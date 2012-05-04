@@ -26,10 +26,10 @@ typedef struct netdialog_t {
 	int option_telnet:1;
 	int option_ntp:1;
 	int option_dns:1;
-	int option_rpc:1;
 	int option_ssl:1;
 	int option_starttls:1;
 	int option_udp:1;
+	int option_external:1;
 } netdialog_t;
 
 static void *netdialogs = NULL;
@@ -43,6 +43,7 @@ void load_protocols(char *fn)
 	strbuffer_t *l;
 	netdialog_t *rec = NULL;
 	int dialogsz = 0;
+	xtreePos_t handle;
 
 	if (!fn) {
 		configfn = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen("/etc/protocols2.cfg") + 1);
@@ -68,7 +69,7 @@ void load_protocols(char *fn)
 
 	/* Wipe out the current configuration */
 	if (netdialogs) {
-		xtreePos_t handle = xtreeFirst(netdialogs);
+		handle = xtreeFirst(netdialogs);
 		while (handle != xtreeEnd(netdialogs)) {
 			int i;
 			netdialog_t *rec = xtreeData(netdialogs, handle);
@@ -113,10 +114,10 @@ void load_protocols(char *fn)
 				if (strcasecmp(tok, "telnet") == 0) rec->option_telnet = 1;
 				if (strcasecmp(tok, "ntp") == 0) rec->option_ntp = 1;
 				if (strcasecmp(tok, "dns") == 0) rec->option_dns = 1;
-				if (strcasecmp(tok, "rpc") == 0) rec->option_rpc = 1;
 				if (strcasecmp(tok, "ssl") == 0) rec->option_ssl = 1;
 				if (strcasecmp(tok, "starttls") == 0) rec->option_starttls = 1;
 				if (strcasecmp(tok, "udp") == 0) rec->option_udp = 1;
+				if (strcasecmp(tok, "external") == 0) rec->option_external = 1;
 				tok = strtok_r(NULL, ",", &savptr);
 			}
 		}
@@ -132,10 +133,13 @@ void load_protocols(char *fn)
 
 			if (strncasecmp(STRBUF(l), "starttls", 8) == 0) rec->option_starttls = 1;
 		}
-
 	}
 
-	if (rec->dialog == NULL) rec->dialog = silentdialog;
+	/* Make sure all protocols have a dialog - minimum the silent dialog */
+	for (handle = xtreeFirst(netdialogs); (handle != xtreeEnd(netdialogs)); handle = xtreeNext(netdialogs, handle)) {
+		netdialog_t *rec = xtreeData(netdialogs, handle);
+		if (rec->dialog == NULL) rec->dialog = silentdialog;
+	}
 
 	freestrbuffer(l);
 	stackfclose(fd);
@@ -363,9 +367,78 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 }
 
 
-static char **build_ldap_dialog(char *testspec, myconn_netparams_t *netparams, void *hostinfo)
+static char **build_standard_dialog(char *testspec, myconn_netparams_t *netparams, net_test_options_t *options, void *hostinfo)
+{
+	char *silentopt, *portopt;
+	int port = 0, silenttest = 0;
+	xtreePos_t handle;
+
+	silentopt = strrchr(testspec, ':');
+	if (silentopt) {
+		/* Cut off the "silent" modifier */
+		if ((strcasecmp(silentopt, ":s") == 0) || (strcasecmp(silentopt, ":q") == 0)) {
+			silenttest = 1;
+			*silentopt = '\0';
+		}
+		else
+			silentopt = NULL;
+	}
+
+	portopt = strrchr(testspec, ':');
+	if (portopt) {
+		port = atoi(portopt);
+		if (port > 0) {
+			*portopt = '\0';
+		}
+		else {
+			port = 0;
+			portopt = NULL;
+		}
+	}
+
+	/* We special-case the rpc check here, because it uses "rpc=..." syntax */
+	if (argnmatch(testspec, "rpc=")) {
+		handle = xtreeFind(netdialogs, "rpc");
+	}
+	else {
+		handle = xtreeFind(netdialogs, testspec);
+	}
+
+	/* Must restore the stuff we have cut off with silent/portnumber options - it might not be a net test at all! */
+	if (portopt) *portopt = ':';
+	if (silentopt) *silentopt = ':';
+
+	if (handle != xtreeEnd(netdialogs)) {
+		netdialog_t *rec = xtreeData(netdialogs, handle);
+
+		if (port)
+			netparams->destinationport = port;
+		else
+			netparams->destinationport = rec->portnumber;
+
+		netparams->socktype = (rec->option_udp ? CONN_SOCKTYPE_DGRAM : CONN_SOCKTYPE_STREAM);
+
+		if (rec->option_ssl) netparams->sslhandling = CONN_SSL_YES;
+		else if (rec->option_starttls) netparams->sslhandling = CONN_SSL_STARTTLS_CLIENT;
+		else netparams->sslhandling = CONN_SSL_NO;
+
+		if (rec->option_telnet) options->testtype = NET_TEST_TELNET;
+		else if (rec->option_dns) options->testtype = NET_TEST_DNS;
+		else if (rec->option_ntp) options->testtype = NET_TEST_NTP;
+		else if (rec->option_external) options->testtype = NET_TEST_EXTERNAL;
+		else options->testtype = NET_TEST_STANDARD;
+
+		return (silenttest ? silentdialog : rec->dialog);
+	}
+
+	return NULL;
+}
+
+
+static char **build_ldap_dialog(char *testspec, myconn_netparams_t *netparams, net_test_options_t *options, void *hostinfo)
 {
 	char *decodedurl;
+	char **dialog;
 	weburl_t weburl;
 
 	/* If there is a parse error in the URL, dont run the test */
@@ -375,26 +448,26 @@ static char **build_ldap_dialog(char *testspec, myconn_netparams_t *netparams, v
 		return NULL;
 	}
 
-	netparams->socktype = CONN_SOCKTYPE_STREAM;
+	dialog = build_standard_dialog(weburl.desturl->scheme, netparams, options, hostinfo);
+	/* Use the destination in the URL, rather than the one provided for the host */
 	if (netparams->destinationip) xfree(netparams->destinationip);
 	netparams->destinationip = strdup(weburl.desturl->ip ? weburl.desturl->ip : weburl.desturl->host);
-	netparams->destinationport = weburl.desturl->port;
-	netparams->sslhandling = CONN_SSL_NO; /* No SSL handling, since this is just the pre-check that we can connect to the service */
 
 	freeweburl_data(&weburl);
-	return silentdialog;
+	return dialog;
 }
+
 
 char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_options_t *options, void *hostinfo, int *dtoken)
 {
-	options->testtype = *dtoken = NET_TEST_STANDARD;
+	char **result = NULL;
 
 	/* Skip old-style modifiers */
 	testspec += strspn(testspec, "?!~");
 
 	if ((argnmatch(testspec, "ldap://")) || (argnmatch(testspec, "ldaps://"))) {
+		result = build_ldap_dialog(testspec, netparams, options, hostinfo);
 		options->testtype = NET_TEST_LDAP;
-		return build_ldap_dialog(testspec, netparams, hostinfo);
 	}
 	else if ( argnmatch(testspec, "http")         ||
 		  argnmatch(testspec, "content=http") ||
@@ -412,74 +485,17 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 		  argnmatch(testspec, "nosoap=")      ||
 		  argnmatch(testspec, "type;http")    ||
 		  argnmatch(testspec, "type=")        )      {
-
-		options->testtype = *dtoken = NET_TEST_HTTP;
-		return build_http_dialog(testspec, netparams, hostinfo);
+		result = build_http_dialog(testspec, netparams, hostinfo);
+		options->testtype = NET_TEST_HTTP;
 	}
 	else {
-		xtreePos_t handle;
-		char *silentopt, *portopt;
-		int port = 0, silenttest = 0;
-
-		silentopt = strrchr(testspec, ':');
-		if (silentopt) {
-			/* Cut off the "silent" modifier */
-			if ((strcasecmp(silentopt, ":s") == 0) || (strcasecmp(silentopt, ":q") == 0)) {
-				silenttest = 1;
-				*silentopt = '\0';
-			}
-			else
-				silentopt = NULL;
-		}
-
-		portopt = strrchr(testspec, ':');
-		if (portopt) {
-			port = atoi(portopt);
-			if (port > 0) {
-				*portopt = '\0';
-			}
-			else {
-				port = 0;
-				portopt = NULL;
-			}
-		}
-
-		/* We special-case the rpc check here, because it uses "rpc=..." syntax */
-		if (argnmatch(testspec, "rpc=")) *(testspec+3) = '\0';
-
-		handle = xtreeFind(netdialogs, testspec);
-
-		/* Must restore the stuff we have cut off with silent/portnumber options - it might not be a net test at all! */
-		if (portopt) *portopt = ':';
-		if (silentopt) *silentopt = ':';
-
-		if (handle != xtreeEnd(netdialogs)) {
-			netdialog_t *rec = xtreeData(netdialogs, handle);
-
-			if (port)
-				netparams->destinationport = port;
-			else
-				netparams->destinationport = rec->portnumber;
-
-			netparams->socktype = (rec->option_udp ? CONN_SOCKTYPE_DGRAM : CONN_SOCKTYPE_STREAM);
-
-			if (rec->option_ssl) netparams->sslhandling = CONN_SSL_YES;
-			else if (rec->option_starttls) netparams->sslhandling = CONN_SSL_STARTTLS_CLIENT;
-			else netparams->sslhandling = CONN_SSL_NO;
-
-			if (rec->option_telnet) options->testtype = NET_TEST_TELNET;
-			else if (rec->option_dns) options->testtype = NET_TEST_DNS;
-			else if (rec->option_ntp) options->testtype = NET_TEST_NTP;
-			else if (rec->option_rpc) options->testtype = NET_TEST_RPC;
-			else options->testtype = NET_TEST_STANDARD;
-
-			*dtoken = options->testtype;
-
-			return (silenttest ? silentdialog : rec->dialog);
-		}
+		/* Default to NET_TEST_STANDARD, but build_standard_dialog() may override it */
+		options->testtype = NET_TEST_STANDARD;
+		result = build_standard_dialog(testspec, netparams, options, hostinfo);
 	}
 
-	return NULL;
+	*dtoken = options->testtype;
+	return result;
 }
 
 

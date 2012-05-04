@@ -22,10 +22,20 @@ static char rcsid[] = "$Id$";
 int concurrency = 10;
 int defaulttimeout = 30;
 
+void do_tests(void)
+{
+	listhead_t *resulthead = NULL;
+
+	setup_tests(defaulttimeout);
+	resulthead = run_net_tests(concurrency);
+	send_test_results(resulthead, programname, 0);
+	add_to_sub_queue(NULL, NULL);	/* Set off the submodule tests */
+}
+
+
 int main(int argc, char **argv)
 {
 	int argi;
-	listhead_t *resulthead = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (standardoption(argv[0], argv[argi])) {
@@ -37,11 +47,7 @@ int main(int argc, char **argv)
 
 	init_tcp_testmodule();
 
-	setup_tests(defaulttimeout);
-	resulthead = run_net_tests(concurrency);
-	send_test_results(resulthead, programname, 0);
-
-	add_to_sub_queue(NULL, NULL);	/* Set off the submodule tests */
+	do_tests();
 
 	conn_deinit();
 	dns_lookup_shutdown();

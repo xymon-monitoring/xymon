@@ -13,5 +13,6 @@
 
 extern void add_to_sub_queue(myconn_t *rec, char *moduleid, ...);
 extern void send_test_results(listhead_t *head, char *collector, int issubmodule);
+extern void cleanup_myconn_list(listhead_t *head);
 
 #endif

@@ -218,9 +218,9 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 			}
 			break;
 
-		  case TALK_PROTO_RPC:
+		  case TALK_PROTO_EXTERNAL:
 			if (!issubmodule && (rec->talkresult == TALK_OK)) {
-				add_to_sub_queue(rec, "rpc", NULL);
+				add_to_sub_queue(rec, rec->testspec, NULL);
 				continue;
 			}
 			break;
@@ -321,7 +321,7 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 		  case TALK_PROTO_DNSQUERY: result_dns(rec, hres->txt); break;
 		  case TALK_PROTO_PING: result_subqueue("PING", rec, hres->txt); break;
 		  case TALK_PROTO_LDAP: result_subqueue("LDAP", rec, hres->txt); break;
-		  case TALK_PROTO_RPC: result_subqueue("RPC", rec, hres->txt); break;
+		  case TALK_PROTO_EXTERNAL: result_subqueue(rec->testspec, rec, hres->txt); break;
 		  default: break;
 		}
 	}
@@ -336,5 +336,26 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 	}
 
 	xtreeDestroy(hostresults);
+}
+
+void cleanup_myconn_list(listhead_t *head)
+{
+	listitem_t *walk, *nextlistitem;
+	myconn_t *testrec;
+
+	walk = head->head;
+	while (walk) {
+		nextlistitem = walk->next;
+		testrec = (myconn_t *)walk->data;
+
+		if (testrec->netparams.destinationip) xfree(testrec->netparams.destinationip);
+		if (testrec->netparams.sourceip) xfree(testrec->netparams.sourceip);
+		if (testrec->testspec) xfree(testrec->testspec);
+		if (testrec->textlog) freestrbuffer(testrec->textlog);
+		xfree(testrec);
+
+		list_item_delete(walk, "");
+		walk = nextlistitem;
+	}
 }
 

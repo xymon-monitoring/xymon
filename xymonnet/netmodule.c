@@ -31,6 +31,7 @@ static char rcsid[] = "$Id$";
 #include "netmodule.h"
 
 int timeout = 0;
+char *extargs[10] = { NULL, };
 
 /* pendingtests and donetests are a list of myconn_t records which holds the data for each test. */
 static listhead_t *pendingtests = NULL;
@@ -107,8 +108,8 @@ static void feed_queue(int talkproto, char *ip)
 		}
 		break;
 
-	  case TALK_PROTO_RPC:
 	  case TALK_PROTO_LDAP:
+	  case TALK_PROTO_EXTERNAL:
 		break;
 
 	  default:
@@ -121,12 +122,6 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 {
 	/* 
 	 * Fork a new worker process.
-	 *
-	 * For ping workers: 
-	 * - Feed it the IP's listed in "workerdata".
-	 * - "subid" indicates if this is for IPv4 or IPv6 tests.
-	 * For rpc workers:
-	 * - pass IP of host to test on commandline.
 	 */
 	int pfd[2];
 	pid_t workerpid;
@@ -148,6 +143,7 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 		int outfile, errfile;
 		char *cmdargs[10];
 		char timeoutstr[20];
+		int i;
 
 		close(pfd[1]); /* Close write end of pipe */
 
@@ -199,18 +195,27 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 			cmdargs[2] = "-q";
 			break;
 
-		  case TALK_PROTO_RPC:
-			cmd = xgetenv("RPCINFO");
-			cmdargs[1] = "-p";
-			cmdargs[2] = STRBUF(workerdata);
-			break;
-
 		  case TALK_PROTO_LDAP:
 			cmd = "ldaptalk";
 			cmdargs[1] = timeoutstr;
 			cmdargs[2] = STRBUF(workerdata);
 			cmdargs[3] = opt1;
 			cmdargs[4] = opt2;
+			break;
+
+		  case TALK_PROTO_EXTERNAL:
+			cmd = extargs[0];
+			for (i=1; (extargs[i] && (i < (sizeof(extargs)/sizeof(extargs[0])))); i++) {
+				if (strcasecmp(extargs[i], "$TEST") == 0) {
+					cmdargs[i-1] = STRBUF(workerdata);
+				}
+				else if (strcasecmp(extargs[i], "$IP") == 0) {
+					cmdargs[i-1] = opt1;
+				}
+				else {
+					cmdargs[i-1] = extargs[i];
+				}
+			}
 			break;
 
 		  default:
@@ -258,8 +263,8 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 			} while (outremain > 0);
 			break;
 
-		  case TALK_PROTO_RPC:
 		  case TALK_PROTO_LDAP:
+		  case TALK_PROTO_EXTERNAL:
 			break;
 
 		  default:
@@ -277,6 +282,8 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 		actrec->killcount = 0;
 		getntimer(&actrec->starttime);
 		list_item_create(activeprocesses, actrec, "");
+		/* Dont fork-bomb the system */
+		sleep(1);
 	}
 }
 
@@ -341,56 +348,55 @@ static int scan_queue(char *id, int talkproto)
 			hinfo = (hname ? hostinfo(hname) : NULL);
 
 			if (hinfo && ip && conn_is_ip(ip) && testspec) {
+				myconn_t *testrec;
+				char *username, *password;
 				xtreePos_t handle;
 
+				/*
+				 * Lots of list / queue manipulation here.
+				 * 1) Create a "myconn_t" record for the test - this will be used to
+				 *    collect test data and eventually submitted to send_test_results() for
+				 *    reporting the test results back to xymond.
+				 * 2) Add the myconn_t record to the "pendingtests" list of active tests.
+				 * 3) For ping tests: create / update a record in the "iptree" tree,
+				 *    so we can map the IP reported by fping back to the test record.
+				 */
+
+				testrec = (myconn_t *)calloc(1, sizeof(myconn_t));
+				testrec->testspec = strdup(id);
+				testrec->talkprotocol = talkproto;
+				testrec->hostinfo = hinfo;
+				testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
+				testrec->netparams.destinationip = strdup(ip);
+
 				/* Add the test only if we haven't got it already */
-				handle = xtreeFind(iptree, ip);
-				if (handle == xtreeEnd(iptree)) {
-					/*
-					 * Lots of list / queue manipulation here.
-					 * 1) Create a "myconn_t" record for the test - this will be used to
-					 *    collect test data and eventually submitted to send_test_results() for
-					 *    reporting the test results back to xymond.
-					 * 2) Add the myconn_t record to the "pendingtests" list of active tests.
-					 * 3) Create / update a record in the "iptree" tree, so we can map the IP
-					 *    reported by fping back to the test record.
-					 */
-					myconn_t *testrec;
-					char *username, *password;
-
-					testrec = (myconn_t *)calloc(1, sizeof(myconn_t));
-					testrec->testspec = strdup(id);
-					testrec->talkprotocol = talkproto;
-					testrec->hostinfo = hinfo;
-					testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
-
-					testrec->netparams.destinationip = strdup(ip);
-					xtreeAdd(iptree, testrec->netparams.destinationip, testrec);
-
-					switch (talkproto) {
-					  case TALK_PROTO_PING:
+				switch (talkproto) {
+				  case TALK_PROTO_PING:
+					handle = xtreeFind(iptree, ip);
+					if (handle == xtreeEnd(iptree)) {
+						xtreeAdd(iptree, testrec->netparams.destinationip, testrec);
 						feed_queue(talkproto, ip);
-						break;
-					  case TALK_PROTO_RPC:
-						/* We do one ping process per test */
-						clearstrbuffer(queue_data);
-						addtobuffer(queue_data, ip);
-						launch_worker(queue_data, TALK_PROTO_RPC, 0, globdata.gl_pathv[i], testrec, NULL, NULL);
-						break;
-					  case TALK_PROTO_LDAP:
-						/* We do one ldaptalk process per test */
-						clearstrbuffer(queue_data);
-						addtobuffer(queue_data, testspec);
-						username = password = NULL;
-						if (extras && *extras) {
-							username = strtok(extras, ":");
-							if (username) password = strtok(NULL, "\t\r\n");
-						}
-						launch_worker(queue_data, TALK_PROTO_LDAP, 0, globdata.gl_pathv[i], testrec, username, password);
-						break;
-					  default:
-						break;
 					}
+					break;
+				  case TALK_PROTO_LDAP:
+					/* We do one ldaptalk process per test */
+					clearstrbuffer(queue_data);
+					addtobuffer(queue_data, testspec);
+					username = password = NULL;
+					if (extras && *extras) {
+						username = strtok(extras, ":");
+						if (username) password = strtok(NULL, "\t\r\n");
+					}
+					launch_worker(queue_data, TALK_PROTO_LDAP, 0, globdata.gl_pathv[i], testrec, username, password);
+					break;
+				  case TALK_PROTO_EXTERNAL:
+					/* We do one process per external test */
+					clearstrbuffer(queue_data);
+					addtobuffer(queue_data, testspec);
+					launch_worker(queue_data, TALK_PROTO_EXTERNAL, 0, globdata.gl_pathv[i], testrec, ip, NULL);
+					break;
+				  default:
+					break;
 				}
 			}
 		}
@@ -405,8 +411,8 @@ static int scan_queue(char *id, int talkproto)
 				launch_worker(ping6_data, TALK_PROTO_PING, 6, globdata.gl_pathv[i], NULL, NULL, NULL);
 			break;
 
-		  case TALK_PROTO_RPC:
 		  case TALK_PROTO_LDAP:
+		  case TALK_PROTO_EXTERNAL:
 			/* Have already forked the children */
 			break;
 
@@ -621,14 +627,14 @@ collectioncleanup:
 	return 1;
 }
 
-static int collect_rpc_results(void)
-{
-	return collect_generic_results("rpcinfo");
-}
-
 static int collect_ldap_results(void)
 {
 	return collect_generic_results("ldaptalk");
+}
+
+static int collect_external_results(char *id)
+{
+	return collect_generic_results(id);
 }
 
 
@@ -651,30 +657,6 @@ static void kill_stalled_tasks(void)
 }
 
 
-static void cleanup_donetests(void)
-{
-	listitem_t *walk, *nextlistitem;
-	myconn_t *testrec;
-
-	walk = donetests->head;
-	while (walk) {
-		nextlistitem = walk->next;
-		testrec = (myconn_t *)walk->data;
-
-		if (testrec->netparams.destinationip) {
-			xtreeDelete(iptree, testrec->netparams.destinationip);
-			xfree(testrec->netparams.destinationip);
-		}
-		if (testrec->netparams.sourceip) xfree(testrec->netparams.sourceip);
-		if (testrec->testspec) xfree(testrec->testspec);
-		if (testrec->textlog) freestrbuffer(testrec->textlog);
-		xfree(testrec);
-
-		list_item_delete(walk, "");
-		walk = nextlistitem;
-	}
-}
-
 int main(int argc, char **argv)
 {
 	int argi;
@@ -683,7 +665,22 @@ int main(int argc, char **argv)
 	int mytalkprotocol = TALK_PROTO_PING;
 
 	for (argi=1; (argi < argc); argi++) {
-		if (standardoption(argv[0], argv[argi])) {
+		if (queueid || *(argv[argi]) != '-') {
+			/* External network test module */
+			if (!queueid) {
+				queueid = argv[argi];
+				mytalkprotocol = TALK_PROTO_EXTERNAL;
+				if (!timeout) timeout = 30;
+			}
+			else {
+				int n;
+				for (n = 0; (extargs[n] && (n < (sizeof(extargs) / sizeof(extargs[0])))); n++) ;
+				if (n < (sizeof(extargs) / sizeof(extargs[0]))) {
+					extargs[n] = argv[argi];
+				}
+			}
+		}
+		else if (standardoption(argv[0], argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else if (argnmatch(argv[argi], "--timeout=")) {
@@ -694,11 +691,6 @@ int main(int argc, char **argv)
 			queueid = argv[argi];
 			mytalkprotocol = TALK_PROTO_PING;
 			if (!timeout) timeout = 200;
-		}
-		else if (strcmp(argv[argi], "rpc") == 0) {
-			queueid = argv[argi];
-			mytalkprotocol = TALK_PROTO_RPC;
-			if (!timeout) timeout = 30;
 		}
 		else if (strcmp(argv[argi], "ldap") == 0) {
 			queueid = argv[argi];
@@ -720,7 +712,7 @@ int main(int argc, char **argv)
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
 
-	iptree = xtreeNew(strcmp);
+	if (mytalkprotocol == TALK_PROTO_PING) iptree = xtreeNew(strcmp);
 	activeprocesses = list_create("activeprocesses");
 	pendingtests = list_create("pending");
 	donetests = list_create("done");
@@ -742,11 +734,11 @@ int main(int argc, char **argv)
 			  case TALK_PROTO_PING:
 				while (collect_ping_results()) anyaction++;
 				break;
-			  case TALK_PROTO_RPC:
-				while (collect_rpc_results()) anyaction++;
-				break;
 			  case TALK_PROTO_LDAP:
 				while (collect_ldap_results()) anyaction++;
+				break;
+			  case TALK_PROTO_EXTERNAL:
+				while (collect_external_results(queueid)) anyaction++;
 				break;
 			  default:
 				break;
@@ -757,9 +749,20 @@ int main(int argc, char **argv)
 		}
 
 		if ((pendingtests->len == 0) && (donetests->len > 0)) {
+			listitem_t *walk;
+
 			dbgprintf("Sending results\n");
 			send_test_results(donetests, programname, 1);
-			cleanup_donetests();
+
+			if (iptree) {
+				/* Zap IP's from the iptree */
+				for (walk = donetests->head; (walk); walk = walk->next) {
+					myconn_t *testrec = (myconn_t *)walk->data;
+					if (testrec->netparams.destinationip) xtreeDelete(iptree, testrec->netparams.destinationip);
+				}
+			}
+
+			cleanup_myconn_list(donetests);
 		}
 
 		anyaction += scan_queue(queueid, mytalkprotocol);

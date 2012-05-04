@@ -566,8 +566,8 @@ void *add_net_test(char *testspec, char **dialog, int dialogtoken, net_test_opti
 	  case NET_TEST_LDAP:
 		newtest->talkprotocol = TALK_PROTO_LDAP;
 		break;
-	  case NET_TEST_RPC:
-		newtest->talkprotocol = TALK_PROTO_RPC;
+	  case NET_TEST_EXTERNAL:
+		newtest->talkprotocol = TALK_PROTO_EXTERNAL;
 		break;
 	}
 
@@ -641,7 +641,7 @@ listhead_t *run_net_tests(int concurrency)
 			  case TALK_PROTO_HTTP:
 			  case TALK_PROTO_NTP:
 			  case TALK_PROTO_LDAP:
-			  case TALK_PROTO_RPC:
+			  case TALK_PROTO_EXTERNAL:
 				dbgprintf("    conn_prepare_connection()\n");
 				if (conn_prepare_connection(rec->netparams.destinationip, 
 							rec->netparams.destinationport, 
