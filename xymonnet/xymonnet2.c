@@ -19,10 +19,9 @@ static char rcsid[] = "$Id$";
 #include "dnstalk.h"
 #include "sendresults.h"
 
-#define DEF_CONCURRENCY 128
 #define DEF_TIMEOUT 30
 
-int concurrency = DEF_CONCURRENCY;
+int concurrency = 0;
 int defaulttimeout = DEF_TIMEOUT;
 char *defaultsourceip4 = NULL, *defaultsourceip6 = NULL;
 int pingenabled = 1;
@@ -55,7 +54,7 @@ int main(int argc, char **argv)
 		else if (argnmatch(argv[argi], "--concurrency=")) {
 			char *p = strchr(argv[argi], '=');
 			concurrency = atoi(p+1);
-			if (concurrency <= 0) concurrency = DEF_CONCURRENCY;
+			if (concurrency <= 0) concurrency = 0;
 		}
 		else if (strcmp(argv[argi], "--test-untagged") == 0) {
 			test_nonet_hosts(1);

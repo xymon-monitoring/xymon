@@ -15,6 +15,8 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "libxymon.h"
 
@@ -608,6 +610,23 @@ listhead_t *run_net_tests(int concurrency, char *sourceip4, char *sourceip6)
 	int maxfd;
 
 	list_shuffle(pendingtests);
+
+	/* 
+	 * Determine how many tests can run in parallel.
+	 * If no --concurrency set by user, default to (FD_SETSIZE / 4) - typically 256.
+	 * But never go above the ressource limit that is set, or above FD_SETSIZE.
+	 * And we save some fd's - 20 - for stdio, libs etc.
+	 */
+	{
+		int absmaxconcurrency = (FD_SETSIZE - 20);
+		struct rlimit lim;
+
+		getrlimit(RLIMIT_NOFILE, &lim);
+		if ((lim.rlim_cur > 20) && ((lim.rlim_cur - 20) < absmaxconcurrency)) absmaxconcurrency = (lim.rlim_cur - 20);
+
+		if (concurrency == 0) concurrency = (FD_SETSIZE / 4);
+		if (concurrency > absmaxconcurrency) concurrency = absmaxconcurrency;
+	}
 
 	/* Loop to process data */
 	do {
