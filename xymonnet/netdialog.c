@@ -465,7 +465,7 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 	/* Skip old-style modifiers */
 	testspec += strspn(testspec, "?!~");
 
-	if ((argnmatch(testspec, "ldap://")) || (argnmatch(testspec, "ldaps://"))) {
+	if (argnmatch(testspec, "ldap://") || argnmatch(testspec, "ldaps://") ||argnmatch(testspec, "ldaptls://")) {
 		result = build_ldap_dialog(testspec, netparams, options, hostinfo);
 		options->testtype = NET_TEST_LDAP;
 	}

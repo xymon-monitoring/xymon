@@ -43,23 +43,34 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 	int rc, msgID = -1;
 	char msgtext[4096];
 	int testresult = 0;
+	char *realurl = NULL;
+	int usestarttls = 0;
 
 	getntimer(&starttime);
 
 	if (!username) username = "";
 	if (!password) password = "";
 
+	/* We use an "ldaptls://" URL to signal that we must use STARTTLS. Convert this to standard "ldap://" for the LDAP library. */
+	usestarttls = (strncmp(url, "ldaptls:", 8) == 0);
+	if (!usestarttls)
+		realurl = strdup(url);
+	else {
+		realurl = (char *)malloc(strlen(url) + 1);
+		sprintf(realurl, "ldap:%s", url+8);
+	}
+
 	/*
 	 * Parse the LDAP URL and get and LDAP handle
 	 */
-	if (ldap_url_parse(url, &ludp) != 0) {
+	if (ldap_url_parse(realurl, &ludp) != 0) {
 		sprintf(msgtext, "Cannot parse LDAP URL '%s'\n", url);
 		addtobuffer(outdata, msgtext);
 		testresult = 1; goto cleanup;
 	}
 
 	if ((ldaphandle = ldap_init(ludp->lud_host, ludp->lud_port)) == NULL) {
-		sprintf(msgtext, "ldap_init() failed for URL '%s'\n", url);
+		sprintf(msgtext, "ldap_init() failed for URL '%s'\n", realurl);
 		addtobuffer(outdata, msgtext);
 		testresult = 1; goto cleanup;
 	}
@@ -96,10 +107,10 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 	}
 
 	/* For TLS connections, try to start the TLS session. This will trigger network-level connect. */
-	if (strcmp(ludp->lud_scheme, "ldaps") == 0) {
-		dbgprintf("Trying to enable TLS for querying '%s'\n", url);
+	if (usestarttls) {
+		dbgprintf("Trying to enable TLS for querying '%s'\n", realurl);
 		if ((rc = ldap_start_tls_s(ldaphandle, NULL, NULL)) != LDAP_SUCCESS) {
-			sprintf(msgtext, "LDAP STARTTLS failed, cannot connect: %s\n", ldap_err2string(rc));
+			sprintf(msgtext, "LDAP STARTTLS failed, connect or STARTTLS error: %s\n", ldap_err2string(rc));
 			addtobuffer(outdata, msgtext);
 			testresult = 2; goto cleanup;
 		}
@@ -108,7 +119,7 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 	/* Bind to the server */
 	msgID = ldap_simple_bind(ldaphandle, username, password);
 	if (msgID == -1) {
-		sprintf(msgtext, "Cannot bind to LDAP server (URL: '%s')\n", url);
+		sprintf(msgtext, "Cannot bind to LDAP server (URL: '%s')\n", realurl);
 		addtobuffer(outdata, msgtext);
 		testresult = 2; goto cleanup;
 	}
@@ -164,7 +175,7 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 		testresult = 4; goto cleanup;
 	}
 
-	sprintf(msgtext, "Searching LDAP for %s yields %d results:\n\n", url, ldap_count_entries(ldaphandle, result));
+	sprintf(msgtext, "Searching LDAP for %s yields %d results:\n\n", realurl, ldap_count_entries(ldaphandle, result));
 	addtobuffer(outdata, msgtext);
 
 	for (e = ldap_first_entry(ldaphandle, result); (e != NULL); e = ldap_next_entry(ldaphandle, e) ) {
@@ -204,6 +215,7 @@ cleanup:
 	if (result) ldap_msgfree(result);
 	if (ldaphandle) ldap_unbind(ldaphandle);
 	if (ludp) ldap_free_urldesc(ludp);
+	if (realurl) xfree(realurl);
 
 	return testresult;
 }
