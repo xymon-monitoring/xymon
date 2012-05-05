@@ -14,8 +14,6 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <assert.h>
 
-#include <sqlite3.h>
-
 #include "ares.h"
 
 #include "libxymon.h"
@@ -23,6 +21,7 @@ static char rcsid[] = "$Id$";
 #include "tcptalk.h"
 #include "dnstalk.h"
 #include "dnsbits.h"
+#include "netsql.h"
 
 static int dns_atype, dns_aaaatype, dns_aclass;
 static ares_channel dns_lookupchannel;
@@ -235,19 +234,10 @@ void dns_finish_queries(listhead_t *activelist)
 }
 
 
-static sqlite3 *dns_lookupcache = NULL;
-static sqlite3_stmt *addrecord_sql = NULL;
-static sqlite3_stmt *ip4query_sql = NULL;
-static sqlite3_stmt *ip6query_sql = NULL;
-static sqlite3_stmt *ip4update_sql = NULL;
-static sqlite3_stmt *ip6update_sql = NULL;
-
-
 void dns_lookup_init(void)
 {
 	struct ares_options options;
 	int optmask, status;
-	char *sqlfn;
 	int dbres;
 
 	optmask = ARES_OPT_TIMEOUTMS | ARES_OPT_TRIES | ARES_OPT_FLAGS;
@@ -259,73 +249,12 @@ void dns_lookup_init(void)
 		errprintf("Cannot initialise DNS lookups: %s\n", ares_strerror(status));
 		return;
 	}
-
-	sqlfn = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen("/etc/xymon.sqlite3") + 1);
-	sprintf(sqlfn, "%s/etc/xymon.sqlite3", xgetenv("XYMONHOME"));
-	dbres = sqlite3_open_v2(sqlfn, &dns_lookupcache, SQLITE_OPEN_READWRITE, NULL);
-	if (dbres != SQLITE_OK) {
-		/* Try creating the database - in that case, we must also create the tables */
-		dbres = sqlite3_open_v2(sqlfn, &dns_lookupcache, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-		if (dbres == SQLITE_OK) {
-			char *err = NULL;
-			dbres = sqlite3_exec(dns_lookupcache, "CREATE TABLE hostip (hostname varchar(200) unique, ip4 varchar(15), upd4time int, ip6 varchar(40), upd6time int)", NULL, NULL, &err);
-			if (dbres != SQLITE_OK) {
-				errprintf("Cannot create hostip table: %s\n", sqlfn, (err ? err : sqlite3_errmsg(dns_lookupcache)));
-				if (err) sqlite3_free(err);
-				xfree(sqlfn);
-				return;
-			}
-		}
-	}
-	if (dbres != SQLITE_OK) {
-		errprintf("Cannot open sqlite3 database %s: %s\n", sqlfn, sqlite3_errmsg(dns_lookupcache));
-		xfree(sqlfn);
-		return;
-	}
-	xfree(sqlfn);
-
-	dbres = sqlite3_prepare_v2(dns_lookupcache, "update hostip set ip4=?,upd4time=strftime('%s','now') where hostname=?", -1, &ip4update_sql, NULL);
-	if (dbres != SQLITE_OK) {
-		errprintf("ip4update prep failed: %s\n", sqlite3_errmsg(dns_lookupcache));
-		return;
-	}
-	dbres = sqlite3_prepare_v2(dns_lookupcache, "update hostip set ip6=?,upd6time=strftime('%s','now') where hostname=?", -1, &ip6update_sql, NULL);
-	if (dbres != SQLITE_OK) {
-		errprintf("ip6update prep failed: %s\n", sqlite3_errmsg(dns_lookupcache));
-		return;
-	}
-	dbres = sqlite3_prepare_v2(dns_lookupcache, "insert into hostip(hostname,ip4,ip6,upd4time,upd6time) values (?,?,?,0,0)", -1, &addrecord_sql, NULL);
-	if (dbres != SQLITE_OK) {
-		errprintf("addrecord prep failed: %s\n", sqlite3_errmsg(dns_lookupcache));
-		return;
-	}
-	dbres = sqlite3_prepare_v2(dns_lookupcache, "select ip4,upd4time from hostip where hostname=?", -1, &ip4query_sql, NULL);
-	if (dbres != SQLITE_OK) {
-		errprintf("ip4query prep failed: %s\n", sqlite3_errmsg(dns_lookupcache));
-		return;
-	}
-	dbres = sqlite3_prepare_v2(dns_lookupcache, "select ip6,upd6time from hostip where hostname=?", -1, &ip6query_sql, NULL);
-	if (dbres != SQLITE_OK) {
-		errprintf("ip6query prep failed: %s\n", sqlite3_errmsg(dns_lookupcache));
-		return;
-	}
-
-	dbres = sqlite3_exec(dns_lookupcache, "PRAGMA synchronous=OFF", NULL, NULL, NULL);
-	if (dbres != SQLITE_OK) {
-		errprintf("Cannot set async mode: %s\n", sqlite3_errmsg(dns_lookupcache));
-	}
 }
 
 void dns_lookup_shutdown(void)
 {
-	if (ip4update_sql) sqlite3_finalize(ip4update_sql);
-	if (ip6update_sql) sqlite3_finalize(ip6update_sql);
-	if (addrecord_sql) sqlite3_finalize(addrecord_sql);
-	if (ip4query_sql) sqlite3_finalize(ip4query_sql);
-	if (ip6query_sql) sqlite3_finalize(ip6query_sql);
-
-	if (dns_lookupcache != NULL) sqlite3_close(dns_lookupcache);
 }
+
 
 /* This defines the sequence in which we perform DNS lookup for IPv4 and IPv6 - default is IPv4 first, then v6 */
 static const int dns_lookup_sequence[] = {
@@ -348,23 +277,7 @@ static void dns_return_lookupdata(myconn_t *rec, char *ip)
 
 void dns_addtocache(myconn_t *rec, char *ip)
 {
-	sqlite3_stmt *updstmt = NULL;
-	int dbres;
-
-	dbgprintf("Updating cache info for %s\n", rec->netparams.lookupstring);
-
-	switch (dns_lookup_sequence[rec->netparams.af_index-1]) {
-	  case AF_INET: updstmt = ip4update_sql; break;
-	  case AF_INET6: updstmt = ip6update_sql; break;
-	}
-
-	/* We know the cache record exists */
-	dbres = sqlite3_bind_text(updstmt, 2, rec->netparams.lookupstring, -1, SQLITE_STATIC);
-	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(updstmt, 1, ((ip && *ip) ? ip : "-"), -1, SQLITE_STATIC);
-	if (dbres == SQLITE_OK) dbres = sqlite3_step(updstmt);
-	if (dbres != SQLITE_DONE) errprintf("Error updating record: %s\n", sqlite3_errmsg(dns_lookupcache));
-
-	sqlite3_reset(updstmt);
+	xymon_sqldb_dns_updatecache(dns_lookup_sequence[rec->netparams.af_index-1], rec->netparams.lookupstring, ip);
 
 	if (strcmp(ip, "-") != 0) 
 		/* Got an IP, we're done */
@@ -378,35 +291,21 @@ void dns_lookup(myconn_t *rec)
 {
 	/* Push a normal DNS lookup into the DNS queue */
 
-	int dbres;
-	char *res = NULL;
 	time_t updtime = 0;
-	sqlite3_stmt *querystmt = NULL;
+	char *res = NULL;
 
 	dbgprintf("dns_lookup(): Lookup %s, family %d\n", rec->netparams.lookupstring, rec->netparams.af_index-1);
 
-	switch (dns_lookup_sequence[rec->netparams.af_index]) {
-	  case AF_INET:
-		querystmt = ip4query_sql;
-		break;
-	  case AF_INET6:
-		querystmt = ip6query_sql;
-		break;
-	  default:
+	if (xymon_sqldb_dns_lookup_search(dns_lookup_sequence[rec->netparams.af_index], rec->netparams.lookupstring, &updtime, &res) != 0) {
 		rec->netparams.lookupstatus = LOOKUP_FAILED;
 		return;
 	}
 
-	/* Create / find the cache-record */
-	dbres = sqlite3_bind_text(querystmt, 1, rec->netparams.lookupstring, -1, SQLITE_STATIC);
-	if (dbres == SQLITE_OK) dbres = sqlite3_step(querystmt);
-	if (dbres == SQLITE_ROW) {
-		/* See what the current cache-data is */
-		res = sqlite3_column_text(querystmt, 0);
-		updtime = sqlite3_column_int(querystmt, 1);
+	if (!res) {
+		/* No cache record, create one */
+		xymon_sqldb_dns_lookup_create(dns_lookup_sequence[rec->netparams.af_index], rec->netparams.lookupstring);
 	}
-
-	if (res && ((time(NULL) - updtime) < 3600)) {
+	else if (res && ((time(NULL) - updtime) < 3600)) {
 		/* We have a valid cache-record */
 		if ((strcmp(res, "-") != 0)) {
 			/* Successfully resolved from cache */
@@ -417,34 +316,9 @@ void dns_lookup(myconn_t *rec)
 			rec->netparams.af_index++;
 			rec->netparams.lookupstatus = LOOKUP_NEEDED;
 		}
-
-		sqlite3_reset(querystmt);
-		return;
 	}
 
-	if (!res) {
-		/* No cache record, create one */
-		dbres = sqlite3_bind_text(addrecord_sql, 1, rec->netparams.lookupstring, -1, SQLITE_STATIC);
-		if (dbres == SQLITE_OK) dbres = sqlite3_step(addrecord_sql);
-		if ((dbres != SQLITE_DONE) && (dbres != SQLITE_CONSTRAINT)) {
-			/*
-			 * This can fail with a "constraint" error when there are multiple
-			 * tests involving the same hostname - in that case, we may call the
-			 * lookup routine multiple times before the cache record is created in
-			 * the database. Therefore only show it when debugging.
-			 */
-			errprintf("Error adding record for %s (%d): %s\n", 
-				  rec->netparams.lookupstring, rec->netparams.af_index-1,
-				  sqlite3_errmsg(dns_lookupcache));
-		}
-		else {
-			dbgprintf("Successfully added record for %s (%d)\n", 
-				  rec->netparams.lookupstring, rec->netparams.af_index-1);
-		}
-		sqlite3_reset(addrecord_sql);
-	}
-
-	sqlite3_reset(querystmt);
+	xymon_sqldb_dns_lookup_finish();
 
 	/* Cache data missing or invalid, do the DNS lookup */
 	if (rec->netparams.af_index == 0) getntimer(&rec->netparams.lookupstart);

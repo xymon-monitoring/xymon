@@ -18,6 +18,7 @@ static char rcsid[] = "$Id$";
 #include "tcptalk.h"
 #include "dnstalk.h"
 #include "sendresults.h"
+#include "netsql.h"
 
 #define DEF_TIMEOUT 30
 
@@ -79,12 +80,17 @@ int main(int argc, char **argv)
 
 	if (debug) conn_register_infohandler(NULL, 7);
 
+	if (xymon_sqldb_init() != 0) {
+		errprintf("Cannot open Xymon SQLite database - aborting\n");
+		return 1;
+	}
+
 	init_tcp_testmodule();
 
 	do_tests();
 
 	conn_deinit();
-	dns_lookup_shutdown();
+	xymon_sqldb_shutdown();
 
 	return 0;
 }

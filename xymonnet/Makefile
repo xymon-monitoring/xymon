@@ -22,7 +22,7 @@ endif
 
 all: $(PROGRAMS) fping.8
 
-NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o sendresults.o
+NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o sendresults.o netsql.o
 NETMODULEOBJS = netmodule.o sendresults.o
 LDAPTALKOBJS = ldaptalk.o sendresults.o
 
