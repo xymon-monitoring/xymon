@@ -145,24 +145,7 @@ else
 	if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
 	then
 		ENABLELDAP="y"
-		if test "$LDAPVENDOR" = "OpenLDAP"; then
-			echo "Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?"
-			if test "$ENABLELDAPSSL" = ""
-			then
-				read ENABLELDAPSSL
-			fi
-		else
-			ENABLELDAPSSL="n"
-		fi
-
-		if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
-		then
-			ENABLELDAPSSL="y"
-			LDAPDEF="-DHAVE_LDAP -DXYMON_LDAP_USESTARTTLS"
-		else
-			ENABLELDAPSSL="n"
-			LDAPDEF="-DHAVE_LDAP"
-		fi
+		LDAPDEF="-DHAVE_LDAP"
 	else
 		ENABLELDAP="n"
 		LDAPDEF=""
@@ -532,6 +515,7 @@ then
     else
 	echo "LDAPLIBS = -lldap $LDAPLBER"  >>Makefile
     fi
+    echo "DOLDAP=1"                      >>Makefile
 fi
 echo "#"                                 >>Makefile
 echo "# clock_gettime() settings"        >>Makefile

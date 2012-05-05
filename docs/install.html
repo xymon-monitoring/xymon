@@ -92,16 +92,15 @@ files installed as well. Often these are in packages called "something<em>-dev</
 	<a href="http://www.libpng.org/pub/png/libpng.html">http://www.libpng.org/pub/png/libpng.html</a></li>
 
 	<li>OpenSSL is a library for communicating with network services, that
-	use SSL encryption - e.g. secure websites. Although this library is
-	not absolutely required for Xymon, I strongly recommend that you install
-	it because sooner or later you will probably need it anyway. It is 
+	use SSL encryption - e.g. secure websites. <em>This library was optional
+	for Xymon versions prior to 5.0, but is now required.</em> It is 
 	available from <a href="http://www.openssl.org/">http://www.openssl.org/</a>.
-	Note: If you are building on Solaris, you should check that you have a
+	Note: If you are building on older Solaris versions, you should check that you have a
 	random-data generator, either the prngd daemon (available on 
 	<a href="http://www.sunfreeware.com/">Sun Freeware</a>) or the Solaris 
-	/dev/random driver from Solaris patch 112438.</li>
+	/dev/random driver from Solaris 8 patch 112438.</li>
 
-	<li>OpenLDAP is used to query LDAP directory servers. If you would like
+	<li>OpenLDAP is used to query LDAP directory servers (optional). If you would like
 	to test that your directory server is up and running, you will need this
 	library. It is available from <a href="http://www.openldap.org/">http://www.openldap.org/</a></li>
 </ul>
@@ -117,11 +116,9 @@ in Xymon, I strongly recommend that you create a dedicated userid for the Xymon
 programs. This user should <em>not</em> be a member of any other groups on your
 system.</p>
 
-<p>Xymon will install the <u>xymonping</u> tool as <b>setuid-root</b>(only on
-the Xymon server). This program requires root privileges to be able to perform
-network &quot;ping&quot; tests. It will drop root privileges immediately after 
-obtaining the network socket needed for this, and will not run with root
-privileges at all while handling network traffic or doing file I/O. </p>
+<p>Xymon will install two <u>fping</u> binaries as <b>setuid-root</b> (only on
+the Xymon server). One for IPv4, and one for IPv6. This program requires root 
+privileges to be able to perform network &quot;ping&quot; tests.</p>
 
 
 <h2>Building Xymon</h2>

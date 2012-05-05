@@ -209,6 +209,7 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 			}
 			break;
 
+#ifdef HAVE_LDAP
 		  case TALK_PROTO_LDAP:
 			if (!issubmodule && (rec->talkresult == TALK_OK)) {
 				char *creds = xmh_item(rec->hostinfo, XMH_LDAPLOGIN);
@@ -217,6 +218,7 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 				continue;
 			}
 			break;
+#endif
 
 		  case TALK_PROTO_EXTERNAL:
 			if (!issubmodule && (rec->talkresult == TALK_OK)) {
@@ -321,7 +323,9 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 		  case TALK_PROTO_HTTP: result_http(rec, hres->txt); break;
 		  case TALK_PROTO_DNSQUERY: result_dns(rec, hres->txt); break;
 		  case TALK_PROTO_PING: result_subqueue("PING", rec, hres->txt); break;
+#ifdef HAVE_LDAP
 		  case TALK_PROTO_LDAP: result_subqueue("LDAP", rec, hres->txt); break;
+#endif
 		  case TALK_PROTO_EXTERNAL: result_subqueue(rec->testspec, rec, hres->txt); break;
 		  default: break;
 		}

@@ -10,9 +10,12 @@ XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares
 
-PROGRAMS = xymonnet2 netmodule ldaptalk fping4 fping6
+PROGRAMS = xymonnet2 netmodule fping4 fping6
 SNMPPROGRAMS = xymon-snmpcollect
 
+ifeq ($(DOLDAP),yes)
+PROGRAMS += ldaptalk
+endif
 ifeq ($(DOSNMP),yes)
 PROGRAMS += $(SNMPPROGRAMS)
 endif
@@ -43,6 +46,9 @@ dnstalk.o: dnstalk.c dnstalk.h
 
 dnsbits.o: dnsbits.c dnsbits.h
 	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dnsbits.c
+
+sendresults.o: sendresults.c sendresults.h
+	$(CC) $(CFLAGS) $(LDAPFLAGS) -c -o $@ sendresults.c
 
 
 libcares.a: c-ares/.libs/libcares.a
