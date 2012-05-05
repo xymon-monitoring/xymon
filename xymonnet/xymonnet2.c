@@ -12,6 +12,7 @@ static char rcsid[] = "$Id$";
 
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include "libxymon.h"
 #include "setuptests.h"
@@ -22,26 +23,57 @@ static char rcsid[] = "$Id$";
 
 #define DEF_TIMEOUT 30
 
+time_t lastloadtime = 0;
+int running = 1;
+int flushdbdata = 0;
+
 int concurrency = 0;
 int defaulttimeout = DEF_TIMEOUT;
 char *defaultsourceip4 = NULL, *defaultsourceip6 = NULL;
 int pingenabled = 1;
 
 
-void do_tests(void)
+void sig_handler(int signum)
 {
+	switch (signum) {
+	  case SIGHUP:
+		lastloadtime = 0;
+		flushdbdata = 1;
+		break;
+	  case SIGINT:
+	  case SIGTERM:
+		running = 0;
+	}
+}
+
+
+int run_tests(void)
+{
+	int count;
 	listhead_t *resulthead = NULL;
 
-	setup_tests(defaulttimeout, pingenabled);
-	resulthead = run_net_tests(concurrency, defaultsourceip4, defaultsourceip6);
-	send_test_results(resulthead, programname, 0);
-	add_to_sub_queue(NULL, NULL);	/* Set off the submodule tests */
+	if (flushdbdata) {
+		xymon_sqldb_flushall();
+		flushdbdata = 0;
+	}
+
+	count = setup_tests(defaulttimeout, pingenabled);
+	if (count > 0) {
+		resulthead = run_net_tests(concurrency, defaultsourceip4, defaultsourceip6);
+		count = resulthead->len;
+		send_test_results(resulthead, programname, 0);
+		add_to_sub_queue(NULL, NULL);	/* Set off the submodule tests */
+		cleanup_myconn_list(resulthead);
+	}
+
+	return count;
 }
 
 
 int main(int argc, char **argv)
 {
 	int argi;
+	time_t nextrun = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (standardoption(argv[0], argv[argi])) {
@@ -76,9 +108,26 @@ int main(int argc, char **argv)
 		else if ((strcmp(argv[argi], "--noping") == 0) || (strcmp(argv[argi], "--no-ping") == 0)) {
 			pingenabled = 0;
 		}
+		else if (strcmp(argv[argi], "--once") == 0) {
+			running = 0;
+		}
+		else if ((strcmp(argv[argi], "--wipedb") == 0) || (strcmp(argv[argi], "--wipe-db") == 0)) {
+			flushdbdata = 1;
+		}
 	}
 
 	if (debug) conn_register_infohandler(NULL, 7);
+
+	{
+		struct sigaction sa;
+
+		setup_signalhandler(programname);
+		memset(&sa, 0, sizeof(sa));
+		sa.sa_handler = sig_handler;
+		sigaction(SIGTERM, &sa, NULL);
+		sigaction(SIGINT, &sa, NULL);
+		sigaction(SIGHUP, &sa, NULL);
+	}
 
 	if (xymon_sqldb_init() != 0) {
 		errprintf("Cannot open Xymon SQLite database - aborting\n");
@@ -87,7 +136,29 @@ int main(int argc, char **argv)
 
 	init_tcp_testmodule();
 
-	do_tests();
+	do {
+		int testcount;
+		time_t now = gettimer();
+
+		if (now > (lastloadtime+600)) {
+			lastloadtime = now;
+
+			if (load_hostnames("@", NULL, get_fqdn()) != 0) {
+				errprintf("Cannot load host configuration from xymond\n");
+
+				if (load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn()) != 0) {
+					errprintf("Cannot load host configuration from %s\n", xgetenv("HOSTSCFG"));
+					return;
+				}
+			}
+		}
+
+		dbgprintf("Launching tests\n");
+		testcount = run_tests();
+		dbgprintf("Ran %d tests\n", testcount);
+
+		if (running) sleep(testcount ? 15 : 30);	/* Take a nap */
+	} while (running);
 
 	conn_deinit();
 	xymon_sqldb_shutdown();

@@ -13,6 +13,6 @@
 extern void test_nonet_hosts(int testthem);
 extern void add_wanted_host(char *hostname);
 extern void clear_wanted_hosts(void);
-extern void setup_tests(int defaulttimeout, int pingenabled);
+extern int setup_tests(int defaulttimeout, int pingenabled);
 #endif
 
