@@ -14,6 +14,8 @@
 extern int xymon_sqldb_init(void);
 extern void xymon_sqldb_shutdown(void);
 
+extern void xymon_sqldb_flushall(void);
+
 extern void xymon_sqldb_dns_updatecache(int family, char *key, char *ip);
 extern int xymon_sqldb_dns_lookup_search(int family, char *key, time_t *updtime, char **res);
 extern int xymon_sqldb_dns_lookup_create(int family, char *key);

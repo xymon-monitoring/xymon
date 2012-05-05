@@ -138,6 +138,15 @@ void xymon_sqldb_shutdown(void)
 }
 
 
+void xymon_sqldb_flushall(void)
+{
+	int dbres;
+
+	dbres = sqlite3_exec(xymonsqldb, "delete from hostip", NULL, NULL, NULL);
+	dbres = sqlite3_exec(xymonsqldb, "delete from testtimes", NULL, NULL, NULL);
+}
+
+
 void xymon_sqldb_dns_updatecache(int family, char *key, char *ip)
 {
 	sqlite3_stmt *updstmt = NULL;
@@ -235,6 +244,8 @@ int xymon_sqldb_nettest_due(char *hostname, char *testspec, int interval)
 			if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_update_sql, 2, testspec, -1, SQLITE_STATIC);
 			if (dbres == SQLITE_OK) dbres = sqlite3_step(due_update_sql);
 			if (dbres != SQLITE_DONE) errprintf("Error updating due-record %s/%s: %s\n", hostname, testspec, sqlite3_errmsg(xymonsqldb));
+
+			sqlite3_reset(due_update_sql);
 		}
 		else
 			result = 0;
