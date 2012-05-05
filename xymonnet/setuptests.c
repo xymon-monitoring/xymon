@@ -18,6 +18,9 @@ static char rcsid[] = "$Id$";
 #include "tcptalk.h"
 #include "netdialog.h"
 #include "setuptests.h"
+#include "netsql.h"
+
+#define DEFAULT_NET_INTERVAL 300
 
 static int testuntagged = 0;
 static char **selectedhosts = NULL;
@@ -69,6 +72,7 @@ static int wanted_host(void *host, char *netstring)
 	return 0;
 }
 
+
 void setup_tests(int defaulttimeout, int pingenabled)
 {
 	char *location;
@@ -95,13 +99,16 @@ void setup_tests(int defaulttimeout, int pingenabled)
 	load_protocols(NULL);
 	load_cookies();
 
-	/* update nettest set valid=0 */
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
 		char *destination, *testspec;
 		myconn_netparams_t netparams;
 		net_test_options_t options;
 
 		if (!wanted_host(hwalk, location)) continue;
+
+		options.timeout = defaulttimeout;
+		options.interval = DEFAULT_NET_INTERVAL;
+		options.sourceip = NULL;
 
 		destination = xmh_item(hwalk, XMH_HOSTNAME);
 
@@ -114,8 +121,6 @@ void setup_tests(int defaulttimeout, int pingenabled)
 			memset(&netparams, 0, sizeof(netparams));
 			netparams.destinationip = strdup(destination);
 			options.testtype = NET_TEST_PING;
-			options.timeout = defaulttimeout;
-			/* update nettest set valid=1 where hostname=xmh_item(hwalk, XMH_HOSTNAME) and testspec="ping" */
 			add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
 		}
 
@@ -123,9 +128,23 @@ void setup_tests(int defaulttimeout, int pingenabled)
 		while (testspec) {
 			char **dialog;
 			int dtoken;
-			net_test_options_t options = { NET_TEST_STANDARD, defaulttimeout };
 
-			if (strncmp(testspec, "conn=", 5) == 0) {
+			options.testtype = NET_TEST_STANDARD;
+			if (argnmatch(testspec, "nopt=") || argnmatch(testspec, "nopt:")) {
+				char *allopts, *opt, *sptr;
+
+				allopts = strdup(testspec+5);
+				opt = strtok_r(allopts, ",", &sptr);
+				while (opt) {
+					if (argnmatch(opt, "timeout")) options.timeout = atoi(opt+8);
+					else if (argnmatch(opt, "interval")) options.interval = atoi(opt+9);
+					else if (argnmatch(opt, "sourceip")) options.sourceip = strdup(opt+9);
+
+					opt = strtok_r(NULL, ",", &sptr);
+				}
+				xfree(allopts);
+			}
+			else if (strncmp(testspec, "conn=", 5) == 0) {
 				if (pingenabled) {
 					char *tsdup = strdup(testspec+5);
 					char *sptr, *ip;
@@ -137,7 +156,6 @@ void setup_tests(int defaulttimeout, int pingenabled)
 							netparams.destinationip = strdup(ip);
 							options.testtype = NET_TEST_PING;
 							options.timeout = defaulttimeout;
-							/* update nettest set valid=1 where hostname=xmh_item(hwalk, XMH_HOSTNAME) and testspec="ping" */
 							add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
 						}
 
@@ -152,21 +170,20 @@ void setup_tests(int defaulttimeout, int pingenabled)
 				dialog = net_dialog(testspec, &netparams, &options, hwalk, &dtoken);
 
 				if (dialog || (options.testtype != NET_TEST_STANDARD)) {
-					/* insert into nettests / update nettest set valid=1 where hostname=xmh_item(hwalk, XMH_HOSTNAME) and testspec=testspec */
-					/* destinationip may have been filled by net_dialog (e.g. http) */
-					if (!netparams.destinationip) netparams.destinationip = strdup(destination);
-					add_net_test(testspec, dialog, dtoken, &options, &netparams, hwalk);
+					if (xymon_sqldb_nettest_due(xmh_item(hwalk, XMH_HOSTNAME), testspec, options.interval)) {
+						/* destinationip may have been filled by net_dialog (e.g. http) */
+						if (!netparams.destinationip) netparams.destinationip = strdup(destination);
+						add_net_test(testspec, dialog, dtoken, &options, &netparams, hwalk);
+					}
+					else {
+						/* Not due yet - clean up what net_dialog() allocated for us */
+						if (dialog) free_net_dialog(dialog, dtoken);
+					}
 				}
 			}
 
 			testspec = xmh_item_walk(NULL);
 		}
 	}
-
-	/* delete from nettests where valid=0 */
-	/* commit */
-
-	/* select hostname,testspec from nettests where valid=1 and lastrun+interval < now
-	 * Calc hwalk, dialog, netparams - add_net_test() */
 }
 

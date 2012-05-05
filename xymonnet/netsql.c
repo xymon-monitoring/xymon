@@ -1,3 +1,15 @@
+/*----------------------------------------------------------------------------*/
+/* Xymon monitor network test tool.                                           */
+/*                                                                            */
+/* Copyright (C) 2004-2012 Henrik Storner <henrik@hswn.dk>                    */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char rcsid[] = "$Id$";
+
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -13,19 +25,24 @@
 #include "netsql.h"
 
 static sqlite3 *xymonsqldb = NULL;
+
 static sqlite3_stmt *dns_addrecord_sql = NULL;
 static sqlite3_stmt *dns_ip4query_sql = NULL;
 static sqlite3_stmt *dns_ip6query_sql = NULL;
 static sqlite3_stmt *dns_ip4update_sql = NULL;
 static sqlite3_stmt *dns_ip6update_sql = NULL;
 
+static sqlite3_stmt *due_query_sql = NULL;
+static sqlite3_stmt *due_addrecord_sql = NULL;
+static sqlite3_stmt *due_update_sql = NULL;
+
 int xymon_sqldb_init(void)
 {
 	char *sqlfn;
 	int dbres;
 
-	sqlfn = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen("/etc/xymon.sqlite3") + 1);
-	sprintf(sqlfn, "%s/etc/xymon.sqlite3", xgetenv("XYMONHOME"));
+	sqlfn = (char *)malloc(strlen(xgetenv("XYMONTMP")) + strlen("/xymon.sqlite3") + 1);
+	sprintf(sqlfn, "%s/xymon.sqlite3", xgetenv("XYMONTMP"));
 	dbres = sqlite3_open_v2(sqlfn, &xymonsqldb, SQLITE_OPEN_READWRITE, NULL);
 	if (dbres != SQLITE_OK) {
 		/* Try creating the database - in that case, we must also create the tables */
@@ -35,6 +52,13 @@ int xymon_sqldb_init(void)
 			dbres = sqlite3_exec(xymonsqldb, "CREATE TABLE hostip (hostname varchar(200) unique, ip4 varchar(15), upd4time int, ip6 varchar(40), upd6time int)", NULL, NULL, &err);
 			if (dbres != SQLITE_OK) {
 				errprintf("Cannot create hostip table: %s\n", sqlfn, (err ? err : sqlite3_errmsg(xymonsqldb)));
+				if (err) sqlite3_free(err);
+				xfree(sqlfn);
+				return 1;
+			}
+			dbres = sqlite3_exec(xymonsqldb, "CREATE TABLE testtimes (hostname varchar(200), testspec varchar(400), timestamp int)", NULL, NULL, &err);
+			if (dbres != SQLITE_OK) {
+				errprintf("Cannot create testtimes table: %s\n", sqlfn, (err ? err : sqlite3_errmsg(xymonsqldb)));
 				if (err) sqlite3_free(err);
 				xfree(sqlfn);
 				return 1;
@@ -74,6 +98,22 @@ int xymon_sqldb_init(void)
 		return 1;
 	}
 
+	dbres = sqlite3_prepare_v2(xymonsqldb, "select timestamp from testtimes where hostname=? and testspec=?", -1, &due_query_sql, NULL);
+	if (dbres != SQLITE_OK) {
+		errprintf("due_query prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
+		return 1;
+	}
+	dbres = sqlite3_prepare_v2(xymonsqldb, "insert into testtimes(hostname,testspec,timestamp) values (?,?,strftime('%s','now'))", -1, &due_addrecord_sql, NULL);
+	if (dbres != SQLITE_OK) {
+		errprintf("due_addrecord prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
+		return 1;
+	}
+	dbres = sqlite3_prepare_v2(xymonsqldb, "update testtimes set timestamp=strftime('%s','now') where hostname=? and testspec=?", -1, &due_update_sql, NULL);
+	if (dbres != SQLITE_OK) {
+		errprintf("due_update prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
+		return 1;
+	}
+
 	dbres = sqlite3_exec(xymonsqldb, "PRAGMA synchronous=OFF", NULL, NULL, NULL);
 	if (dbres != SQLITE_OK) {
 		errprintf("Cannot set async mode: %s\n", sqlite3_errmsg(xymonsqldb));
@@ -90,8 +130,13 @@ void xymon_sqldb_shutdown(void)
 	if (dns_ip4query_sql) sqlite3_finalize(dns_ip4query_sql);
 	if (dns_ip6query_sql) sqlite3_finalize(dns_ip6query_sql);
 
+	if (due_query_sql) sqlite3_finalize(due_query_sql);
+	if (due_addrecord_sql) sqlite3_finalize(due_addrecord_sql);
+	if (due_update_sql) sqlite3_finalize(due_update_sql);
+
 	if (xymonsqldb != NULL) sqlite3_close(xymonsqldb);
 }
+
 
 void xymon_sqldb_dns_updatecache(int family, char *key, char *ip)
 {
@@ -109,7 +154,7 @@ void xymon_sqldb_dns_updatecache(int family, char *key, char *ip)
 	dbres = sqlite3_bind_text(updstmt, 2, key, -1, SQLITE_STATIC);
 	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(updstmt, 1, ((ip && *ip) ? ip : "-"), -1, SQLITE_STATIC);
 	if (dbres == SQLITE_OK) dbres = sqlite3_step(updstmt);
-	if (dbres != SQLITE_DONE) errprintf("Error updating record: %s\n", sqlite3_errmsg(xymonsqldb));
+	if (dbres != SQLITE_DONE) errprintf("Error updating DNS-cache record %s (%d): %s\n", key, family, sqlite3_errmsg(xymonsqldb));
 
 	sqlite3_reset(updstmt);
 }
@@ -170,4 +215,42 @@ int xymon_sqldb_dns_lookup_create(int family, char *key)
 	return 0;
 }
 
+
+int xymon_sqldb_nettest_due(char *hostname, char *testspec, int interval)
+{
+	int dbres, result = 1;
+	time_t now = getcurrenttime(NULL);
+
+	dbres = sqlite3_bind_text(due_query_sql, 1, hostname, -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_query_sql, 2, testspec, -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_step(due_query_sql);
+	if (dbres == SQLITE_ROW) {
+		/* Timestamp record exists */
+		int timestamp = sqlite3_column_int(due_query_sql, 0);
+		sqlite3_reset(due_query_sql);
+
+		if ((timestamp+interval) < now) {
+			/* Test is due, register the time */
+			dbres = sqlite3_bind_text(due_update_sql, 1, hostname, -1, SQLITE_STATIC);
+			if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_update_sql, 2, testspec, -1, SQLITE_STATIC);
+			if (dbres == SQLITE_OK) dbres = sqlite3_step(due_update_sql);
+			if (dbres != SQLITE_DONE) errprintf("Error updating due-record %s/%s: %s\n", hostname, testspec, sqlite3_errmsg(xymonsqldb));
+		}
+		else
+			result = 0;
+	}
+	else {
+		/* Create a new record */
+		sqlite3_reset(due_query_sql);
+
+		dbres = sqlite3_bind_text(due_addrecord_sql, 1, hostname, -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 2, testspec, -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_step(due_addrecord_sql);
+		if (dbres != SQLITE_DONE) errprintf("Error adding due-record for %s/%s: %s\n", hostname, testspec, sqlite3_errmsg(xymonsqldb));
+
+		sqlite3_reset(due_addrecord_sql);
+	}
+
+	return result;
+}
 
