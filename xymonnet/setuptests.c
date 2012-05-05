@@ -81,7 +81,7 @@ int setup_tests(int defaulttimeout, int pingenabled)
 
 	if (first_host() == NULL) {
 		errprintf("Empty configuration, no hosts to test\n");
-		return;
+		return 0;
 	}
 
 	/* See what network we'll test */
@@ -129,7 +129,7 @@ int setup_tests(int defaulttimeout, int pingenabled)
 				xfree(allopts);
 			}
 			else if (strncmp(testspec, "conn=", 5) == 0) {
-				if (pingenabled && xymon_sqldb_nettest_due(xmh_item(hwalk, XMH_HOSTNAME), testspec, options.interval)) {
+				if (pingenabled && xymon_sqldb_nettest_due(xmh_item(hwalk, XMH_HOSTNAME), testspec, &options, location)) {
 					char *tsdup = strdup(testspec+5);
 					char *sptr, *ip;
 
@@ -155,8 +155,8 @@ int setup_tests(int defaulttimeout, int pingenabled)
 				dialog = net_dialog(testspec, &netparams, &options, hwalk, &dtoken);
 
 				if (dialog || (options.testtype != NET_TEST_STANDARD)) {
-					if (xymon_sqldb_nettest_due(xmh_item(hwalk, XMH_HOSTNAME), testspec, options.interval)) {
-						/* destinationip may have been filled by net_dialog (e.g. http) */
+					if (xymon_sqldb_nettest_due(xmh_item(hwalk, XMH_HOSTNAME), testspec, &options, location)) {
+						/* netparams.destinationip may have been filled by net_dialog (e.g. http) */
 						if (!netparams.destinationip) netparams.destinationip = strdup(destination);
 						add_net_test(testspec, dialog, dtoken, &options, &netparams, hwalk);
 						count++;
@@ -175,12 +175,15 @@ int setup_tests(int defaulttimeout, int pingenabled)
 		/* 
 		 * Add the ping check. We do this last, so any net-options can be picked up also for the ping-test.
 		 */
-		if (pingenabled && !xmh_item(hwalk, XMH_FLAG_NOCONN) && !xmh_item(hwalk, XMH_FLAG_NOPING) && xymon_sqldb_nettest_due(xmh_item(hwalk, XMH_HOSTNAME), "ping", options.interval)) {
-			memset(&netparams, 0, sizeof(netparams));
-			netparams.destinationip = strdup(destination);
-			options.testtype = NET_TEST_PING;
+		memset(&netparams, 0, sizeof(netparams));
+		netparams.destinationip = strdup(destination);
+		options.testtype = NET_TEST_PING;
+		if (pingenabled && !xmh_item(hwalk, XMH_FLAG_NOCONN) && !xmh_item(hwalk, XMH_FLAG_NOPING) && xymon_sqldb_nettest_due(xmh_item(hwalk, XMH_HOSTNAME), "ping", &options, location)) {
 			add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
 			count++;
+		}
+		else {
+			xfree(netparams.destinationip);
 		}
 	}
 
