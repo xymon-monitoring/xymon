@@ -227,6 +227,7 @@ void dns_finish_queries(listhead_t *activelist)
 
 		dbgprintf("DNS query %s cleanup\n", rec->testspec);
 		ares_destroy(*((ares_channel *)rec->dnschannel));
+		xfree(rec->dnschannel);
 		rec->dnsstatus = DNS_FINISHED;
 	}
 

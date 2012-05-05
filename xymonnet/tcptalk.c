@@ -776,6 +776,8 @@ listhead_t *run_net_tests(int concurrency, char *sourceip4, char *sourceip6)
 	}
 	while ((activetests->len + pendingtests->len) > 0);
 
+	dns_finish_queries(donetests);
+
 	return donetests;
 }
 

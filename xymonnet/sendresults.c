@@ -353,10 +353,16 @@ void cleanup_myconn_list(listhead_t *head)
 		nextlistitem = walk->next;
 		testrec = (myconn_t *)walk->data;
 
+		if (testrec->netparams.lookupstring) xfree(testrec->netparams.lookupstring);
 		if (testrec->netparams.destinationip) xfree(testrec->netparams.destinationip);
 		if (testrec->netparams.sourceip) xfree(testrec->netparams.sourceip);
 		if (testrec->testspec) xfree(testrec->testspec);
 		if (testrec->textlog) freestrbuffer(testrec->textlog);
+		if (testrec->httpheaders) freestrbuffer(testrec->httpheaders);
+		if (testrec->httpbody) freestrbuffer(testrec->httpbody);
+		if (testrec->dnschannel) xfree(testrec->dnschannel);
+		if (testrec->peercertificate) xfree(testrec->peercertificate);
+		if (testrec->peercertificateissuer) xfree(testrec->peercertificateissuer);
 		xfree(testrec);
 
 		list_item_delete(walk, "");
