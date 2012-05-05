@@ -30,6 +30,8 @@ static char rcsid[] = "$Id$";
 #include "sendresults.h"
 #include "netmodule.h"
 
+#define FORK_INTERVAL 100000	/* Microseconds for usleep() - 100000 = 0.1 second */
+
 int timeout = 0;
 char *extargs[10] = { NULL, };
 
@@ -148,8 +150,8 @@ static pid_t launch_worker(char *workerdata, int talkproto, int subid, char *bas
 		switch (talkproto) {
 		  case TALK_PROTO_PING:
 			switch (subid) {
-			  case 4: cmd = xgetenv("FPING4"); break;
-			  case 6: cmd = xgetenv("FPING6"); break;
+			  case 4: cmd = "fping4"; break;
+			  case 6: cmd = "fping6"; break;
 			  default: break;
 			}
 
@@ -169,10 +171,10 @@ static pid_t launch_worker(char *workerdata, int talkproto, int subid, char *bas
 		  case TALK_PROTO_EXTERNAL:
 			cmd = extargs[0];
 			for (i=1; (extargs[i] && (i < (sizeof(extargs)/sizeof(extargs[0])))); i++) {
-				if (strcasecmp(extargs[i], "$TEST") == 0) {
+				if (strcasecmp(extargs[i], "%TEST") == 0) {
 					cmdargs[i-1] = workerdata;
 				}
-				else if (strcasecmp(extargs[i], "$IP") == 0) {
+				else if (strcasecmp(extargs[i], "%IP") == 0) {
 					cmdargs[i-1] = opt1;
 				}
 				else {
@@ -187,7 +189,7 @@ static pid_t launch_worker(char *workerdata, int talkproto, int subid, char *bas
 
 		if (debug) {
 			int i;
-			dbgprintf("Command: %s", cmd);
+			dbgprintf("Command: %s\n", cmd);
 			for (i=1; (cmdargs[i]); i++) dbgprintf("Arg %d: %s\n", i, cmdargs[i]);
 		}
 
@@ -250,7 +252,7 @@ static pid_t launch_worker(char *workerdata, int talkproto, int subid, char *bas
 		list_item_create(activeprocesses, actrec, "");
 
 		/* Dont fork-bomb the system */
-		sleep(1);
+		usleep(FORK_INTERVAL);
 	}
 
 	return workerpid;
