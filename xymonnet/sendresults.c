@@ -222,7 +222,10 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 
 		  case TALK_PROTO_EXTERNAL:
 			if (!issubmodule && (rec->talkresult == TALK_OK)) {
-				add_to_sub_queue(rec, rec->testspec, NULL);
+				if (strncmp(rec->testspec, "rpc=", 4) == 0)
+					add_to_sub_queue(rec, "rpc", NULL);
+				else
+					add_to_sub_queue(rec, rec->testspec, NULL);
 				continue;
 			}
 			break;
