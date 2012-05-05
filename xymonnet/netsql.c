@@ -58,7 +58,7 @@ int xymon_sqldb_init(void)
 				xfree(sqlfn);
 				return 1;
 			}
-			dbres = sqlite3_exec(xymonsqldb, "CREATE TABLE testtimes (hostname varchar(200), testspec varchar(400), location varchar(50), timestamp int, sourceip varchar(40), interval int, timeout int, testtype int)", NULL, NULL, &err);
+			dbres = sqlite3_exec(xymonsqldb, "CREATE TABLE testtimes (hostname varchar(200), testspec varchar(400), location varchar(50), destination varchar(200), timestamp int, sourceip varchar(40), interval int, timeout int, testtype int)", NULL, NULL, &err);
 			if (dbres != SQLITE_OK) {
 				errprintf("Cannot create testtimes table: %s\n", sqlfn, (err ? err : sqlite3_errmsg(xymonsqldb)));
 				if (err) sqlite3_free(err);
@@ -105,7 +105,7 @@ int xymon_sqldb_init(void)
 		errprintf("due_query prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 		return 1;
 	}
-	dbres = sqlite3_prepare_v2(xymonsqldb, "insert into testtimes(hostname,testspec,location,testtype,sourceip,timeout,interval,timestamp) values (?,?,?,?,?,?,?,strftime('%s','now'))", -1, &due_addrecord_sql, NULL);
+	dbres = sqlite3_prepare_v2(xymonsqldb, "insert into testtimes(hostname,testspec,location,destination,testtype,sourceip,timeout,interval,timestamp) values (?,?,?,?,?,?,?,?,strftime('%s','now'))", -1, &due_addrecord_sql, NULL);
 	if (dbres != SQLITE_OK) {
 		errprintf("due_addrecord prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 		return 1;
@@ -116,7 +116,7 @@ int xymon_sqldb_init(void)
 		return 1;
 	}
 
-	dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,testspec,testtype,sourceip,timeout from testtimes where location=? and (timeout+interval)<strftime('%s','now')", -1, &nettest_query_sql, NULL);
+	dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,testspec,destination,testtype,sourceip,timeout from testtimes where location=? and (timestamp+interval)<?", -1, &nettest_query_sql, NULL);
 	if (dbres != SQLITE_OK) {
 		errprintf("nettest_query prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 		return 1;
@@ -141,6 +141,8 @@ void xymon_sqldb_shutdown(void)
 	if (due_query_sql) sqlite3_finalize(due_query_sql);
 	if (due_addrecord_sql) sqlite3_finalize(due_addrecord_sql);
 	if (due_update_sql) sqlite3_finalize(due_update_sql);
+
+	if (nettest_query_sql) sqlite3_finalize(nettest_query_sql);
 
 	if (xymonsqldb != NULL) sqlite3_close(xymonsqldb);
 }
@@ -233,7 +235,7 @@ int xymon_sqldb_dns_lookup_create(int family, char *key)
 }
 
 
-int xymon_sqldb_nettest_due(char *hostname, char *testspec, net_test_options_t *options, char *location)
+int xymon_sqldb_nettest_due(char *hostname, char *testspec, char *destination, net_test_options_t *options, char *location)
 {
 	int dbres, result = 1;
 	time_t now = getcurrenttime(NULL);
@@ -265,10 +267,11 @@ int xymon_sqldb_nettest_due(char *hostname, char *testspec, net_test_options_t *
 		dbres = sqlite3_bind_text(due_addrecord_sql, 1, hostname, -1, SQLITE_STATIC);
 		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 2, testspec, -1, SQLITE_STATIC);
 		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 3, (location ? location : ""), -1, SQLITE_STATIC);
-		if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(due_addrecord_sql, 4, options->testtype);
-		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 5, (options->sourceip ? options->sourceip : ""), -1, SQLITE_STATIC);
-		if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(due_addrecord_sql, 6, options->interval);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 4, destination, -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(due_addrecord_sql, 5, options->testtype);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 6, (options->sourceip ? options->sourceip : ""), -1, SQLITE_STATIC);
 		if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(due_addrecord_sql, 7, options->timeout);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(due_addrecord_sql, 8, options->interval);
 		if (dbres == SQLITE_OK) dbres = sqlite3_step(due_addrecord_sql);
 		if (dbres != SQLITE_DONE) errprintf("Error adding due-record for %s/%s: %s\n", hostname, testspec, sqlite3_errmsg(xymonsqldb));
 
@@ -276,5 +279,49 @@ int xymon_sqldb_nettest_due(char *hostname, char *testspec, net_test_options_t *
 	}
 
 	return result;
+}
+
+int xymon_sqldb_nettest_row(char *location, char **hostname, char **testspec, char **destination, net_test_options_t *options)
+{
+	static int inprogress = 0;
+	int dbres, result = 0;
+	time_t now = getcurrenttime(NULL);
+
+	if (!inprogress) {
+		dbres = sqlite3_bind_text(nettest_query_sql, 1, (location ? location : ""), -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(nettest_query_sql, 2, (int)now);
+		if (dbres != SQLITE_OK) return 0;
+		inprogress = 1;
+	}
+
+	dbres = sqlite3_step(nettest_query_sql);
+	if (dbres == SQLITE_ROW) {
+		char *srcip;
+		*hostname = sqlite3_column_text(nettest_query_sql, 0);
+		*testspec = sqlite3_column_text(nettest_query_sql, 1);
+		*destination = sqlite3_column_text(nettest_query_sql, 2);
+		options->testtype = sqlite3_column_int(nettest_query_sql, 3);
+		srcip = sqlite3_column_text(nettest_query_sql, 4);
+		options->sourceip = (!srcip || strlen(srcip) == 0) ? NULL : strdup(srcip);
+		options->timeout = sqlite3_column_int(nettest_query_sql, 5);
+		result = 1;
+	}
+	else {
+		sqlite3_reset(nettest_query_sql);
+		inprogress = 0;
+	}
+
+	return result;
+}
+
+void xymon_sqldb_nettest_rowupdate(char *hostname, char *testspec)
+{
+	int dbres;
+
+	dbres = sqlite3_bind_text(due_update_sql, 1, hostname, -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_update_sql, 2, testspec, -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_step(due_update_sql);
+	if (dbres != SQLITE_DONE) errprintf("Error updating due record for %s/%s: %s\n", hostname, testspec, sqlite3_errmsg(xymonsqldb));
+	sqlite3_reset(due_update_sql);
 }
 
