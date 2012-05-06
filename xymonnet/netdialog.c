@@ -32,7 +32,13 @@ typedef struct netdialog_t {
 	int option_external:1;
 } netdialog_t;
 
+typedef struct netdialogalias_t {
+	char *name;
+	netdialog_t *rec;
+} netdialogalias_t;
+
 static void *netdialogs = NULL;
+static void *netdialogaliases = NULL;
 static char *silentdialog[] = { "CLOSE", NULL };
 
 void load_protocols(char *fn)
@@ -86,7 +92,21 @@ void load_protocols(char *fn)
 		netdialogs = NULL;
 	}
 
+	if (netdialogaliases) {
+		handle = xtreeFirst(netdialogaliases);
+		while (handle != xtreeEnd(netdialogaliases)) {
+			netdialogalias_t *rec = xtreeData(netdialogaliases, handle);
+			handle = xtreeNext(netdialogaliases, handle);
+
+			if (rec->name) xfree(rec->name);
+			xfree(rec);
+		}
+		xtreeDestroy(netdialogaliases);
+		netdialogaliases = NULL;
+	}
+
 	netdialogs = xtreeNew(strcmp);
+	netdialogaliases = xtreeNew(strcmp);
 	l = newstrbuffer(0);
 	while (stackfgets(l, NULL)) {
 		char *p;
@@ -95,10 +115,24 @@ void load_protocols(char *fn)
 		if (STRBUFLEN(l) == 0) continue;
 
 		if (*STRBUF(l) == '[') {
+			char *nam, *sptr;
+
 			rec = (netdialog_t *)calloc(1, sizeof(netdialog_t));
-			rec->name = strdup(STRBUF(l)+1);
-			p = strchr(rec->name, ']'); if (p) *p = '\0';
+			nam = strtok_r(STRBUF(l)+1, "|]", &sptr);
+			rec->name = strdup(nam);
 			xtreeAdd(netdialogs, rec->name, rec);
+
+			nam = strtok_r(NULL, "|]", &sptr);
+			while (nam) {
+				netdialogalias_t *arec = (netdialogalias_t *)calloc(1, sizeof(netdialogalias_t));
+
+				arec->name = strdup(nam);
+				arec->rec = rec;
+				xtreeAdd(netdialogaliases, arec->name, arec);
+
+				nam = strtok_r(NULL, "|]", &sptr);
+			}
+
 			rec->portnumber = conn_lookup_portnumber(rec->name, 0);
 			dialogsz = 0;
 		}
@@ -371,6 +405,7 @@ static char **build_standard_dialog(char *testspec, myconn_netparams_t *netparam
 {
 	char *silentopt, *portopt;
 	int port = 0, silenttest = 0;
+	netdialog_t *rec = NULL;
 	xtreePos_t handle;
 
 	silentopt = strrchr(testspec, ':');
@@ -404,13 +439,22 @@ static char **build_standard_dialog(char *testspec, myconn_netparams_t *netparam
 		handle = xtreeFind(netdialogs, testspec);
 	}
 
+	if (handle != xtreeEnd(netdialogs)) {
+		rec = xtreeData(netdialogs, handle);
+	}
+	else {
+		handle = xtreeFind(netdialogaliases, testspec);
+		if (handle != xtreeEnd(netdialogaliases)) {
+			netdialogalias_t *arec = xtreeData(netdialogaliases, handle);
+			rec = arec->rec;
+		}
+	}
+
 	/* Must restore the stuff we have cut off with silent/portnumber options - it might not be a net test at all! */
 	if (portopt) *portopt = ':';
 	if (silentopt) *silentopt = ':';
 
-	if (handle != xtreeEnd(netdialogs)) {
-		netdialog_t *rec = xtreeData(netdialogs, handle);
-
+	if (rec) {
 		if (port)
 			netparams->destinationport = port;
 		else
