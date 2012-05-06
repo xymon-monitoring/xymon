@@ -23,17 +23,17 @@ endif
 all: $(PROGRAMS) fping.8
 
 NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o sendresults.o netsql.o
-NETMODULEOBJS = netmodule.o sendresults.o
-LDAPTALKOBJS = ldaptalk.o sendresults.o
+NETMODULEOBJS = netmodule.o sendresults.o netsql.o
+LDAPTALKOBJS = ldaptalk.o sendresults.o netsql.o
 
 xymonnet2: libcares.a $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS) -lsqlite3
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS) $(SQLITELIBS)
 
 netmodule: $(NETMODULEOBJS) $(XYMONCOMMLIB) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETMODULEOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETMODULEOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIBS) $(SQLITELIBS)
 
 ldaptalk: $(LDAPTALKOBJS) $(XYMONCOMMLIB) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(LDAPTALKOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIBS) $(LDAPLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(LDAPTALKOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIBS) $(LDAPLIBS) $(SQLITELIBS)
 
 ldaptalk.o: ldaptalk.c
 	$(CC) $(CFLAGS) -c -o $@ $(LDAPFLAGS) $(LDAPINCDIR) ldaptalk.c

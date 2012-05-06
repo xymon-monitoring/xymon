@@ -19,87 +19,26 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 #include "tcptalk.h"
 #include "sendresults.h"
+#include "netsql.h"
 
-
-#define MAX_PER_BATCH 500
-
-typedef struct subqueue_t {
-	char *queuename;
-	int batchsz;
-	FILE *batchfd;
-	char batchfn[PATH_MAX];
-	time_t batchid;
-	int batchseq;
-} subqueue_t;
-
-void add_to_sub_queue(myconn_t *rec, char *moduleid, ...)
+static void add_to_sub_queue(myconn_t *rec, char *moduleid, char *location, ...)
 {
-	static void *subqueues = NULL;
-	subqueue_t *qrec = NULL;
+	va_list extraparams;
+	char *s;
+	strbuffer_t *extrastr = newstrbuffer(0);
 
-	if (!subqueues) subqueues = xtreeNew(strcmp);
+	if (!rec || !moduleid) return;
 
-	if (!rec && !moduleid) {
-		/* Flush all */
-		xtreePos_t handle;
-
-		for (handle = xtreeFirst(subqueues); (handle != xtreeEnd(subqueues)); handle = xtreeNext(subqueues, handle)) {
-			qrec = xtreeData(subqueues, handle);
-			add_to_sub_queue(NULL, qrec->queuename, NULL);
-		}
+	va_start(extraparams, location);
+	while ((s = va_arg(extraparams, char *)) != NULL) {
+		if (STRBUFLEN(extrastr) > 0) addtobuffer(extrastr, "\t");
+		addtobuffer(extrastr, s);
 	}
+	va_end(extraparams);
 
-	if (moduleid) {
-		xtreePos_t handle;
-
-		handle = xtreeFind(subqueues, moduleid);
-		if (handle == xtreeEnd(subqueues)) {
-			qrec = (subqueue_t *)calloc(1, sizeof(subqueue_t));
-			qrec->queuename = strdup(moduleid);
-			xtreeAdd(subqueues, qrec->queuename, qrec);
-		}
-		else {
-			qrec = xtreeData(subqueues, handle);
-		}
-	}
-
-	if (rec) {
-		va_list extraparams;
-		char *extrastr;
-
-		if (!qrec->batchfd) {
-			if (qrec->batchid == 0) qrec->batchid = getcurrenttime(NULL);
-			qrec->batchseq++;
-
-			qrec->batchsz = 0;
-			sprintf(qrec->batchfn, "%s/_%stmp.%010d.%05d", xgetenv("XYMONTMP"), moduleid, (int)qrec->batchid, qrec->batchseq);
-			qrec->batchfd = fopen(qrec->batchfn, "w");
-		}
-
-
-		fprintf(qrec->batchfd, "%s\t%s\t%s", xmh_item(rec->hostinfo, XMH_HOSTNAME), rec->netparams.destinationip, rec->testspec);
-		va_start(extraparams, moduleid);
-		while ((extrastr = va_arg(extraparams, char *)) != NULL) fprintf(qrec->batchfd, "\t%s", extrastr);
-		va_end(extraparams);
-		fprintf(qrec->batchfd, "\n");
-
-		qrec->batchsz++;
-	}
-
-	if (qrec->batchfd && (!rec || (qrec->batchsz >= MAX_PER_BATCH))) {
-		char finishedfn[PATH_MAX];
-
-		sprintf(finishedfn, "%s/%sbatch.%010d.%05d", xgetenv("XYMONTMP"), moduleid, (int)qrec->batchid, qrec->batchseq);
-
-		fclose(qrec->batchfd);
-		rename(qrec->batchfn, finishedfn);
-
-		*(qrec->batchfn) = '\0';
-		qrec->batchfd = NULL;
-		qrec->batchsz = 0;
-	}
+	xymon_sqldb_netmodule_additem(moduleid, location, xmh_item(rec->hostinfo, XMH_HOSTNAME), rec->netparams.destinationip, rec->testspec, STRBUF(extrastr));
+	freestrbuffer(extrastr);
 }
-
 
 typedef struct hostresult_t {
 	void *hinfo;
@@ -189,7 +128,7 @@ static void result_subqueue(char *id, myconn_t *rec,  strbuffer_t *txt)
 	}
 }
 
-void send_test_results(listhead_t *head, char *collector, int issubmodule)
+void send_test_results(listhead_t *head, char *collector, int issubmodule, char *location)
 {
 	char msgline[4096];
 	listitem_t *walk;
@@ -204,7 +143,7 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 		switch (rec->talkprotocol) {
 		  case TALK_PROTO_PING:
 			if (!issubmodule && (rec->talkresult == TALK_OK)) {
-				add_to_sub_queue(rec, "ping", NULL);
+				add_to_sub_queue(rec, "ping", location, NULL);
 				continue;
 			}
 			break;
@@ -214,7 +153,7 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 			if (!issubmodule && (rec->talkresult == TALK_OK)) {
 				char *creds = xmh_item(rec->hostinfo, XMH_LDAPLOGIN);
 
-				add_to_sub_queue(rec, "ldap", creds, NULL);
+				add_to_sub_queue(rec, "ldap", location, creds, NULL);
 				continue;
 			}
 			break;
@@ -223,9 +162,9 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 		  case TALK_PROTO_EXTERNAL:
 			if (!issubmodule && (rec->talkresult == TALK_OK)) {
 				if (strncmp(rec->testspec, "rpc=", 4) == 0)
-					add_to_sub_queue(rec, "rpc", NULL);
+					add_to_sub_queue(rec, "rpc", location, NULL);
 				else
-					add_to_sub_queue(rec, rec->testspec, NULL);
+					add_to_sub_queue(rec, rec->testspec, location, NULL);
 				continue;
 			}
 			break;

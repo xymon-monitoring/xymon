@@ -29,6 +29,7 @@ static char rcsid[] = "$Id$";
 #include "tcptalk.h"
 #include "sendresults.h"
 #include "netmodule.h"
+#include "netsql.h"
 
 #define FORK_INTERVAL 100000	/* Microseconds for usleep() - 100000 = 0.1 second */
 
@@ -261,156 +262,113 @@ static pid_t launch_worker(char *workerdata, int talkproto, int subid, char *bas
 
 static int scan_queue(char *id, int talkproto)
 {
-	/*
-	 * Scan the XYMONTMP directory for "batch" files, and pick up the IP's we
-	 * need to test now.
-	 * batch files are named "<ID>batch.TIMESTAMP.SEQUENCE"
-	 */
-	int scanres;
-	char filepath[PATH_MAX];
-	glob_t globdata;
-	int i;
-	int tstampofs;
-	time_t now = getcurrenttime(NULL);
+	char basefn[PATH_MAX];
+	char *location, *hname, *ip, *testspec, *extras;
+	int count = 0;
 
-	tstampofs = strlen(xgetenv("XYMONTMP")) + strlen(id) + strlen("/batch.");
+	/* See what network we'll test */
+	location = xgetenv("XYMONNETWORK");
+	if (strlen(location) == 0) location = NULL;
 
-	sprintf(filepath, "%s/%sbatch.??????????.?????", xgetenv("XYMONTMP"), id);
-	scanres = glob(filepath, 0, NULL, &globdata);
-	if (scanres == GLOB_NOMATCH) return 0;
+	sprintf(basefn, "%s/moduledata-%s-%d-%s", xgetenv("XYMONTMP"), id, talkproto, (location ? location : ""));
 
-	if (scanres != 0) {
-		errprintf("Scanning for files %s failed, glob error\n", filepath);
-		return 0;
+	while (xymon_sqldb_netmodule_row(id, location, &hname, &testspec, &ip, &extras)) {
+		void *hinfo;
+		int ipfamily = 0;
+
+		hinfo = hostinfo(hname);
+		ipfamily = conn_is_ip(ip);
+		if (hinfo && ip && (ipfamily != 0) && testspec) {
+			myconn_t *testrec;
+			char *username, *password;
+			xtreePos_t handle;
+
+			/*
+			 * Lots of list / queue manipulation here.
+			 * 1) Create a "myconn_t" record for the test - this will be used to
+			 *    collect test data and eventually submitted to send_test_results() for
+			 *    reporting the test results back to xymond.
+			 * 2) Add the myconn_t record to the "pendingtests" list of active tests.
+			 * 3) For ping tests: create / update a record in the "iptree" tree,
+			 *    so we can map the IP reported by fping back to the test record.
+			 */
+
+			testrec = (myconn_t *)calloc(1, sizeof(myconn_t));
+			testrec->testspec = strdup(id);
+			testrec->talkprotocol = talkproto;
+			testrec->hostinfo = hinfo;
+			testrec->netparams.destinationip = strdup(ip);
+
+			switch (talkproto) {
+			  case TALK_PROTO_PING:
+				/* Add the test only if we haven't got it already */
+				handle = xtreeFind(iptree, ip);
+				if (handle == xtreeEnd(iptree)) {
+					xtreeAdd(iptree, testrec->netparams.destinationip, testrec);
+					switch (ipfamily) {
+					  case 4:
+						testrec->listitem = list_item_create(ip4tests, testrec, testrec->testspec);
+						break;
+					  case 6:
+						testrec->listitem = list_item_create(ip6tests, testrec, testrec->testspec);
+						break;
+					  default:
+						break;
+					}
+				}
+				break;
+			  case TALK_PROTO_LDAP:
+				/* We do one ldaptalk process per test */
+				testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
+				username = password = NULL;
+				if (extras && *extras) {
+					username = strtok(extras, ":");
+					if (username) password = strtok(NULL, "\t\r\n");
+				}
+				testrec->workerpid = launch_worker(testspec, TALK_PROTO_LDAP, 0, basefn, testrec, username, password);
+				break;
+			  case TALK_PROTO_EXTERNAL:
+				/* We do one process per external test */
+				testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
+				testrec->workerpid = launch_worker(testspec, TALK_PROTO_EXTERNAL, 0, basefn, testrec, ip, NULL);
+				break;
+			  default:
+				break;
+			}
+
+			if (!testrec->listitem) {
+				/* Didn't add the test - zap the unused record */
+				xfree(testrec->testspec);
+				xfree(testrec->netparams.destinationip);
+				xfree(testrec);
+			}
+		}
+
+		count++;
 	}
 
-	for (i = 0; (i < globdata.gl_pathc); i++) {
-		FILE *batchfd;
-		char batchl[100];
-		time_t tstamp;
-
-		tstamp = (time_t)atoi(globdata.gl_pathv[i] + tstampofs);
-		if ((now - tstamp) > 300) {
-			errprintf("Ignoring batch file %s - time now is %d, so it is stale\n", globdata.gl_pathv[i], (int)now);
-			remove(globdata.gl_pathv[i]);
-			continue;
+	switch (talkproto) {
+	  case TALK_PROTO_PING:
+		/* We do one ping process per IP protocol for the entire batch */
+		if (ip4tests->len > 0) {
+			launch_worker(NULL, TALK_PROTO_PING, 4, basefn, NULL, NULL, NULL);
 		}
-
-		batchfd = fopen(globdata.gl_pathv[i], "r");
-		if (batchfd == NULL) {
-			errprintf("Cannot open file %s\n", globdata.gl_pathv[i]);
-			continue;
+		if (ip6tests->len > 0) {
+			launch_worker(NULL, TALK_PROTO_PING, 6, basefn, NULL, NULL, NULL);
 		}
+		break;
 
-		/* Unlink the file so we wont process it again */
-		remove(globdata.gl_pathv[i]);
+	  case TALK_PROTO_LDAP:
+	  case TALK_PROTO_EXTERNAL:
+		/* Have already forked the children */
+		break;
 
-		while (fgets(batchl, sizeof(batchl), batchfd)) {
-			char *hname, *ip, *testspec, *extras;
-			void *hinfo;
-			int ipfamily = 0;
-
-			hname = strtok(batchl, "\t\r\n");
-			ip = (hname ? strtok(NULL, "\t\r\n") : NULL);
-			testspec = (ip ? strtok(NULL, "\t\r\n") : NULL);
-			extras = (testspec ? strtok(NULL, "\t\r\n") : NULL);
-			hinfo = (hname ? hostinfo(hname) : NULL);
-
-			if (ip) ipfamily = conn_is_ip(ip);
-			if (hinfo && ip && (ipfamily != 0) && testspec) {
-				myconn_t *testrec;
-				char *username, *password;
-				xtreePos_t handle;
-
-				/*
-				 * Lots of list / queue manipulation here.
-				 * 1) Create a "myconn_t" record for the test - this will be used to
-				 *    collect test data and eventually submitted to send_test_results() for
-				 *    reporting the test results back to xymond.
-				 * 2) Add the myconn_t record to the "pendingtests" list of active tests.
-				 * 3) For ping tests: create / update a record in the "iptree" tree,
-				 *    so we can map the IP reported by fping back to the test record.
-				 */
-
-				testrec = (myconn_t *)calloc(1, sizeof(myconn_t));
-				testrec->testspec = strdup(id);
-				testrec->talkprotocol = talkproto;
-				testrec->hostinfo = hinfo;
-				testrec->netparams.destinationip = strdup(ip);
-
-				switch (talkproto) {
-				  case TALK_PROTO_PING:
-					/* Add the test only if we haven't got it already */
-					handle = xtreeFind(iptree, ip);
-					if (handle == xtreeEnd(iptree)) {
-						xtreeAdd(iptree, testrec->netparams.destinationip, testrec);
-						switch (ipfamily) {
-						  case 4:
-							testrec->listitem = list_item_create(ip4tests, testrec, testrec->testspec);
-							break;
-						  case 6:
-							testrec->listitem = list_item_create(ip6tests, testrec, testrec->testspec);
-							break;
-						  default:
-							break;
-						}
-					}
-					break;
-				  case TALK_PROTO_LDAP:
-					/* We do one ldaptalk process per test */
-					testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
-					username = password = NULL;
-					if (extras && *extras) {
-						username = strtok(extras, ":");
-						if (username) password = strtok(NULL, "\t\r\n");
-					}
-					testrec->workerpid = launch_worker(testspec, TALK_PROTO_LDAP, 0, globdata.gl_pathv[i], testrec, username, password);
-					break;
-				  case TALK_PROTO_EXTERNAL:
-					/* We do one process per external test */
-					testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
-					testrec->workerpid = launch_worker(testspec, TALK_PROTO_EXTERNAL, 0, globdata.gl_pathv[i], testrec, ip, NULL);
-					break;
-				  default:
-					break;
-				}
-
-				if (!testrec->listitem) {
-					/* Didn't add the test - zap the unused record */
-					xfree(testrec->testspec);
-					xfree(testrec->netparams.destinationip);
-					xfree(testrec);
-				}
-			}
-		}
-		fclose(batchfd);
-
-		switch (talkproto) {
-		  case TALK_PROTO_PING:
-			/* We do one ping process per IP protocol for the entire batch */
-			if (ip4tests->len > 0) {
-				launch_worker(NULL, TALK_PROTO_PING, 4, globdata.gl_pathv[i], NULL, NULL, NULL);
-			}
-			if (ip6tests->len > 0) {
-				launch_worker(NULL, TALK_PROTO_PING, 6, globdata.gl_pathv[i], NULL, NULL, NULL);
-			}
-			break;
-
-		  case TALK_PROTO_LDAP:
-		  case TALK_PROTO_EXTERNAL:
-			/* Have already forked the children */
-			break;
-
-		  default:
-			break;
-		}
+	  default:
+		break;
 	}
 
-	globfree(&globdata);
-
-	return 1;
+	return count;
 }
-
 
 static int collect_ping_results(void)
 {
@@ -661,9 +619,9 @@ static void kill_stalled_tasks(void)
 int main(int argc, char **argv)
 {
 	int argi;
-	struct sigaction sa;
 	char *queueid = NULL;
 	int mytalkprotocol = TALK_PROTO_PING;
+	char *location = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "ping") == 0) {
@@ -705,13 +663,25 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	errprintf("Setting up signal handlers\n");
-	setup_signalhandler(programname);
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = sig_handler;
-	sigaction(SIGINT, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
-	sigaction(SIGHUP, &sa, NULL);
+	{
+		struct sigaction sa;
+
+		setup_signalhandler(programname);
+		memset(&sa, 0, sizeof(sa));
+		sa.sa_handler = sig_handler;
+		sigaction(SIGTERM, &sa, NULL);
+		sigaction(SIGINT, &sa, NULL);
+		sigaction(SIGHUP, &sa, NULL);
+	}
+
+	if (xymon_sqldb_init() != 0) {
+		errprintf("Cannot open Xymon SQLite database - aborting\n");
+		return 1;
+	}
+
+	/* See what network we'll test */
+	location = xgetenv("XYMONNETWORK");
+	if (strlen(location) == 0) location = NULL;
 
 	if (mytalkprotocol == TALK_PROTO_PING) iptree = xtreeNew(strcmp);
 	activeprocesses = list_create("activeprocesses");
@@ -757,7 +727,7 @@ int main(int argc, char **argv)
 			listitem_t *walk;
 
 			dbgprintf("Sending results\n");
-			send_test_results(donetests, programname, 1);
+			send_test_results(donetests, programname, 1, location);
 
 			if (iptree) {
 				/* Zap IP's from the iptree */
@@ -772,7 +742,7 @@ int main(int argc, char **argv)
 
 		anyaction += scan_queue(queueid, mytalkprotocol);
 
-		if (anyaction == 0) sleep(1);
+		if (anyaction == 0) sleep(10);
 	}
 
 	return 0;

@@ -40,6 +40,10 @@ static sqlite3_stmt *nettest_timestamp_sql = NULL;
 static sqlite3_stmt *nettest_forcetest_sql = NULL;
 static sqlite3_stmt *nettest_secstonext_sql = NULL;
 
+static sqlite3_stmt *netmodule_additem_sql = NULL;
+static sqlite3_stmt *netmodule_due_sql = NULL;
+static sqlite3_stmt *netmodule_purge_sql = NULL;
+
 
 int xymon_sqldb_init(void)
 {
@@ -83,6 +87,14 @@ int xymon_sqldb_init(void)
 				xfree(sqlfn);
 				return 1;
 			}
+
+			dbres = sqlite3_exec(xymonsqldb, "CREATE TABLE moduletests (moduleid varchar(30), location varchar(50), hostname varchar(200), destinationip varchar(40), testspec varchar(400), extras varchar(100))", NULL, NULL, &err);
+			if (dbres != SQLITE_OK) {
+				errprintf("Cannot create moduletests table: %s\n", sqlfn, (err ? err : sqlite3_errmsg(xymonsqldb)));
+				if (err) sqlite3_free(err);
+				xfree(sqlfn);
+				return 1;
+			}
 		}
 	}
 	if (dbres != SQLITE_OK) {
@@ -121,6 +133,10 @@ void xymon_sqldb_shutdown(void)
 	if (nettest_timestamp_sql) sqlite3_finalize(nettest_timestamp_sql);
 	if (nettest_forcetest_sql) sqlite3_finalize(nettest_forcetest_sql);
 	if (nettest_secstonext_sql) sqlite3_finalize(nettest_secstonext_sql);
+
+	if (netmodule_additem_sql) sqlite3_finalize(netmodule_additem_sql);
+	if (netmodule_due_sql) sqlite3_finalize(netmodule_due_sql);
+	if (netmodule_purge_sql) sqlite3_finalize(netmodule_purge_sql);
 
 	if (xymonsqldb != NULL) sqlite3_close(xymonsqldb);
 }
@@ -448,4 +464,85 @@ int xymon_sqldb_secs_to_next_test(void)
 
 	return result;
 }
+
+
+void xymon_sqldb_netmodule_additem(char *moduleid, char *location, char *hostname, char *destinationip, char *testspec, char *extras)
+{
+	int dbres;
+
+	if (!netmodule_additem_sql) {
+		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into moduletests(moduleid,location,hostname,destinationip,testspec,extras) values (?,?,?,?,?,?)", -1, &netmodule_additem_sql, NULL);
+		if (dbres != SQLITE_OK) {
+			errprintf("nettest_netmodule_additem prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
+			return;
+		}
+	}
+
+	dbres = sqlite3_bind_text(netmodule_additem_sql, 1, moduleid, -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_additem_sql, 2, (location ? location : ""), -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_additem_sql, 3, hostname, -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_additem_sql, 4, destinationip, -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_additem_sql, 5, testspec, -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_additem_sql, 6, (extras ? extras : ""), -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_step(netmodule_additem_sql);
+	if (dbres != SQLITE_DONE) errprintf("Error adding nettest-module record for %s/%s/%s: %s\n", moduleid, hostname, testspec, sqlite3_errmsg(xymonsqldb));
+
+	sqlite3_reset(netmodule_additem_sql);
+}
+
+int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, char **testspec, char **destination, char **extras)
+{
+	/* Search testtimes for tests that are due to run in a module. Return one row per invocation */
+
+	static int inprogress = 0;
+	int dbres, result = 0;
+
+	if (!netmodule_due_sql) {
+		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,destinationip,testspec,extras from moduletests where moduleid=? and location=?", -1, &netmodule_due_sql, NULL);
+		if (dbres != SQLITE_OK) {
+			errprintf("netmodule_due prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
+			return 0;
+		}
+	}
+
+	if (!netmodule_purge_sql) {
+		dbres = sqlite3_prepare_v2(xymonsqldb, "delete from moduletests where moduleid=? and location=?", -1, &netmodule_purge_sql, NULL);
+		if (dbres != SQLITE_OK) {
+			errprintf("netmodule_due prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
+			return 0;
+		}
+	}
+
+	if (!inprogress) {
+		dbres = sqlite3_bind_text(netmodule_due_sql, 1, module, -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_due_sql, 2, (location ? location : ""), -1, SQLITE_STATIC);
+		if (dbres != SQLITE_OK) return 0;
+		inprogress = 1;
+	}
+
+	dbres = sqlite3_step(netmodule_due_sql);
+	if (dbres == SQLITE_ROW) {
+		char *srcip;
+		*hostname = sqlite3_column_text(netmodule_due_sql, 0);
+		*destination = sqlite3_column_text(netmodule_due_sql, 1);
+		*testspec = sqlite3_column_text(netmodule_due_sql, 2);
+		*extras = sqlite3_column_text(netmodule_due_sql, 3);
+		result = 1;
+	}
+	else if (dbres == SQLITE_DONE) {
+		/* Done - no more tests */
+		sqlite3_reset(netmodule_due_sql);
+
+		dbres = sqlite3_bind_text(netmodule_purge_sql, 1, module, -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_purge_sql, 2, (location ? location : ""), -1, SQLITE_STATIC);
+		dbres = sqlite3_step(netmodule_purge_sql);
+		sqlite3_reset(netmodule_purge_sql);
+
+		inprogress = 0;
+	}
+
+	return result;
+}
+
+
 

@@ -26,6 +26,7 @@ static char rcsid[] = "$Id$";
 
 time_t lastloadtime = 0;
 int running = 1;
+char *location = NULL;
 
 int concurrency = 0;
 int defaulttimeout = DEF_TIMEOUT;
@@ -55,8 +56,7 @@ int run_tests(void)
 	if (count > 0) {
 		resulthead = run_net_tests(concurrency, defaultsourceip4, defaultsourceip6);
 		count = resulthead->len;
-		send_test_results(resulthead, programname, 0);
-		add_to_sub_queue(NULL, NULL);	/* Set off the submodule tests */
+		send_test_results(resulthead, programname, 0, location);
 		cleanup_myconn_list(resulthead);
 	}
 
@@ -135,6 +135,10 @@ int main(int argc, char **argv)
 	}
 
 	init_tcp_testmodule();
+
+	/* See what network we'll test */
+	location = xgetenv("XYMONNETWORK");
+	if (strlen(location) == 0) location = NULL;
 
 	do {
 		int testcount;
