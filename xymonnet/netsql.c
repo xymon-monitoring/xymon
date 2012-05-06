@@ -100,7 +100,12 @@ int xymon_sqldb_init(void)
 		return 1;
 	}
 
-	dbres = sqlite3_prepare_v2(xymonsqldb, "select timestamp from testtimes where hostname=? and testspec=?", -1, &due_query_sql, NULL);
+	/*
+	 * testtimes table uses the tuple (hostname,testspec,destination) as a unique key.
+	 * In most cases that will be (hostname,testspec,'') since 'destination' is empty, 
+	 * except for "conn=..." tests that have multiple config-defined destination-IP's.
+	 */
+	dbres = sqlite3_prepare_v2(xymonsqldb, "select timestamp from testtimes where hostname=? and testspec=? and destination=?", -1, &due_query_sql, NULL);
 	if (dbres != SQLITE_OK) {
 		errprintf("due_query prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 		return 1;
@@ -110,7 +115,7 @@ int xymon_sqldb_init(void)
 		errprintf("due_addrecord prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 		return 1;
 	}
-	dbres = sqlite3_prepare_v2(xymonsqldb, "update testtimes set timestamp=strftime('%s','now') where hostname=? and testspec=?", -1, &due_update_sql, NULL);
+	dbres = sqlite3_prepare_v2(xymonsqldb, "update testtimes set timestamp=strftime('%s','now') where hostname=? and testspec=? and destination=?", -1, &due_update_sql, NULL);
 	if (dbres != SQLITE_OK) {
 		errprintf("due_update prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 		return 1;
@@ -242,6 +247,7 @@ int xymon_sqldb_nettest_due(char *hostname, char *testspec, char *destination, n
 
 	dbres = sqlite3_bind_text(due_query_sql, 1, hostname, -1, SQLITE_STATIC);
 	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_query_sql, 2, testspec, -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_query_sql, 3, (destination ? destination : ""), -1, SQLITE_STATIC);
 	if (dbres == SQLITE_OK) dbres = sqlite3_step(due_query_sql);
 	if (dbres == SQLITE_ROW) {
 		/* Timestamp record exists */
@@ -252,6 +258,7 @@ int xymon_sqldb_nettest_due(char *hostname, char *testspec, char *destination, n
 			/* Test is due, register the time */
 			dbres = sqlite3_bind_text(due_update_sql, 1, hostname, -1, SQLITE_STATIC);
 			if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_update_sql, 2, testspec, -1, SQLITE_STATIC);
+			if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_update_sql, 3, (destination ? destination : ""), -1, SQLITE_STATIC);
 			if (dbres == SQLITE_OK) dbres = sqlite3_step(due_update_sql);
 			if (dbres != SQLITE_DONE) errprintf("Error updating due-record %s/%s: %s\n", hostname, testspec, sqlite3_errmsg(xymonsqldb));
 
@@ -267,7 +274,7 @@ int xymon_sqldb_nettest_due(char *hostname, char *testspec, char *destination, n
 		dbres = sqlite3_bind_text(due_addrecord_sql, 1, hostname, -1, SQLITE_STATIC);
 		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 2, testspec, -1, SQLITE_STATIC);
 		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 3, (location ? location : ""), -1, SQLITE_STATIC);
-		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 4, destination, -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 4, (destination ? destination : ""), -1, SQLITE_STATIC);
 		if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(due_addrecord_sql, 5, options->testtype);
 		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_addrecord_sql, 6, (options->sourceip ? options->sourceip : ""), -1, SQLITE_STATIC);
 		if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(due_addrecord_sql, 7, options->timeout);
@@ -314,12 +321,13 @@ int xymon_sqldb_nettest_row(char *location, char **hostname, char **testspec, ch
 	return result;
 }
 
-void xymon_sqldb_nettest_rowupdate(char *hostname, char *testspec)
+void xymon_sqldb_nettest_rowupdate(char *hostname, char *testspec, char *destination)
 {
 	int dbres;
 
 	dbres = sqlite3_bind_text(due_update_sql, 1, hostname, -1, SQLITE_STATIC);
 	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_update_sql, 2, testspec, -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(due_update_sql, 3, (destination ? destination : ""), -1, SQLITE_STATIC);
 	if (dbres == SQLITE_OK) dbres = sqlite3_step(due_update_sql);
 	if (dbres != SQLITE_DONE) errprintf("Error updating due record for %s/%s: %s\n", hostname, testspec, sqlite3_errmsg(xymonsqldb));
 	sqlite3_reset(due_update_sql);

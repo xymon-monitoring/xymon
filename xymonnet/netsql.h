@@ -23,7 +23,7 @@ extern void xymon_sqldb_dns_lookup_finish(void);
 
 extern int xymon_sqldb_nettest_due(char *hostname, char *testspec, char *destination, net_test_options_t *options, char *location);
 extern int xymon_sqldb_nettest_row(char *location, char **hostname, char **testspec, char **destination, net_test_options_t *options);
-extern void xymon_sqldb_nettest_rowupdate(char *hostname, char *testspec);
+extern void xymon_sqldb_nettest_rowupdate(char *hostname, char *testspec, char *destination);
 
 #endif
 
