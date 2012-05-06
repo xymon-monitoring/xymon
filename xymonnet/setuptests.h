@@ -10,10 +10,12 @@
 
 #ifndef __SETUPTESTS_H__
 #define __SETUPTESTS_H__
+
 extern void test_nonet_hosts(int testthem);
 extern void add_wanted_host(char *hostname);
 extern void clear_wanted_hosts(void);
-extern int setup_tests(int defaulttimeout, int pingenabled);
-extern int setup_tests_fromdb(int defaulttimeout, int pingenabled);
+extern int read_tests_from_hostscfg(int defaulttimeout);
+extern int setup_tests_from_database(int pingenabled, int forcetest);
+
 #endif
 

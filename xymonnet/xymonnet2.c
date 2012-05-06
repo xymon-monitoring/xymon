@@ -15,9 +15,10 @@ static char rcsid[] = "$Id$";
 #include <signal.h>
 
 #include "libxymon.h"
+
 #include "setuptests.h"
 #include "tcptalk.h"
-#include "dnstalk.h"
+#include "netdialog.h"
 #include "sendresults.h"
 #include "netsql.h"
 
@@ -25,7 +26,6 @@ static char rcsid[] = "$Id$";
 
 time_t lastloadtime = 0;
 int running = 1;
-int flushdbdata = 0;
 
 int concurrency = 0;
 int defaulttimeout = DEF_TIMEOUT;
@@ -38,7 +38,6 @@ void sig_handler(int signum)
 	switch (signum) {
 	  case SIGHUP:
 		lastloadtime = 0;
-		flushdbdata = 1;
 		break;
 	  case SIGINT:
 	  case SIGTERM:
@@ -52,12 +51,7 @@ int run_tests(void)
 	int count;
 	listhead_t *resulthead = NULL;
 
-	if (flushdbdata) {
-		xymon_sqldb_flushall();
-		flushdbdata = 0;
-	}
-
-	count = setup_tests(defaulttimeout, pingenabled);
+	count = setup_tests_from_database(pingenabled, (running == 0));
 	if (count > 0) {
 		resulthead = run_net_tests(concurrency, defaultsourceip4, defaultsourceip6);
 		count = resulthead->len;
@@ -112,7 +106,13 @@ int main(int argc, char **argv)
 			running = 0;
 		}
 		else if ((strcmp(argv[argi], "--wipedb") == 0) || (strcmp(argv[argi], "--wipe-db") == 0)) {
-			flushdbdata = 1;
+			xymon_sqldb_flushall();
+			errprintf("Xymon net-test database wiped\n");
+			return 0;
+		}
+		else if (*(argv[argi]) != '-') {
+			add_wanted_host(argv[argi]);
+			running = 0;	/* When testing specific hosts, assume "--once" */
 		}
 	}
 
@@ -142,22 +142,24 @@ int main(int argc, char **argv)
 
 		if (now > (lastloadtime+600)) {
 			lastloadtime = now;
-
-			if (load_hostnames("@", NULL, get_fqdn()) != 0) {
-				errprintf("Cannot load host configuration from xymond\n");
-
-				if (load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn()) != 0) {
-					errprintf("Cannot load host configuration from %s\n", xgetenv("HOSTSCFG"));
-					return;
-				}
-			}
+			read_tests_from_hostscfg(defaulttimeout);
+			load_protocols(NULL);
 		}
 
 		dbgprintf("Launching tests\n");
 		testcount = run_tests();
 		dbgprintf("Ran %d tests\n", testcount);
 
-		if (running) sleep(testcount ? 15 : 30);	/* Take a nap */
+		if (running) {
+			int timetonext = xymon_sqldb_secs_to_next_test();
+
+			if (timetonext > 0) {
+				timetonext++;
+				if (timetonext > 60) timetonext = 60;
+				dbgprintf("Sleeping %d seconds\n", timetonext);
+				sleep(timetonext);
+			}
+		}
 	} while (running);
 
 	conn_deinit();

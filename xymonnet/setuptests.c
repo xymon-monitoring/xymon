@@ -50,10 +50,10 @@ void clear_wanted_hosts(void)
 	shsz = 0;
 }
 
-static int wanted_host(void *host, char *netstring)
+static int wanted_host(void *host, char *netstring, int selectedonly)
 {
 
-	if (!selectedhosts) {
+	if (!selectedhosts || !selectedonly) {
 		char *netlocation = xmh_item(host, XMH_NET);
 
 		return ( !netstring || (strlen(netstring) == 0) ||                  /* No XYMONNETWORK = do all */
@@ -73,11 +73,20 @@ static int wanted_host(void *host, char *netstring)
 }
 
 
-int setup_tests(int defaulttimeout, int pingenabled)
+int read_tests_from_hostscfg(int defaulttimeout)
 {
 	char *location;
 	void *hwalk;
 	int count = 0;
+
+	if (load_hostnames("@", NULL, get_fqdn()) != 0) {
+		errprintf("Cannot load host configuration from xymond\n");
+
+		if (load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn()) != 0) {
+			errprintf("Cannot load host configuration from %s\n", xgetenv("HOSTSCFG"));
+			return 1;
+		}
+	}
 
 	if (first_host() == NULL) {
 		errprintf("Empty configuration, no hosts to test\n");
@@ -89,14 +98,14 @@ int setup_tests(int defaulttimeout, int pingenabled)
 	if (strlen(location) == 0) location = NULL;
 
 	load_protocols(NULL);
-	load_cookies();
+
+	xymon_sqldb_nettest_delete_old(0);
 
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
 		char *destination, *testspec;
-		myconn_netparams_t netparams;
 		net_test_options_t options;
 
-		if (!wanted_host(hwalk, location)) continue;
+		if (!wanted_host(hwalk, location, 0)) continue;
 
 		options.timeout = defaulttimeout;
 		options.interval = DEFAULT_NET_INTERVAL;
@@ -129,49 +138,39 @@ int setup_tests(int defaulttimeout, int pingenabled)
 				xfree(allopts);
 			}
 			else if (strncmp(testspec, "conn=", 5) == 0) {
-				if (pingenabled) {
-					char *tsdup = strdup(testspec+5);
-					char *sptr, *ip;
+				char *tsdup = strdup(testspec+5);
+				char *sptr, *ip;
 
-					options.testtype = NET_TEST_PING;
-					options.timeout = defaulttimeout;
-					ip = strtok_r(tsdup, ",", &sptr);
-					while (ip) {
-						/* 
-						 * We use 'conn' here as the testspec, and provide the destination IP. 
-						 * Default ping test uses 'ping' as the testspec, and does NOT provide the
-						 * IP since it uses the default destination (hostname, or IP if 'testip' set).
-						 */
-						if (conn_is_ip(ip) && (strcmp(ip, destination) != 0) && xymon_sqldb_nettest_due(xmh_item(hwalk, XMH_HOSTNAME), "conn", ip, &options, location)) {
-							memset(&netparams, 0, sizeof(netparams));
-							netparams.destinationip = strdup(ip);
-							add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
-							count++;
-						}
-
-						ip = strtok_r(NULL, ",", &sptr);
+				options.testtype = NET_TEST_PING;
+				options.timeout = defaulttimeout;
+				ip = strtok_r(tsdup, ",", &sptr);
+				while (ip) {
+					/* 
+					 * We use 'conn' here as the testspec, and provide the destination IP. 
+					 * Default ping test uses 'ping' as the testspec, and does NOT provide the
+					 * IP since it uses the default destination (hostname, or IP if 'testip' set).
+					 */
+					if (conn_is_ip(ip) && (strcmp(ip, destination) != 0)) {
+						xymon_sqldb_nettest_register(xmh_item(hwalk, XMH_HOSTNAME), "conn", ip, &options, location);
 					}
 
-					xfree(tsdup);
+					ip = strtok_r(NULL, ",", &sptr);
 				}
+
+				xfree(tsdup);
 			}
 			else {
+				myconn_netparams_t netparams;
+
 				memset(&netparams, 0, sizeof(netparams));
 				dialog = net_dialog(testspec, &netparams, &options, hwalk, &dtoken);
 
 				if (dialog || (options.testtype != NET_TEST_STANDARD)) {
-					if (xymon_sqldb_nettest_due(xmh_item(hwalk, XMH_HOSTNAME), testspec, NULL, &options, location)) {
-						/* netparams.destinationip may have been filled by net_dialog (e.g. http) */
-						if (!netparams.destinationip) netparams.destinationip = strdup(destination);
-						add_net_test(testspec, dialog, dtoken, &options, &netparams, hwalk);
-						count++;
-					}
-					else {
-						/* Not due yet - clean up what net_dialog() allocated for us */
-						if (dialog) free_net_dialog(dialog, dtoken);
-						if (netparams.destinationip) xfree(netparams.destinationip);
-					}
+					xymon_sqldb_nettest_register(xmh_item(hwalk, XMH_HOSTNAME), testspec, NULL, &options, location);
 				}
+
+				if (netparams.destinationip) xfree(netparams.destinationip);
+				if (dialog) free_net_dialog(dialog, dtoken);
 			}
 
 			testspec = xmh_item_walk(NULL);
@@ -180,33 +179,33 @@ int setup_tests(int defaulttimeout, int pingenabled)
 		/* 
 		 * Add the ping check. We do this last, so any net-options can be picked up also for the ping-test.
 		 */
-		memset(&netparams, 0, sizeof(netparams));
-		netparams.destinationip = strdup(destination);
 		options.testtype = NET_TEST_PING;
-		if (pingenabled && !xmh_item(hwalk, XMH_FLAG_NOCONN) && !xmh_item(hwalk, XMH_FLAG_NOPING) && xymon_sqldb_nettest_due(xmh_item(hwalk, XMH_HOSTNAME), "ping", NULL, &options, location)) {
-			add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
-			count++;
-		}
-		else {
-			xfree(netparams.destinationip);
+		if (!xmh_item(hwalk, XMH_FLAG_NOCONN) && !xmh_item(hwalk, XMH_FLAG_NOPING)) {
+			xymon_sqldb_nettest_register(xmh_item(hwalk, XMH_HOSTNAME), "ping", NULL, &options, location);
 		}
 	}
+
+	xymon_sqldb_nettest_delete_old(1);
 
 	return count;
 }
 
-int setup_tests_fromdb(int defaulttimeout, int pingenabled)
+int setup_tests_from_database(int pingenabled, int forcetest)
 {
 	char *location, *hostname, *testspec, *destination;
 	myconn_netparams_t netparams;
 	net_test_options_t options;
 	int count = 0;
 
+	if (forcetest) {
+		int i;
+		for (i=0; (selectedhosts[i]); i++) xymon_sqldb_nettest_forcetest(selectedhosts[i]);
+	}
+
 	/* See what network we'll test */
 	location = xgetenv("XYMONNETWORK");
 	if (strlen(location) == 0) location = NULL;
 
-	load_protocols(NULL);
 	load_cookies();
 
 	while (xymon_sqldb_nettest_row(location, &hostname, &testspec, &destination, &options)) {
@@ -214,10 +213,10 @@ int setup_tests_fromdb(int defaulttimeout, int pingenabled)
 		char **dialog;
 		int dtoken;
 
-		count++;
-
 		hwalk = hostinfo(hostname);
-		if (!hwalk) continue;
+		if (!hwalk || !wanted_host(hwalk, location, 1)) continue;
+
+		count++;
 
 		if (!destination || (*destination == '\0')) {
 			destination = xmh_item(hwalk, XMH_HOSTNAME);
@@ -232,21 +231,21 @@ int setup_tests_fromdb(int defaulttimeout, int pingenabled)
 			netparams.destinationip = strdup(destination);
 			add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
 			/* The default "ping" has a NULL destination in the table; the "conn" test has the IP as destination */
-			if (strcmp(testspec, "ping") == 0) {
-				xymon_sqldb_nettest_rowupdate(xmh_item(hwalk, XMH_HOSTNAME), "ping", NULL);
+			if (strncmp(testspec, "conn", 4) == 0) {
+				xymon_sqldb_nettest_done(xmh_item(hwalk, XMH_HOSTNAME), testspec, destination);
 			}
 			else {
-				xymon_sqldb_nettest_rowupdate(xmh_item(hwalk, XMH_HOSTNAME), "conn", destination);
+				xymon_sqldb_nettest_done(xmh_item(hwalk, XMH_HOSTNAME), testspec, NULL);
 			}
-				
 		}
 		else {
 			dialog = net_dialog(testspec, &netparams, &options, hwalk, &dtoken);
 			/* netparams.destinationip may have been filled by net_dialog (e.g. http) */
 			if (!netparams.destinationip) netparams.destinationip = strdup(destination);
 			add_net_test(testspec, dialog, dtoken, &options, &netparams, hwalk);
-			xymon_sqldb_nettest_rowupdate(xmh_item(hwalk, XMH_HOSTNAME), testspec, NULL);
+			xymon_sqldb_nettest_done(xmh_item(hwalk, XMH_HOSTNAME), testspec, NULL);
 		}
+
 	}
 
 	return count;
