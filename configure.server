@@ -515,7 +515,7 @@ then
     else
 	echo "LDAPLIBS = -lldap $LDAPLBER"  >>Makefile
     fi
-    echo "DOLDAP=1"                      >>Makefile
+    echo "DOLDAP = yes"                  >>Makefile
 fi
 echo "#"                                 >>Makefile
 echo "# clock_gettime() settings"        >>Makefile
