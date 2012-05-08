@@ -172,7 +172,7 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 	  default:
 		sprintf(msgtext, "LDAP search failed: %s\n", ldap_err2string(rc));
 		addtobuffer(outdata, msgtext);
-		testresult = 4; goto cleanup;
+		testresult = 5; goto cleanup;
 	}
 
 	sprintf(msgtext, "Searching LDAP for %s yields %d results:\n\n", realurl, ldap_count_entries(ldaphandle, result));
@@ -243,10 +243,13 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!url || !username || !password) {
-		fprintf(stderr, "Usage: %s [options] URL USERNAME PASSWORD\n", argv[0]);
+	if (!url) {
+		fprintf(stderr, "Usage: %s [options] URL [USERNAME PASSWORD]\n", argv[0]);
 		return 1;
 	}
+
+	if (!username) username = "";
+	if (!password) password = "";
 
 	status = test_ldap(url, username, password, outdata, &elapsedus);
 	fprintf((status == 0) ? stdout : stderr, "%s", STRBUF(outdata));
