@@ -49,6 +49,11 @@ static void result_plain(myconn_t *rec,  strbuffer_t *txt)
 {
 	char msgline[4096];
 
+	if (dontsendmessages >= 2) {
+		if (rec->textlog) clearstrbuffer(rec->textlog);
+		return;
+	}
+
 	if (rec->textlog) {
 		snprintf(msgline, sizeof(msgline), "PLAINlog: %d\n", STRBUFLEN(rec->textlog));
 		addtobuffer(txt, msgline);
@@ -74,6 +79,14 @@ static void result_http(myconn_t *rec,  strbuffer_t *txt)
 
 	snprintf(msgline, sizeof(msgline), "HTTPstatus: %d\n", rec->httpstatus);
 	addtobuffer(txt, msgline);
+
+	if (dontsendmessages >= 2) {
+		if (rec->textlog) clearstrbuffer(rec->textlog);
+		if (rec->httpheaders) clearstrbuffer(rec->httpheaders);
+		if (rec->httpbody) clearstrbuffer(rec->httpbody);
+		return;
+	}
+
 	if (rec->textlog) {
 		char *authtoken;
 		snprintf(msgline, sizeof(msgline), "HTTPrequest: %d\n", STRBUFLEN(rec->textlog));
