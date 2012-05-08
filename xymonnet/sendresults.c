@@ -204,6 +204,9 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 		snprintf(msgline, sizeof(msgline), "\n[%s]\n", rec->testspec);
 		addtobuffer(hres->txt, msgline);
 
+		snprintf(msgline, sizeof(msgline), "StartTime: %d\nEndTime: %d\n", (int)rec->teststarttime, (int)rec->testendtime);
+		addtobuffer(hres->txt, msgline);
+
 		if (rec->netparams.lookupstring) {
 			snprintf(msgline, sizeof(msgline), "TargetHostname: %s\n", rec->netparams.lookupstring);
 			addtobuffer(hres->txt, msgline);

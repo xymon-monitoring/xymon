@@ -699,6 +699,7 @@ listhead_t *run_net_tests(int concurrency, char *sourceip4, char *sourceip6)
 			  case TALK_PROTO_NTP:
 			  case TALK_PROTO_LDAP:
 			  case TALK_PROTO_EXTERNAL:
+				rec->teststarttime = getcurrenttime(NULL);
 				dbgprintf("    conn_prepare_connection()\n");
 				if (!rec->netparams.sourceip && (sourceip4 || sourceip6)) {
 					switch (conn_is_ip(rec->netparams.destinationip)) {
@@ -783,6 +784,7 @@ listhead_t *run_net_tests(int concurrency, char *sourceip4, char *sourceip6)
 
 void test_is_done(myconn_t *rec)
 {
+	rec->testendtime = getcurrenttime(NULL);
 	list_item_move(donetests, rec->listitem, rec->testspec);
 	free_net_dialog(rec->dialog, rec->dialogtoken);
 }

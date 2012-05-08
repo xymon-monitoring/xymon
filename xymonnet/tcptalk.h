@@ -44,6 +44,7 @@ typedef struct myconn_t {
 	listitem_t *listitem;
 	void *hostinfo;
 	int timeout;
+	time_t teststarttime, testendtime;
 
 	/* Results and statistics */
 	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED, TALK_CANNOT_RESOLVE, TALK_MODULE_FAILED } talkresult;
