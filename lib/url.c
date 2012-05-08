@@ -323,7 +323,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 			url->port = 389;
 		} else if (strcmp(startp, "ldaps") == 0) {
 			url->scheme = strdup("ldaps");
-			url->port = 389; /* ldaps:// URL's are non-standard, and must use port 389+STARTTLS */
+			url->port = 636;
 		}
 		else {
 			/* Unknown scheme! */
