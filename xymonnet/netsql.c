@@ -521,7 +521,7 @@ int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, cha
 	}
 
 	if (!netmodule_purge_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "delete from moduletests where moduleid=? and location=?", -1, &netmodule_purge_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "delete from moduletests where moduleid=LOWER(?) and location=LOWER(?)", -1, &netmodule_purge_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("netmodule_due prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 0;
