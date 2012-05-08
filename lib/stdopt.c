@@ -47,6 +47,9 @@ int standardoption(char *id, char *opt)
 	else if (strcmp(opt, "--no-update") == 0) {
 		dontsendmessages = 1;
 	}
+	else if (strcmp(opt, "--no-update-brief") == 0) {
+		dontsendmessages = 2;
+	}
 	else if (argnmatch(opt, "--env=")) {
 		char *p = strchr(opt, '=');
 		loadenv(p+1, envarea);
