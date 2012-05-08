@@ -137,16 +137,16 @@ static pid_t launch_worker(char *workerdata, int talkproto, int subid, char *bas
 
 		/* Assign stdin to the pipe */
 		close(STDIN_FILENO);
-		if (dup2(pfd[0], STDIN_FILENO) != 0) dbgprintf("Cannot dup2 stdin: %s\n", strerror(errno));
+		if (dup2(pfd[0], STDIN_FILENO) != 0);
 		close(pfd[0]); /* No longer needed */
 
 		/* Assign stdout to the output logfile */
 		close(STDOUT_FILENO);
-		if (dup2(outfile, STDOUT_FILENO) != 0) dbgprintf("Cannot dup2 stdout: %s\n", strerror(errno));
+		if (dup2(outfile, STDOUT_FILENO) != 0);
 
 		/* Assign stderr to the error logfile */
 		close(STDERR_FILENO);
-		if (dup2(errfile, STDERR_FILENO) != 0) dbgprintf("Cannot dup2 stderr: %s\n", strerror(errno));
+		if (dup2(errfile, STDERR_FILENO) != 0);
 
 		switch (talkproto) {
 		  case TALK_PROTO_PING:
@@ -186,12 +186,6 @@ static pid_t launch_worker(char *workerdata, int talkproto, int subid, char *bas
 
 		  default:
 			break;
-		}
-
-		if (debug) {
-			int i;
-			dbgprintf("Command: %s\n", cmd);
-			for (i=1; (cmdargs[i]); i++) dbgprintf("Arg %d: %s\n", i, cmdargs[i]);
 		}
 
 		if (cmd) {
@@ -260,7 +254,7 @@ static pid_t launch_worker(char *workerdata, int talkproto, int subid, char *bas
 }
 
 
-static int scan_queue(char *id, int talkproto)
+static int scan_queue(char *id, int talkproto, int batchsize)
 {
 	char basefn[PATH_MAX];
 	char *location, *hname, *ip, *testspec, *extras;
@@ -270,9 +264,11 @@ static int scan_queue(char *id, int talkproto)
 	location = xgetenv("XYMONNETWORK");
 	if (strlen(location) == 0) location = NULL;
 
+	dbgprintf("Scanning queue %s\n", id);
+
 	sprintf(basefn, "%s/moduledata-%s-%d-%s", xgetenv("XYMONTMP"), id, talkproto, (location ? location : ""));
 
-	while (xymon_sqldb_netmodule_row(id, location, &hname, &testspec, &ip, &extras)) {
+	while (xymon_sqldb_netmodule_row(id, location, &hname, &testspec, &ip, &extras, batchsize)) {
 		void *hinfo;
 		int ipfamily = 0;
 
@@ -294,7 +290,6 @@ static int scan_queue(char *id, int talkproto)
 			 */
 
 			testrec = (myconn_t *)calloc(1, sizeof(myconn_t));
-			testrec->testspec = strdup(id);
 			testrec->talkprotocol = talkproto;
 			testrec->hostinfo = hinfo;
 			testrec->netparams.destinationip = strdup(ip);
@@ -315,22 +310,33 @@ static int scan_queue(char *id, int talkproto)
 					  default:
 						break;
 					}
+					testrec->testspec = strdup(id);
 				}
 				break;
 			  case TALK_PROTO_LDAP:
 				/* We do one ldaptalk process per test */
+				/* A plain "ldap" or "ldaps" test is converted to URL format on the fly */
+				if ((strcmp(testspec, "ldap") == 0) || (strcmp(testspec, "ldaps") == 0)) {
+					char urlspec[100];
+					sprintf(urlspec, "%s://%s/", testspec, ip);
+					testrec->testspec = strdup(urlspec);
+				}
+				else {
+					testrec->testspec = strdup(testspec);
+				}
 				testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
 				username = password = NULL;
 				if (extras && *extras) {
 					username = strtok(extras, ":");
 					if (username) password = strtok(NULL, "\t\r\n");
 				}
-				testrec->workerpid = launch_worker(testspec, TALK_PROTO_LDAP, 0, basefn, testrec, username, password);
+				testrec->workerpid = launch_worker(testrec->testspec, TALK_PROTO_LDAP, 0, basefn, testrec, username, password);
 				break;
 			  case TALK_PROTO_EXTERNAL:
 				/* We do one process per external test */
+				testrec->testspec = strdup(testspec);
 				testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
-				testrec->workerpid = launch_worker(testspec, TALK_PROTO_EXTERNAL, 0, basefn, testrec, ip, NULL);
+				testrec->workerpid = launch_worker(testrec->testspec, TALK_PROTO_EXTERNAL, 0, basefn, testrec, ip, NULL);
 				break;
 			  default:
 				break;
@@ -338,7 +344,7 @@ static int scan_queue(char *id, int talkproto)
 
 			if (!testrec->listitem) {
 				/* Didn't add the test - zap the unused record */
-				xfree(testrec->testspec);
+				if (testrec->testspec) xfree(testrec->testspec);
 				xfree(testrec->netparams.destinationip);
 				xfree(testrec);
 			}
@@ -489,7 +495,7 @@ collectioncleanup:
 }
 
 
-static int collect_generic_results(char *toolid)
+static int collect_generic_results(char *toolid, int talkproto)
 {
 	pid_t pid;
 	int status;
@@ -550,6 +556,28 @@ static int collect_generic_results(char *toolid)
 	else {
 		testrec->talkresult = TALK_CONN_FAILED;
 
+		if (WIFEXITED(status)) {
+			switch (talkproto) {
+			  case TALK_PROTO_LDAP:
+				switch (WEXITSTATUS(status)) {
+				  case 1: /* Parse error */
+				  case 2: /* Bind failed */
+					testrec->talkresult = TALK_CONN_FAILED;
+					break;
+				  case 3: /* Bind timeout */
+				  case 4: /* Search timeout */
+					testrec->talkresult = TALK_CONN_TIMEOUT;
+					break;
+				  case 5: /* Search failed */
+					testrec->talkresult = TALK_BADDATA;
+					break;
+				}
+				break;
+			  default:
+				break;
+			}
+		}
+
 		*l = '\0';
 		if (WIFEXITED(status)) sprintf(l, "%s process terminated with error status %d\n", toolid, WEXITSTATUS(status));
 		if (WIFSIGNALED(status)) sprintf(l, "%s process terminated by signal %d\n", toolid, WTERMSIG(status));
@@ -588,12 +616,12 @@ collectioncleanup:
 
 static int collect_ldap_results(void)
 {
-	return collect_generic_results("ldaptalk");
+	return collect_generic_results("ldaptalk", TALK_PROTO_LDAP);
 }
 
 static int collect_external_results(char *id)
 {
-	return collect_generic_results(id);
+	return collect_generic_results(id, TALK_PROTO_EXTERNAL);
 }
 
 
@@ -622,12 +650,16 @@ int main(int argc, char **argv)
 	char *queueid = NULL;
 	int mytalkprotocol = TALK_PROTO_PING;
 	char *location = NULL;
+	int concurrency = 0;
+	int batchsize = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "ping") == 0) {
 			queueid = argv[argi];
 			mytalkprotocol = TALK_PROTO_PING;
 			if (!timeout) timeout = 200;
+			if (!batchsize) batchsize = 500;
+			if (!concurrency) concurrency = 5;
 		}
 		else if (strcmp(argv[argi], "ldap") == 0) {
 			queueid = argv[argi];
@@ -656,12 +688,23 @@ int main(int argc, char **argv)
 			char *p = strchr(argv[argi], '=');
 			timeout = atoi(p+1);
 		}
+		else if (argnmatch(argv[argi], "--concurrency=")) {
+			char *p = strchr(argv[argi], '=');
+			concurrency = atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--batch-size=")) {
+			char *p = strchr(argv[argi], '=');
+			batchsize = atoi(p+1);
+		}
 	}
 
 	if (!queueid) {
 		errprintf("Unknown queue, aborting\n");
 		return 1;
 	}
+
+	if (!concurrency) concurrency = 5;
+	if (!batchsize) batchsize = 10000;
 
 	{
 		struct sigaction sa;
@@ -723,14 +766,13 @@ int main(int argc, char **argv)
 
 		dbgprintf("Pending:%d, done:%d\n", pendingtests->len, donetests->len);
 
-		if ((pendingtests->len == 0) && (donetests->len > 0)) {
-			listitem_t *walk;
-
+		if (donetests->len > 0) {
 			dbgprintf("Sending results\n");
 			send_test_results(donetests, programname, 1, location);
 
 			if (iptree) {
 				/* Zap IP's from the iptree */
+				listitem_t *walk;
 				for (walk = donetests->head; (walk); walk = walk->next) {
 					myconn_t *testrec = (myconn_t *)walk->data;
 					if (testrec->netparams.destinationip) xtreeDelete(iptree, testrec->netparams.destinationip);
@@ -740,7 +782,13 @@ int main(int argc, char **argv)
 			cleanup_myconn_list(donetests);
 		}
 
-		anyaction += scan_queue(queueid, mytalkprotocol);
+		if (activeprocesses->len < concurrency) {
+			/* OK to start new tasks - see if there's anything to do */
+			anyaction += scan_queue(queueid, mytalkprotocol, batchsize);
+		}
+		else {
+			dbgprintf("Max concurrency reached\n");
+		}
 
 		if (anyaction == 0) sleep(10);
 	}

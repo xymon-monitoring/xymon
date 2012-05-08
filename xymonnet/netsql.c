@@ -505,7 +505,7 @@ void xymon_sqldb_netmodule_additem(char *moduleid, char *location, char *hostnam
 	sqlite3_reset(netmodule_additem_sql);
 }
 
-int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, char **testspec, char **destination, char **extras)
+int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, char **testspec, char **destination, char **extras, int batchsize)
 {
 	/* Search testtimes for tests that are due to run in a module. Return one row per invocation */
 
@@ -513,7 +513,7 @@ int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, cha
 	int dbres, result = 0;
 
 	if (!netmodule_due_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,destinationip,testspec,extras from moduletests where moduleid=LOWER(?) and location=LOWER(?)", -1, &netmodule_due_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,destinationip,testspec,extras from moduletests where moduleid=LOWER(?) and location=LOWER(?) limit ?", -1, &netmodule_due_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("netmodule_due prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 0;
@@ -521,7 +521,7 @@ int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, cha
 	}
 
 	if (!netmodule_purge_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "delete from moduletests where moduleid=LOWER(?) and location=LOWER(?)", -1, &netmodule_purge_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "delete from moduletests where moduleid=LOWER(?) and location=LOWER(?) and hostname=LOWER(?) and destinationip=? and testspec=?", -1, &netmodule_purge_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("netmodule_due prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 0;
@@ -531,6 +531,7 @@ int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, cha
 	if (!inprogress) {
 		dbres = sqlite3_bind_text(netmodule_due_sql, 1, module, -1, SQLITE_STATIC);
 		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_due_sql, 2, (location ? location : ""), -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(netmodule_due_sql, 3, batchsize);
 		if (dbres != SQLITE_OK) return 0;
 		inprogress = 1;
 	}
@@ -543,21 +544,22 @@ int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, cha
 		*testspec = sqlite3_column_text(netmodule_due_sql, 2);
 		*extras = sqlite3_column_text(netmodule_due_sql, 3);
 		result = 1;
+
+		/* Purge the record */
+		dbres = sqlite3_bind_text(netmodule_purge_sql, 1, module, -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_purge_sql, 2, (location ? location : ""), -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_purge_sql, 3, *hostname, -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_purge_sql, 4, *destination, -1, SQLITE_STATIC);
+		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_purge_sql, 5, *testspec, -1, SQLITE_STATIC);
+		dbres = sqlite3_step(netmodule_purge_sql);
+		sqlite3_reset(netmodule_purge_sql);
 	}
 	else if (dbres == SQLITE_DONE) {
 		/* Done - no more tests */
 		sqlite3_reset(netmodule_due_sql);
-
-		dbres = sqlite3_bind_text(netmodule_purge_sql, 1, module, -1, SQLITE_STATIC);
-		if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_purge_sql, 2, (location ? location : ""), -1, SQLITE_STATIC);
-		dbres = sqlite3_step(netmodule_purge_sql);
-		sqlite3_reset(netmodule_purge_sql);
-
 		inprogress = 0;
 	}
 
 	return result;
 }
-
-
 
