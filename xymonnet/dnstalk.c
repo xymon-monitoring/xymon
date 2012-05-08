@@ -302,6 +302,12 @@ void dns_lookup(myconn_t *rec)
 		return;
 	}
 
+	if (!rec->netparams.lookupstring || (strlen(rec->netparams.lookupstring) == 0)) {
+		errprintf("Invalid DNS lookup - string is %s\n", (rec->netparams.lookupstring ? "empty" : "null"));
+		rec->netparams.lookupstatus = LOOKUP_FAILED;
+		return;
+	}
+	
 	if (!res) {
 		/* No cache record, create one */
 		xymon_sqldb_dns_lookup_create(dns_lookup_sequence[rec->netparams.af_index], rec->netparams.lookupstring);

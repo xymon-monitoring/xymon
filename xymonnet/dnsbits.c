@@ -638,8 +638,8 @@ void dns_lookup_callback(void *arg, int status, int timeouts, struct hostent *ho
 	}
 	else {
 		/* Uh-oh ... */
-		errprintf("ARES library failed during name resolution: %s\n",
-			  ares_strerror(status));
+		errprintf("ARES library failed during name resolution of '%s': %s\n",
+			  rec->netparams.lookupstring, ares_strerror(status));
 		dns_addtocache(rec, "-");
 	}
 }
