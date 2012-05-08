@@ -241,7 +241,7 @@ int xymon_sqldb_dns_lookup_create(int family, char *key)
 	int dbres;
 
 	if (!dns_addrecord_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into hostip(hostname,ip4,ip6,upd4time,upd6time) values (?,?,?,0,0)", -1, &dns_addrecord_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into hostip(hostname,ip4,ip6,upd4time,upd6time) values (?,'','',0,0)", -1, &dns_addrecord_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("addrecord prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 1;
