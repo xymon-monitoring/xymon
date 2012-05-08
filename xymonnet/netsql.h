@@ -26,6 +26,7 @@ extern void xymon_sqldb_nettest_register(char *hostname, char *testspec, char *d
 extern int xymon_sqldb_nettest_row(char *location, char **hostname, char **testspec, char **destination, net_test_options_t *options);
 extern void xymon_sqldb_nettest_forcetest(char *hostname);
 extern void xymon_sqldb_nettest_done(char *hostname, char *testspec, char *destination);
+extern void xymon_sqldb_sanitycheck(void);
 extern int xymon_sqldb_secs_to_next_test(void);
 
 extern void xymon_sqldb_netmodule_additem(char *moduleid, char *location, char *hostname, char *destinationip, char *testspec, char *extras);

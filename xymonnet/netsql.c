@@ -157,7 +157,7 @@ void xymon_sqldb_dns_updatecache(int family, char *key, char *ip)
 	int dbres;
 
 	if (!dns_ip4update_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "update hostip set ip4=?,upd4time=strftime('%s','now') where hostname=?", -1, &dns_ip4update_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "update hostip set ip4=?,upd4time=strftime('%s','now') where hostname=LOWER(?)", -1, &dns_ip4update_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("ip4update prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return;
@@ -165,7 +165,7 @@ void xymon_sqldb_dns_updatecache(int family, char *key, char *ip)
 	}
 
 	if (!dns_ip6update_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "update hostip set ip6=?,upd6time=strftime('%s','now') where hostname=?", -1, &dns_ip6update_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "update hostip set ip6=?,upd6time=strftime('%s','now') where hostname=LOWER(?)", -1, &dns_ip6update_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("ip6update prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return;
@@ -195,7 +195,7 @@ int xymon_sqldb_dns_lookup_search(int family, char *key, time_t *updtime, char *
 	int dbres;
 
 	if (!dns_ip4query_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "select ip4,upd4time from hostip where hostname=?", -1, &dns_ip4query_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "select ip4,upd4time from hostip where hostname=LOWER(?)", -1, &dns_ip4query_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("ip4query prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 1;
@@ -203,7 +203,7 @@ int xymon_sqldb_dns_lookup_search(int family, char *key, time_t *updtime, char *
 	}
 
 	if (!dns_ip6query_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "select ip6,upd6time from hostip where hostname=?", -1, &dns_ip6query_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "select ip6,upd6time from hostip where hostname=LOWER(?)", -1, &dns_ip6query_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("ip6query prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 1;
@@ -241,7 +241,7 @@ int xymon_sqldb_dns_lookup_create(int family, char *key)
 	int dbres;
 
 	if (!dns_addrecord_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into hostip(hostname,ip4,ip6,upd4time,upd6time) values (?,'','',0,0)", -1, &dns_addrecord_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into hostip(hostname,ip4,ip6,upd4time,upd6time) values (LOWER(?),'','',0,0)", -1, &dns_addrecord_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("addrecord prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 1;
@@ -292,7 +292,7 @@ void xymon_sqldb_nettest_register(char *hostname, char *testspec, char *destinat
 	int dbres;
 
 	if (!nettest_query_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "select valid from testtimes where hostname=? and testspec=? and destination=?", -1, &nettest_query_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "select valid from testtimes where hostname=LOWER(?) and testspec=? and destination=?", -1, &nettest_query_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("nettest_query prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return;
@@ -300,7 +300,7 @@ void xymon_sqldb_nettest_register(char *hostname, char *testspec, char *destinat
 	}
 
 	if (!nettest_updaterecord_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "update testtimes set location=?,testtype=?,sourceip=?,timeout=?,interval=?,valid=1 where hostname=? and testspec=? and destination=?", -1, &nettest_updaterecord_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "update testtimes set location=?,testtype=?,sourceip=?,timeout=?,interval=?,valid=1 where hostname=LOWER(?) and testspec=? and destination=?", -1, &nettest_updaterecord_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("nettest_updaterecord prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return;
@@ -308,7 +308,7 @@ void xymon_sqldb_nettest_register(char *hostname, char *testspec, char *destinat
 	}
 
 	if (!nettest_addrecord_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into testtimes(hostname,testspec,location,destination,testtype,sourceip,timeout,interval,timestamp,valid) values (?,?,?,?,?,?,?,?,0,1)", -1, &nettest_addrecord_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into testtimes(hostname,testspec,location,destination,testtype,sourceip,timeout,interval,timestamp,valid) values (LOWER(?),?,?,?,?,?,?,?,0,1)", -1, &nettest_addrecord_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("nettest_addrecord prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return;
@@ -364,7 +364,7 @@ int xymon_sqldb_nettest_row(char *location, char **hostname, char **testspec, ch
 	time_t now = getcurrenttime(NULL);
 
 	if (!nettest_due_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,testspec,destination,testtype,sourceip,timeout from testtimes where location=? and (timestamp+interval)<?", -1, &nettest_due_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,testspec,destination,testtype,sourceip,timeout from testtimes where location=LOWER(?) and (timestamp+interval)<?", -1, &nettest_due_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("nettest_due prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 0;
@@ -404,7 +404,7 @@ void xymon_sqldb_nettest_forcetest(char *hostname)
 	int dbres;
 
 	if (!nettest_forcetest_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "update testtimes set timestamp=0 where hostname=?", -1, &nettest_forcetest_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "update testtimes set timestamp=0 where hostname=LOWER(?)", -1, &nettest_forcetest_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("nettest_forcetest prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return;
@@ -423,7 +423,7 @@ void xymon_sqldb_nettest_done(char *hostname, char *testspec, char *destination)
 	int dbres;
 
 	if (!nettest_timestamp_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "update testtimes set timestamp=strftime('%s','now') where hostname=? and testspec=? and destination=?", -1, &nettest_timestamp_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "update testtimes set timestamp=strftime('%s','now') where hostname=LOWER(?) and testspec=? and destination=?", -1, &nettest_timestamp_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("nettest_timestamp prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return;
@@ -465,13 +465,28 @@ int xymon_sqldb_secs_to_next_test(void)
 	return result;
 }
 
+void xymon_sqldb_sanitycheck(void)
+{
+	int dbres;
+
+	/* 
+	 * If for some reason a test is not flagged as having run, then we will 
+	 * get -NOW as the result of when to run the next time. This will cause
+	 * tests to run with no delay at all.
+	 * Flag these tests to not run for another hour.
+	 */
+	
+	if (xymon_sqldb_secs_to_next_test() < -1000000000) {
+		dbres = sqlite3_exec(xymonsqldb, "update testtimes set timestamp=strftime('%s','now')+3600 where timestamp=0", NULL, NULL, NULL);
+	}
+}
 
 void xymon_sqldb_netmodule_additem(char *moduleid, char *location, char *hostname, char *destinationip, char *testspec, char *extras)
 {
 	int dbres;
 
 	if (!netmodule_additem_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into moduletests(moduleid,location,hostname,destinationip,testspec,extras) values (?,?,?,?,?,?)", -1, &netmodule_additem_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into moduletests(moduleid,location,hostname,destinationip,testspec,extras) values (LOWER(?),LOWER(?),LOWER(?),?,?,?)", -1, &netmodule_additem_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("nettest_netmodule_additem prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return;
@@ -498,7 +513,7 @@ int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, cha
 	int dbres, result = 0;
 
 	if (!netmodule_due_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,destinationip,testspec,extras from moduletests where moduleid=? and location=?", -1, &netmodule_due_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,destinationip,testspec,extras from moduletests where moduleid=LOWER(?) and location=LOWER(?)", -1, &netmodule_due_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("netmodule_due prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 0;

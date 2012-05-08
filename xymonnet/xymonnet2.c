@@ -155,8 +155,10 @@ int main(int argc, char **argv)
 		dbgprintf("Ran %d tests\n", testcount);
 
 		if (running) {
-			int timetonext = xymon_sqldb_secs_to_next_test();
+			int timetonext;
 
+			xymon_sqldb_sanitycheck();
+			timetonext = xymon_sqldb_secs_to_next_test();
 			if (timetonext > 0) {
 				timetonext++;
 				if (timetonext > 60) timetonext = 60;
