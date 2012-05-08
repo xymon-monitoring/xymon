@@ -239,24 +239,49 @@ int main(int argc, char *argv[])
 				} 
 				if (fd) fclose(fd);
 
-				if ((repeattime = atoi(l)) <= 0) {
-					dbgprintf("Entry %s has repeat < 0, i.e. it is suspended\n", adfn);
-					continue;
+				repeattime = atoi(l);
+				if (repeattime == -2) {
+					/* Non-repeat message, move it to the completed list */
+					char olddir[PATH_MAX], olddn[PATH_MAX];
+					struct stat st;
+
+					dbgprintf("One-shot message, sending and setting it to completed\n");
+					do_xmit(sendcmd, adfn, udent->d_name, xmitfn);
+
+					sprintf(olddir, "%s/old", udent->d_name);
+					if ((stat(olddir, &st) == -1) && (errno == ENOENT)) mkdir (olddir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+					init_timestamp();
+					snprintf(fn, sizeof(fn), "%s/log", adfn);
+					fd = fopen(fn, "a");
+					if (fd) {
+						fprintf(fd, "%s : Message auto-deleted (no repeat)\n", timestamp);
+						fclose(fd);
+					}
+
+					snprintf(olddn, sizeof(olddn), "%s/old/%s", udent->d_name, adent->d_name);
+					rename(adfn, olddn);
+					goto cleanup;
+				}
+				else if (repeattime <= 0) {
+					dbgprintf("Entry %s has repeat <= 0, i.e. it is suspended\n", adfn);
+					goto cleanup;
 				}
 				else {
 					repeattime = 60*atoi(l);
+					dbgprintf("Entry %s has lastxmit=%d, repeat=%d, next=%d, now=%d\n",
+						  adfn, lastxmit, repeattime, (lastxmit+repeattime), now);
 				}
-
-				dbgprintf("Entry %s has lastxmit=%d, repeat=%d, next=%d, now=%d\n",
-					  adfn, lastxmit, repeattime, (lastxmit+repeattime), now);
 
 				if ((lastxmit + repeattime) > now) {
 					dbgprintf("Skipping %s, repeating in %d seconds\n", adfn, ((lastxmit + repeattime) - now));
-					continue;
+					goto cleanup;
 				}
 
 				dbgprintf("Processing %s\n", adfn);
 				do_xmit(sendcmd, adfn, udent->d_name, xmitfn);
+
+cleanup:
 				free(xmitfn);
 			}
 			closedir(activedir);

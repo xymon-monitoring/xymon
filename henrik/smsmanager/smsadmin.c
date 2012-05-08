@@ -299,6 +299,7 @@ void setup_repeat_selection(void)
 	sethostenv_addtolist(listname, "6 hours", "360", NULL, (repeatinterval == 360));
 	sethostenv_addtolist(listname, "12 hours", "720", NULL, (repeatinterval == 720));
 	sethostenv_addtolist(listname, "Suspended", "-1", NULL, (repeatinterval == -1));
+	sethostenv_addtolist(listname, "No repeat", "-2", NULL, (repeatinterval == -2));
 }
 
 void setup_lifetime_selection(int fixed)
@@ -1038,7 +1039,7 @@ int main(int argc, char *argv[])
 			 */
 			for (i=0; (i < lsize); i++) rseq[i] = i;
 			for (i=lsize; (i < (sizeof(recipnames) / sizeof(recipnames[0]))); i++) rseq[i] = -1;
-			qsort(&rseq[0], lsize, sizeof(int *), rseqcompare);
+			qsort(&rseq[0], lsize, sizeof(int), rseqcompare);
 
 			for (i = 0; (i < (sizeof(recipnames) / sizeof(recipnames[0]))); i++) {
 				sprintf(s, "RECIPNAME_%d=%s", i, ((rseq[i] >= 0) ? recipnames[rseq[i]] : ""));
