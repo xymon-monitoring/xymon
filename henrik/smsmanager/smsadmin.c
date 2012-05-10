@@ -365,8 +365,11 @@ void show_summary(char *topdirectory, char *queuename, FILE *outfd, char **group
 	activelist_t **activelist = NULL;
 	int acti, groupi;
 	struct stat st;
+	char datestr[20];
 
 	dbgprintf("show_summary: queuename=%s\n", queuename);
+
+	*datestr = '\0';
 
 	for (groupi = 0; (groups[groupi]); groupi++) {
 		char userdir[PATH_MAX];
@@ -450,10 +453,12 @@ void show_summary(char *topdirectory, char *queuename, FILE *outfd, char **group
 	fprintf(outfd, "<tr><th align=left>User</th><th align=left>Description</th><th align=left>%s transmission</th></tr>\n",
 		(strcmp(queuename, "active") == 0) ? "Next" : "Last");
 	for (acti = 0; (acti < actcount); acti++) {
-		char nextstr[30];
+		char nextstr[100];
+		char mydate[20];
 
 		if (activelist[acti]->repeat <= 0) {
-			strcpy(nextstr, "Suspended");
+			strftime(nextstr, sizeof(nextstr), "Suspended %d/%m/%y-%H:%M", localtime(&activelist[acti]->lastxmit));
+			strftime(mydate, sizeof(mydate), "%d/%m/%y", localtime(&activelist[acti]->lastxmit));
 		}
 		else if (activelist[acti]->lastxmit <= 0) {
 			strcpy(nextstr, "Now");
@@ -461,6 +466,11 @@ void show_summary(char *topdirectory, char *queuename, FILE *outfd, char **group
 		else {
 			time_t nextxmit = activelist[acti]->lastxmit + 60*activelist[acti]->repeat;
 			strftime(nextstr, sizeof(nextstr), "%H:%M %Y-%m-%d", localtime(&nextxmit));
+		}
+
+		if (strcmp(datestr, mydate) != 0) {
+			fprintf(outfd, "<tr><th colspan=4 align=left>%s</th></tr>\n", mydate);
+			strcpy(datestr, mydate);
 		}
 
 		fprintf(outfd, "<tr>");
