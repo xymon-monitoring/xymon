@@ -545,6 +545,7 @@ void *add_net_test(char *testspec, char **dialog, int dialogtoken, net_test_opti
 	newtest->dialog = dialog;
 	newtest->dialogtoken = dialogtoken;
 	newtest->timeout = options->timeout;
+	newtest->interval = options->interval;
 	newtest->netparams.sourceip = (options->sourceip ? strdup(options->sourceip) : NULL);
 
 	switch (options->testtype) {

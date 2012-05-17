@@ -43,7 +43,7 @@ typedef struct myconn_t {
 	int dialogtoken;
 	listitem_t *listitem;
 	void *hostinfo;
-	int timeout;
+	int timeout, interval;
 	time_t teststarttime, testendtime;
 
 	/* Results and statistics */

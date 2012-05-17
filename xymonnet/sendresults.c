@@ -49,7 +49,7 @@ static void result_plain(myconn_t *rec,  strbuffer_t *txt)
 {
 	char msgline[4096];
 
-	if (dontsendmessages >= 2) {
+	if (dontsendmessages >= 1) {
 		if (rec->textlog) clearstrbuffer(rec->textlog);
 		return;
 	}
@@ -220,6 +220,11 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 			addtobuffer(hres->txt, msgline);
 		}
 
+		if (location) {
+			snprintf(msgline, sizeof(msgline), "Location: %s\n", location);
+			addtobuffer(hres->txt, msgline);
+		}
+
 		switch (rec->netparams.socktype) {
 		  case CONN_SOCKTYPE_STREAM: s = "TCP"; break;
 		  case CONN_SOCKTYPE_DGRAM: s = "UDP"; break;
@@ -252,10 +257,10 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 		snprintf(msgline, sizeof(msgline), "Status: %s\n", s);
 		addtobuffer(hres->txt, msgline);
 
-		snprintf(msgline, sizeof(msgline), "ElapsedMS: %d.%02d\nDNSMS:%d.%02d\ntimeoutMS:%d\n",
+		snprintf(msgline, sizeof(msgline), "ElapsedMS: %d.%02d\nDNSMS:%d.%02d\nTimeoutMS:%d\nIntervalMS:%d\n",
 			(rec->elapsedus / 1000), (rec->elapsedus % 1000), 
 			(rec->dnselapsedus / 1000), (rec->dnselapsedus % 1000), 
-			rec->timeout*1000);
+			rec->timeout*1000, rec->intervalMS);
 		addtobuffer(hres->txt, msgline);
 
 		snprintf(msgline, sizeof(msgline), "BytesRead: %u\nBytesWritten: %u\n", rec->bytesread, rec->byteswritten);
