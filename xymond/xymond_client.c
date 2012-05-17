@@ -26,19 +26,11 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 #include "xymond_worker.h"
 #include "client_config.h"
+#include "sections.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
 enum msgtype_t { MSG_CPU, MSG_DISK, MSG_INODE, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, MSG_PROCS, MSG_SVCS, MSG_WHO, MSG_LAST };
-
-typedef struct sectlist_t {
-	char *sname;
-	char *sdata;
-	char *nextsectionrestoreptr, *sectdatarestoreptr;
-	char nextsectionrestoreval, sectdatarestoreval;
-	struct sectlist_t *next;
-} sectlist_t;
-static sectlist_t *defsecthead = NULL;
 
 int pslistinprocs = 1;
 int portlistinports = 1;
@@ -80,151 +72,6 @@ int add_updateinfo(char *hostname, int seq, time_t tstamp)
 	itm->updtime = tstamp;
 	itm->updseq = seq;
 	return 0;
-}
-
-void nextsection_r_done(void *secthead)
-{
-	/* Free the old list */
-	sectlist_t *swalk, *stmp;
-
-	swalk = (sectlist_t *)secthead;
-	while (swalk) {
-		if (swalk->nextsectionrestoreptr) *swalk->nextsectionrestoreptr = swalk->nextsectionrestoreval;
-		if (swalk->sectdatarestoreptr) *swalk->sectdatarestoreptr = swalk->sectdatarestoreval;
-
-		stmp = swalk;
-		swalk = swalk->next;
-		xfree(stmp);
-	}
-}
-
-void splitmsg_r(char *clientdata, sectlist_t **secthead)
-{
-	char *cursection, *nextsection;
-	char *sectname, *sectdata;
-
-	if (clientdata == NULL) {
-		errprintf("Got a NULL client data message\n");
-		return;
-	}
-
-	if (secthead == NULL) {
-		errprintf("BUG: splitmsg_r called with NULL secthead\n");
-		return;
-	}
-
-	if (*secthead) {
-		errprintf("BUG: splitmsg_r called with non-empty secthead\n");
-		nextsection_r_done(*secthead);
-		*secthead = NULL;
-	}
-
-	/* Find the start of the first section */
-	if (*clientdata == '[') 
-		cursection = clientdata; 
-	else {
-		cursection = strstr(clientdata, "\n[");
-		if (cursection) cursection++;
-	}
-
-	while (cursection) {
-		sectlist_t *newsect = (sectlist_t *)calloc(1, sizeof(sectlist_t));
-
-		/* Find end of this section (i.e. start of the next section, if any) */
-		nextsection = strstr(cursection, "\n[");
-		if (nextsection) {
-			newsect->nextsectionrestoreptr = nextsection;
-			newsect->nextsectionrestoreval = *nextsection;
-			*nextsection = '\0';
-			nextsection++;
-		}
-
-		/* Pick out the section name and data */
-		sectname = cursection+1;
-		sectdata = sectname + strcspn(sectname, "]\n");
-		newsect->sectdatarestoreptr = sectdata;
-		newsect->sectdatarestoreval = *sectdata;
-		*sectdata = '\0'; 
-		sectdata++; if (*sectdata == '\n') sectdata++;
-
-		/* Save the pointers in the list */
-		newsect->sname = sectname;
-		newsect->sdata = sectdata;
-		newsect->next = *secthead;
-		*secthead = newsect;
-
-		/* Next section, please */
-		cursection = nextsection;
-	}
-}
-
-void splitmsg_done(void)
-{
-	/*
-	 * NOTE: This MUST be called when we're doing using a message,
-	 * and BEFORE the next message is read. If called after the
-	 * next message is read, the restore-pointers in the "defsecthead"
-	 * list will point to data inside the NEW message, and 
-	 * if the buffer-usage happens to be setup correctly, then
-	 * this will write semi-random data over the new message.
-	 */
-	if (defsecthead) {
-		/* Clean up after the previous message */
-		nextsection_r_done(defsecthead);
-		defsecthead = NULL;
-	}
-}
-
-void splitmsg(char *clientdata)
-{
-	if (defsecthead) {
-		errprintf("BUG: splitmsg_done() was not called on previous message - data corruption possible.\n");
-		splitmsg_done();
-	}
-
-	splitmsg_r(clientdata, &defsecthead);
-}
-
-char *nextsection_r(char *clientdata, char **name, void **current, void **secthead)
-{
-	if (clientdata) {
-		*secthead = NULL;
-		splitmsg_r(clientdata, (sectlist_t **)secthead);
-		*current = *secthead;
-	}
-	else {
-		*current = (*current ? ((sectlist_t *)*current)->next : NULL);
-	}
-
-	if (*current) {
-		*name = ((sectlist_t *)*current)->sname;
-		return ((sectlist_t *)*current)->sdata;
-	}
-
-	return NULL;
-}
-
-char *nextsection(char *clientdata, char **name)
-{
-	static void *current = NULL;
-
-	if (clientdata && defsecthead) {
-		nextsection_r_done(defsecthead);
-		defsecthead = NULL;
-	}
-
-	return nextsection_r(clientdata, name, &current, (void **)&defsecthead);
-}
-
-
-char *getdata(char *sectionname)
-{
-	sectlist_t *swalk;
-
-	for (swalk = defsecthead; (swalk && strcmp(swalk->sname, sectionname)); swalk = swalk->next) ;
-	if (swalk) return swalk->sdata;
-
-	return NULL;
 }
 
 int linecount(char *msg)
@@ -1869,7 +1716,6 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/zos.c"
 #include "client/mqcollect.c"
 #include "client/snmpcollect.c"
-#include "client/netcollect.c"
 
 static volatile int reloadconfig = 0;
 
@@ -2352,10 +2198,6 @@ int main(int argc, char *argv[])
 
 			  case OS_MQCOLLECT:
 				handle_mqcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
-
-			  case OS_NETCOLLECT:
-				handle_netcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  default:

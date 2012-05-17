@@ -5,7 +5,7 @@ XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
-PROGRAMS = xymon.sh xymond xymond_channel xymond_locator xymond_filestore xymond_history xymond_alert xymond_rrd xymond_sample xymond_client xymond_hostdata xymond_capture xymond_distribute xymonfetch xymon-mailack trimhistory combostatus xymonreports.sh moverrd.sh convertnk rrdcachectl
+PROGRAMS = xymon.sh xymond xymond_channel xymond_locator xymond_filestore xymond_history xymond_alert xymond_rrd xymond_sample xymond_client xymond_hostdata xymond_capture xymond_distribute xymonfetch xymon-mailack trimhistory combostatus xymonreports.sh moverrd.sh convertnk rrdcachectl xymond_netcollect
 CLIENTPROGRAMS = ../client/xymond_client
 
 XYMONDOBJS    = xymond.o xymond_buffer.o xymond_ipc.o
@@ -18,7 +18,8 @@ ALERTOBJS     = xymond_alert.o     xymond_worker.o xymond_buffer.o do_alert.o
 RRDOBJS       = xymond_rrd.o       xymond_worker.o xymond_buffer.o do_rrd.o client_config.o
 HOSTDATAOBJS  = xymond_hostdata.o  xymond_worker.o xymond_buffer.o
 CAPTUREOBJS   = xymond_capture.o   xymond_worker.o xymond_buffer.o
-CLIENTOBJS    = xymond_client.o    xymond_worker.o xymond_buffer.o client_config.o
+CLIENTOBJS    = xymond_client.o    xymond_worker.o xymond_buffer.o sections.o client_config.o
+NETCOLLOBJS   = xymond_netcollect.o xymond_worker.o xymond_buffer.o sections.o
 DISTRIBUTEOBJS= xymond_distribute.o xymond_worker.o xymond_buffer.o
 COMBOTESTOBJS = combostatus.o
 MAILACKOBJS   = xymon-mailack.o
@@ -56,6 +57,9 @@ xymond_alert: $(ALERTOBJS) $(XYMONCOMMLIB)
 
 xymond_rrd: $(RRDOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(RRDLIBS) $(PCRELIBS)
+
+xymond_netcollect: $(NETCOLLOBJS) $(XYMONCOMMLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(NETCOLLOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 xymond.o: xymond.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) -c -o $@ xymond.c
