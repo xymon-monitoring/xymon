@@ -1042,6 +1042,8 @@ int main (int argc, char **argv)
 	int cfgcheck = 0;
 	int mibcheck = 0;
 
+	libxymon_init(argv[0]);
+
 	for (argi = 1; (argi < argc); argi++) {
 		if (standardoption(argv[argi])) {
 			if (showhelp) return 0;

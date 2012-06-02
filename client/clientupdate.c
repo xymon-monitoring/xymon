@@ -49,6 +49,8 @@ int main(int argc, char *argv[])
 	int talkstat = 0;
 	sendreturn_t *sres;
 
+	libxymon_init(argv[0]);
+
 #ifdef BIG_SECURITY_HOLE
 	/* Immediately drop all root privs, we'll regain them later when needed */
 	drop_root();

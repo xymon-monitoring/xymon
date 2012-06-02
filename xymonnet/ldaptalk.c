@@ -228,6 +228,8 @@ int main(int argc, char **argv)
 	strbuffer_t *outdata = newstrbuffer(0);
 	int argi, status, elapsedus;
 
+	libxymon_init(argv[0]);
+
 	for (argi=1; (argi < argc); argi++) {
 		if (standardoption(argv[argi])) {
 			if (showhelp) return 0;

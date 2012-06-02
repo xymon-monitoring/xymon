@@ -283,6 +283,8 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	int opt;
 
+	libxymon_init(argv[0]);
+
 	/* Dont save the output from errprintf() */
 	save_errbuf = 0;
 

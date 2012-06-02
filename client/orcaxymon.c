@@ -35,6 +35,8 @@ int main(int argc, char *argv[])
 	char msgline[4096];
 	strbuffer_t *msg;
 
+	libxymon_init(argv[0]);
+
 	machinename = xgetenv("MACHINE");
 
 	for (i=1; (i < argc); i++) {
