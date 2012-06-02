@@ -76,7 +76,7 @@ static void rrd_setup(void)
 
 
 	/* Get the tcp services, and count how many there are */
-	services = strdup(init_tcp_services());
+	services = strdup(init_net_services());
 	tcptests = strdup(services);
 	count = 0; p = strtok(tcptests, " "); while (p) { count++; p = strtok(NULL, " "); }
 	strcpy(tcptests, services);
