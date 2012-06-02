@@ -653,6 +653,8 @@ int main(int argc, char **argv)
 	int concurrency = 0;
 	int batchsize = 0;
 
+	libxymon_init(argv[0]);
+
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "ping") == 0) {
 			queueid = argv[argi];
