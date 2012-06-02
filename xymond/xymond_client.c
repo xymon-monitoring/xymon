@@ -1978,6 +1978,7 @@ int main(int argc, char *argv[])
 	char **collectors = NULL;
 
 	/* Handle program options. */
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--no-ps-listing") == 0) {
 			pslistinprocs = 0;
@@ -2029,7 +2030,7 @@ int main(int argc, char *argv[])
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

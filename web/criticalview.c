@@ -451,6 +451,7 @@ int main(int argc, char *argv[])
 
 	critconfig = (char **)calloc(1, sizeof(char *));
 
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--tooltips") == 0) {
 			usetooltips = 1;
@@ -467,7 +468,7 @@ int main(int argc, char *argv[])
 			critconfig = (char **)realloc(critconfig, (1 + cccount)*sizeof(char *));
 			critconfig[cccount] = NULL;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

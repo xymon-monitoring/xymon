@@ -202,6 +202,7 @@ int main(int argc, char *argv[])
 	int obeycookies = 1;
 	char *accessfn = NULL;
 
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--no-pin") == 0) {
 			nopin = 1;
@@ -213,7 +214,7 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			accessfn = strdup(p+1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

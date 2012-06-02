@@ -118,6 +118,8 @@ int main(int argc, char *argv[])
 	int argi, lookc;
 	strbuffer_t *wantedtags;
 
+	libxymon_init(argv[0]);
+
 	if ((argc <= 1) || (strcmp(argv[1], "--help") == 0)) {
 		printf("Usage:\n%s test1 [test1] [test2] ... \n", argv[0]);
 		exit(1);
@@ -153,7 +155,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			hostsfn = strchr(argv[argi], '=') + 1;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else {

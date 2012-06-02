@@ -189,6 +189,8 @@ int main(int argc, char *argv[])
 	struct sockaddr_un ctlsockaddr;
 	int ctlsocket;
 
+	libxymon_init(argv[0]);
+
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--rrddir=")) {
@@ -213,7 +215,7 @@ int main(int argc, char *argv[])
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[opt], "--no-daemon") == 0) {
 			daemonize = 0;
 		}
-		else if (standardoption(argv[0], argv[opt])) {
+		else if (standardoption(argv[opt])) {
 			/* Do nothing */
 		}
 	}

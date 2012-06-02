@@ -648,6 +648,8 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	int argi, opt;
 
+	libxymon_init(argv[0]);
+
 	/* Dont save the output from errprintf() */
 	save_errbuf = 0;
 
@@ -679,7 +681,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-daemon") == 0) {
 			daemonize = 0;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

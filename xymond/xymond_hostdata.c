@@ -89,6 +89,8 @@ int main(int argc, char *argv[])
 	int minlogspace = 5;
 	struct sigaction sa;
 
+	libxymon_init(argv[0]);
+
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
                 if (argnmatch(argv[argi], "--logdir=")) {
@@ -105,7 +107,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--minimum-free=")) {
 			minlogspace = atoi(strchr(argv[argi], '=')+1);
 		}
-		else if (standardoption(argv[0], argv[argi]) == 0) {
+		else if (standardoption(argv[argi]) == 0) {
 			if (showhelp) return 0;
 		}
 		else if (net_worker_option(argv[argi])) {

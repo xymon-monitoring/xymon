@@ -91,6 +91,7 @@ int main(int argc, char *argv[])
 	int i, found;
 	int argi;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--hffile=")) {
 			char *p = strchr(argv[argi], '=');
@@ -100,7 +101,7 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			bgcolor = parse_color(p+1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

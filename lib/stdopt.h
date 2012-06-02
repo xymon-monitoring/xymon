@@ -20,7 +20,8 @@ extern int  showhelp;
 extern int  dontsendmessages;
 
 
-extern int standardoption(char *id, char *opt);
+extern int standardoption(char *opt);
+extern void libxymon_init(char *toolname);
 
 #endif
 

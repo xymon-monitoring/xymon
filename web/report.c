@@ -206,11 +206,12 @@ int main(int argc, char *argv[])
 	xymongen_argv[newargi++] = xymongencmd;
 	xymongen_argv[newargi++] = xymongentimeopt;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[1], "--noclean") == 0) {
 			cleanupoldreps = 0;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else {

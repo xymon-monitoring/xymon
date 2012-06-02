@@ -430,6 +430,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	xtreePos_t handle;
 
+	libxymon_init(argv[0]);
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
@@ -475,7 +476,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--no-md5")) {
 			checksumsize = 0;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else {

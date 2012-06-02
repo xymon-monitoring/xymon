@@ -681,7 +681,7 @@ int main(int argc, char **argv)
 				}
 			}
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else if (argnmatch(argv[argi], "--timeout=")) {

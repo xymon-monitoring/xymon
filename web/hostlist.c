@@ -71,9 +71,10 @@ int main(int argc, char *argv[])
 	char *cookie;
 	pcre *dummy;
 
+	libxymon_init(argv[0]);
 	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {
-		if (standardoption(argv[0], argv[argi])) {
+		if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

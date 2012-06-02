@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
 	int hostnameitem = 4, testnameitem = 5, coloritem = 7;
 
 	/* Handle program options. */
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (strncmp(argv[argi], "--timeout=", 10) == 0) {
 			/*
@@ -111,7 +112,7 @@ int main(int argc, char *argv[])
 			batchcmd = strdup(p+1);
 			batchbuf = newstrbuffer(0);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else {

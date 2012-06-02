@@ -28,18 +28,9 @@ int  showhelp = 0;
 int  dontsendmessages = 0;
 
 
-int standardoption(char *id, char *opt)
+int standardoption(char *opt)
 {
-	static int firstcall = 1;
-
-	if (firstcall) {
-		firstcall = 0;
-
-		programname = basename(strdup(id));
-
-		pidfn = (char *)malloc(strlen(xgetenv("XYMONSERVERLOGS")) + strlen(programname) + 6);
-		sprintf(pidfn, "%s/%s.pid", xgetenv("XYMONSERVERLOGS"), programname);
-	}
+	if (!opt) return 0;
 
 	if (strcmp(opt, "--debug") == 0) {
 		debug = 1;
@@ -71,9 +62,7 @@ int standardoption(char *id, char *opt)
 		pidfn = strdup(p+1);
 	}
 	else if ((strcmp(opt, "--version") == 0) || (strcmp(opt, "--help") == 0) || (strcmp(opt, "-?") == 0)) {
-		char *progname = strdup(id);
-		fprintf(stderr, "%s %s\n", basename(progname), VERSION);
-		xfree(progname);
+		fprintf(stderr, "%s %s\n", programname, VERSION);
 		showhelp = 1;
 	}
 	else {
@@ -81,5 +70,19 @@ int standardoption(char *id, char *opt)
 	}
 
 	return 1;
+}
+
+void libxymon_init(char *toolname)
+{
+	static int firstcall = 1;
+
+	if (firstcall) {
+		firstcall = 0;
+
+		programname = basename(strdup(toolname));
+
+		pidfn = (char *)malloc(strlen(xgetenv("XYMONSERVERLOGS")) + strlen(programname) + 6);
+		sprintf(pidfn, "%s/%s.pid", xgetenv("XYMONSERVERLOGS"), programname);
+	}
 }
 

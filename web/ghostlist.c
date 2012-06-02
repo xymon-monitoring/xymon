@@ -134,12 +134,13 @@ int main(int argc, char *argv[])
 	char *ghosts = NULL;
 	sendreturn_t *sres;
 
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--hffile=")) {
 			char *p = strchr(argv[argi], '=');
 			hffile = strdup(p+1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

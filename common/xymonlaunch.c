@@ -492,6 +492,7 @@ int main(int argc, char *argv[])
 	int status;
 	struct sigaction sa;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--no-daemon") == 0) {
 			daemonize = 0;
@@ -530,7 +531,7 @@ int main(int argc, char *argv[])
 			fflush(stdout);
 			return 0;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else {

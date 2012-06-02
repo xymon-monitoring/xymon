@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 
 			return 0;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			/* Do nothing */
 		}
 	}

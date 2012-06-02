@@ -79,7 +79,7 @@ static int is_net_test(char *tname)
 	int i;
 
 	miscnet[0] = pingcolumn; /* Cannot be computed in advance */
-	if (find_tcp_service(tname)) return 1;
+	if (find_net_service(tname)) return 1;
 	for (i=0; (miscnet[i]); i++) if (strcmp(tname, miscnet[i]) == 0) return 1;
 
 	return 0;
@@ -648,6 +648,7 @@ int main(int argc, char *argv[])
 	char *critconfigfn = NULL;
 	int patternerror = 0;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--delimiter=")) {
 			char *p = strchr(argv[argi], '=');
@@ -663,7 +664,7 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			critconfigfn = strdup(p+1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}
@@ -821,7 +822,7 @@ int main(int argc, char *argv[])
 
 	/* Get the static info */
 	load_all_links();
-	init_tcp_services();
+	init_net_services();
 	pingcolumn = xgetenv("PINGCOLUMN");
 	pingplus = (char *)malloc(strlen(pingcolumn) + 2);
 	sprintf(pingplus, "%s=", pingcolumn);

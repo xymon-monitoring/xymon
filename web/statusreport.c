@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
 	int argi, res;
 	sendreturn_t *sres;
 
+	libxymon_init(argv[0]);
 	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {
 		if ( argnmatch(argv[argi], "--column=") || argnmatch(argv[argi], "--test=")) {
@@ -93,7 +94,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--embedded") == 0) {
 			embedded = 1;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

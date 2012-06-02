@@ -69,8 +69,9 @@ int main(int argc, char **argv)
 	int argi;
 	time_t nextrun = 0;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
-		if (standardoption(argv[0], argv[argi])) {
+		if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else if (argnmatch(argv[argi], "--timeout=")) {

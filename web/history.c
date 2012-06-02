@@ -652,11 +652,12 @@ int main(int argc, char *argv[])
 	char *p;
 	int argi;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--no-svcid") == 0) {
 			wantserviceid = 0;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

@@ -298,6 +298,7 @@ int main(int argc, char *argv[])
 {
 	int argi;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--top")) {
 			topcount = 10;
@@ -306,7 +307,7 @@ int main(int argc, char *argv[])
 			maxminutes = -1;
 			maxcount = -1;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

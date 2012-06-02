@@ -369,12 +369,13 @@ int main(int argc, char *argv[])
 	operator = getenv("REMOTE_USER");
 	if (!operator) operator = "Anonymous";
 
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--config=")) {
 			char *p = strchr(argv[argi], '=');
 			configfn = strdup(p+1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

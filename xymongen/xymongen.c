@@ -115,6 +115,7 @@ int main(int argc, char *argv[])
 		if (i > 0) maxrowsbeforeheading = i;
 	}
 
+	libxymon_init(argv[0]);
 	for (i = 1; (i < argc); i++) {
 		if ( (strcmp(argv[i], "--hobbitd") == 0)       ||
 		     (argnmatch(argv[i], "--purplelifetime=")) ||
@@ -438,7 +439,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--loadhostsfromxymond") == 0) {
 			loadhostsfromxymond = 1;
 		}
-		else if (standardoption(argv[0], argv[i])) {
+		else if (standardoption(argv[i])) {
 			if (showhelp) {
 				printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 				printf("Options:\n");

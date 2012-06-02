@@ -240,6 +240,8 @@ int main(int argc, char *argv[])
 	unsigned long msgs_recovered = 0;
 	struct timespec timeinqueue = { 0, 0 };
 
+	libxymon_init(argv[0]);
+
 	/* Dont save the output from errprintf() */
 	save_errbuf = 0;
 
@@ -328,7 +330,7 @@ int main(int argc, char *argv[])
 				proxynamesvc = strchr(proxyname, '.')+1;
 			}
 		}
-		else if (standardoption(argv[0], argv[opt])) {
+		else if (standardoption(argv[opt])) {
 			if (showhelp) {
 				printf("\nOptions:\n");
 				printf("\t--listen=IP[:port]          : Listen address and portnumber\n");

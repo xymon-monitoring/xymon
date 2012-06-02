@@ -93,10 +93,11 @@ int main(int argc, char *argv[])
 	char *envarea = NULL;
 	char envfn[PATH_MAX];
 
+	libxymon_init(argv[0]);
 	cmdargs = (char **) calloc(argc+2, sizeof(char *));
 	for (argi=1; (argi < argc); argi++) {
 		/* Process standard args only until we've seen the command - after that, it is standard args for the spawned command! */
-		if ((argcount == 0) && (standardoption(argv[0], argv[argi]))) {
+		if ((argcount == 0) && (standardoption(argv[argi]))) {
 			if (showhelp) return 0;
 		}
 		else {

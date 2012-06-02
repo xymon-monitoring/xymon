@@ -425,6 +425,7 @@ int main(int argc, char *argv[])
 	void *hostwalk;
 	time_t nexttimeout;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--server=")) {
 			char *p = strchr(argv[argi], '=');
@@ -442,7 +443,7 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			serverid = atoi(p+1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

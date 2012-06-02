@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
 	char newmsg[4096];
 
 	/* Handle program options. */
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (strncmp(argv[argi], "--peer=", 7) == 0) {
 			char *ip = strchr(argv[argi], '=') + 1;
@@ -58,7 +59,7 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[argi], "--channel=", 10) == 0) {
 			channelname = strdup(strchr(argv[argi], '=') + 1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

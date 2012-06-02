@@ -473,6 +473,7 @@ int main(int argc, char *argv[])
 	int showeval = 1;
 	int cleanexpr = 0;
 
+	libxymon_init(argv[0]);
 	setup_signalhandler(argv[0]);
 
 	for (argi = 1; (argi < argc); argi++) {
@@ -496,7 +497,7 @@ int main(int argc, char *argv[])
 
 			if (newerrorcolors) errorcolors = newerrorcolors;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) {
 				printf("Usage:\n%s [--quiet] [--clean] [--debug] [--no-update]\n", argv[0]);
 				return 0;

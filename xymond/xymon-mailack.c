@@ -40,8 +40,10 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 
+	libxymon_init(argv[0]);
+
 	for (argi=1; (argi < argc); argi++) {
-		if (standardoption(argv[0], argv[argi])) {
+		if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

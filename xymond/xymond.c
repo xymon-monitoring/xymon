@@ -4804,6 +4804,8 @@ int main(int argc, char *argv[])
 
 	MEMDEFINE(colnames);
 
+	libxymon_init(argv[0]);
+
 	boottimer = gettimer();
 
 	/* Create our trees */
@@ -5010,7 +5012,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-download") == 0) {
 			 allow_downloads = 0;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) {
 				printf("Options:\n");
 				printf("\t--listen=IP:PORT              : The address the daemon listens on\n");

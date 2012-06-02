@@ -1265,6 +1265,8 @@ int main(int argc, char *argv[])
 
 	char *selfURI;
 
+	libxymon_init(argv[0]);
+
 	/* Setup defaults */
 	graphwidth = atoi(xgetenv("RRDWIDTH"));
 	graphheight = atoi(xgetenv("RRDHEIGHT"));
@@ -1286,7 +1288,7 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			graphfn = strdup(p+1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

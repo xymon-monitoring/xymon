@@ -369,6 +369,7 @@ int main(int argc, char *argv[])
 	int droplogs = 0;
 	char *envarea = NULL;
 
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--cutoff=")) {
 			char *p = strchr(argv[argi], '=');
@@ -394,7 +395,7 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			progressinfo = atoi(p+1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) {
 				printf("Usage:\n\n\t%s --cutoff=TIME\n\nTIME is in seconds since epoch\n", argv[0]);
 				return 0;

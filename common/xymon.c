@@ -37,9 +37,10 @@ int main(int argc, char *argv[])
 	sendreturn_t *sres;
 	int wantresponse = 0, mergeinput = 0;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
-			standardoption(argv[0], argv[argi]);
+			standardoption(argv[argi]);
 			conn_register_infohandler(NULL, INFO_DEBUG);
 		}
 		else if (strncmp(argv[argi], "--proxy=", 8) == 0) {
@@ -63,7 +64,7 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--response") == 0) {
 			wantresponse = 1;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			/* Do nothing */
 		}
 		else if ((*(argv[argi]) == '-') && (strlen(argv[argi]) > 1)) {

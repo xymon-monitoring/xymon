@@ -318,6 +318,7 @@ int main(int argc, char **argv)
 	void *hwalk;
 	char *hostname, *pagename;
 
+	libxymon_init(argv[0]);
 	hostptn = exhostptn = pageptn = expageptn = NULL;
 
 	if (getenv("QUERY_STRING") == NULL) {
@@ -346,7 +347,7 @@ int main(int argc, char **argv)
 	else {
 		int argi;
 		for (argi=1; (argi < argc); argi++) {
-			if (standardoption(argv[0], argv[argi])) {
+			if (standardoption(argv[argi])) {
 				if (showhelp) return 0;
 			}
 		}

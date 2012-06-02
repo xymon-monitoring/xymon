@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[i], "--machine=", 10) == 0) {
 			machinename = argv[i]+10;
 		}
-		else if (standardoption(argv[0], argv[i])) {
+		else if (standardoption(argv[i])) {
 			/* Do nothing */
 		}
 	}

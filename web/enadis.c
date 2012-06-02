@@ -273,6 +273,7 @@ int main(int argc, char *argv[])
 	if ((username == NULL) || (strlen(username) == 0)) username = "unknown";
 	if ((userhost == NULL) || (strlen(userhost) == 0)) userhost = userip;
 	
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--no-cookies") == 0) {
 			obeycookies = 0;
@@ -281,7 +282,7 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			accessfn = strdup(p+1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

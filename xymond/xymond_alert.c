@@ -369,6 +369,8 @@ int main(int argc, char *argv[])
 	MEMDEFINE(acklogfn);
 	MEMDEFINE(notiflogfn);
 
+	libxymon_init(argv[0]);
+
 	/* Dont save the error buffer */
 	save_errbuf = 0;
 
@@ -481,7 +483,7 @@ int main(int argc, char *argv[])
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else {

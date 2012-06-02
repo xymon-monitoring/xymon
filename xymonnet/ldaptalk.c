@@ -229,7 +229,7 @@ int main(int argc, char **argv)
 	int argi, status, elapsedus;
 
 	for (argi=1; (argi < argc); argi++) {
-		if (standardoption(argv[0], argv[argi])) {
+		if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else if (argnmatch(argv[argi], "--timeout=")) {

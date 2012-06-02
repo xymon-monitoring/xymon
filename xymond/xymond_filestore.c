@@ -192,6 +192,8 @@ int main(int argc, char *argv[])
 	int seq;
 	int running = 1;
 
+	libxymon_init(argv[0]);
+
 	/* Dont save the error buffer */
 	save_errbuf = 0;
 
@@ -245,7 +247,7 @@ int main(int argc, char *argv[])
 			locator_init(p+1);
 			locatorbased = 1;
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

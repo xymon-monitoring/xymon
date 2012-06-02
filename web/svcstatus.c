@@ -680,6 +680,7 @@ int main(int argc, char *argv[])
 {
 	int argi;
 
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--historical") == 0) {
 			source = SRC_HISTLOGS;
@@ -728,7 +729,7 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			accessfn = strdup(p+1);
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

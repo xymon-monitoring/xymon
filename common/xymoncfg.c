@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	int argi;
 	char *include2 = NULL;
 
-
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--net") == 0) || (strcmp(argv[argi], "--bbnet") == 0)) {
 			include2 = "netinclude";
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 		else if ((strcmp(argv[argi], "--web") == 0) || (strcmp(argv[argi], "--bbdisp") == 0)) {
 			include2 = "dispinclude";
 		}
-		else if (standardoption(argv[0], argv[argi])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else if (*argv[argi] != '-') {
