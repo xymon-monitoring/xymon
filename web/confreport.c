@@ -604,7 +604,7 @@ htnames_t *get_proclist(char *hostname, char *statusbuf)
 		if (marker) {
 			marker += strspn(marker, " \t");
 
-			p = strstr(marker, " - "); if (p) *p = '\0';
+			p = strstr(marker, "\\n"); if (p) *p = '\0';
 			newitem = (htnames_t *)malloc(sizeof(htnames_t));
 			newitem->name = strdup(marker);
 			newitem->next = NULL;
@@ -617,8 +617,7 @@ htnames_t *get_proclist(char *hostname, char *statusbuf)
 			}
 
 			if (p) {
-				*p = ' ';
-				marker = p;
+				*p = '\\';
 			}
 
 			marker = strstr(marker, "\\n&");
