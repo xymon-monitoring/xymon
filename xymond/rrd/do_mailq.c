@@ -48,11 +48,11 @@ int do_mailq_rrd(char *hostname, char *testname, char *classname, char *pagepath
 
 		/* Update RRD's */
 		setupfn("%s.rrd", "mailqin");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, inq);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, inq);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, mailq_params, mailq_tpl);
 
 		setupfn("%s.rrd", "mailqout");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, outq);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, outq);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, mailq_params, mailq_tpl);
 		return 0;
 
@@ -72,7 +72,7 @@ int do_mailq_rrd(char *hostname, char *testname, char *classname, char *pagepath
 			mailq = atoi(valptr);
 
 			setupfn("%s.rrd", "mailq");
-			sprintf(rrdvalues, "%d:%d", (int)tstamp, mailq);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, mailq);
 			return create_and_update_rrd(hostname, testname, classname, pagepaths, mailq_params, mailq_tpl);
 		}
 	}

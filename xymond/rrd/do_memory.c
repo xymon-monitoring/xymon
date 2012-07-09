@@ -38,16 +38,16 @@ void do_memory_rrd_update(time_t tstamp, char *hostname, char *testname, char *c
 	if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
 
 	setupfn2("%s.%s.rrd", "memory", "real");
-	sprintf(rrdvalues, "%d:%d", (int)tstamp, physval);
+	snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, physval);
 	create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
 	setupfn2("%s.%s.rrd", "memory", "swap");
-	sprintf(rrdvalues, "%d:%d", (int)tstamp, swapval);
+	snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, swapval);
 	create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
 	if ((actval >= 0) && (actval <= 100)) {
 		setupfn2("%s.%s.rrd", "memory", "actual");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, actval);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, actval);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 	}
 }
@@ -59,19 +59,19 @@ void do_memory_rrd_update_router(time_t tstamp, char *hostname, char *testname, 
 
 	if ((procval >= 0) && (procval <= 100)) { 
 		setupfn2("%s.%s.rrd", "memory", "processor");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, procval);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, procval);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 	}
 
 	if ((ioval >= 0) && (ioval <= 100)) {  
 		setupfn2("%s.%s.rrd", "memory", "io");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, ioval);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, ioval);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 	}
 
 	if ((fastval >= 0) && (fastval <= 100)) {
 		setupfn2("%s.%s.rrd", "memory", "fast");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, fastval);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, fastval);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 	}
 }
@@ -128,19 +128,19 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
 
 		setupfn2("%s.%s.rrd", "memory", "CSA");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, csautil);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, csautil);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
 		setupfn2("%s.%s.rrd", "memory", "ECSA");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, ecsautil);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, ecsautil);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
 		setupfn2("%s.%s.rrd", "memory", "SQA");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, sqautil);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, sqautil);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
 		setupfn2("%s.%s.rrd", "memory", "ESQA");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, esqautil);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, esqautil);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
 		return 0;
@@ -158,7 +158,7 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
 
 		setupfn2("%s.%s.rrd", "memory", "vsize");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, (int)pctused);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, (int)pctused);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
 		return 0;
@@ -228,7 +228,7 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			if (p) {
 				val = atoi(p+1);
 				setupfn2("%s.%s.rrd", "memory", "tcb");
-				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
+				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, val);
 				create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 			}
 		}
@@ -239,7 +239,7 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			if (p) {
 				val = atoi(p+1);
 				setupfn2("%s.%s.rrd", "memory", "dcb");
-				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
+				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, val);
 				create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 			}
 		}
@@ -250,7 +250,7 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			if (p) {
 				val = atoi(p+1);
 				setupfn2("%s.%s.rrd", "memory", "ltch");
-				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
+				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, val);
 				create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 			}
 		}

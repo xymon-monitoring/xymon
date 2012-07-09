@@ -91,7 +91,7 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			dbgprintf("Skipping line %d, line is malformed\n",lineno);
 			goto nextline;
 		}
-		sprintf(rrdvalues, "%d:", (int)tstamp);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:", (int)tstamp);
 		strcat(rrdvalues,dsval);
 		for (i=1;i < numds;i++) {
 			dsval = strtok(NULL,":");

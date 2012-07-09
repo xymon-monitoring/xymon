@@ -33,15 +33,15 @@ int do_asid_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		sscanf(p, "RSVNONR: %ld Free: %ld Used: %ld %f", &rsvnonr, &rsvnfree, &rsvnused, &rsvnpct);
 
         	setupfn2("%s.%s.rrd", "maxuser", "maxuser");
-        	sprintf(rrdvalues, "%d:%d", (int)tstamp, (int)maxupct);
+        	snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, (int)maxupct);
         	create_and_update_rrd(hostname, testname, classname, pagepaths, asid_params, asid_tpl);
 
         	setupfn2("%s.%s.rrd", "maxuser", "rsvtstrt");
-        	sprintf(rrdvalues, "%d:%d", (int)tstamp, (int)rsvtpct);
+        	snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, (int)rsvtpct);
         	create_and_update_rrd(hostname, testname, classname, pagepaths, asid_params, asid_tpl);
 
         	setupfn2("%s.%s.rrd", "maxuser", "rsvnonr");
-        	sprintf(rrdvalues, "%d:%d", (int)tstamp, (int)rsvnpct);
+        	snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, (int)rsvnpct);
         	create_and_update_rrd(hostname, testname, classname, pagepaths, asid_params, asid_tpl);
 		}
 
@@ -53,7 +53,7 @@ int do_asid_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		sscanf(p, "Nparts: %ld Free: %ld Used: %ld %f", &nparts, &partfree, &partused, &partupct);
 
                 setupfn("nparts.rrd", fn);
-                sprintf(rrdvalues, "%d:%d", (int)tstamp, (int)partupct);
+                snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, (int)partupct);
                 create_and_update_rrd(hostname, testname, classname, pagepaths, asid_params, asid_tpl);
 		}
 

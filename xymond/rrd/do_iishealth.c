@@ -34,7 +34,7 @@ int do_iishealth_rrd(char *hostname, char *testname, char *classname, char *page
 				if (tok == NULL) continue;
 
 				setupfn2("%s.%s.rrd", "iishealth", "connections");
-				sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
+				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lu", (int)tstamp, atol(tok));
 				havedata = 1;
 			}
 			else if (strcmp(tok, "RequestsQueued:") == 0) {
@@ -42,7 +42,7 @@ int do_iishealth_rrd(char *hostname, char *testname, char *classname, char *page
 				if (tok == NULL) continue;
 
 				setupfn2("%s.%s.rrd", "iishealth", "requestqueued");
-				sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
+				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lu", (int)tstamp, atol(tok));
 				havedata = 1;
 			}
 			else if (strcmp(tok, "Sessions:") == 0) {
@@ -50,7 +50,7 @@ int do_iishealth_rrd(char *hostname, char *testname, char *classname, char *page
 				if (tok == NULL) continue;
 
 				setupfn2("%s.%s.rrd", "iishealth", "sessions");
-				sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
+				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lu", (int)tstamp, atol(tok));
 				havedata = 1;
 			}
 

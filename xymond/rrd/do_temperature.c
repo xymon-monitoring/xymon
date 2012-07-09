@@ -83,7 +83,7 @@ int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pa
 			savech = *(p+1); *(p+1) = '\0'; 
 			setupfn2("%s.%s.rrd", "temperature", bol); *(p+1) = savech;
 
-			sprintf(rrdvalues, "%d:%d", (int)tstamp, tmpC);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, tmpC);
 			create_and_update_rrd(hostname, testname, classname, pagepaths, temperature_params, temperature_tpl);
 		}
 

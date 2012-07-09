@@ -34,7 +34,7 @@ int do_filesizes_rrd(char *hostname, char *testname, char *classname, char *page
 			for (p=strchr(fn, '/'); (p); p = strchr(p, '/')) *p = ',';
 			setupfn2("%s.%s.rrd", "filesizes", fn);
 
-			sprintf(rrdvalues, "%d:%s", (int)tstamp, szstr);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%s", (int)tstamp, szstr);
 			create_and_update_rrd(hostname, testname, classname, pagepaths, filesize_params, filesize_tpl);
 		}
 

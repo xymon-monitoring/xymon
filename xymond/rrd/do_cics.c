@@ -35,13 +35,13 @@ int do_cics_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		pr = strtok(pr, "\n");
 		while (pr != NULL) {
 			sscanf(pr, "%s %d %f %f", cicsappl, &numtrans, &dsapct, &edsapct); 
-			sprintf(rrdfn, "cics.%-s.rrd", cicsappl);
+			snprintf(rrdfn, sizeof(rrdvalues), "cics.%-s.rrd", cicsappl);
 			setupfn(rrdfn, fn);
-			sprintf(rrdvalues, "%d:%d", (int)tstamp, numtrans);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, numtrans);
 			create_and_update_rrd(hostname, testname, classname, pagepaths, cicsntrans_params, cics_tpl);
-			sprintf(rrdfn, "dsa.%-s.rrd", cicsappl);
+			snprintf(rrdfn, sizeof(rrdvalues), "dsa.%-s.rrd", cicsappl);
 			setupfn(rrdfn, fn);
-			sprintf(rrdvalues, "%d:%d:%d", (int)tstamp, (int)dsapct, (int)edsapct);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%d", (int)tstamp, (int)dsapct, (int)edsapct);
 			create_and_update_rrd(hostname, testname, classname, pagepaths, cicsdsa_params, cics_tpl);
 			pr = strtok(NULL, "\n");
 			}

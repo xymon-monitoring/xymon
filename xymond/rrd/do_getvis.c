@@ -38,7 +38,7 @@ int do_getvis_rrd(char *hostname, char *testname, char *classname, char *pagepat
                 while (p != NULL) {
                         sscanf(p, "%s %s %d %d %d %d %d %d %d %d", pid, jnm, &j1, &j2, &j3, &j4, &j5, &j6, &used24p, &usedanyp);
                         setupfn2("%s.%s.rrd", "getvis", pid);
-                        sprintf(rrdvalues, "%d:%d:%d", (int)tstamp, used24p, usedanyp);
+                        snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%d", (int)tstamp, used24p, usedanyp);
                         create_and_update_rrd(hostname, testname, classname, pagepaths, getvis_params, getvis_tpl);
                         p = strtok(NULL, "\n");
                         }

@@ -45,7 +45,7 @@ static void *netapp_stats_tpl      = NULL;
 			hostname, testname, taperead,tapewrite);
 		dbgprintf("netapp: host %s test %s fcpin %ld fcpout %ld\n",
 			hostname, testname, fcpin,fcpout);
-		sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
 			(int) tstamp, netread, netwrite, diskread, diskwrite, 
 			taperead, tapewrite, fcpin, fcpout);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_stats_params, netapp_stats_tpl);
@@ -89,7 +89,7 @@ static void *netapp_cifs_tpl      = NULL;
 			hostname, testname, cred, dir);
 		dbgprintf("netapp: host %s test %s ChangeNotif %ld SecureSess %ld\n",
 			hostname, testname, change, secsess);
-		sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
                       	(int) tstamp, sess, share, file, lock, cred, dir, change,secsess);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_cifs_params, netapp_cifs_tpl);
 	}
@@ -126,7 +126,7 @@ static void *netapp_ops_tpl      = NULL;
 			hostname, testname, httpops, fcpops);
 		dbgprintf("netapp: host %s test %s iscsiops %ld totalops %ld\n",
 			hostname, testname, iscsiops, totalops);
-		sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld",
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld:%ld:%ld:%ld",
                        	(int) tstamp, nfsops, cifsops, httpops, fcpops, iscsiops, totalops);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_ops_params, netapp_ops_tpl);
 	}
@@ -160,7 +160,7 @@ static void *netapp_snapmirror_tpl      = NULL;
                        			hostname, testname, curline, size);
 
 				setupfn2("%s,%s.rrd", testname, curline);
-				sprintf(rrdvalues, "%d:%lld", (int)tstamp, size);
+				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lld", (int)tstamp, size);
 				create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_snapmirror_params, netapp_snapmirror_tpl);
 				*(--equalsign)='=';
 			}
@@ -207,7 +207,7 @@ static void *netapp_snaplist_tpl      = NULL;
                        		hostname, testname, volname, young, old);
 
 			setupfn2("%s,%s.rrd", testname, volname);
-                        sprintf(rrdvalues, "%d:%lld:%lld", (int)tstamp, young, old);
+                        snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lld:%lld", (int)tstamp, young, old);
                         create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_snaplist_params, netapp_snaplist_tpl);
                 	if (volname) { xfree(volname); volname = NULL; }
 
@@ -233,7 +233,7 @@ static void *netapp_tpl      = NULL;
         curline = msg;
 
 	dbgprintf("MESSAGE=%s\n",msg);
-        rrdp = rrdvalues + sprintf(rrdvalues, "%d", (int)tstamp);
+        rrdp = rrdvalues + snprintf(rrdvalues, sizeof(rrdvalues), "%d", (int)tstamp);
         while (curline && (*curline))  {
 		char *fsline, *p, *sep, *fname=NULL;
 		char *columns[30];
@@ -290,10 +290,10 @@ static void *netapp_tpl      = NULL;
 		for (i=0; varlist[i]; i++) {
 			val=columns[i];
 			if (val) {
-				outp += sprintf(outp, ":%s",val);
+				outp += snprintf(outp, sizeof(rrdvalues)-(outp-rrdvalues), ":%s",val);
 				dbgprintf("var %s value %s \n", varlist[i], columns[i]);
 			} else {
-				outp += sprintf(outp, ":%s","U");
+				outp += snprintf(outp, sizeof(rrdvalues)-(outp-rrdvalues), ":%s","U");
 			}
 		}
 
@@ -600,7 +600,7 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
                         * all of it by using the testname as part of the filename.
                         */
                        setupfn2("%s%s.rrd", testname, diskname);
-                       sprintf(rrdvalues, "%d:%d:%lld", (int)tstamp, pused, aused);
+                       snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%lld", (int)tstamp, pused, aused);
                        create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_disk_params, netapp_disk_tpl);
                }
                if (diskname) { xfree(diskname); diskname = NULL; }

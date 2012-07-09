@@ -47,7 +47,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 				if (strncmp(urlfn, "http://", 7) == 0) urlfn += 7;
 				p = urlfn; while ((p = strchr(p, '/')) != NULL) *p = ',';
 				setupfn3("%s.%s.%s.rrd", "tcp", "http", urlfn);
-				sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
+				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%.2f", (int)tstamp, seconds);
 				create_and_update_rrd(hostname, testname, classname, pagepaths, xymonnet_params, xymonnet_tpl);
 				xfree(url); url = NULL;
 			}
@@ -80,7 +80,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		else if (strncmp(tmod, "usec", 4) == 0) seconds = seconds / 1000000.0;
 
 		setupfn2("%s.%s.rrd", "tcp", testname);
-		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, seconds);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%.6f", (int)tstamp, seconds);
 		return create_and_update_rrd(hostname, testname, classname, pagepaths, xymonnet_params, xymonnet_tpl);
 	}
 	else if (strcmp(testname, "ntp") == 0) {
@@ -94,6 +94,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 
 		char dataforntpstat[100];
 		char *offsetval = NULL;
+		char offsetbuf[40];
 		char *msgcopy = strdup(msg);
 
 		if (strstr(msgcopy, "ntpdate") != NULL) {
@@ -123,12 +124,13 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 			     plusminus && (strcmp(plusminus, "+/-") == 0) && 
 			     secs && (strcmp(secs, "secs") == 0) ) {
 				/* Looks sane */
-				sprintf(offsetval, "%s%s", offsetdirection, offset);
+				snprintf(offsetbuf, sizeof(offsetbuf), "%s%s", offsetdirection, offset);
+				offsetval = offsetbuf;
 			}
 		}
 		
 		if (offsetval) {
-			sprintf(dataforntpstat, "offset=%s", offsetval);
+			snprintf(dataforntpstat, sizeof(dataforntpstat), "offset=%s", offsetval);
 			do_ntpstat_rrd(hostname, testname, classname, pagepaths, dataforntpstat, tstamp);
 		}
 
@@ -143,7 +145,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		p = strstr(msg, "\nSeconds:");
 		if (p && (sscanf(p+1, "Seconds: %f", &seconds) == 1)) {
 			setupfn2("%s.%s.rrd", "tcp", testname);
-			sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%.2f", (int)tstamp, seconds);
 			return create_and_update_rrd(hostname, testname, classname, pagepaths, xymonnet_params, xymonnet_tpl);
 		}
 	}

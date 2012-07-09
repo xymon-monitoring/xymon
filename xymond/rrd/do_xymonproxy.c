@@ -28,7 +28,7 @@ int do_xymonproxy_rrd(char *hostname, char *testname, char *classname, char *pag
 		else {
 			setupfn("%s.rrd", "xymonproxy");
 		}
-		sprintf(rrdvalues, "%d:%.2f", (int) tstamp, runtime);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%.2f", (int) tstamp, runtime);
 		return create_and_update_rrd(hostname, testname, classname, pagepaths, xymonproxy_params, xymonproxy_tpl);
 	}
 
