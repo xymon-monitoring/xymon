@@ -110,12 +110,13 @@ static int http_datahandler(myconn_t *rec, int iobytes, int startoffset, int *ad
 	char *xferencoding;
 	int len = iobytes;
 	char *bol, *buf;
-	int hdrbytes, bodybytes = 0, n;
+	int hdrbytes, bodybytes = 0, bodyoffset, initialhdrbuflen, n;
 
 	*advancestep = 0;
 
 	switch (rec->httpdatastate) {
 	  case HTTPDATA_HEADERS:
+		initialhdrbuflen = STRBUFLEN(rec->httpheaders);
 		addtobufferraw(rec->httpheaders, rec->readbuf+startoffset, (iobytes - startoffset));
 
 check_for_endofheaders:
@@ -191,9 +192,29 @@ check_for_endofheaders:
 		}
 
 		/* Done with all the http header processing. Call ourselves to handle any remaining data we got after the headers */
+
+		/* 
+		 * To figure out how this works, here is the layout of rec->httpheaders. The first 
+		 * (initialhdrbuflen) part is what we had before this call to http_datahandler, the 
+		 * last (iobytes) part has been copied over from the current rec->buf. 
+		 * endofhdrs points into rec->httpheaders. bodyoffset and bodybytes are relative,
+		 * so even though the body data is in rec->buf and NOT in rec->httpheaders, we can
+		 * calculate the offset and length of the body data.
+		 *
+		 *                                         endofhdrs
+		 *                                              !
+		 * !-----------------------------!----------------------------!
+		 *
+		 * <......initialhdrbuflen.......>
+		 *                               <.........iobytes............>
+		 * <...............hdrbytes.....................>
+		 *                               <..bodyoffset..>
+		 *                                              <..bodybytes..>
+		 */
 		hdrbytes = (endofhdrs - STRBUF(rec->httpheaders));
-		bodybytes = iobytes - hdrbytes;
-		http_datahandler(rec, bodybytes, hdrbytes, advancestep); 
+		bodyoffset = hdrbytes - initialhdrbuflen;
+		bodybytes = iobytes - bodyoffset;
+		http_datahandler(rec, bodybytes, bodyoffset, advancestep); 
 		break;
 
 
