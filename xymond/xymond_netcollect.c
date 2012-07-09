@@ -34,6 +34,7 @@ typedef struct connectresult_t {
 	int ntpstratum;
 	float ntpoffset;
 	int interval;
+	time_t sent;
 } connectresult_t;
 
 typedef struct hostresults_t {
@@ -61,28 +62,28 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 				void *hinfo, char *sender, time_t timestamp,
 				char *clientdata)
 {
+	xtreePos_t handle;
+	hostresults_t *hrec;
 	void *ns1var, *ns1sects;
 	char *onetest, *testspec;
 
 	if (!hostresults) hostresults = xtreeNew(strcasecmp);
 
+	handle = xtreeFind(hostresults, hostname);
+	if (handle == xtreeEnd(hostresults)) {
+		hrec = (hostresults_t *)calloc(1, sizeof(hostresults_t));
+		hrec->hostname = strdup(hostname);
+		hrec->results = xtreeNew(strcmp);
+		xtreeAdd(hostresults, hrec->hostname, hrec);
+	}
+	else {
+		hrec = (hostresults_t *)xtreeData(hostresults, handle);
+	}
+
 	onetest = nextsection_r(clientdata, &testspec, &ns1var, &ns1sects);
 	while (onetest) {
-		xtreePos_t handle;
-		hostresults_t *hrec;
 		connectresult_t *rec;
 		char *bol, *eoln;
-
-		handle = xtreeFind(hostresults, hostname);
-		if (handle == xtreeEnd(hostresults)) {
-			hrec = (hostresults_t *)calloc(1, sizeof(hostresults_t));
-			hrec->hostname = strdup(hostname);
-			hrec->results = xtreeNew(strcmp);
-			xtreeAdd(hostresults, hrec->hostname, hrec);
-		}
-		else {
-			hrec = (hostresults_t *)xtreeData(hostresults, handle);
-		}
 
 		handle = xtreeFind(hrec->results, testspec);
 		if (handle == xtreeEnd(hrec->result)) {
@@ -102,6 +103,7 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 		if (rec->httpheaders) xfree(rec->httpheaders);
 		if (rec->httpbody) xfree(rec->httpbody);
 		rec->elapsedms = 0.0; rec->sslexpires = 0; rec->httpstatus = 0; rec->ntpstratum = 0; rec->ntpoffset = 0.0; rec->interval = 0;
+		rec->sent = 0;
 
 		bol = onetest;
 		while (bol) {
@@ -136,6 +138,19 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 sectiondone:
 		onetest = nextsection_r(NULL, &testspec, &ns1var, &ns1sects);
 	}
+
+	if (debug) {
+		dbgprintf("***********************\n");
+		dbgprintf("Results for %s\n", hrec->hostname);
+		for (handle = xtreeFirst(hrec->results); (handle != xtreeEnd(hrec->results)); handle = xtreeNext(hrec->results, handle)) {
+			connectresult_t *rec;
+			rec = (connectresult_t *)xtreeData(hrec->results, handle);
+			dbgprintf("    %s\n", rec->testspec);
+			dbgprintf("\tStatus:%d, elapsed:%.3f, interval:%d\n", rec->status, rec->elapsedms, rec->interval);
+			dbgprintf("\thttpstatus:%d, ntpstratum:%d, ntpoffset=%.6f\n", rec->httpstatus, rec->ntpstratum, rec->ntpoffset);
+		}
+	}
+
 	nextsection_r_done(ns1sects);
 }
 
@@ -276,6 +291,7 @@ void netcollect_generate_updates(void)
 	if (xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) failgoesclear = (strcmp(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
 	if (xgetenv("NETFAILTEXT")) failtext = xgetenv("NETFAILTEXT");
 
+	combo_start();
 	init_timestamp();
 
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
@@ -300,6 +316,7 @@ void netcollect_generate_updates(void)
 			if (handle == xtreeEnd(hrec->results)) continue;
 
 			crec = (connectresult_t *)xtreeData(hrec->results, handle);
+			if (crec->sent) continue;
 
 			testspec = NULL;
 			isdialup = (xmh_item(hwalk, XMH_FLAG_DIALUP) != NULL);
@@ -313,32 +330,82 @@ void netcollect_generate_updates(void)
 				}
 			}
 
-			if (argnmatch(testspec, "ldap://") || argnmatch(testspec, "ldaps://") ||argnmatch(testspec, "ldaptls://")) {
-				/* LDAP */
+			// FIXME: SSL certificate status
+			//
+			/* LDAP / HTTP */
+			// FIXME: Multiple tests for one host
+			if ( argnmatch(testspec, "http")         ||
+			     argnmatch(testspec, "content=http") ||
+			     argnmatch(testspec, "cont;http")    ||
+			     argnmatch(testspec, "cont=")        ||
+			     argnmatch(testspec, "nocont;http")  ||
+			     argnmatch(testspec, "nocont=")      ||
+			     argnmatch(testspec, "post;http")    ||
+			     argnmatch(testspec, "post=")        ||
+			     argnmatch(testspec, "nopost;http")  ||
+			     argnmatch(testspec, "nopost=")      ||
+			     argnmatch(testspec, "soap;http")    ||
+			     argnmatch(testspec, "soap=")        ||
+			     argnmatch(testspec, "nosoap;http")  ||
+			     argnmatch(testspec, "nosoap=")      ||
+			     argnmatch(testspec, "type;http")    ||
+			     argnmatch(testspec, "type=")        ||
+			     argnmatch(testspec, "ldap://")      ||
+			     argnmatch(testspec, "ldaps://")     ||
+			     argnmatch(testspec, "ldaptls://") ) {
+
+				int isldaptest = (argnmatch(testspec, "ldap"));
+				char *testname;
+				
+				testname = (isldaptest ? "ldap" : "http");
+
+				color = decide_color(crec,
+							(hrec->ping == crec),
+							(xmh_item(hwalk, XMH_FLAG_NOPING) != NULL),
+							(hrec->ping && (hrec->ping->status == NETCOLLECT_FAILED)),
+							isdialup,
+							isreverse,
+							isforced,
+							failgoesclear, causetext);
+
+				if ((color == COL_RED) && isldaptest && (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW))) color = COL_YELLOW;
+
+				init_status(color);
+				sprintf(msgline, "status+%d %s.%s %s %s\n",
+					crec->interval/10, xmh_item(hwalk, XMH_HOSTNAME), testname, colorname(color), timestamp);
+				addtostatus(msgline);
+
+				sprintf(msgline, "\n&%s %s - %s\n\n", colorname(color), testspec, ((color != COL_GREEN) ? "failed" : "OK"));
+				addtostatus(msgline);
+
+				if (crec->plainlog) addtostatus(crec->plainlog);
+				if (!isldaptest) {
+					if (crec->httpheaders) addtostatus(crec->httpheaders);
+					// if (crec->httpbody) addtostatus(crec->httpbody);
+				}
+
+				sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
+				addtostatus(msgtext);
+
+				addtostatus("\n");
+				finish_status();
+				crec->sent = 1;
 			}
-			else if ( argnmatch(testspec, "http")         ||
-				  argnmatch(testspec, "content=http") ||
-				  argnmatch(testspec, "cont;http")    ||
-				  argnmatch(testspec, "cont=")        ||
-				  argnmatch(testspec, "nocont;http")  ||
-				  argnmatch(testspec, "nocont=")      ||
-				  argnmatch(testspec, "post;http")    ||
-				  argnmatch(testspec, "post=")        ||
-				  argnmatch(testspec, "nopost;http")  ||
-				  argnmatch(testspec, "nopost=")      ||
-				  argnmatch(testspec, "soap;http")    ||
-				  argnmatch(testspec, "soap=")        ||
-				  argnmatch(testspec, "nosoap;http")  ||
-				  argnmatch(testspec, "nosoap=")      ||
-				  argnmatch(testspec, "type;http")    ||
-				  argnmatch(testspec, "type=")        )      {
-				/* HTTP */
-			}
+
+			/* Apache data report */
 			else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
-				/* Apache data report */
+				strbuffer_t *datamsg = newstrbuffer(0);
+
+				sprintf(msgline, "data %s.%s\n", xmh_item(hwalk, XMH_HOSTNAME), "apache");
+				addtobuffer(datamsg, msgline);
+				addtobuffer(datamsg, crec->httpbody);
+				sendmessage(STRBUF(datamsg), NULL, XYMON_TIMEOUT, NULL);
+				freestrbuffer(datamsg);
+				crec->sent = 1;
 			}
+
+			/* Standard net test */
 			else {
-				/* Standard net test */
 				char flags[5];
 
 				flags[0] = (isdialup ? 'D' : 'd');
@@ -406,15 +473,18 @@ void netcollect_generate_updates(void)
 					addtostatus("\n"); addtostatus(crec->plainlog); addtostatus("\n");
 				}
 
-				sprintf(msgtext, "\nSeconds: %.2f\n", crec->elapsedms / 1000);
+				sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
 				addtostatus(msgtext);
 
-				addtostatus("\n\n");
+				addtostatus("\n");
 
 				finish_status();
+				crec->sent = 1;
 			}
 		}
 	}
+
+	combo_end();
 }
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
@@ -427,10 +497,13 @@ int main(int argc, char *argv[])
 	int argi, seq;
 	struct timespec timeout = { 10, 0 };
 	time_t nextconfigload = 0;
+	int anychanges = 0;
+
+	libxymon_init(argv[0]);
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
-		if (standardoption(argv[0], argv[argi])) {
+		if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}
@@ -512,7 +585,10 @@ int main(int argc, char *argv[])
 		 * some internal processing even though no messages arrive.
 		 */
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
-			netcollect_generate_updates();
+			if (anychanges) {
+				netcollect_generate_updates();
+				anychanges = 0;
+			}
 		}
 
 		/*
@@ -557,8 +633,11 @@ int main(int argc, char *argv[])
 			if (!clientclass || (*clientclass == '\0')) clientclass = clientos;
 
 			handle_netcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+			anychanges = 1;
 		}
 	}
+
+	if (debug) netcollect_generate_updates();
 
 	return 0;
 }
