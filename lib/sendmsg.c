@@ -244,7 +244,7 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 
 static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t *responsebuffer)
 {
-	int compressit = 1;
+	int compressit = 0;
 	myconn_t *myconn;
 	int i, msglen;
 	int maxfd;
@@ -381,7 +381,8 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 	sendresult_t res;
 
 	if (dontsendmessages) {
-		printf("%s\n", msg);
+		fprintf(stdout, "%s\n", msg);
+		fflush(stdout);
 		return XYMONSEND_OK;
 	}
 
