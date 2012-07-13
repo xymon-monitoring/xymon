@@ -302,6 +302,17 @@ Note: This can be enabled on a per-host basis using the
 "sslbits=N" setting in 
 .I hosts.cfg(5)
 
+.IP --sslkeysize=N
+Enables checking of the length of the public key in SSL certificates.
+N is the minimum size of the SSL public key, typically such keys
+are 2048 bits, but some older certificates may use keys with 1024 bits
+or less. If you specify this, SSL certificates with keys less than N
+bits will result in the "sslcert" status going yellow.
+Default: 0, i.e. this check is disabled.
+
+.IP --no-cipherlist
+Do not show the list of encryption ciphers on the "sslcert" status.
+
 
 .SH DEBUGGING OPTIONS
 .IP --no-update

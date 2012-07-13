@@ -53,6 +53,7 @@ extern char *ciphershigh;
 extern char *ciphersmedium;
 extern unsigned int warnbytesread;
 extern int shuffletests;
+extern int sslincludecipherlist;
 
 #define SSLVERSION_DEFAULT 0
 #define SSLVERSION_V2      1
@@ -112,6 +113,8 @@ typedef struct tcptest_t {
 	char *certinfo;			/* Certificate info (subject+expiretime) */
 	time_t certexpires;		/* Expiretime in time_t format */
 	char *certsubject;
+	char *certissuer;
+	int certkeysz;
 	int mincipherbits;              /* Bits in the weakest encryption supported */
 	int sslrunning;			/* Track state of an SSL session */
 	int sslagain;			/* SSL read/write needs more data */

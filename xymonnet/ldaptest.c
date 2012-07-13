@@ -92,7 +92,9 @@ int add_ldap_test(testitem_t *t)
 	req->faileddeps = NULL;
 	req->duration.tv_sec = req->duration.tv_nsec = 0;
 	req->certinfo = NULL;
+	req->certissuer = NULL;
 	req->certexpires = 0;
+	req->certkeysz = 0;
 	req->skiptest = 0;
 
 	if (badurl) {

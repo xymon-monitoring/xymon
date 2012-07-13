@@ -140,8 +140,10 @@ typedef struct testitem_t {
 	int		open;		/* Is the service open ? NB: Shows true state of service, ignores flags */
 	strbuffer_t	*banner;
 	char		*certinfo;
+	char		*certissuer;
 	time_t		certexpires;
 	int		mincipherbits;
+	int		certkeysz;
 	struct timespec	duration;
 
 	/* For badTEST handling: Need to track downtime duration and poll count */

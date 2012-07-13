@@ -64,6 +64,7 @@ unsigned int warnbytesread = 0;
 static tcptest_t *thead = NULL;
 
 int shuffletests = 0;
+int sslincludecipherlist = 1;
 
 static svcinfo_t svcinfo_http  = { "http", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP), 80 };
 static svcinfo_t svcinfo_https = { "https", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP|TCP_SSL), 443 };
@@ -205,6 +206,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->sslctx = NULL;
 	newtest->ssldata = NULL;
 	newtest->certinfo = NULL;
+	newtest->certissuer = NULL;
 	newtest->certexpires = 0;
 	newtest->sslrunning = ((newtest->svcinfo->flags & TCP_SSL) ? SSLSETUP_PENDING : 0);
 	newtest->sslagain = 0;
@@ -441,8 +443,8 @@ static void setup_ssl(tcptest_t *item)
 	struct servent *sp;
 	char portinfo[100];
 	X509 *peercert;
-	char *certcn, *certstart, *certend;
-	int err;
+	char *certcn, *certstart, *certend, *certissuer;
+	int err, keysz = 0;
 	strbuffer_t *sslinfo;
 	char msglin[2048];
 
@@ -478,8 +480,10 @@ static void setup_ssl(tcptest_t *item)
 
 	if (item->sslctx == NULL) {
 		switch (item->ssloptions->sslversion) {
+#ifdef SSLV2_SUPPORTED
 		  case SSLVERSION_V2:
 			item->sslctx = SSL_CTX_new(SSLv2_client_method()); break;
+#endif
 		  case SSLVERSION_V3:
 			item->sslctx = SSL_CTX_new(SSLv3_client_method()); break;
 		  case SSLVERSION_TLS1:
@@ -638,20 +642,41 @@ static void setup_ssl(tcptest_t *item)
 	sslinfo = newstrbuffer(0);
 
 	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
+	certissuer = X509_NAME_oneline(X509_get_issuer_name(peercert), NULL, 0);
 	certstart = strdup(xymon_ASN1_UTCTIME(X509_get_notBefore(peercert)));
 	certend = strdup(xymon_ASN1_UTCTIME(X509_get_notAfter(peercert)));
+	{
+		BIO *o = BIO_new(BIO_s_mem());
+		long slen;
+		char *sdata, *keyline;
+
+		X509_print_ex(o, peercert, XN_FLAG_COMPAT, X509_FLAG_COMPAT);
+
+		slen = BIO_get_mem_data(o, &sdata);
+		keyline = strstr(sdata, " Public-Key:");
+		if (!keyline) keyline = strstr(sdata, " Public Key:");
+		if (keyline) {
+			keyline = strchr(keyline, '(');
+			if (keyline) keysz = atoi(keyline+1);
+		}
+
+		BIO_set_close(o, BIO_CLOSE);
+		BIO_free(o);
+	}
 
 	snprintf(msglin, sizeof(msglin),
-		"Server certificate:\n\tsubject:%s\n\tstart date: %s\n\texpire date:%s\n", 
-		certcn, certstart, certend);
+		"Server certificate:\n\tsubject:%s\n\tstart date: %s\n\texpire date:%s\n\tkey size:%d\n\tissuer:%s\n", 
+		certcn, certstart, certend, keysz, certissuer);
 	addtobuffer(sslinfo, msglin);
 	item->certsubject = strdup(certcn);
+	item->certissuer = strdup(certissuer);
 	item->certexpires = sslcert_expiretime(certend);
-	xfree(certcn); xfree(certstart); xfree(certend);
+	item->certkeysz = keysz;
+	xfree(certcn); xfree(certstart); xfree(certend); xfree(certissuer);
 	X509_free(peercert);
 
 	/* We list the available ciphers in the SSL cert data */
-	{
+	if (sslincludecipherlist) {
 		int i;
 		STACK_OF(SSL_CIPHER) *sk;
 
