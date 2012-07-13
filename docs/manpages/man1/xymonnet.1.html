@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONNET</TITLE>
 </HEAD><BODY>
 <H1>XYMONNET</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 13 Dec 2011<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 13 Jul 2012<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -122,7 +122,7 @@ tag, or the DNS lookup fails.
 <BR>
 
 With &quot;--dns=only&quot; xymonnet will ONLY do the DNS lookup;
-it it fails, then all services on that host will be 
+if it fails, then all services on that host will be 
 reported as being down.
 <BR>
 
@@ -357,6 +357,17 @@ Note: This can be enabled on a per-host basis using the
 &quot;sslbits=N&quot; setting in 
 <I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
+<P>
+<DT>--sslkeysize=N<DD>
+Enables checking of the length of the public key in SSL certificates.
+N is the minimum size of the SSL public key, typically such keys
+are 2048 bits, but some older certificates may use keys with 1024 bits
+or less. If you specify this, SSL certificates with keys less than N
+bits will result in the &quot;sslcert&quot; status going yellow.
+Default: 0, i.e. this check is disabled.
+<P>
+<DT>--no-cipherlist<DD>
+Do not show the list of encryption ciphers on the &quot;sslcert&quot; status.
 <P>
 <P>
 </DL>
@@ -734,6 +745,6 @@ runs, and read by xymonnet-again.sh.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:13:03 GMT, December 13, 2011
+Time: 21:27:15 GMT, July 13, 2012
 </BODY>
 </HTML>

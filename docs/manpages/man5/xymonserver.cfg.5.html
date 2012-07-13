@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONSERVER.CFG</TITLE>
 </HEAD><BODY>
 <H1>XYMONSERVER.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version Exp: 13 Dec 2011<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp: 13 Jul 2012<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -111,6 +111,13 @@ Default: 120 pixels.
 <DT>RRDWIDTH<DD>
 The default width (in pixels) of the RRD graph images.
 Default: 576 pixels.
+<P>
+<DT>RRDGRAPHOPTS<DD>
+Extra options for the RRD graph command. These are passed directly to
+the &quot;rrdgraph&quot; command used to generate graphs, see the
+<I><A HREF="../man1/rrdgraph.1.html">rrdgraph</A>(1)</I>
+
+man-page for details of the options.
 <P>
 <DT>TRENDSECONDS<DD>
 The graphs on the &quot;trends&quot; page show data for the past TRENDSECONDS
@@ -856,6 +863,6 @@ the options you normally used when building Xymon webpages.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:13:03 GMT, December 13, 2011
+Time: 21:27:15 GMT, July 13, 2012
 </BODY>
 </HTML>

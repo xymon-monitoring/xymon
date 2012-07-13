@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMON</TITLE>
 </HEAD><BODY>
 <H1>XYMON</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 13 Dec 2011<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 13 Jul 2012<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -438,6 +438,19 @@ is used.
 Retrieves an XML string with the summary of all status logs
 as for the &quot;xymondboard&quot; command.
 <P>
+<DT>hostinfo [CRITERIA]<DD>
+Retrieves the current configuration of a host (i.e. the 
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
+
+definition). CRITERIA selects which host(s) to report, and is
+identical to the CRITERIA in the xymondboard command.
+<P>
+The response is one line for each host that matches the CRITERIA,
+or all hosts if no criteria is specified. The line is composed of
+a number of fields, separated by a pipe-sign. The first two fields
+will always be the hostname and the IP-address. The remaining fields 
+- if any - are the hosts.cfg tags in no particular order.
+<P>
 <DT>download FILENAME<DD>
 Download a file from the Xymon server's download directory.
 <P>
@@ -585,6 +598,6 @@ pass it via stdin to the xymon command:
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:13:03 GMT, December 13, 2011
+Time: 21:27:15 GMT, July 13, 2012
 </BODY>
 </HTML>
