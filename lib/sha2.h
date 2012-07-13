@@ -1,37 +1,108 @@
-/*----------------------------------------------------------------------------*/
-/* Xymon monitor library.                                                     */
-/*                                                                            */
-/* API for the SHA1 digest routines.                                          */
-/*                                                                            */
-/* Copyright (C) 2006-2011 Henrik Storner <henrik@hswn.dk>                    */
-/*                                                                            */
-/* This program is released under the GNU General Public License (GPL),       */
-/* version 2. See the file "COPYING" for details.                             */
-/*                                                                            */
-/*----------------------------------------------------------------------------*/
+/*
+ * FIPS 180-2 SHA-224/256/384/512 implementation
+ * Last update: 02/02/2007
+ * Issue date:  04/30/2005
+ *
+ * Copyright (C) 2005, 2007 Olivier Gay <olivier.gay@a3.epfl.ch>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the project nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
 
-#ifndef __SHA2_H__
-#define __SHA2_H__
+#ifndef SHA2_H
+#define SHA2_H
 
-extern int  mySHA512_Size(void);
-extern void mySHA512_Init(void *context);
-extern void mySHA512_Update(void *context, const unsigned char *data, int len);
-extern void mySHA512_Final(unsigned char digest[20], void *context);
+#define SHA224_DIGEST_SIZE ( 224 / 8)
+#define SHA256_DIGEST_SIZE ( 256 / 8)
+#define SHA384_DIGEST_SIZE ( 384 / 8)
+#define SHA512_DIGEST_SIZE ( 512 / 8)
 
-extern int  mySHA256_Size(void);
-extern void mySHA256_Init(void *context);
-extern void mySHA256_Update(void *context, const unsigned char *data, int len);
-extern void mySHA256_Final(unsigned char digest[20], void *context);
+#define SHA256_BLOCK_SIZE  ( 512 / 8)
+#define SHA512_BLOCK_SIZE  (1024 / 8)
+#define SHA384_BLOCK_SIZE  SHA512_BLOCK_SIZE
+#define SHA224_BLOCK_SIZE  SHA256_BLOCK_SIZE
 
-extern int  mySHA384_Size(void);
-extern void mySHA384_Init(void *context);
-extern void mySHA384_Update(void *context, const unsigned char *data, int len);
-extern void mySHA384_Final(unsigned char digest[20], void *context);
-
-extern int  mySHA224_Size(void);
-extern void mySHA224_Init(void *context);
-extern void mySHA224_Update(void *context, const unsigned char *data, int len);
-extern void mySHA224_Final(unsigned char digest[20], void *context);
-
+#ifndef SHA2_TYPES
+#define SHA2_TYPES
+typedef unsigned char uint8;
+typedef unsigned int  uint32;
+typedef unsigned long long uint64;
 #endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+    unsigned int tot_len;
+    unsigned int len;
+    unsigned char block[2 * SHA256_BLOCK_SIZE];
+    uint32 h[8];
+} sha256_ctx;
+
+typedef struct {
+    unsigned int tot_len;
+    unsigned int len;
+    unsigned char block[2 * SHA512_BLOCK_SIZE];
+    uint64 h[8];
+} sha512_ctx;
+
+typedef sha512_ctx sha384_ctx;
+typedef sha256_ctx sha224_ctx;
+
+void sha224_init(sha224_ctx *ctx);
+void sha224_update(sha224_ctx *ctx, const unsigned char *message,
+                   unsigned int len);
+void sha224_final(sha224_ctx *ctx, unsigned char *digest);
+void sha224(const unsigned char *message, unsigned int len,
+            unsigned char *digest);
+
+void sha256_init(sha256_ctx * ctx);
+void sha256_update(sha256_ctx *ctx, const unsigned char *message,
+                   unsigned int len);
+void sha256_final(sha256_ctx *ctx, unsigned char *digest);
+void sha256(const unsigned char *message, unsigned int len,
+            unsigned char *digest);
+
+void sha384_init(sha384_ctx *ctx);
+void sha384_update(sha384_ctx *ctx, const unsigned char *message,
+                   unsigned int len);
+void sha384_final(sha384_ctx *ctx, unsigned char *digest);
+void sha384(const unsigned char *message, unsigned int len,
+            unsigned char *digest);
+
+void sha512_init(sha512_ctx *ctx);
+void sha512_update(sha512_ctx *ctx, const unsigned char *message,
+                   unsigned int len);
+void sha512_final(sha512_ctx *ctx, unsigned char *digest);
+void sha512(const unsigned char *message, unsigned int len,
+            unsigned char *digest);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* !SHA2_H */
 
