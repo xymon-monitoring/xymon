@@ -24,7 +24,7 @@ int do_citrix_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	while (p && (p > msg) && (*p != '\n')) p--;
 	if (p && (sscanf(p+1, "\n%d users active\n", &users) == 1)) {
 		setupfn("%s.rrd", "citrix");
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, users);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, users);
 		return create_and_update_rrd(hostname, testname, classname, pagepaths, citrix_params, citrix_tpl);
 	}
 

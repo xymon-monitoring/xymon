@@ -33,7 +33,7 @@ int do_apache_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	if ((p = strstr(msg, "IdleServers:")) != NULL) memcpy(p, "IdleWorkers:", strlen("IdleWorkers:"));
 
 	setupfn("%s.rrd", "apache");
-	sprintf(rrdvalues, "%d", (int)tstamp);
+	snprintf(rrdvalues, sizeof(rrdvalues), "%d", (int)tstamp);
 	i = 0;
 	while (markers[i]) {
 		strcat(rrdvalues, ":"); 

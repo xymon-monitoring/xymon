@@ -100,7 +100,7 @@ int do_iostatdisk_rrd(char *hostname, char *testname, char *classname, char *pag
 		}
 
 		setupfn2("%s.%s.rrd", "iostat", id);
-		sprintf(rrdvalues, "%d:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
 			(int) tstamp, 
 			elems[valofs],		/* r/s */
 			elems[valofs+1],	/* w/s */
@@ -207,7 +207,7 @@ int do_iostat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 
 					if (newkey) {
 						setupfn2("%s.%s.rrd", "iostat", newkey->value);
-						sprintf(rrdvalues, "%d:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f",
+						snprintf(rrdvalues, sizeof(rrdvalues), "%d:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f",
 							(int) tstamp, 
 							v[0], v[1], v[2], v[3], v[4], v[5], v[6],
 							v[7], v[8], v[9], v[10], v[11], v[12], v[13]);

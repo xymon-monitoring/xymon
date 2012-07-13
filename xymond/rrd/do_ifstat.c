@@ -305,7 +305,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		if ((dmatch == 7) && ifname && rxstr && txstr) {
 			if (!ifname_filter_pcre || matchregex(ifname, ifname_filter_pcre)) {
 				setupfn2("%s.%s.rrd", "ifstat", ifname);
-				sprintf(rrdvalues, "%d:%s:%s", (int)tstamp, txstr, rxstr);
+				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%s:%s", (int)tstamp, txstr, rxstr);
 				create_and_update_rrd(hostname, testname, classname, pagepaths, ifstat_params, ifstat_tpl);
 			}
 

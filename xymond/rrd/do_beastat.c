@@ -52,7 +52,7 @@ static void *beastat_jta_tpl      = NULL;
 			hostname, testname, trab, trcomm, trheur, trtot);
 		dbgprintf("beastat: host %s test %s RB: app %ld res %ld sys %ld timout %ld total %ld\n",
 			hostname, testname, trrbapp, trrbres, trrbsys, trrbto, trrb);
-		sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
 			(int) tstamp, acttrans, secact, trab, trcomm, trheur, trrbapp, 
 			trrbres, trrbsys, trrbto, trrb, trtot);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, beastat_jta_params, beastat_jta_tpl);
@@ -79,7 +79,7 @@ static void *beastat_jvm_tpl      = NULL;
 		heapsize=get_long_data(msg,"HeapSizeCurrent");
 		dbgprintf("beastat: host %s test %s heapfree %ld heapsize %ld\n",
 			hostname, testname, heapfree, heapsize);
-		sprintf(rrdvalues, "%d:%ld:%ld",
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld",
 			(int) tstamp, heapfree, heapsize);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, beastat_jvm_params, beastat_jvm_tpl);
 	}
@@ -115,7 +115,7 @@ static void *beastat_jms_tpl      = NULL;
 			hostname, testname, conncurr, connhigh, conntotal);
 		dbgprintf("beastat: host %s test %s jmscurr %ld jmshigh %ld jmstotal %ld\n",
 			hostname, testname, jmscurr, jmshigh,jmstotal);
-		sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld",
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld:%ld:%ld:%ld",
 			(int) tstamp, conncurr, connhigh, conntotal, jmscurr, jmshigh, jmstotal);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, beastat_jms_params, beastat_jms_tpl);
 	}
@@ -170,7 +170,7 @@ static char *checktest			= "Type=ExecuteQueueRuntime";
 			totservrq=get_long_data(start,"ServicedRequestTotalCount");
 			dbgprintf("beastat: host %s test %s name %s currthr %ld totthr %ld currprq %ld totservrq %ld\n",
 				hostname, testname, execname, currthr, totthr, currprq, totservrq);
-			sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld",
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld:%ld",
 				(int) tstamp, currthr, totthr, currprq, totservrq);
 			create_and_update_rrd(hostname, testname, classname, pagepaths, beastat_exec_params, beastat_exec_tpl);
 			if (execname) { xfree(execname); execname = NULL; }
@@ -258,7 +258,7 @@ static char *checktest			= "Type=JDBCConnectionPoolRuntime";
 			dbgprintf("beastat: host %s test %s name %s acac %ld accc %ld achc %ld wfccc %ld cdt %ld clpc %ld lcc %ld\n", hostname, testname, execname, acac, accc, achc, wfccc, cdt, clpc, lcc);
 			dbgprintf("beastat: host %s test %s name %s mc %ld na %ld nu %ld hna %ld hnu %ld wshc %ld ctc %ld ftrc %ld wfchc %ld\n",hostname, testname, execname, mc, na, nu, hna, hnu, wshc, ctc, ftrc, wfchc);
 
-			sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
 				(int) tstamp, acac, accc, achc, wfccc, cdt, clpc, lcc, 
 				mc, na, nu, hna, hnu, wshc, ctc, ftrc, wfchc);
 			create_and_update_rrd(hostname, testname, classname, pagepaths, beastat_jdbc_params, beastat_jdbc_tpl);

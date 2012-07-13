@@ -73,7 +73,7 @@ static void ifmib_flush_data(int ifmibinterval,
 {
 	setupfn2("%s.%s.rrd", "ifmib", devname);
 	setupinterval(ifmibinterval);
-	sprintf(rrdvalues, "%d:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
+	snprintf(rrdvalues, sizeof(rrdvalues), "%d:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
 		(int)tstamp,
 		values[0], values[1], values[2], values[3],
 		values[4], values[5], values[6], values[7],

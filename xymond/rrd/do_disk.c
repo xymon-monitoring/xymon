@@ -196,7 +196,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 			 * all of it by using the testname as part of the filename.
 			 */
 			setupfn2("%s%s.rrd", testname, diskname);
-			sprintf(rrdvalues, "%d:%d:%lld", (int)tstamp, pused, aused);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%lld", (int)tstamp, pused, aused);
 			create_and_update_rrd(hostname, testname, classname, pagepaths, disk_params, disk_tpl);
 		}
 		if (diskname) { xfree(diskname); diskname = NULL; }

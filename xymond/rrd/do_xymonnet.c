@@ -28,7 +28,7 @@ int do_xymonnet_rrd(char *hostname, char *testname, char *classname, char *pagep
 		else {
 			setupfn("%s.rrd", "xymonnet");
 		}
-		sprintf(rrdvalues, "%d:%.2f", (int) tstamp, runtime);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%.2f", (int) tstamp, runtime);
 		return create_and_update_rrd(hostname, testname, classname, pagepaths, xymonnet_params, xymonnet_tpl);
 	}
 

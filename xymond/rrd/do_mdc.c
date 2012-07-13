@@ -30,11 +30,11 @@ int do_mdc_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		pr++;
 		sscanf(pr, "%d:%d:%d", &mdcreads, &mdcwrites, &mdchitpct);
 		setupfn("mdc.rrd", fn);
-		sprintf(rrdvalues, "%d:%d:%d", (int)tstamp, mdcreads, mdcwrites);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%d", (int)tstamp, mdcreads, mdcwrites);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, mdc_params, mdc_tpl);
 
 		setupfn("mdchitpct.rrd", fn);
-		sprintf(rrdvalues, "%d:%d", (int)tstamp, mdchitpct);
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, mdchitpct);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, mdcpct_params, mdc_tpl);
 
 	}

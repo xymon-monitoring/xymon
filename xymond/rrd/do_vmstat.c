@@ -421,15 +421,15 @@ int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	creparams[defcount] = NULL;
 
 	/* Setup the update string, picking out values according to the layout */
-	p = rrdvalues + sprintf(rrdvalues, "%d", (int)tstamp);
+	p = rrdvalues + snprintf(rrdvalues, sizeof(rrdvalues), "%d", (int)tstamp);
 	for (defidx=0; (defidx < defcount); defidx++) {
 		int dataidx = layout[defidx].index;
 
 		if ((dataidx >= datacount) || (dataidx == -1)) {
-			p += sprintf(p, ":U");
+			p += snprintf(p, sizeof(rrdvalues)-(p-rrdvalues), ":U");
 		}
 		else {
-			p += sprintf(p, ":%d", values[layout[defidx].index]);
+			p += snprintf(p, sizeof(rrdvalues)-(p-rrdvalues), ":%d", values[layout[defidx].index]);
 		}
 	}
 

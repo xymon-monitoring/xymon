@@ -31,7 +31,7 @@ int do_external_rrd(char *hostname, char *testname, char *classname, char *pagep
 		
 		MEMDEFINE(fn); MEMDEFINE(extcmd);
 
-		sprintf(fn, "%s/rrd_msg_%d", xgetenv("XYMONTMP"), (int) getpid());
+		snprintf(fn, sizeof(fn), "%s/rrd_msg_%d", xgetenv("XYMONTMP"), (int) getpid());
 		dbgprintf("%09d : Saving msg to file %s\n", (int)mypid, fn);
 
 		fd = fopen(fn, "w");
@@ -66,7 +66,7 @@ int do_external_rrd(char *hostname, char *testname, char *classname, char *pagep
 		inbuf = newstrbuffer(0);
 
 		/* Now call the external helper */
-		sprintf(extcmd, "%s %s %s %s", exthandler, hostname, testname, fn);
+		snprintf(extcmd, sizeof(extcmd), "%s %s %s %s", exthandler, hostname, testname, fn);
 		dbgprintf("%09d : Calling helper script %s\n", (int)mypid, extcmd);
 		extfd = popen(extcmd, "r");
 		if (extfd) {

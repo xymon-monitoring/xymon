@@ -70,13 +70,13 @@ int do_xymond_rrd(char *hostname, char *testname, char *classname, char *pagepat
 
 	int	i, gotany = 0;
 	char	*p;
-	char	valstr[10];
+	char	valstr[50];
 
 	MEMDEFINE(valstr);
 
 	if (xymond_tpl == NULL) xymond_tpl = setup_template(xymond_params);
 
-	sprintf(rrdvalues, "%d", (int)tstamp);
+	snprintf(rrdvalues, sizeof(rrdvalues), "%d", (int)tstamp);
 	i = 0;
 	while (xymond_data[i].marker) {
 		p = strstr(msg, xymond_data[i].marker);
@@ -84,10 +84,10 @@ int do_xymond_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			if (*p == '\n') p++;
 			p += strcspn(p, ":\r\n");
 			if (*p == ':') {
-				xymond_data[i].val = atol(p+1);
+				xymond_data[i].val = strtoul(p+1, NULL, 10);
 				gotany++;
-				sprintf(valstr, ":%lu", xymond_data[i].val);
-				strcat(rrdvalues, valstr);
+				snprintf(valstr, sizeof(valstr), ":%lu", xymond_data[i].val);
+				strncat(rrdvalues, valstr, sizeof(rrdvalues)-strlen(rrdvalues)-1);
 			}
 			else strcat(rrdvalues, ":U");
 		}

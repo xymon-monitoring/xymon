@@ -29,7 +29,7 @@ static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, ch
 			for (p=strchr(fn, '/'); (p); p = strchr(p, '/')) *p = ',';
 			setupfn2("%s.%s.rrd", counttype, fn);
 
-			sprintf(rrdvalues, "%d:%s", (int)tstamp, countstr);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%s", (int)tstamp, countstr);
 			create_and_update_rrd(hostname, testname, classname, pagepaths, params, tpl);
 		}
 

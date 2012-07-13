@@ -44,7 +44,7 @@ static void *dbcheck_memreq_tpl      = NULL;
 			hostname, testname, used, avus);
 		dbgprintf("dbcheck: host %s test %s reqfail %ld failsize %ld\n",
 			hostname, testname, reqf, fsz);
-		sprintf(rrdvalues, "%d:%ld:%f:%ld:%f:%ld:%ld",
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%f:%ld:%f:%ld:%ld",
 			(int) tstamp, free, avfr, used, avus, reqf,fsz);
 		setupfn("%s.rrd",testname);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_memreq_params, dbcheck_memreq_tpl);
@@ -210,7 +210,7 @@ nextline:
                 setupfn("%s.rrd",testname);
                 dbgprintf("dbcheck: host %s test %s  red %ld yellow %ld green %ld\n", 
 			hostname, testname, red,yellow,green);
-                sprintf(rrdvalues, "%d:%ld:%ld:%ld", (int) tstamp, red,yellow,green);
+                snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld", (int) tstamp, red,yellow,green);
                         create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_invobj_params, dbcheck_invobj_tpl);
         }
         return 0;
@@ -341,7 +341,7 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
                         * all of it by using the testname as part of the filename.
                         */
                        setupfn2("%s%s.rrd", testname,diskname);
-                       sprintf(rrdvalues, "%d:%d:%lld", (int)tstamp, pused, aused);
+                       snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%lld", (int)tstamp, pused, aused);
                        create_and_update_rrd(hostname, testname, classname, pagepaths, tablespace_params, tablespace_tpl);
                }
                if (diskname) { xfree(diskname); diskname = NULL; }
