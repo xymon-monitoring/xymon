@@ -338,7 +338,7 @@ static void addtofnlist(char *dirname, void **v_listhead)
 	if (*dirname == '/') strcpy(dirfn, dirname); else sprintf(dirfn, "%s/%s", stackfd_base, dirname);
 
 	if ((dirfd = opendir(dirfn)) == NULL) {
-		errprintf("Cannot open directory %s\n", fn);
+		errprintf("Cannot open directory %s\n", dirfn);
 		return;
 	}
 
