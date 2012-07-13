@@ -706,7 +706,7 @@ int load_client_config(char *configfn)
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.uptime.ancientlimit = 60*durationvalue(tok);
 				tok = wstok(NULL); if (isqual(tok)) continue;
-				if (tok) currule->rule.clock.color = parse_color(tok);
+				if (tok) currule->rule.uptime.color = parse_color(tok);
 			}
 			else if (strcasecmp(tok, "CLOCK") == 0) {
 				currule = NEWRULE(C_CLOCK);
