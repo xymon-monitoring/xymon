@@ -32,7 +32,6 @@ extern char *u32toIP(unsigned int ip32);
 extern const char *textornull(const char *text);
 extern int get_fqdn(void);
 extern int generate_static(void);
-extern int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, int timeout);
 extern void do_extensions(FILE *output, char *extenv, char *family);
 extern char **setup_commandargs(char *cmdline, char **cmd);
 extern int checkalert(char *alertlist, char *test);

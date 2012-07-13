@@ -46,49 +46,6 @@ time_t getcurrenttime(time_t *retparm)
 }
 
 
-time_t gettimer(void)
-{
-	int res;
-	struct timespec t;
-
-#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
-	res = clock_gettime(CLOCK_MONOTONIC, &t);
-	if(-1 == res)
-	{
-		res = clock_gettime(CLOCK_REALTIME, &t);
-		if(-1 == res)
-		{
-			return time(NULL);
-		}
-	}
-	return (time_t) t.tv_sec;
-#else
-	return time(NULL);
-#endif
-}
-
-void getntimer(struct timespec *tp)
-{
-	int res;
-	struct timeval t;
-	struct timezone tz;
-
-#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
-	res = clock_gettime(CLOCK_MONOTONIC, tp);
-	if(-1 == res)
-	{
-		res = clock_gettime(CLOCK_REALTIME, tp);
-		if(-1 != res) return;
-		/* Fall through to use gettimeofday() */
-	}
-#endif
-
-	gettimeofday(&t, &tz);
-	tp->tv_sec = t.tv_sec;
-	tp->tv_nsec = 1000*t.tv_usec;
-}
-
-
 char *timestamp = NULL;
 void init_timestamp(void)
 {
@@ -331,69 +288,6 @@ int within_sla(char *holidaykey, char *timespec, int defresult)
 
 	return found;
 }
-
-#ifndef CLIENTONLY
-char *check_downtime(char *hostname, char *testname)
-{
-	void *hinfo = hostinfo(hostname);
-	char *dtag;
-	char *holkey;
-
-	if (hinfo == NULL) return NULL;
-
-	dtag = xmh_item(hinfo, XMH_DOWNTIME);
-	holkey = xmh_item(hinfo, XMH_HOLIDAYS);
-	if (dtag && *dtag) {
-		static char *downtag = NULL;
-		static unsigned char *cause = NULL;
-		static int causelen = 0;
-		char *s1, *s2, *s3, *s4, *s5, *p;
-		char timetxt[30];
-
-		if (downtag) xfree(downtag);
-		if (cause) xfree(cause);
-
-		p = downtag = strdup(dtag);
-		do {
-			/* Its either DAYS:START:END or SERVICE:DAYS:START:END:CAUSE */
-
-			s1 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
-			s2 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
-			s3 = p; p += strcspn(p, ":;,"); 
-			if ((*p == ',') || (*p == ';') || (*p == '\0')) { 
-				if (*p != '\0') { *p = '\0'; p++; }
-				snprintf(timetxt, sizeof(timetxt), "%s:%s:%s", s1, s2, s3);
-				cause = strdup("Planned downtime");
-				s1 = "*";
-			}
-			else if (*p == ':') {
-				*p = '\0'; p++; 
-				s4 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
-				s5 = p; p += strcspn(p, ",;"); if (*p != '\0') { *p = '\0'; p++; }
-				snprintf(timetxt, sizeof(timetxt), "%s:%s:%s", s2, s3, s4);
-				getescapestring(s5, &cause, &causelen);
-			}
-
-			if (within_sla(holkey, timetxt, 0)) {
-				char *onesvc, *buf;
-
-				if (strcmp(s1, "*") == 0) return cause;
-
-				onesvc = strtok_r(s1, ",", &buf);
-				while (onesvc) {
-					if (strcmp(onesvc, testname) == 0) return cause;
-					onesvc = strtok_r(NULL, ",", &buf);
-				}
-
-				/* If we didn't use the "cause" we just created, it must be freed */
-				if (cause) xfree(cause);
-			}
-		} while (*p);
-	}
-
-	return NULL;
-}
-#endif
 
 int periodcoversnow(char *tag)
 {

@@ -33,6 +33,50 @@ typedef struct timestamp_t {
 static timestamp_t *stamphead = NULL;
 static timestamp_t *stamptail = NULL;
 
+
+time_t gettimer(void)
+{
+	int res;
+	struct timespec t;
+
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+	res = clock_gettime(CLOCK_MONOTONIC, &t);
+	if(-1 == res)
+	{
+		res = clock_gettime(CLOCK_REALTIME, &t);
+		if(-1 == res)
+		{
+			return time(NULL);
+		}
+	}
+	return (time_t) t.tv_sec;
+#else
+	return time(NULL);
+#endif
+}
+
+void getntimer(struct timespec *tp)
+{
+	int res;
+	struct timeval t;
+	struct timezone tz;
+
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+	res = clock_gettime(CLOCK_MONOTONIC, tp);
+	if(-1 == res)
+	{
+		res = clock_gettime(CLOCK_REALTIME, tp);
+		if(-1 != res) return;
+		/* Fall through to use gettimeofday() */
+	}
+#endif
+
+	gettimeofday(&t, &tz);
+	tp->tv_sec = t.tv_sec;
+	tp->tv_nsec = 1000*t.tv_usec;
+}
+
+
 void add_timestamp(const char *msg)
 {
 	if (timing) {
@@ -52,6 +96,27 @@ void add_timestamp(const char *msg)
 		}
 		stamptail = newstamp;
 	}
+}
+
+int ntimerus(struct timespec *start, struct timespec *now)
+{
+	struct timespec tdiff;
+
+	/* See how long the query took */
+	if (now) {
+		memcpy(&tdiff, now, sizeof(struct timespec));
+	}
+	else {
+		getntimer(&tdiff);
+	}
+
+	if (tdiff.tv_nsec < start->tv_nsec) {
+		tdiff.tv_sec--;
+		tdiff.tv_nsec += 1000000000;
+	}
+	tdiff.tv_sec  -= start->tv_sec;
+	tdiff.tv_nsec -= start->tv_nsec;
+	return (tdiff.tv_sec*1000000 + tdiff.tv_nsec/1000);
 }
 
 void show_timestamps(char **buffer)
