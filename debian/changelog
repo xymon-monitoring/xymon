@@ -1,3 +1,37 @@
+xymon (4.3.8) unstable; urgency=low
+
+   * rev 7046
+
+   Bugfixes
+   * Workaround for DNS timeout handling, now fixed at approximately 25
+     seconds.
+   * "hostinfo" command for xymond documented
+   * confreport only shows processes that are monitored
+   * analysis.cfg parsing of COLOR for UP rules was broken
+   * RRD handlers no longer crash after receiving 1 billion updates
+   * Using .netrc for authentication could crash xymonnet
+   * "directory" includes would report the wrong filename for missing
+     directories.
+   * useradm CGI would invoke htpassword twice
+   * "include" and "directory" now ignores trailing whitespace
+   * SSLv2 support disabled if SSL-library does not support it
+   * Minor bugfixes
+
+   Enhancements
+   * Service status on info page now links to the detailed status page.
+   * Add RRDGRAPHOPTS setting to permit global user-specified RRD options,
+     e.g. for font to showgraph CGI
+   * Add check for the size of public keys used in SSL certificates
+     (enabled via --sslkeysize=N option for xymonnet)
+   * Optionally disable the display of SSL ciphers in the sslcert status
+     (the --no-cipherlist option for xymonnet)
+   * Improved build-scripts works on newer systems with libraries in
+     new and surprising places
+   * Reduce xymonnet memory usage and runtime for ping tests when there 
+     are multiple hosts.cfg entries with the same IP-address.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri, 13 Jul 2012 18:56:00 +0200
+
 xymon (4.3.7) unstable; urgency=low
 
    * rev 6803
