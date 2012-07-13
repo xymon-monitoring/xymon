@@ -1110,6 +1110,36 @@ int start_ping_service(service_t *service)
 	char **cmdargs;
 	int pfd[2];
 	int i;
+	void *iptree;
+	xtreePos_t handle;
+	
+	/* We build a tree of the IP's to test, so we only test each IP once */
+	iptree = xtreeNew(strcmp);
+	for (t=service->items; (t); t = t->next) {
+		char *rec;
+		char ip[IP_ADDR_STRLEN+1];
+
+		if (t->host->dnserror || t->host->noping) continue;
+
+		strcpy(ip, ip_to_test(t->host));
+		handle = xtreeFind(iptree, ip);
+		if (handle == xtreeEnd(iptree)) {
+			rec = strdup(ip);
+			xtreeAdd(iptree, rec, rec);
+		}
+
+		if (t->host->extrapings) {
+			ipping_t *walk;
+
+			for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
+				handle = xtreeFind(iptree, walk->ip);
+				if (handle == xtreeEnd(iptree)) {
+					rec = strdup(walk->ip);
+					xtreeAdd(iptree, rec, rec);
+				}
+			}
+		}
+	}
 
 	/*
 	 * The idea here is to run ping in a separate process, in parallel
@@ -1195,26 +1225,21 @@ int start_ping_service(service_t *service)
 			close(pfd[0]);
 
 			/* Feed the IP's to test to the child */
-			for (t=service->items, hnum = 0; (t); t = t->next, hnum++) {
+			for (handle = xtreeFirst(iptree), hnum = 0; handle != xtreeEnd(iptree); handle = xtreeNext(iptree, handle), hnum++) {
 				if ((hnum % pingchildcount) != i) continue;
 
-				if (!t->host->dnserror && !t->host->noping) {
-					sprintf(ip, "%s\n", ip_to_test(t->host));
-					n = write(pfd[1], ip, strlen(ip));
-					pingcount++;
-					if (t->host->extrapings) {
-						ipping_t *walk;
-
-						for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
-							sprintf(ip, "%s\n", walk->ip);
-							n = write(pfd[1], ip, strlen(ip));
-							pingcount++;
-						}
-					}
-				}
+				sprintf(ip, "%s\n", xtreeKey(iptree, handle));
+				n = write(pfd[1], ip, strlen(ip));
+				pingcount++;
 			}
 
 			close(pfd[1]);	/* This is when ping starts doing tests */
+
+			for (handle = xtreeFirst(iptree); handle != xtreeEnd(iptree); handle = xtreeNext(iptree, handle)) {
+				char *rec = xtreeKey(iptree, handle);
+				xfree(rec);
+			}
+			xtreeDestroy(iptree);
 		}
 	}
 
