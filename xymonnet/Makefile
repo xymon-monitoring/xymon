@@ -1,5 +1,12 @@
 # Xymon - xymonnet Makefile
 
+XYMONLIB = ../lib/libxymon.a
+XYMONLIBS = $(XYMONLIB)
+XYMONCOMMLIB = ../lib/libxymoncomm.a
+XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONTIMELIB = ../lib/libxymontime.a
+XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares
 
@@ -17,11 +24,11 @@ NETTESTOBJS = xymonnet.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2
 PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o
 
-xymonnet: $(NETTESTOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libxymon.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymonnet: $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) libcares.a $(LDAPLIBS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(XYMONLIBS) $(PCRELIBS)
 
-xymonping: $(PINGTESTOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymonping: $(PINGTESTOBJS) $(XYMONTIMELIB) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS)
 
 xymonnet.o: xymonnet.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ xymonnet.c
@@ -60,19 +67,19 @@ c-ares/configure: c-ares-$(ARESVER).tar.gz
 	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
 	touch c-ares/configure
 
-beastat: $(BEASTATOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+beastat: $(BEASTATOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(PCRELIBS)
 
 beastat.o: beastat.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
-contest: contest.c httptest.o dns.o dns2.o httpcookies.o $(LIBOBJS)
-	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+contest: contest.c httptest.o dns.o dns2.o httpcookies.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
 
 
-xymon-snmpcollect: xymon-snmpcollect.o $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` ../lib/libxymon.a $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+xymon-snmpcollect: xymon-snmpcollect.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` ../lib/libxymon.a $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
 
 xymon-snmpcollect.o: xymon-snmpcollect.c
 	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ xymon-snmpcollect.c

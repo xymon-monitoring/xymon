@@ -480,7 +480,7 @@ static void setup_ssl(tcptest_t *item)
 
 	if (item->sslctx == NULL) {
 		switch (item->ssloptions->sslversion) {
-#ifdef SSLV2_SUPPORTED
+#ifdef HAVE_SSLV2_SUPPORT
 		  case SSLVERSION_V2:
 			item->sslctx = SSL_CTX_new(SSLv2_client_method()); break;
 #endif

@@ -11,7 +11,7 @@
 	cd build
 	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-lfs clean
 	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-lfs 2>/dev/null
-	if [ $? -ne 0 ]; then
+	if test $? -ne 0; then
 		echo "ERROR: Compiler doesnt recognize the off_t C type."
 		exit 1
 	fi

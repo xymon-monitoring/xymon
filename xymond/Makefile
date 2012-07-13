@@ -1,7 +1,12 @@
+XYMONLIB = ../lib/libxymon.a
+XYMONLIBS = $(XYMONLIB)
+XYMONCOMMLIB = ../lib/libxymoncomm.a
+XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONTIMELIB = ../lib/libxymontime.a
+XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+
 PROGRAMS = xymon.sh xymond xymond_channel xymond_locator xymond_filestore xymond_history xymond_alert xymond_rrd xymond_sample xymond_client xymond_hostdata xymond_capture xymond_distribute xymonfetch xymon-mailack trimhistory combostatus xymonreports.sh moverrd.sh convertnk rrdcachectl
 CLIENTPROGRAMS = ../client/xymond_client
-
-LIBOBJS = ../lib/libxymon.a
 
 XYMONDOBJS    = xymond.o xymond_buffer.o xymond_ipc.o
 CHANNELOBJS   = xymond_channel.o xymond_buffer.o xymond_ipc.o
@@ -31,26 +36,29 @@ all: $(PROGRAMS) cfgfiles
 
 client: $(CLIENTPROGRAMS)
 
-xymond: $(XYMONDOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(XYMONDOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymond: $(XYMONDOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(XYMONDOBJS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(PCRELIBS)
 
-xymond_channel: $(CHANNELOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymond_channel: $(CHANNELOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(PCRELIBS)
 
-xymond_locator: $(LOCATOROBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(LOCATOROBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
+xymond_locator: $(LOCATOROBJS) $(XYMONCOMMLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(LOCATOROBJS) $(XYMONCOMMLIBS)
 
-xymond_filestore: $(FILESTOREOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymond_filestore: $(FILESTOREOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-xymond_history: $(HISTORYOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
+xymond_history: $(HISTORYOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS)
 
-xymond_alert: $(ALERTOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymond_alert: $(ALERTOBJS) $(XYMONCOMMLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(ALERTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-xymond_rrd: $(RRDOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymond_rrd: $(RRDOBJS) $(XYMONCOMMLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(RRDLIBS) $(PCRELIBS)
+
+xymond.o: xymond.c
+	$(CC) $(CFLAGS) $(SSLFLAGS) -c -o $@ xymond.c
 
 do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
@@ -61,20 +69,20 @@ do_rrd.o: do_rrd.c do_rrd.h rrd/*.c
 xymond_capture.o: xymond_capture.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ xymond_capture.c
 
-xymond_sample: $(SAMPLEOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
+xymond_sample: $(SAMPLEOBJS) $(XYMONCOMMLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS)
 
-xymond_capture: $(CAPTUREOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CAPTUREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymond_capture: $(CAPTUREOBJS) $(XYMONCOMMLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CAPTUREOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-xymond_distribute: $(DISTRIBUTEOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(DISTRIBUTEOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymond_distribute: $(DISTRIBUTEOBJS) $(XYMONCOMMLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(DISTRIBUTEOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-xymond_hostdata: $(HOSTDATAOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOSTDATAOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
+xymond_hostdata: $(HOSTDATAOBJS) $(XYMONCOMMLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOSTDATAOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS)
 
-xymond_client: $(CLIENTOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymond_client: $(CLIENTOBJS) $(XYMONCOMMLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 ../client/xymond_client: $(CLIENTOBJS) ../lib/xymonclient.a
 	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/xymonclient.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
@@ -85,26 +93,26 @@ xymond_client.o: xymond_client.c client/*.c
 combostatus.o: combostatus.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
-combostatus: $(COMBOTESTOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(COMBOTESTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+combostatus: $(COMBOTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(COMBOTESTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 xymon-mailack.o: xymon-mailack.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ xymon-mailack.c
 
-xymon-mailack: $(MAILACKOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymon-mailack: $(MAILACKOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-trimhistory: $(TRIMHISTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TRIMHISTOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
+trimhistory: $(TRIMHISTOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TRIMHISTOBJS) $(XYMONCOMMLIBS)
 
-xymonfetch: $(FETCHOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(FETCHOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
+xymonfetch: $(FETCHOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(FETCHOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS)
 
-convertnk: $(CONVERTNKOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CONVERTNKOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
+convertnk: $(CONVERTNKOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CONVERTNKOBJS) $(XYMONCOMMLIBS)
 
-rrdcachectl: $(RRDCACHECTLOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(RRDCACHECTLOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
+rrdcachectl: $(RRDCACHECTLOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(RRDCACHECTLOBJS) $(XYMONCOMMLIBS)
 
 xymon.sh: xymon.sh.DIST
 	cat $< | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONLOGDIR@!$(XYMONLOGDIR)!g' | sed -e 's!@XYMONUSER@!$(XYMONUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
@@ -171,7 +179,7 @@ ifndef PKGBUILD
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONLOGDIR) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLEXTDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLWWWDIR)/gifs $(INSTALLROOT)$(INSTALLWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLWWWDIR)/wml $(INSTALLROOT)$(XYMONVAR) $(INSTALLROOT)$(XYMONVAR)/*
 	chgrp $(HTTPDGID) $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
 
-	chown root $(INSTALLROOT)$(INSTALLBINDIR)/xymonping || echo "Could not make xymonping owned by root, continuing"
-	chmod 4755 $(INSTALLROOT)$(INSTALLBINDIR)/xymonping || echo "Could not make xymonping suid-root, continuing"
+	chown root $(INSTALLROOT)$(INSTALLBINDIR)/fping4 $(INSTALLROOT)$(INSTALLBINDIR)/fping6 || echo "Could not make fping4/fping6 owned by root, continuing"
+	chmod 4755 $(INSTALLROOT)$(INSTALLBINDIR)/fping4 $(INSTALLROOT)$(INSTALLBINDIR)/fping6 || echo "Could not make fping4/fping6 suid-root, continuing"
 endif
 

@@ -4,10 +4,17 @@
 PROGRAMS = xymongen
 GENOBJS = xymongen.o loadlayout.o loaddata.o pagegen.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
 
+XYMONLIB = ../lib/libxymon.a
+XYMONLIBS = $(XYMONLIB)
+XYMONCOMMLIB = ../lib/libxymoncomm.a
+XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONTIMELIB = ../lib/libxymontime.a
+XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+
 all: $(PROGRAMS)
 
-xymongen: $(GENOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(GENOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymongen: $(GENOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(GENOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 
 ################################################

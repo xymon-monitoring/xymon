@@ -16,6 +16,11 @@ ifeq ($(OSTYPE),openbsd)
 	EXTRATOOLS=openbsd-meminfo
 endif
 
+XYMONCLIENTLIB = ../lib/libxymonclient.a
+XYMONCLIENTLIBS = $(XYMONCLIENTLIB)
+XYMONCLIENTCOMMLIB = ../lib/libxymonclientcomm.a
+XYMONCLIENTCOMMLIBS = $(XYMONCLIENTCOMMLIB) $(SSLLIBS) $(ZLIBLIBS) $(NETLIBS) $(LIBRTDEF)
+
 PROGRAMS=xymonlaunch logfetch clientupdate orcaxymon msgcache
 COMMONTOOLS=xymon xymoncmd xymongrep xymoncfg xymondigest
 
@@ -32,17 +37,17 @@ else
 	cat clientlaunch.cfg.DIST | sed -e 's!@CLIENTFLAGS@!!g' >clientlaunch.cfg
 endif
 
-logfetch: logfetch.c
-	$(CC) $(CFLAGS) -o $@ logfetch.c ../lib/xymonclient.a $(LIBRTDEF)
+logfetch: logfetch.c $(XYMONCLIENTLIB)
+	$(CC) $(CFLAGS) -o $@ logfetch.c $(XYMONCLIENTLIBS)
 
-clientupdate: clientupdate.c
-	$(CC) $(CFLAGS) -o $@ clientupdate.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+clientupdate: clientupdate.c $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
+	$(CC) $(CFLAGS) -o $@ clientupdate.c $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
-orcaxymon: orcaxymon.c
-	$(CC) $(CFLAGS) -o $@ orcaxymon.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+orcaxymon: orcaxymon.c $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
+	$(CC) $(CFLAGS) -o $@ orcaxymon.c $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
-msgcache: msgcache.c
-	$(CC) $(CFLAGS) -o $@ msgcache.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+msgcache: msgcache.c $(XYMONCLIENTLIB)
+	$(CC) $(CFLAGS) -o $@ msgcache.c $(XYMONCLIENTLIBS)
 
 hpux-meminfo: hpux-meminfo.c
 	$(CC) -o $@ hpux-meminfo.c

@@ -1,0 +1,11 @@
+include Makefile.$(OS)
+
+test-compile:
+	@$(CC) $(CFLAGS) $(OSSLINC) -o test-ssl2.o -c test-ssl2.c
+
+test-link:
+	@$(CC) $(CFLAGS) $(OSSLLIB) -o test-ssl2 test-ssl2.o -lssl -lcrypto $(NETLIBS)
+
+clean:
+	@rm -f test-ssl2.o test-ssl2
+

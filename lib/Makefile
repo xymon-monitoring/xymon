@@ -1,30 +1,58 @@
 # Xymon library Makefile
 #
 
-XYMONLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o crondate.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o xymonrrd.o holidays.o htmllog.o ipaccess.o loadalerts.o loadhosts.o loadcriticalconf.o locator.o links.o matching.o md5.o memory.o misc.o msort.o netservices.o notifylog.o readmib.o reportlog.o rmd160c.o sendmsg.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc.o timing.o tree.o url.o webaccess.o
+XYMONLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o crondate.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o xymonrrd.o holidays.o htmllog.o ipaccess.o loadalerts.o loadcriticalconf.o links.o matching.o md5.o memory.o misc.o msort.o netservices.o notifylog.o readmib.o reportlog.o rmd160c.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc.o tree.o url.o webaccess.o
 
-CLIENTLIBOBJS = osdefs.o cgiurls.o color-client.o crondate.o digest.o encoding.o environ-client.o errormsg.o holidays.o ipaccess.o loadhosts.o md5.o memory.o misc.o msort.o rmd160c.o sendmsg.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc-client.o tree.o
+XYMONCOMMLIBOBJS = $(XYMONLIBOBJS) loadhosts.o locator.o sendmsg.o
+XYMONTIMELIBOBJS = run.o timing.o
+
+CLIENTLIBOBJS = osdefs.o cgiurls.o color-client.o crondate.o digest.o encoding.o environ-client.o errormsg.o holidays.o ipaccess.o md5.o memory.o misc.o msort.o rmd160c.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc-client.o tree.o
 ifeq ($(LOCALCLIENT),yes)
 	CLIENTLIBOBJS += matching.o
 endif
+XYMONCLIENTCOMMLIBOBJS = loadhosts.o sendmsg.o
+
+XYMONCLIENTLIB = libxymonclient.a
+XYMONCLIENTLIBS = $(XYMONCLIENTLIB)
+XYMONCLIENTCOMMLIB = libxymonclientcomm.a
+XYMONCLIENTCOMMLIBS = $(XYMONCLIENTCOMMLIB) $(ZLIBLIBS) $(XYMONCLIENTLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+
+XYMONLIB = libxymon.a
+XYMONLIBS = $(XYMONLIB)
+XYMONCOMMLIB = libxymoncomm.a
+XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONTIMELIB = libxymontime.a
+XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
 
 CFLAGS += -I. -I../include 
 
-all: test-endianness libxymon.a xymonclient.a loadhosts stackio availability md5 sha1 rmd160 locator
+all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) loadhosts stackio availability md5 sha1 rmd160 locator
 
-client: test-endianness xymonclient.a
+client: test-endianness $(XYMONCLIENTLIB)
 
 test-endianness: test-endianness.c
 	$(CC) $(CFLAGS) -o $@ $<
 
-libxymon.a: $(XYMONLIBOBJS)
-	ar cr libxymon.a $(XYMONLIBOBJS)
-	ranlib libxymon.a || echo ""
+$(XYMONLIB): $(XYMONLIBOBJS)
+	ar cr $(XYMONLIB) $(XYMONLIBOBJS)
+	ranlib $(XYMONLIB) || echo ""
 
-xymonclient.a: $(CLIENTLIBOBJS)
-	ar cr xymonclient.a $(CLIENTLIBOBJS)
-	ranlib xymonclient.a || echo ""
+$(XYMONCOMMLIB): $(XYMONCOMMLIBOBJS)
+	ar cr $(XYMONCOMMLIB) $(XYMONCOMMLIBOBJS)
+	ranlib $(XYMONCOMMLIB) || echo ""
+
+$(XYMONTIMELIB): $(XYMONTIMELIBOBJS)
+	ar cr $(XYMONTIMELIB) $(XYMONTIMELIBOBJS)
+	ranlib $(XYMONTIMELIB) || echo ""
+
+$(XYMONCLIENTLIB): $(CLIENTLIBOBJS)
+	ar cr $(XYMONCLIENTLIB) $(CLIENTLIBOBJS)
+	ranlib $(XYMONCLIENTLIB) || echo ""
+
+$(XYMONCLIENTCOMMLIB): $(XYMONCLIENTCOMMLIBOBJS)
+	ar cr $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTCOMMLIBOBJS)
+	ranlib $(XYMONCLIENTCOMMLIB) || echo ""
 
 loadhosts.o: loadhosts.c loadhosts_file.c loadhosts_net.c
 	$(CC) $(CFLAGS) -c -o $@ loadhosts.c
@@ -62,14 +90,14 @@ color-client.o: color.c
 timefunc-client.o: timefunc.c
 	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
 
-loadhosts: loadhosts.c libxymon.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c ./libxymon.a $(NETLIBS) $(LIBRTDEF)
+loadhosts: loadhosts.c loadhosts_file.c loadhosts_net.c $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c $(XYMONCOMMLIBS)
 
 stackio: stackio.c libxymon.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c ./libxymon.a $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c $(XYMONLIBS)
 
 availability: availability.c libxymon.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c ./libxymon.a $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c $(XYMONLIBS)
 
 md5: md5.c
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ md5.c
@@ -81,7 +109,7 @@ rmd160: rmd160c.c
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ rmd160c.c
 
 locator: locator.c
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ locator.c ./libxymon.a $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ locator.c $(XYMONCOMMLIBS) $(XYMONLIBS)
 
 clean:
 	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator
