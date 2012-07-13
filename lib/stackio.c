@@ -426,7 +426,8 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			eol = bufpastwhitespace + strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
 			newfn = bufpastwhitespace + strcspn(bufpastwhitespace, " \t");
 			newfn += strspn(newfn, " \t");
-		
+			while (*newfn && isspace(*(newfn + strlen(newfn) - 1))) *(newfn + strlen(newfn) -1) = '\0';
+
 			if (*newfn && (stackfopen(newfn, "r", (void **)fdhead->listhead) != NULL))
 				return stackfgets(buffer, extraincl);
 			else {
@@ -442,6 +443,7 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			eol = bufpastwhitespace + strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
 			dirfn = bufpastwhitespace + 9;
 			dirfn += strspn(dirfn, " \t");
+			while (*dirfn && isspace(*(dirfn + strlen(dirfn) - 1))) *(dirfn + strlen(dirfn) -1) = '\0';
 
 			if (*dirfn) addtofnlist(dirfn, (void **)fdhead->listhead);
 			if (fnlist && (stackfopen(fnlist->name, "r", (void **)fdhead->listhead) != NULL)) {
