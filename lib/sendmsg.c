@@ -153,7 +153,8 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 	int result = XYMONSEND_OK;
 
 	if (dontsendmessages && !respfd && !respstr) {
-		printf("%s\n", message);
+		fprintf(stdout, "%s\n", message);
+		fflush(stdout);
 		return XYMONSEND_OK;
 	}
 
