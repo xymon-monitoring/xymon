@@ -11,45 +11,57 @@ XYMONOBJS    = xymon.o
 LAUNCHOBJS   = xymonlaunch.o
 CMDOBJS      = xymoncmd.o
 
+XYMONCLIENTLIB = ../lib/libxymonclient.a
+XYMONCLIENTLIBS = $(XYMONCLIENTLIB)
+XYMONCLIENTCOMMLIB = ../lib/libxymonclientcomm.a
+XYMONCLIENTCOMMLIBS = $(XYMONCLIENTCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+
+XYMONLIB = ../lib/libxymon.a
+XYMONLIBS = $(XYMONLIB)
+XYMONCOMMLIB = ../lib/libxymoncomm.a
+XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(ZLIBLIBS) $(LIBRTDEF)
+XYMONTIMELIB = ../lib/libxymontime.a
+XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+
 all: $(PROGRAMS)
 
 client: $(CLIENTPROGRAMS)
 
-xymongrep: $(HOSTGREPOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymongrep: $(HOSTGREPOBJS) $(XYMONCOMMLIB) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS)
 
-../client/xymongrep: $(HOSTGREPOBJS) ../lib/xymonclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymongrep: $(HOSTGREPOBJS) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
-xymoncfg: $(HOSTSHOWOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymoncfg: $(HOSTSHOWOBJS) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(XYMONLIBS)
 
-../client/xymoncfg: $(HOSTSHOWOBJS) ../lib/xymonclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymoncfg: $(HOSTSHOWOBJS) $(XYMONCLIENTLIB)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(XYMONCLIENTLIBS)
 
-xymon: $(XYMONOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymon: $(XYMONOBJS) $(XYMONCOMMLIB) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS)
 
-../client/xymon: $(XYMONOBJS) ../lib/xymonclient.a
-	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymon: $(XYMONOBJS) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
+	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
-xymonlaunch: $(LAUNCHOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymonlaunch: $(LAUNCHOBJS) $(XYMONTIMELIB) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) $(XYMONTIMELIBS) $(XYMONLIBS)
 
-../client/xymonlaunch: $(LAUNCHOBJS) ../lib/xymonclient.a
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymonlaunch: $(LAUNCHOBJS) $(XYMONTIMELIB) $(XYMONCLIENTLIB)
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) $(XYMONTIMELIBS) $(XYMONCLIENTLIBS)
 
-xymoncmd: $(CMDOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymoncmd: $(CMDOBJS) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) $(XYMONLIBS)
 
-../client/xymoncmd: $(CMDOBJS) ../lib/xymonclient.a
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymoncmd: $(CMDOBJS) $(XYMONCLIENTLIB)
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) $(XYMONCLIENTLIBS)
 
-xymondigest: $(DIGESTOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymondigest: $(DIGESTOBJS) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS)
 
-../client/xymondigest: $(DIGESTOBJS) ../lib/xymonclient.a
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymondigest: $(DIGESTOBJS) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
 
 xymon.exe: xymon.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.c ../lib/timefunc.c ../lib/memory.c ../lib/sendmsg.c ../lib/holidays.c ../lib/rbtr.c ../lib/msort.c
