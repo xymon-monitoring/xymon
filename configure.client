@@ -136,7 +136,7 @@ then
 fi
 echo ""; echo ""
 
-XYMONHOSTOS=`uname -s | tr [A-Z] [a-z]`
+XYMONHOSTOS=`uname -s | tr '[A-Z]' '[a-z]'`
 if test "$XYMONHOME" = ""; then
 	XYMONHOME=$XYMONTOPDIR/client
 fi
