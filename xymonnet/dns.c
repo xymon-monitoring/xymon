@@ -67,8 +67,14 @@ static void dns_init(void)
 	dnscache = xtreeNew(strcasecmp);
 
 	if (use_ares_lookup) {
-		int status = ares_init(&mychannel);
+		struct ares_options options;
+		int status;
 
+		/* ARES timeout backported from Xymon trunk 20120411 - this should give us a ~23 second timeout */
+		options.timeout = 2000;
+		options.tries = 4;
+
+		status = ares_init_options(&mychannel, &options, (ARES_OPT_TIMEOUTMS | ARES_OPT_TRIES));
 		if (status != ARES_SUCCESS) {
 			errprintf("Cannot initialize ARES resolver, using standard\n");
 			errprintf("ARES error was: '%s'\n", ares_strerror(status));
@@ -300,9 +306,11 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 	options.flags = ARES_FLAG_NOCHECKRESP;
 	options.servers = &serveraddr;
 	options.nservers = 1;
-	options.timeout = dnstimeout;
+	/* ARES timeout backported from Xymon trunk 20120411 - this should give us a ~23 second timeout */
+	options.timeout = 2000;
+	options.tries = 4;
 
-	status = ares_init_options(&channel, &options, (ARES_OPT_FLAGS | ARES_OPT_SERVERS | ARES_OPT_TIMEOUT));
+	status = ares_init_options(&channel, &options, (ARES_OPT_FLAGS | ARES_OPT_SERVERS | ARES_OPT_TIMEOUTMS | ARES_OPT_TRIES));
 	if (status != ARES_SUCCESS) {
 		errprintf("Could not initialize ares channel: %s\n", ares_strerror(status));
 		return 1;
