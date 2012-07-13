@@ -364,6 +364,18 @@ is used.
 Retrieves an XML string with the summary of all status logs
 as for the "xymondboard" command.
 
+.IP "hostinfo [CRITERIA]"
+Retrieves the current configuration of a host (i.e. the 
+.I hosts.cfg(5)
+definition). CRITERIA selects which host(s) to report, and is
+identical to the CRITERIA in the xymondboard command.
+
+The response is one line for each host that matches the CRITERIA,
+or all hosts if no criteria is specified. The line is composed of
+a number of fields, separated by a pipe-sign. The first two fields
+will always be the hostname and the IP-address. The remaining fields 
+- if any - are the hosts.cfg tags in no particular order.
+
 .IP "download FILENAME"
 Download a file from the Xymon server\(aqs download directory.
 
