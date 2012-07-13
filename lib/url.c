@@ -396,7 +396,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 
 		load_netrc();
 		for (walk = loginhead; (walk && (strcmp(walk->host, url->host) != 0)); walk = walk->next) ;
-		if (walk) url->auth = walk->auth;
+		if (walk) url->auth = strdup(walk->auth);
 	}
 
 	/* Build the canonical form of this URL, free from all config artefacts */
