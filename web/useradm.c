@@ -123,7 +123,6 @@ int main(int argc, char *argv[])
 			cmd = (char *)malloc(1024 + strlen(passfile) + strlen(adduser_name) + strlen(adduser_password));
 			sprintf(cmd, "htpasswd -b '%s' '%s' '%s'",
 				 passfile, adduser_name, adduser_password);
-			n = system(cmd);
 			n = system(cmd); ret = WEXITSTATUS(n);
 			if ((n == -1) || (ret != 0)) {
 				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('Update FAILED'); </SCRIPT>\n";
