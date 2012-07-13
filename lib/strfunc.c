@@ -110,9 +110,10 @@ static void strbuf_addtobuffer(strbuffer_t *buf, char *newtext, int newlen)
 	}
 
 	if (newtext) {
-		/* Copy the NUL byte at end of newtext also */
-		memcpy(buf->s+buf->used, newtext, newlen+1);
+		memcpy(buf->s+buf->used, newtext, newlen);
 		buf->used += newlen;
+		/* Make sure result buffer is NUL-terminated; newtext might not be. */
+		*(buf->s + buf->used) = '\0';
 	}
 }
 
