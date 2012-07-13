@@ -805,7 +805,7 @@ int chkfreespace(char *path, int minblks, int mininodes)
 
 	n = statvfs(path, &fs);
 	if (n == -1) {
-		errprintf("Cannot stat filesystem %s: %s", path, strerror(errno));
+		errprintf("Cannot stat filesystem %s: %s\n", path, strerror(errno));
 		return 0;
 	}
 
