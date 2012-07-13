@@ -94,11 +94,13 @@ static int prepare_fromnet(void)
 	sres = newsendreturnbuf(1, NULL);
 	sendstat = sendmessage("config hosts.cfg", NULL, XYMON_TIMEOUT, sres);
 	if (sendstat != XYMONSEND_OK) {
+		freesendreturnbuf(sres);
 		errprintf("Cannot load hosts.cfg from xymond, code %d\n", sendstat);
 		return -1;
 	}
 
 	fdata = getsendreturnstr(sres, 1);
+	freesendreturnbuf(sres);
 	fhash = md5hash(fdata);
 	if (strcmp(contentmd5, fhash) == 0) {
 		/* No changes */
