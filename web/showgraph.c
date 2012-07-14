@@ -684,7 +684,6 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 char *build_selfURI(void)
 {
 	strbuffer_t *result = newstrbuffer(2048);
-	char *p;
 	char numbuf[40];
 
 	addtobuffer(result, xgetenv("SCRIPT_NAME"));

@@ -109,9 +109,9 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		}
 		else if (strstr(msgcopy, " secs") != NULL) {
 			/* Probably new "sntp" output */
-			char *year, *month, *tm, *offsetdirection, *offset, *plusminus, *errorbound, *secs;
+			char *year, *tm, *offsetdirection, *offset, *plusminus, *errorbound, *secs;
 
-			month = tm = offsetdirection = plusminus = errorbound = secs = NULL;
+			tm = offsetdirection = plusminus = errorbound = secs = NULL;
 			year = strtok(msgcopy, " ");
 			if (year) tm = strtok(NULL, " ");
 			if (tm) offsetdirection = strtok(NULL, " ");

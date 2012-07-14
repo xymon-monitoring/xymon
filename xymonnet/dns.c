@@ -138,7 +138,7 @@ static void dns_simple_callback(void *arg, int status, int timeout, struct hoste
 
 static void dns_ares_queue_run(ares_channel channel)
 {
-	int nfds, selres;
+	int nfds;
 	fd_set read_fds, write_fds;
 	struct timeval *tvp, tv;
 	int loops = 0;
@@ -168,7 +168,7 @@ static void dns_ares_queue_run(ares_channel channel)
 		tv.tv_sec = dnstimeout; tv.tv_usec = 0;
 		tvp = ares_timeout(channel, &tv, &tv);
 
-		selres = select(nfds, &read_fds, &write_fds, NULL, tvp);
+		select(nfds, &read_fds, &write_fds, NULL, tvp);
 		ares_process(channel, &read_fds, &write_fds);
 	}
 

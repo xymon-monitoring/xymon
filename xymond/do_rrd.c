@@ -673,7 +673,6 @@ static int rrddatasets(char *hostname, char ***dsnames)
 
 void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, xymonrrd_t *ldef, char *classname, char *pagepaths)
 {
-	int res = 0;
 	char *id;
 
 	MEMDEFINE(rrdvalues);
@@ -681,90 +680,90 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	if (ldef) id = ldef->xymonrrdname; else id = testname;
 	senderip = sender;
 
-	if      (strcmp(id, "bbgen") == 0)       res = do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "xymongen") == 0)    res = do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "bbtest") == 0)      res = do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "xymonnet") == 0)    res = do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "bbproxy") == 0)     res = do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "xymonproxy") == 0)  res = do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "hobbitd") == 0)     res = do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "xymond") == 0)      res = do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "citrix") == 0)      res = do_citrix_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "ntpstat") == 0)     res = do_ntpstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	if      (strcmp(id, "bbgen") == 0)       do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymongen") == 0)    do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "bbtest") == 0)      do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymonnet") == 0)    do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "bbproxy") == 0)     do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymonproxy") == 0)  do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "hobbitd") == 0)     do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymond") == 0)      do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "citrix") == 0)      do_citrix_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "ntpstat") == 0)     do_ntpstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
-	else if (strcmp(id, "la") == 0)          res = do_la_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "disk") == 0)        res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "memory") == 0)      res = do_memory_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "netstat") == 0)     res = do_netstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "vmstat") == 0)      res = do_vmstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "iostat") == 0)      res = do_iostat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "ifstat") == 0)      res = do_ifstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "la") == 0)          do_la_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "disk") == 0)        do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "memory") == 0)      do_memory_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "netstat") == 0)     do_netstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "vmstat") == 0)      do_vmstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "iostat") == 0)      do_iostat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "ifstat") == 0)      do_ifstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	/* These two come from the filerstats2bb.pl script. The reports are in disk-format */
-	else if (strcmp(id, "inode") == 0)       res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "qtree") == 0)       res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "inode") == 0)       do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "qtree") == 0)       do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
-	else if (strcmp(id, "apache") == 0)      res = do_apache_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "sendmail") == 0)    res = do_sendmail_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "mailq") == 0)       res = do_mailq_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "iishealth") == 0)   res = do_iishealth_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "temperature") == 0) res = do_temperature_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "apache") == 0)      do_apache_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "sendmail") == 0)    do_sendmail_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "mailq") == 0)       do_mailq_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "iishealth") == 0)   do_iishealth_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "temperature") == 0) do_temperature_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
-	else if (strcmp(id, "ncv") == 0)         res = do_ncv_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "tcp") == 0)         res = do_net_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "ncv") == 0)         do_ncv_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "tcp") == 0)         do_net_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
-	else if (strcmp(id, "filesizes") == 0)   res = do_filesizes_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "proccounts") == 0)  res = do_counts_rrd("processes", hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "filesizes") == 0)   do_filesizes_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "proccounts") == 0)  do_counts_rrd("processes", hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "portcounts") == 0)  do_counts_rrd("ports", hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "linecounts") == 0)  do_derives_rrd("lines", hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "trends") == 0)      do_trends_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
-	else if (strcmp(id, "ifmib") == 0)       res = do_ifmib_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (is_snmpmib_rrd(id))             res = do_snmpmib_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "ifmib") == 0)       do_ifmib_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (is_snmpmib_rrd(id))             do_snmpmib_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	/* z/OS, z/VSE, z/VM from Rich Smrcina */
-	else if (strcmp(id, "paging") == 0)      res = do_paging_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "mdc") == 0)         res = do_mdc_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "cics") == 0)        res = do_cics_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "getvis") == 0)      res = do_getvis_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "maxuser") == 0)     res = do_asid_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "nparts") == 0)      res = do_asid_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "paging") == 0)      do_paging_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "mdc") == 0)         do_mdc_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "cics") == 0)        do_cics_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "getvis") == 0)      do_getvis_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "maxuser") == 0)     do_asid_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "nparts") == 0)      do_asid_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	/* 
 	 * These are from the hobbit-perl-client
 	 * NetApp check for netapp.pl, dbcheck.pl and beastat.pl scripts
 	 */
-	else if (strcmp(id, "xtstats") == 0)     res = do_netapp_extrastats_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "quotas") == 0)      res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "snapshot") == 0)    res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "TblSpace") == 0)    res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "stats") == 0)       res = do_netapp_stats_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "ops") == 0)         res = do_netapp_ops_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "cifs") == 0)        res = do_netapp_cifs_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "snaplist") == 0)    res = do_netapp_snaplist_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "snapmirr") == 0)    res = do_netapp_snapmirror_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "HitCache") == 0)    res = do_dbcheck_hitcache_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "Session") == 0)     res = do_dbcheck_session_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "RollBack") == 0)    res = do_dbcheck_rb_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "InvObj") == 0)      res = do_dbcheck_invobj_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "MemReq") == 0)      res = do_dbcheck_memreq_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "JVM") == 0)         res = do_beastat_jvm_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "JMS") == 0)         res = do_beastat_jms_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "JTA") == 0)         res = do_beastat_jta_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "ExecQueue") == 0)   res = do_beastat_exec_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "JDBCConn") == 0)    res = do_beastat_jdbc_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xtstats") == 0)     do_netapp_extrastats_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "quotas") == 0)      do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "snapshot") == 0)    do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "TblSpace") == 0)    do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "stats") == 0)       do_netapp_stats_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "ops") == 0)         do_netapp_ops_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "cifs") == 0)        do_netapp_cifs_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "snaplist") == 0)    do_netapp_snaplist_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "snapmirr") == 0)    do_netapp_snapmirror_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "HitCache") == 0)    do_dbcheck_hitcache_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "Session") == 0)     do_dbcheck_session_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "RollBack") == 0)    do_dbcheck_rb_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "InvObj") == 0)      do_dbcheck_invobj_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "MemReq") == 0)      do_dbcheck_memreq_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "JVM") == 0)         do_beastat_jvm_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "JMS") == 0)         do_beastat_jms_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "JTA") == 0)         do_beastat_jta_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "ExecQueue") == 0)   do_beastat_exec_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "JDBCConn") == 0)    do_beastat_jdbc_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	/*
 	 * This is from the devmon SNMP collector
 	 */
-	else if (strcmp(id, "devmon") == 0)      res = do_devmon_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "devmon") == 0)      do_devmon_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;
 
 		for (i=0; (extids[i] && strcmp(extids[i], id)); i++) ;
 
-		if (extids[i]) res = do_external_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+		if (extids[i]) do_external_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	}
 
 	senderip = NULL;

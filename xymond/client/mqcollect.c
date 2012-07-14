@@ -55,7 +55,7 @@ void handle_mqcollect_client(char *hostname, char *clienttype, enum ostype_t os,
 	strbuffer_t *redsummary = newstrbuffer(0);
 	strbuffer_t *yellowsummary = newstrbuffer(0);
 	strbuffer_t *greensummary = newstrbuffer(0);
-	char *chngroup, *bol, *eoln, *clienttext;
+	char *bol, *eoln, *clienttext;
 	int color = COL_GREEN;
 	char fromline[1024], msgline[1024];
 	char *qmid = NULL, *qnam = NULL; int qlen = -1, qage = -1; char *chnnam = NULL, *chnstatus = NULL;

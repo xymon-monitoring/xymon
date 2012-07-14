@@ -451,7 +451,7 @@ startagain:
 	needmoredata = (endpos == NULL);
 	while (needmoredata) {
 		/* Fill buffer with more data until we get an end-of-message marker */
-		struct timespec now, tmo;
+		struct timespec now;
 		struct timeval selecttmo;
 		fd_set fdread;
 		int res;

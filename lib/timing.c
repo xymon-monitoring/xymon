@@ -36,9 +36,6 @@ static timestamp_t *stamptail = NULL;
 
 time_t gettimer(void)
 {
-	int res;
-	struct timespec t;
-
 #if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
 	res = clock_gettime(CLOCK_MONOTONIC, &t);
 	if(-1 == res)
@@ -57,7 +54,6 @@ time_t gettimer(void)
 
 void getntimer(struct timespec *tp)
 {
-	int res;
 	struct timeval t;
 	struct timezone tz;
 

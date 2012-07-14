@@ -332,8 +332,7 @@ void do_vertical(host_t *head, FILE *output, char *pagepath)
 	host_t	*h;
 	entry_t	*e;
 	char	*xymonskin;
-	int	rowcount = 0, hostcount = 0;
-	int     usetooltip = 0;
+	int	hostcount = 0;
 	int	width;
 	int	hidx;
 	void	*vptree;
@@ -345,11 +344,6 @@ void do_vertical(host_t *head, FILE *output, char *pagepath)
 	vptree = xtreeNew(strcmp);
 
 	xymonskin = strdup(xgetenv("XYMONSKIN"));
-
-	switch (tooltipuse) {
-	  case TT_STDONLY: case TT_ALWAYS: usetooltip = 1; break;
-	  case TT_NEVER:  usetooltip = 0; break;
-	}
 
 	width = atoi(xgetenv("DOTWIDTH"));
 	if ((width < 0) || (width > 50)) width = 16;
@@ -373,7 +367,6 @@ void do_vertical(host_t *head, FILE *output, char *pagepath)
 	for (h = head, hidx = 0; (h); h = h->next, hidx++) {
 		for (e = h->entries; (e); e = e->next) {
 			vprec_t *itm;
-			char *hptr;
 
 			handle = xtreeFind(vptree, e->column->name);
 			if (handle == xtreeEnd(vptree)) {

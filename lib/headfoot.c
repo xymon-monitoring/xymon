@@ -184,7 +184,6 @@ void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
 static listpool_t *find_listpool(char *listname)
 {
 	listpool_t *pool = NULL;
-	listrec_t *zombie;
 
 	if (!listname) listname = "";
 	for (pool = listpoolhead; (pool && strcmp(pool->name, listname)); pool = pool->next);

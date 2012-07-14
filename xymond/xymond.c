@@ -859,8 +859,6 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, hostname, msg);
 			if (n > (bufsz-5)) {
-				char *source;
-
 				errprintf("Oversize %s msg from %s for %s truncated (n=%d, limit=%d)\n", 
 					((channel->channelid == C_NOTES) ? "notes" : "user"), 
 					sender, hostname, n, bufsz);
@@ -2802,7 +2800,6 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 	int needed, used;
 	enum boardfield_t f_type;
 	modifier_t *mwalk;
-	time_t now = getcurrenttime(NULL);
 	time_t timeroffset = (getcurrenttime(NULL) - gettimer());
 
 	buf = *outbuf;
@@ -3415,7 +3412,7 @@ void do_message(conn_t *msg, char *origin)
 		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (log) {
 			char *buf, *bufp;
-			int bufsz, buflen;
+			int bufsz;
 			xymond_meta_t *mwalk;
 
 			flush_acklist(log, 0);
@@ -3431,7 +3428,6 @@ void do_message(conn_t *msg, char *origin)
 
 			xfree(msg->buf);
 			bufp = buf = (char *)malloc(bufsz);
-			buflen = 0;
 
 			bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
 			bufp += sprintf(bufp, "<ServerStatus>\n");
@@ -3923,12 +3919,12 @@ void do_message(conn_t *msg, char *origin)
 
 		if (strlen(cmd) == 0) {
 			char *buf, *bufp;
-			int bufsz, buflen;
+			int bufsz;
 			scheduletask_t *swalk;
 
 			bufsz = 4096;
 			bufp = buf = (char *)malloc(bufsz);
-			*buf = '\0'; buflen = 0;
+			*buf = '\0';
 
 			for (swalk = schedulehead; (swalk); swalk = swalk->next) {
 				int needed = 128 + strlen(swalk->command);

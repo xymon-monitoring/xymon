@@ -64,7 +64,6 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 	char *xymonmsg;
-	int res;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -111,7 +110,7 @@ int main(int argc, char *argv[])
 		xymonmsg = (char *)malloc(1024 + strlen(hostname) + strlen(testname) + strlen(ackedby) + strlen(ackmsg));
 		sprintf(xymonmsg, "ackinfo %s.%s\n%d\n%d\n%s\n%s\n",
 			hostname, testname, level, validity, ackedby, ackmsg);
-		res = sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL);
+		sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL);
 	}
 	else {
 		xymonmsg = (char *)malloc(1024 + strlen(hostname) + strlen(testname) + strlen(ackmsg));

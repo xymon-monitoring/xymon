@@ -166,7 +166,6 @@ int send_ping(int sock, int startidx, int minresponses)
 	static unsigned char buffer[PING_PACKET_SIZE];
 	struct icmp *icmphdr;
 	struct pingdata_t *pingdata;
-	struct timezone tz;
 	int sentbytes;
 	int idx = startidx;
 

@@ -121,11 +121,13 @@ int add_ldap_test(testitem_t *t)
 }
 
 
+#if (LDAP_VENDOR != OpenLDAP) || !defined(LDAP_OPT_NETWORK_TIMEOUT)
 static void ldap_alarmhandler(int signum)
 {
 	signal(signum, SIG_DFL);
 	connect_timeout = 1;
 }
+#endif
 
 void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 {

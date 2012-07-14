@@ -318,7 +318,6 @@ int main(int argc, char *argv[])
 
 					while (!gotit) {
 						off_t tmppos = ftello(statuslogfd);
-						time_t dur;
 						int dur_i;
 
 						if (fgets(l, sizeof(l)-1, statuslogfd)) {
@@ -332,7 +331,6 @@ int main(int argc, char *argv[])
 								 */
 								pos = tmppos;
 								lastchg = lastchg_i;
-								dur = dur_i;
 							}
 						}
 						else {

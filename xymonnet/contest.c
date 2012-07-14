@@ -653,11 +653,13 @@ static void setup_ssl(tcptest_t *item)
 		X509_print_ex(o, peercert, XN_FLAG_COMPAT, X509_FLAG_COMPAT);
 
 		slen = BIO_get_mem_data(o, &sdata);
-		keyline = strstr(sdata, " Public-Key:");
-		if (!keyline) keyline = strstr(sdata, " Public Key:");
-		if (keyline) {
-			keyline = strchr(keyline, '(');
-			if (keyline) keysz = atoi(keyline+1);
+		if (slen > 0) {
+			keyline = strstr(sdata, " Public-Key:");
+			if (!keyline) keyline = strstr(sdata, " Public Key:");
+			if (keyline) {
+				keyline = strchr(keyline, '(');
+				if (keyline) keysz = atoi(keyline+1);
+			}
 		}
 
 		BIO_set_close(o, BIO_CLOSE);
@@ -1388,7 +1390,6 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *argp, *p;
-	testitem_t *thead = NULL;
 	int timeout = 0;
 	int concurrency = 0;
 
@@ -1468,7 +1469,6 @@ int main(int argc, char *argv[])
 					add_http_test(testitem);
 
 					testitem->next = NULL;
-					thead = testitem;
 
 					httptest = (http_data_t *)testitem->privdata;
 					if (httptest && httptest->tcptest) {

@@ -73,22 +73,16 @@ int main(int argc, char *argv[])
 
 	running = 1;
 	while (running) {
-		char *eoln, *restofmsg, *p;
+		char *eoln, *p;
 		char *metadata[MAX_META+1];
 		int metacount;
 
 		*newmsg = '\0';
 		msg = get_xymond_message(C_LAST, argv[0], &seq, NULL);
 
-		/* Split the message in the first line (with meta-data), and the rest */
+		/* Split the message in the first line (with meta-data), and the rest. We're only interested in the first line. */
  		eoln = strchr(msg, '\n');
-		if (eoln) {
-			*eoln = '\0';
-			restofmsg = eoln+1;
-		}
-		else {
-			restofmsg = "";
-		}
+		if (eoln) *eoln = '\0';
 
 		metacount = 0; 
 		memset(&metadata, 0, sizeof(metadata));

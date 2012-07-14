@@ -1191,7 +1191,7 @@ int start_ping_service(service_t *service)
 			 *    dump it to /dev/null, but it might be useful to see
 			 *    what went wrong.
 			 */
-			int outfile, errfile, status;
+			int outfile, errfile;
 
 			sprintf(pinglog+strlen(pinglog), ".%02d", i);
 			sprintf(pingerrlog+strlen(pingerrlog), ".%02d", i);
@@ -1206,9 +1206,9 @@ int start_ping_service(service_t *service)
 				exit(98);
 			}
 
-			status = dup2(pfd[0], STDIN_FILENO);
-			status = dup2(outfile, STDOUT_FILENO);
-			status = dup2(errfile, STDERR_FILENO);
+			dup2(pfd[0], STDIN_FILENO);
+			dup2(outfile, STDOUT_FILENO);
+			dup2(errfile, STDERR_FILENO);
 			close(pfd[0]); close(pfd[1]); close(outfile); close(errfile);
 
 			execvp(cmd, cmdargs);
@@ -1220,7 +1220,7 @@ int start_ping_service(service_t *service)
 		else {
 			/* parent */
 			char ip[IP_ADDR_STRLEN+1];	/* Must have room for the \n at the end also */
-			int hnum, n;
+			int hnum;
 
 			close(pfd[0]);
 
@@ -1229,7 +1229,7 @@ int start_ping_service(service_t *service)
 				if ((hnum % pingchildcount) != i) continue;
 
 				sprintf(ip, "%s\n", xtreeKey(iptree, handle));
-				n = write(pfd[1], ip, strlen(ip));
+				write(pfd[1], ip, strlen(ip));
 				pingcount++;
 			}
 

@@ -509,7 +509,6 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 {
 	int diskcolor = COL_GREEN;
 
-	int dchecks = 0;
 	int freecol = -1;
 	int capacol = -1;
 	int mntcol  = -1;
@@ -527,7 +526,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	monmsg = newstrbuffer(0);
 	dfstr_filtered = newstrbuffer(0);
-	dchecks = clear_disk_counts(hinfo, clientclass);
+	clear_disk_counts(hinfo, clientclass);
 	clearalertgroups();
 
 	bol = dfstr; /* Must do this always, to at least grab the column-numbers we need */
@@ -690,7 +689,6 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 {
 	int inodecolor = COL_GREEN;
 
-	int ichecks = 0;
 	int freecol = -1;
 	int capacol = -1;
 	int mntcol  = -1;
@@ -708,7 +706,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	monmsg = newstrbuffer(0);
 	dfstr_filtered = newstrbuffer(0);
-	ichecks = clear_inode_counts(hinfo, clientclass);
+	clear_inode_counts(hinfo, clientclass);
 	clearalertgroups();
 
 	bol = dfstr; /* Must do this always, to at least grab the column-numbers we need */
@@ -1788,7 +1786,6 @@ void testmode(char *configfn)
 	void *hinfo, *oldhinfo = NULL;
 	char hostname[1024], clientclass[1024];
 	char s[4096];
-	int cfid;
 
 	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	load_client_config(configfn);
@@ -1836,7 +1833,7 @@ void testmode(char *configfn)
 			int recentlimit, ancientlimit, uptimecolor;
 			int maxclockdiff, clockdiffcolor;
 
-			cfid = get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
+			get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
 
 			printf("Load: Yellow at %.2f, red at %.2f\n", loadyellow, loadred);
 			printf("Uptime: %s from boot until %s,", colorname(uptimecolor), durationstring(recentlimit));
@@ -1859,7 +1856,7 @@ void testmode(char *configfn)
 
 			printf("Filesystem: "); fflush(stdout);
 			fgets(s, sizeof(s), stdin); clean_instr(s);
-			cfid = get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, 
+			get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, 
 						   &abswarn, &abspanic, &ignored, &groups);
 			if (ignored) 
 				printf("Ignored\n");

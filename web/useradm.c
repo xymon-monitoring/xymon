@@ -82,7 +82,6 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 	char *hffile = "useradm";
-	int bgcolor = COL_BLUE;
 	char *passfile = NULL;
 	FILE *fd;
 	char *infomsg = NULL;

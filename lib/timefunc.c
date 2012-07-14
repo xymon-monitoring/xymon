@@ -96,7 +96,7 @@ char *timespec_text(char *spec)
 		char *days = NULL, *starttime = NULL, *endtime = NULL, *columns = NULL;
 		unsigned char *cause = NULL;
 		char *oneday, *dtext;
-		int daysdone = 0, firstday = 1, ecount, causelen;
+		int daysdone = 0, firstday = 1, causelen;
 
 		/* Its either DAYS:START:END or SERVICE:DAYS:START:END:CAUSE */
 

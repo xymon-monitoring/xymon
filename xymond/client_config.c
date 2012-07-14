@@ -1336,8 +1336,6 @@ int load_client_config(char *configfn)
                                 currule->rule.asid.paniclevel = atoi(tok);
                         }
 			else if (strcasecmp(tok, "SVC") == 0) {
-				int idx = 0;
-
 				tok = wstok(NULL);	/* See if there is any service definition at all */
 				if (tok) {
 					currule = NEWRULE(C_SVC);
@@ -1350,7 +1348,7 @@ int load_client_config(char *configfn)
 					currule->rule.svc.color = COL_RED;
 
 					do {
-						tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
+						tok = wstok(NULL); if (!tok || isqual(tok)) continue;
 
 						if (strncasecmp(tok, "startup=", 8) == 0) {
 							currule->rule.svc.startupexp = setup_expr(tok+8, 0);
@@ -2036,7 +2034,6 @@ void get_cics_thresholds(void *hinfo, char *classname, char *appid,
                         int *dsayel, int *dsared, int *edsayel, int *edsared)
 {
         char *hostname, *pagename;
-        int result = 0;
         c_rule_t *rule;
 
         hostname = xmh_item(hinfo, XMH_HOSTNAME);
@@ -2065,7 +2062,6 @@ void get_cics_thresholds(void *hinfo, char *classname, char *appid,
                 *dsared = rule->rule.cics.dsapaniclevel;
                 *edsayel = rule->rule.cics.edsawarnlevel;
                 *edsared = rule->rule.cics.edsapaniclevel;
-                result = rule->cfid;
         }
 
 }
@@ -2074,7 +2070,6 @@ void get_zvsevsize_thresholds(void *hinfo, char *classname,
                         int *usedyel, int *usedred)
 {
         char *hostname, *pagename;
-        int result = 0;
         c_rule_t *rule;
 
         hostname = xmh_item(hinfo, XMH_HOSTNAME);
@@ -2089,7 +2084,6 @@ void get_zvsevsize_thresholds(void *hinfo, char *classname,
         if (rule) {
                 *usedyel = rule->rule.zvse_vsize.warnlevel;
                 *usedred = rule->rule.zvse_vsize.paniclevel;
-                result = rule->cfid;
         }
 }
 
@@ -2097,7 +2091,6 @@ void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
                         int *gv24yel, int *gv24red, int *gvanyyel, int *gvanyred)
 {
         char *hostname, *pagename;
-        int result = 0;
         c_rule_t *rule;
 
         hostname = xmh_item(hinfo, XMH_HOSTNAME);
@@ -2126,7 +2119,6 @@ void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
                 *gv24red  = rule->rule.zvse_getvis.paniclevel;
                 *gvanyyel = rule->rule.zvse_getvis.anywarnlevel;
                 *gvanyred = rule->rule.zvse_getvis.anypaniclevel;
-                result = rule->cfid;
         	}
 }
 

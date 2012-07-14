@@ -215,7 +215,6 @@ void loadenv(char *envfile, char *area)
 	FILE *fd;
 	strbuffer_t *inbuf;
 	char *p, *oneenv;
-	int n;
 
 	MEMDEFINE(l);
 	inbuf = newstrbuffer(0);
@@ -277,7 +276,7 @@ void loadenv(char *envfile, char *area)
 					}
 				}
 
-				n = putenv(oneenv);
+				putenv(oneenv);
 			}
 		}
 		stackfclose(fd);

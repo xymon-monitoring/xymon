@@ -78,7 +78,7 @@
 #undef RMD160_ASM
 #endif
 
-static char *RMD160_version="RIPEMD160 part of SSLeay 0.9.0b 11-Oct-1998";
+// static char *RMD160_version="RIPEMD160 part of SSLeay 0.9.0b 11-Oct-1998";
 
 #ifdef RMD160_ASM
 static void ripemd160_block_x86(RIPEMD160_CTX *c, const u_int32_t *p,int num);
@@ -230,43 +230,6 @@ size_t len;
 		*p=l;
 #endif
 		}
-	}
-
-static void RIPEMD160_Transform(c,b)
-RIPEMD160_CTX *c;
-unsigned char *b;
-	{
-	u_int32_t p[16];
-#if BYTE_ORDER != LITTLE_ENDIAN
-	u_int32_t *q;
-	int i;
-#endif
-
-#if BYTE_ORDER == BIG_ENDIAN || BYTE_ORDER == LITTLE_ENDIAN 
-	memcpy(p,b,64);
-#if BYTE_ORDER == BIG_ENDIAN
-	q=p;
-	for (i=(RIPEMD160_LBLOCK/4); i; i--)
-		{
-		Endian_Reverse32(q[0]);
-		Endian_Reverse32(q[1]);
-		Endian_Reverse32(q[2]);
-		Endian_Reverse32(q[3]);
-		q+=4;
-		}
-#endif
-#else
-	q=p;
-	for (i=(RIPEMD160_LBLOCK/4); i; i--)
-		{
-		u_int32_t l;
-		c2l(b,l); *(q++)=l;
-		c2l(b,l); *(q++)=l;
-		c2l(b,l); *(q++)=l;
-		c2l(b,l); *(q++)=l; 
-		} 
-#endif
-	ripemd160_block(c,p,64);
 	}
 
 #ifndef RMD160_ASM

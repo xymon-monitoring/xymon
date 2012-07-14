@@ -246,7 +246,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			}
 		}
 		else if (strncmp(inbol, "group", 5) == 0) {
-			char *tok, *inp;
+			char *tok;
 
 			groupid++;
 			if (dgname) xfree(dgname); dgname = NULL;
@@ -294,8 +294,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 		else if (sscanf(inbol, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *startoftags, *tag, *delim;
 			int elemidx, elemsize;
-			char clientname[4096];
-			char downtime[4096];
 			char groupidstr[10];
 			xtreePos_t handle;
 			namelist_t *newitem, *iwalk, *iprev;
@@ -310,9 +308,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			}
 
 			newitem = calloc(1, sizeof(namelist_t));
-
-			MEMDEFINE(clientname);
-			MEMDEFINE(downtime);
 
 			/* Hostname beginning with '@' are "no-display" hosts. But we still want them. */
 			if (*hostname == '@') memmove(hostname, hostname+1, strlen(hostname));
@@ -336,7 +331,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			newitem->page = curpage;
 			newitem->defaulthost = defaulthost;
 
-			clientname[0] = downtime[0] = '\0';
 			startoftags = strchr(inbol, '#');
 			if (startoftags == NULL) startoftags = ""; else startoftags++;
 			startoftags += strspn(startoftags, " \t\r\n");
@@ -435,9 +429,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			newitem->clientname = xmh_find_item(newitem, XMH_CLIENTALIAS);
 			if (newitem->clientname == NULL) newitem->clientname = newitem->hostname;
 			newitem->downtime = xmh_find_item(newitem, XMH_DOWNTIME);
-
-			MEMUNDEFINE(clientname);
-			MEMUNDEFINE(downtime);
 		}
 
 

@@ -71,7 +71,6 @@ static void hostpopup_setup(void)
 static void hostsvc_setup(void)
 {
 	static int setup_done = 0;
-	char *dac;
 
 	if (setup_done) return;
 

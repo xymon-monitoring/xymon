@@ -48,14 +48,6 @@ static int wanted_eventcolumn(char *service)
 	return result;
 }
 
-static char *string_time(time_t timestamp)
-{
-	static char result[20];
-
-	strftime(result, sizeof(result), "%Y/%m/%d@%H:%M:%S", localtime(&timestamp));
-	return result;
-}
-
 int record_compare(void **a, void **b)
 {
 	countlist_t **reca = (countlist_t **)a, **recb = (countlist_t **)b;
@@ -327,8 +319,6 @@ static void count_duration(time_t fromtime, time_t totime,
 			lastchange = ((color != -1) ? atol(strtok(NULL, "\n")) : totime+1);
 
 			if (hname && tname && (color != -1) && (strcmp(tname, icname) != 0) && (strcmp(tname, tcname) != 0)) {
-				int addrec = 1;
-
 				hrec = hostinfo(hname);
 				srec = getname(tname, 1);
 
@@ -349,8 +339,6 @@ static void count_duration(time_t fromtime, time_t totime,
 
 				/* See if we already have an event past the "totime" value */
 				if (lwalk->head) {
-					addrec = 0;
-
 					ed = lwalk->head;
 					while (ed && (ed->event->eventtime < totime)) ed = ed->next;
 
@@ -606,10 +594,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 					if (unlimited && !done) maxcount += 1000;
 				}
 				else {
-					off_t ofs;
 					rewind(eventlog);
 					curtime = 0;
-					ofs = ftello(eventlog);
 					done = 1;
 				}
 			} while (!done);
@@ -626,7 +612,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		unsigned int uievt, uicht, uidur;
 		char hostname[MAX_LINE_LEN], svcname[MAX_LINE_LEN], newcol[MAX_LINE_LEN], oldcol[MAX_LINE_LEN];
 		char *newcolname, *oldcolname;
-		int state, itemsfound, pagematch, hostmatch, testmatch, colrmatch;
+		int state, itemsfound, colrmatch;
 		event_t *newevent;
 		void *eventhost;
 		struct htnames_t *eventcolumn;

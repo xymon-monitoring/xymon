@@ -103,8 +103,6 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	bol = board;
 	while (bol && (*bol)) {
 		char *endkey;
-		xtreeStatus_t status;
-
 		eol = strchr(bol, '\n'); if (eol) *eol = '\0';
 
 		/* Find the config entry */
@@ -154,7 +152,7 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 
 					newitem->key = (char *)malloc(strlen(newitem->hostname) + strlen(newitem->testname) + 2);
 					sprintf(newitem->key, "%s|%s", newitem->hostname, newitem->testname);
-					status = xtreeAdd(rbstate[treecount-1], newitem->key, newitem);
+					xtreeAdd(rbstate[treecount-1], newitem->key, newitem);
 				}
 			}
 		}
@@ -174,10 +172,9 @@ void * columnlist(void * statetree)
 	rbcolumns = xtreeNew(strcasecmp);
 	for (hhandle = xtreeFirst(statetree); (hhandle != xtreeEnd(statetree)); hhandle = xtreeNext(statetree, hhandle)) {
 		hstatus_t *itm;
-		xtreeStatus_t status;
 
 		itm = (hstatus_t *)xtreeData(statetree, hhandle);
-		status = xtreeAdd(rbcolumns, itm->testname, NULL);
+		xtreeAdd(rbcolumns, itm->testname, NULL);
 	}
 
 	return rbcolumns;
@@ -210,15 +207,11 @@ void print_colheaders(FILE *output, void * rbcolumns)
 
 void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * columns, int prio, int firsthost, int firsthostever)
 {
-	void *hinfo;
-	char *dispname, *ip, *key;
+	char *key;
 	time_t now;
 	xtreePos_t colhandle;
 
 	now = getcurrenttime(NULL);
-	hinfo = hostinfo(itm->hostname);
-	dispname = xmh_item(hinfo, XMH_DISPLAYNAME);
-	ip = xmh_item(hinfo, XMH_IP);
 
 	fprintf(output, "<TR>\n");
 
@@ -336,8 +329,6 @@ static int ev_included(char *hostname)
 
 void generate_critpage(void * statetree, void * hoptree, FILE *output, char *header, char *footer, int color, int maxprio)
 {
-	xtreePos_t hhandle;
-
         headfoot(output, header, "", "header", pagecolor);	/* Use PAGE color here, not the part color */
         fprintf(output, "<center>\n");
 
@@ -455,7 +446,6 @@ int main(int argc, char *argv[])
 	char *envarea = NULL;
 	char **critconfig = NULL;
 	int cccount = 0;
-	char *hffile = "critical";
 
 	critconfig = (char **)calloc(1, sizeof(char *));
 
@@ -485,10 +475,6 @@ int main(int argc, char *argv[])
 			cccount++;
 			critconfig = (char **)realloc(critconfig, (1 + cccount)*sizeof(char *));
 			critconfig[cccount] = NULL;
-		}
-		else if (argnmatch(argv[argi], "--hffile=")) {
-			char *p = strchr(argv[argi], '=');
-			hffile = strdup(p+1);
 		}
 	}
 

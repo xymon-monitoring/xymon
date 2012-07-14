@@ -203,7 +203,7 @@ static void *dbcheck_invobj_tpl    = NULL;
 			if ( strstr(curline,"red") == curline) red++;
 			if ( strstr(curline,"yellow") == curline) yellow++;
 			if ( strstr(curline,"green") == curline) green++;
-nextline:
+
                         if (eoln) *(eoln)='\n';
                         curline = (eoln ? (eoln+1) : NULL);
                 }
@@ -272,8 +272,6 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
                long long aused = 0;
                /* FD: Using double instead of long long because we can have decimal on Netapp and DbCheck */
                double dused = 0;
-               /* FD: used to add a column if the filesystem is named "snap reserve" for netapp.pl */
-               int snapreserve=0;
 
                eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 
