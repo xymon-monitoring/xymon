@@ -24,6 +24,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *psstr;
 	char *topstr;
 	char *dfstr;
+	char *inodestr;
 	char *freestr;
 	char *msgsstr;
 	char *netstatstr;
@@ -45,6 +46,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 	psstr = getdata("ps");
 	topstr = getdata("top");
 	dfstr = getdata("df");
+	inodestr = getdata("inode");
 	freestr = getdata("free");
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
@@ -55,6 +57,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
 			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Capacity", "Mounted", dfstr);
+	unix_inode_report(hostname, clienttype, os, hinfo, fromline, timestr, "IFree", "IUse%", "Mounted", inodestr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "CMD", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
 

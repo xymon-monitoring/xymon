@@ -789,9 +789,6 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
-				} else {
-					msgp += sprintf(msgp, "&green <!-- ID=%s --> %s OK\n", fsname, fsname);
-					addtobuffer(monmsg, msgline);
 				}
 			}
 

@@ -99,8 +99,8 @@ as a Perl-compatible regular expression; e.g. "%^/oracle.*/" will match
 any filesystem whose mountpoint begins with "/oracle".
 
 "INODE" works identical to "DISK", but uses the count of i-nodes in
-the filesystem instead of the amount of disk space. This requires
-a 4.3.x or later Xymon client.
+the filesystem instead of the amount of disk space. NB: inode monitoring
+currently (rel. 4.3.8) only works for Linux clients.
 .sp
 Defaults DISK: warnlevel=90%, paniclevel=95%
 .BR
