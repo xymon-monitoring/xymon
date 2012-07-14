@@ -578,7 +578,9 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 
  	if ((xymsrv == NULL) && xgetenv("XYMSRV")) xymsrv = strdup(xgetenv("XYMSRV"));
 	if (recipient == NULL) recipient = xymsrv;
-	if (recipient == NULL) {
+	if ((recipient == NULL) && xgetenv("XYMSERVERS")) {
+		*recipient = "0.0.0.0";
+	} else if (recipient == NULL) {
 		errprintf("No recipient for message\n");
 		return XYMONSEND_EBADIP;
 	}
