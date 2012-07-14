@@ -433,6 +433,9 @@ char *generate_stats(void)
 	clients = semctl(clichgchn->semid, CLIENTCOUNT, GETVAL);
 	sprintf(msgline, "clichg channel messages: %10ld (%d readers)\n", clichgchn->msgcount, clients);
 	addtobuffer(statsbuf, msgline);
+	clients = semctl(userchn->semid, CLIENTCOUNT, GETVAL);
+	sprintf(msgline, "user   channel messages: %10ld (%d readers)\n", userchn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 
 	ghandle = xtreeFirst(rbghosts);
 	if (ghandle != xtreeEnd(rbghosts)) addtobuffer(statsbuf, "\n\nGhost reports:\n");
