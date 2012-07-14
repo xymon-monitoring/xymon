@@ -1281,7 +1281,7 @@ int finish_ping_service(service_t *service)
 
 			case 98:
 				failed = 1;
-				errprintf("xymonping child could not create outputfiles in %s\n", xgetenv("$XYMONTMP"));
+				errprintf("xymonping child could not create outputfiles in %s\n", xgetenv("XYMONTMP"));
 				break;
 
 			case 99:
