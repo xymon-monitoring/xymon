@@ -1234,14 +1234,14 @@ int start_ping_service(service_t *service)
 			}
 
 			close(pfd[1]);	/* This is when ping starts doing tests */
-
-			for (handle = xtreeFirst(iptree); handle != xtreeEnd(iptree); handle = xtreeNext(iptree, handle)) {
-				char *rec = xtreeKey(iptree, handle);
-				xfree(rec);
-			}
-			xtreeDestroy(iptree);
 		}
 	}
+
+	for (handle = xtreeFirst(iptree); handle != xtreeEnd(iptree); handle = xtreeNext(iptree, handle)) {
+		char *rec = xtreeKey(iptree, handle);
+		xfree(rec);
+	}
+	xtreeDestroy(iptree);
 
 	return 0;
 }
