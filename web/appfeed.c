@@ -28,7 +28,7 @@ static char *colorlist = "color=red,yellow,purple";
 static void errormsg(char *msg)
 {
 	fprintf(stderr, 
-		 "Content-type: %s\n\n<html><head><title>Invalid request</title></head>\n<body>%s</body></html>\n", 
+		 "Refresh: 30\nContent-type: %s\n\n<html><head><title>Invalid request</title></head>\n<body>%s</body></html>\n", 
 		 xgetenv("HTMLCONTENTTYPE"), msg);
 }
 

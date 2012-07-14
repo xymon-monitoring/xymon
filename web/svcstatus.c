@@ -53,7 +53,7 @@ static char *hostdatadir = NULL;
 static void errormsg(char *msg)
 {
 	snprintf(errortxt, sizeof(errortxt),
-		 "Content-type: %s\n\n<html><head><title>Invalid request</title></head>\n<body>%s</body></html>\n", 
+		 "Refresh: 30\nContent-type: %s\n\n<html><head><title>Invalid request</title></head>\n<body>%s</body></html>\n", 
 		 xgetenv("HTMLCONTENTTYPE"), msg);
 
 	errortxt[sizeof(errortxt)-1] = '\0';
