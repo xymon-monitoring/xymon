@@ -417,6 +417,9 @@ char *generate_stats(void)
 	clients = semctl(clichgchn->semid, CLIENTCOUNT, GETVAL);
 	sprintf(msgline, "clichg channel messages: %10ld (%d readers)\n", clichgchn->msgcount, clients);
 	addtobuffer(statsbuf, msgline);
+	clients = semctl(userchn->semid, CLIENTCOUNT, GETVAL);
+	sprintf(msgline, "user   channel messages: %10ld (%d readers)\n", userchn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 
 	ghandle = xtreeFirst(rbghosts);
 	if (ghandle != xtreeEnd(rbghosts)) addtobuffer(statsbuf, "\n\nGhost reports:\n");
@@ -3199,7 +3202,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "disable", 7) == 0) {
 		handle_enadis(0, msg, msg->sender);
 	}
-	else if (allow_downloads && (strncmp(msg->buf, "config", 6) == 0)) {
+	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char *conffn, *p;
 
 		if (!oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;

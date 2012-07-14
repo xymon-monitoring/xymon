@@ -146,112 +146,6 @@ char *nocolon(char *txt)
 }
 
 
-typedef struct mcm_data_t {
-	char *columnname;
-	int color;
-	strbuffer_t *mcm_summary[COL_COUNT];
-	strbuffer_t *mcm_text;
-	struct mcm_data_t *next;
-} mcm_data_t;
-mcm_data_t *mcmhead = NULL;
-
-void clear_multicolumn_message(void)
-{
-	mcm_data_t *walk;
-
-	walk = mcmhead;
-	while (walk) {
-		mcm_data_t *zombie;
-		int i;
-
-		zombie = walk; walk = walk->next;
-
-		for (i = 0; (i < COL_COUNT); i++) {
-			freestrbuffer(zombie->mcm_summary[i]);
-		}
-		freestrbuffer(zombie->mcm_text);
-		xfree(zombie->columnname);
-	}
-
-	mcmhead = NULL;
-}
-
-void add_multicolumn_message(char *columnname, int color, char *txt, char *summarytxt)
-{
-	mcm_data_t *mdata;
-
-	for (mdata = mcmhead; (mdata && (strcmp(mdata->columnname, columnname) != 0)); mdata = mdata->next) ;
-	if (!mdata) {
-		mdata = (mcm_data_t *)calloc(1, sizeof(mcm_data_t));
-		mdata->columnname = strdup(columnname);
-		mdata->color = color;
-		mdata->next = mcmhead;
-		mcmhead = mdata;
-	}
-
-	if (summarytxt) {
-		if (!mdata->mcm_summary[color]) mdata->mcm_summary[color] = newstrbuffer(0);
-		addtobuffer(mdata->mcm_summary[color], txt);
-	}
-
-	if (txt) {
-		if (!mdata->mcm_text) mdata->mcm_text = newstrbuffer(0);
-		addtobuffer(mdata->mcm_text, txt);
-	}
-
-	if (color > mdata->color) mdata->color = color;
-}
-
-void flush_multicolumn_message(char *hostname, char *line1txt, char *fromline)
-{
-	mcm_data_t *walk;
-	char msgline[4096];
-
-	combo_start();
-
-	for (walk = mcmhead; (walk); walk = walk->next) {
-		char *group;
-
-		init_status(walk->color);
-
-		group = getalertgroups();
-		if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
-		addtostatus(msgline);
-
-		sprintf(msgline, "%s.%s %s", commafy(hostname), walk->columnname, colorname(walk->color));
-		addtostatus(msgline);
-
-		if (line1txt) {
-			addtostatus(" ");
-			addtostatus(line1txt);
-			addtostatus("\n");
-		}
-
-		if (walk->mcm_summary[COL_RED]) {
-			addtostrstatus(walk->mcm_summary[COL_RED]);
-			addtostatus("\n");
-		}
-		if (walk->mcm_summary[COL_YELLOW]) {
-			addtostrstatus(walk->mcm_summary[COL_YELLOW]);
-			addtostatus("\n");
-		}
-		if (walk->mcm_summary[COL_GREEN]) {
-			addtostrstatus(walk->mcm_summary[COL_GREEN]);
-			addtostatus("\n");
-		}
-		
-		if (walk->mcm_text) addtostrstatus(walk->mcm_text);
-
-		if (fromline && !localmode) addtostatus(fromline);
-
-		finish_status();
-	}
-
-	combo_end();
-	clear_multicolumn_message();
-}
-
-
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
 		     void *hinfo, char *fromline, char *timestr, 
 		     char *uptimestr, char *clockstr, char *msgcachestr,
@@ -618,7 +512,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "%s.disk %s %s - Filesystems %s\n",
 		commafy(hostname), colorname(diskcolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
-		((diskcolor == COL_GREEN) ? "OK" : "NOT ok"));
+		(((diskcolor == COL_RED) || (diskcolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
@@ -801,7 +695,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "%s.inode %s %s - Filesystems %s\n",
 		commafy(hostname), colorname(inodecolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
-		((inodecolor == COL_GREEN) ? "OK" : "NOT ok"));
+		(((inodecolor == COL_RED) || (inodecolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
@@ -1055,7 +949,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "%s.procs %s %s - Processes %s\n",
 		commafy(hostname), colorname(pscolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
-		((pscolor == COL_GREEN) ? "OK" : "NOT ok"));
+		(((pscolor == COL_RED) || (pscolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
@@ -1234,9 +1128,10 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.msgs %s System logs at %s\n",
+	sprintf(msgline, "%s.msgs %s %s - System logs %s\n",
 		commafy(hostname), colorname(msgscolor), 
-		(timestr ? timestr : "<No timestamp data>"));
+		(timestr ? timestr : "<No timestamp data>"),
+		(((msgscolor == COL_RED) || (msgscolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 	addtostatus(msgline);
 
 	if (STRBUFLEN(reddata)) {
@@ -1428,9 +1323,10 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 		addtostatus(msgline);
 
-		sprintf(msgline, "%s.files %s Files status at %s\n",
+		sprintf(msgline, "%s.files %s %s - Files %s\n",
 			commafy(hostname), colorname(filecolor), 
-			(timestr ? timestr : "<No timestamp data>"));
+			(timestr ? timestr : "<No timestamp data>"),
+			(((filecolor == COL_RED) || (filecolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 		addtostatus(msgline);
 
 		if (STRBUFLEN(reddata)) {
@@ -1675,7 +1571,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		sprintf(msgline, "%s.ports %s %s - Ports %s\n",
 			commafy(hostname), colorname(portcolor), 
 			(timestr ? timestr : "<No timestamp data>"), 
-			((portcolor == COL_GREEN) ? "OK" : "NOT ok"));
+			(((portcolor == COL_RED) || (portcolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 		addtostatus(msgline);
 
 		/* And add the info about what's wrong */
