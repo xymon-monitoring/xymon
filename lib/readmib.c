@@ -175,8 +175,10 @@ int readmibs(char *cfgfn, int verbose)
 			char *tok, *name, *oid = NULL;
 
 			name = strtok(bot, " \t");
-			if (name) tok = strtok(NULL, " \t");
-			if (tok && (*tok == '=')) oid = strtok(NULL, " \t"); else oid = tok;
+			if (name) {
+				tok = strtok(NULL, " \t");
+				if (tok && (*tok == '=')) oid = strtok(NULL, " \t"); else oid = tok;
+			}
 
 			if (name && oid) {
 				mib->oidlisttail->oidcount++;

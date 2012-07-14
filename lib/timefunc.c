@@ -93,8 +93,8 @@ char *timespec_text(char *spec)
 	p = sCopy = strdup(spec);
 	do {
 		char *s1, *s2, *s3, *s4, *s5;
-		char *days, *starttime, *endtime, *columns;
-		unsigned char *cause;
+		char *days = NULL, *starttime = NULL, *endtime = NULL, *columns = NULL;
+		unsigned char *cause = NULL;
 		char *oneday, *dtext;
 		int daysdone = 0, firstday = 1, ecount, causelen;
 
@@ -117,6 +117,8 @@ char *timespec_text(char *spec)
 			columns = s1;
 			getescapestring(s5, &cause, &causelen);
 		}
+
+		if (!days) return "";
 
 		oneday = days;
 

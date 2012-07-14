@@ -574,7 +574,7 @@ int main(int argc, char *argv[])
 			/* Set by SIGUSR1 - dump the list of active requests */
 			dumpsessions = 0;
 			for (connwalk = chead; (connwalk); connwalk = connwalk->next) {
-				char *ctypestr, *actionstr;
+				char *ctypestr = "?", *actionstr = "?";
 				char timestr[30];
 
 				switch (connwalk->ctype) {

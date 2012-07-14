@@ -346,7 +346,7 @@ int main(int argc, char **argv)
 		}
 	}
 	else {
-		char *envarea;
+		char *envarea = NULL;
 		int argi;
 
 		for (argi = 1; (argi < argc); argi++) {

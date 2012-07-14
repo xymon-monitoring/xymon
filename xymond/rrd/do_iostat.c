@@ -71,7 +71,7 @@ int do_iostatdisk_rrd(char *hostname, char *testname, char *classname, char *pag
 	dataline++;
 	while (dataline && *dataline) {
 		char *elems[12];
-		char *eoln, *p, *id;
+		char *eoln, *p, *id = "";
 		int i, valofs;
 
 		eoln = strchr(dataline, '\n'); if (eoln) *eoln = '\0';

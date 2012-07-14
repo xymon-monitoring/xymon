@@ -513,7 +513,7 @@ int main(int argc, char *argv[])
 	if (getboard(mincolor) == 0) {
 		int i;
 		char *oneconfig, *onename;
-		int *partcolor, *partprio;
+		int *partcolor = NULL, *partprio = NULL;
 		xtreePos_t hhandle;
 
 		for (i=0; (critconfig[i]); i++) {

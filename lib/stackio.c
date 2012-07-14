@@ -421,7 +421,7 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 
 		if ( (strncmp(bufpastwhitespace, "include ", 8) == 0) ||
 		     (extraincl && (strncmp(bufpastwhitespace, extraincl, strlen(extraincl)) == 0)) ) {
-			char *newfn, *eol, eolchar;
+			char *newfn, *eol, eolchar = '\0';
 
 			eol = bufpastwhitespace + strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
 			newfn = bufpastwhitespace + strcspn(bufpastwhitespace, " \t");
@@ -438,7 +438,7 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			}
 		}
 		else if (strncmp(bufpastwhitespace, "directory ", 10) == 0) {
-			char *dirfn, *eol, eolchar;
+			char *dirfn, *eol, eolchar = '\0';
 
 			eol = bufpastwhitespace + strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
 			dirfn = bufpastwhitespace + 9;

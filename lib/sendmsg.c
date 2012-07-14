@@ -135,7 +135,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 {
 	struct in_addr addr;
 	struct sockaddr_in saddr;
-	int	sockfd;
+	int	sockfd = -1;
 	fd_set	readfds;
 	fd_set	writefds;
 	int	res, isconnected, wdone, rdone;
@@ -419,7 +419,7 @@ retry_connect:
 done:
 	dbgprintf("Closing connection\n");
 	shutdown(sockfd, SHUT_RDWR);
-	close(sockfd);
+	if (sockfd > 0) close(sockfd);
 	xfree(rcptip);
 	if (httpmessage) xfree(httpmessage);
 	return result;
