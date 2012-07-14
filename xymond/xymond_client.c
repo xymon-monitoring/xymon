@@ -664,7 +664,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "%s.disk %s %s - Filesystems %s\n",
 		commafy(hostname), colorname(diskcolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
-		((diskcolor == COL_GREEN) ? "OK" : "NOT ok"));
+		(((diskcolor == COL_RED) || (diskcolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
@@ -844,7 +844,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "%s.inode %s %s - Filesystems %s\n",
 		commafy(hostname), colorname(inodecolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
-		((inodecolor == COL_GREEN) ? "OK" : "NOT ok"));
+		(((inodecolor == COL_RED) || (inodecolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
@@ -1098,7 +1098,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "%s.procs %s %s - Processes %s\n",
 		commafy(hostname), colorname(pscolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
-		((pscolor == COL_GREEN) ? "OK" : "NOT ok"));
+		(((pscolor == COL_RED) || (pscolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
@@ -1718,7 +1718,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		sprintf(msgline, "%s.ports %s %s - Ports %s\n",
 			commafy(hostname), colorname(portcolor), 
 			(timestr ? timestr : "<No timestamp data>"), 
-			((portcolor == COL_GREEN) ? "OK" : "NOT ok"));
+			(((portcolor == COL_RED) || (portcolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 		addtostatus(msgline);
 
 		/* And add the info about what's wrong */
