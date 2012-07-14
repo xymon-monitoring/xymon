@@ -218,7 +218,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 				m1[sizeof(m1)-1] = '\0';
 
 				/* Only show the first line of the HTTP status description */
-				p = strchr(m1, '\n'); if (p) *p = '\0';
+				p = m1 + strcspn(m1, "\n\r"); *p = '\0';
 			}
 			else {
 				sprintf(m1, "Connected, but got empty response (code:%ld)", req->httpstatus);
