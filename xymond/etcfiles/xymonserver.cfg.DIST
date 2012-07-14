@@ -50,6 +50,21 @@ TRENDSCOLUMN="trends"		# Column where the RRD graphs are reported.
 MAXMSGSPERCOMBO="100"           # How many individual messages to combine in a combo-message. 0=unlimited.
 SLEEPBETWEENMSGS="0"            # Delay between sending each combo message, in milliseconds.
 
+# Maximum message size buffers (in KB)
+# These are commented out by default, you should only change them if you
+# have systems sending large status-messages or otherwise need to handle
+# large messages. Please read the description in xymonserver.cfg(5) first.
+#
+#MAXMSG_CLIENT=512		# clientdata messages (default=512k)
+#MAXMSG_CLICHG=$MAXMSG_CLIENT	# client change messages (default=MAXMSG_CLIENT)
+#MAXMSG_STATUS=256		# general "status" messages (default=256k)
+#MAXMSG_STACHG=$MAXMSG_STATUS	# status change messages (default=MAXMSG_STATUS)
+#MAXMSG_PAGE=$MAXMSG_STATUS	# page messages (default=MAXMSG_STATUS)
+#MAXMSG_ENADIS=32		# enable and disable control messages (default=32k)
+#MAXMSG_USER=128		# "user" messages (default=128k)
+#MAXMSG_DATA=256		# "data" messages, if enabled (default=256k)
+#MAXMSG_NOTES=256		# "notes" messages, if enabled (default=256k)
+
 # HOLIDAYS="us"			# Default set of holidays (pointer to section in holidays.cfg)
 # HOLIDAYFORMAT="%m/%d/%y"	# Format for printing holiday dates. Default is %d/%m/%y (day/month/year).
 
