@@ -100,6 +100,27 @@ extern void sha512_final(sha512_ctx *ctx, unsigned char *digest);
 extern void sha512(const unsigned char *message, unsigned int len,
             unsigned char *digest);
 
+extern int  mySHA224_Size(void);
+extern void mySHA224_Init(void *c);
+extern void mySHA224_Update(void *c, unsigned char *in, int len);
+extern void mySHA224_Final(char md[20], void *c);
+
+extern int  mySHA256_Size(void);
+extern void mySHA256_Init(void *c);
+extern void mySHA256_Update(void *c, unsigned char *in, int len);
+extern void mySHA256_Final(char md[20], void *c);
+
+extern int  mySHA384_Size(void);
+extern void mySHA384_Init(void *c);
+extern void mySHA384_Update(void *c, unsigned char *in, int len);
+extern void mySHA384_Final(char md[20], void *c);
+
+extern int  mySHA512_Size(void);
+extern void mySHA512_Init(void *c);
+extern void mySHA512_Update(void *c, unsigned char *in, int len);
+extern void mySHA512_Final(char md[20], void *c);
+
+
 #ifdef __cplusplus
 }
 #endif
