@@ -1277,9 +1277,10 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.msgs %s System logs at %s\n",
+	sprintf(msgline, "%s.msgs %s %s - System logs %s\n",
 		commafy(hostname), colorname(msgscolor), 
-		(timestr ? timestr : "<No timestamp data>"));
+		(timestr ? timestr : "<No timestamp data>"),
+		(((msgscolor == COL_RED) || (msgscolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 	addtostatus(msgline);
 
 	if (STRBUFLEN(reddata)) {
@@ -1471,9 +1472,10 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 		addtostatus(msgline);
 
-		sprintf(msgline, "%s.files %s Files status at %s\n",
+		sprintf(msgline, "%s.files %s %s - Files %s\n",
 			commafy(hostname), colorname(filecolor), 
-			(timestr ? timestr : "<No timestamp data>"));
+			(timestr ? timestr : "<No timestamp data>"),
+			(((filecolor == COL_RED) || (filecolor == COL_YELLOW)) ? "NOT ok" : "ok"));
 		addtostatus(msgline);
 
 		if (STRBUFLEN(reddata)) {
