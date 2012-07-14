@@ -3289,7 +3289,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "disable", 7) == 0) {
 		handle_enadis(0, msg, sender);
 	}
-	else if (allow_downloads && (strncmp(msg->buf, "config", 6) == 0)) {
+	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char *conffn, *p;
 
 		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
