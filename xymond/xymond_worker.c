@@ -582,7 +582,7 @@ startagain:
 		goto startagain;
 	}
 
-	if (!locatorid) {
+	{
 		/* 
 		 * Get and check the message sequence number.
 		 * We dont do this for network based workers, since the
@@ -612,7 +612,7 @@ startagain:
 			}
 			else {
 				/* Out-of-sequence message. Cant do much except accept it */
-				errprintf("%s: Got message %u, expected %u\n", id, *seq, seqnum+1);
+				if (!locatorid) errprintf("%s: Got message %u, expected %u\n", id, *seq, seqnum+1);
 				seqnum = *seq;
 			}
 
