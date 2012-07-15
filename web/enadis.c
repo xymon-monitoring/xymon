@@ -24,6 +24,8 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 enum { ACT_NONE, ACT_FILTER, ACT_ENABLE, ACT_DISABLE, ACT_SCHED_DISABLE, ACT_SCHED_CANCEL } action = ACT_NONE;
+enum { DISABLE_FOR, DISABLE_UNTIL } disableend = DISABLE_FOR; /* disable until a date OR disable for a duration */
+
 int hostcount = 0;
 char **hostnames  = NULL;
 int disablecount = 0;
@@ -34,6 +36,9 @@ int duration = 0;
 int scale = 1;
 char *disablemsg = "No reason given";
 time_t schedtime = 0;
+time_t endtime = 0;
+time_t nowtime = 0;
+time_t starttime = 0;
 int cancelid = 0;
 int preview = 0;
 
@@ -53,8 +58,12 @@ void parse_cgi(void)
 {
 	cgidata_t *postdata, *pwalk;
 	struct tm schedtm;
+	struct tm endtm;
+	struct tm nowtm;
 
 	memset(&schedtm, 0, sizeof(schedtm));
+	memset(&endtm, 0, sizeof(endtm));
+
 	postdata = cgi_request();
 	if (cgi_method == CGI_GET) return;
 
@@ -75,6 +84,9 @@ void parse_cgi(void)
 			else if (strcasecmp(pwalk->value, "schedule disable") == 0) action = ACT_SCHED_DISABLE;
 			else if (strcasecmp(pwalk->value, "cancel") == 0)           action = ACT_SCHED_CANCEL;
 			else if (strcasecmp(pwalk->value, "apply filters") == 0)    action = ACT_FILTER;
+		}
+		else if ((strcmp(pwalk->name, "go2") == 0) && (action != ACT_FILTER)) { 
+			if (strcasecmp(pwalk->value, "Disable until") == 0) disableend = DISABLE_UNTIL;
 		}
 		else if (strcmp(pwalk->name, "duration") == 0) {
 			duration = atoi(pwalk->value);
@@ -156,6 +168,25 @@ void parse_cgi(void)
 		else if (strcmp(pwalk->name, "minute") == 0) {
 			schedtm.tm_min = atoi(pwalk->value);
 		}
+
+		/* Until start */
+		else if (strcmp(pwalk->name, "endyear") == 0) {
+			endtm.tm_year = atoi(pwalk->value) - 1900;
+		}
+		else if (strcmp(pwalk->name, "endmonth") == 0) {
+			endtm.tm_mon = atoi(pwalk->value) - 1;
+		}
+		else if (strcmp(pwalk->name, "endday") == 0) {
+			endtm.tm_mday = atoi(pwalk->value);
+		}
+		else if (strcmp(pwalk->name, "endhour") == 0) {
+			endtm.tm_hour = atoi(pwalk->value);
+		}
+		else if (strcmp(pwalk->name, "endminute") == 0) {
+			endtm.tm_min = atoi(pwalk->value);
+		}
+		/* Until end */
+
 		else if (strcmp(pwalk->name, "canceljob") == 0) {
 			cancelid = atoi(pwalk->value);
 		}
@@ -177,12 +208,23 @@ void parse_cgi(void)
 
 	schedtm.tm_isdst = -1;
 	schedtime = mktime(&schedtm);
+	endtm.tm_isdst = -1;
+	endtime = mktime(&endtm);
 }
 
 void do_one_host(char *hostname, char *fullmsg, char *username)
 {
 	char *xymoncmd = (char *)malloc(1024);
 	int i, result;
+	
+	if (disableend == DISABLE_UNTIL)   {
+
+		nowtime = time(NULL);
+		starttime = nowtime;
+		if (action == ACT_SCHED_DISABLE) starttime = schedtime;
+		duration = (int) difftime (endtime, starttime); 
+		scale = 1;
+	}
 
 	switch (action) {
 	  case ACT_ENABLE:
@@ -330,7 +372,7 @@ int main(int argc, char *argv[])
 		printf("\n");
 	}
 
-        /* It's ok with these hardcoded values, as they are not used for this page */
+	/* It's ok with these hardcoded values, as they are not used for this page */
 	sethostenv("", "", "", colorname(COL_BLUE), NULL);
 	if (preview) headfoot(stdout, "maintact", "", "header", COL_BLUE);
 
@@ -352,6 +394,12 @@ int main(int argc, char *argv[])
 				    for (i=0; (i < disablecount); i++) printf("%s ", disabletest[i]);
 				    printf("\n");
 				    dbgprintf("Duration = %d, scale = %d\n", duration, scale);
+				    if (disableend == DISABLE_UNTIL) {
+					    dbgprintf("Disable until: endtime = %d, duration = %d, scale = %d\n", endtime, duration, scale);
+				    }     
+				    else {
+					    dbgprintf("Duration = %d, scale = %d\n", duration, scale);
+				    }
 				    dbgprintf("Cause = %s\n", textornull(disablemsg));
 				    break;
 
@@ -361,7 +409,12 @@ int main(int argc, char *argv[])
 				    dbgprintf("Tests = ");
 				    for (i=0; (i < disablecount); i++) printf("%s ", disabletest[i]);
 				    printf("\n");
-				    dbgprintf("Duration = %d, scale = %d\n", duration, scale);
+				    if (disableend == DISABLE_UNTIL) {
+					    dbgprintf("Disable until: endtime = %d, duration = %d, scale = %d\n", endtime, duration, scale);
+				    }	
+				    else {
+					    dbgprintf("Duration = %d, scale = %d\n", duration, scale);
+				    }
 				    dbgprintf("Cause = %s\n", textornull(disablemsg));
 				    break;
 

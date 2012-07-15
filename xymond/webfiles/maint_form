@@ -79,16 +79,26 @@
 
               <TR>
                  <TD COLSPAN=3>
-                     Duration:&nbsp;<INPUT NAME=duration TYPE=TEXT SIZE=5 MAXLENGTH=5 value="4">&nbsp;
+		<table summary="Until when to disable" border=1>
+                    <tr><td align=left><input name=go2 type=radio value="Disable for" checked> Disable for&nbsp;
+		<INPUT NAME=duration TYPE=TEXT SIZE=5 MAXLENGTH=5 value="4">&nbsp;
 	             <select name=scale>
 	                <option value=1>minutes</option>
                         <option value=60 selected>hours</option>
 			<option value=1440>days</option>
 			<option value=10080>weeks</option>
-		     </select>
-                     &nbsp;&nbsp;-&nbsp;OR&nbsp;-&nbsp;until&nbsp;OK:<input name="untilok" type=checkbox>
+		     </select></td>
+		 </tr>
+                  <tr><td align=left><input name=go2 type=radio value="Disable until"> Disable until
+                       <br>
+	                      <SELECT NAME=endmonth onClick="setcheck(this.form.go2,true)"> &REPMONLIST </SELECT>
+	                      <SELECT NAME=endday onClick="setcheck(this.form.go2,true)"> &REPDAYLIST </SELECT>
+	                      <SELECT NAME=endyear onClick="setcheck(this.form.go2,true)"> &FUTUREYEARLIST </SELECT> &nbsp;
+	                      <SELECT NAME=endhour onClick="setcheck(this.form.go2,true)"> &REPHOURLIST </SELECT>
+	                      <SELECT NAME=endminute onClick="setcheck(this.form.go2,true)"> &REPMINLIST </SELECT>
+                     &nbsp;&nbsp;-&nbsp;OR&nbsp;-&nbsp;until&nbsp;OK:<input name="untilok" type=checkbox onClick="setcheck(this.form.go2,true)">
                  </td>
-              </TR>
+              </TR></table>
 
               <TR><TD>&nbsp;</TD></TR>
 

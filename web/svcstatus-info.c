@@ -498,18 +498,127 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<td>\n");
 	addtobuffer(buf, "   <table summary=\"Disable parameters\" border=0>\n");
 	addtobuffer(buf, "      <tr> <td>Cause: <input name=\"cause\" type=text size=50 maxlength=80></td> </tr>\n");
-
 	addtobuffer(buf, "      <tr>\n");
-	addtobuffer(buf, "        <td>Duration: <input name=\"duration\" type=text size=5 maxlength=5 value=\"4\"> &nbsp;\n");
+	addtobuffer(buf, "         <td align=center width=\"90%\">\n");
+	addtobuffer(buf, "            <table summary=\"Until when to disable\" border=1>\n");
+	addtobuffer(buf, "              <tr><td align=left><input name=go2 type=radio value=\"Disable for\" checked> Disable for\n");
+	addtobuffer(buf, "         <input name=\"duration\" type=text size=5 maxlength=5 value=\"4\"> &nbsp;\n");
 	addtobuffer(buf, "            <select name=\"scale\">\n");
 	addtobuffer(buf, "               <option value=1>minutes</option>\n");
 	addtobuffer(buf, "               <option value=60 selected>hours</option>\n");
 	addtobuffer(buf, "               <option value=1440>days</option>\n");
 	addtobuffer(buf, "               <option value=10080>weeks</option>\n");
 	addtobuffer(buf, "            </select>\n");
-	addtobuffer(buf, "            &nbsp;&nbsp;-&nbsp;OR&nbsp;-&nbsp;until&nbsp;OK:<input name=\"untilok\" type=checkbox>");
-	addtobuffer(buf, "        </td>\n");
-	addtobuffer(buf, "      </tr>\n");
+	addtobuffer(buf, "        </td>\n</tr>\n");
+	addtobuffer(buf, "<br>\n");
+	
+/* Until start */
+	/* Months */
+
+	addtobuffer(buf, "              <tr><td align=left><input name=go2 type=radio value=\"Disable until\"> Disable until\n");
+	addtobuffer(buf, "                    <br>\n");
+	addtobuffer(buf, "<SELECT NAME=\"endmonth\" onClick=\"setcheck(this.form.go2,true)\">\n");
+	for (i=1; (i <= 12); i++) {
+		char istr[3];
+
+		sprintf(istr, "%d", i);
+
+		if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
+		monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
+		monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
+		strftime(mname, sizeof(mname)-1, "%B", &monthtm);
+
+		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "\" ");
+		addtobuffer(buf, selstr);
+		addtobuffer(buf, ">");
+		addtobuffer(buf, mname);
+		addtobuffer(buf, "</OPTION>\n");
+	}
+	addtobuffer(buf, "</SELECT>\n");
+
+	/* Days */
+	addtobuffer(buf, "<SELECT NAME=\"endday\" onClick=\"setcheck(this.form.go2,true)\">\n");
+	for (i=1; (i <= 31); i++) {
+		char istr[3];
+
+		sprintf(istr, "%d", i);
+
+		if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
+
+		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "\" ");
+		addtobuffer(buf, selstr);
+		addtobuffer(buf, ">");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "</OPTION>\n");
+	}
+	addtobuffer(buf, "</SELECT>\n");
+
+	/* Years */
+	addtobuffer(buf, "<SELECT NAME=\"endyear\" onClick=\"setcheck(this.form.go2,true)\">\n");
+	for (i=beginyear; (i <= endyear); i++) {
+		char istr[5];
+
+		sprintf(istr, "%d", i);
+
+		if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
+
+		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "\" ");
+		addtobuffer(buf, selstr);
+		addtobuffer(buf, ">");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "</OPTION>\n");
+	}
+	addtobuffer(buf, "</SELECT>\n");
+
+	/* Hours */
+	addtobuffer(buf, "<SELECT NAME=\"endhour\" onClick=\"setcheck(this.form.go2,true)\">\n");
+	for (i=0; (i <= 24); i++) {
+		char istr[3];
+
+		sprintf(istr, "%d", i);
+
+		if (i == nowtm->tm_hour) selstr = "SELECTED"; else selstr = "";
+		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "\" ");
+		addtobuffer(buf, selstr);
+		addtobuffer(buf, ">");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "</OPTION>\n");
+	}
+	addtobuffer(buf, "</SELECT>\n");
+
+	/* Minutes */
+	addtobuffer(buf, "<SELECT NAME=\"endminute\" onClick=\"setcheck(this.form.go2,true)\">\n");
+	for (i=0; (i <= 59); i++) {
+		char istr[3];
+
+		sprintf(istr, "%02d", i);
+
+		if (i == nowtm->tm_min) selstr = "SELECTED"; else selstr = "";
+		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "\" ");
+		addtobuffer(buf, selstr);
+		addtobuffer(buf, ">");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "</OPTION>\n");
+	}
+	addtobuffer(buf, "</SELECT>\n");
+
+	addtobuffer(buf, "            &nbsp;&nbsp;-&nbsp;OR&nbsp;-&nbsp;until&nbsp;OK:<input name=\"untilok\" type=checkbox onClick=\"setcheck(this.form.go2,true)\">");
+	addtobuffer(buf, "              </td></tr>\n");
+	addtobuffer(buf, "            </table> \n");
+
+/* Until end */
+
+	addtobuffer(buf, "              </td>\n</tr>\n");
 
 	addtobuffer(buf, "      <tr> <td>&nbsp;</td> </tr>\n");
  
@@ -1089,16 +1198,14 @@ char *generate_info(char *hostname, char *critconfigfn)
 	while (val) {
 		if (*val == '~') val++;
 
-		if ( (strncmp(val, "cont;", 5) == 0)    ||
-		     (strncmp(val, "cont=", 5) == 0)    ||
-		     (strncmp(val, "nocont;", 7) == 0)  ||
+		if ( (strncmp(val, "cont=", 5) == 0)    ||
+		     (strncmp(val, "content=", 8) == 0) ||
 		     (strncmp(val, "nocont=", 7) == 0)  ||
-		     (strncmp(val, "type;", 5) == 0)    ||
 		     (strncmp(val, "type=", 5) == 0)    ||
-		     (strncmp(val, "post;", 5) == 0)    ||
 		     (strncmp(val, "post=", 5) == 0)    ||
 		     (strncmp(val, "nopost=", 7) == 0)  ||
-		     (strncmp(val, "nopost;", 7) == 0) ) {
+		     (strncmp(val, "soap=", 5) == 0)    ||
+		     (strncmp(val, "nosoap=", 7) == 0)  ) {
 
 			weburl_t weburl;
 			char *urlstring = decode_url(val, &weburl);
@@ -1187,16 +1294,13 @@ char *generate_info(char *hostname, char *critconfigfn)
 
 		if ( (xmh_item_idx(val) == -1)          &&
 		     (strncmp(val, "http", 4)    != 0)  &&
-		     (strncmp(val, "cont;", 5)   != 0)  &&
+		     (strncmp(val, "http=", 5)   != 0)  &&
 		     (strncmp(val, "cont=", 5)   != 0)  &&
-		     (strncmp(val, "nocont;", 7) != 0)  &&
 		     (strncmp(val, "nocont=", 7) != 0)  &&
-		     (strncmp(val, "type;", 5)   != 0)  &&
 		     (strncmp(val, "type=", 5)   != 0)  &&
-		     (strncmp(val, "post;", 5)   != 0)  &&
+		     (strncmp(val, "notype=", 7) != 0)  &&
 		     (strncmp(val, "post=", 5)   != 0)  &&
-		     (strncmp(val, "nopost=", 7) != 0)  &&
-		     (strncmp(val, "nopost;", 7) != 0) ) {
+		     (strncmp(val, "nopost=", 7) != 0) ) {
 			addtobuffer(infobuf, val);
 			addtobuffer(infobuf, " ");
 		}

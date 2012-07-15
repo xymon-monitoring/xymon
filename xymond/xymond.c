@@ -1829,7 +1829,13 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 				expires = DISABLED_UNTIL_OK;
 			}
 			else {
+				int expirerounding;
+
 				expires = 60*durationvalue(durstr) + getcurrenttime(NULL);
+
+				/* If "expires" is not on the ":00" seconds, bump expire time to next whole minute */
+				expirerounding = (60 - (expires % 60));
+				if (expirerounding < 60) expires += expirerounding;
 			}
 
 			txtstart = msg->buf + (durstr + strlen(durstr) - firstline);
