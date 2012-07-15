@@ -1,6 +1,6 @@
 Changes from 4.3.7 -> 4.3.8 (15 Jul 2012)
 =========================================
-* rev 7081
+* rev 7082
 
 Bugfixes
 * Workaround for DNS timeout handling, now fixed at approximately 25

@@ -29,7 +29,7 @@ CFLAGS += -I. -I../include
 
 all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) loadhosts stackio availability md5 sha1 rmd160 locator
 
-client: test-endianness $(XYMONCLIENTLIB)
+client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
 
 test-endianness: test-endianness.c
 	$(CC) $(CFLAGS) -o $@ $<
