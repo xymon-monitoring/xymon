@@ -1,6 +1,6 @@
 xymon (4.3.8) unstable; urgency=low
 
-   * rev 7046
+   * rev 7080
 
    Bugfixes
    * Workaround for DNS timeout handling, now fixed at approximately 25
@@ -15,7 +15,7 @@ xymon (4.3.8) unstable; urgency=low
    * useradm CGI would invoke htpassword twice
    * "include" and "directory" now ignores trailing whitespace
    * SSLv2 support disabled if SSL-library does not support it
-   * Minor bugfixes
+   * Minor bugfixes and cleanups of compiler warnings.
 
    Enhancements
    * Service status on info page now links to the detailed status page.
@@ -29,8 +29,13 @@ xymon (4.3.8) unstable; urgency=low
      new and surprising places
    * Reduce xymonnet memory usage and runtime for ping tests when there 
      are multiple hosts.cfg entries with the same IP-address.
+   * Add code for inode-monitoring on Linux. Does not currently work on
+     any other client platform.
+   * Added the ability to disable tests until a specific time, instead of
+     for some interval. Disabling a test also now computes the expire time 
+     for the disable to happen at the next closest minute.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Fri, 13 Jul 2012 18:56:00 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 15 Jul 2012 13:08:00 +0200
 
 xymon (4.3.7) unstable; urgency=low
 
