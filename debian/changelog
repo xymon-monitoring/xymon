@@ -1,6 +1,6 @@
 xymon (4.3.8) unstable; urgency=low
 
-   * rev 7080
+   * rev 7081
 
    Bugfixes
    * Workaround for DNS timeout handling, now fixed at approximately 25
@@ -35,7 +35,7 @@ xymon (4.3.8) unstable; urgency=low
      for some interval. Disabling a test also now computes the expire time 
      for the disable to happen at the next closest minute.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Sun, 15 Jul 2012 13:08:00 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 15 Jul 2012 13:33:00 +0200
 
 xymon (4.3.7) unstable; urgency=low
 
