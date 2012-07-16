@@ -214,9 +214,8 @@ void trim_files(time_t cutoff)
 			fd = fopen(pidfn, "r");
 			if (fd) {
 				char l[100];
-				fgets(l, sizeof(l), fd);
+				pid = (fgets(l, sizeof(l), fd) ? atol(l) : 0);
 				fclose(fd);
-				pid = atol(l);
 			}
 
 			if (pid > 0) kill(pid, SIGHUP);

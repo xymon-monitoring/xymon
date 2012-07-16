@@ -1049,7 +1049,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		}
 		pfd = popen(pcmd, "r");
 		if (pfd) {
-			fgets(graphtitle, sizeof(graphtitle), pfd);
+			if (fgets(graphtitle, sizeof(graphtitle), pfd) == NULL) *graphtitle = '\0';
 			pclose(pfd);
 		}
 

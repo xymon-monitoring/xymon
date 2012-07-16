@@ -572,9 +572,9 @@ int main(int argc, char *argv[])
 	/* If using a logfile, switch stdout and stderr to go there */
 	if (logfn) {
 		/* Should we close stdin here ? No ... */
-		freopen("/dev/null", "r", stdin);
-		freopen(logfn, "a", stdout);
-		freopen(logfn, "a", stderr);
+		reopen_file("/dev/null", "r", stdin);
+		reopen_file(logfn, "a", stdout);
+		reopen_file(logfn, "a", stderr);
 	}
 
 	save_errbuf = 0;
@@ -595,8 +595,8 @@ int main(int argc, char *argv[])
 		}
 
 		if (logfn && dologswitch) {
-			freopen(logfn, "a", stdout);
-			freopen(logfn, "a", stderr);
+			reopen_file(logfn, "a", stdout);
+			reopen_file(logfn, "a", stderr);
 			dologswitch = 0;
 		}
 
@@ -703,8 +703,8 @@ int main(int argc, char *argv[])
 
 						dbgprintf("%s -> Assigning stdout/stderr to log '%s'\n", twalk->key, logfn);
 
-						freopen(logfn, "a", stdout);
-						freopen(logfn, "a", stderr);
+						reopen_file(logfn, "a", stdout);
+						reopen_file(logfn, "a", stderr);
 					}
 
 					/* Go! */

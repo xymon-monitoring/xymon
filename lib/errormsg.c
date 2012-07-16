@@ -21,6 +21,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
+#include <errno.h>
 
 #include "libxymon.h"
 
@@ -156,6 +157,28 @@ void traceprintf(const char *fmt, ...)
 	}
 }
 
+void reopen_file(char *fn, char *mode, FILE *fd)
+{
+	FILE *testfd;
+
+	/*
+	 * Bit of contortionist stuff to avoid losing our stdin/stdout/stderr filehandles when rotating logs.
+	 * If we cannot access the new file, then don't change the original at all.
+	 */
+	testfd = fopen(fn, mode);
+	if (!testfd) {
+		fprintf(stderr, "reopen_file: Cannot open new file: %s\n", strerror(errno));
+		return;
+	}
+
+	fclose(fd);
+	fd = fdopen(fileno(testfd), mode);
+	if (fd == NULL) {
+		fprintf(stderr, "reopen_file: fdopen failed: %s\n", strerror(errno));
+	}
+	fclose(testfd);
+}
+
 void redirect_cgilog(char *cginame)
 {
 	char logfn[PATH_MAX];
@@ -167,14 +190,7 @@ void redirect_cgilog(char *cginame)
 
 	if (cginame) errappname = strdup(cginame);
 	sprintf(logfn, "%s/cgierror.log", cgilogdir);
-	if (fd = fopen(logfn, "a")) {
-	   fclose(fd);
-	   fd = freopen(logfn, "a", stderr);
-	   /* If freopen fails, stderr is now silently invalid. Print a warning to stdout to at least prevent mysterious HTTP 500 errors */
-	   if (!fd) fprintf(stdout, "Content-type: text/plain\n\nError redirecting CGI stderr to %s\n", logfn);
-	} else {
-	   fprintf(stderr, "Cannot redirect CGI errors to %s\n", logfn);
-	}
+	reopen_file(logfn, "a", stderr);
 
 	/* If debugging, setup the debug logfile */
 	if (debug) {
@@ -182,4 +198,5 @@ void redirect_cgilog(char *cginame)
 		set_debugfile(logfn, 1);
 	}
 }
+
 

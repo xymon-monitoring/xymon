@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 	versionfd = fopen(versionfn, "r");
 	if (versionfd) {
 		char *p;
-		fgets(version, sizeof(version), versionfd);
+		if (fgets(version, sizeof(version), versionfd) == NULL) *version = '\0';
 		p = strchr(version, '\n'); if (p) *p = '\0';
 		fclose(versionfd);
 	}

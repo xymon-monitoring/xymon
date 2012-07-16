@@ -802,7 +802,7 @@ handlehost:
 
 		do {
 			*s = '\0';
-			printf("Pick item:"); fflush(stdout); fgets(s, sizeof(s), stdin);
+			printf("Pick item:"); fflush(stdout); if (!fgets(s, sizeof(s), stdin)) return 0;
 			p = strchr(s, '\n'); if (p) *p = '\0';
 			if (*s == '!') {
 				load_hostnames(argv[1], NULL, get_fqdn());

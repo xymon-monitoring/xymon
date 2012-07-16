@@ -47,7 +47,7 @@ orcaxymon: orcaxymon.c $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
 	$(CC) $(CFLAGS) -o $@ orcaxymon.c $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
 msgcache: msgcache.c $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ msgcache.c $(XYMONCLIENTLIBS)
+	$(CC) $(CFLAGS) -o $@ msgcache.c $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
 hpux-meminfo: hpux-meminfo.c
 	$(CC) -o $@ hpux-meminfo.c

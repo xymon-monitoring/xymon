@@ -116,8 +116,8 @@ void sigmisc_handler(int signum)
 
 	  case SIGHUP:
 		if (logfile) {
-			freopen(logfile, "a", stdout);
-			freopen(logfile, "a", stderr);
+			reopen_file(logfile, "a", stdout);
+			reopen_file(logfile, "a", stderr);
 			errprintf("Caught SIGHUP, reopening logfile\n");
 		}
 		break;
@@ -375,8 +375,8 @@ int main(int argc, char *argv[])
 
 	/* Redirect logging to the logfile, if requested */
 	if (logfile) {
-		freopen(logfile, "a", stdout);
-		freopen(logfile, "a", stderr);
+		reopen_file(logfile, "a", stdout);
+		reopen_file(logfile, "a", stderr);
 	}
 
 	errprintf("xymonproxy version %s starting\n", VERSION);
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
 	if (daemonize) {
 		pid_t childpid;
 
-		freopen("/dev/null", "a", stdin);
+		reopen_file("/dev/null", "r", stdin);
 
 		/* Become a daemon */
 		childpid = fork();

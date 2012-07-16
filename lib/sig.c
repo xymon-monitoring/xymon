@@ -53,7 +53,7 @@ static void sigsegv_handler(int signum)
 	}
 
 	/* Dump core and abort */
-	chdir(signal_tmpdir);
+	if (chdir(signal_tmpdir) == 0) {};	/* Cannot chdir? Well, abort anyway */
 	abort();
 }
 

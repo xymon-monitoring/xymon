@@ -64,8 +64,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			/* Assume a log entry is max 150 bytes */
 			if (150*maxcount < st.st_size) {
 				fseeko(acklog, -150*maxcount, SEEK_END);
-				fgets(l, sizeof(l), acklog);
-				if (strchr(l, '\n') == NULL) {
+				if ((fgets(l, sizeof(l), acklog) == NULL) || (strchr(l, '\n') == NULL)) {
 					errprintf("Oops - couldnt find a newline in acklog\n");
 				}
 			}

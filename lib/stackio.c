@@ -546,8 +546,11 @@ int main(int argc, char *argv[])
 		}
 
 		printf("\nCmd: "); fflush(stdout);
-		fgets(cmd, sizeof(cmd), stdin);
-		p = strchr(cmd, '\n'); if (p) *p = '\0';
+		if (fgets(cmd, sizeof(cmd), stdin)) {
+			p = strchr(cmd, '\n'); if (p) *p = '\0';
+		}
+		else
+			done = 1;
 	}
 
 	xfree(fn);

@@ -1649,7 +1649,7 @@ void testmode(char *configfn)
 		hinfo = NULL;
 		while (!hinfo) {
 			printf("Hostname (.=end, ?=dump, !=reload) [%s]: ", hostname); 
-			fflush(stdout); fgets(hostname, sizeof(hostname), stdin);
+			fflush(stdout); if (!fgets(hostname, sizeof(hostname), stdin)) return;
 			clean_instr(hostname);
 
 			if (strlen(hostname) == 0) {
@@ -1673,14 +1673,14 @@ void testmode(char *configfn)
 				if (!hinfo) printf("Unknown host\n");
 
 				printf("Hosttype [%s]: ", clientclass); 
-				fflush(stdout); fgets(clientclass, sizeof(clientclass), stdin);
+				fflush(stdout); if (!fgets(clientclass, sizeof(clientclass), stdin)) return;
 				clean_instr(clientclass);
 			}
 		}
 		oldhinfo = hinfo;
 
 		printf("Test (cpu, mem, disk, proc, log, port): "); fflush(stdout); 
-		fgets(s, sizeof(s), stdin); clean_instr(s);
+		if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
 		if (strcmp(s, "cpu") == 0) {
 			float loadyellow, loadred;
 			int recentlimit, ancientlimit, uptimecolor;
@@ -1708,7 +1708,7 @@ void testmode(char *configfn)
 			char *groups;
 
 			printf("Filesystem: "); fflush(stdout);
-			fgets(s, sizeof(s), stdin); clean_instr(s);
+			if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
 			get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, 
 						   &abswarn, &abspanic, &ignored, &groups);
 			if (ignored) 
@@ -1733,7 +1733,7 @@ void testmode(char *configfn)
 			printf("To read 'ps' data from a file, enter '@FILENAME' at the prompt\n");
 			do {
 				printf("ps command string: "); fflush(stdout);
-				fgets(s, sizeof(s), stdin); clean_instr(s);
+				if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
 				if (*s == '@') {
 					fd = fopen(s+1, "r");
 					while (fd && fgets(s, sizeof(s), fd)) {
@@ -1759,7 +1759,7 @@ void testmode(char *configfn)
 			int logcolor;
 
 			printf("log filename: "); fflush(stdout);
-			fgets(s, sizeof(s), stdin); clean_instr(s);
+			if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
 			sectname = (char *)malloc(strlen(s) + 20);
 			sprintf(sectname, "msgs:%s", s);
 
@@ -1769,7 +1769,7 @@ void testmode(char *configfn)
 			printf("To read log data from a file, enter '@FILENAME' at the prompt\n");
 			do {
 				printf("log line: "); fflush(stdout);
-				fgets(s, sizeof(s), stdin); clean_instr(s);
+				if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
 				if (*s == '@') {
 					fd = fopen(s+1, "r");
 					while (fd && fgets(s, sizeof(s), fd)) {
@@ -1803,13 +1803,13 @@ void testmode(char *configfn)
 
 			printf("Need to know netstat columns for 'Local address', 'Remote address' and 'State'\n");
 			printf("Enter columns [%d %d %d]: ", localcol, remotecol, statecol); fflush(stdout);
-			fgets(s, sizeof(s), stdin); clean_instr(s);
+			if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
 			if (*s) sscanf(s, "%d %d %d", &localcol, &remotecol, &statecol);
 
 			printf("To read 'netstat' data from a file, enter '@FILENAME' at the prompt\n");
 			do {
 				printf("netstat line: "); fflush(stdout);
-				fgets(s, sizeof(s), stdin); clean_instr(s);
+				if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
 				if (*s == '@') {
 					FILE *fd;
 
@@ -2111,8 +2111,8 @@ int main(int argc, char *argv[])
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
 			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
-				freopen(fn, "a", stdout);
-				freopen(fn, "a", stderr);
+				reopen_file(fn, "a", stdout);
+				reopen_file(fn, "a", stderr);
 			}
 			continue;
 		}

@@ -135,8 +135,7 @@ int main(int argc, char *argv[])
 			char ldest[PATH_MAX + 1];
 
 			memset(ldest, 0, sizeof(ldest));
-			readlink(srcfn, ldest, sizeof(ldest)-1);
-			symlink(ldest, destfn);
+			if ((readlink(srcfn, ldest, sizeof(ldest)-1) != -1) && (symlink(ldest, destfn) == 0)) {};
 		}
 	}
 
