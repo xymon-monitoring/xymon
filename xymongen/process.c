@@ -22,6 +22,7 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 #include "xymongen.h"
 #include "process.h"
@@ -174,7 +175,11 @@ void delete_old_acks(void)
 		return;
         }
 
-	chdir(xgetenv("XYMONACKDIR"));
+	if (chdir(xgetenv("XYMONACKDIR")) == -1) {
+		errprintf("Cannot chdir to %s: %s\n", xgetenv("XYMONACKDIR"), strerror(errno));
+		return;
+	}
+
 	while ((d = readdir(xymonacks))) {
 		strcpy(fn, d->d_name);
 		if (strncmp(fn, "ack.", 4) == 0) {

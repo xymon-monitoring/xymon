@@ -168,12 +168,17 @@ void do_notifylog(FILE *output,
 			if (ftello(notifylog) > maxcount*80) {
 				unsigned int uicurtime;
 				fseeko(notifylog, -maxcount*80, SEEK_CUR); 
-				fgets(l, sizeof(l), notifylog); /* Skip to start of line */
-				fgets(l, sizeof(l), notifylog);
-				/* Sun Jan  7 10:29:08 2007 myhost.disk (130.225.226.90) foo@test.com 1168162147 100 */
-				sscanf(l, "%*s %*s %*u %*u:%*u:%*u %*u %*s %*s %*s %u %*d", &uicurtime);
-				curtime = uicurtime;
-				done = (curtime < firstevent);
+				if (fgets(l, sizeof(l), notifylog) && /* Skip to start of line */
+				    fgets(l, sizeof(l), notifylog)) {
+					/* Sun Jan  7 10:29:08 2007 myhost.disk (130.225.226.90) foo@test.com 1168162147 100 */
+					sscanf(l, "%*s %*s %*u %*u:%*u:%*u %*u %*s %*s %*s %u %*d", &uicurtime);
+					curtime = uicurtime;
+					done = (curtime < firstevent);
+				}
+				else { 
+					fprintf(output, "Error reading logfile %s: %s\n", notifylogfilename, strerror(errno));
+					return;
+				}
 			}
 			else {
 				rewind(notifylog);

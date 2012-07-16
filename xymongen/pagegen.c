@@ -884,7 +884,10 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 	char	*dirdelim;
 	char	*localtext;
 
-	getcwd(curdir, sizeof(curdir));
+	if (!getcwd(curdir, sizeof(curdir))) {
+		errprintf("Cannot get current directory: %s\n", strerror(errno));
+		return;
+	}
 	localtext = strdup(xgetenv((page->parent ? "XYMONPAGESUBLOCAL" : "XYMONPAGELOCAL")));
 
 	pagepath[0] = '\0';
@@ -899,8 +902,10 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 			sprintf(filename, "xymon%s", htmlextension);
 			sprintf(rssfilename, "xymon%s", rssextension);
 			sprintf(indexfilename, "index%s", htmlextension);
-			unlink(indexfilename); symlink(filename, indexfilename);
-			dbgprintf("Symlinking %s -> %s\n", filename, indexfilename);
+			unlink(indexfilename); 
+			if (symlink(filename, indexfilename)) {
+				dbgprintf("Symlinking %s -> %s\n", filename, indexfilename);
+			}
 		}
 		else {
 			char tmppath[PATH_MAX];

@@ -453,8 +453,8 @@ int main(int argc, char *argv[])
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
 			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
-				freopen(fn, "a", stdout);
-				freopen(fn, "a", stderr);
+				reopen_file(fn, "a", stdout);
+				reopen_file(fn, "a", stderr);
 			}
 			continue;
 		}

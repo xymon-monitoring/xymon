@@ -301,7 +301,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 				if ((start + dur) < fromtime) {
 					fseeko(fd, 2048, SEEK_CUR);
-					fgets(buf, bufsize, fd); /* Skip partial line */
+					if (!fgets(buf, bufsize, fd)) {}; /* Skip partial line */
 				}
 			}
 		}
@@ -316,7 +316,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 		rewind(fd);
 	else {
 		fseeko(fd, -2300, SEEK_CUR); 
-		fgets(buf, bufsize, fd); /* Skip partial line */
+		if (!fgets(buf, bufsize, fd)) {}; /* Skip partial line */
 	}
 
 	/* Read one line at a time until we hit start of our report period */

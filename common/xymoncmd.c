@@ -34,9 +34,7 @@ static void xymon_default_envs(char *envfn)
 
 	if (getenv("MACHINEDOTS") == NULL) {
 		fd = popen("uname -n", "r");
-		if (fd) {
-			char *p;
-			fgets(buf, sizeof(buf), fd);
+		if (fd && fgets(buf, sizeof(buf), fd)) {
 			p = strchr(buf, '\n'); if (p) *p = '\0';
 			pclose(fd);
 		}
@@ -50,11 +48,8 @@ static void xymon_default_envs(char *envfn)
 	xgetenv("MACHINE");
 
 	if (getenv("SERVEROSTYPE") == NULL) {
-		char *p;
-
 		fd = popen("uname -s", "r");
-		if (fd) {
-			fgets(buf, sizeof(buf), fd);
+		if (fd && fgets(buf, sizeof(buf), fd)) {
 			pclose(fd);
 		}
 		else strcpy(buf, "unix");

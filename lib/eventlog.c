@@ -586,12 +586,17 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 				if (ftello(eventlog) > maxcount*80) {
 					unsigned int uicurtime;
 					fseeko(eventlog, -maxcount*80, SEEK_CUR); 
-					fgets(l, sizeof(l), eventlog); /* Skip to start of line */
-					fgets(l, sizeof(l), eventlog);
-					sscanf(l, "%*s %*s %u %*u %*u %*s %*s %*d", &uicurtime);
-					curtime = uicurtime;
-					done = (curtime < firstevent);
-					if (unlimited && !done) maxcount += 1000;
+					if (fgets(l, sizeof(l), eventlog) &&  /* Skip to start of line */
+					    fgets(l, sizeof(l), eventlog)) {
+						sscanf(l, "%*s %*s %u %*u %*u %*s %*s %*d", &uicurtime);
+						curtime = uicurtime;
+						done = (curtime < firstevent);
+						if (unlimited && !done) maxcount += 1000;
+					}
+					else {
+						if (output) fprintf(output,"Error reading eventlog file %s: %s\n", eventlogfilename, strerror(errno));
+						return;
+					}
 				}
 				else {
 					rewind(eventlog);

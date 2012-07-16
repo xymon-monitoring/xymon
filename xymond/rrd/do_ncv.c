@@ -103,8 +103,9 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 
 		if (name && val && *val) {
 			char *endptr;
+			double dummy;
 
-			strtod(val, &endptr);
+			dummy = strtod(val, &endptr); /* Dont care - we're only interested in endptr */
 			if (isspace((int)*endptr) || (*endptr == '\0')) {
 				char dsname[250];    /* name of ncv in status message (with space and all) */
 				char dskey[252];     /* name of final DS key (stripped)                    */

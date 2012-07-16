@@ -26,6 +26,7 @@ static char rcsid[] = "$Id$";
 #include <dirent.h>
 #include <unistd.h>
 #include <utime.h>
+#include <errno.h>
 
 #include "libxymon.h"
 
@@ -238,7 +239,10 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 	if (!myhost) return NULL;
 
 	sprintf(hostrrddir, "%s/%s", xgetenv("XYMONRRDS"), hostname);
-	chdir(hostrrddir);
+	if (chdir(hostrrddir) != 0) {
+		errprintf("Cannot chdir to %s: %s\n", hostrrddir, strerror(errno));
+		return NULL;
+	}
 	stack_opendir(".");
 
 	while ((fn = stack_readdir())) {
