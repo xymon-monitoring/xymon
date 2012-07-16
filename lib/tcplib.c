@@ -43,6 +43,7 @@ static char rcsid[] = "$Id$";
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
+#include <openssl/bio.h>
 
 /* SSL context (holds certificate, SSL protocol version etc) for server-mode operation */
 /* Note: Since this is global, we are limited to one server instance per process. */
@@ -305,7 +306,7 @@ static time_t convert_asn1_tstamp(ASN1_UTCTIME *tstamp)
 }
 #endif
 
-char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend, char **issuer)
+char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend, char **issuer, char **fulltext)
 {
 	char *result = NULL;
 
@@ -328,6 +329,22 @@ char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend,
 	if (certend) {
 		tstamp = X509_get_notAfter(peercert);
 		*certend = convert_asn1_tstamp(tstamp);
+	}
+
+	if (fulltext) {
+		BIO *o = BIO_new(BIO_s_mem());
+		long slen;
+		char *sdata;
+
+		X509_print_ex(o, peercert, XN_FLAG_COMPAT, X509_FLAG_COMPAT);
+
+		slen = BIO_get_mem_data(o, &sdata);
+		*fulltext = malloc(slen+1);
+		memcpy(*fulltext, sdata, slen);
+		*((*fulltext)+slen) = '\0';
+
+		BIO_set_close(o, BIO_CLOSE);
+		BIO_free(o);
 	}
 
 	X509_free(peercert);
