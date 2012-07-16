@@ -278,6 +278,10 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 			addtobuffer(hres->txt, "\n");
 			snprintf(msgline, sizeof(msgline), "PeerCertificateExpiry: %d %s\n", (int)rec->peercertificateexpiry, exps);
 			addtobuffer(hres->txt, msgline);
+			snprintf(msgline, sizeof(msgline), "PeerCertificateDetails: %d\n", (int)strlen(rec->peercertificatedetails)+1);
+			addtobuffer(hres->txt, msgline);
+			addtobuffer(hres->txt, rec->peercertificatedetails);
+			addtobuffer(hres->txt, "\n");
 		}
 
 		switch (rec->talkprotocol) {
@@ -326,6 +330,7 @@ void cleanup_myconn_list(listhead_t *head)
 		if (testrec->dnschannel) xfree(testrec->dnschannel);
 		if (testrec->peercertificate) xfree(testrec->peercertificate);
 		if (testrec->peercertificateissuer) xfree(testrec->peercertificateissuer);
+		if (testrec->peercertificatedetails) xfree(testrec->peercertificatedetails);
 		xfree(testrec);
 
 		list_item_delete(walk, "");
