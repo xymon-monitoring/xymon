@@ -1,7 +1,7 @@
 # Xymon library Makefile
 #
 
-XYMONLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o compression.o crondate.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o lists.o xymonrrd.o holidays.o htmllog.o ipaccess.o loadalerts.o loadcriticalconf.o links.o matching.o md5.o memory.o misc.o msort.o netservices.o notifylog.o readmib.o reportlog.o rmd160c.o sha1.o sha2.o sig.o stackio.o stdopt.o strfunc.o suid.o timefunc.o tree.o url.o webaccess.o
+XYMONLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o compression.o crondate.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o lists.o xymonrrd.o holidays.o htmllog.o ipaccess.o loadalerts.o loadcriticalconf.o links.o matching.o md5.o memory.o misc.o msort.o multicolumn.o netservices.o notifylog.o readmib.o reportlog.o rmd160c.o sha1.o sha2.o sig.o stackio.o stdopt.o strfunc.o suid.o timefunc.o tree.o url.o webaccess.o
 
 XYMONCOMMLIBOBJS = $(XYMONLIBOBJS) loadhosts.o locator.o sendmsg.o tcplib.o
 XYMONTIMELIBOBJS = run.o timing.o
@@ -29,7 +29,7 @@ CFLAGS += -I. -I../include
 
 all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) loadhosts stackio availability md5 sha1 rmd160 locator
 
-client: test-endianness $(XYMONCLIENTLIB)
+client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
 
 test-endianness: test-endianness.c
 	$(CC) $(CFLAGS) -o $@ $<
