@@ -34,18 +34,6 @@
 		LDAPLIB="$USERLDAPLIB"
 	fi
 
-	#
-	# Some systems require liblber also
-	#
-	if test -f $LDAPLIB/liblber.a
-	then
-		LDAPLBER=-llber
-	fi
-	if test -f $LDAPLIB/liblber.so
-	then
-		LDAPLBER=-llber
-	fi
-
 	# See if it builds
 	LDAPOK="YES"
 	if test ! -z $LDAPINC; then INCOPT="-I$LDAPINC"; fi
@@ -58,6 +46,31 @@
 	else
 		echo "WARNING: Cannot compile with LDAP"
 		LDAPOK="NO"
+	fi
+
+	if test "$LDAPOK" = "YES"
+	then
+		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-lber clean
+		OS=`uname -s | tr '[/]' '[_]'` LDAPINC="$INCOPT" $MAKE -f Makefile.test-lber test-compile 2>/dev/null
+		if test $? -eq 0; then
+			OS=`uname -s | tr '[/]' '[_]'` LDAPLIB="$LIBOPT" $MAKE -f Makefile.test-lber test-link 2>/dev/null
+			if test $? -eq 0; then
+				echo "LBER library not needed"
+				LDAPLBER=""
+			else
+				OS=`uname -s | tr '[/]' '[_]'` LDAPLIB="$LIBOPT" LDAPLBER="-llber" $MAKE -f Makefile.test-lber test-link 2>/dev/null
+				if test $? -eq 0; then
+					echo "LDAP requires the LBER library"
+					LDAPLBER="-llber"
+				else
+					echo "LBER library not found, disabling LDAP support"
+					LDAPOK="NO"
+				fi
+			fi
+		else
+			echo "WARNING: Cannot compile with LBER, disabling LDAP support"
+			LDAPOK="NO"
+		fi
 	fi
 
 	OS=`uname -s | tr '[/]' '[_]'` LDAPLIB="$LIBOPT" LDAPLBER="$LDAPLBER" $MAKE -f Makefile.test-ldap test-link 2>/dev/null
@@ -73,6 +86,7 @@
 	fi
 
 	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ldap clean
+	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-lber clean
 	cd ..
 
 	if test "$LDAPOK" = "NO"; then
