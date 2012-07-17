@@ -1,0 +1,11 @@
+include Makefile.$(OS)
+
+test-compile:
+	@$(CC) $(CFLAGS) $(LDAPINC) -o test-lber.o -c test-lber.c
+
+test-link:
+	@$(CC) $(CFLAGS) $(LDAPLIB) -o test-lber test-lber.o -lldap $(LDAPLBER)
+
+clean:
+	@rm -f test-lber.o test-lber
+
