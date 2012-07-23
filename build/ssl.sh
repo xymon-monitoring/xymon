@@ -45,8 +45,8 @@
 	# Lets see if it builds
 	SSLOK="YES"
 	cd build
-	if test ! -z $OSSLINC; then INCOPT="-I$OSSLINC"; fi
-	if test ! -z $OSSLLIB; then LIBOPT="-L$OSSLLIB"; fi
+	if test "$OSSLINC" != ""; then INCOPT="-I$OSSLINC"; fi
+	if test "$OSSLLIB" != ""; then LIBOPT="-L$OSSLLIB"; fi
 	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl clean
 	OS=`uname -s | tr '[/]' '[_]'` OSSLINC="$INCOPT" $MAKE -f Makefile.test-ssl test-compile
 	if test $? -eq 0; then

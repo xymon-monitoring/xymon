@@ -36,8 +36,8 @@
 
 	# See if it builds
 	LDAPOK="YES"
-	if test ! -z $LDAPINC; then INCOPT="-I$LDAPINC"; fi
-	if test ! -z $LDAPLIB; then LIBOPT="-L$LDAPLIB"; fi
+	if test "$LDAPINC" != ""; then INCOPT="-I$LDAPINC"; fi
+	if test "$LDAPLIB" != ""; then LIBOPT="-L$LDAPLIB"; fi
 	cd build
 	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ldap clean
 	OS=`uname -s | tr '[/]' '[_]'` LDAPINC="$INCOPT" $MAKE -f Makefile.test-ldap test-compile 2>/dev/null
