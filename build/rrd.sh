@@ -73,8 +73,8 @@
 
 	# See if it builds
 	RRDOK="YES"
-	if test ! -z $RRDINC; then INCOPT="-I$RRDINC"; fi
-	if test ! -z $RRDLIB; then LIBOPT="-L$RRDLIB"; fi
+	if test "$RRDINC" != ""; then INCOPT="-I$RRDINC"; fi
+	if test "$RRDLIB" != ""; then LIBOPT="-L$RRDLIB"; fi
 	cd build
 	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-rrd clean
 	OS=`uname -s | tr '[/]' '[_]'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile 2>/dev/null

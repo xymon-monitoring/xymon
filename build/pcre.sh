@@ -41,8 +41,8 @@
 	# Lets see if it can build
 	PCREOK="YES"
 	cd build
-	if test ! -z $PCREINC; then INCOPT="-I$PCREINC"; fi
-	if test ! -z $PCRELIB; then LIBOPT="-L$PCRELIB"; fi
+	if test "$PCREINC" != ""; then INCOPT="-I$PCREINC"; fi
+	if test "$PCRELIB" != ""; then LIBOPT="-L$PCRELIB"; fi
 	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-pcre clean
 	OS=`uname -s | tr '[/]' '[_]'` PCREINC="$INCOPT" $MAKE -f Makefile.test-pcre test-compile
 	if test $? -eq 0; then
