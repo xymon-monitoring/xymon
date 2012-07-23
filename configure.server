@@ -87,10 +87,17 @@ echo ""
 echo ""; echo ""
 . build/pcre.sh
 echo ""; echo ""
-. build/rrd.sh
-echo ""; echo ""
-. build/ssl.sh
 
+. build/rrd.sh
+if test "$RRDOK" = "NO"
+then
+	ENABLERRD="n"
+else
+	ENABLERRD="y"
+fi
+echo ""; echo ""
+
+. build/ssl.sh
 if test "$SSLOK" = "NO"
 then
 	ENABLESSL="n"
@@ -428,18 +435,6 @@ echo "# Webserver group-ID"              >>Makefile
 echo "HTTPDGID=$HTTPDGID"                >>Makefile
 echo ""                                  >>Makefile
 
-echo "# RRDtool settings"                >>Makefile
-echo "RRDDEF = $RRDDEF"                  >>Makefile
-if test "$RRDINC" != ""; then
-	echo "RRDINCDIR = -I$RRDINC"     >>Makefile
-fi
-if test "$RRDLIB" != ""; then
-	echo "RRDLIBS = -L$RRDLIB -lrrd $PNGLIB" >>Makefile
-	echo "RPATHVAL += ${RRDLIB}"             >>Makefile
-else
-	echo "RRDLIBS = -lrrd $PNGLIB"   >>Makefile
-fi
-echo ""                                  >>Makefile
 echo "# PCRE settings"                   >>Makefile
 if test "$PCREOK" = "YES"
 then
@@ -454,6 +449,22 @@ then
     fi
 fi
 echo ""                                  >>Makefile
+if test "$ENABLERRD" = "y"
+then
+    echo "# RRDtool settings"            >>Makefile
+    echo "RRDDEF = $RRDDEF"              >>Makefile
+    if test "$RRDINC" != ""; then
+	echo "RRDINCDIR = -I$RRDINC"     >>Makefile
+    fi
+    if test "$RRDLIB" != ""; then
+	echo "RRDLIBS = -L$RRDLIB -lrrd $PNGLIB" >>Makefile
+	echo "RPATHVAL += ${RRDLIB}"             >>Makefile
+    else
+	echo "RRDLIBS = -lrrd $PNGLIB"   >>Makefile
+    fi
+    echo "DORRD = yes"                   >>Makefile
+fi
+echo "#"                                 >>Makefile
 echo "# OpenSSL settings"                >>Makefile
 if test "$ENABLESSL" = "y"
 then
@@ -467,6 +478,7 @@ then
     else
 	echo "SSLLIBS = -lssl -lcrypto"  >>Makefile
     fi
+    echo "DOSSL = yes"                   >>Makefile
 fi
 echo "#"                                 >>Makefile
 echo "# OpenLDAP settings"               >>Makefile
