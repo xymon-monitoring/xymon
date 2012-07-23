@@ -161,22 +161,16 @@ void reopen_file(char *fn, char *mode, FILE *fd)
 {
 	FILE *testfd;
 
-	/*
-	 * Bit of contortionist stuff to avoid losing our stdin/stdout/stderr filehandles when rotating logs.
-	 * If we cannot access the new file, then don't change the original at all.
-	 */
 	testfd = fopen(fn, mode);
 	if (!testfd) {
 		fprintf(stderr, "reopen_file: Cannot open new file: %s\n", strerror(errno));
 		return;
 	}
-
-	fclose(fd);
-	fd = fdopen(fileno(testfd), mode);
-	if (fd == NULL) {
-		fprintf(stderr, "reopen_file: fdopen failed: %s\n", strerror(errno));
-	}
 	fclose(testfd);
+
+	if (freopen(fn, mode, fd) == NULL) {
+		/* Ugh ... lost the filedescriptor :-(( */
+	}
 }
 
 void redirect_cgilog(char *cginame)
