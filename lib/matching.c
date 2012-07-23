@@ -69,7 +69,7 @@ void freeregex(pcre *pcrecode)
 int namematch(char *needle, char *haystack, pcre *pcrecode)
 {
 	char *xhay;
-	char *tokbuf, *tok;
+	char *tokbuf = NULL, *tok;
 	int found = 0;
 	int result = 0;
 	int allneg = 1;

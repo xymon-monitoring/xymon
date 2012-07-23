@@ -428,7 +428,7 @@ xymongen_page_t *load_layout(char *pgset)
 	int	ip1, ip2, ip3, ip4;
 	char	*p;
 	int	fqdn = get_fqdn();
-	char	*cfgdata, *inbol, *ineol, insavchar;
+	char	*cfgdata, *inbol, *ineol, insavchar = '\0';
 
 	if (loadhostsfromxymond) {
 		if (load_hostnames("@", NULL, fqdn) != 0) {

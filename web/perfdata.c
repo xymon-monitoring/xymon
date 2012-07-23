@@ -98,7 +98,7 @@ int oneset(char *hostname, char *rrdname, char *starttime, char *endtime, char *
 	int columnindex;
 	char tstamp[30];
 	int dataindex, rowcount, havemin, havemax, missingdata;
-	double sum, min, max, val;
+	double sum, min = 0.0, max = 0.0, val;
 
 	char *rrdargs[10];
 	int result;

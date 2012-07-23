@@ -130,7 +130,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	namelist_t *nametail = NULL;
 	void * htree;
-	char *cfgdata, *inbol, *ineol, insavchar;
+	char *cfgdata, *inbol, *ineol, insavchar = '\0';
 
 	load_hostinfo(NULL);
 

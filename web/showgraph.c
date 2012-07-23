@@ -181,7 +181,7 @@ void request_cacheflush(char *hostname)
 void parse_query(void)
 {
 	cgidata_t *cgidata = NULL, *cwalk;
-	char *stp;
+	char *stp = NULL;
 
 	cgidata = cgi_request();
 
