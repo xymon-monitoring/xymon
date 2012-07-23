@@ -43,8 +43,8 @@
 	cd build
 	if test "$PCREINC" != ""; then INCOPT="-I$PCREINC"; fi
 	if test "$PCRELIB" != ""; then LIBOPT="-L$PCRELIB"; fi
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-pcre clean
-	OS=`uname -s | tr '[/]' '[_]'` PCREINC="$INCOPT" $MAKE -f Makefile.test-pcre test-compile
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-pcre clean
+	OS=`uname -s | sed -e's@/@_@g'` PCREINC="$INCOPT" $MAKE -f Makefile.test-pcre test-compile
 	if test $? -eq 0; then
 		echo "Compiling with PCRE library works OK"
 	else
@@ -52,14 +52,14 @@
 		PCREOK="NO"
 	fi
 
-	OS=`uname -s | tr '[/]' '[_]'` PCRELIB="$LIBOPT" $MAKE -f Makefile.test-pcre test-link
+	OS=`uname -s | sed -e's@/@_@g'` PCRELIB="$LIBOPT" $MAKE -f Makefile.test-pcre test-link
 	if test $? -eq 0; then
 		echo "Linking with PCRE library works OK"
 	else
 		echo "ERROR: Cannot link with PCRE library."
 		PCREOK="NO"
 	fi
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-pcre clean
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-pcre clean
 	cd ..
 
 	if test "$PCREOK" = "NO"; then

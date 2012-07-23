@@ -47,8 +47,8 @@
 	cd build
 	if test "$OSSLINC" != ""; then INCOPT="-I$OSSLINC"; fi
 	if test "$OSSLLIB" != ""; then LIBOPT="-L$OSSLLIB"; fi
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl clean
-	OS=`uname -s | tr '[/]' '[_]'` OSSLINC="$INCOPT" $MAKE -f Makefile.test-ssl test-compile
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-ssl clean
+	OS=`uname -s | sed -e's@/@_@g'` OSSLINC="$INCOPT" $MAKE -f Makefile.test-ssl test-compile
 	if test $? -eq 0; then
 		echo "Compiling with SSL library works OK"
 	else
@@ -56,14 +56,14 @@
 		SSLOK="NO"
 	fi
 
-	OS=`uname -s | tr '[/]' '[_]'` OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl test-link
+	OS=`uname -s | sed -e's@/@_@g'` OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl test-link
 	if test $? -eq 0; then
 		echo "Linking with SSL library works OK"
 	else
 		echo "Warning: Cannot link with SSL library"
 		SSLOK="NO"
 	fi
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl clean
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-ssl clean
 	cd ..
 
 	if test "$SSLOK" = "YES"; then
@@ -71,10 +71,10 @@
 
 		cd build
 		echo "Checking if your SSL library has SSLv2 enabled"
-		OS=`uname -s | tr '[/]' '[_]'` OSSLINC="$INCOPT" OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl2 test-compile 2>/dev/null
+		OS=`uname -s | sed -e's@/@_@g'` OSSLINC="$INCOPT" OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl2 test-compile 2>/dev/null
 		CSTAT=$?; LSTAT=$?
 		if test $CSTAT -eq 0; then
-			OS=`uname -s | tr '[/]' '[_]'` OSSLINC="$INCOPT" OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl2 test-link 2>/dev/null
+			OS=`uname -s | sed -e's@/@_@g'` OSSLINC="$INCOPT" OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl2 test-link 2>/dev/null
 			LSTAT=$?
 		fi
 		if test $CSTAT -ne 0 -o $LSTAT -ne 0; then
@@ -85,7 +85,7 @@
 			OSSL2OK="Y"
 			SSLFLAGS="$SSLFLAGS -DHAVE_SSLV2_SUPPORT"
 		fi
-		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl2 clean
+		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-ssl2 clean
 		cd ..
 	fi
 
