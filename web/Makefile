@@ -5,9 +5,14 @@ XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
-PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi showgraph.cgi svcstatus.cgi enadis.cgi confreport.cgi criticalview.cgi criticaleditor.cgi ackinfo.cgi statusreport.cgi boilerplate.cgi hostgraphs.cgi ghostlist.cgi notifications.cgi hostlist.cgi perfdata.cgi useradm.cgi appfeed.cgi
-CGISCRIPTS = history.sh eventlog.sh report.sh reportlog.sh snapshot.sh findhost.sh csvinfo.sh columndoc.sh datepage.sh showgraph.sh svcstatus.sh historylog.sh confreport.sh confreport-critical.sh criticalview.sh certreport.sh nongreen.sh hostgraphs.sh ghostlist.sh notifications.sh hostlist.sh perfdata.sh topchanges.sh appfeed.sh appfeed-critical.sh
+PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi svcstatus.cgi enadis.cgi confreport.cgi criticalview.cgi criticaleditor.cgi ackinfo.cgi statusreport.cgi boilerplate.cgi hostgraphs.cgi ghostlist.cgi notifications.cgi hostlist.cgi useradm.cgi appfeed.cgi
+CGISCRIPTS = history.sh eventlog.sh report.sh reportlog.sh snapshot.sh findhost.sh csvinfo.sh columndoc.sh datepage.sh svcstatus.sh historylog.sh confreport.sh confreport-critical.sh criticalview.sh certreport.sh nongreen.sh hostgraphs.sh ghostlist.sh notifications.sh hostlist.sh topchanges.sh appfeed.sh appfeed-critical.sh
 SECCGISCRIPTS = acknowledge.sh enadis.sh criticaleditor.sh ackinfo.sh useradm.sh
+
+ifeq ($(DORRD),yes)
+	PROGRAMS += showgraph.cgi perfdata.cgi
+	CGISCRIPTS += showgraph.sh perfdata.sh
+endif
 
 HISTOBJS        = history.o
 EVENTLOGOBJS    = eventlog.o

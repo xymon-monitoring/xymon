@@ -89,6 +89,7 @@
 		echo "Compiling with RRDtool works OK"
 	else
 		echo "ERROR: Cannot compile with RRDtool."
+		RRDOK="NO"
 	fi
 
 	OS=`uname -s | tr '[/]' '[_]'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
@@ -109,16 +110,22 @@
 		fi
 	else
 		echo "ERROR: Linking with RRDtool fails"
+		RRDOK="NO"
 	fi
 	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-rrd clean
 	cd ..
 
 	if test "$RRDOK" = "NO"; then
-		echo "RRDtool include- or library-files not found. These are REQUIRED for Xymon"
-		echo "RRDtool can be found at http://www.mrtg.org/rrdtool/"
+		echo "RRDtool include- or library-files not found."
+		echo "These are REQUIRED for trend-graph support in Xymon, but Xymon can"
+		echo "be built without them (e.g. for a network-probe only installation."
+		echo ""
+		echo "RRDtool can be found at http://oss.oetiker.ch/rrdtool/"
 		echo "If you have RRDtool installed, use the \"--rrdinclude DIR\" and \"--rrdlib DIR\""
 		echo "options to configure to specify where they are."
-		exit 1
+		echo ""
+		echo "Continuing with all trend-graph support DISABLED"
+		sleep 3
 	fi
 
 
