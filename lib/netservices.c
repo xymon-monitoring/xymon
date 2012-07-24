@@ -81,6 +81,8 @@ static char *binview(unsigned char *buf, int buflen)
 	unsigned char *inp, *outp;
 	int i;
 
+	if (!buf) return NULL;
+
 	if (result) xfree(result);
 	if (buf && (buflen == 0)) buflen = strlen(buf);
 	result = (char *)malloc(4*buflen + 1);	/* Worst case: All binary */

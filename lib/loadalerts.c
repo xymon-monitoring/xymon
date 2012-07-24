@@ -1042,7 +1042,10 @@ recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch, time_t
 			}
 		}
 		else {
-			if (recipwalk->next) {
+			if (!recipwalk) {
+				/* Should not happen! */
+			}
+			else if (recipwalk->next) {
 				/* Check the next recipient in the current rule */
 				recipwalk = recipwalk->next;
 			}

@@ -190,7 +190,7 @@ int do_request(void)
 	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL, *acklist=NULL, *modifiers = NULL;	/* These are just used */
 	int ishtmlformatted = 0;
 	int clientavail = 0;
-	char *ip, *displayname, *compacts;
+	char *ip = NULL, *displayname = NULL, *compacts;
 
 	if (parse_query() != 0) return 1;
 

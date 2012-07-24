@@ -193,12 +193,17 @@ static xtreePos_t findrec(char *key)
 
 			/* Get the origin record for this cloned record, using the same service name */
 			pointsto = (char *)xtreeData(rbconf, handle);
-			service = strchr(key, '|'); if (service) service++;
-			clonekey = (char *)malloc(strlen(pointsto) + strlen(service) + 2);
-			sprintf(clonekey, "%s|%s", pointsto, service);
+			service = strchr(key, '|'); 
+			if (service) {
+				service++;
+				clonekey = (char *)malloc(strlen(pointsto) + strlen(service) + 2);
+				sprintf(clonekey, "%s|%s", pointsto, service);
 
-			handle = xtreeFind(rbconf, clonekey);
-			xfree(clonekey);
+				handle = xtreeFind(rbconf, clonekey);
+				xfree(clonekey);
+			}
+			else
+				handle = xtreeEnd(rbconf);
 		}
 	}
 

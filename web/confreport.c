@@ -817,13 +817,21 @@ int main(int argc, char *argv[])
 		}
 	} while (nexthost);
 
-	allhosts = (hostlist_t **) malloc(hostcount * sizeof(hostlist_t *));
-	for (hwalk = hosthead, hosti=0; (hwalk); hwalk = hwalk->next, hosti++) {
-		allhosts[hosti] = hwalk;
-		if (hwalk->testcount > maxtests) maxtests = hwalk->testcount;
+	if (hostcount > 0) {
+		allhosts = (hostlist_t **) malloc(hostcount * sizeof(hostlist_t *));
+		for (hwalk = hosthead, hosti=0; (hwalk); hwalk = hwalk->next, hosti++) {
+			allhosts[hosti] = hwalk;
+			if (hwalk->testcount > maxtests) maxtests = hwalk->testcount;
+		}
+		if (maxtests > 0) alltests = (htnames_t **) malloc(maxtests * sizeof(htnames_t *));
+		qsort(&allhosts[0], hostcount, sizeof(hostlist_t **), host_compare);
 	}
-	alltests = (htnames_t **) malloc(maxtests * sizeof(htnames_t *));
-	qsort(&allhosts[0], hostcount, sizeof(hostlist_t **), host_compare);
+
+	if ((hostcount == 0) || (maxtests == 0)) {
+		printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+		printf("<html><body><h1>No hosts or tests to report!</h1></body></html>\n");
+		return 0;
+	}
 
 	/* Get the static info */
 	load_all_links();

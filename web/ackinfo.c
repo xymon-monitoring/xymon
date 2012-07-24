@@ -113,9 +113,9 @@ int main(int argc, char *argv[])
 		sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL);
 	}
 	else {
-		xymonmsg = (char *)malloc(1024 + strlen(hostname) + strlen(testname) + strlen(ackmsg));
+		xymonmsg = (char *)malloc(1024 + (hostname ? strlen(hostname) : 9) + (testname ? strlen(testname) : 9) + (ackmsg ? strlen(ackmsg) : 9));
 		sprintf(xymonmsg, "error in input params: hostname=%s, testname=%s, ackmsg=%s, validity=%d\n",
-			hostname, testname, ackmsg, validity);
+			(hostname ? hostname : "<unknown>", (testname ? testname : "<unknown>", (ackmsg ? ackmsg : "<unknown>"), validity);
 	}
 
 	fprintf(stdout, "Content-type: %s\n", xgetenv("HTMLCONTENTTYPE"));
