@@ -78,7 +78,7 @@ int is_snmpmib_rrd(char *testname)
 		newitem->dsdefs = (char **)calloc(totalvars, sizeof(char *));
 		for (swalk = mib->oidlisthead, newitem->valcount = 0; (swalk); swalk = swalk->next) {
 			for (i=0; (i <= swalk->oidcount); i++) {
-				char *datatypestr, *minimumstr;
+				char *datatypestr = NULL, *minimumstr = NULL;
 
 				if (swalk->oids[i].rrdtype == RRD_NOTRACK) continue;
 
@@ -106,6 +106,8 @@ int is_snmpmib_rrd(char *testname)
 				  case RRD_NOTRACK:
 					break;
 				}
+
+				if (!datatypestr || !minimumstr) continue;
 
 				newitem->valnames[newitem->valcount] = swalk->oids[i].dsname;
 				newitem->dsdefs[newitem->valcount] = (char *)malloc(strlen(swalk->oids[i].dsname) + 20);

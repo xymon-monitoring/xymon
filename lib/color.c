@@ -125,7 +125,7 @@ int colorset(char *colspec, int excludeset)
 	char *cspeccopy = strdup(colspec);
 	int c, ac;
 	char *p;
-	char *pp;
+	char *pp = NULL;
 
 	p = strtok_r(cspeccopy, ",", &pp);
 	ac = 0;
