@@ -481,8 +481,18 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
 				crit = setup_criteria(&currule, &currcp);
-				if (*(p+8) == '>') crit->minduration = 60*durationvalue(p+9);
-				else if (*(p+8) == '<') crit->maxduration = 60*durationvalue(p+9);
+				if (*(p+8) == '>') {
+					if (*(p+9) == '=')
+						crit->minduration = 60*durationvalue(p+10);
+					else
+						crit->minduration = 60*durationvalue(p+9) + 1;
+				}
+				else if (*(p+8) == '<') {
+					if (*(p+9) == '=')
+						crit->maxduration = 60*durationvalue(p+10);
+					else
+						crit->maxduration = 60*durationvalue(p+9) - 1;
+				}
 				else errprintf("Ignoring invalid DURATION at line %d: %s\n",cfid, p);
 				firsttoken = 0;
 			}

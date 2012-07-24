@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
 			argi++; 
 			while (argi < argc) {
 				if (strncasecmp(argv[argi], "--duration=", 11) == 0) {
-					testdur = atoi(strchr(argv[argi], '=')+1);
+					testdur = durationvalue(strchr(argv[argi], '=')+1);
 				}
 				else if (strncasecmp(argv[argi], "--color=", 8) == 0) {
 					testcolor = strchr(argv[argi], '=')+1;
@@ -439,7 +439,7 @@ int main(int argc, char *argv[])
 
 			if ((testhost == NULL) || (testservice == NULL)) {
 				printf("Usage: xymond_alert --test HOST SERVICE [options]\n");
-				printf("Possible options:\n\t[--duration=SECONDS]\n\t[--color=COLOR]\n\t[--group=GROUPNAME]\n\t[--time=TIMESPEC]\n");
+				printf("Possible options:\n\t[--duration=MINUTES]\n\t[--color=COLOR]\n\t[--group=GROUPNAME]\n\t[--time=TIMESPEC]\n");
 
 				return 1;
 			}
