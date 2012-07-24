@@ -39,8 +39,8 @@
 	if test "$LDAPINC" != ""; then INCOPT="-I$LDAPINC"; fi
 	if test "$LDAPLIB" != ""; then LIBOPT="-L$LDAPLIB"; fi
 	cd build
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ldap clean
-	OS=`uname -s | tr '[/]' '[_]'` LDAPINC="$INCOPT" $MAKE -f Makefile.test-ldap test-compile 2>/dev/null
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-ldap clean
+	OS=`uname -s | sed -e's@/@_@g'` LDAPINC="$INCOPT" $MAKE -f Makefile.test-ldap test-compile 2>/dev/null
 	if test $? -eq 0; then
 		echo "Compiling with LDAP works OK"
 	else
@@ -50,15 +50,15 @@
 
 	if test "$LDAPOK" = "YES"
 	then
-		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-lber clean
-		OS=`uname -s | tr '[/]' '[_]'` LDAPINC="$INCOPT" $MAKE -f Makefile.test-lber test-compile 2>/dev/null
+		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-lber clean
+		OS=`uname -s | sed -e's@/@_@g'` LDAPINC="$INCOPT" $MAKE -f Makefile.test-lber test-compile 2>/dev/null
 		if test $? -eq 0; then
-			OS=`uname -s | tr '[/]' '[_]'` LDAPLIB="$LIBOPT" $MAKE -f Makefile.test-lber test-link 2>/dev/null
+			OS=`uname -s | sed -e's@/@_@g'` LDAPLIB="$LIBOPT" $MAKE -f Makefile.test-lber test-link 2>/dev/null
 			if test $? -eq 0; then
 				echo "LBER library not needed"
 				LDAPLBER=""
 			else
-				OS=`uname -s | tr '[/]' '[_]'` LDAPLIB="$LIBOPT" LDAPLBER="-llber" $MAKE -f Makefile.test-lber test-link 2>/dev/null
+				OS=`uname -s | sed -e's@/@_@g'` LDAPLIB="$LIBOPT" LDAPLBER="-llber" $MAKE -f Makefile.test-lber test-link 2>/dev/null
 				if test $? -eq 0; then
 					echo "LDAP requires the LBER library"
 					LDAPLBER="-llber"
@@ -73,7 +73,7 @@
 		fi
 	fi
 
-	OS=`uname -s | tr '[/]' '[_]'` LDAPLIB="$LIBOPT" LDAPLBER="$LDAPLBER" $MAKE -f Makefile.test-ldap test-link 2>/dev/null
+	OS=`uname -s | sed -e's@/@_@g'` LDAPLIB="$LIBOPT" LDAPLBER="$LDAPLBER" $MAKE -f Makefile.test-ldap test-link 2>/dev/null
 	if test $? -eq 0; then
 		echo "Linking with LDAP works OK"
 		LDAPVENDOR=`./test-ldap vendor`
@@ -85,8 +85,8 @@
 		LDAPOK="NO"
 	fi
 
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ldap clean
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-lber clean
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-ldap clean
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-lber clean
 	cd ..
 
 	if test "$LDAPOK" = "NO"; then

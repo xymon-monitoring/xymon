@@ -47,8 +47,8 @@
 	cd build
 	if test ! -z $SQLITEINC; then INCOPT="-I$SQLITEINC"; fi
 	if test ! -z $SQLITELIB; then LIBOPT="-L$SQLITELIB"; fi
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-sqlite clean
-	OS=`uname -s | tr '[/]' '[_]'` SQLITEINC="$INCOPT" $MAKE -f Makefile.test-sqlite test-compile
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-sqlite clean
+	OS=`uname -s | sed -e's@/@_@g'` SQLITEINC="$INCOPT" $MAKE -f Makefile.test-sqlite test-compile
 	if test $? -eq 0; then
 		echo "Compiling with SQLITE library works OK"
 	else
@@ -56,14 +56,14 @@
 		SQLITEOK="NO"
 	fi
 
-	OS=`uname -s | tr '[/]' '[_]'` SQLITELIB="$LIBOPT" $MAKE -f Makefile.test-sqlite test-link
+	OS=`uname -s | sed -e's@/@_@g'` SQLITELIB="$LIBOPT" $MAKE -f Makefile.test-sqlite test-link
 	if test $? -eq 0; then
 		echo "Linking with SQLITE library works OK"
 	else
 		echo "ERROR: Cannot link with SQLITE library."
 		SQLITEOK="NO"
 	fi
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-sqlite clean
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-sqlite clean
 	cd ..
 
 	if test "$SQLITEOK" = "NO"; then

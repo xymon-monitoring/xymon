@@ -76,14 +76,14 @@
 	if test "$RRDINC" != ""; then INCOPT="-I$RRDINC"; fi
 	if test "$RRDLIB" != ""; then LIBOPT="-L$RRDLIB"; fi
 	cd build
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-rrd clean
-	OS=`uname -s | tr '[/]' '[_]'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile 2>/dev/null
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
+	OS=`uname -s | sed -e's@/@_@g'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile 2>/dev/null
 	if test $? -ne 0; then
 		# See if it's the new RRDtool 1.2.x
 		echo "Not RRDtool 1.0.x, checking for 1.2.x"
 		RRDDEF="-DRRDTOOL12"
-		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-rrd clean
-		OS=`uname -s | tr '[/]' '[_]'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile
+		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
+		OS=`uname -s | sed -e's@/@_@g'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile
 	fi
 	if test $? -eq 0; then
 		echo "Compiling with RRDtool works OK"
@@ -92,17 +92,17 @@
 		RRDOK="NO"
 	fi
 
-	OS=`uname -s | tr '[/]' '[_]'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
+	OS=`uname -s | sed -e's@/@_@g'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 	if test $? -ne 0; then
 		# Could be that we need -lz for RRD
 		PNGLIB="$PNGLIB $ZLIB"
 	fi
-	OS=`uname -s | tr '[/]' '[_]'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
+	OS=`uname -s | sed -e's@/@_@g'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 	if test $? -ne 0; then
 		# Could be that we need -lm for RRD
 		PNGLIB="$PNGLIB -lm"
 	fi
-	OS=`uname -s | tr '[/]' '[_]'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
+	OS=`uname -s | sed -e's@/@_@g'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 	if test $? -eq 0; then
 		echo "Linking with RRDtool works OK"
 		if test "$PNGLIB" != ""; then
@@ -112,7 +112,7 @@
 		echo "ERROR: Linking with RRDtool fails"
 		RRDOK="NO"
 	fi
-	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-rrd clean
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
 	cd ..
 
 	if test "$RRDOK" = "NO"; then
