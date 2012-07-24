@@ -1,3 +1,18 @@
+xymon (4.3.9) unstable; urgency=low
+
+   * rev 7118
+
+   * Fix crash when XYMSRV is undefined but XYMSERVERS is
+   * Fix error in calculating combo-status messages with
+     forward references
+   * Fix error in disable-until-TIME or disable-until-OK code
+   * Permit building without the RRDtool libraries, e.g. for
+     a network-tester build, but with trend-graphing disabled.
+   * Full compiler-warning cleanup
+   * Various configuration/build-script issues fixed.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Tue, 24 Jul 2012 17:51:00 +0200
+
 xymon (4.3.8) unstable; urgency=low
 
    * rev 7082
