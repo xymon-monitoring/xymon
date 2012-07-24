@@ -4793,7 +4793,7 @@ int main(int argc, char *argv[])
 {
 	char *listenip4 = "0.0.0.0", *listenip6 = "::";
 	int listenport = 0, listensslport = 0;
-	char *certfn = NULL, *keyfn = NULL, *rootcafn;
+	char *certfn = NULL, *keyfn = NULL, *rootcafn = NULL;
 	int requireclientcert = 0;
 	char *hostsfn = NULL;
 	char *restartfn = NULL;

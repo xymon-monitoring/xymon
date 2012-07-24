@@ -633,7 +633,7 @@ int main(int argc, char *argv[])
 	int argi, hosti, testi;
 	char *pagepattern = NULL, *hostpattern = NULL;
 	char *cookie = NULL, *nexthost;
-	char *xymoncmd, *procscmd, *svcscmd;
+	char *xymoncmd = NULL, *procscmd = NULL, *svcscmd = NULL;
         int alertcolors, alertinterval;
 	char configfn[PATH_MAX];
 	char *respbuf = NULL, *procsbuf = NULL, *svcsbuf = NULL;

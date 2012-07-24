@@ -216,7 +216,7 @@ int do_snmpmib_rrd(char *hostname, char *testname, char *classname, char *pagepa
 	xtreePos_t handle;
 	snmpmib_param_t *params;
 	int pollinterval = 0;
-	char *datapart;
+	char *datapart = msg;
 
 	if (now > snmp_nextreload) readmibs(NULL, 0);
 

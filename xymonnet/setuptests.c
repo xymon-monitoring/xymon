@@ -124,7 +124,7 @@ int read_tests_from_hostscfg(int defaulttimeout)
 
 			options.testtype = NET_TEST_STANDARD;
 			if (argnmatch(testspec, "nopt=") || argnmatch(testspec, "nopt:")) {
-				char *allopts, *opt, *sptr;
+				char *allopts, *opt, *sptr = NULL;
 
 				allopts = strdup(testspec+5);
 				opt = strtok_r(allopts, ",", &sptr);
@@ -139,7 +139,7 @@ int read_tests_from_hostscfg(int defaulttimeout)
 			}
 			else if (strncmp(testspec, "conn=", 5) == 0) {
 				char *tsdup = strdup(testspec+5);
-				char *sptr, *ip;
+				char *sptr = NULL, *ip;
 
 				options.testtype = NET_TEST_PING;
 				options.timeout = defaulttimeout;
