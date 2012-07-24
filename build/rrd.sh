@@ -120,7 +120,7 @@
 		echo "These are REQUIRED for trend-graph support in Xymon, but Xymon can"
 		echo "be built without them (e.g. for a network-probe only installation."
 		echo ""
-		echo "RRDtool can be found at http://www.mrtg.org/rrdtool/"
+		echo "RRDtool can be found at http://oss.oetiker.ch/rrdtool/"
 		echo "If you have RRDtool installed, use the \"--rrdinclude DIR\" and \"--rrdlib DIR\""
 		echo "options to configure to specify where they are."
 		echo ""
