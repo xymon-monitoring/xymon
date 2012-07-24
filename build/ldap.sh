@@ -91,8 +91,8 @@
 
 	if test "$LDAPOK" = "NO"; then
 		echo "(Open)LDAP include- or library-files not found."
-		echo "If you want to perform detailed LDAP tests (queries), you need to"
-		echo "install LDAP an LDAP client library that Xymon can use."
+		echo "If you want to perform detailed LDAP tests (queries), you need"
+		echo "to install an LDAP client library that Xymon can use."
 		echo "OpenLDAP can be found at http://www.openldap.org/"
 		echo ""
 		echo "If you have OpenLDAP installed, use the \"--ldapinclude DIR\" and \"--ldaplib DIR\""
