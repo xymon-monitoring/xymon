@@ -651,7 +651,11 @@ static void setup_ssl(tcptest_t *item)
 		long slen;
 		char *sdata, *keyline;
 
+#if OPENSSL_VERSION_NUMBER < 0x0090700fL
+		X509_NAME_print_ex(o, X509_get_subject_name(peercert), 8, XN_FLAG_COMPAT);
+#else
 		X509_print_ex(o, peercert, XN_FLAG_COMPAT, X509_FLAG_COMPAT);
+#endif
 
 		slen = BIO_get_mem_data(o, &sdata);
 		if (slen > 0) {
