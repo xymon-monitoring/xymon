@@ -128,9 +128,6 @@ void request_cacheflush(char *hostname)
 	struct dirent *d;
 	int ctlsocket = -1;
 
-	req = (char *)malloc(strlen(hostname)+3);
-	sprintf(req, "/%s/", hostname);
-
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (ctlsocket == -1) {
 		errprintf("Cannot get socket: %s\n", strerror(errno));
@@ -139,6 +136,14 @@ void request_cacheflush(char *hostname)
 	fcntl(ctlsocket, F_SETFL, O_NONBLOCK);
 
 	dir = opendir(xgetenv("XYMONTMP"));
+	if (!dir) {
+		errprintf("Cannot acces $XYMONTMP directory: %s\n", strerror(errno));
+		return;
+	}
+
+	req = (char *)malloc(strlen(hostname)+3);
+	sprintf(req, "/%s/", hostname);
+
 	while ((d = readdir(dir)) != NULL) {
 		if (strncmp(d->d_name, "rrdctl.", 7) == 0) {
 			struct sockaddr_un myaddr;
