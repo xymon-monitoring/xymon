@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
 			char *p;
 	
 			if (subjstr) {
-				char *tok, *subjcopy;
+				char *tok, *subjcopy, *outp;
 
 				tok = subjstr;
 				tok += strlen("Subject:");
@@ -430,6 +430,21 @@ int main(int argc, char *argv[])
 					tok = strtok(NULL, ",");
 				}
 				xfree(subjcopy);
+
+				outp = tok = strstr(cn, "\\x00");
+				while (tok) {
+					char *nexttok = strstr(tok+4, "\\x00");
+
+					tok += 4;
+					if (!nexttok) nexttok = tok + strlen(tok);
+					while (tok != nexttok) {
+						*outp = *tok;
+						tok++; outp++;
+					}
+
+					tok = (*nexttok != '\0') ? nexttok : NULL;
+					if (!tok) *outp = '\0';
+				}
 			}
 
 			if (keyszstr) {
