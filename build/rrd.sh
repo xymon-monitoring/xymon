@@ -103,6 +103,12 @@
 		PNGLIB="$PNGLIB -lm"
 	fi
 	OS=`uname -s | sed -e's@/@_@g'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
+	if test $? -ne 0; then
+		# Could be that we need -L/usr/X11R6/lib (OpenBSD)
+		LIBOPT="$LIBOPT -L/usr/X11R6/lib"
+		RRDLIB="$RRDLIB -L/usr/X11R6/lib"
+	fi
+	OS=`uname -s | sed -e's@/@_@g'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 	if test $? -eq 0; then
 		echo "Linking with RRDtool works OK"
 		if test "$PNGLIB" != ""; then
