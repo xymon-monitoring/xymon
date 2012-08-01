@@ -11,6 +11,7 @@
 #ifndef __LIBXYMON_H__
 #define __LIBXYMON_H__
 
+#include <stddef.h>
 #include <stdio.h>
 #include <time.h>
 
