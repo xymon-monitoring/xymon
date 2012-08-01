@@ -19,8 +19,10 @@ static void *ifstat_tpl       = NULL;
 /* eth0   Link encap:                                                 */
 /*        RX bytes: 1829192 (265.8 MiB)  TX bytes: 1827320 (187.7 MiB */
 static const char *ifstat_linux_exprs[] = {
-	"^([a-z]+[0123456789.:]*|lo)\\s",
-	"^\\s+RX bytes:([0-9]+) .*TX bytes.([0-9]+) "
+	"^([a-z]+[0123456789.:]*|lo:?)\\s",
+	"^\\s+RX bytes:([0-9]+) .*TX bytes.([0-9]+) ",
+	"^\\s+RX packets\\s+[0-9]+\\s+bytes\\s+([0-9]+) ",
+	"^\\s+TX packets\\s+[0-9]+\\s+bytes\\s+([0-9]+) "
 };
 
 /* Name MTU  Network        IP            Ipkts Ierrs Ibytes Opkts Oerrs Obytes Coll */
@@ -208,6 +210,10 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 				 * Clear everything when we see an interface name.
 				 * But we dont want to track the "lo" interface.
 				 */
+
+				/* Strip off the last character if it is a colon (:) */
+				if (ifname[strlen(ifname)-1] == ':') ifname[strlen(ifname)-1] = '\0';
+
 				if (strcmp(ifname, "lo") == 0) {
 					xfree(ifname); ifname = NULL;
 				}
@@ -218,6 +224,8 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 				}
 			}
 			else if (pickdata(bol, ifstat_linux_pcres[1], 1, &rxstr, &txstr)) dmatch |= 6;
+			else if (pickdata(bol, ifstat_linux_pcres[2], 1, &rxstr)) dmatch |= 2;
+			else if (pickdata(bol, ifstat_linux_pcres[3], 1, &txstr)) dmatch |= 4;
 			break;
 
 		  case OS_FREEBSD:
