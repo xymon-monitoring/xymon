@@ -3060,7 +3060,7 @@ void do_message(conn_t *msg, char *origin)
 			/* Pick out the real sender of this message */
 			msgfrom = strstr(currmsg, "\nStatus message received from ");
 			if (msgfrom) {
-				sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
+				sscanf(msgfrom, "\nStatus message received from %15s\n", sender);
 				*msgfrom = '\0';
 			}
 
@@ -3137,7 +3137,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "status", 6) == 0) {
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
+			sscanf(msgfrom, "\nStatus message received from %15s\n", sender);
 			*msgfrom = '\0';
 		}
 
@@ -3178,7 +3178,7 @@ void do_message(conn_t *msg, char *origin)
 
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
+			sscanf(msgfrom, "\nStatus message received from %15s\n", sender);
 			*msgfrom = '\0';
 		}
 
@@ -4003,7 +4003,7 @@ void do_message(conn_t *msg, char *origin)
 		if (msgfrom) {
 			char *ipline = strstr(msgfrom, "\nClientIP:");
 			if (ipline) { 
-				sscanf(ipline, "\nClientIP:%16s\n", sender);
+				sscanf(ipline, "\nClientIP:%15s\n", sender);
 			}
 		}
 
