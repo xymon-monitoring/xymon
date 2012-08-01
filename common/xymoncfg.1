@@ -26,6 +26,14 @@ Xymon web-server would.
 Show the hosts.cfg file following include statements as done
 when running xymonnet.
 
+.IP "-s"
+Output only the lines that look like environment variable definitions, in a format suitable for use with Bourne-style shells (e.g. bash, ksh). You will probably not use this with the default hosts.cfg input file, but e.g. xymonserver.cfg. To define all the variables in xymonserver.cfg inside your shell script, you can use
+.br
+.br
+   eval `xymoncfg -s /etc/xymon/xymonserver.cfg`
+
+.IP "-c"
+Similar to "-s", but for C-shell.
 
 .SH ENVIRONMENT VARIABLES
 .IP HOSTSCFG

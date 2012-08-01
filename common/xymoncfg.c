@@ -25,6 +25,8 @@ int main(int argc, char *argv[])
 	strbuffer_t *inbuf;
 	int argi;
 	char *include2 = NULL;
+	enum { S_NONE, S_KSH, S_CSH } shelltype = S_NONE;
+	char *p;
 
 	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
@@ -36,6 +38,12 @@ int main(int argc, char *argv[])
 		}
 		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
+		}
+		else if (strcmp(argv[argi], "-s") == 0) {
+			shelltype = S_KSH;
+		}
+		else if (strcmp(argv[argi], "-c") == 0) {
+			shelltype = S_CSH;
 		}
 		else if (*argv[argi] != '-') {
 			fn = strdup(argv[argi]);
@@ -58,7 +66,33 @@ int main(int argc, char *argv[])
 
 	inbuf = newstrbuffer(0);
 	while (stackfgets(inbuf, include2)) {
-		printf("%s", STRBUF(inbuf));
+		switch (shelltype) {
+		  case S_NONE:
+			printf("%s", STRBUF(inbuf));
+			break;
+		  case S_KSH:
+			sanitize_input(inbuf, 1, 0);
+			p = STRBUF(inbuf) + strspn(STRBUF(inbuf), "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+			if (*p == '=') {
+				char *val = p+1;
+
+				*p = '\0';
+				p = val + strcspn(val, "\r\n"); *p = '\0';
+				printf("%s=%s;export %s\n", STRBUF(inbuf), val, STRBUF(inbuf));
+			}
+			break;
+		  case S_CSH:
+			sanitize_input(inbuf, 1, 0);
+			p = STRBUF(inbuf) + strspn(STRBUF(inbuf), "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+			if (*p == '=') {
+				char *val = p+1;
+
+				*p = '\0';
+				p = val + strcspn(val, "\r\n"); *p = '\0';
+				printf("setenv %s %s\n", STRBUF(inbuf), val);
+			}
+			break;
+		}
 	}
 
 	stackfclose(cfgfile);
