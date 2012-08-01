@@ -243,6 +243,7 @@ the <a href="xymon-config.html">Xymon configuration guide</a>.</p>
 	<li><a href="#commonopenbsd">OpenBSD 4, 5</a></li>
 	<li><a href="#commonsolaris10x86csw">Solaris 10/x86 (using OpenCSW)</a></li>
 	<li><a href="#commonsolaris10x86sfw">Solaris 10/x86 (using Sun Freeware)</a></li>
+	<li><a href="#commonmacosx">Mac OSX</a></li>
 </ul>
 
 <h4><a name="commonrhel6">Red Hat Enterprise Linux 6 / CentOS 6</a></h4>
@@ -574,6 +575,10 @@ make install
 <pre><tt>	crle -c /var/ld/ld.config -l /usr/lib:/usr/lib/secure:/usr/local/lib </tt></pre></p>
 <p>The latter method using &quot;crle&quot; is the recommended method, since LD_LIBRARY_PATH settings can be difficult to setup so they work for all invocations of the Xymon binaries.</p>
 
+<h4><a name="commonmacosx">Mac OSX 10.6, 10.7 and 10.8</a></h4>
+<p>Xymon is available for OSX 10.6, 10.7 and 10.8 through the <a href="http://www.macports.org/">macports project</a>.</p>
+
+<p>The ports can be found here:<a href="http://www.macports.org/ports.php?by=name&substr=xymon">http://www.macports.org/ports.php?by=name&amp;substr=xymon</a>, and there's a page on <a href="https://trac.macports.org/wiki/howto/SetupXymonServer">how to make xymon server on a Mac</a>.</p>
 
 </body>
 </html>
