@@ -241,21 +241,28 @@ the <a href="xymon-config.html">Xymon configuration guide</a>.</p>
 	<li><a href="#commonubuntu1204">Ubuntu 12.04 LTS (Precise Pangolin)</a></li>
 	<li><a href="#commonfreebsd">FreeBSD 7, 8 and 9</a></li>
 	<li><a href="#commonopenbsd">OpenBSD 4, 5</a></li>
-	<li><a href="#commonsolaris10x86">Solaris 10/x86</a></li>
+	<li><a href="#commonsolaris10x86csw">Solaris 10/x86 (using OpenCSW)</a></li>
+	<li><a href="#commonsolaris10x86sfw">Solaris 10/x86 (using Sun Freeware)</a></li>
 </ul>
 
 <h4><a name="commonrhel6">Red Hat Enterprise Linux 6 / CentOS 6</a></h4>
-<p>RHEL6 has all of the necessary tools included in the core distribution.</p>
+<p>RHEL6 has all of the necessary tools except fping included in the core distribution.</p>
 <pre><tt>groupadd xymon
 useradd -g xymon -m xymon
 
 yum install gcc make
 
+wget http://fping.org/dist/fping-3.2.tar.gz
+tar zxf fping-3.2.tar.gz
+cd fping-3.2
+./configure
+make &amp;&amp; make install
+cd ..
+
 yum install pcre-devel openssl-devel openldap-devel rrdtool-devel
 cd xymon-4.3.10
 ./configure --server
-make
-make install
+make &amp;&amp; make install
 </tt></pre>
 
 <p>Copy <tt>rpm/xymon-init.d</tt> to <tt>/etc/init.d/xymon</tt> and make sure it is executable. Edit /etc/init.d/xymon 
@@ -272,26 +279,31 @@ chkconfig xymon on
 </tt></pre></p>
 
 <h4><a name="commonrhel5">Red Hat Enterprise Linux 5 / CentOS 5</a></h4>
-<p>RHEL5 does not include RRDtool in the core distribution. So download it and install it in /usr/local/rrdtool.</p>
+<p>RHEL5 does not include RRDtool in the core distribution. So download it and install it in /usr/local/rrdtool. Also, fping is not included.</p>
 <pre><tt>groupadd xymon
 useradd -g xymon -m xymon
 
 yum install gcc make
+
+wget http://fping.org/dist/fping-3.2.tar.gz
+tar zxf fping-3.2.tar.gz
+cd fping-3.2
+./configure
+make &amp;&amp; make install
+cd ..
 
 yum install freetype-devel libpng-devel libart_lgpl-devel tcl-devel
 wget http://oss.oetiker.ch/rrdtool/pub/rrdtool-1.2.30.tar.gz
 tar zxf rrdtool-1.2.30.tar.gz
 cd rrdtool-1.2.30
 ./configure --prefix=/usr/local/rrdtool
-make
-make install
+make &amp;&amp; make install
 cd ..
 
 yum install pcre-devel openssl-devel openldap-devel
 cd xymon-4.3.10
 ./configure --server
-make
-make install
+make &amp;&amp; make install
 </tt></pre>
 
 <p>Copy <tt>rpm/xymon-init.d</tt> to <tt>/etc/init.d/xymon</tt> and make sure it is executable. Edit /etc/init.d/xymon 
@@ -310,26 +322,31 @@ chkconfig xymon on
 
 
 <h4><a name="commonrhel4">Red Hat Enterprise Linux 4 / CentOS 4</a></h4>
-<p>RHEL4 does not include RRDtool in the core distribution. So download it and install it in /usr/local/rrdtool. Also, some of the development files are in a non-standard location.</p>
+<p>RHEL4 does not include RRDtool in the core distribution. So download it and install it in /usr/local/rrdtool. Also, fping is not included and some of the development files are in a non-standard location.</p>
 <pre><tt>groupadd xymon
 useradd -g xymon -m xymon
 
 yum install gcc make
+
+wget http://fping.org/dist/fping-3.2.tar.gz
+tar zxf fping-3.2.tar.gz
+cd fping-3.2
+./configure
+make &amp;&amp; make install
+cd ..
 
 yum install freetype-devel libpng-devel libart_lgpl-devel tcl-devel
 wget http://oss.oetiker.ch/rrdtool/pub/rrdtool-1.2.30.tar.gz
 tar zxf rrdtool-1.2.30.tar.gz
 cd rrdtool-1.2.30
 ./configure --prefix=/usr/local/rrdtool
-make
-make install
+make &amp;&amp; make install
 cd ..
 
 yum install pcre-devel openssl-devel openldap-devel
 cd xymon-4.3.10
 ./configure --server --pcreinclude /usr/include/pcre --sslinclude /usr/include/openssl
-make
-make install
+make &amp;&amp; make install
 </tt></pre>
 
 <p>Copy <tt>rpm/xymon-init.d</tt> to <tt>/etc/init.d/xymon</tt> and make sure it is executable. Edit /etc/init.d/xymon 
@@ -355,29 +372,22 @@ chkconfig xymon on
 <h4><a name="commondebian6">Debian 6 (Squeeze)</a></h4>
 <p>NOTE: Pre-compiled Debian packages are provided on Sourceforge, along with the source distribution file.</p>
 <p>Debian 6 has all of the necessary tools included in the core distribution.</p>
-<pre><tt>groupadd xymon
-useradd -g xymon -m xymon
+<pre><tt>apt-get install apache2 rrdtool librrd-dev libpcre3-dev libssl-dev ldap-utils libldap2-dev fping
 
-apt-get install gcc make
+# Enable mod_rewrite in Apache
+cd /etc/apache2/mods-enabled/
+ln -s ../mods-available/rewrite.load .
+/etc/init.d/apache2 reload
+cd
 
-apt-get install libpcre3-dev libssl-dev libldap2-dev librrd-dev
+tar zxf xymon-4.3.10.tar.gz
 cd xymon-4.3.10
-./configure --server
-make
-make install
-</tt></pre>
-
-<p>Copy <tt>debian/xymon.init</tt> to <tt>/etc/init.d/xymon</tt> and make sure it is executable. Edit /etc/init.d/xymon 
-and change &quot;/usr/lib/xymon&quot; in the DAEMON line to the directory where you installed Xymon - 
-e.g. &quot;/home/xymon&quot;.</p>
-
-<p>Configure Apache with the Xymon definitions:<br>
-<tt>ln -s /home/xymon/server/etc/xymon-apache.conf /etc/apache2/conf.d/</tt></p>
-
-<p>To enable automatic start of Xymon and apache:<br>
-<pre><tt>update-rc.d apache2 defaults
-update-rc.d xymon defaults
+./build/makedeb.sh 4.3.10
+mv debbuild/*.deb ../
+cd ..
+dpkg -i xymon*deb
 </tt></pre></p>
+
 
 <h4><a name="commonubuntu1204">Ubuntu 12.04 LTS (Precise Pangolin)</a></h4>
 <p>Follow instructions for <a href="#commondebian6">Debian 6</a>.</p>
@@ -400,7 +410,7 @@ cd ~
 gzip -dc xymon-4.3.10.tar.gz | tar xf -
 cd xymon-4.3.10
 ./configure	# All defaults, except group-ID for webserver is "www"
-gmake; gmake install
+gmake &amp;&amp; gmake install
 chown 0:0 /home/xymon/server/bin/xymonping
 chmod u+s /home/xymon/server/bin/xymonping
 
@@ -457,8 +467,8 @@ pkg_add -v gmake pcre rrdtool openldap-client fping apache-httpd
 <p>Configure, build and install Xymon with these commands. Configuration can use all defaults, except that the webserver group-ID is &quot;_apache2&quot;.</p>
 <pre><tt>gzip -dc xymon-4.3.10.tar.gz | tar xf -
 cd xymon-4.3.10
-./configure # All defaults except webserver group is "_apache2"
-gmake; gmake install
+MAKE=gmake ./configure # All defaults except webserver group is "_apache2"
+gmake &amp;&amp; gmake install
 </tt></pre>
 <p>In /etc/apache2/httpd2.conf, add this line at the bottom:<br>
 <tt>Include /home/xymon/server/etc/xymon-apache.conf</tt></p>
@@ -466,7 +476,70 @@ gmake; gmake install
 <p>To enable automatic startup, add these commands to /etc/rc.local:<br>
 <tt>/usr/local/sbin/apachectl2 start<br>su xymon /home/xymon/server/xymon.sh start<br></tt></p>
 
-<h4><a name="commonsolaris10x86">Solaris 10/x86</a></h4>
+<h4><a name="commonsolaris10x86csw">Solaris 10/x86 (using OpenCSW)</a></h4>
+<p>All of the necessary libraries and tools for building Xymon are available in the
+<a href="http://www.opencsw.org/">OpenCSW archive</a>. This appears to be a newer
+collection of Open Source tools, replacing the Sun Freeware archive which is now
+a commercial project. See <a href="#commonsolaris10x86sfw">below</a> for instructions
+on installing Xymon using the SFW packages.</p>
+
+<p>Follow the <a href="http://www.opencsw.org/manual/for-administrators/getting-started.html">
+&quot;Getting Started&quot;</a> instuctions on setting up your system to use the CSW archive.
+Briefly, this means running these commands (as root):<br>
+<pre><tt>pkgadd -d http://get.opencsw.org/now
+PATH=$PATH:/opt/csw/bin
+export PATH
+pkgutil -i -y cswpki
+cswpki --import
+vi /etc/opt/csw/pkgutil.conf	# Define mirror, enable use_gpg and use_md5
+pkgutil -U
+</tt></pre></p>
+
+<p>After setting up the CSW archive tool, you can install the necessary tools
+and libraries that Xymon will use:<br>
+<pre><tt>pkgutil -i -y gcc4core gcc4g++ gmake
+pkgutil -i -y pcre libpcre_dev
+pkgutil -i -y rrdtool rrdtool_dev
+pkgutil -i -y openssl libssl_dev
+pkgutil -i -y openldap_client openldap_dev
+pkgutil -i -y fping</tt></pre></p>
+
+<p>The &quot;fping&quot; tools must be installed suid-root so that the xymon
+user can run them:<pre><tt>chmod u+s /opt/csw/sbin/fping*</tt></pre></p>
+
+<p>Now, create the xymon user:<pre><tt>groupadd xymon; useradd -g xymon -d /export/home/xymon -m xymon</tt></pre></p>
+
+<p>Configure and build Xymon. All tools and libraries should be automatically detected, but it is necessary to explicitly point at the CSW OpenSSL libraries, overriding the default Solaris version of OpenSSL:<br>
+<pre><tt>PATH=$PATH:/usr/ccs/bin
+export PATH
+cd xymon-4.3.10
+MAKE=gmake ./configure --server --sslinclude /opt/csw/include --ssllib /opt/csw/lib
+gmake &amp;&amp; gmake install
+</tt></pre></p>
+
+<p>Install Apache and add the Xymon webserver configuration:<br>
+<pre><tt>pkgutil -i -y apache2
+ln -s /export/home/xymon/server/etc/xymon-apache.conf /opt/csw/apache2/etc/extra/
+</tt></pre>
+Add<br>
+<tt><pre>  Include etc/extra/xymon-apache.conf</pre></tt>
+to /opt/csw/apache2/etc/httpd.conf.
+</p>
+
+<p>The CSW Apache implementation supports the Solaris SMF (svcadm) setup, but conflicts with the default Apache version that is installed with Solaris. So disable the default version, and enable the CSW version:<pre><tt>/etc/init.d/apache stop
+rm /etc/rc?.d/*apache
+svcadm clear cswapache2</tt></pre></p>
+
+<p>To enable automatic startup of Xymon when the server boots, put this into /etc/init.d/xymon:<pre><tt>#!/bin/sh
+su xymon /export/home/xymon/server/xymon.sh $*
+exit $?
+</tt></pre> and then enable this via the &quot;legacy&quot; startup scripts by running these commands:<pre><tt>ln -s /etc/init.d/xymon /etc/rc3.d/S80xymon
+ln -s /etc/init.d/xymon /etc/rc0.d/K20xymon
+ln -s /etc/init.d/xymon /etc/rc1.d/K20xymon
+ln -s /etc/init.d/xymon /etc/rcS.d/K20xymon
+</tt></pre></p>
+
+<h4><a name="commonsolaris10x86sfw">Solaris 10/x86 (using Sun Freeware)</a></h4>
 <p>All of the necessary libraries and tools for building Xymon are available in the
 <a href="http://www.sunfreeware.com/">Sun Freeware archive</a>. You must install these
 packages to build Xymon:</p>
@@ -498,7 +571,8 @@ make
 make install
 </tt></pre>
 <p>The SunFreeware libraries are installed in /usr/local/lib, which is <em>NOT</em> searched by default by the Solaris runtime linker. You must either set LD_LIBRARY_PATH globally to include /usr/local/lib, or you can use the &quot;crle&quot; utility to add /usr/local/lib to the set of directories searched by default. Typically this means running this command:</p>
-<pre><tt>	crle -c /var/ld/ld.config -l /usr/lib:/usr/lib/secure:/usr/local/lib </tt></pre>
+<pre><tt>	crle -c /var/ld/ld.config -l /usr/lib:/usr/lib/secure:/usr/local/lib </tt></pre></p>
+<p>The latter method using &quot;crle&quot; is the recommended method, since LD_LIBRARY_PATH settings can be difficult to setup so they work for all invocations of the Xymon binaries.</p>
 
 
 </body>
