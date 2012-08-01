@@ -33,6 +33,17 @@ while test "$1" != ""; do
   shift
 done
 
+# This only works for ufs filesystems
+echo "[inode]"
+(if test -x /usr/ucb/df
+then
+   /usr/ucb/df -i
+else
+   df -o i 2>/dev/null
+fi) | awk '
+NR<2{printf "%-20s %10s %10s %10s %10s %s\n", $1, "itotal", $2, $3, $4, $5}
+NR>=2{printf "%-20s %10d %10d %10d %10s %s\n", $1, $2+$3, $2, $3, $4, $5}'
+
 echo "[mount]"
 mount
 echo "[prtconf]"

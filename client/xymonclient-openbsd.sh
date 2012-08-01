@@ -20,10 +20,17 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -P -tnonfs,kernfs,procfs,cd9660 | sed -e '/^[^ 	][^ 	]*$/{
+df -k -tnonfs,kernfs,procfs,cd9660 | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+echo "[inode]"
+df -i -tnonfs,kernfs,procfs,cd9660 | sed -e '/^[^       ][^     ]*$/{
+N
+s/[     ]*\n[   ]*/ /
+}' | awk '
+NR<2{printf "%-20s %10s %10s %10s %10s %s\n", $1, "itotal", $6, $7, $8, $9} 
+NR>=2{printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}'
 echo "[mount]"
 mount
 echo "[meminfo]"
