@@ -1950,7 +1950,7 @@ static c_rule_t *getrule(char *hostname, char *pagename, char *classname, void *
 		rwalk = ruleset(hostname, pagename, classname); 
 	}
 	else {
-		rwalk = rwalk->next;
+		if (rwalk) rwalk = rwalk->next;
 	}
 
 	holidayset = (hinfo ? xmh_item(hinfo, XMH_HOLIDAYS) : NULL);

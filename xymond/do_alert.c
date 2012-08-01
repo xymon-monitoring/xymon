@@ -745,7 +745,7 @@ void cleanup_alert(activealerts_t *alert)
 				rptwalk = rpthead = rpthead->next;
 			}
 			else {
-				rptprev->next = rptwalk->next;
+				if (rptprev) rptprev->next = rptwalk->next;
 				rptwalk = rptwalk->next;
 			}
 

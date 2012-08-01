@@ -99,6 +99,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (!filter) allhosts = 1;
+
 	if (!allhosts) {
       		/* Setup the filter we use for the report */
 		cookie = get_cookie("pagepath");
