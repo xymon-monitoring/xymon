@@ -5114,7 +5114,7 @@ int main(int argc, char *argv[])
 	{
 		FILE *fd = fopen(pidfn, "w");
 		if (fd) {
-			if (fprintf(fd, "%d\n", (int)getpid()) <= 0) {
+			if (fprintf(fd, "%lu\n", (unsigned long)getpid()) <= 0) {
 				errprintf("Error writing PID file %s: %s\n", pidfn, strerror(errno));
 			}
 			fclose(fd);

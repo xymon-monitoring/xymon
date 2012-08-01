@@ -7,7 +7,12 @@ NETLIBS = -lresolv -lsocket -lnsl
 
 # Compile flags for normal build
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(LFSDEF) $(OSDEF)
+GCCVER := $(shell gcc -dumpversion|cut -d. -f1)
+ifeq ($(GCCVER),4)
+   CFLAGS = -g -O2 -Wall -Wno-unused -Wno-pointer-sign -D_REENTRANT $(LFSDEF) $(OSDEF)
+else
+   CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(LFSDEF) $(OSDEF)
+endif
 
 # This guesswork doesnt work on a lot of systems.
 # Better have a run-time issue that can easily be fixed with "crle"

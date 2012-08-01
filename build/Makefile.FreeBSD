@@ -7,7 +7,14 @@ NETLIBS =
 
 # Compile flags for normal build
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -I/usr/local/include -L/usr/local/lib $(LFSDEF) $(OSDEF)
+GCCVER := $(shell gcc -dumpversion|cut -d. -f1)
+ifeq ($(GCCVER),4)
+	CFLAGS = -g -O2 -Wall -Wno-unused -Wno-pointer-sign -D_REENTRANT -I/usr/local/include -L/usr/local/lib $(LFSDEF) $(OSDEF)
+else
+	CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -I/usr/local/include -L/usr/local/lib $(LFSDEF) $(OSDEF)
+endif
+
+
 RPATH = "-Wl,--rpath,"
 
 # Compile flags for debugging

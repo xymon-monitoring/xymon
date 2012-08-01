@@ -17,7 +17,13 @@ CC = gcc
 #   xymonnet.c:1813: error: dereferencing pointer to incomplete type
 #   xymonnet.c:1818: error: dereferencing pointer to incomplete type
 # If that happens, try adding -DBROKEN_HPUX_NETDB at the end of the CFLAGS line below. 
-CFLAGS = -g -O -D_REENTRANT  $(LFSDEF) $(OSDEF)
+GCCVER := $(shell gcc -dumpversion|cut -d. -f1)
+ifeq ($(GCCVER),4)
+   CFLAGS = -Wno-unused -Wno-pointer-sign -g -O -D_REENTRANT  $(LFSDEF) $(OSDEF)
+else
+   CFLAGS = -g -O -D_REENTRANT  $(LFSDEF) $(OSDEF)
+endif
+
 
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -D_REENTRANT $(LFSDEF) $(OSDEF)

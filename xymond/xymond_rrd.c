@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 
 	/* Setup the control socket that receives cache-flush commands */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
-	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%d", xgetenv("XYMONTMP"), getpid());
+	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
 	unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
 	ctlsockaddr.sun_family = AF_UNIX;
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
