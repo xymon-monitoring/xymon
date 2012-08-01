@@ -936,11 +936,16 @@ int main(int argc, char *argv[])
 			gettimeofday(&tv, &tz);
 			printf("epoch: %ld.%06ld\n", (long int)tv.tv_sec, (long int)tv.tv_usec);
 
-			tm = localtime(&tv.tv_sec);
+			/*
+			 * OpenBSD mistakenly has struct timeval members defined as "long",
+			 * but requires localtime and gmtime to have a "time_t *" argument.
+			 * Figures ...
+			 */
+			tm = localtime((time_t *)&tv.tv_sec);
 			strftime(timestr, sizeof(timestr), "local: %Y-%m-%d %H:%M:%S %Z", tm);
 			printf("%s\n", timestr);
 
-			tm = gmtime(&tv.tv_sec);
+			tm = gmtime((time_t *)&tv.tv_sec);
 			strftime(timestr, sizeof(timestr), "UTC: %Y-%m-%d %H:%M:%S %Z", tm);
 			printf("%s\n", timestr);
 			return 0;
