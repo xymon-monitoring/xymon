@@ -2,7 +2,6 @@
 
 # This is the Xymon snapshot CGI wrapper
 
-. @XYMONHOME@/etc/xymonserver.cfg
 . @XYMONHOME@/etc/cgioptions.cfg
 @RUNTIMEDEFS@ exec @XYMONHOME@/bin/snapshot.cgi $CGI_SNAPSHOT_OPTS $XYMONGENSNAPOPTS
 

@@ -2,7 +2,6 @@
 
 # This it the Xymon wrapper for the report.cgi tool
 
-. @XYMONHOME@/etc/xymonserver.cfg
 . @XYMONHOME@/etc/cgioptions.cfg
 
 @RUNTIMEDEFS@ exec @XYMONHOME@/bin/report.cgi $CGI_REP_OPTS $XYMONGENREPOPTS
