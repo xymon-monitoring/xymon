@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 
 	snprintf(xymongentimeopt, sizeof(xymongentimeopt)-1,"--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
 
-	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)getcurrenttime(NULL));
+	sprintf(dirid, "%lu-%u", (unsigned long)getpid(), (unsigned int)getcurrenttime(NULL));
 	if (!csvoutput) {
 		sprintf(outdir, "%s/%s", xgetenv("XYMONREPDIR"), dirid);
 		mkdir(outdir, 0755);
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 
 	if (usemultipart) {
 		/* Output the "please wait for report ... " thing */
-		snprintf(htmldelim, sizeof(htmldelim)-1, "xymonrep-%u-%u", (int)getpid(), (unsigned int)getcurrenttime(NULL));
+		snprintf(htmldelim, sizeof(htmldelim)-1, "xymonrep-%lu-%u", (unsigned long)getpid(), (unsigned int)getcurrenttime(NULL));
 		printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 		printf("\n");
 		printf("--%s\n", htmldelim);

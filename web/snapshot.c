@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 
 	snprintf(xymongentimeopt, sizeof(xymongentimeopt), "--snapshot=%u", (unsigned int)starttime);
 
-	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)getcurrenttime(NULL));
+	sprintf(dirid, "%lu-%u", (unsigned long)getpid(), (unsigned int)getcurrenttime(NULL));
 	sprintf(outdir, "%s/%s", xgetenv("XYMONSNAPDIR"), dirid);
 	if (mkdir(outdir, 0755) == -1) errormsg("Cannot create output directory");
 
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 
 	if (usemultipart) {
 		/* Output the "please wait for report ... " thing */
-		snprintf(htmldelim, sizeof(htmldelim)-1, "xymonrep-%u-%u", (int)getpid(), (unsigned int)getcurrenttime(NULL));
+		snprintf(htmldelim, sizeof(htmldelim)-1, "xymonrep-%lu-%u", (unsigned long)getpid(), (unsigned int)getcurrenttime(NULL));
 		printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 		printf("\n");
 		printf("%s\n", htmldelim);

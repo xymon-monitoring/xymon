@@ -88,7 +88,7 @@ void dbgprintf(const char *fmt, ...)
 
 		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S",
 			 localtime(&now));
-		fprintf(debugfd, "%d %s ", (int)getpid(), timestr);
+		fprintf(debugfd, "%lu %s ", (unsigned long)getpid(), timestr);
 
 		va_start(args, fmt);
 		vfprintf(debugfd, fmt, args);
@@ -146,7 +146,7 @@ void traceprintf(const char *fmt, ...)
 		MEMDEFINE(timestr);
 
 		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", localtime(&now));
-		fprintf(tracefd, "%08u %s ", (unsigned int)getpid(), timestr);
+		fprintf(tracefd, "%08lu %s ", (unsigned long)getpid(), timestr);
 
 		va_start(args, fmt);
 		vfprintf(tracefd, fmt, args);

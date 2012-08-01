@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 	{
 		FILE *pidfd = fopen(pidfn, "w");
 		if (pidfd) {
-			fprintf(pidfd, "%d\n", getpid());
+			fprintf(pidfd, "%lu\n", (unsigned long)getpid());
 			fclose(pidfd);
 		}
 	}
