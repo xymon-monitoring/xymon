@@ -26,6 +26,28 @@ df -Pk | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+
+echo "[inode]"
+# HPUX once again proves they never do things like everyone else
+df -il | sed -e 's![():]! !g' | awk '
+BEGIN{
+        t="Filesystem Mounted_on itotal ifree iused iused%"
+}
+{
+if ($1 ~ /^[0123456789]/) {
+        t=sprintf("%s %s",t,$1)
+}
+else {
+        t=sprintf("%s\n%s %s %s",t,$2,$1,$3)
+}
+}
+END{
+print t
+}' | awk '
+NR<2 { printf "%-35s %10s %10s %10s %10s %s\n", $1, $3, $4, $5, $6, "Mounted on"}
+NR>=2 { printf "%-35s %10d %10d %10d %10s %s\n", $1, $3, $4, $5, $6, $2}
+'
+
 echo "[mount]"
 mount
 echo "[memory]"
