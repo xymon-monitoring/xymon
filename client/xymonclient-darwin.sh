@@ -20,12 +20,28 @@ echo "[uptime]"
 uptime
 echo "[who]"
 who
+
+FILESYSTEMS=`mount | grep -v nobrowse | awk '{print $3}'`
 echo "[df]"
-# The sed stuff is to make sure lines are not split into two.
-df -H -t nonfs,nullfs,cd9660,procfs,volfs,devfs,fdesc | sed -e '/^[^ 	][^ 	]*$/{
-N
-s/[ 	]*\n[ 	]*/ /
-}'
+set $FILESYSTEMS
+(df -H $1; shift
+ while test $# -gt 0
+ do
+   df -H $1 | tail -1
+   shift
+ done) | column -t -s " " | sed -e 's!Mounted *on!Mounted on!'
+
+echo "[inode]"
+set $FILESYSTEMS
+(df -i $1; shift
+ while test $# -gt 0
+ do
+   df -H $1 | tail -1
+   shift
+ done) | awk '
+NR<2{printf "%-20s %10s %10s %10s %10s %s\n", $1, "itotal", $6, $7, $8, $9} 
+(NR>=2 && $6>0) {printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}'
+
 echo "[mount]"
 mount
 echo "[meminfo]"
