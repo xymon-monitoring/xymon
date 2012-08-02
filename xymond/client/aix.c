@@ -61,7 +61,7 @@ void handle_aix_client(char *hostname, char *clienttype, enum ostype_t os,
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
 			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Free", "%Used", "Mounted", dfstr);
-	unix_inode_report(hostname, clienttype, os, hinfo, fromline, timestr, "Ifree", "%Iused", "Mounted", inodestr);
+	unix_inode_report(hostname, clienttype, os, hinfo, fromline, timestr, "avail", "%iused", "Mounted", inodestr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", "CMD", psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
 
