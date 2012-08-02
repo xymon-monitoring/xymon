@@ -60,12 +60,12 @@ echo "[ps]"
 ps -ax -ww -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rss,vsz,command
 
 # $TOP must be set, the install utility should do that for us if it exists.
-if test "$TOP" != ""
+if test "$TOP" != "" -a "$AWK" != ""
 then
-    if test -x "$TOP"
+    if test -x "$TOP" -a -x "$AWK"
     then
         echo "[top]"
-	$TOP -l 1 -n 20
+	$TOP -l 2 -n 20 -o cpu | $AWK '/^Processes:/ {toprun++} toprun == 2'
     fi
 fi
 
