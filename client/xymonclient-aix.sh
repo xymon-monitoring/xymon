@@ -25,6 +25,13 @@ df -Ik | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+
+echo "[inode]"
+/usr/sysv/bin/df -i | sed -e 's!Mount Dir!Mount_Dir!' | awk '
+NR<2 { printf "%-20s %10s %10s %10s %10s %s\n", $2, $5, $3, $4, $6, $1 }
+NR>=2 && $5>0 { printf "%-20s %10d %10d %10d %10s %s\n", $2, $5, $3, $4, $6, $1}
+'
+
 echo "[mount]"
 mount
 echo "[realmem]"
