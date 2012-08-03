@@ -1,6 +1,6 @@
-Changes from 4.3.9 -> 4.3.10
+Changes from 4.3.9 -> 4.3.10 (6 Aug 2012)
 =========================================
-* rev 7161
+* rev 7162
 
 * Fix build problems with "errno"
 * Fix build problems with OpenSSL in non-default locations
