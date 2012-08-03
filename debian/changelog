@@ -1,3 +1,21 @@
+xymon (4.3.10) unstable; urgency=low
+
+   * rev 7161
+
+   * Fix build problems with "errno"
+   * Fix build problems with OpenSSL in non-default locations
+   * Fix build problems with certain LDAP configurations
+   * Fix build problems with RRDtool on FreeBSD / OpenBSD
+   * Fix problem with ifstat data from Fedora in graphs
+   * "inode" check on FreeBSD, OpenBSD, OSX, Solaris, HP/UX, AIX
+     in addition to existing support for Linux
+   * Document building and installing Xymon on common platforms 
+     (Linux, FreeBSD, OpenBSD, Solaris)
+   * Enhance xymoncfg so it can be used to import Xymon configuration
+     settings into shell-scripts.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri, 3 Aug 2012 11:45:00 +0200
+
 xymon (4.3.9) unstable; urgency=low
 
    * rev 7120

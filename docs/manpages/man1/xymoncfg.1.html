@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONCFG</TITLE>
 </HEAD><BODY>
 <H1>XYMONCFG</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 24 Jul 2012<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp:  3 Aug 2012<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -46,6 +46,16 @@ Xymon web-server would.
 Show the hosts.cfg file following include statements as done
 when running xymonnet.
 <P>
+<DT>-s<DD>
+Output only the lines that look like environment variable definitions, in a format suitable for use with Bourne-style shells (e.g. bash, ksh). You will probably not use this with the default hosts.cfg input file, but e.g. xymonserver.cfg. To define all the variables in xymonserver.cfg inside your shell script, you can use
+<BR>
+
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;eval&nbsp;`xymoncfg&nbsp;-s&nbsp;/etc/xymon/xymonserver.cfg`
+<P>
+<DT>-c<DD>
+Similar to &quot;-s&quot;, but for C-shell.
 <P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
@@ -79,6 +89,6 @@ file.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:49:57 GMT, July 24, 2012
+Time: 09:47:10 GMT, August 03, 2012
 </BODY>
 </HTML>
