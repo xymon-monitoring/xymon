@@ -153,7 +153,8 @@ chkconfig --del xymon-client
 %attr(-, xymon, xymon) /var/lib/xymon
 %attr(775, xymon, apache) %dir /var/lib/xymon/www/rep
 %attr(775, xymon, apache) %dir /var/lib/xymon/www/snap
-%attr(644, root, root) %config /var/lib/xymon/www/menu/xymonmenu.css
+%attr(644, root, root) %config /var/lib/xymon/www/menu/xymonmenu-grey.css
+%attr(644, root, root) %config /var/lib/xymon/www/menu/xymonmenu-blue.css
 %attr(755, xymon, xymon) %dir /usr/lib/xymon/client/ext
 %attr(664, xymon, apache) %config /etc/xymon/critical.cfg
 %attr(664, xymon, apache) %config /etc/xymon/critical.cfg.bak
