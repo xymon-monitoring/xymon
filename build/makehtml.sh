@@ -5,7 +5,8 @@ DATE=`date +"%e %b %Y"`
 VERSION="$1"
 if [ "$VERSION" = "" ]
 then
-	VERSION="Exp"
+	echo "Usage: $0 VERSION"
+	exit 1
 fi
 
 # cd ~/xymon/trunk

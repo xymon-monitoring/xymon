@@ -1,16 +1,21 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.9    * * *
+           * * *   Release notes for Xymon 4.3.10   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
-Changes for 4.3.9, 4.3.8, 4.3.7, 4.3.6, 4.3.5, 4.3.4, 4.3.3, 4.3.2
-==================================================================
+Changes for 4.3.2 - 4.3.10
+==========================
 See the Changes file for a list of significant changes.
 These releases are mostly to fix bugs.
 
 NOTE: Some configuration parameters have changed, so you must 
 regenerate the top-level Makefile by running the "configure" 
 script before compiling the new version.
+
+The inode-check introduced in 4.3.8 and 4.3.10 requires
+that you update both the Xymon server installation and the
+Xymon client on the systems where you want to monitor how
+many inodes are being used.
 
 
 Changes for 4.3.1

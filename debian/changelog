@@ -1,6 +1,6 @@
 xymon (4.3.10) unstable; urgency=low
 
-   * rev 7162
+   * rev 7164
 
    * Fix build problems with "errno"
    * Fix build problems with OpenSSL in non-default locations
@@ -14,7 +14,7 @@ xymon (4.3.10) unstable; urgency=low
    * Enhance xymoncfg so it can be used to import Xymon configuration
      settings into shell-scripts.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Fri, 3 Aug 2012 11:51:00 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Sat, 4 Aug 2012 13:47:00 +0200
 
 xymon (4.3.9) unstable; urgency=low
 
