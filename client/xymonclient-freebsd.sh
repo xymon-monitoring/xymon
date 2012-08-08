@@ -26,6 +26,14 @@ df -H -tnonfs,nullfs,cd9660,procfs,devfs,linprocfs,fdescfs | sed -e '/^[^ 	][^ 	
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+echo "[inode]"
+# The sed stuff is to make sure lines are not split into two.
+df -i -tnonfs,nullfs,cd9660,procfs,devfs,linprocfs,fdescfs | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}' | awk '
+NR<2{printf "%-20s %10s %10s %10s %10s %s\n", $1, "itotal", $6, $7, $8, $9} 
+NR>=2{printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}'
 echo "[mount]"
 mount
 echo "[meminfo]"

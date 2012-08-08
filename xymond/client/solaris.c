@@ -28,6 +28,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *swapstr;
 	char *swapliststr;
 	char *dfstr;
+	char *inodestr;
 	char *msgsstr;
 	char *netstatstr;
 	char *ifstatstr;
@@ -49,6 +50,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	psstr = getdata("ps");
 	topstr = getdata("top");
 	dfstr = getdata("df");
+	inodestr = getdata("inode");
 	prtconfstr = getdata("prtconf");
 	memorystr = getdata("memory");
 	swapstr = getdata("swap");
@@ -63,6 +65,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
 			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "avail", "capacity", "Mounted", dfstr);
+	unix_inode_report(hostname, clienttype, os, hinfo, fromline, timestr, "ifree", "%iused", "Mounted", inodestr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "CMD", "COMMAND", psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 0, 1, 6, portsstr);
 

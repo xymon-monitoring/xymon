@@ -12,6 +12,11 @@
 #
 # $Id$
 
+# Use LANG=C, since some locales have different numeric delimiters
+# causing the Xymon load-average calculation to fail
+LANG=C
+export LANG
+
 echo "[date]"
 date
 echo "[uname]"

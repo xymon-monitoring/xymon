@@ -52,7 +52,7 @@ void do_memory_rrd_update(time_t tstamp, char *hostname, char *testname, char *c
 	}
 }
 
-/* bb-xsnmp.pl memory update - Marco Avissano */
+/* bb-xsnmp.pl memory update - Marco Avvisano */
 void do_memory_rrd_update_router(time_t tstamp, char *hostname, char *testname, char *classname, char *pagepaths, int procval, int ioval, int fastval)
 {
 	if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
