@@ -94,11 +94,26 @@ clean:
 install: install-bin install-man
 
 install-bin: $(PROGRAMS)
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(PROGRAMS)
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
+	chmod 755 $(PROGRAMS)
+endif
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 	cd $(INSTALLROOT)$(INSTALLBINDIR)/; rm -f bb bbcmd bbhostgrep bbhostshow; ln -s xymon bb; ln -s xymoncmd bbcmd; ln -s xymongrep bbhostgrep; ln -s xymondigest bbdigest; ln -s xymoncfg bbhostshow
 
 install-man:
+ifndef PKGBUILD
+	chown $(XYMONUSER) *.1 *.5 *.7 *.8
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5 *.7 *.8
+	chmod 644 *.1 *.5 *.7 *.8
+endif
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
+	chmod 755 $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
+endif
 	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
 	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
 	cp -fp *.7 $(INSTALLROOT)$(MANROOT)/man7/

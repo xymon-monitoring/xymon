@@ -101,17 +101,42 @@ clean:
 install: install-bin install-ext install-config install-man
 
 install-bin: $(PROGRAMS)
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(PROGRAMS)
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
+	chmod 755 $(PROGRAMS)
+endif
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-ext: $(EXTENSIONS)
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(EXTENSIONS)
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(EXTENSIONS)
+	chmod 755 $(EXTENSIONS)
+endif
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
 
 install-config:
 	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 	../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	chmod 644 $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+endif
 
 install-man:
+ifndef PKGBUILD
+	chown $(XYMONUSER) *.1 *.5
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5
+	chmod 644 *.1 *.5
+endif
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+	chmod 755 $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+endif
 	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
 	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
 
