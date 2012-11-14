@@ -26,6 +26,7 @@ raised with Xymon.</p>
 	<li><a href="#snmptraps">Does Xymon support receiving SNMP traps?</a></li>
 	<li><a href="#scripts">How can I create a custom test script?</a></li>
 	<li><a href="#ipad">How can I make the menus work on my iPad?</a></li>
+	<li><a href="#noinstall">How can I send data to Xymon without installing the client?</a></li>
 </ul>
 <hr>
 
@@ -343,6 +344,78 @@ In the ~xymon/server/etc/xymonmenu.cfg file, I added the
 items. Like:<br>
 &nbsp;&nbsp;&lt;span class=&quot;menutag&quot;&gt;&lt;a href=&quot;javascript:;&quot;&gt;Views&lt;/a&gt;&lt;span class=&quot;invis&quot;&gt;:&lt;/span&gt;&lt;/span&gt;
 </tt></p>
+
+<hr>
+<h3><a name="noinstall">How can I send data to Xymon without installing the client?</a></h3>
+<p>If you cannot install any &quot;foreign&quot; tools on your system, then sending data to Xymon may be a challenge. But if you have access to either Perl, BASH or telnet on the system then it is possible.</p>
+<p>Perl version:<pre><code>#!/usr/bin/perl
+#
+sub sendToXymon {
+	use IO::Socket;
+	my($server,$port,$msg) = @_ ;
+	my $response;
+	my $sock = new IO::Socket::INET (
+			PeerAddr =&gt; $server,
+			PeerPort =&gt; $port,
+			Proto =&gt; 'tcp',
+		);
+	die &quot;Could not create socket: $!\n&quot; unless $sock;
+	print $sock $msg;
+	shutdown($sock, 1);
+	while ($response=&lt;$sock&gt;)
+	{
+		print "$response";
+	}
+	close($sock);
+}
+
+$host = $ARGV[0];
+if ($#ARGV != 2) {
+  $port = 1984;
+  $msg = $ARGV[1];
+}
+else {
+  $port = $ARGV[1];
+  $msg = $ARGV[2];
+}
+
+sendToXymon($host, $port, $msg);
+</pre></code></p>
+<p>BASH version:<pre><code>#!/bin/bash
+#
+HOST=&quot;$1&quot; ; shift
+if test $# -gt 1; then
+  PORT=&quot;$1&quot;
+  shift
+else
+  PORT="1984"
+fi
+MSG=&quot;$1&quot;
+
+exec 3&lt;&gt;/dev/tcp/$HOST/$PORT || exit 1
+echo &quot;$MSG&quot; &gt;&amp;3
+
+exit 0
+</pre></code>
+NOTE: The BASH support for using TCP sockets may be disabled at compile-time - some believe it is a security risk to have such an easy way of doing network I/O without requiring any special tools.</p>
+
+<p>Bourne / Korn shell (requires telnet):<pre><code>#!/bin/sh
+#
+HOST=&quot;$1&quot; ; shift
+if test $# -gt 1; then
+  PORT=&quot;$1&quot;
+  shift
+else
+  PORT="1984"
+fi
+MSG=&quot;$1&quot;
+
+( echo "$MSG"; sleep 1 ) | telnet $HOST $PORT 2&gt;&amp;1 &gt;/dev/null | grep -v "closed by foreign host"
+</pre></code></p>
+
+<p>Both of these take 2 or 3 parameters: The Xymon host (hostname or IP-address), optionally the portnumber (1984 by default if not specified), and the message that will be sent to Xymon. The Perl version will both send data to Xymon and print out any response that is sent back - the shell-versions can only be used to send data to Xymon.</p>
+
+<p>Oyvind Bjorge provided the core of the Perl script, and Jeremy Laidman provided the core of the shell-scripts in <a href="http://lists.xymon.com/archive/2012-August/035299.html">this thread</a> on the Xymon mailing list.</p>
 
 <hr>
 
