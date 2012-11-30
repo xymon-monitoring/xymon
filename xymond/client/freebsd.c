@@ -85,8 +85,16 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	if (vmtotalstr) {
 		p = strstr(vmtotalstr, "\nFree Memory Pages:");
 		if (p) {
-			memphysfree = atol(p + 18);
+			memphysfree = atol(p + 19)/1024;
+			memphysused = memphystotal - memphysfree;
 			found++;
+		} else {
+			p = strstr(vmtotalstr, "\nFree Memory:");
+			if (p) {
+				memphysfree = atol(p + 13)/1024;
+				memphysused = memphystotal - memphysfree;
+				found++;
+			}
 		}
 	}
 
