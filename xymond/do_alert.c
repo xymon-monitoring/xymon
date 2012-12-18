@@ -412,13 +412,18 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			rpt = find_repeatinfo(alert, recip, 1);
 			if (!rpt) continue;	/* Happens for e.g. M_IGNORE recipients */
 
+			/* 
+			 * Update alertcount here, because we dont want to hit an UNMATCHED
+			 * rule when there is actually an alert active - it is just suppressed
+			 * for this run due to the REPEAT setting.
+			 */
+			alertcount++;	
 			dbgprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
 			if (rpt->nextalert > now) {
 				traceprintf("Recipient '%s' dropped, next alert due at %ld > %ld\n",
 						rpt->recipid, (long)rpt->nextalert, (long)now);
 				continue;
 			}
-			alertcount++;
 		}
 		else if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
 			/* RECOVERED messages require that we've sent out an alert before */
