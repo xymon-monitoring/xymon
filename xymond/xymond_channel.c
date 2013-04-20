@@ -78,6 +78,9 @@ typedef struct xymon_peer_t {
 
 void * peers;
 
+pid_t deadpid = 0;
+int childexit;
+
 xymond_channel_t *channel = NULL;
 char *logfn = NULL;
 int locatorbased = 0;
@@ -226,6 +229,8 @@ void openconnection(xymon_peer_t *peer)
 				sprintf(logfnenv, "XYMONCHANNEL_LOGFILENAME=%s", logfn);
 				putenv(logfnenv);
 			}
+
+			dbgprintf("Child '%s' started (PID %d), about to fork\n", peer->childcmd, (int)getpid());
 
 			n = dup2(pfd[0], STDIN_FILENO);
 			close(pfd[0]); close(pfd[1]);
@@ -399,8 +404,6 @@ void shutdownconnection(xymon_peer_t *peer)
 
 void sig_handler(int signum)
 {
-	int childexit;
-
 	switch (signum) {
 	  case SIGTERM:
 	  case SIGINT:
@@ -410,7 +413,7 @@ void sig_handler(int signum)
 
 	  case SIGCHLD:
 		/* Our worker child died. Avoid zombies. */
-		wait(&childexit);
+		deadpid = wait(&childexit);
 		break;
 
 	  case SIGALRM:
@@ -583,6 +586,16 @@ int main(int argc, char *argv[])
 		 */
 		struct sembuf s;
 		int n;
+
+		if (deadpid != 0) {
+			char *cause = "Unknown";
+			int ecode = -1;
+
+			if (WIFEXITED(childexit)) { cause = "Exit status"; ecode = WEXITSTATUS(childexit); }
+			else if (WIFSIGNALED(childexit)) { cause = "Signal"; ecode = WTERMSIG(childexit); }
+			errprintf("Child process %d died: %s %d\n", deadpid, cause, ecode);
+			deadpid = 0;
+		}
 
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = ((pendingcount > 0) ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
