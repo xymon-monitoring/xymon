@@ -37,6 +37,8 @@ static xtreePos_t binsearch(xtree_t *mytree, char *key)
 {
 	xtreePos_t uplim, lowlim, n;
 
+	if (!key) return -1;
+
 	/* Do a binary search  */
 	lowlim = 0; uplim = mytree->treesz-1;
 
