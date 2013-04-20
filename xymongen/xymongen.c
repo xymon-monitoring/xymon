@@ -651,12 +651,15 @@ int main(int argc, char *argv[])
 
 	/* The full summary page - nongreen.html */
 	if (do_nongreen) {
-		nongreen_color = do_nongreen_page(nssidebarfilename, PAGE_NONGREEN);
+		nongreen_color = do_nongreen_page(nssidebarfilename, PAGE_NONGREEN, "nongreen");
+		nongreencolors = (nongreencolors & ~(1 << COL_YELLOW));
+		nongreencolors = (nongreencolors & ~(1 << COL_PURPLE));
+		nongreen_color = do_nongreen_page(nssidebarfilename, PAGE_NONGREEN, "red");
 		add_timestamp("Non-green page generation done");
 	}
 
 	/* Reduced summary (alerts) page - critical.html */
-	critical_color = do_nongreen_page(NULL, PAGE_CRITICAL);
+	critical_color = do_nongreen_page(NULL, PAGE_CRITICAL, "critical");
 	add_timestamp("Critical page generation done");
 
 	if (snapshot) {

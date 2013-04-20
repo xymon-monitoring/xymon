@@ -1102,7 +1102,7 @@ static void do_nongreenext(FILE *output, char *extenv, char *family)
 	xfree(extensions);
 }
 
-int do_nongreen_page(char *nssidebarfilename, int summarytype)
+int do_nongreen_page(char *nssidebarfilename, int summarytype, char *filenamebase)
 {
 	xymongen_page_t	nongreenpage;
 	FILE		*output = NULL;
@@ -1216,12 +1216,12 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype)
 
 	switch (summarytype) {
 	  case PAGE_NONGREEN:
-		sprintf(filename, "nongreen%s", htmlextension);
-		sprintf(rssfilename, "nongreen%s", rssextension);
+		sprintf(filename, "%s%s", filenamebase, htmlextension);
+		sprintf(rssfilename, "%s%s", filenamebase, rssextension);
 		break;
 	  case PAGE_CRITICAL:
-		sprintf(filename, "critical%s", htmlextension);
-		sprintf(rssfilename, "critical%s", rssextension);
+		sprintf(filename, "%s%s", filenamebase, htmlextension);
+		sprintf(rssfilename, "%s%s", filenamebase, rssextension);
 		break;
 	}
 
