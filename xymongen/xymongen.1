@@ -213,6 +213,9 @@ Deprecated, use "--nongreen-colors" instead.
 .IP "--nongreen-ignoredialups"
 Ignore all dialup hosts on the "All non-green" page, including the eventlog.
 .sp
+.IP "--no-pages"
+Do not generate the normal pages (normally used to generate only the non-green page).
+.sp
 .IP "--no-nongreen"
 Do not generate the "All non-green" page.
 .sp
@@ -682,6 +685,13 @@ them to the webserver later on.
 Note how the 
 .I date(1)
 utility is used to calculate the start- and end-time parameters.
+
+.SH "ENVIRONMENT VARIABLES"
+.IP BOARDFILTER
+Filter used to select what hosts / tests are included in the webpages, by
+filtering the data retrieved from xymond vi the xymondboard command. See
+.I xymon(1)
+for details on the filter syntax. By default, no filtering is done.
 
 .SH "SEE ALSO"
 hosts.cfg(5), xymonserver.cfg(5), tasks.cfg(5), report.cgi(1), 
