@@ -128,7 +128,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	int ip1, ip2, ip3, ip4, groupid, pageidx;
 	char hostname[4096], *dgname;
 	pagelist_t *curtoppage, *curpage, *pgtail;
-	namelist_t *nametail = NULL;
 	void * htree;
 	char *cfgdata, *inbol, *ineol, insavchar = '\0';
 
@@ -296,7 +295,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			int elemidx, elemsize;
 			char groupidstr[10];
 			xtreePos_t handle;
-			namelist_t *newitem, *iwalk, *iprev;
+			namelist_t *newitem;
 
 			if ( (ip1 < 0) || (ip1 > 255) ||
 			     (ip2 < 0) || (ip2 > 255) ||
@@ -390,12 +389,12 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			handle = xtreeFind(htree, newitem->hostname);
 			if (strcasecmp(newitem->hostname, ".default.") == 0) {
 				/* The pseudo DEFAULT host */
-				newitem->next = NULL;
+				newitem->next = newitem->prev = NULL;
 				defaulthost = newitem;
 			}
 			else if (handle == xtreeEnd(htree)) {
 				/* New item, so add to end of list */
-				newitem->next = NULL;
+				newitem->prev = nametail; newitem->next = NULL;
 				if (namehead == NULL) 
 					namehead = nametail = newitem;
 				else {
@@ -405,23 +404,30 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				xtreeAdd(htree, newitem->hostname, newitem);
 			}
 			else {
-				/* Find the existing record - compare the record pointer instead of the name */
 				namelist_t *existingrec = (namelist_t *)xtreeData(htree, handle);
-				for (iwalk = namehead, iprev = NULL; ((iwalk != existingrec) && iwalk); iprev = iwalk, iwalk = iwalk->next) ;
- 				if (newitem->preference <= iwalk->preference) {
+
+ 				if (newitem->preference <= existingrec->preference) {
 					/* Add after the existing (more preferred) entry */
-					newitem->next = iwalk->next;
-					iwalk->next = newitem;
+					newitem->next = existingrec->next;
+					/* NB: existingrec may be the end of the list, so existingrec->next can be NULL */
+					if (newitem->next) newitem->next->prev = newitem;
+
+					existingrec->next = newitem;
+					newitem->prev = existingrec;
+
+					if (newitem->next == NULL) nametail = newitem;
 				}
 				else {
-					/* New item has higher preference, so add before the iwalk item (i.e. after iprev) */
-					if (iprev == NULL) {
+					/* New item has higher preference, so add before the current item (i.e. after existingrec->prev) */
+					if (existingrec->prev == NULL) {
 						newitem->next = namehead;
 						namehead = newitem;
 					}
 					else {
-						newitem->next = iprev->next;
-						iprev->next = newitem;
+						newitem->prev = existingrec->prev;
+						newitem->next = existingrec;
+						existingrec->prev = newitem;
+						newitem->prev->next = newitem;
 					}
 				}
 			}
@@ -429,6 +435,27 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			newitem->clientname = xmh_find_item(newitem, XMH_CLIENTALIAS);
 			if (newitem->clientname == NULL) newitem->clientname = newitem->hostname;
 			newitem->downtime = xmh_find_item(newitem, XMH_DOWNTIME);
+
+#ifdef DEBUG
+			{
+				namelist_t *walk;
+				int err = 0;
+
+				for (walk = namehead; (walk && !err); walk = walk->next) {
+					// printf("%s	%s	%s\n", walk->hostname, (walk->next ? walk->next->hostname: "<null>"), (walk->prev ? walk->prev->hostname : "<null>"));
+					if (walk->next && (walk->next->prev != walk)) 
+						{ printf("*** ERROR: next->prev is not self\n"); err = 1; }
+					if (!walk->next && (walk != nametail)) 
+						{ printf("*** ERROR: No next element, but nametail is different\n"); err = 1; }
+					if (!walk->prev && (walk != namehead)) 
+						{ printf("*** ERROR: No prev element, but namehead is different\n"); err = 1; }
+				}
+
+				if (err)
+					printf("Error\n");
+			}
+#endif
+
 		}
 
 
