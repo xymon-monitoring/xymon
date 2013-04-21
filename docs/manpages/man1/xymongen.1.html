@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONGEN</TITLE>
 </HEAD><BODY>
 <H1>XYMONGEN</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.10:  3 Aug 2012<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version 4.3.11: 21 Apr 2013<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -250,6 +250,9 @@ Deprecated, use &quot;--nongreen-colors&quot; instead.
 <P>
 <DT>--nongreen-ignoredialups<DD>
 Ignore all dialup hosts on the &quot;All non-green&quot; page, including the eventlog.
+<P>
+<DT>--no-pages<DD>
+Do not generate the normal pages (normally used to generate only the non-green page).
 <P>
 <DT>--no-nongreen<DD>
 Do not generate the &quot;All non-green&quot; page.
@@ -799,6 +802,18 @@ Note how the
 utility is used to calculate the start- and end-time parameters.
 <P>
 <A NAME="lbAS">&nbsp;</A>
+<H2>ENVIRONMENT VARIABLES</H2>
+
+<DL COMPACT>
+<DT>BOARDFILTER<DD>
+Filter used to select what hosts / tests are included in the webpages, by
+filtering the data retrieved from xymond vi the xymondboard command. See
+<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
+
+for details on the filter syntax. By default, no filtering is done.
+<P>
+</DL>
+<A NAME="lbAT">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
 <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5), <A HREF="../man1/report.cgi.1.html">report.cgi</A>(1), 
@@ -826,12 +841,13 @@ utility is used to calculate the start- and end-time parameters.
 <DT><A HREF="#lbAP">USING XYMONGEN FOR REPORTS</A><DD>
 <DT><A HREF="#lbAQ">SLA REPORTING</A><DD>
 <DT><A HREF="#lbAR">PRE-GENERATED REPORTS</A><DD>
-<DT><A HREF="#lbAS">SEE ALSO</A><DD>
+<DT><A HREF="#lbAS">ENVIRONMENT VARIABLES</A><DD>
+<DT><A HREF="#lbAT">SEE ALSO</A><DD>
 </DL>
 <HR>
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 20:26:23 GMT, August 03, 2012
+Time: 10:54:40 GMT, April 21, 2013
 </BODY>
 </HTML>

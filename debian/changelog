@@ -1,3 +1,26 @@
+xymon (4.3.11) unstable; urgency=low
+
+   * rev 7188
+   * Fix wrong file permissions when installing
+   * Linux client: Fix handling of root filesystem when mounted on "/dev/root"
+   * trends webpage: Fix case where hostname disappears after zoom.
+   * FreeBSD client: Memory patch for FreeBSD 8.0+
+   * xymond_alert: Fix problem with UNMATCHED rules triggering when there are
+     actual recipients, but their alerts are suppressed due to a REPEAT
+     setting not having expired.
+   * xymond_rrd: Dont crash if called with an empty status/data message
+   * xymond_channel: Report cause when channel-child exits/crashes
+   * xymongen: Geneate an overview page with only reds (like non-green)
+   * xymongen: Optionally define env. variable BOARDFILTER to select
+     hosts/tests included in the generated pages
+   * links: Add pdf, docx and odt as known document formats
+   * Fix potential crashes after an alert cookie expired
+   * Fix potential crash after deleting/renaming a host
+   * Speedup loading of the hosts.cfg file, noticeable with very
+     large hosts.cfg files (100.000+ hosts)
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 21 Apr 2013 15;24:01 +0200
+
 xymon (4.3.10) unstable; urgency=low
 
    * rev 7164
