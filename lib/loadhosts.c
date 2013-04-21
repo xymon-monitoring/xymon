@@ -434,7 +434,10 @@ void *hostinfo(char *hostname)
 		return (strcasecmp(hostname, hivalhost) == 0) ? &hival_hostinfo : NULL;
 	}
 
-	if (!configloaded) load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	if (!configloaded) {
+		load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+		configloaded = 1;
+	}
 
 	hosthandle = xtreeFind(rbhosts, hostname);
 	if (hosthandle != xtreeEnd(rbhosts)) {
