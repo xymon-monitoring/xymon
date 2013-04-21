@@ -122,9 +122,9 @@ xtreePos_t xtreeNext(void *treehandle, xtreePos_t pos)
 
 	do {
 		pos++;
-	} while ((pos < mytree->treesz) && (mytree->entries[pos].deleted != 0));
+	} while (mytree->entries[pos].deleted && (pos < mytree->treesz));
 
-	return pos;
+	return (pos < mytree->treesz) ? pos : -1;
 }
 
 char *xtreeKey(void *treehandle, xtreePos_t pos)
@@ -169,7 +169,7 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 			/* Record already exists */
 
 			if (mytree->entries[n].deleted != 0) {
-				/* Revive the old record. Note that we can now discard are privately held key */
+				/* Revive the old record. Note that we can now discard our privately held key */
 				free(mytree->entries[n].key);
 
 				mytree->entries[n].key = key;
