@@ -19,7 +19,7 @@ xymon (4.3.11) unstable; urgency=low
    * Speedup loading of the hosts.cfg file, noticeable with very
      large hosts.cfg files (100.000+ hosts)
 
- -- Henrik Stoerner <henrik@hswn.dk>  Sun, 21 Apr 2013 15;24:01 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 21 Apr 2013 15:24:01 +0200
 
 xymon (4.3.10) unstable; urgency=low
 
