@@ -399,7 +399,7 @@ void generate_compactitems(state_t **topstate)
 	hostlist_t 	*h;
 	entry_t		*e;
 	char *compacted;
-	char *tok1, *tok2, *savep1, *savep2;
+	char *tok1, *savep1, *savep2;
 	compact_t *itm;
 	int i;
 	state_t *newstate;
@@ -506,9 +506,10 @@ state_t *load_state(dispsummary_t **sumhead)
 			}
 		}
 		else {
-			char *bcmd = (char *)malloc(1024 + (filter ? strlen(filter) : 0);
-			sprintf(bcmd, "xymondboard %s %s", "fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", (filter ? filter : ""));
+			char *bcmd;
 
+			bcmd = (char *)malloc(1024 + (filter ? strlen(filter) : 0));
+			sprintf(bcmd, "xymondboard %s %s", "fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", (filter ? filter : ""));
 			xymondresult = sendmessage(bcmd, NULL, XYMON_TIMEOUT, sres);
 			board = getsendreturnstr(sres, 1);
 			xfree(bcmd);

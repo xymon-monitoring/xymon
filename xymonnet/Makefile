@@ -69,15 +69,15 @@ c-ares/configure: c-ares-$(ARESVER).tar.gz
 
 
 fping.8: fping4
-	cp fping.ipv4/fping.8 .
+	cp fping.ipv4/doc/fping.8 .
 
 fping4: fping.ipv4/Makefile
 	(cd fping.ipv4 && $(MAKE))
-	cp fping.ipv4/fping ./fping4
+	cp fping.ipv4/src/fping ./fping4
 
 fping6: fping.ipv6/Makefile
 	(cd fping.ipv6 && $(MAKE))
-	cp fping.ipv6/fping ./fping6
+	cp fping.ipv6/src/fping ./fping6
 
 fping.ipv4/Makefile: fping-$(FPINGVER).tar.gz
 	gzip -dc $< | tar xf -
