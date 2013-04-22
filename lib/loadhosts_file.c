@@ -90,12 +90,9 @@ static int prepare_fromnet(void)
 	sendreturn_t *sres;
 	sendresult_t sendstat;
 	char *fdata, *fhash;
-	int dontsendcopy = dontsendmessages;
 
-	dontsendmessages = 0;
 	sres = newsendreturnbuf(1, NULL);
 	sendstat = sendmessage("config hosts.cfg", NULL, XYMON_TIMEOUT, sres);
-	dontsendmessages = dontsendcopy;
 	if (sendstat != XYMONSEND_OK) {
 		freesendreturnbuf(sres);
 		errprintf("Cannot load hosts.cfg from xymond, code %d\n", sendstat);
@@ -128,13 +125,11 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 {
 	/* Return value: 0 for load OK, 1 for "No files changed since last load", -1 for error (file not found) */
 	int prepresult;
-	int groupid, pageidx;
-	char *hostname, *dgname;
+	int ip1, ip2, ip3, ip4, groupid, pageidx;
+	char hostname[4096], *dgname;
 	pagelist_t *curtoppage, *curpage, *pgtail;
-	namelist_t *nametail = NULL;
 	void * htree;
 	char *cfgdata, *inbol, *ineol, insavchar = '\0';
-	char *lcopy = NULL;
 
 	load_hostinfo(NULL);
 
@@ -164,6 +159,9 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 		return 1;
 	}
 
+	MEMDEFINE(hostname);
+	MEMDEFINE(l);
+
 	configloaded = 1;
 	initialize_hostlist();
 	curpage = curtoppage = pgtail = pghead;
@@ -173,8 +171,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	htree = xtreeNew(strcasecmp);
 	inbol = cfgdata = hostscfg_content();
 	while (inbol && *inbol) {
-		char *key, *keyp;
-
 		inbol += strspn(inbol, " \t");
 		ineol = strchr(inbol, '\n'); 
 		if (ineol) {
@@ -184,11 +180,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			insavchar = *ineol;
 			*ineol = '\0';
 		}
-		if ((*inbol == '#') || (strlen(inbol) == 0)) goto nextline;
-
-		if (lcopy) xfree(lcopy);
-		lcopy = strdup(inbol);
-		key = strtok_r(lcopy, " \t\r\n", &keyp);
 
 		if (strncmp(inbol, "page", 4) == 0) {
 			pagelist_t *newp;
@@ -254,7 +245,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			}
 		}
 		else if (strncmp(inbol, "group", 5) == 0) {
-			char *tok, *inp;
+			char *tok;
 
 			groupid++;
 			if (dgname) xfree(dgname); dgname = NULL;
@@ -299,18 +290,26 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				}
 			}
 		}
-		else if (conn_is_ip(key) != 0) {
+		else if (sscanf(inbol, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *startoftags, *tag, *delim;
 			int elemidx, elemsize;
 			char groupidstr[10];
 			xtreePos_t handle;
+			namelist_t *newitem;
 
-			namelist_t *newitem = calloc(1, sizeof(namelist_t));
-			namelist_t *iwalk, *iprev;
+			if ( (ip1 < 0) || (ip1 > 255) ||
+			     (ip2 < 0) || (ip2 > 255) ||
+			     (ip3 < 0) || (ip3 > 255) ||
+			     (ip4 < 0) || (ip4 > 255)) {
+				errprintf("Invalid IPv4-address for host %s (nibble outside 0-255 range): %d.%d.%d.%d\n",
+					  hostname, ip1, ip2, ip3, ip4);
+				goto nextline;
+			}
 
-			hostname = strtok_r(NULL, " \t\r\n", &keyp);
+			newitem = calloc(1, sizeof(namelist_t));
+
 			/* Hostname beginning with '@' are "no-display" hosts. But we still want them. */
-			if (*hostname == '@') hostname++;
+			if (*hostname == '@') memmove(hostname, hostname+1, strlen(hostname));
 
 			if (!fqdn) {
 				/* Strip any domain from the hostname */
@@ -318,15 +317,14 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				if (p) *p = '\0';
 			}
 
-			newitem->ip = strdup(key);
+			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 			sprintf(groupidstr, "%d", groupid);
 			newitem->groupid = strdup(groupidstr);
 			newitem->dgname = (dgname ? strdup(dgname) : strdup("NONE"));
 			newitem->pageindex = pageidx++;
 
 			newitem->hostname = strdup(hostname);
-			/* If the ip is a NULL ip, then this host has lower preference */
-			newitem->preference = ((strcmp(newitem->ip, "0.0.0.0") == 0) || (strcmp(newitem->ip, "::") == 0)) ? 0 : 1;
+			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
 			newitem->logname = strdup(newitem->hostname);
 			{ char *p = newitem->logname; while ((p = strchr(p, '.')) != NULL) { *p = '_'; } }
 			newitem->page = curpage;
@@ -391,12 +389,12 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			handle = xtreeFind(htree, newitem->hostname);
 			if (strcasecmp(newitem->hostname, ".default.") == 0) {
 				/* The pseudo DEFAULT host */
-				newitem->next = NULL;
+				newitem->next = newitem->prev = NULL;
 				defaulthost = newitem;
 			}
 			else if (handle == xtreeEnd(htree)) {
 				/* New item, so add to end of list */
-				newitem->next = NULL;
+				newitem->prev = nametail; newitem->next = NULL;
 				if (namehead == NULL) 
 					namehead = nametail = newitem;
 				else {
@@ -406,23 +404,30 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				xtreeAdd(htree, newitem->hostname, newitem);
 			}
 			else {
-				/* Find the existing record - compare the record pointer instead of the name */
 				namelist_t *existingrec = (namelist_t *)xtreeData(htree, handle);
-				for (iwalk = namehead, iprev = NULL; ((iwalk != existingrec) && iwalk); iprev = iwalk, iwalk = iwalk->next) ;
- 				if (newitem->preference <= iwalk->preference) {
+
+ 				if (newitem->preference <= existingrec->preference) {
 					/* Add after the existing (more preferred) entry */
-					newitem->next = iwalk->next;
-					iwalk->next = newitem;
+					newitem->next = existingrec->next;
+					/* NB: existingrec may be the end of the list, so existingrec->next can be NULL */
+					if (newitem->next) newitem->next->prev = newitem;
+
+					existingrec->next = newitem;
+					newitem->prev = existingrec;
+
+					if (newitem->next == NULL) nametail = newitem;
 				}
 				else {
-					/* New item has higher preference, so add before the iwalk item (i.e. after iprev) */
-					if (iprev == NULL) {
+					/* New item has higher preference, so add before the current item (i.e. after existingrec->prev) */
+					if (existingrec->prev == NULL) {
 						newitem->next = namehead;
 						namehead = newitem;
 					}
 					else {
-						newitem->next = iprev->next;
-						iprev->next = newitem;
+						newitem->prev = existingrec->prev;
+						newitem->next = existingrec;
+						existingrec->prev = newitem;
+						newitem->prev->next = newitem;
 					}
 				}
 			}
@@ -430,6 +435,27 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			newitem->clientname = xmh_find_item(newitem, XMH_CLIENTALIAS);
 			if (newitem->clientname == NULL) newitem->clientname = newitem->hostname;
 			newitem->downtime = xmh_find_item(newitem, XMH_DOWNTIME);
+
+#ifdef DEBUG
+			{
+				namelist_t *walk;
+				int err = 0;
+
+				for (walk = namehead; (walk && !err); walk = walk->next) {
+					// printf("%s	%s	%s\n", walk->hostname, (walk->next ? walk->next->hostname: "<null>"), (walk->prev ? walk->prev->hostname : "<null>"));
+					if (walk->next && (walk->next->prev != walk)) 
+						{ printf("*** ERROR: next->prev is not self\n"); err = 1; }
+					if (!walk->next && (walk != nametail)) 
+						{ printf("*** ERROR: No next element, but nametail is different\n"); err = 1; }
+					if (!walk->prev && (walk != namehead)) 
+						{ printf("*** ERROR: No prev element, but namehead is different\n"); err = 1; }
+				}
+
+				if (err)
+					printf("Error\n");
+			}
+#endif
+
 		}
 
 
@@ -444,10 +470,12 @@ nextline:
 			inbol = NULL;
 	}
 
-	if (lcopy) xfree(lcopy);
 	xfree(cfgdata);
 	if (dgname) xfree(dgname);
 	xtreeDestroy(htree);
+
+	MEMUNDEFINE(hostname);
+	MEMUNDEFINE(l);
 
 	build_hosttree();
 

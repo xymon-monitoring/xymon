@@ -1,19 +1,94 @@
-Changes from 4.3.7 -> 4.4.0
+Changes from 4.3.10 -> 4.3.11 (21 Apr 2013)
+===========================================
+* rev 7188
+
+* Fix wrong file permissions when installing
+* Linux client: Fix handling of root filesystem when mounted on "/dev/root"
+* trends webpage: Fix case where hostname disappears after zoom.
+* FreeBSD client: Memory patch for FreeBSD 8.0+
+* xymond_alert: Fix problem with UNMATCHED rules triggering when there are
+  actual recipients, but their alerts are suppressed due to a REPEAT
+  setting not having expired.
+* xymond_rrd: Dont crash if called with an empty status/data message
+* xymond_channel: Report cause when channel-child exits/crashes
+* xymongen: Geneate an overview page with only reds (like non-green)
+* xymongen: Optionally define env. variable BOARDFILTER to select
+  hosts/tests included in the generated pages
+* links: Add pdf, docx and odt as known document formats
+* Fix potential crashes after an alert cookie expired
+* Fix potential crash after deleting/renaming a host
+* Speedup loading of the hosts.cfg file, noticeable with very
+  large hosts.cfg files (100.000+ hosts)
+
+Changes from 4.3.9 -> 4.3.10 (6 Aug 2012)
 =========================================
-* rev ????
-* Change all network I/O to support IPv6 as well as IPv4
-* Enable SSL-encryption of traffic between Xymon components
-* Fix build on systems with SSLv2 disabled in SSL library
-* Fix configure-script on systems with unusual default library location
-* BBNUMERIC is no longer passed to alert scripts, the format is 
-  incompatible with IPv6 adresses.
-* MACHIP in alert script now contains the regular (dotted IPv4)
-  address, e.g. "10.1.2.3" instead of "010001002003", or the
-  regular IPv6 address.
-* protocols.cfg has a new syntax for EXPECT/SEND dialog
-* Network tests support SSL-encrypted protocols using STARTTLS
-* xymonnet re-worked and split up into smaller modules
-* Support for NTP tests in xymonnet (no longer needs ntpdate)
+* rev 7164
+
+* Fix build problems with "errno"
+* Fix build problems with OpenSSL in non-default locations
+* Fix build problems with certain LDAP configurations
+* Fix build problems with RRDtool on FreeBSD / OpenBSD
+* Fix problem with ifstat data from Fedora in graphs
+* "inode" check on FreeBSD, OpenBSD, OSX, Solaris, HP/UX, AIX
+  in addition to existing support for Linux
+* Document building and installing Xymon on common platforms 
+  (Linux, FreeBSD, OpenBSD, Solaris)
+* Enhance xymoncfg so it can be used to import Xymon configuration
+  settings into shell-scripts.
+
+Changes from 4.3.8 -> 4.3.9 (15 Jul 2012)
+=========================================
+* rev 7120
+
+* Fix crash when XYMSRV is undefined but XYMSERVERS is
+* Fix error in calculating combo-status messages with
+  forward references
+* Fix error in disable-until-TIME or disable-until-OK code
+* Fix documentation of DURATION in alerts.cfg / xymond_alert so
+  it is consistenly listed as being in "minutes". 
+* Permit explicit use of ">" and ">=" in alerts.cfg
+* Permit building without the RRDtool libraries, e.g. for
+  a network-tester build, but with trend-graphing disabled.
+* Full compiler-warning cleanup
+* Various configuration/build-script issues fixed.
+
+Changes from 4.3.7 -> 4.3.8 (15 Jul 2012)
+=========================================
+* rev 7082
+
+Bugfixes
+* Workaround for DNS timeout handling, now fixed at approximately 25
+  seconds.
+* "hostinfo" command for xymond documented
+* confreport only shows processes that are monitored
+* analysis.cfg parsing of COLOR for UP rules was broken
+* RRD handlers no longer crash after receiving 1 billion updates
+* Using .netrc for authentication could crash xymonnet
+* "directory" includes would report the wrong filename for missing
+  directories.
+* useradm CGI would invoke htpassword twice
+* "include" and "directory" now ignores trailing whitespace
+* SSLv2 support disabled if SSL-library does not support it
+* Minor bugfixes and cleanups of compiler warnings.
+
+Enhancements
+* Service status on info page now links to the detailed status page.
+* Add RRDGRAPHOPTS setting to permit global user-specified RRD options,
+  e.g. for font to showgraph CGI
+* Add check for the size of public keys used in SSL certificates
+  (enabled via --sslkeysize=N option for xymonnet)
+* Optionally disable the display of SSL ciphers in the sslcert status
+  (the --no-cipherlist option for xymonnet)
+* Improved build-scripts works on newer systems with libraries in
+  new and surprising places
+* Reduce xymonnet memory usage and runtime for ping tests when there
+  are multiple hosts.cfg entries with the same IP-address.
+* Add code for inode-monitoring on Linux. Does not currently work on
+  any other client platform.
+* Added the ability to disable tests until a specific time, instead of
+  for some interval. Disabling a test also now computes the expire time
+  for the disable to happen at the next closest minute.
+
 
 Changes from 4.3.6 -> 4.3.7 (13 Dec 2011)
 =========================================

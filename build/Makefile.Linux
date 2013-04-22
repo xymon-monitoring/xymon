@@ -21,6 +21,11 @@ endif
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
 
+# For profiling
+# CFLAGS = -g -pg -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
+# Note: Do 'export GMON_OUT_PREFIX=/var/tmp/FILENAME' to save profiling output in /var/tmp
+# Use gprof to analyse
+
 # By default, Xymon uses a static library for common code.
 # To save some diskspace and run-time memory, you can use a
 # shared library by un-commenting this.

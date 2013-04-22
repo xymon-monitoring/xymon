@@ -332,7 +332,7 @@ void do_vertical(host_t *head, FILE *output, char *pagepath)
 	host_t	*h;
 	entry_t	*e;
 	char	*xymonskin;
-	int	rowcount = 0, hostcount = 0;
+	int	hostcount = 0;
 	int	width;
 	int	hidx;
 	void	*vptree;
@@ -367,7 +367,6 @@ void do_vertical(host_t *head, FILE *output, char *pagepath)
 	for (h = head, hidx = 0; (h); h = h->next, hidx++) {
 		for (e = h->entries; (e); e = e->next) {
 			vprec_t *itm;
-			char *hptr;
 
 			handle = xtreeFind(vptree, e->column->name);
 			if (handle == xtreeEnd(vptree)) {
@@ -737,7 +736,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, 1, NULL, NULL, NULL, NULL, "", 0, 0.0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
+			newhost = init_host(s->row, 1, NULL, NULL, NULL, NULL, 0,0,0,0, 0, 0.0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
 
 			/* Insert into sorted host list */
 			if ((!sumhosts) || (strcmp(newhost->hostname, sumhosts->hostname) < 0)) {
@@ -1103,7 +1102,7 @@ static void do_nongreenext(FILE *output, char *extenv, char *family)
 	xfree(extensions);
 }
 
-int do_nongreen_page(char *nssidebarfilename, int summarytype)
+int do_nongreen_page(char *nssidebarfilename, int summarytype, char *filenamebase)
 {
 	xymongen_page_t	nongreenpage;
 	FILE		*output = NULL;
@@ -1217,12 +1216,12 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype)
 
 	switch (summarytype) {
 	  case PAGE_NONGREEN:
-		sprintf(filename, "nongreen%s", htmlextension);
-		sprintf(rssfilename, "nongreen%s", rssextension);
+		sprintf(filename, "%s%s", filenamebase, htmlextension);
+		sprintf(rssfilename, "%s%s", filenamebase, rssextension);
 		break;
 	  case PAGE_CRITICAL:
-		sprintf(filename, "critical%s", htmlextension);
-		sprintf(rssfilename, "critical%s", rssextension);
+		sprintf(filename, "%s%s", filenamebase, htmlextension);
+		sprintf(rssfilename, "%s%s", filenamebase, rssextension);
 		break;
 	}
 

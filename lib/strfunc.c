@@ -188,6 +188,8 @@ char *htmlquoted(char *s)
 	char *inp, *endp;
 	char c;
 
+	if (!s) return NULL;
+
 	if (!result) result = newstrbuffer(4096);
 	clearstrbuffer(result);
 

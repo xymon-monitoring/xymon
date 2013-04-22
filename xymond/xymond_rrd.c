@@ -189,11 +189,12 @@ int main(int argc, char *argv[])
 	struct sockaddr_un ctlsockaddr;
 	int ctlsocket;
 
-	libxymon_init(argv[0]);
-
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--rrddir=")) {
+		if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--rrddir=")) {
 			char *p = strchr(argv[argi], '=');
 			rrddir = strdup(p+1);
 		}
@@ -214,9 +215,6 @@ int main(int argc, char *argv[])
 		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
-		}
-		else if (standardoption(argv[argi])) {
-			if (showhelp) return 0;
 		}
 	}
 
@@ -331,7 +329,7 @@ int main(int argc, char *argv[])
 		}
 		metadata[metacount] = NULL;
 
-		if ((metacount >= 14) && (strncmp(metadata[0], "@@status", 8) == 0)) {
+		if ((metacount >= 14) && (strncmp(metadata[0], "@@status", 8) == 0) && restofmsg) {
 			/*
 			 * @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|\
 			 * prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage|\
@@ -359,7 +357,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		else if ((metacount > 5) && (strncmp(metadata[0], "@@data", 6) == 0)) {
+		else if ((metacount > 5) && (strncmp(metadata[0], "@@data", 6) == 0) && restofmsg) {
 			/* @@data|timestamp|sender|origin|hostname|testname|classname|pagepaths */
 			tstamp = atoi(metadata[1]);
 			sender = metadata[2];

@@ -412,13 +412,18 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			rpt = find_repeatinfo(alert, recip, 1);
 			if (!rpt) continue;	/* Happens for e.g. M_IGNORE recipients */
 
+			/* 
+			 * Update alertcount here, because we dont want to hit an UNMATCHED
+			 * rule when there is actually an alert active - it is just suppressed
+			 * for this run due to the REPEAT setting.
+			 */
+			alertcount++;	
 			dbgprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
 			if (rpt->nextalert > now) {
 				traceprintf("Recipient '%s' dropped, next alert due at %ld > %ld\n",
 						rpt->recipid, (long)rpt->nextalert, (long)now);
 				continue;
 			}
-			alertcount++;
 		}
 		else if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
 			/* RECOVERED messages require that we've sent out an alert before */
@@ -507,7 +512,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					/* Setup all of the environment for a paging script */
 					void *hinfo;
 					char *p;
-					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
+					int ip1=0, ip2=0, ip3=0, ip4=0;
+					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
 					char *alertid, *alertidenv;
 					int msglen;
 
@@ -546,8 +552,17 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					sprintf(bbhostsvccommas, "BBHOSTSVCCOMMAS=%s.%s", commafy(alert->hostname), alert->testname);
 					putenv(bbhostsvccommas);
 
-					machip = (char *)malloc(strlen("MACHIP=") + strlen(alert->ip) + 1);
-					sprintf(machip, "MACHIP=%s", alert->ip);
+					bbnumeric = (char *)malloc(strlen("BBNUMERIC=") + 22 + 1);
+					p = bbnumeric;
+					p += sprintf(p, "BBNUMERIC=");
+					p += sprintf(p, "%03d", servicecode(alert->testname));
+					sscanf(alert->ip, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
+					p += sprintf(p, "%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
+					p += sprintf(p, "%d", alert->cookie);
+					putenv(bbnumeric);
+
+					machip = (char *)malloc(strlen("MACHIP=") + 13);
+					sprintf(machip, "MACHIP=%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
 					putenv(machip);
 
 					bbsvcname = (char *)malloc(strlen("BBSVCNAME=") + strlen(alert->testname) + 1);

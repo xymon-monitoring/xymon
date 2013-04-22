@@ -44,6 +44,6 @@ extern int  wantrss;
 extern void select_headers_and_footers(char *prefix);
 extern void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded);
 extern void do_page_with_subs(xymongen_page_t *curpage, dispsummary_t *sums);
-extern int  do_nongreen_page(char *nssidebarfilename, int summarytype);
+extern int  do_nongreen_page(char *nssidebarfilename, int summarytype, char *filenamebase);
 
 #endif

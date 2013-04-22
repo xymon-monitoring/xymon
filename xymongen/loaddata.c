@@ -486,6 +486,7 @@ state_t *load_state(dispsummary_t **sumhead)
 
 	if (!reportstart && !snapshot) {
 		char *dumpfn = getenv("BOARDDUMP");
+		char *filter = getenv("BOARDFILTER");
 
 		if (dumpfn) {
 			/* Debugging - read data from a dump file */
@@ -505,8 +506,12 @@ state_t *load_state(dispsummary_t **sumhead)
 			}
 		}
 		else {
-			xymondresult = sendmessage("xymondboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, XYMON_TIMEOUT, sres);
+			char *bcmd = (char *)malloc(1024 + (filter ? strlen(filter) : 0);
+			sprintf(bcmd, "xymondboard %s %s", "fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", (filter ? filter : ""));
+
+			xymondresult = sendmessage(bcmd, NULL, XYMON_TIMEOUT, sres);
 			board = getsendreturnstr(sres, 1);
+			xfree(bcmd);
 		}
 	}
 	else {
