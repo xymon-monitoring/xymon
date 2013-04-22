@@ -454,7 +454,9 @@ int conn_listen(int portnumber, int backlog, int maxlifetime,
 #ifdef IPV4_SUPPORT
 	ls = (tcpconn_t *)calloc(1, sizeof(tcpconn_t));
 	ls->connstate = ((sslhandling == CONN_SSL_YES) ? CONN_SSL_INIT : CONN_PLAINTEXT);
+#ifdef HAVE_OPENSSL
 	ls->sslhandling = sslhandling;
+#endif
 	ls->usercallback = usercallback;
 	ls->maxlifetime = maxlifetime;
 	ls->family = AF_INET;
@@ -474,11 +476,13 @@ int conn_listen(int portnumber, int backlog, int maxlifetime,
 #ifdef IPV6_SUPPORT
 	ls = (tcpconn_t *)calloc(1, sizeof(tcpconn_t));
 	ls->connstate = ((sslhandling == CONN_SSL_YES) ? CONN_SSL_INIT : CONN_PLAINTEXT);
+#ifdef HAVE_OPENSSL
 	ls->sslhandling = sslhandling;
+#endif
 	ls->usercallback = usercallback;
 	ls->maxlifetime = maxlifetime;
 	ls->family = AF_INET6;
-	ls->peersz = sizeof(struct sockaddr_in6);
+	ls->peersz = sizeof(struct sockaddr) + sizeof(struct sockaddr_in6);
 	ls->peer = (struct sockaddr *)calloc(1, ls->peersz);
 	if (listen_port(ls, portnumber, backlog, local6) == -1) {
 		conn_cleanup(ls);
@@ -617,10 +621,10 @@ int conn_starttls(tcpconn_t *conn)
 {
 	const char *funcid = "conn_starttls";
 
+#ifdef HAVE_OPENSSL
 	conn_info(funcid, INFO_DEBUG, "Initiating STARTTLS in %s mode\n",
 		  (conn->sslhandling == CONN_SSL_STARTTLS_SERVER) ? "server" : "client");
 
-#ifdef HAVE_OPENSSL
 	/* The SSL ctx and ssl settings have been setup when the socket was created */
 	if (conn->sslhandling == CONN_SSL_STARTTLS_SERVER) {
 		if (serverctx) {
@@ -675,7 +679,9 @@ tcpconn_t *conn_accept(tcpconn_t *ls)
 
 	newconn = (tcpconn_t *)calloc(1, sizeof(tcpconn_t));
 	newconn->connstate = ls->connstate;
+#ifdef HAVE_OPENSSL
 	newconn->sslhandling = ls->sslhandling;
+#endif
 	newconn->usercallback = ls->usercallback;
 	newconn->maxlifetime = ls->maxlifetime;
 	newconn->family = ls->family;
