@@ -30,9 +30,24 @@ clean:
 install: install-bin install-man
 
 install-bin: $(PROGRAMS)
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(PROGRAMS)
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
+	chmod 755 $(PROGRAMS) 
+endif
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-man:
-	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+ifndef PKGBUILD
+	chown $(XYMONUSER) *.1
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1
+	chmod 644 *.1
+endif
+	mkdir -p $(INSTALLROOT)$(MANROOT)/man1
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1
+	chmod 755 $(INSTALLROOT)$(MANROOT)/man1
+endif
 	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
 

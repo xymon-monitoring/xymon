@@ -32,9 +32,20 @@ clean:
 install: install-bin install-man
 
 install-bin:
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(PROGRAMS)
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
+	chmod 755 $(PROGRAMS)
+endif
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man8
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man8 *.8
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man8 *.8
+	chmod 755 $(INSTALLROOT)$(MANROOT)/man8
+	chmod 644 *.8
+endif
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 

@@ -71,20 +71,26 @@ install:
 	if test ! -d $(INSTALLROOT)$(XYMONHOME)/local ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/local ; fi
 	if test ! -f $(INSTALLROOT)$(XYMONHOME)/etc/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(XYMONHOME)/etc/ ; fi
 	if test ! -f $(INSTALLROOT)$(XYMONHOME)/local/README; then cp README-local $(INSTALLROOT)$(XYMONHOME)/local/README ; chmod 644 $(INSTALLROOT)$(XYMONHOME)/local/README; fi
+	chmod 755 runclient.sh $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS)
 	cp -fp runclient.sh $(INSTALLROOT)$(XYMONHOME)
 	cp -fp $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(XYMONHOME)/bin/
-	chmod ugo+x $(INSTALLROOT)$(XYMONHOME)/bin/*
 
 	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(XYMONHOME)/etc/clientlaunch.cfg
 	../build/merge-lines xymonclient.cfg $(INSTALLROOT)$(XYMONHOME)/etc/xymonclient.cfg
+	chmod 644 $(INSTALLROOT)$(XYMONHOME)/etc/clientlaunch.cfg $(INSTALLROOT)$(XYMONHOME)/etc/xymonclient.cfg
+
 ifndef PKGBUILD
 	chown -R $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME)
+	chgrp -R `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONHOME)
+	chmod 755 $(INSTALLROOT)$(XYMONHOME)
 endif
 
 install-localclient:
+	chmod 755 xymond_client
 	cp -fp xymond_client $(INSTALLROOT)$(XYMONHOME)/bin/
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME)/bin/xymond_client
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONHOME)/bin/xymond_client
 endif
 
 clean:

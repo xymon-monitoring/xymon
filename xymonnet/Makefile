@@ -117,15 +117,36 @@ clean:
 install: install-bin install-config install-man
 
 install-bin: $(PROGRAMS)
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(PROGRAMS)
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
+	chmod 755 $(PROGRAMS)
+endif
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-config:
 	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/protocols2.cfg
 	../build/merge-sects protocols2.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols2.cfg
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	chmod 644 $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+endif
 
 install-man:
+ifndef PKGBUILD
+	chown $(XYMONUSER) *.1 *.5
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5
+	chmod 644 *.1 *.5
+endif
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
-	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+	chmod 755 $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+endif
+
+	#cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
 	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 	cd $(INSTALLROOT)$(MANROOT)/man8 && ln -sf fping.8 fping4.8 && ln -sf fping.8 fping6.8
