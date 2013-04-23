@@ -509,7 +509,7 @@ state_t *load_state(dispsummary_t **sumhead)
 			char *bcmd;
 
 			bcmd = (char *)malloc(1024 + (filter ? strlen(filter) : 0));
-			sprintf(bcmd, "xymondboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist %s", filter);
+			sprintf(bcmd, "xymondboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist %s", (filter ? filter) : "");
 			xymondresult = sendmessage(bcmd, NULL, XYMON_TIMEOUT, sres);
 			board = getsendreturnstr(sres, 1);
 			xfree(bcmd);
