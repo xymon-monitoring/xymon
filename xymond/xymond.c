@@ -4788,6 +4788,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--no-purple")) {
 			do_purples = 0;
 		}
+		else if (argnmatch(argv[argi], "--lqueue=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			listenq = atoi(p);
+		}
 		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
 		}
