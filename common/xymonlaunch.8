@@ -30,7 +30,9 @@ overridden by the ENVFILE option in
 This option defines the file that xymonlaunch scans for tasks it
 must launch. A description of this file is in 
 .I tasks.cfg(5)
-The default tasklist is /etc/tasks.cfg
+If not specified, files at /etc/tasks.cfg, /etc/xymon/tasks.cfg,
+and /etc/xymon-client/clientlaunch.cfg are searched for, as
+well as ~/server/etc/tasks.cfg.
 
 .IP "--log=FILENAME"
 Defines the logfile where xymonlaunch logs information about

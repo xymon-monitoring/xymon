@@ -2513,7 +2513,7 @@ int main(int argc, char *argv[])
 		int color;
 
 		/* Go yellow if it runs for too long */
-		if (total_runtime() > runtimewarn) {
+		if ((runtimewarn > 0) && (total_runtime() > runtimewarn)) {
 			errprintf("WARNING: Runtime %ld longer than time limit (%ld)\n", total_runtime(), runtimewarn);
 		}
 		color = (errbuf ? COL_YELLOW : COL_GREEN);

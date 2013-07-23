@@ -43,8 +43,6 @@ static char rcsid[] = "$Id$";
 #include <signal.h>
 
 
-#define MSGTIMEOUT 30	/* Seconds */
-
 
 /* Our in-memory queue of messages received from xymond via IPC. One queue per peer. */
 typedef struct xymon_msg_t {
@@ -89,6 +87,7 @@ enum locator_servicetype_t locatorservice = ST_MAX;
 static int running = 1;
 static int gotalarm = 0;
 static int pendingcount = 0;
+static int messagetimeout = 30;
 
 /*
  * chksumsize is the space left in front of the message buffer, to
@@ -453,6 +452,10 @@ int main(int argc, char *argv[])
 			for (cnid = C_STATUS; (channelnames[cnid] && strcmp(channelnames[cnid], cn)); cnid++) ;
 			if (channelnames[cnid] == NULL) cnid = -1;
 		}
+		else if (argnmatch(argv[argi], "--msgtimeout")) {
+			char *p = strchr(argv[argi], '=');
+			messagetimeout = atoi(p+1);
+		}
 		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
 		}
@@ -717,7 +720,7 @@ int main(int argc, char *argv[])
 		for (handle = xtreeFirst(peers); (handle != xtreeEnd(peers)); handle = xtreeNext(peers, handle)) {
 			int canwrite = 1, hasfailed = 0;
 			xymon_peer_t *pwalk;
-			time_t msgtimeout = gettimer() - MSGTIMEOUT;
+			time_t msgtimeout = gettimer() - messagetimeout;
 			int flushcount = 0;
 
 			pwalk = (xymon_peer_t *) xtreeData(peers, handle);

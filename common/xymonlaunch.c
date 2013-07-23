@@ -487,7 +487,9 @@ int main(int argc, char *argv[])
 	int argi;
 	int daemonize = 1;
 	int verbose = 0;
-	char *config = "/etc/tasks.cfg";
+	int dumpconfig = 0;
+	struct stat st;
+	char *config = NULL;
 	char *logfn = NULL;
 	char *pidfn = NULL;
 	pid_t cpid;
@@ -526,37 +528,59 @@ int main(int argc, char *argv[])
 			pidfn = strdup(expand_env(p+1));
 		}
 		else if (strcmp(argv[argi], "--dump") == 0) {
-			/* Dump configuration */
-			forcereload=1;
-			load_config(config);
-			forcereload=0;
-			for (gwalk = grouphead; (gwalk); gwalk = gwalk->next) {
-				if (gwalk->maxuse > 1) printf("GROUP %s %d\n", gwalk->groupname, gwalk->maxuse);
-			}
-			printf("\n");
-			for (twalk = taskhead; (twalk); twalk = twalk->next) {
-				printf("[%s]\n", twalk->key);
-				printf("\tCMD %s\n", twalk->cmd);
-				if (twalk->disabled)     printf("\tDISABLED\n");
-				if (twalk->group)        printf("\tGROUP %s\n", twalk->group->groupname);
-				if (twalk->depends)      printf("\tNEEDS %s\n", twalk->depends->key);
-				if (twalk->interval > 0) printf("\tINTERVAL %d\n", twalk->interval);
-				if (twalk->cronstr)      printf("\tCRONDATE %s\n", twalk->cronstr);
-				if (twalk->maxruntime)   printf("\tMAXTIME %d\n", twalk->maxruntime);
-				if (twalk->logfile)      printf("\tLOGFILE %s\n", twalk->logfile);
-				if (twalk->envfile)      printf("\tENVFILE %s\n", twalk->envfile);
-				if (twalk->envarea)      printf("\tENVAREA %s\n", twalk->envarea);
-				if (twalk->onhostptn)    printf("\tONHOST %s\n", twalk->onhostptn);
-				printf("\n");
-			}
-			fflush(stdout);
-			return 0;
+			dumpconfig = 1;
 		}
 		else {
 			fprintf(stderr,"%s: Unsupported argument: %s\n",argv[0],argv[argi]);
 			fflush(stderr);
 			return 1;
 		}
+	}
+
+	/* Find config */
+	if (!config) {
+		if (stat("/etc/tasks.cfg", &st) != -1) config = strdup("/etc/tasks.cfg");
+		else if (stat("/etc/xymon/tasks.cfg", &st) != -1) config = strdup("/etc/xymon/tasks.cfg");
+		else if (stat("/etc/xymon-client/clientlaunch.cfg", &st) != -1) config = strdup("/etc/xymon-client/clientlaunch.cfg");
+		else if (xgetenv("XYMONHOME")) {
+			char *pf = NULL;
+			sprintf(pf, "%s/etc/tasks.cfg", xgetenv("XYMONHOME"));
+			if (pf && stat(pf, &st) != -1) config = strdup(pf);
+		}
+		if (config) dbgprintf("Using config file: %s\n", config);
+	}
+	if (!config || stat(config, &st) == -1) {
+		fprintf(stderr,"%s: Error reading config file %s\n", argv[0], config);
+		fflush(stderr);
+		return 1;
+	}
+
+	/* Dump configuration */
+	if (dumpconfig) {
+		forcereload=1;
+		load_config(config);
+		forcereload=0;
+		for (gwalk = grouphead; (gwalk); gwalk = gwalk->next) {
+			if (gwalk->maxuse > 1) printf("GROUP %s %d\n", gwalk->groupname, gwalk->maxuse);
+		}
+		printf("\n");
+		for (twalk = taskhead; (twalk); twalk = twalk->next) {
+			printf("[%s]\n", twalk->key);
+			printf("\tCMD %s\n", twalk->cmd);
+			if (twalk->disabled)     printf("\tDISABLED\n");
+			if (twalk->group)        printf("\tGROUP %s\n", twalk->group->groupname);
+			if (twalk->depends)      printf("\tNEEDS %s\n", twalk->depends->key);
+			if (twalk->interval > 0) printf("\tINTERVAL %d\n", twalk->interval);
+			if (twalk->cronstr)      printf("\tCRONDATE %s\n", twalk->cronstr);
+			if (twalk->maxruntime)   printf("\tMAXTIME %d\n", twalk->maxruntime);
+			if (twalk->logfile)      printf("\tLOGFILE %s\n", twalk->logfile);
+			if (twalk->envfile)      printf("\tENVFILE %s\n", twalk->envfile);
+			if (twalk->envarea)      printf("\tENVAREA %s\n", twalk->envarea);
+			if (twalk->onhostptn)    printf("\tONHOST %s\n", twalk->onhostptn);
+			printf("\n");
+		}
+		fflush(stdout);
+		return 0;
 	}
 
 	/* Go daemon */

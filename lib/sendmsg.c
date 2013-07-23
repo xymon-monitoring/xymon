@@ -126,7 +126,7 @@ static void setup_transport(char *recipient)
 	}
 
 	dbgprintf("Transport setup is:\n");
-	dbgprintf("xymondportnumber = %d\n", xymondportnumber),
+	dbgprintf("xymondportnumber = %d\n", xymondportnumber);
 	dbgprintf("xymonproxyhost = %s\n", (xymonproxyhost ? xymonproxyhost : "NONE"));
 	dbgprintf("xymonproxyport = %d\n", xymonproxyport);
 }

@@ -43,6 +43,9 @@ touch $MSGTMPFILE
 
 
 CLIENTVERSION="`$XYMONHOME/bin/clientupdate --level`"
+if test -z "$CLIENTVERSION"; then
+	CLIENTVERSION="`$XYMON --version`"
+fi
 
 if test "$LOCALMODE" = "yes"; then
 	echo "@@client#1|0|127.0.0.1|$MACHINEDOTS|$SERVEROSTYPE" >> $MSGTMPFILE

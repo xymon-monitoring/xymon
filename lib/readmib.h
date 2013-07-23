@@ -68,7 +68,7 @@ typedef struct mibidx_t {
 	enum mibidxtype_t idxtype;		/* How to interpret the key */
 	char *keyoid;				/* Key OID */
 	void *rootoid;				/* Binary representation of keyoid */
-	unsigned int rootoidlen;		/* Length of binary keyoid */
+	size_t rootoidlen;			/* Length of binary keyoid */
 	struct mibidx_t *next;
 } mibidx_t;
 

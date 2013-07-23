@@ -58,6 +58,11 @@ List of testnames that are handled by the external script. See the
 CUSTOM RRD DATA section below. Note that NCV graphs should NOT be
 listed here, but in the TEST2RRD environment variable - see below.
 
+.IP "--no-rrd"
+Disable the actual writing of RRD files. This is only really useful if
+you send all of the data destined for the RRD files to an external
+processor (the --extra-script option).
+
 .SH ENVIRONMENT
 .IP TEST2RRD
 Defines the mapping between a status-log columnname and the corresponding

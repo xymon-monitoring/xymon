@@ -76,6 +76,15 @@ static char rcsid[] = "$Id$";
 /* How long to keep an ack after the status has recovered */
 #define ACKCLEARDELAY 720 /* 12 minutes */
 
+/* How long messages are good for (by default) before going purple - minutes */
+#define DEFAULT_VALIDITY 30
+
+#define DEFAULT_PURPLE_INTERVAL 60
+int purplecheckinterval = DEFAULT_PURPLE_INTERVAL; /* Seconds - check for purples every 60s */
+
+#define DEFAULT_STATS_INTERVAL (5*60)
+int statsinterval = DEFAULT_STATS_INTERVAL;	/* Seconds - report xymond status every 5m */
+
 /* How long are sub-client messages valid */
 #define MAX_SUBCLIENT_LIFETIME 960	/* 15 minutes + a bit */
 
@@ -2380,6 +2389,8 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			posttochannel(noteschn, marker, NULL, sender, NULL, NULL, msgbuf);
 			posttochannel(enadischn, marker, NULL, sender, NULL, NULL, msgbuf);
 			posttochannel(clientchn, marker, NULL, sender, NULL, NULL, msgbuf);
+			posttochannel(clichgchn, marker, NULL, sender, NULL, NULL, msgbuf);
+			posttochannel(userchn, marker, NULL, sender, NULL, NULL, msgbuf);
 		}
 
 		xfree(msgbuf);
@@ -5142,12 +5153,12 @@ int main(int argc, char *argv[])
 			load_clientconfig();
 		}
 
-		if (do_purples && (now > nextpurpleupdate)) {
-			nextpurpleupdate = getcurrenttime(NULL) + 60;
+		if (do_purples && (now >= nextpurpleupdate)) {
+			nextpurpleupdate = getcurrenttime(NULL) + purplecheckinterval;
 			check_purple_status();
 		}
 
-		if ((last_stats_time + 300) <= now) {
+		if ((last_stats_time + statsinterval) <= now) {
 			char *buf;
 			xymond_hostlist_t *h;
 			testinfo_t *t;

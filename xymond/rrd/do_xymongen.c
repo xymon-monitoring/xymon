@@ -136,7 +136,7 @@ int do_xymongen_rrd(char *hostname, char *testname, char *classname, char *pagep
 	else {
 		setupfn("%s.rrd", "xymon2");
 	}
-	snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%d:%d:%d:%d:%d:%d:%d:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f", 
+	snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%d:%d:%d:%d:%d:%d:%d:%05.2f:%05.2f:%05.2f:%05.2f:%05.2f:%05.2f:%05.2f:%05.2f", 
 		(int)tstamp, 
 		redcount, rednopropcount, yellowcount, yellownopropcount,
 		greencount, purplecount, clearcount, bluecount,

@@ -214,12 +214,17 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-cache") == 0) {
 			use_rrd_cache = 0;
 		}
+		else if (strcmp(argv[argi], "--no-rrd") == 0) {
+			no_rrd = 1;
+		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
 		}
 	}
 
 	save_errbuf = 0;
+
+	if (no_rrd && !processor) errprintf("RRD writing disabled, but no external processor has been specified.\n");
 
 	if ((rrddir == NULL) && xgetenv("XYMONRRDS")) {
 		rrddir = strdup(xgetenv("XYMONRRDS"));
