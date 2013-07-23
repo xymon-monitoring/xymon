@@ -697,7 +697,7 @@ int main(int argc, char *argv[])
 
 		combo_start();
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s\n\n", xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
+		sprintf(msgline, "status %s.%s %s %s - xymongen completed in %lds\n\n", xgetenv("MACHINE"), egocolumn, colorname(color), timestamp, total_runtime());
 		addtostatus(msgline);
 
 		sprintf(msgline, "xymongen for Xymon version %s\n", VERSION);

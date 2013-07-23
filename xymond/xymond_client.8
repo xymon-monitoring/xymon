@@ -59,6 +59,11 @@ Sets the filename for the
 file. The default value is "etc/analysis.cfg" below the Xymon
 server directory.
 
+.IP "--unknownclientosok"
+Expect and attempt to parse clients with unknown CLIENTOS types.
+Useful if you're submitting custom host responses with file or msgs
+data that you'd like to parse.
+
 .IP "--dump-config"
 Dumps the configuration after parsing it. May be useful to track
 down problems with configuration file errors.

@@ -21,6 +21,7 @@ XYMONSERVERSECURECGIURL="@SECUREXYMONCGIURL@"	# The URL for the secured Xymon CG
 # Make sure the path includes the directories where you have fping, mail and (optionally) ntpdate installed,
 # as well as the XYMONHOME/bin directory where all of the Xymon programs reside.
 PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@XYMONHOME@/bin"
+SHELL="/bin/sh"					# Shell to use when forking programs
 
 # Some systems need extra settings e.g. to locate run-time libraries.
 # You can add these extra settings here:

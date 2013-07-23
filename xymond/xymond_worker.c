@@ -217,9 +217,6 @@ static int net_worker_listener(char *ipport)
 	/* Close the listener socket */
 	close(lsocket);
 
-	/* Kill any children that are still around */
-	kill(0, SIGTERM);
-
 	return 1;
 }
 

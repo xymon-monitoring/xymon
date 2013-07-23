@@ -52,6 +52,11 @@ Note that messages for "logrotate", "shutdown", "drophost", "renamehost",
 "droptest" and "renametest" are always forwarded by xymond_channel, whether
 they match the filter or not.
 
+.IP "--msgtimeout=TIMEOUT"
+Modify the default timeout (30 seconds) for the worker module to handle a message.
+If a message is not handled within this time, it is considered lost. You normally
+do not have to modify this unless you have an extremely busy server.
+
 .IP "--daemon"
 xymond_channel is normally started by 
 .I xymonlaunch(8)

@@ -68,7 +68,12 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 			close(pfd[1]);
 		}
 
-		execl("/bin/sh", "sh", "-c", cmd, NULL);
+		if (strchr(cmd, ' ') == NULL) execlp(cmd, cmd, NULL);
+		else {
+			char *shell = getenv("SHELL");
+			if (!shell) shell = "/bin/sh";
+			execl(shell, "sh", "-c", cmd, NULL);
+		}
 		exit(127);
 	}
 	else {

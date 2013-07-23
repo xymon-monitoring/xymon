@@ -26,7 +26,7 @@ static char rcsid[] = "$Id$";
 typedef struct oid_t {
 	mibdef_t *mib;				/* pointer to the mib definition for mibs */
 	oid Oid[MAX_OID_LEN];			/* the internal OID representation */
-	unsigned int OidLen;			/* size of the oid */
+	size_t OidLen;			/* size of the oid */
 	char *devname;				/* Users' chosen device name. May be a key (e.g "eth0") */
 	oidds_t *oiddef;			/* Points to the oidds_t definition */
 	int  setnumber;				/* All vars fetched in one PDU's have the same setnumber */
@@ -126,7 +126,7 @@ struct snmp_pdu *generate_datarequest(req_t *item)
 int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 {
 	struct variable_list *vp;
-	int len;
+	size_t len;
 	keyrecord_t *kwalk;
 	int keyoidlen;
 	oid_t *owalk;
@@ -136,7 +136,7 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 	  case STAT_SUCCESS:
 		if (pdu->errstat == SNMP_ERR_NOERROR) {
 			unsigned char *valstr = NULL, *oidstr = NULL;
-			int valsz = 0, oidsz = 0;
+			size_t valsz = 0, oidsz = 0;
 
 			okcount++;
 
@@ -545,7 +545,7 @@ void stophosts(void)
 void setupmib(mibdef_t *mib, int verbose)
 {
 	mibidx_t *iwalk;
-	int sz, len;
+	size_t sz, len;
 
 	if (mib->loadstatus != MIB_STATUS_NOTLOADED) return;
 

@@ -40,6 +40,7 @@ int sendclearfiles = 1;
 int sendclearports = 1;
 int sendclearsvcs = 1;
 int localmode     = 0;
+int unknownclientosok = 0;
 int noreportcolor = COL_CLEAR;
 
 typedef struct updinfo_t {
@@ -1136,7 +1137,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.msgs %s %s - System logs %s\n",
+	sprintf(msgline, "%s.msgs %s %s - Log files %s\n",
 		commafy(hostname), colorname(msgscolor), 
 		(timestr ? timestr : "<No timestamp data>"),
 		(((msgscolor == COL_RED) || (msgscolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -1620,6 +1621,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/zos.c"
 #include "client/mqcollect.c"
 #include "client/snmpcollect.c"
+#include "client/generic.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1920,6 +1922,9 @@ int main(int argc, char *argv[])
 				tok = strtok(NULL, ",");
 			}
 		}
+		else if (strcmp(argv[argi], "--unknownclientosok") == 0) {
+			unknownclientosok = 1;
+		}
 		else if (argnmatch(argv[argi], "--dump-config")) {
 			load_client_config(configfn);
 			dump_client_config();
@@ -2106,7 +2111,11 @@ int main(int argc, char *argv[])
 				break;
 
 			  default:
-                                errprintf("No client backend for OS '%s' sent by %s\n", clientos, sender);
+				if (unknownclientosok) {
+					dbgprintf("No client backend for OS '%s' sent by %s; using generic\n", clientos, sender);
+					handle_generic_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				}
+				else errprintf("No client backend for OS '%s' sent by %s\n", clientos, sender);
                                 break;
 			}
 			combo_end();

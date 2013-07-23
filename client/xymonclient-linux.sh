@@ -61,7 +61,7 @@ mount
 echo "[free]"
 free
 echo "[ifconfig]"
-/sbin/ifconfig
+/sbin/ifconfig 2>/dev/null
 echo "[route]"
 netstat -rn
 echo "[netstat]"
@@ -70,11 +70,11 @@ echo "[ports]"
 # Bug in RedHat's netstat spews annoying error messages. 
 netstat -ant 2>/dev/null
 echo "[ifstat]"
-/sbin/ifconfig
+/sbin/ifconfig 2>/dev/null
 # Report mdstat data if it exists
 if test -r /proc/mdstat; then echo "[mdstat]"; cat /proc/mdstat; fi
 echo "[ps]"
-ps -Aww -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rsz,vsz,cmd
+ps -Aww -o pid,ppid,user,start,state,pri,pcpu,time:12,pmem,rsz:10,vsz:10,cmd
 
 # $TOP must be set, the install utility should do that for us if it exists.
 if test "$TOP" != ""

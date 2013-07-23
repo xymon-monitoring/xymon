@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
 			}
 
 			p = stentry->buf;
-			p += sprintf(p, "combo\nstatus %s green %s Proxy up %s\n\nxymonproxy for Xymon version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+			p += sprintf(p, "combo\nstatus+11 %s green %s - xymon proxy up: %s\n\nxymonproxy for Xymon version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
 				proxyname, timestamp, runtime_s, VERSION,
 				msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
 				msgs_delivered,
