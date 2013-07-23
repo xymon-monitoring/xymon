@@ -348,6 +348,7 @@ int main(int argc, char *argv[])
 			  case COL_YELLOW:
 			  case COL_RED:
 			  case COL_BLUE: /* Blue is OK, because it only arrives here when an update is sent */
+			  case COL_CLEAR: /* Clear is OK, because it could still contain valid metric data */
 				tstamp = atoi(metadata[1]);
 				sender = metadata[2];
 				hostname = metadata[4]; 
@@ -359,7 +360,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  default:
-				/* Ignore reports with purple, blue or clear - they have no data we want. */
+				/* Ignore reports with purple - they have no data we want. */
 				break;
 			}
 		}

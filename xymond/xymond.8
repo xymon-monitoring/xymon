@@ -65,6 +65,10 @@ Specifies the IP-address and port where xymond will listen for incoming
 connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
 adresses available on the host) and port 1984.
 
+.IP "--lqueue=NUMBER"
+Specifies the listen-queue for incoming connections. You don't need to tune
+this unless you have a very busy xymond daemon.
+
 .IP "--daemon"
 xymond is normally started by 
 .I xymonlaunch(8)
