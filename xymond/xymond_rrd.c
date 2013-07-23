@@ -28,6 +28,7 @@ static char rcsid[] = "$Id$";
 #include <sys/un.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include "libxymon.h"
 #include "xymond_worker.h"
@@ -393,7 +394,7 @@ int main(int argc, char *argv[])
 
 			MEMDEFINE(hostdir);
 
-			sprintf(hostdir, "%s/%s", rrddir, hostname);
+			sprintf(hostdir, "%s/%s", rrddir, basename(hostname));
 			dropdirectory(hostdir, 1);
 
 			MEMUNDEFINE(hostdir);
