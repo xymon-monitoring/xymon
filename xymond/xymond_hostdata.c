@@ -24,6 +24,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <libgen.h>
 
 #include "libxymon.h"
 #include "xymond_worker.h"
