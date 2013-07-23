@@ -55,6 +55,15 @@ do
 done
 
 XYMONCLIENTHOME="`dirname $0`"
+if test `echo "$XYMONCLIENTHOME" | grep "^\."`
+then
+	# no full path, so add current directory to XYMONCLIENTHOME
+	# This may give you "XYMONCLIENTHOME=/usr/local/xymon/./client" - if you 
+	# run this script from /usr/local/xymon with "./client/runclient.sh" - 
+	# but it works fine.
+	XYMONCLIENTHOME="`pwd`/$XYMONCLIENTHOME"
+fi
+
 export MACHINEDOTS SERVEROSTYPE XYMONOSSCRIPT XYMONCLIENTHOME CONFIGCLASS
 
 MACHINE="`echo $MACHINEDOTS | sed -e 's/\./,/g'`"
