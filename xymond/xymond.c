@@ -169,11 +169,17 @@ typedef struct filecache_t {
 	unsigned char *fdata;
 } filecache_t;
 
+typedef struct senderstats_t {
+	char *senderip;
+	unsigned long msgcount;
+} senderstats_t;
+
 void *rbhosts;				/* The hosts we have reports from */
 void *rbtests;				/* The tests (columns) we have seen */
 void *rborigins;			/* The origins we have seen */
 void *rbcookies;			/* The cookies we use */
 void *rbfilecache;
+void *rbsenders;
 
 sender_t *maintsenders = NULL;
 sender_t *statussenders = NULL;
@@ -3019,6 +3025,25 @@ void do_message(conn_t *msg, char *origin)
 	now = getcurrenttime(NULL);
 	timeroffset = (getcurrenttime(NULL) - gettimer());
 
+	/* Save sender statistics */
+	{
+		xtreePos_t handle;
+		senderstats_t *rec;
+
+		handle = xtreeFind(rbsenders, sender);
+		if (handle == xtreeEnd(rbsenders)) {
+			rec = (senderstats_t *)malloc(sizeof(senderstats_t));
+			rec->senderip = strdup(sender);
+			rec->msgcount = 0;
+			xtreeAdd(rbsenders, rec->senderip, rec);
+		}
+		else {
+			rec = (senderstats_t *)xtreeData(rbsenders, handle);
+		}
+
+		rec->msgcount++;
+	}
+
 	if (traceall || tracelist) {
 		int found = 0;
 
@@ -4209,6 +4234,27 @@ void do_message(conn_t *msg, char *origin)
 			msg->bufp = msg->buf;
 		}
 	}
+	else if (strncmp(msg->buf, "senderstats", 11) == 0) {
+		xtreePos_t handle;
+		senderstats_t *rec;
+		strbuffer_t *resp;
+		char msgline[1024];
+
+		resp = newstrbuffer(0);
+
+		for (handle = xtreeFirst(rbsenders); (handle != xtreeEnd(rbsenders)); handle = xtreeNext(rbsenders, handle)) {
+			rec = (senderstats_t *)xtreeData(rbsenders, handle);
+			snprintf(msgline, sizeof(msgline), "%s %lu\n", rec->senderip, rec->msgcount);
+			addtobuffer(resp, msgline);
+		}
+
+		msg->doingwhat = RESPONDING;
+		xfree(msg->buf);
+		msg->buflen = STRBUFLEN(resp);
+		msg->buf = grabstrbuffer(resp);
+		if (!msg->buf) msg->buf = strdup("");
+		msg->bufp = msg->buf;
+	}
 
 done:
 	if (msg->doingwhat == RESPONDING) {
@@ -4718,6 +4764,7 @@ int main(int argc, char *argv[])
 	rbfilecache = xtreeNew(strcasecmp);
 	rbghosts = xtreeNew(strcasecmp);
 	rbmultisrc = xtreeNew(strcasecmp);
+	rbsenders = xtreeNew(strcmp);
 
 	/* For wildcard notify's */
 	create_testinfo("*");
