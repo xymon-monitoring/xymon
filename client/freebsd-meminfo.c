@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	unsigned long physmem;
 
 	int hw_pagesize[] = { CTL_HW, HW_PAGESIZE };
-	unsigned long pagesize;
+	int pagesize;
 
 	int vm_vmtotal[] = { CTL_VM, VM_METER };
 	struct vmtotal vmdata;
