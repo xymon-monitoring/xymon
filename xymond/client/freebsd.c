@@ -47,7 +47,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	timestr = getdata("date");
 	uptimestr = getdata("uptime");
-	clockstr = getdata("clockstr");
+	clockstr = getdata("clock");
 	msgcachestr = getdata("msgcache");
 	whostr = getdata("who");
 	psstr = getdata("ps");
