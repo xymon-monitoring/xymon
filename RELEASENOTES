@@ -1,6 +1,17 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.11   * * *
+           * * *   Release notes for Xymon 4.3.12   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+Changes for 4.3.12
+==================
+NOTE: This release includes a bugfix for a security issue
+in the xymond_history and xymond_rrd modules. A "drophost"
+command sent to the xymond port (default: 1984) from an IP
+listed in the --admin-senders access control list can be
+used to delete files owned by the user running the xymond 
+daemon. This is allowed by default, so it is highly recommended
+to install this update.
 
 
 Changes for 4.3.2 - 4.3.11

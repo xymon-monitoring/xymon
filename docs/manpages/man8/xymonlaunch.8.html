@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONLAUNCH</TITLE>
 </HEAD><BODY>
 <H1>XYMONLAUNCH</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.11: 21 Apr 2013<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.12: 24 Jul 2013<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -50,7 +50,9 @@ This option defines the file that xymonlaunch scans for tasks it
 must launch. A description of this file is in 
 <I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
-The default tasklist is /etc/tasks.cfg
+If not specified, files at /etc/tasks.cfg, /etc/xymon/tasks.cfg,
+and /etc/xymon-client/clientlaunch.cfg are searched for, as
+well as ~/server/etc/tasks.cfg.
 <P>
 <DT>--log=FILENAME<DD>
 Defines the logfile where xymonlaunch logs information about
@@ -117,6 +119,6 @@ and restarted with the new definition.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 10:54:41 GMT, April 21, 2013
+Time: 08:12:57 GMT, July 24, 2013
 </BODY>
 </HTML>

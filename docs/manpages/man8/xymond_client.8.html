@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND_CLIENT</TITLE>
 </HEAD><BODY>
 <H1>XYMOND_CLIENT</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.11: 21 Apr 2013<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.12: 24 Jul 2013<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -79,6 +79,11 @@ Sets the filename for the
 file. The default value is &quot;etc/analysis.cfg&quot; below the Xymon
 server directory.
 <P>
+<DT>--unknownclientosok<DD>
+Expect and attempt to parse clients with unknown CLIENTOS types.
+Useful if you're submitting custom host responses with file or msgs
+data that you'd like to parse.
+<P>
 <DT>--dump-config<DD>
 Dumps the configuration after parsing it. May be useful to track
 down problems with configuration file errors.
@@ -124,6 +129,6 @@ Enable debugging output.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 10:54:41 GMT, April 21, 2013
+Time: 08:12:57 GMT, July 24, 2013
 </BODY>
 </HTML>

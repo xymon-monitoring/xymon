@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND_CHANNEL</TITLE>
 </HEAD><BODY>
 <H1>XYMOND_CHANNEL</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.11: 21 Apr 2013<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.12: 24 Jul 2013<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -81,6 +81,11 @@ Note that messages for &quot;logrotate&quot;, &quot;shutdown&quot;, &quot;dropho
 &quot;droptest&quot; and &quot;renametest&quot; are always forwarded by xymond_channel, whether
 they match the filter or not.
 <P>
+<DT>--msgtimeout=TIMEOUT<DD>
+Modify the default timeout (30 seconds) for the worker module to handle a message.
+If a message is not handled within this time, it is considered lost. You normally
+do not have to modify this unless you have an extremely busy server.
+<P>
 <DT>--daemon<DD>
 xymond_channel is normally started by 
 <I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
@@ -144,6 +149,6 @@ This program does not use any configuration files.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 10:54:41 GMT, April 21, 2013
+Time: 08:12:57 GMT, July 24, 2013
 </BODY>
 </HTML>

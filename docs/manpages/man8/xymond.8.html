@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND</TITLE>
 </HEAD><BODY>
 <H1>XYMOND</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.11: 21 Apr 2013<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.12: 24 Jul 2013<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -82,6 +82,10 @@ Unlike the standard bbd daemon, purple-handling is done by xymond.
 Specifies the IP-address and port where xymond will listen for incoming
 connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
 adresses available on the host) and port 1984.
+<P>
+<DT>--lqueue=NUMBER<DD>
+Specifies the listen-queue for incoming connections. You don't need to tune
+this unless you have a very busy xymond daemon.
 <P>
 <DT>--daemon<DD>
 xymond is normally started by 
@@ -384,6 +388,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 10:54:41 GMT, April 21, 2013
+Time: 08:12:57 GMT, July 24, 2013
 </BODY>
 </HTML>

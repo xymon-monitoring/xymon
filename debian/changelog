@@ -1,3 +1,21 @@
+xymon (4.3.12) unstable; urgency=high
+
+   * rev 7211
+   * Security fix: Guard against directory traversal via hostname in "drophost" commands.
+   * Fix crash in xymongen introduced in 4.3.11
+   * SCO client: Fix overflow in memory calculation when >2 GB memory
+   * Fix so "include" and "directory" definitions in configuration files now handle <tab> after the keyword
+   * Fix for the Xymon webpage menu on iPad's and Android (touch devices)
+   * Fix "drophost" handling so the host data directory is also cleared
+   * xymond_rrd now processes data from "clear" status messages
+   * Xymon clients now report the version number in the client data
+   * Linux clients now align "ps" output so it is more readable.
+   * New "generic" client message handler allows log/file monitoring from systems that are not known to Xymon.
+   * The Xymon client now works if invoked with a relative path to the runclient.sh script
+   * Other minor / internal bugfixes
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Wed, 24 Jul 2013 10:24:01 +0200
+
 xymon (4.3.11) unstable; urgency=low
 
    * rev 7188
@@ -19,7 +37,7 @@ xymon (4.3.11) unstable; urgency=low
    * Speedup loading of the hosts.cfg file, noticeable with very
      large hosts.cfg files (100.000+ hosts)
 
- -- Henrik Stoerner <henrik@hswn.dk>  Sun, 21 Apr 2013 15;24:01 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 21 Apr 2013 15:24:01 +0200
 
 xymon (4.3.10) unstable; urgency=low
 
