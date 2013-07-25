@@ -51,6 +51,8 @@ int localmode     = 0;
 int unknownclientosok = 0;
 int noreportcolor = COL_CLEAR;
 
+int usebackfeedqueue = 0;
+
 typedef struct updinfo_t {
 	char *hostname;
 	time_t updtime;
@@ -1158,7 +1160,9 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	freestrbuffer(monmsg);
 
-	if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
+	if (anycountdata) {
+		if (usebackfeedqueue) sendmessage_local(STRBUF(countdata)); else sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
+	}
 	clearstrbuffer(countdata);
 }
 
@@ -1515,7 +1519,9 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		clearstrbuffer(greendata);
 	}
 
-	if (anyszdata) sendmessage(STRBUF(sizedata), NULL, XYMON_TIMEOUT, NULL);
+	if (anyszdata) {
+		if (usebackfeedqueue) sendmessage_local(STRBUF(sizedata)); else sendmessage(STRBUF(sizedata), NULL, XYMON_TIMEOUT, NULL);
+	}
 	clearstrbuffer(sizedata);
 }
 
@@ -1557,7 +1563,9 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 	}
 
-	if (anydata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
+	if (anydata) {
+		if (usebackfeedqueue) sendmessage_local(STRBUF(countdata)); else sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
+	}
 	clearstrbuffer(countdata);
 }
 
@@ -1575,7 +1583,7 @@ void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, netstatstr);
-	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
+	if (usebackfeedqueue) sendmessage_local(STRBUF(msg)); else sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1593,7 +1601,7 @@ void unix_ifstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.ifstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, ifstatstr);
-	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
+	if (usebackfeedqueue) sendmessage_local(STRBUF(msg)); else sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1620,7 +1628,7 @@ void unix_vmstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, p+1);
-	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
+	if (usebackfeedqueue) sendmessage_local(STRBUF(msg)); else sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1747,7 +1755,9 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		clearstrbuffer(monmsg);
 	}
 
-	if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
+	if (anycountdata) {
+		if (usebackfeedqueue) sendmessage_local(STRBUF(countdata)); else sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
+	}
 	clearstrbuffer(countdata);
 }
 
@@ -2117,6 +2127,8 @@ int main(int argc, char *argv[])
 	updinfotree = xtreeNew(strcasecmp);
 	running = 1;
 
+	usebackfeedqueue = (sendmessage_init_local() > 0);
+
 	while (running) {
 		char *eoln, *restofmsg, *p;
 		char *metadata[MAX_META+1];
@@ -2185,7 +2197,7 @@ int main(int argc, char *argv[])
 			/* Check for duplicates */
 			if (add_updateinfo(hostname, seq, timestamp) != 0) continue;
 
-			combo_start();
+			if (usebackfeedqueue) combo_start_local(); else combo_start();
 			switch (os) {
                           case OS_FREEBSD:
                                 handle_freebsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
@@ -2291,6 +2303,8 @@ int main(int argc, char *argv[])
 			/* Unknown message - ignore it */
 		}
 	}
+
+	if (usebackfeedqueue) sendmessage_finish_local();
 
 	return 0;
 }
