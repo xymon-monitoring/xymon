@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 	else if (strncmp(STRBUF(msg), "ghostlist", 9) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "multisrclist", 12) == 0) wantresponse = 1;
 
-	usebackfeedqueue = (((strcmp(recipient, "0.0.0.0") == 0) || (strcmp(recipient, "0") == 0)) && !wantresponse);
+	usebackfeedqueue = ((strcmp(recipient, "0") == 0) && !wantresponse);
 
 	if (!usebackfeedqueue) {
 		sres = newsendreturnbuf(wantresponse, respfd);
