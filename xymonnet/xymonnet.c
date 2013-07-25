@@ -1985,6 +1985,7 @@ int main(int argc, char *argv[])
 	int runtimewarn;		/* 300 = default TASKSLEEP setting */
 	int servicedumponly = 0;
 	int pingrunning = 0;
+	int usebackfeedqueue = 0;
 
 	if (init_ldap_library() != 0) {
 		errprintf("Failed to initialize ldap library\n");
@@ -2292,6 +2293,8 @@ int main(int argc, char *argv[])
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 	add_timestamp("Service definitions loaded");
 
+	usebackfeedqueue = (sendmessage_init_local() > 0);
+
 	load_tests();
 	add_timestamp(use_ares_lookup ? "Tests loaded" : "Tests loaded, hostname lookups done");
 
@@ -2339,7 +2342,12 @@ int main(int argc, char *argv[])
 		finish_ping_service(pingtest); 
 		sprintf(msg, "PING test completed (%d hosts)", pingcount);
 		add_timestamp(msg);
-		combo_start();
+
+		if (usebackfeedqueue)
+			combo_start_local();
+		else
+			combo_start();
+
 		send_results(pingtest, failgoesclear);
 		if (selectedhosts == 0) save_ping_status();
 		combo_end();
@@ -2441,7 +2449,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	combo_start();
+	if (usebackfeedqueue)
+		combo_start_local();
+	else
+		combo_start();
+
 	for (handle = xtreeFirst(svctree); handle != xtreeEnd(svctree); handle = xtreeNext(svctree, handle)) {
 		s = (service_t *)xtreeData(svctree, handle);
 		switch (s->toolid) {
@@ -2464,13 +2476,14 @@ int main(int argc, char *argv[])
 	}
 	for (handle = xtreeFirst(testhosttree); (handle != xtreeEnd(testhosttree)); handle = xtreeNext(testhosttree, handle)) {
 		h = (testedhost_t *)xtreeData(testhosttree, handle);
-		send_http_results(httptest, h, h->firsthttp, nonetpage, failgoesclear);
+		send_http_results(httptest, h, h->firsthttp, nonetpage, failgoesclear, usebackfeedqueue);
 		send_content_results(httptest, h, nonetpage, contenttestname, failgoesclear);
 		send_ldap_results(ldaptest, h, nonetpage, failgoesclear);
 		if (ssltestname && !h->nosslcert) send_sslcert_status(h);
 	}
 
 	combo_end();
+
 	add_timestamp("Test results transmitted");
 
 	/*
@@ -2560,6 +2573,8 @@ int main(int argc, char *argv[])
 	else show_timestamps(NULL);
 
 	if (dnsfaillog) fclose(dnsfaillog);
+
+	if (usebackfeedqueue) sendmessage_finish_local();
 
 	return 0;
 }

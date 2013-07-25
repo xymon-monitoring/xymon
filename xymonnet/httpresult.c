@@ -102,7 +102,7 @@ static int statuscolor_by_set(testedhost_t *h, long status, char *okcodes, char 
 
 
 void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firsttest,
-		       char *nonetpage, int failgoesclear)
+		       char *nonetpage, int failgoesclear, int usebackfeedqueue)
 {
 	testitem_t *t;
 	int	color = -1;
@@ -380,7 +380,12 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		msg = (char *)malloc(1024 + strlen(host->hostname) + strlen(req->weburl.columnname) + strlen(data));
 		sprintf(msg, "data %s.%s\n%s", commafy(host->hostname), req->weburl.columnname, data);
-		sendmessage(msg, NULL, XYMON_TIMEOUT, NULL);
+		if (usebackfeedqueue) {
+			sendmessage_local(msg);
+		}
+		else {
+			sendmessage(msg, NULL, XYMON_TIMEOUT, NULL);
+		}
 		xfree(msg);
 	}
 
