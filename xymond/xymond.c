@@ -4757,7 +4757,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	time_t conn_timeout = 30;
 	char *envarea = NULL;
-	int create_backfeedqueue = 1;
+	int create_backfeedqueue = 0;
 
 	MEMDEFINE(colnames);
 
@@ -4967,6 +4967,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-download") == 0) {
 			 allow_downloads = 0;
+		}
+		else if (strcmp(argv[argi], "--bfq") == 0) {
+			 create_backfeedqueue = 1;
 		}
 		else if (strcmp(argv[argi], "--no-bfq") == 0) {
 			 create_backfeedqueue = 0;

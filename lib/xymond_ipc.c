@@ -176,10 +176,6 @@ int setup_feedback_queue(int role)
 	}
 
 	queueid = msgget(key, flags);
-	if (queueid == -1) {
-		errprintf("Could not create backfeed queue: %s\n", strerror(errno));
-		return -1;
-	}
 
 	return queueid;
 }
