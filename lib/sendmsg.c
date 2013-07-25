@@ -600,7 +600,6 @@ sendresult_t sendmessage_local(char *msg)
 	msglen_t msglen;
 
 	if (backfeedqueue == -1) {
-		errprintf("Backfeed channel not available, using TCP\n");
 		return sendmessage(msg, NULL, XYMON_TIMEOUT, NULL);
 	}
 
