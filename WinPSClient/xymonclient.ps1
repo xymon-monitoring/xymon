@@ -859,7 +859,20 @@ if($args[0] -eq "unset") {
 	return
 }
 if($args[0] -eq "config") {
+	"XymonPSClient config:"
 	Get-ItemProperty $XymonRegKey | select * -exclude PS* | fl
+	"Settable Params and values:"
+	foreach($param in $script:XymonSettings | gm -memberType NoteProperty) {
+		if($param.Name -notlike "PS*") {
+			$val = $script:XymonSettings.($param.Name)
+			if($val -is [Array]) {
+				$out = [string]::join(" ",$val)
+			} else {
+				$out = $val.ToString()
+			}
+			"    {0}={1}" -f $param.Name,$out
+		}
+	}
 	return
 }
 if($args -eq "Start") {
