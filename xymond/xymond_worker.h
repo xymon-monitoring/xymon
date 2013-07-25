@@ -13,7 +13,6 @@
 
 #include <sys/time.h>
 
-#include "xymond_ipc.h"
 typedef void (update_fn_t)(char *);
 
 extern int net_worker_option(char *arg);

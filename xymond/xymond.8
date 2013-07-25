@@ -69,6 +69,10 @@ adresses available on the host) and port 1984.
 Specifies the listen-queue for incoming connections. You don't need to tune
 this unless you have a very busy xymond daemon.
 
+.IP "--no-bfq"
+Tells xymond to NOT use the local messagequeue interface for receiving status-
+updates from xymond_client and xymonnet.
+
 .IP "--daemon"
 xymond is normally started by 
 .I xymonlaunch(8)

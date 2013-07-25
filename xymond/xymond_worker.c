@@ -39,7 +39,6 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-#include "xymond_ipc.h"
 #include "xymond_worker.h"
 
 #include <signal.h>

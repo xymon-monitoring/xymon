@@ -53,11 +53,9 @@ static char rcsid[] = "$Id$";
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/wait.h>
+#include <sys/msg.h>
 
 #include "libxymon.h"
-
-#include "xymond_buffer.h"
-#include "xymond_ipc.h"
 
 #define DISABLED_UNTIL_OK -1
 
@@ -227,6 +225,11 @@ xymond_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages 
 xymond_channel_t *clientchn = NULL;	/* Receives "client" messages */
 xymond_channel_t *clichgchn = NULL;	/* Receives "clichg" messages */
 xymond_channel_t *userchn   = NULL;	/* Receives "usermsg" messages */
+
+static int backfeedqueue = -1;
+static unsigned long backfeedcount = 0;
+static char *bf_buf = NULL;
+static int bf_bufsz = 0;
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
@@ -450,6 +453,8 @@ char *generate_stats(void)
 	addtobuffer(statsbuf, msgline);
 	clients = semctl(userchn->semid, CLIENTCOUNT, GETVAL);
 	sprintf(msgline, "user   channel messages: %10ld (%d readers)\n", userchn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
+	sprintf(msgline, "backfeed messages      : %10ld\n", backfeedcount);
 	addtobuffer(statsbuf, msgline);
 
 	ghandle = xtreeFirst(rbghosts);
@@ -901,6 +906,7 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
 
+		  case C_FEEDBACK_QUEUE:
 		  case C_LAST:
 			break;
 		}
@@ -4751,6 +4757,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	time_t conn_timeout = 30;
 	char *envarea = NULL;
+	int create_backfeedqueue = 1;
 
 	MEMDEFINE(colnames);
 
@@ -4961,6 +4968,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-download") == 0) {
 			 allow_downloads = 0;
 		}
+		else if (strcmp(argv[argi], "--no-bfq") == 0) {
+			 create_backfeedqueue = 0;
+		}
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
@@ -5108,6 +5118,12 @@ int main(int argc, char *argv[])
 	if (clichgchn == NULL) { errprintf("Cannot setup clichg channel\n"); return 1; }
 	userchn  = setup_channel(C_USER, CHAN_MASTER);
 	if (userchn == NULL) { errprintf("Cannot setup user channel\n"); return 1; }
+	if (create_backfeedqueue) {
+		backfeedqueue  = setup_feedback_queue(CHAN_MASTER);
+		if (backfeedqueue == -1) { errprintf("Cannot setup backfeed-client channel\n"); return 1; }
+		bf_bufsz = 1024*shbufsz(C_FEEDBACK_QUEUE);
+		bf_buf = (char *)malloc(bf_bufsz);
+	}
 
 	errprintf("Setting up logfiles\n");
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -5155,6 +5171,7 @@ int main(int argc, char *argv[])
 		conn_t *cwalk;
 		time_t now = getcurrenttime(NULL);
 		int childstat;
+		int backfeeddata;
 
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
@@ -5244,6 +5261,32 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		backfeeddata = (backfeedqueue > 0);
+		while (backfeeddata) {
+			int n;
+			ssize_t sz;
+			conn_t msg;
+
+			sz = msgrcv(backfeedqueue, bf_buf, bf_bufsz, 0, (IPC_NOWAIT | MSG_NOERROR));
+			backfeeddata = (sz > 0);
+
+			if (backfeeddata) {
+				backfeedcount++;
+
+				msg.buf = bf_buf;
+				msg.bufsz = msg.buflen = sz;
+				msg.bufp = msg.buf + msg.buflen;
+				msg.doingwhat = RECEIVING;
+				msg.timeout = now + 10;
+				msg.next = NULL;
+				msg.sock = -1;
+				inet_aton("0.0.0.0", (struct in_addr *) &msg.addr.sin_addr.s_addr);
+
+				do_message(&msg, "");
+				*bf_buf = '\0';
+			}
+		}
+
 		/*
 		 * Prepare for the network I/O.
 		 * Find the largest open socket we have, from our active sockets,
@@ -5271,7 +5314,7 @@ int main(int argc, char *argv[])
 		 * some time if there's nothing to do, but short enough for
 		 * us to attend to the housekeeping stuff without undue delay.
 		 */
-		seltmo.tv_sec = 2; seltmo.tv_usec = 0;
+		seltmo.tv_sec = 0; seltmo.tv_usec = 50000;
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &seltmo);
 		if (n <= 0) {
 			if ((errno == EINTR) || (n == 0)) {
@@ -5507,6 +5550,9 @@ int main(int argc, char *argv[])
 	close_channel(clientchn, CHAN_MASTER);
 	close_channel(clichgchn, CHAN_MASTER);
 	close_channel(userchn, CHAN_MASTER);
+
+	if (backfeedqueue > 0) close_feedback_queue(backfeedqueue, CHAN_MASTER);
+	if (bf_buf) xfree(bf_buf);
 
 	save_checkpoint();
 	unlink(pidfile);

@@ -35,6 +35,7 @@ unsigned int shbufsz(enum msgchannels_t chnid)
 		  case C_PAGE:   v = getenv("MAXMSG_PAGE");   defvalue = shbufsz(C_STATUS); break;
 		  case C_ENADIS: v = getenv("MAXMSG_ENADIS"); defvalue =  32; break;
 		  case C_USER:   v = getenv("MAXMSG_USER");   defvalue = 128; break;
+		  case C_FEEDBACK_QUEUE: v = getenv("MAXMSG_STATUS"); defvalue = 256; break;
 		  default: break;
 		}
 

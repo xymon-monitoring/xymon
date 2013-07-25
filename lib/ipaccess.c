@@ -76,6 +76,12 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 		}
 	}
 
+	/* If sender is 0.0.0.0 (i.e. it arrived via backfeed channel), then OK */
+	if (sender.s_addr == INADDR_ANY) {
+		dbgprintf("<- oksender(1-c)\n");
+		return 1;
+	}
+
 	/* It's someone else reporting about the host. Check the access list */
 	i = 0;
 	do {

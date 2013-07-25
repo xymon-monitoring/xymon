@@ -48,6 +48,11 @@ extern char *getsendreturnstr(sendreturn_t *s, int takeover);
 
 extern void combo_start(void);
 extern void combo_end(void);
+extern void combo_start_local(void);
+
+extern int sendmessage_init_local(void);
+extern void sendmessage_finish_local(void);
+extern sendresult_t sendmessage_local(char *msg);
 
 extern void init_status(int color);
 extern void addtostatus(char *p);
