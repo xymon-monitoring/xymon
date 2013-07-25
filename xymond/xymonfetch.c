@@ -61,7 +61,7 @@ typedef struct clients_t {
 } clients_t;
 void * clients;
 
-typedef enum { C_CLIENT, C_SERVER } conntype_t;
+typedef enum { C_CONN_CLIENT, C_CONN_SERVER } conntype_t;
 typedef struct conn_t {
 	unsigned long seq;
 	conntype_t ctype;		/* Talking to a client or a server? */
@@ -134,7 +134,7 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 	newconn->msgbuf = req;
 	newconn->sentbytes = 0;
 	newconn->ctype = ctype;
-	newconn->savedata = ((ctype == C_SERVER) && (strncmp(STRBUF(req), "client ", 7) == 0));
+	newconn->savedata = ((ctype == C_CONN_SERVER) && (strncmp(STRBUF(req), "client ", 7) == 0));
 	newconn->action = C_WRITING;
 	newconn->tstamp = gettimer();
 
@@ -235,7 +235,7 @@ void process_clientdata(conn_t *conn)
 	 * Handle data we received while talking to the Xymon client.
 	 * This will be a list of messages we must send to the server.
 	 * Each of the messages are pushed to the server through
-	 * new C_SERVER requests.
+	 * new C_CONN_SERVER requests.
 	 */
 
 	char *mptr, *databegin, *msgbegin;
@@ -304,7 +304,7 @@ void process_clientdata(conn_t *conn)
 				addtobuffer(req, sourcemsg);
 			}
 
-			addrequest(C_SERVER, serverip, portnum, req, conn->client);
+			addrequest(C_CONN_SERVER, serverip, portnum, req, conn->client);
 
 			*(msgbegin + msgbytes) = savech;
 
@@ -374,11 +374,11 @@ void grabdata(conn_t *conn)
 		flag_cleanup(conn);
 
 		switch (conn->ctype) {
-		  case C_CLIENT:
+		  case C_CONN_CLIENT:
 			process_clientdata(conn);
 			break;
 
-		  case C_SERVER:
+		  case C_CONN_SERVER:
 			process_serverdata(conn);
 			break;
 		}
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
 				}
 
 				if (connwalk->action == C_CLEANUP) {
-					if (connwalk->ctype == C_CLIENT) {
+					if (connwalk->ctype == C_CONN_CLIENT) {
 						/* 
 						 * Finished getting data from a client, 
 						 * flag idle and set next poll time.
@@ -539,7 +539,7 @@ int main(int argc, char *argv[])
 						connwalk->client->busy = 0;
 						set_polltime(connwalk->client);
 					}
-					else if (connwalk->ctype == C_SERVER) {
+					else if (connwalk->ctype == C_CONN_SERVER) {
 						/* Nothing needed for server cleanups */
 					}
 				}
@@ -578,8 +578,8 @@ int main(int argc, char *argv[])
 				char timestr[30];
 
 				switch (connwalk->ctype) {
-				  case C_CLIENT: ctypestr = "client"; break;
-				  case C_SERVER: ctypestr = "server"; break;
+				  case C_CONN_CLIENT: ctypestr = "client"; break;
+				  case C_CONN_SERVER: ctypestr = "server"; break;
 				}
 
 				switch (connwalk->action) {
@@ -664,7 +664,7 @@ int main(int argc, char *argv[])
 				if (clientwalk->clientdata) addtobuffer(request, clientwalk->clientdata);
 
 				/* Put the request on the connection queue */
-				addrequest(C_CLIENT, ip, port, request, clientwalk);
+				addrequest(C_CONN_CLIENT, ip, port, request, clientwalk);
 				clientwalk->busy = 1;
 
 				xfree(ip);
