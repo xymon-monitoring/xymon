@@ -1,0 +1,96 @@
+Enabling the "backfeed" channel on the Xymon server
+===================================================
+
+Background
+----------
+Traditionally, all communication between modules on the
+Xymon server uses a TCP connection to xymond. This is a
+simple standardized way of talking to the daemon, e.g. to
+send status updates from xymond_client or xymonnet into
+the xymond daemon.
+
+However, a TCP connection also carries quite a bit of overhead.
+On a server with a very high load of messages this can be a
+problem - empirical evidence shows that the limit appears to
+be around 3300 messages/second.
+
+
+Solution
+--------
+To solve this, an alternative interface has been implemented
+using the standard SysV IPC "message queue" interface. This
+is a POSIX standard, and other parts of SysV IPC is already
+used by Xymon.
+
+
+Operating system configuration
+------------------------------
+Unfortunately, most systems have default settings for the
+message queue parameters MSGMNB (total # of bytes allowed in 
+the queue) and MSGMAX (maximum size of a single mssage) settings.
+E.g. on Linux, defaults for these are 16 kB and 8 Kb, respectively.
+Since Xymon by default permits status messages of up to 256 kB
+in size, these settings are inadequate.
+
+On Linux, you change the settings via the "sysctl" utility. Most
+Linux systems have these settings defined in /etc/sysctl.conf, so
+you add these parameters:
+	kernel.msgmax=262144
+	kernel.msgmnb=1048576
+The "msgmax" setting should match your MAXMSG_STATUS setting in
+xymonserver.cfg, converted to bytes (MAXMSG_STATUS is in kB, so
+you must multiply it by 1024 for the kernel.msgmax value).
+"msgmnb" should be 4 times the msgmax setting. After setting these,
+either run "sysctl -f /etc/sysctl.conf" or reboot the server
+to enable the new settings.
+
+For other systems, please refer to your OS documentation.
+
+
+Enabling the backfeed queue
+---------------------------
+The backfeed queue is disabled by default. To enable it, add the
+"--bfq" option to xymond (in your tasks.cfg) and restart Xymon.
+You can verify that this has been enabled by checking the output
+from "ipcs -q" - you should see a line with a message queue owned
+by the Xymon userid:
+
+   ------ Message Queues -------- 
+   key        msqid      owner      perms      used-bytes   messages 
+   0x0a01205e 98305      xymon      666        0            0
+
+
+Using the backfeed queue
+------------------------
+xymond_client and xymonnet will automatically use the backfeed queue,
+if available.
+
+If you have custom scripts or tools running on the Xymon server, then
+you can send messages into the queue using the standard "xymon" utility.
+To do so, set the recipient to "0". E.g.
+
+   xymon 0 "status localhost.test green"
+
+will send a status update via the backfeed queue.
+
+NOTE: The backfeed queue is "one-way", so it can only be used for "status",
+"data", "drop" and "rename" messages - i.e., any message where xymond does
+not return a response.
+
+
+Checking if the queue is used
+-----------------------------
+The "xymond" status page includes statistics on the kinds of messages
+received by xymond. If the backfeed queue is used, you should see
+the number reported in the "backfeed messages" line increase.
+
+You can also query xymond for "senderstats": This lists the number of
+connections to xymond from each IP-address. The backfeed queue shows up
+as IP "0.0.0.0":
+
+$ xymon 127.0.0.1 "senderstats"
+0.0.0.0 1360796
+127.0.0.1 1648
+10.0.31.155 1397281
+
+
