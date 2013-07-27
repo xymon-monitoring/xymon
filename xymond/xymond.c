@@ -3127,7 +3127,7 @@ void do_message(conn_t *msg, char *origin)
 				  case COL_CLIENT:
 					/* Pseudo color, allows us to send "client" data from a standard BB utility */
 					/* In HOSTNAME.TESTNAME, the TESTNAME is used as the collector-ID */
-					handle_client(currmsg, sender, h->hostname, t->name, "", NULL);
+					if (h) handle_client(currmsg, sender, h->hostname, (t ? t->name : ""), "", NULL);
 					break;
 
 				  default:
