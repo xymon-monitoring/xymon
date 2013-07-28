@@ -689,7 +689,7 @@ tcpconn_t *conn_accept(tcpconn_t *ls)
 	newconn->sock = accept(ls->sock, newconn->peer, &sin_len);
 	if (newconn->sock == -1) {
 		conn_cleanup(newconn);
-		conn_info(funcid, INFO_WARN, "accept failed (%s)\n", strerror(errno));
+		if ((errno != EAGAIN) && (errno != EINTR)) conn_info(funcid, INFO_WARN, "accept failed (%d: %s)\n", errno, strerror(errno));
 		return NULL;
 	}
 
