@@ -141,7 +141,7 @@ static void result_subqueue(char *id, myconn_t *rec,  strbuffer_t *txt)
 	}
 }
 
-void send_test_results(listhead_t *head, char *collector, int issubmodule, char *location)
+void send_test_results(listhead_t *head, char *collector, int issubmodule, char *location, int usebackfeed)
 {
 	char msgline[4096];
 	listitem_t *walk;
@@ -301,7 +301,7 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 	for (handle = xtreeFirst(hostresults); handle != xtreeEnd(hostresults); handle = xtreeNext(hostresults, handle)) {
 		hostresult_t *hres = xtreeData(hostresults, handle);
 
-		sendmessage(STRBUF(hres->txt), NULL, XYMON_TIMEOUT, NULL);
+		if (usebackfeed) sendmessage_local(STRBUF(hres->txt)); else sendmessage(STRBUF(hres->txt), NULL, XYMON_TIMEOUT, NULL);
 		freestrbuffer(hres->txt);
 		xtreeDelete(hostresults, xmh_item(hres->hinfo, XMH_HOSTNAME));
 		xfree(hres);

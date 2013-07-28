@@ -32,7 +32,7 @@ int concurrency = 0;
 int defaulttimeout = DEF_TIMEOUT;
 char *defaultsourceip4 = NULL, *defaultsourceip6 = NULL;
 int pingenabled = 1;
-
+int usebackfeedqueue = 0;
 
 void sig_handler(int signum)
 {
@@ -56,7 +56,7 @@ int run_tests(void)
 	if (count > 0) {
 		resulthead = run_net_tests(concurrency, defaultsourceip4, defaultsourceip6);
 		count = resulthead->len;
-		send_test_results(resulthead, programname, 0, location);
+		send_test_results(resulthead, programname, 0, location, usebackfeedqueue);
 		cleanup_myconn_list(resulthead);
 	}
 
@@ -136,6 +136,7 @@ int main(int argc, char **argv)
 	}
 
 	init_tcp_testmodule();
+	usebackfeedqueue = (sendmessage_init_local() > 0);
 
 	/* See what network we'll test */
 	location = xgetenv("XYMONNETWORK");
@@ -169,6 +170,7 @@ int main(int argc, char **argv)
 		}
 	} while (running);
 
+	if (usebackfeedqueue) sendmessage_finish_local();
 	conn_deinit();
 	xymon_sqldb_shutdown();
 

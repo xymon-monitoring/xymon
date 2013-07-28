@@ -652,6 +652,7 @@ int main(int argc, char **argv)
 	char *location = NULL;
 	int concurrency = 0;
 	int batchsize = 0;
+	int usebackfeedqueue = 0;
 
 	libxymon_init(argv[0]);
 
@@ -724,6 +725,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	usebackfeedqueue = (sendmessage_init_local() > 0);
+
 	/* See what network we'll test */
 	location = xgetenv("XYMONNETWORK");
 	if (strlen(location) == 0) location = NULL;
@@ -770,7 +773,7 @@ int main(int argc, char **argv)
 
 		if (donetests->len > 0) {
 			dbgprintf("Sending results\n");
-			send_test_results(donetests, programname, 1, location);
+			send_test_results(donetests, programname, 1, location, usebackfeedqueue);
 
 			if (iptree) {
 				/* Zap IP's from the iptree */
@@ -794,6 +797,8 @@ int main(int argc, char **argv)
 
 		if (anyaction == 0) sleep(10);
 	}
+
+	if (usebackfeedqueue) sendmessage_finish_local();
 
 	return 0;
 }
