@@ -23,6 +23,8 @@ static char netcollect_rcsid[] = "$Id: snmpcollect.c 6712 2011-07-31 21:01:52Z s
 #include "xymond_worker.h"
 #include "sections.h"
 
+#define MINIMUM_UPDATE_INTERVAL 10
+
 typedef struct connectresult_t {
 	char *testspec;
 	enum { NETCOLLECT_UNKNOWN, NETCOLLECT_OK, NETCOLLECT_FAILED, NETCOLLECT_TIMEOUT, NETCOLLECT_RESOLVERROR, NETCOLLECT_SSLERROR, NETCOLLECT_BADDATA } status;
@@ -44,6 +46,9 @@ typedef struct hostresults_t {
 } hostresults_t;
 
 static void *hostresults = NULL; /* Tree of hostresults_t records, keyed by hostname. So a tree of trees. */
+static int anychanges = 0;
+static time_t lastupdatesent = 0;
+
 
 static char *sizedstr(char *sbegin, char *eoln)
 {
@@ -279,7 +284,7 @@ int decide_color(connectresult_t *crec, int ispingtest, int noping, int pingisdo
 }
 
 
-void netcollect_generate_updates(void)
+void netcollect_generate_updates(int usebackfeedqueue)
 {
 	void *hwalk;
 	char *pingcolumn;
@@ -291,8 +296,8 @@ void netcollect_generate_updates(void)
 	if (xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) failgoesclear = (strcmp(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
 	if (xgetenv("NETFAILTEXT")) failtext = xgetenv("NETFAILTEXT");
 
-	combo_start();
 	init_timestamp();
+	if (usebackfeedqueue) combo_start_local(); else combo_start();
 
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
 		xtreePos_t handle;
@@ -399,7 +404,7 @@ void netcollect_generate_updates(void)
 				sprintf(msgline, "data %s.%s\n", xmh_item(hwalk, XMH_HOSTNAME), "apache");
 				addtobuffer(datamsg, msgline);
 				addtobuffer(datamsg, crec->httpbody);
-				sendmessage(STRBUF(datamsg), NULL, XYMON_TIMEOUT, NULL);
+				if (usebackfeedqueue) sendmessage_local(STRBUF(datamsg)); else sendmessage(STRBUF(datamsg), NULL, XYMON_TIMEOUT, NULL);
 				freestrbuffer(datamsg);
 				crec->sent = 1;
 			}
@@ -485,6 +490,9 @@ void netcollect_generate_updates(void)
 	}
 
 	combo_end();
+
+	anychanges = 0;
+	lastupdatesent = gettimer();
 }
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
@@ -495,9 +503,9 @@ int main(int argc, char *argv[])
 	char *msg;
 	int running;
 	int argi, seq;
-	struct timespec timeout = { 10, 0 };
+	struct timespec timeout;
 	time_t nextconfigload = 0;
-	int anychanges = 0;
+	int usebackfeedqueue = 0;
 
 	libxymon_init(argv[0]);
 
@@ -508,6 +516,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	usebackfeedqueue = (sendmessage_init_local() > 0);
 	save_errbuf = 0;
 
 	running = 1;
@@ -521,6 +530,7 @@ int main(int argc, char *argv[])
 			nextconfigload = gettimer() + 600;
 		}
 
+		timeout.tv_sec = MINIMUM_UPDATE_INTERVAL; timeout.tv_nsec = 0;
 		msg = get_xymond_message(C_LAST, argv[0], &seq, &timeout);
 		if (msg == NULL) {
 			running = 0;
@@ -586,8 +596,7 @@ int main(int argc, char *argv[])
 		 */
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
 			if (anychanges) {
-				netcollect_generate_updates();
-				anychanges = 0;
+				netcollect_generate_updates(usebackfeedqueue);
 			}
 		}
 
@@ -624,7 +633,7 @@ int main(int argc, char *argv[])
 			dbgprintf("Client report from host %s\n", (hostname ? hostname : "<unknown>"));
 
 			/* Check if we are running a collector module for this type of client */
-			if (!collectorid || (strcmp(collectorid, "xymonnet2") != 0)) continue;
+			if (!collectorid || ((strcmp(collectorid, "xymonnet2") != 0) && (strcmp(collectorid, "netmodule") != 0))) continue;
 
 			hinfo = hostinfo(hostname); if (!hinfo) continue;
 			os = get_ostype(clientos);
@@ -634,10 +643,15 @@ int main(int argc, char *argv[])
 
 			handle_netcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 			anychanges = 1;
+
+			if ((lastupdatesent + MINIMUM_UPDATE_INTERVAL) < gettimer()) {
+				netcollect_generate_updates(usebackfeedqueue);
+			}
 		}
 	}
 
-	if (debug) netcollect_generate_updates();
+	if (debug) netcollect_generate_updates(usebackfeedqueue);
+	if (usebackfeedqueue) sendmessage_finish_local();
 
 	return 0;
 }
