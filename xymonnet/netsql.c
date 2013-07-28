@@ -88,7 +88,7 @@ int xymon_sqldb_init(void)
 				return 1;
 			}
 
-			dbres = sqlite3_exec(xymonsqldb, "CREATE TABLE moduletests (moduleid varchar(30), location varchar(50), hostname varchar(200), destinationip varchar(40), testspec varchar(400), extras varchar(100))", NULL, NULL, &err);
+			dbres = sqlite3_exec(xymonsqldb, "CREATE TABLE moduletests (moduleid varchar(30), location varchar(50), hostname varchar(200), destinationip varchar(40), testspec varchar(400), extras varchar(100), intervalms int, timeoutms int)", NULL, NULL, &err);
 			if (dbres != SQLITE_OK) {
 				errprintf("Cannot create moduletests table: %s\n", sqlfn, (err ? err : sqlite3_errmsg(xymonsqldb)));
 				if (err) sqlite3_free(err);
@@ -482,12 +482,12 @@ void xymon_sqldb_sanitycheck(void)
 	}
 }
 
-void xymon_sqldb_netmodule_additem(char *moduleid, char *location, char *hostname, char *destinationip, char *testspec, char *extras)
+void xymon_sqldb_netmodule_additem(char *moduleid, char *location, char *hostname, char *destinationip, char *testspec, char *extras, int intervalms, int timeoutms)
 {
 	int dbres;
 
 	if (!netmodule_additem_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into moduletests(moduleid,location,hostname,destinationip,testspec,extras) values (LOWER(?),LOWER(?),LOWER(?),?,?,?)", -1, &netmodule_additem_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "insert into moduletests(moduleid,location,hostname,destinationip,testspec,extras,intervalms,timeoutms) values (LOWER(?),LOWER(?),LOWER(?),?,?,?,?,?)", -1, &netmodule_additem_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("nettest_netmodule_additem prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return;
@@ -500,13 +500,15 @@ void xymon_sqldb_netmodule_additem(char *moduleid, char *location, char *hostnam
 	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_additem_sql, 4, destinationip, -1, SQLITE_STATIC);
 	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_additem_sql, 5, testspec, -1, SQLITE_STATIC);
 	if (dbres == SQLITE_OK) dbres = sqlite3_bind_text(netmodule_additem_sql, 6, (extras ? extras : ""), -1, SQLITE_STATIC);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(netmodule_additem_sql, 7, intervalms);
+	if (dbres == SQLITE_OK) dbres = sqlite3_bind_int(netmodule_additem_sql, 8, timeoutms);
 	if (dbres == SQLITE_OK) dbres = sqlite3_step(netmodule_additem_sql);
 	if (dbres != SQLITE_DONE) errprintf("Error adding nettest-module record for %s/%s/%s: %s\n", moduleid, hostname, testspec, sqlite3_errmsg(xymonsqldb));
 
 	sqlite3_reset(netmodule_additem_sql);
 }
 
-int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, char **testspec, char **destination, char **extras, int batchsize)
+int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, char **testspec, char **destination, char **extras, int *intervalms, int *timeoutms, int batchsize)
 {
 	/* Search testtimes for tests that are due to run in a module. Return one row per invocation */
 
@@ -514,7 +516,7 @@ int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, cha
 	int dbres, result = 0;
 
 	if (!netmodule_due_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,destinationip,testspec,extras from moduletests where moduleid=LOWER(?) and location=LOWER(?) limit ?", -1, &netmodule_due_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,destinationip,testspec,extras,intervalms,timeoutms from moduletests where moduleid=LOWER(?) and location=LOWER(?) limit ?", -1, &netmodule_due_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("netmodule_due prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 0;
@@ -544,6 +546,8 @@ int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, cha
 		*destination = sqlite3_column_text(netmodule_due_sql, 1);
 		*testspec = sqlite3_column_text(netmodule_due_sql, 2);
 		*extras = sqlite3_column_text(netmodule_due_sql, 3);
+		*intervalms = sqlite3_column_int(netmodule_due_sql, 4);
+		*timeoutms = sqlite3_column_int(netmodule_due_sql, 5);
 		result = 1;
 
 		/* Purge the record */

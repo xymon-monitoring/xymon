@@ -36,7 +36,7 @@ static void add_to_sub_queue(myconn_t *rec, char *moduleid, char *location, ...)
 	}
 	va_end(extraparams);
 
-	xymon_sqldb_netmodule_additem(moduleid, location, xmh_item(rec->hostinfo, XMH_HOSTNAME), rec->netparams.destinationip, rec->testspec, STRBUF(extrastr));
+	xymon_sqldb_netmodule_additem(moduleid, location, xmh_item(rec->hostinfo, XMH_HOSTNAME), rec->netparams.destinationip, rec->testspec, STRBUF(extrastr), rec->interval*1000, rec->timeout*1000);
 	freestrbuffer(extrastr);
 }
 

@@ -258,6 +258,7 @@ static int scan_queue(char *id, int talkproto, int batchsize)
 {
 	char basefn[PATH_MAX];
 	char *location, *hname, *ip, *testspec, *extras;
+	int intervalms, timeoutms;
 	int count = 0;
 
 	/* See what network we'll test */
@@ -268,7 +269,7 @@ static int scan_queue(char *id, int talkproto, int batchsize)
 
 	sprintf(basefn, "%s/moduledata-%s-%d-%s", xgetenv("XYMONTMP"), id, talkproto, (location ? location : ""));
 
-	while (xymon_sqldb_netmodule_row(id, location, &hname, &testspec, &ip, &extras, batchsize)) {
+	while (xymon_sqldb_netmodule_row(id, location, &hname, &testspec, &ip, &extras, &intervalms, &timeoutms, batchsize)) {
 		void *hinfo;
 		int ipfamily = 0;
 
@@ -293,6 +294,8 @@ static int scan_queue(char *id, int talkproto, int batchsize)
 			testrec->talkprotocol = talkproto;
 			testrec->hostinfo = hinfo;
 			testrec->netparams.destinationip = strdup(ip);
+			testrec->interval = (intervalms / 1000);
+			testrec->timeout = (timeoutms / 1000);
 
 			switch (talkproto) {
 			  case TALK_PROTO_PING:

@@ -29,8 +29,8 @@ extern void xymon_sqldb_nettest_done(char *hostname, char *testspec, char *desti
 extern void xymon_sqldb_sanitycheck(void);
 extern int xymon_sqldb_secs_to_next_test(void);
 
-extern void xymon_sqldb_netmodule_additem(char *moduleid, char *location, char *hostname, char *destinationip, char *testspec, char *extras);
-extern int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, char **testspec, char **destination, char **extras, int batchsize);
+extern void xymon_sqldb_netmodule_additem(char *moduleid, char *location, char *hostname, char *destinationip, char *testspec, char *extras, int intervalms, int timeoutms);
+extern int xymon_sqldb_netmodule_row(char *module, char *location, char **hostname, char **testspec, char **destination, char **extras, int *intervalms, int *timeoutms, int batchsize);
 
 #endif
 

@@ -286,6 +286,7 @@ int decide_color(connectresult_t *crec, int ispingtest, int noping, int pingisdo
 
 void netcollect_generate_updates(int usebackfeedqueue)
 {
+	static char *pingtag = "ping";
 	void *hwalk;
 	char *pingcolumn;
 	int failgoesclear = 1;
@@ -309,7 +310,7 @@ void netcollect_generate_updates(int usebackfeedqueue)
 
 		hrec = xtreeData(hostresults, handle);
 
-		for (tag = xmh_item_walk(hwalk); (tag); tag = xmh_item_walk(NULL)) {
+		for (tag = pingtag; (tag); tag = ((tag == pingtag) ? xmh_item_walk(hwalk) : xmh_item_walk(NULL))) {
 			connectresult_t *crec;
 			char *testspec;
 			int isdialup, isreverse, isforced;
