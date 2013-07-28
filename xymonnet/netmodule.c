@@ -389,7 +389,7 @@ static int collect_ping_results(void)
 	/* Wait for one of the childs to finish */
 	pid = waitpid(-1, &status, WNOHANG);
 	if (pid == -1) {
-		errprintf("waitpid failed: %s\n", strerror(errno));
+		if (errno != ECHILD) errprintf("waitpid failed: %s\n", strerror(errno));
 		return 0;
 	}
 	else if (pid == 0) {
