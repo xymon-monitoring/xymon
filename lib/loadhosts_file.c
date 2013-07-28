@@ -90,7 +90,9 @@ static int prepare_fromnet(void)
 	sendreturn_t *sres;
 	sendresult_t sendstat;
 	char *fdata, *fhash;
+	int ods = dontsendmessages;
 
+	dontsendmessages = 0;
 	sres = newsendreturnbuf(1, NULL);
 	sendstat = sendmessage("config hosts.cfg", NULL, XYMON_TIMEOUT, sres);
 	if (sendstat != XYMONSEND_OK) {
@@ -98,6 +100,7 @@ static int prepare_fromnet(void)
 		errprintf("Cannot load hosts.cfg from xymond, code %d\n", sendstat);
 		return -1;
 	}
+	dontsendmessages = ods;
 
 	fdata = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
@@ -125,8 +128,8 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 {
 	/* Return value: 0 for load OK, 1 for "No files changed since last load", -1 for error (file not found) */
 	int prepresult;
-	int ip1, ip2, ip3, ip4, groupid, pageidx;
-	char hostname[4096], *dgname;
+	int groupid, pageidx;
+	char *hostname, *dgname;
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	void * htree;
 	char *cfgdata, *inbol, *ineol, insavchar = '\0';
@@ -159,8 +162,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 		return 1;
 	}
 
-	MEMDEFINE(hostname);
-	MEMDEFINE(l);
+	dbgprintf("Parsing host data\n");
 
 	configloaded = 1;
 	initialize_hostlist();
@@ -180,6 +182,8 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			insavchar = *ineol;
 			*ineol = '\0';
 		}
+
+		dbgprintf("Got line: %s\n", inbol);
 
 		/* Strip out initial "v" for vpage/vsubpage/vsubparent -- we don't care about the difference here */
 		if ((strncmp(inbol, "vpage", 5) == 0) || (strncmp(inbol, "vsubpage", 8) == 0) || (strncmp(inbol, "vsubparent", 10) == 0)) inbol++;
@@ -293,41 +297,46 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				}
 			}
 		}
-		else if (sscanf(inbol, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		else {
+			char *eoip, eoipchar;
+			char *eohostname, eohostnamechar;
 			char *startoftags, *tag, *delim;
 			int elemidx, elemsize;
 			char groupidstr[10];
 			xtreePos_t handle;
 			namelist_t *newitem;
 
-			if ( (ip1 < 0) || (ip1 > 255) ||
-			     (ip2 < 0) || (ip2 > 255) ||
-			     (ip3 < 0) || (ip3 > 255) ||
-			     (ip4 < 0) || (ip4 > 255)) {
-				errprintf("Invalid IPv4-address for host %s (nibble outside 0-255 range): %d.%d.%d.%d\n",
-					  hostname, ip1, ip2, ip3, ip4);
-				goto nextline;
-			}
+			eoip = inbol + strcspn(inbol, " \t");
+			eoipchar = *eoip;
+			*eoip = '\0';
 
+			if (conn_is_ip(inbol) == 0) goto nextline;
 			newitem = calloc(1, sizeof(namelist_t));
+			newitem->ip = strdup(inbol);
+			*eoip = eoipchar;
+			if (conn_null_ip(newitem->ip)) newitem->preference = 1; else newitem->preference = 0;
 
+			hostname = eoip + strspn(eoip, " \t");
+			eohostname = hostname + strcspn(hostname, " \t\r\n");
+			eohostnamechar = *eohostname;
+			*eohostname = '\0';
 			/* Hostname beginning with '@' are "no-display" hosts. But we still want them. */
 			if (*hostname == '@') memmove(hostname, hostname+1, strlen(hostname));
-
 			if (!fqdn) {
 				/* Strip any domain from the hostname */
 				char *p = strchr(hostname, '.');
 				if (p) *p = '\0';
 			}
+			newitem->hostname = strdup(hostname);
+			*eohostname = eohostnamechar;
 
-			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+			dbgprintf("Host: %s, IP: %s\n", newitem->hostname, newitem->ip);
+
 			sprintf(groupidstr, "%d", groupid);
 			newitem->groupid = strdup(groupidstr);
 			newitem->dgname = (dgname ? strdup(dgname) : strdup("NONE"));
 			newitem->pageindex = pageidx++;
 
-			newitem->hostname = strdup(hostname);
-			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
 			newitem->logname = strdup(newitem->hostname);
 			{ char *p = newitem->logname; while ((p = strchr(p, '.')) != NULL) { *p = '_'; } }
 			newitem->page = curpage;
