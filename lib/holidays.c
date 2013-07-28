@@ -672,10 +672,16 @@ int main(int argc, char *argv[])
 			}
 		}
 		else {
-			int year = atoi(hset);
+			char *set_tok, *y_tok;
+			int year;
+
+			set_tok = strtok(hset, " ");
+			y_tok = strtok(NULL, " ");
+			year = atoi(y_tok);
+
 			load_holidays(year);
-			printholidays(hset, sbuf);
-			printf("Holidays in set: %s\n", STRBUF(sbuf));
+			printholidays(set_tok, sbuf, 0, 11);
+			printf("Holidays year %d in set: %s\n", year, STRBUF(sbuf));
 			clearstrbuffer(sbuf);
 		}
 	} while (1);
