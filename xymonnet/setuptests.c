@@ -79,10 +79,10 @@ int read_tests_from_hostscfg(int defaulttimeout)
 	void *hwalk;
 	int count = 0;
 
-	if (load_hostnames("@", NULL, get_fqdn()) != 0) {
+	if (load_hostnames("@", NULL, get_fqdn()) < 0) {
 		errprintf("Cannot load host configuration from xymond\n");
 
-		if (load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn()) != 0) {
+		if (load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn()) < 0) {
 			errprintf("Cannot load host configuration from %s\n", xgetenv("HOSTSCFG"));
 			return 1;
 		}
