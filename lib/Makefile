@@ -3,14 +3,14 @@
 
 XYMONLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o compression.o crondate.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o lists.o xymonrrd.o holidays.o htmllog.o ipaccess.o loadalerts.o loadcriticalconf.o links.o matching.o md5.o memory.o misc.o msort.o multicolumn.o netservices.o notifylog.o readmib.o reportlog.o rmd160c.o sha1.o sha2.o sig.o stackio.o stdopt.o strfunc.o suid.o timefunc.o tree.o url.o webaccess.o
 
-XYMONCOMMLIBOBJS = $(XYMONLIBOBJS) loadhosts.o locator.o sendmsg.o tcplib.o
+XYMONCOMMLIBOBJS = $(XYMONLIBOBJS) loadhosts.o locator.o sendmsg.o tcplib.o xymond_ipc.o xymond_buffer.o
 XYMONTIMELIBOBJS = run.o timing.o
 
 CLIENTLIBOBJS = osdefs.o cgiurls.o color-client.o compression.o crondate.o digest.o encoding.o environ-client.o errormsg.o holidays.o ipaccess.o md5.o memory.o misc.o msort.o rmd160c.o sha1.o sha2.o sig.o stackio.o stdopt.o strfunc.o suid.o timefunc-client.o tree.o
 ifeq ($(LOCALCLIENT),yes)
 	CLIENTLIBOBJS += matching.o
 endif
-XYMONCLIENTCOMMLIBOBJS = loadhosts.o sendmsg.o tcplib.o
+XYMONCLIENTCOMMLIBOBJS = loadhosts.o sendmsg.o tcplib.o xymond_ipc.o xymond_buffer.o
 
 XYMONCLIENTLIB = libxymonclient.a
 XYMONCLIENTLIBS = $(XYMONCLIENTLIB)

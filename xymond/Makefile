@@ -12,19 +12,19 @@ ifeq ($(DORRD),yes)
 	PROGRAMS += xymond_rrd
 endif
 
-XYMONDOBJS    = xymond.o xymond_buffer.o xymond_ipc.o
-CHANNELOBJS   = xymond_channel.o xymond_buffer.o xymond_ipc.o
+XYMONDOBJS    = xymond.o
+CHANNELOBJS   = xymond_channel.o
 LOCATOROBJS   = xymond_locator.o
-SAMPLEOBJS    = xymond_sample.o    xymond_worker.o xymond_buffer.o
-FILESTOREOBJS = xymond_filestore.o xymond_worker.o xymond_buffer.o
-HISTORYOBJS   = xymond_history.o   xymond_worker.o xymond_buffer.o
-ALERTOBJS     = xymond_alert.o     xymond_worker.o xymond_buffer.o do_alert.o
-RRDOBJS       = xymond_rrd.o       xymond_worker.o xymond_buffer.o do_rrd.o client_config.o
-HOSTDATAOBJS  = xymond_hostdata.o  xymond_worker.o xymond_buffer.o
-CAPTUREOBJS   = xymond_capture.o   xymond_worker.o xymond_buffer.o
-CLIENTOBJS    = xymond_client.o    xymond_worker.o xymond_buffer.o sections.o client_config.o
-NETCOLLOBJS   = xymond_netcollect.o xymond_worker.o xymond_buffer.o sections.o
-DISTRIBUTEOBJS= xymond_distribute.o xymond_worker.o xymond_buffer.o
+SAMPLEOBJS    = xymond_sample.o    xymond_worker.o
+FILESTOREOBJS = xymond_filestore.o xymond_worker.o
+HISTORYOBJS   = xymond_history.o   xymond_worker.o
+ALERTOBJS     = xymond_alert.o     xymond_worker.o do_alert.o
+RRDOBJS       = xymond_rrd.o       xymond_worker.o do_rrd.o client_config.o
+HOSTDATAOBJS  = xymond_hostdata.o  xymond_worker.o
+CAPTUREOBJS   = xymond_capture.o   xymond_worker.o
+CLIENTOBJS    = xymond_client.o    xymond_worker.o sections.o client_config.o
+NETCOLLOBJS   = xymond_netcollect.o xymond_worker.o sections.o
+DISTRIBUTEOBJS= xymond_distribute.o xymond_worker.o
 COMBOTESTOBJS = combostatus.o
 MAILACKOBJS   = xymon-mailack.o
 TRIMHISTOBJS  = trimhistory.o

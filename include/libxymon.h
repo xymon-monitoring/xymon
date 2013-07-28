@@ -106,6 +106,8 @@ typedef struct strbuffer_t {
 #include "../lib/tree.h"
 #include "../lib/url.h"
 #include "../lib/webaccess.h"
+#include "../lib/xymond_buffer.h"
+#include "../lib/xymond_ipc.h"
 
 #endif
 

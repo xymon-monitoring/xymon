@@ -69,6 +69,12 @@ int oksender(sender_t *oklist, char *targetip, char *sender, char *msgbuf)
 		return 1;
 	}
 
+	/* If sender is 0.0.0.0 (i.e. it arrived via backfeed channel), then OK */
+		if (sender.s_addr == INADDR_ANY) {
+		dbgprintf("<- oksender(1-c)\n");
+		return 1;
+	}
+
 	/* If we know the target, it would be ok for the host to report on itself. */
 	if (targetip) {
 		if (strcmp(targetip, "0.0.0.0") == 0) return 1; /* DHCP hosts can report from any address */

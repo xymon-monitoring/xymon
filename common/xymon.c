@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	FILE *respfd = stdout;
 	char *envarea = NULL;
 	sendreturn_t *sres;
-	int wantresponse = 0, mergeinput = 0;
+	int wantresponse = 0, mergeinput = 0, usebackfeedqueue = 0;
 
 	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
@@ -135,10 +135,22 @@ int main(int argc, char *argv[])
 	else if (strncmp(STRBUF(msg), "ghostlist", 9) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "multisrclist", 12) == 0) wantresponse = 1;
 
-	sres = newsendreturnbuf(wantresponse, respfd);
-	result = sendmessage(STRBUF(msg), recipient, timeout, sres);
+	usebackfeedqueue = ((strcmp(recipient, "0") == 0) && !wantresponse);
 
-	if (sres->respstr) printf("Buffered response is '%s'\n", STRBUF(sres->respstr));
+	if (!usebackfeedqueue) {
+		sres = newsendreturnbuf(wantresponse, respfd);
+		result = sendmessage(STRBUF(msg), recipient, timeout, sres);
+
+		if (sres->respstr) printf("Buffered response is '%s'\n", STRBUF(sres->respstr));
+	}
+	else {
+		dbgprintf("Using backfeed channel\n");
+
+		sendmessage_init_local();
+		sendmessage_local(STRBUF(msg));
+		sendmessage_finish_local();
+		result = 0;
+	}
 
 	return result;
 }

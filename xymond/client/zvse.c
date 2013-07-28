@@ -419,7 +419,9 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
 
         freestrbuffer(monmsg);
 
-        if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
+        if (anycountdata) {
+		if (usebackfeedqueue) sendmessage_local(STRBUF(countdata)); else sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
+	}
         clearstrbuffer(countdata);
 }
 
