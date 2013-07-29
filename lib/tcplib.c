@@ -1043,6 +1043,7 @@ void conn_process_active(fd_set *fdread, fd_set *fdwrite)
 	for (walk = conns; (walk); walk = walk->next) {
 		enum conn_cbresult_t cbres = CONN_CBRESULT_OK;
 
+		if (walk->connstate == CONN_DEAD) continue;
 		if (FD_ISSET(walk->sock, fdread)) {
 			cbres = walk->usercallback(walk, CONN_CB_READ, walk->userdata);
 			if (walk->connstate == CONN_DEAD) continue;
@@ -1051,6 +1052,7 @@ void conn_process_active(fd_set *fdread, fd_set *fdwrite)
 				conn_starttls(walk);
 		}
 
+		if (walk->connstate == CONN_DEAD) continue;
 		if (FD_ISSET(walk->sock, fdwrite)) {
 			switch (walk->connstate) {
 			  case CONN_PLAINTEXT_CONNECTING:
