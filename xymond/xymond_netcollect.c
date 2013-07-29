@@ -27,6 +27,8 @@ static char netcollect_rcsid[] = "$Id: snmpcollect.c 6712 2011-07-31 21:01:52Z s
 
 typedef struct connectresult_t {
 	char *testspec;
+	char *targetip;
+	int targetport;
 	enum { NETCOLLECT_UNKNOWN, NETCOLLECT_OK, NETCOLLECT_FAILED, NETCOLLECT_TIMEOUT, NETCOLLECT_RESOLVERROR, NETCOLLECT_SSLERROR, NETCOLLECT_BADDATA } status;
 	float elapsedms;
 	char *sslsubject;
@@ -132,6 +134,8 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 			else if (argnmatch(bol, "HTTPstatus: ")) rec->httpstatus = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "ElapsedMS: ")) rec->elapsedms = atof(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "IntervalMS: ")) rec->interval = atoi(strchr(bol, ':') + 2) / 1000;
+			else if (argnmatch(bol, "TargetIP: ")) rec->targetip = strdup(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "TargetPort: ")) rec->targetport = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "PeerCertificateExpiry: ")) rec->sslexpires = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "NTPstratum: ")) rec->ntpstratum = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "NTPoffset: ")) rec->ntpoffset = atof(strchr(bol, ':') + 2);
@@ -390,6 +394,9 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					// if (crec->httpbody) addtostatus(crec->httpbody);
 				}
 
+				sprintf(msgtext, "\nTarget : %s:%d\n", crec->targetip, crec->targetport);
+				addtostatus(msgtext);
+
 				sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
 				addtostatus(msgtext);
 
@@ -478,6 +485,9 @@ void netcollect_generate_updates(int usebackfeedqueue)
 				if (crec->plainlog) {
 					addtostatus("\n"); addtostatus(crec->plainlog); addtostatus("\n");
 				}
+
+				sprintf(msgtext, "\nTarget : %s:%d\n", crec->targetip, crec->targetport);
+				addtostatus(msgtext);
 
 				sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
 				addtostatus(msgtext);
