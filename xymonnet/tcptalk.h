@@ -44,6 +44,7 @@ typedef struct myconn_t {
 	listitem_t *listitem;
 	void *hostinfo;
 	int timeout, interval;
+	unsigned long testid;
 	time_t teststarttime, testendtime;
 
 	/* Results and statistics */
@@ -98,6 +99,7 @@ typedef struct net_test_options_t {
 	enum { NET_TEST_STANDARD, NET_TEST_TELNET, NET_TEST_HTTP, NET_TEST_NTP, NET_TEST_DNS, NET_TEST_PING, NET_TEST_LDAP, NET_TEST_EXTERNAL } testtype;
 	int timeout, interval;
 	char *sourceip;
+	unsigned long testid;
 } net_test_options_t;
 
 enum dns_strategy_t { DNS_STRATEGY_STANDARD, DNS_STRATEGY_IP, DNS_STRATEGY_HOSTNAME };

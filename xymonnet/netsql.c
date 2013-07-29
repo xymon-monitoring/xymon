@@ -364,7 +364,7 @@ int xymon_sqldb_nettest_row(char *location, char **hostname, char **testspec, ch
 	time_t now = getcurrenttime(NULL);
 
 	if (!nettest_due_sql) {
-		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,testspec,destination,testtype,sourceip,timeout,interval from testtimes where location=LOWER(?) and (timestamp+interval)<?", -1, &nettest_due_sql, NULL);
+		dbres = sqlite3_prepare_v2(xymonsqldb, "select hostname,testspec,destination,testtype,sourceip,timeout,interval,rowid from testtimes where location=LOWER(?) and (timestamp+interval)<?", -1, &nettest_due_sql, NULL);
 		if (dbres != SQLITE_OK) {
 			errprintf("nettest_due prep failed: %s\n", sqlite3_errmsg(xymonsqldb));
 			return 0;
@@ -389,6 +389,7 @@ int xymon_sqldb_nettest_row(char *location, char **hostname, char **testspec, ch
 		options->sourceip = (!srcip || strlen(srcip) == 0) ? NULL : strdup(srcip);
 		options->timeout = sqlite3_column_int(nettest_due_sql, 5);
 		options->interval = sqlite3_column_int(nettest_due_sql, 6);
+		options->testid = sqlite3_column_int(nettest_due_sql, 7);
 		result = 1;
 	}
 	else {

@@ -347,7 +347,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 	char *certsubject, *issuer, *fulltext;
 	myconn_t *rec = (myconn_t *)userdata;
 
-	dbgprintf("CB: %s\n", conn_callback_names[id]);
+	// dbgprintf("CB: %s\n", conn_callback_names[id]);
 
 	switch (id) {
 	  case CONN_CB_CONNECT_START:          /* Client mode: New outbound connection start */
@@ -569,6 +569,7 @@ void *add_net_test(char *testspec, char **dialog, int dialogtoken, net_test_opti
 	newtest->timeout = options->timeout;
 	newtest->interval = options->interval;
 	newtest->netparams.sourceip = (options->sourceip ? strdup(options->sourceip) : NULL);
+	newtest->testid = options->testid;
 
 	switch (options->testtype) {
 	  case NET_TEST_HTTP:

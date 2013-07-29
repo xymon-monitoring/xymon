@@ -257,7 +257,8 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 		snprintf(msgline, sizeof(msgline), "Status: %s\n", s);
 		addtobuffer(hres->txt, msgline);
 
-		snprintf(msgline, sizeof(msgline), "ElapsedMS: %d.%02d\nDNSMS: %d.%02d\nTimeoutMS: %d\nIntervalMS: %d\n",
+		snprintf(msgline, sizeof(msgline), "TestID: %lu\nElapsedMS: %d.%02d\nDNSMS: %d.%02d\nTimeoutMS: %d\nIntervalMS: %d\n",
+			rec->testid,
 			(rec->elapsedus / 1000), (rec->elapsedus % 1000), 
 			(rec->dnselapsedus / 1000), (rec->dnselapsedus % 1000), 
 			rec->timeout*1000, rec->interval*1000);

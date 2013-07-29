@@ -106,6 +106,9 @@ int main(int argc, char **argv)
 		else if (strcmp(argv[argi], "--once") == 0) {
 			running = 0;
 		}
+		else if (strcmp(argv[argi], "--net-debug") == 0) {
+			conn_register_infohandler(NULL, 7);
+		}
 		else if ((strcmp(argv[argi], "--wipedb") == 0) || (strcmp(argv[argi], "--wipe-db") == 0)) {
 			xymon_sqldb_flushall();
 			errprintf("Xymon net-test database wiped\n");
@@ -117,7 +120,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (debug) conn_register_infohandler(NULL, 7);
 
 	{
 		struct sigaction sa;
