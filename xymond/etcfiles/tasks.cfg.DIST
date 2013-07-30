@@ -24,6 +24,11 @@
 		--admin-senders=127.0.0.1,$XYMONSERVERIP \
 		--store-clientlogs=!msgs
 
+[netcollect]
+	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymond_channel --channel=client --log=$XYMONSERVERLOGS/netcollect.log xymond_netcollect --pidfile=$XYMONSERVERLOGS/xymond_netcollect.pid
+
 # "history" keeps track of the status changes that happen.
 [history]
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
@@ -142,27 +147,17 @@
 ### 
 ######################################################################################
 
-# "xymonnet" runs the xymonnet tool to perform the network based tests - i.e. http, smtp, ssh, dns and
-# all of the various network protocols we need to test.
-[xymonnet]
+[xymonnet2]
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
 	NEEDS xymond
-	CMD xymonnet --report --ping --checkresponse
-	LOGFILE $XYMONSERVERLOGS/xymonnet.log
-	INTERVAL 5m
+	CMD xymonnet2
+	LOGFILE $XYMONSERVERLOGS/xymonnet2.log
 
-# "xymonnetagain" picks up the tests that the normal network test consider "failed", and re-does those
-# tests more often. This enables Xymon to pick up a recovered network service faster than
-# if it were tested only by the "xymonnet" task (which only runs every 5 minutes). So if you have
-# servers with very high availability guarantees, running this task will make your availability
-# reports look much better.
-[xymonnetagain]
+[netping]
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
-	NEEDS xymond
-	CMD $XYMONHOME/ext/xymonnet-again.sh
-	LOGFILE $XYMONSERVERLOGS/xymonnetagain.log
-	INTERVAL 1m
-
+	NEEDS xymonnet2
+	CMD netmodule ping
+	LOGFILE $XYMONSERVERLOGS/netping.log
 
 
 ######################################################################################
