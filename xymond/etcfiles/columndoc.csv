@@ -55,3 +55,6 @@ info;The <b>info</b> column shows static information about how this host is conf
 trends;The <b>trends</b> column holds a collection of the graphs that show trends in the utilisation, response-times etc. for the services monitored on this host.;
 graphs;The <b>graphs</b> column holds a collection of the graphs that show trends in the utilisation, response-times etc. for the services monitored on this host.;
 larrd;The <b>larrd</b> column holds a collection of the graphs that show trends in the utilisation, response-times etc. for the services monitored on this host.;
+lpd;The <b>lpd</b> column shows the status of the line printer daemon check.;
+netbios-ssn;The <b>netbios-ssn</b> column shows the status when trying to communicate with the netbios-ssn service on the host. It makes sure that the NETBIOS Session Service for NT Authentication is working for the given host.;
+snpp;The <b>snpp</b> column shows the status when trying to communicate with the Simple Network Paging Protocol (SNPP) service on the host.;
