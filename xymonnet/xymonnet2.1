@@ -1,0 +1,159 @@
+.TH XYMONNET2 1 "Version 4.3.12: 24 Jul 2013" "Xymon"
+.SH NAME
+xymonnet2 \- Xymon network test master
+.SH SYNOPSIS
+.B "xymonnet2 [options]
+.br
+(See the OPTIONS section for a description of the available command-line options).
+
+.SH DESCRIPTION
+.I xymonnet2(1)
+is responsible for scheduling the Xymon network tests. It also performs
+some of the network tests (most TCP-based tests), but will hand off
+certain types of tests to other modules via the
+.I netmodule(1)
+utility.
+
+Unlike previous versions, xymonnet2 is designed to run as a permanent daemon.
+
+xymonnet2 has built-in support for testing most plain-text and
+SSL-encrypted TCP-based protocols. It also supports the DNS and NTP
+protocols, which are UDP-based. The full list of tests is found in the
+.I protocols2.cfg(5)
+file in $XYMONHOME/etc/protocols2.cfg. You can add more network tests,
+as long as they are TCP-based and can be adequately tested via the
+scripting language in the protocols2.cfg file.
+
+Currently, "conn" (ping), "rpc" and "ldap" tests handled by add-on
+modules. xymonnet2 will schedule these tests for the "netmodule" utility,
+which is then responsible for performing the tests.
+
+.SH HOSTNAME RESOLUTION
+xymonnet2 performs the connectivity test (ping) based on the
+hostname, unless the host is tagged with "testip" or the 
+"--dns=ip" option is used. So the target of the connectivity
+test can be determined by your /etc/hosts file or DNS.
+
+Since xymonnet2 performs so many DNS lookups that it can severely
+flood a DNS server, the results are cached for 1 hour between tests. 
+This is currently a fixed value which disregards any TTL settings
+in the DNS record.
+
+
+.SH GENERAL OPTIONS
+
+.IP --timeout=N
+Determines the default timeout (in seconds) for each network test.
+Individual tests can be given a specific timeout via the "nopt" 
+setting in 
+.I hosts.cfg(5)
+.br
+Default: 30 seconds
+
+.IP --concurrency=N 
+Determines the number of network tests that
+run in parallel. Default is operating system dependent,
+but will usually be 256. If xymonnet begins to complain 
+about not being able to get a "socket", try running
+xymonnet2 with a lower value like 50 or 100.
+
+.IP --dns=[ip|only|standard]
+Determines how xymonnet2 finds the IP adresses of the hosts to test. 
+By default (the "standard"), xymonnet2 does a DNS lookup of the hostname 
+to determine the IP address, unless the host has the "testip" 
+tag, or the DNS lookup fails.
+.br
+With "--dns=only" xymonnet2 will ONLY do the DNS lookup;
+if it fails, then all services on that host will be 
+reported as being down.
+.br
+With "--dns=ip" xymonnet2 will never do a DNS lookup;
+it will use the IP adresse specified in hosts.cfg for
+the tests. Thus, this setting is equivalent to having
+the "testip" tag on all hosts.
+
+.IP --test-untagged
+When using the XYMONNETWORK environment variable to test
+only hosts on a particular network segment, xymonnet2
+will ignore hosts that do not have any "NET:x" tag.
+So only hosts that have a NET:$XYMONNETWORK tag will be 
+tested.
+.br
+With this option, hosts with no NET: tag are included
+in the test, so that all hosts that either have a
+matching NET: tag, or no NET: tag at all are tested.
+
+.IP --source-ip=IPADDRESS
+On multi-homed hosts, this option can be used to explicitly
+select the source IP address used for the network tests.
+"IPADDRESS" must be a valid IP-address on the host running
+xymonnet.
+.br
+Note: This option may be listed twice, once for the default
+IPv4 source address, and once for the default IPv6 source address.
+
+.IP --wipe-db
+Clear all data from the xymonnet2 test database. May be used to
+ensure your tests start from scratch (no cached DNS records, no
+record of when tests last ran etc.) Note that xymonnet2 terminates
+immediately after clearing the database.
+
+
+.IP --no-ping
+Disable the connectivity test.
+
+
+.SH DEBUGGING OPTIONS
+.IP --no-update
+Don't send any status updates to the Xymon server. Instead,
+all messages are dumped to stdout.
+
+.IP --debug
+Dumps a bunch of status about the tests as they
+progress to stdout. Note that this can be very verbose.
+
+
+.SH INFORMATIONAL OPTIONS
+.IP "--help or -?"
+Provide a summary of available command-line options.
+
+.IP "--version"
+Prints the version number of xymonnet
+
+
+.SH ABOUT SSL CERTIFICATE CHECKS
+When xymonnet tests services that use SSL- or TLS-based protocols,
+it will check that the server certificate has not expired. This check
+happens automatically for https (secure web), pop3s, imaps, nntps
+and all other SSL-enabled services (except ldap, see LDAP TESTS 
+below).
+
+All certificates found for a host are reported in one status message.
+
+Note: On most systems, the end-date of the certificate is limited to
+Jan 19th, 2038. If your certificate is valid after this date, xymonnet
+will report it as valid only until Jan 19, 2038. This is due to
+limitations in your operating system C library. See
+http://en.wikipedia.org/wiki/2038_problem .
+
+
+.SH ENVIRONMENT VARIABLES
+.IP XYMONNETWORK
+Defines the network segment where xymonnet is currently running.
+This is used to filter out only the entries in the
+.I hosts.cfg(5)
+file that have a matching "NET:LOCATION" tag, and execute the
+tests for only those hosts.
+
+.SH FILES
+.IP "~/server/etc/protocols2.cfg"
+This file contains definitions of TCP services that xymonnet
+can test. Definitions for a default set of common services is built
+into xymonnet, but these can be overridden or supplemented by
+defining services in the protocols.cfg file. See 
+.I protocols2.cfg(5)
+for details on this file.
+
+.SH "SEE ALSO"
+hosts.cfg(5), protocols2.cfg(5), xymonserver.cfg(5)
+

@@ -11,7 +11,7 @@
 #ifndef __VERSION_H__
 #define __VERSION_H__
 
-#define VERSION "4.3.7.20120107.ip6ssl"
+#define VERSION "4.3.99"
 
 #endif
 

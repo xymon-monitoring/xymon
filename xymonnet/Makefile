@@ -123,6 +123,11 @@ ifndef PKGBUILD
 	chmod 755 $(PROGRAMS)
 endif
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
+ifndef PKGBUILD
+	chown 0 $(INSTALLROOT)$(INSTALLBINDIR)/fping* || true
+	chmod u+s $(INSTALLROOT)$(INSTALLBINDIR)/fping* || true
+endif
+
 
 install-config:
 	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/protocols2.cfg
