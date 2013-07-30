@@ -83,6 +83,10 @@ Enable debugging output.
 .SH FILES
 .IP "~xymon/server/etc/analysis.cfg"
 
+.SH BUGS
+The "disk" status cannot handle filesystems containing whitespace in the
+filesystem (device) name.
+
 .SH "SEE ALSO"
 analysis.cfg(5), xymond(8), xymond_channel(8), xymon(7)
 
