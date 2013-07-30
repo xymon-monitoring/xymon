@@ -68,7 +68,7 @@ echo "[netstat]"
 netstat -s
 echo "[ports]"
 # Bug in RedHat's netstat spews annoying error messages. 
-netstat -ant 2>/dev/null
+netstat -antW 2>/dev/null| sed -e's! Address!_Address!g'|tail -n +2 |column -t|sed -e's!_Address! Address!g'
 echo "[ifstat]"
 /sbin/ifconfig 2>/dev/null
 # Report mdstat data if it exists
