@@ -64,6 +64,9 @@ static int      xymondportnumber = 0;
 static char     *xymonproxyhost = NULL;
 static int      xymonproxyport = 0;
 static char	*proxysetting = NULL;
+static char	*comboofsstr = NULL;
+static int	comboofssz = 0;
+static int	*combooffsets = NULL;
 
 static int	xymonmetaqueued;		/* Anything in the buffer ? */
 static strbuffer_t *metamsg = NULL;	/* Complete meta message buffer */
@@ -696,15 +699,28 @@ static void combo_params(void)
 	}
 
 	if (xgetenv("SLEEPBETWEENMSGS")) sleepbetweenmsgs = atoi(xgetenv("SLEEPBETWEENMSGS"));
+
+	comboofssz = 10*maxmsgspercombo;
+	comboofsstr = (char *)malloc(comboofssz+1);
+	combooffsets = (int *)malloc((maxmsgspercombo+1)*sizeof(int));
 }
 
 void combo_start(void)
 {
+	int n;
+
 	combo_params();
+
+	memset(comboofsstr, ' ', comboofssz);
+	memcpy(comboofsstr, "extcombo", 8);
+	*(comboofsstr + comboofssz) = '\0';
+
+	memset(combooffsets, 0, maxmsgspercombo*sizeof(int));
+	combooffsets[0] = comboofssz;
 
 	if (xymonmsg == NULL) xymonmsg = newstrbuffer(0);
 	clearstrbuffer(xymonmsg);
-	addtobuffer(xymonmsg, "combo\n");
+	addtobufferraw(xymonmsg, comboofsstr, comboofssz);
 	xymonmsgqueued = 0;
 	combo_is_local = 0;
 }
@@ -724,11 +740,20 @@ void meta_start(void)
 
 static void combo_flush(void)
 {
+	int i;
+	char *outp;
+
 	if (!xymonmsgqueued) {
 		dbgprintf("Flush, but xymonmsg is empty\n");
 		return;
 	}
 
+	outp = strchr(STRBUF(xymonmsg), ' ');
+	for (i = 0; (i <= xymonmsgqueued); i++) {
+		outp += sprintf(outp, " %d", combooffsets[i]);
+	}
+	*outp = '\n';
+	
 	if (debug) {
 		char *p1, *p2;
 
@@ -769,20 +794,16 @@ static void meta_flush(void)
 	meta_start();	/* Get ready for the next */
 }
 
-static void combo_add(strbuffer_t *buf)
+void combo_add(strbuffer_t *buf)
 {
 	/* Check if there is room for the message + 2 newlines */
 	if (maxmsgspercombo && (xymonmsgqueued >= maxmsgspercombo)) {
 		/* Nope ... flush buffer */
 		combo_flush();
 	}
-	else {
-		/* Yep ... add delimiter before new status (but not before the first!) */
-		if (xymonmsgqueued) addtobuffer(xymonmsg, "\n\n");
-	}
 
 	addtostrbuffer(xymonmsg, buf);
-	xymonmsgqueued++;
+	combooffsets[++xymonmsgqueued] = STRBUFLEN(xymonmsg);
 }
 
 static void meta_add(strbuffer_t *buf)

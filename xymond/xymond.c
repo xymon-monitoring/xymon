@@ -270,6 +270,7 @@ typedef struct xymond_statistics_t {
 xymond_statistics_t xymond_stats[] = {
 	{ "status", 0 },
 	{ "combo", 0 },
+	{ "extcombo", 0 },
 	{ "page", 0 },
 	{ "summary", 0 },
 	{ "data", 0 },
@@ -3089,7 +3090,54 @@ void do_message(conn_t *msg, char *origin)
 	/* Count statistics */
 	update_statistics(msg->buf);
 
-	if (strncmp(msg->buf, "combo\n", 6) == 0) {
+	if (strncmp(msg->buf, "extcombo ", 9) == 0) {
+		char *ofsline, *origbuf, *p, *tokr, *ofsstr;
+		int startofs, endofs;
+
+		origbuf = ofsline = msg->buf;
+		p = strchr(ofsline, '\n');
+		if (p) 
+			*p = '\0';
+		else {
+			/* Abort */
+			goto done;
+		}
+
+		ofsstr = strtok_r(ofsline+9, " ", &tokr);
+		startofs = atoi(ofsstr);
+		if ((startofs <= 0) || (startofs >= msg->bufsz)) {
+			/* Invalid offsets, abort */
+			errprintf("Invalid start-offset in extcombo: startofs=%d, bufsz=%d\n", startofs, msg->bufsz);
+			goto done;
+		}
+
+		do {
+			char savechar;
+
+			ofsstr = strtok_r(NULL, " ", &tokr);
+			if (!ofsstr) continue;
+
+			endofs = atoi(ofsstr);
+			if ((endofs <= 0) || (endofs > msg->bufsz)) {
+				/* Invalid offsets, abort */
+				errprintf("Invalid end-offset in extcombo: endofs=%d, bufsz=%d\n", endofs, msg->bufsz);
+				msg->buf = origbuf;
+				goto done;
+			}
+
+			msg->buf = origbuf + startofs;
+			msg->buflen = (endofs - startofs);
+			savechar = *(msg->buf + msg->buflen);
+			*(msg->buf + msg->buflen) = '\0';
+
+			do_message(msg, origin);
+			*(msg->buf + msg->buflen) = savechar;
+			startofs = endofs;
+		} while (ofsstr);
+
+		msg->buf = origbuf;
+	}
+	else if (strncmp(msg->buf, "combo\n", 6) == 0) {
 		char *currmsg, *nextmsg;
 
 		currmsg = msg->buf+6;
@@ -4263,13 +4311,16 @@ void do_message(conn_t *msg, char *origin)
 	}
 
 done:
-	if (msg->doingwhat == RESPONDING) {
-		shutdown(msg->sock, SHUT_RD);
-	}
-	else if (msg->sock >= 0) {
-		shutdown(msg->sock, SHUT_RDWR);
-		close(msg->sock);
-		msg->sock = -1;
+	if (nesting == 1) {
+		if (msg->doingwhat == RESPONDING) {
+			shutdown(msg->sock, SHUT_RD);
+		}
+		else if (msg->sock >= 0) {
+			shutdown(msg->sock, SHUT_RDWR);
+			close(msg->sock);
+			msg->sock = -1;
+		}
+
 	}
 
 	MEMUNDEFINE(sender);
