@@ -796,10 +796,17 @@ static void meta_flush(void)
 
 void combo_add(strbuffer_t *buf)
 {
-	/* Check if there is room for the message + 2 newlines */
-	if (maxmsgspercombo && (xymonmsgqueued >= maxmsgspercombo)) {
-		/* Nope ... flush buffer */
-		combo_flush();
+	if (combo_is_local) {
+		/* Check if message fits into the backfeed message buffer */
+		if ( (STRBUFLEN(xymonmsg) + STRBUFLEN(buf)) >= shbufsz(C_FEEDBACK_QUEUE)) {
+			combo_flush();
+		}
+	}
+	else {
+		/* Check if there is room for the message + 2 newlines */
+		if (maxmsgspercombo && (xymonmsgqueued >= maxmsgspercombo)) {
+			combo_flush();
+		}
 	}
 
 	addtostrbuffer(xymonmsg, buf);
