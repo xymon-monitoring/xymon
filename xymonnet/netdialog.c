@@ -213,7 +213,14 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 
 	/* Some standard stuff */
 	addtobuffer(httprequest, "Accept: */*\r\n");
-	addtobuffer(httprequest, "Pragma: no-cache\r\n");
+	switch (httpversion) {
+	  case HTTPVER_10: 
+		addtobuffer(httprequest, "Pragma: no-cache\r\n");
+		break;
+	  case HTTPVER_11: 
+		addtobuffer(httprequest, "Cache-control: no-cache\r\n");
+		break;
+	}
 
 	if ((weburl.testtype == WEBTEST_SOAP) || (weburl.testtype == WEBTEST_NOSOAP)) {
 		/* Must provide a SOAPAction header */
