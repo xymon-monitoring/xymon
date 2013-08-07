@@ -681,5 +681,7 @@ void add_http_test(testitem_t *t)
 						 t->testspec, t->silenttest, grabstrbuffer(httprequest), 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
+
+	httptest->tcptest->sni = httptest->weburl.desturl->host;
 }
 

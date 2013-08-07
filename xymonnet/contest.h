@@ -108,6 +108,7 @@ typedef struct tcptest_t {
 
 	/* For testing SSL-wrapped services */
 	ssloptions_t *ssloptions;	/* Specific SSL options requested by user */
+	char *sni;
 	SSL_CTX *sslctx;		/* SSL context pointer */
 	SSL  *ssldata;			/* SSL data (socket) pointer */
 	char *certinfo;			/* Certificate info (subject+expiretime) */

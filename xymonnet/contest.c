@@ -68,7 +68,7 @@ int sslincludecipherlist = 1;
 
 static svcinfo_t svcinfo_http  = { "http", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP), 80 };
 static svcinfo_t svcinfo_https = { "https", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP|TCP_SSL), 443 };
-static ssloptions_t default_sslopt = { NULL, SSLVERSION_DEFAULT };
+static ssloptions_t default_sslopt = { NULL, SSLVERSION_DEFAULT, NULL };
 
 static time_t sslcert_expiretime(char *timestr)
 {
@@ -570,6 +570,11 @@ static void setup_ssl(tcptest_t *item)
 				return;
 			}
 		}
+
+
+#if (SSLEAY_VERSION_NUMBER >= 0x00908070)
+		if (item->sni) SSL_set_tlsext_host_name(item->ssldata, item->sni);
+#endif
 
 		/* SSL setup is done. Now attach the socket FD to the SSL protocol handler */
 		if (SSL_set_fd(item->ssldata, item->fd) != 1) {
