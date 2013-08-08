@@ -1503,7 +1503,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			 *   data collection, so it does not make sense to check it (thanks to Cade Robinson).
 			 * - some multi-homed hosts use a random IP for sending us data.
 			 */
-			if ( (strcmp(log->sender, "xymond") != 0) && (strcmp(sender, "xymond") != 0) )  {
+			if ( (strcmp(log->sender, "xymond") != 0) && (strcmp(sender, "xymond") != 0) && (strcmp(sender, "0.0.0.0") != 0))  {
 				if ((xmh_item(hinfo, XMH_FLAG_PULLDATA) == NULL) && (xmh_item(hinfo, XMH_FLAG_MULTIHOMED) == NULL)) {
 					log_multisrc(log, sender);
 				}
