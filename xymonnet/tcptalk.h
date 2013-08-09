@@ -22,7 +22,7 @@ typedef struct myconn_netparams_t {
 	/* For SSL connections */
 	enum { SSLVERSION_DEFAULT, SSLVERSION_V2, SSLVERSION_V3, SSLVERSION_TLS1 } sslver;
 	enum sslhandling_t sslhandling;
-	char *sslcertfn, *sslkeyfn;
+	char *sslcertfn, *sslkeyfn, *sslname;
 
 	/* For DNS lookups of destinationip */
 	char *lookupstring;
@@ -48,7 +48,7 @@ typedef struct myconn_t {
 	time_t teststarttime, testendtime;
 
 	/* Results and statistics */
-	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED, TALK_CANNOT_RESOLVE, TALK_MODULE_FAILED } talkresult;
+	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED, TALK_CANNOT_RESOLVE, TALK_MODULE_FAILED, TALK_RESULT_LAST } talkresult;
 	strbuffer_t *textlog;			/* Logs the actual data exchanged */
 	unsigned int bytesread;
 	unsigned int byteswritten;
@@ -110,6 +110,8 @@ extern void *add_net_test(char *testspec, char **dialog, int dtoken, net_test_op
 			 myconn_netparams_t *netparams, void *hostinfo);
 extern listhead_t *run_net_tests(int concurrency, char *sourceip4, char *sourceip6);
 extern void init_tcp_testmodule(void);
+
+extern char *myconn_talkresult_names[];
 
 #endif
 

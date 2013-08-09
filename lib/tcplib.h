@@ -34,9 +34,10 @@ enum conn_callback_t {
 	CONN_CB_CLOSED,			/* Client/server mode: Connection has been closed */
 	CONN_CB_CLEANUP			/* Client/server mode: Connection cleanup */
 };
-enum conn_cbresult_t { CONN_CBRESULT_OK, CONN_CBRESULT_FAILED, CONN_CBRESULT_STARTTLS };
+enum conn_cbresult_t { CONN_CBRESULT_OK, CONN_CBRESULT_FAILED, CONN_CBRESULT_STARTTLS, CONN_CBRESULT_LAST };
 
 extern char *conn_callback_names[];
+extern char *conn_callback_result_names[];
 
 typedef struct tcpconn_t {
 	int sock;
@@ -92,7 +93,7 @@ extern void conn_init_server(int portnumber, int backlog, int maxlifetime,
 
 extern void conn_init_client(void);
 extern tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_t socktype, 
-					  char *localaddr, enum sslhandling_t withssl, char *certfn, char *keyfn, long maxlifetime,
+					  char *localaddr, enum sslhandling_t withssl, char *sslname, char *certfn, char *keyfn, long maxlifetime,
 					  enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *), void *userdata);
 
 extern int conn_fdset(fd_set *fdread, fd_set *fdwrite);

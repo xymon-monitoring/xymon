@@ -44,6 +44,8 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 		netparams->destinationip = strdup(weburl.desturl->ip ? weburl.desturl->ip : weburl.desturl->host);
 	netparams->destinationport = (weburl.proxyurl ? weburl.proxyurl->port : weburl.desturl->port);
 	netparams->sslhandling = (strcmp(weburl.desturl->scheme, "https") == 0) ? CONN_SSL_YES : CONN_SSL_NO;
+	if (netparams->sslname) xfree(netparams->sslname);
+	netparams->sslname = strdup(weburl.desturl->host);
 
 #if 0
 	/* FIXME: Handle more schemeopts here for SSL versions */

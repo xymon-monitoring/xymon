@@ -324,6 +324,7 @@ void cleanup_myconn_list(listhead_t *head)
 		if (testrec->netparams.lookupstring) xfree(testrec->netparams.lookupstring);
 		if (testrec->netparams.destinationip) xfree(testrec->netparams.destinationip);
 		if (testrec->netparams.sourceip) xfree(testrec->netparams.sourceip);
+		if (testrec->netparams.sslname) xfree(testrec->netparams.sslname); 
 		if (testrec->testspec) xfree(testrec->testspec);
 		if (testrec->textlog) freestrbuffer(testrec->textlog);
 		if (testrec->httpheaders) freestrbuffer(testrec->httpheaders);

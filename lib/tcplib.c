@@ -94,6 +94,12 @@ char *conn_state_names[CONN_DEAD+1] = {
 	"Closing",
 	"Dead",
 };
+ 
+char *conn_callback_result_names[CONN_CBRESULT_LAST] = {
+	"OK",
+	"Failed",
+	"StartTLS"
+};
 
 void conn_register_infohandler(void (*cb)(time_t, const char *id, char *msg), enum infolevel_t level)
 {
@@ -1268,7 +1274,7 @@ void conn_init_client(void)
  * conn_process_active().
  */
 tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_t socktype, 
-				   char *localaddr, enum sslhandling_t sslhandling, char *certfn, char *keyfn, long maxlifetime,
+				   char *localaddr, enum sslhandling_t sslhandling, char *sslname, char *certfn, char *keyfn, long maxlifetime,
 				   enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *), void *userdata)
 {
 	const char *funcid = "conn_prepare_connection";
@@ -1445,6 +1451,10 @@ tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_
 				return NULL;
 			}
 		}
+
+#if (SSLEAY_VERSION_NUMBER >= 0x00908070)
+		if (sslname) SSL_set_tlsext_host_name(newconn->ssl, sslname);
+#endif
 
 		if (sslhandling == CONN_SSL_YES) {
 			if (SSL_set_fd(newconn->ssl, newconn->sock) != 1) {

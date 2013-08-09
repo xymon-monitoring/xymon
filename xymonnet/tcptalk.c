@@ -31,6 +31,17 @@ static listhead_t *donetests = NULL;
 
 static enum dns_strategy_t dnsstrategy = DNS_STRATEGY_STANDARD;
 
+char *myconn_talkresult_names[TALK_RESULT_LAST] = {
+	"Connection Failed",
+	"Connection Timeout",
+	"OK",
+	"Bad Data",
+	"Bad SSL Handshake",
+	"Interrupted",
+	"Cannot resolve",
+	"Module failed",
+};
+
 void set_dns_strategy(enum dns_strategy_t strategy)
 {
 	dnsstrategy = strategy;
@@ -735,7 +746,7 @@ listhead_t *run_net_tests(int concurrency, char *sourceip4, char *sourceip6)
 							rec->netparams.destinationport, 
 							rec->netparams.socktype,
 							rec->netparams.sourceip, 
-							rec->netparams.sslhandling, rec->netparams.sslcertfn, rec->netparams.sslkeyfn, 
+							rec->netparams.sslhandling, rec->netparams.sslname, rec->netparams.sslcertfn, rec->netparams.sslkeyfn, 
 							rec->timeout*1000000,
 							rec->netparams.callback, rec)) {
 					dbgprintf("\tmoved to activetests, target %s, timeout %d\n", 

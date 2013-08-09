@@ -348,7 +348,8 @@ static int scan_queue(char *id, int talkproto, int batchsize)
 			if (!testrec->listitem) {
 				/* Didn't add the test - zap the unused record */
 				if (testrec->testspec) xfree(testrec->testspec);
-				xfree(testrec->netparams.destinationip);
+				if (testrec->netparams.destinationip) xfree(testrec->netparams.destinationip);
+				if (testrec->netparams.sslname) xfree(testrec->netparams.sslname);
 				xfree(testrec);
 			}
 		}

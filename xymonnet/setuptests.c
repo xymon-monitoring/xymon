@@ -170,6 +170,7 @@ int read_tests_from_hostscfg(int defaulttimeout)
 				}
 
 				if (netparams.destinationip) xfree(netparams.destinationip);
+				if (netparams.sslname) xfree(netparams.sslname);
 				if (dialog) free_net_dialog(dialog, dtoken);
 			}
 
