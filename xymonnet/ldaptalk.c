@@ -144,7 +144,7 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 
 	  default:
 		if (result == NULL) {
-		ldap_unbind(ldaphandle);
+			ldap_unbind(ldaphandle);
 			addtobuffer(outdata, "LDAP BIND failed (unknown error)\n");
 			testresult = 3; goto cleanup;
 		}
