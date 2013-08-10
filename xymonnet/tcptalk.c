@@ -117,7 +117,7 @@ static int telnet_datahandler(myconn_t *rec, int iobytes)
 static int http_datahandler(myconn_t *rec, int iobytes, int startoffset, int *advancestep)
 {
 	char *endofhdrs;
-	int http1subver;
+	int httpmajorver, httpminorver;
 	char *xferencoding;
 	int len = iobytes;
 	char *bol, *buf;
@@ -159,7 +159,7 @@ check_for_endofheaders:
 
 
 		/* We have an end-of-header delimiter, but it could be just a "100 Continue" response */
-		sscanf(STRBUF(rec->httpheaders), "HTTP/1.%d %d", &http1subver, &rec->httpstatus);
+		sscanf(STRBUF(rec->httpheaders), "HTTP/%d.%d %d", &httpmajorver, &httpminorver, &rec->httpstatus);
 		if (rec->httpstatus == 100) {
 			/* 
 			 * It's a "100"  continue-status.
