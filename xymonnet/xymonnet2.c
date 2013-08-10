@@ -68,6 +68,7 @@ int main(int argc, char **argv)
 {
 	int argi;
 	time_t nextrun = 0;
+	int wipedb = 0;
 
 	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
@@ -110,9 +111,7 @@ int main(int argc, char **argv)
 			conn_register_infohandler(NULL, 7);
 		}
 		else if ((strcmp(argv[argi], "--wipedb") == 0) || (strcmp(argv[argi], "--wipe-db") == 0)) {
-			xymon_sqldb_flushall();
-			errprintf("Xymon net-test database wiped\n");
-			return 0;
+			wipedb = 1;
 		}
 		else if (*(argv[argi]) != '-') {
 			add_wanted_host(argv[argi]);
@@ -135,6 +134,13 @@ int main(int argc, char **argv)
 	if (xymon_sqldb_init() != 0) {
 		errprintf("Cannot open Xymon SQLite database - aborting\n");
 		return 1;
+	}
+
+	if (wipedb) {
+		xymon_sqldb_flushall();
+		xymon_sqldb_shutdown();
+		errprintf("Xymon net-test database wiped\n");
+		return 0;
 	}
 
 	init_tcp_testmodule();
