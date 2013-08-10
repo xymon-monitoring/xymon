@@ -116,7 +116,7 @@ in Xymon, I strongly recommend that you create a dedicated userid for the Xymon
 programs. This user should <em>not</em> be a member of any other groups on your
 system.</p>
 
-<p>Xymon will install the <u>xymonping</u> tool as <b>setuid-root</b>(only on
+<p>Xymon will install the <u>fping</u> tool as <b>setuid-root</b>(only on
 the Xymon server). This program requires root privileges to be able to perform
 network &quot;ping&quot; tests. It will drop root privileges immediately after 
 obtaining the network socket needed for this, and will not run with root
@@ -412,8 +412,8 @@ gzip -dc xymon-4.3.10.tar.gz | tar xf -
 cd xymon-4.3.10
 ./configure	# All defaults, except group-ID for webserver is "www"
 gmake &amp;&amp; gmake install
-chown 0:0 /home/xymon/server/bin/xymonping
-chmod u+s /home/xymon/server/bin/xymonping
+chown 0:0 /home/xymon/server/bin/fping*
+chmod u+s /home/xymon/server/bin/fping*
 
 ln -s /home/xymon/server/etc/xymon-apache.cnf /usr/local/etc/apache22/Includes
 </tt></pre>

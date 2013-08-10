@@ -123,19 +123,15 @@ ifndef PKGBUILD
 	chmod 755 $(PROGRAMS)
 endif
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
-ifndef PKGBUILD
-	chown 0 $(INSTALLROOT)$(INSTALLBINDIR)/fping* || true
-	chmod u+s $(INSTALLROOT)$(INSTALLBINDIR)/fping* || true
-endif
 
 
 install-config:
 	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/protocols2.cfg
 	../build/merge-sects protocols2.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols2.cfg
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
-	chmod 644 $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)/protocols2.cfg
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)/protocols2.cfg
+	chmod 644 $(INSTALLROOT)$(INSTALLETCDIR)/protocols2.cfg
 endif
 
 install-man:
@@ -151,7 +147,7 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
 endif
 
-	#cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
+	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
 	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 	cd $(INSTALLROOT)$(MANROOT)/man8 && ln -sf fping.8 fping4.8 && ln -sf fping.8 fping6.8
