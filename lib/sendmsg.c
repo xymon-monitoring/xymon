@@ -260,8 +260,11 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 	int i, msglen;
 	int maxfd;
 	strbuffer_t *cbuf = NULL;
+	int v4server = (getenv("XYMONV4SERVER") != NULL);
 
 	conn_init_client();
+
+	if (v4server) compressit = 0;
 
 	msglen = strlen(msg);
 	if (compressit) {
@@ -284,7 +287,7 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 		myconn->usessl = targets[i]->usessl;
 		myconn->lefttowrite = msglen;
 		sprintf(myconn->szbuf, "size:%d\n", (int)myconn->lefttowrite);
-		myconn->szptr = myconn->szbuf;
+		myconn->szptr = v4server ? NULL : myconn->szbuf;
 		myconn->writebuf = msg;
 		myconn->peer = strdup(ip ? ip : "");
 		myconn->port = (portnum ? portnum : targets[i]->defaultport);
