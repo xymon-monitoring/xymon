@@ -1485,6 +1485,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 				}
 			}
 		}
+		if (log->sender) xfree(log->sender);
 		log->sender = strdup(sender);
 	}
 
@@ -2905,6 +2906,24 @@ void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, void *hi
 	*outsz = bufsz;
 }
 
+void get_sender(conn_t *msg, char *msgtext, char *prestring)
+{
+	char *msgfrom;
+
+	if (msg->sender) xfree(msg->sender);
+
+	msgfrom = strstr(msgtext, prestring);
+	if (msgfrom) {
+		char *tokr, *s;
+
+		s = strtok_r(msgfrom + strlen(prestring), " \r\n\t", &tokr);
+		msg->sender = strdup(s);
+	}
+	else {
+		msg->sender = strdup("");
+	}
+}
+
 
 void do_message(conn_t *msg, char *origin)
 {
@@ -2916,7 +2935,6 @@ void do_message(conn_t *msg, char *origin)
 	char *downcause;
 	char *grouplist;
 	time_t now, timeroffset;
-	char *msgfrom;
 
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
@@ -3010,11 +3028,7 @@ void do_message(conn_t *msg, char *origin)
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
 			/* Pick out the real sender of this message */
-			msgfrom = strstr(currmsg, "\nStatus message received from ");
-			if (msgfrom) {
-				sscanf(msgfrom, "\nStatus message received from %s\n", msg->sender);
-				*msgfrom = '\0';
-			}
+			get_sender(msg, currmsg, "\nStatus message received from ");
 
 			if (statussenders) {
 				get_hts(currmsg, msg->sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
@@ -3071,11 +3085,7 @@ void do_message(conn_t *msg, char *origin)
 		} while (currmsg);
 	}
 	else if (strncmp(msg->buf, "status", 6) == 0) {
-		msgfrom = strstr(msg->buf, "\nStatus message received from ");
-		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %s\n", msg->sender);
-			*msgfrom = '\0';
-		}
+		get_sender(msg, msg->buf, "\nStatus message received from ");
 
 		if (statussenders) {
 			get_hts(msg->buf, msg->sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
@@ -3112,11 +3122,7 @@ void do_message(conn_t *msg, char *origin)
 		char *bhost, *ehost, *btest;
 		char savechar;
 
-		msgfrom = strstr(msg->buf, "\nStatus message received from ");
-		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %s\n", msg->sender);
-			*msgfrom = '\0';
-		}
+		get_sender(msg, msg->buf, "\nStatus message received from ");
 
 		bhost = msg->buf + strlen("data"); bhost += strspn(bhost, " \t");
 		ehost = bhost + strcspn(bhost, " \t\r\n");
@@ -3924,15 +3930,14 @@ void do_message(conn_t *msg, char *origin)
 		/* "client[/COLLECTORID] HOSTNAME.CLIENTOS CLIENTCLASS" */
 		char *hostname = NULL, *clientos = NULL, *clientclass = NULL, *collectorid = NULL;
 		char *hname = NULL;
-		char *line1, *p;
+		char *line1, *p, *msgfrom;
 		char savech;
 
 		msgfrom = strstr(msg->buf, "\n[proxy]\n");
 		if (msgfrom) {
 			char *ipline = strstr(msgfrom, "\nClientIP:");
-			if (ipline) { 
-				sscanf(ipline, "\nClientIP:%s\n", msg->sender);
-			}
+
+			if (ipline) get_sender(msg, ipline, "\nClientIP:");
 		}
 
 		p = msg->buf + strcspn(msg->buf, "\r\n");
@@ -5344,7 +5349,7 @@ int main(int argc, char *argv[])
 				msg.bufsz = msg.buflen = sz;
 				msg.bufp = msg.buf + msg.buflen;
 				msg.doingwhat = RECEIVING;
-				msg.sender = "0.0.0.0";
+				msg.sender = strdup("0.0.0.0");
 
 				do_message(&msg, "");
 				*bf_buf = '\0';
