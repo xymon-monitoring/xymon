@@ -225,10 +225,14 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 			addtobuffer(hres->txt, msgline);
 		}
 
-		switch (rec->netparams.socktype) {
-		  case CONN_SOCKTYPE_STREAM: s = "TCP"; break;
-		  case CONN_SOCKTYPE_DGRAM: s = "UDP"; break;
-		  default: s = "UNKNOWN"; break;
+		if (rec->talkprotocol == TALK_PROTO_PING)
+			s = "ICMP";
+		else {
+			switch (rec->netparams.socktype) {
+			  case CONN_SOCKTYPE_STREAM: s = "TCP"; break;
+			  case CONN_SOCKTYPE_DGRAM: s = "UDP"; break;
+			  default: s = "UNKNOWN"; break;
+			}
 		}
 		snprintf(msgline, sizeof(msgline), "Protocol: %s\n", s);
 		addtobuffer(hres->txt, msgline);
