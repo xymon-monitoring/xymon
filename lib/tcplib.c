@@ -551,8 +551,12 @@ static void try_ssl_connect(tcpconn_t *conn)
 	sslresult = SSL_connect(conn->ssl);
 	if (sslresult == 1) {
 		conn->usercallback(conn, CONN_CB_SSLHANDSHAKE_OK, conn->userdata);
-		conn->connstate = CONN_SSL_READY;
-		conn_info(funcid, INFO_INFO, "SSL connection established with %s\n", conn_print_address(conn));
+
+		if (conn->connstate != CONN_DEAD) {
+			/* connstate may be CONN_DEAD for connections that have no data exchange, ie. the connection is closed immediately */
+			conn->connstate = CONN_SSL_READY;
+			conn_info(funcid, INFO_INFO, "SSL connection established with %s\n", conn_print_address(conn));
+		}
 	}
 	else if (sslresult == 0) {
 		/* SSL connect failed */
