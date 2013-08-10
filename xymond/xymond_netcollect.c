@@ -394,7 +394,7 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					// if (crec->httpbody) addtostatus(crec->httpbody);
 				}
 
-				sprintf(msgtext, "\nTarget : %s:%d\n", crec->targetip, crec->targetport);
+				sprintf(msgtext, "\nTarget : %s port %d\n", crec->targetip, crec->targetport);
 				addtostatus(msgtext);
 
 				sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
@@ -486,7 +486,9 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					addtostatus("\n"); addtostatus(crec->plainlog); addtostatus("\n");
 				}
 
-				sprintf(msgtext, "\nTarget : %s:%d\n", crec->targetip, crec->targetport);
+				sprintf(msgtext, "\nTarget : %s", crec->targetip);
+				if (hrec->ping != crec) sprintf(msgtext+strlen(msgtext), " port %d", crec->targetport);
+				strcat(msgtext, "\n");
 				addtostatus(msgtext);
 
 				sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
