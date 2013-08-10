@@ -21,6 +21,17 @@ static char rcsid[] = "$Id$";
 #include "sendresults.h"
 #include "netsql.h"
 
+static char *talkproto_names[TALK_PROTO_LAST] = {
+	"plain",
+	"ntp",
+	"http",
+	"dns",
+	"ping",
+	"ldap",
+	"external"
+};
+
+
 static void add_to_sub_queue(myconn_t *rec, char *moduleid, char *location, ...)
 {
 	va_list extraparams;
@@ -201,7 +212,17 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 			hres = xtreeData(hostresults, handle);
 		}
 
-		snprintf(msgline, sizeof(msgline), "\n[%s]\n", rec->testspec);
+		switch (rec->talkprotocol) {
+		  case TALK_PROTO_DNSQUERY:
+			snprintf(msgline, sizeof(msgline), "\n[dns=%s]\n", rec->testspec);
+			break;
+		  default:
+			snprintf(msgline, sizeof(msgline), "\n[%s]\n", rec->testspec);
+			break;
+		}
+		addtobuffer(hres->txt, msgline);
+
+		snprintf(msgline, sizeof(msgline), "Handler: %s\n", talkproto_names[rec->talkprotocol]);
 		addtobuffer(hres->txt, msgline);
 
 		snprintf(msgline, sizeof(msgline), "StartTime: %d\nEndTime: %d\n", (int)rec->teststarttime, (int)rec->testendtime);

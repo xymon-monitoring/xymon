@@ -14,7 +14,7 @@
 extern void test_nonet_hosts(int testthem);
 extern void add_wanted_host(char *hostname);
 extern void clear_wanted_hosts(void);
-extern int read_tests_from_hostscfg(int defaulttimeout);
+extern int read_tests_from_hostscfg(int uselocalcfg, int defaulttimeout);
 extern int setup_tests_from_database(int pingenabled, int forcetest);
 
 #endif

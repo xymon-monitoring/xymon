@@ -73,14 +73,16 @@ static int wanted_host(void *host, char *netstring, int selectedonly)
 }
 
 
-int read_tests_from_hostscfg(int defaulttimeout)
+int read_tests_from_hostscfg(int uselocalcfg, int defaulttimeout)
 {
-	char *location;
+	char *source, *location;
 	void *hwalk;
 	int count = 0;
 
-	if (load_hostnames("@", NULL, get_fqdn()) < 0) {
-		errprintf("Cannot load host configuration from xymond\n");
+	source = (uselocalcfg ? xgetenv("HOSTSCFG") : "@");
+
+	if (load_hostnames(source, NULL, get_fqdn()) < 0) {
+		errprintf("Cannot load host configuration, trying local configuration\n");
 
 		if (load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn()) < 0) {
 			errprintf("Cannot load host configuration from %s\n", xgetenv("HOSTSCFG"));
@@ -107,6 +109,7 @@ int read_tests_from_hostscfg(int defaulttimeout)
 
 		if (!wanted_host(hwalk, location, 0)) continue;
 
+		memset(&options, 0, sizeof(options));
 		options.timeout = defaulttimeout;
 		options.interval = DEFAULT_NET_INTERVAL;
 		options.sourceip = NULL;
@@ -158,6 +161,29 @@ int read_tests_from_hostscfg(int defaulttimeout)
 				}
 
 				xfree(tsdup);
+			}
+			else if ((strcmp(testspec, "dns") == 0) || (strcmp(testspec, "dig") == 0) || (strncmp(testspec, "dns=", 4) == 0)) {
+				char *hostname = xmh_item(hwalk, XMH_HOSTNAME);
+				char *tspec, *tokr, *tok, *p;
+
+				p = strchr(testspec, '=');
+				if (!p) {
+					tspec = (char *)malloc(strlen(hostname)+10);
+					sprintf(tspec, "A:%s", hostname);
+				}
+				else {
+					tspec = strdup(p+1);
+				}
+
+				tok = strtok_r(tspec, ",", &tokr);
+				while (tok) {
+					options.testtype = NET_TEST_DNS;
+					options.timeout = defaulttimeout;
+					xymon_sqldb_nettest_register(hostname, tok, NULL, &options, location);
+					tok = strtok_r(NULL, ",", &tokr);
+				}
+
+				xfree(tspec);
 			}
 			else {
 				myconn_netparams_t netparams;
@@ -228,7 +254,8 @@ int setup_tests_from_database(int pingenabled, int forcetest)
 		}
 
 		memset(&netparams, 0, sizeof(netparams));
-		if (options.testtype == NET_TEST_PING) {
+		switch (options.testtype) {
+		  case NET_TEST_PING:
 			netparams.destinationip = strdup(destination);
 			add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
 			/* The default "ping" has a NULL destination in the table; the "conn" test has the IP as destination */
@@ -238,13 +265,21 @@ int setup_tests_from_database(int pingenabled, int forcetest)
 			else {
 				xymon_sqldb_nettest_done(xmh_item(hwalk, XMH_HOSTNAME), testspec, NULL);
 			}
-		}
-		else {
+			break;
+
+		  case NET_TEST_DNS:
+			if (!netparams.destinationip) netparams.destinationip = strdup(destination);
+			add_net_test(testspec, NULL, dtoken, &options, &netparams, hwalk);
+			xymon_sqldb_nettest_done(xmh_item(hwalk, XMH_HOSTNAME), testspec, NULL);
+			break;
+
+		  default:
 			dialog = net_dialog(testspec, &netparams, &options, hwalk, &dtoken);
 			/* netparams.destinationip may have been filled by net_dialog (e.g. http) */
 			if (!netparams.destinationip) netparams.destinationip = strdup(destination);
 			add_net_test(testspec, dialog, dtoken, &options, &netparams, hwalk);
 			xymon_sqldb_nettest_done(xmh_item(hwalk, XMH_HOSTNAME), testspec, NULL);
+			break;
 		}
 
 	}

@@ -38,7 +38,7 @@ typedef struct myconn_netparams_t {
 typedef struct myconn_t {
 	char *testspec;
 	myconn_netparams_t netparams;
-	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY, TALK_PROTO_PING, TALK_PROTO_LDAP, TALK_PROTO_EXTERNAL } talkprotocol;
+	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY, TALK_PROTO_PING, TALK_PROTO_LDAP, TALK_PROTO_EXTERNAL, TALK_PROTO_LAST } talkprotocol;
 	char **dialog;				/* SEND/EXPECT/READ/CLOSE steps */
 	int dialogtoken;
 	listitem_t *listitem;

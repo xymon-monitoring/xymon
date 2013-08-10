@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 {
 	int argi;
 	time_t nextrun = 0;
-	int wipedb = 0;
+	int wipedb = 0, uselocalcfg = 0;
 
 	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
@@ -113,6 +113,9 @@ int main(int argc, char **argv)
 		else if ((strcmp(argv[argi], "--wipedb") == 0) || (strcmp(argv[argi], "--wipe-db") == 0)) {
 			wipedb = 1;
 		}
+		else if (strcmp(argv[argi], "--local") == 0) {
+			uselocalcfg = 1;
+		}
 		else if (*(argv[argi]) != '-') {
 			add_wanted_host(argv[argi]);
 			running = 0;	/* When testing specific hosts, assume "--once" */
@@ -156,7 +159,7 @@ int main(int argc, char **argv)
 
 		if (now > (lastloadtime+600)) {
 			lastloadtime = now;
-			read_tests_from_hostscfg(defaulttimeout);
+			read_tests_from_hostscfg(uselocalcfg, defaulttimeout);
 			load_protocols(NULL);
 		}
 
