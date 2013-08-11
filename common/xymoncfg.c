@@ -24,19 +24,12 @@ int main(int argc, char *argv[])
 	char *fn = NULL;
 	strbuffer_t *inbuf;
 	int argi;
-	char *include2 = NULL;
 	enum { S_NONE, S_KSH, S_CSH } shelltype = S_NONE;
 	char *p;
 
 	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
-		if ((strcmp(argv[argi], "--net") == 0) || (strcmp(argv[argi], "--bbnet") == 0)) {
-			include2 = "netinclude";
-		}
-		else if ((strcmp(argv[argi], "--web") == 0) || (strcmp(argv[argi], "--bbdisp") == 0)) {
-			include2 = "dispinclude";
-		}
-		else if (standardoption(argv[argi])) {
+		if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 		else if (strcmp(argv[argi], "-s") == 0) {
@@ -65,7 +58,7 @@ int main(int argc, char *argv[])
 	}
 
 	inbuf = newstrbuffer(0);
-	while (stackfgets(inbuf, include2)) {
+	while (stackfgets(inbuf, NULL)) {
 		switch (shelltype) {
 		  case S_NONE:
 			printf("%s", STRBUF(inbuf));

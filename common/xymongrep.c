@@ -108,7 +108,6 @@ int main(int argc, char *argv[])
 	void *hwalk;
 	char *hostsfn = NULL;
 	char *netstring = NULL;
-	char *include2 = NULL;
 	int extras = 1;
 	int testuntagged = 0;
 	int nodownhosts = 0;
@@ -144,14 +143,6 @@ int main(int argc, char *argv[])
 			p = strchr(argv[argi], '=');
 			if (p) testcolumn = strdup(p+1);
 		}
-		else if ((strcmp(argv[argi], "--net") == 0) || (strcmp(argv[argi], "--bbnet") == 0)) {
-			include2 = "netinclude";
-			onlypreferredentry = 0;
-		}
-		else if ((strcmp(argv[argi], "--web") == 0) || (strcmp(argv[argi], "--bbdisp") == 0)) {
-			include2 = "dispinclude";
-			onlypreferredentry = 1;
-		}
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			hostsfn = strchr(argv[argi], '=') + 1;
 		}
@@ -170,7 +161,7 @@ int main(int argc, char *argv[])
 		exit(2);
 	}
 
-	load_hostnames(hostsfn, include2, get_fqdn());
+	load_hostnames(hostsfn, NULL, get_fqdn());
 	if (first_host() == NULL) {
 		errprintf("Cannot load %s, or file is empty\n", hostsfn);
 		exit(3);

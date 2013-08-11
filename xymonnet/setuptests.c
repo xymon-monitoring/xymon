@@ -84,7 +84,7 @@ int read_tests_from_hostscfg(int uselocalcfg, int defaulttimeout)
 	if (load_hostnames(source, NULL, get_fqdn()) < 0) {
 		errprintf("Cannot load host configuration, trying local configuration\n");
 
-		if (load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn()) < 0) {
+		if (load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn()) < 0) {
 			errprintf("Cannot load host configuration from %s\n", xgetenv("HOSTSCFG"));
 			return 1;
 		}
