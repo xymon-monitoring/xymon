@@ -295,15 +295,24 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 		if (rec->peercertificate) {
 			char exps[50];
 
-			strftime(exps, sizeof(exps), "%Y-%m-%d %H:%M:%S UTC", gmtime(&rec->peercertificateexpiry));
 			addtobuffer(hres->txt, "PeerCertificateSubject: ");
 			addtobuffer(hres->txt, rec->peercertificate);
 			addtobuffer(hres->txt, "\n");
 			addtobuffer(hres->txt, "PeerCertificateIssuer: ");
 			addtobuffer(hres->txt, rec->peercertificateissuer);
 			addtobuffer(hres->txt, "\n");
+
+			strftime(exps, sizeof(exps), "%Y-%m-%d %H:%M:%S UTC", gmtime(&rec->peercertificatestart));
+			snprintf(msgline, sizeof(msgline), "PeerCertificateStart: %d %s\n", (int)rec->peercertificatestart, exps);
+			addtobuffer(hres->txt, msgline);
+
+			strftime(exps, sizeof(exps), "%Y-%m-%d %H:%M:%S UTC", gmtime(&rec->peercertificateexpiry));
 			snprintf(msgline, sizeof(msgline), "PeerCertificateExpiry: %d %s\n", (int)rec->peercertificateexpiry, exps);
 			addtobuffer(hres->txt, msgline);
+
+			snprintf(msgline, sizeof(msgline), "PeerCertificateKeysize: %d\n", (int)rec->peercertificatekeysize);
+			addtobuffer(hres->txt, msgline);
+
 			snprintf(msgline, sizeof(msgline), "PeerCertificateDetails: %d\n", (int)strlen(rec->peercertificatedetails)+1);
 			addtobuffer(hres->txt, msgline);
 			addtobuffer(hres->txt, rec->peercertificatedetails);

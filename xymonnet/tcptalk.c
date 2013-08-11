@@ -355,6 +355,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 	int n, advancestep;
 	size_t used;
 	time_t start, expire;
+	int keysize;
 	char *certsubject, *issuer, *fulltext;
 	myconn_t *rec = (myconn_t *)userdata;
 
@@ -381,11 +382,13 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 		break;
 
 	  case CONN_CB_SSLHANDSHAKE_OK:        /* Client/server mode: SSL handshake completed OK (peer certificate ready) */
-		certsubject = conn_peer_certificate(connection, &start, &expire, &issuer, &fulltext);
+		certsubject = conn_peer_certificate(connection, &start, &expire, &keysize, &issuer, &fulltext);
 		if (certsubject) {
 			rec->peercertificate = certsubject;	/* certsubject is malloc'ed by conn_peer_certificate */
 			rec->peercertificateissuer = issuer;	/* ditto issuer */
+			rec->peercertificatestart = start;
 			rec->peercertificateexpiry = expire;
+			rec->peercertificatekeysize = keysize;
 			rec->peercertificatedetails = fulltext;
 		}
 		if (strcasecmp(rec->dialog[rec->step], "CLOSE") == 0) conn_close_connection(connection, NULL);
