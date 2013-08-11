@@ -312,7 +312,7 @@ static time_t convert_asn1_tstamp(ASN1_UTCTIME *tstamp)
 }
 #endif
 
-char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend, char **issuer, char **fulltext)
+char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend, int *keysize, char **issuer, char **fulltext)
 {
 	char *result = NULL;
 
@@ -322,6 +322,8 @@ char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend,
 
 	peercert = SSL_get_peer_certificate(conn->ssl);
 	if (!peercert) return NULL;
+
+	if (keysize) *keysize = 0;
 
 	/* X509_NAME_oneline malloc's space for the result when called with a NULL buffer */
 	result = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
@@ -351,6 +353,17 @@ char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend,
 
 		BIO_set_close(o, BIO_CLOSE);
 		BIO_free(o);
+
+		if (keysize) {
+			char *p;
+
+			p = strstr(*fulltext, "Public-Key:");
+			if (p) {
+				p += strlen("Public-Key:");
+				p += strcspn(p, "1234567890\r\n");
+				*keysize = atoi(p);
+			}
+		}
 	}
 
 	X509_free(peercert);
