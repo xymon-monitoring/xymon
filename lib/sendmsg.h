@@ -35,6 +35,13 @@ typedef struct sendreturn_t {
 	int haveseenhttphdrs;
 } sendreturn_t;
 
+typedef struct multistatus_t {
+	int color, testinterval;
+	char *name, *greentext, *yellowtext, *redtext;
+	strbuffer_t *headtext, *detailtext;
+	struct multistatus_t *next;
+} multistatus_t;
+
 extern void setproxy(char *proxy);
 extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);
 
@@ -54,6 +61,10 @@ extern void init_status(int color);
 extern void addtostatus(char *p);
 extern void addtostrstatus(strbuffer_t *p);
 extern void finish_status(void);
+
+extern multistatus_t *init_multi(multistatus_t **mhead, char *name, int duration, char *greentext, char *yellowtext, char *redtext);
+extern void add_multi_item(multistatus_t *item, int color, char *header);
+extern void finish_multi(multistatus_t *head, char *hostname);
 
 #endif
 

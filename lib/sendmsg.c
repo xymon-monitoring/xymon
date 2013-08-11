@@ -705,3 +705,87 @@ void finish_status(void)
 	combo_add(msgbuf);
 }
 
+
+multistatus_t *init_multi(multistatus_t **mhead, char *name, int testinterval, char *greentext, char *yellowtext, char *redtext)
+{
+	multistatus_t *result = NULL;
+
+	if (*mhead) {
+		result = *mhead;
+		while (result && (strcmp(result->name, name) != 0)) result = result->next;
+
+		if (result) {
+			/* Bump duration to the longest duration of the sub-statuses */
+			if (testinterval > result->testinterval) result->testinterval = testinterval;
+			return result;
+		}
+	}
+
+	result = (multistatus_t *)calloc(1, sizeof(multistatus_t));
+	result->name = strdup(name);
+	result->testinterval = testinterval;
+	result->greentext = strdup(greentext);
+	result->yellowtext = strdup(yellowtext);
+	result->redtext = strdup(redtext);
+	result->color = COL_GREEN;
+	result->next = *mhead;
+	*mhead = result;
+
+	return result;
+}
+
+void add_multi_item(multistatus_t *item, int color, char *header)
+{
+	char colmsg[15];
+
+	if (color > item->color) item->color = color;
+
+	if (!item->headtext) item->headtext = newstrbuffer(0);
+	sprintf(colmsg, "&%s ", colorname(color));
+	addtobuffer(item->headtext, colmsg);
+	addtobuffer(item->headtext, header);
+
+	if (!item->detailtext) item->detailtext = newstrbuffer(0);
+}
+
+void finish_multi(multistatus_t *head, char *hostname)
+{
+	char msgline[4096];
+
+	while (head) {
+		char *summary;
+		multistatus_t *zombie = head;
+		head = zombie->next;
+		int validity;
+
+		if (zombie->color == COL_RED) summary = zombie->redtext;
+		else if (zombie->color == COL_YELLOW) summary = zombie->yellowtext;
+		else summary = zombie->greentext;
+
+		/* Validity = 6*(interval in minutes) = 6*(interval/(1000*60)) = interval/10000 */
+		validity = zombie->testinterval / 10000;
+		/* Force a minimum validity of 5 minutes for statuses */
+		if (validity <= 0) validity = 5;
+
+		init_status(zombie->color);
+		sprintf(msgline, "status+%d %s.%s %s %s %s\n\n", 
+			validity, hostname, zombie->name, colorname(zombie->color), timestamp, summary);
+		addtostatus(msgline);
+		addtostrstatus(zombie->headtext);
+
+		if (STRBUFLEN(zombie->detailtext) > 0) {
+			addtostatus("\n\n");
+			addtostrstatus(zombie->detailtext);
+		}
+		finish_status();
+
+		freestrbuffer(zombie->headtext);
+		freestrbuffer(zombie->detailtext);
+		xfree(zombie->name);
+		xfree(zombie->greentext);
+		xfree(zombie->yellowtext);
+		xfree(zombie->redtext);
+		xfree(zombie);
+	}
+}
+
