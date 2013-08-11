@@ -32,8 +32,9 @@ typedef struct connectresult_t {
 	enum { NC_STATUS_UNKNOWN, NC_STATUS_OK, NC_STATUS_FAILED, NC_STATUS_TIMEOUT, NC_STATUS_RESOLVERROR, NC_STATUS_SSLERROR, NC_STATUS_BADDATA } status;
 	enum { NC_HANDLER_PING, NC_HANDLER_PLAIN, NC_HANDLER_HTTP, NC_HANDLER_DNS, NC_HANDLER_NTP, NC_HANDLER_LDAP, NC_HANDLER_RPC, NC_HANDLER_APACHE } handler;
 	float elapsedms;
-	char *sslsubject;
-	time_t sslexpires;
+	char *sslsubject, *sslissuer, *ssldetails;
+	time_t sslstart, sslexpires;
+	int sslkeysize;
 	char *plainlog, *httpheaders, *httpbody;
 	int httpstatus;
 	int ntpstratum;
@@ -139,6 +140,11 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 				else if (strcmp(s, "http") == 0)  rec->handler = ((strncmp(testspec, "apache", 6) == 0) ? NC_HANDLER_APACHE : NC_HANDLER_HTTP);
 			}
 			else if (argnmatch(bol, "PeerCertificateSubject: ")) rec->sslsubject = strdup(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "PeerCertificateIssuer: ")) rec->sslissuer = strdup(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "PeerCertificateStart: ")) rec->sslstart = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "PeerCertificateExpiry: ")) rec->sslexpires = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "PeerCertificateKeysize: ")) rec->sslkeysize = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "PeerCertificateDetails: ")) rec->ssldetails = sizedstr(bol, eoln);
 			else if (argnmatch(bol, "PLAINlog: ")) rec->plainlog = sizedstr(bol, eoln);
 			else if (argnmatch(bol, "HTTPheaders: ")) rec->httpheaders = sizedstr(bol, eoln);
 			else if (argnmatch(bol, "HTTPbody: ")) rec->httpbody = sizedstr(bol, eoln);
@@ -147,7 +153,6 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 			else if (argnmatch(bol, "IntervalMS: ")) rec->interval = atoi(strchr(bol, ':') + 2) / 1000;
 			else if (argnmatch(bol, "TargetIP: ")) rec->targetip = strdup(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "TargetPort: ")) rec->targetport = atoi(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "PeerCertificateExpiry: ")) rec->sslexpires = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "NTPstratum: ")) rec->ntpstratum = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "NTPoffset: ")) rec->ntpoffset = atof(strchr(bol, ':') + 2);
 
@@ -317,6 +322,8 @@ void netcollect_generate_updates(int usebackfeedqueue)
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
 		xtreePos_t handle;
 		hostresults_t *hrec;
+		char msgline[4096], msgtext[4096];
+		multistatus_t *mhead = NULL;
 
 		handle = xtreeFind(hostresults, xmh_item(hwalk, XMH_HOSTNAME));
 		if (handle == xtreeEnd(hostresults)) continue;
@@ -328,8 +335,6 @@ void netcollect_generate_updates(int usebackfeedqueue)
 			char *testspec;
 			int isdialup, isreverse, isforced;
 			char *p;
-			int color;
-			char msgline[4096], msgtext[4096];
 
 			crec = (connectresult_t *)xtreeData(hrec->results, handle);
 			if (crec->sent) continue;
@@ -346,8 +351,56 @@ void netcollect_generate_updates(int usebackfeedqueue)
 				}
 			}
 
-			// FIXME: SSL certificate status
-			// FIXME: Multiple tests for one host
+			if (crec->sslsubject) {
+				char *dupsubj = strdup(crec->sslsubject);
+				char *cn, *tokr;
+				time_t now;
+				char timestr[30];
+				multistatus_t *multiitem;
+				int sslcolor = COL_GREEN;
+
+				multiitem = init_multi(&mhead, "sslcert", crec->interval, "SSL certificate(s) OK", "SSL certificate(s) about to expire", "SSL certificate(s) expire immediately");
+
+				cn = strtok_r(dupsubj, "/", &tokr);
+				while (cn && (strncmp(cn, "CN=", 3) != 0)) cn = strtok_r(NULL, "/", &tokr);
+				now = getcurrenttime(NULL);
+
+				if ((crec->sslexpires - now) >= 30*24*60*60) {
+					sslcolor = COL_GREEN;
+
+				}
+				else if ((crec->sslexpires - now) >= 10*24*60*60) {
+					sslcolor = COL_YELLOW;
+				}
+				else {
+					sslcolor = COL_RED;
+				}
+
+				strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S UTC", gmtime((time_t *)&crec->sslexpires));
+				if (crec->sslexpires >= now)
+					sprintf(msgtext, "SSL certificate for %s expires in %d days (%s)\n", cn, (int)((crec->sslexpires - now) / (24*60*60)), timestr);
+				else
+					sprintf(msgtext, "SSL certificate for %s expired %d days ago (%s)\n", cn, (int)((now - crec->sslexpires) / (24*60*60)), timestr);
+				add_multi_item(multiitem, sslcolor, msgtext);
+
+				sprintf(msgtext, "Server certificate for %s\n", testspec);
+				addtobuffer(multiitem->detailtext, msgtext);
+				sprintf(msgtext, "\tSubject: %s\n", crec->sslsubject);
+				addtobuffer(multiitem->detailtext, msgtext);
+				sprintf(msgtext, "\tIssuer: %s\n", crec->sslissuer);
+				addtobuffer(multiitem->detailtext, msgtext);
+				strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S UTC", gmtime((time_t *)&crec->sslstart));
+				sprintf(msgtext, "\tValid from: %s\n", timestr);
+				addtobuffer(multiitem->detailtext, msgtext);
+				strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S UTC", gmtime((time_t *)&crec->sslexpires));
+				sprintf(msgtext, "\tValid until: %s\n", timestr);
+				addtobuffer(multiitem->detailtext, msgtext);
+				sprintf(msgtext, "\tKeysize: %d\n", crec->sslkeysize);
+				addtobuffer(multiitem->detailtext, msgtext);
+				addtobuffer(multiitem->detailtext, "\n");
+
+				xfree(dupsubj);
+			}
 
 			switch (crec->handler) {
 			  case NC_HANDLER_HTTP:
@@ -355,12 +408,22 @@ void netcollect_generate_updates(int usebackfeedqueue)
 			  case NC_HANDLER_DNS:
 				{
 					char *testname;
+					multistatus_t *multiitem = NULL;
+					int color = COL_GREEN;
+
 
 					switch (crec->handler) {
-					  case NC_HANDLER_HTTP: testname = "http"; break;
-					  case NC_HANDLER_LDAP: testname = "ldap"; break;
-					  case NC_HANDLER_DNS:  testname = "dns"; break;
-					  default:              break;
+					  case NC_HANDLER_HTTP:
+						multiitem = init_multi(&mhead, "http", crec->interval, "Web check OK", "Web check warning", "Web check failed");
+						break;
+					  case NC_HANDLER_LDAP:
+						multiitem = init_multi(&mhead, "ldap", crec->interval, "LDAP Web check OK", "LDAP Web check warning", "LDAP check failed");
+						break;
+					  case NC_HANDLER_DNS:
+						multiitem = init_multi(&mhead, "dns", crec->interval, "DNS Lookup OK", "DNS lookup warning", "DNS lookup failed");
+						break;
+					  default:
+						break;
 					}
 
 					color = decide_color(crec,
@@ -374,18 +437,12 @@ void netcollect_generate_updates(int usebackfeedqueue)
 
 					if ((crec->handler == NC_HANDLER_LDAP) && (color == COL_RED) && (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW))) color = COL_YELLOW;
 
-					init_status(color);
-					sprintf(msgline, "status+%d %s.%s %s %s\n",
-							crec->interval/10, xmh_item(hwalk, XMH_HOSTNAME), testname, colorname(color), timestamp);
-					addtostatus(msgline);
+					sprintf(msgline, "%s - %s\n", testspec, ((color != COL_GREEN) ? "failed" : "OK"));
+					add_multi_item(multiitem, color, msgline);
 
-					sprintf(msgline, "\n&%s %s - %s\n\n", colorname(color), testspec, ((color != COL_GREEN) ? "failed" : "OK"));
-					addtostatus(msgline);
-
-					if (crec->plainlog) addtostatus(crec->plainlog);
 					switch (crec->handler) {
 					  case NC_HANDLER_HTTP:
-						if (crec->httpheaders) addtostatus(crec->httpheaders);
+						if (crec->httpheaders) addtobuffer(multiitem->detailtext, crec->httpheaders);
 						// if (crec->httpbody) addtostatus(crec->httpbody);
 						break;
 
@@ -393,14 +450,14 @@ void netcollect_generate_updates(int usebackfeedqueue)
 						break;
 					}
 
+					if (crec->plainlog) addtobuffer(multiitem->detailtext, crec->plainlog);
+
 					sprintf(msgtext, "\nTarget : %s port %d\n", crec->targetip, crec->targetport);
-					addtostatus(msgtext);
+					addtobuffer(multiitem->detailtext, msgtext);
 
 					sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
-					addtostatus(msgtext);
+					addtobuffer(multiitem->detailtext, msgtext);
 
-					addtostatus("\n");
-					finish_status();
 					crec->sent = 1;
 				}
 				break;
@@ -420,6 +477,7 @@ void netcollect_generate_updates(int usebackfeedqueue)
 
 			  default:
 				{
+					int color = COL_GREEN;
 					char flags[5];
 
 					flags[0] = (isdialup ? 'D' : 'd');
@@ -435,11 +493,12 @@ void netcollect_generate_updates(int usebackfeedqueue)
 							isforced,
 							failgoesclear, causetext);
 
+					/* Validity = 6*(interval in minutes) = 6*(interval/(1000*60)) = interval/10000 */
 					init_status(color);
 					sprintf(msgline, "status+%d %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
-							crec->interval/10, xmh_item(hwalk, XMH_HOSTNAME), testspec, colorname(color), 
-							flags, timestamp, testspec, 
-							( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
+						crec->interval/10000, xmh_item(hwalk, XMH_HOSTNAME), testspec, colorname(color), 
+						flags, timestamp, testspec, 
+						(((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok") );
 
 					if (crec->status == NC_STATUS_RESOLVERROR) {
 						strcat(msgline, ": DNS lookup failed");
@@ -503,6 +562,8 @@ void netcollect_generate_updates(int usebackfeedqueue)
 				break;
 			}
 		}
+
+		finish_multi(mhead, xmh_item(hwalk, XMH_HOSTNAME));
 	}
 
 	combo_end();
@@ -521,7 +582,7 @@ int main(int argc, char *argv[])
 	int argi, seq;
 	struct timespec timeout;
 	time_t nextconfigload = 0;
-	int usebackfeedqueue = 0;
+	int usebackfeedqueue = 0, alwaysflush = 0;
 
 	libxymon_init(argv[0]);
 
@@ -529,6 +590,9 @@ int main(int argc, char *argv[])
 	for (argi = 1; (argi < argc); argi++) {
 		if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
+		}
+		else if (strcmp(argv[argi], "--flush") == 0) {
+			alwaysflush = 1;
 		}
 	}
 
@@ -660,7 +724,7 @@ int main(int argc, char *argv[])
 			handle_netcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 			anychanges = 1;
 
-			if ((lastupdatesent + MINIMUM_UPDATE_INTERVAL) < gettimer()) {
+			if (alwaysflush || ((lastupdatesent + MINIMUM_UPDATE_INTERVAL) < gettimer())) {
 				netcollect_generate_updates(usebackfeedqueue);
 			}
 		}
