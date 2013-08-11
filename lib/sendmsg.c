@@ -745,7 +745,11 @@ void add_multi_item(multistatus_t *item, int color, char *header)
 	addtobuffer(item->headtext, colmsg);
 	addtobuffer(item->headtext, header);
 
-	if (!item->detailtext) item->detailtext = newstrbuffer(0);
+	if (!item->detailtext) 
+		item->detailtext = newstrbuffer(0);
+	else {
+		addtobuffer(item->detailtext, "--------------------------------------------------\n");
+	}
 }
 
 void finish_multi(multistatus_t *head, char *hostname)
