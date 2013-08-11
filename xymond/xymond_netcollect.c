@@ -150,7 +150,7 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 			else if (argnmatch(bol, "HTTPbody: ")) rec->httpbody = sizedstr(bol, eoln);
 			else if (argnmatch(bol, "HTTPstatus: ")) rec->httpstatus = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "ElapsedMS: ")) rec->elapsedms = atof(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "IntervalMS: ")) rec->interval = atoi(strchr(bol, ':') + 2) / 1000;
+			else if (argnmatch(bol, "IntervalMS: ")) rec->interval = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "TargetIP: ")) rec->targetip = strdup(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "TargetPort: ")) rec->targetport = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "NTPstratum: ")) rec->ntpstratum = atoi(strchr(bol, ':') + 2);
@@ -442,6 +442,8 @@ void netcollect_generate_updates(int usebackfeedqueue)
 
 					switch (crec->handler) {
 					  case NC_HANDLER_HTTP:
+						sprintf(msgline, "&%s %s\n\n", colorname(color), testspec);
+						addtobuffer(multiitem->detailtext, msgline);
 						if (crec->httpheaders) addtobuffer(multiitem->detailtext, crec->httpheaders);
 						// if (crec->httpbody) addtostatus(crec->httpbody);
 						break;
