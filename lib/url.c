@@ -367,7 +367,13 @@ void parse_url(char *inputurl, urlelem_t *url)
 	}
 	p = strchr(netloc, '=');
 	if (p) {
-		url->ip = strdup(p+1);
+		if ((*(p+1) == '[') && (*(p+strlen(p)-1) == ']')) {
+			*(p+strlen(p)-1) = '\0';
+			url->ip = strdup(p+2);
+		}
+		else {
+			url->ip = strdup(p+1);
+		}
 		*p = '\0';
 	}
 	p = strchr(netloc, ':');
