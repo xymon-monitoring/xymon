@@ -351,13 +351,24 @@ void netcollect_generate_updates(int usebackfeedqueue)
 				}
 			}
 
-			if (crec->sslsubject) {
+			if (!xmh_item(hwalk, XMH_FLAG_NOSSLCERT) && crec->sslsubject) {
 				char *dupsubj = strdup(crec->sslsubject);
-				char *cn, *tokr;
+				char *cn, *tokr, *val;
 				time_t now;
 				char timestr[30];
 				multistatus_t *multiitem;
-				int sslcolor = COL_GREEN;
+				int sslcolor = COL_GREEN, kscolor = COL_GREEN;
+				int sslwarndays = 30, sslcriticaldays = 10, sslkeysize = 0;
+
+				val = xmh_item(hwalk, XMH_SSLDAYS);
+				if (val) {
+					sslwarndays = atoi(val); /* Stops at colon */
+					val = strchr(val, ':');
+					if (val) sslcriticaldays = atoi(val+1);
+				}
+
+				val = xmh_item(hwalk, XMH_SSLMINIMUMKEYSIZE);
+				if (val) sslkeysize = atoi(val);
 
 				multiitem = init_multi(&mhead, "sslcert", crec->interval, "SSL certificate(s) OK", "SSL certificate(s) about to expire", "SSL certificate(s) expire immediately");
 
@@ -365,22 +376,33 @@ void netcollect_generate_updates(int usebackfeedqueue)
 				while (cn && (strncmp(cn, "CN=", 3) != 0)) cn = strtok_r(NULL, "/", &tokr);
 				now = getcurrenttime(NULL);
 
-				if ((crec->sslexpires - now) >= 30*24*60*60) {
+				if ((crec->sslexpires - now) >= sslwarndays*24*60*60) {
 					sslcolor = COL_GREEN;
 
 				}
-				else if ((crec->sslexpires - now) >= 10*24*60*60) {
+				else if ((crec->sslexpires - now) >= sslcriticaldays*24*60*60) {
 					sslcolor = COL_YELLOW;
 				}
 				else {
 					sslcolor = COL_RED;
 				}
 
-				strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S UTC", gmtime((time_t *)&crec->sslexpires));
+				if ((crec->sslkeysize > 0) && (sslkeysize != 0)) {
+					if (crec->sslkeysize < abs(sslkeysize)) {
+						kscolor = (sslkeysize < 0) ? COL_RED : COL_YELLOW;
+					}
+				}
+
 				if (crec->sslexpires >= now)
-					sprintf(msgtext, "SSL certificate for %s expires in %d days (%s)\n", cn, (int)((crec->sslexpires - now) / (24*60*60)), timestr);
+					sprintf(msgtext, "SSL certificate for %s expires in %d days.", cn, (int)((crec->sslexpires - now) / (24*60*60)));
 				else
-					sprintf(msgtext, "SSL certificate for %s expired %d days ago (%s)\n", cn, (int)((now - crec->sslexpires) / (24*60*60)), timestr);
+					sprintf(msgtext, "SSL certificate for %s expired %d days ago.", cn, (int)((now - crec->sslexpires) / (24*60*60)));
+
+				if (kscolor != COL_GREEN) {
+					if (sslcolor < kscolor) sslcolor = kscolor;
+					sprintf(msgtext + strlen(msgtext), " SSL key is only %d bits (require %d).", crec->sslkeysize, abs(sslkeysize));
+				}
+				strcat(msgtext, "\n");
 				add_multi_item(multiitem, sslcolor, msgtext);
 
 				sprintf(msgtext, "Server certificate for %s\n", testspec);
@@ -395,8 +417,10 @@ void netcollect_generate_updates(int usebackfeedqueue)
 				strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S UTC", gmtime((time_t *)&crec->sslexpires));
 				sprintf(msgtext, "\tValid until: %s\n", timestr);
 				addtobuffer(multiitem->detailtext, msgtext);
-				sprintf(msgtext, "\tKeysize: %d\n", crec->sslkeysize);
-				addtobuffer(multiitem->detailtext, msgtext);
+				if (crec->sslkeysize > 0) {
+					sprintf(msgtext, "\tKeysize: %d\n", crec->sslkeysize);
+					addtobuffer(multiitem->detailtext, msgtext);
+				}
 				addtobuffer(multiitem->detailtext, "\n");
 
 				xfree(dupsubj);
@@ -442,6 +466,8 @@ void netcollect_generate_updates(int usebackfeedqueue)
 
 					switch (crec->handler) {
 					  case NC_HANDLER_HTTP:
+						if (xmh_item(hwalk, XMH_FLAG_HIDEHTTP)) break;
+
 						sprintf(msgline, "&%s %s\n\n", colorname(color), testspec);
 						addtobuffer(multiitem->detailtext, msgline);
 						if (crec->httpheaders) addtobuffer(multiitem->detailtext, crec->httpheaders);
@@ -449,10 +475,9 @@ void netcollect_generate_updates(int usebackfeedqueue)
 						break;
 
 					  default:
+						if (crec->plainlog) addtobuffer(multiitem->detailtext, crec->plainlog);
 						break;
 					}
-
-					if (crec->plainlog) addtobuffer(multiitem->detailtext, crec->plainlog);
 
 					sprintf(msgtext, "\nTarget : %s port %d\n", crec->targetip, crec->targetport);
 					addtobuffer(multiitem->detailtext, msgtext);
