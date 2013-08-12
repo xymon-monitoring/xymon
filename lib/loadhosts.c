@@ -120,8 +120,8 @@ static void xmh_item_list_setup(void)
 	xmh_item_name[XMH_DOWNTIME]            = "XMH_DOWNTIME";
 	xmh_item_key[XMH_SSLDAYS]              = "ssldays=";
 	xmh_item_name[XMH_SSLDAYS]             = "XMH_SSLDAYS";
-	xmh_item_key[XMH_SSLMINBITS]           = "sslbits=";
-	xmh_item_name[XMH_SSLMINBITS]          = "XMH_SSLMINBITS";
+	xmh_item_key[XMH_SSLMINIMUMKEYSIZE]    = "sslkeysize=";
+	xmh_item_name[XMH_SSLMINIMUMKEYSIZE]   = "XMH_SSLMINIMUMKEYSIZE";
 	xmh_item_key[XMH_DEPENDS]              = "depends=";
 	xmh_item_name[XMH_DEPENDS]             = "XMH_DEPENDS";
 	xmh_item_key[XMH_BROWSER]              = "browser=";

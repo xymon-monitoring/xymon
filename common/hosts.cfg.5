@@ -578,12 +578,12 @@ alarm (red) status. These default to the values from the
 tool; the values specified in the "ssldays" tag overrides
 the default.
 
-.IP "sslbits=MINIMUMKEYBITS"
-Enable checking of the encryption strength of the SSL protocol
-offered by the server. If the server offers encryption using
-a key with fewer than MINIMUMKEYBITS bits, the "sslcert"
-test will go red. E.g. to check that your server only uses
-strong encryption (128 bits or better), use "sslbits=128".
+.IP "sslkeysize=MINIMUMKEYBITS"
+Enable checking of the size of the public key used by the SSL 
+certificate. If the certificate uses a key with fewer than 
+MINIMUMKEYBITS bits, the "sslcert" test will go red. 
+Certificate authorities normally require that your certificate 
+is generated with minimum 2048 bits in the public key.
 
 .IP DOWNTIME=day:starttime:endtime[,day:starttime:endtime]
 .IP DOWNTIME=columns:day:starttime:endtime:cause[,columns:day:starttime:endtime:cause]
