@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 
 			sprintf(logfn, "%s/%s.%s", filedir, commafy(hostname), testname);
 			expiretime = atoi(metadata[6]);
-			statusdata = msg_data(statusdata);
+			statusdata = msg_data(statusdata, 0);
 			sscanf(metadata[1], "%d.%*d", &ltime); logtime = ltime;
 			timesincechange = logtime - atoi(metadata[10]);
 			update_file(logfn, "w", statusdata, expiretime, metadata[2], timesincechange, seq);
@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			statusdata = msg_data(statusdata); if (*statusdata == '\n') statusdata++;
+			statusdata = msg_data(statusdata, 0); if (*statusdata == '\n') statusdata++;
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			expiretime = 0;
 			update_file(logfn, "a", statusdata, expiretime, NULL, -1, seq);
@@ -357,7 +357,7 @@ int main(int argc, char *argv[])
 		else if ((role == ROLE_NOTES) && (metacount > 3) && (strncmp(metadata[0], "@@notes", 7) == 0)) {
 			/* @@notes|timestamp|sender|hostname */
 			hostname = metadata[3];
-			statusdata = msg_data(statusdata); if (*statusdata == '\n') statusdata++;
+			statusdata = msg_data(statusdata, 0); if (*statusdata == '\n') statusdata++;
 			sprintf(logfn, "%s/%s", basename(filedir), hostname);
 			expiretime = 0;
 			update_file(logfn, "w", statusdata, expiretime, NULL, -1, seq);

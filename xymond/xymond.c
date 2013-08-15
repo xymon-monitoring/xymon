@@ -1331,7 +1331,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			  textornull(hostname), textornull(testname), textornull(sender));
 		return;
 	}
-	if (msg_data(msg) == (char *)msg) {
+	if (msg_data(msg, 0) == (char *)msg, 0) {
 		errprintf("Bogus status message: msg_data finds no host.test. Sent from: '%s', data:'%s'\n",
 			  sender, msg);
 		return;
@@ -1609,7 +1609,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		}
 
 		/* Get at the test flags. They are immediately after the color */
-		p = msg_data(msg);
+		p = msg_data(msg, 0);
 		p += strlen(colorname(newcolor));
 
 		if (strncmp(p, " <!-- [flags:", 13) == 0) {
@@ -2164,7 +2164,7 @@ void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 
 	hi = hostinfo(hostname);
 
-	msgtext = msg_data(msg);
+	msgtext = msg_data(msg, 0);
 	channelmsg = (char *)malloc(1024 + strlen(msgtext));
 
 	/* Tell the pagers */
@@ -2906,7 +2906,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 
 		  case F_LINE1:
 			eoln = strchr(lwalk->message, '\n'); if (eoln) *eoln = '\0';
-			bufp += sprintf(bufp, "%s", msg_data(lwalk->message));
+			bufp += sprintf(bufp, "%s", msg_data(lwalk->message, 0));
 			if (eoln) *eoln = '\n';
 			break;
 
@@ -3433,7 +3433,7 @@ void do_message(conn_t *msg, char *origin)
 				int msgcol;
 				char response[500];
 
-				bol = msg_data(log->message);
+				bol = msg_data(log->message, 0);
 				msgcol = parse_color(bol);
 				if (msgcol != -1) {
 					/* Skip the color - it may be different in real life */
@@ -3491,7 +3491,7 @@ void do_message(conn_t *msg, char *origin)
 			xfree(msg->buf);
 			bufp = buf = (char *)malloc(bufsz);
 			generate_outbuf(&buf, &bufp, &bufsz, h, log, acklevel);
-			bufp += sprintf(bufp, "%s", msg_data(log->message));
+			bufp += sprintf(bufp, "%s", msg_data(log->message, 0));
 
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf = buf;
@@ -3556,7 +3556,7 @@ void do_message(conn_t *msg, char *origin)
 			else
 				bufp += sprintf(bufp, "  <DisMsg>N/A</DisMsg>\n");
 
-			bufp += sprintf(bufp, "  <Message><![CDATA[%s]]></Message>\n", msg_data(log->message));
+			bufp += sprintf(bufp, "  <Message><![CDATA[%s]]></Message>\n", msg_data(log->message, 0));
 			for (mwalk = log->metas; (mwalk); mwalk = mwalk->next) {
 				bufp += sprintf(bufp, "<%s>\n%s</%s>\n", 
 						mwalk->metaname->name, mwalk->value, mwalk->metaname->name);

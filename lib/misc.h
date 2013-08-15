@@ -23,7 +23,7 @@ extern void uncommafy(char *hostname);
 extern char *skipword(char *l);
 extern char *skipwhitespace(char *l);
 extern int argnmatch(char *arg, char *match);
-extern char *msg_data(char *msg);
+extern char *msg_data(char *msg, int stripcr);
 extern char *gettok(char *s, char *delims);
 extern char *wstok(char *s);
 extern void sanitize_input(strbuffer_t *l, int stripcomment, int unescape);
