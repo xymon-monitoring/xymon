@@ -206,23 +206,45 @@ int argnmatch(char *arg, char *match)
 }
 
 
-char *msg_data(char *msg)
+char *msg_data(char *msg, int stripcr)
 {
 	/* Find the start position of the data following the "status host.test " message */
-	char *result;
+	static strbuffer_t *result = NULL;
+	char *bol;
 
 	if (!msg || (*msg == '\0')) return msg;
 
-	result = strchr(msg, '.');              /* Hits the '.' in "host.test" */
-	if (!result) {
+	bol = strchr(msg, '.');              /* Hits the '.' in "host.test" */
+	if (!bol) {
 		dbgprintf("Msg was not what I expected: '%s'\n", msg);
 		return msg;
 	}
 
-	result += strcspn(result, " \t\n");     /* Skip anything until we see a space, TAB or NL */
-	result += strspn(result, " \t");        /* Skip all whitespace */
+	bol += strcspn(bol, " \t\n");     /* Skip anything until we see a space, TAB or NL */
+	bol += strspn(bol, " \t");        /* Skip all whitespace */
+	if (!stripcr) return bol;
 
-	return result;
+	if (!result) result = newstrbuffer(0); else clearstrbuffer(result);
+	while (bol && *bol) {
+		char *eoln, savchar;
+		
+		eoln = bol + strcspn(bol, "\r\n");
+		if (eoln) {
+			savchar = *eoln;
+			*eoln = '\0';
+			addtobuffer(result, bol);
+			addtobuffer(result, "\n");
+			*eoln = savchar;
+			bol = eoln + 1;
+			if ((savchar == '\r') && (*bol == '\n')) bol++;
+		}
+		else {
+			addtobuffer(result, bol);
+			bol = NULL;
+		}
+	}
+
+	return STRBUF(result);
 }
 
 char *gettok(char *s, char *delims)
