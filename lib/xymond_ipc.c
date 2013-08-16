@@ -184,7 +184,7 @@ void close_feedback_queue(int queueid, int role)
 {
 	int n;
 
-	if ((queueid > 0) && (role == CHAN_MASTER)) {
+	if ((queueid >= 0) && (role == CHAN_MASTER)) {
 		n = msgctl(queueid, IPC_RMID, NULL);
 	}
 }
