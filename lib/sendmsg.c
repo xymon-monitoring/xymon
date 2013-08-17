@@ -734,22 +734,31 @@ multistatus_t *init_multi(multistatus_t **mhead, char *name, int testinterval, c
 	return result;
 }
 
-void add_multi_item(multistatus_t *item, int color, char *header)
+int add_multi_item(multistatus_t *item, int color, char *header)
 {
 	char colmsg[15];
+	char *p;
 
 	if (color > item->color) item->color = color;
 
 	if (!item->headtext) item->headtext = newstrbuffer(0);
 	sprintf(colmsg, "&%s ", colorname(color));
+	p = STRBUF(item->headtext) + STRBUFLEN(item->headtext);
 	addtobuffer(item->headtext, colmsg);
 	addtobuffer(item->headtext, header);
+
+	if (strstr(STRBUF(item->headtext), p) != p) {
+		strbufferchop(item->headtext, strlen(p));
+		return 1;
+	}
 
 	if (!item->detailtext) 
 		item->detailtext = newstrbuffer(0);
 	else {
 		addtobuffer(item->detailtext, "--------------------------------------------------\n");
 	}
+
+	return 0;
 }
 
 void finish_multi(multistatus_t *head, char *hostname)

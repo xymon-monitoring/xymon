@@ -405,25 +405,25 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					sprintf(msgtext + strlen(msgtext), " SSL key is only %d bits (require %d).", crec->sslkeysize, abs(sslkeysize));
 				}
 				strcat(msgtext, "\n");
-				add_multi_item(multiitem, sslcolor, msgtext);
-
-				sprintf(msgtext, "Server certificate for %s\n", testspec);
-				addtobuffer(multiitem->detailtext, msgtext);
-				sprintf(msgtext, "\tSubject: %s\n", crec->sslsubject);
-				addtobuffer(multiitem->detailtext, msgtext);
-				sprintf(msgtext, "\tIssuer: %s\n", crec->sslissuer);
-				addtobuffer(multiitem->detailtext, msgtext);
-				strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S UTC", gmtime((time_t *)&crec->sslstart));
-				sprintf(msgtext, "\tValid from: %s\n", timestr);
-				addtobuffer(multiitem->detailtext, msgtext);
-				strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S UTC", gmtime((time_t *)&crec->sslexpires));
-				sprintf(msgtext, "\tValid until: %s\n", timestr);
-				addtobuffer(multiitem->detailtext, msgtext);
-				if (crec->sslkeysize > 0) {
-					sprintf(msgtext, "\tKeysize: %d\n", crec->sslkeysize);
+				if (add_multi_item(multiitem, sslcolor, msgtext) == 0) {
+					sprintf(msgtext, "Server certificate for %s\n", testspec);
 					addtobuffer(multiitem->detailtext, msgtext);
+					sprintf(msgtext, "\tSubject: %s\n", crec->sslsubject);
+					addtobuffer(multiitem->detailtext, msgtext);
+					sprintf(msgtext, "\tIssuer: %s\n", crec->sslissuer);
+					addtobuffer(multiitem->detailtext, msgtext);
+					strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S UTC", gmtime((time_t *)&crec->sslstart));
+					sprintf(msgtext, "\tValid from: %s\n", timestr);
+					addtobuffer(multiitem->detailtext, msgtext);
+					strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S UTC", gmtime((time_t *)&crec->sslexpires));
+					sprintf(msgtext, "\tValid until: %s\n", timestr);
+					addtobuffer(multiitem->detailtext, msgtext);
+					if (crec->sslkeysize > 0) {
+						sprintf(msgtext, "\tKeysize: %d\n", crec->sslkeysize);
+						addtobuffer(multiitem->detailtext, msgtext);
+					}
+					addtobuffer(multiitem->detailtext, "\n");
 				}
-				addtobuffer(multiitem->detailtext, "\n");
 
 				xfree(dupsubj);
 			}
@@ -464,28 +464,28 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					if ((crec->handler == NC_HANDLER_LDAP) && (color == COL_RED) && (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW))) color = COL_YELLOW;
 
 					sprintf(msgline, "%s - %s\n", testspec, ((color != COL_GREEN) ? "failed" : "OK"));
-					add_multi_item(multiitem, color, msgline);
+					if (add_multi_item(multiitem, color, msgline) == 0) {
+						switch (crec->handler) {
+						  case NC_HANDLER_HTTP:
+							if (xmh_item(hwalk, XMH_FLAG_HIDEHTTP)) break;
 
-					switch (crec->handler) {
-					  case NC_HANDLER_HTTP:
-						if (xmh_item(hwalk, XMH_FLAG_HIDEHTTP)) break;
+							sprintf(msgline, "&%s %s\n\n", colorname(color), testspec);
+							addtobuffer(multiitem->detailtext, msgline);
+							if (crec->httpheaders) addtobuffer(multiitem->detailtext, crec->httpheaders);
+							// if (crec->httpbody) addtostatus(crec->httpbody);
+							break;
 
-						sprintf(msgline, "&%s %s\n\n", colorname(color), testspec);
-						addtobuffer(multiitem->detailtext, msgline);
-						if (crec->httpheaders) addtobuffer(multiitem->detailtext, crec->httpheaders);
-						// if (crec->httpbody) addtostatus(crec->httpbody);
-						break;
+						  default:
+							if (crec->plainlog) addtobuffer(multiitem->detailtext, crec->plainlog);
+							break;
+						}
 
-					  default:
-						if (crec->plainlog) addtobuffer(multiitem->detailtext, crec->plainlog);
-						break;
+						sprintf(msgtext, "\nTarget : %s port %d\n", crec->targetip, crec->targetport);
+						addtobuffer(multiitem->detailtext, msgtext);
+
+						sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
+						addtobuffer(multiitem->detailtext, msgtext);
 					}
-
-					sprintf(msgtext, "\nTarget : %s port %d\n", crec->targetip, crec->targetport);
-					addtobuffer(multiitem->detailtext, msgtext);
-
-					sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
-					addtobuffer(multiitem->detailtext, msgtext);
 
 					crec->sent = 1;
 				}

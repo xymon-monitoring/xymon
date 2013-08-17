@@ -63,7 +63,7 @@ extern void addtostrstatus(strbuffer_t *p);
 extern void finish_status(void);
 
 extern multistatus_t *init_multi(multistatus_t **mhead, char *name, int duration, char *greentext, char *yellowtext, char *redtext);
-extern void add_multi_item(multistatus_t *item, int color, char *header);
+extern int add_multi_item(multistatus_t *item, int color, char *header);
 extern void finish_multi(multistatus_t *head, char *hostname);
 
 #endif
