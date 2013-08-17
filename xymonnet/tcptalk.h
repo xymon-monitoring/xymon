@@ -46,6 +46,7 @@ typedef struct myconn_t {
 	int timeout, interval;
 	unsigned long testid;
 	time_t teststarttime, testendtime;
+	int ignoreresult;	/* Suppress sending of result from HTTP redirect intermediates */
 
 	/* Results and statistics */
 	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED, TALK_CANNOT_RESOLVE, TALK_MODULE_FAILED, TALK_RESULT_LAST } talkresult;
@@ -86,6 +87,7 @@ typedef struct myconn_t {
 	       HTTP_CHUNK_DONE, HTTP_CHUNK_NOMORE } httpchunkstate;
 	int httpleftinchunk;
 	int httplastbodyread;
+	int redircount, noredirect;
 
 	/* DNS */
 	void *dnschannel;
@@ -101,6 +103,7 @@ typedef struct net_test_options_t {
 	int timeout, interval;
 	char *sourceip;
 	unsigned long testid;
+	int noredirect;
 } net_test_options_t;
 
 enum dns_strategy_t { DNS_STRATEGY_STANDARD, DNS_STRATEGY_IP, DNS_STRATEGY_HOSTNAME };

@@ -12,7 +12,7 @@
 #define __NETDIALOG_H__
 
 extern void load_protocols(char *fn);
-extern char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_options_t *options, void *hostinfo, int *dtoken);
+extern char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_options_t *options, void *hostinfo, int *dtoken, char *alternatetest);
 extern void free_net_dialog(char **dialog, int dtoken);
 
 #endif

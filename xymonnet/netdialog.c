@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include "tcptalk.h"
 #include "httpcookies.h"
 
-static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, void *hostinfo)
+static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, void *hostinfo, char *redirecturl)
 {
 	char **dialog = NULL;
 	strbuffer_t *httprequest;
@@ -34,6 +34,18 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 	if (!decodedurl || weburl.desturl->parseerror || (weburl.proxyurl && weburl.proxyurl->parseerror)) {
 		freeweburl_data(&weburl);
 		return NULL;
+	}
+
+	if (redirecturl) {
+		weburl_t redir;
+		urlelem_t *u;
+
+		decodedurl = decode_url(redirecturl, &redir);
+		u = weburl.desturl;
+		weburl.desturl = redir.desturl;
+		redir.desturl = u;
+
+		freeweburl_data(&redir);
 	}
 
 	netparams->socktype = CONN_SOCKTYPE_STREAM;
@@ -340,7 +352,7 @@ static char **build_ldap_dialog(char *testspec, myconn_netparams_t *netparams, n
 }
 
 
-char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_options_t *options, void *hostinfo, int *dtoken)
+char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_options_t *options, void *hostinfo, int *dtoken, char *alternatetest)
 {
 	char **result = NULL;
 
@@ -367,7 +379,7 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 		  argnmatch(testspec, "nosoap=")      ||
 		  argnmatch(testspec, "type;http")    ||
 		  argnmatch(testspec, "type=")        )      {
-		result = build_http_dialog(testspec, netparams, hostinfo);
+		result = build_http_dialog(testspec, netparams, hostinfo, alternatetest);
 		options->testtype = NET_TEST_HTTP;
 	}
 	else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
@@ -382,7 +394,7 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 			sprintf(url, "http://%s/server-status?auto", target);
 		}
 
-		result = build_http_dialog(url, netparams, hostinfo);
+		result = build_http_dialog(url, netparams, hostinfo, NULL);
 		options->testtype = NET_TEST_HTTP;
 		xfree(url);
 	}

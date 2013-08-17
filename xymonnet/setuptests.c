@@ -135,6 +135,7 @@ int read_tests_from_hostscfg(int uselocalcfg, int defaulttimeout)
 					if (argnmatch(opt, "timeout")) options.timeout = atoi(opt+8);
 					else if (argnmatch(opt, "interval")) options.interval = atoi(opt+9);
 					else if (argnmatch(opt, "sourceip")) options.sourceip = strdup(opt+9);
+					else if (argnmatch(opt, "noredirect")) options.noredirect = 1;
 
 					opt = strtok_r(NULL, ",", &sptr);
 				}
@@ -189,7 +190,7 @@ int read_tests_from_hostscfg(int uselocalcfg, int defaulttimeout)
 				myconn_netparams_t netparams;
 
 				memset(&netparams, 0, sizeof(netparams));
-				dialog = net_dialog(testspec, &netparams, &options, hwalk, &dtoken);
+				dialog = net_dialog(testspec, &netparams, &options, hwalk, &dtoken, NULL);
 
 				if (dialog || (options.testtype != NET_TEST_STANDARD)) {
 					xymon_sqldb_nettest_register(xmh_item(hwalk, XMH_HOSTNAME), testspec, NULL, &options, location);
@@ -274,7 +275,7 @@ int setup_tests_from_database(int pingenabled, int forcetest)
 			break;
 
 		  default:
-			dialog = net_dialog(testspec, &netparams, &options, hwalk, &dtoken);
+			dialog = net_dialog(testspec, &netparams, &options, hwalk, &dtoken, NULL);
 			/* netparams.destinationip may have been filled by net_dialog (e.g. http) */
 			if (!netparams.destinationip) netparams.destinationip = strdup(destination);
 			add_net_test(testspec, dialog, dtoken, &options, &netparams, hwalk);

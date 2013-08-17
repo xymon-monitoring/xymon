@@ -37,6 +37,7 @@ typedef struct connectresult_t {
 	int sslkeysize;
 	char *plainlog, *httpheaders, *httpbody;
 	int httpstatus;
+	int redirects;
 	int ntpstratum;
 	float ntpoffset;
 	int interval;
@@ -111,7 +112,7 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 		if (rec->plainlog) xfree(rec->plainlog);
 		if (rec->httpheaders) xfree(rec->httpheaders);
 		if (rec->httpbody) xfree(rec->httpbody);
-		rec->elapsedms = 0.0; rec->sslexpires = 0; rec->httpstatus = 0; rec->ntpstratum = 0; rec->ntpoffset = 0.0; rec->interval = 0;
+		rec->elapsedms = 0.0; rec->sslexpires = 0; rec->httpstatus = 0; rec->redirects = 0; rec->ntpstratum = 0; rec->ntpoffset = 0.0; rec->interval = 0;
 		rec->sent = 0;
 
 		bol = onetest;
@@ -149,6 +150,7 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 			else if (argnmatch(bol, "HTTPheaders: ")) rec->httpheaders = sizedstr(bol, eoln);
 			else if (argnmatch(bol, "HTTPbody: ")) rec->httpbody = sizedstr(bol, eoln);
 			else if (argnmatch(bol, "HTTPstatus: ")) rec->httpstatus = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "Redirects: ")) rec->redirects = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "ElapsedMS: ")) rec->elapsedms = atof(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "IntervalMS: ")) rec->interval = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "TargetIP: ")) rec->targetip = strdup(strchr(bol, ':') + 2);

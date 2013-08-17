@@ -98,6 +98,11 @@ static void result_http(myconn_t *rec,  strbuffer_t *txt)
 		return;
 	}
 
+	if (rec->redircount) {
+		snprintf(msgline, sizeof(msgline), "Redirects: %d\n", rec->redircount);
+		addtobuffer(txt, msgline);
+	}
+
 	if (rec->textlog) {
 		char *authtoken;
 		snprintf(msgline, sizeof(msgline), "HTTPrequest: %d\n", STRBUFLEN(rec->textlog));
@@ -163,6 +168,8 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 		hostresult_t *hres;
 		myconn_t *rec = (myconn_t *)walk->data;
 		char *s;
+
+		if (rec->ignoreresult) continue;
 
 		switch (rec->talkprotocol) {
 		  case TALK_PROTO_PING:

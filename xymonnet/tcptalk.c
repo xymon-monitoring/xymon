@@ -25,6 +25,8 @@ static char rcsid[] = "$Id$";
 #include "dnstalk.h"
 #include "netdialog.h"
 
+#define MAXREDIRECTS 5
+
 static listhead_t *pendingtests = NULL;
 static listhead_t *activetests = NULL;
 static listhead_t *donetests = NULL;
@@ -359,7 +361,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 	char *certsubject, *issuer, *fulltext;
 	myconn_t *rec = (myconn_t *)userdata;
 
-	// dbgprintf("CB: %s\n", conn_callback_names[id]);
+	dbgprintf("CB: %s\n", conn_callback_names[id]);
 
 	switch (id) {
 	  case CONN_CB_CONNECT_START:          /* Client mode: New outbound connection start */
@@ -369,6 +371,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 		rec->talkresult = TALK_CONN_FAILED;
 		rec->textlog = newstrbuffer(0);
 		addtobuffer(rec->textlog, strerror(connection->errcode));
+		conn_close_connection(connection, NULL);
 		break;
 
 	  case CONN_CB_CONNECT_COMPLETE:       /* Client mode: New outbound connection succeded */
@@ -396,6 +399,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 
 	  case CONN_CB_SSLHANDSHAKE_FAILED:    /* Client/server mode: SSL handshake failed (connection will close) */
 		rec->talkresult = TALK_BADSSLHANDSHAKE;
+		conn_close_connection(connection, NULL);
 		break;
 
 	  case CONN_CB_READCHECK:              /* Client/server mode: Check if application wants to read data */
@@ -584,6 +588,7 @@ void *add_net_test(char *testspec, char **dialog, int dialogtoken, net_test_opti
 	newtest->interval = options->interval;
 	newtest->netparams.sourceip = (options->sourceip ? strdup(options->sourceip) : NULL);
 	newtest->testid = options->testid;
+	newtest->noredirect = options->noredirect;
 
 	switch (options->testtype) {
 	  case NET_TEST_HTTP:
@@ -737,7 +742,7 @@ listhead_t *run_net_tests(int concurrency, char *sourceip4, char *sourceip6)
 			  case TALK_PROTO_NTP:
 			  case TALK_PROTO_LDAP:
 			  case TALK_PROTO_EXTERNAL:
-				rec->teststarttime = getcurrenttime(NULL);
+				if (!rec->teststarttime) rec->teststarttime = getcurrenttime(NULL);
 				dbgprintf("    conn_prepare_connection()\n");
 				if (!rec->netparams.sourceip && (sourceip4 || sourceip6)) {
 					switch (conn_is_ip(rec->netparams.destinationip)) {
@@ -791,9 +796,9 @@ listhead_t *run_net_tests(int concurrency, char *sourceip4, char *sourceip6)
 		}
 
 		maxfd = conn_fdset(&fdread, &fdwrite);
-		dbgprintf("Setting up select - conn_fdset has maxfd=%d\n", maxfd);
+		// dbgprintf("Setting up select - conn_fdset has maxfd=%d\n", maxfd);
 		dns_add_active_fds(activetests, &maxfd, &fdread, &fdwrite);
-		dbgprintf("Setting up select - dns_add_active_fds set maxfd=%d\n", maxfd);
+		// dbgprintf("Setting up select - dns_add_active_fds set maxfd=%d\n", maxfd);
 
 		if (maxfd > 0) {
 			tmo.tv_sec = 1; tmo.tv_usec = 0;
@@ -825,6 +830,46 @@ void test_is_done(myconn_t *rec)
 	rec->testendtime = getcurrenttime(NULL);
 	list_item_move(donetests, rec->listitem, rec->testspec);
 	free_net_dialog(rec->dialog, rec->dialogtoken);
+
+	if (!rec->ignoreresult && !rec->noredirect && (rec->talkprotocol == TALK_PROTO_HTTP) && (rec->httpstatus == 302) && (rec->redircount < MAXREDIRECTS)) {
+		/* HTTP redirect */
+		char *lochdr;
+		lochdr = strstr(STRBUF(rec->httpheaders), "\nLocation:");
+
+		rec->ignoreresult = 1;
+
+		if (lochdr) {
+			char *locend, savchar;
+			char **dialog;
+			int dtoken, advtest = 0;
+			net_test_options_t options;
+			myconn_netparams_t netparams;
+			myconn_t *newtest;
+
+			lochdr += strlen("\nLocation:"); lochdr += strspn(lochdr, " \t");
+			locend = lochdr + strcspn(lochdr, "\r\n");
+			savchar = *locend; *locend = '\0';
+
+			/* Copy options from the original test */
+			options.testtype = NET_TEST_HTTP;
+			options.timeout = rec->timeout;
+			options.interval = rec->interval;
+			options.testid = rec->testid;
+			options.sourceip = (rec->netparams.sourceip ? strdup(rec->netparams.sourceip) : NULL);
+
+			memset(&netparams, 0, sizeof(netparams));
+			dialog = net_dialog(rec->testspec, &netparams, &options, rec->hostinfo, &dtoken, lochdr);
+			newtest = add_net_test(rec->testspec, dialog, dtoken, &options, &netparams, rec->hostinfo);
+			*locend = savchar;
+
+			/* 
+			 * Flag the original result record so it is not transmitted as part of the result data.
+			 * Bump redirect counter so we wont end up looping.
+			 */
+			newtest->teststarttime = rec->teststarttime;
+			newtest->redircount = rec->redircount + 1;
+		}
+	}
 }
 
 
