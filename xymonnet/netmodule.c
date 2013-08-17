@@ -780,7 +780,7 @@ int main(int argc, char **argv)
 
 		if (donetests->len > 0) {
 			dbgprintf("Sending results\n");
-			send_test_results(donetests, programname, 1, location, usebackfeedqueue);
+			send_test_results(donetests, collectorname, 1, location, usebackfeedqueue);
 
 			if (iptree) {
 				/* Zap IP's from the iptree */
