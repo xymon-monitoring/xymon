@@ -651,7 +651,7 @@ static void kill_stalled_tasks(void)
 int main(int argc, char **argv)
 {
 	int argi;
-	char *queueid = NULL;
+	char *queueid = NULL, *collectorname;
 	int mytalkprotocol = TALK_PROTO_PING;
 	char *location = NULL;
 	int concurrency = 0;
@@ -709,6 +709,9 @@ int main(int argc, char **argv)
 		errprintf("Unknown queue, aborting\n");
 		return 1;
 	}
+
+	collectorname = (char *)malloc(strlen(programname) + strlen(queueid) + 2);
+	sprintf(collectorname, "%s.%s", programname, queueid);
 
 	if (!concurrency) concurrency = 5;
 	if (!batchsize) batchsize = 10000;
