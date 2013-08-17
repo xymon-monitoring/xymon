@@ -742,7 +742,7 @@ int main(int argc, char *argv[])
 			dbgprintf("Client report from host %s\n", (hostname ? hostname : "<unknown>"));
 
 			/* Check if we are running a collector module for this type of client */
-			if (!collectorid || ((strcmp(collectorid, "xymonnet2") != 0) && (strcmp(collectorid, "netmodule") != 0))) continue;
+			if (!collectorid || ((strcmp(collectorid, "xymonnet2") != 0) && (strncmp(collectorid, "netmodule.", 10) != 0))) continue;
 
 			hinfo = hostinfo(hostname); if (!hinfo) continue;
 			os = get_ostype(clientos);
