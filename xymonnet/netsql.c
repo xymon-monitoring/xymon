@@ -148,6 +148,7 @@ void xymon_sqldb_flushall(void)
 
 	dbres = sqlite3_exec(xymonsqldb, "delete from hostip", NULL, NULL, NULL);
 	dbres = sqlite3_exec(xymonsqldb, "delete from testtimes", NULL, NULL, NULL);
+	dbres = sqlite3_exec(xymonsqldb, "delete from moduletests", NULL, NULL, NULL);
 }
 
 
