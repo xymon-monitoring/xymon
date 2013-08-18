@@ -26,15 +26,13 @@ static char netcollect_rcsid[] = "$Id: snmpcollect.c 6712 2011-07-31 21:01:52Z s
 #define MINIMUM_UPDATE_INTERVAL 10
 
 typedef struct connectresult_t {
-	char *testspec;
+	char *resultkey;
+	char *sourcespec;
 	char *targetip;
 	int targetport;
 	enum { NC_STATUS_UNKNOWN, NC_STATUS_OK, NC_STATUS_FAILED, NC_STATUS_TIMEOUT, NC_STATUS_RESOLVERROR, NC_STATUS_SSLERROR, NC_STATUS_BADDATA } status;
 	enum { NC_HANDLER_UNKNOWN, NC_HANDLER_PING, NC_HANDLER_PLAIN, NC_HANDLER_HTTP, NC_HANDLER_DNS, NC_HANDLER_NTP, NC_HANDLER_LDAP, NC_HANDLER_RPC, NC_HANDLER_APACHE, NC_HANDLER_EXTERNAL } handler;
 	float elapsedms;
-	enum { NC_PINGTYPE_BEST, NC_PINGTYPE_WORST } pingtype;
-	int pingtotalcount, pingokcount;
-	strbuffer_t *pingdetails;
 	char *sslsubject, *sslissuer, *ssldetails;
 	time_t sslstart, sslexpires;
 	int sslkeysize;
@@ -44,13 +42,13 @@ typedef struct connectresult_t {
 	int ntpstratum;
 	float ntpoffset;
 	int interval;
-	time_t sent;
+	time_t expires;
 } connectresult_t;
 
 typedef struct hostresults_t {
 	char *hostname;
 	connectresult_t *ping;
-	void *results; /* Tree of connectresult_t records, keyed by testspec */
+	void *results; /* Tree of connectresult_t records, keyed by resultkey */
 } hostresults_t;
 
 static void *hostresults = NULL; /* Tree of hostresults_t records, keyed by hostname. So a tree of trees. */
@@ -78,7 +76,7 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 	xtreePos_t handle;
 	hostresults_t *hrec;
 	void *ns1var, *ns1sects;
-	char *onetest, *testspec;
+	char *onetest, *resultkey;
 
 	if (!hostresults) hostresults = xtreeNew(strcasecmp);
 
@@ -93,52 +91,29 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 		hrec = (hostresults_t *)xtreeData(hostresults, handle);
 	}
 
-	onetest = nextsection_r(clientdata, &testspec, &ns1var, &ns1sects);
+	onetest = nextsection_r(clientdata, &resultkey, &ns1var, &ns1sects);
 	while (onetest) {
 		connectresult_t *rec;
-		char *bol, *eoln, *testspecnoflags;
-		int ispingtest;
+		char *bol, *eoln;
 
-		testspecnoflags = testspec + strspn(testspec, "?!~");
-		ispingtest = ((strcmp(testspecnoflags, "ping") == 0) || (strncmp(testspecnoflags, "conn", 4) == 0));
-
-		if (ispingtest && hrec->ping) {
-			rec = hrec->ping;
+		handle = xtreeFind(hrec->results, resultkey);
+		if (handle == xtreeEnd(hrec->result)) {
+			rec = (connectresult_t *)calloc(1, sizeof(connectresult_t));
+			rec->resultkey = strdup(resultkey);
+			xtreeAdd(hrec->results, rec->resultkey, rec);
 		}
 		else {
-			handle = xtreeFind(hrec->results, testspec);
-			if (handle == xtreeEnd(hrec->result)) {
-				rec = (connectresult_t *)calloc(1, sizeof(connectresult_t));
-				rec->testspec = strdup(ispingtest ? "ping" : testspec);
-				xtreeAdd(hrec->results, rec->testspec, rec);
-			}
-			else {
-				rec = (connectresult_t *)xtreeData(hrec->results, handle);
-			}
-		}
-
-		if (ispingtest) {
-			if (!hrec->ping) hrec->ping = rec;
-			if (!rec->pingdetails) rec->pingdetails = newstrbuffer(0);
-
-			if (rec->sent) {
-				rec->pingtotalcount = rec->pingokcount = 0;
-				rec->pingtype = NC_PINGTYPE_BEST;
-				clearstrbuffer(rec->pingdetails);
-			}
-
-			if (strncmp(testspec, "conn=worst", 10) == 0) rec->pingtype = NC_PINGTYPE_WORST;
-			rec->pingtotalcount++;
+			rec = (connectresult_t *)xtreeData(hrec->results, handle);
 		}
 
 		rec->handler = NC_HANDLER_UNKNOWN;
 		rec->status = NC_STATUS_UNKNOWN;
+		if (rec->sourcespec) xfree(rec->sourcespec);
 		if (rec->sslsubject) xfree(rec->sslsubject);
 		if (rec->plainlog) xfree(rec->plainlog);
 		if (rec->httpheaders) xfree(rec->httpheaders);
 		if (rec->httpbody) xfree(rec->httpbody);
 		rec->elapsedms = 0.0; rec->sslexpires = 0; rec->httpstatus = 0; rec->redirects = 0; rec->ntpstratum = 0; rec->ntpoffset = 0.0; rec->interval = 0; 
-		rec->sent = 0;
 
 		bol = onetest;
 		while (bol) {
@@ -146,65 +121,54 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 			if (argnmatch(bol, "Status: ")) {
 				char *s = strchr(bol, ':') + 2;
 
-				if      (strcmp(s, "OK") == 0)              rec->status = NC_STATUS_OK;
-				else if (strcmp(s, "CONN_FAILED") == 0)     rec->status = NC_STATUS_FAILED;
-				else if (strcmp(s, "CONN_TIMEOUT") == 0)    rec->status = NC_STATUS_TIMEOUT;
-				else if (strcmp(s, "BADSSLHANDSHAKE") == 0) rec->status = NC_STATUS_SSLERROR;
-				else if (strcmp(s, "CANNOT_RESOLVE") == 0)  rec->status = NC_STATUS_RESOLVERROR;
-				else if (strcmp(s, "BADDATA") == 0)         rec->status = NC_STATUS_BADDATA;
-				else if (strcmp(s, "INTERRUPTED") == 0)     rec->status = NC_STATUS_FAILED;
-				else if (strcmp(s, "MODULE_FAILED") == 0)   rec->status = NC_STATUS_FAILED;
+				if      (strcmp(s, "OK") == 0)               rec->status = NC_STATUS_OK;
+				else if (strcmp(s, "CONN_FAILED") == 0)      rec->status = NC_STATUS_FAILED;
+				else if (strcmp(s, "CONN_TIMEOUT") == 0)     rec->status = NC_STATUS_TIMEOUT;
+				else if (strcmp(s, "BADSSLHANDSHAKE") == 0)  rec->status = NC_STATUS_SSLERROR;
+				else if (strcmp(s, "CANNOT_RESOLVE") == 0)   rec->status = NC_STATUS_RESOLVERROR;
+				else if (strcmp(s, "BADDATA") == 0)          rec->status = NC_STATUS_BADDATA;
+				else if (strcmp(s, "INTERRUPTED") == 0)      rec->status = NC_STATUS_FAILED;
+				else if (strcmp(s, "MODULE_FAILED") == 0)    rec->status = NC_STATUS_FAILED;
 			}
 			else if (argnmatch(bol, "Handler: ")) {
 				char *s = strchr(bol, ':') + 2;
 
-				if      (strcmp(s, "plain") == 0)     rec->handler = NC_HANDLER_PLAIN;
-				else if (strcmp(s, "ntp") == 0)       rec->handler = NC_HANDLER_NTP;
-				else if (strcmp(s, "dns") == 0)       rec->handler = NC_HANDLER_DNS;
-				else if (strcmp(s, "ping") == 0)      rec->handler = NC_HANDLER_PING;
-				else if (strcmp(s, "ldap") == 0)      rec->handler = NC_HANDLER_LDAP;
-				else if (strcmp(s, "external") == 0)  rec->handler = NC_HANDLER_EXTERNAL;
-				else if (strcmp(s, "http") == 0)  rec->handler = ((strncmp(testspec, "apache", 6) == 0) ? NC_HANDLER_APACHE : NC_HANDLER_HTTP);
+				if      (strcmp(s, "plain") == 0)            rec->handler = NC_HANDLER_PLAIN;
+				else if (strcmp(s, "ntp") == 0)              rec->handler = NC_HANDLER_NTP;
+				else if (strcmp(s, "dns") == 0)              rec->handler = NC_HANDLER_DNS;
+				else if (strcmp(s, "ping") == 0)             rec->handler = NC_HANDLER_PING;
+				else if (strcmp(s, "ldap") == 0)             rec->handler = NC_HANDLER_LDAP;
+				else if (strcmp(s, "external") == 0)         rec->handler = NC_HANDLER_EXTERNAL;
+				else if (strcmp(s, "http") == 0)             rec->handler = ((strncmp(resultkey, "apache", 6) == 0) ? NC_HANDLER_APACHE : NC_HANDLER_HTTP);
 			}
+			else if (argnmatch(bol, "SourceSpec: "))             rec->sourcespec = strdup(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "PeerCertificateSubject: ")) rec->sslsubject = strdup(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "PeerCertificateIssuer: ")) rec->sslissuer = strdup(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "PeerCertificateStart: ")) rec->sslstart = atoi(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "PeerCertificateExpiry: ")) rec->sslexpires = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "PeerCertificateIssuer: "))  rec->sslissuer = strdup(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "PeerCertificateStart: "))   rec->sslstart = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "PeerCertificateExpiry: "))  rec->sslexpires = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "PeerCertificateKeysize: ")) rec->sslkeysize = atoi(strchr(bol, ':') + 2);
 			else if (argnmatch(bol, "PeerCertificateDetails: ")) rec->ssldetails = sizedstr(bol, eoln);
-			else if (argnmatch(bol, "PLAINlog: ")) rec->plainlog = sizedstr(bol, eoln);
-			else if (argnmatch(bol, "HTTPheaders: ")) rec->httpheaders = sizedstr(bol, eoln);
-			else if (argnmatch(bol, "HTTPbody: ")) rec->httpbody = sizedstr(bol, eoln);
-			else if (argnmatch(bol, "HTTPstatus: ")) rec->httpstatus = atoi(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "Redirects: ")) rec->redirects = atoi(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "ElapsedMS: ")) rec->elapsedms = atof(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "IntervalMS: ")) rec->interval = atoi(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "TargetIP: ")) rec->targetip = strdup(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "TargetPort: ")) rec->targetport = atoi(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "NTPstratum: ")) rec->ntpstratum = atoi(strchr(bol, ':') + 2);
-			else if (argnmatch(bol, "NTPoffset: ")) rec->ntpoffset = atof(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "PLAINlog: "))               rec->plainlog = sizedstr(bol, eoln);
+			else if (argnmatch(bol, "HTTPheaders: "))            rec->httpheaders = sizedstr(bol, eoln);
+			else if (argnmatch(bol, "HTTPbody: "))               rec->httpbody = sizedstr(bol, eoln);
+			else if (argnmatch(bol, "HTTPstatus: "))             rec->httpstatus = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "Redirects: "))              rec->redirects = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "ElapsedMS: "))              rec->elapsedms = atof(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "IntervalMS: "))             rec->interval = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "TargetIP: "))               rec->targetip = strdup(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "TargetPort: "))             rec->targetport = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "NTPstratum: "))             rec->ntpstratum = atoi(strchr(bol, ':') + 2);
+			else if (argnmatch(bol, "NTPoffset: "))              rec->ntpoffset = atof(strchr(bol, ':') + 2);
 
 
 			if (eoln) *eoln = '\n';
 			bol = (eoln ? eoln+1 : NULL);
 		}
 
+		/* We'll keep this record active until twice the interval (permit skipping one test). Otherwise it takes longer than expected to go purple. */
+		rec->expires = gettimer() + ((rec->interval > 0) ? (2 * rec->interval / 1000) : (2 * 300));
 
-		if (rec->handler == NC_HANDLER_PING) {
-			char pinginfo[1024];
-
-			if (rec->status == NC_STATUS_OK) {
-				snprintf(pinginfo, sizeof(pinginfo), "Target %s up (%.3f seconds)\n", rec->targetip, rec->elapsedms / 1000);
-				rec->pingokcount++;
-			}
-			else {
-				snprintf(pinginfo, sizeof(pinginfo), "Target %s down (%.3f seconds)\n", rec->targetip, rec->elapsedms / 1000);
-			}
-			addtobuffer(rec->pingdetails, pinginfo);
-		}
-
-sectiondone:
-		onetest = nextsection_r(NULL, &testspec, &ns1var, &ns1sects);
+		onetest = nextsection_r(NULL, &resultkey, &ns1var, &ns1sects);
 	}
 
 	if (debug) {
@@ -213,7 +177,7 @@ sectiondone:
 		for (handle = xtreeFirst(hrec->results); (handle != xtreeEnd(hrec->results)); handle = xtreeNext(hrec->results, handle)) {
 			connectresult_t *rec;
 			rec = (connectresult_t *)xtreeData(hrec->results, handle);
-			dbgprintf("    %s\n", rec->testspec);
+			dbgprintf("    %s\n", rec->resultkey);
 			dbgprintf("\tStatus:%d, elapsed:%.3f, interval:%d\n", rec->status, rec->elapsedms, rec->interval);
 			dbgprintf("\thttpstatus:%d, ntpstratum:%d, ntpoffset=%.6f\n", rec->httpstatus, rec->ntpstratum, rec->ntpoffset);
 		}
@@ -223,97 +187,49 @@ sectiondone:
 }
 
 
-int decide_color(connectresult_t *crec, int ispingtest, int noping, int pingisdown, int isdialup, int isreverse, int isforced, int failgoesclear, char *cause)
+int decide_color(connectresult_t *crec, int pingisdown, int isdialup, int isreverse, int isforced, int failgoesclear, char *cause)
 {
 	int color = COL_GREEN;
 
 	*cause = '\0';
 
-	if (ispingtest) {
-		if (noping) {
-			/* Ping test disabled - go "clear". End of story. */
-			strcpy(cause, "Ping test disabled (noping)");
-			return COL_CLEAR; 
-		}
+	if (isreverse) {
+		/*
+		 * Reverse tests go RED when open.
+		 * If not open, they may go CLEAR if the ping test failed
+		 */
 
-		/* Modify status according to the pingtype (best | worst) and the number of OK ping's versus total # of ping's */
-		if ((crec->pingtype == NC_PINGTYPE_WORST) && (crec->pingokcount != crec->pingtotalcount)) {
-			crec->status = NC_STATUS_FAILED;
-		}
-		else {
-			crec->status = NC_STATUS_OK;
-		}
-
-		/* Red if (STATUS=OK, reverse=1) or (status=FAILED, reverse=0) */
-		switch (crec->status) {
-		  case NC_STATUS_OK:
-			if (isreverse) {
-				sprintf(cause, "Host responds to ping on %d of %d IP's tested", crec->pingokcount, crec->pingtotalcount);
-				color = COL_RED;
-			}
-			break;
-
-		  case NC_STATUS_FAILED:
-		  case NC_STATUS_TIMEOUT:
-		  case NC_STATUS_BADDATA:
-			if (!isreverse) {
-				sprintf(cause, "Host responds to ping on %d of %d IP's tested", crec->pingokcount, crec->pingtotalcount);
-				color = COL_RED;
-			}
-			break;
-
-		  case NC_STATUS_RESOLVERROR:
-			strcpy(cause, "DNS lookup failure");
+		if (crec->status == NC_STATUS_OK) {
+			strcpy(cause, "Service responds when it should not");
 			color = COL_RED;
-			break;
-
-		  default:
-			strcpy(cause, "Xymon pingtest failed");
+		}
+		else if (failgoesclear && pingisdown && !isforced) {
+			strcpy(cause, "Host appears to be down");
 			color = COL_CLEAR;
-			break;
 		}
 	}
 	else {
-		/* TCP test */
-		if (isreverse) {
-			/*
-			 * Reverse tests go RED when open.
-			 * If not open, they may go CLEAR if the ping test failed
-			 */
-
-			if (crec->status == NC_STATUS_OK) {
-				strcpy(cause, "Service responds when it should not");
-				color = COL_RED;
-			}
-			else if (failgoesclear && pingisdown && !isforced) {
+		if (crec->status != NC_STATUS_OK) {
+			if (failgoesclear && pingisdown && !isforced) {
 				strcpy(cause, "Host appears to be down");
 				color = COL_CLEAR;
 			}
-		}
-		else {
-			if (crec->status != NC_STATUS_OK) {
-				if (failgoesclear && pingisdown && !isforced) {
-					strcpy(cause, "Host appears to be down");
-					color = COL_CLEAR;
-				}
-				else {
-					strcpy(cause, "Service unavailable");
-					color = COL_RED;
-				}
+			else {
+				strcpy(cause, "Service unavailable");
+				color = COL_RED;
+			}
 
-				switch (crec->status) {
-				  case NC_STATUS_TIMEOUT: strcat(cause, " (connect timeout)"); break;
-				  case NC_STATUS_FAILED: strcat(cause, " (connection failed)"); break;
-		  		  case NC_STATUS_RESOLVERROR: strcat(cause, " (DNS error)"); break;
-				  case NC_STATUS_SSLERROR: strcat(cause, " (SSL error)"); break;
-		  		  case NC_STATUS_BADDATA: strcpy(cause, "Unexpected service response"); break;
-				  case NC_STATUS_UNKNOWN: strcat(cause, " (Xymon error)"); break;
-				  case NC_STATUS_OK: break;
-				}
+			switch (crec->status) {
+			  case NC_STATUS_TIMEOUT: strcat(cause, " (connect timeout)"); break;
+			  case NC_STATUS_FAILED: strcat(cause, " (connection failed)"); break;
+	  		  case NC_STATUS_RESOLVERROR: strcat(cause, " (DNS error)"); break;
+			  case NC_STATUS_SSLERROR: strcat(cause, " (SSL error)"); break;
+	  		  case NC_STATUS_BADDATA: strcpy(cause, "Unexpected service response"); break;
+			  case NC_STATUS_UNKNOWN: strcat(cause, " (Xymon error)"); break;
+			  case NC_STATUS_OK: break;
 			}
 		}
 	}
-
 
 	/* Dialup hosts and dialup tests report red as clear */
 	if ( ((color == COL_RED) || (color == COL_YELLOW)) && isdialup && !isreverse) { 
@@ -332,6 +248,7 @@ void netcollect_generate_updates(int usebackfeedqueue)
 	int failgoesclear = 1;
 	char *failtext = "not OK";
 	char causetext[1024];
+	time_t nowtimer = gettimer();
 
 	pingcolumn = xgetenv("PINGCOLUMN"); if (!pingcolumn) pingcolumn = "conn";
 	if (xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) failgoesclear = (strcmp(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
@@ -345,32 +262,140 @@ void netcollect_generate_updates(int usebackfeedqueue)
 		hostresults_t *hrec;
 		char msgline[4096], msgtext[4096];
 		multistatus_t *mhead = NULL;
+		int pingisdown = 0;
 
 		handle = xtreeFind(hostresults, xmh_item(hwalk, XMH_HOSTNAME));
 		if (handle == xtreeEnd(hostresults)) continue;
 
 		hrec = xtreeData(hostresults, handle);
 
+		/*
+		 * -------------------------------
+		 *  Step 1: Get the ping results
+		 * -------------------------------
+		 */
+		if (xmh_item(hwalk, XMH_FLAG_NOPING)) {
+			init_status(COL_CLEAR);
+			sprintf(msgline, "status %s.%s %s %s ping disabled (noping)\n\n", 
+				xmh_item(hwalk, XMH_HOSTNAME), xgetenv("PINGCOLUMN"), colorname(COL_CLEAR), timestamp);
+			addtostatus(msgline);
+			addtostatus("Ping test disabled\n");
+			finish_status();
+		}
+		else if (xmh_item(hwalk, XMH_FLAG_NOCONN) == NULL) {
+			enum { NC_PINGTYPE_BEST, NC_PINGTYPE_WORST, NC_PINGTYPE_REVERSE } pingtype = NC_PINGTYPE_BEST;
+			int pingtotalcount = 0, pingokcount = 0, pingcolor = COL_GREEN;
+			float minpingtime = 1000000.0, maxpingtime = 0.0;
+			strbuffer_t *pingdetails = newstrbuffer(0);
+			char *summary;
+
+			for (handle = xtreeFirst(hrec->results); (handle != xtreeEnd(hrec->results)); handle = xtreeNext(hrec->results, handle)) {
+				connectresult_t *crec = (connectresult_t *)xtreeData(hrec->results, handle);
+
+				/* For now, only look for PING results. And ignore records that haven't been updated in a long time. */
+				if ((crec->handler != NC_HANDLER_PING) || (crec->expires < nowtimer)) continue;
+
+				if (strncmp(crec->sourcespec, "conn=worst", 10) == 0) pingtype = NC_PINGTYPE_WORST;
+				else if (strcmp(crec->sourcespec, "!conn") == 0) pingtype = NC_PINGTYPE_REVERSE;
+
+				pingtotalcount++;
+
+				switch (crec->status) {
+				  case NC_STATUS_OK:
+					if (crec->elapsedms > maxpingtime) maxpingtime = crec->elapsedms;
+					if (crec->elapsedms < minpingtime) minpingtime = crec->elapsedms;
+					pingokcount++;
+					snprintf(msgtext, sizeof(msgtext), "&green Target %s up (%.3f seconds)\n", crec->targetip, crec->elapsedms / 1000);
+					break;
+
+				  case NC_STATUS_TIMEOUT:
+					snprintf(msgtext, sizeof(msgtext), "&red Target %s down (timeout)\n", crec->targetip);
+					break;
+
+				  case NC_STATUS_RESOLVERROR:
+					snprintf(msgtext, sizeof(msgtext), "&red Target %s down (DNS lookup failed)\n", crec->targetip);
+					break;
+
+				  default:
+					snprintf(msgtext, sizeof(msgtext), "&red Target %s down (failed)\n", crec->targetip);
+					break;
+				}
+				addtobuffer(pingdetails, msgtext);
+			}
+
+			if (pingtotalcount == 0) continue;
+
+			/* Determine color */
+			switch (pingtype) {
+			  case NC_PINGTYPE_REVERSE:
+				pingcolor = (pingokcount == 0) ? COL_GREEN : COL_RED;
+				break;
+
+			  case NC_PINGTYPE_BEST:
+				pingcolor = (pingokcount >= 1) ? COL_GREEN : COL_RED;
+				break;
+
+			  case NC_PINGTYPE_WORST:
+				pingcolor = (pingokcount == pingtotalcount) ? COL_GREEN : COL_RED;
+				break;
+			}
+
+			if ((pingcolor == COL_RED) && xmh_item(hwalk, XMH_FLAG_DIALUP)) {
+				pingcolor = COL_CLEAR;
+				summary = "disabled (dialup host)";
+			}
+			else {
+				summary = (pingcolor == COL_GREEN) ? "ok" : "not ok";
+			}
+
+
+			/* Build and send status */
+			init_status(pingcolor);
+			snprintf(msgline, sizeof(msgline), "status %s.%s %s %s ping %s\n\n", 
+				xmh_item(hwalk, XMH_HOSTNAME), xgetenv("PINGCOLUMN"), colorname(pingcolor), timestamp, summary);
+			addtostatus(msgline);
+
+			snprintf(msgtext, sizeof(msgtext), "&%s Host %s responds to ping on %d of %d IP's\n\n", colorname(pingcolor), xmh_item(hwalk, XMH_HOSTNAME), pingokcount, pingtotalcount);
+			addtostatus(msgtext);
+
+			addtostrstatus(pingdetails);
+
+			snprintf(msgtext, sizeof(msgtext), "\nSeconds: %.3f\n", minpingtime / 1000);
+			addtostatus(msgtext);
+
+			finish_status();
+
+
+			freestrbuffer(pingdetails);
+			pingisdown = (pingokcount > 0);
+		}
+
+
+		/*
+		 * -------------------------------
+		 *  Step 2: Get the other results
+		 * -------------------------------
+		 */
 		for (handle = xtreeFirst(hrec->results); (handle != xtreeEnd(hrec->results)); handle = xtreeNext(hrec->results, handle)) {
-			connectresult_t *crec;
-			char *testspec;
+			char *sourcespec = NULL;
 			int isdialup, isreverse, isforced;
 			char *p;
+			connectresult_t *crec = (connectresult_t *)xtreeData(hrec->results, handle);
 
-			crec = (connectresult_t *)xtreeData(hrec->results, handle);
-			if (crec->sent) continue;
+			/* Ignore ping records and records that haven't been updated in a long time. */
+			if ((crec->expires < nowtimer) || (crec->handler == NC_HANDLER_PING)) continue;
 
-			testspec = NULL;
 			isdialup = (xmh_item(hwalk, XMH_FLAG_DIALUP) != NULL);
 			isreverse = isforced = 0;
-			for (p = crec->testspec; (!testspec); p++) {
+			for (p = (crec->sourcespec ? crec->sourcespec : crec->resultkey); (!sourcespec); p++) {
 				switch (*p) {
 				  case '?' : isdialup = 1; break;
 				  case '!' : isreverse = 1; break;
 				  case '~' : isforced = 1; break;
-				  default: testspec = p; break;
+				  default  : sourcespec = p; break;
 				}
 			}
+			if (!sourcespec) continue;
 
 			if (!xmh_item(hwalk, XMH_FLAG_NOSSLCERT) && crec->sslsubject) {
 				char *dupsubj = strdup(crec->sslsubject);
@@ -425,7 +450,7 @@ void netcollect_generate_updates(int usebackfeedqueue)
 				}
 				strcat(msgtext, "\n");
 				if (add_multi_item(multiitem, sslcolor, msgtext) == 0) {
-					sprintf(msgtext, "Server certificate for %s\n", testspec);
+					sprintf(msgtext, "Server certificate for %s\n", sourcespec);
 					addtobuffer(multiitem->detailtext, msgtext);
 					sprintf(msgtext, "\tSubject: %s\n", crec->sslsubject);
 					addtobuffer(multiitem->detailtext, msgtext);
@@ -456,7 +481,6 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					multistatus_t *multiitem = NULL;
 					int color = COL_GREEN;
 
-
 					switch (crec->handler) {
 					  case NC_HANDLER_HTTP:
 						multiitem = init_multi(&mhead, "http", crec->interval, "Web check OK", "Web check warning", "Web check failed");
@@ -471,24 +495,16 @@ void netcollect_generate_updates(int usebackfeedqueue)
 						break;
 					}
 
-					color = decide_color(crec,
-							(hrec->ping == crec),
-							(xmh_item(hwalk, XMH_FLAG_NOPING) != NULL),
-							(hrec->ping && (hrec->ping->status == NC_STATUS_FAILED)),
-							isdialup,
-							isreverse,
-							isforced,
-							failgoesclear, causetext);
-
+					color = decide_color(crec, pingisdown, isdialup, isreverse, isforced, failgoesclear, causetext);
 					if ((crec->handler == NC_HANDLER_LDAP) && (color == COL_RED) && (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW))) color = COL_YELLOW;
 
-					sprintf(msgline, "%s - %s\n", testspec, ((color != COL_GREEN) ? "failed" : "OK"));
+					sprintf(msgline, "%s - %s\n", sourcespec, ((color != COL_GREEN) ? "failed" : "OK"));
 					if (add_multi_item(multiitem, color, msgline) == 0) {
 						switch (crec->handler) {
 						  case NC_HANDLER_HTTP:
 							if (xmh_item(hwalk, XMH_FLAG_HIDEHTTP)) break;
 
-							sprintf(msgline, "&%s %s\n\n", colorname(color), testspec);
+							sprintf(msgline, "&%s %s\n\n", colorname(color), sourcespec);
 							addtobuffer(multiitem->detailtext, msgline);
 							if (crec->httpheaders) addtobuffer(multiitem->detailtext, crec->httpheaders);
 							// if (crec->httpbody) addtostatus(crec->httpbody);
@@ -505,8 +521,6 @@ void netcollect_generate_updates(int usebackfeedqueue)
 						sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
 						addtobuffer(multiitem->detailtext, msgtext);
 					}
-
-					crec->sent = 1;
 				}
 				break;
 
@@ -519,11 +533,9 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					addtobuffer(datamsg, crec->httpbody);
 					if (usebackfeedqueue) sendmessage_local(STRBUF(datamsg)); else sendmessage(STRBUF(datamsg), NULL, XYMON_TIMEOUT, NULL);
 					freestrbuffer(datamsg);
-					crec->sent = 1;
 				}
 				break;
 
-			  case NC_HANDLER_PING:
 			  case NC_HANDLER_PLAIN:
 			  case NC_HANDLER_NTP:
 			  case NC_HANDLER_RPC:
@@ -535,20 +547,13 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					flags[1] = (isreverse ? 'R' : 'r');
 					flags[2] = '\0';
 
-					color = decide_color(crec,
-							(hrec->ping == crec),
-							(xmh_item(hwalk, XMH_FLAG_NOPING) != NULL),
-							(hrec->ping && (hrec->ping->status == NC_STATUS_FAILED)),
-							isdialup,
-							isreverse,
-							isforced,
-							failgoesclear, causetext);
+					color = decide_color(crec, pingisdown, isdialup, isreverse, isforced, failgoesclear, causetext);
 
 					/* Validity = 6*(interval in minutes) = 6*(interval/(1000*60)) = interval/10000 */
 					init_status(color);
 					sprintf(msgline, "status+%d %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
-						crec->interval/10000, xmh_item(hwalk, XMH_HOSTNAME), testspec, colorname(color), 
-						flags, timestamp, testspec, 
+						crec->interval/10000, xmh_item(hwalk, XMH_HOSTNAME), sourcespec, colorname(color), 
+						flags, timestamp, sourcespec, 
 						(((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok") );
 
 					if (crec->status == NC_STATUS_RESOLVERROR) {
@@ -556,7 +561,7 @@ void netcollect_generate_updates(int usebackfeedqueue)
 						sprintf(msgtext, "\nUnable to resolve hostname %s\n\n", xmh_item(hwalk, XMH_HOSTNAME));
 					}
 					else {
-						sprintf(msgtext, "\nService %s on %s is ", testspec, xmh_item(hwalk, XMH_HOSTNAME));
+						sprintf(msgtext, "\nService %s on %s is ", sourcespec, xmh_item(hwalk, XMH_HOSTNAME));
 						switch (color) {
 						  case COL_GREEN: 
 							strcat(msgtext, "OK ");
@@ -567,32 +572,20 @@ void netcollect_generate_updates(int usebackfeedqueue)
 								strcat(msgtext, "\n");
 							}
 							break;
+
 						  case COL_RED:
 						  case COL_YELLOW:
 							sprintf(msgtext+strlen(msgtext), "%s : %s\n", failtext, causetext);
 							break;
+
 						  case COL_CLEAR:
+							strcat(msgline, ": Ping failed, or dialup host/service");
 							strcat(msgtext, "OK\n");
-							if (crec == hrec->ping) {
-								if (xmh_item(hwalk, XMH_FLAG_NOPING)) {
-									strcat(msgline, ": Disabled");
-									strcat(msgtext, "Ping check disabled (noping)\n");
-								}
-								else if (isdialup) {
-									strcat(msgline, ": Disabled (dialup host)");
-									strcat(msgtext, "Dialup host\n");
-								}
-							}
-							else {
-								/* Non-ping test clear: Dialup test or failed ping */
-								strcat(msgline, ": Ping failed, or dialup host/service");
-								strcat(msgtext, "Dialup host/service, or test depends on another failed test\n");
-								strcat(msgtext, causetext);
-							}
+							strcat(msgtext, "Dialup host/service, or test depends on another failed test\n");
+							strcat(msgtext, causetext);
 							break;
 						}
 					}
-
 					strcat(msgline, "\n");
 					addtostatus(msgline);
 					addtostatus(msgtext);
@@ -601,16 +594,8 @@ void netcollect_generate_updates(int usebackfeedqueue)
 						addtostatus("\n"); addtostatus(crec->plainlog); addtostatus("\n");
 					}
 
-					if (hrec->ping != crec) {
-						sprintf(msgtext, "\nTarget : %s", crec->targetip);
-						if (hrec->ping != crec) sprintf(msgtext+strlen(msgtext), " port %d", crec->targetport);
-						strcat(msgtext, "\n");
-						addtostatus(msgtext);
-					}
-					else {
-						addtostatus("\n");
-						addtostrstatus(crec->pingdetails);
-					}
+					sprintf(msgtext, "\nTarget : %s port %d\n", crec->targetip, crec->targetport);
+					addtostatus(msgtext);
 
 					sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
 					addtostatus(msgtext);
@@ -618,7 +603,6 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					addtostatus("\n");
 
 					finish_status();
-					crec->sent = 1;
 				}
 				break;
 

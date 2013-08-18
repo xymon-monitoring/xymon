@@ -222,12 +222,19 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 		switch (rec->talkprotocol) {
 		  case TALK_PROTO_DNSQUERY:
 			snprintf(msgline, sizeof(msgline), "\n[dns=%s]\n", rec->testspec);
+			addtobuffer(hres->txt, msgline);
+			break;
+		  case TALK_PROTO_PING:
+			snprintf(msgline, sizeof(msgline), "\n[ping=%s]\n", rec->netparams.destinationip);
+			addtobuffer(hres->txt, msgline);
+			snprintf(msgline, sizeof(msgline), "SourceSpec: %s\n", rec->testspec);
+			addtobuffer(hres->txt, msgline);
 			break;
 		  default:
 			snprintf(msgline, sizeof(msgline), "\n[%s]\n", rec->testspec);
+			addtobuffer(hres->txt, msgline);
 			break;
 		}
-		addtobuffer(hres->txt, msgline);
 
 		snprintf(msgline, sizeof(msgline), "Handler: %s\n", talkproto_names[rec->talkprotocol]);
 		addtobuffer(hres->txt, msgline);
