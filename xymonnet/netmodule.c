@@ -313,7 +313,7 @@ static int scan_queue(char *id, int talkproto, int batchsize)
 					  default:
 						break;
 					}
-					testrec->testspec = strdup(id);
+					testrec->testspec = strdup(testspec);
 				}
 				break;
 			  case TALK_PROTO_LDAP:

@@ -155,7 +155,7 @@ int read_tests_from_hostscfg(int uselocalcfg, int defaulttimeout)
 					 * IP since it uses the default destination (hostname, or IP if 'testip' set).
 					 */
 					if (conn_is_ip(ip) && (strcmp(ip, destination) != 0)) {
-						xymon_sqldb_nettest_register(xmh_item(hwalk, XMH_HOSTNAME), "conn", ip, &options, location);
+						xymon_sqldb_nettest_register(xmh_item(hwalk, XMH_HOSTNAME), testspec, ip, &options, location);
 					}
 
 					ip = strtok_r(NULL, ",", &sptr);
@@ -258,7 +258,7 @@ int setup_tests_from_database(int pingenabled, int forcetest)
 		switch (options.testtype) {
 		  case NET_TEST_PING:
 			netparams.destinationip = strdup(destination);
-			add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
+			add_net_test(testspec, NULL, 0, &options, &netparams, hwalk);
 			/* The default "ping" has a NULL destination in the table; the "conn" test has the IP as destination */
 			if (strncmp(testspec, "conn", 4) == 0) {
 				xymon_sqldb_nettest_done(xmh_item(hwalk, XMH_HOSTNAME), testspec, destination);
