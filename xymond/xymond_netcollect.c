@@ -486,7 +486,7 @@ void netcollect_generate_updates(int usebackfeedqueue)
 						multiitem = init_multi(&mhead, "http", crec->interval, "Web check OK", "Web check warning", "Web check failed");
 						break;
 					  case NC_HANDLER_LDAP:
-						multiitem = init_multi(&mhead, "ldap", crec->interval, "LDAP Web check OK", "LDAP Web check warning", "LDAP check failed");
+						multiitem = init_multi(&mhead, "ldap", crec->interval, "LDAP check OK", "LDAP check warning", "LDAP check failed");
 						break;
 					  case NC_HANDLER_DNS:
 						multiitem = init_multi(&mhead, "dns", crec->interval, "DNS Lookup OK", "DNS lookup warning", "DNS lookup failed");
