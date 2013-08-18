@@ -367,7 +367,7 @@ void netcollect_generate_updates(int usebackfeedqueue)
 
 
 			freestrbuffer(pingdetails);
-			pingisdown = (pingokcount > 0);
+			pingisdown = (pingokcount == 0);
 		}
 
 
