@@ -296,6 +296,7 @@ static int scan_queue(char *id, int talkproto, int batchsize)
 			testrec->netparams.destinationip = strdup(ip);
 			testrec->interval = (intervalms / 1000);
 			testrec->timeout = (timeoutms / 1000);
+			testrec->teststarttime = getcurrenttime(NULL);
 
 			switch (talkproto) {
 			  case TALK_PROTO_PING:
@@ -465,6 +466,7 @@ static int collect_ping_results(void)
 						testrec->talkresult = TALK_CONN_FAILED;
 					}
 
+					testrec->testendtime = getcurrenttime(NULL);
 					list_item_move(donetests, testrec->listitem, "");
 				}
 			}
@@ -538,6 +540,7 @@ static int collect_generic_results(char *toolid, int talkproto)
 
 	if (!testrec) goto collectioncleanup;
 
+	testrec->testendtime = getcurrenttime(NULL);
 	if (!testrec->textlog) testrec->textlog = newstrbuffer(0);
 
 	if (WIFEXITED(status) && (WEXITSTATUS(status) == 0)) {
