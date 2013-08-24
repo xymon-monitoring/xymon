@@ -286,7 +286,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		time_t fileage = (now - log->lastchange);
 
 		newstate->entry->color = log->color;
-		newstate->entry->testflags = strdup(log->testflags);
+		newstate->entry->testflags = strdup(log->testflags ? log->testflags : "");
 		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
 		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
 		newstate->entry->shorttext = strdup(log->msg);
