@@ -798,7 +798,7 @@ void combo_add(strbuffer_t *buf)
 {
 	if (combo_is_local) {
 		/* Check if message fits into the backfeed message buffer */
-		if ( (STRBUFLEN(xymonmsg) + STRBUFLEN(buf)) >= shbufsz(C_FEEDBACK_QUEUE)) {
+		if ( (STRBUFLEN(xymonmsg) + STRBUFLEN(buf)) >= max_backfeedsz) {
 			combo_flush();
 		}
 	}
