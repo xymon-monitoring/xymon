@@ -655,14 +655,22 @@ static void combo_flush(void)
 
 static void combo_add(strbuffer_t *buf)
 {
-	/* Check if there is room for the message + 2 newlines */
-	if (maxmsgspercombo && (msgsincombo >= maxmsgspercombo)) {
-		/* Nope ... flush buffer */
-		combo_flush();
+	if (combo_is_local) {
+		/* Check if message fits into the backfeed message buffer */
+		if ( (STRBUFLEN(xymonmsg) + STRBUFLEN(buf)) >= max_backfeedsz) {
+			combo_flush();
+		}
 	}
 	else {
-		/* Yep ... add delimiter before new status (but not before the first!) */
-		if (msgsincombo) addtobuffer(xymonmsg, "\n\n");
+		/* Check if there is room for the message + 2 newlines */
+		if (maxmsgspercombo && (msgsincombo >= maxmsgspercombo)) {
+			/* Nope ... flush buffer */
+			combo_flush();
+		}
+		else {
+			/* Yep ... add delimiter before new status (but not before the first!) */
+			if (msgsincombo) addtobuffer(xymonmsg, "\n\n");
+		}
 	}
 
 	addtostrbuffer(xymonmsg, buf);
