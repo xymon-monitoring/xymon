@@ -2981,7 +2981,7 @@ int check_dir(void *hinfo, char *classname,
 	return result;
 }
 
-char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, void * valnames, char *vals)
+strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, void * valnames, char *vals)
 {
 	static strbuffer_t *resbuf = NULL;
 	char msgline[1024];
@@ -3117,7 +3117,7 @@ nextrule:
 	if (valscopy) xfree(valscopy);
 	if (vallist) xfree(vallist);
 
-	return (STRBUFLEN(resbuf) > 0) ? STRBUF(resbuf) : NULL;
+	return (STRBUFLEN(resbuf) > 0) ? resbuf : NULL;
 }
 
 

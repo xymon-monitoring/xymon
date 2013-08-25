@@ -189,6 +189,7 @@ int main(int argc, char *argv[])
 	char *processor = NULL;
 	struct sockaddr_un ctlsockaddr;
 	int ctlsocket;
+	int usebackfeedqueue = 0;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -231,6 +232,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (exthandler && extids) setup_exthandler(exthandler, extids);
+
+	usebackfeedqueue = (sendmessage_init_local() > 0);
 
 	/* Do the network stuff if needed */
 	net_worker_run(ST_RRD, LOC_STICKY, update_locator_hostdata);
@@ -324,6 +327,8 @@ int main(int argc, char *argv[])
 			*eoln = '\0';
 			restofmsg = eoln+1;
 		}
+
+		if (usebackfeedqueue) combo_start_local(); else combo_start();
 
 		/* Parse the meta-data */
 		metacount = 0; 
@@ -435,6 +440,8 @@ int main(int argc, char *argv[])
 			/* Not implemented. See "droptest". */
 		}
 
+		combo_end();
+
 		/* 
 		 * We fork a subprocess when processing drophost requests.
 		 * Pickup any finished child processes to avoid zombies
@@ -453,6 +460,8 @@ int main(int argc, char *argv[])
 	/* Close the control socket */
 	close(ctlsocket);
 	unlink(ctlsockaddr.sun_path);
+
+	sendmessage_finish_local();
 
 	return 0;
 }

@@ -65,7 +65,7 @@ extern int check_mibvals(void *hinfo, char *classname,
 			 char *mibname, char *keyname, char *mibdata,
 		  	 strbuffer_t *summarybuf, int *anyrules);
 
-extern char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, void *valnames, char *vals);
+extern strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, void *valnames, char *vals);
 
 
 extern int scan_log(void *hinfo, char *classname, 
