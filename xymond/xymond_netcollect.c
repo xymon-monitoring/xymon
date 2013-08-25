@@ -531,7 +531,7 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					sprintf(msgline, "data %s.%s\n", xmh_item(hwalk, XMH_HOSTNAME), "apache");
 					addtobuffer(datamsg, msgline);
 					addtobuffer(datamsg, crec->httpbody);
-					if (usebackfeedqueue) sendmessage_local(STRBUF(datamsg)); else sendmessage(STRBUF(datamsg), NULL, XYMON_TIMEOUT, NULL);
+					combo_add(datamsg);
 					freestrbuffer(datamsg);
 				}
 				break;

@@ -164,6 +164,7 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 	xtreePos_t handle;
 	void *hostresults = xtreeNew(strcasecmp);
 
+	if (usebackfeed) combo_start_local(); else combo_start();
 	for (walk = head->head; (walk); walk = walk->next) {
 		hostresult_t *hres;
 		myconn_t *rec = (myconn_t *)walk->data;
@@ -350,13 +351,14 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule, char 
 	for (handle = xtreeFirst(hostresults); handle != xtreeEnd(hostresults); handle = xtreeNext(hostresults, handle)) {
 		hostresult_t *hres = xtreeData(hostresults, handle);
 
-		if (usebackfeed) sendmessage_local(STRBUF(hres->txt)); else sendmessage(STRBUF(hres->txt), NULL, XYMON_TIMEOUT, NULL);
+		combo_add(hres->txt);
 		freestrbuffer(hres->txt);
 		xtreeDelete(hostresults, xmh_item(hres->hinfo, XMH_HOSTNAME));
 		xfree(hres);
 	}
 
 	xtreeDestroy(hostresults);
+	combo_end();
 }
 
 void cleanup_myconn_list(listhead_t *head)

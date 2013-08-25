@@ -44,6 +44,8 @@ typedef struct testspec_t {
 static testspec_t *testhead = NULL;
 static int testcount = 0;
 static int errorcolors = (1 << COL_RED);
+static int usebackfeedqueue = 0;
+
 static char *gethname(char *spec)
 {
 	static char *result = NULL;
@@ -433,7 +435,7 @@ int update_combotests(int showeval, int cleanexpr)
 
 	} while (pending != remaining);
 
-	combo_start();
+	if (usebackfeedqueue) combo_start_local(); else combo_start();
 	for (t=testhead; (t); t = t->next) {
 		char msgline[MAX_LINE_LEN];
 		int color;
@@ -479,6 +481,8 @@ int main(int argc, char *argv[])
 	libxymon_init(argv[0]);
 	setup_signalhandler(argv[0]);
 
+	usebackfeedqueue = (sendmessage_init_local() > 0);
+
 	for (argi = 1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--quiet") == 0)) {
 			showeval = 0;
@@ -508,6 +512,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	return update_combotests(showeval, cleanexpr);
+	update_combotests(showeval, cleanexpr);
+
+	if (usebackfeedqueue) sendmessage_finish_local();
+	return 0;
 }
 
