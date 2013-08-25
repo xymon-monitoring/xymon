@@ -1011,9 +1011,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	freestrbuffer(monmsg);
 
-	if (anycountdata) {
-		if (usebackfeedqueue) sendmessage_local(STRBUF(countdata)); else sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
-	}
+	if (anycountdata) combo_add(countdata);
 	clearstrbuffer(countdata);
 }
 
@@ -1370,9 +1368,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		clearstrbuffer(greendata);
 	}
 
-	if (anyszdata) {
-		if (usebackfeedqueue) sendmessage_local(STRBUF(sizedata)); else sendmessage(STRBUF(sizedata), NULL, XYMON_TIMEOUT, NULL);
-	}
+	if (anyszdata) combo_add(sizedata);
 	clearstrbuffer(sizedata);
 }
 
@@ -1414,9 +1410,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 	}
 
-	if (anydata) {
-		if (usebackfeedqueue) sendmessage_local(STRBUF(countdata)); else sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
-	}
+	if (anydata) combo_add(countdata);
 	clearstrbuffer(countdata);
 }
 
@@ -1434,8 +1428,8 @@ void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, netstatstr);
-	if (usebackfeedqueue) sendmessage_local(STRBUF(msg)); else sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
+	combo_add(msg);
 	freestrbuffer(msg);
 }
 
@@ -1452,8 +1446,8 @@ void unix_ifstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.ifstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, ifstatstr);
-	if (usebackfeedqueue) sendmessage_local(STRBUF(msg)); else sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
+	combo_add(msg);
 	freestrbuffer(msg);
 }
 
@@ -1479,8 +1473,8 @@ void unix_vmstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, p+1);
-	if (usebackfeedqueue) sendmessage_local(STRBUF(msg)); else sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
+	combo_add(msg);
 	freestrbuffer(msg);
 }
 
@@ -1606,9 +1600,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		clearstrbuffer(monmsg);
 	}
 
-	if (anycountdata) {
-		if (usebackfeedqueue) sendmessage_local(STRBUF(countdata)); else sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
-	}
+	if (anycountdata) combo_add(countdata);
 	clearstrbuffer(countdata);
 }
 

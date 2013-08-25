@@ -44,7 +44,7 @@ static char rcsid[] = "$Id$";
 #define SENDRETRIES 2
 
 /* These commands go to all Xymon servers */
-static char *multircptcmds[] = { "status", "combo", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
+static char *multircptcmds[] = { "status", "extcombo", "combo", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
 static char errordetails[1024];
 
 static strbuffer_t *msgbuf = NULL;	/* message buffer for one status message */
@@ -54,10 +54,15 @@ static strbuffer_t *xymonmsg = NULL;	/* Complete combo message buffer */
 
 static int msgsincombo = 0;		/* # of messages queued in a combo */
 static int maxmsgspercombo = 100;	/* 0 = no limit. 100 is a reasonable default. */
+static int max_combosz = 256*1024;
 static int sleepbetweenmsgs = 0;
 
 static int backfeedqueue = -1;
 static int max_backfeedsz = 16384;
+
+static char *comboofsstr = NULL;
+static int comboofssz = 0;
+static int *combooffsets = NULL;
 
 
 #define USERBUFSZ 4096
@@ -596,16 +601,29 @@ static void combo_params(void)
 		maxmsgspercombo = 100;
 	}
 
+	max_combosz = 1024*shbufsz(C_STATUS);
+
 	if (xgetenv("SLEEPBETWEENMSGS")) sleepbetweenmsgs = atoi(xgetenv("SLEEPBETWEENMSGS"));
+
+	comboofssz = 10*maxmsgspercombo;
+	comboofsstr = (char *)malloc(comboofssz+1);
+	combooffsets = (int *)malloc((maxmsgspercombo+1)*sizeof(int));
 }
 
 void combo_start(void)
 {
 	combo_params();
 
+	memset(comboofsstr, ' ', comboofssz);
+	memcpy(comboofsstr, "extcombo", 8);
+	*(comboofsstr + comboofssz) = '\0';
+
+	memset(combooffsets, 0, maxmsgspercombo*sizeof(int));
+	combooffsets[0] = comboofssz;
+
 	if (xymonmsg == NULL) xymonmsg = newstrbuffer(0);
 	clearstrbuffer(xymonmsg);
-	addtobuffer(xymonmsg, "combo\n");
+	addtobufferraw(xymonmsg, comboofsstr, comboofssz);
 	msgsincombo = 0;
 	combo_is_local = 0;
 }
@@ -618,16 +636,22 @@ void combo_start_local(void)
 
 static void combo_flush(void)
 {
+	int i;
+	char *outp;
 
 	if (!msgsincombo) {
 		dbgprintf("Flush, but xymonmsg is empty\n");
 		return;
 	}
 
+       outp = strchr(STRBUF(xymonmsg), ' ');
+       for (i = 0; (i <= msgsincombo); i++) outp += sprintf(outp, " %d", combooffsets[i]);
+       *outp = '\n';
+
 	if (debug) {
 		char *p1, *p2;
 
-		dbgprintf("Flushing combo message\n");
+		dbgprintf("Flushing combo message with %d elements\n", msgsincombo);
 		p1 = p2 = STRBUF(xymonmsg);
 
 		do {
@@ -653,28 +677,13 @@ static void combo_flush(void)
 	}
 }
 
-static void combo_add(strbuffer_t *buf)
+void combo_add(strbuffer_t *buf)
 {
-	if (combo_is_local) {
-		/* Check if message fits into the backfeed message buffer */
-		if ( (STRBUFLEN(xymonmsg) + STRBUFLEN(buf)) >= max_backfeedsz) {
-			combo_flush();
-		}
-	}
-	else {
-		/* Check if there is room for the message + 2 newlines */
-		if (maxmsgspercombo && (msgsincombo >= maxmsgspercombo)) {
-			/* Nope ... flush buffer */
-			combo_flush();
-		}
-		else {
-			/* Yep ... add delimiter before new status (but not before the first!) */
-			if (msgsincombo) addtobuffer(xymonmsg, "\n\n");
-		}
-	}
+	/* Check if there is room for the message + 2 newlines */
+	if ((STRBUFLEN(xymonmsg) + STRBUFLEN(buf) + 2) >= (combo_is_local ? max_backfeedsz : max_combosz)) combo_flush();
 
 	addtostrbuffer(xymonmsg, buf);
-	msgsincombo++;
+	combooffsets[++msgsincombo] = STRBUFLEN(xymonmsg);
 }
 
 void combo_end(void)

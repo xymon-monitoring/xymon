@@ -50,6 +50,7 @@ extern void freesendreturnbuf(sendreturn_t *s);
 extern char *getsendreturnstr(sendreturn_t *s, int takeover);
 
 extern void combo_start(void);
+extern void combo_add(strbuffer_t *msg);
 extern void combo_end(void);
 extern void combo_start_local(void);
 
