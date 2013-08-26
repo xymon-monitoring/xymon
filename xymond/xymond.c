@@ -205,7 +205,6 @@ xymond_channel_t *clichgchn = NULL;	/* Receives "clichg" messages */
 xymond_channel_t *userchn   = NULL;	/* Receives "usermsg" messages */
 
 static int backfeedqueue = -1;
-static unsigned long backfeedcount = 0;
 static char *bf_buf = NULL;
 static int bf_bufsz = 0;
 
@@ -242,33 +241,50 @@ char *defaultreddelay = NULL, *defaultyellowdelay = NULL;
 
 typedef struct xymond_statistics_t {
 	char *cmd;
-	unsigned long count;
+	unsigned long netcount, bfqcount;
 } xymond_statistics_t;
 
 xymond_statistics_t xymond_stats[] = {
-	{ "status", 0 },
-	{ "combo", 0 },
-	{ "extcombo", 0 },
-	{ "page", 0 },
-	{ "summary", 0 },
-	{ "data", 0 },
-	{ "client", 0 },
-	{ "notes", 0 },
-	{ "enable", 0 },
-	{ "disable", 0 },
-	{ "ack", 0 },
-	{ "config", 0 },
-	{ "query", 0 },
-	{ "xymondboard", 0 },
-	{ "xymondlog", 0 },
-	{ "drop", 0 },
-	{ "rename", 0 },
-	{ "dummy", 0 },
-	{ "ping", 0 },
-	{ "notify", 0 },
-	{ "schedule", 0 },
-	{ "download", 0 },
-	{ NULL, 0 }
+	{ "extcombo", },
+	{ "combo", },
+	{ "modify", },
+	{ "status", },
+	{ "data", },
+	{ "summary", },
+	{ "notes", },
+	{ "usermsg", },
+	{ "enable", },
+	{ "disable", },
+	{ "config", },
+	{ "download", },
+	{ "flush", },
+	{ "reload", },
+	{ "rotate", },
+	{ "query", },
+	{ "xymondlog", },
+	{ "hobbitdlog", },
+	{ "xymondxlog", },
+	{ "hobbitdxlog", },
+	{ "xymondboard", },
+	{ "hobbitdboard", },
+	{ "xymondxboard", },
+	{ "hobbitdxboard", },
+	{ "hostinfo", },
+	{ "xymondack", },
+	{ "hobbitdack", },
+	{ "ack", },
+	{ "ackinfo", },
+	{ "drop", },
+	{ "rename", },
+	{ "dummy", },
+	{ "ping", },
+	{ "notify", },
+	{ "schedule", },
+	{ "client", },
+	{ "clientlog", },
+	{ "ghostlist", },
+	{ "multisrclist", },
+	{ NULL, }
 };
 
 enum boardfield_t { F_NONE, F_HOSTNAME, F_TESTNAME, F_COLOR, F_FLAGS, 
@@ -334,7 +350,7 @@ typedef struct scheduletask_t {
 scheduletask_t *schedulehead = NULL;
 int nextschedid = 1;
 
-void update_statistics(char *cmd)
+void update_statistics(char *cmd, int viabfq)
 {
 	int i;
 
@@ -349,7 +365,18 @@ void update_statistics(char *cmd)
 
 	i = 0;
 	while (xymond_stats[i].cmd && strncmp(xymond_stats[i].cmd, cmd, strlen(xymond_stats[i].cmd))) { i++; }
-	xymond_stats[i].count++;
+	if (viabfq)
+		xymond_stats[i].bfqcount++;
+	else {
+		xymond_stats[i].netcount++;
+	}
+
+	if (!xymond_stats[i].cmd) {
+		char *eoln = strchr(cmd, '\n');
+		if (eoln) *eoln = '\0';
+		errprintf("Bogus message %s\n", cmd);
+		if (eoln) *eoln = '\n';
+	}
 
 	dbgprintf("<- update_statistics\n");
 }
@@ -366,6 +393,7 @@ char *generate_stats(void)
 	time_t uptime = (nowtimer - boottimer);
 	time_t boottstamp = (now - uptime);
 	char msgline[2048];
+	unsigned long net_total = 0, bfq_total = 0;
 
 	dbgprintf("-> generate_stats\n");
 
@@ -388,15 +416,22 @@ char *generate_stats(void)
 	sprintf(msgline, "status+11 %s.xymond %s %s - xymon daemon up: %s\nStatistics for Xymon daemon\nVersion: %s\nUp since %s (%s)\n\n",
 		xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), timestamp, uptimetxt, VERSION, bootuptxt, uptimetxt);
 	addtobuffer(statsbuf, msgline);
-	sprintf(msgline, "Incoming messages      : %10ld\n", msgs_total);
-	addtobuffer(statsbuf, msgline);
-	i = 0;
-	while (xymond_stats[i].cmd) {
-		sprintf(msgline, "- %-20s : %10ld\n", xymond_stats[i].cmd, xymond_stats[i].count);
-		addtobuffer(statsbuf, msgline);
-		i++;
+	for (i = 0; (xymond_stats[i].cmd); i++) {
+		net_total += xymond_stats[i].netcount;
+		bfq_total += xymond_stats[i].bfqcount;
 	}
-	sprintf(msgline, "- %-20s : %10ld\n", "Bogus/Timeouts ", xymond_stats[i].count);
+
+	sprintf(msgline, "Incoming messages      : %10ld (%10ld net %10ld BFQ)\n", msgs_total, net_total, bfq_total);
+	addtobuffer(statsbuf, msgline);
+	for (i = 0; (xymond_stats[i].cmd); i++) {
+		if ((xymond_stats[i].netcount + xymond_stats[i].bfqcount) == 0) continue;
+
+		sprintf(msgline, "- %-20s : %10ld (%10ld net %10ld BFQ)\n", xymond_stats[i].cmd, 
+			xymond_stats[i].netcount + xymond_stats[i].bfqcount,
+			xymond_stats[i].netcount, xymond_stats[i].bfqcount);
+		addtobuffer(statsbuf, msgline);
+	}
+	sprintf(msgline, "- %-20s : %10ld\n", "Bogus/Timeouts ", xymond_stats[i].netcount);
 	addtobuffer(statsbuf, msgline);
 
 	if ((now > last_stats_time) && (last_stats_time > 0)) {
@@ -434,8 +469,6 @@ char *generate_stats(void)
 	addtobuffer(statsbuf, msgline);
 	clients = semctl(userchn->semid, CLIENTCOUNT, GETVAL);
 	sprintf(msgline, "user   channel messages: %10ld (%d readers)\n", userchn->msgcount, clients);
-	addtobuffer(statsbuf, msgline);
-	sprintf(msgline, "backfeed messages      : %10ld\n", backfeedcount);
 	addtobuffer(statsbuf, msgline);
 
 	ghandle = xtreeFirst(rbghosts);
@@ -2926,7 +2959,7 @@ void get_sender(conn_t *msg, char *msgtext, char *prestring)
 }
 
 
-void do_message(conn_t *msg, char *origin)
+void do_message(conn_t *msg, char *origin, int viabfq)
 {
 	static int nesting = 0;
 	xymond_hostlist_t *h;
@@ -3016,7 +3049,7 @@ void do_message(conn_t *msg, char *origin)
 	}
 
 	/* Count statistics */
-	update_statistics(msg->buf);
+	update_statistics(msg->buf, viabfq);
 
 	if (strncmp(msg->buf, "extcombo ", 9) == 0) {
 		char *ofsline, *origbuf, *p, *tokr, *ofsstr;
@@ -3058,7 +3091,7 @@ void do_message(conn_t *msg, char *origin)
 			savechar = *(msg->buf + msg->buflen);
 			*(msg->buf + msg->buflen) = '\0';
 
-			do_message(msg, origin);
+			do_message(msg, origin, viabfq);
 			*(msg->buf + msg->buflen) = savechar;
 			startofs = endofs;
 		} while (ofsstr);
@@ -3104,7 +3137,7 @@ void do_message(conn_t *msg, char *origin)
 
 				  default:
 					/* Count individual status-messages also */
-					update_statistics(currmsg);
+					update_statistics(currmsg, viabfq);
 
 					if (h && t && log && (color != -1)) {
 						handle_status(currmsg, msg->sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
@@ -4700,7 +4733,7 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 		if (n < 0) {
 			if (conn->buf && conn->buflen) {
 				*(conn->bufp) = '\0';
-				do_message(conn, "");
+				do_message(conn, "", 0);
 			}
 			else {
 				conn->doingwhat = NOTALK;
@@ -4711,7 +4744,7 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 			// dbgprintf("Got the entire message, preparing response\n");
 			conn->bufp += n;
 			*(conn->bufp) = '\0';
-			do_message(conn, "");
+			do_message(conn, "", 0);
 		}
 		else {
 			*(conn->bufp + n) = '\0';
@@ -4749,7 +4782,7 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 
 						// dbgprintf("Expect message of size %d, currently have %d\n", conn->msgsz, conn->buflen);
 						if (conn->buflen >= conn->msgsz)
-							do_message(conn, "");
+							do_message(conn, "", 0);
 					}
 				}
 			}
@@ -4773,7 +4806,7 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 			}
 			else if ((n == 0) && (connection->connstate == CONN_PLAINTEXT)) {
 				/* No more data */
-				do_message(conn, "");
+				do_message(conn, "", 0);
 			}
 
 			/* Grow the input buffer - within reason ... */
@@ -4869,7 +4902,6 @@ int main(int argc, char *argv[])
 	int requireclientcert = 0;
 	char *hostsfn = NULL;
 	char *restartfn = NULL;
-	char *logfn = NULL;
 	int checkpointinterval = 900;
 	int do_purples = 1;
 	time_t nextpurpleupdate;
@@ -5391,15 +5423,13 @@ int main(int argc, char *argv[])
 			backfeeddata = (sz > 0);
 
 			if (backfeeddata) {
-				backfeedcount++;
-
 				msg.buf = bf_buf;
 				msg.bufsz = msg.buflen = sz;
 				msg.bufp = msg.buf + msg.buflen;
 				msg.doingwhat = RECEIVING;
 				msg.sender = strdup("0.0.0.0");
 
-				do_message(&msg, "");
+				do_message(&msg, "", 1);
 				*bf_buf = '\0';
 			}
 		}
@@ -5452,7 +5482,7 @@ int main(int argc, char *argv[])
 					task.sender = runtask->sender;
 					task.buf = task.bufp = runtask->command;
 					task.buflen = strlen(runtask->command); task.bufsz = task.buflen+1;
-					do_message(&task, "");
+					do_message(&task, "", 1);
 
 					errprintf("Ran scheduled task %d from %s: %s\n", 
 						  runtask->id, runtask->sender, runtask->command);
