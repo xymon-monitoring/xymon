@@ -601,12 +601,14 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					multistatus_t *multiitem = NULL;
 					int color = COL_GREEN;
 					weburl_t webspec;
+					char *testdescription = sourcespec;
 
 					strcpy(causetext, "OK");
 
 					switch (crec->handler) {
 					  case NC_HANDLER_HTTP:
 						decode_url(sourcespec, &webspec);
+						testdescription = webspec.desturl->origform;
 						multiitem = init_multi(&mhead, (webspec.columnname ? webspec.columnname : "http"), crec->interval, "Web check OK", "Web check warning", "Web check failed");
 						break;
 					  case NC_HANDLER_LDAP:
@@ -634,13 +636,13 @@ void netcollect_generate_updates(int usebackfeedqueue)
 						break;
 					}
 
-					sprintf(msgline, "%s - %s\n", sourcespec, causetext);
+					sprintf(msgline, "%s - %s\n", testdescription, causetext);
 					if (add_multi_item(multiitem, color, msgline) == 0) {
 						switch (crec->handler) {
 						  case NC_HANDLER_HTTP:
 							if (xmh_item(hwalk, XMH_FLAG_HIDEHTTP)) break;
 
-							sprintf(msgline, "&%s %s\n\n", colorname(color), sourcespec);
+							sprintf(msgline, "&%s %s\n\n", colorname(color), testdescription);
 							addtobuffer(multiitem->detailtext, msgline);
 							if (crec->httpheaders) addtobuffer(multiitem->detailtext, crec->httpheaders);
 							if (crec->httpbody && webspec.columnname) addtobuffer(multiitem->detailtext, crec->httpbody);
