@@ -187,11 +187,9 @@ void handle_netcollect_client(char *hostname, char *clienttype, enum ostype_t os
 }
 
 
-int decide_color(connectresult_t *crec, int pingisdown, int isdialup, int isreverse, int isforced, int failgoesclear, char *cause)
+int nettest_color(connectresult_t *crec, int pingisdown, int isdialup, int isreverse, int isforced, int failgoesclear, char *cause)
 {
 	int color = COL_GREEN;
-
-	*cause = '\0';
 
 	if (isreverse) {
 		/*
@@ -238,6 +236,128 @@ int decide_color(connectresult_t *crec, int pingisdown, int isdialup, int isreve
 	}
 
 	return color;
+}
+
+
+void http_color(connectresult_t *crec, int *color, weburl_t *webspec, char *cause)
+{
+	void *ptn = NULL;
+	int matched = 0;
+	char statustxt[10];
+
+	if ((*color == COL_GREEN) && (webspec->testtype != WEBTEST_STATUS)) {
+		/* HTTP tests require an OK HTTP status code in addition to the web requst having succeeded */
+
+		if      ((crec->httpstatus >= 100) && (crec->httpstatus <= 199)) {
+			/* Continue - should not happen, but ok */
+		}
+		else if ((crec->httpstatus >= 200) && (crec->httpstatus <= 299)) {
+			/* Ok */
+		}
+		else if ((crec->httpstatus >= 300) && (crec->httpstatus <= 399)) {
+			/* Redirect */
+		}
+		else if ((crec->httpstatus >= 400) && (crec->httpstatus <= 499)) {
+			/* Client errors */
+
+			switch (crec->httpstatus) {
+			  case 401: case 403: break;	/* Unauthorized or forbidden is OK */
+			  case 404:
+				*color = COL_RED;
+				strcpy(cause, "Webpage error (Page not found)");
+				break;
+			  default:
+				*color = COL_RED;
+				sprintf(cause, "Webpage error %d", crec->httpstatus);
+				break;
+			}
+		}
+		else if ((crec->httpstatus >= 500) && (crec->httpstatus <= 599)) {
+			/* Server errors */
+			*color = COL_RED;
+
+			switch (crec->httpstatus) {
+			  case 500: strcpy(cause, "Webserver: Internal error (500)"); break;
+			  case 503: strcpy(cause, "Webserver: Service unavailable (503)"); break;
+			  case 504: strcpy(cause, "Webserver: Gateway timeout (504)"); break;
+			  default : sprintf(cause, "Webserver error %d", crec->httpstatus); break;
+			}
+		}
+		else if (crec->httpstatus > 0) {
+			*color = COL_RED;
+			sprintf(cause, "Unknown HTTP status %d", crec->httpstatus);
+		}
+	}
+
+	if (*color != COL_GREEN) return;
+
+	switch (webspec->testtype) {
+	  case WEBTEST_BODY:
+	  case WEBTEST_POST:
+	  case WEBTEST_SOAP:
+		if (!crec->httpheaders || !crec->httpbody) {
+			strcpy(cause, "Server sent an empty response");
+			*color = COL_RED;
+			return;
+		}
+		ptn = multilineregex(webspec->matchpattern);
+		if (!ptn) {
+			strcpy(cause, "Invalid match pattern\n");
+			*color = COL_YELLOW;
+			return;
+		}
+		break;
+
+	  case WEBTEST_HEADER:
+	  case WEBTEST_STATUS:
+		if (!crec->httpheaders) {
+			strcpy(cause, "Server sent an empty response");
+			*color = COL_RED;
+			return;
+		}
+		ptn = compileregex(webspec->matchpattern);
+		if (!ptn) {
+			strcpy(cause, "Invalid match pattern\n");
+			*color = COL_YELLOW;
+			return;
+		}
+		break;
+
+	  case WEBTEST_PLAIN:
+		if (!crec->httpheaders) {
+			strcpy(cause, "Server sent an empty response");
+			*color = COL_RED;
+			return;
+		}
+		ptn = NULL;
+		return;	/* Dont do any content checks */
+	}
+
+	switch (webspec->testtype) {
+	  case WEBTEST_BODY:
+	  case WEBTEST_POST:
+	  case WEBTEST_SOAP:
+		matched = matchregex(crec->httpbody, ptn);
+		break;
+
+	  case WEBTEST_HEADER:
+		matched = matchregex(crec->httpheaders, ptn);
+		break;
+
+	  case WEBTEST_STATUS:
+		snprintf(statustxt, sizeof(statustxt), "%d", crec->httpstatus);
+		matched = matchregex(statustxt, ptn);
+		break;
+
+	  default:
+		break;
+	}
+
+	/* Match ok ? */
+	if ((!matched && !webspec->reversetest) || (matched && webspec->reversetest)) *color = COL_RED;
+	if (*color != COL_GREEN) strcpy(cause, "Data returned from server does not match what is expected");
+
+	if (ptn) freeregex(ptn);
 }
 
 
@@ -323,51 +443,51 @@ void netcollect_generate_updates(int usebackfeedqueue)
 				addtobuffer(pingdetails, msgtext);
 			}
 
-			if (pingtotalcount == 0) continue;
+			if (pingtotalcount > 0) {
+				/* Determine color */
+				switch (pingtype) {
+				  case NC_PINGTYPE_REVERSE:
+					pingcolor = (pingokcount == 0) ? COL_GREEN : COL_RED;
+					break;
 
-			/* Determine color */
-			switch (pingtype) {
-			  case NC_PINGTYPE_REVERSE:
-				pingcolor = (pingokcount == 0) ? COL_GREEN : COL_RED;
-				break;
+				  case NC_PINGTYPE_BEST:
+					pingcolor = (pingokcount >= 1) ? COL_GREEN : COL_RED;
+					break;
 
-			  case NC_PINGTYPE_BEST:
-				pingcolor = (pingokcount >= 1) ? COL_GREEN : COL_RED;
-				break;
+				  case NC_PINGTYPE_WORST:
+					pingcolor = (pingokcount == pingtotalcount) ? COL_GREEN : COL_RED;
+					break;
+				}
 
-			  case NC_PINGTYPE_WORST:
-				pingcolor = (pingokcount == pingtotalcount) ? COL_GREEN : COL_RED;
-				break;
+				if ((pingcolor == COL_RED) && xmh_item(hwalk, XMH_FLAG_DIALUP)) {
+					pingcolor = COL_CLEAR;
+					summary = "disabled (dialup host)";
+				}
+				else {
+					summary = (pingcolor == COL_GREEN) ? "ok" : "not ok";
+				}
+
+
+				/* Build and send status */
+				init_status(pingcolor);
+				snprintf(msgline, sizeof(msgline), "status %s.%s %s %s ping %s\n\n", 
+					xmh_item(hwalk, XMH_HOSTNAME), xgetenv("PINGCOLUMN"), colorname(pingcolor), timestamp, summary);
+				addtostatus(msgline);
+
+				snprintf(msgtext, sizeof(msgtext), "&%s Host %s responds to ping on %d of %d IP's\n\n", colorname(pingcolor), xmh_item(hwalk, XMH_HOSTNAME), pingokcount, pingtotalcount);
+				addtostatus(msgtext);
+
+				addtostrstatus(pingdetails);
+
+				snprintf(msgtext, sizeof(msgtext), "\nSeconds: %.3f\n", minpingtime / 1000);
+				addtostatus(msgtext);
+
+				finish_status();
+
+
+				freestrbuffer(pingdetails);
+				pingisdown = (pingokcount == 0);
 			}
-
-			if ((pingcolor == COL_RED) && xmh_item(hwalk, XMH_FLAG_DIALUP)) {
-				pingcolor = COL_CLEAR;
-				summary = "disabled (dialup host)";
-			}
-			else {
-				summary = (pingcolor == COL_GREEN) ? "ok" : "not ok";
-			}
-
-
-			/* Build and send status */
-			init_status(pingcolor);
-			snprintf(msgline, sizeof(msgline), "status %s.%s %s %s ping %s\n\n", 
-				xmh_item(hwalk, XMH_HOSTNAME), xgetenv("PINGCOLUMN"), colorname(pingcolor), timestamp, summary);
-			addtostatus(msgline);
-
-			snprintf(msgtext, sizeof(msgtext), "&%s Host %s responds to ping on %d of %d IP's\n\n", colorname(pingcolor), xmh_item(hwalk, XMH_HOSTNAME), pingokcount, pingtotalcount);
-			addtostatus(msgtext);
-
-			addtostrstatus(pingdetails);
-
-			snprintf(msgtext, sizeof(msgtext), "\nSeconds: %.3f\n", minpingtime / 1000);
-			addtostatus(msgtext);
-
-			finish_status();
-
-
-			freestrbuffer(pingdetails);
-			pingisdown = (pingokcount == 0);
 		}
 
 
@@ -472,18 +592,22 @@ void netcollect_generate_updates(int usebackfeedqueue)
 				xfree(dupsubj);
 			}
 
+
 			switch (crec->handler) {
 			  case NC_HANDLER_HTTP:
 			  case NC_HANDLER_LDAP:
 			  case NC_HANDLER_DNS:
 				{
-					char *testname;
 					multistatus_t *multiitem = NULL;
 					int color = COL_GREEN;
+					weburl_t webspec;
+
+					strcpy(causetext, "OK");
 
 					switch (crec->handler) {
 					  case NC_HANDLER_HTTP:
-						multiitem = init_multi(&mhead, "http", crec->interval, "Web check OK", "Web check warning", "Web check failed");
+						decode_url(sourcespec, &webspec);
+						multiitem = init_multi(&mhead, (webspec.columnname ? webspec.columnname : "http"), crec->interval, "Web check OK", "Web check warning", "Web check failed");
 						break;
 					  case NC_HANDLER_LDAP:
 						multiitem = init_multi(&mhead, "ldap", crec->interval, "LDAP check OK", "LDAP check warning", "LDAP check failed");
@@ -495,10 +619,22 @@ void netcollect_generate_updates(int usebackfeedqueue)
 						break;
 					}
 
-					color = decide_color(crec, pingisdown, isdialup, isreverse, isforced, failgoesclear, causetext);
-					if ((crec->handler == NC_HANDLER_LDAP) && (color == COL_RED) && (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW))) color = COL_YELLOW;
+					color = nettest_color(crec, pingisdown, isdialup, isreverse, isforced, failgoesclear, causetext);
 
-					sprintf(msgline, "%s - %s\n", sourcespec, ((color != COL_GREEN) ? "failed" : "OK"));
+					switch (crec->handler) {
+					  case NC_HANDLER_HTTP:
+						http_color(crec, &color, &webspec, causetext);
+						break;
+
+					  case NC_HANDLER_LDAP:
+						if ((color == COL_RED) && (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW))) color = COL_YELLOW;
+						break;
+
+					  default:
+						break;
+					}
+
+					sprintf(msgline, "%s - %s\n", sourcespec, causetext);
 					if (add_multi_item(multiitem, color, msgline) == 0) {
 						switch (crec->handler) {
 						  case NC_HANDLER_HTTP:
@@ -507,7 +643,7 @@ void netcollect_generate_updates(int usebackfeedqueue)
 							sprintf(msgline, "&%s %s\n\n", colorname(color), sourcespec);
 							addtobuffer(multiitem->detailtext, msgline);
 							if (crec->httpheaders) addtobuffer(multiitem->detailtext, crec->httpheaders);
-							// if (crec->httpbody) addtostatus(crec->httpbody);
+							if (crec->httpbody && webspec.columnname) addtobuffer(multiitem->detailtext, crec->httpbody);
 							break;
 
 						  default:
@@ -521,6 +657,8 @@ void netcollect_generate_updates(int usebackfeedqueue)
 						sprintf(msgtext, "\nSeconds: %.3f\n", crec->elapsedms / 1000);
 						addtobuffer(multiitem->detailtext, msgtext);
 					}
+
+					freeweburl_data(&webspec);
 				}
 				break;
 
@@ -547,7 +685,8 @@ void netcollect_generate_updates(int usebackfeedqueue)
 					flags[1] = (isreverse ? 'R' : 'r');
 					flags[2] = '\0';
 
-					color = decide_color(crec, pingisdown, isdialup, isreverse, isforced, failgoesclear, causetext);
+					*causetext = '\0';
+					color = nettest_color(crec, pingisdown, isdialup, isreverse, isforced, failgoesclear, causetext);
 
 					/* Validity = 6*(interval in minutes) = 6*(interval/(1000*60)) = interval/10000 */
 					init_status(color);

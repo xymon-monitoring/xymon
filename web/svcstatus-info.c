@@ -1176,7 +1176,8 @@ char *generate_info(char *hostname, char *critconfigfn)
 		if (*val == '~') val++;
 
 		if (strncmp(val, "http", 4) == 0) {
-			char *urlstring = decode_url(val, NULL);
+			weburl_t wu;
+			char *urlstring = decode_url(val, &wu);
 
 			if (first) {
 				addtobuffer(infobuf, "<tr><th align=left>URL checks:</th><td align=left>\n");
@@ -1188,6 +1189,8 @@ char *generate_info(char *hostname, char *critconfigfn)
 			addtobuffer(infobuf, "\">");
 			addtobuffer(infobuf, urlstring);
 			addtobuffer(infobuf, "</a><br>\n");
+
+			freeweburl_data(&wu);
 		}
 		val = xmh_item_walk(NULL);
 	}
@@ -1199,7 +1202,6 @@ char *generate_info(char *hostname, char *critconfigfn)
 		if (*val == '~') val++;
 
 		if ( (strncmp(val, "cont=", 5) == 0)    ||
-		     (strncmp(val, "content=", 8) == 0) ||
 		     (strncmp(val, "nocont=", 7) == 0)  ||
 		     (strncmp(val, "type=", 5) == 0)    ||
 		     (strncmp(val, "post=", 5) == 0)    ||
@@ -1226,7 +1228,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 			addtobuffer(infobuf, " return ");
 			addtobuffer(infobuf, ((strncmp(val, "type;", 5) == 0) ? "content-type " : ""));
 			addtobuffer(infobuf, "'");
-			addtobuffer(infobuf, weburl.expdata);
+			addtobuffer(infobuf, weburl.matchpattern);
 			addtobuffer(infobuf, "'");
 			addtobuffer(infobuf, "<br>\n");
 		}

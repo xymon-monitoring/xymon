@@ -31,7 +31,7 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 
 	/* If there is a parse error in the URL, dont run the test */
 	decodedurl = decode_url(testspec, &weburl);
-	if (!decodedurl || weburl.desturl->parseerror || (weburl.proxyurl && weburl.proxyurl->parseerror)) {
+	if (!decodedurl || weburl.desturl->parseerror) {
 		freeweburl_data(&weburl);
 		return NULL;
 	}
@@ -50,11 +50,8 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 
 	netparams->socktype = CONN_SOCKTYPE_STREAM;
 	if (netparams->destinationip) xfree(netparams->destinationip);
-	if (weburl.proxyurl)
-		netparams->destinationip = strdup(weburl.proxyurl->ip ? weburl.proxyurl->ip : weburl.proxyurl->host);
-	else
-		netparams->destinationip = strdup(weburl.desturl->ip ? weburl.desturl->ip : weburl.desturl->host);
-	netparams->destinationport = (weburl.proxyurl ? weburl.proxyurl->port : weburl.desturl->port);
+	netparams->destinationip = strdup(weburl.desturl->ip ? weburl.desturl->ip : weburl.desturl->host);
+	netparams->destinationport = weburl.desturl->port;
 	netparams->sslhandling = (strcmp(weburl.desturl->scheme, "https") == 0) ? CONN_SSL_YES : CONN_SSL_NO;
 	if (netparams->sslname) xfree(netparams->sslname);
 	netparams->sslname = strdup(weburl.desturl->host);
@@ -80,7 +77,7 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 	addtobuffer(httprequest, (weburl.postdata ? "POST " : "GET "));
 	switch (httpversion) {
 	  case HTTPVER_10: 
-		addtobuffer(httprequest, (weburl.proxyurl ? decodedurl : weburl.desturl->relurl));
+		addtobuffer(httprequest, weburl.desturl->relurl);
 		addtobuffer(httprequest, " HTTP/1.0\r\n"); 
 		/*
 		 * Add a "Connection: close" for HTTP 1.0 - we do not do any
@@ -95,7 +92,7 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 		 * full URL, some servers (e.g. SunOne App server 7) choke on it.
 		 * So just send the good-old relative URL unless we're proxying.
 		 */
-		addtobuffer(httprequest, (weburl.proxyurl ? decodedurl : weburl.desturl->relurl));
+		addtobuffer(httprequest, weburl.desturl->relurl);
 		addtobuffer(httprequest, " HTTP/1.1\r\n"); 
 		/*
 		 * addtobuffer(httprequest, "Connection: close\r\n"); 
@@ -154,7 +151,7 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 		addtobuffer(httprequest, "Content-type: ");
 		if      (weburl.postcontenttype) 
 			addtobuffer(httprequest, weburl.postcontenttype);
-		else if ((weburl.testtype == WEBTEST_SOAP) || (weburl.testtype == WEBTEST_NOSOAP)) 
+		else if (weburl.testtype == WEBTEST_SOAP) 
 			addtobuffer(httprequest, "application/soap+xml; charset=utf-8");
 		else 
 			addtobuffer(httprequest, "application/x-www-form-urlencoded");
@@ -193,15 +190,6 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 			netparams->sslcertfn = strdup(weburl.desturl->auth+5);
 		}
 	}
-	if (weburl.proxyurl && weburl.proxyurl->auth) {
-		char *s = base64encode(weburl.proxyurl->auth);
-
-		addtobuffer(httprequest, "Proxy-Authorization: Basic ");
-		addtobuffer(httprequest, s);
-		addtobuffer(httprequest, "\r\n");
-
-		xfree(s);
-	}
 	for (ck = cookiehead; (ck); ck = ck->next) {
 		int useit = 0;
 
@@ -236,7 +224,7 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 		break;
 	}
 
-	if ((weburl.testtype == WEBTEST_SOAP) || (weburl.testtype == WEBTEST_NOSOAP)) {
+	if (weburl.testtype == WEBTEST_SOAP) {
 		/* Must provide a SOAPAction header */
 		addtobuffer(httprequest, "SOAPAction: ");
 		addtobuffer(httprequest, decodedurl);

@@ -11,8 +11,6 @@
 #ifndef __URL_H__
 #define __URL_H__
 
-extern int obeybbproxysyntax;
-
 typedef struct urlelem_t {
 	char *origform;
 	char *scheme;
@@ -26,19 +24,17 @@ typedef struct urlelem_t {
 } urlelem_t;
 
 enum webtesttype_t { 
-	WEBTEST_PLAIN, WEBTEST_CONTENT, WEBTEST_CONT, WEBTEST_NOCONT, WEBTEST_POST, WEBTEST_NOPOST, WEBTEST_TYPE, WEBTEST_STATUS, WEBTEST_SOAP, WEBTEST_NOSOAP,
+	WEBTEST_PLAIN, WEBTEST_STATUS, WEBTEST_HEADER, WEBTEST_BODY, WEBTEST_POST, WEBTEST_SOAP
 };
 
 typedef struct weburl_t {
-	int testtype;
+	enum webtesttype_t testtype;
+	int reversetest;
 	char *columnname;
 	struct urlelem_t *desturl;
-	struct urlelem_t *proxyurl;
 	unsigned char *postcontenttype;
 	unsigned char *postdata;
-	unsigned char *expdata;
-	unsigned char *okcodes;
-	unsigned char *badcodes;
+	unsigned char *matchpattern;
 } weburl_t;
 
 extern char *urlunescape(char *url);

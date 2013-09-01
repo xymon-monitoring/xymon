@@ -252,7 +252,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 			visdata = decode_url(itm, &bu);
 			colname = bu.columnname; 
 			if (!colname) {
-				if (bu.expdata) {
+				if (bu.matchpattern) {
 					httpextra = 1;
 					if (contidx == 0) {
 						colname = "content";
@@ -268,7 +268,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 					colname = "http";
 				}
 			}
-			expdata = bu.expdata;
+			expdata = bu.matchpattern;
 		}
 		else if (strncmp(itm, "rpc=", 4) == 0) {
 			colname = "rpc";

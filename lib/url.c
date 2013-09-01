@@ -22,7 +22,6 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-int obeybbproxysyntax = 0;	/* Big Brother can put proxy-spec in a URL, with "http://proxy/bla;http://target/foo" */
 
 /* This is used for loading a .netrc file with hostnames and authentication tokens. */
 typedef struct loginlist_t {
@@ -463,86 +462,38 @@ static char *gethttpcolumn(char *inp, char **name)
  */
 char *decode_url(char *testspec, weburl_t *weburl)
 {
-	static weburl_t weburlbuf;
-	static urlelem_t desturlbuf, proxyurlbuf;
+	char *tdup, *inp, *p;
+	char *urlstart, *poststart, *postcontenttype, *expstart, *okstart, *notokstart;
+	urlstart = poststart = postcontenttype = expstart = okstart = notokstart = NULL;
 
-	char *inp, *p;
-	char *urlstart, *poststart, *postcontenttype, *expstart, *proxystart, *okstart, *notokstart;
-	urlstart = poststart = postcontenttype = expstart = proxystart = okstart = notokstart = NULL;
+	if (!weburl) return NULL;
 
-	/* If called with no buffer, use our own static one */
-	if (weburl == NULL) {
-		memset(&weburlbuf, 0, sizeof(weburl_t));
-		memset(&desturlbuf, 0, sizeof(urlelem_t));
-		memset(&proxyurlbuf, 0, sizeof(urlelem_t));
+	memset(weburl, 0, sizeof(weburl_t));
+	weburl->desturl = (urlelem_t *)calloc(1, sizeof(urlelem_t));
 
-		weburl = &weburlbuf;
-		weburl->desturl = &desturlbuf;
-		weburl->proxyurl = NULL;
-	}
-	else {
-		memset(weburl, 0, sizeof(weburl_t));
-		weburl->desturl = (urlelem_t*) calloc(1, sizeof(urlelem_t));
-		weburl->proxyurl = NULL;
-	}
+	inp = tdup = strdup(testspec);
+	weburl->reversetest = (strncmp(inp, "no", 2) == 0);
+	if (weburl->reversetest) inp += 2;
 
-	inp = strdup(testspec);
-
-	if (strncmp(inp, "content=", 8) == 0) {
-		weburl->testtype = WEBTEST_CONTENT;
-		urlstart = inp+8;
-	} else if (strncmp(inp, "cont;", 5) == 0) {
-		weburl->testtype = WEBTEST_CONT;
-		urlstart = inp+5;
-	} else if (strncmp(inp, "cont=", 5) == 0) {
-		weburl->testtype = WEBTEST_CONT;
-		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
-	} else if (strncmp(inp, "nocont;", 7) == 0) {
-		weburl->testtype = WEBTEST_NOCONT;
-		urlstart = inp+7;
-	} else if (strncmp(inp, "nocont=", 7) == 0) {
-		weburl->testtype = WEBTEST_NOCONT;
-		urlstart = gethttpcolumn(inp+7, &weburl->columnname);
-	} else if (strncmp(inp, "post;", 5) == 0) {
-		weburl->testtype = WEBTEST_POST;
-		urlstart = inp+5;
+	if (strncmp(inp, "cont=", 5) == 0) {
+		weburl->testtype = WEBTEST_BODY;
+		urlstart = gethttpcolumn(strchr(inp, '=')+1, &weburl->columnname);
 	} else if (strncmp(inp, "post=", 5) == 0) {
 		weburl->testtype = WEBTEST_POST;
-		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
-	} else if (strncmp(inp, "nopost;", 7) == 0) {
-		weburl->testtype = WEBTEST_NOPOST;
-		urlstart = inp+7;
-	} else if (strncmp(inp, "nopost=", 7) == 0) {
-		weburl->testtype = WEBTEST_NOPOST;
-		urlstart = gethttpcolumn(inp+7, &weburl->columnname);
-	} else if (strncmp(inp, "soap;", 5) == 0) {
-		weburl->testtype = WEBTEST_SOAP;
-		urlstart = inp+5;
+		urlstart = gethttpcolumn(strchr(inp, '=')+1, &weburl->columnname);
 	} else if (strncmp(inp, "soap=", 5) == 0) {
 		weburl->testtype = WEBTEST_SOAP;
-		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
-	} else if (strncmp(inp, "nosoap;", 7) == 0) {
-		weburl->testtype = WEBTEST_NOSOAP;
-		urlstart = inp+7;
-	} else if (strncmp(inp, "nosoap=", 7) == 0) {
-		weburl->testtype = WEBTEST_NOSOAP;
-		urlstart = gethttpcolumn(inp+7, &weburl->columnname);
-	} else if (strncmp(inp, "type;", 5) == 0) {
-		weburl->testtype = WEBTEST_TYPE;
-		urlstart = inp+5;
-	} else if (strncmp(inp, "type=", 5) == 0) {
-		weburl->testtype = WEBTEST_TYPE;
-		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
-	} else if (strncmp(inp, "httpstatus;", 11) == 0) {
-		weburl->testtype = WEBTEST_STATUS;
-		urlstart = strchr(inp, ';') + 1;
+		urlstart = gethttpcolumn(strchr(inp, '=')+1, &weburl->columnname);
+	} else if (strncmp(inp, "header=", 7) == 0) {
+		weburl->testtype = WEBTEST_HEADER;
+		urlstart = gethttpcolumn(strchr(inp, '=')+1, &weburl->columnname);
 	} else if (strncmp(inp, "httpstatus=", 11) == 0) {
 		weburl->testtype = WEBTEST_STATUS;
-		urlstart = gethttpcolumn(inp+11, &weburl->columnname);
-	} else if (strncmp(inp, "http=", 5) == 0) {
+		urlstart = gethttpcolumn(strchr(inp, '=')+1, &weburl->columnname);
+	} else if ((strncmp(inp, "http=", 5) == 0) || (strncmp(inp, "https=", 6) == 0)) {
 		/* Plain URL test, but in separate column */
 		weburl->testtype = WEBTEST_PLAIN;
-		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
+		urlstart = gethttpcolumn(strchr(inp, '=')+1, &weburl->columnname);
 	} else {
 		/* Plain URL test */
 		weburl->testtype = WEBTEST_PLAIN;
@@ -551,29 +502,28 @@ char *decode_url(char *testspec, weburl_t *weburl)
 
 	switch (weburl->testtype) {
 	  case WEBTEST_PLAIN:
-		  break;
+		break;
 
-	  case WEBTEST_CONT:
-	  case WEBTEST_NOCONT:
-	  case WEBTEST_TYPE:
-		  expstart = strchr(urlstart, ';');
-		  if (expstart) {
-			  *expstart = '\0';
-			  expstart++;
-		  }
-		  else {
-			  errprintf("content-check, but no content-data in '%s'\n", testspec);
-			  weburl->testtype = WEBTEST_PLAIN;
-		  }
-		  break;
+	  case WEBTEST_STATUS:
+	  case WEBTEST_HEADER:
+	  case WEBTEST_BODY:
+		expstart = strchr(urlstart, ';');
+		if (expstart) {
+			*expstart = '\0';
+			expstart++;
+		}
+		else {
+			errprintf("content-check, but no content-data in '%s'\n", testspec);
+			weburl->testtype = WEBTEST_PLAIN;
+		}
+		break;
 
 	  case WEBTEST_POST:
-	  case WEBTEST_NOPOST:
 	  case WEBTEST_SOAP:
-		  poststart = strchr(urlstart, ';');
-		  if (poststart) {
-			  *poststart = '\0';
-			  poststart++;
+		poststart = strchr(urlstart, ';');
+		if (poststart) {
+			*poststart = '\0';
+			poststart++;
 
 			/* See if "poststart" points to a content-type */
 			if (strncasecmp(poststart, "(content-type=", 14) == 0) {
@@ -586,86 +536,31 @@ char *decode_url(char *testspec, weburl_t *weburl)
 			}
 
 			if (poststart) {
-			  expstart = strchr(poststart, ';');
-			  if (expstart) {
-				  *expstart = '\0';
-				  expstart++;
-			  }
-			}
-
-			if ((weburl->testtype == WEBTEST_NOPOST) && (!expstart)) {
-			  		errprintf("content-check, but no content-data in '%s'\n", testspec);
-			  		weburl->testtype = WEBTEST_PLAIN;
-				  }
-			  }
-		  else {
-			  errprintf("post-check, but no post-data in '%s'\n", testspec);
-			  weburl->testtype = WEBTEST_PLAIN;
-		  }
-		  break;
-
-	  case WEBTEST_STATUS:
-		okstart = strchr(urlstart, ';');
-		if (okstart) {
-			*okstart = '\0';
-			okstart++;
-
-			notokstart = strchr(okstart, ';');
-			if (notokstart) {
-				*notokstart = '\0';
-				notokstart++;
+				expstart = strchr(poststart, ';');
+				if (expstart) {
+					*expstart = '\0';
+					expstart++;
+			  	}
 			}
 		}
-
-		if (okstart && (strlen(okstart) == 0)) okstart = NULL;
-		if (notokstart && (strlen(notokstart) == 0)) notokstart = NULL;
-
-		if (!okstart && !notokstart) {
-			errprintf("HTTP status check, but no OK/not-OK status codes in '%s'\n", testspec);
+		else {
+			errprintf("post-check, but no post-data in '%s'\n", testspec);
 			weburl->testtype = WEBTEST_PLAIN;
 		}
-
-		if (okstart) weburl->okcodes = strdup(okstart);
-		if (notokstart) weburl->badcodes = strdup(notokstart);
+		break;
 	}
 
 	if (poststart) getescapestring(poststart, &weburl->postdata, NULL);
 	if (postcontenttype) getescapestring(postcontenttype, &weburl->postcontenttype, NULL);
-	if (expstart)  getescapestring(expstart, &weburl->expdata, NULL);
-
-	if (obeybbproxysyntax) {
-		/*
-		 * Ye olde Big Brother syntax for using a proxy on per-URL basis.
-		 */
-		p = strstr(urlstart, "/http://");
-		if (!p)
-			p = strstr(urlstart, "/https://");
-		if (p) {
-			proxystart = urlstart;
-			urlstart = (p+1);
-			*p = '\0';
-		}
-	}
+	if (expstart)  getescapestring(expstart, &weburl->matchpattern, NULL);
 
 	parse_url(urlstart, weburl->desturl);
-	if (proxystart) {
-		if (weburl == &weburlbuf) {
-			/* We use our own static buffers */
-			weburl->proxyurl = &proxyurlbuf;
-		}
-		else {
-			/* User allocated buffers */
-			weburl->proxyurl = (urlelem_t *)malloc(sizeof(urlelem_t));
-		}
 
-		parse_url(proxystart, weburl->proxyurl);
-	}
-
-	xfree(inp);
+	xfree(tdup);
 
 	return weburl->desturl->origform;
 }
- 
+
 void freeurlelem_data(struct urlelem_t *url)
 {
 	if (url->origform) xfree(url->origform);
@@ -684,14 +579,8 @@ void freeweburl_data(weburl_t *weburl)
 		freeurlelem_data(weburl->desturl);
 		xfree(weburl->desturl);
 	}
-	if (weburl->proxyurl) {
-		freeurlelem_data(weburl->proxyurl);
-		xfree(weburl->proxyurl);
-	}
 	if (weburl->postcontenttype) xfree(weburl->postcontenttype);
 	if (weburl->postdata) xfree(weburl->postdata);
-	if (weburl->expdata) xfree(weburl->expdata);
-	if (weburl->okcodes) xfree(weburl->okcodes);
-	if (weburl->badcodes) xfree(weburl->badcodes);
+	if (weburl->matchpattern) xfree(weburl->matchpattern);
 }
 
