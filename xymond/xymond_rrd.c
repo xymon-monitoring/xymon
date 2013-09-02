@@ -347,38 +347,53 @@ int main(int argc, char *argv[])
 			 * clienttstamp|flapping|classname|pagepaths
 			 */
 			int color = parse_color(metadata[7]);
+			char *option = restofmsg;
 
-			switch (color) {
-			  case COL_GREEN:
-			  case COL_YELLOW:
-			  case COL_RED:
-			  case COL_BLUE: /* Blue is OK, because it only arrives here when an update is sent */
-			  case COL_CLEAR: /* Clear is OK, because it could still contain valid metric data */
-				tstamp = atoi(metadata[1]);
-				sender = metadata[2];
-				hostname = metadata[4]; 
-				testname = metadata[5];
-				classname = (metadata[17] ? metadata[17] : "");
-				pagepaths = (metadata[18] ? metadata[18] : "");
-				ldef = find_xymon_rrd(testname, metadata[8]);
-				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
-				break;
+			do {
+				option += (1 + strcspn(option+1, "/ \t\n"));
+			} while ((strncmp(option, "/norrd", 6) != 0) && (*option == '/'));
 
-			  default:
-				/* Ignore reports with purple - they have no data we want. */
-				break;
+			if (strncmp(option, "/norrd", 6) != 0) {
+				switch (color) {
+				  case COL_GREEN:
+				  case COL_YELLOW:
+				  case COL_RED:
+				  case COL_BLUE: /* Blue is OK, because it only arrives here when an update is sent */
+				  case COL_CLEAR: /* Clear is OK, because it could still contain valid metric data */
+					tstamp = atoi(metadata[1]);
+					sender = metadata[2];
+					hostname = metadata[4]; 
+					testname = metadata[5];
+					classname = (metadata[17] ? metadata[17] : "");
+					pagepaths = (metadata[18] ? metadata[18] : "");
+					ldef = find_xymon_rrd(testname, metadata[8]);
+					update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
+					break;
+
+				  default:
+					/* Ignore reports with purple - they have no data we want. */
+					break;
+				}
 			}
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@data", 6) == 0) && restofmsg) {
 			/* @@data|timestamp|sender|origin|hostname|testname|classname|pagepaths */
-			tstamp = atoi(metadata[1]);
-			sender = metadata[2];
-			hostname = metadata[4]; 
-			testname = metadata[5];
-			classname = (metadata[6] ? metadata[6] : "");
-			pagepaths = (metadata[7] ? metadata[7] : "");
-			ldef = find_xymon_rrd(testname, "");
-			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
+			char *option = restofmsg;
+
+			do {
+				option += (1 + strcspn(option+1, "/ \t\n"));
+			} while ((strncmp(option, "/norrd", 6) != 0) && (*option == '/'));
+
+			if (strncmp(option, "/norrd", 6) != 0) {
+				tstamp = atoi(metadata[1]);
+				sender = metadata[2];
+				hostname = metadata[4]; 
+				testname = metadata[5];
+				classname = (metadata[6] ? metadata[6] : "");
+				pagepaths = (metadata[7] ? metadata[7] : "");
+				ldef = find_xymon_rrd(testname, "");
+				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
+			}
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
