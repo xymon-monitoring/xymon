@@ -2532,7 +2532,7 @@ int main(int argc, char *argv[])
 		color = (errbuf ? COL_YELLOW : COL_GREEN);
 		if (bigfailure) color = COL_RED;
 
-		combo_start();
+		if (usebackfeedqueue) combo_start_local(); else combo_start();
 		init_status(color);
 		sprintf(msgline, "status+%d %s.%s %s %s\n\n", validity, xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
