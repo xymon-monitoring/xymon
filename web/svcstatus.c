@@ -50,11 +50,11 @@ static char errortxt[1000];
 static char *hostdatadir = NULL;
 
 
-static void errormsg(char *msg)
+static void errormsg(int status, char *msg)
 {
 	snprintf(errortxt, sizeof(errortxt),
-		 "Refresh: 30\nContent-type: %s\n\n<html><head><title>Invalid request</title></head>\n<body>%s</body></html>\n", 
-		 xgetenv("HTMLCONTENTTYPE"), msg);
+		 "Status: %d\nRefresh: 30\nContent-type: %s\n\n<html><head><title>Invalid request</title></head>\n<body>%s</body></html>\n", 
+		 status, xgetenv("HTMLCONTENTTYPE"), msg);
 
 	errortxt[sizeof(errortxt)-1] = '\0';
 }
@@ -134,7 +134,7 @@ static int parse_query(void)
 	}
 
 	if (!hostname || !service || ((source == SRC_HISTLOGS) && !tstamp) ) {
-		errormsg("Invalid request");
+		errormsg(403, "Invalid request");
 		return 1;
 	}
 
@@ -164,12 +164,12 @@ int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts,
 	}
 
 	if ((loadres != 0) && (loadres != -2)) {
-		errormsg("Cannot load host configuration");
+		errormsg(500, "Cannot load host configuration");
 		return 1;
 	}
 
 	if ((loadres == -2) || (hinfo = hostinfo(hostname)) == NULL) {
-		errormsg("No such host");
+		errormsg(403, "No such host");
 		return 1;
 	}
 
@@ -199,7 +199,7 @@ int do_request(void)
 		load_hostinfo(hostname);
 		load_web_access_config(accessfn);
 		if (!web_access_allowed(getenv("REMOTE_USER"), hostname, service, WEB_ACCESS_VIEW)) {
-			errormsg("Not available (restricted).");
+			errormsg(403, "Not available (restricted).");
 			return 1;
 		}
 	}
@@ -233,7 +233,7 @@ int do_request(void)
 			if (xymondresult != XYMONSEND_OK) {
 				char *errtxt = (char *)malloc(1024 + strlen(xymondreq));
 				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", htmlquoted(xymondreq), xymondresult);
-				errormsg(errtxt);
+				errormsg(500, errtxt);
 				return 1;
 			}
 			else {
@@ -336,7 +336,7 @@ int do_request(void)
 			/* Check service as a pcre pattern. And no spaces in servicenames */
 			if (strchr(service, ' ') == NULL) dummy = compileregex(service);
 			if (dummy == NULL) {
-				errormsg("Invalid testname pattern");
+				errormsg(500, "Invalid testname pattern");
 				return 1;
 			}
 
@@ -352,7 +352,7 @@ int do_request(void)
 			sprintf(re, "^(%s)$", complist);
 			dummy = compileregex(re);
 			if (dummy == NULL) {
-				errormsg("Invalid testname pattern");
+				errormsg(500, "Invalid testname pattern");
 				return 1;
 			}
 
@@ -366,7 +366,7 @@ int do_request(void)
 		if (xymondresult == XYMONSEND_OK) log = getsendreturnstr(sres, 1);
 		freesendreturnbuf(sres);
 		if ((xymondresult != XYMONSEND_OK) || (log == NULL) || (strlen(log) == 0)) {
-			errormsg("Status not available\n");
+			errormsg(404, "Status not available\n");
 			return 1;
 		}
 
@@ -525,7 +525,7 @@ int do_request(void)
 		char *p, *unchangedstr, *receivedfromstr, *clientidstr, *hostnamedash;
 		int n;
 
-		if (!tstamp) { errormsg("Invalid request"); return 1; }
+		if (!tstamp) { errormsg(500, "Invalid request"); return 1; }
 
 		if (loadhostdata(hostname, &ip, &displayname, &compacts, 0) != 0) return 1;
 		hostnamedash = strdup(hostname);
@@ -537,13 +537,13 @@ int do_request(void)
 		sethostenv_histlog(tstamp);
 
 		if ((stat(logfn, &st) == -1) || (st.st_size < 10) || (!S_ISREG(st.st_mode))) {
-			errormsg("Historical status log not available\n");
+			errormsg(404, "Historical status log not available\n");
 			return 1;
 		}
 
 		fd = fopen(logfn, "r");
 		if (!fd) {
-			errormsg("Unable to access historical logfile\n");
+			errormsg(404, "Unable to access historical logfile\n");
 			return 1;
 		}
 		log = (char *)malloc(st.st_size+1);
