@@ -36,6 +36,9 @@ extern char *channelnames[];
 extern xymond_channel_t *setup_channel(enum msgchannels_t chnname, int role);
 extern void close_channel(xymond_channel_t *chn, int role);
 
+extern int setup_msg_queue(char *ident, int role);
+extern void close_msg_queue(int queueid, int role);
+
 extern int setup_feedback_queue(int role);
 extern void close_feedback_queue(int queueid, int role);
 

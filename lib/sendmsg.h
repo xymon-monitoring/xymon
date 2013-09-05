@@ -42,6 +42,15 @@ typedef struct multistatus_t {
 	struct multistatus_t *next;
 } multistatus_t;
 
+typedef struct xymon_mqmsg_t {
+	long mtype;
+	char *mtext;
+} xymon_mqmsg_t;
+
+typedef enum {
+	MQMSG_URGENT, MQMSG_STANDARD
+} mqmsgtype_t;
+
 extern void setproxy(char *proxy);
 extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);
 

@@ -156,22 +156,20 @@ void close_channel(xymond_channel_t *chn, int role)
 	if (role == CHAN_MASTER) shmctl(chn->shmid, IPC_RMID, NULL);
 }
 
-int setup_feedback_queue(int role)
+int setup_msg_queue(char *ident, int role)
 {
-	char *xymonhome = xgetenv("XYMONHOME");
 	struct stat st;
 	key_t key;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0666) : 0);
 	int queueid;
 
-	if ( (xymonhome == NULL) || (stat(xymonhome, &st) == -1) ) {
-		errprintf("XYMONHOME not defined, or points to invalid directory - cannot continue.\n");
+	if ( (ident == NULL) || (stat(ident, &st) == -1) ) {
 		return -1;
 	}
 
-	key = ftok(xymonhome, C_FEEDBACK_QUEUE);
+	key = ftok(ident, C_FEEDBACK_QUEUE);
 	if (key == -1) {
-		errprintf("Could not generate backfeed key based on %s: %s\n", xymonhome, strerror(errno));
+		errprintf("Could not generate messagequeue key based on %s: %s\n", ident, strerror(errno));
 		return -1;
 	}
 
@@ -180,7 +178,7 @@ int setup_feedback_queue(int role)
 	return queueid;
 }
 
-void close_feedback_queue(int queueid, int role)
+void close_msg_queue(int queueid, int role)
 {
 	int n;
 
@@ -189,3 +187,13 @@ void close_feedback_queue(int queueid, int role)
 	}
 }
 
+int setup_feedback_queue(int role)
+{
+	char *xymonhome = xgetenv("XYMONHOME");
+	return setup_msg_queue(xymonhome, role);
+}
+
+void close_feedback_queue(int queueid, int role)
+{
+	return close_msg_queue(queueid, role);
+}

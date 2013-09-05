@@ -5418,8 +5418,11 @@ int main(int argc, char *argv[])
 			int n;
 			ssize_t sz;
 			conn_t msg;
+			xymon_mqmsg_t mqmsg;
 
-			sz = msgrcv(backfeedqueue, bf_buf, bf_bufsz, 0, (IPC_NOWAIT | MSG_NOERROR));
+			mqmsg.mtype = 1;
+			mqmsg.mtext = bf_buf;
+			sz = msgrcv(backfeedqueue, &mqmsg, bf_bufsz, 0, (IPC_NOWAIT | MSG_NOERROR));
 			backfeeddata = (sz > 0);
 
 			if (backfeeddata) {

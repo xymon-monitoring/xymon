@@ -406,6 +406,7 @@ sendresult_t sendmessage_local(char *msg)
 {
 	int n, done = 0;
 	msglen_t msglen;
+	xymon_mqmsg_t mqmsg;
 
 	if (backfeedqueue == -1) {
 		return sendmessage(msg, NULL, XYMON_TIMEOUT, NULL);
@@ -419,9 +420,12 @@ sendresult_t sendmessage_local(char *msg)
 		msglen = max_backfeedsz;
 	}
 
+	mqmsg.mtype = MQMSG_STANDARD;
+	mqmsg.mtext = msg;
+
 	/* This will block if queue is full, but that is OK */
 	do {
-		n = msgsnd(backfeedqueue, msg, msglen+1, 0);
+		n = msgsnd(backfeedqueue, &mqmsg, msglen+1, 0);
 		if ((n == 0) || ((n == -1) && (errno != EINTR))) done = 1;
 	} while (!done);
 
