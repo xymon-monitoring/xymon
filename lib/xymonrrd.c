@@ -317,7 +317,7 @@ char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolo
 				 service, bgcolor, graphdef, 
 				 itemcount, nostale,
 				 ((wantmeta == HG_META_LINK) ? metafmt : xymonlinkfmt),
-				 locatorbased, starttime, endtime);
+				 locatorbased, starttime, endtime, xgetenv("IMAGEFILETYPE"));
 }
 
 
