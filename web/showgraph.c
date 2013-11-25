@@ -664,8 +664,8 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 	  case ACT_MENU:
 		fprintf(output, "  <td align=\"left\"><img src=\"%s&amp;action=view&amp;graph=%s\" alt=\"%s graph\"></td>\n",
 			uri, grtype_s, grtype_s);
-		fprintf(output, "  <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=%s&amp;action=selzoom&amp;color=%s\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td>\n",
-			uri, grtype_s, colorname(bgcolor), getenv("XYMONSKIN"));
+		fprintf(output, "  <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=%s&amp;action=selzoom&amp;color=%s\"> <img src=\"%s/zoom.%s\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td>\n",
+			uri, grtype_s, colorname(bgcolor), xgetenv("XYMONSKIN"), xgetenv("IMAGEFILETYPE"));
 		break;
 
 	  case ACT_SELZOOM:

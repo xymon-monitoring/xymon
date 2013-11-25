@@ -110,6 +110,7 @@ const static struct {
 	{ "XYMONNONGREENEXT", "eventlog.sh acklog.sh" },
 	{ "DOTHEIGHT", "16" },
 	{ "DOTWIDTH", "16" },
+	{ "IMAGEFILETYPE", "gif" },
 	{ "RRDHEIGHT", "120" },
 	{ "RRDWIDTH", "576" },
 	{ "COLUMNDOCURL", "$CGIBINURL/columndoc.sh?%s" },

@@ -114,7 +114,7 @@ char *dotgiffilename(int color, int acked, int oldage)
 	else if (use_recentgifs) {
 		strcat(filename, (oldage ? "" : "-recent"));
 	}
-	strcat(filename, ".gif");
+	sprintf(filename+strlen(filename), ".%s", xgetenv("IMAGEFILETYPE"));
 
 	return filename;
 }
