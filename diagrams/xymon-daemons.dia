@@ -28,7 +28,7 @@
           <dia:boolean val="true"/>
         </dia:attribute>
         <dia:attribute name="scaling">
-          <dia:real val="0.3196520209312439"/>
+          <dia:real val="0.31965208053588867"/>
         </dia:attribute>
         <dia:attribute name="fitto">
           <dia:boolean val="true"/>
@@ -132,12 +132,12 @@
         <dia:point val="-2.3493,-3.62331"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-2.3493,-5.11081;23.0657,-3.24581"/>
+        <dia:rectangle val="-2.3493,-5.11081;23.2057,-3.24581"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd &amp; Worker Daemons #</dia:string>
+            <dia:string>#xymond &amp; Worker Daemons #</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="88" name="Helvetica-BoldOblique"/>
@@ -288,7 +288,7 @@
         <dia:point val="-11.3168,33.2327"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-11.3168,32.4643;13.5841,35.4695"/>
+        <dia:rectangle val="-11.3168,32.4877;13.5607,35.4227"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
@@ -356,14 +356,14 @@ xx/xx/201x  YourName
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O8">
       <dia:attribute name="obj_pos">
-        <dia:point val="24.93,5.3"/>
+        <dia:point val="25.0775,5.3"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="24.8742,5.24418;30.261,6.23656"/>
+        <dia:rectangle val="25.0216,5.24406;30.2608,6.22964"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="24.93,5.3"/>
-        <dia:point val="30.1501,5.95356"/>
+        <dia:point val="25.0775,5.3"/>
+        <dia:point val="30.1499,5.94833"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -384,14 +384,14 @@ xx/xx/201x  YourName
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O9">
       <dia:attribute name="obj_pos">
-        <dia:point val="24.93,8.3843"/>
+        <dia:point val="25.0775,8.3843"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="24.8677,6.63572;30.2571,8.44664"/>
+        <dia:rectangle val="25.015,6.65236;30.2567,8.44683"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="24.93,8.3843"/>
-        <dia:point val="30.1501,6.80483"/>
+        <dia:point val="25.0775,8.3843"/>
+        <dia:point val="30.1499,6.81748"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -412,14 +412,14 @@ xx/xx/201x  YourName
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O10">
       <dia:attribute name="obj_pos">
-        <dia:point val="25.6197,2.46151"/>
+        <dia:point val="25.7717,2.45495"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="25.5666,1.8539;30.229,2.57606"/>
+        <dia:rectangle val="25.7186,1.85508;30.2289,2.57721"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="25.6197,2.46151"/>
-        <dia:point val="30.1174,2.17626"/>
+        <dia:point val="25.7717,2.45495"/>
+        <dia:point val="30.1173,2.17711"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -511,14 +511,14 @@ hostdata#</dia:string>
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O12">
       <dia:attribute name="obj_pos">
-        <dia:point val="25.9304,17.2622"/>
+        <dia:point val="26.0773,17.2885"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="25.8693,17.2012;30.6055,18.6569"/>
+        <dia:rectangle val="26.0162,17.2273;30.6069,18.6527"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="25.9304,17.2622"/>
-        <dia:point val="30.4973,18.4625"/>
+        <dia:point val="26.0773,17.2885"/>
+        <dia:point val="30.4988,18.4596"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -539,14 +539,14 @@ hostdata#</dia:string>
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O13">
       <dia:attribute name="obj_pos">
-        <dia:point val="25.2605,13.5614"/>
+        <dia:point val="25.407,13.5606"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="25.2101,13.1682;29.6455,13.8918"/>
+        <dia:rectangle val="25.3565,13.1685;29.6372,13.8921"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="25.2605,13.5614"/>
-        <dia:point val="29.5337,13.5248"/>
+        <dia:point val="25.407,13.5606"/>
+        <dia:point val="29.5254,13.525"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -576,7 +576,7 @@ hostdata#</dia:string>
         <dia:point val="-3.98625,29.1256"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="3.710000001490116"/>
+        <dia:real val="3.7100000014901164"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="2.7000000014901162"/>
@@ -858,7 +858,7 @@ data files#</dia:string>
         <dia:point val="30.29,25.2567"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="30.2653,24.4445;30.56,25.5061"/>
+        <dia:rectangle val="30.29,24.4692;30.56,25.4567"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
@@ -1020,13 +1020,13 @@ data files#</dia:string>
     </dia:object>
     <dia:object type="Standard - ZigZagLine" version="1" id="O26">
       <dia:attribute name="obj_pos">
-        <dia:point val="13.4804,1.89419"/>
+        <dia:point val="13.553,1.89419"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="13.4304,1.84419;19.6613,2.7035"/>
+        <dia:rectangle val="13.503,1.84419;19.6613,2.7035"/>
       </dia:attribute>
       <dia:attribute name="orth_points">
-        <dia:point val="13.4804,1.89419"/>
+        <dia:point val="13.553,1.89419"/>
         <dia:point val="15.1501,1.89419"/>
         <dia:point val="15.1501,2.6535"/>
         <dia:point val="19.6113,2.6535"/>
@@ -1111,16 +1111,16 @@ data files#</dia:string>
     </dia:object>
     <dia:object type="Standard - ZigZagLine" version="1" id="O29">
       <dia:attribute name="obj_pos">
-        <dia:point val="13.4805,4.56919"/>
+        <dia:point val="13.5532,4.56919"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="13.4305,4.51919;20.262,5.35"/>
+        <dia:rectangle val="13.5032,4.51919;20.2556,5.35"/>
       </dia:attribute>
       <dia:attribute name="orth_points">
-        <dia:point val="13.4805,4.56919"/>
+        <dia:point val="13.5532,4.56919"/>
         <dia:point val="14.9988,4.56919"/>
         <dia:point val="14.9988,5.3"/>
-        <dia:point val="20.212,5.3"/>
+        <dia:point val="20.2056,5.3"/>
       </dia:attribute>
       <dia:attribute name="orth_orient">
         <dia:enum val="0"/>
@@ -1140,13 +1140,13 @@ data files#</dia:string>
     </dia:object>
     <dia:object type="Standard - ZigZagLine" version="1" id="O30">
       <dia:attribute name="obj_pos">
-        <dia:point val="13.4803,7.71919"/>
+        <dia:point val="13.5538,7.71919"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="13.4303,7.66919;20.305,8.4343"/>
+        <dia:rectangle val="13.5038,7.66919;20.305,8.4343"/>
       </dia:attribute>
       <dia:attribute name="orth_points">
-        <dia:point val="13.4803,7.71919"/>
+        <dia:point val="13.5538,7.71919"/>
         <dia:point val="16.7501,7.71919"/>
         <dia:point val="16.7501,8.3843"/>
         <dia:point val="20.255,8.3843"/>
@@ -1169,14 +1169,14 @@ data files#</dia:string>
     </dia:object>
     <dia:object type="Standard - ZigZagLine" version="1" id="O31">
       <dia:attribute name="obj_pos">
-        <dia:point val="13.3301,13.1192"/>
+        <dia:point val="13.4039,13.1192"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="13.2801,13.0692;20.0238,13.6343"/>
+        <dia:rectangle val="13.3539,13.0692;20.0238,13.6343"/>
       </dia:attribute>
       <dia:attribute name="orth_points">
-        <dia:point val="13.3301,13.1192"/>
-        <dia:point val="13.3301,13.2892"/>
+        <dia:point val="13.4039,13.1192"/>
+        <dia:point val="13.4039,13.2892"/>
         <dia:point val="19.9738,13.2892"/>
         <dia:point val="19.9738,13.5843"/>
       </dia:attribute>
@@ -1198,14 +1198,14 @@ data files#</dia:string>
     </dia:object>
     <dia:object type="Standard - ZigZagLine" version="1" id="O32">
       <dia:attribute name="obj_pos">
-        <dia:point val="13.3801,16.1692"/>
+        <dia:point val="13.4539,16.1692"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="13.3301,16.1192;19.355,16.6392"/>
+        <dia:rectangle val="13.4039,16.1192;19.355,16.6392"/>
       </dia:attribute>
       <dia:attribute name="orth_points">
-        <dia:point val="13.3801,16.1692"/>
-        <dia:point val="13.3801,16.5892"/>
+        <dia:point val="13.4539,16.1692"/>
+        <dia:point val="13.4539,16.5892"/>
         <dia:point val="19.305,16.5892"/>
         <dia:point val="19.305,16.385"/>
       </dia:attribute>
@@ -1263,12 +1263,12 @@ data files#</dia:string>
         <dia:point val="4.43875,26.8567"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="4.43875,26.0692;11.7312,27.0567"/>
+        <dia:rectangle val="4.43875,26.0692;11.9112,27.0567"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_channel #</dia:string>
+            <dia:string>#xymond_channel #</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -1392,7 +1392,7 @@ directory#</dia:string>
         <dia:point val="29.5751,12.1727"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="29.5251,12.1227;34.6901,14.8327"/>
+        <dia:rectangle val="29.5251,12.1227;34.6901,15.389"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
@@ -1533,7 +1533,7 @@ directory#</dia:string>
         <dia:point val="15.8751,10.5602"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="15.8751,9.77271;18.4751,10.7602"/>
+        <dia:rectangle val="15.8751,9.7727;18.4751,10.7602"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
@@ -1665,13 +1665,13 @@ directory#</dia:string>
         <dia:point val="-11.3499,7.48919"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-11.4999,7.33919;-3.78949,9.3496"/>
+        <dia:rectangle val="-11.4999,7.33919;-3.86324,9.3496"/>
       </dia:attribute>
       <dia:attribute name="orth_points">
         <dia:point val="-11.3499,7.48919"/>
-        <dia:point val="-7.7374,7.48919"/>
-        <dia:point val="-7.7374,8.76419"/>
-        <dia:point val="-4.1249,8.76419"/>
+        <dia:point val="-7.77428,7.48919"/>
+        <dia:point val="-7.77428,8.76419"/>
+        <dia:point val="-4.19865,8.76419"/>
       </dia:attribute>
       <dia:attribute name="orth_orient">
         <dia:enum val="0"/>
@@ -1699,16 +1699,16 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Flowchart - Box" version="0" id="O44">
       <dia:attribute name="obj_pos">
-        <dia:point val="-4.1249,4.58919"/>
+        <dia:point val="-4.19865,4.58919"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-4.1749,4.53919;-0.5374,12.9892"/>
+        <dia:rectangle val="-4.24865,4.53919;-0.46365,12.9892"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="-4.1249,4.58919"/>
+        <dia:point val="-4.19865,4.58919"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="3.5375000014901161"/>
+        <dia:real val="3.6850000014901161"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="8.3499999992549405"/>
@@ -1725,7 +1725,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd#</dia:string>
+            <dia:string>#xymond#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -1747,16 +1747,16 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Flowchart - Box" version="0" id="O45">
       <dia:attribute name="obj_pos">
-        <dia:point val="7.0401,3.49919"/>
+        <dia:point val="6.96635,3.49919"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="6.9901,3.44919;13.4801,5.68919"/>
+        <dia:rectangle val="6.91635,3.44919;13.5539,5.68919"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="7.0401,3.49919"/>
+        <dia:point val="6.96635,3.49919"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="6.3900000014901162"/>
+        <dia:real val="6.5375000014901161"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="2.1399999992549397"/>
@@ -1776,7 +1776,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_channel#</dia:string>
+            <dia:string>#xymond_channel#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -1798,16 +1798,16 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Flowchart - Box" version="0" id="O46">
       <dia:attribute name="obj_pos">
-        <dia:point val="7.0401,-2.10081"/>
+        <dia:point val="6.96635,-2.10081"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="6.9901,-2.15081;13.4801,0.08919"/>
+        <dia:rectangle val="6.91635,-2.15081;13.5539,0.08919"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="7.0401,-2.10081"/>
+        <dia:point val="6.96635,-2.10081"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="6.3900000014901162"/>
+        <dia:real val="6.5375000014901161"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="2.1399999992549397"/>
@@ -1827,7 +1827,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_channel#</dia:string>
+            <dia:string>#xymond_channel#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -1849,16 +1849,16 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Flowchart - Box" version="0" id="O47">
       <dia:attribute name="obj_pos">
-        <dia:point val="7.0401,6.64919"/>
+        <dia:point val="6.96635,6.64919"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="6.9901,6.59919;13.4801,8.83919"/>
+        <dia:rectangle val="6.91635,6.59919;13.5539,8.83919"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="7.0401,6.64919"/>
+        <dia:point val="6.96635,6.64919"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="6.3900000014901162"/>
+        <dia:real val="6.5375000014901161"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="2.1399999992549397"/>
@@ -1878,7 +1878,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_channel#</dia:string>
+            <dia:string>#xymond_channel#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -1900,16 +1900,16 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Flowchart - Box" version="0" id="O48">
       <dia:attribute name="obj_pos">
-        <dia:point val="6.9901,15.0992"/>
+        <dia:point val="6.91635,15.0992"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="6.9401,15.0492;13.4301,17.2892"/>
+        <dia:rectangle val="6.86635,15.0492;13.5039,17.2892"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="6.9901,15.0992"/>
+        <dia:point val="6.91635,15.0992"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="6.3900000014901162"/>
+        <dia:real val="6.5375000014901161"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="2.1399999992549397"/>
@@ -1929,7 +1929,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_channel#</dia:string>
+            <dia:string>#xymond_channel#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -1951,16 +1951,16 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Flowchart - Box" version="0" id="O49">
       <dia:attribute name="obj_pos">
-        <dia:point val="6.9401,12.0492"/>
+        <dia:point val="6.86635,12.0492"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="6.8901,11.9992;13.3801,14.2392"/>
+        <dia:rectangle val="6.81635,11.9992;13.4539,14.2392"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="6.9401,12.0492"/>
+        <dia:point val="6.86635,12.0492"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="6.3900000014901162"/>
+        <dia:real val="6.5375000014901161"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="2.1399999992549397"/>
@@ -1980,7 +1980,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_channel#</dia:string>
+            <dia:string>#xymond_channel#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -2002,16 +2002,16 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Flowchart - Box" version="0" id="O50">
       <dia:attribute name="obj_pos">
-        <dia:point val="7.0401,9.44919"/>
+        <dia:point val="6.96635,9.44919"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="6.9901,9.39919;13.4801,11.6392"/>
+        <dia:rectangle val="6.91635,9.39919;13.5539,11.6392"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="7.0401,9.44919"/>
+        <dia:point val="6.96635,9.44919"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="6.3900000014901162"/>
+        <dia:real val="6.5375000014901161"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="2.1399999992549397"/>
@@ -2031,7 +2031,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_channel#</dia:string>
+            <dia:string>#xymond_channel#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -2053,16 +2053,16 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Flowchart - Box" version="0" id="O51">
       <dia:attribute name="obj_pos">
-        <dia:point val="7.0401,0.82419"/>
+        <dia:point val="6.96635,0.82419"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="6.9901,0.77419;13.4801,3.01419"/>
+        <dia:rectangle val="6.91635,0.77419;13.5539,3.01419"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="7.0401,0.82419"/>
+        <dia:point val="6.96635,0.82419"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="6.3900000014901162"/>
+        <dia:real val="6.5375000014901161"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="2.1399999992549397"/>
@@ -2082,7 +2082,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_channel#</dia:string>
+            <dia:string>#xymond_channel#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -2104,13 +2104,13 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Standard - ZigZagLine" version="1" id="O52">
       <dia:attribute name="obj_pos">
-        <dia:point val="13.4301,10.5192"/>
+        <dia:point val="13.5039,10.5192"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="13.3801,10.4692;19.8838,11.0263"/>
+        <dia:rectangle val="13.4539,10.4692;19.8838,11.0263"/>
       </dia:attribute>
       <dia:attribute name="orth_points">
-        <dia:point val="13.4301,10.5192"/>
+        <dia:point val="13.5039,10.5192"/>
         <dia:point val="14.0353,10.5192"/>
         <dia:point val="14.0353,10.9763"/>
         <dia:point val="19.8338,10.9763"/>
@@ -2133,16 +2133,16 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Standard - ZigZagLine" version="1" id="O53">
       <dia:attribute name="obj_pos">
-        <dia:point val="-0.5874,6.67669"/>
+        <dia:point val="-0.51365,6.67669"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-0.6374,6.62669;7.0901,7.76919"/>
+        <dia:rectangle val="-0.56365,6.62669;7.01635,7.76919"/>
       </dia:attribute>
       <dia:attribute name="orth_points">
-        <dia:point val="-0.5874,6.67669"/>
+        <dia:point val="-0.51365,6.67669"/>
         <dia:point val="1.4001,6.67669"/>
         <dia:point val="1.4001,7.71919"/>
-        <dia:point val="7.0401,7.71919"/>
+        <dia:point val="6.96635,7.71919"/>
       </dia:attribute>
       <dia:attribute name="orth_orient">
         <dia:enum val="0"/>
@@ -2162,13 +2162,13 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O54">
       <dia:attribute name="obj_pos">
-        <dia:point val="-1.47177,4.58919"/>
+        <dia:point val="-1.4349,4.58919"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-1.54101,-0.780049;6.66934,4.65843"/>
+        <dia:rectangle val="-1.50417,-0.780079;6.66937,4.65846"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="-1.47177,4.58919"/>
+        <dia:point val="-1.4349,4.58919"/>
         <dia:point val="6.6001,-0.71081"/>
       </dia:attribute>
       <dia:attribute name="numcp">
@@ -2183,14 +2183,14 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O55">
       <dia:attribute name="obj_pos">
-        <dia:point val="-0.5874,4.58919"/>
+        <dia:point val="-0.51365,4.58919"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-0.651201,1.83039;7.1039,4.65299"/>
+        <dia:rectangle val="-0.577638,1.8302;7.03034,4.65318"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="-0.5874,4.58919"/>
-        <dia:point val="7.0401,1.89419"/>
+        <dia:point val="-0.51365,4.58919"/>
+        <dia:point val="6.96635,1.89419"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -2205,14 +2205,14 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O56">
       <dia:attribute name="obj_pos">
-        <dia:point val="-0.5874,4.58919"/>
+        <dia:point val="-0.51365,4.58919"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-0.637531,4.51906;7.09023,4.63932"/>
+        <dia:rectangle val="-0.563784,4.51906;7.01648,4.63932"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="-0.5874,4.58919"/>
-        <dia:point val="7.0401,4.56919"/>
+        <dia:point val="-0.51365,4.58919"/>
+        <dia:point val="6.96635,4.56919"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -2227,14 +2227,14 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O57">
       <dia:attribute name="obj_pos">
-        <dia:point val="-0.5874,10.8517"/>
+        <dia:point val="-0.51365,10.8517"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-0.657049,10.782;7.05975,16.2388"/>
+        <dia:rectangle val="-0.583409,10.7819;6.98611,16.239"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="-0.5874,10.8517"/>
-        <dia:point val="6.9901,16.1692"/>
+        <dia:point val="-0.51365,10.8517"/>
+        <dia:point val="6.91635,16.1692"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -2249,14 +2249,14 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O58">
       <dia:attribute name="obj_pos">
-        <dia:point val="-0.5874,10.8517"/>
+        <dia:point val="-0.51365,10.8517"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-0.649696,10.7894;7.0024,13.1815"/>
+        <dia:rectangle val="-0.57613,10.7892;6.92883,13.1817"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="-0.5874,10.8517"/>
-        <dia:point val="6.9401,13.1192"/>
+        <dia:point val="-0.51365,10.8517"/>
+        <dia:point val="6.86635,13.1192"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -2271,14 +2271,14 @@ directory#</dia:string>
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O59">
       <dia:attribute name="obj_pos">
-        <dia:point val="-0.53815,9.10375"/>
+        <dia:point val="-0.463371,9.12051"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="-0.59648,9.04542;7.09843,10.5775"/>
+        <dia:rectangle val="-0.521758,9.06213;7.02474,10.5776"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="-0.53815,9.10375"/>
-        <dia:point val="7.0401,10.5192"/>
+        <dia:point val="-0.463371,9.12051"/>
+        <dia:point val="6.96635,10.5192"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -2296,7 +2296,7 @@ directory#</dia:string>
         <dia:point val="20.255,4.4"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="20.205,4.35;24.98,6.25"/>
+        <dia:rectangle val="20.205,4.35;25.1275,6.25"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
@@ -2305,7 +2305,7 @@ directory#</dia:string>
         <dia:point val="20.255,4.4"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="4.6749999999999998"/>
+        <dia:real val="4.8224999999999998"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="1.8"/>
@@ -2319,7 +2319,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_rrd#</dia:string>
+            <dia:string>#xymond_rrd#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -2328,7 +2328,7 @@ directory#</dia:string>
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="22.5925,5.495"/>
+            <dia:point val="22.6662,5.495"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -2353,7 +2353,7 @@ directory#</dia:string>
         <dia:point val="19.6113,1.7535"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="19.5613,1.7035;25.6238,3.6035"/>
+        <dia:rectangle val="19.5613,1.7035;25.7713,3.6035"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
@@ -2362,7 +2362,7 @@ directory#</dia:string>
         <dia:point val="19.6113,1.7535"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="5.9625000000000004"/>
+        <dia:real val="6.1100000000000003"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="1.8"/>
@@ -2376,7 +2376,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_history#</dia:string>
+            <dia:string>#xymond_history#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -2385,7 +2385,7 @@ directory#</dia:string>
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="22.5925,2.8485"/>
+            <dia:point val="22.6663,2.8485"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -2410,7 +2410,7 @@ directory#</dia:string>
         <dia:point val="19.8338,10.0763"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="19.7838,10.0263;25.4013,11.9263"/>
+        <dia:rectangle val="19.7838,10.0263;25.5488,11.9263"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
@@ -2419,7 +2419,7 @@ directory#</dia:string>
         <dia:point val="19.8338,10.0763"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="5.5175000000000001"/>
+        <dia:real val="5.665"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="1.8"/>
@@ -2433,7 +2433,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_client#</dia:string>
+            <dia:string>#xymond_client#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -2442,7 +2442,7 @@ directory#</dia:string>
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="22.5925,11.1713"/>
+            <dia:point val="22.6663,11.1713"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -2467,7 +2467,7 @@ directory#</dia:string>
         <dia:point val="20.255,7.4843"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="20.205,7.4343;24.98,9.3343"/>
+        <dia:rectangle val="20.205,7.4343;25.1275,9.3343"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
@@ -2476,7 +2476,7 @@ directory#</dia:string>
         <dia:point val="20.255,7.4843"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="4.6749999999999998"/>
+        <dia:real val="4.8224999999999998"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="1.8"/>
@@ -2490,7 +2490,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_rrd#</dia:string>
+            <dia:string>#xymond_rrd#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -2499,7 +2499,7 @@ directory#</dia:string>
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="22.5925,8.5793"/>
+            <dia:point val="22.6662,8.5793"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -2524,7 +2524,7 @@ directory#</dia:string>
         <dia:point val="19.9738,12.6843"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="19.9238,12.6343;25.2613,14.5343"/>
+        <dia:rectangle val="19.9238,12.6343;25.4088,14.5343"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
@@ -2533,7 +2533,7 @@ directory#</dia:string>
         <dia:point val="19.9738,12.6843"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="5.2374999999999998"/>
+        <dia:real val="5.3849999999999998"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="1.8"/>
@@ -2547,7 +2547,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_alert#</dia:string>
+            <dia:string>#xymond_alert#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -2556,7 +2556,7 @@ directory#</dia:string>
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="22.5925,13.7793"/>
+            <dia:point val="22.6663,13.7793"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -2581,7 +2581,7 @@ directory#</dia:string>
         <dia:point val="19.305,15.485"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="19.255,15.435;25.93,17.335"/>
+        <dia:rectangle val="19.255,15.435;26.0775,17.335"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
@@ -2590,7 +2590,7 @@ directory#</dia:string>
         <dia:point val="19.305,15.485"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="6.5750000000000002"/>
+        <dia:real val="6.7225000000000001"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="1.8"/>
@@ -2604,7 +2604,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_hostdata#</dia:string>
+            <dia:string>#xymond_hostdata#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -2613,7 +2613,7 @@ directory#</dia:string>
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="22.5925,16.58"/>
+            <dia:point val="22.6662,16.58"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -2638,7 +2638,7 @@ directory#</dia:string>
         <dia:point val="19.4888,-1.115"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="19.4388,-1.165;25.7463,0.735"/>
+        <dia:rectangle val="19.4388,-1.165;25.8938,0.735"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
@@ -2647,7 +2647,7 @@ directory#</dia:string>
         <dia:point val="19.4888,-1.115"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="6.2074999999999996"/>
+        <dia:real val="6.3549999999999995"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
         <dia:real val="1.8"/>
@@ -2661,7 +2661,7 @@ directory#</dia:string>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#hobbitd_capture#</dia:string>
+            <dia:string>#xymond_capture#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -2670,7 +2670,7 @@ directory#</dia:string>
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="22.5925,-0.02"/>
+            <dia:point val="22.6663,-0.02"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
