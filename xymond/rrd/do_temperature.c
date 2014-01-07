@@ -45,7 +45,7 @@ int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pa
 	*/
 
 	char *bol, *eol, *comment, *p;
-	int tmpF, tmpC;
+	int tmpC;
 
 	if (temperature_tpl == NULL) temperature_tpl = setup_template(temperature_params);
 
@@ -71,10 +71,17 @@ int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pa
 
 			bol += strspn(bol, " \t");
 
+			/* Strip off any leading bold and italic HTML tags */
+			if      (strncasecmp(bol, "<i><b>", 6) == 0)  { bol += 6; }
+			else if (strncasecmp(bol, "<i>", 3) == 0)  { bol += 3; }
+			else if (strncasecmp(bol, "<b><i>", 6) == 0)  { bol += 6; }
+			else if (strncasecmp(bol, "<b>", 3) == 0)  { bol += 3; } 
+			bol += strspn(bol, " \t");
+
 			p = bol + strlen(bol) - 1;
 			while ((p > bol) && isspace((int)*p)) p--;
 			while ((p > bol) && isdigit((int)*p)) p--;
-			tmpF = atoi(p);
+			// tmpF = atoi(p);
 			while ((p > bol) && isspace((int)*p)) p--;
 			while ((p > bol) && isdigit((int)*p)) p--;
 			tmpC = atoi(p);

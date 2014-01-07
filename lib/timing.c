@@ -13,6 +13,7 @@
 
 static char rcsid[] = "$Id$";
 
+#include <unistd.h> // For POSIX timer definitions
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
