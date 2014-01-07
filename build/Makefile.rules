@@ -128,14 +128,12 @@ win32: include/config.h
 distclean: allclean
 	rm -f Makefile
 	rm -rf xymonnet/c-ares
-	rm -rf xymonnet/fping.ipv4
-	rm -rf xymonnet/fping.ipv6
+	rm -rf xymonnet/fping-$(FPINGVER)
 	rm -rf debbuild rpmbuild
 
 allclean: clean
 	(cd xymonnet/c-ares && $(MAKE) clean) || true
-	(cd xymonnet/fping.ipv4 && $(MAKE) clean) || true
-	(cd xymonnet/fping.ipv6 && $(MAKE) clean) || true
+	(cd xymonnet/fping-$(FPINGVER) && $(MAKE) clean) || true
 
 clean:
 	$(MAKE) -C build clean

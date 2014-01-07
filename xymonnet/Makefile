@@ -59,7 +59,7 @@ c-ares/.libs/libcares.a: c-ares/Makefile
 	(cd c-ares && $(MAKE))
 
 c-ares/Makefile: c-ares/configure
-	(cd c-ares && CFLAGS="$(CFLAGS)" ./configure --disable-shared)
+	(cd c-ares && CFLAGS="" ./configure --disable-shared)
 
 c-ares/configure: c-ares-$(ARESVER).tar.gz
 	gzip -dc $< | tar xf -
@@ -81,7 +81,7 @@ fping: fping-$(FPINGVER).tar.gz
 	gzip -dc $< | tar xf -
 	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
 	touch fping-$(FPINGVER)/configure
-	(cd fping-$(FPINGVER) && ./configure --enable-ipv4 --enable-ipv6 && $(MAKE))
+	(cd fping-$(FPINGVER) && CFLAGS="" ./configure --enable-ipv4 --enable-ipv6 && $(MAKE))
 
 xymon-snmpcollect: xymon-snmpcollect.o $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(SSLLIBS)
