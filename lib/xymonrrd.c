@@ -288,7 +288,7 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 			if (bgcolor != -1) sprintf(svcurl+strlen(svcurl), "&amp;color=%s", colorname(bgcolor));
 			sprintf(svcurl+strlen(svcurl), "&amp;graph_start=%d&amp;graph_end=%d", (int)starttime, (int)endtime);
 
-			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("XYMONSKIN"));
+			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("XYMONSKIN"), xgetenv("IMAGEFILETYPE"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
 				rrdurlsize += (4096 + rrdparturlsize);
 				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
@@ -317,7 +317,7 @@ char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolo
 				 service, bgcolor, graphdef, 
 				 itemcount, nostale,
 				 ((wantmeta == HG_META_LINK) ? metafmt : xymonlinkfmt),
-				 locatorbased, starttime, endtime, xgetenv("IMAGEFILETYPE"));
+				 locatorbased, starttime, endtime);
 }
 
 
