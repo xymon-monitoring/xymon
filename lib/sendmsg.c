@@ -46,7 +46,7 @@ static char rcsid[] = "$Id$";
 #define SENDRETRIES 2
 
 /* These commands go to all Xymon servers */
-static char *multircptcmds[] = { "status", "combo", "meta", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
+static char *multircptcmds[] = { "status", "combo", "extcombo", "meta", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
 static char errordetails[1024];
 
 /* Stuff for combo message handling */
@@ -457,6 +457,8 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 	 * server.
 	 */
 
+	// errprintf("sendtomany: onercpt=%s\n", onercpt);
+
 	if (strcmp(onercpt, "0.0.0.0") != 0) 
 		allservers = 0;
 	else if (strncmp(msg, "schedule", 8) == 0)
@@ -470,11 +472,14 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 		i = strspn(msg, "abcdefghijklmnopqrstuvwxyz");
 		msgcmd = (char *)malloc(i+1);
 		strncpy(msgcmd, msg, i); *(msgcmd+i) = '\0';
+		// errprintf("sendtomany: msgcmd=%s\n", msgcmd);
 		for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msgcmd)); i++) ;
 		xfree(msgcmd);
 
 		allservers = (multircptcmds[i] != NULL);
 	}
+
+	// errprintf("sendtomany: allservers=%d\n", allservers);
 
 	if (allservers && !morercpts) {
 		sprintf(errordetails+strlen(errordetails), "No recipients listed! XYMSRV was %s, XYMSERVERS %s",
