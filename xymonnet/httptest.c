@@ -482,6 +482,7 @@ void add_http_test(testitem_t *t)
 	if (httptest->weburl.desturl->schemeopts) {
 		if      (strstr(httptest->weburl.desturl->schemeopts, "3"))      sslopt_version = SSLVERSION_V3;
 		else if (strstr(httptest->weburl.desturl->schemeopts, "2"))      sslopt_version = SSLVERSION_V2;
+		else if (strstr(httptest->weburl.desturl->schemeopts, "t"))      sslopt_version = SSLVERSION_TLS1;
 
 		if      (strstr(httptest->weburl.desturl->schemeopts, "h"))      sslopt_ciphers = ciphershigh;
 		else if (strstr(httptest->weburl.desturl->schemeopts, "m"))      sslopt_ciphers = ciphersmedium;
