@@ -45,6 +45,7 @@ static char rcsid[] = "$Id$";
 int seq = 0;
 static int running = 1;
 static time_t reloadtime = 0;
+static int reloadextprocessor = 0;
 
 typedef struct rrddeftree_t {
 	char *key;
@@ -58,6 +59,9 @@ static void sig_handler(int signum)
 	switch (signum) {
 	  case SIGHUP:
 		  reloadtime = 0;
+		  break;
+	  case SIGPIPE:
+		  reloadextprocessor = 0;
 		  break;
 	  case SIGCHLD:
 		  break;
@@ -245,7 +249,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGINT, &sa, NULL);
-	signal(SIGPIPE, SIG_DFL);
+	sigaction(SIGPIPE, &sa, NULL);
 
 	/* Setup the control socket that receives cache-flush commands */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
@@ -287,6 +291,13 @@ int main(int argc, char *argv[])
 		char ctlbuf[PATH_MAX];
 		int gotcachectlmessage;
 		time_t now;
+
+		/* If we need to re-open our external processor, do so */
+		if (reloadextprocessor) {
+			shutdown_extprocessor(); // Just in case we got a PIPE, but the pipe needs to be cleaned up still
+			setup_extprocessor(processor);
+			reloadextprocessor = 0;
+		}
 
 		/* See if we have any cache-control messages pending */
 		do {
