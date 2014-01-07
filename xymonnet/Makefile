@@ -68,31 +68,20 @@ c-ares/configure: c-ares-$(ARESVER).tar.gz
 	touch c-ares/configure
 
 
-fping.8: fping4
-	cp fping.ipv4/doc/fping.8 .
+fping.8: fping
+	cp fping-$(FPINGVER)/doc/fping.8 .
 
-fping4: fping.ipv4/Makefile
-	(cd fping.ipv4 && $(MAKE))
-	cp fping.ipv4/src/fping ./fping4
+fping4: fping
+	cp fping-$(FPINGVER)/src/fping ./fping4
 
-fping6: fping.ipv6/Makefile
-	(cd fping.ipv6 && $(MAKE))
-	cp fping.ipv6/src/fping ./fping6
+fping6: fping
+	cp fping-$(FPINGVER)/src/fping6 ./fping6
 
-fping.ipv4/Makefile: fping-$(FPINGVER).tar.gz
+fping: fping-$(FPINGVER).tar.gz
 	gzip -dc $< | tar xf -
-	mv fping-$(FPINGVER) fping.ipv4
 	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
-	touch fping.ipv4/configure
-	(cd fping.ipv4 && ./configure)
-
-fping.ipv6/Makefile: fping-$(FPINGVER).tar.gz
-	gzip -dc $< | tar xf -
-	mv fping-$(FPINGVER) fping.ipv6
-	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
-	touch fping.ipv6/configure
-	(cd fping.ipv6 && ./configure && echo "#define IPV6 1" >> config.h)
-
+	touch fping-$(FPINGVER)/configure
+	(cd fping-$(FPINGVER) && ./configure --enable-ipv4 --enable-ipv6 && $(MAKE))
 
 xymon-snmpcollect: xymon-snmpcollect.o $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(SSLLIBS)
