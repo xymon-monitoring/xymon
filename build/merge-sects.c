@@ -117,6 +117,7 @@ nooriginal:
 	unlink(curfn); curfd = fopen(curfn, "w");
 	if (srcfd == NULL) { printf("Cannot open template file %s\n", srcfn); return 1; }
 	if (curfd == NULL) { printf("Cannot open config file %s\n", curfn); return 1; }
+	fchmod(fileno(curfd), S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 
 	while (fgets(l, sizeof(l), srcfd)) {
 		char *bol, *p;
