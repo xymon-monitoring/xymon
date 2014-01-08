@@ -446,6 +446,7 @@ int main(int argc, char *argv[])
 	char *envarea = NULL;
 	char **critconfig = NULL;
 	int cccount = 0;
+	char *hffile = "critical";
 
 	critconfig = (char **)calloc(1, sizeof(char *));
 
@@ -475,6 +476,10 @@ int main(int argc, char *argv[])
 			cccount++;
 			critconfig = (char **)realloc(critconfig, (1 + cccount)*sizeof(char *));
 			critconfig[cccount] = NULL;
+		}
+		else if (argnmatch(argv[argi], "--hffile=")) {
+			char *p = strchr(argv[argi], '=');
+			hffile = strdup(p+1);
 		}
 	}
 
@@ -546,8 +551,8 @@ int main(int argc, char *argv[])
 			}
 
 			generate_critpage(rbstate[i], hostsonpage[i], stdout, 
-					  (i == 0) ? (critconfig[1] ? "critmulti" : "critical") : "divider", 
-					  (critconfig[i+1] == NULL) ? "critical" : "divider",
+					  (i == 0) ? (critconfig[1] ? "critmulti" : hffile) : "divider", 
+					  (critconfig[i+1] == NULL) ? hffile : "divider",
 					  partcolor[i], partprio[i]);
 		}
 	}
