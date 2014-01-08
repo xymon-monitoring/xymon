@@ -109,9 +109,9 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "Cannot create output file %s: %s\n", destfn, strerror(errno));
 				return 1;
 			}
+			fchmod(fileno(outfd), S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 			while ( (n = fread(buf, 1, sizeof(buf), infd)) > 0) fwrite(buf, 1, n, outfd);
 			fclose(infd); fclose(outfd);
-			chmod(destfn, st.st_mode);
 		}
 		else if (S_ISDIR(st.st_mode)) {
 			struct stat tmpst;
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
 			/* Create the directory itself */
 			if (stat(destfn, &tmpst) == -1) mkdir(destfn, st.st_mode);
-			chmod(destfn, st.st_mode);
+			chmod(destfn, S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
 		}
 		else if (S_ISLNK(st.st_mode)) {
 			char ldest[PATH_MAX + 1];
