@@ -1,3 +1,36 @@
+xymon (4.3.13) unstable; urgency=low
+
+   * rev 7339
+   * Fixes to FreeBSD client code, from Mark Felder (FreeBSD maintainer)
+   * Fix crash on "client" data sent via status channel when host is unknown
+   * HTTP tests now use "Cache-control" header for HTTP/1.1 (default) and
+     "Pragma" for HTTP/1.0, so it is protocol compliant.
+   * xymonnet network tester supports Server Name Indication (SNI) for SSL
+     enabled virtual websites.
+   * Strip carriage-return from text sent to mail alerts, to avoid mail
+     programs treating the message as binary and putting it in an attachment
+   * netbios-ssn, snpp and lpd protocol.cfg entries (Tom Schmidt)
+   * "temperature" status strips html tags from sensor names (Tom Schmidt)
+   * Extra "total network I/O" line on ifstat graph (Tom Schmidt)
+   * New "backfeed" queue for high-speed transmission of Xymon status updates 
+     between modules located on the same server as xymond. Note: This is
+     disabled by default, see the README.backfeed file.
+   * New "extcombo" message type allows for combo messages of all types
+     (usually "status" and "data").
+   * New setting IMAGEFILETYPE removes hardcoded ".gif" on the various
+     image-files in the "gifs" directory. Directory name is unchanged, though.
+   * New modifier for https tests for selecting only TLSv1 as protocol
+   * CGI's now return a proper HTTP status code in case of errors (e.g. "404"
+     when requesting a status for a non-existing host).
+   * Fix problem with xymond_rrd dying if an external processors crashes
+     (from J. Cleaver)
+   * Fix configure/build problem with detecting POSIX realtime-clock functions.
+   * Fix for FreeBSD 5+ vmstat reporting (from Jeremy Laidman)
+   * Fix for "make install" not setting correct file/directory permissions
+   * Re-add the "--hf-file" option for criticalview CGI (removed in 4.3.7)
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Wed, 8 Jan 2014 16:43:32 +0100
+
 xymon (4.3.12) unstable; urgency=high
 
    * rev 7211
