@@ -61,6 +61,7 @@ EOF
 	test -e /etc/xymon/xymonpasswd || touch /etc/xymon/xymonpasswd
 	test -e /etc/xymon/xymongroups || touch /etc/xymon/xymongroups
 	if test -e /etc/init.d/apache2 ; then
+	    a2enmod rewrite || :
 	    invoke-rc.d apache2 reload || :
 	fi
     ;;
