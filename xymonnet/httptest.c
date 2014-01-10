@@ -341,6 +341,7 @@ void add_http_test(testitem_t *t)
 	int firstcookie = 1;
 	char *decodedurl;
 	strbuffer_t *httprequest = newstrbuffer(0);
+	void *hinfo = NULL;
 
 	/* Allocate the private data and initialize it */
 	httptest = (http_data_t *) calloc(1, sizeof(http_data_t));
@@ -351,6 +352,9 @@ void add_http_test(testitem_t *t)
 		errprintf("Invalid URL for http check: %s\n", t->testspec);
 		return;
 	}
+
+	hinfo = hostinfo(t->host->hostname);
+
 
 	httptest->url = strdup(decodedurl);
 	httptest->contlen = -1;
@@ -579,10 +583,8 @@ void add_http_test(testitem_t *t)
 	}
 	{
 		char useragent[100];
-		void *hinfo;
 		char *browser = NULL;
 
-		hinfo = hostinfo(t->host->hostname);
 		if (hinfo) browser = xmh_item(hinfo, XMH_BROWSER);
 
 		if (browser) {
@@ -683,6 +685,11 @@ void add_http_test(testitem_t *t)
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 
-	httptest->tcptest->sni = httptest->weburl.desturl->host;
+	if (hinfo && xmh_item(hinfo, XMH_FLAG_SNI))
+		httptest->tcptest->sni = httptest->weburl.desturl->host;
+	else if (hinfo && xmh_item(hinfo, XMH_FLAG_NOSNI))
+		httptest->tcptest->sni = NULL;
+	else
+		httptest->tcptest->sni = (snienabled ? httptest->weburl.desturl->host : NULL);
 }
 

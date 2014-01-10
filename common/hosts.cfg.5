@@ -593,6 +593,22 @@ a key with fewer than MINIMUMKEYBITS bits, the "sslcert"
 test will go red. E.g. to check that your server only uses
 strong encryption (128 bits or better), use "sslbits=128".
 
+.IP sni
+.IP nosni
+Enables or disables use of SNI (Server Name Indication) for SSL tests.
+
+Some SSL implementations cannot handle SSL handshakes with SNI
+data, so Xymon by default does not use SNI. This default can be 
+changed with the "--sni" option for 
+.I xymonnet(1)
+but can also be managed per host with these tags.
+
+SNI support was added in Xymon 4.3.13, where the default was to
+use SNI. This was changed in 4.3.14 so SNI support is disabled by
+default, and the "sni" and "nosni" tags were introduced together
+with the "--sni" option for xymonnet.
+
+
 .IP DOWNTIME=day:starttime:endtime[,day:starttime:endtime]
 .IP DOWNTIME=columns:day:starttime:endtime:cause[,columns:day:starttime:endtime:cause]
 This tag can be used to ignore failed checks during

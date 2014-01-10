@@ -313,6 +313,12 @@ Default: 0, i.e. this check is disabled.
 .IP --no-cipherlist
 Do not show the list of encryption ciphers on the "sslcert" status.
 
+.IP --sni=[on|off]
+Sets the default for whether SSL connections use SNI (Server Name
+Indication). This can also be set with the "sni" or "nosni"
+options in hosts.cfg for each host - the hosts.cfg entries
+override this  option.
+Default: off
 
 .SH DEBUGGING OPTIONS
 .IP --no-update

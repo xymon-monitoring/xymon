@@ -1,3 +1,16 @@
+xymon (4.3.14) unstable; urgency=low
+
+   * rev 734x
+   * SNI (Server Name Indication) causes some SSL connections to fail
+     due to server-side buggy SSL implementations. Add "sni" and "nosni" 
+     flags to control SNI for specific hosts, and "--sni" option for 
+     xymonnet to control the default. Reported by Mark Felder.
+   * Fix critical ack not working for hosts where the display-name is
+     set (via "NAME:" tag). From Any Smith.
+   * Fix Debian installation so it enables Apache mod_rewrite
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Wed, 8 Jan 2014 16:43:32 +0100
+
 xymon (4.3.13) unstable; urgency=low
 
    * rev 7339

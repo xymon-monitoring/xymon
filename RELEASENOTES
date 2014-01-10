@@ -1,6 +1,37 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.12   * * *
+           * * *   Release notes for Xymon 4.3.14   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+Changes for 4.3.14
+==================
+SNI support added in 4.3.13 causes problems with some older
+webservers, whose SSL implementation cannot handshake correctly
+when SNI is used. The failed handshake causes Xymon to report
+the site as down. In 4.3.14, the default is changed so SNI is
+disabled. A new "--sni" option was added to xymonnet to control the
+default setting, and two new tags "sni" and "nosni" can be used in 
+hosts.cfg to control SNI for each host that is tested.
+
+
+Changes for 4.3.13
+==================
+This is mostly a bugfix release. Apart from simple bugs (see
+the Changes file), there are some enhancements:
+
+Alerts sent via e-mail have <CR><NL> line-endings converted
+to plain <NL>, since the carriage-return characters would
+cause some mailers to send alerts as a (binary) attachment
+to an empty mail message.
+
+https-URL's can be forced to use TLS only, by using 
+"httpst://..." similar to how SSLv2 and SSLv3 can be chosen.
+
+SSL connections (e.g. for https URL's) now use the TLS 
+"Server Name Indication" (SNI) if your OpenSSL library 
+supports it. This allows testing of systems that have 
+multiple SSL websites located on the same physical IP+port 
+(i.e. virtual name-based hosts).
 
 
 Changes for 4.3.12

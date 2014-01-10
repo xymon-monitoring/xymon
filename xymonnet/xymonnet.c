@@ -2154,6 +2154,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; sslminkeysize = atoi(p);
 		}
+		else if (argnmatch(argv[argi], "--sni=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; snienabled = ( (strcasecmp(p, "yes") == 0) || (strcasecmp(p, "on") == 0) || (strcasecmp(p, "enabled") == 0) || (strcasecmp(p, "true") == 0) || (strcasecmp(p, "1") == 0) );
+		}
 		else if (strcmp(argv[argi], "--no-cipherlist") == 0) {
 			sslincludecipherlist = 0;
 		}
