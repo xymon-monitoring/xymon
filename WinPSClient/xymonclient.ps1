@@ -215,6 +215,12 @@ function epochTime([System.DateTime] $t)
 
 }
 
+function epochTimeUtc([System.DateTime] $t)
+{
+		[uint32](($t.Ticks - ([DateTime] "1/1/1970 00:00:00").Ticks) / 10000000)
+
+}
+
 function filesize($file,$clsize=4KB)
 {
     return [math]::floor((($_.Length -1)/$clsize + 1) * $clsize/1KB)
@@ -269,7 +275,7 @@ function XymonClock
 	"[clock]"
 	"epoch: " + $epoch
 	"local: " + (UnixDate $localdatetime)
-	"UTC: " + (UnixDate $localdatetime.AddMinutes(-$osinfo.CurrentTimeZone))
+	"UTC: " + (UnixDate $localdatetime.ToUniversalTime())
 	$timesource = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters').Type
 	"Time Synchronisation type: " + $timesource
 	if ($timesource -eq "NTP") {
@@ -438,9 +444,9 @@ function XymonFileStat($file,$hash="")
 		"owner:0 ({0})" -f $fh.GetAccessControl().Owner
 		"group:0 ({0})" -f $fh.GetAccessControl().Group
 		if(test-path $_ -PathType Leaf) { "size:{0}" -f $fh.length }
-		"atime:{0} ({1})" -f (epochTime $fh.LastAccessTimeUtc),$fh.LastAccessTime.ToString("yyyy/MM/dd-HH:mm:ss")
-		"ctime:{0} ({1})" -f (epochTime $fh.CreationTimeUtc),$fh.CreationTime.ToString("yyyy/MM/dd-HH:mm:ss")
-		"mtime:{0} ({1})" -f (epochTime $fh.LastWriteTimeUtc),$fh.LastWriteTime.ToString("yyyy/MM/dd-HH:mm:ss")
+		"atime:{0} ({1})" -f (epochTimeUtc $fh.LastAccessTimeUtc),$fh.LastAccessTime.ToString("yyyy/MM/dd-HH:mm:ss")
+		"ctime:{0} ({1})" -f (epochTimeUtc $fh.CreationTimeUtc),$fh.CreationTime.ToString("yyyy/MM/dd-HH:mm:ss")
+		"mtime:{0} ({1})" -f (epochTimeUtc $fh.LastWriteTimeUtc),$fh.LastWriteTime.ToString("yyyy/MM/dd-HH:mm:ss")
 		if(test-path $_ -PathType Leaf) {
 			"FileVersion:{0}" -f $fh.VersionInfo.FileVersion
 			"FileDescription:{0}" -f $fh.VersionInfo.FileDescription
