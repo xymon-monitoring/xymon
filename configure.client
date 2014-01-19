@@ -137,9 +137,6 @@ fi
 echo ""; echo ""
 
 XYMONHOSTOS=`uname -s | tr '[A-Z]' '[a-z]'`
-if test "$XYMONHOME" = ""; then
-	XYMONHOME=$XYMONTOPDIR/client
-fi
 
 echo "# Toplevel Makefile for Xymon"    > Makefile
 
@@ -156,8 +153,6 @@ echo "# configure settings for Xymon"    >>Makefile
 echo "#"                                 >>Makefile
 echo "# Toplevel dir"                    >>Makefile
 echo "XYMONTOPDIR = $XYMONTOPDIR"        >>Makefile
-echo "# Server home dir for etc/, www/"  >>Makefile
-echo "XYMONHOME = $XYMONHOME"            >>Makefile
 echo ""                                  >>Makefile
 echo "# Xymon settings follows"          >>Makefile
 echo "#"                                 >>Makefile

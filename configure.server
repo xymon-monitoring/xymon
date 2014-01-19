@@ -375,9 +375,6 @@ fi
 echo ""; echo ""
 
 XYMONHOSTOS=`uname -s | tr '[A-Z]' '[a-z]'`
-if test "$XYMONHOME" = ""; then
-	XYMONHOME=$XYMONTOPDIR/server
-fi
 if test "$XYMONVAR" = ""; then
 	XYMONVAR=$XYMONTOPDIR/data
 fi
@@ -401,8 +398,6 @@ echo "# configure settings for Xymon"   >>Makefile
 echo "#"                                 >>Makefile
 echo "# Toplevel dir"                    >>Makefile
 echo "XYMONTOPDIR = $XYMONTOPDIR"        >>Makefile
-echo "# Server home dir for etc/, bin/"  >>Makefile
-echo "XYMONHOME = $XYMONHOME"            >>Makefile
 echo "# Server data dir for hist/ etc."  >>Makefile
 echo "XYMONVAR = $XYMONVAR"              >>Makefile
 echo "# CGI scripts go in CGIDIR"        >>Makefile
