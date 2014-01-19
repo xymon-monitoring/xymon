@@ -46,8 +46,9 @@ STATUSLIFETIME="30"		# Default number of minutes a status is valid after an upda
 
 PINGCOLUMN="conn"		# Column where the ping-test reports results.
 INFOCOLUMN="info"		# Column where the info-pages are reported.
-INFOCOLUMNCOLOR="green"		# Color of the info-column.
+INFOCOLUMNGIF="green.gif"	# Icon file used for the info-column.
 TRENDSCOLUMN="trends"		# Column where the RRD graphs are reported.
+TRENDSCOLUMNGIF="green.gif"	# Icon file used for the trends-column.
 
 MAXMSGSPERCOMBO="100"           # How many individual messages to combine in a combo-message. 0=unlimited.
 SLEEPBETWEENMSGS="0"            # Delay between sending each combo message, in milliseconds.
