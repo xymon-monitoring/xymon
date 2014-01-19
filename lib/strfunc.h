@@ -14,6 +14,7 @@
 extern strbuffer_t *newstrbuffer(int initialsize);
 extern strbuffer_t *convertstrbuffer(char *buffer, int bufsz);
 extern void addtobuffer(strbuffer_t *buf, char *newtext);
+extern void addtobuffer_many(strbuffer_t *buf, ...);
 extern void addtostrbuffer(strbuffer_t *buf, strbuffer_t *newtext);
 extern void addtobufferraw(strbuffer_t *buf, char *newdata, int bytes);
 extern void clearstrbuffer(strbuffer_t *buf);
