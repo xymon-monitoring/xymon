@@ -143,6 +143,7 @@ chkconfig --del xymon-client
 %attr(644, root, root) %config /etc/xymon/*
 %attr(644, root, root) %config /etc/httpd/conf.d/xymon-apache.conf
 %attr(755, root, root) %dir /etc/xymon 
+%attr(755, root, root) %dir /etc/xymon/tasks.d
 %attr(755, root, root) %dir /usr/lib/xymon/server/download
 %attr(755, root, root) %dir /etc/xymon/web
 %attr(755, xymon, xymon) %dir /var/log/xymon
