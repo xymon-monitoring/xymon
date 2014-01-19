@@ -553,10 +553,12 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 				else if (reportstart == 0) {
 					/* Standard webpage */
 					char *skin;
+					char *img = dotgiffilename(e->color, e->acked, e->oldage);
 
 					if (strcmp(e->column->name, xgetenv("INFOCOLUMN")) == 0) {
 						/* Show the host IP on the hint display of the "info" column */
 						htmlalttag = alttag(e->column->name, COL_GREEN, 0, 1, h->ip);
+						img = dotgiffilename((getenv("INFOCOLUMNCOLOR") ? parse_color(getenv("INFOCOLUMNCOLOR")) : COL_GREEN), 0, 0);
 					}
 					else {
 						htmlalttag = alttag(e->column->name, e->color, e->acked, e->propagate, e->age);
@@ -586,7 +588,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 					}
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
-						skin, dotgiffilename(e->color, e->acked, e->oldage),
+						skin, img,
 						htmlalttag, htmlalttag,
 						xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 				}
