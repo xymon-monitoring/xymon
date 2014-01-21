@@ -212,6 +212,7 @@ void sig_handler(int signum)
 	  case SIGCHLD:
 		  break;
 
+	  case SIGHUP:
 	  case SIGUSR1:
 		  nextcheckpoint = 0;
 		  break;
@@ -506,6 +507,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGINT,  &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGHUP,  &sa, NULL);
 
 	if (xgetenv("XYMONSERVERLOGS")) {
 		sprintf(acklogfn, "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
