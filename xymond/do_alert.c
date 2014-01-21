@@ -689,11 +689,10 @@ time_t next_alert(activealerts_t *alert)
 	recip_t *recip;
 	repeat_t *rpt;
 	time_t r_next = -1;
+	void *hinfo = hostinfo(alert->hostname);
 
 	stoprulefound = 0;
 	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL, &r_next)) != NULL)) {
-		void *hinfo = hostinfo(alert->hostname);
-
 		found = 1;
 
 		if (recip->criteria && recip->criteria->timespec && !timematch(xmh_item(hinfo, XMH_HOLIDAYS), recip->criteria->timespec)) {
