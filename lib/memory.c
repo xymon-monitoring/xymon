@@ -359,3 +359,20 @@ int xsprintf(char *dest, const char *fmt, ...)
 	return printedbytes;
 }
 
+
+char *xresultbuf(int maxsz)
+{
+	static char rrbuf[10000];
+	static char *rrbufnext = rrbuf;
+	char *result;
+
+	if ((rrbufnext + maxsz) >= (rrbuf + sizeof(rrbuf))) 
+		result = rrbufnext = rrbuf;
+	else {
+		result = rrbufnext;
+		rrbufnext += maxsz;
+	}
+
+	return result;
+}
+
