@@ -8,12 +8,17 @@ XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
 # ARES settings. c-ares is included
-DNSFLAGS = -I./c-ares
+ifeq ($(SYSTEMCARES),no)
+	CARESINC = -I./c-ares
+	CARESLIBS = libcares.a
+	LOCALCARES = libcares.a
+endif
 
 PROGRAMS = xymonnet xymonping beastat
 EXTENSIONS = xymonnet-again.sh
 SNMPPROGRAMS = xymon-snmpcollect
 DBGTOOLS = contest
+
 
 ifeq ($(DOSNMP),yes)
 PROGRAMS += $(SNMPPROGRAMS)
@@ -25,7 +30,7 @@ PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o
 
 xymonnet: $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIBS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) libcares.a $(LDAPLIBS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(XYMONLIBS) $(PCRELIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) $(CARESLIBS) $(LDAPLIBS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(XYMONLIBS) $(PCRELIBS)
 
 xymonping: $(PINGTESTOBJS) $(XYMONTIMELIB) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS)
@@ -45,11 +50,11 @@ httpresult.o: httpresult.c
 contest.o: contest.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ contest.c
 
-dns.o: libcares.a dns.c
-	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dns.c
+dns.o: $(LOCALCARES) dns.c
+	$(CC) $(CFLAGS) $(CARESINC) -c -o $@ dns.c
 
 dns2.o: dns2.c
-	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dns2.c
+	$(CC) $(CFLAGS) $(CARESINC) -c -o $@ dns2.c
 
 libcares.a: c-ares/.libs/libcares.a
 	ranlib c-ares/.libs/libcares.a || echo "ranlib failure - ignored"
@@ -75,7 +80,7 @@ beastat.o: beastat.c
 
 
 contest: contest.c httptest.o dns.o dns2.o httpcookies.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
-	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
+	$(CC) $(CFLAGS) -o contest -I../include $(CARESINC) -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o $(CARESLIBS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
 
 
 xymon-snmpcollect: xymon-snmpcollect.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
