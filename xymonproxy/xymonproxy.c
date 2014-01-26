@@ -227,6 +227,7 @@ int main(int argc, char *argv[])
 	int opt;
 	conn_t *chead = NULL;
 	struct sigaction sa;
+	int selectfailures = 0;
 
 	/* Statistics info */
 	time_t startuptime = gettimer();
@@ -967,8 +968,20 @@ int main(int argc, char *argv[])
 		else {
 			selecttmo.tv_sec = 1; selecttmo.tv_usec = 0;
 		}
+
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &selecttmo);
-		if (n <= 0) {
+
+		if (n < 0) {
+			errprintf("select() failed: %s\n", strerror(errno));
+			if (++selectfailures > 5) {
+				errprintf("Too many select failures, aborting\n");
+				exit(1);
+			}
+		}
+		else if (n == 0) {
+			/* Timeout */
+			if (selectfailures > 0) selectfailures--;
+
 			getntimer(&tmo);
 			for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
 				switch (cwalk->state) {
@@ -988,6 +1001,8 @@ int main(int argc, char *argv[])
 			}
 		}
 		else {
+			if (selectfailures > 0) selectfailures--;
+
 			for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
 				switch (cwalk->state) {
 				  case P_REQ_READING:
