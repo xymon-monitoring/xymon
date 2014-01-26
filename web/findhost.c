@@ -106,7 +106,7 @@ void print_header(void)
 	printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
         headfoot(stdout, "findhost", "", "header", COL_BLUE);
 	printf("<br><br><CENTER><TABLE CELLPADDING=5 SUMMARY=\"Hostlist\">\n");
-	printf("<tr><th align=left>Hostname (DisplayName)</th><th align=left>Location (Group Name)</th></tr>\n");
+	printf("<tr><th align=left>Hostname (DisplayName)</th><th align=left>IP</th><th align=left>Location (Group Name)</th></tr>\n");
 }
 
 void print_footer(void)
@@ -192,20 +192,23 @@ int main(int argc, char *argv[])
 			(comment     && regexec (&re, comment, 	   (size_t)0, NULL, 0) == 0)   ) {
 	
 			/*  match */
-			addtobuffer(outbuf, "<tr>\n");
-			addtobuffer(outbuf, "<td align=left> ");
-			addtobuffer(outbuf, displayname ? displayname : hostname);
-			addtobuffer(outbuf, " </td>\n");
+			addtobuffer_many(outbuf, 
+					"<tr>\n",
+					"<td align=left> ", (displayname ? displayname : hostname), " </td>\n",
+					"<td align=left> ", ip, " </td>\n",
+					NULL);
 
 			oneurl = (char *)malloc(4 + strlen(xgetenv("XYMONWEB")) + strlen(xmh_item(hostwalk, XMH_PAGEPATH)) + strlen(hostname));
 			sprintf(oneurl, "%s/%s/#%s",
 				xgetenv("XYMONWEB"), xmh_item(hostwalk, XMH_PAGEPATH), hostname);
 
-			addtobuffer(outbuf, "<td align=left> <a href=\"");
-			addtobuffer(outbuf, oneurl);
-			addtobuffer(outbuf, "\">");
-			addtobuffer(outbuf, xmh_item(hostwalk, XMH_PAGEPATHTITLE));
-			addtobuffer(outbuf, "</a>\n");
+			addtobuffer_many(outbuf, 
+					"<td align=left> <a href=\"",
+					oneurl,
+					"\">",
+					xmh_item(hostwalk, XMH_PAGEPATHTITLE),
+					"</a>\n",
+					NULL);
 			gotany++;
 
 			/* See if all of the matches so far are on one page */
@@ -225,15 +228,17 @@ int main(int argc, char *argv[])
 
 			clonewalk = next_host(hostwalk, 1);
 			while (clonewalk && (strcmp(xmh_item(hostwalk, XMH_HOSTNAME), xmh_item(clonewalk, XMH_HOSTNAME)) == 0)) {
-				addtobuffer(outbuf, "<br><a href=\"");
-				addtobuffer(outbuf, xgetenv("XYMONWEB"));
-				addtobuffer(outbuf, "/");
-				addtobuffer(outbuf, xmh_item(clonewalk, XMH_PAGEPATH));
-				addtobuffer(outbuf, "/#");
-				addtobuffer(outbuf, xmh_item(clonewalk, XMH_HOSTNAME));
-				addtobuffer(outbuf, "\">");
-				addtobuffer(outbuf, xmh_item(clonewalk, XMH_PAGEPATHTITLE));
-				addtobuffer(outbuf, "</a>\n");
+				addtobuffer_many(outbuf, 
+						"<br><a href=\"",
+						xgetenv("XYMONWEB"),
+						"/",
+						xmh_item(clonewalk, XMH_PAGEPATH),
+						"/#",
+						xmh_item(clonewalk, XMH_HOSTNAME),
+						"\">",
+						xmh_item(clonewalk, XMH_PAGEPATHTITLE),
+						"</a>\n",
+						NULL);
 				clonewalk = next_host(clonewalk, 1);
 				gotany++;
 			}
