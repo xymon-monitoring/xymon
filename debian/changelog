@@ -40,7 +40,7 @@ xymon (4.3.14) unstable; urgency=low
      HTTP headers in addition to the HTML body.
    * Use system-wide c-ares library. NB: Now requires libc-ares2.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Sun, 19 Jan 2014 13:49:02 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 26 Jan 2014 13:49:02 +0100
 
 xymon (4.3.13) unstable; urgency=low
 

@@ -1,7 +1,7 @@
-Changes from 4.3.13 -> 4.3.14 (19 Jan 2014)
+Changes from 4.3.13 -> 4.3.14 (26 Jan 2014)
 ===========================================
 
-* rev 7376
+* rev 7377
 
 * Fix critical ack not working for hosts where the display-name is
   set (via "NAME:" tag). From Any Smith.
