@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOSTS.CFG</TITLE>
 </HEAD><BODY>
 <H1>HOSTS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.13:  7 Jan 2014<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.14: 26 Jan 2014<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -315,15 +315,18 @@ you must enclose it in double-quotes, e.g.  DESCR:&quot;switch:4th floor Marketi
 <DT>CLASS:Classname<DD>
 Force the host to belong to a specific class. Class-names are used
 when configuring log-file monitoring (they can be used as references in
-<I><A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)</I>
+<I><A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5),</I>
 
-and
 <I><A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5)</I>
 
-to group log file checks). Normally, class-names are controlled on the 
+and
+<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
+
+to group log file checks or alerts). Normally, class-names are controlled on the 
 client by starting the Xymon client with the &quot;--class=Classname&quot; option.
 If you specify it in the hosts.cfg file on the Xymon server, it overrides
-any class name that the client reports.
+any class name that the client reports. If not set, then the host belongs
+to a class named by the operating system the Xymon client is running on.
 <P>
 <DT>dialup<DD>
 The keyword &quot;dialup&quot; for a host means that it is OK for it to be
@@ -658,7 +661,7 @@ checks for the host.
 Define the number of days before an SSL certificate expires,
 in which the sslcert status shows a warning (yellow) or
 alarm (red) status. These default to the values from the
-&quot;--sslwarndays&quot; and &quot;--sslalarmdays&quot; options for the
+&quot;--sslwarn&quot; and &quot;--sslalarm&quot; options for the
 <I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
 
 tool; the values specified in the &quot;ssldays&quot; tag overrides
@@ -670,6 +673,23 @@ offered by the server. If the server offers encryption using
 a key with fewer than MINIMUMKEYBITS bits, the &quot;sslcert&quot;
 test will go red. E.g. to check that your server only uses
 strong encryption (128 bits or better), use &quot;sslbits=128&quot;.
+<P>
+<DT>sni<DD>
+<DT>nosni<DD>
+Enables or disables use of SNI (Server Name Indication) for SSL tests.
+<P>
+Some SSL implementations cannot handle SSL handshakes with SNI
+data, so Xymon by default does not use SNI. This default can be 
+changed with the &quot;--sni&quot; option for 
+<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
+
+but can also be managed per host with these tags.
+<P>
+SNI support was added in Xymon 4.3.13, where the default was to
+use SNI. This was changed in 4.3.14 so SNI support is disabled by
+default, and the &quot;sni&quot; and &quot;nosni&quot; tags were introduced together
+with the &quot;--sni&quot; option for xymonnet.
+<P>
 <P>
 <DT>DOWNTIME=day:starttime:endtime[,day:starttime:endtime]<DD>
 <DT>DOWNTIME=columns:day:starttime:endtime:cause[,columns:day:starttime:endtime:cause]<DD>
@@ -1377,6 +1397,11 @@ If you would like to hide these from view, then the HIDEHTTP
 tag will keep this information from showing up on the status
 webpages.
 <P>
+<DT>headermatch<DD>
+Content checks by default only search the HTML body returned by
+the webserver. This option causes it to also search the HTTP 
+headers for the string that must / must not be present.
+<P>
 <DT>browser=BROWSERNAME<DD>
 By default, Xymon sends an HTTP &quot;User-Agent&quot; header identifying
 it a &quot;Xymon&quot;. Some websites require that you use a specific
@@ -1616,6 +1641,6 @@ daemon is listening on a non-standard IP-address or port-number.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 09:25:35 GMT, January 07, 2014
+Time: 11:48:38 GMT, January 26, 2014
 </BODY>
 </HTML>

@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND</TITLE>
 </HEAD><BODY>
 <H1>XYMOND</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.13:  7 Jan 2014<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.14: 26 Jan 2014<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -232,6 +232,20 @@ Disable the &quot;download&quot; command which can be used by clients to pull fi
 from the Xymon server. The use of these may be seen as a security risk since 
 they allow file downloads.
 <P>
+<DT>--ack-each-color<DD>
+By default, sending an ACK for a yellow status stops alerts from being sent
+while the status remains yellow or red. A status change from yellow to red
+will not re-enable alerts - the ACK covers all non-green statuses.
+With this option, an ACK is valid only for the color of the status when the 
+ACK was sent. So an ACK for a yellow status is ignored if the status later
+changes to red, but an ACK for a red status covers both yellow and red.
+<BR>
+
+Note: An ACK for a red status will clear any existing yellow acks. This 
+means that a long-lived ack for yellow is lost when you send a short-lived
+ack for red. Hence alerts will restart when the red ack expires, even if
+the status by then has changed to yellow.
+<P>
 <DT>--debug<DD>
 Enable debugging output.
 <P>
@@ -392,6 +406,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 09:25:35 GMT, January 07, 2014
+Time: 11:48:38 GMT, January 26, 2014
 </BODY>
 </HTML>

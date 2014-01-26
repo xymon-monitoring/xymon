@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of ANALYSIS.CFG</TITLE>
 </HEAD><BODY>
 <H1>ANALYSIS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.13:  7 Jan 2014<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.14: 26 Jan 2014<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -276,7 +276,7 @@ Defaults:
 <H2>MSGS STATUS COLUMN SETTINGS</H2>
 
 <P>
-<B>LOG logfilename pattern [COLOR=color] [IGNORE=excludepattern]</B>
+<B>LOG logfilename pattern [COLOR=color] [IGNORE=excludepattern] [OPTIONAL]</B>
 
 <P>
 The Xymon client extracts interesting lines from one or 
@@ -307,6 +307,9 @@ word WARNING only when it is upper-case.
 &quot;excludepattern&quot; is a string or regular expression that can be used to 
 filter out any unwanted strings that happen to match &quot;pattern&quot;.
 <P>
+The <B>OPTIONAL</B> keyword causes the check to be skipped if the logfile
+does not exist.
+<P>
 Example: Trigger a red alert when the string &quot;ERROR&quot; appears in the &quot;/var/adm/syslog&quot; file:
 <BR>
 
@@ -331,7 +334,7 @@ will just show up on the &quot;msgs&quot; column with status OK (green).
 <H2>FILES STATUS COLUMN SETTINGS</H2>
 
 <P>
-<B>FILE filename [color] [things to check] [TRACK]</B>
+<B>FILE filename [color] [things to check] [OPTIONAL] [TRACK]</B>
 
 <P>
 <B>DIR directoryname [color] [size&lt;MAXSIZE] [size&gt;MINSIZE] [TRACK]</B>
@@ -346,6 +349,12 @@ files and directories reported by the client, if you prefix the expression
 with a '%' character.
 <P>
 <B>color</B> is the color that triggers when one or more of the checks fail.
+<P>
+The <B>OPTIONAL</B> keyword causes this check to be skipped if the file does
+not exist. E.g. you can use this to check if files that should be temporary are
+not deleted, by checking that they are not older than the max time you would
+expect them to stick around, and then using OPTIONAL to ignore the state
+where no files exist.
 <P>
 The <B>TRACK</B> keyword causes the size of the file or directory to be tracked
 in an RRD file, and presented in a graph on the &quot;files&quot; status display.
@@ -816,6 +825,6 @@ is not considered strong enough when a high level of security is required.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 09:25:35 GMT, January 07, 2014
+Time: 11:48:38 GMT, January 26, 2014
 </BODY>
 </HTML>
