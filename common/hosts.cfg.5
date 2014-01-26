@@ -1255,6 +1255,11 @@ If you would like to hide these from view, then the HIDEHTTP
 tag will keep this information from showing up on the status
 webpages.
 
+.IP headermatch
+Content checks by default only search the HTML body returned by
+the webserver. This option causes it to also search the HTTP 
+headers for the string that must / must not be present.
+
 .IP browser=BROWSERNAME
 By default, Xymon sends an HTTP "User-Agent" header identifying
 it a "Xymon". Some websites require that you use a specific

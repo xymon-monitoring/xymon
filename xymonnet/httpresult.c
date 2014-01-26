@@ -453,6 +453,8 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 						regmatch_t foo[1];
 
 						status = regexec((regex_t *) req->exp, req->output, 0, foo, 0);
+						if ((status != 0) && xmh_item(host, XMH_FLAG_HTTP_HEADER_MATCH)) 
+							status = regexec((regex_t *) req->exp, req->headers, 0, foo, 0);
 						regfree((regex_t *) req->exp);
 					}
 					else {
@@ -465,7 +467,13 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 					if (req->output) {
 						regmatch_t foo[1];
 
-						status = (!regexec((regex_t *) req->exp, req->output, 0, foo, 0));
+						if (xmh_item(host, XMH_FLAG_HTTP_HEADER_MATCH)) {
+							status = ( (!regexec((regex_t *) req->exp, req->output, 0, foo, 0)) &&
+								   (!regexec((regex_t *) req->exp, req->headers, 0, foo, 0)) );
+						}
+						else {
+							status = (!regexec((regex_t *) req->exp, req->output, 0, foo, 0));
+						}
 						regfree((regex_t *) req->exp);
 					}
 					else {
