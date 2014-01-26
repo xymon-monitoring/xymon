@@ -2660,21 +2660,23 @@ int get_binary(char *fn, conn_t *msg)
 
 char *timestr(time_t tstamp)
 {
-	static char result[30];
+	static char *result[10] = { NULL, };
+	static int residx = -1;
 	char *p;
 
-	MEMDEFINE(result);
-
-	if (tstamp == 0) {
-		MEMUNDEFINE(result);
+	if (tstamp < 0) {
+		residx = -1;
+	}
+	else if (tstamp == 0) {
 		return "N/A";
 	}
+	else {
+		if (result[++residx] == NULL) result[residx] = (char *)malloc(30);
+		strcpy(result[residx], ctime(&tstamp));
+		p = strchr(result[residx], '\n'); if (p) *p = '\0';
+	}
 
-	strcpy(result, ctime(&tstamp));
-	p = strchr(result, '\n'); if (p) *p = '\0';
-
-	MEMUNDEFINE(result);
-	return result;
+	return result[residx];
 }
 
 hostfilter_rec_t *setup_filter(char *buf, char **fields, int *acklevel, int *havehostfilter)
@@ -3713,6 +3715,7 @@ void do_message(conn_t *msg, char *origin)
 				"  <DisableTime>", 	timestr(log->enabletime), 		"</DisableTime>\n",
 				"  <Sender>", 		log->sender, 				"</Sender>\n", 
 				NULL);
+			timestr(-1);
 
 			if (log->cookie && (log->cookieexpires > now))
 				addtobuffer_many(response, "  <Cookie>", log->cookie, "</Cookie>\n", NULL);
@@ -3733,6 +3736,7 @@ void do_message(conn_t *msg, char *origin)
 				"  <Message><![CDATA[", msg_data(log->message, 0), "]]></Message>\n",
 				"</ServerStatus>\n",
 				NULL);
+			timestr(-1);
 
 			msg->doingwhat = RESPONDING;
 			msg->buflen = STRBUFLEN(response);
@@ -3915,6 +3919,7 @@ void do_message(conn_t *msg, char *origin)
 					"    <DisableTime>", timestr(lwalk->enabletime), "</DisableTime>\n",
 					"    <Sender>", lwalk->sender, "</Sender>\n",
 				NULL);
+				timestr(-1);
 
 				if (lwalk->cookie && (lwalk->cookieexpires > now))
 					addtobuffer_many(response, "    <Cookie>", lwalk->cookie, "</Cookie>\n", NULL);
