@@ -12,7 +12,8 @@ install:
 ifndef PKGBUILD
 	chown -R $(XYMONUSER) $(INSTALLROOT)$(INSTALLWWWDIR)/help
 	chgrp -R `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLWWWDIR)/help
-	find $(INSTALLROOT)$(INSTALLWWWDIR)/help -type d | xargs chmod 755
-	find $(INSTALLROOT)$(INSTALLWWWDIR)/help -type f | xargs chmod 644
+	# These may fail if no files installed
+	(find $(INSTALLROOT)$(INSTALLWWWDIR)/help/ -type d | xargs chmod 755 ) || /bin/true
+	(find $(INSTALLROOT)$(INSTALLWWWDIR)/help/ -type f | xargs chmod 644 ) || /bin/true
 endif
 
