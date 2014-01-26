@@ -207,6 +207,19 @@ Disable the "download" command which can be used by clients to pull files
 from the Xymon server. The use of these may be seen as a security risk since 
 they allow file downloads.
 
+.IP "--ack-each-color"
+By default, sending an ACK for a yellow status stops alerts from being sent
+while the status remains yellow or red. A status change from yellow to red
+will not re-enable alerts - the ACK covers all non-green statuses.
+With this option, an ACK is valid only for the color of the status when the 
+ACK was sent. So an ACK for a yellow status is ignored if the status later
+changes to red, but an ACK for a red status covers both yellow and red.
+.br
+Note: An ACK for a red status will clear any existing yellow acks. This 
+means that a long-lived ack for yellow is lost when you send a short-lived
+ack for red. Hence alerts will restart when the red ack expires, even if
+the status by then has changed to yellow.
+
 .IP "--debug"
 Enable debugging output.
 
