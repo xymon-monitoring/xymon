@@ -703,10 +703,28 @@ time_t next_alert(activealerts_t *alert)
 			/* 
 			 * This runs in the parent xymond_alert proces, so we must create
 			 * a repeat-record here - or all alerts will get repeated every minute.
+			 * 
+			 * NB: Even though we say "create", find_repeatinfo() will return NULL
+			 *     for ignored alerts.
 			 */
 			rpt = find_repeatinfo(alert, recip, 1);
-			if (rpt->nextalert <= now) rpt->nextalert = (now + recip->interval);
-			if (rpt->nextalert < nexttime) nexttime = rpt->nextalert;
+			if (rpt) {
+				if (rpt->nextalert <= now) rpt->nextalert = (now + recip->interval);
+				if (rpt->nextalert < nexttime) nexttime = rpt->nextalert;
+			}
+			else if (r_next != -1) {
+				if (r_next < nexttime) nexttime = r_next;
+			}
+			else {
+				/* 
+				 * This can happen, e.g.  if we get an alert, but the minimum 
+				 * DURATION has not been met.
+				 * This simply means we dropped the alert -for now - for some 
+				 * reason, so it should be retried again right away. Put in a
+				 * 1 minute delay to prevent run-away alerts from flooding us.
+				 */
+				if ((now + 60) < nexttime) nexttime = now + 60;
+			}
 		}
 	}
 
