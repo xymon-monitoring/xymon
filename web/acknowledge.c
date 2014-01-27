@@ -247,11 +247,20 @@ int main(int argc, char *argv[])
 			char *hostname, *pagename;
 			int gotfilter = 0, filtererror = 0;
 			sendreturn_t *sres = NULL;
+			int col, firstcolor = 1, alertcolors = colorset(xgetenv("ALERTCOLORS"), ((1 << COL_GREEN) | (1 << COL_BLUE)));
 
 			headfoot(stdout, "acknowledge", "", "header", COL_RED);
 
 			cmd = (char *)malloc(1024);
-			strcpy(cmd, "xymondboard color=red,yellow fields=hostname,testname,cookie");
+			strcpy(cmd, "xymondboard fields=hostname,testname,cookie color=");
+			for (col = 0; (col < COL_COUNT); col++) {
+				if ((1 << col) & alertcolors) {
+					if (!firstcolor) strcat(cmd, ",");
+					strcat(cmd, colorname(col));
+					firstcolor = 0;
+				}
+			}
+			// printf("<!-- cmd = %s -->\n", cmd);
 
 			if (obeycookies && !gotfilter && ((hostname = get_cookie("host")) != NULL)) {
 				if (*hostname) {
