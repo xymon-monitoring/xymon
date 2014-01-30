@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of CLIENT-LOCAL.CFG</TITLE>
 </HEAD><BODY>
 <H1>CLIENT-LOCAL.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.14: 26 Jan 2014<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.15: 30 Jan 2014<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -69,6 +69,20 @@ the client; if such a section does not exist, it will look for
 a section named by the operating system of the client. So you
 can configure special configurations for individual hosts, and have
 a default configuration for all other hosts of a certain type.
+<P>
+It will often be practical to use regular expressions for hostnames.
+To do this you must use
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;[host=&lt;expression&gt;]
+<P>
+where &lt;expression&gt; is a Perl-compatible regular expression. The same 
+kind of matching can be done on operating system or host class, using
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;[os=&lt;expresssion&gt;]
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;[class=&lt;expression&gt;]
+<P>
 <P>
 Apart from the section delimiter, the file format is free-form, or
 rather it is defined by the tools that make use of the configuration.
@@ -219,6 +233,6 @@ of files and/or sub-directories can be quite ressource-intensive.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 11:48:38 GMT, January 26, 2014
+Time: 21:22:58 GMT, January 30, 2014
 </BODY>
 </HTML>

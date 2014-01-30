@@ -1,3 +1,14 @@
+xymon (4.3.15) unstable; urgency=low
+
+   * rev 7384
+
+   * Fix xymond_alert crashes introduced in 4.3.14
+   * Fix missing C-ARES build files
+   * client-local.cfg: Support expression matching of sections
+   * acknowledge.cgi: Acks are enabled for all ALERTCOLORS, not just red and yellow
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri, 31 Jan 2014 13:49:02 +0100
+
 xymon (4.3.14) unstable; urgency=low
 
    * rev 7376

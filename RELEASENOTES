@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.14   * * *
+           * * *   Release notes for Xymon 4.3.15   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -8,6 +8,11 @@ changes you should be aware of when upgrading.
 
 For a full list of changes and enhancements, please see the 
 Changes file.
+
+
+Changes for 4.3.15
+==================
+No significant changes.
 
 
 Changes for 4.3.14
