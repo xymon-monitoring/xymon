@@ -58,12 +58,12 @@ case "$CMD" in
 	;;
   stop)
 	echo -n "Stopping $DESC: "
-	su -c "$DAEMON stop" - xymon
+	su -c "$DAEMON $DMNOPTS stop" - xymon
 	echo "$NAME."
 	;;
   restart)
 	echo -n "Restarting $DESC: "
-	su -c "$DAEMON stop" - xymon
+	su -c "$DAEMON $DMNOPTS stop" - xymon
 	su -c "$DAEMON $DMNOPTS start" - xymon
 	echo "$NAME."
 	;;
