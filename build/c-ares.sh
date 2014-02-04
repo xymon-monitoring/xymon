@@ -61,12 +61,12 @@
 			echo "ERROR: Cannot link with c-ares library."
 			CARESOK="NO"
 		fi
-		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-cares clean
+		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-cares ares-clean
 	fi
 	cd ..
 
 	if test "$CARESOK" = "NO"; then
-		echo "Missing c-ares include- or library-files. Will use the version shipped with Xymon"
+		echo "The system C-ARES library is missing or not usable. I will use the version shipped with Xymon"
 	fi
 
 
