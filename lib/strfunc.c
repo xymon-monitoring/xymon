@@ -134,6 +134,7 @@ void addtobuffer_many(strbuffer_t *buf, ...)
 		strbuf_addtobuffer(buf, newtext, strlen(newtext));
 		newtext = va_arg(ap, char *);
 	}
+	va_end(ap);
 }
 
 void addtostrbuffer(strbuffer_t *buf, strbuffer_t *newtext)
