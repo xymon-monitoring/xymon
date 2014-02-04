@@ -196,7 +196,7 @@ char *get_clientconfig(char *hostname, char *hostclass, char *hostos)
 			if ( (walk->hostptn && matchregex(hostname, walk->hostptn))    ||
 			     (walk->classptn && matchregex(hostclass, walk->classptn)) ||
 			     (walk->osptn && matchregex(hostos, walk->osptn)) ) {
-				addtostrbuffer(config, walk->config);
+				if (walk->config) addtostrbuffer(config, walk->config);
 			}
 
 			walk = walk->next;
