@@ -32,6 +32,9 @@ typedef struct cctree_t {
 } cctree_t;
 static void *cctree = NULL;
 
+/* Feature flag: Set to 1 to merge all matching clientconfig entries into one */
+static int ccmergemode = 0;
+
 
 void load_clientconfig(void)
 {
@@ -182,7 +185,6 @@ char *get_clientconfig(char *hostname, char *hostclass, char *hostos)
 	xtreePos_t handle;
 	cctree_t *rec = NULL;
 
-
 	if (!cchead) return NULL;
 
 	if (!cctree) cctree = xtreeNew(strcasecmp);
@@ -192,14 +194,33 @@ char *get_clientconfig(char *hostname, char *hostclass, char *hostos)
 		strbuffer_t *config = newstrbuffer(0);
 		clientconfig_t *walk = cchead;
 
-		while (walk) {
-			if ( (walk->hostptn && matchregex(hostname, walk->hostptn))    ||
-			     (walk->classptn && matchregex(hostclass, walk->classptn)) ||
-			     (walk->osptn && matchregex(hostos, walk->osptn)) ) {
-				if (walk->config) addtostrbuffer(config, walk->config);
+		if (!ccmergemode) {
+			/* Old-style: Find the first match of hostname, classname or osname - in that priority */
+			clientconfig_t *hostmatch = NULL, *classmatch = NULL, *osmatch = NULL;
+
+			while (walk && !hostmatch) {	/* Can stop if we find a hostmatch, since those are priority 1 */
+				if      (walk->hostptn && !hostmatch && matchregex(hostname, walk->hostptn))	hostmatch = walk;
+				else if (walk->classptn && !classmatch && matchregex(hostclass, walk->classptn)) classmatch = walk;
+				else if (walk->osptn && !osmatch && matchregex(hostos, walk->osptn)) osmatch = walk;
+
+				walk = walk->next;
 			}
 
-			walk = walk->next;
+			if (hostmatch && hostmatch->config) addtostrbuffer(config, hostmatch->config);
+			else if (classmatch && classmatch->config) addtostrbuffer(config, classmatch->config);
+			else if (osmatch && osmatch->config) addtostrbuffer(config, osmatch->config);
+		}
+		else {
+			/* Merge mode: Merge all matching entries into one */
+			while (walk) {
+				if ( (walk->hostptn && matchregex(hostname, walk->hostptn))    ||
+				     (walk->classptn && matchregex(hostclass, walk->classptn)) ||
+				     (walk->osptn && matchregex(hostos, walk->osptn)) ) {
+					if (walk->config) addtostrbuffer(config, walk->config);
+				}
+
+				walk = walk->next;
+			}
 		}
 
 		rec = (cctree_t *)calloc(1, sizeof(cctree_t));
@@ -212,5 +233,10 @@ char *get_clientconfig(char *hostname, char *hostclass, char *hostos)
 	}
 
 	return (rec ? rec->config : NULL);
+}
+
+void set_clientlocal_mergemode(int onoff)
+{
+	ccmergemode = (onoff != 0);
 }
 
