@@ -27,7 +27,7 @@ XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
 CFLAGS += -I../include 
 
-all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) loadhosts stackio availability md5 sha1 rmd160 locator
+all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) loadhosts stackio availability md5 sha1 rmd160 locator tree
 
 client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
 
@@ -111,6 +111,9 @@ rmd160: rmd160c.c
 locator: locator.c
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ locator.c $(XYMONCOMMLIBS) $(XYMONLIBS)
 
+tree: tree.c
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ tree.c
+
 clean:
-	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator
+	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator tree
 

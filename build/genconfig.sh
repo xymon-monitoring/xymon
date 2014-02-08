@@ -80,6 +80,15 @@ else
 	echo "#undef HAVE_STRTOLL_H" >>include/config.h
 fi
 
+echo "Checking for POSIX binary tree functions"
+$CC -c -o build/testfile.o $CFLAGS build/test-bintree.c 1>/dev/null 2>&1
+if test $? -eq 0; then
+	echo "#define HAVE_BINARY_TREE 1" >>include/config.h
+else
+	echo "#undef HAVE_BINARY_TREE" >>include/config.h
+fi
+
+
 echo "#endif" >>include/config.h
 
 echo "config.h created"
