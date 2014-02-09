@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if ((strncmp(bol, "include ", 8) == 0) || (strncmp(bol, "directory ", 10) == 0)) {
+		if (tail && ((strncmp(bol, "include ", 8) == 0) || (strncmp(bol, "directory ", 10) == 0))) {
 			if (!tail->extralines) {
 				tail->extracount = 1;
 				tail->extralines = (char **)malloc(sizeof(char *));
