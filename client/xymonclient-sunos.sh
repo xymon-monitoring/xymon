@@ -11,6 +11,13 @@
 #
 # $Id$
 
+# Work out what type of environment we are on 
+#
+# this will return the zone name on any non-global solaris zone
+# or the word "Global" on any global solaris zone
+# or the word "global" on any standalone solaris platform, including LDOMS
+(/usr/sbin/zoneadm list 2>/dev/null || echo 1) | wc -l | grep '\<1\>' > /dev/null 2>&1 && ZTYPE=`/bin/zonename 2>/dev/null || echo global` || ZTYPE='Global'
+
 echo "[date]"
 date
 echo "[uname]"
@@ -26,11 +33,25 @@ echo "[df]"
 ROOTFSTYPE=`/bin/df -n / | awk '{print $3}'`
 /bin/df -F $ROOTFSTYPE -k
 # Then see what fs types are in use, and weed out those we dont want.
-FSTYPES=`/bin/df -n -l|cut -d: -f2 | awk '{print $1}'|egrep -v "^${ROOTFSTYPE}|^proc|^fd|^mntfs|^ctfs|^devfs|^objfs|^nfs|^lofs"|sort|uniq`
-set $FSTYPES
-while test "$1" != ""; do
-  /bin/df -F $1 -k | grep -v " /var/run" | tail +2
-  shift
+case $ZTYPE in
+global|Global)
+   FSTYPES=`/bin/df -n -l|cut -d: -f2 | awk '{print $1}'|egrep -v "^${ROOTFSTYPE}|^proc|^fd|^mntfs|^ctfs|^devfs|^objfs|^nfs|^lofs|^tmpfs|^sharefs"|sort|uniq`
+   ;;
+*)
+   # zones are frequently type lofs so deal with them specially
+   FSTYPES=`/bin/df -n -l|cut -d: -f2 | awk '{print $1}'|egrep -v "^${ROOTFSTYPE}|^proc|^fd|^mntfs|^ctfs|^devfs|^objfs|^nfs|^tmpfs|^sharefs"|sort|uniq`
+   ;;
+esac
+# $FSTYPES may be empty
+for fst in $FSTYPES; do
+  case $ZTYPE in
+    global|Global)
+      /bin/df -F $fst -k | grep -v " /var/run" | tail +2
+      ;;
+    *)
+      /bin/df -F $fst -k | egrep -v "( /var/run|^(/dev|/platform/))" | tail +2
+      ;;
+  esac
 done
 
 # This only works for ufs filesystems
@@ -47,13 +68,55 @@ NR>=2{printf "%-20s %10d %10d %10d %10s %s\n", $1, $2+$3, $2, $3, $4, $5}'
 echo "[mount]"
 mount
 echo "[prtconf]"
-/usr/sbin/prtconf
+case $ZTYPE in
+global|Global)
+   /usr/sbin/prtconf 2>&1
+   ;;
+*)
+   # provided  by the firmware (PROM) since devinfo facility not available
+   # in a zone
+   /usr/sbin/prtconf -p 2>&1
+   ;;
+esac
 echo "[memory]"
-vmstat 1 2 | tail -1
+case $ZTYPE in
+global|Global)
+   vmstat 1 2 | tail -1
+   ;;
+*)
+   # need to modify vmstat output in a non-global zone
+   VMSTAT=`vmstat 1 2 | tail -1`
+   # cut out the useable parts
+   VMFR=`echo $VMSTAT | cut -d " " -f1,2,3`
+   VMBK=`echo $VMSTAT | cut -d " " -f6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22`
+   # get the total memory for the platform
+   TMEM=`/usr/sbin/prtconf 2>&1 | grep Memory | cut -d" " -f3`
+   TMEM=`expr $TMEM "*" 1024`
+   # get the total allocated and reserved swap
+   SUSED=`swap -s | cut -d "=" -f2 | cut -d "," -f1 | cut -d " " -f2 | cut -d "k" -f1`
+   # work out the RSS for this zone
+   TUSED=`prstat -Z -n 1,1 1 1 | \
+     nawk ' NR == 4 {
+       do {
+         if ($4 ~ /G$/) { sub(/G$/,"",$4); print $4*1024*1024; break; }
+         if ($4 ~ /M$/) { sub(/M$/,"",$4); print $4*1024; break; }
+         if ($4 ~ /K$/) { sub(/K$/,"",$4); print $4; break; }
+         print "unknown"
+       } while (0)}'`
+   TUSED=`expr $TMEM "-" $TUSED`
+   echo "$VMFR $SUSED $TUSED $VMBK"
+   ;;
+esac
 echo "[swap]"
 /usr/sbin/swap -s
-echo "[swaplist]"
-/usr/sbin/swap -l
+# dont report the swaplist in a non-global zone because it will cause the
+# server client module to miscalculate memory
+case $ZTYPE in
+global|Global)
+   echo "[swaplist]"
+   /usr/sbin/swap -l 2>/dev/null
+   ;;
+esac
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
@@ -65,9 +128,28 @@ netstat -na -f inet -P tcp | tail +3
 netstat -na -f inet6 -P tcp | tail +5
 echo "[ifstat]"
 # Leave out the wrmsd and mac interfaces. See http://www.xymon.com/archive/2009/06/msg00204.html
-/usr/bin/kstat -p -s '[or]bytes64' | egrep -v 'wrsmd|mac' | sort
+case $ZTYPE in
+global|Global)
+   /usr/bin/kstat -p -s '[or]bytes64' | egrep -v 'wrsmd|mac' | sort
+   ;;
+*)
+   # find out which nics are configured into this zone
+   MYNICS=`netstat -i |cut -f1 -d" " | egrep -i -v "Name|lo|^$"  |paste -s -d"|" - `
+   /usr/bin/kstat -p -s '[or]bytes64' | egrep "$MYNICS"| sort
+   ;;
+esac
 echo "[ps]"
-ps -A -o pid,ppid,user,stime,s,pri,pcpu,time,pmem,rss,vsz,args
+case $ZTYPE in
+global)
+    /bin/ps -A -o pid,ppid,user,stime,s,pri,pcpu,time,pmem,rss,vsz,args
+   ;;
+Global)
+    /bin/ps -A -o zone,pid,ppid,user,stime,class,s,pri,pcpu,time,pmem,rss,vsz,args | sort
+   ;;
+*)
+    /bin/ps -A -o pid,ppid,user,stime,class,s,pri,pcpu,time,pmem,rss,vsz,args
+   ;;
+esac
 
 # If TOP is defined, then use it. If not, fall back to the Solaris prstat command.
 echo "[top]"
