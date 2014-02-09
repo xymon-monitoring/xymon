@@ -43,7 +43,7 @@
 	cd build
 	if test "$CARESINC" != ""; then INCOPT="-I$CARESINC"; fi
 	if test "$CARESLIB" != ""; then LIBOPT="-L$CARESLIB"; fi
-	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-cares clean
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-cares ares-clean
 	OS=`uname -s | sed -e's@/@_@g'` CARESINC="$INCOPT" $MAKE -f Makefile.test-cares test-compile
 	if test $? -eq 0; then
 		echo "Compiling with c-ares library works OK"
