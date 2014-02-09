@@ -22,9 +22,13 @@ typedef enum {
 	XTREE_STATUS_NOTREE
 } xtreeStatus_t;
 
+#ifdef HAVE_BINARY_TREE
+#define xtreeEnd(X) (NULL)
+typedef void *xtreePos_t;
+#else
 #define xtreeEnd(X) (-1)
-
 typedef int xtreePos_t;
+#endif
 
 extern void *xtreeNew(int(*xtreeCompare)(const char *a, const char *b));
 extern void xtreeDestroy(void *treehandle);
