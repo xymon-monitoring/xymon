@@ -2,7 +2,7 @@ Source: xymon
 Section: net
 Priority: extra
 Maintainer: Henrik Stoerner <henrik@hswn.dk>
-Build-Depends: debhelper (>= 7), librrd2-dev, libssl-dev, libldap2-dev, libpcre3-dev, libsqlite3-dev
+Build-Depends: debhelper (>= 7), libc-ares-dev, librrd2-dev, libssl-dev, libldap2-dev, libpcre3-dev, libsqlite3-dev
 Standards-Version: 3.8.3
 Homepage: http://xymon.sourceforge.net/
 

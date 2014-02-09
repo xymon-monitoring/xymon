@@ -1,0 +1,12 @@
+include Makefile.$(OS)
+include Makefile.rules
+
+test-compile:
+	@$(CC) $(CFLAGS) $(CARESINC) -o test-cares.o -c test-cares.c
+
+test-link:
+	@$(CC) $(CFLAGS) $(CARESLIB) -o test-cares test-cares.o -lcares && ./test-cares $(ARESVER)
+
+ares-clean:
+	@rm -f test-cares.o test-cares
+

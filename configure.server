@@ -25,6 +25,8 @@ do
      --ssllib DIRECTORY       : Specify location of OpenSSL libraries
      --ldapinclude DIRECTORY  : Specify location of OpenLDAP include files
      --ldaplib DIRECTORY      : Specify location of OpenLDAP libraries
+     --caresinclude DIRECTORY : Specify location of C-ARES include files
+     --careslib DIRECTORY     : Specify location of C-ARES libraries
 
   The script will search a number of standard directories for
   all of these files, so you normally do not have to specify any options.
@@ -61,6 +63,12 @@ EOF
 	  "--ldaplib")
 	  	USERLDAPLIB="$1"; shift
 		;;
+	  "--caresinclude")
+		USERCARESINC="$1"; shift
+		;;
+	  "--careslib")
+		USERCARESLIB="$1"; shift
+		;;
 	esac
 done
 
@@ -92,6 +100,8 @@ echo ""; echo ""
 . build/pcre.sh
 echo ""; echo ""
 . build/zlib.sh
+echo ""; echo ""
+. build/c-ares.sh
 echo ""; echo ""
 
 . build/rrd.sh
@@ -435,7 +445,26 @@ echo "# Webserver group-ID"              >>Makefile
 echo "HTTPDGID=$HTTPDGID"                >>Makefile
 echo ""                                  >>Makefile
 
-echo "# PCRE settings"                   >>Makefile
+echo "# C-ARES settings"                 >>Makefile
+if test "$CARESOK" = "YES"
+then
+    echo "SYSTEMCARES = yes"             >>Makefile
+
+    if test "$CARESINC" != ""; then
+       echo "CARESINCDIR = -I$CARESINC" >>Makefile
+    fi
+    if test "$CARESLIB" != ""; then
+       echo "CARESLIBS = -L$LIB -lcares" >>Makefile
+       echo "RPATHVAL += ${LIB}"         >>Makefile
+    else
+       echo "CARESLIBS = -lcares"       >>Makefile
+    fi
+else
+    echo "SYSTEMCARES = no"             >>Makefile
+fi
+echo ""                                 >>Makefile
+
+echo "# PCRE settings"                  >>Makefile
 if test "$PCREOK" = "YES"
 then
     if test "$PCREINC" != ""; then
