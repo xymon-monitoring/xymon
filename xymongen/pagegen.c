@@ -441,7 +441,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	col_list_t *groupcols, *gc;
 	int	genstatic;
 	int	columncount;
-	char	*xymonskin;
+	char	*xymonskin, *infocolumngif, *trendscolumngif;
 	int	rowcount = 0;
 	int     usetooltip = 0;
 
@@ -449,6 +449,8 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 		return;
 
 	xymonskin = strdup(xgetenv("XYMONSKIN"));
+	infocolumngif = strdup(getenv("INFOCOLUMNGIF") ?  getenv("INFOCOLUMNGIF") : dotgiffilename(COL_GREEN, 0, 1));
+	trendscolumngif = strdup(getenv("TRENDSCOLUMNGIF") ?  getenv("TRENDSCOLUMNGIF") : dotgiffilename(COL_GREEN, 0, 1));
 
 	switch (tooltipuse) {
 	  case TT_STDONLY: usetooltip = (pagetype == PAGE_NORMAL); break;
@@ -553,10 +555,16 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 				else if (reportstart == 0) {
 					/* Standard webpage */
 					char *skin;
+					char *img = dotgiffilename(e->color, e->acked, e->oldage);
 
 					if (strcmp(e->column->name, xgetenv("INFOCOLUMN")) == 0) {
 						/* Show the host IP on the hint display of the "info" column */
 						htmlalttag = alttag(e->column->name, COL_GREEN, 0, 1, h->ip);
+						img = infocolumngif;
+					}
+					else if (strcmp(e->column->name, xgetenv("TRENDSCOLUMN")) == 0) {
+						htmlalttag = alttag(e->column->name, COL_GREEN, 0, 1, h->ip);
+						img = trendscolumngif;
 					}
 					else {
 						htmlalttag = alttag(e->column->name, e->color, e->acked, e->propagate, e->age);
@@ -586,7 +594,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 					}
 
 					fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
-						skin, dotgiffilename(e->color, e->acked, e->oldage),
+						skin, img,
 						htmlalttag, htmlalttag,
 						xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 				}
@@ -679,6 +687,8 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	}
 
 	xfree(xymonskin);
+	xfree(infocolumngif);
+	xfree(trendscolumngif);
 }
 
 void do_groups(group_t *head, FILE *output, FILE *rssoutput, char *pagepath)
