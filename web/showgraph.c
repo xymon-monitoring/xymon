@@ -158,7 +158,13 @@ void request_cacheflush(char *hostname)
 			do {
 				n = sendto(ctlsocket, bufp, bytesleft, 0, (struct sockaddr *)&myaddr, myaddrsz);
 				if (n == -1) {
-					if (errno != EAGAIN) {
+					if (errno == EDESTADDRREQ) {
+						/* Probably a left-over rrdctl file, ignore it */
+					}
+					else if (errno == EAGAIN) {
+						/* Harmless */
+					}
+					else {
 						errprintf("Sendto failed: %s\n", strerror(errno));
 					}
 
