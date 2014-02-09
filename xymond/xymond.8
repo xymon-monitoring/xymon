@@ -60,6 +60,16 @@ a temporary client alias is automatically generated. The default is "log".
 Prevent status messages from going purple when they are no longer valid.
 Unlike the standard bbd daemon, purple-handling is done by xymond.
 
+.IP "--merge-clientconfig"
+The
+.I client-local.cfg(5)
+file contains client-configuration which can be found matching a client
+against its hostname, its classname, or the name of the OS the client is
+running. By default xymond will return one entry from the file to the 
+client, looking for a hostname, classname or OS match (in that order).
+This option causes xymond to merge all matching entries together into 
+one and return all of it to the client.
+
 .IP "--listen=IP[:PORT]"
 Specifies the IP-address and port where xymond will listen for incoming
 connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
