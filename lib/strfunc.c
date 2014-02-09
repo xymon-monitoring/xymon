@@ -18,6 +18,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "libxymon.h"
 #include "version.h"
@@ -120,6 +121,19 @@ static void strbuf_addtobuffer(strbuffer_t *buf, char *newtext, int newlen)
 void addtobuffer(strbuffer_t *buf, char *newtext)
 {
 	if (newtext) strbuf_addtobuffer(buf, newtext, strlen(newtext));
+}
+
+void addtobuffer_many(strbuffer_t *buf, ...)
+{
+	va_list ap;
+	char *newtext;
+
+	va_start(ap, buf);
+	newtext = va_arg(ap, char *);
+	while (newtext) {
+		strbuf_addtobuffer(buf, newtext, strlen(newtext));
+		newtext = va_arg(ap, char *);
+	}
 }
 
 void addtostrbuffer(strbuffer_t *buf, strbuffer_t *newtext)
