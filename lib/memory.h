@@ -36,6 +36,7 @@ extern char *xstrcpy(char *dest, const char *src);
 extern char *xstrncat(char *dest, const char *src, size_t maxlen);
 extern char *xstrncpy(char *dest, const char *src, size_t maxlen);
 extern int   xsprintf(char *dest, const char *fmt, ...);
+extern char *xresultbuf(int maxsz);
 
 
 #ifdef XYMON_MEMORY_WRAPPERS
