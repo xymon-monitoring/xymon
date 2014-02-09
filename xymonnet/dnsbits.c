@@ -46,7 +46,8 @@ static char rcsid[] = "$Id$";
 
 #include "ares.h"
 #include "ares_dns.h"
-#include "nameser.h"
+#include <arpa/nameser.h> 
+#include <arpa/nameser_compat.h> 
 
 #include "libxymon.h"
 #include "tcptalk.h"

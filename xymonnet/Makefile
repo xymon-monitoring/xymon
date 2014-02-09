@@ -8,7 +8,11 @@ XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
 # ARES settings. c-ares is included
-DNSFLAGS = -I./c-ares
+ifeq ($(SYSTEMCARES),no)
+	CARESINC = -I./c-ares
+	CARESLIBS = libcares.a
+	LOCALCARES = libcares.a
+endif
 
 PROGRAMS = xymonnet2 netmodule fping4 fping6
 SNMPPROGRAMS = xymon-snmpcollect
@@ -26,8 +30,8 @@ NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o
 NETMODULEOBJS = netmodule.o sendresults.o netsql.o
 LDAPTALKOBJS = ldaptalk.o sendresults.o netsql.o
 
-xymonnet2: libcares.a $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS) $(SQLITELIBS)
+xymonnet2: $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIB) $(LOCALCARES)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) $(CARESLIBS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS) $(SQLITELIBS)
 
 netmodule: $(NETMODULEOBJS) $(XYMONCOMMLIB) $(XYMONCOMMLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETMODULEOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIBS) $(SQLITELIBS)
@@ -41,11 +45,11 @@ ldaptalk.o: ldaptalk.c
 tcptalk.o: tcptalk.c tcptalk.h dnstalk.h ntptalk.h
 	$(CC) $(CFLAGS) -c -o $@ tcptalk.c
 
-dnstalk.o: dnstalk.c dnstalk.h
-	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dnstalk.c
+dnstalk.o: dnstalk.c dnstalk.h $(LOCALCARES)
+	$(CC) $(CFLAGS) $(CARESINC) -c -o $@ dnstalk.c
 
-dnsbits.o: dnsbits.c dnsbits.h
-	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dnsbits.c
+dnsbits.o: dnsbits.c dnsbits.h $(LOCALCARES)
+	$(CC) $(CFLAGS) $(CARESINC) -c -o $@ dnsbits.c
 
 sendresults.o: sendresults.c sendresults.h
 	$(CC) $(CFLAGS) $(LDAPFLAGS) -c -o $@ sendresults.c
@@ -68,16 +72,19 @@ c-ares/configure: c-ares-$(ARESVER).tar.gz
 	touch c-ares/configure
 
 
-fping.8: fping
+fping.8: fping-$(FPINGVER)/doc/fping.8
 	cp fping-$(FPINGVER)/doc/fping.8 .
 
-fping4: fping
+fping4: fping-$(FPINGVER)/src/fping
 	cp fping-$(FPINGVER)/src/fping ./fping4
 
-fping6: fping
+fping6: fping-$(FPINGVER)/src/fping
 	cp fping-$(FPINGVER)/src/fping6 ./fping6
 
-fping: fping-$(FPINGVER).tar.gz
+fping-$(FPINGVER)/doc/fping.8: fping-$(FPINGVER)/src/fping
+	/bin/true
+
+fping-$(FPINGVER)/src/fping: fping-$(FPINGVER).tar.gz
 	gzip -dc $< | tar xf -
 	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
 	touch fping-$(FPINGVER)/configure
