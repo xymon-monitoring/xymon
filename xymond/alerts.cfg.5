@@ -89,6 +89,16 @@ setting in the analysis.cfg file.
 Rule excluding an alert by the group name. Groupnames are assigned to a status via the GROUP
 setting in the analysis.cfg file.
 .sp
+.BR "CLASS=classname"
+Rule matching an alert by the class that the host belongs to. By default, the classname is
+the operating system name; you can set another class either in 
+.I hosts.cfg(5)
+using the CLASS tag, or a client running on the server can set the class (via a parameter
+to the client startup-script).
+.sp
+.BR "EXCLASS=classname"
+Rule excluding an alert by the class name.
+.sp
 .BR "COLOR=color[,color]"
 Rule matching an alert by color. Can be "red", "yellow", or "purple". The forms "!red", "!yellow" and "!purple" can also be used to NOT send an alert if the color is the specified one.
 .sp

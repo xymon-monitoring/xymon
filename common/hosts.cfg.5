@@ -271,13 +271,15 @@ you must enclose it in double-quotes, e.g.  DESCR:"switch:4th floor Marketing sw
 .IP "CLASS:Classname"
 Force the host to belong to a specific class. Class-names are used
 when configuring log-file monitoring (they can be used as references in
-.I client-local.cfg(5)
-and
+.I client-local.cfg(5),
 .I analysis.cfg(5)
-to group log file checks). Normally, class-names are controlled on the 
+and
+.I alerts.cfg(5)
+to group log file checks or alerts). Normally, class-names are controlled on the 
 client by starting the Xymon client with the "--class=Classname" option.
 If you specify it in the hosts.cfg file on the Xymon server, it overrides
-any class name that the client reports.
+any class name that the client reports. If not set, then the host belongs
+to a class named by the operating system the Xymon client is running on.
 
 .IP dialup
 The keyword "dialup" for a host means that it is OK for it to be
@@ -573,7 +575,7 @@ checks for the host.
 Define the number of days before an SSL certificate expires,
 in which the sslcert status shows a warning (yellow) or
 alarm (red) status. These default to the values from the
-"--sslwarndays" and "--sslalarmdays" options for the
+"--sslwarn" and "--sslalarm" options for the
 .I xymonnet(1)
 tool; the values specified in the "ssldays" tag overrides
 the default.

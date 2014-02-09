@@ -215,7 +215,7 @@ Defaults:
 
 .SH MSGS STATUS COLUMN SETTINGS
 .sp
-.BR "LOG logfilename pattern [COLOR=color] [IGNORE=excludepattern]"
+.BR "LOG logfilename pattern [COLOR=color] [IGNORE=excludepattern] [OPTIONAL]"
 .sp
 The Xymon client extracts interesting lines from one or 
 more logfiles - see the
@@ -244,6 +244,9 @@ word WARNING only when it is upper-case.
 "excludepattern" is a string or regular expression that can be used to 
 filter out any unwanted strings that happen to match "pattern".
 .sp
+The \fBOPTIONAL\fR keyword causes the check to be skipped if the logfile
+does not exist.
+.sp
 Example: Trigger a red alert when the string "ERROR" appears in the "/var/adm/syslog" file:
 .br
 	LOG /var/adm/syslog ERROR
@@ -263,7 +266,7 @@ will just show up on the "msgs" column with status OK (green).
 
 .SH FILES STATUS COLUMN SETTINGS
 .sp
-.BR "FILE filename [color] [things to check] [TRACK]"
+.BR "FILE filename [color] [things to check] [OPTIONAL] [TRACK]"
 .sp
 .BR "DIR directoryname [color] [size<MAXSIZE] [size>MINSIZE] [TRACK]"
 .sp
@@ -276,6 +279,12 @@ files and directories reported by the client, if you prefix the expression
 with a '%' character.
 
 \fBcolor\fR is the color that triggers when one or more of the checks fail.
+
+The \fBOPTIONAL\fR keyword causes this check to be skipped if the file does
+not exist. E.g. you can use this to check if files that should be temporary are
+not deleted, by checking that they are not older than the max time you would
+expect them to stick around, and then using OPTIONAL to ignore the state
+where no files exist.
 
 The \fBTRACK\fR keyword causes the size of the file or directory to be tracked
 in an RRD file, and presented in a graph on the "files" status display.
