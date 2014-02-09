@@ -51,6 +51,19 @@ a section named by the operating system of the client. So you
 can configure special configurations for individual hosts, and have
 a default configuration for all other hosts of a certain type.
 
+It will often be practical to use regular expressions for hostnames.
+To do this you must use
+.sp
+    [host=<expression>]
+.sp
+where <expression> is a Perl-compatible regular expression. The same 
+kind of matching can be done on operating system or host class, using
+.sp
+    [os=<expresssion>]
+.br
+    [class=<expression>]
+
+
 Apart from the section delimiter, the file format is free-form, or
 rather it is defined by the tools that make use of the configuration.
 
