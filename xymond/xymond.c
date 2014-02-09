@@ -122,6 +122,7 @@ typedef struct xymond_log_t {
 	time_t enabletime;	/* time when test auto-enables after a disable */
 	time_t acktime;		/* time when test acknowledgement expires */
 	time_t redstart, yellowstart;
+	int maxackedcolor;	/* The most severe color that has been acked */
 	unsigned char *message;
 	int msgsz;
 	unsigned char *dismsg, *ackmsg;
@@ -174,7 +175,7 @@ int      clientsavemem = 1;	/* In memory */
 int      clientsavedisk = 0;	/* On disk via the CLICHG channel */
 int      allow_downloads = 1;
 int	 defaultvalidity = 30;	/* Minutes */
-
+int      ackeachcolor = 0;
 
 /* This struct describes an active connection with a Xymon client */
 typedef struct conn_t {
@@ -1466,6 +1467,12 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		if (decide_alertstate(newcolor) == A_OK) {
 			/* The test recovered. Clear the ack. */
 			log->acktime = 0;
+			log->maxackedcolor = 0;
+		}
+
+		if (ackeachcolor && (log->maxackedcolor < newcolor)) {
+			/* Severity has increased above the one that was acked. Clear the current ack */
+			log->acktime = 0;
 		}
 
 		if (log->acktime > now) {
@@ -1474,6 +1481,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		else {
 			/* The acknowledge has expired. Clear the timestamp and the message buffer */
 			log->acktime = 0;
+			log->maxackedcolor = 0;
 			if (log->ackmsg) { xfree(log->ackmsg); log->ackmsg = NULL; }
 		}
 	}
@@ -2011,6 +2019,7 @@ void handle_ack(char *msg, char *sender, xymond_log_t *log, int duration)
 	dbgprintf("->handle_ack\n");
 
 	log->acktime = getcurrenttime(NULL)+duration*60;
+	if (log->color > log->maxackedcolor) log->maxackedcolor = log->color;
 	if (log->validtime < log->acktime) log->validtime = log->acktime;
 
 	p = msg;
@@ -5075,6 +5084,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			flapcount = atoi(p+1);
 			if (flapcount < 0) flapcount = 0;
+		}
+		else if (strcmp(argv[argi], "--ack-each-color") == 0) {
+			ackeachcolor = 1;
 		}
 		else if (argnmatch(argv[argi], "--trace=")) {
 			char *p = strchr(argv[argi], '=');
