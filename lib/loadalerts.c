@@ -971,6 +971,8 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * this check to all messages.
 	 */
 	if (crit && crit->timespec && !timematch(xmh_item(hinfo, XMH_HOLIDAYS), crit->timespec)) {
+		/* Try again in a minute */
+		if (nexttime) *nexttime = getcurrenttime(NULL) + 60;
 		traceprintf("Failed '%s' (time criteria)\n", cfline);
 		if (!printmode) return 0; 
 	}
