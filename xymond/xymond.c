@@ -288,7 +288,7 @@ xymond_statistics_t xymond_stats[] = {
 	{ NULL, }
 };
 
-enum boardfield_t { F_NONE, F_HOSTNAME, F_TESTNAME, F_COLOR, F_FLAGS, 
+enum boardfield_t { F_NONE, F_IP, F_HOSTNAME, F_TESTNAME, F_MATCHEDTAG, F_COLOR, F_FLAGS,
 		    F_LASTCHANGE, F_LOGTIME, F_VALIDTIME, F_ACKTIME, F_DISABLETIME,
 		    F_SENDER, F_COOKIE, F_LINE1,
 		    F_ACKMSG, F_DISMSG, F_MSG, F_CLIENT, F_CLIENTTSTAMP,
@@ -304,7 +304,10 @@ typedef struct boardfieldnames_t {
 	enum boardfield_t id;
 } boardfieldnames_t;
 boardfieldnames_t boardfieldnames[] = {
+	{ "ip", F_IP },
 	{ "hostname", F_HOSTNAME },
+	{ "matchedtag", F_MATCHEDTAG },
+	{ "matchedtags", F_MATCHEDTAG },
 	{ "testname", F_TESTNAME },
 	{ "color", F_COLOR },
 	{ "flags", F_FLAGS },
@@ -330,10 +333,19 @@ boardfieldnames_t boardfieldnames[] = {
 };
 typedef struct boardfields_t {
 	enum boardfield_t field;
-	enum xmh_item_t xmhfield;
+	enum xmh_item_t xmhfield; /* Only for field == F_HOSTINFO */
 } boardfield_t;
-#define BOARDFIELDS_MAX 50
-boardfield_t boardfields[BOARDFIELDS_MAX+1];
+
+enum filtertype_t { FILTER_XMH, FILTER_PAGEPATH, FILTER_TEST, FILTER_TAG, FILTER_COLOR, FILTER_ACKLEVEL, FILTER_NOTDOWN, FILTER_DOWN };
+
+typedef struct hostfilter_rec_t {
+	enum filtertype_t filtertype;
+	pcre *wantedptn; int wantedvalue;
+	struct hostfilter_rec_t *next;
+	enum xmh_item_t field;  /* Only for filtertype == FILTER_XMH */
+	xtreePos_t handle;
+} hostfilter_rec_t;
+
 
 /* Statistics counters */
 unsigned long msgs_total = 0;
@@ -520,10 +532,7 @@ char *totalclientmsg(clientmsg_list_t *msglist)
 	clearstrbuffer(result);
 	for (mwalk = msglist; (mwalk); mwalk = mwalk->next) {
 		if ((mwalk->timestamp + MAX_SUBCLIENT_LIFETIME) < nowtimer) continue; /* Expired data */
-		addtobuffer(result, "\n[collector:");
-		addtobuffer(result, mwalk->collectorid);
-		addtobuffer(result, "]\n");
-		addtobuffer(result, mwalk->msg);
+		addtobuffer_many(result, "\n[collector:", mwalk->collectorid, "]\n", mwalk->msg, NULL);
 	}
 
 	return STRBUF(result);
@@ -1011,29 +1020,34 @@ void log_multisrc(xymond_log_t *log, char *newsender)
 	dbgprintf("<- log_multisrc\n");
 }
 
-xymond_log_t *find_log(char *hostname, char *testname, char *origin, xymond_hostlist_t **host)
+xymond_log_t *find_log(hostfilter_rec_t *filter, xymond_hostlist_t **host)
 {
-	xtreePos_t hosthandle, testhandle, originhandle;
-	xymond_hostlist_t *hwalk;
-	char *owalk = NULL;
-	testinfo_t *twalk;
+	hostfilter_rec_t *fwalk;
+	xymond_hostlist_t *hrec = NULL;
+	testinfo_t *trec = NULL;
 	xymond_log_t *lwalk;
 
 	*host = NULL;
-	if ((hostname == NULL) || (testname == NULL)) return NULL;
+	if (!filter) return NULL;
 
-	hosthandle = xtreeFind(rbhosts, hostname);
-	if (hosthandle != xtreeEnd(rbhosts)) *host = hwalk = xtreeData(rbhosts, hosthandle); else return NULL;
+	for (fwalk = filter; (fwalk); fwalk = fwalk->next) {
+		switch(fwalk->filtertype) {
+		  case FILTER_XMH:
+			if ((fwalk->field == XMH_HOSTNAME) && (fwalk->handle != xtreeEnd(rbhosts))) *host = hrec = xtreeData(rbhosts, fwalk->handle);
+			break;
 
-	testhandle = xtreeFind(rbtests, testname);
-	if (testhandle != xtreeEnd(rbtests)) twalk = xtreeData(rbtests, testhandle); else return NULL;
+		  case FILTER_TEST:
+			if (fwalk->handle != xtreeEnd(rbtests)) trec = xtreeData(rbtests, fwalk->handle);
+			break;
 
-	if (origin) {
-		originhandle = xtreeFind(rborigins, origin);
-		if (originhandle != xtreeEnd(rborigins)) owalk = xtreeData(rborigins, originhandle);
+		  default:
+			break;
+		}
 	}
 
-	for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
+	if (!hrec || !trec) return NULL;
+
+	for (lwalk = hrec->logs; (lwalk && (lwalk->test != trec)); lwalk = lwalk->next);
 	return lwalk;
 }
 
@@ -2594,76 +2608,135 @@ int get_binary(char *fn, conn_t *msg)
 
 char *timestr(time_t tstamp)
 {
-	static char result[30];
+	static char *result[10] = { NULL, };
+	static int residx = -1;
 	char *p;
 
-	MEMDEFINE(result);
-
-	if (tstamp == 0) {
-		MEMUNDEFINE(result);
+	if (tstamp < 0) {
+		residx = -1;
+	}
+	else if (tstamp == 0) {
 		return "N/A";
 	}
+	else {
+		if (result[++residx] == NULL) result[residx] = (char *)malloc(30);
+		strcpy(result[residx], ctime(&tstamp));
+		p = strchr(result[residx], '\n'); if (p) *p = '\0';
+	}
 
-	strcpy(result, ctime(&tstamp));
-	p = strchr(result, '\n'); if (p) *p = '\0';
-
-	MEMUNDEFINE(result);
-	return result;
+	return result[residx];
 }
 
-void setup_filter(char *buf, char *defaultfields, 
-		  pcre **spage, pcre **shost, pcre **snet, 
-		  pcre **stest, int *scolor, int *acklevel, char **fields,
-		  char **chspage, char **chshost, char **chsnet, char **chstest)
+
+hostfilter_rec_t *setup_filter(char *buf, char **fields, int *acklevel, int *havehostfilter)
 {
-	char *tok, *s;
-	int idx = 0;
+	char *tok;
+	hostfilter_rec_t *filterhead = NULL, *filtertail = NULL;
+	static pcre *xmhptn = NULL;
 
 	dbgprintf("-> setup_filter: %s\n", buf);
 
-	*spage = *shost = *snet = *stest = NULL;
-	if (chspage) *chspage = NULL;
-	if (chshost) *chshost = NULL;
-	if (chsnet)  *chsnet  = NULL;
-	if (chstest) *chstest = NULL;
+	if (!xmhptn) xmhptn = compileregex("^(XMH_.*)=(.*)");
+
 	*fields = NULL;
-	*scolor = -1;
 
 	tok = strtok(buf, " \t\r\n");
 	if (tok) tok = strtok(NULL, " \t\r\n");
 	while (tok) {
 		/* Get filter */
-		if (strncmp(tok, "page=", 5) == 0) {
-			if (*(tok+5)) {
-				*spage = compileregex(tok+5);
-				if (chspage) *chspage = tok+5;
+		hostfilter_rec_t *newrec = NULL;
+		char *xmhfld = NULL, *xmhval = NULL;
+
+		if ((strncmp(tok, "XMH_", 4) == 0) && pickdata(tok, xmhptn, 1, &xmhfld, &xmhval)) {
+			enum xmh_item_t fld = xmh_key_idx(xmhfld);
+
+			if ((fld != XMH_LAST) && (*xmhfld) && (*xmhval)) {
+				newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+				newrec->filtertype = FILTER_XMH;
+				newrec->field = fld;
+				newrec->wantedptn = compileregex(xmhval);
+			}
+			xfree(xmhfld); xfree(xmhval);
+		}
+		else if ((strncmp(tok, "page=", 5) == 0) && (*(tok+5))) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_PAGEPATH;
+			newrec->wantedptn = compileregex(tok+5);
+		}
+		else if ((strncmp(tok, "host=", 5) == 0) && (*(tok+5))) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_XMH;
+			newrec->field = XMH_HOSTNAME;
+			newrec->wantedptn = compileregex(tok+5);
+			newrec->handle = xtreeFind(rbhosts, tok+5);
+		}
+		else if ((strncmp(tok, "net=", 4) == 0) && (*(tok+4))) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_XMH;
+			newrec->field = XMH_NET;
+			newrec->wantedptn = compileregex(tok+4);
+		}
+		else if ((strncmp(tok, "test=", 5) == 0) && (*(tok+5))) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_TEST;
+			newrec->wantedptn = compileregex(tok+5);
+			newrec->handle = xtreeFind(rbtests, tok+5);
+		}
+		else if ((strncmp(tok, "tag=", 4) == 0) && (*(tok+4))) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_TAG;
+			newrec->wantedptn = compileregex(tok+4);
+			newrec->handle = xtreeFind(rbtests, tok+4);
+		}
+		else if ((strncmp(tok, "color=", 6) == 0) && (*(tok+6))) {
+			char *tokptr, *col;
+
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_COLOR;
+			col = strtok_r(tok+6, ",", &tokptr);
+			while (col) {
+				newrec->wantedvalue |= (1 << parse_color(col));
+				col = strtok_r(NULL, ",", &tokptr);
 			}
 		}
-		else if (strncmp(tok, "host=", 5) == 0) {
-			if (*(tok+5)) {
-				*shost = compileregex(tok+5);
-				if (chshost) *chshost = tok+5;
+		else if ((strncmp(tok, "acklevel=", 9) == 0) && (*(tok+9))) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_ACKLEVEL;
+			newrec->wantedvalue = atoi(tok+9);
+			if (*acklevel) *acklevel = newrec->wantedvalue;
+		}
+		else if (strncmp(tok, "notdown", 7) == 0) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_NOTDOWN;
+			if ((*(tok+7) == '=') && (*(tok+8))) {
+				newrec->wantedptn = compileregex(tok+8);
+			}
+			else {
+				char *ptn = (char *)malloc(strlen(xgetenv("PINGCOLUMN")) + 3);
+				sprintf(ptn, "^%s$", xgetenv("PINGCOLUMN"));
+				newrec->wantedptn = compileregex(ptn);
+				xfree(ptn);
 			}
 		}
-		else if (strncmp(tok, "net=", 4) == 0) {
-			if (*(tok+4)) {
-				*snet = compileregex(tok+4);
-				if (chsnet) *chsnet = tok+4;
+		else if (strncmp(tok, "down", 4) == 0) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_DOWN;
+			if ((*(tok+4) == '=') && (*(tok+5))) {
+				newrec->wantedptn = compileregex(tok+5);
+			}
+			else {
+				char *ptn = (char *)malloc(strlen(xgetenv("PINGCOLUMN")) + 3);
+				sprintf(ptn, "^%s$", xgetenv("PINGCOLUMN"));
+				newrec->wantedptn = compileregex(ptn);
+				xfree(ptn);
 			}
 		}
-		else if (strncmp(tok, "test=", 5) == 0) {
-			if (*(tok+5)) {
-				*stest = compileregex(tok+5);
-				if (chstest) *chstest = tok+5;
-			}
+		else if (strncmp(tok, "fields=", 7) == 0) {
+			*fields = tok+7;
 		}
-		else if (strncmp(tok, "fields=", 7) == 0) *fields = tok+7;
-		else if (strncmp(tok, "color=", 6) == 0) *scolor = colorset(tok+6, 0);
-		else if (strncmp(tok, "acklevel=", 9) == 0) *acklevel = atoi(tok+9);
 		else {
 			/* Might be an old-style HOST.TEST request */
 			char *hname, *tname, *hostip = NULL;
-			char *hnameexp, *tnameexp;
 
 			hname = tok;
 			tname = strrchr(tok, '.');
@@ -2672,28 +2745,57 @@ void setup_filter(char *buf, char *defaultfields,
 			hname = knownhost(hname, &hostip, ghosthandling);
 
 			if (hname && tname) {
-				hnameexp = (char *)malloc(strlen(hname)+3);
-				sprintf(hnameexp, "^%s$", hname);
-				*shost = compileregex(hnameexp);
-				xfree(hnameexp);
+				newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+				newrec->filtertype = FILTER_XMH;
+				newrec->field = XMH_HOSTNAME;
+				newrec->wantedptn = compileregex(hname);
+				newrec->handle = xtreeFind(rbhosts, hname);
 
-				tnameexp = (char *)malloc(strlen(tname)+3);
-				sprintf(tnameexp, "^%s$", tname);
-				*stest = compileregex(tnameexp);
-				xfree(tnameexp);
-
-				if (chshost) *chshost = hname;
-				if (chstest) *chstest = tname;
+				newrec->next = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+				newrec->next->filtertype = FILTER_TEST;
+				newrec->next->wantedptn = compileregex(tname);
+				newrec->next->handle = xtreeFind(rbtests, tname);
 			}
+		}
+
+		if (newrec) {
+			if (filtertail) {
+				filtertail->next = newrec; 
+			}
+			else {
+				filterhead = filtertail = newrec;
+			}
+			while (filtertail->next) filtertail = filtertail->next;
 		}
 
 		tok = strtok(NULL, " \t\r\n");
 	}
 
-	/* If no fields given, provide the default set. */
-	if (*fields == NULL) *fields = defaultfields;
+	if (havehostfilter) {
+		hostfilter_rec_t *fwalk = filterhead;
 
-	s = strdup(*fields);
+		*havehostfilter = 0;
+		while (fwalk && !(*havehostfilter)) { 
+			*havehostfilter = ((fwalk->filtertype == FILTER_XMH) && (fwalk->field = XMH_HOSTNAME)); 
+			fwalk = fwalk->next;
+		}
+	}
+
+	dbgprintf("<- setup_filter: %s\n", buf);
+
+	return filterhead;
+}
+
+
+boardfield_t *setup_fields(char *fieldstr)
+{
+	char *s, *tok;
+	int tsize = 0;
+	boardfield_t *boardfields = NULL;
+
+	boardfields = (boardfield_t *)calloc(++tsize, sizeof(boardfield_t));
+
+	s = strdup(fieldstr);
 	tok = strtok(s, ",");
 	while (tok) {
 		enum boardfield_t fieldid = F_LAST;
@@ -2711,242 +2813,315 @@ void setup_filter(char *buf, char *defaultfields,
 			int i;
 			for (i=0; (boardfieldnames[i].name && strcmp(tok, boardfieldnames[i].name)); i++) ;
 			if (boardfieldnames[i].name) {
-				fieldid = boardfieldnames[i].id;
-				xmhfieldid = XMH_LAST;
+				switch (boardfieldnames[i].id) {
+				  case F_IP: fieldid = F_HOSTINFO; xmhfieldid = XMH_IP; break;
+				  case F_HOSTNAME: fieldid = F_HOSTINFO; xmhfieldid = XMH_HOSTNAME; break;
+				  default:
+					fieldid = boardfieldnames[i].id;
+					xmhfieldid = XMH_LAST;
+					break;
+				}
 			}
 		}
 
-		if ((fieldid != F_LAST) && (idx < BOARDFIELDS_MAX) && validfield) {
-			boardfields[idx].field = fieldid;
-			boardfields[idx].xmhfield = xmhfieldid;
-			idx++;
+		if ((fieldid != F_LAST) && validfield) {
+			boardfields[tsize-1].field = fieldid;
+			boardfields[tsize-1].xmhfield = xmhfieldid;
+			boardfields = (boardfield_t *)realloc(boardfields, (++tsize)*sizeof(boardfield_t));
 		}
 
 		tok = strtok(NULL, ",");
 	}
-	boardfields[idx].field = F_NONE;
-	boardfields[idx].xmhfield = XMH_LAST;
+
+	boardfields[tsize-1].field = F_NONE;
+	boardfields[tsize-1].xmhfield = XMH_LAST;
 
 	xfree(s);
 
-	dbgprintf("<- setup_filter: %s\n", buf);
+	return boardfields;
 }
 
-int match_host_filter(void *hinfo, pcre *spage, pcre *shost, pcre *snet)
+void clear_filter(hostfilter_rec_t *filter)
 {
-	char *match;
+	hostfilter_rec_t *fwalk, *zombie;
 
-	match = xmh_item(hinfo, XMH_HOSTNAME);
-	if (shost && match && !matchregex(match, shost)) return 0;
-	if (spage) {
-		int matchres = 0;
+	fwalk = filter;
+	while (fwalk) {
+		zombie = fwalk; fwalk = fwalk->next;
+		if (zombie->wantedptn) freeregex(zombie->wantedptn);
+		xfree(zombie);
+	}
+}
 
-		match = xmh_item_multi(hinfo, XMH_PAGEPATH);
-		while (match && (matchres == 0)) {
-			if (match && matchregex(match, spage)) matchres = 1;
-			match = xmh_item_multi(NULL, XMH_PAGEPATH);
+int match_host_filter(void *hinfo, hostfilter_rec_t *filter, int matchontests, char ***tags)
+{
+       int matched = 1, downcount, matchcount;
+       hostfilter_rec_t *fwalk;
+       char *val;
+       xtreePos_t hosthandle;
+       xymond_hostlist_t *hwalk;
+       xymond_log_t *lwalk;
+       char **taglist = NULL;
+       int taglistsz = 0;
+
+	if (tags) *tags = NULL;
+
+       if (!filter) return 1;  /* Empty filter matches all */
+       fwalk = filter;
+       while (fwalk && matched) {
+               switch (fwalk->filtertype) {
+                 case FILTER_XMH:
+                       val = xmh_item(hinfo, fwalk->field);
+                       matched = (val ? matchregex(val, fwalk->wantedptn) : 0);
+                       break;
+
+                 case FILTER_PAGEPATH:
+                       matched = 0;
+                       val = xmh_item_multi(hinfo, XMH_PAGEPATH);
+                       while (val && !matched) {
+                               matched = matchregex(val, fwalk->wantedptn);
+                               val = xmh_item_multi(NULL, XMH_PAGEPATH);
+                       }
+                       break;
+
+		 case FILTER_TAG:
+		       if (!matchontests) break;       /* When processing a xymondboard, we dont want to return entries that have a test in hosts.cfg but no test result */
+		       matched = 0;
+		       val = xmh_item_walk(hinfo);
+		       while (val) {
+			       if (matchregex(val, fwalk->wantedptn)) {
+				       matched = 1;
+				       if (tags) {
+					       taglistsz++;
+					       taglist = (char **)realloc(taglist, (taglistsz+1)*sizeof(char *));
+					       taglist[taglistsz-1] = val;
+					       taglist[taglistsz] = NULL;
+				       }
+			       }
+			       val = xmh_item_walk(NULL);
+		       }
+		       break;
+
+		 case FILTER_DOWN:
+		       /* Want only hosts that are down */
+		       hosthandle = xtreeFind(rbhosts, xmh_item(hinfo, XMH_HOSTNAME));
+		       hwalk = xtreeData(rbhosts, hosthandle);
+		       if (!hwalk) continue;
+		       for (lwalk = hwalk->logs, downcount = 0, matchcount = 0; (lwalk); lwalk = lwalk->next) {
+			       if (matchregex(lwalk->test->name, fwalk->wantedptn)) {
+				       matchcount++;
+				       if (lwalk->color == COL_RED) {
+					       downcount++;
+					       if (tags) {
+						       taglistsz++;
+						       taglist = (char **)realloc(taglist, (taglistsz+1)*sizeof(char *));
+						       taglist[taglistsz-1] = lwalk->test->name;
+						       taglist[taglistsz] = NULL;
+					       }
+				       }
+			       }
+		       }
+		       if ((matchcount <= 0) || (downcount < matchcount)) matched = 0;
+		       break;
+
+		 case FILTER_NOTDOWN:
+		       /* Dont want hosts where a service is down. Any test matching the pattern and is red will trigger this host not being matched */
+		       hosthandle = xtreeFind(rbhosts, xmh_item(hinfo, XMH_HOSTNAME));
+		       hwalk = xtreeData(rbhosts, hosthandle);
+		       if (!hwalk) continue;
+		       for (lwalk = hwalk->logs, downcount = 0, matchcount = 0; (lwalk); lwalk = lwalk->next) {
+			       if (matchregex(lwalk->test->name, fwalk->wantedptn)) {
+				       matchcount++;
+				       if (lwalk->color == COL_RED) {
+					       downcount++;
+					       if (tags) {
+						       taglistsz++;
+						       taglist = (char **)realloc(taglist, (taglistsz+1)*sizeof(char *));
+						       taglist[taglistsz-1] = lwalk->test->name;
+						       taglist[taglistsz] = NULL;
+					       }
+				       }
+			       }
+		       }
+		       if (downcount > 0) matched = 0;
+		       break;
+
+		  default:
+			break;
 		}
 
-		if (matchres == 0) return 0;
+		fwalk = fwalk->next;
 	}
-	match = xmh_item(hinfo, XMH_NET);
-	if (snet  && match && !matchregex(match, snet))  return 0;
 
-	return 1;
+       if (taglist && tags) *tags = taglist;
+       return matched;
 }
 
-int match_test_filter(xymond_log_t *log, pcre *stest, int scolor)
+int match_test_filter(xymond_log_t *log, hostfilter_rec_t *filter)
 {
-	/* Testname filter */
-	if (stest && !matchregex(log->test->name, stest)) return 0;
+	int matched = 1;
+	hostfilter_rec_t *fwalk;
 
-	/* Color filter */
-	if ((scolor != -1) && (((1 << log->color) & scolor) == 0)) return 0;
+	if (!filter) return 1;  /* Empty filter matches all */
+	fwalk = filter;
+	while (fwalk && matched) {
+		switch (fwalk->filtertype) {
+		  case FILTER_TEST:
+			matched = matchregex(log->test->name, fwalk->wantedptn);
+			break;
 
-	return 1;
+		  case FILTER_COLOR:
+			matched = ( ((1 << log->color) & fwalk->wantedvalue) != 0);
+			break;
+
+		  case FILTER_NOTDOWN:
+			matched = (log->color != COL_RED);
+			break;
+
+		  case FILTER_DOWN:
+			matched = (log->color == COL_RED);
+			break;
+
+		  default:
+			break;
+		}
+
+		fwalk = fwalk->next;
+	}
+
+	return matched;
 }
 
 
-
-void generate_outbuf(char **outbuf, char **outpos, int *outsz, 
-		     xymond_hostlist_t *hwalk, xymond_log_t *lwalk, int acklevel)
+strbuffer_t *generate_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, xymond_hostlist_t *hwalk, xymond_log_t *lwalk, int acklevel)
 {
 	int f_idx;
-	char *buf, *bufp;
-	int bufsz;
+	enum boardfield_t f_type;
+	strbuffer_t *buf;
 	char *eoln;
 	void *hinfo = NULL;
 	char *acklist = NULL;
-	int needed, used;
-	enum boardfield_t f_type;
 	modifier_t *mwalk;
-	time_t now = getcurrenttime(NULL);
 	time_t timeroffset = (getcurrenttime(NULL) - gettimer());
+	char l[1024];
 
-	buf = *outbuf;
-	bufp = *outpos;
-	bufsz = *outsz;
-	needed = 1024;
-
-	/* First calculate how much buffer space is needed */
-	for (f_idx = 0, f_type = boardfields[0].field; ((f_type != F_NONE) && (f_type != F_LAST)); f_type = boardfields[++f_idx].field) {
-		if ((lwalk == NULL) && (f_type != F_HOSTINFO)) continue;
-
-		switch (f_type) {
-		  case F_ACKMSG: if (lwalk->ackmsg) needed += 2*strlen(lwalk->ackmsg); break;
-		  case F_DISMSG: if (lwalk->dismsg) needed += 2*strlen(lwalk->dismsg); break;
-
-		  case F_ACKLIST:
-			flush_acklist(lwalk, 0);
-			acklist = acklist_string(lwalk, acklevel);
-			if (acklist) needed += 2*strlen(acklist);
-			break;
-
-		  case F_HOSTINFO:
-			if (!hinfo) hinfo = hostinfo(hwalk->hostname);
-			if (hinfo) {
-				char *infostr = xmh_item(hinfo, boardfields[f_idx].xmhfield);
-				if (infostr) needed += strlen(infostr);
-			}
-			break;
-
-		  case F_MSG:
-		  case F_LINE1:
-			needed += 2*strlen(lwalk->message); break;
-
-		  case F_MODIFIERS:
-			for (mwalk = lwalk->modifiers; (mwalk); mwalk = mwalk->next) {
-				if (mwalk->valid <= 0) continue;
-				needed += 3+2*strlen(mwalk->cause);
-			}
-			break;
-
-		  default: break;
-		}
-	}
-
-	/* Make sure the buffer is large enough */
-	used = (bufp - buf);
-	if ((bufsz - used) < needed) {
-		bufsz += needed;
-		buf = (char *)realloc(buf, bufsz);
-		bufp = buf + used;
-	}
+	buf = (prebuf ? *prebuf : newstrbuffer(0));
 
 	/* Now generate the data */
 	for (f_idx = 0, f_type = boardfields[0].field; ((f_type != F_NONE) && (f_type != F_LAST)); f_type = boardfields[++f_idx].field) {
 		if ((lwalk == NULL) && (f_type != F_HOSTINFO)) continue;
-		if (f_idx > 0) bufp += sprintf(bufp, "|");
+		if (f_idx > 0) addtobuffer(buf, "|");
 
 		switch (f_type) {
 		  case F_NONE: break;
-		  case F_HOSTNAME: bufp += sprintf(bufp, "%s", hwalk->hostname); break;
-		  case F_TESTNAME: bufp += sprintf(bufp, "%s", lwalk->test->name); break;
-		  case F_COLOR: bufp += sprintf(bufp, "%s", colnames[lwalk->color]); break;
-		  case F_FLAGS: bufp += sprintf(bufp, "%s", (lwalk->testflags ? lwalk->testflags : "")); break;
-		  case F_LASTCHANGE: bufp += sprintf(bufp, "%d", (int)lwalk->lastchange[0]); break;
-		  case F_LOGTIME: bufp += sprintf(bufp, "%d", (int)lwalk->logtime); break;
-		  case F_VALIDTIME: bufp += sprintf(bufp, "%d", (int)lwalk->validtime); break;
-		  case F_ACKTIME: bufp += sprintf(bufp, "%d", (int)lwalk->acktime); break;
-		  case F_DISABLETIME: bufp += sprintf(bufp, "%d", (int)lwalk->enabletime); break;
-		  case F_SENDER: bufp += sprintf(bufp, "%s", lwalk->sender); break;
-		  case F_COOKIE: bufp += sprintf(bufp, "%s", (lwalk->cookie ? lwalk->cookie : "")); break;
+		  case F_IP: snprintf(l, sizeof(l), "%s", hwalk->ip); addtobuffer(buf, l); break;
+		  case F_HOSTNAME: addtobuffer(buf, hwalk->hostname); break;
+		  case F_TESTNAME: addtobuffer(buf, lwalk->test->name); break;
+		  case F_COLOR: addtobuffer(buf, colnames[lwalk->color]); break;
+		  case F_FLAGS: if (lwalk->testflags) addtobuffer(buf, lwalk->testflags); break;
+		  case F_LASTCHANGE: snprintf(l, sizeof(l), "%d", (int)lwalk->lastchange[0]); addtobuffer(buf, l); break;
+		  case F_LOGTIME: snprintf(l, sizeof(l), "%d", (int)lwalk->logtime); addtobuffer(buf, l); break;
+		  case F_VALIDTIME: snprintf(l, sizeof(l), "%d", (int)lwalk->validtime); addtobuffer(buf, l); break;
+		  case F_ACKTIME: snprintf(l, sizeof(l), "%d", (int)lwalk->acktime); addtobuffer(buf, l); break;
+		  case F_DISABLETIME: snprintf(l, sizeof(l), "%d", (int)lwalk->enabletime); addtobuffer(buf, l); break;
+		  case F_SENDER: addtobuffer(buf, lwalk->sender); break;
+		  case F_COOKIE: if (lwalk->cookie) addtobuffer(buf, lwalk->cookie); break;
 
 		  case F_LINE1:
 			eoln = strchr(lwalk->message, '\n'); if (eoln) *eoln = '\0';
-			bufp += sprintf(bufp, "%s", msg_data(lwalk->message, 0));
+			addtobuffer(buf, msg_data(lwalk->message, 0));
 			if (eoln) *eoln = '\n';
 			break;
 
-		  case F_ACKMSG: if (lwalk->ackmsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->ackmsg)); break;
-		  case F_DISMSG: if (lwalk->dismsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->dismsg)); break;
-		  case F_MSG: bufp += sprintf(bufp, "%s", nlencode(lwalk->message)); break;
-		  case F_CLIENT: bufp += sprintf(bufp, "%s", (hwalk->clientmsgs ? "Y" : "N")); break;
-		  case F_CLIENTTSTAMP: bufp += sprintf(bufp, "%ld", (hwalk->clientmsgs ? (long) (hwalk->clientmsgtstamp + timeroffset) : 0)); break;
-		  case F_ACKLIST: if (acklist) bufp += sprintf(bufp, "%s", nlencode(acklist)); break;
+		  case F_ACKMSG: if (lwalk->ackmsg) addtobuffer(buf, nlencode(lwalk->ackmsg)); break;
+		  case F_DISMSG: if (lwalk->dismsg) addtobuffer(buf, nlencode(lwalk->dismsg)); break;
+		  case F_MSG: addtobuffer(buf, nlencode(lwalk->message)); break;
+		  case F_CLIENT: addtobuffer(buf, (hwalk->clientmsgs ? "Y" : "N")); break;
+		  case F_CLIENTTSTAMP: snprintf(l, sizeof(l), "%ld", (hwalk->clientmsgs ? (long) (hwalk->clientmsgtstamp + timeroffset) : 0)); addtobuffer(buf, l); break;
+
+		  case F_ACKLIST: 
+			flush_acklist(lwalk, 0);
+			acklist = acklist_string(lwalk, acklevel);
+			if (acklist) addtobuffer(buf, nlencode(acklist));
+			break;
 
 		  case F_HOSTINFO:
-			if (hinfo) {	/* hinfo has been set above while scanning for the needed bufsize */
+			hinfo = hostinfo(hwalk->hostname);
+			if (hinfo) {
 				char *infostr = xmh_item(hinfo, boardfields[f_idx].xmhfield);
-				if (infostr) bufp += sprintf(bufp, "%s", infostr);
+				if (infostr) addtobuffer(buf, infostr);
 			}
 			break;
 
 		  case F_FLAPINFO:
-			bufp += sprintf(bufp, "%d/%ld/%ld/%s/%s", 
+			snprintf(l, sizeof(l), "%d/%ld/%ld/%s/%s", 
 					lwalk->flapping, 
 					lwalk->lastchange[0], (flapcount > 0) ? lwalk->lastchange[flapcount-1] : 0,
 					colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor]);
+			addtobuffer(buf, l);
 			break;
 
 		  case F_STATS:
-			bufp += sprintf(bufp, "statuschanges=%lu", lwalk->statuschangecount);
+			snprintf(l, sizeof(l), "statuschanges=%lu", lwalk->statuschangecount);
+			addtobuffer(buf, l);
 			break;
 
 		  case F_MODIFIERS:
 			for (mwalk = lwalk->modifiers; (mwalk); mwalk = mwalk->next) {
 				if (mwalk->valid <= 0) continue;
-				bufp += sprintf(bufp, "%s", nlencode(mwalk->cause));
+				addtobuffer(buf, nlencode(mwalk->cause));
 			}
 			break;
 
+		  case F_MATCHEDTAG: break;
 		  case F_LAST: break;
 		}
 	}
-	bufp += sprintf(bufp, "\n");
+	addtobuffer(buf, "\n");
 
-	*outbuf = buf;
-	*outpos = bufp;
-	*outsz = bufsz;
+	return buf;
 }
 
 
-void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, void *hinfo)
+strbuffer_t *generate_hostinfo_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, void *hinfo, char **tags)
 {
-	int f_idx;
-	char *buf, *bufp;
-	int bufsz;
+	int f_idx, tagi;
+	strbuffer_t *buf;
+	char l[1024];
 	char *infostr = NULL;
 
-	buf = *outbuf;
-	bufp = *outpos;
-	bufsz = *outsz;
+	buf = (prebuf ? *prebuf : newstrbuffer(0));
 
 	for (f_idx = 0; (boardfields[f_idx].field != F_NONE); f_idx++) {
-		int needed = 1024;
-		int used = (bufp - buf);
+		if (f_idx > 0) addtobuffer(buf, "|");
 
 		switch (boardfields[f_idx].field) {
 		  case F_HOSTINFO:
 			infostr = xmh_item(hinfo, boardfields[f_idx].xmhfield);
 			if (infostr) {
 				if (boardfields[f_idx].xmhfield != XMH_RAW) infostr = nlencode(infostr);
-				needed += strlen(infostr);
+				addtobuffer(buf, infostr);
+			}
+			break;
+
+		  case F_MATCHEDTAG:
+			if (tags) {
+				tagi = 0;
+				while (tags[tagi]) {
+					if (tagi > 0) 
+						addtobuffer_many(buf, "|", tags[tagi++], NULL);
+					else
+						addtobuffer(buf, tags[tagi++]);
+				}
 			}
 			break;
 
 		  default: break;
 		}
-
-		if ((bufsz - used) < needed) {
-			bufsz += 4096 + needed;
-			buf = (char *)realloc(buf, bufsz);
-			bufp = buf + used;
-		}
-
-		if (f_idx > 0) bufp += sprintf(bufp, "|");
-
-		switch (boardfields[f_idx].field) {
-		  case F_HOSTINFO: if (infostr) bufp += sprintf(bufp, "%s", infostr); break;
-		  default: break;
-		}
 	}
 
-	bufp += sprintf(bufp, "\n");
-
-	*outbuf = buf;
-	*outpos = bufp;
-	*outsz = bufsz;
+	addtobuffer(buf, "\n");
+	return buf;
 }
 
 void get_sender(conn_t *msg, char *msgtext, char *prestring)
@@ -3398,22 +3573,20 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		 * xymondlog HOST.TEST [fields=FIELDLIST]
 		 *
 		 */
-
-		pcre *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL;
-		char *chspage, *chshost, *chsnet, *chstest, *fields = NULL;
-		int scolor = -1, acklevel = -1;
+		hostfilter_rec_t *logfilter;
+		boardfield_t *logfields;
+		char *fields;
+		int acklevel = -1;
 
 		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
-		setup_filter(msg->buf, 
-		 	     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,modifiers",
-			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
-			     &chspage, &chshost, &chsnet, &chstest);
+		logfilter = setup_filter(msg->buf, &fields, &acklevel, NULL);
+		if (!fields) fields = "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,modifiers";
+		logfields = setup_fields(fields);
 
-		log = find_log(chshost, chstest, "", &h);
+		log = find_log(logfilter, &h);
 		if (log) {
-			char *buf, *bufp;
-			int bufsz;
+			strbuffer_t *logdata;
 
 			flush_acklist(log, 0);
 			if (log->message == NULL) {
@@ -3422,21 +3595,17 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 				log->msgsz = strlen(log->message) + 1;
 			}
 
-			bufsz = 1024 + strlen(log->message);
-			if (log->ackmsg) bufsz += 2*strlen(log->ackmsg);
-			if (log->dismsg) bufsz += 2*strlen(log->dismsg);
-
 			xfree(msg->buf);
-			bufp = buf = (char *)malloc(bufsz);
-			generate_outbuf(&buf, &bufp, &bufsz, h, log, acklevel);
-			bufp += sprintf(bufp, "%s", msg_data(log->message, 0));
+			logdata = generate_outbuf(NULL, logfields, h, log, acklevel);
+			addtobuffer(logdata, msg_data(log->message, 0));
 
 			msg->doingwhat = RESPONDING;
-			msg->bufp = msg->buf = buf;
-			msg->buflen = (bufp - buf);
+			msg->buflen = STRBUFLEN(logdata);
+			msg->bufp = grabstrbuffer(logdata);
 		}
 
-		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
+		clear_filter(logfilter);
+		xfree(logfields);
 	}
 	else if ((strncmp(msg->buf, "xymondxlog ", 11) == 0) || (strncmp(msg->buf, "hobbitdxlog ", 12) == 0)) {
 		/* 
@@ -3448,8 +3617,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 
 		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (log) {
-			char *buf, *bufp;
-			int bufsz;
+			strbuffer_t *response = newstrbuffer(0);
 
 			flush_acklist(log, 0);
 			if (log->message == NULL) {
@@ -3458,47 +3626,46 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 				log->msgsz = strlen(log->message) + 1;
 			}
 
-			bufsz = 4096 + strlen(log->message);
-			if (log->ackmsg) bufsz += strlen(log->ackmsg);
-			if (log->dismsg) bufsz += strlen(log->dismsg);
-
-			xfree(msg->buf);
-			bufp = buf = (char *)malloc(bufsz);
-
-			bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
-			bufp += sprintf(bufp, "<ServerStatus>\n");
-			bufp += sprintf(bufp, "  <ServerName>%s</ServerName>\n", h->hostname);
-			bufp += sprintf(bufp, "  <Type>%s</Type>\n", log->test->name);
-			bufp += sprintf(bufp, "  <Status>%s</Status>\n", colnames[log->color]);
-			bufp += sprintf(bufp, "  <TestFlags>%s</TestFlags>\n", (log->testflags ? log->testflags : ""));
-			bufp += sprintf(bufp, "  <LastChange>%s</LastChange>\n", timestr(log->lastchange[0]));
-			bufp += sprintf(bufp, "  <LogTime>%s</LogTime>\n", timestr(log->logtime));
-			bufp += sprintf(bufp, "  <ValidTime>%s</ValidTime>\n", timestr(log->validtime));
-			bufp += sprintf(bufp, "  <AckTime>%s</AckTime>\n", timestr(log->acktime));
-			bufp += sprintf(bufp, "  <DisableTime>%s</DisableTime>\n", timestr(log->enabletime));
-			bufp += sprintf(bufp, "  <Sender>%s</Sender>\n", log->sender);
+			addtobuffer_many(response, 
+				"<?xml version='1.0' encoding='ISO-8859-1'?>\n",
+				"<ServerStatus>\n",
+				"  <ServerName>",       h->hostname,                            "</ServerName>\n",
+				"  <Type>",             log->test->name,                        "</Type>\n",
+				"  <Status>",           colnames[log->color],                   "</Status>\n",
+				"  <TestFlags>",        (log->testflags ? log->testflags : ""), "</TestFlags>\n",
+				"  <LastChange>",       timestr(log->lastchange[0]),            "</LastChange>\n",
+				"  <LogTime>",          timestr(log->logtime),                  "</LogTime>\n",
+				"  <ValidTime>",        timestr(log->validtime),                "</ValidTime>\n",
+				"  <AckTime>",          timestr(log->acktime),                  "</AckTime>\n",
+				"  <DisableTime>",      timestr(log->enabletime),               "</DisableTime>\n",
+				"  <Sender>",           log->sender,                            "</Sender>\n", 
+				NULL);
+			timestr(-1);
 
 			if (log->cookie && (log->cookieexpires > now))
-				bufp += sprintf(bufp, "  <Cookie>%s</Cookie>\n", log->cookie);
+				addtobuffer_many(response, "  <Cookie>", log->cookie, "</Cookie>\n", NULL);
 			else
-				bufp += sprintf(bufp, "  <Cookie>N/A</Cookie>\n");
+				addtobuffer(response, "  <Cookie>N/A</Cookie>\n");
 
 			if (log->ackmsg && (log->acktime > now))
-				bufp += sprintf(bufp, "  <AckMsg><![CDATA[%s]]></AckMsg>\n", log->ackmsg);
+				addtobuffer_many(response, "  <AckMsg><![CDATA[", log->ackmsg, "]]></AckMsg>\n", NULL);
 			else
-				bufp += sprintf(bufp, "  <AckMsg>N/A</AckMsg>\n");
+				addtobuffer(response, "  <AckMsg>N/A</AckMsg>\n");
 
 			if (log->dismsg && (log->enabletime > now))
-				bufp += sprintf(bufp, "  <DisMsg><![CDATA[%s]]></DisMsg>\n", log->dismsg);
+				addtobuffer_many(response, "  <DisMsg><![CDATA[", log->dismsg, "]]></DisMsg>\n", NULL);
 			else
-				bufp += sprintf(bufp, "  <DisMsg>N/A</DisMsg>\n");
+				addtobuffer(response, "  <DisMsg>N/A</DisMsg>\n");
 
-			bufp += sprintf(bufp, "  <Message><![CDATA[%s]]></Message>\n", msg_data(log->message, 0));
-			bufp += sprintf(bufp, "</ServerStatus>\n");
+			addtobuffer_many(response, 
+				"  <Message><![CDATA[", msg_data(log->message, 0), "]]></Message>\n",
+				"</ServerStatus>\n",
+				NULL);
+			timestr(-1);
 
 			msg->doingwhat = RESPONDING;
-			msg->bufp = msg->buf = buf;
-			msg->buflen = (bufp - buf);
+			msg->buflen = STRBUFLEN(response);
+			msg->bufp = msg->buf = grabstrbuffer(response);
 		}
 	}
 	else if ((strncmp(msg->buf, "xymondboard", 11) == 0) || (strncmp(msg->buf, "hobbitdboard", 12) == 0)) {
@@ -3512,30 +3679,20 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		xymond_log_t infologrec, rrdlogrec;
 		time_t *dummytimes;
 		testinfo_t trendstest, infotest;
-		char *buf, *bufp;
-		int bufsz;
-		pcre *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL;
-		char *chspage = NULL, *chshost = NULL, *chsnet = NULL, *chstest = NULL;
+		hostfilter_rec_t *logfilter;
+		boardfield_t *logfields;
 		char *fields = NULL;
-		int scolor = -1, acklevel = -1;
+		int acklevel = -1, havehostfilter = 0;
+		strbuffer_t *response;
 		static unsigned int lastboardsize = 0;
 
 		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
-		setup_filter(msg->buf, 
-			     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1",
-			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
-			     &chspage, &chshost, &chsnet, &chstest);
+		logfilter = setup_filter(msg->buf, &fields, &acklevel, &havehostfilter);
+		if (!fields) fields = "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1";
+		logfields = setup_fields(fields);
 
-		if (lastboardsize <= 8192) {
-			/* A guesstimate - 8 tests per hosts, 1KB/test (only 1st line of msg) */
-			bufsz = (hostcount+1)*8*1024; 
-		}
-		else {
-			/* Add 10% to the last size we used */
-			bufsz = lastboardsize + (lastboardsize / 10);
-		}
-		bufp = buf = (char *)malloc(bufsz);
+		response = newstrbuffer(lastboardsize);
 
 		/* Setup fake log-records for the "info" and "trends" data. */
 		dummytimes = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
@@ -3562,7 +3719,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			}
 
 			/* If there is a hostname filter, drop the "summary" 'hosts' */
-			if (shost && (hwalk->hosttype != H_NORMAL)) continue;
+			if (havehostfilter && (hwalk->hosttype != H_NORMAL)) continue;
 
 			firstlog = hwalk->logs;
 
@@ -3575,7 +3732,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 				}
 
 				/* Host/pagename filter */
-				if (!match_host_filter(hinfo, spage, shost, snet)) continue;
+				if (!match_host_filter(hinfo, logfilter, 0, NULL)) continue;
 
 				/* Handle NOINFO and NOTRENDS here */
 				if (!xmh_item(hinfo, XMH_FLAG_NOINFO)) {
@@ -3591,7 +3748,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			rrdlogrec.host = infologrec.host = hwalk;
 
 			for (lwalk = firstlog; (lwalk); lwalk = lwalk->next) {
-				if (!match_test_filter(lwalk, stest, scolor)) continue;
+				if (!match_test_filter(lwalk, logfilter)) continue;
 
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->name);
@@ -3599,19 +3756,20 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 					lwalk->msgsz = strlen(lwalk->message) + 1;
 				}
 
-				generate_outbuf(&buf, &bufp, &bufsz, hwalk, lwalk, acklevel);
+				response = generate_outbuf(&response, logfields, hwalk, lwalk, acklevel);
 			}
 		}
-		*bufp = '\0';
+
+		if (STRBUFLEN(response) > lastboardsize) lastboardsize = STRBUFLEN(response);
 
 		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
-		msg->bufp = msg->buf = buf;
-		msg->buflen = (bufp - buf);
-		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
+		msg->buflen = STRBUFLEN(response);
+		msg->bufp = msg->buf = grabstrbuffer(response);
 
+		clear_filter(logfilter);
+		xfree(logfields);
 		xfree(dummytimes);
-		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
 	else if ((strncmp(msg->buf, "xymondxboard", 12) == 0) || (strncmp(msg->buf, "hobbitdxboard", 13) == 0)) {
 		/* 
@@ -3621,33 +3779,19 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		xtreePos_t hosthandle;
 		xymond_hostlist_t *hwalk;
 		xymond_log_t *lwalk;
-		char *buf, *bufp;
-		int bufsz;
-		pcre *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL;
-		char *chspage = NULL, *chshost = NULL, *chsnet = NULL, *chstest = NULL;
+		hostfilter_rec_t *logfilter;
 		char *fields = NULL;
-		int scolor = -1, acklevel = -1;
+		int acklevel = -1, havehostfilter = 0;
 		static unsigned int lastboardsize = 0;
+		strbuffer_t *response;
 
 		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
-		setup_filter(msg->buf,
-			     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1",
-			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
-			     &chspage, &chshost, &chsnet, &chstest);
+		logfilter = setup_filter(msg->buf, &fields, &acklevel, &havehostfilter);
+		response = newstrbuffer(lastboardsize);
 
-		if (lastboardsize <= 8192) {
-			/* A guesstimate - 8 tests per hosts, 2KB/test (only 1st line of msg) */
-			bufsz = (hostcount+1)*8*2048; 
-		}
-		else {
-			/* Add 10% to the last size we used */
-			bufsz = lastboardsize + (lastboardsize / 10);
-		}
-		bufp = buf = (char *)malloc(bufsz);
-
-		bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
-		bufp += sprintf(bufp, "<StatusBoard>\n");
+		addtobuffer(response, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+		addtobuffer(response, "<StatusBoard>\n");
 
 		for (hosthandle = xtreeFirst(rbhosts); (hosthandle != xtreeEnd(rbhosts)); hosthandle = xtreeNext(rbhosts, hosthandle)) {
 			hwalk = xtreeData(rbhosts, hosthandle);
@@ -3657,7 +3801,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			}
 
 			/* If there is a hostname filter, drop the "summary" 'hosts' */
-			if (shost && (hwalk->hosttype != H_NORMAL)) continue;
+			if (havehostfilter && (hwalk->hosttype != H_NORMAL)) continue;
 
 			if (hwalk->hosttype == H_NORMAL) {
 				void *hinfo;
@@ -3669,14 +3813,13 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 				}
 
 				/* Host/pagename filter */
-				if (!match_host_filter(hinfo, spage, shost, snet)) continue;
+				if (!match_host_filter(hinfo, logfilter, 0, NULL)) continue;
 			}
 
 			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 				char *eoln;
-				int buflen = (bufp - buf);
 
-				if (!match_test_filter(lwalk, stest, scolor)) continue;
+				if (!match_test_filter(lwalk, logfilter)) continue;
 
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->name);
@@ -3686,43 +3829,43 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 
 				eoln = strchr(lwalk->message, '\n');
 				if (eoln) *eoln = '\0';
-				if ((bufsz - buflen - strlen(lwalk->message)) < 4096) {
-					bufsz += (16384 + strlen(lwalk->message));
-					buf = (char *)realloc(buf, bufsz);
-					bufp = buf + buflen;
-				}
 
-				bufp += sprintf(bufp, "  <ServerStatus>\n");
-				bufp += sprintf(bufp, "    <ServerName>%s</ServerName>\n", hwalk->hostname);
-				bufp += sprintf(bufp, "    <Type>%s</Type>\n", lwalk->test->name);
-				bufp += sprintf(bufp, "    <Status>%s</Status>\n", colnames[lwalk->color]);
-				bufp += sprintf(bufp, "    <TestFlags>%s</TestFlags>\n", (lwalk->testflags ? lwalk->testflags : ""));
-				bufp += sprintf(bufp, "    <LastChange>%s</LastChange>\n", timestr(lwalk->lastchange[0]));
-				bufp += sprintf(bufp, "    <LogTime>%s</LogTime>\n", timestr(lwalk->logtime));
-				bufp += sprintf(bufp, "    <ValidTime>%s</ValidTime>\n", timestr(lwalk->validtime));
-				bufp += sprintf(bufp, "    <AckTime>%s</AckTime>\n", timestr(lwalk->acktime));
-				bufp += sprintf(bufp, "    <DisableTime>%s</DisableTime>\n", timestr(lwalk->enabletime));
-				bufp += sprintf(bufp, "    <Sender>%s</Sender>\n", lwalk->sender);
+				addtobuffer_many(response, 
+					"  <ServerStatus>\n",
+					"    <ServerName>", hwalk->hostname, "</ServerName>\n",
+					"    <Type>", lwalk->test->name, "</Type>\n",
+					"    <Status>", colorname(lwalk->color), "</Status>\n",
+					"    <TestFlags>", (lwalk->testflags ? lwalk->testflags : ""), "</TestFlags>\n",
+					"    <LastChange>", timestr(lwalk->lastchange[0]), "</LastChange>\n",
+					"    <LogTime>", timestr(lwalk->logtime), "</LogTime>\n",
+					"    <ValidTime>", timestr(lwalk->validtime), "</ValidTime>\n",
+					"    <AckTime>", timestr(lwalk->acktime), "</AckTime>\n",
+					"    <DisableTime>", timestr(lwalk->enabletime), "</DisableTime>\n",
+					"    <Sender>", lwalk->sender, "</Sender>\n",
+					NULL);
+				timestr(-1);
 
 				if (lwalk->cookie && (lwalk->cookieexpires > now))
-					bufp += sprintf(bufp, "    <Cookie>%s</Cookie>\n", lwalk->cookie);
+					addtobuffer_many(response, "    <Cookie>", lwalk->cookie, "</Cookie>\n", NULL);
 				else
-					bufp += sprintf(bufp, "    <Cookie>N/A</Cookie>\n");
+					addtobuffer(response, "    <Cookie>N/A</Cookie>\n");
 
-				bufp += sprintf(bufp, "    <MessageSummary><![CDATA[%s]]></MessageSummary>\n", lwalk->message);
-				bufp += sprintf(bufp, "  </ServerStatus>\n");
+				addtobuffer_many(response, 
+					"    <MessageSummary><![CDATA[", lwalk->message, "]]></MessageSummary>\n",
+					"  </ServerStatus>\n",
+					NULL);
 				if (eoln) *eoln = '\n';
 			}
 		}
-		bufp += sprintf(bufp, "</StatusBoard>\n");
+		addtobuffer(response, "</StatusBoard>\n");
 
 		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
-		msg->bufp = msg->buf = buf;
-		msg->buflen = (bufp - buf);
+		msg->buflen = STRBUFLEN(response);
+		msg->bufp = msg->buf = grabstrbuffer(response);
 		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
 
-		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
+		clear_filter(logfilter);
 	}
 	else if (strncmp(msg->buf, "hostinfo", 8) == 0) {
 		/* 
@@ -3730,24 +3873,18 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		 *
 		 */
 		void *hinfo;
-		char *buf, *bufp;
-		int bufsz;
-		pcre *spage = NULL, *shost = NULL, *stest = NULL, *snet = NULL;
-		char *chspage = NULL, *chshost = NULL, *chsnet = NULL, *chstest = NULL;
-		char *fields = NULL;
-		int scolor = -1, acklevel = -1;
+		strbuffer_t *response;
 		static unsigned int lastboardsize = 0;
 		char *clonehost;
 
 		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
+		response = newstrbuffer(lastboardsize);
+
 		clonehost = strstr(msg->buf, " clone=");
 		if (clonehost) {
 			void *hinfo;
-			strbuffer_t *outbuf = NULL;
-			int outlen;
 
-			outbuf = newstrbuffer(1024);
 			clonehost += strlen(" clone=");
 			hinfo = hostinfo(clonehost);
 
@@ -3758,56 +3895,41 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 				for (idx = 0; (idx < XMH_LAST); idx++) {
 					val = xmh_item(hinfo, idx);
 					if (val) {
-						addtobuffer(outbuf, xmh_item_id(idx));
-						addtobuffer(outbuf, ":");
-						addtobuffer(outbuf, val);
-						addtobuffer(outbuf, "\n");
+						addtobuffer_many(response, xmh_item_id(idx), ":", val, "\n", NULL);
 					}
 				}
 
 				val = xmh_item_walk(hinfo);
 				while (val) {
-					addtobuffer(outbuf, val);
-					addtobuffer(outbuf, "\n");
+					addtobuffer_many(response, val, "\n", NULL);
 					val = xmh_item_walk(NULL);
 				}
 			}
-
-			outlen = STRBUFLEN(outbuf);
-			buf = grabstrbuffer(outbuf);
-			bufp = (buf + outlen);
 		}
 		else {
-			setup_filter(msg->buf, 
-				     "XMH_HOSTNAME,XMH_IP,XMH_RAW",
-				     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
-				     &chspage, &chshost, &chsnet, &chstest);
+			hostfilter_rec_t *hostfilter;
+			boardfield_t *hostfields;
+			char *fields = NULL, **tags = NULL;
 
-			if (lastboardsize == 0) {
-				/* A guesstimate - 500 bytes per host */
-				bufsz = (hostcount+1)*500;
-			}
-			else {
-				/* Add 10% to the last size we used */
-				bufsz = lastboardsize + (lastboardsize / 10);
-			}
-			bufp = buf = (char *)malloc(bufsz);
+			hostfilter = setup_filter(msg->buf, &fields, NULL, NULL);
+			if (!fields) fields = "XMH_HOSTNAME,XMH_IP,XMH_RAW";
+			hostfields = setup_fields(fields);
 
 			for (hinfo = first_host(); (hinfo); hinfo = next_host(hinfo, 0)) {
-				if (!match_host_filter(hinfo, spage, shost, snet)) continue;
-				generate_hostinfo_outbuf(&buf, &bufp, &bufsz, hinfo);
+				if (!match_host_filter(hinfo, hostfilter, 1, &tags)) continue;
+				response = generate_hostinfo_outbuf(&response, hostfields, hinfo, tags);
 			}
+			if (tags) xfree(tags);
 
-			*bufp = '\0';
+			clear_filter(hostfilter);
+			xfree(hostfields);
 		}
 
 		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
-		msg->bufp = msg->buf = buf;
-		msg->buflen = (bufp - buf);
+		msg->buflen = STRBUFLEN(response);
+		msg->bufp = msg->buf = grabstrbuffer(response);
 		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
-
-		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
 
 	else if ((strncmp(msg->buf, "xymondack", 9) == 0) || (strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
@@ -3951,32 +4073,19 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		cmd = msg->buf + 8; cmd += strspn(cmd, " ");
 
 		if (strlen(cmd) == 0) {
-			char *buf, *bufp;
-			int bufsz;
+			strbuffer_t *response = newstrbuffer(0);
 			scheduletask_t *swalk;
-
-			bufsz = 4096;
-			bufp = buf = (char *)malloc(bufsz);
-			*buf = '\0';
+			char tbuf[50];
 
 			for (swalk = schedulehead; (swalk); swalk = swalk->next) {
-				int needed = 128 + strlen(swalk->command);
-
-				if ((bufsz - (bufp - buf)) < needed) {
-					int buflen = (bufp - buf);
-					bufsz += 4096 + needed;
-					buf = (char *)realloc(buf, bufsz);
-					bufp = buf + buflen;
-				}
-
-				bufp += sprintf(bufp, "%d|%d|%s|%s\n", swalk->id,
-						(int)swalk->executiontime, swalk->sender, nlencode(swalk->command));
+				snprintf(tbuf, sizeof(tbuf), "%d|%d", swalk->id, (int)swalk->executiontime);
+				addtobuffer_many(response, tbuf, "|", swalk->sender, "|", nlencode(swalk->command));
 			}
 
 			xfree(msg->buf);
 			msg->doingwhat = RESPONDING;
-			msg->bufp = msg->buf = buf;
-			msg->buflen = (bufp - buf);
+			msg->buflen = STRBUFLEN(response);
+			msg->bufp = msg->buf = grabstrbuffer(response);
 		}
 		else {
 			if (strncmp(cmd, "cancel", 6) != 0) {
@@ -5430,7 +5539,6 @@ int main(int argc, char *argv[])
 
 		backfeeddata = (backfeedqueue > 0);
 		while (backfeeddata) {
-			int n;
 			ssize_t sz;
 			conn_t msg;
 			xymon_mqmsg_t mqmsg;
