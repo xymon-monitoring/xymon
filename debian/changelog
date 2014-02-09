@@ -1,3 +1,20 @@
+xymon (4.3.16) unstable; urgency=low
+
+   * rev 7394
+
+   * Fix xymonnet crash on sending http test results
+   * Fix xymond crash if client-local.cfg contains empty sections
+   * Fix RPM-based initscript for clients with explicit hostname
+   * Fix misleading error-message when testing for C-ARES library
+   * Fix client-local.cfg handling, so by default it will not merge
+     sections together, i.e. behave like previous 4.x releases.
+     NOTE: The new regexp matching can still be used.
+   * Add "--merge-clientlocal" option for xymond, which causes it
+     to merge all matching sections from client-local.cfg into one.
+   * Use native POSIX binary-tree handling code
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 9 Feb 2014 10:16:02 +0100
+
 xymon (4.3.15) unstable; urgency=low
 
    * rev 7384

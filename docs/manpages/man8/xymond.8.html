@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND</TITLE>
 </HEAD><BODY>
 <H1>XYMOND</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.15: 30 Jan 2014<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.16:  9 Feb 2014<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -77,6 +77,17 @@ a temporary client alias is automatically generated. The default is &quot;log&qu
 <DT>--no-purple<DD>
 Prevent status messages from going purple when they are no longer valid.
 Unlike the standard bbd daemon, purple-handling is done by xymond.
+<P>
+<DT>--merge-clientconfig<DD>
+The
+<I><A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)</I>
+
+file contains client-configuration which can be found matching a client
+against its hostname, its classname, or the name of the OS the client is
+running. By default xymond will return one entry from the file to the 
+client, looking for a hostname, classname or OS match (in that order).
+This option causes xymond to merge all matching entries together into 
+one and return all of it to the client.
 <P>
 <DT>--listen=IP[:PORT]<DD>
 Specifies the IP-address and port where xymond will listen for incoming
@@ -406,6 +417,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 21:22:58 GMT, January 30, 2014
+Time: 07:07:20 GMT, February 09, 2014
 </BODY>
 </HTML>

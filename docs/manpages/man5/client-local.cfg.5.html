@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of CLIENT-LOCAL.CFG</TITLE>
 </HEAD><BODY>
 <H1>CLIENT-LOCAL.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.15: 30 Jan 2014<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.16:  9 Feb 2014<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -56,6 +56,20 @@ This method of propagating the configuration means that there is a
 delay of up to two poll cycles (i.e. 5-10 minutes) from a configuration
 change is entered into the client-local.cfg file, and until you see
 the result in the status messages reported by the client.
+<P>
+By default, xymond will look for a matching entry by matching the client
+hostname, classname or operating system name against the section expressions.
+Hostname matches are used first, then classname matches, then OS matches.
+The first match found is the one that is returned to the client.
+<P>
+If xymond is started with the &quot;--merge-clientlocal&quot; option, then xymond
+will instead merge all of the matching sections into one, and return all
+of this data to the client. So you can have host-specific entries, and
+then supplement them with class- or os-generic entries. Note that the
+merging does not remove entries, so if you have e.g. a &quot;log&quot; entry defined
+in both a hostname- and an osname-matching section, then both entries
+will be sent back to the client.
+<P>
 <P>
 <A NAME="lbAF">&nbsp;</A>
 <H2>FILE FORMAT</H2>
@@ -233,6 +247,6 @@ of files and/or sub-directories can be quite ressource-intensive.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 21:22:58 GMT, January 30, 2014
+Time: 07:07:20 GMT, February 09, 2014
 </BODY>
 </HTML>
