@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
 				}
 
 				if (first) {
-					fprintf(stdout, "<center><font size=\"+1\"><b>No active alerts</b></font></center\n");
+					fprintf(stdout, "<center><font size=\"+1\"><b>No active alerts</b></font></center>\n");
 				}
 				else {
 					generate_ackline(stdout, NULL, NULL, NULL);
