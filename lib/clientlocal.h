@@ -13,5 +13,6 @@
 
 extern void load_clientconfig(void);
 extern char *get_clientconfig(char *hostname, char *hostclass, char *hostos);
+extern void set_clientlocal_mergemode(int onoff);
 
 #endif
