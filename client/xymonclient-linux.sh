@@ -83,6 +83,8 @@ then
     then
         echo "[top]"
 	$TOP -b -n 1 
+	# Some top versions do not finish off the last line of output
+	echo ""
     fi
 fi
 
