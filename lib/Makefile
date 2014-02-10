@@ -10,7 +10,7 @@ CLIENTLIBOBJS = osdefs.o cgiurls.o color-client.o crondate.o digest.o encoding.o
 ifeq ($(LOCALCLIENT),yes)
 	CLIENTLIBOBJS += matching.o
 endif
-XYMONCLIENTCOMMLIBOBJS = loadhosts.o sendmsg.o xymond_ipc.o xymond_buffer.o
+XYMONCLIENTCOMMLIBOBJS = locator.o loadhosts.o sendmsg.o xymond_ipc.o xymond_buffer.o
 
 XYMONCLIENTLIB = libxymonclient.a
 XYMONCLIENTLIBS = $(XYMONCLIENTLIB)
