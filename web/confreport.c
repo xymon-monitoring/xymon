@@ -233,9 +233,8 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 		weburl_t bu;
 		int httpextra = 0;
 
-		if (*itm == '?') { itm++; }
-		if (*itm == '!') { itm++; }
-		if (*itm == '~') { itm++; }
+		/* Skip modifiers */
+		itm += strspn(itm, "?!~"); 
 
 		if ( argnmatch(itm, "http")         ||
 		     argnmatch(itm, "content=http") ||

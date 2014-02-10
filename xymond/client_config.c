@@ -1362,7 +1362,7 @@ int load_client_config(char *configfn)
 					currule->rule.svc.color = COL_RED;
 
 					do {
-						tok = wstok(NULL);
+						tok = wstok(NULL); if (!tok || isqual(tok)) continue;
 
 						if (strncasecmp(tok, "startup=", 8) == 0) {
 							currule->rule.svc.startupexp = setup_expr(tok+8, 0);

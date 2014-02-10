@@ -172,11 +172,13 @@ int readmibs(char *cfgfn, int verbose)
 
 		if (mib) {
 			/* icmpInMsgs = IP-MIB::icmpInMsgs.0 [/u32] [/rrd:TYPE] */
-			char *tok = NULL, *name, *oid = NULL;
+			char *tok, *name, *oid = NULL;
 
 			name = strtok(bot, " \t");
-			if (name) tok = strtok(NULL, " \t");
-			if (tok && (*tok == '=')) oid = strtok(NULL, " \t"); else oid = tok;
+			if (name) {
+				tok = strtok(NULL, " \t");
+				if (tok && (*tok == '=')) oid = strtok(NULL, " \t"); else oid = tok;
+			}
 
 			if (name && oid) {
 				mib->oidlisttail->oidcount++;

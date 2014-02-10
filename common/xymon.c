@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
 	}
 
 	if ((recipient == NULL) || (STRBUFLEN(msg) == 0) || showhelp) {
+		fprintf(stderr, "Xymon version %s\n", VERSION);
 		fprintf(stderr, "Usage: %s [--debug] [--merge] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
 		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
 		fprintf(stderr, "  DATA: Message to send, or \"-\" to read from stdin\n");
