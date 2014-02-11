@@ -358,5 +358,5 @@ install-clientmsg:
 	@echo "To start the Xymon client, as the $(XYMONUSER) user run '${XYMONHOME}/runclient.sh start'"
 
 install-localclient:
-	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient
+	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient
 
