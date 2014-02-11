@@ -1,11 +1,40 @@
 #!/bin/sh
 
-# Configure script for Xymon CLIENT
+# Configure script for Xymon client
 # $Id$
 
 echo ""
 echo "Configuration script for Xymon client"
 echo ""
+
+while test "$1" != ""
+do
+	OPT="$1"; shift
+
+	case "$OPT" in
+	  "--help")
+	  	cat <<EOF
+  To configure Xymon, the following options are available:
+     --pcreinclude DIRECTORY  : Specify location of PCRE include files
+     --pcrelib DIRECTORY      : Specify location of PCRE libraries
+     --make /path/to/gnumake  : Specify location of the GNU make program
+
+  The script will search a number of standard directories for
+  all of these files, so you normally do not have to specify any options.
+EOF
+		exit 0
+		;;
+	  "--pcreinclude")
+	  	USERPCREINC="$1"; shift
+		;;
+	  "--pcrelib")
+	  	USERPCRELIB="$1"; shift
+		;;
+	  "--make")
+	  	MAKE="$1"; shift
+		;;
+	esac
+done
 
 if test -r Makefile
 then
@@ -27,7 +56,7 @@ then
 	echo "If it is available as \"gmake\", run configure as: 'MAKE=gmake $0'"
 	exit 1
 fi
-echo ""
+
 
 echo "Xymon normally keeps all of the client configuration files"
 echo "on the Xymon server. If you prefer, it is possible to use"
@@ -204,10 +233,15 @@ fi
 echo "" >>Makefile
 if test "$CONFTYPE" = "client"
 then
-	echo "# PCRE settings"                   >>Makefile
-	echo "PCREINCDIR = -I$PCREINC"           >>Makefile
-	echo "PCRELIBS = -L$PCRELIB -lpcre"      >>Makefile
-	echo "RPATHVAL += ${PCRELIB}"            >>Makefile
+	if test "$PCREINC" != ""; then
+		echo "PCREINCDIR = -I$PCREINC"   >>Makefile
+    	fi
+    	if test "$PCRELIB" != ""; then
+		echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
+		echo "RPATHVAL += ${PCRELIB}"       >>Makefile
+	else
+		echo "PCRELIBS = -lpcre"         >>Makefile
+    	fi
 fi
 echo "#"                                 >>Makefile
 echo "# Add local CFLAGS etc. settings here" >>Makefile
