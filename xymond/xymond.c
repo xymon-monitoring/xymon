@@ -3263,7 +3263,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			if (!ofsstr) continue;
 
 			endofs = atoi(ofsstr);
-			if ((endofs <= 0) || (endofs > msg->bufsz)) {
+			if ((endofs <= 0) || (endofs <= startofs) || (endofs > msg->bufsz)) {
 				/* Invalid offsets, abort */
 				errprintf("Invalid end-offset in extcombo: endofs=%d, bufsz=%d\n", endofs, msg->bufsz);
 				msg->buf = origbuf;
