@@ -19,7 +19,7 @@ extern void sethostenv_snapshot(time_t snapshot);
 extern void sethostenv_histlog(char *histtime);
 extern void sethostenv_template(char *dir);
 extern void sethostenv_refresh(int n);
-extern void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn);
+extern void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn, char *classptn);
 extern void sethostenv_clearlist(char *listname);
 extern void sethostenv_addtolist(char *listname, char *name, char *val, char *extra, int selected);
 extern void sethostenv_critack(int prio, char *ttgroup, char *ttextra, char *infourl, char *docurl);

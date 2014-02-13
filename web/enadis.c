@@ -45,6 +45,7 @@ int preview = 0;
 char *hostpattern = NULL;
 char *pagepattern = NULL;
 char *ippattern = NULL;
+char *classpattern = NULL;
 
 void errormsg(char *msg)
 {
@@ -202,6 +203,9 @@ void parse_cgi(void)
 		else if ((strcmp(pwalk->name, "ippattern") == 0)   && pwalk->value && strlen(pwalk->value)) {
 			ippattern = strdup(pwalk->value);
 		}
+		else if ((strcmp(pwalk->name, "classpattern") == 0)   && pwalk->value && strlen(pwalk->value)) {
+			classpattern = strdup(pwalk->value);
+		}
 
 		pwalk = pwalk->next;
 	}
@@ -354,7 +358,7 @@ int main(int argc, char *argv[])
 
 		load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
-		sethostenv_filter(hostpattern, pagepattern, ippattern);
+		sethostenv_filter(hostpattern, pagepattern, ippattern, classpattern);
 		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		showform(stdout, "maint", "maint_form", COL_BLUE, getcurrenttime(NULL), NULL, NULL);
 		return 0;

@@ -35,7 +35,7 @@ void parse_query(void)
 	while (cwalk) {
 		/*
 		 * cwalk->name points to the name of the setting.
-		 * cwakl->value points to the value (may be an empty string).
+		 * cwalk->value points to the value (may be an empty string).
 		 */
 
 		cwalk = cwalk->next;
