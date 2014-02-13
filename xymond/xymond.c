@@ -1217,6 +1217,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		if (createlog && (lwalk == NULL)) {
 			lwalk = (xymond_log_t *)calloc(1, sizeof(xymond_log_t));
 			lwalk->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
+			lwalk->lastchange[0] = getcurrenttime(NULL);
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->host = hwalk;
 			lwalk->test = twalk;

@@ -122,6 +122,8 @@ char *timespec_text(char *spec)
 
 		oneday = days;
 
+		if (STRBUFLEN(result) > 0) addtobuffer(result, "<br>");
+
 		while (!daysdone) {
 			switch (*oneday) {
 			  case '*': dtext = "All days"; break;
