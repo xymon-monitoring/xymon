@@ -55,6 +55,8 @@ static char *pagepattern_text = NULL;
 static pcre *pagepattern = NULL;
 static char *ippattern_text = NULL;
 static pcre *ippattern = NULL;
+static char *classpattern_text = NULL;
+static pcre *classpattern = NULL;
 static void * hostnames;
 static void * testnames;
 
@@ -154,7 +156,7 @@ void sethostenv_pagepath(char *s)
 	hostenv_pagepath = strdup(s);
 }
 
-void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
+void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn, char *classptn)
 {
 	const char *errmsg;
 	int errofs;
@@ -165,6 +167,8 @@ void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
 	if (pagepattern) { pcre_free(pagepattern); pagepattern = NULL; }
 	if (ippattern_text) xfree(ippattern_text);
 	if (ippattern) { pcre_free(ippattern); ippattern = NULL; }
+	if (classpattern_text) xfree(classpattern_text);
+	if (classpattern) { pcre_free(classpattern); classpattern = NULL; }
 
 	/* Setup the pattern to match names against */
 	if (hostptn) {
@@ -178,6 +182,10 @@ void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
 	if (ipptn) {
 		ippattern_text = strdup(ipptn);
 		ippattern = pcre_compile(ipptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	}
+	if (classptn) {
+		classpattern_text = strdup(classptn);
+		classpattern = pcre_compile(classptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	}
 }
 
@@ -383,6 +391,15 @@ static void *wanted_host(char *hostname)
 	if (ippattern && hinfo) {
 		char *hostip = xmh_item(hinfo, XMH_IP);
 		result = pcre_exec(ippattern, NULL, hostip, strlen(hostip), 0, 0,
+				ovector, (sizeof(ovector)/sizeof(int)));
+		if (result < 0) return NULL;
+	}
+
+	if (classpattern && hinfo) {
+		char *hostclass = xmh_item(hinfo, XMH_CLASS);
+		if (!hostclass) return NULL;
+
+		result = pcre_exec(classpattern, NULL, hostclass, strlen(hostclass), 0, 0,
 				ovector, (sizeof(ovector)/sizeof(int)));
 		if (result < 0) return NULL;
 	}
@@ -841,6 +858,9 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		}
 		else if (strcmp(t_start, "IPFILTER") == 0) {
 			if (ippattern_text) fprintf(output, "%s", ippattern_text);
+		}
+		else if (strcmp(t_start, "CLASSFILTER") == 0) {
+			if (classpattern_text) fprintf(output, "%s", classpattern_text);
 		}
 		else if (strcmp(t_start, "HOSTLIST") == 0) {
 			xtreePos_t handle;

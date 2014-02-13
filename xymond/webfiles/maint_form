@@ -52,7 +52,7 @@
                           <FONT SIZE=-1>Hostname pattern</FONT><BR>
                           <INPUT TYPE=TEXT NAME=hostpattern VALUE="&HOSTFILTER" SIZE=20 MAXLENGTH=80>
                       </TD>
-                      <TD ROWSPAN=3 ALIGN=CENTER>
+                      <TD ROWSPAN=4 ALIGN=CENTER>
                           <INPUT TYPE=SUBMIT NAME=go VALUE="Apply filters" ALT="Submit">
                       </TD>
                     </TR>
@@ -66,6 +66,12 @@
                        <TD>
                           <FONT SIZE=-1>IP address pattern</FONT><BR>
                           <INPUT TYPE=TEXT NAME=ippattern VALUE="&IPFILTER" SIZE=20 MAXLENGTH=80>
+                      </TD>
+                    </TR>
+                    <TR>
+                       <TD>
+                          <FONT SIZE=-1>Class pattern</FONT><BR>
+                          <INPUT TYPE=TEXT NAME=classpattern VALUE="&CLASSFILTER" SIZE=20 MAXLENGTH=80>
                       </TD>
                     </TR>
                  </TABLE>
