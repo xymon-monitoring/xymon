@@ -953,7 +953,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 	}
 
 	val = xmh_item(hostwalk, XMH_IP);
-	if ((strcmp(val, "0.0.0.0") == 0) || (strcmp(val, "::") == 0)) {
+	if (conn_null_ip(val)) {
 		static char hostip[100];
 		char *ip = conn_lookup_ip(hostname, 0);
 
