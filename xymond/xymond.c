@@ -3928,7 +3928,7 @@ void do_message(conn_t *msg, char *origin)
 					"    <AckTime>", timestr(lwalk->acktime), "</AckTime>\n",
 					"    <DisableTime>", timestr(lwalk->enabletime), "</DisableTime>\n",
 					"    <Sender>", lwalk->sender, "</Sender>\n",
-				NULL);
+					NULL);
 				timestr(-1);
 
 				if (lwalk->cookie && (lwalk->cookieexpires > now))
