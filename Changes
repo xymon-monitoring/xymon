@@ -1,3 +1,28 @@
+Changes from 4.3.16 -> 4.3.17 (23 Feb 2014)
+===========================================
+
+* rev 7446
+
+* Fix crash in xymond when using 'schedule' command
+* Configure/build/install fixes:
+  - Allow specifying location of the PCRE include/library files 
+    for client-side configuration build. 
+  - Pass IDTOOL to client installation (for Solaris).
+  - Fix broken configure+Makefiles for client-side configuration
+  - C-ARES: Fix wrong call to Makefile.test-cares during configure
+  - Dont error out if www-dir or man-dir is empty. Mostly an
+    issue when building packages with non-standard layouts.
+* Fix wrong timestamp on a new status arriving with a non-green
+  status while DOWNTIME was active. Such a status would appear to
+  have been created on Jan 1st, 1970.
+* Fix hostgraphs so it obeys RRDWIDTH / RRDHEIGHT settings
+* Add upper limit to showgraph CGI when generating self-referring URI's
+  From Werner Maier
+* Extra sanity check on extcombo message offsets.
+* The Enable/Disable webpage now permits filtering on CLASS value.
+  From Galen Johnson
+
+
 Changes from 4.3.15 -> 4.3.16 (9 Feb 2014)
 ==========================================
 
