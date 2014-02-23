@@ -718,6 +718,11 @@ char *build_selfURI(void)
 		addtobuffer(result, "&amp;service=");
 		addtobuffer(result, urlencode(service));
 	}
+	if (haveupperlimit) {
+		snprintf(numbuf, sizeof(numbuf)-1, "%f", upperlimit);
+		addtobuffer(result, "&amp;upper=");
+		addtobuffer(result, urlencode(numbuf));
+	}
 	if (graphheight) {
 		snprintf(numbuf, sizeof(numbuf)-1, "%d", graphheight); 
 		addtobuffer(result, "&amp;graph_height="); 
