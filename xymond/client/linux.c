@@ -31,6 +31,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *vmstatstr;
 	char *ifstatstr;
 	char *portsstr;
+	char *mdstatstr;
 
 	char fromline[1024];
 
@@ -53,6 +54,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 	ifstatstr = getdata("ifstat");
 	vmstatstr = getdata("vmstat");
 	portsstr = getdata("ports");
+	mdstatstr = getdata("mdstat");
 
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
 			whostr, 0, psstr, 0, topstr);
@@ -96,6 +98,95 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 				   memphystotal, memphysused, memactused, memswaptotal, memswapused);
+	}
+
+	if (mdstatstr) {
+		char *statcopy, *bol, *eol;
+		int color = COL_GREEN;
+		char *mdname = NULL, *mdstatus = NULL;
+		int mddevices, mdactive, recovering;
+		strbuffer_t *alerttext = newstrbuffer(0);
+		char msgline[1024];
+		char *summary = NULL;
+
+		statcopy = (char *)malloc(strlen(mdstatstr) + 10);
+		sprintf(statcopy, "%s\nmd999\n", mdstatstr);
+
+		bol = statcopy;
+		while (bol) {
+			eol = strchr(bol, '\n'); if (eol) *eol = '\0';
+
+			if ((strncmp(bol, "md", 2) == 0) && (isdigit(*(bol+2)))) {
+				char *tok;
+
+				if (mdname && (mddevices >= 0) && (mdactive >= 0)) {
+					int onecolor = COL_GREEN;
+
+					/* Got a full md device status, flush it before we start on the next one */
+					if (mddevices != mdactive) {
+						if (!recovering) {
+							onecolor = COL_RED;
+							snprintf(msgline, sizeof(msgline), "&red %s : Disk failure in array : %d devices of %d active\n", mdname, mdactive, mddevices);
+							addtobuffer(alerttext, msgline);
+							summary = "failure";
+						}
+						else {
+							onecolor = COL_YELLOW;
+							snprintf(msgline, sizeof(msgline), "&yellow %s status %s : %d devices of %d active\n", mdname, mdstatus, mdactive, mddevices);
+							addtobuffer(alerttext, msgline);
+							if (!summary) summary = "recovering";
+						}
+					}
+
+					if (onecolor > color) {
+						color = onecolor;
+					}
+				}
+
+				/* First line, holds the name of the array and the active/inactive status */
+				mddevices = mdactive = -1; recovering = 0;
+
+				mdname = strtok(bol, " ");
+				tok = strtok(NULL, " ");	// Skip the ':'
+				mdstatus = strtok(NULL, " ");
+			}
+
+
+			if (mdname && ((mddevices == -1) && (mdactive == -1)) && (strchr(bol, '/'))) {
+				char *p = strchr(bol, '/');
+
+				/* Second line: Holds the number of configured/active devices */
+				mdactive = atoi(p+1);
+				while ((p > bol) && (isdigit(*(p-1)))) p--;
+				mddevices = atoi(p);
+			}
+
+			if (mdname && (mddevices != mdactive) && strstr(bol, "recovery = ")) {
+				/* Third line: Only present during recovery */
+				mdstatus = "recovery in progress";
+				recovering = 1;
+			}
+
+			bol = (eol ? eol+1 : NULL);
+		}
+
+
+		init_status(color);
+		sprintf(msgline, "status %s.raid %s %s - RAID %s\n\n",
+				commafy(hostname), colorname(color), 
+				(timestr ? timestr : "<No timestamp data>"),
+				(summary ? summary : "OK"));
+		addtostatus(msgline);
+		if (STRBUFLEN(alerttext) > 0) {
+			addtostrstatus(alerttext);
+			addtostatus("\n\n");
+		}
+		addtostatus("============================ /proc/mdstat ===========================\n\n");
+		addtostatus(mdstatstr);
+		finish_status();
+
+		xfree(statcopy);
+		freestrbuffer(alerttext);
 	}
 
 	splitmsg_done();
