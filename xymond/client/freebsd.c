@@ -37,7 +37,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *p;
 	char fromline[1024];
 
-	unsigned long memphystotal = 0, memphysfree = 0, memphysused = 0;
+	unsigned long memphystotal = 0, memphysfree = 0, memphysused = 0, memphysactual = -1;
 	unsigned long memswaptotal = 0, memswapfree = 0, memswapused = 0;
 	int found = 0;
 
@@ -80,6 +80,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	if (meminfostr) {
 		p = strstr(meminfostr, "Total:"); if (p) { memphystotal = atol(p+6); found++; }
+		p = strstr(meminfostr, "Actual:"); if (p) memphysactual = atol(p+7);
 	}
 
 	if (vmtotalstr) {
@@ -127,7 +128,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	if (found >= 2) {
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-			   memphystotal, memphysused, -1, memswaptotal, memswapused);
+			   memphystotal, memphysused, memphysactual, memswaptotal, memswapused);
 	}
 
 	splitmsg_done();
