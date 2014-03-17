@@ -1998,7 +1998,9 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	}
 	else hwalk = xtreeData(rbhosts, hosthandle);
 
-	if (!oksender(maintsenders, hwalk->ip, msg->addr.sin_addr, msg->buf)) goto done;
+	if (!oksender(maintsenders, 
+		      (hwalk->ip && (strcmp(hwalk->ip, "0.0.0.0") != 0)) ? hwalk->ip : NULL,
+		      msg->addr.sin_addr, msg->buf)) goto done;
 
 	if (tname) {
 		testhandle = xtreeFind(rbtests, tname);
