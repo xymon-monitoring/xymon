@@ -175,10 +175,7 @@ static int fetch_status(char *hostname)
 
 		boln = strstr(clidata, "[osversion]\n");
 		if (boln) {
-			boln = strchr(boln, '\n') + 1;
-			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
-			unametxt = strdup(boln);
-			if (eoln) *eoln = '\n';
+			unametxt = grabstrbuffer(replacetext(boln, "\n", "<br>"));
 		}
 
 		boln = strstr(clidata, "[uname]\n");
