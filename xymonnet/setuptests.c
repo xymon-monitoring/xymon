@@ -236,6 +236,7 @@ int setup_tests_from_database(int pingenabled, int forcetest)
 
 	load_cookies();
 
+	memset(&options, 0, sizeof(options));
 	while (xymon_sqldb_nettest_row(location, &hostname, &testspec, &destination, &options)) {
 		void *hwalk;
 		char **dialog;
@@ -283,6 +284,7 @@ int setup_tests_from_database(int pingenabled, int forcetest)
 			break;
 		}
 
+		memset(&options, 0, sizeof(options));
 	}
 
 	return count;

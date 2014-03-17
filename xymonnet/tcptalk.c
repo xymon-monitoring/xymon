@@ -831,7 +831,7 @@ void test_is_done(myconn_t *rec)
 	list_item_move(donetests, rec->listitem, rec->testspec);
 	free_net_dialog(rec->dialog, rec->dialogtoken);
 
-	if (!rec->ignoreresult && !rec->noredirect && (rec->talkprotocol == TALK_PROTO_HTTP) && (rec->httpstatus == 302) && (rec->redircount < MAXREDIRECTS)) {
+	if (!rec->ignoreresult && !rec->noredirect && (rec->talkprotocol == TALK_PROTO_HTTP) && (rec->httpstatus >= 300) && (rec->httpstatus <= 399) && (rec->redircount < MAXREDIRECTS)) {
 		/* HTTP redirect */
 		char *lochdr;
 		lochdr = strstr(STRBUF(rec->httpheaders), "\nLocation:");
@@ -851,6 +851,7 @@ void test_is_done(myconn_t *rec)
 			savchar = *locend; *locend = '\0';
 
 			/* Copy options from the original test */
+			memset(&options, 0, sizeof(options));
 			options.testtype = NET_TEST_HTTP;
 			options.timeout = rec->timeout;
 			options.interval = rec->interval;
