@@ -108,6 +108,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 		strbuffer_t *alerttext = newstrbuffer(0);
 		char msgline[1024];
 		char *summary = NULL;
+		int arraycount = 0;
 
 		statcopy = (char *)malloc(strlen(mdstatstr) + 10);
 		sprintf(statcopy, "%s\nmd999\n", mdstatstr);
@@ -123,6 +124,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 					int onecolor = COL_GREEN;
 
 					/* Got a full md device status, flush it before we start on the next one */
+					arraycount++;
 					if (mddevices != mdactive) {
 						if (!recovering) {
 							onecolor = COL_RED;
@@ -136,6 +138,10 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 							addtobuffer(alerttext, msgline);
 							if (!summary) summary = "recovering";
 						}
+					}
+					else {
+						snprintf(msgline, sizeof(msgline), "&green %s : %d devices of %d active\n", mdname, mdactive, mddevices);
+						addtobuffer(alerttext, msgline);
 					}
 
 					if (onecolor > color) {
@@ -171,20 +177,22 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 		}
 
 
-		init_status(color);
-		sprintf(msgline, "status %s.raid %s %s - RAID %s\n\n",
+		if (arraycount > 0) {
+			init_status(color);
+			sprintf(msgline, "status %s.raid %s %s - RAID %s\n\n",
 				commafy(hostname), colorname(color), 
 				(timestr ? timestr : "<No timestamp data>"),
 				(summary ? summary : "OK"));
-		addtostatus(msgline);
-		if (STRBUFLEN(alerttext) > 0) {
-			addtostrstatus(alerttext);
-			addtostatus("\n\n");
+			addtostatus(msgline);
+			if (STRBUFLEN(alerttext) > 0) {
+				addtostrstatus(alerttext);
+				addtostatus("\n\n");
+			}
+			addtostatus("============================ /proc/mdstat ===========================\n\n");
+			addtostatus(mdstatstr);
+			finish_status();
 		}
-		addtostatus("============================ /proc/mdstat ===========================\n\n");
-		addtostatus(mdstatstr);
-		finish_status();
-
+	
 		xfree(statcopy);
 		freestrbuffer(alerttext);
 	}
