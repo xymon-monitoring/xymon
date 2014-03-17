@@ -234,8 +234,11 @@ strbuffer_t *replacetext(char *original, char *oldtext, char *newtext)
 
 	do {
 		start = pos; pos = strstr(pos, oldtext);
-		if (pos)
-			strbuf_addtobuffer(result, newtext, (pos - start + 1));
+		if (pos) {
+			if (pos > start) strbuf_addtobuffer(result, start, (pos - start));
+			addtobuffer(result, newtext);
+			pos += strlen(oldtext);
+		}
 		else
 			addtobuffer(result, start);
 	} while (pos);
