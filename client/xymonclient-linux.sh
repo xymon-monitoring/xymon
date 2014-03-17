@@ -30,7 +30,7 @@ elif [ -f /etc/debian_version ]; then
 	echo -n "Debian "
 	cat /etc/debian_version
 elif [ -f /etc/S?SE-release ]; then
-	egrep -i "^suse|^opensuse" /etc/S?SE-release
+	cat /etc/S?SE-release
 elif [ -f /etc/slackware-version ]; then
 	cat /etc/slackware-version
 elif [ -f /etc/mandrake-release ]; then
@@ -68,7 +68,7 @@ echo "[netstat]"
 netstat -s
 echo "[ports]"
 # Bug in RedHat's netstat spews annoying error messages. 
-netstat -antW 2>/dev/null| sed -e's! Address!_Address!g'|tail -n +2 |column -t|sed -e's!_Address! Address!g'
+netstat -antuW 2>/dev/null| sed -e's! Address!_Address!g'|tail -n +2 |column -t|sed -e's!_Address! Address!g'
 echo "[ifstat]"
 /sbin/ifconfig 2>/dev/null
 # Report mdstat data if it exists
