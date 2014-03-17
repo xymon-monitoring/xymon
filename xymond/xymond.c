@@ -1950,6 +1950,10 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	else hwalk = xtreeData(rbhosts, hosthandle);
 
 	if (!oksender(maintsenders, hwalk->ip, msg->sender, msg->buf)) goto done;
+	if (!oksender(maintsenders,
+			(hwalk->ip && !conn_null_ip(hwalk->ip)) ? hwalk->ip : NULL,
+			msg->sender, msg->buf)) 
+		goto done; 
 
 	if (tname) {
 		testhandle = xtreeFind(rbtests, tname);
@@ -4080,7 +4084,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 
 			for (swalk = schedulehead; (swalk); swalk = swalk->next) {
 				snprintf(tbuf, sizeof(tbuf), "%d|%d", swalk->id, (int)swalk->executiontime);
-				addtobuffer_many(response, tbuf, "|", swalk->sender, "|", nlencode(swalk->command));
+				addtobuffer_many(response, tbuf, "|", swalk->sender, "|", nlencode(swalk->command), NULL);
 			}
 
 			xfree(msg->buf);
