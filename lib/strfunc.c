@@ -227,3 +227,19 @@ char *htmlquoted(char *s)
 	return STRBUF(result);
 }
 
+strbuffer_t *replacetext(char *original, char *oldtext, char *newtext)
+{
+	strbuffer_t *result = newstrbuffer(0);
+	char *pos = original, *start;
+
+	do {
+		start = pos; pos = strstr(pos, oldtext);
+		if (pos)
+			strbuf_addtobuffer(result, newtext, (pos - start + 1));
+		else
+			addtobuffer(result, start);
+	} while (pos);
+
+	return result;
+}
+

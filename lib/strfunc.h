@@ -26,6 +26,7 @@ extern void strbufferrecalc(strbuffer_t *buf);
 extern void strbuffergrow(strbuffer_t *buf, int bytes);
 extern void strbufferuse(strbuffer_t *buf, int bytes);
 extern char *htmlquoted(char *s);
+extern strbuffer_t *replacetext(char *original, char *oldtext, char *newtext);
 
 #endif
 
