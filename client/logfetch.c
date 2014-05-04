@@ -248,7 +248,7 @@ char *logdata(char *filename, logdef_t *logdef)
 		if (logdef->triggercount) {
 			int i, match = 0;
 
-			for (i=0; ((i < logdef->ignorecount) && !match); i++) {
+			for (i=0; ((i < logdef->triggercount) && !match); i++) {
 				match = (regexec(&trigexpr[i], fillpos, 0, NULL, 0) == 0);
 			}
 
@@ -305,19 +305,19 @@ char *logdata(char *filename, logdef_t *logdef)
 			 * then skip until it will fit.
 			 */
 			if (bytesread > logdef->maxbytes) {
-				size_t bytesleft;
+				size_t triggerbytesleft;
 
-				bytesleft = logdef->maxbytes - (triggerendpos - startpos);
-				if (bytesleft > 0) {
+				triggerbytesleft = bytesread - (triggerendpos - startpos);
+				if (triggerbytesleft > 0) {
 					char *skipend;
 
-					skipend = fillpos - bytesleft;
-					memmove(triggerendpos, skipend, bytesleft);
-					*(triggerendpos + bytesleft) = '\0';
+					skipend = fillpos - triggerbytesleft;
+					memmove(triggerendpos, skipend, triggerbytesleft);
+					*(triggerendpos + triggerbytesleft) = '\0';
 
-					if (bytesleft >= strlen(skiptxt)) 
+					if (triggerbytesleft >= strlen(skiptxt)) 
 						memcpy(triggerendpos, skiptxt, strlen(skiptxt));
-					bytesread = (triggerendpos - startpos) + bytesleft;
+					bytesread = (triggerendpos - startpos) + triggerbytesleft;
 				}
 			}
 		}
