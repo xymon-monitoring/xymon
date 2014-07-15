@@ -53,6 +53,13 @@ Normally the "ports" status message includes the full netstat-listing
 received from the client. If you prefer to just have the monitored
 ports shown, this option will turn off the full netstat-listing.
 
+.IP "--uptime-status"
+Generate a separate "uptime" status column. The uptime is normally 
+just reported in the "cpu" status column, but if you would like a
+separate status column for the uptime, you can use this option. It 
+is useful if you want to generate an alert in case of a reboot, 
+without having this alert mixed in with the cpu load alerts.
+
 .IP "--config=FILENAME"
 Sets the filename for the 
 .I analysis.cfg

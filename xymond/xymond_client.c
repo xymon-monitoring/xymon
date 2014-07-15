@@ -50,6 +50,7 @@ int sendclearsvcs = 1;
 int localmode     = 0;
 int unknownclientosok = 0;
 int noreportcolor = COL_CLEAR;
+int separate_uptime_status = 0;
 
 int usebackfeedqueue = 0;
 
@@ -315,10 +316,10 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 	long uptimesecs = -1;
 	char myupstr[100];
 
-	int cpucolor = COL_GREEN;
+	int cpucolor = COL_GREEN, upstatuscolor = COL_GREEN;
 
 	char msgline[4096];
-	strbuffer_t *upmsg;
+	strbuffer_t *cpumsg, *upmsg = NULL;
 
 	if (!want_msgtype(hinfo, MSG_CPU)) return;
 
@@ -421,27 +422,45 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
 
-	upmsg = newstrbuffer(0);
+	cpumsg = newstrbuffer(0);
 
 	if (load5 > loadred) {
 		cpucolor = COL_RED;
-		addtobuffer(upmsg, "&red Load is CRITICAL\n");
+		addtobuffer(cpumsg, "&red Load is CRITICAL\n");
 	}
 	else if (load5 > loadyellow) {
 		cpucolor = COL_YELLOW;
-		addtobuffer(upmsg, "&yellow Load is HIGH\n");
+		addtobuffer(cpumsg, "&yellow Load is HIGH\n");
 	}
 
-	if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
-		if (cpucolor != COL_RED) cpucolor = uptimecolor;
-		sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
-		addtobuffer(upmsg, msgline);
+	if (separate_uptime_status) {
+		upmsg = newstrbuffer(0);
+
+		if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
+			upstatuscolor = uptimecolor;
+			sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+			addtobuffer(upmsg, msgline);
+		}
+		if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
+			upstatuscolor = uptimecolor;
+			sprintf(msgline, "&%s Machine has been up more than %d days\n", 
+				colorname(uptimecolor), (ancientlimit / 86400));
+			addtobuffer(upmsg, msgline);
+		}
+
 	}
-	if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
-		if (cpucolor != COL_RED) cpucolor = uptimecolor;
-		sprintf(msgline, "&%s Machine has been up more than %d days\n", 
-			colorname(uptimecolor), (ancientlimit / 86400));
-		addtobuffer(upmsg, msgline);
+	else {
+		if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
+			if (cpucolor != COL_RED) cpucolor = uptimecolor;
+			sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+			addtobuffer(cpumsg, msgline);
+		}
+		if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
+			if (cpucolor != COL_RED) cpucolor = uptimecolor;
+			sprintf(msgline, "&%s Machine has been up more than %d days\n", 
+				colorname(uptimecolor), (ancientlimit / 86400));
+			addtobuffer(cpumsg, msgline);
+		}
 	}
 
 	if (clockstr) {
@@ -472,11 +491,11 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 				if (cpucolor != COL_RED) cpucolor = clockdiffcolor;
 				sprintf(msgline, "&%s System clock is %ld seconds off (max %ld)\n",
 					colorname(clockdiffcolor), (long) clockdiff.tv_sec, (long) maxclockdiff);
-				addtobuffer(upmsg, msgline);
+				addtobuffer(cpumsg, msgline);
 			}
 			else {
 				sprintf(msgline, "System clock is %ld seconds off\n", (long) clockdiff.tv_sec);
-				addtobuffer(upmsg, msgline);
+				addtobuffer(cpumsg, msgline);
 			}
 		}
 	}
@@ -490,8 +509,8 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		(psstr ? linecount(psstr)-1 : pscount), 
 		loadresult);
 	addtostatus(msgline);
-	if (STRBUFLEN(upmsg)) {
-		addtostrstatus(upmsg);
+	if (STRBUFLEN(cpumsg)) {
+		addtostrstatus(cpumsg);
 		addtostatus("\n");
 	}
 	if (topstr) {
@@ -502,7 +521,21 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
 
-	freestrbuffer(upmsg);
+	if (separate_uptime_status) {
+		init_status(upstatuscolor);
+		sprintf(msgline, "status %s.uptime %s %s Uptime %s\n",
+			commafy(hostname), colorname(upstatuscolor), 
+			(timestr ? timestr : "<no timestamp data>"),
+			((upstatuscolor == COL_GREEN) ? "OK" : "Not OK"));
+		addtostatus(msgline);
+		sprintf(msgline, "\nSystem has been %s\n", myupstr);
+		addtostatus(msgline);
+		if (fromline && !localmode) addtostatus(fromline);
+		finish_status();
+	}
+
+	freestrbuffer(cpumsg);
+	if (upmsg) freestrbuffer(upmsg);
 }
 
 
@@ -2057,6 +2090,9 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[argi], "--clear-color=", 14) == 0) {
 			char *p = strchr(argv[argi], '=');
 			noreportcolor = parse_color(p+1);
+		}
+		else if (strcmp(argv[argi], "--uptime-status") == 0) {
+			separate_uptime_status = 1;
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *lp = strchr(argv[argi], '=');
