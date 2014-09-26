@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.17   * * *
+           * * *   Release notes for Xymon 4.3.18   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -8,6 +8,20 @@ changes you should be aware of when upgrading.
 
 For a full list of changes and enhancements, please see the 
 Changes file.
+
+
+Changes for 4.3.18
+==================
+In previous versions, the Xymon web CGI programs were run through
+a shell-script wrapper, which took care of setting up the environment
+for the Xymon programs. In light of the bash 'Shell shock' bug, this
+is no longer the case. Instead, a binary 'cgiwrap' utility is used
+to load the xymonserver.cfg and cgioptions.cfg files before invoking
+the CGI programs. This means that the cgioptions.cfg file is no longer 
+parsed as a shell script, so if you rely on this then it will no 
+longer work. In that case you must replace the symlink(s) in 
+xymon/cgi-bin/ with shell script wrappers which source the 
+cgioptions.cfg file.
 
 
 Changes for 4.3.15 - 4.3.17

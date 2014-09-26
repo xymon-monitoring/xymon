@@ -1,3 +1,21 @@
+Changes from 4.3.17 -> 4.3.18 (26 Sep 2014)
+===========================================
+
+* rev 7470
+
+* Mitigate CVE-2014-6271 (bash 'Shell shock' vulnerability) by
+  eliminating the shell script CGI wrappers
+* Dont crash in XML board output when there is no sender for status
+* Fix IP sender-address check for maintenance commands, when
+  the target host is listed with IP 0.0.0.0 in hosts.cfg.
+* Linux client:
+    - Generate 'raid' status from mdstat data
+    - Include UDP listen ports in netstat data
+    - Include full OS version data from SuSE clients
+* FreeBSD client: Handle 'actual' memory item, once the client
+  starts reporting it.
+
+
 Changes from 4.3.16 -> 4.3.17 (23 Feb 2014)
 ===========================================
 

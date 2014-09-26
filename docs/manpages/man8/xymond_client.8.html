@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND_CLIENT</TITLE>
 </HEAD><BODY>
 <H1>XYMOND_CLIENT</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.17: 23 Feb 2014<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.18: 26 Sep 2014<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -72,6 +72,13 @@ Normally the &quot;ports&quot; status message includes the full netstat-listing
 received from the client. If you prefer to just have the monitored
 ports shown, this option will turn off the full netstat-listing.
 <P>
+<DT>--uptime-status<DD>
+Generate a separate &quot;uptime&quot; status column. The uptime is normally 
+just reported in the &quot;cpu&quot; status column, but if you would like a
+separate status column for the uptime, you can use this option. It 
+is useful if you want to generate an alert in case of a reboot, 
+without having this alert mixed in with the cpu load alerts.
+<P>
 <DT>--config=FILENAME<DD>
 Sets the filename for the 
 <I>analysis.cfg</I>
@@ -136,6 +143,6 @@ filesystem (device) name.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 09:41:02 GMT, February 23, 2014
+Time: 14:24:18 GMT, September 26, 2014
 </BODY>
 </HTML>

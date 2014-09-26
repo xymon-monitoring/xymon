@@ -22,7 +22,7 @@ do
       NAME=`head -n 1 $f | awk '{print $2}'`;
       SECTION=`head -n 1 $f | awk '{print $3}'`;
       (echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Xymon\""; tail -n +2 $f) >$f.new
-      mv $f.new $f
+      mv -f $f.new $f
       # ci -u -m"Version update" -q -f $f
    done
 
