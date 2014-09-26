@@ -5,7 +5,7 @@ XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
-PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi svcstatus.cgi enadis.cgi confreport.cgi criticalview.cgi criticaleditor.cgi ackinfo.cgi statusreport.cgi boilerplate.cgi hostgraphs.cgi ghostlist.cgi notifications.cgi hostlist.cgi useradm.cgi appfeed.cgi
+PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi svcstatus.cgi enadis.cgi confreport.cgi criticalview.cgi criticaleditor.cgi ackinfo.cgi statusreport.cgi boilerplate.cgi hostgraphs.cgi ghostlist.cgi notifications.cgi hostlist.cgi useradm.cgi appfeed.cgi cgiwrap
 CGISCRIPTS = history.sh eventlog.sh report.sh reportlog.sh snapshot.sh findhost.sh csvinfo.sh columndoc.sh datepage.sh svcstatus.sh historylog.sh confreport.sh confreport-critical.sh criticalview.sh certreport.sh nongreen.sh hostgraphs.sh ghostlist.sh notifications.sh hostlist.sh topchanges.sh appfeed.sh appfeed-critical.sh
 SECCGISCRIPTS = acknowledge.sh enadis.sh criticaleditor.sh ackinfo.sh useradm.sh
 
@@ -14,6 +14,7 @@ ifeq ($(DORRD),yes)
 	CGISCRIPTS += showgraph.sh perfdata.sh
 endif
 
+CGIWRAPOBJS     = cgiwrap.o
 HISTOBJS        = history.o
 EVENTLOGOBJS    = eventlog.o
 REPOBJS         = report.o
@@ -49,6 +50,12 @@ IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else
 
 
 all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS)
+
+cgiwrap.o: cgiwrap.c
+	$(CC) $(CFLAGS) -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ $<
+
+cgiwrap: $(CGIWRAPOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(CGIWRAPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 history.cgi: $(HISTOBJS) $(XYMONCOMMLIB)
 	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
