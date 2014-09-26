@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# This is an example of using the Xymon statusreport.cgi tool.
-# Through the options, it generates a report of the currently
-# about-to-expire SSL certificates.
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/statusreport.cgi --column=sslcert --filter=color=red,yellow --all --no-colors
-

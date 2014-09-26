@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon criticaleditor.cgi script
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/criticaleditor.cgi $CGI_CRITEDIT_OPTS
-

@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon svcstatus.cgi script
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/svcstatus.cgi $CGI_SVC_OPTS
-

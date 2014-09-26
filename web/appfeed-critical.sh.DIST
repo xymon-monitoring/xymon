@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon appfeed.cgi script
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/appfeed.cgi --critical=@XYMONHOME@/etc/critical.cfg $CGI_APPFEED_OPTS
-

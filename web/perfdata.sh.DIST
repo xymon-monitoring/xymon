@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon perfdata.cgi script
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/perfdata.cgi $CGI_PERFDATA_OPTS
-

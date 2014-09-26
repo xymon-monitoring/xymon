@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is the Xymon wrapper for the notifications CGI
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/notifications.cgi $CGI_NOTIFYLOG_OPTS
-

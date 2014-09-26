@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# This is the wrapper for svcstatus.cgi when viewing a 
-# a historical logfile.
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/svcstatus.cgi $CGI_SVCHIST_OPTS --historical
-

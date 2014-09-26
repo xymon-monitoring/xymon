@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# This is the Xymon CGI script to display the eventlog
-
-. @XYMONHOME@/etc/cgioptions.cfg
-
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/eventlog.cgi $CGI_EVENTLOG_OPTS
-

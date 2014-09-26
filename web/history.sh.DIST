@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# This is the Xymon wrapper for the history.cgi tool
-
-. @XYMONHOME@/etc/cgioptions.cfg
-
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/history.cgi $CGI_HIST_OPTS
-

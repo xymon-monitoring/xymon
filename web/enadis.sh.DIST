@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon enadis script
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/enadis.cgi $CGI_ENADIS_OPTS
-

@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is the Xymon wrapper for the acknowledge CGI
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/acknowledge.cgi $CGI_ACK_OPTS
-

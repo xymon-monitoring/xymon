@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon ackinfo.cgi script
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/ackinfo.cgi $CGI_ACKINFO_OPTS
-

@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon useradm.cgi script
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/useradm.cgi $CGI_USERADM_OPTS
-

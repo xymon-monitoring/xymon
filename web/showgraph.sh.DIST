@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# This is the Xymon CGI script interface to showgraph.cgi
-#
-# Install this script in your webservers' cgi-bin directory
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/showgraph.cgi $CGI_SHOWGRAPH_OPTS
-

@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon criticalview.cgi script
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/criticalview.cgi $CGI_CRITVIEW_OPTS
-

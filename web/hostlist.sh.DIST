@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is the Xymon wrapper for the hostlist CGI
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/hostlist.cgi $CGI_HOSTLIST_OPTS
-

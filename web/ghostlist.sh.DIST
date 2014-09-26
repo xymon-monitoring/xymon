@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is the Xymon wrapper for the ghostlist CGI
-
-. @XYMONHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/ghostlist.cgi $CGI_GHOSTS_OPTS
-

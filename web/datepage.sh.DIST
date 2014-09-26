@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# This is the Xymon CGI script to select a pre-generated report.
-
-. @XYMONHOME@/etc/cgioptions.cfg
-
-@RUNTIMEDEFS@ exec @XYMONHOME@/bin/datepage.cgi $CGI_DATEPAGE_OPTS
-
