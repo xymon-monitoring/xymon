@@ -21,7 +21,7 @@ Alias @XYMONHOSTURL@/  "@INSTALLWWWDIR@/"
 ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
 <Directory "@CGIDIR@">
     AllowOverride None
-    Options ExecCGI Includes
+    Options ExecCGI FollowSymLinks Includes
     Order allow,deny
     Allow from all
 </Directory>
@@ -29,7 +29,7 @@ ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
 ScriptAlias @SECUREXYMONCGIURL@/ "@SECURECGIDIR@/"
 <Directory "@SECURECGIDIR@">
     AllowOverride None
-    Options ExecCGI Includes
+    Options ExecCGI FollowSymLinks Includes
     Order allow,deny
     Allow from all
 
