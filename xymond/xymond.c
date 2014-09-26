@@ -2676,8 +2676,11 @@ char *timestr(time_t tstamp)
 	static int residx = -1;
 	char *p;
 
-	if (tstamp < 0) {
+	if (tstamp < DISABLED_UNTIL_OK) {
 		residx = -1;
+	}
+	else if (tstamp == DISABLED_UNTIL_OK) {
+		return "Until OK";
 	}
 	else if (tstamp == 0) {
 		return "N/A";
@@ -2690,6 +2693,7 @@ char *timestr(time_t tstamp)
 
 	return result[residx];
 }
+
 
 hostfilter_rec_t *setup_filter(char *buf, char **fields, int *acklevel, int *havehostfilter)
 {
@@ -3725,9 +3729,9 @@ void do_message(conn_t *msg, char *origin)
 				"  <ValidTime>", 	timestr(log->validtime), 		"</ValidTime>\n",
 				"  <AckTime>", 		timestr(log->acktime), 			"</AckTime>\n",
 				"  <DisableTime>", 	timestr(log->enabletime), 		"</DisableTime>\n",
-				"  <Sender>", 		log->sender, 				"</Sender>\n", 
+				"  <Sender>", 		(log->sender ? log->sender : "xymond"),	"</Sender>\n", 
 				NULL);
-			timestr(-1);
+			timestr(-999);
 
 			if (log->cookie && (log->cookieexpires > now))
 				addtobuffer_many(response, "  <Cookie>", log->cookie, "</Cookie>\n", NULL);
@@ -3748,7 +3752,6 @@ void do_message(conn_t *msg, char *origin)
 				"  <Message><![CDATA[", msg_data(log->message, 0), "]]></Message>\n",
 				"</ServerStatus>\n",
 				NULL);
-			timestr(-1);
 
 			msg->doingwhat = RESPONDING;
 			msg->buflen = STRBUFLEN(response);
@@ -3929,9 +3932,9 @@ void do_message(conn_t *msg, char *origin)
 					"    <ValidTime>", timestr(lwalk->validtime), "</ValidTime>\n",
 					"    <AckTime>", timestr(lwalk->acktime), "</AckTime>\n",
 					"    <DisableTime>", timestr(lwalk->enabletime), "</DisableTime>\n",
-					"    <Sender>", lwalk->sender, "</Sender>\n",
+					"    <Sender>", (lwalk->sender ? lwalk->sender : "xymond"), "</Sender>\n",
 					NULL);
-				timestr(-1);
+				timestr(-999);
 
 				if (lwalk->cookie && (lwalk->cookieexpires > now))
 					addtobuffer_many(response, "    <Cookie>", lwalk->cookie, "</Cookie>\n", NULL);
