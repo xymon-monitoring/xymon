@@ -4991,6 +4991,7 @@ int main(int argc, char *argv[])
 			if (p) {
 				*p = '\0';
 				listenport = atoi(p+1);
+				*p = ':';
 			}
 		}
 		else if (argnmatch(argv[argi], "--timeout=")) {
