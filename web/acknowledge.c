@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 					pcre *dummy;
 					char *re;
 
-					re = (char *)malloc(8 + strlen(pagename));
+					re = (char *)malloc(8 + strlen(pagename)*2);
 					sprintf(re, "%s$|^%s/.+", pagename, pagename);
 					dummy = compileregex(re);
 					if (dummy) {
