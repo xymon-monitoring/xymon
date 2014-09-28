@@ -19,6 +19,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include "libxymon.h"
 #include "version.h"
@@ -34,6 +35,11 @@ strbuffer_t *newstrbuffer(int initialsize)
 	if (!initialsize) initialsize = 4096;
 
 	newbuf->s = (char *)malloc(initialsize);
+	if (newbuf->s == NULL) {
+		errprintf("newstrbuffer: Attempt to allocate failed (initialsize=%d): %s\n", initialsize, strerror(errno));
+		xfree(newbuf);
+		return NULL;
+	}
 	*(newbuf->s) = '\0';
 	newbuf->sz = initialsize;
 
