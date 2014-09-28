@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 				match = (pcre_exec(testexp, NULL, testname, strlen(testname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
 				if (!match) continue;
 			}
-			if (exhostexp) {
+			if (extestexp) {
 				match = (pcre_exec(extestexp, NULL, testname, strlen(testname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
 				if (match) continue;
 			}
