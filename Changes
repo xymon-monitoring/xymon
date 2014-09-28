@@ -1,7 +1,7 @@
-Changes from 4.3.17 -> 4.3.18 (26 Sep 2014)
+Changes from 4.3.17 -> 4.3.18 (28 Sep 2014)
 ===========================================
 
-* rev 7470
+* rev 7491
 
 * Mitigate CVE-2014-6271 (bash 'Shell shock' vulnerability) by
   eliminating the shell script CGI wrappers
@@ -14,6 +14,20 @@ Changes from 4.3.17 -> 4.3.18 (26 Sep 2014)
     - Include full OS version data from SuSE clients
 * FreeBSD client: Handle 'actual' memory item, once the client
   starts reporting it.
+* Bugfixes from JC Cleaver:
+  - xymond_capture: Fix exclude-test pattern handling
+  - xymonlaunch: Guard against cron-times triggering twice in one minute
+  - xymond_client: Fix DISPLAYGROUP handling in analysis.cfg rules
+  - xymonnet: Handle AAAA records in dns checks
+  - xymond_channel: Fix matching in --filter code
+  - xymond: BFQ id may be zero
+  - xymond: Fix bug in hostfilter matching code
+  - xymond: Fix memory leak
+  - xymond: Fix list manipulation for "modify" commands
+  - acknowledge CGI: Fix overflow in page filter
+  - xymond_rrd: Fix restart of external processor
+  - Linux client: Set CPULOOP for correct top output
+  - AIX client: vmstat behaves differently
 
 
 Changes from 4.3.16 -> 4.3.17 (23 Feb 2014)
