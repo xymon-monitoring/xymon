@@ -2845,7 +2845,7 @@ hostfilter_rec_t *setup_filter(char *buf, char **fields, int *acklevel, int *hav
 	
 		*havehostfilter = 0;
 		while (fwalk && !(*havehostfilter)) { 
-			*havehostfilter = ((fwalk->filtertype == FILTER_XMH) && (fwalk->field = XMH_HOSTNAME)); 
+			*havehostfilter = ((fwalk->filtertype == FILTER_XMH) && (fwalk->field == XMH_HOSTNAME)); 
 			fwalk = fwalk->next;
 		}
 	}
