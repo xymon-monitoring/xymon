@@ -61,7 +61,7 @@ static void sig_handler(int signum)
 		  reloadtime = 0;
 		  break;
 	  case SIGPIPE:
-		  reloadextprocessor = 0;
+		  reloadextprocessor = 1;
 		  break;
 	  case SIGCHLD:
 		  break;
