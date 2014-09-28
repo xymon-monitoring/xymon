@@ -454,8 +454,8 @@ static int isqual(char *token)
 	     (strncasecmp(token, "EXHOST=", 7) == 0)		||
 	     (strncasecmp(token, "PAGE=", 5) == 0)		||
 	     (strncasecmp(token, "EXPAGE=", 7) == 0)		||
-	     (strncasecmp(token, "DISPLAYGROUP=", 12) == 0)	||
-	     (strncasecmp(token, "EXDISPLAYGROUP=", 14) == 0)	||
+	     (strncasecmp(token, "DISPLAYGROUP=", 13) == 0)	||
+	     (strncasecmp(token, "EXDISPLAYGROUP=", 15) == 0)	||
 	     (strncasecmp(token, "CLASS=", 6) == 0)		||
 	     (strncasecmp(token, "EXCLASS=", 8) == 0)		||
 	     (strncasecmp(token, "TEXT=", 5) == 0)		||
