@@ -69,6 +69,7 @@ typedef struct tasklist_t {
 	int beingkilled;
 	char *cronstr; /* pointer to cron string */
 	void *crondate; /* pointer to cron date-time structure */
+	int cronmin;	/* minute value of the last sucessful cron execution attempt */
 	struct tasklist_t *depends;
 	struct tasklist_t *next;
 	struct tasklist_t *copy;
@@ -629,6 +630,13 @@ int main(int argc, char *argv[])
 	errprintf("xymonlaunch starting\n");
 	while (running) {
 		time_t now = gettimer();
+		struct timeval curtime;
+		struct tm tt;
+		int thisminute = -1;
+
+		gettimeofday(&curtime, NULL);
+		gmtime_r(&curtime.tv_sec, &tt);
+		thisminute = tt.tm_min;
 
 		if (now >= nextcfgload) {
 			load_config(config);
@@ -682,7 +690,7 @@ int main(int argc, char *argv[])
 		for (twalk = taskhead; (twalk); twalk = twalk->next) {
 			if ( (twalk->pid == 0) && !twalk->disabled && 
 			       ( ((twalk->interval >= 0) && (now >= (twalk->laststart + twalk->interval))) || /* xymon interval condition */
-			         (twalk->crondate && ((twalk->laststart + 55) < now) && cronmatch(twalk->crondate)) /* cron date */
+			         (twalk->crondate && (twalk->cronmin != thisminute) && cronmatch(twalk->crondate) ) /* cron date, has not had run attempt this minute */
 			       ) 
 			   ) {
 				if (twalk->depends && ((twalk->depends->pid == 0) || (twalk->depends->laststart > (now - 5)))) {
@@ -715,6 +723,7 @@ int main(int argc, char *argv[])
 				dbgprintf("About to start task %s\n", twalk->key);
 
 				twalk->laststart = now;
+				if (twalk->crondate) twalk->cronmin = thisminute;
 				twalk->pid = fork();
 				if (twalk->pid == 0) {
 					/* Exec the task */
@@ -777,6 +786,9 @@ int main(int argc, char *argv[])
 					twalk->beingkilled = 1; /* Next time it's a real kill */
 				}
 			}
+			/* Crondate + our flag isn't set and we don't need to run... reset the minute value to the flag. */
+			/* This clears whenever the minute has changed */
+			if (twalk->crondate && (twalk->cronmin != -1) && !cronmatch(twalk->crondate)) twalk->cronmin = -1;
 		}
 
 		sleep(5);
