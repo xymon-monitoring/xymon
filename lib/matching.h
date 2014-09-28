@@ -17,6 +17,14 @@
 #include <stdarg.h>
 
 extern pcre *compileregex(const char *pattern);
+extern pcre *compileregex_opts(const char *pattern, int flags);
+#ifdef PCRE_FIRSTLINE
+#define firstlineregex(P) compileregex_opts(P, PCRE_FIRSTLINE);
+#define firstlineregexnocase(P) compileregex_opts(P, PCRE_CASELESS|PCRE_FIRSTLINE);
+#else
+#define firstlineregex(P) compileregex_opts(P);
+#define firstlineregexnocase(P) compileregex_opts(P, PCRE_CASELESS);
+#endif
 extern pcre *multilineregex(const char *pattern);
 extern int matchregex(char *needle, pcre *pcrecode);
 extern void freeregex(pcre *pcrecode);

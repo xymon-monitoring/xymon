@@ -492,7 +492,7 @@ int main(int argc, char *argv[])
 				errprintf("Invalid filter (bad expression): %s\n", p+1);
 			}
 			else {
-				stdfilter = compileregex("^@@(logrotate|shutdown|drophost|droptest|renamehost|renametest)");
+				stdfilter = firstlineregexnocase("^@@(logrotate|shutdown|drophost|droptest|renamehost|renametest)");
 			}
 		}
 		else if (argnmatch(argv[argi], "--md5")) {

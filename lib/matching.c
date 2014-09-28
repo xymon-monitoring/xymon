@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-static pcre *compileregex_opts(const char *pattern, int flags)
+pcre *compileregex_opts(const char *pattern, int flags)
 {
 	pcre *result;
 	const char *errmsg;
