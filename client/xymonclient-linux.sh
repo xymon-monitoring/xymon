@@ -82,6 +82,7 @@ then
     if test -x "$TOP"
     then
         echo "[top]"
+	export CPULOOP ; CPULOOP=1 ;
 	$TOP -b -n 1 
 	# Some top versions do not finish off the last line of output
 	echo ""
