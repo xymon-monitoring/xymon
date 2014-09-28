@@ -1366,8 +1366,10 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * We dont do this for status changes triggered by a "modify" command.
 		 */
 		modifier_t *mwalk;
+		modifier_t *mlast;
 		int mcolor = -1;
 
+		mlast = NULL;
 		mwalk = log->modifiers;
 		while (mwalk) {
 			mwalk->valid--;
@@ -1381,11 +1383,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 
 				/* Remove this modifier from the list. Make sure log->modifiers is updated */
 				if (mwalk == log->modifiers) log->modifiers = mwalk->next;
+				/* ... link the previous entry to the next, since we're about to free the current record */
+				if (mlast) mlast->next = mwalk->next;
 				mwalk = mwalk->next;
 				xfree(zombie);
 			}
 			else {
 				if (mwalk->color > mcolor) mcolor = mwalk->color;
+				mlast = mwalk;
 				mwalk = mwalk->next;
 			}
 		}
