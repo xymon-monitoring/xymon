@@ -2367,6 +2367,8 @@ void free_log_t(xymond_log_t *zombie)
 	if (zombie->dismsg) xfree(zombie->dismsg);
 	if (zombie->ackmsg) xfree(zombie->ackmsg);
 	if (zombie->grouplist) xfree(zombie->grouplist);
+	if (zombie->lastchange) xfree(zombie->lastchange);
+	if (zombie->testflags) xfree(zombie->testflags);
 	flush_acklist(zombie, 1);
 	xfree(zombie);
 	dbgprintf("<- free_log_t\n");
