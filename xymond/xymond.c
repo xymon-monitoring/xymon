@@ -3685,12 +3685,13 @@ void do_message(conn_t *msg, char *origin)
 			}
 
 			xfree(msg->buf);
-			logdata = generate_outbuf(NULL, logfields, h, log, acklevel);
+			logdata = newstrbuffer(20480);
+			logdata = generate_outbuf(&logdata, logfields, h, log, acklevel);
 			addtobuffer(logdata, msg_data(log->message, 0));
 
 			msg->doingwhat = RESPONDING;
 			msg->buflen = STRBUFLEN(logdata);
-			msg->bufp = grabstrbuffer(logdata);
+			msg->bufp = msg->buf = grabstrbuffer(logdata);
 		}
 
 		clear_filter(logfilter);
