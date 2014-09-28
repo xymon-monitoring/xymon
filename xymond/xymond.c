@@ -5456,7 +5456,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		backfeeddata = (backfeedqueue > 0);
+		backfeeddata = (backfeedqueue >= 0);
 		while (backfeeddata) {
 			ssize_t sz;
 			conn_t msg;
@@ -5745,7 +5745,7 @@ int main(int argc, char *argv[])
 	close_channel(clichgchn, CHAN_MASTER);
 	close_channel(userchn, CHAN_MASTER);
 
-	if (backfeedqueue > 0) close_feedback_queue(backfeedqueue, CHAN_MASTER);
+	if (backfeedqueue >= 0) close_feedback_queue(backfeedqueue, CHAN_MASTER);
 	if (bf_buf) xfree(bf_buf);
 
 	save_checkpoint();
