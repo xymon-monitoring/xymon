@@ -266,6 +266,7 @@ int main(int argc, char *argv[])
 				errprintf("Invalid listen address %s\n", locaddr);
 				return 1;
 			}
+			if (p) *p = ':';
 		}
 		else if (argnmatch(argv[opt], "--server=") || argnmatch(argv[opt], "--bbdisplay=")) {
 			char *ips, *ip1;
@@ -852,7 +853,7 @@ int main(int argc, char *argv[])
 					cwalk->ssocket = -1;
 				}
 				cwalk->arrival.tv_sec = cwalk->arrival.tv_nsec = 0;
-				cwalk->bufp = cwalk->bufp; 
+				cwalk->bufp = cwalk->buf; 
 				cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
 				memset(&cwalk->caddr, 0, sizeof(cwalk->caddr));
