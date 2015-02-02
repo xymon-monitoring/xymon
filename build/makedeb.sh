@@ -28,6 +28,6 @@ cd $BASEDIR
 find debian | egrep -v "RCS|pkg|\.svn" | cpio -pdvmu $BASEDIR/debbuild/xymon-$REL/
 
 cd debbuild/xymon-$REL
-dpkg-buildpackage -rfakeroot -kA6EDAB79
+dpkg-buildpackage -rfakeroot
 #mv ../xymon*$REL*.{deb,dsc,changes} ../../debian/pkg/
 
