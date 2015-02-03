@@ -1,6 +1,7 @@
+
 xymon (4.3.18) unstable; urgency=medium
 
-   * rev 7493
+   * rev 7494
 
    * Fix CVE-2015-1430, a buffer overflow in the acknowledge.cgi script.
      Thank you to Mark Felder for noting the impact and Martin Lenko

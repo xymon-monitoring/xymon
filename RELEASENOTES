@@ -12,6 +12,13 @@ Changes file.
 
 Changes for 4.3.18
 ==================
+4.3.18 fixes a buffer overflow vulnerability in the acknowledge.cgi
+script (CVE-2015-1430). All users are encouraged to upgrade.
+
+Thank you to Mark Felder for noting the impact and Martin Lenko
+for the original patch.
+
+
 In previous versions, the Xymon web CGI programs were run through
 a shell-script wrapper, which took care of setting up the environment
 for the Xymon programs. In light of the bash 'Shell shock' bug, this

@@ -1,7 +1,7 @@
 Changes from 4.3.17 -> 4.3.18 (3 Feb 2015)
 ===========================================
 
-* rev 7493
+* rev 7494
 
 * Fix CVE-2015-1430, a buffer overflow in the acknowledge.cgi script.
   Thank you to Mark Felder for noting the impact and Martin Lenko
