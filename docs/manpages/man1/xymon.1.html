@@ -1,9 +1,8 @@
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of XYMON</TITLE>
+<HTML><HEAD><TITLE>Manpage of XYMON</TITLE>
 </HEAD><BODY>
 <H1>XYMON</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.18: 26 Sep 2014<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version 4.3.18:  3 Feb 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -84,7 +83,7 @@ The <B>message</B> parameter is the message to be sent across
 to the Xymon server. Messages must be enclosed in quotes,
 but by doing so they can span multiple lines. The maximum size
 of a message is defined by the maximum allowed length of your
-shell's command-line, and is typically 8-32 KB. 
+shellaqs command-line, and is typically 8-32 KB. 
 <P>
 If you need to send longer status messages, you can specify &quot;@&quot; 
 as the message: xymon will then read the status message from its
@@ -135,7 +134,7 @@ the number, e.g. &quot;status+5h&quot; for a status that is valid for 5 hours.
 <BR>
 
 The GROUP option is used to direct alerts from the status to a specific group.
-It is currently used for status generated from the Xymon clients' data,
+It is currently used for status generated from the Xymon clientsaq data,
 e.g. to direct alerts for a &quot;procs&quot; status to different people, depending on
 exactly which process is down.
 <P>
@@ -174,10 +173,10 @@ status of this test to be listed as &quot;blue&quot; on the Xymon server,
 and no alerts for this host/test will be generated. If DURATION is
 given as a number followed by s/m/h/d, it is interpreted as being
 in seconds/minutes/hours/days respectively.
+<B>To</B>disable<B>a</B>test<B>until</B>it<B>becomes</B>OK,<B>use</B>-1<B>as</B>the<B>DURATION.</B>
 
-To disable a test until it becomes OK, use &quot;-1&quot; as the DURATION.
+<B>To</B>disable<B>all</B>tests<B>for</B>a<B>host,</B>use<B>an</B>asterisk<B>*</B>for<B>TESTNAME.</B>
 
-To disable all tests for a host, use an asterisk &quot;*&quot; for TESTNAME.
 <P>
 <DT>enable HOSTNAME.TESTNAME<DD>
 Re-enables a test that had been disabled.
@@ -452,7 +451,7 @@ will always be the hostname and the IP-address. The remaining fields
 - if any - are the hosts.cfg tags in no particular order.
 <P>
 <DT>download FILENAME<DD>
-Download a file from the Xymon server's download directory.
+Download a file from the Xymon serveraqs download directory.
 <P>
 <DT>client[/COLLECTORID] HOSTNAME.OSTYPE [HOSTCLASS]<DD>
 Used to send a &quot;client&quot; message to the Xymon server. Client messages
@@ -547,7 +546,7 @@ standard Xymon protocol on TCP port 1984:
 <BR>&nbsp;&nbsp;&nbsp;$&nbsp;$XYMON&nbsp;$XYMSRV&nbsp;&quot;status&nbsp;www,foo,com.http&nbsp;green&nbsp;`date`&nbsp;Web&nbsp;OK&quot;
 <P>
 Send the same status message, but using HTTP protocol via the
-webserver's xymoncgimsg.cgi script:
+webserveraqs xymoncgimsg.cgi script:
 <BR>
 
 <BR>&nbsp;&nbsp;&nbsp;$&nbsp;$XYMON&nbsp;<A HREF="http://bb.foo.com/cgi-bin/xymoncgimsg.cgi">http://bb.foo.com/cgi-bin/xymoncgimsg.cgi</A>&nbsp;&quot;status&nbsp;www,foo,com.http&nbsp;green&nbsp;`date`&nbsp;Web&nbsp;OK&quot;
@@ -557,7 +556,7 @@ restart Apache if it is red:
 <BR>
 
 <P>
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;WWW=`$XYMON&nbsp;$XYMSRV&nbsp;&quot;query&nbsp;www,foo,com.www&quot;&nbsp;|&nbsp;awk&nbsp;'{print&nbsp;$1}'`
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;WWW=`$XYMON&nbsp;$XYMSRV&nbsp;&quot;query&nbsp;www,foo,com.www&quot;&nbsp;|&nbsp;awk&nbsp;aq{print&nbsp;$1}aq`
 <BR>&nbsp;&nbsp;&nbsp;$&nbsp;if&nbsp;[&nbsp;&quot;$WWW&quot;&nbsp;=&nbsp;&quot;red&quot;&nbsp;];&nbsp;then&nbsp;/etc/init.d/apache&nbsp;restart;&nbsp;fi
 <P>
 Use &quot;config&quot; message to update a local mytest.cfg file (but only
@@ -596,8 +595,8 @@ pass it via stdin to the xymon command:
 </DL>
 <HR>
 This document was created by
-<A HREF="/cgi-bin/man/man2html">man2html</A>,
+<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 14:24:17 GMT, September 26, 2014
+Time: 19:31:38 GMT, February 03, 2015
 </BODY>
 </HTML>
