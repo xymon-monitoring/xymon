@@ -22,7 +22,7 @@ extern pcre *compileregex_opts(const char *pattern, int flags);
 #define firstlineregex(P) compileregex_opts(P, PCRE_FIRSTLINE);
 #define firstlineregexnocase(P) compileregex_opts(P, PCRE_CASELESS|PCRE_FIRSTLINE);
 #else
-#define firstlineregex(P) compileregex_opts(P);
+#define firstlineregex(P) compileregex_opts(P, 0);
 #define firstlineregexnocase(P) compileregex_opts(P, PCRE_CASELESS);
 #endif
 extern pcre *multilineregex(const char *pattern);
