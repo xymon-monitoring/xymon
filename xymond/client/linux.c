@@ -104,7 +104,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 		char *statcopy, *bol, *eol;
 		int color = COL_GREEN;
 		char *mdname = NULL, *mdstatus = NULL;
-		int mddevices, mdactive, recovering;
+		int mddevices = 0, mdactive = 0, recovering = 0;
 		strbuffer_t *alerttext = newstrbuffer(0);
 		char msgline[1024];
 		char *summary = NULL;

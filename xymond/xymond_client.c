@@ -217,7 +217,7 @@ char *nextsection(char *clientdata, char **name)
 		defsecthead = NULL;
 	}
 
-	return nextsection_r(clientdata, name, &current, (void **)&defsecthead);
+	return nextsection_r(clientdata, name, &current, (void *)defsecthead);
 }
 
 

@@ -119,8 +119,9 @@ int main(int argc, char *argv[])
 			char *cmd;
 			int n, ret;
 
-			cmd = (char *)malloc(1024 + strlen(passfile) + strlen(adduser_name) + strlen(adduser_password));
-			sprintf(cmd, "htpasswd -b '%s' '%s' '%s'",
+			const size_t bufsz = 1024 + strlen(passfile) + strlen(adduser_name) + strlen(adduser_password);
+			cmd = (char *)malloc(bufsz);
+			snprintf(cmd, bufsz, "htpasswd -b '%s' '%s' '%s'",
 				 passfile, adduser_name, adduser_password);
 			n = system(cmd); ret = WEXITSTATUS(n);
 			if ((n == -1) || (ret != 0)) {
@@ -141,8 +142,9 @@ int main(int argc, char *argv[])
 			char *cmd;
 			int n, ret;
 
-			cmd = (char *)malloc(1024 + strlen(passfile) + strlen(deluser_name));
-			snprintf(cmd, sizeof(cmd), "htpasswd -D '%s' '%s'",
+			const size_t bufsz = 1024 + strlen(passfile) + strlen(deluser_name);
+			cmd = (char *)malloc(bufsz);
+			snprintf(cmd, bufsz, "htpasswd -D '%s' '%s'",
 					passfile, deluser_name);
 			n = system(cmd); ret = WEXITSTATUS(n);
 			if ((n == -1) || (ret != 0)) {

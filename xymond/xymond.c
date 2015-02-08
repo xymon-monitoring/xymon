@@ -2766,7 +2766,7 @@ hostfilter_rec_t *setup_filter(char *buf, char **fields, int *acklevel, int *hav
 			newrec->handle = xtreeFind(rbtests, tok+4);
 		}
 		else if ((strncmp(tok, "color=", 6) == 0) && (*(tok+6))) {
-			char *tokptr, *col;
+			char *col, *tokptr = NULL;
 
 			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
 			newrec->filtertype = FILTER_COLOR;
@@ -3300,7 +3300,7 @@ void do_message(conn_t *msg, char *origin)
 	update_statistics(msg->buf);
 
 	if (strncmp(msg->buf, "extcombo ", 9) == 0) {
-		char *ofsline, *origbuf, *p, *tokr, *ofsstr;
+		char *ofsline, *origbuf, *p, *ofsstr, *tokr = NULL;
 		int startofs, endofs;
 
 		origbuf = ofsline = msg->buf;
@@ -4233,7 +4233,7 @@ void do_message(conn_t *msg, char *origin)
 		char *hostname = NULL, *clientos = NULL, *clientclass = NULL, *collectorid = NULL;
 		char *hname = NULL;
 		char *line1, *p;
-		char savech;
+		char savech = '\0';
 
 		msgfrom = strstr(msg->buf, "\n[proxy]\n");
 		if (msgfrom) {
@@ -5223,6 +5223,7 @@ int main(int argc, char *argv[])
 	if (restartfn) {
 		errprintf("Loading saved state\n");
 		load_checkpoint(restartfn);
+		xfree(restartfn);
 	}
 
 	nextcheckpoint = getcurrenttime(NULL) + checkpointinterval;
