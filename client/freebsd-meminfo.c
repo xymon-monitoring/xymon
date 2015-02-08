@@ -44,6 +44,6 @@ int main(int argc, char *argv[])
 
 	// printf("Pagesize:%d\n", pagesize);
 	printf("Total:%lu\n", (physmem / (1024 * 1024)));
-	printf("Free:%lu\n", (pagesize / 1024)*(vmdata.t_free / 1024));
+	printf("Free:%d\n", (pagesize / 1024)*(vmdata.t_free / 1024));
 }
 

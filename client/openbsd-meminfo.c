@@ -15,6 +15,7 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #include <sys/swap.h>
+#include <sys/vmmeter.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,7 +23,7 @@ static char rcsid[] = "$Id$";
 int main(int argc, char *argv[])
 {
 	int hw_physmem[] = { CTL_HW, HW_PHYSMEM };
-	int physmem;
+	unsigned int physmem;
 
 	int hw_pagesize[] = { CTL_HW, HW_PAGESIZE };
 	int pagesize;
