@@ -131,6 +131,7 @@ static void setup_transport(char *recipient)
 			struct servent *svcinfo;
 
 			svcinfo = getservbyname("bbd", NULL);
+			if (!svcinfo) svcinfo = getservbyname("bb", NULL);
 			if (svcinfo) xymondportnumber = ntohs(svcinfo->s_port);
 		}
 	}
