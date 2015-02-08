@@ -215,7 +215,7 @@ void loadenv(char *envfile, char *area)
 {
 	FILE *fd;
 	strbuffer_t *inbuf;
-	char *p, *oneenv;
+	char *p, *marker, *oneenv;
 
 	MEMDEFINE(l);
 	inbuf = newstrbuffer(0);
@@ -239,14 +239,19 @@ void loadenv(char *envfile, char *area)
 			 */
 			oneenv = NULL;
 
-			p = STRBUF(inbuf) + strcspn(STRBUF(inbuf), "=/");
-			if (*p == '/') {
+			p = STRBUF(inbuf);
+
+			/* Skip ahead for anyone who thinks this is a shell include */
+			if ((strncmp(p, "export ", 7) == 0) || (strncmp(p, "export\t", 7) == 0)) { p += 6; p += strspn(p, " \t"); }
+
+			marker = p + strcspn(p, "=/");
+			if (*marker == '/') {
 				if (area) {
-					*p = '\0';
-					if (strcasecmp(STRBUF(inbuf), area) == 0) oneenv = strdup(expand_env(p+1));
+					*marker = '\0';
+					if (strcasecmp(p, area) == 0) oneenv = strdup(expand_env(marker+1));
 				}
 			}
-			else oneenv = strdup(expand_env(STRBUF(inbuf)));
+			else oneenv = strdup(expand_env(p));
 
 			if (oneenv) {
 				p = strchr(oneenv, '=');
