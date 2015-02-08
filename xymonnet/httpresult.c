@@ -430,6 +430,8 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 
 	for (t=firsttest; (t && (t->host == host)); t = nextcontenttest(httptest, host, t)) {
 		http_data_t *req = (http_data_t *) t->privdata;
+		void *hinfo = hostinfo(host->hostname);
+		int headermatch = (hinfo && xmh_item(hinfo, XMH_FLAG_HTTP_HEADER_MATCH));
 		char cause[100];
 		char *msgline;
 		int got_data = 1;
@@ -445,20 +447,19 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 			color = statuscolor(t->host, req->httpstatus);
 			if (color == COL_GREEN) {
 				/* We got the data from the server */
+				regmatch_t foo[1];
 				int status = 0;
 
 				switch (req->contentcheck) {
 				  case CONTENTCHECK_REGEX:
-					if (req->output) {
-						regmatch_t foo[1];
-
+					if (headermatch && req->headers) {
+						/* regex() returns 0 on success, REG_NOMATCH on failure */
+						status = (regexec((regex_t *) req->exp, req->headers, 0, foo, 0) == 0) ? 0 : 
+							    (req->output && (regexec((regex_t *) req->exp, req->output, 0, foo, 0) == 0)) ? 0 : 1;
+						regfree((regex_t *) req->exp);
+					}
+					else if (req->output) {
 						status = regexec((regex_t *) req->exp, req->output, 0, foo, 0);
-						if (status != 0) {
-							void *hinfo = hostinfo(host->hostname);
-
-							if (hinfo && xmh_item(hinfo, XMH_FLAG_HTTP_HEADER_MATCH)) 
-								status = regexec((regex_t *) req->exp, req->headers, 0, foo, 0);
-						}
 						regfree((regex_t *) req->exp);
 					}
 					else {
@@ -468,17 +469,13 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 					break;
 
 				  case CONTENTCHECK_NOREGEX:
-					if (req->output) {
-						regmatch_t foo[1];
-						void *hinfo = hostinfo(host->hostname);
-
-						if (hinfo && xmh_item(hinfo, XMH_FLAG_HTTP_HEADER_MATCH)) {
-							status = ( (!regexec((regex_t *) req->exp, req->output, 0, foo, 0)) &&
-								   (!regexec((regex_t *) req->exp, req->headers, 0, foo, 0)) );
-						}
-						else {
-							status = (!regexec((regex_t *) req->exp, req->output, 0, foo, 0));
-						}
+					if (headermatch && req->headers) {
+						status = ( (!regexec((regex_t *) req->exp, req->headers, 0, foo, 0)) && 
+							   (!req->output || (!regexec((regex_t *) req->exp, req->output, 0, foo, 0))) );
+						regfree((regex_t *) req->exp);
+					}
+					else if (req->output) {
+						status = (!regexec((regex_t *) req->exp, req->output, 0, foo, 0));
 						regfree((regex_t *) req->exp);
 					}
 					else {
@@ -577,9 +574,15 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		}
 		addtostatus(msgline);
 		xfree(msgline);
+		addtostatus("\n");
+
+		if (headermatch && req->headers) {
+			addtostatus(req->headers);
+			addtostatus("\n");
+		}
 
 		if (req->output == NULL) {
-			addtostatus("\nNo output received from server\n\n");
+			addtostatus("\nNo body output received from server\n\n");
 		}
 		else if (!host->hidehttp) {
 			/* Dont flood xymond with data */
