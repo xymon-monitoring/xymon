@@ -173,8 +173,7 @@ static int wantedtest(char *wanted, char *key)
 	p = strstr(wanted, ckey);
 	xfree(ckey);
 
-	if (p) dbgprintf("wantedtest: Found '%s' at '%s'\n", key, p);
-	else dbgprintf("wantedtest: '%s' not found\n", key);
+	dbgprintf("wantedtest: Found '%s' at '%s'\n", key, (p ? p : "<not found>"));
 
 	return (p != NULL);
 }
@@ -259,8 +258,7 @@ int main(int argc, char *argv[])
 	setup_signalhandler("xymond_filestore");
 	signal(SIGPIPE, SIG_DFL);
 
-	if (onlytests) dbgprintf("Storing tests '%s' only\n", onlytests);
-	else dbgprintf("Storing all tests\n");
+	dbgprintf("Storing tests: %s\n", (onlytests ? onlytests : "<all>"));
 
 	while (running) {
 		char *metadata[20] = { NULL, };

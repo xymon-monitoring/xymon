@@ -15,6 +15,7 @@ static char rcsid[] = "$Id$";
 
 #include <sys/types.h>
 #include <string.h>
+#include <sys/time.h>
 #include <time.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -26,6 +27,11 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 char *errbuf = NULL;
+static char msg[4096];
+static char timestr[20];
+static size_t timesize = sizeof(timestr);
+static struct timeval now;
+static time_t then = 0;
 int save_errbuf = 1;
 static unsigned int errbufsize = 0;
 static char *errappname = NULL;
@@ -36,17 +42,14 @@ static FILE *debugfd = NULL;
 
 void errprintf(const char *fmt, ...)
 {
-	char timestr[30];
-	char msg[4096];
 	va_list args;
+	gettimeofday(&now, NULL);
 
-	time_t now = getcurrenttime(NULL);
-
-	MEMDEFINE(timestr);
-	MEMDEFINE(msg);
-
-	strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", localtime(&now));
-	fprintf(stderr, "%s ", timestr);
+	if (now.tv_sec != then) {
+		strftime(timestr, timesize, "%Y-%m-%d %H:%M:%S", localtime(&now.tv_sec));
+		then = now.tv_sec;
+	}
+	fprintf(stderr, "%s.%06d ", timestr, (int) now.tv_usec);
 	if (errappname) fprintf(stderr, "%s ", errappname);
 
 	va_start(args, fmt);
@@ -69,34 +72,26 @@ void errprintf(const char *fmt, ...)
 
 		strcat(errbuf, msg);
 	}
-
-	MEMUNDEFINE(timestr);
-	MEMUNDEFINE(msg);
 }
 
 
-void dbgprintf(const char *fmt, ...)
+void real_dbgprintf(const char *fmt, ...)
 {
-	if (debug) {
-		va_list args;
-		char timestr[30];
-		time_t now = getcurrenttime(NULL);
+	va_list args;
+	gettimeofday(&now, NULL);
 
-		MEMDEFINE(timestr);
-
-		if (!debugfd) debugfd = stdout;
-
-		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S",
-			 localtime(&now));
-		fprintf(debugfd, "%lu %s ", (unsigned long)getpid(), timestr);
-
-		va_start(args, fmt);
-		vfprintf(debugfd, fmt, args);
-		va_end(args);
-		fflush(debugfd);
-
-		MEMUNDEFINE(timestr);
+	if (!debugfd) debugfd = stdout;
+	if (now.tv_sec != then) {
+		strftime(timestr, timesize, "%Y-%m-%d %H:%M:%S", localtime(&now.tv_sec));
+		then = now.tv_sec;
 	}
+
+	fprintf(debugfd, "%lu %s.%06d ", (unsigned long)getpid(), timestr, (int) now.tv_usec);
+
+	va_start(args, fmt);
+	vfprintf(debugfd, fmt, args);
+	va_end(args);
+	fflush(debugfd);
 }
 
 void flush_errbuf(void)

@@ -18,7 +18,9 @@ extern int save_errbuf;
 extern int debug;
 
 extern void errprintf(const char *fmt, ...);
-extern void dbgprintf(const char *fmt, ...);
+extern void real_dbgprintf(const char *fmt, ...);
+#define dbgprintf(...) { if (debug) real_dbgprintf(__VA_ARGS__); }
+#define logprintf(...) printf(__VA_ARGS__);
 extern void flush_errbuf(void);
 extern void set_debugfile(char *fn, int appendtofile);
 
