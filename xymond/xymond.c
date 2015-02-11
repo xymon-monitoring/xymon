@@ -346,13 +346,24 @@ typedef struct boardfields_t {
 	enum xmh_item_t xmhfield; /* Only for field == F_HOSTINFO */
 } boardfield_t;
 
-enum filtertype_t { FILTER_XMH, FILTER_PAGEPATH, FILTER_TEST, FILTER_TAG, FILTER_COLOR, FILTER_ACKLEVEL, FILTER_NOTDOWN, FILTER_DOWN };
+enum filtertype_t { FILTER_XMH, FILTER_PAGEPATH, FILTER_TEST, FILTER_FIELD, FILTER_FIELDTIME, FILTER_TAG, FILTER_COLOR, FILTER_ACKLEVEL, FILTER_NOTDOWN, FILTER_DOWN };
+
+/* Filtration comparison flags */
+#define COMPARE_GT	(1 << 0)
+#define COMPARE_GE	(1 << 1)
+#define COMPARE_LT	(1 << 2)
+#define COMPARE_LE	(1 << 3)
+#define COMPARE_EQ	(1 << 4)
+#define COMPARE_NE	(1 << 5)
+#define COMPARE_INTVL	(1 << 29)
 
 typedef struct hostfilter_rec_t {
 	enum filtertype_t filtertype;
 	pcre *wantedptn; int wantedvalue;
 	struct hostfilter_rec_t *next;
 	enum xmh_item_t field;	/* Only for filtertype == FILTER_XMH */
+	enum boardfield_t boardfield;	/* Only for filtertype == FILTER_FIELD(TIME) */
+	unsigned int flags;	/* Private filter flags */
 	xtreePos_t handle;
 } hostfilter_rec_t;
 
@@ -2705,6 +2716,36 @@ char *timestr(time_t tstamp)
 }
 
 
+int parseinequality(char *str, unsigned int *flags)
+{
+	if (strncmp(str, ">=", 2) == 0) {
+		*(flags) |= COMPARE_GE;
+		return 2;
+	}
+	else if (strncmp(str, "<=", 2) == 0) {
+		*(flags) |= COMPARE_LE;
+		return 2;
+	}
+	else if (strncmp(str, "!=", 2) == 0) {
+		*(flags) |= COMPARE_NE;
+		return 2;
+	}
+	else if (strncmp(str, ">", 1) == 0) {
+		*(flags) |= COMPARE_GT;
+		return 1;
+	}
+	else if (strncmp(str, "<", 1) == 0) {
+		*(flags) |= COMPARE_LT;
+		return 1;
+	}
+	else if (strncmp(str, "=", 1) == 0) {
+		*(flags) |= COMPARE_EQ;
+		return 1;
+	}
+	else errprintf("Missing comparison operator: %s\n", str);
+	return 0;
+}
+
 hostfilter_rec_t *setup_filter(char *buf, char **fields, int *acklevel, int *havehostfilter)
 {
 	char *tok;
@@ -2752,6 +2793,75 @@ hostfilter_rec_t *setup_filter(char *buf, char **fields, int *acklevel, int *hav
 			newrec->filtertype = FILTER_XMH;
 			newrec->field = XMH_NET;
 			newrec->wantedptn = compileregex(tok+4);
+		}
+		else if ((strncmp(tok, "ip=", 3) == 0) && (*(tok+3))) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_XMH;
+			newrec->field = XMH_IP;
+			newrec->wantedptn = compileregex(tok+3);
+		}
+		else if ((strncmp(tok, "lastchange", 10) == 0) && (*(tok+10))) {
+			int skipchar;
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_FIELDTIME;
+			newrec->boardfield = F_LASTCHANGE;
+			skipchar = parseinequality(tok+10, &newrec->flags);
+			if (skipchar) newrec->wantedvalue = atoi(tok+skipchar+10);
+			else xfree(newrec);
+		}
+		else if ((strncmp(tok, "logtime", 7) == 0) && (*(tok+7))) {
+			int skipchar;
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_FIELDTIME;
+			newrec->boardfield = F_LOGTIME;
+			skipchar = parseinequality(tok+7, &newrec->flags);
+			if (skipchar) newrec->wantedvalue = atoi(tok+skipchar+7);
+			else xfree(newrec);
+		}
+		else if ((strncmp(tok, "validtime", 9) == 0) && (*(tok+9))) {
+			int skipchar;
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_FIELDTIME;
+			newrec->boardfield = F_VALIDTIME;
+			skipchar = parseinequality(tok+9, &newrec->flags);
+			if (skipchar) newrec->wantedvalue = atoi(tok+skipchar+9);
+			else xfree(newrec);
+		}
+		else if ((strncmp(tok, "acktime", 7) == 0) && (*(tok+7))) {
+			int skipchar;
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_FIELDTIME;
+			newrec->boardfield = F_ACKTIME;
+			skipchar = parseinequality(tok+7, &newrec->flags);
+			if (skipchar) newrec->wantedvalue = atoi(tok+skipchar+7);
+			else xfree(newrec);
+		}
+		else if ((strncmp(tok, "disabletime", 11) == 0) && (*(tok+11))) {
+			int skipchar;
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_FIELDTIME;
+			newrec->boardfield = F_DISABLETIME;
+			skipchar = parseinequality(tok+11, &newrec->flags);
+			if (skipchar) newrec->wantedvalue = atoi(tok+skipchar+11);
+			else xfree(newrec);
+		}
+		else if ((strncmp(tok, "msg=", 4) == 0) && (*(tok+4))) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_FIELD;
+			newrec->boardfield = F_MSG;
+			newrec->wantedptn = compileregex(tok+4);
+		}
+		else if ((strncmp(tok, "ackmsg=", 7) == 0) && (*(tok+7))) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_FIELD;
+			newrec->boardfield = F_ACKMSG;
+			newrec->wantedptn = compileregex(tok+7);
+		}
+		else if ((strncmp(tok, "dismsg=", 7) == 0) && (*(tok+7))) {
+			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
+			newrec->filtertype = FILTER_FIELD;
+			newrec->boardfield = F_DISMSG;
+			newrec->wantedptn = compileregex(tok+7);
 		}
 		else if ((strncmp(tok, "test=", 5) == 0) && (*(tok+5))) {
 			newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
@@ -3045,6 +3155,8 @@ int match_host_filter(void *hinfo, hostfilter_rec_t *filter, int matchontests, c
 
 int match_test_filter(xymond_log_t *log, hostfilter_rec_t *filter)
 {
+	char *testedstr;
+	int testedval;
 	int matched = 1;
 	hostfilter_rec_t *fwalk;
 
@@ -3066,6 +3178,34 @@ int match_test_filter(xymond_log_t *log, hostfilter_rec_t *filter)
 
 		  case FILTER_DOWN:
 			matched = (log->color == COL_RED);
+			break;
+
+		  case FILTER_FIELDTIME:
+			switch (fwalk->boardfield) {
+			  case F_LASTCHANGE: testedval = log->lastchange[0]; break;
+			  case F_LOGTIME: testedval = log->logtime; break;
+			  case F_VALIDTIME: testedval = log->validtime; break;
+			  case F_ACKTIME: testedval = log->acktime; break;
+			  case F_DISABLETIME: testedval = log->enabletime; break;
+			  default: errprintf("Unknown FILTER_FIELDTIME field given\n"); testedval = -2; break;
+			}
+			matched = (testedval != -2) ? 
+				( 	((fwalk->flags & COMPARE_GT) && (testedval >  fwalk->wantedvalue)) ||
+					((fwalk->flags & COMPARE_GE) && (testedval >= fwalk->wantedvalue)) ||
+					((fwalk->flags & COMPARE_LT) && (testedval <  fwalk->wantedvalue)) ||
+					((fwalk->flags & COMPARE_LE) && (testedval <= fwalk->wantedvalue)) ||
+					((fwalk->flags & COMPARE_EQ) && (testedval == fwalk->wantedvalue)) ||
+					((fwalk->flags & COMPARE_NE) && (testedval != fwalk->wantedvalue)) ) : 0;
+			break;
+
+		  case FILTER_FIELD:
+			switch (fwalk->boardfield) {
+			  case F_MSG: testedstr = log->message; break;
+			  case F_ACKMSG: testedstr = log->ackmsg; break;
+			  case F_DISMSG: testedstr = log->dismsg; break;
+			  default: errprintf("Unknown FILTER_FIELD field given\n"); testedstr = NULL; break;
+			}
+			matched = (testedstr ? matchregex(testedstr, fwalk->wantedptn) : 0 );
 			break;
 
 		  default:

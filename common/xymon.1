@@ -248,13 +248,29 @@ the Xymon daemon.
 
 By default - if no CRITERIA is provided - it returns one line for all 
 status messages that are found in Xymon. You can filter the response
-by selecting a page, a host, a test or a color - the PAGEPATH, HOSTNAME
-and TESTNAME parameters are interpreted as regular expressions, the COLOR 
-parameter accepts multiple colors separated by comma.
+by selection specific page, host, test, color or various other fields. The 
+PAGEPATH, NETWORK, HOSTNAME, TESTNAME, and *MSG parameters are interpreted 
+perl-compatible regular expressions; the COLOR parameter accepts multiple 
+colors separated by commas; the *TIME values accept unix epoch timestamps.
+Other variables identified in xymon-xmh(5) may also be used.
+
+Because host filtration is done before test filtration, it's more efficient 
+(with very large data sets) to use PAGEPATH, HOSTNAME, NETWORK, and other 
+XMH_ filters when possible, before globally filtering with COLOR, *MSG, 
+*TIME, or TESTNAME. 
+
+You can filter on, for example, both a hostname and a testname.
+
 .sp
 .BR page=PAGEPATH
 Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
 file.
+.sp
+.BR net=NETWORK
+Include only tests from hosts with this NET: tag
+.sp
+.BR ip=IP Address
+Include only tests from hosts with this IP address. This is a regex, not CIDR.
 .sp
 .BR host=HOSTNAME
 Include only tests from the host HOSTNAME
@@ -265,7 +281,37 @@ Include only tests with the testname TESTNAME
 .BR color=COLORNAME
 Include only tests where the status color is COLORNAME
 .sp
-You can filter on, for example, both a hostname and a testname. 
+.BR tag=TAGNAME
+Include only hosts with a certain tag specified in the hosts.cfg(5) line.
+Note that only items known to xymon components are included here; arbitrary
+text is not included
+.sp
+.BR XMH_string=VALUE
+Include only hosts with a xymon-xmh(5) variable matching this value
+.sp
+
+Advanced Filtering
+.sp
+.BR msg=MESSAGE
+Include only tests with full content matching MESSAGE. Use "\s" to escape 
+spaces (or other PCRE strings)
+.sp
+.BR ackmsg=MESSAGE
+Include only tests with acknowledgement(s) MESSAGE. Use "\s" to escape 
+spaces (or other PCRE strings)
+.sp
+.BR dismsg=MESSAGE
+Include only tests that have been disabled with strings matching MESSAGE. 
+Use "\s" to escape spaces (or other PCRE strings). (It is most efficient
+to pair this with color=blue.)
+
+
+Timestamp Filters
+
+Certain fields (explained below) can be filtered with unix timestamps
+and with the following inequalities:  >= > <= < = != 
+
+These filters are: lastchange, logtime, validtime, acktime, disabletime
 
 The response is one line for each status that matches the CRITERIA,
 or all statuses if no criteria is specified. The line is composed of
