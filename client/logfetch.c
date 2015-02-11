@@ -927,7 +927,12 @@ int main(int argc, char *argv[])
 #endif
 
 	for (i=1; (i<argc); i++) {
-		if (strcmp(argv[i], "--clock") == 0) {
+		if (strcmp(argv[i], "--debug") == 0) {
+			char *delim = strchr(argv[i], '=');
+			debug = 1;
+			if (delim) set_debugfile(delim+1, 0);
+		}
+		else if (strcmp(argv[i], "--clock") == 0) {
 			struct timeval tv;
 			struct timezone tz;
 			struct tm *tm;
@@ -950,11 +955,21 @@ int main(int argc, char *argv[])
 			printf("%s\n", timestr);
 			return 0;
 		}
-		else if (i == 1) cfgfn = argv[i];
-		else if (i == 2) statfn = argv[i];
+		else if ((*(argv[i]) == '-') && (strlen(argv[i]) > 1)) {
+			fprintf(stderr, "Unknown option %s\n", argv[i]);
+		}
+		else {
+			/* Not an option -- should have two arguments left: our config and status file */
+			if (cfgfn == NULL) cfgfn = argv[i];
+			else if (statfn == NULL) statfn = argv[i];
+			else fprintf(stderr, "Unknown argument '%s'\n", argv[i]);
+		}
 	}
 
-	if ((cfgfn == NULL) || (statfn == NULL)) return 1;
+	if ((cfgfn == NULL) || (statfn == NULL)) {
+		fprintf(stderr, "Missing config or status file arguments\n");
+		return 1;
+	}
 
 	if (loadconfig(cfgfn) != 0) return 1;
 	loadlogstatus(statfn);
