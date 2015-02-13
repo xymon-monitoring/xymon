@@ -25,8 +25,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.3"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-02 zak.beck@accenture.com"
+$Version = "1.4"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-15 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -1188,8 +1188,8 @@ function XymonReportConfig
 	}
 	"[XymonPSClientInfo]"
 	get-process -id $PID
-	"[XymonPSClientThreadStats]"
-	(get-process -id $PID).Threads
+	#"[XymonPSClientThreadStats]"
+	#(get-process -id $PID).Threads
 }
 
 function XymonClientSections {
@@ -1433,7 +1433,7 @@ while ($running -eq $true) {
     WriteLog "XymonCollectInfo finished."
     
     WriteLog "Performing main and optional tests and building output..."
-	$clout = "client " + $clientname + ".bbwin win32 ps $Version" | Out-String
+	$clout = "client " + $clientname + ".XymonPS win32 $Version" | Out-String
 	$clsecs = XymonClientSections | Out-String
 	$localdatetime = Get-Date
 	$clout += XymonDate | Out-String
