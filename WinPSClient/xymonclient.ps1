@@ -25,8 +25,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.2"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-08-27 zak.beck@accenture.com"
+$Version = "1.3"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-02 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -108,7 +108,6 @@ function XymonInit
 	SetIfNot $script:XymonSettings slowscanrate 72 # repeats of main loop before collecting slowly changing information again
 	SetIfNot $script:XymonSettings reportevt 1 # scan eventlog and report (can be very slow)
 	SetIfNot $script:XymonSettings wanteddisks @( 3 )	# 3=Local disks, 4=Network shares, 2=USB, 5=CD
-	SetIfNot $script:XymonSettings wantedlogs @("Application",  "System", "Security")
     SetIfNot $script:XymonSettings EnableWin32_Product 0 # 0 = do not use Win32_product, 1 = do - see 
                         # see http://support.microsoft.com/kb/974524 for reasons why Win32_Product is not recommended!
     SetIfNot $script:XymonSettings servergiflocation '/xymon/gifs/'
@@ -421,66 +420,90 @@ function XymonMsgs
 {
 	if($script:XymonSettings.reportevt -eq 0) {return}
 	$since = (Get-Date).AddMinutes(-($script:XymonSettings.maxlogage))
-	if ($script:XymonSettings.wantedlogs -eq $null) {
-		$script:XymonSettings.wantedlogs = "Application", "System", "Security"
-	}
 
-	foreach ($l in $script:XymonSettings.wantedlogs) {
-		$log = Get-EventLog -List | where { $_.Log -eq $l }
 
-        # default to sending 512 bytes of description
-        $logpayloadlength = 512
+    # default logs - may be overridden by config
+    $wantedlogs = "Application", "System", "Security"
+    $maxpayloadlength = 1024
+    $payload = ''
 
-		$logentries = Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since | where {$_.EntryType -match "Error|Warning"}
-        
-        # filter based on clientlocal.cfg / clientconfig.cfg
-        if ($script:clientlocalcfg_entries -ne $null)
+    # this function no longer uses $script:XymonSettings.wantedlogs
+    # - it now uses eventlogswanted from the remote config
+    if ($script:clientlocalcfg_entries.keys | where { $_ -match '^eventlogswanted:(.+):(\d+)$' })
+    {
+        $wantedlogs = $matches[1] -split ','
+        $maxpayloadlength = $matches[2]
+    }
+
+    WriteLog "Event Log processing - max payload: $maxpayloadlength - wanted logs: $wantedlogs"
+
+	foreach ($l in $wantedlogs) 
+    {
+        # only scan the current log if there is space in the payload
+        if ($payload.Length -lt $maxpayloadlength)
         {
-            $filterkey = $script:clientlocalcfg_entries.keys | where { $_ -match "^eventlog\:$l\:(\d+)" }
-            $logpayloadlength = $matches[1]
-            if ($filterkey -ne $null -and $script:clientlocalcfg_entries.ContainsKey($filterkey))
+            WriteLog "Processing event log $l"
+
+            $log = Get-EventLog -List | where { $_.Log -eq $l }
+
+            $logentries = @(Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since | where {$_.EntryType -match "Error|Warning"})
+
+            WriteLog "Event log $l entries since last scan: $($logentries.Length)"
+            
+            # filter based on clientlocal.cfg / clientconfig.cfg
+            if ($script:clientlocalcfg_entries -ne $null)
             {
-                $output = @()
-                foreach ($entry in $logentries)
+                $filterkey = $script:clientlocalcfg_entries.keys | where { $_ -match "^eventlog\:$l" }
+                if ($filterkey -ne $null -and $script:clientlocalcfg_entries.ContainsKey($filterkey))
                 {
-                    foreach ($filter in $script:clientlocalcfg_entries[$filterkey])
+                    WriteLog "Found a configured filter for log $l"
+                    $output = @()
+                    foreach ($entry in $logentries)
                     {
-                        if ($filter -match '^ignore')
+                        foreach ($filter in $script:clientlocalcfg_entries[$filterkey])
                         {
-                            $filter = $filter -replace '^ignore ', ''
-                            if ($entry.Source -match $filter -or $entry.Message -match $filter)
+                            if ($filter -match '^ignore')
                             {
-                                $exclude = $true
-                                break
+                                $filter = $filter -replace '^ignore ', ''
+                                if ($entry.Source -match $filter -or $entry.Message -match $filter)
+                                {
+                                    $exclude = $true
+                                    break
+                                }
                             }
                         }
+                        if (-not $exclude)
+                        {
+                            $output += $entry
+                        }
                     }
-                    if (-not $exclude)
+                    $logentries = $output
+                }
+            }
+
+            if ($logentries -ne $null) 
+            {
+                WriteLog "Event log $l adding to payload"
+
+                $payload += "[msgs:eventlog_$l]`r`n"
+
+                foreach ($entry in $logentries) 
+                {
+                    $payload += [string]$entry.EntryType + " - " +`
+                        [string]$entry.TimeGenerated + " - " + `
+                        [string]$entry.Source + " - " + `
+                        [string]$entry.Message +"`r`n"
+                    
+                    if ($payload.Length -gt $maxpayloadlength)
                     {
-                        $output += $entry
+                        break;
                     }
                 }
-                $logentries = $output
             }
         }
-        WriteLog "Event Log $l; payload length $logpayloadlength"
-
-        $payload = "[msgs:eventlog_$l]"
-		if ($logentries -ne $null) {
-			foreach ($entry in $logentries) {
-				$payload += [string]$entry.EntryType + " - " +`
-                    [string]$entry.TimeGenerated + " - " + `
-                    [string]$entry.Source + " - " + `
-                    [string]$entry.Message
-                
-                if ($payload.Length > $logpayloadlength)
-                {
-                    break;
-                }
-			}
-		}
-        $payload
 	}
+    WriteLog "Event log processing finished"
+    $payload
 }
 
 function ResolveEnvPath($envpath)
@@ -1084,8 +1107,12 @@ function XymonClientConfig($cfglines)
     # remote config is enabled
     if ($script:XymonSettings.clientremotecfgexec -ne 0)
     {
-        WriteLog "Received new config, saving locally"
+        WriteLog "Using new remote config, saving locally"
         $clientlocalcfg >$script:XymonSettings.clientconfigfile
+    }
+    else
+    {
+        WriteLog "Using local config only (if one exists), clientremotecfgexec = 0"
     }
 
 	# Parse the config - always uses the local file (which may contain
@@ -1097,10 +1124,12 @@ function XymonClientConfig($cfglines)
          $currentsection = ''
          foreach ($l in $lines)
          {
+             # change this to recognise new config items
              if ($l -match '^eventlog:' -or $l -match '^servicecheck:' `
                  -or $l -match '^dir:' -or $l -match '^file:' `
                  -or $l -match '^dirsize:' -or $l -match '^dirtime:' `
                  -or $l -match '^log' -or $l -match '^clientversion:' `
+                 -or $l -match '^eventlogswanted' `
                  -or $l -match '^servergifs:' `
                  )
              {
@@ -1247,7 +1276,7 @@ function XymonCheckUpdate
     $updates = @($script:clientlocalcfg_entries.keys | where { $_ -match '^clientversion:(\d+\.\d+):(.+)$' })
     if ($updates.length -gt 1)
     {
-        WriteLog "ERROR: more than one clientversion directive in remote config!"
+        WriteLog "ERROR: more than one clientversion directive in config!"
     }
     elseif ($updates.length -eq 1)
     {
@@ -1255,7 +1284,7 @@ function XymonCheckUpdate
         # $matches[2] = the place to look for new version file
         if ($Version -lt $matches[1])
         {
-            WriteLog "Running version $Version; remote config version $($matches[1]); attempting upgrade"
+            WriteLog "Running version $Version; config version $($matches[1]); attempting upgrade"
 
             $newversion = join-path $matches[2] "xymonclient_$($matches[1]).ps1"
 
@@ -1275,13 +1304,13 @@ function XymonCheckUpdate
         }
         else
         {
-            WriteLog "Running version $Version; remote config version $($matches[1]); doing nothing"
+            WriteLog "Update: Running version $Version; config version $($matches[1]); doing nothing"
         }
     }
     else
     {
         # no clientversion directive
-        WriteLog "No clientversion directive in remote config, nothing to do"
+        WriteLog "Update: No clientversion directive in config, nothing to do"
     }
 }
 
