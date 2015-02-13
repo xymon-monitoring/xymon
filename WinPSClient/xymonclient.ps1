@@ -429,7 +429,7 @@ function XymonMsgs
 		$log = Get-EventLog -List | where { $_.Log -eq $l }
 
         # default to sending 512 bytes of description
-        $descriptionlength = 512
+        $logpayloadlength = 512
 
 		$logentries = Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since | where {$_.EntryType -match "Error|Warning"}
         
@@ -437,7 +437,7 @@ function XymonMsgs
         if ($script:clientlocalcfg_entries -ne $null)
         {
             $filterkey = $script:clientlocalcfg_entries.keys | where { $_ -match "^eventlog\:$l\:(\d+)" }
-            $descriptionlength = $matches[1]
+            $logpayloadlength = $matches[1]
             if ($filterkey -ne $null -and $script:clientlocalcfg_entries.ContainsKey($filterkey))
             {
                 $output = @()
@@ -463,14 +463,23 @@ function XymonMsgs
                 $logentries = $output
             }
         }
-        WriteLog "Event Log $l; description length $descriptionlength"
+        WriteLog "Event Log $l; payload length $logpayloadlength"
 
-		"[msgs:eventlog_$l]"
+        $payload = "[msgs:eventlog_$l]"
 		if ($logentries -ne $null) {
 			foreach ($entry in $logentries) {
-				[string]$entry.EntryType + " - " + [string]$entry.TimeGenerated + " - " + [string]$entry.Source + " - " + ([string]$entry.Message).substring(0, $descriptionlength)
+				$payload += [string]$entry.EntryType + " - " +`
+                    [string]$entry.TimeGenerated + " - " + `
+                    [string]$entry.Source + " - " + `
+                    [string]$entry.Message
+                
+                if ($payload.Length > $logpayloadlength)
+                {
+                    break;
+                }
 			}
 		}
+        $payload
 	}
 }
 
@@ -1070,13 +1079,18 @@ function XymonClientConfig($cfglines)
 
 	# Convert to Windows-style linebreaks
 	$script:clientlocalcfg = $cfglines.Split("`n")
-	$clientlocalcfg >$script:XymonSettings.clientconfigfile
 
-    WriteLog "Received new config, parsing now"
+    # overwrite local cached config with this version if 
+    # remote config is enabled
+    if ($script:XymonSettings.clientremotecfgexec -ne 0)
+    {
+        WriteLog "Received new config, saving locally"
+        $clientlocalcfg >$script:XymonSettings.clientconfigfile
+    }
 
-	# Parse the new config
-	if ($script:XymonSettings.clientremotecfgexec -ne 0 `
-        -and (test-path -PathType Leaf $script:XymonSettings.clientconfigfile)) 
+	# Parse the config - always uses the local file (which may contain
+    # config from remote)
+	if (test-path -PathType Leaf $script:XymonSettings.clientconfigfile) 
     {
          $script:clientlocalcfg_entries = @{}
          $lines = get-content $script:XymonSettings.clientconfigfile
