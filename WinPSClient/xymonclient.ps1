@@ -1187,7 +1187,8 @@ function XymonReportConfig
 		(Get-Variable $v).Value
 	}
 	"[XymonPSClientInfo]"
-	get-process -id $PID
+    $script:thisXymonProcess	
+    #get-process -id $PID
 	#"[XymonPSClientThreadStats]"
 	#(get-process -id $PID).Threads
 }
@@ -1388,8 +1389,8 @@ if($args -ne $null) {
 # assume no other args, so run as normal
 
 # elevate our priority to high
-$thisprocess = get-process -id $PID
-$thisprocess.PriorityClass = "High"
+$script:thisXymonProcess = get-process -id $PID
+$script:thisXymonProcess.PriorityClass = "High"
 
 # ZB: read any cached client config
 if (Test-Path -PathType Leaf $script:XymonSettings.clientconfigfile)
