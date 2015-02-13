@@ -25,7 +25,7 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.8"
+$Version = "1.9"
 $XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-30 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
@@ -1055,14 +1055,14 @@ function XymonMsgs
     # xml template
     #   {0} = log name e.g. Application
     #   {1} = milliseconds - how far back in time to go
-    $filterXMLTemplate = @' 
+    $filterXMLTemplate = `
+@' 
     <QueryList>
       <Query Id="0" Path="{0}">
         <Select Path="{0}">*[System[TimeCreated[timediff(@SystemTime) &lt;= {1}]]]</Select>
       </Query>
     </QueryList>
-    '@
-    #
+'@
 
     # default logs - may be overridden by config
     $wantedlogs = "Application", "System", "Security"
