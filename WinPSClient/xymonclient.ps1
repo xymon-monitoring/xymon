@@ -492,14 +492,14 @@ function XymonMsgs
             {
                 WriteLog "Event log $l adding to payload"
 
-                $payload += "[msgs:eventlog_$l]`r`n"
+                $payload += "[msgs:eventlog_$l]" + [environment]::newline
 
                 foreach ($entry in $logentries) 
                 {
                     $payload += [string]$entry.EntryType + " - " +`
                         [string]$entry.TimeGenerated + " - " + `
                         [string]$entry.Source + " - " + `
-                        [string]$entry.Message +"`r`n"
+                        [string]$entry.Message + [environment]::newline
                     
                     if ($payload.Length -gt $maxpayloadlength)
                     {
@@ -832,13 +832,13 @@ function XymonIfstat
 function XymonSvcs
 {
     WriteLog "XymonSvcs start"
-	"[svcs]"
-	"Name".PadRight(39) + " " + "StartupType".PadRight(12) + " " + "Status".PadRight(14) + " " + "DisplayName"
-	foreach ($s in $svcs) {
-		if ($s.StartMode -eq "Auto") { $stm = "automatic" } else { $stm = $s.StartMode.ToLower() }
-		if ($s.State -eq "Running")  { $state = "started" } else { $state = $s.State.ToLower() }
-		$s.Name.Replace(" ","_").PadRight(39) + " " + $stm.PadRight(12) + " " + $state.PadRight(14) + " " + $s.DisplayName
-	}
+    "[$name]"
+    "Name".PadRight(39) + " " + "StartupType".PadRight(12) + " " + "Status".PadRight(14) + " " + "DisplayName"
+    foreach ($s in $svcs) {
+        if ($s.StartMode -eq "Auto") { $stm = "automatic" } else { $stm = $s.StartMode.ToLower() }
+        if ($s.State -eq "Running")  { $state = "started" } else { $state = $s.State.ToLower() }
+        $s.Name.Replace(" ","_").PadRight(39) + " " + $stm.PadRight(12) + " " + $state.PadRight(14) + " " + $s.DisplayName
+    }
     WriteLog "XymonSvcs finished."
 }
 
