@@ -142,6 +142,7 @@ function XymonProcsCPUUtilisation
 	# 	2 = ticks used since last poll
 	# 	3 = activeflag
 
+    # ZB - got a feeling XymonProcsCpuElapsed should be multiplied by number of cores
 	if ((get-variable -erroraction SilentlyContinue "XymonProcsCpu") -eq $null) {
 		$script:XymonProcsCpu = @{ 0 = ( $null, 0, 0, $false) }
 		$script:XymonProcsCpuTStart = (Get-Date).ticks
@@ -151,6 +152,7 @@ function XymonProcsCPUUtilisation
 		$script:XymonProcsCpuElapsed = (Get-Date).ticks - $script:XymonProcsCpuTStart
 		$script:XymonProcsCpuTStart = (Get-Date).Ticks
 	}
+    $script:XymonProcsCpuTStart *= $script:numcores
 	
 	#$allprocs = Get-Process
 	foreach ($p in $script:procs) {
@@ -204,16 +206,16 @@ function XymonCollectInfo
 
     WriteLog "XymonCollectInfo: CPU info (WMI)"
 	$script:cpuinfo = @(Get-WmiObject -Class Win32_Processor)
-	$script:totalload = 0
+	#$script:totalload = 0
 	$script:numcpus  = $cpuinfo.Count
 	$script:numcores = 0
 	$script:numvcpus = 0
 	foreach ($cpu in $cpuinfo) { 
-		$script:totalload += $cpu.LoadPercentage
+		#$script:totalload += $cpu.LoadPercentage
 		$script:numcores += $cpu.NumberOfCores
 		$script:numvcpus += $cpu.NumberOfLogicalProcessors
 	}
-	$script:totalload /= $numcpus
+	#$script:totalload /= $numcpus
 
     WriteLog "XymonCollectInfo: OS info (including memory) (WMI)"
 	$script:osinfo = Get-WmiObject -Class Win32_OperatingSystem
@@ -221,8 +223,9 @@ function XymonCollectInfo
 	$script:svcs = Get-WmiObject -Class Win32_Service | Sort-Object -Property Name
     WriteLog "XymonCollectInfo: Disk info (WMI)"
 	$mydisks = @()
+    $wmidisks = Get-WmiObject -Class Win32_LogicalDisk
 	foreach ($disktype in $script:XymonSettings.wanteddisks) { 
-		$mydisks += @( (Get-WmiObject -Class Win32_LogicalDisk | where { $_.DriveType -eq $disktype } ))
+		$mydisks += @( ($wmidisks | where { $_.DriveType -eq $disktype } ))
 	}
 	$script:disks = $mydisks | Sort-Object DeviceID
 
@@ -366,19 +369,9 @@ function XymonCpu
 {
     WriteLog "XymonCpu start"
 
-	"[cpu]"
-	"up: {0} days, {1} users, {2} procs, load={3}%" -f [string]$uptime.Days, $usercount, $procs.count, [string]$totalload
-	""
-	"CPU states:"
-	"`ttotal`t" + ([string]$totalload) + "`%"
-	foreach ($cpu in $cpuinfo) { 
-		"`t" + $cpu.DeviceID + "`t" + $cpu.LoadPercentage + "`%"
-	}
+    $totalcpu = 0
 
 	if ($script:XymonProcsCpuElapsed -gt 0) {
-		""
-		"CPU".PadRight(8) + "PID".PadRight(6) + "Image Name".PadRight(32) + "Pri".PadRight(5) + "Time".PadRight(9) + "MemUsage"
-
         $cpulist = @()
 
 		foreach ($p in $script:XymonProcsCpu.Keys) {
@@ -393,6 +386,7 @@ function XymonCpu
 				}
 
 				$usedpct = ([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100
+                $totalcpu += $usedpct
 
                 $hash = @{ 'ProcessObj' = $thisp; 'Name' = $pname; 'CPUPercent' = $usedpct }
                 $cpulist += (New-Object -TypeName PSObject -Property $hash)
@@ -405,6 +399,17 @@ function XymonCpu
 				$thisp[0] = $null
 			}
 		}
+    }
+
+	"[cpu]"
+	"up: {0} days, {1} users, {2} procs, load={3}%" -f [string]$uptime.Days, $usercount, $procs.count, [string]$totalcpu
+	""
+	"CPU states:"
+	"`ttotal`t" + ([string]$totalcpu) + "`%"
+
+    if ($script:XymonProcsCpuElapsed -gt 0) {
+		""
+		"CPU".PadRight(8) + "PID".PadRight(6) + "Image Name".PadRight(32) + "Pri".PadRight(5) + "Time".PadRight(9) + "MemUsage"
 
         $cpulist | Sort-Object -Descending { $_.CPUPercent } | foreach { XymonPrintProcess $_.ProcessObj $_.Name $_.CPUPercent }
 	}
