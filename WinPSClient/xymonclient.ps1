@@ -1530,6 +1530,13 @@ while ($running -eq $true) {
 
 
 	$delay = ($script:XymonSettings.loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
+    if ($collectionnumber -eq 1)
+    {
+        # if this is the very first collection, make the second collection happen sooner
+        # than the normal delay - this is because CPU usage is not collected on the 
+        # first run
+        $delay = 30
+    }
     WriteLog "Delaying until next run: $delay seconds"
 	if ($delay -gt 0) { sleep $delay }
 }
