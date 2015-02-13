@@ -1415,55 +1415,52 @@ function XymonDirTime
         foreach {
             resolveEnvPath $matches[1] | foreach {
 
-                if (test-path $_ -PathType Container)
+                WriteLog "DirTime: $_"
+                $minutesdiff = ((get-date) - (Get-Item $_).LastWriteTime).TotalMinutes
+                $criteriaminutes = ($matches[4] -as [int])
+                $conditionmet = $false
+                if ($matches[3] -eq 'gt')
                 {
-                    WriteLog "DirTime: $_"
-                    $minutesdiff = ((get-date) - (Get-Item $_).LastWriteTime).TotalMinutes
-                    $criteriaminutes = ($matches[4] -as [int])
-                    $conditionmet = $false
-                    if ($matches[3] -eq 'gt')
-                    {
-                        $conditionmet = $minutesdiff -gt $criteriaminutes
-                        $conditiontype = '>'
-                    }
-                    elseif ($matches[3] -eq 'lt')
-                    {
-                        $conditionmet = $minutesdiff -lt $criteriaminutes
-                        $conditiontype = '<'
-                    }
-                    else
-                    {
-                        $conditionmet = $minutesdiff -eq $criteriaminutes
-                        $conditiontype = '='
-                    }
-                    if ($conditionmet)
-                    {
-                        $alertcolour = $matches[5]
-                    }
-                    else
-                    {
-                        $alertcolour = 'green'
-                    }
-                    # report out - 
-                    #  {0} = colour (matches[5])
-                    #  {1} = folder name
-                    #  {2} = folder modified x minutes ago
-                    #  {3} = condition symbol (<,>,=)
-                    #  {4} = alert criteria minutes
-                    $outputtext += (('<img src="{5}{0}.gif" alt="{0}"' +`
-                        'height="16" width="16" border="0">' +`
-                        '{1} updated {2:F1} minutes ago. Alert if {3} {4} minutes ago.<br>') `
-                        -f $alertcolour, $_, $minutesdiff, $conditiontype, $criteriaminutes, $script:XymonSettings.servergiflocation)
-                    # set group colour to colour if it is not already set to a 
-                    # higher alert state colour
-                    if ($groupcolour -eq 'green' -and $alertcolour -eq 'yellow')
-                    {
-                        $groupcolour = 'yellow'
-                    }
-                    elseif ($alertcolour -eq 'red')
-                    {
-                        $groupcolour = 'red'
-                    }
+                    $conditionmet = $minutesdiff -gt $criteriaminutes
+                    $conditiontype = '>'
+                }
+                elseif ($matches[3] -eq 'lt')
+                {
+                    $conditionmet = $minutesdiff -lt $criteriaminutes
+                    $conditiontype = '<'
+                }
+                else
+                {
+                    $conditionmet = $minutesdiff -eq $criteriaminutes
+                    $conditiontype = '='
+                }
+                if ($conditionmet)
+                {
+                    $alertcolour = $matches[5]
+                }
+                else
+                {
+                    $alertcolour = 'green'
+                }
+                # report out - 
+                #  {0} = colour (matches[5])
+                #  {1} = folder name
+                #  {2} = folder modified x minutes ago
+                #  {3} = condition symbol (<,>,=)
+                #  {4} = alert criteria minutes
+                $outputtext += (('<img src="{5}{0}.gif" alt="{0}"' +`
+                    'height="16" width="16" border="0">' +`
+                    '{1} updated {2:F1} minutes ago. Alert if {3} {4} minutes ago.<br>') `
+                    -f $alertcolour, $_, $minutesdiff, $conditiontype, $criteriaminutes, $script:XymonSettings.servergiflocation)
+                # set group colour to colour if it is not already set to a 
+                # higher alert state colour
+                if ($groupcolour -eq 'green' -and $alertcolour -eq 'yellow')
+                {
+                    $groupcolour = 'yellow'
+                }
+                elseif ($alertcolour -eq 'red')
+                {
+                    $groupcolour = 'red'
                 }
             }
         }
