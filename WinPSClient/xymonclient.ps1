@@ -25,8 +25,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.94"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-01-07 zak.beck@accenture.com"
+$Version = "1.95"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-01-21 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
