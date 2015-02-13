@@ -1799,13 +1799,17 @@ function XymonActiveDirectoryReplicationCheck
                         $failcount)
         $outputtext = (get-date -format G) + '<br><h2>Active Directory Replication</h2>' + $outputtext
         $outputtext += '<br/>'
-        $outputtext += ($results | select 'Source DSA', `
+
+        $outputtable = ($results | select 'Source DSA', `
             'Naming Context', 'Destination DSA', 'Number of Failures', `
             'Last Failure Time', 'Last Success Time', 'Last Failure Status'`
              | ConvertTo-Html -Fragment)
 
-        $output = ('status {0}.tssessions {1} {2}' -f $script:clientname, $alertColour, $outputtext)
-        WriteLog "Active Directory Replication: sending $output"
+        $outputtable = $outputtable -replace '<table>', '<table style="font-size: 10pt">'
+
+        $outputtext += $outputtable
+        $output = ('status {0}.adreplicaton {1} {2}' -f $script:clientname, $alertColour, $outputtext)
+        WriteLog "Active Directory Replication: sending status $alertColour"
         XymonSend $output $script:XymonSettings.servers
     }
 }
@@ -1925,6 +1929,7 @@ function XymonClientConfig($cfglines)
                  -or $l -match '^eventlogswanted' `
                  -or $l -match '^servergifs:' `
                  -or $l -match '^terminalservicessessions:' `
+                 -or $l -match '^adreplicationcheck' `
                  )
              {
                  WriteLog "Found a command: $l"
@@ -2003,6 +2008,7 @@ function XymonClientSections {
     XymonDirSize
     XymonDirTime
     XymonTerminalServicesSessionsCheck
+    XymonActiveDirectoryReplicationCheck
 
 	$XymonIISSitesCache
 	$XymonWMIQuickFixEngineeringCache
