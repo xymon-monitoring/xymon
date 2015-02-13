@@ -1152,6 +1152,7 @@ function XymonSend($msg, $servers)
 				$ErrorActionPreference = $saveerractpref
 				if(! $? -or ! $socket.Connected ) {
 					$errmsg = $Error[0].Exception
+                    WriteLog "ERROR: Cannot connect to host $srv ($srvip) : $errmsg"
 					Write-Error -Category OpenError "Cannot connect to host $srv ($srvip) : $errmsg"
 					continue;
 				}
@@ -1163,7 +1164,14 @@ function XymonSend($msg, $servers)
 				$sent = 0
 				foreach ($line in $msg) {
 					# Convert data to ASCII instead of UTF, and to Unix line breaks
-					$sent += $socket.Client.Send($ASCIIEncoder.GetBytes($line.Replace("`r","") + "`n"))
+                    try
+                    {
+                        $sent += $socket.Client.Send($ASCIIEncoder.GetBytes($line.Replace("`r","") + "`n"))
+                    }
+                    catch
+                    {
+                        WriteLog "ERROR: $_"
+                    }
 				}
 
 				if ($saveresponse-- -gt 0) {
@@ -1465,6 +1473,8 @@ while ($running -eq $true) {
 
     $collectionnumber++
 	$loopcount++ 
+    $UTCstr = get-date -Date ((get-date).ToUniversalTime()) -uformat '%Y-%m-%d %H:%M:%S'
+    WriteLog "UTC date/time: $UTCstr"
     WriteLog "This is collection number $collectionnumber, loop count $loopcount"
     WriteLog "Next 'slow scan' is when loopcount reaches $($script:XymonSettings.slowscanrate)"
 
