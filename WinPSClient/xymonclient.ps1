@@ -25,7 +25,7 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.93"
+$Version = "1.94"
 $XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-01-07 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
@@ -1516,11 +1516,11 @@ function XymonProcs
 			
 		$thisp = $script:XymonProcsCpu[$p.Id]
 		if ($script:XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null -and $thisp[3] -eq $true) {
-			$pcpu = "{0,5:F1}" -f (([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100)
+			$pcpu = (([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100)
             $cmdline = $thisp[4]
             $owner = $thisp[5]
 		} else {
-			$pcpu = "{0,5}" -f "-"
+			$pcpu = 0
 		}
 
         # quick way to make a new object from a hash
@@ -1533,7 +1533,7 @@ function XymonProcs
     
     # output sorted process table
     $proclist | Sort-Object -Descending { $_.CPUPercent } | foreach {
-        "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8} {9}" -f $_.PID, $_.Owner, $_.PeakWorkingSet, $_.PeakVirtualMem,`
+        "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7,5:F1} {8} {9}" -f $_.PID, $_.Owner, $_.PeakWorkingSet, $_.PeakVirtualMem,`
              $_.PeakPagedMem, $_.NonPagedSystemMem, $_.Handles, $_.CPUPercent, $_.Name, $_.NameCmd
     }
     WriteLog "XymonProcs finished."
@@ -1542,25 +1542,26 @@ function XymonProcs
 function CleanXymonProcsCpu
 {
     # reset cache flags and clear terminated processes from the cache
-	if ($script:XymonProcsCpuElapsed -gt 0) {
-        WriteLog "CleanXymonProcsCpu start"
-		foreach ($p in @($script:XymonProcsCpu.Keys)) {
-			$thisp = $script:XymonProcsCpu[$p]
-			if ($thisp[3] -eq $true) {
+    WriteLog "CleanXymonProcsCpu start"
+    if ($script:XymonProcsCpu.Count -gt 0)
+    {
+        foreach ($p in @($script:XymonProcsCpu.Keys)) {
+            $thisp = $script:XymonProcsCpu[$p]
+            if ($thisp[3] -eq $true) {
                 # reset flag to catch a dead process on the next run
                 # this flag will be updated back to $true by XymonProcsCPUUtilisation
                 # if the process still exists
-				$thisp[3] = $false	
-			}
-			else {
+                $thisp[3] = $false	
+            }
+            else {
                 # flag was set to $false previously = process has been terminated
                 WriteLog "Process id $p has disappeared, removing from cache"
                 $script:XymonProcsCpu.Remove($p)
-			}
-		}
-        WriteLog ("DEBUG: cached process ids: " + (($script:XymonProcsCpu.Keys | sort-object) -join ', '))
-        WriteLog "CleanXymonProcsCpu finished."
+            }
+        }
     }
+    WriteLog ("DEBUG: cached process ids: " + (($script:XymonProcsCpu.Keys | sort-object) -join ', '))
+    WriteLog "CleanXymonProcsCpu finished."
 }
 
 function XymonWho
