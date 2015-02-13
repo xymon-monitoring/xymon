@@ -25,7 +25,7 @@ $xymonsvcname = "XymonPSClient"
 $xymondir = (get-item $MyInvocation.InvocationName).DirectoryName
 # -----------------------------------------------------------------------------------
 
-$XymonClientVersion = "${Id}: xymonclient.ps1  2014-06-25 zak.beck@accenture.com"
+$XymonClientVersion = "${Id}: xymonclient.ps1  2014-07-11 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -108,6 +108,7 @@ function XymonInit
 	SetIfNot $script:XymonSettings wantedlogs @("Application",  "System", "Security")
     SetIfNot $script:XymonSettings EnableWin32_Product 0 # 0 = do not use Win32_product, 1 = do - see 
                         # see http://support.microsoft.com/kb/974524 for reasons why Win32_Product is not recommended!
+    SetIfNot $script:XymonSettings servergiflocation '/xymon/gifs/'
     $script:clientlocalcfg = ""
 	$script:logfilepos = @{}
 
@@ -587,14 +588,16 @@ function XymonDirSize
     #        :  1   :   2      :     3      :     4
     # <path> may be a simple path (c:\temp) or contain an environment variable
     # e.g. %USERPROFILE%\temp
+    WriteLog "Executing XymonDirSize"
     $outputtext = ''
     $groupcolour = 'green'
-    $script:clientlocalcfg_entries.keys | where { $_ match '^dirsize:([a-z%][a-z:][^:]+):([gl]t|eq):(\d+):.+$' } |`
+    $script:clientlocalcfg_entries.keys | where { $_ -match '^dirsize:([a-z%][a-z:][^:]+):([gl]t|eq):(\d+):(.+)$' } |`
         foreach {
             resolveEnvPath $matches[1] | foreach {
 
                 if (test-path $_ -PathType Container)
                 {
+                    WriteLog "DirSize: $_"
                     # could use "get-childitem ... -recurse | measure ..." here 
                     # but that does not work well when there are many files/subfolders
                     $objFSO = new-object -com Scripting.FileSystemObject
@@ -606,7 +609,7 @@ function XymonDirSize
                         $conditionmet = $size -gt $criteriasize
                         $conditiontype = '>'
                     }
-                    else if ($matches[2] -eq 'lt')
+                    elseif ($matches[2] -eq 'lt')
                     {
                         $conditionmet = $size -lt $criteriasize
                         $conditiontype = '<'
@@ -617,26 +620,32 @@ function XymonDirSize
                         $conditionmet = $size -eq $criteriasize
                         $conditiontype = '='
                     }
-                }
-                if ($conditionmet)
-                {
+                    if ($conditionmet)
+                    {
+                        $alertcolour = $matches[4]
+                    }
+                    else
+                    {
+                        $alertcolour = 'green'
+                    }
+
                     # report out - 
                     #  {0} = colour (matches[4])
                     #  {1} = folder name
                     #  {2} = folder size
                     #  {3} = condition symbol (<,>,=)
                     #  {4} = alert size
-                    $outputtext += ('<img src="/xymon/gifs/{0}.gif" alt="{0}"' +`
+                    $outputtext += (('<img src="{5}{0}.gif" alt="{0}" ' +`
                         'height="16" width="16" border="0">' +`
-                        '{1} size is {2} bytes. Alert if {3} {4} bytes.<br>' `
-                        -f $matches[4], $_, $size, $conditiontype, $matches[3])
+                        '{1} size is {2} bytes. Alert if {3} {4} bytes.<br>') `
+                        -f $alertcolour, $_, $size, $conditiontype, $matches[3], $script:XymonSettings.servergiflocation)
                     # set group colour to colour if it is not already set to a 
                     # higher alert state colour
-                    if ($groupcolour -eq 'green' -and $matches[4] -eq 'yellow')
+                    if ($groupcolour -eq 'green' -and $alertcolour -eq 'yellow')
                     {
                         $groupcolour = 'yellow'
                     }
-                    else if ($matches[4] -eq 'red')
+                    elseif ($alertcolour -eq 'red')
                     {
                         $groupcolour = 'red'
                     }
@@ -653,6 +662,84 @@ function XymonDirSize
     }
 }
 
+function XymonDirTime
+{
+    # dirtime:<path>:<unused>:<gt/lt/eq>:<alerttime>:<colour>
+    # match number:
+    #        :  1   :    2   :     3    :     4     :   5
+    # <path> may be a simple path (c:\temp) or contain an environment variable
+    # e.g. %USERPROFILE%\temp
+    # <alerttime> = number of minutes to alert after
+    # e.g. if a directory should be modified every 10 minutes
+    # alert for gt 10
+    WriteLog "Executing XymonDirTime"
+    $outputtext = ''
+    $groupcolour = 'green'
+    $script:clientlocalcfg_entries.keys | where { $_ -match '^dirtime:([a-z%][a-z:][^:]+):([^:]*):([gl]t|eq):(\d+):(.+)$' } |`
+        foreach {
+            resolveEnvPath $matches[1] | foreach {
+
+                if (test-path $_ -PathType Container)
+                {
+                    WriteLog "DirTime: $_"
+                    $minutesdiff = ((get-date) - (Get-Item $_).LastWriteTime).TotalMinutes
+                    $criteriaminutes = ($matches[4] -as [int])
+                    $conditionmet = $false
+                    if ($matches[3] -eq 'gt')
+                    {
+                        $conditionmet = $minutesdiff -gt $criteriaminutes
+                        $conditiontype = '>'
+                    }
+                    elseif ($matches[3] -eq 'lt')
+                    {
+                        $conditionmet = $minutesdiff -lt $criteriaminutes
+                        $conditiontype = '<'
+                    }
+                    else
+                    {
+                        $conditionmet = $minutesdiff -eq $criteriaminutes
+                        $conditiontype = '='
+                    }
+                    if ($conditionmet)
+                    {
+                        $alertcolour = $matches[5]
+                    }
+                    else
+                    {
+                        $alertcolour = 'green'
+                    }
+                    # report out - 
+                    #  {0} = colour (matches[5])
+                    #  {1} = folder name
+                    #  {2} = folder modified x minutes ago
+                    #  {3} = condition symbol (<,>,=)
+                    #  {4} = alert criteria minutes
+                    $outputtext += (('<img src="{5}{0}.gif" alt="{0}"' +`
+                        'height="16" width="16" border="0">' +`
+                        '{1} updated {2:F1} minutes ago. Alert if {3} {4} minutes ago.<br>') `
+                        -f $alertcolour, $_, $minutesdiff, $conditiontype, $criteriaminutes, $script:XymonSettings.servergiflocation)
+                    # set group colour to colour if it is not already set to a 
+                    # higher alert state colour
+                    if ($groupcolour -eq 'green' -and $alertcolour -eq 'yellow')
+                    {
+                        $groupcolour = 'yellow'
+                    }
+                    elseif ($alertcolour -eq 'red')
+                    {
+                        $groupcolour = 'red'
+                    }
+                }
+            }
+        }
+
+    if ($outputtext -ne '')
+    {
+        $outputtext = (get-date -format G) + '<br><h2>Folder Last Modified Time In Minutes</h2>' + $outputtext
+        $output = ('status {0}.dirtime {1} {2}' -f $script:clientname, $groupcolour, $outputtext)
+        WriteLog "dirtime: Sending $output"
+        XymonSend $output $script:XymonSettings.servers
+    }
+}
 
 function XymonPorts
 {
@@ -859,9 +946,10 @@ function XymonEventLogs
 
 function XymonServiceCheck
 {
+    WriteLog "Executing XymonServiceCheck"
     if ($script:clientlocalcfg_entries -ne $null)
     {
-        $servicecfgs = $script:clientlocalcfg_entries.keys | where { $_ -match '^servicecheck' }
+        $servicecfgs = @($script:clientlocalcfg_entries.keys | where { $_ -match '^servicecheck' })
         foreach ($service in $servicecfgs)
         {
             # parameter should be 'servicecheck:<servicename>:<duration>'
@@ -981,6 +1069,8 @@ function XymonClientConfig($cfglines)
 	$script:clientlocalcfg = $cfglines.Split("`n")
 	$clientlocalcfg >$script:XymonSettings.clientconfigfile
 
+    WriteLog "Received new config, parsing now"
+
 	# Parse the new config
 	if ($script:XymonSettings.clientremotecfgexec -ne 0 `
         -and (test-path -PathType Leaf $script:XymonSettings.clientconfigfile)) 
@@ -992,9 +1082,11 @@ function XymonClientConfig($cfglines)
          {
              if ($l -match '^eventlog:' -or $l -match '^servicecheck:' `
                  -or $l -match '^dir:' -or $l -match '^file:' `
+                 -or $l -match '^dirsize:' -or $l -match '^dirtime:' `
                  -or $l -match '^log' `
                  )
              {
+                 WriteLog "Found a command: $l"
                  $currentsection = $l
                  $script:clientlocalcfg_entries[$currentsection] = @()
              }
@@ -1004,6 +1096,9 @@ function XymonClientConfig($cfglines)
              }
          }
     }
+    WriteLog "Cached config now contains: "
+    WriteLog ($script:clientlocalcfg_entries.keys -join ', ')
+
 }
 
 function XymonReportConfig
@@ -1053,6 +1148,8 @@ function XymonClientSections {
 	XymonWMILogicalDisk
 
     XymonServiceCheck
+    XymonDirSize
+    XymonDirTime
 
 	$XymonIISSitesCache
 	$XymonWMIQuickFixEngineeringCache
@@ -1081,6 +1178,7 @@ function WriteLog([string]$message)
 {
     $datestamp = get-date -uformat '%Y-%m-%d %H:%M:%S'
     add-content -Path $script:XymonSettings.clientlogfile -Value "$datestamp  $message"
+    Write-Host "$datestamp  $message"
 }
 
 ##### Main code #####
@@ -1171,10 +1269,11 @@ while ($running -eq $true) {
 		$XymonIISSitesCache = XymonIISSites
 	}
 
-    WriteLog "Executing XymonCollectInfo..."
+    WriteLog "Executing XymonCollectInfo (cpu, procs)..."
 	XymonCollectInfo
     WriteLog "XymonCollectInfo finished."
     
+    WriteLog "Performing main and optional tests and building output..."
 	$clout = "client " + $clientname + ".bbwin win32 ps" | Out-String
 	$clsecs = XymonClientSections | Out-String
 	$localdatetime = Get-Date
@@ -1182,7 +1281,8 @@ while ($running -eq $true) {
 	$clout += XymonClock | Out-String
 	$clout +=  $clsecs
 	
-	XymonReportConfig >> $script:XymonSettings.clientlogfile
+	#XymonReportConfig >> $script:XymonSettings.clientlogfile
+    WriteLog "Main and optional tests finished."
 	
     WriteLog "Sending to server"
     Set-Content -path c:\xymon-lastcollect.txt -value $clout
