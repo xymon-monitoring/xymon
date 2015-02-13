@@ -375,6 +375,8 @@ function XymonCpu
 		""
 		"CPU".PadRight(8) + "PID".PadRight(6) + "Image Name".PadRight(32) + "Pri".PadRight(5) + "Time".PadRight(9) + "MemUsage"
 
+        $cpulist = @()
+
 		foreach ($p in $script:XymonProcsCpu.Keys) {
 			$thisp = $script:XymonProcsCpu[$p]
 			if ($thisp[3] -eq $true) {
@@ -387,7 +389,9 @@ function XymonCpu
 				}
 
 				$usedpct = ([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100
-				XymonPrintProcess $thisp $pname $usedpct
+
+                $hash = @{ 'ProcessObj' = $thisp; 'Name' = $pname; 'CPUPercent' = $usedpct }
+                $cpulist += (New-Object -TypeName PSObject -Property $hash)
 
 				$thisp[3] = $false	# Set flag to catch a dead process on the next run
 			}
@@ -397,6 +401,8 @@ function XymonCpu
 				$thisp[0] = $null
 			}
 		}
+
+        $cpulist | Sort-Object -Descending { $_.CPUPercent } | foreach { XymonPrintProcess $_.ProcessObj $_.Name $_.CPUPercent }
 	}
     WriteLog "XymonCpu finished."
 }
@@ -877,6 +883,7 @@ function XymonProcs
 
     # one call to Get-WmiObject rather than as many calls as we have processes
     $wmiProcs = Get-WmiObject -Class Win32_Process
+    $proclist = @()
 
 	foreach ($p in $procs) {
 		if ($svcprocs[($p.Id)] -ne $null) {
@@ -886,7 +893,6 @@ function XymonProcs
 			$procname = $p.Name
 		}
 
-        #$thiswmip = Get-WmiObject -Query "select * from Win32_Process where ProcessId = $($p.Id)"
         $thiswmip = $wmiProcs | where { $_.ProcessId -eq $p.Id }
         $cmdline = "{0} {1}" -f $procname, $thiswmip.CommandLine
        
@@ -910,9 +916,20 @@ function XymonProcs
 		} else {
 			$pcpu = "{0,5}" -f "-"
 		}
-#		"{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8}" -f $p.Id, $owner, $pws, $pvmem, $ppgmem, $pnpgmem, $p.HandleCount, $pcpu, $procname
-		"{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8}" -f $p.Id, $owner, $pws, $pvmem, $ppgmem, $pnpgmem, $p.HandleCount, $pcpu, $cmdline
+
+        # quick way to make a new object from a hash
+        $hash = @{ 'PID' = $p.Id; 'Owner' = $owner; 'PeakWorkingSet' = $pws;`
+            'PeakVirtualMem' = $pvmem; 'PeakPagedMem' = $ppgmem;`
+            'NonPagedSystemMem' = $pnpgmem; 'Handles' = $p.HandleCount;`
+            'CPUPercent' = $pcpu; 'NameCmd' = $cmdline }
+        $proclist += (New-Object -TypeName PSObject -Property $hash)
 	}
+    
+    # output sorted process table
+    $proclist | Sort-Object -Descending { $_.CPUPercent } | foreach {
+        "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8}" -f $_.PID, $_.Owner, $_.PeakWorkingSet, $_.PeakVirtualMem,`
+             $_.PeakPagedMem, $_.NonPagedSystemMem, $_.Handles, $_.CPUPercent, $_.NameCmd
+    }
     WriteLog "XymonProcs finished."
 }
 
