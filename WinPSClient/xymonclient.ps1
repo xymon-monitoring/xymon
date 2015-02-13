@@ -25,7 +25,7 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.95"
+$Version = "1.96"
 $XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-01-21 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
@@ -684,6 +684,7 @@ function XymonInit
     SetIfNot $script:XymonSettings EnableWin32_QuickFixEngineering 0 # 0 = do not use Win32_QuickFixEngineering, 1 = do
     SetIfNot $script:XymonSettings EnableWMISections 0 # 0 = do not produce [WMI: sections (OS, BIOS, Processor, Memory, Disk), 1 = do
     SetIfNot $script:XymonSettings ClientProcessPriority 'Normal' # possible values Normal, Idle, High, RealTime, BelowNormal, AboveNormal
+    SetIfNot $script:XymonSettings MaxEvents 5000 # maximum number of events per event log
 
     $clientlogpath = Split-Path -Parent $script:XymonSettings.clientlogfile
     SetIfNot $script:XymonSettings clientlogpath $clientlogpath
@@ -1144,7 +1145,9 @@ function XymonMsgs
             WriteLog "Processing event log $l"
 
             $logFilterXML = $filterXMLTemplate -f $l, $sinceMs
-            $logentries = @(Get-WinEvent -ErrorAction:SilentlyContinue -FilterXML $logFilterXML)
+            # todo - make this max events number configurable
+            $logentries = @(Get-WinEvent -ErrorAction:SilentlyContinue -FilterXML $logFilterXML `
+                -MaxEvents $script:XymonSettings.MaxEvents)
 
             WriteLog "Event log $l entries since last scan: $($logentries.Length)"
             
