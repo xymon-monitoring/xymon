@@ -911,14 +911,14 @@ function du([string]$dir,[int]$clsize=0)
 function XymonPrintProcess($pobj, $name, $pct)
 {
 	$pcpu = (("{0:F1}" -f $pct) + "`%").PadRight(8)
-	$ppid = ([string]($pobj[0]).Id).PadRight(6)
+	$ppid = ([string]($pobj.Id)).PadRight(6)
 	
 	if ($name.length -gt 30) { $name = $name.substring(0, 30) }
 	$pname = $name.PadRight(32)
 
-	$pprio = ([string]$pobj[0].BasePriority).PadRight(5)
-	$ptime = (([string]$pobj[0].TotalProcessorTime).Split(".")[0]).PadRight(9)
-	$pmem = ([string]($pobj[0].WorkingSet64 / 1KB)) + "k"
+	$pprio = ([string]$pobj.BasePriority).PadRight(5)
+	$ptime = (([string]($pobj.TotalProcessorTime)).Split(".")[0]).PadRight(9)
+	$pmem = ([string]($pobj.WorkingSet64 / 1KB)) + "k"
 
 	$pcpu + $ppid + $pname + $pprio + $ptime + $pmem
 }
