@@ -2017,6 +2017,51 @@ function ExecuteSelfUpdate([string]$newversion)
     exit
 }
 
+function XymonGetUpdateFromFile([string]$updatePath, [string]$updateFile)
+{
+    $newversion = join-path $updatePath "xymonclient_$updateFile.ps1"
+
+    if (!(Test-Path $newversion))
+    {
+        WriteLog "New version $newversion cannot be found - aborting upgrade"
+        return $false
+    }
+
+    WriteLog "Copying $newversion to $xymondir"
+    try
+    {
+        Copy-Item  $newversion $xymondir -Force
+    }
+    catch 
+    {
+        WriteLog "Error copying file: $_"
+        return $false
+    }
+    return $true
+}
+
+function XymonGetUpdateFromURL([string]$updateURL, [string]$updateFile)
+{
+    if ($updateURL -notmatch '/$')
+    {
+        $updateURL += '/'
+    }
+    $URL = $updateURL + $updateFile
+
+    WriteLog "Downloading $URL to $xymondir"
+    $client = New-Object System.Net.WebClient
+    try
+    {
+        $client.DownloadFile($URL, $xymondir)
+    }
+    catch
+    {
+        WriteLog "Error downloading: $_"
+        return $false
+    }
+    return $true
+}
+
 function XymonCheckUpdate
 {
     WriteLog "Executing XymonCheckUpdate"
@@ -2033,21 +2078,26 @@ function XymonCheckUpdate
         {
             WriteLog "Running version $Version; config version $($matches[1]); attempting upgrade"
 
-            $newversion = join-path $matches[2] "xymonclient_$($matches[1]).ps1"
-
-            if (!(Test-Path $newversion))
+            # $matches[2] can be either a http[s] URL or a file path
+            $updatePath = $matches[2]
+            $updateFile = "xymonclient_$($matches[1]).ps1"
+            $result = $false;
+            if ($updatePath -match '^http')
             {
-                WriteLog "New version $newversion cannot be found - aborting upgrade"
-                return
+                $result = XymonGetUpdateFromURL($updatePath, $updateFile)
+            }
+            else
+            {
+                $result = XymonGetUpdateFromFile($updatePath, $updateFile)
             }
 
-            WriteLog "Copying $newversion to $xymondir"
-            Copy-Item  $newversion $xymondir -Force
+            if ($result)
+            {
+                $newversion = Join-Path $xymondir $updateFile
 
-            $newversion = Join-Path $xymondir (Split-Path $newversion -Leaf)
-
-            WriteLog "Launching update"
-            ExecuteSelfUpdate $newversion
+                WriteLog "Launching update"
+                ExecuteSelfUpdate $newversion
+            }
         }
         else
         {
