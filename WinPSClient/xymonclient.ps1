@@ -217,7 +217,7 @@ function XymonCollectInfo
 	}
 	#$script:totalload /= $numcpus
 
-    WriteLog "Found $($script:numcpus) CPUs, $($script:numcores) cores"
+    WriteLog "Found $($script:numcpus) CPUs, total of $($script:numcores) cores"
 
     WriteLog "XymonCollectInfo: OS info (including memory) (WMI)"
 	$script:osinfo = Get-WmiObject -Class Win32_OperatingSystem
