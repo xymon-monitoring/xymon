@@ -333,6 +333,8 @@ function XymonClientVersion
 
 function XymonCpu
 {
+    WriteLog "XymonCpu start"
+
 	"[cpu]"
 	"up: {0} days, {1} users, {2} procs, load={3}%" -f [string]$uptime.Days, $usercount, $procs.count, [string]$totalload
 	""
@@ -369,10 +371,12 @@ function XymonCpu
 			}
 		}
 	}
+    WriteLog "XymonCpu finished."
 }
 
 function XymonDisk
 {
+    WriteLog "XymonDisk start"
 	"[disk]"
 	"{0,-15} {1,9} {2,9} {3,9} {4,9} {5,10} {6}" -f "Filesystem", "1K-blocks", "Used", "Avail", "Capacity", "Mounted", "Summary(Total\Avail GB)"
 	foreach ($d in $disks) {
@@ -393,10 +397,12 @@ function XymonDisk
 
 		"{0,-15} {1,9} {2,9} {3,9} {4,9:0%} {5,10} {6}" -f $diskletter, $dsKB, $duKB, $dfKB, $duPCT, "/FIXED/$diskletter", $dsGB + "\" + $dfGB
 	}
+    WriteLog "XymonDisk finished."
 }
 
 function XymonMemory
 {
+    WriteLog "XymonMemory start"
 	$physused  = [int](($osinfo.TotalVisibleMemorySize - $osinfo.FreePhysicalMemory)/1KB)
 	$phystotal = [int]($osinfo.TotalVisibleMemorySize / 1KB)
 	$pageused  = [int](($osinfo.SizeStoredInPagingFiles - $osinfo.FreeSpaceInPagingFiles) / 1KB)
@@ -414,6 +420,7 @@ function XymonMemory
 		"virtual: $pagetotal $pageused"
 		"page: $virttotal $virtused"
 	}
+    WriteLog "XymonMemory finished."
 }
 
 function XymonMsgs
@@ -778,31 +785,40 @@ function XymonDirTime
 
 function XymonPorts
 {
+    WriteLog "XymonPorts start"
 	"[ports]"
 	netstat -an
+    WriteLog "XymonPorts finished."
 }
 
 function XymonIpconfig
 {
+    WriteLog "XymonIpconfig start"
 	"[ipconfig]"
 	ipconfig /all | %{ $_.split("`n") } | ?{ $_ -match "\S" }  # for some reason adds blankline between each line
+    WriteLog "XymonIpconfig finished."
 }
 
 function XymonRoute
 {
+    WriteLog "XymonRoute start"
 	"[route]"
 	netstat -rn
+    WriteLog "XymonRoute finished."
 }
 
 function XymonNetstat
 {
+    WriteLog "XymonNetstat start"
 	"[netstat]"
 	$pref=""
 	netstat -s | ?{$_ -match "=|(\w+) Statistics for"} | %{ if($_.contains("=")) {("$pref$_").REPLACE(" ","")}else{$pref=$matches[1].ToLower();""}}
+    WriteLog "XymonNetstat finished."
 }
 
 function XymonIfstat
 {
+    WriteLog "XymonIfstat start"
 	"[ifstat]"
     [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() | ?{$_.OperationalStatus -eq "Up"} | %{
         $ad = $_.GetIPv4Statistics() | select BytesSent, BytesReceived
@@ -810,10 +826,12 @@ function XymonIfstat
 		# some interfaces have multiple IPs, so iterate over them reporting same stats
         $ip | %{ "{0} {1} {2}" -f $_.Address.IPAddressToString,$ad.BytesReceived,$ad.BytesSent }
     }
+    WriteLog "XymonIfstat finished."
 }
 
 function XymonSvcs
 {
+    WriteLog "XymonSvcs start"
 	"[svcs]"
 	"Name".PadRight(39) + " " + "StartupType".PadRight(12) + " " + "Status".PadRight(14) + " " + "DisplayName"
 	foreach ($s in $svcs) {
@@ -821,10 +839,12 @@ function XymonSvcs
 		if ($s.State -eq "Running")  { $state = "started" } else { $state = $s.State.ToLower() }
 		$s.Name.Replace(" ","_").PadRight(39) + " " + $stm.PadRight(12) + " " + $state.PadRight(14) + " " + $s.DisplayName
 	}
+    WriteLog "XymonSvcs finished."
 }
 
 function XymonProcs
 {
+    WriteLog "XymonProcs start"
 	"[procs]"
 	"{0,8} {1,-35} {2,-17} {3,-17} {4,-17} {5,8} {6,-7} {7,5} {8}" -f "PID", "User", "WorkingSet/Peak", "VirtualMem/Peak", "PagedMem/Peak", "NPS", "Handles", "%CPU", "Name"
 	foreach ($p in $procs) {
@@ -835,15 +855,8 @@ function XymonProcs
 			$procname = $p.Name
 		}
 
-		$thiswmip = Get-WmiObject -Class Win32_Process | where { $_.ProcessId -eq $p.Id }
-        $cmdline = Get-WmiObject -Class Win32_Process | where { $_.ProcessId -eq $p.Id }|select commandline
-        #write-host "1. cmdline: $cmdline"
-        #write-host "2. procname: $procname"
-        $cmdline = $cmdline -replace "@{commandline=" -replace "}"
-        
-        #if( $cmdline -eq "" ) { $cmdline = $procname }
-        $cmdline = "$procname $cmdline"
-        #write-host "3. cmdline: $cmdline"
+        $thiswmip = Get-WmiObject -Query "select * from Win32_Process where ProcessId = $($p.Id)"
+        $cmdline = "{0} {1}" -f $procname, $thiswmip.CommandLine
        
 		if(	$thiswmip -ne $null ) { # short-lived process could possibly be gone
 			$saveerractpref = $ErrorActionPreference
@@ -868,26 +881,32 @@ function XymonProcs
 #		"{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8}" -f $p.Id, $owner, $pws, $pvmem, $ppgmem, $pnpgmem, $p.HandleCount, $pcpu, $procname
 		"{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8}" -f $p.Id, $owner, $pws, $pvmem, $ppgmem, $pnpgmem, $p.HandleCount, $pcpu, $cmdline
 	}
+    WriteLog "XymonProcs finished."
 }
 
 function XymonWho
 {
+    WriteLog "XymonWho start"
 	if( $HaveCmd.qwinsta) {
 		"[who]"
 		qwinsta.exe /counter
 	}
+    WriteLog "XymonWho finished."
 }
 
 function XymonUsers
 {
+    WriteLog "XymonUsers start"
 	if( $HaveCmd.query) {
 		"[users]"
 		query user
 	}
+    WriteLog "XymonUsers finished."
 }
 
 function XymonIISSites
 {
+    WriteLog "XymonIISSites start"
     $objSites = [adsi]("IIS://localhost/W3SVC")
 	if($objSites.path -ne $null) {
 		"[iis_sites]"
@@ -905,6 +924,7 @@ function XymonIISSites
         clear-variable objChild
 	}
 	clear-variable objSites
+    WriteLog "XymonIISSites finished."
 }
 
 function XymonWMIOperatingSystem
