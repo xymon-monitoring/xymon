@@ -21,7 +21,7 @@ $xymonservers = @( "xymonhost" )	# List your Xymon servers here
 # $clientname  = "winxptest"	# Define this to override the default client hostname
 
 $xymonsvcname = "XymonPSClient"
-$xymondir = (get-item $MyInvocation.InvocationName).DirectoryName
+$xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
@@ -1174,7 +1174,7 @@ function XymonClientUnInstall()
         $service = Get-WmiObject -Class Win32_Service -Filter "Name='$xymonsvcname'"
         $service.delete()
 
-        Remove-Item -Path HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\* -Recurse
+        Remove-Item -Path HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\* -Recurse -ErrorAction SilentlyContinue
     }
 }
 
@@ -1264,30 +1264,13 @@ XymonConfig
 $ret = 0
 # check for install/set/unset/config/start/stop for service management
 if($args -eq "Install") {
-	XymonClientInstall (Resolve-Path $MyInvocation.InvocationName)
+	XymonClientInstall $MyInvocation.MyCommand.Definition
 	$ret=1
 }
 if ($args -eq "uninstall")
 {
     XymonClientUnInstall
-    return
-}
-if($args[0] -eq "set") {
-	if($args.count -eq 3) {
-		$cfgitm = Set-ItemProperty $XymonRegKey $args[1] $args[2]
-	} else {
-		"Usage: "+(get-item $MyInvocation.InvocationName).Name+" set <Param> <Value>`n  Settable Params:"
-		$script:XymonSettings | gm -memberType NoteProperty  | ?{ $_.Name -notlike "PS*" } | %{"    "+$_.Name}
-	}
-	return
-}
-if($args[0] -eq "unset") {
-	if($args.count -eq 2) {
-		$cfgitm = Remove-ItemProperty $XymonRegKey $args[1]
-	} else {
-		"Error: need property to UNSET"
-	}
-	return
+    $ret=1
 }
 if($args[0] -eq "config") {
 	"XymonPSClient config:`n"
@@ -1316,7 +1299,7 @@ if($args -eq "Stop") {
 }
 if($ret) {return}
 if($args -ne $null) {
-	"Usage: "+(get-item $MyInvocation.InvocationName).Name+" install | start | stop | config | set <Param> <Value> | unset <Param>"
+	"Usage: "+ $MyInvocation.MyCommand.Definition +" install | uninstall | start | stop | config "
 	return
 }
 
