@@ -832,7 +832,7 @@ function XymonIfstat
 function XymonSvcs
 {
     WriteLog "XymonSvcs start"
-    "[$name]"
+    "[svcs]"
     "Name".PadRight(39) + " " + "StartupType".PadRight(12) + " " + "Status".PadRight(14) + " " + "DisplayName"
     foreach ($s in $svcs) {
         if ($s.StartMode -eq "Auto") { $stm = "automatic" } else { $stm = $s.StartMode.ToLower() }
