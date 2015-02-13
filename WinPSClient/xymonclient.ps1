@@ -2261,7 +2261,7 @@ while ($running -eq $true) {
 	XymonCollectInfo
     
     WriteLog "Performing main and optional tests and building output..."
-	$clout = "client " + $clientname + ".bbwin XymonPS" | Out-String
+	$clout = "client " + $clientname + ".powershell powershell XymonPS" | Out-String
 	$clsecs = XymonClientSections | Out-String
 	$localdatetime = Get-Date
 	$clout += XymonDate | Out-String
