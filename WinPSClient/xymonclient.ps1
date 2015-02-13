@@ -1338,7 +1338,7 @@ function XymonDirSize
                     # but that does not work well when there are many files/subfolders
                     $objFSO = new-object -com Scripting.FileSystemObject
                     $size = $objFSO.GetFolder($_).Size
-                    $criteriasize = ($matches[3] -as [int])
+                    $criteriasize = ($matches[3] -as [long])
                     $conditionmet = $false
                     if ($matches[2] -eq 'gt')
                     {
