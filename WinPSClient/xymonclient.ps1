@@ -1329,27 +1329,14 @@ function ExecuteSelfUpdate([string]$newversion)
 
     WriteLog "Upgrading $oldversion to $newversion"
 
-    # sleep to allow original script to exit
-    # stop existing service
     # copy newversion to correct name
     # remove newversion file
-    # re-start service
+    # re-start service - by exiting, NSSM will notice the process has ended and will
+    # automatically restart it
 
-    $command = "sleep -seconds 5; if ((get-service '$xymonsvcname').Status -eq 'Running') { stop-service '$xymonsvcname' }; " +
-        "copy-item '$newversion' '$oldversion' -force; remove-item '$newversion'; start-service '$xymonsvcname'"
-
-    $StartInfo = new-object System.Diagnostics.ProcessStartInfo
-    $StartInfo.Filename = join-path $pshome 'powershell.exe'
-
-    # for debugging:
-    # set .UseShellExecute to $true below
-    # add -noexit to leave the upgrade window open
-    # remove it to close the window at the end
-    $StartInfo.Arguments = "-noprofile -executionpolicy RemoteSigned -Command `"$command`""
-    $StartInfo.WorkingDirectory = $xymondir
-    $StartInfo.LoadUserProfile = $true
-    $StartInfo.UseShellExecute = $false
-    $ret = [System.Diagnostics.Process]::Start($StartInfo)
+    copy-item "$newversion" "$oldversion" -force
+    remove-item "$newversion"
+    WriteLog "Restarting service..."
     exit
 }
 
