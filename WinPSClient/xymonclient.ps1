@@ -25,12 +25,583 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.7"
+$Version = "1.8"
 $XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-30 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
 $ServiceChecks = @{}
+
+#region dotNETHelperTypes
+function AddHelperTypes
+{
+$getprocessowner = @'
+// see: http://www.codeproject.com/Articles/14828/How-To-Get-Process-Owner-ID-and-Current-User-SID
+// adapted slightly and bugs fixed
+using System;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
+
+public class GetProcessOwner
+{
+
+    public const int TOKEN_QUERY = 0X00000008;
+
+    const int ERROR_NO_MORE_ITEMS = 259;
+
+    enum TOKEN_INFORMATION_CLASS                           
+    {
+        TokenUser = 1,
+        TokenGroups,
+        TokenPrivileges,
+        TokenOwner,
+        TokenPrimaryGroup,
+        TokenDefaultDacl,
+        TokenSource,
+        TokenType,
+        TokenImpersonationLevel,
+        TokenStatistics,
+        TokenRestrictedSids,
+        TokenSessionId
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct TOKEN_USER
+    {
+        public _SID_AND_ATTRIBUTES User;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct _SID_AND_ATTRIBUTES
+    {
+        public IntPtr Sid;
+        public int Attributes;
+    }
+
+    [DllImport("advapi32")]
+    static extern bool OpenProcessToken(
+        IntPtr ProcessHandle, // handle to process
+        int DesiredAccess, // desired access to process
+        ref IntPtr TokenHandle // handle to open access token
+    );
+
+    [DllImport("kernel32")]
+    static extern IntPtr GetCurrentProcess();
+
+    [DllImport("advapi32", CharSet = CharSet.Auto)]
+    static extern bool GetTokenInformation(
+        IntPtr hToken,
+        TOKEN_INFORMATION_CLASS tokenInfoClass,
+        IntPtr TokenInformation,
+        int tokeInfoLength,
+        ref int reqLength
+    );
+
+    [DllImport("kernel32")]
+    static extern bool CloseHandle(IntPtr handle);
+
+    [DllImport("advapi32", CharSet = CharSet.Auto)]
+    static extern bool ConvertSidToStringSid(
+        IntPtr pSID,
+        [In, Out, MarshalAs(UnmanagedType.LPTStr)] ref string pStringSid
+    );
+
+    [DllImport("advapi32", CharSet = CharSet.Auto)]
+    static extern bool ConvertStringSidToSid(
+        [In, MarshalAs(UnmanagedType.LPTStr)] string pStringSid,
+        ref IntPtr pSID
+    );
+
+    /// <span class="code-SummaryComment"><summary></span>
+    /// Collect User Info
+    /// <span class="code-SummaryComment"></summary></span>
+    /// <span class="code-SummaryComment"><param name="pToken">Process Handle</param></span>
+    public static bool DumpUserInfo(IntPtr pToken, out IntPtr SID)
+    {
+        int Access = TOKEN_QUERY;
+        IntPtr procToken = IntPtr.Zero;
+        bool ret = false;
+        SID = IntPtr.Zero;
+        try
+        {
+            if (OpenProcessToken(pToken, Access, ref procToken))
+            {
+                ret = ProcessTokenToSid(procToken, out SID);
+                CloseHandle(procToken);
+            }
+            return ret;
+        }
+        catch //(Exception err)
+        {
+            return false;
+        }
+    }
+
+    private static bool ProcessTokenToSid(IntPtr token, out IntPtr SID)
+    {
+        TOKEN_USER tokUser;
+        const int bufLength = 256;            
+        IntPtr tu = Marshal.AllocHGlobal(bufLength);
+        bool ret = false;
+        SID = IntPtr.Zero;
+        try
+        {
+            int cb = bufLength;
+            ret = GetTokenInformation(token, 
+                    TOKEN_INFORMATION_CLASS.TokenUser, tu, cb, ref cb);
+            if (ret)
+            {
+                tokUser = (TOKEN_USER)Marshal.PtrToStructure(tu, typeof(TOKEN_USER));
+                SID = tokUser.User.Sid;
+            }
+            return ret;
+        }
+        catch //(Exception err)
+        {
+            return false;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(tu);
+        }
+    }
+
+    public static string GetProcessOwnerByPId(int PID)
+    {                                                                  
+        IntPtr _SID = IntPtr.Zero;                                       
+        string SID = String.Empty;                                             
+        try                                                             
+        {                                                                
+            Process process = Process.GetProcessById(PID);
+            if (DumpUserInfo(process.Handle, out _SID))
+            {                                                                    
+                ConvertSidToStringSid(_SID, ref SID);
+            }
+
+            // convert SID to username
+            string account = new System.Security.Principal.SecurityIdentifier(SID).Translate(typeof(System.Security.Principal.NTAccount)).ToString();
+
+            return account;                                          
+        }                                                                           
+        catch
+        {                                                                           
+            return "Unknown";
+        }
+    }
+}
+'@
+
+$type = Add-Type $getprocessowner
+
+$getprocesscmdline = @'
+    // ZB adapted from ProcessHacker (http://processhacker.sf.net)
+    using System;
+    using System.Diagnostics;
+    using System.Runtime.InteropServices;
+
+    public class ProcessInformation
+    {
+        [DllImport("ntdll.dll")]
+        internal static extern int NtQueryInformationProcess(
+            [In] IntPtr ProcessHandle,
+            [In] int ProcessInformationClass,
+            [Out] out ProcessBasicInformation ProcessInformation,
+            [In] int ProcessInformationLength,
+            [Out] [Optional] out int ReturnLength
+            );
+
+        [DllImport("ntdll.dll")]
+        public static extern int NtReadVirtualMemory(
+            [In] IntPtr processHandle,
+            [In] [Optional] IntPtr baseAddress,
+            [In] IntPtr buffer,
+            [In] IntPtr bufferSize,
+            [Out] [Optional] out IntPtr returnLength
+            );
+
+        private const int FLS_MAXIMUM_AVAILABLE = 128;
+        
+        //Win32
+        //private const int GDI_HANDLE_BUFFER_SIZE = 34;
+        //Win64
+        private const int GDI_HANDLE_BUFFER_SIZE = 60;
+
+        private enum PebOffset
+        {
+            CommandLine,
+            CurrentDirectoryPath,
+            DesktopName,
+            DllPath,
+            ImagePathName,
+            RuntimeData,
+            ShellInfo,
+            WindowTitle
+        }
+
+        [Flags]
+        public enum RtlUserProcessFlags : uint
+        {
+            ParamsNormalized = 0x00000001,
+            ProfileUser = 0x00000002,
+            ProfileKernel = 0x00000004,
+            ProfileServer = 0x00000008,
+            Reserve1Mb = 0x00000020,
+            Reserve16Mb = 0x00000040,
+            CaseSensitive = 0x00000080,
+            DisableHeapDecommit = 0x00000100,
+            DllRedirectionLocal = 0x00001000,
+            AppManifestPresent = 0x00002000,
+            ImageKeyMissing = 0x00004000,
+            OptInProcess = 0x00020000
+        }
+
+        [Flags]
+        public enum StartupFlags : uint
+        {
+            UseShowWindow = 0x1,
+            UseSize = 0x2,
+            UsePosition = 0x4,
+            UseCountChars = 0x8,
+            UseFillAttribute = 0x10,
+            RunFullScreen = 0x20,
+            ForceOnFeedback = 0x40,
+            ForceOffFeedback = 0x80,
+            UseStdHandles = 0x100,
+            UseHotkey = 0x200
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct UnicodeString
+        {
+            public ushort Length;
+            public ushort MaximumLength;
+            public IntPtr Buffer;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ListEntry
+        {
+            public IntPtr Flink;
+            public IntPtr Blink;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct Peb
+        {
+            public static readonly int ImageSubsystemOffset =
+                Marshal.OffsetOf(typeof(Peb), "ImageSubsystem").ToInt32();
+            public static readonly int LdrOffset =
+                Marshal.OffsetOf(typeof(Peb), "Ldr").ToInt32();
+            public static readonly int ProcessHeapOffset =
+                Marshal.OffsetOf(typeof(Peb), "ProcessHeap").ToInt32();
+            public static readonly int ProcessParametersOffset =
+                Marshal.OffsetOf(typeof(Peb), "ProcessParameters").ToInt32();
+
+            [MarshalAs(UnmanagedType.I1)]
+            public bool InheritedAddressSpace;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool ReadImageFileExecOptions;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool BeingDebugged;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool BitField;
+            public IntPtr Mutant;
+
+            public IntPtr ImageBaseAddress;
+            public IntPtr Ldr; // PebLdrData*
+            public IntPtr ProcessParameters; // RtlUserProcessParameters*
+            public IntPtr SubSystemData;
+            public IntPtr ProcessHeap;
+            public IntPtr FastPebLock;
+            public IntPtr AtlThunkSListPtr;
+            public IntPtr SparePrt2;
+            public int EnvironmentUpdateCount;
+            public IntPtr KernelCallbackTable;
+            public int SystemReserved;
+            public int SpareUlong;
+            public IntPtr FreeList;
+            public int TlsExpansionCounter;
+            public IntPtr TlsBitmap;
+            public unsafe fixed int TlsBitmapBits[2];
+            public IntPtr ReadOnlySharedMemoryBase;
+            public IntPtr ReadOnlySharedMemoryHeap;
+            public IntPtr ReadOnlyStaticServerData;
+            public IntPtr AnsiCodePageData;
+            public IntPtr OemCodePageData;
+            public IntPtr UnicodeCaseTableData;
+
+            public int NumberOfProcessors;
+            public int NtGlobalFlag;
+
+            public long CriticalSectionTimeout;
+            public IntPtr HeapSegmentReserve;
+            public IntPtr HeapSegmentCommit;
+            public IntPtr HeapDeCommitTotalFreeThreshold;
+            public IntPtr HeapDeCommitFreeBlockThreshold;
+
+            public int NumberOfHeaps;
+            public int MaximumNumberOfHeaps;
+            public IntPtr ProcessHeaps;
+
+            public IntPtr GdiSharedHandleTable;
+            public IntPtr ProcessStarterHelper;
+            public int GdiDCAttributeList;
+            public IntPtr LoaderLock;
+
+            public int OSMajorVersion;
+            public int OSMinorVersion;
+            public short OSBuildNumber;
+            public short OSCSDVersion;
+            public int OSPlatformId;
+            public int ImageSubsystem;
+            public int ImageSubsystemMajorVersion;
+            public int ImageSubsystemMinorVersion;
+            public IntPtr ImageProcessAffinityMask;
+            public unsafe fixed byte GdiHandleBuffer[GDI_HANDLE_BUFFER_SIZE];
+            public IntPtr PostProcessInitRoutine;
+
+            public IntPtr TlsExpansionBitmap;
+            public unsafe fixed int TlsExpansionBitmapBits[32];
+
+            public int SessionId;
+
+            public long AppCompatFlags;
+            public long AppCompatFlagsUser;
+            public IntPtr pShimData;
+            public IntPtr AppCompatInfo;
+
+            public UnicodeString CSDVersion;
+
+            public IntPtr ActivationContextData;
+            public IntPtr ProcessAssemblyStorageMap;
+            public IntPtr SystemDefaultActivationContextData;
+            public IntPtr SystemAssemblyStorageMap;
+
+            public IntPtr MinimumStackCommit;
+
+            public IntPtr FlsCallback;
+            public ListEntry FlsListHead;
+            public IntPtr FlsBitmap;
+            public unsafe fixed int FlsBitmapBits[FLS_MAXIMUM_AVAILABLE / (sizeof(int) * 8)];
+            public int FlsHighIndex;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RtlUserProcessParameters
+        {
+            public static readonly int CurrentDirectoryOffset =
+                Marshal.OffsetOf(typeof(RtlUserProcessParameters), "CurrentDirectory").ToInt32();
+            public static readonly int DllPathOffset =
+                Marshal.OffsetOf(typeof(RtlUserProcessParameters), "DllPath").ToInt32();
+            public static readonly int ImagePathNameOffset =
+                Marshal.OffsetOf(typeof(RtlUserProcessParameters), "ImagePathName").ToInt32();
+            public static readonly int CommandLineOffset =
+                Marshal.OffsetOf(typeof(RtlUserProcessParameters), "CommandLine").ToInt32();
+            public static readonly int EnvironmentOffset =
+                Marshal.OffsetOf(typeof(RtlUserProcessParameters), "Environment").ToInt32();
+            public static readonly int WindowTitleOffset =
+                Marshal.OffsetOf(typeof(RtlUserProcessParameters), "WindowTitle").ToInt32();
+            public static readonly int DesktopInfoOffset =
+                Marshal.OffsetOf(typeof(RtlUserProcessParameters), "DesktopInfo").ToInt32();
+            public static readonly int ShellInfoOffset =
+                Marshal.OffsetOf(typeof(RtlUserProcessParameters), "ShellInfo").ToInt32();
+            public static readonly int RuntimeDataOffset =
+                Marshal.OffsetOf(typeof(RtlUserProcessParameters), "RuntimeData").ToInt32();
+            public static readonly int CurrentDirectoriesOffset =
+                Marshal.OffsetOf(typeof(RtlUserProcessParameters), "CurrentDirectories").ToInt32();
+
+            public struct CurDir
+            {
+                public UnicodeString DosPath;
+                public IntPtr Handle;
+            }
+
+            public struct RtlDriveLetterCurDir
+            {
+                public ushort Flags;
+                public ushort Length;
+                public uint TimeStamp;
+                public IntPtr DosPath;
+            }
+
+            public int MaximumLength;
+            public int Length;
+
+            public RtlUserProcessFlags Flags;
+            public int DebugFlags;
+
+            public IntPtr ConsoleHandle;
+            public int ConsoleFlags;
+            public IntPtr StandardInput;
+            public IntPtr StandardOutput;
+            public IntPtr StandardError;
+
+            public CurDir CurrentDirectory;
+            public UnicodeString DllPath;
+            public UnicodeString ImagePathName;
+            public UnicodeString CommandLine;
+            public IntPtr Environment;
+
+            public int StartingX;
+            public int StartingY;
+            public int CountX;
+            public int CountY;
+            public int CountCharsX;
+            public int CountCharsY;
+            public int FillAttribute;
+
+            public StartupFlags WindowFlags;
+            public int ShowWindowFlags;
+            public UnicodeString WindowTitle;
+            public UnicodeString DesktopInfo;
+            public UnicodeString ShellInfo;
+            public UnicodeString RuntimeData;
+
+            public RtlDriveLetterCurDir CurrentDirectories;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ProcessBasicInformation
+        {
+            public int ExitStatus;
+            public IntPtr PebBaseAddress;
+            public IntPtr AffinityMask;
+            public int BasePriority;
+            public IntPtr UniqueProcessId;
+            public IntPtr InheritedFromUniqueProcessId;
+        }
+
+        private static string GetProcessCommandLine(IntPtr handle)
+        {
+            ProcessBasicInformation pbi;
+
+            int returnLength;
+            int status = NtQueryInformationProcess(handle, 0, out pbi, Marshal.SizeOf(typeof(ProcessBasicInformation)), out returnLength);
+
+            if (status != 0) throw new InvalidOperationException(string.Format("Exception: status = {0}, expecting 0", status));
+
+            string result = GetPebString(PebOffset.CommandLine, pbi.PebBaseAddress, handle);
+
+            return result;
+        }
+
+        private static string GetProcessImagePath(IntPtr handle)
+        {
+            ProcessBasicInformation pbi;
+
+            int returnLength;
+            int status = NtQueryInformationProcess(handle, 0, out pbi, Marshal.SizeOf(typeof(ProcessBasicInformation)), out returnLength);
+
+            if (status != 0) throw new InvalidOperationException(string.Format("Exception: status = {0}, expecting 0", status));
+
+            string result = GetPebString(PebOffset.ImagePathName, pbi.PebBaseAddress, handle);
+
+            return result;
+        }
+
+        private static IntPtr IncrementPtr(IntPtr ptr, int value)
+        {
+            return IntPtr.Size == sizeof(Int32) ? new IntPtr(ptr.ToInt32() + value) : new IntPtr(ptr.ToInt64() + value);
+        }
+
+        private static unsafe string GetPebString(PebOffset offset, IntPtr pebBaseAddress, IntPtr handle)
+        {
+            byte* buffer = stackalloc byte[IntPtr.Size];
+
+            ReadMemory(IncrementPtr(pebBaseAddress, Peb.ProcessParametersOffset), buffer, IntPtr.Size, handle);
+
+            IntPtr processParameters = *(IntPtr*)buffer;
+            int realOffset = GetPebOffset(offset);
+
+            UnicodeString pebStr;
+            ReadMemory(IncrementPtr(processParameters, realOffset), &pebStr, Marshal.SizeOf(typeof(UnicodeString)), handle);
+
+            string str = System.Text.Encoding.Unicode.GetString(ReadMemory(pebStr.Buffer, pebStr.Length, handle), 0, pebStr.Length);
+
+            return str;
+        }
+
+        private static int GetPebOffset(PebOffset offset)
+        {
+            switch (offset)
+            {
+                case PebOffset.CommandLine:
+                    return RtlUserProcessParameters.CommandLineOffset;
+                case PebOffset.CurrentDirectoryPath:
+                    return RtlUserProcessParameters.CurrentDirectoryOffset;
+                case PebOffset.DesktopName:
+                    return RtlUserProcessParameters.DesktopInfoOffset;
+                case PebOffset.DllPath:
+                    return RtlUserProcessParameters.DllPathOffset;
+                case PebOffset.ImagePathName:
+                    return RtlUserProcessParameters.ImagePathNameOffset;
+                case PebOffset.RuntimeData:
+                    return RtlUserProcessParameters.RuntimeDataOffset;
+                case PebOffset.ShellInfo:
+                    return RtlUserProcessParameters.ShellInfoOffset;
+                case PebOffset.WindowTitle:
+                    return RtlUserProcessParameters.WindowTitleOffset;
+                default:
+                    throw new ArgumentException("offset");
+            }
+        }
+
+        private static byte[] ReadMemory(IntPtr baseAddress, int length, IntPtr handle)
+        {
+            byte[] buffer = new byte[length];
+
+            ReadMemory(baseAddress, buffer, length, handle);
+
+            return buffer;
+        }
+
+        private static unsafe int ReadMemory(IntPtr baseAddress, byte[] buffer, int length, IntPtr handle)
+        {
+            fixed (byte* bufferPtr = buffer) return ReadMemory(baseAddress, bufferPtr, length, handle);
+        }
+
+        private static unsafe int ReadMemory(IntPtr baseAddress, void* buffer, int length, IntPtr handle)
+        {
+            return ReadMemory(baseAddress, new IntPtr(buffer), length, handle);
+        }
+
+        private static int ReadMemory(IntPtr baseAddress, IntPtr buffer, int length, IntPtr handle)
+        {
+            int status;
+            IntPtr retLengthIntPtr;
+
+            if ((status = NtReadVirtualMemory(handle, baseAddress, buffer, new IntPtr(length), out retLengthIntPtr)) > 0)
+            {
+                throw new InvalidOperationException(string.Format("Exception: status = {0}, expecting 0", status));
+            }
+            return retLengthIntPtr.ToInt32();
+        }
+
+        public static string GetCommandLineByProcessId(int PID)
+        {
+            string commandLine = "";
+            try
+            {
+                Process process = Process.GetProcessById(PID);
+                commandLine = GetProcessCommandLine(process.Handle);
+                commandLine = commandLine.Replace((char)0, ' ');
+            }
+            catch
+            {
+            }
+            return commandLine;
+        }
+    }
+'@
+
+$cp = new-object System.CodeDom.Compiler.CompilerParameters
+$cp.CompilerOptions = "/unsafe"
+$dummy = $cp.ReferencedAssemblies.Add('System.dll')
+
+$type = Add-Type -TypeDefinition $getprocesscmdline -CompilerParameters $cp
+
+}
+#endregion 
 
 function SetIfNot($obj,$key,$value)
 {
@@ -72,7 +643,7 @@ function XymonInit
 		if($script:XymonSettings.servers -match " ") {
 			$script:XymonSettings.servers = $script:XymonSettings.servers.Split(" ")
 		}
-		if($script:XymonSettings.wanteddisks -match " ") {
+	if($script:XymonSettings.wanteddisks -match " ") {
 			$script:XymonSettings.wanteddisks = $script:XymonSettings.wanteddisks.Split(" ")
 		}
 	}
@@ -157,11 +728,17 @@ function XymonProcsCPUUtilisation
 	#$allprocs = Get-Process
 	foreach ($p in $script:procs) {
 		$thisp = $script:XymonProcsCpu[$p.Id]
-		if ($thisp -eq $null -and $p.Id -ne 0) {
+		if ($thisp -eq $null -and $p.Id -ne 0) 
+        {
+            $cmdline = ''
+            $cmdline = [ProcessInformation]::GetCommandLineByProcessId($p.Id)
+            $owner = [GetProcessOwner]::GetProcessOwnerByPId($p.Id)
+            if ($owner.length -gt 32) { $owner = $owner.substring(0, 32) }
+
 			# New process - create an entry in the curprocs table
 			# We use static values here, because some get-process entries have null values
 			# for the tick-count (The "SYSTEM" and "Idle" processes).
-			$script:XymonProcsCpu += @{ $p.Id = @($null, 0, 0, $false) }
+			$script:XymonProcsCpu += @{ $p.Id = @($null, 0, 0, $false, $cmdline, $owner) }
 			$thisp = $script:XymonProcsCpu[$p.Id]
 		}
 
@@ -403,6 +980,8 @@ function XymonCpu
 		}
     }
 
+    $totalcpu = [Math]::Round($totalcpu, 2)
+
 	"[cpu]"
 	"up: {0} days, {1} users, {2} procs, load={3}%" -f [string]$uptime.Days, $usercount, $procs.count, [string]$totalcpu
 	""
@@ -470,8 +1049,20 @@ function XymonMemory
 function XymonMsgs
 {
 	if($script:XymonSettings.reportevt -eq 0) {return}
-	$since = (Get-Date).AddMinutes(-($script:XymonSettings.maxlogage))
 
+    $sinceMs = (New-Timespan -Minutes $script:XymonSettings.maxlogage).TotalMilliseconds
+
+    # xml template
+    #   {0} = log name e.g. Application
+    #   {1} = milliseconds - how far back in time to go
+    $filterXMLTemplate = @' 
+    <QueryList>
+      <Query Id="0" Path="{0}">
+        <Select Path="{0}">*[System[TimeCreated[timediff(@SystemTime) &lt;= {1}]]]</Select>
+      </Query>
+    </QueryList>
+    '@
+    #
 
     # default logs - may be overridden by config
     $wantedlogs = "Application", "System", "Security"
@@ -495,9 +1086,8 @@ function XymonMsgs
         {
             WriteLog "Processing event log $l"
 
-            $log = Get-EventLog -List | where { $_.Log -eq $l }
-
-            $logentries = @(Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since)
+            $logFilterXML = $filterXMLTemplate -f $l, $sinceMs
+            $logentries = @(Get-WinEvent -ErrorAction:SilentlyContinue -FilterXML $logFilterXML)
 
             WriteLog "Event log $l entries since last scan: $($logentries.Length)"
             
@@ -516,7 +1106,7 @@ function XymonMsgs
                             if ($filter -match '^ignore')
                             {
                                 $filter = $filter -replace '^ignore ', ''
-                                if ($entry.Source -match $filter -or $entry.Message -match $filter)
+                                if ($entry.ProviderName -match $filter -or $entry.Message -match $filter)
                                 {
                                     $exclude = $true
                                     break
@@ -540,9 +1130,9 @@ function XymonMsgs
 
                 foreach ($entry in $logentries) 
                 {
-                    $payload += [string]$entry.EntryType + " - " +`
-                        [string]$entry.TimeGenerated + " - " + `
-                        [string]$entry.Source + " - " + `
+                    $payload += [string]$entry.LevelDisplayName + " - " +`
+                        [string]$entry.TimeCreated + " - " + `
+                        [string]$entry.ProviderName + " - " + `
                         [string]$entry.Message + [environment]::newline
                     
                     if ($payload.Length -gt $maxpayloadlength)
@@ -892,11 +1482,10 @@ function XymonProcs
 	"[procs]"
 	"{0,8} {1,-35} {2,-17} {3,-17} {4,-17} {5,8} {6,-7} {7,5} {8}" -f "PID", "User", "WorkingSet/Peak", "VirtualMem/Peak", "PagedMem/Peak", "NPS", "Handles", "%CPU", "Name"
 
-    # one call to Get-WmiObject rather than as many calls as we have processes
-    $wmiProcs = Get-WmiObject -Class Win32_Process
     $proclist = @()
 
-	foreach ($p in $procs) {
+	foreach ($p in $procs) 
+    {
 		if ($svcprocs[($p.Id)] -ne $null) {
 			$procname = "Service:" + $svcprocs[($p.Id)]
 		}
@@ -904,17 +1493,8 @@ function XymonProcs
 			$procname = $p.Name
 		}
 
-        $thiswmip = $wmiProcs | where { $_.ProcessId -eq $p.Id }
-        $cmdline = "{0} {1}" -f $procname, $thiswmip.CommandLine
-       
-		if(	$thiswmip -ne $null ) { # short-lived process could possibly be gone
-			$saveerractpref = $ErrorActionPreference
-            $ErrorActionPreference = "SilentlyContinue"
-            $owner = ($thiswmip.getowner()).Domain + "\" + ($thiswmip.GetOwner().user)
-            $ErrorActionPreference = $saveerractpref
-		} else { $owner = "NA" }
-		if ($owner -eq "\") { $owner = "SYSTEM" }
-		if ($owner.length -gt 32) { $owner = $owner.substring(0, 32) }
+        $cmdline = ''
+        $owner = ''
 
 		$pws     = "{0,8:F0}/{1,-8:F0}" -f ($p.WorkingSet64 / 1KB), ($p.PeakWorkingSet64 / 1KB)
 		$pvmem   = "{0,8:F0}/{1,-8:F0}" -f ($p.VirtualMemorySize64 / 1KB), ($p.PeakVirtualMemorySize64 / 1KB)
@@ -924,6 +1504,8 @@ function XymonProcs
 		$thisp = $script:XymonProcsCpu[$p.Id]
 		if ($script:XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null) {
 			$pcpu = "{0,5:F1}" -f (([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100)
+            $cmdline = $thisp[4]
+            $owner = $thisp[5]
 		} else {
 			$pcpu = "{0,5}" -f "-"
 		}
@@ -1131,6 +1713,69 @@ function XymonServiceCheck
     }
 }
 
+function XymonTerminalServicesSessionsCheck
+{
+    # this function relies on data from XymonWho - should be called after XymonWho
+    WriteLog "Executing XymonTerminalServicesSessionsCheck"
+
+    # config: terminalservicessessions:<yellowthreshold>:<redthreshold>
+    # thresholds are number of free sessions - so alert when only x sessions free
+    $script:clientlocalcfg_entries.keys | where { $_ -match '^terminalservicessessions:(\d+):(\d+)' } |`
+        foreach {
+            try
+            {
+                $maxSessions = Get-ItemProperty -ErrorAction:Stop -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp'`
+                    -Name MaxInstanceCount | select -ExpandProperty MaxInstanceCount
+            }
+            catch
+            {
+                WriteLog "Failed to get max sessions from registry: $_"
+                return
+            }
+
+            $maxSessionMsg = ''
+            if ($maxSessions -eq 0xffffffffL)
+            {
+                $maxSessionMsg = "Max sessions not set (probably not an RDS server)"
+                WriteLog $maxSessionMsg
+                $maxSessions = 2
+            }
+
+            $yellowThreshold = $matches[1]
+            $redThreshold = $matches[2]
+
+            $activeSessions = $script:usersessions | where { $_ -match 'Active' } | measure | 
+                select -ExpandProperty Count
+
+            $freeSessions = $maxSessions - $activeSessions
+
+            WriteLog "sessions: active: $activeSessions maximum: $maxSessions free: $freeSessions"
+            WriteLog "thresholds: yellow: $yellowThreshold red: $redThreshold"
+
+            $alertColour = 'green'
+
+            if ($freeSessions -le $redThreshold)
+            {
+                $alertColour = 'red'
+            }
+            elseif ($freeSessions -le $yellowThreshold)
+            {
+                $alertColour = 'yellow'
+            }
+
+            $outputtext = (('<img src="{0}{1}.gif" alt="{1}" ' +`
+                            'height="16" width="16" border="0">' +`
+                            'sessions: active: {2} maximum: {3} free: {4}. {7}<br>yellow alert = {5} free, red = {6} free.<br>') `
+                            -f $script:XymonSettings.servergiflocation, $alertColour, `
+                            $activeSessions, $maxSessions, $freeSessions, $yellowThreshold, $redThreshold, $maxSessionMsg)
+            
+            $outputtext = (get-date -format G) + '<br><h2>Terminal Services Sessions</h2>' + $outputtext
+            $output = ('status {0}.tssessions {1} {2}' -f $script:clientname, $alertColour, $outputtext)
+            WriteLog "Terminal Services Sessions: sending $output"
+            XymonSend $output $script:XymonSettings.servers
+        }
+}
+
 function XymonSend($msg, $servers)
 {
 	$saveresponse = 1	# Only on the first server
@@ -1153,6 +1798,8 @@ function XymonSend($msg, $servers)
 				$srvport = 1984
 			}
 			foreach ($srvip in $srvIPs) {
+
+                WriteLog "Connecting to host $srvip"
 
 				$saveerractpref = $ErrorActionPreference
 				$ErrorActionPreference = "SilentlyContinue"
@@ -1182,6 +1829,7 @@ function XymonSend($msg, $servers)
                         WriteLog "ERROR: $_"
                     }
 				}
+                WriteLog "Sent $sent bytes to server"
 
 				if ($saveresponse-- -gt 0) {
 					$socket.Client.Shutdown(1)	# Signal to Xymon we're done writing.
@@ -1189,7 +1837,15 @@ function XymonSend($msg, $servers)
 					$s = new-object system.io.StreamReader($stream,"ASCII")
 
 					start-sleep -m 200  # wait for data to buffer
-					$outputBuffer = $s.ReadToEnd()
+                    try
+                    {
+                        $outputBuffer = $s.ReadToEnd()
+                        WriteLog "Received $($outputBuffer.Length) bytes from server"
+                    }
+                    catch
+                    {
+                        WriteLog "ERROR: $_"
+                    }
 				}
 
 				$socket.Close()
@@ -1234,6 +1890,7 @@ function XymonClientConfig($cfglines)
                  -or $l -match '^log' -or $l -match '^clientversion:' `
                  -or $l -match '^eventlogswanted' `
                  -or $l -match '^servergifs:' `
+                 -or $l -match '^terminalservicessessions:' `
                  )
              {
                  WriteLog "Found a command: $l"
@@ -1311,6 +1968,7 @@ function XymonClientSections {
     XymonServiceCheck
     XymonDirSize
     XymonDirTime
+    XymonTerminalServicesSessionsCheck
 
 	$XymonIISSitesCache
 	$XymonWMIQuickFixEngineeringCache
@@ -1475,6 +2133,8 @@ $loopcount = ($script:XymonSettings.slowscanrate - 1)
 
 #Write-Host "Running as normal"
 #Write-Host "clientname is " $clientname
+
+AddHelperTypes
 
 while ($running -eq $true) {
     Set-Content -Path $script:XymonSettings.clientlogfile `
