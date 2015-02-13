@@ -1166,6 +1166,18 @@ function XymonClientInstall([string]$scriptname)
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Default" $xymondir
 }
 
+function XymonClientUnInstall()
+{
+    if ((Get-Service -ea:SilentlyContinue $xymonsvcname) -ne $null)
+    {
+        Stop-Service $xymonsvcname
+        $service = Get-WmiObject -Class Win32_Service -Filter "Name='$xymonsvcname'"
+        $service.delete()
+
+        Remove-Item -Path HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\* -Recurse
+    }
+}
+
 function ExecuteSelfUpdate([string]$newversion)
 {
     $oldversion = $MyInvocation.ScriptName
@@ -1254,6 +1266,11 @@ $ret = 0
 if($args -eq "Install") {
 	XymonClientInstall (Resolve-Path $MyInvocation.InvocationName)
 	$ret=1
+}
+if ($args -eq "uninstall")
+{
+    XymonClientUnInstall
+    return
 }
 if($args[0] -eq "set") {
 	if($args.count -eq 3) {
