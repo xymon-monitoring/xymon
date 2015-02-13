@@ -843,6 +843,9 @@ function XymonCollectInfo
 		}
 	}
 	
+    WriteLog "XymonCollectInfo: Adding CPU usage etc to main process data"
+    XymonProcesses
+
     WriteLog "XymonCollectInfo: Date processing (uses WMI data)"
 	$script:localdatetime = $osinfo.ConvertToDateTime($osinfo.LocalDateTime)
 	$script:uptime = $localdatetime - $osinfo.ConvertToDateTime($osinfo.LastBootUpTime)
@@ -963,14 +966,14 @@ function XymonClientVersion
     $Version
 }
 
-function XymonCpu
+function XymonProcesses
 {
-    WriteLog "XymonCpu start"
+    # gather process and timing information and add this to $script:procs
+    # variable
+    # XymonCpu and XymonProcs use this information to output
+ 
+    WriteLog "XymonProcesses start"
 
-    $totalcpu = 0
-    $cpulist = @()
-
-    # cpu list based on procs, not cached data
     foreach ($p in $script:procs)
     {
 		if ($svcprocs[($p.Id)] -ne $null) {
@@ -979,20 +982,59 @@ function XymonCpu
 		else {
 			$procname = $p.Name
 		}
+           
+        Add-Member -MemberType NoteProperty `
+            -Name XymonProcessName -Value $procname `
+            -InputObject $p
 
 		$thisp = $script:XymonProcsCpu[$p.Id]
-		if ($script:XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null -and $thisp[3] -eq $true) {
+		if ($script:XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null -and $thisp[3] -eq $true) 
+        {
             $usedpct = ([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100
-		} else {
+            Add-Member -MemberType NoteProperty `
+                -Name CommandLine -Value $thisp[4] `
+                -InputObject $p
+            Add-Member -MemberType NoteProperty `
+                -Name Owner -Value $thisp[5] `
+                -InputObject $p
+		}
+        else 
+        {
 			$usedpct = 0
 		}
 
-        $totalcpu += $usedpct
+        Add-Member -MemberType NoteProperty `
+            -Name CPUPercent -Value $usedpct `
+            -InputObject $p
 
-        $hash = @{ 'ProcessObj' = $thisp; 'Name' = $procname; 'CPUPercent' = $usedpct }
-        $cpulist += (New-Object -TypeName PSObject -Property $hash)
+		$pws     = "{0,8:F0}/{1,-8:F0}" -f ($p.WorkingSet64 / 1KB), ($p.PeakWorkingSet64 / 1KB)
+		$pvmem   = "{0,8:F0}/{1,-8:F0}" -f ($p.VirtualMemorySize64 / 1KB), ($p.PeakVirtualMemorySize64 / 1KB)
+		$ppgmem  = "{0,8:F0}/{1,-8:F0}" -f ($p.PagedMemorySize64 / 1KB), ($p.PeakPagedMemorySize64 / 1KB)
+		$pnpgmem = "{0,8:F0}" -f ($p.NonPagedSystemMemorySize64 / 1KB)
+
+        Add-Member -MemberType NoteProperty `
+            -Name XymonPeakWorkingSet -Value $pws `
+            -InputObject $p
+        Add-Member -MemberType NoteProperty `
+            -Name XymonPeakVirtualMem -Value $pvmem `
+            -InputObject $p
+        Add-Member -MemberType NoteProperty `
+            -Name XymonPeakPagedMem -Value $ppgmem `
+            -InputObject $p
+        Add-Member -MemberType NoteProperty `
+            -Name XymonNonPagedSystemMem -Value $pnpgmem `
+            -InputObject $p
     }
 
+    WriteLog "XymonProcesses finished."
+}
+
+
+function XymonCpu
+{
+    WriteLog "XymonCpu start"
+
+    $totalcpu = ($script:procs | Measure-Object -Sum -Property CPUPercent | Select -ExpandProperty Sum)
     $totalcpu = [Math]::Round($totalcpu, 2)
 
 	"[cpu]"
@@ -1005,7 +1047,8 @@ function XymonCpu
 		""
 		"CPU".PadRight(8) + "PID".PadRight(6) + "Image Name".PadRight(32) + "Pri".PadRight(5) + "Time".PadRight(9) + "MemUsage"
 
-        $cpulist | Sort-Object -Descending { $_.CPUPercent } | foreach { XymonPrintProcess $_.ProcessObj $_.Name $_.CPUPercent }
+        $script:procs | Sort-Object -Descending { $_.CPUPercent } `
+            | foreach { XymonPrintProcess $_ $_.XymonProcessName $_.CPUPercent }
 	}
     WriteLog "XymonCpu finished."
 }
@@ -1494,47 +1537,14 @@ function XymonProcs
     WriteLog "XymonProcs start"
 	"[procs]"
 	"{0,8} {1,-35} {2,-17} {3,-17} {4,-17} {5,8} {6,-7} {7,5} {8} {9}" -f "PID", "User", "WorkingSet/Peak", "VirtualMem/Peak", "PagedMem/Peak", "NPS", "Handles", "%CPU", "Name", "Command"
-
-    $proclist = @()
-
-	foreach ($p in $script:procs) 
-    {
-		if ($svcprocs[($p.Id)] -ne $null) {
-			$procname = "SVC:" + $svcprocs[($p.Id)]
-		}
-		else {
-			$procname = $p.Name
-		}
-
-        $cmdline = ''
-        $owner = ''
-
-		$pws     = "{0,8:F0}/{1,-8:F0}" -f ($p.WorkingSet64 / 1KB), ($p.PeakWorkingSet64 / 1KB)
-		$pvmem   = "{0,8:F0}/{1,-8:F0}" -f ($p.VirtualMemorySize64 / 1KB), ($p.PeakVirtualMemorySize64 / 1KB)
-		$ppgmem  = "{0,8:F0}/{1,-8:F0}" -f ($p.PagedMemorySize64 / 1KB), ($p.PeakPagedMemorySize64 / 1KB)
-		$pnpgmem = "{0,8:F0}" -f ($p.NonPagedSystemMemorySize64 / 1KB)
-			
-		$thisp = $script:XymonProcsCpu[$p.Id]
-		if ($script:XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null -and $thisp[3] -eq $true) {
-			$pcpu = (([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100)
-            $cmdline = $thisp[4]
-            $owner = $thisp[5]
-		} else {
-			$pcpu = 0
-		}
-
-        # quick way to make a new object from a hash
-        $hash = @{ 'PID' = $p.Id; 'Owner' = $owner; 'PeakWorkingSet' = $pws;`
-            'PeakVirtualMem' = $pvmem; 'PeakPagedMem' = $ppgmem;`
-            'NonPagedSystemMem' = $pnpgmem; 'Handles' = $p.HandleCount;`
-            'CPUPercent' = $pcpu; 'NameCmd' = $cmdline; 'Name' = $procname }
-        $proclist += (New-Object -TypeName PSObject -Property $hash)
-	}
     
     # output sorted process table
-    $proclist | Sort-Object -Descending { $_.CPUPercent } | foreach {
-        "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7,5:F1} {8} {9}" -f $_.PID, $_.Owner, $_.PeakWorkingSet, $_.PeakVirtualMem,`
-             $_.PeakPagedMem, $_.NonPagedSystemMem, $_.Handles, $_.CPUPercent, $_.Name, $_.NameCmd
+    $script:procs | Sort-Object -Descending { $_.CPUPercent } `
+        | foreach {
+        "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7,5:F1} {8} {9}" -f $_.Id, $_.Owner, `
+            $_.XymonPeakWorkingSet, $_.XymonPeakVirtualMem,`
+             $_.XymonPeakPagedMem, $_.XymonNonPagedSystemMem, `
+             $_.Handles, $_.CPUPercent, $_.XymonProcessName, $_.CommandLine
     }
     WriteLog "XymonProcs finished."
 }
