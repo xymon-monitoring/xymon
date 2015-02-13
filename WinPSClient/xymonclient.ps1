@@ -152,7 +152,7 @@ function XymonProcsCPUUtilisation
 		$script:XymonProcsCpuElapsed = (Get-Date).ticks - $script:XymonProcsCpuTStart
 		$script:XymonProcsCpuTStart = (Get-Date).Ticks
 	}
-    $script:XymonProcsCpuTStart *= $script:numcores
+    $script:XymonProcsCpuElapsed *= $script:numcores
 	
 	#$allprocs = Get-Process
 	foreach ($p in $script:procs) {
@@ -216,6 +216,8 @@ function XymonCollectInfo
 		$script:numvcpus += $cpu.NumberOfLogicalProcessors
 	}
 	#$script:totalload /= $numcpus
+
+    WriteLog "Found $($script:numcpus) CPUs, $($script:numcores) cores"
 
     WriteLog "XymonCollectInfo: OS info (including memory) (WMI)"
 	$script:osinfo = Get-WmiObject -Class Win32_OperatingSystem
