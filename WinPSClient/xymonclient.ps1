@@ -1971,6 +1971,8 @@ function XymonReportConfig
 	}
 	"[XymonPSClientInfo]"
     $script:thisXymonProcess	
+    "Collection number: $($script:collectionnumber)"
+
     #get-process -id $PID
 	#"[XymonPSClientThreadStats]"
 	#(get-process -id $PID).Threads
@@ -2222,7 +2224,7 @@ if (Test-Path -PathType Leaf $script:XymonSettings.clientconfigfile)
 
 $lastcollectfile = join-path $script:XymonSettings.clientlogpath 'xymon-lastcollect.txt'
 $running = $true
-$collectionnumber = (0 -as [long])
+$script:collectionnumber = (0 -as [long])
 $loopcount = ($script:XymonSettings.slowscanrate - 1)
 
 #Write-Host "Running as normal"
@@ -2234,11 +2236,11 @@ while ($running -eq $true) {
     Set-Content -Path $script:XymonSettings.clientlogfile `
         -Value "$clientname - $XymonClientVersion"
 
-    $collectionnumber++
+    $script:collectionnumber++
 	$loopcount++ 
     $UTCstr = get-date -Date ((get-date).ToUniversalTime()) -uformat '%Y-%m-%d %H:%M:%S'
     WriteLog "UTC date/time: $UTCstr"
-    WriteLog "This is collection number $collectionnumber, loop count $loopcount"
+    WriteLog "This is collection number $($script:collectionnumber), loop count $loopcount"
     WriteLog "Next 'slow scan' is when loopcount reaches $($script:XymonSettings.slowscanrate)"
 
 	$starttime = Get-Date
@@ -2286,7 +2288,7 @@ while ($running -eq $true) {
 
 
 	$delay = ($script:XymonSettings.loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
-    if ($collectionnumber -eq 1)
+    if ($script:collectionnumber -eq 1)
     {
         # if this is the very first collection, make the second collection happen sooner
         # than the normal delay - this is because CPU usage is not collected on the 
