@@ -688,6 +688,8 @@ function XymonInit
     $clientlogpath = Split-Path -Parent $script:XymonSettings.clientlogfile
     SetIfNot $script:XymonSettings clientlogpath $clientlogpath
 
+    SetIfNot $script:XymonSettings clientlogretain 0
+
     SetIfNot $script:XymonSettings servergiflocation '/xymon/gifs/'
     $script:clientlocalcfg = ""
 	$script:logfilepos = @{}
@@ -1970,8 +1972,8 @@ function XymonReportConfig
 		(Get-Variable $v).Value
 	}
 	"[XymonPSClientInfo]"
-    $script:thisXymonProcess	
     "Collection number: $($script:collectionnumber)"
+    $script:thisXymonProcess	
 
     #get-process -id $PID
 	#"[XymonPSClientThreadStats]"
@@ -2164,6 +2166,48 @@ function WriteLog([string]$message)
     Write-Host "$datestamp  $message"
 }
 
+function RotateLog
+{
+    $retain = $script:XymonSettings.clientlogretain
+    if ($retain -gt 99)
+    {
+        $retain = 99
+    }
+    $logfile = $script:XymonSettings.clientlogfile
+    if ($retain -gt 0)
+    {
+        WriteLog "Rotating logfiles..."
+        if (Test-Path $logfile)
+        {
+            $lastext = "{0:00}" -f $retain
+            if (Test-Path "$logfile.$lastext")
+            {
+                WriteLog "Removing $logfile.$lastext"
+                Remove-Item "$logfile.$lastext"
+            }
+
+            (($retain - 1) .. 1) | foreach {
+                # pad 1 -> 01 etc
+                $ext = "{0:00}" -f $_
+                if (Test-Path "$logfile.$ext")
+                {
+                    # pad 1 -> 01, 2 -> 02 etc
+                    $newext = "{0:00}" -f ($_ + 1)
+                    WriteLog "Renaming $logfile.$ext to $logfile.$newext"
+                    Move-Item "$logfile.$ext" "$logfile.$newext"
+                }
+            }
+
+            if (Test-Path $logfile)
+            {
+                WriteLog "Finally: Renaming $logfile to $logfile.01"
+                Move-Item $logfile "$logfile.01"
+            }
+        }
+    }
+}
+
+
 ##### Main code #####
 $script:thisXymonProcess = get-process -id $PID
 $script:thisXymonProcess.PriorityClass = "High"
@@ -2227,12 +2271,11 @@ $running = $true
 $script:collectionnumber = (0 -as [long])
 $loopcount = ($script:XymonSettings.slowscanrate - 1)
 
-#Write-Host "Running as normal"
-#Write-Host "clientname is " $clientname
-
 AddHelperTypes
 
 while ($running -eq $true) {
+    # log file setup/maintenance
+    RotateLog
     Set-Content -Path $script:XymonSettings.clientlogfile `
         -Value "$clientname - $XymonClientVersion"
 
