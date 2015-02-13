@@ -709,11 +709,13 @@ function XymonInit
 
 function XymonProcsCPUUtilisation
 {
-	# XymonProcsCpu is a table with 4 elements:
-	# 	0 = process handle
+	# XymonProcsCpu is a table with 6 elements:
+	# 	0 = process object
 	# 	1 = last tick value
 	# 	2 = ticks used since last poll
 	# 	3 = activeflag
+    # 	4 = command line
+    # 	5 = owner
 
     # ZB - got a feeling XymonProcsCpuElapsed should be multiplied by number of cores
 	if ((get-variable -erroraction SilentlyContinue "XymonProcsCpu") -eq $null) {
@@ -732,7 +734,7 @@ function XymonProcsCPUUtilisation
         # and if $p.name differs but id matches, need to pick up new command line etc and zero counters
         # - this covers the case where a process id is reused
 		$thisp = $script:XymonProcsCpu[$p.Id]
-		if ($p.Id -ne 0 -and ($thisp -eq $null -or $thisp[6] -ne $p.Name))
+		if ($p.Id -ne 0 -and ($thisp -eq $null -or $thisp[0].Name -ne $p.Name))
         {
             # either we have not seen this process before ($thisp -eq $null)
             # OR
@@ -743,7 +745,7 @@ function XymonProcsCPUUtilisation
             }
             else
             {
-                WriteLog "Process $($p.Id) appears to have changed from $($thisp[6]) to $($p.Name)"
+                WriteLog "Process $($p.Id) appears to have changed from $($thisp[0].Name) to $($p.Name)"
             }
 
             $cmdline = ''
@@ -754,7 +756,7 @@ function XymonProcsCPUUtilisation
 			# New process - create an entry in the curprocs table
 			# We use static values here, because some get-process entries have null values
 			# for the tick-count (The "SYSTEM" and "Idle" processes).
-			$script:XymonProcsCpu[$p.Id] = @($null, 0, 0, $false, $cmdline, $owner, $p.Name)
+			$script:XymonProcsCpu[$p.Id] = @($null, 0, 0, $false, $cmdline, $owner)
 			$thisp = $script:XymonProcsCpu[$p.Id]
 		}
 
@@ -792,6 +794,7 @@ function XymonCollectInfo
 {
     WriteLog "Executing XymonCollectInfo"
 
+    CleanXymonProcsCpu
     WriteLog "XymonCollectInfo: Process info"
 	$script:procs = Get-Process | Sort-Object -Property Id
     WriteLog "XymonCollectInfo: calling XymonProcsCPUUtilisation"
@@ -965,44 +968,32 @@ function XymonCpu
     WriteLog "XymonCpu start"
 
     $totalcpu = 0
+    $cpulist = @()
 
-	if ($script:XymonProcsCpuElapsed -gt 0) {
-        $cpulist = @()
-
-		foreach ($p in @($script:XymonProcsCpu.Keys)) {
-			$thisp = $script:XymonProcsCpu[$p]
-			if ($thisp[3] -eq $true) {
-				# Process found in the latest Get-Procs call 
-                # (see XymonCollectInfo / XymonProcsCPUUtilisation), so it is active.
-				if ($svcprocs[$p] -eq $null) {
-					$pname = ($thisp[0]).Name
-				}
-				else {
-					$pname = "SVC:" + $svcprocs[$p]
-				}
-
-				$usedpct = ([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100
-                $totalcpu += $usedpct
-
-                $hash = @{ 'ProcessObj' = $thisp; 'Name' = $pname; 'CPUPercent' = $usedpct }
-                $cpulist += (New-Object -TypeName PSObject -Property $hash)
-
-				$thisp[3] = $false	# Set flag to catch a dead process on the next run
-			}
-			else {
-				# Process has died, clear it.
-                WriteLog "Process id $p has disappeared, removing from cache"
-                $script:XymonProcsCpu.Remove($p)
-				$thisp[2] = $thisp[1] = 0
-				$thisp[0] = $null
-                $thisp[4] = $thisp[5] = ''
-			}
+    # cpu list based on procs, not cached data
+    foreach ($p in $script:procs)
+    {
+		if ($svcprocs[($p.Id)] -ne $null) {
+			$procname = "SVC:" + $svcprocs[($p.Id)]
 		}
+		else {
+			$procname = $p.Name
+		}
+
+		$thisp = $script:XymonProcsCpu[$p.Id]
+		if ($script:XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null -and $thisp[3] -eq $true) {
+            $usedpct = ([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100
+		} else {
+			$usedpct = 0
+		}
+
+        $totalcpu += $usedpct
+
+        $hash = @{ 'ProcessObj' = $thisp; 'Name' = $procname; 'CPUPercent' = $usedpct }
+        $cpulist += (New-Object -TypeName PSObject -Property $hash)
     }
 
     $totalcpu = [Math]::Round($totalcpu, 2)
-
-    WriteLog ("DEBUG: cached process ids: " + (($script:XymonProcsCpu.Keys | sort-object) -join ', '))
 
 	"[cpu]"
 	"up: {0} days, {1} users, {2} procs, load={3}%" -f [string]$uptime.Days, $usercount, $procs.count, [string]$totalcpu
@@ -1506,7 +1497,7 @@ function XymonProcs
 
     $proclist = @()
 
-	foreach ($p in $procs) 
+	foreach ($p in $script:procs) 
     {
 		if ($svcprocs[($p.Id)] -ne $null) {
 			$procname = "SVC:" + $svcprocs[($p.Id)]
@@ -1524,7 +1515,7 @@ function XymonProcs
 		$pnpgmem = "{0,8:F0}" -f ($p.NonPagedSystemMemorySize64 / 1KB)
 			
 		$thisp = $script:XymonProcsCpu[$p.Id]
-		if ($script:XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null) {
+		if ($script:XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null -and $thisp[3] -eq $true) {
 			$pcpu = "{0,5:F1}" -f (([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100)
             $cmdline = $thisp[4]
             $owner = $thisp[5]
@@ -1546,6 +1537,30 @@ function XymonProcs
              $_.PeakPagedMem, $_.NonPagedSystemMem, $_.Handles, $_.CPUPercent, $_.Name, $_.NameCmd
     }
     WriteLog "XymonProcs finished."
+}
+
+function CleanXymonProcsCpu
+{
+    # reset cache flags and clear terminated processes from the cache
+	if ($script:XymonProcsCpuElapsed -gt 0) {
+        WriteLog "CleanXymonProcsCpu start"
+		foreach ($p in @($script:XymonProcsCpu.Keys)) {
+			$thisp = $script:XymonProcsCpu[$p]
+			if ($thisp[3] -eq $true) {
+                # reset flag to catch a dead process on the next run
+                # this flag will be updated back to $true by XymonProcsCPUUtilisation
+                # if the process still exists
+				$thisp[3] = $false	
+			}
+			else {
+                # flag was set to $false previously = process has been terminated
+                WriteLog "Process id $p has disappeared, removing from cache"
+                $script:XymonProcsCpu.Remove($p)
+			}
+		}
+        WriteLog ("DEBUG: cached process ids: " + (($script:XymonProcsCpu.Keys | sort-object) -join ', '))
+        WriteLog "CleanXymonProcsCpu finished."
+    }
 }
 
 function XymonWho
