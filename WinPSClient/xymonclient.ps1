@@ -1041,7 +1041,8 @@ function XymonCpu
 	"up: {0} days, {1} users, {2} procs, load={3}%" -f [string]$uptime.Days, $usercount, $procs.count, [string]$totalcpu
 	""
 	"CPU states:"
-	"`ttotal`t" + ([string]$totalcpu) + "`%"
+	"`ttotal`t{0}`%" -f [string]$totalcpu
+    "`tcores: {0}" -f [string]$script:numcores
 
     if ($script:XymonProcsCpuElapsed -gt 0) {
 		""
