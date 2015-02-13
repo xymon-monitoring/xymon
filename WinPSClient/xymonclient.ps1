@@ -152,8 +152,8 @@ function XymonProcsCPUUtilisation
 		$script:XymonProcsCpuTStart = (Get-Date).Ticks
 	}
 	
-	$allprocs = Get-Process
-	foreach ($p in $allprocs) {
+	#$allprocs = Get-Process
+	foreach ($p in $script:procs) {
 		$thisp = $script:XymonProcsCpu[$p.Id]
 		if ($thisp -eq $null -and $p.Id -ne 0) {
 			# New process - create an entry in the curprocs table
@@ -196,6 +196,13 @@ function UserSessionCount
 function XymonCollectInfo
 {
     WriteLog "Executing XymonCollectInfo"
+
+    WriteLog "XymonCollectInfo: Process info"
+	$script:procs = Get-Process | Sort-Object -Property Id
+    WriteLog "XymonCollectInfo: calling XymonProcsCPUUtilisation"
+	XymonProcsCPUUtilisation
+    WriteLog "XymonCollectInfo finished"
+
     WriteLog "XymonCollectInfo: CPU info (WMI)"
 	$script:cpuinfo = @(Get-WmiObject -Class Win32_Processor)
 	$script:totalload = 0
@@ -213,8 +220,6 @@ function XymonCollectInfo
 	$script:osinfo = Get-WmiObject -Class Win32_OperatingSystem
     WriteLog "XymonCollectInfo: Service info (WMI)"
 	$script:svcs = Get-WmiObject -Class Win32_Service | Sort-Object -Property Name
-    WriteLog "XymonCollectInfo: Process info"
-	$script:procs = Get-Process | Sort-Object -Property Id
     WriteLog "XymonCollectInfo: Disk info (WMI)"
 	$mydisks = @()
 	foreach ($disktype in $script:XymonSettings.wanteddisks) { 
@@ -245,9 +250,6 @@ function XymonCollectInfo
     WriteLog "XymonCollectInfo: calling UserSessionCount"
 	$script:usercount = UserSessionCount
 
-    WriteLog "XymonCollectInfo: calling XymonProcsCPUUtilisation"
-	XymonProcsCPUUtilisation
-    WriteLog "XymonCollectInfo finished"
 }
 
 function WMIProp($class)
@@ -914,7 +916,7 @@ function XymonProcs
 			
 		$thisp = $script:XymonProcsCpu[$p.Id]
 		if ($script:XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null) {
-			$pcpu = "{0,5:F0}" -f (([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100)
+			$pcpu = "{0,5:F1}" -f (([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100)
 		} else {
 			$pcpu = "{0,5}" -f "-"
 		}
