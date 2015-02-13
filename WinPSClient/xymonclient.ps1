@@ -114,6 +114,8 @@ function XymonInit
     SetIfNot $script:XymonSettings EnableWMISections 0 # 0 = do not produce [WMI: sections (OS, BIOS, Processor, Memory, Disk), 1 = do
     SetIfNot $script:XymonSettings ClientProcessPriority 'Normal' # possible values Normal, Idle, High, RealTime, Belo wNormal, AboveNormal
 
+    $clientlogpath = Split-Path -Parent $script:XymonSettings.clientlogfile
+    SetIfNot $script:XymonSettings clientlogpath $clientlogpath
 
     SetIfNot $script:XymonSettings servergiflocation '/xymon/gifs/'
     $script:clientlocalcfg = ""
@@ -1449,6 +1451,7 @@ if (Test-Path -PathType Leaf $script:XymonSettings.clientconfigfile)
     XymonClientConfig $cfglines
 }
 
+$lastcollectfile = join-path $script:XymonSettings.clientlogpath 'xymon-lastcollect.txt'
 $running = $true
 $collectionnumber = (0 -as [long])
 $loopcount = ($script:XymonSettings.slowscanrate - 1)
@@ -1496,7 +1499,7 @@ while ($running -eq $true) {
     WriteLog "Main and optional tests finished."
 	
     WriteLog "Sending to server"
-    Set-Content -path c:\xymon-lastcollect.txt -value $clout
+    Set-Content -path $lastcollectfile -value $clout
         
     $newconfig = XymonSend $clout $script:XymonSettings.servers
 	XymonClientConfig $newconfig
