@@ -83,18 +83,20 @@ function XymonInit
 	SetIfNot $script:XymonSettings clientfqdn 1 # 0 = unqualified, 1 = fully-qualified
 	SetIfNot $script:XymonSettings clientlower 1 # 0 = unqualified, 1 = fully-qualified
     
-    #write-host "settings clientname" $script:XymonSettings.clientname
-    
 	if ($script:XymonSettings.clientname -eq $null -or $script:XymonSettings.clientname -eq "") { # set name based on rules
 		$ipProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
 		$clname  = $ipProperties.HostName
-		if ($script:XymonSettings.clientfqdn -and ($ipProperties.DomainName -ne $null)) { 
+		if ($script:XymonSettings.clientfqdn -eq 1 -and ($ipProperties.DomainName -ne $null)) { 
 			$clname += "." + $ipProperties.DomainName
 		}
-		if ($script:XymonSettings.clientlower) { $clname = $clname.ToLower() }
-		if($script:XymonSettings.clientname -eq "") {$script:XymonSettings.clientname = $clname }
-		else {SetIfNot $script:XymonSettings clientname $clname}
+		if ($script:XymonSettings.clientlower -eq 1) { $clname = $clname.ToLower() }
+		SetIfNot $script:XymonSettings clientname $clname
+        $script:clientname = $clname
 	}
+    else
+    {
+        $script:clientname = $script:XymonSettings.clientname
+    }
 
 	# Params for various client options
 	SetIfNot $script:XymonSettings clientbbwinmembug 1 # 0 = report correctly, 1 = page and virtual switched
@@ -124,17 +126,6 @@ function XymonInit
 	"XymonProcsCpu","XymonProcsCpuTStart","XymonProcsCpuElapsed") `
 	| %{ if (get-variable -erroraction SilentlyContinue $_) { Remove-Variable $_ }}
 	
-    # ZB: added
-    $script:clientname = $script:XymonSettings.clientname
-    
-	if ((get-variable -erroraction SilentlyContinue "clientname") -eq $null -or $script:clientname -eq "") {
-		$ipProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
-		$script:clientname  = $ipProperties.HostName
-		if ($script:XymonSettings.clientfqdn -and ($ipProperties.DomainName -ne $null)) { 
-			$script:clientname += "." + $ipProperties.DomainName
-		}
-		if ($script:XymonSettings.clientlower) { $script:clientname = $clientname.ToLower() }
-	}
 }
 
 function XymonProcsCPUUtilisation
