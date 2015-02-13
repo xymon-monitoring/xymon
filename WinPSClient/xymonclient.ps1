@@ -26,7 +26,7 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 # -----------------------------------------------------------------------------------
 
 $Version = "1.5"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-23 zak.beck@accenture.com"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-30 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -1474,17 +1474,16 @@ while ($running -eq $true) {
         -Value "$clientname - $XymonClientVersion"
 
     $collectionnumber++
-    WriteLog "This is collection number $collectionnumber"
+	$loopcount++ 
+    WriteLog "This is collection number $collectionnumber, loop count $loopcount"
+    WriteLog "Next 'slow scan' is when loopcount reaches $($script:XymonSettings.slowscanrate)"
 
 	$starttime = Get-Date
 	
-	$loopcount++ 
 	if ($loopcount -eq $script:XymonSettings.slowscanrate) { 
 		$loopcount = 0
         
         WriteLog "Doing slow scan tasks"
-
-        XymonCheckUpdate
 
 		WriteLog "Executing XymonWMIQuickFixEngineering"
         $XymonWMIQuickFixEngineeringCache = XymonWMIQuickFixEngineering
@@ -1516,6 +1515,13 @@ while ($running -eq $true) {
 	XymonClientConfig $newconfig
 	[GC]::Collect() # run every time to avoid memory bloat
     
+    #maybe check for update - only happens after a slow scan, when loopcount = 0
+    if ($loopcount -eq 0)
+    {
+        XymonCheckUpdate
+    }
+
+
 	$delay = ($script:XymonSettings.loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
     WriteLog "Delaying until next run: $delay seconds"
 	if ($delay -gt 0) { sleep $delay }
