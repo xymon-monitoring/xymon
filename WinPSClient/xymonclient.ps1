@@ -453,7 +453,7 @@ function XymonMsgs
 
             $log = Get-EventLog -List | where { $_.Log -eq $l }
 
-            $logentries = @(Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since | where {$_.EntryType -match "Error|Warning"})
+            $logentries = @(Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since)
 
             WriteLog "Event log $l entries since last scan: $($logentries.Length)"
             
