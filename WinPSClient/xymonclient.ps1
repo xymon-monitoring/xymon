@@ -483,8 +483,10 @@ function ResolveEnvPath($envpath)
 
 function XymonDir
 {
-	$script:clientlocalcfg | ? { $_ -match "^dir:(.*)" } | % {
-		resolveEnvPath $matches[1] | %{
+    #$script:clientlocalcfg | ? { $_ -match "^dir:(.*)" } | % {
+	$script:clientlocalcfg_entries.keys | where { $_ -match "^dir:(.*)" } |`
+        foreach {
+		resolveEnvPath $matches[1] | foreach {
 			"[dir:$($_)]"
 			if(test-path $_ -PathType Container) { du $_ }
 			elseif(test-path $_) {"ERROR: The path specified is not a directory." }
@@ -523,8 +525,10 @@ function XymonFileStat($file,$hash="")
 function XymonFileCheck
 {
     # don't implement hashing yet - don't even check for it...
-    $script:clientlocalcfg | ? { $_ -match "^file:(.*)$" } | % {
-		resolveEnvPath $matches[1] | %{
+    #$script:clientlocalcfg | ? { $_ -match "^file:(.*)$" } | % {
+    $script:clientlocalcfg_entries.keys | where { $_ -match "^file:(.*)$" } |`
+        foreach {
+		resolveEnvPath $matches[1] | foreach {
 			"[file:$_]"
 			XymonFileStat $_
 		}
@@ -533,9 +537,11 @@ function XymonFileCheck
 
 function XymonLogCheck
 {
-    $script:clientlocalcfg | ? { $_ -match "^log:(.*):(\d+)$" } | % {
+    #$script:clientlocalcfg | ? { $_ -match "^log:(.*):(\d+)$" } | % {
+    $script:clientlocalcfg_entries.keys | where { $_ -match "^log:(.*):(\d+)$" } |`
+        foreach {
 		$sizemax=$matches[2]
-		resolveEnvPath $matches[1] | %{
+		resolveEnvPath $matches[1] | foreach {
 			"[logfile:$_]"
 			XymonFileStat $_
 			"[msgs:$_]"
@@ -573,6 +579,80 @@ function XymonLogCheckFile([string]$file,$sizemax=0)
 	}
 	$script:logfilepos.$($file) += $nowpos # save for next loop
 }
+
+function XymonDirSize
+{
+    # dirsize:<path>:<gt/lt/eq>:<size bytes>:<fail colour>
+    # match number:
+    #        :  1   :   2      :     3      :     4
+    # <path> may be a simple path (c:\temp) or contain an environment variable
+    # e.g. %USERPROFILE%\temp
+    $outputtext = ''
+    $groupcolour = 'green'
+    $script:clientlocalcfg_entries.keys | where { $_ match '^dirsize:([a-z%][a-z:][^:]+):([gl]t|eq):(\d+):.+$' } |`
+        foreach {
+            resolveEnvPath $matches[1] | foreach {
+
+                if (test-path $_ -PathType Container)
+                {
+                    # could use "get-childitem ... -recurse | measure ..." here 
+                    # but that does not work well when there are many files/subfolders
+                    $objFSO = new-object -com Scripting.FileSystemObject
+                    $size = $objFSO.GetFolder($_).Size
+                    $criteriasize = ($matches[3] -as [int])
+                    $conditionmet = $false
+                    if ($matches[2] -eq 'gt')
+                    {
+                        $conditionmet = $size -gt $criteriasize
+                        $conditiontype = '>'
+                    }
+                    else if ($matches[2] -eq 'lt')
+                    {
+                        $conditionmet = $size -lt $criteriasize
+                        $conditiontype = '<'
+                    }
+                    else
+                    {
+                        # eq
+                        $conditionmet = $size -eq $criteriasize
+                        $conditiontype = '='
+                    }
+                }
+                if ($conditionmet)
+                {
+                    # report out - 
+                    #  {0} = colour (matches[4])
+                    #  {1} = folder name
+                    #  {2} = folder size
+                    #  {3} = condition symbol (<,>,=)
+                    #  {4} = alert size
+                    $outputtext += ('<img src="/xymon/gifs/{0}.gif" alt="{0}"' +`
+                        'height="16" width="16" border="0">' +`
+                        '{1} size is {2} bytes. Alert if {3} {4} bytes.<br>' `
+                        -f $matches[4], $_, $size, $conditiontype, $matches[3])
+                    # set group colour to colour if it is not already set to a 
+                    # higher alert state colour
+                    if ($groupcolour -eq 'green' -and $matches[4] -eq 'yellow')
+                    {
+                        $groupcolour = 'yellow'
+                    }
+                    else if ($matches[4] -eq 'red')
+                    {
+                        $groupcolour = 'red'
+                    }
+                }
+            }
+        }
+
+    if ($outputtext -ne '')
+    {
+        $outputtext = (get-date -format G) + '<br><h2>Directory Size</h2>' + $outputtext
+        $output = ('status {0}.dirsize {1} {2}' -f $script:clientname, $groupcolour, $outputtext)
+        WriteLog "dirsize: Sending $output"
+        XymonSend $output $script:XymonSettings.servers
+    }
+}
+
 
 function XymonPorts
 {
