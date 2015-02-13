@@ -25,8 +25,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.92"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-30 zak.beck@accenture.com"
+$Version = "1.93"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-01-07 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -683,7 +683,7 @@ function XymonInit
                         # see http://support.microsoft.com/kb/974524 for reasons why Win32_Product is not recommended!
     SetIfNot $script:XymonSettings EnableWin32_QuickFixEngineering 0 # 0 = do not use Win32_QuickFixEngineering, 1 = do
     SetIfNot $script:XymonSettings EnableWMISections 0 # 0 = do not produce [WMI: sections (OS, BIOS, Processor, Memory, Disk), 1 = do
-    SetIfNot $script:XymonSettings ClientProcessPriority 'Normal' # possible values Normal, Idle, High, RealTime, Belo wNormal, AboveNormal
+    SetIfNot $script:XymonSettings ClientProcessPriority 'Normal' # possible values Normal, Idle, High, RealTime, BelowNormal, AboveNormal
 
     $clientlogpath = Split-Path -Parent $script:XymonSettings.clientlogfile
     SetIfNot $script:XymonSettings clientlogpath $clientlogpath
@@ -727,11 +727,25 @@ function XymonProcsCPUUtilisation
 	}
     $script:XymonProcsCpuElapsed *= $script:numcores
 	
-	#$allprocs = Get-Process
 	foreach ($p in $script:procs) {
+        # store the process name in XymonProcsCpu
+        # and if $p.name differs but id matches, need to pick up new command line etc and zero counters
+        # - this covers the case where a process id is reused
 		$thisp = $script:XymonProcsCpu[$p.Id]
-		if ($thisp -eq $null -and $p.Id -ne 0) 
+		if ($p.Id -ne 0 -and ($thisp -eq $null -or $thisp[6] -ne $p.Name))
         {
+            # either we have not seen this process before ($thisp -eq $null)
+            # OR
+            # the name of the process for ID x does not equal the cached process name
+            if ($thisp -eq $null)
+            {
+                WriteLog "New process $($p.Id) detected: $($p.Name)"
+            }
+            else
+            {
+                WriteLog "Process $($p.Id) appears to have changed from $($thisp[6]) to $($p.Name)"
+            }
+
             $cmdline = ''
             $cmdline = [ProcessInformation]::GetCommandLineByProcessId($p.Id)
             $owner = [GetProcessOwner]::GetProcessOwnerByPId($p.Id)
@@ -740,7 +754,7 @@ function XymonProcsCPUUtilisation
 			# New process - create an entry in the curprocs table
 			# We use static values here, because some get-process entries have null values
 			# for the tick-count (The "SYSTEM" and "Idle" processes).
-			$script:XymonProcsCpu += @{ $p.Id = @($null, 0, 0, $false, $cmdline, $owner) }
+			$script:XymonProcsCpu[$p.Id] = @($null, 0, 0, $false, $cmdline, $owner, $p.Name)
 			$thisp = $script:XymonProcsCpu[$p.Id]
 		}
 
@@ -955,10 +969,11 @@ function XymonCpu
 	if ($script:XymonProcsCpuElapsed -gt 0) {
         $cpulist = @()
 
-		foreach ($p in $script:XymonProcsCpu.Keys) {
+		foreach ($p in @($script:XymonProcsCpu.Keys)) {
 			$thisp = $script:XymonProcsCpu[$p]
 			if ($thisp[3] -eq $true) {
-				# Process found in the latest Get-Procs call, so it is active.
+				# Process found in the latest Get-Procs call 
+                # (see XymonCollectInfo / XymonProcsCPUUtilisation), so it is active.
 				if ($svcprocs[$p] -eq $null) {
 					$pname = ($thisp[0]).Name
 				}
@@ -976,13 +991,18 @@ function XymonCpu
 			}
 			else {
 				# Process has died, clear it.
+                WriteLog "Process id $p has disappeared, removing from cache"
+                $script:XymonProcsCpu.Remove($p)
 				$thisp[2] = $thisp[1] = 0
 				$thisp[0] = $null
+                $thisp[4] = $thisp[5] = ''
 			}
 		}
     }
 
     $totalcpu = [Math]::Round($totalcpu, 2)
+
+    WriteLog ("DEBUG: cached process ids: " + (($script:XymonProcsCpu.Keys | sort-object) -join ', '))
 
 	"[cpu]"
 	"up: {0} days, {1} users, {2} procs, load={3}%" -f [string]$uptime.Days, $usercount, $procs.count, [string]$totalcpu
@@ -1489,7 +1509,7 @@ function XymonProcs
 	foreach ($p in $procs) 
     {
 		if ($svcprocs[($p.Id)] -ne $null) {
-			$procname = "Service:" + $svcprocs[($p.Id)]
+			$procname = "SVC:" + $svcprocs[($p.Id)]
 		}
 		else {
 			$procname = $p.Name
@@ -2166,17 +2186,16 @@ function WriteLog([string]$message)
     Write-Host "$datestamp  $message"
 }
 
-function RotateLog
+function RotateLog([string]$logfile)
 {
     $retain = $script:XymonSettings.clientlogretain
     if ($retain -gt 99)
     {
         $retain = 99
     }
-    $logfile = $script:XymonSettings.clientlogfile
     if ($retain -gt 0)
     {
-        WriteLog "Rotating logfiles..."
+        WriteLog "Rotating logfile $logfile"
         if (Test-Path $logfile)
         {
             $lastext = "{0:00}" -f $retain
@@ -2275,7 +2294,8 @@ AddHelperTypes
 
 while ($running -eq $true) {
     # log file setup/maintenance
-    RotateLog
+    RotateLog $lastcollectfile
+    RotateLog $script:XymonSettings.clientlogfile
     Set-Content -Path $script:XymonSettings.clientlogfile `
         -Value "$clientname - $XymonClientVersion"
 
