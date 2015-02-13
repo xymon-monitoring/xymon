@@ -676,6 +676,7 @@ function XymonInit
 	SetIfNot $script:XymonSettings clientlogfile "$env:TEMP\xymonclient.log" # path for logfile
 	SetIfNot $script:XymonSettings loopinterval 300 # seconds to repeat client reporting loop
 	SetIfNot $script:XymonSettings maxlogage 60 # minutes age for event log reporting
+    SetIfNot $script:XymonSettings MaxEvents 5000 # maximum number of events per event log
 	SetIfNot $script:XymonSettings slowscanrate 72 # repeats of main loop before collecting slowly changing information again
 	SetIfNot $script:XymonSettings reportevt 1 # scan eventlog and report (can be very slow)
 	SetIfNot $script:XymonSettings wanteddisks @( 3 )	# 3=Local disks, 4=Network shares, 2=USB, 5=CD
@@ -684,7 +685,6 @@ function XymonInit
     SetIfNot $script:XymonSettings EnableWin32_QuickFixEngineering 0 # 0 = do not use Win32_QuickFixEngineering, 1 = do
     SetIfNot $script:XymonSettings EnableWMISections 0 # 0 = do not produce [WMI: sections (OS, BIOS, Processor, Memory, Disk), 1 = do
     SetIfNot $script:XymonSettings ClientProcessPriority 'Normal' # possible values Normal, Idle, High, RealTime, BelowNormal, AboveNormal
-    SetIfNot $script:XymonSettings MaxEvents 5000 # maximum number of events per event log
 
     $clientlogpath = Split-Path -Parent $script:XymonSettings.clientlogfile
     SetIfNot $script:XymonSettings clientlogpath $clientlogpath
