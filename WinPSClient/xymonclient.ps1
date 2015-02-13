@@ -25,7 +25,7 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.9"
+$Version = "1.92"
 $XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-30 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
@@ -1774,6 +1774,40 @@ function XymonTerminalServicesSessionsCheck
             WriteLog "Terminal Services Sessions: sending $output"
             XymonSend $output $script:XymonSettings.servers
         }
+}
+
+function XymonActiveDirectoryReplicationCheck
+{
+    WriteLog "Executing XymonActiveDirectoryReplicationCheck"
+    if ($script:clientlocalcfg_entries.keys -contains 'adreplicationcheck')
+    {
+        $status = repadmin /showrepl * /csv
+        $results = @(ConvertFrom-Csv -InputObject $status)
+
+        $alertColour = 'green'
+    
+        $failcount = ($results | where { $_.'Last Failure Time' -gt $_.'Last Success Time' }).Length
+        if ($failcount -gt 0)
+        {
+            $alertColour = 'red'
+        }
+        
+        $outputtext = (('<img src="{0}{1}.gif" alt="{1}" ' +`
+                        'height="16" width="16" border="0">' +`
+                        'Failing replication contexts: {2}<br>red alert = more than zero.<br>') `
+                        -f $script:XymonSettings.servergiflocation, $alertColour, `
+                        $failcount)
+        $outputtext = (get-date -format G) + '<br><h2>Active Directory Replication</h2>' + $outputtext
+        $outputtext += '<br/>'
+        $outputtext += ($results | select 'Source DSA', `
+            'Naming Context', 'Destination DSA', 'Number of Failures', `
+            'Last Failure Time', 'Last Success Time', 'Last Failure Status'`
+             | ConvertTo-Html -Fragment)
+
+        $output = ('status {0}.tssessions {1} {2}' -f $script:clientname, $alertColour, $outputtext)
+        WriteLog "Active Directory Replication: sending $output"
+        XymonSend $output $script:XymonSettings.servers
+    }
 }
 
 function XymonSend($msg, $servers)
