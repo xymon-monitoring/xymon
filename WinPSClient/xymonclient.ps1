@@ -1313,6 +1313,7 @@ if (Test-Path -PathType Leaf $script:XymonSettings.clientconfigfile)
 }
 
 $running = $true
+$collectionnumber = (0 -as [long])
 $loopcount = ($script:XymonSettings.slowscanrate - 1)
 
 #Write-Host "Running as normal"
@@ -1322,12 +1323,17 @@ while ($running -eq $true) {
     Set-Content -Path $script:XymonSettings.clientlogfile `
         -Value "$clientname - $XymonClientVersion"
 
+    $collectionnumber++
+    WriteLog "This is collection number $collectionnumber"
+
 	$starttime = Get-Date
 	
-	$loopcount++; 
+	$loopcount++ 
 	if ($loopcount -eq $script:XymonSettings.slowscanrate) { 
 		$loopcount = 0
         
+        WriteLog "Doing slow scan tasks"
+
         XymonCheckUpdate
 
 		WriteLog "Executing XymonWMIQuickFixEngineering"
@@ -1336,6 +1342,8 @@ while ($running -eq $true) {
 		$XymonWMIProductCache = XymonWMIProduct
         WriteLog "Executing XymonIISSites"
 		$XymonIISSitesCache = XymonIISSites
+
+        WriteLog "Slow scan tasks completed."
 	}
 
     WriteLog "Executing XymonCollectInfo (cpu, procs)..."
