@@ -989,9 +989,16 @@ function XymonProcesses
             -InputObject $p
 
 		$thisp = $script:XymonProcsCpu[$p.Id]
-		if ($script:XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null -and $thisp[3] -eq $true) 
+		if ($thisp -ne $null -and $thisp[3] -eq $true) 
         {
-            $usedpct = ([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100
+            if ($script:XymonProcsCpuElapsed -gt 0)
+            {
+                $usedpct = ([int](10000*($thisp[2] / $script:XymonProcsCpuElapsed))) / 100
+            }
+            else
+            {
+                $usedpct = 0
+            }
             Add-Member -MemberType NoteProperty `
                 -Name CommandLine -Value $thisp[4] `
                 -InputObject $p
