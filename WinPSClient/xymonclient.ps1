@@ -25,19 +25,45 @@ $xymonsvcname = "XymonPSClient"
 $xymondir = (get-item $MyInvocation.InvocationName).DirectoryName
 # -----------------------------------------------------------------------------------
 
-$XymonClientVersion = "$Id$"
+$XymonClientVersion = "${Id}: xymonclient.ps1  2014-06-25 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
+$XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
+$ServiceChecks = @{}
 
 function SetIfNot($obj,$key,$value)
 {
     if($obj.$key -eq $null) { $obj | Add-Member -MemberType noteproperty -Name $key -Value $value }
 }
 
+function XymonConfig
+{
+    if (Test-Path $XymonClientCfg)
+    {
+        XymonInitXML
+        $script:XymonCfgLocation = "XML: $XymonClientCfg"
+    }
+    else
+    {
+        XymonInitRegistry
+        $script:XymonCfgLocation = "Registry"
+    }
+    XymonInit
+}
+
+function XymonInitXML
+{
+    $xmlconfig = [xml](Get-Content $XymonClientCfg)
+    $script:XymonSettings = $xmlconfig.XymonSettings
+}
+
+function XymonInitRegistry
+{
+    $script:XymonSettings = Get-ItemProperty -ErrorAction:SilentlyContinue $XymonRegKey
+}
+
 function XymonInit
 {
-	# Get reg key first, then override if not set
-	$script:XymonSettings = Get-ItemProperty -ErrorAction:SilentlyContinue $XymonRegKey
 	if($script:XymonSettings -eq $null) {
 		$script:XymonSettings = New-Object Object
 	} else {
@@ -55,6 +81,9 @@ function XymonInit
 	# Params for default clientname
 	SetIfNot $script:XymonSettings clientfqdn 1 # 0 = unqualified, 1 = fully-qualified
 	SetIfNot $script:XymonSettings clientlower 1 # 0 = unqualified, 1 = fully-qualified
+    
+    #write-host "settings clientname" $script:XymonSettings.clientname
+    
 	if ($script:XymonSettings.clientname -eq $null -or $script:XymonSettings.clientname -eq "") { # set name based on rules
 		$ipProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
 		$clname  = $ipProperties.HostName
@@ -77,6 +106,8 @@ function XymonInit
 	SetIfNot $script:XymonSettings reportevt 1 # scan eventlog and report (can be very slow)
 	SetIfNot $script:XymonSettings wanteddisks @( 3 )	# 3=Local disks, 4=Network shares, 2=USB, 5=CD
 	SetIfNot $script:XymonSettings wantedlogs @("Application",  "System", "Security")
+    SetIfNot $script:XymonSettings EnableWin32_Product 0 # 0 = do not use Win32_product, 1 = do - see 
+                        # see http://support.microsoft.com/kb/974524 for reasons why Win32_Product is not recommended!
     $script:clientlocalcfg = ""
 	$script:logfilepos = @{}
 
@@ -91,6 +122,9 @@ function XymonInit
 	"XymonProcsCpu","XymonProcsCpuTStart","XymonProcsCpuElapsed") `
 	| %{ if (get-variable -erroraction SilentlyContinue $_) { Remove-Variable $_ }}
 	
+    # ZB: added
+    $script:clientname = $script:XymonSettings.clientname
+    
 	if ((get-variable -erroraction SilentlyContinue "clientname") -eq $null -or $script:clientname -eq "") {
 		$ipProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
 		$script:clientname  = $ipProperties.HostName
@@ -396,7 +430,37 @@ function XymonMsgs
 		$log = Get-EventLog -List | where { $_.Log -eq $l }
 
 		$logentries = Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since | where {$_.EntryType -match "Error|Warning"}
-	
+        
+        # filter based on clientlocal.cfg / clientconfig.cfg
+        if ($script:clientlocalcfg_entries -ne $null)
+        {
+            $filterkey = $script:clientlocalcfg_entries.keys | where { $_ -match "^eventlog:$l" }
+            if ($filterkey -ne $null -and $script:clientlocalcfg_entries.ContainsKey($filterkey))
+            {
+                $output = @()
+                foreach ($entry in $logentries)
+                {
+                    foreach ($filter in $script:clientlocalcfg_entries[$filterkey])
+                    {
+                        if ($filter -match '^ignore')
+                        {
+                            $filter = $filter -replace '^ignore ', ''
+                            if ($entry.Source -match $filter -or $entry.Message -match $filter)
+                            {
+                                $exclude = $true
+                                break
+                            }
+                        }
+                    }
+                    if (-not $exclude)
+                    {
+                        $output += $entry
+                    }
+                }
+                $logentries = $output
+            }
+        }
+
 		"[msgs:eventlog_$l]"
 		if ($logentries -ne $null) {
 			foreach ($entry in $logentries) {
@@ -570,6 +634,15 @@ function XymonProcs
 		}
 
 		$thiswmip = Get-WmiObject -Class Win32_Process | where { $_.ProcessId -eq $p.Id }
+        $cmdline = Get-WmiObject -Class Win32_Process | where { $_.ProcessId -eq $p.Id }|select commandline
+        #write-host "1. cmdline: $cmdline"
+        #write-host "2. procname: $procname"
+        $cmdline = $cmdline -replace "@{commandline=" -replace "}"
+        
+        #if( $cmdline -eq "" ) { $cmdline = $procname }
+        $cmdline = "$procname $cmdline"
+        #write-host "3. cmdline: $cmdline"
+       
 		if(	$thiswmip -ne $null ) { # short-lived process could possibly be gone
 			$saveerractpref = $ErrorActionPreference
             $ErrorActionPreference = "SilentlyContinue"
@@ -590,8 +663,8 @@ function XymonProcs
 		} else {
 			$pcpu = "{0,5}" -f "-"
 		}
-
-		"{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8}" -f $p.Id, $owner, $pws, $pvmem, $ppgmem, $pnpgmem, $p.HandleCount, $pcpu, $procname
+#		"{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8}" -f $p.Id, $owner, $pws, $pvmem, $ppgmem, $pnpgmem, $p.HandleCount, $pcpu, $procname
+		"{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8}" -f $p.Id, $owner, $pws, $pvmem, $ppgmem, $pnpgmem, $p.HandleCount, $pcpu, $cmdline
 	}
 }
 
@@ -646,19 +719,26 @@ function XymonWMIQuickFixEngineering
 
 function XymonWMIProduct
 {
-    # run as job, since Win32_Product WMI dies on some systems (e.g. XP)
-	$job = Get-WmiObject -Class Win32_Product -AsJob | wait-job
-	if($job.State -eq "Completed") {
-		"[WMI:Win32_Product]"
-		$fmt = "{0,-70} {1,-15} {2}"
-		$fmt -f "Name", "Version", "Vendor"
-		$fmt -f "----", "-------", "------"
-		receive-job $job | Sort-Object Name | 
-		foreach {
-			$fmt -f $_.Name, $_.Version, $_.Vendor
-		}
-	}
-	remove-job $job
+    if ($script:XymonSettings.EnableWin32_Product -eq 1)
+    {
+        # run as job, since Win32_Product WMI dies on some systems (e.g. XP)
+        $job = Get-WmiObject -Class Win32_Product -AsJob | wait-job
+        if($job.State -eq "Completed") {
+            "[WMI:Win32_Product]"
+            $fmt = "{0,-70} {1,-15} {2}"
+            $fmt -f "Name", "Version", "Vendor"
+            $fmt -f "----", "-------", "------"
+            receive-job $job | Sort-Object Name | 
+            foreach {
+                $fmt -f $_.Name, $_.Version, $_.Vendor
+            }
+        }
+        remove-job $job
+    }
+    else
+    {
+        WriteLog "Skipping XymonWMIProduct, EnableWin32_Product = 0 in config"
+    }
 }
 
 function XymonWMIComputerSystem
@@ -697,6 +777,61 @@ function XymonEventLogs
 	Get-EventLog -List | Format-Table -AutoSize
 }
 
+function XymonServiceCheck
+{
+    if ($script:clientlocalcfg_entries -ne $null)
+    {
+        $servicecfgs = $script:clientlocalcfg_entries.keys | where { $_ -match '^servicecheck' }
+        foreach ($service in $servicecfgs)
+        {
+            # parameter should be 'servicecheck:<servicename>:<duration>'
+            $checkparams = $service -split ':'
+            # validation
+            if ($checkparams.length -ne 3)
+            {
+                WriteLog "ERROR: config error (should be servicecheck:<servicename>:<duration>) - $service"
+                continue
+            }
+            else
+            {
+                $duration = $checkparams[2] -as [int]
+                if ($checkparams[1] -eq '' -or $duration -eq $null)
+                {
+                    WriteLog "ERROR: config error (should be servicecheck:<servicename>:<duration>) - $service"
+                    continue
+                }
+            }
+
+            WriteLog ("Checking service {0}" -f $checkparams[1])
+
+            $winsrv = Get-Service -Name $checkparams[1]
+            if ($winsrv.Status -eq 'Stopped')
+            {
+                writeLog ("Service {0} is stopped" -f $checkparams[1])
+                if ($script:ServiceChecks.ContainsKey($checkparams[1]))
+                {
+                    $restarttime = $script:ServiceChecks[$checkparams[1]].AddSeconds($duration)
+                    writeLog "Seen this service before; restart time is $restarttime"
+                    if ($restarttime -lt (get-date))
+                    {
+                        writeLog ("Starting service {0}" -f $checkparams[1])
+                        $winsrv.Start()
+                    }
+                }
+                else
+                {
+                    writeLog "Not seen this service before, setting restart time -1 hour"
+                    $script:ServiceChecks[$checkparams[1]] = (get-date).AddHours(-1)
+                }
+            }
+            elseif ('StartPending', 'Running' -contains $winsrv.Status)
+            {
+                writeLog "Service is running, updating last seen time"
+                $script:ServiceChecks[$checkparams[1]] = get-date
+            }
+        }
+    }
+}
 
 function XymonSend($msg, $servers)
 {
@@ -766,8 +901,29 @@ function XymonClientConfig($cfglines)
 	$script:clientlocalcfg = $cfglines.Split("`n")
 	$clientlocalcfg >$script:XymonSettings.clientconfigfile
 
-	# Source the new config
-	if ($script:XymonSettings.clientremotecfgexec -ne 0 -and (test-path -PathType Leaf $script:XymonSettings.clientconfigfile) ) { . $script:XymonSettings.clientconfigfile }
+	# Parse the new config
+	if ($script:XymonSettings.clientremotecfgexec -ne 0 `
+        -and (test-path -PathType Leaf $script:XymonSettings.clientconfigfile)) 
+    {
+         $script:clientlocalcfg_entries = @{}
+         $lines = get-content $script:XymonSettings.clientconfigfile
+         $currentsection = ''
+         foreach ($l in $lines)
+         {
+             if ($l -match '^eventlog:' -or $l -match '^servicecheck:' `
+                 -or $l -match '^dir:' -or $l -match '^file:' `
+                 -or $l -match '^log' `
+                 )
+             {
+                 $currentsection = $l
+                 $script:clientlocalcfg_entries[$currentsection] = @()
+             }
+             elseif ($l -ne '')
+             {
+                 $script:clientlocalcfg_entries[$currentsection] += $l
+             }
+         }
+    }
 }
 
 function XymonReportConfig
@@ -816,6 +972,8 @@ function XymonClientSections {
 	XymonWMIMemory
 	XymonWMILogicalDisk
 
+    XymonServiceCheck
+
 	$XymonIISSitesCache
 	$XymonWMIQuickFixEngineeringCache
 	$XymonWMIProductCache
@@ -835,12 +993,18 @@ function XymonClientInstall([string]$scriptname)
 		$cfgitm = New-Item $XymonRegKey
 	}
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters Application "$PSHOME\powershell.exe"
-	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Parameters" "-nonInteractive -ExecutionPolicy Unrestricted -File $scriptname"
+	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Parameters" "-ExecutionPolicy RemoteSigned -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -File `"$scriptname`""
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Default" $xymondir
 }
 
+function WriteLog([string]$message)
+{
+    $datestamp = get-date -uformat '%Y-%m-%d %H:%M:%S'
+    add-content -Path $script:XymonSettings.clientlogfile -Value "$datestamp  $message"
+}
+
 ##### Main code #####
-XymonInit
+XymonConfig
 $ret = 0
 # check for install/set/unset/config/start/stop for service management
 if($args -eq "Install") {
@@ -865,10 +1029,10 @@ if($args[0] -eq "unset") {
 	return
 }
 if($args[0] -eq "config") {
-	"XymonPSClient config:"
-	Get-ItemProperty $XymonRegKey | select * -exclude PS* | fl
+	"XymonPSClient config:`n"
+    $XymonCfgLocation
 	"Settable Params and values:"
-	foreach($param in $script:XymonSettings | gm -memberType NoteProperty) {
+	foreach($param in $script:XymonSettings | gm -memberType NoteProperty,Property) {
 		if($param.Name -notlike "PS*") {
 			$val = $script:XymonSettings.($param.Name)
 			if($val -is [Array]) {
@@ -897,34 +1061,57 @@ if($args -ne $null) {
 
 # assume no other args, so run as normal
 
+# ZB: read any cached client config
+if (Test-Path -PathType Leaf $script:XymonSettings.clientconfigfile)
+{
+    $cfglines = (get-content $script:XymonSettings.clientconfigfile) -join "`n"
+    XymonClientConfig $cfglines
+}
+
 $running = $true
 $loopcount = ($script:XymonSettings.slowscanrate - 1)
 
+#Write-Host "Running as normal"
+#Write-Host "clientname is " $clientname
+
 while ($running -eq $true) {
+    Set-Content -Path $script:XymonSettings.clientlogfile `
+        -Value "$clientname - $XymonClientVersion"
+
 	$starttime = Get-Date
 	
 	$loopcount++; 
 	if ($loopcount -eq $script:XymonSettings.slowscanrate) { 
 		$loopcount = 0
-		$XymonWMIQuickFixEngineeringCache = XymonWMIQuickFixEngineering
+		WriteLog "Executing XymonWMIQuickFixEngineering"
+        $XymonWMIQuickFixEngineeringCache = XymonWMIQuickFixEngineering
+        WriteLog "Executing XymonWMIProduct"
 		$XymonWMIProductCache = XymonWMIProduct
+        WriteLog "Executing XymonIISSites"
 		$XymonIISSitesCache = XymonIISSites
 	}
 
+    WriteLog "Executing XymonCollectInfo..."
 	XymonCollectInfo
-
-	$clout = "client " + $clientname + ".bbwin win32" | Out-String
+    WriteLog "XymonCollectInfo finished."
+    
+	$clout = "client " + $clientname + ".bbwin win32 ps" | Out-String
 	$clsecs = XymonClientSections | Out-String
 	$localdatetime = Get-Date
 	$clout += XymonDate | Out-String
 	$clout += XymonClock | Out-String
 	$clout +=  $clsecs
 	
-	Get-Date > $script:XymonSettings.clientlogfile  # rewrite logfile because it gets large!
 	XymonReportConfig >> $script:XymonSettings.clientlogfile
-	$newconfig = XymonSend $clout $script:XymonSettings.servers
+	
+    WriteLog "Sending to server"
+    Set-Content -path c:\xymon-lastcollect.txt -value $clout
+        
+    $newconfig = XymonSend $clout $script:XymonSettings.servers
 	XymonClientConfig $newconfig
 	[GC]::Collect() # run every time to avoid memory bloat
+    
 	$delay = ($script:XymonSettings.loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
+    WriteLog "Delaying until next run: $delay seconds"
 	if ($delay -gt 0) { sleep $delay }
 }
