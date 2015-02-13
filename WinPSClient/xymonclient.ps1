@@ -1387,6 +1387,10 @@ if($args -ne $null) {
 
 # assume no other args, so run as normal
 
+# elevate our priority to high
+$thisprocess = get-process -id $PID
+$thisprocess.PriorityClass = "High"
+
 # ZB: read any cached client config
 if (Test-Path -PathType Leaf $script:XymonSettings.clientconfigfile)
 {
