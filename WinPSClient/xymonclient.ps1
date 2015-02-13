@@ -1791,6 +1791,10 @@ function XymonActiveDirectoryReplicationCheck
         {
             $alertColour = 'red'
         }
+        else
+        {
+            $failcount = 'none'
+        }
         
         $outputtext = (('<img src="{0}{1}.gif" alt="{1}" ' +`
                         'height="16" width="16" border="0">' +`
@@ -2257,7 +2261,7 @@ while ($running -eq $true) {
 	XymonCollectInfo
     
     WriteLog "Performing main and optional tests and building output..."
-	$clout = "client " + $clientname + ".bbwin win32 XymonPS $Version" | Out-String
+	$clout = "client " + $clientname + ".bbwin XymonPS" | Out-String
 	$clsecs = XymonClientSections | Out-String
 	$localdatetime = Get-Date
 	$clout += XymonDate | Out-String
