@@ -25,8 +25,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.4"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-15 zak.beck@accenture.com"
+$Version = "1.5"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-09-23 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -170,16 +170,25 @@ function XymonProcsCPUUtilisation
 
 function UserSessionCount
 {
-	$q = get-wmiobject win32_logonsession | %{ $_.logonid}
-	$s = 0
-	get-wmiobject win32_session | ?{ 2,10 -eq $_.LogonType} | ?{$q -eq $_.logonid} | %{
-		$z = $_.logonid
-		get-wmiobject win32_sessionprocess | ?{ $_.Antecedent -like "*LogonId=`"$z`"*" } | %{
-			if($_.Dependent -match "Handle=`"(\d+)`"") {
-				get-wmiobject win32_process -filter "processid='$($matches[1])'" }
-		} | select -first 1 | %{ $s++ }
-	}
-	$s
+    if ($HaveCmd.qwinsta)
+    {
+        $script:usersessions = qwinsta /counter
+        ($script:usersessions -match ' Active ').Length
+    }
+    else
+    {
+        $q = get-wmiobject win32_logonsession | %{ $_.logonid}
+        $service = Get-WmiObject -ComputerName $server -Class Win32_Service -Filter "Name='$xymonsvc'"
+        $s = 0
+        get-wmiobject win32_session | ?{ 2,10 -eq $_.LogonType} | ?{$q -eq $_.logonid} | %{
+            $z = $_.logonid
+            get-wmiobject win32_sessionprocess | ?{ $_.Antecedent -like "*LogonId=`"$z`"*" } | %{
+                if($_.Dependent -match "Handle=`"(\d+)`"") {
+                    get-wmiobject win32_process -filter "processid='$($matches[1])'" }
+            } | select -first 1 | %{ $s++ }
+        }
+        $s
+    }
 }
 
 function XymonCollectInfo
@@ -231,6 +240,7 @@ function XymonCollectInfo
 	$script:localdatetime = $osinfo.ConvertToDateTime($osinfo.LocalDateTime)
 	$script:uptime = $localdatetime - $osinfo.ConvertToDateTime($osinfo.LastBootUpTime)
 
+    WriteLog "XymonCollectInfo: calling UserSessionCount"
 	$script:usercount = UserSessionCount
 
     WriteLog "XymonCollectInfo: calling XymonProcsCPUUtilisation"
@@ -909,9 +919,17 @@ function XymonProcs
 function XymonWho
 {
     WriteLog "XymonWho start"
-	if( $HaveCmd.qwinsta) {
+	if( $HaveCmd.qwinsta) 
+    {
 		"[who]"
-		qwinsta.exe /counter
+        if ($script:usersessions -eq $null)
+        {
+            qwinsta.exe /counter
+        }
+        else
+        {
+            $script:usersessions
+        }
 	}
     WriteLog "XymonWho finished."
 }
