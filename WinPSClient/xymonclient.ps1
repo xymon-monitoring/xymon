@@ -25,8 +25,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.1"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-07-24 zak.beck@accenture.com"
+$Version = "1.2"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-08-27 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -428,12 +428,18 @@ function XymonMsgs
 	foreach ($l in $script:XymonSettings.wantedlogs) {
 		$log = Get-EventLog -List | where { $_.Log -eq $l }
 
+
+        # default to sending 512 bytes of description
+
+        $descriptionlength = 512
+
 		$logentries = Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since | where {$_.EntryType -match "Error|Warning"}
         
         # filter based on clientlocal.cfg / clientconfig.cfg
         if ($script:clientlocalcfg_entries -ne $null)
         {
-            $filterkey = $script:clientlocalcfg_entries.keys | where { $_ -match "^eventlog:$l" }
+            $filterkey = $script:clientlocalcfg_entries.keys | where { $_ -match "^eventlog\:$l\:(\d+)" }
+            $descriptionlength = $matches[1]
             if ($filterkey -ne $null -and $script:clientlocalcfg_entries.ContainsKey($filterkey))
             {
                 $output = @()
@@ -459,11 +465,12 @@ function XymonMsgs
                 $logentries = $output
             }
         }
+        WriteLog "Event Log $l; description length $descriptionlength"
 
 		"[msgs:eventlog_$l]"
 		if ($logentries -ne $null) {
 			foreach ($entry in $logentries) {
-				[string]$entry.EntryType + " - " + [string]$entry.TimeGenerated + " - " + [string]$entry.Source + " - " + [string]$entry.Message
+				[string]$entry.EntryType + " - " + [string]$entry.TimeGenerated + " - " + [string]$entry.Source + " - " + ([string]$entry.Message).substring(0, $descriptionlength)
 			}
 		}
 	}
@@ -865,8 +872,8 @@ function XymonIISSites
 				}
 			}
 		}
+        clear-variable objChild
 	}
-	clear-variable objChild
 	clear-variable objSites
 }
 
