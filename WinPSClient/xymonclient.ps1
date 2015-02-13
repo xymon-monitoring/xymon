@@ -20,12 +20,13 @@
 $xymonservers = @( "xymonhost" )	# List your Xymon servers here
 # $clientname  = "winxptest"	# Define this to override the default client hostname
 
-
 $xymonsvcname = "XymonPSClient"
 $xymondir = (get-item $MyInvocation.InvocationName).DirectoryName
+
 # -----------------------------------------------------------------------------------
 
-$XymonClientVersion = "${Id}: xymonclient.ps1  2014-07-11 zak.beck@accenture.com"
+$Version = "1.0"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-07-18 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -1083,7 +1084,7 @@ function XymonClientConfig($cfglines)
              if ($l -match '^eventlog:' -or $l -match '^servicecheck:' `
                  -or $l -match '^dir:' -or $l -match '^file:' `
                  -or $l -match '^dirsize:' -or $l -match '^dirtime:' `
-                 -or $l -match '^log' `
+                 -or $l -match '^log' -or $l -match '^clientversion:' `
                  )
              {
                  WriteLog "Found a command: $l"
@@ -1174,6 +1175,80 @@ function XymonClientInstall([string]$scriptname)
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Default" $xymondir
 }
 
+function ExecuteSelfUpdate([string]$newversion)
+{
+    $oldversion = $MyInvocation.ScriptName
+
+    WriteLog "Upgrading $oldversion to $newversion"
+
+    # sleep to allow original script to exit
+    # stop existing service
+    # copy newversion to correct name
+    # remove newversion file
+    # re-start service
+
+    $command = "sleep -seconds 5; if ((get-service '$xymonsvcname').Status -eq 'Running') { stop-service '$xymonsvcname' }; " +
+        "copy-item '$newversion' '$oldversion' -force; remove-item '$newversion'; start-service '$xymonsvcname'"
+
+    $StartInfo = new-object System.Diagnostics.ProcessStartInfo
+    $StartInfo.Filename = join-path $pshome 'powershell.exe'
+
+    # for debugging:
+    # set .UseShellExecute to $true below
+    # add -noexit to leave the upgrade window open
+    # remove it to close the window at the end
+    $StartInfo.Arguments = "-noprofile -executionpolicy RemoteSigned -Command `"$command`""
+    $StartInfo.WorkingDirectory = $xymondir
+    $StartInfo.LoadUserProfile = $true
+    $StartInfo.UseShellExecute = $false
+    $ret = [System.Diagnostics.Process]::Start($StartInfo)
+    exit
+}
+
+function XymonCheckUpdate
+{
+    WriteLog "Executing XymonCheckUpdate"
+    $updates = @($script:clientlocalcfg_entries.keys | where { $_ -match '^clientversion:(\d+\.\d+):(.+)$' })
+    if ($updates.length -gt 1)
+    {
+        WriteLog "ERROR: more than one clientversion directive in remote config!"
+    }
+    elseif ($updates.length -eq 1)
+    {
+        # $matches[1] = the new version number
+        # $matches[2] = the place to look for new version file
+        if ($Version -lt $matches[1])
+        {
+            WriteLog "Running version $Version; remote config version $($matches[1]); attempting upgrade"
+
+            $newversion = join-path $matches[2] "xymonclient_$($matches[1]).ps1"
+
+            if (!(Test-Path $newversion))
+            {
+                WriteLog "New version $newversion cannot be found - aborting upgrade"
+                return
+            }
+
+            WriteLog "Copying $newversion to $xymondir"
+            Copy-Item  $newversion $xymondir -Force
+
+            $newversion = Join-Path $xymondir (Split-Path $newversion -Leaf)
+
+            WriteLog "Launching update"
+            ExecuteSelfUpdate $newversion
+        }
+        else
+        {
+            WriteLog "Running version $Version; remote config version $($matches[1]); doing nothing"
+        }
+    }
+    else
+    {
+        # no clientversion directive
+        WriteLog "No clientversion directive in remote config, nothing to do"
+    }
+}
+
 function WriteLog([string]$message)
 {
     $datestamp = get-date -uformat '%Y-%m-%d %H:%M:%S'
@@ -1261,6 +1336,9 @@ while ($running -eq $true) {
 	$loopcount++; 
 	if ($loopcount -eq $script:XymonSettings.slowscanrate) { 
 		$loopcount = 0
+        
+        XymonCheckUpdate
+
 		WriteLog "Executing XymonWMIQuickFixEngineering"
         $XymonWMIQuickFixEngineeringCache = XymonWMIQuickFixEngineering
         WriteLog "Executing XymonWMIProduct"
@@ -1274,7 +1352,7 @@ while ($running -eq $true) {
     WriteLog "XymonCollectInfo finished."
     
     WriteLog "Performing main and optional tests and building output..."
-	$clout = "client " + $clientname + ".bbwin win32 ps" | Out-String
+	$clout = "client " + $clientname + ".bbwin win32 ps $Version" | Out-String
 	$clsecs = XymonClientSections | Out-String
 	$localdatetime = Get-Date
 	$clout += XymonDate | Out-String
