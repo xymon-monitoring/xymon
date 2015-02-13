@@ -428,9 +428,7 @@ function XymonMsgs
 	foreach ($l in $script:XymonSettings.wantedlogs) {
 		$log = Get-EventLog -List | where { $_.Log -eq $l }
 
-
         # default to sending 512 bytes of description
-
         $descriptionlength = 512
 
 		$logentries = Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since | where {$_.EntryType -match "Error|Warning"}
