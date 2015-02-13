@@ -2137,17 +2137,24 @@ function XymonGetUpdateFromFile([string]$updatePath, [string]$updateFile)
 
 function XymonGetUpdateFromURL([string]$updateURL, [string]$updateFile)
 {
+    WriteLog "update URL >$updateURL< updateFile >$updateFile<"
+    $updateURL = $updateURL.Trim()
     if ($updateURL -notmatch '/$')
     {
         $updateURL += '/'
     }
-    $URL = $updateURL + $updateFile
+    $URL = "{0}{1}" -f $updateURL, $updateFile
 
-    WriteLog "Downloading $URL to $xymondir"
+    $destination = Join-Path -Path $xymondir -ChildPath $updateFile
+
+    WriteLog "Downloading $URL to $destination"
     $client = New-Object System.Net.WebClient
     try
     {
-        $client.DownloadFile($URL, $xymondir)
+        # for self-signed certificates, turn off cert validation
+        # TODO: make this a config option
+        [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+        $client.DownloadFile($URL, $destination)
     }
     catch
     {
@@ -2179,11 +2186,11 @@ function XymonCheckUpdate
             $result = $false;
             if ($updatePath -match '^http')
             {
-                $result = XymonGetUpdateFromURL($updatePath, $updateFile)
+                $result = XymonGetUpdateFromURL $updatePath $updateFile
             }
             else
             {
-                $result = XymonGetUpdateFromFile($updatePath, $updateFile)
+                $result = XymonGetUpdateFromFile $updatePath $updateFile
             }
 
             if ($result)
