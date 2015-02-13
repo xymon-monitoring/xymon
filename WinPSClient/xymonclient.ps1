@@ -1480,7 +1480,7 @@ function XymonProcs
 {
     WriteLog "XymonProcs start"
 	"[procs]"
-	"{0,8} {1,-35} {2,-17} {3,-17} {4,-17} {5,8} {6,-7} {7,5} {8}" -f "PID", "User", "WorkingSet/Peak", "VirtualMem/Peak", "PagedMem/Peak", "NPS", "Handles", "%CPU", "Name"
+	"{0,8} {1,-35} {2,-17} {3,-17} {4,-17} {5,8} {6,-7} {7,5} {8} {9}" -f "PID", "User", "WorkingSet/Peak", "VirtualMem/Peak", "PagedMem/Peak", "NPS", "Handles", "%CPU", "Name", "Command"
 
     $proclist = @()
 
@@ -1514,14 +1514,14 @@ function XymonProcs
         $hash = @{ 'PID' = $p.Id; 'Owner' = $owner; 'PeakWorkingSet' = $pws;`
             'PeakVirtualMem' = $pvmem; 'PeakPagedMem' = $ppgmem;`
             'NonPagedSystemMem' = $pnpgmem; 'Handles' = $p.HandleCount;`
-            'CPUPercent' = $pcpu; 'NameCmd' = $cmdline }
+            'CPUPercent' = $pcpu; 'NameCmd' = $cmdline; 'Name' = $procname }
         $proclist += (New-Object -TypeName PSObject -Property $hash)
 	}
     
     # output sorted process table
     $proclist | Sort-Object -Descending { $_.CPUPercent } | foreach {
-        "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8}" -f $_.PID, $_.Owner, $_.PeakWorkingSet, $_.PeakVirtualMem,`
-             $_.PeakPagedMem, $_.NonPagedSystemMem, $_.Handles, $_.CPUPercent, $_.NameCmd
+        "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8} {9}" -f $_.PID, $_.Owner, $_.PeakWorkingSet, $_.PeakVirtualMem,`
+             $_.PeakPagedMem, $_.NonPagedSystemMem, $_.Handles, $_.CPUPercent, $_.Name, $_.NameCmd
     }
     WriteLog "XymonProcs finished."
 }
