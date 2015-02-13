@@ -112,7 +112,7 @@ function XymonInit
                         # see http://support.microsoft.com/kb/974524 for reasons why Win32_Product is not recommended!
     SetIfNot $script:XymonSettings EnableWin32_QuickFixEngineering 0 # 0 = do not use Win32_QuickFixEngineering, 1 = do
     SetIfNot $script:XymonSettings EnableWMISections 0 # 0 = do not produce [WMI: sections (OS, BIOS, Processor, Memory, Disk), 1 = do
-    SetIfNot $script:XymonSettings ClientProcessPriority 'High' # possible values Normal, Idle, High, RealTime, Belo wNormal, AboveNormal
+    SetIfNot $script:XymonSettings ClientProcessPriority 'Normal' # possible values Normal, Idle, High, RealTime, Belo wNormal, AboveNormal
 
 
     SetIfNot $script:XymonSettings servergiflocation '/xymon/gifs/'
@@ -210,14 +210,9 @@ function XymonCollectInfo
 		$mydisks += @( (Get-WmiObject -Class Win32_LogicalDisk | where { $_.DriveType -eq $disktype } ))
 	}
 	$script:disks = $mydisks | Sort-Object DeviceID
-<<<<<<< HEAD
-    WriteLog "XymonCollectInfo: Network adapter info (WMI)"
-	$script:netifs = Get-WmiObject -Class Win32_NetworkAdapterConfiguration | where { $_.IPEnabled -eq $true }
-=======
 
     # netifs does not appear to be used, commented out
 	#$script:netifs = Get-WmiObject -Class Win32_NetworkAdapterConfiguration | where { $_.IPEnabled -eq $true }
->>>>>>> no-priority
 
     WriteLog "XymonCollectInfo: Building table of service processes (uses WMI data)"
 	$script:svcprocs = @{([int]-1) = ""}
