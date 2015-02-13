@@ -108,13 +108,8 @@ function XymonInit
 	SetIfNot $script:XymonSettings slowscanrate 72 # repeats of main loop before collecting slowly changing information again
 	SetIfNot $script:XymonSettings reportevt 1 # scan eventlog and report (can be very slow)
 	SetIfNot $script:XymonSettings wanteddisks @( 3 )	# 3=Local disks, 4=Network shares, 2=USB, 5=CD
-    SetIfNot $script:XymonSettings EnableWin32_Product 0 # 0 = do not use Win32_product, 1 = do
+    SetIfNot $script:XymonSettings EnableWin32_Product 0 # 0 = do not use Win32_product, 1 = do - see 
                         # see http://support.microsoft.com/kb/974524 for reasons why Win32_Product is not recommended!
-    SetIfNot $script:XymonSettings EnableWin32_QuickFixEngineering 0 # 0 = do not use Win32_QuickFixEngineering, 1 = do
-    SetIfNot $script:XymonSettings EnableWMISections 0 # 0 = do not produce [WMI: sections (OS, BIOS, Processor, Memory, Disk), 1 = do
-    SetIfNot $script:XymonSettings ClientProcessPriority 'High' # possible values Normal, Idle, High, RealTime, Belo wNormal, AboveNormal
-
-
     SetIfNot $script:XymonSettings servergiflocation '/xymon/gifs/'
     $script:clientlocalcfg = ""
 	$script:logfilepos = @{}
@@ -184,8 +179,6 @@ function UserSessionCount
 
 function XymonCollectInfo
 {
-    WriteLog "Executing XymonCollectInfo"
-    WriteLog "XymonCollectInfo: CPU info (WMI)"
 	$script:cpuinfo = @(Get-WmiObject -Class Win32_Processor)
 	$script:totalload = 0
 	$script:numcpus  = $cpuinfo.Count
@@ -198,22 +191,18 @@ function XymonCollectInfo
 	}
 	$script:totalload /= $numcpus
 
-    WriteLog "XymonCollectInfo: OS info (including memory) (WMI)"
 	$script:osinfo = Get-WmiObject -Class Win32_OperatingSystem
-    WriteLog "XymonCollectInfo: Service info (WMI)"
 	$script:svcs = Get-WmiObject -Class Win32_Service | Sort-Object -Property Name
-    WriteLog "XymonCollectInfo: Process info"
 	$script:procs = Get-Process | Sort-Object -Property Id
-    WriteLog "XymonCollectInfo: Disk info (WMI)"
 	$mydisks = @()
 	foreach ($disktype in $script:XymonSettings.wanteddisks) { 
 		$mydisks += @( (Get-WmiObject -Class Win32_LogicalDisk | where { $_.DriveType -eq $disktype } ))
 	}
 	$script:disks = $mydisks | Sort-Object DeviceID
-    WriteLog "XymonCollectInfo: Network adapter info (WMI)"
-	$script:netifs = Get-WmiObject -Class Win32_NetworkAdapterConfiguration | where { $_.IPEnabled -eq $true }
 
-    WriteLog "XymonCollectInfo: Building table of service processes (uses WMI data)"
+    # netifs does not appear to be used, commented out
+	#$script:netifs = Get-WmiObject -Class Win32_NetworkAdapterConfiguration | where { $_.IPEnabled -eq $true }
+
 	$script:svcprocs = @{([int]-1) = ""}
 	foreach ($s in $svcs) {
 		if ($s.State -eq "Running") {
@@ -226,15 +215,12 @@ function XymonCollectInfo
 		}
 	}
 	
-    WriteLog "XymonCollectInfo: Date processing (uses WMI data)"
 	$script:localdatetime = $osinfo.ConvertToDateTime($osinfo.LocalDateTime)
 	$script:uptime = $localdatetime - $osinfo.ConvertToDateTime($osinfo.LastBootUpTime)
 
 	$script:usercount = UserSessionCount
 
-    WriteLog "XymonCollectInfo: calling XymonProcsCPUUtilisation"
 	XymonProcsCPUUtilisation
-    WriteLog "XymonCollectInfo finished"
 }
 
 function WMIProp($class)
@@ -863,6 +849,10 @@ function XymonProcs
     WriteLog "XymonProcs start"
 	"[procs]"
 	"{0,8} {1,-35} {2,-17} {3,-17} {4,-17} {5,8} {6,-7} {7,5} {8}" -f "PID", "User", "WorkingSet/Peak", "VirtualMem/Peak", "PagedMem/Peak", "NPS", "Handles", "%CPU", "Name"
+
+    # one call to Get-WmiObject rather than as many calls as we have processes
+    $wmiProcs = Get-WmiObject -Class Win32_Process
+
 	foreach ($p in $procs) {
 		if ($svcprocs[($p.Id)] -ne $null) {
 			$procname = "Service:" + $svcprocs[($p.Id)]
@@ -871,7 +861,8 @@ function XymonProcs
 			$procname = $p.Name
 		}
 
-        $thiswmip = Get-WmiObject -Query "select * from Win32_Process where ProcessId = $($p.Id)"
+        #$thiswmip = Get-WmiObject -Query "select * from Win32_Process where ProcessId = $($p.Id)"
+        $thiswmip = $wmiProcs | where { $_.ProcessId -eq $p.Id }
         $cmdline = "{0} {1}" -f $procname, $thiswmip.CommandLine
        
 		if(	$thiswmip -ne $null ) { # short-lived process could possibly be gone
@@ -951,15 +942,8 @@ function XymonWMIOperatingSystem
 
 function XymonWMIQuickFixEngineering
 {
-    if ($script:XymonSettings.EnableWin32_QuickFixEngineering -eq 1)
-    {
-        "[WMI:Win32_QuickFixEngineering]"
-        Get-WmiObject -Class Win32_QuickFixEngineering | where { $_.Description -ne "" } | Sort-Object HotFixID | Format-Wide -Property HotFixID -AutoSize
-    }
-    else
-    {
-        WriteLog "Skipping XymonWMIQuickFixEngineering, EnableWin32_QuickFixEngineering = 0 in config"
-    }
+	"[WMI:Win32_QuickFixEngineering]"
+	Get-WmiObject -Class Win32_QuickFixEngineering | where { $_.Description -ne "" } | Sort-Object HotFixID | Format-Wide -Property HotFixID -AutoSize
 }
 
 function XymonWMIProduct
@@ -1210,8 +1194,7 @@ function XymonReportConfig
 		(Get-Variable $v).Value
 	}
 	"[XymonPSClientInfo]"
-    $script:thisXymonProcess	
-    #get-process -id $PID
+	get-process -id $PID
 	#"[XymonPSClientThreadStats]"
 	#(get-process -id $PID).Threads
 }
@@ -1238,15 +1221,12 @@ function XymonClientSections {
 	XymonWho
 	XymonUsers
 
-    if ($script:XymonSettings.EnableWMISections -eq 1)
-    {
-        XymonWMIOperatingSystem
-        XymonWMIComputerSystem
-        XymonWMIBIOS
-        XymonWMIProcessor
-        XymonWMIMemory
-        XymonWMILogicalDisk
-    }
+	XymonWMIOperatingSystem
+	XymonWMIComputerSystem
+	XymonWMIBIOS
+	XymonWMIProcessor
+	XymonWMIMemory
+	XymonWMILogicalDisk
 
     XymonServiceCheck
     XymonDirSize
@@ -1369,8 +1349,6 @@ function WriteLog([string]$message)
 }
 
 ##### Main code #####
-$script:thisXymonProcess = get-process -id $PID
-$script:thisXymonProcess.PriorityClass = "High"
 XymonConfig
 $ret = 0
 # check for install/set/unset/config/start/stop for service management
@@ -1416,9 +1394,6 @@ if($args -ne $null) {
 
 # assume no other args, so run as normal
 
-# elevate our priority to configured setting
-$script:thisXymonProcess.PriorityClass = $script:XymonSettings.ClientProcessPriority
-
 # ZB: read any cached client config
 if (Test-Path -PathType Leaf $script:XymonSettings.clientconfigfile)
 {
@@ -1460,10 +1435,12 @@ while ($running -eq $true) {
         WriteLog "Slow scan tasks completed."
 	}
 
+    WriteLog "Executing XymonCollectInfo (cpu, procs)..."
 	XymonCollectInfo
+    WriteLog "XymonCollectInfo finished."
     
     WriteLog "Performing main and optional tests and building output..."
-	$clout = "client " + $clientname + ".XymonPS win32 $Version" | Out-String
+	$clout = "client " + $clientname + ".bbwin win32 XymonPS $Version" | Out-String
 	$clsecs = XymonClientSections | Out-String
 	$localdatetime = Get-Date
 	$clout += XymonDate | Out-String
