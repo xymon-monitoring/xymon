@@ -25,8 +25,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.0"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-07-18 zak.beck@accenture.com"
+$Version = "1.1"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2014-07-24 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -324,6 +324,12 @@ function XymonUname
 {
 	"[uname]"
 	$osinfo.Caption + " " + $osinfo.CSDVersion + " (build " + $osinfo.BuildNumber + ")"
+}
+
+function XymonClientVersion
+{
+    "[clientversion]"
+    $Version
 }
 
 function XymonCpu
@@ -1076,6 +1082,7 @@ function XymonClientConfig($cfglines)
                  -or $l -match '^dir:' -or $l -match '^file:' `
                  -or $l -match '^dirsize:' -or $l -match '^dirtime:' `
                  -or $l -match '^log' -or $l -match '^clientversion:' `
+                 -or $l -match '^servergifs:' `
                  )
              {
                  WriteLog "Found a command: $l"
@@ -1091,6 +1098,12 @@ function XymonClientConfig($cfglines)
     WriteLog "Cached config now contains: "
     WriteLog ($script:clientlocalcfg_entries.keys -join ', ')
 
+    # special handling for servergifs
+    $gifpath = @($script:clientlocalcfg_entries.keys | where { $_ -match '^servergifs:(.+)$' })
+    if ($gifpath.length -eq 1)
+    {
+        $script:XymonSettings.servergiflocation = $matches[1]
+    }
 }
 
 function XymonReportConfig
@@ -1112,6 +1125,7 @@ function XymonReportConfig
 }
 
 function XymonClientSections {
+    XymonClientVersion
 	XymonUname
 	XymonCpu
 	XymonDisk
