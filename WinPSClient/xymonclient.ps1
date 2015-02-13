@@ -1267,18 +1267,13 @@ function XymonClientSections {
 
 function XymonClientInstall([string]$scriptname)
 {
-	if((Get-Service -ea:SilentlyContinue $xymonsvcname) -eq $null) {
-		$newsvc = New-Service $xymonsvcname $xymondir\XymonPSClient.exe -DisplayName "Xymon Powershell Client" -StartupType Automatic -Description "Reports to Xymon monitoring server client data gathered by powershell script"
-	}
-	if((Get-Item -ea:SilentlyContinue HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters) -eq $null) {
-		$newitm = New-Item HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters
-	}
-	if((Get-Item -ea:SilentlyContinue $XymonRegKey) -eq $null) {
-		$cfgitm = New-Item $XymonRegKey
-	}
-	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters Application "$PSHOME\powershell.exe"
-	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Parameters" "-ExecutionPolicy RemoteSigned -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -File `"$scriptname`""
-	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Default" $xymondir
+    # client install re-written to use NSSM
+    # also to remove any existing service first
+    
+    XymonClientUnInstall
+
+    & "$xymondir\nssm.exe" install `"$xymonsvcname`" `"$PSHOME\powershell.exe`" -ExecutionPolicy RemoteSigned -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -File `"`"`"$scriptname`"`"`"
+    # "
 }
 
 function XymonClientUnInstall()
@@ -1287,7 +1282,7 @@ function XymonClientUnInstall()
     {
         Stop-Service $xymonsvcname
         $service = Get-WmiObject -Class Win32_Service -Filter "Name='$xymonsvcname'"
-        $service.delete()
+        $service.delete() | out-null
 
         Remove-Item -Path HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\* -Recurse -ErrorAction SilentlyContinue
     }
