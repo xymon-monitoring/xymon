@@ -7,9 +7,24 @@
 #
 # Copyright (C) 2010 Henrik Storner <henrik@hswn.dk>
 # Copyright (C) 2010 David Baldwin
+# Copyright (c) 2014, 2015 Accenture (zak.beck@accenture.com)
 #
-# This program is released under the GNU General Public License (GPL),
-# version 2. See the file "COPYING" for details.
+#   Contributions to this project were made by Accenture starting from June 2014.
+#   For a list of modifications, please see the SVN change log.
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # ###################################################################################
 
@@ -25,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.96"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-01-21 zak.beck@accenture.com"
+$Version = "1.97"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-02-17 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -638,16 +653,29 @@ function XymonInit
 {
 	if($script:XymonSettings -eq $null) {
 		$script:XymonSettings = New-Object Object
-	} else {
+	} 
+    else 
+    {
 		# any special handling for settings from reg keys
-		if($script:XymonSettings.servers -match " ") {
-			$script:XymonSettings.servers = $script:XymonSettings.servers.Split(" ")
+        SetIfNot $script:XymonSettings serversList $script:XymonSettings.servers
+		if ($script:XymonSettings.servers -match " ") 
+        {
+			$script:XymonSettings.serversList = $script:XymonSettings.servers.Split(" ")
 		}
-	if($script:XymonSettings.wanteddisks -match " ") {
-			$script:XymonSettings.wanteddisks = $script:XymonSettings.wanteddisks.Split(" ")
+        SetIfNot $script:XymonSettings wanteddisksList $script:XymonSettings.wanteddisks
+        if ($script:XymonSettings.wanteddisks -match " ") 
+        {
+			$script:XymonSettings.wanteddisksList = $script:XymonSettings.wanteddisks.Split(" ")
 		}
+        if ($script:XymonSettings.wanteddisksList -eq $null)
+        {
+            $script:XymonSettings.wanteddisksList = @( 3 ) # 3=Local disks, 4=Network shares, 2=USB, 5=CD
+        }
 	}
-	SetIfNot $script:XymonSettings servers $xymonservers # List your Xymon servers here
+    if ($script:XymonSettings.serversList -eq $null)
+    {
+        $script:XymonSettings.serversList = $xymonservers
+    }
 	# SetIfNot $script:XymonSettings clientname "winxptest"	# Define this to override the default client hostname
 
 	# Params for default clientname
@@ -679,7 +707,6 @@ function XymonInit
     SetIfNot $script:XymonSettings MaxEvents 5000 # maximum number of events per event log
 	SetIfNot $script:XymonSettings slowscanrate 72 # repeats of main loop before collecting slowly changing information again
 	SetIfNot $script:XymonSettings reportevt 1 # scan eventlog and report (can be very slow)
-	SetIfNot $script:XymonSettings wanteddisks @( 3 )	# 3=Local disks, 4=Network shares, 2=USB, 5=CD
     SetIfNot $script:XymonSettings EnableWin32_Product 0 # 0 = do not use Win32_product, 1 = do
                         # see http://support.microsoft.com/kb/974524 for reasons why Win32_Product is not recommended!
     SetIfNot $script:XymonSettings EnableWin32_QuickFixEngineering 0 # 0 = do not use Win32_QuickFixEngineering, 1 = do
@@ -823,7 +850,7 @@ function XymonCollectInfo
     WriteLog "XymonCollectInfo: Disk info (WMI)"
 	$mydisks = @()
     $wmidisks = Get-WmiObject -Class Win32_LogicalDisk
-	foreach ($disktype in $script:XymonSettings.wanteddisks) { 
+	foreach ($disktype in $script:XymonSettings.wanteddisksList) { 
 		$mydisks += @( ($wmidisks | where { $_.DriveType -eq $disktype } ))
 	}
 	$script:disks = $mydisks | Sort-Object DeviceID
@@ -1401,7 +1428,7 @@ function XymonDirSize
         $outputtext = (get-date -format G) + '<br><h2>Directory Size</h2>' + $outputtext
         $output = ('status {0}.dirsize {1} {2}' -f $script:clientname, $groupcolour, $outputtext)
         WriteLog "dirsize: Sending $output"
-        XymonSend $output $script:XymonSettings.servers
+        XymonSend $output $script:XymonSettings.serversList
     }
 }
 
@@ -1493,7 +1520,7 @@ function XymonDirTime
         $outputtext = (get-date -format G) + '<br><h2>Last Modified Time In Minutes</h2>' + $outputtext
         $output = ('status {0}.dirtime {1} {2}' -f $script:clientname, $groupcolour, $outputtext)
         WriteLog "dirtime: Sending $output"
-        XymonSend $output $script:XymonSettings.servers
+        XymonSend $output $script:XymonSettings.serversList
     }
 }
 
@@ -1844,7 +1871,7 @@ function XymonTerminalServicesSessionsCheck
             $outputtext = (get-date -format G) + '<br><h2>Terminal Services Sessions</h2>' + $outputtext
             $output = ('status {0}.tssessions {1} {2}' -f $script:clientname, $alertColour, $outputtext)
             WriteLog "Terminal Services Sessions: sending $output"
-            XymonSend $output $script:XymonSettings.servers
+            XymonSend $output $script:XymonSettings.serversList
         }
 }
 
@@ -1886,7 +1913,7 @@ function XymonActiveDirectoryReplicationCheck
         $outputtext += $outputtable
         $output = ('status {0}.adreplicaton {1} {2}' -f $script:clientname, $alertColour, $outputtext)
         WriteLog "Active Directory Replication: sending status $alertColour"
-        XymonSend $output $script:XymonSettings.servers
+        XymonSend $output $script:XymonSettings.serversList
     }
 }
 
@@ -2396,7 +2423,7 @@ while ($running -eq $true) {
     WriteLog "Sending to server"
     Set-Content -path $lastcollectfile -value $clout
         
-    $newconfig = XymonSend $clout $script:XymonSettings.servers
+    $newconfig = XymonSend $clout $script:XymonSettings.serversList
 	XymonClientConfig $newconfig
 	[GC]::Collect() # run every time to avoid memory bloat
     
