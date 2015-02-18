@@ -277,7 +277,6 @@ int main(int argc, char *argv[])
 	/* If we are passing data to an external processor, create the pipe to it */
 	setup_extprocessor(processor);
 
-	running = 1;
 	while (running) {
 		char *eoln, *restofmsg = NULL;
 		char *metadata[MAX_META+1];
