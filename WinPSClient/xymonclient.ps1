@@ -1172,6 +1172,9 @@ function XymonMsgs
 
     foreach ($l in $wantedlogs) 
     {
+        WriteLog "Event log $l adding to payload"
+        $payload += "[msgs:eventlog_$l]" + [environment]::newline
+
         # only scan the current log if there is space in the payload
         if ($payload.Length -lt $maxpayloadlength)
         {
@@ -1237,10 +1240,6 @@ function XymonMsgs
 
             if ($logentries -ne $null) 
             {
-                WriteLog "Event log $l adding to payload"
-
-                $payload += "[msgs:eventlog_$l]" + [environment]::newline
-
                 foreach ($entry in $logentries) 
                 {
                     $payload += [string]$entry.LevelDisplayName + " - " +`
