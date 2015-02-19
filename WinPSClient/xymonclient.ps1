@@ -1178,9 +1178,29 @@ function XymonMsgs
             WriteLog "Processing event log $l"
 
             $logFilterXML = $filterXMLTemplate -f $l, $sinceMs
-            # todo - make this max events number configurable
-            $logentries = @(Get-WinEvent -ErrorAction:SilentlyContinue -FilterXML $logFilterXML `
-                -MaxEvents $script:XymonSettings.MaxEvents)
+            
+            try
+            {
+                WriteLog 'Setting thread/UI culture to en-US'
+                $currentCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
+                $currentUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
+                [System.Threading.Thread]::CurrentThread.CurrentCulture = 'en-US'
+                [System.Threading.Thread]::CurrentThread.CurrentUICulture = 'en-US'
+
+                # todo - make this max events number configurable
+                $logentries = @(Get-WinEvent -ErrorAction:SilentlyContinue -FilterXML $logFilterXML `
+                    -MaxEvents $script:XymonSettings.MaxEvents)
+            }
+            catch
+            {
+                WriteLog "Error setting culture and getting event log entries: $_"
+            }
+            finally
+            {
+                WriteLog "Resetting thread/UI culture to previous: $currentCulture / $currentUICulture"
+                [System.Threading.Thread]::CurrentThread.CurrentCulture = $currentCulture
+                [System.Threading.Thread]::CurrentThread.CurrentUICulture = $currentUICulture
+            }
 
             WriteLog "Event log $l entries since last scan: $($logentries.Length)"
             
