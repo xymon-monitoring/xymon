@@ -33,7 +33,7 @@ const static struct {
 	{ "XYMONSERVERWWWNAME", XYMONHOSTNAME },
 	{ "XYMONSERVERWWWURL", "/xymon" },
 	{ "XYMONSERVERCGIURL", "/xymon-cgi" },
-	{ "XYMONSERVERSECCGIURL", "/xymon-cgisecure" },
+	{ "XYMONSERVERSECURECGIURL", "/xymon-seccgi" },
 	{ "XYMONNETWORK", "" },
 	{ "BBLOCATION", "" },
 	{ "PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:"XYMONHOME"/bin" },
