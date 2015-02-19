@@ -350,6 +350,23 @@ then
 fi
 echo ""; echo ""
 
+echo "Apache 2.4 introduced a new format for authentication configuration"
+echo "that requires the sample httpd.conf snippets to be configured differently."
+echo "See http://httpd.apache.org/docs/2.4/upgrading.html#run-time for more details."
+echo ""
+echo "Are you running Apache 2.4 or greater [n] ? "
+if test -z "$APACHE24"
+then
+	read APACHE24
+fi
+if test "$APACHE24" = "y" -o "$APACHE24" = "Y" -o "$APACHE24" = "yes" -o "$APACHE24" = "YES"
+then
+	APACHE24=yes
+else
+	APACHE24=no
+fi
+echo ""; echo ""
+
 echo "Where to put the Xymon logfiles [/var/log/xymon] ? "
 if test -z "$XYMONLOGDIR"
 then
@@ -527,6 +544,9 @@ echo "LIBRTDEF = $LIBRTDEF"              >>Makefile
 echo ""                                  >>Makefile
 echo "# Net-SNMP settings"               >>Makefile
 echo "DOSNMP = $DOSNMP"                  >>Makefile
+echo ""                                  >>Makefile
+echo "# Apache24 settings"               >>Makefile
+echo "APACHE24 = $APACHE24"              >>Makefile
 echo ""                                  >>Makefile
 
 echo "# Large File Support settings"     >>Makefile

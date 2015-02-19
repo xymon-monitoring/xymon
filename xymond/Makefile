@@ -142,6 +142,10 @@ cfgfiles:
 	../build/bb-commands.sh >>etcfiles/xymonserver.cfg
 	cat etcfiles/hosts.cfg.DIST | sed -e 's!@XYMONHOSTNAME@!$(XYMONHOSTNAME)!g' | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' >etcfiles/hosts.cfg
 	cat etcfiles/alerts.cfg.DIST | sed -e 's!@XYMONHOSTNAME@!$(XYMONHOSTNAME)!g' | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' >etcfiles/alerts.cfg
+ifeq ($(APACHE24),yes)
+	cat etcfiles/xymon-apache.conf | sed -e 's!Order allow,deny!#Order allow,deny!g' -e 's!Allow from all!#Allow from all!g' -e 's!#Require all granted!Require all granted!g' >etcfiles/xymon-apache.conf.tmp
+	mv -f etcfiles/xymon-apache.conf.tmp etcfiles/xymon-apache.conf
+endif
 	cat etcfiles/tasks.cfg.DIST | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONTOPDIR@!$(XYMONTOPDIR)!g' >etcfiles/tasks.cfg
 	cat etcfiles/cgioptions.cfg.DIST | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >etcfiles/cgioptions.cfg
 
