@@ -16,7 +16,7 @@ Alias @XYMONHOSTURL@/  "@INSTALLWWWDIR@/"
     Options Indexes FollowSymLinks Includes MultiViews
     Order allow,deny
     Allow from all
-    #Require all granted	# for apache 2.4
+    #Require all granted
 </Directory>
 
 ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
@@ -25,7 +25,7 @@ ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
     Options ExecCGI FollowSymLinks Includes
     Order allow,deny
     Allow from all
-    #Require all granted	# for apache 2.4
+    #Require all granted
 </Directory>
 
 
