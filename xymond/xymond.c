@@ -4322,7 +4322,7 @@ void do_message(conn_t *msg, char *origin)
 
 			for (swalk = schedulehead; (swalk); swalk = swalk->next) {
 				snprintf(tbuf, sizeof(tbuf), "%d|%d", swalk->id, (int)swalk->executiontime);
-				addtobuffer_many(response, tbuf, "|", swalk->sender, "|", nlencode(swalk->command), NULL);
+				addtobuffer_many(response, tbuf, "|", swalk->sender, "|", nlencode(swalk->command), "\n", NULL);
 			}
 
 			xfree(msg->buf);
