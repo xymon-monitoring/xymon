@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.97"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-02-17 zak.beck@accenture.com"
+$Version = "1.98"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-02-24 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -615,6 +615,210 @@ $dummy = $cp.ReferencedAssemblies.Add('System.dll')
 
 $type = Add-Type -TypeDefinition $getprocesscmdline -CompilerParameters $cp
 
+$volumeinfo = @'
+    using System;
+    using System.Collections;
+    using System.Runtime.InteropServices;
+    using System.Text;
+    using Microsoft.Win32.SafeHandles;
+
+    public class VolumeInfo
+    {
+        [DllImport("kernel32.dll")]
+        public static extern DriveType GetDriveType([MarshalAs(UnmanagedType.LPStr)] string lpRootPathName);
+
+        [DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Auto)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetDiskFreeSpaceEx(string lpDirectoryName,
+            out ulong lpFreeBytesAvailable,
+            out ulong lpTotalNumberOfBytes,
+            out ulong lpTotalNumberOfFreeBytes);
+
+        [DllImport("Kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private extern static bool GetVolumeInformation(
+            string RootPathName,
+            StringBuilder VolumeNameBuffer,
+            int VolumeNameSize,
+            out uint VolumeSerialNumber,
+            out uint MaximumComponentLength,
+            out uint FileSystemFlags, // FileSystemFeature
+            StringBuilder FileSystemNameBuffer,
+            int nFileSystemNameSize);
+
+        [DllImport("kernel32.dll", SetLastError=true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetVolumePathNamesForVolumeNameW(
+            [MarshalAs(UnmanagedType.LPWStr)]
+            string lpszVolumeName,
+            [MarshalAs(UnmanagedType.LPWStr)]
+            string lpszVolumePathNames,
+            uint cchBuferLength,
+            ref UInt32 lpcchReturnLength);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern FindVolumeSafeHandle FindFirstVolume([Out] StringBuilder lpszVolumeName, uint cchBufferLength);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool FindNextVolume(FindVolumeSafeHandle hFindVolume, [Out] StringBuilder lpszVolumeName, uint cchBufferLength);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool FindVolumeClose(IntPtr hFindVolume);
+
+        private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+
+        public enum DriveType : uint
+        {
+            Unknown = 0,    //DRIVE_UNKNOWN
+            Error = 1,        //DRIVE_NO_ROOT_DIR
+            Removable = 2,    //DRIVE_REMOVABLE
+            Fixed = 3,        //DRIVE_FIXED
+            Remote = 4,        //DRIVE_REMOTE
+            CDROM = 5,        //DRIVE_CDROM
+            RAMDisk = 6        //DRIVE_RAMDISK
+        }
+
+        private class FindVolumeSafeHandle : SafeHandleZeroOrMinusOneIsInvalid
+        {
+            private FindVolumeSafeHandle()
+            : base(true)
+            {
+            }
+
+            public FindVolumeSafeHandle(IntPtr preexistingHandle, bool ownsHandle)
+            : base(ownsHandle)
+            {
+                SetHandle(preexistingHandle);
+            }
+
+            protected override bool ReleaseHandle()
+            {
+                return FindVolumeClose(handle);
+            }
+        }
+
+        public class Volume
+        {            
+            public string VolumeGUID;            
+            public string FileSys;
+            public DriveType DriveType;
+            public uint DriveTypeId;
+
+            public string MountPoint;
+            public string FileSystemName;
+            public string VolumeName;
+            
+            public ulong TotalBytes;
+            public ulong FreeBytes;
+            public int UsedPercent;
+
+            public uint SerialNumber;
+        }
+
+        private static void GetVolumeDetails(string drive, Volume v)
+        {
+            ulong FreeBytesToCallerDummy;
+            if (GetDiskFreeSpaceEx(drive, out FreeBytesToCallerDummy, out v.TotalBytes, out v.FreeBytes))
+            {
+                StringBuilder volname = new StringBuilder(261);
+                StringBuilder fsname = new StringBuilder(261);
+                uint flagsDummy, maxlenDummy;
+                GetVolumeInformation(drive, volname, volname.Capacity, 
+                    out v.SerialNumber, out maxlenDummy, out flagsDummy, fsname, fsname.Capacity);
+                v.FileSystemName = fsname.ToString();
+                v.VolumeName = volname.ToString();
+
+                if (v.TotalBytes > 0)
+                {
+                    double used = ((double)(v.TotalBytes - v.FreeBytes) / (double)v.TotalBytes);
+                    v.UsedPercent = (int)Math.Round(used * 100.0);
+                }
+            }
+        }
+
+        private static void GetVolumeMountPoints(string volumeDeviceName, ArrayList volumes)
+        {
+            string buffer = "";
+            uint lpcchReturnLength = 0;
+            GetVolumePathNamesForVolumeNameW(volumeDeviceName, buffer, (uint)buffer.Length, ref lpcchReturnLength);
+            if (lpcchReturnLength == 0)
+            {
+                return;
+            }
+
+            buffer = new string(new char[lpcchReturnLength]);
+
+            if (!GetVolumePathNamesForVolumeNameW(volumeDeviceName, buffer, lpcchReturnLength, ref lpcchReturnLength))
+            {
+                throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());                
+            }
+
+            string[] mounts = buffer.Split('\0');
+            if (buffer.Length > 1)
+            {
+                foreach (string mount in mounts)
+                {
+                    if (mount.Length > 0)
+                    {
+                        Volume v = new Volume();
+                        v.VolumeGUID = volumeDeviceName;
+                        v.MountPoint = mount;
+                        v.DriveType = GetDriveType(mount);                        
+                        v.DriveTypeId = (uint)v.DriveType;
+                        if (mount[0] >= 'A' && mount[0] <= 'Z')
+                        {
+                            v.FileSys = mount[0].ToString();
+                        }
+                        if (mount.Length > 3)
+                        {
+                            // per BBWin, replace spaces with underscore in mountpoint name
+                            v.FileSys = mount.Substring(3, mount.LastIndexOf('\\') - 3).Replace(' ', '_');                            
+                        }
+                        GetVolumeDetails(mount, v);
+                        volumes.Add(v);
+                    }
+                }
+            }
+            else
+            {
+                // unmounted volume - only add details once
+                Volume v = new Volume();
+                v.VolumeGUID = volumeDeviceName;
+                v.MountPoint = "";
+                v.DriveType = GetDriveType(volumeDeviceName);                
+                v.DriveTypeId = 99; // special value for unmounted
+                v.FileSys = "unmounted";
+
+                GetVolumeDetails(volumeDeviceName, v);
+                volumes.Add(v);
+            }
+        }
+
+        public static Volume[] GetVolumes()
+        {
+            const uint bufferLength = 1024;
+            StringBuilder volume = new StringBuilder((int)bufferLength, (int)bufferLength);
+            ArrayList ret = new ArrayList();
+
+            using (FindVolumeSafeHandle volumeHandle = FindFirstVolume(volume, bufferLength))
+            {
+                if (volumeHandle.IsInvalid)
+                {
+                    throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+                }
+
+                do
+                {
+                    GetVolumeMountPoints(volume.ToString(), ret);
+                } while (FindNextVolume(volumeHandle, volume, bufferLength));
+
+                return (Volume[])ret.ToArray(typeof(Volume));
+            }
+        }
+    }
+'@
+
+$type = Add-Type $volumeinfo
+
 }
 #endregion 
 
@@ -846,16 +1050,21 @@ function XymonCollectInfo
     $script:osinfo = Get-WmiObject -Class Win32_OperatingSystem
     WriteLog "XymonCollectInfo: Service info (WMI)"
     $script:svcs = Get-WmiObject -Class Win32_Service | Sort-Object -Property Name
-    WriteLog "XymonCollectInfo: Disk info (WMI)"
+    WriteLog "XymonCollectInfo: Disk info"
     $mydisks = @()
-    $wmidisks = Get-WmiObject -Class Win32_LogicalDisk
-    foreach ($disktype in $script:XymonSettings.wanteddisksList) { 
-        $mydisks += @( ($wmidisks | where { $_.DriveType -eq $disktype } ))
+    try
+    {
+        $volumes = [VolumeInfo]::GetVolumes()
+        foreach ($disktype in $script:XymonSettings.wanteddisksList) { 
+            $mydisks += @( ($volumes | where { $_.DriveTypeId -eq $disktype } ))
+        }
     }
-    $script:disks = $mydisks | Sort-Object DeviceID
-
-    # netifs does not appear to be used, commented out
-    #$script:netifs = Get-WmiObject -Class Win32_NetworkAdapterConfiguration | where { $_.IPEnabled -eq $true }
+    catch
+    {
+        $volumes = @()
+        WriteLog "Error getting volume information: $_"
+    }
+    $script:disks = $mydisks | Sort-Object FileSys
 
     WriteLog "XymonCollectInfo: Building table of service processes (uses WMI data)"
     $script:svcprocs = @{([int]-1) = ""}
@@ -1090,26 +1299,54 @@ function XymonCpu
 
 function XymonDisk
 {
+    $maxMountpoint = 25
+    $maxLabel = 20
+    $maxFilesys = 15
+
     WriteLog "XymonDisk start"
     "[disk]"
-    "{0,-15} {1,9} {2,9} {3,9} {4,9} {5,10} {6}" -f "Filesystem", "1K-blocks", "Used", "Avail", "Capacity", "Mounted", "Summary(Total\Avail GB)"
+    "{0,-$maxFilesys} {1,12} {2,12} {3,12} {4,9}  {5,-$maxMountpoint} {6,-$maxLabel} {7}" -f `
+        "Filesystem", `
+        "1K-blocks", `
+        "Used", `
+        "Avail", `
+        "Capacity", `
+        "Mounted", `
+        "Label", `
+        "Summary(Total\Avail GB)"
     foreach ($d in $disks) {
-        $diskletter = ($d.DeviceId).Trim(":")
-        [uint32]$diskusedKB = ([uint32]($d.Size/1KB)) - ([uint32]($d.FreeSpace/1KB))    # PS ver 1 doesnt support subtraction uint64's
-        [uint32]$disksizeKB = [uint32]($d.size/1KB)
+        [uint32]$diskusedKB = ([uint32]($d.TotalBytes/1KB)) - ([uint32]($d.FreeBytes/1KB))    # PS ver 1 doesnt support subtraction uint64's
+        [uint32]$disksizeKB = [uint32]($d.TotalBytes/1KB)
 
-        $dsKB = "{0:F0}" -f ($d.Size / 1KB); $dsGB = "{0:F2}" -f ($d.Size / 1GB)
+        $dsKB = "{0:F0}" -f ($d.TotalBytes / 1KB); $dsGB = "{0:F2}" -f ($d.TotalBytes / 1GB)
         $duKB = "{0:F0}" -f ($diskusedKB); $duGB = "{0:F2}" -f ($diskusedKB / 1KB);
-        $dfKB = "{0:F0}" -f ($d.FreeSpace / 1KB); $dfGB = "{0:F2}" -f ($d.FreeSpace / 1GB)
-        
-        if ($d.Size -gt 0) {
-            $duPCT = $diskusedKB/$disksizeKB
-        }
-        else {
-            $duPCT = 0
-        }
+        $dfKB = "{0:F0}" -f ($d.FreeBytes / 1KB); $dfGB = "{0:F2}" -f ($d.FreeBytes / 1GB)
 
-        "{0,-15} {1,9} {2,9} {3,9} {4,9:0%} {5,10} {6}" -f $diskletter, $dsKB, $duKB, $dfKB, $duPCT, "/FIXED/$diskletter", $dsGB + "\" + $dfGB
+        $filesys = $d.FileSys
+        if ($filesys.Length -gt $maxFilesys)
+        {
+            $filesys = $filesys.Substring(0, $maxFilesys - 3) + '...'
+        }
+        $mountpoint = $d.MountPoint
+        if ($mountpoint.Length -gt $maxMountpoint)
+        {
+            $mountpoint = $mountpoint.Substring(0, $maxMountpoint - 3) + '...'
+        }
+        $label = $d.VolumeName
+        if ($label.Length -gt $maxLabel)
+        {
+            $label = $label.Substring(0, $maxLabel - 3) + '...'
+        }
+       
+        "{0,-$maxFilesys} {1,12} {2,12} {3,12} {4,9:0}% {5,-$maxMountpoint} {6,-$maxLabel} {7}" -f `
+            $filesys, `
+            $dsKB, `
+            $duKB, `
+            $dfKB, `
+            $d.UsedPercent, `
+            $mountpoint, `
+            $label, `
+            $dsGB + "\" + $dfGB
     }
     WriteLog "XymonDisk finished."
 }
@@ -1137,6 +1374,20 @@ function XymonMemory
     WriteLog "XymonMemory finished."
 }
 
+# ContainsLike - whether or not $compare matches
+# one of the entries in $arrayOfLikes using the -like operator
+function ContainsLike([string[]] $arrayOfLikes, [string] $compare)
+{
+    foreach ($l in $arrayOfLikes)
+    {
+        if ($compare -like $l)
+        {
+            return $true
+        }
+    }
+    return $false
+}
+
 function XymonMsgs
 {
     if($script:XymonSettings.reportevt -eq 0) {return}
@@ -1150,106 +1401,142 @@ function XymonMsgs
 @' 
     <QueryList>
       <Query Id="0" Path="{0}">
-        <Select Path="{0}">*[System[TimeCreated[timediff(@SystemTime) &lt;= {1}]]]</Select>
+        <Select Path="{0}">*[System[TimeCreated[timediff(@SystemTime) &lt;= {1}] and ({2})]]</Select>
       </Query>
     </QueryList>
 '@
 
+    $eventLevels = @{ 
+        '0' = 'Information';
+        '1' = 'Critical';
+        '2' = 'Error';
+        '3' = 'Warning';
+        '4' = 'Information';
+        '5' = 'Verbose';
+    }
+
     # default logs - may be overridden by config
     $wantedlogs = "Application", "System", "Security"
+    $wantedLevels = @('Critical', 'Warning', 'Error', 'Information', 'Verbose')
     $maxpayloadlength = 1024
     $payload = ''
 
     # this function no longer uses $script:XymonSettings.wantedlogs
     # - it now uses eventlogswanted from the remote config
-    if ($script:clientlocalcfg_entries.keys | where { $_ -match '^eventlogswanted:(.+):(\d+)$' })
+    if ($script:clientlocalcfg_entries.keys | where { $_ -match '^eventlogswanted:(.+):(\d+):?(.+)?$' })
     {
         $wantedlogs = $matches[1] -split ','
         $maxpayloadlength = $matches[2]
+        if ($matches[3] -ne $null)
+        {
+            $wantedLevels = $matches[3] -split ','
+        }
+    }
+
+    $levelcriteria = @()
+    foreach ($level in $wantedLevels)
+    {
+        switch ($level)
+        {
+            'critical' { $levelcriteria += 'Level=1'; break }
+            'warning' { $levelcriteria += 'Level=3'; break }
+            'verbose' { $levelcriteria += 'Level=5'; break }
+            'error' { $levelcriteria += 'Level=2'; break }
+            'information' { $levelcriteria += 'Level=4 or Level=0'; break }
+        }
     }
 
     WriteLog "Event Log processing - max payload: $maxpayloadlength - wanted logs: $wantedlogs"
 
-    foreach ($l in $wantedlogs) 
+    foreach ($l in ($script:EventLogs | select -ExpandProperty Log))
     {
-        WriteLog "Event log $l adding to payload"
-        $payload += "[msgs:eventlog_$l]" + [environment]::newline
-
-        # only scan the current log if there is space in the payload
-        if ($payload.Length -lt $maxpayloadlength)
+        if (ContainsLike $wantedlogs $l)
         {
-            WriteLog "Processing event log $l"
+            WriteLog "Event log $l adding to payload"
+            $payload += "[msgs:eventlog_$l]" + [environment]::newline
 
-            $logFilterXML = $filterXMLTemplate -f $l, $sinceMs
-            
-            try
+            # only scan the current log if there is space in the payload
+            if ($payload.Length -lt $maxpayloadlength)
             {
-                WriteLog 'Setting thread/UI culture to en-US'
-                $currentCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
-                $currentUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
-                [System.Threading.Thread]::CurrentThread.CurrentCulture = 'en-US'
-                [System.Threading.Thread]::CurrentThread.CurrentUICulture = 'en-US'
+                WriteLog "Processing event log $l"
 
-                # todo - make this max events number configurable
-                $logentries = @(Get-WinEvent -ErrorAction:SilentlyContinue -FilterXML $logFilterXML `
-                    -MaxEvents $script:XymonSettings.MaxEvents)
-            }
-            catch
-            {
-                WriteLog "Error setting culture and getting event log entries: $_"
-            }
-            finally
-            {
-                WriteLog "Resetting thread/UI culture to previous: $currentCulture / $currentUICulture"
-                [System.Threading.Thread]::CurrentThread.CurrentCulture = $currentCulture
-                [System.Threading.Thread]::CurrentThread.CurrentUICulture = $currentUICulture
-            }
-
-            WriteLog "Event log $l entries since last scan: $($logentries.Length)"
-            
-            # filter based on clientlocal.cfg / clientconfig.cfg
-            if ($script:clientlocalcfg_entries -ne $null)
-            {
-                $filterkey = $script:clientlocalcfg_entries.keys | where { $_ -match "^eventlog\:$l" }
-                if ($filterkey -ne $null -and $script:clientlocalcfg_entries.ContainsKey($filterkey))
+                $logFilterXML = $filterXMLTemplate -f $l, $sinceMs, ($levelcriteria -join ' or ')
+                WriteLog "Log filter $logFilterXML"
+                
+                try
                 {
-                    WriteLog "Found a configured filter for log $l"
-                    $output = @()
-                    foreach ($entry in $logentries)
+                    WriteLog 'Setting thread/UI culture to en-US'
+                    $currentCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
+                    $currentUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
+                    [System.Threading.Thread]::CurrentThread.CurrentCulture = 'en-US'
+                    [System.Threading.Thread]::CurrentThread.CurrentUICulture = 'en-US'
+
+                    # todo - make this max events number configurable
+                    $logentries = @(Get-WinEvent -ErrorAction:SilentlyContinue -FilterXML $logFilterXML `
+                        -MaxEvents $script:XymonSettings.MaxEvents)
+                }
+                catch
+                {
+                    WriteLog "Error setting culture and getting event log entries: $_"
+                }
+                finally
+                {
+                    WriteLog "Resetting thread/UI culture to previous: $currentCulture / $currentUICulture"
+                    [System.Threading.Thread]::CurrentThread.CurrentCulture = $currentCulture
+                    [System.Threading.Thread]::CurrentThread.CurrentUICulture = $currentUICulture
+                }
+
+                WriteLog "Event log $l entries since last scan: $($logentries.Length)"
+                
+                # filter based on clientlocal.cfg / clientconfig.cfg
+                if ($script:clientlocalcfg_entries -ne $null)
+                {
+                    $filterkey = $script:clientlocalcfg_entries.keys | where { $_ -match "^eventlog\:$l" }
+                    if ($filterkey -ne $null -and $script:clientlocalcfg_entries.ContainsKey($filterkey))
                     {
-                        foreach ($filter in $script:clientlocalcfg_entries[$filterkey])
+                        WriteLog "Found a configured filter for log $l"
+                        $output = @()
+                        foreach ($entry in $logentries)
                         {
-                            if ($filter -match '^ignore')
+                            foreach ($filter in $script:clientlocalcfg_entries[$filterkey])
                             {
-                                $filter = $filter -replace '^ignore ', ''
-                                if ($entry.ProviderName -match $filter -or $entry.Message -match $filter)
+                                if ($filter -match '^ignore')
                                 {
-                                    $exclude = $true
-                                    break
+                                    $filter = $filter -replace '^ignore ', ''
+                                    if ($entry.ProviderName -match $filter -or $entry.Message -match $filter)
+                                    {
+                                        $exclude = $true
+                                        break
+                                    }
                                 }
                             }
+                            if (-not $exclude)
+                            {
+                                $output += $entry
+                            }
                         }
-                        if (-not $exclude)
-                        {
-                            $output += $entry
-                        }
+                        $logentries = $output
                     }
-                    $logentries = $output
                 }
-            }
 
-            if ($logentries -ne $null) 
-            {
-                foreach ($entry in $logentries) 
+                if ($logentries -ne $null) 
                 {
-                    $payload += [string]$entry.LevelDisplayName + " - " +`
-                        [string]$entry.TimeCreated + " - " + `
-                        [string]$entry.ProviderName + " - " + `
-                        [string]$entry.Message + [environment]::newline
-                    
-                    if ($payload.Length -gt $maxpayloadlength)
+                    foreach ($entry in $logentries) 
                     {
-                        break;
+                        $level = 'Unknown'
+                        if ($eventLevels.ContainsKey($entry.Level.ToString()))
+                        {
+                            $level = $eventLevels[$entry.Level.ToString()]
+                        }
+                        $payload += [string]$level + " - " +`
+                            [string]$entry.TimeCreated + " - " + `
+                            [string]$entry.ProviderName + " - " + `
+                            [string]$entry.Message + [environment]::newline
+                        
+                        if ($payload.Length -gt $maxpayloadlength)
+                        {
+                            break;
+                        }
                     }
                 }
             }
@@ -1374,7 +1661,7 @@ function XymonDirSize
     # dirsize:<path>:<gt/lt/eq>:<size bytes>:<fail colour>
     # match number:
     #        :  1   :   2      :     3      :     4
-    # <path> may be a simple path (c:\temp) or contain an environment variable
+    # <path> may be a simple path (c:\temp) or contain an environment variable, or a filename
     # e.g. %USERPROFILE%\temp
     WriteLog "Executing XymonDirSize"
     $outputtext = ''
@@ -1383,60 +1670,66 @@ function XymonDirSize
         foreach {
             resolveEnvPath $matches[1] | foreach {
 
+                WriteLog "DirSize: $_"
+                $objFSO = new-object -com Scripting.FileSystemObject
+
                 if (test-path $_ -PathType Container)
                 {
-                    WriteLog "DirSize: $_"
                     # could use "get-childitem ... -recurse | measure ..." here 
                     # but that does not work well when there are many files/subfolders
-                    $objFSO = new-object -com Scripting.FileSystemObject
                     $size = $objFSO.GetFolder($_).Size
-                    $criteriasize = ($matches[3] -as [long])
-                    $conditionmet = $false
-                    if ($matches[2] -eq 'gt')
-                    {
-                        $conditionmet = $size -gt $criteriasize
-                        $conditiontype = '>'
-                    }
-                    elseif ($matches[2] -eq 'lt')
-                    {
-                        $conditionmet = $size -lt $criteriasize
-                        $conditiontype = '<'
-                    }
-                    else
-                    {
-                        # eq
-                        $conditionmet = $size -eq $criteriasize
-                        $conditiontype = '='
-                    }
-                    if ($conditionmet)
-                    {
-                        $alertcolour = $matches[4]
-                    }
-                    else
-                    {
-                        $alertcolour = 'green'
-                    }
+                }
+                else
+                {
+                    $size = (Get-Item $_).Length
+                }
 
-                    # report out - 
-                    #  {0} = colour (matches[4])
-                    #  {1} = folder name
-                    #  {2} = folder size
-                    #  {3} = condition symbol (<,>,=)
-                    #  {4} = alert size
-                    $outputtext += (('<img src="{5}{0}.gif" alt="{0}" ' +`
-                        'height="16" width="16" border="0">' +`
-                        '{1} size is {2} bytes. Alert if {3} {4} bytes.<br>') `
-                        -f $alertcolour, $_, $size, $conditiontype, $matches[3], $script:XymonSettings.servergiflocation)
-                    # set group colour to colour if it is not already set to a 
-                    # higher alert state colour
-                    if ($groupcolour -eq 'green' -and $alertcolour -eq 'yellow')
-                    {
-                        $groupcolour = 'yellow'
-                    }
-                    elseif ($alertcolour -eq 'red')
-                    {
-                        $groupcolour = 'red'
-                    }
+                $criteriasize = ($matches[3] -as [long])
+                $conditionmet = $false
+                if ($matches[2] -eq 'gt')
+                {
+                    $conditionmet = $size -gt $criteriasize
+                    $conditiontype = '>'
+                }
+                elseif ($matches[2] -eq 'lt')
+                {
+                    $conditionmet = $size -lt $criteriasize
+                    $conditiontype = '<'
+                }
+                else
+                {
+                    # eq
+                    $conditionmet = $size -eq $criteriasize
+                    $conditiontype = '='
+                }
+                if ($conditionmet)
+                {
+                    $alertcolour = $matches[4]
+                }
+                else
+                {
+                    $alertcolour = 'green'
+                }
+
+                # report out - 
+                #  {0} = colour (matches[4])
+                #  {1} = folder name
+                #  {2} = folder size
+                #  {3} = condition symbol (<,>,=)
+                #  {4} = alert size
+                $outputtext += (('<img src="{5}{0}.gif" alt="{0}" ' +`
+                    'height="16" width="16" border="0">' +`
+                    '{1} size is {2} bytes. Alert if {3} {4} bytes.<br>') `
+                    -f $alertcolour, $_, $size, $conditiontype, $matches[3], $script:XymonSettings.servergiflocation)
+                # set group colour to colour if it is not already set to a 
+                # higher alert state colour
+                if ($groupcolour -eq 'green' -and $alertcolour -eq 'yellow')
+                {
+                    $groupcolour = 'yellow'
+                }
+                elseif ($alertcolour -eq 'red')
+                {
+                    $groupcolour = 'red'
                 }
             }
         }
@@ -1770,7 +2063,8 @@ function XymonWMILogicalDisk
 function XymonEventLogs
 {
     "[EventlogSummary]"
-    Get-EventLog -List | Format-Table -AutoSize
+    $script:EventLogs = Get-EventLog -List 
+    $script:EventLogs | Format-Table -AutoSize
 }
 
 function XymonServiceCheck
@@ -2304,7 +2598,7 @@ function RotateLog([string]$logfile)
             if (Test-Path "$logfile.$lastext")
             {
                 WriteLog "Removing $logfile.$lastext"
-                Remove-Item "$logfile.$lastext"
+                Remove-Item -Force "$logfile.$lastext"
             }
 
             (($retain - 1) .. 1) | foreach {
@@ -2315,14 +2609,14 @@ function RotateLog([string]$logfile)
                     # pad 1 -> 01, 2 -> 02 etc
                     $newext = "{0:00}" -f ($_ + 1)
                     WriteLog "Renaming $logfile.$ext to $logfile.$newext"
-                    Move-Item "$logfile.$ext" "$logfile.$newext"
+                    Move-Item -Force "$logfile.$ext" "$logfile.$newext"
                 }
             }
 
             if (Test-Path $logfile)
             {
                 WriteLog "Finally: Renaming $logfile to $logfile.01"
-                Move-Item $logfile "$logfile.01"
+                Move-Item -Force $logfile "$logfile.01"
             }
         }
     }
