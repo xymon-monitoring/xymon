@@ -606,7 +606,11 @@ void sendmessage_finish_local(void)
 sendresult_t sendmessage_local(char *msg)
 {
 	int n, done = 0;
-	msglen_t msglen;
+	#if defined(__OpenBSD__) || defined(__dietlibc__)
+		unsigned long msglen;
+	#else
+		msglen_t msglen;
+	#endif
 
 	if (backfeedqueue == -1) {
 		return sendmessage(msg, NULL, XYMON_TIMEOUT, NULL);
