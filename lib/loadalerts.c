@@ -182,6 +182,7 @@ static void free_criteria(criteria_t *crit)
 	if (crit->exgroupspec)   xfree(crit->exgroupspec);
 	if (crit->exgroupspecre) pcre_free(crit->exgroupspecre);
 	if (crit->timespec)      xfree(crit->timespec);
+	if (crit->extimespec)    xfree(crit->extimespec);
 }
 
 int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
@@ -476,6 +477,16 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit->timespec = strdup(val);
 				firsttoken = 0;
 			}
+			else if ((strncasecmp(p, "EXTIME=", 7) == 0) || (strncasecmp(p, "EXTIMES=", 8) == 0)) {
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
+				crit->extimespec = strdup(val);
+				firsttoken = 0;
+			}
 			else if (strncasecmp(p, "DURATION", 8) == 0) {
 				criteria_t *crit;
 
@@ -729,6 +740,7 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 	}
 
 	if (crit->timespec) printf("TIME=%s ", crit->timespec);
+	if (crit->extimespec) printf("EXTIME=%s ", crit->extimespec);
 	if (crit->minduration) printf("DURATION>%d ", (crit->minduration / 60));
 	if (crit->maxduration) printf("DURATION<%d ", (crit->maxduration / 60));
 	if (isrecip) {
@@ -788,7 +800,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 {
 	/*
 	 * See if the "crit" matches the "alert".
-	 * Match on pagespec, dgspec, hostspec, svcspec, classspec, groupspec, colors, timespec, minduration, maxduration, sendrecovered
+	 * Match on pagespec, dgspec, hostspec, svcspec, classspec, groupspec, colors, timespec, extimespec, minduration, maxduration, sendrecovered
 	 */
 
 	static char *pgnames = NULL;
@@ -980,10 +992,11 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * some random system recovered ... not good. So apply
 	 * this check to all messages.
 	 */
-	if (crit && crit->timespec && !timematch(xmh_item(hinfo, XMH_HOLIDAYS), crit->timespec)) {
+	if (crit && ( (crit->timespec && !timematch(xmh_item(hinfo, XMH_HOLIDAYS), crit->timespec)) || 
+		      (crit->extimespec && timematch(xmh_item(hinfo, XMH_HOLIDAYS), crit->extimespec)) ) ) {
 		/* Try again in a minute */
 		if (nexttime) *nexttime = getcurrenttime(NULL) + 60;
-		traceprintf("Failed '%s' (time criteria)\n", cfline);
+		traceprintf("Failed '%s' (time/extime criteria)\n", cfline);
 		if (!printmode) return 0; 
 	}
 
@@ -1126,7 +1139,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	stoprulefound = 0;
 	while ((recip = next_recipient(alert, &first, NULL, NULL)) != NULL) {
 		int mindur = 0, maxdur = INT_MAX;
-		char *timespec = NULL;
+		char *timespec = NULL; char *extimespec = NULL;
 		int colors = defaultcolors;
 		int i, firstcolor = 1;
 		int recovered = 0, notice = 0;
@@ -1154,9 +1167,14 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 		if (printrule->criteria && printrule->criteria->maxduration) maxdur = printrule->criteria->maxduration;
 		if (recip->criteria && recip->criteria->maxduration && (recip->criteria->maxduration < maxdur)) maxdur = recip->criteria->maxduration;
 		if (printrule->criteria && printrule->criteria->timespec) timespec = printrule->criteria->timespec;
+		if (printrule->criteria && printrule->criteria->extimespec) extimespec = printrule->criteria->extimespec;
 		if (recip->criteria && recip->criteria->timespec) {
 			if (timespec == NULL) timespec = recip->criteria->timespec;
 			else errprintf("Cannot handle nested timespecs yet\n");
+		}
+		if (recip->criteria && recip->criteria->extimespec) {
+			if (extimespec == NULL) extimespec = recip->criteria->extimespec;
+			else errprintf("Cannot handle nested extimespecs yet\n");
 		}
 
 		if (printrule->criteria && printrule->criteria->colors) colors = (colors & printrule->criteria->colors);
@@ -1204,6 +1222,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 		addtobuffer(buf, l);
 
 		if (timespec) sprintf(l, "<td align=center>%s</td>", timespec); else strcpy(l, "<td align=center>-</td>");
+		if (extimespec) sprintf(l, "<td align=center>%s</td>", extimespec); else strcpy(l, "<td align=center>-</td>");
 		addtobuffer(buf, l);
 
 		addtobuffer(buf, "<td>");

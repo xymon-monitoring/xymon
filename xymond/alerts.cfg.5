@@ -105,6 +105,9 @@ Rule matching an alert by color. Can be "red", "yellow", or "purple". The forms 
 .BR "TIME=timespecification"
 Rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the hosts.cfg file.
 .sp
+.BR "EXTIME=timespecification"
+Rule excluding an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the hosts.cfg file.
+.sp
 .BR "DURATION>time, DURATION<time"
 Rule matcing an alert if the event has lasted longer/shorter than the given duration. E.g. DURATION>1h (lasted longer than 1 hour) or DURATION<30 (only sends alerts the first 30 minutes). The duration is specified as a number, optionally followed by 'm' (minutes, default), 'h' (hours) or 'd' (days).
 .sp

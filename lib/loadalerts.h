@@ -75,6 +75,7 @@ typedef struct criteria_t {
 	pcre *exgroupspecre;
 	int colors;
 	char *timespec;
+	char *extimespec;
 	int minduration, maxduration;	/* In seconds */
 	enum recovermsg_t sendrecovered, sendnotice;
 } criteria_t;
