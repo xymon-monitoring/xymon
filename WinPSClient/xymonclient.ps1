@@ -664,7 +664,7 @@ $volumeinfo = @'
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool FindVolumeClose(IntPtr hFindVolume);
 
-        private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+        private static readonly ulong KB = 1024;
 
         public enum DriveType : uint
         {
@@ -709,7 +709,12 @@ $volumeinfo = @'
             
             public ulong TotalBytes;
             public ulong FreeBytes;
+            public ulong UsedBytes;
             public int UsedPercent;
+
+            public ulong TotalBytesKB;
+            public ulong FreeBytesKB;
+            public ulong UsedBytesKB;
 
             public uint SerialNumber;
         }
@@ -732,6 +737,11 @@ $volumeinfo = @'
                     double used = ((double)(v.TotalBytes - v.FreeBytes) / (double)v.TotalBytes);
                     v.UsedPercent = (int)Math.Round(used * 100.0);
                 }
+
+                v.UsedBytes = v.TotalBytes - v.FreeBytes;
+                v.TotalBytesKB = v.TotalBytes / KB;
+                v.FreeBytesKB = v.FreeBytes / KB;
+                v.UsedBytesKB = v.UsedBytes / KB;
             }
         }
 
@@ -1315,8 +1325,8 @@ function XymonDisk
         "Label", `
         "Summary(Total\Avail GB)"
     foreach ($d in $disks) {
-        [uint32]$diskusedKB = ([uint32]($d.TotalBytes/1KB)) - ([uint32]($d.FreeBytes/1KB))    # PS ver 1 doesnt support subtraction uint64's
-        [uint32]$disksizeKB = [uint32]($d.TotalBytes/1KB)
+        $diskusedKB = $d.UsedBytesKB
+        $disksizeKB = $d.TotalBytesKB
 
         $dsKB = "{0:F0}" -f ($d.TotalBytes / 1KB); $dsGB = "{0:F2}" -f ($d.TotalBytes / 1GB)
         $duKB = "{0:F0}" -f ($diskusedKB); $duGB = "{0:F2}" -f ($diskusedKB / 1KB);
@@ -1327,7 +1337,7 @@ function XymonDisk
         {
             $filesys = $filesys.Substring(0, $maxFilesys - 3) + '...'
         }
-        $mountpoint = $d.MountPoint
+        $mountpoint = "/FIXED/$($d.MountPoint)"
         if ($mountpoint.Length -gt $maxMountpoint)
         {
             $mountpoint = $mountpoint.Substring(0, $maxMountpoint - 3) + '...'
@@ -2476,7 +2486,8 @@ function ExecuteSelfUpdate([string]$newversion)
 
 function XymonGetUpdateFromFile([string]$updatePath, [string]$updateFile)
 {
-    $newversion = join-path $updatePath "xymonclient_$updateFile.ps1"
+    $newversion = join-path $updatePath $updateFile
+    WriteLog "Attempting to update from file $newversion"
 
     if (!(Test-Path $newversion))
     {
