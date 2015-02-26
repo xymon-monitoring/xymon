@@ -1309,13 +1309,31 @@ function XymonCpu
 
 function XymonDisk
 {
-    $maxMountpoint = 25
-    $maxLabel = 20
-    $maxFilesys = 15
+    $MountpointWidth = 10
+    $LabelWidth = 10
+    $FilesysWidth = 10
+
+    # work out column widths
+    foreach ($d in $script:disks)
+    {
+        $mplength = "/FIXED/$($d.MountPoint)".Length
+        if ($mplength -gt $MountpointWidth)
+        {
+            $MountpointWidth = $mplength
+        }
+        if ($d.FileSys.Length -gt $FilesysWidth)
+        {
+            $FilesysWidth = $d.FileSys.Length
+        }
+        if ($d.VolumeName.Length -gt $LabelWidth)
+        {
+            $LabelWidth = $d.VolumeName.Length
+        }
+    }
 
     WriteLog "XymonDisk start"
     "[disk]"
-    "{0,-$maxFilesys} {1,12} {2,12} {3,12} {4,9}  {5,-$maxMountpoint} {6,-$maxLabel} {7}" -f `
+    "{0,-$FilesysWidth} {1,12} {2,12} {3,12} {4,9}  {5,-$MountpointWidth} {6,-$LabelWidth} {7}" -f `
         "Filesystem", `
         "1K-blocks", `
         "Used", `
@@ -1324,7 +1342,7 @@ function XymonDisk
         "Mounted", `
         "Label", `
         "Summary(Total\Avail GB)"
-    foreach ($d in $disks) {
+    foreach ($d in $script:disks) {
         $diskusedKB = $d.UsedBytesKB
         $disksizeKB = $d.TotalBytesKB
 
@@ -1332,30 +1350,16 @@ function XymonDisk
         $duKB = "{0:F0}" -f ($diskusedKB); $duGB = "{0:F2}" -f ($diskusedKB / 1KB);
         $dfKB = "{0:F0}" -f ($d.FreeBytes / 1KB); $dfGB = "{0:F2}" -f ($d.FreeBytes / 1GB)
 
-        $filesys = $d.FileSys
-        if ($filesys.Length -gt $maxFilesys)
-        {
-            $filesys = $filesys.Substring(0, $maxFilesys - 3) + '...'
-        }
         $mountpoint = "/FIXED/$($d.MountPoint)"
-        if ($mountpoint.Length -gt $maxMountpoint)
-        {
-            $mountpoint = $mountpoint.Substring(0, $maxMountpoint - 3) + '...'
-        }
-        $label = $d.VolumeName
-        if ($label.Length -gt $maxLabel)
-        {
-            $label = $label.Substring(0, $maxLabel - 3) + '...'
-        }
        
-        "{0,-$maxFilesys} {1,12} {2,12} {3,12} {4,9:0}% {5,-$maxMountpoint} {6,-$maxLabel} {7}" -f `
-            $filesys, `
+        "{0,-$FilesysWidth} {1,12} {2,12} {3,12} {4,9:0}% {5,-$MountpointWidth} {6,-$LabelWidth} {7}" -f `
+            $d.FileSys, `
             $dsKB, `
             $duKB, `
             $dfKB, `
             $d.UsedPercent, `
             $mountpoint, `
-            $label, `
+            $d.VolumeName, `
             $dsGB + "\" + $dfGB
     }
     WriteLog "XymonDisk finished."
