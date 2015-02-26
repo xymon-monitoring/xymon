@@ -51,7 +51,7 @@ ifndef INSTALLWWWDIR
 INSTALLWWWDIR = $(XYMONHOME)/www
 endif
 
-ARESVER = 1.7.3
+ARESVER = 1.10.0
 FPINGVER = 3.0
 
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)

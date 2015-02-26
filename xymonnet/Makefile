@@ -64,7 +64,7 @@ c-ares/.libs/libcares.a: c-ares/Makefile
 	(cd c-ares && $(MAKE))
 
 c-ares/Makefile: c-ares/configure
-	(cd c-ares && CFLAGS="$(CFLAGS)" ./configure --disable-shared)
+	(cd c-ares && ../c-ares-shim.sh ./configure --disable-shared)
 
 c-ares/configure: c-ares-$(ARESVER).tar.gz
 	gzip -dc $< | tar xf -
