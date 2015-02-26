@@ -92,7 +92,7 @@ static void rrd_setup(void)
 	xfree(services);
 
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
-	xymonrrds = (xymonrrd_t *)calloc(sizeof(xymonrrd_t), (count+1));
+	xymonrrds = (xymonrrd_t *)calloc((count+1), sizeof(xymonrrd_t));
 
 	xymonrrdtree = xtreeNew(strcasecmp);
 	lrec = xymonrrds; ldef = strtok(lenv, ",");
@@ -117,7 +117,7 @@ static void rrd_setup(void)
 	lenv = strdup(xgetenv("GRAPHS"));
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
-	xymongraphs = (xymongraph_t *)calloc(sizeof(xymongraph_t), (count+1));
+	xymongraphs = (xymongraph_t *)calloc((count+1), sizeof(xymongraph_t));
 
 	grec = xymongraphs; ldef = strtok(lenv, ",");
 	while (ldef) {
