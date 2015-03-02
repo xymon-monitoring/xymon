@@ -1693,9 +1693,15 @@ function XymonDirSize
                     # but that does not work well when there are many files/subfolders
                     $size = $objFSO.GetFolder($_).Size
                 }
-                else
+                elseif (test-path $_)
                 {
                     $size = (Get-Item $_).Length
+                }
+                else
+                {
+                    # file / directory does not exist
+                    WriteLog "File $_ not found, setting size = -1"
+                    $size = -1
                 }
 
                 $criteriasize = ($matches[3] -as [long])
