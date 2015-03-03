@@ -142,6 +142,7 @@ int main(int argc, char *argv[])
 	else if ((strncmp(STRBUF(msg), "xymondxlog ", 11) == 0) || (strncmp(STRBUF(msg), "hobbitdxlog ", 12) == 0)) wantresponse = 1;
 	else if ((strncmp(STRBUF(msg), "xymondboard", 11) == 0) || (strncmp(STRBUF(msg), "hobbitdboard", 12) == 0)) wantresponse = 1;
 	else if ((strncmp(STRBUF(msg), "xymondxboard", 12) == 0) || (strncmp(STRBUF(msg), "hobbitdxboard", 13) == 0)) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "schedule ", 9) == 0) wantresponse = 0;
 	else if (strncmp(STRBUF(msg), "schedule", 8) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "clientlog ", 10) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "hostinfo", 8) == 0) wantresponse = 1;
