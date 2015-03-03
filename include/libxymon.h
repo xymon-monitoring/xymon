@@ -29,6 +29,7 @@ typedef struct strbuffer_t {
 #define STRBUFLEN(buf) (buf->used)
 #define STRBUFAVAIL(buf) (buf->sz - buf->used)
 #define STRBUFEND(buf) (buf->s + buf->used)
+#define STRBUFSZ(buf) (buf->sz)
 
 #define IP_ADDR_STRLEN 16
 
