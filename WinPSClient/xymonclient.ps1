@@ -40,7 +40,7 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.98"
+$Version = "1.99"
 $XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-02-24 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
@@ -915,6 +915,7 @@ function XymonInit
     SetIfNot $script:XymonSettings clientremotecfgexec 0 # 0 = don't run remote config, 1 = run remote config
     SetIfNot $script:XymonSettings clientconfigfile "$env:TEMP\xymonconfig.cfg" # path for saved client-local.cfg section from server
     SetIfNot $script:XymonSettings clientlogfile "$env:TEMP\xymonclient.log" # path for logfile
+    SetIfNot $script:XymonSettings clientsoftware "powershell" # powershell / bbwin
     SetIfNot $script:XymonSettings loopinterval 300 # seconds to repeat client reporting loop
     SetIfNot $script:XymonSettings maxlogage 60 # minutes age for event log reporting
     SetIfNot $script:XymonSettings MaxEvents 5000 # maximum number of events per event log
@@ -1891,12 +1892,38 @@ function XymonNetstat
 function XymonIfstat
 {
     WriteLog "XymonIfstat start"
+    $families = @{ 'IPv4' = [System.Net.Sockets.AddressFamily]::InterNetwork; 
+        'IPv6' = [System.Net.Sockets.AddressFamily]::InterNetworkV6;
+    }
+
+    $wantedFamilies = @()
+    $script:clientlocalcfg_entries.keys | where { $_ -match '^ifstat:((ipv[46],?)+)$' } |
+        foreach {
+            foreach ($wanted in ($matches[1] -split ','))
+            {
+                if ($families.ContainsKey($wanted))
+                {
+                    $wantedFamilies += $families[$wanted]
+                }
+            }
+            $wantedFamilies = ($wantedFamilies | Sort-Object -Unique)
+        }
+    if (@($wantedFamilies).Length -eq 0)
+    {
+        $wantedFamilies += $families['IPv4']
+    }
+    WriteLog "wanted address families: $wantedFamilies"
+
     "[ifstat]"
-    [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() | ?{$_.OperationalStatus -eq "Up"} | %{
+    [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() | 
+        where { $_.OperationalStatus -eq "Up" -and $_.NetworkInterfaceType -ne 'loopback' } |
+        foreach {
         $ad = $_.GetIPv4Statistics() | select BytesSent, BytesReceived
         $ip = $_.GetIPProperties().UnicastAddresses | select Address
         # some interfaces have multiple IPs, so iterate over them reporting same stats
-        $ip | %{ "{0} {1} {2}" -f $_.Address.IPAddressToString,$ad.BytesReceived,$ad.BytesSent }
+        # also replace statement removes zone information (adaptor) from IPv6 addresses
+        $ip | where { $wantedFamilies -contains $_.Address.AddressFamily } |
+            foreach { "{0} {1} {2}" -f ($_.Address.IPAddressToString -replace '%\d+$'),$ad.BytesReceived,$ad.BytesSent }
     }
     WriteLog "XymonIfstat finished."
 }
@@ -2365,6 +2392,7 @@ function XymonClientConfig($cfglines)
                  -or $l -match '^servergifs:' `
                  -or $l -match '^terminalservicessessions:' `
                  -or $l -match '^adreplicationcheck' `
+                 -or $l -match '^ifstat:' `
                  )
              {
                  WriteLog "Found a command: $l"
@@ -2743,7 +2771,7 @@ while ($running -eq $true) {
     XymonCollectInfo
     
     WriteLog "Performing main and optional tests and building output..."
-    $clout = "client " + $clientname + ".powershell powershell XymonPS" | Out-String
+    $clout = "client $($clientname).$($script:XymonSettings.clientsoftware) powershell XymonPS" | Out-String
     $clsecs = XymonClientSections | Out-String
     $localdatetime = Get-Date
     $clout += XymonDate | Out-String
