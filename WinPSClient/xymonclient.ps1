@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "1.99"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-02-24 zak.beck@accenture.com"
+$Version = "2.00"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-03-10 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -1629,20 +1629,27 @@ function XymonFileCheck
 function XymonLogCheck
 {
     #$script:clientlocalcfg | ? { $_ -match "^log:(.*):(\d+)$" } | % {
-    $script:clientlocalcfg_entries.keys | where { $_ -match "^log:(.*):(\d+)$" } |`
+    $script:clientlocalcfg_entries.keys | where { $_ -match "^log:([a-z%][a-z:][^:]+):(\d+):?(\d+)?$" } |`
         foreach {
-        $sizemax=$matches[2]
+        $positions = 6
+        if ($matches[3] -ne $null)
+        {
+            $positions = $matches[3]
+        }
+        $sizemax = $matches[2]
         resolveEnvPath $matches[1] | foreach {
             "[logfile:$_]"
             XymonFileStat $_
             "[msgs:$_]"
-            XymonLogCheckFile $_ $sizemax
+            XymonLogCheckFile $_ $sizemax $positions
         }
     }
 }
 
-function XymonLogCheckFile([string]$file,$sizemax=0)
+function XymonLogCheckFile([string]$file,$sizemax=0, $positions=6)
 {
+    WriteLog "Executing XymonLogCheckFile"
+    WriteLog "File: $file"
     $f = [system.io.file]::Open($file,"Open","Read","ReadWrite")
     $s = get-item $file
     $nowpos = $f.length
@@ -1664,11 +1671,13 @@ function XymonLogCheckFile([string]$file,$sizemax=0)
         #"Save2: {0}  Pos: {1} Blen: {2} Len: {3} Enc($charsize): {4}" -f $savepos,$f.Position,$buf.length,$nowpos,$enc.EncodingName
     }
     if($script:logfilepos.$($file) -ne $null) {
-        $script:logfilepos.$($file) = $script:logfilepos.$($file)[1..6]
+        $script:logfilepos.$($file) = $script:logfilepos.$($file)[1..$positions]
     } else {
-        $script:logfilepos.$($file) = @(0,0,0,0,0,0) # save for next loop
+        $script:logfilepos.$($file) = @(0) * $positions
     }
     $script:logfilepos.$($file) += $nowpos # save for next loop
+    WriteLog ("File saved positions: " + ($script:logfilepos.$($file) -join ','))
+    WriteLog "XymonLogCheckFile finished"
 }
 
 function XymonDirSize
@@ -2112,6 +2121,9 @@ function XymonEventLogs
     "[EventlogSummary]"
     $script:EventLogs = Get-EventLog -List 
     $script:EventLogs | Format-Table -AutoSize
+
+    "[msgs:EventlogSummary]"
+    $script:EventLogs | Format-Table -AutoSize
 }
 
 function XymonServiceCheck
@@ -2393,6 +2405,7 @@ function XymonClientConfig($cfglines)
                  -or $l -match '^terminalservicessessions:' `
                  -or $l -match '^adreplicationcheck' `
                  -or $l -match '^ifstat:' `
+                 -or $l -match '^repeattest:' `
                  )
              {
                  WriteLog "Found a command: $l"
@@ -2671,6 +2684,102 @@ function RotateLog([string]$logfile)
     }
 }
 
+function RepeatTests([string] $content)
+{
+    if (@($script:clientlocalcfg_entries.Keys -like 'repeattest*').Length -eq 0)
+    {
+        WriteLog "RepeatTests: nothing to do!"
+        return
+    }
+
+    WriteLog 'Executing RepeatTests'
+
+    $lines = $content -split [environment]::newline
+    $capturelines = $false
+    $capturedSection = ''
+
+    foreach ($line in $lines)
+    {
+        if ($line -match '^\[([^\]]+)\]$')
+        {
+            $currentSection = $matches[1]
+            # found a new section - if we were previously capturing lines from the 
+            # previous section, write out any repeat sections and reset
+            if ($capturelines)
+            {
+                $capturelines = $false
+                # we were capturing lines - check for alerts and send to Xymon
+                $regex = "^repeattest:$($capturedSection):(.+)"
+                $script:clientlocalcfg_entries.keys | where { $_ -match $regex } | foreach {
+                    $newsection = $matches[1]
+                    $outputHeader = @()
+                    $outputHeader += (get-date -format G) + "<br><h2>$newsection</h2>"                
+                    $groupcolour = 'green'
+                    # check for triggers
+                    if ($script:clientlocalcfg_entries[$_] -ne $null)
+                    {
+                        foreach ($trigger in $script:clientlocalcfg_entries[$_])
+                        {
+                            $alertcolour = 'green'
+                            $alertLines = @()
+                            if ($trigger -match '^trigger:([a-z]+):(.+)$')
+                            {
+                                $triggerAlertcolour = $Matches[1]
+                                $triggerRegex = $Matches[2]
+                                foreach ($line in $capturedlines)
+                                {
+                                    if ($line -match $triggerRegex)
+                                    {
+                                        $alertcolour = $triggerAlertcolour
+                                        $alertLines += "matches `"$line`""
+                                    }
+                                }
+                                if ($alertLines.Length -eq 0)
+                                {
+                                    $alertLine = 'no match'
+                                }
+                                else
+                                {
+                                    $alertLine = $alertLines -join '<br>'
+                                }
+                                $outputHeader += ('<img src="{3}{0}.gif" alt="{0}" height="16" width="16" border="0"> {1} {2}<br>' `
+                                    -f $alertcolour, $trigger, $alertLine, $script:XymonSettings.servergiflocation)
+                                if ($groupcolour -eq 'green' -and $alertcolour -eq 'yellow')
+                                {
+                                    $groupcolour = 'yellow'
+                                }
+                                elseif ($alertcolour -eq 'red')
+                                {
+                                    $groupcolour = 'red'
+                                }
+                            }
+                        }
+                    }
+
+                    $outputHeader += '<br>'
+                    $output = ($outputHeader -join "`n")
+                    $output += ($capturedlines -join '<br>')
+                    # repeat the test by sending to Xymon
+                    WriteLog "Sending repeated test: $newsection"
+                    $outputXymon = ('status {0}.{1} {2} {3}' -f $script:clientname, $newsection, $groupcolour, $output)
+                    XymonSend $outputXymon $script:XymonSettings.serversList
+                }
+            }
+            $capturedlines = @()
+            $capturedSection = $currentSection -replace '\\', '\\'
+            $regex = "^repeattest:$($capturedSection):(.+)"
+            # check to see if the new section is one we want to repeat
+            $script:clientlocalcfg_entries.keys | where { $_ -match $regex } | foreach {
+                $capturelines = $true
+            }
+        }
+        elseif ($capturelines)
+        {
+            $capturedlines += $line
+        }
+    }
+    WriteLog 'RepeatTests finished'
+}
 
 ##### Main code #####
 $script:thisXymonProcess = get-process -id $PID
@@ -2785,6 +2894,9 @@ while ($running -eq $true) {
     Set-Content -path $lastcollectfile -value $clout
         
     $newconfig = XymonSend $clout $script:XymonSettings.serversList
+
+    RepeatTests $clout
+
     XymonClientConfig $newconfig
     [GC]::Collect() # run every time to avoid memory bloat
     
@@ -2793,7 +2905,6 @@ while ($running -eq $true) {
     {
         XymonCheckUpdate
     }
-
 
     $delay = ($script:XymonSettings.loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
     if ($script:collectionnumber -eq 1)
