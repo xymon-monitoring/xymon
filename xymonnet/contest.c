@@ -460,12 +460,6 @@ static void setup_ssl(tcptest_t *item)
 			/* load entropy from files */
 			RAND_load_file(RAND_file_name(path, sizeof (path)), -1);
 
-			/* load entropy from egd sockets */
-			RAND_egd("/var/run/egd-pool");
-			RAND_egd("/dev/egd-pool");
-			RAND_egd("/etc/egd-pool");
-			RAND_egd("/var/spool/prngd/pool");
-
 			/* shuffle $RANDFILE (or ~/.rnd if unset) */
 			RAND_write_file(RAND_file_name(path, sizeof (path)));
 			if (RAND_status() != 1) {
