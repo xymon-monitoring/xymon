@@ -1150,41 +1150,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 
 	/* And the full ps output for those who want it */
-	if (pslistinprocs) {
-		/*
-		 * NB: Process listings may contain HTML special characters.
-		 *     We must encode these for HTML, cf.
-		 *     http://www.w3.org/TR/html4/charset.html#h-5.3.2
-		 */
-		char *inp, *tagpos;
-
-		inp = psstr;
-		do {
-			tagpos = inp + strcspn(inp, "<>&\"");
-			switch (*tagpos) {
-			  case '<':
-				*tagpos = '\0'; addtostatus(inp); addtostatus("&lt;"); *tagpos = '<';
-				inp = tagpos + 1;
-				break;
-			  case '>':
-				*tagpos = '\0'; addtostatus(inp); addtostatus("&gt;"); *tagpos = '>';
-				inp = tagpos + 1;
-				break;
-			  case '&':
-				*tagpos = '\0'; addtostatus(inp); addtostatus("&amp;"); *tagpos = '&';
-				inp = tagpos + 1;
-				break;
-			  case '\"':
-				*tagpos = '\0'; addtostatus(inp); addtostatus("&quot;"); *tagpos = '\"';
-				inp = tagpos + 1;
-				break;
-			  default:
-				/* We're done */
-				addtostatus(inp); inp = NULL;
-				break;
-			}
-		} while (inp && *inp);
-	}
+	if (pslistinprocs) addtostatus(prehtmlquoted(psstr));
 
 	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
@@ -1360,7 +1326,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 		addtostatus(msgline);
 		addtobuffer(yellowdata, "<pre>\n");
-		addtostatus(swalk->sdata);
+		addtostatus(prehtmlquoted(swalk->sdata));
 		addtobuffer(yellowdata, "</pre>\n");
 		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "msgs:", 5));
 	}
