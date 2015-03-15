@@ -2568,7 +2568,7 @@ int scan_log(void *hinfo, char *classname,
 					anylines++;
 					sprintf(msgline, "&%s ", colorname(rule->rule.log.color));
 					addtobuffer(summarybuf, msgline);
-					addtobuffer(summarybuf, boln);
+					addtobuffer(summarybuf, prehtmlquoted(boln));
 					addtobuffer(summarybuf, "\n");
 				}
 			}

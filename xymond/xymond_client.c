@@ -1253,9 +1253,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 					swalk->sname+5);
 			}
 			addtobuffer(yellowdata, msgline);
-			addtobuffer(yellowdata, "<pre>\n");
 			addtostrbuffer(yellowdata, logsummary);
-			addtobuffer(yellowdata, "</pre>\n");
 			break;
 
 		  case COL_RED:
@@ -1268,9 +1266,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 					swalk->sname+5);
 			}
 			addtobuffer(reddata, msgline);
-			addtobuffer(yellowdata, "<pre>\n");
 			addtostrbuffer(reddata, logsummary);
-			addtobuffer(yellowdata, "</pre>\n");
 			break;
 		}
 
@@ -1325,9 +1321,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 				swalk->sname+5);
 		}
 		addtostatus(msgline);
-		addtobuffer(yellowdata, "<pre>\n");
 		addtostatus(prehtmlquoted(swalk->sdata));
-		addtobuffer(yellowdata, "</pre>\n");
 		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "msgs:", 5));
 	}
 
