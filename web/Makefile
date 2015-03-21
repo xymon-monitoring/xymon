@@ -5,8 +5,8 @@ XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
-PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi svcstatus.cgi enadis.cgi confreport.cgi criticalview.cgi criticaleditor.cgi ackinfo.cgi statusreport.cgi boilerplate.cgi hostgraphs.cgi ghostlist.cgi notifications.cgi hostlist.cgi useradm.cgi appfeed.cgi cgiwrap
-CGISCRIPTS = history.sh eventlog.sh report.sh reportlog.sh snapshot.sh findhost.sh csvinfo.sh columndoc.sh datepage.sh svcstatus.sh historylog.sh confreport.sh confreport-critical.sh criticalview.sh certreport.sh nongreen.sh hostgraphs.sh ghostlist.sh notifications.sh hostlist.sh topchanges.sh appfeed.sh appfeed-critical.sh
+PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi svcstatus.cgi enadis.cgi confreport.cgi criticalview.cgi criticaleditor.cgi ackinfo.cgi statusreport.cgi boilerplate.cgi hostgraphs.cgi ghostlist.cgi notifications.cgi acknowledgements.cgi hostlist.cgi useradm.cgi appfeed.cgi cgiwrap
+CGISCRIPTS = history.sh eventlog.sh report.sh reportlog.sh snapshot.sh findhost.sh csvinfo.sh columndoc.sh datepage.sh svcstatus.sh historylog.sh confreport.sh confreport-critical.sh criticalview.sh certreport.sh nongreen.sh hostgraphs.sh ghostlist.sh notifications.sh acknowledgements.sh hostlist.sh topchanges.sh appfeed.sh appfeed-critical.sh
 SECCGISCRIPTS = acknowledge.sh enadis.sh criticaleditor.sh ackinfo.sh useradm.sh
 
 ifeq ($(DORRD),yes)
@@ -38,6 +38,7 @@ STATUSREPOBJS   = statusreport.o
 MAILACKOBJS     = xymon-mailack.o
 GHOSTOBJS       = ghostlist.o
 NOTIFYOBJS      = notifications.o
+ACKNOWLEDGEOBJS = acknowledgements.o
 HOSTLISTOBJS    = hostlist.o
 PERFDATAOBJS	= perfdata.o
 USERADMOBJS	= useradm.o
@@ -129,6 +130,9 @@ ghostlist.cgi: $(GHOSTOBJS) $(XYMONCOMMLIB)
 
 notifications.cgi: $(NOTIFYOBJS) $(XYMONCOMMLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NOTIFYOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+
+acknowledgements.cgi: $(ACKNOWLEDGEOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKNOWLEDGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 hostlist.cgi: $(HOSTLISTOBJS) $(XYMONCOMMLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)

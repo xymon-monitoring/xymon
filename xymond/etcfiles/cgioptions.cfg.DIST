@@ -61,6 +61,8 @@ CGI_ENADIS_OPTS="--env=$XYMONENV"
 CGI_HOSTLIST_OPTS="--env=$XYMONENV"
 # notifications options
 CGI_NOTIFYLOG_OPTS="--env=$XYMONENV"
+# acknowledgements options
+CGI_ACKNOWLEDGEMENTSLOG_OPTS="--env=$XYMONENV"
 # perfdata options
 CGI_PERFDATA_OPTS="--env=$XYMONENV"
 # topchanges options

@@ -61,6 +61,7 @@ typedef struct strbuffer_t {
 #include "../lib/headfoot.h"
 #include "../lib/htmllog.h"
 #include "../lib/notifylog.h"
+#include "../lib/acknowledgementslog.h"
 #include "../lib/reportlog.h"
 
 #include "../lib/availability.h"
