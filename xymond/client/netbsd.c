@@ -63,6 +63,7 @@ void handle_netbsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	msgs_report(hostname, clienttype, os, hinfo, fromline, timestr, msgsstr);
 	file_report(hostname, clienttype, os, hinfo, fromline, timestr);
 	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
+	deltacount_report(hostname, clienttype, os, hinfo, fromline, timestr);
 
 	unix_netstat_report(hostname, clienttype, os, hinfo, fromline, timestr, netstatstr);
 	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);

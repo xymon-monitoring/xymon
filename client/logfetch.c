@@ -57,6 +57,10 @@ typedef struct logdef_t {
 	int triggercount;
 	char **ignore;
 	int ignorecount;
+	char **deltacountpatterns;
+	char **deltacountnames;
+	int deltacountcount;
+	int *deltacountcounts;
 } logdef_t;
 
 typedef struct filedef_t {
@@ -143,7 +147,7 @@ char *logdata(char *filename, logdef_t *logdef)
 	int lpidx;
 	int scrollback = DEFAULTSCROLLBACK;
 	size_t byteslast, bytestocurrent, bytesin = 0;
-	regex_t *ignexpr = NULL, *trigexpr = NULL;
+	regex_t *deltaexpr = NULL, *ignexpr = NULL, *trigexpr = NULL;
 #ifdef _LARGEFILE_SOURCE
 	off_t bufsz;
 #else
@@ -245,6 +249,23 @@ char *logdata(char *filename, logdef_t *logdef)
 	}
 
 	/* Compile the regex patterns */
+	if (logdef->deltacountcount) {
+		int i, realcount = 0;
+
+		deltaexpr = (regex_t *) malloc(logdef->deltacountcount * sizeof(regex_t));
+		for (i=0; (i < logdef->deltacountcount); i++) {
+			dbgprintf(" - compiling DELTACOUNT regex: %s\n", logdef->deltacountpatterns[i]);
+			status = regcomp(&deltaexpr[realcount++], logdef->deltacountpatterns[i], REG_EXTENDED|REG_ICASE|REG_NOSUB);
+			if (status != 0) {
+				char regbuf[1000];
+				regerror(status, &deltaexpr[--realcount], regbuf, sizeof(regbuf));	/* re-decrement realcount here */
+				errprintf("logfetch: could not compile deltacount regex '%s': %s\n", logdef->deltacountpatterns[i], regbuf);
+				logdef->deltacountpatterns[i] = logdef->deltacountnames[i] = NULL;
+			}
+		}
+		logdef->deltacountcount = realcount;
+		logdef->deltacountcounts = (int *)calloc(logdef->deltacountcount, sizeof(int));	// initialize the equivalent count array with 0's
+	}
 	if (logdef->ignorecount) {
                int i, realcount = 0;
 		ignexpr = (regex_t *) malloc(logdef->ignorecount * sizeof(regex_t));
@@ -316,6 +337,16 @@ char *logdata(char *filename, logdef_t *logdef)
 			dbgprintf(" - empty buffer returned; assuming eof\n");
 			done = 1;
 			continue;
+		}
+
+		/* Begin counting lines once we've reached the end of the last run */
+		if (curpos && logdef->deltacountcount) {
+			int i, match = 0;
+
+			for (i=0; (i < logdef->deltacountcount); i++) {
+				match = (regexec(&deltaexpr[i], fillpos, 0, NULL, 0) == 0);
+				if (match) { logdef->deltacountcounts[i]++; dbgprintf(" - line matched deltacount %d: %s", i, fillpos); } // fgets stores the newline in
+			}
 		}
 
 		/* Check ignore pattern */
@@ -514,6 +545,13 @@ cleanup:
 
 	{
 		int i;
+
+		if (logdef->deltacountcount) {
+			for (i=0; (i < logdef->deltacountcount); i++) {
+				if (logdef->deltacountpatterns[i]) regfree(&deltaexpr[i]);
+			}
+			xfree(deltaexpr);
+		}
 
 		if (logdef->ignorecount) {
 			for (i=0; (i < logdef->ignorecount); i++) {
@@ -750,6 +788,7 @@ int loadconfig(char *cfgfn)
 	 *    log:filename:maxbytes
 	 *    ignore ignore-regexp (optional)
 	 *    trigger trigger-regexp (optional)
+	 *    deltacount label deltacount-regexp (optional)
 	 *
 	 *    file:filename
 	 */
@@ -982,6 +1021,61 @@ int loadconfig(char *cfgfn)
 					currcfg->check.logcheck.trigger[currcfg->check.logcheck.triggercount-1] = strdup(p);
 				}
 			}
+			else if (strncmp(bol, "deltacount ", 11) == 0) {
+				char *p; 
+
+				p = bol + 11; p += strspn(p, " \t");
+
+				if (firstpipeitem) {
+					/* Fill in this trigger expression on all items in this pipe set */
+					checkdef_t *walk = currcfg;
+					char *name, *ptn = NULL;
+
+					name = strtok(p, " :");
+					if (name) ptn = strtok(NULL, "\n");
+
+					if (name && ptn) {
+					    do {
+						walk->check.logcheck.deltacountcount++;
+
+						walk->check.logcheck.deltacountnames = 
+							realloc(walk->check.logcheck.deltacountnames,
+								(walk->check.logcheck.deltacountcount)*sizeof(char *));
+
+						walk->check.logcheck.deltacountpatterns = 
+							realloc(walk->check.logcheck.deltacountpatterns,
+								(walk->check.logcheck.deltacountcount)*sizeof(char *));
+
+						walk->check.logcheck.deltacountnames[walk->check.logcheck.deltacountcount-1] = strdup(name);
+						walk->check.logcheck.deltacountpatterns[walk->check.logcheck.deltacountcount-1] = strdup(ptn);
+
+						walk = walk->next;
+
+					    } while (walk && (walk != firstpipeitem->next));
+					}
+				}
+				else {
+					char *name, *ptn = NULL;
+
+					name = strtok(p, " :");
+					if (name) ptn = strtok(NULL, "\n");
+
+					if (name && ptn) {
+						currcfg->check.logcheck.deltacountcount++;
+
+						currcfg->check.logcheck.deltacountnames = 
+							realloc(currcfg->check.logcheck.deltacountnames,
+								(currcfg->check.logcheck.deltacountcount)*sizeof(char *));
+
+						currcfg->check.logcheck.deltacountpatterns = 
+							realloc(currcfg->check.logcheck.deltacountpatterns,
+								(currcfg->check.logcheck.deltacountcount)*sizeof(char *));
+
+						currcfg->check.logcheck.deltacountnames[currcfg->check.logcheck.deltacountcount-1] = strdup(name);
+						currcfg->check.logcheck.deltacountpatterns[currcfg->check.logcheck.deltacountcount-1] = strdup(ptn);
+					}
+				}
+			}
 		}
 		else if (currcfg && (currcfg->checktype == C_FILE)) {
 			/* Nothing */
@@ -1145,6 +1239,7 @@ int main(int argc, char *argv[])
 	loadlogstatus(statfn);
 
 	for (walk = checklist; (walk); walk = walk->next) {
+		int idx;
 		char *data;
 		checkdef_t *fwalk;
 
@@ -1153,6 +1248,11 @@ int main(int argc, char *argv[])
 			data = logdata(walk->filename, &walk->check.logcheck);
 			fprintf(stdout, "[msgs:%s]\n", walk->filename);
 			fprintf(stdout, "%s\n", data);
+
+			if (walk->check.logcheck.deltacountcount) fprintf(stdout, "[deltacount:%s]\n", walk->filename);
+			for (idx = 0; (idx < walk->check.logcheck.deltacountcount); idx++) {
+				fprintf(stdout, "%s: %d\n", walk->check.logcheck.deltacountnames[idx], walk->check.logcheck.deltacountcounts[idx]);
+			}
 
 			/* See if there's a special "file:" entry for this logfile */
 			for (fwalk = checklist; (fwalk && ((fwalk->checktype != C_FILE) || (strcmp(fwalk->filename, walk->filename) != 0))); fwalk = fwalk->next) ;

@@ -1555,6 +1555,49 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 }
 
 
+void deltacount_report(char *hostname, char *clientclass, enum ostype_t os,
+			void *hinfo, char *fromline, char *timestr)
+{
+	static strbuffer_t *countdata = NULL;
+	sectlist_t *swalk;
+	char msgline[PATH_MAX];
+	int anydata = 0;
+
+	if (!countdata) countdata = newstrbuffer(0);
+
+	sprintf(msgline, "data %s.deltacounts\n", commafy(hostname));
+	addtobuffer(countdata, msgline);
+
+	for (swalk = defsecthead; (swalk); swalk = swalk->next) {
+		if (strncmp(swalk->sname, "deltacount:", 10) == 0) {
+			char *fn, *boln, *eoln, *id, *countstr;
+
+			anydata = 1;
+
+			fn = strchr(swalk->sname, ':'); fn += 1 + strspn(fn+1, "\t ");
+
+			boln = swalk->sdata;
+			while (boln) {
+				eoln = strchr(boln, '\n');
+
+				id = strtok(boln, ":");
+				countstr = (id ? strtok(NULL, "\n") : NULL);
+				if (id && countstr) {
+					countstr += strspn(countstr, "\t ");
+					snprintf(msgline, sizeof(msgline), "%s#%s:%s\n", nocolon(fn), id, countstr);
+					addtobuffer(countdata, msgline);
+				}
+
+				boln = (eoln ? eoln + 1 : NULL);
+			}
+		}
+	}
+
+	if (anydata) combo_add(countdata);
+	clearstrbuffer(countdata);
+}
+
+
 void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
 		 	 void *hinfo, char *fromline, char *timestr,
 			 char *netstatstr)

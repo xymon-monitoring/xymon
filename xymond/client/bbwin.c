@@ -466,6 +466,7 @@ void handle_win32_bbwin_client(char *hostname, char *clienttype, enum ostype_t o
 	msgs_report(hostname, clienttype, os, hinfo, fromline, timestr, msgsstr);
         file_report(hostname, clienttype, os, hinfo, fromline, timestr);
         linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
+        deltacount_report(hostname, clienttype, os, hinfo, fromline, timestr);
 
 	/* Data status */
         unix_netstat_report(hostname, clienttype, os, hinfo, fromline, timestr, netstatstr);

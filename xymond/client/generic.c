@@ -31,6 +31,7 @@ void handle_generic_client(char *hostname, char *clienttype, enum ostype_t os,
 	msgs_report(hostname, clienttype, os, hinfo, fromline, timestr, msgsstr);
 	file_report(hostname, clienttype, os, hinfo, fromline, timestr);
 	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
+	deltacount_report(hostname, clienttype, os, hinfo, fromline, timestr);
 
 	splitmsg_done();
 }
