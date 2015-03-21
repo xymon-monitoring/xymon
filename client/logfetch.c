@@ -173,6 +173,7 @@ char *logdata(char *filename, logdef_t *logdef)
 		 * Logfile shrank - probably it was rotated.
 		 * Start from beginning of file.
 		 */
+		errprintf("logfetch: File %s shrank from >=%zu to %zu bytes in size. Probably rotated; clearing position state\n", filename, logdef->lastpos[POSCOUNT-1], st.st_size);
 		for (i=0; (i < POSCOUNT); i++) logdef->lastpos[i] = 0;
 	}
 
@@ -184,6 +185,7 @@ char *logdata(char *filename, logdef_t *logdef)
 		/*
 		 * Too much data for us. We have to skip some of the old data.
 		 */
+		errprintf("logfetch: %s delta %zu bytes exceeds max buffer size %zu; skipping some data\n", filename, bufsz, MAXCHECK);
 		logdef->lastpos[POSCOUNT-1] = st.st_size - MAXCHECK;
 		fseeko(fd, logdef->lastpos[POSCOUNT-1], SEEK_SET);
 		bufsz = st.st_size - ftello(fd);
@@ -195,6 +197,7 @@ char *logdata(char *filename, logdef_t *logdef)
 		/*
 		 * Too much data for us. We have to skip some of the old data.
 		 */
+		errprintf("logfetch: %s delta %zu bytes exceeds max buffer size %zu; skipping some data\n", filename, bufsz, MAXCHECK);
 		logdef->lastpos[POSCOUNT-1] = st.st_size - MAXCHECK;
 		fseek(fd, logdef->lastpos[POSCOUNT-1], SEEK_SET);
 		bufsz = st.st_size - ftell(fd);
@@ -223,20 +226,34 @@ char *logdata(char *filename, logdef_t *logdef)
 
 	/* Compile the regex patterns */
 	if (logdef->ignorecount) {
-		int i;
+               int i, realcount = 0;
 		ignexpr = (regex_t *) malloc(logdef->ignorecount * sizeof(regex_t));
 		for (i=0; (i < logdef->ignorecount); i++) {
-			status = regcomp(&ignexpr[i], logdef->ignore[i], REG_EXTENDED|REG_ICASE|REG_NOSUB);
-			if (status != 0) logdef->ignore[i] = NULL;
+			dbgprintf(" - compiling IGNORE regex: %s\n", logdef->ignore[i]);
+			status = regcomp(&ignexpr[realcount++], logdef->ignore[i], REG_EXTENDED|REG_ICASE|REG_NOSUB);
+			if (status != 0) {
+				char regbuf[1000];
+				regerror(status, &ignexpr[--realcount], regbuf, sizeof(regbuf));	/* re-decrement realcount here */
+				errprintf("logfetch: could not compile ignore regex '%s': %s\n", logdef->ignore[i], regbuf);
+				logdef->ignore[i] = NULL;
+			}
 		}
+		logdef->ignorecount = realcount;
 	}
 	if (logdef->triggercount) {
-		int i;
+		int i, realcount = 0;
 		trigexpr = (regex_t *) malloc(logdef->triggercount * sizeof(regex_t));
 		for (i=0; (i < logdef->triggercount); i++) {
-			status = regcomp(&trigexpr[i], logdef->trigger[i], REG_EXTENDED|REG_ICASE|REG_NOSUB);
-			if (status != 0) logdef->trigger[i] = NULL;
+			dbgprintf(" - compiling TRIGGER regex: %s\n", logdef->trigger[i]);
+			status = regcomp(&trigexpr[realcount++], logdef->trigger[i], REG_EXTENDED|REG_ICASE|REG_NOSUB);
+			if (status != 0) {
+				char regbuf[1000];
+				regerror(status, &trigexpr[--realcount], regbuf, sizeof(regbuf));	/* re-decrement realcount here */
+				errprintf("logfetch: could not compile trigger regex '%s': %s\n", logdef->trigger[i], regbuf);
+				logdef->trigger[i] = NULL;
+			}
 		}
+		logdef->triggercount = realcount;
 	}
 	triggerstartpos = triggerendpos = NULL;
 	triggerlinecount = 0;
@@ -259,6 +276,7 @@ char *logdata(char *filename, logdef_t *logdef)
 			 * terminating \0 byte, but if it does then we will
 			 * catch it here.
 			 */
+			dbgprintf(" - empty buffer returned; assuming eof\n");
 			done = 1;
 			continue;
 		}
@@ -269,6 +287,7 @@ char *logdata(char *filename, logdef_t *logdef)
 
 			for (i=0; ((i < logdef->ignorecount) && !match); i++) {
 				match = (regexec(&ignexpr[i], fillpos, 0, NULL, 0) == 0);
+				if (match) dbgprintf(" - line matched ignore %d: %s", i, fillpos); // fgets stores the newline in
 			}
 
 			if (match) continue;
@@ -282,6 +301,7 @@ char *logdata(char *filename, logdef_t *logdef)
 
 			for (i=0; ((i < logdef->triggercount) && !match); i++) {
 				match = (regexec(&trigexpr[i], fillpos, 0, NULL, 0) == 0);
+				if (match) dbgprintf(" - line matched trigger %d: %s", i, fillpos); // fgets stores the newline in
 			}
 
 			if (match) {
@@ -336,6 +356,7 @@ char *logdata(char *filename, logdef_t *logdef)
 		}
 
 		bytesleft = (bufsz - (fillpos - buf));
+		// dbgprintf(" -- bytesleft: %zu\n", bytesleft);
 	}
 
 	if (triggerptrs != NULL) {
