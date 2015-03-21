@@ -39,7 +39,8 @@ static char rcsid[] = "$Id$";
 /* Is it ok for these to be hardcoded ? */
 #define MAXCHECK   102400   /* When starting, dont look at more than 100 KB of data */
 #define MAXMINUTES 30
-#define POSCOUNT ((MAXMINUTES / 5) + 1)
+#define POSCOUNT ((MAXMINUTES / 5) + 1)		/* 0 = current run */
+#define DEFAULTSCROLLBACK (POSCOUNT - 1)	/* How far back to begin processing data, in runs */
 #define LINES_AROUND_TRIGGER 5
 
 typedef enum { C_NONE, C_LOG, C_FILE, C_DIR, C_COUNT } checktype_t;
@@ -132,13 +133,16 @@ char *fgets_nonull(char *buf, size_t size, FILE *stream) {
 char *logdata(char *filename, logdef_t *logdef)
 {
 	static char *buf, *replacement = NULL;
-	char *startpos, *fillpos, *triggerstartpos, *triggerendpos;
+	char *startpos, *fillpos, *triggerstartpos, *triggerendpos, *curpos = NULL;
+	char *curpostxt = "<...CURRENT...>\n";
 	FILE *fd;
 	struct stat st;
 	size_t bytesread, bytesleft;
 	int openerr, i, status, triggerlinecount, done;
 	char *linepos[2*LINES_AROUND_TRIGGER+1];
 	int lpidx;
+	int scrollback = DEFAULTSCROLLBACK;
+	size_t byteslast, bytestocurrent, bytesin = 0;
 	regex_t *ignexpr = NULL, *trigexpr = NULL;
 #ifdef _LARGEFILE_SOURCE
 	off_t bufsz;
@@ -154,6 +158,14 @@ char *logdata(char *filename, logdef_t *logdef)
 
 	if (replacement) free(replacement);
 	replacement = NULL;
+
+	if (getenv("LOGFETCH_SCROLLBACK") != NULL) {
+		int scroll;
+		scroll = atoi(getenv("LOGFETCH_SCROLLBACK"));
+		/* Don't use DEFAULTSCROLLBACK here in case we change/lower it in the future */
+		if (scroll > (POSCOUNT-1)) errprintf("Scrollback requested is greater than maximum saved\n");
+		else { dbgprintf("logfetch: setting scrollback to %d\n", scroll); scrollback = scroll; }
+	}
 
 	fd = fileopen(filename, &openerr);
 	if (fd == NULL) {
@@ -177,36 +189,44 @@ char *logdata(char *filename, logdef_t *logdef)
 		for (i=0; (i < POSCOUNT); i++) logdef->lastpos[i] = 0;
 	}
 
-	/* Go to the position we were at POSCOUNT-1 times ago (corresponds to 30 minutes) */
+	/* Go to the position we were at $SCROLLBACK times ago (default corresponds to 6 (30 minutes when 5m/run)) */
 #ifdef _LARGEFILE_SOURCE
-	fseeko(fd, logdef->lastpos[POSCOUNT-1], SEEK_SET);
+	fseeko(fd, logdef->lastpos[scrollback], SEEK_SET);
 	bufsz = st.st_size - ftello(fd);
 	if (bufsz > MAXCHECK) {
 		/*
 		 * Too much data for us. We have to skip some of the old data.
 		 */
 		errprintf("logfetch: %s delta %zu bytes exceeds max buffer size %zu; skipping some data\n", filename, bufsz, MAXCHECK);
-		logdef->lastpos[POSCOUNT-1] = st.st_size - MAXCHECK;
-		fseeko(fd, logdef->lastpos[POSCOUNT-1], SEEK_SET);
+		logdef->lastpos[scrollback] = st.st_size - MAXCHECK;
+		fseeko(fd, logdef->lastpos[scrollback], SEEK_SET);
 		bufsz = st.st_size - ftello(fd);
 	}
 #else
-	fseek(fd, logdef->lastpos[POSCOUNT-1], SEEK_SET);
+	fseek(fd, logdef->lastpos[scrollback], SEEK_SET);
 	bufsz = st.st_size - ftell(fd);
 	if (bufsz > MAXCHECK) {
 		/*
 		 * Too much data for us. We have to skip some of the old data.
 		 */
 		errprintf("logfetch: %s delta %zu bytes exceeds max buffer size %zu; skipping some data\n", filename, bufsz, MAXCHECK);
-		logdef->lastpos[POSCOUNT-1] = st.st_size - MAXCHECK;
-		fseek(fd, logdef->lastpos[POSCOUNT-1], SEEK_SET);
+		logdef->lastpos[scrollback] = st.st_size - MAXCHECK;
+		fseek(fd, logdef->lastpos[scrollback], SEEK_SET);
 		bufsz = st.st_size - ftell(fd);
 	}
 #endif
 
+	/* Calculate delta between scrollback (where we're starting) and end of last run */
+	byteslast = logdef->lastpos[scrollback];
+
 	/* Shift position markers one down for the next round */
+	/* lastpos[1] is the previous end location, lastpos[0] will be the end of this run */
 	for (i=POSCOUNT-1; (i > 0); i--) logdef->lastpos[i] = logdef->lastpos[i-1];
 	logdef->lastpos[0] = st.st_size;
+
+	/* This is where we place our "CURRENT" marker -- lastpos[1] should only be 0 if we're starting from the beginning anyway */
+	bytestocurrent = logdef->lastpos[1] - byteslast;
+	dbgprintf("logfetch: last position count was %zu, current is %zu, scrollback is %d, bytestocurrent: %zu\n", byteslast, logdef->lastpos[1], scrollback, bytestocurrent);
 
 	/*
 	 * Get our read buffer.
@@ -217,7 +237,7 @@ char *logdata(char *filename, logdef_t *logdef)
 	 *     it still hasnt reached end-of-file status.
 	 *     At least, on some platforms (Solaris, FreeBSD).
 	 */
-	bufsz += 1023;
+	bufsz += 1023 + strlen(curpostxt);
 	startpos = buf = (char *)malloc(bufsz + 1);
 	if (buf == NULL) {
 		/* Couldnt allocate the buffer */
@@ -268,6 +288,23 @@ char *logdata(char *filename, logdef_t *logdef)
 	bytesleft = bufsz;
 	done = 0;
 	while (!ferror(fd) && (bytesleft > 0) && !done && (fgets_nonull(fillpos, bytesleft, fd) != NULL)) {
+		int force_trigger = 0;
+
+		/* Mark where we left off */
+		bytesin += strlen(fillpos);
+		if (!curpos && (bytesin >= bytestocurrent)) {
+			char *t;
+
+			dbgprintf(" - Last position was %u, found curpos location at %u in current buffer.\n", logdef->lastpos[1], bytesin);
+			t = strdup(fillpos);	/* need shuffle about to insert before this line */
+			strncpy(fillpos, curpostxt, strlen(curpostxt));		/* add in the CURRENT + \n */
+			strncpy(fillpos+strlen(curpostxt), t, strlen(t));	/* add in whatever this line originally was */
+			*(fillpos+strlen(curpostxt)+strlen(t)) = '\0';		/* and terminate it */
+			xfree(t);						/* free temp */
+			curpos = fillpos;					/* leave curpos to the beginning of the CURRENT flag */
+			force_trigger = 1;					/* We'll force this to be saved as a trigger later on, so it always gets printed */
+		}
+
 		if (*fillpos == '\0') {
 			/*
 			 * fgets() can return an empty buffer without flagging
@@ -290,18 +327,31 @@ char *logdata(char *filename, logdef_t *logdef)
 				if (match) dbgprintf(" - line matched ignore %d: %s", i, fillpos); // fgets stores the newline in
 			}
 
-			if (match) continue;
+			if (force_trigger) {
+				/* Oops. We actually wanted this line poked through */
+				/* At the moment, we're only entering this state when we've added 'CURRENT\n' to the existing line */
+				/* Since we're guaranteeing to downstream users that we're ignoring this, just truncate the line */
+				/* to the first newline. If we start using force_trigger for other purposes, we might have to change */
+				/* the logic here. */
+				char *eoln;
+
+				eoln = strchr(fillpos, '\n'); if (eoln) *++eoln = '\0';	// still need the final newline
+			}
+			else if (match) continue;
 		}
 
 		linepos[lpidx] = fillpos;
 
 		/* See if this is a trigger line */
-		if (logdef->triggercount) {
+		if (force_trigger || logdef->triggercount) {
 			int i, match = 0;
 
-			for (i=0; ((i < logdef->triggercount) && !match); i++) {
+			if (force_trigger) { match = 1; dbgprintf(" - line forced as a trigger: %s", fillpos); }
+			else {
+			    for (i=0; ((i < logdef->triggercount) && !match); i++) {
 				match = (regexec(&trigexpr[i], fillpos, 0, NULL, 0) == 0);
 				if (match) dbgprintf(" - line matched trigger %d: %s", i, fillpos); // fgets stores the newline in
+			    }
 			}
 
 			if (match) {
