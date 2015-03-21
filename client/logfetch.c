@@ -102,6 +102,32 @@ FILE *fileopen(char *filename, int *err)
 	return fd;
 }
 
+/*
+ * A wrapper for fgets() which eats embedded 0x00 characters in the stream.
+ */
+char *fgets_nonull(char *buf, size_t size, FILE *stream) {
+	char *in, *out, *end;
+
+	if (fgets(buf, size - 1, stream) == NULL) 
+	        return NULL;
+
+	end = memchr(buf, '\n', size - 1); 
+
+	if (end == NULL) 
+	        end = buf + (size - 1); 
+	else 
+	        end++;
+
+	for (in = out = buf; in < end; in++) {
+	        if (*in != '\0') 
+		       *out++ = *in;
+	}
+
+	*out = '\0';
+
+	return buf;
+}
+
 
 char *logdata(char *filename, logdef_t *logdef)
 {
@@ -224,7 +250,7 @@ char *logdata(char *filename, logdef_t *logdef)
 	fillpos = buf;
 	bytesleft = bufsz;
 	done = 0;
-	while (!ferror(fd) && (bytesleft > 0) && !done && (fgets(fillpos, bytesleft, fd) != NULL)) {
+	while (!ferror(fd) && (bytesleft > 0) && !done && (fgets_nonull(fillpos, bytesleft, fd) != NULL)) {
 		if (*fillpos == '\0') {
 			/*
 			 * fgets() can return an empty buffer without flagging
