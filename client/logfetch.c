@@ -105,7 +105,7 @@ FILE *fileopen(char *filename, int *err)
 
 char *logdata(char *filename, logdef_t *logdef)
 {
-	static char *buf = NULL;
+	static char *buf, *replacement = NULL;
 	char *startpos, *fillpos, *triggerstartpos, *triggerendpos;
 	FILE *fd;
 	struct stat st;
@@ -120,8 +120,14 @@ char *logdata(char *filename, logdef_t *logdef)
 	long bufsz;
 #endif
 
+	char *(*triggerptrs)[2] = NULL;
+	unsigned int triggerptrs_count = 0;
+
 	if (buf) free(buf);
 	buf = NULL;
+
+	if (replacement) free(replacement);
+	replacement = NULL;
 
 	fd = fileopen(filename, &openerr);
 	if (fd == NULL) {
@@ -259,6 +265,30 @@ char *logdata(char *filename, logdef_t *logdef)
 				if (sidx < 0) sidx += (2*LINES_AROUND_TRIGGER + 1);
 				triggerstartpos = linepos[sidx]; if (!triggerstartpos) triggerstartpos = buf;
 				triggerlinecount = LINES_AROUND_TRIGGER;
+
+				if (triggerptrs == NULL || (triggerptrs_count > 0 && triggerptrs[triggerptrs_count - 1][1] != NULL)) {
+					dbgprintf(" - %s trigger line encountered; preparing trigger START & END positioning store\n", ((triggerptrs_count == 0) ? "first" : "additional")); 
+
+					/* Create or resize the trigger pointer array to contain another pair of anchors */
+   					triggerptrs = realloc(triggerptrs, (sizeof(char *) * 2) * (++triggerptrs_count));
+					if (triggerptrs == NULL) return "Out of memory";
+
+					/* Save the current triggerstartpos as our first anchor in the pair */
+					triggerptrs[triggerptrs_count - 1][0] = triggerstartpos;
+					triggerptrs[triggerptrs_count - 1][1] = NULL;
+
+					if (triggerptrs_count > 1 && (triggerstartpos <= triggerptrs[triggerptrs_count - 2][1])) {
+						/* Whoops! This trigger's LINES_AROUND_TRIGGER bleeds into the prior's LINES_AROUND_TRIGGER */
+						triggerptrs[triggerptrs_count - 1][0] = triggerptrs[triggerptrs_count - 2][1];
+						dbgprintf("Current trigger START (w/ prepended LINES_AROUND_TRIGGER) would overlap with prior trigger's END. Adjusting.\n");
+					}
+
+					dbgprintf(" - new trigger anchor START position set\n");
+		               } 
+		               else {
+					/* Do nothing. Merge the two trigger lines into a single start and end pair by extending the existing */
+					dbgprintf("Additional trigger line encountered. Previous trigger START has no set END yet. Compressing anchors.\n");
+				}
 			}
 		}
 
@@ -271,9 +301,22 @@ char *logdata(char *filename, logdef_t *logdef)
 		if (triggerlinecount) {
 			triggerlinecount--;
 			triggerendpos = fillpos;
+
+			if (triggerlinecount == 0) {
+				/* Terminate the current trigger anchor pair by aligning the end pointer */
+				dbgprintf(" - trigger END position set\n");
+				triggerptrs[triggerptrs_count - 1][1] = triggerendpos;
+			}
 		}
 
 		bytesleft = (bufsz - (fillpos - buf));
+	}
+
+	if (triggerptrs != NULL) {
+	        dbgprintf("Marked %i pairs of START and END anchors for consideration.\n", triggerptrs_count);
+
+		/* Ensure that a premature EOF before the last trigger end postion doesn't blow up */
+		if (triggerptrs[triggerptrs_count - 1][1] == NULL) triggerptrs[triggerptrs_count -1][1] = fillpos;
 	}
 
 	/* Was there an error reading the file? */
@@ -290,37 +333,65 @@ char *logdata(char *filename, logdef_t *logdef)
 	if (bytesread > logdef->maxbytes) {
 		char *skiptxt = "<...SKIPPED...>\n";
 
-		/* FIXME: Must make sure to only pass complete lines back to the server */
-		if (triggerstartpos) {
-			/* Skip the beginning of the data up until the trigger was found */
-			startpos = triggerstartpos;
-			if ((startpos - strlen(skiptxt)) >= buf) {
-				startpos -= strlen(skiptxt);
-				memcpy(startpos, skiptxt, strlen(skiptxt));
-			}
-			bytesread = (fillpos - startpos);
+	        if (triggerptrs != NULL) {
+		       size_t triggerbytes, nontriggerbytes, skiptxtbytes;
+		       char *pos;
+		       size_t size;
 
-			/*
-			 * If it's still too big, show some lines after the trigger, and
-			 * then skip until it will fit.
-			 */
-			if (bytesread > logdef->maxbytes) {
-				size_t triggerbytesleft;
+		       /* Sum the number of bytes required to hold all the trigger content (start -> end anchors) */
+		       for (i = 0, triggerbytes = 0, skiptxtbytes = 0; i < triggerptrs_count; i++) {
+		           triggerbytes += strlen(triggerptrs[i][0]) - strlen(triggerptrs[i][1]);
+		           skiptxtbytes += strlen(skiptxt) * 2;
+		       }
+	  
+		       /* Find the remaining bytes allowed for non-trigger content (and prevent size_t underflow wrap ) */
+			nontriggerbytes = (logdef->maxbytes < triggerbytes) ? 0 : (logdef->maxbytes - triggerbytes);
 
-				triggerbytesleft = bytesread - (triggerendpos - startpos);
-				if (triggerbytesleft > 0) {
-					char *skipend;
+		       dbgprintf("Found %zu bytes of trigger data, %zu bytes remaining of non-trigger data. Max allowed is %zu.\n", triggerbytes, nontriggerbytes, logdef->maxbytes);
 
-					skipend = fillpos - triggerbytesleft;
-					memmove(triggerendpos, skipend, triggerbytesleft);
-					*(triggerendpos + triggerbytesleft) = '\0';
+		       /* Allocate a new buffer, reduced to what we actually can hold */
+		       replacement = malloc(sizeof(char) * (triggerbytes + skiptxtbytes + nontriggerbytes));
+		       if (replacement == NULL) return "Out of memory";
 
-					if (triggerbytesleft >= strlen(skiptxt)) 
-						memcpy(triggerendpos, skiptxt, strlen(skiptxt));
-					bytesread = (triggerendpos - startpos) + triggerbytesleft;
-				}
-			}
-		}
+		       dbgprintf("Staging replacement buffer, %zu bytes.\n", (triggerbytes + skiptxtbytes + nontriggerbytes));
+
+		       /* Iterate each trigger anchor pair, copying into the replacement */
+		       for (i = 0, pos = replacement; i < triggerptrs_count; i++) {
+		               dbgprintf("Copying buffer content for trigger %i.\n", (i + 1));
+
+		               strncpy(pos, skiptxt, strlen(skiptxt));
+		               pos += strlen(skiptxt);
+
+		               size = strlen(triggerptrs[i][0]) - strlen(triggerptrs[i][1]);
+		               strncpy(pos, triggerptrs[i][0], size);
+		               pos += size;
+		       }
+
+		       /* At this point, all the required trigger lines are present */
+
+		       if (nontriggerbytes > 0) {
+		               /* Append non-trigger, up to the allowed byte size remaining, of remaining log content */
+		               dbgprintf("Copying %zu bytes of non-trigger content.\n", nontriggerbytes);
+
+		               /* Add the final skip for completeness */
+		               strncpy(pos, skiptxt, strlen(skiptxt));
+		               pos += strlen(skiptxt);
+
+		               /* And copy the the rest of the original buffer content, starting at the last trigger END */
+		               strncpy(pos, triggerptrs[triggerptrs_count - 1][1], nontriggerbytes);
+		       }
+
+		       /* Prune out the last line to prevent sending a partial */
+		       if (*(pos = &replacement[strlen(replacement) - 1]) != '\n') {
+		               while (*pos != '\n') {
+		                       pos -= 1;
+		               }
+		               *(++pos) = '\0';
+		       }
+
+		       startpos = replacement;
+		       bytesread = strlen(startpos);          
+	        }
 		else {
 			/* Just drop what is too much */
 			startpos += (bytesread - logdef->maxbytes);
@@ -360,6 +431,8 @@ cleanup:
 			}
 			xfree(trigexpr);
 		}
+
+		if (triggerptrs) xfree(triggerptrs);
 	}
 
 	return startpos;
