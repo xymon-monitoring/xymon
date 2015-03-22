@@ -1541,7 +1541,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 				countstr = (id ? strtok(NULL, "\n") : NULL);
 				if (id && countstr) {
 					countstr += strspn(countstr, "\t ");
-					sprintf(msgline, "%s#%s:%s\n", nocolon(fn), id, countstr);
+					snprintf(msgline, sizeof(msgline), "%s#%s:%s\n", nocolon(fn), id, countstr);
 					addtobuffer(countdata, msgline);
 				}
 
