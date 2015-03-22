@@ -299,6 +299,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			break;
 			
 		  case OS_WIN32_BBWIN:
+		  case OS_WIN_POWERSHELL:
 			if (pickdata(bol, ifstat_bbwin_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 

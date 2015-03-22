@@ -516,6 +516,7 @@ int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepa
 
 	  case OS_WIN32:
 	  case OS_WIN32_BBWIN:
+	  case OS_WIN_POWERSHELL:
 		havedata = do_valaftermarkerequal(netstat_win32_markers, datapart, outp);
 		break;
 
