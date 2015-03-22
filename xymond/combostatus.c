@@ -287,7 +287,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 
 	done = 0; inp=symbolicexpr; outp=expr; symp = NULL; 
 	while (!done) {
-		if (isalpha((int)*inp)) {
+		if (isalpha((int)*inp) || isdigit((int)*inp)) {
 			if (!insymbol) { insymbol = 1; symp = symbol; }
 			*symp = *inp; symp++;
 		}
