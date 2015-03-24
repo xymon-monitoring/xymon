@@ -47,6 +47,10 @@ static char curpostxt[512];
 #define DEFAULTSCROLLBACK (POSCOUNT - 1)	/* How far back to begin processing data, in runs */
 #define LINES_AROUND_TRIGGER 5
 
+/* Default = use default */
+int scrollback = -1;
+
+
 typedef enum { C_NONE, C_LOG, C_FILE, C_DIR, C_COUNT } checktype_t;
 
 typedef struct logdef_t {
@@ -148,7 +152,6 @@ char *logdata(char *filename, logdef_t *logdef)
 	int openerr, i, status, triggerlinecount, done;
 	char *linepos[2*LINES_AROUND_TRIGGER+1];
 	int lpidx;
-	int scrollback = DEFAULTSCROLLBACK;
 	size_t byteslast, bytestocurrent, bytesin = 0;
 	regex_t *deltaexpr = NULL, *ignexpr = NULL, *trigexpr = NULL;
 #ifdef _LARGEFILE_SOURCE
@@ -160,19 +163,13 @@ char *logdata(char *filename, logdef_t *logdef)
 	char *(*triggerptrs)[2] = NULL;
 	unsigned int triggerptrs_count = 0;
 
+	dbgprintf("logfetch: -> logdata (%s)\n", filename);
+
 	if (buf) free(buf);
 	buf = NULL;
 
 	if (replacement) free(replacement);
 	replacement = NULL;
-
-	if (getenv("LOGFETCH_SCROLLBACK") != NULL) {
-		int scroll;
-		scroll = atoi(getenv("LOGFETCH_SCROLLBACK"));
-		/* Don't use DEFAULTSCROLLBACK here in case we change/lower it in the future */
-		if (scroll > (POSCOUNT-1)) errprintf("Scrollback requested is greater than maximum saved\n");
-		else { dbgprintf("logfetch: setting scrollback to %d\n", scroll); scrollback = scroll; }
-	}
 
 	fd = fileopen(filename, &openerr);
 	if (fd == NULL) {
@@ -196,7 +193,7 @@ char *logdata(char *filename, logdef_t *logdef)
 		for (i=0; (i < POSCOUNT); i++) logdef->lastpos[i] = 0;
 	}
 
-	/* Go to the position we were at $SCROLLBACK times ago (default corresponds to 6 (30 minutes when 5m/run)) */
+	/* Go to the position we were at scrollback times ago (default corresponds to 6 -- 30 minutes when 5m per run) */
 #ifdef _LARGEFILE_SOURCE
 	fseeko(fd, logdef->lastpos[scrollback], SEEK_SET);
 	bufsz = st.st_size - ftello(fd);
@@ -223,17 +220,19 @@ char *logdata(char *filename, logdef_t *logdef)
 	}
 #endif
 
-	/* Calculate delta between scrollback (where we're starting) and end of last run */
+	/* Calculate delta between scrollback (where going to start looking at data) and end of the most recent run.
+	 * This is where we place our "CURRENT" marker */
 	byteslast = logdef->lastpos[scrollback];
+	/* If lastpos[0] is 0, then all of the positions are 0 because we rotated above */
+	bytestocurrent = logdef->lastpos[0] - byteslast;
 
 	/* Shift position markers one down for the next round */
 	/* lastpos[1] is the previous end location, lastpos[0] will be the end of this run */
 	for (i=POSCOUNT-1; (i > 0); i--) logdef->lastpos[i] = logdef->lastpos[i-1];
 	logdef->lastpos[0] = st.st_size;
 
-	/* This is where we place our "CURRENT" marker -- lastpos[1] should only be 0 if we're starting from the beginning anyway */
-	bytestocurrent = logdef->lastpos[1] - byteslast;
-	dbgprintf("logfetch: last position count was %zu, current is %zu, scrollback is %d, bytestocurrent: %zu\n", byteslast, logdef->lastpos[1], scrollback, bytestocurrent);
+	dbgprintf("logfetch: Current size (ending): %zu bytes. Last end was %zu. Looking %d spots before that, which is %zu. bytestocurrent: %zu\n",
+		logdef->lastpos[0], logdef->lastpos[1], scrollback, byteslast, bytestocurrent);
 
 	/*
 	 * Get our read buffer.
@@ -464,8 +463,8 @@ char *logdata(char *filename, logdef_t *logdef)
 	if (bytesread > logdef->maxbytes) {
 
 	        if (triggerptrs != NULL) {
-		       size_t triggerbytes, nontriggerbytes, skiptxtbytes;
-		       char *pos;
+		       size_t triggerbytes, nontriggerbytes, skiptxtbytes, lasttriggeroffset;
+		       char *pos, *lasttriggerptr;
 		       size_t size;
 
 		       /* Sum the number of bytes required to hold all the trigger content (start -> end anchors) */
@@ -476,8 +475,10 @@ char *logdata(char *filename, logdef_t *logdef)
 	  
 		       /* Find the remaining bytes allowed for non-trigger content (and prevent size_t underflow wrap ) */
 			nontriggerbytes = (logdef->maxbytes < triggerbytes) ? 0 : (logdef->maxbytes - triggerbytes);
+			lasttriggerptr = triggerptrs[triggerptrs_count - 1][1];
+			lasttriggeroffset = (fillpos - lasttriggerptr);
 
-		       dbgprintf("Found %zu bytes of trigger data, %zu bytes remaining of non-trigger data. Max allowed is %zu.\n", triggerbytes, nontriggerbytes, logdef->maxbytes);
+		       dbgprintf("Found %zu bytes of trigger data, %zu bytes available space for non-trigger data; last trigger ended %zu bytes from end. Max bytes allowed is %zu.\n", triggerbytes, nontriggerbytes, lasttriggeroffset, logdef->maxbytes);
 
 		       /* Allocate a new buffer, reduced to what we actually can hold */
 		       replacement = malloc(sizeof(char) * (triggerbytes + skiptxtbytes + nontriggerbytes));
@@ -500,15 +501,38 @@ char *logdata(char *filename, logdef_t *logdef)
 		       /* At this point, all the required trigger lines are present */
 
 		       if (nontriggerbytes > 0) {
-		               /* Append non-trigger, up to the allowed byte size remaining, of remaining log content */
-		               dbgprintf("Copying %zu bytes of non-trigger content.\n", nontriggerbytes);
+				char *finalstartptr;
 
-		               /* Add the final skip for completeness */
-		               strncpy(pos, skiptxt, strlen(skiptxt));
-		               pos += strlen(skiptxt);
+				/* Append non-trigger, up to the allowed byte size remaining, of remaining log content, starting backwards */
 
-		               /* And copy the the rest of the original buffer content, starting at the last trigger END */
-		               strncpy(pos, triggerptrs[triggerptrs_count - 1][1], nontriggerbytes);
+				/* Figure out where to start copying from */
+				finalstartptr = (fillpos - nontriggerbytes);
+				if (finalstartptr < lasttriggerptr) {
+					/* 
+					 * FIXME: We could have included inter-trigger data here too.
+					 * At the moment, duplicate lines are the worse of two evils, so just start from there.
+					 */
+					finalstartptr = lasttriggerptr;
+					nontriggerbytes = (fillpos - finalstartptr);
+					dbgprintf("logfetch: More space was available than between last trigger and eof; reducing to %zu bytes\n", nontriggerbytes);
+				}
+
+				/* We're already skipping content; so don't send a partial line. Be sure to decrement the subsequent length we feed to strncpy */
+				while (*(finalstartptr-1) != '\n') {
+					finalstartptr += 1; nontriggerbytes -= 1;
+				}
+
+				dbgprintf("logfetch: Delta from end of final trigger to beginning of final section: %zu bytes\n", (finalstartptr - lasttriggerptr) );
+
+				if (finalstartptr > lasttriggerptr) {
+					/* Add the final skip for completeness */
+					strncpy(pos, skiptxt, strlen(skiptxt));
+					pos += strlen(skiptxt);
+				}
+
+				/* And copy the the rest of the original buffer content */
+				dbgprintf("Copying %zu final bytes of non-trigger content\n", nontriggerbytes);
+				strncpy(pos, finalstartptr, nontriggerbytes);
 		       }
 
 		       /* Prune out the last line to prevent sending a partial */
@@ -572,6 +596,7 @@ cleanup:
 		if (triggerptrs) xfree(triggerptrs);
 	}
 
+	dbgprintf("logfetch: <- logdata (%s)\n", filename);
 	return startpos;
 }
 
@@ -1193,7 +1218,7 @@ int main(int argc, char *argv[])
 #endif
 
 	for (i=1; (i<argc); i++) {
-		if (strcmp(argv[i], "--debug") == 0) {
+		if (strncmp(argv[i], "--debug", 7) == 0) {
 			char *delim = strchr(argv[i], '=');
 			debug = 1;
 			if (delim) set_debugfile(delim+1, 0);
@@ -1231,6 +1256,30 @@ int main(int argc, char *argv[])
 			else fprintf(stderr, "Unknown argument '%s'\n", argv[i]);
 		}
 	}
+
+
+	if (scrollback == -1) {
+		char *p;
+
+		p = getenv("LOGFETCHSCROLLBACK");
+		if (!p) p = getenv("LOGFETCH_SCROLLBACK"); /* compat */
+		if (!p || (strlen(p) == 0) ) scrollback = DEFAULTSCROLLBACK;
+		else {
+			int scroll;
+			scroll = atoi(p);
+
+			/* Don't use DEFAULTSCROLLBACK here in case we change or lower the default in the future */
+			if ((scroll < 0) || (scroll > (POSCOUNT-1)) ) {
+				errprintf("Scrollback requested (%d) is greater than max saved (%d)\n", scroll, (POSCOUNT - 1) );
+				scrollback = DEFAULTSCROLLBACK;
+			}
+			else {
+				dbgprintf("logfetch: setting scrollback to %d\n", scroll);
+				scrollback = scroll;
+			}
+		}
+	}
+
 
 	if ((cfgfn == NULL) || (statfn == NULL)) {
 		fprintf(stderr, "Missing config or status file arguments\n");
