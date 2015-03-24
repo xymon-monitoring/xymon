@@ -103,11 +103,16 @@ void flush_errbuf(void)
 
 void set_debugfile(char *fn, int appendtofile)
 {
-	if (debugfd && (debugfd != stdout)) fclose(debugfd);
+	/* Always close and reopen when re-setting */
+	if (debugfd && (debugfd != stdout) && (debugfd != stderr)) fclose(debugfd);
 
 	if (fn) {
-		debugfd = fopen(fn, (appendtofile ? "a" : "w"));
-		if (debugfd == NULL) errprintf("Cannot open debug log %s\n", fn);
+		if (strcasecmp(fn, "stderr") == 0) debugfd = stderr;
+		else if (strcasecmp(fn, "stdout") == 0) debugfd = stdout;
+		else {
+			debugfd = fopen(fn, (appendtofile ? "a" : "w"));
+			if (debugfd == NULL) errprintf("Cannot open debug log '%s': %s\n", fn, strerror(errno));
+		}
 	}
 
 	if (!debugfd) debugfd = stdout;
