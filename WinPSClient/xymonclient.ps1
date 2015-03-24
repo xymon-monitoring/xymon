@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "2.00"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-03-10 zak.beck@accenture.com"
+$Version = "2.01"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-03-23 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -916,6 +916,7 @@ function XymonInit
     SetIfNot $script:XymonSettings clientconfigfile "$env:TEMP\xymonconfig.cfg" # path for saved client-local.cfg section from server
     SetIfNot $script:XymonSettings clientlogfile "$env:TEMP\xymonclient.log" # path for logfile
     SetIfNot $script:XymonSettings clientsoftware "powershell" # powershell / bbwin
+    SetIfNot $script:XymonSettings clientclass "powershell" # 'class' value (default powershell)
     SetIfNot $script:XymonSettings loopinterval 300 # seconds to repeat client reporting loop
     SetIfNot $script:XymonSettings maxlogage 60 # minutes age for event log reporting
     SetIfNot $script:XymonSettings MaxEvents 5000 # maximum number of events per event log
@@ -1545,6 +1546,7 @@ function XymonMsgs
                         }
                         $payload += [string]$level + " - " +`
                             [string]$entry.TimeCreated + " - " + `
+                            "[$($entry.Id)] - " + `
                             [string]$entry.ProviderName + " - " + `
                             [string]$entry.Message + [environment]::newline
                         
@@ -2880,7 +2882,8 @@ while ($running -eq $true) {
     XymonCollectInfo
     
     WriteLog "Performing main and optional tests and building output..."
-    $clout = "client $($clientname).$($script:XymonSettings.clientsoftware) powershell XymonPS" | Out-String
+    $clout = "client $($clientname).$($script:XymonSettings.clientsoftware) $($script:XymonSettings.clientclass) XymonPS" | 
+        Out-String
     $clsecs = XymonClientSections | Out-String
     $localdatetime = Get-Date
     $clout += XymonDate | Out-String
