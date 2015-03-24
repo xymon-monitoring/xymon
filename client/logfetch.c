@@ -36,6 +36,10 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
+/* Set via xgetenv */
+static char skiptxt[512];
+static char curpostxt[512];
+
 /* Is it ok for these to be hardcoded ? */
 #define MAXCHECK   102400   /* When starting, dont look at more than 100 KB of data */
 #define MAXMINUTES 30
@@ -138,7 +142,6 @@ char *logdata(char *filename, logdef_t *logdef)
 {
 	static char *buf, *replacement = NULL;
 	char *startpos, *fillpos, *triggerstartpos, *triggerendpos, *curpos = NULL;
-	char *curpostxt = "<...CURRENT...>\n";
 	FILE *fd;
 	struct stat st;
 	size_t bytesread, bytesleft;
@@ -459,7 +462,6 @@ char *logdata(char *filename, logdef_t *logdef)
 	*(buf + bytesread) = '\0';
 
 	if (bytesread > logdef->maxbytes) {
-		char *skiptxt = "<...SKIPPED...>\n";
 
 	        if (triggerptrs != NULL) {
 		       size_t triggerbytes, nontriggerbytes, skiptxtbytes;
@@ -1237,6 +1239,9 @@ int main(int argc, char *argv[])
 
 	if (loadconfig(cfgfn) != 0) return 1;
 	loadlogstatus(statfn);
+
+	snprintf(skiptxt, sizeof(skiptxt), "%s\n", xgetenv("LOGFETCHSKIPTEXT"));
+	snprintf(curpostxt, sizeof(curpostxt), "%s\n", xgetenv("LOGFETCHCURRENTTEXT"));
 
 	for (walk = checklist; (walk); walk = walk->next) {
 		int idx;
