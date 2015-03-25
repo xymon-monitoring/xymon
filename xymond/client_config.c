@@ -3456,7 +3456,8 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		break;
 
 	  case C_SVC:
-		result = (*walk)->rule->statustext;
+		/* Have to clear this each time since it contains current state */
+		// result = (*walk)->rule->statustext;
 		if (!result) { 
 			int sz = 1024;
 			char *p;
