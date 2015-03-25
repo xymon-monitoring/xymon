@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.18   * * *
+           * * *   Release notes for Xymon 4.3.19   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -8,6 +8,38 @@ changes you should be aware of when upgrading.
 
 For a full list of changes and enhancements, please see the 
 Changes file.
+
+
+Changes for 4.3.19
+==================
+This is mostly a bugfix release (see the Changes file for a full list), 
+but there are some enhancements:
+
+Apache 2.4 syntax is now supported by the sample xymon.conf file.
+
+EXTIME= syntax in analysis.cfg and alerts.cfg files is now supported.
+Note that this exclusion is applied *after* any normal TIME= 
+specifiers. (If a TIME= modifier is present, then times outside of
+that range are already excluded.)
+
+An Acknowledgements report CGI is now available, similar to 
+the Notifications report. (Thanks, Andy Smith)
+
+Client logs with multiple trigger lines found are guaranteed to have all
+the sections returned, even if this exceeds the "maxbytes" specified (up to
+the compiled-in limit). Additionally, the "current" location of new log 
+data written since the last time xymonclient was run is now marked for 
+reference. (Thanks, Franco Gasperino)
+
+A new "deltacount" option is available in client-local.cfg. It functions
+similarly to "linecount", but only counts lines written in the log
+file since the last run.
+
+Additional filtration options are available for the xymondboard command,
+including the full body of the message, and acknoweldgement and disable
+comments. Also, inequalities can be used to filter an epoch timestamp
+against any of: lastchange, logtime, validtime, acktime, or disabletime.
+See the xymon(1) man page for details.
 
 
 Changes for 4.3.18

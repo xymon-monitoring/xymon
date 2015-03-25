@@ -10,12 +10,14 @@ Olivier Beau
 Adamets Bluejay
 Brian Buchanan
 Massimo Carnevali
-J Cleaver
+Japheth Cleaver
 Craig Cook
 Douwe Dijkstra
 Francesco Duranti
 Lars Ebeling
+Mark Felder
 David Ferrest
+Franco Gasperino
 Tom Georgoulias
 Laurent Grilli
 Kevin Hanrahan
@@ -44,6 +46,7 @@ Thomas Schäfer
 Tom Schmidt
 Eric Schwimmer
 Bill Simaz
+Andy Smith
 Gavin Stone-Tolcher
 Jeff Stoner
 David Stuffle
@@ -66,11 +69,11 @@ libCURL (although this is no longer used, it was quite
 libCARES
 	Based on the ARES library by Greg Hudson of MIT, 
 	C-ARES provides asynchronous parallel DNS lookups.
-	http://daniel.haxx.se/projects/c-ares/
+	http://c-ares.haxx.se/
 	Greg Hudson, Daniel Steenberg and others
 
 RRDtool
-	http://www.mrtg.org/rrdtool/
+	http://oss.oetiker.ch/rrdtool/
 
 OpenSSL
 	http://www.openssl.org/

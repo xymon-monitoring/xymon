@@ -1,3 +1,68 @@
+Changes from 4.3.18 -> 4.3.19 (2x Mar 2015)
+===========================================
+
+* rev 76xx
+
+* Don't crash when receiving an AAAA DNS response (BSD, thanks Mark Felder)
+* xymonclient.sh running in --local mode was generating reports that were
+  marked as duplicates (and thus being ignored). Reported by Guillaume Chane.
+* Building with old versions of libpcre not supporting PCRE_FIRSTLINE should
+  once again work
+* Memory reporting on FreeBSD and OpenBSD has been fixed (Mark Felder)
+* clientlog, hostinfo, and modify messages are now tracked in xymond stats
+* In environment config files (xymonserver.cfg, xymonclient.cfg, and cfgoptions.cfg)
+  an initial "export " line (as if it were actually a shell script) will be
+  ignored and the remainder of the line parsed as normal.
+* headermatch will now match the headers of an HTTP response even if the body
+  is empty (eg, matching for a 302 Redirect)
+* --debug mode in most daemons should cause *much* less of a performance hit, and
+  output will be timestamped in microseconds
+* xymondboard can now be used to PCRE-match against the raw message, and 
+  acknowledgement and disable comments. Inequalities can be specified against the 
+  lastchange, logtime, validtime, acktime, disabletime fields (in epoch timestamps).
+  The existing net= and tag= filters have been documented.
+* The sample xymon.conf apache snippet now supports apache 2.4 syntax
+* Fix missing newline when returning upcoming 'schedule' commands.
+* EXTIME= syntax in analysis.cfg and alerts.cfg has been added. This is applied
+  after any TIME= filter. Use (e.g.) to exclude Wednesday afternoons on a line 
+  which is already restricted to 9:00a to 5:00p on weekdays only.
+* The included version of c-ares has been bumped to version 1.10.0.
+* Support for older EGD (entropy gathering daemon) has been removed
+* A crash when xymond_rrd was run in --debug mode on non GNU/glibc systems has 
+  been fixed
+* The msgs and procs tests are now HTML-encoded to ensure that lines with brackets
+  are properly displayed
+* An acknowledgements.sh log report has been added in (Submitted by Andy Smith)
+* A number of logfetch issues have been addressed:
+  - --debug syntax is now supported. (If modifying the command line in xymonclient.sh,
+    use --debug=stderr to prevent spurious lines being sent in the client report.)
+  - Invalid POSIX regular expressions for ignore or trigger lines will now be reported
+    but should not cause crashes
+  - Null characters in a log file will no longer cause further processing to stop (Thanks,
+    Franco Gasperino.)
+  - All lines matching a 'trigger' regex will be reported back, even if the total size
+    exceeds the "maxbytes" limit. (Up to the maximum compiled buffer size.) As much of
+    the final section as can be fit in the space remaining will be included, similar
+    to the previous behavior if maxbytes was exceeded but no trigger lines were given.
+    (Thanks, Franco Gasperino.)
+  - The current location (where the previous run left off) is now marked in the status 
+    report.
+  - The '<...SKIPPED...>' and '<...CURRENT...>' texts can be overridden by specifying 
+    values for LOGFETCHSKIPTEXT and LOGFETCHCURRENTTEXT in xymonclient.cfg
+  - The "scrollback" (number of positions in previous "runs" back) that logfetch starts
+    at can now be specified with the LOGFETCHSCROLLBACK variable, from 0 - 6 (the default)
+* "deltacount" can be used to count the number of lines matching a specific regex in 
+  client-local.cfg, counting only since the last run. These will be shown on the trends page.
+  NOTE: Unlike the "linecount:" option, deltacount is specified after a specific "log:" line.
+  See the client-local.cfg file for details.
+* ifstat and netstat output from the new Windows PowerShell client is now graphed properly.
+* Hostnames beginning with a number (allowed by RFC1123) are now supported in combo.cfg
+* When a Windows service's status has been changed (ie, stopped or started), the relevant line
+  in the 'svcs' test will now be updated to reflect this. (Reported by Gavin Stone-Tolcher and
+  Neil Simmonds)
+* Various build issues, compiler fixes, and valgrind complaints have been fixed.
+
+
 Changes from 4.3.17 -> 4.3.18 (3 Feb 2015)
 ===========================================
 
