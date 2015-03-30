@@ -32,14 +32,17 @@ data written since the last time xymonclient was run is now marked for
 reference. (Thanks, Franco Gasperino)
 
 A new "deltacount" option is available in client-local.cfg. It functions
-similarly to "linecount", but only counts lines written in the log
-file since the last run.
+similarly to "linecount" for a given log: entry, but only counts matching 
+lines written in the log file since the last run.
 
 Additional filtration options are available for the xymondboard command,
 including the full body of the message, and acknoweldgement and disable
 comments. Also, inequalities can be used to filter an epoch timestamp
 against any of: lastchange, logtime, validtime, acktime, or disabletime.
 See the xymon(1) man page for details.
+
+The process list visible in the 'procs' test of Linux and FreeBSD clients
+is now generated in ASCII "forest" mode for increased legibility.
 
 
 Changes for 4.3.18

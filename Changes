@@ -1,4 +1,4 @@
-Changes from 4.3.18 -> 4.3.19 (2x Mar 2015)
+Changes from 4.3.18 -> 4.3.19 (30 Mar 2015)
 ===========================================
 
 * rev 76xx
@@ -9,6 +9,8 @@ Changes from 4.3.18 -> 4.3.19 (2x Mar 2015)
 * Building with old versions of libpcre not supporting PCRE_FIRSTLINE should
   once again work
 * Memory reporting on FreeBSD and OpenBSD has been fixed (Mark Felder)
+* The process list visible in the 'procs' test of Linux and FreeBSD clients
+  is now generated in ASCII "forest" mode for increased legibility.
 * clientlog, hostinfo, and modify messages are now tracked in xymond stats
 * In environment config files (xymonserver.cfg, xymonclient.cfg, and cfgoptions.cfg)
   an initial "export " line (as if it were actually a shell script) will be

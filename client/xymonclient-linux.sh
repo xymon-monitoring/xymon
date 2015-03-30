@@ -74,7 +74,7 @@ echo "[ifstat]"
 # Report mdstat data if it exists
 if test -r /proc/mdstat; then echo "[mdstat]"; cat /proc/mdstat; fi
 echo "[ps]"
-ps -Aww -o pid,ppid,user,start,state,pri,pcpu,time:12,pmem,rsz:10,vsz:10,cmd
+ps -Aww f -o pid,ppid,user,start,state,pri,pcpu,time:12,pmem,rsz:10,vsz:10,cmd
 
 # $TOP must be set, the install utility should do that for us if it exists.
 if test "$TOP" != ""

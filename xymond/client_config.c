@@ -3262,6 +3262,12 @@ static void add_count(char *pname, mon_proc_t *head)
 					pwalk->rule->rule.proc.pcount++;
 			}
 			else {
+				/* 
+				 * Strip the initial spaces, pipes and so forth seen if an ASCII forest was generated
+				 * This allows PCRE regexes using a '^' to remain useful.
+				 */
+				pname += strspn(pname, " |\\_");
+				if (!pname) break;
 				if (namematch(pname, pwalk->rule->rule.proc.procexp->pattern, pwalk->rule->rule.proc.procexp->exp))
 					pwalk->rule->rule.proc.pcount++;
 			}
