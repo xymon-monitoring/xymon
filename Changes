@@ -1,7 +1,7 @@
 Changes from 4.3.18 -> 4.3.19 (30 Mar 2015)
 ===========================================
 
-* rev 76xx
+* rev 7619
 
 * Don't crash when receiving an AAAA DNS response (BSD, thanks Mark Felder)
 * xymonclient.sh running in --local mode was generating reports that were

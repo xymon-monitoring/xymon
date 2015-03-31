@@ -1,7 +1,7 @@
 
 xymon (4.3.19) unstable; urgency=medium
 
-   * rev 76xx
+   * rev 7619
    
    * Don't crash when receiving an AAAA DNS response (BSD, thanks Mark Felder)
    * xymonclient.sh running in --local mode was generating reports that were
@@ -64,7 +64,7 @@ xymon (4.3.19) unstable; urgency=medium
      Neil Simmonds)
    * Various build issues, compiler fixes, and valgrind complaints have been fixed.
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, 30 Mar 2015 XX:XX:XX -0700
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, 30 Mar 2015 22:39:17 -0700
 
 
 xymon (4.3.18) unstable; urgency=medium

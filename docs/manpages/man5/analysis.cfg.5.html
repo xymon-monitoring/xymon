@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of ANALYSIS.CFG</TITLE>
 </HEAD><BODY>
 <H1>ANALYSIS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.18:  3 Feb 2015<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.19: 30 Mar 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -700,6 +700,14 @@ time specification in the hosts.cfg file.  E.g. &quot;TIME=W:0800:2200&quot;
 applied to a rule will make this rule active only on week-days between
 8AM and 10PM.
 <P>
+<B>EXTIME=timespecification</B>
+
+Rule excluding by the time-of-day. This is also specified as the DOWNTIME 
+time specification in the hosts.cfg file.  E.g. &quot;TIME=W:0400:0600&quot;
+applied to a rule will make this rule exclude on week-days between
+4AM and 6AM. This applies on top of any TIME= specification, so both
+must match.
+<P>
 <A NAME="lbAR">&nbsp;</A>
 <H2>DIRECTING ALERTS TO GROUPS</H2>
 
@@ -824,6 +832,6 @@ is not considered strong enough when a high level of security is required.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 19:31:38 GMT, February 03, 2015
+Time: 05:39:17 GMT, March 31, 2015
 </BODY>
 </HTML>

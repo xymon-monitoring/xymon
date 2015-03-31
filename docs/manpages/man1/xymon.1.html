@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of XYMON</TITLE>
 </HEAD><BODY>
 <H1>XYMON</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.18:  3 Feb 2015<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version 4.3.19: 30 Mar 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -293,14 +293,32 @@ the Xymon daemon.
 <P>
 By default - if no CRITERIA is provided - it returns one line for all 
 status messages that are found in Xymon. You can filter the response
-by selecting a page, a host, a test or a color - the PAGEPATH, HOSTNAME
-and TESTNAME parameters are interpreted as regular expressions, the COLOR 
-parameter accepts multiple colors separated by comma.
+by selection specific page, host, test, color or various other fields. The 
+PAGEPATH, NETWORK, HOSTNAME, TESTNAME, and *MSG parameters are interpreted 
+perl-compatible regular expressions; the COLOR parameter accepts multiple 
+colors separated by commas; the *TIME values accept unix epoch timestamps.
+Other variables identified in <A HREF="../man5/xymon-xmh.5.html">xymon-xmh</A>(5) may also be used.
+<P>
+Because host filtration is done before test filtration, it's more efficient 
+(with very large data sets) to use PAGEPATH, HOSTNAME, NETWORK, and other 
+XMH_ filters when possible, before globally filtering with COLOR, *MSG, 
+*TIME, or TESTNAME. 
+<P>
+You can filter on, for example, both a hostname and a testname.
+<P>
 <P>
 <B>page=PAGEPATH</B>
 
 Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
 file.
+<P>
+<B>net=NETWORK</B>
+
+Include only tests from hosts with this NET: tag
+<P>
+<B>ip=IP</B>Address
+
+Include only tests from hosts with this IP address. This is a regex, not CIDR.
 <P>
 <B>host=HOSTNAME</B>
 
@@ -314,7 +332,42 @@ Include only tests with the testname TESTNAME
 
 Include only tests where the status color is COLORNAME
 <P>
-You can filter on, for example, both a hostname and a testname. 
+<B>tag=TAGNAME</B>
+
+Include only hosts with a certain tag specified in the <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5) line.
+Note that only items known to xymon components are included here; arbitrary
+text is not included
+<P>
+<B>XMH_string=VALUE</B>
+
+Include only hosts with a <A HREF="../man5/xymon-xmh.5.html">xymon-xmh</A>(5) variable matching this value
+<P>
+<P>
+Advanced Filtering
+<P>
+<B>msg=MESSAGE</B>
+
+Include only tests with full content matching MESSAGE. Use &quot;&quot; to escape 
+spaces (or other PCRE strings)
+<P>
+<B>ackmsg=MESSAGE</B>
+
+Include only tests with acknowledgement(s) MESSAGE. Use &quot;&quot; to escape 
+spaces (or other PCRE strings)
+<P>
+<B>dismsg=MESSAGE</B>
+
+Include only tests that have been disabled with strings matching MESSAGE. 
+Use &quot;&quot; to escape spaces (or other PCRE strings). (It is most efficient
+to pair this with color=blue.)
+<P>
+<P>
+Timestamp Filters
+<P>
+Certain fields (explained below) can be filtered with unix timestamps
+and with the following inequalities:  &gt;= &gt; &lt;= &lt; = != 
+<P>
+These filters are: lastchange, logtime, validtime, acktime, disabletime
 <P>
 The response is one line for each status that matches the CRITERIA,
 or all statuses if no criteria is specified. The line is composed of
@@ -597,6 +650,6 @@ pass it via stdin to the xymon command:
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 19:31:38 GMT, February 03, 2015
+Time: 05:39:17 GMT, March 31, 2015
 </BODY>
 </HTML>
