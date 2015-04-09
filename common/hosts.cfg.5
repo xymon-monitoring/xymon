@@ -73,6 +73,11 @@ files ending in ".rpmsave" or ".rpmnew", DPKG package manager
 files ending in ".dpkg-new" or ".dpkg-orig", and all special
 files (devices, sockets, pipes etc).
 
+.IP "optional include/directory"
+Both "include" and "directory" can be prefixed with the tag
+'optional', which will preven an error message being logged if
+the file or directory is not present on a system.
+
 
 .SH GENERAL PER-HOST OPTIONS
 .IP noclear
@@ -1357,16 +1362,17 @@ network tests.
 .SH DEFAULT HOST
 If you have certain tags that you want to apply to all hosts, you can
 define a host name ".default." and put the tags on that host. Note that
-per-host definitions will override the default ones.
+per-host definitions will override the default ones. To apply to all hosts
+this should be listed FIRST in your file.
 
 \fBNOTE:\fR The ".default." host entry will only accept the following
-tags - others are silently ignored: NOCOLUMNS, COMMENT, DESCR, CLASS, 
-dialup, testip, nonongreen, nodisp, noinfo, notrends, TRENDS, NOPROPRED, 
-NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, REPORTTIME, WARNPCT, NET, noclear, 
-nosslcert, ssldays, DOWNTIME, depends, noping, noconn, trace, notrace, 
-HIDEHTTP, browser, pulldata. Specifically, note that network tests,
-"badTEST" settings, and alternate pageset relations cannot be listed on 
-the ".default." host.
+tags - others are silently ignored: delayyellow, delayred, NOCOLUMNS, 
+COMMENT, DESCR, CLASS, dialup, testip, nonongreen, nodisp, noinfo, 
+notrends, TRENDS, NOPROPRED, NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, 
+REPORTTIME, WARNPCT, NET, noclear, nosslcert, ssldays, DOWNTIME, depends, 
+noping, noconn, trace, notrace, HIDEHTTP, browser, pulldata. Specifically, 
+note that network tests, "badTEST" settings, and alternate pageset 
+relations cannot be listed on the ".default." host.
 
 .SH SENDING SUMMARIES TO REMOTE XYMON SERVERS
 .IP "summary ROW.COLUMN IP URL"
