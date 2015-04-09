@@ -307,23 +307,26 @@ void parse_url(char *inputurl, urlelem_t *url)
 	p = strchr(startp, ':');
 	if (p) {
 		*p = '\0';
-		if (strncmp(startp, "https", 5) == 0) {
+		if (strncasecmp(startp, "https", 5) == 0) {
 			url->scheme = "https";
 			url->port = 443;
 			if (strlen(startp) > 5) url->schemeopts = strdup(startp+5);
-		} else if (strncmp(startp, "http", 4) == 0) {
+		} else if (strncasecmp(startp, "http", 4) == 0) {
 			url->scheme = "http";
 			url->port = 80;
 			if (strlen(startp) > 4) url->schemeopts = strdup(startp+4);
-		} else if (strcmp(startp, "ftp") == 0) {
+		} else if (strncasecmp(startp, "ftps", 4) == 0) {
+			url->scheme = "ftps";
+			url->port = 990;
+		} else if (strncasecmp(startp, "ftp", 3) == 0) {
 			url->scheme = "ftp";
 			url->port = 21;
-		} else if (strcmp(startp, "ldap") == 0) {
-			url->scheme = "ldap";
-			url->port = 389;
-		} else if (strcmp(startp, "ldaps") == 0) {
+		} else if (strncasecmp(startp, "ldaps", 5) == 0) {
 			url->scheme = "ldaps";
 			url->port = 389; /* ldaps:// URL's are non-standard, and must use port 389+STARTTLS */
+		} else if (strncasecmp(startp, "ldap", 4) == 0) {
+			url->scheme = "ldap";
+			url->port = 389;
 		}
 		else {
 			/* Unknown scheme! */
