@@ -172,11 +172,11 @@ install-cgi:
 	mkdir -p $(INSTALLROOT)$(CGIDIR)
 	mkdir -p $(INSTALLROOT)$(SECURECGIDIR)
 ifndef PKGBUILD
-	for F in $(CGISCRIPTS); do ln -sf $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done
-	for F in $(SECCGISCRIPTS); do ln -sf $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done
+	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done
+	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done
 else
-	for F in $(CGISCRIPTS); do ln -sf $(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done
-	for F in $(SECCGISCRIPTS); do ln -sf $(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done
+	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done
+	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done
 endif
 
 install-man:
