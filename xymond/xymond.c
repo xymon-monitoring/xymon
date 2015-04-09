@@ -3003,14 +3003,8 @@ boardfield_t *setup_fields(char *fieldstr)
 			int i;
 			for (i=0; (boardfieldnames[i].name && strcmp(tok, boardfieldnames[i].name)); i++) ;
 			if (boardfieldnames[i].name) {
-				switch (boardfieldnames[i].id) {
-				  case F_IP: fieldid = F_HOSTINFO; xmhfieldid = XMH_IP; break;
-				  case F_HOSTNAME: fieldid = F_HOSTINFO; xmhfieldid = XMH_HOSTNAME; break;
-				  default:
-					fieldid = boardfieldnames[i].id;
-					xmhfieldid = XMH_LAST;
-					break;
-				}
+				fieldid = boardfieldnames[i].id;
+				xmhfieldid = XMH_LAST;
 			}
 		}
 
