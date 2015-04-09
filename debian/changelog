@@ -1,4 +1,23 @@
 
+xymon (4.xx.yy) unstable; urgency=medium
+
+   * rev xxxx
+
+   * Summaries should be properly displayed again
+   * An icon for green acknowledged states is now included -- ironically, the
+     original icon that the other checkmarks were based off of.
+   * The various utilities in cgi-bin and cgi-secure are now hardlinked to
+     cgiwrap at install time instead of softlink, to allow for FollowSymLinks-less
+     apache configurations
+   * The protocol section of URLs in hosts.cfg is now case-insensitive, and ftps
+     URLs (FTP-over-SSL, not sftp) are recognized as a protocol.
+   * hosts.cfg docs have been clarified to include delayyellow and delayred as 
+     allowable options (Reported by John Thurston)
+*    'optional include' and 'optional directory' syntax has been documented 
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 Apr 2015 22:39:17 -0700
+
+
 xymon (4.3.19) unstable; urgency=medium
 
    * rev 7619
@@ -29,7 +48,7 @@ xymon (4.3.19) unstable; urgency=medium
      after any TIME= filter. Use (e.g.) to exclude Wednesday afternoons on a line 
      which is already restricted to 9:00a to 5:00p on weekdays only.
    * The included version of c-ares has been bumped to version 1.10.0.
-   * Support for older EGD (entropy gathering daemon) has been removed
+   * Support for older EGD (entropy gathering daemon) has been removed (Thanks, Bernard Spil)
    * A crash when xymond_rrd was run in --debug mode on non GNU/glibc systems has 
      been fixed
    * The msgs and procs tests are now HTML-encoded to ensure that lines with brackets
