@@ -14,6 +14,8 @@ Changes from 4.3.19 -> 4.xx.yy (00 Apr 2015)
 * hosts.cfg docs have been clarified to include delayyellow and delayred as
   allowable options (Reported by John Thurston)
 * 'optional include' and 'optional directory' syntax has been documented
+* pulldata directives in the hosts.cfg file now honor a given IP address and port
+  XMH_FLAG_PULLDATA is now retired; XMH_PULLDATA must be used in its place
 
 Changes from 4.3.18 -> 4.3.19 (30 Mar 2015)
 ===========================================

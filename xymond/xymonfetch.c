@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
 				char *hname;
 				clients_t *newclient;
 
-				if (!xmh_item(hostwalk, XMH_FLAG_PULLDATA)) continue;
+				if (!xmh_item(hostwalk, XMH_PULLDATA)) continue;
 
 				hname = xmh_item(hostwalk, XMH_HOSTNAME);
 				handle = xtreeFind(clients, hname);
@@ -613,7 +613,7 @@ int main(int argc, char *argv[])
 
 				/* Deleted hosts stay in our tree - but should disappear from the known hosts */
 				hostwalk = hostinfo(clientwalk->hostname); if (!hostwalk) continue;
-				pullstr = xmh_item(hostwalk, XMH_FLAG_PULLDATA); if (!pullstr) continue;
+				pullstr = xmh_item(hostwalk, XMH_PULLDATA); if (!pullstr) continue;
 
 				ip = strchr(pullstr, '=');
 				port = atoi(xgetenv("XYMONDPORT"));

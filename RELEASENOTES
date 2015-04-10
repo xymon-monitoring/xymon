@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.19   * * *
+           * * *   Release notes for Xymon 4.xx.yy   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -8,6 +8,19 @@ changes you should be aware of when upgrading.
 
 For a full list of changes and enhancements, please see the 
 Changes file.
+
+
+Changes for 4.3.20
+==================
+Remote summaries have been broken for a while but should now display again
+
+Documentation for various directives in hosts.cfg(5) has been added
+
+pullclient=IP:PORT directives are honored, if the defaults for the host are
+incorrect
+
+cgiwrap is now installed via hardlinking (or as packaged); FollowSymLinks 
+is no longer needed for the xymon cgi-bin directories and can be removed.
 
 
 Changes for 4.3.19

@@ -13,7 +13,8 @@ xymon (4.xx.yy) unstable; urgency=medium
      URLs (FTP-over-SSL, not sftp) are recognized as a protocol.
    * hosts.cfg docs have been clarified to include delayyellow and delayred as 
      allowable options (Reported by John Thurston)
-*    'optional include' and 'optional directory' syntax has been documented 
+   * 'optional include' and 'optional directory' syntax has been documented
+   * pulldata directives in the hosts.cfg file now honor a given IP address and port
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 Apr 2015 22:39:17 -0700
 
