@@ -18,6 +18,8 @@ Changes from 4.3.19 -> 4.xx.yy (00 Apr 2015)
   XMH_FLAG_PULLDATA is now retired; XMH_PULLDATA must be used in its place
 * confreport.sh not displaying time-restricted alerts properly has been fixed
   (Reported by Gavin Stone-Tolcher)
+* Planned downtime settings are now applied to 'purple' statuses as well
+  (Thanks, Torsten Richter)
 
 
 Changes from 4.3.18 -> 4.3.19 (30 Mar 2015)

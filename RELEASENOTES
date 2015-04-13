@@ -22,6 +22,8 @@ incorrect
 cgiwrap is now installed via hardlinking (or as packaged); FollowSymLinks 
 is no longer needed for the xymon cgi-bin directories and can be removed.
 
+Planned downtime settings are now applied to 'purple' statuses as well
+
 
 Changes for 4.3.19
 ==================

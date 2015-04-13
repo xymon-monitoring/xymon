@@ -17,6 +17,8 @@ xymon (4.xx.yy) unstable; urgency=medium
    * pulldata directives in the hosts.cfg file now honor a given IP address and port
    * confreport.sh not displaying time-restricted alerts properly has been fixed
      (Reported by Gavin Stone-Tolcher)
+   * Planned downtime settings are now applied to 'purple' statuses as well
+     (Thanks, Torsten Richter)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 Apr 2015 22:39:17 -0700
 

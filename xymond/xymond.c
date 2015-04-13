@@ -1244,7 +1244,7 @@ void get_hts(char *msg, char *sender, char *origin,
 
 done:
 	if (colstr) {
-		if ((*color == COL_RED) || (*color == COL_YELLOW)) {
+		if ((*color == COL_RED) || (*color == COL_YELLOW) || (*color == COL_PURPLE)) {
 			char *cause;
 
 			cause = check_downtime(hostname, testname);
