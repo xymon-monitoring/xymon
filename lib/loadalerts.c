@@ -1221,8 +1221,10 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 		sprintf(l, "<td align=center>%s</td>", durationstring(recip->interval)); 
 		addtobuffer(buf, l);
 
-		if (timespec) sprintf(l, "<td align=center>%s</td>", timespec); else strcpy(l, "<td align=center>-</td>");
-		if (extimespec) sprintf(l, "<td align=center>%s</td>", extimespec); else strcpy(l, "<td align=center>-</td>");
+		if (timespec && extimespec) sprintf(l, "<td align=center>%s, except %s</td>", timespec, extimespec);
+		else if (timespec) sprintf(l, "<td align=center>%s</td>", timespec);
+		else if (extimespec) sprintf(l, "<td align=center>all, except %s</td>", extimespec);
+		else strcpy(l, "<td align=center>-</td>");
 		addtobuffer(buf, l);
 
 		addtobuffer(buf, "<td>");

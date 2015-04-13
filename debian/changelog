@@ -15,6 +15,8 @@ xymon (4.xx.yy) unstable; urgency=medium
      allowable options (Reported by John Thurston)
    * 'optional include' and 'optional directory' syntax has been documented
    * pulldata directives in the hosts.cfg file now honor a given IP address and port
+   * confreport.sh not displaying time-restricted alerts properly has been fixed
+     (Reported by Gavin Stone-Tolcher)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 Apr 2015 22:39:17 -0700
 
