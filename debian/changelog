@@ -19,6 +19,11 @@ xymon (4.xx.yy) unstable; urgency=medium
      (Reported by Gavin Stone-Tolcher)
    * Planned downtime settings are now applied to 'purple' statuses as well
      (Thanks, Torsten Richter)
+   * Column documentation links should be working again (Reported by Andy Smith)
+   * Fix missing null termination in certain logfetch situations (Reported by
+     Johan Sj�berg)
+   * New httphead tag to force an http request using HEAD instead of GET
+
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 Apr 2015 22:39:17 -0700
 

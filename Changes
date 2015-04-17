@@ -20,6 +20,10 @@ Changes from 4.3.19 -> 4.xx.yy (00 Apr 2015)
   (Reported by Gavin Stone-Tolcher)
 * Planned downtime settings are now applied to 'purple' statuses as well
   (Thanks, Torsten Richter)
+* Column documentation links should be working again (Reported by Andy Smith)
+* Fix missing null termination in certain logfetch situations (Reported by
+  Johan Sjšberg)
+* New httphead tag to force an http request using HEAD instead of GET
 
 
 Changes from 4.3.18 -> 4.3.19 (30 Mar 2015)

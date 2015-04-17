@@ -24,6 +24,8 @@ is no longer needed for the xymon cgi-bin directories and can be removed.
 
 Planned downtime settings are now applied to 'purple' statuses as well
 
+http checks can now be performed using a HEAD request if desired.
+
 
 Changes for 4.3.19
 ==================
