@@ -385,6 +385,7 @@ void add_http_test(testitem_t *t)
 
 	switch (httptest->weburl.testtype) {
 	  case WEBTEST_PLAIN:
+	  case WEBTEST_HEAD:
 	  case WEBTEST_STATUS:
 		httptest->contentcheck = CONTENTCHECK_NONE;
 		break;
@@ -499,7 +500,8 @@ void add_http_test(testitem_t *t)
 	load_cookies();
 
 	/* Generate the request */
-	addtobuffer(httprequest, (httptest->weburl.postdata ? "POST " : "GET "));
+	addtobuffer(httprequest, (httptest->weburl.postdata ? "POST " :
+				 (httptest->weburl.testtype == WEBTEST_HEAD) ? "HEAD " : "GET "));
 	switch (httpversion) {
 		case HTTPVER_10: 
 			addtobuffer(httprequest, (httptest->weburl.proxyurl ? httptest->url : httptest->weburl.desturl->relurl));

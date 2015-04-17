@@ -1245,6 +1245,9 @@ the response, and red when it IS found. So it can be used to
 watch for data that should NOT be present in the response,
 e.g. a server error message.
 
+.IP httphead[=COLUMN];URL
+This is used to perform an HTTP HEAD request instead of a GET.
+
 .IP httpstatus[=COLUMN];URL;okstatusexpr;notokstatusexpr
 This is used to explicitly test for certain HTTP statuscodes
 returned when the URL is requested. The \fBokstatusexpr\fR and

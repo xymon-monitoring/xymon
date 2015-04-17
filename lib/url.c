@@ -536,6 +536,12 @@ char *decode_url(char *testspec, weburl_t *weburl)
 	} else if (strncmp(inp, "httpstatus=", 11) == 0) {
 		weburl->testtype = WEBTEST_STATUS;
 		urlstart = gethttpcolumn(inp+11, &weburl->columnname);
+	} else if (strncmp(inp, "httphead;", 9) == 0) {
+		weburl->testtype = WEBTEST_HEAD;
+		urlstart = strchr(inp, ';') + 1;
+	} else if (strncmp(inp, "httphead=", 9) == 0) {
+		weburl->testtype = WEBTEST_HEAD;
+		urlstart = gethttpcolumn(inp+9, &weburl->columnname);
 	} else if (strncmp(inp, "http=", 5) == 0) {
 		/* Plain URL test, but in separate column */
 		weburl->testtype = WEBTEST_PLAIN;
@@ -548,6 +554,7 @@ char *decode_url(char *testspec, weburl_t *weburl)
 
 	switch (weburl->testtype) {
 	  case WEBTEST_PLAIN:
+	  case WEBTEST_HEAD:
 		  break;
 
 	  case WEBTEST_CONT:
