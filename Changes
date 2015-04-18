@@ -24,6 +24,7 @@ Changes from 4.3.19 -> 4.xx.yy (00 Apr 2015)
 * Fix missing null termination in certain logfetch situations (Reported by
   Johan Sjšberg)
 * New httphead tag to force an http request using HEAD instead of GET
+* Fix a memory leak introduced in parsing Windows SVCS test data
 
 
 Changes from 4.3.18 -> 4.3.19 (30 Mar 2015)

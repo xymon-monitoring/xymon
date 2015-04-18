@@ -23,6 +23,7 @@ xymon (4.xx.yy) unstable; urgency=medium
    * Fix missing null termination in certain logfetch situations (Reported by
      Johan Sj�berg)
    * New httphead tag to force an http request using HEAD instead of GET
+   * Fix a memory leak introduced in parsing Windows SVCS test data
 
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 Apr 2015 22:39:17 -0700
