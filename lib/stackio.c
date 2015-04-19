@@ -367,13 +367,16 @@ static void addtofnlist(char *dirname, void **v_listhead)
 		/* Skip RCS files - they end with ",v" */
 		if ((fnlen >= 2) && (strcmp(d->d_name + fnlen - 2, ",v") == 0)) continue;
 
+		/* Skip any documentation file starting with README */
+		if (strncmp(d->d_name, "README", 6) == 0) continue;
+
 		/* Skip Debian installer left-overs - they end with ".dpkg-new"  or .dpkg-orig */
 		if ((fnlen >= 9) && (strcmp(d->d_name + fnlen - 9, ".dpkg-new") == 0)) continue;
 		if ((fnlen >= 10) && (strcmp(d->d_name + fnlen - 10, ".dpkg-orig") == 0)) continue;
 
 
-		/* Skip RPM package debris - they end with ".rpmsave" or .rpmnew */
-		if ((fnlen >= 8) && (strcmp(d->d_name + fnlen - 8, ".rpmsave") == 0)) continue;
+		/* Skip RPM package debris - they end with ".rpmsave", .rpmnew, or .rpmorig */
+		if ((fnlen >= 8) && ((strcmp(d->d_name + fnlen - 8, ".rpmsave") == 0) || (strcmp(d->d_name + fnlen - 8, ".rpmorig") == 0) ) ) continue;
 		if ((fnlen >= 7) && (strcmp(d->d_name + fnlen - 7, ".rpmnew") == 0)) continue;
 
 		sprintf(fn, "%s/%s", dirfn, d->d_name);
