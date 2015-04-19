@@ -127,8 +127,8 @@ state_t *init_state(char *filename, logdata_t *log)
 {
 	FILE 		*fd = NULL;
 	char		*p;
-	char		*hostname;
-	char		*testname;
+	char		*hostname = NULL;
+	char		*testname = NULL;
 	char		*testnameidx;
 	state_t 	*newstate;
 	char		fullfn[PATH_MAX];
@@ -163,8 +163,8 @@ state_t *init_state(char *filename, logdata_t *log)
 	}
 
 	if (!reportstart && !snapshot) {
-		hostname = strdup(log->hostname);
-		testname = strdup(log->testname);
+		if (log->hostname) hostname = strdup(log->hostname);
+		if (log->testname) testname = strdup(log->testname);
 	}
 	else {
 		sprintf(fullfn, "%s/%s", xgetenv("XYMONHISTDIR"), filename);
@@ -582,6 +582,11 @@ state_t *load_state(dispsummary_t **sumhead)
 
 			p = gettok(NULL, "|");
 			i++;
+		}
+		if (!log.hostname || !log.testname) {
+			errprintf("Found incomplete or corrupt log line (%s|%s); skipping\n", textornull(log.hostname), textornull(log.testname) );
+			xfree(onelog);
+			continue;
 		}
 		if (!log.msg) log.msg = "";
 		sprintf(fn, "%s.%s", commafy(log.hostname), log.testname);
