@@ -3480,7 +3480,9 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 			if ((*walk)->rule->rule.svc.stateexp)
 				sz += strlen((*walk)->rule->rule.svc.stateexp->pattern) + 10;
 
-			if ((*walk)->rule->statustext == NULL) (*walk)->rule->statustext = (char *)malloc(sz + 1);
+			if ((*walk)->rule->statustext != NULL) xfree((*walk)->rule->statustext);
+			(*walk)->rule->statustext = (char *)malloc(sz + 1);
+
 			p = (*walk)->rule->statustext;
 			if ((*walk)->rule->rule.svc.svcname) {
 				p += sprintf(p, "%s is %s/%s", (*walk)->rule->rule.svc.svcname,
