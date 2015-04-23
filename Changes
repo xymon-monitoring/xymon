@@ -25,6 +25,8 @@ Changes from 4.3.19 -> 4.xx.yy (00 Apr 2015)
   Johan Sjšberg)
 * New httphead tag to force an http request using HEAD instead of GET
 * Fix a memory leak introduced in parsing Windows SVCS test data
+* A divide-by-zero condition when systems erroneously report 0MB of physical
+  memory has been corrected (Reported by John Thurston)
 
 
 Changes from 4.3.18 -> 4.3.19 (30 Mar 2015)

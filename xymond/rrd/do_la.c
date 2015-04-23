@@ -255,6 +255,7 @@ done_parsing:
 		}
 
 		if (found == 4) {
+			if (!phystotal || !pagetotal) { errprintf("Host %s cpu report had 0 total physical/pagefile memory listed\n", hostname); return 0; }
 			phystotal = phystotal / 100;
 			pagetotal = pagetotal / 100;
 			realuse = 100 - (physavail / phystotal);
