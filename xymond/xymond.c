@@ -1532,6 +1532,13 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			if (log->enabletime == DISABLED_UNTIL_OK) log->validtime = INT_MAX;
 			else if (log->enabletime > log->validtime) log->validtime = log->enabletime;
 		}
+		else if ((newcolor == COL_PURPLE) && (xmh_item(hinfo, XMH_DOWNTIME) != NULL) ) {
+			/*
+			 * If DOWNTIME is configured, we don't want to wait the default amount of time
+			 * to re-scan for validity.
+			*/
+			log->validtime = now + 60;
+		}
 
 		/* 
 		 * If we have an existing status, check if the sender has changed.
@@ -4999,6 +5006,7 @@ void check_purple_status(void)
 					free_log_t(tmp);
 				}
 				else {
+					char *cause;
 					int newcolor = COL_PURPLE;
 					void *hinfo = hostinfo(hwalk->hostname);
 
@@ -5024,6 +5032,14 @@ void check_purple_status(void)
 					/* Tests on dialup hosts go clear, not purple */
 					if ((newcolor == COL_PURPLE) && hinfo && xmh_item(hinfo, XMH_FLAG_DIALUP)) {
 						newcolor = COL_CLEAR;
+					}
+
+					cause = check_downtime(hwalk->hostname, lwalk->test->name);
+					if (lwalk) lwalk->downtimeactive = (cause != NULL);
+					if (cause) {
+						newcolor = COL_BLUE;
+						/* If the status is not disabled, use downcause as the disable text */
+						if (!lwalk->dismsg) lwalk->dismsg = strdup(cause);                                         
 					}
 
 					handle_status(lwalk->message, "xymond", 
