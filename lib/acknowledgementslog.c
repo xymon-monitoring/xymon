@@ -172,7 +172,11 @@ void do_acknowledgementslog(FILE *output,
 				if (fgets(l, sizeof(l), acknowledgementslog) && /* Skip to start of line */
 				    fgets(l, sizeof(l), acknowledgementslog)) {
                                         /* 2015-03-07 18:17:03 myserver disk andy 1 1425724570 1425752223 1425838623 testing message */
-					sscanf(l, "%*u-%*u-%*u %*u:%*u:%*u %*s %*s %*s %*u %*u %u %*u %*s", &uicurtime);
+					if ( sscanf(l, "%*u-%*u-%*u %*u:%*u:%*u %*s %*s %*s %*u %*u %u %*u %*s", &uicurtime) == 0 ) {
+					    /* that didnt work - try the old format
+						1430040985      630949  30      630949  np_filename_not_used    myserver.procs red     testing log format \nAcked by: andy (127.0.0.1) */
+					    sscanf(l, "%u\t%*u\t%*u\t%*u\tnp_filename_not_used\t%*s\t%*s\t%*s", &uicurtime);
+					}
 					curtime = uicurtime;
 					done = (curtime < firstevent);
 				}
@@ -205,10 +209,29 @@ void do_acknowledgementslog(FILE *output,
 		struct htnames_t *eventcolumn;
 		int ovector[30];
 
-		/*itemsfound = sscanf(l, "%*u-%*u-%*u %*u:%*u:%*u %s %s %s %*u %*u %u %*u %s", host, svc, recipient, &etim, message);*/
+                /* 2015-03-07 18:17:03 myserver disk andy 1 1425724570 1425752223 1425838623 testing message */
 		itemsfound = sscanf(l, "%*u-%*u-%*u %*u:%*u:%*u %s %s %s %*u %*u %u %*u %[^\t\n]", host, svc, recipient, &etim, message);
+		if (itemsfound != 5) {
+		    /* 1430040985      630949  30      630949  np_filename_not_used    myserver.procs red     testing log format \nAcked by: andy (127.0.0.1) */
+		    itemsfound = sscanf(l, "%u\t%*u\t%*u\t%*u\tnp_filename_not_used\t%s\t%*s\t%[^\n]", &etim, host, message);
+		    if (itemsfound != 3) continue;
+		    p = strrchr(host, '.');
+		    if (p) {
+                        *p = '\0';
+			strcpy(svc,p+1);
+                    }
+		    /* Xymon uses \n in the ack message, for the "acked by" data. Cut it off. */
+		    p = strstr(message, "\\nAcked by:");
+		    if (p) {
+			strcpy(recipient,p+12);
+                        *(p-1) = '\0';
+		    }
+		    else {
+			strcpy(recipient,"UnknownUser");
+                    }
+		    p = strchr(recipient, '('); if (p) *(p-1) = '\0';
+                }
 		eventtime = etim;
-		if (itemsfound != 5) continue;
 		if (eventtime < firstevent) continue;
 		if (eventtime > lastevent) break;
 

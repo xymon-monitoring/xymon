@@ -26,6 +26,9 @@ xymon (4.xx.yy) unstable; urgency=medium
    * Fix a memory leak introduced in parsing Windows SVCS test data
    * A divide-by-zero condition when systems erroneously report 0MB of physical
      memory has been corrected (Reported by John Thurston)
+   * Parse either critical config or xymond-formatted acknowledgements on the
+     report page, and add documentation for the --ack-log option in xymond
+     (Thanks, Andy Smith)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 Apr 2015 22:39:17 -0700
 

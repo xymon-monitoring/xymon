@@ -230,6 +230,13 @@ means that a long-lived ack for yellow is lost when you send a short-lived
 ack for red. Hence alerts will restart when the red ack expires, even if
 the status by then has changed to yellow.
 
+.IP "--ack-log=FILENAME"
+Log acknowledgements created on the Critical Systems page to FILENAME.  
+NB, acknowledgements created by the Acknowledge Alert CGI are 
+automatically written to acknowledge.log in the Xymon server log 
+directory.  Alerts from the Critical Systems page can be directed to the 
+same log.
+
 .IP "--debug"
 Enable debugging output.
 

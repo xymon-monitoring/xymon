@@ -27,6 +27,9 @@ Changes from 4.3.19 -> 4.xx.yy (00 Apr 2015)
 * Fix a memory leak introduced in parsing Windows SVCS test data
 * A divide-by-zero condition when systems erroneously report 0MB of physical
   memory has been corrected (Reported by John Thurston)
+* Parse either critical config or xymond-formatted acknowledgements on the
+  report page, and add documentation for the --ack-log option in xymond
+  (Thanks, Andy Smith)
 
 
 Changes from 4.3.18 -> 4.3.19 (30 Mar 2015)
