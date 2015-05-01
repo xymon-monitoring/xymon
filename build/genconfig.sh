@@ -88,6 +88,15 @@ else
 	echo "#undef HAVE_UNAME" >>include/config.h
 fi
 
+echo "Checking for setenv"
+$CC -c -o build/testfile.o $CFLAGS build/test-setenv.c 1>/dev/null 2>&1
+if test $? -eq 0; then
+	echo "#define HAVE_SETENV 1" >>include/config.h
+else
+	echo "#undef HAVE_SETENV" >>include/config.h
+fi
+
+
 # This is experimental for 4.3.x
 #echo "Checking for POSIX binary tree functions"
 #$CC -c -o build/testfile.o $CFLAGS build/test-bintree.c 1>/dev/null 2>&1
