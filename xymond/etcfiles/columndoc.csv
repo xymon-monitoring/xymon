@@ -51,6 +51,7 @@ xymongen;The <b>xymongen</b> column shows the status of the Xymon xymongen task.
 xymonproxy;The <b>xymonproxy</b> column shows the status of the Xymon xymonproxy task. xymonproxy is used to forward Xymon status-reports from one part of the network to another, so a failure of this task may result in servers that are not being monitored.;
 xymonnet;The <b>xymonnet</b> column shows the status of the Xymon network-service monitoring task. This task is responsible for testing all of the network services being monitored. ;
 xymond;The <b>xymond</b> column shows the status of the central Xymon daemon.;
+clientlog;The <b>clientlog</b> column shows the current raw client message last sent by the host.;
 info;The <b>info</b> column shows static information about how this host is configured in the Xymon system.;
 trends;The <b>trends</b> column holds a collection of the graphs that show trends in the utilisation, response-times etc. for the services monitored on this host.;
 graphs;The <b>graphs</b> column holds a collection of the graphs that show trends in the utilisation, response-times etc. for the services monitored on this host.;

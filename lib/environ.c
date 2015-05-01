@@ -49,6 +49,7 @@ const static struct {
 	{ "PINGCOLUMN", "conn" },
 	{ "INFOCOLUMN", "info" },
 	{ "TRENDSCOLUMN", "trends" },
+	{ "CLIENTCOLUMN", "clientlog" },
 	{ "DOCOMBO", "TRUE" },
 	{ "MAXMSGSPERCOMBO", "100" },
 	{ "SLEEPBETWEENMSGS", "0" },

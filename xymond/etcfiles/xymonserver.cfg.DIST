@@ -49,6 +49,8 @@ INFOCOLUMN="info"		# Column where the info-pages are reported.
 INFOCOLUMNGIF="green.gif"	# Icon file used for the info-column.
 TRENDSCOLUMN="trends"		# Column where the RRD graphs are reported.
 TRENDSCOLUMNGIF="green.gif"	# Icon file used for the trends-column.
+CLIENTCOLUMN="clientlog"	# Column where raw client logs are reported.
+CLIENTCOLUMNGIF="green.gif"	# Icon file used for the client-column.
 
 MAXMSGSPERCOMBO="100"           # How many individual messages to combine in a combo-message. 0=unlimited.
 SLEEPBETWEENMSGS="0"            # Delay between sending each combo message, in milliseconds.

@@ -138,6 +138,14 @@ static int parse_query(void)
 		return 1;
 	}
 
+	if (strcmp(service, xgetenv("CLIENTCOLUMN")) == 0) {
+		/* Make this a client request */
+		char *p = strdup(basename(hostname));
+		xfree(hostname); hostname = p;	/* no need to convert to dots, since we'll already have them */
+		xfree(service);			/* service does double-duty as the 'section' param */
+		outform = FRM_CLIENT;
+	}
+
 	if (outform == FRM_STATUS) {
 		char *p, *req;
 

@@ -31,6 +31,11 @@ xymon (4.xx.yy) unstable; urgency=medium
      (Thanks, Andy Smith)
    * The graphs to be displayed on a specific status page can be customized
      with environment variables - see xymonserver.cfg(5). From Werner Maier.
+   * When clients are in "server" mode (sending raw data to the xymond server
+     to be centrally processed), a 'clientlog' column will now be shown on
+     xymon pages (similar to trends and info columns). This can be disabled on 
+     a per-host basis by adding a 'noclient' tag to the hosts.cfg line, 
+     or globally by adding that to the .default. host.
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 Apr 2015 22:39:17 -0700
 

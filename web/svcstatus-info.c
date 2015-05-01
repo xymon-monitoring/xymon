@@ -94,7 +94,7 @@ static int fetch_status(char *hostname)
 		eol = strchr(walk, '\n'); if (eol) *eol = '\0';
 
 		tok = gettok(walk, "|");
-		if ( tok && (strcmp(tok, xgetenv("INFOCOLUMN")) != 0) && (strcmp(tok, xgetenv("TRENDSCOLUMN")) != 0) ) {
+		if ( tok && (strcmp(tok, xgetenv("INFOCOLUMN")) != 0) && (strcmp(tok, xgetenv("TRENDSCOLUMN")) != 0) && (strcmp(tok, xgetenv("CLIENTCOLUMN")) != 0) ) {
 			tnames[testcount].name = strdup(tok); tok = gettok(NULL, "|"); 
 			if (tok) { tnames[testcount].color = parse_color(tok); tok = gettok(NULL, "|"); }
 			if (tok) { tnames[testcount].distime = atol(tok); tok = gettok(NULL, "|"); }

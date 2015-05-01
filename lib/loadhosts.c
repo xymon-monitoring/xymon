@@ -136,6 +136,8 @@ static void xmh_item_list_setup(void)
 	xmh_item_name[XMH_FLAG_NOINFO]         = "XMH_FLAG_NOINFO";
 	xmh_item_key[XMH_FLAG_NOTRENDS]        = "notrends";
 	xmh_item_name[XMH_FLAG_NOTRENDS]       = "XMH_FLAG_NOTRENDS";
+	xmh_item_key[XMH_FLAG_NOCLIENT]        = "noclient";
+	xmh_item_name[XMH_FLAG_NOCLIENT]       = "XMH_FLAG_NOCLIENT";
 	xmh_item_key[XMH_FLAG_NODISP]          = "nodisp";
 	xmh_item_name[XMH_FLAG_NODISP]         = "XMH_FLAG_NODISP";
 	xmh_item_key[XMH_FLAG_NONONGREEN]      = "nonongreen";

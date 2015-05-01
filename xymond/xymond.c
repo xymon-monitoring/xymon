@@ -3918,9 +3918,10 @@ void do_message(conn_t *msg, char *origin)
 		xtreePos_t hosthandle;
 		xymond_hostlist_t *hwalk;
 		xymond_log_t *lwalk, *firstlog;
-		xymond_log_t infologrec, rrdlogrec;
 		time_t *dummytimes;
-		testinfo_t trendstest, infotest;
+		static testinfo_t trendstest, infotest, clienttest;
+		static xymond_log_t trendslogrec, infologrec, clientlogrec;
+		static int faketestinit = 0;
 		hostfilter_rec_t *logfilter;
 		boardfield_t *logfields;
 		char *fields = NULL;
@@ -3936,21 +3937,31 @@ void do_message(conn_t *msg, char *origin)
 
 		response = newstrbuffer(lastboardsize);
 
-		/* Setup fake log-records for the "info" and "trends" data. */
+		/* Setup fake log-records for the "clientlog", "info" and "trends" data. */
 		dummytimes = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
-		memset(&infotest, 0, sizeof(infotest));
-		infotest.name = xgetenv("INFOCOLUMN");
-		memset(&infologrec, 0, sizeof(infologrec));
-		infologrec.test = &infotest;
 
-		memset(&trendstest, 0, sizeof(trendstest));
-		trendstest.name = xgetenv("TRENDSCOLUMN");
-		memset(&rrdlogrec, 0, sizeof(rrdlogrec));
-		rrdlogrec.test = &trendstest;
+		if (!faketestinit) {
+			memset(&clienttest, 0, sizeof(clienttest));
+			clienttest.name = xgetenv("CLIENTCOLUMN");
+			memset(&clientlogrec, 0, sizeof(clientlogrec));
+			clientlogrec.test = &clienttest;
 
-		infologrec.color = rrdlogrec.color = COL_GREEN;
-		infologrec.message = rrdlogrec.message = "";
-		infologrec.lastchange = rrdlogrec.lastchange = dummytimes;
+			memset(&infotest, 0, sizeof(infotest));
+			infotest.name = xgetenv("INFOCOLUMN");
+			memset(&infologrec, 0, sizeof(infologrec));
+			infologrec.test = &infotest;
+
+			memset(&trendstest, 0, sizeof(trendstest));
+			trendstest.name = xgetenv("TRENDSCOLUMN");
+			memset(&trendslogrec, 0, sizeof(trendslogrec));
+			trendslogrec.test = &trendstest;
+
+			clientlogrec.color = infologrec.color = trendslogrec.color = COL_GREEN;
+			clientlogrec.message = infologrec.message = trendslogrec.message = "";
+			faketestinit = 1;
+		}
+		clientlogrec.lastchange = infologrec.lastchange = trendslogrec.lastchange = dummytimes;
+
 
 		for (hosthandle = xtreeFirst(rbhosts); (hosthandle != xtreeEnd(rbhosts)); hosthandle = xtreeNext(rbhosts, hosthandle)) {
 			hwalk = xtreeData(rbhosts, hosthandle);
@@ -3975,18 +3986,22 @@ void do_message(conn_t *msg, char *origin)
 				/* Host/pagename filter */
 				if (!match_host_filter(hinfo, logfilter, 0, NULL)) continue;
 
-				/* Handle NOINFO and NOTRENDS here */
+				/* Handle NOINFO, NOCLIENT and NOTRENDS here */
+				if (hwalk->clientmsgs && !xmh_item(hinfo, XMH_FLAG_NOCLIENT)) {
+					clientlogrec.next = firstlog;
+					firstlog = &clientlogrec;
+				}
 				if (!xmh_item(hinfo, XMH_FLAG_NOINFO)) {
 					infologrec.next = firstlog;
 					firstlog = &infologrec;
 				}
 				if (!xmh_item(hinfo, XMH_FLAG_NOTRENDS)) {
-					rrdlogrec.next = firstlog;
-					firstlog = &rrdlogrec;
+					trendslogrec.next = firstlog;
+					firstlog = &trendslogrec;
 				}
 			}
 
-			rrdlogrec.host = infologrec.host = hwalk;
+			clientlogrec.host = trendslogrec.host = infologrec.host = hwalk;
 
 			for (lwalk = firstlog; (lwalk); lwalk = lwalk->next) {
 				if (!match_test_filter(lwalk, logfilter)) continue;
@@ -4862,9 +4877,10 @@ void load_checkpoint(char *fn)
 		hostname = knownhost(hostname, hostip, ghosthandling);
 		if (hostname == NULL) continue;
 
-		/* Ignore the "info" and "trends" data, since we generate on the fly now. */
+		/* Ignore the "client", "info" and "trends" data, since we generate on the fly now. */
 		if (strcmp(testname, xgetenv("INFOCOLUMN")) == 0) continue;
 		if (strcmp(testname, xgetenv("TRENDSCOLUMN")) == 0) continue;
+		if (strcmp(testname, xgetenv("CLIENTCOLUMN")) == 0) continue;
 
 		/* Rename the now-forgotten internal statuses */
 		if (strcmp(hostname, getenv("MACHINEDOTS")) == 0) {

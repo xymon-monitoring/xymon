@@ -111,9 +111,10 @@ int interesting_column(int pagetype, int color, int alert, xymongen_col_t *colum
 
 	/* pagetype is now known NOT to be PAGE_NORMAL */
 
-	/* TRENDS and INFO columns are always included on non-Xymon pages */
+	/* CLIENT, TRENDS and INFO columns are always included on non-Xymon pages */
 	if (strcmp(column->name, xgetenv("INFOCOLUMN")) == 0) return 1;
 	if (strcmp(column->name, xgetenv("TRENDSCOLUMN")) == 0) return 1;
+	if (strcmp(column->name, xgetenv("CLIENTCOLUMN")) == 0) return 1;
 
 	if (includecolumns) {
 		int result;
@@ -441,7 +442,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	col_list_t *groupcols, *gc;
 	int	genstatic;
 	int	columncount;
-	char	*xymonskin, *infocolumngif, *trendscolumngif;
+	char	*xymonskin, *infocolumngif, *trendscolumngif, *clientcolumngif;
 	int	rowcount = 0;
 	int     usetooltip = 0;
 
@@ -451,6 +452,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	xymonskin = strdup(xgetenv("XYMONSKIN"));
 	infocolumngif = strdup(getenv("INFOCOLUMNGIF") ?  getenv("INFOCOLUMNGIF") : dotgiffilename(COL_GREEN, 0, 1));
 	trendscolumngif = strdup(getenv("TRENDSCOLUMNGIF") ?  getenv("TRENDSCOLUMNGIF") : dotgiffilename(COL_GREEN, 0, 1));
+	clientcolumngif = strdup(getenv("CLIENTCOLUMNGIF") ?  getenv("CLIENTCOLUMNGIF") : dotgiffilename(COL_GREEN, 0, 1));
 
 	switch (tooltipuse) {
 	  case TT_STDONLY: usetooltip = (pagetype == PAGE_NORMAL); break;
@@ -566,6 +568,10 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 						htmlalttag = alttag(e->column->name, COL_GREEN, 0, 1, h->ip);
 						img = trendscolumngif;
 					}
+					else if (strcmp(e->column->name, xgetenv("CLIENTCOLUMN")) == 0) {
+						htmlalttag = alttag(e->column->name, COL_GREEN, 0, 1, h->ip);
+						img = clientcolumngif;
+					}
 					else {
 						htmlalttag = alttag(e->column->name, e->color, e->acked, e->propagate, e->age);
 					}
@@ -576,7 +582,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 						/* A summary host. */
 						fprintf(output, "<A HREF=\"%s\">", e->sumurl);
 					}
-					else if (genstatic && strcmp(e->column->name, xgetenv("INFOCOLUMN")) && strcmp(e->column->name, xgetenv("TRENDSCOLUMN"))) {
+					else if (genstatic && strcmp(e->column->name, xgetenv("INFOCOLUMN")) && strcmp(e->column->name, xgetenv("TRENDSCOLUMN")) && strcmp(e->column->name, xgetenv("CLIENTCOLUMN"))) {
 						/*
 						 * Dont use htmlextension here - it's for the
 						 * pages generated dynamically.

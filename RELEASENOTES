@@ -31,6 +31,10 @@ a per-test basis through the use of environment variables. For example,
 GRAPHS_cpu="la,vmstat1" will cause an additional graph to be shown on 
 cpu tests. (Submitted by Werner Maier)
 
+A new column will be displayed on all xymon pages allowing direct access
+to a server's raw clientlog (similar to the special info and trends columns). 
+This can be disabled with a "noclient" tag in hosts.cfg
+
 
 Changes for 4.3.19
 ==================
