@@ -4443,6 +4443,12 @@ void do_message(conn_t *msg, char *origin)
 			else {
 				void *hinfo = hostinfo(hname);
 
+				if (xtreeFind(rbhosts, hname) == xtreeEnd(rbhosts)) {
+					/* No hostlist record */
+					(void *)create_hostlist_t(hname, hostip);
+					hostcount++;
+				}
+
 				handle_client(msg->buf, sender, hname, collectorid, clientos, clientclass);
 
 				if (hinfo) {
