@@ -36,6 +36,9 @@ xymon (4.xx.yy) unstable; urgency=medium
      xymon pages (similar to trends and info columns). This can be disabled on 
      a per-host basis by adding a 'noclient' tag to the hosts.cfg line, 
      or globally by adding that to the .default. host.
+   * Add protocols.cfg entries for amqp(s), svn, ircd, and mail (submission).     
+     (Note that smtp testing here may suffer the same occasional issue as  
+     regular smtp conversations with regard to out-of-order commands.)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 Apr 2015 22:39:17 -0700
 

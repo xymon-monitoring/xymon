@@ -35,6 +35,10 @@ A new column will be displayed on all xymon pages allowing direct access
 to a server's raw clientlog (similar to the special info and trends columns). 
 This can be disabled with a "noclient" tag in hosts.cfg
 
+Additional sample protocols.cfg services are present, for svn, amqp(s) and
+ircd. (Note that different ircd servers respond differently and the included
+protocol conversation may require modification to work on your server.)
+
 
 Changes for 4.3.19
 ==================
