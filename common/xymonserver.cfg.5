@@ -500,7 +500,12 @@ the response-time, OR if you are using the
 external script mechanism to collect data from custom tests. 
 Note: All TCP tests are automatically added.
 
-This is also used by the 
+.IP GRAPH_<COLUMNAME>
+List of GRAPHs that should be displayed on the corresponding colmn page. Note
+this will override the default, so to add multiple graphs you should include
+the origina one (e.g. GRAPH_cpu="la,vmstat1").
+
+These are used together by the 
 .I svcstatus.cgi(1) 
 script to determine if the detailed status view of a test should 
 include a graph.

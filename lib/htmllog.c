@@ -182,6 +182,9 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	xymonrrd_t *rrd = NULL;
 	xymongraph_t *graph = NULL;
 	char *tplfile = "hostsvc";
+	char *graphs;
+	char *graphsenv;
+	char *graphsptr;
 	time_t now = getcurrenttime(NULL);
 
 	if (graphtime == 0) {
@@ -493,7 +496,29 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 		if (may_have_rrd) {
 			fprintf(output, "<!-- linecount=%d -->\n", linecount);
-			fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+			fprintf(output, "<a name=\"begingraph\">&nbsp;</a>\n");
+
+			/* Get the GRAPHS_* environment setting */
+			graphs = (char *)malloc(7 + strlen(service) + 1);
+			sprintf(graphs, "GRAPHS_%s", service);
+			graphsenv=getenv(graphs);
+			if (graphsenv) {
+				fprintf(output, "<!-- GRAPHS_%s: %s -->\n", service, graphsenv);
+				/* check for strtokens */
+				graphsptr = strtok(graphsenv,",");
+				while (graphsptr != NULL) {
+					// fprintf(output, "<!-- found: %s -->\n", graphsptr);
+					graph->xymonrrdname = strdup(graphsptr);
+					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+					// next token
+					graphsptr = strtok(NULL,",");
+				}
+
+			}
+			else {
+				fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+			}
+			xfree(graphs);
 		}
 	}
 

@@ -26,6 +26,11 @@ Planned downtime settings are now applied to 'purple' statuses as well
 
 http checks can now be performed using a HEAD request if desired.
 
+Which RRD graphs are displayed on a status page can now be customized on
+a per-test basis through the use of environment variables. For example,
+GRAPHS_cpu="la,vmstat1" will cause an additional graph to be shown on 
+cpu tests. (Submitted by Werner Maier)
+
 
 Changes for 4.3.19
 ==================

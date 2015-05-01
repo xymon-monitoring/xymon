@@ -29,6 +29,8 @@ xymon (4.xx.yy) unstable; urgency=medium
    * Parse either critical config or xymond-formatted acknowledgements on the
      report page, and add documentation for the --ack-log option in xymond
      (Thanks, Andy Smith)
+   * The graphs to be displayed on a specific status page can be customized
+     with environment variables - see xymonserver.cfg(5). From Werner Maier.
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 Apr 2015 22:39:17 -0700
 

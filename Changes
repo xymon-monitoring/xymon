@@ -30,6 +30,8 @@ Changes from 4.3.19 -> 4.xx.yy (00 Apr 2015)
 * Parse either critical config or xymond-formatted acknowledgements on the
   report page, and add documentation for the --ack-log option in xymond
   (Thanks, Andy Smith)
+* The graphs to be displayed on a specific status page can be customized
+  with environment variables - see xymonserver.cfg(5). From Werner Maier.
 
 
 Changes from 4.3.18 -> 4.3.19 (30 Mar 2015)
