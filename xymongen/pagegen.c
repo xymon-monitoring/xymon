@@ -1271,6 +1271,9 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype, char *filenamebas
 		fprintf(output, "%s", xgetenv("XYMONALLOKTEXT"));
 	}
 
+	/* Summaries on nongreenpage as well */
+	do_summaries(dispsums, output);
+
 	if ((snapshot == 0) && (summarytype == PAGE_NONGREEN)) {
 		do_nongreenext(output, "XYMONNONGREENEXT", "mkbb");
 

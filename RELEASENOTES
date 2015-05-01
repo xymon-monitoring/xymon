@@ -12,7 +12,8 @@ Changes file.
 
 Changes for 4.3.20
 ==================
-Remote summaries have been broken for a while but should now display again
+Remote summaries display had been broken for a while but should now be working
+again. Summaries are now also displayed on the nongreen.html page
 
 Documentation for various directives in hosts.cfg(5) has been added
 

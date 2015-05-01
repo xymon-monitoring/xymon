@@ -3,7 +3,8 @@ Changes from 4.3.19 -> 4.xx.yy (00 Apr 2015)
 
 * rev xxyy
 
-* Summaries should be properly displayed again
+* Summaries should be properly displayed again, and will display on the
+  nongreen.html page as well.
 * An icon for green acknowledged states is now included -- ironically, the 
   original icon that the other checkmarks were based off of.
 * The various utilities in cgi-bin and cgi-secure are now hardlinked to 
