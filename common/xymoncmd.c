@@ -24,6 +24,9 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 
 #include "libxymon.h"
+#ifdef HAVE_UNAME
+#include <sys/utsname.h>
+#endif
 
 static void xymon_default_envs(char *envfn)
 {
@@ -31,9 +34,21 @@ static void xymon_default_envs(char *envfn)
 	char buf[1024];
 	char *evar;
 	char *homedir, *p;
+	int hasuname = 0;
+#ifdef	HAVE_UNAME
+	struct utsname u_name;
+#endif
+
+#ifdef	HAVE_UNAME
+	hasuname = (uname(&u_name) != -1);
+	if (!hasuname) errprintf("uname() failed: %s\n", strerror(errno));
+#endif
 
 	if (getenv("MACHINEDOTS") == NULL) {
 	    if (getenv("HOSTNAME") != NULL) sprintf(buf, "%s", xgetenv("HOSTNAME"));
+#ifdef	HAVE_UNAME
+	    else if (hasuname) sprintf(buf, "%s", u_name.nodename);
+#endif
 	    else {
 		fd = popen("uname -n", "r");
 		if (fd && fgets(buf, sizeof(buf), fd)) {
@@ -50,12 +65,19 @@ static void xymon_default_envs(char *envfn)
 	xgetenv("MACHINE");
 
 	if (getenv("SERVEROSTYPE") == NULL) {
+#ifdef	HAVE_UNAME
+	    if (hasuname) sprintf(buf, "%s", u_name.sysname);
+	    else {
+#else
+	    {
+#endif
 		fd = popen("uname -s", "r");
 		if (fd && fgets(buf, sizeof(buf), fd)) {
 			p = strchr(buf, '\n'); if (p) *p = '\0';
 			pclose(fd);
 		}
 		else strcpy(buf, "unix");
+	    }
 		for (p=buf; (*p); p++) *p = (char) tolower((int)*p);
 
 		evar = (char *)malloc(strlen(buf) + 14);
