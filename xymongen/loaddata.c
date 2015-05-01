@@ -509,7 +509,7 @@ state_t *load_state(dispsummary_t **sumhead)
 			char *bcmd;
 
 			bcmd = (char *)malloc(1024 + (filter ? strlen(filter) : 0));
-			sprintf(bcmd, "xymondboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist %s", (filter ? filter: ""));
+			sprintf(bcmd, "xymondboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,acklist %s", (filter ? filter: ""));
 			xymondresult = sendmessage(bcmd, NULL, XYMON_TIMEOUT, sres);
 			board = getsendreturnstr(sres, 1);
 			xfree(bcmd);
@@ -564,7 +564,7 @@ state_t *load_state(dispsummary_t **sumhead)
 		p = gettok(onelog, "|"); i = 0;
 		while (p) {
 			switch (i) {
-			  /* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message */
+			  /* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|acklist */
 			  case  0: log.hostname = p; break;
 			  case  1: log.testname = p; break;
 			  case  2: log.color = parse_color(p); break;
@@ -576,8 +576,7 @@ state_t *load_state(dispsummary_t **sumhead)
 			  case  8: log.disabletime = atoi(p); break;
 			  case  9: log.sender = p; break;
 			  case 10: log.cookie = atoi(p); break;
-			  case 11: log.msg = p; break;
-			  case 12: acklist = p; break;
+			  case 11: acklist = p; break;
 			}
 
 			p = gettok(NULL, "|");
