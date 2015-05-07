@@ -15,6 +15,12 @@ Changes for 4.3.20
 Remote summaries display had been broken for a while but should now be working
 again. Summaries are now also displayed on the nongreen.html page
 
+The "Actual Used" memory figure on recent Linux kernels is now taken from
+the "Available" memory reported back from free (or /proc/meminfo), which should
+give a more accurate response. Physical Memory Used is still reported as the 
+combination of Kernel Physical Use + buffers/cache, however this may change in
+a future release.
+
 Documentation for various directives in hosts.cfg(5) has been added
 
 pullclient=IP:PORT directives are honored, if the defaults for the host are

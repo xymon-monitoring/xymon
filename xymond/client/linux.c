@@ -72,6 +72,18 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
 	unix_vmstat_report(hostname, clienttype, os, hinfo, fromline, timestr, vmstatstr);
 
+	/*
+	 * Sigh. Recent kernels + procps-ng change things up a bit. If 'available' is present
+	 * (roughly, 3.14+ and 2.6.27+, but depends on the vendor), then we'll use the inverse of that:
+	 * 	(Physical - Available = ACTUALUSED)
+	 * Otherwise, it's:
+	 *	(Physical Used - (buffers + cached) = ACTUALUSED)
+	 * 
+	 * See discussions at http://lists.xymon.com/pipermail/xymon/2015-April/041628.html
+	 * If the legacy meminfo display is NOT used, we should get the old format still
+	 * 
+	 */
+		
 	if (freestr) {
 		char *p;
 		long memphystotal, memphysused, memphysfree,
@@ -79,22 +91,47 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 		     memswaptotal, memswapused, memswapfree;
 
 		memphystotal = memswaptotal = memphysused = memswapused = memactused = memactfree = -1;
-		p = strstr(freestr, "\nMem:");
-		if (p && (sscanf(p, "\nMem: %ld %ld %ld", &memphystotal, &memphysused, &memphysfree) == 3)) {
-			memphystotal /= 1024;
-			memphysused /= 1024;
-			memphysfree /= 1024;
+
+		/* check for old style */
+		p = strstr(freestr, "\n-/+ buffers/cache:");
+		if (p) {
+			if (sscanf(p, "\n-/+ buffers/cache: %ld %ld", &memactused, &memactfree) == 2) {
+				memactused /= 1024;
+				memactfree /= 1024;
+			}
+			p = strstr(freestr, "\nMem:");
+			if (p && (sscanf(p, "\nMem: %ld %ld %ld", &memphystotal, &memphysused, &memphysfree) == 3)) {
+				memphystotal /= 1024;
+				memphysused /= 1024;
+				memphysfree /= 1024;
+			}
+
 		}
+		/* check for new style */
+		else if (strstr(freestr, "available\n")) {
+			long shared, buffcache;
+			p = strstr(freestr, "\nMem:");
+			if (p && (sscanf(p, "\nMem: %ld %ld %ld %ld %ld %ld", &memphystotal, &memphysused, &memphysfree, 
+										&shared, &buffcache, &memactfree) == 6)) {
+				memphystotal /= 1024;
+				memphysused /= 1024;
+				memphysfree /= 1024;
+				/* Provide a Physical Used value that's compatible with previous thresholds. However, use the */
+				/* new 'Available' line as the basis for "Actual Used", since it'll be more accurate. */
+				memactfree /= 1024;
+				memactused = memphystotal - memactfree; if (memactused < 0) memactused = 0;
+				memphysused += (buffcache / 1024);
+
+			}
+		}
+		else errprintf(" -> No readable memory data for %s in freestr\n", hostname);
+
+		/* There's always a swap line */
 		p = strstr(freestr, "\nSwap:");
 		if (p && (sscanf(p, "\nSwap: %ld %ld %ld", &memswaptotal, &memswapused, &memswapfree) == 3)) {
 			memswaptotal /= 1024;
 			memswapused /= 1024;
 			memswapfree /= 1024;
-		}
-		p = strstr(freestr, "\n-/+ buffers/cache:");
-		if (p && (sscanf(p, "\n-/+ buffers/cache: %ld %ld", &memactused, &memactfree) == 2)) {
-			memactused /= 1024;
-			memactfree /= 1024;
 		}
 
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,

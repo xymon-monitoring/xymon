@@ -42,6 +42,9 @@ xymon (4.xx.yy) unstable; urgency=medium
      regular smtp conversations with regard to out-of-order commands.)
    * Fix a crash on non-glibc systems when testing xymond_alert configs with
      a host not in hosts.cfg (Reported by John Thurston)
+   * On newer Linux kernels with recent procps-ng, use the "Available" memory
+     reported by the kernel to give a more accurate reading for "Actual Used"
+     in the client's memory status. (Reported by Dominique Frise)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 May 2015 22:39:17 -0700
 
