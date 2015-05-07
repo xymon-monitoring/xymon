@@ -1,4 +1,4 @@
-Changes from 4.3.19 -> 4.xx.yy (00 Apr 2015)
+Changes from 4.3.19 -> 4.xx.yy (00 May 2015)
 ===========================================
 
 * rev xxyy
@@ -41,6 +41,8 @@ Changes from 4.3.19 -> 4.xx.yy (00 Apr 2015)
 * Add protocols.cfg entries for amqp(s), svn, ircd, and mail (submission).
   (Note that smtp testing here may suffer the same occasional issue as 
   regular smtp conversations with regard to out-of-order commands.)
+* Fix a crash on non-glibc systems when testing xymond_alert configs with
+  a host not in hosts.cfg (Reported by John Thurston)
 
 
 Changes from 4.3.18 -> 4.3.19 (30 Mar 2015)

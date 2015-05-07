@@ -804,15 +804,22 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 */
 
 	static char *pgnames = NULL;
+	char *dgname = NULL;
 	int pgmatchres, pgexclres;
 	time_t duration = (getcurrenttime(NULL) - alert->eventstart);
 	int result, cfid = 0;
 	char *pgtok, *cfline = NULL;
 	void *hinfo = hostinfo(alert->hostname);
 
+	if (!hinfo) {
+		errprintf("Checking criteria for host '%s', which is not defined\n", alert->hostname);
+		hinfo = localhostinfo(alert->hostname);
+	};
+
 	/* The top-level page needs a name - cannot match against an empty string */
 	if (pgnames) xfree(pgnames);
 	pgnames = strdup((*alert->location == '\0') ? "/" : alert->location);
+	dgname = textornull(xmh_item(hinfo, XMH_DGNAME));
 
 	if (crit) { cfid = crit->cfid; cfline = crit->cfline; }
 	if (!cfid && rulecrit) cfid = rulecrit->cfid;
@@ -820,7 +827,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	if (!cfline) cfline = "<undefined>";
 
 	traceprintf("Matching host:service:dgroup:page '%s:%s:%s:%s' against rule line %d\n",
-			alert->hostname, alert->testname, xmh_item(hinfo, XMH_DGNAME), alert->location, cfid);
+			alert->hostname, alert->testname, dgname, alert->location, cfid);
 
 	if (alert->state == A_PAGING) {
 		/* Check max-duration now - it's fast and easy. */
@@ -916,11 +923,11 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		return 0;
 	}
 
-	if (crit && crit->dgspec && !namematch(xmh_item(hinfo, XMH_DGNAME), crit->dgspec, crit->dgspecre)) { 
+	if (crit && crit->dgspec && !namematch(dgname, crit->dgspec, crit->dgspecre)) { 
 		traceprintf("Failed '%s' (displaygroup not in include list)\n", cfline);
 		return 0; 
 	}
-	if (crit && crit->exdgspec && namematch(xmh_item(hinfo, XMH_DGNAME), crit->exdgspec, crit->exdgspecre)) { 
+	if (crit && crit->exdgspec && namematch(dgname, crit->exdgspec, crit->exdgspecre)) { 
 		traceprintf("Failed '%s' (displaygroup excluded)\n", cfline);
 		return 0; 
 	}
