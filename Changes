@@ -1,7 +1,7 @@
-Changes from 4.3.19 -> 4.xx.yy (00 May 2015)
+Changes from 4.3.19 -> 4.3.20 (14 May 2015)
 ===========================================
 
-* rev xxyy
+* rev 7656
 
 * Summaries should be properly displayed again, and will display on the
   nongreen.html page as well.

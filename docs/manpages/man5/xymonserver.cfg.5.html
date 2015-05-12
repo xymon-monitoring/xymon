@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of XYMONSERVER.CFG</TITLE>
 </HEAD><BODY>
 <H1>XYMONSERVER.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.19: 30 Mar 2015<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.20-rc1: 12 May 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -575,7 +575,12 @@ the response-time, OR if you are using the
 external script mechanism to collect data from custom tests. 
 Note: All TCP tests are automatically added.
 <P>
-This is also used by the 
+<DT>GRAPH_&lt;COLUMNAME&gt;<DD>
+List of GRAPHs that should be displayed on the corresponding colmn page. Note
+this will override the default, so to add multiple graphs you should include
+the origina one (e.g. GRAPH_cpu=&quot;la,vmstat1&quot;).
+<P>
+These are used together by the 
 <I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1) </I>
 
 script to determine if the detailed status view of a test should 
@@ -862,6 +867,6 @@ the options you normally used when building Xymon webpages.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 05:39:17 GMT, March 31, 2015
+Time: 13:57:07 GMT, May 12, 2015
 </BODY>
 </HTML>
