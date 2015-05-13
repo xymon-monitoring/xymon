@@ -6,9 +6,9 @@
 # 
 
 for i in $CFLAGS; do
-   if [ `echo $i | grep -c -e '-I' -e '-D' -e '-L'` -eq 0 ]; then
+   if [ `echo $i | grep -c '\-I'` -eq 0 -a `echo $i | grep -c '\-D'` -eq 0 -a `echo $i | grep -c '\-L'` -eq 0 ]; then
         CFF="$CFF $i"
-   elif [ `echo $i | grep -c -e '-L'` -eq 0 ]; then
+   elif [ `echo $i | grep -c '\-L'` -eq 0 ]; then
         CPF="$CPF $i"
    else
         echo "REJECTING '${i}' in CFLAGS"
