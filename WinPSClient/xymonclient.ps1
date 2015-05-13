@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "2.01"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-03-23 zak.beck@accenture.com"
+$Version = "2.02"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-05-13 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -2284,7 +2284,7 @@ function XymonActiveDirectoryReplicationCheck
         $outputtable = $outputtable -replace '<table>', '<table style="font-size: 10pt">'
 
         $outputtext += $outputtable
-        $output = ('status {0}.adreplicaton {1} {2}' -f $script:clientname, $alertColour, $outputtext)
+        $output = ('status {0}.adreplication {1} {2}' -f $script:clientname, $alertColour, $outputtext)
         WriteLog "Active Directory Replication: sending status $alertColour"
         XymonSend $output $script:XymonSettings.serversList
     }
