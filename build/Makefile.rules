@@ -135,7 +135,7 @@ distclean: allclean
 	rm -rf debbuild rpmbuild
 
 allclean: clean
-	(cd xymonnet/c-ares && $(MAKE) clean) || true
+	(cd xymonnet/c-ares 2>/dev/null && $(MAKE) clean) || true
 
 clean:
 	$(MAKE) -C build clean
