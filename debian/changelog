@@ -1,7 +1,7 @@
 
 xymon (4.3.20) unstable; urgency=medium
 
-   * rev 7656
+   * rev 7661
 
    * Summaries should be properly displayed again, and will display on the
      nongreen.html page as well.
@@ -46,7 +46,7 @@ xymon (4.3.20) unstable; urgency=medium
      reported by the kernel to give a more accurate reading for "Actual Used"
      in the client's memory status. (Reported by Dominique Frise)
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, 14 May 2015 00:00:00 -0700
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 15 May 2015 08:15:00 -0700
 
 
 xymon (4.3.19) unstable; urgency=medium

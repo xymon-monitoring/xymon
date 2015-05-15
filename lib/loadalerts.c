@@ -812,7 +812,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	void *hinfo = hostinfo(alert->hostname);
 
 	if (!hinfo) {
-		errprintf("Checking criteria for host '%s', which is not defined\n", alert->hostname);
+		dbgprintf("Checking criteria for host '%s', which is not defined\n", alert->hostname);
 		hinfo = localhostinfo(alert->hostname);
 	};
 
