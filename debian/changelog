@@ -1,7 +1,16 @@
 
-xymon (4.xx.yy) unstable; urgency=medium
+xymon (4.3.21) unstable; urgency=medium
 
-   * rev xxxx
+   * rev 76XX
+
+   * RSS feeds should now display the short description of the event again.
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, XX May 2015 08:15:00 -0700
+
+
+xymon (4.3.20) unstable; urgency=medium
+
+   * rev 7661
 
    * Summaries should be properly displayed again, and will display on the
      nongreen.html page as well.
@@ -46,7 +55,7 @@ xymon (4.xx.yy) unstable; urgency=medium
      reported by the kernel to give a more accurate reading for "Actual Used"
      in the client's memory status. (Reported by Dominique Frise)
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, 00 May 2015 22:39:17 -0700
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 15 May 2015 08:15:00 -0700
 
 
 xymon (4.3.19) unstable; urgency=medium
