@@ -27,7 +27,7 @@ Alias @XYMONHOSTURL@/  "@INSTALLWWWDIR@/"
 ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
 <Directory "@CGIDIR@">
     AllowOverride None
-    Options ExecCGI FollowSymLinks Includes
+    Options ExecCGI Includes
     <IfModule mod_authz_core.c>
         # Apache 2.4+
         Require all granted

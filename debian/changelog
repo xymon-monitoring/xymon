@@ -1,11 +1,11 @@
 
 xymon (4.3.21) unstable; urgency=medium
 
-   * rev 76XX
+   * rev 7668
 
    * RSS feeds should now display the short description of the event again.
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, XX May 2015 08:15:00 -0700
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 
 
 xymon (4.3.20) unstable; urgency=medium

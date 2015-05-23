@@ -27,7 +27,7 @@ Alias /xymon/  "/usr/local/xymon/server/www/"
 ScriptAlias /xymon-cgi/ "/usr/local/xymon/cgi-bin/"
 <Directory "/usr/local/xymon/cgi-bin">
     AllowOverride None
-    Options FollowSymLinks ExecCGI Includes
+    Options ExecCGI Includes
     <IfModule mod_authz_core.c>
         # Apache 2.4+
         Require all granted
@@ -41,7 +41,7 @@ ScriptAlias /xymon-cgi/ "/usr/local/xymon/cgi-bin/"
 ScriptAlias /xymon-seccgi/ "/usr/local/xymon/cgi-secure/"
 <Directory "/usr/local/xymon/cgi-secure">
     AllowOverride None
-    Options FollowSymLinks ExecCGI Includes
+    Options ExecCGI Includes
     <IfModule mod_authz_core.c>
         # Apache 2.4+
         Require all granted
