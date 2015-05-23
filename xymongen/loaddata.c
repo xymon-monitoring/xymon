@@ -55,7 +55,7 @@ typedef struct compact_t {
 
 
 typedef struct logdata_t {
-	/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message|acklist */
+	/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message */
 	char *hostname;
 	char *testname;
 	int  color;
@@ -564,7 +564,7 @@ state_t *load_state(dispsummary_t **sumhead)
 		p = gettok(onelog, "|"); i = 0;
 		while (p) {
 			switch (i) {
-			  /* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message */
+			  /* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message|acklist */
 			  case  0: log.hostname = p; break;
 			  case  1: log.testname = p; break;
 			  case  2: log.color = parse_color(p); break;
