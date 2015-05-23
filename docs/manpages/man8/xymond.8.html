@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of XYMOND</TITLE>
 </HEAD><BODY>
 <H1>XYMOND</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.19: 30 Mar 2015<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.21: 22 May 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -256,6 +256,13 @@ means that a long-lived ack for yellow is lost when you send a short-lived
 ack for red. Hence alerts will restart when the red ack expires, even if
 the status by then has changed to yellow.
 <P>
+<DT>--ack-log=FILENAME<DD>
+Log acknowledgements created on the Critical Systems page to FILENAME.  
+NB, acknowledgements created by the Acknowledge Alert CGI are 
+automatically written to acknowledge.log in the Xymon server log 
+directory.  Alerts from the Critical Systems page can be directed to the 
+same log.
+<P>
 <DT>--debug<DD>
 Enable debugging output.
 <P>
@@ -416,6 +423,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 05:39:17 GMT, March 31, 2015
+Time: 01:15:29 GMT, May 23, 2015
 </BODY>
 </HTML>
