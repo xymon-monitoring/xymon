@@ -1,4 +1,14 @@
 
+xymon (4.####) unstable; urgency=medium
+
+   * rev ####
+
+   * Ensure we don't leave xymond_hostdata or xymond_history zombies lying around
+     after dropping host records (Reported by Scot Kreienkamp)
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
+
+
 xymon (4.3.21) unstable; urgency=medium
 
    * rev 7668

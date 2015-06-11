@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 	setup_signalhandler("xymond_history");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
-	sigaction(SIGCHLD, &sa, NULL);
+	signal(SIGCHLD, SIG_IGN);
 	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
 
@@ -195,9 +195,6 @@ int main(int argc, char *argv[])
 		struct tm tstamptm;
 		int trend;
 		int childstat;
-
-		/* Pickup any finished child processes to avoid zombies */
-		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 
 		if (rotatefiles && alleventsfd) {
 			fclose(alleventsfd);

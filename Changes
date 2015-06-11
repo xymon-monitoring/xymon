@@ -1,3 +1,12 @@
+Changes from 4.3.21 -> 4.#### ()
+===========================================
+
+* rev ####
+
+* Ensure we don't leave xymond_hostdata or xymond_history zombies lying around
+  after dropping host records (Reported by Scot Kreienkamp)
+
+
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)
 ===========================================
 

@@ -132,6 +132,7 @@ int main(int argc, char *argv[])
 	setup_signalhandler("xymond_hostdata");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
+	signal(SIGCHLD, SIG_IGN);
 	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
 
