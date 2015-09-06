@@ -354,15 +354,15 @@ char *wkdayselect(char wkday, char *valtxt, int isdefault)
 	char *selstr;
 
 	if (!criteditslawkdays) {
-		if (isdefault) selstr = "SELECTED";
+		if (isdefault) selstr = " selected";
 		else selstr = "";
 	}
 	else {
-		if (strchr(criteditslawkdays, wkday)) selstr = "SELECTED";
+		if (strchr(criteditslawkdays, wkday)) selstr = " selected";
 		else selstr = "";
 	}
 
-	sprintf(result, "<option value=\"%c\" %s>%s</option>\n", wkday, selstr, valtxt);
+	sprintf(result, "<option value=\"%c\"%s>%s</option>\n", wkday, selstr, valtxt);
 
 	return result;
 }
@@ -710,11 +710,11 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 			nowtm = localtime(&selectedtime);
 			for (i=1; (i <= 12); i++) {
-				if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
+				if (i == (nowtm->tm_mon + 1)) selstr = " selected"; else selstr = "";
 				monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
 				monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
 				strftime(mname, sizeof(mname)-1, "%B", &monthtm);
-				fprintf(output, "<OPTION VALUE=\"%d\" %s>%s\n", i, selstr, mname);
+				fprintf(output, "<option value=\"%d\"%s>%s</option>\n", i, selstr, mname);
 			}
 
 			MEMUNDEFINE(mname);
@@ -731,7 +731,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
 				monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
 				strftime(mname, sizeof(mname)-1, "%B", &monthtm);
-				fprintf(output, "<OPTION VALUE=\"%d\">%s\n", i, mname);
+				fprintf(output, "<option value=\"%d\">%s</option>\n", i, mname);
 			}
 
 			MEMUNDEFINE(mname);
@@ -745,8 +745,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			nowtm = localtime(&selectedtime);
 			strftime(weekstr, sizeof(weekstr)-1, "%V", nowtm); weeknum = atoi(weekstr);
 			for (i=1; (i <= 53); i++) {
-				if (i == weeknum) selstr = "SELECTED"; else selstr = "";
-				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+				if (i == weeknum) selstr = " selected"; else selstr = "";
+				fprintf(output, "<option value=\"%d\"%s>%d</option>\n", i, selstr, i);
 			}
 		}
 		else if (strcmp(t_start, "REPDAYLIST") == 0) {
@@ -755,8 +755,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 			nowtm = localtime(&selectedtime);
 			for (i=1; (i <= 31); i++) {
-				if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
-				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+				if (i == nowtm->tm_mday) selstr = " selected"; else selstr = "";
+				fprintf(output, "<option value=\"%d\"%s>%d</option>\n", i, selstr, i);
 			}
 		}
 		else if (strcmp(t_start, "DAYLIST") == 0) {
@@ -764,7 +764,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 			nowtm = localtime(&selectedtime);
 			for (i=1; (i <= 31); i++) {
-				fprintf(output, "<OPTION VALUE=\"%d\">%d\n", i, i);
+				fprintf(output, "<option value=\"%d\">%d</option>\n", i, i);
 			}
 		}
 		else if (strcmp(t_start, "REPYEARLIST") == 0) {
@@ -777,8 +777,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			endyear = nowtm->tm_year + 1900;
 
 			for (i=beginyear; (i <= endyear); i++) {
-				if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
-				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+				if (i == (nowtm->tm_year + 1900)) selstr = " selected"; else selstr = "";
+				fprintf(output, "<option value=\"%d\"%s>%d</option>\n", i, selstr, i);
 			}
 		}
 		else if (strcmp(t_start, "FUTUREYEARLIST") == 0) {
@@ -791,8 +791,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			endyear = nowtm->tm_year + 1900 + 5;
 
 			for (i=beginyear; (i <= endyear); i++) {
-				if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
-				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+				if (i == (nowtm->tm_year + 1900)) selstr = " selected"; else selstr = "";
+				fprintf(output, "<option value=\"%d\"%s>%d</option>\n", i, selstr, i);
 			}
 		}
 		else if (strcmp(t_start, "YEARLIST") == 0) {
@@ -804,7 +804,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			endyear = nowtm->tm_year + 1900 + 5;
 
 			for (i=beginyear; (i <= endyear); i++) {
-				fprintf(output, "<OPTION VALUE=\"%d\">%d\n", i, i);
+				fprintf(output, "<option value=\"%d\">%d</option>\n", i, i);
 			}
 		}
 		else if (strcmp(t_start, "REPHOURLIST") == 0) { 
@@ -813,15 +813,15 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			char *selstr;
 
 			for (i=0; (i <= 24); i++) {
-				if (i == nowtm->tm_hour) selstr = "SELECTED"; else selstr = "";
-				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d\n", i, selstr, i);
+				if (i == nowtm->tm_hour) selstr = " selected"; else selstr = "";
+				fprintf(output, "<option value=\"%d\"%s>%d</option>\n", i, selstr, i);
 			}
 		}
 		else if (strcmp(t_start, "HOURLIST") == 0) { 
 			int i; 
 
 			for (i=0; (i <= 24); i++) {
-				fprintf(output, "<OPTION VALUE=\"%d\">%d\n", i, i);
+				fprintf(output, "<option value=\"%d\">%d</option>\n", i, i);
 			}
 		}
 		else if (strcmp(t_start, "REPMINLIST") == 0) {
@@ -830,15 +830,15 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			char *selstr;
 
 			for (i=0; (i <= 59); i++) {
-				if (i == nowtm->tm_min) selstr = "SELECTED"; else selstr = "";
-				fprintf(output, "<OPTION VALUE=\"%02d\" %s>%02d\n", i, selstr, i);
+				if (i == nowtm->tm_min) selstr = " selected"; else selstr = "";
+				fprintf(output, "<option value=\"%02d\"%s>%02d</option>\n", i, selstr, i);
 			}
 		}
 		else if (strcmp(t_start, "MINLIST") == 0) {
 			int i;
 
 			for (i=0; (i <= 59); i++) {
-				fprintf(output, "<OPTION VALUE=\"%02d\">%02d\n", i, i);
+				fprintf(output, "<option value=\"%02d\">%02d</option>\n", i, i);
 			}
 		}
 		else if (strcmp(t_start, "REPSECLIST") == 0) {
@@ -846,8 +846,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			char *selstr;
 
 			for (i=0; (i <= 59); i++) {
-				if (i == 0) selstr = "SELECTED"; else selstr = "";
-				fprintf(output, "<OPTION VALUE=\"%02d\" %s>%02d\n", i, selstr, i);
+				if (i == 0) selstr = " selected"; else selstr = "";
+				fprintf(output, "<option value=\"%02d\"%s>%02d</option>\n", i, selstr, i);
 			}
 		}
 		else if (strcmp(t_start, "HOSTFILTER") == 0) {
@@ -872,7 +872,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				rec = (treerec_t *)xtreeData(hostnames, handle);
 
 				if (wanted_host(rec->name)) {
-					fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", rec->name, rec->name);
+					fprintf(output, "<option value=\"%s\">%s</option>\n", rec->name, rec->name);
 				}
 			}
 		}
@@ -943,7 +943,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 			for (handle = xtreeFirst(testnames); (handle != xtreeEnd(testnames)); handle = xtreeNext(testnames, handle)) {
 				rec = (treerec_t *)xtreeData(testnames, handle);
-				fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", rec->name, rec->name);
+				fprintf(output, "<option value=\"%s\">%s</option>\n", rec->name, rec->name);
 			}
 		}
 		else if (strcmp(t_start, "DISABLELIST") == 0) {
@@ -1172,8 +1172,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			listrec_t *walk;
 
 			for (walk = pool->listhead; (walk); walk = walk->next)
-				fprintf(output, "<OPTION VALUE=\"%s\" %s %s>%s</OPTION>\n", 
-					walk->val, (walk->selected ? "SELECTED" : ""), (walk->extra ? walk->extra : ""),
+				fprintf(output, "<option value=\"%s\"%s %s>%s</option>\n", 
+					walk->val, (walk->selected ? " selected" : ""), (walk->extra ? walk->extra : ""),
 					walk->name);
 		}
 
@@ -1192,8 +1192,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			char *selstr;
 
 			for (i=1; (i <= 3); i++) {
-				selstr = ((i == criteditprio) ? "SELECTED" : "");
-				fprintf(output, "<option value=\"%d\" %s>%d</option>\n", i, selstr, i);
+				selstr = ((i == criteditprio) ? " selected" : "");
+				fprintf(output, "<option value=\"%d\"%s>%d</option>\n", i, selstr, i);
 			}
 		}
 
@@ -1230,8 +1230,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 			curr = (criteditslastart ? (atoi(criteditslastart) / 100) : 0);
 			for (i=0; (i <= 23); i++) {
-				selstr = ((i == curr) ? "SELECTED" : "");
-				fprintf(output, "<option value=\"%02i00\" %s>%02i:00</option>\n", i, selstr, i);
+				selstr = ((i == curr) ? " selected" : "");
+				fprintf(output, "<option value=\"%02i00\"%s>%02i:00</option>\n", i, selstr, i);
 			}
 		}
 
@@ -1241,8 +1241,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 			curr = (criteditslaend ? (atoi(criteditslaend) / 100) : 24);
 			for (i=1; (i <= 24); i++) {
-				selstr = ((i == curr) ? "SELECTED" : "");
-				fprintf(output, "<option value=\"%02i00\" %s>%02i:00</option>\n", i, selstr, i);
+				selstr = ((i == curr) ? " selected" : "");
+				fprintf(output, "<option value=\"%02i00\"%s>%02i:00</option>\n", i, selstr, i);
 			}
 		}
 
@@ -1255,12 +1255,12 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 			tm = localtime(&t);
 
-			selstr = ((t == 0) ? "SELECTED" : "");
-			fprintf(output, "<option value=\"0\" %s>%s</option>\n", selstr, defstr);
+			selstr = ((t == 0) ? " selected" : "");
+			fprintf(output, "<option value=\"0\"%s>%s</option>\n", selstr, defstr);
 
 			for (i=1; (i <= 31); i++) {
-				selstr = ( (t && (tm->tm_mday == i)) ? "SELECTED" : "");
-				fprintf(output, "<option value=\"%d\" %s>%d</option>\n", i, selstr, i);
+				selstr = ( (t && (tm->tm_mday == i)) ? " selected" : "");
+				fprintf(output, "<option value=\"%d\"%s>%d</option>\n", i, selstr, i);
 			}
 		}
 
@@ -1280,15 +1280,15 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			now = getcurrenttime(NULL);
 			memcpy(&nowtm, localtime(&now), sizeof(tm));
 
-			selstr = ((t == 0) ? "SELECTED" : "");
-			fprintf(output, "<option value=\"0\" %s>%s</option>\n", selstr, defstr);
+			selstr = ((t == 0) ? " selected" : "");
+			fprintf(output, "<option value=\"0\"%s>%s</option>\n", selstr, defstr);
 
 			for (i=1; (i <= 12); i++) {
-				selstr = ( (t && (tm.tm_mon == (i -1))) ? "SELECTED" : "");
+				selstr = ( (t && (tm.tm_mon == (i -1))) ? " selected" : "");
 				monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm.tm_year;
 				monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
 				strftime(mname, sizeof(mname)-1, "%B", &monthtm);
-				fprintf(output, "<OPTION VALUE=\"%d\" %s>%s</option>\n", i, selstr, mname);
+				fprintf(output, "<option value=\"%d\"%s>%s</option>\n", i, selstr, mname);
 			}
 		}
 
@@ -1310,12 +1310,12 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			beginyear = nowtm.tm_year + 1900;
 			endyear = nowtm.tm_year + 1900 + 5;
 
-			selstr = ((t == 0) ? "SELECTED" : "");
-			fprintf(output, "<option value=\"0\" %s>%s</option>\n", selstr, defstr);
+			selstr = ((t == 0) ? " selected" : "");
+			fprintf(output, "<option value=\"0\"%s>%s</option>\n", selstr, defstr);
 
 			for (i=beginyear; (i <= endyear); i++) {
-				selstr = ( (t && (tm.tm_year == (i - 1900))) ? "SELECTED" : "");
-				fprintf(output, "<OPTION VALUE=\"%d\" %s>%d</option>\n", i, selstr, i);
+				selstr = ( (t && (tm.tm_year == (i - 1900))) ? " selected" : "");
+				fprintf(output, "<option value=\"%d\"%s>%d</option>\n", i, selstr, i);
 			}
 		}
 

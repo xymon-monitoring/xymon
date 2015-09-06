@@ -172,7 +172,7 @@ void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
 
 	fprintf(output, "    <td align=left>%s</td>\n", (hname ? htmlquoted(hname) : "&nbsp;"));
 	fprintf(output, "    <td align=left>%s</td>\n", (tname ? htmlquoted(tname) : "&nbsp;"));
-	fprintf(output, "    <TD NOWRAP><INPUT TYPE=TEXT NAME=\"DELAY_%s\" SIZE=4 MAXLENGTH=6><SELECT NAME=\"PERIOD_%s\"><OPTION VALUE=\"min\" SELECTED>min(s)<OPTION VALUE=\"hour\">hour(s)<OPTION VALUE=\"day\">day(s)</SELECT></TD>\n", numstr, numstr);
+	fprintf(output, "    <TD NOWRAP><INPUT TYPE=TEXT NAME=\"DELAY_%s\" SIZE=4 MAXLENGTH=6><select NAME=\"PERIOD_%s\"><option value=\"min\" selected>min(s)</option><option value=\"hour\">hour(s)</option><option value=\"day\">day(s)</option></select></TD>\n", numstr, numstr);
 
 	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"MESSAGE_%s\" SIZE=60 MAXLENGTH=80></TD>\n", numstr);
 

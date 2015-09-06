@@ -529,18 +529,18 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 		sprintf(istr, "%d", i);
 
-		if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
+		if (i == (nowtm->tm_mon + 1)) selstr = " selected"; else selstr = "";
 		monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
 		monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
 		strftime(mname, sizeof(mname)-1, "%B", &monthtm);
 
-		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, "<option value=\"");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "\" ");
+		addtobuffer(buf, "\"");
 		addtobuffer(buf, selstr);
 		addtobuffer(buf, ">");
 		addtobuffer(buf, mname);
-		addtobuffer(buf, "</OPTION>\n");
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
@@ -551,15 +551,15 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 		sprintf(istr, "%d", i);
 
-		if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
+		if (i == nowtm->tm_mday) selstr = " selected"; else selstr = "";
 
-		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, "<option value=\"");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "\" ");
+		addtobuffer(buf, "\"");
 		addtobuffer(buf, selstr);
 		addtobuffer(buf, ">");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "</OPTION>\n");
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
@@ -570,15 +570,15 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 		sprintf(istr, "%d", i);
 
-		if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
+		if (i == (nowtm->tm_year + 1900)) selstr = " selected"; else selstr = "";
 
-		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, "<option value=\"");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "\" ");
+		addtobuffer(buf, "\"");
 		addtobuffer(buf, selstr);
 		addtobuffer(buf, ">");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "</OPTION>\n");
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
@@ -589,14 +589,14 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 		sprintf(istr, "%d", i);
 
-		if (i == nowtm->tm_hour) selstr = "SELECTED"; else selstr = "";
-		addtobuffer(buf, "<OPTION VALUE=\"");
+		if (i == nowtm->tm_hour) selstr = " selected"; else selstr = "";
+		addtobuffer(buf, "<option value=\"");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "\" ");
+		addtobuffer(buf, "\"");
 		addtobuffer(buf, selstr);
 		addtobuffer(buf, ">");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "</OPTION>\n");
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
@@ -607,14 +607,14 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 		sprintf(istr, "%02d", i);
 
-		if (i == nowtm->tm_min) selstr = "SELECTED"; else selstr = "";
-		addtobuffer(buf, "<OPTION VALUE=\"");
+		if (i == nowtm->tm_min) selstr = " selected"; else selstr = "";
+		addtobuffer(buf, "<option value=\"");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "\" ");
+		addtobuffer(buf, "\"");
 		addtobuffer(buf, selstr);
 		addtobuffer(buf, ">");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "</OPTION>\n");
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
@@ -642,18 +642,18 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 		sprintf(istr, "%d", i);
 
-		if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
+		if (i == (nowtm->tm_mon + 1)) selstr = " selected"; else selstr = "";
 		monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
 		monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
 		strftime(mname, sizeof(mname)-1, "%B", &monthtm);
 
-		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, "<option value=\"");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "\" ");
+		addtobuffer(buf, "\"");
 		addtobuffer(buf, selstr);
 		addtobuffer(buf, ">");
 		addtobuffer(buf, mname);
-		addtobuffer(buf, "</OPTION>\n");
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
@@ -664,15 +664,15 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 		sprintf(istr, "%d", i);
 
-		if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
+		if (i == nowtm->tm_mday) selstr = " selected"; else selstr = "";
 
-		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, "<option value=\"");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "\" ");
+		addtobuffer(buf, "\"");
 		addtobuffer(buf, selstr);
 		addtobuffer(buf, ">");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "</OPTION>\n");
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
@@ -683,15 +683,15 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 		sprintf(istr, "%d", i);
 
-		if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
+		if (i == (nowtm->tm_year + 1900)) selstr = " selected"; else selstr = "";
 
-		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, "<option value=\"");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "\" ");
+		addtobuffer(buf, "\"");
 		addtobuffer(buf, selstr);
 		addtobuffer(buf, ">");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "</OPTION>\n");
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
@@ -702,14 +702,14 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 		sprintf(istr, "%d", i);
 
-		if (i == nowtm->tm_hour) selstr = "SELECTED"; else selstr = "";
-		addtobuffer(buf, "<OPTION VALUE=\"");
+		if (i == nowtm->tm_hour) selstr = " selected"; else selstr = "";
+		addtobuffer(buf, "<option value=\"");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "\" ");
+		addtobuffer(buf, "\"");
 		addtobuffer(buf, selstr);
 		addtobuffer(buf, ">");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "</OPTION>\n");
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
@@ -720,14 +720,14 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 		sprintf(istr, "%02d", i);
 
-		if (i == nowtm->tm_min) selstr = "SELECTED"; else selstr = "";
-		addtobuffer(buf, "<OPTION VALUE=\"");
+		if (i == nowtm->tm_min) selstr = " selected"; else selstr = "";
+		addtobuffer(buf, "<option value=\"");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "\" ");
+		addtobuffer(buf, "\"");
 		addtobuffer(buf, selstr);
 		addtobuffer(buf, ">");
 		addtobuffer(buf, istr);
-		addtobuffer(buf, "</OPTION>\n");
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 	addtobuffer(buf, "              </td></tr>\n");
