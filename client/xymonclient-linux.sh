@@ -78,6 +78,8 @@ echo "[ifstat]"
 if test -r /proc/mdstat; then echo "[mdstat]"; cat /proc/mdstat; fi
 echo "[ps]"
 ps -Aww f -o pid,ppid,user,start,state,pri,pcpu,time:12,pmem,rsz:10,vsz:10,cmd
+echo "[dpkg]"
+COLUMNS=200 dpkg -l | awk '/^..  / { print $1 " " $2 " " $3 }'
 
 # $TOP must be set, the install utility should do that for us if it exists.
 if test "$TOP" != ""
