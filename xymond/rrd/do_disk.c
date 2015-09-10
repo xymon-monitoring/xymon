@@ -21,6 +21,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	static pcre2_code *inclpattern = NULL;
 	static pcre2_code *exclpattern = NULL;
 	pcre2_match_data *ovector;
+	int seen_root_fs = 0;
 
 	if (strstr(msg, "netapp.pl")) return do_netapp_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	if (strstr(msg, "dbcheck.pl")) return do_dbcheck_tablespace_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
@@ -172,6 +173,19 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 
 		/* Check include/exclude patterns */
 		wanteddisk = 1;
+		/*
+		 * On some systems, including the Debian Wheezy default setup,
+		 * df shows two entries for / (one for "rootfs", one for the
+		 * real device). Skip the second one or else the rrd files
+		 * produced contain ugly gaps. (A complete fix would do this
+		 * for all filesystems, but this case should be rare.)
+		 */
+		if (!strcmp(diskname, "/")) {
+			if (seen_root_fs)
+				wanteddisk = 0;
+			else
+				seen_root_fs = 1;
+		}
 		if (exclpattern) {
 			int result;
 
