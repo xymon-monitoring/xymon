@@ -13,84 +13,13 @@ additional programs need be installed to run it.
 Installation guide
 ==================
 
-Unpack the distribution zip-file to C:\ . All of the
-files unpack into the C:\Xymon directory.
-
-You must configure the IP-address or hostname of
-your Xymon server - see Client Configuration below.
-
-
-Installing as service
-=====================
-
-To install the script to run as a service run:
-
-./xymonclient.ps1 install
-
-To start or stop the service run:
-
-./xymonclient.ps1 start|stop
-
-The Windows Service manager can also be used to manage the "XymonPSClient" service.
+Please see the installation instructions in XymonPSClient.doc.
 
 
 Client configuration
 ====================
-Client configuration can be controlled by registry keys as detailed. These are
-stored in HKLM:\SOFTWARE\XymonPSClient on 32-bit systems and 
-HKLM:\SOFTWARE\Wow6432Node\XymonPSClient (32-bit universe) on 64-bit
-(note %NAME% is environment variable)
 
-You will probably need to set "servers" unless your xymon server is called "xymonhost".
-Multiple servers can be used - space delimited list as a string. TCP port 1984 is
-standard or enter host:port format if using other than 1984.
-
-By default the client sends data using the system hostname.
-If you want it to report using a different name, you can
-set this explicitly in the "clientname".
-
-
-Name                : default (comment)
-clientfqdn          : 1 (add default domain name to client name)
-clientlower         : 1 (force client name to lowercase)
-clientname          : %COMPUTERNAME%
-clientbbwinmembug   : 1
-clientremotecfgexec : 0 (execute client-local.cfg section as PS script)
-clientconfigfile    : %TEMP%\xymonconfig.cfg (file to save client-local.cfg section)
-clientlogfile       : %TEMP%\xymonclient.log (basic debugging info)
-loopinterval        : 300  (seconds)
-maxlogage           : 60  (minutes - for event log)
-slowscanrate        : 72   (number of cycles before refresh slow changing but expensive to obtain data)
-servers             : xymonhost (server to report to - space delimited if multiple values)
-reportevt           : 1 (report from event logs - can be slow when auditing enabled)
-
-Note: if "servers" is a DNS name with multiple A records, client will attempt to report to all IP addresses.
-
-To set a value:
-
-./xymonclient.ps1 set NAME VALUE
-e.g.
-./xymonclient.ps1 set servers "192.168.1.10 192.168.1.12"
-
-To unset/clear a value:
-
-./xymonclient.ps1 unset NAME
-
-To show config:
-
-./xymonclient.ps1 config
-
-Uninstalling the service
-========================
-
-To remove the service, first make sure it has been stopped. From a
-powershell run:
-
-	stop-service XymonPSClient
-
-then use the "sc" utility:
-
-	sc.exe delete XymonPSClient
+Please see the configuration instructions in XymonPSClient.doc.
 
 
 Talking to the Xymon Server
