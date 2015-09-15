@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "2.02"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-05-13 zak.beck@accenture.com"
+$Version = "2.03"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-07-17 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -1090,13 +1090,13 @@ function XymonCollectInfo
             }
         }
     }
-    
-    WriteLog "XymonCollectInfo: Adding CPU usage etc to main process data"
-    XymonProcesses
 
     WriteLog "XymonCollectInfo: Date processing (uses WMI data)"
     $script:localdatetime = $osinfo.ConvertToDateTime($osinfo.LocalDateTime)
     $script:uptime = $localdatetime - $osinfo.ConvertToDateTime($osinfo.LastBootUpTime)
+    
+    WriteLog "XymonCollectInfo: Adding CPU usage etc to main process data"
+    XymonProcesses
 
     WriteLog "XymonCollectInfo: calling UserSessionCount"
     $script:usercount = UserSessionCount
@@ -1155,11 +1155,10 @@ function du([string]$dir,[int]$clsize=0)
     "$dulist$sum`t$dir"
 }
 
-
 function XymonPrintProcess($pobj, $name, $pct)
 {
     $pcpu = (("{0:F1}" -f $pct) + "`%").PadRight(8)
-    $ppid = ([string]($pobj.Id)).PadRight(6)
+    $ppid = ([string]($pobj.Id)).PadRight(9)
     
     if ($name.length -gt 30) { $name = $name.substring(0, 30) }
     $pname = $name.PadRight(32)
@@ -1262,6 +1261,15 @@ function XymonProcesses
             -Name CPUPercent -Value $usedpct `
             -InputObject $p
 
+        $elapsedRuntime = 0
+        if ($p.StartTime -ne $null)
+        {
+            $elapsedRuntime = ($script:localdatetime - $p.StartTime).TotalMinutes 
+        }
+        Add-Member -MemberType NoteProperty `
+            -Name ElapsedSinceStart -Value $elapsedRuntime `
+            -InputObject $p
+
         $pws     = "{0,8:F0}/{1,-8:F0}" -f ($p.WorkingSet64 / 1KB), ($p.PeakWorkingSet64 / 1KB)
         $pvmem   = "{0,8:F0}/{1,-8:F0}" -f ($p.VirtualMemorySize64 / 1KB), ($p.PeakVirtualMemorySize64 / 1KB)
         $ppgmem  = "{0,8:F0}/{1,-8:F0}" -f ($p.PagedMemorySize64 / 1KB), ($p.PeakPagedMemorySize64 / 1KB)
@@ -1301,7 +1309,7 @@ function XymonCpu
 
     if ($script:XymonProcsCpuElapsed -gt 0) {
         ""
-        "CPU".PadRight(8) + "PID".PadRight(6) + "Image Name".PadRight(32) + "Pri".PadRight(5) + "Time".PadRight(9) + "MemUsage"
+        "CPU".PadRight(9) + "PID".PadRight(8) + "Image Name".PadRight(32) + "Pri".PadRight(5) + "Time".PadRight(9) + "MemUsage"
 
         $script:procs | Sort-Object -Descending { $_.CPUPercent } `
             | foreach { XymonPrintProcess $_ $_.XymonProcessName $_.CPUPercent }
@@ -1956,15 +1964,23 @@ function XymonProcs
 {
     WriteLog "XymonProcs start"
     "[procs]"
-    "{0,8} {1,-35} {2,-17} {3,-17} {4,-17} {5,8} {6,-7} {7,5} {8} {9}" -f "PID", "User", "WorkingSet/Peak", "VirtualMem/Peak", "PagedMem/Peak", "NPS", "Handles", "%CPU", "Name", "Command"
+    "{0,8} {1,-35} {2,-17} {3,-17} {4,-17} {5,8} {6,-7} {7,5} {8,-19} {9,7} {10} {11}" -f `
+        "PID", "User", "WorkingSet/Peak", "VirtualMem/Peak", "PagedMem/Peak", "NPS", `
+        "Handles", "%CPU", 'Start Time', 'Elapsed', "Name", "Command"
     
     # output sorted process table
     $script:procs | Sort-Object -Descending { $_.CPUPercent } `
         | foreach {
-        "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7,5:F1} {8} {9}" -f $_.Id, $_.Owner, `
-            $_.XymonPeakWorkingSet, $_.XymonPeakVirtualMem,`
-             $_.XymonPeakPagedMem, $_.XymonNonPagedSystemMem, `
-             $_.Handles, $_.CPUPercent, $_.XymonProcessName, $_.CommandLine
+            $startTime = ''
+            if ($_.StartTime -ne $null)
+            {
+                $startTime = Get-Date -Date $_.StartTime -uformat '%Y-%m-%d %H:%M:%S'
+            }
+            "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7,5:F1} {8,19} {9,7:F0} {10} {11}" -f $_.Id, $_.Owner, `
+                $_.XymonPeakWorkingSet, $_.XymonPeakVirtualMem,`
+                 $_.XymonPeakPagedMem, $_.XymonNonPagedSystemMem, `
+                 $_.Handles, $_.CPUPercent, `
+                 $startTime, $_.ElapsedSinceStart, $_.XymonProcessName, $_.CommandLine
     }
     WriteLog "XymonProcs finished."
 }
@@ -2192,20 +2208,37 @@ function XymonTerminalServicesSessionsCheck
 
     # config: terminalservicessessions:<yellowthreshold>:<redthreshold>
     # thresholds are number of free sessions - so alert when only x sessions free
-    $script:clientlocalcfg_entries.keys | where { $_ -match '^terminalservicessessions:(\d+):(\d+)' } |`
+    $script:clientlocalcfg_entries.keys | where { $_ -match '^(?:ts|terminalservices)sessions:(\d+):(\d+)' } |`
         foreach {
             try
             {
-                $maxSessions = Get-ItemProperty -ErrorAction:Stop -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp'`
+                $maxSessions = Get-ItemProperty -ErrorAction:Stop `
+                    -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp'`
                     -Name MaxInstanceCount | select -ExpandProperty MaxInstanceCount
             }
             catch
             {
-                WriteLog "Failed to get max sessions from registry: $_"
-                return
+                WriteLog "Failed to get max sessions from CurrentControlSet registry: $_"
+                $maxSessions = 0xffffffffL 
             }
 
             $maxSessionMsg = ''
+            if ($maxSessions -eq 0xffffffffL)
+            {
+                # try group policy key
+                try
+                {
+                    $maxSessions = Get-ItemProperty -ErrorAction:Stop `
+                        -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'`
+                        -Name MaxInstanceCount | select -ExpandProperty MaxInstanceCount
+                }
+                catch
+                {
+                    WriteLog "Failed to get max sessions from Group Policy registry: $_"
+                    return
+                }
+            }
+
             if ($maxSessions -eq 0xffffffffL)
             {
                 $maxSessionMsg = "Max sessions not set (probably not an RDS server)"
@@ -2288,6 +2321,72 @@ function XymonActiveDirectoryReplicationCheck
         WriteLog "Active Directory Replication: sending status $alertColour"
         XymonSend $output $script:XymonSettings.serversList
     }
+}
+
+function XymonProcessRuntimeCheck
+{
+    WriteLog 'Executing XymonProcessRuntimeCheck'
+    
+    # config: processruntime:<process name>:<yellow elapsed threshold>:<red elapsed threshold>
+    # thresholds in minutes
+
+    $groupColour = 'green'
+
+    $outputHeader = (get-date -format G) + "<br><h3>Process Run Time Check</h3><pre>"
+    $output = ''
+
+    $script:clientlocalcfg_entries.keys | where { $_ -match '^proc(?:ess)?runtime:(.+):(\d+):(\d+)' } | `
+        foreach {
+            $processName = $matches[1]
+            $yellowThreshold = $matches[2]
+            $redThreshold = $matches[3]
+            $alertColour = 'green'
+            $headerColour = 'green'
+
+            $script:procs | where { $_.XymonProcessName -eq $processName } | foreach {
+                if ($_.ElapsedSinceStart -gt $redThreshold)
+                {
+                    $alertColour = 'red'
+                    $headerColour = 'red'
+                    $groupcolour = 'red'
+                }
+                elseif ($_.ElapsedSinceStart -gt $yellowThreshold)
+                {
+                    $alertColour = 'yellow'
+                }
+                if ($groupcolour -eq 'green' -and $alertcolour -eq 'yellow')
+                {
+                    $groupcolour = 'yellow'
+                }
+                if ($headerColour -eq 'green' -and $alertColour -eq 'yellow')
+                {
+                    $headerColour = 'yellow'
+                }
+
+                WriteLog "Process $($_.XymonProcessName) running for $($_.ElapsedSinceStart) minutes: $alertcolour"
+
+                $startTime = Get-Date -Date $_.StartTime -uformat '%Y-%m-%d %H:%M:%S'
+                $processLine = "{0,8} {1,-35} {2,-19} {3,7:F0} {4} {5}" -f $_.Id, $_.Owner, `
+                     $startTime, $_.ElapsedSinceStart, $_.XymonProcessName, $_.CommandLine
+
+                $output += '<img src="{2}{0}.gif" alt="{0}" height="16" width="16" border="0">{1}<br>' `
+                    -f $alertcolour, $processLine, $script:XymonSettings.servergiflocation
+            }
+
+            $outputHeader += ('<img src="{1}{0}.gif" alt="{0}" height="16" width="16" border="0">' + `
+                'Process: {2}  Yellow alert after {3} minutes, Red alert after {4} minutes<br>') `
+                -f $headerColour, $script:XymonSettings.servergiflocation, `
+                    $processName, $yellowThreshold, $redThreshold
+        }
+
+    $output += '</pre>'
+    $outputHeader += '<br><span style="margin-left: 16px;">{0,8} {1,-35} {2,19} {3,7} {4} {5}</span><br>' `
+        -f "PID", "User", 'Start Time', 'Elapsed', "Name", "Command"
+    $output = $outputHeader + $output
+    WriteLog "Sending output for procruntime"
+    $outputXymon = ('status {0}.procruntime {1} {2}' -f $script:clientname, $groupcolour, $output)
+    XymonSend $outputXymon $script:XymonSettings.serversList
+    WriteLog 'XymonProcessRuntimeCheck finished'
 }
 
 function XymonSend($msg, $servers)
@@ -2404,10 +2503,11 @@ function XymonClientConfig($cfglines)
                  -or $l -match '^log' -or $l -match '^clientversion:' `
                  -or $l -match '^eventlogswanted' `
                  -or $l -match '^servergifs:' `
-                 -or $l -match '^terminalservicessessions:' `
+                 -or $l -match '^(?:ts|terminalservices)sessions:' `
                  -or $l -match '^adreplicationcheck' `
                  -or $l -match '^ifstat:' `
                  -or $l -match '^repeattest:' `
+                 -or $l -match '^proc(?:ess)?runtime:' `
                  )
              {
                  WriteLog "Found a command: $l"
@@ -2489,6 +2589,7 @@ function XymonClientSections {
     XymonDirTime
     XymonTerminalServicesSessionsCheck
     XymonActiveDirectoryReplicationCheck
+    XymonProcessRuntimeCheck
 
     $XymonIISSitesCache
     $XymonWMIQuickFixEngineeringCache
