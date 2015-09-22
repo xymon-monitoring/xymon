@@ -156,15 +156,15 @@ RRDWIDTH="576"		# The RRD's contain 576 data points, so this is a good value
 # The format here is "COLUMN=RRDSERVICE". If you leave out the "=RRDSERVICE"
 # part, it is assumed to be the same as the COLUMN value.
 
-# GRAPH_<columnname> entries define what graphs to display on COLUMNs, if not the 
+# GRAPHS_<columnname> entries define what graphs to display on COLUMNs, if not the 
 # default ones indicated above. This can allow you to display additional graphs on
 # a status page, even if xymond_rrd is not using the TEST2RRD data above.
 # If present, overrides the column RRD value above for display purposes, so be sure
-# to include the that, if desured
-# eg, GRAPH_cpu="la,vmstat1"
+# to include the that, if desired
+# eg, GRAPHS_cpu="la,vmstat1"
 
 #
-# TEST2RRD and GRAPH_* are used by the svcstatus.cgi script to determine if the detailed
+# TEST2RRD and GRAPHS_* are used by the svcstatus.cgi script to determine if the detailed
 # status view of a test should include a graph.
 TEST2RRD="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,mailq,nmailq=mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,files,procs=processes,ports,clock,lines,deltalines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,if_load=devmon,temp=devmon,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts,xymongen,xymonnet,xymonproxy,xymond"
 
