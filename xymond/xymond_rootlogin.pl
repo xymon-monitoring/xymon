@@ -88,7 +88,7 @@ sub processmessage {
 	my $statusmsg;
 	my $cmd;
 
-	# Dont do anything unless we have the "who" section
+	# Don't do anything unless we have the "who" section
 	return unless ( $sections{"who"} );
 
 	# Is there a "root" login somewhere in the "who" section?

@@ -411,7 +411,7 @@ int durationvalue(char *dur)
 	char *endpos;
 	char savedelim;
 
-	/* Make sure we only process the first token, dont go past whitespace or some other delimiter */
+	/* Make sure we only process the first token, don't go past whitespace or some other delimiter */
 	endpos = dur + strspn(dur, "01234567890mhdw");
 	savedelim = *endpos;
 	*endpos = '\0';

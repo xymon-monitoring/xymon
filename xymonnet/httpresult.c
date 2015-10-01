@@ -585,7 +585,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 			addtostatus("\nNo body output received from server\n\n");
 		}
 		else if (!host->hidehttp) {
-			/* Dont flood xymond with data */
+			/* Don't flood xymond with data */
 			if (req->outlen > MAX_CONTENT_DATA) {
 				*(req->output + MAX_CONTENT_DATA) = '\0';
 				req->outlen = MAX_CONTENT_DATA;

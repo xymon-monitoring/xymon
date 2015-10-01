@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 				firsttxtline = strdup(STRBUF(inbuf));
 			}
 
-			continue;	/* We dont care about the rest of the message body */
+			continue;	/* We don't care about the rest of the message body */
 		}
 
 		/* See if we're at the end of the mail headers */

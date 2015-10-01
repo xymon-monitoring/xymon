@@ -2,7 +2,7 @@
 .SH NAME
 xymond_history \- xymond worker module for logging status changes 
 .SH SYNOPSIS
-.B "xymond_channel --channel=stachg xymond_history [options]"
+.B "xymond_channel \-\-channel=stachg xymond_history [options]"
 
 .SH DESCRIPTION
 xymond_history is a worker module for xymond, and as such it is normally
@@ -13,26 +13,26 @@ channel via stdin, and uses these to update the history logfiles in a manner
 that is compatible with the standard Big Brother daemon, bbd.
 
 .SH OPTIONS
-.IP "--histdir=DIRECTORY"
+.IP "\-\-histdir=DIRECTORY"
 The directory for the history files. If not specified, the
 directory given by the XYMONHISTDIR environment is used.
 
-.IP "--histlogdir=DIRECTORY"
+.IP "\-\-histlogdir=DIRECTORY"
 The directory for the historical status-logs. If not specified, the
 directory given by the XYMONHISTLOGS environment is used.
 
-.IP "--minimum-free=N"
+.IP "\-\-minimum\-free=N"
 Sets the minimum percentage of free filesystem space on the $XYMONHISTLOGS
 directory. If there is less than N% free space, xymond_history will
 not save the detailed status-logs.
 Default: 5
 
-.IP "--pidfile=FILENAME"
+.IP "\-\-pidfile=FILENAME"
 xymond_history writes the process-ID it is running with to this file.
 This is for use in automated startup scripts. The default file is
 $XYMONSERVERLOGS/xymond_history.pid.
 
-.IP "--debug"
+.IP "\-\-debug"
 Enable debugging output.
 
 .SH ENVIRONMENT
@@ -61,7 +61,7 @@ If you want to save none except some specific logs, use SAVESTATUSLOG=FALSE,TEST
 .br
 NOTE: Status logs will not be saved if there is less than 5% free space on 
 the filesystem hosting the $XYMONHISTLOGS directory. The threshold can
-be tuned via the "--minimum-free" option.
+be tuned via the "\-\-minimum\-free" option.
 
 .SH FILES
 This module does not rely on any configuration files.

@@ -35,12 +35,12 @@ Number of graphs in a multi-graph.
 .BR upper
 Set the upper limit of the graph. See
 .I rrdgraph(1)
-for a description of the "-u" option.
+for a description of the "\-u" option.
 .sp
 .BR lower
 Set the lower limit of the graph. See
 .I rrdgraph(1)
-for a description of the "-l" option.
+for a description of the "\-l" option.
 .sp
 .BR graph_start
 Set the starttime of the graph. This is used in zoom-mode.
@@ -67,25 +67,25 @@ an "action=view" invocation of showgraph.cgi.
 Generate a single graph image.
 
 .SH OPTIONS
-.IP "--config=FILENAME"
+.IP "\-\-config=FILENAME"
 Loads the graph configuration file from FILENAME. If not specified,
 the file $XYMONHOME/etc/graphs.cfg is used. See the
 .I graphs.cfg(5)
 for details about this file.
 
-.IP "--env=FILENAME"
+.IP "\-\-env=FILENAME"
 Loads the environment settings defined in FILENAME before executing
 the CGI.
 
-.IP "--rrddir=DIRECTORY"
+.IP "\-\-rrddir=DIRECTORY"
 The top-level directory for the RRD files. If not specified, the
 directory given by the XYMONRRDS environment is used.
 
-.IP "--save=FILENAME"
+.IP "\-\-save=FILENAME"
 Instead of returning the image via the CGI interface (i.e. on stdout),
 save the generated image to FILENAME.
 
-.IP "--debug"
+.IP "\-\-debug"
 Enable debugging output.
 
 .SH ENVIRONMENT

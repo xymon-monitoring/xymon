@@ -2,7 +2,7 @@
 
 # You MUST set the list of Xymon servers that this
 # client reports to.
-# It is good to use IP-adresses here instead of DNS 
+# It is good to use IP-addresses here instead of DNS 
 # names - DNS might not work if there's a problem.
 #
 # E.g. (a single Xymon server)

@@ -16,7 +16,7 @@
 /* dnslookup values */
 #define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from hosts.cfg */
 #define DNS_ONLY        1	/* DNS only - if it fails, report service down */
-#define IP_ONLY         2	/* IP only - dont do DNS lookups */
+#define IP_ONLY         2	/* IP only - don't do DNS lookups */
 
 extern int use_ares_lookup;
 extern int max_dns_per_run;

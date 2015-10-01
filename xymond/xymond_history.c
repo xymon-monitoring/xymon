@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 	MEMDEFINE(newcol2);
 	MEMDEFINE(oldcol2);
 
-	/* Dont save the error buffer */
+	/* Don't save the error buffer */
 	save_errbuf = 0;
 
 	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
 			strncpy(newcol2, colorname(newcolor), 2);
 			newcol2[2] = oldcol2[2] = '\0';
 
-			if (oldcolor == -1)           trend = -1;	/* we dont know how bad it was */
+			if (oldcolor == -1)           trend = -1;	/* we don't know how bad it was */
 			else if (newcolor > oldcolor) trend = 2;	/* It's getting worse */
 			else if (newcolor < oldcolor) trend = 1;	/* It's getting better */
 			else                          trend = 0;	/* Shouldn't happen ... */

@@ -25,23 +25,23 @@ not to contact you about the problem, or inform them when the problem
 is expected to be resolved.
 
 .SH OPTIONS
-.IP "--no-pin"
+.IP "\-\-no\-pin"
 acknowledge.cgi normally requires the user to enter the acknowledgment code
 received in an alert message. If you run it with this option, the user
 will instead get a list of the current non-green statuses, and he may
 send an acknowledge without knowing the code.
 
-.IP "--no-cookies"
+.IP "\-\-no\-cookies"
 Normally, acknowledge.cgi uses a cookie sent by the browser to initially 
 filter the list of hosts presented. If this is not desired, you can
-turn off this behaviour by calling acknowledge.cgi with the --no-cookies
+turn off this behaviour by calling acknowledge.cgi with the \-\-no\-cookies
 option. This would normally be placed in the CGI_ACK_OPTS setting in
 .I cgioptions.cfg(5)
 
-.IP "--env=FILENAME"
+.IP "\-\-env=FILENAME"
 Loads the environment defined in FILENAME before executing the CGI script.
 
-.IP "--debug"
+.IP "\-\-debug"
 Enables debugging output.
 
 .SH FILES

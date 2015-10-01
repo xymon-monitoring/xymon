@@ -595,7 +595,7 @@ function onMouseUpEvent(e) {
  countStr = "";
 
  if ((gMouseObj.rightButtonPressed()) && (insideZoomBox())) {
-  // This causes a zoom-out event. We dont care about Y-axis zooming here.
+  // This causes a zoom-out event. We don't care about Y-axis zooming here.
   var Timespan = graphEnd - graphStart;
 
   gMouseObj.dragging = false;

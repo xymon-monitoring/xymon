@@ -21,19 +21,19 @@ users to select what to enable or disable.
 
 
 .SH OPTIONS
-.IP "--no-cookies"
+.IP "\-\-no\-cookies"
 Normally, enadis.cgi uses a cookie sent by the browser to initially 
 filter the list of hosts presented. If this is not desired, you can
-turn off this behaviour by calling acknowledge.cgi with the --no-cookies
+turn off this behaviour by calling acknowledge.cgi with the \-\-no\-cookies
 option. This would normally be placed in the CGI_ENADIS_OPTS setting in
 .I cgioptions.cfg(5)
 
-.IP "--env=FILENAME"
+.IP "\-\-env=FILENAME"
 Load the environment from FILENAME before executing the CGI.
 
-.IP "--area=NAME"
+.IP "\-\-area=NAME"
 Load environment variables for a specific area. NB: if used,
-this option must appear before any --env=FILENAME option.
+this option must appear before any \-\-env=FILENAME option.
 
 .SH FILES
 .IP "$XYMONHOME/web/maint_{header,form,footer}"

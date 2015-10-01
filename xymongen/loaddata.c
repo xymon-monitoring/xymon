@@ -146,7 +146,7 @@ state_t *init_state(char *filename, logdata_t *log)
 	}
 
 	if (reportstart || snapshot) {
-		/* Dont do reports for info- and trends-columns */
+		/* Don't do reports for info- and trends-columns */
 		p = strrchr(filename, '.');
 		if (p == NULL) return NULL;
 		p++;

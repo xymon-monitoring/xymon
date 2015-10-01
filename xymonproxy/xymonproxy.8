@@ -3,7 +3,7 @@
 .SH NAME
 xymonproxy \- Xymon message proxy
 .SH SYNOPSIS
-.B "xymonproxy [options] --server=$XYMSRV"
+.B "xymonproxy [options] \-\-server=$XYMSRV"
 
 .SH DESCRIPTION
 .I xymonproxy(8)
@@ -34,11 +34,11 @@ to be delayed for up to 0.25 seconds before being sent off
 to the Xymon server.
 
 .SH OPTIONS
-.IP "--server=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
+.IP "\-\-server=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
 standard Xymon port number. If you have setup the normal
-Xymon environment, you can use "--server=$XYMSRV". Up
+Xymon environment, you can use "\-\-server=$XYMSRV". Up
 to 3 servers can be specified; incoming messages are sent to
 all of them (except "config", "query" and "download" messages, 
 which go to the LAST server only). If you have Xymon clients
@@ -46,55 +46,55 @@ sending their data via this proxy, note that the clients will
 receive their configuration data from the LAST of the servers
 listed here.  This option is required.
 
-.IP "--listen=LOCALIP[:PORT]"
+.IP "\-\-listen=LOCALIP[:PORT]"
 Specifies the IP-adress where xymonproxy listens for incoming 
-connections. By default, xymonproxy listens on all IP-adresses
+connections. By default, xymonproxy listens on all IP-addresses
 assigned to the host. If no portnumber is given, port 1984
 will be used.
 
-.IP "--timeout=N"
+.IP "\-\-timeout=N"
 Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
 
-.IP "--report=[PROXYHOSTNAME.]SERVICE"
+.IP "\-\-report=[PROXYHOSTNAME.]SERVICE"
 If given, this option causes xymonproxy to send a status report
 every 5 minutes to the Xymon server about itself. If you
 have set the standard Xymon environment, you can use
-"--report=xymonproxy" to have xymonproxy report its status to a
+"\-\-report=xymonproxy" to have xymonproxy report its status to a
 "xymonproxy" column in Xymon. The default for PROXYHOSTNAME
 is the $MACHINE environment variable, i.e. the hostname of the
 server running xymonproxy. See REPORT OUTPUT below for an 
 explanation of the report contents.
 
-.IP "--lqueue=N"
+.IP "\-\-lqueue=N"
 Size of the listen-queue where incoming connections can
 queue up before being processed. This should be large to
-accomodate bursts of activity from clients. Default: 512.
+accommodate bursts of activity from clients. Default: 512.
 
-.IP "--daemon"
-Run in daemon mode, i.e. detach and run as a background proces.
+.IP "\-\-daemon"
+Run in daemon mode, i.e. detach and run as a background process.
 This is the default.
 
-.IP "--no-daemon"
-Runs xymonproxy as a foreground proces.
+.IP "\-\-no\-daemon"
+Runs xymonproxy as a foreground process.
 
-.IP "--pidfile=FILENAME"
-Specifies the location of a file containing the proces-ID 
-of the xymonproxy daemon proces. Default: /var/run/xymonproxy.pid.
+.IP "\-\-pidfile=FILENAME"
+Specifies the location of a file containing the process-ID 
+of the xymonproxy daemon process. Default: /var/run/xymonproxy.pid.
 
-.IP "--logfile=FILENAME"
+.IP "\-\-logfile=FILENAME"
 Sends all logging output to the specified file instead of stderr.
 
-.IP "--log-details"
+.IP "\-\-log\-details"
 Log details (IP-address, message type and hostname) to the logfile.
 This can also be enabled and disabled at run-time by sending the
-xymonproxy proces a SIGUSR1 signal.
+xymonproxy process a SIGUSR1 signal.
 
-.IP "--debug"
+.IP "\-\-debug"
 Enable debugging output.
 
 .SH "REPORT OUTPUT"
-If enabled via the "--report" option, xymonproxy will send a 
+If enabled via the "\-\-report" option, xymonproxy will send a 
 status message about itself to the Xymon server once
 every 5 minutes.
 
@@ -126,13 +126,13 @@ merging.
 The number of other messages (data, notes, ack, query, ...)
 messages received from a client.
 
-.IP "Proxy ressources - Connection table size"
+.IP "Proxy resources - Connection table size"
 This is the number of connection table slots in the proxy.
 This measures the number of simultaneously active requests
 that the proxy has handled, and so gives an idea about the
 peak number of clients that the proxy has handled simultaneously.
 
-.IP "Proxy ressources - Buffer space"
+.IP "Proxy resources - Buffer space"
 This is the number of KB memory allocated for network buffers.
 
 .IP "Timeout details - reading from client"

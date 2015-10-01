@@ -7,7 +7,7 @@ CONFIGCLASS="$SERVEROSTYPE"     # Default configuration class for logfiles
 PATH="/bin:/usr/bin:/sbin:/usr/sbin:/etc"  # PATH setting for the client scripts.
 SHELL="/bin/sh"				# Shell to use when forking programs
 
-# You normally dont need to modify anything below here
+# You normally don't need to modify anything below here
 XYMONDPORT="1984"                   # Portnumber where xymond listens
 XYMONHOME="$XYMONCLIENTHOME"       # Directory for the Xymon client files
 XYMON="$XYMONHOME/bin/xymon"          # The Xymon client "xymon" utility

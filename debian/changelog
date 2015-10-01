@@ -12,6 +12,7 @@ xymon (4.####) unstable; urgency=medium
    * Supports scientific notation for NCV data (Thanks, Axel Beckert)
    * Increase resolution of xymonnet poll timing results (Thanks, Christoph Berg)
    * New clock skew RRD files will allow for negative delta values (Thanks, Axel Beckert)
+   * Fix lots of typos! (Debian)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 

@@ -86,7 +86,7 @@ typedef struct testedhost_t {
 	char *hostname;
 	char ip[IP_ADDR_STRLEN];
 	int dialup;		/* dialup flag (if set, failed tests report as clear) */
-	int testip;		/* testip flag (dont do dns lookups on hostname) */
+	int testip;		/* testip flag (don't do dns lookups on hostname) */
 	int nosslcert;		/* nosslcert flag */
 	int hidehttp;		/* hidehttp flag */
 	int dodns;              /* set while loading tests if we need to do a DNS lookup */
@@ -95,13 +95,13 @@ typedef struct testedhost_t {
 	char *hosttype;         /* For the "Intermediate HOSTTYPE is down" message */
 
 	/* The following are for the connectivity test */
-	int noconn;		/* noconn flag (dont report "conn" at all */
+	int noconn;		/* noconn flag (don't report "conn" at all */
 	int noping;		/* noping flag (report "conn" as clear=disabled */
 	int badconn[3];		/* badconn:x:y:z flag */
 	int downcount;		/* number of successive failed conn tests */
 	time_t downstart;	/* time() of first conn failure */
 	char *routerdeps;       /* Hosts from the "router:" tag */
-	struct testedhost_t *deprouterdown;    /* Set if dependant router is down */
+	struct testedhost_t *deprouterdown;    /* Set if dependent router is down */
 	int dotrace;		/* Run traceroute for this host */
 	strbuffer_t *traceroute;/* traceroute results */
 	struct extraping_t *extrapings;

@@ -58,7 +58,7 @@ char *logfile = NULL;
  * - a tree with information about what servers provide this service; and
  * - a tree with information about the hosts that have been registered to
  *   run on this particular server.
- * Some types of services dont have any host-specific data (e.g. "client"),
+ * Some types of services don't have any host-specific data (e.g. "client"),
  * then the host-specific tree will just be empty.
  */
 typedef struct serverinfo_t {
@@ -164,7 +164,7 @@ serverinfo_t *downup_server(char *servername, enum locator_servicetype_t service
 	  case 'U':
 		dbgprintf("Upping server '%s' type %s to weight %d\n", servername, servicetype_names[servicetype], itm->serverconfweight);
 		itm->serveractualweight = itm->serverconfweight;
-		/* Dont mess with serverweightleft - this may just be an "i'm alive" message */
+		/* Don't mess with serverweightleft - this may just be an "i'm alive" message */
 		if (itm->serverconfweight < 0) recalc_current(servicetype);
 		break;
 	}
@@ -189,7 +189,7 @@ hostinfo_t *register_host(char *hostname, enum locator_servicetype_t servicetype
 		itm = xtreeData(hitree[servicetype], handle);
 	}
 
-	/* If we dont know this server, then we must register it. If we do, just update the host record */
+	/* If we don't know this server, then we must register it. If we do, just update the host record */
 	handle = xtreeFind(sitree[servicetype], servername);
 	if (handle == xtreeEnd(sitree[servicetype])) {
 		dbgprintf("Registering default server '%s'\n", servername);
@@ -649,7 +649,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	int argi, opt;
 
-	/* Dont save the output from errprintf() */
+	/* Don't save the output from errprintf() */
 	save_errbuf = 0;
 
 	memset(&laddr, 0, sizeof(laddr));

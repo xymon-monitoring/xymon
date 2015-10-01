@@ -302,7 +302,7 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid, struct sn
 			/*
 			 * While fetching keys, walk the current key-table until we reach the end of the table.
 			 * When we reach the end of one key-table, start with the next.
-			 * FIXME: Could optimize so we dont fetch the whole table, but only those rows we need.
+			 * FIXME: Could optimize so we don't fetch the whole table, but only those rows we need.
 			 */
 			if (pdu->errstat == SNMP_ERR_NOERROR) {
 				struct variable_list *vp = pdu->variables;
@@ -358,7 +358,7 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid, struct sn
 		}
 	}
 	else {
-		dbgprintf("operation not succesful: %d\n", operation);
+		dbgprintf("operation not successful: %d\n", operation);
 		print_result(STAT_TIMEOUT, req, pdu);
 	}
 
@@ -865,7 +865,7 @@ void resolvekeys(void)
 
 		for (kwalk = rwalk->keyrecords; (kwalk); kwalk = kwalk->next) {
 			if (!kwalk->indexoid) {
-				/* Dont report failed lookups for the pseudo match-all key record */
+				/* Don't report failed lookups for the pseudo match-all key record */
 				if (*kwalk->key != '*') {
 					/* We failed to determine the index */
 					errprintf("Could not determine index for host=%s mib=%s key=%s\n",
@@ -1081,7 +1081,7 @@ int main (int argc, char **argv)
 
 	netsnmp_register_loghandler(NETSNMP_LOGHANDLER_STDERR, 7);
 	init_snmp("xymon-snmpcollect");
-	snmp_mib_toggle_options("e");	/* Like -Pe: Dont show MIB parsing errors */
+	snmp_mib_toggle_options("e");	/* Like -Pe: Don't show MIB parsing errors */
 	snmp_out_toggle_options("qn");	/* Like -Oqn: OID's printed as numbers, values printed without type */
 
 	readmibs(NULL, mibcheck);

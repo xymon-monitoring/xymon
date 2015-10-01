@@ -58,7 +58,7 @@ void parse_query(void)
 		else if (strcasecmp(cwalk->name, "db") == 0) {
 			char *val, *p;
 
-			/* Dont allow any slashes in the db-name */
+			/* Don't allow any slashes in the db-name */
 			val = cwalk->value;
 			p = strrchr(val, '/');
 			if (p) val = (p+1);

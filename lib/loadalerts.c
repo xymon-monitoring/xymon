@@ -848,7 +848,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 	/* alert->groups is a comma-separated list of groups, so it needs some special handling */
 	/* 
-	 * NB: Dont check groups when RECOVERED - the group list for recovery messages is always empty.
+	 * NB: Don't check groups when RECOVERED - the group list for recovery messages is always empty.
 	 * It doesn't matter if we match a recipient who was not in the group that originally
 	 * got the alert - we will later check who has received the alert, and only those that
 	 * have will get the recovery message.
@@ -952,8 +952,8 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 	if (alert->state == A_NOTIFY) {
 		/*
-		 * Dont do the check until we are checking individual recipients (rulecrit is set).
-		 * You dont need to have NOTICE on the top-level rule, it's enough if a recipient
+		 * Don't do the check until we are checking individual recipients (rulecrit is set).
+		 * You don't need to have NOTICE on the top-level rule, it's enough if a recipient
 		 * has it set. However, we do want to allow there to be a default defined in the
 		 * rule; but it doesn't take effect until we start checking the recipients.
 		 */
@@ -1023,8 +1023,8 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 	if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
 		/*
-		 * Dont do the check until we are checking individual recipients (rulecrit is set).
-		 * You dont need to have RECOVERED on the top-level rule, it's enough if a recipient
+		 * Don't do the check until we are checking individual recipients (rulecrit is set).
+		 * You don't need to have RECOVERED on the top-level rule, it's enough if a recipient
 		 * has it set. However, we do want to allow there to be a default defined in the
 		 * rule; but it doesn't take effect until we start checking the recipients.
 		 */

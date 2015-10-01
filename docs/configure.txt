@@ -105,7 +105,7 @@ must have write-access to a directory below the Xymon
 top-level directory. I can set this up if you tell me
 what group-ID your webserver runs with. This is typically
 'nobody' or 'apache' or 'www-data'
-If you dont know, just hit ENTER and we will handle it later.
+If you don't know, just hit ENTER and we will handle it later.
 
 What group-ID does your webserver use ?
 www-data

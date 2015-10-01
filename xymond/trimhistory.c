@@ -492,7 +492,7 @@ int main(int argc, char *argv[])
 	/* Process statuslogs also ? */
 	if (!droplogs) return 0;
 
-	flhead = NULL;  /* Dirty - we should clean it up properly - but I dont care */
+	flhead = NULL;  /* Dirty - we should clean it up properly - but I don't care */
 	totalitems = 0;
 	if (chdir(xgetenv("XYMONHISTLOGS")) == -1) {
 		errprintf("Cannot cd to historical statuslogs directory: %s\n", strerror(errno));

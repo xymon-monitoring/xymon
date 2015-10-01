@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 	else if (childpid > 0) {
 		wait(&childstat);
 
-		/* Ignore SIGHUP so we dont get killed during cleanup of XYMONSNAPDIR */
+		/* Ignore SIGHUP so we don't get killed during cleanup of XYMONSNAPDIR */
 		signal(SIGHUP, SIG_IGN);
 
 		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {

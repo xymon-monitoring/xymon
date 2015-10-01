@@ -182,7 +182,7 @@ int send_ping(int sock, int startidx, int minresponses)
 	if (idx >= hostcount) return hostcount;
 
 	/* 
-	 * Dont flood the net.
+	 * Don't flood the net.
 	 * By enforcing a brief sleep here, we force a delay
 	 * between sending packets. It is easiest to do before sending
 	 * a packet, because if done after the send completes, then
@@ -471,7 +471,7 @@ int main(int argc, char *argv[])
 		time_t cutoff = getcurrenttime(NULL) + timeout + 1;
 		sendidx = 0;
 
-		/* Change this on each iteration, so we dont mix packets from each round of pings */
+		/* Change this on each iteration, so we don't mix packets from each round of pings */
 		myicmpid = ((getpid()+tries) & 0x7FFF);
 
 		/* Do one loop over the hosts we havent had responses from yet. */

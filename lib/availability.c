@@ -401,7 +401,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	/* Sanity check */
 	if (totime > getcurrenttime(NULL)) totime = getcurrenttime(NULL);
 
-	/* If for_history and fromtime is 0, dont do any seeking */
+	/* If for_history and fromtime is 0, don't do any seeking */
 	if (!for_history || (fromtime > 0)) {
 		fileerrors = scan_historyfile(fd, fromtime, totime, 
 				      l, sizeof(l), &starttime, &duration, colstr);

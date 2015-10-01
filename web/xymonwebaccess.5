@@ -1,6 +1,6 @@
-.TH XYMON-WEBACCESS 5 "Version 4.3.19: 30 Mar 2015" "Xymon"
+.TH XYMON\-WEBACCESS 5 "Version 4.3.19: 30 Mar 2015" "Xymon"
 .SH NAME
-xymon-webaccess \- Web-based access controls in Xymon
+xymon\-webaccess \- Web-based access controls in Xymon
 
 .SH DESCRIPTION
 Xymon does not provide any built-in authentication (login) mechanism.
@@ -19,14 +19,14 @@ or more groups in an Apache \fBAuthGroupFile\fR file.
 However, this does not work for the Xymon CGI programs since they 
 are used to fetch information about all hosts in Xymon, but there
 is only a single directory holding all of the CGI's. So here you
-can only require that the user is logged-in (the Apache "Require valid-user"
+can only require that the user is logged-in (the Apache "Require valid\-user"
 directive). A user with a login can - if he knows the hostname - 
 manipulate the request sent to the webserver and fetch information
 about any status by use of the Xymon CGI programs, even though he
 cannot see the overview webpages.
 
 To alleviate this situation, the following Xymon CGI's support a
-"--access=FILENAME" option, where FILENAME is an Apache compatible
+"\-\-access=FILENAME" option, where FILENAME is an Apache compatible
 group-definitions file:
 .br
 .I svcstatus.cgi(1)

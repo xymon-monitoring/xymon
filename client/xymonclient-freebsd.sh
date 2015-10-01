@@ -53,7 +53,7 @@ netstat -s
 echo "[ports]"
 (netstat -Wna -f inet; netstat -Wna -f inet6) | grep "^tcp"
 echo "[ps]"
-# Dont use "args". "command" works also in FreeBSD 4.x.
+# Don't use "args". "command" works also in FreeBSD 4.x.
 ps -axd -ww -o pid,ppid,user,start,state,pri,pcpu,cputime,pmem,rss,vsz,command
 
 # $TOP must be set, the install utility should do that for us if it exists.

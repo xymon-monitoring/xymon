@@ -46,7 +46,7 @@ typedef struct repeat_t {
 static repeat_t *rpthead = NULL;
 
 int include_configid = 0;  /* Whether to include the configuration file linenumber in alerts */
-int testonly = 0;	   /* Test mode, dont actually send out alerts */
+int testonly = 0;	   /* Test mode, don't actually send out alerts */
 
 /* 
  * This generates a unique ID for an event.
@@ -701,7 +701,7 @@ time_t next_alert(activealerts_t *alert)
 		}
 		else {
 			/* 
-			 * This runs in the parent xymond_alert proces, so we must create
+			 * This runs in the parent xymond_alert process, so we must create
 			 * a repeat-record here - or all alerts will get repeated every minute.
 			 * 
 			 * NB: Even though we say "create", find_repeatinfo() will return NULL

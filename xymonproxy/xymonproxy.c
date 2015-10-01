@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 	unsigned long msgs_recovered = 0;
 	struct timespec timeinqueue = { 0, 0 };
 
-	/* Dont save the output from errprintf() */
+	/* Don'T save the output from errprintf() */
 	save_errbuf = 0;
 
 	memset(&laddr, 0, sizeof(laddr));
@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
 			printf("\t--lqueue=N                  : Listen-queue size\n");
 			printf("\t--daemon                    : Run as a daemon\n");
 			printf("\t--no-daemon                 : Do not run as a daemon\n");
-			printf("\t--pidfile=FILENAME          : Save proces-ID of daemon to FILENAME\n");
+			printf("\t--pidfile=FILENAME          : Save process-ID of daemon to FILENAME\n");
 			printf("\t--logfile=FILENAME          : Log to FILENAME instead of stderr\n");
 			printf("\t--debug                     : Enable debugging output\n");
 			printf("\n");
@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
 			}
 
 			p = stentry->buf;
-			p += sprintf(p, "combo\nstatus+11 %s green %s - xymon proxy up: %s\n\nxymonproxy for Xymon version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+			p += sprintf(p, "combo\nstatus+11 %s green %s - xymon proxy up: %s\n\nxymonproxy for Xymon version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Other messages         : %10lu\n\nProxy resources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
 				proxyname, timestamp, runtime_s, VERSION,
 				msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
 				msgs_delivered,
@@ -667,7 +667,7 @@ int main(int argc, char *argv[])
 							currmsg = nextmsg;
 						} while (currmsg);
 
-						/* We dont do anymore with this conn_t */
+						/* We don't do anymore with this conn_t */
 						cwalk->state = P_CLEANUP;
 						break;
 					}

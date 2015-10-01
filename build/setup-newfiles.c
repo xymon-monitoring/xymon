@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 		if (stat(destfn, &st) == 0) {
 			/* Destination file exists, see if it's a previous version */
 
-			if (sumbuf == NULL) continue; /* No md5-data, dont overwrite an existing file */
+			if (sumbuf == NULL) continue; /* No md5-data, don't overwrite an existing file */
 			if (!S_ISREG(st.st_mode)) continue;
 
 			fd = fopen(destfn, "r"); if (fd == NULL) continue;
@@ -99,13 +99,13 @@ int main(int argc, char *argv[])
 
 			infd = fopen(srcfn, "r");
 			if (infd == NULL) {
-				/* Dont know how this can happen, but .. */
+				/* Don't know how this can happen, but .. */
 				fprintf(stderr, "Cannot open input file %s: %s\n", srcfn, strerror(errno));
 				return 1;
 			}
 			outfd = fopen(destfn, "w");
 			if (outfd == NULL) {
-				/* Dont know how this can happen, but .. */
+				/* Don't know how this can happen, but .. */
 				fprintf(stderr, "Cannot create output file %s: %s\n", destfn, strerror(errno));
 				return 1;
 			}

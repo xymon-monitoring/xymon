@@ -631,7 +631,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 		/* Find token */
 		t_start = t_next;
-		/* Dont include lower-case letters - reserve those for eg "&nbsp;" */
+		/* Don't include lower-case letters - reserve those for eg "&nbsp;" */
 		t_next += strspn(t_next, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_");
 		savechar = *t_next; *t_next = '\0';
 

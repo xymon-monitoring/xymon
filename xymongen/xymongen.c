@@ -564,7 +564,7 @@ int main(int argc, char *argv[])
 	if (xgetenv("XYMONSUBPAGEHTACCESS")) xymonsubpagehtaccess = strdup(xgetenv("XYMONSUBPAGEHTACCESS"));
 
 	/*
-	 * When doing embedded- or snapshot-pages, dont build the WML/RSS pages.
+	 * When doing embedded- or snapshot-pages, don't build the WML/RSS pages.
 	 */
 	if (embedded || snapshot) enable_wmlgen = wantrss = 0;
 	if (embedded) {

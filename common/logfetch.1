@@ -25,7 +25,7 @@ not be edited. If deleted, it will be re-created automatically.
 logfetch needs read access to the logfiles it should monitor. If you 
 configure monitoring of files or directories through the "file:"
 and "dir:" entries in 
-.I client-local.cfg(5)
+.I client\-local.cfg(5)
 then logfetch will require at least read-acces to the directory
 where the file is located. If you request checksum calculation
 for a file, then it must be readable by the Xymon client user.
@@ -41,8 +41,8 @@ has been installed suid-root.
 .SH "ENVIRONMENT VARIABLES"
 .IP DU
 Command used to collect information about the size of directories.
-By default, this is the command \fBdu -k\fR. If the local
-du-command on the client does not recognize the "-k" option,
+By default, this is the command \fBdu \-k\fR. If the local
+du-command on the client does not recognize the "\-k" option,
 you should set the DU environment variable in the 
 \fB$XYMONHOME/etc/xymonclient.cfg\fR file to a command that
 does report directory sizes in kilobytes.

@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <utime.h>
 
-/* The following is for the DNS lookup we perform on DHCP adresses */
+/* The following is for the DNS lookup we perform on DHCP addresses */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

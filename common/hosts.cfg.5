@@ -70,7 +70,7 @@ directories, these are recursively included also. The following
 files are ignored: Files that begin with a dot, files that end
 with a tilde, RCS files that end with ",v", RPM package manager
 files ending in ".rpmsave" or ".rpmnew", DPKG package manager
-files ending in ".dpkg-new" or ".dpkg-orig", and all special
+files ending in ".dpkg\-new" or ".dpkg\-orig", and all special
 files (devices, sockets, pipes etc).
 
 .IP "optional include/directory"
@@ -108,11 +108,11 @@ times in the hosts.cfg file, although it will not hurt to add it
 on other hosts as well.
 
 .IP multihomed
-Tell Xymon that data from the host can arrive from multiple IP-adresses.
+Tell Xymon that data from the host can arrive from multiple IP-addresses.
 By default, Xymon will warn if it sees data for one host coming from
-different IP-adresses, because this usually indicates a mis-configuration
+different IP-addresses, because this usually indicates a mis-configuration
 of the hostname on at least one of the servers involved. Some hosts
-with multiple IP-adresses may use different IP's for sending data to
+with multiple IP-addresses may use different IP's for sending data to
 Xymon, however. This tag disables the check of source IP when receiving
 data.
 
@@ -124,7 +124,7 @@ on the Xymon webpages until it has been red for at least 10 minutes.
 Note: Since most tests only execute once every 5 minutes, it will
 usually not make sense to set N to anything but a multiple of 5. The
 exception is network tests, since 
-.I xymonnet-again.sh(1)
+.I xymonnet\-again.sh(1)
 will re-run failed network tests once a minute for up to 30 minutes.
 
 .IP delayyellow=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]
@@ -193,7 +193,7 @@ Note that the "group" directives have no effect on these types
 of pages.
 
 .IP "group [group-title]"
-.IP "group-compress [group-title]"
+.IP "group\-compress [group-title]"
 Defines a group of hosts, that appear together on the web page,
 with a single header-line listing all of the columns. Hosts
 following the "group" line appear inside the group, until a
@@ -201,17 +201,17 @@ new "group" or page-line is found. The two group-directives
 are handled identically by Xymon and xymongen, but both forms
 are allowed for backwards compatibility.
 
-.IP "group-sorted [group-title]"
+.IP "group\-sorted [group-title]"
 Same as the "group" line, but will sort the hosts inside the
 group so they appear in strict lexicographic order.
 
-.IP "group-only COLUMN1|COLUMN2|COLUMN3 [group-title]"
-Same as the "group" and "group-compress" lines, but includes
+.IP "group\-only COLUMN1|COLUMN2|COLUMN3 [group-title]"
+Same as the "group" and "group\-compress" lines, but includes
 only the columns explicitly listed in the group. Any columns
 not listed will be ignored for these hosts.
 
-.IP "group-except COLUMN1|COLUMN2|COLUMN3 [group-title]"
-Same as the "group-only" lines, but includes all columns EXCEPT
+.IP "group\-except COLUMN1|COLUMN2|COLUMN3 [group-title]"
+Same as the "group\-only" lines, but includes all columns EXCEPT
 those explicitly listed in the group. Any columns listed will 
 be ignored for these hosts - all other columns are shown.
 
@@ -236,7 +236,7 @@ entry, the title text replaces the normal "Pages hosted
 locally" heading normally inserted by Xymon. This
 appears on the page that links to the sub-pages,
 not on the sub-page itself. To get a custom heading on
-the sub-page, you may want to use the "--pagetext-heading"
+the sub-page, you may want to use the "\-\-pagetext\-heading"
 when running
 .I xymongen(1)
 
@@ -284,12 +284,12 @@ you must enclose it in double-quotes, e.g.  DESCR:"switch:4th floor Marketing sw
 .IP "CLASS:Classname"
 Force the host to belong to a specific class. Class-names are used
 when configuring log-file monitoring (they can be used as references in
-.I client-local.cfg(5),
+.I client\-local.cfg(5),
 .I analysis.cfg(5)
 and
 .I alerts.cfg(5)
 to group log file checks or alerts). Normally, class-names are controlled on the 
-client by starting the Xymon client with the "--class=Classname" option.
+client by starting the Xymon client with the "\-\-class=Classname" option.
 If you specify it in the hosts.cfg file on the Xymon server, it overrides
 any class name that the client reports. If not set, then the host belongs
 to a class named by the operating system the Xymon client is running on.
@@ -415,15 +415,15 @@ would be valid and have the same effect as \fB*:2330:2400,*:0000:0200\fR.
 
 
 .SH XYMON TAGS FOR THE WML (WAP) CARDS
-If xymongen is run with the "--wml" option, it will generate a
+If xymongen is run with the "\-\-wml" option, it will generate a
 set of WAP-format output "cards" that can be viewed with a
 WAP-capable device, e.g. a PDA or cell-phone.
 
-.IP WML:[+|-]testname[,[+|-]testname]
+.IP WML:[+|\-]testname[,[+|\-]testname]
 This tag determines which tests for this hosts are included
 in the WML (WAP) page. Syntax is identical to the NK: tag.  
 
-The default set of WML tests are taken from the --wml
+The default set of WML tests are taken from the \-\-wml
 command line option.  If no "WML:" tag is specified, the 
 "NK:" tag is used if present.
 
@@ -431,44 +431,44 @@ command line option.  If no "WML:" tag is specified, the
 .SH XYMON STATUS PROPAGATION OPTIONS
 These tags affect how a status propagates upwards from a single
 test to the page and higher. This can also be done with the 
-command-line options --nopropyellow and --nopropred, but the tags 
+command-line options \-\-nopropyellow and \-\-nopropred, but the tags 
 apply to individual hosts, whereas the command line options are global.
 
-.IP NOPROPRED:[+|-]testname[,[+|-]testname]
+.IP NOPROPRED:[+|\-]testname[,[+|\-]testname]
 This tag is used to inhibit a yellow or red status from
 propagating upwards - i.e. from a test status color to
 the (sub)page status color, and further on to xymon.html
 or nongreen.html
 
-If a host-specific tag begins with a '-' or a '+', the
+If a host-specific tag begins with a '\-' or a '+', the
 host-specific tags are removed/added to the default 
 setting from the command-line option. If the host-specific
-tag does not begin with a '+' or a '-', the default setting
+tag does not begin with a '+' or a '\-', the default setting
 is ignored for this host and the NOPROPRED applies to the
 tests given with this tag.
 
-E.g.: xymongen runs with "--nopropred=ftp,smtp".
-"NOPROPRED:+dns,-smtp" gives a NOPROPRED setting of "ftp,dns"
+E.g.: xymongen runs with "\-\-nopropred=ftp,smtp".
+"NOPROPRED:+dns,\-smtp" gives a NOPROPRED setting of "ftp,dns"
 (dns is added to the default, smtp is removed).
 "NOPROPRED:dns" gives a setting of "dns" only (the default
 is ignored).
 
-Note: If you set use the "--nopropred=*" command line
+Note: If you set use the "\-\-nopropred=*" command line
 option to disable propagation of all alerts, you cannot use
-the "+" and "-" methods to add or remove from the wildcard
-setting. In that case, do not use the "+" or "-" setting,
+the "+" and "\-" methods to add or remove from the wildcard
+setting. In that case, do not use the "+" or "\-" setting,
 but simply list the required tests that you want to keep
 from propagating.
 
-.IP NOPROPYELLOW:[+|-]testname[,[+|-]testname]
+.IP NOPROPYELLOW:[+|\-]testname[,[+|\-]testname]
 Similar to NOPROPRED: tag, but applies to propagating a yellow
 status upwards.
 
-.IP NOPROPPURPLE:[+|-]testname[,[+|-]testname]
+.IP NOPROPPURPLE:[+|\-]testname[,[+|\-]testname]
 Similar to NOPROPRED: tag, but applies to propagating a purple
 status upwards.
 
-.IP NOPROPACK:[+|-]testname[,[+|-]testname]
+.IP NOPROPACK:[+|\-]testname[,[+|\-]testname]
 Similar to NOPROPRED: tag, but applies to propagating an 
 acknowledged status upwards.
 
@@ -554,7 +554,7 @@ if you have more than one system running network tests, but you
 still want to keep a consolidated hosts.cfg file for all your 
 systems.
 
-Note: The "--test-untagged" option modifies this behaviour,
+Note: The "\-\-test\-untagged" option modifies this behaviour,
 see
 .I xymonnet(1)
 
@@ -588,7 +588,7 @@ checks for the host.
 Define the number of days before an SSL certificate expires,
 in which the sslcert status shows a warning (yellow) or
 alarm (red) status. These default to the values from the
-"--sslwarn" and "--sslalarm" options for the
+"\-\-sslwarn" and "\-\-sslalarm" options for the
 .I xymonnet(1)
 tool; the values specified in the "ssldays" tag overrides
 the default.
@@ -674,7 +674,7 @@ run tests (disk, cpu, msgs) or network tests from other
 servers in a dependency definition. Such dependencies are
 silently ignored.
 
-.IP badTEST[-weekdays-starttime-endtime]:x:y:z
+.IP badTEST[\-weekdays\-starttime\-endtime]:x:y:z
 NOTE: This has been deprecated, use the \fBdelayred\fR and
 \fBdelayyellow\fR settings instead.
 
@@ -701,7 +701,7 @@ as "12345", i.e. all working days. Putting "*" here
 counts as all days of the week, equivalent to "0123456".
 .br
 * start time and end time are specified using 24-hour clocks,
-e.g. "badTEST-W-0900-2000" is valid for working days
+e.g. "badTEST\-W\-0900\-2000" is valid for working days
 between 9 AM (09:00) and 8 PM (20:00).
 
 When using multiple badTEST tags, the LAST one specified
@@ -742,13 +742,13 @@ when the host is NOT up, and red if it does appear on
 the network.
 
 The actual name of the tag - "conn" by default - depends
-on the "--ping=TESTNAME" option for xymonnet, as that
+on the "\-\-ping=TESTNAME" option for xymonnet, as that
 decides the testname for the connectivity test.
 
 .IP "conn={best,|worst,}IP1[,IP2...]"
-This adds additional IP-adresses that are pinged during the
+This adds additional IP-addresses that are pinged during the
 normal "conn" test. So the normal "conn" test must be enabled
-(the default) before this tag has any effect. The IP-adresses
+(the default) before this tag has any effect. The IP-addresses
 listed here are pinged in addition to the main IP-address.
 
 When multiple IP's are pinged, you can choose if ALL IP's
@@ -759,7 +759,7 @@ from the result of pinging the IP's and the best/worst setting.
 The default method is "best" - so it will report green if 
 just one of the IP's respond to ping.
 
-.IP badconn[-weekdays-starttime-endtime]:x:y:z
+.IP badconn[\-weekdays\-starttime\-endtime]:x:y:z
 This is taken directly from the "fping.sh" connectivity-
 testing script, and is used by xymonnet when it runs
 with ping testing enabled (the default). See the description
@@ -767,7 +767,7 @@ of the "badTEST" tag.
 
 .IP route:router1,router2,....
 This tag is taken from the "fping.sh" script, and is used
-by xymonnet when run with the "--ping" option to enable
+by xymonnet when run with the "\-\-ping" option to enable
 ping testing.
 
 The router1,router2,... is a comma-separated list of hosts
@@ -806,7 +806,7 @@ variable, see
 Similar to the "trace" option, this disables the running
 of a traceroute for the host after a failed connectivity
 test. It is only used if running traceroute is made the
-default via the --trace option.
+default via the \-\-trace option.
 
 .SH SIMPLE NETWORK TESTS
 These tests perform a simple network test of a service by connecting
@@ -975,7 +975,7 @@ checkbox and uncheck the "Enable strong protection".
 Provide a temporary password for the exported file,
 and select a filename for the PFX-file.
 .br
-Now run "openssl pkcs12 -in file.pfx -out file.pem". When
+Now run "openssl pkcs12 \-in file.pfx \-out file.pem". When
 prompted for the "Import Password", provide the temporary
 password you gave when exporting the certificate. Then
 provide a "PEM pass phrase" (twice) when prompted for one.
@@ -1041,7 +1041,7 @@ it should be done as
 
 .IP "HTTP Testing via proxy"
 \fBNOTE:\fR This is not enabled by default. You must
-add the "--bb-proxy-syntax" option when running
+add the "\-\-bb\-proxy\-syntax" option when running
 .I xymonnet(1)
 if you want to use this.
 
@@ -1131,7 +1131,7 @@ can be used e.g. when testing SSL sites that require the use of
 SSLv2 or strong ciphers.
 
 The column name for the result of the content check is by default
-called "content" - you can change the default with the "--content=NAME"
+called "content" - you can change the default with the "\-\-content=NAME"
 option to xymonnet. See 
 .I xymonnet(1)
 for a description of this option.
@@ -1153,20 +1153,20 @@ by adding the \fBHIDEHTTP\fR tag to the host entry.
 This syntax is deprecated. You should use the "cont"
 tag instead, see above.
 
-.IP post[=COLUMN];URL;form-data;[expected_data_regexp|#digesttype:digest]
+.IP post[=COLUMN];URL;form\-data;[expected_data_regexp|#digesttype:digest]
 This tag can be used to test web pages, that use an input
 form. Data can be posted to the form by specifying them 
 in the form-data field, and the result can be checked
 as if it was a normal content check (see above for a description
 of the cont-tag and the restrictions on how the URL must be writen).
 
-The form-data field must be entered in "application/x-www-form-urlencoded"
+The form-data field must be entered in "application/x\-www\-form\-urlencoded"
 format, which is the most commonly used format for web
 forms.
 
 E.g. if you have a web form defined like this:
 
-   <form action="/cgi-bin/form.cgi" method="post">
+   <form action="/cgi\-bin/form.cgi" method="post">
 .br
      <p>Given name<input type="text" name="givenname"></p>
 .br
@@ -1185,8 +1185,8 @@ would be
 Note that any spaces in the input value is replaced with '+'.
 
 If your form-data requires a different content-type, you can specify
-it by beginning the form-data with \fB(content-type=TYPE)\fR,
-e.g. "(content-type=text/xml)" followed by the POST data. Note
+it by beginning the form-data with \fB(content\-type=TYPE)\fR,
+e.g. "(content\-type=text/xml)" followed by the POST data. Note
 that as with normal forms, the POST data should be specified using
 escape-sequences for reserved characters: "space" should be
 entered as "\\x20", double quote as "\\x22", newline as "\\n",
@@ -1208,7 +1208,7 @@ the response, and red when it IS found. So it can be used to
 watch for data that should NOT be present in the response,
 e.g. a server error message.
 
-.IP nopost[=COLUMN];URL;form-data;expected_data_regexp
+.IP nopost[=COLUMN];URL;form\-data;expected_data_regexp
 This tag works just like "post" tag, but reverses the test. 
 It is green when the "forbidden_data_regexp" is NOT found in
 the response, and red when it IS found. So it can be used to 
@@ -1218,14 +1218,14 @@ e.g. a server error message.
 .IP type[=COLUMN];URL;expected_content_type
 This is a variant of the content check - instead of checking
 the content data, it checks the type of the data as given by 
-the HTTP Content-Type: header. This can used to check if a
+the HTTP Content\-Type: header. This can used to check if a
 URL returns e.g. a PDF file, regardless of what is inside the
 PDF file.
 
 .IP soap[=COLUMN];URL;SOAPMESSAGE;[expected_data_regexp|#digesttype:digest]
 Send SOAP message over HTTP. This is identical to the "cont"
 test, except that the request sent to the server uses a
-Content-type of "application/soap+xml", and it also sends
+Content\-type of "application/soap+xml", and it also sends
 a "SOAPAction" header with the URL. SOAPMESSAGE is the SOAP
 message sent to the server. Since SOAP messages are usually
 XML documents, you can store this in a separate file by
@@ -1269,19 +1269,19 @@ the webserver. This option causes it to also search the HTTP
 headers for the string that must / must not be present.
 
 .IP browser=BROWSERNAME
-By default, Xymon sends an HTTP "User-Agent" header identifying
+By default, Xymon sends an HTTP "User\-Agent" header identifying
 it a "Xymon". Some websites require that you use a specific
 browser, typically Internet Explorer. To cater for testing of
 such sites, this tag can be used to modify the data sent in the
-User-Agent header.
+User\-Agent header.
 .br
 E.g. to perform an HTTP test with Xymon masquerading as an Internet
 Explorer 6.0 browser, use \fBbrowser="Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"\fR.
-If you do not know what the User-Agent header should be, open up
+If you do not know what the User\-Agent header should be, open up
 the browser that works with this particular site, and open the
 URL "javascript:document.writeln(navigator.userAgent)" (just copy this
 into the "Open URL" dialog. The text that shows up is what the browser
-sends as the User-Agent header.
+sends as the User\-Agent header.
 
 .SH LDAP (DIRECTORY SERVER) TESTS
 .IP ldap
@@ -1330,24 +1330,24 @@ as "red" (alarm). This tag reduces a search failure to a
 If you are running an Apache web server, adding this tag makes
 .I xymonnet(1)
 collect performance statistics from the Apache web server by
-querying the URL \fBhttp://IP.ADDRESS.OF.HOST/server-status?auto\fR.
+querying the URL \fBhttp://IP.ADDRESS.OF.HOST/server\-status?auto\fR.
 The response is sent as a data-report and processed by the Xymon
 xymond_rrd module into an RRD file and an "apache" graph. If
 your web server requires e.g. authentication, or runs on a different
 URL for the server-status, you can provide the full URL needed to 
 fetch the server-status page, e.g. 
-\fBapache=http://LOGIN:PASSWORD@10.0.0.1/server-status?auto\fR 
-for a password protected server-status page, or
-\fBapache=http://10.0.0.1:8080/apache/server-status?auto\fR 
+\fBapache=http://LOGIN:PASSWORD@10.0.0.1/server\-status?auto\fR 
+for a password protected server\-status page, or
+\fBapache=http://10.0.0.1:8080/apache/server\-status?auto\fR 
 for a server listening on port 8080 and with a different path
 to the server-status page.
 
 Note that you need to enable the server-status URL in your
 Apache configuration. The following configuration is needed:
 .sp
-    <Location /server-status>
+    <Location /server\-status>
 .br
-        SetHandler server-status
+        SetHandler server\-status
 .br
         Order deny,allow
 .br

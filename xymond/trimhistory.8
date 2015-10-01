@@ -2,7 +2,7 @@
 .SH NAME
 trimhistory \- Remove old Xymon history-log entries
 .SH SYNOPSIS
-.B "trimhistory --cutoff=TIME [options]"
+.B "trimhistory \-\-cutoff=TIME [options]"
 
 .SH DESCRIPTION
 The \fBtrimhistory\fR tool is used to purge old entries from the
@@ -24,7 +24,7 @@ if the service no longer has a valid status-report logged in the
 current Xymon status.
 
 .SH OPTIONS
-.IP "--cutoff=TIME"
+.IP "\-\-cutoff=TIME"
 This defines the cutoff-time when processing the history logs. Entries
 dated before this time are discarded. TIME is specified as the number
 of seconds since the beginning of the Epoch. This is easily generated 
@@ -34,38 +34,38 @@ utility, e.g. the following command will trim history logs of all
 entries prior to Oct. 1st 2004:
 .br
 .sp
-    trimhistory --cutoff=`date +%s --date="1 Oct 2004"`
+    trimhistory \-\-cutoff=`date +%s \-\-date="1 Oct 2004"`
 
-.IP "--outdir=DIRECTORY"
+.IP "\-\-outdir=DIRECTORY"
 Normally, files in the XYMONHISTDIR directory are replaced. This option causes
 trimhistory to save the shortened history logfiles to another directory,
 so you can verify that the operation works as intended. The output directory
 must exist.
 
-.IP --drop
+.IP \-\-drop
 Causes trimhistory to delete files from hosts that are not listed in the
 .I hosts.cfg(5)
 file.
 
-.IP --dropsvcs
+.IP \-\-dropsvcs
 Causes trimhistory to delete files from services that are not currently
 tracked by Xymon. Normally these files would be left untouched if only
 the host exists.
 
-.IP --droplogs
+.IP \-\-droplogs
 Process the XYMONHISTLOGS directory also, and delete status-logs from events
 prior to the cut-off time. Note that this can dramatically increase the
 processing time, since there are often lots and lots of files to process.
 
-.IP "--progress[=N]"
+.IP "\-\-progress[=N]"
 This will cause trimhistory to output a status line for every N history
 logs or status-log collections it processes, to indicate how far it has
 progressed. The default setting for N is 100.
 
-.IP "--env=FILENAME"
+.IP "\-\-env=FILENAME"
 Loads the environment from FILENAME before executing trimhistory.
 
-.IP --debug
+.IP \-\-debug
 Enable debugging output.
 
 

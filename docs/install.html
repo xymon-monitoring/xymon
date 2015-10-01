@@ -23,7 +23,7 @@ follow the <a href="bb-to-xymon.html">migration guide</a>.</p>
 		which has brief instructions for installing Xymon for these types of systems.</b></p>
 
 <p>There are a few things you should check before you begin to install Xymon.
-Dont be scared of the number of items here - it is likely that you already have
+Don't be scared of the number of items here - it is likely that you already have
 most or all of it in place.</p>
 
 <h4>A webbrowser capable of handling HTML 4, JavaScript and CSS</h4>
@@ -37,10 +37,10 @@ It will probably work on any Unix-like system that supports the Unix System V
 IPC mechanisms (shared memory, semaphores) - that should be just about anything
 Unix-like you are likely to have.</p>
 
-<h4>Sufficient SYSV IPC ressources on your system</h4>
+<h4>Sufficient SYSV IPC resources on your system</h4>
 <p>Xymon uses 8 shared memory segments, ranging in size from 32 KB to 512 KB (2336 KB
 total) in the default configuration; and 8 sets of 3 semaphores. Experience shows that 
-some systems need tuning to provide the necessary IPC ressources that Xymon uses. 
+some systems need tuning to provide the necessary IPC resources that Xymon uses. 
 Specifically, when installing on Solaris you must increase the "shmseg" kernel parameter 
 from the default 6 to at least 8. Since other programs on your system may also use shared 
 memory, a higher value may be required.  See <a href="http://www.xymon.com/archive/2005/08/msg00183.html">http://www.xymon.com/archive/2005/08/msg00183.html</a> for more information about these issues.</p>

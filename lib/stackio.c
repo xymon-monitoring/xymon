@@ -350,7 +350,7 @@ static void addtofnlist(char *dirname, void **v_listhead)
 		newlistitem = (filelist_t *)malloc(sizeof(filelist_t));
 		newlistitem->filename = strdup(dirfn);
 		newlistitem->mtime = st.st_mtime;
-		newlistitem->fsize = 0; /* We dont check sizes of directories */
+		newlistitem->fsize = 0; /* We don't check sizes of directories */
 		newlistitem->next = *listhead;
 		*listhead = newlistitem;
 	}

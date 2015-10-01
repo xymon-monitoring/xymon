@@ -41,7 +41,7 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 		if (strcmp(mibname, "proxy") == 0) {
 			/*
 			 * Data was forwarded through a proxy - skip this section.
-			 * We dont want a "proxy" status for all SNMP-enabled hosts.
+			 * We don't want a "proxy" status for all SNMP-enabled hosts.
 			 */
 			goto sectiondone;
 		}

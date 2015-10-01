@@ -2,7 +2,7 @@
 .SH NAME
 xymonnet \- Xymon network test tool
 .SH SYNOPSIS
-.B "xymonnet [--ping|--noping] [--timeout=N] [options] [hostname] [hostname]
+.B "xymonnet [\-\-ping|\-\-noping] [\-\-timeout=N] [options] [hostname] [hostname]
 .br
 (See the OPTIONS section for a description of the available command-line options).
 
@@ -39,7 +39,7 @@ program.
 
 Note: xymonnet performs the connectivity test (ping) based on the
 hostname, unless the host is tagged with "testip" or the 
-"--dns=ip" option is used. So the target of the connectivity
+"\-\-dns=ip" option is used. So the target of the connectivity
 test can be determined by your /etc/hosts file or DNS.
 
 By default, all servers are tested - if XYMONNETWORK is set via
@@ -51,7 +51,7 @@ then only those servers are tested.
 
 .SH GENERAL OPTIONS
 
-.IP --timeout=N
+.IP \-\-timeout=N
 Determines the timeout (in seconds) for each
 service that is tested. For TCP tests (those from XYMONNETSVCS),
 if the connection to the service does not succeed within N 
@@ -61,45 +61,45 @@ to the webserver (the time needed to connect to the server,
 plus the time it takes the server to respond to the request).
 Default: 10 seconds
 
-.IP --conntimeout=N
+.IP \-\-conntimeout=N
 This option is deprecated, and will be ignored. Use the
---timeout option instead.
+\-\-timeout option instead.
 
-.IP --cmdtimeout=N
+.IP \-\-cmdtimeout=N
 This option sets a timeout for the external commands used for
 testing of NTP and RPC services, and to perform traceroute.
 
-.IP --concurrency=N 
+.IP \-\-concurrency=N 
 Determines the number of network tests that
 run in parallel. Default is operating system dependent,
 but will usually be 256. If xymonnet begins to complain 
 about not being able to get a "socket", try running
 xymonnet with a lower value like 50 or 100.
 
-.IP "--dns-timeout=N (default: 30 seconds)"
+.IP "\-\-dns\-timeout=N (default: 30 seconds)"
 xymonnet will timeout all DNS lookups after N seconds.
 Any pending DNS lookups are regarded as failed, i.e. the
 network tests that depend on this DNS lookup will report
 an error.
 .br
-Note: If you use the --no-ares option, timeout of DNS
+Note: If you use the \-\-no\-ares option, timeout of DNS
 lookups cannot be controlled by xymonnet.
 
-.IP --dns-max-all=N
-Same as "--dns-timeout=N". The "--dns-max-all" option is 
+.IP \-\-dns\-max\-all=N
+Same as "\-\-dns\-timeout=N". The "\-\-dns\-max\-all" option is 
 deprecated and should not be used.
 
-.IP --dns=[ip|only|standard]
-Determines how xymonnet finds the IP adresses of the hosts to test. 
+.IP \-\-dns=[ip|only|standard]
+Determines how xymonnet finds the IP addresses of the hosts to test. 
 By default (the "standard"), xymonnet does a DNS lookup of the hostname 
 to determine the IP address, unless the host has the "testip" 
 tag, or the DNS lookup fails.
 .br
-With "--dns=only" xymonnet will ONLY do the DNS lookup;
+With "\-\-dns=only" xymonnet will ONLY do the DNS lookup;
 if it fails, then all services on that host will be 
 reported as being down.
 .br
-With "--dns=ip" xymonnet will never do a DNS lookup;
+With "\-\-dns=ip" xymonnet will never do a DNS lookup;
 it will use the IP adresse specified in hosts.cfg for
 the tests. Thus, this setting is equivalent to having
 the "testip" tag on all hosts. Note that http tests
@@ -108,7 +108,7 @@ lookup for the hostname given in the URL; see the
 "xymonnet tags for HTTP tests" section in
 .I hosts.cfg(5)
 
-.IP --no-ares
+.IP \-\-no\-ares
 Disable the ARES resolver built into xymonnet. This makes
 xymonnet resolve hostnames using your system resolver
 function. You should only use this as a last resort if xymonnet
@@ -119,20 +119,20 @@ resolve hostnames via NIS/NIS+ (a.k.a. Yellow Pages).
 The system resolver function does not provide a mechanism for
 controlling timeouts of the hostname lookups, so if your
 DNS or NIS server is down, xymonnet can take a very long time
-to run. The --dns-timeout option is effectively disabled when
+to run. The \-\-dns\-timeout option is effectively disabled when
 using this option.
 
-.IP --dnslog=FILENAME
+.IP \-\-dnslog=FILENAME
 Log failed hostname lookups to the file FILENAME. FILENAME should 
 be a full pathname.
 
-.IP --report[=COLUMNNAME]
+.IP \-\-report[=COLUMNNAME]
 With this option, xymonnet will send a status message with details 
 of how many hosts were processed, how many tests were generated, 
 any errors that occurred during the run, and some timing statistics. 
 The default columnname is "xymonnet".
 
-.IP --test-untagged
+.IP \-\-test\-untagged
 When using the XYMONNETWORK environment variable to test
 only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any "NET:x" tag.
@@ -143,14 +143,14 @@ With this option, hosts with no NET: tag are included
 in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 
-.IP --frequenttestlimit=N
+.IP \-\-frequenttestlimit=N
 Used with the
-.I xymonnet-again.sh(1)
+.I xymonnet\-again.sh(1)
 Xymon extension. This option determines how long failed tests
 remain in the frequent-test queue. The default is 1800
 seconds (30 minutes).
 
-.IP --timelimit=N
+.IP \-\-timelimit=N
 Causes xymonnet to generate a warning if the run-time
 of xymonnet exceeds N seconds. By default N is set to
 the value of TASKSLEEP, so a warning triggers if the
@@ -160,7 +160,7 @@ option has no effect, i.e. it will not terminate xymonnet
 prematurely. So to eliminate any such warnings, use this
 option with a very high value of N.
 
-.IP --huge=N
+.IP \-\-huge=N
 Warn if the response from a TCP test is more than N bytes.
 If you see from the xymonnet status report that you are
 transferring large amounts of data for your tests, you can
@@ -168,20 +168,20 @@ enable this option to see which tests have large replies.
 .br
 Default: 0 (disabled).
 
-.IP --validity=N
+.IP \-\-validity=N
 Make the test results valid for N minutes before they go purple. 
 By default test results are valid for 30 minutes; if you run xymonnet
 less often than that, the results will go purple before the next run
 of xymonnet. This option lets you change how long the status is 
 valid.
 
-.IP --source-ip=IPADDRESS
+.IP \-\-source\-ip=IPADDRESS
 On multi-homed hosts, this option can be used to explicitly
 select the source IP address used for the network tests.
 "IPADDRESS" must be a valid IP-address on the host running
 xymonnet.
 
-.IP --loadhostsfromxymond
+.IP \-\-loadhostsfromxymond
 Instead of reading the hosts.cfg file, xymonnet will load the
 hosts.cfg configuration from the xymond daemon. This eliminates
 the need for reading the hosts.cfg, and if you have xymond and
@@ -191,7 +191,7 @@ for copying the hosts.cfg file between systems. Note that the
 enabled.
 
 .SH OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES
-.IP --checkresponse[=COLOR]
+.IP \-\-checkresponse[=COLOR]
 When testing well-known services (e.g. FTP, SSH, SMTP, POP-2, POP-3, 
 IMAP, NNTP and rsync), xymonnet will look for a valid service-specific
 "OK" response. If another reponse is seen, this will cause
@@ -200,23 +200,23 @@ option, the response from the service is ignored.
 .br
 The optional color-name is used to select a color other than
 yellow for the status message when the response is wrong.
-E.g. "--checkresponse=red" will cause a "red" status message
+E.g. "\-\-checkresponse=red" will cause a "red" status message
 to be sent when the service does not respond as expected.
 
-.IP --no-flags
+.IP \-\-no\-flags
 By default, xymonnet sends some extra information in the
 status messages, called "flags". These are used by xymongen
 e.g. to pick different icons for reversed tests when
 generating the Xymon webpages. This option makes
 xymonnet omit these flags from the status messages.
 
-.IP --shuffle
+.IP \-\-shuffle
 By default, TCP tests run roughly in the order that the hosts
 are listed in the hosts.cfg file. If you have many tests for
 one server, this may result in an exceptionally large
 load when Xymon is testing it because Xymon will perform
 a lot of tests at the same time. To avoid this, the
-\fB--shuffle\fR option reorders the sequence of tests
+\fB\-\-shuffle\fR option reorders the sequence of tests
 so they are spread randomly across all of the servers
 tested.
 
@@ -230,34 +230,34 @@ utility. See
 for a description of how to customize this, e.g. if you
 need to run it with "sudo" or a similar tool.
 
-.IP --ping
+.IP \-\-ping
 Enables xymonnet's ping test. The column name used for
 ping test results is defined by the PINGCOLUMN environment 
 variable in 
 .I xymonserver.cfg(5).
 .br
-If not specifed, xymonnet uses the CONNTEST environment
+If not specified, xymonnet uses the CONNTEST environment
 variable to determine if it should perform the ping test
 or not. So if you prefer to use another tool to implement 
 ping checks, either set the CONNTEST environment variable 
-to false, or run xymonnet with the "--noping".
+to false, or run xymonnet with the "\-\-noping".
 
-.IP --noping
+.IP \-\-noping
 Disable the connectivity test.
 
-.IP "--trace"
-.IP "--notrace"
+.IP "\-\-trace"
+.IP "\-\-notrace"
 Enable/disable the use of traceroute when a ping-test fails.
 Performing a traceroute for failed ping tests is a slow
 operation, so the default is not to do any traceroute, unless
 it is requested on a per-host basis via the "trace" tag in the 
 .I hosts.cfg(5) 
-entry for each host. The "--trace" option changes this, so 
+entry for each host. The "\-\-trace" option changes this, so 
 the default becomes to run traceroute on all hosts where
 the ping test fails; you can then disable it on specific 
 hosts by putting a "notrace" tag on the host-entry.
 
-.IP --ping-tasks=N
+.IP \-\-ping\-tasks=N
 Spread the task of pinging the hosts over N processes. If you have
 a very large number of hosts the time it takes to ping all of them 
 can be substantial, even with the use of tools like fping or xymonping
@@ -267,12 +267,12 @@ be divided evenly between these processes.
 
 
 .SH OPTIONS FOR HTTP (WEB) TESTS
-.IP --content=CONTENTTESTNAME 
+.IP \-\-content=CONTENTTESTNAME 
 Determines the name of the column Xymon displays for content checks. 
 The default is "content".  If you have used the "cont.sh" or "cont2.sh" 
-scripts earlier, you may want to use "--content=cont" to report content
+scripts earlier, you may want to use "\-\-content=cont" to report content
 checks using the same test name as these scripts do.
-.IP --bb-proxy-syntax
+.IP \-\-bb\-proxy\-syntax
 Adhere to the Big Brother syntax for a URL, which allows specifying 
 a HTTP proxy as part of a URL. See \fB"HTTP Testing via proxy"\fR in the
 .I hosts.cfg(5) 
@@ -281,28 +281,28 @@ by default since URL's that include other URL's are now much more
 common. This option restores the old Big Brother-compatible behaviour.
 
 .SH OPTIONS FOR SSL CERTIFICATE TESTS
-.IP --ssl=SSLCERTTESTNAME
+.IP \-\-ssl=SSLCERTTESTNAME
 Determines the name of the column Xymon displays for the SSL certificate checks.
 The default is "sslcert".
-.IP --no-ssl
+.IP \-\-no\-ssl
 Disables reporting of the SSL certificate check.
 
-.IP --sslwarn=N
-.IP --sslalarm=N
+.IP \-\-sslwarn=N
+.IP \-\-sslalarm=N
 Determines the number of days before an SSL certificate
 expires, where xymonnet will generate a warning or
 alarm status for the SSL certificate column.
 
-.IP --sslbits=N
+.IP \-\-sslbits=N
 Enables checking that the encryption supported by the
 SSL protocol uses an encryption key of at least N bits.
 E.g. to trigger an alert if your SSL-enabled website 
-supports less than 128 bits of encryption, use "--sslbits=128".
+supports less than 128 bits of encryption, use "\-\-sslbits=128".
 Note: This can be enabled on a per-host basis using the
 "sslbits=N" setting in 
 .I hosts.cfg(5)
 
-.IP --sslkeysize=N
+.IP \-\-sslkeysize=N
 Enables checking of the length of the public key in SSL certificates.
 N is the minimum size of the SSL public key, typically such keys
 are 2048 bits, but some older certificates may use keys with 1024 bits
@@ -310,10 +310,10 @@ or less. If you specify this, SSL certificates with keys less than N
 bits will result in the "sslcert" status going yellow.
 Default: 0, i.e. this check is disabled.
 
-.IP --no-cipherlist
+.IP \-\-no\-cipherlist
 Do not show the list of encryption ciphers on the "sslcert" status.
 
-.IP --sni=[on|off]
+.IP \-\-sni=[on|off]
 Sets the default for whether SSL connections use SNI (Server Name
 Indication). This can also be set with the "sni" or "nosni"
 options in hosts.cfg for each host - the hosts.cfg entries
@@ -321,23 +321,23 @@ override this  option.
 Default: off
 
 .SH DEBUGGING OPTIONS
-.IP --no-update
+.IP \-\-no\-update
 Don't send any status updates to the Xymon server. Instead,
 all messages are dumped to stdout.
 
-.IP --timing
+.IP \-\-timing
 Causes xymonnet to collect information about
 the time spent in different parts of the program.
 The information is printed on stdout just before
 the program ends. Note that this information is also
-included in the status report sent with the "--report"
+included in the status report sent with the "\-\-report"
 option.
 
-.IP --debug
+.IP \-\-debug
 Dumps a bunch of status about the tests as they
 progress to stdout.
 
-.IP --dump[=before|=after|=both]
+.IP \-\-dump[=before|=after|=both]
 Dumps internal memory structures before and/or after the
 tests have executed.
 
@@ -516,7 +516,7 @@ one combo message. Default is 0 - no limit.
 .br
 In practice, the maximum size of a single Xymon message
 sets a limit - the default value for the maximum message
-size is 32 KB, but that will easily accomodate 100 status
+size is 32 KB, but that will easily accommodate 100 status
 messages per transmission. So if you want to experiment
 with this setting, I suggest starting with a value of 10.
 

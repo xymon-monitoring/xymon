@@ -20,23 +20,23 @@ return hosts that are present on the "webservers" page in Xymon.
 
 If no filter is specified, appfeed.cgi returns data for all red, yellow or purple
 statuses (equivalent to the data present on the "All non-green" page), or if invoked 
-with the "--critical" option it returns data from the "Critical systems" page.
+with the "\-\-critical" option it returns data from the "Critical systems" page.
 
 The output is an XML document with the current status of the selected hosts/services.
 
 .SH OPTIONS
-.IP "--env=FILENAME
+.IP "\-\-env=FILENAME
 Loads the environment from FILENAME before executing the CGI.
 
-.IP "--critical[=FILENAME]"
+.IP "\-\-critical[=FILENAME]"
 FILENAME specifies the "Critical Systems" configuration file (default: critical.cfg).
 appfeed.cgi will only return the statuses currently on the "Critical Systems" view.
 
-.IP "--access=FILENAME"
-In addition to the filtering done by the "filter" parameter or the "--critical" option,
+.IP "\-\-access=FILENAME"
+In addition to the filtering done by the "filter" parameter or the "\-\-critical" option,
 this option limits the output to hosts that the user has access to as defined in the
 Apache-compatible group-definitions in FILENAME. See
-.I xymon-webaccess(5)
+.I xymon\-webaccess(5)
 for more details of this.
 .BR
 Note: Use of this option requires that access to the appfeed.cgi tool is password-protected
@@ -45,5 +45,5 @@ via the REMOTE_USER environment variable (this is standard CGI behaviour, so all
 should provide it if you use the webserver's built-in authentication mechanisms).
 
 .SH "SEE ALSO"
-xymon(1), critical.cfg(5), xymon-webaccess(5)
+xymon(1), critical.cfg(5), xymon\-webaccess(5)
 

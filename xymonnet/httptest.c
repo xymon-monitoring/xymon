@@ -360,7 +360,7 @@ void add_http_test(testitem_t *t)
 	httptest->contlen = -1;
 	httptest->parsestatus = (httptest->weburl.proxyurl ? httptest->weburl.proxyurl->parseerror : httptest->weburl.desturl->parseerror);
 
-	/* If there was a parse error in the URL, dont run the test */
+	/* If there was a parse error in the URL, don't run the test */
 	if (httptest->parsestatus) return;
 
 

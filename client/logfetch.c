@@ -41,7 +41,7 @@ static char skiptxt[512];
 static char curpostxt[512];
 
 /* Is it ok for these to be hardcoded ? */
-#define MAXCHECK   102400   /* When starting, dont look at more than 100 KB of data */
+#define MAXCHECK   102400   /* When starting, don't look at more than 100 KB of data */
 #define MAXMINUTES 30
 #define POSCOUNT ((MAXMINUTES / 5) + 1)		/* 0 = current run */
 #define DEFAULTSCROLLBACK (POSCOUNT - 1)	/* How far back to begin processing data, in runs */

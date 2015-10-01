@@ -52,7 +52,7 @@ void dropdirectory(char *dirfn, int background)
 					}
 					else if (S_ISDIR(st.st_mode)) {
 						dbgprintf("Recurse into %s\n", fn);
-						dropdirectory(fn, 0); /* Dont background the recursive calls! */
+						dropdirectory(fn, 0); /* Don't background the recursive calls! */
 					}
 				}
 			}

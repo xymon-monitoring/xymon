@@ -2,23 +2,23 @@
 .SH NAME
 report.cgi \- CGI front-end to xymongen reporting
 .SH SYNOPSIS
-.B "report.cgi [--noclean] [xymongen-options]"
+.B "report.cgi [\-\-noclean] [xymongen-options]"
 
 .SH DESCRIPTION
 \fBreport.cgi\fR
 is invoked as a CGI script via the report.sh CGI wrapper.
 It triggers the generation of a Xymon availability
-report for the timeperiod specified by the CGI paramaters.
+report for the timeperiod specified by the CGI parameters.
 
 report.cgi is passed a QUERY_STRING environment variable with the
 following parameters:
 
-   start-mon (Start month of the report)
-   start-day (Start day-of-month of the report)
-   start-yr  (Start year of the report)
-   end-mon   (End month of the report)
-   end-day   (End day-of-month of the report)
-   end-yr    (End year of the report)
+   start\-mon (Start month of the report)
+   start\-day (Start day-of-month of the report)
+   start\-yr  (Start year of the report)
+   end\-mon   (End month of the report)
+   end\-day   (End day-of-month of the report)
+   end\-yr    (End year of the report)
    style     (Report style)
  
 The following non-standard parameters are handled by the
@@ -41,21 +41,21 @@ at 23:59:59 of the end-day.
 
 The "style" parameter is passed directly to 
 .I xymongen(1)
-and should be "crit", "non-crit" or "all". Other values result
+and should be "crit", "non\-crit" or "all". Other values result
 in undefined behaviour.
 
 All of the processing involved in generating the report is done 
 by invoking 
 .I xymongen(1)
-with the proper "--reportopts" option.
+with the proper "\-\-reportopts" option.
 
 .SH OPTIONS
-.IP --noclean
+.IP \-\-noclean
 Do not clean the XYMONREPDIR directory of old reports. Makes the
 report-tool go a bit faster - instead, you can clean up the
 XYMONREPDIR directory e.g. via a cron-job.
 
-.IP "--env=FILENAME"
+.IP "\-\-env=FILENAME"
 Load the environment from FILENAME before executing the CGI.
 
 .IP xymongen-options

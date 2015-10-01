@@ -205,7 +205,7 @@ void grabdata(conn_t *conn)
 			addtobuffer(conn->msgbuf, client_response);
 
 			/* 
-			 * Dont drop the client response data. If for some reason
+			 * Don't drop the client response data. If for some reason
 			 * the "client" request is repeated, he should still get
 			 * the right answer that we have.
 			 */
@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	int opt;
 
-	/* Dont save the output from errprintf() */
+	/* Don't save the output from errprintf() */
 	save_errbuf = 0;
 
 	memset(&laddr, 0, sizeof(laddr));

@@ -2,7 +2,7 @@
 .SH NAME
 xymond_alert \- xymond worker module for sending out alerts
 .SH SYNOPSIS
-.B "xymond_channel --channel=page xymond_alert [options]"
+.B "xymond_channel \-\-channel=page xymond_alert [options]"
 
 .SH DESCRIPTION
 xymond_alert is a worker module for xymond, and as such it is normally
@@ -18,58 +18,58 @@ file. This file holds the definition of rules and recipients,
 that determine who gets alerts, how often, for what servers etc.
 
 .SH OPTIONS
-.IP "--config=FILENAME"
+.IP "\-\-config=FILENAME"
 Sets the filename for the 
 .I alerts.cfg
 file. The default value is "etc/alerts.cfg" below the Xymon
 server directory.
 
-.IP "--dump-config"
+.IP "\-\-dump\-config"
 Dumps the configuration after parsing it. May be useful to track
 down problems with configuration file errors.
 
-.IP "--checkpoint-file=FILENAME"
+.IP "\-\-checkpoint\-file=FILENAME"
 File where the current state of the xymond_alert module is saved. 
 When starting up, xymond_alert will also read this file to restore
 the previous state.
 
-.IP "--checkpoint-interval=N"
+.IP "\-\-checkpoint\-interval=N"
 Defines how often (in seconds) the checkpoint-file is saved.
 
-.IP "--cfid"
+.IP "\-\-cfid"
 If this option is present, alert messages will include a line with
 "cfid:N" where N is the linenumber in the alerts.cfg file that
 caused this message to be sent. This can be useful to track down
 problems with duplicate alerts.
 
-.IP "--test HOST SERVICE [options]
+.IP "\-\-test HOST SERVICE [options]
 Shows which alert rules matches the given HOST/SERVICE combination.
 Useful to debug configuration problems, and see what rules are used
 for an alert. 
 
 The possible options are:
 .br
-.BI "--color=COLORNAME"
+.BI "\-\-color=COLORNAME"
 The COLORNAME parameter is the color of the alert: red, yellow or purple.
 .br
-.BI "--duration=MINUTES"
+.BI "\-\-duration=MINUTES"
 The MINUTES parameter is the duration of the alert in minutes. 
 .br
-.BI "--group=GROUPNAME"
-The GROUPNAME paramater is a groupid string from the analysis.cfg
+.BI "\-\-group=GROUPNAME"
+The GROUPNAME parameter is a groupid string from the analysis.cfg
 file.
 .br
-.BI "--time=TIMESTRING"
+.BI "\-\-time=TIMESTRING"
 The TIMESTRING parameter is the time-of-day for the alert, expressed as an
 absolute time in the epoch format (seconds since Jan 1 1970). This is
 easily obtained with the GNU date utility using the "+%s" output format.
 
-.IP "--trace=FILENAME"
+.IP "\-\-trace=FILENAME"
 Send trace output to FILENAME, This allows for more detailed
 analysis of how alerts trigger, without having the full debugging
 enabled.
 
-.IP "--debug"
+.IP "\-\-debug"
 Enable debugging output.
 
 .SH HOW XYMON DECIDES WHEN TO SEND ALERTS
@@ -117,7 +117,7 @@ process starts all over again.
 .SH ENVIRONMENT
 .IP MAIL
 The first part of a command line used to send out an e-mail with a 
-subject, typically set to "/usr/bin/mail -s" . xymond_alert will add
+subject, typically set to "/usr/bin/mail \-s" . xymond_alert will add
 the subject and the mail recipients to form the command line used
 for sending out email alerts.
 

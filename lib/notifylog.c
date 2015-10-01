@@ -210,7 +210,7 @@ void do_notifylog(FILE *output,
 
 		hostname = hostsvc; svcname = strrchr(hostsvc, '.'); if (svcname) { *svcname = '\0'; svcname++; } else svcname = "";
 		eventhost = hostinfo(hostname);
-		if (!eventhost) continue; /* Dont report hosts that no longer exist */
+		if (!eventhost) continue; /* Don't report hosts that no longer exist */
 		eventcolumn = getname(svcname, 1);
 
 		p = strchr(recipient, '['); if (p) *p = '\0';

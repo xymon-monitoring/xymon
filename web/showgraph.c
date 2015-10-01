@@ -827,7 +827,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		*delim = '\0';
 		realservice = strdup(delim+1);
 
-		/* The requested gdef only acts as a fall-back solution so dont set gdef here. */
+		/* The requested gdef only acts as a fall-back solution so don't set gdef here. */
 		for (gdefuser = gdefs; (gdefuser && strcmp(service, gdefuser->name)); gdefuser = gdefuser->next) ;
 		strcpy(service, realservice);
 		wantsingle = 1;
@@ -990,7 +990,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* 
 			 * Has it been updated recently (within the past 24 hours) ? 
-			 * We dont want old graphs to mess up multi-displays.
+			 * We don't want old graphs to mess up multi-displays.
 			 */
 			if (ignorestalerrds && (stat(d->d_name, &st) == 0) && ((now - st.st_mtime) > 86400)) {
 				continue;

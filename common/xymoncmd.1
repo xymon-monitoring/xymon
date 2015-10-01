@@ -2,7 +2,7 @@
 .SH NAME
 xymoncmd \- Run a Xymon command with environment set
 .SH SYNOPSIS
-.B "xymoncmd [--env=ENVFILE COMMAND|--version|--debug]"
+.B "xymoncmd [\-\-env=ENVFILE COMMAND|\-\-version|\-\-debug]"
 
 .SH DESCRIPTION
 .I xymoncmd(1)
@@ -13,7 +13,7 @@ with this environment in place. It is mostly used for testing
 extension scripts or in other situations where you need to run
 a single command with the environment in place.
 
-The "--env=ENVFILE" option points xymoncmd to the file where the 
+The "\-\-env=ENVFILE" option points xymoncmd to the file where the 
 environment definitions are loaded from.
 
 COMMAND is the command to execute after setting up the environment.
@@ -22,9 +22,9 @@ If you want to run multiple commands, it is often easiest to just
 use "sh" as the COMMAND - this gives you a sub-shell with the 
 environment defined globally.
 
-The "--debug" option print out more detail steps of xymoncmd execution.
+The "\-\-debug" option print out more detail steps of xymoncmd execution.
 
-The "--version" option print out version number of xymoncmd.
+The "\-\-version" option print out version number of xymoncmd.
 .SH "SEE ALSO"
 xymonlaunch(8), xymon(7)
 

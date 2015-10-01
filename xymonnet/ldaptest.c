@@ -106,7 +106,7 @@ int add_ldap_test(testitem_t *t)
 	 * At this point, the plain TCP checks have already run.
 	 * So we know from the test found in t->privdata whether
 	 * the LDAP port is open.
-	 * If it is not open, then dont run this check.
+	 * If it is not open, then don't run this check.
 	 */
 	if (basecheck->open == 0) {
 		/* Cannot connect to LDAP port. */
@@ -536,7 +536,7 @@ int main(int argc, char *argv[])
 		argi++;
 	}
 
-	/* For testing, dont crash in sendmsg when no XYMSRV defined */
+	/* For testing, don't crash in sendmsg when no XYMSRV defined */
 	dontsendmessages = 1;
 	if (xgetenv("XYMSRV") == NULL) putenv("XYMSRV=127.0.0.1");
 

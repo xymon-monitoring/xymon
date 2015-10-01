@@ -1,11 +1,11 @@
-.TH XYMONNET-AGAIN.SH 1 "Version 4.3.19: 30 Mar 2015" "Xymon"
+.TH XYMONNET\-AGAIN.SH 1 "Version 4.3.19: 30 Mar 2015" "Xymon"
 .SH NAME
-xymonnet-again.sh \- Xymon network re-test tool
+xymonnet\-again.sh \- Xymon network re-test tool
 .SH SYNOPSIS
-.B "xymonnet-again.sh"
+.B "xymonnet\-again.sh"
 
 .SH DESCRIPTION
-\fBxymonnet-again.sh\fR
+\fBxymonnet\-again.sh\fR
 is an extension script for Xymon that runs on the network
 test server.  It picks up the failing network tests executed by the 
 .I xymonnet(1)
@@ -16,10 +16,10 @@ again, this is detected quicker resulting in less reported
 downtime.
 
 Only tests whose first failure occurred within 30 minutes
-are included in the tests that are run by xymonnet-again.sh.
+are included in the tests that are run by xymonnet\-again.sh.
 The 30 minute limit is there to avoid hosts that are down for
-longer periods of time to bog down xymonnet-again.sh.  You can change 
-this limit with the "--frequenttestlimit=SECONDS" when you run
+longer periods of time to bog down xymonnet\-again.sh.  You can change 
+this limit with the "\-\-frequenttestlimit=SECONDS" when you run
 xyxmonnet.
 
 
@@ -33,7 +33,7 @@ file.
 .IP $XYMONTMP/TESTNAME.LOCATION.status
 Temporary status file managed by xyxmonnet with status of tests that have currently failed.
 .IP $XYMONTMP/frequenttests.LOCATION
-Temporary file managed by xymonnet with the hostnames that xymonnet-again.sh should test.
+Temporary file managed by xymonnet with the hostnames that xymonnet\-again.sh should test.
 
 .SH "SEE ALSO"
 xymonnet(1), xymon(7), tasks.cfg(5)

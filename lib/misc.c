@@ -476,7 +476,7 @@ void do_extensions(FILE *output, char *extenv, char *family)
 	inbuf = newstrbuffer(0);
 
 	while (p) {
-		/* Dont redo the eventlog or acklog things */
+		/* Don't redo the eventlog or acklog things */
 		if ((strcmp(p, "eventlog.sh") != 0) &&
 		    (strcmp(p, "acklog.sh") != 0)) {
 			sprintf(extfn, "%s/ext/%s/%s", xgetenv("XYMONHOME"), family, p);

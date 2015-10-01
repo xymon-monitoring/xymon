@@ -38,7 +38,7 @@ The cpu status goes yellow/red if the system has been up for less than
 minutes, or you can add h/d/w for hours/days/weeks - eg. "2h" for
 two hours, or "4w" for 4 weeks.
 .sp
-Defaults: bootlimit=1h, toolonglimit=-1 (infinite), color=yellow.
+Defaults: bootlimit=1h, toolonglimit=\-1 (infinite), color=yellow.
 .sp
 .sp
 .BR "CLOCK max.offset [color]"
@@ -48,7 +48,7 @@ differs more than "max.offset" seconds from that of the Xymon
 server. Note that this is not a particularly accurate test, since 
 it is affected by network delays between the client and the server,
 and the load on both systems. You should therefore not rely on this
-being accurate to more than +/- 5 seconds, but it will let you
+being accurate to more than +/\- 5 seconds, but it will let you
 catch a client clock that goes completely wrong. The default is
 NOT to check the system clock.
 .br
@@ -120,7 +120,7 @@ Note: The words "PHYS", "ACT" and "SWAP" are also recognized.
 .sp
 Example: Go yellow if more than 20% swap is used, and red if
 more than 40% swap is used or the actual memory utilisation exceeds
-90%. Dont alert on physical memory usage.
+90%. Don't alert on physical memory usage.
 .IP
 .nf
 MEMSWAP 20 40
@@ -156,22 +156,22 @@ a ps-listing of e.g. "/usr/sbin/cron" if you only specify "processname"
 as "cron".
 "processname" can also be a Perl-compatiable regular expression, e.g.
 "%java.*inst[0123]" can be used to find entries in the ps-listing for
-"java -Xmx512m inst2" and "java -Xmx256 inst3". In that case,
+"java \-Xmx512m inst2" and "java \-Xmx256 inst3". In that case,
 "processname" must begin with "%" followed by the regular expression.
 Note that Xymon defaults to case-insensitive pattern matching; if that
-is not what you want, put "(?-i)" between the "%" and the regular
-expression to turn this off. E.g. "%(?-i)HTTPD" will match the
+is not what you want, put "(?\-i)" between the "%" and the regular
+expression to turn this off. E.g. "%(?\-i)HTTPD" will match the
 word HTTPD only when it is upper-case.
 .br
 If "processname" contains whitespace (blanks or TAB), you must enclose
 the full string in double quotes - including the "%" if you use regular
 expression matching. E.g.
 .sp
-    PROC "%xymond_channel --channel=data.*xymond_rrd" 1 1 yellow
+    PROC "%xymond_channel \-\-channel=data.*xymond_rrd" 1 1 yellow
 .sp
 or
 .sp
-    PROC "java -DCLASSPATH=/opt/java/lib" 2 5
+    PROC "java \-DCLASSPATH=/opt/java/lib" 2 5
 .sp
 You can have multiple "PROC" entries for the same host, all of the
 checks are merged into the "procs" status and the most severe
@@ -209,7 +209,7 @@ Example: Check that at least 5 "httpd" processes are running, but not more than 
 .sp
 Defaults:
 .br
-	mincount=1, maxcount=-1 (unlimited), color="red".
+	mincount=1, maxcount=\-1 (unlimited), color="red".
 .br
 	Note that no processes are checked by default.
 
@@ -237,8 +237,8 @@ the pattern is matched. To match against a regular expression, "pattern"
 must begin with a '%' sign - e.g "%WARNING|NOTICE" will match any lines
 containing either of these two words.
 Note that Xymon defaults to case-insensitive pattern matching; if that
-is not what you want, put "(?-i)" between the "%" and the regular
-expression to turn this off. E.g. "%(?-i)WARNING" will match the
+is not what you want, put "(?\-i)" between the "%" and the regular
+expression to turn this off. E.g. "%(?\-i)WARNING" will match the
 word WARNING only when it is upper-case.
 .sp
 "excludepattern" is a string or regular expression that can be used to 
@@ -307,7 +307,7 @@ GROUP is specified either with the numeric gid, or the group name.
 .IP "mode=MODE"
 triggers a warning if the file permissions are not
 as listed. MODE is written in the standard octal notation, e.g.
-"644" for the rw-r--r-- permissions.
+"644" for the rw\-r\-\-r\-\- permissions.
 .IP "size<MAX.SIZE and size>MIN.SIZE"
 triggers a warning it the file size is greater than MAX.SIZE or 
 less than MIN.SIZE, respectively. For filesizes, you can use the
@@ -330,7 +330,7 @@ entry of the file was last changed, eg. by chown, chgrp or chmod).
 trigger a warning if the file checksum using the MD5, SHA1 or RMD160 
 message digest algorithms do not match the one configured here. Note: 
 The "file" entry in the
-.I client-local.cfg(5)
+.I client\-local.cfg(5)
 file must specify which algorithm to use.
 
 .LP
@@ -364,12 +364,12 @@ sockets match the \fBcriteria\fR listed.  The criteria you can use are:
 "addr" is a (partial) local address specification in the format used on
 the output from netstat.
 .IP "EXLOCAL=addr"
-Exclude certain local adresses from the rule.
+Exclude certain local addresses from the rule.
 .IP "REMOTE=addr"
 "addr" is a (partial) remote address specification in the format used on
 the output from netstat.
 .IP "EXREMOTE=addr"
-Exclude certain remote adresses from the rule.
+Exclude certain remote addresses from the rule.
 .IP "STATE=state"
 Causes only the sockets in the specified state to be included, "state"
 is usually LISTEN or ESTABLISHED but can be any socket state reported by
@@ -379,7 +379,7 @@ Exclude certain states from the rule.
 .LP
 "addr" is typically "10.0.0.1:80" for the IP 10.0.0.1, port 80. 
 Or "*:80" for any local address, port 80. Note that the Xymon clients 
-normally report only the numeric data for IP-adresses and port-numbers, 
+normally report only the numeric data for IP-addresses and port-numbers, 
 so you must specify the port number (e.g. "80") instead of the service 
 name ("www").
 .br
@@ -413,7 +413,7 @@ local/remote/state rules as identification, but this may be somewhat
 difficult to understand. You can then use e.g. "TEXT=Secure Shell" to make
 these ports appear with the name "Secure Shell" instead.
 .sp
-Defaults: mincount=1, maxcount=-1 (unlimited), color="red".
+Defaults: mincount=1, maxcount=\-1 (unlimited), color="red".
 Note: No ports are checked by default.
 .sp
 Example: Check that the SSH daemon is listening on port 22. Track the
@@ -461,7 +461,7 @@ Example: Flag "conn" status a yellow if responsetime exceeds
 .sp
 .SH MQ Series SETTINGS
 .sp
-.BR "MQ_QUEUE queuename [age-warning=N] [age-critical=N] [depth-warning=N] [depth-critical=N]"
+.BR "MQ_QUEUE queuename [age\-warning=N] [age\-critical=N] [depth\-warning=N] [depth\-critical=N]"
 .br
 .BR "MQ_CHANNEL channelname [warning=PATTERN] [alert=PATTERN]"
 .sp
@@ -534,15 +534,15 @@ Rule matching a host by the hostname.
 "targetstring" is either a comma-separated list of hostnames (from the hosts.cfg file),
 "*" to indicate "all hosts", or a Perl-compatible regular expression.
 E.g. "HOST=dns.foo.com,www.foo.com" identifies two specific hosts;
-"HOST=%www.*.foo.com EXHOST=www-test.foo.com" matches all hosts with a name
-beginning with "www", except the "www-test" host.
+"HOST=%www.*.foo.com EXHOST=www\-test.foo.com" matches all hosts with a name
+beginning with "www", except the "www\-test" host.
 
 .BR "EXHOST=targetstring"
 Rule excluding a host by matching the hostname.
 
 .BR "CLASS=classname"
 Rule match by the client class-name. You specify the class-name 
-for a host when starting the client through the "--class=NAME"
+for a host when starting the client through the "\-\-class=NAME"
 option to the runclient.sh script. If no class is specified, the
 host by default goes into a class named by the operating system.
 
@@ -637,7 +637,7 @@ the generic ones last.
 .SH NOTES
 For the LOG, FILE and DIR checks, it is necessary also to configure the actual 
 file- and directory-names in the
-.I client-local.cfg(5)
+.I client\-local.cfg(5)
 file. If the filenames are not listed there, the clients will not collect
 any data about these files/directories, and the settings in the 
 analysis.cfg file will be silently ignored.
@@ -653,5 +653,5 @@ is not considered strong enough when a high level of security is required.
 
 
 .SH "SEE ALSO"
-xymond_client(8), client-local.cfg(5), xymond(8), xymon(7)
+xymond_client(8), client\-local.cfg(5), xymond(8), xymon(7)
 

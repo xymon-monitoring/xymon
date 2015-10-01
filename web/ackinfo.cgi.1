@@ -22,27 +22,27 @@ In a future version of Xymon (after Xymon 4.2), this utility
 will also be used for acknowledging alerts at other levels.
 
 .SH OPTIONS
-.IP "--level=NUMBER"
+.IP "\-\-level=NUMBER"
 Sets the acknowledgment level. This is typically used to force a specific
 level of the acknowledgment, e.g. a level 1 acknowledge when called from the
 Critical Systems view.
 
-.IP "--validity=TIME"
+.IP "\-\-validity=TIME"
 Sets the validity of the acknowledgment. By default this is taken from the
 CGI parameters supplied by the user.
 
-.IP "--sender=STRING"
+.IP "\-\-sender=STRING"
 Logs STRING as the sender of the acknowledgment. By default, this is taken
 from the loginname of the webuser sending the acknowledgment.
 
-.IP "--env=FILENAME"
+.IP "\-\-env=FILENAME"
 Loads the environment defined in FILENAME before executing the CGI script.
 
-.IP "--area=NAME"
+.IP "\-\-area=NAME"
 Load environment variables for a specific area. NB: if used,
-this option must appear before any --env=FILENAME option.
+this option must appear before any \-\-env=FILENAME option.
 
-.IP "--debug"
+.IP "\-\-debug"
 Enables debugging output.
 
 .SH "ENVIRONMENT VARIABLES"

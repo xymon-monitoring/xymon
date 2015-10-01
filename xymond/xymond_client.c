@@ -1398,7 +1398,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 			}
 
 			if (!anyrules) {
-				/* Dont clutter the display with logfiles unless they have rules */
+				/* Don't clutter the display with logfiles unless they have rules */
 				continue;
 			}
 		}

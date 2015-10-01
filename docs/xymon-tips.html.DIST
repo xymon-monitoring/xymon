@@ -42,7 +42,7 @@ raised with Xymon.</p>
 </table>
 <hr>
 
-<h3><a name="noclient">My client-side tests dont show up on the webpages</a></h3>
+<h3><a name="noclient">My client-side tests don't show up on the webpages</a></h3>
 <p>Did you install a client ? The Xymon client package is installed
 automatically only on the Xymon server - on other systems, you must
 build the client package by running Xymon's configure-script with
@@ -229,7 +229,7 @@ be added into Xymon. A lot of extension scripts are available for
 Big Brother at the <a href="http://www.deadcat.net/">www.deadcat.net archive</a>,
 and these will typically work without modifications if you run them in
 Xymon. Sometimes a few minor tweaks are needed - the Xymon mailing list
-can help you if you dont know how to go about that.</p>
+can help you if you don't know how to go about that.</p>
 <p>But if you have something unique you need to test, writing an extension
 script is pretty simple. You need to figure out some things:</p>
 <ul>

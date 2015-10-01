@@ -208,7 +208,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 				/*
 				 * Linux' netif aliases mess up things. 
 				 * Clear everything when we see an interface name.
-				 * But we dont want to track the "lo" interface.
+				 * But we don't want to track the "lo" interface.
 				 */
 
 				/* Strip off the last character if it is a colon (:) */

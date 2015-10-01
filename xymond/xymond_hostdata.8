@@ -2,7 +2,7 @@
 .SH NAME
 xymond_hostdata \- xymond worker module for storing historical client data
 .SH SYNOPSIS
-.B "xymond_channel --channel=clichg xymond_hostdata"
+.B "xymond_channel \-\-channel=clichg xymond_hostdata"
 
 .SH DESCRIPTION
 xymond_hostdata is a worker module for xymond, and as such it is normally
@@ -18,16 +18,16 @@ of the host status shortly before a problem became apparent.
 
 Note: This module requires that
 .I xymond(8)
-is launched with the "--store-clientlogs" option enabled.
+is launched with the "\-\-store\-clientlogs" option enabled.
 
 .SH OPTIONS
-.IP "--minimum-free=N"
+.IP "\-\-minimum\-free=N"
 Sets the minimum percentage of free filesystem space on the $CLIENTLOGS
 directory. If there is less than N% free space, xymond_hostdata will
 not save the data.
 Default: 5
 
-.IP "--debug"
+.IP "\-\-debug"
 Enable debugging output.
 
 .SH FILES

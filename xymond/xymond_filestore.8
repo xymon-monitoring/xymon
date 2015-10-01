@@ -2,13 +2,13 @@
 .SH NAME
 xymond_filestore \- xymond worker module for storing Xymon data
 .SH SYNOPSIS
-.B "xymond_channel --channel=status xymond_filestore --status [options]"
+.B "xymond_channel \-\-channel=status xymond_filestore \-\-status [options]"
 .br
-.B "xymond_channel --channel=data   xymond_filestore --data [options]"
+.B "xymond_channel \-\-channel=data   xymond_filestore \-\-data [options]"
 .br
-.B "xymond_channel --channel=notes  xymond_filestore --notes [options]"
+.B "xymond_channel \-\-channel=notes  xymond_filestore \-\-notes [options]"
 .br
-.B "xymond_channel --channel=enadis xymond_filestore --enadis [options]"
+.B "xymond_channel \-\-channel=enadis xymond_filestore \-\-enadis [options]"
 
 .SH DESCRIPTION
 xymond_filestore is a worker module for xymond, and as such it is normally
@@ -22,7 +22,7 @@ This program can be started multiple times, if you want to store
 messages for more than one channel.
 
 .SH OPTIONS
-.IP "--status"
+.IP "\-\-status"
 Incoming messages are "status" messages, they will be stored in the
 $XYMONRAWSTATUSDIR/ directory. If you are using 
 .I xymon(7)
@@ -33,7 +33,7 @@ This module is NOT needed to get trend graphs, you should run the
 .I xymond_rrd(8)
 module instead.
 
-.IP "--data"
+.IP "\-\-data"
 Incoming messages are "data" messages, they will be stored in the
 $XYMONDATADIR directory. This module is not needed, unless you have a
 third-party module that processes the data-files. This module is
@@ -41,44 +41,44 @@ NOT needed to get trend graphs, you should run the
 .I xymond_rrd(8)
 module instead.
 
-.IP "--notes"
+.IP "\-\-notes"
 Incoming messages are "notes" messages, they will be stored in the
 $XYMONNOTESDIR directory. This modules is only needed if you want to 
 allow people to remotely update the notes-files available on the
 Xymon webpages.
 
-.IP "--enadis"
+.IP "\-\-enadis"
 Incoming messages are enable/disable messages, they will update 
 files in the $XYMONDISABLEDDIR directory. This is only needed if you have
 third-party add-ons that use these files.
 
-.IP "--dir=DIRECTORY"
+.IP "\-\-dir=DIRECTORY"
 Overrides the default output directory.
 
-.IP "--html"
-Used together with "--status". Tells xymond_filestore to also save
+.IP "\-\-html"
+Used together with "\-\-status". Tells xymond_filestore to also save
 an HTML version of the status-log. Should not be used unless you 
 must run with "XYMONLOGSTATUS=static".
 
-.IP "--htmldir=DIRECTORY"
+.IP "\-\-htmldir=DIRECTORY"
 The directory where HTML-versions of the status logs are stored.
 Default: $XYMONHTMLSTATUSDIR
 
-.IP "--htmlext=.EXT"
+.IP "\-\-htmlext=.EXT"
 Set the filename extension for generated HTML files. By default, HTML
 files are saved with a ".html" extension.
 
-.IP "--multigraphs=TEST1[,TEST2]"
+.IP "\-\-multigraphs=TEST1[,TEST2]"
 This causes xymond_filestore to generate HTML status pages with links to 
 service graphs that are split up into multiple images, with at most 5 graphs
 per image. If not specified, only the "disk" status is split up this way.
 
-.IP "--only=test[,test,test]"
+.IP "\-\-only=test[,test,test]"
 Save status messages only for the listed set of tests. This can be useful
 if you have an external script that needs to parse some of the status logs,
 but you do not want to save all status logs.
 
-.IP "--debug"
+.IP "\-\-debug"
 Enable debugging output.
 
 .SH FILES

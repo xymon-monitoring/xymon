@@ -51,7 +51,7 @@ static char rcsid[] = "$Id$";
 
 #include "dns2.h"
 
-/* Some systems (AIX, HP-UX) dont know the DNS T_SRV record */
+/* Some systems (AIX, HP-UX) don't know the DNS T_SRV record */
 #ifndef T_SRV
 #define T_SRV 33
 #endif

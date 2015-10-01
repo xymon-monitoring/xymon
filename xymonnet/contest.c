@@ -294,10 +294,10 @@ static int do_telnet_options(tcptest_t *item)
 		}
 	        *outp = 255; outp++;
 		inp++; remain--;
-		if ((*inp == 251) || (*inp == 252))     /* WILL or WONT */
-			y = 254;                          /* -> DONT */
-		if ((*inp == 253) || (*inp == 254))     /* DO or DONT */
-			y = 252;                          /* -> WONT */
+		if ((*inp == 251) || (*inp == 252))     /* WILL or WON'T */
+			y = 254;                          /* -> DON'T */
+		if ((*inp == 253) || (*inp == 254))     /* DO or DON'T */
+			y = 252;                          /* -> WON'T */
 		if (y) {
 			*outp = y; outp++;
 			inp++; remain--;
@@ -390,7 +390,7 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 	strncpy(buf, passphrase, size);
 	buf[size - 1] = '\0';
 
-	/* Clear this buffer for security! Dont want passphrases in core dumps... */
+	/* Clear this buffer for security! Don't want passphrases in core dumps... */
 	memset(passphrase, 0, sizeof(passphrase));
 
 	return strlen(buf);
@@ -1260,7 +1260,7 @@ restartselect:
 							item->telnetbuflen = res;
 
 							/*
-							 * Safety measure: Dont loop forever doing
+							 * Safety measure: Don't loop forever doing
 							 * telnet options.
 							 * This puts a maximum on how many times
 							 * we go here.

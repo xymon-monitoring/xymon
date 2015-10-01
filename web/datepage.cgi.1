@@ -2,7 +2,7 @@
 .SH NAME
 datepage.cgi \- Xymon CGI script to view pre-built reports by date
 .SH SYNOPSIS
-.B "datepage.cgi?type={day,week,month} --url=URLPREFIX [options]
+.B "datepage.cgi?type={day,week,month} \-\-url=URLPREFIX [options]
 
 .SH DESCRIPTION
 \fBdatepage.cgi\fR is invoked as a CGI script via the datepage.sh CGI wrapper.
@@ -37,20 +37,20 @@ is found is used for PAGEPATH. These two cookies are set by the
 default web-header templates supplied with Xymon.
 
 .SH OPTIONS
-.IP "--url=URLPREFIX"
+.IP "\-\-url=URLPREFIX"
 This specifies the initial part of the final URL. This option is required.
 
-.IP "--hffile=FILENAME"
+.IP "\-\-hffile=FILENAME"
 Specifies the template files (from $XYMONHOME/web/) to use. The default is 
-"--hffile=report".
+"\-\-hffile=report".
 
-.IP "--color=COLOR"
+.IP "\-\-color=COLOR"
 Sets the background color of the generated webpage. The default is blue.
 
-.IP "--env=FILENAME"
+.IP "\-\-env=FILENAME"
 Loads the environment defined in FILENAME before executing the CGI script.
 
-.IP "--debug"
+.IP "\-\-debug"
 Enables debugging output.
 
 .IP "$XYMONHOME/web/report_form_daily"

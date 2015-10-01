@@ -385,7 +385,7 @@ unsigned char *get_xymond_message(enum msgchannels_t chnid, char *id, int *seq, 
 		/* idlemsg is used to return the idle message in case of timeouts. */
 		idlemsg = strdup("@@idle\n");
 
-		/* We dont want to block when reading data. */
+		/* We don't want to block when reading data. */
 		fcntl(inputfd, F_SETFL, O_NONBLOCK);
 	}
 
@@ -410,7 +410,7 @@ unsigned char *get_xymond_message(enum msgchannels_t chnid, char *id, int *seq, 
 			endpos = NULL;
 		}
 
-		seqnum = 0; /* After skipping, we dont know what to expect */
+		seqnum = 0; /* After skipping, we don't know what to expect */
 	}
 
 startagain:
@@ -468,7 +468,7 @@ startagain:
 
 		if (needmoredata) {
 			if (maymove && (bufleft < EXTRABUFSPACE)) {
-				/* Buffer is almost full - move data to accomodate a large message. */
+				/* Buffer is almost full - move data to accommodate a large message. */
 				dbgprintf("Moving %d bytes to start of buffer\n", usedbytes);
 				memmove(buf, startpos, usedbytes);
 				startpos = buf;
@@ -581,7 +581,7 @@ startagain:
 	{
 		/* 
 		 * Get and check the message sequence number.
-		 * We dont do this for network based workers, since the
+		 * We don't do this for network based workers, since the
 		 * sequence number is globally generated (by xymond)
 		 * but a network-based worker may only see some of the
 		 * messages (those that are not handled by other network-based

@@ -2,11 +2,11 @@
 .SH NAME
 combostatus \- Xymon combination test tool
 .SH SYNOPSIS
-.B "combostatus --help"
+.B "combostatus \-\-help"
 .br
-.B "combostatus --version"
+.B "combostatus \-\-version"
 .br
-.B "combostatus [--debug] [--quiet]"
+.B "combostatus [\-\-debug] [\-\-quiet]"
 
 .SH DESCRIPTION
 \fBcombostatus\fR
@@ -24,24 +24,24 @@ redundancy and automatic failover - e.g. load-balanced web servers.
 But other uses are possible.
 
 .SH OPTIONS
-.IP "--error-colors=COLOR[,COLOR]"
+.IP "\-\-error\-colors=COLOR[,COLOR]"
 Specify which colors trigger an error status. By default only a "red" 
 status counts as an error color - all other colors, including yellow,
 will count as "green" when evaluating the combined status. COLOR
 is "red", "yellow", "blue", "purple" or "clear".
 
-.IP "--quiet"
+.IP "\-\-quiet"
 Normally, the test status sent by combostatus includes information
 about the underlying test results used to determine the current
-value of the combined test. "--quiet" eliminates this information
+value of the combined test. "\-\-quiet" eliminates this information
 from the test status page.
 
-.IP "--debug"
+.IP "\-\-debug"
 Provide debugging output for use in troubleshooting problems with
 combostatus.
 
-.IP "--no-update"
-Dont send any status messages - instead, the result of the combotests
+.IP "\-\-no\-update"
+Don't send any status messages - instead, the result of the combotests
 is simply dumped to stdout. Useful for debugging.
 
 

@@ -2,7 +2,7 @@
 .SH NAME
 xymond_capture \- catch selected messages from a xymond channel
 .SH SYNOPSIS
-.B "xymond_channel --channel=status xymond_capture [options]"
+.B "xymond_channel \-\-channel=status xymond_capture [options]"
 
 .SH DESCRIPTION
 xymond_capture is a worker module for xymond, and as such it is normally
@@ -17,36 +17,36 @@ xymond_capture supports the \fBstatus\fR, \fBdata\fR, \fBclient\fR and
 \fBhostdata\fR channels.
 
 .SH OPTIONS
-.IP "--hosts=PATTERN"
+.IP "\-\-hosts=PATTERN"
 Select messages only from hosts matching PATTERN (regular expression).
 
-.IP "--exhosts=PATTERN"
-Exclude messages from hosts matching PATTERN. If used with the --hosts option, 
-then the hostname must match the --hosts pattern, but NOT the --exhosts pattern.
+.IP "\-\-exhosts=PATTERN"
+Exclude messages from hosts matching PATTERN. If used with the \-\-hosts option, 
+then the hostname must match the \-\-hosts pattern, but NOT the \-\-exhosts pattern.
 
-.IP "--tests=PATTERN"
+.IP "\-\-tests=PATTERN"
 Select messages only from tests matching PATTERN (regular expression).
 
-.IP "--extests=PATTERN"
-Exclude messages from tests matching PATTERN. If used with the --tests option, 
-then the testname must match the --tests pattern, but NOT the --extests pattern.
+.IP "\-\-extests=PATTERN"
+Exclude messages from tests matching PATTERN. If used with the \-\-tests option, 
+then the testname must match the \-\-tests pattern, but NOT the \-\-extests pattern.
 
-.IP "--colors=COLOR[,color]"
+.IP "\-\-colors=COLOR[,color]"
 Select messages based on the color of the status message. Multiple colors can be 
 listed, separated by comma. Default: Accept all colors.
 
-.IP "--batch-command=COMMAND"
+.IP "\-\-batch\-command=COMMAND"
 Instead of printing the messages to stdout, feed them to COMMAND on stdin. COMMAND
 can be any command which accepts the mssage on standard input.
 
-.IP "--batch-timeout=SECONDS"
+.IP "\-\-batch\-timeout=SECONDS"
 Collect messages until no messages have arrived in SECONDS seconds, before sending
-them to the --batch-command COMMAND.
+them to the \-\-batch\-command COMMAND.
 
-.IP "--client"
+.IP "\-\-client"
 Capture data from the "client" channel instead of the default "status" channel.
 
-.IP "--debug"
+.IP "\-\-debug"
 Enable debugging output.
 
 .SH "SEE ALSO"

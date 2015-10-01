@@ -53,7 +53,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 		acklog = fopen(acklogfilename, "r");
 	}
 	if (!acklog) {
-		/* If no acklog, that is OK - some people dont use acks */
+		/* If no acklog, that is OK - some people don't use acks */
 		dbgprintf("Cannot open acklog\n");
 		return;
 	}

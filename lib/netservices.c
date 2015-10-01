@@ -145,7 +145,7 @@ char *init_tcp_services(void)
 			return xymonnetsvcs;
 		}
 
-		/* File has changed - reload configuration. But clean up first so we dont leak memory. */
+		/* File has changed - reload configuration. But clean up first so we don't leak memory. */
 		if (svcinfo != default_svcinfo) {
 			for (i=0; (svcinfo[i].svcname); i++) {
 				if (svcinfo[i].svcname) xfree(svcinfo[i].svcname);
@@ -287,7 +287,7 @@ char *init_tcp_services(void)
 	/* Free the temp. svclist list */
 	while (head) {
 		/*
-		 * Note: Dont free the strings inside the records, 
+		 * Note: Don't free the strings inside the records, 
 		 * as they are now owned by the svcinfo records.
 		 */
 		walk = head;

@@ -523,7 +523,7 @@ int do_request(void)
 		struct stat st;
 		FILE *fd;
 		/*
-		 * Some clients (Unix disk reports) dont have a newline before the
+		 * Some clients (Unix disk reports) don't have a newline before the
 		 * "Status unchanged in ..." text. Most do, but at least Solaris and
 		 * AIX do not. So just look for the text, not the newline.
 		 */

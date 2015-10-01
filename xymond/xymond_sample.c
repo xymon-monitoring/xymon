@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 			 * You can have a timeout when waiting for new
 			 * messages. If it happens, you will get a "@@idle\n"
 			 * message with sequence number 0.
-			 * If you dont want a timeout, just pass a NULL for the timeout parameter.
+			 * If you don't want a timeout, just pass a NULL for the timeout parameter.
 			 */
 			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
 			timeout->tv_sec = (atoi(argv[argi]+10));
@@ -89,8 +89,8 @@ int main(int argc, char *argv[])
 		 * All messages have a sequence number ranging from 1-999999.
 		 *
 		 *
-		 * The first paramater is the channel you're handling - this is used
-		 * to determine the needed input buffer size. If you dont know what
+		 * The first parameter is the channel you're handling - this is used
+		 * to determine the needed input buffer size. If you don't know what
 		 * channel you're handling, use C_LAST and you'll get a buffer large
 		 * enough for the largest channel.
 		 *

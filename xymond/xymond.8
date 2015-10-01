@@ -25,29 +25,29 @@ tool, and the command used to invoke xymond should therefore be
 in the tasks.cfg file.
 
 .SH OPTIONS
-.IP "--hosts=FILENAME"
+.IP "\-\-hosts=FILENAME"
 Specifies the path to the Xymon hosts.cfg file. This is used
 to check if incoming status messages refer to known hosts; depending
-on the "--ghosts" option, messages for unknown hosts may be dropped.
+on the "\-\-ghosts" option, messages for unknown hosts may be dropped.
 If this option is omitted, the default path used is set by the HOSTSCFG
 environment variable.
 
-.IP "--checkpoint-file=FILENAME"
+.IP "\-\-checkpoint\-file=FILENAME"
 With regular intervals, xymond will dump all of its internal state 
 to this check-point file. It is also dumped when xymond terminates,
 or when it receives a SIGUSR1 signal.
 
-.IP "--checkpoint-interval=N"
+.IP "\-\-checkpoint\-interval=N"
 Specifies the interval (in seconds) between dumps to the check-point
 file. The default is 900 seconds (15 minutes).
 
-.IP "--restart=FILENAME"
+.IP "\-\-restart=FILENAME"
 Specifies an existing file containing a previously generated xymond 
 checkpoint. When starting up, xymond will restore its internal state
 from the information in this file. You can use the same filename for
-"--checkpoint-file" and "--restart".
+"\-\-checkpoint\-file" and "\-\-restart".
 
-.IP "--ghosts={allow|drop|log|match}"
+.IP "\-\-ghosts={allow|drop|log|match}"
 How to handle status messages from unknown hosts. The "allow" setting
 accepts all status messages, regardless of whether the host is known
 in the hosts.cfg file or not. "drop" silently ignores reports from unknown 
@@ -56,11 +56,11 @@ hosts. "log" works like drop, but logs the event in the xymond output file.
 the known names by ignoring any domain-names - if a match is found, then
 a temporary client alias is automatically generated. The default is "log". 
 
-.IP "--no-purple"
+.IP "\-\-no\-purple"
 Prevent status messages from going purple when they are no longer valid.
 Unlike the standard bbd daemon, purple-handling is done by xymond.
 
-.IP "--merge-clientconfig"
+.IP "\-\-merge\-clientconfig"
 The
 .I client-local.cfg(5)
 file contains client-configuration which can be found matching a client
@@ -70,51 +70,51 @@ client, looking for a hostname, classname or OS match (in that order).
 This option causes xymond to merge all matching entries together into 
 one and return all of it to the client.
 
-.IP "--listen=IP[:PORT]"
+.IP "\-\-listen=IP[:PORT]"
 Specifies the IP-address and port where xymond will listen for incoming
 connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
-adresses available on the host) and port 1984.
+addresses available on the host) and port 1984.
 
-.IP "--lqueue=NUMBER"
+.IP "\-\-lqueue=NUMBER"
 Specifies the listen-queue for incoming connections. You don't need to tune
 this unless you have a very busy xymond daemon.
 
-.IP "--no-bfq"
+.IP "\-\-no\-bfq"
 Tells xymond to NOT use the local messagequeue interface for receiving status-
 updates from xymond_client and xymonnet.
 
-.IP "--daemon"
+.IP "\-\-daemon"
 xymond is normally started by 
 .I xymonlaunch(8)
 . If you do not want to use xymonlaunch, you can start xymond with this option;
 it will then detach from the terminal and continue running as a background
 task.
 
-.IP "--timeout=N"
+.IP "\-\-timeout=N"
 Set the timeout used for incoming connections. If a status has not been
 received more than N seconds after the connection was accepted, then
 the connection is dropped and any status message is discarded.
 Default: 10 seconds.
 
-.IP "--flap-count=N"
+.IP "\-\-flap\-count=N"
 Track the N latest status-changes for flap-detection. See the
-\fB--flap-seconds\fR option also. To disable flap-checks, set
+\fB\-\-flap\-seconds\fR option also. To disable flap-checks, set
 N to zero.
 Default: 5
 
-.IP "--flap-seconds=N"
-If a status changes more than \fBflap-count\fR times in N seconds or 
+.IP "\-\-flap\-seconds=N"
+If a status changes more than \fBflap\-count\fR times in N seconds or 
 less, then it is considered to be flapping. In that case, the status 
 is locked at the most severe level until the flapping stops. The 
 history information is not updated after the flapping is detected. 
 \fBNOTE:\fR If this is set higher than the default value, you should 
-also use the \fB--flap-count\fR option to ensure that enough status-changes 
-are stored for flap detection to work. The flap-count setting should be
-at least (N/300)-1, e.g. if you set flap-seconds to 3600 (1 hour), then 
-flap-count should be at least (3600/300)-1, i.e. 11.
+also use the \fB\-\-flap\-count\fR option to ensure that enough status-changes 
+are stored for flap detection to work. The flap\-count setting should be
+at least (N/300)\-1, e.g. if you set flap\-seconds to 3600 (1 hour), then 
+flap\-count should be at least (3600/300)\-1, i.e. 11.
 Default: 1800 seconds (30 minutes).
 
-.IP "--delay-red=N" / "--delay-yellow=N"
+.IP "\-\-delay\-red=N" / "\-\-delay\-yellow=N"
 Sets the delay before a red/yellow status causes a change in the web
 page display. Is usually controlled on a per-host basis via the
 \fBdelayred\fR and \fBdelayyellow\fR settings in
@@ -124,59 +124,59 @@ The value N is in minutes. Default: 0 minutes (no delay).
 Note: Since most tests only execute once every 5 minutes, it will
 usually not make sense to set N to anything but a multiple of 5.
 
-.IP "--env=FILENAME"
+.IP "\-\-env=FILENAME"
 Loads the content of FILENAME as environment settings before starting
 xymond. This is mostly used when running as a stand-alone daemon; if
 xymond is started by xymonlaunch, the environment settings are controlled
 by the xymonlaunch tasks.cfg file.
 
-.IP "--pidfile=FILENAME"
+.IP "\-\-pidfile=FILENAME"
 xymond writes the process-ID it is running with to this file.
 This is for use in automated startup scripts. The default file is
 $XYMONSERVERLOGS/xymond.pid.
 
-.IP "--log=FILENAME"
+.IP "\-\-log=FILENAME"
 Redirect all output from xymond to FILENAME.
 
-.IP "--store-clientlogs[=[!]COLUMN]"
+.IP "\-\-store\-clientlogs[=[!]COLUMN]"
 Determines which status columns can cause a client message to be
 broadcast to the CLICHG channel. By default, no client messages 
 are pushed to the CLICHG channel. If this option is specified with
 no parameter list, all status columns that go into an alert state
 will trigger the client data to be sent to the CLICHG channel. If
-a paramater list is added to this option, only those status columns
+a parameter list is added to this option, only those status columns
 listed in the list will cause the client data to be sent to the
 CLICHG channel. Several column names can be listed, separated by
 commas. If all columns are given as "!COLUMNNAME", then all status
 columns except those listed will cause the client data to be sent.
 
-.IP "--status-senders=IP[/MASK][,IP/MASK]"
+.IP "\-\-status\-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send "status", "combo", "config" and "query"
 commands to xymond.
 
 By default, any host can send status-updates. If this option is used, 
 then status-updates are accepted only if they are sent by one of the 
-IP-adresses listed here, or if they are sent from the IP-address of the 
+IP-addresses listed here, or if they are sent from the IP-address of the 
 host that the updates pertains to (this is to allow Xymon clients to send in their
 own status updates, without having to list all clients here). So typically
 you will need to list your servers running network tests here.
 
-The format of this option is a list of IP-adresses, optionally with a
+The format of this option is a list of IP-addresses, optionally with a
 network mask in the form of the number of bits. E.g. if you want to 
 accept status-updates from the host 172.16.10.2, you would use
 .br
-    --status-senders=172.16.10.2
+    \-\-status\-senders=172.16.10.2
 .br
 whereas if you want to accept status updates from both 172.16.10.2 and
 from all of the hosts on the 10.0.2.* network (a 24-bit IP network), you
 would use
 .br
-    --status-senders=172.16.10.2,10.0.2.0/24
+    \-\-status\-senders=172.16.10.2,10.0.2.0/24
 
-.IP "--maint-senders=IP[/MASK][,IP/MASK]"
+.IP "\-\-maint\-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send maintenance commands to xymond. Maintenance
 commands are the "enable", "disable", "ack" and "notes" commands. Format
-of this option is as for the --status-senders option. It is strongly
+of this option is as for the \-\-status\-senders option. It is strongly
 recommended that you use this to restrict access to these commands, so
 that monitoring of a host cannot be disabled by a rogue user - e.g. to
 hide a system compromise from the monitoring system.
@@ -186,7 +186,7 @@ are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
 include the address of a server running xymonproxy in the list of allowed addresses.
 
-.IP "--www-senders=IP[/MASK][,IP/MASK]"
+.IP "\-\-www\-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send commands to retrieve the state of xymond. These
 are the "xymondlog", "xymondboard" and "xymondxboard" commands, which are used
 by
@@ -200,7 +200,7 @@ are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
 include the address of a server running xymonproxy in the list of allowed addresses.
 
-.IP "--admin-senders=IP[/MASK][,IP/MASK]"
+.IP "\-\-admin\-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send administrative commands to xymond. These
 commands are the "drop" and "rename" commands. Access to these should be 
 restricted, since they provide an un-authenticated means of completely
@@ -212,12 +212,12 @@ are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
 include the address of a server running xymonproxy in the list of allowed addresses.
 
-.IP "--no-download"
+.IP "\-\-no\-download"
 Disable the "download" command which can be used by clients to pull files 
 from the Xymon server. The use of these may be seen as a security risk since 
 they allow file downloads.
 
-.IP "--ack-each-color"
+.IP "\-\-ack\-each\-color"
 By default, sending an ACK for a yellow status stops alerts from being sent
 while the status remains yellow or red. A status change from yellow to red
 will not re-enable alerts - the ACK covers all non-green statuses.
@@ -237,10 +237,10 @@ automatically written to acknowledge.log in the Xymon server log
 directory.  Alerts from the Critical Systems page can be directed to the 
 same log.
 
-.IP "--debug"
+.IP "\-\-debug"
 Enable debugging output.
 
-.IP "--dbghost=HOSTNAME"
+.IP "\-\-dbghost=HOSTNAME"
 For troubleshooting problems with a specific host, it may be useful to track
 the exact communications from a single host. This option causes xymond to
 dump all traffic from a single host to the file "/tmp/xymond.dbg".
@@ -324,7 +324,7 @@ This channel is fed the contents of a host client messages,
 whenever a status for that host goes red, yellow or purple.
 
 Information about the data stream passed on these channels is
-in the Xymon source-tree, see the "xymond/new-daemon.txt" file.
+in the Xymon source-tree, see the "xymond/new\-daemon.txt" file.
 
 .SH SIGNALS
 .IP SIGHUP
@@ -340,7 +340,7 @@ so a connection that should timeout after N seconds may persist until
 some activity happens on another (unrelated) connection.
 
 .SH FILES
-If ghost-handling is enabled via the "--ghosts" option, the hosts.cfg
+If ghost-handling is enabled via the "\-\-ghosts" option, the hosts.cfg
 file is read to determine the names of all known hosts.
 
 .SH "SEE ALSO"

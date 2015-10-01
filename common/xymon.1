@@ -16,25 +16,25 @@ purposes, e.g. to rename or delete hosts, or to disable
 hosts that are down for longer periods of time.
 
 .SH OPTIONS AND PARAMETERS
-.IP "--debug"
+.IP "\-\-debug"
 Enable debugging. This prints out details about how the
 connection to the Xymon server is being established.
 
-.IP "--proxy=http://PROXYSERVER:PROXYPORT/"
+.IP "\-\-proxy=http://PROXYSERVER:PROXYPORT/"
 When sending the status messages via HTTP, use this server
 as an HTTP proxy instead of connecting directly to the Xymon
 server.
 
-.IP "--timeout=N"
+.IP "\-\-timeout=N"
 Specifies the timeout for connecting to the Xymon server, in
 seconds. The default is 5 seconds.
 
-.IP "--response"
+.IP "\-\-response"
 The xymon utility normally knows when to expect a response 
 from the server, so this option is not required. However,
 it will cause any response from the server to be displayed.
 
-.IP "--merge"
+.IP "\-\-merge"
 Merge the command line message text with the data provided
 on standard input, and send the result to the Xymon server.
 The message text provided on the command line becomes the
@@ -144,7 +144,7 @@ and no alerts for this host/test will be generated. If DURATION is
 given as a number followed by s/m/h/d, it is interpreted as being
 in seconds/minutes/hours/days respectively.
 .BR
-To disable a test until it becomes OK, use "-1" as the DURATION.
+To disable a test until it becomes OK, use "\-1" as the DURATION.
 .BR
 To disable all tests for a host, use an asterisk "*" for TESTNAME.
 
@@ -217,16 +217,16 @@ Unix timestamp when the log message was received.
 Unix timestamp when the log message is no longer valid (it goes purple at this time).
 .sp
 .BR acktime
-Either -1 or Unix timestamp when an active acknowledgement expires.
+Either \-1 or Unix timestamp when an active acknowledgement expires.
 .sp
 .BR disabletime
-Either -1 or Unix timestamp when the status is no longer disabled.
+Either \-1 or Unix timestamp when the status is no longer disabled.
 .sp
 .BR sender
 IP address where the status was received from.
 .sp
 .BR cookie
-Either -1 or the cookie value used to acknowledge an alert.
+Either \-1 or the cookie value used to acknowledge an alert.
 .sp
 .BR ackmsg
 Empty or the acknowledgment message sent when the status was acknowledged.
@@ -341,16 +341,16 @@ Unix timestamp when the log message was received.
 Unix timestamp when the log message is no longer valid (it goes purple at this time).
 .sp
 .BR acktime
-Either -1 or Unix timestamp when an active acknowledgement expires.
+Either \-1 or Unix timestamp when an active acknowledgement expires.
 .sp
 .BR disabletime
-Either -1 or Unix timestamp when the status is no longer disabled.
+Either \-1 or Unix timestamp when the status is no longer disabled.
 .sp
 .BR sender
 IP address where the status was received from.
 .sp
 .BR cookie
-Either -1 or the cookie value used to acknowledge an alert.
+Either \-1 or the cookie value used to acknowledge an alert.
 .sp
 .BR line1
 First line of status log.
@@ -395,7 +395,7 @@ command).
 The XMH-tags refer to the Xymon
 .I hosts.cfg(5)
 configuration settings. A full list of these can be found in the
-.I xymon-xmh(5)
+.I xymon\-xmh(5)
 man-page.
 
 The ackmsg, dismsg and msg fields have certain characters encoded: Newline
@@ -510,7 +510,7 @@ standard Xymon protocol on TCP port 1984:
 Send the same status message, but using HTTP protocol via the
 webserver\(aqs xymoncgimsg.cgi script:
 .br
-   $ $XYMON http://bb.foo.com/cgi-bin/xymoncgimsg.cgi "status www,foo,com.http green \(gadate\(ga Web OK"
+   $ $XYMON http://bb.foo.com/cgi\-bin/xymoncgimsg.cgi "status www,foo,com.http green \(gadate\(ga Web OK"
 
 Use "query" message to determine the color of the "www" test, and
 restart Apache if it is red:
@@ -524,7 +524,7 @@ if we get a response):
 .br
 
    $ $XYMON $XYMSRV "config mytest.cfg" >/tmp/mytest.cfg.new
-   $ if [ -s /tmp/mytest.cfg.new ]; then 
+   $ if [ \-s /tmp/mytest.cfg.new ]; then 
        mv /tmp/mytest.cfg.new $XYMONHOME/etc/mytest.cfg
      fi
 

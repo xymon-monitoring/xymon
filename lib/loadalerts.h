@@ -14,7 +14,7 @@
 #include <time.h>
 #include <stdio.h>
 
-/* The clients probably dont have the pcre headers */
+/* The clients probably don't have the pcre headers */
 #if defined(LOCALCLIENT) || !defined(CLIENTONLY)
 #include <pcre.h>
 

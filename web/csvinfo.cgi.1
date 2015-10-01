@@ -32,14 +32,14 @@ you have a CSV-formatted file with information about the hosts stored
 as $XYMONHOME/etc/hostinfo.csv, and the hostname is in the first column
 of the file.
 
-.IP "Use with the xymongen --docurl"
-The --docurl option to
+.IP "Use with the xymongen \-\-docurl"
+The \-\-docurl option to
 .I xymongen(1)
 sets up all of the hostnames on your Xymon webpages to act as links to
 a CGI script. To invoke the csvinfo CGI script, run xymongen with the
 option
 .sp
-   --docurl=/cgi-bin/csvinfo.sh?db=hostinfo.csv&key=%s
+   \-\-docurl=/cgi\-bin/csvinfo.sh?db=hostinfo.csv&key=%s
 
 .SH "SEE ALSO"
 hosts.cfg(5), xymonserver.cfg(5), xymongen(1)

@@ -11,7 +11,7 @@
 #ifndef __MATCHING_H__
 #define __MATCHING_H__
 
-/* The clients probably dont have the pcre headers */
+/* The clients probably don't have the pcre headers */
 #if defined(LOCALCLIENT) || !defined(CLIENTONLY)
 #include <pcre.h>
 #include <stdarg.h>

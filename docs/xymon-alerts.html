@@ -8,7 +8,7 @@
 <body>
 <h1>Configuring Xymon Alerts</h1>
 <p>When something breaks, you want to know about it. Since you probably 
-dont have the Xymon webpages in view all of the time, Xymon can 
+don't have the Xymon webpages in view all of the time, Xymon can 
 generate alerts to draw your attention to problems. Alerts can go out
 as e-mail, or Xymon can run a script that takes care of activating
 a pager, sending an SMS, or however you prefer to get alerted.</p>
@@ -172,7 +172,7 @@ paging scripts, so you should be able to re-use any paging scripts written for B
 with Xymon.</p>
 
 <h3><a name="macros">Save on the typing - use macros</a></h3>
-<p>Say you have a long list of hosts or e-mail adresses that you want to use several times throughout the
+<p>Say you have a long list of hosts or e-mail addresses that you want to use several times throughout the
 alerts.cfg file. Do you have to write the full list every time ? No:<br>
 <pre>
 	$WEBHOSTS=%(www|intranet|support|mail).foo.com 
@@ -185,7 +185,7 @@ alerts.cfg file. Do you have to write the full list every time ? No:<br>
 </pre><br>
 The first line defines <em>$WEBHOSTS</em> as a <em>macro</em>. So everywhere else in the file,
 &quot;$WEBHOSTS&quot; is automatically replaced with &quot;&#37;(www|intranet|support|mail).foo.com&quot;
-before the rule is processed. The same method can be used for recipients, e.g. e-mail adresses.
+before the rule is processed. The same method can be used for recipients, e.g. e-mail addresses.
 In fact, you can put an entire line into a macro:<br>
 <pre>
 	$UNIXSUPPORT=MAIL unixsupport@foo.com TIME=*:0800:1600 SERVICE=cpu,disk,memory
@@ -205,7 +205,7 @@ you use it in a subsequent macro definition.</p>
 
 <h3><a name="ignorerules">There are rules ... and exceptions: IGNORE</h3>
 <p>A common scenario is where you handle most of the alerts with a wildcard rule, but
-there is <i>just</i> that one exception where you dont want any cpu alerts
+there is <i>just</i> that one exception where you don't want any cpu alerts
 from the marketing server on Thursday afternoon. Then it is time for the 
 IGNORE recipient:<br>
 <pre>

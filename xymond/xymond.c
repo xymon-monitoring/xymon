@@ -60,7 +60,7 @@ static char rcsid[] = "$Id$";
 #define DISABLED_UNTIL_OK -1
 
 /*
- * The absolute maximum size we'll grow our buffers to accomodate an incoming message.
+ * The absolute maximum size we'll grow our buffers to accommodate an incoming message.
  * This is really just an upper bound to squash the bad guys trying to data-flood us. 
  */
 #define MAX_XYMON_INBUFSZ (10*1024*1024)	/* 10 MB */
@@ -1118,7 +1118,7 @@ void get_hts(char *msg, char *sender, char *origin,
 {
 	/*
 	 * This routine takes care of finding existing status log records, or
-	 * (if they dont exist) creating new ones for an incoming status.
+	 * (if they don't exist) creating new ones for an incoming status.
 	 *
 	 * "msg" contains an incoming message. First list is of the form "KEYWORD host,domain.test COLOR"
 	 */
@@ -1167,7 +1167,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	colstr = strtok(NULL, " \t"); /* ... and the color (if any) */
 	if (colstr) {
 		*color = parse_color(colstr);
-		/* Dont create log-entries if we get a bad color spec. */
+		/* Don't create log-entries if we get a bad color spec. */
 		if (*color == -1) createlog = 0;
 	}
 	else createlog = 0;
@@ -1377,7 +1377,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	if (!modifyonly && log->modifiers) {
 		/*
 		 * Original status message - check if there is an active modifier for the color.
-		 * We dont do this for status changes triggered by a "modify" command.
+		 * We don't do this for status changes triggered by a "modify" command.
 		 */
 		modifier_t *mwalk;
 		modifier_t *mlast;
@@ -1501,7 +1501,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		}
 
 		if (log->acktime > now) {
-			/* Dont need to do anything about an acked test */
+			/* Don't need to do anything about an acked test */
 		}
 		else {
 			/* The acknowledge has expired. Clear the timestamp and the message buffer */
@@ -1722,7 +1722,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		log->histsynced = 1;
 
 		/*
-		 * Dont update the log->lastchange timestamp while DOWNTIME is active.
+		 * Don't update the log->lastchange timestamp while DOWNTIME is active.
 		 * (It is only seen as active if the color has been forced BLUE).
 		 */
 		if (!log->downtimeactive && (log->oldcolor != newcolor)) {
@@ -1872,7 +1872,7 @@ void handle_modify(char *msg, xymond_log_t *log, int color)
 		 *
 		 * We must determine the color based ONLY on the modifications that
 		 * have been reported.
-		 * The reason we dont include the original status color in the scan
+		 * The reason we don't include the original status color in the scan
 		 * is because the modifiers override the original status - and they
 		 * can make it both worse (green -> red) or better (red -> green).
 		 *
@@ -2173,7 +2173,7 @@ void handle_ackinfo(char *msg, char *sender, xymond_log_t *log)
 			newack = (ackinfo_t *)malloc(sizeof(ackinfo_t));
 		}
 		else {
-			/* Drop the old data so we dont leak memory */
+			/* Drop the old data so we don't leak memory */
 			dbgprintf("Dropping old ackinfo data: From %s, msg=%s\n", newack->ackedby, newack->msg);
 			if (newack->ackedby) xfree(newack->ackedby); 
 			if (newack->msg) xfree(newack->msg);
@@ -3695,7 +3695,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 
 		/* 
-		 * We dont validate the ID, because "notes" may also send messages
+		 * We don't validate the ID, because "notes" may also send messages
 		 * for documenting pages or column-names. And the "usermsg" stuff can be
 		 * anything in the "ID" field. So we just insist that there IS an ID.
 		 */

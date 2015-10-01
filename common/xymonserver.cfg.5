@@ -28,7 +28,7 @@ by an application in the "management" area, you would do this:
   management/XYMSERVERS="10.1.0.5"  # Definition in the "management" area
 .fi
 .LP
-Areas are invoked by using the "--area" option for all tools, or via the 
+Areas are invoked by using the "\-\-area" option for all tools, or via the 
 ENVAREA setting in the
 .I tasks.cfg(5)
 file.
@@ -101,11 +101,11 @@ seconds. Default: 172800 seconds, i.e. 48 hours.
 .IP HTMLCONTENTTYPE
 The Content-type reported by the CGI scripts that generate web pages.
 By default, this it "text/html". If you have on-line help texts in
-character sets other than the ISO-8859-1 (western european) character
+character sets other than the ISO\-8859\-1 (western european) character
 set, it may be necessary to modify this to include a character set.
 E.g.
 .br
-   HTMLCONTENTTYPE="text/html; charset=euc-jp"
+   HTMLCONTENTTYPE="text/html; charset=euc\-jp"
 .br
 for a Japanese character sets. Note: Some webservers will automatically
 add this, if configured to do so.
@@ -201,13 +201,13 @@ Default: $XYMONSERVERROOT/data/
 
 .IP XYMONRAWSTATUSDIR
 Directory for storing the raw status-logs. Not used unless
-"xymond_filestore --status" is running, which is \fBdiscouraged\fR
+"xymond_filestore \-\-status" is running, which is \fBdiscouraged\fR
 since it increases the load on the Xymon server significantly.
 Default: $XYMONVAR/logs/
 
 .IP XYMONHTMLSTATUSDIR
 Directory for storing HTML status-logs. Not used unless
-"xymond_filestore --status --html" is running, which is \fBdiscouraged\fR
+"xymond_filestore \-\-status \-\-html" is running, which is \fBdiscouraged\fR
 since it increases the load on the Xymon server significantly.
 Default: $XYMONHOME/www/html/
 
@@ -248,7 +248,7 @@ Default: $XYMONVAR/hostdata/
 Directory where debug output from CGI applications are stored. If not
 specified, it defaults to $XYMONSERVERLOGS, but this is often a directory
 that is not writable by the userid running the CGI applications. It
-is therefore recommended when using "--debug" on CGI applications that
+is therefore recommended when using "\-\-debug" on CGI applications that
 you create a separate directory owned by the user running your webserver,
 and point XYMONCGILOGDIR to this directory.
 
@@ -275,13 +275,13 @@ webpage generator program. Default: $XYMONHOME/bin/xymongen.
 .IP XYMONSERVERWWWURL
 The root URL for the Xymon webpages, without the hostname. This
 URL must be mapped to the ~/server/www/ directory in your webserver
-configuration. See the sample Apache configuration in ~/server/etc/xymon-apache.conf.
+configuration. See the sample Apache configuration in ~/server/etc/xymon\-apache.conf.
 
 .IP XYMONSERVERCGIURL
 The root URL for the Xymon CGI-scripts, without the hostname. This
-directory must be mapped to the ~/cgi-bin/ directory in your webserver
+directory must be mapped to the ~/cgi\-bin/ directory in your webserver
 configuration, and must be flagged as holding executable scripts. See
-the sample Apache configuration in ~/server/etc/xymon-apache.conf.
+the sample Apache configuration in ~/server/etc/xymon\-apache.conf.
 
 .IP XYMONWEBHOST
 Initial part of the Xymon URL, including just the protocol and the
@@ -347,9 +347,9 @@ service. Used by clients and the tools that perform network tests.
 Default: $XYMONSERVERIP
 
 .IP XYMSERVERS
-List of IP-adresses. Clients and network test tools will try to
+List of IP-addresses. Clients and network test tools will try to
 send status reports to a Xymon server running on each of these
-adresses. This setting is only used if XYMSRV=0.0.0.0.
+addresses. This setting is only used if XYMSRV=0.0.0.0.
 
 .IP XYMONDPORT
 The portnumber for used to contact the
@@ -476,7 +476,7 @@ directory.
 
 .IP MAIL
 Command used to send alerts via e-mail, including a "Subject:"
-header in the mail. Default: "mail -s"
+header in the mail. Default: "mail \-s"
 
 .IP MAILC
 Command used to send alerts via e-mail in a form that does not
@@ -583,7 +583,7 @@ the connectivity test when the ping test fails; if
 requested via the "trace" tag, the TRACEROUTE command
 is executed to try to determine the point in the
 network that is causing the problem. By default the
-command executed is "traceroute -n -q 2 -w 2 -m 15"
+command executed is "traceroute \-n \-q 2 \-w 2 \-m 15"
 (no DNS lookup, max. 2 probes, wait 2 seconds per hop,
 max 15 hops).
 .sp
@@ -591,7 +591,7 @@ If you have the
 .I mtr(8)
 tool installed - available from http://www.bitwizard.nl/mtr/ - I
 strongly recommend using this instead. The recommended
-setting for mtr is "/usr/sbin/mtr -c 2 -n --report" (the
+setting for mtr is "/usr/sbin/mtr \-c 2 \-n \-\-report" (the
 exact path to the mtr utility may be different on your 
 system).  Note that mtr needs to be installed suid-root 
 on most systems.
@@ -660,8 +660,8 @@ the current date and time. Normally this looks like "Tue Aug 24
 21:59:47 2004". The XYMONDATEFORMAT controls the format of this
 timestamp - you can define the format using the controls in the 
 .I strftime(3)
-routine. E.g. to have it show up as "2004-08-24 21:59:47 +0200"
-you would set XYMONDATEFORMAT="%Y-%m-%d %H:%M:%S %z"
+routine. E.g. to have it show up as "2004\-08\-24 21:59:47 +0200"
+you would set XYMONDATEFORMAT="%Y\-%m\-%d %H:%M:%S %z"
 
 .IP HOLIDAYFORMAT
 How holiday dates are displayed. The default is "%d/%m" which
@@ -676,7 +676,7 @@ Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
 the maximum number of rows before repeating the column headings
 on a webpage. This sets the default value for the 
 .I xymongen(1)
-"--maxrows" option; if the command-line option is also specifed,
+"\-\-maxrows" option; if the command-line option is also specified,
 then it overrides this environment variable. Note that unlike
 Jeff's patch, xymongen implements this for both the "All non-green" 
 page and all other pages (xymon.html, subpages, critical.html). 
@@ -702,7 +702,7 @@ Default: cpu,disk,memory,procs,svcs.
 .IP XYMONRSSTITLE
 If defined, this is the title of the RSS/RDF documents generated when
 .I xymongen(1)
-is invoked with the "--rss" option. The default value is "Xymon Alerts".
+is invoked with the "\-\-rss" option. The default value is "Xymon Alerts".
 
 .IP WMLMAXCHARS
 Maximum size of a WAP/WML output "card" when generating these.
@@ -726,7 +726,7 @@ Default: 97 (percent)
 
 .IP XYMONGENREPOPTS
 Default xymongen options used for reports. This will typically include
-such options as "--subpagecolumns", and also "--ignorecolumns" if 
+such options as "\-\-subpagecolumns", and also "\-\-ignorecolumns" if 
 you wish to exclude certain tests from reports by default.
 
 .IP XYMONGENSNAPOPTS

@@ -157,7 +157,7 @@ xymonrrd_t *find_xymon_rrd(char *service, char *flags)
 	rrd_setup();
 
 	if (flags && (strchr(flags, 'R') != NULL)) {
-		/* Dont do RRD's for reverse tests, since they have no data */
+		/* Don't do RRD's for reverse tests, since they have no data */
 		return NULL;
 	}
 

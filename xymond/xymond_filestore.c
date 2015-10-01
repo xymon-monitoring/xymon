@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 	int seq;
 	int running = 1;
 
-	/* Dont save the error buffer */
+	/* Don't save the error buffer */
 	save_errbuf = 0;
 
 	for (argi = 1; (argi < argc); argi++) {

@@ -434,7 +434,7 @@ int main(int argc, char *argv[])
 	xtreePos_t handle;
 
 
-	/* Dont save the error buffer */
+	/* Don't save the error buffer */
 	save_errbuf = 0;
 
 	/* Create the peer container */
@@ -621,7 +621,7 @@ int main(int argc, char *argv[])
 			 * this message (GOCLIENT reaches 0).
 			 *
 			 * We wrap this into an alarm handler, because it can occasionally
-			 * fail, causing the whole system to lock up. We dont want that....
+			 * fail, causing the whole system to lock up. We don't want that....
 			 * We'll set the alarm to trigger after 1 second. Experience shows
 			 * that we'll either succeed in a few milliseconds, or fail completely
 			 * and wait the full alarm-timer duration.
