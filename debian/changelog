@@ -8,7 +8,7 @@ xymon (4.####) unstable; urgency=medium
    * Fix up HTML list layout to reflect current standards (Thanks, hallik@calyc3.com)
    * Fix documentation incorrectly describing multigraph syntax as (e.g.) GRAPH_cpu. 
      Should be GRAPHS_cpu (Thanks, Galen Johnson)
-
+   * Move ntpdate config to env variable (Thanks, Axel Beckert, pointed out by Matt Vander Werf)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 

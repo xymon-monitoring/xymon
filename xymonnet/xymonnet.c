@@ -1076,7 +1076,7 @@ void run_ntp_service(service_t *service)
 				sprintf(cmd, "%s -u -d %d %s 2>&1", cmdpath, extcmdtimeout-1, ip_to_test(t->host));
 			}
 			else {
-				sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, ip_to_test(t->host));
+				sprintf(cmd, "%s -u -q %s 2>&1", cmdpath, ip_to_test(t->host));
 			}
 
 			t->open = (run_command(cmd, "no server suitable for synchronization", t->banner, 1, extcmdtimeout) == 0);
