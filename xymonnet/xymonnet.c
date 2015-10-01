@@ -1774,8 +1774,8 @@ void send_results(service_t *service, int failgoesclear)
 		}
 
 		if (t->duration.tv_sec != -1) {
-			sprintf(msgtext, "\nSeconds: %u.%02u\n", 
-				(unsigned int)t->duration.tv_sec, (unsigned int)t->duration.tv_nsec / 10000000);
+			sprintf(msgtext, "\nSeconds: %u.%.9ld\n", 
+				(unsigned int)t->duration.tv_sec, t->duration.tv_nsec);
 			addtostatus(msgtext);
 		}
 		addtostatus("\n\n");

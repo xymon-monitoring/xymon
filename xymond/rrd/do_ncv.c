@@ -84,7 +84,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 			val = l + strspn(l, " \t"); 
 			/* Find the end of the value string */
 			l = val; if ((*l == '-') || (*l == '+')) l++; /* Pass leading sign */
-			l += strspn(l, "0123456789.+-"); /* and the numbers. */
+			l += strspn(l, "0123456789.+-eE"); /* and the numbers. */
 			if( *val ) {
 				int iseol = (*l == '\n');
 

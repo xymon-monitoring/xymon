@@ -356,11 +356,11 @@ void show_results(void)
 		if (hosts[idx]->received > 0) {
 			printf("%s is alive", inet_ntoa(hosts[idx]->addr.sin_addr));
 			rtt_usecs = (hosts[idx]->rtt_total.tv_sec*1000000 + (hosts[idx]->rtt_total.tv_nsec / 1000)) / hosts[idx]->received;
-			if (rtt_usecs >= 1000) {
-				printf(" (%lu ms)\n", rtt_usecs / 1000);
+			if (rtt_usecs >= 3000) {
+				printf(" (%.1f ms)\n", rtt_usecs / 1000.0);
 			}
 			else {
-				printf(" (0.%02lu ms)\n", (rtt_usecs / 10));
+				printf(" (%u usec)\n", rtt_usecs);
 			}
 		}
 		else {

@@ -476,8 +476,8 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 		}
 		if (req->faileddeps) addtostatus(req->faileddeps);
 
-		sprintf(msgline, "\nSeconds: %u.%02u\n",
-			(unsigned int)req->duration.tv_sec, (unsigned int)req->duration.tv_nsec / 10000000);
+		sprintf(msgline, "\nSeconds: %u.%.9ld\n",
+			(unsigned int)req->duration.tv_sec, req->duration.tv_nsec);
 
 		addtostatus(msgline);
 	}
@@ -496,9 +496,9 @@ void show_ldap_test_results(service_t *ldaptest)
 		req = (ldap_data_t *) t->privdata;
 
 		printf("URL        : %s\n", t->testspec);
-		printf("Time spent : %u.%02u\n", 
+		printf("Time spent : %u.%.9ld\n", 
 			(unsigned int)req->duration.tv_sec, 
-			(unsigned int)req->duration.tv_nsec / 10000000);
+			req->duration.tv_nsec);
 		printf("LDAP output:\n%s\n", textornull(req->output));
 		printf("------------------------------------------------------\n");
 	}
