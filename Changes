@@ -13,6 +13,7 @@ Changes from 4.3.21 -> 4.#### ()
 * Increase resolution of xymonnet poll timing results (Thanks, Christoph Berg)
 * New clock skew RRD files will allow for negative delta values (Thanks, Axel Beckert)
 * Fix lots of typos! (Debian)
+* Don't skip over "mailq.rrd" (Roland Rosenfeld)
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)
 ===========================================

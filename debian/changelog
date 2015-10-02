@@ -13,6 +13,7 @@ xymon (4.####) unstable; urgency=medium
    * Increase resolution of xymonnet poll timing results (Thanks, Christoph Berg)
    * New clock skew RRD files will allow for negative delta values (Thanks, Axel Beckert)
    * Fix lots of typos! (Debian)
+   * Don't skip over "mailq.rrd" (Roland Rosenfeld)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 
