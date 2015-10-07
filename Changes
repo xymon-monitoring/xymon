@@ -14,6 +14,12 @@ Changes from 4.3.21 -> 4.#### ()
 * New clock skew RRD files will allow for negative delta values (Thanks, Axel Beckert)
 * Fix lots of typos! (Debian)
 * Don't skip over "mailq.rrd" (Roland Rosenfeld)
+* The signature algorithm used on an SSL-enabled TCP test run by xymonnet is now shown
+  on the sslcert page. (Thanks, Ralph Mitchell)
+* The cipher list displayed in 'sslcert' tests will now be limited to the cipher that was 
+  actually used on the SSL connection. The --showallciphers option to xymonnet will
+  restore the previous behavior. (From idea from Ralph Mitchell)
+
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)
 ===========================================

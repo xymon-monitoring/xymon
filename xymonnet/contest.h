@@ -54,6 +54,7 @@ extern char *ciphersmedium;
 extern unsigned int warnbytesread;
 extern int shuffletests;
 extern int sslincludecipherlist;
+extern int sslshowallciphers;
 extern int snienabled;
 
 #define SSLVERSION_DEFAULT 0

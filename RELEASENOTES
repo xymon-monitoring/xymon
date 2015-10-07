@@ -10,6 +10,14 @@ For a full list of changes and enhancements, please see the
 Changes file.
 
 
+Changes for 4.3.22
+==================
+The 'sslcert' test will now indicate the signature algorithm and cipher 
+actually used in the connection. Use --showallciphers to restore the
+previous behavior of displaying all ciphers supported by the local ssl 
+library at all.
+
+
 Changes for 4.3.21
 ==================
 RSS feeds should now display the short description of the event again.

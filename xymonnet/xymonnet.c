@@ -2161,6 +2161,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-cipherlist") == 0) {
 			sslincludecipherlist = 0;
 		}
+		else if (strcmp(argv[argi], "--showallciphers") == 0) {
+			sslshowallciphers = 1;
+		}
 
 		/* Debugging options */
 		else if (strcmp(argv[argi], "--debug") == 0) {
@@ -2226,6 +2229,8 @@ int main(int argc, char *argv[])
 			printf("    --no-ssl                    : Disable SSL certificate check\n");
 			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30)\n");
 			printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10)\n");
+			printf("    --no-cipherlist             : Do not display SSL cipher data in the SSL certificate check\n");
+			printf("    --showallciphers            : List all available ciphers supported by the local SSL library\n");
 			printf("\nDebugging options:\n");
 			printf("    --no-update                 : Send status messages to stdout instead of to Xymon\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
