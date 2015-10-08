@@ -140,10 +140,14 @@ typedef struct c_paging_t {
 #define FCHK_ATIMEEQL (1 << 24)
 #define FCHK_MD5      (1 << 25)
 #define FCHK_SHA1     (1 << 26)
-#define FCHK_RMD160   (1 << 27)
+#define FCHK_SHA256   (1 << 27)
+#define FCHK_SHA512   (1 << 28)
+#define FCHK_SHA224   (1 << 29)
+#define FCHK_SHA384   (1 << 30)
+#define FCHK_RMD160   (1 << 31)
 
-#define CHK_OPTIONAL  (1 << 30)
-#define CHK_TRACKIT   (1 << 31)
+#define CHK_OPTIONAL  (1 << 33)
+#define CHK_TRACKIT   (1 << 34)
  
 typedef struct c_file_t {
 	exprlist_t *filename;
@@ -157,7 +161,7 @@ typedef struct c_file_t {
 	unsigned int minctimedif, maxctimedif, ctimeeql;
 	unsigned int minmtimedif, maxmtimedif, mtimeeql;
 	unsigned int minatimedif, maxatimedif, atimeeql;
-	char *md5hash, *sha1hash, *rmd160hash;
+	char *md5hash, *sha1hash, *sha256hash, *sha512hash, *sha224hash, *sha384hash, *rmd160hash;
 } c_file_t;
 
 typedef struct c_dir_t {
@@ -248,7 +252,7 @@ typedef struct c_rule_t {
 	char *timespec, *extimespec, *statustext, *rrdidstr, *groups;
 	ruletype_t ruletype;
 	int cfid;
-	unsigned int flags;
+	unsigned long flags;
 	struct c_rule_t *next;
 	union {
 		c_load_t load;
@@ -1173,6 +1177,22 @@ int load_client_config(char *configfn)
 						currule->flags |= FCHK_SHA1;
 						currule->rule.fcheck.sha1hash = strdup(tok+5);
 					}
+					else if (strncasecmp(tok, "sha256=", 7) == 0) {
+						currule->flags |= FCHK_SHA256;
+						currule->rule.fcheck.sha256hash = strdup(tok+7);
+					}
+					else if (strncasecmp(tok, "sha512=", 7) == 0) {
+						currule->flags |= FCHK_SHA512;
+						currule->rule.fcheck.sha512hash = strdup(tok+7);
+					}
+					else if (strncasecmp(tok, "sha224=", 7) == 0) {
+						currule->flags |= FCHK_SHA224;
+						currule->rule.fcheck.sha224hash = strdup(tok+7);
+					}
+					else if (strncasecmp(tok, "sha384=", 7) == 0) {
+						currule->flags |= FCHK_SHA384;
+						currule->rule.fcheck.sha384hash = strdup(tok+7);
+					}
 					else if (strncasecmp(tok, "rmd160=", 7) == 0) {
 						currule->flags |= FCHK_RMD160;
 						currule->rule.fcheck.rmd160hash = strdup(tok+7);
@@ -1749,6 +1769,14 @@ void dump_client_config(void)
 				printf(" md5=%s", rwalk->rule.fcheck.md5hash);
 			if (rwalk->flags & FCHK_SHA1) 
 				printf(" sha1=%s", rwalk->rule.fcheck.sha1hash);
+			if (rwalk->flags & FCHK_SHA256) 
+				printf(" sha256=%s", rwalk->rule.fcheck.sha256hash);
+			if (rwalk->flags & FCHK_SHA512) 
+				printf(" sha512=%s", rwalk->rule.fcheck.sha512hash);
+			if (rwalk->flags & FCHK_SHA224) 
+				printf(" sha224=%s", rwalk->rule.fcheck.sha224hash);
+			if (rwalk->flags & FCHK_SHA384) 
+				printf(" sha384=%s", rwalk->rule.fcheck.sha384hash);
 			if (rwalk->flags & FCHK_RMD160) 
 				printf(" rmd160=%s", rwalk->rule.fcheck.rmd160hash);
 			break;
@@ -2609,7 +2637,7 @@ int check_file(void *hinfo, char *classname,
 	char *ownerstr = NULL, *groupstr = NULL;
 	unsigned int ctime = 0, mtime = 0, atime = 0, clock = 0;
 	unsigned int ctimedif, mtimedif, atimedif;
-	char *md5hash = NULL, *sha1hash = NULL, *rmd160hash = NULL;
+	char *md5hash = NULL, *sha1hash = NULL, *sha256hash = NULL, *sha512hash = NULL, *sha224hash = NULL, *sha384hash = NULL, *rmd160hash = NULL;
 
 	hostname = xmh_item(hinfo, XMH_HOSTNAME);
 	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
@@ -2680,6 +2708,18 @@ int check_file(void *hinfo, char *classname,
 		}
 		else if (strncmp(boln, "sha1:", 5) == 0) {
 			sha1hash = boln+5;
+		}
+		else if (strncmp(boln, "sha256:", 7) == 0) {
+			sha256hash = boln+7;
+		}
+		else if (strncmp(boln, "sha512:", 7) == 0) {
+			sha512hash = boln+7;
+		}
+		else if (strncmp(boln, "sha224:", 7) == 0) {
+			sha224hash = boln+7;
+		}
+		else if (strncmp(boln, "sha384:", 7) == 0) {
+			sha384hash = boln+7;
 		}
 		else if (strncmp(boln, "rmd160:", 7) == 0) {
 			rmd160hash = boln+7;
@@ -2888,6 +2928,42 @@ int check_file(void *hinfo, char *classname,
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File has SHA1 hash %s  - should be %s\n", 
 					sha1hash, rwalk->rule.fcheck.sha1hash);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->flags & FCHK_SHA256) {
+			if (!sha256hash) sha256hash = "(No SHA256 data)";
+			if (strcmp(sha256hash, rwalk->rule.fcheck.sha256hash) != 0) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has SHA256 hash %s  - should be %s\n", 
+					sha256hash, rwalk->rule.fcheck.sha256hash);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->flags & FCHK_SHA512) {
+			if (!sha512hash) sha512hash = "(No SHA256 data)";
+			if (strcmp(sha512hash, rwalk->rule.fcheck.sha512hash) != 0) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has SHA512 hash %s  - should be %s\n", 
+					sha512hash, rwalk->rule.fcheck.sha512hash);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->flags & FCHK_SHA224) {
+			if (!sha224hash) sha224hash = "(No SHA224 data)";
+			if (strcmp(sha224hash, rwalk->rule.fcheck.sha224hash) != 0) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has SHA224 hash %s  - should be %s\n", 
+					sha224hash, rwalk->rule.fcheck.sha224hash);
+				addtobuffer(summarybuf, msgline);
+			}
+		}
+		if (rwalk->flags & FCHK_SHA384) {
+			if (!sha384hash) sha384hash = "(No SHA384 data)";
+			if (strcmp(sha384hash, rwalk->rule.fcheck.sha384hash) != 0) {
+				rulecolor = rwalk->rule.fcheck.color;
+				sprintf(msgline, "File has SHA384 hash %s  - should be %s\n", 
+					sha384hash, rwalk->rule.fcheck.sha384hash);
 				addtobuffer(summarybuf, msgline);
 			}
 		}
