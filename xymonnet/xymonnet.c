@@ -1062,21 +1062,15 @@ void run_ntp_service(service_t *service)
 	p = getenv("SNTP");	/* Plain "getenv" as we want to know if it's unset */
 	use_sntp = (p != NULL);
 
-	if (use_sntp) {
-		strcpy(cmdpath, p);
-	}
-	else {
-		p = xgetenv("NTPDATE");
-		strcpy(cmdpath, (p ? p : "ntpdate"));
-	}
+	strcpy(cmdpath, (use_sntp ? xgetenv("SNTP") : xgetenv("NTPDATE")) );
 
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
 			if (use_sntp) {
-				sprintf(cmd, "%s -u -d %d %s 2>&1", cmdpath, extcmdtimeout-1, ip_to_test(t->host));
+				sprintf(cmd, "%s %s -d %d %s 2>&1", cmdpath, xgetenv("SNTPOPTS"), extcmdtimeout-1, ip_to_test(t->host));
 			}
 			else {
-				sprintf(cmd, "%s -u -q %s 2>&1", cmdpath, ip_to_test(t->host));
+				sprintf(cmd, "%s %s %s 2>&1", cmdpath, xgetenv("NTPDATEOPTS"), ip_to_test(t->host));
 			}
 
 			t->open = (run_command(cmd, "no server suitable for synchronization", t->banner, 1, extcmdtimeout) == 0);
@@ -1156,9 +1150,8 @@ int start_ping_service(service_t *service)
 
 	pingcount = 0;
 	pingpids = calloc(pingchildcount, sizeof(pid_t));
-	pingcmd = strdup(getenv_default("FPING", "xymonping", NULL));
-	pingcmd = realloc(pingcmd, strlen(pingcmd)+5);
-	strcat(pingcmd, " -Ae");
+	pingcmd = malloc(strlen(xgetenv("FPING")) + strlen(xgetenv("FPINGOPTS")) + 2);
+	sprintf(pingcmd, "%s %s", xgetenv("FPING"), xgetenv("FPINGOPTS"));
 
 	sprintf(pinglog, "%s/ping-stdout.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
 	sprintf(pingerrlog, "%s/ping-stderr.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
@@ -1484,11 +1477,12 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		if ((color == COL_RED) && test->host->dotrace && !test->host->dialup && !test->reverse && !test->dialup) {
 			char cmd[PATH_MAX];
 
-			if (xgetenv("TRACEROUTE")) {
-				sprintf(cmd, "%s %s 2>&1", xgetenv("TRACEROUTE"), test->host->ip);
+			if (getenv("TRACEROUTEOPTS")) {
+				/* post 4.3.21 */
+				sprintf(cmd, "%s %s %s 2>&1", xgetenv("TRACEROUTE"), xgetenv("TRACEROUTEOPTS"), test->host->ip);
 			}
 			else {
-				sprintf(cmd, "traceroute -n -q 2 -w 2 -m 15 %s 2>&1", test->host->ip);
+				sprintf(cmd, "%s %s 2>&1", xgetenv("TRACEROUTE"), test->host->ip);
 			}
 			test->host->traceroute = newstrbuffer(0);
 			run_command(cmd, NULL, test->host->traceroute, 0, extcmdtimeout);

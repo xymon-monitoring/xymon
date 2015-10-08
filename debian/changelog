@@ -8,7 +8,6 @@ xymon (4.####) unstable; urgency=medium
    * Fix up HTML list layout to reflect current standards (Thanks, hallik@calyc3.com)
    * Fix documentation incorrectly describing multigraph syntax as (e.g.) GRAPH_cpu. 
      Should be GRAPHS_cpu (Thanks, Galen Johnson)
-   * Move ntpdate config to env variable (Thanks, Axel Beckert, pointed out by Matt Vander Werf)
    * Supports scientific notation for NCV data (Thanks, Axel Beckert)
    * Increase resolution of xymonnet poll timing results (Thanks, Christoph Berg)
    * New clock skew RRD files will allow for negative delta values (Thanks, Axel Beckert)
@@ -19,6 +18,12 @@ xymon (4.####) unstable; urgency=medium
    * The cipher list displayed in 'sslcert' tests will now be limited to the cipher that was 
      actually used on the SSL connection. The --showallciphers option to xymonnet will
      restore the previous behavior. (From idea from Ralph Mitchell)
+   * Provide configurable environment overrides in xymonserver.cfg for standard xymonnet 
+     options to fping/xymonping, ntpdate, and traceroute binaries. In regular installs, the   
+     intended default options to traceroute (-n -q 2 -w 2 -m 15) were not actually used. This
+     may change in a future release, so it's suggested that users move any custom options to    
+     the new TRACEROUTEOPTS setting in xymonserver.cfg.
+     (Orig. thanks, Axel Beckert, ntpdate issues pointed out by Matt Vander Werf)  
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 

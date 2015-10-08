@@ -576,14 +576,26 @@ the "fping" utility was used until Xymon version 4.2). This may include
 suid-root wrappers and xymonping options.
 Default: "xymonping"
 
+.IP FPINGOPTS
+Options used for the
+.I fping(1)
+or
+.I xymonping(1)
+tool for the connectivity test. Note that xymonnet will still expect the 
+output to match the default format.
+Default: "-Ae"
+
 .IP TRACEROUTE
+.IP TRACEROUTEOPTS
 Defines the location of the "traceroute" tool and
-any options needed to run it. traceroute it used by
+any options needed to run it. traceroute is used by
 the connectivity test when the ping test fails; if
 requested via the "trace" tag, the TRACEROUTE command
-is executed to try to determine the point in the
-network that is causing the problem. By default the
-command executed is "traceroute \-n \-q 2 \-w 2 \-m 15"
+is executed to try to indicate the point in the
+network that is causing the problem. For backwards compatibility, 
+with prior versions, if TRACEROUTEOPTS is unset, TRACEROUTE is assumed
+to have whatever options are desired and no addl options are used.
+Recommended defaults are:  "\-n \-q 2 \-w 2 \-m 15"
 (no DNS lookup, max. 2 probes, wait 2 seconds per hop,
 max 15 hops).
 .sp
@@ -591,9 +603,8 @@ If you have the
 .I mtr(8)
 tool installed - available from http://www.bitwizard.nl/mtr/ - I
 strongly recommend using this instead. The recommended
-setting for mtr is "/usr/sbin/mtr \-c 2 \-n \-\-report" (the
-exact path to the mtr utility may be different on your 
-system).  Note that mtr needs to be installed suid-root 
+TRACEROUTEOPTS for mtr are "\-c 2 \-n \-\-report"
+Note that mtr needs to be installed suid-root 
 on most systems.
 
 .IP NTPDATE
@@ -601,6 +612,12 @@ Defines the
 .I ntpdate(1)
 program used for the "ntp" test.  
 Default: "ntpdate"
+
+.IP NTPDATEOPTS
+Options used for the 
+.I ntpdate(1)
+program.
+Default: "\-u \-q \-p 1"
 
 .IP RPCINFO
 Defines the

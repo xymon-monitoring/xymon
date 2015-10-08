@@ -132,8 +132,11 @@ CONNTEST="TRUE"					# Should we 'ping' hosts ?
 IPTEST_2_CLEAR_ON_FAILED_CONN="TRUE"		# If TRUE, then failing network tests go CLEAR if conn-test fails.
 NONETPAGE=""					# Network tests that go YELLOW upon failure
 FPING="@FPING@"					# Path and options for the ping program.
-NTPDATE="ntpdate -p 1"				# Path to the 'ntpdate' program
+FPINGOPTS="-Ae"					# Standard options to fping/xymonping
+NTPDATE="ntpdate"				# Path to the 'ntpdate' program
+NTPDATEOPTS="-u -q -p 1"			# Standard options to ntpdate
 TRACEROUTE="traceroute"                         # How to do traceroute on failing ping tests. Requires "trace" in hosts.cfg .
+TRACEROUTEOPTS="-n -q 2 -w 2 -m 15"		# Standard options to traceroute
 XYMONROUTERTEXT="router"			# What to call a failing intermediate network device.
 NETFAILTEXT="not OK"				# Text indicating a network test failed
 
