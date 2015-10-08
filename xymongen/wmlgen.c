@@ -117,6 +117,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	}
 
 	nextline = msg;
+	l[MAX_LINE_LEN - 1] = '\0';
 
 	sprintf(fn, "%s/%s.%s.wml", wmldir, host->hostname, entry->column->name);
 	fd = fopen(fn, "w");
@@ -147,7 +148,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	 */
 	while (nextline) {
 		p = strchr(nextline, '\n'); if (p) *p = '\0';
-		strcpy(l, nextline);
+		strncpy(l, nextline, (MAX_LINE_LEN - 1));
 		if (p) nextline = p+1; else nextline = NULL;
 
 		outp = lineout;

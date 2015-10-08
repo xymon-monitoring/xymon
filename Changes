@@ -25,6 +25,7 @@ Changes from 4.3.21 -> 4.#### ()
   the new TRACEROUTEOPTS setting in xymonserver.cfg.
   (Orig. thanks, Axel Beckert, ntpdate issues pointed out by Matt Vander Werf)
 * Enable latent additional SHA digest strengths (sha256, sha512, sha224, sha384)
+* Don't crash generating wml cards for statuses w/ very long lines (Reported by Axel Beckert)
 
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)
