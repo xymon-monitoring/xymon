@@ -1113,9 +1113,9 @@ into '.' which is the regular-expression wildcard character.
 
 Message digests can use whatever digest algorithms your
 libcrypto implementation (usually OpenSSL) supports. 
-Common message digests are "md5" and "sha1". The digest
-is calculated on the data portion of the response from 
-the server, i.e. HTTP headers are not included in the
+Common message digests are "md5", "sha1", "sha256" or "sha512". 
+The digest is calculated on the data portion of the response 
+from the server, i.e. HTTP headers are not included in the
 digest (as they change from one request to the next).
 
 The expected digest value can be computed with the

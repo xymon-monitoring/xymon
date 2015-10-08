@@ -24,6 +24,7 @@ Changes from 4.3.21 -> 4.#### ()
   may change in a future release, so it's suggested that users move any custom options to 
   the new TRACEROUTEOPTS setting in xymonserver.cfg.
   (Orig. thanks, Axel Beckert, ntpdate issues pointed out by Matt Vander Werf)
+* Enable latent additional SHA digest strengths (sha256, sha512, sha224, sha384)
 
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)

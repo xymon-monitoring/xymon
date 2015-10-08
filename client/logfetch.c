@@ -72,7 +72,7 @@ typedef struct logdef_t {
 } logdef_t;
 
 typedef struct filedef_t {
-	int domd5, dosha1, dormd160;
+	int domd5, dosha1, dosha256, dosha512, dosha224, dosha384, dormd160;
 } filedef_t;
 
 typedef struct countdef_t {
@@ -684,7 +684,7 @@ char *filesum(char *fn, char *dtype)
 	return result;
 }
 
-void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
+void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dosha256, int dosha512, int dosha224, int dosha384, int dormd160)
 {
 	struct stat st;
 	struct passwd *pw;
@@ -732,6 +732,10 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 		if (S_ISREG(st.st_mode)) {
 			if      (domd5) fprintf(fd, "%s\n", filesum(fn, "md5"));
 			else if (dosha1) fprintf(fd, "%s\n", filesum(fn, "sha1"));
+			else if (dosha256) fprintf(fd, "%s\n", filesum(fn, "sha256"));
+			else if (dosha512) fprintf(fd, "%s\n", filesum(fn, "sha512"));
+			else if (dosha224) fprintf(fd, "%s\n", filesum(fn, "sha224"));
+			else if (dosha384) fprintf(fd, "%s\n", filesum(fn, "sha384"));
 			else if (dormd160) fprintf(fd, "%s\n", filesum(fn, "rmd160"));
 		}
 	}
@@ -825,7 +829,7 @@ int loadconfig(char *cfgfn)
 	while (fgets(l, sizeof(l), fd) != NULL) {
 		checktype_t checktype;
 		char *bol, *filename;
-		int maxbytes, domd5, dosha1, dormd160;
+		int maxbytes, domd5, dosha1, dosha256, dosha512, dosha224, dosha384, dormd160;
 
 		{ char *p = strchr(l, '\n'); if (p) *p = '\0'; }
 
@@ -841,7 +845,7 @@ int loadconfig(char *cfgfn)
 		if (checktype != C_NONE) {
 			char *tok;
 
-			filename = NULL; maxbytes = -1; domd5 = dosha1 = dormd160 = 0;
+			filename = NULL; maxbytes = -1; domd5 = dosha1 = dosha256 = dosha512 = dosha224 = dosha384 = dormd160 = 0;
 
 			/* Skip the initial keyword token */
 			tok = strtok(l, ":"); filename = strtok(NULL, ":");
@@ -855,9 +859,13 @@ int loadconfig(char *cfgfn)
 				maxbytes = 0; /* Needed to get us into the put-into-list code */
 				tok = (filename ? strtok(NULL, ":") : NULL);
 				if (tok) {
-					if (strcmp(tok, "md5") == 0) domd5 = 1;
-					else if (strcmp(tok, "sha1") == 0) dosha1 = 1;
-					else if (strcmp(tok, "rmd160") == 0) dormd160 = 1;
+					if (strcasecmp(tok, "md5") == 0) domd5 = 1;
+					else if (strcasecmp(tok, "sha1") == 0) dosha1 = 1;
+					else if (strcasecmp(tok, "sha256") == 0) dosha256 = 1;
+					else if (strcasecmp(tok, "sha512") == 0) dosha512 = 1;
+					else if (strcasecmp(tok, "sha224") == 0) dosha224 = 1;
+					else if (strcasecmp(tok, "sha384") == 0) dosha384 = 1;
+					else if (strcasecmp(tok, "rmd160") == 0) dormd160 = 1;
 				}
 				break;
 
@@ -905,6 +913,10 @@ int loadconfig(char *cfgfn)
 							  case C_FILE:
 								newitem->check.filecheck.domd5 = domd5;
 								newitem->check.filecheck.dosha1 = dosha1;
+								newitem->check.filecheck.dosha256 = dosha256;
+								newitem->check.filecheck.dosha512 = dosha512;
+								newitem->check.filecheck.dosha224 = dosha224;
+								newitem->check.filecheck.dosha384 = dosha384;
 								newitem->check.filecheck.dormd160 = dormd160;
 								break;
 							  case C_DIR:
@@ -947,6 +959,10 @@ int loadconfig(char *cfgfn)
 					  case C_FILE:
 						newitem->check.filecheck.domd5 = domd5;
 						newitem->check.filecheck.dosha1 = dosha1;
+						newitem->check.filecheck.dosha256 = dosha256;
+						newitem->check.filecheck.dosha512 = dosha512;
+						newitem->check.filecheck.dosha224 = dosha224;
+						newitem->check.filecheck.dosha384 = dosha384;
 						newitem->check.filecheck.dormd160 = dormd160;
 						break;
 					  case C_DIR:
@@ -1315,7 +1331,7 @@ int main(int argc, char *argv[])
 			if (fwalk == NULL) {
 				/* No specific file: entry, so make sure the logfile metadata is available */
 				fprintf(stdout, "[logfile:%s]\n", walk->filename);
-				printfiledata(stdout, walk->filename, 0, 0, 0);
+				printfiledata(stdout, walk->filename, 0, 0, 0, 0, 0, 0, 0);
 			}
 			break;
 
@@ -1324,6 +1340,10 @@ int main(int argc, char *argv[])
 			printfiledata(stdout, walk->filename, 
 					walk->check.filecheck.domd5, 
 					walk->check.filecheck.dosha1,
+					walk->check.filecheck.dosha256,
+					walk->check.filecheck.dosha512,
+					walk->check.filecheck.dosha224,
+					walk->check.filecheck.dosha384,
 					walk->check.filecheck.dormd160);
 			break;
 

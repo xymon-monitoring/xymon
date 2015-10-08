@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
 	if (argc < 2) {
 		printf("Usage: %s digestmethod [filename]\n", argv[0]);
-		printf("\"digestmethod\" is \"md5\", \"sha1\", \"sha256\", \"sha512\" or \"rmd160\"\n");
+		printf("\"digestmethod\" is \"md5\", \"sha1\", \"sha256\", \"sha512\", \"sha224\", \"sha384\", or \"rmd160\"\n");
 		return 1;
 	}
 

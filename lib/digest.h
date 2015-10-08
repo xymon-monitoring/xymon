@@ -13,7 +13,7 @@
 #ifndef __DIGEST_H_
 #define __DIGEST_H_
 
-typedef enum { D_MD5, D_SHA1, D_RMD160, D_SHA256, D_SHA512, D_SHA224, D_SHA384 } digesttype_t;
+typedef enum { D_MD5, D_SHA1, D_SHA256, D_SHA512, D_SHA224, D_SHA384, D_RMD160 } digesttype_t;
 
 typedef struct digestctx_t {
 	char *digestname;
@@ -25,5 +25,7 @@ extern char *md5hash(char *input);
 extern digestctx_t *digest_init(char *digest);
 extern int digest_data(digestctx_t *ctx, unsigned char *buf, int buflen);
 extern char *digest_done(digestctx_t *ctx);
+
+#define dohash(P) md5hash(P)
 
 #endif

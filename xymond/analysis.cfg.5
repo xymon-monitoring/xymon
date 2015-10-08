@@ -327,11 +327,12 @@ time (seconds since midnight Jan 1 1970 UTC).
 acts as the mtime checks, but for the ctime timestamp (when the directory
 entry of the file was last changed, eg. by chown, chgrp or chmod).
 .IP "md5=MD5SUM, sha1=SHA1SUM, rmd160=RMD160SUM"
-trigger a warning if the file checksum using the MD5, SHA1 or RMD160 
-message digest algorithms do not match the one configured here. Note: 
-The "file" entry in the
+and so on for RMD160, SHA256, SHA512, SHA224, and SHA384 trigger a 
+warning if the file checksum using the specified message digest algorithm 
+does not match the one configured here. Note: The "file" entry in the 
 .I client\-local.cfg(5)
-file must specify which algorithm to use.
+file must specify which
+algorithm to use as that is the only one that will be sent.
 
 .LP
 For directories, you can check one or more of the following:

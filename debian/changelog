@@ -24,6 +24,7 @@ xymon (4.####) unstable; urgency=medium
      may change in a future release, so it's suggested that users move any custom options to    
      the new TRACEROUTEOPTS setting in xymonserver.cfg.
      (Orig. thanks, Axel Beckert, ntpdate issues pointed out by Matt Vander Werf)  
+   * Enable latent additional SHA digest strengths (sha256, sha512, sha224, sha384)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 
