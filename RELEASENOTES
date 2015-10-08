@@ -17,6 +17,14 @@ actually used in the connection. Use --showallciphers to restore the
 previous behavior of displaying all ciphers supported by the local ssl 
 library at all.
 
+NTPDATEOPTS, FPINGOPTS, and TRACEROUTEOPTS variables are now present in
+xymonserver.cfg and will override the default options for the associated
+xymonnet calls.
+
+Note: The suggested options to 'traceroute' were never actually used as 
+the default on a standard installation. In a future release, '-n -q 2 -w 2 -m 15'
+may be used unless overridden or otherwise specified.
+
 
 Changes for 4.3.21
 ==================
