@@ -116,38 +116,38 @@ typedef struct c_paging_t {
 	int warnlevel, paniclevel;
 } c_paging_t;
 
-#define FCHK_NOEXIST  (1 << 0)
-#define FCHK_TYPE     (1 << 1)
-#define FCHK_MODE     (1 << 2)
-#define FCHK_MINLINKS (1 << 3)
-#define FCHK_MAXLINKS (1 << 4)
-#define FCHK_EQLLINKS (1 << 5)
-#define FCHK_MINSIZE  (1 << 6)
-#define FCHK_MAXSIZE  (1 << 7)
-#define FCHK_EQLSIZE  (1 << 8)
-#define FCHK_OWNERID  (1 << 10)
-#define FCHK_OWNERSTR (1 << 11)
-#define FCHK_GROUPID  (1 << 12)
-#define FCHK_GROUPSTR (1 << 13)
-#define FCHK_CTIMEMIN (1 << 16)
-#define FCHK_CTIMEMAX (1 << 17)
-#define FCHK_CTIMEEQL (1 << 18)
-#define FCHK_MTIMEMIN (1 << 19)
-#define FCHK_MTIMEMAX (1 << 20)
-#define FCHK_MTIMEEQL (1 << 21)
-#define FCHK_ATIMEMIN (1 << 22)
-#define FCHK_ATIMEMAX (1 << 23)
-#define FCHK_ATIMEEQL (1 << 24)
-#define FCHK_MD5      (1 << 25)
-#define FCHK_SHA1     (1 << 26)
-#define FCHK_SHA256   (1 << 27)
-#define FCHK_SHA512   (1 << 28)
-#define FCHK_SHA224   (1 << 29)
-#define FCHK_SHA384   (1 << 30)
-#define FCHK_RMD160   (1 << 31)
+#define FCHK_NOEXIST  (1ULL << 0)
+#define FCHK_TYPE     (1ULL << 1)
+#define FCHK_MODE     (1ULL << 2)
+#define FCHK_MINLINKS (1ULL << 3)
+#define FCHK_MAXLINKS (1ULL << 4)
+#define FCHK_EQLLINKS (1ULL << 5)
+#define FCHK_MINSIZE  (1ULL << 6)
+#define FCHK_MAXSIZE  (1ULL << 7)
+#define FCHK_EQLSIZE  (1ULL << 8)
+#define FCHK_OWNERID  (1ULL << 10)
+#define FCHK_OWNERSTR (1ULL << 11)
+#define FCHK_GROUPID  (1ULL << 12)
+#define FCHK_GROUPSTR (1ULL << 13)
+#define FCHK_CTIMEMIN (1ULL << 16)
+#define FCHK_CTIMEMAX (1ULL << 17)
+#define FCHK_CTIMEEQL (1ULL << 18)
+#define FCHK_MTIMEMIN (1ULL << 19)
+#define FCHK_MTIMEMAX (1ULL << 20)
+#define FCHK_MTIMEEQL (1ULL << 21)
+#define FCHK_ATIMEMIN (1ULL << 22)
+#define FCHK_ATIMEMAX (1ULL << 23)
+#define FCHK_ATIMEEQL (1ULL << 24)
+#define FCHK_MD5      (1ULL << 25)
+#define FCHK_SHA1     (1ULL << 26)
+#define FCHK_SHA256   (1ULL << 27)
+#define FCHK_SHA512   (1ULL << 28)
+#define FCHK_SHA224   (1ULL << 29)
+#define FCHK_SHA384   (1ULL << 30)
+#define FCHK_RMD160   (1ULL << 31)
 
-#define CHK_OPTIONAL  (1 << 33)
-#define CHK_TRACKIT   (1 << 34)
+#define CHK_OPTIONAL  (1ULL << 33)
+#define CHK_TRACKIT   (1ULL << 34)
  
 typedef struct c_file_t {
 	exprlist_t *filename;
@@ -252,7 +252,7 @@ typedef struct c_rule_t {
 	char *timespec, *extimespec, *statustext, *rrdidstr, *groups;
 	ruletype_t ruletype;
 	int cfid;
-	unsigned long flags;
+	unsigned long long flags;
 	struct c_rule_t *next;
 	union {
 		c_load_t load;
