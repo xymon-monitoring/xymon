@@ -229,8 +229,8 @@ int main(int argc, char *argv[])
 		if (outform == O_HTML) {
 			fprintf(stdout, "<table align=center>\n");
 			fprintf(stdout, "<tr>");
+			fprintf(stdout, "<th align=left><a href=\"ghostlist.sh?SORT=sender&MAXAGE=%d\">Sender</a></th>", maxage);
 			fprintf(stdout, "<th align=left><a href=\"ghostlist.sh?SORT=name&MAXAGE=%d\">Hostname</a></th>", maxage);
-			fprintf(stdout, "<th align=left><a href=\"ghostlist.sh?SORT=sender&MAXAGE=%d\">Sent from</a></th>", maxage);
 			fprintf(stdout, "<th align=left>Candidate</th>");
 			fprintf(stdout, "<th align=right><a href=\"ghostlist.sh?SORT=time&MAXAGE=%d\">Report age</a></th>", maxage);
 			fprintf(stdout, "</tr>\n");
@@ -243,8 +243,8 @@ int main(int argc, char *argv[])
 			switch (outform) {
 			  case O_HTML:
 				fprintf(stdout, "<tr><td align=left>%s</td><td align=left>%s</td>",
-					ghosttable[idx].name, 
-					ghosttable[idx].sender);
+					ghosttable[idx].sender, 
+					ghosttable[idx].name);
 
 				if (ghosttable[idx].candidate) {
 					fprintf(stdout, "<td align=left><a href=\"%s\">%s</a></td>",

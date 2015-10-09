@@ -26,6 +26,8 @@ xymon (4.####) unstable; urgency=medium
      (Orig. thanks, Axel Beckert, ntpdate issues pointed out by Matt Vander Werf)  
    * Enable latent additional SHA digest strengths (sha256, sha512, sha224, sha384)
    * Don't crash generating wml cards for statuses w/ very long lines (Reported by Axel Beckert)
+   * Flip SenderIP and Hostname columns on ghostlist pages to allow easier cutting and pasting 
+     to hosts files
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 
