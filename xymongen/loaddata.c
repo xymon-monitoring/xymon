@@ -417,8 +417,8 @@ void generate_compactitems(state_t **topstate)
 			itm = (compact_t *)calloc(1, sizeof(compact_t));
 			itm->compactname = strdup(strtok_r(tok1, "=", &savep2));
 			members = strtok_r(NULL, "\n", &savep2);
-			itm->members = (char *)malloc(3 + strlen(members));
-			sprintf(itm->members, "|%s|", members);
+			itm->members = (char *)malloc(3 + (members ? strlen(members) : 0) );
+			sprintf(itm->members, "|%s|", (members ? members : "") );
 
 			if (complistsz == 0) {
 				complist = (compact_t **)calloc(2, sizeof(compact_t *));

@@ -29,6 +29,7 @@ Changes from 4.3.21 -> 4.#### ()
 * Flip SenderIP and Hostname columns on ghostlist pages to allow easier cutting and pasting
   to hosts files
 * Fix multiple disk volumes reported in on Darwin (OS X) clients. (Thanks, Axel Beckert)
+* Fix COMPACT parsing; update docs to match expected syntax (Thanks, Brian Scott)
 
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)

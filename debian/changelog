@@ -29,6 +29,7 @@ xymon (4.####) unstable; urgency=medium
    * Flip SenderIP and Hostname columns on ghostlist pages to allow easier cutting and pasting 
      to hosts files
    * Fix multiple disk volumes reported in on Darwin (OS X) clients. (Thanks, Axel Beckert)
+   * Fix COMPACT parsing; update docs to match expected syntax (Thanks, Brian Scott)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 
