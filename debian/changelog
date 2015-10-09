@@ -30,6 +30,7 @@ xymon (4.####) unstable; urgency=medium
      to hosts files
    * Fix multiple disk volumes reported in on Darwin (OS X) clients. (Thanks, Axel Beckert)
    * Fix COMPACT parsing; update docs to match expected syntax (Thanks, Brian Scott)
+   * Trailing slash no longer required for URL alias ("http://www.example.com/xymon" should work)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 

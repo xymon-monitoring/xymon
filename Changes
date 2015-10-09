@@ -30,6 +30,7 @@ Changes from 4.3.21 -> 4.#### ()
   to hosts files
 * Fix multiple disk volumes reported in on Darwin (OS X) clients. (Thanks, Axel Beckert)
 * Fix COMPACT parsing; update docs to match expected syntax (Thanks, Brian Scott)
+* Trailing slash no longer required for URL alias ("http://www.example.com/xymon" should work)
 
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)

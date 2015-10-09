@@ -11,7 +11,7 @@
 #
 #          DocumentRoot @INSTALLWWWDIR@
 
-Alias @XYMONHOSTURL@/  "@INSTALLWWWDIR@/"
+Alias @XYMONHOSTURL@  "@INSTALLWWWDIR@"
 <Directory "@INSTALLWWWDIR@">
     Options Indexes FollowSymLinks Includes MultiViews
     <IfModule mod_authz_core.c>

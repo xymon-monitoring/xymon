@@ -17,6 +17,10 @@ actually used in the connection. Use --showallciphers to restore the
 previous behavior of displaying all ciphers supported by the local ssl 
 library at all.
 
+The Apache configuration has been updated to no longer require a trailing
+slash when accessing the xymon pages -- on a default install (depending on
+your distribution), http://www.example.com/xymon should now work.
+
 NTPDATEOPTS, FPINGOPTS, and TRACEROUTEOPTS variables are now present in
 xymonserver.cfg and will override the default options for the associated
 xymonnet calls.
