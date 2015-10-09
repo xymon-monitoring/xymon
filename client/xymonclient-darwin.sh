@@ -29,10 +29,10 @@ who
 FILESYSTEMS=`mount | grep -v nobrowse | awk '{print $3}'`
 echo "[df]"
 set $FILESYSTEMS
-(df -H $1; shift
+(df -P -H $1; shift
  while test $# -gt 0
  do
-   df -H $1 | tail -1
+   df -P -H $1 | tail -1
    shift
  done) | column -t -s " " | sed -e 's!Mounted *on!Mounted on!'
 
@@ -41,7 +41,7 @@ set $FILESYSTEMS
 (df -i $1; shift
  while test $# -gt 0
  do
-   df -H $1 | tail -1
+   df -P -H $1 | tail -1
    shift
  done) | awk '
 NR<2{printf "%-20s %10s %10s %10s %10s %s\n", $1, "itotal", $6, $7, $8, $9} 
