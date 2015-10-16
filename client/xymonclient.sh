@@ -80,7 +80,7 @@ $XYMONHOME/bin/logfetch --clock >> $MSGTMPFILE
 
 if test "$LOCALMODE" = "yes"; then
 	echo "@@" >> $MSGTMPFILE
-	$XYMONHOME/bin/xymond_client --local --config=$XYMONHOME/etc/localclient.cfg <$MSGTMPFILE
+	$XYMONHOME/bin/xymond_client $XYMONLOCALCLIENTOPTS --local --config=$XYMONHOME/etc/localclient.cfg <$MSGTMPFILE
 else
 	$XYMON $XYMSRV "@" < $MSGTMPFILE >$LOGFETCHCFG.tmp
 	if test -f $LOGFETCHCFG.tmp

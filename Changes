@@ -31,6 +31,8 @@ Changes from 4.3.21 -> 4.#### ()
 * Fix multiple disk volumes reported in on Darwin (OS X) clients. (Thanks, Axel Beckert)
 * Fix COMPACT parsing; update docs to match expected syntax (Thanks, Brian Scott)
 * Trailing slash no longer required for URL alias ("http://www.example.com/xymon" should work)
+* A new XYMONLOCALCLIENTOPTS variable in xymonclient.cfg allows options (e.g., --no-port-listing)
+  to be given to xymond_client when running in local client mode.
 
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)
