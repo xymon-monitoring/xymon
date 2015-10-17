@@ -37,6 +37,7 @@ xymon (4.####) unstable; urgency=medium
      which mark the end of data-to-be-processed in the message.
    * Ensure that nostale is passed down during graph zooming (Thanks, Stef Coene)
    * Add missing XMH_DATA in loadhosts (Thanks, Jacek Tomasiak)
+   * Search in more locations for default environment files when using xymoncmd
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 

@@ -37,6 +37,7 @@ Changes from 4.3.21 -> 4.#### ()
   which mark the end of data-to-be-processed in the message.
 * Ensure that nostale is passed down during graph zooming (Thanks, Stef Coene)
 * Add missing XMH_DATA in loadhosts (Thanks, Jacek Tomasiak)
+* Search in more locations for default environment files when using xymoncmd
 
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)
