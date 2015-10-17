@@ -205,6 +205,7 @@ static void xmh_item_list_setup(void)
 	xmh_item_name[XMH_DGNAME]              = "XMH_DGNAME";
 	xmh_item_name[XMH_PAGEINDEX]           = "XMH_PAGEINDEX";
 	xmh_item_name[XMH_RAW]                 = "XMH_RAW";
+	xmh_item_name[XMH_DATA]                = "XMH_DATA";
 
 	i = 0; while (xmh_item_key[i]) i++;
 	if (i != XMH_IP) {
