@@ -57,6 +57,19 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 
 		l += strspn(l, " \t\n");
 		if (*l) { 
+			/* Look for a sign to alter processing */
+			if (strncmp(l, "<!-- ncv_", 9) == 0) {
+				/* expandable for future use */
+				l += 9;
+				if (strncmp(l, "skip -->", 8) == 0) { l += strcspn(l, "\n"); l++; continue; }
+				else if (strncmp(l, "end -->", 7) == 0) break;
+				else {
+					dbgprintf("Unexpected NCV directive found\n");
+					/* skip past directive */
+					l += strcspn(l, ">"); l++; l += strspn(l, " \t\n");
+				}
+			}
+
 			/* See if this line contains a '=' or ':' sign */
 			name = l; 
 			l += strcspn(l, ":=\n");

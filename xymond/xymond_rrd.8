@@ -196,6 +196,15 @@ a custom script generating the status- or data-message that is fed
 into the NCV handler, make sure it inserts a newline before each
 of the data-items you want to track.
 
+Any lines in the status message prepended with a 
+"<!\-\- ncv_skip \-\->" will be skipped by the module. This can be used
+to prevent un-needed RRD files from an existing dataset from being
+created.
+
+A bare "<!\-\- ncv_end \-\->" on its own line will stop further NCV
+processing of that message. (Note that both of these terms are case-
+sensitive.)
+
 To enable the ncv module for a status, add a "COLUMNNAME=ncv" to the 
 TEST2RRD setting and the COLUMNNAME to the GRAPHS setting in
 .I xymonserver.cfg(5)
