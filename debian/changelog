@@ -35,6 +35,7 @@ xymon (4.####) unstable; urgency=medium
      to be given to xymond_client when running in local client mode.
    * Add a method to indicate lines which should be skipped by the NCV RRD processor or
      which mark the end of data-to-be-processed in the message.
+   * Ensure that nostale is passed down during graph zooming (Thanks, Stef Coene)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 

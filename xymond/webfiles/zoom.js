@@ -582,6 +582,7 @@ function onMouseUpEvent(e) {
 
  var idxStr;
  var countStr;
+ var nostaleStr;
 
  gMouseObj.setEvent(e);
 
@@ -593,6 +594,7 @@ function onMouseUpEvent(e) {
 
  idxStr = "";
  countStr = "";
+ nostaleStr = "";
 
  if ((gMouseObj.rightButtonPressed()) && (insideZoomBox())) {
   // This causes a zoom-out event. We don't care about Y-axis zooming here.
@@ -607,6 +609,7 @@ function onMouseUpEvent(e) {
   var service = gUrlObj.getUrlParameterValue("service");
   var dispName = gUrlObj.getUrlParameterValue("disp");
   var firstIdx = gUrlObj.getUrlParameterValue("first");
+  var nostale =  gUrlObj.getUrlParameterValue("nostale");
   var idxCount =  gUrlObj.getUrlParameterValue("count");
   var graphWidth = gUrlObj.getUrlParameterValue("graph_width");
   var graphHeight = gUrlObj.getUrlParameterValue("graph_height");
@@ -618,8 +621,11 @@ function onMouseUpEvent(e) {
   if (idxCount != "") {
      countStr = "&count=" + idxCount; 
   }
+  if (nostale != "") {
+     nostaleStr = "&nostale"; 
+  }
 
-  open(urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor, "_self");
+  open(urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + nostaleStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor, "_self");
  }
 
  if ((gMouseObj.leftButtonPressed()) && (gMouseObj.dragging)) {
@@ -664,6 +670,7 @@ function onMouseUpEvent(e) {
    var service = gUrlObj.getUrlParameterValue("service");
    var dispName = gUrlObj.getUrlParameterValue("disp");
    var firstIdx = gUrlObj.getUrlParameterValue("first");
+   var nostale =  gUrlObj.getUrlParameterValue("nostale");
    var idxCount =  gUrlObj.getUrlParameterValue("count");
    var graphWidth = gUrlObj.getUrlParameterValue("graph_width");
    var graphHeight = gUrlObj.getUrlParameterValue("graph_height");
@@ -675,8 +682,11 @@ function onMouseUpEvent(e) {
    if (idxCount != "") {
       countStr = "&count=" + idxCount; 
    }
+   if (nostale != "") {
+      nostaleStr = "&nostale"; 
+   }
 
-   newURL = urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor;
+   newURL = urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + nostaleStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor;
 
    if (haveGraphLimits) {
       var OnePixelY = (graphTop - graphBottom) / gZoomGraphObj.zoomBoxHeight; // Represent # of units on Y axis for 1 pixel on the graph
