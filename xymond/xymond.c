@@ -1351,7 +1351,7 @@ static int isset_noflap(void *hinfo, char *testname, char *hostname)
 	if (strcmp(dstr, "NOFLAP") == 0) return 1;
 
 	/* if not 'NOFLAP', we should receive "=test1,test2". Skip the = */
-	if (*dstr = '=') dstr++;
+	if (*dstr == '=') dstr++;
 	
 	keylen = strlen(testname);
 	tok = strtok(dstr, ",");
