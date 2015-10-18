@@ -537,6 +537,13 @@ threshold is defined as the percentage of the time that the host
 must be available, e.g. "WARNPCT:98.5" if you want the threshold to
 be at 98.5%
 
+.IP "noflap"
+Flap detection is normally controlled by xymond command lines, but
+if you'd like to disable flap detection for a host (or for certain
+tests on a host), you can use this option. A "noflap" by itself
+disables all flap detection for the host, or you can specify a
+list of hosts as "noflap=test1,test2,test3".
+
 
 .SH NETWORK TEST SETTINGS
 

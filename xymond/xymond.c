@@ -1338,6 +1338,32 @@ static int changedelay(void *hinfo, int newcolor, char *testname, int currcolor)
 	return result;
 }
 
+static int isset_noflap(void *hinfo, char *testname, char *hostname)
+{
+	char *tok, *dstr;
+	int keylen;
+
+	dstr = xmh_item(hinfo, XMH_NOFLAP);
+	if (!dstr) return 0; /* no 'noflap' set */
+
+	/* Check bare noflap (disable for host) vs "noflap=test1,test2" */
+	/* A bare noflap will be set equal to the key itself (usually NOFLAP) like a flag */
+	if (strcmp(dstr, "NOFLAP") == 0) return 1;
+
+	/* if not 'NOFLAP', we should receive "=test1,test2". Skip the = */
+	if (*dstr = '=') dstr++;
+	
+	keylen = strlen(testname);
+	tok = strtok(dstr, ",");
+	while (tok && (strncmp(testname, tok, keylen) != 0)) tok = strtok(NULL, ",");
+	if (!tok) return 0; /* specifies noflap, but this test is not in the list */
+
+	/* do not use flapping for the test */
+	dbgprintf("Ignoring flapping for %s:%s due to noflap set.\n", hostname, testname);
+
+	return 1;
+}
+
 void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, char *grouplist, 
 		   xymond_log_t *log, int newcolor, char *downcause, int modifyonly)
 {
@@ -1424,7 +1450,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	if (modifyonly || issummary) {
 		/* Nothing */
 	}
-	else if ((flapcount > 0) && ((now - log->lastchange[flapcount-1]) < flapthreshold)) {
+	else if ((flapcount > 0) && ((now - log->lastchange[flapcount-1]) < flapthreshold) && (!isset_noflap(hinfo, testname, hostname))) {
 		if (!log->flapping) {
 			errprintf("Flapping detected for %s:%s - %d changes in %d seconds\n",
 				  hostname, testname, flapcount, (now - log->lastchange[flapcount-1]));

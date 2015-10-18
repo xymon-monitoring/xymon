@@ -98,8 +98,10 @@ Default: 10 seconds.
 
 .IP "\-\-flap\-count=N"
 Track the N latest status-changes for flap-detection. See the
-\fB\-\-flap\-seconds\fR option also. To disable flap-checks, set
-N to zero.
+\fB\-\-flap\-seconds\fR option also. To disable flap-checks globally, 
+set N to zero. To disable for a specific host, you must use the 
+"noflap" option in 
+.I hosts.cfg(5).
 Default: 5
 
 .IP "\-\-flap\-seconds=N"

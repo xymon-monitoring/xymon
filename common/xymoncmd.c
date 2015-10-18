@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 		if (stat(envfn, &st) == -1) sprintf(envfn, "xymonserver.cfg");
 		if (stat(envfn, &st) == -1) sprintf(envfn, "xymonclient.cfg");
 
-		envfile = &envfn;
+		envfile = (char *)envfn;
 		dbgprintf("Using default environment file %s\n", envfile);
 
 	}
