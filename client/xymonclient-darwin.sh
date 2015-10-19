@@ -72,6 +72,8 @@ if test "$TOP" != "" -a "$AWK" != ""
 then
     if test -x "$TOP" -a -x "$AWK"
     then
+        echo "[nproc]"
+        sysctl -n hw.ncpu
         echo "[top]"
 	$TOP -l 2 -n 20 -o cpu | $AWK '/^Processes:/ {toprun++} toprun == 2'
     fi

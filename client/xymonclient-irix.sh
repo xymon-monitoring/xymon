@@ -44,6 +44,8 @@ if test "$TOP" != ""
 then
     if test -x "$TOP"
     then
+	echo "[nproc]"
+	sysconf NPROC_ONLN
         echo "[top]"
 	$TOP -d2 -b 20 | tail +9
     fi

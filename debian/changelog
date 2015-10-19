@@ -47,6 +47,7 @@ xymon (4.####) unstable; urgency=medium
    * Turn memory test yellow if nonsensical numbers are found (>100% used for 'Actual' or Swap)
    * "optional include" and "optional directory" support actually added
    * xymongrep: load from the hosts.cfg file and error if unable, unless --loadhostsfromxymond is specified
+   * Collect number of total cores in client data
 
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700

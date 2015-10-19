@@ -48,6 +48,8 @@ if test "$TOP" != ""
 then
     if test -x "$TOP"
     then
+        echo "[nproc]"
+        sysctl -n hw.ncpu
         echo "[top]"
 	$TOP -n 20
     fi

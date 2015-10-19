@@ -81,6 +81,8 @@ if test "$TOP" != ""
 then
     if test -x "$TOP"
     then
+	echo "[nproc]"
+	nproc --all 2>/dev/null
         echo "[top]"
 	export CPULOOP ; CPULOOP=1 ;
 	$TOP -b -n 1 
