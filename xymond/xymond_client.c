@@ -914,6 +914,7 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 {
 	long memphyspct = 0, memswappct = 0, memactpct = 0;
 	int physyellow, physred, swapyellow, swapred, actyellow, actred;
+	int invaliddata = 0;
 
 	int memorycolor = COL_GREEN, physcolor = COL_GREEN, swapcolor = COL_GREEN, actcolor = COL_GREEN;
 	char *memorysummary = "OK";
@@ -937,25 +938,31 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 		if (memswappct > swapyellow) swapcolor = COL_YELLOW;
 		if (memswappct > swapred)    swapcolor = COL_RED;
 	}
+	else invaliddata = 1;
 
 	if (memactused != -1) memactpct = (memphystotal > 0) ? ((100 * memactused) / memphystotal) : 0;
 	if (memactpct <= 100) {
 		if (memactpct  > actyellow)  actcolor  = COL_YELLOW;
 		if (memactpct  > actred)     actcolor  = COL_RED;
 	}
+	else invaliddata = 1;
 
-	if ((physcolor == COL_YELLOW) || (swapcolor == COL_YELLOW) || (actcolor == COL_YELLOW)) {
-		memorycolor = COL_YELLOW;
-		memorysummary = "low";
-	}
 	if ((physcolor == COL_RED) || (swapcolor == COL_RED) || (actcolor == COL_RED)) {
 		memorycolor = COL_RED;
 		memorysummary = "CRITICAL";
+	}
+	else if ((physcolor == COL_YELLOW) || (swapcolor == COL_YELLOW) || (actcolor == COL_YELLOW)) {
+		memorycolor = COL_YELLOW;
+		memorysummary = "low";
 	}
 
 	if ((memphystotal == 0) && (memorycolor == COL_GREEN)) {
 		memorycolor = COL_YELLOW;
 		memorysummary = "detection FAILED";
+	}
+	else if (invaliddata) {
+		if (memorycolor != COL_RED) memorycolor = COL_YELLOW;
+		memorysummary = "invalid data when parsing";
 	}
 
 	init_status(memorycolor);
@@ -978,7 +985,7 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 				colorname(actcolor), "Actual", memactused, memphystotal, memactpct);
 		else
 			sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%% - invalid data\n", 
-				colorname(COL_CLEAR), "Actual", memactused, memphystotal, 0L);
+				colorname(COL_YELLOW), "Actual", memactused, memphystotal, 0L);
 			
 		addtostatus(msgline);
 	}
@@ -989,7 +996,7 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 				colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
 		else
 			sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%% - invalid data\n", 
-				colorname(COL_CLEAR), "Swap", memswapused, memswaptotal, 0L);
+				colorname(COL_YELLOW), "Swap", memswapused, memswaptotal, 0L);
 
 		addtostatus(msgline);
 	}

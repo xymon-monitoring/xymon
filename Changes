@@ -44,6 +44,8 @@ Changes from 4.3.21 -> 4.#### ()
 * Add UDP ports to netstat output returned from darwin clients (Mac OS X)
 * Fixes to df/inode parsing on darwin clients (Mac OS X) (Thanks, Jason White et al.)
 * Add httphdr= tag to hosts.cfg to inject arbitrary headers into xymonnet HTTP tests for that host.
+* Turn memory test yellow if nonsensical numbers are found (>100% used for 'Actual' or Swap)
+
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)
 ===========================================
