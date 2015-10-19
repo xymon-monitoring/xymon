@@ -13,25 +13,26 @@ Changes file.
 Changes for 4.3.22
 ==================
 The default rules for HTTP response codes have been made generic as follows:
+	1xx = Warning (when the final code received)
 	2xx = OK
 	3xx = Warning (except 302/303/307 = OK)
 	4xx = Critical
 	5xx = Critical
-	1xx = Warning (when the final code received)
 
 The specific changes from previous versions are:
- - 401 and 403 response codes are now considered Critical (was OK)
- - a 301 Permanent Redirect response code is now considered a Warning (was OK)
+ - 401 and 403 response codes are now considered Critical (were OK)
+ - 301 Permanent Redirect response code is now considered a Warning (was OK)
 
 In both cases, if you're explicitly checking for this code to be returned, use
 the 'httpstatus' command in the hosts.cfg line. Note that xymonnet *does* support
 Basic HTTP Authentication, which can be used for evaluating.
 
-Note that the default, vendor-configured "Welcome" page on many installations of
+
+*** Note that the default, vendor-configured "Welcome" page on many installations of
 Apache is actually displayed by a 403 error code handler which runs if there's
 no actual index page in the Directory. To prevent this from being flagged as an
 error, simply place an actual index.html file in your default HTTP directory
-(often '/var/www/html/' or something similar).
+(often '/var/www/html/' or something similar). ***
 
 
 The 'sslcert' test will now indicate the signature algorithm and cipher 
@@ -43,6 +44,7 @@ The Apache configuration has been updated to no longer require a trailing
 slash when accessing the xymon pages -- on a default install (depending on
 your distribution), http://www.example.com/xymon should now work.
 
+
 NTPDATEOPTS, FPINGOPTS, and TRACEROUTEOPTS variables are now present in
 xymonserver.cfg and will override the default options for the associated
 xymonnet calls.
@@ -50,6 +52,10 @@ xymonnet calls.
 Note: The suggested options to 'traceroute' were never actually used as 
 the default on a standard installation. In a future release, '-n -q 2 -w 2 -m 15'
 may be used unless overridden or otherwise specified.
+
+Darwin clients (Mac OS X) now exclude AFS and read-only volumes (which are 
+usually just mounted disk images) from processing, properly handle volumes with
+spaces in their names, and correctly process inode details.
 
 
 Changes for 4.3.21

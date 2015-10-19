@@ -26,22 +26,25 @@ uptime
 echo "[who]"
 who
 
-FILESYSTEMS=`mount | grep -v nobrowse | awk '{print $3}'`
+FILESYSTEMS=`mount | sed -E '/[\( ](nobrowse|afs|read-only)[ ,\)]/d;s/^.* on (.*) \(.*$/\1/'`
+
 echo "[df]"
-set $FILESYSTEMS
-(df -P -H $1; shift
+(IFS=$'\n'
+ set $FILESYSTEMS
+ df -P -H $1; shift
  while test $# -gt 0
  do
-   df -P -H $1 | tail -1
+   df -P -H $1 | tail -1 | sed 's/\([^ ]\) \([^ ]\)/\1_\2/g'
    shift
  done) | column -t -s " " | sed -e 's!Mounted *on!Mounted on!'
 
 echo "[inode]"
-set $FILESYSTEMS
-(df -i $1; shift
+(IFS=$'\n'
+ set $FILESYSTEMS
+ df -P -i $1; shift
  while test $# -gt 0
  do
-   df -P -H $1 | tail -1
+   df -P -H $1 | tail -1 | sed 's/\([^0123456789% ]\) \([^ ]\)/\1_\2/g'
    shift
  done) | awk '
 NR<2{printf "%-20s %10s %10s %10s %10s %s\n", $1, "itotal", $6, $7, $8, $9} 
