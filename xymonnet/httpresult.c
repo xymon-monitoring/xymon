@@ -366,9 +366,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		}
 		if (req->faileddeps) addtostatus(req->faileddeps);
 
-		sprintf(msgline, "\nSeconds: %5d.%02d\n\n", 
+		sprintf(msgline, "\nSeconds: %u.%.9ld\n\n", 
 			(unsigned int)req->tcptest->totaltime.tv_sec, 
-			(unsigned int)req->tcptest->totaltime.tv_nsec / 10000000 );
+			req->tcptest->totaltime.tv_nsec);
 		addtostatus(msgline);
 
 		addtostatus("\n\n");
