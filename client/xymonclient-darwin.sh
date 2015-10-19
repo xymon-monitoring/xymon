@@ -60,7 +60,7 @@ netstat -s
 echo "[ifstat]"
 netstat -ibn | egrep -v "^lo|<Link"
 echo "[ports]"
-netstat -an|grep "^tcp"
+netstat -an | grep -e "^tcp" -e "^udp"
 echo "[ps]"
 ps -ax -ww -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rss,vsz,command
 
