@@ -324,7 +324,7 @@ static int namecompare(const void *v1, const void *v2)
 	return -strcmp(*n1, *n2);
 }
 
-static void addtofnlist(char *dirname, void **v_listhead)
+static void addtofnlist(char *dirname, int is_optional, void **v_listhead)
 {
 	filelist_t **listhead = (filelist_t **)v_listhead;
 	DIR *dirfd;
@@ -338,7 +338,8 @@ static void addtofnlist(char *dirname, void **v_listhead)
 	if (*dirname == '/') strcpy(dirfn, dirname); else sprintf(dirfn, "%s/%s", stackfd_base, dirname);
 
 	if ((dirfd = opendir(dirfn)) == NULL) {
-		errprintf("Cannot open directory %s\n", dirfn);
+		if (!is_optional) errprintf("WARNING: Cannot open directory %s\n", dirfn);
+		else dbgprintf("addtofnlist(): Cannot open directory %s\n", dirfn);
 		return;
 	}
 
@@ -385,7 +386,7 @@ static void addtofnlist(char *dirname, void **v_listhead)
 		if (S_ISDIR(st.st_mode)) {
 			/* Skip RCS sub-directories */
 			if (strcmp(d->d_name, "RCS") == 0) continue;
-			addtofnlist(fn, v_listhead);
+			addtofnlist(fn, 0, v_listhead);		/* this directory is optional, but opening up files that do exist isn't */
 		}
 
 		/* Skip everything that isn't a regular file */
@@ -416,11 +417,13 @@ static void addtofnlist(char *dirname, void **v_listhead)
 char *stackfgets(strbuffer_t *buffer, char *extraincl)
 {
 	char *result;
+	int optional = 0;
 
 	result = unlimfgets(buffer, fdhead->fd);
 
 	if (result) {
 		char *bufpastwhitespace = STRBUF(buffer) + strspn(STRBUF(buffer), " \t");
+		if (strncmp(bufpastwhitespace, "optional", 8) == 0) { optional = 1; bufpastwhitespace += 8 + strspn(bufpastwhitespace+8, " \t"); }
 
 		if ( (strncmp(bufpastwhitespace, "include ", 8) == 0) || (strncmp(bufpastwhitespace, "include\t", 8) == 0) ||
 		     (extraincl && (strncmp(bufpastwhitespace, extraincl, strlen(extraincl)) == 0)) ) {
@@ -434,8 +437,9 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			if (*newfn && (stackfopen(newfn, "r", (void **)fdhead->listhead) != NULL))
 				return stackfgets(buffer, extraincl);
 			else {
-				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", 
-					  newfn, STRBUF(buffer));
+				if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", newfn, STRBUF(buffer));
+				else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", newfn, STRBUF(buffer));
+
 				if (eol) *eol = eolchar;
 				return result;
 			}
@@ -448,7 +452,7 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			dirfn += strspn(dirfn, " \t");
 			while (*dirfn && isspace(*(dirfn + strlen(dirfn) - 1))) *(dirfn + strlen(dirfn) -1) = '\0';
 
-			if (*dirfn) addtofnlist(dirfn, (void **)fdhead->listhead);
+			if (*dirfn) addtofnlist(dirfn, optional, (void **)fdhead->listhead);
 			if (fnlist && (stackfopen(fnlist->name, "r", (void **)fdhead->listhead) != NULL)) {
 				htnames_t *tmp = fnlist;
 
@@ -459,7 +463,9 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			else if (fnlist) {
 				htnames_t *tmp = fnlist;
 
-				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", fnlist->name, buffer);
+				if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", fnlist->name, buffer);
+				else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", fnlist->name, buffer);
+
 				fnlist = fnlist->next;
 				xfree(tmp->name); xfree(tmp);
 				if (eol) *eol = eolchar;
@@ -467,6 +473,7 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			}
 			else {
 				/* Empty directory include - return a blank line */
+				dbgprintf("stackfgets(): Directory %s was empty\n", dirfn);
 				*result = '\0'; 
 				return result;
 			}
@@ -486,7 +493,9 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			else {
 				htnames_t *tmp = fnlist;
 
-				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", fnlist->name, buffer);
+				if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", fnlist->name, buffer);
+				else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", fnlist->name, buffer);
+
 				fnlist = fnlist->next;
 				xfree(tmp->name); xfree(tmp);
 				return result;
