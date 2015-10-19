@@ -6,7 +6,7 @@ xymongrep \- pick out lines in hosts.cfg
 .br
 .B "xymongrep \-\-version"
 .br
-.B "xymongrep [\-\-noextras] [\-\-test\-untagged] [\-\-web] [\-\-net] TAG [TAG...]"
+.B "xymongrep [\-\-noextras] [\-\-test\-untagged] [\-\-web] [\-\-net] [\-\-loadhostsfromxymond] TAG [TAG...]"
 
 .SH DESCRIPTION
 .I xymongrep(1)
@@ -63,6 +63,15 @@ Xymon web-server would.
 .IP "\-\-net"
 Search the hosts.cfg file following include statements as 
 when running xymonnet.
+
+.IP "\-\-loadhostsfromxymond"
+xymongrep will normally attempt to load the HOSTSCFG file
+by itself when searching for lines to transmit. If the file
+is unreadable, it will exit out. With this option, it will
+query the xymond server (set via the XYMONSERVER environment)
+for the hosts file. This can be used if you're running this
+on a client or remote system and can't or don't want to 
+have the hosts.cfg file synchronized across your servers.
 
 .SH EXAMPLE
 If your hosts.cfg file looks like this

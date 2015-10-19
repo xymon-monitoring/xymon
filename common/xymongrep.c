@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
 	int extras = 1;
 	int testuntagged = 0;
 	int nodownhosts = 0;
+	int loadhostsfromxymond = 0;
 	int onlypreferredentry = 0;
 	char *p;
 	char **lookv;
@@ -121,7 +122,6 @@ int main(int argc, char *argv[])
 	lookv = (char **)malloc(argc*sizeof(char *));
 	lookc = 0;
 
-	hostsfn = xgetenv("HOSTSCFG");
 	conncolumn = xgetenv("PINGCOLUMN");
 
 	for (argi=1; (argi < argc); argi++) {
@@ -161,6 +161,9 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			hostsfn = strchr(argv[argi], '=') + 1;
 		}
+		else if (strcmp(argv[argi], "--loadhostsfromxymond") == 0) {
+			loadhostsfromxymond = 1;
+		}
 		else if ((*(argv[argi]) == '-') && (strlen(argv[argi]) > 1)) {
 			fprintf(stderr, "Unknown option %s\n", argv[argi]);
 		}
@@ -172,9 +175,17 @@ int main(int argc, char *argv[])
 	lookv[lookc] = NULL;
 
 	if ((hostsfn == NULL) || (strlen(hostsfn) == 0)) {
-		errprintf("Environment variable HOSTSCFG is not set - aborting\n");
-		exit(2);
+		hostsfn = strdup(xgetenv("HOSTSCFG"));
+		if (!loadhostsfromxymond) {
+			/* The default in load_hostnames is to try xymond first when */
+			/* hostsfn = xgetenv("HOSTSCFG"), however we don't want that here */
+			/* unless we're told to explicitly. Thus, copy xymond logic here. */
+			hostsfn = (char *)realloc(hostsfn, strlen(hostsfn) + 2);
+			memmove(hostsfn+1, hostsfn, strlen(hostsfn)+1);
+			*hostsfn = '!';
+		}
 	}
+	dbgprintf("Loading host configuration from %s%s\n", (loadhostsfromxymond ? "xymond, failing back to " : ""), hostsfn);
 
 	load_hostnames(hostsfn, include2, get_fqdn());
 	if (first_host() == NULL) {
