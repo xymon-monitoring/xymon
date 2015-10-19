@@ -43,6 +43,7 @@ xymon (4.####) unstable; urgency=medium
    * The protocol.cfg entry for RDP network tests has been updated and should work again (Thanks, Rob Steuer)
    * Add UDP ports to netstat output returned from darwin clients (Mac OS X)
    * Fixes to df/inode parsing on darwin clients (Mac OS X) (Thanks, Jason White et al.)
+   * Add httphdr= tag to hosts.cfg to inject arbitrary headers into xymonnet HTTP tests for that host.
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 

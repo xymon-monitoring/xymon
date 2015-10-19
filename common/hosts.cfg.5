@@ -1290,6 +1290,17 @@ URL "javascript:document.writeln(navigator.userAgent)" (just copy this
 into the "Open URL" dialog. The text that shows up is what the browser
 sends as the User\-Agent header.
 
+.IP httphdr=STRING
+Xymon can be send additional headers when performing HTTP checks, to
+allow for validation of any custom configurations needed for your
+site. Note that this is a host-wide configuration. The string will
+be added directly to the headers for all URLs on that host. There is
+currently no way to have this occur only for specific URLs checked.
+.br
+The string should be encased in quotes, like \fBhttphdr="X-Requested-With: XMLHttpRequest"\fR.
+Newlines can be included, however the string MUST NOT end with a newline
+as that may cause premature ending of the headers sent.
+
 .SH LDAP (DIRECTORY SERVER) TESTS
 .IP ldap
 .IP ldaps

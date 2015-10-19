@@ -587,6 +587,7 @@ void add_http_test(testitem_t *t)
 	{
 		char useragent[100];
 		char *browser = NULL;
+		char *httpheaders = NULL;
 
 		if (hinfo) browser = xmh_item(hinfo, XMH_BROWSER);
 
@@ -598,6 +599,12 @@ void add_http_test(testitem_t *t)
 		}
 
 		addtobuffer(httprequest, useragent);
+
+		if (hinfo) httpheaders = xmh_item(hinfo, XMH_HTTPHEADERS);
+		if (httpheaders) {
+			addtobuffer(httprequest, httpheaders);
+			addtobuffer(httprequest, "\r\n");
+		}
 	}
 	if (httptest->weburl.desturl->auth) {
 		if (strncmp(httptest->weburl.desturl->auth, "CERT:", 5) == 0) {

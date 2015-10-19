@@ -126,6 +126,8 @@ static void xmh_item_list_setup(void)
 	xmh_item_name[XMH_DEPENDS]             = "XMH_DEPENDS";
 	xmh_item_key[XMH_BROWSER]              = "browser=";
 	xmh_item_name[XMH_BROWSER]             = "XMH_BROWSER";
+	xmh_item_key[XMH_HTTPHEADERS]              = "httphdr=";
+	xmh_item_name[XMH_HTTPHEADERS]             = "XMH_HTTPHEADERS";
 	xmh_item_key[XMH_HOLIDAYS]             = "holidays=";
 	xmh_item_name[XMH_HOLIDAYS]            = "XMH_HOLIDAYS";
 	xmh_item_key[XMH_DELAYRED]             = "delayred=";
