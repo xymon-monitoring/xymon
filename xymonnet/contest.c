@@ -1364,7 +1364,7 @@ void show_tcp_test_results(void)
 		if ((item->svcinfo == &svcinfo_http) || (item->svcinfo == &svcinfo_https)) {
 			http_data_t *httptest = (http_data_t *) item->priv;
 
-			printf("httpstatus = %ld, open=%d, errcode=%d, parsestatus=%d\n",
+			printf("httpstatus = %d, open=%d, errcode=%d, parsestatus=%d\n",
 				httptest->httpstatus, httptest->tcptest->open, httptest->tcptest->errcode, httptest->parsestatus);
 			printf("Response:\n");
 			if (httptest->headers) printf("%s\n", httptest->headers); else printf("(no headers)\n");

@@ -39,6 +39,7 @@ xymon (4.####) unstable; urgency=medium
    * Add missing XMH_DATA in loadhosts (Thanks, Jacek Tomasiak)
    * Search in more locations for default environment files when using xymoncmd
    * Add a "noflap" override to disable flap detection for any/all tests on a given host (Thanks, Martin Lenko)
+   * Simplify default HTTP error code settings for xymonnet (2xx = green; 3xx = yellow; 4xx/5xx = red)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700
 

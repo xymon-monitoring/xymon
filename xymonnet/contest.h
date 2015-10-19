@@ -171,7 +171,7 @@ typedef struct {
 	unsigned char	*output;		/* Data from server */
 	unsigned int	outlen;
 
-	long		httpstatus;		/* HTTP status from server */
+	int		httpstatus;		/* HTTP status from server */
 	char		*contenttype;		/* Content-type: header from server */
 
 	int		contentcheck;		/* 0=no content check, 1=regex check, 2=digest check */

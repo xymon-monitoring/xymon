@@ -300,7 +300,8 @@ void tcp_http_final_callback(void *priv)
 		int http1subver;
 		char *p;
 
-		sscanf(item->headers, "HTTP/1.%d %ld", &http1subver, &item->httpstatus);
+		/* TODO: HTTP2 ? */
+		sscanf(item->headers, "HTTP/1.%d %d", &http1subver, &item->httpstatus);
 
 		item->contenttype = NULL;
 		p = item->headers;
@@ -321,8 +322,8 @@ void tcp_http_final_callback(void *priv)
 	}
 
 	if (item->tcptest->errcode != CONTEST_ENOERROR) {
-		/* Flag error by setting httpstatus to 0 */
-		item->httpstatus = 0;
+		/* Flag error by setting httpstatus to inverted error code. */
+		item->httpstatus = 0 - item->tcptest->errcode;
 	}
 }
 

@@ -163,6 +163,13 @@ typedef struct dnstest_t {
 	int	okcount;
 } dnstest_t;
 
+/* Custom list of status code => color overrides */
+typedef struct httpstatuscolor_t {
+	int	statuscode;
+	int	color;
+	struct httpstatuscolor_t *next;
+} httpstatuscolor_t;
+
 extern char *deptest_failed(testedhost_t *host, char *testname);
 
 extern int validity;

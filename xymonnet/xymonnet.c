@@ -101,6 +101,7 @@ char		pinglog[PATH_MAX];
 char		pingerrlog[PATH_MAX];
 pid_t		*pingpids;
 int		respcheck_color = COL_YELLOW;
+httpstatuscolor_t *httpstatusoverrides = NULL;
 int		extcmdtimeout = 30;
 int		bigfailure = 0;
 char		*defaultsourceip = NULL;
