@@ -294,6 +294,9 @@ For files, you can check one or more of the following:
 triggers a warning if the file exists. By default,
 a warning is triggered for files that have a FILE entry, but
 which do not exist.
+.IP "ifexist"
+only checks the file if it exists. If the file is
+reported as missing by the client, it is ignored.
 .IP "type=TYPE"
 where TYPE is one of "file", "dir", "char", "block",
 "fifo", or "socket". Triggers warning if the file is not of the
