@@ -102,6 +102,7 @@ int main(int argc, char **argv)
 	else if (strcmp(cgipgm, "svcstatus2.cgi") == 0)          { cgipgm = "svcstatus.cgi";    addoptl("CGI_SVC_OPTS");         }
 	else if (strcmp(cgipgm, "topchanges.cgi") == 0)          { cgipgm = "eventlog.cgi";     addoptl("CGI_TOPCHANGE_OPTS");   }
 	else if (strcmp(cgipgm, "useradm.cgi") == 0)             {                              addoptl("CGI_USERADM_OPTS");     }
+	else if (strcmp(cgipgm, "chpasswd.cgi") == 0)            {                              addoptl("CGI_CHPASSWD_OPTS");    }
 	else {
 	}
 

@@ -63,6 +63,18 @@ will be shown according to the config. Pass --no-showemptygroups to xymongen
 to restore the previous behavior.
 
 
+A chpasswd.sh file is now provided which allows a logged-in user to change their 
+own .htpasswd password (after verification). Because it verifies their existing 
+password first, it requires the '-v' option to htpasswd, which is only available 
+in Apache 2.4.5 or higher.
+
+By default, it is installed in the /xymon-seccgi/ directory, but can be moved
+to the /xymon-cgi/ directory to allow all users to change their password. Basic 
+input validation is provided, but this CGI should be used with caution and only 
+with relatively-trusted user bases.
+
+
+
 Changes for 4.3.21
 ==================
 RSS feeds should now display the short description of the event again.

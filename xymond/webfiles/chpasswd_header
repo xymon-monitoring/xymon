@@ -1,0 +1,40 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<HTML>
+<HEAD>
+
+<TITLE>Xymon - Change Password</TITLE>
+
+<!-- Styles for the Xymon body  -->
+<link rel="stylesheet" type="text/css" href="&XYMONBODYCSS">
+
+<!-- Styles for the menu bar -->
+<link rel="stylesheet" type="text/css" href="&XYMONBODYMENUCSS">
+
+<!-- The favicon image -->
+<link rel="shortcut icon" href="&XYMONSKIN/favicon-&XYMWEBBACKGROUND.ico">
+
+</HEAD>
+
+<BODY class="&XYMWEBBACKGROUND">
+
+&XYMONBODYHEADER
+
+<TABLE SUMMARY="Topline" WIDTH="100%">
+<TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
+<TR>
+  <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMONLOGO</B></FONT>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Change Password</B></FONT></CENTER>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMWEBDATE</B></FONT>
+  </TD>
+</TR>
+<TR>
+  <TD COLSPAN=3> <HR WIDTH="100%"> </TD>
+</TR>
+</TABLE>
+<BR>
+

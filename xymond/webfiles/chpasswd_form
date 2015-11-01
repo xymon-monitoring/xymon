@@ -1,0 +1,26 @@
+<CENTER>
+<FORM METHOD="POST" ACTION="&SCRIPT_NAME">
+   <TABLE SUMMARY="Change Password" BORDER=0>
+     <TR>
+          <TD ALIGN=RIGHT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Current Username: </B><INPUT TYPE=TEXT NAME="USERNAME" VALUE="" SIZE=10 MAXLENGTH=20></FONT></TD>
+     </TR>
+     <TR>
+          <TD ALIGN=RIGHT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Existing Password: </B><INPUT TYPE=PASSWORD NAME="PASSWORD" VALUE="" SIZE=10 MAXLENGTH=20></FONT></TD>
+     </TR>
+     <TR>
+	  <TD ALIGN=RIGHT><FONT FACE="Arial, Helvetica" COLOR="silver"> </FONT></TD>
+     </TR>
+     <TR>
+          <TD ALIGN=RIGHT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>New Password: </B><INPUT TYPE=PASSWORD NAME="PASSWORD1" VALUE="" SIZE=10 MAXLENGTH=20></FONT></TD>
+     </TR>
+     <TR>
+          <TD ALIGN=RIGHT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Repeat New Password: </B><INPUT TYPE=PASSWORD NAME="PASSWORD2" VALUE="" SIZE=10 MAXLENGTH=20></FONT></TD>
+     </TR>
+     <TR>
+          <TD ALIGN=RIGHT><INPUT TYPE="SUBMIT" NAME="SendUpdate" VALUE="Update" ALT="Update Password"></TD>
+     </TR>
+
+   </TABLE>
+</FORM>
+</CENTER>
+
