@@ -57,6 +57,11 @@ Darwin clients (Mac OS X) now exclude AFS and read-only volumes (which are
 usually just mounted disk images) from processing, properly handle volumes with
 spaces in their names, and correctly process inode details.
 
+Previously, xymongen would entirely skip display of a group of hosts if 
+none of them had any columns to display (no tests present). Now the hosts
+will be shown according to the config. Pass --no-showemptygroups to xymongen
+to restore the previous behavior.
+
 
 Changes for 4.3.21
 ==================

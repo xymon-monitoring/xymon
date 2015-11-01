@@ -30,6 +30,7 @@ extern int  pagetitlelinks;
 extern int  pagetextheadings;
 extern int  underlineheadings;
 extern int  maxrowsbeforeheading;
+extern int  showemptygroups;
 extern int  nongreeneventlog;
 extern int  nongreenacklog;
 extern int  nongreeneventlogmaxcount;

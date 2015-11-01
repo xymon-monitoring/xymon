@@ -49,6 +49,8 @@ xymon (4.3.22) unstable; urgency=medium
    * xymongrep: load from the hosts.cfg file and error if unable, unless --loadhostsfromxymond is specified
    * Collect number of total cores in client data
    * combostatus: Fix parenthesis processing (Thanks, Andy Smith)
+   * Add per-group anchors to generated pages when a group title is present (Thanks, Thomas Giordmaina)
+   * xymongen: Display group tables even if group has no test results yet unless --no-showemptygroups given
 
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 22 May 2015 18:15:00 -0700

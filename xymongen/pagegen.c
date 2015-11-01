@@ -43,6 +43,7 @@ int  pagetitlelinks = 0;
 int  pagetextheadings = 0;
 int  underlineheadings = 1;
 int  maxrowsbeforeheading = 0;
+int  showemptygroups = 1;
 int  nongreeneventlog = 1;
 int  nongreenacklog = 1;
 int  nongreeneventlogmaxcount = 100;
@@ -467,10 +468,13 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	else fprintf(output, "<A NAME=hosts-blk-%d>&nbsp;</A>\n\n", hostblkidx);
 	hostblkidx++;
 
+	if (!grouptitle) grouptitle = "";
+	if (*grouptitle != '\0') fprintf(output, "<A NAME=\"group-%s\"></A>\n\n", grouptitle);
+
 	groupcols = gen_column_list(head, pagetype, onlycols, exceptcols);
 	for (columncount=0, gc=groupcols; (gc); gc = gc->next, columncount++) ;
 
-	if (groupcols) {
+	if (showemptygroups || groupcols) {
 		int width;
 
 		width = atoi(xgetenv("DOTWIDTH"));
@@ -478,7 +482,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 		width += 4;
 
 		/* Start the table ... */
-		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0 CELLPADDING=2>\n");
+		fprintf(output, "<CENTER><TABLE SUMMARY=\"%s Group Block\" BORDER=0 CELLPADDING=2>\n", grouptitle);
 
 		/* Generate the host rows */
 		if (sorthosts) {
@@ -512,7 +516,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 				fprintf(output, "<TR>");
 
 				fprintf(output, "<TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
-					xgetenv("XYMONPAGETITLE"), (strlen(grouptitle) ? grouptitle : "&nbsp;"));
+					xgetenv("XYMONPAGETITLE"), (grouptitle ? grouptitle : ""));
 
 				for (gc=groupcols; (gc); gc = gc->next) {
 					fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
@@ -520,7 +524,8 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 						columnlink(gc->column->name), 
 						xgetenv("XYMONPAGECOLFONT"), gc->column->name);
 				}
-				fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", columncount);
+				if (columncount) fprintf(output, "</TR>\n<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", columncount);
+				else fprintf(output, "</TR>\n<TR><TD></TD></TR>\n\n");
 			}
 
 			fprintf(output, "<TR class=line>\n <TD NOWRAP ALIGN=LEFT><A NAME=\"%s\">&nbsp;</A>\n", h->hostname);
