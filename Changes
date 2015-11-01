@@ -1,4 +1,4 @@
-Changes from 4.3.21 -> 4.#### ()
+Changes from 4.3.21 -> 4.3.22 ()
 ===========================================
 
 * rev ####
@@ -48,6 +48,7 @@ Changes from 4.3.21 -> 4.#### ()
 * "optional include" and "optional directory" support actually added
 * xymongrep: load from the hosts.cfg file and error if unable, unless --loadhostsfromxymond is specified
 * Collect number of total cores in client data
+* combostatus: Fix parenthesis processing (Thanks, Andy Smith)
 
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)
