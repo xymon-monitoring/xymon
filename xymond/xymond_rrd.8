@@ -196,14 +196,32 @@ a custom script generating the status- or data-message that is fed
 into the NCV handler, make sure it inserts a newline before each
 of the data-items you want to track.
 
+
 Any lines in the status message prepended with a 
 "<!\-\- ncv_skip \-\->" will be skipped by the module. This can be used
-to prevent un-needed RRD files from an existing dataset from being
+to prevent unneeded RRD files from an existing dataset from being
 created.
 
+A line prepended with a "<!\-\- ncv_skipstart \-\->" will be ignored, 
+along with all subsequent lines until a line starting with 
+"<!\-\- ncv_skipend \-\->" is found, at which point processing will 
+resume. This can be used to ignore explanatory or other text with a
+mostly-ncv message.
+
+"<!\-\- ncv_ignore \-\->" can be used to ignore certain text at the 
+beginning of a line, up until a closing '</-->' tag on the same line, 
+at which point the line will continue to be processed as usual. Wrapping
+is not supported; but skipstart/skipend can be used to handle multiple
+lines.
+
 A bare "<!\-\- ncv_end \-\->" on its own line will stop further NCV
-processing of that message. (Note that both of these terms are case-
-sensitive.)
+processing of that message.
+
+All of these ncv_ terms are case-sensitive. Note that if you have full
+control over your NCV output, it is most efficient to have NCV data near
+the top of your message and use "<!\-\- ncv_end \-\->" once your data 
+is complete.
+
 
 To enable the ncv module for a status, add a "COLUMNNAME=ncv" to the 
 TEST2RRD setting and the COLUMNNAME to the GRAPHS setting in

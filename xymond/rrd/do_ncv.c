@@ -23,6 +23,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 	char *envnam;
 	char *dstypes = NULL; /* contain NCV_testname value */
 	int split_ncv = 0;
+	int skipblock = 0;
 	int dslen;
 
 	snprintf(rrdvalues, sizeof(rrdvalues), "%d", (int)tstamp);
@@ -61,14 +62,40 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 			if (strncmp(l, "<!-- ncv_", 9) == 0) {
 				/* expandable for future use */
 				l += 9;
-				if (strncmp(l, "skip -->", 8) == 0) { l += strcspn(l, "\n"); l++; continue; }
-				else if (strncmp(l, "end -->", 7) == 0) break;
+
+				if (strncmp(l, "skip -->", 8) == 0) {
+					/* skip the entire line */
+					l += strcspn(l, "\n"); l++; continue;
+				}
+				else if (strncmp(l, "skipstart -->", 13) == 0) {
+					/* begin ignoring lines until told to stop */
+					skipblock = 1;
+				}
+				else if (strncmp(l, "skipend -->", 11) == 0) {
+					/* we're done skipping,  */
+					skipblock = 0;
+					l += 11; continue;
+				}
+				else if (strncmp(l, "ignore -->", 10) == 0) {	
+					/* allowed syntax: <!-- ncv_ignore --> assorted text without html </--> label : value */
+					l += 10; l += strcspn(l, ">\n");	/* search for closing '>' or the eol */
+
+					/* See if it's the expected end marker '</-->', and repeat until we find it (or eol) */
+					while ((*l != '\n') && (strncmp((l-4), "</-->", 5) != 0) ) { l++; l += strcspn(l, ">\n"); }
+					
+					/* Did we hit the end? Move on. If not, skip any (now) leading whitespace and continue on */
+					if (*l == '\n') { l++; continue; }
+					else { l++; l += strspn(l, " \t\n"); }
+				}
+				else if (strncmp(l, "end -->", 7) == 0) break;	/* abort */
 				else {
 					dbgprintf("Unexpected NCV directive found\n");
 					/* skip past directive */
 					l += strcspn(l, ">"); l++; l += strspn(l, " \t\n");
 				}
 			}
+
+			if (skipblock) { l += strcspn(l, "\n"); l++; continue; } /* We're still in a comment block */
 
 			/* See if this line contains a '=' or ':' sign */
 			name = l; 
