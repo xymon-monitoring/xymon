@@ -56,10 +56,12 @@
 	  <option value="ALL" SELECTED>ALL</option>
 	  <option value="cpu">CPU load (Windows/Unix)</option>
 	  <option value="la1">CPU utilization (Unix)</option>
-	  <option value="disk">Disk</option>
-	  <option value="memory">RAM/Swap</option>
+	  <option value="ram">RAM/Real</option>
+	  <option value="mem">RAM/Actual</option>
+	  <option value="swap">RAM/Swap</option>
 	  <option value="conn">Ping times</option>
 	  <option value="netstat3">Network connections</option>
+	  <option value="apache3">Apache requests</option>
 	  </SELECT>
 
           <BR><BR>
