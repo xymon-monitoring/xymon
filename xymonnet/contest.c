@@ -446,7 +446,7 @@ static void setup_ssl(tcptest_t *item)
 	struct servent *sp;
 	char portinfo[100];
 	X509 *peercert;
-	char *certcn, *certstart, *certend, *certissuer, *certsigalg;
+	char *certcn, *certstart, *certend, *certissuer; const char *certsigalg;
 	int err, keysz = 0;
 	strbuffer_t *sslinfo;
 	char msglin[2048];
