@@ -156,6 +156,7 @@ const static struct {
 	{ "XYMONALLOKTEXT", "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>" },
 	{ "HOSTPOPUP", "CDI" },
 	{ "STATUSLIFETIME", "30" },
+	{ "ACK_COOKIE_EXPIRATION", "86400" },
 	{ NULL, NULL }
 };
 
