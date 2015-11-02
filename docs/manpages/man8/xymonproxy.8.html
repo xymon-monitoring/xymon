@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of XYMONPROXY</TITLE>
 </HEAD><BODY>
 <H1>XYMONPROXY</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.19: 30 Mar 2015<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.22-rc2:  2 Nov 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <P>
@@ -67,7 +67,7 @@ listed here.  This option is required.
 <P>
 <DT>--listen=LOCALIP[:PORT]<DD>
 Specifies the IP-adress where xymonproxy listens for incoming 
-connections. By default, xymonproxy listens on all IP-adresses
+connections. By default, xymonproxy listens on all IP-addresses
 assigned to the host. If no portnumber is given, port 1984
 will be used.
 <P>
@@ -88,18 +88,18 @@ explanation of the report contents.
 <DT>--lqueue=N<DD>
 Size of the listen-queue where incoming connections can
 queue up before being processed. This should be large to
-accomodate bursts of activity from clients. Default: 512.
+accommodate bursts of activity from clients. Default: 512.
 <P>
 <DT>--daemon<DD>
-Run in daemon mode, i.e. detach and run as a background proces.
+Run in daemon mode, i.e. detach and run as a background process.
 This is the default.
 <P>
 <DT>--no-daemon<DD>
-Runs xymonproxy as a foreground proces.
+Runs xymonproxy as a foreground process.
 <P>
 <DT>--pidfile=FILENAME<DD>
-Specifies the location of a file containing the proces-ID 
-of the xymonproxy daemon proces. Default: /var/run/xymonproxy.pid.
+Specifies the location of a file containing the process-ID 
+of the xymonproxy daemon process. Default: /var/run/xymonproxy.pid.
 <P>
 <DT>--logfile=FILENAME<DD>
 Sends all logging output to the specified file instead of stderr.
@@ -107,7 +107,7 @@ Sends all logging output to the specified file instead of stderr.
 <DT>--log-details<DD>
 Log details (IP-address, message type and hostname) to the logfile.
 This can also be enabled and disabled at run-time by sending the
-xymonproxy proces a SIGUSR1 signal.
+xymonproxy process a SIGUSR1 signal.
 <P>
 <DT>--debug<DD>
 Enable debugging output.
@@ -149,13 +149,13 @@ merging.
 The number of other messages (data, notes, ack, query, ...)
 messages received from a client.
 <P>
-<DT>Proxy ressources - Connection table size<DD>
+<DT>Proxy resources - Connection table size<DD>
 This is the number of connection table slots in the proxy.
 This measures the number of simultaneously active requests
 that the proxy has handled, and so gives an idea about the
 peak number of clients that the proxy has handled simultaneously.
 <P>
-<DT>Proxy ressources - Buffer space<DD>
+<DT>Proxy resources - Buffer space<DD>
 This is the number of KB memory allocated for network buffers.
 <P>
 <DT>Timeout details - reading from client<DD>
@@ -258,6 +258,6 @@ Toggles logging of individual messages.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 05:39:17 GMT, March 31, 2015
+Time: 16:14:59 GMT, November 02, 2015
 </BODY>
 </HTML>

@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of XYMONNET</TITLE>
 </HEAD><BODY>
 <H1>XYMONNET</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.19: 30 Mar 2015<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version 4.3.22-rc2:  2 Nov 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -114,7 +114,7 @@ Same as &quot;--dns-timeout=N&quot;. The &quot;--dns-max-all&quot; option is
 deprecated and should not be used.
 <P>
 <DT>--dns=[ip|only|standard]<DD>
-Determines how xymonnet finds the IP adresses of the hosts to test. 
+Determines how xymonnet finds the IP addresses of the hosts to test. 
 By default (the &quot;standard&quot;), xymonnet does a DNS lookup of the hostname 
 to determine the IP address, unless the host has the &quot;testip&quot; 
 tag, or the DNS lookup fails.
@@ -280,7 +280,7 @@ variable in
 
 <BR>
 
-If not specifed, xymonnet uses the CONNTEST environment
+If not specified, xymonnet uses the CONNTEST environment
 variable to determine if it should perform the ping test
 or not. So if you prefer to use another tool to implement 
 ping checks, either set the CONNTEST environment variable 
@@ -366,7 +366,10 @@ bits will result in the &quot;sslcert&quot; status going yellow.
 Default: 0, i.e. this check is disabled.
 <P>
 <DT>--no-cipherlist<DD>
-Do not show the list of encryption ciphers on the &quot;sslcert&quot; status.
+Do not show encryption cipher details on the &quot;sslcert&quot; status.
+<P>
+<DT>--showallciphers<DD>
+List ALL locally available encryption ciphers on the &quot;sslcert&quot; status.
 <P>
 <DT>--sni=[on|off]<DD>
 Sets the default for whether SSL connections use SNI (Server Name
@@ -603,7 +606,7 @@ one combo message. Default is 0 - no limit.
 
 In practice, the maximum size of a single Xymon message
 sets a limit - the default value for the maximum message
-size is 32 KB, but that will easily accomodate 100 status
+size is 32 KB, but that will easily accommodate 100 status
 messages per transmission. So if you want to experiment
 with this setting, I suggest starting with a value of 10.
 <P>
@@ -750,6 +753,6 @@ runs, and read by xymonnet-again.sh.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 05:39:17 GMT, March 31, 2015
+Time: 16:14:59 GMT, November 02, 2015
 </BODY>
 </HTML>

@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of XYMONPING</TITLE>
 </HEAD><BODY>
 <H1>XYMONPING</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.19: 30 Mar 2015<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version 4.3.22-rc2:  2 Nov 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -12,7 +12,7 @@ xymonping - Xymon ping tool
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>xymonping [--retries=N] [--timeout=N] [IP-adresses]</B>
+<B>xymonping [--retries=N] [--timeout=N] [IP-addresses]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
@@ -23,18 +23,18 @@ xymonping - Xymon ping tool
 is used for ping testing of the hosts monitored by the
 <I><A HREF="../man7/xymon.7.html">xymon</A>(7)</I>
 
-monitoring system. It reads a list of IP adresses from stdin,
+monitoring system. It reads a list of IP addresses from stdin,
 and performs a &quot;ping&quot; check to see if these hosts are alive.
 It is normally invoked by the
 <I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
 
 utility, which performs all of the Xymon network tests.
 <P>
-Optionally, if a list of IP-adresses is passed as command-line
+Optionally, if a list of IP-addresses is passed as command-line
 arguments, it will ping those IP's instead of reading them 
 from stdin.
 <P>
-xymonping only handles IP-adresses, not hostnames.
+xymonping only handles IP-addresses, not hostnames.
 <P>
 xymonping was inspired by the
 <I><A HREF="../man1/fping.1.html">fping</A>(1)</I>
@@ -45,10 +45,10 @@ such utilities. The output from xymonping is similar to that
 of &quot;fping -Ae&quot;.
 <P>
 xymonping probes multiple systems in parallel, and the runtime
-is therefore mostly dependant on the timeout-setting and the
+is therefore mostly dependent on the timeout-setting and the
 number of retries. With the default options, xymonping takes
 approximately 18 seconds to ping all hosts (tested with an
-input set of 1500 IP adresses).
+input set of 1500 IP addresses).
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>SUID-ROOT INSTALLATION REQUIRED</H2>
@@ -132,6 +132,6 @@ Enable debug output. This prints out all packets sent and received.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 05:39:17 GMT, March 31, 2015
+Time: 16:14:59 GMT, November 02, 2015
 </BODY>
 </HTML>

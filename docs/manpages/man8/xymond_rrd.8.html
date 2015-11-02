@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of XYMOND_RRD</TITLE>
 </HEAD><BODY>
 <H1>XYMOND_RRD</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.19: 30 Mar 2015<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.22-rc2:  2 Nov 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -227,6 +227,33 @@ Note that each &quot;NAME : value&quot; must be on a line by itself. If you have
 a custom script generating the status- or data-message that is fed
 into the NCV handler, make sure it inserts a newline before each
 of the data-items you want to track.
+<P>
+<P>
+Any lines in the status message prepended with a 
+&quot;&lt;!-- ncv_skip --&gt;&quot; will be skipped by the module. This can be used
+to prevent unneeded RRD files from an existing dataset from being
+created.
+<P>
+A line prepended with a &quot;&lt;!-- ncv_skipstart --&gt;&quot; will be ignored, 
+along with all subsequent lines until a line starting with 
+&quot;&lt;!-- ncv_skipend --&gt;&quot; is found, at which point processing will 
+resume. This can be used to ignore explanatory or other text with a
+mostly-ncv message.
+<P>
+&quot;&lt;!-- ncv_ignore --&gt;&quot; can be used to ignore certain text at the 
+beginning of a line, up until a closing '&lt;/--&gt;' tag on the same line, 
+at which point the line will continue to be processed as usual. Wrapping
+is not supported; but skipstart/skipend can be used to handle multiple
+lines.
+<P>
+A bare &quot;&lt;!-- ncv_end --&gt;&quot; on its own line will stop further NCV
+processing of that message.
+<P>
+All of these ncv_ terms are case-sensitive. Note that if you have full
+control over your NCV output, it is most efficient to have NCV data near
+the top of your message and use &quot;&lt;!-- ncv_end --&gt;&quot; once your data 
+is complete.
+<P>
 <P>
 To enable the ncv module for a status, add a &quot;COLUMNNAME=ncv&quot; to the 
 TEST2RRD setting and the COLUMNNAME to the GRAPHS setting in
@@ -483,6 +510,6 @@ reporting.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 05:39:17 GMT, March 31, 2015
+Time: 16:14:59 GMT, November 02, 2015
 </BODY>
 </HTML>

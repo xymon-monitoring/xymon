@@ -58,6 +58,8 @@ md5:abd6b4accb9cb39e3e4491a8c0905623 webfiles/bbsnap_header
 md5:4accea67f8fb44aeea4c58c2e70ec6a0 webfiles/bbsnapnk_header
 md5:d5fd55e8fd8caa675dc2bda3f2d886a6 webfiles/bbsnapnk_header
 md5:fe3e7e17ff71f189bf5bae2bf924fd16 webfiles/bbsnapnk_header
+md5:9cc913e3c6403b67cadd2add56e168e3 webfiles/chpasswd_form
+md5:d4efd5ffc214b3719e384f2a6e112b70 webfiles/chpasswd_header
 md5:023a7ee2e6267b8bb5f84951ff2e14ef webfiles/columndoc_header
 md5:40c8ae5d3477449c630110677964ac3d webfiles/columndoc_header
 md5:488cdd7334c3eb9c193862abb37e7d3e webfiles/columndoc_header
@@ -163,6 +165,7 @@ md5:1d9e995b3778cf2c40529b47a7af8739 webfiles/hobbitnk_header
 md5:9094360854ab61a4d2f035a4108ae8c9 webfiles/hobbitnk_header
 md5:eb11ca199fb132916136d85ea2237068 webfiles/hobbitnk_header
 md5:04370521e21a8f5e8a7f5a4bd90be710 webfiles/hostgraphs_form
+md5:12a5a143d0176995da2393c5d921a730 webfiles/hostgraphs_form
 md5:1a89274a84bcb504ec795efe38790a29 webfiles/hostgraphs_form
 md5:0b93340f61b0ab8a9679ed63f8fdaf1f webfiles/hostgraphs_header
 md5:6fbce8b850a2b6f6c11eae3de1780a53 webfiles/hostgraphs_header
@@ -331,6 +334,7 @@ md5:eb7962eedea531ac0437cd7ba99b2f6b webfiles/useradm_header
 md5:152758a0a0a028353ea10fb1824e39c1 webfiles/zoom.js
 md5:1781c28a551f54aba99821a0f70065ad webfiles/zoom.js
 md5:2e55ae03b1e9deebd4d98f1bdc7fc9fc webfiles/zoom.js
+md5:36717ff2352222b96514de2fed9003e0 webfiles/zoom.js
 md5:4cdb87332f200d1d6b1cf1cd37fcd5ff webfiles/zoom.js
 md5:4d2d2cd984c9046d2332d5e59c527a59 webfiles/zoom.js
 md5:5bf16eb30301d49011406f71f839c58b webfiles/zoom.js
@@ -360,6 +364,7 @@ md5:3a0f210c04cf0ca8112ebdb5acf6931a wwwfiles/gifs/favicon-purple.ico
 md5:6030caa1c3efb1f78d3371db897d4c1f wwwfiles/gifs/favicon-red.ico
 md5:f8096714c7bf4ba1de5bb121f37e5843 wwwfiles/gifs/favicon-unknown.ico
 md5:ec30822e46c1d23bcddf50e901f0841a wwwfiles/gifs/favicon-yellow.ico
+md5:a1bfa97274f4905d26ff44eb3ddd5376 wwwfiles/gifs/green-ack.gif
 md5:fcd9f31b34edc95c424654eacd2ce3df wwwfiles/gifs/green.gif
 md5:720ee80877f25d10e18a2435df8e5515 wwwfiles/gifs/green-recent.gif
 md5:974f3c1e72b6cec1ff089cbcc0874340 wwwfiles/gifs/purple-ack.gif

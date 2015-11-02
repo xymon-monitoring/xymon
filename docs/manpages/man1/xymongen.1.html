@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of XYMONGEN</TITLE>
 </HEAD><BODY>
 <H1>XYMONGEN</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.19: 30 Mar 2015<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version 4.3.22-rc2:  2 Nov 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -168,6 +168,13 @@ and subpages. The default is N=1.
 Column headings on a page are by default only shown at the beginning
 of a page, subpage or group of hosts. This options causes the column
 headings to repeat for every N hosts shown.
+<P>
+<DT>--showemptygroups<DD>
+<DT>--no-showemptygroups<DD>
+When groups are hosts are made, display the table and host names even
+if there are no tests present for any of the hosts in question. Use
+--no-showemptygroups to hide.
+(Default: yes)
 <P>
 <DT>--pagetitle-links<DD>
 Normally, only the colored &quot;dots&quot; next to a page or subpage act as links
@@ -552,7 +559,7 @@ subpages win-nt4.html and win-xp.html
 
 The syntax is identical to the normal &quot;page&quot; and &quot;subpage&quot;
 directives in hosts.cfg, but the directive is prefixed with
-the pageset name. Dont put any hosts in-between the page
+the pageset name. Don't put any hosts in-between the page
 and subpage directives - just add all the directives at
 the top of the hosts.cfg file.
 <BR>
@@ -847,6 +854,6 @@ for details on the filter syntax. By default, no filtering is done.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 05:39:17 GMT, March 31, 2015
+Time: 16:14:59 GMT, November 02, 2015
 </BODY>
 </HTML>

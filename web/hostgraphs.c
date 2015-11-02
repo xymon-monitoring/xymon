@@ -175,6 +175,13 @@ void parse_query(void)
 		tests[testcount] = NULL;
 	}
 
+	if (hostcount > 1) {
+		int i;
+
+		for (i = 0; (i < testcount); i++) {
+			if (strcmp(tests[i], "conn") == 0) tests[i] = strdup("conn-multi");
+		}
+	}
 }
 
 int main(int argc, char *argv[])

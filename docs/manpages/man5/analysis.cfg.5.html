@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of ANALYSIS.CFG</TITLE>
 </HEAD><BODY>
 <H1>ANALYSIS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.19: 30 Mar 2015<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.22-rc2:  2 Nov 2015<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -161,7 +161,7 @@ Note: The words &quot;PHYS&quot;, &quot;ACT&quot; and &quot;SWAP&quot; are also 
 <P>
 Example: Go yellow if more than 20% swap is used, and red if
 more than 40% swap is used or the actual memory utilisation exceeds
-90%. Dont alert on physical memory usage.
+90%. Don't alert on physical memory usage.
 <DL COMPACT>
 <DT><DD>
 <PRE>
@@ -397,12 +397,13 @@ time (seconds since midnight Jan 1 1970 UTC).
 acts as the mtime checks, but for the ctime timestamp (when the directory
 entry of the file was last changed, eg. by chown, chgrp or chmod).
 <DT>md5=MD5SUM, sha1=SHA1SUM, rmd160=RMD160SUM<DD>
-trigger a warning if the file checksum using the MD5, SHA1 or RMD160 
-message digest algorithms do not match the one configured here. Note: 
-The &quot;file&quot; entry in the
+and so on for RMD160, SHA256, SHA512, SHA224, and SHA384 trigger a 
+warning if the file checksum using the specified message digest algorithm 
+does not match the one configured here. Note: The &quot;file&quot; entry in the 
 <I><A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)</I>
 
-file must specify which algorithm to use.
+file must specify which
+algorithm to use as that is the only one that will be sent.
 <P>
 </DL>
 <P>
@@ -444,12 +445,12 @@ sockets match the <B>criteria</B> listed.  The criteria you can use are:
 &quot;addr&quot; is a (partial) local address specification in the format used on
 the output from netstat.
 <DT>EXLOCAL=addr<DD>
-Exclude certain local adresses from the rule.
+Exclude certain local addresses from the rule.
 <DT>REMOTE=addr<DD>
 &quot;addr&quot; is a (partial) remote address specification in the format used on
 the output from netstat.
 <DT>EXREMOTE=addr<DD>
-Exclude certain remote adresses from the rule.
+Exclude certain remote addresses from the rule.
 <DT>STATE=state<DD>
 Causes only the sockets in the specified state to be included, &quot;state&quot;
 is usually LISTEN or ESTABLISHED but can be any socket state reported by
@@ -461,7 +462,7 @@ Exclude certain states from the rule.
 
 &quot;addr&quot; is typically &quot;10.0.0.1:80&quot; for the IP 10.0.0.1, port 80. 
 Or &quot;*:80&quot; for any local address, port 80. Note that the Xymon clients 
-normally report only the numeric data for IP-adresses and port-numbers, 
+normally report only the numeric data for IP-addresses and port-numbers, 
 so you must specify the port number (e.g. &quot;80&quot;) instead of the service 
 name (&quot;www&quot;).
 <BR>
@@ -832,6 +833,6 @@ is not considered strong enough when a high level of security is required.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 05:39:17 GMT, March 31, 2015
+Time: 16:14:59 GMT, November 02, 2015
 </BODY>
 </HTML>
