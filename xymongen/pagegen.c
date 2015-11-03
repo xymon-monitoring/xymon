@@ -444,6 +444,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	int	genstatic;
 	int	columncount;
 	char	*xymonskin, *infocolumngif, *trendscolumngif, *clientcolumngif;
+	char	*safegrouptitle;
 	int	rowcount = 0;
 	int     usetooltip = 0;
 
@@ -469,7 +470,8 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	hostblkidx++;
 
 	if (!grouptitle) grouptitle = "";
-	if (*grouptitle != '\0') fprintf(output, "<A NAME=\"group-%s\"></A>\n\n", grouptitle);
+	safegrouptitle = stripnonwords(grouptitle);
+	if (*safegrouptitle != '\0') fprintf(output, "<A NAME=\"group-%s\"></A>\n\n", safegrouptitle);
 
 	groupcols = gen_column_list(head, pagetype, onlycols, exceptcols);
 	for (columncount=0, gc=groupcols; (gc); gc = gc->next, columncount++) ;
@@ -482,7 +484,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 		width += 4;
 
 		/* Start the table ... */
-		fprintf(output, "<CENTER><TABLE SUMMARY=\"%s Group Block\" BORDER=0 CELLPADDING=2>\n", grouptitle);
+		fprintf(output, "<CENTER><TABLE SUMMARY=\"%s Group Block\" BORDER=0 CELLPADDING=2>\n", safegrouptitle);
 
 		/* Generate the host rows */
 		if (sorthosts) {
@@ -516,7 +518,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 				fprintf(output, "<TR>");
 
 				fprintf(output, "<TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
-					xgetenv("XYMONPAGETITLE"), (grouptitle ? grouptitle : ""));
+					xgetenv("XYMONPAGETITLE"), grouptitle);
 
 				for (gc=groupcols; (gc); gc = gc->next) {
 					fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");

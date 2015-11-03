@@ -22,6 +22,7 @@ extern char *commafy(char *hostname);
 extern void uncommafy(char *hostname);
 extern char *skipword(char *l);
 extern char *skipwhitespace(char *l);
+extern char *stripnonwords(char *l);
 extern int argnmatch(char *arg, char *match);
 extern char *msg_data(char *msg, int stripcr);
 extern char *gettok(char *s, char *delims);
