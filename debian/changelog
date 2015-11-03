@@ -54,6 +54,7 @@ xymon (4.3.22) unstable; urgency=medium
    * Add chpasswd CGI for user-level htpasswd file updates. Requires Apache 2.4.5 or later (Thanks, Andy Smith)
    * Fix memory/display on multihost hostgraphs.cgi reports; remove multi-disk (which won't work as-is)
    * Add ACK_COOKIE_EXPIRATION for environment control of cookie validity duration (Noted by Thomas Giordmaina)
+   * combostatus: fix core dumps on Solaris when dealing with erroneous config
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Wed, 4 Nov 2015 08:15:00 -0700
 

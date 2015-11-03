@@ -441,7 +441,7 @@ int update_combotests(int showeval, int cleanexpr)
 
 		color = (t->result ? COL_GREEN : COL_RED);
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s\n\n", commafy(t->reshostname), t->restestname, colorname(color), timestamp);
+		sprintf(msgline, "status %s.%s %s %s\n\n", commafy(t->reshostname), ( t->restestname ? t->restestname : "combostatuserror" ), colorname(color), timestamp);
 		addtostatus(msgline);
 		if (t->comment) { addtostatus(t->comment); addtostatus("\n\n"); }
 		if (showeval) {
@@ -454,7 +454,7 @@ int update_combotests(int showeval, int cleanexpr)
 
 			for (vwalk = t->valuelist; (vwalk); vwalk = vwalk->next) {
 				sprintf(msgline, "&%s <a href=\"%s/svcstatus.sh?HOST=%s&amp;SERVICE=%s\">%s</a>\n",
-					colorname(vwalk->color), xgetenv("CGIBINURL"), gethname(vwalk->symbol), gettname(vwalk->symbol), vwalk->symbol);
+					colorname(vwalk->color), xgetenv("CGIBINURL"), textornull(gethname(vwalk->symbol)), textornull(gettname(vwalk->symbol)), textornull(vwalk->symbol));
 				addtostatus(msgline);
 			}
 
