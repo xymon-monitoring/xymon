@@ -206,6 +206,8 @@ char *stripnonwords(char *l)
 	int outidx;
 
 	reduced[0] = '\0';
+	if (!l) return (char *)reduced;
+
 	/* Must be in the set [a-zA-Z0-9_] ... */
 	for (inp=l, outidx=0; (*inp && (outidx < 250)); inp++) {
 		if ( ((*inp >= 'A') && (*inp <= 'Z')) ||

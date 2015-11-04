@@ -55,6 +55,7 @@ Changes from 4.3.21 -> 4.3.22 (4 Nov 2015)
 * Fix memory/display on multihost hostgraphs.cgi reports; remove multi-disk (which won't work as-is)
 * Add ACK_COOKIE_EXPIRATION for environment control of cookie validity duration (Noted by Thomas Giordmaina)
 * combostatus: fix core dumps on Solaris when dealing with erroneous config
+* Add ACCEPTONLY: functionality to implicity reject other tests for a given host
 
 
 Changes from 4.3.20 -> 4.3.21 (22 May 2015)

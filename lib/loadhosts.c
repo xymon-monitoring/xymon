@@ -196,6 +196,8 @@ static void xmh_item_list_setup(void)
 	xmh_item_name[XMH_COMPACT]             = "XMH_COMPACT";
 	xmh_item_key[XMH_INTERFACES]           = "INTERFACES:";
 	xmh_item_name[XMH_INTERFACES]          = "XMH_INTERFACES";
+	xmh_item_key[XMH_ACCEPT_ONLY]          = "ACCEPTONLY:";
+	xmh_item_name[XMH_ACCEPT_ONLY]         = "XMH_ACCEPT_ONLY";
 
 	xmh_item_name[XMH_IP]                  = "XMH_IP";
 	xmh_item_name[XMH_CLIENTALIAS]         = "XMH_CLIENTALIAS";

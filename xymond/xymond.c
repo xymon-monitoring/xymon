@@ -1113,6 +1113,37 @@ xymond_log_t *find_log(hostfilter_rec_t *filter, xymond_hostlist_t **host)
 	return lwalk;
 }
 
+int accept_test(void *hrec, char *testname)
+{
+	char *accept = xmh_item(hrec, XMH_ACCEPT_ONLY);
+	char *p, *endp;
+
+	if (!accept || !testname || !(*testname)) return 1;
+
+	p = strstr(accept, testname);
+	if (p) {
+	    int testlength = strlen(testname);
+
+	    while (p) {
+		/*
+		 * p points to where the testname is in the accept string. Must check that it
+		 * points to a full word.
+		 *
+		 * Check :
+		 * - if p points at (beginning of accept string, or there is a ',' right before p) AND
+		 * - (p+strlen(testname) hits end of accept string, or it hits a ',')
+		 */
+		endp = p + testlength;
+		if (((*endp == '\0') || (*endp == ',')) && ((p == accept) || (*(p-1) == ','))) return 1;
+		/* no match, keep looking */
+		p = strstr(endp, testname);
+	    }
+	}
+
+	return 0;
+}
+
+
 void get_hts(char *msg, char *sender, char *origin,
 	     xymond_hostlist_t **host, testinfo_t **test, char **grouplist, xymond_log_t **log, 
 	     int *color, char **downcause, int *alltests, int createhost, int createlog)
@@ -1392,6 +1423,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	if (msg_data(msg, 0) == (char *)msg, 0) {
 		errprintf("Bogus status message: msg_data finds no host.test. Sent from: '%s', data:'%s'\n",
 			  sender, msg);
+		return;
+	}
+
+	/* Check if disallowed, but let internally-generated messages through */
+	/* Otherwise existing tests never go purple */
+	if ((strcmp(sender, "xymond") != 0) && !accept_test(hinfo, testname)) {
+		dbgprintf("Rejected status message for %s.%s sent from %s\n", 
+			  textornull(hostname), textornull(testname), textornull(sender));
 		return;
 	}
 
