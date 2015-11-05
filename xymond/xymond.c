@@ -1426,13 +1426,15 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		return;
 	}
 
+	/* XXX: TODO: Needs revisiting; get_hts() has already run, so
+	 * 	we're leaving test record debris around */
 	/* Check if disallowed, but let internally-generated messages through */
 	/* Otherwise existing tests never go purple */
-	if ((strcmp(sender, "xymond") != 0) && !accept_test(hinfo, testname)) {
-		dbgprintf("Rejected status message for %s.%s sent from %s\n", 
-			  textornull(hostname), textornull(testname), textornull(sender));
-		return;
-	}
+	// if ((strcmp(sender, "xymond") != 0) && !accept_test(hinfo, testname)) {
+	//	dbgprintf("Rejected status message for %s.%s sent from %s\n", 
+	//		  textornull(hostname), textornull(testname), textornull(sender));
+	//	return;
+	// }
 
 	issummary = (log->host->hosttype == H_SUMMARY);
 

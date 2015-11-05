@@ -266,19 +266,6 @@ host. Note: If the columns already exist, you must use the
 .I xymon(1)
 utility to \fBdrop\fR them, or they will go purple.
 
-.IP ACCEPTONLY:test1[,test2,...]
-Used to allow only certain, defined tests for this host, implicitly 
-rejecting all others before they are stored. By default Xymon will 
-accept any status tests for a host, dynamically adding new ones to 
-its internal record and displaying them on the appropriate page(s). 
-
-There is a small performance penalty when receiving status messages 
-for hosts with this configured, since additional validation 
-must be done. Note: As above, if the columns already exist, you 
-must use the
-.I xymon(1)
-utility to \fBdrop\fR them, or they will go purple after blocking.
-
 .IP "COMMENT:Host comment"
 Adds a small text after the hostname on the web page. This can
 be used to describe the host, without completely changing its
