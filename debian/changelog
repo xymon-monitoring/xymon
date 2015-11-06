@@ -56,7 +56,7 @@ xymon (4.3.22) unstable; urgency=medium
    * Add ACK_COOKIE_EXPIRATION for environment control of cookie validity duration (Noted by Thomas Giordmaina)
    * combostatus: fix core dumps on Solaris when dealing with erroneous config
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 6 Nov 2015 08:00:00 -0700
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 6 Nov 2015 06:00:00 -0800
 
 
 xymon (4.3.21) unstable; urgency=medium
