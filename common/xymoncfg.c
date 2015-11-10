@@ -28,15 +28,10 @@ int main(int argc, char *argv[])
 	enum { S_NONE, S_KSH, S_CSH } shelltype = S_NONE;
 	char *p;
 
-
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--version") == 0) {
-			printf("xymoncfg version %s\n", VERSION);
-			exit(0);
-		}
-		else if (strcmp(argv[argi], "--help") == 0) {
-			printf("Usage:\n%s [filename]\n", argv[0]);
-			exit(0);
+		if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
 		}
 		else if ((strcmp(argv[argi], "--net") == 0) || (strcmp(argv[argi], "--bbnet") == 0)) {
 			include2 = "netinclude";

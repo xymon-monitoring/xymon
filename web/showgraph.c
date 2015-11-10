@@ -1274,12 +1274,13 @@ int main(int argc, char *argv[])
 {
 	/* Command line settings */
 	int argi;
-	char *envarea = NULL;
 	char *rrddir  = NULL;		/* RRD files top-level directory */
 	char *gdeffn  = NULL;		/* graphs.cfg file */
 	char *graphfn = "-";		/* Output filename, default is stdout */
 
 	char *selfURI;
+
+	libxymon_init(argv[0]);
 
 	/* Setup defaults */
 	graphwidth = atoi(xgetenv("RRDWIDTH"));
@@ -1290,18 +1291,7 @@ int main(int argc, char *argv[])
 
 	/* Handle any command-line args */
 	for (argi=1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--rrddir=")) {
+		if (argnmatch(argv[argi], "--rrddir=")) {
 			char *p = strchr(argv[argi], '=');
 			rrddir = strdup(p+1);
 		}
@@ -1313,9 +1303,12 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			graphfn = strdup(p+1);
 		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
+		}
 	}
 
-	redirect_cgilog("showgraph");
+	redirect_cgilog(programname);
 
 	selfURI = build_selfURI();
 

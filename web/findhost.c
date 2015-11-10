@@ -120,7 +120,6 @@ int main(int argc, char *argv[])
 {
 	void *hostwalk, *clonewalk;
 	int argi;
-	char *envarea = NULL;
 
 	strbuffer_t *outbuf;
 	char *oneurl = NULL;
@@ -134,18 +133,14 @@ int main(int argc, char *argv[])
 	char    re_errstr[BUFSIZE];
 	int 	re_status;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
+		if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 
-	redirect_cgilog("findhost");
+	redirect_cgilog(programname);
 
 	cgidata = cgi_request();
 	if (cgidata == NULL) {

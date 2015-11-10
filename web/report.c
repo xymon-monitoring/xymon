@@ -199,7 +199,6 @@ int main(int argc, char *argv[])
 	char startstr[30], endstr[30];
 	int cleanupoldreps = 1;
 	int argi, newargi;
-	char *envarea = NULL;
 	char *useragent = NULL;
 	int usemultipart = 1;
 
@@ -207,24 +206,20 @@ int main(int argc, char *argv[])
 	xymongen_argv[newargi++] = xymongencmd;
 	xymongen_argv[newargi++] = xymongentimeopt;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[1], "--noclean") == 0) {
+		if (strcmp(argv[1], "--noclean") == 0) {
 			cleanupoldreps = 0;
+		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
 		}
 		else {
 			xymongen_argv[newargi++] = argv[argi];
 		}
 	}
 
-	redirect_cgilog("report");
+	redirect_cgilog(programname);
 
 	cgidata = cgi_request();
 	if (cgidata == NULL) {

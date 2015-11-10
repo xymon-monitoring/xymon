@@ -692,8 +692,8 @@ int do_request(void)
 int main(int argc, char *argv[])
 {
 	int argi;
-	char *envarea = NULL;
 
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--historical") == 0) {
 			source = SRC_HISTLOGS;
@@ -707,14 +707,6 @@ int main(int argc, char *argv[])
 				histlocation = HIST_TOP;
 			else if (strcmp(val, "bottom") == 0)
 				histlocation = HIST_BOTTOM;
-		}
-		else if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--no-svcid") == 0) {
 			wantserviceid = 0;
@@ -737,9 +729,6 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--old-critical-config") == 0) {
 			newcritconfig = 0;
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
 		else if (argnmatch(argv[argi], "--locator=")) {
 			char *p = strchr(argv[argi], '=');
 			locator_init(p+1);
@@ -753,9 +742,12 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			accessfn = strdup(p+1);
 		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
+		}
 	}
 
-	redirect_cgilog("svcstatus");
+	redirect_cgilog(programname);
 
 	*errortxt = '\0';
 	hostname = service = tstamp = NULL;

@@ -75,8 +75,6 @@ static strbuffer_t *metabuf = NULL;	/* message buffer for one meta message */
 static int backfeedqueue = -1;
 static int max_backfeedsz = 16384;
 
-int dontsendmessages = 0;
-
 void setproxy(char *proxy)
 {
 	if (proxysetting) xfree(proxysetting);

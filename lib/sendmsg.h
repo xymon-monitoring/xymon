@@ -38,7 +38,6 @@ typedef struct sendreturn_t {
 extern int xymonmsgcount;
 extern int xymonstatuscount;
 extern int xymonnocombocount;
-extern int dontsendmessages;
 
 extern void setproxy(char *proxy);
 extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);

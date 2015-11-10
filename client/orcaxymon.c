@@ -31,10 +31,11 @@ int main(int argc, char *argv[])
 	FILE *fd;
 	char headerline[32768];
 	char vals[32768];
-	int gotvals = 0;
 	char *hp, *hdr, *vp, *val;
 	char msgline[4096];
 	strbuffer_t *msg;
+
+	libxymon_init(argv[0]);
 
 	machinename = xgetenv("MACHINE");
 
@@ -45,8 +46,8 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[i], "--machine=", 10) == 0) {
 			machinename = argv[i]+10;
 		}
-		else if (strcmp(argv[i], "--debug") == 0) {
-			debug = dontsendmessages = 1;
+		else if (standardoption(argv[i])) {
+			/* Do nothing */
 		}
 	}
 
@@ -70,7 +71,7 @@ int main(int argc, char *argv[])
 
 	/* Grab the header line, and the last logfile entry. */
 	if (fgets(headerline, sizeof(headerline), fd)) {
-		while (fgets(vals, sizeof(vals), fd)) gotvals = 1;
+		while (fgets(vals, sizeof(vals), fd));
 	}
 	fclose(fd);
 

@@ -315,35 +315,27 @@ int main(int argc, char *argv[])
 	char *userhost = getenv("REMOTE_HOST");
 	char *userip   = getenv("REMOTE_ADDR");
 	char *fullmsg = "No cause specified";
-	char *envarea = NULL;
 	int  obeycookies = 1;
 	char *accessfn = NULL;
 
 	if ((username == NULL) || (strlen(username) == 0)) username = "unknown";
 	if ((userhost == NULL) || (strlen(userhost) == 0)) userhost = userip;
 	
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--no-cookies") == 0) {
+		if (strcmp(argv[argi], "--no-cookies") == 0) {
 			obeycookies = 0;
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
 		}
 		else if (argnmatch(argv[argi], "--access=")) {
 			char *p = strchr(argv[argi], '=');
 			accessfn = strdup(p+1);
 		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
+		}
 	}
 
-	redirect_cgilog("enadis");
+	redirect_cgilog(programname);
 
 	parse_cgi();
 	if (debug) preview = 1;

@@ -194,6 +194,7 @@ int main(int argc, char *argv[])
 	/* Don't save the error buffer */
 	save_errbuf = 0;
 
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--status") == 0) {
 			role = ROLE_STATUS;
@@ -220,9 +221,6 @@ int main(int argc, char *argv[])
 			chnid = C_ENADIS;
 			if (!filedir) filedir = xgetenv("XYMONDISABLEDDIR");
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
 		else if (argnmatch(argv[argi], "--dir=")) {
 			filedir = strchr(argv[argi], '=')+1;
 		}
@@ -246,6 +244,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			locator_init(p+1);
 			locatorbased = 1;
+		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

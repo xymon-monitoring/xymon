@@ -45,25 +45,17 @@ void parse_query(void)
 int main(int argc, char *argv[])
 {
 	int argi;
-	char *envarea = NULL;
 	char *hffile = "boilerplate";
 	int bgcolor = COL_BLUE;
 
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--hffile=")) {
+		if (argnmatch(argv[argi], "--hffile=")) {
 			char *p = strchr(argv[argi], '=');
 			hffile = strdup(p+1);
+		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

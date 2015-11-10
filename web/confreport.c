@@ -631,7 +631,7 @@ int main(int argc, char *argv[])
 {
 	int argi, hosti, testi;
 	char *pagepattern = NULL, *hostpattern = NULL;
-	char *envarea = NULL, *cookie = NULL, *nexthost;
+	char *cookie = NULL, *nexthost;
 	char *xymoncmd = NULL, *procscmd = NULL, *svcscmd = NULL;
         int alertcolors, alertinterval;
 	char configfn[PATH_MAX];
@@ -646,19 +646,9 @@ int main(int argc, char *argv[])
 	char *critconfigfn = NULL;
 	int patternerror = 0;
 
+	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--delimiter=")) {
+		if (argnmatch(argv[argi], "--delimiter=")) {
 			char *p = strchr(argv[argi], '=');
 			coldelim = strdup(p+1);
 		}
@@ -672,9 +662,12 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			critconfigfn = strdup(p+1);
 		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
+		}
 	}
 
-	redirect_cgilog("confreport");
+	redirect_cgilog(programname);
 
 	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	load_critconfig(critconfigfn);

@@ -1982,6 +1982,8 @@ int main(int argc, char *argv[])
 	int pingrunning = 0;
 	int usebackfeedqueue = 0;
 
+	libxymon_init(argv[0]);
+
 	if (init_ldap_library() != 0) {
 		errprintf("Failed to initialize ldap library\n");
 		return 1;
@@ -2161,9 +2163,6 @@ int main(int argc, char *argv[])
 		}
 
 		/* Debugging options */
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
 		else if (argnmatch(argv[argi], "--dump")) {
 			char *p = strchr(argv[argi], '=');
 
@@ -2194,50 +2193,51 @@ int main(int argc, char *argv[])
 			printf("\n");
 			return 0;
 		}
-		else if ((strcmp(argv[argi], "--help") == 0) || (strcmp(argv[argi], "-?") == 0)) {
-			printf("xymonnet version %s\n\n", VERSION);
-			printf("Usage: %s [options] [host1 host2 host3 ...]\n", argv[0]);
-			printf("General options:\n");
-			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
-			printf("    --concurrency=N             : Number of tests run in parallel\n");
-			printf("    --dns-timeout=N             : DNS lookups timeout and fail after N seconds [30]\n");
-			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
-			printf("    --no-ares                   : Use the system resolver library for hostname lookups\n");
-			printf("    --dnslog=FILENAME           : Log failed hostname lookups to file FILENAME\n");
-			printf("    --report[=COLUMNNAME]       : Send a status report about the running of xymonnet\n");
-			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
-			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
-			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [TASKSLEEP]\n");
-			printf("\nOptions for simple TCP service tests:\n");
-			printf("    --checkresponse             : Check response from known services\n");
-			printf("    --no-flags                  : Don't send extra xymonnet test flags\n");
-			printf("\nOptions for PING (connectivity) tests:\n");
-			printf("    --ping[=COLUMNNAME]         : Enable ping checking, default columname is \"conn\"\n");
-			printf("    --noping                    : Disable ping checking\n");
-			printf("    --trace                     : Run traceroute on all hosts where ping fails\n");
-			printf("    --notrace                   : Disable traceroute when ping fails (default)\n");
-			printf("    --ping-tasks=N              : Run N ping tasks in parallel (default N=1)\n");
-			printf("\nOptions for HTTP/HTTPS (Web) tests:\n");
-			printf("    --content=COLUMNNAME        : Define default columnname for CONTENT checks (content)\n");
-			printf("\nOptions for SSL certificate tests:\n");
-			printf("    --ssl=COLUMNNAME            : Define columnname for SSL certificate checks (sslcert)\n");
-			printf("    --no-ssl                    : Disable SSL certificate check\n");
-			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30)\n");
-			printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10)\n");
-			printf("    --no-cipherlist             : Do not display SSL cipher data in the SSL certificate check\n");
-			printf("    --showallciphers            : List all available ciphers supported by the local SSL library\n");
-			printf("\nDebugging options:\n");
-			printf("    --no-update                 : Send status messages to stdout instead of to Xymon\n");
-			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
-			printf("    --debug                     : Output debugging information\n");
-			printf("    --dump[=before|=after|=all] : Dump internal memory structures before/after tests run\n");
-			printf("    --maxdnsqueue=N             : Only queue N DNS lookups at a time\n");
-			printf("\nInformational options:\n");
-			printf("    --services                  : Dump list of known services and exit\n");
-			printf("    --version                   : Show program version and exit\n");
-			printf("    --help                      : Show help text and exit\n");
+		else if (standardoption(argv[argi])) {
+			if (showhelp) {
+				printf("Usage: %s [options] [host1 host2 host3 ...]\n", argv[0]);
+				printf("General options:\n");
+				printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
+				printf("    --concurrency=N             : Number of tests run in parallel\n");
+				printf("    --dns-timeout=N             : DNS lookups timeout and fail after N seconds [30]\n");
+				printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
+				printf("    --no-ares                   : Use the system resolver library for hostname lookups\n");
+				printf("    --dnslog=FILENAME           : Log failed hostname lookups to file FILENAME\n");
+				printf("    --report[=COLUMNNAME]       : Send a status report about the running of xymonnet\n");
+				printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
+				printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
+				printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [TASKSLEEP]\n");
+				printf("\nOptions for simple TCP service tests:\n");
+				printf("    --checkresponse             : Check response from known services\n");
+				printf("    --no-flags                  : Don't send extra xymonnet test flags\n");
+				printf("\nOptions for PING (connectivity) tests:\n");
+				printf("    --ping[=COLUMNNAME]         : Enable ping checking, default columname is \"conn\"\n");
+				printf("    --noping                    : Disable ping checking\n");
+				printf("    --trace                     : Run traceroute on all hosts where ping fails\n");
+				printf("    --notrace                   : Disable traceroute when ping fails (default)\n");
+				printf("    --ping-tasks=N              : Run N ping tasks in parallel (default N=1)\n");
+				printf("\nOptions for HTTP/HTTPS (Web) tests:\n");
+				printf("    --content=COLUMNNAME        : Define default columnname for CONTENT checks (content)\n");
+				printf("\nOptions for SSL certificate tests:\n");
+				printf("    --ssl=COLUMNNAME            : Define columnname for SSL certificate checks (sslcert)\n");
+				printf("    --no-ssl                    : Disable SSL certificate check\n");
+				printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30)\n");
+				printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10)\n");
+				printf("    --no-cipherlist             : Do not display SSL cipher data in the SSL certificate check\n");
+				printf("    --showallciphers            : List all available ciphers supported by the local SSL library\n");
+				printf("\nDebugging options:\n");
+				printf("    --no-update                 : Send status messages to stdout instead of to Xymon\n");
+				printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
+				printf("    --debug                     : Output debugging information\n");
+				printf("    --dump[=before|=after|=all] : Dump internal memory structures before/after tests run\n");
+				printf("    --maxdnsqueue=N             : Only queue N DNS lookups at a time\n");
+				printf("\nInformational options:\n");
+				printf("    --services                  : Dump list of known services and exit\n");
+				printf("    --version                   : Show program version and exit\n");
+				printf("    --help                      : Show help text and exit\n");
 
-			return 0;
+				return 0;
+			}
 		}
 		else if (strncmp(argv[argi], "-", 1) == 0) {
 			errprintf("Unknown option %s - try --help\n", argv[argi]);

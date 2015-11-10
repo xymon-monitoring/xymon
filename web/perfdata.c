@@ -318,6 +318,7 @@ int main(int argc, char **argv)
 	void *hwalk;
 	char *hostname, *pagename;
 
+	libxymon_init(argv[0]);
 	hostptn = exhostptn = pageptn = expageptn = NULL;
 
 	if (getenv("QUERY_STRING") == NULL) {
@@ -344,20 +345,10 @@ int main(int argc, char **argv)
 		}
 	}
 	else {
-		char *envarea = NULL;
 		int argi;
-
-		for (argi = 1; (argi < argc); argi++) {
-			if (argnmatch(argv[argi], "--env=")) {
-				char *p = strchr(argv[argi], '=');
-				loadenv(p+1, envarea);
-			}
-			else if (argnmatch(argv[argi], "--area=")) {
-				char *p = strchr(argv[argi], '=');
-				envarea = strdup(p+1);
-			}
-			else if (strcmp(argv[argi], "--debug") == 0) {
-				debug = 1;
+		for (argi=1; (argi < argc); argi++) {
+			if (standardoption(argv[argi])) {
+				if (showhelp) return 0;
 			}
 		}
 

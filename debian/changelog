@@ -1,3 +1,11 @@
+xymon (4.4-alpha) unstable; urgency=low
+
+   * rev xxxx
+
+   * Standardize command line options across most binaries
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 6 Nov 2015 08:00:00 -0700
+
 
 xymon (4.3.22) unstable; urgency=medium
 

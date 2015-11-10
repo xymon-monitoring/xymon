@@ -49,15 +49,9 @@ int main(int argc, char *argv[])
 	int hostnameitem = 4, testnameitem = 5, coloritem = 7;
 
 	/* Handle program options. */
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			/*
-			 * A global "debug" variable is available. If
-			 * it is set, then "dbgprintf()" outputs debug messages.
-			 */
-			debug = 1;
-		}
-		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
+		if (strncmp(argv[argi], "--timeout=", 10) == 0) {
 			/*
 			 * You can have a timeout when waiting for new
 			 * messages. If it happens, you will get a "@@idle\n"
@@ -117,6 +111,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			batchcmd = strdup(p+1);
 			batchbuf = newstrbuffer(0);
+		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
 		}
 		else {
 			printf("Unknown option %s\n", argv[argi]);

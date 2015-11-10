@@ -119,6 +119,8 @@ int main(int argc, char *argv[])
 	int argi, lookc;
 	strbuffer_t *wantedtags;
 
+	libxymon_init(argv[0]);
+
 	lookv = (char **)malloc(argc*sizeof(char *));
 	lookc = 0;
 
@@ -146,10 +148,6 @@ int main(int argc, char *argv[])
 			p = strchr(argv[argi], '=');
 			if (p) testcolumn = strdup(p+1);
 		}
-		else if (strcmp(argv[argi], "--version") == 0) {
-			printf("xymongrep version %s\n", VERSION);
-			exit(0);
-		}
 		else if ((strcmp(argv[argi], "--net") == 0) || (strcmp(argv[argi], "--bbnet") == 0)) {
 			include2 = "netinclude";
 			onlypreferredentry = 0;
@@ -163,6 +161,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--loadhostsfromxymond") == 0) {
 			loadhostsfromxymond = 1;
+		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
 		}
 		else if ((*(argv[argi]) == '-') && (strlen(argv[argi]) > 1)) {
 			fprintf(stderr, "Unknown option %s\n", argv[argi]);

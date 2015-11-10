@@ -113,22 +113,12 @@ int main(int argc, char *argv[])
 	char *envarea = NULL;
 	char envfn[PATH_MAX];
 
+	libxymon_init(argv[0]);
 	cmdargs = (char **) calloc(argc+2, sizeof(char *));
 	for (argi=1; (argi < argc); argi++) {
-		if ((argcount == 0) && (strcmp(argv[argi], "--debug") == 0)) {
-			debug = 1;
-		}
-		else if ((argcount == 0) && (argnmatch(argv[argi], "--env="))) {
-			char *p = strchr(argv[argi], '=');
-			envfile = strdup(p+1);
-		}
-		else if ((argcount == 0) && (argnmatch(argv[argi], "--area="))) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if ((argcount == 0) && (strcmp(argv[argi], "--version") == 0)) {
-			fprintf(stdout, "Xymon version %s\n", VERSION);
-			return 0;
+		/* Process standard args only until we've seen the command - after that, it is standard args for the spawned command! */
+		if ((argcount == 0) && (standardoption(argv[argi]))) {
+			if (showhelp) return 0;
 		}
 		else {
 			if (argcount == 0) {

@@ -50,7 +50,6 @@ static char rcsid[] = "$Id$";
 
 
 volatile int keeprunning = 1;
-char *logfile = NULL;
 
 
 /*
@@ -464,9 +463,9 @@ void sigmisc_handler(int signum)
 		break;
 
 	  case SIGHUP:
-		if (logfile) {
-			reopen_file(logfile, "a", stdout);
-			reopen_file(logfile, "a", stderr);
+		if (logfn) {
+			reopen_file(logfn, "a", stdout);
+			reopen_file(logfn, "a", stderr);
 			errprintf("Caught SIGHUP, reopening logfile\n");
 		}
 		break;
@@ -649,6 +648,8 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	int argi, opt;
 
+	libxymon_init(argv[0]);
+
 	/* Don't save the output from errprintf() */
 	save_errbuf = 0;
 
@@ -680,12 +681,8 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-daemon") == 0) {
 			daemonize = 0;
 		}
-		else if (argnmatch(argv[argi], "--logfile=")) {
-			char *p = strchr(argv[argi], '=');
-			logfile = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 
@@ -708,9 +705,9 @@ int main(int argc, char *argv[])
 	fcntl(lsocket, F_SETFL, O_NONBLOCK);
 
 	/* Redirect logging to the logfile, if requested */
-	if (logfile) {
-		reopen_file(logfile, "a", stdout);
-		reopen_file(logfile, "a", stderr);
+	if (logfn) {
+		reopen_file(logfn, "a", stdout);
+		reopen_file(logfn, "a", stderr);
 	}
 
 	errprintf("Xymon locator version %s starting\n", VERSION);

@@ -78,7 +78,6 @@ pid_t deadpid = 0;
 int childexit;
 
 xymond_channel_t *channel = NULL;
-char *logfn = NULL;
 int locatorbased = 0;
 enum locator_servicetype_t locatorservice = ST_MAX;
 

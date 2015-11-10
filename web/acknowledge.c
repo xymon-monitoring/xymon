@@ -199,23 +199,12 @@ void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
 int main(int argc, char *argv[])
 {
 	int argi;
-	char *envarea = NULL;
 	int obeycookies = 1;
 	char *accessfn = NULL;
 
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--no-pin") == 0) {
+		if (strcmp(argv[argi], "--no-pin") == 0) {
 			nopin = 1;
 		}
 		else if (strcmp(argv[argi], "--no-cookies") == 0) {
@@ -225,10 +214,12 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			accessfn = strdup(p+1);
 		}
-
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
+		}
 	}
 
-	redirect_cgilog("ack");
+	redirect_cgilog(programname);
 
 	cgidata = cgi_request();
 	if ( (nopin && (cgi_method == CGI_GET)) || (!nopin && (cgidata == NULL)) ) {

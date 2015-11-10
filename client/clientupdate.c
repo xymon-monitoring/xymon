@@ -49,6 +49,8 @@ int main(int argc, char *argv[])
 	int talkstat = 0;
 	sendreturn_t *sres;
 
+	libxymon_init(argv[0]);
+
 #ifdef BIG_SECURITY_HOLE
 	/* Immediately drop all root privs, we'll regain them later when needed */
 	drop_root();
@@ -168,9 +170,6 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--remove-self") == 0) {
 			removeself = 1;
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
 
 		else if (strcmp(argv[argi], "--suid-setup") == 0) {
 			/*
@@ -188,6 +187,9 @@ int main(int argc, char *argv[])
 #endif
 
 			return 0;
+		}
+		else if (standardoption(argv[argi])) {
+			/* Do nothing */
 		}
 	}
 

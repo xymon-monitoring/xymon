@@ -2074,11 +2074,9 @@ int main(int argc, char *argv[])
 	char **collectors = NULL;
 
 	/* Handle program options. */
+	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--no-update") == 0) {
+		if (strcmp(argv[argi], "--no-update") == 0) {
 			dontsendmessages = 1;
 		}
 		else if (strcmp(argv[argi], "--no-ps-listing") == 0) {
@@ -2136,6 +2134,9 @@ int main(int argc, char *argv[])
 		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
+		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 
