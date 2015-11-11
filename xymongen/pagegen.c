@@ -759,7 +759,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, 1, NULL, NULL, NULL, NULL, 0,0,0,0, 0, 0.0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
+			newhost = init_host(s->row, 1, NULL, NULL, NULL, NULL, "", 0, 0.0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
 
 			/* Insert into sorted host list */
 			if ((!sumhosts) || (strcmp(newhost->hostname, sumhosts->hostname) < 0)) {

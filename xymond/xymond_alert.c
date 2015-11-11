@@ -125,6 +125,7 @@ void clean_active(alertanchor_t *anchor)
 		curr = curr->next;
 
 		if (tmp->state == A_DEAD) {
+			if (tmp->ip) xfree(tmp->ip);
 			if (tmp->osname) xfree(tmp->osname);
 			if (tmp->classname) xfree(tmp->classname);
 			if (tmp->groups) xfree(tmp->groups);
@@ -301,7 +302,7 @@ void load_checkpoint(char *filename)
 			newalert->hostname = find_name(hostnames, item[0]);
 			newalert->testname = find_name(testnames, item[1]);
 			newalert->location = find_name(locations, item[2]);
-			strcpy(newalert->ip, item[3]);
+			newalert->ip = strdup(item[3]);
 			newalert->color = newalert->maxcolor = parse_color(item[4]);
 			newalert->eventstart = (time_t) atoi(item[5]);
 			newalert->nextalerttime = (time_t) atoi(item[6]);
@@ -458,7 +459,7 @@ int main(int argc, char *argv[])
 			awalk->hostname = find_name(hostnames, testhost);
 			awalk->testname = find_name(testnames, testservice);
 			awalk->location = find_name(locations, testpage);
-			strcpy(awalk->ip, "127.0.0.1");
+			awalk->ip = strdup("127.0.0.1");
 			awalk->color = awalk->maxcolor = parse_color(testcolor);
 			awalk->pagemessage = "Test of the alert configuration";
 			awalk->eventstart = getcurrenttime(NULL) - testdur*60;
@@ -671,7 +672,8 @@ int main(int argc, char *argv[])
 				clear_interval(awalk);
 			}
 
-			strcpy(awalk->ip, metadata[5]);
+			if (awalk->ip) xfree(awalk->ip);
+			awalk->ip = strdup(metadata[5]);
 			awalk->cookie = atoi(metadata[11]);
 			if (awalk->osname) xfree(awalk->osname);
 			awalk->osname    = (metadata[12] ? strdup(metadata[12]) : NULL);

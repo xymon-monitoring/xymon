@@ -467,7 +467,7 @@ addtolist:
 	alert = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 	alert->hostname = host->hostname;
 	alert->location = xmh_item(hinfo, XMH_ALLPAGEPATHS);
-	strcpy(alert->ip, "127.0.0.1");
+	alert->ip = strdup("127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";
 	alert->state = A_PAGING;

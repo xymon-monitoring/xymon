@@ -19,8 +19,7 @@ extern xymongen_page_t *load_layout(char *pgset);
 /* Needed by the summary handling */
 extern host_t *init_host(char *hostname, int issummary,
 			 char *displayname, char *clientalias,
-			 char *comment, char *description,
-			 int ip1, int ip2, int ip3, int ip4,
+			 char *comment, char *description, char *ip,
 			 int dialup,
 			 double warnpct, int warnstops, char *reporttime,
 			 char *alerts, int crittime, char *waps,

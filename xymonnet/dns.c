@@ -277,7 +277,7 @@ char *dnsresolve(char *hostname)
 		errprintf("dnsresolve: name '%s' not in cache. You probably have a NULL IP setting and the 'testip' flag set.\n", hostname);
 		return NULL;
 	}
-	if (strcmp(result, "0.0.0.0") == 0) return NULL;
+	if (conn_null_ip(result)) return NULL;
 
 	return result;
 }

@@ -232,7 +232,7 @@ static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 	alert = calloc(1, sizeof(activealerts_t));
 	alert->hostname = hostname;
 	alert->location = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
-	strcpy(alert->ip, "127.0.0.1");
+	alert->ip = strdup("127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";
 	alert->state = A_PAGING;
@@ -959,10 +959,10 @@ char *generate_info(char *hostname, char *critconfigfn)
 	}
 
 	val = xmh_item(hostwalk, XMH_IP);
-	if (strcmp(val, "0.0.0.0") == 0) {
+	if (conn_null_ip(val)) {
 		struct in_addr addr;
 		struct hostent *hent;
-		static char hostip[IP_ADDR_STRLEN + 20];
+		static char hostip[50];
 
 		hent = gethostbyname(hostname);
 		if (hent) {

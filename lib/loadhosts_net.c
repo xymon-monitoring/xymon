@@ -90,10 +90,7 @@ int load_hostinfo(char *targethost)
 	hival_hostinfo.elems[elemsize] = NULL;
 
 	hival_hostinfo.hostname = hivals[XMH_HOSTNAME];
-	if (hivals[XMH_IP]) 
-		strcpy(hival_hostinfo.ip, hivals[XMH_IP]);
-	else
-		*(hival_hostinfo.ip) = '\0';
+	hival_hostinfo.ip = strdup(hivals[XMH_IP] ? hivals[XMH_IP] : "");
 
 	return 0;
 }

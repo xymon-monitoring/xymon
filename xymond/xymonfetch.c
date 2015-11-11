@@ -639,7 +639,7 @@ int main(int argc, char *argv[])
 					}
 				}
 
-				if (strcmp(ip, "0.0.0.0") == 0) {
+				if (conn_null_ip(ip)) {
 					struct hostent *hent;
 
 					xfree(ip); ip = NULL;

@@ -31,7 +31,7 @@ typedef struct pagelist_t {
 } pagelist_t;
 
 typedef struct namelist_t {
-	char ip[IP_ADDR_STRLEN];
+	char *ip;
 	char *hostname;	/* Name for item 2 of hosts.cfg */
 	char *logname;		/* Name of the host directory in XYMONHISTLOGS (underscores replaces dots). */
 	int preference;		/* For host with multiple entries, mark if we have the preferred one */
@@ -259,6 +259,7 @@ static void initialize_hostlist(void)
 		namelist_t *walk = defaulthost;
 		defaulthost = defaulthost->defaulthost;
 
+		if (walk->ip) xfree(walk->ip);
 		if (walk->hostname) xfree(walk->hostname);
 		if (walk->groupid) xfree(walk->groupid);
 		if (walk->dgname) xfree(walk->dgname);
@@ -276,6 +277,7 @@ static void initialize_hostlist(void)
 		namehead = namehead->next;
 
 		/* clientname should not be freed, since it's just a pointer into the elems-array */
+		if (walk->ip) xfree(walk->ip);
 		if (walk->hostname) xfree(walk->hostname);
 		if (walk->groupid) xfree(walk->groupid);
 		if (walk->dgname) xfree(walk->dgname);
@@ -348,7 +350,7 @@ static void build_hosttree(void)
 #include "loadhosts_file.c"
 #include "loadhosts_net.c"
 
-char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling)
+char *knownhost(char *hostname, char **hostip, enum ghosthandling_t ghosthandling)
 {
 	/*
 	 * ghosthandling = GH_ALLOW  : Default BB method (case-sensitive, no logging, keep ghosts)
@@ -363,6 +365,7 @@ char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling
 
 	if (result) xfree(result);
 	result = NULL;
+	if (hostip) *hostip = NULL;
 
 	if (hivalhost) {
 		*hostip = '\0';
@@ -374,7 +377,7 @@ char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling
 			result = (strcasecmp(hivals[XMH_CLIENTALIAS], hostname) == 0) ? strdup(hivalhost) : NULL;
 		}
 
-		if (result && hivals[XMH_IP]) strcpy(hostip, hivals[XMH_IP]);
+		if (result && hivals[XMH_IP] && hostip) *hostip = hivals[XMH_IP];
 
 		return result;
 	}
@@ -397,11 +400,10 @@ char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling
 		/*
 		 * Force our version of the hostname. Done here so CLIENT works always.
 		 */
-		strcpy(hostip, walk->ip);
+		*hostip = walk->ip;
 		result = strdup(walk->hostname);
 	}
 	else {
-		*hostip = '\0';
 		result = strdup(hostname);
 	}
 
@@ -473,7 +475,7 @@ void *localhostinfo(char *hostname)
 		result = (namelist_t *)calloc(1, sizeof(namelist_t));
 	}
 
-	strcpy(result->ip, "127.0.0.1");
+	result->ip = strdup("127.0.0.1");
 
 	if (result->hostname) xfree(result->hostname);
 	result->hostname = strdup(hostname);
@@ -807,10 +809,10 @@ int main(int argc, char *argv[])
 		char s[1024];
 		char *p;
 		char *hname;
-		char hostip[IP_ADDR_STRLEN];
+		char *hostip = NULL;
 
 handlehost:
-		hname = knownhost(argv[argi], hostip, GH_IGNORE);
+		hname = knownhost(argv[argi], &hostip, GH_IGNORE);
 		if (hname == NULL) {
 			printf("Unknown host '%s'\n", argv[argi]);
 			continue;

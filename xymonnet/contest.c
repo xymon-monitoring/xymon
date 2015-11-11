@@ -1480,7 +1480,7 @@ int main(int argc, char *argv[])
 					hostitem->hostname = strdup("localhost");
 					testitem->host = hostitem;
 					testitem->testspec = testspec;
-					strcpy(hostitem->ip, ip);
+					hostitem->ip = strdup(ip);
 					add_url_to_dns_queue(testspec);
 					add_http_test(testitem);
 

@@ -839,7 +839,7 @@ void load_tests(void)
 				errprintf("Host %s appears twice in hosts.cfg! This may cause strange results\n", h->hostname);
 			}
 	
-			strcpy(h->ip, xmh_item(hwalk, XMH_IP));
+			h->ip = strdup(xmh_item(hwalk, XMH_IP));
 			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {
@@ -861,7 +861,7 @@ void load_tests(void)
 char *ip_to_test(testedhost_t *h)
 {
 	char *dnsresult;
-	int nullip = (strcmp(h->ip, "0.0.0.0") == 0);
+	int nullip = (h->ip && conn_null_ip(h->ip));
 
 	if (!nullip && (h->testip || (dnsmethod == IP_ONLY))) {
 		/* Already have the IP setup */
@@ -870,7 +870,7 @@ char *ip_to_test(testedhost_t *h)
 		dnsresult = dnsresolve(h->hostname);
 
 		if (dnsresult) {
-			strcpy(h->ip, dnsresult);
+			h->ip = strdup(dnsresult);
 		}
 		else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
 			/* Already have the IP setup */
@@ -1112,14 +1112,14 @@ int start_ping_service(service_t *service)
 	iptree = xtreeNew(strcmp);
 	for (t=service->items; (t); t = t->next) {
 		char *rec;
-		char ip[IP_ADDR_STRLEN+1];
+		char *ip;
 
 		if (t->host->dnserror || t->host->noping) continue;
 
-		strcpy(ip, ip_to_test(t->host));
+		ip = strdup(ip_to_test(t->host));
 		handle = xtreeFind(iptree, ip);
 		if (handle == xtreeEnd(iptree)) {
-			rec = strdup(ip);
+			rec = ip;
 			xtreeAdd(iptree, rec, rec);
 		}
 
@@ -1213,7 +1213,7 @@ int start_ping_service(service_t *service)
 		}
 		else {
 			/* parent */
-			char ip[IP_ADDR_STRLEN+1];	/* Must have room for the \n at the end also */
+			char *ip;
 			int hnum, feederror = 0;
 
 			close(pfd[0]);
@@ -1222,8 +1222,8 @@ int start_ping_service(service_t *service)
 			for (handle = xtreeFirst(iptree), hnum = 0; ((feederror == 0) && (handle != xtreeEnd(iptree))); handle = xtreeNext(iptree, handle), hnum++) {
 				if ((hnum % pingchildcount) != i) continue;
 
-				sprintf(ip, "%s\n", xtreeKey(iptree, handle));
-				if (write(pfd[1], ip, strlen(ip)) != strlen(ip)) {
+				ip = xtreeKey(iptree, handle);
+				if ((write(pfd[1], ip, strlen(ip)) != strlen(ip)) || (write(pfd[1], "\n", 1) != 1)) {
 					errprintf("Cannot feed IP to ping tool: %s\n", strerror(errno));
 					feederror = 1;
 					continue;

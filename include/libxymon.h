@@ -31,8 +31,6 @@ typedef struct strbuffer_t {
 #define STRBUFEND(buf) (buf->s + buf->used)
 #define STRBUFSZ(buf) (buf->sz)
 
-#define IP_ADDR_STRLEN 16
-
 #include "version.h"
 #include "config.h"
 #include "../lib/osdefs.h"
@@ -99,6 +97,7 @@ typedef struct strbuffer_t {
 #include "../lib/stdopt.h"
 #include "../lib/strfunc.h"
 #include "../lib/suid.h"
+#include "../lib/tcplib.h"
 #include "../lib/timefunc.h"
 #include "../lib/timing.h"
 #include "../lib/tree.h"

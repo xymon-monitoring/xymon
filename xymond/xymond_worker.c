@@ -111,7 +111,7 @@ static int net_worker_listener(char *ipport)
         /* Set up a socket to listen for new connections */
 	errprintf("Setting up network listener on %s:%d\n", listenip, listenport);
 	memset(&laddr, 0, sizeof(laddr));
-	if ((strlen(listenip) == 0) || (strcmp(listenip, "0.0.0.0") == 0)) {
+	if ((strlen(listenip) == 0) || (conn_null_ip(listenip))) {
 		listenip = "0.0.0.0";
 		laddr.sin_addr.s_addr = INADDR_ANY;
 	}

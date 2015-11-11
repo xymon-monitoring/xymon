@@ -124,7 +124,7 @@ typedef struct xymond_log_t {
 	int color, oldcolor, activealert, histsynced, downtimeactive, flapping, oldflapcolor, currflapcolor;
 	char *testflags;
 	char *grouplist;        /* For extended status reports (e.g. from xymond_client) */
-	char sender[IP_ADDR_STRLEN];
+	char *sender;
 	time_t *lastchange;	/* Table of times when the currently logged status began */
 	time_t logtime;		/* time when last update was received */
 	time_t validtime;	/* time when status is no longer valid */
@@ -154,7 +154,7 @@ typedef struct clientmsg_list_t {
 /* This is a list of the hosts we have seen reports for, and links to their status logs */
 typedef struct xymond_hostlist_t {
 	char *hostname;
-	char ip[IP_ADDR_STRLEN];
+	char *ip;
 	enum { H_NORMAL, H_SUMMARY } hosttype;
 	xymond_log_t *logs;
 	xymond_log_t *pinglog; /* Points to entry in logs list, but we need it often */
@@ -616,7 +616,7 @@ xymond_hostlist_t *create_hostlist_t(char *hostname, char *ip)
 
 	hitem = (xymond_hostlist_t *) calloc(1, sizeof(xymond_hostlist_t));
 	hitem->hostname = strdup(hostname);
-	strcpy(hitem->ip, ip);
+	hitem->ip = strdup(ip);
 	if (strcmp(hostname, "summary") == 0) hitem->hosttype = H_SUMMARY;
 	else hitem->hosttype = H_NORMAL;
 	xtreeAdd(rbhosts, hitem->hostname, hitem);
@@ -1157,7 +1157,7 @@ void get_hts(char *msg, char *sender, char *origin,
 
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr, *grp;
-	char hostip[IP_ADDR_STRLEN];
+	char *hostip = NULL;
 	xtreePos_t hosthandle, testhandle, originhandle;
 	xymond_hostlist_t *hwalk = NULL;
 	testinfo_t *twalk = NULL;
@@ -1165,9 +1165,6 @@ void get_hts(char *msg, char *sender, char *origin,
 	xymond_log_t *lwalk = NULL;
 
 	dbgprintf("-> get_hts\n");
-
-	MEMDEFINE(hostip);
-	*hostip = '\0';
 
 	*host = NULL;
 	*test = NULL;
@@ -1218,7 +1215,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		if (testname) { *testname = '\0'; testname++; }
 		uncommafy(hostname);	/* For BB agent compatibility */
 
-		knownname = knownhost(hostname, hostip, ghosthandling);
+		knownname = knownhost(hostname, &hostip, ghosthandling);
 		if (knownname == NULL) {
 			knownname = log_ghost(hostname, sender, msg);
 			if (knownname == NULL) goto done;
@@ -1296,8 +1293,6 @@ done:
 	*host = hwalk;
 	*test = twalk;
 	*log = lwalk;
-
-	MEMUNDEFINE(hostip);
 
 	dbgprintf("<- get_hts\n");
 }
@@ -1613,7 +1608,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * This could be an indication of a mis-configured host reporting with
 		 * the wrong hostname.
 		 */
-		if (*(log->sender) && (strcmp(log->sender, sender) != 0)) {
+		if (log->sender && (strcmp(log->sender, sender) != 0)) {
 			/*
 			 * There are a few exceptions:
 			 * - if sender is "xymond", then this is an internal update, e.g. a status going purple.
@@ -1621,14 +1616,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			 *   data collection, so it does not make sense to check it (thanks to Cade Robinson).
 			 * - some multi-homed hosts use a random IP for sending us data.
 			 */
-			if ( (strcmp(log->sender, "xymond") != 0) && (strcmp(sender, "xymond") != 0) && (strcmp(sender, "0.0.0.0") != 0))  {
+			if ( (strcmp(log->sender, "xymond") != 0) && (strcmp(sender, "xymond") != 0) && (!conn_null_ip(sender)))  {
 				if ((xmh_item(hinfo, XMH_PULLDATA) == NULL) && (xmh_item(hinfo, XMH_FLAG_MULTIHOMED) == NULL)) {
 					log_multisrc(log, sender);
 				}
 			}
 		}
-		strncpy(log->sender, sender, sizeof(log->sender)-1);
-		*(log->sender + sizeof(log->sender) - 1) = '\0';
+		if (log->sender) xfree(log->sender);
+		log->sender = strdup(sender);
 	}
 
 
@@ -2023,11 +2018,9 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	testinfo_t *twalk = NULL;
 	xymond_log_t *log;
 	char *p;
-	char hostip[IP_ADDR_STRLEN];
+	char *hostip = NULL;
 
 	dbgprintf("->handle_enadis\n");
-
-	MEMDEFINE(hostip);
 
 	p = strchr(msg->buf, '\n'); if (p) *p = '\0';
 	firstline = strdup(msg->buf);
@@ -2082,7 +2075,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 		tname = (p+1);
 	}
 	uncommafy(hosttest);
-	hname = knownhost(hosttest, hostip, ghosthandling);
+	hname = knownhost(hosttest, &hostip, ghosthandling);
 	if (hname == NULL) goto done;
 
 	hosthandle = xtreeFind(rbhosts, hname);
@@ -2093,7 +2086,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	else hwalk = xtreeData(rbhosts, hosthandle);
 
 	if (!oksender(maintsenders, 
-		      (hwalk->ip && (strcmp(hwalk->ip, "0.0.0.0") != 0)) ? hwalk->ip : NULL,
+		      (hwalk->ip && (!conn_null_ip(hwalk->ip))) ? hwalk->ip : NULL,
 		      msg->addr.sin_addr, msg->buf)) goto done;
 
 	if (tname) {
@@ -2164,7 +2157,6 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	}
 
 done:
-	MEMUNDEFINE(hostip);
 	xfree(firstline);
 
 	dbgprintf("<-handle_enadis\n");
@@ -2457,6 +2449,7 @@ void free_log_t(xymond_log_t *zombie)
 		xfree(modtmp);
 	}
 
+	if (zombie->sender) xfree(zombie->sender);
 	if (zombie->message) xfree(zombie->message);
 	if (zombie->dismsg) xfree(zombie->dismsg);
 	if (zombie->ackmsg) xfree(zombie->ackmsg);
@@ -2470,7 +2463,7 @@ void free_log_t(xymond_log_t *zombie)
 
 void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
 {
-	char hostip[IP_ADDR_STRLEN];
+	char *hostip = NULL;
 	xtreePos_t hosthandle, testhandle;
 	xymond_hostlist_t *hwalk;
 	testinfo_t *twalk, *newt;
@@ -2479,7 +2472,6 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	char *canonhostname;
 
 	dbgprintf("-> handle_dropnrename\n");
-	MEMDEFINE(hostip);
 
 	{
 		/*
@@ -2538,7 +2530,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	 * NB: knownhost() may return NULL, if the hosts.cfg file was re-loaded before
 	 * we got around to cleaning up a host.
 	 */
-	canonhostname = knownhost(hostname, hostip, ghosthandling);
+	canonhostname = knownhost(hostname, &hostip, ghosthandling);
 	if (canonhostname) hostname = canonhostname;
 
 	hosthandle = xtreeFind(rbhosts, hostname);
@@ -2582,6 +2574,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		/* Free the hostlist entry */
 		xfree(hwalk->hostname);
+		xfree(hwalk->ip);
 		while (hwalk->clientmsgs) {
 			clientmsg_list_t *czombie = hwalk->clientmsgs;
 			hwalk->clientmsgs = hwalk->clientmsgs->next;
@@ -2622,8 +2615,6 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	}
 
 done:
-	MEMUNDEFINE(hostip);
-
 	dbgprintf("<- handle_dropnrename\n");
 
 	return;
@@ -2998,15 +2989,13 @@ hostfilter_rec_t *setup_filter(char *buf, char **fields, int *acklevel, int *hav
 		}
 		else {
 			/* Might be an old-style HOST.TEST request */
-			char *hname, *tname, hostip[IP_ADDR_STRLEN];
-
-			MEMDEFINE(hostip);
+			char *hname, *tname, *hostip = NULL;
 
 			hname = tok;
 			tname = strrchr(tok, '.');
 			if (tname) { *tname = '\0'; tname++; }
 			uncommafy(hname);
-			hname = knownhost(hname, hostip, ghosthandling);
+			hname = knownhost(hname, &hostip, ghosthandling);
 
 			if (hname && tname) {
 				newrec = (hostfilter_rec_t *)calloc(1, sizeof(hostfilter_rec_t));
@@ -3428,7 +3417,7 @@ void do_message(conn_t *msg, char *origin)
 	xymond_log_t *log;
 	int color;
 	char *downcause;
-	char sender[IP_ADDR_STRLEN];
+	char *sender;
 	char *grouplist;
 	time_t now, timeroffset;
 	char *msgfrom;
@@ -3442,11 +3431,9 @@ void do_message(conn_t *msg, char *origin)
 		if (eoln) *eoln = '\n';
 	}
 
-	MEMDEFINE(sender);
-
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
-	strncpy(sender, inet_ntoa(msg->addr.sin_addr), sizeof(sender));
+	sender = strdup(inet_ntoa(msg->addr.sin_addr));
 	now = getcurrenttime(NULL);
 	timeroffset = (getcurrenttime(NULL) - gettimer());
 
@@ -3568,7 +3555,10 @@ void do_message(conn_t *msg, char *origin)
 			/* Pick out the real sender of this message */
 			msgfrom = strstr(currmsg, "\nStatus message received from ");
 			if (msgfrom) {
-				sscanf(msgfrom, "\nStatus message received from %15s\n", sender);
+				char realsender[51];
+				sscanf(msgfrom, "\nStatus message received from %50s\n", realsender);
+				if (sender) xfree(sender);
+				sender = strdup(realsender);
 				*msgfrom = '\0';
 			}
 
@@ -3645,7 +3635,10 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "status", 6) == 0) {
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %15s\n", sender);
+			char realsender[51];
+			sscanf(msgfrom, "\nStatus message received from %50s\n", realsender);
+			if (sender) xfree(sender);
+			sender = strdup(realsender);
 			*msgfrom = '\0';
 		}
 
@@ -3686,7 +3679,10 @@ void do_message(conn_t *msg, char *origin)
 
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %15s\n", sender);
+			char realsender[51];
+			sscanf(msgfrom, "\nStatus message received from %50s\n", realsender);
+			if (sender) xfree(sender);
+			sender = strdup(realsender);
 			*msgfrom = '\0';
 		}
 
@@ -3712,11 +3708,9 @@ void do_message(conn_t *msg, char *origin)
 		*ehost = savechar;
 
 		if (hostname && testname) {
-			char *hname, hostip[IP_ADDR_STRLEN];
+			char *hname, *hostip = NULL;
 
-			MEMDEFINE(hostip);
-
-			hname = knownhost(hostname, hostip, ghosthandling);
+			hname = knownhost(hostname, &hostip, ghosthandling);
 
 			if (hname == NULL) {
 				hname = log_ghost(hostname, sender, msg->buf);
@@ -3734,8 +3728,6 @@ void do_message(conn_t *msg, char *origin)
 			}
 
 			xfree(hostname); xfree(testname);
-
-			MEMUNDEFINE(hostip);
 		}
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
@@ -4462,8 +4454,11 @@ void do_message(conn_t *msg, char *origin)
 		msgfrom = strstr(msg->buf, "\n[proxy]\n");
 		if (msgfrom) {
 			char *ipline = strstr(msgfrom, "\nClientIP:");
-			if (ipline) { 
-				sscanf(ipline, "\nClientIP:%15s\n", sender);
+			if (ipline) {
+				char realsender[51];
+				sscanf(ipline, "\nClientIP:%50s\n", realsender);
+				if (sender) xfree(sender);
+				sender = strdup(realsender);
 			}
 		}
 
@@ -4490,11 +4485,9 @@ void do_message(conn_t *msg, char *origin)
 		}
 
 		if (hostname && clientos) {
-			char hostip[IP_ADDR_STRLEN];
+			char *hostip = NULL;
 
-			MEMDEFINE(hostip);
-
-			hname = knownhost(hostname, hostip, ghosthandling);
+			hname = knownhost(hostname, &hostip, ghosthandling);
 
 			if (hname == NULL) {
 				hname = log_ghost(hostname, sender, msg->buf);
@@ -4536,8 +4529,6 @@ void do_message(conn_t *msg, char *origin)
 					}
 				}
 			}
-
-			MEMUNDEFINE(hostip);
 		}
 
 		if (hname) {
@@ -4699,7 +4690,7 @@ done:
 
 	}
 
-	MEMUNDEFINE(sender);
+	if (sender) xfree(sender);
 
 	dbgprintf("<- do_message/%d\n", nesting);
 	nesting--;
@@ -4805,7 +4796,7 @@ void load_checkpoint(char *fn)
 	strbuffer_t *inbuf;
 	char *item;
 	int i, err;
-	char hostip[IP_ADDR_STRLEN];
+	char *hostip = NULL;
 	xtreePos_t hosthandle, testhandle, originhandle;
 	xymond_hostlist_t *hitem = NULL;
 	testinfo_t *t = NULL;
@@ -4821,8 +4812,6 @@ void load_checkpoint(char *fn)
 		errprintf("Cannot access checkpoint file %s for restore\n", fn);
 		return;
 	}
-
-	MEMDEFINE(hostip);
 
 	inbuf = newstrbuffer(0);
 	initfgets(fd);
@@ -4948,7 +4937,7 @@ void load_checkpoint(char *fn)
 		if (err) continue;
 
 		/* Only load hosts we know; they may have been dropped while we were offline */
-		hostname = knownhost(hostname, hostip, ghosthandling);
+		hostname = knownhost(hostname, &hostip, ghosthandling);
 		if (hostname == NULL) continue;
 
 		/* Ignore the "client", "info" and "trends" data, since we generate on the fly now. */
@@ -5010,7 +4999,7 @@ void load_checkpoint(char *fn)
 		ltail->activealert = (decide_alertstate(color) == A_ALERT);
 		ltail->histsynced = 0;
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
-		strcpy(ltail->sender, sender);
+		ltail->sender = strdup(sender);
 		ltail->logtime = logtime;
 		ltail->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
 		ltail->lastchange[0] = lastchange;
@@ -5056,8 +5045,6 @@ void load_checkpoint(char *fn)
 	fclose(fd);
 	freestrbuffer(inbuf);
 	dbgprintf("Loaded %d status logs\n", count);
-
-	MEMDEFINE(hostip);
 }
 
 

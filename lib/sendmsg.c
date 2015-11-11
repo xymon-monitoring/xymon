@@ -270,7 +270,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 		/* recipient is not an IP - do DNS lookup */
 
 		struct hostent *hent;
-		char hostip[IP_ADDR_STRLEN];
+		char hostip[50];
 
 		hent = gethostbyname(rcptip);
 		if (hent) {
@@ -458,7 +458,7 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 
 	// errprintf("sendtomany: onercpt=%s\n", onercpt);
 
-	if (strcmp(onercpt, "0.0.0.0") != 0) 
+	if (!conn_null_ip(onercpt)) 
 		allservers = 0;
 	else if (strncmp(msg, "schedule", 8) == 0)
 		/* See if it's just a blank "schedule" command */
@@ -486,7 +486,7 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 		return XYMONSEND_EBADIP;
 	}
 
-	if (strcmp(onercpt, "0.0.0.0") != 0) 
+	if (!conn_null_ip(onercpt)) 
 		xymondlist = strdup(onercpt);
 	else
 		xymondlist = strdup(morercpts);
@@ -675,7 +675,7 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 		};
 
 		eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
-		if (strcmp(recipient, "0.0.0.0") == 0) recipient = xgetenv("XYMSERVERS");
+		if (conn_null_ip(recipient)) recipient = xgetenv("XYMSERVERS");
 		errprintf("Whoops ! Failed to send message (%s)\n", statustext);
 		errprintf("->  %s\n", errordetails);
 		errprintf("->  Recipient '%s', timeout %d\n", recipient, timeout);
