@@ -417,6 +417,7 @@ void handle_win32_bbwin_client(char *hostname, char *clienttype, enum ostype_t o
 	char *cpuutilstr;
 	char *uptimestr;
 	char *clockstr;
+	char *proxystr;
 	char *msgcachestr;
 	char *diskstr;
 	char *procsstr;	
@@ -441,6 +442,7 @@ void handle_win32_bbwin_client(char *hostname, char *clienttype, enum ostype_t o
 
 	uptimestr = getdata("uptime");
 	clockstr = getdata("clock");
+	proxystr = getdata("proxy");
 	msgcachestr = getdata("msgcache"); /* TODO check when it is usefull */
 	cpuutilstr = getdata("cpu");
 	procsstr = getdata("procs");

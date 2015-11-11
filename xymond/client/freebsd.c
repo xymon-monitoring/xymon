@@ -19,6 +19,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *timestr;
 	char *uptimestr;
 	char *clockstr;
+	char *proxystr;
 	char *msgcachestr;
 	char *whostr;
 	char *psstr;
@@ -48,6 +49,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	timestr = getdata("date");
 	uptimestr = getdata("uptime");
 	clockstr = getdata("clock");
+	proxystr = getdata("proxy");
 	msgcachestr = getdata("msgcache");
 	whostr = getdata("who");
 	psstr = getdata("ps");
@@ -63,7 +65,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	vmstatstr = getdata("vmstat");
 	vmtotalstr = getdata("vmtotal");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, proxystr, timestamp, 
 			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Avail", "Capacity", "Mounted", dfstr);
 	unix_inode_report(hostname, clienttype, os, hinfo, fromline, timestr, "ifree", "%iused", "Mounted", inodestr);

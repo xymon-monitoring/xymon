@@ -3,6 +3,8 @@ xymon (4.4-alpha) unstable; urgency=low
    * rev xxxx
 
    * Standardize command line options across most binaries
+   * Attempt to get a more accurate clock delta when a client message has been
+     sent through a xymonproxy
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 6 Nov 2015 08:00:00 -0700
 

@@ -558,10 +558,10 @@ int main(int argc, char *argv[])
 					msgs_other++;
 					cwalk->snum = xymonservercount;
 
-					if ((cwalk->buflen + 40 ) < cwalk->bufsize) {
+					if ((cwalk->buflen + 100 ) < cwalk->bufsize) {
 						int n = sprintf(cwalk->bufp, 
-								"\n[proxy]\nClientIP:%s\n", 
-								inet_ntoa(*cwalk->clientip));
+								"\n[proxy]\nClientIP:%s\nArrival:%ld.%06ld\n", 
+								inet_ntoa(*cwalk->clientip), (long int)cwalk->arrival.tv_sec, (long int)(cwalk->arrival.tv_nsec / 1000));
 						cwalk->bufp += n;
 						cwalk->buflen += n;
 					}

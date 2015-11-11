@@ -304,7 +304,7 @@ char *nocolon(char *txt)
 
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
 		     void *hinfo, char *fromline, char *timestr, 
-		     char *uptimestr, char *clockstr, char *msgcachestr,
+		     char *uptimestr, char *clockstr, char *msgcachestr, char *proxystr, time_t timestamp, 
 		     char *whostr, int usercount, 
 		     char *psstr, int pscount, char *topstr)
 {
@@ -479,7 +479,18 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 				if (p) cachedelay = atoi(p+11);
 			}
 
-			gettimeofday(&clockdiff, &tz);
+			if (proxystr) p = strstr(proxystr, "Arrival:");
+			else p = NULL;
+			if (p && sscanf(p, "Arrival:%ld.%ld", (long int *)&clockdiff.tv_sec, (long int *)&clockdiff.tv_usec) == 2) {
+				dbgprintf(" - per proxy, %s\n", p);
+			}
+			else if (timestamp > 1) {	/* 0 if blank, 1 if local */
+				/* check message timestamp passed to handle_client		 */
+				/* but this is only in whole seconds (we atoi earlier), so cheat */
+				clockdiff.tv_sec = timestamp; clockdiff.tv_usec = clockval.tv_sec;
+			}
+			else gettimeofday(&clockdiff, &tz);
+
 			clockdiff.tv_sec -= (clockval.tv_sec + cachedelay);
 			clockdiff.tv_usec -= clockval.tv_usec;
 			if (clockdiff.tv_usec < 0) {

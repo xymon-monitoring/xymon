@@ -19,6 +19,7 @@ void handle_osf_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *timestr;
 	char *uptimestr;
 	char *clockstr;
+	char *proxystr;
 	char *msgcachestr;
 	char *whostr;
 	char *psstr;
@@ -41,6 +42,7 @@ void handle_osf_client(char *hostname, char *clienttype, enum ostype_t os,
 	timestr = getdata("date");
 	uptimestr = getdata("uptime");
 	clockstr = getdata("clock");
+	proxystr = getdata("proxy");
 	msgcachestr = getdata("msgcache");
 	whostr = getdata("who");
 	psstr = getdata("ps");
@@ -54,7 +56,7 @@ void handle_osf_client(char *hostname, char *clienttype, enum ostype_t os,
 	memorystr = getdata("memory");
 	swapstr = getdata("swap");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, proxystr, timestamp, 
 			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "CMD", "COMMAND", psstr);
