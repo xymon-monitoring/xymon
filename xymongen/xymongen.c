@@ -96,9 +96,10 @@ int main(int argc, char *argv[])
 	char		*csvfile = NULL;
 	char		csvdelim = ',';
 	int		embedded = 0;
-	char		*envarea = NULL;
 	int		do_normal = 1;
 	int		do_nongreen = 1;
+
+	libxymon_init(argv[0]);
 
 	/* Setup standard header+footer (might be modified by option pageset) */
 	select_headers_and_footers("std");
@@ -117,17 +118,9 @@ int main(int argc, char *argv[])
 
 	for (i = 1; (i < argc); i++) {
 		if ( (strcmp(argv[i], "--hobbitd") == 0)       ||
-		     (argnmatch(argv[i], "--purplelifetime=")) ||
-		     (strcmp(argv[i], "--nopurple") == 0)      ) {
+				(argnmatch(argv[i], "--purplelifetime=")) ||
+				(strcmp(argv[i], "--nopurple") == 0)      ) {
 			/* Deprecated */
-		}
-		else if (argnmatch(argv[i], "--env=")) {
-			char *lp = strchr(argv[i], '=');
-			loadenv(lp+1, envarea);
-		}
-		else if (argnmatch(argv[i], "--area=")) {
-			char *lp = strchr(argv[i], '=');
-			envarea = strdup(lp+1);
 		}
 
 		else if (argnmatch(argv[i], "--ignorecolumns=")) {
@@ -237,7 +230,7 @@ int main(int argc, char *argv[])
 			unsigned int rstart, rend;
 
 			int count = sscanf(argv[i], "--reportopts=%u:%u:%d:%s", 
-					   &rstart, &rend, &dynamicreport, style);
+					&rstart, &rend, &dynamicreport, style);
 			reportstart = rstart; reportend = rend;
 
 			if (count < 2) {
@@ -439,7 +432,7 @@ int main(int argc, char *argv[])
 			timing = 1;
 		}
 		else if ( argnmatch(argv[i], "--criticallog=") || (strcmp(argv[i], "--criticallog") == 0) || 
-			  argnmatch(argv[i], "--nklog=") || (strcmp(argv[i], "--nklog") == 0) ){
+				argnmatch(argv[i], "--nklog=") || (strcmp(argv[i], "--nklog") == 0) ){
 			char *lp = strchr(argv[i], '=');
 			if (lp) {
 				logcritstatus = strdup(lp+1);
@@ -449,12 +442,6 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "--timing") == 0) {
 			timing = 1;
 		}
-		else if (strcmp(argv[i], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[i], "--no-update") == 0) {
-			dontsendmessages = 1;
-		}
 		else if (strcmp(argv[i], "--loadhostsfromxymond") == 0) {
 			loadhostsfromxymond = 1;
 		}
@@ -463,65 +450,66 @@ int main(int argc, char *argv[])
 			printf("\n");
 			exit(0);
 		}
-
-		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
-			printf("xymongen for Xymon version %s\n\n", VERSION);
-			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
-			printf("Options:\n");
-			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
-			printf("    --critical-reds-only        : Only show red statuses on the Critical page\n");
-			printf("    --nongreen-ignorecolumns=test[,test]: Ignore these columns for the non-green page\n");
-			printf("    --nongreen-ignorepurples         : Ignore all-purple hosts on non-green page\n");
-			printf("    --includecolumns=test[,test]: Always include these columns on non-green page\n");
-		        printf("    --max-eventcount=N          : Max number of events to include in eventlog\n");
-		        printf("    --max-eventtime=N           : Show events that occurred within the last N minutes\n");
-			printf("    --eventignore=test[,test]   : Columns to ignore in non-green event-log display\n");
-			printf("    --no-eventlog               : Do not generate the non-green eventlog display\n");
-			printf("    --no-acklog                 : Do not generate the non-green ack-log display\n");
-			printf("    --no-pages                  : Generate only the nongreen and critical pages\n");
-			printf("    --docurl=documentation-URL  : Hostnames link to a general (dynamic) web page for docs\n");
-			printf("    --doc-window                : Open doc-links in a new browser window\n");
-			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
-			printf("    --report[=COLUMNNAME]       : Send a status report about the running of xymongen\n");
-			printf("    --reportopts=ST:END:DYN:STL : Run in Xymon Reporting mode\n");
-			printf("    --csv=FILENAME              : For Xymon Reporting, output CSV file\n");
-			printf("    --csvdelim=CHARACTER        : Delimiter in CSV file output (default: comma)\n");
-			printf("    --snapshot=TIME             : Snapshot mode\n");
-			printf("\nPage layout options:\n");
-			printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
-			printf("    --pages-last                : Put page- and subpage-links after hosts\n");
-			printf("    --subpagecolumns=N          : Number of columns for links to pages and subpages\n");
-			printf("    --maxrows=N                 : Repeat column headings for every N hosts shown\n");
-			printf("    --no-showemptygroups        : Do not show groups without test results for the listed hosts\n");
-			printf("    --recentgifs                : Use xxx-recent.gif icons for newly changed tests\n");
-			printf("    --sort-group-only-items     : Display group-only items in alphabetical order\n");
-			printf("    --page-title=TITLE          : Set a default page title for all pages\n");
-			printf("    --dialupskin=URL            : Use a different icon skin for dialup tests\n");
-			printf("    --reverseskin=URL           : Use a different icon skin for reverse tests\n");
-			printf("    --pagetitle-links           : Make page- and subpage-titles act as links\n");
-			printf("    --pagetext-headings         : Use page texts as headings\n");
-			printf("    --no-underline-headings     : Do not underline the page headings\n");
-			printf("\nStatus propagation control options:\n");
-			printf("    --noprop=test[,test]        : Disable upwards status propagation when YELLOW\n");
-			printf("    --nopropred=test[,test]     : Disable upwards status propagation when RED or YELLOW\n");
-			printf("    --noproppurple=test[,test]  : Disable upwards status propagation when PURPLE\n");
-			printf("\nAlternate pageset generation support:\n");
-			printf("    --pageset=SETNAME           : Generate non-standard pageset with tag SETNAME\n");
-			printf("    --template=TEMPLATE         : template for header and footer files\n");
-			printf("\nAlternate output formats:\n");
-			printf("    --wml[=test1,test2,...]     : Generate a small (All nongreen-style) WML page\n");
-			printf("    --nstab=FILENAME            : Generate a Netscape Sidebar feed\n");
-			printf("    --nslimit=COLOR             : Minimum color to include on Netscape sidebar\n");
-			printf("    --rss                       : Generate a RSS/RDF feed of alerts\n");
-			printf("    --rssextension=.EXT         : Sets filename extension for RSS files (default: .rss\n");
-			printf("    --rssversion={0.91|0.92|1.0|2.0} : Specify RSS/RDF version (default: 0.91)\n");
-			printf("    --rsslimit=COLOR            : Minimum color to include on RSS feed\n");
-			printf("\nDebugging/troubleshooting options:\n");
-			printf("    --timing                    : Collect timing information\n");
-			printf("    --debug                     : Debugging information\n");
-			printf("    --version                   : Show version information\n");
-			printf("    --purplelog=FILENAME        : Create a log of purple hosts and tests\n");
-			exit(0);
+		else if (standardoption(argv[i])) {
+			if (showhelp) {
+				printf("xymongen for Xymon version %s\n\n", VERSION);
+				printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
+				printf("Options:\n");
+				printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
+				printf("    --critical-reds-only        : Only show red statuses on the Critical page\n");
+				printf("    --nongreen-ignorecolumns=test[,test]: Ignore these columns for the non-green page\n");
+				printf("    --nongreen-ignorepurples         : Ignore all-purple hosts on non-green page\n");
+				printf("    --includecolumns=test[,test]: Always include these columns on non-green page\n");
+				printf("    --max-eventcount=N          : Max number of events to include in eventlog\n");
+				printf("    --max-eventtime=N           : Show events that occurred within the last N minutes\n");
+				printf("    --eventignore=test[,test]   : Columns to ignore in non-green event-log display\n");
+				printf("    --no-eventlog               : Do not generate the non-green eventlog display\n");
+				printf("    --no-acklog                 : Do not generate the non-green ack-log display\n");
+				printf("    --no-pages                  : Generate only the nongreen and critical pages\n");
+				printf("    --docurl=documentation-URL  : Hostnames link to a general (dynamic) web page for docs\n");
+				printf("    --doc-window                : Open doc-links in a new browser window\n");
+				printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
+				printf("    --report[=COLUMNNAME]       : Send a status report about the running of xymongen\n");
+				printf("    --reportopts=ST:END:DYN:STL : Run in Xymon Reporting mode\n");
+				printf("    --csv=FILENAME              : For Xymon Reporting, output CSV file\n");
+				printf("    --csvdelim=CHARACTER        : Delimiter in CSV file output (default: comma)\n");
+				printf("    --snapshot=TIME             : Snapshot mode\n");
+				printf("\nPage layout options:\n");
+				printf("    --pages-first               : Put page- and subpage-links before hosts (default)\n");
+				printf("    --pages-last                : Put page- and subpage-links after hosts\n");
+				printf("    --subpagecolumns=N          : Number of columns for links to pages and subpages\n");
+				printf("    --maxrows=N                 : Repeat column headings for every N hosts shown\n");
+				printf("    --no-showemptygroups        : Do not show groups without test results for the listed hosts\n");
+				printf("    --recentgifs                : Use xxx-recent.gif icons for newly changed tests\n");
+				printf("    --sort-group-only-items     : Display group-only items in alphabetical order\n");
+				printf("    --page-title=TITLE          : Set a default page title for all pages\n");
+				printf("    --dialupskin=URL            : Use a different icon skin for dialup tests\n");
+				printf("    --reverseskin=URL           : Use a different icon skin for reverse tests\n");
+				printf("    --pagetitle-links           : Make page- and subpage-titles act as links\n");
+				printf("    --pagetext-headings         : Use page texts as headings\n");
+				printf("    --no-underline-headings     : Do not underline the page headings\n");
+				printf("\nStatus propagation control options:\n");
+				printf("    --noprop=test[,test]        : Disable upwards status propagation when YELLOW\n");
+				printf("    --nopropred=test[,test]     : Disable upwards status propagation when RED or YELLOW\n");
+				printf("    --noproppurple=test[,test]  : Disable upwards status propagation when PURPLE\n");
+				printf("\nAlternate pageset generation support:\n");
+				printf("    --pageset=SETNAME           : Generate non-standard pageset with tag SETNAME\n");
+				printf("    --template=TEMPLATE         : template for header and footer files\n");
+				printf("\nAlternate output formats:\n");
+				printf("    --wml[=test1,test2,...]     : Generate a small (All nongreen-style) WML page\n");
+				printf("    --nstab=FILENAME            : Generate a Netscape Sidebar feed\n");
+				printf("    --nslimit=COLOR             : Minimum color to include on Netscape sidebar\n");
+				printf("    --rss                       : Generate a RSS/RDF feed of alerts\n");
+				printf("    --rssextension=.EXT         : Sets filename extension for RSS files (default: .rss\n");
+				printf("    --rssversion={0.91|0.92|1.0|2.0} : Specify RSS/RDF version (default: 0.91)\n");
+				printf("    --rsslimit=COLOR            : Minimum color to include on RSS feed\n");
+				printf("\nDebugging/troubleshooting options:\n");
+				printf("    --timing                    : Collect timing information\n");
+				printf("    --debug                     : Debugging information\n");
+				printf("    --version                   : Show version information\n");
+				printf("    --purplelog=FILENAME        : Create a log of purple hosts and tests\n");
+				exit(0);
+			}
 		}
 		else if (argnmatch(argv[i], "-")) {
 			errprintf("Unknown option : %s\n", argv[i]);

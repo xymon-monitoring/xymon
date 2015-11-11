@@ -422,8 +422,6 @@ void sig_handler(int signum)
 int main(int argc, char *argv[])
 {
 	int daemonize = 0;
-	char *pidfile = NULL;
-	char *envarea = NULL;
 	int cnid = -1;
 	pcre *msgfilter = NULL;
 	pcre *stdfilter = NULL;
@@ -433,6 +431,8 @@ int main(int argc, char *argv[])
 	xtreePos_t handle;
 
 
+	libxymon_init(argv[0]);
+
 	/* Don't save the error buffer */
 	save_errbuf = 0;
 
@@ -440,10 +440,7 @@ int main(int argc, char *argv[])
 	peers = xtreeNew(strcasecmp);
 
 	for (argi=1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--debug")) {
-			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--channel=")) {
+		if (argnmatch(argv[argi], "--channel=")) {
 			char *cn = strchr(argv[argi], '=') + 1;
 
 			for (cnid = C_STATUS; (channelnames[cnid] && strcmp(channelnames[cnid], cn)); cnid++) ;
@@ -458,22 +455,6 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--no-daemon")) {
 			daemonize = 0;
-		}
-		else if (argnmatch(argv[argi], "--pidfile=")) {
-			char *p = strchr(argv[argi], '=');
-			pidfile = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--log=")) {
-			char *p = strchr(argv[argi], '=');
-			logfn = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--locator=")) {
 			char *p = strchr(argv[argi], '=');
@@ -499,6 +480,9 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--no-md5")) {
 			checksumsize = 0;
+		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) return 0;
 		}
 		else {
 			char *childcmd;
@@ -541,7 +525,7 @@ int main(int argc, char *argv[])
 		else if (daemonpid > 0) {
 			/* Parent creates PID file and exits */
 			FILE *fd = NULL;
-			if (pidfile) fd = fopen(pidfile, "w");
+			if (pidfn) fd = fopen(pidfn, "w");
 			if (fd) {
 				fprintf(fd, "%d\n", (int)daemonpid);
 				fclose(fd);
@@ -810,7 +794,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Remove the PID file */
-	if (pidfile) unlink(pidfile);
+	if (pidfn) unlink(pidfn);
 
 	return 0;
 }
