@@ -14,8 +14,9 @@
 			echo "clock_gettime() not present, but this should be OK"
 		fi
 
-		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-clockgettime-librt clean
 	fi
+
+	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-clockgettime-librt clean
 
 	cd ..
 
