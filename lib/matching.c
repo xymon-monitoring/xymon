@@ -48,7 +48,7 @@ pcre *multilineregex(const char *pattern)
 	return compileregex_opts(pattern, PCRE_CASELESS|PCRE_MULTILINE);
 }
 
-int matchregex(char *needle, pcre *pcrecode)
+int matchregex(const char *needle, pcre *pcrecode)
 {
 	int ovector[30];
 	int result;
@@ -66,7 +66,7 @@ void freeregex(pcre *pcrecode)
 	pcre_free(pcrecode);
 }
 
-int namematch(char *needle, char *haystack, pcre *pcrecode)
+int namematch(const char *needle, char *haystack, pcre *pcrecode)
 {
 	char *xhay;
 	char *tokbuf = NULL, *tok;

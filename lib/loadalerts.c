@@ -804,7 +804,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 */
 
 	static char *pgnames = NULL;
-	char *dgname = NULL;
+	const char *dgname = NULL;
 	int pgmatchres, pgexclres;
 	time_t duration = (getcurrenttime(NULL) - alert->eventstart);
 	int result, cfid = 0;
