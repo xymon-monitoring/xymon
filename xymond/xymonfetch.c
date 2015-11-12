@@ -449,7 +449,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	setup_signalhandler("xymonfetch");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigmisc_handler;
 	sigaction(SIGHUP, &sa, NULL);

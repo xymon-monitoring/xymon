@@ -11,6 +11,7 @@
 #ifndef __SIG_H__
 #define __SIG_H__
 
+extern void sigusr2_handler(int signum);
 extern void setup_signalhandler(char *programname);
 
 #endif

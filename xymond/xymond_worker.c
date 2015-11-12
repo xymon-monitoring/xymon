@@ -144,7 +144,6 @@ static int net_worker_listener(char *ipport)
 	fcntl(lsocket, F_SETFL, O_NONBLOCK);
 
 	/* Catch some signals */
-	setup_signalhandler("xymond_listener");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = netinp_sighandler;
 	sigaction(SIGCHLD, &sa, NULL);

@@ -477,7 +477,6 @@ int main(int argc, char *argv[])
 	int cleanexpr = 0;
 
 	libxymon_init(argv[0]);
-	setup_signalhandler(argv[0]);
 
 	for (argi = 1; (argi < argc); argi++) {
 		if ((strcmp(argv[argi], "--quiet") == 0)) {

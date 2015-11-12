@@ -602,7 +602,6 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
-	setup_signalhandler("xymonlaunch");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);

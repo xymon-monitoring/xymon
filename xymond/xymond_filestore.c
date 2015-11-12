@@ -256,7 +256,6 @@ int main(int argc, char *argv[])
 	}
 
 	/* For picking up lost children */
-	setup_signalhandler("xymond_filestore");
 	signal(SIGPIPE, SIG_DFL);
 
 	dbgprintf("Storing tests: %s\n", (onlytests ? onlytests : "<all>"));

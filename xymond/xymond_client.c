@@ -2164,7 +2164,6 @@ int main(int argc, char *argv[])
 	net_worker_run(ST_CLIENT, LOC_ROAMING, NULL);
 
 	/* Signals */
-	setup_signalhandler("xymond_client");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);

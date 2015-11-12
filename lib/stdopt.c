@@ -83,6 +83,8 @@ void libxymon_init(char *toolname)
 
 		pidfn = (char *)malloc(strlen(xgetenv("XYMONSERVERLOGS")) + strlen(programname) + 6);
 		sprintf(pidfn, "%s/%s.pid", xgetenv("XYMONSERVERLOGS"), programname);
+
+		setup_signalhandler(programname);
 	}
 }
 

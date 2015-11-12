@@ -57,7 +57,7 @@ static void sigsegv_handler(int signum)
 	abort();
 }
 
-static void sigusr2_handler(int signum)
+void sigusr2_handler(int signum)
 {
 	/* SIGUSR2 toggles debugging */
 

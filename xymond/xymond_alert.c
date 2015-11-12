@@ -501,7 +501,6 @@ int main(int argc, char *argv[])
 		dbgprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
 	}
 
-	setup_signalhandler("xymond_alert");
 	/* Need to handle these ourselves, so we can shutdown and save state-info */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;

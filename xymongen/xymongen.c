@@ -521,9 +521,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* In case they changed the name of our column ... */
-	if (egocolumn) setup_signalhandler(egocolumn);
-
 	if (debug) {
 		int i;
 		printf("Command: xymongen");
@@ -537,9 +534,6 @@ int main(int argc, char *argv[])
 
 	/* Check that all needed environment vars are defined */
 	envcheck(reqenv);
-
-	/* Catch a SEGV fault */
-	setup_signalhandler("xymongen");
 
 	/* Set umask to 0022 so that the generated HTML pages have world-read access */
 	umask(0022);

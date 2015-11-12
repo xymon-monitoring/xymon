@@ -386,7 +386,6 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
-	setup_signalhandler("msgcache");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigmisc_handler;
 	sigaction(SIGHUP, &sa, NULL);

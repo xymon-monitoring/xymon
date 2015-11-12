@@ -537,7 +537,6 @@ int main(int argc, char *argv[])
 	}
 
 	/* Catch signals */
-	setup_signalhandler("xymond_channel");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGINT, &sa, NULL);

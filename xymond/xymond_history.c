@@ -171,7 +171,6 @@ int main(int argc, char *argv[])
 	}
 
 	/* For picking up lost children */
-	setup_signalhandler("xymond_history");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	signal(SIGCHLD, SIG_IGN);

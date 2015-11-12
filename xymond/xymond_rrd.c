@@ -244,7 +244,6 @@ int main(int argc, char *argv[])
 	/* Do the network stuff if needed */
 	net_worker_run(ST_RRD, LOC_STICKY, update_locator_hostdata);
 
-	setup_signalhandler("xymond_rrd");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);

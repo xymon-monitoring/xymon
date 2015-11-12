@@ -5155,16 +5155,6 @@ void sig_handler(int signum)
 	  case SIGUSR1:
 		nextcheckpoint = 0;
 		break;
-
-	  case SIGUSR2:
-		if (debug) {
-			dbgprintf("Debug OFF\n");
-			debug = 0;
-		}
-		else {
-			debug = 1;
-			dbgprintf("Debug ON\n");
-		}
 	}
 }
 
@@ -5512,13 +5502,11 @@ int main(int argc, char *argv[])
 	}
 
 	errprintf("Setting up signal handlers\n");
-	setup_signalhandler("xymond");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
-	sigaction(SIGUSR2, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGALRM, &sa, NULL);
