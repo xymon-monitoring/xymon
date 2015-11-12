@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 			timeout->tv_sec = (atoi(argv[argi]+10));
 			timeout->tv_nsec = 0;
 		}
-		else if (standardoption(argv[0])) {
+		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}

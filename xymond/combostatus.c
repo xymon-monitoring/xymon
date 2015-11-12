@@ -476,25 +476,11 @@ int main(int argc, char *argv[])
 	int showeval = 1;
 	int cleanexpr = 0;
 
+	libxymon_init(argv[0]);
 	setup_signalhandler(argv[0]);
 
 	for (argi = 1; (argi < argc); argi++) {
-		if ((strcmp(argv[argi], "--help") == 0)) {
-			printf("%s version %s\n\n", argv[0], VERSION);
-			printf("Usage:\n%s [--quiet] [--clean] [--debug] [--no-update]\n", argv[0]);
-			exit(0);
-		}
-		else if ((strcmp(argv[argi], "--version") == 0)) {
-			printf("%s version %s\n", argv[0], VERSION);
-			exit(0);
-		}
-		else if ((strcmp(argv[argi], "--debug") == 0)) {
-			debug = 1;
-		}
-		else if ((strcmp(argv[argi], "--no-update") == 0)) {
-			dontsendmessages = 1;
-		}
-		else if ((strcmp(argv[argi], "--quiet") == 0)) {
+		if ((strcmp(argv[argi], "--quiet") == 0)) {
 			showeval = 0;
 		}
 		else if ((strcmp(argv[argi], "--clean") == 0)) {
@@ -513,6 +499,12 @@ int main(int argc, char *argv[])
 			}
 
 			if (newerrorcolors) errorcolors = newerrorcolors;
+		}
+		else if (standardoption(argv[argi])) {
+			if (showhelp) {
+				printf("Usage:\n%s [--quiet] [--clean] [--debug] [--no-update]\n", argv[0]);
+				return 0;
+			}
 		}
 	}
 

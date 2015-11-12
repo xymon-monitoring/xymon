@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 	int argi;
 
 	for (argi=1; (argi < argc); argi++) {
-		if (standardoption(argv[0])) {
+		if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
 		}
 	}
