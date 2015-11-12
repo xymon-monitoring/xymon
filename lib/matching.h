@@ -26,9 +26,9 @@ extern pcre *compileregex_opts(const char *pattern, int flags);
 #define firstlineregexnocase(P) compileregex_opts(P, PCRE_CASELESS);
 #endif
 extern pcre *multilineregex(const char *pattern);
-extern int matchregex(char *needle, pcre *pcrecode);
+extern int matchregex(const char *needle, pcre *pcrecode);
 extern void freeregex(pcre *pcrecode);
-extern int namematch(char *needle, char *haystack, pcre *pcrecode);
+extern int namematch(const char *needle, char *haystack, pcre *pcrecode);
 extern int patternmatch(char *datatosearch, char *pattern, pcre *pcrecode);
 extern pcre **compile_exprs(char *id, const char **patterns, int count);
 extern int pickdata(char *buf, pcre *expr, int dupok, ...);
