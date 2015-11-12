@@ -116,38 +116,38 @@ typedef struct c_paging_t {
 	int warnlevel, paniclevel;
 } c_paging_t;
 
-#define FCHK_NOEXIST  (1ULL << 0)
-#define FCHK_TYPE     (1ULL << 1)
-#define FCHK_MODE     (1ULL << 2)
-#define FCHK_MINLINKS (1ULL << 3)
-#define FCHK_MAXLINKS (1ULL << 4)
-#define FCHK_EQLLINKS (1ULL << 5)
-#define FCHK_MINSIZE  (1ULL << 6)
-#define FCHK_MAXSIZE  (1ULL << 7)
-#define FCHK_EQLSIZE  (1ULL << 8)
-#define FCHK_OWNERID  (1ULL << 10)
-#define FCHK_OWNERSTR (1ULL << 11)
-#define FCHK_GROUPID  (1ULL << 12)
-#define FCHK_GROUPSTR (1ULL << 13)
-#define FCHK_CTIMEMIN (1ULL << 16)
-#define FCHK_CTIMEMAX (1ULL << 17)
-#define FCHK_CTIMEEQL (1ULL << 18)
-#define FCHK_MTIMEMIN (1ULL << 19)
-#define FCHK_MTIMEMAX (1ULL << 20)
-#define FCHK_MTIMEEQL (1ULL << 21)
-#define FCHK_ATIMEMIN (1ULL << 22)
-#define FCHK_ATIMEMAX (1ULL << 23)
-#define FCHK_ATIMEEQL (1ULL << 24)
-#define FCHK_MD5      (1ULL << 25)
-#define FCHK_SHA1     (1ULL << 26)
-#define FCHK_SHA256   (1ULL << 27)
-#define FCHK_SHA512   (1ULL << 28)
-#define FCHK_SHA224   (1ULL << 29)
-#define FCHK_SHA384   (1ULL << 30)
-#define FCHK_RMD160   (1ULL << 31)
+#define FCHK_NOEXIST  (1 << 0)
+#define FCHK_TYPE     (1 << 1)
+#define FCHK_MODE     (1 << 2)
+#define FCHK_MINLINKS (1 << 3)
+#define FCHK_MAXLINKS (1 << 4)
+#define FCHK_EQLLINKS (1 << 5)
+#define FCHK_MINSIZE  (1 << 6)
+#define FCHK_MAXSIZE  (1 << 7)
+#define FCHK_EQLSIZE  (1 << 8)
+#define FCHK_OWNERID  (1 << 10)
+#define FCHK_OWNERSTR (1 << 11)
+#define FCHK_GROUPID  (1 << 12)
+#define FCHK_GROUPSTR (1 << 13)
+#define FCHK_CTIMEMIN (1 << 16)
+#define FCHK_CTIMEMAX (1 << 17)
+#define FCHK_CTIMEEQL (1 << 18)
+#define FCHK_MTIMEMIN (1 << 19)
+#define FCHK_MTIMEMAX (1 << 20)
+#define FCHK_MTIMEEQL (1 << 21)
+#define FCHK_ATIMEMIN (1 << 22)
+#define FCHK_ATIMEMAX (1 << 23)
+#define FCHK_ATIMEEQL (1 << 24)
+#define FCHK_MD5      (1 << 25)
+#define FCHK_SHA1     (1 << 26)
+#define FCHK_SHA256   (1 << 27)
+#define FCHK_SHA512   (1 << 28)
+#define FCHK_SHA224   (1 << 29)
+#define FCHK_SHA384   (1 << 30)
+#define FCHK_RMD160   (1 << 31)
 
-#define CHK_OPTIONAL  (1ULL << 33)
-#define CHK_TRACKIT   (1ULL << 34)
+#define CHK_OPTIONAL  (1 << 0)
+#define CHK_TRACKIT   (1 << 1)
  
 typedef struct c_file_t {
 	exprlist_t *filename;
@@ -252,7 +252,8 @@ typedef struct c_rule_t {
 	char *timespec, *extimespec, *statustext, *rrdidstr, *groups;
 	ruletype_t ruletype;
 	int cfid;
-	unsigned long long flags;
+	uint32_t flags;
+	uint32_t chkflags;
 	struct c_rule_t *next;
 	union {
 		c_load_t load;
@@ -978,7 +979,7 @@ int load_client_config(char *configfn)
 						currule->rule.proc.color = parse_color(tok+6);
 					}
 					else if (strncasecmp(tok, "track", 5) == 0) {
-						currule->flags |= CHK_TRACKIT;
+						currule->chkflags |= CHK_TRACKIT;
 						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
 					}
 					else if (idx == 0) {
@@ -1027,7 +1028,7 @@ int load_client_config(char *configfn)
 						currule->rule.log.color = parse_color(tok+6);
 					}
 					else if (strcasecmp(tok, "optional") == 0) {
-						currule->flags |= CHK_OPTIONAL;
+						currule->chkflags |= CHK_OPTIONAL;
 					}
 					else if (idx == 0) {
 						currule->rule.log.logfile   = setup_expr(tok, 0);
@@ -1198,11 +1199,11 @@ int load_client_config(char *configfn)
 						currule->rule.fcheck.rmd160hash = strdup(tok+7);
 					}
 					else if (strncasecmp(tok, "track", 5) == 0) {
-						currule->flags |= CHK_TRACKIT;
+						currule->chkflags |= CHK_TRACKIT;
 						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
 					}
 					else if (strcasecmp(tok, "optional") == 0) {
-						currule->flags |= CHK_OPTIONAL;
+						currule->chkflags |= CHK_OPTIONAL;
 					}
 					else {
 						int col = parse_color(tok);
@@ -1229,7 +1230,7 @@ int load_client_config(char *configfn)
 						currule->rule.dcheck.minsize = atol(tok+5);
 					}
 					else if (strncasecmp(tok, "track", 5) == 0) {
-						currule->flags |= CHK_TRACKIT;
+						currule->chkflags |= CHK_TRACKIT;
 						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
 					}
 					else {
@@ -1291,7 +1292,7 @@ int load_client_config(char *configfn)
 						currule->rule.port.color = parse_color(tok+6);
 					}
 					else if (strncasecmp(tok, "track", 5) == 0) {
-						currule->flags |= CHK_TRACKIT;
+						currule->chkflags |= CHK_TRACKIT;
 						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
 					}
 				} while (tok && (!isqual(tok)));
@@ -1542,7 +1543,7 @@ int load_client_config(char *configfn)
 						currule->rule.mqqueue.critage = atol(tok+13);
 					}
 					else if (strncasecmp(tok, "track", 5) == 0) {
-						currule->flags |= CHK_TRACKIT;
+						currule->chkflags |= CHK_TRACKIT;
 						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
 					}
 				} while (tok && (!isqual(tok)));
@@ -1905,12 +1906,12 @@ void dump_client_config(void)
 			break;
 		}
 
-		if (rwalk->flags & CHK_TRACKIT) {
+		if (rwalk->chkflags & CHK_TRACKIT) {
 			printf(" TRACK");
 			if (rwalk->rrdidstr) printf("=%s", rwalk->rrdidstr);
 		}
 
-		if (rwalk->flags & CHK_OPTIONAL) printf(" OPTIONAL");
+		if (rwalk->chkflags & CHK_OPTIONAL) printf(" OPTIONAL");
 
 		if (rwalk->timespec) printf(" TIME=%s", rwalk->timespec);
 		if (rwalk->extimespec) printf(" EXTIME=%s", rwalk->extimespec);
@@ -2567,7 +2568,7 @@ int scan_log(void *hinfo, char *classname,
 		if (!rule->rule.log.logfile || !namematch(logname, rule->rule.log.logfile->pattern, rule->rule.log.logfile->exp)) continue;
 
 		if (nofile) {
-			if (!(rule->flags & CHK_OPTIONAL)) {
+			if (!(rule->chkflags & CHK_OPTIONAL)) {
 				if (COL_YELLOW > result) result = COL_YELLOW;
 				addalertgroup(rule->groups);
 				addtobuffer(summarybuf, "&yellow Logfile not accessible \n");
@@ -2743,7 +2744,7 @@ int check_file(void *hinfo, char *classname,
 
 		*anyrules = 1;
 		if (!exists) {
-			if (rwalk->flags & CHK_OPTIONAL) goto nextcheck;
+			if (rwalk->chkflags & CHK_OPTIONAL) goto nextcheck;
 
 			if (!(rwalk->flags & FCHK_NOEXIST)) {
 				/* Required file does not exist */
@@ -2976,7 +2977,7 @@ int check_file(void *hinfo, char *classname,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->flags & CHK_TRACKIT) {
+		if (rwalk->chkflags & CHK_TRACKIT) {
 			*trackit = (trackit || (ftype == S_IFREG));
 			*id = rwalk->rrdidstr;
 		}
@@ -3058,7 +3059,7 @@ int check_dir(void *hinfo, char *classname,
 				addtobuffer(summarybuf, msgline);
 			}
 		}
-		if (rwalk->flags & CHK_TRACKIT) {
+		if (rwalk->chkflags & CHK_TRACKIT) {
 			*trackit = 1;
 			*id = rwalk->rrdidstr;
 		}
@@ -3230,7 +3231,7 @@ void get_mqqueue_thresholds(void *hinfo, char *classname, char *qmgrname, char *
 			*critlen = rule->rule.mqqueue.critlen;
 			*warnage = rule->rule.mqqueue.warnage;
 			*critage = rule->rule.mqqueue.critage;
-			if (rule->flags & CHK_TRACKIT) *trackit = (rule->rrdidstr ? rule->rrdidstr : "");
+			if (rule->chkflags & CHK_TRACKIT) *trackit = (rule->rrdidstr ? rule->rrdidstr : "");
 			return;
 		}
 
@@ -3463,7 +3464,7 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		*uplim = (*walk)->rule->rule.proc.pmax;
 		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.proc.color;
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.proc.color;
-		*trackit = ((*walk)->rule->flags & CHK_TRACKIT);
+		*trackit = ((*walk)->rule->chkflags & CHK_TRACKIT);
 		*id = (*walk)->rule->rrdidstr;
 		if (group) *group = (*walk)->rule->groups;
 		break;
@@ -3532,7 +3533,7 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		*uplim = (*walk)->rule->rule.port.pmax;
 		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.port.color;
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.port.color;
-		*trackit = ((*walk)->rule->flags & CHK_TRACKIT);
+		*trackit = ((*walk)->rule->chkflags & CHK_TRACKIT);
 		*id = (*walk)->rule->rrdidstr;
 		if (group) *group = (*walk)->rule->groups;
 		break;
