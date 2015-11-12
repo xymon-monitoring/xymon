@@ -30,10 +30,6 @@ typedef enum {
 	HG_WITHOUT_STALE_RRDS, HG_WITH_STALE_RRDS
 } hg_stale_rrds_t;
 
-typedef enum {
-	HG_PLAIN_LINK, HG_META_LINK
-} hg_link_t;
-
 typedef struct rrdtpldata_t {
 	char *template;
 	void *dsnames;	/* Tree of tplnames_t records */
@@ -51,7 +47,7 @@ extern xymonrrd_t *find_xymon_rrd(char *service, char *flags);
 extern xymongraph_t *find_xymon_graph(char *rrdname);
 extern char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 		xymongraph_t *graphdef, int itemcount, 
-		hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,
+		hg_stale_rrds_t nostale, int locatorbased,
 		time_t starttime, time_t endtime);
 extern rrdtpldata_t *setup_template(char *params[]);
 

@@ -509,14 +509,14 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				while (graphsptr != NULL) {
 					// fprintf(output, "<!-- found: %s -->\n", graphsptr);
 					graph->xymonrrdname = strdup(graphsptr);
-					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, graph, linecount, HG_WITHOUT_STALE_RRDS, locatorbased, now-graphtime, now));
 					// next token
 					graphsptr = strtok(NULL,",");
 				}
 
 			}
 			else {
-				fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+				fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, locatorbased, now-graphtime, now));
 			}
 			xfree(graphs);
 		}

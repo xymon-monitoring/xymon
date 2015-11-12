@@ -46,7 +46,7 @@ static char rcsid[] = "$Id$";
 #define SENDRETRIES 2
 
 /* These commands go to all Xymon servers */
-static char *multircptcmds[] = { "status", "combo", "extcombo", "meta", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
+static char *multircptcmds[] = { "status", "combo", "extcombo", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
 static char errordetails[1024];
 
 /* Stuff for combo message handling */
@@ -67,10 +67,6 @@ static char	*proxysetting = NULL;
 static char	*comboofsstr = NULL;
 static int	comboofssz = 0;
 static int	*combooffsets = NULL;
-
-static int	xymonmetaqueued;		/* Anything in the buffer ? */
-static strbuffer_t *metamsg = NULL;	/* Complete meta message buffer */
-static strbuffer_t *metabuf = NULL;	/* message buffer for one meta message */
 
 static int backfeedqueue = -1;
 static int max_backfeedsz = 16384;
@@ -739,13 +735,6 @@ void combo_start_local(void)
 	combo_is_local = 1;
 }
 
-void meta_start(void)
-{
-	if (metamsg == NULL) metamsg = newstrbuffer(0);
-	clearstrbuffer(metamsg);
-	xymonmetaqueued = 0;
-}
-
 static void combo_flush(void)
 {
 	int i;
@@ -791,17 +780,6 @@ static void combo_flush(void)
 	}
 }
 
-static void meta_flush(void)
-{
-	if (!xymonmetaqueued) {
-		dbgprintf("Flush, but xymonmeta is empty\n");
-		return;
-	}
-
-	sendmessage(STRBUF(metamsg), NULL, XYMON_TIMEOUT, NULL);
-	meta_start();	/* Get ready for the next */
-}
-
 void combo_add(strbuffer_t *buf)
 {
 	if (combo_is_local) {
@@ -821,32 +799,11 @@ void combo_add(strbuffer_t *buf)
 	combooffsets[++xymonmsgqueued] = STRBUFLEN(xymonmsg);
 }
 
-static void meta_add(strbuffer_t *buf)
-{
-	/* Check if there is room for the message + 2 newlines */
-	if (maxmsgspercombo && (xymonmetaqueued >= maxmsgspercombo)) {
-		/* Nope ... flush buffer */
-		meta_flush();
-	}
-	else {
-		/* Yep ... add delimiter before new status (but not before the first!) */
-		if (xymonmetaqueued) addtobuffer(metamsg, "\n\n");
-	}
-
-	addtostrbuffer(metamsg, buf);
-	xymonmetaqueued++;
-}
-
 void combo_end(void)
 {
 	combo_flush();
 	combo_is_local = 0;
 	dbgprintf("%d status messages merged into %d transmissions\n", xymonstatuscount, xymonmsgcount);
-}
-
-void meta_end(void)
-{
-	meta_flush();
 }
 
 void init_status(int color)
@@ -857,12 +814,6 @@ void init_status(int color)
 	xymonstatuscount++;
 }
 
-void init_meta(char *metaname)
-{
-	if (metabuf == NULL) metabuf = newstrbuffer(0);
-	clearstrbuffer(metabuf);
-}
-
 void addtostatus(char *p)
 {
 	addtobuffer(msgbuf, p);
@@ -871,11 +822,6 @@ void addtostatus(char *p)
 void addtostrstatus(strbuffer_t *p)
 {
 	addtostrbuffer(msgbuf, p);
-}
-
-void addtometa(char *p)
-{
-	addtobuffer(metabuf, p);
 }
 
 void finish_status(void)
@@ -890,10 +836,4 @@ void finish_status(void)
 
 	combo_add(msgbuf);
 }
-
-void finish_meta(void)
-{
-	meta_add(metabuf);
-}
-
 

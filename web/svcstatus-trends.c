@@ -111,7 +111,7 @@ static char *stack_readdir(void)
 }
 
 
-static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t starttime, time_t endtime)
+static char *rrdlink_text(void *host, graph_t *rrd, time_t starttime, time_t endtime)
 {
 	static char *rrdlink = NULL;
 	static int rrdlinksize = 0;
@@ -127,7 +127,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 	if (hostrrdgraphs == NULL) {
 		dbgprintf("rrdlink_text: Standard URL (no rrdgraphs)\n");
 		return xymon_graph_data(xmh_item(host, XMH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
-					 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
+					 HG_WITH_STALE_RRDS, 0, starttime, endtime);
 	}
 
 	/* Find this rrd definition in the rrdgraphs */
@@ -143,7 +143,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 
 			/* Yes, return default link for this RRD */
 			return xymon_graph_data(xmh_item(host, XMH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
-						 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
+						 HG_WITH_STALE_RRDS, 0, starttime, endtime);
 		}
 		else {
 			dbgprintf("rrdlink_text: Default URL NOT included\n");
@@ -195,7 +195,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 			myrrd->count = rrd->count;
 			myrrd->next = NULL;
 			partlink = xymon_graph_data(xmh_item(host, XMH_HOSTNAME), hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
-						     HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
+						     HG_WITH_STALE_RRDS, 0, starttime, endtime);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
 				rrdlink = (char *)realloc(rrdlink, rrdlinksize);
@@ -217,7 +217,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 	else {
 		/* It is included with the default graph */
 		return xymon_graph_data(xmh_item(host, XMH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
-					 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
+					 HG_WITH_STALE_RRDS, 0, starttime, endtime);
 	}
 
 	return "";
@@ -289,7 +289,7 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 			char *onelink;
 
 			buflen = (allrrdlinksend - allrrdlinks);
-			onelink = rrdlink_text(myhost, rwalk, 0, starttime, endtime);
+			onelink = rrdlink_text(myhost, rwalk, starttime, endtime);
 			if ((buflen + strlen(onelink)) >= allrrdlinksize) {
 				allrrdlinksize += (strlen(onelink) + 4096);
 				allrrdlinks = (char *) realloc(allrrdlinks, allrrdlinksize);

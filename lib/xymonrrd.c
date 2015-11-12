@@ -32,8 +32,6 @@ xymongraph_t *xymongraphs = NULL;
 
 static const char *xymonlinkfmt = "<table summary=\"%s Graph\"><tr><td><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"xymongraph %s\"></A></td><td> <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=custom&amp;action=selzoom\"> <img src=\"%s/zoom.%s\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td></tr></table>\n";
 
-static const char *metafmt = "<RRDGraph>\n  <GraphType>%s</GraphType>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&amp;graph=hourly]]></GraphImage>\n</RRDGraph>\n";
-
 
 /*
  * Define the mapping between Xymon columns and RRD graphs.
@@ -310,13 +308,13 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 
 char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 			xymongraph_t *graphdef, int itemcount,
-			hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,
+			hg_stale_rrds_t nostale, int locatorbased,
 			time_t starttime, time_t endtime)
 {
 	return xymon_graph_text(hostname, dispname, 
 				 service, bgcolor, graphdef, 
 				 itemcount, nostale,
-				 ((wantmeta == HG_META_LINK) ? metafmt : xymonlinkfmt),
+				 xymonlinkfmt,
 				 locatorbased, starttime, endtime);
 }
 
