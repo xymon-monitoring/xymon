@@ -10,6 +10,13 @@ For a full list of changes and enhancements, please see the
 Changes file.
 
 
+Changes for 4.3.23
+==================
+
+Fixes a bug in 4.3.22 where RRD tracking of number of matching processes or
+ports open on a client was not being performed.
+
+
 Changes for 4.3.22
 ==================
 

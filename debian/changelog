@@ -3,10 +3,24 @@ xymon (4.4-alpha) unstable; urgency=low
    * rev xxxx
 
    * Standardize command line options across most binaries
+   * Refactoring of TCP code in preparation for IPv6/SSL support
+   * Remove obsolete "meta" message support
    * Attempt to get a more accurate clock delta when a client message has been
      sent through a xymonproxy
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 6 Nov 2015 08:00:00 -0700
+
+
+xymon (4.3.23) unstable; urgency=high
+ 
+   * rev 7740
+
+   * Fix broken 'TRACK' and 'OPTIONAL' identifiers in analysis.cfg
+   * Prevent logfetch from segfaulting if a file we're tracking line matching
+     deltacounts for wasn't found      
+   * Fix a type mismatch compiler warning in display group name alert matching
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, 12 Nov 2015 12:00:00 -0800
 
 
 xymon (4.3.22) unstable; urgency=medium
