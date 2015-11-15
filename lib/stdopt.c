@@ -61,9 +61,13 @@ int standardoption(char *opt)
 		char *p = strchr(opt, '=');
 		pidfn = strdup(p+1);
 	}
-	else if ((strcmp(opt, "--version") == 0) || (strcmp(opt, "--help") == 0) || (strcmp(opt, "-?") == 0)) {
-		fprintf(stderr, "%s %s\n", programname, VERSION);
+	else if ((strcmp(opt, "--help") == 0) || (strcmp(opt, "-?") == 0)) {
+		fprintf(stdout, "%s %s\n", programname, VERSION);
 		showhelp = 1;
+	}
+	else if (strcmp(opt, "--version") == 0) {
+		fprintf(stdout, "%s %s\n", programname, VERSION);
+		exit(0);
 	}
 	else {
 		return 0;
