@@ -11,6 +11,7 @@
 #ifndef __ENVIRON_H__
 #define __ENVIRON_H__
 
+extern void xymon_default_xymonhome(char *programname);
 extern char *xgetenv(const char *name);
 extern void envcheck(char *envvars[]);
 extern void loadenv(char *envfile, char *area);

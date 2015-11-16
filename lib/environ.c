@@ -17,8 +17,20 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <libgen.h>
+#include <unistd.h>
+#include <limits.h>
 
 #include "libxymon.h"
+
+#ifdef HAVE_UNAME
+#include <sys/utsname.h>
+#endif
+
+static int haveenv = 0;
+
 
 const static struct {
 	char *name;
@@ -160,29 +172,242 @@ const static struct {
 	{ NULL, NULL }
 };
 
+#ifdef	HAVE_UNAME
+static struct utsname u_name;
+#endif
+
+
+static void xymon_default_machine(void)
+{
+	/* 
+	 * If not set, determine MACHINE from the first of:
+	 * - MACHINEDOTS environment
+	 * - HOSTNAME environment
+	 * - The "nodename" setting in the uname-struct
+	 * - The output from "uname -n"
+	 */
+	char *machinebase, *evar;
+	char buf[1024];
+	
+	machinebase = getenv("MACHINE"); if (machinebase) return;
+
+	if (!machinebase) machinebase = getenv("MACHINEDOTS");
+	if (!machinebase) machinebase = getenv("HOSTNAME");
+
+#ifdef	HAVE_UNAME
+	if (uname(&u_name) == 0) machinebase = u_name.nodename;
+#endif
+
+	if (!machinebase) {
+		FILE *fd;
+		char *p;
+
+		fd = popen("uname -n", "r");
+		if (fd && fgets(buf, sizeof(buf), fd)) {
+			p = strchr(buf, '\n'); if (p) *p = '\0';
+			pclose(fd);
+		}
+		machinebase = buf;
+	}
+
+	if (!machinebase) {
+		errprintf("Cannot determine hostname, defaulting to localhost\n");
+		machinebase = "localhost";
+	}
+
+	evar = (char *)malloc(9+strlen(machinebase));
+	sprintf(evar, "MACHINE=%s", machinebase);
+	commafy(evar);
+	dbgprintf("Setting %s\n", evar);
+	putenv(evar);
+}
+
+static void xymon_default_machinedots(void)
+{
+	/* If not set, make MACHINEDOTS be the dotted form of MACHINE */
+	char *machinebase;
+	
+	machinebase = getenv("MACHINEDOTS"); if (machinebase) return;
+
+	xymon_default_machine();
+	machinebase = getenv("MACHINE");
+	if (machinebase) {
+		char *evar = (char *)malloc(13 + strlen(machinebase));
+		sprintf(evar, "MACHINEDOTS=%s", machinebase);
+		uncommafy(evar);
+		dbgprintf("Setting %s\n", evar);
+		putenv(evar);
+	}
+	else {
+		/* Not possible ... since xymon_default_machine() sets MACHINE */
+		errprintf("MACHINE not set, cannot set MACHINEDOTS");
+	}
+}
+
+static void xymon_default_clienthostname(void)
+{
+	/* If not set, set CLIENTHOSTNAME to MACHINEDOTS */
+	char *machinebase, *evar;
+	
+	if (getenv("CLIENTHOSTNAME")) return;
+
+	xymon_default_machinedots();
+	machinebase = getenv("MACHINEDOTS");
+	evar = (char *)malloc(strlen(machinebase) + 16);
+	sprintf(evar, "CLIENTHOSTNAME=%s", machinebase);
+	dbgprintf("Setting %s\n", evar);
+	putenv(evar);
+}
+
+
+static void xymon_default_serverostype(void)
+{
+	/* If not set, make SERVEROSTYPE be output from "uname -s" */
+	char *ostype = NULL, *evar;
+	char buf[128];
+
+	if (NULL != (ostype = getenv("SERVEROSTYPE"))) return;
+
+#ifdef	HAVE_UNAME
+	if (uname(&u_name) == 0) {
+		strncpy(buf, u_name.sysname, sizeof(buf));
+		ostype = buf;
+	}
+#endif
+
+	if (!ostype) {
+		FILE *fd;
+		char *p;
+
+		fd = popen("uname -s", "r");
+		if (fd && fgets(buf, sizeof(buf), fd)) {
+			p = strchr(buf, '\n'); if (p) *p = '\0';
+			pclose(fd);
+			ostype = buf;
+		}
+	}
+
+	if (!ostype) {
+		errprintf("Cannot determine OS type, defaulting to unix\n");
+		ostype = "unix";
+	}
+	else {
+		char *p;
+		for (p=ostype; (*p); p++) *p = (char) tolower((int)*p);
+	}
+
+	evar = (char *)malloc(strlen(ostype) + 14);
+	sprintf(evar, "SERVEROSTYPE=%s", ostype);
+	dbgprintf("Setting %s\n", evar);
+	putenv(evar);
+}
+
+
+void xymon_default_xymonhome(char *programname)
+{
+	char buf[PATH_MAX];
+
+	if (getenv("XYMONHOME") && getenv("XYMONCLIENTHOME")) return;
+
+	if (!getenv("XYMONHOME")) {
+		char *dbuf, *evar;
+
+		dbgprintf("Looking for XYMONHOME based on command %s\n", programname);
+
+		/* First check if programname has no path-element, then we need to scan $PATH */
+		if (strchr(programname, '/') == NULL) {
+			char *path = strdup(getenv("PATH")), *pathelem, *tokr;
+			int found = 0;
+			char pathpgm[PATH_MAX];
+			struct stat st;
+
+			pathelem = strtok_r(path, ":", &tokr);
+			while (pathelem && !found) {
+				snprintf(pathpgm, sizeof(pathpgm), "%s/%s", pathelem, programname);
+				found = (stat(pathpgm, &st) == 0);
+				if (!found) pathelem = strtok_r(NULL, ":", &tokr);
+			} 
+
+			free(path);
+			realpath((found ? pathpgm: programname), buf);
+		}
+		else {
+			realpath(programname, buf);
+		}
+		dbuf = dirname(buf);
+
+		if ((strlen(dbuf) > 4) && (strcmp(dbuf+strlen(dbuf)-4, "/bin") == 0)) {
+			*(dbuf+strlen(dbuf)-4) = '\0';
+		}
+		else {
+			strcpy(buf, getenv("HOME"));
+			dbuf = buf;
+		}
+
+		evar = (char *)malloc(strlen(dbuf)+11);
+		sprintf(evar, "XYMONHOME=%s", dbuf);
+		dbgprintf("Setting %s\n", evar);
+		putenv(evar);
+	}
+
+	if (!getenv("XYMONCLIENTHOME")) {
+		char *evar;
+
+		strcpy(buf, getenv("XYMONHOME"));
+		if (strcmp(basename(buf), "server") == 0) {
+			struct stat st;
+
+			strcpy(buf, getenv("XYMONHOME"));
+			sprintf(buf+strlen(buf)-6, "client");
+			if (stat(buf, &st) != 0) {
+				/* No "../client/" directory, so just use XYMONHOME */
+				*buf = '\0';
+			}
+		}
+
+		if (*buf == '\0') strcpy(buf, getenv("XYMONHOME"));
+
+		evar = (char *)malloc(17+strlen(buf));
+		sprintf(evar, "XYMONCLIENTHOME=%s", buf);
+		dbgprintf("Setting %s\n", evar);
+		putenv(evar);
+	}
+}
+
+
 char *xgetenv(const char *name)
 {
+	static int firsttime = 1;
 	char *result, *newstr;
 	int i;
 
-	result = getenv(name);
-	if ((result == NULL) && (strcmp(name, "MACHINE") == 0) && xgetenv("MACHINEDOTS")) {
-		/* If MACHINE is undefined, but MACHINEDOTS is there, create MACHINE  */
-		char *oneenv, *p;
-		
-#ifdef HAVE_SETENV
-		oneenv = strdup(xgetenv("MACHINEDOTS"));
-		p = oneenv; while ((p = strchr(p, '.')) != NULL) *p = ',';
-		setenv(name, oneenv, 1);
-		xfree(oneenv);
-#else
-		oneenv = (char *)malloc(10 + strlen(xgetenv("MACHINEDOTS")));
-		sprintf(oneenv, "%s=%s", name, xgetenv("MACHINEDOTS"));
-		p = oneenv; while ((p = strchr(p, '.')) != NULL) *p = ',';
-		putenv(oneenv);
-#endif
-		result = getenv(name);
+	if (firsttime) {
+		xymon_default_machine();
+		xymon_default_machinedots();
+		xymon_default_clienthostname();
+		xymon_default_serverostype();
+		firsttime = 0;
 	}
+
+	if (!haveenv) {
+		struct stat st;
+		char envfn[PATH_MAX];
+
+		haveenv = 1; /* Must set here to avoid looping when calling xgetenv on the next line */
+
+		snprintf(envfn, sizeof(envfn), "%s/etc/xymonserver.cfg", xgetenv("XYMONHOME"));
+		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "/etc/xymon/xymonserver.cfg");
+		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "%s/etc/xymonclient.cfg", xgetenv("XYMONHOME"));
+		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "%s/etc/xymonclient.cfg", xgetenv("XYMONCLIENTHOME"));
+		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "/etc/xymon-client/xymonclient.cfg");
+		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "xymonserver.cfg");
+		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "xymonclient.cfg");
+
+		dbgprintf("Using default environment file %s\n", envfn);
+		loadenv(envfn, envarea);
+	}
+
+	result = getenv(name);
 
 	if (result == NULL) {
 		for (i=0; (xymonenv[i].name && (strcmp(xymonenv[i].name, name) != 0)); i++) ;
@@ -196,13 +421,10 @@ char *xgetenv(const char *name)
 		 * If we got a result, put it into the environment so it will stay there.
 		 * Allocate memory for this new environment string - this stays allocated.
 		 */
-#ifdef HAVE_SETENV
-		setenv(name, result, 1);
-#else
 		newstr = malloc(strlen(name) + strlen(result) + 2);
 		sprintf(newstr, "%s=%s", name, result);
 		putenv(newstr);
-#endif
+
 		/*
 		 * Return pointer to the environment string.
 		 */
@@ -211,6 +433,7 @@ char *xgetenv(const char *name)
 
 	return result;
 }
+
 
 void envcheck(char *envvars[])
 {
@@ -236,7 +459,8 @@ void loadenv(char *envfile, char *area)
 	strbuffer_t *inbuf;
 	char *p, *marker, *oneenv;
 
-	MEMDEFINE(l);
+	haveenv = 1;	/* Set whether this succeeds or not */
+
 	inbuf = newstrbuffer(0);
 
 	fd = stackfopen(envfile, "r", NULL);
@@ -311,7 +535,6 @@ void loadenv(char *envfile, char *area)
 	}
 
 	freestrbuffer(inbuf);
-	MEMUNDEFINE(l);
 }
 
 char *getenv_default(char *envname, char *envdefault, char **buf)
