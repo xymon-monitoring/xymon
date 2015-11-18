@@ -403,8 +403,13 @@ char *xgetenv(const char *name)
 		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "xymonserver.cfg");
 		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "xymonclient.cfg");
 
-		dbgprintf("Using default environment file %s\n", envfn);
-		loadenv(envfn, envarea);
+		if (stat(envfn, &st) == 0) {
+			dbgprintf("Using default environment file %s\n", envfn);
+			loadenv(envfn, envarea);
+		}
+		else {
+			dbgprintf("Could not find an environment file to load\n");
+		}
 	}
 
 	result = getenv(name);
