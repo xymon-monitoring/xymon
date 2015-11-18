@@ -1,0 +1,119 @@
+Setting up TLS encrypted connections for Xymon
+==============================================
+
+Xymon 4.4 adds the ability for xymond to handle connections from clients
+using TLS.
+
+To do this, you must provide xymond with a TLS certificate. There are
+several ways of getting these: You can buy certificates from official
+Certificate Authorities (CA's), you can generate them yourselves, or
+perhaps your company already has the necessary in-house certificate 
+management.
+
+This document describes how to generate your own certificates using
+the "easy-rsa" utility, which is based on the OpenSSL tools. Since 
+OpenSSL is required by Xymon you probably already have it installed.
+
+Easy-rsa is provided as part of the OpenVPN project. Some Linux 
+distributions have a separate package for it (Debian "easy-rsa"),
+others include it with their openvpn package. Or you can fetch it
+from https://community.openvpn.net/openvpn/wiki/GettingEasyRsa
+
+One reason for using easy-rsa is that it also becomes easy to 
+issue client certificates for your Xymon client installations, if
+you want to enable certificate based authentication of clients.
+
+
+Setting up easy-rsa
+-------------------
+
+First step is to setup easy-rsa. If you fetched it from the download
+site, unpack it an run the usual "./configure; make; make install"
+sequence - this puts the easy-rsa installation in /usr/local/share/easy-rsa.
+If you have the Debian package installed, copy the directory 
+/usr/share/easy-rsa/ to a convenient place.
+
+The easy-rsa directory is where your certificates will be generated.
+
+Next, edit the "vars" file. I would recommend setting the default KEY
+values at the bottom of the file, and check that KEY_SIZE is set to
+2048. You may also want to set the KEY_EXPIRE / CA_EXPIRE number of
+days.
+
+
+Generate the CA- and xymonserver-certificates
+---------------------------------------------
+Run these commands:
+
+  . ./vars
+  clean-all
+  ./build-ca
+  ./build-key-server xymon
+
+Note the first one uses ". " at the start of the line to "source" the
+vars-file.
+
+The "build-ca" generates the certificate authority certificate - this is
+what is used to sign all of the other certificates.
+
+The "build-key-server" generates a certificate for the Xymon server,
+
+The key- and certificate-files are placed in the "keys" subdirectory.
+
+
+Enable TLS in xymond
+--------------------
+Copy the CA certificate (not the key!) and the Xymon-server certificate
+AND key over to the Xymon server's /etc/xymon/ directory.  I highly 
+recommend that the key-file is made readable only by the xymon user 
+(or whatever useraccount is running Xymon):
+
+  cp keys/ca.crt keys/xymon.crt keys/xymon.key /etc/xymon/
+  chown xymon /etc/xymon/ca.crt /etc/xymon/xymon.crt /etc/xymon/xymon.key
+  chmod 400 /etc/xymon/xymon.key
+
+Now you must add the necessary options to tell xymond to enable TLS. In 
+/etc/xymon/tasks.cfg add these options to the CMD starting xymond:
+
+  --ssl-certificate=/etc/xymon/xymon.crt
+  --ssl-key=/etc/xymon/xymon.key
+  --ssl-listen=[::]:1985
+
+After restarting you can test with openssl:
+
+  openssl s_client -connect localhost:1985
+
+This dumps a lot of information, but amongst it you should see the
+Xymon server certificate identification and the encryption used:
+
+  subject=/C=DK/ST=Copenhagen/L=Vanloese/O=Xymon/OU=Development/CN=newxymon/name=XymonCA/emailAddress=henrik@xymon.com
+  issuer=/C=DK/ST=Copenhagen/L=Vanloese/O=Xymon/OU=Development/CN=Xymon CA/name=XymonCA/emailAddress=henrik@xymon.com
+  <snip>
+  New, TLSv1/SSLv3, Cipher is AES256-GCM-SHA384
+  Server public key is 2048 bit
+
+You can now talk to xymond. Enter this (no spaces at the front):
+
+  size:4
+  ping
+
+You should see the response "xymond <versionnumber>".
+
+
+Two ways of doing TLS in xymond
+-------------------------------
+The "--ssl-listen" option sets up an extra network port for xymond, 
+which only talks TLS - this makes it possible for us to test that TLS
+is working, because the standard OpenSSL "s_client" command can be
+used to talk to xymond.
+
+But an extra network port is bothersome, if you already have a lot
+of clients configured to use the default Xymon port 1984.
+
+Port 1984 also supports TLS. Clients can send a special "STARTTLS"
+command after connecting, and then the connection on port 1984 
+will become encrypted. This is the default for the Xymon-specific
+tools to enable encryption, so you do not really need the --ssl-listen
+option unless you have third-party tools talking to xymond, that you 
+would like to wrap in TLS encryption.
+

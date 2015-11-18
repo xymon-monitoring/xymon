@@ -70,10 +70,13 @@ client, looking for a hostname, classname or OS match (in that order).
 This option causes xymond to merge all matching entries together into 
 one and return all of it to the client.
 
-.IP "\-\-listen=IP[:PORT]"
-Specifies the IP-address and port where xymond will listen for incoming
-connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
-addresses available on the host) and port 1984.
+.IP "\-\-listen=IP:PORT[,IP:PORT]"
+Specifies the IP-addresses and ports where xymond will listen for incoming
+connections. IPv4 addresses are in dotted-quad format, e.g.172.16.10.1:1984.
+IPv6-addresses must be enclosed in square brackets, e.g. [2001:16d8:dda8:0::162]:1984.
+Multiple addresse can be given by putting a comma between each address.
+The default is "[::]:1984" on IPv6 enabled systems, and "0.0.0.0:1984" on
+systems without IPv6 support - this listens on all available network interfaces.
 
 .IP "\-\-lqueue=NUMBER"
 Specifies the listen-queue for incoming connections. You don't need to tune
@@ -82,6 +85,31 @@ this unless you have a very busy xymond daemon.
 .IP "\-\-no\-bfq"
 Tells xymond to NOT use the local messagequeue interface for receiving status-
 updates from xymond_client and xymonnet.
+
+.IP "--tls-certificate=FILENAME"
+For TLS support in xymond. FILENAME must be a valid TLS certificate in PEM format,
+with the matching private key given by the --tls-key option.
+
+.IP "--tls-key=FILENAME"
+For TLS support in xymond. FILENAME must be a valid TLS private key in PEM format,
+with the matching certificate given by the --tls-certificate option.
+
+.IP "--tls-listen=IP:PORT[,IP:PORT]"
+Same as "--listen", but configures extra listener sockets to accept only TLS
+encrypted connections without using the STARTTLS command. Useful if you are
+connecting to the Xymon server using non-Xymon client tools, e.g. openssl s_client.
+You must also provide the --tls-certificate and --tls-key options.
+.br
+Note: This is NOT used by any of the Xymon programs, so you normally do not
+need this option.
+
+.IP "--tls-clientrootca=FILENAME"
+For TLS support where xymond requires a client TLS certificate for authentication.
+xymond will verify that the certificate presented by the client was issued by the
+CA given in FILENAME. FILENAME must be a valid TLS CA certificate in PEM format.
+
+.IP "--tls-requireclientcert"
+Require clients to present a valid client certificate before accepting a connection.
 
 .IP "\-\-daemon"
 xymond is normally started by 

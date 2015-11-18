@@ -21,17 +21,16 @@ static char rcsid[] = "$Id$";
 
 sender_t *getsenderlist(char *iplist)
 {
-	char *ips, *p, *tok;
+	char *p, *tok;
 	sender_t *result;
 	int count;
 
 	dbgprintf("-> getsenderlist\n");
 
-	ips = strdup(iplist);
-	count = 0; p = ips; do { count++; p = strchr(p, ','); if (p) p++; } while (p);
+	count = 0; p = iplist; do { count++; p = strchr(p, ','); if (p) p++; } while (p);
 	result = (sender_t *) calloc(1, sizeof(sender_t) * (count+1));
 
-	tok = strtok(ips, ","); count = 0;
+	tok = strtok(iplist, ","); count = 0;
 	while (tok) {
 		int bits = 32;
 
@@ -48,14 +47,16 @@ sender_t *getsenderlist(char *iplist)
 		count++;
 	}
 
-	xfree(ips);
 	dbgprintf("<- getsenderlist\n");
 
 	return result;
 }
 
-int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgbuf)
+int oksender(sender_t *oklist, char *targetip, char *sender, char *msgbuf)
 {
+#if 0 
+	--- FIXME ---
+
 	int i;
 	unsigned long int tg_ip;
 	char *eoln = NULL;
@@ -68,6 +69,12 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 		return 1;
 	}
 
+	/* If sender is 0.0.0.0 (i.e. it arrived via backfeed channel), then OK */
+		if (sender.s_addr == INADDR_ANY) {
+		dbgprintf("<- oksender(1-c)\n");
+		return 1;
+	}
+
 	/* If we know the target, it would be ok for the host to report on itself. */
 	if (targetip) {
 		if (conn_null_ip(targetip)) return 1; /* DHCP hosts can report from any address */
@@ -76,12 +83,6 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 			dbgprintf("<- oksender(1-b)\n");
 			return 1;
 		}
-	}
-
-	/* If sender is 0.0.0.0 (i.e. it arrived via backfeed channel), then OK */
-	if (sender.s_addr == INADDR_ANY) {
-		dbgprintf("<- oksender(1-c)\n");
-		return 1;
 	}
 
 	/* It's someone else reporting about the host. Check the access list */
@@ -102,5 +103,9 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 	dbgprintf("<- oksender(0)\n");
 
 	return 0;
+#else
+	return 1;
+#endif
+
 }
 

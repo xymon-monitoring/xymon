@@ -127,11 +127,12 @@ void grabdata(conn_t *conn)
 	if (strncmp(STRBUF(conn->msgbuf), "pullclient", 10) == 0) {
 		char *clientcfg;
 		int idnum;
+		char sender[50];
 
 		/* Access check */
-		if (!oksender(serverlist, NULL, conn->caddr.sin_addr, STRBUF(conn->msgbuf))) {
-			errprintf("Rejected pullclient request from %s\n",
-				  inet_ntoa(conn->caddr.sin_addr));
+		strcpy(sender, inet_ntoa(conn->caddr.sin_addr));
+		if (!oksender(serverlist, NULL, sender, STRBUF(conn->msgbuf))) {
+			errprintf("Rejected pullclient request from %s\n", sender);
 			conn->action = C_DONE;
 			return;
 		}

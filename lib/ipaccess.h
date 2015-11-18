@@ -26,7 +26,7 @@ typedef struct sender_t {
 
 
 extern sender_t *getsenderlist(char *iplist);
-extern int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgbuf);
+extern int oksender(sender_t *oklist, char *targetip, char *sender, char *msgbuf);
 
 #endif
 

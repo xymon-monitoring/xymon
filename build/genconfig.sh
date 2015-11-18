@@ -106,6 +106,15 @@ fi
 	echo "#undef HAVE_BINARY_TREE" >>include/config.h
 #fi
 
+# Assume IPv4 is always supported (at least for now :-))
+echo "#define IPV4_SUPPORT" >>include/config.h
+
+# Check for IPv6 support
+echo "Checking for IPv6"
+$CC -c -o build/testfile.o $CFLAGS build/test-ipv6.c 1>/dev/null 2>&1
+if test $? -eq 0; then
+	echo "#define IPV6_SUPPORT" >>include/config.h
+fi
 
 
 echo "#endif" >>include/config.h
