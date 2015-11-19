@@ -96,8 +96,8 @@ static int prepare_fromnet(void)
 	sres = newsendreturnbuf(1, NULL);
 	sendstat = sendmessage("config hosts.cfg", NULL, XYMON_TIMEOUT, sres);
 	if (sendstat != XYMONSEND_OK) {
+		errprintf("Cannot load hosts.cfg from xymond: %s\n", strxymonsendresult(sendstat));
 		freesendreturnbuf(sres);
-		errprintf("Cannot load hosts.cfg from xymond, code %d\n", sendstat);
 		return -1;
 	}
 	dontsendmessages = ods;

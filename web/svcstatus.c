@@ -240,7 +240,7 @@ int do_request(void)
 			xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
 			if (xymondresult != XYMONSEND_OK) {
 				char *errtxt = (char *)malloc(1024 + strlen(xymondreq));
-				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", htmlquoted(xymondreq), xymondresult);
+				sprintf(errtxt, "Status not available: %s\nRequest: %s\n", strxymonsendresult(xymondresult), htmlquoted(xymondreq));
 				errormsg(500, errtxt);
 				return 1;
 			}

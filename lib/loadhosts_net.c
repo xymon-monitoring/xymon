@@ -45,13 +45,14 @@ int load_hostinfo(char *targethost)
 	sendstat = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
 	xfree(msg);
 	if (sendstat != XYMONSEND_OK) {
-		errprintf("Cannot load hostinfo\n");
+		errprintf("Cannot load info for host '%s': %s\n", targethost, strxymonsendresult(sendstat));
+		freesendreturnbuf(sres);
 		return -1;
 	}
 
 	hivalbuf = getsendreturnstr(sres, 1);
 	if (strlen(hivalbuf) == 0) {
-		errprintf("No such host\n");
+		errprintf("No such host '%s'\n", targethost);
 		return -2;
 	}
 

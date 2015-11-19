@@ -11,6 +11,7 @@ Changes from 4.3.x -> 4.4-alpha
 * Convert various size variables to size_t throughout
 * Add error handling to recover when messages greater than the internal MAX BUF size
   are found (must delete to not be wedged)
+* Add better reporting for sendmessage() failures
 
 
 

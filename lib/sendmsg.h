@@ -27,6 +27,7 @@ typedef enum {
 	XYMONSEND_EREADERROR,
 	XYMONSEND_EBADURL 
 } sendresult_t;
+extern char *strxymonsendresult(sendresult_t s);
 
 typedef struct sendreturn_t {
 	FILE *respfd;

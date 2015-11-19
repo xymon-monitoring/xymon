@@ -78,6 +78,22 @@ void setproxy(char *proxy)
 	proxysetting = strdup(proxy);
 }
 
+char *strxymonsendresult(sendresult_t res)
+{
+	return (res == XYMONSEND_OK ? "OK" :
+		res == XYMONSEND_EBADIP ? "Bad IP address" :
+		res == XYMONSEND_EIPUNKNOWN ? "Cannot resolve hostname" :
+		res == XYMONSEND_ENOSOCKET ? "Cannot get a socket" :
+		res == XYMONSEND_ECANNOTDONONBLOCK ? "Non-blocking I/O failed" :
+		res == XYMONSEND_ECONNFAILED ? "Connection failed" :
+		res == XYMONSEND_ESELFAILED ? "Select(2) failed" :
+		res == XYMONSEND_ETIMEOUT ? "Timeout" :
+		res == XYMONSEND_EWRITEERROR ? "Write error" :
+		res == XYMONSEND_EREADERROR ? "Read error" :
+		res == XYMONSEND_EBADURL ? "Bad URL" :
+		"Unknown error");
+}
+
 static void setup_transport(char *recipient)
 {
 	static int transport_is_setup = 0;
@@ -568,7 +584,6 @@ char *getsendreturnstr(sendreturn_t *s, int takeover)
 
 	if (!s) return NULL;
 	if (!s->respstr) return NULL;
-	result = STRBUF(s->respstr);
 	if (takeover) {
 		/*
 		 * We cannot leave respstr as NULL, because later calls 
@@ -577,8 +592,10 @@ char *getsendreturnstr(sendreturn_t *s, int takeover)
 		 * responsebuffer for future use - if it isn't used, it
 		 * will be freed by freesendreturnbuf().
 		 */
+		result = grabstrbuffer(s->respstr);
 		s->respstr = newstrbuffer(0);
 	}
+	else result = STRBUF(s->respstr);
 
 	return result;
 }
@@ -653,27 +670,11 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 	res = sendtomany(recipient, xgetenv("XYMSERVERS"), msg, timeout, response);
 
 	if (res != XYMONSEND_OK) {
-		char *statustext = "";
 		char *eoln;
-
-		switch (res) {
-		  case XYMONSEND_OK            : statustext = "OK"; break;
-		  case XYMONSEND_EBADIP        : statustext = "Bad IP address"; break;
-		  case XYMONSEND_EIPUNKNOWN    : statustext = "Cannot resolve hostname"; break;
-		  case XYMONSEND_ENOSOCKET     : statustext = "Cannot get a socket"; break;
-		  case XYMONSEND_ECANNOTDONONBLOCK   : statustext = "Non-blocking I/O failed"; break;
-		  case XYMONSEND_ECONNFAILED   : statustext = "Connection failed"; break;
-		  case XYMONSEND_ESELFAILED    : statustext = "select(2) failed"; break;
-		  case XYMONSEND_ETIMEOUT      : statustext = "timeout"; break;
-		  case XYMONSEND_EWRITEERROR   : statustext = "write error"; break;
-		  case XYMONSEND_EREADERROR    : statustext = "read error"; break;
-		  case XYMONSEND_EBADURL       : statustext = "Bad URL"; break;
-		  default:                statustext = "Unknown error"; break;
-		};
 
 		eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
 		if (conn_null_ip(recipient)) recipient = xgetenv("XYMSERVERS");
-		errprintf("Whoops ! Failed to send message (%s)\n", statustext);
+		errprintf("Whoops ! Failed to send message (%s)\n", strxymonsendresult(res));
 		errprintf("->  %s\n", errordetails);
 		errprintf("->  Recipient '%s', timeout %d\n", recipient, timeout);
 		errprintf("->  1st line: '%s'\n", msg);
