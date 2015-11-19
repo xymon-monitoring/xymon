@@ -47,7 +47,7 @@ typedef struct xymon_msg_t {
 	time_t tstamp;  /* When did the message arrive */
 	char *buf;	/* The message data */
 	char *bufp;	/* Next char to send */
-	int buflen;	/* How many bytes left to send */
+	size_t buflen;	/* How many bytes left to send */
 	struct xymon_msg_t *next;
 } xymon_msg_t;
 
@@ -266,7 +266,7 @@ void flushmessage(xymon_peer_t *peer)
 	pendingcount--;
 }
 
-static void addmessage_onepeer(xymon_peer_t *peer, char *inbuf, int inlen)
+static void addmessage_onepeer(xymon_peer_t *peer, char *inbuf, size_t inlen)
 {
 	xymon_msg_t *newmsg;
 
@@ -304,7 +304,7 @@ int addmessage(char *inbuf)
 	xtreePos_t phandle;
 	xymon_peer_t *peer;
 	int bcastmsg = 0;
-	int inlen = strlen(inbuf);
+	size_t inlen = strlen(inbuf);
 
 	if (locatorbased) {
 		char *hostname, *hostend, *peerlocation;

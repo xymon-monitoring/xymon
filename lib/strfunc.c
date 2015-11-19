@@ -15,6 +15,7 @@ static char rcsid[] = "$Id$";
 
 #include "config.h"
 
+#include <errno.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
@@ -26,7 +27,7 @@ static char rcsid[] = "$Id$";
 
 #define BUFSZINCREMENT 4096
 
-strbuffer_t *newstrbuffer(int initialsize)
+strbuffer_t *newstrbuffer(size_t initialsize)
 {
 	strbuffer_t *newbuf;
 	
@@ -46,7 +47,7 @@ strbuffer_t *newstrbuffer(int initialsize)
 	return newbuf;
 }
 
-strbuffer_t *convertstrbuffer(char *buffer, int bufsz)
+strbuffer_t *convertstrbuffer(char *buffer, size_t bufsz)
 {
 	strbuffer_t *newbuf;
 	
@@ -91,7 +92,7 @@ char *grabstrbuffer(strbuffer_t *buf)
 strbuffer_t *dupstrbuffer(char *src)
 {
 	strbuffer_t *newbuf;
-	int len = 0;
+	size_t len = 0;
 	
 	newbuf = newstrbuffer(0);
 	if (src) {
@@ -103,7 +104,7 @@ strbuffer_t *dupstrbuffer(char *src)
 	return newbuf;
 }
 
-static void strbuf_addtobuffer(strbuffer_t *buf, char *newtext, int newlen)
+void strbuf_addtobuffer(strbuffer_t *buf, char *newtext, size_t newlen)
 {
 	if (buf->s == NULL) {
 		buf->used = 0;
@@ -148,7 +149,7 @@ void addtostrbuffer(strbuffer_t *buf, strbuffer_t *newtext)
 	strbuf_addtobuffer(buf, STRBUF(newtext), STRBUFLEN(newtext));
 }
 
-void addtobufferraw(strbuffer_t *buf, char *newdata, int bytes)
+void addtobufferraw(strbuffer_t *buf, char *newdata, size_t bytes)
 {
 	/* Add binary data to the buffer */
 	strbuf_addtobuffer(buf, newdata, bytes);
@@ -177,7 +178,7 @@ void strbufferrecalc(strbuffer_t *buf)
 	buf->used = strlen(buf->s);
 }
 
-void strbuffergrow(strbuffer_t *buf, int bytes)
+void strbuffergrow(strbuffer_t *buf, size_t bytes)
 {
 	if (buf == NULL) return;
 
@@ -185,7 +186,7 @@ void strbuffergrow(strbuffer_t *buf, int bytes)
 	buf->s = (char *) realloc(buf->s, buf->sz);
 }
 
-void strbufferuse(strbuffer_t *buf, int bytes)
+void strbufferuse(strbuffer_t *buf, size_t bytes)
 {
 	if (buf == NULL) return;
 

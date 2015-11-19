@@ -215,7 +215,7 @@ xymond_channel_t *userchn   = NULL;	/* Receives "usermsg" messages */
 static int backfeedqueue = -1;
 static unsigned long backfeedcount = 0;
 static char *bf_buf = NULL;
-static int bf_bufsz = 0;
+static size_t bf_bufsz = 0;
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
@@ -3452,7 +3452,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 
 	if (strncmp(msg->buf, "extcombo ", 9) == 0) {
 		char *ofsline, *origbuf, *p, *ofsstr, *tokr = NULL;
-		int startofs, endofs;
+		off_t startofs, endofs;
 
 		origbuf = ofsline = msg->buf;
 		p = strchr(ofsline, '\n');
@@ -3464,7 +3464,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		}
 
 		ofsstr = strtok_r(ofsline+9, " ", &tokr);
-		startofs = atoi(ofsstr);
+		startofs = (off_t)atol(ofsstr);
 		if ((startofs <= 0) || (startofs >= msg->bufsz)) {
 			/* Invalid offsets, abort */
 			errprintf("Invalid start-offset in extcombo: startofs=%d, bufsz=%d\n", startofs, msg->bufsz);
@@ -3477,7 +3477,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			ofsstr = strtok_r(NULL, " ", &tokr);
 			if (!ofsstr) continue;
 
-			endofs = atoi(ofsstr);
+			endofs = (off_t)atol(ofsstr);
 			if ((endofs <= 0) || (endofs <= startofs) || (endofs > msg->bufsz)) {
 				/* Invalid offsets, abort */
 				errprintf("Invalid end-offset in extcombo: endofs=%d, bufsz=%d\n", endofs, msg->bufsz);
@@ -3899,7 +3899,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		char *fields = NULL;
 		int acklevel = -1, havehostfilter = 0;
 		strbuffer_t *response;
-		static unsigned int lastboardsize = 0;
+		static size_t lastboardsize = 0;
 
 		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
@@ -4011,7 +4011,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		hostfilter_rec_t *logfilter;
 		char *fields = NULL;
 		int acklevel = -1, havehostfilter = 0;
-		static unsigned int lastboardsize = 0;
+		static size_t lastboardsize = 0;
 		strbuffer_t *response;
 
 		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
@@ -4103,7 +4103,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		 */
 		void *hinfo;
 		strbuffer_t *response;
-		static unsigned int lastboardsize = 0;
+		static size_t lastboardsize = 0;
 		char *clonehost;
 
 		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
@@ -5633,7 +5633,10 @@ int main(int argc, char *argv[])
 		backfeedqueue  = setup_feedback_queue(CHAN_MASTER);
 		if (backfeedqueue == -1) { errprintf("Cannot setup backfeed-client channel\n"); return 1; }
 		bf_bufsz = 1024*shbufsz(C_FEEDBACK_QUEUE);
-		bf_buf = (char *)malloc(bf_bufsz);
+		bf_buf = (char *)calloc(1, bf_bufsz);
+		if (bf_buf == NULL) { errprintf("Cannot allocate backfeed queue buffer (%d): %s\n", bf_bufsz, strerror(errno)); return 1; }
+		*bf_buf = '\0';
+		bf_bufsz -= sizeof(long); /* leave space for msgp at the beginning */
 	}
 
 	errprintf("Setting up logfiles\n");
@@ -5777,10 +5780,26 @@ int main(int argc, char *argv[])
 			ssize_t sz;
 			conn_t msg;
 
-			sz = msgrcv(backfeedqueue, bf_buf, bf_bufsz, 0, (IPC_NOWAIT | MSG_NOERROR));
+			sz = msgrcv(backfeedqueue, bf_buf, bf_bufsz, 0L, IPC_NOWAIT);
 			backfeeddata = (sz > 0);
 
-			if (backfeeddata) {
+			if ((sz == -1) && !((errno == ENOMSG) || (errno == EAGAIN) )) {
+				if (errno == E2BIG) {
+					/* someone dropped something huge on our message queue */
+					/* since we can't guarantee what it is to downstream users, just log and discard it */
+					char *temp = malloc(MAX_XYMON_INBUFSZ);
+					sz = msgrcv(backfeedqueue, temp, (MAX_XYMON_INBUFSZ - 1), 0L, IPC_NOWAIT | MSG_NOERROR);
+					if (sz >= (MAX_XYMON_INBUFSZ - 1)) errprintf("ERROR reading message on BFQ, size exceeded %zu; dropping\n", MAX_XYMON_INBUFSZ);
+					else errprintf("ERROR reading message on BFQ, size %zu where limit is %zu; dropping. You might want to increase MAXMSG_BFQ in xymonserver.cfg\n", sz, bf_bufsz);
+					xfree(temp);
+				}
+				else if ((errno == EACCES) || (errno == EFAULT) || (errno == EINVAL)) {
+					running = 0;
+					errprintf("ERROR reading from BFQ %d: %s; exiting\n", backfeedqueue, strerror(errno));
+				}
+				else errprintf("Skipping backfeed queue message due to error: %s\n", strerror(errno));
+			}
+			else if (backfeeddata) {
 				backfeedcount++;
 
 				msg.buf = bf_buf;

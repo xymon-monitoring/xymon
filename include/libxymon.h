@@ -22,7 +22,7 @@ typedef struct htnames_t {
 
 typedef struct strbuffer_t {
 	char *s;
-	int used, sz;
+	size_t used, sz;
 } strbuffer_t;
 
 #define STRBUF(buf) (buf->s)

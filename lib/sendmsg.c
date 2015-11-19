@@ -70,6 +70,7 @@ static int	*combooffsets = NULL;
 
 static int backfeedqueue = -1;
 static int max_backfeedsz = 16384;
+#define ASSUMELARGEMEM 0		/* Reserve and persist larger buffer sizes instead of growing slowly */
 
 void setproxy(char *proxy)
 {
@@ -722,7 +723,7 @@ void combo_start(void)
 	memset(combooffsets, 0, maxmsgspercombo*sizeof(int));
 	combooffsets[0] = comboofssz;
 
-	if (xymonmsg == NULL) xymonmsg = newstrbuffer(0);
+	if (xymonmsg == NULL) xymonmsg = newstrbuffer(ASSUMELARGEMEM ? 1024*shbufsz(C_LAST) : 0 );
 	clearstrbuffer(xymonmsg);
 	addtobufferraw(xymonmsg, comboofsstr, comboofssz);
 	xymonmsgqueued = 0;

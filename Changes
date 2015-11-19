@@ -8,6 +8,10 @@ Changes from 4.3.x -> 4.4-alpha
 * IPv6 support added
 * Performance optimizations / bug fixes with POSIX btree usage
 * Performance improvements within xymond_rrd
+* Convert various size variables to size_t throughout
+* Add error handling to recover when messages greater than the internal MAX BUF size
+  are found (must delete to not be wedged)
+
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)

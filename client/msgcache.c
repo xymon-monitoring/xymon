@@ -227,8 +227,8 @@ void grabdata(conn_t *conn)
 			/* Index line first */
 			for (mwalk = qhead; (mwalk); mwalk = mwalk->next) {
 				if ((mwalk->sentto & pollid) == 0) {
-					char idx[20];
-					sprintf(idx, "%d:%ld ", 
+					char idx[24];
+					sprintf(idx, "%zd:%ld ", 
 						STRBUFLEN(mwalk->msgbuf), (long)(now - mwalk->tstamp));
 					addtobuffer(conn->msgbuf, idx);
 				}
