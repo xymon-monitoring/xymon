@@ -35,6 +35,7 @@ static treerec_t *i_curr = NULL;
 
 void xtree_empty(void *dummy)
 {
+	free(dummy);
 }
 
 

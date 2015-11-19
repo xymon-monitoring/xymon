@@ -128,7 +128,7 @@ void show_timestamps(char **buffer)
 	int outbuflen = 4096;
 	char buf1[80];
 
-	if (!timing || (stamphead == NULL)) return;
+	if (!timing || (stamphead == NULL)) { xfree(outbuf); return; }
 
 	MEMDEFINE(buf1);
 

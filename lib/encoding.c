@@ -173,12 +173,13 @@ void getescapestring(char *msg, unsigned char **buf, int *buflen)
 unsigned char *nlencode(unsigned char *msg)
 {
 	static unsigned char *buf = NULL;
+	static unsigned char empty = '\0';
 	static int bufsz = 0;
 	int maxneeded;
 	unsigned char *inp, *outp;
 	int n;
 
-	if (msg == NULL) msg = "";
+	if (msg == NULL) return &empty;
 
 	maxneeded = 2*strlen(msg)+1;
 

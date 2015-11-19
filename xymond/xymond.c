@@ -1114,10 +1114,10 @@ char *check_downtime(char *hostname, char *testname)
 					if (strcmp(onesvc, testname) == 0) return cause;
 					onesvc = strtok_r(NULL, ",", &buf);
 				}
-
-				/* If we didn't use the "cause" we just created, it must be freed */
-				if (cause) xfree(cause);
 			}
+
+			/* If we didn't use the "cause" we just created, it must be freed */
+			if (cause) xfree(cause);
 		} while (*p);
 	}
 
@@ -1315,7 +1315,9 @@ void clear_cookie(xymond_log_t *log)
 	if (!log->cookie) return;
 
 	xtreeDelete(rbcookies, log->cookie);
+#ifndef HAVE_BINARY_TREE
 	xfree(log->cookie);
+#endif
 	log->cookie = NULL; log->cookieexpires = 0;
 }
 
@@ -2505,10 +2507,6 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 	  case CMD_DROPHOST:
 	  case CMD_DROPSTATE:
-		/* Unlink the hostlist entry */
-		xtreeDelete(rbhosts, hostname);
-		hostcount--;
-
 		/* Loop through the host logs and free them */
 		lwalk = hwalk->logs;
 		while (lwalk) {
@@ -2518,9 +2516,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			free_log_t(tmp);
 		}
 
-		/* Free the hostlist entry */
-		xfree(hwalk->hostname);
-		xfree(hwalk->ip);
+		/* Now loop through the client logs and free those */
 		while (hwalk->clientmsgs) {
 			clientmsg_list_t *czombie = hwalk->clientmsgs;
 			hwalk->clientmsgs = hwalk->clientmsgs->next;
@@ -2529,6 +2525,16 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			xfree(czombie->msg);
 			xfree(czombie);
 		}
+
+		/* Unlink the hostlist entry */
+		xtreeDelete(rbhosts, hostname);
+		hostcount--;
+
+		/* Free the hostlist entry */
+#ifndef HAVE_BINARY_TREE
+		xfree(hwalk->hostname);
+		xfree(hwalk->ip);
+#endif
 		xfree(hwalk);
 		break;
 
@@ -5905,6 +5911,7 @@ int main(int argc, char *argv[])
 
 	if (dbgfd) fclose(dbgfd);
 
+	if (hostsfn) xfree(hostsfn);
 	return 0;
 }
 

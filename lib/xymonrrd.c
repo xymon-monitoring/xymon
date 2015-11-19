@@ -83,7 +83,7 @@ static void rrd_setup(void)
 	rrd_destroy();
 
 	/* Get the tcp services, and count how many there are */
-	services = strdup(init_tcp_services());
+	services = init_tcp_services();
 	tcptests = strdup(services);
 	count = 0; p = strtok(tcptests, " "); while (p) { count++; p = strtok(NULL, " "); }
 	strcpy(tcptests, services);

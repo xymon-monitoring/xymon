@@ -292,6 +292,7 @@ char *init_tcp_services(void)
 		 */
 		walk = head;
 		head = head->next;
+		xfree(walk->rec);
 		xfree(walk);
 	}
 
