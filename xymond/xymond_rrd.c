@@ -359,6 +359,9 @@ int main(int argc, char *argv[])
 			 */
 			int color = parse_color(metadata[7]);
 
+			/* ignore reversed tests */
+			if (metadata[8] && (strchr(metadata[8], 'R') != NULL)) continue;
+
 			switch (color) {
 			  case COL_GREEN:
 			  case COL_YELLOW:
@@ -371,7 +374,7 @@ int main(int argc, char *argv[])
 				testname = metadata[5];
 				classname = (metadata[17] ? metadata[17] : "");
 				pagepaths = (metadata[18] ? metadata[18] : "");
-				ldef = find_xymon_rrd(testname, metadata[8]);
+				ldef = find_xymon_rrd(testname, metadata[8]); /* flags passed for future use */
 				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 				break;
 
@@ -388,7 +391,7 @@ int main(int argc, char *argv[])
 			testname = metadata[5];
 			classname = (metadata[6] ? metadata[6] : "");
 			pagepaths = (metadata[7] ? metadata[7] : "");
-			ldef = find_xymon_rrd(testname, "");
+			ldef = find_xymon_rrd(testname, NULL);
 			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
@@ -474,6 +477,9 @@ int main(int argc, char *argv[])
 
 	sendmessage_finish_local();
 
+#ifdef DEBUG_FOR_VALGRIND
+	rrd_destroy();
+#endif
 	return 0;
 }
 

@@ -23,6 +23,20 @@ typedef enum {
 } xtreeStatus_t;
 
 #ifdef HAVE_BINARY_TREE
+typedef struct treerec_t {
+	char *key;
+	void *userdata;
+	int (*compare)(const char *a, const char *b);
+	struct treerec_t *link;
+} treerec_t;
+
+typedef struct xtree_t {
+	void *root;
+	int (*compare)(const char *a, const char *b);
+} xtree_t;
+#endif
+
+#ifdef HAVE_BINARY_TREE
 #define xtreeEnd(X) (NULL)
 typedef void *xtreePos_t;
 #else

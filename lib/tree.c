@@ -13,31 +13,29 @@
 
 static char rcsid[] = "$Id: files.c 6712 2011-07-31 21:01:52Z storner $";
 
+#include "config.h"
+#ifdef HAVE_BINARY_TREE
+#define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
 
-#include "config.h"
 #include "tree.h"
 
 
 #ifdef HAVE_BINARY_TREE
 #include <search.h>
 
-typedef struct treerec_t {
-	char *key;
-	void *userdata;
-	int (*compare)(const char *a, const char *b);
-	struct treerec_t *link;
-} treerec_t;
-
-typedef struct xtree_t {
-	void *root;
-	int (*compare)(const char *a, const char *b);
-} xtree_t;
 static treerec_t *i_curr = NULL;
+
+
+void xtree_empty(void *dummy)
+{
+}
 
 
 static int xtree_i_compare(const void *pa, const void *pb)
@@ -60,6 +58,13 @@ void *xtreeNew(int(*xtreeCompare)(const char *a, const char *b))
 
 void xtreeDestroy(void *treehandle)
 {
+	xtree_t *tree = treehandle;
+
+#ifdef DEBUG
+	if (tree == NULL) fprintf(stderr, "Asked to destroy a NULL tree? %p\n", treehandle);
+#endif
+	if (tree == NULL) return;
+	tdestroy(tree->root, free);
 	free(treehandle);
 }
 
@@ -110,6 +115,7 @@ void *xtreeDelete(void *treehandle, char *key)
 	userdata = (*result)->userdata;
 	zombie = (*result);
 	tdelete(&rec, &tree->root, xtree_i_compare);
+	free(zombie->key); /* Can't assume this is ours. We'll leak, but use xtreeDestroy to walk */
 	free(zombie);
 
 	return userdata;

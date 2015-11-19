@@ -43,6 +43,8 @@ typedef struct rrdtplnames_t {
 extern xymonrrd_t *xymonrrds;
 extern xymongraph_t *xymongraphs;
 
+extern void rrd_destroy(void);
+// extern void rrd_setup(void); /* future use -- currently never reloaded */
 extern xymonrrd_t *find_xymon_rrd(char *service, char *flags);
 extern xymongraph_t *find_xymon_graph(char *rrdname);
 extern char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolor,

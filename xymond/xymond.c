@@ -5878,6 +5878,10 @@ int main(int argc, char *argv[])
 	save_checkpoint();
 	unlink(pidfn);
 
+#ifdef DEBUG_FOR_VALGRIND
+	initialize_hostlist();
+	destroy_hosttree();
+#endif
 	xfree(hostsfn);
 
 	if (dbgfd) fclose(dbgfd);

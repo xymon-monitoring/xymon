@@ -15,6 +15,13 @@
 
 static char rcsid[] = "$Id$";
 
+#include "config.h"
+#ifdef HAVE_BINARY_TREE
+#define _GNU_SOURCE
+#include <search.h>
+#endif
+#include "tree.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -23,39 +30,6 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 
 #include "libxymon.h"
-
-typedef struct pagelist_t {
-	char *pagepath;
-	char *pagetitle;
-	struct pagelist_t *next;
-} pagelist_t;
-
-typedef struct namelist_t {
-	char *ip;
-	char *hostname;	/* Name for item 2 of hosts.cfg */
-	char *logname;		/* Name of the host directory in XYMONHISTLOGS (underscores replaces dots). */
-	int preference;		/* For host with multiple entries, mark if we have the preferred one */
-	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
-	void *data;		/* Misc. data supplied by the user of this library function */
-	struct namelist_t *defaulthost;	/* Points to the latest ".default." host */
-	int pageindex;
-	char *groupid, *dgname;
-	char *classname;
-	char *osname;
-	struct namelist_t *next, *prev;
-
-	char *allelems;		/* Storage for data pointed to by elems */
-	char **elems;		/* List of pointers to the elements of the entry */
-
-	/* 
-	 * The following are pre-parsed elements.
-	 * These are pre-parsed because they are used by the xymon daemon, so
-	 * fast access to them is an optimization.
-	 */
-	char *clientname;	/* CLIENT: tag - host alias */
-	char *downtime;		/* DOWNTIME tag - when host has planned downtime. */
-	time_t notbefore, notafter; /* NOTBEFORE and NOTAFTER tags as time_t values */
-} namelist_t;
 
 static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL, *nametail = NULL;
@@ -229,6 +203,7 @@ static char *xmh_find_item(namelist_t *host, enum xmh_item_t item)
 	char *result;
 
 	if (item == XMH_LAST) return NULL;	/* Unknown item requested */
+	if (host == NULL) return NULL;	/* Unknown item requested */
 
 	xmh_item_list_setup();
 	i = 0;
@@ -253,43 +228,47 @@ static char *xmh_find_item(namelist_t *host, enum xmh_item_t item)
 		return xmh_find_item(host->defaulthost, item);
 }
 
-static void initialize_hostlist(void)
+
+void freenamelist(namelist_t *rec)
 {
+	dbgprintf(" - freenamelist called on hostname: %s at %p\n", (rec ? rec->hostname ? rec->hostname : "record, but hostname null" : "null record"), rec);
+	if (rec == NULL) return;
+	/* clientname should not be freed, since it's just a pointer into the elems-array (or *rec->hostname) */
+	if (rec->ip != NULL)		xfree(rec->ip);
+	if (rec->hostname != NULL)	xfree(rec->hostname);
+	if (rec->logname != NULL)	xfree(rec->logname);
+	if (rec->groupid != NULL)	xfree(rec->groupid);
+	if (rec->dgname != NULL)	xfree(rec->dgname);
+	if (rec->classname != NULL)	xfree(rec->classname);
+	if (rec->osname != NULL)	xfree(rec->osname);
+	if (rec->allelems != NULL)	xfree(rec->allelems);
+	if (rec->elems != NULL)		xfree(rec->elems);
+	if (rec->data != NULL)		xfree(rec->data);
+	return;
+}
+
+void initialize_hostlist(void)
+{
+	dbgprintf(" -> initialize_hostlist\n");
 	while (defaulthost) {
 		namelist_t *walk = defaulthost;
 		defaulthost = defaulthost->defaulthost;
 
-		if (walk->ip) xfree(walk->ip);
-		if (walk->hostname) xfree(walk->hostname);
-		if (walk->groupid) xfree(walk->groupid);
-		if (walk->dgname) xfree(walk->dgname);
-		if (walk->classname) xfree(walk->classname);
-		if (walk->osname) xfree(walk->osname);
-		if (walk->logname) xfree(walk->logname);
-		if (walk->allelems) xfree(walk->allelems);
-		if (walk->elems) xfree(walk->elems);
+		freenamelist(walk);
 		xfree(walk);
 	}
 
+	dbgprintf("  - freeing name list (namehead)\n");
 	while (namehead) {
 		namelist_t *walk = namehead;
 
 		namehead = namehead->next;
-
-		/* clientname should not be freed, since it's just a pointer into the elems-array */
-		if (walk->ip) xfree(walk->ip);
-		if (walk->hostname) xfree(walk->hostname);
-		if (walk->groupid) xfree(walk->groupid);
-		if (walk->dgname) xfree(walk->dgname);
-		if (walk->classname) xfree(walk->classname);
-		if (walk->osname) xfree(walk->osname);
-		if (walk->logname) xfree(walk->logname);
-		if (walk->allelems) xfree(walk->allelems);
-		if (walk->elems) xfree(walk->elems);
+		freenamelist(walk);
 		xfree(walk);
 	}
 	nametail = NULL;
 
+	dbgprintf("  - freeing page list (pghead)\n");
 	while (pghead) {
 		pagelist_t *walk = pghead;
 
@@ -304,24 +283,55 @@ static void initialize_hostlist(void)
 	pghead->pagepath = strdup("");
 	pghead->pagetitle = strdup("");
 	pghead->next = NULL;
+
+	dbgprintf(" <- initialize_hostlist\n");
+}
+
+#ifdef HAVE_BINARY_TREE
+void xtree_delete_hostname (treerec_t *hosttree)
+{
+	if (hosttree != NULL) freenamelist((namelist_t *)hosttree->userdata);
+}
+#endif
+ 
+void destroy_hosttree(void)
+{
+#ifdef HAVE_BINARY_TREE
+	dbgprintf(" -> destroy_hosttree (posix)\n");
+	if (rbhosts != NULL) {
+		// tdestroy(((xtree_t *)rbhosts)->root, (__free_fn_t)xtree_delete_hostname); /* Do not do a namelist_t delete */
+		// tdestroy(((xtree_t *)rbhosts)->root, (__free_fn_t)xtree_empty);
+		xtreeDestroy(rbhosts);
+		// free(rbhosts);
+	}
+	if (rbclients != NULL) {
+		// tdestroy(((xtree_t *)rbclients)->root, (__free_fn_t)xtree_empty);
+		xtreeDestroy(rbclients);
+		// free(rbclients);
+	}
+#else
+	dbgprintf(" -> destroy_hosttree\n");
+	if (rbhosts != NULL) xtreeDestroy(rbhosts);
+	if (rbclients != NULL) xtreeDestroy(rbclients);
+#endif
+	dbgprintf(" <- destroy_hosttree\n");
+	return;
 }
 
 static void build_hosttree(void)
 {
-	static int hosttree_exists = 0;
 	namelist_t *walk;
 	xtreeStatus_t status;
 	char *tstr;
 
-	if (hosttree_exists) {
-		xtreeDestroy(rbhosts);
-		xtreeDestroy(rbclients);
-	}
+	dbgprintf(" -> build_hosttree\n");
+	destroy_hosttree();
+
 	rbhosts = xtreeNew(strcasecmp);
 	rbclients = xtreeNew(strcasecmp);
-	hosttree_exists = 1;
 
 	for (walk = namehead; (walk); walk = walk->next) {
+		if (walk->hostname == NULL) { errprintf(" BUG: What? -> build_hosttree not trying to insert a hostrec with no hostname\n"); continue; }
 		status = xtreeAdd(rbhosts, walk->hostname, walk);
 		if (walk->clientname) xtreeAdd(rbclients, walk->clientname, walk);
 
@@ -345,6 +355,7 @@ static void build_hosttree(void)
 		walk->notafter = (tstr ? timestr2timet(tstr) : INT_MAX);
 		if (walk->notafter == -1) walk->notafter = INT_MAX;
 	}
+	dbgprintf(" <- build_hosttree\n");
 }
 
 #include "loadhosts_file.c"
@@ -824,6 +835,7 @@ handlehost:
 
 		if (h == NULL) { printf("Host %s not found\n", argv[argi]); continue; }
 
+		val = xmh_item_multi(h, XMH_PAGEPATH);	/* reset the static h record */
 		val = xmh_item_walk(h);
 		printf("Entry for host %s\n", h->hostname);
 		while (val) {
@@ -858,6 +870,7 @@ handlehost:
 		} while (*s);
 	}
 
+	destroy_hosttree();
 	return 0;
 }
 

@@ -60,10 +60,10 @@ static pcre *classpattern = NULL;
 static void * hostnames;
 static void * testnames;
 
-typedef struct treerec_t {
+typedef struct hftreerec_t {
 	char *name;
 	int flag;
-} treerec_t;
+} hftreerec_t;
 
 static int backdays = 0, backhours = 0, backmins = 0, backsecs = 0;
 static char hostenv_eventtimestart[20];
@@ -90,12 +90,12 @@ typedef struct bodystorage_t {
 static void clearflags(void * tree)
 {
 	xtreePos_t handle;
-	treerec_t *rec;
+	hftreerec_t *rec;
 
 	if (!tree) return;
 
 	for (handle = xtreeFirst(tree); (handle != xtreeEnd(tree)); handle = xtreeNext(tree, handle)) {
-		rec = (treerec_t *)xtreeData(tree, handle);
+		rec = (hftreerec_t *)xtreeData(tree, handle);
 		rec->flag = 0;
 	}
 }
@@ -434,21 +434,21 @@ static void fetch_board(void)
 		eoln = strchr(walk, '\n'); if (eoln) *eoln = '\0';
 		if (strlen(walk) && (strncmp(walk, "summary|", 8) != 0)) {
 			char *buf, *hname = NULL, *tname = NULL;
-			treerec_t *newrec;
+			hftreerec_t *newrec;
 
 			buf = strdup(walk);
 
 			hname = gettok(buf, "|");
 
 			if (hname && wanted_host(hname) && hostinfo(hname)) {
-				newrec = (treerec_t *)malloc(sizeof(treerec_t));
+				newrec = (hftreerec_t *)malloc(sizeof(hftreerec_t));
 				newrec->name = strdup(hname);
 				newrec->flag = 0;
 				xtreeAdd(hostnames, newrec->name, newrec);
 
 				tname = gettok(NULL, "|");
 				if (tname) {
-					newrec = (treerec_t *)malloc(sizeof(treerec_t));
+					newrec = (hftreerec_t *)malloc(sizeof(hftreerec_t));
 					newrec->name = strdup(tname);
 					newrec->flag = 0;
 					xtreeAdd(testnames, strdup(tname), newrec);
@@ -864,12 +864,12 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		}
 		else if (strcmp(t_start, "HOSTLIST") == 0) {
 			xtreePos_t handle;
-			treerec_t *rec;
+			hftreerec_t *rec;
 
 			fetch_board();
 
 			for (handle = xtreeFirst(hostnames); (handle != xtreeEnd(hostnames)); handle = xtreeNext(hostnames, handle)) {
-				rec = (treerec_t *)xtreeData(hostnames, handle);
+				rec = (hftreerec_t *)xtreeData(hostnames, handle);
 
 				if (wanted_host(rec->name)) {
 					fprintf(output, "<option value=\"%s\">%s</option>\n", rec->name, rec->name);
@@ -885,16 +885,16 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			fprintf(output, "var hosts = new Array();\n");
 			fprintf(output, "hosts[\"ALL\"] = [ \"ALL\"");
 			for (handle = xtreeFirst(testnames); (handle != xtreeEnd(testnames)); handle = xtreeNext(testnames, handle)) {
-				treerec_t *rec = xtreeData(testnames, handle);
+				hftreerec_t *rec = xtreeData(testnames, handle);
 				fprintf(output, ", \"%s\"", rec->name);
 			}
 			fprintf(output, " ];\n");
 
 			for (handle = xtreeFirst(hostnames); (handle != xtreeEnd(hostnames)); handle = xtreeNext(hostnames, handle)) {
-				treerec_t *hrec = xtreeData(hostnames, handle);
+				hftreerec_t *hrec = xtreeData(hostnames, handle);
 				if (wanted_host(hrec->name)) {
 					xtreePos_t thandle;
-					treerec_t *trec;
+					hftreerec_t *trec;
 					char *bwalk, *tname, *p;
 					char *key = (char *)malloc(strlen(hrec->name) + 3);
 
@@ -914,7 +914,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						     (strcmp(tname, xgetenv("TRENDSCOLUMN")) != 0) ) {
 							thandle = xtreeFind(testnames, tname);
 							if (thandle != xtreeEnd(testnames)) {
-								trec = (treerec_t *)xtreeData(testnames, thandle);
+								trec = (hftreerec_t *)xtreeData(testnames, thandle);
 								trec->flag = 1;
 							}
 						}
@@ -925,7 +925,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 					fprintf(output, "hosts[\"%s\"] = [ \"ALL\"", hrec->name);
 					for (thandle = xtreeFirst(testnames); (thandle != xtreeEnd(testnames)); thandle = xtreeNext(testnames, thandle)) {
-						trec = (treerec_t *)xtreeData(testnames, thandle);
+						trec = (hftreerec_t *)xtreeData(testnames, thandle);
 						if (trec->flag == 0) continue;
 
 						trec->flag = 0;
@@ -937,12 +937,12 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		}
 		else if (strcmp(t_start, "TESTLIST") == 0) {
 			xtreePos_t handle;
-			treerec_t *rec;
+			hftreerec_t *rec;
 
 			fetch_board();
 
 			for (handle = xtreeFirst(testnames); (handle != xtreeEnd(testnames)); handle = xtreeNext(testnames, handle)) {
-				rec = (treerec_t *)xtreeData(testnames, handle);
+				rec = (hftreerec_t *)xtreeData(testnames, handle);
 				fprintf(output, "<option value=\"%s\">%s</option>\n", rec->name, rec->name);
 			}
 		}
@@ -961,7 +961,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 					char *buf, *hname, *tname, *dismsg, *p;
 					time_t distime;
 					xtreePos_t thandle;
-					treerec_t *rec;
+					hftreerec_t *rec;
 
 					buf = strdup(walk);
 					hname = tname = dismsg = NULL; distime = 0;
@@ -1074,7 +1074,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 					}
 					else {
 						xtreePos_t tidx;
-						treerec_t *rec;
+						hftreerec_t *rec;
 
 						for (tidx = xtreeFirst(testnames); (tidx != xtreeEnd(testnames)); tidx = xtreeNext(testnames, tidx)) {
 							rec = xtreeData(testnames, tidx);

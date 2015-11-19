@@ -408,7 +408,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	/* trends stuff here */
 	if (!is_history) {
-		rrd = find_xymon_rrd(service, flags);
+		if (! (flags && (strchr(flags, 'R') != NULL)) ) rrd = find_xymon_rrd(service, flags);
 		if (rrd) {
 			graph = find_xymon_graph(rrd->xymonrrdname);
 			if (graph == NULL) {

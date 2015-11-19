@@ -33,47 +33,54 @@ xymongraph_t *xymongraphs = NULL;
 static const char *xymonlinkfmt = "<table summary=\"%s Graph\"><tr><td><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"xymongraph %s\"></A></td><td> <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=custom&amp;action=selzoom\"> <img src=\"%s/zoom.%s\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td></tr></table>\n";
 
 
+void rrd_destroy(void)
+{
+	/* 
+	 * Must free any old data first.
+	 * NB: These lists are NOT null-terminated ! 
+	 *     Stop when svcname becomes a NULL.
+	 */
+	
+	dbgprintf(" - performing rrd_destroy()\n");
+	
+	if (xymonrrds != NULL) {
+	    xymonrrd_t *lrec;
+	    lrec = xymonrrds;
+	    while (lrec && lrec->svcname) {
+		if (lrec->xymonrrdname != lrec->svcname) xfree(lrec->xymonrrdname);
+		xfree(lrec->svcname);
+		lrec++;
+	    }
+	    xfree(xymonrrds);
+	}
+
+	if (xymongraphs != NULL) {
+	    xymongraph_t *grec;
+	    grec = xymongraphs;
+	    while (grec && grec->xymonrrdname) {
+		if (grec->xymonpartname) xfree(grec->xymonpartname);
+		xfree(grec->xymonrrdname);
+		grec++;
+	    }
+	    xfree(xymongraphs);
+	}
+
+	xtreeDestroy(xymonrrdtree);
+}
+
 /*
  * Define the mapping between Xymon columns and RRD graphs.
  * Normally they are identical, but some RRD's use different names.
  */
 static void rrd_setup(void)
 {
-	static int setup_done = 0;
 	char *lenv, *ldef, *p, *tcptests, *services;
 	int count;
 	xymonrrd_t *lrec;
 	xymongraph_t *grec;
 
 
-	/* Do nothing if we have been called within the past 5 minutes */
-	if ((setup_done + 300) >= getcurrenttime(NULL)) return;
-
-
-	/* 
-	 * Must free any old data first.
-	 * NB: These lists are NOT null-terminated ! 
-	 *     Stop when svcname becomes a NULL.
-	 */
-	lrec = xymonrrds;
-	while (lrec && lrec->svcname) {
-		if (lrec->xymonrrdname != lrec->svcname) xfree(lrec->xymonrrdname);
-		xfree(lrec->svcname);
-		lrec++;
-	}
-	if (xymonrrds) {
-		xfree(xymonrrds);
-		xtreeDestroy(xymonrrdtree);
-	}
-
-	grec = xymongraphs;
-	while (grec && grec->xymonrrdname) {
-		if (grec->xymonpartname) xfree(grec->xymonpartname);
-		xfree(grec->xymonrrdname);
-		grec++;
-	}
-	if (xymongraphs) xfree(xymongraphs);
-
+	rrd_destroy();
 
 	/* Get the tcp services, and count how many there are */
 	services = strdup(init_tcp_services());
@@ -143,7 +150,8 @@ static void rrd_setup(void)
 	}
 	xfree(lenv);
 
-	setup_done = getcurrenttime(NULL);
+	/* Mark that we've done this at least once -- for those who aren't tracking it on their own */
+	dbgprintf(" - performed rrd_setup()\n");
 }
 
 
@@ -152,12 +160,7 @@ xymonrrd_t *find_xymon_rrd(char *service, char *flags)
 	/* Lookup an entry in the xymonrrds table */
 	xtreePos_t handle;
 
-	rrd_setup();
-
-	if (flags && (strchr(flags, 'R') != NULL)) {
-		/* Don't do RRD's for reverse tests, since they have no data */
-		return NULL;
-	}
+	if (xymonrrdtree == NULL) rrd_setup();
 
 	handle = xtreeFind(xymonrrdtree, service);
 	if (handle == xtreeEnd(xymonrrdtree)) 
@@ -174,7 +177,8 @@ xymongraph_t *find_xymon_graph(char *rrdname)
 	int found = 0;
 	char *dchar;
 
-	rrd_setup();
+	if (xymonrrdtree == NULL) rrd_setup();
+
 	grec = xymongraphs; 
 	while (!found && (grec->xymonrrdname != NULL)) {
 		found = (strncmp(grec->xymonrrdname, rrdname, strlen(grec->xymonrrdname)) == 0);

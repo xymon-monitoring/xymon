@@ -4,6 +4,10 @@ Changes from 4.3.x -> 4.4-alpha
 * Standardize command line options across most binaries
 * Attempt to get a more accurate clock delta when a client message has been
   sent through a xymonproxy
+* TLS/SSL support added
+* IPv6 support added
+* Performance optimizations / bug fixes with POSIX btree usage
+* Performance improvements within xymond_rrd
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)

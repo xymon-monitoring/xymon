@@ -88,8 +88,44 @@ enum xmh_item_t {
 
 enum ghosthandling_t { GH_ALLOW, GH_IGNORE, GH_LOG, GH_MATCH };
 
+typedef struct pagelist_t {
+	char *pagepath;
+	char *pagetitle;
+	struct pagelist_t *next;
+} pagelist_t;
+
+typedef struct namelist_t {
+	char *ip;
+	char *hostname;		/* Name for item 2 of hosts.cfg */
+	char *logname;		/* Name of the host directory in XYMONHISTLOGS (underscores replaces dots). */
+	int preference;		/* For host with multiple entries, mark if we have the preferred one */
+	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
+	void *data;		/* Misc. data supplied by the user of this library function */
+	struct namelist_t *defaulthost; /* Points to the latest ".default." host */
+	int pageindex;
+	char *groupid, *dgname;
+	char *classname;
+	char *osname;
+	struct namelist_t *next, *prev;
+
+	char *allelems;		/* Storage for data pointed to by elems */
+	char **elems;		/* List of pointers to the elements of the entry */
+
+	/*
+	 * The following are pre-parsed elements.
+	 * These are pre-parsed because they are used by the xymon daemon, so
+	 * fast access to them is an optimization.
+	 */                                                                     
+	char *clientname;	/* CLIENT: tag - host alias */
+	char *downtime;		/* DOWNTIME tag - when host has planned downtime. */
+	time_t notbefore, notafter; /* NOTBEFORE and NOTAFTER tags as time_t values */
+} namelist_t;
+
+extern void freenamelist(namelist_t *rec);
 extern int load_hostnames(char *hostsfn, char *extrainclude, int fqdn);
 extern int load_hostinfo(char *hostname);
+extern void initialize_hostlist(void);
+extern void destroy_hosttree(void);
 extern char *hostscfg_content(void);
 extern char *knownhost(char *hostname, char **hostip, enum ghosthandling_t ghosthandling);
 extern int knownloghost(char *logdir);

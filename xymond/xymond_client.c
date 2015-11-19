@@ -2351,6 +2351,10 @@ int main(int argc, char *argv[])
 
 	if (usebackfeedqueue) sendmessage_finish_local();
 
+#ifdef DEBUG_FOR_VALGRIND
+	initialize_hostlist();
+	destroy_hosttree();
+#endif
 	return 0;
 }
 

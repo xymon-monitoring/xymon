@@ -965,6 +965,10 @@ int main(int argc, char *argv[])
 		errprintf("Terminated by signal %d\n", termsig);
 	}
 
+#ifdef DEBUG_FOR_VALGRIND
+	initialize_hostlist();
+	destroy_hosttree();
+#endif
 	return 0;
 }
 
