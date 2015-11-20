@@ -16,8 +16,9 @@
 [msgcache]
 	DISABLED
 	ENVFILE $XYMONCLIENTHOME/etc/xymonclient.cfg
-	CMD $XYMONCLIENTHOME/bin/msgcache --no-daemon --pidfile=$XYMONCLIENTLOGS/msgcache.pid
+	CMD $XYMONCLIENTHOME/bin/msgcache --no-daemon
 	LOGFILE $XYMONCLIENTLOGS/msgcache.log
+	PIDFILE $XYMONCLIENTLOGS/msgcache.pid
 
 # The main client task
 [client]

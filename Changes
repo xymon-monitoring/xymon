@@ -20,6 +20,9 @@ Changes from 4.3.x -> 4.4-alpha
   which will be used as the default logfn for xymond, xymonproxy, xymond_channel,
   and its children
 * xymond_channel: Timestamp and tag log output to reduce confusion w/ child entries
+* Uplift most log file configuration from command lines to tasks.cfg and clientlaunch.cfg
+* logrotate: Adjust default config to send -HUP to xymonlaunch instead of searching for
+  xymond PID file.
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)
