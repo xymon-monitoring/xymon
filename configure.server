@@ -554,6 +554,9 @@ echo "" >>Makefile
 if test "$INSTALLBINDIR" != ""; then
 	echo "INSTALLBINDIR = $INSTALLBINDIR"   >>Makefile
 fi
+if test "$INSTALLLIBDIR" != ""; then
+	echo "INSTALLLIBDIR = $INSTALLLIBDIR"   >>Makefile
+fi
 if test "$INSTALLETCDIR" != ""; then
 	echo "INSTALLETCDIR = $INSTALLETCDIR"   >>Makefile
 fi

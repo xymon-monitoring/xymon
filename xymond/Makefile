@@ -4,6 +4,10 @@ XYMONCOMMLIB = ../lib/libxymoncomm.a
 XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+XYMONCLIENTLIB = ../lib/libxymonclient.a
+XYMONCLIENTLIBS = $(XYMONCLIENTLIB)
+XYMONCLIENTCOMMLIB = ../lib/libxymonclientcomm.a
+XYMONCLIENTCOMMLIBS = $(XYMONCLIENTCOMMLIB) $(ZLIBLIBS) $(NETLIBS) $(LIBRTDEF)
 
 PROGRAMS = xymon.sh xymond xymond_channel xymond_locator xymond_filestore xymond_history xymond_alert xymond_sample xymond_client xymond_hostdata xymond_capture xymond_distribute xymonfetch xymon-mailack trimhistory combostatus xymonreports.sh moverrd.sh convertnk rrdcachectl
 CLIENTPROGRAMS = ../client/xymond_client
@@ -88,8 +92,8 @@ xymond_hostdata: $(HOSTDATAOBJS) $(XYMONCOMMLIB)
 xymond_client: $(CLIENTOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-../client/xymond_client: $(CLIENTOBJS) ../lib/libxymonclientcomm.a  ../lib/libxymontime.a ../lib/libxymonclient.a
-	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/libxymonclientcomm.a  ../lib/libxymontime.a ../lib/libxymonclient.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+../client/xymond_client: $(CLIENTOBJS) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(XYMONCLIENTCOMMLIBS) $(XYMONTIMELIBS) $(XYMONCLIENTLIBS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 xymond_client.o: xymond_client.c client/*.c
 	$(CC) $(CFLAGS) -c -o $@ xymond_client.c

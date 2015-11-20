@@ -55,7 +55,7 @@ $(XYMONCLIENTCOMMLIB): $(XYMONCLIENTCOMMLIBOBJS)
 	ranlib $(XYMONCLIENTCOMMLIB) || echo ""
 
 loadhosts.o: loadhosts.c loadhosts_file.c loadhosts_net.c
-	$(CC) $(CFLAGS) -c -o $@ loadhosts.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ loadhosts.c
 
 eventlog.o: eventlog.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
@@ -96,14 +96,14 @@ color-client.o: color.c
 timefunc-client.o: timefunc.c
 	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
 
-loadhosts: loadhosts.c loadhosts_file.c loadhosts_net.c $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c $(XYMONCOMMLIBS)
+loadhosts: loadhosts.c loadhosts_file.c loadhosts_net.c $(XYMONLIB) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c $(XYMONLIBS) $(XYMONCOMMLIBS)
 
-stackio: stackio.c libxymon.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c $(XYMONLIBS)
+stackio: stackio.c $(XYMONLIB) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c $(XYMONLIBS) $(XYMONCOMMLIBS)
 
-availability: availability.c libxymon.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c $(XYMONLIBS)
+availability: availability.c $(XYMONLIB) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c $(XYMONLIBS) $(XYMONCOMMLIBS)
 
 md5: md5.c
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ md5.c
@@ -121,5 +121,9 @@ tree: tree.c
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ tree.c
 
 clean:
-	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator tree
+	rm -f *.o *.a *.so *.so.* *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator tree
 
+install:
+	cp -fp *.so* *.a $(INSTALLROOT)$(INSTALLLIBDIR)/ || :
+	chmod 644 $(INSTALLROOT)$(INSTALLLIBDIR)/*.a || :
+	chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)/*.so* || :

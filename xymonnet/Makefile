@@ -29,10 +29,10 @@ NETTESTOBJS = xymonnet.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2
 PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o
 
-xymonnet: $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIBS)
+xymonnet: $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) $(CARESLIBS) $(LDAPLIBS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(XYMONLIBS) $(PCRELIBS)
 
-xymonping: $(PINGTESTOBJS) $(XYMONTIMELIB) ../lib/libxymon.a
+xymonping: $(PINGTESTOBJS) $(XYMONTIMELIB) $(XYMONLIB)
 	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS)
 
 xymonnet.o: xymonnet.c
@@ -84,7 +84,7 @@ contest: contest.c httptest.o dns.o dns2.o httpcookies.o $(XYMONCOMMLIB) $(XYMON
 
 
 xymon-snmpcollect: xymon-snmpcollect.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
-	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` ../lib/libxymon.a $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
+	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` $(XYMONLIBS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
 
 xymon-snmpcollect.o: xymon-snmpcollect.c
 	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ xymon-snmpcollect.c
