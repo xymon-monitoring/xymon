@@ -2595,7 +2595,8 @@ int scan_log(void *hinfo, char *classname,
 					/* We wants it ... */
 					dbgprintf("FOUND match in line '%s'\n", boln);
 					anylines++;
-					sprintf(msgline, "&%s ", colorname(rule->rule.log.color));
+					if (rule->statustext) sprintf(msgline, "&%s %s ", colorname(rule->rule.log.color), rule->statustext);
+					else sprintf(msgline, "&%s ", colorname(rule->rule.log.color));
 					addtobuffer(summarybuf, msgline);
 					addtobuffer(summarybuf, prehtmlquoted(boln));
 					addtobuffer(summarybuf, "\n");
