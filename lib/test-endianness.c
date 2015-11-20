@@ -50,7 +50,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "UNKNOWN ENDIANNESS! testvalue is %u\n", c);
 	}
 
-	fflush(stdout);
 	return 0;
 }
 

@@ -57,7 +57,7 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	}
 
 	logfd = fopen(tmpfn, mode);
-	fwrite(msg, strlen(msg), 1, logfd);
+	if (fwrite(msg, strlen(msg), 1, logfd) != 1 && strlen(msg)) errprintf("Write to '%s' as '%s' failed\n", fn, tmpfn);
 	if (sender) fprintf(logfd, "\n\nMessage received from %s\n", sender);
 	if (timesincechange >= 0) {
 		char timestr[100];

@@ -433,8 +433,8 @@ int main(int argc, char *argv[])
 		int n, idx;
 		conn_t *cwalk, *ctmp;
 		time_t ctime;
-		time_t now;
 		int combining = 0;
+		time_t now = getcurrenttime(NULL);
 
 		/* See if it is time for a status report */
 		if (proxyname && ((now = gettimer()) >= (laststatus+300))) {

@@ -17,6 +17,9 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <errno.h>
+#include <string.h>
+#include "errormsg.h"
 #include "libxymon.h"
 
 int havemyuid = 0;
@@ -40,12 +43,12 @@ void get_root(void)
 void drop_root(void)
 {
 	if (!havemyuid) { myuid = getuid(); havemyuid = 1; }
-	seteuid(myuid);
+	if (seteuid(myuid) == -1) errprintf("**** WARNING: Unable to seteuid to %zu: %s ****\n", myuid, strerror(errno));
 }
 
 void get_root(void)
 {
-	seteuid(0);
+        if (seteuid(0) == -1) errprintf("**** WARNING: Unable to seteuid to root: %s ****\n", strerror(errno));
 }
 
 #endif

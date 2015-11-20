@@ -497,16 +497,16 @@ int main(int argc, char **argv)
 			break;
 
 		  case 'A': case 'a':
-			printf("Key:");fflush(stdout); fgets(key, sizeof(key), stdin);
+			printf("Key:");fflush(stdout); if (fgets(key, sizeof(key), stdin) == NULL) break;
 			p = strchr(key, '\n'); if (p) *p = '\0';
-			printf("Data:");fflush(stdout); fgets(data, sizeof(data), stdin);
+			printf("Data:");fflush(stdout); if (fgets(data, sizeof(data), stdin) == NULL) break;
 			p = strchr(data, '\n'); if (p) *p = '\0';
 			stat = xtreeAdd(th, strdup(key), strdup(data));
 			printf("Result: %d\n", stat);
 			break;
 
 		  case 'D': case 'd':
-			printf("Key:");fflush(stdout); fgets(key, sizeof(key), stdin);
+			printf("Key:");fflush(stdout); if (fgets(key, sizeof(key), stdin) == NULL) break;
 			p = strchr(key, '\n'); if (p) *p = '\0';
 			rec = xtreeDelete(th, key);
 			if (rec) {
@@ -518,7 +518,7 @@ int main(int argc, char **argv)
 			break;
 
 		  case 'F': case 'f':
-			printf("Key:");fflush(stdout); fgets(key, sizeof(key), stdin);
+			printf("Key:");fflush(stdout); if (fgets(key, sizeof(key), stdin) == NULL) break;
 			p = strchr(key, '\n'); if (p) *p = '\0';
 			n = xtreeFind(th, key);
 			if (n != xtreeEnd(th)) {
