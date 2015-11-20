@@ -69,8 +69,10 @@ install:
 	if test ! -d $(INSTALLROOT)$(XYMONHOME)/logs  ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/logs  ; chmod 755 $(INSTALLROOT)$(XYMONHOME)/logs ; fi
 	if test ! -d $(INSTALLROOT)$(XYMONHOME)/ext   ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/ext   ; chmod 755 $(INSTALLROOT)$(XYMONHOME)/ext  ; fi
 	if test ! -d $(INSTALLROOT)$(XYMONHOME)/local ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/local ; chmod 755 $(INSTALLROOT)$(XYMONHOME)/local; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/sections ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/sections ; chmod 755 $(INSTALLROOT)$(XYMONHOME)/sections; fi
 	if test ! -f $(INSTALLROOT)$(XYMONHOME)/etc/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(XYMONHOME)/etc/ ; chmod 644 $(INSTALLROOT)$(XYMONHOME)/etc/localclient.cfg; fi
 	if test ! -f $(INSTALLROOT)$(XYMONHOME)/local/README; then cp README-local $(INSTALLROOT)$(XYMONHOME)/local/README ; chmod 644 $(INSTALLROOT)$(XYMONHOME)/local/README; fi
+	if test ! -f $(INSTALLROOT)$(XYMONHOME)/sections/README; then cp README-sections $(INSTALLROOT)$(XYMONHOME)/sections/README ; chmod 644 $(INSTALLROOT)$(XYMONHOME)/sections/README; fi
 	chmod 755 runclient.sh $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS)
 	cp -fp runclient.sh $(INSTALLROOT)$(XYMONHOME)
 	cp -fp $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(XYMONHOME)/bin/

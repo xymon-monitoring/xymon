@@ -14,3 +14,6 @@
 
 @XYMONHOSTIP@   @XYMONHOSTNAME@      # bbd http://@XYMONHOSTNAME@/
 
+
+# include additional host configurations
+optional directory @XYMONHOME@/etc/hosts.d

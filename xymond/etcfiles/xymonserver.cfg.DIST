@@ -237,6 +237,13 @@ XYMONGENSNAPOPTS="$XYMONGENOPTS"		# xymongen(1) options used when generating sna
 XYMONHISTEXT=""					# What extensions to run on history pages.
 
 
+###############################################################
+# Auto-include any files dropped into the directory below
+###############################################################
+directory /etc/xymon/xymonserver.cfg.d
+
+
+
 ##### Compatibility settings #####
 BBSERVERROOT="$XYMONSERVERROOT"
 BBSERVERHOSTNAME="$XYMONSERVERHOSTNAME"

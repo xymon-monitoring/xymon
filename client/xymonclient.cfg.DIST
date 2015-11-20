@@ -17,6 +17,11 @@ XYMONCLIENTLOGS="$XYMONHOME/logs"     # Where we store the client logfiles
 # Options to xymond_client. Used only if this install is running in local client mode.
 XYMONLOCALCLIENTOPTS=""
 
+
+# Auto-include any files dropped into the directory below
+optional directory @XYMONHOME@/etc/xymonclient.cfg.d
+
+
 # Compatibility settings
 HOBBITCLIENTHOME="$XYMONCLIENTHOME"
 

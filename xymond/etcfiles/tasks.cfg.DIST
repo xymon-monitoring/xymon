@@ -249,5 +249,5 @@
 
 
 # Include add-on modules.
-directory @XYMONHOME@/etc/tasks.d
+optional directory @XYMONHOME@/etc/tasks.d
 

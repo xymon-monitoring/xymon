@@ -62,6 +62,18 @@ fi
 echo "[clientversion]"  >>$MSGTMPFILE
 echo "$CLIENTVERSION"   >> $MSGTMPFILE
 
+# See if there are any individual client sections
+if test -d $XYMONHOME/sections; then
+	for MODULE in `ls $XYMONHOME/sections/* 2>/dev/null | grep -v -e \.rpm -e \.dpkg`
+	do
+		if test -x $MODULE -a -f $MODULE
+		then
+			echo "[`basename $MODULE`]" >>$MSGTMPFILE
+			$MODULE >>$MSGTMPFILE
+		fi
+	done
+fi
+
 # See if there are any local add-ons (must do this before checking the clock)
 if test -d $XYMONHOME/local; then
 	for MODULE in $XYMONHOME/local/*
