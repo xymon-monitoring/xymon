@@ -40,6 +40,25 @@ int debug = 0;
 static FILE *tracefd = NULL;
 static FILE *debugfd = NULL;
 
+void logprintf(const char *fmt, ...)
+{
+	va_list args;
+
+	gettimeofday(&now, NULL);
+	
+	if (now.tv_sec != then) {
+		strftime(timestr, timesize, "%Y-%m-%d %H:%M:%S", localtime(&now.tv_sec));
+		then = now.tv_sec;
+	}
+	fprintf(stdout, "%s ", timestr);
+
+	va_start(args, fmt);
+	vfprintf(stdout, fmt, args);
+	va_end(args);
+
+	fflush(stdout);
+}
+
 void errprintf(const char *fmt, ...)
 {
 	va_list args;

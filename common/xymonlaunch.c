@@ -413,7 +413,7 @@ void load_config(char *conffn)
 		  case -1:
 			/* Kill the task, if active */
 			if (twalk->pid) {
-				dbgprintf("Killing task %s PID %d\n", twalk->key, (int)twalk->pid);
+				logprintf("xymonlaunch: killing task [%s] (PID %d), due to removal\n", twalk->key, (int)twalk->pid);
 				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
@@ -439,7 +439,7 @@ void load_config(char *conffn)
 		  case 1:
 			/* Bounce the task, if it is active */
 			if (twalk->pid) {
-				dbgprintf("Killing task %s PID %d\n", twalk->key, (int)twalk->pid);
+				logprintf("xymonlaunch: stopping task [%s] (PID %d), due to config change\n", twalk->key, (int)twalk->pid);
 				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
@@ -634,7 +634,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 
-	errprintf("xymonlaunch starting\n");
+	logprintf("xymonlaunch starting\n");
 	while (running) {
 		time_t now = gettimer();
 		struct timeval curtime;
@@ -691,8 +691,7 @@ int main(int argc, char *argv[])
 		}
 
 		/* See what new tasks need to get going */
-		dbgprintf("\n");
-		dbgprintf("Starting tasklist scan\n");
+		dbgprintf("xymonlaunch: starting tasklist scan\n");
 		crongettime();
 		for (twalk = taskhead; (twalk); twalk = twalk->next) {
 			if ( (twalk->pid == 0) && !twalk->disabled && 
@@ -728,6 +727,9 @@ int main(int argc, char *argv[])
 				}
 
 				dbgprintf("About to start task %s\n", twalk->key);
+				/* Don't do a non-debug log entry if this is being fired off at repeating intervals */
+				/* NB: What about crondate entries? */
+				if ((!debug) && (twalk->interval == 0)) logprintf("xymonlaunch: starting task [%s]\n", twalk->key);
 
 				twalk->laststart = now;
 				if (twalk->crondate) twalk->cronmin = thisminute;
@@ -803,7 +805,7 @@ int main(int argc, char *argv[])
 			else if (twalk->pid > 0) {
 				dbgprintf("Task %s active with PID %d\n", twalk->key, (int)twalk->pid);
 				if (twalk->maxruntime && ((now - twalk->laststart) > twalk->maxruntime)) {
-					errprintf("Killing hung task %s (PID %d) after %d seconds\n",
+					errprintf("Killing task [%s] (PID %d) automatically after MAXRUNTIME %d seconds\n",
 						  twalk->key, (int)twalk->pid,
 						  (now - twalk->laststart));
 					kill(twalk->pid, (twalk->beingkilled ? SIGKILL : SIGTERM));
@@ -819,10 +821,17 @@ int main(int argc, char *argv[])
 	}
 
 	/* Shutdown running tasks */
+	signal(SIGPIPE, SIG_IGN); signal(SIGCHLD, SIG_IGN);
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
-		if (twalk->pid) kill(twalk->pid, SIGTERM);
+		if (twalk->pid > 0) {
+			kill(twalk->pid, SIGTERM);
+			dbgprintf("xymonlaunch: sent TERM to %s with PID %d (shutting down)\n", twalk->key, (int)twalk->pid);
+		}
 	}
 
+	dbgprintf("xymonlaunch: waiting 4 seconds to let things shut down nicely\n");
+	logprintf("xymonlaunch stopping\n");
+	sleep(4);
 	if (pidfn) unlink(pidfn);
 
 	return 0;
