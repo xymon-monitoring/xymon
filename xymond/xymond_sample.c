@@ -30,12 +30,30 @@ static char rcsid[] = "$Id$";
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
+static volatile int running = 0;
+static volatile int dologrotate = 0;
+
+void sig_handler(int signum)
+{
+	switch (signum) {
+	  case SIGTERM:
+	  case SIGINT:
+		running = 0;
+		break;
+
+	  case SIGHUP:
+		dologrotate = 1;
+		break;
+	}
+}
+
 
 int main(int argc, char *argv[])
 {
 	char *msg;
-	int running;
+	char *logfn;
 	int argi, seq;
+	struct sigaction sa;
 	struct timespec *timeout = NULL;
 
 	libxymon_init(argv[0]);
@@ -73,11 +91,38 @@ int main(int argc, char *argv[])
 	 */
 	signal(SIGCHLD, SIG_IGN);
 
+	dbgprintf("xymond_sample: Setting up signal handlers\n");
+	setup_signalhandler("xymond_sample");
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sig_handler;
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
+
+	/*
+	 * Typically, your worker is running either from xymond_channel
+	 * or xymonlaunch, either of which might already be redirecting your
+	 * stdout/stderr to a log file. If so, store than name now so we
+	 * can rotate logs intelligently later on.
+	 */
+	logfn = getenv("XYMONCHANNEL_LOGFILENAME") ? xgetenv("XYMONCHANNEL_LOGFILENAME") :
+		getenv("XYMONLAUNCH_LOGFILENAME")  ? xgetenv("XYMONLAUNCH_LOGFILENAME")  : "";
+
+
 	running = 1;
 	while (running) {
 		char *eoln, *restofmsg, *p;
 		char *metadata[MAX_META+1];
 		int metacount;
+
+		if (dologrotate) {
+			if (logfn && strlen(logfn)) {
+				logprintf("xymond_sample: Rotating log file\n");
+				reopen_file(logfn, "a", stdout);
+				reopen_file(logfn, "a", stderr);
+			}
+			dologrotate = 0;			
+		}
 
 		/*
 		 * get_xymond_message() gets the next message from the queue.
@@ -155,7 +200,7 @@ int main(int argc, char *argv[])
 		 * terminates. The child workers should shutdown also.
 		 */
 		if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
-			printf("Shutting down\n");
+			logprintf("xymond_sample: Shutting down\n");
 			running = 0;
 			continue;
 		}
@@ -167,18 +212,15 @@ int main(int argc, char *argv[])
 		 * provided in the XYMONCHANNEL_LOGFILENAME environment.
 		 */
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
-			if (fn && strlen(fn)) {
-				reopen_file(fn, "a", stdout);
-				reopen_file(fn, "a", stderr);
-			}
-			continue;
+			logprintf("xymond_sample: Got a 'logrotate' message\n");
+			dologrotate = 1;
 		}
 
 		/*
 		 * "reload" means the hosts.cfg file has changed.
 		 */
 		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
+			dbgprintf("xymond_sample: Got a 'reload' message\n");
 			/* Do nothing ... */
 		}
 
@@ -189,7 +231,7 @@ int main(int argc, char *argv[])
 		 * some internal processing even though no messages arrive.
 		 */
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
-			printf("Got an 'idle' message\n");
+			dbgprintf("xymond_sample: Got an 'idle' message\n");
 		}
 
 		/*
@@ -200,16 +242,16 @@ int main(int argc, char *argv[])
 		 * messages to maintain data consistency.
 		 */
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
-			printf("Got a 'drophost' message for host '%s'\n", metadata[3]);
+			logprintf("xymond_sample: Got a 'drophost' message for host '%s'\n", metadata[3]);
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
-			printf("Got a 'droptest' message for host '%s' test '%s'\n", metadata[3], metadata[4]);
+			logprintf("xymond_sample: Got a 'droptest' message for host '%s' test '%s'\n", metadata[3], metadata[4]);
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@renamehost", 12) == 0)) {
-			printf("Got a 'renamehost' message for host '%s' -> '%s'\n", metadata[3], metadata[4]);
+			logprintf("xymond_sample: Got a 'renamehost' message for host '%s' -> '%s'\n", metadata[3], metadata[4]);
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
-			printf("Got a 'renametest' message for host '%s' test '%s' -> '%s'\n", 
+			logprintf("xymond_sample: Got a 'renametest' message for host '%s' test '%s' -> '%s'\n", 
 				metadata[3], metadata[4], metadata[5]);
 		}
 

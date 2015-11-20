@@ -5648,6 +5648,14 @@ int main(int argc, char *argv[])
 	errprintf("Setting up logfiles\n");
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
+
+	if (!logfn && getenv("XYMONLAUNCH_LOGFILENAME")) {
+		/* No log file on the command line, but our STDOUT is already */
+		/* being piped somewhere. Record this for when it's time to re-open on rotation */
+		logfn = xgetenv("XYMONLAUNCH_LOGFILENAME");
+		dbgprintf("xymond: Already logging out to %s, per xymonlaunch\n", logfn);
+	}
+
 	reopen_file("/dev/null", "r", stdin);
 	if (logfn) {
 		reopen_file(logfn, "a", stdout);

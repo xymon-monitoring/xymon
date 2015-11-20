@@ -653,7 +653,6 @@ int main(int argc, char *argv[])
 		if (logfn && dologswitch) {
 			reopen_file(logfn, "a", stdout);
 			reopen_file(logfn, "a", stderr);
-			dologswitch = 0;
 		}
 
 		/* Pick up children that have terminated */
@@ -759,6 +758,9 @@ int main(int argc, char *argv[])
 					/* Point stdout/stderr to a logfile, if requested */
 					if (twalk->logfile) {
 						char *logfn = expand_env(twalk->logfile);
+						char *logfnenv = (char *)malloc(strlen(logfn) + 30);
+						sprintf(logfnenv, "XYMONLAUNCH_LOGFILENAME=%s", logfn);
+						putenv(logfnenv);	/* So daemon knows what to reopen on -HUP */
 
 						dbgprintf("%s -> Assigning stdout/stderr to log '%s'\n", twalk->key, logfn);
 
@@ -811,12 +813,17 @@ int main(int argc, char *argv[])
 					kill(twalk->pid, (twalk->beingkilled ? SIGKILL : SIGTERM));
 					twalk->beingkilled = 1; /* Next time it's a real kill */
 				}
+				else if (dologswitch && twalk->sendhup) {
+					dbgprintf("Sending HUP to %s with PID %d for log switch\n", twalk->key, (int)twalk->pid);
+					kill(twalk->pid, SIGHUP);
+				}
 			}
 			/* Crondate + our flag isn't set and we don't need to run... reset the minute value to the flag. */
 			/* This clears whenever the minute has changed */
 			if (twalk->crondate && (twalk->cronmin != -1) && !cronmatch(twalk->crondate)) twalk->cronmin = -1;
 		}
 
+		if (dologswitch) dologswitch = 0;
 		sleep(5);
 	}
 
