@@ -34,6 +34,7 @@ Makefile: configure
 	INSTALLEXTDIR=/usr/lib/xymon/server/ext \
 	INSTALLTMPDIR=/var/lib/xymon/tmp \
 	INSTALLWWWDIR=/var/lib/xymon/www \
+	INSTALLSTATICWWWDIR=/usr/share/xymon \
 	./configure
 
 build: build-stamp
@@ -67,11 +68,6 @@ install-server: build install-clean
 	dh_install -a
 	dh_installdirs -a
 	PKGBUILD=1 INSTALLROOT=$S/ $(MAKE) install
-	# Static content in /usr/share
-	cd $S/var/lib/xymon/www && \
-		mv gifs ../../../../usr/share/xymon && ln -s ../../../../usr/share/xymon/gifs . && \
-		mv help ../../../../usr/share/xymon && ln -s ../../../../usr/share/xymon/help . && \
-		mv menu ../../../../usr/share/xymon && ln -s ../../../../usr/share/xymon/menu .
 	# We depend on the -client package
 	rm -rf $S/usr/lib/xymon/client
 	# This needs root

@@ -572,6 +572,9 @@ fi
 if test "$INSTALLWWWDIR" != ""; then
 	echo "INSTALLWWWDIR = $INSTALLWWWDIR"   >>Makefile
 fi
+if test "$INSTALLSTATICWWWDIR" != ""; then
+	echo "INSTALLSTATICWWWDIR = $INSTALLSTATICWWWDIR"   >>Makefile
+fi
 echo "" >>Makefile
 echo "# Add local CFLAGS etc. settings here" >>Makefile
 echo "" >>Makefile

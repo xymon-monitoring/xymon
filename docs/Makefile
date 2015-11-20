@@ -5,10 +5,10 @@ clean:
 	rm -f xymon-tips.html *~
 
 install:
-	mkdir -p $(INSTALLROOT)$(INSTALLWWWDIR)/help/manpages
-	cd manpages; tar cf - . | (cd $(INSTALLROOT)$(INSTALLWWWDIR)/help/manpages; tar xf -)
-	cp -f *html *txt *png *jpg $(INSTALLROOT)$(INSTALLWWWDIR)/help/; rm -f $(INSTALLROOT)$(INSTALLWWWDIR)/help/man-index.html
-	cp -f man-index.html $(INSTALLROOT)$(INSTALLWWWDIR)/help/manpages/index.html
+	mkdir -p $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages
+	cd manpages; tar cf - . | (cd $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages; tar xf -)
+	cp -f *html *txt *png *jpg $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/; rm -f $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/man-index.html
+	cp -f man-index.html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages/index.html
 ifndef PKGBUILD
 	chown -R $(XYMONUSER) $(INSTALLROOT)$(INSTALLWWWDIR)/help
 	chgrp -R `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLWWWDIR)/help

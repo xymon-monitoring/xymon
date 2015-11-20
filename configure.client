@@ -233,6 +233,9 @@ fi
 if test "$INSTALLWWWDIR" != ""; then
 	echo "INSTALLWWWDIR = $INSTALLWWWDIR"   >>Makefile
 fi
+if test "$INSTALLSTATICWWWDIR" != ""; then
+	echo "INSTALLSTATICWWWDIR = $INSTALLSTATICWWWDIR"   >>Makefile
+fi
 echo "" >>Makefile
 if test "$CONFTYPE" = "client"
 then

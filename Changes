@@ -24,6 +24,10 @@ Changes from 4.3.x -> 4.4-alpha
 * logrotate: Adjust default config to send -HUP to xymonlaunch instead of searching for
   xymond PID file.
 * Search in /usr for libraries and includes during build configuration
+* Move static WWW files (gifs, help files, and CSS) to new /static/ directory outside of 
+  $XYMONWWW
+* Store 'notes' uploads in $XYMONVAR rather than $XYMONWWW directory
+* Move 'periodic' directory (output from xymonreport.sh, executed via crondate) to $XYMONVAR
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)

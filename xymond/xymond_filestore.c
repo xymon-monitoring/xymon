@@ -16,6 +16,7 @@
 
 static char rcsid[] = "$Id$";
 
+#include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -57,6 +58,11 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	}
 
 	logfd = fopen(tmpfn, mode);
+	if (!logfd) {
+		errprintf("Could not open '%s' as '%s', mode %s: %s\n", fn, tmpfn, mode, strerror(errno));
+		MEMUNDEFINE(tmpfn);
+		return;
+	}
 	if (fwrite(msg, strlen(msg), 1, logfd) != 1 && strlen(msg)) errprintf("Write to '%s' as '%s' failed\n", fn, tmpfn);
 	if (sender) fprintf(logfd, "\n\nMessage received from %s\n", sender);
 	if (timesincechange >= 0) {
@@ -254,6 +260,8 @@ int main(int argc, char *argv[])
 		errprintf("No directory given, aborting\n");
 		return 1;
 	}
+	if (filedir && mkdir(filedir, 0755) != -1) dbgprintf("Created %s\n", filedir);
+	if (htmldir && mkdir(htmldir, 0755) != -1) dbgprintf("Created %s\n", htmldir);
 
 	/* For picking up lost children */
 	signal(SIGPIPE, SIG_DFL);
@@ -356,7 +364,7 @@ int main(int argc, char *argv[])
 			/* @@notes|timestamp|sender|hostname */
 			hostname = metadata[3];
 			statusdata = msg_data(statusdata, 0); if (*statusdata == '\n') statusdata++;
-			sprintf(logfn, "%s/%s", basename(filedir), hostname);
+			sprintf(logfn, "%s/%s", filedir, basename(hostname));
 			expiretime = 0;
 			update_file(logfn, "w", statusdata, expiretime, NULL, -1, seq);
 		}

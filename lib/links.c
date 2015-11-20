@@ -78,7 +78,7 @@ static link_t *init_link(char *filename, char *urlprefix)
 	return newlink;
 }
 
-static void load_links(char *directory, char *urlprefix)
+static void load_links(char *directory, char *urlprefix, int softfail)
 {
 	DIR		*linkdir;
 	struct dirent 	*d;
@@ -88,7 +88,8 @@ static void load_links(char *directory, char *urlprefix)
 
 	linkdir = opendir(directory);
 	if (!linkdir) {
-		errprintf("Cannot read links in directory %s\n", directory);
+		if (softfail) { dbgprintf("Cannot read links in directory %s\n", directory); }
+		else errprintf("Cannot read links in directory %s\n", directory);
 		return;
 	}
 
@@ -141,13 +142,16 @@ void load_all_links(void)
 
 	if (!hostdocurl || (strlen(hostdocurl) == 0)) {
 		strcpy(dirname, xgetenv("XYMONNOTESDIR"));
-		load_links(dirname, notesskin);
+		load_links(dirname, notesskin, 1);
 	}
 
-	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
-	strcpy(dirname, xgetenv("XYMONNOTESDIR"));
-	p = strrchr(dirname, '/'); *p = '\0'; strcat(dirname, "/help");
-	load_links(dirname, helpskin);
+	/* If no XYMONHELPDIR, change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
+	if (xgetenv("XYMONHELPDIR")) strcpy(dirname, xgetenv("XYMONHELPDIR"));
+	else {
+		strcpy(dirname, xgetenv("XYMONNOTESDIR"));
+		p = strrchr(dirname, '/'); *p = '\0'; strcat(dirname, "/help");
+	}
+	load_links(dirname, helpskin, 0);
 
 	linksloaded = 1;
 

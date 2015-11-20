@@ -10,6 +10,17 @@ For a full list of changes and enhancements, please see the
 Changes file.
 
 
+Changes for 4.4
+==================
+(placeholder)
+ - Static WWW files moved outside of WWW tree - update apache config
+ - /periodic/ and /notes/ moved from $XYMONWWW to $XYMONVAR
+ - Combined, these allow the $XYMONWWW directory to be placed on a tmpfs partition
+
+
+
+
+
 Changes for 4.3.23
 ==================
 

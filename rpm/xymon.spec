@@ -60,6 +60,7 @@ rm -rf $RPM_BUILD_ROOT
         INSTALLEXTDIR=/usr/lib/xymon/server/ext \
         INSTALLTMPDIR=/var/lib/xymon/tmp \
         INSTALLWWWDIR=/var/lib/xymon/www \
+        INSTALLSTATICWWWDIR=/usr/lib/xymon/static \
         ./configure
 
 %build

@@ -11,6 +11,47 @@
 #
 #          DocumentRoot @INSTALLWWWDIR@
 
+Alias @XYMONHOSTURL@/help "@INSTALLSTATICWWWDIR@/help"
+Alias @XYMONHOSTURL@/menu "@INSTALLSTATICWWWDIR@/menu"
+Alias @XYMONHOSTURL@/gifs "@INSTALLSTATICWWWDIR@/gifs"
+<Directory "@INSTALLSTATICWWWDIR@/">
+    Options Indexes FollowSymLinks Includes MultiViews
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Allow from all
+    </IfModule>
+</Directory>
+
+Alias @XYMONHOSTURL@/periodic "@XYMONVAR@/periodic"
+<Directory "@XYMONVAR@/periodic">
+    Options Indexes FollowSymLinks Includes MultiViews
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Allow from all
+    </IfModule>
+</Directory>
+
+Alias @XYMONHOSTURL@/notes "@XYMONVAR@/notes"
+<Directory "@XYMONVAR@/notes">
+    Options Indexes FollowSymLinks Includes MultiViews
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Allow from all
+    </IfModule>
+</Directory>
+
 Alias @XYMONHOSTURL@  "@INSTALLWWWDIR@"
 <Directory "@INSTALLWWWDIR@">
     Options Indexes FollowSymLinks Includes MultiViews

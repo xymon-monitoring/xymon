@@ -192,7 +192,10 @@ int main(int argc, char *argv[])
 
 	sprintf(dirid, "%lu-%u", (unsigned long)getpid(), (unsigned int)getcurrenttime(NULL));
 	sprintf(outdir, "%s/%s", xgetenv("XYMONSNAPDIR"), dirid);
-	if (mkdir(outdir, 0755) == -1) errormsg("Cannot create output directory");
+	if (mkdir(outdir, 0755) == -1) {
+		if (xgetenv("XYMONSNAPDIR") && mkdir(xgetenv("XYMONSNAPDIR"), 0755) != -1) dbgprintf("Created %s\n", xgetenv("XYMONSNAPDIR"));
+		if (mkdir(outdir, 0755) == -1) errormsg("Cannot create output directory");
+	}
 
 	sprintf(xymonwebenv, "XYMONWEB=%s/%s", xgetenv("XYMONSNAPURL"), dirid);
 	putenv(xymonwebenv);

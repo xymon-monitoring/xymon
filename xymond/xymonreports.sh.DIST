@@ -35,7 +35,7 @@ if [ "$XYMONHOME" = "" ]; then
 fi
 
 # This is the top-level directory for the pre-generated reports.
-REPORTTOPDIR="$XYMONWWWDIR/periodic"
+REPORTTOPDIR="$XYMONVAR/periodic"
 REPORTTOPURL="$XYMONWEB/periodic"
 
 REPTYPE=$1
