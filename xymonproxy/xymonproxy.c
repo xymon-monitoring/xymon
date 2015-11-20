@@ -36,6 +36,14 @@ static char rcsid[] = "$Id$";
 #include "version.h"
 #include "libxymon.h"
 
+
+#define SNUM_NULL	-4
+#define SNUM_ISBFQ	-3
+#define SNUM_DONE	-2
+#define SNUM_NONE	-1
+#define SNUM_FIRST	 0
+
+
 enum phase_t {
 	P_IDLE, 
 
@@ -75,6 +83,7 @@ typedef struct conn_t {
 	int csocket;
 	struct sockaddr_in caddr;
 	struct in_addr *clientip, *serverip;
+	unsigned long connid;
 	int snum;
 	int ssocket;
 	int conntries, sendtries;
@@ -106,6 +115,10 @@ char *logfile = NULL;
 int logdetails = 0;
 unsigned long msgs_timeout_from[P_CLEANUP+1] = { 0, };
 
+struct sockaddr_in xymonserveraddr[MAX_SERVERS];
+char xymonservername[MAX_SERVERS][64];
+int xymonservercount = 0;
+
 
 void sigmisc_handler(int signum)
 {
@@ -117,6 +130,10 @@ void sigmisc_handler(int signum)
 
 	  case SIGHUP:
 		dologswitch = 1;
+		break;
+
+	  case SIGPIPE:
+		logprintf("Got SIGPIPE...\n");
 		break;
 
 	  case SIGUSR1:
@@ -134,9 +151,9 @@ int overdue(struct timespec *now, struct timespec *limit)
 	else return (now->tv_nsec >= limit->tv_nsec);
 }
 
-static int do_read(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t completedstate)
+static int do_read(int sockfd, conn_t *conn, enum phase_t completedstate)
 {
-	int n;
+	ssize_t n;
 
 	if ((conn->buflen + BUFSZ_READ + 1) > conn->bufsize) {
 		conn->bufsize += BUFSZ_INC;
@@ -147,7 +164,7 @@ static int do_read(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t 
 	n = read(sockfd, conn->bufp, (conn->bufsize - conn->buflen - 1));
 	if (n == -1) {
 		/* Error - abort */
-		errprintf("READ error from %s: %s\n", inet_ntoa(*addr), strerror(errno));
+		errprintf(" conn %ld, socket %d: error reading from socket: %s\n", conn->connid, sockfd, strerror(errno));
 		msgs_timeout_from[conn->state]++;
 		conn->state = P_CLEANUP;
 		return -1;
@@ -165,14 +182,14 @@ static int do_read(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t 
 	return 0;
 }
 
-static int do_write(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t completedstate)
+static int do_write(int sockfd, conn_t *conn, enum phase_t completedstate)
 {
-	int n;
+	ssize_t n;
 
 	n = write(sockfd, conn->bufp, conn->buflen);
 	if (n == -1) {
 		/* Error - abort */
-		errprintf("WRITE error to %s: %s\n", inet_ntoa(*addr), strerror(errno));
+		errprintf(" conn %ld, socket %d: error writing to socket: %s\n", conn->connid, sockfd, strerror(errno));
 		msgs_timeout_from[conn->state]++;
 		conn->state = P_CLEANUP;
 		return -1;
@@ -180,9 +197,8 @@ static int do_write(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t
 	else if (n >= 0) { 
 		conn->buflen -= n; 
 		conn->bufp += n; 
-		if (conn->buflen == 0) {
-			conn->state = completedstate;
-		}
+		if (conn->buflen == 0) conn->state = completedstate;
+		else if (conn->buflen < 0) errprintf(" error conn %ld, socket %d: buflen dropped below zero\n", conn->connid, sockfd);
 	}
 
 	return 0;
@@ -213,8 +229,6 @@ int main(int argc, char *argv[])
 	int sockcount = 0;
 	int lsocket;
 	struct sockaddr_in laddr;
-	struct sockaddr_in xymonserveraddr[MAX_SERVERS];
-	int xymonservercount = 0;
 	int opt;
 	conn_t *chead = NULL;
 	struct sigaction sa;
@@ -222,6 +236,7 @@ int main(int argc, char *argv[])
 
 	/* Statistics info */
 	time_t startuptime = gettimer();
+	unsigned long msgs_connections = 0;
 	unsigned long msgs_total = 0;
 	unsigned long msgs_total_last = 0;
 	unsigned long msgs_combined = 0;
@@ -280,6 +295,8 @@ int main(int argc, char *argv[])
 					errprintf("Invalid remote address %s\n", ip1);
 				}
 				else {
+					snprintf(xymonservername[xymonservercount], 64, "%s:%d", ip1, port1);
+					dbgprintf("Parsed server %d: %s\n", xymonservercount, xymonservername[xymonservercount]);
 					xymonservercount++;
 				}
 				if (p) *p = ':';
@@ -389,7 +406,7 @@ int main(int argc, char *argv[])
 		for (i=0, srvrs[0] = '\0', p=srvrs; (i<xymonservercount); i++) {
 			p += sprintf(p, "%s:%d ", inet_ntoa(xymonserveraddr[i].sin_addr), ntohs(xymonserveraddr[i].sin_port));
 		}
-		errprintf("Sending to Xymon server(s) %s\n", srvrs);
+		errprintf("Sending to %d Xymon server(s): %s\n", xymonservercount, srvrs);
 	}
 
 	if (daemonize) {
@@ -422,6 +439,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGPIPE, &sa, NULL);
 
 	do {
 		fd_set fdread, fdwrite;
@@ -520,7 +538,7 @@ int main(int argc, char *argv[])
 		combining = 0;
 
 		for (cwalk = chead, idx=0; (cwalk); cwalk = cwalk->next, idx++) {
-			dbgprintf("state %d: %s\n", idx, statename[cwalk->state]);
+			dbgprintf(" state conn %ld: %s\n", cwalk->connid, statename[cwalk->state]);
 
 			/* First, handle any state transitions and setup the FD sets for select() */
 			switch (cwalk->state) {
@@ -538,6 +556,9 @@ int main(int argc, char *argv[])
 				}
 
 				if (logdetails) do_log(cwalk);
+				/* 5m report conn gives a false error here */
+				if ((shutdown(cwalk->csocket, SHUT_RD) == -1) && (cwalk->csocket != -1)) errprintf(" conn %ld, socket %d: client read shutdown failed: %s\n", cwalk->connid, cwalk->csocket, strerror(errno));
+
 				cwalk->conntries = CONNECT_TRIES;
 				cwalk->sendtries = SEND_TRIES;
 				cwalk->conntime = 0;
@@ -560,9 +581,8 @@ int main(int argc, char *argv[])
 					 * we will only pass back the response from one of them
 					 * (the last one).
 					 */
-					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
-					cwalk->snum = xymonservercount;
+					cwalk->snum = SNUM_FIRST;	/* start first to last */
 
 					if ((cwalk->buflen + 100 ) < cwalk->bufsize) {
 						int n = sprintf(cwalk->bufp, 
@@ -580,18 +600,18 @@ int main(int argc, char *argv[])
 					 * These requests get a response back, but send no data.
 					 * Send these to the last of the Xymon servers only.
 					 */
-					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
-					cwalk->snum = 1;
+					cwalk->snum = xymonservercount - 1;	/* final server only */
 				}
 				else {
 					/* It's a request that doesn't take a response. */
 					if (cwalk->csocket >= 0) {
-						shutdown(cwalk->csocket, SHUT_RDWR);
-						close(cwalk->csocket); sockcount--;
+						if (shutdown(cwalk->csocket, SHUT_WR) == -1) errprintf(" conn %ld, socket %d: client write shutdown failed: %s\n", cwalk->connid, cwalk->csocket, strerror(errno));
+						if (close(cwalk->csocket) == -1) errprintf(" conn %ld, socket %d: client socket close failed: %s\n", cwalk->connid, cwalk->csocket, strerror(errno));
+						sockcount--;
 						cwalk->csocket = -1;
 					}
-					cwalk->snum = xymonservercount;
+					cwalk->snum = SNUM_FIRST;	/* start first to last */
 
 					if (strncmp(cwalk->buf+6, "status", 6) == 0) {
 						msgs_status++;
@@ -690,16 +710,24 @@ int main(int argc, char *argv[])
 				cwalk->bufp = cwalk->bufpsave;
 				cwalk->buflen = cwalk->buflensave;
 
+				/* What server number are we on? */
+				if ((cwalk->snum < SNUM_FIRST) || (cwalk->snum >= xymonservercount)) {
+					msgs_timeout_from[P_REQ_CONNECTING]++;
+					errprintf("Invalid server number (%d) for conn in P_REQ_CONNECTING state (at %s); aborting delivery\n", cwalk->snum);
+					cwalk->state = P_CLEANUP;
+					break;
+				}
+
 				ctime = gettimer();
 				if (ctime < (cwalk->conntime + CONNECT_INTERVAL)) {
-					dbgprintf("Delaying retry of connection\n");
+					dbgprintf(" conn %ld: delaying retry to server %d (%s)\n", cwalk->connid, cwalk->snum, xymonservername[cwalk->snum]);
 					break;
 				}
 
 				cwalk->conntries--;
 				cwalk->conntime = ctime;
 				if (cwalk->conntries < 0) {
-					errprintf("Server not responding, message lost\n");
+					errprintf(" conn %ld: server %d (%s) not responding, message lost\n", cwalk->connid, cwalk->snum, xymonservername[cwalk->snum]);
 					cwalk->state = P_REQ_DONE;	/* Not CLENAUP - might be more servers */
 					msgs_timeout_from[P_REQ_CONNECTING]++;
 					break;
@@ -707,18 +735,15 @@ int main(int argc, char *argv[])
 
 				cwalk->ssocket = socket(AF_INET, SOCK_STREAM, 0);
 				if (cwalk->ssocket == -1) {
-					dbgprintf("Could not get a socket - will try again\n");
+					dbgprintf(" conn %ld: could not get a socket - will try again\n", cwalk->connid);
 					break; /* Retry the next time around */
 				}
 				sockcount++;
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
-				{
-					int idx = (xymonservercount - cwalk->snum);
-					n = connect(cwalk->ssocket, (struct sockaddr *)&xymonserveraddr[idx], sizeof(xymonserveraddr[idx]));
-					cwalk->serverip = &xymonserveraddr[idx].sin_addr;
-					dbgprintf("Connecting to Xymon server at %s\n", inet_ntoa(*cwalk->serverip));
-				}
+				dbgprintf(" conn %ld, socket %d: connecting to server %d (%s) (%s:%d)\n", cwalk->connid, cwalk->ssocket, cwalk->snum, xymonservername[cwalk->snum],
+						 inet_ntoa(xymonserveraddr[cwalk->snum].sin_addr), ntohs(xymonserveraddr[cwalk->snum].sin_port) );
+				n = connect(cwalk->ssocket, (struct sockaddr *)&xymonserveraddr[cwalk->snum], sizeof(xymonserveraddr[cwalk->snum]));
 
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
 					cwalk->state = P_REQ_SENDING;
@@ -729,8 +754,10 @@ int main(int argc, char *argv[])
 				}
 				else {
 					/* Could not connect! Invoke retries */
-					dbgprintf("Connect to server failed: %s\n", strerror(errno));
-					close(cwalk->ssocket); sockcount--;
+					errprintf(" conn %ld, socket %d: connect to server %d (%s) failed: %s\n", cwalk->connid, cwalk->ssocket, cwalk->snum, xymonservername[cwalk->snum], strerror(errno));
+					if (close(cwalk->ssocket) == -1 ) errprintf(" conn %ld, socket %d: socket close failed: %s\n", cwalk->connid, cwalk->ssocket, strerror(errno));
+					if (ntohs(xymonserveraddr[cwalk->snum].sin_port) == 0) { errprintf("ERROR: Invalid remote address %s:%d, ABORTING\n", inet_ntoa(xymonserveraddr[cwalk->snum].sin_addr), ntohs(xymonserveraddr[cwalk->snum].sin_port)); abort(); }
+					sockcount--;
 					cwalk->ssocket = -1;
 					break;
 				}
@@ -743,11 +770,26 @@ int main(int argc, char *argv[])
 
 			  case P_REQ_DONE:
 				/* Request has been sent to the server - we're done writing data */
-				shutdown(cwalk->ssocket, SHUT_WR);
-				cwalk->snum--;
-				if (cwalk->snum) {
+				if (shutdown(cwalk->ssocket, SHUT_WR) == -1) errprintf(" conn %ld, socket %d: write shutdown failed: %s\n", cwalk->connid, cwalk->ssocket, strerror(errno));
+
+				if (cwalk->snum < SNUM_FIRST) {
+					errprintf(" conn %ld: BUG: P_REQ_DONE with server %d; how did this happen?\n", cwalk->connid, cwalk->snum);
+					cwalk->state = P_CLEANUP;
+					break;
+				}
+
+				if (cwalk->sendtries < SEND_TRIES) {
+					errprintf(" cwalk %ld, socket %d: recovered from write to server %d (%s) after %d retries\n", 
+						  cwalk->connid, cwalk->ssocket, cwalk->snum, xymonservername[cwalk->snum], (SEND_TRIES - cwalk->sendtries));
+					msgs_recovered++;
+				}
+
+				cwalk->snum++;
+				if (cwalk->snum < xymonservercount) {
 					/* More servers to do */
-					close(cwalk->ssocket); cwalk->ssocket = -1; sockcount--;
+					if (shutdown(cwalk->ssocket, SHUT_RD) == -1) errprintf(" conn %ld, socket %d: read shutdown failed: %s\n", cwalk->connid, cwalk->ssocket, strerror(errno));
+					if (close(cwalk->ssocket) == -1 ) errprintf(" conn %ld, socket %d: socket close failed: %s\n", cwalk->connid, cwalk->ssocket, strerror(errno));
+					cwalk->ssocket = -1; sockcount--;
 					cwalk->conntries = CONNECT_TRIES;
 					cwalk->sendtries = SEND_TRIES;
 					cwalk->conntime = 0;
@@ -758,13 +800,14 @@ int main(int argc, char *argv[])
 					/* Have sent to all servers, grab the response from the last one. */
 					cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
 					memset(cwalk->buf, 0, cwalk->bufsize);
+					cwalk->snum = SNUM_DONE;
 				}
 
 				msgs_delivered++;
 
 				if (cwalk->sendtries < SEND_TRIES) {
-					errprintf("Recovered from write error after %d retries\n", 
-						  (SEND_TRIES - cwalk->sendtries));
+					errprintf(" cwalk %ld, socket %d: recovered from write to server %d (%s) after %d retries\n", 
+						  cwalk->connid, cwalk->ssocket, cwalk->snum, xymonservername[cwalk->snum], (SEND_TRIES - cwalk->sendtries));
 					msgs_recovered++;
 				}
 
@@ -807,8 +850,9 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_RESP_READY:
-				shutdown(cwalk->ssocket, SHUT_RD);
-				close(cwalk->ssocket); sockcount--;
+				if ((shutdown(cwalk->ssocket, SHUT_RD) == -1) && (errno != ENOTCONN))  errprintf(" conn %ld, socket %d: read shutdown failed: %s\n", cwalk->connid, cwalk->ssocket, strerror(errno));
+				if (close(cwalk->ssocket) == -1) errprintf(" conn %ld, socket %d: socket close failed: %s\n", cwalk->connid, cwalk->ssocket, strerror(errno));
+				sockcount--;
 				cwalk->ssocket = -1;
 				cwalk->bufp = cwalk->buf;
 				cwalk->state = P_RESP_SENDING;
@@ -829,8 +873,9 @@ int main(int argc, char *argv[])
 
 			  case P_RESP_DONE:
 				if (cwalk->csocket >= 0) {
-					shutdown(cwalk->csocket, SHUT_WR);
-					close(cwalk->csocket); sockcount--;
+					if (shutdown(cwalk->csocket, SHUT_WR) == -1) errprintf(" conn %ld, socket %d: client write shutdown failed: %s\n", cwalk->connid, cwalk->csocket, strerror(errno));
+					if (close(cwalk->csocket) == -1) errprintf(" conn %ld, socket %d: client socket close failed: %s\n", cwalk->connid, cwalk->csocket, strerror(errno));
+					sockcount--;
 				}
 				cwalk->csocket = -1;
 				cwalk->state = P_CLEANUP;
@@ -838,13 +883,16 @@ int main(int argc, char *argv[])
 
 			  case P_CLEANUP:
 				if (cwalk->csocket >= 0) {
-					close(cwalk->csocket); sockcount--;
+					if (close(cwalk->csocket) == -1) errprintf(" conn %ld, socket %d: client socket close failed: %s\n", cwalk->connid, cwalk->csocket, strerror(errno));
+					sockcount--;
 					cwalk->csocket = -1;
 				}
 				if (cwalk->ssocket >= 0) {
-					close(cwalk->ssocket); sockcount--;
+					if (close(cwalk->ssocket) == -1) errprintf(" conn %ld, socket %d: socket close failed: %s\n", cwalk->connid, cwalk->ssocket, strerror(errno));
+					sockcount--;
 					cwalk->ssocket = -1;
 				}
+				cwalk->snum = SNUM_NULL;
 				cwalk->arrival.tv_sec = cwalk->arrival.tv_nsec = 0;
 				cwalk->bufp = cwalk->buf; 
 				cwalk->buflen = 0;
@@ -1001,7 +1049,7 @@ int main(int argc, char *argv[])
 				switch (cwalk->state) {
 				  case P_REQ_READING:
 					if (FD_ISSET(cwalk->csocket, &fdread)) {
-						do_read(cwalk->csocket, cwalk->clientip, cwalk, P_REQ_READY);
+						do_read(cwalk->csocket, cwalk, P_REQ_READY);
 					}
 					break;
 
@@ -1016,8 +1064,8 @@ int main(int argc, char *argv[])
 							n = getsockopt(cwalk->ssocket, SOL_SOCKET, SO_ERROR, &connres, &connressize);
 							if (connres != 0) {
 								/* Connect failed! Invoke retries. */
-								dbgprintf("Connect to server failed: %s - retrying\n", 
-									strerror(errno));
+								dbgprintf(" conn %ld: connect to server %d (%s) failed: %s - retrying\n", 
+									cwalk->connid, cwalk->snum, xymonservername[cwalk->snum], strerror(errno));
 								close(cwalk->ssocket); sockcount--;
 								cwalk->ssocket = -1;
 								cwalk->state = P_REQ_CONNECTING;
@@ -1025,13 +1073,13 @@ int main(int argc, char *argv[])
 							}
 						}
 
-						if ( (do_write(cwalk->ssocket, cwalk->serverip, cwalk, P_REQ_DONE) == -1) && 
+						if ( (do_write(cwalk->ssocket, cwalk, P_REQ_DONE) == -1) && 
 						     (cwalk->sendtries > 0) ) {
 							/*
 							 * Got a "write" error after connecting.
 							 * Try saving the situation by retrying the send later.
 							 */
-							dbgprintf("Attempting recovery from write error\n");
+							errprintf(" conn %ld, socket %d: attempting recovery from write error to server %d (%s): %s\n", cwalk->connid, cwalk->ssocket, cwalk->snum, xymonservername[cwalk->snum], strerror(errno));
 							close(cwalk->ssocket); sockcount--; cwalk->ssocket = -1;
 							cwalk->sendtries--;
 							cwalk->state = P_REQ_CONNECTING;
@@ -1043,13 +1091,13 @@ int main(int argc, char *argv[])
 
 				  case P_RESP_READING:
 					if (FD_ISSET(cwalk->ssocket, &fdread)) {
-						do_read(cwalk->ssocket, cwalk->serverip, cwalk, P_RESP_READY);
+						do_read(cwalk->ssocket, cwalk, P_RESP_READY);
 					}
 					break;
 
 				  case P_RESP_SENDING:
 					if (FD_ISSET(cwalk->csocket, &fdwrite)) {
-						do_write(cwalk->csocket, cwalk->clientip, cwalk, P_RESP_DONE);
+						do_write(cwalk->csocket, cwalk, P_RESP_DONE);
 					}
 					break;
 
@@ -1063,7 +1111,6 @@ int main(int argc, char *argv[])
 				conn_t *newconn;
 				int caddrsize;
 
-				dbgprintf("New connection\n");
 				for (cwalk = chead; (cwalk && (cwalk->state != P_IDLE)); cwalk = cwalk->next);
 				if (cwalk) {
 					newconn = cwalk;
@@ -1076,9 +1123,11 @@ int main(int argc, char *argv[])
 					newconn->buf = newconn->bufp = malloc(newconn->bufsize);
 				}
 
+				newconn->connid = msgs_connections++;
+				dbgprintf("New connection: %ld\n", newconn->connid);
 				newconn->connectpending = 0;
 				newconn->madetocombo = 0;
-				newconn->snum = 0;
+				newconn->snum = SNUM_NULL;
 				newconn->ssocket = -1;
 				newconn->serverip = NULL;
 				newconn->conntries = 0;
