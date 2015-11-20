@@ -191,19 +191,14 @@ static int do_write(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t
 void do_log(conn_t *conn)
 {
 	char *rq, *eol, *delim;
+	char *iscombo = "";
 	char savechar;
 
 	rq = conn->buf+6;
-	if (strncmp(rq, "combo\n", 6) == 0) rq += 6;
+	if (strncmp(rq, "combo\n", 6) == 0) { rq += 6; iscombo = "(in combo) "; }
 
 	eol = strchr(rq, '\n'); if (eol) *eol = '\0';
-	for (delim = rq; (*delim && isalpha((unsigned char) *delim)); delim++);
-	for (; (*delim && isspace((unsigned char) *delim)); delim++);
-	for (; (*delim && !isspace((unsigned char) *delim)); delim++);
-	savechar = *delim; *delim = '\0';
-
-	errprintf("%s : %s\n", inet_ntoa(*conn->clientip), rq);
-	*delim = savechar;
+	logprintf("conn %ld, socket %d: %s: %s%s\n", conn->connid, conn->csocket, inet_ntoa(*conn->clientip), iscombo, rq);
 	if (eol) *eol = '\n';
 }
 
@@ -926,8 +921,8 @@ int main(int argc, char *argv[])
 						cwalk->madetocombo++;
 						msgs_merged++; /* Count the proginal message also */
 						msgs_combined++;
-						dbgprintf("Now going to send combo from %d messages\n%s\n", 
-							cwalk->madetocombo, cwalk->buf);
+						dbgprintf("Now going to send combo from %d messages\n", 
+							cwalk->madetocombo);
 					}
 					else {
 						/*
