@@ -60,9 +60,11 @@ typedef struct tasklist_t {
 	char *cmd;
 	int interval, maxruntime;
 	char *logfile;
+	char *pidfile;
 	char *envfile, *envarea, *onhostptn;
 	pid_t pid;
 	time_t laststart;
+	int sendhup;
 	int exitcode;
 	int failcount;
 	int cfload;	/* Used while reloading a configuration */
@@ -131,6 +133,8 @@ void load_config(char *conffn)
 		twalk->maxruntime = 0;
 		twalk->group = NULL;
 		twalk->logfile = NULL;
+		twalk->pidfile = NULL;
+		twalk->sendhup = 0;
 		twalk->envfile = NULL;
 		twalk->envarea = NULL;
 		twalk->onhostptn = NULL;
@@ -285,6 +289,14 @@ void load_config(char *conffn)
 			p += strspn(p, " \t");
 			xfreedup(curtask->logfile,p);
 		}
+		else if (curtask && (strncasecmp(p, "PIDFILE ", 8) == 0)) {
+			p += 7;
+			p += strspn(p, " \t");
+			xfreedup(curtask->pidfile,p);
+		}
+		else if (curtask && (strcasecmp(p, "SENDHUP") == 0)) {
+			curtask->sendhup = 1;
+		}
 		else if (curtask && (strncasecmp(p, "NEEDS ", 6) == 0)) {
 			p += 6;
 			p += strspn(p, " \t");
@@ -337,6 +349,10 @@ void load_config(char *conffn)
 
 	/* Running tasks that have been deleted or changed are killed off now. */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
+		/* old pidfn (if any) */
+		char *pidfn = NULL;
+		if (twalk->pidfile) pidfn = expand_env(twalk->pidfile);
+
 		/* compare the current settings with the copy - if we have one */
 		if (twalk->cfload == 0) {
 			if (twalk->copy) {
@@ -369,6 +385,7 @@ void load_config(char *conffn)
 				}
 				twalkstrcmp(cmd,1);
 				twalkstrcmp(logfile,1);
+				twalkstrcmp(pidfile,1);
 				twalkstrcmp(envfile,1);
 				twalkstrcmp(envarea,1);
 				twalkstrcmp(onhostptn,0);
@@ -400,10 +417,14 @@ void load_config(char *conffn)
 				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
+			/* Always remove pidfn, even if it wasn't running */
+			if (pidfn) unlink(pidfn);
+
 			/* And prepare to free this tasklist entry */
 			xfreenull(twalk->key); 
 			xfreenull(twalk->cmd); 
 			xfreenull(twalk->logfile);
+			xfreenull(twalk->pidfile);
 			xfreenull(twalk->envfile);
 			xfreenull(twalk->envarea);
 			xfreenull(twalk->onhostptn);
@@ -422,6 +443,9 @@ void load_config(char *conffn)
 				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
+			/* Always remove pidfn, even if it wasn't running */
+			if (pidfn) unlink(pidfn);
+
 			break;
 		}
 	}
@@ -556,6 +580,8 @@ int main(int argc, char *argv[])
 			if (twalk->cronstr)      printf("\tCRONDATE %s\n", twalk->cronstr);
 			if (twalk->maxruntime)   printf("\tMAXTIME %d\n", twalk->maxruntime);
 			if (twalk->logfile)      printf("\tLOGFILE %s\n", twalk->logfile);
+			if (twalk->pidfile)      printf("\tPIDFILE %s\n", twalk->pidfile);
+			if (twalk->sendhup)      printf("\tSENDHUP\n");
 			if (twalk->envfile)      printf("\tENVFILE %s\n", twalk->envfile);
 			if (twalk->envarea)      printf("\tENVAREA %s\n", twalk->envarea);
 			if (twalk->onhostptn)    printf("\tONHOST %s\n", twalk->onhostptn);
@@ -736,6 +762,23 @@ int main(int argc, char *argv[])
 
 						reopen_file(logfn, "a", stdout);
 						reopen_file(logfn, "a", stderr);
+					}
+
+					/* Print our pid to a pidfile, if requested */
+					if (twalk->pidfile) {
+						char *pidfn = expand_env(twalk->pidfile);
+						FILE *pidfd = fopen(pidfn, "w");
+
+						dbgprintf("%s -> Writing PID to '%s'\n", twalk->key, pidfn);
+
+						if (pidfd) {
+							fprintf(pidfd, "%lu\n", (unsigned long)getpid());
+							fclose(pidfd);
+						}
+						else {
+							errprintf("Could not write PID to %s for command '%s': %s\n", 
+						   		pidfn, twalk->key, strerror(errno));
+						}
 					}
 
 					/* Go! */
