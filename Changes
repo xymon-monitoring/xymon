@@ -12,7 +12,9 @@ Changes from 4.3.x -> 4.4-alpha
 * Add error handling to recover when messages greater than the internal MAX BUF size
   are found (must delete to not be wedged)
 * Add better reporting for sendmessage() failures
-
+* xymonlaunch: Add support for specifying a PIDFILE in tasks.cfg or clientlaunch.cfg
+* xymonlaunch: Add SENDHUP support for optionally passing along signals to running 
+  tasks (ie, for log rotation)
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)
