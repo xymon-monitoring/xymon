@@ -5,7 +5,7 @@
 	RRDLIB=""
 	PNGLIB=""
 	ZLIB=""
-	for DIR in /opt/rrdtool* /usr/local/rrdtool* /usr/local /usr/pkg /opt/csw /opt/sfw /usr/sfw
+	for DIR in /opt/rrdtool* /usr/local/rrdtool* /usr/local /usr/pkg /usr /opt/csw /opt/sfw /usr/sfw
 	do
 		if test -f $DIR/include/rrd.h
 		then

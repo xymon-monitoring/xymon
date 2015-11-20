@@ -2,7 +2,7 @@
 
 	ZLIBINC=""
 	ZLIBLIB=""
-	for DIR in /opt/zlib* /usr/local/zlib* /usr/local /usr/pkg /opt/csw /opt/sfw
+	for DIR in /opt/zlib* /usr/local/zlib* /usr/local /usr/pkg /usr /opt/csw /opt/sfw
 	do
 		if test -f $DIR/include/zlib.h
 		then

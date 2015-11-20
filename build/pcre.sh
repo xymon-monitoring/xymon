@@ -2,7 +2,7 @@
 
 	PCREINC=""
 	PCRELIB=""
-	for DIR in /opt/pcre* /usr/local/pcre* /usr/local /usr/pkg /opt/csw /opt/sfw
+	for DIR in /opt/pcre* /usr/local/pcre* /usr/local /usr/pkg /usr /opt/csw /opt/sfw
 	do
 		if test -f $DIR/include/pcre.h
 		then

@@ -23,6 +23,7 @@ Changes from 4.3.x -> 4.4-alpha
 * Uplift most log file configuration from command lines to tasks.cfg and clientlaunch.cfg
 * logrotate: Adjust default config to send -HUP to xymonlaunch instead of searching for
   xymond PID file.
+* Search in /usr for libraries and includes during build configuration
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)
