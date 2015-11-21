@@ -28,6 +28,11 @@ if test $# -ge 1; then
 	shift
 fi
 
+if test "$LOCALMODE" = "yes" -a ! -x $XYMONHOME/bin/xymond_client; then
+	echo "ERROR: Local mode (--local) disabled because $XYMONHOME/bin/xymond_client missing or not executable; you may need to recompile this client or install an additional package" >&2
+	LOCALMODE="no"
+fi
+
 if test "$XYMONOSSCRIPT" = ""; then
 	XYMONOSSCRIPT="xymonclient-`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`.sh"
 fi
