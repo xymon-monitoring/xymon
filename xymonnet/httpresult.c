@@ -110,7 +110,7 @@ static int statuscolor_by_set(testedhost_t *h, int status, char *okcodes, char *
 
 
 void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firsttest,
-		       char *nonetpage, int failgoesclear, int usebackfeedqueue)
+		       char *nonetpage, int failgoesclear, int usebackfeedqueue, int dosavecookies)
 {
 	testitem_t *t;
 	int	color = -1;
@@ -141,7 +141,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		if (t->senddata) continue;
 
 		/* Grab session cookies */
-		update_session_cookies(host->hostname, req->weburl.desturl->host, req->headers);
+		if (dosavecookies) update_session_cookies(host->hostname, req->weburl.desturl->host, req->headers);
 
 		totalreports++;
 		if (req->weburl.okcodes || req->weburl.badcodes) {

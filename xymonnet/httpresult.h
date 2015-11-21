@@ -19,7 +19,7 @@
 
 extern void show_http_test_results(service_t *httptest);
 extern void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firsttest,
-			      char *nonetpage, int failgoesclear, int usebackfeedqueue);
+			      char *nonetpage, int failgoesclear, int usebackfeedqueue, int dosavecookies);
 extern void send_content_results(service_t *httptest, testedhost_t *host,
 				 char *nonetpage, char *contenttestname, int failgoesclear);
 

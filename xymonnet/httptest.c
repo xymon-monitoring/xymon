@@ -328,7 +328,7 @@ void tcp_http_final_callback(void *priv)
 }
 
 
-void add_http_test(testitem_t *t)
+void add_http_test(testitem_t *t, int dousecookies)
 {
 	http_data_t *httptest;
 
@@ -498,7 +498,7 @@ void add_http_test(testitem_t *t)
 	}
 
 	/* Get any cookies */
-	load_cookies();
+	if (dousecookies) load_cookies();
 
 	/* Generate the request */
 	addtobuffer(httprequest, (httptest->weburl.postdata ? "POST " :

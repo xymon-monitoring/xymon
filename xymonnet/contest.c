@@ -1482,7 +1482,7 @@ int main(int argc, char *argv[])
 					testitem->testspec = testspec;
 					hostitem->ip = strdup(ip);
 					add_url_to_dns_queue(testspec);
-					add_http_test(testitem);
+					add_http_test(testitem, 1);
 
 					testitem->next = NULL;
 

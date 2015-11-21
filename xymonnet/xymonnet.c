@@ -96,6 +96,8 @@ int		checktcpresponse = 0;
 int		dotraceroute = 0;
 int		fqdn = 1;
 int		dosendflags = 1;
+int		dosavecookies = 1;
+int		dousecookies = 1;
 char		*pingcmd = NULL;
 char		pinglog[PATH_MAX];
 char		pingerrlog[PATH_MAX];
@@ -2077,6 +2079,12 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-flags") == 0) {
 			dosendflags = 0;
 		}
+		else if (strcmp(argv[argi], "--no-save-cookies") == 0) {
+			dosavecookies = 0;
+		}
+		else if (strcmp(argv[argi], "--no-cookies") == 0) {
+			dousecookies = 0;
+		}
 		else if (strcmp(argv[argi], "--shuffle") == 0) {
 			shuffletests = 1;
 		}
@@ -2218,6 +2226,8 @@ int main(int argc, char *argv[])
 				printf("    --ping-tasks=N              : Run N ping tasks in parallel (default N=1)\n");
 				printf("\nOptions for HTTP/HTTPS (Web) tests:\n");
 				printf("    --content=COLUMNNAME        : Define default columnname for CONTENT checks (content)\n");
+				printf("    --no-cookies                : Disable reading and writing of cookies for any tests\n");
+				printf("    --no-save-cookies           : Disable writing of per-session cookies received\n");
 				printf("\nOptions for SSL certificate tests:\n");
 				printf("    --ssl=COLUMNNAME            : Define columnname for SSL certificate checks (sslcert)\n");
 				printf("    --no-ssl                    : Disable SSL certificate check\n");
@@ -2249,9 +2259,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (!dousecookies) dosavecookies=0;
+
 	svctree = xtreeNew(strcasecmp);
 	testhosttree = xtreeNew(strcasecmp);
-	cookietree = xtreeNew(strcmp);
+	if (dousecookies) cookietree = xtreeNew(strcmp);
 	init_timestamp();
 	envcheck(reqenv);
 	fqdn = get_fqdn();
@@ -2334,7 +2346,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	for (t = httptest->items; (t); t = t->next) add_http_test(t);
+	for (t = httptest->items; (t); t = t->next) add_http_test(t, dousecookies);
 	add_timestamp("Test engine setup completed");
 
 	do_tcp_tests(timeout, concurrency);
@@ -2480,7 +2492,7 @@ int main(int argc, char *argv[])
 	}
 	for (handle = xtreeFirst(testhosttree); (handle != xtreeEnd(testhosttree)); handle = xtreeNext(testhosttree, handle)) {
 		h = (testedhost_t *)xtreeData(testhosttree, handle);
-		send_http_results(httptest, h, h->firsthttp, nonetpage, failgoesclear, usebackfeedqueue);
+		send_http_results(httptest, h, h->firsthttp, nonetpage, failgoesclear, usebackfeedqueue, dosavecookies);
 		send_content_results(httptest, h, nonetpage, contenttestname, failgoesclear);
 		send_ldap_results(ldaptest, h, nonetpage, failgoesclear);
 		if (ssltestname && !h->nosslcert) send_sslcert_status(h);
@@ -2516,7 +2528,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Save session cookies - every time */
-	save_session_cookies();
+	if (dosavecookies) save_session_cookies();
 
 	shutdown_ldap_library();
 	add_timestamp("xymonnet completed");

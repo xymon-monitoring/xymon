@@ -15,7 +15,7 @@
 
 extern int  tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv);
 extern void tcp_http_final_callback(void *priv);
-extern void add_http_test(testitem_t *t);
+extern void add_http_test(testitem_t *t, int dousecookies);
 
 #endif
 
