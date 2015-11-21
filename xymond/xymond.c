@@ -565,6 +565,7 @@ xymond_hostlist_t *create_hostlist_t(char *hostname, char *ip)
 	xymond_hostlist_t *hitem;
 
 	hitem = (xymond_hostlist_t *) calloc(1, sizeof(xymond_hostlist_t));
+	dbgprintf(" -- create_hostlist_t for %s (%s)\n", hostname, ip);
 	hitem->hostname = strdup(hostname);
 	hitem->ip = strdup(ip);
 	if (strcmp(hostname, "summary") == 0) hitem->hosttype = H_SUMMARY;
@@ -580,6 +581,7 @@ testinfo_t *create_testinfo(char *name)
 
 	newrec = (testinfo_t *)calloc(1, sizeof(testinfo_t));
 	newrec->name = strdup(name);
+	dbgprintf(" -- create_testinfo for %s\n", name);
 	newrec->clientsave = clientsavedisk;
 	xtreeAdd(rbtests, newrec->name, newrec);
 
@@ -605,7 +607,7 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 	/* First see how many users are on this channel */
 	clients = semctl(channel->semid, CLIENTCOUNT, GETVAL);
 	if (clients == 0) {
-		dbgprintf("Dropping message - no readers\n");
+		dbgprintf("Dropping %s message - no readers on %s channel\n", channelmarker, channelnames[channel->channelid]);
 		return;
 	}
 
@@ -624,7 +626,7 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 		n = semop(channel->semid, &s, 1);
 		if (n == -1) {
 			semerr = errno;
-			if (semerr != EINTR) errprintf("semop failed, %s\n", strerror(errno));
+			if (semerr != EINTR) errprintf("semop failed on %s, %s\n", channelmarker, strerror(errno));
 		}
 	} while ((n == -1) && (semerr == EINTR) && running && !gotalarm);
 	alarm(0);
@@ -632,8 +634,8 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 
 	/* Check if the alarm fired */
 	if (gotalarm) {
-		errprintf("BOARDBUSY locked at %d, GETNCNT is %d, GETPID is %d, %d clients\n",
-			  semctl(channel->semid, BOARDBUSY, GETVAL),
+		errprintf("BOARDBUSY locked at %d on '%s', GETNCNT is %d, GETPID is %d, %d clients\n",
+			  semctl(channel->semid, BOARDBUSY, GETVAL), channelnames[channel->channelid], 
 			  semctl(channel->semid, BOARDBUSY, GETNCNT),
 			  semctl(channel->semid, BOARDBUSY, GETPID),
 			  semctl(channel->semid, CLIENTCOUNT, GETVAL));
@@ -642,7 +644,7 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 
 	/* Check if we failed to grab the semaphore */
 	if (n == -1) {
-		errprintf("Dropping message due to semaphore error\n");
+		errprintf("Dropping %s message due to semaphore error\n", channelmarker);
 		return;
 	}
 
@@ -662,8 +664,8 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 			char *p, *overmsg = readymsg;
 			*(overmsg+100) = '\0';
 			p = strchr(overmsg, '\n'); if (p) *p = '\0';
-			errprintf("Oversize data/client msg from %s truncated (n=%d, limit %d)\nFirst line: %s\n", 
-				   sender, n, bufsz, overmsg);
+			errprintf("Oversize %s msg from %s truncated (n=%d, limit %d)\nFirst line: %s\n", 
+				   channelmarker, sender, n, bufsz, overmsg);
 		}
 		*(channel->channelbuf + bufsz - 5) = '\0';
 	}
@@ -1270,6 +1272,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	if (hwalk && twalk && owalk) {
 		for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
+			dbgprintf(" -- get_hts creating new log record: host %s, test %s, color %s, group %s, origin %s\n", hostname, testname, colstr, grp, origin);
 			lwalk = (xymond_log_t *)calloc(1, sizeof(xymond_log_t));
 			lwalk->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
 			lwalk->lastchange[0] = getcurrenttime(NULL);
@@ -1334,8 +1337,11 @@ xymond_log_t *find_cookie(char *cookie)
 
 	cookiehandle = xtreeFind(rbcookies, cookie);
 	if (cookiehandle != xtreeEnd(rbcookies)) {
+		dbgprintf(" - found a cookie matching %s\n", cookie);
 		result = xtreeData(rbcookies, cookiehandle);
-		if (result->cookieexpires <= getcurrenttime(NULL)) {
+		if (result == NULL) errprintf("BUG: find_cookie given cookie %s that returned a NULL result from xtreeData\n", cookie);
+		else if (result->cookieexpires <= getcurrenttime(NULL)) {
+			dbgprintf(" - cookie %s expired at %d, so we didn't find a cookie\n", cookie, result->cookieexpires);
 			clear_cookie(result);
 			result = NULL;
 		}
@@ -1463,11 +1469,13 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		mlast = NULL;
 		mwalk = log->modifiers;
 		while (mwalk) {
+			dbgprintf(" -- modifier found: %s, curvalid: %d, %s", mwalk->source, mwalk->valid, mwalk->cause); // includes newline
 			mwalk->valid--;
 			if (mwalk->valid <= 0) {
 				modifier_t *zombie;
 
 				/* Modifier no longer valid */
+				dbgprintf(" -- expiring this modifier: %s\n", mwalk->source);
 				zombie = mwalk;
 				if (zombie->source) xfree(zombie->source);
 				if (zombie->cause) xfree(zombie->cause);
@@ -1480,6 +1488,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 				xfree(zombie);
 			}
 			else {
+				dbgprintf(" -- modifier color: %d\n", mwalk->color);
 				if (mwalk->color > mcolor) mcolor = mwalk->color;
 				mlast = mwalk;
 				mwalk = mwalk->next;
@@ -2386,6 +2395,8 @@ void free_log_t(xymond_log_t *zombie)
 	modifier_t *modwalk, *modtmp;
 
 	dbgprintf("-> free_log_t\n");
+	if (zombie->host && zombie->host->hostname) dbgprintf(" - for hostname %s\n", zombie->host->hostname);
+	if (zombie->test && zombie->test->name) dbgprintf(" -- freeing testname %s\n", zombie->test->name);
 
 	modwalk = zombie->modifiers;
 	while (modwalk) {
@@ -2480,19 +2491,25 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	 */
 	canonhostname = knownhost(hostname, &hostip, ghosthandling);
 	if (canonhostname) hostname = canonhostname;
+	dbgprintf(" - canonhostname was: %s\n", canonhostname);
 
 	hosthandle = xtreeFind(rbhosts, hostname);
+	dbgprintf(" - hosthandle: %p\n", hosthandle);
 	if (hosthandle == xtreeEnd(rbhosts)) goto done;
 	else hwalk = xtreeData(rbhosts, hosthandle);
-
+	dbgprintf(" - hwalk: %p\n", hwalk);
+	if (hwalk == NULL) { errprintf("- droptest given with null host data\n"); goto done; }
+	
 	switch (cmd) {
 	  case CMD_DROPTEST:
 		testhandle = xtreeFind(rbtests, n1);
 		if (testhandle == xtreeEnd(rbtests)) goto done;
 		twalk = xtreeData(rbtests, testhandle);
+		dbgprintf(" - twalk: %p\n", twalk);
+		if (twalk == NULL) { errprintf("- droptest given with null test data\n"); goto done; }
 
 		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next) ;
-		if (lwalk == NULL) goto done;
+		if (lwalk == NULL) { errprintf("- droptest given with test data but no log record\n"); goto done; }
 		if (lwalk == hwalk->pinglog) hwalk->pinglog = NULL;
 		if (lwalk == hwalk->logs) {
 			hwalk->logs = hwalk->logs->next;

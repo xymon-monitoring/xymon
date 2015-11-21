@@ -475,6 +475,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 */
 	if (use_rrd_cache && (++callcounter < CACHESZ)) {
 		if (cacheitem && (cacheitem->valcount < CACHESZ)) {
+			dbgprintf(" - %s: storing %zu bytes into seq %d (pos: %d/%d), at %d: %s\n", updcachekey, strlen(rrdvalues), seq, cacheitem->valcount, CACHESZ, updtime, rrdvalues);
 			cacheitem->updseq[cacheitem->valcount] = seq;
 			cacheitem->updtime[cacheitem->valcount] = updtime;
 			cacheitem->vals[cacheitem->valcount] = strdup(rrdvalues);

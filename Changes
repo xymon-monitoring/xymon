@@ -17,6 +17,7 @@ Changes from 4.3.x -> 4.4-alpha
 * Add error handling to recover when messages greater than the internal MAX BUF size
   are found (must delete to not be wedged)
 * Add better reporting for sendmessage() failures
+* More verbose debugging in message processing, cookie searching, and in core library routines
 * xymonlaunch: Improve logging for actions taken against tasks
   tasks (ie, for log rotation)
 * xymonlaunch now passes the path to LOGFILE (if configured) as $XYMONLAUNCH_LOGFILENAME,

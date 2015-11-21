@@ -76,7 +76,7 @@ xymond_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	dbgprintf("calling ftok('%s',%d)\n", xymonhome, chnid);
 	key = ftok(xymonhome, chnid);
 	if (key == -1) {
-		errprintf("Could not generate shmem key based on %s: %s\n", xymonhome, strerror(errno));
+		errprintf("Could not generate shmem key %d based on %s: %s\n", chnid, xymonhome, strerror(errno));
 		return NULL;
 	}
 	dbgprintf("ftok() returns: 0x%X\n", key);
@@ -87,7 +87,8 @@ xymond_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	newch->msgcount = 0;
 	newch->shmid = shmget(key, bufsz, flags);
 	if (newch->shmid == -1) {
-		errprintf("Could not get shm of size %d: %s\n", bufsz, strerror(errno));
+		if (errno == ENOENT) { dbgprintf("Channel shared memory %d in %s doesn't exist (yet): %s\n", chnid, xymonhome, strerror(errno)); }
+		else errprintf("Could not get channel %d shared memory for size %d in %s: %s\n", chnid, bufsz, xymonhome, strerror(errno));
 		xfree(newch);
 		return NULL;
 	}

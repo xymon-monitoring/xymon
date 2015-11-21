@@ -379,7 +379,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_NOTIFY, A_DEAD */
 	char *alerttxt[A_DEAD+1] = { "Paging", "Norecip", "Acked", "Recovered", "Disabled", "Notify", "Dead" };
 
-	dbgprintf("send_alert %s:%s state %d\n", alert->hostname, alert->testname, (int)alert->state);
+	dbgprintf("send_alert %s:%s state %s\n", alert->hostname, alert->testname, alerttxt[alert->state]);
 	traceprintf("send_alert %s:%s state %s\n", 
 		    alert->hostname, alert->testname, alerttxt[alert->state]);
 

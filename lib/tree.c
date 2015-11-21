@@ -24,6 +24,8 @@ static char rcsid[] = "$Id: files.c 6712 2011-07-31 21:01:52Z storner $";
 #include <unistd.h>
 #include <ctype.h>
 
+#include "errormsg.h"
+#include "memory.h"
 #include "tree.h"
 
 
@@ -88,10 +90,12 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 	}
 	if (*erec != rec) {
 		/* Was already there */
-		free(rec);
+		// dbgprintf(" -- xtreeAdd: %s attempted, but was already present at %p, freeing unneeded new at %p\n", key, erec, rec);
+		xfree(rec);
 		return XTREE_STATUS_DUPLICATE_KEY;
 	}
 
+	// dbgprintf(" -- xtreeAdd: %s added OK at %p\n", key, rec);
 	return XTREE_STATUS_OK;
 }
 
