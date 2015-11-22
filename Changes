@@ -10,7 +10,10 @@ Changes from 4.3.x -> 4.4-alpha
 * xymonlaunch: Add support for specifying a PIDFILE in tasks.cfg or clientlaunch.cfg
 * xymonlaunch: Add SENDHUP support for optionally passing along signals to running 
 * Support and display "TEXT=Human readable" tags for LOG entries in analysis.cfg on msgs
-* Add --no-cookies and --no-save-cookies (read but don't write) to xymonnet
+* FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't write) to xymonnet
+* FIXME-doc: Add hidden tunables for controlling flushing to the external RRD processor
+  Set RRD_EXTPROC_DOFLUSH to flush after every processed message (which could be multiple 
+  lines). Set RRD_EXTPROC_BUFSIZ to control buffer size (similar to BUFSIZ)
 
 * Performance optimizations / bug fixes with POSIX btree usage
 * Performance improvements within xymond_rrd
