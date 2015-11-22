@@ -141,6 +141,7 @@ else
 endif
 
 cfgfiles:
+	cat etcfiles/combo.cfg.DIST | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >etcfiles/combo.cfg
 	cat $(APACHECONF) | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@INSTALLETCDIR@!$(INSTALLETCDIR)!g' | sed -e 's!@INSTALLWWWDIR@!$(INSTALLWWWDIR)!g' | sed -e 's!@INSTALLSTATICWWWDIR@!$(INSTALLSTATICWWWDIR)!g' | sed -e 's!@XYMONVAR@!$(XYMONVAR)!g' | sed -e 's!@CGIDIR@!$(CGIDIR)!g' | sed -e 's!@SECURECGIDIR@!$(SECURECGIDIR)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' >etcfiles/xymon-apache.conf
 	cat etcfiles/xymonserver.cfg.DIST | sed -e 's!@XYMONTOPDIR@!$(XYMONTOPDIR)!g'| sed -e 's!@XYMONLOGDIR@!$(XYMONLOGDIR)!g'| sed -e 's!@XYMONHOSTNAME@!$(XYMONHOSTNAME)!g'| sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g'| sed -e 's!@XYMONHOSTOS@!$(XYMONHOSTOS)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONVAR@!$(XYMONVAR)!g' | sed -e 's!@FPING@!$(FPING)!g' | sed -e 's!@MAILPROGRAM@!$(MAILPROGRAM)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >etcfiles/xymonserver.cfg
 	../build/bb-commands.sh >>etcfiles/xymonserver.cfg
