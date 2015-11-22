@@ -117,3 +117,57 @@ tools to enable encryption, so you do not really need the --ssl-listen
 option unless you have third-party tools talking to xymond, that you 
 would like to wrap in TLS encryption.
 
+
+Authenticating Xymon clients with certificates
+----------------------------------------------
+Traditionally Xymon clients (i.e. servers sending data about themselves
+into Xymon) have not been authenticated in any way. With TLS support,
+it is possible to require that clients are authenticated using
+TLS client certificates
+
+The authentication works by checking that the client certificate is
+issued by a specific, trusted Certificate Authority. So you can setup
+your own private CA and issue client certificates for your servers.
+
+Easy-RSA lets you do this, so if you have already generated a certificate
+for the Xymon server, then it is simple to also generate client
+certificates.
+
+Go to the directory where you installed Easy-RSA and generated the
+Xymon server certificate. Then run
+
+   . ./vars
+   build-key myserver
+
+When filling in the details about the certificate, pay attention to
+the "Common Name" setting - this name is checked against the name
+that your client uses when sending data to Xymon, so they must 
+match. I.e. use the name of the server that you have in the Xymon
+hosts.cfg file.
+
+Put the key- and certificate-files on your Xymon client, and set
+these two settings in the xymonclient.cfg file:
+
+   XYMONCLIENTCERT="/usr/local/xymon/etc/clientcertificate.crt"
+   XYMONCLIENTKEY="/usr/local/xymon/etc/clientcertificate.key"
+
+(If you put the certificate files elsewhere, adjust the filenames).
+
+
+Requiring client certificates on the Xymon server
+-------------------------------------------------
+The Xymon client can present a certificate to the Xymon server,
+and for xymond to validate it as issued by the trusted CA you
+must point xymond to the CA certificate. To do this, add the
+option "--tls-clientrootca=FILENAME" to the xymond commandline
+in tasks.cfg.
+
+This does not cause xymond to reject connections that do not 
+have a certificate. To enforce authentication with client 
+certificates, you must also addthe option "--tls-requireclientcert". 
+
+NOTE: This is a global option, so it affects ALL clients that try
+to send data to Xymon. Any client without a certificate will be
+rejected.
+
+

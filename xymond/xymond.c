@@ -170,11 +170,12 @@ void *rbcookies;			/* The cookies we use */
 void *rbfilecache;
 void *rbsenders;
 
-sender_t *maintsenders = NULL;
-sender_t *statussenders = NULL;
-sender_t *adminsenders = NULL;
-sender_t *wwwsenders = NULL;
-sender_t *tracelist = NULL;
+void *maintsenders = NULL;
+void *statussenders = NULL;
+void *adminsenders = NULL;
+void *wwwsenders = NULL;
+void *tracelist = NULL;
+
 int      traceall = 0;
 int      ignoretraced = 0;
 int      clientsavemem = 1;	/* In memory */
@@ -187,6 +188,7 @@ int	 defaultcookietime = 86400;	/* 1 day */
 /* This struct describes an active connection with a Xymon client */
 typedef struct conn_t {
 	char *sender;
+	char *certcn;
 	unsigned char *buf, *bufp;	/* Message buffer and pointer */
 	int msgsz;
 	size_t buflen, bufsz;		/* Active and maximum length of buffer */
@@ -931,6 +933,47 @@ void posttoall(char *msg)
 	posttochannel(clientchn, msg, NULL, "xymond", NULL, NULL, "");
 	posttochannel(clichgchn, msg, NULL, "xymond", NULL, NULL, "");
 	posttochannel(userchn, msg, NULL, "xymond", NULL, NULL, "");
+}
+
+
+void *buildsenderlist(char *senderlist)
+{
+	void *result = xtreeNew(strcasecmp);
+	char *tok, *tokr;
+
+	tok = strtok_r(senderlist, ",", &tokr);
+	while (tok) {
+		xtreeAdd(result, strdup(tok), NULL);
+		tok = strtok_r(NULL, ",", &tokr);
+	}
+
+	return result;
+}
+
+
+int oksender(void *oklist, void *target, char *sender, char *msgbuf)
+{
+	char *eoln = NULL;
+
+	if (!oklist) return 1;	/* No access checks = access allowed */
+
+	if (target) {
+		/* OK for a host to report about itself */
+		char *name = xmh_item(target, XMH_HOSTNAME);
+		if (strcasecmp(name, sender) == 0) return 1; /* Sender and target match = access allowed */
+		name = xmh_item(target, XMH_CLIENTALIAS);
+		if (strcasecmp(name, sender) == 0) return 1; /* Sender and client alias match = access allowed */
+	}
+
+	/* Someone else is reporting on a host. Check access list */
+	if (oklist && (xtreeFind(oklist, sender) != xtreeEnd(oklist))) return 1; /* In auth list = access allowed */
+
+	/* Sorry, not allowed. Refuse and log the message */
+	if (msgbuf) { eoln = strchr(msgbuf, '\n'); if (eoln) *eoln = '\0'; }
+	errprintf("Refused message from %s: %s\n", sender, (msgbuf ? msgbuf : "<empty>"));
+	if (msgbuf && eoln) *eoln = '\n';
+
+	return 0;
 }
 
 
@@ -1976,7 +2019,7 @@ void handle_usermsg(char *msg, char *sender, char *hostname)
 	dbgprintf("<-handle_usermsg\n");
 }
 
-void handle_enadis(int enabled, conn_t *msg, char *sender)
+void handle_enadis(int enabled, conn_t *msg, char *sender, int viabfq)
 {
 	char *firstline = NULL, *hosttest = NULL, *durstr = NULL, *txtstart = NULL;
 	char *hname = NULL, *tname = NULL;
@@ -2054,9 +2097,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	}
 	else hwalk = xtreeData(rbhosts, hosthandle);
 
-	if (!oksender(maintsenders, 
-		      (hwalk->ip && (!conn_null_ip(hwalk->ip))) ? hwalk->ip : NULL,
-		      msg->sender, msg->buf)) goto done;
+	if (!viabfq && !oksender(maintsenders, hostinfo(hwalk->hostname), msg->sender, msg->buf)) goto done;
 
 	if (tname) {
 		testhandle = xtreeFind(rbtests, tname);
@@ -3380,9 +3421,17 @@ strbuffer_t *generate_hostinfo_outbuf(strbuffer_t **prebuf, boardfield_t *boardf
 	return buf;
 }
 
+
 void get_sender(conn_t *msg, char *msgtext, char *prestring)
 {
 	char *msgfrom;
+
+	if (msg->certcn) {
+		msg->sender = strdup(msg->certcn);
+		return;
+	}
+
+	if (msg->sender && (strcmp(msg->sender, "BFQ"))) return;
 
 	msgfrom = strstr(msgtext, prestring);
 	if (msgfrom) {
@@ -3537,7 +3586,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 
 			if (statussenders) {
 				get_hts(currmsg, msg->sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
-				if (!oksender(statussenders, (h ? h->ip : NULL), msg->sender, currmsg)) validsender = 0;
+				if (!viabfq && !oksender(statussenders, (h ? hostinfo(h->hostname) : NULL), msg->sender, currmsg)) validsender = 0;
 			}
 
 			if (validsender) {
@@ -3582,7 +3631,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
 			get_hts(currmsg, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->sender, currmsg)) {
+			if (h && t && log && (viabfq || oksender(statussenders, (h ? hostinfo(h->hostname) : NULL), msg->sender, currmsg))) {
 				handle_modify(currmsg, log, color);
 			}
 
@@ -3594,7 +3643,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 
 		if (statussenders) {
 			get_hts(msg->buf, msg->sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
-			if (!oksender(statussenders, (h ? h->ip : NULL), msg->sender, msg->buf)) goto done;
+			if (!viabfq && !oksender(statussenders, (h ? hostinfo(h->hostname) : NULL), msg->sender, msg->buf)) goto done;
 		}
 
 		get_hts(msg->buf, msg->sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 1, 1);
@@ -3662,7 +3711,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			if (hname == NULL) {
 				/* Ignore it */
 			}
-			else if (!oksender(statussenders, hostip, msg->sender, msg->buf)) {
+			else if (!viabfq && !oksender(statussenders, hostinfo(hname), msg->sender, msg->buf)) {
 				/* Invalid sender */
 				errprintf("Invalid data message - sender %s not allowed for host %s\n", msg->sender, hostname);
 			}
@@ -3705,7 +3754,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		if (*id) {
 			if (*msg->buf == 'n') {
 				/* "notes" message */
-				if (!oksender(maintsenders, NULL, msg->sender, msg->buf)) {
+				if (!viabfq && !oksender(maintsenders, NULL, msg->sender, msg->buf)) {
 					/* Invalid sender */
 					errprintf("Invalid notes message - sender %s not allowed for host %s\n", 
 						  msg->sender, id);
@@ -3716,7 +3765,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			}
 			else if (*msg->buf == 'u') {
 				/* "usermsg" message */
-				if (!oksender(statussenders, NULL, msg->sender, msg->buf)) {
+				if (!viabfq && !oksender(statussenders, NULL, msg->sender, msg->buf)) {
 					/* Invalid sender */
 					errprintf("Invalid user message - sender %s not allowed for host %s\n", 
 						  msg->sender, id);
@@ -3733,15 +3782,15 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		xfree(id);
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
-		handle_enadis(1, msg, msg->sender);
+		handle_enadis(1, msg, msg->sender, viabfq);
 	}
 	else if (strncmp(msg->buf, "disable", 7) == 0) {
-		handle_enadis(0, msg, msg->sender);
+		handle_enadis(0, msg, msg->sender, viabfq);
 	}
 	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char *conffn, *p;
 
-		if (!oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + 6; p += strspn(p, " \t");
 		p = strtok(p, " \t\r\n");
@@ -3756,7 +3805,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	else if (allow_downloads && (strncmp(msg->buf, "download", 8) == 0)) {
 		char *fn, *p;
 
-		if (!oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + 8; p += strspn(p, " \t");
 		p = strtok(p, " \t\r\n");
@@ -3776,7 +3825,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
 		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-		if (!oksender(statussenders, (h ? h->ip : NULL), msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(statussenders, (h ? hostinfo(h->hostname) : NULL), msg->sender, msg->buf)) goto done;
 
 		if (log) {
 			xfree(msg->buf);
@@ -3818,7 +3867,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		char *fields;
 		int acklevel = -1;
 
-		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		logfilter = setup_filter(msg->buf, &fields, &acklevel, NULL);
 		if (!fields) fields = "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,modifiers";
@@ -3853,7 +3902,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		 * xymondxlog HOST.TEST
 		 *
 		 */
-		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (log) {
@@ -3926,7 +3975,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		strbuffer_t *response;
 		static size_t lastboardsize = 0;
 
-		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		logfilter = setup_filter(msg->buf, &fields, &acklevel, &havehostfilter);
 		if (!fields) fields = "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1";
@@ -4039,7 +4088,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		static size_t lastboardsize = 0;
 		strbuffer_t *response;
 
-		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		logfilter = setup_filter(msg->buf, &fields, &acklevel, &havehostfilter);
 		response = newstrbuffer(lastboardsize);
@@ -4131,7 +4180,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		static size_t lastboardsize = 0;
 		char *clonehost;
 
-		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		response = newstrbuffer(lastboardsize);
 
@@ -4192,7 +4241,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		int duration;
 		xymond_log_t *lwalk;
 
-		if (!oksender(maintsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(maintsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		/*
 		 * For just a bit of compatibility with the old BB system,
@@ -4240,7 +4289,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		/* ackinfo HOST.TEST\nlevel\nvaliduntil\nackedby\nmsg */
 		int ackall = 0;
 
-		if (!oksender(maintsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(maintsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, &ackall, 0, 0);
 		if (log) {
@@ -4260,7 +4309,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		char *hostname = NULL, *testname = NULL;
 		char *p;
 
-		if (!oksender(adminsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(adminsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + 4; p += strspn(p, " \t");
 		hostname = strtok(p, " \t");
@@ -4277,7 +4326,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		char *hostname = NULL, *n1 = NULL, *n2 = NULL;
 		char *p;
 
-		if (!oksender(adminsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(adminsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + 6; p += strspn(p, " \t");
 		hostname = strtok(p, " \t");
@@ -4307,7 +4356,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		msg->buflen = strlen(msg->buf);
 	}
 	else if (strncmp(msg->buf, "notify", 6) == 0) {
-		if (!oksender(maintsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(maintsenders, NULL, msg->sender, msg->buf)) goto done;
 		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (h && t) handle_notify(msg->buf, msg->sender, h->hostname, t->name);
 	}
@@ -4423,7 +4472,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			if (hname == NULL) {
 				/* Ignore it */
 			}
-			else if (!oksender(statussenders, hostip, msg->sender, msg->buf)) {
+			else if (!viabfq && !oksender(statussenders, hostinfo(hname), msg->sender, msg->buf)) {
 				/* Invalid sender */
 				errprintf("Invalid client message - sender %s not allowed for host %s\n", msg->sender, hostname);
 				hname = NULL;
@@ -4475,7 +4524,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	else if (strncmp(msg->buf, "clientlog ", 10) == 0) {
 		char *hostname, *p;
 		xtreePos_t hosthandle;
-		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + strlen("clientlog"); p += strspn(p, "\t ");
 		hostname = p; p += strcspn(p, "\t "); if (*p) { *p = '\0'; p++; }
@@ -4534,7 +4583,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		}
 	}
 	else if (strncmp(msg->buf, "ghostlist", 9) == 0) {
-		if (oksender(wwwsenders, NULL, msg->sender, msg->buf)) {
+		if (viabfq || oksender(wwwsenders, NULL, msg->sender, msg->buf)) {
 			xtreePos_t ghandle;
 			ghostlist_t *gwalk;
 			strbuffer_t *resp;
@@ -4559,7 +4608,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	}
 
 	else if (strncmp(msg->buf, "multisrclist", 12) == 0) {
-		if (oksender(wwwsenders, NULL, msg->sender, msg->buf)) {
+		if (viabfq || oksender(wwwsenders, NULL, msg->sender, msg->buf)) {
 			xtreePos_t mhandle;
 			multisrclist_t *mwalk;
 			strbuffer_t *resp;
@@ -5096,6 +5145,9 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 		break;
 
 	  case CONN_CB_SSLHANDSHAKE_OK:        /* Client/server mode: SSL handshake completed OK (peer certificate ready) */
+		conn->certcn = conn_peer_certificate_cn(connection);
+		if (conn->certcn) dbgprintf("Got connection using client certificate issued to %s\n", conn->certcn);
+		/* Fall through */
 	  case CONN_CB_SSLHANDSHAKE_FAILED:    /* Client/server mode: SSL handshake failed (connection will close) */
 		conn->bufp = conn->buf;
 		conn->buflen = 0;
@@ -5266,6 +5318,7 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 	  case CONN_CB_CLEANUP:                /* Client/server mode: Connection cleanup */
 		if (conn) {
 			xfree(conn->sender);
+			if (conn->certcn) xfree(conn->certcn);
 			if (conn->buf) xfree(conn->buf);
 			xfree(conn);
 			conn = connection->userdata = NULL;
@@ -5431,22 +5484,22 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--maint-senders=")) {
 			/* Who is allowed to send us "enable", "disable", "ack", "notes" messages */
 			char *p = strchr(argv[argi], '=');
-			maintsenders = getsenderlist(p+1);
+			maintsenders = buildsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--status-senders=")) {
 			/* Who is allowed to send us "status", "combo", "summary", "data" messages */
 			char *p = strchr(argv[argi], '=');
-			statussenders = getsenderlist(p+1);
+			statussenders = buildsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--admin-senders=")) {
 			/* Who is allowed to send us "drop", "rename", "config", "query" messages */
 			char *p = strchr(argv[argi], '=');
-			adminsenders = getsenderlist(p+1);
+			adminsenders = buildsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--www-senders=")) {
 			/* Who is allowed to send us "xymondboard", "xymondlog"  messages */
 			char *p = strchr(argv[argi], '=');
-			wwwsenders = getsenderlist(p+1);
+			wwwsenders = buildsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--dbghost=")) {
 			char *p = strchr(argv[argi], '=');
@@ -5466,7 +5519,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--trace=")) {
 			char *p = strchr(argv[argi], '=');
-			tracelist = getsenderlist(p+1);
+			tracelist = buildsenderlist(p+1);
 		}
 		else if (strcmp(argv[argi], "--trace-all") == 0) {
 			traceall = 1;

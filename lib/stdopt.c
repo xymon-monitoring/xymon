@@ -31,7 +31,7 @@ char *logfn = NULL;
 char *envarea = NULL;
 int  showhelp = 0;
 int  dontsendmessages = 0;
-
+ipprotocol_t ipprotocol = XYMON_IPPROTO_ANY;
 
 int standardoption(char *opt)
 {
@@ -78,6 +78,12 @@ int standardoption(char *opt)
 	else if (strcmp(opt, "--version") == 0) {
 		fprintf(stdout, "%s %s\n", programname, VERSION);
 		exit(0);
+	}
+	else if ((strcmp(opt, "-4") == 0) || (strcmp(opt, "--4") == 0)) {
+		ipprotocol = XYMON_IPPROTO_4;
+	}
+	else if ((strcmp(opt, "-6") == 0) || (strcmp(opt, "--6") == 0)) {
+		ipprotocol = XYMON_IPPROTO_6;
 	}
 	else {
 		return 0;

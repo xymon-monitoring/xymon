@@ -34,8 +34,6 @@ static char rcsid[] = "$Id$";
 
 #include <limits.h>
 #include <sys/resource.h>
-#include <unistd.h>
-#include <signal.h>
 #include <time.h>
 
 #include <sys/ipc.h>
@@ -49,557 +47,381 @@ static char rcsid[] = "$Id$";
 static char *multircptcmds[] = { "status", "combo", "extcombo", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
 static char errordetails[1024];
 
-/* Stuff for combo message handling */
-int		xymonmsgcount = 0;	/* Number of messages transmitted */
-int		xymonstatuscount = 0;	/* Number of status items reported */
-int		xymonnocombocount = 0;	/* Number of status items reported outside combo msgs */
-static int	xymonmsgqueued;		/* Anything in the buffer ? */
-static strbuffer_t *xymonmsg = NULL;	/* Complete combo message buffer */
-static strbuffer_t *msgbuf = NULL;	/* message buffer for one status message */
-static int	msgcolor;		/* color of status message in msgbuf */
-static int	combo_is_local = 0;
-static int      maxmsgspercombo = 100;	/* 0 = no limit. 100 is a reasonable default. */
-static int      sleepbetweenmsgs = 0;
-static int      xymondportnumber = 0;
-static char     *xymonproxyhost = NULL;
-static int      xymonproxyport = 0;
-static char	*proxysetting = NULL;
-static char	*comboofsstr = NULL;
-static int	comboofssz = 0;
-static int	*combooffsets = NULL;
+static strbuffer_t *msgbuf = NULL;      /* message buffer for one status message */
+static int msgcolor;                    /* color of status message in msgbuf */
+static int combo_is_local = 0;
+static strbuffer_t *xymonmsg = NULL;    /* Complete combo message buffer */
+
+static int xymonmsgqueued;		/* Anything in the buffer ? */
+
+static int maxmsgspercombo = 100;       /* 0 = no limit. 100 is a reasonable default. */
+static int max_combosz = 256*1024;
+static int sleepbetweenmsgs = 0;
 
 static int backfeedqueue = -1;
 static int max_backfeedsz = 16384;
 #define ASSUMELARGEMEM 0		/* Reserve and persist larger buffer sizes instead of growing slowly */
 
-void setproxy(char *proxy)
-{
-	if (proxysetting) xfree(proxysetting);
-	proxysetting = strdup(proxy);
-}
+static char *comboofsstr = NULL;
+static int comboofssz = 0;
+static int *combooffsets = NULL;
+
+#define USERBUFSZ 4096
+
+typedef struct myconn_t {
+	/* Plain-text protocols */
+	char szbuf[20]; char *szptr;
+	char tlsbuf[10]; char *tlsptr;
+	char *readbuf, *writebuf;
+	char *readp, *writep;
+	size_t readbufsz, lefttowrite;
+	char *peer;
+	int port, readmore, starttlspending;
+	enum sslhandling_t usessl;
+	sendresult_t result;
+	sendreturn_t *response;
+	struct myconn_t *next;
+} myconn_t;
+
+typedef struct mytarget_t {
+	char *targetip;
+	int defaultport;
+	enum sslhandling_t usessl;
+} mytarget_t;
+
+static myconn_t *myhead = NULL, *mytail = NULL;
+
 
 char *strxymonsendresult(sendresult_t res)
 {
-	return (res == XYMONSEND_OK ? "OK" :
-		res == XYMONSEND_EBADIP ? "Bad IP address" :
-		res == XYMONSEND_EIPUNKNOWN ? "Cannot resolve hostname" :
-		res == XYMONSEND_ENOSOCKET ? "Cannot get a socket" :
-		res == XYMONSEND_ECANNOTDONONBLOCK ? "Non-blocking I/O failed" :
-		res == XYMONSEND_ECONNFAILED ? "Connection failed" :
-		res == XYMONSEND_ESELFAILED ? "Select(2) failed" :
-		res == XYMONSEND_ETIMEOUT ? "Timeout" :
-		res == XYMONSEND_EWRITEERROR ? "Write error" :
-		res == XYMONSEND_EREADERROR ? "Read error" :
-		res == XYMONSEND_EBADURL ? "Bad URL" :
-		"Unknown error");
+	switch (res) {
+	  case XYMONSEND_OK               : return "OK";
+	  case XYMONSEND_EBADIP           : return "Bad IP address";
+	  case XYMONSEND_EIPUNKNOWN       : return "Cannot resolve hostname";
+	  case XYMONSEND_ENOSOCKET        : return "Cannot get a socket";
+	  case XYMONSEND_ECANNOTDONONBLOCK: return "Non-blocking I/O failed";
+	  case XYMONSEND_ECONNFAILED      : return "Connection failed";
+	  case XYMONSEND_ESELFAILED       : return "select(2) failed";
+	  case XYMONSEND_ETIMEOUT         : return "timeout";
+	  case XYMONSEND_EWRITEERROR      : return "write error";
+	  case XYMONSEND_EREADERROR       : return "read error";
+	  case XYMONSEND_EBADURL          : return "Bad URL";
+	  default			  : return "Unknown error";
+	};
 }
 
-static void setup_transport(char *recipient)
+
+static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 {
-	static int transport_is_setup = 0;
-	int default_port;
+	enum conn_cbresult_t res = CONN_CBRESULT_OK;
+	int n, sslhandshakeinprogress = 0;
+	size_t used;
+	time_t start, expire;
+	myconn_t *rec = (myconn_t *)userdata;
 
-	if (transport_is_setup) return;
-	transport_is_setup = 1;
+	// dbgprintf("CB: %s\n", conn_callback_names[id]);
 
-	if (strncmp(recipient, "http://", 7) == 0) {
+	switch (id) {
+	  case CONN_CB_CONNECT_COMPLETE:       /* Client mode: New outbound connection succeded */
+		rec->writep = rec->writebuf;
+		rec->readbufsz = USERBUFSZ;
+		rec->readbuf = rec->readp = malloc(rec->readbufsz);
+		*(rec->readbuf) = '\0';
+		rec->readmore = 1;
+		break;
+
+	  case CONN_CB_SSLHANDSHAKE_OK:        /* Client/server mode: SSL handshake completed OK (peer certificate ready) */
+		rec->starttlspending = 0;
+		rec->readp = rec->readbuf;
+		*(rec->readbuf) = '\0';
+		break;
+
+	  case CONN_CB_READCHECK:              /* Client/server mode: Check if application wants to read data */
+		res = (rec->readmore || rec->starttlspending) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
+		break;
+
+	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
+		used = (rec->readp - rec->readbuf);
+		if ((rec->readbufsz - used) < USERBUFSZ) {
+			rec->readbufsz += USERBUFSZ;
+			rec->readbuf = (char *)realloc(rec->readbuf, rec->readbufsz);
+			rec->readp = rec->readbuf + used;
+		}
+
 		/*
-		 * Send messages via http. This requires e.g. a CGI on the webserver to
-		 * receive the POST we do here.
+		 * When doing an SSL handshake, CB_READ is invoked. Eventually there
+		 * is enough data arriving so that *during* a CB READ, the callback
+		 * is recursively invoked with CB_SSL_HANDSHAKE_OK. After that has
+		 * completed, we return here from conn_read, and the status has
+		 * now been changed to CONN_SSL_READY. We should NOT clear the readmore
+		 * flag in this case, since it will happen before we have read
+		 * any data. So we use a local flag variable to remember if we
+		 * were doing a conn_read as part of the handshake.
 		 */
-		default_port = 80;
+		switch (connection->connstate) {
+		  case CONN_SSL_ACCEPT_READ:
+		  case CONN_SSL_ACCEPT_WRITE:
+		  case CONN_SSL_CONNECT_READ:
+		  case CONN_SSL_CONNECT_WRITE:
+		  case CONN_SSL_STARTTLS_READ:
+		  case CONN_SSL_STARTTLS_WRITE:
+		  case CONN_SSL_READ:
+		  case CONN_SSL_WRITE:
+			sslhandshakeinprogress = 1; break;
+		  default:
+			sslhandshakeinprogress = 0; break;
+		}
 
-		if (proxysetting == NULL) proxysetting = getenv("http_proxy");
-		if (proxysetting) {
-			char *p;
+		n = conn_read(connection, rec->readp, (rec->readbufsz - used - 1));
 
-			xymonproxyhost = strdup(proxysetting);
-			if (strncmp(xymonproxyhost, "http://", 7) == 0) xymonproxyhost += strlen("http://");
- 
-			p = strchr(xymonproxyhost, ':');
-			if (p) {
-				*p = '\0';
-				p++;
-				xymonproxyport = atoi(p);
+		if ((n > 0) && rec->starttlspending) {
+			*(rec->readp + n) = '\0';
+			// dbgprintf("Read %d bytes while waiting for starttls OK: %s\n", n, rec->readp);
+			if ((strncmp(rec->readp, "OK", 2) == 0) && strchr(rec->readp, '\n')) {
+				rec->starttlspending = 0;
+				return CONN_CBRESULT_STARTTLS;
+			}
+			else if ((strncmp(rec->readp, "ERR", 3) == 0) && strchr(rec->readp, '\n')) {
+				errprintf("Server does not accept STARTTLS\n");
+				conn_close_connection(connection, NULL);
+				rec->result = XYMONSEND_ECONNFAILED;
+				return CONN_CBRESULT_OK;
 			}
 			else {
-				xymonproxyport = 8080;
+				rec->readp += n;
 			}
 		}
-	}
-	else {
-		/* 
-		 * Non-HTTP transport - lookup portnumber in both XYMONDPORT env.
-		 * and the "xymond" entry from /etc/services.
-		 */
-		default_port = 1984;
-
-		if (xgetenv("XYMONDPORT")) xymondportnumber = atoi(xgetenv("XYMONDPORT"));
-	
-	
-		/* Next is /etc/services "bbd" entry */
-		if ((xymondportnumber <= 0) || (xymondportnumber > 65535)) {
-			struct servent *svcinfo;
-
-			svcinfo = getservbyname("bbd", NULL);
-			if (!svcinfo) svcinfo = getservbyname("bb", NULL);
-			if (svcinfo) xymondportnumber = ntohs(svcinfo->s_port);
-		}
-	}
-
-	/* Last resort: The default value */
-	if ((xymondportnumber <= 0) || (xymondportnumber > 65535)) {
-		xymondportnumber = default_port;
-	}
-
-	dbgprintf("Transport setup is:\n");
-	dbgprintf("xymondportnumber = %d\n", xymondportnumber);
-	dbgprintf("xymonproxyhost = %s\n", (xymonproxyhost ? xymonproxyhost : "NONE"));
-	dbgprintf("xymonproxyport = %d\n", xymonproxyport);
-}
-
-static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **respstr, int fullresponse, int timeout)
-{
-	struct in_addr addr;
-	struct sockaddr_in saddr;
-	int	sockfd = -1;
-	fd_set	readfds;
-	fd_set	writefds;
-	int	res, isconnected, wdone, rdone;
-	struct timeval tmo;
-	char *msgptr = message;
-	char *p;
-	char *rcptip = NULL;
-	int rcptport = 0;
-	int connretries = SENDRETRIES;
-	char *httpmessage = NULL;
-	char recvbuf[32768];
-	int haveseenhttphdrs = 1;
-	int respstrsz = 0;
-	int respstrlen = 0;
-	int result = XYMONSEND_OK;
-
-	if (dontsendmessages && !respfd && !respstr) {
-		fprintf(stdout, "%s\n", message);
-		fflush(stdout);
-		return XYMONSEND_OK;
-	}
-
-	setup_transport(recipient);
-
-	dbgprintf("Recipient listed as '%s'\n", recipient);
-
-	if (strncmp(recipient, "http://", strlen("http://")) != 0) {
-		/* Standard communications, directly to Xymon daemon */
-		rcptip = strdup(recipient);
-		rcptport = xymondportnumber;
-		p = strchr(rcptip, ':');
-		if (p) {
-			*p = '\0'; p++; rcptport = atoi(p);
-		}
-		dbgprintf("Standard protocol on port %d\n", rcptport);
-	}
-	else {
-		char *bufp;
-		char *posturl = NULL;
-		char *posthost = NULL;
-
-		if (xymonproxyhost == NULL) {
-			char *p;
-
-			/*
-			 * No proxy. "recipient" is "http://host[:port]/url/for/post"
-			 * Strip off "http://", and point "posturl" to the part after the hostname.
-			 * If a portnumber is present, strip it off and update rcptport.
-			 */
-			rcptip = strdup(recipient+strlen("http://"));
-			rcptport = xymondportnumber;
-
-			p = strchr(rcptip, '/');
-			if (p) {
-				posturl = strdup(p);
-				*p = '\0';
-			}
-
-			p = strchr(rcptip, ':');
-			if (p) {
-				*p = '\0';
-				p++;
-				rcptport = atoi(p);
-			}
-
-			posthost = strdup(rcptip);
-
-			dbgprintf("HTTP protocol directly to host %s\n", posthost);
-		}
-		else {
-			char *p;
-
-			/*
-			 * With proxy. The full "recipient" must be in the POST request.
-			 */
-			rcptip = strdup(xymonproxyhost);
-			rcptport = xymonproxyport;
-
-			posturl = strdup(recipient);
-
-			p = strchr(recipient + strlen("http://"), '/');
-			if (p) {
-				*p = '\0';
-				posthost = strdup(recipient + strlen("http://"));
-				*p = '/';
-
-				p = strchr(posthost, ':');
-				if (p) *p = '\0';
-			}
-
-			dbgprintf("HTTP protocol via proxy to host %s\n", posthost);
-		}
-
-		if ((posturl == NULL) || (posthost == NULL)) {
-			sprintf(errordetails + strlen(errordetails), "Unable to parse HTTP recipient");
-			if (posturl) xfree(posturl);
-			if (posthost) xfree(posthost);
-			if (rcptip) xfree(rcptip);
-			return XYMONSEND_EBADURL;
-		}
-
-		bufp = msgptr = httpmessage = malloc(strlen(message)+1024);
-		bufp += sprintf(httpmessage, "POST %s HTTP/1.0\n", posturl);
-		bufp += sprintf(bufp, "MIME-version: 1.0\n");
-		bufp += sprintf(bufp, "Content-Type: application/octet-stream\n");
-		bufp += sprintf(bufp, "Content-Length: %d\n", (int)strlen(message));
-		bufp += sprintf(bufp, "Host: %s\n", posthost);
-		bufp += sprintf(bufp, "\n%s", message);
-
-		if (posturl) xfree(posturl);
-		if (posthost) xfree(posthost);
-		haveseenhttphdrs = 0;
-
-		dbgprintf("HTTP message is:\n%s\n", httpmessage);
-	}
-
-	if (inet_aton(rcptip, &addr) == 0) {
-		/* recipient is not an IP - do DNS lookup */
-
-		struct hostent *hent;
-		char hostip[50];
-
-		hent = gethostbyname(rcptip);
-		if (hent) {
-			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
-			strcpy(hostip, inet_ntoa(addr));
-
-			if (inet_aton(hostip, &addr) == 0) {
-				result = XYMONSEND_EBADIP;
-				goto done;
-			}
-		}
-		else {
-			sprintf(errordetails+strlen(errordetails), "Cannot determine IP address of message recipient %s", rcptip);
-			result = XYMONSEND_EIPUNKNOWN;
-			goto done;
-		}
-	}
-
-retry_connect:
-	dbgprintf("Will connect to address %s port %d\n", rcptip, rcptport);
-
-	memset(&saddr, 0, sizeof(saddr));
-	saddr.sin_family = AF_INET;
-	saddr.sin_addr.s_addr = addr.s_addr;
-	saddr.sin_port = htons(rcptport);
-
-	/* Get a non-blocking socket */
-	sockfd = socket(PF_INET, SOCK_STREAM, 0);
-	if (sockfd == -1) { result = XYMONSEND_ENOSOCKET; goto done; }
-	res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
-	if (res != 0) { result = XYMONSEND_ECANNOTDONONBLOCK; goto done; }
-
-	res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
-	if ((res == -1) && (errno != EINPROGRESS)) {
-		sprintf(errordetails+strlen(errordetails), "connect to Xymon daemon@%s:%d failed (%s)", rcptip, rcptport, strerror(errno));
-		result = XYMONSEND_ECONNFAILED;
-		goto done;
-	}
-
-	rdone = ((respfd == NULL) && (respstr == NULL));
-	isconnected = wdone = 0;
-	while (!wdone || !rdone) {
-		FD_ZERO(&writefds);
-		FD_ZERO(&readfds);
-		if (!rdone) FD_SET(sockfd, &readfds);
-		if (!wdone) FD_SET(sockfd, &writefds);
-		tmo.tv_sec = timeout;  tmo.tv_usec = 0;
-		res = select(sockfd+1, &readfds, &writefds, NULL, (timeout ? &tmo : NULL));
-		if (res == -1) {
-			sprintf(errordetails+strlen(errordetails), "Select failure while sending to Xymon daemon@%s:%d", rcptip, rcptport);
-			result = XYMONSEND_ESELFAILED;
-			goto done;
-		}
-		else if (res == 0) {
-			/* Timeout! */
-			shutdown(sockfd, SHUT_RDWR);
-			close(sockfd);
-
-			if (!isconnected && (connretries > 0)) {
-				dbgprintf("Timeout while talking to Xymon daemon@%s:%d - retrying\n", rcptip, rcptport);
-				connretries--;
-				sleep(1);
-				goto retry_connect;	/* Yuck! */
-			}
-
-			result = XYMONSEND_ETIMEOUT;
-			goto done;
-		}
-		else {
-			if (!isconnected) {
-				/* Havent seen our connect() status yet - must be now */
-				int connres;
-				socklen_t connressize = sizeof(connres);
-
-				res = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &connres, &connressize);
-				dbgprintf("Connect status is %d\n", connres);
-				isconnected = (connres == 0);
-				if (!isconnected) {
-					sprintf(errordetails+strlen(errordetails), "Could not connect to Xymon daemon@%s:%d (%s)", 
-						  rcptip, rcptport, strerror(connres));
-					result = XYMONSEND_ECONNFAILED;
-					goto done;
-				}
-			}
-
-			if (!rdone && FD_ISSET(sockfd, &readfds)) {
-				char *outp;
-				int n;
-
-				n = recv(sockfd, recvbuf, sizeof(recvbuf)-1, 0);
-				if (n > 0) {
-					dbgprintf("Read %d bytes\n", n);
-					recvbuf[n] = '\0';
-
-					/*
-					 * When running over a HTTP transport, we must strip
-					 * off the HTTP headers we get back, so the response
-					 * is consistent with what we get from the normal Xymon daemon
-					 * transport.
-					 * (Non-http transport sets "haveseenhttphdrs" to 1)
-					 */
-					if (!haveseenhttphdrs) {
-						outp = strstr(recvbuf, "\r\n\r\n");
-						if (outp) {
-							outp += 4;
-							n -= (outp - recvbuf);
-							haveseenhttphdrs = 1;
-						}
-						else n = 0;
-					}
-					else outp = recvbuf;
-
-					if (n > 0) {
-						if (respfd) {
-							fwrite(outp, n, 1, respfd);
-						}
-						else if (respstr) {
-							char *respend;
-
-							if (respstrsz == 0) {
-								respstrsz = (n+sizeof(recvbuf));
-								*respstr = (char *)malloc(respstrsz);
-							}
-							else if ((n+respstrlen) >= respstrsz) {
-								respstrsz += (n+sizeof(recvbuf));
-								*respstr = (char *)realloc(*respstr, respstrsz);
-							}
-							respend = (*respstr) + respstrlen;
-							memcpy(respend, outp, n);
-							*(respend + n) = '\0';
-							respstrlen += n;
-						}
-						if (!fullresponse) {
-							rdone = (strchr(outp, '\n') == NULL);
-						}
-					}
-				}
-				else rdone = 1;
-				if (rdone) shutdown(sockfd, SHUT_RD);
-			}
-
-			if (!wdone && FD_ISSET(sockfd, &writefds)) {
-				/* Send some data */
-				res = write(sockfd, msgptr, strlen(msgptr));
-				if (res == -1) {
-					sprintf(errordetails+strlen(errordetails), "Write error while sending message to Xymon daemon@%s:%d", rcptip, rcptport);
-					result = XYMONSEND_EWRITEERROR;
-					goto done;
+		else if (n > 0) {
+			// dbgprintf("Read %d bytes data\n", n);
+			if (rec->response) {
+				if (rec->response->respfd) {
+					fwrite(rec->readp, n, 1, rec->response->respfd);
 				}
 				else {
-					dbgprintf("Sent %d bytes\n", res);
-					msgptr += res;
-					wdone = (strlen(msgptr) == 0);
-					if (wdone) shutdown(sockfd, SHUT_WR);
+					*(rec->readp + n) = '\0';
+					addtobuffer(rec->response->respstr, rec->readp);
+					if (!rec->response->fullresponse && strchr(rec->readp, '\n'))
+						conn_close_connection(connection, NULL);
 				}
 			}
 		}
-	}
+		else if ((n == 0) && !sslhandshakeinprogress) {
+			// dbgprintf("No more data\n");
+			rec->readmore = 0;
+			conn_close_connection(connection, "r");
+		}
+		break;
 
-done:
-	dbgprintf("Closing connection\n");
-	shutdown(sockfd, SHUT_RDWR);
-	if (sockfd > 0) close(sockfd);
-	xfree(rcptip);
-	if (httpmessage) xfree(httpmessage);
-	return result;
-}
+	  case CONN_CB_WRITECHECK:             /* Client/server mode: Check if application wants to write data */
+		if (rec->starttlspending)
+			res = CONN_CBRESULT_FAILED;
+		else
+			res = (rec->lefttowrite != 0) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
+		break;
 
-static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, sendreturn_t *response)
-{
-	int allservers = 1, first = 1, result = XYMONSEND_OK;
-	char *xymondlist, *rcpt;
-
-	/*
-	 * Even though this is the "sendtomany" routine, we need to decide if the
-	 * request should go to all servers, or just a single server. The default 
-	 * is to send to all servers - but commands that trigger a response can
-	 * only go to a single server.
-	 *
-	 * "schedule" is special - when scheduling an action there is no response, but 
-	 * when it is the blank "schedule" command there will be a response. So a 
-	 * schedule action goes to all Xymon servers, the blank "schedule" goes to a single
-	 * server.
-	 */
-
-	// errprintf("sendtomany: onercpt=%s\n", onercpt);
-
-	if (!conn_null_ip(onercpt)) 
-		allservers = 0;
-	else if (strncmp(msg, "schedule", 8) == 0)
-		/* See if it's just a blank "schedule" command */
-		allservers = (strcmp(msg, "schedule") != 0);
-	else {
-		char *msgcmd;
-		int i;
-
-		/* See if this is a multi-recipient command */
-		i = strspn(msg, "abcdefghijklmnopqrstuvwxyz");
-		msgcmd = (char *)malloc(i+1);
-		strncpy(msgcmd, msg, i); *(msgcmd+i) = '\0';
-		// errprintf("sendtomany: msgcmd=%s\n", msgcmd);
-		for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msgcmd)); i++) ;
-		xfree(msgcmd);
-
-		allservers = (multircptcmds[i] != NULL);
-	}
-
-	// errprintf("sendtomany: allservers=%d\n", allservers);
-
-	if (allservers && !morercpts) {
-		sprintf(errordetails+strlen(errordetails), "No recipients listed! XYMSRV was %s, XYMSERVERS %s",
-			  onercpt, textornull(morercpts));
-		return XYMONSEND_EBADIP;
-	}
-
-	if (!conn_null_ip(onercpt)) 
-		xymondlist = strdup(onercpt);
-	else
-		xymondlist = strdup(morercpts);
-
-	rcpt = strtok(xymondlist, " \t");
-	while (rcpt) {
-		int oneres;
-
-		if (first) {
-			/* We grab the result from the first server */
-			char *respstr = NULL;
-
-			if (response) {
-				oneres =  sendtoxymond(rcpt, msg,
-						    response->respfd,
-						    (response->respstr ? &respstr : NULL),
-						    (response->respfd || response->respstr),
-						    timeout);
-			}
-			else {
-				oneres =  sendtoxymond(rcpt, msg, NULL, NULL, 0, timeout);
-			}
-
-			if (oneres == XYMONSEND_OK) {
-				if (respstr && response && response->respstr) {
-					addtobuffer(response->respstr, respstr);
-					xfree(respstr);
+	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
+		if (rec->tlsptr) {
+			n = conn_write(connection, rec->tlsptr, strlen(rec->tlsptr));
+			if (n > 0) {
+				rec->tlsptr += n;
+				if (*rec->tlsptr == '\0') {
+					rec->tlsptr = NULL;
+					rec->starttlspending = 1;
+					// dbgprintf("Switching to STARTTLS pending\n");
 				}
-				first = 0;
+				n = 0;	/* Didn't send any message data yet */
+			}
+		}
+		else if (rec->szptr) {
+			n = conn_write(connection, rec->szptr, strlen(rec->szptr));
+			// dbgprintf("Sent %d bytes of size command\n", n);
+			if (n > 0) {
+				rec->szptr += n;
+				if (*rec->szptr == '\0') rec->szptr = NULL;
+				n = 0;	/* Didn't send any message data yet */
 			}
 		}
 		else {
-			/* Secondary servers do not yield a response */
-			oneres =  sendtoxymond(rcpt, msg, NULL, NULL, 0, timeout);
+			n = conn_write(connection, rec->writep, rec->lefttowrite);
+			// dbgprintf("Sent %d bytes of data\n", n);
+			if (n > 0) {
+				rec->writep += n;
+				rec->lefttowrite -= n;
+				if (rec->lefttowrite == 0) {
+					conn_close_connection(connection, "w");
+				}
+			}
+		}
+		break;
+
+	  case CONN_CB_TIMEOUT:
+		conn_close_connection(connection, NULL);
+		rec->result = XYMONSEND_ETIMEOUT;
+		break;
+
+	  case CONN_CB_CLOSED:                 /* Client/server mode: Connection has been closed */
+		break;
+
+	  case CONN_CB_CLEANUP:                /* Client/server mode: Connection cleanup */
+		connection->userdata = NULL;
+		break;
+
+	  case CONN_CB_SSLHANDSHAKE_FAILED:
+	  case CONN_CB_CONNECT_FAILED:
+		rec->result = XYMONSEND_ECONNFAILED;
+		break;
+
+	  default:
+		break;
+	}
+
+	return res;
+}
+
+
+static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t *responsebuffer)
+{
+	myconn_t *myconn;
+	int i, msglen;
+	int maxfd;
+	strbuffer_t *cbuf = NULL;
+	int v4server = (getenv("XYMONV4SERVER") != NULL);
+
+	conn_register_infohandler(NULL, (debug ? INFO_DEBUG : INFO_WARN));
+	conn_init_client();
+
+	msglen = strlen(msg);
+
+	for (i = 0; (targets[i]); i++) {
+		char *ip;
+		int portnum;
+		enum conn_ipproto_t wantedproto;
+
+		switch (ipprotocol) {
+		  case XYMON_IPPROTO_ANY: wantedproto = CONN_IPPROTO_ANY; break;
+		  case XYMON_IPPROTO_4: wantedproto = CONN_IPPROTO_V4; break;
+		  case XYMON_IPPROTO_6: wantedproto = CONN_IPPROTO_V6; break;
 		}
 
-		/* Save any error results */
-		if (result == XYMONSEND_OK) result = oneres;
+		ip = conn_lookup_ip(targets[i]->targetip, &portnum, wantedproto);
 
-		/*
-		 * Handle more servers IF we're doing all servers, OR
-		 * we are still at the first one (because the previous
-		 * ones failed).
-		 */
-		if (allservers || first) 
-			rcpt = strtok(NULL, " \t");
-		else 
-			rcpt = NULL;
+		myconn = (myconn_t *)calloc(1, sizeof(myconn_t));
+		strcpy(myconn->tlsbuf, "starttls\n");
+		myconn->tlsptr = (targets[i]->usessl ? myconn->tlsbuf : NULL);
+		myconn->usessl = targets[i]->usessl;
+		myconn->lefttowrite = msglen;
+		sprintf(myconn->szbuf, "size:%d\n", (int)myconn->lefttowrite);
+		myconn->szptr = v4server ? NULL : myconn->szbuf;
+		myconn->writebuf = msg;
+		myconn->peer = strdup(ip ? ip : "");
+		myconn->port = (portnum ? portnum : targets[i]->defaultport);
+		if (mytail) {
+			mytail->next = myconn;
+			mytail = myconn;
+		}
+		else {
+			myhead = mytail = myconn;
+		}
+
+		if (ip) {
+			conn_prepare_connection(myconn->peer, myconn->port, CONN_SOCKTYPE_STREAM, NULL, 
+					(myconn->usessl ? CONN_SSL_STARTTLS_CLIENT : CONN_SSL_NO), NULL, getenv("XYMONCLIENTCERT"), getenv("XYMONCLIENTKEY"), 
+					1000000*timeout, client_callback, myconn);
+		}
+		else {
+			myconn->result = XYMONSEND_EBADIP;
+		}
 	}
 
-	xfree(xymondlist);
+	myhead->response = responsebuffer;	/* Only want the response from the first server returned to the user */
 
-	return result;
+	/* Loop to process data */
+	do {
+		fd_set fdread, fdwrite;
+		int n;
+		struct timeval tmo;
+
+		maxfd = conn_fdset(&fdread, &fdwrite);
+
+		if (maxfd > 0) {
+			if (timeout) { tmo.tv_sec = 1; tmo.tv_usec = 0; }
+
+			n = select(maxfd+1, &fdread, &fdwrite, NULL, (timeout ? &tmo : NULL));
+			if (n < 0) {
+				if (errno != EINTR) {
+					if (cbuf) freestrbuffer(cbuf);
+					return 1;
+				}
+			}
+
+			conn_process_active(&fdread, &fdwrite);
+		}
+
+		conn_trimactive();
+	} while (conn_active() && (maxfd > 0));
+
+	if (cbuf) freestrbuffer(cbuf);
+
+	return 0;
 }
 
-sendreturn_t *newsendreturnbuf(int fullresponse, FILE *respfd)
+static mytarget_t **build_targetlist(char *recips, int defaultport)
 {
-	sendreturn_t *result;
+	/*
+	 * Target format: [tls:][IP|hostname]:[portnumber|servicename]
+	 */
+	mytarget_t **targets;
+	char *multilist, *r, *p;
+	int tcount = 0;
 
-	result = (sendreturn_t *)calloc(1, sizeof(sendreturn_t));
-	result->fullresponse = fullresponse;
-	result->respfd = respfd;
-	if (!respfd) {
-		/* No response file, so return it in a strbuf */
-		result->respstr = newstrbuffer(0);
+	multilist = strdup(recips);
+
+	targets = (mytarget_t **)malloc(sizeof(mytarget_t *));
+	r = strtok(multilist, " ,");
+	while (r) {
+		targets = (mytarget_t **)realloc(targets, (tcount+2)*sizeof(mytarget_t *));
+		targets[tcount] = (mytarget_t *)calloc(1, sizeof(mytarget_t));
+		if (strncmp(r, "tls:", 4) == 0) {
+			r += 4;
+			targets[tcount]->usessl = CONN_SSL_STARTTLS_CLIENT;
+		}
+		else {
+			targets[tcount]->usessl = CONN_SSL_NO;
+		}
+
+		if (*r == '[') {
+			/* IPv6 address in brackets [1234:5678:abcd::9]:1984 */
+			r++;
+			p = strchr(r, ']');
+			if (p) {
+				*p = '\0'; p++;
+				targets[tcount]->defaultport = ((*p == ':') ? atoi(p+1) : defaultport);
+			}
+			else {
+				/* Not really valid format, but let it pass */
+				targets[tcount]->defaultport = defaultport;
+			}
+		}
+		else {
+			p = strrchr(r, ':');
+			if (p) {
+				*p = '\0';
+				targets[tcount]->defaultport = atoi(p+1);
+			}
+			else {
+				targets[tcount]->defaultport = defaultport;
+			}
+		}
+
+		targets[tcount]->targetip = strdup(r);
+		tcount++;
+		r = strtok(NULL, " ,");
 	}
-	result->haveseenhttphdrs = 1;
+	targets[tcount] = NULL;
+	xfree(multilist);
 
-	return result;
+	return targets;
 }
-
-void freesendreturnbuf(sendreturn_t *s)
-{
-	if (!s) return;
-	if (s->respstr) freestrbuffer(s->respstr);
-	xfree(s);
-}
-
-char *getsendreturnstr(sendreturn_t *s, int takeover)
-{
-	char *result = NULL;
-
-	if (!s) return NULL;
-	if (!s->respstr) return NULL;
-	if (takeover) {
-		/*
-		 * We cannot leave respstr as NULL, because later calls 
-		 * to sendmessage() might re-use this sendreturn_t struct
-		 * and expect to get the data back. So allocate a new
-		 * responsebuffer for future use - if it isn't used, it
-		 * will be freed by freesendreturnbuf().
-		 */
-		result = grabstrbuffer(s->respstr);
-		s->respstr = newstrbuffer(0);
-	}
-	else result = STRBUF(s->respstr);
-
-	return result;
-}
-
 
 int sendmessage_init_local(void)
 {
@@ -661,40 +483,130 @@ sendresult_t sendmessage_local(char *msg)
 }
 
 
+/* TODO: http targets, http proxy */
 sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *response)
 {
-	static char *xymsrv = NULL;
-	int res = 0;
+	static mytarget_t **defaulttargets = NULL;
+	static int defaultport = 0;
+	mytarget_t **targets;
+	int i;
+	myconn_t *walk;
+	sendresult_t res;
 
-	*errordetails = '\0';
-
- 	if ((xymsrv == NULL) && xgetenv("XYMSRV")) xymsrv = strdup(xgetenv("XYMSRV"));
-	if (recipient == NULL) recipient = xymsrv;
-	if ((recipient == NULL) && xgetenv("XYMSERVERS")) {
-		recipient = "0.0.0.0";
-	} else if (recipient == NULL) {
-		errprintf("No recipient for message\n");
-		return XYMONSEND_EBADIP;
+	if (dontsendmessages) {
+		fprintf(stdout, "%s\n", msg);
+		fflush(stdout);
+		return XYMONSEND_OK;
 	}
 
-	res = sendtomany(recipient, xgetenv("XYMSERVERS"), msg, timeout, response);
+	if (defaultport == 0) {
+		if (xgetenv("XYMONDPORT")) defaultport = atoi(xgetenv("XYMONDPORT"));
+		if (defaultport == 0) defaultport = conn_lookup_portnumber("bb", 1984);
+	}
 
-	if (res != XYMONSEND_OK) {
-		char *eoln;
+	if (defaulttargets == NULL) {
+		char *recips;
 
-		eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
-		if (conn_null_ip(recipient)) recipient = xgetenv("XYMSERVERS");
-		errprintf("Whoops ! Failed to send message (%s)\n", strxymonsendresult(res));
-		errprintf("->  %s\n", errordetails);
-		errprintf("->  Recipient '%s', timeout %d\n", recipient, timeout);
-		errprintf("->  1st line: '%s'\n", msg);
-		if (eoln) *eoln = '\n';
+		if ((strcmp(xgetenv("XYMSRV"), "0.0.0.0") != 0) || (strcmp(xgetenv("XYMSRV"), "0") != 0) || (strcmp(xgetenv("XYMSRV"), "::") == 0))
+			recips = xgetenv("XYMSRV");
+		else
+			recips = xgetenv("XYMSERVERS");
+
+		defaulttargets = build_targetlist(recips, defaultport);
+	}
+
+	targets = ((recipient == NULL) ? defaulttargets : build_targetlist(recipient, defaultport));
+	sendtoall(msg, timeout, targets, response);
+
+	res = myhead->result;	/* Always return the result from the first server */
+
+	for (walk = myhead; (walk); walk = walk->next) {
+		if (walk->result != XYMONSEND_OK) {
+			char *eoln;
+
+			eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
+			errprintf("Whoops ! Failed to send message (%s)\n", strxymonsendresult(res));
+			errprintf("->  %s\n", errordetails);
+			errprintf("->  Recipient '%s', timeout %d\n", walk->peer, timeout);
+			errprintf("->  1st line: '%s'\n", msg);
+			if (eoln) *eoln = '\n';
+		}
+	}
+
+	while (myhead) {
+		walk = myhead; myhead = myhead->next;
+
+		if (walk->peer) xfree(walk->peer);
+		if (walk->readbuf) xfree(walk->readbuf);
+		xfree(walk);
+	}
+	mytail = NULL;
+
+	if (targets != defaulttargets) {
+		int i;
+
+		for (i = 0; (targets[i]); i++) {
+			xfree(targets[i]->targetip);
+			xfree(targets[i]);
+		}
+
+		xfree(targets);
 	}
 
 	/* Give it a break */
 	if (sleepbetweenmsgs) usleep(sleepbetweenmsgs);
-	xymonmsgcount++;
+
 	return res;
+}
+
+
+void setproxy(char *proxy)
+{
+}
+
+
+sendreturn_t *newsendreturnbuf(int fullresponse, FILE *respfd)
+{
+	sendreturn_t *result;
+
+	result = (sendreturn_t *)calloc(1, sizeof(sendreturn_t));
+	result->fullresponse = fullresponse;
+	result->respfd = respfd;
+	if (!respfd) {
+		/* No response file, so return it in a strbuf */
+		result->respstr = newstrbuffer(0);
+	}
+
+	return result;
+}
+
+void freesendreturnbuf(sendreturn_t *s)
+{
+	if (!s) return;
+	if (s->respstr) freestrbuffer(s->respstr);
+	xfree(s);
+}
+
+char *getsendreturnstr(sendreturn_t *s, int takeover)
+{
+	char *result = NULL;
+
+	if (!s) return NULL;
+	if (!s->respstr) return NULL;
+	if (takeover) {
+		/*
+		 * We cannot leave respstr as NULL, because later calls 
+		 * to sendmessage() might re-use this sendreturn_t struct
+		 * and expect to get the data back. So allocate a new
+		 * responsebuffer for future use - if it isn't used, it
+		 * will be freed by freesendreturnbuf().
+		 */
+		result = grabstrbuffer(s->respstr);
+		s->respstr = newstrbuffer(0);
+	}
+	else result = STRBUF(s->respstr);
+
+	return result;
 }
 
 
@@ -723,8 +635,6 @@ static void combo_params(void)
 
 void combo_start(void)
 {
-	int n;
-
 	combo_params();
 
 	memset(comboofsstr, ' ', comboofssz);
@@ -815,7 +725,6 @@ void combo_end(void)
 {
 	combo_flush();
 	combo_is_local = 0;
-	dbgprintf("%d status messages merged into %d transmissions\n", xymonstatuscount, xymonmsgcount);
 }
 
 void init_status(int color)
@@ -823,7 +732,6 @@ void init_status(int color)
 	if (msgbuf == NULL) msgbuf = newstrbuffer(0);
 	clearstrbuffer(msgbuf);
 	msgcolor = color;
-	xymonstatuscount++;
 }
 
 void addtostatus(char *p)

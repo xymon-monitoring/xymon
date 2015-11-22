@@ -46,7 +46,6 @@ static char rcsid[] = "$Id$";
 volatile int keeprunning = 1;
 char *client_response = NULL;		/* The latest response to a "client" message */
 int maxage = 600;			/* Maximum time we will cache messages */
-sender_t *serverlist = NULL;		/* Who is allowed to grab our messages */
 
 typedef struct conn_t {
 	time_t tstamp;
@@ -131,12 +130,6 @@ void grabdata(conn_t *conn)
 
 		/* Access check */
 		strcpy(sender, inet_ntoa(conn->caddr.sin_addr));
-		if (!oksender(serverlist, NULL, sender, STRBUF(conn->msgbuf))) {
-			errprintf("Rejected pullclient request from %s\n", sender);
-			conn->action = C_DONE;
-			return;
-		}
-
 		dbgprintf("Got pullclient request: %s\n", STRBUF(conn->msgbuf));
 
 		/*
@@ -309,11 +302,6 @@ int main(int argc, char *argv[])
 				errprintf("Invalid listen address %s\n", locaddr);
 				return 1;
 			}
-		}
-		else if (argnmatch(argv[opt], "--server=")) {
-			/* Who is allowed to fetch cached messages */
-			char *p = strchr(argv[opt], '=');
-			serverlist = getsenderlist(p+1);
 		}
 		else if (argnmatch(argv[opt], "--max-age=")) {
 			char *p = strchr(argv[opt], '=');

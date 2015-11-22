@@ -16,15 +16,6 @@ purposes, e.g. to rename or delete hosts, or to disable
 hosts that are down for longer periods of time.
 
 .SH OPTIONS AND PARAMETERS
-.IP "\-\-debug"
-Enable debugging. This prints out details about how the
-connection to the Xymon server is being established.
-
-.IP "\-\-proxy=http://PROXYSERVER:PROXYPORT/"
-When sending the status messages via HTTP, use this server
-as an HTTP proxy instead of connecting directly to the Xymon
-server.
-
 .IP "\-\-timeout=N"
 Specifies the timeout for connecting to the Xymon server, in
 seconds. The default is 5 seconds.
@@ -40,6 +31,16 @@ on standard input, and send the result to the Xymon server.
 The message text provided on the command line becomes the
 first line of the merged message.
 
+.IP "\-4"
+Connect to an IPv4 address (when RECIPIENT is a hostname).
+
+.IP "\-6"
+Connect to an IPv6 address (when RECIPIENT is a hostname).
+
+.IP "\-\-debug"
+Enable debugging. This prints out details about how the
+connection to the Xymon server is being established.
+
 .IP "RECIPIENT"
 The \fBRECIPIENT\fR parameter defines which server receives
 the message. If RECIPIENT is given as "0.0.0.0", then the
@@ -50,14 +51,11 @@ Usually, a client will use "$XYMSRV" for the \fBRECIPIENT\fR
 parameter, as this is defined for the client scripts
 to automatically contain the correct value.
 
-The \fBRECIPIENT\fR parameter may be a URL for a webserver
-that has the xymoncgimsg.cgi or similar script installed. This
-tunnels the Xymon messages to the Xymon server using standard 
-HTTP protocol. The 
-.I xymoncgimsg.cgi(8)
-CGI tool (included in Xymon) must be installed on the webserver 
-for the HTTP transport to work.
-.br
+RECIPIENT may be a hostname, that can be resolved via DNS.
+
+If RECIPIENT is prefixed with "tls:", the connection will
+use TLS encryption if the server supports it. If the server
+does not support TLS, the connection will fail.
 
 .IP MESSAGE
 The \fBmessage\fR parameter is the message to be sent across
@@ -506,11 +504,6 @@ Send a normal status message to the Xymon server, using the
 standard Xymon protocol on TCP port 1984:
 .br
    $ $XYMON $XYMSRV "status www,foo,com.http green \(gadate\(ga Web OK"
-
-Send the same status message, but using HTTP protocol via the
-webserver\(aqs xymoncgimsg.cgi script:
-.br
-   $ $XYMON http://bb.foo.com/cgi\-bin/xymoncgimsg.cgi "status www,foo,com.http green \(gadate\(ga Web OK"
 
 Use "query" message to determine the color of the "www" test, and
 restart Apache if it is red:

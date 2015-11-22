@@ -1,15 +1,13 @@
-xymon (4.4.0-alpha4) unstable; urgency=low
+xymon (4.4.0-alpha5) unstable; urgency=low
 
-   * rev 7747
+   * rev 7788
 
-   * xymond support for IPv6 and TLS connections
+   * Support for IPv6 and TLS connections in xymond and xymon
    * Standardize command line options across most binaries
    * Refactoring of TCP code in preparation for IPv6/SSL support
    * Remove obsolete "meta" message support
-   * Attempt to get a more accurate clock delta when a client message has been
-     sent through a xymonproxy
 
- -- Henrik Stoerner <henrik@hswn.dk>  Wed, 18 Nov 2015 14:47:42 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 Nov 2015 18:26:21 +0100
 
 
 xymon (4.3.23) unstable; urgency=high

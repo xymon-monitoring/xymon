@@ -180,30 +180,22 @@ CLICHG channel. Several column names can be listed, separated by
 commas. If all columns are given as "!COLUMNNAME", then all status
 columns except those listed will cause the client data to be sent.
 
-.IP "\-\-status\-senders=IP[/MASK][,IP/MASK]"
+.IP "\-\-status\-senders=HOSTNAME[,HOSTNAME]"
 Controls which hosts may send "status", "combo", "config" and "query"
 commands to xymond.
 
 By default, any host can send status-updates. If this option is used, 
 then status-updates are accepted only if they are sent by one of the 
-IP-addresses listed here, or if they are sent from the IP-address of the 
-host that the updates pertains to (this is to allow Xymon clients to send in their
-own status updates, without having to list all clients here). So typically
+hosts listed here, or if they are sent from the host that the updates 
+pertains to (this is to allow Xymon clients to send in their own status 
+updates, without having to list all clients here). So typically
 you will need to list your servers running network tests here.
 
-The format of this option is a list of IP-addresses, optionally with a
-network mask in the form of the number of bits. E.g. if you want to 
-accept status-updates from the host 172.16.10.2, you would use
-.br
-    \-\-status\-senders=172.16.10.2
-.br
-whereas if you want to accept status updates from both 172.16.10.2 and
-from all of the hosts on the 10.0.2.* network (a 24-bit IP network), you
-would use
-.br
-    \-\-status\-senders=172.16.10.2,10.0.2.0/24
+The hostnames are determined by the TLS client certificate that the
+sending hosts presents to xymond. Hence this check really only 
+applies when you are running xymond with TLS enabled.
 
-.IP "\-\-maint\-senders=IP[/MASK][,IP/MASK]"
+.IP "\-\-maint\-senders=HOSTNAME[,HOSTNAME]"
 Controls which hosts may send maintenance commands to xymond. Maintenance
 commands are the "enable", "disable", "ack" and "notes" commands. Format
 of this option is as for the \-\-status\-senders option. It is strongly
@@ -211,12 +203,7 @@ recommended that you use this to restrict access to these commands, so
 that monitoring of a host cannot be disabled by a rogue user - e.g. to
 hide a system compromise from the monitoring system.
 
-\fBNote:\fR If messages are sent through a proxy, the IP-address restrictions
-are of little use, since the messages will appear to originate from the
-proxy server address. It is therefore strongly recommended that you do NOT
-include the address of a server running xymonproxy in the list of allowed addresses.
-
-.IP "\-\-www\-senders=IP[/MASK][,IP/MASK]"
+.IP "\-\-www\-senders=HOSTNAME[,HOSTNAME]"
 Controls which hosts may send commands to retrieve the state of xymond. These
 are the "xymondlog", "xymondboard" and "xymondxboard" commands, which are used
 by
@@ -225,22 +212,12 @@ and
 .I combostatus(1)
 to retrieve the state of the Xymon system so they can generate the Xymon webpages.
 
-\fBNote:\fR If messages are sent through a proxy, the IP-address restrictions
-are of little use, since the messages will appear to originate from the
-proxy server address. It is therefore strongly recommended that you do NOT
-include the address of a server running xymonproxy in the list of allowed addresses.
-
-.IP "\-\-admin\-senders=IP[/MASK][,IP/MASK]"
+.IP "\-\-admin\-senders=HOSTNAME[,HOSTNAME]"
 Controls which hosts may send administrative commands to xymond. These
 commands are the "drop" and "rename" commands. Access to these should be 
 restricted, since they provide an un-authenticated means of completely
 disabling monitoring of a host, and can be used to remove all traces of e.g.
 a system compromise from the Xymon monitor.
-
-\fBNote:\fR If messages are sent through a proxy, the IP-address restrictions
-are of little use, since the messages will appear to originate from the
-proxy server address. It is therefore strongly recommended that you do NOT
-include the address of a server running xymonproxy in the list of allowed addresses.
 
 .IP "\-\-no\-download"
 Disable the "download" command which can be used by clients to pull files 

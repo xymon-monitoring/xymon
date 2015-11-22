@@ -328,6 +328,7 @@ static time_t convert_asn1_tstamp(ASN1_UTCTIME *tstamp)
 
 char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend, int *keysize, char **issuer, char **fulltext)
 {
+	/* Subject result looks like this: /C=US/ST=California/L=Mountain View/O=Google Inc/CN=www.google.com */
 	char *result = NULL;
 
 #ifdef HAVE_OPENSSL
@@ -384,6 +385,33 @@ char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend,
 #endif
 
 	return result;
+}
+
+char *conn_peer_certificate_cn(tcpconn_t *conn)
+{
+	char *cn = NULL;
+
+#ifdef HAVE_OPENSSL
+	X509 *peercert = NULL;
+	X509_NAME *subj = NULL;
+	int cnpos = -1;
+
+	peercert = SSL_get_peer_certificate(conn->ssl);
+	if (peercert) subj = X509_get_subject_name(peercert);
+	if (subj) cnpos = X509_NAME_get_index_by_NID(subj, NID_commonName, cnpos);
+	if (cnpos != -1) {
+		X509_NAME_ENTRY *e = NULL;
+		ASN1_STRING *d = NULL;
+
+		e = X509_NAME_get_entry(subj, cnpos);
+		if (e) d = X509_NAME_ENTRY_get_data(e);
+		if (d) cn = strdup(ASN1_STRING_data(d));
+	}
+
+	if (peercert) X509_free(peercert);
+#endif
+
+	return cn;
 }
 
 

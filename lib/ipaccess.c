@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-sender_t *getsenderlist(char *iplist)
+sender_t *get_ipaccess_list(char *iplist)
 {
 	char *p, *tok;
 	sender_t *result;
@@ -52,11 +52,8 @@ sender_t *getsenderlist(char *iplist)
 	return result;
 }
 
-int oksender(sender_t *oklist, char *targetip, char *sender, char *msgbuf)
+int ok_ipaccess_sender(sender_t *oklist, char *targetip, char *sender, char *msgbuf)
 {
-#if 0 
-	--- FIXME ---
-
 	int i;
 	unsigned long int tg_ip;
 	char *eoln = NULL;
@@ -103,9 +100,5 @@ int oksender(sender_t *oklist, char *targetip, char *sender, char *msgbuf)
 	dbgprintf("<- oksender(0)\n");
 
 	return 0;
-#else
-	return 1;
-#endif
-
 }
 

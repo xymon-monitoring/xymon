@@ -19,6 +19,8 @@ extern char *envarea;
 extern int  showhelp;
 extern int  dontsendmessages;
 
+typedef enum { XYMON_IPPROTO_ANY, XYMON_IPPROTO_4, XYMON_IPPROTO_6 } ipprotocol_t;
+extern ipprotocol_t ipprotocol;
 
 extern int standardoption(char *opt);
 extern void libxymon_init(char *toolname);

@@ -33,15 +33,11 @@ typedef struct sendreturn_t {
 	FILE *respfd;
 	strbuffer_t *respstr;
 	int fullresponse;
-	int haveseenhttphdrs;
 } sendreturn_t;
-
-extern int xymonmsgcount;
-extern int xymonstatuscount;
-extern int xymonnocombocount;
 
 extern void setproxy(char *proxy);
 extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);
+
 extern sendreturn_t *newsendreturnbuf(int fullresponse, FILE *respfd);
 extern void freesendreturnbuf(sendreturn_t *s);
 extern char *getsendreturnstr(sendreturn_t *s, int takeover);
