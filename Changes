@@ -63,6 +63,11 @@ Changes from 4.3.x -> 4.4-alpha
   - Pre-load the nl-encoded version of the current modifiers and store in the log record,
     to combine posttochannel loads into a single snprintf (perf3)
   - Pre-calculate the line1 field since it's so frequently used (perf4)
+* Compile-time settings for MAX_XYMON_INBUFSZ have been split into two 
+  variables and made global, to allow for larger extcombo and/or compressed messages.
+  MAX_XYMON_INBUFSZ - maximum size of a connection buffer, no matter the source
+  MAX_XYMON_MSGSZ   - maximum size of an uncompressed message sent on a channel
+
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)
 ===========================================

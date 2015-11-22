@@ -57,12 +57,6 @@ static char rcsid[] = "$Id$";
 
 #define DISABLED_UNTIL_OK -1
 
-/*
- * The absolute maximum size we'll grow our buffers to accommodate an incoming message.
- * This is really just an upper bound to squash the bad guys trying to data-flood us. 
- */
-#define MAX_XYMON_INBUFSZ (10*1024*1024)	/* 10 MB */
-
 /* The initial size of an input buffer. Make this large enough for most traffic. */
 #define XYMON_INBUF_INITIAL   (128*1024)
 

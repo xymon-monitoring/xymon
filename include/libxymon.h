@@ -15,6 +15,23 @@
 #include <stdio.h>
 #include <time.h>
 
+
+/*
+ * The absolute maximum size we'll grow our buffers to accomodate an incoming message.
+ * This is really just an upper bound to squash the bad guys trying to data-flood us.
+ * For the backfeed queue, is further subject to MAXMSG_BFQ limits + your sysctl settings.
+ */
+#define MAX_XYMON_INBUFSZ (64*1024*1024)	/* 64 MB */
+
+/*
+ * The absolute maximum size we'll allow for a single message component in uncompressed
+ * or un-packed format. (Handled immediately by do_message or passed to xymond_channel.)
+ * Buffers for dealing with opaque data transfer, including combos/extcombos, can be larger.
+ * Also subject to MAXMSG_STATUS(etc) for each particular type of message.
+ */
+#define MAX_XYMON_MSGSZ (32*1024*1024)		/* 32 MB */
+
+
 typedef struct htnames_t {
 	char *name;
 	struct htnames_t *next;
