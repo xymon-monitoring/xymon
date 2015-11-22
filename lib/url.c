@@ -308,24 +308,24 @@ void parse_url(char *inputurl, urlelem_t *url)
 	if (p) {
 		*p = '\0';
 		if (strncasecmp(startp, "https", 5) == 0) {
-			url->scheme = "https";
+			url->scheme = strdup("https");
 			url->port = 443;
 			if (strlen(startp) > 5) url->schemeopts = strdup(startp+5);
 		} else if (strncasecmp(startp, "http", 4) == 0) {
-			url->scheme = "http";
+			url->scheme = strdup("http");
 			url->port = 80;
 			if (strlen(startp) > 4) url->schemeopts = strdup(startp+4);
 		} else if (strncasecmp(startp, "ftps", 4) == 0) {
-			url->scheme = "ftps";
+			url->scheme = strdup("ftps");
 			url->port = 990;
 		} else if (strncasecmp(startp, "ftp", 3) == 0) {
-			url->scheme = "ftp";
+			url->scheme = strdup("ftp");
 			url->port = 21;
 		} else if (strncasecmp(startp, "ldaps", 5) == 0) {
-			url->scheme = "ldaps";
+			url->scheme = strdup("ldaps");
 			url->port = 389; /* ldaps:// URL's are non-standard, and must use port 389+STARTTLS */
 		} else if (strncasecmp(startp, "ldap", 4) == 0) {
-			url->scheme = "ldap";
+			url->scheme = strdup("ldap");
 			url->port = 389;
 		}
 		else {
@@ -429,6 +429,19 @@ void parse_url(char *inputurl, urlelem_t *url)
 	return;
 }
 
+void free_urlelem_data(urlelem_t *url)
+{
+	if (url->origform)   free(url->origform);
+	if (url->scheme)     free(url->scheme);
+	if (url->schemeopts) free(url->schemeopts);
+	if (url->host)       free(url->host);
+	if (url->ip)         free(url->ip);
+	if (url->auth)       free(url->auth);
+	if (url->relurl)     free(url->relurl);
+
+}
+
+
 /*
  * If a column name is column=NAME, pick out NAME.
  */
@@ -461,7 +474,7 @@ static char *gethttpcolumn(char *inp, char **name)
 char *decode_url(char *testspec, weburl_t *weburl)
 {
 	static weburl_t weburlbuf;
-	static urlelem_t desturlbuf, proxyurlbuf;
+	static urlelem_t desturlbuf = { NULL, }, proxyurlbuf = { NULL, };
 
 	char *inp, *p;
 	char *urlstart, *poststart, *postcontenttype, *expstart, *proxystart, *okstart, *notokstart;
@@ -469,6 +482,9 @@ char *decode_url(char *testspec, weburl_t *weburl)
 
 	/* If called with no buffer, use our own static one */
 	if (weburl == NULL) {
+		free_urlelem_data(&desturlbuf);
+		free_urlelem_data(&proxyurlbuf);
+
 		memset(&weburlbuf, 0, sizeof(weburl_t));
 		memset(&desturlbuf, 0, sizeof(urlelem_t));
 		memset(&proxyurlbuf, 0, sizeof(urlelem_t));

@@ -57,6 +57,15 @@ If RECIPIENT is prefixed with "tls:", the connection will
 use TLS encryption if the server supports it. If the server
 does not support TLS, the connection will fail.
 
+The \fBRECIPIENT\fR parameter may be a URL for a webserver
+that has the xymoncgimsg.cgi or similar script installed. This
+tunnels the Xymon messages to the Xymon server using standard
+HTTP protocol (https is also supported). The
+.I xymoncgimsg.cgi(8)
+CGI tool (included in Xymon) must be installed on the webserver
+for the HTTP transport to work.
+.br
+
 .IP MESSAGE
 The \fBmessage\fR parameter is the message to be sent across
 to the Xymon server. Messages must be enclosed in quotes,
@@ -76,7 +85,7 @@ protocol.
 Each message must begin with one of the Xymon commands. Where
 a HOSTNAME is specified, it must have any dots in the hostname changed
 to commas if the Xymon FQDN setting is enabled (which is the default).
-So the host "www.foo.com", for example, would report as "www,foo,com".
+So the host "www.example.com", for example, would report as "www,example,com".
 
 .IP "status[+LIFETIME][/group:GROUP] HOSTNAME.TESTNAME COLOR <additional text>"
 This sends in a status message for a single test (column) on a single host.
@@ -503,13 +512,18 @@ displayed on the status webpage.
 Send a normal status message to the Xymon server, using the
 standard Xymon protocol on TCP port 1984:
 .br
-   $ $XYMON $XYMSRV "status www,foo,com.http green \(gadate\(ga Web OK"
+   $ $XYMON $XYMSRV "status www,example,com.http green \(gadate\(ga Web OK"
+
+Send the same status message, but using HTTP protocol via the
+webserver\(aqs xymoncgimsg.cgi script:
+.br
+   $ $XYMON http://xymon.example.com/cgi\-bin/xymoncgimsg.cgi "status www,example,com.http green \(gadate\(ga Web OK"
 
 Use "query" message to determine the color of the "www" test, and
 restart Apache if it is red:
 .br
 
-   $ WWW=\(ga$XYMON $XYMSRV "query www,foo,com.www" | awk \(aq{print $1}\(aq\(ga
+   $ WWW=\(ga$XYMON $XYMSRV "query www,example,com.www" | awk \(aq{print $1}\(aq\(ga
    $ if [ "$WWW" = "red" ]; then /etc/init.d/apache restart; fi
 
 Use "config" message to update a local mytest.cfg file (but only

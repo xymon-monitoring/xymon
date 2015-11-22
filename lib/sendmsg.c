@@ -69,14 +69,14 @@ static int *combooffsets = NULL;
 #define USERBUFSZ 4096
 
 typedef struct myconn_t {
-	/* Plain-text protocols */
-	char szbuf[20]; char *szptr;
-	char tlsbuf[10]; char *tlsptr;
-	char *readbuf, *writebuf;
+	char tlsbuf[10]; char *tlsptr;		/* This holds the "starttls" command we send when talking to a starttls-enabled xymon server */
+	char *prebuf; char *preptr;		/* This holds the "size: N" line, or http request headers */
+	char *readbuf, *writebuf;		/* This holds what we read and write during the communication */
 	char *readp, *writep;
 	size_t readbufsz, lefttowrite;
-	char *peer;
-	int port, readmore, starttlspending;
+	strbuffer_t *httpheaderbuf;		/* Holds our data until we have the full http headers */
+	char *peer;				/* IP of our peer */
+	int port, readmore, starttlspending, waitforhttpheaders;
 	enum sslhandling_t usessl;
 	sendresult_t result;
 	sendreturn_t *response;
@@ -87,6 +87,7 @@ typedef struct mytarget_t {
 	char *targetip;
 	int defaultport;
 	enum sslhandling_t usessl;
+	char *httprequest;
 } mytarget_t;
 
 static myconn_t *myhead = NULL, *mytail = NULL;
@@ -193,14 +194,35 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 		}
 		else if (n > 0) {
 			// dbgprintf("Read %d bytes data\n", n);
-			if (rec->response) {
+			char *outstart = rec->readp;
+			int outlen = n;
+
+			if (rec->response && rec->waitforhttpheaders) {
+				*(rec->readp + n) = '\0';
+				addtobuffer(rec->httpheaderbuf, rec->readp);
+
+				outstart = strstr(STRBUF(rec->httpheaderbuf), "\r\n\r\n");
+				if (outstart)
+					outstart += 4;
+				else {
+					outstart = strstr(STRBUF(rec->httpheaderbuf), "\n\n");
+					if (outstart) outstart += 2;
+				}
+
+				if (outstart) {
+					rec->waitforhttpheaders = 0;
+					outlen -= (rec->readp - outstart);
+				}
+			}
+
+			if (rec->response && outstart) {
 				if (rec->response->respfd) {
-					fwrite(rec->readp, n, 1, rec->response->respfd);
+					fwrite(outstart, outlen, 1, rec->response->respfd);
 				}
 				else {
-					*(rec->readp + n) = '\0';
-					addtobuffer(rec->response->respstr, rec->readp);
-					if (!rec->response->fullresponse && strchr(rec->readp, '\n'))
+					*(outstart + outlen) = '\0';
+					addtobuffer(rec->response->respstr, outstart);
+					if (!rec->response->fullresponse && strchr(outstart, '\n'))
 						conn_close_connection(connection, NULL);
 				}
 			}
@@ -232,12 +254,12 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 				n = 0;	/* Didn't send any message data yet */
 			}
 		}
-		else if (rec->szptr) {
-			n = conn_write(connection, rec->szptr, strlen(rec->szptr));
+		else if (rec->preptr) {
+			n = conn_write(connection, rec->preptr, strlen(rec->preptr));
 			// dbgprintf("Sent %d bytes of size command\n", n);
 			if (n > 0) {
-				rec->szptr += n;
-				if (*rec->szptr == '\0') rec->szptr = NULL;
+				rec->preptr += n;
+				if (*rec->preptr == '\0') rec->preptr = NULL;
 				n = 0;	/* Didn't send any message data yet */
 			}
 		}
@@ -307,11 +329,22 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 
 		myconn = (myconn_t *)calloc(1, sizeof(myconn_t));
 		strcpy(myconn->tlsbuf, "starttls\n");
-		myconn->tlsptr = (targets[i]->usessl ? myconn->tlsbuf : NULL);
+		myconn->tlsptr = ((targets[i]->usessl == CONN_SSL_STARTTLS_CLIENT) ? myconn->tlsbuf : NULL);
 		myconn->usessl = targets[i]->usessl;
 		myconn->lefttowrite = msglen;
-		sprintf(myconn->szbuf, "size:%d\n", (int)myconn->lefttowrite);
-		myconn->szptr = v4server ? NULL : myconn->szbuf;
+		if (targets[i]->httprequest) {
+			/* Must strdup() here, since it is freed once per conn_t (connection) - and prebuf will always be freed when connection terminates */
+			myconn->prebuf = myconn->preptr = strdup(targets[i]->httprequest);
+			if (!debug) {
+				/* We dont want to see the HTTP headers except when in debug mode */
+				myconn->waitforhttpheaders = 1;
+				myconn->httpheaderbuf = newstrbuffer(1024);
+			}
+		}
+		else if (!v4server) {
+			myconn->prebuf = myconn->preptr = (char *)malloc(20);
+			sprintf(myconn->prebuf, "size:%d\n", (int)myconn->lefttowrite);
+		}
 		myconn->writebuf = msg;
 		myconn->peer = strdup(ip ? ip : "");
 		myconn->port = (portnum ? portnum : targets[i]->defaultport);
@@ -325,8 +358,8 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 
 		if (ip) {
 			conn_prepare_connection(myconn->peer, myconn->port, CONN_SOCKTYPE_STREAM, NULL, 
-					(myconn->usessl ? CONN_SSL_STARTTLS_CLIENT : CONN_SSL_NO), NULL, getenv("XYMONCLIENTCERT"), getenv("XYMONCLIENTKEY"), 
-					1000000*timeout, client_callback, myconn);
+						myconn->usessl, NULL, getenv("XYMONCLIENTCERT"), getenv("XYMONCLIENTKEY"), 
+						1000000*timeout, client_callback, myconn);
 		}
 		else {
 			myconn->result = XYMONSEND_EBADIP;
@@ -365,28 +398,63 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 	return 0;
 }
 
-static mytarget_t **build_targetlist(char *recips, int defaultport)
+static mytarget_t **build_targetlist(char *recips, int defaultport, int msglength)
 {
 	/*
 	 * Target format: [tls:][IP|hostname]:[portnumber|servicename]
 	 */
 	mytarget_t **targets;
-	char *multilist, *r, *p;
+	char *multilist, *r, *p, *tokr;
 	int tcount = 0;
 
 	multilist = strdup(recips);
 
 	targets = (mytarget_t **)malloc(sizeof(mytarget_t *));
-	r = strtok(multilist, " ,");
+	r = strtok_r(multilist, " ,", &tokr);
 	while (r) {
+		urlelem_t url;
+
+		memset(&url, 0, sizeof(url));
+
 		targets = (mytarget_t **)realloc(targets, (tcount+2)*sizeof(mytarget_t *));
 		targets[tcount] = (mytarget_t *)calloc(1, sizeof(mytarget_t));
 		if (strncmp(r, "tls:", 4) == 0) {
 			r += 4;
 			targets[tcount]->usessl = CONN_SSL_STARTTLS_CLIENT;
 		}
+		else if (strncmp(r, "https:", 6) == 0) {
+			targets[tcount]->usessl = CONN_SSL_YES;
+		}
 		else {
 			targets[tcount]->usessl = CONN_SSL_NO;
+		}
+
+		/* If an http target, generate the http request headers - and point r to the URL hostname */
+		if (strncmp(r, "http", 4) == 0) {
+			char lengthstr[10];
+			strbuffer_t *httpreq = newstrbuffer(0);
+
+			parse_url(r, &url);
+			if (url.parseerror) {
+				errprintf("Skipping invalid URL target %s\n", r);
+				goto target_done;
+			}
+
+			snprintf(lengthstr, sizeof(lengthstr), "%d", msglength);
+			addtobuffer_many(httpreq, 
+					"POST ", url.relurl, " HTTP/1.0\r\n",
+					"Host: ", url.host, "\r\n",
+					"MIME-Version: 1.0\r\n",
+					"Content-Type: application/octet-stream\r\n",
+					"Content-Length: ", lengthstr, "\r\n",
+					"\r\n", NULL);
+			targets[tcount]->httprequest = grabstrbuffer(httpreq);
+			dbgprintf("Sending HTTP request:\n%s", targets[tcount]->httprequest);
+
+			/* We use the url.ip field for the destination address+port - it is only used for net-tests with http-requests using http://website=10.1.2.3/ notation */
+			url.ip = (char *)malloc(strlen(url.host) + 10);
+			sprintf(url.ip, "%s:%d", url.host, url.port);
+			r = url.ip;
 		}
 
 		if (*r == '[') {
@@ -415,7 +483,9 @@ static mytarget_t **build_targetlist(char *recips, int defaultport)
 
 		targets[tcount]->targetip = strdup(r);
 		tcount++;
-		r = strtok(NULL, " ,");
+target_done:
+		free_urlelem_data(&url);
+		r = strtok_r(NULL, " ,", &tokr);
 	}
 	targets[tcount] = NULL;
 	xfree(multilist);
@@ -512,10 +582,10 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 		else
 			recips = xgetenv("XYMSERVERS");
 
-		defaulttargets = build_targetlist(recips, defaultport);
+		defaulttargets = build_targetlist(recips, defaultport, 0);
 	}
 
-	targets = ((recipient == NULL) ? defaulttargets : build_targetlist(recipient, defaultport));
+	targets = ((recipient == NULL) ? defaulttargets : build_targetlist(recipient, defaultport, strlen(msg)));
 	sendtoall(msg, timeout, targets, response);
 
 	res = myhead->result;	/* Always return the result from the first server */
@@ -538,6 +608,8 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 
 		if (walk->peer) xfree(walk->peer);
 		if (walk->readbuf) xfree(walk->readbuf);
+		if (walk->prebuf) xfree(walk->prebuf);
+		if (walk->httpheaderbuf) xfree(walk->httpheaderbuf);
 		xfree(walk);
 	}
 	mytail = NULL;
@@ -547,6 +619,7 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 
 		for (i = 0; (targets[i]); i++) {
 			xfree(targets[i]->targetip);
+			if (targets[i]->httprequest) xfree(targets[i]->httprequest);
 			xfree(targets[i]);
 		}
 
