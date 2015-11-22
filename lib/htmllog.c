@@ -342,22 +342,6 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			fprintf(output, "<TR><TD ALIGN=LEFT><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
 		}
 
-		if (modifiers) {
-			char *modtxt;
-
-			nldecode(modifiers);
-			fprintf(output, "<TR><TD ALIGN=LEFT>");
-			modtxt = strtok(modifiers, "\n");
-			while (modtxt) {
-				fprintf(output, "<H3>");
-				textwithcolorimg(modtxt, output);
-				fprintf(output, "</H3>");
-				modtxt = strtok(NULL, "\n");
-				if (modtxt) fprintf(output, "<br>");
-			}
-			fprintf(output, "\n");
-		}
-
 		fprintf(output, "<TR><TD ALIGN=LEFT>");
 		if (strlen(txt)) {
 			fprintf(output, "<H3>");
@@ -368,6 +352,19 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	}
 
 	if (!htmlfmt) fprintf(output, "<PRE>\n");
+
+	if (modifiers) {
+		char *modtxt;
+		nldecode(modifiers);
+		modtxt = strtok(modifiers, "\n");
+		while (modtxt) {
+			textwithcolorimg(modtxt, output);
+			modtxt = strtok(NULL, "\n");
+			if (modtxt) fprintf(output, "\n");
+		}
+		fprintf(output, "\n\n");
+	}
+
 	textwithcolorimg(restofmsg, output);
 	if (!htmlfmt) fprintf(output, "\n</PRE>\n");
 

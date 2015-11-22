@@ -35,6 +35,7 @@ Changes from 4.3.x -> 4.4-alpha
 * Move 'periodic' directory (output from xymonreport.sh, executed via crondate) to $XYMONVAR
 * xymond: Fix double-free in grouplist referenced 2x in handle_status (Thanks, Franco Gasperino)
 * Fix non-special HTTP 1xx/3xx status codes red instead of yellow >.<
+* Standardize the location of "modify" messages on status pages and in mailed alerts
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)

@@ -466,6 +466,7 @@ int main(int argc, char *argv[])
 							fprintf(histlogfd, "%s\n", modtxt);
 							modtxt = strtok(NULL, "\n");
 						}
+						fprintf(histlogfd, "\n");
 					}
 
 					written = fwrite(restofdata, 1, strlen(restofdata), histlogfd);

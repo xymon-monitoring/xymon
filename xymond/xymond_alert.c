@@ -683,8 +683,9 @@ int main(int argc, char *argv[])
 			if (awalk->pagemessage) xfree(awalk->pagemessage);
 			if (metadata[15]) {
 				/* Modifiers are more interesting than the message itself */
-				awalk->pagemessage = (char *)malloc(strlen(awalk->hostname) + strlen(awalk->testname) + strlen(colorname(awalk->color)) + strlen(metadata[15]) + strlen(restofmsg) + 10);
-				sprintf(awalk->pagemessage, "%s:%s %s\n%s\n%s",
+				nldecode(metadata[15]);
+				awalk->pagemessage = (char *)malloc(strlen(awalk->hostname) + strlen(awalk->testname) + strlen(colorname(awalk->color)) + strlen(metadata[15]) + strlen(restofmsg) + 30);
+				sprintf(awalk->pagemessage, "%s:%s %s (modified to)\n%s\n\n%s",
 					awalk->hostname, awalk->testname, colorname(awalk->color), metadata[15], restofmsg);
 			}
 			else {
