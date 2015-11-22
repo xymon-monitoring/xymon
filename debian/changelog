@@ -1,4 +1,13 @@
 
+xymon (4.3.24) stable; urgency=high
+
+   * rev XXXX
+
+   * Fix occasional crash in xymond when handling group names (Thanks, Franco Gasperino)
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>
+
+
 xymon (4.3.23) unstable; urgency=high
 
    * rev 7740

@@ -1682,8 +1682,10 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	log->color = newcolor;
 	oldalertstatus = decide_alertstate(log->oldcolor);
 	newalertstatus = decide_alertstate(newcolor);
-	if (log->grouplist) xfree(log->grouplist);
-	if (grouplist) log->grouplist = strdup(grouplist);
+
+	/* grouplist and log->grouplist can point to the same address.. */
+	if (log->grouplist && log->grouplist != grouplist) xfree(log->grouplist);
+	if (grouplist && !log->grouplist) log->grouplist = strdup(grouplist);
 
 	if (log->acklist) {
 		ackinfo_t *awalk;
