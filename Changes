@@ -34,6 +34,7 @@ Changes from 4.3.x -> 4.4-alpha
 * Store 'notes' uploads in $XYMONVAR rather than $XYMONWWW directory
 * Move 'periodic' directory (output from xymonreport.sh, executed via crondate) to $XYMONVAR
 * xymond: Fix double-free in grouplist referenced 2x in handle_status (Thanks, Franco Gasperino)
+* Fix non-special HTTP 1xx/3xx status codes red instead of yellow >.<
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)
