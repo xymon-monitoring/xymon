@@ -2312,6 +2312,10 @@ int main(int argc, char *argv[])
 	usebackfeedqueue = (sendmessage_init_local() > 0);
 
 	load_tests();
+        if (loadhostsfromxymond && first_host() == NULL) {
+                errprintf("Failed to load hostlist from xymond, aborting run\n");
+                return 0;
+        }
 	add_timestamp(use_ares_lookup ? "Tests loaded" : "Tests loaded, hostname lookups done");
 
 	flush_dnsqueue();

@@ -142,7 +142,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 		prepresult = prepare_fromfile(hostsfn, extrainclude);
 	else if ((*hostsfn == '@') || (strcmp(hostsfn, xgetenv("HOSTSCFG")) == 0)) {
 		prepresult = prepare_fromnet();
-		if (prepresult == -1) {
+		if ((prepresult == -1) && (strcmp(hostsfn, xgetenv("HOSTSCFG")) == 0)) {
 			errprintf("Failed to load from xymond, reverting to file-load\n");
 			prepresult = prepare_fromfile(xgetenv("HOSTSCFG"), extrainclude);
 		}
