@@ -52,6 +52,7 @@ static char rrdvalues[MAX_LINE_LEN];
 static char *senderip = NULL;
 static char rrdfn[PATH_MAX];   /* Base filename without directories, from setupfn() */
 static char filedir[PATH_MAX]; /* Full path filename */
+static char filejustdir[PATH_MAX]; /* Full path filename - just the directory */
 static char *fnparams[4] = { NULL, };  /* Saved parameters passed to setupfn() */
 
 /* How often do we feed data into the RRD file */
@@ -64,6 +65,7 @@ static void * updcache;
 typedef struct updcacheitem_t {
 	char *key;
 	rrdtpldata_t *tpl;
+	int fileok;
 	int valcount;
 	char *vals[CACHESZ];
 	int updseq[CACHESZ];
@@ -270,6 +272,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	xtreePos_t handle;
 	updcacheitem_t *cacheitem = NULL;
 	int pollinterval;
+	int dofilechk = 0;
 	strbuffer_t *modifymsg;
 	time_t updtime = 0;
 
@@ -285,15 +288,6 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	MEMDEFINE(rrdvalues);
 	MEMDEFINE(filedir);
 
-	sprintf(filedir, "%s/%s", rrddir, hostname);
-	if (stat(filedir, &st) == -1) {
-		if (mkdir(filedir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
-			errprintf("Cannot create rrd directory %s : %s\n", filedir, strerror(errno));
-			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues);
-			return -1;
-		}
-	}
 	/* Watch out here - "rrdfn" may be very large. */
 	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
 	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
@@ -321,6 +315,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		cacheitem = (updcacheitem_t *)calloc(1, sizeof(updcacheitem_t));
 		cacheitem->key = strdup(updcachekey);
 		cacheitem->tpl = template;
+		cacheitem->fileok = 0;
 		xtreeAdd(updcache, cacheitem->key, cacheitem);
 	}
 	else {
@@ -329,7 +324,8 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	}
 
 	/* If the RRD file doesn't exist, create it immediately */
-	if (stat(filedir, &st) == -1) {
+	/* otherwise, mark that it's present so we don't burn a syscall again */
+	if (!no_rrd && !cacheitem->fileok && !( (stat(filedir, &st) != -1) && ++cacheitem->fileok ) ) {
 		char **rrdcreate_params, **rrddefinitions;
 		int rrddefcount, i;
 		char *rrakey = NULL;
@@ -337,6 +333,20 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		int havestepsetting = 0, fixcount = 2;
 
 		dbgprintf("Creating rrd %s\n", filedir);
+
+		MEMDEFINE(filejustdir);
+		sprintf(filejustdir, "%s/%s", rrddir, hostname);
+		if (stat(filejustdir, &st) == -1) {
+			dbgprintf("Creating rrd dir %s\n", filejustdir);
+			if (mkdir(filejustdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
+				errprintf("Cannot create rrd directory %s : %s\n", filejustdir, strerror(errno));
+				MEMUNDEFINE(filedir);
+				MEMUNDEFINE(filejustdir);
+				MEMUNDEFINE(rrdvalues);
+				return -1;
+			}
+		}
+		MEMUNDEFINE(filejustdir);
 
 		/* How many parameters did we get? */
 		for (pcount = 0; (creparams[pcount]); pcount++);
@@ -388,6 +398,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			MEMUNDEFINE(rrdvalues);
 			return 1;
 		}
+		else cacheitem->fileok++;
 	}
 
 	updtime = atoi(rrdvalues);
@@ -461,7 +472,11 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	}
 
 	/* Are we actually handling the writing of RRD files? */
-	if (no_rrd) return 0;
+	if (no_rrd) {
+		MEMUNDEFINE(filedir);
+		MEMUNDEFINE(rrdvalues);
+		return 0;
+	}
 
 	/* 
 	 * We cannot just cache data every time because then after CACHESZ updates
@@ -500,6 +515,9 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			errprintf("RRD error updating %s from %s: %s\n", 
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}
+
+		/* check the file next time around */
+		cacheitem->fileok = 0;
 
 		MEMUNDEFINE(filedir);
 		MEMUNDEFINE(rrdvalues);
