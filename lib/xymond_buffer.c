@@ -18,47 +18,57 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 #include "xymond_buffer.h"
+static int envloaded = 0;
+static size_t chnbufsizes[C_LAST + 1];
 
-unsigned int shbufsz(enum msgchannels_t chnid)
+
+size_t shbufsz(enum msgchannels_t chnid)
 {
-	unsigned int defvalue = 0, result = 0;
-	char *v = NULL;
-
-	if (chnid != C_LAST) {
-		switch (chnid) {
-		  case C_STATUS: v = getenv("MAXMSG_STATUS"); defvalue = 256; break;
-		  case C_CLIENT: v = getenv("MAXMSG_CLIENT"); defvalue = 512; break;
-		  case C_CLICHG: v = getenv("MAXMSG_CLICHG"); defvalue = shbufsz(C_CLIENT); break;
-		  case C_DATA:   v = getenv("MAXMSG_DATA");   defvalue = 256; break;
-		  case C_NOTES:  v = getenv("MAXMSG_NOTES");  defvalue = 256; break;
-		  case C_STACHG: v = getenv("MAXMSG_STACHG"); defvalue = shbufsz(C_STATUS); break;
-		  case C_PAGE:   v = getenv("MAXMSG_PAGE");   defvalue = shbufsz(C_STATUS); break;
-		  case C_ENADIS: v = getenv("MAXMSG_ENADIS"); defvalue =  32; break;
-		  case C_USER:   v = getenv("MAXMSG_USER");   defvalue = 128; break;
-		  case C_FEEDBACK_QUEUE: v = getenv("MAXMSG_STATUS"); defvalue = 256; break;
-		  default: break;
-		}
-
-		if (v) {
-			result = atoi(v);
-			/* See if it is an old setting in bytes */
-			if (result > 32*1024) result = (result / 1024);
-		}
-
-		if (result < 32) result = defvalue;
+	if ((chnid < C_STATUS) || (chnid > C_LAST)) {
+		errprintf("Invalid channel ID buffer requested: %d\n", chnid);
+		return 0;
 	}
-	else {
-		enum msgchannels_t i;
-		unsigned int isz;
 
-		result = 0;
+	if (envloaded) return chnbufsizes[chnid];
+	else {
+		/* Load channel buffer sizes as configured from the environment */
+		enum msgchannels_t i;
+		size_t result, largestsz = 0;
+		char *v = NULL;
 
 		for (i=C_STATUS; (i < C_LAST); i++) {
-			isz = shbufsz(i);
-			if (isz > result) result = isz;
+		   switch (i) {
+			case C_STATUS: v = xgetenv("MAXMSG_STATUS");	break;	/* default: 256 */
+			case C_CLIENT: v = xgetenv("MAXMSG_CLIENT");	break;	/* default: 512 */
+			case C_DATA:   v = xgetenv("MAXMSG_DATA");	break;	/* default: 256 */
+			case C_NOTES:  v = xgetenv("MAXMSG_NOTES");	break;	/* default: 256 */
+			case C_ENADIS: v = xgetenv("MAXMSG_ENADIS");	break;	/* default: 32 */
+			case C_USER:   v = xgetenv("MAXMSG_USER");	break;	/* default: 128 */
+			case C_PAGE:   v = (getenv("MAXMSG_PAGE")) ? xgetenv("MAXMSG_PAGE") : xgetenv("MAXMSG_STATUS"); break;
+			case C_STACHG: v = (getenv("MAXMSG_STACHG")) ? xgetenv("MAXMSG_STACHG") : xgetenv("MAXMSG_STATUS"); break;
+			case C_CLICHG: v = (getenv("MAXMSG_CLICHG")) ? xgetenv("MAXMSG_CLICHG") : xgetenv("MAXMSG_CLIENT"); break;
+			case C_FEEDBACK_QUEUE: v = (getenv("MAXMSG_BFQ")) ? xgetenv("MAXMSG_BFQ") : xgetenv("MAXMSG_STATUS"); break;
+			default: break;
+		   }
+
+		   if (v) result = atol(v);
+		   else { errprintf("Invalid or missing buffer size for channel '%s'; using %d\n", channelnames[chnid], 1024); result = 1024; }
+
+		   /* Keep track of the largest message expected to be possible */
+		   if (result > largestsz) largestsz = result;
+
+		   /* Backfeed queue needs to be slightly less (-1K)to account for msgp padding(?) */
+		   // if (i == C_FEEDBACK_QUEUE) result--;
+
+		   /* Store it */
+		   chnbufsizes[i] = result;
 		}
+
+		/* This is what to ask for if you're not sure which channel you're receiving from */
+		chnbufsizes[C_LAST] = largestsz;
+		envloaded = 1;
 	}
 
-	return result;
+	return chnbufsizes[chnid];
 }
 

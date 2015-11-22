@@ -69,6 +69,9 @@ SLEEPBETWEENMSGS="0"            # Delay between sending each combo message, in m
 #MAXMSG_USER=128		# "user" messages (default=128k)
 #MAXMSG_DATA=256		# "data" messages, if enabled (default=256k)
 #MAXMSG_NOTES=256		# "notes" messages, if enabled (default=256k)
+#MAXMSG_BFQ=$MAXMSG_STATUS	# buffer space for backfeed queue messages, if enabled
+				# (default=MAXMSG_STATUS, however combo messages can result
+				# in messages much larger than this). See README.backfeed
 
 # HOLIDAYS="us"			# Default set of holidays (pointer to section in holidays.cfg)
 # HOLIDAYFORMAT="%m/%d/%y"	# Format for printing holiday dates. Default is %d/%m/%y (day/month/year).

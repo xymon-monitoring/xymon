@@ -13,6 +13,6 @@
 
 enum msgchannels_t { C_STATUS=1, C_STACHG, C_PAGE, C_DATA, C_NOTES, C_ENADIS, C_CLIENT, C_CLICHG, C_USER, C_FEEDBACK_QUEUE, C_LAST };
 
-extern unsigned int shbufsz(enum msgchannels_t chnid);
+extern size_t shbufsz(enum msgchannels_t chnid);
 #endif
 

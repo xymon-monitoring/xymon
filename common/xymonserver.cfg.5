@@ -450,6 +450,16 @@ The maximum size of a "user" message in kB, default: 128.
 modules you have installed, it is not used directly by
 Xymon.
 
+.IP MAXMSG_BFQ
+The maximum buffer size of a single message from the backfeed
+queue. While individual messages are expected to be no larger
+than the maximum of any of the above settings, some tools can
+create "combo" messages that are much larger. This should be
+set to the value of the kernel.msgmax in sysctl, but both 
+may need to be set higher if you receive messages about invalid
+or truncated messages while bfq mode is enabled in xymond.
+See README.backfeed for more information
+
 
 .SH XYMOND_HISTORY SETTINGS
 

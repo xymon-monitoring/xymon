@@ -14,6 +14,7 @@ Changes from 4.3.x -> 4.4-alpha
 
 * Performance optimizations / bug fixes with POSIX btree usage
 * Performance improvements within xymond_rrd
+* Cache various buffer sizes for channel messages instead of re-calculating
 * Convert various size variables to size_t throughout
 * Add error handling to recover when messages greater than the internal MAX BUF size
   are found (must delete to not be wedged)
