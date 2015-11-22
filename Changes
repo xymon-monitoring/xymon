@@ -16,7 +16,8 @@ Changes from 4.3.x -> 4.4-alpha
   lines). Set RRD_EXTPROC_BUFSIZ to control buffer size (similar to BUFSIZ)
 * FIXME-doc: Experimental support for rrdcached (requires rrdtoool 1.5 or higher) (Thanks, Martin Sperl)
 * The first line of a status message (beginning at the color indicator) is now limited to 255 characters
-
+* FIXME-doc: xymond_rrd: Add --flushtimeout option and reduce the 
+  frequency of cachectl, zombie, and extcombo flushing
 
 * Performance optimizations / bug fixes with POSIX btree usage
 * Performance improvements within xymond_rrd

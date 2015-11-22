@@ -195,6 +195,10 @@ int main(int argc, char *argv[])
 	struct sockaddr_un ctlsockaddr;
 	int ctlsocket;
 	int usebackfeedqueue = 0;
+	int force_backfeedqueue = 0;
+	int comboflushtime;
+	int checkctltime;
+	struct timespec *timeout = NULL;
 
 	libxymon_init(argv[0]);
 
@@ -215,6 +219,17 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--processor=")) {
 			char *p = strchr(argv[argi], '=');
 			processor = strdup(p+1);
+		}
+		else if (strncmp(argv[argi], "--flushtimeout=", 15) == 0) {
+			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
+			timeout->tv_sec = (atoi(argv[argi]+15));
+			timeout->tv_nsec = 0;
+		}
+		else if (strcmp(argv[argi], "--bfq") == 0) {
+			force_backfeedqueue = 1;
+		}
+		else if (strcmp(argv[argi], "--no-bfq") == 0) {
+			force_backfeedqueue = -1;
 		}
 		else if (strcmp(argv[argi], "--no-cache") == 0) {
 			use_rrd_cache = 0;
@@ -250,7 +265,13 @@ int main(int argc, char *argv[])
 
 	if (exthandler && extids) setup_exthandler(exthandler, extids);
 
-	usebackfeedqueue = (sendmessage_init_local() > 0);
+	/* Open up our extcombo message for any modifications */
+	usebackfeedqueue = ((force_backfeedqueue >= 0) ? (sendmessage_init_local() > 0) : 0);
+	if (force_backfeedqueue == 1 && usebackfeedqueue <= 0) {
+		errprintf("Unable to set up backfeed queue when --bfq given; aborting\n");
+		exit(0);
+	}
+	if (usebackfeedqueue) combo_start_local(); else combo_start();
 
 	/* Do the network stuff if needed */
 	net_worker_run(ST_RRD, LOC_STICKY, update_locator_hostdata);
@@ -258,6 +279,8 @@ int main(int argc, char *argv[])
 	load_client_config(NULL);
 	now = gettimer();
 	reloadtime = now + 600;
+	comboflushtime = now + 23;
+	checkctltime = now + 4;
 
 
 	memset(&sa, 0, sizeof(sa));
@@ -321,7 +344,9 @@ int main(int argc, char *argv[])
 		}
 
 		/* See if we have any cache-control messages pending */
-		do {
+		if ((checkctltime < now) && (ctlsocket != -1)) {
+		    dbgprintf("xymond_rrd: checking for rrdctl flush messages\n");
+		    do {
 			n = recv(ctlsocket, ctlbuf, sizeof(ctlbuf), 0);
 			gotcachectlmessage = (n > 0);
 			if (gotcachectlmessage) {
@@ -336,10 +361,13 @@ int main(int argc, char *argv[])
 					if (eol) { bol = eol+1; } else bol = NULL;
 				} while (bol && *bol);
 			}
-		} while (gotcachectlmessage);
+		    } while (gotcachectlmessage);
+		    checkctltime = now + 7;
+		}
+
 
 		/* Get next message */
-		msg = get_xymond_message(C_LAST, argv[0], &seq, NULL);
+		msg = get_xymond_message(C_LAST, argv[0], &seq, timeout);
 		if (msg == NULL) {
 			running = 0;
 			continue;
@@ -351,6 +379,23 @@ int main(int argc, char *argv[])
 			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			load_client_config(NULL);
 			reloadtime = now + 600;
+			comboflushtime = now + 23;
+		}
+		if ((comboflushtime < now)) {
+			/*
+			 * We fork a subprocess when processing drophost requests.
+			 * Pickup any finished child processes to avoid zombies
+			 */
+			while (wait3(&childstat, WNOHANG, NULL) > 0) ;
+
+			/* Make sure any combo of pending modify's goes out */
+			/* if we don't have an idle message timeout set */
+			if (timeout == NULL) {
+				dbgprintf("Flushing any pending extcombo messages\n");
+				combo_end();
+				if (usebackfeedqueue) combo_start_local(); else combo_start();
+			}
+			comboflushtime = now + 23;
 		}
 
 		/* Split the message in the first line (with meta-data), and the rest */
@@ -360,7 +405,6 @@ int main(int argc, char *argv[])
 			restofmsg = eoln+1;
 		}
 
-		if (usebackfeedqueue) combo_start_local(); else combo_start();
 
 		/* Parse the meta-data */
 		metacount = 0; 
@@ -420,7 +464,9 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
-			/* Ignored */
+			dbgprintf("Got an 'idle' message\n");
+			combo_end();
+			if (usebackfeedqueue) combo_start_local(); else combo_start();
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
@@ -474,20 +520,16 @@ int main(int argc, char *argv[])
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
 			/* Not implemented. See "droptest". */
 		}
-
-		combo_end();
-
-		/* 
-		 * We fork a subprocess when processing drophost requests.
-		 * Pickup any finished child processes to avoid zombies
-		 */
-		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 	}
 
 	/* Flush all cached updates to disk */
 	errprintf("Shutting down, flushing cached updates to disk\n");
 	rrdcacheflushall();
 	errprintf("Cache flush completed\n");
+
+	/* Close out any modify's waiting to be sent */
+	combo_end();
+	if (usebackfeedqueue) sendmessage_finish_local();
 
 	/* Close the external processor */
 	shutdown_extprocessor();
@@ -497,8 +539,6 @@ int main(int argc, char *argv[])
 		close(ctlsocket);
 		unlink(ctlsockaddr.sun_path);
 	}
-
-	sendmessage_finish_local();
 
 #ifdef DEBUG_FOR_VALGRIND
 	rrd_destroy();

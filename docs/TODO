@@ -1,3 +1,17 @@
+4.x / Trunk Integration
+-----------------------
+* Migrate certain things to global options:
+  --bfq / --no-bfq: force bfq usage/non-usage rather than dynamically determine.
+    --bfq=# (round-robinning for multiple BFQ's)
+  --loadhostsfromxymond: control source for loadhosts
+  --timeout/timer/flushtimeout: for how often we idle in get_xymon_message and
+    use that opportunity to do cleanup work
+  --compress=<format>
+* Unified digest name parsing/dispatch
+* Re-integrate non-zlib compression logic
+* 'alerttxt' split into enums for keyword and regular case display
+
+
 Bugfixes
 --------
 * From: <Stewart_Larsen@doh.state.fl.us>
