@@ -2550,7 +2550,7 @@ int main(int argc, char *argv[])
 
 		if (usebackfeedqueue) combo_start_local(); else combo_start();
 		init_status(color);
-		sprintf(msgline, "status+%d %s.%s %s %s\n\n", validity, xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
+		sprintf(msgline, "status+%d %s.%s %s %s - xymonnet completed in %lds\n\n", validity, xgetenv("MACHINE"), egocolumn, colorname(color), timestamp, total_runtime());
 		addtostatus(msgline);
 
 		sprintf(msgline, "xymonnet version %s\n", VERSION);

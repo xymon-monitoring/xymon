@@ -502,7 +502,7 @@ char *generate_stats(void)
 	addtobuffer(statsbuf, msgline);
 
 	ghandle = xtreeFirst(rbghosts);
-	if (ghandle != xtreeEnd(rbghosts)) addtobuffer(statsbuf, "\n\nGhost reports:\n");
+	if (ghandle != xtreeEnd(rbghosts)) addtobuffer(statsbuf, "\n\nGhost reports (last 10m):\n");
 	for (; (ghandle != xtreeEnd(rbghosts)); ghandle = xtreeNext(rbghosts, ghandle)) {
 		ghostlist_t *gwalk = (ghostlist_t *)xtreeData(rbghosts, ghandle);
 
@@ -513,7 +513,7 @@ char *generate_stats(void)
 	}
 
 	ghandle = xtreeFirst(rbmultisrc);
-	if (ghandle != xtreeEnd(rbmultisrc)) addtobuffer(statsbuf, "\n\nMulti-source statuses\n");
+	if (ghandle != xtreeEnd(rbmultisrc)) addtobuffer(statsbuf, "\n\nMulti-source statuses (last 10m):\n");
 	for (; (ghandle != xtreeEnd(rbmultisrc)); ghandle = xtreeNext(rbmultisrc, ghandle)) {
 		multisrclist_t *mwalk = (multisrclist_t *)xtreeData(rbmultisrc, ghandle);
 

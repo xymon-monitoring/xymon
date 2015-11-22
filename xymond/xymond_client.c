@@ -1251,11 +1251,11 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 		switch (logcolor) {
 		  case COL_GREEN:
 			if (!localmode) {
-				sprintf(msgline, "\nNo entries in <a href=\"%s\">%s</a>\n", 
+				sprintf(msgline, "&green No notable entries in <a href=\"%s\">%s</a>\n", 
 					hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
 			}
 			else {
-				sprintf(msgline, "\nNo entries in %s\n", 
+				sprintf(msgline, "&green No notable entries in %s\n", 
 					swalk->sname+5);
 			}
 			addtobuffer(greendata, msgline);
@@ -1299,7 +1299,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.msgs %s %s - System logs %s\n",
+	sprintf(msgline, "%s.msgs %s %s - Log files %s\n",
 		commafy(hostname), colorname(msgscolor), 
 		(timestr ? timestr : "<No timestamp data>"),
 		(((msgscolor == COL_RED) || (msgscolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -1331,11 +1331,11 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	for (swalk = defsecthead; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 	while (swalk) {
 		if (!localmode) {
-			sprintf(msgline, "\nFull log <a href=\"%s\">%s</a>\n", 
+			sprintf(msgline, "\n<B>Full log:</B> <a href=\"%s\">%s</a>\n", 
 				hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
 		}
 		else {
-			sprintf(msgline, "\nFull log %s\n", 
+			sprintf(msgline, "\n<B>Full log:</B> %s\n", 
 				swalk->sname+5);
 		}
 		addtostatus(msgline);
