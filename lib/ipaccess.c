@@ -54,6 +54,9 @@ sender_t *get_ipaccess_list(char *iplist)
 
 int ok_ipaccess_sender(sender_t *oklist, char *targetip, char *sender, char *msgbuf)
 {
+#if 0 
+	--- FIXME ---
+
 	int i;
 	unsigned long int tg_ip;
 	char *eoln = NULL;
@@ -100,5 +103,9 @@ int ok_ipaccess_sender(sender_t *oklist, char *targetip, char *sender, char *msg
 	dbgprintf("<- oksender(0)\n");
 
 	return 0;
+#else
+	return 1;
+#endif
+
 }
 
