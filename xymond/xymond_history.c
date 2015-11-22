@@ -59,7 +59,7 @@ void * columndefs;
 
 int main(int argc, char *argv[])
 {
-	time_t starttime = gettimer();
+	time_t starttime = time(NULL);
 	char *histdir = NULL;
 	char *histlogdir = NULL;
 	char *msg;
@@ -178,6 +178,7 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, SIG_DFL);
 
 	while (running) {
+		time_t now = time(NULL);
 		char *metadata[20] = { NULL, };
 		int metacount;
 		char *p;
@@ -208,10 +209,10 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if (nextfscheck < gettimer()) {
+		if (nextfscheck < now) {
 			logdirfull = (chkfreespace(histlogdir, minlogspace, minlogspace) != 0);
 			if (logdirfull) errprintf("Historylog directory %s has less than %d%% free space - disabling save of data for 5 minutes\n", histlogdir, minlogspace);
-			nextfscheck = gettimer() + 300;
+			nextfscheck = now + 300;
 		}
 
 		p = strchr(msg, '\n'); 
