@@ -3790,7 +3790,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char *conffn, *p;
 
-		if (!viabfq && !oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;
+		if (viabfq || !oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + 6; p += strspn(p, " \t");
 		p = strtok(p, " \t\r\n");
@@ -3805,7 +3805,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	else if (allow_downloads && (strncmp(msg->buf, "download", 8) == 0)) {
 		char *fn, *p;
 
-		if (!viabfq && !oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;
+		if (viabfq || !oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + 8; p += strspn(p, " \t");
 		p = strtok(p, " \t\r\n");
@@ -3825,7 +3825,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
 		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-		if (!viabfq && !oksender(statussenders, (h ? hostinfo(h->hostname) : NULL), msg->sender, msg->buf)) goto done;
+		if (viabfq || !oksender(statussenders, (h ? hostinfo(h->hostname) : NULL), msg->sender, msg->buf)) goto done;
 
 		if (log) {
 			xfree(msg->buf);
@@ -3867,7 +3867,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		char *fields;
 		int acklevel = -1;
 
-		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (viabfq || !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		logfilter = setup_filter(msg->buf, &fields, &acklevel, NULL);
 		if (!fields) fields = "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,modifiers";
@@ -3902,7 +3902,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		 * xymondxlog HOST.TEST
 		 *
 		 */
-		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (viabfq || !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (log) {
@@ -3975,7 +3975,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		strbuffer_t *response;
 		static size_t lastboardsize = 0;
 
-		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (viabfq || !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		logfilter = setup_filter(msg->buf, &fields, &acklevel, &havehostfilter);
 		if (!fields) fields = "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1";
@@ -4088,7 +4088,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		static size_t lastboardsize = 0;
 		strbuffer_t *response;
 
-		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (viabfq || !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		logfilter = setup_filter(msg->buf, &fields, &acklevel, &havehostfilter);
 		response = newstrbuffer(lastboardsize);
@@ -4180,7 +4180,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		static size_t lastboardsize = 0;
 		char *clonehost;
 
-		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (viabfq || !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		response = newstrbuffer(lastboardsize);
 
@@ -4349,6 +4349,8 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		/* Tell them we're here */
 		char id[128];
 
+		if (viabfq) goto done;
+
 		sprintf(id, "xymond %s\n", VERSION);
 		msg->doingwhat = RESPONDING;
 		xfree(msg->buf);
@@ -4372,19 +4374,22 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		cmd = msg->buf + 8; cmd += strspn(cmd, " ");
 
 		if (strlen(cmd) == 0) {
-			strbuffer_t *response = newstrbuffer(0);
-			scheduletask_t *swalk;
-			char tbuf[50];
+			if (!viabfq) {
+				strbuffer_t *response = newstrbuffer(0);
+				scheduletask_t *swalk;
+				char tbuf[50];
 
-			for (swalk = schedulehead; (swalk); swalk = swalk->next) {
-				snprintf(tbuf, sizeof(tbuf), "%d|%d", swalk->id, (int)swalk->executiontime);
-				addtobuffer_many(response, tbuf, "|", swalk->sender, "|", nlencode(swalk->command), "\n", NULL);
+				for (swalk = schedulehead; (swalk); swalk = swalk->next) {
+					snprintf(tbuf, sizeof(tbuf), "%d|%d", swalk->id, (int)swalk->executiontime);
+					addtobuffer_many(response, tbuf, "|", swalk->sender, "|", nlencode(swalk->command), "\n", NULL);
+				}
+
+				xfree(msg->buf);
+				msg->doingwhat = RESPONDING;
+				msg->buflen = STRBUFLEN(response);
+				msg->bufp = msg->buf = grabstrbuffer(response);
 			}
-
-			xfree(msg->buf);
-			msg->doingwhat = RESPONDING;
-			msg->buflen = STRBUFLEN(response);
-			msg->bufp = msg->buf = grabstrbuffer(response);
+			else goto done;
 		}
 		else {
 			if (strncmp(cmd, "cancel", 6) != 0) {
@@ -4507,7 +4512,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			}
 		}
 
-		if (hname) {
+		if (!viabfq && hname) {
 			char *cfg;
 			
 			cfg = get_clientconfig(hname, clientclass, clientos);
@@ -4524,7 +4529,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	else if (strncmp(msg->buf, "clientlog ", 10) == 0) {
 		char *hostname, *p;
 		xtreePos_t hosthandle;
-		if (!viabfq && !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
+		if (viabfq || !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + strlen("clientlog"); p += strspn(p, "\t ");
 		hostname = p; p += strcspn(p, "\t "); if (*p) { *p = '\0'; p++; }
@@ -4583,7 +4588,8 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		}
 	}
 	else if (strncmp(msg->buf, "ghostlist", 9) == 0) {
-		if (viabfq || oksender(wwwsenders, NULL, msg->sender, msg->buf)) {
+		/* NB: inverted */
+		if (!viabfq && oksender(wwwsenders, NULL, msg->sender, msg->buf)) {
 			xtreePos_t ghandle;
 			ghostlist_t *gwalk;
 			strbuffer_t *resp;
@@ -4608,7 +4614,8 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	}
 
 	else if (strncmp(msg->buf, "multisrclist", 12) == 0) {
-		if (viabfq || oksender(wwwsenders, NULL, msg->sender, msg->buf)) {
+		/* NB: inverted */
+		if (!viabfq && oksender(wwwsenders, NULL, msg->sender, msg->buf)) {
 			xtreePos_t mhandle;
 			multisrclist_t *mwalk;
 			strbuffer_t *resp;
@@ -4636,6 +4643,8 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		senderstats_t *rec;
 		strbuffer_t *resp;
 		char msgline[1024];
+
+		if (viabfq || !oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		resp = newstrbuffer(0);
 

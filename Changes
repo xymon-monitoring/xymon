@@ -53,6 +53,8 @@ Changes from 4.3.x -> 4.4-alpha
 * xymond_history: rewrite file write section using posix instead of C
 * xymond_rrd: don't restat files and dirs on each message; only re-create on error
 * xymond_rrd: don't create a cachectl socket if we're not writing RRD files and/or not caching
+* Don't try to respond to messages sent via bfq (or when a response is impossible, like via
+  a scheduled task) (From "can_respond" patch, by Franco Gasperino)
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)
