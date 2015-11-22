@@ -4,6 +4,7 @@ xymon (4.3.24) stable; urgency=high
    * rev XXXX
 
    * Fix occasional crash in xymond when handling group names (Thanks, Franco Gasperino)
+   * Fix non-special HTTP 1xx/3xx status codes red instead of yellow >.<
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>
 
