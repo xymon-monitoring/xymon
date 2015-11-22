@@ -258,6 +258,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
 
+	if (use_rrd_cache && !no_rrd) {
 	/* Setup the control socket that receives cache-flush commands */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
 	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
@@ -276,6 +277,11 @@ int main(int argc, char *argv[])
 	/* Linux obeys filesystem permissions on the socket file, so make it world-accessible */
 	if (chmod(ctlsockaddr.sun_path, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) == -1) {
 		errprintf("Setting permissions on cache-control socket failed: %s\n", strerror(errno));
+	}
+	}
+	else {
+		checkctltime = 2147483640;	/* far into the future */
+		ctlsocket = -1;
 	}
 
 	/* Load the RRD definitions */
@@ -477,8 +483,10 @@ int main(int argc, char *argv[])
 	shutdown_extprocessor();
 
 	/* Close the control socket */
-	close(ctlsocket);
-	unlink(ctlsockaddr.sun_path);
+	if (ctlsocket != -1 ) {
+		close(ctlsocket);
+		unlink(ctlsockaddr.sun_path);
+	}
 
 	sendmessage_finish_local();
 
