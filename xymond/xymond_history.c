@@ -15,12 +15,17 @@
 
 static char rcsid[] = "$Id$";
 
+/* For pread()/pwrite() - try not to go backwards though */
+#define _XOPEN_SOURCE 700
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <signal.h>
 #include <dirent.h>
@@ -191,7 +196,7 @@ int main(int argc, char *argv[])
 		char *statusdata = "";
 		char *hostname, *hostnamecommas, *testname, *dismsg, *modifiers;
 		time_t tstamp, lastchg, disabletime, clienttstamp;
-		int tstamp_i, lastchg_i;
+		int tstamp_i, lastchg_i, dur_i;
 		int newcolor, oldcolor;
 		int downtimeactive;
 		struct tm tstamptm;
@@ -272,23 +277,40 @@ int main(int argc, char *argv[])
 
 			if (save_statusevents) {
 				char statuslogfn[PATH_MAX];
-				int logexists;
-				FILE *statuslogfd;
-				char oldcol[100];
-				char timestamp[40];
+				int statuslogfd;
+				char histcol[15];
+				char oldtimestamp[40];
+				char newtimestamp[40];
 				struct stat st;
+				char *newrec = (char *)malloc(1023);
 
 				MEMDEFINE(statuslogfn);
-				MEMDEFINE(oldcol);
-				MEMDEFINE(timestamp);
+				MEMDEFINE(histcol);
+				MEMDEFINE(oldtimestamp);
+				MEMDEFINE(newtimestamp);
 
 				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
-				stat(statuslogfn, &st);
-				statuslogfd = fopen(statuslogfn, "r+");
-				logexists = (statuslogfd != NULL);
-				*oldcol = '\0';
+				statuslogfd = open(statuslogfn, O_RDWR);
+				*histcol = '\0';
 
-				if (logexists) {
+				if (statuslogfd == -1) {
+					/*
+					 * Logfile does not exist.
+					 */
+					lastchg = tstamp;
+					statuslogfd = open(statuslogfn, O_RDWR|O_CREAT|O_APPEND, 00644);
+					if (statuslogfd == -1) {
+						errprintf("Cannot create status historyfile '%s' : %s\n", 
+							statuslogfn, strerror(errno));
+						MEMUNDEFINE(oldtimestamp);
+						MEMUNDEFINE(newtimestamp);
+						MEMUNDEFINE(histcol);
+						MEMUNDEFINE(statuslogfn);
+						continue;
+					}
+				}
+
+				{
 					/*
 					 * There is a fair chance xymond has not been
 					 * running all the time while this system was monitored.
@@ -298,116 +320,114 @@ int main(int argc, char *argv[])
 					 * standard bbd to xymond.
 					 */
 					off_t pos = -1;
+					ptrdiff_t len = 0;
+					int gotit = 0;
+					struct tm oldtm;
 					char l[1024];
-					int gotit;
 
 					MEMDEFINE(l);
 
-					fseeko(statuslogfd, 0, SEEK_END);
-					if (ftello(statuslogfd) > 512) {
-						/* Go back 512 from EOF, and skip to start of a line */
-						fseeko(statuslogfd, -512, SEEK_END);
-						gotit = (fgets(l, sizeof(l)-1, statuslogfd) == NULL);
+					/* Go back 64 from EOF, and skip to start of a line */
+					pos = lseek(statuslogfd, -(off_t)64, SEEK_END);
+					if (pos != (off_t)-1 ) gotit = ( pread(statuslogfd, l, sizeof(l)-1, pos) > 0 );
+					else {
+						if (errno != EINVAL) errprintf("Unexpected error reading back from %s: %s\n", statuslogfn, strerror(errno));
+						/* Read from beginning of file */
+						dbgprintf(" - position was -1, reading from beginning of file\n");
+						pos = lseek(statuslogfd, (off_t)0, SEEK_SET);
+						if (pos != (off_t)-1 ) gotit = ( pread(statuslogfd, l, sizeof(l)-1, pos) > 0 );
+						else errprintf("Unexpected error reading anything from %s: %s\n", statuslogfn, strerror(errno));
+					}
+
+					if (gotit) {
+						gotit = 0;
+
+						char *p;
+						/* get the last (partial) line in the buf */
+						p = strrchr(l, '\n');
+						// dbgprintf(" -- file history buffer (%d chars): %s\n -- end buffer\n", strlen(l), l);
+						/* Skip past the newline, but only if we got something. */
+						/* A file with a single entry will have no '\n' yet */
+						if (p) p++;
+						else p = l;
+
+							/* track this so we now how far ahead to move in the file */
+							len = (p - l);
+							// dbgprintf(" -- final line of %d chars (calculated size before: %d): %s\n", strlen(p), len, p);
+
+							/* Sun Oct 10 06:49:42 2004 red   1097383782 602 */
+							if ((strlen(p) > 24) && 
+							    (sscanf(p+24, " %s %d %d", histcol, &lastchg_i, &dur_i) == 2) &&
+							    (parse_color(histcol) != -1)) {
+								/* 
+								 * Not garbage - move start location of the line
+								 */
+								// dbgprintf(" should move ahead %d bytes after finding '%s'\n", len, p)
+								//// pos = lseek(statuslogfd, (off_t)len, SEEK_CUR);
+								lastchg = lastchg_i;
+								gotit = 1;
+							}
+					}
+
+					if ((strcmp(histcol, colorname(newcolor)) == 0) && (newcolor == oldcolor)  ) {
+						/* We won't update history unless the color did change. */
+						if (pastinitial || debug) errprintf("Will not update %s - color unchanged from disk (%s)\n", statuslogfn, histcol);
+						if (statuslogfd) close(statuslogfd);
+
+						if (hostnamecommas) xfree(hostnamecommas);
+
+						MEMUNDEFINE(statuslogfn);
+						MEMUNDEFINE(histcol);
+						MEMUNDEFINE(oldtimestamp);
+						MEMUNDEFINE(newtimestamp);
+						MEMUNDEFINE(l);
+
+						continue;
+					}
+
+					if (gotit) {
+						if (len) {
+							dbgprintf(" moving ahead %d bytes after finding '%s'\n", len, p)
+							pos = lseek(statuslogfd, (off_t)len, SEEK_CUR);
+						}
+						else dbgprintf(" position at beginning of file and only a single line -- no seek needed\n");
 					}
 					else {
-						/* Read from beginning of file */
-						fseeko(statuslogfd, 0, SEEK_SET);
-						gotit = 0;
-					}
-
-
-					while (!gotit) {
-						off_t tmppos = ftello(statuslogfd);
-						int dur_i;
-
-						if (fgets(l, sizeof(l)-1, statuslogfd)) {
-							/* Sun Oct 10 06:49:42 2004 red   1097383782 602 */
-
-							if ((strlen(l) > 24) && 
-							    (sscanf(l+24, " %s %d %d", oldcol, &lastchg_i, &dur_i) == 2) &&
-							    (parse_color(oldcol) != -1)) {
-								/* 
-								 * Record the start location of the line
-								 */
-								pos = tmppos;
-								lastchg = lastchg_i;
-							}
-						}
-						else {
-							gotit = 1;
-						}
-					}
-
-					if (pos == -1) {
 						/* 
 						 * Couldnt find anything in the log.
 						 * Take lastchg from the timestamp of the logfile,
 						 * and just append the data.
 						 */
+						fstat(statuslogfd, &st);
 						lastchg = st.st_mtime;
-						fseeko(statuslogfd, 0, SEEK_END);
-					}
-					else {
-						/*
-						 * lastchg was updated above.
-						 * Seek to where the last line starts.
-						 */
-						fseeko(statuslogfd, pos, SEEK_SET);
+						pos = lseek(statuslogfd, (off_t)0, SEEK_END);
 					}
 
-					MEMUNDEFINE(l);
-				}
-				else {
-					/*
-					 * Logfile does not exist.
-					 */
-					lastchg = tstamp;
-					statuslogfd = fopen(statuslogfn, "a");
-					if (statuslogfd == NULL) {
-						errprintf("Cannot open status historyfile '%s' : %s\n", 
-							statuslogfn, strerror(errno));
-					}
-				}
-
-				if (strcmp(oldcol, colorname(newcolor)) == 0) {
-					/* We wont update history unless the color did change. */
-					if ((gettimer() - starttime) > 300) {
-						errprintf("Will not update %s - color unchanged (%s)\n", 
-							  statuslogfn, oldcol);
-					}
-
-					if (hostnamecommas) xfree(hostnamecommas);
-					if (statuslogfd) fclose(statuslogfd);
-
-					MEMUNDEFINE(statuslogfn);
-					MEMUNDEFINE(oldcol);
-					MEMUNDEFINE(timestamp);
-
-					continue;
-				}
-
-				if (statuslogfd) {
-					if (logexists) {
-						struct tm oldtm;
-
-						/* Re-print the old record, now with the final duration */
-						memcpy(&oldtm, localtime(&lastchg), sizeof(oldtm));
-						strftime(timestamp, sizeof(timestamp), "%a %b %e %H:%M:%S %Y", &oldtm);
-						fprintf(statuslogfd, "%s %s %d %d\n", 
-							timestamp, oldcol, (int)lastchg, (int)(tstamp - lastchg));
-					}
+					/* Re-print the old record, now with the final duration */
+					memcpy(&oldtm, localtime(&lastchg), sizeof(oldtm));
+					strftime(oldtimestamp, sizeof(oldtimestamp), "%a %b %e %H:%M:%S %Y", &oldtm);
 
 					/* And the new record. */
 					memcpy(&tstamptm, localtime(&tstamp), sizeof(tstamptm));
-					strftime(timestamp, sizeof(timestamp), "%a %b %e %H:%M:%S %Y", &tstamptm);
-					fprintf(statuslogfd, "%s %s %d", timestamp, colorname(newcolor), (int)tstamp);
+					strftime(newtimestamp, sizeof(newtimestamp), "%a %b %e %H:%M:%S %Y", &tstamptm);
 
-					fclose(statuslogfd);
+					snprintf(newrec, 1023, "%s %s %d %d\n%s %s %d", 
+						oldtimestamp, histcol, (int)lastchg, (int)(tstamp - lastchg),
+						newtimestamp, colorname(newcolor), (int)tstamp );
+					dbgprintf(" - writing out to file: '%s'\n", newrec);
+					// strncpy(l, newrec, sizeof(neww)-1);
+					if (write(statuslogfd, newrec, strlen(newrec)+1 ) == -1) errprintf("Error writing to '%s': %s\n", statuslogfn, strerror(errno));
+
+					if (close(statuslogfd) == -1) errprintf("Error closing '%s': %s\n", statuslogfn, strerror(errno));
 				}
 
 				MEMUNDEFINE(statuslogfn);
-				MEMUNDEFINE(oldcol);
-				MEMUNDEFINE(timestamp);
+				MEMUNDEFINE(histcol);
+				MEMUNDEFINE(oldtimestamp);
+				MEMUNDEFINE(newtimestamp);
+				MEMUNDEFINE(l);
+				xfree(newrec);
+
 			}
 
 			if (save_histlogs && saveit->saveit && !logdirfull) {
