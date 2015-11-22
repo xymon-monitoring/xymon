@@ -191,6 +191,7 @@ int main(int argc, char *argv[])
 	char *exthandler = NULL;
 	char *extids = NULL;
 	char *processor = NULL;
+	time_t now;
 	struct sockaddr_un ctlsockaddr;
 	int ctlsocket;
 	int usebackfeedqueue = 0;
@@ -243,6 +244,11 @@ int main(int argc, char *argv[])
 
 	/* Do the network stuff if needed */
 	net_worker_run(ST_RRD, LOC_STICKY, update_locator_hostdata);
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	load_client_config(NULL);
+	now = gettimer();
+	reloadtime = now + 600;
+
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
@@ -290,7 +296,6 @@ int main(int argc, char *argv[])
                 ssize_t n;
 		char ctlbuf[PATH_MAX];
 		int gotcachectlmessage;
-		time_t now;
 
 		/* If we need to re-open our external processor, do so */
 		if (reloadextprocessor) {

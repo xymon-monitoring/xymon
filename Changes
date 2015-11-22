@@ -43,6 +43,7 @@ Changes from 4.3.x -> 4.4-alpha
   -- hosts.cfg file could be different
 * sendmsg: Don't block when posting to BFQ. Retry locally; attempt to recover if 
   given EIDRM (bfq channel went away)
+* xymond_rrd: Load hostnames and configuration earlier in the startup process
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)
