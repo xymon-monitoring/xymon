@@ -119,6 +119,48 @@ void errormsg(char *msg)
 	exit(1);
 }
 
+#if defined(RRDTOOL14)
+void rrd_cached_flush(char *hostname)
+{
+	/* Build a cache-flush request, and send it rrdtool or rrdcached */
+	DIR *dirHandle;
+	struct dirent * dirEntry;
+	char dirName[PATH_MAX];
+	char fileName[PATH_MAX];
+	char *flush_args[2];
+	int i, len;
+
+	flush_args[0] = "rrd_flushcached";
+	// flush_args[1] = "--daemon";
+	// flush_args[2] = getenv("RRDCACHED_ADDRESS"); // prerequisite
+	flush_args[1] = fileName;
+	
+	/* get this host's RRD directory */
+	snprintf(dirName, sizeof(dirName), "%s/%s", xgetenv("XYMONRRDS"), hostname);
+
+	/* now iterate all the rrd files in this directory */
+	dirHandle = opendir(dirName);
+	if (!dirHandle) {
+		if (errno != ENOENT) errprintf("showgraph: could not open %s: %s\n", dirName, strerror(errno));
+		return;
+	}
+
+	for (i = 1; (dirEntry = readdir(dirHandle)) && (i < 24); i++)
+	{
+		len = strlen(dirEntry->d_name);
+		if ((len < 4) || strcmp(dirEntry->d_name + len - 4, ".rrd") != 0) continue;
+
+		/* create final filename */
+		snprintf(fileName, sizeof(fileName), "%s/%s", hostname, dirEntry->d_name);
+		dbgprintf(" - found an RRD file to ask to be flushed: %s\n", fileName);
+
+		/* and flush */
+		rrd_flushcached(2, flush_args);
+	}
+	closedir(dirHandle);
+}
+#endif
+
 void request_cacheflush(char *hostname)
 {
 	/* Build a cache-flush request, and send it to all of the $XYMONTMP/rrdctl.* sockets */
@@ -179,6 +221,17 @@ void request_cacheflush(char *hostname)
 	}
 	closedir(dir);
 	xfree(req);
+
+	/* If using rrdcached, send that a flush request as well 
+	 * Note: It's possible you might be using two layers of caching here (xymond_rrd's
+	 * as well as the rrdtool caching daemon. Send ours first to give it a chance to
+	 * perhaps send it off to the daemon first.
+	 *
+	 * This variable can be controlled independently in ~/etc/cgioptions.cfg.
+	 */
+#if defined(RRDTOOL14)
+	if ((getenv("RRDCACHED_ADDRESS") != NULL) && (strlen(getenv("RRDCACHED_ADDRESS")) > 0)) rrd_cached_flush(hostname);
+#endif
 
 	/*
 	 * Sleep 0.3 secs to allow the cache flush to happen.

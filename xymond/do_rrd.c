@@ -38,6 +38,7 @@ static char rcsid[] = "$Id$";
 extern int seq;	/* from xymond_rrd.c */
 
 char *rrddir = NULL;
+int ext_rrd_cache = 0;		/* Has external rrdcached running */
 int use_rrd_cache = 1;         /* Use the cache by default */
 int no_rrd = 0;                /* Write to rrd by default */
 
@@ -221,7 +222,7 @@ static void setupinterval(int intvl)
 	rrdinterval = (intvl ? intvl : DEFAULT_RRD_INTERVAL);
 }
 
-static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
+static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata, int dosync)
 {
 	/* Flush any updates we've cached */
 	char *updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
@@ -253,9 +254,11 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	/*
 	 * RRDtool 1.2+ uses mmap'ed I/O, but the Linux kernel does not update timestamps when
 	 * doing file I/O on mmap'ed files. This breaks our check for stale/nostale RRD's.
-	 * So do an explicit timestamp update on the file here.
+	 * So do an explicit timestamp update on the file here if we're doing this on request
+	 * for a user and ultimately responsible for the file, instead of just basic periodic 
+	 * flushing or sending it over to a later cache like rrdcached.
 	 */
-	utimes(filedir, NULL);
+	if (dosync && !ext_rrd_cache) utimes(filedir, NULL);
 #endif
 
 	/* Clear the cached data */
@@ -509,7 +512,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	else callcounter = 0;
 
 	/* At this point, we will commit the update to disk */
-	result = flush_cached_updates(cacheitem, rrdvalues);
+	result = flush_cached_updates(cacheitem, rrdvalues, 0);
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
@@ -547,7 +550,7 @@ void rrdcacheflushall(void)
 		cacheitem = (updcacheitem_t *) xtreeData(updcache, handle);
 		if (cacheitem->valcount > 0) {
 			sprintf(filedir, "%s%s", rrddir, cacheitem->key);
-			flush_cached_updates(cacheitem, NULL);
+			flush_cached_updates(cacheitem, NULL, 0);
 		}
 	}
 }
@@ -599,7 +602,7 @@ void rrdcacheflushhost(char *hostname)
 			if (cacheitem->valcount > 0) {
 				dbgprintf("Flushing cache '%s'\n", cacheitem->key);
 				sprintf(filedir, "%s%s", rrddir, cacheitem->key);
-				flush_cached_updates(cacheitem, NULL);
+				flush_cached_updates(cacheitem, NULL, 1);
 			}
 			/* Fall through */
 

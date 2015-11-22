@@ -219,6 +219,12 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-cache") == 0) {
 			use_rrd_cache = 0;
 		}
+		else if (strcmp(argv[argi], "--extcache") == 0) {
+			ext_rrd_cache = 1;
+		}
+		else if (strcmp(argv[argi], "--no-extcache") == 0) {
+			ext_rrd_cache = -1;
+		}
 		else if (strcmp(argv[argi], "--no-rrd") == 0) {
 			no_rrd = 1;
 		}
@@ -237,6 +243,10 @@ int main(int argc, char *argv[])
 	if ((rrddir == NULL) && xgetenv("XYMONRRDS")) {
 		rrddir = strdup(xgetenv("XYMONRRDS"));
 	}
+
+	/* Has external rrdcached running? Use env by default */
+	ext_rrd_cache = ((ext_rrd_cache >= 0) ? (getenv("RRDCACHED_ADDRESS") != NULL) : 0); 
+	dbgprintf("xymond_rrd: External cache: %d\n", ext_rrd_cache);
 
 	if (exthandler && extids) setup_exthandler(exthandler, extids);
 

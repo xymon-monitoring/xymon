@@ -14,6 +14,8 @@ Changes from 4.3.x -> 4.4-alpha
 * FIXME-doc: Add hidden tunables for controlling flushing to the external RRD processor
   Set RRD_EXTPROC_DOFLUSH to flush after every processed message (which could be multiple 
   lines). Set RRD_EXTPROC_BUFSIZ to control buffer size (similar to BUFSIZ)
+* FIXME-doc: Experimental support for rrdcached (requires rrdtoool 1.5 or higher) (Thanks, Martin Sperl)
+
 
 * Performance optimizations / bug fixes with POSIX btree usage
 * Performance improvements within xymond_rrd

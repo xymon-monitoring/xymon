@@ -1,10 +1,10 @@
 include Makefile.$(OS)
 
 test-compile:
-	@$(CC) $(CFLAGS) $(RRDDEF) $(RRDINC) -o test-rrd.o -c test-rrd.c
+	@$(CC) $(CFLAGS) $(RRDDEF) $(RRDINC) -Wall -Werror -o test-rrd.o -c test-rrd.c
 
 test-link:
-	@$(CC) $(CFLAGS) $(RRDDEF) $(RRDLIB) -o test-rrd test-rrd.o -lrrd $(PNGLIB)
+	@$(CC) $(CFLAGS) $(RRDDEF) $(RRDLIB) -Wall -Werror -o test-rrd test-rrd.o -lrrd $(PNGLIB)
 
 clean:
 	@rm -f test-rrd.o test-rrd xymongen.png

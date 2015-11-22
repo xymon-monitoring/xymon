@@ -24,8 +24,12 @@ int main(int argc, char *argv[])
 
 	for (pcount = 0; (rrdargs[pcount]); pcount++);
 	rrd_clear_error();
+#ifdef RRDTOOL14
+	result = rrd_flushcached(pcount, rrdargs); printf("%d", result);
+#endif
+	rrd_clear_error();
 #ifdef RRDTOOL12
-	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
+	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax); printf("%d", result);
 #else
 	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize);
 #endif
