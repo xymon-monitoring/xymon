@@ -1,0 +1,11 @@
+include Makefile.$(OS)
+
+test-compile:
+	@$(CC) $(CFLAGS) $(LZOINC) -o test-lzo.o -c test-lzo.c
+
+test-link:
+	@$(CC) $(CFLAGS) $(LZOLIB) -o test-lzo test-lzo.o -llzo2
+
+clean:
+	@rm -f test-lzo.o test-lzo
+

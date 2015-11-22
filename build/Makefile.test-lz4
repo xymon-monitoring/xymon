@@ -1,0 +1,11 @@
+include Makefile.$(OS)
+
+test-compile:
+	@$(CC) $(CFLAGS) $(LZ4INC) -o test-lz4.o -c test-lz4.c
+
+test-link:
+	@$(CC) $(CFLAGS) $(LZ4LIB) -o test-lz4 test-lz4.o -llz4
+
+clean:
+	@rm -f test-lz4.o test-lz4
+

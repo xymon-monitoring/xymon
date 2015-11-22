@@ -14,12 +14,24 @@
 extern char *compressionmarker;
 extern int  compressionmarkersz;
 
+enum compressiontype_t { COMP_ZLIB, COMP_LZO, COMP_LZ4, COMP_LZ4HC, COMP_GZIP, COMP_PLAIN, COMP_UNKNOWN } ;
+extern int enablecompression;
+extern enum compressiontype_t defaultcompression;
+extern enum compressiontype_t parse_compressiontype(char *c);
+extern const char * comptype2str(enum compressiontype_t ctype);
+
+extern strbuffer_t *uncompress_message(enum compressiontype_t ctype, const char *datasrc, size_t datasz, size_t expandedsz, strbuffer_t *deststrbuffer, void *buffermemory);
+
 extern void *uncompress_stream_init(void);
-extern strbuffer_t *uncompress_stream_data(void *s, char *cmsg, int clen);
+extern strbuffer_t *uncompress_stream_data(void *s, char *cmsg, size_t clen);
 extern void uncompress_stream_done(void *s);
 
-extern strbuffer_t *uncompress_buffer(char *msg, int msglen, char *prestring);
-extern strbuffer_t *compress_buffer(char *msg, int msglen);
+extern strbuffer_t *uncompress_to_my_buffer(const char *msg, size_t msglen, strbuffer_t *buf);
+extern strbuffer_t *uncompress_buffer(const char *msg, size_t msglen, char *prestring);
+
+
+extern strbuffer_t *compress_message_to_strbuffer(enum compressiontype_t ctype, const char *datasrc, size_t datasz, strbuffer_t *deststrbuffer, void *buffermemory);
+extern strbuffer_t *compress_buffer(strbuffer_t *cmsg, char *msg, size_t msglen);
 
 #endif
 

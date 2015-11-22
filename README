@@ -54,6 +54,15 @@ wishlist at http://www.amazon.co.uk/ - just search for
 my mail-address (henrik@hswn.dk). A contribution in the 
 form of a book, CD or DVD is appreciated.
 
+The following files are distributed with Xymon and used by 
+Xymon, but written by others and are licensed under the GPL:
+
+* minilzo-2.09.tar.gz (SHA1: 32d43a04d16da65258427d978960ecf1bf751ec1)
+  Author: Markus Franz Xaver Johannes Oberhumer <markus@oberhumer.com>
+  Files: lib/minilzo.c, lib/minilzo.h, lib/lzoconf.h, lib/lzodefs.h
+  See the file 'README.LZO' for more information.
+
+
 The following files are distributed with Xymon and used
 by Xymon, but written by others and are NOT licensed under the GPL:
 
@@ -71,6 +80,11 @@ by Xymon, but written by others and are NOT licensed under the GPL:
   in Xymon was taken from the "mutt" mail client sources, so 
   some changes were done by Thomas Roessler <roessler@does-not-exist.org>.
 
+* The build/test-lz4.c file is originally written by Takayuki Matsuoka and
+  is under a BSD license. The file was originally named blockStreaming_lineByLine.c
+  and was taken from the lz4 sources 'examples' directory at 
+  https://github.com/Cyan4973/lz4/
+  
 
 Support
 -------

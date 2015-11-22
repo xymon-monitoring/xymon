@@ -1,0 +1,79 @@
+Compression in Xymon
+====================
+
+** DRAFT DOCUMENT **
+
+
+Xymon can be configured to compress messages upon transmission and
+uncompressed by xymond upon receipt. There is a choice of various
+compression algorithms with have varying tradeoffs for speed and
+efficiency. It's important to note that xymond MUST be compiled with
+support for the algorithm in question in order to understand a 
+message compressed with that by the client.
+
+Packagers: It is recommended to compile the xymon server with 
+support for all available compression libraries on your system.
+
+
+The available compression algorithms are:
+
+* LZO
+  This is the default compression algorithm in the 4.4 branch. It 
+  provides reasonable compression ratios, but fast compression and
+  very fast decompression. If the LZO libraries are not installed 
+  on your system (available at http://www.oberhumer.com/opensource/lzo/)
+  then the "minilzo" files will be included automatically. All 
+  versions of xymon 4.4 and beyond support this algorithm.
+
+* ZLIB
+  zlib (aka gzip/deflate) provides high compression ratios but 
+  relatively slow decompression. The 'zlib' library is installed 
+  virtually everywhere, and messages sent with zlib will be 
+  readable by the previous 'trunk' version of xymon 5. Due to
+  the high CPU cost of decompression, it should not be used to send
+  high volumes of messages to very heavily loaded xymon servers.
+
+* LZ4/LZ4HC
+  LZ4 is a new compression algorithm based on the LZ work but 
+  optimized for decompression efficiency. It has two variants, 
+  a regular and a high-compression mode. The regular mode achieves 
+  good compression and very fast decompression. It is recommended
+  as the default on high volume xymonnet systems wishing to achieve
+  high concurrency while not overloading the destination xymon server.
+
+  LZ4HC is the same algorithm, but sacrifices local speed for near-zlib
+  quality compression ratios but maintaining extremely fast decompression.
+  This is the recommended compression algorithm for 'xymon' clients.
+
+* PLAIN
+  No compression, but wraps the message in a compression header. Use
+  for testing.
+
+
+
+At the moment, decompression is only performed by the xymond server.
+An intermediary xymonproxy system will not analyze or decompress a 
+message payload, although this may change in the future.
+
+THE QUESTION OF WHETHER MESSAGES NEEDING A RESPONSE MAY BE COMPRESSED 
+IS UNDECIDED AND MAY CHANGE. Currently, xymonproxy treats compressed
+messages as one-way-only and the 'xymon' client will not compress 
+message types it expects a response for. This includes the 'client'
+message sent in by the normal xymonclient.sh
+
+
+
+The following refers to the Terabithia RPMs - not yet committed to 
+the 4.x branch.
+
+
+To enable compression with the 'xymon' binary, pass
+the --compress option. The default algorithm will be used, or you can
+specify one of the following: --compress=[lzo | zlib | lz4 | lz4hc | plain]
+
+At the moment, to force any other binary to compress (eg, xymonnet, 
+xymond_client) you must set the XYMON_COMPRESS=1 environment variable. 
+To specify a compression algorithm, pass XYMON_COMPTYPE=lz4hc
+
+To control some binaries but not others, use the 'env' command in the
+CMD line in tasks.cfg
