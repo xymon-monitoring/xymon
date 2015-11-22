@@ -73,7 +73,7 @@ install-server: build install-clean
 	# This needs root
 	chmod 4755 $S/usr/lib/xymon/server/bin/xymonping
 	mv $S/etc/xymon/xymon-apache.conf \
-		$S/etc/apache2/conf.d/xymon
+		$S/etc/apache2/conf-available/xymon.conf
 	# Make xymonserver.cfg use the settings we have configured during installation
 	echo "include /etc/default/xymon-client" > $S/etc/xymon/xymonserver.cfg.debian
 	sed -f debian/xymonserver-setup.sed $S/etc/xymon/xymonserver.cfg >> $S/etc/xymon/xymonserver.cfg.debian
