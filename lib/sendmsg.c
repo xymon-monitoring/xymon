@@ -617,7 +617,7 @@ void sendmessage_finish_local(void)
 
 sendresult_t sendmessage_local(char *msg)
 {
-	int n, done = 0;
+	int n, done = 0, tries = 0;
 	#if defined(__OpenBSD__) || defined(__dietlibc__)
 		unsigned long msglen;
 	#else
@@ -636,14 +636,24 @@ sendresult_t sendmessage_local(char *msg)
 		msglen = max_backfeedsz;
 	}
 
-	/* This will block if queue is full, but that is OK */
+	/* Retry a few times if not immediately available, otherwise return error */
 	do {
-		n = msgsnd(backfeedqueue, msg, msglen+1, 0);
-		if ((n == 0) || ((n == -1) && (errno != EINTR))) done = 1;
-	} while (!done);
+		n = msgsnd(backfeedqueue, msg, msglen, IPC_NOWAIT);
+		if ((n == 0) || ((n == -1) && (errno != EINTR) && (errno != EAGAIN))) done = 1;
+	} while (!done && (tries++ < SENDRETRIES));
 
 	if (n == -1) {
-		errprintf("Sending via backfeed channel failed: %s\n", strerror(errno));
+		errprintf("Sending %d bytes via backfeed channel failed: %s\n", msglen, strerror(errno));
+		if (errno == EIDRM) {
+			int newqueue = setup_feedback_queue(CHAN_CLIENT);
+			if (newqueue != -1) {
+				backfeedqueue = newqueue;
+				/* Try one more time */
+				n = msgsnd(backfeedqueue, msg, msglen, IPC_NOWAIT);
+				if (n != -1) return XYMONSEND_OK;
+			}
+			else errprintf("Scan for new BFQ identifier unsuccessful; will try again\n");
+		}
 		return XYMONSEND_ECONNFAILED;
 	}
 

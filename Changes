@@ -40,6 +40,8 @@ Changes from 4.3.x -> 4.4-alpha
 * xymond_alert: Add --loadhostsfromxymond option, and exit if xymond is unavailable
 * xymonnet/loadhosts: Don't fail back to file load if --loadhostsfromxymond is given
   -- hosts.cfg file could be different
+* sendmsg: Don't block when posting to BFQ. Retry locally; attempt to recover if 
+  given EIDRM (bfq channel went away)
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)
