@@ -15,6 +15,7 @@ Changes from 4.3.x -> 4.4-alpha
   Set RRD_EXTPROC_DOFLUSH to flush after every processed message (which could be multiple 
   lines). Set RRD_EXTPROC_BUFSIZ to control buffer size (similar to BUFSIZ)
 * FIXME-doc: Experimental support for rrdcached (requires rrdtoool 1.5 or higher) (Thanks, Martin Sperl)
+* The first line of a status message (beginning at the color indicator) is now limited to 255 characters
 
 
 * Performance optimizations / bug fixes with POSIX btree usage
@@ -55,7 +56,12 @@ Changes from 4.3.x -> 4.4-alpha
 * xymond_rrd: don't create a cachectl socket if we're not writing RRD files and/or not caching
 * Don't try to respond to messages sent via bfq (or when a response is impossible, like via
   a scheduled task) (From "can_respond" patch, by Franco Gasperino)
-
+* Significant optimizations in channel posting:
+  - Keep track of written bytes when posting to channel so we don't have to strncat (perf1)
+  - Combine snprintfs, except for modifier strings (perf2)
+  - Pre-load the nl-encoded version of the current modifiers and store in the log record,
+    to combine posttochannel loads into a single snprintf (perf3)
+  - Pre-calculate the line1 field since it's so frequently used (perf4)
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)
 ===========================================

@@ -69,6 +69,9 @@ static char rcsid[] = "$Id$";
 /* How much the input buffer grows per re-allocation */
 #define XYMON_INBUF_INCREMENT (32*1024)
 
+/* How long can the first line of a status message be? This is for the copy statically copied */
+#define MAXLINE1SIZE 255
+
 /* How long to keep an ack after the status has recovered */
 #define ACKCLEARDELAY 720 /* 12 minutes */
 
@@ -124,11 +127,13 @@ typedef struct xymond_log_t {
 	time_t redstart, yellowstart;
 	int maxackedcolor;	/* The most severe color that has been acked */
 	unsigned char *message;
-	int msgsz;
+	unsigned char *line1;	/* The first line of the message, starting with color */
+	size_t msgsz;
 	unsigned char *dismsg, *ackmsg;
 	char *cookie;
 	time_t cookieexpires;
 	struct modifier_t *modifiers;
+	char  *modifierbuf;	/* nl-encoded list of all modifier messages (needed on channel posts, so we need it cached) */
 	ackinfo_t *acklist;	/* Holds list of acks */
 	unsigned long statuschangecount;
 	struct xymond_log_t *next;
@@ -369,6 +374,9 @@ typedef struct hostfilter_rec_t {
 } hostfilter_rec_t;
 
 
+#define CHANNELTERMINATOR "\n@@\n"
+#define CHANNELTERMINATORLEN 4		/* Length NOT including the terminating '\0' */
+
 /* Statistics counters */
 unsigned long msgs_total = 0;
 unsigned long msgs_total_last = 0;
@@ -600,6 +608,8 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 	struct timezone tz;
 	int semerr = 0;
 	unsigned int bufsz = 1024*shbufsz(channel->channelid);
+	size_t bufmax = bufsz - CHANNELTERMINATORLEN - 1;	/* Terminating \0 */
+	size_t originalsize, byteswritten = 0;
 	void *hi;
 	char *pagepath, *classname, *osname;
 	time_t timeroffset = (getcurrenttime(NULL) - gettimer());
@@ -656,20 +666,21 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 	channel->msgcount++;
 	gettimeofday(&tstamp, &tz);
 	if (readymsg) {
-		n = snprintf(channel->channelbuf, (bufsz-5),
+		byteswritten = snprintf(channel->channelbuf, bufmax,
 			    "@@%s#%u/%s|%d.%06d|%s|%s", 
 			    channelmarker, channel->seq, 
 			    (hostname ? hostname : "*"), 
 			    (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 			    sender, readymsg);
-		if (n > (bufsz-5)) {
+		if (byteswritten > bufmax) {
 			char *p, *overmsg = readymsg;
 			*(overmsg+100) = '\0';
 			p = strchr(overmsg, '\n'); if (p) *p = '\0';
 			errprintf("Oversize %s msg from %s truncated (n=%d, limit %d)\nFirst line: %s\n", 
-				   channelmarker, sender, n, bufsz, overmsg);
+				   channelmarker, sender, byteswritten, bufsz, overmsg);
+			*(channel->channelbuf + bufmax) = '\0';
+			byteswritten = bufmax;
 		}
-		*(channel->channelbuf + bufsz - 5) = '\0';
 	}
 	else {
 		switch(channel->channelid) {
@@ -679,8 +690,8 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 			classname = (hi ? xmh_item(hi, XMH_CLASS) : "");
 			if (!classname) classname = "";
 
-			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%s|%d", 
+			byteswritten = snprintf(channel->channelbuf, bufmax,
+				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%s|%d|%d|%s|%d|%s|%d|%s|%s|%d|%s\n%s", 
 				channelmarker, channel->seq, hostname, 		/*  0 */
 				(int) tstamp.tv_sec, (int) tstamp.tv_usec,	/*  1 */
 				sender, 					/*  2 */
@@ -691,55 +702,27 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 				colnames[log->color], 				/*  7 */
 				(log->testflags ? log->testflags : ""),		/*  8 */
 				colnames[log->oldcolor], 			/*  9 */
-				(int) log->lastchange[0]); 			/* 10 */
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 11+12 */
-					(int)log->acktime, nlencode(log->ackmsg));
-			}
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 13+14 */
-					(int)log->enabletime, nlencode(log->dismsg));
-			}
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",	/* 15 */
-					(int)(log->host->clientmsgtstamp + timeroffset));
-			}
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", classname);	/* 16 */
-			}
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", pagepath);	/* 17 */
-			}
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",	/* 18 */
-					(int)log->flapping);
-			}
-			if (n < (bufsz-5)) {
-				modifier_t *mwalk;
+				(int) log->lastchange[0], 			/* 10 */
+				(int)log->acktime, nlencode(log->ackmsg),	/* 11+12 */
+				(int)log->enabletime, nlencode(log->dismsg),	/* 13+14 */
+				(int)(log->host->clientmsgtstamp + timeroffset), /* 15 */
+				classname,					/* 16 */
+				pagepath,					/* 17 */
+				(int)log->flapping,				/* 18 */
+				(log->modifiers ? log->modifierbuf : ""),	/* 19 */
+				msg);						/* 20 */
 
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
-				mwalk = log->modifiers;						/* 19 */
-				while ((n < (bufsz-5)) && mwalk) {
-					if (mwalk->valid > 0) {
-						n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
-								nlencode(mwalk->cause));
-					}
-					mwalk = mwalk->next;
-				}
-			}
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
-			}
-			if (n > (bufsz-5)) {
+			if (byteswritten > bufmax) {
 				errprintf("Oversize status msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, log->test->name, n, bufsz);
+					sender, hostname, log->test->name, byteswritten, bufsz);
+				*(channel->channelbuf + bufmax) = '\0';
+				byteswritten = bufmax;
 			}
-			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
 
 		  case C_STACHG:
-			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d", 
+			byteswritten = snprintf(channel->channelbuf, bufmax,
+				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%d|%s|%d|%d|%s\n%s", 
 				channelmarker, channel->seq, hostname, 		/*  0 */
 				(int) tstamp.tv_sec, (int) tstamp.tv_usec,	/*  1 */
 				sender,						/*  2 */ 
@@ -749,58 +732,38 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 				(int) log->validtime,				/*  6 */ 
 				colnames[log->color],				/*  7 */ 
 				colnames[log->oldcolor],			/*  8 */ 
-				(int) log->lastchange[0])			/*  9 */;
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 10+11 */
-					(int)log->enabletime, nlencode(log->dismsg));
-			}
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 	/* 12 */
-						log->downtimeactive);
-			}
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 	/* 13 */
-						(int) (log->host->clientmsgtstamp + timeroffset));
-			}
-			if (n < (bufsz-5)) {
-				modifier_t *mwalk;
+				(int) log->lastchange[0],			/*  9 */
+				(int)log->enabletime, nlencode(log->dismsg),	/* 10+11 */
+				log->downtimeactive,				/* 12 */
+				(int) (log->host->clientmsgtstamp + timeroffset), /* 13 */
+				(log->modifiers ? log->modifierbuf : ""),	/* 14 */
+				msg);						/* 15 */
 
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
-				mwalk = log->modifiers;						/* 14 */
-				while ((n < (bufsz-5)) && mwalk) {
-					if (mwalk->valid > 0) {
-						n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
-								nlencode(mwalk->cause));
-					}
-					mwalk = mwalk->next;
-				}
-			}
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
-			}
-			if (n > (bufsz-5)) {
+			if (byteswritten > bufmax) {
 				errprintf("Oversize stachg msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, log->test->name, n, bufsz);
+					sender, hostname, log->test->name, byteswritten, bufsz);
+				*(channel->channelbuf + bufmax) = '\0';
+				byteswritten = bufmax;
 			}
-			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
 
 		  case C_CLICHG:
-			n = snprintf(channel->channelbuf, (bufsz-5),
+			byteswritten = snprintf(channel->channelbuf, bufmax,
 				"@@%s#%u/%s|%d.%06d|%s|%s|%d\n%s",
 				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, hostname, (int) (log->host->clientmsgtstamp + timeroffset), 
 				totalclientmsg(log->host->clientmsgs));
-			if (n > (bufsz-5)) {
+			if (byteswritten > bufmax) {
 				errprintf("Oversize clichg msg from %s for %s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, n, bufsz);
+					sender, hostname, byteswritten, bufsz);
+				*(channel->channelbuf + bufmax) = '\0';
+				byteswritten = bufmax;
 			}
-			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
 
 		  case C_PAGE:
 			if (strcmp(channelmarker, "ack") == 0) {
-				n = snprintf(channel->channelbuf, (bufsz-5),
+				byteswritten = snprintf(channel->channelbuf, bufmax,
 					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d\n%s", 
 					channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 					sender, hostname, 
@@ -815,8 +778,8 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 				if (!classname) classname = "";
 				if (!osname) osname = "";
 
-				n = snprintf(channel->channelbuf, (bufsz-5),
-					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%s|%s|%s|%s", 
+				byteswritten = snprintf(channel->channelbuf, bufmax,
+					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%s|%s|%s|%s|%s\n%s", 
 					channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 					sender, hostname, 
 					log->test->name, log->host->ip, (int) log->validtime, 
@@ -824,31 +787,17 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 					pagepath, 
 					(log->cookie ? log->cookie : ""), 
 					osname, classname, 
-					(log->grouplist ? log->grouplist : ""));
-
-				if (n < (bufsz-5)) {
-					modifier_t *mwalk;
-
-					n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
-					mwalk = log->modifiers;
-					while ((n < (bufsz-5)) && mwalk) {
-						if (mwalk->valid > 0) {
-							n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
-									nlencode(mwalk->cause));
-						}
-						mwalk = mwalk->next;
-					}
-				}
-
-				if (n < (bufsz-5)) {
-					n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
-				}
+					(log->grouplist ? log->grouplist : ""),
+					(log->modifiers ? log->modifierbuf : ""),
+					msg
+				);
 			}
-			if (n > (bufsz-5)) {
+			if (byteswritten > bufmax) {
 				errprintf("Oversize page/ack/notify msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, (log->test->name ? log->test->name : "<none>"), n, bufsz);
+					sender, hostname, (log->test->name ? log->test->name : "<none>"), byteswritten, bufsz);
+				*(channel->channelbuf + bufmax) = '\0';
+				byteswritten = bufmax;
 			}
-			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
 
 		  case C_DATA:
@@ -858,16 +807,17 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 
 		  case C_NOTES:
 		  case C_USER:
-			n = snprintf(channel->channelbuf,  (bufsz-5),
+			byteswritten = snprintf(channel->channelbuf, bufmax,
 				"@@%s#%u/%s|%d.%06d|%s|%s\n%s", 
 				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, hostname, msg);
-			if (n > (bufsz-5)) {
+			if (byteswritten > bufmax) {
 				errprintf("Oversize %s msg from %s for %s truncated (n=%d, limit=%d)\n", 
 					((channel->channelid == C_NOTES) ? "notes" : "user"), 
-					sender, hostname, n, bufsz);
+					sender, hostname, byteswritten, bufsz);
+				*(channel->channelbuf + bufmax) = '\0';
+				byteswritten = bufmax;
 			}
-			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
 
 		  case C_ENADIS:
@@ -875,16 +825,17 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 				char *dism = "";
 
 				if (log->dismsg) dism = nlencode(log->dismsg);
-				n = snprintf(channel->channelbuf, (bufsz-5),
+				byteswritten = snprintf(channel->channelbuf, bufmax,
 						"@@%s#%u/%s|%d.%06d|%s|%s|%s|%d|%s",
 						channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
 						sender, hostname, log->test->name, (int) log->enabletime, dism);
-				if (n > (bufsz-5)) {
+				if (byteswritten > bufmax) {
 					errprintf("Oversize enadis msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-							sender, hostname, log->test->name, n, bufsz);
+							sender, hostname, log->test->name, byteswritten, bufsz);
+					*(channel->channelbuf + bufmax) = '\0';
+					byteswritten = bufmax;
 				}
 			}
-			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
 
 		  case C_FEEDBACK_QUEUE:
@@ -892,8 +843,13 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 			break;
 		}
 	}
+
 	/* Terminate the message */
-	strncat(channel->channelbuf, "\n@@\n", (bufsz-1));
+		// We don't actually need to do this now since we're memcpy'ing directly over the end
+		// *(channel->channelbuf + bufmax) = '\0';
+		// byteswritten = bufmax;
+	memcpy(channel->channelbuf+byteswritten, CHANNELTERMINATOR, CHANNELTERMINATORLEN);
+	*(channel->channelbuf + byteswritten + CHANNELTERMINATORLEN) = '\0';
 
 	/* Let the readers know it is there.  */
 	clients = semctl(channel->semid, CLIENTCOUNT, GETVAL); /* Get it again, maybe changed since last check */
@@ -1322,6 +1278,8 @@ void get_hts(char *msg, char *sender, char *origin,
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
+			lwalk->modifiers = NULL;
+			lwalk->modifierbuf = NULL;
 			lwalk->origin = owalk;
 			lwalk->next = hwalk->logs;
 			hwalk->logs = lwalk;
@@ -1505,9 +1463,12 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * Original status message - check if there is an active modifier for the color.
 		 * We don't do this for status changes triggered by a "modify" command.
 		 */
+		static strbuffer_t *modifierbuf;
 		modifier_t *mwalk;
 		modifier_t *mlast;
 		int mcolor = -1;
+
+		if (modifierbuf == NULL) modifierbuf = newstrbuffer(1024);
 
 		mlast = NULL;
 		mwalk = log->modifiers;
@@ -1532,10 +1493,16 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			}
 			else {
 				dbgprintf(" -- modifier color: %d\n", mwalk->color);
+				addtobuffer(modifierbuf, mwalk->cause);
 				if (mwalk->color > mcolor) mcolor = mwalk->color;
 				mlast = mwalk;
 				mwalk = mwalk->next;
 			}
+		}
+		if (STRBUFLEN(modifierbuf)) {
+			if (log->modifierbuf) xfree(log->modifierbuf);
+			log->modifierbuf = strdup(nlencode(STRBUF(modifierbuf)));
+			clearstrbuffer(modifierbuf);
 		}
 
 		/* If there was an active modifier, this overrides the current "newcolor" status value */
@@ -1765,7 +1732,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	}
 
 	if (msg != log->message) { /* They can be the same when called from handle_enadis() or check_purple_status() */
-		char *p;
+		char *p, *eoln = NULL;
 
 		/*
 		 * Note here:
@@ -1789,8 +1756,12 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			log->msgsz = msglen+1;
 		}
 
-		/* Get at the test flags. They are immediately after the color */
+		/* Isolate the first line and get at the test flags. They are immediately after the color */
+		if (log->line1 == NULL) log->line1 = malloc(MAXLINE1SIZE * sizeof(unsigned char) + 1);
+		eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
 		p = msg_data(msg, 0);
+		snprintf(log->line1, MAXLINE1SIZE, "%s", p);	/* even if null, we terminate here */
+		if (eoln) *eoln = '\n';
 		p += strlen(colorname(newcolor));
 
 		if (strncmp(p, " <!-- [flags:", 13) == 0) {
@@ -2450,9 +2421,10 @@ void free_log_t(xymond_log_t *zombie)
 		if (modtmp->cause) xfree(modtmp->cause);
 		xfree(modtmp);
 	}
-
+	if (zombie->modifierbuf) xfree(zombie->modifierbuf);
 	if (zombie->sender) xfree(zombie->sender);
 	if (zombie->message) xfree(zombie->message);
+	if (zombie->line1) xfree(zombie->line1);
 	if (zombie->dismsg) xfree(zombie->dismsg);
 	if (zombie->ackmsg) xfree(zombie->ackmsg);
 	if (zombie->grouplist) xfree(zombie->grouplist);
@@ -3323,13 +3295,7 @@ strbuffer_t *generate_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, xy
 		  case F_DISABLETIME: snprintf(l, sizeof(l), "%d", (int)lwalk->enabletime); addtobuffer(buf, l); break;
 		  case F_SENDER: addtobuffer(buf, lwalk->sender); break;
 		  case F_COOKIE: if (lwalk->cookie) addtobuffer(buf, lwalk->cookie); break;
-
-		  case F_LINE1:
-			eoln = strchr(lwalk->message, '\n'); if (eoln) *eoln = '\0';
-			addtobuffer(buf, msg_data(lwalk->message, 0));
-			if (eoln) *eoln = '\n';
-			break;
-
+		  case F_LINE1: addtobuffer(buf, lwalk->line1); break;
 		  case F_ACKMSG: if (lwalk->ackmsg) addtobuffer(buf, nlencode(lwalk->ackmsg)); break;
 		  case F_DISMSG: if (lwalk->dismsg) addtobuffer(buf, nlencode(lwalk->dismsg)); break;
 		  case F_MSG: addtobuffer(buf, nlencode(lwalk->message)); break;
@@ -3364,10 +3330,7 @@ strbuffer_t *generate_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, xy
 			break;
 
 		  case F_MODIFIERS:
-			for (mwalk = lwalk->modifiers; (mwalk); mwalk = mwalk->next) {
-				if (mwalk->valid <= 0) continue;
-				addtobuffer(buf, nlencode(mwalk->cause));
-			}
+			if (lwalk->modifiers) addtobuffer(buf, lwalk->modifierbuf);
 			break;
 
 		  case F_MATCHEDTAG: break;
@@ -3835,7 +3798,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 				int msgcol;
 				char response[500];
 
-				bol = msg_data(log->message, 0);
+				bol = log->line1;
 				msgcol = parse_color(bol);
 				if (msgcol != -1) {
 					/* Skip the color - it may be different in real life */
@@ -4764,7 +4727,7 @@ void load_checkpoint(char *fn)
 {
 	FILE *fd;
 	strbuffer_t *inbuf;
-	char *item;
+	char *item, *eoln;
 	int i, err;
 	char *hostip = NULL;
 	xtreePos_t hosthandle, testhandle, originhandle;
@@ -4789,6 +4752,7 @@ void load_checkpoint(char *fn)
 		originname = hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = cookie = NULL;
 		logtime = lastchange = validtime = enabletime = acktime = cookieexpires = yellowstart = redstart = 0;
 		err = 0;
+		eoln = NULL;
 
 		if ((strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.task.|", 22) == 0) || (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.task.|", 23) == 0)) {
 			scheduletask_t *newtask = (scheduletask_t *)calloc(1, sizeof(scheduletask_t));
@@ -4982,6 +4946,10 @@ void load_checkpoint(char *fn)
 		nldecode(statusmsg);
 		ltail->message = strdup(statusmsg);
 		ltail->msgsz = strlen(statusmsg)+1;
+		ltail->line1 = malloc(MAXLINE1SIZE * sizeof(unsigned char) + 1);
+		eoln = strchr(ltail->message, '\n'); if (eoln) *eoln = '\0';
+		snprintf(ltail->line1, MAXLINE1SIZE, "%s", msg_data(ltail->message, 0));
+		if (eoln) *eoln = '\n';
 
 		if (disablemsg && strlen(disablemsg)) {
 			nldecode(disablemsg);
