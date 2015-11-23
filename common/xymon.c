@@ -129,6 +129,7 @@ int main(int argc, char *argv[])
 	else if (strncmp(STRBUF(msg), "clientlog ", 10) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "hostinfo", 8) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "ping", 4) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "proxyping", 9) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "pullclient", 10) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "ghostlist", 9) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "multisrclist", 12) == 0) wantresponse = 1;

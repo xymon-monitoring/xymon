@@ -451,6 +451,11 @@ Retrieves the current raw client message last sent by HOSTNAME. The optional
 Attempts to contact the Xymon server. If successful, the Xymon server version ID
 is reported.
 
+.IP "proxyping"
+Attempts to contact a xymonproxy server itself rather than passing the request
+to an upstream Xymon server. If successful, the xymonproxy server version ID
+is reported.
+
 .IP "pullclient"
 This message is used when fetching client data via the "pull" mechanism implemented by
 .I xymonfetch(8)

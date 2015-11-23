@@ -603,6 +603,22 @@ int main(int argc, char *argv[])
 					msgs_other++;
 					cwalk->snum = xymonservercount - 1;	/* final server only */
 				}
+				else if ((strncmp(cwalk->buf+6, "proxyping", 9) == 0)) {
+					/* 
+					 * These requests get a response back from xymonproxy itself.
+					 */
+					if (shutdown(cwalk->csocket, SHUT_RD) == -1) errprintf(" conn %ld, socket %d: read client shutdown failed: %s\n", cwalk->connid, cwalk->csocket, strerror(errno));
+					msgs_other++;
+					cwalk->snum = SNUM_NONE;	/* don't send to any */
+
+					sprintf(cwalk->buf, "xymonproxy %s\n", VERSION);
+					cwalk->bufp = cwalk->buf;
+					cwalk->buflen = strlen(cwalk->bufp);
+					cwalk->state = P_RESP_SENDING;
+					getntimer(&cwalk->timelimit);
+					cwalk->timelimit.tv_sec += timeout;
+					break;
+				}
 				else {
 					/* It's a request that doesn't take a response. */
 					if (cwalk->csocket >= 0) {
@@ -694,15 +710,17 @@ int main(int argc, char *argv[])
 					}
 				}
 
-				/* 
-				 * This wont be made into a combo message, so skip the "combo\n" 
-				 * and go off to send the message to the server.
-				 */
-				cwalk->bufp = cwalk->buf+6; 
-				cwalk->buflen -= 6;
-				cwalk->bufpsave = cwalk->bufp;
-				cwalk->buflensave = cwalk->buflen;
-				cwalk->state = P_REQ_CONNECTING;
+				if (cwalk->state == P_REQ_READY) {
+					/* 
+					 * This hasn't been recategorized as something else already, so skip the "combo\n" 
+					 * and go off to send the message to the server.
+					 */
+					cwalk->bufp = cwalk->buf+6; 
+					cwalk->buflen -= 6;
+					cwalk->bufpsave = cwalk->bufp;
+					cwalk->buflensave = cwalk->buflen;
+					cwalk->state = P_REQ_CONNECTING;
+				}
 				/* Fall through for non-status messages */
 
 			  case P_REQ_CONNECTING:

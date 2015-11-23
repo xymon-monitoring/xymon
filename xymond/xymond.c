@@ -4314,6 +4314,18 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		msg->bufp = msg->buf = strdup(id);
 		msg->buflen = strlen(msg->buf);
 	}
+	else if (strncmp(msg->buf, "proxyping", 9) == 0) {
+		/* A proxyping was sent directly to us */
+		char id[128];
+
+		if (viabfq) goto done;
+
+		sprintf(id, "xymond %s (not a proxy)\n", VERSION);
+		msg->doingwhat = RESPONDING;
+		xfree(msg->buf);
+		msg->bufp = msg->buf = strdup(id);
+		msg->buflen = strlen(msg->buf);
+	}
 	else if (strncmp(msg->buf, "notify", 6) == 0) {
 		if (!viabfq && !oksender(maintsenders, NULL, msg->sender, msg->buf)) goto done;
 		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
