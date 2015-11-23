@@ -24,7 +24,7 @@ extern char *grabstrbuffer(strbuffer_t *buf);
 extern strbuffer_t *dupstrbuffer(char *src);
 extern void strbufferchop(strbuffer_t *buf, int count);
 extern void strbufferrecalc(strbuffer_t *buf);
-extern void strbuffergrow(strbuffer_t *buf, size_t bytes);
+extern int strbuffergrow(strbuffer_t *buf, size_t bytes);
 extern void strbufferuse(strbuffer_t *buf, size_t bytes);
 extern char *htmlquoted(char *s);
 extern char *prehtmlquoted(char *s);

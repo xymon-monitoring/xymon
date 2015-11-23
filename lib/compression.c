@@ -137,7 +137,7 @@ strbuffer_t *uncompress_stream_data(void *s, char *cmsg, size_t clen)
 	do {
 		strm->avail_out = STRBUFSZ(dbuf) - STRBUFLEN(dbuf);
 		if (strm->avail_out < 4096) {
-			strbuffergrow(dbuf, 4096);
+			if (strbuffergrow(dbuf, 4096) == -1) { freestrbuffer(dbuf); return NULL; }
 			strm->avail_out = STRBUFSZ(dbuf) - STRBUFLEN(dbuf);
 		}
 		strm->next_out = STRBUF(dbuf) + STRBUFLEN(dbuf);
@@ -189,7 +189,7 @@ strbuffer_t *uncompress_to_my_buffer(const char *msg, size_t msglen, strbuffer_t
 		do {
 			avbytes = STRBUFSZ(dbuf) - STRBUFLEN(dbuf) - 1;	/* -1 for the trailing \0 */
 			if (strm->avail_out < 4096) {
-				strbuffergrow(dbuf, 4096);
+				if (strbuffergrow(dbuf, 4096) == -1) { n = Z_MEM_ERROR; goto done; }
 				avbytes = STRBUFSZ(dbuf) - STRBUFLEN(dbuf) - 1;
 			}
 

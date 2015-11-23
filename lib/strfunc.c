@@ -178,12 +178,20 @@ void strbufferrecalc(strbuffer_t *buf)
 	buf->used = strlen(buf->s);
 }
 
-void strbuffergrow(strbuffer_t *buf, size_t bytes)
+int strbuffergrow(strbuffer_t *buf, size_t bytes)
 {
-	if (buf == NULL) return;
+	char *newbuf;
+	if (buf == NULL) return -1;
+	if (!bytes && !buf->sz) return -1;	/* this could cause realloc() to free */
 
+	newbuf = (char *) realloc(buf->s, (buf->sz + bytes));
+	if (newbuf == NULL) {
+		errprintf("strbuffergrow: Attempt to re-allocate failed (initialsize=%zu, requested increase=%zu): %s\n", buf->sz, bytes, strerror(errno));
+		return -1;
+	}
+	buf->s = newbuf;
 	buf->sz += bytes;
-	buf->s = (char *) realloc(buf->s, buf->sz);
+	return 0;
 }
 
 void strbufferuse(strbuffer_t *buf, size_t bytes)
