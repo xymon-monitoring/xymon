@@ -46,6 +46,8 @@ extern void combo_start(void);
 extern void combo_end(void);
 extern void combo_add(strbuffer_t *msg);
 extern void combo_start_local(void);
+extern void combo_addchar(char *p);
+extern void combo_addcharbytes(char *p, size_t len);
 
 extern int sendmessage_init_local(void);
 extern void sendmessage_finish_local(void);

@@ -67,6 +67,7 @@ Changes from 4.3.x -> 4.4-alpha
   variables and made global, to allow for larger extcombo and/or compressed messages.
   MAX_XYMON_INBUFSZ - maximum size of a connection buffer, no matter the source
   MAX_XYMON_MSGSZ   - maximum size of an uncompressed message sent on a channel
+* Improved checking we don't hit combo size and msg number limits
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)

@@ -735,10 +735,9 @@ static void combo_flush(void)
 	int i;
 	char *outp;
 
-	if (!xymonmsgqueued) {
-		dbgprintf("Flush, but xymonmsg is empty\n");
-		return;
-	}
+	/* Flushing may be attempted even if there's nothing waiting to go out. That's fine. */
+	if (!xymonmsgqueued) return;
+	dbgprintf("Flushing combo message\n");
 
 	outp = strchr(STRBUF(xymonmsg), ' ');
 	for (i = 0; (i <= xymonmsgqueued); i++) {
@@ -749,7 +748,6 @@ static void combo_flush(void)
 	if (debug) {
 		char *p1, *p2;
 
-		dbgprintf("Flushing combo message\n");
 		p1 = p2 = STRBUF(xymonmsg);
 
 		do {
@@ -775,20 +773,40 @@ static void combo_flush(void)
 	}
 }
 
-void combo_add(strbuffer_t *buf)
+static int combo_hasroom(size_t len)
 {
 	if (combo_is_local) {
-		/* Check if message fits into the backfeed message buffer */
-		if ( (STRBUFLEN(xymonmsg) + STRBUFLEN(buf)) >= max_backfeedsz) {
-			combo_flush();
-		}
+		/* Check that message fits into the backfeed message buffer AND that we haven't exceeded maxmsgspercombo */
+		dbgprintf(" combo_hasroom -> current state (bfq): xymonmsg sz: %zd, buffer sz: %zd, max_backfeedsz: %zd; maxmsgspercombo: %d, messages queued so far: %d\n", STRBUFLEN(xymonmsg), len, max_backfeedsz, maxmsgspercombo, xymonmsgqueued);
+		if ( ((STRBUFLEN(xymonmsg) + len) >= max_backfeedsz) || (maxmsgspercombo && (xymonmsgqueued >= maxmsgspercombo)) ) return 0;
 	}
 	else {
-		/* Check if there is room for the message + 2 newlines */
-		if (maxmsgspercombo && (xymonmsgqueued >= maxmsgspercombo)) {
-			combo_flush();
-		}
+		/* Check that we haven't exceeded msgmsgspercombo */
+		/* TODO: We don't yet have a paradigm for max combo size over the network */
+		dbgprintf(" combo_hasroom -> current state (tcp): xymonmsg sz: %zd, buffer sz: %zd; maxmsgspercombo: %d, messages queued so far: %d\n", STRBUFLEN(xymonmsg), len, maxmsgspercombo, xymonmsgqueued);
+		if (maxmsgspercombo && (xymonmsgqueued >= maxmsgspercombo)) return 0;
 	}
+	/* OK to proceed */
+	return 1;
+}
+
+void combo_addcharbytes(char *p, size_t len)
+{
+	if (!combo_hasroom(len)) combo_flush();
+
+	strbuf_addtobuffer(xymonmsg, p, len);
+	combooffsets[++xymonmsgqueued] = STRBUFLEN(xymonmsg);
+}
+
+void combo_addchar(char *p)
+{
+	if (!p) { errprintf("BUG: combo_addchar received a null pointer\n"); return; }
+	return combo_addcharbytes(p, strlen(p));
+}
+
+void combo_add(strbuffer_t *buf)
+{
+	if (!combo_hasroom(STRBUFLEN(buf))) combo_flush();
 
 	addtostrbuffer(xymonmsg, buf);
 	combooffsets[++xymonmsgqueued] = STRBUFLEN(xymonmsg);
