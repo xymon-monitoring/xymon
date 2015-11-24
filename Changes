@@ -1,74 +1,104 @@
 Changes from 4.3.x -> 4.4-alpha
 ===========================================
 
-
+* Support for IPv6 and TLS connections in xymond and xymon
 * Standardize command line options across most binaries
+* Refactoring of TCP code in preparation for IPv6/SSL support
+* Remove obsolete "meta" message support
 * Attempt to get a more accurate clock delta when a client message has been
   sent through a xymonproxy
-* TLS/SSL support added
-* IPv6 support added
-* xymonlaunch: Add support for specifying a PIDFILE in tasks.cfg or clientlaunch.cfg
-* xymonlaunch: Add SENDHUP support for optionally passing along signals to running 
-* Support and display "TEXT=Human readable" tags for LOG entries in analysis.cfg on msgs
-* A 'proxyping' command has been added for checking that a xymonproxy server itself is up
-* FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't write) to xymonnet
-* FIXME-doc: Add hidden tunables for controlling flushing to the external RRD processor
-  Set RRD_EXTPROC_DOFLUSH to flush after every processed message (which could be multiple 
-  lines). Set RRD_EXTPROC_BUFSIZ to control buffer size (similar to BUFSIZ)
-* FIXME-doc: Experimental support for rrdcached (requires rrdtoool 1.5 or higher) (Thanks, Martin Sperl)
-* The first line of a status message (beginning at the color indicator) is now limited to 255 characters
+* xymonlaunch: Add support for specifying a PIDFILE in tasks.cfg or 
+  clientlaunch.cfg
+* xymonlaunch: Add SENDHUP support for optionally passing along signals 
+  to running
+* Support and display "TEXT=Human readable" tags for LOG entries in 
+  analysis.cfg on msgs
+* A 'proxyping' command has been added for checking that a xymonproxy 
+  server itself is up
+
+* FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
+  write) to xymonnet
+* FIXME-doc: Add hidden tunables for controlling flushing to the external 
+  RRD processor. Set RRD_EXTPROC_DOFLUSH to flush after every processed 
+  message (which could be multiple lines). Set RRD_EXTPROC_BUFSIZ to 
+  control buffer size (similar to BUFSIZ)
+* FIXME-doc: Experimental support for rrdcached (requires rrdtoool 1.5 
+  or higher) (Thanks, Martin Sperl)
 * FIXME-doc: xymond_rrd: Add --flushtimeout option and reduce the 
   frequency of cachectl, zombie, and extcombo flushing
 
+* The first line of a status message (beginning at the color indicator) 
+  is now limited to 255 characters
 * Performance optimizations / bug fixes with POSIX btree usage
 * Performance improvements within xymond_rrd
 * Cache various buffer sizes for channel messages instead of re-calculating
 * Convert various size variables to size_t throughout
-* Add error handling to recover when messages greater than the internal MAX BUF size
-  are found (must delete to not be wedged)
+* Add error handling to recover when messages greater than the internal 
+  MAX BUF size are found (must delete to not be wedged)
 * Add better reporting for sendmessage() failures
-* More verbose debugging in message processing, cookie searching, and in core library routines
+* More verbose debugging in message processing, cookie searching, and in 
+  core library routines
 * xymonlaunch: Improve logging for actions taken against tasks
   tasks (ie, for log rotation)
-* xymonlaunch now passes the path to LOGFILE (if configured) as $XYMONLAUNCH_LOGFILENAME,
-  which will be used as the default logfn for xymond, xymonproxy, xymond_channel,
-  and its children
-* xymond_channel: Timestamp and tag log output to reduce confusion w/ child entries
-* Uplift most log file configuration from command lines to tasks.cfg and clientlaunch.cfg
-* logrotate: Adjust default config to send -HUP to xymonlaunch instead of searching for
-  xymond PID file.
+* xymonlaunch now passes the path to LOGFILE (if configured) as 
+  $XYMONLAUNCH_LOGFILENAME, which will be used as the default logfn for 
+  xymond, xymonproxy, xymond_channel, and its children
+* xymond_channel: Timestamp and tag log output to reduce confusion w/ 
+  child entries
+* Uplift most log file configuration from command lines to tasks.cfg and 
+  clientlaunch.cfg
+* logrotate: Adjust default config to send -HUP to xymonlaunch instead 
+  of searching for xymond PID file.
 * Search in /usr for libraries and includes during build configuration
-* Move static WWW files (gifs, help files, and CSS) to new /static/ directory outside of 
-  $XYMONWWW
+* Move static WWW files (gifs, help files, and CSS) to new /static/ 
+  directory outside of $XYMONWWW
 * Store 'notes' uploads in $XYMONVAR rather than $XYMONWWW directory
-* Move 'periodic' directory (output from xymonreport.sh, executed via crondate) to $XYMONVAR
-* xymond: Fix double-free in grouplist referenced 2x in handle_status (Thanks, Franco Gasperino)
-* Fix non-special HTTP 1xx/3xx status codes red instead of yellow >.<
-* Standardize the location of "modify" messages on status pages and in mailed alerts
+* Move 'periodic' directory (output from xymonreport.sh, executed via 
+  crondate) to $XYMONVAR
+* xymond: Fix double-free in grouplist referenced 2x in handle_status 
+  (Thanks, Franco Gasperino)
+* Standardize the location of "modify" messages on status pages and in 
+  mailed alerts
 * xymond_alert: Reload config in response to -HUP or 'reload' message
-* xymond_alert: Add --loadhostsfromxymond option, and exit if xymond is unavailable
-* xymonnet/loadhosts: Don't fail back to file load if --loadhostsfromxymond is given
-  -- hosts.cfg file could be different
-* sendmsg: Don't block when posting to BFQ. Retry locally; attempt to recover if 
-  given EIDRM (bfq channel went away)
+* xymond_alert: Add --loadhostsfromxymond option, and exit if xymond is 
+  unavailable
+* xymonnet/loadhosts: Don't fail back to file load if 
+  --loadhostsfromxymond is given -- hosts.cfg file could be different
+* sendmsg: Don't block when posting to BFQ. Retry locally; attempt to 
+  recover if given EIDRM (bfq channel went away)
 * xymond_rrd: Load hostnames and configuration earlier in the startup process
 * xymonnet: keep the services db open during entire run
 * xymond_history: rewrite file write section using posix instead of C
-* xymond_rrd: don't restat files and dirs on each message; only re-create on error
-* xymond_rrd: don't create a cachectl socket if we're not writing RRD files and/or not caching
-* Don't try to respond to messages sent via bfq (or when a response is impossible, like via
-  a scheduled task) (From "can_respond" patch, by Franco Gasperino)
+* xymond_rrd: don't restat files and dirs on each message; only 
+  re-create on error
+* xymond_rrd: don't create a cachectl socket if we're not writing RRD 
+  files and/or not caching
+* Don't try to respond to messages sent via bfq (or when a response is 
+  impossible, like via a scheduled task) (From "can_respond" patch, by 
+  Franco Gasperino)
 * Significant optimizations in channel posting:
-  - Keep track of written bytes when posting to channel so we don't have to strncat (perf1)
+  - Keep track of written bytes when posting to channel so we don't have 
+    to strncat (perf1)
   - Combine snprintfs, except for modifier strings (perf2)
-  - Pre-load the nl-encoded version of the current modifiers and store in the log record,
-    to combine posttochannel loads into a single snprintf (perf3)
+  - Pre-load the nl-encoded version of the current modifiers and store 
+    in the log record, to combine posttochannel loads into a single snprintf 
+    (perf3)
   - Pre-calculate the line1 field since it's so frequently used (perf4)
 * Compile-time settings for MAX_XYMON_INBUFSZ have been split into two 
-  variables and made global, to allow for larger extcombo and/or compressed messages.
-  MAX_XYMON_INBUFSZ - maximum size of a connection buffer, no matter the source
-  MAX_XYMON_MSGSZ   - maximum size of an uncompressed message sent on a channel
+  variables and made global, to allow for larger extcombo and/or 
+  compressed messages: 
+  MAX_XYMON_INBUFSZ - max size of a connection buffer, no matter the source
+  MAX_XYMON_MSGSZ - max size of an uncompressed message sent on a channel
 * Improved checking we don't hit combo size and msg number limits
+
+
+Changes from 4.3.23 -> 4.3.24 (23 Nov 2015)
+===========================================
+
+* rev 7805
+
+* Fix occasional crash in xymond when handling group names (Thanks, Franco Gasperino)
+* Fix non-special HTTP <400 status codes red instead of yellow >.<
 
 
 Changes from 4.3.22 -> 4.3.23 (12 Nov 2015)
