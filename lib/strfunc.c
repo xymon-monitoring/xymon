@@ -91,17 +91,15 @@ char *grabstrbuffer(strbuffer_t *buf)
 
 strbuffer_t *dupstrbuffer(char *src)
 {
-	strbuffer_t *newbuf;
-	size_t len = 0;
+	char *new;
 	
-	newbuf = newstrbuffer(0);
-	if (src) {
-		newbuf->s = strdup(src);
-		len = strlen(src);
-		newbuf->used = newbuf->sz = len;
+	if (src == NULL) return newstrbuffer(0);
+	new = strdup(src);
+	if (new == NULL) {
+		errprintf("dupstrbuffer: unable to create buffer of size %zu: %s\n", strlen(src), strerror(errno) );
+		return NULL;
 	}
-
-	return newbuf;
+	return convertstrbuffer(new, 0);
 }
 
 void strbuf_addtobuffer(strbuffer_t *buf, char *newtext, size_t newlen)
