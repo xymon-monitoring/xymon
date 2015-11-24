@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.23   * * *
+           * * *   Release notes for Xymon 4.3.24   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -8,6 +8,15 @@ changes you should be aware of when upgrading.
 
 For a full list of changes and enhancements, please see the 
 Changes file.
+
+
+Changes for 4.3.24
+==================
+
+Fixes a bug introduced in 4.3.22 where the non-excepted HTTP status 
+codes were always seen as Critical instead of OK/Warning as intended.
+
+All users are urged to upgrade.
 
 
 Changes for 4.3.23
