@@ -853,7 +853,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * got the alert - we will later check who has received the alert, and only those that
 	 * have will get the recovery message.
 	 */
-	if (crit && (crit->groupspec || crit->exgroupspec) && (alert->state != A_RECOVERED)) {
+	if (crit && (crit->groupspec || crit->exgroupspec) && ((alert->state != A_RECOVERED) && (alert->state != A_STALE) && (alert->state != A_DROPPED))) {
 		char *grouplist;
 		char *tokptr;
 
@@ -1021,7 +1021,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		return result;
 	}
 
-	if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
+	if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED) || (alert->state == A_STALE) || (alert->state == A_DROPPED)) {
 		/*
 		 * Don't do the check until we are checking individual recipients (rulecrit is set).
 		 * You don't need to have RECOVERED on the top-level rule, it's enough if a recipient

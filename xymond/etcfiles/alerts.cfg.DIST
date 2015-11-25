@@ -112,7 +112,10 @@
 #    BBHOSTSVC     - HOSTNAME.SERVICE that the alert is about.
 #    BBHOSTSVCCOMMAS - As BBHOSTSVC, but dots in the hostname replaced with commas
 #    BBNUMERIC     - A 22-digit number made by BBSVCNUM, MACHIP and ACKCODE.
-#    RECOVERED     - Is "1" if the service has recovered.
+#    RECOVERED     - "0" if the service is currently alerting, "1" if it has
+#		     recovered, "2" if the test has been disabled, "3" if the test 
+#		     or host has been dropped, "4" if the alert recovered while
+#		     xymond_alert was not running.
 #    DOWNSECS      - Number of seconds the service has been down.
 #    DOWNSECSMSG   - When recovered, holds the text "Event duration : N" where
 #                    N is the DOWNSECS value.

@@ -79,8 +79,8 @@ typedef struct alertanchor_t {
 activealerts_t *ahead = NULL;
 
 char *statename[] = {
-	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_NOTIFY, A_DEAD */
-	"paging", "norecip", "acked", "recovered", "disabled", "notify", "dead"
+	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_DROPPED, A_NOTIFY, A_STALE, A_DEAD */
+	"paging", "norecip", "acked", "recovered", "disabled", "dropped", "notify", "stale", "dead"
 };
 
 char *find_name(void * tree, char *name)
@@ -338,13 +338,13 @@ int load_checkpoint(char *filename)
 				xfree(key);
 			}
 			if (!valid) {
-				errprintf("Stale alert for %s:%s dropped\n", newalert->hostname, newalert->testname);
-				xfree(newalert);
-				continue;
+				errprintf("Stale alert for %s:%s found\n", newalert->hostname, newalert->testname);
+				newalert->state = A_STALE;
 			}
-
-			while (strcmp(item[7], statename[newalert->state]) && (newalert->state < A_DEAD)) 
-				newalert->state++;
+			else {
+				while (strcmp(item[7], statename[newalert->state]) && (newalert->state < A_DEAD)) 
+					newalert->state++;
+			}
 			/* Config might have changed while we were down */
 			if (newalert->state == A_NORECIP) newalert->state = A_PAGING;
 			newalert->pagemessage = newalert->ackmessage = NULL;
@@ -815,14 +815,14 @@ int main(int argc, char *argv[])
 			handle = xtreeFind(hostnames, hostname);
 			if (handle != xtreeEnd(hostnames)) {
 				alertanchor_t *anchor = (alertanchor_t *)xtreeData(hostnames, handle);
-				for (awalk = anchor->head; (awalk); awalk = awalk->next) awalk->state = A_DEAD;
+				for (awalk = anchor->head; (awalk); awalk = awalk->next) awalk->state = A_DROPPED;
 			}
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 
 			awalk = find_active(hostname, testname);
-			if (awalk) awalk->state = A_DEAD;
+			if (awalk) awalk->state = A_DROPPED;
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@renamehost", 12) == 0)) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
@@ -837,7 +837,7 @@ int main(int argc, char *argv[])
 			handle = xtreeFind(hostnames, hostname);
 			if (handle != xtreeEnd(hostnames)) {
 				alertanchor_t *anchor = (alertanchor_t *)xtreeData(hostnames, handle);
-				for (awalk = anchor->head; (awalk); awalk = awalk->next) awalk->state = A_DEAD;
+				for (awalk = anchor->head; (awalk); awalk = awalk->next) awalk->state = A_DROPPED;
 			}
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
@@ -849,7 +849,7 @@ int main(int argc, char *argv[])
 			 * status update arrives.
 			 */
 			awalk = find_active(hostname, testname);
-			if (awalk) awalk->state = A_DEAD;
+			if (awalk) awalk->state = A_DROPPED;
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
@@ -934,6 +934,8 @@ int main(int argc, char *argv[])
 			  case A_RECOVERED:
 			  case A_DISABLED:
 			  case A_NOTIFY:
+			  case A_DROPPED:
+			  case A_STALE:
 				anytogo++;
 				break;
 
@@ -965,6 +967,8 @@ int main(int argc, char *argv[])
 					  case A_RECOVERED:
 					  case A_DISABLED:
 					  case A_NOTIFY:
+					  case A_DROPPED:
+					  case A_STALE:
 						send_alert(awalk, notiflogfd);
 						break;
 
@@ -999,11 +1003,13 @@ int main(int argc, char *argv[])
 
 			  case A_RECOVERED:
 			  case A_DISABLED:
+			  case A_DROPPED:
 			  case A_NOTIFY:
 				awalk->state = A_DEAD;
 				/* Fall through */
 
 			  case A_DEAD:
+			  case A_STALE:
 				cleanup_alert(awalk); 
 				break;
 			}

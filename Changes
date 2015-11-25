@@ -15,6 +15,10 @@ Changes from 4.3.x -> 4.4-alpha
   analysis.cfg on msgs
 * A 'proxyping' command has been added for checking that a xymonproxy 
   server itself is up
+* Recipients of 'RECOVERED' alert messages will now also receive 
+  them if the host/service has been dropped or the alert became stale
+  (recovered while xymond_alert was not running), not just if the
+  test has been disabled.
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet

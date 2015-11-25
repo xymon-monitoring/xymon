@@ -225,6 +225,18 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 			 alert->hostname, alert->testname, recip->cfid);
 		break;
 
+	  case A_DROPPED:
+		subjfmt = (include_configid ? "Xymon %s:%s dropped [cfid:%d]" :  "Xymon %s:%s dropped");
+		snprintf(subj, sizeof(subj), subjfmt, 
+			 alert->hostname, alert->testname, recip->cfid);
+		break;
+
+	  case A_STALE:
+		subjfmt = (include_configid ? "Xymon %s:%s recovered? (stale) [cfid:%d]" :  "Xymon %s:%s recovered? (stale)");
+		snprintf(subj, sizeof(subj), subjfmt, 
+			 alert->hostname, alert->testname, recip->cfid);
+		break;
+
 	  case A_DISABLED:
 		subjfmt = (include_configid ? "Xymon %s:%s disabled [cfid:%d]" :  "Xymon %s:%s disabled");
 		snprintf(subj, sizeof(subj), subjfmt, 
@@ -316,6 +328,16 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 				alert->hostname, alert->testname);
 			break;
 
+		  case A_DROPPED:
+			sprintf(info, "%s:%s DROPPED", 
+				alert->hostname, alert->testname);
+			break;
+
+		  case A_STALE:
+			sprintf(info, "%s:%s RECOVERED/STALE", 
+				alert->hostname, alert->testname);
+			break;
+
 		  case A_DISABLED:
 			sprintf(info, "%s:%s DISABLED", 
 				alert->hostname, alert->testname);
@@ -376,8 +398,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	int first = 1;
 	int alertcount = 0;
 	time_t now = getcurrenttime(NULL);
-	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_NOTIFY, A_DEAD */
-	char *alerttxt[A_DEAD+1] = { "Paging", "Norecip", "Acked", "Recovered", "Disabled", "Notify", "Dead" };
+	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_DROPPED, A_NOTIFY, A_STALE, A_DEAD */
+	char *alerttxt[A_DEAD+1] = { "Paging", "Norecip", "Acked", "Recovered", "Disabled", "Dropped", "Notify", "Stale", "Dead" };
 
 	dbgprintf("send_alert %s:%s state %s\n", alert->hostname, alert->testname, alerttxt[alert->state]);
 	traceprintf("send_alert %s:%s state %s\n", 
@@ -392,7 +414,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			continue;
 		}
 
-		if (recip->noalerts && ((alert->state == A_PAGING) || (alert->state == A_RECOVERED) || (alert->state == A_DISABLED))) {
+		if (recip->noalerts && ((alert->state == A_PAGING) || (alert->state == A_RECOVERED) || (alert->state == A_STALE) || (alert->state == A_DROPPED) || (alert->state == A_DISABLED))) {
 			traceprintf("Recipient '%s' dropped (NOALERT)\n", recip->recipient);
 			continue;
 		}
@@ -425,7 +447,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				continue;
 			}
 		}
-		else if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
+		else if ((alert->state == A_RECOVERED) || (alert->state == A_STALE) || (alert->state == A_DISABLED) || (alert->state == A_DROPPED)) {
 			/* RECOVERED messages require that we've sent out an alert before */
 			repeat_t *rpt = NULL;
 
@@ -480,7 +502,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 							timestamp, alert->hostname, alert->testname,
 							alert->ip, mailrecip, recip->cfid,
 							(long)now, servicecode(alert->testname));
-						if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
+						if ((alert->state == A_RECOVERED) || (alert->state == A_STALE) || (alert->state == A_DISABLED) || (alert->state == A_DROPPED)) {
 							fprintf(logfd, " %ld\n", (long)(now - alert->eventstart));
 						}
 						else {
@@ -585,6 +607,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					  case A_DISABLED:
 						strcpy(recovered, "RECOVERED=2");
 						break;
+					  case A_STALE:
+						strcpy(recovered, "RECOVERED=3");
+						break;
+					  case A_DROPPED:
+						strcpy(recovered, "RECOVERED=4");
+						break;
 					  default:
 						strcpy(recovered, "RECOVERED=0");
 						break;
@@ -602,6 +630,14 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
 						downsecsmsg = (char *)malloc(strlen("DOWNSECSMSG=Event duration :") + 20);
 						sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %ld", (long)(getcurrenttime(NULL) - alert->eventstart));
+					}
+					else if (alert->state == A_DROPPED) {
+						downsecsmsg = (char *)malloc(strlen("DOWNSECSMSG=Event duration :") + 20);
+						sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %ld", (long)(getcurrenttime(NULL) - alert->eventstart));
+					}
+					else if (alert->state == A_STALE) {
+						downsecsmsg = (char *)malloc(strlen("DOWNSECSMSG=Event duration (max):") + 20);
+						sprintf(downsecsmsg, "DOWNSECSMSG=Event duration (max): %ld", (long)(getcurrenttime(NULL) - alert->eventstart));
 					}
 					else {
 						downsecsmsg = strdup("DOWNSECSMSG=");
@@ -655,7 +691,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 							timestamp, alert->hostname, alert->testname,
 							alert->ip, scriptrecip, (long)now, 
 							servicecode(alert->testname));
-						if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
+						if ((alert->state == A_RECOVERED) || (alert->state == A_STALE) || (alert->state == A_DISABLED) || (alert->state == A_DROPPED)) {
 							fprintf(logfd, " %ld\n", (long)(now - alert->eventstart));
 						}
 						else {

@@ -204,7 +204,10 @@ A 22-digit number made by BBSVCNUM, MACHIP and ACKCODE.
 .sp
 .BR RECOVERED
 Is "0" if the service is alerting, "1" if the service has 
-recovered, "2" if the service was disabled.
+recovered, "2" if the service was disabled, "3" if the host
+and/or test was dropped, and "4" if the alert became stale.
+(A stale alert is one where the service recovered during a 
+time that xymond_alert was not running.)
 .sp
 .BR EVENTSTART
 Timestamp when the current status (color) began.
