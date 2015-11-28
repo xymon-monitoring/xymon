@@ -57,6 +57,13 @@ Modify the default timeout (30 seconds) for the worker module to handle a messag
 If a message is not handled within this time, it is considered lost. You normally
 do not have to modify this unless you have an extremely busy server.
 
+.IP "--initialdelay=SECONDS"
+Give worker module a certain length of time to initialize before xymond_channel
+begins sending it messages. Note that this only occurs on the initial startup. If
+the worker module dies and must be re-launched by xymond_channel, it will begin
+receiving messages immediately. You normally don't need to set this. 
+(Default: no delay)
+
 .IP "--daemon"
 xymond_channel is normally started by 
 .I xymonlaunch(8)

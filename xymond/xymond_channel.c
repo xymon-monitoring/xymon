@@ -96,6 +96,12 @@ static int messagetimeout = 30;
  */
 static int checksumsize = 0;
 
+/* How long to wait when first launching an
+ * external command before attaching to the 
+ * shared memory.
+ */
+static int initialdelay = 0;
+
 void addnetpeer(char *peername)
 {
 	xymon_peer_t *newpeer;
@@ -457,6 +463,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			messagetimeout = atoi(p+1);
 		}
+		else if (argnmatch(argv[argi], "--initialdelay") || argnmatch(argv[argi], "--delay")) {
+			char *p = strchr(argv[argi], '=');
+			initialdelay = atoi(p+1);
+		}
 		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
 		}
@@ -564,6 +574,20 @@ int main(int argc, char *argv[])
 	if (logfn) {
 		reopen_file(logfn, "a", stdout);
 		reopen_file(logfn, "a", stderr);
+	}
+
+	/* Connect to all of our peers (ie, launch the process(es)) before we even
+	 * attach to the channel */
+	if (!locatorbased) {
+		for (handle = xtreeFirst(peers); (handle != xtreeEnd(peers)); handle = xtreeNext(peers, handle)) {
+			xymon_peer_t *pwalk;
+			pwalk = (xymon_peer_t *) xtreeData(peers, handle);
+			openconnection(pwalk);
+		}
+		if (initialdelay > 0) {
+			logprintf("xymond_channel: Sleeping for %d seconds before attaching to channel\n", initialdelay);
+			sleep(initialdelay);
+		}
 	}
 
 	/* Attach to the channel */
