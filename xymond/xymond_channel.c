@@ -301,12 +301,11 @@ static void addmessage_onepeer(xymon_peer_t *peer, char *inbuf, size_t inlen)
 	pendingcount++;
 }
 
-int addmessage(char *inbuf)
+int addmessage(char *inbuf, size_t inlen)
 {
 	xtreePos_t phandle;
 	xymon_peer_t *peer;
 	int bcastmsg = 0;
-	size_t inlen = strlen(inbuf);
 
 	if (locatorbased) {
 		char *hostname, *hostend, *peerlocation;
@@ -694,7 +693,7 @@ int main(int argc, char *argv[])
 				/*
 				 * Put the new message on our outbound queue.
 				 */
-				if (addmessage(inbuf) != 0) {
+				if (addmessage(inbuf, msgsz) != 0) {
 					/* Failed to queue message, free the buffer */
 					xfree(inbuf);
 				}
