@@ -3558,7 +3558,35 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 				  case COL_CLIENT:
 					/* Pseudo color, allows us to send "client" data from a standard BB utility */
 					/* In HOSTNAME.TESTNAME, the TESTNAME is used as the collector-ID */
-					if (h) handle_client(currmsg, msg->sender, h->hostname, (t ? t->name : ""), "", NULL);
+					/* TODO: combine this and normal client parsing into a get_clientdata() routine */
+					if (h) {
+						char *line1, *p, *hostname, *collectorid, *clientos = '\0', *clientclass = '\0';
+						char savech = '\0';
+
+						/* Syntax: status HOSTNAME.COLLECTORID client SERVEROSTYPE CONFIGCLASS */
+						p = currmsg + strcspn(currmsg, "\r\n");
+						if ((*p == '\r') || (*p == '\n')) { savech = *p; *p = '\0'; }
+						else p = NULL;
+						line1 = strdup(currmsg); if (p) *p = savech;
+
+						p = strtok(line1, " \t"); /* Skip the status keyword */
+						if (!p) { errprintf("BUG: Didn't get a line1 parsing client 'status' msg\n"); xfree (line1); break; }
+
+						hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.COLLECTORID */
+						if (!hostname) { errprintf("BUG: Didn't get a hostname parsing client msg\n"); xfree(line1); break; }
+
+						p = strtok(NULL, " \t"); /* Skip the client keyword */
+						if (p != NULL) clientos = strtok(NULL, " \t"); /* Get the SERVEROSTYPE */
+						if (clientos != NULL) clientclass = strtok(NULL, " \t"); /* Get the CONFIGCLASS */
+
+						collectorid = strrchr(hostname, '.'); if (collectorid) { *collectorid = '\0'; collectorid++; }
+						/* Backwards compat for previous RPM versions, which needed a fake "default" collector name */
+						if (collectorid && ( (strcmp(collectorid,"")==0) || (strcmp(collectorid,"xymonclient")==0) || (strcmp(collectorid,xgetenv("CLIENTCOLUMN"))==0) ) ) { *collectorid = '\0'; }
+
+						dbgprintf(" found a client message for %s, collector '%s', os '%s', class '%s'\n", h->hostname, collectorid, clientos, clientclass);
+						handle_client(currmsg, msg->sender, h->hostname, (collectorid ? collectorid : ""), (clientos ? clientos : "") , (clientclass ? clientclass : ""));
+						xfree(line1);
+					}
 					break;
 
 				  default:
@@ -3614,7 +3642,35 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		  case COL_CLIENT:
 			/* Pseudo color, allows us to send "client" data from a standard BB utility */
 			/* In HOSTNAME.TESTNAME, the TESTNAME is used as the collector-ID */
-			if (h) handle_client(msg->buf, msg->sender, h->hostname, (t ? t->name : ""), "", NULL);
+			/* TODO: combine this and normal client parsing into a get_clientdata() routine */
+			if (h) {
+				char *line1, *p, *hostname, *collectorid, *clientos = '\0', *clientclass = '\0';
+				char savech = '\0';
+
+				/* Syntax: status HOSTNAME.COLLECTORID client SERVEROSTYPE CONFIGCLASS */
+				p = msg->buf + strcspn(msg->buf, "\r\n");
+				if ((*p == '\r') || (*p == '\n')) { savech = *p; *p = '\0'; }
+				else p = NULL;
+				line1 = strdup(msg->buf); if (p) *p = savech;
+
+				p = strtok(line1, " \t"); /* Skip the status keyword */
+				if (!p) { errprintf("BUG: Didn't get a line1 parsing client 'status' msg\n"); xfree(line1); break; }
+
+				hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.COLLECTORID */
+				if (!hostname) { errprintf("BUG: Didn't get a hostname parsing client msg\n"); xfree(line1); break; }
+
+				p = strtok(NULL, " \t"); /* Skip the client keyword */
+				if (p) clientos = strtok(NULL, " \t"); /* Get the SERVEROSTYPE */
+				if (clientos) clientclass = strtok(NULL, " \t"); /* Get the CONFIGCLASS */
+
+				collectorid = strrchr(hostname, '.'); if (collectorid) { *collectorid = '\0'; collectorid++; }
+				/* Backwards compat for previous RPM versions, which needed a fake "default" collector name */
+				if (collectorid && ( (strcmp(collectorid,"")==0) || (strcmp(collectorid,"xymonclient")==0) || (strcmp(collectorid,xgetenv("CLIENTCOLUMN"))==0) ) ) { *collectorid = '\0'; }
+
+				dbgprintf(" found a client message for %s, collector '%s', os '%s', class '%s'\n", h->hostname, collectorid, clientos, clientclass);
+				handle_client(msg->buf, msg->sender, h->hostname, (collectorid ? collectorid : ""), (clientos ? clientos : "") , (clientclass ? clientclass : ""));
+				xfree(line1);
+			}
 			break;
 
 		  default:
@@ -4408,6 +4464,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			if (ipline) get_sender(msg, ipline, "\nClientIP:");
 		}
 
+		/* TODO: combine this and legacy status-as-client parsing into a get_clientdata() routine */
 		p = msg->buf + strcspn(msg->buf, "\r\n");
 		if ((*p == '\r') || (*p == '\n')) {
 			savech = *p;
