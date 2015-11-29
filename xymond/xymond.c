@@ -85,6 +85,13 @@ int statsinterval = DEFAULT_STATS_INTERVAL;	/* Seconds - report xymond status ev
 int flapcount = DEFAULT_FLAPCOUNT;
 int flapthreshold = (DEFAULT_FLAPCOUNT+1)*5*60;	/* Seconds - if more than flapcount changes during this period, it's flapping */
 
+#define DEFAULT_CHECKPOINT_INTERVAL 900
+int checkpointinterval = DEFAULT_CHECKPOINT_INTERVAL;	/* Seconds - how often to save checkpoint file */
+
+#define DEFAULT_RELOAD_INTERVAL 600
+int reloadinterval = DEFAULT_RELOAD_INTERVAL;	/* Seconds - how often to check hosts.cfg for changes */
+
+
 typedef struct ackinfo_t {
 	int level;
 	time_t received, validuntil, cleartime;
@@ -199,6 +206,7 @@ enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST, 
 static volatile int running = 1;
 static volatile int reloadconfig = 0;
 static volatile time_t nextcheckpoint = 0;
+static volatile time_t nextreload = 0;
 static volatile int dologswitch = 0;
 static volatile int gotalarm = 0;
 
@@ -5437,7 +5445,6 @@ int main(int argc, char *argv[])
 	int requireclientcert = 0;
 	char *hostsfn = NULL;
 	char *restartfn = NULL;
-	int checkpointinterval = 900;
 	int do_purples = 1;
 	time_t nextpurpleupdate;
 	int lsocket, opt;
@@ -5529,6 +5536,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--checkpoint-interval=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 			checkpointinterval = atoi(p);
+		}
+		else if (argnmatch(argv[argi], "--reload-interval=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			reloadinterval = atoi(p);
 		}
 		else if (argnmatch(argv[argi], "--restart=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -5703,6 +5714,7 @@ int main(int argc, char *argv[])
 	errprintf("Loading hostnames\n");
 	load_hostnames(hostsfn, NULL, get_fqdn());
 	load_clientconfig();
+	nextreload = getcurrenttime(NULL) + reloadinterval;
 
 	if (restartfn) {
 		errprintf("Loading saved state\n");
@@ -5865,11 +5877,12 @@ int main(int argc, char *argv[])
 			posttoall("logrotate");
 		}
 
-		if (reloadconfig && hostsfn) {
+		if ((reloadconfig || (now >= nextreload)) && hostsfn) {
 			xtreePos_t hosthandle;
 			int loadresult;
 
 			reloadconfig = 0;
+			nextreload = now + reloadinterval;
 			loadresult = load_hostnames(hostsfn, NULL, get_fqdn());
 
 			if (loadresult == 0) {
@@ -5930,7 +5943,6 @@ int main(int argc, char *argv[])
 		if (now > nextcheckpoint) {
 			pid_t childpid;
 
-			reloadconfig = 1;
 			nextcheckpoint = now + checkpointinterval;
 			childpid = fork();
 			if (childpid == -1) {

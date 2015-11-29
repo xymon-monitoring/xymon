@@ -134,7 +134,9 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      the server OS and client class
    * Add 'histsync' diagnostic command to force spurious stachg on next status
      message, causing xymond_history to update history file if color doesn't match.
-
+   * xymond: new --reload-interval opt can be used to control how often config files are
+     scanned for changes (and re-processed if necessary). Previously, was equivalent
+     to checkpoint interval. Default: 10m
 
  -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 Nov 2015 18:26:21 +0100
 

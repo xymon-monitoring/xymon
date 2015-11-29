@@ -41,6 +41,22 @@ or when it receives a SIGUSR1 signal.
 Specifies the interval (in seconds) between dumps to the check-point
 file. The default is 900 seconds (15 minutes).
 
+.IP "\-\-reload\-interval=N"
+Specifies the interval (in seconds) between the reloading of the 
+.I hosts.cfg(5)
+and 
+.I client\-local.cfg(5)
+files and processing any changes. The default is 600 seconds (10 
+minutes). 
+
+Note that if the files have indeed changed, xymond must briefly pause 
+operations to compare all entries. On extremely large hosts.cfg 
+installations (over 100K lines) with rapidly changing entries, this 
+interval should not be set unreasonably low.
+
+A reload can be triggered at any time by sending xymond the 
+\fBreload\fR command or SIGHUP.
+
 .IP "\-\-restart=FILENAME"
 Specifies an existing file containing a previously generated xymond 
 checkpoint. When starting up, xymond will restore its internal state
@@ -335,7 +351,7 @@ in the Xymon source-tree, see the "xymond/new\-daemon.txt" file.
 
 .SH SIGNALS
 .IP SIGHUP
-Re-read the hosts.cfg configuration file.
+Re-read the hosts.cfg and client-local.cfg configuration files.
 
 .IP SIGUSR1
 Force an immediate dump of the checkpoint file.
