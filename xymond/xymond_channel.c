@@ -736,6 +736,12 @@ int main(int argc, char *argv[])
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = ((pendingcount > 0) ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
 
+		/* This is where we'll first find some fatal errors */
+		if ((n == -1) && (errno != EAGAIN) && (errno != EINTR) ) {
+			dbgprintf("xymond_channel: Semaphore wait failed; can't continue: %s\n", strerror(errno));
+			running = 0;
+		} 
+
 		if (n == 0) {
 			/*
 			 * GOCLIENT went high, and so we got alerted about a new
