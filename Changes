@@ -24,6 +24,8 @@ Changes from 4.3.x -> 4.4-alpha
   --multilocal and/or --multirun options.
 * xymond_channel can wait for a configurable amount of time after launching
   a worker before sending it messages, to give it time to initialize.
+* xymond_channel will now attempt to finish sending any messages that 
+  are still pending for workers before it exits.
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet

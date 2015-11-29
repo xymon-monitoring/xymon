@@ -25,6 +25,8 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      --multilocal and/or --multirun options.
    * xymond_channel can wait for a configurable amount of time after launching
      a worker before sending it messages, to give it time to initialize.
+   * xymond_channel will now attempt to finish sending any messages that 
+     were still pending for workers before it completely exits.
 
    
    * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 

@@ -700,7 +700,7 @@ int main(int argc, char *argv[])
 		running = 0;
 	}
 
-	while (running) {
+	while (running || pendingcount) {
 		/* 
 		 * Wait for GOCLIENT to go up.
 		 *
@@ -732,6 +732,10 @@ int main(int argc, char *argv[])
 			}
 			hupchildren = 0;
 		}
+
+
+	    /* Only do our semaphore work if we're still connected to a channel */
+	    if (running) {
 
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = ((pendingcount > 0) ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
@@ -803,6 +807,14 @@ int main(int argc, char *argv[])
 					dologswitch = 1;
 				}
 
+				/*
+				 * Are we shutting down via channel command? Flag for closing.
+				 */
+				if (strncmp(inbuf+checksumsize, "@@shutdown", 10) == 0) {
+					logprintf("xymond_channel: received shutdown message\n");
+					running = 0;
+				}
+
 				if (checksumsize > 0) {
 					char *sep1 = inbuf + checksumsize + strcspn(inbuf+checksumsize, "#|\n");
 
@@ -844,6 +856,45 @@ int main(int argc, char *argv[])
 			}
 		}
 
+	    }
+	    else if (channel) {
+
+			pid_t daemonpid;
+
+			/* Not running any more but may still have pending messages,
+			 * Shut down our channel but keep looping until the peers 
+			 * have received all pending messages
+			 *
+			 * Since we registered with SEM_UNDO, fork again and let our
+			 * parent get killed to do the detach safely.
+			 */
+
+			logprintf("xymond_channel: detaching from channel\n");
+
+			daemonpid = fork();
+			if (daemonpid < 0) {
+				/* Fork failed */
+				errprintf("xymond_channel: Could not fork ourself for channel cleanup; aborting\n");
+				exit(1);
+			}
+			else if (daemonpid > 0) {
+				/* Parent exits immediately. This should remove our semaphore
+				 * while keeping our child attached to the peers and sending off
+				 * messages that may be buffered.
+				 */
+				exit(0);
+			}
+			/* Child (daemon) continues here */
+			setsid();
+
+			/* Just detach. Our parent SEM_UNDOs us when it exits above */
+			close_channel(channel, CHAN_CLIENT);
+			/* Regardless of result, NULL the channel pointer since that's what we check for */
+			channel = NULL;
+			if (inbuf) xfree(inbuf);
+	    }
+	    /* end if (running || pendingcount) else if (channel) */
+
 		/* 
 		 * We've picked up messages from the master. Now we 
 		 * must push them to the worker process. Since there 
@@ -877,7 +928,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_DOWN:
-				openconnection(pwalk);
+				if (running) openconnection(pwalk);
 				canwrite = (pwalk->peerstatus == P_UP);
 				break;
 
@@ -894,6 +945,11 @@ int main(int argc, char *argv[])
 					flushcount++;
 				}
 				pwalk->nextflushtime = currenttime + PEERFLUSHSECS;
+			}
+
+			/* If we have write errors and are already closing up, just flush everything */
+			if (!running && !canwrite) {
+				while (pwalk->msghead) { flushmessage(pwalk); flushcount++; }
 			}
 
 			if (flushcount) {
@@ -963,8 +1019,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* Detach from channels */
-	close_channel(channel, CHAN_CLIENT);
+	/* Detach from channels if we haven't already */
+	if (channel) close_channel(channel, CHAN_CLIENT);
 
 	/* Free the buffer to be pedantic */
 	if (inbuf) xfree(inbuf);
