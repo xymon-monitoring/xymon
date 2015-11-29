@@ -5,18 +5,23 @@
     --bfq=# (round-robinning for multiple BFQ's)
   --timeout: how long to wait when sending a message to xymond
   --retries: how many times to retry a message to xymond before giving up
-  --loadhostsfromxymond: control source for loadhosts
   --flushtimeout: for how often we idle in get_xymon_message and
     use that opportunity to do cleanup work
+  --loadhostsfromxymond: control source for loadhosts
+  --reload-interval=N: config file rescan interval (xymond/xymond_alert/xymond_client/xymond_rrd/etc)
   --reportserver=<addr[,addr]>: who to send daemon "egocolumn" status reports to
     (eg, xymongen, xymonnet, xymonproxy, etc.)
   --compress=<format> / --no-compress
   --verbose: undefined, but "log out more" (currently xymonproxy + use xymond_alert trace?)
+
 * Unified digest name parsing/dispatch
 * Re-integrate non-zlib compression logic
 * 'alerttxt' split into enums for keyword and regular case display
 * xymond_channel --initialdelay should be a P_DELAYED state, to allow for 
   it to be applied on relaunch as well
+
+* want_network/oknet: refactor to library in loadhosts (for exnetworks; xymonnet/xymongrep)
+* get_clientinfo() in xymond for client message parsing
 
 
 Bugfixes
