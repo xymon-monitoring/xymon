@@ -575,7 +575,7 @@ int main(int argc, char *argv[])
 				 * at the front of the buffer, we need to skip that when looking at
 				 * what type of message it is. Hence the "cwalk->buf+6".
 				 */
-				if (strncmp(cwalk->buf+6, "client", 6) == 0) {
+				if ((strncmp(cwalk->buf+6, "client ", 7) == 0) || (strncmp(cwalk->buf+6, "client/", 7) == 0)) {
 					/*
 					 * "client" messages go to all Xymon servers, but
 					 * we will only pass back the response from one of them
@@ -593,9 +593,14 @@ int main(int argc, char *argv[])
 					}
 				}
 				else if ((strncmp(cwalk->buf+6, "query", 5) == 0)  ||
-				         (strncmp(cwalk->buf+6, "config", 6) == 0) ||
-				         (strncmp(cwalk->buf+6, "ping", 4) == 0) ||
-				         (strncmp(cwalk->buf+6, "download", 8) == 0)) {
+					 (strncmp(cwalk->buf+6, "client", 6) == 0) ||
+					 (strncmp(cwalk->buf+6, "xymond", 6) == 0) ||
+					 (strncmp(cwalk->buf+6, "hobbitd", 7) == 0) ||
+					 (strncmp(cwalk->buf+6, "hostinfo", 8) == 0) ||
+					 (strncmp(cwalk->buf+6, "config", 6) == 0) ||
+					 (strncmp(cwalk->buf+6, "ghostlist", 9) == 0) ||
+					 (strncmp(cwalk->buf+6, "ping", 4) == 0) ||
+					 (strncmp(cwalk->buf+6, "download", 8) == 0)) {
 					/* 
 					 * These requests get a response back, but send no data.
 					 * Send these to the last of the Xymon servers only.

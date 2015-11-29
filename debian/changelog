@@ -86,6 +86,8 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      crondate) to $XYMONVAR
    * xymond: Fix double-free in grouplist referenced 2x in handle_status 
      (Thanks, Franco Gasperino)
+   * xymonproxy: 'clientlog' messages should not be sent to all servers,
+     nor should many others
    * Standardize the location of "modify" messages on status pages and in 
      mailed alerts
    * xymond_alert: Reload config in response to -HUP or 'reload' message
