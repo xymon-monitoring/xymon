@@ -33,6 +33,8 @@ An entry looks like this:
 \&          NEEDS xymond
 \&          GROUP webupdates
 \&          INTERVAL 5m
+\&          DELAY 30
+\&          FAILDELAY 600
 \&          ONHOST localhost
 \&          MAXTIME 10m
 \&          LOGFILE /var/log/xymon/updateweb.log
@@ -70,11 +72,24 @@ provide a "regular expression"; if the hostname where xymonlaunch
 runs matches this expression, then the task will run. If it doesn't
 match, then the task is treated as if it were DISABLED.
 
+The \fBDELAY\fR keyword sets an intial holding period after launch
+before this task is started. By default all tasks are launched
+immediately, or no later than 5s after any NEEDS have been 
+fulfulled.
+
 The \fBMAXTIME\fR keyword sets a maximum time that the task may
 run; if exceeded, xymonlaunch will kill the task. The time
 is in seconds by default, you can specify minutes, hours or
 days by adding an "m", "h" or "d" after the number. By default
 there is no upper limit on how long a taskmay run.
+
+The \fBFAILDELAY\fR keyword sets a how long to hold off on re-
+launching a task that has exited with a non-zero error value \fB5\fR
+times in that length of time. For example, if a process had to 
+be re-launched (due to error) more than 5 times in a 15 minute 
+period, 15 minutes would have to pass before it is tried again. 
+This fail "penalty" is cleared if it stays up for a subsequent 
+15 minutes. Default: 10m
 
 The \fBNEEDS\fR instructs xymonlaunch not to run this task unless
 the task defined by the NEEDS keyword is already running. This
