@@ -761,7 +761,7 @@ void load_tests(void)
 						handle = xtreeFind(svctree, "ldap");
 						s2 = ((handle == xtreeEnd(svctree)) ? NULL : (service_t *)xtreeData(svctree, handle));
 						if (s2) {
-							newtest2 = init_testitem(h, s2, NULL, "ldap", 0, 0, 0, 0, 1);
+							newtest2 = init_testitem(h, s2, NULL, "ldap", 0, 0, 0, 0, 1, 0);
 							newtest2->internal = 1;
 							newtest2->next = s2->items;
 							s2->items = newtest2;
