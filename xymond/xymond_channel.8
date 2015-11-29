@@ -3,6 +3,7 @@
 xymond_channel \- Feed a xymond channel to a worker module
 .SH SYNOPSIS
 .B "xymond_channel --channel=CHANNEL [options] workerprogram [worker-options]"
+.B "xymond_channel --channel=CHANNEL [options] --multilocal workerprogram [workerprogram2 workerprogram3 ...]"
 
 .SH DESCRIPTION
 xymond_channel hooks into one of the 
@@ -63,6 +64,22 @@ begins sending it messages. Note that this only occurs on the initial startup. I
 the worker module dies and must be re-launched by xymond_channel, it will begin
 receiving messages immediately. You normally don't need to set this. 
 (Default: no delay)
+
+.IP "--multirun=N"
+xymond_channel will launch N copies of the local worker and send the message to 
+whichever copy has the least number of messages in its queue. This allows you
+to spread out load if that worker cannot individually keep up with the
+incoming message load. If N is absent, implies --multilocal (below), which
+allows you to specify individual executable names to rotate through.
+(Default: off)
+
+.IP "--multilocal"
+xymond_channel normally executes a single local program, passing any subsequent
+arguments on to that program. In --multilocal mode, xymond_channel will launch
+multiple local programs and feed messages to them simultaneously. Note that 
+because each argument is considered its own executable, none of the programs
+may be given arguments of their own. If you need to specify arguments, use a
+shell wrapper as the command(s) xymond_channel is launching.
 
 .IP "--daemon"
 xymond_channel is normally started by 

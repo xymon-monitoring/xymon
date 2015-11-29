@@ -58,6 +58,7 @@ typedef struct xymon_peer_t {
 
 	enum { P_DOWN, P_UP, P_FAILED } peerstatus;
 	xymon_msg_t *msghead, *msgtail;	/* Message queue */
+	unsigned long msgcount;	/* Pending message queue size */
 
 	enum { P_LOCAL, P_NET } peertype;
 	int peersocket;				/* File descriptor receiving the data */
@@ -73,6 +74,10 @@ typedef struct xymon_peer_t {
 } xymon_peer_t;
 
 void * peers;
+static int localpeers = 0;
+static int networkpeers = 0;
+static int multipeers = 0;
+static int multirun = 0;
 
 pid_t deadpid = 0;
 int childexit;
@@ -145,7 +150,8 @@ void addnetpeer(char *peername)
 	if (peerport == 0) peerport = atoi(xgetenv("XYMONDPORT"));
 
 	newpeer = calloc(1, sizeof(xymon_peer_t));
-	newpeer->peername = strdup(peername);
+	newpeer->peername = (char *)malloc(strlen(peername)+12);
+	snprintf(newpeer->peername, (strlen(peername)+10), "%s:%d", peername, ++networkpeers);
 	newpeer->peerstatus = P_DOWN;
 	newpeer->peertype = P_NET;
 	newpeer->peeraddr.sin_family = AF_INET;
@@ -169,7 +175,8 @@ void addlocalpeer(char *childcmd, char **childargs)
 	for (count=0; (childargs[count]); count++) ;
 
 	newpeer = (xymon_peer_t *)calloc(1, sizeof(xymon_peer_t));
-	newpeer->peername = strdup("");
+	newpeer->peername = (char *)malloc(strlen(childcmd)+12);
+	snprintf(newpeer->peername, (strlen(childcmd)+10), "%s:%d", childcmd, ++localpeers);
 	newpeer->peerstatus = P_DOWN;
 	newpeer->peertype = P_LOCAL;
 	newpeer->childcmd = strdup(childcmd);
@@ -271,17 +278,13 @@ void flushmessage(xymon_peer_t *peer)
 
 	xfree(zombie->buf);
 	xfree(zombie);
+	peer->msgcount--;
 	pendingcount--;
 }
 
 static void addmessage_onepeer(xymon_peer_t *peer, char *inbuf, size_t inlen)
 {
 	xymon_msg_t *newmsg;
-
-	newmsg = (xymon_msg_t *) calloc(1, sizeof(xymon_msg_t));
-	newmsg->tstamp = gettimer();
-	newmsg->buf = newmsg->bufp = inbuf;
-	newmsg->buflen = inlen;
 
 	/* 
 	 * If we've flagged the peer as FAILED, then change status to DOWN so
@@ -290,11 +293,19 @@ static void addmessage_onepeer(xymon_peer_t *peer, char *inbuf, size_t inlen)
 	 */
 	if (peer->peerstatus == P_FAILED) peer->peerstatus = P_DOWN;
 
-	/* If the peer is down, we will only permit ONE message in the queue. */
+	/* If the peer is not up, we will only permit ONE message in the queue. */
 	if (peer->peerstatus != P_UP) {
 		errprintf("Peer not up, flushing message queue\n");
 		while (peer->msghead) flushmessage(peer);
+		if (peer->msgcount) { errprintf("xymond_channel: flushed all messages, but msgcount is %lu\n", peer->msgcount); peer->msgcount = 0; }
 	}
+
+	newmsg = (xymon_msg_t *) calloc(1, sizeof(xymon_msg_t));
+	newmsg->tstamp = gettimer();
+	newmsg->buf = (char *)malloc(inlen + 1);
+	memcpy(newmsg->buf, inbuf, inlen);
+	newmsg->bufp = newmsg->buf;
+	newmsg->buflen = inlen;
 
 	if (peer->msghead == NULL) {
 		peer->msghead = peer->msgtail = newmsg;
@@ -304,6 +315,7 @@ static void addmessage_onepeer(xymon_peer_t *peer, char *inbuf, size_t inlen)
 		peer->msgtail = newmsg;
 	}
 
+	peer->msgcount++;
 	pendingcount++;
 }
 
@@ -354,18 +366,31 @@ int addmessage(char *inbuf, size_t inlen)
 			}
 		}
 	}
-	else {
-		phandle = xtreeFind(peers, "");
-	}
 
-	if (bcastmsg) {
+	if ((multipeers && !multirun) || bcastmsg) {
 		for (phandle = xtreeFirst(peers); (phandle != xtreeEnd(peers)); phandle = xtreeNext(peers, phandle)) {
 			peer = (xymon_peer_t *)xtreeData(peers, phandle);
 
 			addmessage_onepeer(peer, inbuf, inlen);
 		}
 	}
+	else if (multipeers && multirun) {
+		/* Find the peer with the smallest number of messages in queue -- this could be expanded 
+		 * easily to a more general purpose load balancing mechanism in the future.
+		 */
+		unsigned long minqueuesize = 999999999; /* if you have more than this many pending, you have other problems */
+		xymon_peer_t *bestpeer = NULL;
+
+		for (phandle = xtreeFirst(peers); (phandle != xtreeEnd(peers)); phandle = xtreeNext(peers, phandle)) {
+			peer = (xymon_peer_t *)xtreeData(peers, phandle);
+			if (peer->msgcount < minqueuesize) { bestpeer = peer; minqueuesize = peer->msgcount; }
+		}
+		if (bestpeer) addmessage_onepeer(bestpeer, inbuf, inlen);
+		else errprintf("xymond_channel: BUG: multirun could not find any peers? Message dropped.\n");
+
+	}
 	else {
+		phandle = xtreeFirst(peers);
 		if (phandle == xtreeEnd(peers)) {
 			errprintf("No peer found to handle message, dropping it\n");
 			return -1;
@@ -401,6 +426,7 @@ void shutdownconnection(xymon_peer_t *peer)
 
 	/* Any messages queued are discarded */
 	while (peer->msghead) flushmessage(peer);
+	if (peer->msgcount) { errprintf("xymond_channel: flushed all messages, but msgcount is %lu\n", peer->msgcount); peer->msgcount = 0; }
 	peer->msghead = peer->msgtail = NULL;
 }
 
@@ -434,6 +460,7 @@ void sig_handler(int signum)
 
 int main(int argc, char *argv[])
 {
+	int multilocal = 0;
 	int daemonize = 0;
 	int cnid = -1;
 	pcre *msgfilter = NULL;
@@ -498,8 +525,38 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--no-md5")) {
 			checksumsize = 0;
 		}
+		else if (argnmatch(argv[argi], "--multilocal")) {
+			multilocal = 1;
+			dbgprintf("xymond_channel: sending to multiple local peers\n");
+		}
+		else if (argnmatch(argv[argi], "--multirun")) {
+			char *p = strchr(argv[argi], '=');
+			if (p) {
+				multirun = atoi(p+1);
+				logprintf("xymond_channel: sending messages to one of %d worker copies\n", multirun);
+			} else {
+				multirun = 1;
+				if (!multilocal) errprintf("xymond_channel: bare '--multirun' seen, assuming --multilocal\n");
+				multilocal = 1;
+			}
+		}
 		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
+		}
+		else if (multilocal) {
+			char *childcmd;
+			char **childargs;
+			childargs = (char **) calloc(2, sizeof(char *));
+
+			if (multirun && (multirun > 1)) errprintf("ERROR: specified --multirun=%d; '%d' ignored in multilocal mode\n", multirun, multirun);
+
+			while (argi < argc) {
+				childcmd = argv[argi];
+				childargs[0] = argv[argi];
+				addlocalpeer(childcmd, childargs);
+				argi++;
+			}
+			xfree(childargs);
 		}
 		else {
 			char *childcmd;
@@ -510,6 +567,12 @@ int main(int argc, char *argv[])
 			childargs = (char **) calloc((1 + argc - argi), sizeof(char *));
 			while (argi < argc) { childargs[i++] = argv[argi++]; }
 			addlocalpeer(childcmd, childargs);
+
+			/* if --multirun=N given, repeat as many _more_ times as needed */
+			/* --multirun=1 and no --multilocal is a no-op */
+			for ( i = 1; i < multirun; i++ ) addlocalpeer(childcmd, childargs);
+
+			xfree(childargs);
 		}
 	}
 
@@ -589,6 +652,9 @@ int main(int argc, char *argv[])
 			sleep(initialdelay);
 		}
 	}
+
+	/* Record if we're dealing with multiple local peers */
+	multipeers = ((networkpeers + localpeers) > 1);
 
 	/* Attach to the channel */
 	channel = setup_channel(cnid, CHAN_CLIENT);

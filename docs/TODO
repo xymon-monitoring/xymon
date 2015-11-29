@@ -10,6 +10,8 @@
 * Unified digest name parsing/dispatch
 * Re-integrate non-zlib compression logic
 * 'alerttxt' split into enums for keyword and regular case display
+* xymond_channel --initialdelay should be a P_DELAYED state, to allow for 
+  it to be applied on relaunch as well
 
 
 Bugfixes

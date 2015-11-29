@@ -19,6 +19,11 @@ Changes from 4.3.x -> 4.4-alpha
   them if the host/service has been dropped or the alert became stale
   (recovered while xymond_alert was not running), not just if the
   test has been disabled.
+* xymond_channel can now send to multiple local workers at once, and/or
+  rotate message submission to multiple copies of local workers with the
+  --multilocal and/or --multirun options.
+* xymond_channel can wait for a configurable amount of time after launching
+  a worker before sending it messages, to give it time to initialize.
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet
