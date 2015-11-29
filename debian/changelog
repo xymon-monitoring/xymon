@@ -114,7 +114,8 @@ xymon (4.4.0-alpha5) unstable; urgency=low
        semaphore has been released (may be useful in certain heavy-load situations)
      - only flush peer queues of expired messages every few seconds instead of
        re-walking the queue for every message that comes in
-   
+   * xymond now allocates a persistent buffer in memory for preparing a channel message   
+
 
  -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 Nov 2015 18:26:21 +0100
 

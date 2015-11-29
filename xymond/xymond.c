@@ -1938,7 +1938,6 @@ void handle_modify(char *msg, xymond_log_t *log, int color)
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
 {
 	void *hi;
-	char *chnbuf;
 	int buflen = 0;
 	char *classname, *pagepath;
 
@@ -1956,17 +1955,15 @@ void handle_data(char *msg, char *sender, char *origin, char *hostname, char *te
 	if (msg) buflen += strlen(msg); else dbgprintf("  msg is NULL\n");
 	buflen += 6;
 
-	chnbuf = (char *)malloc(buflen);
-	snprintf(chnbuf, buflen, "%s|%s|%s|%s|%s\n%s", 
+	snprintf(datachn->workmem, buflen, "%s|%s|%s|%s|%s\n%s", 
 		 (origin ? origin : ""), 
 		 (hostname ? hostname : ""), 
 		 (testname ? testname : ""), 
 		 (classname ? classname : ""),
 		 (pagepath ? pagepath : ""),
 		 msg);
-
-	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, chnbuf);
-	xfree(chnbuf);
+	*(datachn->workmem + buflen) = '\0';
+	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, datachn->workmem);
 	dbgprintf("<-handle_data\n");
 }
 
@@ -2269,7 +2266,7 @@ void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 void handle_client(char *msg, char *sender, char *hostname, char *collectorid, 
 		   char *clientos, char *clientclass)
 {
-	char *chnbuf, *theclass;
+	char *theclass;
 	int msglen, buflen = 0;
 	xtreePos_t hosthandle;
 	clientmsg_list_t *cwalk, *chead, *ctail, *czombie;
@@ -2337,10 +2334,9 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 		}
 	}
 
-	chnbuf = (char *)malloc(buflen);
-	snprintf(chnbuf, buflen, "%s|%s|%s|%s\n%s", hostname, clientos, theclass, collectorid, msg);
-	posttochannel(clientchn, channelnames[C_CLIENT], msg, sender, hostname, NULL, chnbuf);
-	xfree(chnbuf);
+	snprintf(clientchn->workmem, buflen, "%s|%s|%s|%s\n%s", hostname, clientos, theclass, collectorid, msg);
+	*(clientchn->workmem + buflen) = '\0';
+	posttochannel(clientchn, channelnames[C_CLIENT], msg, sender, hostname, NULL, clientchn->workmem);
 	dbgprintf("<-handle_client\n");
 }
 

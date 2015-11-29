@@ -84,6 +84,7 @@ xymond_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	newch = (xymond_channel_t *)malloc(sizeof(xymond_channel_t));
 	newch->seq = 0;
 	newch->channelid = chnid;
+	newch->workmem = NULL;
 	newch->msgcount = 0;
 	newch->shmid = shmget(key, bufsz, flags);
 	if (newch->shmid == -1) {
@@ -126,6 +127,12 @@ xymond_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	}
 	else if (role == CHAN_MASTER) {
 		int n;
+		/* Allocate some working memory here */
+		newch->workmem = (char *)malloc(bufsz);
+		if (newch->workmem == NULL) { errprintf("Out of memory"); xfree (newch); return NULL; }
+		else dbgprintf(" -> create_channel has working mem for %s at %p:\n", channelnames[newch->channelid], newch->workmem);
+		*(newch->workmem) = '\0';
+		*(newch->workmem + bufsz - 1) = '\0'; /* safety */
 
 		n = semctl(newch->semid, CLIENTCOUNT, GETVAL);
 		if (n > 0) {
@@ -155,6 +162,7 @@ void close_channel(xymond_channel_t *chn, int role)
 	MEMUNDEFINE(chn->channelbuf);
 	shmdt(chn->channelbuf);
 	if (role == CHAN_MASTER) shmctl(chn->shmid, IPC_RMID, NULL);
+	if (chn->workmem) dbgprintf(" -> close_channel had working mem for %s at %p\n", channelnames[chn->channelid], chn->workmem);
 }
 
 int setup_feedback_queue(int role)
