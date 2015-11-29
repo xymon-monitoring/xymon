@@ -130,6 +130,9 @@ Changes from 4.3.x -> 4.4-alpha
 * xymond now allocates a persistent buffer in memory for preparing a channel message
 * Extend the legacy BB "client message as status" syntax to allow for specifying
   the server OS and client class
+* Add 'histsync' diagnostic command to force spurious stachg on next status
+  message, causing xymond_history to update history file if color doesn't match.
+
 
 Changes from 4.3.23 -> 4.3.24 (23 Nov 2015)
 ===========================================

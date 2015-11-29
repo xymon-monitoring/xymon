@@ -280,6 +280,7 @@ xymond_statistics_t xymond_stats[] = {
 	{ "xymondxboard", },
 	{ "hobbitdxboard", },
 	{ "hostinfo", },
+	{ "histsync", },
 	{ "xymondack", },
 	{ "hobbitdack", },
 	{ "ack", },
@@ -4241,6 +4242,51 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		msg->buflen = STRBUFLEN(response);
 		msg->bufp = msg->buf = grabstrbuffer(response);
 		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
+	}
+	else if ((strncmp(msg->buf, "histsync", 8) == 0)) {
+		/* 
+		 * Mark one or many status logs as in need of a re-sync.
+		 * This causes a spurious stachg post to be sent, and a
+		 * spurious re-validation by xymond_history.
+		 */
+		xtreePos_t hosthandle;
+		xymond_hostlist_t *hwalk;
+		void *hinfo;
+		xymond_log_t *lwalk;
+		hostfilter_rec_t *logfilter;
+		char *fields = NULL;
+		int acklevel = -1, havehostfilter = 0;
+		strbuffer_t *response;
+
+		/* administrative - can cause high I/O load */
+		if (!oksender(adminsenders, NULL, msg->sender, msg->buf)) goto done;
+
+		logfilter = setup_filter(msg->buf, &fields, &acklevel, &havehostfilter);
+
+		for (hosthandle = xtreeFirst(rbhosts); (hosthandle != xtreeEnd(rbhosts)); hosthandle = xtreeNext(rbhosts, hosthandle)) {
+
+			hwalk = xtreeData(rbhosts, hosthandle);
+			if (!hwalk) { errprintf("host-tree has a record with no data\n"); continue; }
+
+			/* Summaries don't get a stachg anyway */
+			if (hwalk->hosttype != H_NORMAL) continue;
+
+			hinfo = hostinfo(hwalk->hostname);
+			if (!hinfo) { errprintf("Hostname '%s' in tree, but no host-info\n", hwalk->hostname); continue; }
+
+			/* Host/pagename filter */
+			if (!match_host_filter(hinfo, logfilter, 0, NULL)) continue;
+			dbgprintf(" - host %s matched histsync; clearing matching testnames\n", hwalk->hostname);
+
+			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
+				// if (!match_test_filter(lwalk, logfilter)) continue;
+				// dbgprintf(" - forcing a resync of history for %s.%s the next time through\n", lwalk->host->hostname, lwalk->test->name);
+				// lwalk->histsynced = 0;
+				if (match_test_filter(lwalk, logfilter)) lwalk->histsynced = 0;
+			}
+		}
+
+		clear_filter(logfilter);
 	}
 
 	else if ((strncmp(msg->buf, "xymondack", 9) == 0) || (strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {

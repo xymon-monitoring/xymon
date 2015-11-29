@@ -132,6 +132,9 @@ xymon (4.4.0-alpha5) unstable; urgency=low
    * xymond now allocates a persistent buffer in memory for preparing a channel message   
    * Extend the legacy BB "client message as status" syntax to allow for specifying
      the server OS and client class
+   * Add 'histsync' diagnostic command to force spurious stachg on next status
+     message, causing xymond_history to update history file if color doesn't match.
+
 
  -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 Nov 2015 18:26:21 +0100
 

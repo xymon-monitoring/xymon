@@ -429,6 +429,21 @@ a number of fields, separated by a pipe-sign. The first two fields
 will always be the hostname and the IP-address. The remaining fields 
 - if any - are the hosts.cfg tags in no particular order.
 
+.IP "histsync [CRITERIA]"
+Forces xymond_history (running on the server) to re-verify that the
+history files match the current status color, which can happen if an
+update message was lost or due to an I/O error. CRITERIA selects which
+host(s) and test(s) to mark for resync, and is also identical to the 
+CRITERIA in the xymondboard command.
+
+The resync does not actually occur until the next status message is
+received for the host(s) and/or test(s) in question.
+
+Note that a bare 'histsync' command should be used with caution. It 
+will cause I/O load equivalent to that seen when xymond initially
+starts up, which can be large on a heavily loaded system, while all
+files are validated.
+
 .IP "download FILENAME"
 Download a file from the Xymon server\(aqs download directory.
 
