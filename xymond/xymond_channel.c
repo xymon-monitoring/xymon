@@ -506,6 +506,12 @@ int main(int argc, char *argv[])
 
 			for (cnid = C_STATUS; (channelnames[cnid] && strcmp(channelnames[cnid], cn)); cnid++) ;
 			if (channelnames[cnid] == NULL) cnid = -1;
+			else {
+				char *chanenv = (char *)malloc(strlen(cn) + 20);
+				/* pass on to our local children */
+				snprintf(chanenv, (strlen(cn) + 20), "XYMOND_CHANNELNAME=%s", cn);
+				putenv(chanenv);
+			}
 		}
 		else if (argnmatch(argv[argi], "--msgtimeout")) {
 			char *p = strchr(argv[argi], '=');

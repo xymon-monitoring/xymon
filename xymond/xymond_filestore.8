@@ -19,7 +19,8 @@ stores these in the filesystem in a manner that is compatible with the
 Big Brother daemon, bbd.
 
 This program can be started multiple times, if you want to store
-messages for more than one channel.
+messages for more than one channel. It has built-in support for the 
+\fBstatus\fR, \fBdata\fR, \fBnotes\fR, and \fBenadis\fR channels.
 
 .SH OPTIONS
 .IP "\-\-status"
@@ -51,6 +52,11 @@ Xymon webpages.
 Incoming messages are enable/disable messages, they will update 
 files in the $XYMONDISABLEDDIR directory. This is only needed if you have
 third-party add-ons that use these files.
+
+Note: The four options above are optional if run via xymond_channel(8). 
+xymond_filestore will be able to tell which channel it's listening to
+automatically.
+
 
 .IP "\-\-dir=DIRECTORY"
 Overrides the default output directory.

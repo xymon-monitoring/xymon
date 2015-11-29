@@ -13,8 +13,8 @@ select messages based on the hostname, testname or color of the status.
 By default the resulting messages are printed on stdout, but they can also
 be fed into a command for further processing.
 
-xymond_capture supports the \fBstatus\fR, \fBdata\fR, \fBclient\fR and 
-\fBhostdata\fR channels.
+xymond_capture supports all channels, however not all filters make sense
+in all situations. Filters that are inapplicable will be silently ignored.
 
 .SH OPTIONS
 .IP "\-\-hosts=PATTERN"
@@ -42,9 +42,6 @@ can be any command which accepts the mssage on standard input.
 .IP "\-\-batch\-timeout=SECONDS"
 Collect messages until no messages have arrived in SECONDS seconds, before sending
 them to the \-\-batch\-command COMMAND.
-
-.IP "\-\-client"
-Capture data from the "client" channel instead of the default "status" channel.
 
 .IP "\-\-debug"
 Enable debugging output.

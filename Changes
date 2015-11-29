@@ -26,6 +26,9 @@ Changes from 4.3.x -> 4.4-alpha
   a worker before sending it messages, to give it time to initialize.
 * xymond_channel will now attempt to finish sending any messages that 
   are still pending for workers before it exits.
+* xymond_channel will now pass the channel it's connected to onto its
+  workers via the XYMOND_CHANNELNAME environment variable. xymond_filestore
+  and xymond_capture will now use this value if no options are given.
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet

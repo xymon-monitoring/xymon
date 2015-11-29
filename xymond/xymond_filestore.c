@@ -35,7 +35,7 @@ static char rcsid[] = "$Id$";
 static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 static int locatorbased = 0;
 
-enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
+enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS, ROLE_LAST };
 
 void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, time_t timesincechange, int seq)
 {
@@ -191,8 +191,8 @@ int main(int argc, char *argv[])
 	char *htmlextension = "html";
 	char *onlytests = NULL;
 	char *msg;
-	enum role_t role = ROLE_STATUS;
-	enum msgchannels_t chnid = C_STATUS;
+	enum role_t role = ROLE_LAST;
+	enum msgchannels_t chnid = C_LAST;
 	int argi;
 	int seq;
 	int running = 1;
@@ -253,6 +253,39 @@ int main(int argc, char *argv[])
 		}
 		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
+		}
+	}
+
+	/* If no command line option given, get from environment */
+	if (role == ROLE_LAST) {
+		char *channelname = getenv("XYMOND_CHANNELNAME");
+
+		if (!channelname || *channelname == '\0') {
+			errprintf("No channel given, aborting\n");
+			return 1;
+		}
+
+		dbgprintf("Getting channel from environment: %s\n", channelname);
+
+		if (strcmp(channelname, "status") == 0) {
+			role = ROLE_STATUS;
+			chnid = C_STATUS;
+			if (!filedir) filedir = xgetenv("XYMONRAWSTATUSDIR");
+		}
+		else if (strcmp(channelname, "data") == 0) {
+			role = ROLE_DATA;
+			chnid = C_DATA;
+			if (!filedir) filedir = xgetenv("XYMONDATADIR");
+		}
+		else if (strcmp(channelname, "notes") == 0) {
+			role = ROLE_NOTES;
+			chnid = C_NOTES;
+			if (!filedir) filedir = xgetenv("XYMONNOTESDIR");
+		}
+		else if (strcmp(channelname, "enadis") == 0) {
+			role = ROLE_ENADIS;
+			chnid = C_ENADIS;
+			if (!filedir) filedir = xgetenv("XYMONDISABLEDDIR");
 		}
 	}
 

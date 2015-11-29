@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	char *batchcmd = NULL;
 	strbuffer_t *batchbuf = NULL;
 	time_t lastmsgtime = 0;
-	int hostnameitem = 4, testnameitem = 5, coloritem = 7;
+	int hostnameitem = 0, testnameitem = 0, coloritem = 0;
 
 	/* Handle program options. */
 	libxymon_init(argv[0]);
@@ -63,9 +63,13 @@ int main(int argc, char *argv[])
 			timeout->tv_nsec = 0;
 		}
 		else if (strcmp(argv[argi], "--client") == 0) {
-			hostnameitem = 3;
-			testnameitem = 4;
+			hostnameitem = 4;
 			errprintf("Expecting to be fed from 'client' channel\n");
+		}
+		else if (strcmp(argv[argi], "--data") == 0) {
+			hostnameitem = 5;
+			testnameitem = 6;
+			errprintf("Expecting to be fed from 'data' channel\n");
 		}
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
@@ -121,6 +125,49 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 	}
+
+	/* If not otherwise told, determine what channel we're on from the environment */
+
+	if ((!hostnameitem) && getenv("XYMOND_CHANNELNAME")) {
+		char *channelname = getenv("XYMOND_CHANNELNAME");
+
+
+		if (strcmp(channelname, "status") == 0) {
+			hostnameitem = 4; testnameitem = 5; coloritem = 7;
+		}
+		else if (strcmp(channelname, "stachg") == 0) {
+			hostnameitem = 4; testnameitem = 5; coloritem = 7;
+		}
+		else if (strcmp(channelname, "page") == 0) {
+			hostnameitem = 5; testnameitem = 6; coloritem = 0;
+		}
+		else if (strcmp(channelname, "data") == 0) {
+			hostnameitem = 4; testnameitem = 5; coloritem = 0;
+		}
+		else if (strcmp(channelname, "client") == 0) {
+			hostnameitem = 3; testnameitem = 0; coloritem = 0;
+		}
+		else if (strcmp(channelname, "clichg") == 0) {
+			hostnameitem = 3; testnameitem = 0; coloritem = 0;
+		}
+		else if (strcmp(channelname, "notes") == 0) {
+			hostnameitem = 3; testnameitem = 0; coloritem = 0;
+		}
+		else if (strcmp(channelname, "enadis") == 0) {
+			hostnameitem = 3; testnameitem = 4; coloritem = 0;
+		}
+		else if (strcmp(channelname, "user") == 0) {
+			errprintf("xymond_capture: 'user' channel is free-form; can't filter\n");
+			hostnameitem = 0; testnameitem = 0; coloritem = 0;
+		}
+		else {
+			errprintf("xymond_capture: assuming 'status' channel, found %s\n", channelname);
+			hostnameitem = 4; testnameitem = 5; coloritem = 7;
+		}
+		dbgprintf("Getting channel from environment: %s\n", channelname);
+
+	}
+
 
 	signal(SIGCHLD, SIG_IGN);
 
@@ -294,23 +341,23 @@ int main(int argc, char *argv[])
 			}
 
 
-			if (hostexp) {
+			if (hostnameitem && hostexp) {
 				match = (pcre_exec(hostexp, NULL, hostname, strlen(hostname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
 				if (!match) continue;
 			}
-			if (exhostexp) {
+			if (hostnameitem && exhostexp) {
 				match = (pcre_exec(exhostexp, NULL, hostname, strlen(hostname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
 				if (match) continue;
 			}
-			if (testexp) {
+			if (testnameitem && testexp) {
 				match = (pcre_exec(testexp, NULL, testname, strlen(testname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
 				if (!match) continue;
 			}
-			if (extestexp) {
+			if (testnameitem && extestexp) {
 				match = (pcre_exec(extestexp, NULL, testname, strlen(testname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
 				if (match) continue;
 			}
-			if (colorexp) {
+			if (coloritem && colorexp) {
 				match = (pcre_exec(colorexp, NULL, color, strlen(color), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
 				if (!match) continue;
 			}
