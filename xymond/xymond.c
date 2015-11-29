@@ -1203,8 +1203,8 @@ void get_hts(char *msg, char *sender, char *origin,
 	colstr = strtok(NULL, " \t"); /* ... and the color (if any) */
 	if (colstr) {
 		*color = parse_color(colstr);
-		/* Don't create log-entries if we get a bad color spec. */
-		if (*color == -1) createlog = 0;
+		/* Don't create log-entries if we get a bad color spec or if it's the 'client ' pseudo-color */
+		if (*color == -1 || *color == COL_CLIENT) createlog = 0;
 	}
 	else createlog = 0;
 
