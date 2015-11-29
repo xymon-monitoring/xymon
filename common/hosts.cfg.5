@@ -94,6 +94,7 @@ Note that "noclear" also affects the behaviour of network tests;
 see below.
 
 .IP prefer
+.IP noprefer
 When a single host is defined multiple time in the hosts.cfg file,
 xymongen tries to guess which definition is the best to use for
 the information used on the "info" column, or for the NOPROPRED
@@ -103,9 +104,12 @@ a "noconn" tag or an IP of 0.0.0.0 get lower priority.
 By using the "prefer" tag you tell xymongen that this host definition
 should be used.
 
-Note: This only applies to hosts that are defined multiple
-times in the hosts.cfg file, although it will not hurt to add it
-on other hosts as well.
+By using the "noprefer" tag you tell xymongen that this host definition
+should be given the lowest priority of all.
+
+Note: These are only needed if you have hosts that are defined multiple
+times in the hosts.cfg file, although it will not hurt to add them to 
+other hosts as well.
 
 .IP multihomed
 Tell Xymon that data from the host can arrive from multiple IP-addresses.

@@ -382,13 +382,16 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				}
 
 				/* 
-				 * If we find a "noconn", drop preference value to 0.
+				 * If we find a "noprefer", drop reference value to -1.
 				 * If we find a "prefer", up reference value to 2.
+				 * If we find a "noconn", drop preference value to 0.
 				 */
-				if ((newitem->preference == 1) && (strcmp(newitem->elems[elemidx], "noconn") == 0))
-					newitem->preference = 0;
+				if (strcmp(newitem->elems[elemidx], "noprefer") == 0)
+					newitem->preference = -1;
 				else if (strcmp(newitem->elems[elemidx], "prefer") == 0)
 					newitem->preference = 2;
+				else if ((newitem->preference == 1) && (strcmp(newitem->elems[elemidx], "noconn") == 0))
+					newitem->preference = 0;
 
 				/* Skip whitespace until start of next tag */
 				if (tag) tag += strspn(tag, " \t\r\n");
