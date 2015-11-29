@@ -88,7 +88,7 @@ typedef struct conn_t {
 	int ssocket;
 	int conntries, sendtries;
 	int connectpending;
-	time_t conntime;
+	time_t nextconntime;
 	int madetocombo;
 	struct timespec arrival;
 	struct timespec timelimit;
@@ -561,7 +561,7 @@ int main(int argc, char *argv[])
 
 				cwalk->conntries = CONNECT_TRIES;
 				cwalk->sendtries = SEND_TRIES;
-				cwalk->conntime = 0;
+				cwalk->nextconntime = 0;
 
 				/*
 				 * We now want to find out what kind of message we've got.
@@ -737,13 +737,13 @@ int main(int argc, char *argv[])
 				}
 
 				ctime = gettimer();
-				if (ctime < (cwalk->conntime + CONNECT_INTERVAL)) {
+				if (ctime < cwalk->nextconntime) {
 					dbgprintf(" conn %ld: delaying retry to server %d (%s)\n", cwalk->connid, cwalk->snum, xymonservername[cwalk->snum]);
 					break;
 				}
 
 				cwalk->conntries--;
-				cwalk->conntime = ctime;
+				cwalk->nextconntime = ctime + CONNECT_INTERVAL;
 				if (cwalk->conntries < 0) {
 					errprintf(" conn %ld: server %d (%s) not responding, message lost\n", cwalk->connid, cwalk->snum, xymonservername[cwalk->snum]);
 					cwalk->state = P_REQ_DONE;	/* Not CLENAUP - might be more servers */
@@ -810,7 +810,7 @@ int main(int argc, char *argv[])
 					cwalk->ssocket = -1; sockcount--;
 					cwalk->conntries = CONNECT_TRIES;
 					cwalk->sendtries = SEND_TRIES;
-					cwalk->conntime = 0;
+					cwalk->nextconntime = 0;
 					cwalk->state = P_REQ_CONNECTING;
 					break;
 				}
@@ -916,6 +916,7 @@ int main(int argc, char *argv[])
 				cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
 				memset(&cwalk->caddr, 0, sizeof(cwalk->caddr));
+				cwalk->nextconntime = 0;
 				cwalk->madetocombo = 0;
 				cwalk->state = P_IDLE;
 				break;
@@ -1102,7 +1103,7 @@ int main(int argc, char *argv[])
 							cwalk->sendtries--;
 							cwalk->state = P_REQ_CONNECTING;
 							cwalk->conntries = CONNECT_TRIES;
-							cwalk->conntime = gettimer();
+							cwalk->nextconntime = gettimer() + CONNECT_INTERVAL;
 						}
 					}
 					break;
