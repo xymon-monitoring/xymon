@@ -101,6 +101,17 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      MAX_XYMON_INBUFSZ - max size of a connection buffer, no matter the source
      MAX_XYMON_MSGSZ - max size of an uncompressed message sent on a channel
    * Improved checking we don't hit combo size and msg number limits
+   * xymond_channel: 
+     - reuse existing memory buffers instead of re-allocating
+     - prioritize channel pickup from xymond over writing to the worker by
+       waiting for far less time between consecutive writes to the same worker
+       and setting a maximum number of writes to be made when there was a message
+       recently picked up on the channel
+     - add '--filterlater' option to postpone potentially heavy regex matching
+       until after a copy has been picked up from the channel and the xymond
+       semaphore has been released (may be useful in certain heavy-load situations)
+     - only flush peer queues of expired messages every few seconds instead of
+       re-walking the queue for every message that comes in
    
 
  -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 Nov 2015 18:26:21 +0100

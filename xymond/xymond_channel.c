@@ -40,7 +40,17 @@ static char rcsid[] = "$Id$";
 
 #include <signal.h>
 
+/* How long should we wait when selecting the peer and seeing if it can accept data? - in microseconds */
+#define PEERWAITUSEC 15
 
+/* How often do we go through messages pending for a peer and flush stale ones */
+#define PEERFLUSHSECS 5
+
+
+/* How many writes max per peer if we picked up a message via semaphore */
+/* We want this to be somewhat low to prevent semaphore communication from being unduly delayed */
+/* which will negatively affect xymond */
+static int maxpeerwrites = 1;
 
 /* Our in-memory queue of messages received from xymond via IPC. One queue per peer. */
 typedef struct xymon_msg_t {
@@ -59,6 +69,7 @@ typedef struct xymon_peer_t {
 	enum { P_DOWN, P_UP, P_FAILED } peerstatus;
 	xymon_msg_t *msghead, *msgtail;	/* Message queue */
 	unsigned long msgcount;	/* Pending message queue size */
+	time_t nextflushtime;	/* When to check for stale messages to flush out */
 
 	enum { P_LOCAL, P_NET } peertype;
 	int peersocket;				/* File descriptor receiving the data */
@@ -92,6 +103,14 @@ static int dologswitch = 0;
 static int hupchildren = 0;
 static int pendingcount = 0;
 static int messagetimeout = 30;
+
+/* Do we run our filters before or after copying the
+ * message into local memory (and letting xymond get on
+ * with its semaphore work). In very heavy systems with 
+ * lots of RAM, it might be more important to perform
+ * semaphore changes first.
+ */
+static int filterlater = 0;
 
 /*
  * chksumsize is the space left in front of the message buffer, to
@@ -463,6 +482,8 @@ int main(int argc, char *argv[])
 	int multilocal = 0;
 	int daemonize = 0;
 	int cnid = -1;
+	char *inbuf = NULL;
+	size_t msgsz = 0;
 	pcre *msgfilter = NULL;
 	pcre *stdfilter = NULL;
 
@@ -519,6 +540,9 @@ int main(int argc, char *argv[])
 				stdfilter = firstlineregex("^@@(logrotate|shutdown|drophost|droptest|renamehost|renametest)");
 			}
 		}
+		else if (argnmatch(argv[argi], "--filterlater")) {
+			filterlater = 1;
+		}
 		else if (argnmatch(argv[argi], "--md5")) {
 			checksumsize = 33;
 		}
@@ -539,6 +563,12 @@ int main(int argc, char *argv[])
 				if (!multilocal) errprintf("xymond_channel: bare '--multirun' seen, assuming --multilocal\n");
 				multilocal = 1;
 			}
+		}
+		else if (argnmatch(argv[argi], "--maxpeerwrites")) {
+			char *p = strchr(argv[argi], '=');
+			maxpeerwrites = atoi(p+1);
+			dbgprintf("xymond_channel: max writes attempted when msg on channel: %d\n", maxpeerwrites);
+			if (maxpeerwrites <= 0) maxpeerwrites = 1;	/* it's a do ... while later on, basically */
 		}
 		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
@@ -658,7 +688,14 @@ int main(int argc, char *argv[])
 
 	/* Attach to the channel */
 	channel = setup_channel(cnid, CHAN_CLIENT);
-	if (channel == NULL) {
+	if (channel != NULL) {
+		inbuf = (char *)malloc(1024*shbufsz(cnid) + checksumsize + 1);
+		if (inbuf == NULL) {
+			errprintf("xymond_channel: Could not allocate sufficient memory for %s channel buffer size\n", channelnames[cnid]);
+			running = 0;
+		}
+	}
+	else {
 		errprintf("Channel not available\n");
 		running = 0;
 	}
@@ -673,7 +710,8 @@ int main(int argc, char *argv[])
 		 * queued data to the worker.
 		 */
 		struct sembuf s;
-		int n;
+		int n, gotmsg;
+		time_t msgtimeout, currenttime;
 
 		if (deadpid != 0) {
 			char *cause = "Unknown";
@@ -703,13 +741,13 @@ int main(int argc, char *argv[])
 			 * GOCLIENT went high, and so we got alerted about a new
 			 * message arriving. Copy the message to our own buffer queue.
 			 */
-			char *inbuf = NULL;
-			int msgsz = 0;
 
-			if (!msgfilter || matchregex(channel->channelbuf, msgfilter) || matchregex(channel->channelbuf, stdfilter)) {
+			if (filterlater || !msgfilter || matchregex(channel->channelbuf, msgfilter) || matchregex(channel->channelbuf, stdfilter)) {
 				msgsz = strlen(channel->channelbuf);
-				inbuf = (char *)malloc(msgsz + checksumsize + 1);
 				memcpy(inbuf+checksumsize, channel->channelbuf, msgsz+1); /* Include \0 */
+			}
+			else {
+				msgsz = 0; *inbuf = '\0';
 			}
 
 			/* 
@@ -747,7 +785,10 @@ int main(int argc, char *argv[])
 				errprintf("Tried to down BOARDBUSY: %s\n", strerror(errno));
 			}
 
-			if (inbuf) {
+			/* If we postponed filtering after we handled the semaphore logic, do it now */
+			if (filterlater && msgfilter && !matchregex(inbuf, msgfilter) && !matchregex(inbuf, stdfilter)) { msgsz = 0; *inbuf = '\0'; }
+
+			if (msgsz) {
 				/*
 				 * See if they want us to rotate logs. We pass this on to
 				 * the worker module as well, but must handle our own logfile.
@@ -784,9 +825,10 @@ int main(int argc, char *argv[])
 				 * Put the new message on our outbound queue.
 				 */
 				if (addmessage(inbuf, msgsz) != 0) {
-					/* Failed to queue message, free the buffer */
-					xfree(inbuf);
+					/* Failed to queue message */
+					errprintf("xymond_channel: Failed to queue message, moving on\n");
 				}
+				gotmsg = 1;			/* since we received something from xymond, don't dally too long */
 			}
 		}
 		else {
@@ -811,11 +853,14 @@ int main(int argc, char *argv[])
 		 * of the time because we'll just shove the data to the
 		 * worker child.
 		 */
+		currenttime = msgtimeout = gettimer();
+		msgtimeout -= messagetimeout;
+
 		for (handle = xtreeFirst(peers); (handle != xtreeEnd(peers)); handle = xtreeNext(peers, handle)) {
 			int canwrite = 1, hasfailed = 0;
 			xymon_peer_t *pwalk;
-			time_t msgtimeout = gettimer() - messagetimeout;
 			int flushcount = 0;
+			int writecount = maxpeerwrites;
 
 			pwalk = (xymon_peer_t *) xtreeData(peers, handle);
 			if (pwalk->msghead == NULL) continue; /* Ignore peers with nothing queued */
@@ -835,10 +880,14 @@ int main(int argc, char *argv[])
 				break;
 			}
 
-			/* See if we have stale messages queued */
-			while (pwalk->msghead && (pwalk->msghead->tstamp < msgtimeout)) {
-				flushmessage(pwalk);
-				flushcount++;
+
+			/* Occasionally see if we have stale messages queued */
+			if (currenttime > pwalk->nextflushtime) {
+				while (pwalk->msghead && (pwalk->msghead->tstamp < msgtimeout)) {
+					flushmessage(pwalk);
+					flushcount++;
+				}
+				pwalk->nextflushtime = currenttime + PEERFLUSHSECS;
 			}
 
 			if (flushcount) {
@@ -854,7 +903,7 @@ int main(int argc, char *argv[])
 
 				/* Check that this peer is ready for writing. */
 				FD_ZERO(&fdwrite); FD_SET(pwalk->peersocket, &fdwrite);
-				tmo.tv_sec = 0; tmo.tv_usec = 2000;
+				tmo.tv_sec = 0; tmo.tv_usec = PEERWAITUSEC;
 				n = select(pwalk->peersocket+1, NULL, &fdwrite, NULL, &tmo);
 				if (n == -1) {
 					errprintf("select() failed: %s\n", strerror(errno));
@@ -872,6 +921,8 @@ int main(int argc, char *argv[])
 					pwalk->msghead->bufp += n;
 					pwalk->msghead->buflen -= n;
 					if (pwalk->msghead->buflen == 0) flushmessage(pwalk);
+					/* stop on this peer after we've hit our max */
+					if (gotmsg && !--writecount) canwrite = 0;
 				}
 				else if (errno == EAGAIN) {
 					/*
@@ -908,6 +959,9 @@ int main(int argc, char *argv[])
 
 	/* Detach from channels */
 	close_channel(channel, CHAN_CLIENT);
+
+	/* Free the buffer to be pedantic */
+	if (inbuf) xfree(inbuf);
 
 	/* Close peer connections */
 	for (handle = xtreeFirst(peers); (handle != xtreeEnd(peers)); handle = xtreeNext(peers, handle)) {
