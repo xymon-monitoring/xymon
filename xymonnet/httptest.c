@@ -134,13 +134,24 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 
 			if (len1chunk > 0) {
 				switch (item->contentcheck) {
-				  case CONTENTCHECK_NONE:
-				  case CONTENTCHECK_CONTENTTYPE:
-					/* No need to save output - just drop it */
-					break;
-
 				  case CONTENTCHECK_REGEX:
 				  case CONTENTCHECK_NOREGEX:
+					item->contentsave = CONTENTSAVE_FULL;
+					break;
+
+				  case CONTENTCHECK_DIGEST:
+					/* Run the data through our digest routine, but discard the raw data */
+					if ((item->digestctx == NULL) || (digest_data(item->digestctx, buf, len1chunk) != 0)) {
+						errprintf("Failed to hash data for digest\n");
+					}
+					break;
+				}
+
+				switch (item->contentsave) {
+				  case CONTENTSAVE_NONE:
+					/* No need to save output - just drop it */
+					break;
+				  case CONTENTSAVE_FULL:
 					/* Save the full data */
 					if ((item->output == NULL) || (item->outlen == 0)) {
 						item->output = (unsigned char *)malloc(len1chunk+1);
@@ -152,13 +163,6 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 					memcpy(item->output+item->outlen, buf, len1chunk);
 					item->outlen += len1chunk;
 					*(item->output + item->outlen) = '\0'; /* Just in case ... */
-					break;
-
-				  case CONTENTCHECK_DIGEST:
-					/* Run the data through our digest routine, but discard the raw data */
-					if ((item->digestctx == NULL) || (digest_data(item->digestctx, buf, len1chunk) != 0)) {
-						errprintf("Failed to hash data for digest\n");
-					}
 					break;
 				}
 
@@ -359,6 +363,7 @@ void add_http_test(testitem_t *t, int dousecookies)
 
 	httptest->url = strdup(decodedurl);
 	httptest->contlen = -1;
+	httptest->contentsave = CONTENTSAVE_NONE;
 	httptest->parsestatus = (httptest->weburl.proxyurl ? httptest->weburl.proxyurl->parseerror : httptest->weburl.desturl->parseerror);
 
 	/* If there was a parse error in the URL, don't run the test */
@@ -418,11 +423,21 @@ void add_http_test(testitem_t *t, int dousecookies)
 		break;
 
 	  case WEBTEST_CONT:
+	  case WEBTEST_CONTONLY:
 		httptest->contentcheck = ((*httptest->weburl.expdata == '#') ?  CONTENTCHECK_DIGEST : CONTENTCHECK_REGEX);
 		break;
 
 	  case WEBTEST_NOCONT:
 		httptest->contentcheck = CONTENTCHECK_NOREGEX;
+		break;
+
+	  case WEBTEST_DATA:
+	  case WEBTEST_DATAONLY:
+	  case WEBTEST_DATASVC:
+	  case WEBTEST_CLIENTHTTP:
+	  case WEBTEST_CLIENTHTTPONLY:
+	  case WEBTEST_CLIENTHTTPSVC:
+		httptest->contentsave = CONTENTSAVE_FULL;
 		break;
 
 	  case WEBTEST_POST:
@@ -449,6 +464,9 @@ void add_http_test(testitem_t *t, int dousecookies)
 		httptest->contentcheck = CONTENTCHECK_CONTENTTYPE;
 		break;
 	}
+
+	/* Do we need the callback to save the raw data even if no content check? */
+	if ((t->senddata >= 2) || (t->sendclient >= 2)) httptest->contentsave = CONTENTSAVE_FULL;
 
 	/* Compile the hashes and regex's for those tests that use it */
 	switch (httptest->contentcheck) {

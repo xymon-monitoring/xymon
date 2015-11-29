@@ -337,7 +337,7 @@ testedhost_t *init_testedhost(char *hostname)
 
 testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, char *testspec, 
                           int dialuptest, int reversetest, int alwaystruetest, int silenttest,
-			  int sendasdata)
+			  int sendasdata, int sendasclient)
 {
 	testitem_t *newtest;
 
@@ -350,6 +350,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 	newtest->alwaystrue = alwaystruetest;
 	newtest->silenttest = silenttest;
 	newtest->senddata = sendasdata;
+	newtest->sendclient = sendasclient;
 	newtest->testspec = (testspec ? strdup(testspec) : NULL);
 	if (srcip)
 		newtest->srcip = strdup(srcip);
@@ -488,7 +489,7 @@ void load_tests(void)
 		testspec = xmh_item_walk(hwalk);
 		while (testspec) {
 			service_t *s = NULL;
-			int dialuptest = 0, reversetest = 0, silenttest = 0, sendasdata = 0;
+			int dialuptest = 0, reversetest = 0, silenttest = 0, sendasdata = 0, sendasclient = 0;
 			char *srcip = NULL;
 			int alwaystruetest = (xmh_item(hwalk, XMH_FLAG_NOCLEAR) != NULL);
 
@@ -565,6 +566,18 @@ void load_tests(void)
 					  argnmatch(testspec, "content=http") ||
 					  argnmatch(testspec, "cont;http")    ||
 					  argnmatch(testspec, "cont=")        ||
+					  argnmatch(testspec, "data;http")    ||
+					  argnmatch(testspec, "data=")        ||
+					  argnmatch(testspec, "dataonly;http") ||
+					  argnmatch(testspec, "dataonly=")     ||
+					  argnmatch(testspec, "datasvc;http")  ||
+					  argnmatch(testspec, "datasvc=")      ||
+					  argnmatch(testspec, "clienthttp;http")     ||
+					  argnmatch(testspec, "clienthttp=")         ||
+					  argnmatch(testspec, "clienthttponly;http") ||
+					  argnmatch(testspec, "clienthttponly=")     ||
+					  argnmatch(testspec, "clienthttpsvc;http")  ||
+					  argnmatch(testspec, "clienthttpsvc=")      ||
 					  argnmatch(testspec, "nocont;http")  ||
 					  argnmatch(testspec, "nocont=")      ||
 					  argnmatch(testspec, "post;http")    ||
@@ -591,6 +604,18 @@ void load_tests(void)
 						s = httptest;
 						if (!url.desturl->ip)
 							add_url_to_dns_queue(testspec);
+						if (argnmatch(testspec, "dataonly;http") || argnmatch(testspec, "dataonly="))
+							sendasdata = 1;
+						else if (argnmatch(testspec, "data;http") || argnmatch(testspec, "data="))
+							sendasdata = 2;
+						else if (argnmatch(testspec, "datasvc;http") || argnmatch(testspec, "datasvc="))
+							sendasdata = 3;
+						else if (argnmatch(testspec, "clienthttponly;http") || argnmatch(testspec, "clienthttponly="))
+							sendasclient = 1;
+						else if (argnmatch(testspec, "clienthttp;http") || argnmatch(testspec, "clienthttp="))
+							sendasclient = 2;
+						else if (argnmatch(testspec, "clienthttpsvc;http") || argnmatch(testspec, "clienthttpsvc="))
+							sendasclient = 3;
 					}
 				}
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
@@ -715,7 +740,7 @@ void load_tests(void)
 					testitem_t *newtest;
 
 					anytests = 1;
-					newtest = init_testitem(h, s, srcip, testspec, dialuptest, reversetest, alwaystruetest, silenttest, sendasdata);
+					newtest = init_testitem(h, s, srcip, testspec, dialuptest, reversetest, alwaystruetest, silenttest, sendasdata, sendasclient);
 					newtest->next = s->items;
 					s->items = newtest;
 
@@ -754,7 +779,7 @@ void load_tests(void)
 			testitem_t *newtest;
 
 			anytests = 1;
-			newtest = init_testitem(h, pingtest, NULL, NULL, ping_dialuptest, ping_reversetest, 1, 0, 0);
+			newtest = init_testitem(h, pingtest, NULL, NULL, ping_dialuptest, ping_reversetest, 1, 0, 0, 0);
 			newtest->next = pingtest->items;
 			pingtest->items = newtest;
 			h->dodns = 1;

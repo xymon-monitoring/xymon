@@ -1159,6 +1159,46 @@ by adding the \fBHIDEHTTP\fR tag to the host entry.
 This syntax is deprecated. You should use the "cont"
 tag instead, see above.
 
+.IP dataonly[=COLUMN];URL;
+.IP data=[=COLUMN];URL;
+.IP datasvc=[=COLUMN];URL;
+
+These tags are used to specify an http/https check where the raw 
+contents of the page retrieved are sent over the "data" channel
+with a dataname of COLUMN. Although Xymon doesn't process it further,
+custom scripts could read this data and generate status reports.
+
+The "data" tag includes the status of this URL among the overall
+http status test result for the host.
+
+The "datasvc" tag ALSO creates a separate service status report
+for this URL.
+
+Column-names cannot include whitespace or semi-colon. If no name
+is specified, "httpdata" is used. If more than one unnamed data
+test is used, numbers are appended to the test name.
+
+You can hide the HTML data on a per-host (not per-test) basis 
+by adding the \fBHIDEHTTP\fR tag to the host entry.
+
+.IP clienthttponly[=COLUMN];URL;
+.IP clienthttp=[=COLUMN];URL;
+.IP clienthttpsvc=[=COLUMN];URL;
+
+These tags are used to specify an http/https check where the raw 
+contents of the page retrieved are sent as a client message for the
+host with a dataname of COLUMN. The collector name will be "xymonnet"
+
+The "clienthttp" tag includes the status of this URL among the overall
+http status test result for the host.
+
+The "clienthttpsvc" tag ALSO creates a separate service status report
+for this URL.
+
+Column-names cannot include whitespace or semi-colon. If no name
+is specified, "httpdata" is used. If more than one unnamed data
+test is used, numbers are appended to the test name.
+
 .IP post[=COLUMN];URL;form\-data;[expected_data_regexp|#digesttype:digest]
 This tag can be used to test web pages, that use an input
 form. Data can be posted to the form by specifying them 

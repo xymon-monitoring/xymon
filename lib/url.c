@@ -510,6 +510,45 @@ char *decode_url(char *testspec, weburl_t *weburl)
 	} else if (strncmp(inp, "cont=", 5) == 0) {
 		weburl->testtype = WEBTEST_CONT;
 		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
+	} else if (strncmp(inp, "contonly=", 9) == 0) {
+		weburl->testtype = WEBTEST_CONTONLY;
+		urlstart = gethttpcolumn(inp+9, &weburl->columnname);
+	} else if (strncmp(inp, "dataonly;", 9) == 0) {
+		weburl->testtype = WEBTEST_DATAONLY;
+		urlstart = inp+9;
+	} else if (strncmp(inp, "dataonly=", 9) == 0) {
+		weburl->testtype = WEBTEST_DATAONLY;
+		urlstart = gethttpcolumn(inp+9, &weburl->columnname);
+	} else if (strncmp(inp, "data;", 5) == 0) {
+		weburl->testtype = WEBTEST_DATA;
+		urlstart = inp+5;
+	} else if (strncmp(inp, "data=", 5) == 0) {
+		weburl->testtype = WEBTEST_DATA;
+		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
+	} else if (strncmp(inp, "datasvc;", 8) == 0) {
+		weburl->testtype = WEBTEST_DATASVC;
+		urlstart = inp+8;
+	} else if (strncmp(inp, "datasvc=", 8) == 0) {
+		weburl->testtype = WEBTEST_DATASVC;
+		urlstart = gethttpcolumn(inp+8, &weburl->columnname);
+	} else if (strncmp(inp, "clienthttponly;", 15) == 0) {
+		weburl->testtype = WEBTEST_CLIENTHTTPONLY;
+		urlstart = inp+15;
+	} else if (strncmp(inp, "clienthttponly=", 15) == 0) {
+		weburl->testtype = WEBTEST_CLIENTHTTPONLY;
+		urlstart = gethttpcolumn(inp+15, &weburl->columnname);
+	} else if (strncmp(inp, "clienthttp;", 11) == 0) {
+		weburl->testtype = WEBTEST_CLIENTHTTP;
+		urlstart = inp+11;
+	} else if (strncmp(inp, "clienthttp=", 11) == 0) {
+		weburl->testtype = WEBTEST_CLIENTHTTP;
+		urlstart = gethttpcolumn(inp+11, &weburl->columnname);
+	} else if (strncmp(inp, "clienthttpsvc;", 14) == 0) {
+		weburl->testtype = WEBTEST_CLIENTHTTPSVC;
+		urlstart = inp+14;
+	} else if (strncmp(inp, "clienthttpsvc=", 14) == 0) {
+		weburl->testtype = WEBTEST_CLIENTHTTPSVC;
+		urlstart = gethttpcolumn(inp+14, &weburl->columnname);
 	} else if (strncmp(inp, "nocont;", 7) == 0) {
 		weburl->testtype = WEBTEST_NOCONT;
 		urlstart = inp+7;
@@ -574,6 +613,13 @@ char *decode_url(char *testspec, weburl_t *weburl)
 		  break;
 
 	  case WEBTEST_CONT:
+	  case WEBTEST_CONTONLY:
+	  case WEBTEST_DATA:
+	  case WEBTEST_DATAONLY:
+	  case WEBTEST_DATASVC:
+	  case WEBTEST_CLIENTHTTP:
+	  case WEBTEST_CLIENTHTTPONLY:
+	  case WEBTEST_CLIENTHTTPSVC:
 	  case WEBTEST_NOCONT:
 	  case WEBTEST_TYPE:
 		  expstart = strchr(urlstart, ';');

@@ -119,6 +119,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	char    *nopagename;
 	int     nopage = 0;
 	int	anydown = 0, totalreports = 0;
+	char    *contsave;
+	int 	contentsavenum = 0;
+	contsave = (char *)malloc(128);
 
 	if (firsttest == NULL) return;
 
@@ -137,8 +140,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	for (t=firsttest; (t && (t->host == host)); t = t->next) {
 		http_data_t *req = (http_data_t *) t->privdata;
 
-		/* Skip the data-reports for now */
-		if (t->senddata) continue;
+		/* Skip the data-reports and client-reports for now */
+		if ((t->senddata == 1) || (t->sendclient == 1)) continue;
 
 		/* Grab session cookies */
 		if (dosavecookies) update_session_cookies(host->hostname, req->weburl.desturl->host, req->headers);
@@ -277,8 +280,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			char *urlmsg;
 			http_data_t *req = (http_data_t *) t->privdata;
 
-			/* Skip the "data" reports */
-			if (t->senddata) continue;
+			/* Skip the "data" and "client" (status as client) reports */
+			if ((t->senddata == 1) || (t->sendclient == 1)) continue;
 
 			urlmsg = (char *)malloc(1024 + strlen(req->url));
 			sprintf(urlmsg, "\n&%s %s - ", colorname(req->httpcolor), req->url);
@@ -320,7 +323,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		char *urlmsg;
 		http_data_t *req = (http_data_t *) t->privdata;
 
-		if ((t->senddata) || (!req->weburl.columnname) || (req->contentcheck != CONTENTCHECK_NONE)) continue;
+		if ((t->senddata == 1) || (t->senddata == 2) || (t->sendclient == 1) || (t->sendclient == 2) || (!req->weburl.columnname) || (req->contentcheck != CONTENTCHECK_NONE)) continue;
 
 		/* Handle the "badtest" stuff */
 		color = req->httpcolor;
@@ -386,8 +389,17 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		req = (http_data_t *) t->privdata;
 		if (req->output) data = req->output;
+		if (req->weburl.columnname) {
+			strcpy(contsave, req->weburl.columnname);
+		}
+		else {
+			if (contentsavenum > 0) sprintf(contsave, "%s%d", "httpdata", contentsavenum);
+			else strcpy(contsave, "httpdata");
 
-		sprintf(msgline, "data %s.%s\n", commafy(host->hostname), req->weburl.columnname);
+			contentsavenum++;
+		}
+
+		sprintf(msgline, "data %s.%s\n", commafy(host->hostname), contsave);
 		addtobuffer(msg, msgline);
 		addtobuffer(msg, data);
 		combo_add(msg);
@@ -395,7 +407,55 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		freestrbuffer(msg);
 	}
 
+	/* Send off any "client" pseudo-status messages now */
+	/* These leverage the old BB compatibility syntax to store the data portion of the HTTP result */
+	/* as a client message section for the hostname in question */
+	{
+	 int hadclientrecords = 0;
+	 static char msgline[4096];
+	 static strbuffer_t *msg;
+	 if (!msg) msg = newstrbuffer(0);
+
+	 for (t=firsttest; (t && (t->host == host)); t = t->next) {
+		http_data_t *req;
+
+		if (!t->sendclient) continue;
+
+		req = (http_data_t *) t->privdata;
+		/* 
+		 * We want to mirror regular client semantics here. A blank client message
+		 * is not very useful as a forensic snapshot since it will overwrite the
+		 * previous content. Therefore, only send section if at least *some* content.
+		 */
+		if (!req->output || !req->outlen) continue;
+
+		if (req->weburl.columnname) {
+			strcpy(contsave, req->weburl.columnname);
+		}
+		else {
+			if (contentsavenum > 0) sprintf(contsave, "%s%d", "httpdata", contentsavenum);
+			else strcpy(contsave, "httpdata");
+
+			contentsavenum++;
+		}
+
+		if (!hadclientrecords++) {
+			/* first time - clear previous message and add our header line */
+			clearstrbuffer(msg);
+			sprintf(msgline, "status %s.xymonnet client \n[date]\n%s\n", commafy(host->hostname), timestamp);
+			addtobuffer(msg, msgline);
+		}
+		sprintf(msgline, "[%s]\n", contsave);
+		addtobuffer(msg, msgline);
+		addtobuffer(msg, req->output);
+		addtobuffer(msg, "\n");
+	 }
+	 /* Send off the http data as a fake-status client report */
+	 if (hadclientrecords) combo_add(msg);
+	}
+
 	xfree(svcname);
+	xfree(contsave);
 	freestrbuffer(msgtext);
 }
 
@@ -444,8 +504,8 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		char *msgline;
 		int got_data = 1;
 
-		/* Skip the "data"-only messages */
-		if (t->senddata) continue;
+		/* Skip the "data"-only and client-only messages */
+		if ((t->senddata == 1) || (t->senddata == 2) || (t->sendclient == 1) || (t->sendclient == 2)) continue;
 		if (!req->contentcheck) continue;
 
 		/* We have a content check */

@@ -33,6 +33,10 @@ Changes from 4.3.x -> 4.4-alpha
 * xymond_channel will now pass the channel it's connected to onto its
   workers via the XYMOND_CHANNELNAME environment variable. xymond_filestore
   and xymond_capture will now use this value if no options are given.
+* xymonnet can now send HTTP content back as a data or client message in
+  addition to the normal http testing semantics. This allows page content
+  to be used for downstream processing, or snapshotting of last data in
+  the event of a status change. See data= and clienthttp= in hosts.cfg(5)
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet

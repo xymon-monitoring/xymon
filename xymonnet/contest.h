@@ -141,6 +141,9 @@ typedef struct tcptest_t {
 #define CONTENTCHECK_NOREGEX 3
 #define CONTENTCHECK_CONTENTTYPE 4
 
+#define CONTENTSAVE_NONE   0
+#define CONTENTSAVE_FULL   1
+
 #define HTTPVER_ANY 0
 #define HTTPVER_10  1
 #define HTTPVER_11  2
@@ -175,6 +178,7 @@ typedef struct {
 	char		*contenttype;		/* Content-type: header from server */
 
 	int		contentcheck;		/* 0=no content check, 1=regex check, 2=digest check */
+	int		contentsave;		/* 0=don't save content, 1=save content */
 	void		*exp;			/* data for content match (digest, or regexp data) */
 	digestctx_t	*digestctx;		/* OpenSSL data for digest handling */
 	char		*digest;		/* Digest of the data received from the server */
