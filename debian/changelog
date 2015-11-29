@@ -42,7 +42,8 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      configured multiple times.
    * Acknowledgement codes (aka cookies) are now longer in length to help
      prevent collisions on heavily loaded (or longer cookie age) systems.
-
+   * Timed out connections to xymond are now reported and tracked instead           
+     of being lumped together with bogus messages / unknown types.   
    
    * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
      write) to xymonnet

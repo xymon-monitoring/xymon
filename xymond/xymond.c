@@ -304,6 +304,7 @@ xymond_statistics_t xymond_stats[] = {
 	{ "ghostlist", },
 	{ "multisrclist", },
 	{ "senderstats", },
+	{ "Timeouts", },
 	{ NULL, }
 };
 
@@ -474,7 +475,7 @@ char *generate_stats(void)
 			xymond_stats[i].netcount, xymond_stats[i].bfqcount);
 		addtobuffer(statsbuf, msgline);
 	}
-	sprintf(msgline, "- %-20s : %10ld\n", "Bogus/Timeouts ", xymond_stats[i].netcount);
+	sprintf(msgline, "- %-20s : %10ld\n", "Bogus/Unknown ", xymond_stats[i].netcount);
 	addtobuffer(statsbuf, msgline);
 
 	if ((now > last_stats_time) && (last_stats_time > 0)) {
@@ -5421,6 +5422,10 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 	  case CONN_CB_CONNECT_FAILED:
 	  case CONN_CB_TIMEOUT:
 		conn->doingwhat = NOTALK;
+		/* NB: With the new networking code, there may be a better way */
+		/*     to track and report different types of failures here -jc */
+		errprintf("Discarding timed-out partial msg from %s\n", conn->sender);		
+		update_statistics("Timeouts", 0);
 		conn_close_connection(connection, NULL);
 		break;
 	}
