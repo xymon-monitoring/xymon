@@ -471,7 +471,7 @@ addtolist:
 	alert->color = COL_RED;
 	alert->pagemessage = "";
 	alert->state = A_PAGING;
-	alert->cookie = 12345;
+	strcpy(alert->cookie, "12345");
 	alert_printmode(2);
 	for (testi = 0; (testi < testcount); testi++) {
 		alert->testname = testnames[testi]->name;

@@ -208,7 +208,7 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 	switch (alert->state) {
 	  case A_PAGING:
 	  case A_ACKED:
-		subjfmt = (include_configid ? "Xymon [%d] %s:%s %s [cfid:%d]" :  "Xymon [%d] %s:%s %s");
+		subjfmt = (include_configid ? "Xymon [%s] %s:%s %s [cfid:%d]" :  "Xymon [%s] %s:%s %s");
 		snprintf(subj, sizeof(subj), subjfmt, 
 			 alert->cookie, alert->hostname, alert->testname, sev, recip->cfid);
 		break;
@@ -318,7 +318,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		switch (alert->state) {
 		  case A_PAGING:
 		  case A_ACKED:
-			sprintf(info, "%s:%s %s [%d]", 
+			sprintf(info, "%s:%s %s [%s]", 
 				alert->hostname, alert->testname, 
 				colorname(alert->color), alert->cookie);
 			break;
@@ -370,7 +370,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		return STRBUF(buf);
 
 	  case ALERTFORM_SCRIPT:
-		sprintf(info, "%s:%s %s [%d]\n",
+		sprintf(info, "%s:%s %s [%s]\n",
 			alert->hostname, alert->testname, colorname(alert->color), alert->cookie);
 		addtobuffer(buf, info);
 		addtobuffer(buf, msg_data(alert->pagemessage, 0));
@@ -525,7 +525,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				pid_t scriptpid;
 				char *scriptrecip;
 
-				traceprintf("Script alert with command '%s' and recipient %s\n", recip->scriptname, recip->recipient);
+				traceprintf("Script alert with command '%s', ackcode '%s', and recipient %s\n", recip->scriptname, alert->cookie, recip->recipient);
 				if (testonly) break;
 
 				scriptrecip = message_recipient(recip->recipient, alert->hostname, alert->testname, colorname(alert->color));
@@ -554,8 +554,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					snprintf(bbalphamsg, msglen+1, "BBALPHAMSG=%s", p);
 					putenv(bbalphamsg);
 
-					ackcode = (char *)malloc(strlen("ACKCODE=") + 10);
-					sprintf(ackcode, "ACKCODE=%d", alert->cookie);
+					ackcode = (char *)malloc(strlen("ACKCODE=") + 20);
+					sprintf(ackcode, "ACKCODE=%s", alert->cookie);
 					putenv(ackcode);
 
 					rcpt = (char *)malloc(strlen("RCPT=") + strlen(scriptrecip) + 1);
@@ -574,13 +574,13 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					sprintf(bbhostsvccommas, "BBHOSTSVCCOMMAS=%s.%s", commafy(alert->hostname), alert->testname);
 					putenv(bbhostsvccommas);
 
-					bbnumeric = (char *)malloc(strlen("BBNUMERIC=") + 22 + 1);
+					bbnumeric = (char *)malloc(strlen("BBNUMERIC=") + 32 + 1);
 					p = bbnumeric;
 					p += sprintf(p, "BBNUMERIC=");
 					p += sprintf(p, "%03d", servicecode(alert->testname));
 					sscanf(alert->ip, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
 					p += sprintf(p, "%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
-					p += sprintf(p, "%d", alert->cookie);
+					p += sprintf(p, "%s", alert->cookie);
 					putenv(bbnumeric);
 
 					machip = (char *)malloc(strlen("MACHIP=") + 13);

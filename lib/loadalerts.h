@@ -37,7 +37,7 @@ typedef struct activealerts_t {
 	time_t eventstart;
 	time_t nextalerttime;
 	astate_t state;
-	int cookie;
+	char cookie[20];
 
 	struct activealerts_t *next;
 } activealerts_t;

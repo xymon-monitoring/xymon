@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
 			awalk->eventstart = getcurrenttime(NULL) - testdur*60;
 			awalk->groups = (testgroups ? strdup(testgroups) : NULL);
 			awalk->state = A_PAGING;
-			awalk->cookie = 12345;
+			strcpy(awalk->cookie, "12345");
 			awalk->next = NULL;
 
 			logfd = fopen("/dev/null", "w");
@@ -669,7 +669,7 @@ int main(int argc, char *argv[])
 				awalk->hostname = hwalk;
 				awalk->testname = twalk;
 				awalk->location = pwalk;
-				awalk->cookie = -1;
+				strcpy(awalk->cookie, "-1");
 				awalk->state = A_DEAD;
 				/*
 				 * Use changetime here, if we restart the alert module then
@@ -730,7 +730,7 @@ int main(int argc, char *argv[])
 
 			if (awalk->ip) xfree(awalk->ip);
 			awalk->ip = strdup(metadata[5]);
-			awalk->cookie = atoi(metadata[11]);
+			strcpy(awalk->cookie, (metadata[11] ? metadata[11] : "0"));
 			if (awalk->osname) xfree(awalk->osname);
 			awalk->osname    = (metadata[12] ? strdup(metadata[12]) : NULL);
 			if (awalk->classname) xfree(awalk->classname);
@@ -764,16 +764,13 @@ int main(int argc, char *argv[])
 
 			awalk = find_active(hostname, testname);
 
-			if (acklogfd) {
-				int cookie = (awalk ? awalk->cookie : -1);
-				int color  = (awalk ? awalk->color : 0);
-
-				fprintf(acklogfd, "%d\t%d\t%d\t%d\t%s\t%s.%s\t%s\t%s\n",
-					(int)now, cookie, 
-					(int)((nextalert - now) / 60), cookie,
+			if (awalk && acklogfd) {
+				fprintf(acklogfd, "%d\t%s\t%d\t%s\t%s\t%s.%s\t%s\t%s\n",
+					(int)now, (strlen(awalk->cookie) ? awalk->cookie : "-1"), 
+					(int)((nextalert - now) / 60), (awalk->cookie ? awalk->cookie : "-1"),
 					"np_filename_not_used", 
 					hostname, testname, 
-					colorname(color),
+					colorname(awalk->color),
 					nlencode(restofmsg));
 				fflush(acklogfd);
 			}
@@ -800,7 +797,7 @@ int main(int argc, char *argv[])
 			awalk->hostname = hwalk;
 			awalk->testname = twalk;
 			awalk->location = pwalk;
-			awalk->cookie = -1;
+			strcpy(awalk->cookie, "-1");
 			awalk->pagemessage = strdup(restofmsg);
 			awalk->eventstart = getcurrenttime(NULL);
 			awalk->state = A_NOTIFY;

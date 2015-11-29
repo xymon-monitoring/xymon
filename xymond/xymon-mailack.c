@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	const char *errmsg;
 	int errofs, result;
 	int ovector[30];
-	char cookie[10];
+	char cookie[20];
 	int duration = 0;
 	int argi;
 

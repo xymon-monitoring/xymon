@@ -1780,17 +1780,16 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	/* If in an alert state, we may need to generate a cookie */
 	if (newalertstatus == A_ALERT) {
 		if (log->cookieexpires < now) {
-			int newcookie;
-			char scookie[10];
+			char scookie[20];
 
 			clear_cookie(log);
 
 			/* Need to ensure that cookies are unique, hence the loop */
 			do {
-				newcookie = (random() % 1000000);
-				sprintf(scookie, "%d", newcookie);
+				snprintf(scookie, 20, "%ju", (uintmax_t)random());
 			} while (find_cookie(scookie));
 
+			dbgprintf("- generated cookie: %s\n", scookie);
 			log->cookie = strdup(scookie);
 			xtreeAdd(rbcookies, log->cookie, log);
 

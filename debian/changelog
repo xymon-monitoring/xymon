@@ -40,6 +40,9 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      the event of a status change. See data= and clienthttp= in hosts.cfg(5)
    * Add "noprefer" tag in hosts.cfg to force lowest-preference for a host    
      configured multiple times.
+   * Acknowledgement codes (aka cookies) are now longer in length to help
+     prevent collisions on heavily loaded (or longer cookie age) systems.
+
    
    * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
      write) to xymonnet

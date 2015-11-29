@@ -236,7 +236,7 @@ static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 	alert->color = COL_RED;
 	alert->pagemessage = "";
 	alert->state = A_PAGING;
-	alert->cookie = 12345;
+	strcpy(alert->cookie, "12345");
 	rcount = 0;
 
 	alert_printmode(1);
