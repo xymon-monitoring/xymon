@@ -3,10 +3,15 @@
 * Migrate certain things to global options:
   --bfq / --no-bfq: force bfq usage/non-usage rather than dynamically determine.
     --bfq=# (round-robinning for multiple BFQ's)
+  --timeout: how long to wait when sending a message to xymond
+  --retries: how many times to retry a message to xymond before giving up
   --loadhostsfromxymond: control source for loadhosts
-  --timeout/timer/flushtimeout: for how often we idle in get_xymon_message and
+  --flushtimeout: for how often we idle in get_xymon_message and
     use that opportunity to do cleanup work
-  --compress=<format>
+  --reportserver=<addr[,addr]>: who to send daemon "egocolumn" status reports to
+    (eg, xymongen, xymonnet, xymonproxy, etc.)
+  --compress=<format> / --no-compress
+  --verbose: undefined, but "log out more" (currently xymonproxy + use xymond_alert trace?)
 * Unified digest name parsing/dispatch
 * Re-integrate non-zlib compression logic
 * 'alerttxt' split into enums for keyword and regular case display
