@@ -46,6 +46,8 @@ static char rcsid[] = "$Id$";
  */
 
 #define MAX_FAILS 5
+#define FAIL_DELAY 600
+#define DELAY 5
 
 typedef struct grouplist_t {
 	char *groupname;
@@ -66,6 +68,8 @@ typedef struct tasklist_t {
 	time_t laststart;
 	int sendhup;
 	int exitcode;
+	int delay;
+	int faildelay;
 	int failcount;
 	int cfload;	/* Used while reloading a configuration */
 	int beingkilled;
@@ -175,6 +179,11 @@ void load_config(char *conffn)
 				if (taskhead == NULL) taskhead = curtask;
 				else tasktail->next = curtask;
 				tasktail = curtask;
+
+				/* Default variable initialization */
+				curtask->delay = DELAY;
+				curtask->faildelay = FAIL_DELAY;
+
 			}
 			/* mark task as configured */
 			curtask->cfload = 0;
@@ -284,6 +293,17 @@ void load_config(char *conffn)
 			  case 'd': curtask->maxruntime *= 86400; break;	/* Days */
 			}
 		}
+		else if (curtask && (strncasecmp(p, "FAILDELAY ", 10) == 0)) {
+			char *tspec;
+			p += 10;
+			curtask->faildelay = atoi(p);
+			tspec = p + strspn(p, "0123456789");
+			switch (*tspec) {
+			  case 'm': curtask->faildelay *= 60; break;	/* Minutes */
+			  case 'h': curtask->faildelay *= 3600; break;	/* Hours */
+			  case 'd': curtask->faildelay *= 86400; break;	/* Days */
+			}
+		}
 		else if (curtask && (strncasecmp(p, "LOGFILE ", 8) == 0)) {
 			p += 7;
 			p += strspn(p, " \t");
@@ -306,6 +326,17 @@ void load_config(char *conffn)
 			}
 			else {
 				errprintf("Configuration error, unknown dependency %s->%s\n", curtask->key, p);
+			}
+		}
+		else if (curtask && (strncasecmp(p, "DELAY ", 6) == 0)) {
+			char *tspec;
+			p += 6;
+			curtask->delay = atoi(p);
+			tspec = p + strspn(p, "0123456789");
+			switch (*tspec) {
+			  case 'm': curtask->delay *= 60; break;	/* Minutes */
+			  case 'h': curtask->delay *= 3600; break;	/* Hours */
+			  case 'd': curtask->delay *= 86400; break;	/* Days */
 			}
 		}
 		else if (curtask && (strncasecmp(p, "ENVFILE ", 8) == 0)) {
@@ -363,6 +394,9 @@ void load_config(char *conffn)
 				if (twalk->disabled!=twalk->copy->disabled) { changed++; }
 				if (twalk->interval!=twalk->copy->interval) { changed++; }
 				if (twalk->maxruntime!=twalk->copy->maxruntime) { changed++; }
+				if (twalk->faildelay!=twalk->copy->faildelay) { changed++; }
+				if (twalk->delay!=twalk->copy->delay) { changed++; }
+				if (twalk->sendhup!=twalk->copy->sendhup) { changed++; }
 				if (twalk->group!=twalk->copy->group) { changed++; reload++;}
 				/* then the string versions */
 #define twalkstrcmp(k,doreload) {					\
@@ -576,9 +610,11 @@ int main(int argc, char *argv[])
 			if (twalk->disabled)     printf("\tDISABLED\n");
 			if (twalk->group)        printf("\tGROUP %s\n", twalk->group->groupname);
 			if (twalk->depends)      printf("\tNEEDS %s\n", twalk->depends->key);
+			if (twalk->delay)        printf("\tDELAY %d\n", twalk->delay);
 			if (twalk->interval > 0) printf("\tINTERVAL %d\n", twalk->interval);
 			if (twalk->cronstr)      printf("\tCRONDATE %s\n", twalk->cronstr);
 			if (twalk->maxruntime)   printf("\tMAXTIME %d\n", twalk->maxruntime);
+			if (twalk->faildelay != FAIL_DELAY) printf("\tFAILDELAY %d\n", twalk->faildelay);
 			if (twalk->logfile)      printf("\tLOGFILE %s\n", twalk->logfile);
 			if (twalk->pidfile)      printf("\tPIDFILE %s\n", twalk->pidfile);
 			if (twalk->sendhup)      printf("\tSENDHUP\n");
@@ -677,6 +713,7 @@ int main(int argc, char *argv[])
 					errprintf("Task %s terminated by signal %d\n", twalk->key, abs(twalk->exitcode));
 				}
 
+				if (twalk->failcount > MAX_FAILS) errprintf("Postponing restart of [%s] for %d seconds from last start due to multiple failures\n", twalk->key, twalk->faildelay);
 				if (twalk->group) twalk->group->currentuse--;
 
 				/* Tasks that depend on this task should be killed ... */
@@ -698,10 +735,17 @@ int main(int argc, char *argv[])
 			         (twalk->crondate && (twalk->cronmin != thisminute) && cronmatch(twalk->crondate) ) /* cron date, has not had run attempt this minute */
 			       ) 
 			   ) {
-				if (twalk->depends && ((twalk->depends->pid == 0) || (twalk->depends->laststart > (now - 5)))) {
-					dbgprintf("Postponing start of %s due to %s not yet running\n",
-						twalk->key, twalk->depends->key);
-					continue;
+				if (twalk->depends) {
+					if (twalk->depends->pid == 0) {
+						dbgprintf("Postponing start of %s due to %s not yet running\n",
+							twalk->key, twalk->depends->key);
+						continue;
+					}
+					else if (twalk->depends->laststart > (now - twalk->delay)) {
+						dbgprintf("Postponing start of %s until %s running for %d seconds\n",
+							twalk->key, twalk->depends->key, twalk->delay);
+						continue;
+					}
 				}
 
 				if (twalk->group && (twalk->group->currentuse >= twalk->group->maxuse)) {
@@ -710,13 +754,14 @@ int main(int argc, char *argv[])
 					continue;
 				}
 
-				if ((twalk->failcount > MAX_FAILS) && ((twalk->laststart + 600) < now)) {
-					dbgprintf("Releasing %s from failure hold\n", twalk->key);
+				if ((twalk->failcount > 0) && twalk->faildelay && ((twalk->laststart + twalk->faildelay) < now)) {
+					if (twalk->failcount > MAX_FAILS) errprintf("Releasing [%s] from failure hold\n", twalk->key);
+					else dbgprintf("Releasing [%s] from previous failures\n", twalk->key);
 					twalk->failcount = 0;
 				}
 
-				if (twalk->failcount > MAX_FAILS) {
-					dbgprintf("Postponing start of %s due to multiple failures\n", twalk->key);
+				if (twalk->faildelay && (twalk->failcount > MAX_FAILS)) {
+					dbgprintf("Postponing start of [%s] for %d more seconds due to multiple failures\n", twalk->key, (twalk->faildelay + twalk->laststart - now));
 					continue;
 				}
 

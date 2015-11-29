@@ -12,6 +12,10 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      clientlaunch.cfg
    * xymonlaunch: Add SENDHUP support for optionally passing along signals 
      to running
+   * xymonlaunch: Add DELAY keyword for delaying initial task startup                 
+   * xymonlaunch: Add FAILDELAY keyword for configuring backoff period
+     after too many (5) non-zero exit errors. Failure count is also 
+     cleared after this period passes without issue.
    * Support and display "TEXT=Human readable" tags for LOG entries in 
      analysis.cfg on msgs
    * A 'proxyping' command has been added for checking that a xymonproxy 
