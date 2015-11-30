@@ -22,6 +22,7 @@ extern void real_dbgprintf(const char *fmt, ...);
 #define dbgprintf(...) { if (debug) real_dbgprintf(__VA_ARGS__); }
 extern void logprintf(const char *fmt, ...);
 extern void flush_errbuf(void);
+extern void set_errappname(char *name);
 extern void set_debugfile(char *fn, int appendtofile);
 
 extern void starttrace(const char *fn);

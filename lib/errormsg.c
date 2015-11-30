@@ -45,7 +45,6 @@ void logprintf(const char *fmt, ...)
 	va_list args;
 
 	gettimeofday(&now, NULL);
-	
 	if (now.tv_sec != then) {
 		strftime(timestr, timesize, "%Y-%m-%d %H:%M:%S", localtime(&now.tv_sec));
 		then = now.tv_sec;
@@ -62,14 +61,13 @@ void logprintf(const char *fmt, ...)
 void errprintf(const char *fmt, ...)
 {
 	va_list args;
-	gettimeofday(&now, NULL);
 
+	gettimeofday(&now, NULL);
 	if (now.tv_sec != then) {
 		strftime(timestr, timesize, "%Y-%m-%d %H:%M:%S", localtime(&now.tv_sec));
 		then = now.tv_sec;
 	}
-	fprintf(stderr, "%s.%06d ", timestr, (int) now.tv_usec);
-	if (errappname) fprintf(stderr, "%s ", errappname);
+	fprintf(stderr, "%s.%06d %s", timestr, (int) now.tv_usec, (errappname ? errappname : "") );
 
 	va_start(args, fmt);
 	vsnprintf(msg, sizeof(msg), fmt, args);
@@ -97,19 +95,20 @@ void errprintf(const char *fmt, ...)
 void real_dbgprintf(const char *fmt, ...)
 {
 	va_list args;
-	gettimeofday(&now, NULL);
 
-	if (!debugfd) debugfd = stdout;
+	gettimeofday(&now, NULL);
 	if (now.tv_sec != then) {
 		strftime(timestr, timesize, "%Y-%m-%d %H:%M:%S", localtime(&now.tv_sec));
 		then = now.tv_sec;
 	}
 
-	fprintf(debugfd, "%lu %s.%06d ", (unsigned long)getpid(), timestr, (int) now.tv_usec);
+	if (!debugfd) debugfd = stdout;
+	fprintf(debugfd, "%lu %s.%06d %s", (unsigned long)getpid(), timestr, (int) now.tv_usec, (errappname ? errappname : ""));
 
 	va_start(args, fmt);
 	vfprintf(debugfd, fmt, args);
 	va_end(args);
+
 	fflush(debugfd);
 }
 
@@ -119,6 +118,17 @@ void flush_errbuf(void)
 	errbuf = NULL;
 }
 
+/* Set a name to prefix lines with */
+void set_errappname(char *name)
+{
+	if (errappname) xfree(errappname);
+	if (!name || (*name == '\0')) {
+		errappname = strdup("");
+	} else {
+		errappname = (char *)malloc(strlen(name) + 3);
+		sprintf(errappname, "%s: ", name);
+	}
+}
 
 void set_debugfile(char *fn, int appendtofile)
 {
@@ -198,16 +208,22 @@ void redirect_cgilog(char *cginame)
 	char *cgilogdir;
 	FILE *fd;
 	
-	cgilogdir = getenv("XYMONCGILOGDIR");
-	if (!cgilogdir) return;
+	if (cginame) set_errappname(cginame);
 
-	if (cginame) errappname = strdup(cginame);
+	cgilogdir = getenv("XYMONCGILOGDIR");
+
+	if (!cgilogdir) {
+		/* Use stderr if not set - hopefully apache does something useful */
+		set_debugfile("stderr", 1);
+		return;
+	}
+
 	sprintf(logfn, "%s/cgierror.log", cgilogdir);
 	reopen_file(logfn, "a", stderr);
 
-	/* If debugging, setup the debug logfile */
+	/* If debugging, setup the debug logfile too */
 	if (debug) {
-		sprintf(logfn, "%s/%s.dbg", cgilogdir, (errappname ? errappname : "cgi"));
+		sprintf(logfn, "%s/%s.dbg", cgilogdir, ( cginame ? cginame : "cgi"));
 		set_debugfile(logfn, 1);
 	}
 }

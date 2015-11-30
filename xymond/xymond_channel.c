@@ -316,7 +316,7 @@ static void addmessage_onepeer(xymon_peer_t *peer, char *inbuf, size_t inlen)
 	if (peer->peerstatus != P_UP) {
 		errprintf("Peer not up, flushing message queue\n");
 		while (peer->msghead) flushmessage(peer);
-		if (peer->msgcount) { errprintf("xymond_channel: flushed all messages, but msgcount is %lu\n", peer->msgcount); peer->msgcount = 0; }
+		if (peer->msgcount) { errprintf("flushed all messages, but msgcount is %lu\n", peer->msgcount); peer->msgcount = 0; }
 	}
 
 	newmsg = (xymon_msg_t *) calloc(1, sizeof(xymon_msg_t));
@@ -405,7 +405,7 @@ int addmessage(char *inbuf, size_t inlen)
 			if (peer->msgcount < minqueuesize) { bestpeer = peer; minqueuesize = peer->msgcount; }
 		}
 		if (bestpeer) addmessage_onepeer(bestpeer, inbuf, inlen);
-		else errprintf("xymond_channel: BUG: multirun could not find any peers? Message dropped.\n");
+		else errprintf("BUG: multirun could not find any peers? Message dropped.\n");
 
 	}
 	else {
@@ -445,7 +445,7 @@ void shutdownconnection(xymon_peer_t *peer)
 
 	/* Any messages queued are discarded */
 	while (peer->msghead) flushmessage(peer);
-	if (peer->msgcount) { errprintf("xymond_channel: flushed all messages, but msgcount is %lu\n", peer->msgcount); peer->msgcount = 0; }
+	if (peer->msgcount) { errprintf("flushed all messages, but msgcount is %lu\n", peer->msgcount); peer->msgcount = 0; }
 	peer->msghead = peer->msgtail = NULL;
 }
 
@@ -493,6 +493,9 @@ int main(int argc, char *argv[])
 
 
 	libxymon_init(argv[0]);
+
+        /* From this point on, prefix log output to distinguish from task spew */
+        set_errappname("xymond_channel");
 
 	/* Don't save the error buffer */
 	save_errbuf = 0;
@@ -557,23 +560,23 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--multilocal")) {
 			multilocal = 1;
-			dbgprintf("xymond_channel: sending to multiple local peers\n");
+			dbgprintf("sending to multiple local peers\n");
 		}
 		else if (argnmatch(argv[argi], "--multirun")) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
 				multirun = atoi(p+1);
-				logprintf("xymond_channel: sending messages to one of %d worker copies\n", multirun);
+				dbgprintf("sending messages to one of %d worker copies\n", multirun);
 			} else {
 				multirun = 1;
-				if (!multilocal) errprintf("xymond_channel: bare '--multirun' seen, assuming --multilocal\n");
+				if (!multilocal) errprintf("bare '--multirun' seen, assuming --multilocal\n");
 				multilocal = 1;
 			}
 		}
 		else if (argnmatch(argv[argi], "--maxpeerwrites")) {
 			char *p = strchr(argv[argi], '=');
 			maxpeerwrites = atoi(p+1);
-			dbgprintf("xymond_channel: max writes attempted when msg on channel: %d\n", maxpeerwrites);
+			dbgprintf("max writes attempted when msg on channel: %d\n", maxpeerwrites);
 			if (maxpeerwrites <= 0) maxpeerwrites = 1;	/* it's a do ... while later on, basically */
 		}
 		else if (standardoption(argv[argi])) {
@@ -629,7 +632,7 @@ int main(int argc, char *argv[])
 		/* No log file on the command line, but our STDOUT is already */
 		/* being piped somewhere. Record this for when it's time to re-open on rotation */
 		logfn = xgetenv("XYMONLAUNCH_LOGFILENAME");
-		dbgprintf("xymond_channel: Already logging out to %s, per xymonlaunch\n", logfn);
+		dbgprintf("Already logging out to %s, per xymonlaunch\n", logfn);
 	}
 
 
@@ -675,6 +678,8 @@ int main(int argc, char *argv[])
 		reopen_file(logfn, "a", stderr);
 	}
 
+        dbgprintf("starting\n");
+
 	/* Connect to all of our peers (ie, launch the process(es)) before we even
 	 * attach to the channel */
 	if (!locatorbased) {
@@ -697,7 +702,7 @@ int main(int argc, char *argv[])
 	if (channel != NULL) {
 		inbuf = (char *)malloc(1024*shbufsz(cnid) + checksumsize + 1);
 		if (inbuf == NULL) {
-			errprintf("xymond_channel: Could not allocate sufficient memory for %s channel buffer size\n", channelnames[cnid]);
+			errprintf("Could not allocate sufficient memory for %s channel buffer size\n", channelnames[cnid]);
 			running = 0;
 		}
 	}
@@ -748,7 +753,7 @@ int main(int argc, char *argv[])
 
 		/* This is where we'll first find some fatal errors */
 		if ((n == -1) && (errno != EAGAIN) && (errno != EINTR) ) {
-			dbgprintf("xymond_channel: Semaphore wait failed; can't continue: %s\n", strerror(errno));
+			dbgprintf("Semaphore wait failed; can't continue: %s\n", strerror(errno));
 			running = 0;
 		} 
 
@@ -850,7 +855,7 @@ int main(int argc, char *argv[])
 				 */
 				if (addmessage(inbuf, msgsz) != 0) {
 					/* Failed to queue message */
-					errprintf("xymond_channel: Failed to queue message, moving on\n");
+					errprintf("Failed to queue message, moving on\n");
 				}
 				gotmsg = 1;			/* since we received something from xymond, don't dally too long */
 			}
@@ -880,7 +885,7 @@ int main(int argc, char *argv[])
 			daemonpid = fork();
 			if (daemonpid < 0) {
 				/* Fork failed */
-				errprintf("xymond_channel: Could not fork ourself for channel cleanup; aborting\n");
+				errprintf("Could not fork ourself for channel cleanup; aborting\n");
 				exit(1);
 			}
 			else if (daemonpid > 0) {

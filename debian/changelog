@@ -140,6 +140,7 @@ xymon (4.4.0-alpha5) unstable; urgency=low
    * xymond: new --reload-interval opt can be used to control how often config files are
      scanned for changes (and re-processed if necessary). Previously, was equivalent
      to checkpoint interval. Default: 10m
+   * xymonlaunch/xymond_channel: canonicalize error/debug log prefixing of tool name
 
  -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 Nov 2015 18:26:21 +0100
 

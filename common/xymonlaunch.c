@@ -447,7 +447,7 @@ void load_config(char *conffn)
 		  case -1:
 			/* Kill the task, if active */
 			if (twalk->pid) {
-				logprintf("xymonlaunch: killing task [%s] (PID %d), due to removal\n", twalk->key, (int)twalk->pid);
+				logprintf("killing task [%s] (PID %d), due to removal\n", twalk->key, (int)twalk->pid);
 				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
@@ -473,7 +473,7 @@ void load_config(char *conffn)
 		  case 1:
 			/* Bounce the task, if it is active */
 			if (twalk->pid) {
-				logprintf("xymonlaunch: stopping task [%s] (PID %d), due to config change\n", twalk->key, (int)twalk->pid);
+				logprintf("stopping task [%s] (PID %d), due to config change\n", twalk->key, (int)twalk->pid);
 				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
@@ -554,6 +554,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 
 	libxymon_init(argv[0]);
+
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--no-daemon") == 0) {
 			daemonize = 0;
@@ -670,6 +671,8 @@ int main(int argc, char *argv[])
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 
+	/* From this point on, prefix log output to distinguish task spew */
+	set_errappname("xymonlaunch");
 	logprintf("xymonlaunch starting\n");
 	while (running) {
 		time_t now = gettimer();
@@ -727,7 +730,7 @@ int main(int argc, char *argv[])
 		}
 
 		/* See what new tasks need to get going */
-		dbgprintf("xymonlaunch: starting tasklist scan\n");
+		dbgprintf("starting tasklist scan\n");
 		crongettime();
 		for (twalk = taskhead; (twalk); twalk = twalk->next) {
 			if ( (twalk->pid == 0) && !twalk->disabled && 
@@ -773,7 +776,7 @@ int main(int argc, char *argv[])
 				dbgprintf("About to start task %s\n", twalk->key);
 				/* Don't do a non-debug log entry if this is being fired off at repeating intervals */
 				/* NB: What about crondate entries? */
-				if ((!debug) && (twalk->interval == 0)) logprintf("xymonlaunch: starting task [%s]\n", twalk->key);
+				if ((!debug) && (twalk->interval == 0)) logprintf("starting task [%s]\n", twalk->key);
 
 				twalk->laststart = now;
 				if (twalk->crondate) twalk->cronmin = thisminute;
@@ -877,11 +880,11 @@ int main(int argc, char *argv[])
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
 		if (twalk->pid > 0) {
 			kill(twalk->pid, SIGTERM);
-			dbgprintf("xymonlaunch: sent TERM to %s with PID %d (shutting down)\n", twalk->key, (int)twalk->pid);
+			dbgprintf("sent TERM to %s with PID %d (shutting down)\n", twalk->key, (int)twalk->pid);
 		}
 	}
 
-	dbgprintf("xymonlaunch: waiting 4 seconds to let things shut down nicely\n");
+	dbgprintf("waiting 4 seconds to let things shut down nicely\n");
 	logprintf("xymonlaunch stopping\n");
 	sleep(4);
 	if (pidfn) unlink(pidfn);
