@@ -142,6 +142,10 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      to checkpoint interval. Default: 10m
    * xymonlaunch/xymond_channel: canonicalize error/debug log prefixing of tool name
 
+   * Trends pages should display all configured 'TRENDS' graphs, including when
+     names are partial matches of other graph configurations (Thanks, Jeremy Laidman)     
+
+
  -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 Nov 2015 18:26:21 +0100
 
 

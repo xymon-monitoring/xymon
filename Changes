@@ -141,6 +141,9 @@ Changes from 4.3.x -> 4.4-alpha
   to checkpoint interval. Default: 10m
 * xymonlaunch/xymond_channel: canonicalize error/debug log prefixing of tool name 
 
+* Trends pages should display all configured 'TRENDS' graphs, including when
+  names are partial matches of other graph configurations (Thanks, Jeremy Laidman)
+
 
 Changes from 4.3.23 -> 4.3.24 (23 Nov 2015)
 ===========================================
