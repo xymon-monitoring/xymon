@@ -260,7 +260,7 @@ void openconnection(xymon_peer_t *peer)
 				putenv(logfnenv);
 			}
 
-			dbgprintf("Child '%s' started (PID %d), about to fork\n", peer->childcmd, (int)getpid());
+			dbgprintf("Child '%s' started (PID %d), about to exec\n", peer->childcmd, (int)getpid());
 
 			n = dup2(pfd[0], STDIN_FILENO);
 			close(pfd[0]); close(pfd[1]);
@@ -707,7 +707,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	else {
-		errprintf("Channel not available\n");
+		errprintf("%s channel not available\n", channelnames[cnid]);
 		running = 0;
 	}
 
@@ -790,7 +790,7 @@ int main(int argc, char *argv[])
 			signal(SIGALRM, SIG_IGN);
 
 			if (gotalarm) {
-				errprintf("Gave up waiting for GOCLIENT to go low.\n");
+				errprintf("Gave up waiting for GOCLIENT to go low: %s\n", strerror(errno));
 			}
 
 			/* 
@@ -964,7 +964,8 @@ int main(int argc, char *argv[])
 			}
 
 			if (flushcount) {
-				errprintf("Flushed %d stale messages for %s:%d\n",
+				if (pwalk->peertype == P_LOCAL) errprintf("Flushed %d stale messages for '%s' (pid %d)\n", flushcount, pwalk->peername, pwalk->childpid);
+				else errprintf("Flushed %d stale messages for %s:%d\n",
 					  flushcount,
 				  	  inet_ntoa(pwalk->peeraddr.sin_addr), 
 					  ntohs(pwalk->peeraddr.sin_port));
