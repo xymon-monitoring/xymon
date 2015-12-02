@@ -72,6 +72,9 @@ static char rcsid[] = "$Id$";
 /* How long messages are good for (by default) before going purple - minutes */
 #define DEFAULT_VALIDITY 30
 
+/* How many subsequent messages 'modify' overrides are valid for - messages */
+#define DEFAULT_MODIFY_VALIDITY 3
+
 #define DEFAULT_PURPLE_INTERVAL 60
 int purplecheckinterval = DEFAULT_PURPLE_INTERVAL; /* Seconds - check for purples every 60s */
 
@@ -105,9 +108,14 @@ typedef struct testinfo_t {
 	int clientsave;
 } testinfo_t;
 
+enum modifytype_t { MODIFY_NORM, MODIFY_DOWN, MODIFY_UP };
+
 typedef struct modifier_t {
 	char *source, *cause;
-	int color, valid;
+	int color;
+	int valid;		/* # of next status messages to modify */
+	enum modifytype_t type;	/* normal, onlydown, onlyup */
+	time_t validtime;	/* time the modify is valid until */
 	struct modifier_t *next;
 } modifier_t;
 
@@ -1421,7 +1429,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 {
 	int validity = defaultvalidity;
 	time_t now = getcurrenttime(NULL);
-	int msglen, issummary;
+	int msglen, issummary, modifychanged = 0;
 	enum alertstate_t oldalertstatus, newalertstatus;
 	int delayval = 0;
 	void *hinfo = hostinfo(hostname);
@@ -1462,11 +1470,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		validity = durationvalue(msg+7);
 	}
 
-	if (!modifyonly && log->modifiers) {
+	if (log->modifiers) {
 		/*
-		 * Original status message - check if there is an active modifier for the color.
-		 * We don't do this for status changes triggered by a "modify" command.
+		 * Modifiers are present, but first expire any stale ones and
+		 * ensure what's left aren't past their "valid" count.
+		 * (Decrementing IFF this is an Original Status Message) 
 		 */
+		int mupcolor = COL_GREEN;	/* least useful modifyup */
+		int mdowncolor = COL_COUNT;	/* least useful modifydown */
 		static strbuffer_t *modifierbuf;
 		modifier_t *mwalk;
 		modifier_t *mlast;
@@ -1474,12 +1485,28 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 
 		if (modifierbuf == NULL) modifierbuf = newstrbuffer(1024);
 
+		/* 
+		 * If handle_modify called us (this is a modify message, not a
+		 * status message), it will set this flag. If this was a new 'cause'
+		 * it will set this to 2. We track this so we can consider a 
+		 * status as "changed" even if the color eventually stays the same.
+		 */
+		modifychanged = (modifyonly == 2);
+
 		mlast = NULL;
 		mwalk = log->modifiers;
 		while (mwalk) {
-			dbgprintf(" -- modifier found: %s, curvalid: %d, %s", mwalk->source, mwalk->valid, mwalk->cause); // includes newline
-			mwalk->valid--;
-			if (mwalk->valid <= 0) {
+			dbgprintf(" -- modifier found; source=%s, type=%d, validnum=%d, expires=%d, cause=%s",
+			 mwalk->source, (int)mwalk->type, mwalk->valid, mwalk->validtime, mwalk->cause);
+
+			/* Decrement validness count, but only if this is an Original Status Message */
+			if (!modifyonly) mwalk->valid--;
+
+			/* Note: !mwalk->valid is safe
+			 * A modify message only being judged on timestamp gets
+			 * a negative valid number to begin with
+			 */
+			if (!mwalk->valid || (mwalk->validtime && (mwalk->validtime < now))) {
 				modifier_t *zombie;
 
 				/* Modifier no longer valid */
@@ -1494,23 +1521,40 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 				if (mlast) mlast->next = mwalk->next;
 				mwalk = mwalk->next;
 				xfree(zombie);
+
+				modifychanged = 1; /* Something was removed */
+				continue; /* walk to next modifer */
 			}
-			else {
-				dbgprintf(" -- modifier color: %d\n", mwalk->color);
-				addtobuffer(modifierbuf, mwalk->cause);
-				if (mwalk->color > mcolor) mcolor = mwalk->color;
-				mlast = mwalk;
-				mwalk = mwalk->next;
-			}
+
+			/* append valid cause for later nlencoding */
+			addtobuffer(modifierbuf, mwalk->cause);
+
+			/* Track three separate modifer colors overall	 */
+			/* best "modifydown", worst "modifyup", worst regular modify */
+
+			if      ((mwalk->type == MODIFY_DOWN) && (mwalk->color < mdowncolor)) mdowncolor = mwalk->color;
+			else if ((mwalk->type == MODIFY_UP)   && (mwalk->color > mupcolor)) mupcolor = mwalk->color;
+			else if ((mwalk->type == MODIFY_NORM) && (mwalk->color > mcolor)) mcolor = mwalk->color;
+			mlast = mwalk;
+			mwalk = mwalk->next;
 		}
-		if (STRBUFLEN(modifierbuf)) {
+		if (STRBUFLEN(modifierbuf) || modifychanged) {		/* Might have removed our last one */
 			if (log->modifierbuf) xfree(log->modifierbuf);
 			log->modifierbuf = strdup(nlencode(STRBUF(modifierbuf)));
 			clearstrbuffer(modifierbuf);
 		}
 
+		dbgprintf(" -- final calculation: newcolor=%d, mcolor=%d, mdowncolor=%d, mupcolor=%d\n", newcolor, mcolor, mdowncolor, mupcolor);
 		/* If there was an active modifier, this overrides the current "newcolor" status value */
-		if ((mcolor != -1) && (mcolor != newcolor)) newcolor = mcolor;
+		if (mcolor != -1) newcolor = mcolor;
+
+		/* ... then decrease by any MODIFY_DOWN  */
+		if (mdowncolor < newcolor) newcolor = mdowncolor;
+
+		/* ... then increase by any MODIFY_UP */
+		if (mupcolor > newcolor) newcolor = mupcolor;
+
+		dbgprintf(" -- overridden via modify to newcolor=%d\n", newcolor);
 	}
 
 	/*
@@ -1818,7 +1862,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		if (log->cookie) clear_cookie(log);
 	}
 
-	if (!issummary && (!log->histsynced || (log->oldcolor != newcolor))) {
+	if (!issummary && (!log->histsynced || (log->oldcolor != newcolor) || modifychanged)) {
 		/*
 		 * Change of color goes to the status-change channel.
 		 */
@@ -1830,14 +1874,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * Don't update the log->lastchange timestamp while DOWNTIME is active.
 		 * (It is only seen as active if the color has been forced BLUE).
 		 */
-		if (!log->downtimeactive && (log->oldcolor != newcolor)) {
+		if (!log->downtimeactive && ((log->oldcolor != newcolor) || modifychanged)) {
 			int i;
 			if (log->host->clientmsgs && (newalertstatus == A_ALERT) && log->test->clientsave) {
 				posttochannel(clichgchn, channelnames[C_CLICHG], msg, sender, 
 						hostname, log, NULL);
 			}
 
-			if (flapcount > 0) {
+			if ((log->oldcolor != newcolor) && (flapcount > 0)) {
 				/* We keep track of flaps, so update the lastchange table */
 				for (i=flapcount-1; (i > 0); i--)
 					log->lastchange[i] = log->lastchange[i-1];
@@ -1871,38 +1915,107 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			dbgprintf("posting color change to page channel\n");
 			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
 		}
+		else if (log->activealert && modifychanged) {
+			/* 
+			 * A modifier was added or removed when we do have an
+			 * active alert for this status. So tell the pager module so that it can use
+			 * the updated data.
+			 */
+			dbgprintf("posting modifier change to page channel\n");
+			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
+		}
 	}
 
-	dbgprintf("posting to status channel\n");
-	posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, log, NULL);
+	/* Don't post to the status channel if this was just a modify */
+	if (!modifyonly || modifychanged) {
+		dbgprintf("posting to status channel\n");
+		posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, log, NULL);
+	}
 
 	dbgprintf("<-handle_status\n");
 	return;
 }
 
-void handle_modify(char *msg, xymond_log_t *log, int color)
+void handle_modify(char *msg, xymond_log_t *log, int color, time_t now)
 {
-	char *tok, *sourcename, *cause;
+	char *tok, *eoln, *modstr, *sourcename, *cause;
 	modifier_t *mwalk;
 	int newcolor;
+	enum modifytype_t type;
+	int n, isnewcause = 0, validity = 0;
+	time_t validtime = 0;
 
-	/* "modify HOSTNAME.TESTNAME COLOR SOURCE CAUSE ..." */
+	/* "modify[up|down][+N][+Nv] HOSTNAME.TESTNAME COLOR SOURCE CAUSE ..." */
 	dbgprintf("->handle_modify\n");
 
+	if ((color < 0) || (color >= COL_COUNT)) return;
+
 	sourcename = cause = NULL;
+
+	/*
+	 * Modify messages come in one of three varieties:
+	 * 	modify = neutrally override existing color
+	 *		(the worst neutral modify will be the resulting color)
+	 * 	modifydown = only DECREASES alert status (red -> yellow -> green)
+	 * 	modifyup = only INCREASES alert status (green -> yellow, or yellow -> red)
+	 * 
+	 * modifydown and modifyup are needed to ensure you don't accidentally
+	 * override an underlying 'red' state with a yellow caused by some other minor issue
+	 */
+	eoln = strchr(msg, ' ');
+	if (!eoln) { errprintf("Received garbled modify: %s\n", msg); return; }
+	*eoln = '\0'; modstr = strdup(msg); *eoln = ' ';
+
+
+	type =  (!strncmp(modstr, "modifydown", 10)) ? MODIFY_DOWN :
+		(!strncmp(modstr, "modifyup",    8)) ? MODIFY_UP   : MODIFY_NORM;
+
+	/*
+	 * Figure out if a duration or validity specifier (or both) are present.
+	 * If not, 'DEFAULT_MODIFY_VALIDITY' is set. If so, then one/both are set.
+	 * The first one that expires will cause it to be removed (in handle_status).
+	 */
+
+	dbgprintf(" - modify msg=%s\n", msg);
+	tok = strtok(modstr, "+");
+	if (tok) tok = strtok(NULL, "+"); /* skip MODIFY[up|down]+ */
+	while (tok) {
+		/* 4v = "validity", otherwise regular duration */
+		if (strcmp((tok + strlen(tok) - 1), "v") == 0) {
+			n = atoi(tok);
+			validity = (n > 0) ? n : DEFAULT_MODIFY_VALIDITY; // could be garbage
+
+		} else {
+			validtime = durationvalue(tok)*60 + now;
+			if (!validity) validity = -10; /* Just make sure it's not 0 */
+
+		}
+		// dbgprintf(" -- modify specifier %s now: validity: %d, expires %d\n", tok, validity, validtime);
+		tok = strtok(NULL, "+"); /* could have both */
+        }
+
+	xfree(modstr);
+
 	tok = strtok(msg, " "); /* Skip "modify" */
 	if (tok) tok = strtok(NULL, " "); /* Skip HOSTNAME.TESTNAME */
 	if (tok) tok = strtok(NULL, " "); /* Skip COLOR */
 	if (tok) sourcename = strtok(NULL, " ");
 	if (sourcename) cause = strtok(NULL, "\r\n");
 
-	if (cause) {
-		/* Got all tokens - find the modifier, if this is just an update */
-		for (mwalk = log->modifiers; (mwalk && strcmp(mwalk->source, sourcename)); mwalk = mwalk->next);
+	if (!cause) {
+		errprintf("Garbled modify statement: source=%s, type=%d, validnum=%d, expires=%d, cause=%s\n", sourcename, type, validity, validtime, cause);
+		return;
+	}
+	else dbgprintf(" - parse of modify statement; source=%s, type=%d, validnum=%d, expires=%d, cause=%s\n", sourcename, type, validity, validtime, cause);
 
-		if ((color >= 0) && (color < COL_COUNT)) {
+		/* Got all tokens - find the modifier, if this is just an update */
+		n = strlen(sourcename);
+		for (mwalk = log->modifiers; (mwalk && strncmp(mwalk->source, sourcename, n)); mwalk = mwalk->next);
+
 			if (!mwalk) {
 				/* New modifier record */
+				dbgprintf(" - creating new modify record for '%s'\n", sourcename);
+				isnewcause = 1;
 				mwalk = (modifier_t *)calloc(1, sizeof(modifier_t));
 				mwalk->source = strdup(sourcename);
 				mwalk->next = log->modifiers;
@@ -1910,35 +2023,20 @@ void handle_modify(char *msg, xymond_log_t *log, int color)
 			}
 
 			mwalk->color = color;
-			mwalk->valid = 2;
+			mwalk->validtime = validtime;	/* 0 if unset */
+			mwalk->valid = (validity ? validity : DEFAULT_MODIFY_VALIDITY); /* if duration ONLY, this will be < 0 */
+			mwalk->type = type;
 			if (mwalk->cause) xfree(mwalk->cause);
 			mwalk->cause = (char *)malloc(strlen(cause) + 10); /* 10 for maxlength of colorname + markers */
 			sprintf(mwalk->cause, "&%s %s\n", colnames[mwalk->color], cause);
-		}
 
+		
 		/*
-		 * See if there's a change of color because of this modification.
-		 *
-		 * We must determine the color based ONLY on the modifications that
-		 * have been reported.
-		 * The reason we don't include the original status color in the scan
-		 * is because the modifiers override the original status - and they
-		 * can make it both worse (green -> red) or better (red -> green).
-		 *
-		 * So we simply decide what's the worst modifier we have, and if it
-		 * is different than the original status color, we trigger a change.
+		 * Modify messages always get sent to handle_status for evaluation.
+		 * It's possible a status change will result, or just a new status message.
 		 */
-		for (newcolor=color, mwalk=log->modifiers; (mwalk); mwalk = mwalk->next) {
-			if (mwalk->valid <= 0) continue;
-			if (mwalk->color > newcolor) newcolor = mwalk->color;
-		}
-
-		if (newcolor != log->color) {
-			/* Color change - trigger a status update */
-			handle_status(log->message, log->sender, 
-				log->host->hostname, log->test->name, log->grouplist, log, newcolor, NULL, 1);
-		}
-	}
+			handle_status(log->message, log->sender,  
+				log->host->hostname, log->test->name, log->grouplist, log, log->color, NULL, (isnewcause ? 2 : 1) );
 
 	dbgprintf("<-handle_modify\n");
 }
@@ -3622,7 +3720,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 
 			get_hts(currmsg, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 			if (h && t && log && (viabfq || oksender(statussenders, (h ? hostinfo(h->hostname) : NULL), msg->sender, currmsg))) {
-				handle_modify(currmsg, log, color);
+				handle_modify(currmsg, log, color, now);
 			}
 
 			currmsg = nextmsg;

@@ -507,7 +507,7 @@ These messages will be relayed directly to modules listening on the "user"
 channel of the Xymon daemon. This is intended for custom communication
 between client-side modules and the Xymon server.
 
-.IP "modify HOSTNAME.TESTNAME COLOR SOURCE CAUSE"
+.IP "modify[|up|down][+DURATION][+VALIDITYv] HOSTNAME.TESTNAME COLOR SOURCE CAUSE"
 Modify the color of a specific status, without generating a complete
 status message. This is for backend processors (e.g. RRD graphs)
 that can override the color of a status based on some criteria
@@ -521,10 +521,22 @@ setting in
 for how to do this). SOURCE is some identification of the module
 that generates the "modify" message - future modifications must
 use the same source. There may be several sources that modify
-the same status (the most severe status then becomes the actual
-color of the status). CAUSE is a one-line text string explaining
+the same status. CAUSE is a one-line text string explaining
 the reason for overriding the normal status color - it will be
-displayed on the status webpage.
+displayed on the status webpage. DURATION is the length of time the override
+will be valid for (eg, '+30m'). VALIDITY (specified as "+4v") is the number of
+subsequent status messages (regardless of duration) that this override will
+be considered valid for. If both DURATION and VALIDITY are specified, the
+first value to "expire" will cause the modify to be removed.
+
+If any "modify" messages are present, then the most severe of the modify statuses 
+will become the actual color of the status, IGNORING the original color. Thus, 
+a red status may be 'modify'd down to a yellow.
+
+To specify a minimum or maximum color, use the optional 'modifyup' or 'modifydown' 
+variants, which guarantee that they will not accidentally lower an already-worse 
+(or already-OK) status. (For example, a 'red' status that has a 'modifyup yellow' 
+override applied will remain red.)
 
 
 .SH EXAMPLE

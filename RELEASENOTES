@@ -17,6 +17,8 @@ Changes for 4.4
  - /periodic/ and /notes/ moved from $XYMONWWW to $XYMONVAR
  - Combined, these allow the $XYMONWWW directory to be placed on a tmpfs partition
 
+ - New "modify" message types for reliably increasing or decreasing the
+   severity of a status
 
 
 

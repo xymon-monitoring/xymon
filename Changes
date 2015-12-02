@@ -43,6 +43,11 @@ Changes from 4.3.x -> 4.4-alpha
   prevent collisions on heavily loaded (or longer cookie age) systems.
 * Timed out connections to xymond are now reported and tracked instead
   of being lumped together with bogus messages / unknown types.
+* modify messages can have variable durations assigned to them, or be
+  valid for a certain number of incoming original status messages.
+* modifyup/modifydown messages can be issued which are guaranteed to
+  only increase or decrease the severity of a status safely. I.e., a
+  red status that is then given a "modifyup yellow" will still be red
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet
