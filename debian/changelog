@@ -52,7 +52,11 @@ xymon (4.4.0-alpha5) unstable; urgency=low
    * xymond_client can send follow-up "modify" messages showing matching
      log lines in the 'msgs' column, allowing color to potentially be
      persisted independently of LOGFETCH_SCROLLBACK or client frequency.
-
+   * xymonproxy now can send one-way messages via the local BFQ when given 
+     the --bfq option. By default it will combine messages as well, unless
+     given --no-extcombine. In this mode, only two-way messages will be
+     forwarded to the server over TCP, so it only makes sense to have a
+     single one listed.
    
    * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
      write) to xymonnet

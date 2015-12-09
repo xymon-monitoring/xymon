@@ -1,7 +1,7 @@
 4.x / Trunk Integration
 -----------------------
 * Migrate certain things to global options:
-  --bfq / --no-bfq: force bfq usage/non-usage rather than dynamically determine.
+  --bfq / --no-bfq: force_backfeedqueue usage/non-usage rather than dynamically determine.
     --bfq=# (round-robinning for multiple BFQ's)
   --timeout: how long to wait when sending a message to xymond
   --retries: how many times to retry a message to xymond before giving up

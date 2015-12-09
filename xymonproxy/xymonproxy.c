@@ -51,6 +51,7 @@ enum phase_t {
 	P_REQ_READY, 		/* Done reading request from client */
 
 	P_REQ_COMBINING,
+	P_REQ_BFQING,		/* Being sent via backfeed queue */
 
 	P_REQ_CONNECTING,	/* Connecting to server */
 	P_REQ_SENDING, 		/* Sending request data */
@@ -68,6 +69,7 @@ char *statename[P_CLEANUP+1] = {
 	"reading from client",
 	"request from client OK",
 	"request combining",
+	"sending to bfq",
 	"connecting to server",
 	"sending to server",
 	"request sent",
@@ -111,6 +113,9 @@ typedef struct conn_t {
 int keeprunning = 1;
 int dologswitch = 0;
 time_t laststatus = 0;
+time_t lastcomboflush = 0;
+int usebackfeedqueue = -1;
+int extcombine = 1;
 char *logfile = NULL;
 int logdetails = 0;
 unsigned long msgs_timeout_from[P_CLEANUP+1] = { 0, };
@@ -226,6 +231,7 @@ int main(int argc, char *argv[])
 	char *proxyname = NULL;
 	char *proxynamesvc = "xymonproxy";
 
+	int force_backfeedqueue = 0;
 	int sockcount = 0;
 	int lsocket;
 	struct sockaddr_in laddr;
@@ -241,6 +247,8 @@ int main(int argc, char *argv[])
 	unsigned long msgs_total_last = 0;
 	unsigned long msgs_combined = 0;
 	unsigned long msgs_merged = 0;
+	unsigned long msgs_bfqd = 0;
+	unsigned long msgs_bfqrecovered = 0;
 	unsigned long msgs_delivered = 0;
 	unsigned long msgs_status = 0;
 	unsigned long msgs_combo = 0;
@@ -312,6 +320,18 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[opt], '=');
 			listenq = atoi(p+1);
 		}
+		else if (strcmp(argv[opt], "--bfq") == 0) {
+			force_backfeedqueue = 1;
+		}
+		else if (strcmp(argv[opt], "--no-bfq") == 0) {
+			force_backfeedqueue = -1;
+		}
+		else if (strcmp(argv[opt], "--extcombine") == 0) {
+			extcombine = 1;
+		}
+		else if (strcmp(argv[opt], "--no-extcombine") == 0) {
+			extcombine = 0;
+		}
 		else if (strcmp(argv[opt], "--daemon") == 0) {
 			daemonize = 1;
 		}
@@ -360,10 +380,30 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (force_backfeedqueue >= 1) {
+		if (xymonservercount > 1) {
+			errprintf("Multiple Xymon server addresses given but --bfq specified (only one would be used)\n");
+			return 1;
+		}
+		else if (xymonservercount == 0) {
+			errprintf("No Xymon server address given but --bfq specified (suggested: --server=127.0.0.1:1984)\n");
+			return 1;
+		}
+	}
+
 	if (xymonservercount == 0) {
 		errprintf("No Xymon server address given - aborting\n");
 		return 1;
 	}
+
+	usebackfeedqueue = ((force_backfeedqueue > 0) ? (sendmessage_init_local() > 0) : 0);
+	if ((force_backfeedqueue == 1) && (usebackfeedqueue <= 0)) {
+		errprintf("Unable to set up backfeed queue when --bfq given - exiting\n");
+		return 1;
+	}
+	if (usebackfeedqueue) combo_start_local();
+
+
 
 	/* Set up a socket to listen for new connections */
 	lsocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -409,6 +449,12 @@ int main(int argc, char *argv[])
 		errprintf("Sending to %d Xymon server(s): %s\n", xymonservercount, srvrs);
 	}
 
+	if (usebackfeedqueue) errprintf("Sending to local backfeed queue\n");
+	if (getenv("XYMONPROXY_NOEXTCOMBINE") || (extcombine == 0) ) {
+		/* legacy env variable support */
+		extcombine = 0;
+		logprintf("xymonproxy: NOT using extcombo -- all messages being passed directly through\n");
+	}
 	if (daemonize) {
 		pid_t childpid;
 
@@ -504,10 +550,11 @@ int main(int argc, char *argv[])
 			}
 
 			p = stentry->buf;
-			p += sprintf(p, "combo\nstatus+11 %s green %s - xymon proxy up: %s\n\nxymonproxy for Xymon version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Other messages         : %10lu\n\nProxy resources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+			p += sprintf(p, "combo\nstatus+11 %s green %s - xymon proxy up: %s\n\nxymonproxy for Xymon version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound TCP messages    : %10lu\nOutbound BFQ messages    : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Other messages         : %10lu\n\nProxy resources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
 				proxyname, timestamp, runtime_s, VERSION,
 				msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
 				msgs_delivered,
+				msgs_bfqd,
 				msgs_combo, 
 				msgs_status, msgs_merged, msgs_combined, 
 				msgs_other,
@@ -515,6 +562,8 @@ int main(int argc, char *argv[])
 			p += sprintf(p, "\nTimeout/failure details\n");
 			p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_READING], msgs_timeout_from[P_REQ_READING]);
 			p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_CONNECTING], msgs_timeout_from[P_REQ_CONNECTING]);
+			p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_BFQING], msgs_timeout_from[P_REQ_BFQING]);
+			p += sprintf(p, "- %-22s : %10lu\n", "bfq recovered", msgs_bfqrecovered);
 			p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_SENDING], msgs_timeout_from[P_REQ_SENDING]);
 			p += sprintf(p, "- %-22s : %10lu\n", "recovered", msgs_recovered);
 			p += sprintf(p, "- %-22s : %10lu\n", statename[P_RESP_READING], msgs_timeout_from[P_RESP_READING]);
@@ -536,6 +585,14 @@ int main(int argc, char *argv[])
 		FD_ZERO(&fdwrite);
 		maxfd = -1;
 		combining = 0;
+
+		/* Max time to hold a pending extcombo message */
+		/* nb: now gets set above -- no need to call gettimer() again */
+		if (usebackfeedqueue && extcombine && (now >= (lastcomboflush+10))) {
+			combo_end();
+			if (usebackfeedqueue) combo_start_local(); else combo_start();
+			lastcomboflush = now;
+		}
 
 		for (cwalk = chead, idx=0; (cwalk); cwalk = cwalk->next, idx++) {
 			dbgprintf(" state conn %ld: %s\n", cwalk->connid, statename[cwalk->state]);
@@ -633,6 +690,19 @@ int main(int argc, char *argv[])
 						cwalk->csocket = -1;
 					}
 					cwalk->snum = SNUM_FIRST;	/* start first to last */
+
+					/* If we're using the backfeed queue, isolate the message and put it
+					 * on the queue ASAP
+					 */
+					if (usebackfeedqueue) {
+						cwalk->snum = SNUM_ISBFQ; /* not a regular server */
+						cwalk->bufp = cwalk->buf+6;
+						cwalk->buflen -= 6;
+						cwalk->bufpsave = cwalk->bufp;
+						cwalk->buflensave = cwalk->buflen;
+						cwalk->state = P_REQ_BFQING;
+						break;
+					}
 
 					if (strncmp(cwalk->buf+6, "status", 6) == 0) {
 						msgs_status++;
@@ -1066,8 +1136,9 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-		else {
-			if (selectfailures > 0) selectfailures--;
+
+		if ((n > 0) || usebackfeedqueue) {
+			if ((selectfailures > 0) && (n > 0)) selectfailures--;
 
 			for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
 				switch (cwalk->state) {
@@ -1109,6 +1180,40 @@ int main(int argc, char *argv[])
 							cwalk->state = P_REQ_CONNECTING;
 							cwalk->conntries = CONNECT_TRIES;
 							cwalk->nextconntime = gettimer() + CONNECT_INTERVAL;
+						}
+					}
+					break;
+
+				  case P_REQ_BFQING:
+					if (extcombine && (strncmp(cwalk->bufp, "extcombo", 8) != 0) ) {
+						/* Using the generic add-to-extcombo routine */
+						dbgprintf(" conn %ld: sending %zu bytes to BFQ via extcombo\n", cwalk->connid, cwalk->buflen);
+						combo_addcharbytes(cwalk->bufp, cwalk->buflen);
+						msgs_bfqd++;
+						cwalk->state = P_CLEANUP;
+					}
+					else {
+						/* Handle semantics ourselves */
+						if (cwalk->nextconntime && (gettimer() < cwalk->nextconntime) ) {
+							dbgprintf(" conn %ld: delaying retry of BFQ post\n", cwalk->connid);
+							break;
+						}
+						else if (cwalk->conntries < 0) {
+							errprintf(" conn %ld: failed to post %d bytes to BFQ after %d tries, message lost\n", cwalk->connid, cwalk->buflen, CONNECT_TRIES);
+							msgs_timeout_from[P_REQ_BFQING]++;
+							cwalk->state = P_CLEANUP;
+						}
+						else {
+							dbgprintf(" conn %ld: passing %d bytes onto BFQ\n", cwalk->connid, cwalk->buflen);
+							if (sendmessage_local(cwalk->bufp, cwalk->buflen) != XYMONSEND_OK) {
+								cwalk->nextconntime = gettimer() + CONNECT_INTERVAL + (int)(rand() % 4) - 2;
+								dbgprintf(" conn %ld: bfq post failed -  will retry\n", cwalk->connid);
+								cwalk->conntries--;
+								break;
+							}
+							msgs_bfqd++;					/* successfully sent */
+							if (cwalk->nextconntime) msgs_bfqrecovered++;	/* ... but retried at least once */
+							cwalk->state = P_CLEANUP;
 						}
 					}
 					break;
@@ -1227,6 +1332,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	} while (keeprunning);
+	if (usebackfeedqueue) sendmessage_finish_local();
 
 	if (pidfn) unlink(pidfn);
 	return 0;

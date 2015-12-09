@@ -46,6 +46,16 @@ sending their data via this proxy, note that the clients will
 receive their configuration data from the LAST of the servers
 listed here.  This option is required.
 
+.IP "\-\-bfq"
+Tells xymonproxy to use the local messagequeue interface for 
+forwarding messages that don't need a response to xymond. Two-
+way messages (such as "query", "config", and "client") are 
+sent to a (single) server listed above. Because the BFQ must 
+be running on the same machine, this is typically used to off-
+load TCP processing duties to xymonproxy, forwarding two-way
+messages to xymond on a separate port while converting the 
+remaining messages to a more efficient to handle form.
+
 .IP "\-\-listen=LOCALIP[:PORT]"
 Specifies the IP-adress where xymonproxy listens for incoming 
 connections. By default, xymonproxy listens on all IP-addresses
@@ -55,6 +65,15 @@ will be used.
 .IP "\-\-timeout=N"
 Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
+
+.IP "\-\-no\-extcombine"
+When running with --bfq enabled, xymonproxy will attempt to 
+combine one-way messages together into larger blocks automatically.
+With this specified, xymonproxy will instead simply deposit
+messages directly onto the messagequeue interface. This should
+be used if this xymonproxy is already primarily receiving 
+efficiently packed messages from some other source, such as a
+remote network poller.
 
 .IP "\-\-report=[PROXYHOSTNAME.]SERVICE"
 If given, this option causes xymonproxy to send a status report
