@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "2.03"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-07-17 zak.beck@accenture.com"
+$Version = "2.04"
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-12-02 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -2379,13 +2379,16 @@ function XymonProcessRuntimeCheck
                     $processName, $yellowThreshold, $redThreshold
         }
 
-    $output += '</pre>'
-    $outputHeader += '<br><span style="margin-left: 16px;">{0,8} {1,-35} {2,19} {3,7} {4} {5}</span><br>' `
-        -f "PID", "User", 'Start Time', 'Elapsed', "Name", "Command"
-    $output = $outputHeader + $output
-    WriteLog "Sending output for procruntime"
-    $outputXymon = ('status {0}.procruntime {1} {2}' -f $script:clientname, $groupcolour, $output)
-    XymonSend $outputXymon $script:XymonSettings.serversList
+    if ($output -ne '')
+    {
+        $output += '</pre>'
+        $outputHeader += '<br><span style="margin-left: 16px;">{0,8} {1,-35} {2,19} {3,7} {4} {5}</span><br>' `
+            -f "PID", "User", 'Start Time', 'Elapsed', "Name", "Command"
+        $output = $outputHeader + $output
+        WriteLog "Sending output for procruntime"
+        $outputXymon = ('status {0}.procruntime {1} {2}' -f $script:clientname, $groupcolour, $output)
+        XymonSend $outputXymon $script:XymonSettings.serversList
+    }
     WriteLog 'XymonProcessRuntimeCheck finished'
 }
 
