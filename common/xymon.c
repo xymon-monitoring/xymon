@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 
 		initfgets(stdin);
 		while (unlimfgets(inpline, stdin)) {
-			result = sendmessage(STRBUF(inpline), recipient, timeout, sres);
+			result = sendmessage_buffer(inpline, recipient, timeout, sres);
 			clearstrbuffer(inpline);
 		}
 
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
 	if (!usebackfeedqueue) {
 		sres = newsendreturnbuf(wantresponse, respfd);
-		result = sendmessage(STRBUF(msg), recipient, timeout, sres);
+		result = sendmessage_buffer(msg, recipient, timeout, sres);
 
 		if (sres->respstr) printf("Buffered response is '%s'\n", STRBUF(sres->respstr));
 	}
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 		dbgprintf("Using backfeed channel\n");
 
 		sendmessage_init_local();
-		sendmessage_local(STRBUF(msg));
+		sendmessage_local_buffer(msg);
 		sendmessage_finish_local();
 		result = 0;
 	}

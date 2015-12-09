@@ -22,12 +22,20 @@ int main(int argc, char *argv[])
 	sendreturn_t *sres;
 
 	cgidata = cgi_request();
-	if (cgidata) {
-		printf("Content-Type: application/octet-stream\n\n");
-		sres = newsendreturnbuf(1, stdout);
-		result = sendmessage(cgidata->value, "127.0.0.1", XYMON_TIMEOUT, sres);
+	if (!cgidata || !cgidata->valsize) {
+		printf("Status: 400\nContent-Type: text/plain\n\nNo request submitted\n");
+		return 1;
 	}
 
+	/* NB: We're blasting the output regardless of success here */
+	printf("Content-Type: application/octet-stream\n\n");
+	sres = newsendreturnbuf(1, stdout);
+	result = sendmessage_safe(cgidata->value, cgidata->valsize, "127.0.0.1", XYMON_TIMEOUT, sres);
+
+	if (result != XYMONSEND_OK) {
+		printf("Attempted msg post failed: %s\n", strxymonsendresult(result));
+		errprintf("Attempted msg post failed: %s\n", strxymonsendresult(result));
+	}
 	return result;
 }
 

@@ -107,6 +107,9 @@ char *strxymonsendresult(sendresult_t res)
 	  case XYMONSEND_EWRITEERROR      : return "write error";
 	  case XYMONSEND_EREADERROR       : return "read error";
 	  case XYMONSEND_EBADURL          : return "Bad URL";
+	  case XYMONSEND_EBADMSG          : return "Bad message";
+	  case XYMONSEND_EEMPTY           : return "Empty message";
+	  case XYMONSEND_EOTHER           : return "Unspecified xymon error";
 	  default			  : return "Unknown error";
 	};
 }
@@ -301,18 +304,16 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 }
 
 
-static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t *responsebuffer)
+static int sendtoall(char *msg, size_t msglen, int timeout, mytarget_t **targets, sendreturn_t *responsebuffer)
 {
 	myconn_t *myconn;
-	int i, msglen;
+	int i;
 	int maxfd;
 	strbuffer_t *cbuf = NULL;
 	int v4server = (getenv("XYMONV4SERVER") != NULL);
 
 	conn_register_infohandler(NULL, (debug ? INFO_DEBUG : INFO_WARN));
 	conn_init_client();
-
-	msglen = strlen(msg);
 
 	for (i = 0; (targets[i]); i++) {
 		char *ip;
@@ -398,7 +399,7 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 	return 0;
 }
 
-static mytarget_t **build_targetlist(char *recips, int defaultport, int msglength)
+static mytarget_t **build_targetlist(char *recips, int defaultport, size_t msglength)
 {
 	/*
 	 * Target format: [tls:][IP|hostname]:[portnumber|servicename]
@@ -440,7 +441,7 @@ static mytarget_t **build_targetlist(char *recips, int defaultport, int msglengt
 				goto target_done;
 			}
 
-			snprintf(lengthstr, sizeof(lengthstr), "%d", msglength);
+			snprintf(lengthstr, sizeof(lengthstr), "%zu", msglength);
 			addtobuffer_many(httpreq, 
 					"POST ", url.relurl, " HTTP/1.0\r\n",
 					"Host: ", url.host, "\r\n",
@@ -507,22 +508,17 @@ void sendmessage_finish_local(void)
         close_feedback_queue(backfeedqueue, CHAN_CLIENT);
 }
 
-sendresult_t sendmessage_local(char *msg)
+sendresult_t sendmessage_local(char *msg, size_t msglen)
 {
 	int n, done = 0, tries = 0;
-	#if defined(__OpenBSD__) || defined(__dietlibc__)
-		unsigned long msglen;
-	#else
-		msglen_t msglen;
-	#endif
 
 	if (backfeedqueue == -1) {
 		return sendmessage(msg, NULL, XYMON_TIMEOUT, NULL);
 	}
 
 	/* Make sure we dont overflow the message buffer */
-	msglen = strlen(msg);
 	if (msglen > max_backfeedsz) {
+		/* NB: Someday we could consider compressing here */
 		errprintf("Truncating backfeed channel message from %d to %d\n", msglen, max_backfeedsz);
 		*(msg+max_backfeedsz) = '\0';
 		msglen = max_backfeedsz;
@@ -530,7 +526,11 @@ sendresult_t sendmessage_local(char *msg)
 
 	/* Retry a few times if not immediately available, otherwise return error */
 	do {
-		n = msgsnd(backfeedqueue, msg, msglen, IPC_NOWAIT);
+#if defined(__OpenBSD__) || defined(__dietlibc__)
+		n = msgsnd(backfeedqueue, msg, (unsigned long)msglen, IPC_NOWAIT);
+#else
+		n = msgsnd(backfeedqueue, msg, (msglen_t)msglen, IPC_NOWAIT);
+#endif
 		if ((n == 0) || ((n == -1) && (errno != EINTR) && (errno != EAGAIN))) done = 1;
 	} while (!done && (tries++ < SENDRETRIES));
 
@@ -541,7 +541,11 @@ sendresult_t sendmessage_local(char *msg)
 			if (newqueue != -1) {
 				backfeedqueue = newqueue;
 				/* Try one more time */
-				n = msgsnd(backfeedqueue, msg, msglen, IPC_NOWAIT);
+#if defined(__OpenBSD__) || defined(__dietlibc__)
+				n = msgsnd(backfeedqueue, msg, (unsigned long)msglen, IPC_NOWAIT);
+#else
+				n = msgsnd(backfeedqueue, msg, (msglen_t)msglen, IPC_NOWAIT);
+#endif
 				if (n != -1) return XYMONSEND_OK;
 			}
 			else errprintf("Scan for new BFQ identifier unsuccessful; will try again\n");
@@ -552,9 +556,15 @@ sendresult_t sendmessage_local(char *msg)
 	return XYMONSEND_OK;
 }
 
+sendresult_t sendmessage_local_buffer(strbuffer_t *buf)
+{
+	if (buf) return sendmessage_local(STRBUF(buf), STRBUFLEN(buf));
+	errprintf("BUG: sendmessage_local_buffer given empty message\n");
+	return XYMONSEND_EEMPTY;
+}
 
 /* TODO: http targets, http proxy */
-sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *response)
+sendresult_t sendmessage_safe(char *msg, size_t msglen, char *recipient, int timeout, sendreturn_t *response)
 {
 	static mytarget_t **defaulttargets = NULL;
 	static int defaultport = 0;
@@ -585,8 +595,8 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 		defaulttargets = build_targetlist(recips, defaultport, 0);
 	}
 
-	targets = ((recipient == NULL) ? defaulttargets : build_targetlist(recipient, defaultport, strlen(msg)));
-	sendtoall(msg, timeout, targets, response);
+	targets = ((recipient == NULL) ? defaulttargets : build_targetlist(recipient, defaultport, msglen));
+	sendtoall(msg, msglen, timeout, targets, response);
 
 	res = myhead->result;	/* Always return the result from the first server */
 
@@ -683,6 +693,15 @@ char *getsendreturnstr(sendreturn_t *s, int takeover)
 }
 
 
+/* Like sendmessage, but given a strbuffer -- safer if we're passing around binary/compressed data */
+sendresult_t sendmessage_buffer(strbuffer_t *msgbuf, char *recipient, int timeout, sendreturn_t *response)
+{
+	if (msgbuf) return sendmessage_safe(STRBUF(msgbuf), STRBUFLEN(msgbuf), recipient, timeout, response);
+	errprintf("BUG: sendmessage_buffer given empty message\n");
+	return XYMONSEND_EEMPTY;
+}
+
+
 /* Routines for handling combo message transmission */
 static void combo_params(void)
 {
@@ -764,11 +783,11 @@ static void combo_flush(void)
 	}
 
 	if (combo_is_local) {
-		sendmessage_local(STRBUF(xymonmsg));
+		sendmessage_local_buffer(xymonmsg);
 		combo_start_local();
 	}
 	else {
-		sendmessage(STRBUF(xymonmsg), NULL, XYMON_TIMEOUT, NULL);
+		sendmessage_buffer(xymonmsg, NULL, XYMON_TIMEOUT, NULL);
 		combo_start();
 	}
 }

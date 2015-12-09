@@ -25,7 +25,10 @@ typedef enum {
 	XYMONSEND_ETIMEOUT,
 	XYMONSEND_EWRITEERROR,
 	XYMONSEND_EREADERROR,
-	XYMONSEND_EBADURL 
+	XYMONSEND_EBADURL,
+	XYMONSEND_EBADMSG,
+	XYMONSEND_EEMPTY,
+	XYMONSEND_EOTHER
 } sendresult_t;
 extern char *strxymonsendresult(sendresult_t s);
 
@@ -36,8 +39,10 @@ typedef struct sendreturn_t {
 } sendreturn_t;
 
 extern void setproxy(char *proxy);
-extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);
+extern sendresult_t sendmessage_safe(char *msg, size_t msglen, char *recipient, int timeout, sendreturn_t *reponse);
 
+extern sendresult_t sendmessage_buffer(strbuffer_t *msgbuf, char *recipient, int timeout, sendreturn_t *response);
+#define sendmessage(A,B,C,D) sendmessage_safe(A, strlen(A), B, C, D)
 extern sendreturn_t *newsendreturnbuf(int fullresponse, FILE *respfd);
 extern void freesendreturnbuf(sendreturn_t *s);
 extern char *getsendreturnstr(sendreturn_t *s, int takeover);
@@ -51,7 +56,8 @@ extern void combo_addcharbytes(char *p, size_t len);
 
 extern int sendmessage_init_local(void);
 extern void sendmessage_finish_local(void);
-extern sendresult_t sendmessage_local(char *msg);
+extern sendresult_t sendmessage_local(char *msg, size_t msglen);
+extern sendresult_t sendmessage_local_buffer(strbuffer_t *msgbuf);
 
 extern void init_status(int color);
 extern void addtostatus(char *p);

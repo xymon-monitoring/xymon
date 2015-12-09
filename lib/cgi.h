@@ -14,6 +14,7 @@
 typedef struct cgidata_t {
 	char *name;
 	char *value;
+	size_t valsize;	/* for POST data, which could be arbitrary bytes */
 	char *filename;
 	struct cgidata_t *next;
 } cgidata_t;

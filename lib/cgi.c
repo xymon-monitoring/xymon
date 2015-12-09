@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-#define MAX_REQ_SIZE (1024*1024)
+#define MAX_REQ_SIZE MAX_XYMON_MSGSZ
 
 enum cgi_method_t cgi_method = CGI_OTHER;
 
@@ -46,7 +46,8 @@ cgidata_t *cgi_request(void)
 	char *method = NULL;
 	char *reqdata = NULL;
 	char *conttype = NULL;
-        char *token;
+	char *token;
+	size_t postsize = 0;
 	cgidata_t *head = NULL, *tail = NULL;
 
 	cgi_error_text = NULL;
@@ -62,7 +63,6 @@ cgidata_t *cgi_request(void)
 
 	if (strcasecmp(method, "POST") == 0) {
 		char *contlen = getenv("CONTENT_LENGTH");
-		int postsize = 0;
 
 		cgi_method = CGI_POST;
 
@@ -244,7 +244,9 @@ cgidata_t *cgi_request(void)
 		/* Raw data - return a single record to caller */
 		head = (cgidata_t *)calloc(1, sizeof(cgidata_t));
 		head->name = strdup("");
-		head->value = reqdata ? strdup(reqdata) : NULL;
+		head->value = reqdata;	/* Don't free, send back */
+		head->valsize = postsize + 1; /* size of buffer includes \0 */
+		return head;
 	}
 
 	if (reqdata) xfree(reqdata);
