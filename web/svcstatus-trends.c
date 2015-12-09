@@ -132,6 +132,22 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 
 	/* Find this rrd definition in the rrdgraphs */
 	graphdef = strstr(hostrrdgraphs, rrd->gdef->xymonrrdname);
+	if (graphdef) {
+		char *endp;
+		int namelength;
+		namelength = strlen(rrd->gdef->xymonrrdname);
+		while (graphdef) {
+			/* 
+			 * Search for string, but eliminate partial matches.
+			 * Must start and bol or after a comma or !,
+			 *  and end with colon, comma, or eol.
+			*/
+			endp = graphdef + namelength;
+			if (((*endp == '\0') || (*endp == ':') || (*endp == ',')) && ((graphdef == hostrrdgraphs) || (*(graphdef-1) == ',') || (*(graphdef-1) == '!') )) break;
+			/* no match, keep looking */
+			graphdef = strstr(endp, rrd->gdef->xymonrrdname);
+		}
+	}
 
 	/* If not found ... */
 	if (graphdef == NULL) {

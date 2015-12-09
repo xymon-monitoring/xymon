@@ -1,4 +1,14 @@
 
+xymon (4.3.25) stable; urgency=high
+
+   * rev XXXX
+
+   * Fix "TRENDS" entries in hosts.cfg improperly handling partial matches with 
+     other graph names (Reported by Jeremy Laidman) 
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, XX Dec 2015 17:40:00 -0800
+
+
 xymon (4.3.24) stable; urgency=high
 
    * rev 7774
