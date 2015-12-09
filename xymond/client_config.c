@@ -2547,7 +2547,7 @@ int check_mibvals(void *hinfo, char *classname,
 }
 
 int scan_log(void *hinfo, char *classname, 
-	     char *logname, char *logdata, char *section, strbuffer_t *summarybuf)
+	     char *logname, char *logdata, char *section, strbuffer_t *summarybuf, strbuffer_t *modifierbuf)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -2615,6 +2615,18 @@ int scan_log(void *hinfo, char *classname,
 			dbgprintf("Log rule at line %d matched\n", rule->cfid);
 			if (rule->rule.log.color != COL_GREEN) addalertgroup(rule->groups);
 			if (rule->rule.log.color > result) result = rule->rule.log.color;
+
+			if (modifierbuf) {
+				/*
+				 * Give a single 'COLOR SOURCE RULENAME\n' into the modifier buffer.
+				 * TODO: Find a better unique ID; possibly construct our own msg
+				 *  using per-CFID modify type, duration, and validity.
+				 */
+				sprintf(msgline, "%s msgs-cfid:%d Recently seen: %s\n", 
+					colorname(rule->rule.log.color), rule->cfid, 
+					(rule->statustext ? rule->statustext : rule->rule.log.matchexp->pattern));
+				addtobuffer(modifierbuf, msgline);
+			}
 		}
 	}
 
@@ -3157,9 +3169,16 @@ strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagep
 		if (rulematch) {
 			char *bot, *marker;
 
-			sprintf(msgline, "modify %s.%s %s rrdds ", 
+			/*
+			 * TODO: This line number will change when an edit is made, leading
+			 * to potentially incorrect behavior for a few cycles after a config
+			 * file update. Normally just duplicate modify's, but if we're unlucky
+			 * an inappropriate downgrade from red to yellow. We need a longer term
+			 * unique identifier for this rule that can be condensed to a source name.
+			*/
+			sprintf(msgline, "modify %s.%s %s rrdds-cfid:%d ", 
 				hostname, rule->rule.rrdds.column,
-				colorname(rule->rule.rrdds.color));
+				colorname(rule->rule.rrdds.color), rule->cfid);
 			addtobuffer(resbuf, msgline);
 
 			/* Format and add the status text */

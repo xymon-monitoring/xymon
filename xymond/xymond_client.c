@@ -46,6 +46,7 @@ int svclistinsvcs = 1;
 int sendclearmsgs = 1;
 int sendclearfiles = 1;
 int sendclearports = 1;
+int modifymsgs = 0;
 int sendclearsvcs = 1;
 int localmode     = 0;
 int unknownclientosok = 0;
@@ -1218,8 +1219,10 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	static strbuffer_t *greendata = NULL;
 	static strbuffer_t *yellowdata = NULL;
 	static strbuffer_t *reddata = NULL;
+	static strbuffer_t *modifiers = NULL;
 	sectlist_t *swalk;
 	strbuffer_t *logsummary;
+	char *p, *eoln = NULL;
 	int msgscolor = COL_GREEN;
 	char msgline[PATH_MAX];
 	char *group;
@@ -1239,12 +1242,13 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	clearalertgroups();
 
 	logsummary = newstrbuffer(0);
+	if (!modifiers) modifiers = newstrbuffer(0); /* logsummary could be large, modifiers isn't */
 
 	while (swalk) {
 		int logcolor;
 
 		clearstrbuffer(logsummary);
-		logcolor = scan_log(hinfo, clientclass, swalk->sname+5, swalk->sdata, swalk->sname, logsummary);
+		logcolor = scan_log(hinfo, clientclass, swalk->sname+5, swalk->sdata, swalk->sname, logsummary, (modifymsgs ? modifiers : NULL) );
 
 		if (logcolor > msgscolor) msgscolor = logcolor;
 
@@ -1346,6 +1350,37 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (fromline && !localmode) addtostatus(fromline);
 
 	finish_status();
+
+	/*
+	 * When modify-msgs is enabled, we also send in modify messages 
+	 * relating to the status we just created. This is redundant while
+	 * we're still seeing the lines in question, but allows the persistence
+	 * of the color change to be independently controlled from the logfetch
+	 * scrollback.
+	 * 
+	 * NB: Future use: extend LOG format to allow specification of time/
+	 * valid durations, and do this final assembly in scan_log instead.
+	 * 
+	 * scan_log returns a buffer consisting of lines of form 
+	 * "COLOR SOURCE CAUSE\n" , where "SOURCE" is msgs-<CFID> and 
+	 * "CAUSE" is "Recently seen: " + TEXT= or the regex to match, so all
+	 * we need to do now is prepend "modify commafy(hostname).msgs "
+	 */
+
+	if (modifymsgs) {
+		p = STRBUF(modifiers);
+	    	while ((p != NULL) && (*p != '\0')) {
+			eoln = strchr(p, '\n'); if (eoln) *eoln = '\0';
+
+			sprintf(msgline, "modify %s.msgs %s\n", commafy(hostname), p); 
+			dbgprintf("Found a requested modifier, issuing: %s", msgline);
+			combo_addchar(msgline);
+
+			/* move to next source line, if present */
+			p = (eoln ? eoln+1 : NULL);
+	    	}
+		clearstrbuffer(modifiers);
+	}
 }
 
 void file_report(char *hostname, char *clientclass, enum ostype_t os,
@@ -1966,7 +2001,7 @@ void testmode(char *configfn)
 		else if (strcmp(s, "log") == 0) {
 			FILE *fd;
 			char *sectname;
-			strbuffer_t *logdata, *logsummary;
+			strbuffer_t *logdata, *logsummary, *modifiers;
 			int logcolor;
 
 			printf("log filename: "); fflush(stdout);
@@ -1976,6 +2011,7 @@ void testmode(char *configfn)
 
 			logdata = newstrbuffer(0);
 			logsummary = newstrbuffer(0);
+			modifiers = newstrbuffer(0);
 
 			printf("To read log data from a file, enter '@FILENAME' at the prompt\n");
 			do {
@@ -1994,10 +2030,13 @@ void testmode(char *configfn)
 			} while (*s);
 
 			clearstrbuffer(logsummary);
-			logcolor = scan_log(hinfo, clientclass, sectname+5, STRBUF(logdata), sectname, logsummary);
+			clearstrbuffer(modifiers);
+			logcolor = scan_log(hinfo, clientclass, sectname+5, STRBUF(logdata), sectname, logsummary, modifiers);
 			printf("Log status is %s\n\n", colorname(logcolor));
 			if (STRBUFLEN(logsummary)) printf("%s\n", STRBUF(logsummary));
+			if (STRBUFLEN(modifiers)) printf("%s\n", STRBUF(modifiers));
 			freestrbuffer(logsummary);
+			freestrbuffer(modifiers);
 			freestrbuffer(logdata);
 		}
 		else if (strcmp(s, "port") == 0) {
@@ -2104,6 +2143,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-clear-ports") == 0) {
 			sendclearports = 0;
+		}
+		else if (strcmp(argv[argi], "--modify-msgs") == 0) {
+			modifymsgs = 1;
 		}
 		else if (strncmp(argv[argi], "--clear-color=", 14) == 0) {
 			char *p = strchr(argv[argi], '=');

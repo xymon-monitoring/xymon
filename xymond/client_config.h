@@ -69,7 +69,7 @@ extern strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char
 
 
 extern int scan_log(void *hinfo, char *classname, 
-		    char *logname, char *logdata, char *section, strbuffer_t *summarybuf);
+		    char *logname, char *logdata, char *section, strbuffer_t *summarybuf, strbuffer_t *modifierbuf);
 extern int check_file(void *hinfo, char *classname, 
 		      char *filename, char *filedata, char *section, strbuffer_t *summarybuf, off_t *sz, 
 		      char **id, int *trackit, int *anyrules);

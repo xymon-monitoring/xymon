@@ -53,6 +53,15 @@ Normally the "ports" status message includes the full netstat-listing
 received from the client. If you prefer to just have the monitored
 ports shown, this option will turn off the full netstat-listing.
 
+.IP "\-\-modify\-msgs"
+Generate separate "modify" messages for the "msgs" column indicating
+which matching lines have been "Recently seen." Normally, the "msgs" 
+column will stay yellow or red only for as long as the client sends 
+copies of the lines in question. (By default, that is six cycles five 
+minutes apart, or 30 minutes total after the last matching line, 
+however client frequency and scrollback can be altered by advanced
+users.) Most users will not need to set this.
+
 .IP "\-\-uptime\-status"
 Generate a separate "uptime" status column. The uptime is normally 
 just reported in the "cpu" status column, but if you would like a

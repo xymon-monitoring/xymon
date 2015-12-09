@@ -48,6 +48,9 @@ Changes from 4.3.x -> 4.4-alpha
 * modifyup/modifydown messages can be issued which are guaranteed to
   only increase or decrease the severity of a status safely. I.e., a
   red status that is then given a "modifyup yellow" will still be red
+* xymond_client can send follow-up "modify" messages showing matching
+  log lines in the 'msgs' column, allowing color to potentially be
+  persisted independently of LOGFETCH_SCROLLBACK or client frequency.
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet
@@ -145,7 +148,7 @@ Changes from 4.3.x -> 4.4-alpha
   scanned for changes (and re-processed if necessary). Previously, was equivalent
   to checkpoint interval. Default: 10m
 * xymonlaunch/xymond_channel: canonicalize error/debug log prefixing of tool name 
-
+* Multiple RRD 'DS' entries can now be applied at once to a status.
 * Trends pages should display all configured 'TRENDS' graphs, including when
   names are partial matches of other graph configurations (Thanks, Jeremy Laidman)
 
