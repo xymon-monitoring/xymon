@@ -3,6 +3,8 @@ Changes from 4.3.24 -> 4.3.25 (unreleased)
 
 * Fix "TRENDS" entries in hosts.cfg improperly handling partial matches with
   other graph names (Reported by Jeremy Laidman)
+* A possible crash in when loading confreport.cgi has been fixed 
+  (Thanks, Axel Beckert)
 
 
 Changes from 4.3.23 -> 4.3.24 (23 Nov 2015)
