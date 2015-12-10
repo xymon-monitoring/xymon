@@ -288,9 +288,10 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 		}
 		else if (is_net_test(itm)) {
 			colname = strdup(itm);
+			visdata = strdup("");
 		}
 
-
+		if (!visdata) visdata = strdup("");
 		if (colname) {
 			tag_t *newitem;
 
@@ -307,7 +308,9 @@ addtolist:
 			}
 			else {
 				/* Multiple tags for one column - must be http */
-				newitem->visualdata = (char *)realloc(newitem->visualdata, strlen(newitem->visualdata) + strlen(visdata) + 5);
+				newitem->visualdata = newitem->visualdata ?
+					(char *)realloc(newitem->visualdata, strlen(newitem->visualdata) + strlen(visdata) + 5) :
+					(char *)malloc(strlen(visdata) + 5);
 				strcat(newitem->visualdata, "<br>");
 				strcat(newitem->visualdata, visdata);
 			}
