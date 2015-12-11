@@ -360,7 +360,7 @@ void show_results(void)
 				printf(" (%.1f ms)\n", rtt_usecs / 1000.0);
 			}
 			else {
-				printf(" (%u usec)\n", rtt_usecs);
+				printf(" (%lu usec)\n", rtt_usecs);
 			}
 		}
 		else {
