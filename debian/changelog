@@ -8,6 +8,7 @@ xymon (4.3.25) stable; urgency=high
    * A possible crash in when loading confreport.cgi has been fixed
      (Thanks, Axel Beckert)
    * Improve error handling slightly in the CGI wrapper
+   * Fix missing network interface graph data on FreeBSD (Niko <nicolas@lienard.name>)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, XX Dec 2015 17:40:00 -0800
 
