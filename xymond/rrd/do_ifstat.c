@@ -25,10 +25,12 @@ static const char *ifstat_linux_exprs[] = {
 	"^\\s+TX packets\\s+[0-9]+\\s+bytes\\s+([0-9]+) "
 };
 
-/* Name MTU  Network        IP            Ipkts Ierrs Ibytes Opkts Oerrs Obytes Coll */
-/* lnc0 1500 172.16.10.0/24 172.16.10.151 26    -     1818   26    -     1802   -    */
+/* Name    Mtu Network       Address              Ipkts Ierrs Idrop     Ibytes    Opkts Oerrs     Obytes  Coll */
+/* em0    1500 <Link#1>      14:da:e9:d2:10:b8 505128976    54     0 610016288902 294395839    14 290951791879     0 */
+/* tun0   1500 <Link#3>      tun0                     0     0     0          0        5     0        436     0 */
+/* Note: FreeBSD 9 and 10 have a blank column for "Address" when the interface doesn't have a MAC address */
 static const char *ifstat_freebsd_exprs[] = {
-	"^([a-z0-9]+)\\s+\\d+\\s+[0-9.\\/]+\\s+[0-9.]+\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+[0-9-]+"
+	"^([a-z0-9]+)\\s+\\d+\\s+<Link#\\d+>\\s+.*\\s+\\d+\\s+[0-9-]+\\s+[0-9-]+\\s+(\\d+)\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+[0-9-]+"
 };
 
 /* Name    Mtu Network       Address         Ipkts Ierrs Idrop     Ibytes    Opkts Oerrs     Obytes  Coll */

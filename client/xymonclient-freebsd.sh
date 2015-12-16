@@ -47,7 +47,7 @@ ifconfig -a
 echo "[route]"
 netstat -rn
 echo "[ifstat]"
-netstat -i -b -n | egrep -v "^lo|<Link"
+netstat -ibnW | egrep "<Link|Name" | grep -v ^lo
 echo "[netstat]"
 netstat -s
 echo "[ports]"
