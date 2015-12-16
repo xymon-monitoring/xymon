@@ -60,6 +60,10 @@ int main(int argc, char **argv)
 	char *pgm = strdup(argv[0]);
 	char *cgipgm = NULL;
 	char executable[PATH_MAX];
+	char xymoncmd[PATH_MAX];
+
+	if (getenv("CGIDEBUG")) debug = 1;
+	set_debugfile("stderr", 1);
 
 	loadenv(cgifile, NULL);
 
@@ -67,6 +71,10 @@ int main(int argc, char **argv)
 	strcpy(cgipgm, basename(pgm));
 	if (strstr(cgipgm, ".sh")) strcpy(strstr(cgipgm, ".sh"), ".cgi");
 
+	if (strcmp(cgipgm, "cgiwrap") == 0) {
+		printf("\ncgiwrap is an executable wrapper program for xymon CGI scripts. It sets the environment according to the configuration specified in %s and then launches the CGI to response to the request.\n\nCGI scripts in the xymon-cgi or xymon-seccgi directories should be symlinked or hardlinked to this file. cgiwrap will do nothing if called directly.\n", cgifile);
+		return 1;
+	}
 	addopt("");	// Reserve one for the program name
 
 	if      (strcmp(cgipgm, "ackinfo.cgi") == 0)             {                              addoptl("CGI_ACKINFO_OPTS");     }
@@ -104,6 +112,13 @@ int main(int argc, char **argv)
 	else if (strcmp(cgipgm, "useradm.cgi") == 0)             {                              addoptl("CGI_USERADM_OPTS");     }
 	else if (strcmp(cgipgm, "chpasswd.cgi") == 0)            {                              addoptl("CGI_CHPASSWD_OPTS");    }
 	else {
+		/* Make sure we're being called as a CGI */
+                if ((strlen(cgipgm) <= 4) || (strcmp(cgipgm+strlen(cgipgm)-4, ".cgi") != 0)) {
+			fprintf(stderr, "ERROR: cgiwrap was called as an unexpected CGI name: %s\n", cgipgm);
+			printf("Status: 403\nContent-type: text/plain\n\nUnexpected CGI name: %s\n", cgipgm);
+			return 1;
+		}
+		dbgprintf("called as an unexpected CGI name: %s", cgipgm);
 	}
 
 	addoptdone();
@@ -113,7 +128,8 @@ int main(int argc, char **argv)
 
 	execv(executable, options);
 
-	printf("Content-type: text/plain\n\nExec failed for %s: %s\n", executable, strerror(errno));
-	return 0;
+	printf("Status: 500\nContent-type: text/plain\n\nExec failed for %s: %s\n", executable, strerror(errno));
+	errprintf("Exec failed for %s: %s\n", executable, strerror(errno));
+	return 1;
 }
 
