@@ -2,7 +2,7 @@
 .SH NAME
 logfetch \- Xymon client data collector
 .SH SYNOPSIS
-.B "logfetch CONFIGFILE STATUSFILE"
+.B "logfetch [options] CONFIGFILE STATUSFILE"
 
 .SH DESCRIPTION
 \fBlogfetch\fR is part of the Xymon client. It is responsible
@@ -20,6 +20,22 @@ logfetch stores information about what parts of the monitored
 logfiles have been processed already in the \fB$XYMONHOME/tmp/logfetch.status\fR 
 file. This file is an internal file used by logfetch, and should
 not be edited. If deleted, it will be re-created automatically.
+
+.SH OPTIONS
+.IP "\-\-debug[=stderr]"
+Enables debug mode. Note that when run by the xymonclient, debug 
+output may be written into the client data report, which can cause
+false positives and other unintended side effects. Use '=stderr' to
+cause the output to be written to stderr instead.
+
+.IP "\-\-noexec"
+The client-local.cfg(5) section for this host, class, or OS is
+automatically retrieved from the server during client submission. 
+Logfetch can be requested to execute arbitrary commands to generate
+a list of log files to examine dynamically, but this can present a
+security risk in some environments. Set this option to prevent
+logfetch from executing requested commands
+
 
 .SH SECURITY
 logfetch needs read access to the logfiles it should monitor. If you 
@@ -52,5 +68,5 @@ does report directory sizes in kilobytes.
 .IP $XYMONHOME/tmp/logfetch.status
 
 .SH "SEE ALSO"
-xymon(7), analysis.cfg(5)
+xymon(7), analysis.cfg(5), client-local.cfg(5)
 

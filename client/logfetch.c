@@ -50,6 +50,7 @@ static char curpostxt[512];
 /* Default = use default */
 int scrollback = -1;
 
+static int allowexec = 1;
 
 typedef enum { C_NONE, C_LOG, C_FILE, C_DIR, C_COUNT } checktype_t;
 
@@ -889,11 +890,13 @@ int loadconfig(char *cfgfn)
 					/* Run the command to get filenames */
 					char *p;
 					char *cmd;
-					FILE *fd;
+					FILE *fd = NULL;
 
 					cmd = filename+1;
 					p = strchr(cmd, '`'); if (p) *p = '\0';
-					fd = popen(cmd, "r");
+					if (allowexec) fd = popen(cmd, "r");
+					else fprintf(stderr, "logfetch given --noexec option but config told to run command '%s'\n", cmd);
+
 					if (fd) {
 						char pline[PATH_MAX+1];
 
@@ -943,7 +946,7 @@ int loadconfig(char *cfgfn)
 							if (!firstpipeitem) firstpipeitem = newitem;
 						}
 
-						pclose(fd);
+						if (fd) pclose(fd);
 					}
 				}
 				else {
@@ -1245,6 +1248,9 @@ int main(int argc, char *argv[])
 			char *delim = strchr(argv[i], '=');
 			debug = 1;
 			if (delim) set_debugfile(delim+1, 0);
+		}
+		else if (strncmp(argv[i], "--noexec", 8) == 0) {
+			allowexec = 0;
 		}
 		else if (strcmp(argv[i], "--clock") == 0) {
 			struct timeval tv;
