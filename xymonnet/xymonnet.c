@@ -1546,11 +1546,29 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 					}
 				}
 				else {
+					tcptest_t *tcptest = (tcptest_t *)test->privdata;
+
 					/* Check if we got the expected data */
 					if (checktcpresponse && (service->toolid == TOOL_CONTEST) && !tcp_got_expected((tcptest_t *)test->privdata)) {
 						strcpy(cause, "Unexpected service response");
 						color = respcheck_color; countasdown = 1;
 					}
+
+					/* Check that other transport issues didn't occur (like SSL) */
+					if (tcptest && (tcptest->errcode != CONTEST_ENOERROR)) {
+						switch (tcptest->errcode) {
+						  case CONTEST_ESSL    : 
+							strcpy(cause, "Service listening but unavailable (SSL error)"); 
+							color = COL_RED; countasdown = 1;
+							break;
+						  default		:
+							errprintf("TCPtest error %d seen on open connection for %s.%s\n", tcptest->errcode, test->host, test->service->testname); 
+							// color = COL_RED; countasdown = 1;
+							break;
+						}
+						// color = COL_RED; countasdown = 1;
+					}
+
 				}
 			}
 		}
