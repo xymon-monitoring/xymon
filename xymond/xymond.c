@@ -276,6 +276,8 @@ xymond_statistics_t xymond_stats[] = {
 	{ "modify", },
 	{ "status", },
 	{ "data", },
+	{ "clientsubmit", },
+	{ "clientconfig", },
 	{ "summary", },
 	{ "notes", },
 	{ "usermsg", },
@@ -4602,8 +4604,12 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			}
 		}
 	}
-	else if ((strncmp(msg->buf, "client", 6) == 0) && ((*(msg->buf+6) == ' ') ||(*(msg->buf+6) == '/'))) {
+	else if ((strncmp(msg->buf, "client", 6) == 0) && (strncmp(msg->buf, "clientlog", 9) != 0)) {
 		/* "client[/COLLECTORID] HOSTNAME.CLIENTOS CLIENTCLASS" */
+		/* or "clientsubmit[/COLLECTORID] HOSTNAME.CLIENTOS CLIENTCLASS" (same as client, but don't send config back) */
+		/* or "clientconfig[/COLLECTORID] HOSTNAME.CLIENTOS CLIENTCLASS" (same as client, but don't handle msg, only send config back) */
+		int process_clientmsg = 1;
+		int send_clientconfig = 1;
 		char *hostname = NULL, *clientos = NULL, *clientclass = NULL, *collectorid = NULL;
 		char *hname = NULL;
 		char *line1, *p;
@@ -4627,7 +4633,11 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		}
 		line1 = strdup(msg->buf); if (p) *p = savech;
 
-		p = strtok(line1, " \t"); /* Skip the client keyword */
+		/* check for special handling -- no response, or respond only */
+		if (strncmp(line1, "clientsubmit", 12) == 0) send_clientconfig = 0;
+		else if (strncmp(line1, "clientconfig", 12) == 0) process_clientmsg = 0;
+
+		p = strtok(line1, " \t"); /* Skip the client.* keyword */
 		if (p) collectorid = strchr(p, '/'); if (collectorid) collectorid++;
 		if (p) hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.CLIENTOS */
 		if (hostname) {
@@ -4635,8 +4645,8 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			if (clientos) { *clientos = '\0'; clientos++; }
 			uncommafy(hostname);
 
-			/* Only the default client (which has no collector-ID) can set the client class */
-			if (!collectorid) clientclass = strtok(NULL, " \t");
+			/* Next tok from 'HOSTNAME.CLIENTOS CLIENTCLASS' */
+			clientclass = strtok(NULL, " \t");
 		}
 
 		if (hostname && clientos) {
@@ -4665,13 +4675,13 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 					hostcount++;
 				}
 
-				handle_client(msg->buf, msg->sender, hname, collectorid, clientos, clientclass);
+				if (process_clientmsg) handle_client(msg->buf, msg->sender, hname, collectorid, clientos, clientclass);
 
 				if (hinfo) {
 					if (clientos) xmh_set_item(hinfo, XMH_OS, clientos);
-					if (clientclass) {
+					if (clientclass && !collectorid) {
 						/*
-						 * If the client sends an explicit class,
+						 * If the default client sends an explicit class,
 						 * save it for later use unless there is an
 						 * explicit override (XMH_CLASS is alread set).
 						 */
@@ -4686,7 +4696,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 			}
 		}
 
-		if (!viabfq && hname) {
+		if (!viabfq && send_clientconfig && hname) {
 			char *cfg;
 			
 			cfg = get_clientconfig(hname, clientclass, clientos);

@@ -119,6 +119,8 @@ int main(int argc, char *argv[])
 	if      (strncmp(STRBUF(msg), "query ", 6) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "client ", 7) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "config ", 7) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "clientsubmit", 12) == 0) wantresponse = 0;
+	else if (strncmp(STRBUF(msg), "clientconfig", 12) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "download ", 9) == 0) wantresponse = 1;
 	else if ((strncmp(STRBUF(msg), "xymondlog ", 10) == 0) || (strncmp(STRBUF(msg), "hobbitdlog ", 11) == 0)) wantresponse = 1;
 	else if ((strncmp(STRBUF(msg), "xymondxlog ", 11) == 0) || (strncmp(STRBUF(msg), "hobbitdxlog ", 12) == 0)) wantresponse = 1;

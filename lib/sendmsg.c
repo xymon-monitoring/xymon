@@ -44,7 +44,7 @@ static char rcsid[] = "$Id$";
 #define SENDRETRIES 2
 
 /* These commands go to all Xymon servers */
-static char *multircptcmds[] = { "status", "combo", "extcombo", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
+static char *multircptcmds[] = { "status", "combo", "extcombo", "data", "notify", "enable", "disable", "drop", "rename", "client", "clientsubmit", NULL };
 static char errordetails[1024];
 
 static strbuffer_t *msgbuf = NULL;      /* message buffer for one status message */

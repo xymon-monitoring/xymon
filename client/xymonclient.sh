@@ -20,13 +20,15 @@ LC_ALL=C
 LC_MESSAGES=C
 export LANG LC_ALL LC_MESSAGES
 
-LOCALMODE="no"
-if test $# -ge 1; then
-	if test "$1" = "--local"; then
-		LOCALMODE="yes"
-	fi
-	shift
-fi
+while test $# -ge 1; do
+   case "$1" in
+	"--local")  LOCALMODE="yes";;
+	"--submit") SUBMITMODE="yes";;
+	"--status") STATUSMODE="yes";;
+	*) echo "Unknown parameter: '$1'";;
+    esac
+    shift
+done
 
 if test "$LOCALMODE" = "yes" -a ! -x $XYMONHOME/bin/xymond_client; then
 	echo "ERROR: Local mode (--local) disabled because $XYMONHOME/bin/xymond_client missing or not executable; you may need to recompile this client or install an additional package" >&2
@@ -54,9 +56,14 @@ fi
 
 if test "$LOCALMODE" = "yes"; then
 	echo "@@client#1|1|127.0.0.1|$MACHINEDOTS|$SERVEROSTYPE" >> $MSGTMPFILE
+elif test "$SUBMITMODE" = "yes"; then
+	echo "clientsubmit $MACHINE.$SERVEROSTYPE $CONFIGCLASS"  >>  $MSGTMPFILE
+elif test "$STATUSMODE" = "yes"; then
+	echo "status $MACHINE.xymonclient client $SERVEROSTYPE $CONFIGCLASS"  >>  $MSGTMPFILE
+else
+	echo "client $MACHINE.$SERVEROSTYPE $CONFIGCLASS"  >>  $MSGTMPFILE
 fi
 
-echo "client $MACHINE.$SERVEROSTYPE $CONFIGCLASS"  >>  $MSGTMPFILE
 $XYMONHOME/bin/$XYMONOSSCRIPT >> $MSGTMPFILE
 # logfiles
 if test -f $LOGFETCHCFG
@@ -98,6 +105,16 @@ $XYMONHOME/bin/logfetch --clock >> $MSGTMPFILE
 if test "$LOCALMODE" = "yes"; then
 	echo "@@" >> $MSGTMPFILE
 	$XYMONHOME/bin/xymond_client $XYMONLOCALCLIENTOPTS --local --config=$XYMONHOME/etc/localclient.cfg <$MSGTMPFILE
+elif test "$SUBMITMODE" = "yes" -o "$STATUSMODE" = "yes"; then
+	if test "$XYMSRV" = "0.0.0.0" ; then
+	    # Send to any/all at once -- there won't be output (except for errors)
+	    for THISSRV in $XYMSERVERS; do
+		$XYMON $THISSRV "@" < $MSGTMPFILE &
+	    done
+	    sleep 4
+	else
+	    $XYMON $XYMSRV "@" < $MSGTMPFILE
+	fi
 else
 	$XYMON $XYMSRV "@" < $MSGTMPFILE >$LOGFETCHCFG.tmp
 	if test -f $LOGFETCHCFG.tmp

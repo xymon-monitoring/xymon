@@ -57,6 +57,9 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      given --no-extcombine. In this mode, only two-way messages will be
      forwarded to the server over TCP, so it only makes sense to have a
      single one listed.
+   * Add new "clientsubmit" and "clientconfig" message types, allowing
+     for more control at the client level of client-local.cfg downloads
+     and more efficient processing in xymond and xymonproxy.
    
    * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
      write) to xymonnet
