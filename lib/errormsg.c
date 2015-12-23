@@ -172,8 +172,6 @@ void traceprintf(const char *fmt, ...)
 		char timestr[40];
 		time_t now = getcurrenttime(NULL);
 
-		MEMDEFINE(timestr);
-
 		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", localtime(&now));
 		fprintf(tracefd, "%08lu %s ", (unsigned long)getpid(), timestr);
 
@@ -181,8 +179,6 @@ void traceprintf(const char *fmt, ...)
 		vfprintf(tracefd, fmt, args);
 		va_end(args);
 		fflush(tracefd);
-
-		MEMUNDEFINE(timestr);
 	}
 }
 

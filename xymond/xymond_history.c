@@ -84,10 +84,6 @@ int main(int argc, char *argv[])
 	int logdirfull = 0;
 	int minlogspace = 5;
 
-	MEMDEFINE(alleventsfn);
-	MEMDEFINE(newcol2);
-	MEMDEFINE(oldcol2);
-
 	libxymon_init(argv[0]);
 
 	/* Don't save the error buffer */
@@ -284,11 +280,6 @@ int main(int argc, char *argv[])
 				struct stat st;
 				char *newrec = (char *)malloc(1023);
 
-				MEMDEFINE(statuslogfn);
-				MEMDEFINE(histcol);
-				MEMDEFINE(oldtimestamp);
-				MEMDEFINE(newtimestamp);
-
 				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
 				statuslogfd = open(statuslogfn, O_RDWR);
 				*histcol = '\0';
@@ -302,10 +293,6 @@ int main(int argc, char *argv[])
 					if (statuslogfd == -1) {
 						errprintf("Cannot create status historyfile '%s' : %s\n", 
 							statuslogfn, strerror(errno));
-						MEMUNDEFINE(oldtimestamp);
-						MEMUNDEFINE(newtimestamp);
-						MEMUNDEFINE(histcol);
-						MEMUNDEFINE(statuslogfn);
 						continue;
 					}
 				}
@@ -324,8 +311,6 @@ int main(int argc, char *argv[])
 					int gotit = 0;
 					struct tm oldtm;
 					char l[1024];
-
-					MEMDEFINE(l);
 
 					/* Go back 64 from EOF, and skip to start of a line */
 					pos = lseek(statuslogfd, -(off_t)64, SEEK_END);
@@ -376,12 +361,6 @@ int main(int argc, char *argv[])
 
 						if (hostnamecommas) xfree(hostnamecommas);
 
-						MEMUNDEFINE(statuslogfn);
-						MEMUNDEFINE(histcol);
-						MEMUNDEFINE(oldtimestamp);
-						MEMUNDEFINE(newtimestamp);
-						MEMUNDEFINE(l);
-
 						continue;
 					}
 
@@ -421,11 +400,6 @@ int main(int argc, char *argv[])
 					if (close(statuslogfd) == -1) errprintf("Error closing '%s': %s\n", statuslogfn, strerror(errno));
 				}
 
-				MEMUNDEFINE(statuslogfn);
-				MEMUNDEFINE(histcol);
-				MEMUNDEFINE(oldtimestamp);
-				MEMUNDEFINE(newtimestamp);
-				MEMUNDEFINE(l);
 				xfree(newrec);
 
 			}
@@ -434,8 +408,6 @@ int main(int argc, char *argv[])
 				char *hostdash;
 				char fname[PATH_MAX];
 				FILE *histlogfd;
-
-				MEMDEFINE(fname);
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(fname, "%s/%s/%s/%s", histlogdir, hostdash, testname, histlogtime(tstamp));
@@ -524,8 +496,6 @@ int main(int argc, char *argv[])
 					if (!ok) remove(fname);
 				}
 				xfree(hostdash);
-
-				MEMUNDEFINE(fname);
 			}
 
 			strncpy(oldcol2, ((oldcolor >= 0) ? colorname(oldcolor) : "-"), 2);
@@ -541,8 +511,6 @@ int main(int argc, char *argv[])
 				char hostlogfn[PATH_MAX];
 				FILE *hostlogfd;
 
-				MEMDEFINE(hostlogfn);
-
 				sprintf(hostlogfn, "%s/%s", histdir, hostname);
 				hostlogfd = fopen(hostlogfn, "a");
 				if (hostlogfd) {
@@ -554,8 +522,6 @@ int main(int argc, char *argv[])
 				else {
 					errprintf("Cannot open host logfile '%s' : %s\n", hostlogfn, strerror(errno));
 				}
-
-				MEMUNDEFINE(hostlogfn);
 			}
 
 			if (save_allevents) {
@@ -575,29 +541,21 @@ int main(int argc, char *argv[])
 				char *hostdash;
 				char testdir[PATH_MAX];
 
-				MEMDEFINE(testdir);
-
 				/* Remove all directories below the host-specific histlog dir */
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(testdir, "%s/%s", histlogdir, hostdash);
 				dropdirectory(testdir, 1);
 				xfree(hostdash);
-
-				MEMUNDEFINE(testdir);
 			}
 
 			if (save_hostevents) {
 				char hostlogfn[PATH_MAX];
 				struct stat st;
 
-				MEMDEFINE(hostlogfn);
-
 				sprintf(hostlogfn, "%s/%s", histdir, hostname);
 				if ((stat(hostlogfn, &st) == 0) && S_ISREG(st.st_mode)) {
 					unlink(hostlogfn);
 				}
-
-				MEMUNDEFINE(hostlogfn);
 			}
 
 			if (save_statusevents) {
@@ -606,8 +564,6 @@ int main(int argc, char *argv[])
 				char *hostlead;
 				char statuslogfn[PATH_MAX];
 				struct stat st;
-
-				MEMDEFINE(statuslogfn);
 
 				/* Remove $XYMONVAR/hist/host,name.* */
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
@@ -629,8 +585,6 @@ int main(int argc, char *argv[])
 
 				xfree(hostlead);
 				xfree(hostnamecommas);
-
-				MEMUNDEFINE(statuslogfn);
 			}
 		}
 		else if ((metacount > 4) && ((strncmp(metadata[0], "@@droptest", 10) == 0))) {
@@ -643,14 +597,10 @@ int main(int argc, char *argv[])
 				char *hostdash;
 				char testdir[PATH_MAX];
 
-				MEMDEFINE(testdir);
-
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(testdir, "%s/%s/%s", histlogdir, hostdash, testname);
 				dropdirectory(testdir, 1);
 				xfree(hostdash);
-
-				MEMUNDEFINE(testdir);
 			}
 
 			if (save_statusevents) {
@@ -658,14 +608,10 @@ int main(int argc, char *argv[])
 				char statuslogfn[PATH_MAX];
 				struct stat st;
 
-				MEMDEFINE(statuslogfn);
-
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
 				if ((stat(statuslogfn, &st) == 0) && S_ISREG(st.st_mode)) unlink(statuslogfn);
 				xfree(hostnamecommas);
-
-				MEMUNDEFINE(statuslogfn);
 			}
 		}
 		else if ((metacount > 4) && ((strncmp(metadata[0], "@@renamehost", 12) == 0))) {
@@ -681,8 +627,6 @@ int main(int argc, char *argv[])
 				char olddir[PATH_MAX];
 				char newdir[PATH_MAX];
 
-				MEMDEFINE(olddir); MEMDEFINE(newdir);
-
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				p = newhostdash = strdup(newhostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(olddir, "%s/%s", histlogdir, hostdash);
@@ -690,21 +634,15 @@ int main(int argc, char *argv[])
 				rename(olddir, newdir);
 				xfree(newhostdash);
 				xfree(hostdash);
-
-				MEMUNDEFINE(newdir); MEMUNDEFINE(olddir);
 			}
 
 			if (save_hostevents) {
 				char hostlogfn[PATH_MAX];
 				char newhostlogfn[PATH_MAX];
 
-				MEMDEFINE(hostlogfn); MEMDEFINE(newhostlogfn);
-
 				sprintf(hostlogfn, "%s/%s", histdir, hostname);
 				sprintf(newhostlogfn, "%s/%s", histdir, newhostname);
 				rename(hostlogfn, newhostlogfn);
-
-				MEMUNDEFINE(hostlogfn); MEMUNDEFINE(newhostlogfn);
 			}
 
 			if (save_statusevents) {
@@ -714,8 +652,6 @@ int main(int argc, char *argv[])
 				char *newhostnamecommas;
 				char statuslogfn[PATH_MAX];
 				char newlogfn[PATH_MAX];
-
-				MEMDEFINE(statuslogfn); MEMDEFINE(newlogfn);
 
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 				hostlead = malloc(strlen(hostname) + 2);
@@ -740,8 +676,6 @@ int main(int argc, char *argv[])
 				xfree(newhostnamecommas);
 				xfree(hostlead);
 				xfree(hostnamecommas);
-
-				MEMUNDEFINE(statuslogfn); MEMUNDEFINE(newlogfn);
 			}
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
@@ -757,15 +691,11 @@ int main(int argc, char *argv[])
 				char olddir[PATH_MAX];
 				char newdir[PATH_MAX];
 
-				MEMDEFINE(olddir); MEMDEFINE(newdir);
-
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				sprintf(olddir, "%s/%s/%s", histlogdir, hostdash, testname);
 				sprintf(newdir, "%s/%s/%s", histlogdir, hostdash, newtestname);
 				rename(olddir, newdir);
 				xfree(hostdash);
-
-				MEMUNDEFINE(newdir); MEMUNDEFINE(olddir);
 			}
 
 			if (save_statusevents) {
@@ -773,15 +703,11 @@ int main(int argc, char *argv[])
 				char statuslogfn[PATH_MAX];
 				char newstatuslogfn[PATH_MAX];
 
-				MEMDEFINE(statuslogfn); MEMDEFINE(newstatuslogfn);
-
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
 				sprintf(newstatuslogfn, "%s/%s.%s", histdir, hostnamecommas, newtestname);
 				rename(statuslogfn, newstatuslogfn);
 				xfree(hostnamecommas);
-
-				MEMUNDEFINE(newstatuslogfn); MEMUNDEFINE(statuslogfn);
 			}
 		}
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
@@ -805,10 +731,6 @@ int main(int argc, char *argv[])
 			/* Do nothing */
 		}
 	}
-
-	MEMUNDEFINE(newcol2);
-	MEMUNDEFINE(oldcol2);
-	MEMUNDEFINE(alleventsfn);
 
 	fclose(alleventsfd);
 	unlink(pidfn);

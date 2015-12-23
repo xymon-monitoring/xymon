@@ -390,9 +390,6 @@ int main(int argc, char *argv[])
 	int configchanged;
 	time_t lastxmit = 0;
 
-	MEMDEFINE(acklogfn);
-	MEMDEFINE(notiflogfn);
-
 	libxymon_init(argv[0]);
 
 	/* Don't save the error buffer */
@@ -1020,9 +1017,6 @@ int main(int argc, char *argv[])
 	if (acklogfd) fclose(acklogfd);
 	if (notiflogfd) fclose(notiflogfd);
 	stoptrace();
-
-	MEMUNDEFINE(notiflogfn);
-	MEMUNDEFINE(acklogfn);
 
 	if (termsig >= 0) {
 		errprintf("Terminated by signal %d\n", termsig);

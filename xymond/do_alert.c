@@ -201,8 +201,6 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 	/* Only subjects on ALERTFORM_TEXT and ALERTFORM_PLAIN messages */
 	if ((recip->format != ALERTFORM_TEXT) && (recip->format != ALERTFORM_PLAIN)) return NULL;
 
-	MEMDEFINE(subj);
-
 	if ((alert->color >= 0) && (alert->color < COL_COUNT)) sev = sevtxt[alert->color];
 
 	switch (alert->state) {
@@ -250,8 +248,6 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 	}
 
 	*(subj + sizeof(subj) - 1) = '\0';
-
-	MEMUNDEFINE(subj);
 	return subj;
 }
 
@@ -261,15 +257,12 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 	char *eoln, *bom, *p;
 	char info[4096];
 
-	MEMDEFINE(info);
-
 	if (!buf) buf = newstrbuffer(0); else clearstrbuffer(buf);
 
 	if (alert->state == A_NOTIFY) {
 		sprintf(info, "%s:%s INFO\n", alert->hostname, alert->testname);
 		addtobuffer(buf, info);
 		addtobuffer(buf, alert->pagemessage);
-		MEMUNDEFINE(info);
 		return STRBUF(buf);
 	}
 
@@ -307,7 +300,6 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 			addtobuffer(buf, info);
 		}
 
-		MEMUNDEFINE(info);
 		return STRBUF(buf);
 
 	  case ALERTFORM_SMS:
@@ -366,7 +358,6 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 				bom = (eoln ? eoln+1 : "");
 			}
 		}
-		MEMUNDEFINE(info);
 		return STRBUF(buf);
 
 	  case ALERTFORM_SCRIPT:
@@ -379,16 +370,13 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 			xgetenv("XYMONWEBHOST"),
 			hostsvcurl(alert->hostname, alert->testname, 0));
 		addtobuffer(buf, info);
-		MEMUNDEFINE(info);
 		return STRBUF(buf);
 
 	  case ALERTFORM_PAGER:
 	  case ALERTFORM_NONE:
-		MEMUNDEFINE(info);
 		return "";
 	}
 
-	MEMUNDEFINE(info);
 	return alert->pagemessage;
 }
 
@@ -468,8 +456,6 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				char *mailrecip;
 				FILE *mailpipe;
 
-				MEMDEFINE(cmd);
-
 				mailsubj = message_subject(alert, recip);
 				mailrecip = message_recipient(recip->recipient, alert->hostname, alert->testname, colorname(alert->color));
 
@@ -490,7 +476,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				strcat(cmd, mailrecip);
 
 				traceprintf("Mail alert with command '%s'\n", cmd);
-				if (testonly) { MEMUNDEFINE(cmd); break; }
+				if (testonly) { break; }
 
 				mailpipe = popen(cmd, "w");
 				if (mailpipe) {
@@ -515,8 +501,6 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					errprintf("ERROR: Cannot open command pipe for '%s' - alert lost!\n", cmd);
 					traceprintf("Mail pipe failed - alert lost\n");
 				}
-
-				MEMUNDEFINE(cmd);
 			}
 			break;
 

@@ -43,8 +43,6 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	char tmpfn[PATH_MAX];
 	char *p;
 
-	MEMDEFINE(tmpfn);
-
 	dbgprintf("Updating seq %d file %s\n", seq, fn);
 
 	p = strrchr(fn, '/');
@@ -60,7 +58,6 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	logfd = fopen(tmpfn, mode);
 	if (!logfd) {
 		errprintf("Could not open '%s' as '%s', mode %s: %s\n", fn, tmpfn, mode, strerror(errno));
-		MEMUNDEFINE(tmpfn);
 		return;
 	}
 	if (fwrite(msg, strlen(msg), 1, logfd) != 1 && strlen(msg)) errprintf("Write to '%s' as '%s' failed\n", fn, tmpfn);
@@ -82,8 +79,6 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	}
 
 	rename(tmpfn, fn);
-
-	MEMUNDEFINE(tmpfn);
 }
 
 void update_htmlfile(char *fn, char *msg, 
@@ -99,8 +94,6 @@ void update_htmlfile(char *fn, char *msg,
 	char *displayname = hostname;
 	char *ip = "";
 	char timestr[100];
-
-	MEMDEFINE(timestr);
 
 	tmpfn = (char *) malloc(strlen(fn)+5);
 	sprintf(tmpfn, "%s.tmp", fn);
@@ -140,7 +133,6 @@ void update_htmlfile(char *fn, char *msg,
 	}
 
 	xfree(tmpfn);
-	MEMUNDEFINE(timestr);
 }
 
 void update_enable(char *fn, time_t expiretime)
@@ -310,12 +302,9 @@ int main(int argc, char *argv[])
 		time_t expiretime = 0;
 		char logfn[PATH_MAX];
 
-		MEMDEFINE(logfn);
-
 		msg = get_xymond_message(chnid, "filestore", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
-			MEMUNDEFINE(logfn);
 			continue;
 		}
 
@@ -342,7 +331,6 @@ int main(int argc, char *argv[])
 			testname = metadata[5];
 			if (!wantedtest(onlytests, testname)) {
 				dbgprintf("Status dropped - not wanted\n");
-				MEMUNDEFINE(logfn);
 				continue;
 			}
 
@@ -356,8 +344,6 @@ int main(int argc, char *argv[])
 				char *ackmsg = NULL;
 				char *dismsg = NULL;
 				char htmllogfn[PATH_MAX];
-
-				MEMDEFINE(htmllogfn);
 
 				if (metadata[11]) acktime = atoi(metadata[11]);
 				if (metadata[12] && strlen(metadata[12])) ackmsg = metadata[12];
@@ -374,8 +360,6 @@ int main(int argc, char *argv[])
 						     metadata[2], metadata[8], logtime, timesincechange, 
 						     acktime, ackmsg,
 						     disabletime, dismsg);
-
-				MEMUNDEFINE(htmllogfn);
 			}
 		}
 		else if ((role == ROLE_DATA) && (metacount > 5) && (strncmp(metadata[0], "@@data", 6) == 0)) {
@@ -384,7 +368,6 @@ int main(int argc, char *argv[])
 			testname = metadata[5];
 			if (!wantedtest(onlytests, testname)) {
 				dbgprintf("data dropped - not wanted\n");
-				MEMUNDEFINE(logfn);
 				continue;
 			}
 
@@ -447,8 +430,6 @@ int main(int argc, char *argv[])
 			char *newhostname;
 			char newlogfn[PATH_MAX];
 
-			MEMDEFINE(newlogfn);
-
 			p = hostname = metadata[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			hostlead = malloc(strlen(hostname) + 2);
 			strcpy(hostlead, hostname); strcat(hostlead, ".");
@@ -467,15 +448,11 @@ int main(int argc, char *argv[])
 				closedir(dirfd);
 			}
 			xfree(hostlead);
-
-			MEMUNDEFINE(newlogfn);
 		}
 		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 			char newfn[PATH_MAX];
-
-			MEMDEFINE(newfn);
 
 			p = hostname = metadata[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = metadata[4];
@@ -483,8 +460,6 @@ int main(int argc, char *argv[])
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			sprintf(newfn, "%s/%s.%s", filedir, hostname, newtestname);
 			rename(logfn, newfn);
-
-			MEMUNDEFINE(newfn);
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
@@ -506,8 +481,6 @@ int main(int argc, char *argv[])
 		else {
 			errprintf("Dropping message type %s, metacount=%d\n", metadata[0], metacount);
 		}
-
-		MEMUNDEFINE(logfn);
 	}
 
 	return 0;

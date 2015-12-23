@@ -152,8 +152,6 @@ int do_iostat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	float v[14];
 	char marker[MAX_LINE_LEN];
 
-	MEMDEFINE(marker);
-
 	if (iostat_tpl == NULL) iostat_tpl = setup_template(iostat_params);
 
 	curline = msg; state = S_NONE;
@@ -231,8 +229,6 @@ int do_iostat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		if (newkey->value) xfree(newkey->value);
 		xfree(newkey);
 	}
-
-	MEMUNDEFINE(marker);
 
 	return 0;
 }

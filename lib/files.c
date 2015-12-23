@@ -37,8 +37,6 @@ void dropdirectory(char *dirfn, int background)
 		childpid = fork();
 	}
 
-	MEMDEFINE(fn);
-
 	if (childpid == 0) {
 		dbgprintf("Starting to remove directory %s\n", dirfn);
 		dirfd = opendir(dirfn);
@@ -68,7 +66,5 @@ void dropdirectory(char *dirfn, int background)
 	else if (childpid < 0) {
 		errprintf("Could not fork child to remove directory %s\n", dirfn);
 	}
-
-	MEMUNDEFINE(fn);
 }
 

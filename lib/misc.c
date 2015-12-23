@@ -505,8 +505,6 @@ void do_extensions(FILE *output, char *extenv, char *family)
 		return;
 	}
 
-	MEMDEFINE(extfn);
-
 	exts = strdup(p);
 	p = strtok(exts, "\t ");
 	inbuf = newstrbuffer(0);
@@ -528,9 +526,6 @@ void do_extensions(FILE *output, char *extenv, char *family)
 	}
 
 	xfree(exts);
-
-	MEMUNDEFINE(extfn);
-	MEMUNDEFINE(buf);
 }
 
 static void clean_cmdarg(char *l)

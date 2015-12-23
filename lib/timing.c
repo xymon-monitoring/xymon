@@ -130,8 +130,6 @@ void show_timestamps(char **buffer)
 
 	if (!timing || (stamphead == NULL)) { xfree(outbuf); return; }
 
-	MEMDEFINE(buf1);
-
 	strcpy(outbuf, "\n\nTIME SPENT\n");
 	strcat(outbuf, "Event                                   ");
 	strcat(outbuf, "        Start time");
@@ -167,8 +165,6 @@ void show_timestamps(char **buffer)
 		xfree(outbuf);
 	}
 	else *buffer = outbuf;
-
-	MEMUNDEFINE(buf1);
 }
 
 

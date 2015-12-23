@@ -72,8 +72,6 @@ int do_xymond_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	char	*p;
 	char	valstr[50];
 
-	MEMDEFINE(valstr);
-
 	if (xymond_tpl == NULL) xymond_tpl = setup_template(xymond_params);
 
 	snprintf(rrdvalues, sizeof(rrdvalues), "%d", (int)tstamp);
@@ -104,11 +102,9 @@ int do_xymond_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			setupfn("%s.rrd", "xymond");
 		}
 
-		MEMUNDEFINE(valstr);
 		return create_and_update_rrd(hostname, testname, classname, pagepaths, xymond_params, xymond_tpl);
 	}
 
-	MEMUNDEFINE(valstr);
 	return 0;
 }
 

@@ -145,9 +145,6 @@ xymond_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 		}
 	}
 
-#ifdef MEMORY_DEBUG
-	add_to_memlist(newch->channelbuf, bufsz);
-#endif
 	return newch;
 }
 
@@ -159,7 +156,6 @@ void close_channel(xymond_channel_t *chn, int role)
 
 	if (role == CHAN_MASTER) semctl(chn->semid, 0, IPC_RMID);
 
-	MEMUNDEFINE(chn->channelbuf);
 	shmdt(chn->channelbuf);
 	if (role == CHAN_MASTER) shmctl(chn->shmid, IPC_RMID, NULL);
 	if (chn->workmem) dbgprintf(" -> close_channel had working mem for %s at %p\n", channelnames[chn->channelid], chn->workmem);

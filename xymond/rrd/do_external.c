@@ -28,8 +28,6 @@ int do_external_rrd(char *hostname, char *testname, char *classname, char *pagep
 		char **params = NULL;
 		int paridx = 0;
 		pid_t mypid = getpid();
-		
-		MEMDEFINE(fn); MEMDEFINE(extcmd);
 
 		snprintf(fn, sizeof(fn), "%s/rrd_msg_%d", xgetenv("XYMONTMP"), (int) getpid());
 		dbgprintf("%09d : Saving msg to file %s\n", (int)mypid, fn);

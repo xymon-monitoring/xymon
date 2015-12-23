@@ -639,8 +639,6 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			char *datefmt = xgetenv("XYMONDATEFORMAT");
 			char datestr[100];
 
-			MEMDEFINE(datestr);
-
 			/*
 			 * If no XYMONDATEFORMAT setting, use a format string that
 			 * produces output similar to that from ctime()
@@ -650,16 +648,12 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			if (hostenv_reportstart != 0) {
 				char starttime[20], endtime[20];
 
-				MEMDEFINE(starttime); MEMDEFINE(endtime);
-
 				strftime(starttime, sizeof(starttime), "%b %d %Y", localtime(&hostenv_reportstart));
 				strftime(endtime, sizeof(endtime), "%b %d %Y", localtime(&hostenv_reportend));
 				if (strcmp(starttime, endtime) == 0)
 					fprintf(output, "%s", starttime);
 				else
 					fprintf(output, "%s - %s", starttime, endtime);
-
-				MEMUNDEFINE(starttime); MEMUNDEFINE(endtime);
 			}
 			else if (hostenv_snapshot != 0) {
 				strftime(datestr, sizeof(datestr), datefmt, localtime(&hostenv_snapshot));
@@ -669,8 +663,6 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				strftime(datestr, sizeof(datestr), datefmt, localtime(&now));
 				fprintf(output, "%s", datestr);
 			}
-
-			MEMUNDEFINE(datestr);
 		}
 
 		else if ((strcmp(t_start, "XYMWEBBACKGROUND") == 0) || (strcmp(t_start, "BBBACKGROUND") == 0)) {
@@ -706,8 +698,6 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			char mname[20];
 			char *selstr;
 
-			MEMDEFINE(mname);
-
 			nowtm = localtime(&selectedtime);
 			for (i=1; (i <= 12); i++) {
 				if (i == (nowtm->tm_mon + 1)) selstr = " selected"; else selstr = "";
@@ -716,15 +706,11 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				strftime(mname, sizeof(mname)-1, "%B", &monthtm);
 				fprintf(output, "<option value=\"%d\"%s>%s</option>\n", i, selstr, mname);
 			}
-
-			MEMUNDEFINE(mname);
 		}
 		else if (strcmp(t_start, "MONLIST") == 0) {
 			int i;
 			struct tm monthtm;
 			char mname[20];
-
-			MEMDEFINE(mname);
 
 			nowtm = localtime(&selectedtime);
 			for (i=1; (i <= 12); i++) {
@@ -733,8 +719,6 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				strftime(mname, sizeof(mname)-1, "%B", &monthtm);
 				fprintf(output, "<option value=\"%d\">%s</option>\n", i, mname);
 			}
-
-			MEMUNDEFINE(mname);
 		}
 		else if (strcmp(t_start, "REPWEEKLIST") == 0) {
 			int i;
@@ -1505,8 +1489,6 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	char	*hfpath;
 	int	have_pagepath = (hostenv_pagepath != NULL);
 
-	MEMDEFINE(filename);
-
 	if (xgetenv("XYMONDREL") == NULL) {
 		char *xymondrel = (char *)malloc(12+strlen(VERSION));
 		sprintf(xymondrel, "XYMONDREL=%s", VERSION);
@@ -1619,8 +1601,6 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	}
 
 	xfree(bulletinfile);
-
-	MEMUNDEFINE(filename);
 }
 
 void showform(FILE *output, char *headertemplate, char *formtemplate, int color, time_t seltime, 

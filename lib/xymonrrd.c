@@ -207,8 +207,6 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 	char rrdservicename[100];
 	char *cgiurl = xgetenv("CGIBINURL");
 
-	MEMDEFINE(rrdservicename);
-
 	if (locatorbased) {
 		char *qres = locator_query(hostname, ST_RRD, &cgiurl);
 		if (!qres) {
@@ -304,8 +302,6 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 	dbgprintf("URLtext: %s\n", rrdurl);
 
 	xfree(svcurl);
-
-	MEMUNDEFINE(rrdservicename);
 
 	return rrdurl;
 }

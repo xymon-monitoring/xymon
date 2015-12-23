@@ -538,8 +538,6 @@ int load_client_config(char *configfn)
 	c_rule_t *currule = NULL;
 	int cfid = 0;
 
-	MEMDEFINE(fn);
-
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/analysis.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
@@ -557,7 +555,6 @@ int load_client_config(char *configfn)
 	fd = stackfopen(fn, "r", &configfiles);
 	if (!fd) { 
 		errprintf("Cannot load config file %s: %s\n", fn, strerror(errno)); 
-		MEMUNDEFINE(fn); 
 		return 0;
 	}
 
@@ -1618,7 +1615,6 @@ int load_client_config(char *configfn)
 	ruletree = xtreeNew(strcasecmp);
 	havetree = 1;
 
-	MEMUNDEFINE(fn);
 	return 1;
 }
 

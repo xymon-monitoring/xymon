@@ -76,11 +76,6 @@ void setup_signalhandler(char *programname)
 	struct rlimit lim;
 	struct sigaction sa;
 
-	MEMDEFINE(signal_xymoncmd);
-	MEMDEFINE(signal_xymondserver);
-	MEMDEFINE(signal_tmpdir);
-	MEMDEFINE(signal_msg);
-
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigsegv_handler;
 

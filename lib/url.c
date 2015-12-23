@@ -171,8 +171,6 @@ static void load_netrc(void)
 	if (loaded) return;
 	loaded = 1;
 
-	MEMDEFINE(netrcfn);
-
 	/* Look for $XYMONHOME/etc/netrc first, then the default ~/.netrc */
 	sprintf(netrcfn, "%s/etc/netrc", xgetenv("XYMONHOME"));
 	fd = fopen(netrcfn, "r");
@@ -183,7 +181,6 @@ static void load_netrc(void)
 	}
 
 	if (fd == NULL) {
-		MEMUNDEFINE(netrcfn);
 		return;
 	}
 
@@ -238,8 +235,6 @@ static void load_netrc(void)
 
 	fclose(fd);
 	freestrbuffer(inbuf);
-
-	MEMUNDEFINE(netrcfn);
 }
 
 /*

@@ -194,8 +194,6 @@ FILE *stackfopen(char *filename, char *mode, void **v_listhead)
 	char stackfd_filename[PATH_MAX];
 	filelist_t **listhead = (filelist_t **)v_listhead;
 
-	MEMDEFINE(stackfd_filename);
-
 	if (fdhead == NULL) {
 		char *p;
 
@@ -236,8 +234,6 @@ FILE *stackfopen(char *filename, char *mode, void **v_listhead)
 			*listhead = newlistitem;
 		}
 	}
-
-	MEMUNDEFINE(stackfd_filename);
 
 	return newfd;
 }

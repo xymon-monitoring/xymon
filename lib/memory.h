@@ -11,9 +11,6 @@
 #ifndef __MEMORY_H__
 #define __MEMORY_H__
 
-#undef XYMON_MEMORY_WRAPPERS		/* If defined, will wrap mem-alloc routines */
-#undef MEMORY_DEBUG			/* If defined, use debugging code */
-
 typedef struct xmemory_t {
 	char *sdata;
 	size_t ssize;
@@ -39,58 +36,6 @@ extern int   xsprintf(char *dest, const char *fmt, ...);
 extern char *xresultbuf(int maxsz);
 
 
-#ifdef XYMON_MEMORY_WRAPPERS
-#ifndef LIB_MEMORY_C_COMPILE
-#undef calloc
-#undef malloc
-#undef realloc
-#undef strdup
-
-/*
- * This arranges for all memory-allocation routines to
- * go via a wrapper that checks for bogus input data
- * and malloc() returning NULL when running out of memory.
- * Errors caught here are fatal.
- * Overhead is small, so this is turned on always.
- */
-#define calloc(N,S)  xcalloc((N), (S))
-#define malloc(N)    xmalloc((N))
-#define realloc(P,S) xrealloc((P), (S))
-#define strdup(P)    xstrdup((P))
-#endif /* LIB_MEMORY_C_COMPILE */
-#endif /* XYMON_MEMORY_WRAPPERS */
-
-
-#ifdef MEMORY_DEBUG
-
-/*
- * This arranges for all calls to potentially memory-overwriting routines
- * to do strict allocation checks and overwrite checks. The performance
- * overhead is significant, so it should only be turned on in debugging
- * situations.
- */
-
-#ifndef LIB_MEMORY_C_COMPILE
-#define MEMDEFINE(P) { add_to_memlist((P), sizeof((P))); }
-#define MEMUNDEFINE(P) { remove_from_memlist((P)); }
-
-#define xfree(P) { remove_from_memlist((P)); free((P)); (P) = NULL; }
-
-#undef strcat
-#undef strncat
-#undef strcpy
-#undef strncpy
-#undef sprintf
-
-#define strcat(D,S) xstrcat((D), (S))
-#define strncat(D,S,L) xstrncat((D), (S), (L))
-#define strcpy(D,S) xstrcpy((D), (S))
-#define strncpy(D,S,L) xstrncpy((D), (S), (L))
-#define sprintf xsprintf
-#endif
-
-#else
-
 /*
  * This defines an "xfree()" macro, which checks for freeing of
  * a NULL ptr and complains if that happens. It does not check if
@@ -99,12 +44,6 @@ extern char *xresultbuf(int maxsz);
  */
 
 #define xfree(P) { if ((P) == NULL) { errprintf(xfreenullstr); abort(); } free((P)); (P) = NULL; }
-
-#define MEMDEFINE(P) do { } while (0);
-#define MEMUNDEFINE(P) do { } while (0);
-
-#endif /* MEMORY_DEBUG */
-
 
 #endif
 

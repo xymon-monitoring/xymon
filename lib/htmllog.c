@@ -380,8 +380,6 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		char *ackedby;
 		char ackuntil[200];
 
-		MEMDEFINE(ackuntil);
-
 		strftime(ackuntil, sizeof(ackuntil)-1, xgetenv("ACKUNTILMSG"), localtime(&acktime));
 		ackuntil[sizeof(ackuntil)-1] = '\0';
 
@@ -396,8 +394,6 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			fprintf(output, "<font %s>Current acknowledgment: %s<br>%s</font><br>\n", 
 				ackfont, htmlquoted(ackmsg), ackuntil);
 		}
-
-		MEMUNDEFINE(ackuntil);
 	}
 
 	fprintf(output, "</font></td></tr>\n");

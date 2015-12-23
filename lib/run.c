@@ -38,8 +38,6 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 	int	pfd[2];
 	pid_t	childpid; 
 
-	MEMDEFINE(l);
-
 	result = 0;
 	if (banner && showcmd) { 
 		sprintf(l, "Command: %s\n\n", cmd); 
@@ -49,13 +47,11 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 	/* Adapted from Stevens' popen()/pclose() example */
 	if (pipe(pfd) > 0) {
 		errprintf("Could not create pipe: %s\n", strerror(errno));
-		MEMUNDEFINE(l);
 		return -1;
 	}
 
 	if ((childpid = fork()) < 0) {
 		errprintf("Could not fork child process: %s\n", strerror(errno));
-		MEMUNDEFINE(l);
 		return -1;
 	}
 
@@ -155,7 +151,6 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 		}
 	}
 
-	MEMUNDEFINE(l);
 	return result;
 }
 

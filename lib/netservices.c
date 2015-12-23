@@ -131,8 +131,6 @@ char *init_tcp_services(void)
 	int svccount = 0;
 	int i;
 
-	MEMDEFINE(filename);
-
 	filename[0] = '\0';
 	if (xgetenv("XYMONHOME")) {
 		sprintf(filename, "%s/etc/", xgetenv("XYMONHOME"));
@@ -167,8 +165,6 @@ char *init_tcp_services(void)
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
 		xymonnetsvcs = strdup(xgetenv("XYMONNETSVCS"));
-
-		MEMUNDEFINE(filename);
 		return xymonnetsvcs;
 	}
 
@@ -318,7 +314,6 @@ char *init_tcp_services(void)
 		dbgprintf("XYMONNETSVCS set to : %s\n", xymonnetsvcs);
 	}
 
-	MEMUNDEFINE(filename);
 	return xymonnetsvcs;
 }
 

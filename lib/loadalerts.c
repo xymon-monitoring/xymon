@@ -59,8 +59,6 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 {
 	criteria_t *crit = NULL;
 
-	MEMDEFINE(cfline);
-
 	switch (pstate) {
 	  case P_NONE:
 		*currule = (rule_t *)calloc(1, sizeof(rule_t));
@@ -94,7 +92,6 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 		break;
 	}
 
-	MEMUNDEFINE(cfline);
 	return crit;
 }
 
@@ -196,15 +193,12 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	rule_t *currule = NULL;
 	recip_t *currcp = NULL, *rcptail = NULL;
 
-	MEMDEFINE(fn);
-
 	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
 		if (!stackfmodified(configfiles)){
 			dbgprintf("No files modified, skipping reload of %s\n", fn);
-			MEMUNDEFINE(fn); 
 			return 0;
 		}
 		else {
@@ -216,7 +210,6 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	fd = stackfopen(fn, "r", &configfiles);
 	if (!fd) { 
 		errprintf("Cannot open configuration file %s: %s\n", fn, strerror(errno));
-		MEMUNDEFINE(fn); 
 		return 0; 
 	}
 
@@ -265,8 +258,6 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	}
 
 	defaultcolors = defcolors;
-
-	MEMDEFINE(cfline);
 
 	cfid = 0;
 	inbuf = newstrbuffer(0);
@@ -705,9 +696,6 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	stackfclose(fd);
 	freestrbuffer(inbuf);
 
-	MEMUNDEFINE(cfline);
-	MEMUNDEFINE(fn);
-
 	return 1;
 }
 
@@ -1133,9 +1121,6 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	char *p, *fontspec;
 	char codes[20];
 
-	MEMDEFINE(l);
-	MEMDEFINE(codes);
-
 	if (printmode == 2) {
 		/* For print-out usage - e.g. confreport.cgi */
 		normalfont = "COLOR=\"#000000\" FACE=\"Tahoma, Arial, Helvetica\"";
@@ -1253,8 +1238,5 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	sprintf(l, "%d   ", count);
 	p = strstr(STRBUF(buf), "rowspan=###");
 	if (p) { p += strlen("rowspan="); memcpy(p, l, 3); }
-
-	MEMUNDEFINE(l);
-	MEMUNDEFINE(codes);
 }
 

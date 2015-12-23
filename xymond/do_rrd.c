@@ -87,8 +87,6 @@ void setup_exthandler(char *handlerpath, char *ids)
 	char *p;
 	int idcount = 0;
 
-	MEMDEFINE(rrdvalues);
-
 	exthandler = strdup(handlerpath);
 	idcount=1; p = ids; while ((p = strchr(p, ',')) != NULL) { p++; idcount++; }
 	extids = (char **)malloc((idcount+1)*(sizeof(char *)));
@@ -99,8 +97,6 @@ void setup_exthandler(char *handlerpath, char *ids)
 		p = strtok(NULL, ",");
 	}
 	extids[idcount] = NULL;
-
-	MEMUNDEFINE(rrdvalues);
 }
 
 void setup_extprocessor(char *cmd)
@@ -294,9 +290,6 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		return -1;
 	}
 
-	MEMDEFINE(rrdvalues);
-	MEMDEFINE(filedir);
-
 	/* Watch out here - "rrdfn" may be very large. */
 	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
 	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
@@ -343,19 +336,14 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 		dbgprintf("Creating rrd %s\n", filedir);
 
-		MEMDEFINE(filejustdir);
 		sprintf(filejustdir, "%s/%s", rrddir, hostname);
 		if (stat(filejustdir, &st) == -1) {
 			dbgprintf("Creating rrd dir %s\n", filejustdir);
 			if (mkdir(filejustdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
 				errprintf("Cannot create rrd directory %s : %s\n", filejustdir, strerror(errno));
-				MEMUNDEFINE(filedir);
-				MEMUNDEFINE(filejustdir);
-				MEMUNDEFINE(rrdvalues);
 				return -1;
 			}
 		}
-		MEMUNDEFINE(filejustdir);
 
 		/* How many parameters did we get? */
 		for (pcount = 0; (creparams[pcount]); pcount++);
@@ -403,8 +391,6 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 		if (result != 0) {
 			errprintf("RRD error creating %s: %s\n", filedir, rrd_get_error());
-			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues);
 			return 1;
 		}
 		else cacheitem->fileok++;
@@ -423,14 +409,10 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			 * with different POST data.
 			 */
 			dbgprintf("%s/%s: Error - ignored duplicate update for message sequence %d\n", hostname, rrdfn, seq);
-			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues);
 			return 0;
 		}
 		else if (cacheitem->updtime[cacheitem->valcount-1] > updtime) {
 			dbgprintf("%s/%s: Error - RRD time goes backwards: Now=%d, previous=%d\n", hostname, rrdfn, (int) updtime, (int)cacheitem->updtime[cacheitem->valcount-1]);
-			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues);
 			return 0;
 		}
 		else if (cacheitem->updtime[cacheitem->valcount-1] == updtime) {
@@ -450,8 +432,6 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 				dbgprintf("%s/%s: Ignored duplicate (and identical) update timestamped %d\n", hostname, rrdfn, (int) updtime);
 			}
 
-			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues);
 			return 0;
 		}
 	}
@@ -482,8 +462,6 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 	/* Are we actually handling the writing of RRD files? */
 	if (no_rrd) {
-		MEMUNDEFINE(filedir);
-		MEMUNDEFINE(rrdvalues);
 		return 0;
 	}
 
@@ -504,8 +482,6 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			cacheitem->updtime[cacheitem->valcount] = updtime;
 			cacheitem->vals[cacheitem->valcount] = strdup(rrdvalues);
 			cacheitem->valcount += 1;
-			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues);
 			return 0;
 		}
 	}
@@ -528,13 +504,8 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		/* check the file next time around */
 		cacheitem->fileok = 0;
 
-		MEMUNDEFINE(filedir);
-		MEMUNDEFINE(rrdvalues);
 		return 2;
 	}
-
-	MEMUNDEFINE(filedir);
-	MEMUNDEFINE(rrdvalues);
 
 	return 0;
 }
@@ -707,8 +678,6 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 {
 	char *id;
 
-	MEMDEFINE(rrdvalues);
-
 	if (ldef) id = ldef->xymonrrdname; else id = testname;
 	senderip = sender;
 
@@ -800,7 +769,5 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	}
 
 	senderip = NULL;
-
-	MEMUNDEFINE(rrdvalues);
 }
 

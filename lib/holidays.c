@@ -357,8 +357,6 @@ int load_holidays(int year)
 	char *setname = NULL;
 	holidayset_t *commonhols;
 
-	MEMDEFINE(fn);
-
 	if (year == 0) {
 		time_t tnow;
 		struct tm *now;
@@ -377,7 +375,6 @@ int load_holidays(int year)
 		/* if the new year begins, the holidays have to be recalculated */
 		if (!stackfmodified(configholidays) && (year == current_year)){
 			dbgprintf("No files modified, skipping reload of %s\n", fn);
-			MEMUNDEFINE(fn);
 			return 0;
 		}
 		else {
@@ -391,7 +388,6 @@ int load_holidays(int year)
 	fd = stackfopen(fn, "r", &configholidays);
 	if (!fd) {
 		errprintf("Cannot open configuration file %s\n", fn);
-		MEMUNDEFINE(fn);
 		return 0;
 	}
 
@@ -500,7 +496,6 @@ int load_holidays(int year)
 		oneset->head = msort(oneset->head, record_compare, record_getnext, record_setnext);
 	}
 
-	MEMUNDEFINE(fn);
 	current_year = year;
 
 	return 0;

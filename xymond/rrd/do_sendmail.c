@@ -75,7 +75,6 @@ int do_sendmail_rrd(char *hostname, char *testname, char *classname, char *pagep
 	while (!done) {
 		char mailer[1024];
 
-		MEMDEFINE(mailer);
 		*rrdvalues = '\0';
 
 		eoln = strchr(bofdata, '\n');
@@ -145,8 +144,6 @@ gotdata:
 			done = (*bofdata == '\0');
 		}
 		else done=1;
-
-		MEMUNDEFINE(mailer);
 	}
 
 	if (eofdata) *(eofdata+1) = '=';

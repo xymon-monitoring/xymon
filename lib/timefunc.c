@@ -378,7 +378,6 @@ char *histlogtime(time_t histtime)
 	char d1[40],d2[3],d3[40];
 
 	if (result == NULL) result = (char *)malloc(30);
-	MEMDEFINE(d1); MEMDEFINE(d2); MEMDEFINE(d3);
 
 	/*
 	 * Historical logs use a filename like "Fri_Nov_7_16:01:08_2002 
@@ -392,8 +391,6 @@ char *histlogtime(time_t histtime)
         strftime(d3, sizeof(d3), "_%H:%M:%S_%Y", localtime(&histtime));
 
 	snprintf(result, 29, "%s%s%s", d1, d2, d3);
-
-	MEMUNDEFINE(d1); MEMUNDEFINE(d2); MEMUNDEFINE(d3);
 
 	return result;
 }

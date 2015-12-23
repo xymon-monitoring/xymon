@@ -484,12 +484,8 @@ int main(int argc, char *argv[])
 			char hostdir[PATH_MAX];
 			hostname = metadata[3];
 
-			MEMDEFINE(hostdir);
-
 			sprintf(hostdir, "%s/%s", rrddir, basename(hostname));
 			dropdirectory(hostdir, 1);
-
-			MEMUNDEFINE(hostdir);
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
 			/*
@@ -503,9 +499,6 @@ int main(int argc, char *argv[])
 			char newhostdir[PATH_MAX];
 			char *newhostname;
 
-			MEMDEFINE(oldhostdir);
-			MEMDEFINE(newhostdir);
-
 			hostname = metadata[3];
 			newhostname = metadata[4];
 			sprintf(oldhostdir, "%s/%s", rrddir, hostname);
@@ -513,9 +506,6 @@ int main(int argc, char *argv[])
 			rename(oldhostdir, newhostdir);
 
 			if (net_worker_locatorbased()) locator_rename_host(hostname, newhostname, ST_RRD);
-
-			MEMUNDEFINE(newhostdir);
-			MEMUNDEFINE(oldhostdir);
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
 			/* Not implemented. See "droptest". */

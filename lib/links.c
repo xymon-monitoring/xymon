@@ -93,8 +93,6 @@ static void load_links(char *directory, char *urlprefix, int softfail)
 		return;
 	}
 
-	MEMDEFINE(fn);
-
 	while ((d = readdir(linkdir))) {
 		link_t *newlink;
 
@@ -105,16 +103,12 @@ static void load_links(char *directory, char *urlprefix, int softfail)
 		xtreeAdd(linkstree, newlink->key, newlink);
 	}
 	closedir(linkdir);
-
-	MEMUNDEFINE(fn);
 }
 
 void load_all_links(void)
 {
 	char dirname[PATH_MAX];
 	char *p;
-
-	MEMDEFINE(dirname);
 
 	dbgprintf("load_all_links()\n");
 
@@ -154,8 +148,6 @@ void load_all_links(void)
 	load_links(dirname, helpskin, 0);
 
 	linksloaded = 1;
-
-	MEMUNDEFINE(dirname);
 }
 
 

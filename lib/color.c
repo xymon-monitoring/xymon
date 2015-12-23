@@ -46,8 +46,6 @@ int parse_color(char *colortext)
 
 	if (!colortext) return -1;
 
-	MEMDEFINE(inpcolor);
-
 	strncpy(inpcolor, colortext, 7);
 	inpcolor[7] = '\0';
 	n = strspn(inpcolor, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -55,35 +53,27 @@ int parse_color(char *colortext)
 	strcat(inpcolor, " ");
 
 	if (strncasecmp(inpcolor, "green ", 6) == 0) {
-		MEMUNDEFINE(inpcolor);
 		return COL_GREEN;
 	}
 	else if (strncasecmp(inpcolor, "yellow ", 7) == 0) {
-		MEMUNDEFINE(inpcolor);
 		return COL_YELLOW;
 	}
 	else if (strncasecmp(inpcolor, "red ", 4) == 0) {
-		MEMUNDEFINE(inpcolor);
 		return COL_RED;
 	}
 	else if (strncasecmp(inpcolor, "blue ", 5) == 0) {
-		MEMUNDEFINE(inpcolor);
 		return COL_BLUE;
 	}
 	else if (strncasecmp(inpcolor, "clear ", 6) == 0) {
-		MEMUNDEFINE(inpcolor);
 		return COL_CLEAR;
 	}
 	else if (strncasecmp(inpcolor, "purple ", 7) == 0) {
-		MEMUNDEFINE(inpcolor);
 		return COL_PURPLE;
 	}
 	else if (strncasecmp(inpcolor, "client ", 7) == 0) {
-		MEMUNDEFINE(inpcolor);
 		return COL_CLIENT;
 	}
 
-	MEMUNDEFINE(inpcolor);
 	return -1;
 }
 

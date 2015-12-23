@@ -489,9 +489,6 @@ nextline:
 	if (dgname) xfree(dgname);
 	xtreeDestroy(htree);
 
-	MEMUNDEFINE(hostname);
-	MEMUNDEFINE(l);
-
 	build_hosttree();
 
 	return 0;
