@@ -86,18 +86,15 @@ void setup_signalhandler(char *programname)
 	lim.rlim_cur = RLIM_INFINITY;
 	setrlimit(RLIMIT_CORE, &lim);
 
-	if (xgetenv("XYMON") == NULL) return;
-	if (xgetenv("XYMSRV") == NULL) return;
-
 	/*
 	 * Used inside signal-handler. Must be setup in
 	 * advance.
 	 */
-	strcpy(signal_xymoncmd, xgetenv("XYMON"));
-	strcpy(signal_xymondserver, xgetenv("XYMSRV"));
-	strcpy(signal_tmpdir, xgetenv("XYMONTMP"));
+	strcpy(signal_xymoncmd, (getenv("XYMON") ? getenv("XYMON") : "xymon"));
+	strcpy(signal_xymondserver, (getenv("XYMSRV") ? getenv("XYMSRV") : "0.0.0.0"));
+	strcpy(signal_tmpdir, (getenv("XYMONTMP") ? getenv("XYMONTMP") : "/tmp"));
 	sprintf(signal_msg, "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
-		(xgetenv("MACHINE") ? xgetenv("MACHINE") : "XYMSERVERS"), programname);
+		(getenv("MACHINE") ? getenv("MACHINE") : (getenv("HOSTNAME") ? getenv("HOSTNAME") : "localhost") ), programname);
 
 	sigaction(SIGSEGV, &sa, NULL);
 	sigaction(SIGILL, &sa, NULL);
