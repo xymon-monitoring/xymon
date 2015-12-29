@@ -50,12 +50,17 @@ int main(int argc, char *argv[])
 	}
 
 	/* Go! */
-	if (cmd == NULL) cmd = cmdargs[0] = "/bin/sh";
+	if (cmd == NULL) {
+		cmd = cmdargs[0] = xgetenv("SHELL");
+		printf("xymoncmd: No command given; dropping you to a shell\n\n");
+		if (*cmd == '\0') cmd = cmdargs[0] = "/bin/sh";
+		cmdargs[1] = "-i"; cmdargs[2] = NULL;
+	}
 	execvp(cmd, cmdargs);
 
 	/* Should never go here */
-	errprintf("execvp() failed: %s\n", strerror(errno));
+	errprintf("xymoncmd: execvp of '%s' failed: %s\n", cmd, strerror(errno));
 
-	return 0;
+	exit(127);
 }
 

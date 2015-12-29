@@ -111,6 +111,7 @@ const static struct {
 	{ "XYMONHOSTHISTLOG", "TRUE" },
 	{ "SAVESTATUSLOG", "TRUE" },
 	{ "CLIENTLOGS", "$XYMONVAR/hostdata" },
+	{ "SHELL", "/bin/sh" },
 	{ "MAILC", "mail" },
 	{ "MAIL", "$MAILC -s" },
 	{ "SVCCODES", "disk:100,cpu:200,procs:300,svcs:350,msgs:400,conn:500,http:600,dns:800,smtp:725,telnet:723,ftp:721,pop:810,pop3:810,pop-3:810,ssh:722,imap:843,ssh1:722,ssh2:722,imap2:843,imap3:843,imap4:843,pop2:809,pop-2:809,nntp:819,test:901" },

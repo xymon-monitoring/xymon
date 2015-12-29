@@ -1,8 +1,8 @@
 .TH XYMONCMD 1 "Version 4.3.22-rc2:  2 Nov 2015" "Xymon"
 .SH NAME
-xymoncmd \- Run a Xymon command with environment set
+xymoncmd \- Run a command under a xymon environment
 .SH SYNOPSIS
-.B "xymoncmd [\-\-env=ENVFILE COMMAND|\-\-version|\-\-debug]"
+.B "xymoncmd [options] [COMMAND]"
 
 .SH DESCRIPTION
 .I xymoncmd(1)
@@ -13,18 +13,28 @@ with this environment in place. It is mostly used for testing
 extension scripts or in other situations where you need to run
 a single command with the environment in place.
 
-The "\-\-env=ENVFILE" option points xymoncmd to the file where the 
-environment definitions are loaded from.
+COMMAND is the command to execute after setting up the environment. All 
+remaining arguments on the command line are passed on to it.
 
-COMMAND is the command to execute after setting up the environment.
+If executed without a COMMAND, it will drop you into an interactive 
+subshell with this environment defined globally. If an environment 
+file was specified (or was found), then the SHELL variable there 
+will be used. If none was present, xymoncmd may inherit the 
+$SHELL of its execution environment and use that. If none was found,
+xymoncmd will use /bin/sh.
 
-If you want to run multiple commands, it is often easiest to just
-use "sh" as the COMMAND - this gives you a sub-shell with the 
-environment defined globally.
 
-The "\-\-debug" option print out more detail steps of xymoncmd execution.
+.SH OPTIONS AND PARAMETERS
+.IP "\-\-env=ENVFILE"
+Points xymoncmd to the file where the environment definitions are to be 
+loaded from. If not specified, it will search various locations for 
+first a xymonserver.cfg and then a xymonclient.cfg file. On xymon 
+servers with both installed, the server environment will be loaded by 
+default.
 
-The "\-\-version" option print out version number of xymoncmd.
+.IP "\-\-debug"
+Enable debugging output.
+
 .SH "SEE ALSO"
 xymonlaunch(8), xymon(7)
 

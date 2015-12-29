@@ -162,6 +162,8 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      names are partial matches of other graph configurations (Thanks, Jeremy Laidman)     
    * Add --noexec option to logfetch to ignore commands to dynamically list files. 
      (Suggested by Jeremy Laidman)
+   * xymoncmd now makes it clearer when it's dropping you into a shell, and
+     in these cases the shell is marked interactive.
 
  -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 Nov 2015 18:26:21 +0100
 

@@ -24,6 +24,8 @@ static char rcsid[] = "$Id: stdopt.c 7008 2012-06-02 09:22:02Z storner $";
 
 #include "libxymon.h"
 
+char *programtoolname = NULL;
+char *programpath = NULL;
 char *programname = NULL;
 char *pidfn = NULL;
 char *hostsfn = NULL;
@@ -49,11 +51,8 @@ int standardoption(char *opt)
 	else if (argnmatch(opt, "--env=")) {
 		char *p = strchr(opt, '=');
 		loadenv(p+1, envarea);
-		if (pidfn) {
-			free(pidfn);
-			pidfn = (char *)malloc(strlen(xgetenv("XYMONSERVERLOGS")) + strlen(programname) + 6);
-			sprintf(pidfn, "%s/%s.pid", xgetenv("XYMONSERVERLOGS"), programname);
-		}
+		/* Immediately load any remaining defaults */
+		xymon_default_xymonhome(programtoolname);
 	}
 	else if (argnmatch(opt, "--area=")) {
 		char *p = strchr(opt, '=');
@@ -67,9 +66,14 @@ int standardoption(char *opt)
 		char *p = strchr(opt, '=');
 		logfn = strdup(p+1);
 	}
-	else if (argnmatch(opt, "--pidfile=") || argnmatch(opt, "--pid=")) {
+	else if (argnmatch(opt, "--pidfile") || argnmatch(opt, "--pid")) {
 		char *p = strchr(opt, '=');
-		pidfn = strdup(p+1);
+		if (pidfn) free(pidfn);
+		if (p && *(p+1)) pidfn = strdup(p+1);
+		else {
+			pidfn = (char *)malloc(strlen(xgetenv("XYMONSERVERLOGS")) + strlen(programname) + 6);
+			sprintf(pidfn, "%s/%s.pid", xgetenv("XYMONSERVERLOGS"), programname);
+		}
 	}
 	else if ((strcmp(opt, "--help") == 0) || (strcmp(opt, "-?") == 0)) {
 		fprintf(stdout, "%s %s\n", programname, VERSION);
@@ -101,11 +105,9 @@ void libxymon_init(char *toolname)
 
 		if (getenv("EARLYDEBUG")) debug = 1;	/* For debugging before commandline options are parsed */
 
+		programtoolname = strdup(toolname);
 		programname = basename(strdup(toolname));
-		xymon_default_xymonhome(toolname);
-
-		pidfn = (char *)malloc(strlen(xgetenv("XYMONSERVERLOGS")) + strlen(programname) + 6);
-		sprintf(pidfn, "%s/%s.pid", xgetenv("XYMONSERVERLOGS"), programname);
+		programpath = dirname(strdup(toolname));
 
 		setup_signalhandler(programname);
 	}
