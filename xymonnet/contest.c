@@ -408,10 +408,11 @@ static char *xymon_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 	len=tm->length;
 	asn1_string=(char *)tm->data;
 
-	if (len < 10) return NULL;
+	result[0] = '\0';
+	if (len < 10) return result;
 	if (asn1_string[len-1] == 'Z') gmt=1;
 	for (i=0; i<len-1; i++) {
-		if ((asn1_string[i] > '9') || (asn1_string[i] < '0')) return NULL;
+		if ((asn1_string[i] > '9') || (asn1_string[i] < '0')) return result;
 	}
 
 	if (len >= 15) { /* 20541024111745Z format */
@@ -423,7 +424,7 @@ static char *xymon_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 	if (century == 0 && year < 50) year+=100;
 
 	month=(asn1_string[2]-'0')*10+(asn1_string[3]-'0');
-	if ((month > 12) || (month < 1)) return NULL;
+	if ((month > 12) || (month < 1)) return result;
 
 	day=(asn1_string[4]-'0')*10+(asn1_string[5]-'0');
 	hour=(asn1_string[6]-'0')*10+(asn1_string[7]-'0');
