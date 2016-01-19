@@ -2767,7 +2767,7 @@ int get_config(char *fn, conn_t *msg)
 	strbuffer_t *inbuf, *result;
 
 	dbgprintf("-> get_config %s\n", fn);
-	sprintf(fullfn, "%s/etc/%s", xgetenv("XYMONHOME"), fn);
+	snprintf(fullfn, sizeof(fullfn), "%s/etc/%s", xgetenv("XYMONHOME"), fn);
 	fd = stackfopen(fullfn, "r", NULL);
 	if (fd == NULL) {
 		errprintf("Config file %s not found\n", fn);
@@ -2798,7 +2798,7 @@ int get_binary(char *fn, conn_t *msg)
 	long flen;
 
 	dbgprintf("-> get_binary %s\n", fn);
-	sprintf(fullfn, "%s/download/%s", xgetenv("XYMONHOME"), fn);
+	snprintf(fullfn, sizeof(fullfn), "%s/download/%s", xgetenv("XYMONHOME"), fn);
 
 	result = get_filecache(fullfn, &flen);
 	if (!result) {
@@ -3571,7 +3571,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 
 			gettimeofday(&tv, &tz);
 
-			sprintf(tracefn, "%s/%d_%06d_%s.trace", xgetenv("XYMONTMP"), 
+			snprintf(tracefn, sizeof(tracefn), "%s/%d_%06d_%s.trace", xgetenv("XYMONTMP"), 
 				(int) tv.tv_sec, (int) tv.tv_usec, msg->sender);
 			fd = fopen(tracefn, "w");
 			if (fd) {
@@ -4514,7 +4514,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 
 		if (viabfq) goto done;
 
-		sprintf(id, "xymond %s\n", VERSION);
+		snprintf(id, sizeof(id), "xymond %s\n", VERSION);
 		msg->doingwhat = RESPONDING;
 		xfree(msg->buf);
 		msg->bufp = msg->buf = strdup(id);
@@ -4526,7 +4526,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 
 		if (viabfq) goto done;
 
-		sprintf(id, "xymond %s (not a proxy)\n", VERSION);
+		snprintf(id, sizeof(id), "xymond %s (not a proxy)\n", VERSION);
 		msg->doingwhat = RESPONDING;
 		xfree(msg->buf);
 		msg->bufp = msg->buf = strdup(id);
@@ -5950,7 +5950,7 @@ int main(int argc, char *argv[])
 	if (dbghost) {
 		char fname[PATH_MAX];
 
-		sprintf(fname, "%s/xymond.dbg", xgetenv("XYMONTMP"));
+		snprintf(fname, sizeof(fname), "%s/xymond.dbg", xgetenv("XYMONTMP"));
 		dbgfd = fopen(fname, "a");
 		if (dbgfd == NULL) errprintf("Cannot open debug file %s: %s\n", fname, strerror(errno));
 	}
