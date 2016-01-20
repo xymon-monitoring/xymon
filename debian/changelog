@@ -13,6 +13,7 @@ xymon (4.3.25) stable; urgency=high
      connection is opened will now be considered "service down"        
    * Fix a crash in xymonnet when handling certain malformed SSL certificates
      (Reported by Thomas Leavitt, originally via Jeremy Laidman)
+   * Add new trends_header and trends_footer for use on associated Trends pages
 
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, XX Dec 2015 17:40:00 -0800

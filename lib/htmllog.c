@@ -199,6 +199,8 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	if (is_history) tplfile = "histlog";
 	if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) tplfile = "info";
+	else if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) tplfile = "trends";
+
 	headfoot(output, tplfile, "", "header", color);
 
 	if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
