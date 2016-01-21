@@ -14,6 +14,9 @@ XYMON="$XYMONHOME/bin/xymon"          # The Xymon client "xymon" utility
 XYMONTMP="$XYMONHOME/tmp"             # Where we may store temporary files.
 XYMONCLIENTLOGS="$XYMONHOME/logs"     # Where we store the client logfiles
 
+# Options to logfetch, the xymon binary which examines log files for recent changes.
+LOGFETCHOPTS=""
+
 # Options to xymond_client. Used only if this install is running in local client mode.
 XYMONLOCALCLIENTOPTS=""
 

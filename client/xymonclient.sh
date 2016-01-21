@@ -56,7 +56,7 @@ $XYMONHOME/bin/$XYMONOSSCRIPT >> $MSGTMPFILE
 # logfiles
 if test -f $LOGFETCHCFG
 then
-    $XYMONHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS >>$MSGTMPFILE
+    $XYMONHOME/bin/logfetch $LOGFETCHOPTS $LOGFETCHCFG $LOGFETCHSTATUS >>$MSGTMPFILE
 fi
 # Client version
 echo "[clientversion]"  >>$MSGTMPFILE
