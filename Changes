@@ -12,6 +12,9 @@ Changes from 4.3.24 -> 4.3.25 (unreleased)
 * Fix a crash in xymonnet when handling certain malformed SSL certificates
   (Reported by Thomas Leavitt, originally via Jeremy Laidman)
 * Add new trends_header and trends_footer for use on associated Trends pages
+* "Jump to page" redirect functionality fixed on findhost.sh (Reported by Francois Claire)
+* When a note is present for a host, the info page no longer has a spurious
+  hostname on the text link
 
 
 Changes from 4.3.23 -> 4.3.24 (23 Nov 2015)

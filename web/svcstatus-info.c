@@ -992,7 +992,6 @@ char *generate_info(char *hostname, char *critconfigfn)
 		addtobuffer(infobuf, "<tr><th align=left>Notes:</th><td align=left><a href=\"");
 		addtobuffer(infobuf, val);
 		addtobuffer(infobuf, "\">");
-		addtobuffer(infobuf, xgetenv("XYMONWEBHOST"));
 		addtobuffer(infobuf, val);
 		addtobuffer(infobuf, "</a>\n");
 	}
