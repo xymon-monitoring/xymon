@@ -152,9 +152,9 @@ void request_cacheflush(char *hostname)
 	}
 	fcntl(ctlsocket, F_SETFL, O_NONBLOCK);
 
-	dir = opendir(xgetenv("XYMONTMP"));
+	dir = opendir(xgetenv("XYMONRUNDIR"));
 	if (!dir) {
-		errprintf("Cannot access $XYMONTMP directory: %s\n", strerror(errno));
+		errprintf("Cannot acces $XYMONRUNDIR directory: %s\n", strerror(errno));
 		return;
 	}
 
@@ -170,16 +170,7 @@ void request_cacheflush(char *hostname)
 
 			memset(&myaddr, 0, sizeof(myaddr));
 			myaddr.sun_family = AF_UNIX;
-
-			SBUF_MALLOC(fnam, strlen(xgetenv("XYMONTMP"))+ strlen(d->d_name) + 2);
-			snprintf(fnam, fnam_buflen, "%s/%s", xgetenv("XYMONTMP"), d->d_name);
-			if (strlen(fnam) > sizeof(myaddr.sun_path)) {
-				errprintf("rrdctl files located in XYMONTMP with too long pathname - max %d characters\n", sizeof(myaddr.sun_path));
-				return;
-			}
-			strncpy(myaddr.sun_path, fnam, sizeof(myaddr.sun_path));
-			xfree(fnam);
-
+			sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONRUNDIR"), d->d_name);
 			myaddrsz = sizeof(myaddr);
 			bufp = req; bytesleft = strlen(req);
 			do {
