@@ -44,14 +44,33 @@ This option is required. The following channels are available:
 
 .IP "--filter=EXPRESSION"
 EXPRESSION is a Perl-compatible regular expression. xymond_channel will match 
-the first line of each message against this expression, and silently drops any
-message that does not match the expression. Especially useful for custom 
-worker modules and during testing, to limit the amount of data that the module
-must process.
+each message against this expression, and silently drops any message that does 
+NOT match the expression. Especially useful for custom worker modules and during 
+testing, to limit the amount of data that the module must process.
 .br
+
+.IP "--metafilter=EXPRESSION"
+Same as above, but only matches the header line on the channel itself instead
+of the entire message body.
+.br
+
+.IP "--exfilter=EXPRESSION"
+EXPRESSION is a Perl-compatible regular expression. xymond_channel will match
+each message against this expression, and silently drops any message that matches.
+.br
+
+.IP "--metaexfilter=EXPRESSION"
+Same as above, but only matches the header line on the channel itself instead
+of the entire message body.
+.br
+
 Note that messages for "logrotate", "shutdown", "drophost", "renamehost",
-"droptest" and "renametest" are always forwarded by xymond_channel, whether
-they match the filter or not.
+"droptest" and "renametest" are ALWAYS forwarded by xymond_channel, whether or 
+not they match any of the above filters.
+
+Note that if --filter or --metafilter are specified, any message which does NOT
+pass those matches will be REJECTED. (The presence of --exfilter or --metaexfilter 
+alone does not cause this type of "default denial.")
 
 .IP "--msgtimeout=TIMEOUT"
 Modify the default timeout (30 seconds) for the worker module to handle a message.

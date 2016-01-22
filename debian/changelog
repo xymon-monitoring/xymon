@@ -68,6 +68,10 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      for history files under both names, so there is no need to migrate            
      previously-saved files. Note that additional formats might be available
      in a future release.
+   * xymond_channel can now efficiently filter based only on channel metadata
+     using the --metafilter option (rather than the entire message)
+   * xymond_channel can now filter by exclusion with --ex(meta)filter. Messages
+     matching that regex are silently discarded.
    
    * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
      write) to xymonnet

@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
 	int cnid = -1;
 	char *inbuf = NULL;
 	size_t msgsz = 0;
-	pcre *msgfilter = NULL;
+	pcre *msgfilter = NULL; pcre *msgexfilter = NULL; pcre *metafilter = NULL; pcre *metaexfilter = NULL;
 	pcre *stdfilter = NULL;
 
 	int argi;
@@ -542,12 +542,22 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--filter=")) {
 			char *p = strchr(argv[argi], '=');
 			msgfilter = compileregex(p+1);
-			if (!msgfilter) {
-				errprintf("Invalid filter (bad expression): %s\n", p+1);
-			}
-			else {
-				stdfilter = firstlineregex("^@@(logrotate|shutdown|drophost|droptest|renamehost|renametest)");
-			}
+			if (!msgfilter) errprintf("Invalid filter (bad expression): %s\n", p+1);
+		}
+		else if (argnmatch(argv[argi], "--exfilter=")) {
+			char *p = strchr(argv[argi], '=');
+			msgexfilter = compileregex(p+1);
+			if (!msgexfilter) errprintf("Invalid exfilter (bad expression): %s\n", p+1);
+		}
+		else if (argnmatch(argv[argi], "--metafilter=")) {
+			char *p = strchr(argv[argi], '=');
+			metafilter = firstlineregex(p+1);
+			if (!metafilter) errprintf("Invalid metafilter (bad expression): %s\n", p+1);
+		}
+		else if (argnmatch(argv[argi], "--metaexfilter=")) {
+			char *p = strchr(argv[argi], '=');
+			metaexfilter = firstlineregex(p+1);
+			if (!metaexfilter) errprintf("Invalid metaexfilter (bad expression): %s\n", p+1);
 		}
 		else if (argnmatch(argv[argi], "--filterlater")) {
 			filterlater = 1;
@@ -633,6 +643,18 @@ int main(int argc, char *argv[])
 		/* being piped somewhere. Record this for when it's time to re-open on rotation */
 		logfn = xgetenv("XYMONLAUNCH_LOGFILENAME");
 		dbgprintf("Already logging out to %s, per xymonlaunch\n", logfn);
+	}
+
+
+	if (msgfilter || msgexfilter || metafilter || metaexfilter) {
+		/* Some sort of filtering has been requested. We want to make sure that */
+		/* certain messages are always allowed through, no matter what */
+		dbgprintf("filter specified; adding standard filter too\n");
+		stdfilter = firstlineregex("^@@(logrotate|shutdown|drophost|droptest|renamehost|renametest)");
+	}
+	else if (filterlater) {
+		errprintf("--filterlater specified, but valid no filter found!\n");
+		filterlater = 0;
 	}
 
 
@@ -763,12 +785,34 @@ int main(int argc, char *argv[])
 			 * message arriving. Copy the message to our own buffer queue.
 			 */
 
-			if (filterlater || !msgfilter || matchregex(channel->channelbuf, msgfilter) || matchregex(channel->channelbuf, stdfilter)) {
+			/* See if we're filtering messages */
+			if (!stdfilter || filterlater) {
 				msgsz = strlen(channel->channelbuf);
 				memcpy(inbuf+checksumsize, channel->channelbuf, msgsz+1); /* Include \0 */
 			}
 			else {
-				msgsz = 0; *inbuf = '\0';
+				/* If we're filtering, then reject messages first and check the */
+				/* meta line regexes first (since they're quicker) */
+				int deny = 0;
+				int accept = 1;
+
+				deny =  (metaexfilter && matchregex(channel->channelbuf, metaexfilter)) ? 1 :
+					( msgexfilter && matchregex(channel->channelbuf,  msgexfilter)) ? 1 : 0;
+
+				/* accept only becomes 0 if we haven't denied and it and we have filters that don't match */
+				if (!deny && (metafilter || msgfilter)) accept =
+					(  metafilter && matchregex(channel->channelbuf,   metafilter)) ? 1 :
+					(   msgfilter && matchregex(channel->channelbuf,    msgfilter)) ? 1 : 0;
+
+				/* if deny'd, then accept=0... and if we're here then stdfilter exists */
+				/* (meaning deny by default) */
+				if ((!deny && accept) || matchregex(channel->channelbuf, stdfilter)) {
+					msgsz = strlen(channel->channelbuf);
+					memcpy(inbuf+checksumsize, channel->channelbuf, msgsz+1); /* Include \0 */
+				}
+				else {
+					msgsz = 0; *inbuf = '\0';
+				}
 			}
 
 			/* 
@@ -807,7 +851,28 @@ int main(int argc, char *argv[])
 			}
 
 			/* If we postponed filtering after we handled the semaphore logic, do it now */
-			if (filterlater && msgfilter && !matchregex(inbuf, msgfilter) && !matchregex(inbuf, stdfilter)) { msgsz = 0; *inbuf = '\0'; }
+			/* This logic is subtly different since we must now clear the buffer if we don't want it */
+			if (filterlater) {
+
+				/* If we're filtering now, then reject messages first and check the */
+				/* meta line regexes first (since they're quicker) */
+				int deny = 0;
+				int accept = 1;
+
+				deny =  (metaexfilter && matchregex(inbuf, metaexfilter)) ? 1 :
+					( msgexfilter && matchregex(inbuf,  msgexfilter)) ? 1 : 0;
+
+				if (!deny && (metafilter || msgfilter)) accept =
+					(  metafilter && matchregex(inbuf,   metafilter)) ? 1 :
+					(   msgfilter && matchregex(inbuf,    msgfilter)) ? 1 : 0;
+
+				/* if deny'd, then accept=0... and if we're here then stdfilter exists */
+				/* (meaning deny by default) */
+				/* INVERT of this: --> if ((!deny && accept) || matchregex(channel->channelbuf, stdfilter)) */
+
+				if ((deny || !accept) && !matchregex(inbuf, stdfilter)) { msgsz = 0; *inbuf = '\0'; }
+			}
+
 
 			if (msgsz) {
 				/*
