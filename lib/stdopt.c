@@ -71,8 +71,8 @@ int standardoption(char *opt)
 		if (pidfn) free(pidfn);
 		if (p && *(p+1)) pidfn = strdup(p+1);
 		else {
-			pidfn = (char *)malloc(strlen(xgetenv("XYMONSERVERLOGS")) + strlen(programname) + 6);
-			sprintf(pidfn, "%s/%s.pid", xgetenv("XYMONSERVERLOGS"), programname);
+			pidfn = (char *)malloc(strlen(xgetenv("XYMONRUNDIR")) + strlen(programname) + 6);
+			sprintf(pidfn, "%s/%s.pid", xgetenv("XYMONRUNDIR"), programname);
 		}
 	}
 	else if ((strcmp(opt, "--help") == 0) || (strcmp(opt, "-?") == 0)) {

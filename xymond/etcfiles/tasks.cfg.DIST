@@ -23,7 +23,8 @@
 		--admin-senders=127.0.0.1,$XYMONSERVERIP \
 		--store-clientlogs=!msgs
 	LOGFILE $XYMONSERVERLOGS/xymond.log
-	PIDFILE $XYMONSERVERLOGS/xymond.pid
+	PIDFILE $XYMONRUNDIR/xymond.pid
+	SENDHUP
 
 # "history" keeps track of the status changes that happen.
 [history]
@@ -31,7 +32,7 @@
 	NEEDS xymond
 	CMD xymond_channel --channel=stachg xymond_history
 	LOGFILE $XYMONSERVERLOGS/history.log
-	PIDFILE $XYMONSERVERLOGS/xymond_history.pid
+	PIDFILE $XYMONRUNDIR/xymond_history.pid
 
 # "alert" sends out alerts.
 [alert]
@@ -111,7 +112,8 @@
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
 	CMD $XYMONHOME/bin/xymonproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.xymonproxy --no-daemon
 	LOGFILE $XYMONSERVERLOGS/xymonproxy.log
-	PIDFILE $XYMONSERVERLOGS/xymonproxy.pid
+	PIDFILE $XYMONRUNDIR/xymonproxy.pid
+	SENDHUP
 
 
 # "xymonfetch" is used when you have clients that cannot connect to your Xymon server,
@@ -127,7 +129,8 @@
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
 	CMD $XYMONHOME/bin/xymonfetch --server=YOUR.XYMON.SERVER.IP --no-daemon
 	LOGFILE $XYMONSERVERLOGS/xymonfetch.log
-	PIDFILE $XYMONSERVERLOGS/xymonfetch.pid
+	PIDFILE $XYMONRUNDIR/xymonfetch.pid
+	SENDHUP
 
 
 ######################################################################################

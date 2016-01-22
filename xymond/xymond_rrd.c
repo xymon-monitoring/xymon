@@ -294,7 +294,8 @@ int main(int argc, char *argv[])
 	if (use_rrd_cache && !no_rrd) {
 	/* Setup the control socket that receives cache-flush commands */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
-	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
+	if (xgetenv("XYMONRUNDIR") && mkdir(xgetenv("XYMONRUNDIR"), 0755) != -1) dbgprintf("Created %s\n", xgetenv("XYMONRUNDIR")); // just in case
+	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%lu", xgetenv("XYMONRUNDIR"), (unsigned long)getpid());
 	unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
 	ctlsockaddr.sun_family = AF_UNIX;
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);

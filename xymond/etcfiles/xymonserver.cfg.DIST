@@ -2,6 +2,7 @@
 #
 XYMONSERVERROOT="@XYMONTOPDIR@"			# Where Xymon is installed
 XYMONSERVERLOGS="@XYMONLOGDIR@"			# Directory for server logs. The xymon user must have write-access here.
+XYMONRUNDIR="@XYMONRUNDIR@"			# Directory for server pid files and runtime data. The xymon user must also have write-access here.
 XYMONCLIENTHOME="@XYMONTOPDIR@/client"		# XYMONHOME directory for the client
 
 

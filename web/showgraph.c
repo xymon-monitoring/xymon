@@ -177,9 +177,9 @@ void request_cacheflush(char *hostname)
 	}
 	fcntl(ctlsocket, F_SETFL, O_NONBLOCK);
 
-	dir = opendir(xgetenv("XYMONTMP"));
+	dir = opendir(xgetenv("XYMONRUNDIR"));
 	if (!dir) {
-		errprintf("Cannot acces $XYMONTMP directory: %s\n", strerror(errno));
+		errprintf("Cannot acces $XYMONRUNDIR directory: %s\n", strerror(errno));
 		return;
 	}
 
@@ -194,7 +194,7 @@ void request_cacheflush(char *hostname)
 
 			memset(&myaddr, 0, sizeof(myaddr));
 			myaddr.sun_family = AF_UNIX;
-			sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONTMP"), d->d_name);
+			sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONRUNDIR"), d->d_name);
 			myaddrsz = sizeof(myaddr);
 			bufp = req; bytesleft = strlen(req);
 			do {

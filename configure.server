@@ -361,6 +361,17 @@ then
 fi
 echo ""; echo ""
 
+echo "Where to put the Xymon runfiles [$XYMONLOGDIR] ? "
+if test -z "$XYMONRUNDIR"
+then
+	read XYMONRUNDIR
+fi
+if test -z "$XYMONRUNDIR"
+then
+	XYMONRUNDIR="$XYMONLOGDIR"
+fi
+echo ""; echo ""
+
 echo "What is the name of this host [`uname -n`] ? "
 if test -z "$XYMONHOSTNAME"
 then
@@ -416,6 +427,8 @@ echo "# Admin CGI scripts go in SECURECGIDIR" >>Makefile
 echo "SECURECGIDIR = $SECURECGIDIR"      >>Makefile
 echo "# Where to put logfiles"           >>Makefile
 echo "XYMONLOGDIR = $XYMONLOGDIR"        >>Makefile
+echo "# Where to put runfiles"           >>Makefile
+echo "XYMONRUNDIR = $XYMONRUNDIR"        >>Makefile
 echo "# Where to install manpages"       >>Makefile
 echo "MANROOT = $MANROOT"                >>Makefile
 echo "# How to run fping or xymonping"   >>Makefile

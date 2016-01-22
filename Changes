@@ -59,6 +59,9 @@ Changes from 4.3.x -> 4.4-alpha
 * Add new "clientsubmit" and "clientconfig" message types, allowing
   for more control at the client level of client-local.cfg downloads
   and more efficient processing in xymond and xymonproxy.
+* A $XYMONRUNDIR variable is now used as the destination for pid files and
+  RRD sockets (needed for some types of SELinux separation). $XYMONLOGDIR is used
+  as the default if not specified.
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet

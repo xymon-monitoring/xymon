@@ -18,7 +18,8 @@
 	ENVFILE $XYMONCLIENTHOME/etc/xymonclient.cfg
 	CMD $XYMONCLIENTHOME/bin/msgcache --no-daemon
 	LOGFILE $XYMONCLIENTLOGS/msgcache.log
-	PIDFILE $XYMONCLIENTLOGS/msgcache.pid
+	PIDFILE $XYMONRUNDIR/msgcache.pid
+	SENDHUP
 
 # The main client task
 [client]
