@@ -255,6 +255,10 @@ int do_request(void)
 
 			sprintf(logfn, "%s/%s", hostdatadir, tstamp);
 			fd = fopen(logfn, "r");
+			if (!fd && (strtol(tstamp, NULL, 10) != 0)) {
+				sprintf(logfn, "%s/%s", hostdatadir, histlogtime((time_t)atoi(tstamp)));
+				fd = fopen(logfn, "r");
+			}
 			if (fd) {
 				struct stat st;
 				int n;
@@ -540,7 +544,11 @@ int do_request(void)
 		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
 		sprintf(logfn, "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, service, tstamp);
+		if (((stat(logfn, &st) == -1) || (st.st_size < 10) || (!S_ISREG(st.st_mode))) && (strtol(tstamp, NULL, 10) != 0)) {
+			sprintf(logfn, "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, service, histlogtime((time_t)atoi(tstamp)));
+		}
 		xfree(hostnamedash);
+		if (strtol(tstamp, NULL, 10) != 0) tstamp = strdup(histlogtime((time_t)atoi(tstamp)));
 		p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
 		sethostenv_histlog(tstamp);
 

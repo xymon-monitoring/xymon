@@ -151,7 +151,7 @@ static unsigned long reportingduration(time_t eventstart, time_t eventduration)
 }
 
 
-static char *parse_histlogfile(char *hostname, char *servicename, char *timespec)
+static char *parse_histlogfile(char *hostname, char *servicename, char *timespec, time_t starttime)
 {
 	char cause[MAX_LINE_LEN];
 	char fn[PATH_MAX];
@@ -166,9 +166,18 @@ static char *parse_histlogfile(char *hostname, char *servicename, char *timespec
 	for (p = strrchr(fn, '/'); (*p); p++) if (*p == ',') *p = '_';
 	sprintf(p, "/%s/%s", servicename, timespec);
 
-	dbgprintf("Looking at history logfile %s\n", fn);
+	dbgprintf("Looking for history logfile %s\n", fn);
 	fd = fopen(fn, "r");
+	if (!fd) {
+		sprintf(fn, "%s/%s", xgetenv("XYMONHISTLOGS"), commafy(hostname));
+		for (p = strrchr(fn, '/'); (*p); p++) if (*p == ',') *p = '_';
+		sprintf(p, "/%s/%d", servicename, (unsigned int)starttime);
+
+		dbgprintf("Looking for history logfile %s\n", fn);		
+		fd = fopen(fn, "r");
+	}
 	if (fd != NULL) {
+		dbgprintf("Looking at history logfile %s\n", fn);
 		while (!causefull && fgets(l, sizeof(l), fd)) {
 			p = strchr(l, '\n'); if (p) *p = '\0';
 
@@ -463,7 +472,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 				newentry->affectssla = (reporttime && (sladuration > 0));
 
 				if (!for_history && timespec && (color != COL_GREEN)) {
-					newentry->cause = parse_histlogfile(hostname, servicename, timespec);
+					newentry->cause = parse_histlogfile(hostname, servicename, timespec, starttime);
 				}
 				else newentry->cause = "";
 

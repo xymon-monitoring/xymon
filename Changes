@@ -62,6 +62,11 @@ Changes from 4.3.x -> 4.4-alpha
 * A $XYMONRUNDIR variable is now used as the destination for pid files and
   RRD sockets (needed for some types of SELinux separation). $XYMONLOGDIR is used
   as the default if not specified.
+* Xymon status history snapshots can now be saved with epoch filenames instead
+  of the BB-compatible (Fri_Nov_7_16:01:08_2002) format. The CGI will look
+  for history files under both names, so there is no need to migrate 
+  previously-saved files. Note that additional formats might be available 
+  in a future release.
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet

@@ -83,11 +83,11 @@ char *histlogurl(char *hostname, char *service, time_t histtime, char *histtime_
 	if (url) xfree(url);
 	if (!cgibinurl) cgibinurl = xgetenv("CGIBINURL");
 
-	/* cgi-bin/historylog.sh?HOST=foo.sample.com&SERVICE=msgs&TIMEBUF=Fri_Nov_7_16:01:08_2002 */
+	/* cgi-bin/historylog.sh?HOST=foo.sample.com&SERVICE=msgs&TIMEBUF=(Fri_Nov_7_16:01:08_2002 or 1036684868) */
 	url = (char *)malloc(1024 + strlen(cgibinurl) + strlen(hostname) + strlen(service));
 	if (!histtime_txt) {
-		sprintf(url, "%s/historylog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s",
-			xgetenv("CGIBINURL"), hostname, service, histlogtime(histtime));
+		sprintf(url, "%s/historylog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%d",
+			xgetenv("CGIBINURL"), hostname, service, (unsigned int)histtime);
 	}
 	else {
 		sprintf(url, "%s/historylog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s",

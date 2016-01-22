@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
 	int save_hostevents = 1;
 	int save_statusevents = 1;
 	int save_histlogs = 1, defaultsaveop = 1;
+	int epochtimestamps = 0;
 	FILE *alleventsfd = NULL;
 	int running = 1;
 	struct sigaction sa;
@@ -100,6 +101,12 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--histlogdir=")) {
 			histlogdir = strchr(argv[argi], '=')+1;
 		}
+		else if (argnmatch(argv[argi], "--epochtimestamps")) {
+			epochtimestamps = 1;
+		}
+		else if (argnmatch(argv[argi], "--no-epochtimestamps")) {
+			epochtimestamps = 0;
+		}
 		else if (argnmatch(argv[argi], "--minimum-free=")) {
 			minlogspace = atoi(strchr(argv[argi], '=')+1);
 		}
@@ -119,6 +126,7 @@ int main(int argc, char *argv[])
 		errprintf("No history directory given, aborting\n");
 		return 1;
 	}
+	if (getenv("EPOCHHIST")) epochtimestamps = 1;
 
 	if (save_histlogs && (histlogdir == NULL) && xgetenv("XYMONHISTLOGS")) {
 		histlogdir = strdup(xgetenv("XYMONHISTLOGS"));
@@ -410,7 +418,8 @@ int main(int argc, char *argv[])
 				FILE *histlogfd;
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				sprintf(fname, "%s/%s/%s/%s", histlogdir, hostdash, testname, histlogtime(tstamp));
+				if (epochtimestamps) sprintf(fname, "%s/%s/%s/%d", histlogdir, hostdash, testname, (unsigned int)tstamp );
+				else sprintf(fname, "%s/%s/%s/%s", histlogdir, hostdash, testname, histlogtime(tstamp));
 				histlogfd = fopen(fname, "w");
 				if (!histlogfd) {
 					/* Might be the first time seeing it the host+test combo; make necessary directories */
@@ -418,7 +427,8 @@ int main(int argc, char *argv[])
 					mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);	/* no error check; will fail if we've seen the host */
 					sprintf(fname, "%s/%s/%s", histlogdir, hostdash, testname);
 					if (!mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) ) errprintf("Cannot create %s: %s\n", fname, strerror(errno));
-					sprintf(fname, "%s/%s/%s/%s", histlogdir, hostdash, testname, histlogtime(tstamp));
+					if (epochtimestamps) sprintf(fname, "%s/%s/%s/%d", histlogdir, hostdash, testname, (unsigned int)tstamp );
+					else sprintf(fname, "%s/%s/%s/%s", histlogdir, hostdash, testname, histlogtime(tstamp));
 					histlogfd = fopen(fname, "w");
 				}
 

@@ -473,7 +473,7 @@ static void generate_histlog_table(FILE *htmlrep,
 		fprintf(htmlrep, "<TR BGCOLOR=%s>\n", bgcols[curbg]); curbg = (1-curbg);
 		fprintf(htmlrep, "<TD ALIGN=LEFT NOWRAP>%s</TD>\n", start);
 		fprintf(htmlrep, "<TD ALIGN=CENTER BGCOLOR=\"#000000\">");
-		fprintf(htmlrep, "<A HREF=\"%s\">", histlogurl(hostname, service, 0, walk->timespec));
+		fprintf(htmlrep, "<A HREF=\"%s\">", histlogurl(hostname, service, (unsigned int)walk->starttime, NULL));
 		fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
 			xgetenv("XYMONSKIN"), dotgiffilename(walk->color, 0, 1), colorname(walk->color), colorname(walk->color),
 			xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
