@@ -253,21 +253,8 @@ int main(int argc, char *argv[])
 
 	/* Setup the control socket that receives cache-flush commands */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
-	{
-		/* sun_path is tiny (~108 bytes); refuse an XYMONTMP that cannot
-		 * fit rather than overflow (showgraph guards the sender side). */
-		char *xymontmp = xgetenv("XYMONTMP");
-		int n = snprintf(ctlsockaddr.sun_path, sizeof(ctlsockaddr.sun_path),
-				 "%s/rrdctl.%lu", xymontmp, (unsigned long)getpid());
-		if ((n < 0) || (n >= (int)sizeof(ctlsockaddr.sun_path))) {
-			/* Report the limit on XYMONTMP itself: sun_path minus the suffix. */
-			int maxtmp = (int)sizeof(ctlsockaddr.sun_path) - 1
-				   - snprintf(NULL, 0, "/rrdctl.%lu", (unsigned long)getpid());
-			errprintf("Cannot set up cache-control socket: XYMONTMP is too long for a socket path (%d characters; max %d with this process ID)\n",
-				  (int)strlen(xymontmp), maxtmp);
-			return 1;
-		}
-	}
+	if (xgetenv("XYMONRUNDIR") && mkdir(xgetenv("XYMONRUNDIR"), 0755) != -1) dbgprintf("Created %s\n", xgetenv("XYMONRUNDIR")); // just in case
+	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%lu", xgetenv("XYMONRUNDIR"), (unsigned long)getpid());
 	unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
 	ctlsockaddr.sun_family = AF_UNIX;
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
