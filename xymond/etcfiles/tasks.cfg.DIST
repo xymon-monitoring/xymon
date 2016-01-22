@@ -28,7 +28,9 @@
 [history]
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
 	NEEDS xymond
-	CMD xymond_channel --channel=stachg --log=$XYMONSERVERLOGS/history.log xymond_history --pidfile=$XYMONSERVERLOGS/xymond_history.pid
+	CMD xymond_channel --channel=stachg xymond_history
+	LOGFILE $XYMONSERVERLOGS/history.log
+	PIDFILE $XYMONRUNDIR/xymond_history.pid
 
 # "alert" sends out alerts.
 [alert]
