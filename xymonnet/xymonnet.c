@@ -909,7 +909,7 @@ char *ip_to_test(testedhost_t *h)
 		else {
 			/* Cannot resolve hostname */
 			h->dnserror = 1;
-			errprintf("xymonnet: Cannot resolve IP for host %s\n", h->hostname);
+			logprintf("xymonnet: Cannot resolve IP for host %s\n", h->hostname);
 		}
 	}
 
