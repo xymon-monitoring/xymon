@@ -226,6 +226,11 @@ char *getdata(char *sectionname)
 {
 	sectlist_t *swalk;
 
+	if (!defsecthead) {
+		errprintf("BUG: getdata(%s) called but defsecthead is NULL\n", sectionname);
+		return NULL;
+	}
+
 	for (swalk = defsecthead; (swalk && strcmp(swalk->sname, sectionname)); swalk = swalk->next) ;
 	if (swalk) return swalk->sdata;
 
@@ -2266,7 +2271,7 @@ int main(int argc, char *argv[])
 			enum ostype_t os;
 			void *hinfo = NULL;
 
-			dbgprintf("Client report from host %s\n", (hostname ? hostname : "<unknown>"));
+			dbgprintf("Client report from sender %s, collector '%s', about host %s\n", (sender ? sender : "<unknown>"), (collectorid ? collectorid : ""), (hostname ? hostname : "<unknown>"));
 
 			/* Check if we are running a collector module for this type of client */
 			if (!collectorid) collectorid = "";

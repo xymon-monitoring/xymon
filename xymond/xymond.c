@@ -2583,6 +2583,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		if (strlen(msgbuf)) {
 			/* Tell the workers */
+			logprintf("Sending %s (from %s) with %s\n", marker, sender, msgbuf);
 			posttochannel(statuschn, marker, NULL, sender, NULL, NULL, msgbuf);
 			posttochannel(stachgchn, marker, NULL, sender, NULL, NULL, msgbuf);
 			posttochannel(pagechn, marker, NULL, sender, NULL, NULL, msgbuf);
@@ -4172,7 +4173,7 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 				if (!match_test_filter(lwalk, logfilter)) continue;
 
 				if (lwalk->message == NULL) {
-					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->name);
+					errprintf("%s.%s has a NULL message\n", (lwalk->host->hostname ? lwalk->host->hostname : "<no host>"), (lwalk->test->name ? lwalk->test->name : "<no test>"));
 					lwalk->message = strdup("No data");
 					lwalk->msgsz = strlen(lwalk->message) + 1;
 				}
@@ -6010,14 +6011,21 @@ int main(int argc, char *argv[])
 						/* Leave the summaries as-is */
 						hosthandle = xtreeNext(rbhosts, hosthandle);
 					}
+					else if (hwalk->hostname == NULL) {
+						errprintf("Null hostname record in state; can't remove, moving on\n");
+						hosthandle = xtreeNext(rbhosts, hosthandle);
+					}
 					else if (hostinfo(hwalk->hostname) == NULL) {
 						/* Remove all state info about this host. This will NOT remove files. */
+						// dbgprintf("Host info record for '%s' is now empty; removing...\n", hwalk->hostname);
 						handle_dropnrename(CMD_DROPSTATE, "xymond", hwalk->hostname, NULL, NULL);
 
 						/* Must restart tree-walk after deleting node from the tree */
+						// dbgprintf("Restarting hostinfo scan from the beginning...\n");
 						hosthandle = xtreeFirst(rbhosts);
 					}
 					else {
+						// dbgprintf(" - record %s present...\n", hwalk->hostname);
 						hosthandle = xtreeNext(rbhosts, hosthandle);
 					}
 				}
