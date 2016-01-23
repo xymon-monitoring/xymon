@@ -1,11 +1,11 @@
 # Xymon - xymonnet Makefile
 
 XYMONLIB = ../lib/libxymon.a
-XYMONLIBS = $(XYMONLIB)
+XYMONLIBS = -lxymon $(PCRELIBS)
 XYMONCOMMLIB = ../lib/libxymoncomm.a
-XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCOMMLIBS = -lxymoncomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF) $(PCRELIBS)
 XYMONTIMELIB = ../lib/libxymontime.a
-XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+XYMONTIMELIBS = -lxymontime $(LIBRTDEF)
 
 # c-ares (async DNS) is a required system dependency; the formerly-bundled
 # copy has been removed. configure provides CARESINCDIR and CARESLIBS.
