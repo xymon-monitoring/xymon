@@ -1,11 +1,11 @@
 # xymonproxy Makefile
 
 XYMONLIB = ../lib/libxymon.a
-XYMONLIBS = $(XYMONLIB)
+XYMONLIBS = -lxymon $(PCRELIBS)
 XYMONCOMMLIB = ../lib/libxymoncomm.a
-XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCOMMLIBS = -lxymoncomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF) $(PCRELIBS)
 XYMONTIMELIB = ../lib/libxymontime.a
-XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+XYMONTIMELIBS = -lxymontime $(LIBRTDEF)
 
 PROGRAMS = xymonproxy xymoncgimsg.cgi
 

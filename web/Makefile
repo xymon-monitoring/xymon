@@ -1,9 +1,9 @@
 XYMONLIB = ../lib/libxymon.a
-XYMONLIBS = $(XYMONLIB)
+XYMONLIBS = -lxymon $(PCRELIBS)
 XYMONCOMMLIB = ../lib/libxymoncomm.a
-XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCOMMLIBS = -lxymoncomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF) $(PCRELIBS)
 XYMONTIMELIB = ../lib/libxymontime.a
-XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+XYMONTIMELIBS = -lxymontime $(LIBRTDEF)
 
 PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi svcstatus.cgi enadis.cgi confreport.cgi criticalview.cgi criticaleditor.cgi ackinfo.cgi statusreport.cgi boilerplate.cgi hostgraphs.cgi ghostlist.cgi notifications.cgi acknowledgements.cgi hostlist.cgi useradm.cgi chpasswd.cgi appfeed.cgi cgiwrap
 CGISCRIPTS = history.sh eventlog.sh report.sh reportlog.sh snapshot.sh findhost.sh csvinfo.sh columndoc.sh datepage.sh svcstatus.sh historylog.sh confreport.sh confreport-critical.sh criticalview.sh certreport.sh nongreen.sh hostgraphs.sh ghostlist.sh notifications.sh acknowledgements.sh hostlist.sh topchanges.sh appfeed.sh appfeed-critical.sh

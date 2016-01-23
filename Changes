@@ -83,6 +83,10 @@ Changes from 4.3.x -> 4.4-alpha
 * FIXME-doc: xymond_rrd: Add --flushtimeout option and reduce the 
   frequency of cachectl, zombie, and extcombo flushing
 
+* Experimental support for buiding libxymon as a shared library
+  has been improved. Note: As a private library, there are no immediate
+  plans for ABI stability or a versioned SONAME
+
 * The first line of a status message (beginning at the color indicator) 
   is now limited to 255 characters
 * Performance optimizations / bug fixes with POSIX btree usage

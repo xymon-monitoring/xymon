@@ -5,11 +5,11 @@ PROGRAMS = xymongen
 GENOBJS = xymongen.o loadlayout.o loaddata.o pagegen.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
 
 XYMONLIB = ../lib/libxymon.a
-XYMONLIBS = $(XYMONLIB)
+XYMONLIBS = -lxymon $(PCRELIBS)
 XYMONCOMMLIB = ../lib/libxymoncomm.a
-XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCOMMLIBS = -lxymoncomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF) $(PCRELIBS)
 XYMONTIMELIB = ../lib/libxymontime.a
-XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+XYMONTIMELIBS = -lxymontime $(LIBRTDEF)
 
 all: $(PROGRAMS)
 

@@ -176,6 +176,13 @@ else
 	DOSNMP=no
 fi
 
+if test "$SHARED" = "1"
+then
+	ENABLESHARED=yes
+else
+	ENABLESHARED=no
+fi
+
 MAKE="$MAKE -s" ./build/lfs.sh
 if test $? -eq 0; then
 	LFS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
@@ -542,6 +549,9 @@ echo "# Net-SNMP settings"               >>Makefile
 echo "DOSNMP = $DOSNMP"                  >>Makefile
 echo ""                                  >>Makefile
 
+echo "# Shared Library settings"         >>Makefile
+echo "ENABLESHARED = $ENABLESHARED"      >>Makefile
+echo ""                                  >>Makefile
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
 

@@ -17,9 +17,11 @@ ifeq ($(OSTYPE),openbsd)
 endif
 
 XYMONCLIENTLIB = ../lib/libxymonclient.a
-XYMONCLIENTLIBS = $(XYMONCLIENTLIB)
+XYMONCLIENTLIBS = -lxymonclient
 XYMONCLIENTCOMMLIB = ../lib/libxymonclientcomm.a
-XYMONCLIENTCOMMLIBS = $(XYMONCLIENTCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCLIENTCOMMLIBS = -lxymonclientcomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONTIMELIB = -lxymontime
+XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
 PROGRAMS=xymonlaunch logfetch clientupdate orcaxymon msgcache
 COMMONTOOLS=xymon xymoncmd xymongrep xymoncfg xymondigest
