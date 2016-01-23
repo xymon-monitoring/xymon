@@ -56,6 +56,16 @@ CLIENTCOLUMNGIF="green.gif"	# Icon file used for the client-column.
 MAXMSGSPERCOMBO="100"           # How many individual messages to combine in a combo-message. 0=unlimited.
 SLEEPBETWEENMSGS="0"            # Delay between sending each combo message, in milliseconds.
 
+# Message compression
+# Xymon server programs such as xymonnet and xymond_client can compress messages 
+# before sending them to xymond. This can help reduce network bandwidth used
+# in exchange for increasing CPU load on xymond itself. LZO support is included, 
+# and, if support has been compiled in, ZLIB and LZ4 are also available.
+COMPRESSION="TRUE"		# Set to "TRUE" to enable for xymon server processes
+COMPRESSTYPE="lzo"		# Default is "lzo". "zlib", "lz4", and "lz4hc" may be available
+				# See README.compresson for more details
+
+
 # Maximum message size buffers (in KB)
 # These are commented out by default, you should only change them if you
 # have systems sending large status-messages or otherwise need to handle

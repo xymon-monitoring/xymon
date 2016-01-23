@@ -22,6 +22,19 @@ LOGFETCHOPTS=""
 XYMONLOCALCLIENTOPTS=""
 
 
+# Message compression
+# Xymon clients can compress messages before sending to the xymon server to save on bandwidth.
+# This requires version 4.4 of higher of xymond to be running. If using a format other than "lzo",
+# the destination server must have been compiled with support for your algorithm.
+# 
+# If your destination is a xymonproxy, you are running in server-side (non-local) config mode,
+# and you are not running in $STATUSMODE, you should NOT enable compression as your client 
+# messages will not return a logfetch configuration.
+COMPRESSION="TRUE"		# Set to "TRUE" to enable for xymon client processes 
+COMPRESSTYPE="lzo"		# Default is "lzo" unless "lz4hc" is available
+				# See README.compresson for more details
+
+
 # Auto-include any files dropped into the directory below
 optional directory @XYMONHOME@/etc/xymonclient.cfg.d
 
