@@ -12,23 +12,28 @@ ifeq ($(LOCALCLIENT),yes)
 endif
 XYMONCLIENTCOMMLIBOBJS = locator.o loadhosts.o sendmsg.o xymond_ipc.o xymond_buffer.o xymontls.o
 
-XYMONCLIENTLIB = libxymonclient.a
-XYMONCLIENTLIBS = $(XYMONCLIENTLIB)
-XYMONCLIENTCOMMLIB = libxymonclientcomm.a
-XYMONCLIENTCOMMLIBS = $(XYMONCLIENTCOMMLIB) $(ZLIBLIBS) $(XYMONCLIENTLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCLIENTLIB = libxymonclient
+XYMONCLIENTLIBS = -lxymonclient
+XYMONCLIENTCOMMLIB = libxymonclientcomm
+XYMONCLIENTCOMMLIBS = -lxymonclientcomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
-XYMONLIB = libxymon.a
-XYMONLIBS = $(XYMONLIB)
-XYMONCOMMLIB = libxymoncomm.a
-XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
-XYMONTIMELIB = libxymontime.a
-XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+XYMONLIB = libxymon
+XYMONLIBS = -lxymon
+XYMONCOMMLIB = libxymoncomm
+XYMONCOMMLIBS = -lxymoncomm $(NETLIBS) $(LIBRTDEF) $(ZLIBLIBS) $(SSLLIBS) $(PCRELIBS)
+XYMONTIMELIB = libxymontime
+XYMONTIMELIBS = -lxymontime $(LIBRTDEF)
 
 
 # The commit this build comes from, empty for a release (build/build-id.sh)
 XYMONBUILD := $(shell cat ../build/build-id 2>/dev/null)
 
-CFLAGS += -I../include 
+CFLAGS += -I../include -L../lib
+ifeq ($(ENABLESHARED),yes)
+	CFLAGS += -fpic
+	# SONAME = ".0"
+	# LIBVERSION = ".0.0.0"
+endif
 
 all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) xymonloadhosts xymonstackio xymonavailability md5 sha1 rmd160 xymonlocator tree
 
@@ -62,24 +67,29 @@ test-endianness: test-endianness.c
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $<
 
 $(XYMONLIB): $(XYMONLIBOBJS)
-	ar cr $(XYMONLIB) $(XYMONLIBOBJS)
-	ranlib $(XYMONLIB) || echo ""
+	ar cr $(XYMONLIB).a $(XYMONLIBOBJS)
+	ranlib $(XYMONLIB).a || echo ""
+	test x"$(ENABLESHARED)" = x"yes" && $(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname,$(XYMONLIB).so$(SONAME) -o $(XYMONLIB).so$(LIBVERSION) $(XYMONLIBOBJS) || :
 
 $(XYMONCOMMLIB): $(XYMONCOMMLIBOBJS)
-	ar cr $(XYMONCOMMLIB) $(XYMONCOMMLIBOBJS)
-	ranlib $(XYMONCOMMLIB) || echo ""
+	ar cr $(XYMONCOMMLIB).a $(XYMONCOMMLIBOBJS)
+	ranlib $(XYMONCOMMLIB).a || echo ""
+	test x"$(ENABLESHARED)" = x"yes" && $(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname,$(XYMONCOMMLIB).so$(SONAME) -o $(XYMONCOMMLIB).so$(LIBVERSION) $(XYMONCOMMLIBOBJS) || :
 
 $(XYMONTIMELIB): $(XYMONTIMELIBOBJS)
-	ar cr $(XYMONTIMELIB) $(XYMONTIMELIBOBJS)
-	ranlib $(XYMONTIMELIB) || echo ""
+	ar cr $(XYMONTIMELIB).a $(XYMONTIMELIBOBJS)
+	ranlib $(XYMONTIMELIB).a || echo ""
+	test x"$(ENABLESHARED)" = x"yes" && $(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname,$(XYMONTIMELIB).so$(SONAME) -o $(XYMONTIMELIB).so$(LIBVERSION) $(XYMONTIMELIBOBJS) || :
 
 $(XYMONCLIENTLIB): $(CLIENTLIBOBJS)
-	ar cr $(XYMONCLIENTLIB) $(CLIENTLIBOBJS)
-	ranlib $(XYMONCLIENTLIB) || echo ""
+	ar cr $(XYMONCLIENTLIB).a $(CLIENTLIBOBJS)
+	ranlib $(XYMONCLIENTLIB).a || echo ""
+	test x"$(ENABLESHARED)" = x"yes" && $(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname,$(XYMONCLIENTLIB).so$(SONAME) -o $(XYMONCLIENTLIB).so$(LIBVERSION) $(CLIENTLIBOBJS) || :
 
 $(XYMONCLIENTCOMMLIB): $(XYMONCLIENTCOMMLIBOBJS)
-	ar cr $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTCOMMLIBOBJS)
-	ranlib $(XYMONCLIENTCOMMLIB) || echo ""
+	ar cr $(XYMONCLIENTCOMMLIB).a $(XYMONCLIENTCOMMLIBOBJS)
+	ranlib $(XYMONCLIENTCOMMLIB).a || echo ""
+	test x"$(ENABLESHARED)" = x"yes" && $(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname,$(XYMONCLIENTCOMMLIB).so$(SONAME) -o $(XYMONCLIENTCOMMLIB).so$(LIBVERSION) $(XYMONCLIENTCOMMLIBOBJS) || :
 
 sendmsg.o: sendmsg.c xymontls.h
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ sendmsg.c
