@@ -41,6 +41,8 @@ char *rrddir = NULL;
 int ext_rrd_cache = 0;		/* Has external rrdcached running */
 int use_rrd_cache = 1;         /* Use the cache by default */
 int no_rrd = 0;                /* Write to rrd by default */
+int cacheflushsz = 1;		/* Cache multipler set to 1x by default */
+int releasecachedelay = -1;	/* Don't start auto-flushing the cache right away */
 
 static int  processorfd = 0;
 static FILE *processorstream = NULL;
@@ -61,7 +63,6 @@ static char *fnparams[4] = { NULL, };  /* Saved parameters passed to setupfn() *
 #define DEFAULT_RRD_INTERVAL 300
 static int  rrdinterval = DEFAULT_RRD_INTERVAL;
 
-#define CACHESZ 12             /* # of updates that can be cached - updates are usually 5 minutes apart */
 static int updcache_keyofs = -1;
 static void * updcache;
 typedef struct updcacheitem_t {
@@ -471,11 +472,14 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 * fill at the same speed); this would result in huge load-spikes every 
 	 * rrdinterval*CACHESZ seconds.
 	 *
-	 * So to smooth the load, we force the update through for every CACHESZ 
+	 * So to smooth the load, we force the update through for every CACHESZ*multiplier 
 	 * updates, regardless of how much is in the cache. This gives us a steady 
 	 * (although slightly higher) load.
+	 * This can be modified with the cachemultiplier option to xymond_rrd.
+	 * We wait 10m (roughly 2 PDPs) after startup to give any previous xymond_rrd's
+	 * a chance to flush their caches first (since rrdtool can't handle out-of-order data well).
 	 */
-	if (use_rrd_cache && (++callcounter < CACHESZ)) {
+	if (use_rrd_cache && ((++callcounter < cacheflushsz) || releasecachedelay) ) {
 		if (cacheitem && (cacheitem->valcount < CACHESZ)) {
 			dbgprintf(" - %s: storing %zu bytes into seq %d (pos: %d/%d), at %d: %s\n", updcachekey, strlen(rrdvalues), seq, cacheitem->valcount, CACHESZ, updtime, rrdvalues);
 			cacheitem->updseq[cacheitem->valcount] = seq;
@@ -535,6 +539,11 @@ void rrdcacheflushhost(char *hostname)
 	time_t now = gettimer();
 
 	if (updcache_keyofs == -1) return;
+
+	if (releasecachedelay) {
+		dbgprintf("Flush of '%s' skipped, too soon after restart of xymond_rrd\n", hostname);
+		return;
+	}
 
 	/* If we get a full path for the key, skip the leading rrddir */
 	if (strncmp(hostname, rrddir, updcache_keyofs) == 0) hostname += updcache_keyofs;
