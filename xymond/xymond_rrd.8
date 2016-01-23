@@ -42,6 +42,15 @@ a 30 minute period before being committed to disk in one update.
 This option disables caching of the data, so that data is stored
 on disk immediately.
 
+.IP "\-\-processor=FILENAME"
+xymond_rrd can send a parallel copy of all RRD updates to a single
+external process as a stream on its STDIN. The data will be in a 
+format similar to that used by rrdupdate(1):
+	<rrdtemplate> ts:<rrdvalue(s)> host <rrdparameters>
+
+If the process exits, xymond_rrd will re-launch it.
+
+
 .IP "\-\-extra\-script=FILENAME"
 Defines the script that is run to get the RRD data for tests that are not
 built into xymond_rrd. You must also specify which tests are handled
@@ -58,10 +67,10 @@ List of testnames that are handled by the external script. See the
 CUSTOM RRD DATA section below. Note that NCV graphs should NOT be
 listed here, but in the TEST2RRD environment variable - see below.
 
-.IP "--no-rrd"
+.IP "\-\-no\-rrd"
 Disable the actual writing of RRD files. This is only really useful if
 you send all of the data destined for the RRD files to an external
-processor (the --extra-script option).
+processor (the \-\-extra\-script or \-\-processor options).
 
 .SH ENVIRONMENT
 .IP TEST2RRD
@@ -270,6 +279,23 @@ documentation of "How to create graph custom data" available in
 the Help menu section on your Xymon server.
 
 
+.SH SENDING METRIC DATA TO AN ADDITIONAL PROCESS
+xymond_rrd provides a mechanism to send a copy of isolated metric 
+data to a single external processor for further processing. This can
+be used to inject metric data that xymond_rrd has prepared into other 
+storage systems, such as OpenTSDB, graphite, etc. The data is printed 
+in a format nearly suitable for injection using 
+.I rrdupdate(1) 
+and easily transformable to other formats. If the process exits, 
+xymond_rrd will re-launch it automatically.
+
+The stream written to this process will normally be fully buffered, but
+a line flush can be forced by setting the RRD_EXTPROC_DOFLUSH variable in
+xymonserver.cfg. The pipe buffer size can be adjusted (on systems which
+allow this) by setting the RRD_EXTPROC_BUFSIZ variable, otherwise the
+system's normal BUFSIZ will be used.
+
+
 .SH CUSTOM RRD DATA VIA SCRIPTS
 xymond_rrd provides a simple mechanism for adding custom graphs
 to the set of data collected on your Xymon server. By adding the
@@ -282,7 +308,8 @@ for large amounts of data. The overhead involved in storing the received
 message to disk and launching the script is significantly larger than
 the normal xymond_rrd overhead. So if you have a large number of
 reports for a given test, you should consider implementing it in C
-and including it in the xymond_rrd tool.
+and including it in the xymond_rrd tool or writing a separate stream
+listener that injects appropriate "trends" data messages back to xymond.
 
 Apart from writing the script, You must also add a section to
 .I graphs.cfg(5)

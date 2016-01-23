@@ -182,6 +182,7 @@ xymon (4.4.0-alpha5) unstable; urgency=low
      in these cases the shell is marked interactive.
    * xymonnet: DNS lookup failures no longer cause the entire xymonnet status to 
      turn yellow
+   * xymond_rrd: The (existing) --processor option is now documented.
 
  -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 Nov 2015 18:26:21 +0100
 
