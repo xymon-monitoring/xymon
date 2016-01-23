@@ -243,12 +243,19 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-rrd") == 0) {
 			no_rrd = 1;
 		}
+		else if (strcmp(argv[argi], "--cachemultiplier=") == 0) {
+			cacheflushsz = atoi(argv[argi]+18);
+			if (cacheflushsz == 0) cacheflushsz = 1;
+		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
 		}
 	}
 
 	save_errbuf = 0;
+
+	dbgprintf("rrd cache flush multiplier: %d\n", cacheflushsz);
+	cacheflushsz *= CACHESZ;
 
 	if (no_rrd && !processor) errprintf("RRD writing disabled, but no external processor has been specified.\n");
 
@@ -273,6 +280,7 @@ int main(int argc, char *argv[])
 	/* Do the network stuff if needed */
 	net_worker_run(ST_RRD, LOC_STICKY, update_locator_hostdata);
 	now = gettimer();
+	releasecachedelay = (int)now + 600;
 	comboflushtime = now + 23;
 	checkctltime = now + 4;
 
@@ -350,6 +358,8 @@ int main(int argc, char *argv[])
 		/* See if we have any cache-control messages pending */
 		if ((checkctltime < now) && (ctlsocket != -1)) {
 		    dbgprintf("xymond_rrd: checking for rrdctl flush messages\n");
+		    if (releasecachedelay && (releasecachedelay < (int)now)) releasecachedelay = 0;
+
 		    do {
 			n = recv(ctlsocket, ctlbuf, sizeof(ctlbuf), 0);
 			gotcachectlmessage = (n > 0);
