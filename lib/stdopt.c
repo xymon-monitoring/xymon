@@ -33,6 +33,10 @@ char *logfn = NULL;
 char *envarea = NULL;
 int  showhelp = 0;
 int  dontsendmessages = 0;
+
+int enablecompression = 0;
+char *defaultcompression = NULL;
+
 ipprotocol_t ipprotocol = XYMON_IPPROTO_ANY;
 
 int standardoption(char *opt)
@@ -88,6 +92,21 @@ int standardoption(char *opt)
 	}
 	else if ((strcmp(opt, "-6") == 0) || (strcmp(opt, "--6") == 0)) {
 		ipprotocol = XYMON_IPPROTO_6;
+	}
+	else if (argnmatch(opt, "--compress")) {
+		char *p = strchr(opt, '=');
+		enablecompression = 1;
+
+		/* If specified, override the default */
+		if (p && (*(++p))) {
+			defaultcompression = strdup(p);
+			dbgprintf("Compression enabled (using: %s)\n", p);
+		}
+		else dbgprintf("Compression enabled\n");
+	}
+	else if (strcmp(opt, "--no-compress") == 0) {
+		enablecompression = -1;
+		dbgprintf("Compression disabled\n");
 	}
 	else {
 		return 0;

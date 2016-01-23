@@ -44,7 +44,7 @@ static char rcsid[] = "$Id$";
 #define SENDRETRIES 2
 
 /* These commands go to all Xymon servers */
-static char *multircptcmds[] = { "status", "combo", "extcombo", "data", "notify", "enable", "disable", "drop", "rename", "client", "clientsubmit", NULL };
+static char *multircptcmds[] = { "status", "combo", "extcombo", "compress", "data", "notify", "enable", "disable", "drop", "rename", "client", "clientsubmit", "dummy", NULL };
 static char errordetails[1024];
 
 static strbuffer_t *msgbuf = NULL;      /* message buffer for one status message */
@@ -310,10 +310,36 @@ static int sendtoall(char *msg, size_t msglen, int timeout, mytarget_t **targets
 	int i;
 	int maxfd;
 	strbuffer_t *cbuf = NULL;
-	int v4server = (getenv("XYMONV4SERVER") != NULL);
+	static int first_run = 1;
+	static int v4server = 0;
+
+	if (first_run) {
+	   v4server = (getenv("XYMONV4SERVER") != NULL);
+	   setup_compression_opts();
+	   first_run = 0;
+	}
 
 	conn_register_infohandler(NULL, (debug ? INFO_DEBUG : INFO_WARN));
 	conn_init_client();
+
+	/*
+	 * XXX: This is being somewhat jammed in from the original patches
+	 * based on the 4.3 code base. Open questions remain on whether
+	 * multi-rcpt commands should or should not be compressed by
+	 * default. There's also no point to re-compressing messages again
+	 * or trying to compress an encrypted payload. It's possible for 
+	 * an extcombo message to be assembled from compressed messages;
+	 * it would be nice to have an easy way of skipping these.
+	 */
+	if (docompress && (strcmp(msg, "compress:") != 0)) {
+		cbuf = compress_message_to_strbuffer(comptype, msg, msglen, cbuf, NULL);
+		if (cbuf) {
+			msglen = STRBUFLEN(cbuf);
+			msg = STRBUF(cbuf);	/* original message freed by caller */
+			dbgprintf(" - compressed message OK; %zu bytes\n", msglen);
+		}
+		else errprintf("Error attempting to compress message! Leaving unchanged...\n");
+	}
 
 	for (i = 0; (targets[i]); i++) {
 		char *ip;
@@ -511,14 +537,36 @@ void sendmessage_finish_local(void)
 sendresult_t sendmessage_local(char *msg, size_t msglen)
 {
 	int n, done = 0, tries = 0;
+	strbuffer_t *cbuf = NULL;
+	static int first_run = 1;
 
-	if (backfeedqueue == -1) {
-		return sendmessage(msg, NULL, XYMON_TIMEOUT, NULL);
+	if (first_run) {
+	   setup_compression_opts();
+	   first_run = 0;
 	}
 
-	/* Make sure we dont overflow the message buffer */
+	if ((!msg) || (!msglen)) return XYMONSEND_EREADERROR;
+
+	if (backfeedqueue == -1) {
+		errprintf("sendmessage_local: no backfeed queue present; falling back to normal send\n");
+		return sendmessage_safe(msg, msglen, NULL, XYMON_TIMEOUT, NULL);
+	}
+
+	/* see sendtoall() above */
+	if (docompress && (strcmp(msg, "compress:") != 0)) {
+		cbuf = compress_message_to_strbuffer(comptype, msg, msglen, cbuf, NULL);
+		if (cbuf) {
+			msglen = STRBUFLEN(cbuf);
+			msg = STRBUF(cbuf);	/* original message freed by caller */
+			dbgprintf(" - compressed message OK; %zu bytes\n", msglen);
+		}
+		else errprintf("Error attempting to compress message! Leaving unchanged...\n");
+	}
+
+
+	/* Make sure we dont overflow the message buffer. */
+	/* Perhaps we should save the original msglen and truncate the uncompressed version? */
 	if (msglen > max_backfeedsz) {
-		/* NB: Someday we could consider compressing here */
 		errprintf("Truncating backfeed channel message from %d to %d\n", msglen, max_backfeedsz);
 		*(msg+max_backfeedsz) = '\0';
 		msglen = max_backfeedsz;
@@ -546,13 +594,17 @@ sendresult_t sendmessage_local(char *msg, size_t msglen)
 #else
 				n = msgsnd(backfeedqueue, msg, (msglen_t)msglen, IPC_NOWAIT);
 #endif
+				if (cbuf) freestrbuffer(cbuf);
 				if (n != -1) return XYMONSEND_OK;
 			}
-			else errprintf("Scan for new BFQ identifier unsuccessful; will try again\n");
+			else errprintf("BFQ re-scan failed; message lost\n");
 		}
+		if (cbuf) freestrbuffer(cbuf);
 		return XYMONSEND_ECONNFAILED;
 	}
+	// dbgprintf("Sending %d bytes via backfeed channel succeeded (%d retries)\n", msglen, tries);
 
+	if (cbuf) freestrbuffer(cbuf);
 	return XYMONSEND_OK;
 }
 

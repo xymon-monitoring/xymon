@@ -19,7 +19,7 @@ endif
 XYMONCLIENTLIB = ../lib/libxymonclient.a
 XYMONCLIENTLIBS = -lxymonclient
 XYMONCLIENTCOMMLIB = ../lib/libxymonclientcomm.a
-XYMONCLIENTCOMMLIBS = -lxymonclientcomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCLIENTCOMMLIBS = -lxymonclientcomm $(COMPLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 XYMONTIMELIB = -lxymontime
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 

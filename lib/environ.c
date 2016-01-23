@@ -63,6 +63,8 @@ const static struct {
 	{ "INFOCOLUMN", "info" },
 	{ "TRENDSCOLUMN", "trends" },
 	{ "CLIENTCOLUMN", "clientlog" },
+	{ "COMPRESS", "TRUE" },
+	{ "COMPRESSTYPE", "lzo" },
 	{ "DOCOMBO", "TRUE" },
 	{ "MAXMSGSPERCOMBO", "100" },
 	{ "SLEEPBETWEENMSGS", "0" },

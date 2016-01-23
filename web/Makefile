@@ -1,7 +1,7 @@
 XYMONLIB = ../lib/libxymon.a
 XYMONLIBS = -lxymon $(PCRELIBS)
 XYMONCOMMLIB = ../lib/libxymoncomm.a
-XYMONCOMMLIBS = -lxymoncomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF) $(PCRELIBS)
+XYMONCOMMLIBS = -lxymoncomm $(COMPLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF) $(PCRELIBS)
 XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = -lxymontime $(LIBRTDEF)
 

@@ -15,10 +15,12 @@ extern char *compressionmarker;
 extern int  compressionmarkersz;
 
 enum compressiontype_t { COMP_ZLIB, COMP_LZO, COMP_LZ4, COMP_LZ4HC, COMP_GZIP, COMP_PLAIN, COMP_UNKNOWN } ;
-extern int enablecompression;
-extern enum compressiontype_t defaultcompression;
+extern int docompress;
+extern enum compressiontype_t comptype;
+
 extern enum compressiontype_t parse_compressiontype(char *c);
 extern const char * comptype2str(enum compressiontype_t ctype);
+extern void *setup_compression_opts(void);
 
 extern strbuffer_t *uncompress_message(enum compressiontype_t ctype, const char *datasrc, size_t datasz, size_t expandedsz, strbuffer_t *deststrbuffer, void *buffermemory);
 

@@ -2,6 +2,7 @@ Changes from 4.3.x -> 4.4-alpha
 ===========================================
 
 * Support for IPv6 and TLS connections in xymond and xymon
+* Support for message compression has been added
 * Standardize command line options across most binaries
 * Refactoring of TCP code in preparation for IPv6/SSL support
 * Remove obsolete "meta" message support

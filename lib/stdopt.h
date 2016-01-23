@@ -19,6 +19,9 @@ extern char *envarea;
 extern int  showhelp;
 extern int  dontsendmessages;
 
+extern int enablecompression;
+extern char *defaultcompression;
+
 typedef enum { XYMON_IPPROTO_ANY, XYMON_IPPROTO_4, XYMON_IPPROTO_6 } ipprotocol_t;
 extern ipprotocol_t ipprotocol;
 

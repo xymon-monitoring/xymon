@@ -2032,6 +2032,11 @@ int main(int argc, char *argv[])
 	int pingrunning = 0;
 	int usebackfeedqueue = 0;
 
+#ifdef HAVE_LZ4
+        /* xymonnet sends a lot of data; decrease the load on xymond */
+        defaultcompression = strdup("lz4");
+#endif
+
 	libxymon_init(argv[0]);
 
 	if (init_ldap_library() != 0) {

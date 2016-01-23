@@ -64,12 +64,10 @@ static HEAP_ALLOC(wrkmem, LZO1X_1_MEM_COMPRESS);
 #include "libxymon.h"
 
 /* Compress things by default? */
-int enablecompression = 0;
-/* Take from XYMON_COMPRESS variable at sendmsg time */
-enum compressiontype_t defaultcompression = COMP_UNKNOWN;
+int docompress = 0;
+enum compressiontype_t comptype = COMP_UNKNOWN;
 
-
-/* enum compressiontype_t { COMP_ZLIB, COMP_LZO, COMP_GZIP, COMP_LZO2A, COMP_MINILZO, COMP_LZOP, COMP_LZ4, COMP_LZ4HC, COMP_PLAIN, COMP_UNKNOWN } */
+/* enum compressiontype_t { COMP_ZLIB, COMP_LZO, COMP_LZ4, COMP_LZ4HC, COMP_GZIP, COMP_PLAIN, COMP_UNKNOWN } */
 enum compressiontype_t parse_compressiontype(char *c)
 {
 
@@ -305,6 +303,8 @@ strbuffer_t *compress_message_to_strbuffer(enum compressiontype_t ctype, const c
 
 	dbgprintf(" -> compress_message_to_strbuffer\n");
 
+	if (ctype == COMP_UNKNOWN) { errprintf("compress_message_to_strbuffer: invalid compression type\n"); return NULL; }
+
 	sprintf(compressionhdr, "compress:%s %zu\n", comptype2str(ctype), datasz);
 	if (deststrbuffer == NULL) {
 		/*
@@ -386,6 +386,31 @@ strbuffer_t *compress_message_to_strbuffer(enum compressiontype_t ctype, const c
 	}
 }
 
+/*
+ * This happens deep within sendmsg.c. If compression wasn't enabled on
+ * the command line then we look for global environment variables.
+ * Compression method can be set on the command line, or overridden by the binary.
+ */
+void *setup_compression_opts(void)
+{
+	/* legacy overrides */
+	if ((enablecompression >= 0) && getenv("XYMON_COMPRESS")) enablecompression = atoi(getenv("XYMON_COMPRESS"));
+	if ((!defaultcompression) && getenv("XYMON_COMPTYPE")) defaultcompression = getenv("XYMON_COMPTYPE");
+
+	/* If 0, get from environment */
+	if (enablecompression) docompress = (enablecompression >= 1) ? 1 : 0;
+	else docompress = (!strcmp(xgetenv("COMPRESSION"), "TRUE"));
+
+	comptype = parse_compressiontype(defaultcompression ? defaultcompression : xgetenv("COMPRESSTYPE"));
+
+	if (comptype == COMP_UNKNOWN) {
+		errprintf("Could not identify default compression type. Compression disabled.\n");
+		docompress = 0;
+	}
+
+	dbgprintf(" setup_compression_opts -> enabled: %d, type: %s\n", docompress, comptype2str(comptype))
+	return NULL;
+}
 
 
 strbuffer_t *compress_buffer(strbuffer_t *cmsg, char *msg, size_t msglen)

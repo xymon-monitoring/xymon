@@ -14,12 +14,12 @@ CMDOBJS      = xymoncmd.o
 XYMONCLIENTLIB = ../lib/libxymonclient.a
 XYMONCLIENTLIBS = -lxymonclient
 XYMONCLIENTCOMMLIB = ../lib/libxymonclientcomm.a
-XYMONCLIENTCOMMLIBS = -lxymonclientcomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCLIENTCOMMLIBS = -lxymonclientcomm $(COMPLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
 XYMONLIB = ../lib/libxymon.a
 XYMONLIBS = -lxymon $(PCRELIBS)
 XYMONCOMMLIB = ../lib/libxymoncomm.a
-XYMONCOMMLIBS = -lxymoncomm $(SSLLIBS) $(NETLIBS) $(ZLIBLIBS) $(LIBRTDEF) $(PCRELIBS)
+XYMONCOMMLIBS = -lxymoncomm $(SSLLIBS) $(NETLIBS) $(COMPLIBS) $(LIBRTDEF) $(PCRELIBS)
 XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = -lxymontime $(LIBRTDEF)
 

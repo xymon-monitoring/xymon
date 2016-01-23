@@ -35,7 +35,12 @@ int main(int argc, char *argv[])
 	FILE *respfd = stdout;
 	char *envarea = NULL;
 	sendreturn_t *sres;
-	int wantresponse = 0, mergeinput = 0, usebackfeedqueue = 0;
+	int wantresponse = 0, forcecompression = 0, mergeinput = 0, usebackfeedqueue = 0;
+
+#ifdef HAVE_LZ4
+	/* The command line xymon client trades compression speed for server efficiency */
+	defaultcompression = strdup("lz4hc");
+#endif
 
 	libxymon_init(argv[0]);
 	for (argi=1; (argi < argc); argi++) {
@@ -59,6 +64,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--response") == 0) {
 			wantresponse = 1;
+		}
+		else if (argnmatch(argv[argi], "--force-compress")) {
+			forcecompression = 1;
 		}
 		else if (standardoption(argv[argi])) {
 			/* Do nothing */
@@ -135,6 +143,16 @@ int main(int argc, char *argv[])
 	else if (strncmp(STRBUF(msg), "pullclient", 10) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "ghostlist", 9) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "multisrclist", 12) == 0) wantresponse = 1;
+
+	/* By default, don't compress two-way messages; xymonproxy doesn't unpack them */
+	if (wantresponse && (enablecompression >= 0) && !forcecompression && !getenv("XYMON_FORCECOMPRESSION")) {
+		if (enablecompression > 0) 
+			errprintf("Response needed, disabling compression (use --force-compress to override)\n");
+		else 
+			dbgprintf("Response needed, disabling compression (use --force-compress to override)\n");
+
+		enablecompression = -1;
+	}
 
 	usebackfeedqueue = ((strcmp(recipient, "0") == 0) && !wantresponse);
 

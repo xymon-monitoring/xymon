@@ -19,6 +19,12 @@ do
      --rrdlib DIRECTORY       : Specify location of RRDtool libraries
      --pcreinclude DIRECTORY  : Specify location of PCRE include files
      --pcrelib DIRECTORY      : Specify location of PCRE libraries
+     --zlibinclude DIRECTORY  : Specify location of ZLIB include files
+     --zliblib DIRECTORY      : Specify location of ZLIB libraries
+     --lzoinclude DIRECTORY   : Specify location of LZO include files
+     --lzolib DIRECTORY       : Specify location of LZO libraries
+     --lz4include DIRECTORY   : Specify location of LZ4 include files
+     --lz4lib DIRECTORY       : Specify location of LZ4 libraries
      --sslinclude DIRECTORY   : Specify location of OpenSSL include files
      --ssllib DIRECTORY       : Specify location of OpenSSL libraries
      --ldapinclude DIRECTORY  : Specify location of OpenLDAP include files
@@ -43,6 +49,24 @@ EOF
 		;;
 	  "--pcrelib")
 	  	USERPCRELIB="$1"; shift
+		;;
+	  "--zlibinclude")
+	  	USERZLIBINC="$1"; shift
+		;;
+	  "--zliblib")
+	  	USERZLIBLIB="$1"; shift
+		;;
+	  "--lzoinclude")
+	  	USERLZOINC="$1"; shift
+		;;
+	  "--lzolib")
+	  	USERLZOLIB="$1"; shift
+		;;
+	  "--lz4include")
+	  	USERLZ4INC="$1"; shift
+		;;
+	  "--lz4lib")
+	  	USERLZ4LIB="$1"; shift
 		;;
 	  "--sslinclude")
 	  	USEROSSLINC="$1"; shift
@@ -94,6 +118,12 @@ echo ""
 . build/fping.sh
 echo ""; echo ""
 . build/pcre.sh
+echo ""; echo ""
+. build/zlib.sh
+echo ""; echo ""
+. build/lzo.sh
+echo ""; echo ""
+. build/lz4.sh
 echo ""; echo ""
 . build/c-ares.sh
 echo ""; echo ""
@@ -492,6 +522,35 @@ then
 	echo "PCRELIBS = -lpcre"         >>Makefile
     fi
 fi
+echo ""                                  >>Makefile
+echo "# ZLIB settings"                   >>Makefile
+if test "$ZLIBOK" = "YES"
+then
+    	COMPINCDIR="$COMPINCDIR -DHAVE_ZLIB"
+    	if test "$ZLIBINC" != ""; then COMPINCDIR="-I$ZLIBINC ${COMPINCDIR}"; fi
+	COMPLIBS="$COMPLIBS -lz"
+    	if test "$ZLIBLIB" != ""; then COMPLIBS="-L$ZLIBLIB ${COMPLIBS}"; echo "RPATHVAL += ${ZLIBLIB}"    >>Makefile; fi
+fi
+echo ""                                  >>Makefile
+echo "# LZO settings"                    >>Makefile
+if test "$LZOOK" = "YES"
+then
+    	COMPINCDIR="$COMPINCDIR -DHAVE_LZO"
+    	if test "$LZOINC" != ""; then COMPINCDIR="-I$LZOINC ${COMPINCDIR}"; fi
+	COMPLIBS="$COMPLIBS -llzo2"
+    	if test "$LZOLIB" != ""; then COMPLIBS="-L$LZOLIB ${COMPLIBS}"; echo "RPATHVAL += ${LZOLIB}"    >>Makefile; fi
+fi
+echo ""                                  >>Makefile
+echo "# LZ4 settings"                    >>Makefile
+if test "$LZ4OK" = "YES"
+then
+    	COMPINCDIR="$COMPINCDIR -DHAVE_LZ4"
+    	if test "$LZ4INC" != ""; then COMPINCDIR="-I$LZ4INC ${COMPINCDIR}"; fi
+	COMPLIBS="$COMPLIBS -llz4"
+    	if test "$LZ4LIB" != ""; then COMPLIBS="-L$LZ4LIB ${COMPLIBS}"; echo "RPATHVAL += ${LZ4LIB}"    >>Makefile; fi
+fi
+echo "COMPINCDIR = ${COMPINCDIR}"	>>Makefile
+echo "COMPLIBS = ${COMPLIBS}"		>>Makefile
 echo ""                                  >>Makefile
 if test "$ENABLERRD" = "y"
 then

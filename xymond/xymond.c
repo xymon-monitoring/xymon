@@ -3521,6 +3521,60 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	time_t now, timeroffset;
 	char *msgfrom;
 
+	if (strncmp(msg->buf, "compress:", 9) == 0) {
+		char *p = NULL;
+		strbuffer_t *expbuf = NULL;
+		enum compressiontype_t compressiontype = COMP_UNKNOWN;
+		unsigned char *cbegin;
+		size_t expandedsz = 0;
+
+		p = msg->buf+9; if (!p) goto done;
+		compressiontype = parse_compressiontype(p);
+		if (compressiontype == COMP_UNKNOWN) {
+			errprintf("Unsupported/unknown compression type in message; skipping\n");
+			goto done;
+		}
+		p = strchr(msg->buf, ' '); if (!++p) goto done;		// skip to size
+		expandedsz = (size_t)atol(p); dbgprintf(" - compressed message; expecting %zu bytes\n", expandedsz);
+
+		cbegin = strchr(msg->buf, '\n');
+		if (cbegin) {
+			ptrdiff_t len;
+			cbegin++;
+			len = msg->buflen - (cbegin - msg->buf); // dbgprintf(" - data length: %td\n", len);
+
+			// expbuf = uncompress_buffer(cbegin, len, NULL);
+			expbuf = newstrbuffer(expandedsz + 2048); // safety
+			// (void)uncompress_to_my_buffer(cbegin, len, expbuf);
+			expbuf = uncompress_message(compressiontype, cbegin, len, expandedsz, expbuf, NULL);
+		}
+
+		if (expbuf && (STRBUFLEN(expbuf) == expandedsz)) {
+			char *origbuf, *origbufp;
+			size_t origbuflen, origbufsz;
+
+			dbgprintf(" - compressed msg found, %zu bytes\n", expandedsz);
+			origbuf = msg->buf; origbuflen = msg->buflen; origbufsz = msg->bufsz; origbufp = msg->bufp;
+
+			msg->buflen = msg->bufsz = STRBUFLEN(expbuf);
+			msg->buf = grabstrbuffer(expbuf);
+			msg->bufp = msg->buf + msg->buflen; *(msg->bufp) = '\0';
+
+			do_message(msg, origin, viabfq);
+
+			xfree(msg->buf); // uncompress gives us a new buffer each time
+			msg->buf=origbuf; msg->buflen=origbuflen; msg->bufsz=origbufsz; msg->bufp=origbufp;
+
+			goto done;
+		}
+		else {
+			errprintf("Garbled %s-compressed message: expected %zu bytes, but expanded to %zu bytes\n",
+				  comptype2str(compressiontype), expandedsz, (expbuf ? STRBUFLEN(expbuf) : 0));
+			if (expbuf != NULL) freestrbuffer(expbuf);
+			goto done;
+		}
+	}
+
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
 	now = getcurrenttime(NULL);
