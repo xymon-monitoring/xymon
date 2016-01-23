@@ -137,6 +137,7 @@ void dump_hostlist(void)
 		printf("\tdowncount    : %d started %s", walk->downcount, ctime(&walk->downstart));
 		printf("\trouterdeps   : %s\n", textornull(walk->routerdeps));
 		printf("\tdeprouterdown: %s\n", (walk->deprouterdown ? textornull(walk->deprouterdown->hostname) : ""));
+		printf("\tdeptests     : %s\n", textornull(walk->deptests));
 		printf("\tldapauth     : '%s' '%s'\n", textornull(walk->ldapuser), textornull(walk->ldappasswd));
 		printf("\tSSL alerts   : %d:%d\n", walk->sslwarndays, walk->sslalarmdays);
 		printf("\n");
