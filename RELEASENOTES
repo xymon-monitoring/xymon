@@ -16,6 +16,14 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.31 (not yet released)
 =====================================
 
+Graphs
+------
+
+For ten minutes after it starts, xymond_rrd keeps updates in its cache, writing
+an RRD only when its cache is full, and ignores flush requests from the graph
+pages, so that a previous xymond_rrd can finish writing first. Graphs may lag
+by up to ten minutes after a restart.
+
 Clients -- filesystem reporting
 -------------------------------
 

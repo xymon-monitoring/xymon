@@ -15,8 +15,12 @@
 
 #include "libxymon.h"
 
+#define CACHESZ 12             /* # of updates that can be cached - updates are usually 5 minutes apart */
+
 extern char *rrddir;
 extern char *trackmax;
+extern int cacheflushsz;
+extern int releasecachedelay;
 extern int use_rrd_cache;
 extern int ext_rrd_cache;
 extern int no_rrd;
