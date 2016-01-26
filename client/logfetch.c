@@ -25,6 +25,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <errno.h>
 #include <regex.h>
+#include <glob.h>
 #include <pwd.h>
 #include <grp.h>
 
@@ -948,6 +949,75 @@ int loadconfig(char *cfgfn)
 
 						if (fd) pclose(fd);
 					}
+				}
+				else if (*filename == '<') {
+					/* Resolve the glob to get filenames */
+					char *p;
+					char *fileglob;
+					glob_t globbuf;
+					int n, i;
+
+					fileglob = filename+1;
+					p = strchr(fileglob, '>'); if (p) *p = '\0';
+					dbgprintf(" - searching file glob: %s\n", fileglob);
+/* Some of these are GNU extensions */
+#if !defined(HAVE_GLOB_NOMAGIC) || !defined(HAVE_GLOB_BRACE)
+					n = glob(fileglob, GLOB_MARK | GLOB_NOCHECK , NULL, &globbuf);
+#else
+					n = glob(fileglob, GLOB_MARK | GLOB_NOCHECK | GLOB_BRACE | GLOB_NOMAGIC , NULL, &globbuf);
+#endif
+
+					if (n) errprintf("Error searching glob pattern '%s': %s\n", fileglob, strerror(errno));
+					else {
+
+						for (i = 0; (globbuf.gl_pathv[i] && (*(globbuf.gl_pathv[i]))) ; i++) {
+							dbgprintf(" -- found matching path: %s\n", globbuf.gl_pathv[i]);
+
+							newitem = calloc(sizeof(checkdef_t), 1);
+
+							newitem->checktype = checktype;
+							newitem->filename = strdup(globbuf.gl_pathv[i]);
+
+							switch (checktype) {
+					  		  case C_LOG:
+								newitem->check.logcheck.maxbytes = maxbytes;
+								break;
+							  case C_FILE:
+								newitem->check.filecheck.domd5 = domd5;
+								newitem->check.filecheck.dosha1 = dosha1;
+								newitem->check.filecheck.dosha256 = dosha256;
+								newitem->check.filecheck.dosha512 = dosha512;
+								newitem->check.filecheck.dosha224 = dosha224;
+								newitem->check.filecheck.dosha384 = dosha384;
+								newitem->check.filecheck.dormd160 = dormd160;
+								break;
+							  case C_DIR:
+								break;
+							  case C_COUNT:
+								newitem->check.countcheck.patterncount = 0;
+								newitem->check.countcheck.patternnames = calloc(1, sizeof(char *));
+								newitem->check.countcheck.patterns = calloc(1, sizeof(char *));
+								break;
+					  		  case C_NONE:
+								break;
+							}
+
+							newitem->next = checklist;
+							checklist = newitem;
+
+							/*
+							 * Since we insert new items at the head of the list,
+							 * currcfg points to the first item in the list of
+							 * these log configs. firstpipeitem points to the
+							 * last item inside the list which is part of this
+							 * configuration.
+							 */
+							currcfg = newitem;
+							if (!firstpipeitem) firstpipeitem = newitem;
+						}
+
+					}
+					globfree(&globbuf);
 				}
 				else {
 					newitem = calloc(sizeof(checkdef_t), 1);
