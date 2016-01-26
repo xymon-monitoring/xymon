@@ -19,6 +19,8 @@ Changes from 4.3.24 -> 4.3.25 (XX Jan 2016)
   via new LOGFETCHOPTS variable in xymonclient.cfg (Suggested by Jeremy Laidman)
 * Add variables in xymonclient.cfg for overriding config files for xymond_client 
   and logfetch when client is running in --local mode without editing xymonclient.sh
+* Add file globbing capabilities to logfetch to avoid need to fork commands
+  to create dynamic lists (Suggested by Jeremy Laidman)
 
 
 Changes from 4.3.23 -> 4.3.24 (23 Nov 2015)
