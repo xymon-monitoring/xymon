@@ -17,10 +17,13 @@ xymon (4.3.25) stable; urgency=high
    * "Jump to page" redirect functionality fixed on findhost.sh (Reported by Francois Claire)
    * When a note is present for a host, the info page no longer has a spurious
      hostname on the text link
-   * Add --noexec option to logfetch to ignore commands to dynamically list files. 
-     (Suggested by Jeremy Laidman) 
+   * xymonclient.cfg: Add variables in for overriding config files for xymond_client
+     and logfetch when in local mode without editing xymonclient.sh
+   * xymonclient: Allow LOCALMODE to be set in xymonclient.cfg w/o passing --local option
+   * logfetch: Add --noexec option to ignore commands to dynamically list files
+     for scanning (Suggested by Jeremy Laidman)                                      
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, XX Dec 2015 17:40:00 -0800
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Jan 2016 08:00:00 -0800
 
 
 xymon (4.3.24) stable; urgency=high

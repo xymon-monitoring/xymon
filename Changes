@@ -1,4 +1,4 @@
-Changes from 4.3.24 -> 4.3.25 (unreleased)
+Changes from 4.3.24 -> 4.3.25 (XX Jan 2016)
 ===========================================
 
 * Fix "TRENDS" entries in hosts.cfg improperly handling partial matches with
@@ -15,8 +15,10 @@ Changes from 4.3.24 -> 4.3.25 (unreleased)
 * "Jump to page" redirect functionality fixed on findhost.sh (Reported by Francois Claire)
 * When a note is present for a host, the info page no longer has a spurious
   hostname on the text link
-* Add --noexec option to logfetch to ignore commands to dynamically list files.
-  (Suggested by Jeremy Laidman)
+* Add --noexec option to logfetch to ignore commands to dynamically list files, modifiable
+  via new LOGFETCHOPTS variable in xymonclient.cfg (Suggested by Jeremy Laidman)
+* Add variables in xymonclient.cfg for overriding config files for xymond_client 
+  and logfetch when client is running in --local mode without editing xymonclient.sh
 
 
 Changes from 4.3.23 -> 4.3.24 (23 Nov 2015)
