@@ -56,12 +56,15 @@ case "$1" in
 		if test $? -eq 0
 		then
 			echo "Xymon (xymonlaunch) running with PID `cat @XYMONLOGDIR@/xymonlaunch.pid`"
+			exit 0
 		else
 			echo "Xymon not running, removing stale PID file"
 			rm -f @XYMONLOGDIR@/xymonlaunch.pid
+			exit 1
 		fi
 	else
 		echo "Xymon (xymonlaunch) does not appear to be running"
+		exit 3
 	fi
 	;;
 

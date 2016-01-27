@@ -120,12 +120,15 @@ case "$CMD" in
 		if test $? -eq 0
 		then
 			echo "Xymon client (clientlaunch) running with PID `cat $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`"
+			exit 0
 		else
 			echo "Xymon client not running, removing stale PID file"
 			rm -f $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+			exit 1
 		fi
 	else
 		echo "Xymon client (clientlaunch) does not appear to be running"
+		exit 3
 	fi
 	;;
 

@@ -26,6 +26,8 @@ xymon (4.3.25) stable; urgency=high
      to create dynamic lists (Suggested by Jeremy Laidman)
    * The "Valid Until" time for an acknowledgement is now displayed on the ack log
      report page (Thanks, Dominique Frise)
+   * The xymon.sh and runclient.sh scripts are themselves now more LSB compliant 
+     (Thanks, Nikolai Lifanov)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Jan 2016 08:00:00 -0800
 

@@ -33,6 +33,9 @@ case "$1" in
 	su -c "$DAEMON stop" - xymon
 	echo "$NAME."
 	;;
+  status)
+	su -c "$DAEMON status" - xymon
+	;;
   reload|force-reload)
 	echo "Reloading $DESC configuration files."
 	su -c "$DAEMON reload" - xymon
@@ -50,8 +53,8 @@ case "$1" in
 	;;
   *)
 	N=/etc/init.d/$NAME
-	# echo "Usage: $N {start|stop|restart|reload|force-reload}" >&2
-	echo "Usage: $N {start|stop|restart|force-reload}" >&2
+	# echo "Usage: $N {start|stop|restart|status|reload|force-reload}" >&2
+	echo "Usage: $N {start|stop|restart|status|force-reload}" >&2
 	exit 1
 	;;
 esac
