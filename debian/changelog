@@ -24,6 +24,8 @@ xymon (4.3.25) stable; urgency=high
      for scanning (Suggested by Jeremy Laidman)                                      
    * Add file globbing capabilities to logfetch to avoid need to fork commands      
      to create dynamic lists (Suggested by Jeremy Laidman)
+   * The "Valid Until" time for an acknowledgement is now displayed on the ack log
+     report page (Thanks, Dominique Frise)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Jan 2016 08:00:00 -0800
 
