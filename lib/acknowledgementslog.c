@@ -33,7 +33,8 @@ static char rcsid[] = "$Id: acknowledgementslog.c 7085 2012-07-16 11:08:37Z stor
 typedef struct acknowledgements_t {
 	void *host;
 	struct htnames_t *service;
-	time_t  eventtime;
+	time_t eventtime;
+	time_t validity;
 	char *recipient;
 	char *message;
 	struct acknowledgements_t *next;
@@ -197,7 +198,10 @@ void do_acknowledgementslog(FILE *output,
 	while (acknowledgementslog && (fgets(l, sizeof(l), acknowledgementslog))) {
 
 		unsigned int etim;
+		unsigned int valid;
+		int duration;
 		time_t eventtime;
+		time_t validity;
 		char host[MAX_LINE_LEN];
 		char svc[MAX_LINE_LEN];
 		char recipient[MAX_LINE_LEN];
@@ -210,11 +214,11 @@ void do_acknowledgementslog(FILE *output,
 		int ovector[30];
 
                 /* 2015-03-07 18:17:03 myserver disk andy 1 1425724570 1425752223 1425838623 testing message */
-		itemsfound = sscanf(l, "%*u-%*u-%*u %*u:%*u:%*u %s %s %s %*u %*u %u %*u %[^\t\n]", host, svc, recipient, &etim, message);
-		if (itemsfound != 5) {
+		itemsfound = sscanf(l, "%*u-%*u-%*u %*u:%*u:%*u %s %s %s %*u %*u %u %u %[^\t\n]", host, svc, recipient, &etim, &valid, message);
+		if (itemsfound != 6) {
 		    /* 1430040985      630949  30      630949  np_filename_not_used    myserver.procs red     testing log format \nAcked by: andy (127.0.0.1) */
-		    itemsfound = sscanf(l, "%u\t%*u\t%*u\t%*u\tnp_filename_not_used\t%s\t%*s\t%[^\n]", &etim, host, message);
-		    if (itemsfound != 3) continue;
+		    itemsfound = sscanf(l, "%u\t%*u\t%d\t%*u\tnp_filename_not_used\t%s\t%*s\t%[^\n]", &etim, &duration, host, message);
+		    if (itemsfound != 4) continue;
 		    p = strrchr(host, '.');
 		    if (p) {
                         *p = '\0';
@@ -234,6 +238,8 @@ void do_acknowledgementslog(FILE *output,
 		eventtime = etim;
 		if (eventtime < firstevent) continue;
 		if (eventtime > lastevent) break;
+
+		validity = duration ? (etim + duration * 60) : valid;
 
 		hostname = host; svcname = svc;
 		eventhost = hostinfo(hostname);
@@ -318,6 +324,7 @@ void do_acknowledgementslog(FILE *output,
 		newrec->host       = eventhost;
 		newrec->service    = eventcolumn;
 		newrec->eventtime  = eventtime;
+		newrec->validity   = validity;
 		newrec->recipient  = strdup(recipient);
 		newrec->message  = strdup(message);
 		newrec->next       = head;
@@ -349,8 +356,8 @@ void do_acknowledgementslog(FILE *output,
 		fprintf(output, "<BR><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"Acknowledgements log\" BORDER=0>\n");
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=5><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", htmlquoted(title));
-		fprintf(output, "<TR BGCOLOR=\"#333333\"><TH>Time</TH><TH>Host</TH><TH>Service</TH><TH>Acknowledged By</TH><TH>Message</TH></TR>\n");
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", htmlquoted(title));
+		fprintf(output, "<TR BGCOLOR=\"#333333\"><TH>Time</TH><TH>Valid Until</TH><TH>Host</TH><TH>Service</TH><TH>Acknowledged By</TH><TH>Message</TH></TR>\n");
 
 		for (walk=head; (walk != lasttoshow->next); walk=walk->next) {
 			char *hostname = xmh_item(walk->host, XMH_HOSTNAME);
@@ -359,6 +366,7 @@ void do_acknowledgementslog(FILE *output,
 			bgcolor = ((bgcolor + 1) % 2);
 
 			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", ctime(&walk->eventtime));
+			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", ctime(&walk->validity));
 
 			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostname);
 			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", walk->service->name);
