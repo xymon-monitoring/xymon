@@ -95,6 +95,7 @@ typedef struct recip_t {
 
 extern int load_alertconfig(char *configfn, int alertcolors, int alertinterval);
 extern void dump_alertconfig(int showlinenumbers);
+extern void set_localalertmode(int localmode);
 
 extern int stoprulefound;
 extern recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch, time_t *nexttime);

@@ -30,6 +30,9 @@ xymon (4.3.25) stable; urgency=high
      (Thanks, Nikolai Lifanov)
    * Windows systems now have a better calculation of "Actual" memory usage 
      (Thanks, John Rothlisberger)
+   * A bug in xymond_alert that could cause pages about hosts.cfg not present at inital start
+     to cause inconsistent alerting has been fixed
+   * xymond_alert now reloads its hostlist at regular intervals
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Jan 2016 08:00:00 -0800
 

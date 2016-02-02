@@ -59,7 +59,11 @@ static char rcsid[] = "$Id$";
 
 
 
+#define DEFAULT_RELOAD_INTERVAL 300
+int reloadinterval = DEFAULT_RELOAD_INTERVAL;  /* Seconds - how often to check hosts.cfg for changes (which can be expensive) */
 
+int loadhostsfromxymond = 0;
+static int reloadconfig = 0;
 static int running = 1;
 static time_t nextcheckpoint = 0;
 static int termsig = -1;
@@ -210,9 +214,14 @@ void sig_handler(int signum)
 {
 	switch (signum) {
 	  case SIGCHLD:
+		  /* Pickup any finished child processes to avoid zombies */
+		  while (waitpid(-1, NULL, WNOHANG) > 0) ;
 		  break;
 
 	  case SIGHUP:
+		  reloadconfig = 1;
+		  break;
+
 	  case SIGUSR1:
 		  nextcheckpoint = 0;
 		  break;
@@ -257,7 +266,7 @@ void save_checkpoint(char *filename)
 	xfree(subfn);
 }
 
-void load_checkpoint(char *filename)
+int load_checkpoint(char *filename)
 {
 	char *subfn;
 	FILE *fd;
@@ -265,15 +274,26 @@ void load_checkpoint(char *filename)
 	char statuscmd[1024];
 	char *statusbuf = NULL;
 	sendreturn_t *sres;
+	int xymondresult;
 
-	fd = fopen(filename, "r");
-	if (fd == NULL) return;
 
 	sprintf(statuscmd, "xymondboard color=%s fields=hostname,testname,color", xgetenv("ALERTCOLORS"));
 	sres = newsendreturnbuf(1, NULL);
-	sendmessage(statuscmd, NULL, XYMON_TIMEOUT, sres);
+	xymondresult = sendmessage(statuscmd, NULL, XYMON_TIMEOUT, sres);
 	statusbuf = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
+
+	if ((xymondresult != XYMONSEND_OK) || (statusbuf == NULL) || (*statusbuf == '\0')) {
+		errprintf("xymond_alert: xymond not available or had empty response; error: %d\n", xymondresult);
+		running = 0;
+		return -1;
+	}
+
+	fd = fopen(filename, "r");
+	if (fd == NULL) {
+		errprintf("xymond_alert: Couldn't open checkpoint file '%s', but continuing: %s\n", filename, strerror(errno));
+		return 0;
+	}
 
 	initfgets(fd);
 	inbuf = newstrbuffer(0);
@@ -346,6 +366,7 @@ void load_checkpoint(char *filename)
 	load_state(subfn, statusbuf);
 	xfree(subfn);
 	if (statusbuf) xfree(statusbuf);
+	return 0;
 }
 
 int main(int argc, char *argv[])
@@ -356,6 +377,8 @@ int main(int argc, char *argv[])
 	int alertcolors, alertinterval;
 	char *configfn = NULL;
 	char *checkfn = NULL;
+	int loadresult;
+	int reloadconfigtime = 0;
 	int checkpointinterval = 900;
 	char acklogfn[PATH_MAX];
 	FILE *acklogfd = NULL;
@@ -395,6 +418,13 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=') + 1;
 			checkpointinterval = atoi(p);
 		}
+		else if (argnmatch(argv[argi], "--reload-interval=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			reloadinterval = atoi(p);
+		}
+		else if (argnmatch(argv[argi], "--loadhostsfromxymond")) {
+			loadhostsfromxymond = 1;
+		}
 		else if (argnmatch(argv[argi], "--dump-config")) {
 			load_alertconfig(configfn, alertcolors, alertinterval);
 			dump_alertconfig(1);
@@ -412,6 +442,7 @@ int main(int argc, char *argv[])
 			activealerts_t *awalk = NULL;
 			int paramno = 0;
 
+			set_localalertmode(1); /* create a dummy hostinfo record to try to match against */
 			argi++; if (argi < argc) testhost = argv[argi];
 			argi++; if (argi < argc) testservice = argv[argi];
 			argi++; 
@@ -492,8 +523,24 @@ int main(int argc, char *argv[])
 	/* Do the network stuff if needed */
 	net_worker_run(ST_ALERT, LOC_SINGLESERVER, NULL);
 
+
+	/* Load our hostnames */
+	loadresult = load_hostnames( (loadhostsfromxymond ? "@" : xgetenv("HOSTSCFG")) , NULL, get_fqdn() );
+	if (loadresult != 0) {
+		errprintf("Cannot load host configuration from %s\n", (loadhostsfromxymond ? "xymond" : xgetenv("HOSTSCFG")));
+		running = 0;
+		return -1;
+        }
+	else {
+		reloadconfig = 0;
+		reloadconfigtime = getcurrenttime(NULL) + reloadinterval;
+	}
+
 	if (checkfn) {
-		load_checkpoint(checkfn);
+		if ( load_checkpoint(checkfn) != 0 ) {
+			errprintf("xymond_alert: cannot load checkpoint file or current state; aborting\n");
+			return -1;
+		}
 		nextcheckpoint = gettimer() + checkpointinterval;
 		dbgprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
 	}
@@ -552,6 +599,17 @@ int main(int argc, char *argv[])
 
 			if (acklogfd) acklogfd = freopen(acklogfn, "a", acklogfd);
 			if (notiflogfd) notiflogfd = freopen(notiflogfn, "a", notiflogfd);
+		}
+
+		if (reloadconfig || (nowtimer > reloadconfigtime)) {
+			dbgprintf("Reloading hostnames\n");
+			reloadconfig = 0;
+			loadresult = load_hostnames( (loadhostsfromxymond ? "@" : xgetenv("HOSTSCFG")) , NULL, get_fqdn() );
+			if (loadresult == -1) {
+				errprintf("Cannot load host configuration from %s; postponing for 90s\n", (loadhostsfromxymond ? "xymond" : xgetenv("HOSTSCFG")));
+				reloadconfigtime = nowtimer + 90;
+			}
+			else reloadconfigtime = nowtimer + reloadinterval;
 		}
 
 		timeout.tv_sec = 60; timeout.tv_nsec = 0;
@@ -809,6 +867,8 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
+			logprintf("Received reload request\n");
+			reloadconfig = 1;
 			/* Nothing ... right now */
 		}
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
@@ -832,6 +892,8 @@ int main(int argc, char *argv[])
 		 */
 		configchanged = load_alertconfig(configfn, alertcolors, alertinterval);
 		configchanged += load_holidays(0);
+		if (configchanged) reloadconfig = 1;
+
 		anytogo = 0;
 		for (awalk = alistBegin(); (awalk); awalk = alistNext()) {
 			int anymatch = 0;
@@ -946,8 +1008,6 @@ int main(int argc, char *argv[])
 
 		clean_all_active();
 
-		/* Pickup any finished child processes to avoid zombies */
-		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 	}
 
 	if (checkfn) save_checkpoint(checkfn);
