@@ -88,7 +88,7 @@ void handle_netbsd_client(char *hostname, char *clienttype, enum ostype_t os,
 
 		if (found == 4) {
 			unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-				   memphystotal, memphysused, -1, memswaptotal, memswapused);
+				   memphystotal, memphysused, -1, -1, memswaptotal, memswapused);
 		}
 	}
 
