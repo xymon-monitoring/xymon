@@ -439,6 +439,7 @@ int main(int argc, char *argv[])
 			activealerts_t *awalk = NULL;
 			int paramno = 0;
 
+			set_localalertmode(1); /* create a dummy hostinfo record to try to match against */
 			argi++; if (argi < argc) testhost = argv[argi];
 			argi++; if (argi < argc) testservice = argv[argi];
 			argi++; 

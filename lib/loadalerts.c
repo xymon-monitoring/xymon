@@ -54,6 +54,7 @@ static rule_t *printrule = NULL;
 
 static enum { P_NONE, P_RULE, P_RECIP } pstate = P_NONE;
 static int defaultcolors = 0;
+static int localalertmode = 0;
 
 static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 {
@@ -93,6 +94,11 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 	}
 
 	return crit;
+}
+
+void set_localalertmode(int localmode)
+{
+	if (localmode) localalertmode = 1;
 }
 
 static char *preprocess(char *buf)
@@ -800,14 +806,14 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	void *hinfo = hostinfo(alert->hostname);
 
 	if (!hinfo) {
-		dbgprintf("Checking criteria for host '%s', which is not defined\n", alert->hostname);
-		hinfo = localhostinfo(alert->hostname);
+		logprintf("Checking criteria for host '%s', which is not yet defined; some alerts may not immediately fire\n", alert->hostname);
+		if (localalertmode) hinfo = localhostinfo(alert->hostname);
 	};
 
 	/* The top-level page needs a name - cannot match against an empty string */
 	if (pgnames) xfree(pgnames);
 	pgnames = strdup((*alert->location == '\0') ? "/" : alert->location);
-	dgname = textornull(xmh_item(hinfo, XMH_DGNAME));
+	dgname = hinfo ? textornull(xmh_item(hinfo, XMH_DGNAME)) : strdup("");
 
 	if (crit) { cfid = crit->cfid; cfline = crit->cfline; }
 	if (!cfid && rulecrit) cfid = rulecrit->cfid;
@@ -987,8 +993,8 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * some random system recovered ... not good. So apply
 	 * this check to all messages.
 	 */
-	if (crit && ( (crit->timespec && !timematch(xmh_item(hinfo, XMH_HOLIDAYS), crit->timespec)) || 
-		      (crit->extimespec && timematch(xmh_item(hinfo, XMH_HOLIDAYS), crit->extimespec)) ) ) {
+	if (crit && ((!hinfo) || ( (crit->timespec && !timematch(xmh_item(hinfo, XMH_HOLIDAYS), crit->timespec)) || 
+		      (crit->extimespec && timematch(xmh_item(hinfo, XMH_HOLIDAYS), crit->extimespec)) ) ) ) {
 		/* Try again in a minute */
 		if (nexttime) *nexttime = getcurrenttime(NULL) + 60;
 		traceprintf("Failed '%s' (time/extime criteria)\n", cfline);
