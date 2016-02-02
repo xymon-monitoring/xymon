@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of CLIENT\-LOCAL.CFG</TITLE>
 </HEAD><BODY>
 <H1>CLIENT\-LOCAL.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.24: 23 Nov 2015<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.25-rc2:  2 Feb 2016<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -76,7 +76,7 @@ will be sent back to the client.
 The file is divided into sections, delimited by &quot;[name]&quot; lines.
 A section name can be either an operating system identifier - 
 linux, solaris, hp-ux, aix, freebsd, openbsd, netbsd, darwin - 
-or a hostname. When deciding which section to send to a client,
+a class, or a hostname. When deciding which section to send to a client,
 Xymon will first look for a section named after the hostname of
 the client; if such a section does not exist, it will look for
 a section named by the operating system of the client. So you
@@ -119,7 +119,8 @@ is usually an explicit full-path filename on the client. If it is enclosed
 in backticks, it is a command which the Xymon client runs and each line 
 of output from this command is then used as a filename. This allows
 scripting which files to monitor, e.g. if you have logfiles that are
-named with some sort of timestamp.
+named with some sort of timestamp. If FILENAME is enclosed in angle brackets
+it is treated as a glob and passed through the local <A HREF="../man3/glob.3.html">glob</A>(3) function first.
 <P>
 The <B>ignore PATTERN</B> line (optional) defines lines in the logfile which
 are ignored entirely, i.e. they are stripped from the logfile data before
@@ -182,7 +183,8 @@ and any sub-directories. It looks like this:
 <P>
 The <B>dir:DIRECTORYNAME</B> line defines the filename of the file to monitor.
 As with the &quot;log:&quot; entries, a filename enclosed in backticks means a 
-command which will generate the filenames dynamically. The Xymon client
+command which will generate the filenames dynamically and a filename enclosed 
+in angle brackets will be treated as a fileglob. The Xymon client
 will run the
 <I><A HREF="../man1/du.1.html">du</A>(1)</I>
 
@@ -191,23 +193,17 @@ Xymon server.
 <BR>
 
 <B>NOTE:</B> If you want to check multiple directories using a 
-wildcard, you <B>must</B> use a command to generate the directory names. Putting 
-wildcards directly into the <B>dir:</B> entry will not work. E.g. use something
-like
+wildcard, you <B>must</B> use a command or glob to generate the directory names. 
+Putting wildcards directly into the <B>dir:</B> entry will not work. E.g. use 
+something like
 <BR>
 
 <TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>dir:`find /var/log -maxdepth 1 -type d`<BR>
 <P>
 The &quot;du&quot; command used can be configured through the <B>DU</B> environment 
-variable. On some systems, by default <B>du</B> reports data in disk blocks
-instead of KB (e.g. Solaris). So you may want to configure the Xymon client
-to use a <B>du</B> command which reports data in KB, e.g. by setting
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;DU=&quot;du&nbsp;-k&quot;
-<BR>
-
-in the xymonclient.cfg file.
+variable in the xymonclient.cfg file if needed. If not specified, <B>du -k</B> 
+is used, as on some systems by default <B>du</B> reports data in disk blocks 
+instead of KB (e.g. Solaris). 
 <P>
 <A NAME="lbAK">&nbsp;</A>
 <H2>NOTES</H2>
@@ -247,6 +243,6 @@ of files and/or sub-directories can be quite ressource-intensive.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 01:39:59 GMT, November 24, 2015
+Time: 21:08:08 GMT, February 02, 2016
 </BODY>
 </HTML>

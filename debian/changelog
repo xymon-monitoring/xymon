@@ -1,7 +1,7 @@
 
-xymon (4.3.25) stable; urgency=high
+xymon (4.3.25-rc2) stable; urgency=high
 
-   * rev XXXX
+   * rev 7889
 
    * Fix "TRENDS" entries in hosts.cfg improperly handling partial matches with 
      other graph names (Reported by Jeremy Laidman) 
@@ -34,7 +34,7 @@ xymon (4.3.25) stable; urgency=high
      to cause inconsistent alerting has been fixed
    * xymond_alert now reloads its hostlist at regular intervals
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Jan 2016 08:00:00 -0800
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Tue, 02 Feb 2016 13:00:00 -0800
 
 
 xymon (4.3.24) stable; urgency=high

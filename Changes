@@ -1,4 +1,4 @@
-Changes from 4.3.24 -> 4.3.25 (XX Jan 2016)
+Changes from 4.3.24 -> 4.3.25-rc2 (02 Feb 2016)
 ===========================================
 
 * Fix "TRENDS" entries in hosts.cfg improperly handling partial matches with

@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of LOGFETCH</TITLE>
 </HEAD><BODY>
 <H1>LOGFETCH</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.24: 23 Nov 2015<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version 4.3.25-rc2:  2 Feb 2016<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -12,7 +12,7 @@ logfetch - Xymon client data collector
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>logfetch CONFIGFILE STATUSFILE</B>
+<B>logfetch [options] CONFIGFILE STATUSFILE</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
@@ -35,6 +35,26 @@ file. This file is an internal file used by logfetch, and should
 not be edited. If deleted, it will be re-created automatically.
 <P>
 <A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--debug[=stderr]<DD>
+Enables debug mode. Note that when run by the xymonclient, debug 
+output may be written into the client data report, which can cause
+false positives and other unintended side effects. Use '=stderr' to
+cause the output to be written to stderr instead.
+<P>
+<DT>--noexec<DD>
+The <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5) section for this host, class, or OS is
+automatically retrieved from the server during client submission. 
+Logfetch can be requested to execute arbitrary commands to generate
+a list of log files to examine dynamically, but this can present a
+security risk in some environments. Set this option to prevent
+logfetch from executing requested commands
+<P>
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
 <H2>SECURITY</H2>
 
 logfetch needs read access to the logfiles it should monitor. If you 
@@ -54,7 +74,7 @@ by using a hand-crafted configuration file. In fact, logfetch will
 attempt to remove its own suid-root setup if it detects that it
 has been installed suid-root.
 <P>
-<A NAME="lbAF">&nbsp;</A>
+<A NAME="lbAG">&nbsp;</A>
 <H2>ENVIRONMENT VARIABLES</H2>
 
 <DL COMPACT>
@@ -67,7 +87,7 @@ you should set the DU environment variable in the
 does report directory sizes in kilobytes.
 <P>
 </DL>
-<A NAME="lbAG">&nbsp;</A>
+<A NAME="lbAH">&nbsp;</A>
 <H2>FILES</H2>
 
 <DL COMPACT>
@@ -75,10 +95,10 @@ does report directory sizes in kilobytes.
 <DT>$XYMONHOME/tmp/logfetch.status<DD>
 <P>
 </DL>
-<A NAME="lbAH">&nbsp;</A>
+<A NAME="lbAI">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5)
+<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5), <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)
 <P>
 <P>
 
@@ -88,15 +108,16 @@ does report directory sizes in kilobytes.
 <DT><A HREF="#lbAB">NAME</A><DD>
 <DT><A HREF="#lbAC">SYNOPSIS</A><DD>
 <DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">SECURITY</A><DD>
-<DT><A HREF="#lbAF">ENVIRONMENT VARIABLES</A><DD>
-<DT><A HREF="#lbAG">FILES</A><DD>
-<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">SECURITY</A><DD>
+<DT><A HREF="#lbAG">ENVIRONMENT VARIABLES</A><DD>
+<DT><A HREF="#lbAH">FILES</A><DD>
+<DT><A HREF="#lbAI">SEE ALSO</A><DD>
 </DL>
 <HR>
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 01:39:58 GMT, November 24, 2015
+Time: 21:08:08 GMT, February 02, 2016
 </BODY>
 </HTML>
