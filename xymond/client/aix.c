@@ -87,7 +87,8 @@ void handle_aix_client(char *hostname, char *clienttype, enum ostype_t os,
 		}
 
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-				memphystotal, (memphystotal - memphysfree), -1L,
+				memphystotal, (memphystotal - memphysfree), 
+				-1L, -1L,
 				memswaptotal, ((memswaptotal * memswappct) / 100L));
 	}
 

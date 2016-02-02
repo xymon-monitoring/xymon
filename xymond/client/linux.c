@@ -87,23 +87,25 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 	if (freestr) {
 		char *p;
 		long memphystotal, memphysused, memphysfree,
-		     memactused, memactfree,
+		     memacttotal, memactused, memactfree,
 		     memswaptotal, memswapused, memswapfree;
 
-		memphystotal = memswaptotal = memphysused = memswapused = memactused = memactfree = -1;
+		memphystotal = memswaptotal = memphysused = memswapused = memacttotal = memactused = memactfree = -1;
 
 		/* check for old style */
 		p = strstr(freestr, "\n-/+ buffers/cache:");
 		if (p) {
-			if (sscanf(p, "\n-/+ buffers/cache: %ld %ld", &memactused, &memactfree) == 2) {
-				memactused /= 1024;
-				memactfree /= 1024;
-			}
 			p = strstr(freestr, "\nMem:");
 			if (p && (sscanf(p, "\nMem: %ld %ld %ld", &memphystotal, &memphysused, &memphysfree) == 3)) {
 				memphystotal /= 1024;
 				memphysused /= 1024;
 				memphysfree /= 1024;
+			}
+			p = strstr(freestr, "\n-/+ buffers/cache:");
+			if (sscanf(p, "\n-/+ buffers/cache: %ld %ld", &memactused, &memactfree) == 2) {
+				memacttotal = memphystotal;
+				memactused /= 1024;
+				memactfree /= 1024;
 			}
 
 		}
@@ -118,8 +120,9 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 				memphysfree /= 1024;
 				/* Provide a Physical Used value that's compatible with previous thresholds. However, use the */
 				/* new 'Available' line as the basis for "Actual Used", since it'll be more accurate. */
+				memacttotal = memphystotal;
 				memactfree /= 1024;
-				memactused = memphystotal - memactfree; if (memactused < 0) memactused = 0;
+				memactused = memacttotal - memactfree; if (memactused < 0) memactused = 0;
 				memphysused += (buffcache / 1024);
 
 			}
@@ -135,7 +138,9 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 		}
 
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-				   memphystotal, memphysused, memactused, memswaptotal, memswapused);
+				   memphystotal, memphysused, 
+				   memacttotal, memactused, 
+				   memswaptotal, memswapused);
 	}
 
 	if (mdstatstr) {

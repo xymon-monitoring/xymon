@@ -97,7 +97,9 @@ void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os,
 				memphysused  = memphysused * pgsize / 1024;
 
 				unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-						   memphystotal, memphysused, -1, -1, -1);
+						   memphystotal, memphysused, 
+						   -1, -1, 
+						   -1, -1);
 			}
 		}
 	}

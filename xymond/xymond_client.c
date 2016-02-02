@@ -909,7 +909,8 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 
 void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 		        void *hinfo, char *fromline, char *timestr, 
-			long memphystotal, long memphysused, long memactused,
+			long memphystotal, long memphysused,
+			long memacttotal, long memactused,
 			long memswaptotal, long memswapused)
 {
 	long memphyspct = 0, memswappct = 0, memactpct = 0;
@@ -940,7 +941,7 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 	else invaliddata = 1;
 
-	if (memactused != -1) memactpct = (memphystotal > 0) ? ((100 * memactused) / memphystotal) : 0;
+	if (memactused != -1) memactpct = (memacttotal > 0) ? ((100 * memactused) / memacttotal) : 0;
 	if (memactpct <= 100) {
 		if (memactpct  > actyellow)  actcolor  = COL_YELLOW;
 		if (memactpct  > actred)     actcolor  = COL_RED;
@@ -972,31 +973,31 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 		memorysummary);
 	addtostatus(msgline);
 
-	sprintf(msgline, "   %-12s%12s%12s%12s\n", "Memory", "Used", "Total", "Percentage");
+	sprintf(msgline, "   %-16s%12s%12s%12s\n", "Memory", "Used", "Total", "Percentage");
 	addtostatus(msgline);
 
-	sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%%\n", 
-		colorname(physcolor), "Physical", memphysused, memphystotal, memphyspct);
+	sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%%\n", 
+		colorname(physcolor), "Real/Physical", memphysused, memphystotal, memphyspct);
 	addtostatus(msgline);
 
 	if (memactused != -1) {
 		if (memactpct <= 100)
-			sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%%\n", 
-				colorname(actcolor), "Actual", memactused, memphystotal, memactpct);
+			sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%%\n", 
+				colorname(actcolor), "Actual/Virtual", memactused, memacttotal, memactpct);
 		else
-			sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%% - invalid data\n", 
-				colorname(COL_YELLOW), "Actual", memactused, memphystotal, 0L);
+			sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%% - invalid data\n", 
+				colorname(COL_YELLOW), "Actual/Virtual", memactused, memacttotal, 0L);
 			
 		addtostatus(msgline);
 	}
 
 	if (memswapused != -1) {
 		if (memswappct <= 100)
-			sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%%\n", 
-				colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
+			sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%%\n", 
+				colorname(swapcolor), "Swap/Page", memswapused, memswaptotal, memswappct);
 		else
-			sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%% - invalid data\n", 
-				colorname(COL_YELLOW), "Swap", memswapused, memswaptotal, 0L);
+			sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%% - invalid data\n", 
+				colorname(COL_YELLOW), "Swap/Page", memswapused, memswaptotal, 0L);
 
 		addtostatus(msgline);
 	}

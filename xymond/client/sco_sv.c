@@ -103,7 +103,9 @@ void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os,
 			memswaptotal /= 2048 ; memswapfree /= 2048;
                 }
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-				   memphystotal, (memphystotal - memphysfree), -1, memswaptotal, (memswaptotal - memswapfree));
+				   memphystotal, (memphystotal - memphysfree),
+				   -1, -1, 
+				   memswaptotal, (memswaptotal - memswapfree));
 	}
 
 	splitmsg_done();

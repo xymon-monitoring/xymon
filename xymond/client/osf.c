@@ -129,7 +129,8 @@ void handle_osf_client(char *hostname, char *clienttype, enum ostype_t os,
 		}
 
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-				   phystotal, (phystotal - physfree), -1, 
+				   phystotal, (phystotal - physfree),
+				   -1, -1, 
 				   swaptotal, (swaptotal - swapfree));
 	}
 

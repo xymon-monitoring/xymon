@@ -138,7 +138,8 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 
 		if ((memphystotal>=0) && (memphysfree>=0) && (memswapused>=0) && (memswapfree>=0)) {
 			unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-					   memphystotal, (memphystotal - memphysfree), -1,
+					   memphystotal, (memphystotal - memphysfree), 
+					   -1, -1,
 					   (memswapused + memswapfree), memswapused);
 		}
 	}

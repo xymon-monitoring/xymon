@@ -129,7 +129,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	if (found >= 2) {
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-			   memphystotal, memphysused, memphysactual, memswaptotal, memswapused);
+			   memphystotal, memphysused, memphystotal, memphysactual, memswaptotal, memswapused);
 	}
 
 	splitmsg_done();

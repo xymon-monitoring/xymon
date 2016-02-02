@@ -72,7 +72,7 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 		int ovector[20];
 		char w[20];
 		long memphystotal = -1, memphysused = -1, memphysfree = 0,
-		     memactused = -1, memactfree = -1,
+		     memacttotal = -1, memactused = -1, memactfree = -1,
 		     memswaptotal = -1, memswapused = -1, memswapfree = 0;
 
 		if (!memptn) {
@@ -95,6 +95,7 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 		if (res > 2) {
 			pcre_copy_substring(memline, ovector, res, 2, w, sizeof(w));
 			memactfree = atol(w);
+			memacttotal = memphystotal;
 			memactused = memphystotal - memactfree;
 		}
 		if (res > 3) {
@@ -116,7 +117,7 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 		if (eoln) *eoln = '\n';
 
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-				   memphystotal, memphysused, memactused, memswaptotal, memswapused);
+				   memphystotal, memphysused, memacttotal, memactused, memswaptotal, memswapused);
 	}
 
 	splitmsg_done();
