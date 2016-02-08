@@ -472,6 +472,11 @@ const char *textornull(const char *text)
 	return (text ? text : "(NULL)");
 }
 
+int issimpleword(const char *text)
+{
+	if (text == NULL) return 0;
+	return (strlen(text) == strspn(text, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ._-"));
+}
 
 int get_fqdn(void)
 {

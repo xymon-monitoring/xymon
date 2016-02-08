@@ -252,6 +252,71 @@ cgidata_t *cgi_request(void)
 	return head;
 }
 
+char *csp_header(const char *str)
+{
+	char *csppol = NULL;
+	char *returnstr = NULL;
+
+	if (getenv("XYMON_NOCSPHEADER")) return NULL;
+	
+	if      (strncmp(str, "enadis", 6) == 0) csppol = strdup("script-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; sandbox allow-forms allow-scripts;");
+	else if (strncmp(str, "useradm", 7) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self';");
+	else if (strncmp(str, "chpasswd", 8) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self';");
+	else if (strncmp(str, "ackinfo", 7) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self';");
+	else if (strncmp(str, "acknowledge", 11) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self';");
+	else if (strncmp(str, "criticaleditor", 14) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self';");
+	else if (strncmp(str, "svcstatus", 9) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self'; sandbox allow-forms;");
+	else if (strncmp(str, "historylog", 10) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self'; sandbox allow-forms;");
+	else {
+		errprintf(" csp_header: page %s not listed, no CSP returned\n", str);
+	}
+	if ((!csppol) || (*csppol == '\0')) return NULL;
+	returnstr = (char *)malloc(3 * strlen(csppol) + 512);
+	snprintf(returnstr, (3 * strlen(csppol) + 512), "Content-Security-Policy: %s\nX-Content-Security-Policy: %s\nX-Webkit-CSP: %s\n", csppol, csppol, csppol);
+	dbgprintf("CSP return is %s", returnstr);
+	return returnstr;
+}
+
+int cgi_refererok(char *expected)
+{
+	static char cgi_checkstr[1024];
+	int isok = 0;
+	char *p, *httphost;
+
+	p = getenv("HTTP_REFERER");
+	dbgprintf(" - checking if referer is OK (http_referer: %s, http_host: %s, xymonwebhost: %s, checkstr: %s\n", textornull(p), textornull(getenv("HTTP_HOST")),  textornull(xgetenv("XYMONWEBHOST")), textornull(expected));
+	if (!p) return 0;
+
+	/* If passed NULL, just check that there _is_ a REFERER */
+	if (!expected) return 1;
+
+	httphost = getenv("HTTP_HOST");
+	if (!httphost) {
+		if (strcmp(xgetenv("XYMONWEBHOST"), "http://localhost") != 0) {
+			/* If XYMONWEBHOST is set by the admin, use that */
+			snprintf(cgi_checkstr, sizeof(cgi_checkstr), "%s%s", getenv("XYMONWEBHOST"), expected);
+			if (strncmp(p, cgi_checkstr, strlen(cgi_checkstr)) == 0) isok = 1;
+		}
+		else {
+			errprintf("Disallowed request due to missing HTTP_HOST variable\n");
+			return 0;
+		}
+	}
+	else {
+		/* skip the protocol specifier, which HTTP_REFERER has but HTTP_HOST doesn't */
+		p += (strncasecmp(p, "https://", 8) == 0) ? 8 : (strncasecmp(p, "http://", 7) == 0) ? 7 : 0;
+
+		if (*p == '\0') { errprintf("Disallowed request due to unexpected referer '%s'\n", getenv("HTTP_REFERER")); return 0; }
+
+		snprintf(cgi_checkstr, sizeof(cgi_checkstr), "%s%s", httphost, expected);
+		if (strncmp(p, cgi_checkstr, strlen(cgi_checkstr)) == 0) isok = 1;
+	}
+	
+	if (!isok) errprintf("Disallowed request due to unexpected referer '%s', wanted '%s' (originally '%s')\n", p, cgi_checkstr, expected);
+
+	return isok;
+}
+
 char *get_cookie(char *cookiename)
 {
 	static char *ckdata = NULL;

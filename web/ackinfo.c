@@ -92,6 +92,18 @@ int main(int argc, char *argv[])
 	}
 
 	redirect_cgilog("ackinfo");
+
+	/* We only want to accept posts from certain pages */
+	{
+	    char cgisource[1024]; char *p;
+	    p = csp_header("ackinfo"); if (p) fprintf(stdout, "%s", p);
+	    snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("SECURECGIBINURL"), "criticalview");
+	    if (!cgi_refererok(cgisource)) {
+		fprintf(stdout, "Location: %s.sh?\n\n", cgisource);
+		return 0;
+	    }
+	}
+
 	parse_query();
 
 	if (hostname && *hostname && testname && *testname && ((level == 0) || (validity>0)) && ackmsg && *ackmsg) {

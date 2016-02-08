@@ -359,6 +359,18 @@ int main(int argc, char *argv[])
 		strbuffer_t *response = newstrbuffer(0);
 		int count = 0;
 
+
+		/* We only want to accept posts from certain pages */
+		{ 
+			char cgisource[1024]; char *p;
+			p = csp_header("acknowledge"); if (p) fprintf(stdout, "%s", p);
+			snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("SECURECGIBINURL"), "acknowledge");
+			if (!cgi_refererok(cgisource)) {
+				fprintf(stdout, "Location: %s.sh?\n\n", cgisource);
+				return 0;
+			}
+		}
+
 		parse_query();
 		if (getenv("REMOTE_USER")) {
 			char *remaddr = getenv("REMOTE_ADDR");
@@ -396,7 +408,7 @@ int main(int argc, char *argv[])
 			if (!awalk->ackmsg || !awalk->validity || !awalk->acknum) {
 				if (awalk->hostname && awalk->testname) {
 					sprintf(msgline, "<b>NO ACK</b> sent for host %s / test %s",
-						awalk->hostname, awalk->testname);
+						htmlquoted(awalk->hostname), htmlquoted(awalk->testname));
 				}
 				else {
 					sprintf(msgline, "<b>NO ACK</b> sent for item %d", awalk->id);
@@ -411,7 +423,7 @@ int main(int argc, char *argv[])
 			if (sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL) == XYMONSEND_OK) {
 				if (awalk->hostname && awalk->testname) {
 					sprintf(msgline, "Acknowledge sent for host %s / test %s<br>\n", 
-						awalk->hostname, awalk->testname);
+						htmlquoted(awalk->hostname), htmlquoted(awalk->testname));
 				}
 				else {
 					sprintf(msgline, "Acknowledge sent for code %d<br>\n", awalk->acknum);
@@ -420,7 +432,7 @@ int main(int argc, char *argv[])
 			else {
 				if (awalk->hostname && awalk->testname) {
 					sprintf(msgline, "Failed to send acknowledge for host %s / test %s<br>\n", 
-						awalk->hostname, awalk->testname);
+						htmlquoted(awalk->hostname), htmlquoted(awalk->testname));
 				}
 				else {
 					sprintf(msgline, "Failed to send acknowledge for code %d<br>\n", awalk->acknum);

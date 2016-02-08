@@ -68,6 +68,23 @@ void parse_cgi(void)
 	postdata = cgi_request();
 	if (cgi_method == CGI_GET) return;
 
+
+	/* We only want to accept posts from certain pages: svcstatus (for info), and ourselves */
+	/* At some point in the future, moving info lookups to their own page would be a good idea */
+	{
+		char cgisource[1024]; char *p;
+		p = csp_header("enadis"); if (p) fprintf(stdout, "%s", p);
+		snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("SECURECGIBINURL"), "enadis");
+		if (!cgi_refererok(cgisource)) {
+			snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("CGIBINURL"), "svcstatus");
+			if (!cgi_refererok(cgisource)) {
+				dbgprintf("Not coming from self or svcstatus; abort\n");
+				return;	/* Just display, don't do anything */
+			}
+		}
+	}
+
+
 	if (!postdata) {
 		errormsg(cgi_error());
 	}
@@ -380,7 +397,15 @@ int main(int argc, char *argv[])
 	 */
 	printf("Content-Type: %s\n", xgetenv("HTMLCONTENTTYPE"));
 	if (!preview) {
-		printf("Location: %s\n\n", xgetenv("HTTP_REFERER"));
+		char *returl;
+		// dbgprintf("Not a preview: sending to %s\n", textornull(getenv("HTTP_REFERER")));
+		/* We're done -- figure out where to send them */
+		if (getenv("HTTP_REFERER")) printf("Location: %s\n\n", getenv("HTTP_REFERER"));
+		else {
+			returl = (char *)malloc(1024);
+			snprintf(returl, sizeof(returl), "%s/%s", xgetenv("SECURECGIBINURL"), "enadis.sh");
+			printf("Location: %s?\n\n", returl);
+		}
 	}
 	else {
 		printf("\n");

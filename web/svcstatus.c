@@ -756,6 +756,8 @@ int main(int argc, char *argv[])
 	}
 
 	redirect_cgilog("svcstatus");
+	fprintf(stdout, "%s", csp_header("svcstatus"));
+	fprintf(stdout, "Refresh: 30\n");
 
 	*errortxt = '\0';
 	hostname = service = tstamp = NULL;

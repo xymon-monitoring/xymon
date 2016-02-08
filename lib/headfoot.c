@@ -1645,7 +1645,7 @@ void showform(FILE *output, char *headertemplate, char *formtemplate, int color,
 		close(formfile);
 
 		if (headertemplate) headfoot(output, headertemplate, (hostenv_pagepath ? hostenv_pagepath : ""), "header", color);
-		if (pretext) fprintf(output, "%s", pretext);
+		if (pretext) fprintf(output, "<center><strong><big>%s</big></strong></center>\n", pretext);
 		output_parsed(output, inbuf, color, seltime);
 		if (posttext) fprintf(output, "%s", posttext);
 		if (headertemplate) headfoot(output, headertemplate, (hostenv_pagepath ? hostenv_pagepath : ""), "footer", color);
