@@ -14,6 +14,7 @@ static char rcsid[] = "$Id: useradm.c 6588 2010-11-14 17:21:19Z storner $";
 #include <string.h>
 #include <stdlib.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "libxymon.h"
 
@@ -74,12 +75,20 @@ int parse_query(void)
 		cwalk = cwalk->next;
 	}
 
+	/* We only want to accept posts from certain pages */
+	if (returnval != ACT_NONE) {
+		char cgisource[1024]; char *p;
+		p = csp_header("useradm"); if (p) fprintf(stdout, "%s", p);
+		snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("SECURECGIBINURL"), "useradm");
+		if (!cgi_refererok(cgisource)) { fprintf(stdout, "Location: %s.sh?\n\n", cgisource); return 0; }
+	}
+
 	return returnval;
 }
 
 int main(int argc, char *argv[])
 {
-	int argi;
+	int argi, event;
 	char *hffile = "useradm";
 	int bgcolor = COL_BLUE;
 	char *passfile = NULL;
@@ -102,53 +111,94 @@ int main(int argc, char *argv[])
 		sprintf(passfile, "%s/etc/xymonpasswd", xgetenv("XYMONHOME"));
 	}
 
-	switch (parse_query()) {
+	event = parse_query();
+
+	if (adduser_name && !issimpleword(adduser_name)) {
+		event = ACT_NONE;
+		adduser_name = strdup("");
+		infomsg = "<strong><big><font color='#FF0000'>Invalid USERNAME. Letters, numbers, dashes, and periods only.</font></big></strong>\n";
+	}
+
+	switch (event) {
 	  case ACT_NONE:	/* Show the form */
 		break;
 
 
 	  case ACT_CREATE:	/* Add a user */
 		{
-			char *cmd;
+			pid_t childpid;
 			int n, ret;
 
-			const size_t bufsz = 1024 + strlen(passfile) + strlen(adduser_name) + strlen(adduser_password);
-			cmd = (char *)malloc(bufsz);
-			snprintf(cmd, bufsz, "htpasswd -b '%s' '%s' '%s'",
-				 passfile, adduser_name, adduser_password);
-			n = system(cmd); ret = WEXITSTATUS(n);
-			if ((n == -1) || (ret != 0)) {
-				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('Update FAILED'); </SCRIPT>\n";
+			childpid = fork();
+			if (childpid < 0) {
+				/* Fork failed */
+				errprintf("Could not fork child\n");
+				exit(1);
+			}
+			else if (childpid == 0) {
+				/* child */
+				char *cmd;
+				char **cmdargs;
+
+				cmdargs = (char **) calloc(4 + 2, sizeof(char *));
+				cmdargs[0] = cmd = strdup("htpasswd");
+				cmdargs[1] = "-b";
+				cmdargs[2] = strdup(passfile);
+				cmdargs[3] = strdup(adduser_name);
+				cmdargs[4] = strdup(adduser_password);
+				cmdargs[5] = '\0';
+
+				execvp(cmd, cmdargs);
+				exit(127);
+			}
+
+			/* parent waits for htpasswd to finish */
+			if ((waitpid(childpid, &n, 0) == -1) || (WEXITSTATUS(n) != 0)) {
+				infomsg = "Update FAILED";
 
 			}
 			else {
-				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('User added/updated'); </SCRIPT>\n";
+				infomsg = "User added/updated";
 			}
-
-			xfree(cmd);
 		}
 		break;
 
 
 	  case ACT_DELETE:	/* Delete a user */
 		{
-			char *cmd;
+			pid_t childpid;
 			int n, ret;
 
-			const size_t bufsz = 1024 + strlen(passfile) + strlen(deluser_name);
-			cmd = (char *)malloc(bufsz);
-			snprintf(cmd, bufsz, "htpasswd -D '%s' '%s'",
-					passfile, deluser_name);
-			n = system(cmd); ret = WEXITSTATUS(n);
-			if ((n == -1) || (ret != 0)) {
-				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('Update delete FAILED'); </SCRIPT>\n";
+			childpid = fork();
+			if (childpid < 0) {
+				/* Fork failed */
+				errprintf("Could not fork child\n");
+				exit(1);
+			}
+			else if (childpid == 0) {
+				/* child */
+				char *cmd;
+				char **cmdargs;
+
+				cmdargs = (char **) calloc(3 + 2, sizeof(char *));
+				cmdargs[0] = cmd = strdup("htpasswd");
+				cmdargs[1] = "-D";
+				cmdargs[2] = strdup(passfile);
+				cmdargs[3] = strdup(deluser_name);
+				cmdargs[4] = '\0';
+
+				execvp(cmd, cmdargs);
+				exit(127);
+			}
+
+			/* parent waits for htpasswd to finish */
+			if ((waitpid(childpid, &n, 0) == -1) || (WEXITSTATUS(n) != 0)) {
+				infomsg = "Update delete FAILED";
 
 			}
 			else {
-				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('User deleted'); </SCRIPT>\n";
+				infomsg = "User deleted";
 			}
-
-			xfree(cmd);
 		}
 		break;
 	}

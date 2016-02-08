@@ -234,9 +234,9 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	sethostenv(hostname, "", service, colorname(COL_BLUE), NULL);
 
 	*warnmsg = '\0';
-	if (!rec && nodatawarning) sprintf(warnmsg, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s'); </SCRIPT>\n", nodatawarning);
-	if (isaclone && isclonewarning) sprintf(warnmsg, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s'); </SCRIPT>\n", isclonewarning);
-	if (hasclones && hascloneswarning) sprintf(warnmsg, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s'); </SCRIPT>\n", hascloneswarning);
+	if (!rec && nodatawarning) snprintf(warnmsg, sizeof(warnmsg), "%s", nodatawarning);
+	if (isaclone && isclonewarning) snprintf(warnmsg, sizeof(warnmsg), "%s", isclonewarning);
+	if (hasclones && hascloneswarning) snprintf(warnmsg, sizeof(warnmsg), "%s", hascloneswarning);
 
 	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	showform(stdout, "critedit", "critedit_form", COL_BLUE, getcurrenttime(NULL), warnmsg, NULL);
@@ -381,6 +381,18 @@ int main(int argc, char *argv[])
 	}
 
 	redirect_cgilog(programname);
+
+        /* We only want to accept posts from certain pages */
+	{
+		char cgisource[1024]; char *p;
+		p = csp_header(programname); if (p) fprintf(stdout, "%s", p);
+		snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("SECURECGIBINURL"), programname);
+		if (!cgi_refererok(cgisource)) {
+			fprintf(stdout, "Location: %s.sh?\n\n", cgisource);
+			return 0;
+		}
+	}
+
 	parse_query();
 	load_critconfig(configfn);
 

@@ -751,12 +751,26 @@ void printdirdata(FILE *fd, char *fn)
 	char *cmd;
 	char buf[4096];
 	int buflen;
+	struct stat st;
+	int staterror;
 
-	ducmd = getenv("DU");
-	if (ducmd == NULL) ducmd = "du -k";
+	ducmd = xgetenv("DU");
+
+	staterror = stat(fn, &st);
+	if (staterror == -1) {
+		fprintf(fd, "ERROR: %s\n", strerror(errno));
+		return;
+	}
+	else if (!S_ISDIR(st.st_mode)) {
+		fprintf(fd, "ERROR: Not a directory\n");
+		return;
+	}
+
+	/* Cannot handle filenames with a quote in them (insecure) */
+	if (strchr(fn, '\'')) return;
 
 	cmd = (char *)malloc(strlen(ducmd) + strlen(fn) + 10);
-	sprintf(cmd, "%s %s 2>&1", ducmd, fn);
+	sprintf(cmd, "%s '%s' 2>&1", ducmd, fn);
 
 	cmdfd = popen(cmd, "r");
 	xfree(cmd);

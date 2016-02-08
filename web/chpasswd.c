@@ -14,6 +14,7 @@ static char rcsid[] = "$Id: chpasswd.c 6588 2010-11-14 17:21:19Z storner $";
 #include <string.h>
 #include <stdlib.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "libxymon.h"
 
@@ -83,12 +84,21 @@ int parse_query(void)
 		cwalk = cwalk->next;
 	}
 
+	/* We only want to accept posts from certain pages */
+	
+	if (returnval != ACT_NONE) {
+		char cgisource[1024]; char *p;
+		p = csp_header("chpasswd"); if (p) fprintf(stdout, "%s", p);
+		snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("SECURECGIBINURL"), programname);
+		if (!cgi_refererok(cgisource)) { fprintf(stdout, "Location: %s.sh?\n\n", cgisource); return 0; }
+	}
+
 	return returnval;
 }
 
 int main(int argc, char *argv[])
 {
-	int argi;
+	int argi, event;
 	char *envarea = NULL;
 	char *hffile = "chpasswd";
 	char *passfile = NULL;
@@ -122,7 +132,15 @@ int main(int argc, char *argv[])
 	loggedinuser = getenv("REMOTE_USER");
         if (!loggedinuser) errormsg(401, "User authentication must be enabled and you must be logged in to use this CGI");
 
-	switch (parse_query()) {
+	event = parse_query();
+
+	if (adduser_name && !issimpleword(adduser_name)) {
+		event = ACT_NONE;
+		adduser_name = strdup("");
+		infomsg = "<strong><big><font color='#FF0000'>Invalid USERNAME. Letters, numbers, dashes, and periods only.</font></big></strong>\n";
+	}
+
+	switch (event) {
 	  case ACT_NONE:	/* Show the form */
 		break;
 
@@ -132,53 +150,89 @@ int main(int argc, char *argv[])
 			int n, ret;
 
 			if ( (strlen(loggedinuser) == 0) || (strlen(loggedinuser) != strlen(adduser_name)) || (strcmp(loggedinuser, adduser_name) != 0) ) {
-				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('Username mismatch! You may only change your own password.'); </SCRIPT>\n";
+				infomsg = "Username mismatch! You may only change your own password.";
 				break;
 			}
 
 			if ( (strlen(adduser_name) == 0)) {
-				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('I dont know who you are!'); </SCRIPT>\n";
+				infomsg = "User not logged in";
 			}
 			else if ( (strlen(adduser_password1) == 0) || (strlen(adduser_password2) == 0)) {
-				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('New password cannot be blank'); </SCRIPT>\n";
+				infomsg = "New password cannot be blank";
 			}
 			else if (strcmp(adduser_password1, adduser_password2) != 0) {
-				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('New passwords dont match'); </SCRIPT>\n";
+				infomsg = "New passwords dont match";
 			}
 			else if (strlen(adduser_name) != strspn(adduser_name,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.,@/=^") ) {
-				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('Username has invalid characters!'); </SCRIPT>\n";
+				infomsg = "Username has invalid characters!";
 			}
 			else if (strlen(adduser_password1) != strspn(adduser_password1,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.,@/=^") ) {
-				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('Password has invalid characters! Use alphanumerics and/or _ - . , @ / = ^'); </SCRIPT>\n";
+				infomsg = "Password has invalid characters! Use alphanumerics and/or _ - . , @ / = ^";
 			}
 			else {
-				const size_t bufsz = 1024 + strlen(passfile) + strlen(adduser_name) + strlen(adduser_password);
+				pid_t childpid;
+				int n, ret;
 
-				cmd = (char *)malloc(bufsz);
-				snprintf(cmd, bufsz, "htpasswd -bv '%s' '%s' '%s'",
-					 passfile, adduser_name, adduser_password);
-				n = system(cmd); ret = WEXITSTATUS(n);
-				if ((n == -1) || (ret != 0)) {
-					infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('Existing Password incorrect'); </SCRIPT>\n";
+				childpid = fork();
+				if (childpid < 0) {
+				        /* Fork failed */
+				        errprintf("Could not fork child\n");
+				        exit(1);
+				}
+				else if (childpid == 0) {
+				        /* child */
+				        char *cmd;
+				        char **cmdargs;
+				
+				        cmdargs = (char **) calloc(4 + 2, sizeof(char *));
+				        cmdargs[0] = cmd = strdup("htpasswd");
+				        cmdargs[1] = "-bv";
+				        cmdargs[2] = strdup(passfile);
+				        cmdargs[3] = strdup(adduser_name);
+				        cmdargs[4] = strdup(adduser_password);
+				        cmdargs[5] = '\0';
+				
+				        execvp(cmd, cmdargs);
+				        exit(127);
+				}
+				
+				/* parent waits for htpasswd to finish */
+				if ((waitpid(childpid, &n, 0) == -1) || (WEXITSTATUS(n) != 0)) {
+					infomsg = "Existing Password incorrect";
+					break;
+				}
+
+				childpid = fork();
+				if (childpid < 0) {
+				        /* Fork failed */
+				        errprintf("Could not fork child\n");
+				        exit(1);
+				}
+				else if (childpid == 0) {
+				        /* child */
+				        char *cmd;
+				        char **cmdargs;
+				
+				        cmdargs = (char **) calloc(4 + 2, sizeof(char *));
+				        cmdargs[0] = cmd = strdup("htpasswd");
+				        cmdargs[1] = "-b";
+				        cmdargs[2] = strdup(passfile);
+				        cmdargs[3] = strdup(adduser_name);
+				        cmdargs[4] = strdup(adduser_password1);
+				        cmdargs[5] = '\0';
+				
+				        execvp(cmd, cmdargs);
+				        exit(127);
+				}
+				
+				/* parent waits for htpasswd to finish */
+				if ((waitpid(childpid, &n, 0) == -1) || (WEXITSTATUS(n) != 0)) {
+					infomsg = "Update FAILED";
 
 				}
 				else {
-
-					xfree(cmd);
-					cmd = (char *)malloc(bufsz);
-					snprintf(cmd, bufsz, "htpasswd -b '%s' '%s' '%s'",
-					 	passfile, adduser_name, adduser_password1);
-					n = system(cmd); ret = WEXITSTATUS(n);
-					if ((n == -1) || (ret != 0)) {
-						infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('Update FAILED'); </SCRIPT>\n";
-
-					}
-					else {
-						infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('Password changed'); </SCRIPT>\n";
-					}
+					infomsg = "<strong><big>Password changed</big></strong>\n";
 				}
-
-				xfree(cmd);
 			}
 		}
 		break;

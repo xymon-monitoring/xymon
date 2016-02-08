@@ -31,6 +31,7 @@ extern void sanitize_input(strbuffer_t *l, int stripcomment, int unescape);
 extern unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4);
 extern char *u32toIP(unsigned int ip32);
 extern const char *textornull(const char *text);
+extern int issimpleword(const char *text);
 extern int get_fqdn(void);
 extern int generate_static(void);
 extern void do_extensions(FILE *output, char *extenv, char *family);

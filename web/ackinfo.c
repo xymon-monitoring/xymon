@@ -84,6 +84,18 @@ int main(int argc, char *argv[])
 	}
 
 	redirect_cgilog(programname);
+
+	/* We only want to accept posts from certain pages */
+	{
+	    char cgisource[1024]; char *p;
+	    p = csp_header(programname); if (p) fprintf(stdout, "%s", p);
+	    snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("SECURECGIBINURL"), "criticalview"); /* not current name */
+	    if (!cgi_refererok(cgisource)) {
+		fprintf(stdout, "Location: %s.sh?\n\n", cgisource);
+		return 0;
+	    }
+	}
+
 	parse_query();
 
 	if (hostname && *hostname && testname && *testname && ((level == 0) || (validity>0)) && ackmsg && *ackmsg) {

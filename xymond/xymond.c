@@ -2765,13 +2765,40 @@ int get_config(char *fn, conn_t *msg)
 {
 	char fullfn[PATH_MAX];
 	FILE *fd = NULL;
+	size_t fnlen;
+	static int allowallconfigs = -1;
+	struct stat st;
 	strbuffer_t *inbuf, *result;
 
 	dbgprintf("-> get_config %s\n", fn);
+
+	if (allowallconfigs == -1) allowallconfigs = (strcmp(xgetenv("ALLOWALLCONFIGFILES"), "TRUE") == 0);
+
+	fnlen = strlen(fn);
+	if (fnlen < 4) {
+		errprintf("Config filename requested (%s) is too short\n", fn);
+		return -1;
+	}
+
+	/* Make sure it ends in .cfg */
+	if ((!allowallconfigs) && (strcasecmp(fn + fnlen - 4, ".cfg") != 0) ) {
+		errprintf("Config filename requested (%s) doesn't end in '.cfg'\n", fn);
+		return -1;
+	}
+
 	snprintf(fullfn, sizeof(fullfn), "%s/etc/%s", xgetenv("XYMONHOME"), fn);
+	if (! (lstat(fullfn, &st) == 0) ) {
+		errprintf("Config file %s (%s) error: %s\n", fn, fullfn, strerror(errno));
+		return -1;
+        }
+	if (! S_ISREG(st.st_mode)) {
+		errprintf("Config file requested (%s) is not a regular file\n", fullfn);
+		return -1;
+	}
+
 	fd = stackfopen(fullfn, "r", NULL);
 	if (fd == NULL) {
-		errprintf("Config file %s not found\n", fn);
+		errprintf("Config file %s not readable\n", fn);
 		return -1;
 	}
 
