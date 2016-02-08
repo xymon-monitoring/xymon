@@ -187,6 +187,58 @@ Changes from 4.3.x -> 4.4-alpha
   to prevent out-of-order RRD writes from a previous process being affected.
 
 
+Changes from 4.3.24 -> 4.3.25 (05 Feb 2016)
+===========================================
+
+* rev 7894
+
+* Resolve buffer overflow when handling "config" file requests (CVE-2016-2054)
+* Restrict "config" files to regular files inside the $XYMONHOME/etc/ directory
+  (symlinks disallowed) (CVE-2016-2055). Also, require that the initial filename
+  end in '.cfg' by default
+* Resolve shell command injection vulnerability in useradm and chpasswd CGIs
+  (CVE-2016-2056)
+* Tighten permissions on the xymond BFQ used for message submission to restrict
+  access to the xymon user and group. It is now 0620. (CVE-2016-2057)
+* Restrict javascript execution in current and historical status messages by
+  the addition of appropriate Content-Security-Policy headers to prevent XSS
+  attacks. (CVE-2016-2058)
+
+We would like to thank Markus Krell for reporting the above issues, and for 
+working with us to resolve them.
+
+
+* Fix "TRENDS" entries in hosts.cfg improperly handling partial matches with
+  other graph names (Reported by Jeremy Laidman)
+* A possible crash in when loading confreport.cgi has been fixed 
+  (Thanks, Axel Beckert)
+* Improve error handling slightly in the CGI wrapper
+* Fix missing network interface graph data on FreeBSD (Niko <nicolas@lienard.name>)
+* In xymonnet, a rare SSL error state that could occur after a 
+  connection is opened will now be considered "service down"
+* Fix a crash in xymonnet when handling certain malformed SSL certificates
+  (Reported by Thomas Leavitt, originally via Jeremy Laidman)
+* Add new trends_header and trends_footer for use on associated Trends pages
+* "Jump to page" redirect functionality fixed on findhost.sh (Reported by Francois Claire)
+* When a note is present for a host, the info page no longer has a spurious
+  hostname on the text link
+* Add --noexec option to logfetch to ignore commands to dynamically list files, modifiable
+  via new LOGFETCHOPTS variable in xymonclient.cfg (Suggested by Jeremy Laidman)
+* Add variables in xymonclient.cfg for overriding config files for xymond_client 
+  and logfetch when client is running in --local mode without editing xymonclient.sh
+* Add file globbing capabilities to logfetch to avoid need to fork commands
+  to create dynamic lists (Suggested by Jeremy Laidman)
+* The "Valid Until" time for an acknowledgement is now displayed on the ack log
+  report page (Thanks, Dominique Frise)
+* The xymon.sh and runclient.sh scripts are themselves now more LSB compliant 
+  (Thanks, Nikolai Lifanov)
+* Windows systems now have a better calculation of "Actual" memory usage    
+  (Thanks, John Rothlisberger)
+* A bug in xymond_alert that could cause pages about hosts.cfg not present at inital start
+  to cause inconsistent alerting has been fixed
+* xymond_alert now reloads its hostlist at regular intervals
+
+
 Changes from 4.3.23 -> 4.3.24 (23 Nov 2015)
 ===========================================
 
