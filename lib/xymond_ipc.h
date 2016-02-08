@@ -27,6 +27,7 @@ typedef struct xymond_channel_t {
 	int semid;
 	char *channelbuf;
 	char *workmem;
+	size_t maxsize;
 	unsigned int seq;
 	unsigned long msgcount;
 	struct xymond_channel_t *next;

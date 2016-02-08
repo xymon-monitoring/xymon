@@ -621,7 +621,7 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 	struct timeval tstamp;
 	struct timezone tz;
 	int semerr = 0;
-	unsigned int bufsz = 1024*shbufsz(channel->channelid);
+	unsigned int bufsz = channel->maxsize;	/* only master ever posts */
 	size_t bufmax = bufsz - CHANNELTERMINATORLEN - 1;	/* Terminating \0 */
 	size_t originalsize, byteswritten = 0;
 	void *hi;
@@ -2047,7 +2047,7 @@ void handle_modify(char *msg, xymond_log_t *log, int color, time_t now)
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
 {
 	void *hi;
-	int buflen = 0;
+	int n, buflen = 0;
 	char *classname, *pagepath;
 
 	dbgprintf("->handle_data\n");
@@ -2064,14 +2064,16 @@ void handle_data(char *msg, char *sender, char *origin, char *hostname, char *te
 	if (msg) buflen += strlen(msg); else dbgprintf("  msg is NULL\n");
 	buflen += 6;
 
-	snprintf(datachn->workmem, buflen, "%s|%s|%s|%s|%s\n%s", 
+	n = snprintf(datachn->workmem, datachn->maxsize, "%s|%s|%s|%s|%s\n%s", 
 		 (origin ? origin : ""), 
 		 (hostname ? hostname : ""), 
 		 (testname ? testname : ""), 
 		 (classname ? classname : ""),
 		 (pagepath ? pagepath : ""),
 		 msg);
-	*(datachn->workmem + buflen) = '\0';
+
+	if (n >= datachn->maxsize) errprintf("Data msg from %s/%s for %s.%s truncated by %d bytes\n", 
+		textornull(sender), textornull(origin), textornull(hostname), textornull(testname), n - datachn->maxsize + 1);
 	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, datachn->workmem);
 	dbgprintf("<-handle_data\n");
 }
@@ -2376,7 +2378,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 		   char *clientos, char *clientclass)
 {
 	char *theclass;
-	int msglen, buflen = 0;
+	int n, msglen, buflen = 0;
 	xtreePos_t hosthandle;
 	clientmsg_list_t *cwalk, *chead, *ctail, *czombie;
 
@@ -2443,8 +2445,10 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 		}
 	}
 
-	snprintf(clientchn->workmem, buflen, "%s|%s|%s|%s\n%s", hostname, clientos, theclass, collectorid, msg);
-	*(clientchn->workmem + buflen) = '\0';
+	n = snprintf(clientchn->workmem, clientchn->maxsize, "%s|%s|%s|%s\n%s", hostname, clientos, theclass, collectorid, msg);
+
+	if (n >= clientchn->maxsize) errprintf("Client msg from %s for %s.%s truncated by %d bytes\n", 
+		textornull(sender), textornull(hostname), textornull(collectorid), n - clientchn->maxsize + 1);
 	posttochannel(clientchn, channelnames[C_CLIENT], msg, sender, hostname, NULL, clientchn->workmem);
 	dbgprintf("<-handle_client\n");
 }
