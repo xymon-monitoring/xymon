@@ -1,5 +1,23 @@
-Changes from 4.3.24 -> 4.3.25-rc2 (02 Feb 2016)
+Changes from 4.3.24 -> 4.3.25 (05 Feb 2016)
 ===========================================
+
+* rev 7890
+
+* Resolve buffer overflow when handling "config" file requests (CVE-2016-2054)
+* Restrict "config" files to regular files inside the $XYMONHOME/etc/ directory
+  (symlinks disallowed) (CVE-2016-2055). Also, require that the initial filename
+  end in '.cfg' by default
+* Resolve shell command injection vulnerability in useradm and chpasswd CGIs
+  (CVE-2016-2056)
+* Tighten permissions on the xymond BFQ used for message submission to restrict
+  access to the xymon user and group. It is now 0620. (CVE-2016-2057)
+* Restrict javascript execution in current and historical status messages by
+  the addition of appropriate Content-Security-Policy headers to prevent XSS
+  attacks. (CVE-2016-2058)
+
+We would like to thank Markus Krell for reporting the above issues, and for 
+working with us to resolve them.
+
 
 * Fix "TRENDS" entries in hosts.cfg improperly handling partial matches with
   other graph names (Reported by Jeremy Laidman)
