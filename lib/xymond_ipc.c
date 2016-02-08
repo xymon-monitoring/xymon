@@ -40,6 +40,8 @@ static char rcsid[] = "$Id$";
 
 #include "xymond_ipc.h"
 
+#define FEEDBACKQUEUE_MODE 0620
+
 char *channelnames[C_LAST+1] = {
 	"",		/* First one is index 0 - not used */
 	"status", 
@@ -161,7 +163,7 @@ int setup_feedback_queue(int role)
 	char *xymonhome = xgetenv("XYMONHOME");
 	struct stat st;
 	key_t key;
-	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0666) : 0);
+	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | FEEDBACKQUEUE_MODE) : 0);
 	int queueid;
 
 	if ( (xymonhome == NULL) || (stat(xymonhome, &st) == -1) ) {
@@ -176,6 +178,20 @@ int setup_feedback_queue(int role)
 	}
 
 	queueid = msgget(key, flags);
+	
+	if ((role == CHAN_MASTER) && (queueid == -1)) {
+		/* Check if the permissions simply don't match, and re-create if necessary */
+		if ((errno == EACCES) && (msgget(key, 0) != -1)) {
+			errprintf("BFQ 0x%X already existed but did not match expected permissions; recreating\n", key);
+		}
+		if (msgctl(msgget(key, 0), IPC_RMID, NULL) != 0) errprintf("Existing BFQ 0x%X could not be removed: %s\n", key, strerror(errno));
+		
+		/* try creating again */
+		queueid = msgget(key, flags);
+	}
+
+	if ((queueid == -1) && (errno != ENOENT)) errprintf("Could not retrieve BFQ ID from key 0x%X: %s\n", key, strerror(errno));
+	dbgprintf(" setup_feedback_queue: got ID %d for key 0x%X\n", queueid, key);
 
 	return queueid;
 }
@@ -186,6 +202,7 @@ void close_feedback_queue(int queueid, int role)
 
 	if ((queueid >= 0) && (role == CHAN_MASTER)) {
 		n = msgctl(queueid, IPC_RMID, NULL);
+		if (n) errprintf("Error closing BFQ (%d): %s\n", queueid, strerror(errno));
 	}
 }
 
