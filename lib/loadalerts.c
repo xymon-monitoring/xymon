@@ -812,7 +812,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 	/* The top-level page needs a name - cannot match against an empty string */
 	if (pgnames) xfree(pgnames);
-	pgnames = strdup((*alert->location == '\0') ? "/" : alert->location);
+	pgnames = strdup((*alert->pagepath == '\0') ? "/" : alert->pagepath);
 	dgname = hinfo ? textornull(xmh_item(hinfo, XMH_DGNAME)) : strdup("");
 
 	if (crit) { cfid = crit->cfid; cfline = crit->cfline; }
@@ -821,7 +821,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	if (!cfline) cfline = "<undefined>";
 
 	traceprintf("Matching host:service:dgroup:page '%s:%s:%s:%s' against rule line %d\n",
-			alert->hostname, alert->testname, dgname, alert->location, cfid);
+			alert->hostname, alert->testname, dgname, alert->pagepath, cfid);
 
 	if (alert->state == A_PAGING) {
 		/* Check max-duration now - it's fast and easy. */

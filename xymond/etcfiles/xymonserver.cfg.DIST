@@ -16,8 +16,22 @@ XYMONSERVERCGIURL="@XYMONCGIURL@"		# The URL for the Xymon CGI scripts.
 XYMONSERVERSECURECGIURL="@SECUREXYMONCGIURL@"	# The URL for the secured Xymon CGI scripts.
 
 # XYMONNETWORK="foo"				# The network location, makes xymonnet test only hosts with NET:foo
-						# You only need to set this if you have multiple network test servers with
-						# a shared hosts.cfg file.
+						# (but see below). You only need to set this if you have multiple 
+						# network test servers with a shared hosts.cfg file.
+# TESTUNTAGGED="FALSE"				# If XYMONNETWORK is set, also test hosts with no NET: tag at all (default: false)
+						# This can also be enabled by passing a command line option to xymonnet
+
+# XYMONNETWORKS="foo,bar,$XYMONNETWORK"		# IFF there are multiple networks to test, list them all here (comma separated).
+						# Network names that will be matched are not case sensitive.
+						# You only need to set this if you this network test server is covering
+						# multiple networks.
+
+# XYMONEXNETWORKS="sna,fu"			# Network locations to EXCLUDE from testing. This can be used without setting
+						# values above, causing xymonnet to test hosts like normal, except for the 
+						# listed networks. This can be useful if you are bringing up multiple network
+						# test servers one at a time, or have a single network being tested from behind
+						# a firewall, but with a shared hosts.cfg file.
+
 
 # Make sure the path includes the directories where you have fping, mail and (optionally) ntpdate installed,
 # as well as the XYMONHOME/bin directory where all of the Xymon programs reside.

@@ -84,13 +84,11 @@ int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert c
 int             mincipherbits = 0;		/* If weakest cipher is weaker than this # of buts, SSL cert column = red */
 int		validity = 30;
 int		pingchildcount = DEFAULT_PING_CHILD_COUNT;	/* How many ping processes to start */
-char		*location = "";			/* XYMONNETWORK value */
 int		hostcount = 0;
 int		testcount = 0;
 int		notesthostcount = 0;
 char		**selectedhosts;
 int		selectedcount = 0;
-int		testuntagged = 0;
 time_t		frequenttestlimit = 1800;	/* Interval (seconds) when failing hosts are retried frequently */
 int		checktcpresponse = 0;
 int		dotraceroute = 0;
@@ -377,14 +375,12 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 }
 
 
-int wanted_host(void *host, char *netstring)
+int wanted_host(void *host)
 {
 	char *netlocation = xmh_item(host, XMH_NET);
 
 	if (selectedcount == 0)
-		return ((strlen(netstring) == 0) || 				   /* No XYMONNETWORK = do all */
-			(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* XYMONNETWORK && matching NET: tag */
-			(testuntagged && (netlocation == NULL)));		   /* No NET: tag for this host */
+		return oklocation_host(netlocation);
 	else {
 		/* User provided an explicit list of hosts to test */
 		int i;
@@ -424,7 +420,7 @@ void load_tests(void)
 	}
 
 	/* Each network test tagged with NET:locationname */
-	if (strlen(location) > 0) {
+	if (location) {
 		routestring = (char *) malloc(strlen(location)+strlen("route_:")+1);
 		sprintf(routestring, "route_%s:", location);
 	}
@@ -434,7 +430,8 @@ void load_tests(void)
 		int ping_dialuptest = 0, ping_reversetest = 0;
 		char *testspec;
 
-		if (!wanted_host(hwalk, location)) continue;
+		if (!wanted_host(hwalk)) continue;
+		else dbgprintf(" - adding wanted host\n");
 
 		h = init_testedhost(xmh_item(hwalk, XMH_HOSTNAME));
 
@@ -2324,10 +2321,8 @@ int main(int argc, char *argv[])
 	/* Setup SEGV handler */
 	setup_signalhandler(egocolumn ? egocolumn : "xymonnet");
 
-	if (xgetenv("XYMONNETWORK") && (strlen(xgetenv("XYMONNETWORK")) > 0)) 
-		location = strdup(xgetenv("XYMONNETWORK"));
-	else if (xgetenv("BBLOCATION") && (strlen(xgetenv("BBLOCATION")) > 0))
-		location = strdup(xgetenv("BBLOCATION"));
+	/* Setup network filters for NET:locationname hosts */
+	load_locations();
 
 	if (pingcolumn && (strlen(pingcolumn) == 0)) pingcolumn = xgetenv("PINGCOLUMN");
 	if (pingcolumn && xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
@@ -2340,7 +2335,10 @@ int main(int argc, char *argv[])
 		printf("Command: xymonnet");
 		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
 		printf("\n");
-		printf("Environment XYMONNETWORK='%s'\n", textornull(location));
+		printf("Environment BBLOCATION='%s'\n", textornull(xgetenv("BBLOCATION")));
+		printf("Environment XYMONNETWORK='%s'\n", textornull(xgetenv("XYMONNETWORK")));
+		printf("Environment XYMONNETWORKS='%s'\n", textornull(xgetenv("XYMONNETWORKS")));
+		printf("Environment XYMONEXNETWORKS='%s'\n", textornull(xgetenv("XYMONEXNETWORKS")));
 		printf("Environment CONNTEST='%s'\n", textornull(xgetenv("CONNTEST")));
 		printf("Environment IPTEST_2_CLEAR_ON_FAILED_CONN='%s'\n", textornull(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")));
 		printf("\n");

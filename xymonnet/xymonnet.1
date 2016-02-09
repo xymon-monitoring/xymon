@@ -42,11 +42,19 @@ hostname, unless the host is tagged with "testip" or the
 "\-\-dns=ip" option is used. So the target of the connectivity
 test can be determined by your /etc/hosts file or DNS.
 
-By default, all servers are tested - if XYMONNETWORK is set via
+By default, all servers are tested - if XYMONNETWORKS or XYMONNETWORK
+are set via
 .I xymonserver.cfg(5)
-then only the hosts marked as belonging to this network are
-tested. If the command-line includes one or more hostnames,
-then only those servers are tested.
+then only the hosts marked as belonging to those networks are
+tested. If XYMONEXNETWORK is set, then hosts marked with those
+networks are specifically excluded from being tested, regardless of
+any other settings. These three variables can be used to divide a 
+large and complex list of networks up into different areas of 
+responsiblity by different xymonnet polling servers while still
+using a single hosts.cfg(5) file.
+If the command-line includes one or more hostnames, then only those 
+servers are tested. This can be used to perform simple "one-off"
+tests of a single host, however it is not particularly efficient.
 
 
 .SH GENERAL OPTIONS

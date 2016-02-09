@@ -56,13 +56,6 @@ static void load_hoststatus()
 }
 
 
-static int netok(char *netstring, char *curnet, int testuntagged)
-{
-	return ( (netstring == NULL) || 
-		 (curnet && netstring && (strcmp(curnet, netstring) == 0)) || 
-		 (testuntagged && (curnet == NULL)) );
-}
-
 static int downok(char *hostname, int nodownhosts)
 {
 	char *mark, *colorstr;
@@ -110,7 +103,6 @@ int main(int argc, char *argv[])
 	char *netstring = NULL;
 	char *include2 = NULL;
 	int extras = 1;
-	int testuntagged = 0;
 	int nodownhosts = 0;
 	int loadhostsfromxymond = 0;
 	int onlypreferredentry = 0;
@@ -197,10 +189,8 @@ int main(int argc, char *argv[])
 	/* If we must avoid downed or disabled hosts, let's find out what those are */
 	if (nodownhosts) load_hoststatus();
 
-	/* Each network test tagged with NET:locationname */
-	p = xgetenv("XYMONNETWORK");
-	if ((p == NULL) || (strlen(p) == 0)) p = xgetenv("BBLOCATION");
-	if (p && strlen(p)) netstring = strdup(p);
+	/* We might need to filter hosts based on their NET:locationname */
+	load_locations();
 
 	hwalk = first_host();
 	wantedtags = newstrbuffer(0);
@@ -214,7 +204,7 @@ int main(int argc, char *argv[])
 		 * Must also check if the host is currently down (not responding to ping).
 		 * And if the host is OK with knownhost(), because it may be time-limited.
 		 */
-		if (netok(netstring, curnet, testuntagged) && downok(curname, nodownhosts) && knownhost(curname, &hostip, GH_IGNORE)) {
+		if (oklocation_host(curnet) && downok(curname, nodownhosts) && knownhost(curname, &hostip, GH_IGNORE)) {
 			char *item;
 
 			clearstrbuffer(wantedtags);

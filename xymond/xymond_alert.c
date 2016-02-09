@@ -17,7 +17,7 @@
  *
  *   page
  *   ----
- *   @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|location
+ *   @@page|timestamp|sender|hostname|testname|expiretime|color|prevcolor|changetime|pagepath
  *   <message>
  *   @@
  *
@@ -70,7 +70,7 @@ static int termsig = -1;
 
 void * hostnames;
 void * testnames;
-void * locations;
+void * pagepaths;
 
 typedef struct alertanchor_t {
 	activealerts_t *head;
@@ -249,7 +249,7 @@ void save_checkpoint(char *filename)
 		pgmsg = ackmsg = "";
 
 		fprintf(fd, "%s|%s|%s|%s|%s|%d|%d|%s|",
-			awalk->hostname, awalk->testname, awalk->location, awalk->ip,
+			awalk->hostname, awalk->testname, awalk->pagepath, awalk->ip,
 			colorname(awalk->maxcolor),
 			(int) awalk->eventstart,
 			(int) awalk->nextalerttime,
@@ -321,7 +321,7 @@ int load_checkpoint(char *filename)
 			activealerts_t *newalert = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 			newalert->hostname = find_name(hostnames, item[0]);
 			newalert->testname = find_name(testnames, item[1]);
-			newalert->location = find_name(locations, item[2]);
+			newalert->pagepath = find_name(pagepaths, item[2]);
 			newalert->ip = strdup(item[3]);
 			newalert->color = newalert->maxcolor = parse_color(item[4]);
 			newalert->eventstart = (time_t) atoi(item[5]);
@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
 	/* Create our loookup-trees */
 	hostnames = xtreeNew(strcasecmp);
 	testnames = xtreeNew(strcasecmp);
-	locations = xtreeNew(strcasecmp);
+	pagepaths = xtreeNew(strcasecmp);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--config=")) {
@@ -486,7 +486,7 @@ int main(int argc, char *argv[])
 			awalk = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 			awalk->hostname = find_name(hostnames, testhost);
 			awalk->testname = find_name(testnames, testservice);
-			awalk->location = find_name(locations, testpage);
+			awalk->pagepath = find_name(pagepaths, testpage);
 			awalk->ip = strdup("127.0.0.1");
 			awalk->color = awalk->maxcolor = parse_color(testcolor);
 			awalk->pagemessage = "Test of the alert configuration";
@@ -650,7 +650,7 @@ int main(int argc, char *argv[])
 		if (metacount > 4) testname = metadata[4];
 
 		if ((metacount > 10) && (strncmp(metadata[0], "@@page", 6) == 0)) {
-			/* @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie|osname|classname|grouplist|modifiers */
+			/* @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|pagepath|cookie|osname|classname|grouplist|modifiers */
 
 			int newcolor, newalertstatus, oldalertstatus;
 
@@ -661,12 +661,12 @@ int main(int argc, char *argv[])
 			if (awalk == NULL) {
 				char *hwalk = find_name(hostnames, hostname);
 				char *twalk = find_name(testnames, testname);
-				char *pwalk = find_name(locations, metadata[10]);
+				char *pwalk = find_name(pagepaths, metadata[10]);
 
 				awalk = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 				awalk->hostname = hwalk;
 				awalk->testname = twalk;
-				awalk->location = pwalk;
+				awalk->pagepath = pwalk;
 				strcpy(awalk->cookie, "-1");
 				awalk->state = A_DEAD;
 				/*
@@ -789,12 +789,12 @@ int main(int argc, char *argv[])
 
 			char *hwalk = find_name(hostnames, hostname);
 			char *twalk = find_name(testnames, testname);
-			char *pwalk = find_name(locations, (metadata[5] ? metadata[5] : ""));
+			char *pwalk = find_name(pagepaths, (metadata[5] ? metadata[5] : ""));
 
 			awalk = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 			awalk->hostname = hwalk;
 			awalk->testname = twalk;
-			awalk->location = pwalk;
+			awalk->pagepath = pwalk;
 			strcpy(awalk->cookie, "-1");
 			awalk->pagemessage = strdup(restofmsg);
 			awalk->eventstart = getcurrenttime(NULL);

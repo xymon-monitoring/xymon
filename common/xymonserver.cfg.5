@@ -550,9 +550,31 @@ tracked.
 
 .SH XYMONNET NETWORK TEST SETTINGS
 
+.IP XYMONEXNETWORKS
+List of network tags (separated with commas) that should NOT be tested
+by the xymonnet tool. Any hosts that have been tagged with a matching 
+"NET:" tag will be skipped by the xymonnet tool, regardless of other settings.
+This matching is case-insensitve. You might wish to set
+this if you have a network of servers behind a firewall that you don't want
+your central xymon server performing network tests on.
+
+.IP XYMONNETWORKS
+List of network tags (separated with commas) that should be tested
+by the xymonnet tool. If this is set, then ONLY MATCHING HOSTS will be tested
+and hosts that don't match will be silently skipped. You might set this on a
+xymonnet poller that is responsible for a testing a number of different 
+networks.
+
+Any hosts that have been tagged with a matching 
+"NET:" tag will be skipped by the xymonnet tool, regardless of other settings.
+
 .IP XYMONNETWORK
-If this variable is defined, then only the hosts that have been tagged
-with "NET:$XYMONNETWORK" will be tested by the xymonnet tool.
+The location of "this" Xymon server. If this variable is defined and 
+XYMONNETWORKS is left blank, then this functions like a single entry there.
+However, this network will NOT be automatically appended to XYMONNETWORKS if
+that is non-blank. This can be used to set up complex network dependency testing 
+using the route tag in hosts.cfg(5).
+
 
 .IP CONNTEST
 If set to TRUE, the connectivity (ping) test will be performed.

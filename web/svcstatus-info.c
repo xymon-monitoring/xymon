@@ -231,7 +231,7 @@ static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 
 	alert = calloc(1, sizeof(activealerts_t));
 	alert->hostname = hostname;
-	alert->location = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
+	alert->pagepath = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
 	alert->ip = strdup("127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";

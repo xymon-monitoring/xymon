@@ -72,6 +72,8 @@ Changes from 4.3.x -> 4.4-alpha
   using the --metafilter option (rather than the entire message)
 * xymond_channel can now filter by exclusion with --ex(meta)filter. Messages
   matching that regex are silently discarded.
+* Multiple targeted and excluded networks can be specified for xymonnet and
+  xymongrep using XYMONNETWORKS and XYMONEXNETWORKS variables in xymonserver.cfg
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet

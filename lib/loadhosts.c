@@ -31,6 +31,13 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
+char *location = NULL;	/* XYMONNETWORK value - where we are now */
+int testuntagged = 0;	/* If location is set, test hosts w/o a NET: ? */
+char **locations;	/* Any XYMONNETWORKS specified to include? */
+char **exlocations;	/* Any XYMONEXNETWORKS specified to exclude? */
+int haslocations = 0;
+int hasexlocations = 0;
+
 static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL, *nametail = NULL;
 static namelist_t *defaulthost = NULL;
@@ -360,6 +367,122 @@ static void build_hosttree(void)
 
 #include "loadhosts_file.c"
 #include "loadhosts_net.c"
+
+void load_locations(void)
+{
+	static int setup_done = 0;
+	char *oneloc, *p;
+
+	dbgprintf(" -> load_locations\n");
+
+	if (setup_done++) return;
+
+	if ((testuntagged == 0) && (strcasecmp(xgetenv("TESTUNTAGGED"), "TRUE") == 0)) {
+			dbgprintf(" - Enabling testing untagged\n");
+			testuntagged = 1;
+	}
+
+	/* Where this system physically is */
+	if (getenv("XYMONNETWORK")) location = getenv("XYMONNETWORK");
+
+	/* Networks to include. If not set at all, copy our location into it for compatibility */
+	if (!getenv("XYMONNETWORKS")) {
+		if (( (!location) || (!strlen(location)) ) && 
+			getenv("BBLOCATION") && strlen(getenv("BBLOCATION"))) location=getenv("BBLOCATION");
+
+		if (location && strlen(location)) {
+			dbgprintf(" adding XYMONNETWORK=%s to otherwise empty XYMONNETWORKS list\n", location);
+
+			locations = malloc(2 * sizeof(char *));
+			haslocations = 1;
+			locations[0] = strdup(location);
+			locations[1] = NULL;
+		}
+	}
+	else {
+		locations = malloc(sizeof(char *));
+
+		p = strdup(xgetenv("XYMONNETWORKS"));
+		oneloc = strtok(p, ",");
+		while (oneloc) {
+			locations = realloc(locations, (sizeof(char *)) * (haslocations + 2));
+			locations[haslocations++] = strdup(oneloc);
+			dbgprintf(" adding XYMONNETWORKS location %s to list (%d total)\n", oneloc, haslocations);
+			oneloc = strtok(NULL, ",");
+		}
+		locations[haslocations] = NULL;
+		xfree(p);
+	}
+
+
+	/* Networks to exclude */
+	if (xgetenv("XYMONEXNETWORKS") && (strlen(getenv("XYMONEXNETWORKS")) > 0)) {
+		exlocations = malloc(sizeof(char *));
+
+		p = strdup(xgetenv("XYMONEXNETWORKS"));
+		oneloc = strtok(p, ",");
+		while (oneloc) {
+			exlocations = realloc(exlocations, (sizeof(char *)) * (hasexlocations + 2));
+			exlocations[hasexlocations++] = strdup(oneloc);
+			dbgprintf(" adding XYMONEXNETWORKS location %s to list (%d total)\n", oneloc, hasexlocations);
+			oneloc = strtok(NULL, ",");
+		}
+		exlocations[hasexlocations] = NULL;
+		xfree(p);
+	}
+
+	/* Use a blank location as a flag */
+	if (location && (!strlen(location)) ) xfree(location);
+
+	dbgprintf("  - Current location: %s\n", textornull(location) );
+	dbgprintf("  - Included locations (%d): %s\n", haslocations, 
+	  textornull(	(location && (haslocations == 1) && (!getenv("XYMONNETWORKS")) )  ? location : getenv("XYMONNETWORKS") ));
+	dbgprintf("  - Excluded locations (%d): %s\n", hasexlocations, textornull(getenv("XYMONEXNETWORKS")) );
+	dbgprintf("  - Testing untagged hosts: %sabled\n", (testuntagged ? "en" : "dis") );
+	dbgprintf(" <- load_locations\n");
+
+	return;
+}
+
+
+int oklocation_host(char *netlocation)
+{
+	/*
+	 * Make sure it's a host in our current network, or not in an excluded one.
+	 * First, check for matching exclude entries, then matching include entries,
+	 * then allow it if
+	 *	a) we're not filtering based on network at all, or
+	 *	b) the host has no network and testuntagged was specified
+	 */
+	int i;
+
+	/* 
+	 * TODO 4.x: prefix matching requires a strlen H * L times per run.
+	 * Better to create a real struct, store the length, and pre-lowercase all
+	 * fields once hosts.cfg case resolution is finished.
+	 */
+
+	if (netlocation != NULL) {
+		if (hasexlocations) {
+			for (i=0; (i < hasexlocations); i++) {
+				if (strcasecmp(netlocation, exlocations[i]) == 0) return 0;   /* bail */
+			}
+			// dbgprintf(" -- host in net:%s; NOT found in %d specified XYMONEXNETWORKS\n", netlocation, hasexlocations);
+		}
+
+		if (haslocations) {
+			for (i=0; (i < haslocations); i++) {
+				if (strcasecmp(netlocation, locations[i]) == 0) return 1;   /* matches */
+			}
+			// dbgprintf(" -- host in net:%s; NOT found in %d specified XYMONNETWORKS\n", netlocation, haslocations);
+		}
+	}
+
+	return ((haslocations == 0) ||				/* No XYMONNETWORKS == do all */
+		(testuntagged && (netlocation == NULL)));	/* No NET: tag for this host */
+ }
+
+
 
 char *knownhost(char *hostname, char **hostip, enum ghosthandling_t ghosthandling)
 {

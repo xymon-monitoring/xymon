@@ -88,6 +88,14 @@ enum xmh_item_t {
 
 enum ghosthandling_t { GH_ALLOW, GH_IGNORE, GH_LOG, GH_MATCH };
 
+extern char *location;  /* XYMONNETWORK value */
+extern int testuntagged;
+extern int haslocations;
+extern int hasexlocations;
+extern char **locations;
+extern char **exlocations;
+
+
 typedef struct pagelist_t {
 	char *pagepath;
 	char *pagetitle;
@@ -124,6 +132,8 @@ typedef struct namelist_t {
 extern void freenamelist(namelist_t *rec);
 extern int load_hostnames(char *hostsfn, char *extrainclude, int fqdn);
 extern int load_hostinfo(char *hostname);
+extern void load_locations(void);
+extern int oklocation_host(char *netloc);
 extern void initialize_hostlist(void);
 extern void destroy_hosttree(void);
 extern char *hostscfg_content(void);

@@ -24,7 +24,7 @@ typedef struct activealerts_t {
 	/* Identification of the alert */
 	char *hostname;
 	char *testname;
-	char *location;
+	char *pagepath;
 	char *osname;
 	char *classname;
 	char *groups;

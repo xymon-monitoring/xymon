@@ -37,8 +37,6 @@ static char msgline[MAX_LINE_LEN];
 static int statuscolor = COL_GREEN;
 
 /* Set with environment or command-line options */
-static char *location = "";		/* XYMONNETWORK value */
-static int testuntagged = 0;
 static int default_port = 161;
 static char *default_community = "public";
 static int extcmdtimeout = 30;
@@ -79,13 +77,9 @@ static void find_idxes(char *buf, char *searchstr)
         }
 }
 
-int wanted_host(void *host, char *netstring)
+int wanted_host(void *host)
 {
-	char *netlocation = xmh_item(host, XMH_NET);
-
-	return ((strlen(netstring) == 0) ||                                /* No XYMONNETWORK = do all */
-		(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* XYMONNETWORK && matching NET: tag */
-		(testuntagged && (netlocation == NULL)));                  /* No NET: tag for this host */
+	return oklocation_host(xmh_item(host, XMH_NET));
 }
 
 char *getstring(char *databuf, char *beaindex, char *key)
@@ -215,10 +209,8 @@ int main(int argc, char *argv[])
                 return 1;
         }
 
-	if (xgetenv("XYMONNETWORK") && (strlen(xgetenv("XYMONNETWORK")) > 0)) 
-		location = strdup(xgetenv("XYMONNETWORK"));
-	else if (xgetenv("BBLOCATION") && (strlen(xgetenv("BBLOCATION")) > 0))
-		location = strdup(xgetenv("BBLOCATION"));
+	/* Set up NET:locationname filters */
+	load_locations();
 
 	init_timestamp();
 	combo_start();
@@ -240,7 +232,7 @@ int main(int argc, char *argv[])
 		clearstrbuffer(qout);
 
 		/* Check if we have a "bea" test for this host, and it is a host we want to test */
-                if (!tspec || !wanted_host(hwalk, location)) continue;
+                if (!tspec || !wanted_host(hwalk)) continue;
 
 		/* Parse the testspec: bea=[SNMPCOMMUNITY@]BEADOMAIN[:SNMPPORT] */
 		tspec = strdup(tspec+strlen("bea="));
