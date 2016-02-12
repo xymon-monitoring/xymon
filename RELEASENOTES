@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.25   * * *
+           * * *   Release notes for Xymon 4.3.26   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -8,6 +8,20 @@ changes you should be aware of when upgrading.
 
 For a full list of changes and enhancements, please see the 
 Changes file.
+
+
+Changes for 4.3.26
+==================
+
+This is mostly a bug fix release for javascript issues on the info and 
+trends pages, along with the enable / disable CGI. Several browsers had
+difficulty with the new CSP rules introduced in 4.3.25.
+
+XYMWEBREFRESH is now used as the default refresh interval for dynamic
+status pages and various other xymongen destinations. Non-svcstatus 
+pages can be overridden by altering the appropriate *_header template
+files, but svcstatus refresh interval uses this value. (default: 60s)
+Set in xymonserver.cfg(5).
 
 
 Changes for 4.3.25

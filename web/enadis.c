@@ -78,7 +78,7 @@ void parse_cgi(void)
 		if (!cgi_refererok(cgisource)) {
 			snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("CGIBINURL"), "svcstatus");
 			if (!cgi_refererok(cgisource)) {
-				dbgprintf("Not coming from self or svcstatus; abort\n");
+				errprintf("Enadis POST that is not coming from self or svcstatus (referer=%s). Ignoring.\n", textornull(getenv("HTTP_REFERER")) );
 				return;	/* Just display, don't do anything */
 			}
 		}
@@ -402,8 +402,8 @@ int main(int argc, char *argv[])
 		/* We're done -- figure out where to send them */
 		if (getenv("HTTP_REFERER")) printf("Location: %s\n\n", getenv("HTTP_REFERER"));
 		else {
-			returl = (char *)malloc(1024);
-			snprintf(returl, sizeof(returl), "%s/%s", xgetenv("SECURECGIBINURL"), "enadis.sh");
+			returl = (char *)malloc(strlen( xgetenv("SECURECGIBINURL") ) + 11);
+			sprintf(returl, "%s/%s", xgetenv("SECURECGIBINURL"), "enadis.sh");
 			printf("Location: %s?\n\n", returl);
 		}
 	}

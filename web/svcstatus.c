@@ -202,6 +202,20 @@ int do_request(void)
 
 	if (parse_query() != 0) return 1;
 
+	{ 
+	  char *p = NULL;
+	  if (!service || !strlen(service)) p = csp_header("svcstatus");
+	  else {
+		if (strcasecmp(service, xgetenv("INFOCOLUMN")) == 0) p = csp_header("svcstatus-info");
+		else if (strcasecmp(service, xgetenv("TRENDSCOLUMN")) == 0) p = csp_header("svcstatus-trends");
+		else {
+			int d = atoi(xgetenv("XYMWEBREFRESH"));
+			fprintf(stdout, "Refresh: %d\n", ((d > 0) ? d : 60) );
+			p = csp_header("svcstatus");
+		}
+	  }
+	  if (p) fprintf(stdout, "%s", p);
+	}
 	/* Load the host data (for access control) */
 	if (accessfn) {
 		load_hostinfo(hostname);
@@ -756,8 +770,6 @@ int main(int argc, char *argv[])
 	}
 
 	redirect_cgilog("svcstatus");
-	fprintf(stdout, "%s", csp_header("svcstatus"));
-	fprintf(stdout, "Refresh: 30\n");
 
 	*errortxt = '\0';
 	hostname = service = tstamp = NULL;
