@@ -7,8 +7,11 @@ xymon (4.3.26) stable; urgency=high
    * Do not auto-refresh info or trends svcstatus pages
    * Revert default svcstatus page refresh interval from 30s back to 60s
    * Re-introduce XYMWEBREFRESH variable to control refresh interval
+   * HTML encode most fields on info page
+   * Restrict characters allowed for hostnames and testnames
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, 11 Feb 2016 23:00:00 -0800
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Feb 2016 23:00:00 -0800
 
 
 xymon (4.3.25) stable; urgency=high

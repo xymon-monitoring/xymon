@@ -1,4 +1,4 @@
-Changes from 4.3.25 -> 4.3.26 (11 Feb 2016)
+Changes from 4.3.25 -> 4.3.26 (XX Feb 2016)
 ===========================================
 
 * rev XXXX
@@ -8,6 +8,8 @@ Changes from 4.3.25 -> 4.3.26 (11 Feb 2016)
 * Do not auto-refresh info or trends svcstatus pages
 * Revert default svcstatus page refresh interval from 30s back to 60s
 * Re-introduce XYMWEBREFRESH variable to control refresh interval
+* HTML encode most fields on info page
+* Restrict characters allowed for hostnames and testnames
 
 
 Changes from 4.3.24 -> 4.3.25 (05 Feb 2016)

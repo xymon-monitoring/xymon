@@ -23,6 +23,14 @@ pages can be overridden by altering the appropriate *_header template
 files, but svcstatus refresh interval uses this value. (default: 60s)
 Set in xymonserver.cfg(5).
 
+Incoming test names are now restricted to alphanumeric characters, colons
+dashes, underscores, and slashes. Slashes and colons may be restricted in 
+a future release.
+
+Unconfigured (ghost) host names are now restricted to alphanumerics, colons, 
+commas, periods, dashes, and underscores. It is strongly recommended to use only
+valid hostnames and DNS components in servers names.
+
 
 Changes for 4.3.25
 ==================
