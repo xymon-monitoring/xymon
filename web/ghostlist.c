@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
 			  case O_HTML:
 				fprintf(stdout, "<tr><td align=left>%s</td><td align=left>%s</td>",
 					ghosttable[idx].sender, 
-					ghosttable[idx].name);
+					htmlquoted(ghosttable[idx].name));
 
 				if (ghosttable[idx].candidate) {
 					fprintf(stdout, "<td align=left><a href=\"%s\">%s</a></td>",

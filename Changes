@@ -10,6 +10,8 @@ Changes from 4.3.25 -> 4.3.26 (XX Feb 2016)
 * Re-introduce XYMWEBREFRESH variable to control refresh interval
 * HTML encode most fields on info page
 * Restrict characters allowed for hostnames and testnames
+* HTML encode error log output on xymond/net/gen pages
+* HTML encode ghost hostnames output on xymond/ghostlist pages
 
 
 Changes from 4.3.24 -> 4.3.25 (05 Feb 2016)

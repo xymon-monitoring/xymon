@@ -9,6 +9,8 @@ xymon (4.3.26) stable; urgency=high
    * Re-introduce XYMWEBREFRESH variable to control refresh interval
    * HTML encode most fields on info page
    * Restrict characters allowed for hostnames and testnames
+   * HTML encode error log output on xymond/net/gen pages
+   * HTML encode ghost hostnames output on xymond/ghostlist pages
 
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Feb 2016 23:00:00 -0800
