@@ -15,6 +15,9 @@ xymon (4.3.26) stable; urgency=high
      the same file name
    * xymongen/reports: fix vague error message around missing history files
      and properly exclude clientlog statuses (Reported by Magdi Mahmoud)
+   * Ensure configured CLASS overrides in hosts.cfg are always passed on 
+     to client workers, regardless of 'class' for that specific message
+     (Reported by Steve Hill)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Feb 2016 23:00:00 -0800
 

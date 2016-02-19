@@ -31,6 +31,11 @@ Unconfigured (ghost) host names are now restricted to alphanumerics, colons,
 commas, periods, dashes, and underscores. It is strongly recommended to use only
 valid hostnames and DNS components in servers names.
 
+CLASS groupings in analysis.cfg and alerts.cfg will now reliably work for
+hosts with a CLASS override in hosts.cfg. Previous, this class was not used
+in favor of the class type sent in on any specific client message.
+
+
 
 Changes for 4.3.25
 ==================

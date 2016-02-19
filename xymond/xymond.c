@@ -4558,8 +4558,6 @@ void do_message(conn_t *msg, char *origin)
 					hostcount++;
 				}
 
-				handle_client(msg->buf, sender, hname, collectorid, clientos, clientclass);
-
 				if (hinfo) {
 					if (clientos) xmh_set_item(hinfo, XMH_OS, clientos);
 					if (clientclass) {
@@ -4576,6 +4574,8 @@ void do_message(conn_t *msg, char *origin)
 							clientclass = forcedclass;
 					}
 				}
+
+				handle_client(msg->buf, sender, hname, collectorid, clientos, clientclass);
 			}
 
 			MEMUNDEFINE(hostip);

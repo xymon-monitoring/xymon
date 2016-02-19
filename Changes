@@ -16,7 +16,9 @@ Changes from 4.3.25 -> 4.3.26 (XX Feb 2016)
   the same file name
 * xymongen/reports: fix vague error message around missing history files
   and properly exclude clientlog statuses (Reported by Magdi Mahmoud)
-
+* Ensure configured CLASS overrides in hosts.cfg are always passed on 
+  to client workers, regardless of 'class' for that specific message
+  (Reported by Steve Hill)
 
 Changes from 4.3.24 -> 4.3.25 (05 Feb 2016)
 ===========================================
