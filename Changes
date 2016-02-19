@@ -1,7 +1,7 @@
-Changes from 4.3.25 -> 4.3.26 (XX Feb 2016)
+Changes from 4.3.25 -> 4.3.26 (19 Feb 2016)
 ===========================================
 
-* rev XXXX
+* rev 7906
 
 * Fix javascript failures on info/trends pages caused by CSP fixes
 * Fix incorrect HTTP refresh on rejected enadis.sh POSTs

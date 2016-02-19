@@ -1,6 +1,6 @@
-xymon (4.3.26) stable; urgency=high
+xymon (4.3.26) stable; urgency=medium
 
-   * rev XXXX
+   * rev 7906
 
    * Fix javascript failures on info/trends pages caused by CSP fixes
    * Fix incorrect HTTP refresh on rejected enadis.sh POSTs
@@ -19,7 +19,7 @@ xymon (4.3.26) stable; urgency=high
      to client workers, regardless of 'class' for that specific message
      (Reported by Steve Hill)
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Feb 2016 23:00:00 -0800
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 19 Feb 2016 15:00:00 -0800
 
 
 xymon (4.3.25) stable; urgency=high

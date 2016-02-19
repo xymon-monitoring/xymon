@@ -31,6 +31,11 @@ Unconfigured (ghost) host names are now restricted to alphanumerics, colons,
 commas, periods, dashes, and underscores. It is strongly recommended to use only
 valid hostnames and DNS components in servers names.
 
+Files matched multiple times by logfetch in the client config retrieved
+from config-local.cfg (such as a file matching multiple globs) will now only 
+be scanned once and only use the ignore/trigger rules from its first entry.
+(Note: A future version of Xymon may combine all matching rules for a file together.)
+
 CLASS groupings in analysis.cfg and alerts.cfg will now reliably work for
 hosts with a CLASS override in hosts.cfg. Previous, this class was not used
 in favor of the class type sent in on any specific client message.
