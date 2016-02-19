@@ -13,6 +13,8 @@ xymon (4.3.26) stable; urgency=high
    * HTML encode ghost hostnames output on xymond/ghostlist pages
    * logfetch: only evaluate the first config of a given type seen for 
      the same file name
+   * xymongen/reports: fix vague error message around missing history files
+     and properly exclude clientlog statuses (Reported by Magdi Mahmoud)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Feb 2016 23:00:00 -0800
 

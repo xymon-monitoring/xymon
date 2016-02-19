@@ -14,6 +14,8 @@ Changes from 4.3.25 -> 4.3.26 (XX Feb 2016)
 * HTML encode ghost hostnames output on xymond/ghostlist pages
 * logfetch: only evaluate the first config of a given type seen for 
   the same file name
+* xymongen/reports: fix vague error message around missing history files
+  and properly exclude clientlog statuses (Reported by Magdi Mahmoud)
 
 
 Changes from 4.3.24 -> 4.3.25 (05 Feb 2016)
