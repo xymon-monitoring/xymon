@@ -12,6 +12,8 @@ Changes from 4.3.25 -> 4.3.26 (XX Feb 2016)
 * Restrict characters allowed for hostnames and testnames
 * HTML encode error log output on xymond/net/gen pages
 * HTML encode ghost hostnames output on xymond/ghostlist pages
+* logfetch: only evaluate the first config of a given type seen for 
+  the same file name
 
 
 Changes from 4.3.24 -> 4.3.25 (05 Feb 2016)

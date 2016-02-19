@@ -11,7 +11,8 @@ xymon (4.3.26) stable; urgency=high
    * Restrict characters allowed for hostnames and testnames
    * HTML encode error log output on xymond/net/gen pages
    * HTML encode ghost hostnames output on xymond/ghostlist pages
-
+   * logfetch: only evaluate the first config of a given type seen for 
+     the same file name
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Feb 2016 23:00:00 -0800
 
