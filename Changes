@@ -189,6 +189,29 @@ Changes from 4.3.x -> 4.4-alpha
   to prevent out-of-order RRD writes from a previous process being affected.
 
 
+Changes from 4.3.25 -> 4.3.26 (19 Feb 2016)
+===========================================
+
+* rev 7906
+
+* Fix javascript failures on info/trends pages caused by CSP fixes
+* Fix incorrect HTTP refresh on rejected enadis.sh POSTs
+* Do not auto-refresh info or trends svcstatus pages
+* Revert default svcstatus page refresh interval from 30s back to 60s
+* Re-introduce XYMWEBREFRESH variable to control refresh interval
+* HTML encode most fields on info page
+* Restrict characters allowed for hostnames and testnames
+* HTML encode error log output on xymond/net/gen pages
+* HTML encode ghost hostnames output on xymond/ghostlist pages
+* logfetch: only evaluate the first config of a given type seen for
+  the same file name
+* xymongen/reports: fix vague error message around missing history files
+  and properly exclude clientlog statuses (Reported by Magdi Mahmoud)
+* Ensure configured CLASS overrides in hosts.cfg are always passed on
+  to client workers, regardless of 'class' for that specific message
+  (Reported by Steve Hill)
+
+
 Changes from 4.3.24 -> 4.3.25 (05 Feb 2016)
 ===========================================
 

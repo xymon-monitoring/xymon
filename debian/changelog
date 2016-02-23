@@ -192,6 +192,30 @@ xymon (4.4.0-alpha1) unstable; urgency=low
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, ## MMM 2016 00:00:00 +0100
 
 
+xymon (4.3.26) stable; urgency=medium
+
+   * rev 7906
+
+   * Fix javascript failures on info/trends pages caused by CSP fixes
+   * Fix incorrect HTTP refresh on rejected enadis.sh POSTs
+   * Do not auto-refresh info or trends svcstatus pages
+   * Revert default svcstatus page refresh interval from 30s back to 60s
+   * Re-introduce XYMWEBREFRESH variable to control refresh interval
+   * HTML encode most fields on info page
+   * Restrict characters allowed for hostnames and testnames
+   * HTML encode error log output on xymond/net/gen pages
+   * HTML encode ghost hostnames output on xymond/ghostlist pages
+   * logfetch: only evaluate the first config of a given type seen for
+     the same file name
+   * xymongen/reports: fix vague error message around missing history files
+     and properly exclude clientlog statuses (Reported by Magdi Mahmoud)
+   * Ensure configured CLASS overrides in hosts.cfg are always passed on
+     to client workers, regardless of 'class' for that specific message
+     (Reported by Steve Hill)
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 19 Feb 2016 15:00:00 -0800
+
+
 xymon (4.3.25) stable; urgency=high
 
    * rev 7894
