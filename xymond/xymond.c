@@ -231,6 +231,7 @@ xymond_channel_t *userchn   = NULL;	/* Receives "usermsg" messages */
 
 static int backfeedqueue = -1;
 static unsigned long backfeedcount = 0;
+static unsigned long bfqchkcount = 0;
 static char *bf_buf = NULL;
 static size_t bf_bufsz = 0;
 
@@ -5668,6 +5669,8 @@ int main(int argc, char *argv[])
 	time_t conn_timeout = 30;
 	char *envarea = NULL;
 	int create_backfeedqueue = 0;
+	time_t nexttcpcheck;
+	int tcpcheckinterval; int bfqchunksize;
 
 	libxymon_init(argv[0]);
 
@@ -5933,6 +5936,9 @@ int main(int argc, char *argv[])
 		xfree(restartfn);
 	}
 
+	tcpcheckinterval = atoi(xgetenv("XYMONDTCPINTERVAL"));
+	bfqchunksize = atoi(xgetenv("BFQCHUNKSIZE"));
+	nexttcpcheck = getcurrenttime(NULL) + tcpcheckinterval;
 	nextcheckpoint = getcurrenttime(NULL) + checkpointinterval;
 	nextpurpleupdate = getcurrenttime(NULL) + 600;	/* Wait 10 minutes the first time */
 	last_stats_time = getcurrenttime(NULL);	/* delay sending of the first status report until we're fully running */
@@ -6078,6 +6084,7 @@ int main(int argc, char *argv[])
 		time_t now = getcurrenttime(NULL);
 		int childstat;
 		int backfeeddata;
+		int bfqexiting = 0;
 
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
@@ -6175,7 +6182,7 @@ int main(int argc, char *argv[])
 		}
 
 		backfeeddata = (backfeedqueue >= 0);
-		while (backfeeddata) {
+		while (backfeeddata && !bfqexiting) {
 			ssize_t sz;
 			conn_t msg;
 
@@ -6212,6 +6219,12 @@ int main(int argc, char *argv[])
 
 				do_message(&msg, "", 1);
 				*bf_buf = '\0';
+
+				if (backfeedcount >= bfqchkcount) {
+					dbgprintf("bfq count for this loop: %d, exceeds %d\n", backfeedcount, bfqchkcount);
+					bfqchkcount += bfqchunksize; /* They both start at 0 on launch; only check time every XX messages */
+					if (getcurrenttime(NULL) >= nexttcpcheck) { bfqexiting=1; dbgprintf("Exiting bfq early (at %d, limit now %d) to handle TCP\n", backfeedcount, bfqchkcount); }
+				}
 			}
 		}
 
@@ -6240,6 +6253,9 @@ int main(int argc, char *argv[])
 
 		/* Pick up new connections */
 		conn_process_listeners(&fdread);
+
+		/* When should we next try to handle TCP by? */
+		nexttcpcheck = getcurrenttime(NULL) + tcpcheckinterval;
 
 		/* Any scheduled tasks that need attending to? */
 		{

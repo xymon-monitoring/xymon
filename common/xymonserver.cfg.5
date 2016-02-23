@@ -469,6 +469,25 @@ may need to be set higher if you receive messages about invalid
 or truncated messages while bfq mode is enabled in xymond.
 See README.backfeed for more information
 
+.IP XYMONDTCPINTERVAL
+How often in seconds to stop processing BFQ messages (even if 
+there are still some pending) in order to handle TCP traffic. 
+Only needed on very busy xymon servers that primarily receive
+traffic via BFQ. Default: 1
+
+.IP MAXACCEPTSPERLOOP
+How many pending TCP messages should xymond accept on each 
+time through its main processing loop. The default should be
+sufficient for most cases, but unusually high TCP workloads or
+tcp tuning values (i.e., in sysctl) may require raising it on
+exceptionally busy xymond servers. Default: 20
+
+.IP BFQCHUNKSIZE
+How many BFQ messages should be handled in a group before 
+checking for a XYMONDTCPINTERVAL to have expired. Reduce this
+value if xymond seems unusually unresponsive to queries over 
+TCP, or increase if it cannot keep up with the BFQ. Default: 50	
+
 
 .SH XYMOND_HISTORY SETTINGS
 

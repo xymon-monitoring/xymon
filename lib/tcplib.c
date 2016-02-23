@@ -39,7 +39,8 @@ static char rcsid[] = "$Id: tcplib.c 7271 2013-08-11 09:43:16Z storner $";
 #include "config.h"
 #include "tcplib.h"
 
-#define MAX_ACCEPT_PER_LOOP 20
+# How many connections to accept on each loop
+static int max_accepts = 0;
 
 #ifdef HAVE_OPENSSL
 #include <openssl/err.h>
@@ -510,6 +511,14 @@ int conn_listen(int backlog, int maxlifetime,
 	int port4 = 0, port6 = 0;
 	tcpconn_t *ls;
 	int result = 0;
+
+	if (!max_accepts) {
+		max_accepts = atoi(xgetenv("MAXACCEPTSPERLOOP"));
+		if (!max_accepts) {
+			errprintf("ERROR: Invalid MAXACCEPTSPERLOOP value: '%s'\n", textornull(xgetenv("MAXACCEPTSPERLOOP")));
+			max_accepts = 20;
+		}
+	}
 
 #ifdef IPV6_SUPPORT
 	{
@@ -1224,7 +1233,7 @@ void conn_process_listeners(fd_set *fdread)
 	conn_info(funcid, INFO_DEBUG, "Processing all listen-sockets\n");
 	for (walk = lsocks; (walk); walk = walk->next) {
 		if (FD_ISSET(walk->sock, fdread)) {
-			while (conn_accept(walk) && (++acceptcount < MAX_ACCEPT_PER_LOOP)) ;
+			while (conn_accept(walk) && (++acceptcount < max_accepts)) ;
 		}
 	}
 }

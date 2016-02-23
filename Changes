@@ -80,6 +80,11 @@ Changes from 4.3.x -> 4.4-alpha
 * The xymonserver.cfg file now presupposes that it's running in a xymoncmd-
   or xymonlaunch-configured context, and that variables like $MACHINEDOTS are
   already set.
+* Add BFQCHUNKSIZE, MAXACCEPTSPERLOOP, and XYMONDTCPINTERVAL to adjust how
+  often xymond will pause handling BFQ messages to deal with TCP traffic.
+  This can prevent TCP timeouts on busy xymond servers with large amounts of
+  BFQ traffic (eg, from xymonproxy's listening on different ports for one-way
+  messages).
 * xymonnet: support a --bfq/--no-bfq option for automatically sensing the
   presence of a feedback queue when running on a xymond server
 
