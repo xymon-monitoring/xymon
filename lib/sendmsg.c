@@ -344,7 +344,7 @@ static int sendtoall(char *msg, size_t msglen, int timeout, mytarget_t **targets
 	for (i = 0; (targets[i]); i++) {
 		char *ip;
 		int portnum;
-		enum conn_ipproto_t wantedproto;
+		enum conn_ipproto_t wantedproto = CONN_IPPROTO_ANY;
 
 		switch (ipprotocol) {
 		  case XYMON_IPPROTO_ANY: wantedproto = CONN_IPPROTO_ANY; break;

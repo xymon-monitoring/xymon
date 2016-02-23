@@ -340,7 +340,7 @@ void xymon_default_xymonhome(char *programname)
 
 		/* First check if programname has no path-element, then we need to scan $PATH */
 		if (strchr(programname, '/') == NULL) {
-			char *path = strdup(getenv("PATH")), *pathelem, *tokr;
+			char *path = strdup(getenv("PATH")), *pathelem, *tokr = NULL;
 			int found = 0;
 			char pathpgm[PATH_MAX];
 			struct stat st;
@@ -353,10 +353,10 @@ void xymon_default_xymonhome(char *programname)
 			} 
 
 			free(path);
-			realpath((found ? pathpgm: programname), buf);
+			if (!realpath((found ? pathpgm: programname), buf)) errprintf("Unable to resolve path to %s: %s\n", (found ? pathpgm: programname), strerror(errno));
 		}
 		else {
-			realpath(programname, buf);
+			if (!realpath(programname, buf)) errprintf("Unable to resolve path to %s: %s\n", programname, strerror(errno));
 		}
 		dbuf = dirname(buf);
 

@@ -36,10 +36,12 @@ static char rcsid[] = "$Id: tcplib.c 7271 2013-08-11 09:43:16Z storner $";
 #include <stdarg.h>
 #include <time.h>
 
+#include "environ.h"
+#include "errormsg.h"
 #include "config.h"
 #include "tcplib.h"
 
-# How many connections to accept on each loop
+/* How many connections to accept on each loop */
 static int max_accepts = 0;
 
 #ifdef HAVE_OPENSSL
@@ -515,7 +517,7 @@ int conn_listen(int backlog, int maxlifetime,
 	if (!max_accepts) {
 		max_accepts = atoi(xgetenv("MAXACCEPTSPERLOOP"));
 		if (!max_accepts) {
-			errprintf("ERROR: Invalid MAXACCEPTSPERLOOP value: '%s'\n", textornull(xgetenv("MAXACCEPTSPERLOOP")));
+			errprintf("ERROR: Invalid MAXACCEPTSPERLOOP value: '%s'\n", xgetenv("MAXACCEPTSPERLOOP"));
 			max_accepts = 20;
 		}
 	}
