@@ -80,6 +80,8 @@ Changes from 4.3.x -> 4.4-alpha
 * The xymonserver.cfg file now presupposes that it's running in a xymoncmd-
   or xymonlaunch-configured context, and that variables like $MACHINEDOTS are
   already set.
+* xymonnet: support a --bfq/--no-bfq option for automatically sensing the
+  presence of a feedback queue when running on a xymond server
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet

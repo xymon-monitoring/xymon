@@ -2028,6 +2028,7 @@ int main(int argc, char *argv[])
 	int servicedumponly = 0;
 	int pingrunning = 0;
 	int usebackfeedqueue = 0;
+	int force_backfeedqueue = 0;
 
 #ifdef HAVE_LZ4
         /* xymonnet sends a lot of data; decrease the load on xymond */
@@ -2077,6 +2078,12 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-ares") == 0) {
 			use_ares_lookup = 0;
+		}
+		else if (strcmp(argv[argi], "--bfq") == 0) {
+			force_backfeedqueue = 1;
+		}
+		else if (strcmp(argv[argi], "--no-bfq") == 0) {
+			force_backfeedqueue = -1;
 		}
 		else if (argnmatch(argv[argi], "--maxdnsqueue=")) {
 			char *p = strchr(argv[argi], '=');
@@ -2360,7 +2367,12 @@ int main(int argc, char *argv[])
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 	add_timestamp("Service definitions loaded");
 
-	usebackfeedqueue = (sendmessage_init_local() > 0);
+	usebackfeedqueue = ((force_backfeedqueue >= 0) ? (sendmessage_init_local() > 0) : 0);
+	if (force_backfeedqueue == 1 && usebackfeedqueue <= 0) {
+		errprintf("Unable to set up backfeed queue when --bfq given, aborting run\n");
+		return 0;
+	}
+
 
 	load_tests();
         if (loadhostsfromxymond && first_host() == NULL) {
