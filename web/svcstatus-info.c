@@ -95,10 +95,10 @@ static int fetch_status(char *hostname)
 
 		tok = gettok(walk, "|");
 		if ( tok && (strcmp(tok, xgetenv("INFOCOLUMN")) != 0) && (strcmp(tok, xgetenv("TRENDSCOLUMN")) != 0) && (strcmp(tok, xgetenv("CLIENTCOLUMN")) != 0) ) {
-			tnames[testcount].name = strdup(tok); tok = gettok(NULL, "|"); 
+			tnames[testcount].name = strdup(htmlquoted(tok)); tok = gettok(NULL, "|"); 
 			if (tok) { tnames[testcount].color = parse_color(tok); tok = gettok(NULL, "|"); }
 			if (tok) { tnames[testcount].distime = atol(tok); tok = gettok(NULL, "|"); }
-			if (tok) { tnames[testcount].dismsg = strdup(tok); tok = gettok(NULL, "|"); }
+			if (tok) { tnames[testcount].dismsg = strdup(tok); tok = gettok(NULL, "|"); }	/* nlencoded, so htmlrequote later */
 			if (tok) { haveuname |= (*tok == 'Y'); tok = gettok(NULL, "|"); }
 			if (tok) { tnames[testcount].lastchange = atol(tok); }
 			tnames[testcount].next = NULL;
@@ -169,7 +169,7 @@ static int fetch_status(char *hostname)
 
 	if (haveuname) {
 		char *clidata = NULL;
-		char *boln, *eoln;
+		char *boln, *eoln, *htmlq;
 
 		sprintf(xymoncmd, "clientlog %s section=uname,osversion,clientversion", hostname);
 		if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
@@ -183,7 +183,7 @@ static int fetch_status(char *hostname)
 		if (boln) {
 			boln = strchr(boln, '\n') + 1;
 			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
-			unametxt = strdup(boln);
+			unametxt = strdup(htmlquoted(boln));
 			if (eoln) *eoln = '\n';
 		}
 
@@ -191,13 +191,14 @@ static int fetch_status(char *hostname)
 		if (boln) {
 			boln = strchr(boln, '\n') + 1;
 			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
+			htmlq = htmlquoted(boln);
 			if (unametxt) {
-				unametxt = (char *)realloc(unametxt, strlen(unametxt) + strlen(boln) + 6);
+				unametxt = (char *)realloc(unametxt, strlen(unametxt) + strlen(htmlq) + 6);
 				strcat(unametxt, "<br>\n");
-				strcat(unametxt, boln);
+				strcat(unametxt, htmlq);
 			}
 			else {
-				unametxt = strdup(boln);
+				unametxt = strdup(htmlq);
 			}
 			if (eoln) *eoln = '\n';
 		}
@@ -206,7 +207,8 @@ static int fetch_status(char *hostname)
 		if (boln) {
 			boln = strchr(boln, '\n') + 1;
 			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
-			clientvertxt = strdup(boln);
+			htmlq = htmlquoted(boln);
+			clientvertxt = strdup(htmlq);
 			if (eoln) *eoln = '\n';
 		}
 
@@ -1197,7 +1199,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 			addtobuffer(infobuf, "<a href=\"");
 			addtobuffer(infobuf, urlstring);
 			addtobuffer(infobuf, "\">");
-			addtobuffer(infobuf, urlstring);
+			addtobuffer(infobuf, htmlquoted(urlstring));
 			addtobuffer(infobuf, "</a><br>\n");
 		}
 		val = xmh_item_walk(NULL);

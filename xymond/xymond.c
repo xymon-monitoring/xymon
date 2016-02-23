@@ -967,6 +967,12 @@ char *log_ghost(char *hostname, char *sender, char *msg)
 	ghandle = xtreeFind(rbghosts, hostname);
 	gwalk = (ghandle != xtreeEnd(rbghosts)) ? (ghostlist_t *)xtreeData(rbghosts, ghandle) : NULL;
 
+	/* Disallow weird test names - Note: a future version may restrict these to valid hostname + DNS labels and not preserve case */
+	if (!gwalk && (strlen(hostname) != strspn(hostname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:,._-")) ) {
+		errprintf("Bogus message from %s: Invalid new hostname '%s'\n", sender, hostname);
+		return NULL;
+	}
+
 	if ((gwalk == NULL) || ((gwalk->matchtime + 600) < nowtimer)) {
 		int found = 0;
 
@@ -1267,6 +1273,12 @@ void get_hts(char *msg, char *sender, char *origin,
 
 		testhandle = xtreeFind(rbtests, testname);
 		if (testhandle != xtreeEnd(rbtests)) twalk = xtreeData(rbtests, testhandle);
+
+		/* Disallow new, weird test names - Note: a future version of Xymon may restrict this further and not preserve case */
+		if (!twalk && (strlen(testname) != strspn(testname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:\\/_-")) ) {
+			errprintf("Bogus message from %s: Invalid new testname '%s'\n", sender, testname);
+			return;
+		}
 		if (createlog && (twalk == NULL)) twalk = create_testinfo(testname);
 	}
 	else {
