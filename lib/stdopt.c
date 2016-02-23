@@ -128,6 +128,9 @@ void libxymon_init(char *toolname)
 		programname = basename(strdup(toolname));
 		programpath = dirname(strdup(toolname));
 
+		/* Set up just enough of an environment to deal with signal handlers */
+		/* We haven't processed any standard commandline options (like --env) yet */
+		initenv();
 		setup_signalhandler(programname);
 	}
 }

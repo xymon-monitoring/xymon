@@ -42,6 +42,8 @@ int main(int argc, char *argv[])
 		}
 		else {
 			if (argcount == 0) {
+				/* Load our default environment, if --env= wasn't given and handled by standardoption() */
+				(void)loaddefaultenv();
 				cmdargs[0] = cmd = strdup(expand_env(argv[argi]));
 				argcount = 1;
 			}
@@ -51,8 +53,11 @@ int main(int argc, char *argv[])
 
 	/* Go! */
 	if (cmd == NULL) {
-		cmd = cmdargs[0] = xgetenv("SHELL");
+		/* Load our default environment, if --env= wasn't given and handled by standardoption() */
+		if (!loaddefaultenv()) xymon_default_xymonhome(argv[0]);
 		printf("xymoncmd: No command given; dropping you to a shell\n\n");
+
+		cmd = cmdargs[0] = xgetenv("SHELL");
 		if (*cmd == '\0') cmd = cmdargs[0] = "/bin/sh";
 		cmdargs[1] = "-i"; cmdargs[2] = NULL;
 	}

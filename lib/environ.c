@@ -29,6 +29,7 @@ static char rcsid[] = "$Id$";
 #include <sys/utsname.h>
 #endif
 
+static int haveinitenv = 0;
 static int haveenv = 0;
 
 
@@ -397,43 +398,11 @@ void xymon_default_xymonhome(char *programname)
 
 char *xgetenv(const char *name)
 {
-	static int firsttime = 1;
 	char *result, *newstr;
 	int i;
 
-	if (firsttime) {
-		xymon_default_machine();
-		xymon_default_machinedots();
-		xymon_default_clienthostname();
-		xymon_default_serverostype();
-		firsttime = 0;
-	}
-
-	if (!haveenv) {
-		struct stat st;
-		char envfn[PATH_MAX];
-
-		haveenv = 1; /* Must set here to avoid looping when calling xgetenv on the next line */
-
-		snprintf(envfn, sizeof(envfn), "%s/etc/xymonserver.cfg", xgetenv("XYMONHOME"));
-		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "/etc/xymon/xymonserver.cfg");
-		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "%s/etc/xymonclient.cfg", xgetenv("XYMONHOME"));
-		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "%s/etc/xymonclient.cfg", xgetenv("XYMONCLIENTHOME"));
-		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "/etc/xymon-client/xymonclient.cfg");
-		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "xymonserver.cfg");
-		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "xymonclient.cfg");
-
-		if (stat(envfn, &st) == 0) {
-			dbgprintf("Using default environment file %s\n", envfn);
-			loadenv(envfn, envarea);
-		}
-		else {
-			dbgprintf("Could not find an environment file to load\n");
-		}
-	}
 
 	result = getenv(name);
-
 	if (result == NULL) {
 		for (i=0; (xymonenv[i].name && (strcmp(xymonenv[i].name, name) != 0)); i++) ;
 		if (xymonenv[i].name) result = expand_env(xymonenv[i].val);
@@ -478,11 +447,63 @@ void envcheck(char *envvars[])
 	}
 }
 
+void initenv(void)
+{
+	if (haveinitenv++) return;
+
+	xymon_default_machine();
+	xymon_default_machinedots();
+	xymon_default_clienthostname();
+	xymon_default_serverostype();
+	return;
+}
+
+int loaddefaultenv(void)
+{
+	struct stat st;
+	char envfn[PATH_MAX];
+	char *defhome = NULL;
+
+	/* Don't load a default environment file on top of an existing one */
+	if (haveenv) return 1;
+	if (!haveinitenv) initenv();
+
+	/* NB: Chicken-and-egg issue here for $XYMONHOME. If unset, don't check first. */
+	if (getenv("XYMONHOME")) {
+		snprintf(envfn, sizeof(envfn), "%s/etc/xymonserver.cfg", getenv("XYMONHOME"));
+		if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "/etc/xymon/xymonserver.cfg");
+	}
+	else snprintf(envfn, sizeof(envfn), "/etc/xymon/xymonserver.cfg");
+
+	if (getenv("XYMONHOME") && (stat(envfn, &st) == -1)) snprintf(envfn, sizeof(envfn), "%s/etc/xymonclient.cfg", getenv("XYMONHOME"));
+	if (getenv("XYMONCLIENTHOME") && (stat(envfn, &st) == -1)) snprintf(envfn, sizeof(envfn), "%s/etc/xymonclient.cfg", getenv("XYMONCLIENTHOME"));
+	if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "/etc/xymon-client/xymonclient.cfg");
+	if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "xymonserver.cfg");
+	if (stat(envfn, &st) == -1) snprintf(envfn, sizeof(envfn), "xymonclient.cfg");
+
+	if (stat(envfn, &st) == 0) {
+		dbgprintf("Using default environment file %s\n", envfn);
+		loadenv(envfn, envarea);
+		/* Return failure on loadenv failure? */
+	}
+	else {
+		errprintf("Could not find an environment file to load\n");
+		return 0;
+	}
+	return 1;
+}
+
+
 void loadenv(char *envfile, char *area)
 {
 	FILE *fd;
 	strbuffer_t *inbuf;
-	char *p, *marker, *oneenv;
+	char *p, *marker, *evar, *oneenv;
+
+	if (haveenv) {
+		errprintf("loadenv(): Loading file '%s' over existing file '%s'; results might be unexpected\n",
+			envfile, textornull(getenv("XYMONENV")) );
+	}
 
 	haveenv = 1;	/* Set whether this succeeds or not */
 
@@ -554,6 +575,12 @@ void loadenv(char *envfile, char *area)
 			}
 		}
 		stackfclose(fd);
+
+		evar = (char *)malloc(10+strlen(envfile));
+		sprintf(evar, "XYMONENV=%s", envfile);
+		dbgprintf("Setting %s\n", evar);
+		putenv(evar);
+
 	}
 	else {
 		errprintf("Cannot open env file %s - %s\n", envfile, strerror(errno));

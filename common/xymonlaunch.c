@@ -584,9 +584,9 @@ int main(int argc, char *argv[])
 		if (stat("/etc/tasks.cfg", &st) != -1) config = strdup("/etc/tasks.cfg");
 		else if (stat("/etc/xymon/tasks.cfg", &st) != -1) config = strdup("/etc/xymon/tasks.cfg");
 		else if (stat("/etc/xymon-client/clientlaunch.cfg", &st) != -1) config = strdup("/etc/xymon-client/clientlaunch.cfg");
-		else if (xgetenv("XYMONHOME")) {
-			config = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen("/etc/tasks.cfg") + 1);
-			sprintf(config, "%s/etc/tasks.cfg", xgetenv("XYMONHOME"));
+		else if (getenv("XYMONHOME")) {
+			config = (char *)malloc(strlen(getenv("XYMONHOME")) + strlen("/etc/tasks.cfg") + 1);
+			sprintf(config, "%s/etc/tasks.cfg", getenv("XYMONHOME"));
 		}
 		if (config) dbgprintf("Using config file: %s\n", config);
 	}
