@@ -6012,9 +6012,11 @@ int main(int argc, char *argv[])
 	userchn  = setup_channel(C_USER, CHAN_MASTER);
 	if (userchn == NULL) { errprintf("Cannot setup user channel\n"); return 1; }
 	if (create_backfeedqueue) {
+		logprintf("Setting up backfeed queue\n");
 		backfeedqueue  = setup_feedback_queue(CHAN_MASTER);
 		if (backfeedqueue == -1) { errprintf("Cannot setup backfeed-client channel\n"); return 1; }
 		bf_bufsz = 1024*shbufsz(C_FEEDBACK_QUEUE);
+		logprintf("Backfeed queue buffer allocation: %d bytes\n", bf_bufsz);
 		bf_buf = (char *)calloc(1, bf_bufsz);
 		if (bf_buf == NULL) { errprintf("Cannot allocate backfeed queue buffer (%d): %s\n", bf_bufsz, strerror(errno)); return 1; }
 		*bf_buf = '\0';

@@ -172,10 +172,14 @@ int setup_feedback_queue(int role)
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | FEEDBACKQUEUE_MODE) : 0);
 	int queueid;
 
+	dbgprintf("- setting up feedback queue\n");
+
 	if ( (xymonhome == NULL) || (stat(xymonhome, &st) == -1) ) {
 		errprintf("XYMONHOME not defined, or points to invalid directory - cannot continue.\n");
 		return -1;
 	}
+
+	dbgprintf("- calling ftok('%s',%d)\n", xymonhome, C_FEEDBACK_QUEUE);
 
 	key = ftok(xymonhome, C_FEEDBACK_QUEUE);
 	if (key == -1) {
