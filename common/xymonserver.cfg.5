@@ -110,6 +110,15 @@ E.g.
 for a Japanese character sets. Note: Some webservers will automatically
 add this, if configured to do so.
 
+.IP XYMWEBREFRESH
+The default HTTP page reload interval for many xymongen and status pages. 
+Note that while this can be overridden in the header template files for 
+regular pages, dynamically generated status logs displayed with 
+svcstatus.cgi(1) use this value in the HTTP response header and for
+security reasons the value in hostsvc_header may be ignored on many
+modern browsers. (default [seconds]: 60)
+
+
 .IP HOLIDAYS
 Defines the default set of holidays used if there is no "holidays" 
 tag for a host in the hosts.cfg file. Holiday sets are defined in the

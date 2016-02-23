@@ -125,6 +125,7 @@ const static struct {
 	{ "ALERTCOLORS", "red,yellow,purple" },
 	{ "OKCOLORS", "green,blue,clear" },
 	{ "ALERTREPEAT", "30" },
+	{ "XYMWEBREFRESH", "60" },
 	{ "CONNTEST", "TRUE" },
 	{ "IPTEST_2_CLEAR_ON_FAILED_CONN", "TRUE" },
 	{ "NONETPAGE", "" },

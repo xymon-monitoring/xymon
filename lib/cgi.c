@@ -261,12 +261,14 @@ char *csp_header(const char *str)
 
 	if (getenv("XYMON_NOCSPHEADER")) return NULL;
 	
-	if      (strncmp(str, "enadis", 6) == 0) csppol = strdup("script-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; sandbox allow-forms allow-scripts;");
+	if      (strncmp(str, "enadis", 6) == 0) csppol = strdup("script-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; sandbox allow-forms allow-scripts allow-same-origin allow-modals allow-popups;");
 	else if (strncmp(str, "useradm", 7) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self';");
 	else if (strncmp(str, "chpasswd", 8) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self';");
 	else if (strncmp(str, "ackinfo", 7) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self';");
 	else if (strncmp(str, "acknowledge", 11) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self';");
 	else if (strncmp(str, "criticaleditor", 14) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self';");
+	else if (strncmp(str, "svcstatus-trends", 16) == 0) csppol = strdup("script-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; sandbox allow-forms allow-scripts;");
+	else if (strncmp(str, "svcstatus-info", 14) == 0) csppol = strdup("script-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; sandbox allow-forms allow-same-origin allow-scripts allow-modals allow-popups;");
 	else if (strncmp(str, "svcstatus", 9) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self'; sandbox allow-forms;");
 	else if (strncmp(str, "historylog", 10) == 0) csppol = strdup("script-src 'self'; connect-src 'self'; form-action 'self'; sandbox allow-forms;");
 	else {
@@ -314,7 +316,7 @@ int cgi_refererok(char *expected)
 		if (strncmp(p, cgi_checkstr, strlen(cgi_checkstr)) == 0) isok = 1;
 	}
 	
-	if (!isok) errprintf("Disallowed request due to unexpected referer '%s', wanted '%s' (originally '%s')\n", p, cgi_checkstr, expected);
+	if (!isok) dbgprintf("Disallowed request due to unexpected referer '%s', wanted '%s' (originally '%s')\n", p, cgi_checkstr, expected);
 
 	return isok;
 }
