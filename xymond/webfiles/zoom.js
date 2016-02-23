@@ -582,6 +582,7 @@ function onMouseUpEvent(e) {
 
  var idxStr;
  var countStr;
+ var filterStr;
  var nostaleStr;
 
  gMouseObj.setEvent(e);
@@ -590,10 +591,11 @@ function onMouseUpEvent(e) {
  graphEnd = parseInt(gUrlObj.getUrlParameterValue("graph_end"));
  graphTop = parseFloat(gUrlObj.getUrlParameterValue("upper"));
  graphBottom = parseFloat(gUrlObj.getUrlParameterValue("lower"));
- haveGraphLimits = (gUrlObj.getUrlParameterValue("upper") != undefined) && (gUrlObj.getUrlParameterValue("lower") != undefined);
+ // haveGraphLimits = (gUrlObj.getUrlParameterValue("upper") != undefined) && (gUrlObj.getUrlParameterValue("lower") != undefined);
 
  idxStr = "";
  countStr = "";
+ filterStr = "";
  nostaleStr = "";
 
  if ((gMouseObj.rightButtonPressed()) && (insideZoomBox())) {
@@ -610,6 +612,7 @@ function onMouseUpEvent(e) {
   var dispName = gUrlObj.getUrlParameterValue("disp");
   var firstIdx = gUrlObj.getUrlParameterValue("first");
   var nostale =  gUrlObj.getUrlParameterValue("nostale");
+  var filter =  gUrlObj.getUrlParameterValue("filter");
   var idxCount =  gUrlObj.getUrlParameterValue("count");
   var graphWidth = gUrlObj.getUrlParameterValue("graph_width");
   var graphHeight = gUrlObj.getUrlParameterValue("graph_height");
@@ -621,11 +624,14 @@ function onMouseUpEvent(e) {
   if (idxCount != "") {
      countStr = "&count=" + idxCount; 
   }
+  if (filter != "") {
+     filterStr = "&filter=" + filter; 
+  }
   if (nostale != "") {
      nostaleStr = "&nostale"; 
   }
 
-  open(urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + nostaleStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor, "_self");
+  open(urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + filterStr + nostaleStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor, "_self");
  }
 
  if ((gMouseObj.leftButtonPressed()) && (gMouseObj.dragging)) {
@@ -672,6 +678,7 @@ function onMouseUpEvent(e) {
    var firstIdx = gUrlObj.getUrlParameterValue("first");
    var nostale =  gUrlObj.getUrlParameterValue("nostale");
    var idxCount =  gUrlObj.getUrlParameterValue("count");
+   var filter =  gUrlObj.getUrlParameterValue("filter");
    var graphWidth = gUrlObj.getUrlParameterValue("graph_width");
    var graphHeight = gUrlObj.getUrlParameterValue("graph_height");
    var bgColor = gUrlObj.getUrlParameterValue("color");
@@ -682,11 +689,14 @@ function onMouseUpEvent(e) {
    if (idxCount != "") {
       countStr = "&count=" + idxCount; 
    }
+   if (filter != "") {
+      filterStr = "&filter=" + filter; 
+   }
    if (nostale != "") {
       nostaleStr = "&nostale"; 
    }
 
-   newURL = urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + nostaleStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor;
+   newURL = urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + filterStr + nostaleStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor;
 
    if (haveGraphLimits) {
       var OnePixelY = (graphTop - graphBottom) / gZoomGraphObj.zoomBoxHeight; // Represent # of units on Y axis for 1 pixel on the graph

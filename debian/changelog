@@ -188,6 +188,7 @@ xymon (4.4.0-alpha1) unstable; urgency=low
    * xymond_rrd: The (existing) --processor option is now documented.
    * xymond_rrd: Delay 10m after start before first flushing of cached values,
      to prevent out-of-order RRD writes from a previous process being affected.
+   * Add ability to filter/filelist when displaying graphs (Thanks, Stef Coene)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, ## MMM 2016 00:00:00 +0100
 

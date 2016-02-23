@@ -49,6 +49,9 @@ unsigned char blankimg[] = "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49
 #endif
 
 
+char **filelist = NULL;
+int filelistmatch = 0;
+int filelistsize = 0;
 char *hostname = NULL;
 char **hostlist = NULL;
 int hostlistsize = 0;
@@ -272,6 +275,29 @@ void parse_query(void)
 
 			xfree(hnames);
 			if (hostlist) hostname = hostlist[0];
+		}
+		else if (strcmp(cwalk->name, "filelist") == 0) {
+			char *filehnames = strdup(cwalk->value);
+         char *filename = NULL;
+
+			filename = strtok_r(cwalk->value, ",", &stp);
+			while (filename) {
+				if (filelist == NULL) {
+					filelistsize = 1;
+					filelist = (char **)malloc(sizeof(char *));
+					filelist[0] = strdup(filename);
+				}
+				else {
+					filelistsize++;
+					filelist = (char **)realloc(filelist, (filelistsize * sizeof(char *)));
+					filelist[filelistsize-1] = strdup(filename);
+				}
+
+				filename = strtok_r(NULL, ",", &stp);
+			}
+
+			xfree(filehnames);
+			/* if (filelist) filename = filelist[0]; */
 		}
 		else if (strcmp(cwalk->name, "service") == 0) {
 			service = strdup(cwalk->value);
@@ -764,6 +790,17 @@ char *build_selfURI(void)
 	}
 	else {
 		addtobuffer(result, urlencode(hostname));
+	if (filelist) {
+	   addtobuffer(result, "&filelist=");
+      int i;
+
+      addtobuffer(result, urlencode(filelist[0]));
+      for (i = 1; (i < filelistsize); i++) {
+         addtobuffer(result, ",");
+         addtobuffer(result, urlencode(filelist[i]));
+      }
+   }
+
 	}
 
 	addtobuffer(result, "&amp;color="); addtobuffer(result, colorname(bgcolor));
@@ -1052,6 +1089,21 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			/* We have a matching file! */
 			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
 			if (pcre_copy_substring(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
+
+            /* Nakijken of we een lijst hebben van rrd's die we moeten machen */
+	         if (filelist) {
+               int i;
+			      filelistmatch = 0 ;
+               for (i = 0; (i < filelistsize); i++) {
+                  if ( strcmp(filelist[i],param) == 0 ) {
+			            filelistmatch = 1 ;
+                  }
+               }
+               if (!filelistmatch) {
+                  continue ;
+               }
+            }
+
 				/*
 				 * This is ugly, but I cannot find a pretty way of un-mangling
 				 * the disk- and http-data that has been molested by the back-end.
@@ -1087,7 +1139,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 				rrddbsize += 5;
 				rrddbs = (rrddb_t *)realloc(rrddbs, (rrddbsize+1) * sizeof(rrddb_t));
 			}
-		}
+		} /* While loop in directory */
+
 		pcre_free(pat);
 		if (expat) pcre_free(expat);
 		closedir(dir);

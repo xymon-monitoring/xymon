@@ -187,7 +187,8 @@ Changes from 4.3.x -> 4.4-alpha
 * xymond_rrd: The (existing) --processor option is now documented.
 * xymond_rrd: Delay 10m after start before first flushing of cached values,
   to prevent out-of-order RRD writes from a previous process being affected.
-
+* Add ability to filter/filelist when displaying graphs (Thanks, Stef Coene)
+ 
 
 Changes from 4.3.25 -> 4.3.26 (19 Feb 2016)
 ===========================================
