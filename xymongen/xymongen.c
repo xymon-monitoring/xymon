@@ -728,7 +728,7 @@ int main(int argc, char *argv[])
 
 		if (errbuf) {
 			addtostatus("\n\nError output:\n");
-			addtostatus(errbuf);
+			addtostatus(prehtmlquoted(errbuf));
 		}
 
 		show_timestamps(&timestamps);

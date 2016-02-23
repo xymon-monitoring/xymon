@@ -532,7 +532,7 @@ char *generate_stats(void)
 
 		/* Skip records older than 10 minutes */
 		if (gwalk->tstamp < (nowtimer - 600)) continue;
-		sprintf(msgline, "  %-15s reported host %s\n", gwalk->sender, gwalk->name);
+		sprintf(msgline, "  %-15s reported host %s\n", gwalk->sender, htmlquoted(gwalk->name));
 		addtobuffer(statsbuf, msgline);
 	}
 
@@ -549,7 +549,7 @@ char *generate_stats(void)
 
 	if (errbuf) {
 		addtobuffer(statsbuf, "\n\nLatest error messages:\n");
-		addtobuffer(statsbuf, errbuf);
+		addtobuffer(statsbuf, prehtmlquoted(errbuf));
 		addtobuffer(statsbuf, "\n");
 	}
 
