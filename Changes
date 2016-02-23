@@ -211,6 +211,7 @@ Changes from 4.3.x -> 4.4-alpha
 * xymond: Attempt to continue startup even if a previous worker is still    
   attached to the channel.
 * Add ability to filter/filelist when displaying graphs (Thanks, Stef Coene)
+* No longer generate a PID file by default (when --pid not given)
  
 
 Changes from 4.3.25 -> 4.3.26 (19 Feb 2016)

@@ -168,7 +168,8 @@ int main(int argc, char *argv[])
 		xfree(savelist);
 	}
 
-	{
+	if (pidfn != NULL) {
+		/* Save PID */
 		FILE *pidfd = fopen(pidfn, "w");
 		if (pidfd) {
 			fprintf(pidfd, "%lu\n", (unsigned long)getpid());

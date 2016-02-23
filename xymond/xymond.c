@@ -5973,8 +5973,8 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
-	/* Save PID */
-	{
+	if (pidfn != NULL) {
+		/* Save PID */
 		FILE *fd = fopen(pidfn, "w");
 		if (fd) {
 			if (fprintf(fd, "%lu\n", (unsigned long)getpid()) <= 0) {
@@ -6313,7 +6313,7 @@ int main(int argc, char *argv[])
 	if (bf_buf) xfree(bf_buf);
 
 	save_checkpoint();
-	unlink(pidfn);
+	if (pidfn) unlink(pidfn);
 
 #ifdef DEBUG_FOR_VALGRIND
 	initialize_hostlist();

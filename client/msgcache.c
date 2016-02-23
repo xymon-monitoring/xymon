@@ -363,17 +363,26 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 		else if (childpid > 0) {
-			/* Parent - save PID and exit */
-			FILE *fd = fopen(pidfn, "w");
-			if (fd) {
-				fprintf(fd, "%d\n", (int)childpid);
-				fclose(fd);
-			}
+			/* Parent just exits */
 			exit(0);
 		}
 		/* Child (daemon) continues here */
 		setsid();
 	}
+        if (pidfn) {
+		/* Save PID */
+		FILE *fd = fopen(pidfn, "w");
+		if (fd) {
+			if (fprintf(fd, "%lu\n", (unsigned long)getpid()) <= 0) {
+				errprintf("Error writing PID file %s: %s\n", pidfn, strerror(errno));
+			}
+			fclose(fd);
+		}
+		else {
+			errprintf("Cannot open PID file %s: %s\n", pidfn, strerror(errno));
+		}
+	}
+
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigmisc_handler;
