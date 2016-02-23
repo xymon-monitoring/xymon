@@ -4773,8 +4773,6 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 					hostcount++;
 				}
 
-				if (process_clientmsg) handle_client(msg->buf, msg->sender, hname, collectorid, clientos, clientclass);
-
 				if (hinfo) {
 					if (clientos) xmh_set_item(hinfo, XMH_OS, clientos);
 					if (clientclass && !collectorid) {
@@ -4791,6 +4789,8 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 							clientclass = forcedclass;
 					}
 				}
+
+				if (process_clientmsg) handle_client(msg->buf, msg->sender, hname, collectorid, clientos, clientclass);
 			}
 		}
 
