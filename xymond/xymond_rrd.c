@@ -188,6 +188,7 @@ int main(int argc, char *argv[])
 	char *msg;
 	int argi;
 	struct sigaction sa;
+	pid_t flushpid;
 	char *exthandler = NULL;
 	char *extids = NULL;
 	char *processor = NULL;
@@ -523,17 +524,26 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* Flush all cached updates to disk */
-	errprintf("Shutting down, flushing cached updates to disk\n");
-	rrdcacheflushall();
-	errprintf("Cache flush completed\n");
-
 	/* Close out any modify's waiting to be sent */
 	combo_end();
 	if (usebackfeedqueue) sendmessage_finish_local();
 
 	/* Close the external processor */
 	shutdown_extprocessor();
+	
+	flushpid = fork();
+	if (flushpid == -1) {
+		errprintf("Could not fork cacheflush child:%s\n", strerror(errno));
+		rrdcacheflushall();
+		errprintf("Cache flush completed\n");
+	}
+	else if (flushpid == 0) {
+		/* Flush all cached updates to disk */
+		errprintf("Shutting down, flushing cached updates to disk\n");
+		rrdcacheflushall();
+		errprintf("Cache flush completed\n");
+		_exit(0);
+	}
 
 	/* Close the control socket */
 	if (ctlsocket != -1 ) {

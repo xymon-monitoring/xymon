@@ -200,6 +200,11 @@ Changes from 4.3.x -> 4.4-alpha
 * xymond_rrd: The (existing) --processor option is now documented.
 * xymond_rrd: Delay 10m after start before first flushing of cached values,
   to prevent out-of-order RRD writes from a previous process being affected.
+* xymond_rrd will now fork into the background when exiting to allow for 
+  cached updates to be written to the disk while the rest the xymon server 
+  exits.
+* xymond: Attempt to continue startup even if a previous worker is still    
+  attached to the channel.
 * Add ability to filter/filelist when displaying graphs (Thanks, Stef Coene)
  
 

@@ -139,12 +139,7 @@ xymond_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 
 		n = semctl(newch->semid, CLIENTCOUNT, GETVAL);
 		if (n > 0) {
-			errprintf("FATAL: xymond sees clientcount %d, should be 0\nCheck for hanging xymond_channel processes or stale semaphores\n", n);
-			shmdt(newch->channelbuf);
-			shmctl(newch->shmid, IPC_RMID, NULL);
-			semctl(newch->semid, 0, IPC_RMID);
-			xfree(newch);
-			return NULL;
+			errprintf("WARNING: xymond sees clientcount %d, should be 0\nCheck for hanging xymond_channel processes or stale semaphores\nBehavior is undefined.\n", n);
 		}
 	}
 
