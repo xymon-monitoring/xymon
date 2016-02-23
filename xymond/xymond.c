@@ -6172,11 +6172,14 @@ int main(int argc, char *argv[])
 				if (errno == E2BIG) {
 					/* someone dropped something huge on our message queue */
 					/* since we can't guarantee what it is to downstream users, just log and discard it */
-					char *temp = malloc(MAX_XYMON_INBUFSZ);
-					sz = msgrcv(backfeedqueue, temp, (MAX_XYMON_INBUFSZ - 1), 0L, IPC_NOWAIT | MSG_NOERROR);
-					if (sz >= (MAX_XYMON_INBUFSZ - 1)) errprintf("ERROR reading message on BFQ, size exceeded %zu; dropping\n", MAX_XYMON_INBUFSZ);
-					else errprintf("ERROR reading message on BFQ, size %zu where limit is %zu; dropping. You might want to increase MAXMSG_BFQ in xymonserver.cfg\n", sz, bf_bufsz);
-					xfree(temp);
+					sz = msgrcv(backfeedqueue, bf_buf, bf_bufsz, 0L, IPC_NOWAIT | MSG_NOERROR);
+					if (sz != -1) {
+						errprintf("Dropping oversized message from BFQ %d (limit=%zu). Increase MAXMSG_BFQ in xymonserver.cfg\n", backfeedqueue, bf_bufsz);
+					}
+					else {
+						running = 0;
+						errprintf("ERROR reading oversized message from BFQ %d: %s; exiting\n", backfeedqueue, strerror(errno));
+					}
 				}
 				else if ((errno == EACCES) || (errno == EFAULT) || (errno == EINVAL)) {
 					running = 0;
