@@ -22,6 +22,7 @@ static char rcsid[] = "$Id$";
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #include "xymongen.h"
 #include "util.h"
@@ -153,6 +154,7 @@ state_t *init_state(char *filename, logdata_t *log)
 
 		if (strcmp(p, xgetenv("INFOCOLUMN")) == 0) return NULL;
 		if (strcmp(p, xgetenv("TRENDSCOLUMN")) == 0) return NULL;
+		if (strcmp(p, xgetenv("CLIENTCOLUMN")) == 0) return NULL;
 
 		/*
 		 * When doing reports, we are scanning the XYMONHISTDIR directory. It may
@@ -170,10 +172,17 @@ state_t *init_state(char *filename, logdata_t *log)
 		sprintf(fullfn, "%s/%s", xgetenv("XYMONHISTDIR"), filename);
 
 		/* Check that we can access this file */
-		if ( (stat(fullfn, &log_st) == -1)       || 
-		     (!S_ISREG(log_st.st_mode))            ||
-		     ((fd = fopen(fullfn, "r")) == NULL)   ) {
+		if (stat(fullfn, &log_st) == -1) {
+			errprintf("Error searching for '%s' history file: %s\n", filename, strerror(errno));
+			return NULL;
+		}
+		if (!S_ISREG(log_st.st_mode)) {
 			errprintf("Weird file '%s' skipped\n", fullfn);
+			return NULL;
+		}
+
+		if ((fd = fopen(fullfn, "r")) == NULL) {
+			errprintf("Unable to read file '%s', skipped: %s\n", fullfn, strerror(errno));
 			return NULL;
 		}
 
