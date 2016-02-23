@@ -74,6 +74,12 @@ Changes from 4.3.x -> 4.4-alpha
   matching that regex are silently discarded.
 * Multiple targeted and excluded networks can be specified for xymonnet and
   xymongrep using XYMONNETWORKS and XYMONEXNETWORKS variables in xymonserver.cfg
+* The xymonclient.cfg file now references /etc/{default,sysconfig}/xymon-client
+  files (if present) to allow for defaults (such as client destination) to 
+  be modified there.
+* The xymonserver.cfg file now presupposes that it's running in a xymoncmd-
+  or xymonlaunch-configured context, and that variables like $MACHINEDOTS are
+  already set.
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet

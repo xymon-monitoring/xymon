@@ -6,11 +6,11 @@ XYMONRUNDIR="@XYMONRUNDIR@"			# Directory for server pid files and runtime data.
 XYMONCLIENTHOME="@XYMONTOPDIR@/client"		# XYMONHOME directory for the client
 
 
-XYMONSERVERHOSTNAME="@XYMONHOSTNAME@"		# The hostname of your server
-XYMONSERVERIP="@XYMONHOSTIP@"			# The IP-address of your server. Use the real one, not 127.0.0.1 .
-XYMONSERVEROS="@XYMONHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix,osf
+XYMONSERVERHOSTNAME="$MACHINEDOTS"		# The hostname of your server. Typically automatically set at runtime, but may be overriden here
+XYMONSERVERIP="@XYMONHOSTIP@"			# The IP-address of your server. Use the real one, not 127.0.0.1.
+XYMONSERVEROS="@XYMONHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix,osf # NB: set automatically?
 
-XYMONSERVERWWWNAME="@XYMONHOSTNAME@"		# The name used for this hosts' webserver
+XYMONSERVERWWWNAME="$XYMONSERVERHOSTNAME"	# The name used for this hosts' webserver when full links are generated
 XYMONSERVERWWWURL="@XYMONHOSTURL@"		# The top URL for the Xymon webpages
 XYMONSERVERCGIURL="@XYMONCGIURL@"		# The URL for the Xymon CGI scripts.
 XYMONSERVERSECURECGIURL="@SECUREXYMONCGIURL@"	# The URL for the secured Xymon CGI scripts.
@@ -51,8 +51,9 @@ DELAYYELLOW=""			# Format: status:delay[,status:delay - e.g. "cpu:15,disk:30"
 
 # General settings
 XYMONDPORT="1984"		# Portnumber where xymond listens
-XYMSRV="$XYMONSERVERIP"		# IP of a single Xymon server
-XYMSERVERS=""			# IP of multiple Xymon servers. If used, XYMSRV must be 0.0.0.0
+XYMSRV="0.0.0.0"		# IP of a single Xymon server
+XYMSERVERS="$XYMONSERVERIP"	# IP of multiple Xymon servers to report to. If used, XYMSRV must be 0.0.0.0
+				# This is where server processes (like xymonnet and workers) will send their results. 
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
 XYMONLOGSTATUS="DYNAMIC"	# Are HTML status logs statically or dynamically generated?
 				# Use DYNAMIC with Xymon, unless you run xymond_filestore --status --html
@@ -102,9 +103,9 @@ COMPRESSTYPE="lzo"		# Default is "lzo". "zlib", "lz4", and "lz4hc" may be availa
 # HOLIDAYFORMAT="%m/%d/%y"	# Format for printing holiday dates. Default is %d/%m/%y (day/month/year).
 
 # Specific to this host
-SERVEROSTYPE="$XYMONSERVEROS"		# Hosttype (operating system). Not used by server-side, but clients use this.
-MACHINEDOTS="$XYMONSERVERHOSTNAME"	# This systems hostname
-MACHINEADDR="$XYMONSERVERIP"		# This systems IP-address
+#SERVEROSTYPE="$XYMONSERVEROS"		# Hosttype (operating system). Not used by server-side, but clients use this.
+#MACHINEDOTS="$XYMONSERVERHOSTNAME"	# This system's hostname; this usually doesn't need to be overridden here.
+MACHINEADDR="$XYMONSERVERIP"		# This system's IP-address
 
 # URL's generated/used by xymongen
 XYMONWEBHOST="http://$XYMONSERVERWWWNAME"	# Just the host part of the URL - http://www.foo.com

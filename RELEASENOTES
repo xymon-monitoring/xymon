@@ -12,13 +12,23 @@ Changes file.
 
 Changes for 4.4
 ==================
+
 (placeholder)
+
  - Static WWW files moved outside of WWW tree - update apache config
  - /periodic/ and /notes/ moved from $XYMONWWW to $XYMONVAR
  - Combined, these allow the $XYMONWWW directory to be placed on a tmpfs partition
 
  - New "modify" message types for reliably increasing or decreasing the
    severity of a status
+
+ - Client scripts running on a Xymon server (such as xymonclient.sh itself, 
+   or a local hardware monitor) are now executed with the environment in
+   xymonclient.cfg instead of xymonserver.cfg, and xymonclient.cfg now 
+   attempts to load variables from /etc/{default,sysconfig}/xymon-client
+   if present. This means that the "local client" report on a Xymon server
+   can report to multiple xymond servers just like any other client, for
+   HA or other purposes.
 
 
 Changes for 4.3.26

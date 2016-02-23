@@ -1,7 +1,9 @@
 # Environment settings for the Xymon client.
+optional include /etc/default/xymon-client
+optional include /etc/sysconfig/xymon-client
 
-XYMSRV="@XYMONHOSTIP@"          # IP address of the Xymon server
-XYMSERVERS=""                   # IP of multiple Xymon servers. XYMSRV must be "0.0.0.0".
+XYMSRV="0.0.0.0"                # IP address of the Xymon server
+XYMSERVERS="$XYMONSERVERS"      # IP of multiple Xymon servers. XYMSRV must be "0.0.0.0".
 CONFIGCLASS="$SERVEROSTYPE"     # Default configuration class for logfiles
 
 PATH="/bin:/usr/bin:/sbin:/usr/sbin:/etc"  # PATH setting for the client scripts.

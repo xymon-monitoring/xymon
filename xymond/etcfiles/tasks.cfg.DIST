@@ -202,17 +202,13 @@
 ### 
 ######################################################################################
 
-# "xymonclient" runs the Xymon client. The client is installed automatically
-# when you install a Xymon server (presumably, you do want to monitor the 
-# Xymon server ?), but there's no need to have two xymonlaunch instances
-# running at the same time. So we'll just run it from here.
-[xymonclient]
-	ENVFILE @XYMONTOPDIR@/client/etc/xymonclient.cfg
-	NEEDS xymond
-	CMD @XYMONTOPDIR@/client/bin/xymonclient.sh
-	LOGFILE $XYMONSERVERLOGS/xymonclient.log
-	INTERVAL 5m
-
+# The client is installed automatically when you install a Xymon server 
+# (presumably, you do want to monitor the Xymon server ?), but there's no need 
+# to have two xymonlaunch instances running at the same time. Since the client 
+# scripts are usually configured to run by
+# @XYMONTOPDIR@/client/etc/clientlaunch.cfg and use ENVFILE's specified there, 
+# we'll just include it from here.
+optional include @XYMONTOPDIR@/client/etc/clientlaunch.cfg
 
 
 ######################################################################################

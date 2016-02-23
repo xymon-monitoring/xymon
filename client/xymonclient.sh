@@ -39,6 +39,15 @@ if test "$XYMONOSSCRIPT" = ""; then
 	XYMONOSSCRIPT="xymonclient-`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`.sh"
 fi
 
+# Overrides for xymoncmd from /etc/sysconfig/xymon-client
+if test "$CLIENTOS" != ""; then
+	SERVEROSTYPE="$CLIENTOS"
+fi
+if test "$CLIENTHOSTNAME" != ""; then
+	MACHINEDOTS="$CLIENTHOSTNAME"
+	MACHINE="`echo \"$CLIENTHOSTNAME\" | tr '.' ','`"
+fi
+
 MSGFILE="$XYMONTMP/msg.$MACHINEDOTS.txt"
 MSGTMPFILE="$MSGFILE.$$"
 if test "$LOCALMODE" = "yes"; then
