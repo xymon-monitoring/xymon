@@ -87,6 +87,11 @@ Changes from 4.3.x -> 4.4-alpha
   messages).
 * xymonnet: support a --bfq/--no-bfq option for automatically sensing the
   presence of a feedback queue when running on a xymond server
+* xymond_client: support a --bfq/--no-bfq option for automatically sensing the
+  presence of a feedback queue when running on a xymond server
+* xymond_client: --flushtimeout option to use normal combo functioning every
+  X seconds (at most) instead of sending one combo message per source client.
+  TODO: These options should be factored out into stdopt.c
 
 * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
   write) to xymonnet

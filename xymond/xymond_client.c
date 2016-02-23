@@ -2125,6 +2125,8 @@ int main(int argc, char *argv[])
 	int running;
 	int argi, seq;
 	struct sigaction sa;
+	struct timespec *timeout = NULL;
+	int force_backfeedqueue = 0;
 	time_t nextconfigload = 0;
 	char *configfn = NULL;
 	char **collectors = NULL;
@@ -2185,6 +2187,17 @@ int main(int argc, char *argv[])
 			dump_client_config();
 			return 0;
 		}
+		else if (strncmp(argv[argi], "--flushtimeout=", 15) == 0) {
+			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
+			timeout->tv_sec = (atoi(argv[argi]+15));
+			timeout->tv_nsec = 0;
+		}
+		else if (strcmp(argv[argi], "--bfq") == 0) {
+			force_backfeedqueue = 1;
+		}
+		else if (strcmp(argv[argi], "--no-bfq") == 0) {
+			force_backfeedqueue = -1;
+		}
 		else if (strcmp(argv[argi], "--local") == 0) {
 			localmode = 1;
 		}
@@ -2220,7 +2233,12 @@ int main(int argc, char *argv[])
 	updinfotree = xtreeNew(strcasecmp);
 	running = 1;
 
-	usebackfeedqueue = (sendmessage_init_local() > 0);
+	usebackfeedqueue = ((force_backfeedqueue >= 0) ? (sendmessage_init_local() > 0) : 0);
+	if (force_backfeedqueue == 1 && usebackfeedqueue <= 0) {
+		errprintf("Unable to set up backfeed queue when --bfq given - exiting\n");
+		running = 0;
+	}
+	if (timeout != NULL) { if (usebackfeedqueue) combo_start_local(); else combo_start(); }
 
 	while (running) {
 		char *eoln, *restofmsg, *p;
@@ -2228,7 +2246,7 @@ int main(int argc, char *argv[])
 		int metacount;
 		time_t nowtimer = gettimer();
 
-		msg = get_xymond_message(C_CLIENT, argv[0], &seq, NULL);
+		msg = get_xymond_message(C_CLIENT, argv[0], &seq, timeout);
 		if (msg == NULL) {
 			if (!localmode) errprintf("Failed to get a message, terminating\n");
 			running = 0;
@@ -2238,8 +2256,10 @@ int main(int argc, char *argv[])
 		if (reloadconfig || (nowtimer >= nextconfigload)) {
 			nextconfigload = nowtimer + 600;
 			reloadconfig = 0;
+			if (timeout != NULL) combo_end();
 			if (!localmode) load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			load_client_config(configfn);
+			if (timeout != NULL) { if (usebackfeedqueue) combo_start_local(); else combo_start(); }
 		}
 
 		/* Split the message in the first line (with meta-data), and the rest */
@@ -2290,7 +2310,7 @@ int main(int argc, char *argv[])
 			/* Check for duplicates */
 			if (add_updateinfo(hostname, seq, timestamp) != 0) continue;
 
-			if (usebackfeedqueue) combo_start_local(); else combo_start();
+			if (timeout == NULL) { if (usebackfeedqueue) combo_start_local(); else combo_start(); }
 			switch (os) {
                           case OS_FREEBSD:
                                 handle_freebsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
@@ -2374,7 +2394,7 @@ int main(int argc, char *argv[])
 				else errprintf("No client backend for OS '%s' sent by %s\n", clientos, sender);
                                 break;
 			}
-			combo_end();
+			if (timeout == NULL) combo_end();
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			printf("Shutting down\n");
@@ -2392,11 +2412,17 @@ int main(int argc, char *argv[])
 		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
 			reloadconfig = 1;
 		}
+		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
+			dbgprintf("Got an 'idle' message\n");
+			combo_end();
+			if (usebackfeedqueue) combo_start_local(); else combo_start();
+		}
 		else {
 			/* Unknown message - ignore it */
 		}
 	}
 
+	if (timeout != NULL) combo_end();
 	if (usebackfeedqueue) sendmessage_finish_local();
 
 #ifdef DEBUG_FOR_VALGRIND
