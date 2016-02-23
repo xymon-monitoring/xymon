@@ -180,6 +180,10 @@ char *logdata(char *filename, logdef_t *logdef)
 		return buf;
 	}
 
+	if (debug) {
+		for (i = 0; (i < POSCOUNT); i++) dbgprintf(" - fn: %s, pos %d, loc %lu\n", filename, i, logdef->lastpos[i]);
+	}
+
 	/*
 	 * See how large the file is, and decide where to start reading.
 	 * Save the last POSCOUNT positions so we can scrap 5 minutes of data
@@ -599,6 +603,10 @@ cleanup:
 		if (triggerptrs) xfree(triggerptrs);
 	}
 
+	if (debug) {
+		for (i = 0; (i < POSCOUNT); i++) dbgprintf(" -- fn: %s, pos %d, loc %lu\n", filename, i, logdef->lastpos[i]);
+	}
+
 	dbgprintf("logfetch: <- logdata (%s)\n", filename);
 	return startpos;
 }
@@ -916,7 +924,16 @@ int loadconfig(char *cfgfn)
 						char pline[PATH_MAX+1];
 
 						while (fgets(pline, sizeof(pline), fd)) {
+							checkdef_t *cwalk = NULL;
+
 							p = pline + strcspn(pline, "\r\n"); *p = '\0';
+							for (cwalk = checklist; (cwalk); cwalk = cwalk->next) {
+								if ((cwalk->checktype == checktype) && (strcmp(cwalk->filename, pline) == 0)) {
+									dbgprintf("logfetch: file %s already seen in config; ignoring this entry\n", cwalk->filename);
+									break;
+								}
+							}
+							if (cwalk) continue;
 
 							newitem = calloc(sizeof(checkdef_t), 1);
 
@@ -985,7 +1002,17 @@ int loadconfig(char *cfgfn)
 					else {
 
 						for (i = 0; (globbuf.gl_pathv[i] && (*(globbuf.gl_pathv[i]))) ; i++) {
+							checkdef_t *cwalk = NULL;
+
 							dbgprintf(" -- found matching path: %s\n", globbuf.gl_pathv[i]);
+
+							for (cwalk = checklist; (cwalk); cwalk = cwalk->next) {
+								if ((cwalk->checktype == checktype) && (strcmp(cwalk->filename, globbuf.gl_pathv[i]) == 0)) {
+									dbgprintf("logfetch: file %s already seen in config; ignoring this entry\n", cwalk->filename);
+									break;
+								}
+							}
+							if (cwalk) continue;
 
 							newitem = calloc(sizeof(checkdef_t), 1);
 
@@ -1034,6 +1061,16 @@ int loadconfig(char *cfgfn)
 					globfree(&globbuf);
 				}
 				else {
+					checkdef_t *cwalk = NULL;
+
+					for (cwalk = checklist; (cwalk); cwalk = cwalk->next) {
+						if ((cwalk->checktype == checktype) && (strcmp(cwalk->filename, filename) == 0)) {
+							dbgprintf("logfetch: file %s already seen in config; ignoring this entry\n", cwalk->filename);
+							break;
+						}
+					}
+
+				     if (!cwalk) {
 					newitem = calloc(sizeof(checkdef_t), 1);
 					newitem->filename = strdup(filename);
 					newitem->checktype = checktype;
@@ -1066,6 +1103,7 @@ int loadconfig(char *cfgfn)
 					checklist = newitem;
 
 					currcfg = newitem;
+				     }
 				}
 			}
 			else {
