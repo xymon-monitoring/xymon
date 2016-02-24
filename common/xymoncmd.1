@@ -2,7 +2,7 @@
 .SH NAME
 xymoncmd \- Run a command under a xymon environment
 .SH SYNOPSIS
-.B "xymoncmd [options] [COMMAND]"
+.B "xymoncmd [options] [COMMAND [ARG]...]"
 
 .SH DESCRIPTION
 .I xymoncmd(1)
@@ -31,6 +31,14 @@ loaded from. If not specified, it will search various locations for
 first a xymonserver.cfg and then a xymonclient.cfg file. On xymon 
 servers with both installed, the server environment will be loaded by 
 default.
+
+.IP "\-\-no\-env"
+Inhibit automatic searching for an ENVFILE. If specified, xymoncmd 
+will set up a few default entries needed for xymon tools and then
+execute COMMAND. This might be used in an init script when launching
+.I xymonlaunch(8)
+to prevent unwanted pollution of the environments of any subequently-
+launched tasks.
 
 .IP "\-\-debug"
 Enable debugging output.

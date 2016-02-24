@@ -93,6 +93,8 @@ xymon (4.4.0-alpha1) unstable; urgency=low
    * xymond_client: --flushtimeout option to use normal combo functioning every
      X seconds (at most) instead of sending one combo message per source client.  
      TODO: These options should be factored out into stdopt.c
+   * xymoncmd now supports a --no-env argument to inhibit the normal search 
+     for a default environment file
 
    * FIXME-doc: Add --no-cookies and --no-save-cookies (read but don't 
      write) to xymonnet

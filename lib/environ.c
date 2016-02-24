@@ -503,12 +503,23 @@ void loadenv(char *envfile, char *area)
 	strbuffer_t *inbuf;
 	char *p, *marker, *evar, *oneenv;
 
+	/* Being passed an actual NULL could be an unintentional bug */
+	if (!envfile) {
+		errprintf("loadenv(): Asked to load a NULL environment file\n");
+		return;
+	}
+
+	/* Set whether anything below succeeds or not */
 	if (haveenv) {
 		errprintf("loadenv(): Loading file '%s' over existing file '%s'; results might be unexpected\n",
 			envfile, textornull(getenv("XYMONENV")) );
 	}
 
 	haveenv = 1;	/* Set whether this succeeds or not */
+	if (strcmp(envfile, "/dev/null") == 0) {
+		dbgprintf("Intentionally not loading an environment\n");
+		return;
+	}
 
 	inbuf = newstrbuffer(0);
 

@@ -52,15 +52,20 @@ int standardoption(char *opt)
 	else if (strcmp(opt, "--no-update-brief") == 0) {
 		dontsendmessages = 2;
 	}
+	else if (argnmatch(opt, "--area=")) {
+		char *p = strchr(opt, '=');
+		envarea = strdup(p+1);
+	}
+	else if (argnmatch(opt, "--no-env")) {
+		/* Prevent any future automatic loading */
+		loadenv("/dev/null", envarea);
+		// xymon_default_xymonhome(programtoolname);
+	}
 	else if (argnmatch(opt, "--env=")) {
 		char *p = strchr(opt, '=');
 		loadenv(p+1, envarea);
 		/* Immediately load any remaining defaults */
 		xymon_default_xymonhome(programtoolname);
-	}
-	else if (argnmatch(opt, "--area=")) {
-		char *p = strchr(opt, '=');
-		envarea = strdup(p+1);
 	}
 	else if (argnmatch(opt, "--hosts=")) {
 		char *p = strchr(opt, '=');
