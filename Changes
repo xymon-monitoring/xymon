@@ -105,6 +105,8 @@ Changes from 4.3.x -> 4.4-alpha
   or higher) (Thanks, Martin Sperl)
 * FIXME-doc: xymond_rrd: Add --flushtimeout option and reduce the 
   frequency of cachectl, zombie, and extcombo flushing
+* Various generic startup scripts and service files have been added to
+  the /tools/ directory
 
 * Experimental support for buiding libxymon as a shared library
   has been improved. Note: As a private library, there are no immediate
