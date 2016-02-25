@@ -15,7 +15,7 @@ XYMONHOME="$XYMONCLIENTHOME"       # Directory for the Xymon client files
 XYMON="$XYMONHOME/bin/xymon"          # The Xymon client "xymon" utility
 XYMONTMP="$XYMONHOME/tmp"             # Where we may store temporary files.
 XYMONCLIENTLOGS="$XYMONHOME/logs"     # Where we store the client logfiles
-XYMONRUNDIR="$XYMONCLIENTLOGS"	      # Where we store pid and other run files
+XYMONRUNDIR="$XYMONHOME/logs"         # Where we store pid and other run files
 
 # Options to logfetch, the xymon binary which examines log files for recent changes.
 LOGFETCHOPTS=""
