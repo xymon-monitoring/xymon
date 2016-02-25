@@ -1,0 +1,16 @@
+# Configure options for xymonlaunch(8) here. All other options, and
+# flags for other daemons, should be set in the tasks.cfg(5) (on 
+# Xymon servers), clientlaunch.cfg (on Xymon clients), or associated
+# environment files.
+# 
+# To edit the default destination for the Xymon client to report to, 
+# see the /etc/{default,sysconfig}/xymon-client file.
+# 
+# On systemd systems, --no-daemon is passed in the xymonlaunch unit 
+# file, but the log file (if any) for xymonlaunch should be set here.
+# 
+# If not set here, xymonlaunch's output will be sent to syslog on 
+# systemd releases, or lost on sysvinit distributions.
+
+XYMONLAUNCHOPTS="--log=/var/log/xymon/xymonlaunch.log"
+
