@@ -63,8 +63,8 @@ static int max_backfeedsz = 16384;
 #define ASSUMELARGEMEM 0		/* Reserve and persist larger buffer sizes instead of growing slowly */
 
 static char *comboofsstr = NULL;
-static int comboofssz = 0;
-static int *combooffsets = NULL;
+static size_t comboofssz = 0;
+static unsigned int *combooffsets = NULL;
 
 #define USERBUFSZ 4096
 
@@ -766,15 +766,16 @@ static void combo_params(void)
 	if (xgetenv("MAXMSGSPERCOMBO")) maxmsgspercombo = atoi(xgetenv("MAXMSGSPERCOMBO"));
 	if (maxmsgspercombo == 0) {
 		/* Force it to 100 */
-		dbgprintf("MAXMSGSPERCOMBO is 0, setting it to 100\n");
+		errprintf("MAXMSGSPERCOMBO is 0, setting it to 100\n");
 		maxmsgspercombo = 100;
 	}
 
 	if (xgetenv("SLEEPBETWEENMSGS")) sleepbetweenmsgs = atoi(xgetenv("SLEEPBETWEENMSGS"));
 
-	comboofssz = 10*maxmsgspercombo;
+	/* 'extcombo' + (space + unsigned int), repeat for maxmsgspercombo */
+	comboofssz = (1 + 10)*maxmsgspercombo;
 	comboofsstr = (char *)malloc(comboofssz+1);
-	combooffsets = (int *)malloc((maxmsgspercombo+1)*sizeof(int));
+	combooffsets = (unsigned int *)malloc((maxmsgspercombo+1)*sizeof(unsigned int));
 }
 
 void combo_start(void)
@@ -785,7 +786,7 @@ void combo_start(void)
 	memcpy(comboofsstr, "extcombo", 8);
 	*(comboofsstr + comboofssz) = '\0';
 
-	memset(combooffsets, 0, maxmsgspercombo*sizeof(int));
+	memset(combooffsets, 0, (maxmsgspercombo+1)*sizeof(unsigned int));
 	combooffsets[0] = comboofssz;
 
 	if (xymonmsg == NULL) xymonmsg = newstrbuffer(ASSUMELARGEMEM ? 1024*shbufsz(C_LAST) : 0 );
