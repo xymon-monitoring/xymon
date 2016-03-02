@@ -895,6 +895,7 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 
 void posttoall(char *msg)
 {
+	logprintf("Sending %s\n", msg);
 	posttochannel(statuschn, msg, NULL, "xymond", NULL, NULL, "");
 	posttochannel(stachgchn, msg, NULL, "xymond", NULL, NULL, "");
 	posttochannel(pagechn, msg, NULL, "xymond", NULL, NULL, "");
@@ -1585,7 +1586,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	}
 	else if ((flapcount > 0) && ((now - log->lastchange[flapcount-1]) < flapthreshold) && (!isset_noflap(hinfo, testname, hostname))) {
 		if (!log->flapping) {
-			errprintf("Flapping detected for %s:%s - %d changes in %d seconds\n",
+			logprintf("Flapping detected for %s:%s - %d changes in %d seconds\n",
 				  hostname, testname, flapcount, (now - log->lastchange[flapcount-1]));
 			log->flapping = 1;
 			log->oldflapcolor = log->color;
@@ -2770,6 +2771,7 @@ void flush_filecache(void)
 {
 	xtreePos_t handle;
 
+	logprintf("Flushing filecache\n");
 	for (handle = xtreeFirst(rbfilecache); (handle != xtreeEnd(rbfilecache)); handle = xtreeNext(rbfilecache, handle)) {
 		filecache_t *item = (filecache_t *)xtreeData(rbfilecache, handle);
 		if (item->fdata) xfree(item->fdata);
@@ -5925,13 +5927,14 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	errprintf("Loading hostnames\n");
+	logprintf("Loading hostnames\n");
 	load_hostnames(hostsfn, NULL, get_fqdn());
+	logprintf("Loading client config\n");
 	load_clientconfig();
 	nextreload = getcurrenttime(NULL) + reloadinterval;
 
 	if (restartfn) {
-		errprintf("Loading saved state\n");
+		logprintf("Loading saved state\n");
 		load_checkpoint(restartfn);
 		xfree(restartfn);
 	}
@@ -5945,7 +5948,7 @@ int main(int argc, char *argv[])
 
 
 	/* Set up a socket to listen for new connections */
-	errprintf("Setting up network listener(s) on %s%s\n", listen_addresses,
+	logprintf("Setting up network listener(s) on %s%s\n", listen_addresses,
 		  (certfn && keyfn) ? " (STARTTLS enabled)" : " (STARTTLS disabled)");
 	if (tls_listen_addresses) errprintf("Setting up TLS network listener(s) on %s\n", tls_listen_addresses);
 	conn_register_infohandler(NULL, (debug ? INFO_DEBUG : INFO_WARN));
@@ -5987,7 +5990,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	errprintf("Setting up signal handlers\n");
+	logprintf("Setting up signal handlers\n");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGINT, &sa, NULL);
@@ -5998,7 +6001,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGALRM, &sa, NULL);
 
-	errprintf("Setting up xymond channels\n");
+	logprintf("Setting up xymond channels\n");
 	statuschn = setup_channel(C_STATUS, CHAN_MASTER);
 	if (statuschn == NULL) { errprintf("Cannot setup status channel\n"); return 1; }
 	stachgchn = setup_channel(C_STACHG, CHAN_MASTER);
@@ -6029,7 +6032,7 @@ int main(int argc, char *argv[])
 		bf_bufsz -= sizeof(long); /* leave space for msgp at the beginning */
 	}
 
-	errprintf("Setting up logfiles\n");
+	logprintf("Setting up logfiles\n");
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
 
@@ -6061,7 +6064,7 @@ int main(int argc, char *argv[])
 		if (dbgfd == NULL) errprintf("Cannot open debug file %s: %s\n", fname, strerror(errno));
 	}
 
-	errprintf("Setup complete\n");
+	logprintf("Setup complete\n");
 	do {
 		/*
 		 * The endless loop.
@@ -6089,9 +6092,12 @@ int main(int argc, char *argv[])
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 
-		if (logfn && dologswitch) {
-			reopen_file(logfn, "a", stdout);
-			reopen_file(logfn, "a", stderr);
+		if (dologswitch) {
+			logprintf("Reopening logfiles\n");
+			if (logfn) {
+				reopen_file(logfn, "a", stdout);
+				reopen_file(logfn, "a", stderr);
+			}
 			if (ackinfologfd) reopen_file(ackinfologfn, "a", ackinfologfd);
 			dologswitch = 0;
 			posttoall("logrotate");
@@ -6101,12 +6107,14 @@ int main(int argc, char *argv[])
 			xtreePos_t hosthandle;
 			int loadresult;
 
+			logprintf("Reloading hostnames\n");
 			reloadconfig = 0;
 			nextreload = now + reloadinterval;
 			loadresult = load_hostnames(hostsfn, NULL, get_fqdn());
 
 			if (loadresult == 0) {
 				/* Scan our list of hosts and weed out those we do not know about any more */
+				logprintf("Rescanning host tree\n");
 				hosthandle = xtreeFirst(rbhosts);
 				while (hosthandle != xtreeEnd(rbhosts)) {
 					xymond_hostlist_t *hwalk;
@@ -6139,6 +6147,7 @@ int main(int argc, char *argv[])
 				posttoall("reload");
 			}
 
+			logprintf("Reloading client config\n");
 			load_clientconfig();
 		}
 
@@ -6154,6 +6163,7 @@ int main(int argc, char *argv[])
 			xymond_log_t *log;
 			int color;
 
+			logprintf("Generating stats\n");
 			buf = generate_stats();
 			get_hts(buf, "xymond", "", &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 			if (!h || !t || !log) {
@@ -6176,6 +6186,7 @@ int main(int argc, char *argv[])
 				errprintf("Could not fork checkpoint child:%s\n", strerror(errno));
 			}
 			else if (childpid == 0) {
+				logprintf("Saving checkpoint file\n");
 				save_checkpoint();
 				exit(0);
 			}
@@ -6299,6 +6310,7 @@ int main(int argc, char *argv[])
 	running = 0;
 
 	/* Close the channels */
+	logprintf("Closing xymond channels\n");
 	close_channel(statuschn, CHAN_MASTER);
 	close_channel(stachgchn, CHAN_MASTER);
 	close_channel(pagechn, CHAN_MASTER);
@@ -6312,6 +6324,7 @@ int main(int argc, char *argv[])
 	if (backfeedqueue >= 0) close_feedback_queue(backfeedqueue, CHAN_MASTER);
 	if (bf_buf) xfree(bf_buf);
 
+	logprintf("Saving final checkpoint file\n");
 	save_checkpoint();
 	if (pidfn) unlink(pidfn);
 

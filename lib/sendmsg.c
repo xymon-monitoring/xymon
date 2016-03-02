@@ -526,6 +526,7 @@ int sendmessage_init_local(void)
 	if (backfeedqueue == -1) return -1;
 
 	max_backfeedsz = 1024*shbufsz(C_FEEDBACK_QUEUE)-1;
+	dbgprintf("Max backfeed size set to: %ju\n", max_backfeedsz);
 	return max_backfeedsz;
 }
 
