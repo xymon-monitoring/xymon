@@ -1,0 +1,125 @@
+#!/bin/sh
+#----------------------------------------------------------------------------#
+# Xymon init.d script.                                                       #
+#                                                                            #
+# This invokes xymonlaunch, which in turn starts all of the other Xymon      #
+# server programs.                                                           #
+#                                                                            #
+# Copyright (C) 2005-2011 Henrik Storner <henrik@hswn.dk>                    #
+#                                                                            #
+# Revised and simplified to invoke xymoncmd by Japheth Cleaver 2013          #
+#                                                                            #
+# This program is released under the GNU General Public License (GPL),       #
+# version 2. See the file "COPYING" for details.                             #
+#                                                                            #
+#----------------------------------------------------------------------------#
+#
+# chkconfig: - 80 20
+# description: Xymon is a network monitoring tool that can monitor hosts \
+#		and services and shows monitor status via a webpage.
+#
+# processname: xymonlaunch
+# 
+### BEGIN INIT INFO
+# Provides: xymon xymond
+# Default-Start: 
+# Default-Stop: 0 1 2 3 4 5 6
+# Required-Start: $local_fs $network
+# Required-Stop: $local_fs $network
+# Short-Description: start and stop xymon
+# Description: Xymon is a network monitoring tool that can monitor hosts
+#              and services and shows monitor status via a webpage.
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+exec=/usr/sbin/xymonlaunch
+prog=xymonlaunch
+config=/etc/sysconfig/xymon-client
+
+NAME=xymon
+user=xymon
+lockfile=/var/lock/subsys/$prog
+logfile=/var/log/xymon/$prog.log
+
+[ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
+
+start() {
+	[ -x $exec ] || exit 5
+	[ -f $config ] || exit 6
+	echo -n $"Starting $NAME: "
+	daemon --user=$user /usr/bin/xymoncmd $exec $XYMONLAUNCHOPTS
+	retval=$?
+	echo
+	[ $retval -eq 0 ] && touch $lockfile
+	return $retval
+}
+
+stop() {
+	echo -n $"Stopping $NAME: "
+	killproc $prog
+	retval=$?
+	echo
+	[ $retval -eq 0 ] && rm -f $lockfile
+	return $retval
+}
+
+restart() {
+	stop
+	start
+}
+
+reload() {
+	echo -n $"Reloading configuration files: "
+	killproc $prog -HUP
+        retval=$?
+        echo
+	return $retval
+}
+
+rh_status() {
+	status $prog
+}
+
+rh_status_q() {
+	rh_status >/dev/null 2>&1
+}
+
+
+case "$1" in
+	start)
+		rh_status_q && exit 0
+		$1
+		;;
+	stop)
+		rh_status_q || exit 0
+		# Also kill backgrounded vmstats that will be around
+		killall -q -u "$user" vmstat iostat
+		$1
+		;;
+	restart)
+		$1
+		;;
+	reload)
+		rh_status_q || exit 7
+		$1
+		;;
+	force-reload)
+		force_reload
+		;;
+	rotate)
+		reload
+		;;
+	status)
+		rh_status
+		;;
+	condrestart|try-restart)
+		rh_status_q || exit 0
+		restart
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload|rotate}"
+		exit 2
+esac
+exit $?
