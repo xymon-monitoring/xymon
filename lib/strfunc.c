@@ -51,10 +51,13 @@ strbuffer_t *convertstrbuffer(char *buffer, size_t bufsz)
 {
 	strbuffer_t *newbuf;
 	
+	if (buffer == NULL) return newstrbuffer(0);
+	if (bufsz < 1) bufsz = strlen(buffer) + 1;
+
 	newbuf = calloc(1, sizeof(strbuffer_t));
 	newbuf->s = buffer;
-	newbuf->used = strlen(buffer);
-	newbuf->sz = (bufsz ? bufsz : newbuf->used+1);
+	newbuf->used = (bufsz - 1);
+	newbuf->sz = bufsz;
 
 	return newbuf;
 }
