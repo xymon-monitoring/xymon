@@ -224,6 +224,9 @@ Changes from 4.3.x -> 4.4-alpha
   available data to be snapshotted when tests go purple
 * Linux: disk space on 'tmpfs' partitions is now tracked (unless otherwise
   excluded)
+* xymond_rrd: The "default" config in rrddefinitions.cfg now must be present
+  to start up (to prevent missing/inaccessible files from causing a 
+  (potentially different) compiled-in default).
  
 
 Changes from 4.3.25 -> 4.3.26 (19 Feb 2016)

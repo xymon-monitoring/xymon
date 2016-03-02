@@ -155,16 +155,8 @@ loaddone:
 
 	/* Check if the default record exists */
 	if (xtreeFind(rrddeftree, "") == xtreeEnd(rrddeftree)) {
-		/* Create the default record */
-		newrec = (rrddeftree_t *)malloc(sizeof(rrddeftree_t));
-		newrec->key = strdup("");
-		newrec->defs = (char **)malloc(4 * sizeof(char *));;
-		newrec->defs[0] = strdup("RRA:AVERAGE:0.5:1:576");
-		newrec->defs[1] = strdup("RRA:AVERAGE:0.5:6:576");
-		newrec->defs[2] = strdup("RRA:AVERAGE:0.5:24:576");
-		newrec->defs[3] = strdup("RRA:AVERAGE:0.5:288:576");
-		newrec->count = 4;
-		xtreeAdd(rrddeftree, newrec->key, newrec);
+		errprintf("Unable to load default RRD definition record from '%s'\n", fn);
+		running = 0;
 	}
 }
 

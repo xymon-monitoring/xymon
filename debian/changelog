@@ -225,6 +225,9 @@ xymon (4.4.0-alpha1) unstable; urgency=low
      available data to be snapshotted when tests go purple
    * Linux: disk space on 'tmpfs' partitions is now tracked (unless otherwise 
      excluded)
+   * xymond_rrd: The "default" config in rrddefinitions.cfg now must be present
+     to start up (to prevent missing/inaccessible files from causing a         
+     (potentially different) compiled-in default).
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, ## MMM 2016 00:00:00 +0100
 
