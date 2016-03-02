@@ -228,6 +228,8 @@ xymon (4.4.0-alpha1) unstable; urgency=low
    * xymond_rrd: The "default" config in rrddefinitions.cfg now must be present
      to start up (to prevent missing/inaccessible files from causing a         
      (potentially different) compiled-in default).
+   * Don't treat empty (0 byte) directory size as invalid 
+     (Reported by Bert Willekens) 
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, ## MMM 2016 00:00:00 +0100
 

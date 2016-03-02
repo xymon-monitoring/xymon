@@ -227,6 +227,8 @@ Changes from 4.3.x -> 4.4-alpha
 * xymond_rrd: The "default" config in rrddefinitions.cfg now must be present
   to start up (to prevent missing/inaccessible files from causing a 
   (potentially different) compiled-in default).
+* Don't treat empty (0 byte) directory size as invalid 
+  (Reported by Bert Willekens)
  
 
 Changes from 4.3.25 -> 4.3.26 (19 Feb 2016)
