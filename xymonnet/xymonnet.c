@@ -742,30 +742,13 @@ void load_tests(void)
 					newtest->next = s->items;
 					s->items = newtest;
 
+					/*
+					 * TODO: In the case of external libraries (like ldap)
+					 * basic TCP pre-testing needs to take into account port details
+					 * and other edge cases.
+					 */
 					if (s == httptest) h->firsthttp = newtest;
-					else if (s == ldaptest) {
-						xtreePos_t handle;
-						service_t *s2 = NULL;
-						testitem_t *newtest2;
-
-						h->firstldap = newtest;
-
-						/* 
-						 * Add a plain tcp-connect test for the LDAP service.
-						 * We don't want the LDAP library to run amok and do 
-						 * time-consuming connect retries if the service
-						 * is down.
-						 */
-						handle = xtreeFind(svctree, "ldap");
-						s2 = ((handle == xtreeEnd(svctree)) ? NULL : (service_t *)xtreeData(svctree, handle));
-						if (s2) {
-							newtest2 = init_testitem(h, s2, NULL, "ldap", 0, 0, 0, 0, 1, 0);
-							newtest2->internal = 1;
-							newtest2->next = s2->items;
-							s2->items = newtest2;
-							newtest->privdata = newtest2;
-						}
-					}
+					else if (s == ldaptest) h->firstldap = newtest;
 				}
 			}
 

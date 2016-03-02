@@ -108,8 +108,8 @@ int add_ldap_test(testitem_t *t)
 	 * the LDAP port is open.
 	 * If it is not open, then don't run this check.
 	 */
-	if (basecheck->open == 0) {
-		/* Cannot connect to LDAP port. */
+	if (basecheck != NULL && (basecheck->open == 0)) {
+		dbgprintf("Cannot connect to LDAP port via basic TCP check; skipping...\n");
 		req->skiptest = 1;
 		req->ldapstatus = XYMON_LDAP_BINDFAIL;
 		req->output = "Cannot connect to server";
