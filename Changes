@@ -218,6 +218,8 @@ Changes from 4.3.x -> 4.4-alpha
 * No longer generate a PID file by default (when --pid not given)
 * Increase time stale clientlogs are kept in memory to allow for last
   available data to be snapshotted when tests go purple
+* Linux: disk space on 'tmpfs' partitions is now tracked (unless otherwise
+  excluded)
  
 
 Changes from 4.3.25 -> 4.3.26 (19 Feb 2016)

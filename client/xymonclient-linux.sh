@@ -45,7 +45,7 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-EXCLUDES=`cat /proc/filesystems | grep nodev | grep -v rootfs | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g'`
+EXCLUDES=`cat /proc/filesystems | grep nodev | grep -v -e '[[:space:]]tmpfs' -e rootfs | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g'`
 ROOTFS=`readlink -m /dev/root`
 df -Pl -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
 N
