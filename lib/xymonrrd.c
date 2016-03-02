@@ -248,7 +248,8 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 			 strlen(fmt)        +
 			 3*svcurllen        +
 			 strlen(rrdservicename) +
-			 strlen(xgetenv("XYMONSKIN"));
+			 strlen(xgetenv("XYMONSKIN")) +
+			 strlen(xgetenv("IMAGEFILETYPE"));
 
 	if (rrdurl == NULL) {
 		rrdurlsize = rrdparturlsize;
