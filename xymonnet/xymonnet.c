@@ -1772,7 +1772,7 @@ void send_results(service_t *service, int failgoesclear)
 			addtostatus(msgtext);
 		}
 
-		if (STRBUFLEN(t->banner)) {
+		if ((t->banner != NULL) && (STRBUFLEN(t->banner) < 8192)) {
 			if (service == pingtest) {
 				sprintf(msgtext, "\n&%s %s\n", colorname(t->open ? COL_GREEN : COL_RED), STRBUF(t->banner));
 				addtostatus(msgtext);
