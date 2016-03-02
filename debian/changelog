@@ -217,6 +217,8 @@ xymon (4.4.0-alpha1) unstable; urgency=low
      attached to the channel.
    * Add ability to filter/filelist when displaying graphs (Thanks, Stef Coene)
    * No longer generate a PID file by default (when --pid not given)
+   * Increase time stale clientlogs are kept in memory to allow for last
+     available data to be snapshotted when tests go purple
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, ## MMM 2016 00:00:00 +0100
 

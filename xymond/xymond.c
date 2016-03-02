@@ -82,7 +82,7 @@ int purplecheckinterval = DEFAULT_PURPLE_INTERVAL; /* Seconds - check for purple
 int statsinterval = DEFAULT_STATS_INTERVAL;	/* Seconds - report xymond status every 5m */
 
 /* How long are sub-client messages valid */
-#define MAX_SUBCLIENT_LIFETIME 960	/* 15 minutes + a bit */
+#define MAX_SUBCLIENT_LIFETIME ((DEFAULT_VALIDITY * 60) + (DEFAULT_PURPLE_INTERVAL*2)) /* 30 minutes + a bit */
 
 #define DEFAULT_FLAPCOUNT 5
 int flapcount = DEFAULT_FLAPCOUNT;
