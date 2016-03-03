@@ -5684,6 +5684,7 @@ int main(int argc, char *argv[])
 
 			reloadconfig = 0;
 			loadresult = load_hostnames(hostsfn, NULL, get_fqdn());
+			flush_filecache();
 
 			if (loadresult == 0) {
 				/* Scan our list of hosts and weed out those we do not know about any more */
