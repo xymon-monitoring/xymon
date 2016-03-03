@@ -539,6 +539,8 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 					     ((pagetype != PAGE_NORMAL) ? hostpage_link(h) : NULL), 
 					     usetooltip));
 
+			fprintf(output, " </TD>");
+
 			/* Then the columns. */
 			for (gc = groupcols; (gc); gc = gc->next) {
 				char *htmlalttag;
