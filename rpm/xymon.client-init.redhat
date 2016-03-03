@@ -51,7 +51,7 @@ start() {
 	[ -x $exec ] || exit 5
 	[ -f $config ] || exit 6
 	echo -n $"Starting $NAME: "
-	daemon --user=$user /usr/bin/xymoncmd $exec $XYMONLAUNCHOPTS
+	daemon --user=$user /usr/bin/xymoncmd --no-env $exec $XYMONLAUNCHOPTS
 	retval=$?
 	echo
 	[ $retval -eq 0 ] && touch $lockfile
