@@ -1,3 +1,13 @@
+xymon (4.3.27) stable; urgency=medium
+
+   * rev ####
+
+   * Don't treat empty (0 byte) directory size as invalid    
+     (Reported by Bert Willekens)
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Mar 2016 15:00:00 -0800
+
+
 xymon (4.3.26) stable; urgency=medium
 
    * rev 7906

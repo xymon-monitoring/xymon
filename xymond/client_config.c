@@ -2996,6 +2996,7 @@ int check_dir(void *hinfo, char *classname,
 	      char **id, int *trackit)
 {
 	int result = COL_GREEN;
+	int gotsize = 0;
 	char *hostname, *pagename;
 	c_rule_t *rwalk;
 	char *boln, *eoln;
@@ -3023,7 +3024,7 @@ int check_dir(void *hinfo, char *classname,
 		sz = atol(boln);
 		p = boln + strcspn(boln, " \t");
 		if (isspace((int)*p)) p += strspn(p, " \t");
-		if (strcmp(p, filename) == 0) dsize = sz;
+		if (strcmp(p, filename) == 0) { gotsize = 1; dsize = sz; }
 
 		if (eoln) { *eoln = '\0'; boln = eoln+1; } else boln = NULL;
 	}
@@ -3031,7 +3032,7 @@ int check_dir(void *hinfo, char *classname,
 	*dirsize = dsize;
 
 	/* Got the data? */
-	if (dsize == 0) {
+	if (!gotsize) {
 		sprintf(msgline, "Could not determine size of directory %s\n", filename);
 		addtobuffer(summarybuf, msgline);
 		return COL_YELLOW;
