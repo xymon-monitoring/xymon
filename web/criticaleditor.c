@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
 	redirect_cgilog(programname);
 
         /* We only want to accept posts from certain pages */
-	{
+	if (cgi_ispost()) {
 		char cgisource[1024]; char *p;
 		p = csp_header(programname); if (p) fprintf(stdout, "%s", p);
 		snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("SECURECGIBINURL"), programname);

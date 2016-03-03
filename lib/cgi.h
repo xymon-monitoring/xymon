@@ -23,6 +23,7 @@ enum cgi_method_t { CGI_OTHER, CGI_GET, CGI_POST };
 extern enum cgi_method_t cgi_method;
 
 extern char *cgi_error(void);
+extern int cgi_ispost(void);
 extern cgidata_t *cgi_request(void);
 extern char *csp_header(const char *pagename); 
 extern int cgi_refererok(char *expected); 
