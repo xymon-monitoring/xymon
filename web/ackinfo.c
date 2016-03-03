@@ -97,10 +97,14 @@ int main(int argc, char *argv[])
 	{
 	    char cgisource[1024]; char *p;
 	    p = csp_header("ackinfo"); if (p) fprintf(stdout, "%s", p);
-	    snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("SECURECGIBINURL"), "criticalview");
+	    snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("CGIBINURL"), "svcstatus");
 	    if (!cgi_refererok(cgisource)) {
-		fprintf(stdout, "Location: %s.sh?\n\n", cgisource);
-		return 0;
+		snprintf(cgisource, sizeof(cgisource), "%s/%s", xgetenv("CGIBINURL"), "criticalview");
+		if (!cgi_refererok(cgisource)) {
+			errprintf("ackinfo POST that is not coming from criticalview or svcstatus (referer=%s). Ignoring.\n", textornull(getenv("HTTP_REFERER")) );
+			fprintf(stdout, "Location: %s.sh?\n\n", cgisource);
+			return 0;
+		}
 	    }
 	}
 
