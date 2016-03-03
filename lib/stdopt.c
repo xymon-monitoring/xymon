@@ -33,6 +33,8 @@ char *logfn = NULL;
 char *envarea = NULL;
 int  showhelp = 0;
 int  dontsendmessages = 0;
+int  sendtimeout = 15;
+int  idletimeout = 0; /* don't idle flush */
 
 int enablecompression = 0;
 char *defaultcompression = NULL;
@@ -97,6 +99,14 @@ int standardoption(char *opt)
 	}
 	else if ((strcmp(opt, "-6") == 0) || (strcmp(opt, "--6") == 0)) {
 		ipprotocol = XYMON_IPPROTO_6;
+	}
+	else if ((strcmp(opt, "--sendtimeout=") == 0)) {
+		char *p = strchr(opt, '=');
+		sendtimeout = atoi(p+1);
+	}
+	else if ((strcmp(opt, "--idletimeout=") == 0) || (strcmp(opt, "--flushtimeout") == 0)) {
+		char *p = strchr(opt, '=');
+		idletimeout = atoi(p+1);
 	}
 	else if (argnmatch(opt, "--compress")) {
 		char *p = strchr(opt, '=');

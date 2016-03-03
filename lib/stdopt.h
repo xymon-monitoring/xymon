@@ -18,6 +18,8 @@ extern char *logfn;
 extern char *envarea;
 extern int  showhelp;
 extern int  dontsendmessages;
+extern int  sendtimeout;
+extern int  idletimeout;
 
 extern int enablecompression;
 extern char *defaultcompression;

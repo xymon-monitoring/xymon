@@ -2187,11 +2187,6 @@ int main(int argc, char *argv[])
 			dump_client_config();
 			return 0;
 		}
-		else if (strncmp(argv[argi], "--flushtimeout=", 15) == 0) {
-			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
-			timeout->tv_sec = (atoi(argv[argi]+15));
-			timeout->tv_nsec = 0;
-		}
 		else if (strcmp(argv[argi], "--bfq") == 0) {
 			force_backfeedqueue = 1;
 		}
@@ -2213,6 +2208,15 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
+
+	if (idletimeout == -1) {
+		idletimeout = atoi(xgetenv("IDLETIMEOUT"));
+		if (idletimeout) {
+			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
+			timeout->tv_sec = idletimeout;          
+			timeout->tv_nsec = 0;
+		}
+	}
 
 	if (collectors == NULL) {
 		/* Setup the default collectors */

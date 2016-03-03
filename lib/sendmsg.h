@@ -11,7 +11,8 @@
 #ifndef __SENDMSG_H_
 #define __SENDMSG_H_
 
-#define XYMON_TIMEOUT 15  /* Default timeout for a request going to Xymon server */
+#define TIMEOUT_USEENV -2
+#define XYMON_TIMEOUT TIMEOUT_USEENV  /* "Default" timeout for a request going to Xymon server */
 #define PAGELEVELSDEFAULT "red purple"
 
 typedef enum {

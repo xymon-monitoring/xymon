@@ -75,6 +75,8 @@ const static struct {
 	{ "DOCOMBO", "TRUE" },
 	{ "MAXMSGSPERCOMBO", "100" },
 	{ "SLEEPBETWEENMSGS", "0" },
+	{ "XYMONTIMEOUT", "15" },
+	{ "IDLETIMEOUT", "0" },
 	{ "MAXMSG_STATUS", "256" },
 	{ "MAXMSG_CLIENT", "512" },
 	{ "MAXMSG_DATA", "256" },

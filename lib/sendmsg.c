@@ -312,12 +312,19 @@ static int sendtoall(char *msg, size_t msglen, int timeout, mytarget_t **targets
 	strbuffer_t *cbuf = NULL;
 	static int first_run = 1;
 	static int v4server = 0;
+	static int default_timeout = 0;
 
 	if (first_run) {
 	   v4server = (getenv("XYMONV4SERVER") != NULL);
+	   /* XYMON_TIMEOUT = legacy */
+	   default_timeout = (sendtimeout >= 0) ? sendtimeout : 
+		atoi(getenv("XYMON_TIMEOUT"))   ? atoi(xgetenv("XYMON_TIMEOUT")) : 
+		atoi(xgetenv("XYMONTIMEOUT"));
 	   setup_compression_opts();
 	   first_run = 0;
 	}
+
+	if (timeout == TIMEOUT_USEENV) timeout = default_timeout;
 
 	conn_register_infohandler(NULL, (debug ? INFO_DEBUG : INFO_WARN));
 	conn_init_client();

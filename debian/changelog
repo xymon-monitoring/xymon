@@ -9,6 +9,12 @@ xymon (4.4.0-alpha1) unstable; urgency=low
    * Remove obsolete "meta" message support
    * Attempt to get a more accurate clock delta when a client message has been
      sent through a xymonproxy
+   * Global --sendtimeout option introduced to allow control over
+     sendmsg() timeout periods. Can be controlled with XYMONTIMEOUT
+     environment variable
+   * xymond_client and xymond_rrd idle and combo flush timeouts
+     can be controlled with an --idletimeout option, or the IDLETIMEOUT 
+     environment variable. 
    * xymonlaunch: Add support for specifying a PIDFILE in tasks.cfg or 
      clientlaunch.cfg
    * xymonlaunch: Add SENDHUP support for optionally passing along signals 
@@ -90,9 +96,6 @@ xymon (4.4.0-alpha1) unstable; urgency=low
      presence of a feedback queue when running on a xymond server
    * xymond_client: support a --bfq/--no-bfq option for automatically sensing the 
      presence of a feedback queue when running on a xymond server
-   * xymond_client: --flushtimeout option to use normal combo functioning every
-     X seconds (at most) instead of sending one combo message per source client.  
-     TODO: These options should be factored out into stdopt.c
    * xymoncmd now supports a --no-env argument to inhibit the normal search 
      for a default environment file
    * xymonnet: openldap seems to handle failure cases better, and we weren't handling
@@ -108,8 +111,6 @@ xymon (4.4.0-alpha1) unstable; urgency=low
      control buffer size (similar to BUFSIZ)
    * FIXME-doc: Experimental support for rrdcached (requires rrdtoool 1.5 
      or higher) (Thanks, Martin Sperl)
-   * FIXME-doc: xymond_rrd: Add --flushtimeout option and reduce the 
-     frequency of cachectl, zombie, and extcombo flushing
    * Various generic startup scripts and service files have been added to
      the /tools/ directory 
    

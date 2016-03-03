@@ -23,6 +23,11 @@ XYMSRV=0.0.0.0.
 The port number for used to contact the Xymon server.
 Default: 1984.
 
+.IP XYMONTIMEOUT
+Number of seconds to wait for a response from the Xymon server.
+This time includes transmission and receiving (if applicable).
+Default: 15.
+
 .IP XYMONHOME
 The Xymon client top-level directory. Default: The
 $XYMONCLIENTHOME setting inherited from the "runclient.sh"

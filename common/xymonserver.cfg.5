@@ -164,6 +164,18 @@ The number of minutes that a status is considered valid after an update.
 After this time elapses, the status will go purple.
 Default: 30 minutes
 
+.IP IDLETIMEOUT
+How often a xymon worker should perform maintenance activities if no
+message is received on the channel. 
+Setting this to something other than 0 will cause worker processes 
+to delay sending messages (e.g.) to xymond until more can be combined
+together into a single larger message instead of transmitting 
+synchronously after each incoming message is processed. However, on 
+lightly loaded servers, this can cause messages to be delayed 
+by up to this amount of time if there's been no activity.
+
+Default: 0 (disabled). Recommended: 10 (on loaded servers)
+
 
 .SH DIRECTORIES
 
@@ -369,6 +381,11 @@ The portnumber for used to contact the
 .I xymond(8)
 service. Used by clients and the tools that perform network tests.
 Default: 1984.
+
+.IP XYMONTIMEOUT 
+Number of seconds to wait for a response from the Xymon server.
+This time includes transmission and receiving (if applicable).
+Default: 15.
 
 .IP MAXMSGSPERCOMBO
 The maximum number of status messages to combine into one
