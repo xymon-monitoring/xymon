@@ -7,6 +7,7 @@ xymon (4.4.0-alpha1) unstable; urgency=low
    * Standardize command line options across most binaries
    * Refactoring of TCP code in preparation for IPv6/SSL support
    * Remove obsolete "meta" message support
+   * POSIX btree functions are used if available on the platform
    * Attempt to get a more accurate clock delta when a client message has been
      sent through a xymonproxy
    * Global --sendtimeout option introduced to allow control over

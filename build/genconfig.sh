@@ -98,13 +98,13 @@ fi
 
 
 # This is experimental for 4.3.x
-#echo "Checking for POSIX binary tree functions"
-#$CC -c -o build/testfile.o $CFLAGS build/test-bintree.c 1>/dev/null 2>&1
-#if test $? -eq 0; then
-#	echo "#define HAVE_BINARY_TREE 1" >>include/config.h
-#else
+echo "Checking for POSIX binary tree functions"
+$CC -c -o build/testfile.o $CFLAGS build/test-bintree.c 1>/dev/null 2>&1
+if test $? -eq 0; then
+	echo "#define HAVE_BINARY_TREE 1" >>include/config.h
+else
 	echo "#undef HAVE_BINARY_TREE" >>include/config.h
-#fi
+fi
 
 # Assume IPv4 is always supported (at least for now :-))
 echo "#define IPV4_SUPPORT" >>include/config.h
