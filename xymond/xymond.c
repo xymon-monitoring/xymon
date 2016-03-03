@@ -911,7 +911,7 @@ void posttoall(char *msg)
 void *buildsenderlist(char *senderlist)
 {
 	void *result = xtreeNew(strcasecmp);
-	char *tok, *tokr;
+	char *tok, *tokr = NULL;
 
 	tok = strtok_r(senderlist, ",", &tokr);
 	while (tok) {
