@@ -210,6 +210,13 @@ void send_summaries(summary_t *sumhead)
 			suburl += 7;			/* Skip "http://" */
 			p = strchr(suburl, '/');	/* Find next '/' */
 			if (p) suburl = p;
+		} else if(strncmp(suburl, "https://", 8) == 0) {
+			char *p;
+
+			/* Skip hostname part */
+			suburl += 8;			/* Skip "https://" */
+			p = strchr(suburl, '/');	/* Find next '/' */
+			if (p) suburl = p;
 		}
 		if (strncmp(suburl, xgetenv("XYMONWEB"), strlen(xgetenv("XYMONWEB"))) == 0) 
 			suburl += strlen(xgetenv("XYMONWEB"));

@@ -8,6 +8,8 @@ xymon (4.3.27) stable; urgency=medium
    * Allow NK-critical acknowledgements from status pages
    * Fix redirect to criticalview.sh, which is just a
      regular CGI
+   * Properly recognize https URLs as summary links (Thanks, 
+     David Steinn Geirsson)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, XX Mar 2016 15:00:00 -0800
 
