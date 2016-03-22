@@ -78,7 +78,7 @@
 			LSTAT=$?
 		fi
 		if test $CSTAT -ne 0 -o $LSTAT -ne 0; then
-			echo "SSLv2 support disabled (dont worry, all systems should use SSLv3 or TLS)"
+			echo "SSLv2 support disabled (dont worry, all systems should use SSLv1 or TLS)"
 			OSSL2OK="N"
 		else
 			echo "Will support SSLv2 when testing SSL-enabled network services"
@@ -86,6 +86,23 @@
 			SSLFLAGS="$SSLFLAGS -DHAVE_SSLV2_SUPPORT"
 		fi
 		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-ssl2 clean
+
+		echo "Checking if your SSL library has SSLv3 enabled"
+		OS=`uname -s | sed -e's@/@_@g'` OSSLINC="$INCOPT" OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl3 test-compile 2>/dev/null
+		CSTAT=$?; LSTAT=$?
+		if test $CSTAT -eq 0; then
+			OS=`uname -s | sed -e's@/@_@g'` OSSLINC="$INCOPT" OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl3 test-link 2>/dev/null
+			LSTAT=$?
+		fi
+		if test $CSTAT -ne 0 -o $LSTAT -ne 0; then
+			echo "SSLv3 support disabled (dont worry, all systems should use SSLv1 or TLS)"
+			OSSL3OK="N"
+		else
+			echo "Will support SSLv3 when testing SSL-enabled network services"
+			OSSL3OK="Y"
+			SSLFLAGS="$SSLFLAGS -DHAVE_SSLV3_SUPPORT"
+		fi
+		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-ssl3 clean
 		cd ..
 	fi
 

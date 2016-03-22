@@ -131,6 +131,10 @@ else
 		then
 			SSLDEF="$SSLDEF -DHAVE_SSLV2_SUPPORT=1"
 		fi
+		if test "$OSSL3OK" = "Y"
+		then
+			SSLDEF="$SSLDEF -DHAVE_SSLV3_SUPPORT=1"
+		fi
 	else
 		ENABLESSL="n"
 		SSLDEF=""

@@ -11,6 +11,7 @@ Changes from 4.3.26 -> 4.3.27 (XX Mar 2016)
   regular CGI
 * Properly recognize https URLs as summary links (Thanks, 
   David Steinn Geirsson)
+* Add compile-time check for SSLv3 support
 
 
 Changes from 4.3.25 -> 4.3.26 (19 Feb 2016)
