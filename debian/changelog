@@ -236,6 +236,23 @@ xymon (4.4.0-alpha1) unstable; urgency=low
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, ## MMM 2016 00:00:00 +0100
 
 
+xymon (4.3.27) stable; urgency=medium
+
+   * rev 7957
+
+   * Don't treat empty (0 byte) directory size as invalid
+     (Reported by Bert Willekens)
+   * Fix looping redirect on criticaleditor.sh
+   * Allow NK-critical acknowledgements from status pages
+   * Fix redirect to criticalview.sh, which is just a
+     regular CGI
+   * Properly recognize https URLs as summary links (Thanks,
+     David Steinn Geirsson)
+   * Add compile-time check for SSLv3 support
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, 24 Mar 2016 15:00:00 -0700
+
+
 xymon (4.3.26) stable; urgency=medium
 
    * rev 7906

@@ -233,6 +233,22 @@ Changes from 4.3.x -> 4.4-alpha
   (Reported by Bert Willekens)
  
 
+Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)
+===========================================
+
+* rev 7957
+
+* Don't treat empty (0 byte) directory size as invalid
+  (Reported by Bert Willekens)
+* Fix looping redirect on criticaleditor.sh
+* Allow NK-critical acknowledgements from status pages
+* Fix redirect to criticalview.sh, which is just a
+  regular CGI
+* Properly recognize https URLs as summary links (Thanks,
+  David Steinn Geirsson)
+* Add compile-time check for SSLv3 support
+
+
 Changes from 4.3.25 -> 4.3.26 (19 Feb 2016)
 ===========================================
 
