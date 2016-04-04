@@ -20,7 +20,7 @@ XYMONCLIENTLIB = ../lib/libxymonclient.a
 XYMONCLIENTLIBS = -lxymonclient
 XYMONCLIENTCOMMLIB = ../lib/libxymonclientcomm.a
 XYMONCLIENTCOMMLIBS = -lxymonclientcomm $(COMPLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
-XYMONTIMELIB = -lxymontime
+XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
 PROGRAMS=xymonlaunch logfetch clientupdate orcaxymon msgcache
