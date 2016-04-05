@@ -645,17 +645,21 @@ sendresult_t sendmessage_safe(char *msg, size_t msglen, char *recipient, int tim
 	}
 
 	if (defaulttargets == NULL) {
-		char *recips;
+		char *recips = xgetenv("XYMSRV");
 
-		if ((strcmp(xgetenv("XYMSRV"), "0.0.0.0") != 0) || (strcmp(xgetenv("XYMSRV"), "0") != 0) || (strcmp(xgetenv("XYMSRV"), "::") == 0))
-			recips = xgetenv("XYMSRV");
-		else
+		if ((strcmp(recips, "0.0.0.0") == 0) || (strcmp(recips, "0") == 0) || (strcmp(recips, "::") == 0)) 
 			recips = xgetenv("XYMSERVERS");
 
 		defaulttargets = build_targetlist(recips, defaultport, 0);
 	}
 
-	targets = ((recipient == NULL) ? defaulttargets : build_targetlist(recipient, defaultport, msglen));
+	if ((recipient == NULL) || 
+		((strcmp(recipient, "0.0.0.0") == 0) || (strcmp(recipient, "0") == 0) || (strcmp(recipient, "::") == 0)) ) {
+		targets = defaulttargets;
+		dbgprintf("Using default target list\n");
+	}
+	else targets = build_targetlist(recipient, defaultport, msglen);
+
 	sendtoall(msg, msglen, timeout, targets, response);
 
 	res = myhead->result;	/* Always return the result from the first server */
