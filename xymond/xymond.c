@@ -3558,6 +3558,7 @@ void get_sender(conn_t *msg, char *msgtext, char *prestring)
 
 void do_message(conn_t *msg, char *origin, int viabfq)
 {
+	static int nesting = 0;
 	xymond_hostlist_t *h;
 	testinfo_t *t;
 	xymond_log_t *log;
@@ -3566,6 +3567,15 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	char *grouplist;
 	time_t now, timeroffset;
 	char *msgfrom;
+
+	nesting++;
+	if (debug) {
+		char *eoln = strchr(msg->buf, '\n');
+
+		if (eoln) *eoln = '\0';
+		dbgprintf("-> do_message/%d (%d bytes): %s\n", nesting, msg->buflen, msg->buf);
+		if (eoln) *eoln = '\n';
+	}
 
 	if (strncmp(msg->buf, "compress:", 9) == 0) {
 		char *p = NULL;
@@ -4948,7 +4958,8 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	}
 
 done:
-	dbgprintf("<- do_message\n");
+	dbgprintf("<- do_message/%d\n", nesting);
+	nesting--;
 }
 
 
