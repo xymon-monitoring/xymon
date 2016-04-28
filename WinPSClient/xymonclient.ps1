@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = "2.04"
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2015-12-02 zak.beck@accenture.com"
+$Version = '2.15'
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2016-02-03 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -933,11 +933,15 @@ function XymonInit
 
     SetIfNot $script:XymonSettings clientlogretain 0
 
+    $extscript = Join-Path $xymondir 'ext'
+    $extdata = Join-Path $xymondir 'tmp'
+    SetIfNot $script:XymonSettings externalscriptlocation $extscript
+    SetIfNot $script:XymonSettings externaldatalocation $extdata
     SetIfNot $script:XymonSettings servergiflocation '/xymon/gifs/'
     $script:clientlocalcfg = ""
     $script:logfilepos = @{}
+    $script:externals = @{}
 
-    
     $script:HaveCmd = @{}
     foreach($cmd in "query","qwinsta") {
         $script:HaveCmd.$cmd = (get-command -ErrorAction:SilentlyContinue $cmd) -ne $null
@@ -1372,6 +1376,26 @@ function XymonDisk
             $d.VolumeName, `
             $dsGB + "\" + $dfGB
     }
+
+    WriteLog "XymonDisk - partitions"
+    try
+    {
+        $diskpart = 'list disk' | diskpart
+        $dpOutput = $diskpart | where { $_ -match '^  Disk \d+' }
+        $dpOutput = $dpOutput -replace '^\s+', ''
+        $dpOutput = $dpOutput -replace '\s+$', ''
+        "[diskpart]"
+        
+        $dpOutput | foreach {
+            $dpColumns = $_ -split '\s{2,}'
+            "diskpart:{0}:{1}" -f $dpColumns[0], $dpColumns[2]
+        }
+    }
+    catch
+    {
+        WriteLog "Xymondisk diskpart - error $_"
+    }
+        
     WriteLog "XymonDisk finished."
 }
 
@@ -1470,7 +1494,7 @@ function XymonMsgs
         }
     }
 
-    WriteLog "Event Log processing - max payload: $maxpayloadlength - wanted logs: $wantedlogs"
+    WriteLog "Event Log processing - max payload: $maxpayloadlength - wanted logs: $wantedlogs - wanted levels: $wantedLevels"
 
     foreach ($l in ($script:EventLogs | select -ExpandProperty Log))
     {
@@ -2392,6 +2416,111 @@ function XymonProcessRuntimeCheck
     WriteLog 'XymonProcessRuntimeCheck finished'
 }
 
+function XymonProcessExternalData
+{
+    WriteLog 'Executing XymonProcessExternalData'
+
+    if (Test-Path $script:XymonSettings.externaldatalocation)
+    {
+        $files = Get-ChildItem $script:XymonSettings.externaldatalocation
+
+        if ($files -ne $null)
+        {
+            foreach ($f in $files)
+            {
+                # external filenames
+                # it appears that BBWin ignores external files containing a dot '.'?
+                # so replicate that behaviour
+                if ($f.Name -match '\.')
+                {
+                    continue
+                }
+                # a valid filename is either just the test name: testname
+                # or testname^hostname, to allow sending results from a different 
+                # named host
+                if ($f.Name -match '^([\w-]+)(?:\^([\S]+))?$')
+                {
+                    $testName = $matches[1]
+                    $hostName = $matches[2]
+                
+                    if ($hostName -eq $null)
+                    {
+                        $hostName = $script:clientname
+                    }
+
+                    # attempt to open the file with an exclusive lock
+                    # if we cannot, the file may be being updated by a running job, so
+                    # we will ignore it until the next poll
+                    WriteLog "Attempting to process external file $($f.FullName)"
+                    try
+                    {
+                        $statusFile = [System.IO.File]::Open($f.FullName, 'Open', 'Read', 'None')
+                        $reader = New-Object System.IO.StreamReader($statusFile)
+                        $statusFileContent = $reader.ReadToEnd()
+                        $reader.Close()
+                        $statusFile.Close()
+                    }
+                    catch
+                    {        
+                        # if this file is locked or other errors, skip and go to the next one
+                        if ($_ -like '*The process cannot access the file*because it is being used by another process*')
+                        {
+                            WriteLog "External file $($f.Name) is locked by another process, skipping"
+                        }
+                        else
+                        {
+                            WriteLog "External file $($f.Name) error accessing file, skipping: $_"
+                        }
+                        continue
+                    }
+
+                    # match:
+                    # colour ($matches[1])
+                    # optionally + and any non-space chars ($matches[2])
+                    # space
+                    # remainder ($matches[3])
+                    if ($statusFileContent -match '^(red|yellow|green|clear)(?:\+([^ ]+))? ([\s\S]+)$')
+                    {
+                        $groupColour = $matches[1]
+                        $lifeSpan = $matches[2]
+                        $statusMessage = $matches[3]
+
+                        $msg = 'status'
+                        if ($lifeSpan -ne $null -and $lifeSpan -ne '')
+                        {
+                            $msg += "+$lifeSpan"
+                        }
+                        $msg += (' {0}.{1} {2} {3}' -f $hostName, $testName, $groupColour, $statusMessage)
+                        
+                        WriteLog "Sending Xymon message for file $($f.Name) - test $($testName), host $($hostName): $msg"
+                        XymonSend $msg $script:XymonSettings.serversList
+                    }
+                    else
+                    {
+                        WriteLog "External File: $($f.Name) - format not recognised"
+                        WriteLog "Contents of file:`n$statusFileContent"
+                    }
+                    WriteLog "Deleting file $($f.Name)"
+                    Remove-Item $f.FullName -Force
+                }
+                else
+                {
+                    WriteLog "Invalid filename $($f.Name)"
+                }
+            }
+        }
+        else
+        {
+            WriteLog "No files in $($script:XymonSettings.externaldatalocation), nothing to do"
+        }
+    }
+    else
+    {
+        WriteLog "External data path $($script:XymonSettings.externaldatalocation) does not exist"
+    }
+    WriteLog 'XymonProcessExternalData finished'
+}
+
 function XymonSend($msg, $servers)
 {
     $saveresponse = 1   # Only on the first server
@@ -2511,6 +2640,7 @@ function XymonClientConfig($cfglines)
                  -or $l -match '^ifstat:' `
                  -or $l -match '^repeattest:' `
                  -or $l -match '^proc(?:ess)?runtime:' `
+                 -or $l -match '^external:' `
                  )
              {
                  WriteLog "Found a command: $l"
@@ -2555,7 +2685,12 @@ function XymonReportConfig
     #(get-process -id $PID).Threads
 }
 
-function XymonClientSections {
+function XymonClientSections([boolean] $isSlowScan)
+{
+    # maybe move XymonManageExternals to slow scan tasks
+    XymonManageExternals
+    XymonExecuteExternals $isSlowScan
+
     XymonClientVersion
     XymonUname
     XymonCpu
@@ -2593,6 +2728,7 @@ function XymonClientSections {
     XymonTerminalServicesSessionsCheck
     XymonActiveDirectoryReplicationCheck
     XymonProcessRuntimeCheck
+    XymonProcessExternalData
 
     $XymonIISSitesCache
     $XymonWMIQuickFixEngineeringCache
@@ -2641,21 +2777,19 @@ function ExecuteSelfUpdate([string]$newversion)
     exit
 }
 
-function XymonGetUpdateFromFile([string]$updatePath, [string]$updateFile)
+function XymonDownloadFromFile([string]$downloadPath, [string]$destinationFilePath)
 {
-    $newversion = join-path $updatePath $updateFile
-    WriteLog "Attempting to update from file $newversion"
-
-    if (!(Test-Path $newversion))
+    WriteLog "XymonDownloadFromFile - Downloading $downloadPath to $destinationFilePath"
+    if (!(Test-Path $downloadPath))
     {
-        WriteLog "New version $newversion cannot be found - aborting upgrade"
+        WriteLog "File $downloadPath cannot be found - aborting"
         return $false
     }
 
-    WriteLog "Copying $newversion to $xymondir"
+    WriteLog "Copying $downloadPath to $destinationPath"
     try
     {
-        Copy-Item  $newversion $xymondir -Force
+        Copy-Item  $downloadPath $destinationFilePath -Force
     }
     catch 
     {
@@ -2665,26 +2799,17 @@ function XymonGetUpdateFromFile([string]$updatePath, [string]$updateFile)
     return $true
 }
 
-function XymonGetUpdateFromURL([string]$updateURL, [string]$updateFile)
+function XymonDownloadFromURL([string]$downloadURL, [string]$destinationFilePath)
 {
-    WriteLog "update URL >$updateURL< updateFile >$updateFile<"
-    $updateURL = $updateURL.Trim()
-    if ($updateURL -notmatch '/$')
-    {
-        $updateURL += '/'
-    }
-    $URL = "{0}{1}" -f $updateURL, $updateFile
-
-    $destination = Join-Path -Path $xymondir -ChildPath $updateFile
-
-    WriteLog "Downloading $URL to $destination"
+    $downloadURL = $downloadURL.Trim()
+    WriteLog "XymonDownloadFromURL - Downloading $downloadURL to $destinationFilePath"
     $client = New-Object System.Net.WebClient
     try
     {
         # for self-signed certificates, turn off cert validation
         # TODO: make this a config option
         [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-        $client.DownloadFile($URL, $destination)
+        $client.DownloadFile($downloadURL, $destinationFilePath)
     }
     catch
     {
@@ -2694,10 +2819,20 @@ function XymonGetUpdateFromURL([string]$updateURL, [string]$updateFile)
     return $true
 }
 
+function GetHashValueForFile([string] $filename, [string] $hashAlgorithm)
+{
+    $hash = [System.Security.Cryptography.HashAlgorithm]::Create($hashAlgorithm)
+    $stream = ([System.IO.StreamReader]$filename).BaseStream
+    $fileHash = -join ($hash.ComputeHash($stream) | foreach { '{0:x2}' -f $_ } )
+    $stream.Close()
+    return $fileHash
+}
+
 function XymonCheckUpdate
 {
     WriteLog "Executing XymonCheckUpdate"
-    $updates = @($script:clientlocalcfg_entries.keys | where { $_ -match '^clientversion:(\d+\.\d+):(.+)$' })
+    $updates = @($script:clientlocalcfg_entries.keys | `
+        where { $_ -match '^clientversion:(\d+\.\d+):(.+?)(?::(MD5|SHA1|SHA256):([0-9a-f]+))?$' })
     if ($updates.length -gt 1)
     {
         WriteLog "ERROR: more than one clientversion directive in config!"
@@ -2706,6 +2841,9 @@ function XymonCheckUpdate
     {
         # $matches[1] = the new version number
         # $matches[2] = the place to look for new version file
+        # $matches[3] = (optional) hash type
+        # $matches[4] = (optional) hash value
+
         if ($Version -lt $matches[1])
         {
             WriteLog "Running version $Version; config version $($matches[1]); attempting upgrade"
@@ -2713,19 +2851,59 @@ function XymonCheckUpdate
             # $matches[2] can be either a http[s] URL or a file path
             $updatePath = $matches[2]
             $updateFile = "xymonclient_$($matches[1]).ps1"
-            $result = $false;
+            $hashAlgorithm = $matches[3]
+            $hashRequired = $matches[4]
+            $destination = Join-Path -Path $xymondir -ChildPath $updateFile
+
+            $result = $false
             if ($updatePath -match '^http')
             {
-                $result = XymonGetUpdateFromURL $updatePath $updateFile
+                $updateURL = $updatePath.Trim()
+                if ($updateURL -notmatch '/$')
+                {
+                    $updateURL += '/'
+                }
+                $URL = "{0}{1}" -f $updateURL, $updateFile
+                $destination = Join-Path -Path $xymondir -ChildPath $updateFile
+                $result = XymonDownloadFromURL $URL $destination
             }
             else
             {
-                $result = XymonGetUpdateFromFile $updatePath $updateFile
+                $updateSource = Join-Path $updatePath $updateFile
+                $result = XymonDownloadFromFile $updateSource $destination
             }
 
             if ($result)
             {
                 $newversion = Join-Path $xymondir $updateFile
+                if ($hashAlgorithm -ne $null)
+                {
+                    WriteLog "$($hashAlgorithm) hash specified, testing update file"
+                    $fileHash = ''
+                    try
+                    {
+                        $fileHash = GetHashValueForFile -filename $newversion -hashAlgorithm $hashAlgorithm
+                    }
+                    catch
+                    {
+                        WriteLog "Update directive specifies hash, but error calculating hash: $_"
+                        WriteLog "Update cancelled"
+                        Remove-Item $newversion
+                        return
+                    }
+
+                    if ($fileHash -ne $hashRequired)
+                    {
+                        WriteLog "Update: update file hash mismatch (calculated $fileHash should be $hashRequired)"
+                        WriteLog "Update cancelled"
+                        Remove-Item $newversion
+                        return
+                    }
+                    else
+                    {
+                        WriteLog "Update file hash matches expected value, update can proceed"
+                    }
+                }
 
                 WriteLog "Launching update"
                 ExecuteSelfUpdate $newversion
@@ -2741,6 +2919,251 @@ function XymonCheckUpdate
         # no clientversion directive
         WriteLog "Update: No clientversion directive in config, nothing to do"
     }
+}
+
+function DownloadAndVerify([string] $URI, [string] $name, [string] $path, `
+    [string] $hashAlgorithm, [string] $hashRequired)
+{
+    if (!(Test-Path $path))
+    {
+        New-Item -ItemType directory -Path $path
+    }
+
+    $tempName = "$($name)_new"
+    $destination = Join-Path -Path $path -ChildPath $tempName
+
+    $result = $false
+    if ($URI -match '^http')
+    {
+        $result = XymonDownloadFromURL $URI $destination
+    }
+    else
+    {
+        $result = XymonDownloadFromFile $URI $destination
+    }
+
+    if ($result -and $hashAlgorithm -ne $null)
+    {
+        WriteLog "$($hashAlgorithm) hash specified, testing destination file"
+        $fileHash = ''
+        try
+        {
+            $fileHash = GetHashValueForFile -filename $destination -hashAlgorithm $hashAlgorithm
+        }
+        catch
+        {
+            WriteLog "Error calculating hash: $_"
+            $result = $false
+        }
+
+        if ($result)
+        {
+            if ($fileHash -ne $hashRequired)
+            {
+                $result = $false
+                WriteLog "File hash mismatch (calculated $fileHash should be $hashRequired)"
+            }
+            else
+            {
+                WriteLog "Downloaded file hash matches expected value, can proceed"
+            }
+        }
+        if (!$result)
+        {
+            WriteLog "Removing failed download $destination"
+            Remove-Item $destination
+        }
+    }
+    if ($result)
+    {
+        $originalFile = Join-Path -Path $path -ChildPath $name
+        if (Test-Path $originalFile)
+        {
+            WriteLog "Deleting original file $originalFile"
+            Remove-Item -Force $originalFile
+        }
+        WriteLog "Renaming $destination to $originalFile"
+        Move-Item -Force $destination $originalFile
+    }
+    return $result
+}
+
+function XymonManageExternals
+{
+    WriteLog "Executing XymonManageExternals"
+    $externalConfig = @($script:clientlocalcfg_entries.keys | `
+        where { $_ -match '^external:' })
+    $script:externals = @()
+
+    foreach ($external in $externalConfig)
+    {
+        if ($external -match '^external:(?:(\d+):)?(slowscan|everyscan):(sync|async):(.+?)(?:\|(MD5|SHA1|SHA256)\|([0-9a-f]+))?(?:\|(.+)\|(.+))?$')
+        {
+            # $matches[1] = priority (optional) 0-99
+            # $matches[2] = slowscan/everyscan
+            # $matches[3] = sync/async
+            # $matches[4] = URL / file location
+            # $matches[5] = optional hash type
+            # $matches[6] = optional hash value
+            # $matches[7] = optional process
+            # $matches[8] = optional arguments
+
+            ($priority, $executionFrequency, $executionMethod, $externalURI, `
+             $hashAlgorithm, $hashRequired, $process, $arguments) = $matches[1..8]
+
+            if ($externalURI -match '^http')
+            {
+                $externalScriptName = $externalURI.SubString($externalURI.LastIndexOf('/') + 1)
+            }
+            else
+            {
+                $externalScriptName = Split-Path -Leaf $externalURI
+            }
+            $externalFullName = Join-Path $script:XymonSettings.externalscriptlocation $externalScriptName
+            if ($arguments -ne $null)
+            {
+                $arguments = $arguments -replace '{script}', $externalFullName
+                $arguments = $arguments -replace '{scriptdir}', $script:XymonSettings.externalscriptlocation
+            }
+            if ($priority -eq $null)
+            {
+                $priority = 99
+            }
+            if ($process -eq $null)
+            {
+                $process = $externalFullName
+            }
+            $externalInfo = @{ Fullname = $externalFullName; `
+                ExecutionFrequency = $executionFrequency; `
+                ExecutionMethod = $executionMethod; 
+                ProcessName = $process; 
+                Arguments = $arguments;
+                Priority = $priority }
+            $externalObj = New-Object -Type PSObject -Property $externalInfo
+            $downloadFlag = $false
+
+            WriteLog "Checking $externalFullName"
+
+            # check to see if we have the matching version
+            if (Test-Path $externalFullName)
+            {
+                WriteLog "External script $externalScriptName found"
+                if ($hashAlgorithm -ne $null -and $hashRequired -ne $null)
+                {
+                    WriteLog "External script $externalScriptName - testing against hash"
+                    try
+                    {
+                        $fileHash = GetHashValueForFile -filename $externalFullName -hashAlgorithm $hashAlgorithm
+                    }
+                    catch
+                    {
+                        WriteLog "Error calculating hash for external: $_"
+                    }
+                    if ($fileHash -ne $hashRequired)
+                    {
+                        WriteLog "Existing script hash mismatch (calculated $fileHash should be $hashRequired)"
+                        # hash mismatch, need to update via download 
+                        $downloadFlag = $true
+                    }
+                }
+                if (!$downloadFlag)
+                {
+                    WriteLog "Success, adding/updating external $externalScriptName in execution plan"
+                    $script:externals += $externalObj
+                }
+            }
+            else
+            {
+                WriteLog "External $externalFullName not found"
+                # external does not exist, need to download
+                $downloadFlag = $true
+            }
+
+            if ($downloadFlag)
+            {
+                WriteLog "External script $externalScriptName not found or requires update, downloading"
+                try
+                {
+                    $result = DownloadAndVerify -URI $externalURI -name $externalScriptName `
+                        -path $script:XymonSettings.externalscriptlocation `
+                        -hashAlgorithm $hashAlgorithm -hashRequired $hashRequired
+                    
+                    if ($result)
+                    {
+                        WriteLog "Success, adding/updating external $externalScriptName in execution plan"
+                        $script:externals += $externalObj
+                    }
+                }
+                catch
+                {
+                    WriteLog "Error downloading $externalScriptName, ignoring (will not be executed)"
+                    WriteLog "Error was: $_"
+                }
+            }
+        }
+        else
+        {
+            WriteLog "external directive does not match expected format: $external"
+        }
+    } # foreach ... externals
+    WriteLog 'XymonManageExternals finished'
+}
+
+function XymonExecuteExternals([boolean] $isSlowscan)
+{
+    WriteLog 'Executing XymonExecuteExternals'
+    if (!(Test-Path $script:XymonSettings.externaldatalocation))
+    {
+        New-Item -ItemType directory -Path $script:XymonSettings.externaldatalocation
+    }
+    $script:externals | Sort-Object Priority, ExecutionMethod | foreach {
+        WriteLog "External: $($_.ExecutionFrequency) - $($_.FullName)"
+        if (!$isSlowscan -and $_.ExecutionFrequency -eq 'slowscan')
+        {
+            WriteLog 'Skipping execution, this is not a slow scan'
+        }
+        else
+        {
+            try
+            {
+                $process = $_.ProcessName
+                $arguments = $_.Arguments
+                if ($arguments -ne $null)
+                {
+                    WriteLog "Executing $process with arguments $arguments"
+                    $extpid = Start-Process -PassThru `
+                        -WindowStyle Hidden `
+                        -WorkingDirectory $script:XymonSettings.externalscriptlocation `
+                        $process $arguments
+                }
+                else
+                {
+                    WriteLog "Executing $process with no arguments"
+                    $extpid = Start-Process -PassThru `
+                        -WindowStyle Hidden `
+                        -WorkingDirectory $script:XymonSettings.externalscriptlocation `
+                        $process
+                }
+                WriteLog "Process $($extpid.Id) started"
+            
+                if ($_.ExecutionMethod -eq 'sync')
+                {
+                    WriteLog "Synchronous external: waiting for process $($extpid.Id) to complete"
+                    $extpid | Wait-Process
+                    WriteLog "Process $($extpid.Id) completed"
+                }
+                else
+                {
+                    WriteLog "Asynchronous: not waiting for process $($extpid.Id)"
+                }
+            }
+            catch
+            {
+                WriteLog "Error executing: $_"
+            }
+        }
+    }
+    WriteLog 'XymonExecuteExternals finished'
 }
 
 function WriteLog([string]$message)
@@ -2967,9 +3390,11 @@ while ($running -eq $true) {
     WriteLog "Next 'slow scan' is when loopcount reaches $($script:XymonSettings.slowscanrate)"
 
     $starttime = Get-Date
+    $slowscan = $false
     
     if ($loopcount -eq $script:XymonSettings.slowscanrate) { 
         $loopcount = 0
+        $slowscan = $true
         
         WriteLog "Doing slow scan tasks"
 
@@ -2988,7 +3413,7 @@ while ($running -eq $true) {
     WriteLog "Performing main and optional tests and building output..."
     $clout = "client $($clientname).$($script:XymonSettings.clientsoftware) $($script:XymonSettings.clientclass) XymonPS" | 
         Out-String
-    $clsecs = XymonClientSections | Out-String
+    $clsecs = XymonClientSections $slowscan | Out-String
     $localdatetime = Get-Date
     $clout += XymonDate | Out-String
     $clout += XymonClock | Out-String
@@ -3008,7 +3433,7 @@ while ($running -eq $true) {
     [GC]::Collect() # run every time to avoid memory bloat
     
     #maybe check for update - only happens after a slow scan, when loopcount = 0
-    if ($loopcount -eq 0)
+    if ($slowscan)
     {
         XymonCheckUpdate
     }
