@@ -1,3 +1,13 @@
+xymon (4.3.28) stable; urgency=medium
+
+   * rev XXXX
+
+   * Catch addition possible errors during SSL handshake
+     for standard TCP checks
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, XX XXX 2016 15:00:00 -0700
+
+
 xymon (4.3.27) stable; urgency=medium
 
    * rev 7957

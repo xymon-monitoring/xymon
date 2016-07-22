@@ -1,3 +1,12 @@
+Changes from 4.3.27 -> 4.3.28 (XX XXX 2016)
+===========================================
+
+* rev xxxx
+
+* Catch addition possible errors during SSL handshake
+  for standard TCP checks
+
+
 Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)
 ===========================================
 
