@@ -4,6 +4,8 @@ xymon (4.3.28) stable; urgency=medium
 
    * Catch addition possible errors during SSL handshake
      for standard TCP checks
+   * Fix misparsing of --timelimit and --huge options in
+     xymonnet (Reported by Foster Patch)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, XX XXX 2016 15:00:00 -0700
 

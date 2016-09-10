@@ -13,6 +13,12 @@ Changes file.
 Changes for 4.3.27
 ==================
 
+Bug fixes.
+
+
+Changes for 4.3.27
+==================
+
 Fixes for CGI acknowledgements and NK/criticalview web redirects.
 
 Xymon should now properly check for lack of SSLv3 (or v2) support at compile-

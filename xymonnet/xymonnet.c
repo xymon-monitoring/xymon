@@ -2084,11 +2084,11 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			p++; frequenttestlimit = atoi(p);
 		}
-		else if (strcmp(argv[argi], "--timelimit=") == 0) {
+		else if (argnmatch(argv[argi], "--timelimit=")) {
 			char *p = strchr(argv[argi], '=');
 			p++; runtimewarn = atol(p);
 		}
-		else if (strcmp(argv[argi], "--huge=") == 0) {
+		else if (argnmatch(argv[argi], "--huge=")) {
 			char *p = strchr(argv[argi], '=');
 			p++; warnbytesread = atoi(p);
 		}
