@@ -35,14 +35,20 @@ available on the xymon website (http://xymon.sourceforge.net/).
 XYMON 4.4 ALPHA 1 RELEASE NOTES
 ===============================
 
-By default, xymon sends using non-backwards compatible message format
-(the size of the remaining message is prefixed). To send from a 4.4 client
-to a 4.3 or below server, add the following to your environment:
+By default, xymon sends using the existing, compatible message format used
+by all previous versions (and Big Brother). To send using the "V5" format
+(the size of the remaining message is prefixed, allowing truncated messages
+to be rejected, and possibly future improvements later on), add the following 
+to your environment:
 
-	XYMONV4SERVER=1
+XYMONV5SERVER=TRUE
 
 This can be added in xymonclient.cfg, xymonserver.cfg, 
 /etc/sysconfig/xymon-client or any other location where the sending 
 process will have it set. This may change for the final release.
+
+
+(Note: Previous trunk versions had an inverted version of this logic, requiring
+XYMONV4SERVER=1 to send to an older server.)
 
 

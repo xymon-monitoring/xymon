@@ -73,6 +73,7 @@ const static struct {
 	{ "COMPRESSION", "FALSE" },
 	{ "COMPRESSTYPE", "lzo" },
 	{ "DOCOMBO", "TRUE" },
+	{ "XYMONV5SERVER", "FALSE" },
 	{ "MAXMSGSPERCOMBO", "100" },
 	{ "SLEEPBETWEENMSGS", "0" },
 	{ "XYMONTIMEOUT", "15" },

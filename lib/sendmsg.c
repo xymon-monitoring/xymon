@@ -311,11 +311,12 @@ static int sendtoall(char *msg, size_t msglen, int timeout, mytarget_t **targets
 	int maxfd;
 	strbuffer_t *cbuf = NULL;
 	static int first_run = 1;
-	static int v4server = 0;
+	static int v5server = 0;
 	static int default_timeout = 0;
 
 	if (first_run) {
-	   v4server = (getenv("XYMONV4SERVER") != NULL);
+	   /* Enable to remove backwards compatibility to v4 servers */
+	   v5server = (strcmp(xgetenv("XYMONV5SERVER"), "TRUE") != 0);
 	   /* XYMON_TIMEOUT = legacy */
 	   default_timeout = (sendtimeout >= 0) ? sendtimeout : 
 		atoi(getenv("XYMON_TIMEOUT"))   ? atoi(xgetenv("XYMON_TIMEOUT")) : 
@@ -375,7 +376,7 @@ static int sendtoall(char *msg, size_t msglen, int timeout, mytarget_t **targets
 				myconn->httpheaderbuf = newstrbuffer(1024);
 			}
 		}
-		else if (!v4server) {
+		else if (v5server) {
 			myconn->prebuf = myconn->preptr = (char *)malloc(20);
 			sprintf(myconn->prebuf, "size:%d\n", (int)myconn->lefttowrite);
 		}
