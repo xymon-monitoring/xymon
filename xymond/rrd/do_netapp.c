@@ -220,16 +220,20 @@ static void *netapp_snaplist_tpl      = NULL;
 	return 0;
 }
 
-int do_netapp_extratest_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp, char *params[],char *varlist[])
+int do_netapp_extratest_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp, char *params[], rrdtpldata_t **tpl, char *varlist[])
 {
-static void *netapp_tpl      = NULL;
+static rrdtpldata_t *netapp_tpl = NULL;
 
 	char *outp;	
 	char *eoln,*curline;
 	char *rrdp;
 	/* Setup the update string */
 
-	netapp_tpl = setup_template(params);
+	if (tpl == NULL) netapp_tpl = setup_template(params);
+	else {
+		if ((*tpl) == NULL) *tpl = setup_template(params);
+		netapp_tpl = *tpl;
+	}
         curline = msg;
 
 	dbgprintf("MESSAGE=%s\n",msg);
@@ -436,6 +440,19 @@ static char *processor_test[] = { "processor_busy" ,NULL };
 static char *disk_test[] = { "total_transfers", "user_read_chain", "user_reads", "user_write_chain", "user_writes", "cp_read_chain", "cp_reads", "guarenteed_read_chain", "guaranteed_reads", "guarenteed_write_chain", "guaranteed_writes", "user_read_latency", "user_read_blocks", "user_write_latency", "user_write_blocks", "cp_read_latency", "cp_read_blocks", "guarenteed_read_latency", "guarenteed_read_blocks", "guarenteed_write_latency", "guarenteed_write_blocks", "disk_busy" ,NULL };
 static char *system_test[] = { "nfs_ops", "cifs_ops", "http_ops", "dafs_ops", "fcp_ops", "iscsi_ops", "net_data_recv", "net_data_sent", "disk_data_read", "disk_data_written", "cpu_busy", "avg_processor_busy", "total_processor_busy", "num_processors", "time", "uptime" ,NULL };
 
+static rrdtpldata_t *qtree_tpl = NULL;
+static rrdtpldata_t *aggregate_tpl = NULL;
+static rrdtpldata_t *iscsi_tpl = NULL;
+static rrdtpldata_t *fcp_tpl = NULL;
+static rrdtpldata_t *cifs_tpl = NULL;
+static rrdtpldata_t *volume_tpl = NULL;
+static rrdtpldata_t *lun_tpl = NULL;
+static rrdtpldata_t *nfsv3_tpl = NULL;
+static rrdtpldata_t *ifnet_tpl = NULL;
+static rrdtpldata_t *processor_tpl = NULL;
+static rrdtpldata_t *disk_tpl = NULL;
+static rrdtpldata_t *system_tpl = NULL;
+
         char *ifnetstr;
         char *qtreestr;
         char *aggregatestr;
@@ -450,12 +467,19 @@ static char *system_test[] = { "nfs_ops", "cifs_ops", "http_ops", "dafs_ops", "f
         volumestr = getdata("volume");
         lunstr = getdata("lun");
         diskstr = getdata("disk");
-	do_netapp_extratest_rrd(hostname,"xstatifnet",classname,pagepaths,ifnetstr,tstamp,netapp_ifnet_params,ifnet_test);
-	do_netapp_extratest_rrd(hostname,"xstatqtree",classname,pagepaths,qtreestr,tstamp,netapp_qtree_params,qtree_test);
-	do_netapp_extratest_rrd(hostname,"xstataggregate",classname,pagepaths,aggregatestr,tstamp,netapp_aggregate_params,aggregate_test);
-	do_netapp_extratest_rrd(hostname,"xstatvolume",classname,pagepaths,volumestr,tstamp,netapp_volume_params,volume_test);
-	do_netapp_extratest_rrd(hostname,"xstatlun",classname,pagepaths,lunstr,tstamp,netapp_lun_params,lun_test);
-	do_netapp_extratest_rrd(hostname,"xstatdisk",classname,pagepaths,diskstr,tstamp,netapp_disk_params,disk_test);
+	
+	if (ifnet_tpl == NULL) ifnet_tpl = setup_template(netapp_ifnet_params);
+	if (qtree_tpl == NULL) qtree_tpl = setup_template(netapp_qtree_params);
+	if (aggregate_tpl == NULL) aggregate_tpl = setup_template(netapp_aggregate_params);
+	if (volume_tpl == NULL) volume_tpl = setup_template(netapp_volume_params);
+	if (lun_tpl == NULL) lun_tpl = setup_template(netapp_lun_params);
+	if (disk_tpl == NULL) disk_tpl = setup_template(netapp_disk_params);
+	do_netapp_extratest_rrd(hostname,"xstatifnet",classname,pagepaths,ifnetstr,tstamp,netapp_ifnet_params,&ifnet_tpl,ifnet_test);
+	do_netapp_extratest_rrd(hostname,"xstatqtree",classname,pagepaths,qtreestr,tstamp,netapp_qtree_params,&qtree_tpl,qtree_test);
+	do_netapp_extratest_rrd(hostname,"xstataggregate",classname,pagepaths,aggregatestr,tstamp,netapp_aggregate_params,&aggregate_tpl,aggregate_test);
+	do_netapp_extratest_rrd(hostname,"xstatvolume",classname,pagepaths,volumestr,tstamp,netapp_volume_params,&volume_tpl,volume_test);
+	do_netapp_extratest_rrd(hostname,"xstatlun",classname,pagepaths,lunstr,tstamp,netapp_lun_params,&lun_tpl,lun_test);
+	do_netapp_extratest_rrd(hostname,"xstatdisk",classname,pagepaths,diskstr,tstamp,netapp_disk_params,&disk_tpl,disk_test);
 
 	return 0;
 }

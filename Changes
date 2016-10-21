@@ -7,6 +7,8 @@ Changes from 4.3.27 -> 4.3.28 (XX XXX 2016)
   for standard TCP checks
 * Fix misparsing of --timelimit and --huge options in
   xymonnet (Reported by Foster Patch)
+* Fix memory leak when processing netapp test reports
+  (Reported by Peter Welter)
 
 
 Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)
