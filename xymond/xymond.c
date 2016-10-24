@@ -3631,6 +3631,47 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		}
 	}
 
+	/* Handle size:#### messages that have made it through (likely via compression) */
+	if (strncmp(msg->buf, "size:", 5) == 0) {
+		char *p = NULL;
+		strbuffer_t *expbuf = NULL;
+		size_t expandedsz = 0;
+		unsigned char *cbegin;
+
+		p = msg->buf+5; if (!p) goto done;
+		p = strchr(msg->buf, ' '); if (!++p) goto done;		// skip to size
+		expandedsz = (size_t)atol(p); dbgprintf(" - xymon v5 message came through; expecting %zu bytes\n", expandedsz);
+
+		cbegin = strchr(msg->buf, '\n');
+		if (cbegin) {
+			ptrdiff_t len;
+			cbegin++;
+			len = msg->bufsz - (cbegin - msg->buf);
+
+			if (len == expandedsz) {
+				char *origbuf, *origbufp;
+				size_t origbuflen, origbufsz;
+
+				dbgprintf(" - valid xymond v5 msg found, %zu bytes\n", expandedsz);
+
+				origbuf = msg->buf; origbuflen = msg->buflen; origbufsz = msg->bufsz; origbufp = msg->bufp;
+				msg->buflen = msg->bufsz = len;
+				msg->buf = cbegin;
+				msg->bufp = msg->buf + msg->buflen; *(msg->bufp) = '\0';
+
+				do_message(msg, origin, viabfq);
+
+				msg->buf=origbuf; msg->buflen=origbuflen; msg->bufsz=origbufsz; msg->bufp=origbufp;
+				goto done;
+			}
+			else {
+				errprintf("Garbled xymon v5 message: expected %zu bytes, but got %zu bytes\n",
+					  expandedsz, len);
+				goto done;
+			}
+		}
+	}
+
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
 	now = getcurrenttime(NULL);
@@ -5531,13 +5572,13 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 						 */
 						unsigned char *newbuf = (unsigned char *)malloc(conn->msgsz + 2048);
 						conn->buflen -= szlen;
-						// memmove(conn->buf, eosz+1, conn->buflen + 1);   /* Move the '\0' also */
-						strcpy(newbuf, eosz+1);
+						memmove(conn->buf, eosz+1, conn->buflen + 1);   /* Move the '\0' also */
+						// strcpy(newbuf, eosz+1);
 						xfree(conn->buf);
 						conn->buf = newbuf;
 						conn->bufp = conn->buf + conn->buflen;
 
-						// dbgprintf("Expect message of size %d, currently have %d\n", conn->msgsz, conn->buflen);
+						dbgprintf("Expect message of size %zu, currently have %zu\n", conn->msgsz, conn->buflen);
 						if (conn->buflen >= conn->msgsz)
 							do_message(conn, "", 0);
 					}
