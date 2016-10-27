@@ -316,7 +316,7 @@ static int sendtoall(char *msg, size_t msglen, int timeout, mytarget_t **targets
 
 	if (first_run) {
 	   /* Enable to remove backwards compatibility to v4 servers */
-	   v5server = (strcmp(xgetenv("XYMONV5SERVER"), "TRUE") != 0);
+	   v5server = (strcmp(xgetenv("XYMONV5SERVER"), "TRUE") == 0);
 	   /* XYMON_TIMEOUT = legacy */
 	   default_timeout = (sendtimeout >= 0) ? sendtimeout : 
 		atoi(getenv("XYMON_TIMEOUT"))   ? atoi(xgetenv("XYMON_TIMEOUT")) : 
