@@ -648,7 +648,7 @@ static void setup_ssl(tcptest_t *item)
 
 	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
 	certissuer = X509_NAME_oneline(X509_get_issuer_name(peercert), NULL, 0);
-	certsigalg = OBJ_nid2ln(OBJ_obj2nid(peercert->sig_alg->algorithm));
+	certsigalg = OBJ_nid2ln(X509_get_signature_nid(peercert));
 	certstart = strdup(xymon_ASN1_UTCTIME(X509_get_notBefore(peercert)));
 	certend = strdup(xymon_ASN1_UTCTIME(X509_get_notAfter(peercert)));
 	{
