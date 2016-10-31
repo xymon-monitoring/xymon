@@ -36,12 +36,6 @@
 #error SSL-protocol testing requires OpenSSL version 0.9.5 or later
 #endif
 
-/* Function not available prior */
-#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
-#define X509_get_signature_nid(X) OBJ_obj2nid(X->sig_alg->algorithm)
-#endif
-
-
 #else
 /*
  * xymonnet without support for SSL protocols.
