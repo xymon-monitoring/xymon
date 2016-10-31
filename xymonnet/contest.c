@@ -680,7 +680,7 @@ static void setup_ssl(tcptest_t *item)
 
 	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
 	certissuer = X509_NAME_oneline(X509_get_issuer_name(peercert), NULL, 0);
-#if OPENSSL_VERSION_NUMBER < 0x10002000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	certsigalg = OBJ_nid2ln(OBJ_obj2nid(peercert->sig_alg->algorithm));
 #else
 	certsigalg = OBJ_nid2ln(X509_get_signature_nid(peercert));
