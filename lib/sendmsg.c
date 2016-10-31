@@ -45,6 +45,8 @@ static char rcsid[] = "$Id$";
 
 /* These commands go to all Xymon servers */
 static char *multircptcmds[] = { "status", "combo", "extcombo", "compress", "data", "notify", "enable", "disable", "drop", "rename", "client", "clientsubmit", "dummy", NULL };
+/* These commands require a response -- Note: bare 'schedule', xymond* and hobbitd* are caught specially */
+static char *responsecmds[] = { "client", "hostinfo", "query", "config", "clientconfig", "download", "clientlog", "ping", "proxyping", "pullclient", "ghostlist", "multisrclist", "senderstats", NULL };
 static char errordetails[1024];
 
 static strbuffer_t *msgbuf = NULL;      /* message buffer for one status message */
@@ -114,6 +116,31 @@ char *strxymonsendresult(sendresult_t res)
 	};
 }
 
+int msgwantsresponse(char *msg)
+{
+	static char msgcmd[32];
+	int wantresponse = RESPONSE_NONE;
+
+	if ( (strncmp(msg, "xymond", 6) == 0) || (strncmp(msg, "hobbitd", 7) == 0) )
+		/* Wildcard these */
+		wantresponse = RESPONSE_FIRST;
+	else if (strcmp(msg, "schedule") == 0) {
+                /* It's just a blank "schedule" (query) command */
+                wantresponse = RESPONSE_FIRST;
+	}
+        else {
+		int i = strspn(msg, "abcdefghijklmnopqrstuvwxyz");
+		if (i > 31) {
+			errprintf("Message command too long to parse\n");
+			return 1;
+		}
+		strncpy(msgcmd, msg, i); *(msgcmd+i) = '\0';
+
+		for (i = 0; (responsecmds[i] && strcmp(responsecmds[i], msgcmd)); i++) ;
+		wantresponse = (responsecmds[i] != NULL) ? RESPONSE_FIRST : RESPONSE_NONE;
+	}
+	return wantresponse;
+}
 
 static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 {
@@ -307,6 +334,7 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 static int sendtoall(char *msg, size_t msglen, int timeout, mytarget_t **targets, sendreturn_t *responsebuffer)
 {
 	myconn_t *myconn;
+	int allservers = 1, wantsresponse = RESPONSE_NONE;
 	int i;
 	int maxfd;
 	strbuffer_t *cbuf = NULL;
@@ -339,7 +367,20 @@ static int sendtoall(char *msg, size_t msglen, int timeout, mytarget_t **targets
 	 * an extcombo message to be assembled from compressed messages;
 	 * it would be nice to have an easy way of skipping these.
 	 */
-	if (docompress && (strcmp(msg, "compress:") != 0)) {
+
+	wantsresponse = msgwantsresponse(msg);
+
+	if (wantsresponse == RESPONSE_NONE) allservers = 1;
+	else {
+		/* Generally, only send response-requested messages to a single server */
+		allservers = 0;
+
+		/* Except client messages */
+		if ( (strncmp(msg, "client", 6) == 0) && (strncmp(msg, "clientlog", 9) != 0) ) allservers = 1;
+	}
+
+	/* It's possible we've been manually given an already-compressed message */
+	if (docompress && (wantsresponse == RESPONSE_NONE) && (strncmp(msg, "compress:", 9) != 0)) {
 		cbuf = compress_message_to_strbuffer(comptype, msg, msglen, cbuf, NULL);
 		if (cbuf) {
 			msglen = STRBUFLEN(cbuf);

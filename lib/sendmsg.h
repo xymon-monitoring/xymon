@@ -33,6 +33,12 @@ typedef enum {
 } sendresult_t;
 extern char *strxymonsendresult(sendresult_t s);
 
+
+#define RESPONSE_NONE	0	/* No response */
+#define RESPONSE_FIRST	1	/* Transmit to first, return the first response */
+#define RESPONSE_ALL	2
+extern int msgwantsresponse(char *msg);
+
 typedef struct sendreturn_t {
 	FILE *respfd;
 	strbuffer_t *respstr;

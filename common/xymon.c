@@ -124,25 +124,11 @@ int main(int argc, char *argv[])
 		freestrbuffer(inpline);
 	}
 
-	if      (strncmp(STRBUF(msg), "query ", 6) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "client ", 7) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "config ", 7) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "clientsubmit", 12) == 0) wantresponse = 0;
-	else if (strncmp(STRBUF(msg), "clientconfig", 12) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "download ", 9) == 0) wantresponse = 1;
-	else if ((strncmp(STRBUF(msg), "xymondlog ", 10) == 0) || (strncmp(STRBUF(msg), "hobbitdlog ", 11) == 0)) wantresponse = 1;
-	else if ((strncmp(STRBUF(msg), "xymondxlog ", 11) == 0) || (strncmp(STRBUF(msg), "hobbitdxlog ", 12) == 0)) wantresponse = 1;
-	else if ((strncmp(STRBUF(msg), "xymondboard", 11) == 0) || (strncmp(STRBUF(msg), "hobbitdboard", 12) == 0)) wantresponse = 1;
-	else if ((strncmp(STRBUF(msg), "xymondxboard", 12) == 0) || (strncmp(STRBUF(msg), "hobbitdxboard", 13) == 0)) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "schedule ", 9) == 0) wantresponse = 0;
-	else if (strncmp(STRBUF(msg), "schedule", 8) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "clientlog ", 10) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "hostinfo", 8) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "ping", 4) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "proxyping", 9) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "pullclient", 10) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "ghostlist", 9) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "multisrclist", 12) == 0) wantresponse = 1;
+
+	/* Much of this logic is handled in the general sendmessage() routine */
+	/* for other purposes, but we want more direct control over transmission here */
+
+	if (!wantresponse) wantresponse = msgwantsresponse(STRBUF(msg));
 
 	/* By default, don't compress two-way messages; xymonproxy doesn't unpack them */
 	if (wantresponse && (enablecompression >= 0) && !forcecompression && !getenv("XYMON_FORCECOMPRESSION")) {
@@ -154,6 +140,7 @@ int main(int argc, char *argv[])
 		enablecompression = -1;
 	}
 
+	/* Only use the backfeed queue from the xymon client if explicitly told and we don't need a response */
 	usebackfeedqueue = ((strcmp(recipient, "0") == 0) && !wantresponse);
 
 	if (!usebackfeedqueue) {
