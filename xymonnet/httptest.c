@@ -506,7 +506,10 @@ void add_http_test(testitem_t *t, int dousecookies)
 	if (httptest->weburl.desturl->schemeopts) {
 		if      (strstr(httptest->weburl.desturl->schemeopts, "3"))      sslopt_version = SSLVERSION_V3;
 		else if (strstr(httptest->weburl.desturl->schemeopts, "2"))      sslopt_version = SSLVERSION_V2;
-		else if (strstr(httptest->weburl.desturl->schemeopts, "t"))      sslopt_version = SSLVERSION_TLS1;
+		else if (strstr(httptest->weburl.desturl->schemeopts, "t"))      sslopt_version = SSLVERSION_TLS10;
+		else if (strstr(httptest->weburl.desturl->schemeopts, "a"))      sslopt_version = SSLVERSION_TLS10;
+		else if (strstr(httptest->weburl.desturl->schemeopts, "b"))      sslopt_version = SSLVERSION_TLS11;
+		else if (strstr(httptest->weburl.desturl->schemeopts, "c"))      sslopt_version = SSLVERSION_TLS12;
 
 		if      (strstr(httptest->weburl.desturl->schemeopts, "h"))      sslopt_ciphers = ciphershigh;
 		else if (strstr(httptest->weburl.desturl->schemeopts, "m"))      sslopt_ciphers = ciphersmedium;
