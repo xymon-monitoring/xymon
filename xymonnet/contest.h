@@ -66,7 +66,9 @@ extern int snienabled;
 #define SSLVERSION_DEFAULT 0
 #define SSLVERSION_V2      1
 #define SSLVERSION_V3      2
-#define SSLVERSION_TLS1    3
+#define SSLVERSION_TLS10   3
+#define SSLVERSION_TLS11   4
+#define SSLVERSION_TLS12   5
 
 typedef struct {
 	char *cipherlist;

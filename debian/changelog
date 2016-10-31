@@ -10,6 +10,8 @@ xymon (4.3.28) stable; urgency=medium
      (Reported by Peter Welter)
    * The included version of c-ares has been bumped to version 1.12.0
    * Fix for building on OpenSSL 1.1.0 (Thanks, Axel Beckert)
+   * Add TLS variant specification to http checks, using newer funcs
+     in OpenSSL 1.1.0 (From Henrik)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, XX XXX 2016 15:00:00 -0700
 
