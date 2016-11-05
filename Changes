@@ -13,6 +13,10 @@ Changes from 4.3.27 -> 4.3.28 (XX XXX 2016)
 * Fix for building on OpenSSL 1.1.0 (Thanks, Axel Beckert)
 * Add TLS variant specification to http checks, using newer funcs
   in OpenSSL 1.1.0 (From Henrik)
+* Fix overflow when skipping >2G pending data in logfetch
+  (Reported by Sergey, a_s_y at sama.ru)
+* xymond_alert will no longer exit and be relaunched if started
+  while there's no actual alertable condition. (Thanks, Franco G.)
 
 
 Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)
