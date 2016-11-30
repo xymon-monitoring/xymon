@@ -119,9 +119,10 @@ void load_clientconfig(void)
 				pcre *hostptn = NULL, *classptn = NULL, *osptn = NULL;
 				clientconfig_t *newrec;
 
-				p = STRBUF(buf) + strcspn(STRBUF(buf), "]\r\n");
-				if (*p == ']') {
-					*p = '\0'; strbufferrecalc(buf);
+				p = STRBUF(buf) + strcspn(STRBUF(buf), "\r\n");
+				if (p == STRBUF(buf)) errprintf("Garbled block in client-local.cfg\n");
+				else if (*(p-1) == ']') {
+					*(p-1) = '\0'; strbufferrecalc(buf);
 					ptn = STRBUF(buf) + 1;
 					if (strncasecmp(ptn, "host=", 5) == 0) {
 						ptn += 5; if (*ptn == '%') ptn++;

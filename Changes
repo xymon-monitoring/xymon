@@ -17,6 +17,8 @@ Changes from 4.3.27 -> 4.3.28 (XX XXX 2016)
   (Reported by Sergey, a_s_y at sama.ru)
 * xymond_alert will no longer exit and be relaunched if started
   while there's no actual alertable condition. (Thanks, Franco G.)
+* Fix mis-parsing of PCRE regex's in client-local.cfg when char
+  ranges are present (Reported by Erik D. Schminke)
 
 
 Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)
