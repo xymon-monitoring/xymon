@@ -31,8 +31,6 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-#define MAX_ALERTMSG_SCRIPTS 4096
-
 /*
  * This is the dynamic info stored to keep track of active alerts. We
  * need to keep track of when the next alert is due for each recipient,
@@ -47,6 +45,7 @@ static repeat_t *rpthead = NULL;
 
 int include_configid = 0;  /* Whether to include the configuration file linenumber in alerts */
 int testonly = 0;	   /* Test mode, don't actually send out alerts */
+int max_alertmsg_scripts = 0; /* Max message size to pass to SCRIPT via env variable */
 
 /* 
  * This generates a unique ID for an event.
@@ -373,6 +372,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 void send_alert(activealerts_t *alert, FILE *logfd)
 {
 	recip_t *recip;
+	static char *bbalphamsg;
 	int first = 1;
 	int alertcount = 0;
 	time_t now = getcurrenttime(NULL);
@@ -382,6 +382,13 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	dbgprintf("send_alert %s:%s state %d\n", alert->hostname, alert->testname, (int)alert->state);
 	traceprintf("send_alert %s:%s state %s\n", 
 		    alert->hostname, alert->testname, alerttxt[alert->state]);
+
+	if (bbalphamsg == NULL) {
+		int len;
+		len = strlen("BBALPHAMSG=");
+		max_alertmsg_scripts = atoi(xgetenv("MAXMSG_ALERTSCRIPT")) + len;
+		bbalphamsg = (char *)calloc(1, max_alertmsg_scripts + 1);
+	}
 
 	stoprulefound = 0;
 
@@ -513,7 +520,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					void *hinfo;
 					char *p;
 					int ip1=0, ip2=0, ip3=0, ip4=0;
-					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
+					char *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
 					char *alertid, *alertidenv;
 					int msglen;
 
@@ -522,14 +529,13 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					putenv(cfidtxt);
 
 					p = message_text(alert, recip);
-					msglen = strlen(p);
-					if (msglen > MAX_ALERTMSG_SCRIPTS) {
-						dbgprintf("Cropping large alert message from %d to %d bytes\n", msglen, MAX_ALERTMSG_SCRIPTS);
-						msglen = MAX_ALERTMSG_SCRIPTS;
+					if (debug) {
+						msglen = strlen(p);
+						if (msglen > (max_alertmsg_scripts - strlen("BBALPHAMSG="))) {
+							errprintf("Truncated large alert message from %d bytes; consider increasing MAXMSG_ALERTSCRIPT above %d\n", msglen, atoi(xgetenv("MAXMSG_ALERTSCRIPT")));
+						}
 					}
-					msglen += strlen("BBALPHAMSG=");
-					bbalphamsg = (char *)malloc(msglen + 1);
-					snprintf(bbalphamsg, msglen+1, "BBALPHAMSG=%s", p);
+					snprintf(bbalphamsg, max_alertmsg_scripts, "BBALPHAMSG=%s", p);
 					putenv(bbalphamsg);
 
 					ackcode = (char *)malloc(strlen("ACKCODE=") + 10);

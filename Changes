@@ -19,6 +19,8 @@ Changes from 4.3.27 -> 4.3.28 (XX XXX 2016)
   while there's no actual alertable condition. (Thanks, Franco G.)
 * Fix mis-parsing of PCRE regex's in client-local.cfg when char
   ranges are present (Reported by Erik D. Schminke)
+* The size limit of message data passed to SCRIPT alerts is 
+  configurable with the MAXMSG_ALERTSCRIPT variable.
 
 
 Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)

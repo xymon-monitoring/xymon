@@ -18,6 +18,8 @@ xymon (4.3.28) stable; urgency=medium
      while there's no actual alertable condition. (Thanks, Franco G.)
    * Fix mis-parsing of PCRE regex's in client-local.cfg when char
      ranges are present (Reported by Erik D. Schminke)
+   * The size limit of message data passed to SCRIPT alerts is
+     configurable with the MAXMSG_ALERTSCRIPT variable.
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, XX XXX 2016 15:00:00 -0700
 
