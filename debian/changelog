@@ -1,6 +1,6 @@
 xymon (4.3.28) stable; urgency=medium
 
-   * rev XXXX
+   * rev 7989
 
    * Catch addition possible errors during SSL handshake
      for standard TCP checks
@@ -22,7 +22,7 @@ xymon (4.3.28) stable; urgency=medium
      configurable with the MAXMSG_ALERTSCRIPT variable.
    * Summary messages should work again (Thanks, Axel)
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, XX XXX 2016 15:00:00 -0700
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Sat, 31 Dec 2016 15:00:00 -0700
 
 
 xymon (4.3.27) stable; urgency=medium

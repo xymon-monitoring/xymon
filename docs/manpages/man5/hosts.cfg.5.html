@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of HOSTS.CFG</TITLE>
 </HEAD><BODY>
 <H1>HOSTS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.27: 24 Mar 2016<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.28-rc1: 28 Dec 2016<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -1128,7 +1128,14 @@ one or more &quot;dialect names&quot; to the URL scheme, i.e. the
 * &quot;3&quot;,  e.g. https3://<A HREF="http://www.sample.com">www.sample.com</A>/ : use only SSLv3
 <BR>
 
-* &quot;t&quot;,  e.g. <A HREF="httpst://www.sample.com/">httpst://www.sample.com/</A> : use only TLSv1
+* &quot;t&quot;,  e.g. <A HREF="httpst://www.sample.com/">httpst://www.sample.com/</A> : use only TLSv1.0
+* &quot;a&quot;,  e.g. <A HREF="httpsa://www.sample.com/">httpsa://www.sample.com/</A> : use only TLSv1.0
+<BR>
+
+* &quot;b&quot;,  e.g. <A HREF="httpsb://www.sample.com/">httpsb://www.sample.com/</A> : use only TLSv1.1
+<BR>
+
+* &quot;c&quot;,  e.g. <A HREF="httpsc://www.sample.com/">httpsc://www.sample.com/</A> : use only TLSv1.2
 <BR>
 
 * &quot;m&quot;,  e.g. <A HREF="httpsm://www.sample.com/">httpsm://www.sample.com/</A> : use only 128-bit ciphers
@@ -1143,7 +1150,9 @@ one or more &quot;dialect names&quot; to the URL scheme, i.e. the
 * &quot;11&quot;, e.g. http11://<A HREF="http://www.sample.com">www.sample.com</A>/ : use HTTP 1.1
 <P>
 These can be combined where it makes sense, e.g to force
-SSLv2 and HTTP 1.0 you would use &quot;https210&quot;.
+TLS1.2 and HTTP 1.0 you would use &quot;httpsc10&quot;.
+<P>
+Note that SSLv2 support is disabled in all current OpenSSL releases.
 <P>
 <DT>Testing sites by IP-address<DD>
 xymonnet ignores the &quot;testip&quot; tag normally used to force a 
@@ -1667,6 +1676,6 @@ daemon is listening on a non-standard IP-address or port-number.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 22:10:42 GMT, March 24, 2016
+Time: 02:39:10 GMT, December 29, 2016
 </BODY>
 </HTML>

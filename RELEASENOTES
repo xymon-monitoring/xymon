@@ -10,7 +10,7 @@ For a full list of changes and enhancements, please see the
 Changes file.
 
 
-Changes for 4.3.28
+Changes for 4.3.28 (RC1)
 ==================
 
 Specific TLS variants (1.0, 1.1, and 1.2) can be selected for 
@@ -20,6 +20,15 @@ OpenSSL 1.1.0 is now supported.
 
 The bundled version of c-ares (for hosts without a system lib)
 has been updated to 1.12.0
+
+Xymond_alert should now provide more stable behavior when hosts
+are dropped or alerts go stale between launches.
+
+Summary messages are properly working again.
+
+SCRIPT message sizes are now limited only by environment memory
+and can be increased by adding a MAXMSG_ALERTSCRIPT variable to
+your xymonserver.cfg file
 
 
 Changes for 4.3.27
