@@ -477,10 +477,27 @@ static void setup_ssl(tcptest_t *item)
 	}
 
 	if (item->sslctx == NULL) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		item->sslctx = SSL_CTX_new(TLS_client_method());
+#else
 		item->sslctx = SSL_CTX_new(SSLv23_client_method());
+#endif
 
 		switch (item->ssloptions->sslversion) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		  case SSLVERSION_TLS12:
+			SSL_CTX_set_min_proto_version(item->sslctx, TLS1_2_VERSION);
+			SSL_CTX_set_max_proto_version(item->sslctx, TLS1_2_VERSION);
+			break;
+		  case SSLVERSION_TLS11:
+			SSL_CTX_set_min_proto_version(item->sslctx, TLS1_1_VERSION);
+			SSL_CTX_set_max_proto_version(item->sslctx, TLS1_1_VERSION);
+			break;
+		  case SSLVERSION_TLS10:
+			SSL_CTX_set_min_proto_version(item->sslctx, TLS1_VERSION);
+			SSL_CTX_set_max_proto_version(item->sslctx, TLS1_VERSION);
+			break;
+#elseif OPENSSL_VERSION_NUMBER >= 0x10001000L
 		  case SSLVERSION_TLS12:
 			SSL_CTX_set_options(item->sslctx, (SSL_OP_NO_SSLv2|SSL_OP_NO_SSLv3|SSL_OP_NO_TLSv1|SSL_OP_NO_TLSv1_1));
 			break;
@@ -500,29 +517,24 @@ static void setup_ssl(tcptest_t *item)
 			SSL_CTX_set_options(item->sslctx, (SSL_OP_NO_SSLv2|SSL_OP_NO_TLSv1|SSL_OP_NO_TLSv1_1|SSL_OP_NO_TLSv1_2));
 			break;
 #endif
-		  default:
-			break;
-		}
 #else
-		item->sslctx = SSL_CTX_new(TLS_client_method());
-
-		switch (item->ssloptions->sslversion) {
-		  case SSLVERSION_TLS12:
-			SSL_CTX_set_min_proto_version(item->sslctx, TLS1_2_VERSION);
-			SSL_CTX_set_max_proto_version(item->sslctx, TLS1_2_VERSION);
-			break;
-		  case SSLVERSION_TLS11:
-			SSL_CTX_set_min_proto_version(item->sslctx, TLS1_1_VERSION);
-			SSL_CTX_set_max_proto_version(item->sslctx, TLS1_1_VERSION);
-			break;
 		  case SSLVERSION_TLS10:
-			SSL_CTX_set_min_proto_version(item->sslctx, TLS1_VERSION);
-			SSL_CTX_set_max_proto_version(item->sslctx, TLS1_VERSION);
+			SSL_CTX_set_options(item->sslctx, (SSL_OP_NO_SSLv2|SSL_OP_NO_SSLv3));
 			break;
+#ifdef HAVE_SSLV2_SUPPORT
+		  case SSLVERSION_V2:
+			SSL_CTX_set_options(item->sslctx, (SSL_OP_NO_SSLv3|SSL_OP_NO_TLSv1));
+			break;
+#endif
+#ifdef HAVE_SSLV3_SUPPORT
+		  case SSLVERSION_V3:
+			SSL_CTX_set_options(item->sslctx, (SSL_OP_NO_SSLv2|SSL_OP_NO_TLSv1));
+			break;
+#endif
+#endif
 		  default:
 			break;
 		}
-#endif
 
 		if (!item->sslctx) {
 			char sslerrmsg[256];
