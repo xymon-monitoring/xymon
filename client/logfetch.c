@@ -42,7 +42,7 @@ static char skiptxt[512];
 static char curpostxt[512];
 
 /* Is it ok for these to be hardcoded ? */
-#define MAXCHECK   102400   /* When starting, don't look at more than 100 KB of data */
+#define MAXCHECK   102400U   /* When starting, don't look at more than 100 KB of data */
 #define MAXMINUTES 30
 #define POSCOUNT ((MAXMINUTES / 5) + 1)		/* 0 = current run */
 #define DEFAULTSCROLLBACK (POSCOUNT - 1)	/* How far back to begin processing data, in runs */
@@ -207,7 +207,7 @@ char *logdata(char *filename, logdef_t *logdef)
 		/*
 		 * Too much data for us. We have to skip some of the old data.
 		 */
-		errprintf("logfetch: %s delta %zu bytes exceeds max buffer size %zu; skipping some data\n", filename, bufsz, MAXCHECK);
+		errprintf("logfetch: %s delta %jd bytes exceeds max buffer size %u; skipping some data\n", filename, (intmax_t)bufsz, MAXCHECK);
 		logdef->lastpos[scrollback] = st.st_size - MAXCHECK;
 		fseeko(fd, logdef->lastpos[scrollback], SEEK_SET);
 		bufsz = st.st_size - ftello(fd);
@@ -219,7 +219,7 @@ char *logdata(char *filename, logdef_t *logdef)
 		/*
 		 * Too much data for us. We have to skip some of the old data.
 		 */
-		errprintf("logfetch: %s delta %zu bytes exceeds max buffer size %zu; skipping some data\n", filename, bufsz, MAXCHECK);
+		errprintf("logfetch: %s delta %zu bytes exceeds max buffer size %u; skipping some data\n", filename, bufsz, MAXCHECK);
 		logdef->lastpos[scrollback] = st.st_size - MAXCHECK;
 		fseek(fd, logdef->lastpos[scrollback], SEEK_SET);
 		bufsz = st.st_size - ftell(fd);
