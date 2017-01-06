@@ -1569,13 +1569,32 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 					/* Check that other transport issues didn't occur (like SSL) */
 					if (tcptest && (tcptest->errcode != CONTEST_ENOERROR)) {
 						switch (tcptest->errcode) {
+						  case CONTEST_ETIMEOUT    : 
+							strcpy(cause, "Service listening but unavailable (connect timeout)"); 
+							color = COL_RED; countasdown = 1;
+							break;
+						  case CONTEST_ENOCONN    : 
+							strcpy(cause, "Service listening but unavailable ("); 
+							strcat(cause, strerror(tcptest->connres)); 
+							strcat(cause, ")"); 
+							color = COL_RED; countasdown = 1;
+							break;
+						  case CONTEST_EDNS    : 
+							strcpy(cause, "Service listening but unavailable (DNS error)"); 
+							color = COL_RED; countasdown = 1;
+							break;
+						  case CONTEST_EIO    : 
+							strcpy(cause, "Service listening but unavailable (I/O error)"); 
+							color = COL_RED; countasdown = 1;
+							break;
 						  case CONTEST_ESSL    : 
 							strcpy(cause, "Service listening but unavailable (SSL error)"); 
 							color = COL_RED; countasdown = 1;
 							break;
 						  default		:
-							errprintf("TCPtest error %d seen on open connection for %s.%s\n", tcptest->errcode, test->host, test->service->testname); 
-							// color = COL_RED; countasdown = 1;
+							/* Should not get here */
+							errprintf("-> TCPtest error %d seen on open connection for %s.%s\n", tcptest->errcode, test->host->hostname, test->service->testname); 
+							color = COL_YELLOW;
 							break;
 						}
 						// color = COL_RED; countasdown = 1;
