@@ -21,6 +21,8 @@ xymon (4.3.28) stable; urgency=medium
    * The size limit of message data passed to SCRIPT alerts is
      configurable with the MAXMSG_ALERTSCRIPT variable.
    * Summary messages should work again (Thanks, Axel)
+   * Many typos in comments and man pages have been corrected
+     (Thanks, Axel et al. at Debian)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Sat, 31 Dec 2016 15:00:00 -0700
 

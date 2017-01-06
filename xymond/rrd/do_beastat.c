@@ -50,7 +50,7 @@ static void *beastat_jta_tpl      = NULL;
 			 hostname, testname, acttrans, secact);
 		dbgprintf("beastat: host %s test %s TRANS: aband %ld comm %ld heur %ld total\n",
 			hostname, testname, trab, trcomm, trheur, trtot);
-		dbgprintf("beastat: host %s test %s RB: app %ld res %ld sys %ld timout %ld total %ld\n",
+		dbgprintf("beastat: host %s test %s RB: app %ld res %ld sys %ld timeout %ld total %ld\n",
 			hostname, testname, trrbapp, trrbres, trrbsys, trrbto, trrb);
 		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
 			(int) tstamp, acttrans, secact, trab, trcomm, trheur, trrbapp, 

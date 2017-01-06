@@ -61,7 +61,7 @@ is a simple definition that uses a single RRD-file, la.rrd:
 .br
         GPRINT:la:MIN: \: %5.1lf (min)
 .br
-        GPRINT:la:AVERAGE: \: %5.1lf (avg)\n
+        GPRINT:la:AVERAGE: \: %5.1lf (avg)\\n
 .sp
 
 Here is an example of a graph that uses multiple RRD-files, determined
@@ -92,7 +92,7 @@ for the graph legend:
 .br
         GPRINT:p@RRDIDX@:MIN: \: %5.1lf (min)
 .br
-        GPRINT:p@RRDIDX@:AVERAGE: \: %5.1lf (avg)\n
+        GPRINT:p@RRDIDX@:AVERAGE: \: %5.1lf (avg)\\n
 
 .SH ADVANCED GRAPH  TITLES
 Normally the title of a graph is a static text defined in

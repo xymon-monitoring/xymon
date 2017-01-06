@@ -41,7 +41,7 @@ extern int xymonnocombocount;
 extern int dontsendmessages;
 
 extern void setproxy(char *proxy);
-extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);
+extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *response);
 extern sendreturn_t *newsendreturnbuf(int fullresponse, FILE *respfd);
 extern void freesendreturnbuf(sendreturn_t *s);
 extern char *getsendreturnstr(sendreturn_t *s, int takeover);

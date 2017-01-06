@@ -3190,7 +3190,7 @@ int match_host_filter(void *hinfo, hostfilter_rec_t *filter, int matchontests, c
 			break;
 
 		  case FILTER_TAG:
-			if (!matchontests) break;	/* When processing a xymondboard, we dont want to return entries that have a test in hosts.cfg but no test result */
+			if (!matchontests) break;	/* When processing a xymondboard, we don't want to return entries that have a test in hosts.cfg but no test result */
 			matched = 0;
 			val = xmh_item_walk(hinfo);
 			while (val) {

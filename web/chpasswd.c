@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 				infomsg = "New password cannot be blank";
 			}
 			else if (strcmp(adduser_password1, adduser_password2) != 0) {
-				infomsg = "New passwords dont match";
+				infomsg = "New passwords don't match";
 			}
 			else if (strlen(adduser_name) != strspn(adduser_name,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.,@/=^") ) {
 				infomsg = "Username has invalid characters!";

@@ -74,7 +74,7 @@
 #    TIME      - rule matching an alert by the time-of-day. This
 #                is specified as the DOWNTIME timespecification
 #                in the hosts.cfg file (see hosts.cfg(5)).
-#    DURATION  - Rule matcing an alert if the event has lasted
+#    DURATION  - Rule matching an alert if the event has lasted
 #                longer/shorter than the given duration. E.g.
 #                DURATION>10 (lasted longer than 10 minutes) or
 #                DURARION<30 (only sends alerts the first 30 minutes).

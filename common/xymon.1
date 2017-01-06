@@ -293,16 +293,16 @@ Include only hosts with a xymon-xmh(5) variable matching this value
 Advanced Filtering
 .sp
 .BR msg=MESSAGE
-Include only tests with full content matching MESSAGE. Use "\s" to escape 
+Include only tests with full content matching MESSAGE. Use "\\s" to escape 
 spaces (or other PCRE strings)
 .sp
 .BR ackmsg=MESSAGE
-Include only tests with acknowledgement(s) MESSAGE. Use "\s" to escape 
+Include only tests with acknowledgement(s) MESSAGE. Use "\\s" to escape 
 spaces (or other PCRE strings)
 .sp
 .BR dismsg=MESSAGE
 Include only tests that have been disabled with strings matching MESSAGE. 
-Use "\s" to escape spaces (or other PCRE strings). (It is most efficient
+Use "\\s" to escape spaces (or other PCRE strings). (It is most efficient
 to pair this with color=blue.)
 
 
