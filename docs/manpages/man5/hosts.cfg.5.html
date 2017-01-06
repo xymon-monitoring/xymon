@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of HOSTS.CFG</TITLE>
 </HEAD><BODY>
 <H1>HOSTS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.28-rc1: 28 Dec 2016<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.28-rc2:  5 Jan 2017<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -97,7 +97,7 @@ files (devices, sockets, pipes etc).
 <P>
 <DT>optional include/directory<DD>
 Both &quot;include&quot; and &quot;directory&quot; can be prefixed with the tag
-
+&quot;optional&quot;, which will preven an error message being logged if
 the file or directory is not present on a system.
 <P>
 <P>
@@ -214,6 +214,8 @@ the parent page in the &quot;subparent&quot; tag was what made
 it easy to implement.
 <P>
 <DT>vpage<DD>
+<DT>vsubpage<DD>
+<DT>vsubparent<DD>
 These are page-definitions similar to the &quot;page&quot;, &quot;subpage&quot; and
 &quot;subparent&quot; definitions. However, on these pages the rows are 
 the tests, and the columns are the hosts (normal pages have it
@@ -1129,6 +1131,8 @@ one or more &quot;dialect names&quot; to the URL scheme, i.e. the
 <BR>
 
 * &quot;t&quot;,  e.g. <A HREF="httpst://www.sample.com/">httpst://www.sample.com/</A> : use only TLSv1.0
+<BR>
+
 * &quot;a&quot;,  e.g. <A HREF="httpsa://www.sample.com/">httpsa://www.sample.com/</A> : use only TLSv1.0
 <BR>
 
@@ -1153,6 +1157,7 @@ These can be combined where it makes sense, e.g to force
 TLS1.2 and HTTP 1.0 you would use &quot;httpsc10&quot;.
 <P>
 Note that SSLv2 support is disabled in all current OpenSSL releases.
+TLS version-specific scheme testing requires OpenSSL 1.0.1 or higher.
 <P>
 <DT>Testing sites by IP-address<DD>
 xymonnet ignores the &quot;testip&quot; tag normally used to force a 
@@ -1310,7 +1315,7 @@ This tag can be used to test web pages, that use an input
 form. Data can be posted to the form by specifying them 
 in the form-data field, and the result can be checked
 as if it was a normal content check (see above for a description
-of the cont-tag and the restrictions on how the URL must be writen).
+of the cont-tag and the restrictions on how the URL must be written).
 <P>
 The form-data field must be entered in &quot;application/x-www-form-urlencoded&quot;
 format, which is the most commonly used format for web
@@ -1676,6 +1681,6 @@ daemon is listening on a non-standard IP-address or port-number.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 02:39:10 GMT, December 29, 2016
+Time: 02:32:27 GMT, January 06, 2017
 </BODY>
 </HTML>

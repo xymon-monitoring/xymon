@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of XYMOND</TITLE>
 </HEAD><BODY>
 <H1>XYMOND</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.28-rc1: 28 Dec 2016<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.28-rc2:  5 Jan 2017<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -102,10 +102,8 @@ Tells xymond to NOT use the local messagequeue interface for receiving status-
 updates from xymond_client and xymonnet.
 <P>
 <DT>--daemon<DD>
-xymond is normally started by 
-<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
-
-
+xymond is normally started by <I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>.
+If you do not want to use xymonlaunch, you can start xymond with this option;
 it will then detach from the terminal and continue running as a background
 task.
 <P>
@@ -119,9 +117,7 @@ Default: 10 seconds.
 Track the N latest status-changes for flap-detection. See the
 <B>--flap-seconds</B> option also. To disable flap-checks globally, 
 set N to zero. To disable for a specific host, you must use the 
-&quot;noflap&quot; option in 
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5).</I>
-
+&quot;noflap&quot; option in <I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>.
 Default: 5
 <P>
 <DT>--flap-seconds=N<DD>
@@ -137,6 +133,7 @@ flap-count should be at least (3600/300)-1, i.e. 11.
 Default: 1800 seconds (30 minutes).
 <P>
 <DT>--delay-red=N<DD>
+<DT>--delay-yellow=N<DD>
 Sets the delay before a red/yellow status causes a change in the web
 page display. Is usually controlled on a per-host basis via the
 <B>delayred</B> and <B>delayyellow</B> settings in
@@ -426,6 +423,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 02:39:10 GMT, December 29, 2016
+Time: 02:32:27 GMT, January 06, 2017
 </BODY>
 </HTML>

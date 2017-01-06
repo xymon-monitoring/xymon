@@ -2,7 +2,7 @@
 <HTML><HEAD><TITLE>Manpage of GRAPHS.CFG</TITLE>
 </HEAD><BODY>
 <H1>GRAPHS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.28-rc1: 28 Dec 2016<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.28-rc2:  5 Jan 2017<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -87,7 +87,8 @@ is a simple definition that uses a single RRD-file, la.rrd:
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:MIN:&nbsp;:&nbsp;%5.1lf&nbsp;(min)
 <BR>
 
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:AVERAGE:&nbsp;:&nbsp;%5.1lf&nbsp;(avg)<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:AVERAGE:&nbsp;:&nbsp;%5.1lf&nbsp;(avg)\n
+<P>
 <P>
 Here is an example of a graph that uses multiple RRD-files, determined
 automatically at run-time via the FNPATTERN setting. Note how it uses
@@ -128,7 +129,8 @@ for the graph legend:
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:MIN:&nbsp;:&nbsp;%5.1lf&nbsp;(min)
 <BR>
 
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:AVERAGE:&nbsp;:&nbsp;%5.1lf&nbsp;(avg)<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:AVERAGE:&nbsp;:&nbsp;%5.1lf&nbsp;(avg)\n
+<P>
 <A NAME="lbAF">&nbsp;</A>
 <H2>ADVANCED GRAPH  TITLES</H2>
 
@@ -182,6 +184,6 @@ from the definitions in the <B>larrd-grapher.cgi</B> CGI from LARRD 0.43c.
 This document was created by
 <A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 02:39:11 GMT, December 29, 2016
+Time: 02:32:27 GMT, January 06, 2017
 </BODY>
 </HTML>
