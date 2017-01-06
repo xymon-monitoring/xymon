@@ -133,6 +133,7 @@ const static struct {
 	{ "OKCOLORS", "green,blue,clear" },
 	{ "ALERTREPEAT", "30" },
 	{ "XYMWEBREFRESH", "60" },
+	{ "MAXMSG_ALERTSCRIPT", "8164" },
 	{ "CONNTEST", "TRUE" },
 	{ "IPTEST_2_CLEAR_ON_FAILED_CONN", "TRUE" },
 	{ "NONETPAGE", "" },
