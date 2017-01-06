@@ -128,9 +128,8 @@ CA given in FILENAME. FILENAME must be a valid TLS CA certificate in PEM format.
 Require clients to present a valid client certificate before accepting a connection.
 
 .IP "\-\-daemon"
-xymond is normally started by 
-.I xymonlaunch(8)
-. If you do not want to use xymonlaunch, you can start xymond with this option;
+xymond is normally started by \fIxymonlaunch(8)\fR.
+If you do not want to use xymonlaunch, you can start xymond with this option;
 it will then detach from the terminal and continue running as a background
 task.
 
@@ -144,8 +143,7 @@ Default: 10 seconds.
 Track the N latest status-changes for flap-detection. See the
 \fB\-\-flap\-seconds\fR option also. To disable flap-checks globally, 
 set N to zero. To disable for a specific host, you must use the 
-"noflap" option in 
-.I hosts.cfg(5).
+"noflap" option in \fIhosts.cfg(5)\fR.
 Default: 5
 
 .IP "\-\-flap\-seconds=N"
@@ -160,7 +158,8 @@ at least (N/300)\-1, e.g. if you set flap\-seconds to 3600 (1 hour), then
 flap\-count should be at least (3600/300)\-1, i.e. 11.
 Default: 1800 seconds (30 minutes).
 
-.IP "\-\-delay\-red=N" / "\-\-delay\-yellow=N"
+.IP "\-\-delay\-red=N"
+.IP "\-\-delay\-yellow=N"
 Sets the delay before a red/yellow status causes a change in the web
 page display. Is usually controlled on a per-host basis via the
 \fBdelayred\fR and \fBdelayyellow\fR settings in

@@ -323,7 +323,7 @@ int get_response(int sock)
 
 		  default:
 			/* Shouldn't happen */
-			errprintf("Got a packet that wasnt a reply - type %d\n", icmphdr->icmp_type);
+			errprintf("Got a packet that wasn't a reply - type %d\n", icmphdr->icmp_type);
 			break;
 		}
 	} while (n > 0);

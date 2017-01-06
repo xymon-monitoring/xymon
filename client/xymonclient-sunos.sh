@@ -109,7 +109,7 @@ global|Global)
 esac
 echo "[swap]"
 /usr/sbin/swap -s
-# dont report the swaplist in a non-global zone because it will cause the
+# don't report the swaplist in a non-global zone because it will cause the
 # server client module to miscalculate memory
 case $ZTYPE in
 global|Global)

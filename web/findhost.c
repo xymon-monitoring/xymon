@@ -13,7 +13,7 @@
 /* 2004/09/08 - Werner Michels [wm]                                           */
 /*              Added support regular expression on the host search.          */
 /*              Minor changes on errormsg() and error messagess.              */
-/*		The parse_query was rewriten to meet the new needs.           */
+/*		The parse_query was rewritten to meet the new needs.          */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 

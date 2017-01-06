@@ -276,7 +276,7 @@ char *init_tcp_services(void)
 
 	/* This should not happen */
 	if (walk) {
-		errprintf("Whoa - didnt copy all services! svccount=%d, next service '%s'\n", 
+		errprintf("Whoa - didn't copy all services! svccount=%d, next service '%s'\n", 
 			svccount, walk->rec->svcname);
 	}
 

@@ -63,7 +63,7 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 
 		/* DS:ds0:COUNTER:600:0:U DS:ds1:COUNTER:600:0:U */
 		if (!strncmp(curline, "DS:",3)) {
-			dbgprintf("Looking for DS defintions in %s\n",curline);
+			dbgprintf("Looking for DS definitions in %s\n",curline);
 			while ( numds < MAXCOLS) {
 				dbgprintf("Seeing if column %d that has %s is a DS\n",numds,columns[numds]);
 				if (strncmp(columns[numds],"DS:",3)) break;

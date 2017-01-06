@@ -430,7 +430,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			if (!rpt) continue;	/* Happens for e.g. M_IGNORE recipients */
 
 			/* 
-			 * Update alertcount here, because we dont want to hit an UNMATCHED
+			 * Update alertcount here, because we don't want to hit an UNMATCHED
 			 * rule when there is actually an alert active - it is just suppressed
 			 * for this run due to the REPEAT setting.
 			 */

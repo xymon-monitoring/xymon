@@ -75,7 +75,7 @@ files (devices, sockets, pipes etc).
 
 .IP "optional include/directory"
 Both "include" and "directory" can be prefixed with the tag
-'optional', which will preven an error message being logged if
+"optional", which will preven an error message being logged if
 the file or directory is not present on a system.
 
 
@@ -185,7 +185,9 @@ I implement it in xymongen. The idea to explicitly list
 the parent page in the "subparent" tag was what made
 it easy to implement.
 
-.IP "vpage" "vsubpage" "vsubparent"
+.IP "vpage"
+.IP "vsubpage"
+.IP "vsubparent"
 These are page-definitions similar to the "page", "subpage" and
 "subparent" definitions. However, on these pages the rows are 
 the tests, and the columns are the hosts (normal pages have it
@@ -1217,7 +1219,7 @@ This tag can be used to test web pages, that use an input
 form. Data can be posted to the form by specifying them 
 in the form-data field, and the result can be checked
 as if it was a normal content check (see above for a description
-of the cont-tag and the restrictions on how the URL must be writen).
+of the cont-tag and the restrictions on how the URL must be written).
 
 The form-data field must be entered in "application/x\-www\-form\-urlencoded"
 format, which is the most commonly used format for web
