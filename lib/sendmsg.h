@@ -46,7 +46,7 @@ typedef struct sendreturn_t {
 } sendreturn_t;
 
 extern void setproxy(char *proxy);
-extern sendresult_t sendmessage_safe(char *msg, size_t msglen, char *recipient, int timeout, sendreturn_t *reponse);
+extern sendresult_t sendmessage_safe(char *msg, size_t msglen, char *recipient, int timeout, sendreturn_t *response);
 
 extern sendresult_t sendmessage_buffer(strbuffer_t *msgbuf, char *recipient, int timeout, sendreturn_t *response);
 #define sendmessage(A,B,C,D) sendmessage_safe(A, strlen(A), B, C, D)
