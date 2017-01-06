@@ -1196,6 +1196,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	xtreePos_t hosthandle, testhandle, originhandle;
 	xymond_hostlist_t *hwalk = NULL;
 	testinfo_t *twalk = NULL;
+	int is_summary = 0;
 	char *owalk = NULL;
 	xymond_log_t *lwalk = NULL;
 
@@ -1241,6 +1242,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		hostname = hosttest;	/* This will always be "summary" */
 		testname = strchr(hosttest, '.');
 		if (testname) { *testname = '\0'; testname++; }
+		is_summary = 1;
 	}
 	else {
 		char *knownname;
@@ -1277,7 +1279,8 @@ void get_hts(char *msg, char *sender, char *origin,
 		if (testhandle != xtreeEnd(rbtests)) twalk = xtreeData(rbtests, testhandle);
 
 		/* Disallow new, weird test names - Note: a future version of Xymon may restrict this further and not preserve case */
-		if (!twalk && (strlen(testname) != strspn(testname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:\\/_-")) ) {
+		/* NB: Summary messages are stored under the pseudo-host 'summary' but have invalid test names unpacked by xymongen */
+		if (!twalk && !is_summary && (strlen(testname) != strspn(testname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:\\/_-")) ) {
 			errprintf("Bogus message from %s: Invalid new testname '%s'\n", sender, testname);
 			return;
 		}
