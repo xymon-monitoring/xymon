@@ -24,6 +24,8 @@ Changes from 4.3.27 -> 4.3.28 (31 Dec 2016)
 * Summary messages should work again (Thanks, Axel)
 * Many typos in comments and man pages have been corrected
   (Thanks, Axel et al. at Debian)
+* Change netstat RRD numbers to be slightly more human-readable
+  (Thanks Roland Rosenfeld)
 
 
 Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)
