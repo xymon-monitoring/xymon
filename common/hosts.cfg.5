@@ -1009,6 +1009,7 @@ one or more "dialect names" to the URL scheme, i.e. the
 * "3",  e.g. https3://www.sample.com/ : use only SSLv3
 .br
 * "t",  e.g. httpst://www.sample.com/ : use only TLSv1.0
+.br
 * "a",  e.g. httpsa://www.sample.com/ : use only TLSv1.0
 .br
 * "b",  e.g. httpsb://www.sample.com/ : use only TLSv1.1
@@ -1027,6 +1028,7 @@ These can be combined where it makes sense, e.g to force
 TLS1.2 and HTTP 1.0 you would use "httpsc10".
 
 Note that SSLv2 support is disabled in all current OpenSSL releases.
+TLS version-specific scheme testing requires OpenSSL 1.0.1 or higher.
 
 .IP "Testing sites by IP-address"
 xymonnet ignores the "testip" tag normally used to force a 
