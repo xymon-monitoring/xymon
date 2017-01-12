@@ -40,12 +40,16 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = '2.15'
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2016-02-03 zak.beck@accenture.com"
+$Version = '2.19'
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2016-12-28 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
 $ServiceChecks = @{}
+
+$UnixEpochOriginUTC = New-Object DateTime 1970,1,1,0,0,0,([DateTimeKind]::Utc)
+
+Add-Type -AssemblyName System.Web
 
 #region dotNETHelperTypes
 function AddHelperTypes
@@ -941,6 +945,7 @@ function XymonInit
     $script:clientlocalcfg = ""
     $script:logfilepos = @{}
     $script:externals = @{}
+    $script:diskpartData = ''
 
     $script:HaveCmd = @{}
     foreach($cmd in "query","qwinsta") {
@@ -1122,16 +1127,9 @@ function UnixDate([System.DateTime] $t)
     $t.ToString("ddd dd MMM HH:mm:ss yyyy")
 }
 
-function epochTime([System.DateTime] $t)
-{
-        [uint32](($t.Ticks - ([DateTime] "1/1/1970 00:00:00").Ticks) / 10000000) - $osinfo.CurrentTimeZone*60
-
-}
-
 function epochTimeUtc([System.DateTime] $t)
 {
-        [uint32](($t.Ticks - ([DateTime] "1/1/1970 00:00:00").Ticks) / 10000000)
-
+    [int64]($t.ToUniversalTime() - $UnixEpochOriginUTC).TotalSeconds
 }
 
 function filesize($file,$clsize=4KB)
@@ -1182,7 +1180,7 @@ function XymonDate
 
 function XymonClock
 {
-    $epoch = epochTime $localdatetime
+    $epoch = epochTimeUtc $localdatetime
 
     "[clock]"
     "epoch: " + $epoch
@@ -1377,25 +1375,8 @@ function XymonDisk
             $dsGB + "\" + $dfGB
     }
 
-    WriteLog "XymonDisk - partitions"
-    try
-    {
-        $diskpart = 'list disk' | diskpart
-        $dpOutput = $diskpart | where { $_ -match '^  Disk \d+' }
-        $dpOutput = $dpOutput -replace '^\s+', ''
-        $dpOutput = $dpOutput -replace '\s+$', ''
-        "[diskpart]"
-        
-        $dpOutput | foreach {
-            $dpColumns = $_ -split '\s{2,}'
-            "diskpart:{0}:{1}" -f $dpColumns[0], $dpColumns[2]
-        }
-    }
-    catch
-    {
-        WriteLog "Xymondisk diskpart - error $_"
-    }
-        
+    $script:diskpartData
+
     WriteLog "XymonDisk finished."
 }
 
@@ -1438,7 +1419,7 @@ function ContainsLike([string[]] $arrayOfLikes, [string] $compare)
 
 function XymonMsgs
 {
-    if($script:XymonSettings.reportevt -eq 0) {return}
+    if ($script:XymonSettings.reportevt -eq 0) {return}
 
     $sinceMs = (New-Timespan -Minutes $script:XymonSettings.maxlogage).TotalMilliseconds
 
@@ -2158,8 +2139,62 @@ function XymonWMILogicalDisk
     Get-WmiObject -Class Win32_LogicalDisk | Format-Table -AutoSize
 }
 
+function XymonDiskPart
+{
+    WriteLog 'XymonDiskPart start'
+
+    try
+    {
+        $diskpart = 'list disk' | diskpart
+        $dpOutput = $diskpart | where { $_ -match '^  Disk \d+' }
+        $dpOutput = $dpOutput -replace '^\s+', ''
+        $dpOutput = $dpOutput -replace '\s+$', ''
+        "[diskpart]"
+        
+        $diskDetailCmd = "select disk {0}`r`ndetail disk"
+        $noVolumeRX = '^There are no volumes.'
+
+        $dpOutput | foreach {
+            $dpColumns = $_ -split '\s{2,}'
+            $diskNum = $dpColumns[0] -replace 'Disk ', ''
+            $cmd = $diskDetailCmd -f $diskNum
+            $detailOutput = $cmd | diskpart
+            $detailDisk = $detailOutput | where { $_ -match '^Clustered' -or $_ -match $noVolumeRX }
+        
+            if ($detailDisk -match '^Clustered Disk  : No')
+            {
+                $clusterOutput = 'Not Clustered'
+            }
+            else
+            {
+                if (-not ($detailDisk -match '^Clustered'))
+                {
+                    $clusterOutput = 'Clustered Unknown'
+                }
+                else
+                {
+                    $clusterOutput = 'Clustered Active'
+                    if ($detailDisk -match $noVolumeRX)
+                    {
+                        $clusterOutput = 'Clustered Inactive'
+                    }
+                }
+            }
+
+            "diskpart:{0}:{1}:{2}" -f $dpColumns[0], $dpColumns[2], $clusterOutput
+        }
+    }
+    catch
+    {
+        WriteLog "Xymondisk diskpart - error $_"
+    }
+
+    WriteLog 'XymonDiskPart finished'
+}
 function XymonEventLogs
 {
+    if ($script:XymonSettings.reportevt -eq 0) {return}
+
     "[EventlogSummary]"
     $script:EventLogs = Get-EventLog -List 
     $script:EventLogs | Format-Table -AutoSize
@@ -2641,6 +2676,7 @@ function XymonClientConfig($cfglines)
                  -or $l -match '^repeattest:' `
                  -or $l -match '^proc(?:ess)?runtime:' `
                  -or $l -match '^external:' `
+                 -or $l -match '^xymonlogsend' `
                  )
              {
                  WriteLog "Found a command: $l"
@@ -3310,6 +3346,29 @@ function RepeatTests([string] $content)
     WriteLog 'RepeatTests finished'
 }
 
+function XymonLogSend()
+{
+    if (@($script:clientlocalcfg_entries.Keys -eq 'xymonlogsend').Length -eq 0)
+    {
+        WriteLog 'XymonLogSend: nothing to do!'
+        return
+    }
+
+    WriteLog 'XymonLogSend - sending log'
+
+    $log = ((get-content $script:XymonSettings.clientlogfile) -join "`n")
+    $log = [System.Web.HttpUtility]::HtmlEncode($log)
+
+    $output = (get-date -format G) + '<br><h2>Xymon client log</h2><pre>' 
+    $output += $log
+    $output += '</pre>'
+
+    $outputXymon = ('status {0}.{1} {2} {3}' -f $script:clientname, 'xymonlog', 'green', $output)
+    XymonSend $outputXymon $script:XymonSettings.serversList
+
+    WriteLog 'XymonLogSend - finished'
+}
+
 ##### Main code #####
 $script:thisXymonProcess = get-process -id $PID
 $script:thisXymonProcess.PriorityClass = "High"
@@ -3404,6 +3463,7 @@ while ($running -eq $true) {
         $XymonWMIProductCache = XymonWMIProduct
         WriteLog "Executing XymonIISSites"
         $XymonIISSitesCache = XymonIISSites
+        $script:diskpartData = XymonDiskPart
 
         WriteLog "Slow scan tasks completed."
     }
@@ -3446,6 +3506,7 @@ while ($running -eq $true) {
         # first run
         $delay = 30
     }
+    XymonLogSend
     WriteLog "Delaying until next run: $delay seconds"
     if ($delay -gt 0) { sleep $delay }
 }
