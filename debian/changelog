@@ -1,6 +1,6 @@
-xymon (4.3.28-rc2) stable; urgency=medium
+xymon (4.3.28) stable; urgency=medium
 
-   * rev 8003
+   * rev 8005
 
    * Catch addition possible errors during SSL handshake
      for standard TCP checks
@@ -26,7 +26,7 @@ xymon (4.3.28-rc2) stable; urgency=medium
    * Change netstat RRD numbers to be slightly more human-readable
      (Thanks Roland Rosenfeld)
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, 5 Jan 2017 15:00:00 -0700
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Tue, 17 Jan 2017 16:30:00 -0800
 
 
 xymon (4.3.27) stable; urgency=medium
