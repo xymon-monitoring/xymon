@@ -161,7 +161,7 @@ static void conn_ssllibrary_init(void)
 
 void conn_getntimer(struct timespec *tp)
 {
-#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK) && defined(CLOCK_MONOTONIC)
 	if (clock_gettime(CLOCK_MONOTONIC, tp) == 0) 
 		return;
 	else
