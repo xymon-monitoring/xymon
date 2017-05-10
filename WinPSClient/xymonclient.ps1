@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = '2.19'
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2016-12-28 zak.beck@accenture.com"
+$Version = '2.21'
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2017-04-28 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -937,10 +937,14 @@ function XymonInit
 
     SetIfNot $script:XymonSettings clientlogretain 0
 
+    SetIfNot $script:XymonSettings XymonAcceptUTF8 0 # messages sent to Xymon 0 = convert to ASCII, 1 = convert to UTF8
+
     $extscript = Join-Path $xymondir 'ext'
     $extdata = Join-Path $xymondir 'tmp'
+    $localdata = Join-Path $xymondir 'local'
     SetIfNot $script:XymonSettings externalscriptlocation $extscript
     SetIfNot $script:XymonSettings externaldatalocation $extdata
+    SetIfNot $script:XymonSettings localdatalocation $localdata
     SetIfNot $script:XymonSettings servergiflocation '/xymon/gifs/'
     $script:clientlocalcfg = ""
     $script:logfilepos = @{}
@@ -1584,7 +1588,7 @@ function ResolveEnvPath($envpath)
         $s = $s.Replace($matches[0],$(Invoke-Expression "`$env:$($matches[1])"))
     }
     if(! (test-path $s)) { return $envpath }
-    resolve-path $s
+    resolve-path $s | Select -ExpandProperty ProviderPath
 }
 
 function XymonDir
@@ -2556,11 +2560,112 @@ function XymonProcessExternalData
     WriteLog 'XymonProcessExternalData finished'
 }
 
+# replicate Linux client behaviour
+# include items from 'local' folder in client data, if present
+# no validation is done on the file content - it's just included
+# in the client data with [local:<filename>] tags
+function XymonProcessLocalData
+{
+    WriteLog 'Executing XymonProcessLocalData'
+
+    if (Test-Path $script:XymonSettings.localdatalocation)
+    {
+        $files = Get-ChildItem $script:XymonSettings.localdatalocation
+
+        if ($files -ne $null)
+        {
+            foreach ($f in $files)
+            {
+                # attempt to open the file with an exclusive lock
+                # if we cannot, the file may be being updated by a running job, so
+                # we will ignore it until the next poll
+                WriteLog "Attempting to process local file $($f.FullName)"
+
+                $statusFileContent = ''
+
+                try
+                {
+                    $statusFile = [System.IO.File]::Open($f.FullName, 'Open', 'Read', 'None')
+                    $reader = New-Object System.IO.StreamReader($statusFile)
+                    $statusFileContent = $reader.ReadToEnd()
+                    $reader.Close()
+                    $statusFile.Close()
+                }
+                catch
+                {        
+                    # if this file is locked or other errors, skip and go to the next one
+                    if ($_ -like '*The process cannot access the file*because it is being used by another process*')
+                    {
+                        WriteLog "Local file $($f.Name) is locked by another process, skipping"
+                    }
+                    else
+                    {
+                        WriteLog "Local file $($f.Name) error accessing file, skipping: $_"
+                    }
+                    continue
+                }
+
+                if ($statusFileContent -ne '')
+                {
+                    $heading = "[local:$($f.Name)]"
+                    $heading
+                    $statusFileContent
+                }
+
+                WriteLog "Deleting file $($f.Name)"
+                Remove-Item $f.FullName -Force
+            }
+        }
+        else
+        {
+            WriteLog "No files in $($script:XymonSettings.localdatalocation), nothing to do"
+        }
+
+    }
+    else
+    {
+        WriteLog "Local data path $($script:XymonSettings.localdatalocation) does not exist, nothing to do"
+    }
+
+    WriteLog 'XymonProcessLocalData finished'
+}
+
+# from http://poshcode.org/1054
+function Remove-Diacritics([string]$String) 
+{
+    $objD = $String.Normalize([Text.NormalizationForm]::FormD)
+    $sb = New-Object Text.StringBuilder
+    for ($i = 0; $i -lt $objD.Length; $i++) 
+    {
+        $c = [Globalization.CharUnicodeInfo]::GetUnicodeCategory($objD[$i])
+        if($c -ne [Globalization.UnicodeCategory]::NonSpacingMark) 
+        {
+            [void]$sb.Append($objD[$i])
+        }
+    }
+    return("$sb".Normalize([Text.NormalizationForm]::FormC))
+}
+
+
+
 function XymonSend($msg, $servers)
 {
     $saveresponse = 1   # Only on the first server
     $outputbuffer = ""
-    $ASCIIEncoder = New-Object System.Text.ASCIIEncoding
+    if ($script:XymonSettings.XymonAcceptUTF8 -eq 1) 
+    {
+        WriteLog 'Using UTF8 encoding'
+        $MessageEncoder = New-Object System.Text.UTF8Encoding
+    }
+    else 
+    {
+        WriteLog 'Using ASCII encoding'
+        $MessageEncoder = New-Object System.Text.ASCIIEncoding
+        # remove diacritics
+        $msg = Remove-Diacritics -String $msg
+        # convert non-break spaces to normal spaces
+        $msg = $msg.Replace([char]0x00a0,' ')
+    }
 
     foreach ($srv in $servers) {
         $srvparams = $srv.Split(":")
@@ -2599,10 +2704,10 @@ function XymonSend($msg, $servers)
                 
                 $sent = 0
                 foreach ($line in $msg) {
-                    # Convert data to ASCII instead of UTF, and to Unix line breaks
+                    # Convert data as appropriate
                     try
                     {
-                        $sent += $socket.Client.Send($ASCIIEncoder.GetBytes($line.Replace("`r","") + "`n"))
+                        $sent += $socket.Client.Send($MessageEncoder.GetBytes($line.Replace("`r","") + "`n"))
                     }
                     catch
                     {
@@ -2765,6 +2870,7 @@ function XymonClientSections([boolean] $isSlowScan)
     XymonActiveDirectoryReplicationCheck
     XymonProcessRuntimeCheck
     XymonProcessExternalData
+    XymonProcessLocalData
 
     $XymonIISSitesCache
     $XymonWMIQuickFixEngineeringCache
