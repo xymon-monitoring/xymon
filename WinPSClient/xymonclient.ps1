@@ -7,7 +7,7 @@
 #
 # Copyright (C) 2010 Henrik Storner <henrik@hswn.dk>
 # Copyright (C) 2010 David Baldwin
-# Copyright (c) 2014, 2015 Accenture (zak.beck@accenture.com)
+# Copyright (c) 2014-2017 Accenture (zak.beck@accenture.com)
 #
 #   Contributions to this project were made by Accenture starting from June 2014.
 #   For a list of modifications, please see the SVN change log.
@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = '2.21'
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2017-04-28 zak.beck@accenture.com"
+$Version = '2.27'
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2017-12-11 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -830,7 +830,6 @@ $volumeinfo = @'
         }
     }
 '@
-
 $type = Add-Type $volumeinfo
 
 }
@@ -841,11 +840,11 @@ function SetIfNot($obj,$key,$value)
     if($obj.$key -eq $null) { $obj | Add-Member -MemberType noteproperty -Name $key -Value $value }
 }
 
-function XymonConfig
+function XymonConfig($startedWithArgs)
 {
     if (Test-Path $XymonClientCfg)
     {
-        XymonInitXML
+        XymonInitXML $startedWithArgs
         $script:XymonCfgLocation = "XML: $XymonClientCfg"
     }
     else
@@ -855,11 +854,33 @@ function XymonConfig
     }
     XymonInit
 }
-
-function XymonInitXML
+#'
+function XymonInitXML($startedWithArgs)
 {
     $xmlconfig = [xml](Get-Content $XymonClientCfg)
     $script:XymonSettings = $xmlconfig.XymonSettings
+
+    # if serverhttppassword is populated and not encrypted, encrypt it
+    # only if we were started without arguments - so don't do it for
+    # service installation mode
+    if ($startedWithArgs -eq $false -and
+        $xmlconfig.XymonSettings.serverHttpPassword -ne '' -and
+        $xmlconfig.XymonSettings.serverHttpPassword -notlike '{SecureString}*')
+    {
+        WriteLog 'Attempting to encrypt password in config file'
+        try
+        {
+            $securePass = ConvertTo-SecureString -AsPlainText -Force $xmlconfig.XymonSettings.serverHttpPassword
+            $encryptedPass = ConvertFrom-SecureString -SecureString $securePass
+            $xmlSecPass = "{SecureString}$($encryptedPass)"
+            $xmlconfig.XymonSettings.serverHttpPassword = $xmlSecPass
+            $xmlconfig.Save($XymonClientCfg)
+        }
+        catch
+        {
+            WriteLog "Exception encrypting config file password: $_"
+        }
+    }
 }
 
 function XymonInitRegistry
@@ -883,6 +904,11 @@ function XymonInit
     {
         $script:XymonSettings.serversList = $xymonservers
     }
+
+    SetIfNot $script:XymonSettings serverUrl ''
+    SetIfNot $script:XymonSettings serverHttpUsername ''
+    SetIfNot $script:XymonSettings serverHttpPassword ''
+    SetIfNot $script:XymonSettings serverHttpTimeoutMs 100000
 
     $wanteddisks = $script:XymonSettings.wanteddisks
     SetIfNot $script:XymonSettings wanteddisksList $wanteddisks
@@ -938,6 +964,8 @@ function XymonInit
     SetIfNot $script:XymonSettings clientlogretain 0
 
     SetIfNot $script:XymonSettings XymonAcceptUTF8 0 # messages sent to Xymon 0 = convert to ASCII, 1 = convert to UTF8
+    SetIfNot $script:XymonSettings GetProcessInfoCommandLine 1 # get process command line 1 = yes, 0 = no
+    SetIfNot $script:XymonSettings GetProcessInfoOwner 1 # get process owner 1 = yes, 0 = no
 
     $extscript = Join-Path $xymondir 'ext'
     $extdata = Join-Path $xymondir 'tmp'
@@ -950,6 +978,7 @@ function XymonInit
     $script:logfilepos = @{}
     $script:externals = @{}
     $script:diskpartData = ''
+    $script:LastTransmissionMethod = 'Unknown'
 
     $script:HaveCmd = @{}
     foreach($cmd in "query","qwinsta") {
@@ -1005,8 +1034,15 @@ function XymonProcsCPUUtilisation
             }
 
             $cmdline = ''
-            $cmdline = [ProcessInformation]::GetCommandLineByProcessId($p.Id)
-            $owner = [GetProcessOwner]::GetProcessOwnerByPId($p.Id)
+            $owner = ''
+            if ($script:XymonSettings.GetProcessInfoCommandLine -eq 1)
+            {
+                $cmdline = [ProcessInformation]::GetCommandLineByProcessId($p.Id)
+            }
+            if ($script:XymonSettings.GetProcessInfoOwner -eq 1)
+            {
+                $owner = [GetProcessOwner]::GetProcessOwnerByPId($p.Id)
+            }
             if ($owner.length -gt 32) { $owner = $owner.substring(0, 32) }
 
             # New process - create an entry in the curprocs table
@@ -1318,7 +1354,27 @@ function XymonCpu
         "CPU".PadRight(9) + "PID".PadRight(8) + "Image Name".PadRight(32) + "Pri".PadRight(5) + "Time".PadRight(9) + "MemUsage"
 
         $script:procs | Sort-Object -Descending { $_.CPUPercent } `
-            | foreach { XymonPrintProcess $_ $_.XymonProcessName $_.CPUPercent }
+            | foreach `
+            { 
+                $skipFlag = $false
+                if ($script:clientlocalcfg_entries.ContainsKey('slimmode'))
+                {
+                    if ($script:clientlocalcfg_entries.slimmode.ContainsKey('processes'))
+                    {
+                        # skip this process if we are in slimmode and this process is not one of the 
+                        # requested processes
+                        if ($script:clientlocalcfg_entries.slimmode.processes -notcontains $_.XymonProcessName)
+                        {
+                            $skipFlag = $true
+                        }
+                    }
+                }
+                
+                if (!$skipFlag)
+                {
+                    XymonPrintProcess $_ $_.XymonProcessName $_.CPUPercent 
+                }
+            }
     }
     WriteLog "XymonCpu finished."
 }
@@ -1959,9 +2015,28 @@ function XymonIfstat
 function XymonSvcs
 {
     WriteLog "XymonSvcs start"
+    if ($script:clientlocalcfg_entries.ContainsKey('slimmode') -and `
+        !$script:clientlocalcfg_entries.slimmode.ContainsKey('services'))
+    {
+        WriteLog 'Skipping XymonSvcs; slim mode but no services specified'
+        return
+    }
     "[svcs]"
     "Name".PadRight(39) + " " + "StartupType".PadRight(12) + " " + "Status".PadRight(14) + " " + "DisplayName"
-    foreach ($s in $svcs) {
+    foreach ($s in $svcs) 
+    {
+        if ($script:clientlocalcfg_entries.ContainsKey('slimmode'))
+        {
+            if ($script:clientlocalcfg_entries.slimmode.ContainsKey('services'))
+            {
+                # skip this service if we are in slimmode and this service is not one of the 
+                # requested services
+                if ($script:clientlocalcfg_entries.slimmode.services -notcontains $s.Name)
+                {
+                    continue
+                }
+            }
+        }
         if ($s.StartMode -eq "Auto") { $stm = "automatic" } else { $stm = $s.StartMode.ToLower() }
         if ($s.State -eq "Running")  { $state = "started" } else { $state = $s.State.ToLower() }
         $s.Name.Replace(" ","_").PadRight(39) + " " + $stm.PadRight(12) + " " + $state.PadRight(14) + " " + $s.DisplayName
@@ -1985,11 +2060,29 @@ function XymonProcs
             {
                 $startTime = Get-Date -Date $_.StartTime -uformat '%Y-%m-%d %H:%M:%S'
             }
-            "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7,5:F1} {8,19} {9,7:F0} {10} {11}" -f $_.Id, $_.Owner, `
-                $_.XymonPeakWorkingSet, $_.XymonPeakVirtualMem,`
-                 $_.XymonPeakPagedMem, $_.XymonNonPagedSystemMem, `
-                 $_.Handles, $_.CPUPercent, `
-                 $startTime, $_.ElapsedSinceStart, $_.XymonProcessName, $_.CommandLine
+
+            $skipFlag = $false
+            if ($script:clientlocalcfg_entries.ContainsKey('slimmode'))
+            {
+                if ($script:clientlocalcfg_entries.slimmode.ContainsKey('processes'))
+                {
+                    # skip this process if we are in slimmode and this process is not one of the 
+                    # requested processes
+                    if ($script:clientlocalcfg_entries.slimmode.processes -notcontains $_.XymonProcessName)
+                    {
+                        $skipFlag = $true
+                    }
+                }
+            }
+            
+            if (!$skipFlag)
+            {
+                "{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7,5:F1} {8,19} {9,7:F0} {10} {11}" -f $_.Id, $_.Owner, `
+                    $_.XymonPeakWorkingSet, $_.XymonPeakVirtualMem,`
+                     $_.XymonPeakPagedMem, $_.XymonNonPagedSystemMem, `
+                     $_.Handles, $_.CPUPercent, `
+                     $startTime, $_.ElapsedSinceStart, $_.XymonProcessName, $_.CommandLine
+            }
     }
     WriteLog "XymonProcs finished."
 }
@@ -2447,11 +2540,12 @@ function XymonProcessRuntimeCheck
         $output += '</pre>'
         $outputHeader += '<br><span style="margin-left: 16px;">{0,8} {1,-35} {2,19} {3,7} {4} {5}</span><br>' `
             -f "PID", "User", 'Start Time', 'Elapsed', "Name", "Command"
-        $output = $outputHeader + $output
-        WriteLog "Sending output for procruntime"
-        $outputXymon = ('status {0}.procruntime {1} {2}' -f $script:clientname, $groupcolour, $output)
-        XymonSend $outputXymon $script:XymonSettings.serversList
     }
+    $output = $outputHeader + $output
+
+    WriteLog "Sending output for procruntime"
+    $outputXymon = ('status {0}.procruntime {1} {2}' -f $script:clientname, $groupcolour, $output)
+    XymonSend $outputXymon $script:XymonSettings.serversList
     WriteLog 'XymonProcessRuntimeCheck finished'
 }
 
@@ -2646,96 +2740,233 @@ function Remove-Diacritics([string]$String)
     return("$sb".Normalize([Text.NormalizationForm]::FormC))
 }
 
+function DecryptHttpServerPassword
+{
+    $serverPassword = $script:XymonSettings.serverHttpPassword
+    if ($serverPassword -like '{SecureString}*')
+    {
+        WriteLog '  Decrypting serverHttpPassword'
+        $serverPass = ($serverPassword -replace '^{SecureString}', '')
+        try
+        {
+            $securePass = ConvertTo-SecureString -String $serverPass
+            $tempCred = New-Object System.Management.Automation.PSCredential 'N/A', $securePass
+            $serverPassword = $tempCred.GetNetworkCredential().Password
+        }
+        catch
+        {
+            WriteLog "Failed to decrypt serverHttpPassword: $_"
+            $serverPassword = ''
+        }
+    }
+    return $serverPassword
+}
+
+function XymonSendViaHttp($msg)
+{
+    WriteLog 'Executing XymonSendViaHttp'
+
+    $url = $script:XymonSettings.serverUrl
+    if ($url -notmatch '^https?://')
+    {
+        WriteLog "  ERROR: invalid server Url, check config: $url"
+        return ''
+    }
+
+    WriteLog "  Using url $url"
+    $encodedAuth = ''
+    if ($script:XymonSettings.serverHttpUsername -ne '')
+    {
+        $serverHttpPassword = DecryptHttpServerPassword
+        $authString = ('{0}:{1}' -f $script:XymonSettings.serverHttpUsername, `
+            $serverHttpPassword)
+        
+        $encodedAuth = [System.Convert]::ToBase64String(`
+            [System.Text.Encoding]::GetEncoding('ISO-8859-1').GetBytes($authString))
 
 
-function XymonSend($msg, $servers)
+        WriteLog "  Using username $($script:XymonSettings.serverHttpUsername)"
+    }
+
+    # no Invoke-RestMethod before Powershell 3.0
+    $request = [System.Net.HttpWebRequest]::Create($url)
+    $request.Method = 'POST'
+    $request.Timeout = $script:XymonSettings.serverHttpTimeoutMs
+    if ($encodedAuth -ne '')
+    {
+        $request.Headers.Add('Authorization', "Basic $encodedAuth")
+    }
+
+    $body = [byte[]][char[]]$msg
+    $bodyStream = $request.GetRequestStream()
+    $bodyStream.Write($body, 0, $body.Length)
+
+    WriteLog "  Connecting to $($url), body length $($body.Length), timeout $($script:XymonSettings.serverHttpTimeoutMs)ms"
+    try
+    {
+        $response = $request.GetResponse()
+    }
+    catch
+    {
+        WriteLog "  Exception connecting to $($url):`n$($_)"
+        return ''
+    }
+        
+    $statusCode = [int]($response.StatusCode)
+    if ($response.StatusCode -ne [System.Net.HttpStatusCode]::OK)
+    {
+        WriteLog "  FAILED, HTTP response code: $($response.StatusCode) ($statusCode)"
+        return ''
+    }
+
+    $responseStream = $response.GetResponseStream()
+    $readStream = New-Object System.IO.StreamReader $responseStream
+    $output = $readStream.ReadToEnd()
+    WriteLog "  Received $($output.Length) bytes from server"
+    $script:LastTransmissionMethod = 'HTTP'
+
+    WriteLog 'XymonSendViaHttp finished'
+    return $output
+}
+
+function XymonSend($msg, $servers, $filePath)
 {
     $saveresponse = 1   # Only on the first server
     $outputbuffer = ""
-    if ($script:XymonSettings.XymonAcceptUTF8 -eq 1) 
+
+    if ($script:XymonSettings.serverUrl -ne '')
     {
-        WriteLog 'Using UTF8 encoding'
-        $MessageEncoder = New-Object System.Text.UTF8Encoding
+        $outputBuffer = XymonSendViaHttp $msg
     }
-    else 
+    else
     {
-        WriteLog 'Using ASCII encoding'
-        $MessageEncoder = New-Object System.Text.ASCIIEncoding
-        # remove diacritics
-        $msg = Remove-Diacritics -String $msg
-        # convert non-break spaces to normal spaces
-        $msg = $msg.Replace([char]0x00a0,' ')
-    }
-
-    foreach ($srv in $servers) {
-        $srvparams = $srv.Split(":")
-        # allow for server names that may resolve to multiple A records
-        $srvIPs = & {
-            $local:ErrorActionPreference = "SilentlyContinue"
-            $srvparams[0] | %{[system.net.dns]::GetHostAddresses($_)} | %{ $_.IPAddressToString}
+        if ($script:XymonSettings.XymonAcceptUTF8 -eq 1) 
+        {
+            WriteLog 'Using UTF8 encoding'
+            $MessageEncoder = New-Object System.Text.UTF8Encoding
         }
-        if ($srvIPs -eq $null) { # no IP addresses could be looked up
-            Write-Error -Category InvalidData ("No IP addresses could be found for host: " + $srvparams[0])
-        } else {
-            if ($srvparams.Count -gt 1) {
-                $srvport = $srvparams[1]
-            } else {
-                $srvport = 1984
-            }
-            foreach ($srvip in $srvIPs) {
-
-                WriteLog "Connecting to host $srvip"
-
-                $saveerractpref = $ErrorActionPreference
-                $ErrorActionPreference = "SilentlyContinue"
-                $socket = new-object System.Net.Sockets.TcpClient
-                $socket.Connect($srvip, $srvport)
-                $ErrorActionPreference = $saveerractpref
-                if(! $? -or ! $socket.Connected ) {
-                    $errmsg = $Error[0].Exception
-                    WriteLog "ERROR: Cannot connect to host $srv ($srvip) : $errmsg"
-                    Write-Error -Category OpenError "Cannot connect to host $srv ($srvip) : $errmsg"
-                    continue;
-                }
-                $socket.sendTimeout = 500
-                $socket.NoDelay = $true
-
-                $stream = $socket.GetStream()
-                
-                $sent = 0
-                foreach ($line in $msg) {
-                    # Convert data as appropriate
-                    try
-                    {
-                        $sent += $socket.Client.Send($MessageEncoder.GetBytes($line.Replace("`r","") + "`n"))
-                    }
-                    catch
-                    {
-                        WriteLog "ERROR: $_"
-                    }
-                }
-                WriteLog "Sent $sent bytes to server"
-
-                if ($saveresponse-- -gt 0) {
-                    $socket.Client.Shutdown(1)  # Signal to Xymon we're done writing.
-
-                    $s = new-object system.io.StreamReader($stream,"ASCII")
-
-                    start-sleep -m 200  # wait for data to buffer
-                    try
-                    {
-                        $outputBuffer = $s.ReadToEnd()
-                        WriteLog "Received $($outputBuffer.Length) bytes from server"
-                    }
-                    catch
-                    {
-                        WriteLog "ERROR: $_"
-                    }
-                }
-
-                $socket.Close()
-            }
+        else 
+        {
+            WriteLog 'Using ASCII encoding'
+            $MessageEncoder = New-Object System.Text.ASCIIEncoding
+            # remove diacritics
+            $msg = Remove-Diacritics -String $msg
+            # convert non-break spaces to normal spaces
+            $msg = $msg.Replace([char]0x00a0,' ')
         }
+
+        foreach ($srv in $servers) 
+        {
+            $srvparams = $srv.Split(":")
+            # allow for server names that may resolve to multiple A records
+            $srvIPs = & {
+                $local:ErrorActionPreference = "SilentlyContinue"
+                $srvparams[0] | %{[system.net.dns]::GetHostAddresses($_)} | %{ $_.IPAddressToString}
+            }
+            if ($srvIPs -eq $null) 
+            { # no IP addresses could be looked up
+                Write-Error -Category InvalidData ("No IP addresses could be found for host: " + $srvparams[0])
+            } 
+            else 
+            {
+                if ($srvparams.Count -gt 1) 
+                {
+                    $srvport = $srvparams[1]
+                } 
+                else 
+                {
+                    $srvport = 1984
+                }
+                foreach ($srvip in $srvIPs) 
+                {
+                    WriteLog "Connecting to host $srvip"
+
+                    $saveerractpref = $ErrorActionPreference
+                    $ErrorActionPreference = "SilentlyContinue"
+                    $socket = new-object System.Net.Sockets.TcpClient
+                    $socket.Connect($srvip, $srvport)
+                    $ErrorActionPreference = $saveerractpref
+                    if(! $? -or ! $socket.Connected ) 
+                    {
+                        $errmsg = $Error[0].Exception
+                        WriteLog "ERROR: Cannot connect to host $srv ($srvip) : $errmsg"
+                        Write-Error -Category OpenError "Cannot connect to host $srv ($srvip) : $errmsg"
+                        continue;
+                    }
+                    $socket.sendTimeout = 500
+                    $socket.NoDelay = $true
+
+                    $stream = $socket.GetStream()
+                    
+                    $sent = 0
+                    foreach ($line in $msg) 
+                    {
+                        # Convert data as appropriate
+                        try
+                        {
+                            $sent += $socket.Client.Send($MessageEncoder.GetBytes($line.Replace("`r","") + "`n"))
+                        }
+                        catch
+                        {
+                            WriteLog "ERROR: $_"
+                        }
+                    }
+                    WriteLog "Sent $sent bytes to server"
+
+                    if ($saveresponse-- -gt 0) 
+                    {
+                        $socket.Client.Shutdown(1)  # Signal to Xymon we're done writing.
+
+                        $bytes = 0
+                        $line = ($msg -split [environment]::newline)[0]
+                        $line = $line -replace '[\t|\s]+', ' '
+                        if  ($line -match '(download) (.*$)' ) 
+                        {
+                            if ($filePath -eq $null -or $filePath -eq "") 
+                            {
+                                # save it locally with the same name
+                                $filePath = split-path -leaf $matches[2]
+                            }
+                            $buffer = new-object System.Byte[] 2048;
+                            $fileStream = New-Object System.IO.FileStream($filePath, [System.IO.FileMode]'Create', [System.IO.FileAccess]'Write');
+
+                            do
+                            {
+                                $read = $null;
+                                while($stream.DataAvailable -or $read -eq $null) 
+                                {
+                                    $read = $stream.Read($buffer, 0, 2048);
+                                    if ($read -gt 0) 
+                                    {
+                                        $fileStream.Write($buffer, 0, $read);
+                                        $bytes += $read
+                                    }
+                                }
+                            } while ($read -gt 0);
+                            $fileStream.Close();
+                            WriteLog "Wrote $bytes bytes from server to $filePath"
+                        } 
+                        else 
+                        {
+                            $s = new-object system.io.StreamReader($stream,"ASCII")
+
+                            start-sleep -m 200  # wait for data to buffer
+                            try
+                            {
+                                $outputBuffer = $s.ReadToEnd()
+                                WriteLog "Received $($outputBuffer.Length) bytes from server"
+                            }
+                            catch
+                            {
+                                WriteLog "ERROR: $_"
+                            }
+                        }
+                    } # saveresponse-- -gt 0
+                    $socket.Close()
+                    $script:LastTransmissionMethod = 'TCP'
+                } # foreach ($srvip in $srvIPs)
+            } # else of if ($srvIPs -eq $null) 
+        } # foreach $srv in $servers
     }
     $outputbuffer
 }
@@ -2763,36 +2994,56 @@ function XymonClientConfig($cfglines)
     # config from remote)
     if (test-path -PathType Leaf $script:XymonSettings.clientconfigfile) 
     {
-         $script:clientlocalcfg_entries = @{}
-         $lines = get-content $script:XymonSettings.clientconfigfile
-         $currentsection = ''
-         foreach ($l in $lines)
-         {
-             # change this to recognise new config items
-             if ($l -match '^eventlog:' -or $l -match '^servicecheck:' `
-                 -or $l -match '^dir:' -or $l -match '^file:' `
-                 -or $l -match '^dirsize:' -or $l -match '^dirtime:' `
-                 -or $l -match '^log' -or $l -match '^clientversion:' `
-                 -or $l -match '^eventlogswanted' `
-                 -or $l -match '^servergifs:' `
-                 -or $l -match '^(?:ts|terminalservices)sessions:' `
-                 -or $l -match '^adreplicationcheck' `
-                 -or $l -match '^ifstat:' `
-                 -or $l -match '^repeattest:' `
-                 -or $l -match '^proc(?:ess)?runtime:' `
-                 -or $l -match '^external:' `
-                 -or $l -match '^xymonlogsend' `
-                 )
-             {
-                 WriteLog "Found a command: $l"
-                 $currentsection = $l
-                 $script:clientlocalcfg_entries[$currentsection] = @()
-             }
-             elseif ($l -ne '')
-             {
-                 $script:clientlocalcfg_entries[$currentsection] += $l
-             }
-         }
+        $script:clientlocalcfg_entries = @{}
+        $lines = get-content $script:XymonSettings.clientconfigfile
+        $currentsection = ''
+        foreach ($l in $lines)
+        {
+            # change this to recognise new config items
+            if ($l -match '^eventlog:' -or $l -match '^servicecheck:' `
+                -or $l -match '^dir:' -or $l -match '^file:' `
+                -or $l -match '^dirsize:' -or $l -match '^dirtime:' `
+                -or $l -match '^log' -or $l -match '^clientversion:' `
+                -or $l -match '^eventlogswanted' `
+                -or $l -match '^servergifs:' `
+                -or $l -match '^(?:ts|terminalservices)sessions:' `
+                -or $l -match '^adreplicationcheck' `
+                -or $l -match '^ifstat:' `
+                -or $l -match '^repeattest:' `
+                -or $l -match '^proc(?:ess)?runtime:' `
+                -or $l -match '^external:' `
+                -or $l -match '^xymonlogsend' `
+                -or $l -match '^slimmode' `
+                )
+            {
+                WriteLog "Found a command: $l"
+                $currentsection = $l
+                $script:clientlocalcfg_entries[$currentsection] = @()
+            }
+            elseif ($l -ne '')
+            {
+                $script:clientlocalcfg_entries[$currentsection] += $l
+            }
+        }
+
+        # re-parse slimmode config to make it easier
+        if ($script:clientlocalcfg_entries.ContainsKey('slimmode'))
+        {
+            $slimConfig = @{}
+            $script:clientlocalcfg_entries.slimmode | `
+               foreach { $i = ($_ -split ':'); $slimConfig[$i[0]] = $i[1] }
+
+            $script:clientlocalcfg_entries.slimmode = $slimConfig
+
+            ('services', 'processes') | foreach `
+            {
+                if ($script:clientlocalcfg_entries.slimmode.ContainsKey($_))
+                {
+                    $script:clientlocalcfg_entries.slimmode.$_ = `
+                        ($script:clientlocalcfg_entries.slimmode.$_ -split ',')
+                }
+            }
+        }
     }
     WriteLog "Cached config now contains: "
     WriteLog ($script:clientlocalcfg_entries.keys -join ', ')
@@ -2807,9 +3058,13 @@ function XymonClientConfig($cfglines)
 
 function XymonReportConfig
 {
+    # exclude serverHttpPassword from output
+    $settings = (($script:XymonSettings | Out-String) -split [System.Environment]::NewLine) | `
+        where { $_ -notmatch '^serverHttpPassword' }
+
     "[XymonConfig]"
     "XymonSettings"
-    $script:XymonSettings
+    $settings
     ""
     "HaveCmd"
     $HaveCmd
@@ -2819,6 +3074,7 @@ function XymonReportConfig
     }
     "[XymonPSClientInfo]"
     "Collection number: $($script:collectionnumber)"
+    "Last transmission method: $($script:LastTransmissionMethod)"
     $script:thisXymonProcess    
 
     #get-process -id $PID
@@ -2840,18 +3096,30 @@ function XymonClientSections([boolean] $isSlowScan)
     XymonEventLogs
     XymonMsgs
     XymonProcs
-    XymonNetstat
-    XymonPorts
-    XymonIPConfig
-    XymonRoute
-    XymonIfstat
+
+    $includeSections = @('Netstat', 'Ports', 'IPConfig', 'Route', 'Ifstat', 'Who', 'Users')
+    if ($script:clientlocalcfg_entries.ContainsKey('slimmode'))
+    {
+        $includeSections = @()
+        if ($script:clientlocalcfg_entries.slimmode.ContainsKey('sections'))
+        {
+            $includeSections += $script:clientlocalcfg_entries.slimmode.sections
+        }
+    }
+
+    if ($includeSections -contains 'Netstat') { XymonNetstat }
+    if ($includeSections -contains 'Ports') { XymonPorts }
+    if ($includeSections -contains 'IPConfig') { XymonIPConfig }
+    if ($includeSections -contains 'Route') { XymonRoute }
+    if ($includeSections -contains 'Ifstat') { XymonIfstat }
+
     XymonSvcs
     XymonDir
     XymonFileCheck
     XymonLogCheck
     XymonUptime
-    XymonWho
-    XymonUsers
+    if ($includeSections -contains 'Who') { XymonWho }
+    if ($includeSections -contains 'Users') { XymonUsers }
 
     if ($script:XymonSettings.EnableWMISections -eq 1)
     {
@@ -2961,6 +3229,24 @@ function XymonDownloadFromURL([string]$downloadURL, [string]$destinationFilePath
     return $true
 }
 
+function XymonDownloadFromServer([string]$ServerPath, [string]$destinationFilePath)
+{
+    $ServerPath = $ServerPath.Trim()
+    WriteLog "XymonDownloadFromServer - Downloading $ServerPath to $destinationFilePath"
+    $message = "download $ServerPath"
+    try
+    {
+        # should work transparently through any intermediate proxies
+        XymonSend $message $script:XymonSettings.serversList $destinationFilePath
+    }
+    catch
+    {
+        WriteLog "Error downloading: $_"
+        return $false
+    }
+    return $true
+}
+
 function GetHashValueForFile([string] $filename, [string] $hashAlgorithm)
 {
     $hash = [System.Security.Cryptography.HashAlgorithm]::Create($hashAlgorithm)
@@ -2990,7 +3276,7 @@ function XymonCheckUpdate
         {
             WriteLog "Running version $Version; config version $($matches[1]); attempting upgrade"
 
-            # $matches[2] can be either a http[s] URL or a file path
+            # $matches[2] can be either a http[s] URL, bb fake URL or a file path
             $updatePath = $matches[2]
             $updateFile = "xymonclient_$($matches[1]).ps1"
             $hashAlgorithm = $matches[3]
@@ -3008,6 +3294,18 @@ function XymonCheckUpdate
                 $URL = "{0}{1}" -f $updateURL, $updateFile
                 $destination = Join-Path -Path $xymondir -ChildPath $updateFile
                 $result = XymonDownloadFromURL $URL $destination
+            }
+            elseif ($updatePath -match '^bb')
+            {
+                $ServerPath = $updatePath.Trim()
+                $ServerPath = $ServerPath -creplace '^[^:]*:/*',''
+                if ($ServerPath -notmatch '/$')
+                {
+                    $ServerPath += '/'
+                }
+                $URL = "{0}{1}" -f $ServerPath, $updateFile
+                $destination = Join-Path -Path $xymondir -ChildPath $updateFile
+                $result = XymonDownloadFromServer $URL $destination
             }
             else
             {
@@ -3078,6 +3376,11 @@ function DownloadAndVerify([string] $URI, [string] $name, [string] $path, `
     if ($URI -match '^http')
     {
         $result = XymonDownloadFromURL $URI $destination
+    }
+    elseif ($URI -match '^bb')
+    {
+        $URI = $URI -creplace '^[^:]*:/*',''
+        $result = XymonDownloadFromServer $URI $destination
     }
     else
     {
@@ -3153,7 +3456,7 @@ function XymonManageExternals
             ($priority, $executionFrequency, $executionMethod, $externalURI, `
              $hashAlgorithm, $hashRequired, $process, $arguments) = $matches[1..8]
 
-            if ($externalURI -match '^http')
+            if ($externalURI -match '^(http|bb)')
             {
                 $externalScriptName = $externalURI.SubString($externalURI.LastIndexOf('/') + 1)
             }
@@ -3478,7 +3781,12 @@ function XymonLogSend()
 ##### Main code #####
 $script:thisXymonProcess = get-process -id $PID
 $script:thisXymonProcess.PriorityClass = "High"
-XymonConfig
+$hasargs = $false
+if ($args -ne $null)
+{
+    $hasargs = $true
+}
+XymonConfig $hasargs
 $ret = 0
 # check for install/set/unset/config/start/stop for service management
 if($args -eq "Install") {
