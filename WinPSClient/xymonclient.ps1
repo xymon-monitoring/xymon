@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = '2.27'
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2017-12-11 zak.beck@accenture.com"
+$Version = '2.28'
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2018-01-29 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -2015,12 +2015,6 @@ function XymonIfstat
 function XymonSvcs
 {
     WriteLog "XymonSvcs start"
-    if ($script:clientlocalcfg_entries.ContainsKey('slimmode') -and `
-        !$script:clientlocalcfg_entries.slimmode.ContainsKey('services'))
-    {
-        WriteLog 'Skipping XymonSvcs; slim mode but no services specified'
-        return
-    }
     "[svcs]"
     "Name".PadRight(39) + " " + "StartupType".PadRight(12) + " " + "Status".PadRight(14) + " " + "DisplayName"
     foreach ($s in $svcs) 
@@ -3035,7 +3029,7 @@ function XymonClientConfig($cfglines)
 
             $script:clientlocalcfg_entries.slimmode = $slimConfig
 
-            ('services', 'processes') | foreach `
+            ('sections', 'services', 'processes') | foreach `
             {
                 if ($script:clientlocalcfg_entries.slimmode.ContainsKey($_))
                 {
@@ -3103,6 +3097,7 @@ function XymonClientSections([boolean] $isSlowScan)
         $includeSections = @()
         if ($script:clientlocalcfg_entries.slimmode.ContainsKey('sections'))
         {
+            WriteLog "Including $($script:clientlocalcfg_entries.slimmode.sections)"
             $includeSections += $script:clientlocalcfg_entries.slimmode.sections
         }
     }
