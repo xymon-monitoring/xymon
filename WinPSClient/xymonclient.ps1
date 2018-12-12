@@ -40,12 +40,13 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = '2.28'
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2018-01-29 zak.beck@accenture.com"
+$Version = '2.34'
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2018-12-06 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
 $ServiceChecks = @{}
+$MaintChecks = @{}
 
 $UnixEpochOriginUTC = New-Object DateTime 1970,1,1,0,0,0,([DateTimeKind]::Utc)
 
@@ -864,6 +865,7 @@ function XymonInitXML($startedWithArgs)
     # only if we were started without arguments - so don't do it for
     # service installation mode
     if ($startedWithArgs -eq $false -and
+        $xmlconfig.XymonSettings.serverHttpPassword -ne $null -and
         $xmlconfig.XymonSettings.serverHttpPassword -ne '' -and
         $xmlconfig.XymonSettings.serverHttpPassword -notlike '{SecureString}*')
     {
@@ -925,11 +927,23 @@ function XymonInit
     SetIfNot $script:XymonSettings clientfqdn 1 # 0 = unqualified, 1 = fully-qualified
     SetIfNot $script:XymonSettings clientlower 1 # 0 = unqualified, 1 = fully-qualified
     
-    if ($script:XymonSettings.clientname -eq $null -or $script:XymonSettings.clientname -eq "") { # set name based on rules
+    if ($script:XymonSettings.clientname -eq $null -or $script:XymonSettings.clientname -eq "") 
+    { 
+        # set name based on rules; first try IP properties
         $ipProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
         $clname  = $ipProperties.HostName
-        if ($script:XymonSettings.clientfqdn -eq 1 -and ($ipProperties.DomainName -ne $null)) { 
+        if ($clname -ne '' -and $script:XymonSettings.clientfqdn -eq 1 -and ($ipProperties.DomainName -ne $null)) 
+        { 
             $clname += "." + $ipProperties.DomainName
+        }
+        if ($clname -eq '')
+        {
+            # try environment
+            $clname = $Env:COMPUTERNAME
+            if ($clname -ne '' -and $script:XymonSettings.clientfqdn -eq 1 -and ($Env:USERDNSDOMAIN -ne $null)) 
+            {
+                $clname += '.' + $Env:USERDNSDOMAIN
+            }
         }
         if ($script:XymonSettings.clientlower -eq 1) { $clname = $clname.ToLower() }
         SetIfNot $script:XymonSettings clientname $clname
@@ -956,6 +970,7 @@ function XymonInit
                         # see http://support.microsoft.com/kb/974524 for reasons why Win32_Product is not recommended!
     SetIfNot $script:XymonSettings EnableWin32_QuickFixEngineering 0 # 0 = do not use Win32_QuickFixEngineering, 1 = do
     SetIfNot $script:XymonSettings EnableWMISections 0 # 0 = do not produce [WMI: sections (OS, BIOS, Processor, Memory, Disk), 1 = do
+    SetIfNot $script:XymonSettings EnableIISSection 1 # 0 = do not produce iis_sites section, 1 = do
     SetIfNot $script:XymonSettings ClientProcessPriority 'Normal' # possible values Normal, Idle, High, RealTime, BelowNormal, AboveNormal
 
     $clientlogpath = Split-Path -Parent $script:XymonSettings.clientlogfile
@@ -1465,16 +1480,17 @@ function XymonMemory
 
 # ContainsLike - whether or not $compare matches
 # one of the entries in $arrayOfLikes using the -like operator
-function ContainsLike([string[]] $arrayOfLikes, [string] $compare)
+# returns $null (no match) or the matching entry from $arrayOfLikes
+function ContainsLike([string[]] $ArrayOfLikes, [string] $Compare)
 {
-    foreach ($l in $arrayOfLikes)
+    foreach ($l in $ArrayOfLikes)
     {
-        if ($compare -like $l)
+        if ($Compare -like $l)
         {
-            return $true
+            return $l
         }
     }
-    return $false
+    return $null
 }
 
 function XymonMsgs
@@ -1510,36 +1526,94 @@ function XymonMsgs
     $maxpayloadlength = 1024
     $payload = ''
 
+    # $wantedEventLogs
+    # each key is an event log name
+    # each value is an array of wanted levels
+    # defaults set below
+    # can be overridden by eventlogswanted config 
+    $wantedEventLogs = `
+        @{ `
+            'Application' = @('Critical', 'Warning', 'Error', 'Information', 'Verbose'); `
+            'System' = @('Critical', 'Warning', 'Error', 'Information', 'Verbose'); `
+            'Security' = @('Critical', 'Warning', 'Error', 'Information', 'Verbose'); `
+        }
+    # any config from server should override this default config
+    $wantedEventLogsPriority = -1
+
     # this function no longer uses $script:XymonSettings.wantedlogs
     # - it now uses eventlogswanted from the remote config
-    if ($script:clientlocalcfg_entries.keys | where { $_ -match '^eventlogswanted:(.+):(\d+):?(.+)?$' })
+    # eventlogswanted:[optional priority]:<logs/levels>:max payload:[optional default levels]
+    $script:clientlocalcfg_entries.keys | where { $_ -match '^eventlogswanted:(?:(\d+):)?(.+):(\d+):?(.+)?$' } | foreach `
     {
-        $wantedlogs = $matches[1] -split ','
-        $maxpayloadlength = $matches[2]
-        if ($matches[3] -ne $null)
+        $thisSectionPriority = 0
+        WriteLog "Processing eventlogswanted config: $($matches[0])"
+        # config priority (if present)
+        # we only want the configuration with the highest priority
+        if ($matches[1] -ne $null)
         {
-            $wantedLevels = $matches[3] -split ','
+            $thisSectionPriority = [int]($matches[1])
+        }
+        if ($wantedEventLogsPriority -gt $thisSectionPriority)
+        {
+            WriteLog "Previous priority $wantedEventLogsPriority greater than this config ($($thisSectionPriority)), skipping"
+            $skip = $true
+        }
+        else
+        {
+            WriteLog "This config priority $($thisSectionPriority) greater than/equal to previous config ($($wantedEventLogsPriority)), processing"
+            $wantedEventLogsPriority = $thisSectionPriority
+            $skip = $false
+        }
+
+        # $wantedlogs
+        # might be a list of logs - e.g. application,system
+        # or a list of logs and levels - e.g. application|information&critical,system|critical&error
+        if (-not ($skip))
+        {
+            $wantedEventLogs = @{}
+            $wantedlogs = $matches[2] -split ','
+            $maxpayloadlength = $matches[3]
+            if ($matches[4] -ne $null)
+            {
+                $wantedLevels = $matches[4] -split ','
+            }
+
+            foreach ($log in $wantedlogs)
+            {
+                if ($log -like '*|*')
+                {
+                    $logParams = @($log -split '\|')
+                    if ($logParams.Length -eq 2)
+                    {
+                        $levelParams = $logParams[1] -replace '&', ','
+                        $wantedEventLogs[$logParams[0]] = ($levelParams -split ',')
+                    }
+                    elseif ($logParams.Length -eq 1)
+                    {
+                        $wantedEventLogs[$logParams[0]] = $wantedLevels
+                    }
+                    else
+                    {
+                        WriteLog "Bad configuration item in eventlogswanted: $log"
+                    }
+                }
+                else
+                {
+                    # if no individual levels specified, then use the defaults - 
+                    # either specified in match 3 or script default
+                    $wantedEventLogs[$log] = $wantedLevels
+                }
+            }
         }
     }
 
-    $levelcriteria = @()
-    foreach ($level in $wantedLevels)
-    {
-        switch ($level)
-        {
-            'critical' { $levelcriteria += 'Level=1'; break }
-            'warning' { $levelcriteria += 'Level=3'; break }
-            'verbose' { $levelcriteria += 'Level=5'; break }
-            'error' { $levelcriteria += 'Level=2'; break }
-            'information' { $levelcriteria += 'Level=4 or Level=0'; break }
-        }
-    }
 
-    WriteLog "Event Log processing - max payload: $maxpayloadlength - wanted logs: $wantedlogs - wanted levels: $wantedLevels"
+    WriteLog "Event Log processing - max payload: $maxpayloadlength"
 
     foreach ($l in ($script:EventLogs | select -ExpandProperty Log))
     {
-        if (ContainsLike $wantedlogs $l)
+        $wantedEventLogEntry = ContainsLike -ArrayofLikes $wantedEventLogs.Keys -Compare $l
+        if ($wantedEventLogEntry -ne $null)
         {
             WriteLog "Event log $l adding to payload"
             $payload += "[msgs:eventlog_$l]" + [environment]::newline
@@ -1548,6 +1622,20 @@ function XymonMsgs
             if ($payload.Length -lt $maxpayloadlength)
             {
                 WriteLog "Processing event log $l"
+
+                $levelcriteria = @()
+                $wantedLevels = $wantedEventLogs[$wantedEventLogEntry]
+                foreach ($level in $wantedLevels)
+                {
+                    switch ($level)
+                    {
+                        'critical' { $levelcriteria += 'Level=1'; break }
+                        'warning' { $levelcriteria += 'Level=3'; break }
+                        'verbose' { $levelcriteria += 'Level=5'; break }
+                        'error' { $levelcriteria += 'Level=2'; break }
+                        'information' { $levelcriteria += 'Level=4 or Level=0'; break }
+                    }
+                }
 
                 $logFilterXML = $filterXMLTemplate -f $l, $sinceMs, ($levelcriteria -join ' or ')
                 WriteLog "Log filter $logFilterXML"
@@ -1575,6 +1663,7 @@ function XymonMsgs
                     [System.Threading.Thread]::CurrentThread.CurrentUICulture = $currentUICulture
                 }
 
+                $totalEntries = $logentries.Length
                 WriteLog "Event log $l entries since last scan: $($logentries.Length)"
                 
                 # filter based on clientlocal.cfg / clientconfig.cfg
@@ -1584,32 +1673,68 @@ function XymonMsgs
                     if ($filterkey -ne $null -and $script:clientlocalcfg_entries.ContainsKey($filterkey))
                     {
                         WriteLog "Found a configured filter for log $l"
+
+                        # ignore / include - include has priority over ignore
+                        # so if there are any include filters, they get priority and ignores are disregarded
+                        $filters = @( $script:clientlocalcfg_entries[$filterkey] | where { $_ -match '^include ' } )
+                        $filterMode = 'include'
+                        if ($filters -eq $null -or $filters.Length -eq 0)
+                        {
+                            $filters = @( $script:clientlocalcfg_entries[$filterkey] | where { $_ -match '^ignore ' } )
+                            $filterMode = 'exclude'
+                        }
+                        WriteLog "Filter mode: $filterMode Filter entries: $($filters.Length)"
+
+                        # process filters if we have one or the other
+                        $filterCount = 0
                         $output = @()
                         foreach ($entry in $logentries)
                         {
-                            foreach ($filter in $script:clientlocalcfg_entries[$filterkey])
+                            if ($filterMode -eq 'exclude')
                             {
-                                if ($filter -match '^ignore')
+                                $excludeItem = $false
+                                foreach ($filter in $filters)
                                 {
                                     $filter = $filter -replace '^ignore ', ''
                                     if ($entry.ProviderName -match $filter -or $entry.Message -match $filter)
                                     {
-                                        $exclude = $true
+                                        ++$filterCount
+                                        $excludeItem = $true
                                         break
                                     }
                                 }
+                                if (-not $excludeItem)
+                                {
+                                    $output += $entry
+                                }
                             }
-                            if (-not $exclude)
+                            elseif ($filterMode -eq 'include')
                             {
-                                $output += $entry
+                                $includeItem = $false
+                                foreach ($filter in $filters)
+                                {
+                                    $filter = $filter -replace '^include ', ''
+                                    if ($entry.ProviderName -match $filter -or $entry.Message -match $filter)
+                                    {
+                                        ++$filterCount
+                                        $includeItem = $true
+                                        break
+                                    }
+                                }
+                                if ($includeItem)
+                                {
+                                    $output += $entry
+                                }
                             }
                         }
                         $logentries = $output
+                        WriteLog "Starting entries: $($totalEntries)  Entries filtered: $($filterCount)  Remaining entries: $($logentries.Count)"
                     }
                 }
 
                 if ($logentries -ne $null) 
                 {
+                    WriteLog "Entries to add to payload: $($logentries.Count) "
                     foreach ($entry in $logentries) 
                     {
                         $level = 'Unknown'
@@ -1625,9 +1750,14 @@ function XymonMsgs
                         
                         if ($payload.Length -gt $maxpayloadlength)
                         {
+                            WriteLog "Payload length reached $($payload.Length), greater than $($maxpayloadlength)"
                             break;
                         }
                     }
+                }
+                else
+                {
+                    WriteLog "No entries to add to payload"
                 }
             }
         }
@@ -1727,7 +1857,7 @@ function XymonLogCheckFile([string]$file,$sizemax=0, $positions=6)
     WriteLog "File: $file"
     $f = [system.io.file]::Open($file,"Open","Read","ReadWrite")
     $s = get-item $file
-    $nowpos = $f.length
+    $nowpos = $s.length
     $savepos = 0
     if($script:logfilepos.$($file) -ne $null) { $savepos = $script:logfilepos.$($file)[0] }
     if($nowpos -lt $savepos) {$savepos = 0} # log file rolled over??
@@ -1943,8 +2073,14 @@ function XymonDirTime
 function XymonPorts
 {
     WriteLog "XymonPorts start"
+    $filter = ''
+    if ($script:clientlocalcfg_entries.ContainsKey('ports:listenonly'))
+    {
+        $filter = 'LISTENING'
+    }
+
     "[ports]"
-    netstat -an
+    netstat -an | where { $_ -like "*$($filter)*" }
     WriteLog "XymonPorts finished."
 }
 
@@ -2137,23 +2273,30 @@ function XymonUsers
 function XymonIISSites
 {
     WriteLog "XymonIISSites start"
-    $objSites = [adsi]("IIS://localhost/W3SVC")
-    if($objSites.path -ne $null) {
-        "[iis_sites]"
-        foreach ($objChild in $objSites.Psbase.children | where {$_.KeyType -eq "IIsWebServer"} ) {
-            ""
-            $objChild.servercomment
-            $objChild.path
-            if($objChild.path -match "\/W3SVC\/(\d+)") { "SiteID: "+$matches[1] }
-            foreach ($prop in @("LogFileDirectory","LogFileLocaltimeRollover","LogFileTruncateSize","ServerAutoStart","ServerBindings","ServerState","SecureBindings" )) {
-                if( $($objChild | gm -Name $prop ) -ne $null) {
-                    "{0} {1}" -f $prop,$objChild.$prop.ToString()
+    if ($script:XymonSettings.EnableIISSection -eq 1)
+    {
+        $objSites = [adsi]("IIS://localhost/W3SVC")
+        if($objSites.path -ne $null) {
+            "[iis_sites]"
+            foreach ($objChild in $objSites.Psbase.children | where {$_.KeyType -eq "IIsWebServer"} ) {
+                ""
+                $objChild.servercomment
+                $objChild.path
+                if($objChild.path -match "\/W3SVC\/(\d+)") { "SiteID: "+$matches[1] }
+                foreach ($prop in @("LogFileDirectory","LogFileLocaltimeRollover","LogFileTruncateSize","ServerAutoStart","ServerBindings","ServerState","SecureBindings" )) {
+                    if( $($objChild | gm -Name $prop ) -ne $null) {
+                        "{0} {1}" -f $prop,$objChild.$prop.ToString()
+                    }
                 }
             }
+            clear-variable objChild
         }
-        clear-variable objChild
+        clear-variable objSites
     }
-    clear-variable objSites
+    else
+    {
+        WriteLog 'Skipping XymonIISSites, EnableIISSection = 0 in config'
+    }
     WriteLog "XymonIISSites finished."
 }
 
@@ -2307,7 +2450,7 @@ function XymonServiceCheck
             # validation
             if ($checkparams.length -ne 3)
             {
-                WriteLog "ERROR: config error (should be servicecheck:<servicename>:<duration>) - $service"
+                WriteLog "ERROR: not enough parameters (should be servicecheck:<servicename>:<duration>) - $checkparams[1]"
                 continue
             }
             else
@@ -2315,37 +2458,92 @@ function XymonServiceCheck
                 $duration = $checkparams[2] -as [int]
                 if ($checkparams[1] -eq '' -or $duration -eq $null)
                 {
-                    WriteLog "ERROR: config error (should be servicecheck:<servicename>:<duration>) - $service"
+                    WriteLog "ERROR: config error (should be servicecheck:<servicename>:<duration>) - $checkparams[1]"
                     continue
                 }
             }
-
-            WriteLog ("Checking service {0}" -f $checkparams[1])
-
-            $winsrv = Get-Service -Name $checkparams[1]
-            if ($winsrv.Status -eq 'Stopped')
+            # check for maintenance window
+            $days = ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')
+            $serviceexclds = @($script:clientlocalcfg_entries.keys | where { $_ -match '^noservicecheck' })
+            foreach ($maintservice in $serviceexclds)
             {
-                writeLog ("Service {0} is stopped" -f $checkparams[1])
-                if ($script:ServiceChecks.ContainsKey($checkparams[1]))
+                # parameter should be 'noservicecheck:<servicename>:<numeric day of week Sun=0>:<military start hour>:<duration in Hours>'
+                $checkMparams = $maintservice -split ':'
+                if ($checkparams[1] -eq $checkMparams[1])
                 {
-                    $restarttime = $script:ServiceChecks[$checkparams[1]].AddSeconds($duration)
-                    writeLog "Seen this service before; restart time is $restarttime"
-                    if ($restarttime -lt (get-date))
+                    # validation of number of parameters
+                    if ($checkMparams.length -ne 5)
                     {
-                        writeLog ("Starting service {0}" -f $checkparams[1])
-                        $winsrv.Start()
+                        WriteLog ("ERROR: not enough parameters (noservicecheck:<servicename>:<numeric day of week Sun=0>:<start hour (24h)>:<duration Hrs> {0}" -f $checkMparams[1])
+                        continue
+                    }
+                    else
+                    {
+                        # get values
+                        $MaintDay = $checkMparams[2] -as [int]
+                        $MaintStartHour = $checkMparams[3] -as [int]
+                        $MaintDuration = $checkMparams[4] -as [int]
+                        # validation of basic values
+                        if ($checkMparams[1] -eq '' -or $MaintDuration -eq $null -or (0..6 -notcontains $MaintDay) -or (0..23 -notcontains $MaintStartHour))
+                        {
+                            WriteLog ("ERROR: config error (noservicecheck:<servicename>:<numeric day of week Sun=0>:<start hour (24h)>:<duration Hrs>) {0}" -f $checkMparams[1])
+                            continue
+                        }
+                        $MaintWeekDay = $days[$MaintDay]
+                    }
+                    
+                    if (((get-date).DayofWeek -eq $MaintWeekDay) -and ((get-date).Hour -eq $MaintStartHour) ) 
+                    { 
+                        if ($script:MaintChecks.ContainsKey($checkMparams[1])) 
+                        {
+                            $MaintWindowEnd = $script:MaintChecks[$checkMparams[1]].AddHours($MaintDuration)
+                            if ((get-date) -lt $MaintWindowEnd)
+                            {
+                                WriteLog (" Maintenance: Skipping Service Check until after $($MaintWindowEnd) for {0}" -f $checkMparams[1])
+                                continue
+                            }
+                            else
+                            {
+                                clear.variable $script:MaintChecks
+                            }
+                        }
+                        else
+                        {
+                             WriteLog ("Not seen this NoServiceCheck before, starting Maintenance Window now for {0}" -f $checkMparams[1])
+                             $hourTop = (get-date).Minute
+                             $script:MaintChecks[$checkMparams[1]] = (get-date).AddMinutes(-($hourTop))
+                             continue
+                        }
+                    }
+                    # end of maintenance hold   
+                }
+                WriteLog ("Checking service {0}" -f $checkparams[1])
+
+                $winsrv = Get-Service -Name $checkparams[1]
+                if ($winsrv.Status -eq 'Stopped')
+                {
+                    writeLog ("!! Service {0} is stopped" -f $checkparams[1])
+                    if ($script:ServiceChecks.ContainsKey($checkparams[1]))
+                    {
+                        $restarttime = $script:ServiceChecks[$checkparams[1]].AddSeconds($duration)
+                        writeLog "Seen this service before; restart time is $restarttime"
+                        if ($restarttime -lt (get-date))
+                        {
+                            writeLog (" -> Starting service {0}" -f $checkparams[1])
+                            $winsrv.Start()
+                        }
+                    }
+                    else
+                    {
+                        writeLog "Not seen this service before, setting restart time -1 hour"
+                        $script:ServiceChecks[$checkparams[1]] = (get-date).AddHours(-1)
                     }
                 }
-                else
+                elseif ('StartPending', 'Running' -contains $winsrv.Status)
                 {
-                    writeLog "Not seen this service before, setting restart time -1 hour"
-                    $script:ServiceChecks[$checkparams[1]] = (get-date).AddHours(-1)
+                    writeLog "  -Service is running, updating last seen time"
+                    $script:ServiceChecks[$checkparams[1]] = get-date
                 }
-            }
-            elseif ('StartPending', 'Running' -contains $winsrv.Status)
-            {
-                writeLog "Service is running, updating last seen time"
-                $script:ServiceChecks[$checkparams[1]] = get-date
             }
         }
     }
@@ -2991,6 +3189,7 @@ function XymonClientConfig($cfglines)
         $script:clientlocalcfg_entries = @{}
         $lines = get-content $script:XymonSettings.clientconfigfile
         $currentsection = ''
+        $eventlogswantedSeen = 0
         foreach ($l in $lines)
         {
             # change this to recognise new config items
@@ -3003,16 +3202,22 @@ function XymonClientConfig($cfglines)
                 -or $l -match '^(?:ts|terminalservices)sessions:' `
                 -or $l -match '^adreplicationcheck' `
                 -or $l -match '^ifstat:' `
+                -or $l -match '^ports:' `
                 -or $l -match '^repeattest:' `
                 -or $l -match '^proc(?:ess)?runtime:' `
                 -or $l -match '^external:' `
                 -or $l -match '^xymonlogsend' `
                 -or $l -match '^slimmode' `
+                -or $l -match '^noservicecheck:' `
                 )
             {
                 WriteLog "Found a command: $l"
                 $currentsection = $l
-                $script:clientlocalcfg_entries[$currentsection] = @()
+                # merging for eventlog include/ignore
+                if (-not ($script:clientlocalcfg_entries.ContainsKey($currentsection)))
+                {
+                    $script:clientlocalcfg_entries[$currentsection] = @()
+                }
             }
             elseif ($l -ne '')
             {
@@ -3097,7 +3302,7 @@ function XymonClientSections([boolean] $isSlowScan)
         $includeSections = @()
         if ($script:clientlocalcfg_entries.slimmode.ContainsKey('sections'))
         {
-            WriteLog "Including $($script:clientlocalcfg_entries.slimmode.sections)"
+            WriteLog "Slimmode: including sections $($script:clientlocalcfg_entries.slimmode.sections)"
             $includeSections += $script:clientlocalcfg_entries.slimmode.sections
         }
     }
@@ -3213,7 +3418,12 @@ function XymonDownloadFromURL([string]$downloadURL, [string]$destinationFilePath
     {
         # for self-signed certificates, turn off cert validation
         # TODO: make this a config option
+        # TODO: at some point, deprecate tls1.1 & 1.0
         [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+        if ($downloadURL -match '^https://')
+        {
+            [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+        }
         $client.DownloadFile($downloadURL, $destinationFilePath)
     }
     catch
