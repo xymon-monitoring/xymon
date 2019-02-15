@@ -7,7 +7,7 @@
 #
 # Copyright (C) 2010 Henrik Storner <henrik@hswn.dk>
 # Copyright (C) 2010 David Baldwin
-# Copyright (c) 2014-2017 Accenture (zak.beck@accenture.com)
+# Copyright (c) 2014-2019 Accenture (zak.beck@accenture.com)
 #
 #   Contributions to this project were made by Accenture starting from June 2014.
 #   For a list of modifications, please see the SVN change log.
@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = '2.34'
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2018-12-06 zak.beck@accenture.com"
+$Version = '2.37'
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2019-02-12 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -833,6 +833,41 @@ $volumeinfo = @'
 '@
 $type = Add-Type $volumeinfo
 
+$getsysteminfoType = @'
+    using System;
+    using System.Runtime.InteropServices;
+
+    public class ProcessorInformation
+    {
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SystemInfo
+        {
+            public ushort ProcessorArchitecture; // WORD
+            public uint PageSize; // DWORD
+            public IntPtr MinimumApplicationAddress; // (long)void*
+            public IntPtr MaximumApplicationAddress; // (long)void*
+            public IntPtr ActiveProcessorMask; // DWORD*
+            public uint NumberOfProcessors; // DWORD 
+            public uint ProcessorType; // DWORD
+            public uint AllocationGranularity; // DWORD
+            public ushort ProcessorLevel; // WORD
+            public ushort ProcessorRevision; // WORD
+        }
+
+        [DllImport("kernel32.dll", SetLastError = false)]
+        private static extern void GetNativeSystemInfo(out SystemInfo Info);
+
+        public static SystemInfo GetSystemInfo()
+        {
+            SystemInfo info;
+            GetNativeSystemInfo(out info);
+
+            return info;
+        }
+    }
+'@
+$type = Add-Type $getsysteminfoType
+
 }
 #endregion 
 
@@ -971,6 +1006,7 @@ function XymonInit
     SetIfNot $script:XymonSettings EnableWin32_QuickFixEngineering 0 # 0 = do not use Win32_QuickFixEngineering, 1 = do
     SetIfNot $script:XymonSettings EnableWMISections 0 # 0 = do not produce [WMI: sections (OS, BIOS, Processor, Memory, Disk), 1 = do
     SetIfNot $script:XymonSettings EnableIISSection 1 # 0 = do not produce iis_sites section, 1 = do
+    SetIfNot $script:XymonSettings EnableDiskPart 0 # 0 = do not collect diskpart data, 1 = do
     SetIfNot $script:XymonSettings ClientProcessPriority 'Normal' # possible values Normal, Idle, High, RealTime, BelowNormal, AboveNormal
 
     $clientlogpath = Split-Path -Parent $script:XymonSettings.clientlogfile
@@ -978,7 +1014,7 @@ function XymonInit
 
     SetIfNot $script:XymonSettings clientlogretain 0
 
-    SetIfNot $script:XymonSettings XymonAcceptUTF8 0 # messages sent to Xymon 0 = convert to ASCII, 1 = convert to UTF8
+    SetIfNot $script:XymonSettings XymonAcceptUTF8 0 # messages sent to Xymon 0 = use "original" ASCII, 1 = convert to UTF8, 2 = use "pure" ASCII
     SetIfNot $script:XymonSettings GetProcessInfoCommandLine 1 # get process command line 1 = yes, 0 = no
     SetIfNot $script:XymonSettings GetProcessInfoOwner 1 # get process owner 1 = yes, 0 = no
 
@@ -1097,30 +1133,21 @@ function UserSessionCount
     }
 }
 
-function XymonCollectInfo
+function XymonCollectInfo([boolean] $isSlowScan)
 {
     WriteLog "Executing XymonCollectInfo"
 
     CleanXymonProcsCpu
     WriteLog "XymonCollectInfo: Process info"
     $script:procs = Get-Process | Sort-Object -Property Id
+
+    WriteLog "XymonCollectInfo: CPU info"
+    $script:cpuinfo = [ProcessorInformation]::GetSystemInfo()
+    $script:numcores  = $cpuinfo.NumberOfProcessors
+    WriteLog "Found $($script:numcores) cores"
+
     WriteLog "XymonCollectInfo: calling XymonProcsCPUUtilisation"
     XymonProcsCPUUtilisation
-
-    WriteLog "XymonCollectInfo: CPU info (WMI)"
-    $script:cpuinfo = @(Get-WmiObject -Class Win32_Processor)
-    #$script:totalload = 0
-    $script:numcpus  = $cpuinfo.Count
-    $script:numcores = 0
-    $script:numvcpus = 0
-    foreach ($cpu in $cpuinfo) { 
-        #$script:totalload += $cpu.LoadPercentage
-        $script:numcores += $cpu.NumberOfCores
-        $script:numvcpus += $cpu.NumberOfLogicalProcessors
-    }
-    #$script:totalload /= $numcpus
-
-    WriteLog "Found $($script:numcpus) CPUs, total of $($script:numcores) cores"
 
     WriteLog "XymonCollectInfo: OS info (including memory) (WMI)"
     $script:osinfo = Get-WmiObject -Class Win32_OperatingSystem
@@ -2221,24 +2248,27 @@ function CleanXymonProcsCpu
 {
     # reset cache flags and clear terminated processes from the cache
     WriteLog "CleanXymonProcsCpu start"
-    if ($script:XymonProcsCpu.Count -gt 0)
+    if (Test-Path variable:script:XymonProcsCpu)
     {
-        foreach ($p in @($script:XymonProcsCpu.Keys)) {
-            $thisp = $script:XymonProcsCpu[$p]
-            if ($thisp[3] -eq $true) {
-                # reset flag to catch a dead process on the next run
-                # this flag will be updated back to $true by XymonProcsCPUUtilisation
-                # if the process still exists
-                $thisp[3] = $false  
-            }
-            else {
-                # flag was set to $false previously = process has been terminated
-                WriteLog "Process id $p has disappeared, removing from cache"
-                $script:XymonProcsCpu.Remove($p)
+        if ($script:XymonProcsCpu.Count -gt 0)
+        {
+            foreach ($p in @($script:XymonProcsCpu.Keys)) {
+                $thisp = $script:XymonProcsCpu[$p]
+                if ($thisp[3] -eq $true) {
+                    # reset flag to catch a dead process on the next run
+                    # this flag will be updated back to $true by XymonProcsCPUUtilisation
+                    # if the process still exists
+                    $thisp[3] = $false  
+                }
+                else {
+                    # flag was set to $false previously = process has been terminated
+                    WriteLog "Process id $p has disappeared, removing from cache"
+                    $script:XymonProcsCpu.Remove($p)
+                }
             }
         }
+        WriteLog ("DEBUG: cached process ids: " + (($script:XymonProcsCpu.Keys | sort-object) -join ', '))
     }
-    WriteLog ("DEBUG: cached process ids: " + (($script:XymonProcsCpu.Keys | sort-object) -join ', '))
     WriteLog "CleanXymonProcsCpu finished."
 }
 
@@ -2465,6 +2495,7 @@ function XymonServiceCheck
             # check for maintenance window
             $days = ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')
             $serviceexclds = @($script:clientlocalcfg_entries.keys | where { $_ -match '^noservicecheck' })
+            
             foreach ($maintservice in $serviceexclds)
             {
                 # parameter should be 'noservicecheck:<servicename>:<numeric day of week Sun=0>:<military start hour>:<duration in Hours>'
@@ -2517,33 +2548,33 @@ function XymonServiceCheck
                     }
                     # end of maintenance hold   
                 }
-                WriteLog ("Checking service {0}" -f $checkparams[1])
+            }
+            WriteLog ("Checking service {0}" -f $checkparams[1])
 
-                $winsrv = Get-Service -Name $checkparams[1]
-                if ($winsrv.Status -eq 'Stopped')
+            $winsrv = Get-Service -Name $checkparams[1]
+            if ($winsrv.Status -eq 'Stopped')
+            {
+                writeLog ("!! Service {0} is stopped" -f $checkparams[1])
+                if ($script:ServiceChecks.ContainsKey($checkparams[1]))
                 {
-                    writeLog ("!! Service {0} is stopped" -f $checkparams[1])
-                    if ($script:ServiceChecks.ContainsKey($checkparams[1]))
+                    $restarttime = $script:ServiceChecks[$checkparams[1]].AddSeconds($duration)
+                    writeLog "Seen this service before; restart time is $restarttime"
+                    if ($restarttime -lt (get-date))
                     {
-                        $restarttime = $script:ServiceChecks[$checkparams[1]].AddSeconds($duration)
-                        writeLog "Seen this service before; restart time is $restarttime"
-                        if ($restarttime -lt (get-date))
-                        {
-                            writeLog (" -> Starting service {0}" -f $checkparams[1])
-                            $winsrv.Start()
-                        }
-                    }
-                    else
-                    {
-                        writeLog "Not seen this service before, setting restart time -1 hour"
-                        $script:ServiceChecks[$checkparams[1]] = (get-date).AddHours(-1)
+                        writeLog (" -> Starting service {0}" -f $checkparams[1])
+                        $winsrv.Start()
                     }
                 }
-                elseif ('StartPending', 'Running' -contains $winsrv.Status)
+                else
                 {
-                    writeLog "  -Service is running, updating last seen time"
-                    $script:ServiceChecks[$checkparams[1]] = get-date
+                    writeLog "Not seen this service before, setting restart time -1 hour"
+                    $script:ServiceChecks[$checkparams[1]] = (get-date).AddHours(-1)
                 }
+            }
+            elseif ('StartPending', 'Running' -contains $winsrv.Status)
+            {
+                writeLog "  -Service is running, updating last seen time"
+                $script:ServiceChecks[$checkparams[1]] = get-date
             }
         }
     }
@@ -2980,6 +3011,19 @@ function XymonSendViaHttp($msg)
         WriteLog "  Using username $($script:XymonSettings.serverHttpUsername)"
     }
 
+    if ($url -match '^https://')
+    {
+        try
+        {
+            [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+        }
+        catch
+        {
+            WriteLog "Error setting TLS options (old version of .NET?): $_"
+            return $false
+        }
+    }
+
     # no Invoke-RestMethod before Powershell 3.0
     $request = [System.Net.HttpWebRequest]::Create($url)
     $request.Method = 'POST'
@@ -3032,21 +3076,25 @@ function XymonSend($msg, $servers, $filePath)
     }
     else
     {
-        if ($script:XymonSettings.XymonAcceptUTF8 -eq 1) 
+        switch ($script:XymonSettings.XymonAcceptUTF8) 
         {
-            WriteLog 'Using UTF8 encoding'
-            $MessageEncoder = New-Object System.Text.UTF8Encoding
+            1 {
+                WriteLog 'Using UTF8 encoding'
+                $MessageEncoder = New-Object System.Text.UTF8Encoding
+            }
+            2 {
+                WriteLog 'Using "pure" ASCII encoding with remove diacritics etc'
+                $MessageEncoder = New-Object System.Text.ASCIIEncoding
+                # remove diacritics
+                $msg = Remove-Diacritics -String $msg
+                # convert non-break spaces to normal spaces
+                $msg = $msg.Replace([char]0x00a0,' ')
+            }
+            default { 
+                WriteLog 'Using "original" ASCII encoding' 
+                $MessageEncoder = New-Object System.Text.ASCIIEncoding
+            }
         }
-        else 
-        {
-            WriteLog 'Using ASCII encoding'
-            $MessageEncoder = New-Object System.Text.ASCIIEncoding
-            # remove diacritics
-            $msg = Remove-Diacritics -String $msg
-            # convert non-break spaces to normal spaces
-            $msg = $msg.Replace([char]0x00a0,' ')
-        }
-
         foreach ($srv in $servers) 
         {
             $srvparams = $srv.Split(":")
@@ -3172,21 +3220,25 @@ function XymonClientConfig($cfglines)
 
     # overwrite local cached config with this version if 
     # remote config is enabled
+    $configmode = ''
     if ($script:XymonSettings.clientremotecfgexec -ne 0)
     {
         WriteLog "Using new remote config, saving locally"
         $clientlocalcfg >$script:XymonSettings.clientconfigfile
+        $configmode = 'remote'
     }
     else
     {
         WriteLog "Using local config only (if one exists), clientremotecfgexec = 0"
+        $configmode = 'localonly'
     }
 
     # Parse the config - always uses the local file (which may contain
     # config from remote)
     if (test-path -PathType Leaf $script:XymonSettings.clientconfigfile) 
     {
-        $script:clientlocalcfg_entries = @{}
+        # make sure the config always contains something
+        $script:clientlocalcfg_entries = @{ '_configmode_' = $configmode }
         $lines = get-content $script:XymonSettings.clientconfigfile
         $currentsection = ''
         $eventlogswantedSeen = 0
@@ -3387,6 +3439,7 @@ function ExecuteSelfUpdate([string]$newversion)
     exit
 }
 
+# XymonDownloadFromFile used when a file path is used instead of a URL
 function XymonDownloadFromFile([string]$downloadPath, [string]$destinationFilePath)
 {
     WriteLog "XymonDownloadFromFile - Downloading $downloadPath to $destinationFilePath"
@@ -3422,7 +3475,15 @@ function XymonDownloadFromURL([string]$downloadURL, [string]$destinationFilePath
         [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
         if ($downloadURL -match '^https://')
         {
-            [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+            try
+            {
+                [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+            }
+            catch
+            {
+                WriteLog "Error setting TLS options (old version of .NET?): $_"
+                return $false
+            }
         }
         $client.DownloadFile($downloadURL, $destinationFilePath)
     }
@@ -3514,6 +3575,7 @@ function XymonCheckUpdate
             }
             else
             {
+                # not http, not bb - maybe a file path?
                 $updateSource = Join-Path $updatePath $updateFile
                 $result = XymonDownloadFromFile $updateSource $destination
             }
@@ -3589,6 +3651,7 @@ function DownloadAndVerify([string] $URI, [string] $name, [string] $path, `
     }
     else
     {
+        # not http, not bb - maybe a file path?
         $result = XymonDownloadFromFile $URI $destination
     }
 
@@ -3818,7 +3881,7 @@ function XymonExecuteExternals([boolean] $isSlowscan)
 
 function WriteLog([string]$message)
 {
-    $datestamp = get-date -uformat '%Y-%m-%d %H:%M:%S'
+    $datestamp = get-date -format 'yyyy-MM-dd HH:mm:ss.fff'
     add-content -Path $script:XymonSettings.clientlogfile -Value "$datestamp  $message"
     Write-Host "$datestamp  $message"
 }
@@ -4082,12 +4145,19 @@ while ($running -eq $true) {
         $XymonWMIProductCache = XymonWMIProduct
         WriteLog "Executing XymonIISSites"
         $XymonIISSitesCache = XymonIISSites
-        $script:diskpartData = XymonDiskPart
+        if ($script:XymonSettings.EnableDiskPart -eq 1)
+        {
+            $script:diskpartData = XymonDiskPart
+        }
+        else
+        {
+            $script:diskpartData = ''
+        }
 
         WriteLog "Slow scan tasks completed."
     }
 
-    XymonCollectInfo
+    XymonCollectInfo $slowscan
     
     WriteLog "Performing main and optional tests and building output..."
     $clout = "client $($clientname).$($script:XymonSettings.clientsoftware) $($script:XymonSettings.clientclass) XymonPS" | 
