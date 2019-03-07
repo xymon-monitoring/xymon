@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = '2.37'
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2019-02-12 zak.beck@accenture.com"
+$Version = '2.41'
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2019-03-07 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -1634,16 +1634,19 @@ function XymonMsgs
         }
     }
 
+    $script:EventLogs = Get-WinEvent -ListLog @($wantedEventLogs.Keys)
+    "[msgs:EventlogSummary]"
+    $script:EventLogs | Format-Table -AutoSize
 
     WriteLog "Event Log processing - max payload: $maxpayloadlength"
 
-    foreach ($l in ($script:EventLogs | select -ExpandProperty Log))
+    foreach ($l in ($script:EventLogs | select -ExpandProperty LogName))
     {
         $wantedEventLogEntry = ContainsLike -ArrayofLikes $wantedEventLogs.Keys -Compare $l
         if ($wantedEventLogEntry -ne $null)
         {
             WriteLog "Event log $l adding to payload"
-            $payload += "[msgs:eventlog_$l]" + [environment]::newline
+            $payload += [environment]::newline + "[msgs:eventlog_$l]" + [environment]::newline
 
             # only scan the current log if there is space in the payload
             if ($payload.Length -lt $maxpayloadlength)
@@ -1882,33 +1885,41 @@ function XymonLogCheckFile([string]$file,$sizemax=0, $positions=6)
 {
     WriteLog "Executing XymonLogCheckFile"
     WriteLog "File: $file"
-    $f = [system.io.file]::Open($file,"Open","Read","ReadWrite")
-    $s = get-item $file
-    $nowpos = $s.length
-    $savepos = 0
-    if($script:logfilepos.$($file) -ne $null) { $savepos = $script:logfilepos.$($file)[0] }
-    if($nowpos -lt $savepos) {$savepos = 0} # log file rolled over??
-    #"Save: {0}  Len: {1} Diff: {2} Max: {3} Write: {4}" -f $savepos,$nowpos, ($nowpos-$savepos),$sizemax,$s.LastWriteTime
-    if($nowpos -gt $savepos) { # must be some more content to check
-        $s = new-object system.io.StreamReader($f,$true)
-        $dummy = $s.readline()
-        $enc = $s.currentEncoding
-        $charsize = 1
-        if($enc.EncodingName -eq "Unicode") { $charsize = 2 }
-        if($nowpos-$savepos -gt $charsize*$sizemax) {$savepos = $nowpos-$charsize*$sizemax}
-        $seek = $f.Seek($savepos,0)
-        $t = new-object system.io.StreamReader($f,$enc)
-        $buf = $t.readtoend()
-        if($buf -ne $null) { $buf }
-        #"Save2: {0}  Pos: {1} Blen: {2} Len: {3} Enc($charsize): {4}" -f $savepos,$f.Position,$buf.length,$nowpos,$enc.EncodingName
+    if (Test-Path $file)
+    {
+        $f = [system.io.file]::Open($file,"Open","Read","ReadWrite")
+        $s = get-item $file
+        $nowpos = $s.length
+        $savepos = 0
+        if($script:logfilepos.$($file) -ne $null) { $savepos = $script:logfilepos.$($file)[0] }
+        if($nowpos -lt $savepos) {$savepos = 0} # log file rolled over??
+        #"Save: {0}  Len: {1} Diff: {2} Max: {3} Write: {4}" -f $savepos,$nowpos, ($nowpos-$savepos),$sizemax,$s.LastWriteTime
+        if($nowpos -gt $savepos) { # must be some more content to check
+            $s = new-object system.io.StreamReader($f,$true)
+            $dummy = $s.readline()
+            $enc = $s.currentEncoding
+            $charsize = 1
+            if($enc.EncodingName -eq "Unicode") { $charsize = 2 }
+            if($nowpos-$savepos -gt $charsize*$sizemax) {$savepos = $nowpos-$charsize*$sizemax}
+            $seek = $f.Seek($savepos,0)
+            $t = new-object system.io.StreamReader($f,$enc)
+            $buf = $t.readtoend()
+            if($buf -ne $null) { $buf }
+            #"Save2: {0}  Pos: {1} Blen: {2} Len: {3} Enc($charsize): {4}" -f $savepos,$f.Position,$buf.length,$nowpos,$enc.EncodingName
+        }
+        if($script:logfilepos.$($file) -ne $null) {
+            $script:logfilepos.$($file) = $script:logfilepos.$($file)[1..$positions]
+        } else {
+            $script:logfilepos.$($file) = @(0) * $positions
+        }
+        $script:logfilepos.$($file) += $nowpos # save for next loop
+        WriteLog ("File saved positions: " + ($script:logfilepos.$($file) -join ','))
     }
-    if($script:logfilepos.$($file) -ne $null) {
-        $script:logfilepos.$($file) = $script:logfilepos.$($file)[1..$positions]
-    } else {
-        $script:logfilepos.$($file) = @(0) * $positions
+    else
+    {
+        WriteLog "Cannot open / resolve $file"
+        "ERROR: Cannot open / resolve $file" 
     }
-    $script:logfilepos.$($file) += $nowpos # save for next loop
-    WriteLog ("File saved positions: " + ($script:logfilepos.$($file) -join ','))
     WriteLog "XymonLogCheckFile finished"
 }
 
@@ -2454,17 +2465,6 @@ function XymonDiskPart
     }
 
     WriteLog 'XymonDiskPart finished'
-}
-function XymonEventLogs
-{
-    if ($script:XymonSettings.reportevt -eq 0) {return}
-
-    "[EventlogSummary]"
-    $script:EventLogs = Get-EventLog -List 
-    $script:EventLogs | Format-Table -AutoSize
-
-    "[msgs:EventlogSummary]"
-    $script:EventLogs | Format-Table -AutoSize
 }
 
 function XymonServiceCheck
@@ -3261,6 +3261,7 @@ function XymonClientConfig($cfglines)
                 -or $l -match '^xymonlogsend' `
                 -or $l -match '^slimmode' `
                 -or $l -match '^noservicecheck:' `
+                -or $l -match '^enablediskpart' `
                 )
             {
                 WriteLog "Found a command: $l"
@@ -3344,7 +3345,6 @@ function XymonClientSections([boolean] $isSlowScan)
     XymonCpu
     XymonDisk
     XymonMemory
-    XymonEventLogs
     XymonMsgs
     XymonProcs
 
@@ -3435,7 +3435,9 @@ function ExecuteSelfUpdate([string]$newversion)
 
     copy-item "$newversion" "$oldversion" -force
     remove-item "$newversion"
-    WriteLog "Restarting service..."
+
+    WriteLog "Sending final log and restarting service..."
+    XymonLogSend
     exit
 }
 
@@ -4025,10 +4027,41 @@ function RepeatTests([string] $content)
 
 function XymonLogSend()
 {
-    if (@($script:clientlocalcfg_entries.Keys -eq 'xymonlogsend').Length -eq 0)
+    # special handling for xymonlog
+    $markslowscan = 'green'
+    if (@($script:clientlocalcfg_entries.Keys -like 'xymonlogsend*').Length -gt 1)
+    {
+        WriteLog "XymonLogSend: more than one xymonlogsend directive in config!"
+        $markslowscan = 'yellow'
+    }
+    elseif (@($script:clientlocalcfg_entries.Keys -like 'xymonlogsend*').Length -eq 0)
     {
         WriteLog 'XymonLogSend: nothing to do!'
         return
+    }
+    else
+    {
+        $XymonLogSendConfig = @($script:clientlocalcfg_entries.Keys | where { $_ -match '^xymonlogsend:(.*)$' })
+
+        # parameter should be 'xymonlogsend:<slow colour>:<restart colour>'
+        # <restart colour> not mandatory
+        $checkparams = $XymonLogSendConfig -split ':'
+        # should maybe check these are valid xymon colours red, yellow, clear
+
+        if ($($script:collectionnumber) -eq 1 )
+        {
+            if ($checkparams.length -ge 3)
+            {
+                $markslowscan = $checkparams[2]
+            }
+        }
+        elseif ($($script:loopcount) -eq 0)
+        {
+            if ($checkparams.length -ge 2)
+            {
+                $markslowscan = $checkparams[1]
+            }
+        }
     }
 
     WriteLog 'XymonLogSend - sending log'
@@ -4040,7 +4073,7 @@ function XymonLogSend()
     $output += $log
     $output += '</pre>'
 
-    $outputXymon = ('status {0}.{1} {2} {3}' -f $script:clientname, 'xymonlog', 'green', $output)
+    $outputXymon = ('status {0}.{1} {2} {3}' -f $script:clientname, 'xymonlog', $markslowscan, $output)
     XymonSend $outputXymon $script:XymonSettings.serversList
 
     WriteLog 'XymonLogSend - finished'
@@ -4145,7 +4178,8 @@ while ($running -eq $true) {
         $XymonWMIProductCache = XymonWMIProduct
         WriteLog "Executing XymonIISSites"
         $XymonIISSitesCache = XymonIISSites
-        if ($script:XymonSettings.EnableDiskPart -eq 1)
+        if ($script:XymonSettings.EnableDiskPart -eq 1 `
+            -or $script:clientlocalcfg_entries.ContainsKey('enablediskpart'))
         {
             $script:diskpartData = XymonDiskPart
         }
