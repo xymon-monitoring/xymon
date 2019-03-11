@@ -18,6 +18,7 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
