@@ -9,6 +9,20 @@
 </TR>
 </TABLE>
 
+<!-- Don't rely just on HTML to set the cookies -->
+<!-- http://lists.xymon.com/pipermail/xymon/2018-June/045538.html -->
+<script type="text/javascript">
+    var metas = document.getElementsByTagName('meta');
+
+    for (var i=0; i<metas.length; i++) {
+        var type = metas[i].getAttribute("HTTP-EQUIV");
+        if (type == "Set-Cookie") {
+            var prop = metas[i].getAttribute("CONTENT");
+            document.cookie = prop;
+        }
+    }
+</script>
+
 &XYMONBODYFOOTER
 
 </BODY>

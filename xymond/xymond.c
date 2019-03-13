@@ -41,6 +41,7 @@ static char rcsid[] = "$Id$";
 #include <sys/resource.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
