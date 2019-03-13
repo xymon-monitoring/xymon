@@ -101,12 +101,8 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
 	logbuf = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
-	if (xymondresult != XYMONSEND_OK) {
-		errprintf("WML: Error retrieving status for '%s.%s': %s\n", host->hostname, entry->column->name, strxymonsendresult(xymondresult));
-		return;
-	}
-	if ((logbuf == NULL) || (strlen(logbuf) == 0)) {
-		dbgprintf("WML: Status for '%s.%s' not available\n", host->hostname, entry->column->name);
+	if ((xymondresult != XYMONSEND_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
+		errprintf("WML: Status not available\n");
 		return;
 	}
 
