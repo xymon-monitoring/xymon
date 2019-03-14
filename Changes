@@ -1,3 +1,15 @@
+Changes from 4.3.28 -> 4.3.29 ()
+===========================================
+
+* rev 
+
+* Deal with Set-Cookie deprecation on normal pages (Thanks, Erik Schminke)
+* Support glibc->tirpc migration on newer distributions
+* Fix certain flags not being set on GCC 8/9
+* Fix wrong doc for --merge-clientlocal option (Thanks, Thomas Eckert)
+* Fix CSP errors on trends pages (Thanks, John Thurston)
+
+
 Changes from 4.3.27 -> 4.3.28 (17 Jan 2017)
 ===========================================
 
