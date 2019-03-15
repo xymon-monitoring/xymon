@@ -58,7 +58,8 @@ ifndef INSTALLSTATICWWWDIR
 INSTALLSTATICWWWDIR = $(XYMONHOME)/static
 endif
 
-ARESVER = 1.12.0
+MINARESVER = 1.5.1
+ARESVER = 1.15.0
 FPINGVER = 3.0
 
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
