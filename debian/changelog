@@ -7,6 +7,7 @@ xymon (4.3.29) stable; urgency=medium
    * Fix certain flags not being set on GCC 8/9
    * Fix wrong doc for --merge-clientlocal option (Thanks, Thomas Eckert)
    * Fix CSP errors on trends pages (Thanks, John Thurston)
+   * Accept minimum libcares version >= 1.5.1; update bundled to 1.15.0
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>
 
