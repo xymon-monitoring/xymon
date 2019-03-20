@@ -265,8 +265,8 @@ static char *netstat_freebsd_markers[] = {
 	NULL
 };
 
-/* This one matches all Linux systems */
-static char *netstat_linux_markers[] = {
+/* This one matches most older Linux systems using traditional netstat */
+static char *netstat_linux_legacy_markers[] = {
 	"packets received",
 	"packets sent",
 	"packet receive errors",
@@ -283,6 +283,27 @@ static char *netstat_linux_markers[] = {
 	"segments received",
 	"",
 	"segments retransmited",
+	NULL
+};
+
+/* This one matches Linux systems using net-tools from approx 2016 onwards */
+static char *netstat_linux_markers[] = {
+	"packets received",
+	"packets sent",
+	"packet receive errors",
+	"active connection openings",
+	"passive connection openings",
+	"failed connection attempts",
+	"connection resets received",
+	"connections established",
+	"",
+	"",
+	"",
+	"",
+	"segments sent out",
+	"segments received",
+	"",
+	"segments retransmitted",
 	NULL
 };
 
@@ -506,7 +527,13 @@ int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepa
 	  case OS_ZOS:
 		/* These are of the form "<value> <marker" */
 		datapart = strstr(datapart, "\nTcp:");	/* Skip to the start of "Tcp" (udp comes after) */
-		if (datapart) havedata = do_valbeforemarker(netstat_linux_markers, datapart, outp);
+
+		/* The net-tools project changed formats recently, but not in enough */
+		/* of a way to warrant switching to regex; we can branch on a former typo. */
+		if (datapart) {
+			if (strstr(datapart, "segments sent out")) havedata = do_valbeforemarker(netstat_linux_markers, datapart, outp);
+			else havedata = do_valbeforemarker(netstat_linux_legacy_markers, datapart, outp);
+		}
 		break;
 
 	  case OS_SNMP:
