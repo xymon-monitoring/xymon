@@ -13,8 +13,8 @@ WantedBy=multi-user.target
 
 
 [Service]
-EnvironmentFile=/etc/default/xymonlaunch
-EnvironmentFile=/etc/sysconfig/xymonlaunch
+EnvironmentFile=-/etc/default/xymonlaunch
+EnvironmentFile=-/etc/sysconfig/xymonlaunch
 User=xymon
 # We wrap in xymoncmd to eliminate the need for the bulk of the old init script
 ExecStart=/usr/bin/xymoncmd --no-env /usr/sbin/xymonlaunch --no-daemon $XYMONLAUNCHOPTS
