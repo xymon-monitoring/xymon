@@ -1,6 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
 <HTML>
 <HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="&HTMLCONTENTTYPE">
 <META HTTP-EQUIV="Set-Cookie" CONTENT="pagepath=&XYMWEBPAGEPATH; path=/">
 <META HTTP-EQUIV="Set-Cookie" CONTENT="host=; path=/">
 <TITLE>Xymon Snapshot Report : &XYMWEBDATE</TITLE>
