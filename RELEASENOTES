@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.28   * * *
+           * * *   Release notes for Xymon 4.3.29   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -8,6 +8,25 @@ changes you should be aware of when upgrading.
 
 For a full list of changes and enhancements, please see the 
 Changes file.
+
+
+Changes for 4.3.29
+==================
+
+On Linux, a few additional tmpfs volumes are ignored by default
+on new (or unmodified) installs. This includes /run/user/<uid>,
+which is a transient, per-session tmpfs on some systems. To re-
+enable monitoring for this (if you are running services under
+a user with a login session), you may need to edit the analysis.cfg(5)
+file.
+
+After upgrade, these partitions will no longer be alerted on or
+tracked, and their associated RRD files may also be removed:
+
+ /run/user/<uid> (but NOT /run)
+ /dev (but NOT /dev/shm)
+ /sys/fs/cgroup
+ /lib/init/rw
 
 
 Changes for 4.3.28
