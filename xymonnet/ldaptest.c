@@ -408,7 +408,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	/* Check if this service is a NOPAGENET service. */
 	nopagename = (char *) malloc(strlen(svcname)+3);
 	sprintf(nopagename, ",%s,", svcname);
-	nopage = (strstr(nonetpage, svcname) != NULL);
+	nopage = (strstr(nonetpage, nopagename) != NULL);
 	xfree(nopagename);
 
 	dbgprintf("Calc ldap color host %s : ", host->hostname);

@@ -11,6 +11,7 @@ xymon (4.3.29) stable; urgency=medium
    * Fix RRD parsing for recent netstat (net-tools) on Linux
    * Ensure Content-Type always set in HTML headers (Thanks, Christoph Berg)
    * Ignore additional common tmpfs partitions on recent Linux
+   * Fix NONETPAGE parsing (Thanks, John Horne)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>
 

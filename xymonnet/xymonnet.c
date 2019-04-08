@@ -1620,7 +1620,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		/* Check if this service is a NOPAGENET service. */
 		nopagename = (char *) malloc(strlen(svcname)+3);
 		sprintf(nopagename, ",%s,", svcname);
-		if (strstr(nonetpage, svcname) != NULL) color = COL_YELLOW;
+		if (strstr(nonetpage, nopagename) != NULL) color = COL_YELLOW;
 		xfree(nopagename);
 	}
 

@@ -128,7 +128,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	/* Check if this service is a NOPAGENET service. */
 	nopagename = (char *) malloc(strlen(svcname)+3);
 	sprintf(nopagename, ",%s,", svcname);
-	nopage = (strstr(nonetpage, svcname) != NULL);
+	nopage = (strstr(nonetpage, nopagename) != NULL);
 	xfree(nopagename);
 
 	dbgprintf("Calc http color host %s : ", host->hostname);
@@ -429,7 +429,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 	/* Check if this service is a NOPAGENET service. */
 	nopagename = (char *) malloc(strlen(contenttestname)+3);
 	sprintf(nopagename, ",%s,", contenttestname);
-	nopage = (strstr(nonetpage, contenttestname) != NULL);
+	nopage = (strstr(nonetpage, nopagename) != NULL);
 	xfree(nopagename);
 
 	dbgprintf("Calc content color host %s : ", host->hostname);
