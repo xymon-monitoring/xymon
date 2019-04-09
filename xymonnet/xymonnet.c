@@ -1264,7 +1264,7 @@ int finish_ping_service(service_t *service)
 	char 		*p;
 	char		l[MAX_LINE_LEN];
 	char		pingip[MAX_LINE_LEN];
-	int		ip1, ip2, ip3, ip4;
+	char		*eoip, eoipchar;
 	int		pingstatus, failed = 0, i;
 	char		fn[PATH_MAX];
 
@@ -1337,29 +1337,31 @@ int finish_ping_service(service_t *service)
 			/* The test did run, and we have a result-file. Look at it. */
 			while (fgets(l, sizeof(l), logfd)) {
 				p = strchr(l, '\n'); if (p) *p = '\0';
-				if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
-
-					sprintf(pingip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-
-					/*
-					 * Need to loop through all testitems - there may be multiple entries for
-					 * the same IP-address.
-					 */
-					for (t=service->items; (t); t = t->next) {
-						if (strcmp(t->host->ip, pingip) == 0) {
-							if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
-							t->open = (strstr(l, "is alive") != NULL);
-							t->banner = dupstrbuffer(l);
-						}
-
-						if (t->host->extrapings) {
-							ipping_t *walk;
-							for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
-								if (strcmp(walk->ip, pingip) == 0) {
-									if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
-									walk->open = (strstr(l, "is alive") != NULL);
-									walk->banner = dupstrbuffer(l);
-								}
+				eoip = l + strcspn(l, " \t");
+				eoipchar = *eoip;
+				*eoip = '\0';
+				
+				if (conn_is_ip(l) == 0) continue;
+				sprintf(pingip, "%s", l);
+				*eoip = eoipchar;
+				
+				/*
+				 * Need to loop through all testitems - there may be multiple entries for
+				 * the same IP-address.
+				 */
+				for (t=service->items; (t); t = t->next) {
+					if (strcmp(t->host->ip, pingip) == 0) {
+						if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
+						t->open = (strstr(l, "is alive") != NULL);
+						t->banner = dupstrbuffer(l);
+					}
+					if (t->host->extrapings) {
+						ipping_t *walk;
+						for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
+							if (strcmp(walk->ip, pingip) == 0) {
+								if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
+								walk->open = (strstr(l, "is alive") != NULL);
+								walk->banner = dupstrbuffer(l);
 							}
 						}
 					}
