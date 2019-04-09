@@ -12,6 +12,7 @@ xymon (4.3.29) stable; urgency=medium
    * Ensure Content-Type always set in HTML headers (Thanks, Christoph Berg)
    * Ignore additional common tmpfs partitions on recent Linux
    * Fix NONETPAGE parsing (Thanks, John Horne)
+   * Increase hard max xymon message size from 10MB to 64MB to match 4.4-alpha
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>
 

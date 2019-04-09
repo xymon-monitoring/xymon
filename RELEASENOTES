@@ -29,6 +29,10 @@ tracked, and their associated RRD files may also be removed:
  /lib/init/rw
 
 
+The default hard limit for an incoming message has been raised from 
+10MB to 64MB
+
+
 Changes for 4.3.28
 ==================
 

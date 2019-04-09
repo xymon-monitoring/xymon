@@ -13,6 +13,7 @@ Changes from 4.3.28 -> 4.3.29 ()
 * Ensure Content-Type always set in HTML headers (Thanks, Christoph Berg)
 * Ignore additional common tmpfs partitions on recent Linux
 * Fix NONETPAGE parsing (Thanks, John Horne)
+* Increase hard max xymon message size from 10MB to 64MB to match 4.4-alpha
 
 
 Changes from 4.3.27 -> 4.3.28 (17 Jan 2017)
