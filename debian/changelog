@@ -13,6 +13,8 @@ xymon (4.3.29) stable; urgency=medium
    * Ignore additional common tmpfs partitions on recent Linux
    * Fix NONETPAGE parsing (Thanks, John Horne)
    * Increase hard max xymon message size from 10MB to 64MB to match 4.4-alpha
+   * Fix line-off-by-one error in logfetch retrieval when triggers are used
+     (Thanks, Toshimitsu FUJIWARA)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>
 

@@ -321,7 +321,7 @@ char *logdata(char *filename, logdef_t *logdef)
 
 		/* Mark where we left off */
 		bytesin += strlen(fillpos);
-		if (!curpos && (bytesin >= bytestocurrent)) {
+		if (!curpos && (bytesin > bytestocurrent)) {
 			char *t;
 
 			dbgprintf(" - Last position was %u, found curpos location at %u in current buffer.\n", logdef->lastpos[1], bytesin);
@@ -369,12 +369,12 @@ char *logdata(char *filename, logdef_t *logdef)
 			if (force_trigger) {
 				/* Oops. We actually wanted this line poked through */
 				/* At the moment, we're only entering this state when we've added 'CURRENT\n' to the existing line */
-				/* Since we're guaranteeing to downstream users that we're ignoring this, just truncate the line */
-				/* to the first newline. If we start using force_trigger for other purposes, we might have to change */
+				/* Since we're guaranteeing to downstream users that we're ignoring this, just skip the line */
+				/* until the first newline. If we start using force_trigger for other purposes, we might have to change */
 				/* the logic here. */
 				char *eoln;
 
-				eoln = strchr(fillpos, '\n'); if (eoln) *++eoln = '\0';	// still need the final newline
+				eoln = strchr(fillpos, '\n'); if (eoln && *(eoln + 1)) fillpos = eoln + 1;	// skip first line
 			}
 			else if (match) continue;
 		}
