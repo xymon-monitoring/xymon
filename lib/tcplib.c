@@ -1157,8 +1157,9 @@ void conn_process_active(fd_set *fdread, fd_set *fdwrite)
 	socklen_t connressize;
 	struct timespec tnow;
 	
+#ifdef DEBUG
 	conn_info(funcid, INFO_DEBUG, "Processing all active connections\n");
-
+#endif
 	conn_getntimer(&tnow);
 
 	for (walk = conns; (walk); walk = walk->next) {
@@ -1232,7 +1233,9 @@ void conn_process_listeners(fd_set *fdread)
 	tcpconn_t *walk;
 	int acceptcount = 0;
 
+#ifdef DEBUG
 	conn_info(funcid, INFO_DEBUG, "Processing all listen-sockets\n");
+#endif
 	for (walk = lsocks; (walk); walk = walk->next) {
 		if (FD_ISSET(walk->sock, fdread)) {
 			while (conn_accept(walk) && (++acceptcount < max_accepts)) ;
