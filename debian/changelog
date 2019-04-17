@@ -15,6 +15,7 @@ xymon (4.3.29) stable; urgency=medium
    * Increase hard max xymon message size from 10MB to 64MB to match 4.4-alpha
    * Fix line-off-by-one error in logfetch retrieval when triggers are used
      (Thanks, Toshimitsu FUJIWARA)
+   * Fixes to do_temperature parsing (Thanks, Michael Pins)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>
 

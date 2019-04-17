@@ -8,43 +8,49 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
+/* Sample input reports:
+
+
+Device				Temp	LowShutdown	LowWarning	HighWarning	HighShutdown
+----------------------------------------------------------------------------------------------------
+&green hard-disk1 hard-disk1 	 44	  0		  5		 55		 60
+&green CPU 0 Die             	 86	-10		  0		 95		100
+&green CPU 1 Die             	 80	-10		  0		 95		100
+&green CPU 0 Ambient         	 54	 -8		  0		 70		 75
+&green System Outtake Ambient	 53	-10		  0		 70		 75
+&green System Intake Ambient 	 33	-11		  0		 45		 70
+&green CPU 1 Ambient         	 42	 -9		  0		 70		 75
+----------------------------------------------------------------------------------------------------
+
+Device				Temp	Warning	Critical
+---------------------------------------------------------
+&green CPU0                  	 60	 63	 68
+&green CPU1                  	 58	 63	 68
+&clear MB0                   	 46		
+&clear MB1                   	 36		
+&green PDB                   	 40	 53	 58
+&clear SCSI                  	 33		
+---------------------------------------------------------
+
+Device				Temp	High	Crit
+-----------------------------------------------------
+&green Package id 0          	 42	 86	100
+&green Core 0                	 41	 86	100
+&green Core 1                	 42	 86	100
+&green temp1                 	 37		 98
+-----------------------------------------------------
+
+*/
+
 static char temperature_rcsid[] = "$Id$";
 
-int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
-{ 
+int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
+{
 	static char *temperature_params[] = { "DS:temperature:GAUGE:600:1:U",
 					      NULL };
-	static void *temperature_tpl      = NULL;
+	static void *temperature_tpl	  = NULL;
 
-	/* Sample input report:
-	Device             Temp(C)  Temp(F)
-	-----------------------------------
-	&green Motherboard#0      31       87
-	&green Motherboard#1      28       82
-	&green AMBIENT            25       77
-	&green CPU0               40      104
-	&green CPU1               40      104
-	&green CPU2               40      104
-	&green CPU3               40      104
-	&green Board 0            29       84
-	&green Board 1            35       95
-	&green Board 2            30       86
-	&green Board 3            37       98
-	&green Board 4            28       82
-	&green Board 6            28       82
-	&green Board CLK          27       80
-	&green MB                 24       75
-	&green IOB                19       66
-	&green DBP0               19       66
-	&green CPU 0 Die          79      174
-	&green CPU 0 Ambient      27       80
-	&green CPU 1 Die          73      163
-	&green CPU 1 Ambient      26       78
-	-----------------------------------
-	Status green: All devices look okay
-	*/
-
-	char *bol, *eol, *comment, *p;
+	char *bol, *eol, *p;
 	int tmpC;
 
 	if (temperature_tpl == NULL) temperature_tpl = setup_template(temperature_params);
@@ -56,14 +62,9 @@ int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pa
 		bol = p + 1;
 		eol = strchr(bol, '\n'); if (eol) *eol = '\0';
 
-		/* See if there's a comment in parenthesis */
-		comment = strchr(bol, '('); /* Begin comment */
-		p = strchr(bol, ')');       /* End comment */
-		if (comment && p && (comment < p)) *comment = '\0'; /* Cut off the comment */
-
-		if      (strncmp(bol, "&green", 6) == 0)  { bol += 6; gotone = 1; }
+		if	(strncmp(bol, "&green", 6) == 0)  { bol += 6; gotone = 1; }
 		else if (strncmp(bol, "&yellow", 7) == 0) { bol += 7; gotone = 1; }
-		else if (strncmp(bol, "&red", 4) == 0)    { bol += 4; gotone = 1; }
+		else if (strncmp(bol, "&red", 4) == 0)	  { bol += 4; gotone = 1; }
 		else if (strncmp(bol, "&clear", 6) == 0)  { bol += 6; gotone = 1; }
 
 		if (gotone) {
@@ -71,30 +72,17 @@ int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pa
 
 			bol += strspn(bol, " \t");
 
-			/* Strip off any leading bold and italic HTML tags */
-			if      (strncasecmp(bol, "<i><b>", 6) == 0)  { bol += 6; }
-			else if (strncasecmp(bol, "<i>", 3) == 0)  { bol += 3; }
-			else if (strncasecmp(bol, "<b><i>", 6) == 0)  { bol += 6; }
-			else if (strncasecmp(bol, "<b>", 3) == 0)  { bol += 3; } 
-			bol += strspn(bol, " \t");
-
-			p = bol + strlen(bol) - 1;
-			while ((p > bol) && isspace((int)*p)) p--;
-			while ((p > bol) && isdigit((int)*p)) p--;
-			// tmpF = atoi(p);
-			while ((p > bol) && isspace((int)*p)) p--;
-			while ((p > bol) && isdigit((int)*p)) p--;
+			p = strstr(bol, "\t");
 			tmpC = atoi(p);
 			while ((p > bol) && isspace((int)*p)) p--;
 
-			savech = *(p+1); *(p+1) = '\0'; 
+			savech = *(p+1); *(p+1) = '\0';
 			setupfn2("%s.%s.rrd", "temperature", bol); *(p+1) = savech;
 
 			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, tmpC);
 			create_and_update_rrd(hostname, testname, classname, pagepaths, temperature_params, temperature_tpl);
 		}
 
-		if (comment) *comment = '(';
 		if (eol) *eol = '\n';
 	}
 
