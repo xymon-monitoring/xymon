@@ -619,16 +619,16 @@ echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
 
 echo "" >>Makefile
-if test -r build/Makefile.`uname -s`
+if test -r build/Makefile.`uname -s | tr '/' '_'`
 then
-	echo "include build/Makefile.`uname -s`" >>Makefile
+	echo "include build/Makefile.`uname -s | tr '/' '_'`" >>Makefile
 	echo ""
-	echo "Using `uname -s` Makefile settings"
+	echo "Using `uname -s | tr '/' '_'` Makefile settings"
 	echo ""
 else
 	echo "include build/Makefile.generic" >>Makefile
 	echo ""
-	echo "Using GENERIC Makefile settings"
+	echo "Using GENERIC Makefile settings (uname -s is `uname -s`)"
 	echo ""
 	echo "If this fails, change the compile settings in Makefile"
 	echo ""
