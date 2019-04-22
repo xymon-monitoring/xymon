@@ -17,6 +17,7 @@ Changes from 4.3.28 -> 4.3.29 ()
 * Fix line-off-by-one error in logfetch retrieval when triggers are used
   (Thanks, Toshimitsu FUJIWARA)
 * Fixes to do_temperature parsing (Thanks, Michael Pins)
+* Add support for GNU/kFreeBSD
 
 
 Changes from 4.3.27 -> 4.3.28 (17 Jan 2017)

@@ -16,6 +16,7 @@ xymon (4.3.29) stable; urgency=medium
    * Fix line-off-by-one error in logfetch retrieval when triggers are used
      (Thanks, Toshimitsu FUJIWARA)
    * Fixes to do_temperature parsing (Thanks, Michael Pins)
+   * Add support for GNU/kFreeBSD
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>
 
