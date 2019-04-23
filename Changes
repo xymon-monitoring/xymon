@@ -18,6 +18,7 @@ Changes from 4.3.28 -> 4.3.29 ()
   (Thanks, Toshimitsu FUJIWARA)
 * Fixes to do_temperature parsing (Thanks, Michael Pins)
 * Add support for GNU/kFreeBSD
+* Don't require apache authz_groupfile module by default when not needed
 
 
 Changes from 4.3.27 -> 4.3.28 (17 Jan 2017)

@@ -32,6 +32,10 @@ tracked, and their associated RRD files may also be removed:
 The default hard limit for an incoming message has been raised from 
 10MB to 64MB
 
+The secure apache config snippet no longer requires a xymongroups file
+to be present (and module loaded), since it's not used by default. This
+will not affect existing installs.
+
 
 Changes for 4.3.28
 ==================

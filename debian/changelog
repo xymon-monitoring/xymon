@@ -17,6 +17,7 @@ xymon (4.3.29) stable; urgency=medium
      (Thanks, Toshimitsu FUJIWARA)
    * Fixes to do_temperature parsing (Thanks, Michael Pins)
    * Add support for GNU/kFreeBSD
+   * Don't require apache authz_groupfile module by default when not needed
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>
 
