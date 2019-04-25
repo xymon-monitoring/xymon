@@ -1,0 +1,32 @@
+# Xymon compile-time settings for GNU (Hurd) systems
+
+OSDEF = -DLINUX
+
+# NETLIBS: None needed
+NETLIBS = 
+
+# Compile flags for normal build
+CC = gcc
+CFLAGS += -g -O2 -Wall -Wno-unused -D_REENTRANT $(LFSDEF) $(OSDEF)
+
+ifndef PKGBUILD
+RPATH = -Wl,--rpath,
+endif
+
+# Compile flags for debugging
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
+
+# For profiling
+# CFLAGS = -g -pg -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
+# Note: Do 'export GMON_OUT_PREFIX=/var/tmp/FILENAME' to save profiling output in /var/tmp
+# Use gprof to analyse
+
+# By default, Xymon uses a static library for common code.
+# To save some diskspace and run-time memory, you can use a
+# shared library by un-commenting this.
+# XYMONLIBRARY=libxymon.so
+
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mail"
+
