@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
 
 #ifndef PATH_MAX
 	res = pathconf("/", _PC_PATH_MAX);
+	if (res == -1) res = 4096;
 	printf("#define PATH_MAX %ld\n", res);
 #endif
 
