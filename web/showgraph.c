@@ -1154,15 +1154,16 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	if (!gdef->title) gdef->title = strdup("");
 	if (strncmp(gdef->title, "exec:", 5) == 0) {
 		char *pcmd;
-		int i, pcmdlen = 0;
+		int i, pcmdlen = 7;
 		FILE *pfd;
 		char *p;
+		char *param_str = "%s \"%s\" %s \"%s\"";
 
-		pcmdlen = strlen(gdef->title+5) + strlen(displayname) + strlen(service) + strlen(glegend) + 5;
+		pcmdlen += (strlen(gdef->title+5) + strlen(displayname) + strlen(service) + strlen(glegend));
 		for (i=0; (i<rrddbcount); i++) pcmdlen += (strlen(rrddbs[i].rrdfn) + 3);
 
 		p = pcmd = (char *)malloc(pcmdlen+1);
-		p += sprintf(p, "%s %s %s \"%s\"", gdef->title+5, displayname, service, glegend);
+		p += sprintf(p, param_str, gdef->title+5, displayname, service, glegend);
 		for (i=0; (i<rrddbcount); i++) {
 			if ((firstidx == -1) || ((i >= firstidx) && (i <= lastidx))) {
 				p += sprintf(p, " \"%s\"", rrddbs[i].rrdfn);

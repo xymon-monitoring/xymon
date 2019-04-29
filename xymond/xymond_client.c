@@ -40,6 +40,7 @@ typedef struct sectlist_t {
 } sectlist_t;
 static sectlist_t *defsecthead = NULL;
 
+int cpulistincpu = 1;
 int pslistinprocs = 1;
 int portlistinports = 1;
 int svclistinsvcs = 1;
@@ -530,7 +531,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		addtostrstatus(cpumsg);
 		addtostatus("\n");
 	}
-	if (topstr) {
+	if (topstr && cpulistincpu == 1) {
 		addtostatus("\n");
 		addtostatus(topstr);
 	}
@@ -2142,6 +2143,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-port-listing") == 0) {
 			portlistinports = 0;
+		}
+		else if (strcmp(argv[argi], "--no-cpu-listing") == 0) {
+			cpulistincpu = 0;
 		}
 		else if (strcmp(argv[argi], "--no-clear-msgs") == 0) {
 			sendclearmsgs = 0;
