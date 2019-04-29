@@ -36,6 +36,9 @@ The secure apache config snippet no longer requires a xymongroups file
 to be present (and module loaded), since it's not used by default. This
 will not affect existing installs.
 
+A --no-cpu-listing option has been added to xymond_client to suppress the 
+'top' output in cpu test status messages.
+
 
 Changes for 4.3.28
 ==================

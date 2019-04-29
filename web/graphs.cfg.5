@@ -107,7 +107,8 @@ script to determine the graph title. Like this:
 The \fB/usr/local/bin/graphtitle\fR command is then called with 
 the hostname, the graphtype, the period string, and all of the 
 RRD files used as parameters. The script must generate one line of output,
-which is then used as the title of the graph.
+which is then used as the title of the graph. Each of the RRD pathname
+parameters will be enclosed in double quotes.
 
 .SH ENVIRONMENT
 .BR TEST2RRD

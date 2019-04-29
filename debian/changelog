@@ -18,6 +18,9 @@ xymon (4.3.29) stable; urgency=medium
    * Fixes to do_temperature parsing (Thanks, Michael Pins)
    * Add support for GNU Hurd and GNU/kFreeBSD
    * Don't require apache authz_groupfile module by default when not needed
+   * Add --no-cpu-listing option to xymond_client to block 'top' output in         
+     cpu test (Thanks, John Horne)
+   * Double-quote the display name of host titles handed to RRD
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>
 
