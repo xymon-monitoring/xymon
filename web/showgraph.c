@@ -137,7 +137,7 @@ void request_cacheflush(char *hostname)
 
 	dir = opendir(xgetenv("XYMONTMP"));
 	if (!dir) {
-		errprintf("Cannot acces $XYMONTMP directory: %s\n", strerror(errno));
+		errprintf("Cannot access $XYMONTMP directory: %s\n", strerror(errno));
 		return;
 	}
 
