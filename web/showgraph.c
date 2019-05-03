@@ -182,7 +182,7 @@ void request_cacheflush(char *hostname)
 
 	dir = opendir(xgetenv("XYMONRUNDIR"));
 	if (!dir) {
-		errprintf("Cannot acces $XYMONRUNDIR directory: %s\n", strerror(errno));
+		errprintf("Cannot access $XYMONRUNDIR directory: %s\n", strerror(errno));
 		return;
 	}
 

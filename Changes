@@ -2352,7 +2352,7 @@ New features:
   groups, to permanently enable or disable a status to
   appear on their monitoring console when a system goes
   into or is taken out of production, and also provides
-  direct acces to special instructions for the monitoring
+  direct access to special instructions for the monitoring
   staff.
   To accomodate all of these new configuration items, a
   separate "Critical Systems Configuration" file is
