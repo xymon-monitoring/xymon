@@ -43,6 +43,10 @@ The conversation used in SMTP checks has been adjusted to perform a proper
 "EHLO" greeting against servers, using the host string 'xymonnet'. If the 
 string needs to be adjusted, however, see protocols.cfg(5)
 
+"Actual" memory usage (as a percentage) may be >100% on some platforms 
+in certain situations. This alone will not be tagged as "invalid" data and
+should be graphed in RRD.
+
 
 Changes for 4.3.28
 ==================

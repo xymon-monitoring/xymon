@@ -45,7 +45,7 @@ void do_memory_rrd_update(time_t tstamp, char *hostname, char *testname, char *c
 	snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, swapval);
 	create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
-	if ((actval >= 0) && (actval <= 100)) {
+	if (actval >= 0) {
 		setupfn2("%s.%s.rrd", "memory", "actual");
 		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, actval);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
