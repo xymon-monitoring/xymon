@@ -22,6 +22,7 @@ xymon (4.3.29) stable; urgency=medium
      cpu test (Thanks, John Horne)
    * Double-quote the display name of host titles handed to RRD
    * Ensure NTP checks not hung for unreachable hosts (Thanks, Tom Schmidt)
+   * Standardize xymonnet SMTP/s protocol conversation (Thanks, Tom Schmidt)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>
 

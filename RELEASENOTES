@@ -39,6 +39,10 @@ will not affect existing installs.
 A --no-cpu-listing option has been added to xymond_client to suppress the 
 'top' output in cpu test status messages.
 
+The conversation used in SMTP checks has been adjusted to perform a proper
+"EHLO" greeting against servers, using the host string 'xymonnet'. If the 
+string needs to be adjusted, however, see protocols.cfg(5)
+
 
 Changes for 4.3.28
 ==================
