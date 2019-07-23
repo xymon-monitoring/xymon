@@ -25,6 +25,7 @@ xymon (4.3.29) stable; urgency=medium
    * Standardize xymonnet SMTP/s protocol conversation (Thanks, Tom Schmidt)
    * AIX: Report Actual Memory and Phys/Entitled CPU capacity (Thanks, Stef Coene)
    * snmp: Fix parsing error with SNMPv3 config parsing (Thanks, Jeremy Laidman)
+   * RRD: Fix parsing error with DS files containing commas - http* only (Thanks, John Horne)
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Tue, 23 Jul 2019 08:30:00 -0800
 

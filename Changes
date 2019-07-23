@@ -26,6 +26,7 @@ Changes from 4.3.28 -> 4.3.29 (23 Jul 2019)
 * Standardize xymonnet SMTP/s protocol conversation (Thanks, Tom Schmidt)
 * AIX: Report Actual Memory and Phys/Entitled CPU capacity (Thanks, Stef Coene)
 * snmp: Fix parsing error with SNMPv3 config parsing (Thanks, Jeremy Laidman)
+* RRD: Fix parsing error with DS files containing commas - http* only (Thanks, John Horne)
 
 
 Changes from 4.3.27 -> 4.3.28 (17 Jan 2017)
