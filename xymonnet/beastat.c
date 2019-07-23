@@ -96,7 +96,7 @@ char *getstring(char *databuf, char *beaindex, char *key)
 
 	*result = '\0';
 
-	sprintf(keystr, "\nBEA-WEBLOGIC-MIB::%s.\"%s\"", key, beaindex);
+	snprintf(keystr, sizeof(keystr), "\nBEA-WEBLOGIC-MIB::%s.\"%s\"", key, beaindex);
 	p = strstr(databuf, keystr);
 	if (!p) {
 		/* Might be at the very beginning of the buffer (with no \n first) */
@@ -109,7 +109,7 @@ char *getstring(char *databuf, char *beaindex, char *key)
 	if (p) {
 		eol = strchr(p, '\n');
 		if (eol) *eol = '\0';
-		strcpy(result, p);
+		strncpy(result, p, sizeof(result));
 		if (eol) *eol = '\n';
 	}
 
@@ -151,17 +151,17 @@ void send_data(void *host, char *beadomain, char *databuf, char **items)
 	msgbuf = newstrbuffer(0);
 
         for (idxwalk = bea_idxhead; (idxwalk); idxwalk = idxwalk->next) {
-		sprintf(msgline, "data %s.bea\n\n", commafy(xmh_item(host, XMH_HOSTNAME)));
+		snprintf(msgline, sizeof(msgline), "data %s.bea\n\n", commafy(xmh_item(host, XMH_HOSTNAME)));
 		addtobuffer(msgbuf, msgline);
 
 		if (beadomain && *beadomain) {
-			sprintf(msgline, "DOMAIN:%s\n", beadomain);
+			snprintf(msgline, sizeof(msgline), "DOMAIN:%s\n", beadomain);
 			addtobuffer(msgbuf, msgline);
 		}
 
 		for (i=0; (items[i]); i++) {
 			p = getstring(databuf, idxwalk->idx, items[i]);
-			sprintf(msgline, "%s\n", p);
+			snprintf(msgline, sizeof(msgline), "%s\n", p);
 			addtobuffer(msgbuf, msgline);
 		}
 
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
 		statuscolor = COL_GREEN;
 
 		/* Setup the snmpwalk pipe-command for jrockit stats */
-		sprintf(pipecmd, "snmpwalk -m BEA-WEBLOGIC-MIB -c %s@%s -v 1 %s:%d enterprises.140.625.302.1",
+		snprintf(pipecmd, sizeof(pipecmd), "snmpwalk -m BEA-WEBLOGIC-MIB -c %s@%s -v 1 %s:%d enterprises.140.625.302.1",
 			snmpcommunity, beadomain, xmh_item(hwalk, XMH_IP), snmpport);
 		jrockres = run_command(pipecmd, NULL, jrockout, 0, extcmdtimeout);
 		if (jrockres == 0) {
@@ -274,13 +274,13 @@ int main(int argc, char *argv[])
 		}
 		else {
 			if (statuscolor < COL_YELLOW) statuscolor = COL_YELLOW;
-			sprintf(msgline, "Could not retrieve BEA jRockit statistics from %s:%d domain %s (code %d)\n",
+			snprintf(msgline, sizeof(msgline), "Could not retrieve BEA jRockit statistics from %s:%d domain %s (code %d)\n",
 				xmh_item(hwalk, XMH_IP), snmpport, beadomain, jrockres);
 			addtobuffer(statusmsg, msgline);
 		}
 
 		/* Setup the snmpwalk pipe-command for executeQueur stats */
-		sprintf(pipecmd, "snmpwalk -m BEA-WEBLOGIC-MIB -c %s@%s -v 1 %s:%d enterprises.140.625.180.1",
+		snprintf(pipecmd, sizeof(pipecmd), "snmpwalk -m BEA-WEBLOGIC-MIB -c %s@%s -v 1 %s:%d enterprises.140.625.180.1",
 			snmpcommunity, beadomain, xmh_item(hwalk, XMH_IP), snmpport);
 		qres = run_command(pipecmd, NULL, qout, 0, extcmdtimeout);
 		if (qres == 0) {
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 		}
 		else {
 			if (statuscolor < COL_YELLOW) statuscolor = COL_YELLOW;
-			sprintf(msgline, "Could not retrieve BEA executeQueue statistics from %s:%d domain %s (code %d)\n",
+			snprintf(msgline, sizeof(msgline), "Could not retrieve BEA executeQueue statistics from %s:%d domain %s (code %d)\n",
 				xmh_item(hwalk, XMH_IP), snmpport, beadomain, qres);
 			addtobuffer(statusmsg, msgline);
 		}
@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
 		/* FUTURE: Have the statuscolor/statusmsg be updated to check against thresholds */
 		/* Right now, the "bea" status is always green */
 		init_status(statuscolor);
-		sprintf(msgline, "status %s.%s %s %s\n\n", commafy(xmh_item(hwalk, XMH_HOSTNAME)), "bea", colorname(statuscolor), timestamp);
+		snprintf(msgline, sizeof(msgline), "status %s.%s %s %s\n\n", commafy(xmh_item(hwalk, XMH_HOSTNAME)), "bea", colorname(statuscolor), timestamp);
 		addtostatus(msgline);
 		if (STRBUFLEN(statusmsg) == 0) addtobuffer(statusmsg, "All BEA monitors OK\n");
 		addtostrstatus(statusmsg);

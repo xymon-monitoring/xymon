@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 		char numstr[10];
 		newrec = (rec_t *)calloc(1, sizeof(rec_t));
 		newrec->key = strdup(tdata[i]);
-		sprintf(numstr, "%d", i+1); newrec->val = strdup(numstr);
+		snprintf(numstr, sizeof(numstr), "%d", i+1); newrec->val = strdup(numstr);
 
 		if (tail) {
 			tail->next = newrec;

@@ -472,6 +472,9 @@ void *xtreeDelete(void *treehandle, char *key)
 
 
 #ifdef STANDALONE
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+
 int main(int argc, char **argv)
 {
 	char buf[1024], key[1024], data[1024];
@@ -539,5 +542,6 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+#pragma GCC diagnostic pop
 #endif
 

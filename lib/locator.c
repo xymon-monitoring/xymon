@@ -206,7 +206,7 @@ char *locator_cmd(char *cmd)
 	static char pingbuf[512];
 	int res;
 
-	strcpy(pingbuf, cmd);
+	strncpy(pingbuf, cmd, sizeof(pingbuf));
 	res = call_locator(pingbuf, sizeof(pingbuf));
 
 	return (res == 0) ? pingbuf : NULL;
@@ -265,16 +265,16 @@ int locator_init(char *ipport)
 
 int locator_register_server(char *servername, enum locator_servicetype_t svctype, int weight, enum locator_sticky_t sticky, char *extras)
 {
-	char *buf;
+	SBUF_DEFINE(buf);
 	int bufsz;
 	int res;
 
 	bufsz = strlen(servername) + 100;
 	if (extras) bufsz += (strlen(extras) + 1);
-	buf = (char *)malloc(bufsz);
+	SBUF_MALLOC(buf, bufsz);
 
 	if (sticky == LOC_SINGLESERVER) weight = -1;
-	sprintf(buf, "S|%s|%s|%d|%d|%s", servername, servicetype_names[svctype], weight, 
+	snprintf(buf, buf_buflen, "S|%s|%s|%d|%d|%s", servername, servicetype_names[svctype], weight, 
 		((sticky == LOC_STICKY) ? 1 : 0), (extras ? extras : ""));
 
 	res = call_locator(buf, bufsz);
@@ -285,13 +285,13 @@ int locator_register_server(char *servername, enum locator_servicetype_t svctype
 
 int locator_register_host(char *hostname, enum locator_servicetype_t svctype, char *servername)
 {
-	char *buf;
+	SBUF_DEFINE(buf);
 	int bufsz;
 	int res;
 
 	bufsz = strlen(servername) + strlen(hostname) + 100;
-	buf = (char *)malloc(bufsz);
-	sprintf(buf, "H|%s|%s|%s", hostname, servicetype_names[svctype], servername);
+	SBUF_MALLOC(buf, bufsz);
+	snprintf(buf, buf_buflen, "H|%s|%s|%s", hostname, servicetype_names[svctype], servername);
 
 	res = call_locator(buf, bufsz);
 
@@ -301,13 +301,13 @@ int locator_register_host(char *hostname, enum locator_servicetype_t svctype, ch
 
 int locator_rename_host(char *oldhostname, char *newhostname, enum locator_servicetype_t svctype)
 {
-	char *buf;
+	SBUF_DEFINE(buf);
 	int bufsz;
 	int res;
 
 	bufsz = strlen(oldhostname) + strlen(newhostname) + 100;
-	buf = (char *)malloc(bufsz);
-	sprintf(buf, "M|%s|%s|%s", oldhostname, servicetype_names[svctype], newhostname);
+	SBUF_MALLOC(buf, bufsz);
+	snprintf(buf, buf_buflen, "M|%s|%s|%s", oldhostname, servicetype_names[svctype], newhostname);
 
 	res = call_locator(buf, bufsz);
 
@@ -317,7 +317,7 @@ int locator_rename_host(char *oldhostname, char *newhostname, enum locator_servi
 
 char *locator_query(char *hostname, enum locator_servicetype_t svctype, char **extras)
 {
-	static char *buf = NULL;
+	STATIC_SBUF_DEFINE(buf);
 	static int bufsz = 0;
 	int res, bufneeded;
 
@@ -325,11 +325,11 @@ char *locator_query(char *hostname, enum locator_servicetype_t svctype, char **e
 	if (extras) bufneeded += 1024;
 	if (!buf) {
 		bufsz = bufneeded;
-		buf = (char *)malloc(bufsz);
+		SBUF_MALLOC(buf, bufsz);
 	}
 	else if (bufneeded > bufsz) {
 		bufsz = bufneeded;
-		buf = (char *)realloc(buf, bufsz);
+		SBUF_REALLOC(buf, bufsz);
 	}
 
 	if (havecache[svctype] && !extras) {
@@ -337,7 +337,7 @@ char *locator_query(char *hostname, enum locator_servicetype_t svctype, char **e
 		if (cachedata) return cachedata;
 	}
 
-	sprintf(buf, "Q|%s|%s", servicetype_names[svctype], hostname);
+	snprintf(buf, buf_buflen, "Q|%s|%s", servicetype_names[svctype], hostname);
 	if (extras) buf[0] = 'X';
 	res = call_locator(buf, bufsz);
 	if (res == -1) return NULL;
@@ -365,13 +365,13 @@ char *locator_query(char *hostname, enum locator_servicetype_t svctype, char **e
 
 int locator_serverdown(char *servername, enum locator_servicetype_t svctype)
 {
-	char *buf;
+	SBUF_DEFINE(buf);
 	int bufsz;
 	int res;
 
 	bufsz = strlen(servername) + 100;
-	buf = (char *)malloc(bufsz);
-	sprintf(buf, "D|%s|%s", servername, servicetype_names[svctype]);
+	SBUF_MALLOC(buf, bufsz);
+	snprintf(buf, buf_buflen, "D|%s|%s", servername, servicetype_names[svctype]);
 
 	res = call_locator(buf, bufsz);
 	locator_flushcache(svctype, NULL);
@@ -382,13 +382,13 @@ int locator_serverdown(char *servername, enum locator_servicetype_t svctype)
 
 int locator_serverup(char *servername, enum locator_servicetype_t svctype)
 {
-	char *buf;
+	SBUF_DEFINE(buf);
 	int bufsz;
 	int res;
 
 	bufsz = strlen(servername) + 100;
-	buf = (char *)malloc(bufsz);
-	sprintf(buf, "U|%s|%s", servername, servicetype_names[svctype]);
+	SBUF_MALLOC(buf, bufsz);
+	snprintf(buf, buf_buflen, "U|%s|%s", servername, servicetype_names[svctype]);
 
 	res = call_locator(buf, bufsz);
 
@@ -398,13 +398,13 @@ int locator_serverup(char *servername, enum locator_servicetype_t svctype)
 
 int locator_serverforget(char *servername, enum locator_servicetype_t svctype)
 {
-	char *buf;
+	SBUF_DEFINE(buf);
 	int bufsz;
 	int res;
 
 	bufsz = strlen(servername) + 100;
-	buf = (char *)malloc(bufsz);
-	sprintf(buf, "F|%s|%s", servername, servicetype_names[svctype]);
+	SBUF_MALLOC(buf, bufsz);
+	snprintf(buf, buf_buflen, "F|%s|%s", servername, servicetype_names[svctype]);
 
 	res = call_locator(buf, bufsz);
 	locator_flushcache(svctype, NULL);

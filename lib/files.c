@@ -44,7 +44,7 @@ void dropdirectory(char *dirfn, int background)
 		dirfd = opendir(dirfn);
 		if (dirfd) {
 			while ( (de = readdir(dirfd)) != NULL ) {
-				sprintf(fn, "%s/%s", dirfn, de->d_name);
+				snprintf(fn, sizeof(fn), "%s/%s", dirfn, de->d_name);
 				if (strcmp(de->d_name, ".") && strcmp(de->d_name, "..") && (stat(fn, &st) == 0)) {
 					if (S_ISREG(st.st_mode)) {
 						dbgprintf("Removing file %s\n", fn);

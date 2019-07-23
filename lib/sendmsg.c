@@ -161,7 +161,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 	char *rcptip = NULL;
 	int rcptport = 0;
 	int connretries = SENDRETRIES;
-	char *httpmessage = NULL;
+	SBUF_DEFINE(httpmessage);
 	char recvbuf[32768];
 	int haveseenhttphdrs = 1;
 	int respstrsz = 0;
@@ -189,7 +189,6 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 		dbgprintf("Standard protocol on port %d\n", rcptport);
 	}
 	else {
-		char *bufp;
 		char *posturl = NULL;
 		char *posthost = NULL;
 
@@ -246,20 +245,18 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 		}
 
 		if ((posturl == NULL) || (posthost == NULL)) {
-			sprintf(errordetails + strlen(errordetails), "Unable to parse HTTP recipient");
+			snprintf(errordetails + strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Unable to parse HTTP recipient");
 			if (posturl) xfree(posturl);
 			if (posthost) xfree(posthost);
 			if (rcptip) xfree(rcptip);
 			return XYMONSEND_EBADURL;
 		}
 
-		bufp = msgptr = httpmessage = malloc(strlen(message)+1024);
-		bufp += sprintf(httpmessage, "POST %s HTTP/1.0\n", posturl);
-		bufp += sprintf(bufp, "MIME-version: 1.0\n");
-		bufp += sprintf(bufp, "Content-Type: application/octet-stream\n");
-		bufp += sprintf(bufp, "Content-Length: %d\n", (int)strlen(message));
-		bufp += sprintf(bufp, "Host: %s\n", posthost);
-		bufp += sprintf(bufp, "\n%s", message);
+		SBUF_MALLOC(httpmessage, strlen(message)+strlen(posthost)+1024);
+		msgptr = httpmessage;
+		snprintf(httpmessage, httpmessage_buflen, 
+			 "POST %s HTTP/1.0\nMIME-version: 1.0\nContent-Type: application/octet-stream\nContent-Length: %d\nHost: %s\n\n%s",
+			 posturl, (int)strlen(message), posthost, message);
 
 		if (posturl) xfree(posturl);
 		if (posthost) xfree(posthost);
@@ -277,7 +274,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 		hent = gethostbyname(rcptip);
 		if (hent) {
 			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
-			strcpy(hostip, inet_ntoa(addr));
+			strncpy(hostip, inet_ntoa(addr), sizeof(hostip));
 
 			if (inet_aton(hostip, &addr) == 0) {
 				result = XYMONSEND_EBADIP;
@@ -285,7 +282,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 			}
 		}
 		else {
-			sprintf(errordetails+strlen(errordetails), "Cannot determine IP address of message recipient %s", rcptip);
+			snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Cannot determine IP address of message recipient %s", rcptip);
 			result = XYMONSEND_EIPUNKNOWN;
 			goto done;
 		}
@@ -307,7 +304,7 @@ retry_connect:
 
 	res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
 	if ((res == -1) && (errno != EINPROGRESS)) {
-		sprintf(errordetails+strlen(errordetails), "connect to Xymon daemon@%s:%d failed (%s)", rcptip, rcptport, strerror(errno));
+		snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "connect to Xymon daemon@%s:%d failed (%s)", rcptip, rcptport, strerror(errno));
 		result = XYMONSEND_ECONNFAILED;
 		goto done;
 	}
@@ -322,7 +319,7 @@ retry_connect:
 		tmo.tv_sec = timeout;  tmo.tv_usec = 0;
 		res = select(sockfd+1, &readfds, &writefds, NULL, (timeout ? &tmo : NULL));
 		if (res == -1) {
-			sprintf(errordetails+strlen(errordetails), "Select failure while sending to Xymon daemon@%s:%d", rcptip, rcptport);
+			snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Select failure while sending to Xymon daemon@%s:%d", rcptip, rcptport);
 			result = XYMONSEND_ESELFAILED;
 			goto done;
 		}
@@ -351,7 +348,7 @@ retry_connect:
 				dbgprintf("Connect status is %d\n", connres);
 				isconnected = (connres == 0);
 				if (!isconnected) {
-					sprintf(errordetails+strlen(errordetails), "Could not connect to Xymon daemon@%s:%d (%s)", 
+					snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Could not connect to Xymon daemon@%s:%d (%s)", 
 						  rcptip, rcptport, strerror(connres));
 					result = XYMONSEND_ECONNFAILED;
 					goto done;
@@ -418,7 +415,7 @@ retry_connect:
 				/* Send some data */
 				res = write(sockfd, msgptr, strlen(msgptr));
 				if (res == -1) {
-					sprintf(errordetails+strlen(errordetails), "Write error while sending message to Xymon daemon@%s:%d", rcptip, rcptport);
+					snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Write error while sending message to Xymon daemon@%s:%d", rcptip, rcptport);
 					result = XYMONSEND_EWRITEERROR;
 					goto done;
 				}
@@ -483,7 +480,7 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 	// errprintf("sendtomany: allservers=%d\n", allservers);
 
 	if (allservers && !morercpts) {
-		sprintf(errordetails+strlen(errordetails), "No recipients listed! XYMSRV was %s, XYMSERVERS %s",
+		snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "No recipients listed! XYMSRV was %s, XYMSERVERS %s",
 			  onercpt, textornull(morercpts));
 		return XYMONSEND_EBADIP;
 	}
@@ -760,7 +757,7 @@ static void combo_flush(void)
 
 	outp = strchr(STRBUF(xymonmsg), ' ');
 	for (i = 0; (i <= xymonmsgqueued); i++) {
-		outp += sprintf(outp, " %d", combooffsets[i]);
+		outp += snprintf(outp, (STRBUFSZ(xymonmsg) - (outp - STRBUF(xymonmsg))), " %d", combooffsets[i]);
 	}
 	*outp = '\n';
 	

@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 	char *envarea = NULL;
 
 	strbuffer_t *outbuf;
-	char *oneurl = NULL;
+	SBUF_DEFINE(oneurl);
 	int gotany = 0;
 	enum { OP_INITIAL, OP_YES, OP_NO } gotonepage = OP_INITIAL; /* Tracks if all matches are on one page */
 	char *onepage = NULL;	/* If gotonepage==OP_YES, then this is the page */
@@ -198,8 +198,8 @@ int main(int argc, char *argv[])
 					"<td align=left> ", ip, " </td>\n",
 					NULL);
 
-			oneurl = (char *)malloc(4 + strlen(xgetenv("XYMONWEB")) + strlen(xmh_item(hostwalk, XMH_PAGEPATH)) + strlen(hostname));
-			sprintf(oneurl, "%s/%s/#%s",
+			SBUF_MALLOC(oneurl, 4 + strlen(xgetenv("XYMONWEB")) + strlen(xmh_item(hostwalk, XMH_PAGEPATH)) + strlen(hostname));
+			snprintf(oneurl, oneurl_buflen, "%s/%s/#%s",
 				xgetenv("XYMONWEB"), xmh_item(hostwalk, XMH_PAGEPATH), hostname);
 
 			addtobuffer_many(outbuf, 

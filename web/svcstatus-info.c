@@ -45,7 +45,7 @@ typedef struct hinf_t {
 } hinf_t;
 hinf_t *tnames = NULL;
 int testcount = 0;
-char *unametxt = NULL;
+SBUF_DEFINE(unametxt);
 char *clientvertxt = NULL;
 
 typedef struct sched_t {
@@ -68,14 +68,16 @@ static int fetch_status(char *hostname)
 {
 	char *commaname;
 	char *statuslist = NULL;
-	char *xymoncmd = (char *)malloc(1024 + strlen(hostname));
+	SBUF_DEFINE(xymoncmd);
 	char *walk;
 	int testsz;
 	int haveuname = 0;
 	sendreturn_t *sres;
 
+	SBUF_MALLOC(xymoncmd, 1024 + strlen(hostname));
+
 	sres = newsendreturnbuf(1, NULL);
-	sprintf(xymoncmd, "xymondboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
+	snprintf(xymoncmd, xymoncmd_buflen, "xymondboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
 	if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		return 1;
 	}
@@ -122,7 +124,7 @@ static int fetch_status(char *hostname)
 	if (statuslist) xfree(statuslist); statuslist = NULL;
 
 
-	sprintf(xymoncmd, "schedule");
+	snprintf(xymoncmd, xymoncmd_buflen, "schedule");
 	if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		return 1;
 	}
@@ -171,7 +173,7 @@ static int fetch_status(char *hostname)
 		char *clidata = NULL;
 		char *boln, *eoln, *htmlq;
 
-		sprintf(xymoncmd, "clientlog %s section=uname,osversion,clientversion", hostname);
+		snprintf(xymoncmd, xymoncmd_buflen, "clientlog %s section=uname,osversion,clientversion", hostname);
 		if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 			return 1;
 		}
@@ -184,6 +186,7 @@ static int fetch_status(char *hostname)
 			boln = strchr(boln, '\n') + 1;
 			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
 			unametxt = strdup(htmlquoted(boln));
+			unametxt_buflen = strlen(unametxt)+1;
 			if (eoln) *eoln = '\n';
 		}
 
@@ -193,12 +196,13 @@ static int fetch_status(char *hostname)
 			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
 			htmlq = htmlquoted(boln);
 			if (unametxt) {
-				unametxt = (char *)realloc(unametxt, strlen(unametxt) + strlen(htmlq) + 6);
-				strcat(unametxt, "<br>\n");
-				strcat(unametxt, htmlq);
+				SBUF_REALLOC(unametxt, strlen(unametxt) + strlen(htmlq) + 6);
+				strncat(unametxt, "<br>\n", (unametxt_buflen - strlen(unametxt)));
+				strncat(unametxt, htmlq, (unametxt_buflen - strlen(unametxt)));
 			}
 			else {
 				unametxt = strdup(htmlq);
+				unametxt_buflen = strlen(unametxt)+1;
 			}
 			if (eoln) *eoln = '\n';
 		}
@@ -234,7 +238,7 @@ static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 	alert = calloc(1, sizeof(activealerts_t));
 	alert->hostname = hostname;
 	alert->location = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
-	strcpy(alert->ip, "127.0.0.1");
+	strncpy(alert->ip, "127.0.0.1", sizeof(alert->ip));
 	alert->color = COL_RED;
 	alert->pagemessage = "";
 	alert->state = A_PAGING;
@@ -266,7 +270,7 @@ static void generate_xymon_holidayinfo(char *hostname, strbuffer_t *buf)
 	int month, year;
 	int needreload = 0;
 	char *holidayset;
-	char yeartxt[10];
+	char yeartxt[25];
 
 	tm = localtime(&now);
 	year = tm->tm_year + 1900;
@@ -283,15 +287,15 @@ static void generate_xymon_holidayinfo(char *hostname, strbuffer_t *buf)
 
 	switch (month) {
 	  case 0: case 1: case 2:
-		sprintf(yeartxt, "%d/%d", year-1, year);
+		snprintf(yeartxt, sizeof(yeartxt), "%d/%d", year-1, year);
 		break;
 
 	  case 9: case 10: case 11:
-		sprintf(yeartxt, "%d/%d", year, year+1);
+		snprintf(yeartxt, sizeof(yeartxt), "%d/%d", year, year+1);
 		break;
 
 	  default:
-		sprintf(yeartxt, "%d", year);
+		snprintf(yeartxt, sizeof(yeartxt), "%d", year);
 		break;
 	}
 
@@ -527,9 +531,9 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "                    <br>\n");
 	addtobuffer(buf, "<SELECT NAME=\"endmonth\" onClick=\"setcheck(this.form.go2,true)\">\n");
 	for (i=1; (i <= 12); i++) {
-		char istr[3];
+		char istr[15];
 
-		sprintf(istr, "%d", i);
+		snprintf(istr, sizeof(istr), "%d", i);
 
 		if (i == (nowtm->tm_mon + 1)) selstr = " selected"; else selstr = "";
 		monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
@@ -549,9 +553,9 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Days */
 	addtobuffer(buf, "<SELECT NAME=\"endday\" onClick=\"setcheck(this.form.go2,true)\">\n");
 	for (i=1; (i <= 31); i++) {
-		char istr[3];
+		char istr[15];
 
-		sprintf(istr, "%d", i);
+		snprintf(istr, sizeof(istr), "%d", i);
 
 		if (i == nowtm->tm_mday) selstr = " selected"; else selstr = "";
 
@@ -568,9 +572,9 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Years */
 	addtobuffer(buf, "<SELECT NAME=\"endyear\" onClick=\"setcheck(this.form.go2,true)\">\n");
 	for (i=beginyear; (i <= endyear); i++) {
-		char istr[5];
+		char istr[15];
 
-		sprintf(istr, "%d", i);
+		snprintf(istr, sizeof(istr), "%d", i);
 
 		if (i == (nowtm->tm_year + 1900)) selstr = " selected"; else selstr = "";
 
@@ -587,9 +591,9 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Hours */
 	addtobuffer(buf, "<SELECT NAME=\"endhour\" onClick=\"setcheck(this.form.go2,true)\">\n");
 	for (i=0; (i <= 24); i++) {
-		char istr[3];
+		char istr[15];
 
-		sprintf(istr, "%d", i);
+		snprintf(istr, sizeof(istr), "%d", i);
 
 		if (i == nowtm->tm_hour) selstr = " selected"; else selstr = "";
 		addtobuffer(buf, "<option value=\"");
@@ -605,9 +609,9 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Minutes */
 	addtobuffer(buf, "<SELECT NAME=\"endminute\" onClick=\"setcheck(this.form.go2,true)\">\n");
 	for (i=0; (i <= 59); i++) {
-		char istr[3];
+		char istr[15];
 
-		sprintf(istr, "%02d", i);
+		snprintf(istr, sizeof(istr), "%02d", i);
 
 		if (i == nowtm->tm_min) selstr = " selected"; else selstr = "";
 		addtobuffer(buf, "<option value=\"");
@@ -640,9 +644,9 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Months */
 	addtobuffer(buf, "<SELECT NAME=\"month\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=1; (i <= 12); i++) {
-		char istr[3];
+		char istr[15];
 
-		sprintf(istr, "%d", i);
+		snprintf(istr, sizeof(istr), "%d", i);
 
 		if (i == (nowtm->tm_mon + 1)) selstr = " selected"; else selstr = "";
 		monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
@@ -662,9 +666,9 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Days */
 	addtobuffer(buf, "<SELECT NAME=\"day\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=1; (i <= 31); i++) {
-		char istr[3];
+		char istr[15];
 
-		sprintf(istr, "%d", i);
+		snprintf(istr, sizeof(istr), "%d", i);
 
 		if (i == nowtm->tm_mday) selstr = " selected"; else selstr = "";
 
@@ -681,9 +685,9 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Years */
 	addtobuffer(buf, "<SELECT NAME=\"year\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=beginyear; (i <= endyear); i++) {
-		char istr[5];
+		char istr[15];
 
-		sprintf(istr, "%d", i);
+		snprintf(istr, sizeof(istr), "%d", i);
 
 		if (i == (nowtm->tm_year + 1900)) selstr = " selected"; else selstr = "";
 
@@ -700,9 +704,9 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Hours */
 	addtobuffer(buf, "<SELECT NAME=\"hour\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=0; (i <= 24); i++) {
-		char istr[3];
+		char istr[15];
 
-		sprintf(istr, "%d", i);
+		snprintf(istr, sizeof(istr), "%d", i);
 
 		if (i == nowtm->tm_hour) selstr = " selected"; else selstr = "";
 		addtobuffer(buf, "<option value=\"");
@@ -718,9 +722,9 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Minutes */
 	addtobuffer(buf, "<SELECT NAME=\"minute\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=0; (i <= 59); i++) {
-		char istr[3];
+		char istr[15];
 
-		sprintf(istr, "%02d", i);
+		snprintf(istr, sizeof(istr), "%02d", i);
 
 		if (i == nowtm->tm_min) selstr = " selected"; else selstr = "";
 		addtobuffer(buf, "<option value=\"");
@@ -767,7 +771,7 @@ static void generate_xymon_enable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<tr><th>Test</th><th>Disabled until</th><th>Cause</th><th>&nbsp;</th></tr>\n");
 
 	for (i=0; (i < testcount); i++) {
-		char istr[10];
+		char istr[15];
 
 		if (tnames[i].distime == 0) continue;
 
@@ -914,7 +918,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 	{
 		char configfn[PATH_MAX];
 
-		sprintf(configfn, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
+		snprintf(configfn, sizeof(configfn), "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 		load_alertconfig(configfn, alertcolors, alertinterval);
 		load_holidays(0);
 	}
@@ -1043,15 +1047,15 @@ char *generate_info(char *hostname, char *critconfigfn)
 	if (newcritconfig) {
 		/* Load the critical.cfg file and get the alerts for this host */
 		int i;
-		char istr[10];
-		char *key;
+		char istr[15];
+		SBUF_DEFINE(key);
 		critconf_t *nkrec;
 		int firstrec = 1;
 
 		load_critconfig(critconfigfn);
 		for (i=0; (i < testcount); i++) {
-			key = (char *)malloc(strlen(hostname) + strlen(tnames[i].name) + 2);
-			sprintf(key, "%s|%s", hostname, tnames[i].name);
+			SBUF_MALLOC(key, strlen(hostname) + strlen(tnames[i].name) + 2);
+			snprintf(key, key_buflen, "%s|%s", hostname, tnames[i].name);
 			nkrec = get_critconfig(key, CRITCONF_FIRSTMATCH, NULL);
 			if (!nkrec) continue;
 			if (firstrec) {
@@ -1072,7 +1076,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 			}
 			else addtobuffer(infobuf, " 24x7");
 
-			sprintf(istr, "%d", nkrec->priority);
+			snprintf(istr, sizeof(istr), "%d", nkrec->priority);
 			addtobuffer(infobuf, " priority ");
 			addtobuffer(infobuf, istr);
 

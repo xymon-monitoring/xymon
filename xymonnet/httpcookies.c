@@ -29,10 +29,11 @@ typedef struct hcookie_t {
 void init_session_cookies(char *urlhost, char *cknam, char *ckpath, char *ckval)
 {
 	hcookie_t *itm;
+	unsigned int keylen = strlen(urlhost) + strlen(cknam) + strlen(ckpath) + 3;
 
 	itm = (hcookie_t *)malloc(sizeof(hcookie_t));
-	itm->key = (char *)malloc(strlen(urlhost) + strlen(cknam) + strlen(ckpath) + 3);
-	sprintf(itm->key, "%s\t%s\t%s", urlhost, cknam, ckpath);
+	itm->key = (char *)malloc(keylen);
+	snprintf(itm->key, keylen, "%s\t%s\t%s", urlhost, cknam, ckpath);
 	itm->val = strdup(ckval);
 	xtreeAdd(cookietree, itm->key, itm);
 }
@@ -62,6 +63,7 @@ void update_session_cookies(char *hostname, char *urlhost, char *headers)
 			if (cknam) ckval = strtok(NULL, ";");
 			if (ckval) {
 				char *tok, *key;
+				unsigned int keylen; 
 				xtreePos_t h;
 				hcookie_t *itm;
 
@@ -76,8 +78,9 @@ void update_session_cookies(char *hostname, char *urlhost, char *headers)
 				} while (tok);
 
 				if (ckpath == NULL) ckpath = "/";
-				key = (char *)malloc(strlen(urlhost) + strlen(cknam) + strlen(ckpath) + 3);
-				sprintf(key, "%s\t%s\t%s", urlhost, cknam, ckpath);
+				keylen = strlen(urlhost) + strlen(cknam) + strlen(ckpath) + 3;
+				key = (char *)malloc(keylen);
+				snprintf(key, keylen, "%s\t%s\t%s", urlhost, cknam, ckpath);
 				h = xtreeFind(cookietree, key);
 				if (h == xtreeEnd(cookietree)) {
 					itm = (hcookie_t *)malloc(sizeof(hcookie_t));
@@ -105,7 +108,7 @@ void save_session_cookies(void)
 	xtreePos_t h;
 	hcookie_t *itm;
 
-	sprintf(cookiefn, "%s/etc/cookies.session", xgetenv("XYMONHOME"));
+	snprintf(cookiefn, sizeof(cookiefn), "%s/etc/cookies.session", xgetenv("XYMONHOME"));
 	fd = fopen(cookiefn, "w");
 	if (fd == NULL) return;
 
@@ -186,10 +189,10 @@ void load_cookies(void)
 	if (initdone) return;
 	initdone = 1;
 
-	sprintf(cookiefn, "%s/etc/cookies", xgetenv("XYMONHOME"));
+	snprintf(cookiefn, sizeof(cookiefn), "%s/etc/cookies", xgetenv("XYMONHOME"));
 	load_cookies_one(cookiefn);
 
-	sprintf(cookiefn, "%s/etc/cookies.session", xgetenv("XYMONHOME"));
+	snprintf(cookiefn, sizeof(cookiefn), "%s/etc/cookies.session", xgetenv("XYMONHOME"));
 	load_cookies_one(cookiefn);
 }
 

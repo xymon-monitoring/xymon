@@ -41,7 +41,7 @@ char *md5hash(char *input)
 	myMD5_Final(md_value, ctx->mdctx);
 
 	for(i = 0, p = md_string; (i < sizeof(md_value)); i++) 
-		p += sprintf(p, "%02x", md_value[i]);
+		p += snprintf(p, (sizeof(md_string) - (md_string - p)), "%02x", md_value[i]);
 	*p = '\0';
 
 	return md_string;
@@ -151,7 +151,7 @@ char *digest_done(digestctx_t *ctx)
 {
 	unsigned int md_len = 0;
 	unsigned char *md_value = NULL;
-	char *md_string = NULL;
+	SBUF_DEFINE(md_string);
 	int i;
 	char *p;
 
@@ -160,55 +160,55 @@ char *digest_done(digestctx_t *ctx)
 		/* Built in MD5 hash */
 		md_len = 16;
 		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
-		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		SBUF_MALLOC(md_string, (2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
 		myMD5_Final(md_value, ctx->mdctx);
 		break;
 	  case D_SHA1:
 		/* Built in SHA1 hash */
 		md_len = 20;
 		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
-		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		SBUF_MALLOC(md_string, (2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
 		mySHA1_Final(md_value, ctx->mdctx);
 		break;
 	  case D_RMD160:
 		/* Built in RMD160 hash */
 		md_len = 20;
 		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
-		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		SBUF_MALLOC(md_string, (2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
 		myRIPEMD160_Final(md_value, ctx->mdctx);
 		break;
 	  case D_SHA512:
 		/* Built in SHA-512 hash */
 		md_len = (512/8);
 		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
-		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		SBUF_MALLOC(md_string, (2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
 		mySHA512_Final(md_value, ctx->mdctx);
 		break;
 	  case D_SHA256:
 		/* Built in SHA-256 hash */
 		md_len = (256/8);
 		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
-		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		SBUF_MALLOC(md_string, (2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
 		mySHA256_Final(md_value, ctx->mdctx);
 		break;
 	  case D_SHA384:
 		/* Built in SHA-384 hash */
 		md_len = (384/8);
 		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
-		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		SBUF_MALLOC(md_string, (2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
 		mySHA384_Final(md_value, ctx->mdctx);
 		break;
 	  case D_SHA224:
 		/* Built in SHA-224 hash */
 		md_len = (224/8);
 		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
-		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		SBUF_MALLOC(md_string, (2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
 		mySHA224_Final(md_value, ctx->mdctx);
 		break;
 	}
 
-	sprintf(md_string, "%s:", ctx->digestname);
-	for(i = 0, p = md_string + strlen(md_string); (i < md_len); i++) p += sprintf(p, "%02x", md_value[i]);
+	snprintf(md_string, md_string_buflen, "%s:", ctx->digestname);
+	for(i = 0, p = md_string + strlen(md_string); (i < md_len); i++) p += snprintf(p, (md_string_buflen - (p - md_string)), "%02x", md_value[i]);
 	*p = '\0';
 
 	xfree(md_value);

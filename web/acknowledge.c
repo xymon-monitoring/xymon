@@ -158,14 +158,14 @@ static void parse_query(void)
 void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
 {
 	static int num = 0;
-	char numstr[10];
+	char numstr[15];
 
 	num++;
 	if (ackcode) {
-		sprintf(numstr, "%d", num); 
+		snprintf(numstr, sizeof(numstr), "%d", num); 
 	}
 	else {
-		strcpy(numstr, "all");
+		strncpy(numstr, "all", sizeof(numstr));
 	}
 
 	fprintf(output, "<tr>\n");
@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 				 NULL, NULL);
 		}
 		else {
-			char *cmd;
+			SBUF_DEFINE(cmd);
 			char *respbuf = NULL;
 			char *hostname, *pagename;
 			int gotfilter = 0, filtererror = 0;
@@ -251,12 +251,12 @@ int main(int argc, char *argv[])
 
 			headfoot(stdout, "acknowledge", "", "header", COL_RED);
 
-			cmd = (char *)malloc(1024);
-			strcpy(cmd, "xymondboard fields=hostname,testname,cookie color=");
+			SBUF_MALLOC(cmd, 1024);
+			strncpy(cmd, "xymondboard fields=hostname,testname,cookie color=", cmd_buflen);
 			for (col = 0; (col < COL_COUNT); col++) {
 				if ((1 << col) & alertcolors) {
-					if (!firstcolor) strcat(cmd, ",");
-					strcat(cmd, colorname(col));
+					if (!firstcolor) strncat(cmd, ",", cmd_buflen - strlen(cmd));
+					strncat(cmd, colorname(col), cmd_buflen - strlen(cmd));
 					firstcolor = 0;
 				}
 			}
@@ -265,16 +265,16 @@ int main(int argc, char *argv[])
 			if (obeycookies && !gotfilter && ((hostname = get_cookie("host")) != NULL)) {
 				if (*hostname) {
 					pcre *dummy;
-					char *re;
-					
-					re = (char *)malloc(3+strlen(hostname));
-					sprintf(re, "^%s$", hostname);
+					SBUF_DEFINE(re);
+
+					SBUF_MALLOC(re, 3+strlen(hostname));
+					snprintf(re, re_buflen, "^%s$", hostname);
 					dummy = compileregex(re);
 					if (dummy) {
 						/* Valid expression */
 						freeregex(dummy);
-						cmd = (char *)realloc(cmd, 1024 + strlen(cmd) + strlen(re));
-						sprintf(cmd + strlen(cmd), " host=%s", re);
+						SBUF_REALLOC(cmd, 1024 + strlen(cmd) + strlen(re));
+						snprintf(cmd + strlen(cmd), cmd_buflen - strlen(cmd), " host=%s", re);
 						gotfilter = 1;
 					}
 					else {
@@ -287,16 +287,16 @@ int main(int argc, char *argv[])
 			if (obeycookies && !gotfilter && ((pagename = get_cookie("pagepath")) != NULL)) {
 				if (*pagename) {
 					pcre *dummy;
-					char *re;
+					SBUF_DEFINE(re);
 
-					re = (char *)malloc(8 + strlen(pagename)*2);
-					sprintf(re, "%s$|^%s/.+", pagename, pagename);
+					SBUF_MALLOC(re, 8 + strlen(pagename)*2);
+					snprintf(re, re_buflen, "%s$|^%s/.+", pagename, pagename);
 					dummy = compileregex(re);
 					if (dummy) {
 						/* Valid expression */
 						freeregex(dummy);
-						cmd = (char *)realloc(cmd, 1024 + strlen(cmd) + strlen(re));
-						sprintf(cmd + strlen(cmd), " page=%s", re);
+						SBUF_REALLOC(cmd, 1024 + strlen(cmd) + strlen(re));
+						snprintf(cmd + strlen(cmd), cmd_buflen - strlen(cmd), " page=%s", re);
 						gotfilter = 1;
 					}
 					else {
@@ -353,12 +353,13 @@ int main(int argc, char *argv[])
 		}
 	}
 	else if ( (nopin && (cgi_method == CGI_POST)) || (!nopin && (cgidata != NULL)) ) {
-		char *xymonmsg;
-		char *acking_user = "";
+		SBUF_DEFINE(xymonmsg);
+		SBUF_DEFINE(acking_user);
 		acklist_t *awalk;
 		strbuffer_t *response = newstrbuffer(0);
 		int count = 0;
 
+		acking_user = "";
 
 		/* We only want to accept posts from certain pages */
 		{ 
@@ -375,9 +376,9 @@ int main(int argc, char *argv[])
 		if (getenv("REMOTE_USER")) {
 			char *remaddr = getenv("REMOTE_ADDR");
 
-			acking_user = (char *)malloc(1024 + strlen(getenv("REMOTE_USER")) + (remaddr ? strlen(remaddr) : 0));
-			sprintf(acking_user, "\nAcked by: %s", getenv("REMOTE_USER"));
-			if (remaddr) sprintf(acking_user + strlen(acking_user), " (%s)", remaddr);
+			SBUF_MALLOC(acking_user, 1024 + strlen(getenv("REMOTE_USER")) + (remaddr ? strlen(remaddr) : 0));
+			snprintf(acking_user, acking_user_buflen, "\nAcked by: %s", getenv("REMOTE_USER"));
+			if (remaddr) snprintf(acking_user + strlen(acking_user), acking_user_buflen - strlen(acking_user), " (%s)", remaddr);
 		}
 
 		/* Load the host data (for access control) */
@@ -388,7 +389,9 @@ int main(int argc, char *argv[])
 
 		addtobuffer(response, "<center>\n");
 		for (awalk = ackhead; (awalk); awalk = awalk->next) {
-			char *msgline = (char *)malloc(1024 + (awalk->hostname ? strlen(awalk->hostname) : 0) + (awalk->testname ? strlen(awalk->testname) : 0));
+			SBUF_DEFINE(msgline);
+
+			SBUF_MALLOC(msgline, 1024 + (awalk->hostname ? MAX_HTMLQUOTE_FACTOR*strlen(awalk->hostname) : 0) + (awalk->testname ? MAX_HTMLQUOTE_FACTOR*strlen(awalk->testname) : 0));
 
 			if (!awalk->checked) continue;
 			if (accessfn && (!web_access_allowed(getenv("REMOTE_USER"), awalk->hostname, awalk->testname, WEB_ACCESS_CONTROL))) continue;
@@ -407,35 +410,35 @@ int main(int argc, char *argv[])
 			count++;
 			if (!awalk->ackmsg || !awalk->validity || !awalk->acknum) {
 				if (awalk->hostname && awalk->testname) {
-					sprintf(msgline, "<b>NO ACK</b> sent for host %s / test %s",
+					snprintf(msgline, msgline_buflen, "<b>NO ACK</b> sent for host %s / test %s",
 						htmlquoted(awalk->hostname), htmlquoted(awalk->testname));
 				}
 				else {
-					sprintf(msgline, "<b>NO ACK</b> sent for item %d", awalk->id);
+					snprintf(msgline, msgline_buflen, "<b>NO ACK</b> sent for item %d", awalk->id);
 				}
 				addtobuffer(response, msgline);
 				addtobuffer(response, ": Duration or message not set<br>\n");
 				continue;
 			}
 
-			xymonmsg = (char *)malloc(1024 + strlen(awalk->ackmsg) + strlen(acking_user));
-			sprintf(xymonmsg, "xymondack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
+			SBUF_MALLOC(xymonmsg, 1024 + strlen(awalk->ackmsg) + strlen(acking_user));
+			snprintf(xymonmsg, xymonmsg_buflen, "xymondack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
 			if (sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL) == XYMONSEND_OK) {
 				if (awalk->hostname && awalk->testname) {
-					sprintf(msgline, "Acknowledge sent for host %s / test %s<br>\n", 
+					snprintf(msgline, msgline_buflen, "Acknowledge sent for host %s / test %s<br>\n", 
 						htmlquoted(awalk->hostname), htmlquoted(awalk->testname));
 				}
 				else {
-					sprintf(msgline, "Acknowledge sent for code %d<br>\n", awalk->acknum);
+					snprintf(msgline, msgline_buflen, "Acknowledge sent for code %d<br>\n", awalk->acknum);
 				}
 			}
 			else {
 				if (awalk->hostname && awalk->testname) {
-					sprintf(msgline, "Failed to send acknowledge for host %s / test %s<br>\n", 
+					snprintf(msgline, msgline_buflen, "Failed to send acknowledge for host %s / test %s<br>\n", 
 						htmlquoted(awalk->hostname), htmlquoted(awalk->testname));
 				}
 				else {
-					sprintf(msgline, "Failed to send acknowledge for code %d<br>\n", awalk->acknum);
+					snprintf(msgline, msgline_buflen, "Failed to send acknowledge for code %d<br>\n", awalk->acknum);
 				}
 			}
 

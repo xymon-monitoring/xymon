@@ -40,12 +40,19 @@ void get_root(void)
 void drop_root(void)
 {
 	if (!havemyuid) { myuid = getuid(); havemyuid = 1; }
-	seteuid(myuid);
+	if (seteuid(myuid) != 0) {
+		perror("Failed to drop root privileges\n");
+		abort();
+	}
+				 
 }
 
 void get_root(void)
 {
-	seteuid(0);
+	if (seteuid(0) != 0) {
+		perror("Failed to get root privileges\n");
+		abort();
+	}
 }
 
 #endif

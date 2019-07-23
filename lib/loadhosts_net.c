@@ -22,7 +22,8 @@ int load_hostinfo(char *targethost)
 {
 	sendreturn_t *sres;
 	sendresult_t sendstat;
-	char *msg, *bol, *eoln, *key, *val;
+	SBUF_DEFINE(msg);
+	char *bol, *eoln, *key, *val;
 	int elemsize = 0;
 
 	xmh_item_list_setup();
@@ -38,8 +39,8 @@ int load_hostinfo(char *targethost)
 
 	if (!targethost) return -1;
 
-	msg = (char *)malloc(200 + strlen(targethost));
-	sprintf(msg, "hostinfo clone=%s", targethost);
+	SBUF_MALLOC(msg, 200 + strlen(targethost));
+	snprintf(msg, msg_buflen, "hostinfo clone=%s", targethost);
 
 	sres = newsendreturnbuf(1, NULL);
 	sendstat = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
@@ -91,7 +92,7 @@ int load_hostinfo(char *targethost)
 
 	hival_hostinfo.hostname = hivals[XMH_HOSTNAME];
 	if (hivals[XMH_IP]) 
-		strcpy(hival_hostinfo.ip, hivals[XMH_IP]);
+		strncpy(hival_hostinfo.ip, hivals[XMH_IP], sizeof(hival_hostinfo.ip));
 	else
 		*(hival_hostinfo.ip) = '\0';
 

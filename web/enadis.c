@@ -235,7 +235,7 @@ void parse_cgi(void)
 
 void do_one_host(char *hostname, char *fullmsg, char *username)
 {
-	char *xymoncmd = (char *)malloc(1024);
+	SBUF_DEFINE(xymoncmd);
 	int i, result;
 	
 	if (disableend == DISABLE_UNTIL)   {
@@ -249,15 +249,17 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		scale = 1;
 	}
 
+	SBUF_MALLOC(xymoncmd, 1024);
+
 	switch (action) {
 	  case ACT_ENABLE:
 		for (i=0; (i < enablecount); i++) {
 			if (preview) result = 0;
 			else {
-				xymoncmd = (char *)realloc(xymoncmd, 1024 + 2*strlen(hostname) + 2*strlen(enabletest[i]) + strlen(username));
-				sprintf(xymoncmd, "enable %s.%s", commafy(hostname), enabletest[i]);
+				SBUF_REALLOC(xymoncmd, 1024 + 2*strlen(hostname) + 2*strlen(enabletest[i]) + strlen(username));
+				snprintf(xymoncmd, xymoncmd_buflen, "enable %s.%s", commafy(hostname), enabletest[i]);
 				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
-				sprintf(xymoncmd, "notify %s.%s\nMonitoring of %s:%s has been ENABLED by %s\n", 
+				snprintf(xymoncmd, xymoncmd_buflen, "notify %s.%s\nMonitoring of %s:%s has been ENABLED by %s\n", 
 					commafy(hostname), enabletest[i], 
 					hostname, enabletest[i], username);
 				sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
@@ -275,11 +277,11 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		for (i=0; (i < disablecount); i++) {
 			if (preview) result = 0;
 			else {
-				xymoncmd = (char *)realloc(xymoncmd, 1024 + 2*strlen(hostname) + 2*strlen(disabletest[i]) + strlen(fullmsg) + strlen(username));
-				sprintf(xymoncmd, "disable %s.%s %d %s", 
+				SBUF_REALLOC(xymoncmd, 1024 + 2*strlen(hostname) + 2*strlen(disabletest[i]) + strlen(fullmsg) + strlen(username));
+				snprintf(xymoncmd, xymoncmd_buflen, "disable %s.%s %d %s", 
 					commafy(hostname), disabletest[i], duration*scale, fullmsg);
 				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
-				sprintf(xymoncmd, "notify %s.%s\nMonitoring of %s:%s has been DISABLED by %s for %d minutes\n%s", 
+				snprintf(xymoncmd, xymoncmd_buflen, "notify %s.%s\nMonitoring of %s:%s has been DISABLED by %s for %d minutes\n%s", 
 					commafy(hostname), disabletest[i], 
 					hostname, disabletest[i], username, duration*scale, fullmsg);
 				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
@@ -295,8 +297,8 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 
 	  case ACT_SCHED_DISABLE:
 		for (i=0; (i < disablecount); i++) {
-			xymoncmd = (char *)realloc(xymoncmd, 1024 + 2*strlen(hostname) + strlen(disabletest[i]) + strlen(fullmsg));
-			sprintf(xymoncmd, "schedule %d disable %s.%s %d %s", 
+			SBUF_REALLOC(xymoncmd, 1024 + 2*strlen(hostname) + strlen(disabletest[i]) + strlen(fullmsg));
+			snprintf(xymoncmd, xymoncmd_buflen, "schedule %d disable %s.%s %d %s", 
 				(int) schedtime, commafy(hostname), disabletest[i], duration*scale, fullmsg);
 			result = (preview ? 0 : sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL));
 
@@ -309,7 +311,7 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		break;
 
 	  case ACT_SCHED_CANCEL:
-		sprintf(xymoncmd, "schedule cancel %d", cancelid);
+		snprintf(xymoncmd, xymoncmd_buflen, "schedule cancel %d", cancelid);
 		result = (preview ? 0 : sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL));
 
 		if (preview) {
@@ -331,10 +333,12 @@ int main(int argc, char *argv[])
 	char *username = getenv("REMOTE_USER");
 	char *userhost = getenv("REMOTE_HOST");
 	char *userip   = getenv("REMOTE_ADDR");
-	char *fullmsg = "No cause specified";
+	SBUF_DEFINE(fullmsg);
 	char *envarea = NULL;
 	int  obeycookies = 1;
 	char *accessfn = NULL;
+
+	SBUF_MALLOC(fullmsg, 1024); strncpy(fullmsg, "No cause specified", fullmsg_buflen);
 
 	if ((username == NULL) || (strlen(username) == 0)) username = "unknown";
 	if ((userhost == NULL) || (strlen(userhost) == 0)) userhost = userip;
@@ -389,21 +393,21 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	fullmsg = (char *)malloc(1024 + strlen(username) + strlen(userhost) + strlen(disablemsg));
-	sprintf(fullmsg, "\nDisabled by: %s @ %s\nReason: %s\n", username, userhost, disablemsg);
+	SBUF_REALLOC(fullmsg, 1024 + strlen(username) + strlen(userhost) + strlen(disablemsg));
+	snprintf(fullmsg, fullmsg_buflen, "\nDisabled by: %s @ %s\nReason: %s\n", username, userhost, disablemsg);
 
 	/*
 	 * Ready ... go build the webpage.
 	 */
 	printf("Content-Type: %s\n", xgetenv("HTMLCONTENTTYPE"));
 	if (!preview) {
-		char *returl;
+		SBUF_DEFINE(returl);
 		// dbgprintf("Not a preview: sending to %s\n", textornull(getenv("HTTP_REFERER")));
 		/* We're done -- figure out where to send them */
 		if (getenv("HTTP_REFERER")) printf("Location: %s\n\n", getenv("HTTP_REFERER"));
 		else {
-			returl = (char *)malloc(strlen( xgetenv("SECURECGIBINURL") ) + 11);
-			sprintf(returl, "%s/%s", xgetenv("SECURECGIBINURL"), "enadis.sh");
+			SBUF_MALLOC(returl, strlen( xgetenv("SECURECGIBINURL") ) + 11);
+			snprintf(returl, returl_buflen, "%s/%s", xgetenv("SECURECGIBINURL"), "enadis.sh");
 			printf("Location: %s?\n\n", returl);
 		}
 	}

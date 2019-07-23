@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 char *hostname = NULL;
 char *displayname = NULL;
 char *ip = NULL;
-char *reporttime = NULL;
+SBUF_DEFINE(reporttime);
 char *service = NULL;
 time_t st, end;
 int style;
@@ -55,21 +55,27 @@ static void parse_query(void)
 		 */
 
 		if (strcasecmp(cwalk->name, "HOSTSVC") == 0) {
-			char *p = strrchr(cwalk->value, '.');
+			char *p = cwalk->value + strspn(cwalk->value, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,");
+			*p = '\0';
 
+			p = strrchr(cwalk->value, '.');
 			if (p) { *p = '\0'; service = strdup(p+1); }
 			hostname = strdup(basename(cwalk->value));
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
 		else if (strcasecmp(cwalk->name, "HOST") == 0) {
+			char *p = cwalk->value + strspn(cwalk->value, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,");
+			*p = '\0';
 			hostname = strdup(basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
+			char *p = cwalk->value + strspn(cwalk->value, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,");
+			*p = '\0';
 			service = strdup(basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "REPORTTIME") == 0) {
-			reporttime = (char *) malloc(strlen(cwalk->value)+strlen("REPORTTIME=")+1);
-			sprintf(reporttime, "REPORTTIME=%s", cwalk->value);
+			SBUF_MALLOC(reporttime, strlen(cwalk->value)+strlen("REPORTTIME=")+1);
+			snprintf(reporttime, reporttime_buflen, "REPORTTIME=%s", cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "WARNPCT") == 0) {
 			reportwarnlevel = atof(cwalk->value);
@@ -87,8 +93,10 @@ static void parse_query(void)
 			end = atol(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "COLOR") == 0) {
-			char *colstr = (char *) malloc(strlen(cwalk->value)+2);
-			sprintf(colstr, "%s ", cwalk->value);
+			SBUF_DEFINE(colstr);
+
+			SBUF_MALLOC(colstr, strlen(cwalk->value)+2);
+			snprintf(colstr, colstr_buflen, "%s ", cwalk->value);
 			color = parse_color(colstr);
 			xfree(colstr);
 		}
@@ -102,14 +110,18 @@ static void parse_query(void)
 
 int main(int argc, char *argv[])
 {
-	char histlogfn[PATH_MAX];
+	SBUF_DEFINE(histlogfn);
 	FILE *fd;
-	char *textrepfn = NULL, *textrepfullfn = NULL, *textrepurl = NULL;
+	SBUF_DEFINE(textrepfn);
+	SBUF_DEFINE(textrepfullfn);
+	SBUF_DEFINE(textrepurl);
 	FILE *textrep;
 	reportinfo_t repinfo;
 	int argi;
 	char *envarea = NULL;
 	void *hinfo;
+
+	SBUF_MALLOC(histlogfn, PATH_MAX);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -135,7 +147,7 @@ int main(int argc, char *argv[])
 	displayname = xmh_item(hinfo, XMH_DISPLAYNAME);
 	if (!displayname) displayname = hostname;
 
-	sprintf(histlogfn, "%s/%s.%s", xgetenv("XYMONHISTDIR"), commafy(hostname), service);
+	snprintf(histlogfn, histlogfn_buflen, "%s/%s.%s", xgetenv("XYMONHISTDIR"), commafy(hostname), service);
 	fd = fopen(histlogfn, "r");
 	if (fd == NULL) {
 		errormsg("Cannot open history file");
@@ -144,12 +156,12 @@ int main(int argc, char *argv[])
 	color = parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, reportwarnstops, reporttime);
 	fclose(fd);
 
-	textrepfn = (char *)malloc(1024 + strlen(hostname) + strlen(service));
-	sprintf(textrepfn, "avail-%s-%s-%u-%lu.txt", hostname, service, (unsigned int)getcurrenttime(NULL), (unsigned long)getpid());
-	textrepfullfn = (char *)malloc(1024 + strlen(xgetenv("XYMONREPDIR")) + strlen(textrepfn));
-	sprintf(textrepfullfn, "%s/%s", xgetenv("XYMONREPDIR"), textrepfn);
-	textrepurl = (char *)malloc(1024 + strlen(xgetenv("XYMONREPURL")) + strlen(textrepfn));
-	sprintf(textrepurl, "%s/%s", xgetenv("XYMONREPURL"), textrepfn);
+	SBUF_MALLOC(textrepfn, 1024 + strlen(hostname) + strlen(service));
+	snprintf(textrepfn, textrepfn_buflen, "avail-%s-%s-%u-%lu.txt", hostname, service, (unsigned int)getcurrenttime(NULL), (unsigned long)getpid());
+	SBUF_MALLOC(textrepfullfn, 1024 + strlen(xgetenv("XYMONREPDIR")) + strlen(textrepfn));
+	snprintf(textrepfullfn, textrepfullfn_buflen, "%s/%s", xgetenv("XYMONREPDIR"), textrepfn);
+	SBUF_MALLOC(textrepurl, 1024 + strlen(xgetenv("XYMONREPURL")) + strlen(textrepfn));
+	snprintf(textrepurl, textrepurl_buflen, "%s/%s", xgetenv("XYMONREPURL"), textrepfn);
 	textrep = fopen(textrepfullfn, "w");
 
 	/* Now generate the webpage */

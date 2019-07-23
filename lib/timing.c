@@ -124,43 +124,43 @@ void show_timestamps(char **buffer)
 {
 	timestamp_t *s;
 	struct timespec dif;
-	char *outbuf = (char *) malloc(4096);
-	int outbuflen = 4096;
+	SBUF_DEFINE(outbuf);
 	char buf1[80];
 
 	if (!timing || (stamphead == NULL)) return;
 
 	MEMDEFINE(buf1);
 
-	strcpy(outbuf, "\n\nTIME SPENT\n");
-	strcat(outbuf, "Event                                   ");
-	strcat(outbuf, "        Start time");
-	strcat(outbuf, "          Duration\n");
+	SBUF_MALLOC(outbuf, 4096);
+
+	strncpy(outbuf, "\n\nTIME SPENT\n", outbuf_buflen);
+	strncat(outbuf, "Event                                   ", (outbuf_buflen - strlen(outbuf)));
+	strncat(outbuf, "        Start time", (outbuf_buflen - strlen(outbuf)));
+	strncat(outbuf, "          Duration\n", (outbuf_buflen - strlen(outbuf)));
 
 	for (s=stamphead; (s); s=s->next) {
-		sprintf(buf1, "%-40s ", s->eventtext);
-		strcat(outbuf, buf1);
-		sprintf(buf1, "%10u.%06u ", (unsigned int)s->eventtime.tv_sec, (unsigned int)s->eventtime.tv_nsec / 1000);
-		strcat(outbuf, buf1);
+		snprintf(buf1, sizeof(buf1), "%-40s ", s->eventtext);
+		strncat(outbuf, buf1, (outbuf_buflen - strlen(outbuf)));
+		snprintf(buf1, sizeof(buf1), "%10u.%06u ", (unsigned int)s->eventtime.tv_sec, (unsigned int)s->eventtime.tv_nsec / 1000);
+		strncat(outbuf, buf1, (outbuf_buflen - strlen(outbuf)));
 		if (s->prev) {
 			tvdiff(&((timestamp_t *)s->prev)->eventtime, &s->eventtime, &dif);
-			sprintf(buf1, "%10u.%06u ", (unsigned int)dif.tv_sec, (unsigned int)dif.tv_nsec / 1000);
-			strcat(outbuf, buf1);
+			snprintf(buf1, sizeof(buf1), "%10u.%06u ", (unsigned int)dif.tv_sec, (unsigned int)dif.tv_nsec / 1000);
+			strncat(outbuf, buf1, (outbuf_buflen - strlen(outbuf)));
 		}
-		else strcat(outbuf, "                -");
-		strcat(outbuf, "\n");
+		else strncat(outbuf, "                -", (outbuf_buflen - strlen(outbuf)));
+		strncat(outbuf, "\n", (outbuf_buflen - strlen(outbuf)));
 
-		if ((outbuflen - strlen(outbuf)) < 200) {
-			outbuflen += 4096;
-			outbuf = (char *) realloc(outbuf, outbuflen);
+		if ((outbuf_buflen - strlen(outbuf)) < 200) {
+			SBUF_REALLOC(outbuf, outbuf_buflen + 4096);
 		}
 	}
 
 	tvdiff(&stamphead->eventtime, &stamptail->eventtime, &dif);
-	sprintf(buf1, "%-40s ", "TIME TOTAL"); strcat(outbuf, buf1);
-	sprintf(buf1, "%-18s", ""); strcat(outbuf, buf1);
-	sprintf(buf1, "%10u.%06u ", (unsigned int)dif.tv_sec, (unsigned int)dif.tv_nsec / 1000); strcat(outbuf, buf1);
-	strcat(outbuf, "\n");
+	snprintf(buf1, sizeof(buf1), "%-40s ", "TIME TOTAL"); strncat(outbuf, buf1, (outbuf_buflen - strlen(outbuf)));
+	snprintf(buf1, sizeof(buf1), "%-18s", ""); strncat(outbuf, buf1, (outbuf_buflen - strlen(outbuf)));
+	snprintf(buf1, sizeof(buf1), "%10u.%06u ", (unsigned int)dif.tv_sec, (unsigned int)dif.tv_nsec / 1000); strncat(outbuf, buf1, (outbuf_buflen - strlen(outbuf)));
+	strncat(outbuf, "\n", (outbuf_buflen - strlen(outbuf)));
 
 	if (buffer == NULL) {
 		printf("%s", outbuf);

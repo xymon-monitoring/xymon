@@ -52,7 +52,7 @@ int parse_color(char *colortext)
 	inpcolor[7] = '\0';
 	n = strspn(inpcolor, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	inpcolor[n] = '\0';
-	strcat(inpcolor, " ");
+	strncat(inpcolor, " ", sizeof(inpcolor)-strlen(inpcolor));
 
 	if (strncasecmp(inpcolor, "green ", 6) == 0) {
 		MEMUNDEFINE(inpcolor);
@@ -103,18 +103,19 @@ int eventcolor(char *colortext)
 char *dotgiffilename(int color, int acked, int oldage)
 {
 	static char *filename = NULL; /* yellow-recent.gif */
+	unsigned int bytesleft = 1024; /* Max length of a the gif-file, without path */
 
 	/* Allocate the first time, never free */
-	if (filename == NULL) filename = (char *)malloc(20);
+	if (filename == NULL) filename = (char *)malloc(bytesleft);
 
-	strcpy(filename, colorname(color));
+	strncpy(filename, colorname(color), bytesleft); bytesleft -= strlen(filename);
 	if (acked) {
-		strcat(filename, "-ack");
+		strncat(filename, "-ack", bytesleft); bytesleft -= 4;
 	}
 	else if (use_recentgifs) {
-		strcat(filename, (oldage ? "" : "-recent"));
+		strncat(filename, (oldage ? "" : "-recent"), bytesleft); bytesleft -= 7;
 	}
-	sprintf(filename+strlen(filename), ".%s", xgetenv("IMAGEFILETYPE"));
+	snprintf(filename+strlen(filename), bytesleft, ".%s", xgetenv("IMAGEFILETYPE"));
 
 	return filename;
 }

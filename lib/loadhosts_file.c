@@ -110,7 +110,7 @@ static int prepare_fromnet(void)
 
 	if (contentbuffer) freestrbuffer(contentbuffer);
 	contentbuffer = convertstrbuffer(fdata, 0);
-	strcpy(contentmd5, fhash);
+	strncpy(contentmd5, fhash, sizeof(contentmd5));
 
 	return 0;
 }
@@ -126,7 +126,8 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	/* Return value: 0 for load OK, 1 for "No files changed since last load", -1 for error (file not found) */
 	int prepresult;
 	int ip1, ip2, ip3, ip4, groupid, pageidx;
-	char hostname[4096], *dgname;
+	char hostname[4096];
+	SBUF_DEFINE(dgname);
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	void * htree;
 	char *cfgdata, *inbol, *ineol, insavchar = '\0';
@@ -209,11 +210,15 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			pageidx = groupid = 0;
 			if (dgname) xfree(dgname); dgname = NULL;
 			if (get_page_name_title(inbol, "subpage", &name, &title) == 0) {
+				unsigned int sz;
+
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
-				newp->pagepath = malloc(strlen(curtoppage->pagepath) + strlen(name) + 2);
-				sprintf(newp->pagepath, "%s/%s", curtoppage->pagepath, name);
-				newp->pagetitle = malloc(strlen(curtoppage->pagetitle) + strlen(title) + 2);
-				sprintf(newp->pagetitle, "%s/%s", curtoppage->pagetitle, title);
+				sz = strlen(curtoppage->pagepath) + strlen(name) + 2;
+				newp->pagepath = malloc(sz);
+				snprintf(newp->pagepath, sz, "%s/%s", curtoppage->pagepath, name);
+				sz = strlen(curtoppage->pagetitle) + strlen(title) + 2;
+				newp->pagetitle = malloc(sz);
+				snprintf(newp->pagetitle, sz, "%s/%s", curtoppage->pagetitle, title);
 				newp->next = NULL;
 
 				pgtail->next = newp;
@@ -234,11 +239,15 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			}
 
 			if (parent && (get_page_name_title(title, "", &name, &title) == 0)) {
+				unsigned int sz;
+
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
-				newp->pagepath = malloc(strlen(parent->pagepath) + strlen(name) + 2);
-				sprintf(newp->pagepath, "%s/%s", parent->pagepath, name);
-				newp->pagetitle = malloc(strlen(parent->pagetitle) + strlen(title) + 2);
-				sprintf(newp->pagetitle, "%s/%s", parent->pagetitle, title);
+				sz = strlen(parent->pagepath) + strlen(name) + 2;
+				newp->pagepath = malloc(sz);
+				snprintf(newp->pagepath, sz, "%s/%s", parent->pagepath, name);
+				sz = strlen(parent->pagetitle) + strlen(title) + 2;
+				newp->pagetitle = malloc(sz);
+				snprintf(newp->pagetitle, sz, "%s/%s", parent->pagetitle, title);
 				newp->next = NULL;
 
 				pgtail->next = newp;
@@ -263,7 +272,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				char *inp;
 
 				/* Strip HTML tags from the string */
-				dgname = (char *)malloc(strlen(tok) + 1);
+				SBUF_MALLOC(dgname, strlen(tok) + 1);
 				*dgname = '\0';
 
 				inp = tok;
@@ -275,19 +284,19 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 						tagend = strchr(tagstart, '>');
 
 						*tagstart = '\0';
-						if (*inp) strcat(dgname, inp);
+						if (*inp) strncat(dgname, inp, (dgname_buflen - strlen(dgname)));
 						if (tagend) {
 							inp = tagend+1;
 						}
 						else {
 							/* Unmatched '<', keep all of the string */
 							*tagstart = '<';
-							strcat(dgname, tagstart);
+							strncat(dgname, tagstart, (dgname_buflen - strlen(dgname)));
 							inp += strlen(inp);
 						}
 					}
 					else {
-						strcat(dgname, inp);
+						strncat(dgname, inp, (dgname_buflen - strlen(dgname)));
 						inp += strlen(inp);
 					}
 				}
@@ -296,7 +305,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 		else if (sscanf(inbol, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *startoftags, *tag, *delim;
 			int elemidx, elemsize;
-			char groupidstr[10];
+			char groupidstr[15];
 			xtreePos_t handle;
 			namelist_t *newitem;
 
@@ -320,8 +329,8 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				if (p) *p = '\0';
 			}
 
-			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-			sprintf(groupidstr, "%d", groupid);
+			snprintf(newitem->ip, sizeof(newitem->ip), "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+			snprintf(groupidstr, sizeof(groupidstr), "%d", groupid);
 			newitem->groupid = strdup(groupidstr);
 			newitem->dgname = (dgname ? strdup(dgname) : strdup("NONE"));
 			newitem->pageindex = pageidx++;

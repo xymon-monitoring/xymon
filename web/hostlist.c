@@ -66,7 +66,8 @@ void parse_query(void)
 int main(int argc, char *argv[])
 {
 	char *envarea = NULL;
-	char *req, *board, *l;
+	SBUF_DEFINE(req);
+	char *board, *l;
 	int argi, res;
 	sendreturn_t *sres;
 	char *cookie;
@@ -106,8 +107,8 @@ int main(int argc, char *argv[])
 	if (dummy == NULL) return 1; else freeregex(dummy);
 
 	sres = newsendreturnbuf(1, NULL);
-	req = malloc(1024 + strlen(fields) + strlen(testfilter) + strlen(pagefilter));
-	sprintf(req, "xymondboard fields=%s test=%s page=%s",
+	SBUF_MALLOC(req, 1024 + strlen(fields) + strlen(testfilter) + strlen(pagefilter));
+	snprintf(req, req_buflen, "xymondboard fields=%s test=%s page=%s",
 		fields, testfilter, pagefilter);
 	res = sendmessage(req, NULL, XYMON_TIMEOUT, sres);
 	if (res != XYMONSEND_OK) return 1;

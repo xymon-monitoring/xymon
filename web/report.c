@@ -99,7 +99,10 @@ void parse_query(void)
 			endyear = atoi(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "style") == 0) {
+			char *p = cwalk->value + strspn(cwalk->value, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+			*p = '\0';
 			style = strdup(cwalk->value);
+			
 		}
 		else if (strcasecmp(cwalk->name, "suburl") == 0) {
 			suburl = strdup(cwalk->value);
@@ -165,7 +168,7 @@ void cleandir(char *dirname)
 
 	while ((d = readdir(dir))) {
 		if (d->d_name[0] != '.') {
-			sprintf(fn, "%s/%s", dirname, d->d_name);
+			snprintf(fn, sizeof(fn), "%s/%s", dirname, d->d_name);
 			if ((stat(fn, &st) == 0) && (st.st_mtime < killtime)) {
 				if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
 					dbgprintf("rm %s\n", fn);
@@ -187,9 +190,9 @@ void cleandir(char *dirname)
 int main(int argc, char *argv[])
 {
 	char dirid[PATH_MAX];
-	char outdir[PATH_MAX];
-	char xymonwebenv[PATH_MAX];
-	char xymongencmd[PATH_MAX];
+	SBUF_DEFINE(outdir);
+	SBUF_DEFINE(xymonwebenv);
+	SBUF_DEFINE(xymongencmd);
 	char xymongentimeopt[100];
 	char csvdelimopt[100];
 	char *xymongen_argv[20];
@@ -202,6 +205,10 @@ int main(int argc, char *argv[])
 	char *envarea = NULL;
 	char *useragent = NULL;
 	int usemultipart = 1;
+
+	SBUF_MALLOC(outdir, PATH_MAX+1024);
+	SBUF_MALLOC(xymonwebenv, PATH_MAX+1024);
+	SBUF_MALLOC(xymongencmd, PATH_MAX+1024);
 
 	newargi = 0;
 	xymongen_argv[newargi++] = xymongencmd;
@@ -249,23 +256,23 @@ int main(int argc, char *argv[])
 	 * We cannot do it before, because we need the environment that the command-line options 
 	 * might provide.
 	 */
-	if (xgetenv("XYMONGEN")) sprintf(xymongencmd, "%s", xgetenv("XYMONGEN"));
-	else sprintf(xymongencmd, "%s/bin/xymongen", xgetenv("XYMONHOME"));
+	if (xgetenv("XYMONGEN")) snprintf(xymongencmd, xymongencmd_buflen, "%s", xgetenv("XYMONGEN"));
+	else snprintf(xymongencmd, xymongencmd_buflen, "%s/bin/xymongen", xgetenv("XYMONHOME"));
 
 	snprintf(xymongentimeopt, sizeof(xymongentimeopt)-1,"--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
 
-	sprintf(dirid, "%lu-%u", (unsigned long)getpid(), (unsigned int)getcurrenttime(NULL));
+	snprintf(dirid, sizeof(dirid), "%lu-%u", (unsigned long)getpid(), (unsigned int)getcurrenttime(NULL));
 	if (!csvoutput) {
-		sprintf(outdir, "%s/%s", xgetenv("XYMONREPDIR"), dirid);
+		snprintf(outdir, outdir_buflen, "%s/%s", xgetenv("XYMONREPDIR"), dirid);
 		mkdir(outdir, 0755);
 		xymongen_argv[newargi++] = outdir;
-		sprintf(xymonwebenv, "XYMONWEB=%s/%s", xgetenv("XYMONREPURL"), dirid);
+		snprintf(xymonwebenv, xymonwebenv_buflen, "XYMONWEB=%s/%s", xgetenv("XYMONREPURL"), dirid);
 		putenv(xymonwebenv);
 	}
 	else {
-		sprintf(outdir, "--csv=%s/%s.csv", xgetenv("XYMONREPDIR"), dirid);
+		snprintf(outdir, outdir_buflen, "--csv=%s/%s.csv", xgetenv("XYMONREPDIR"), dirid);
 		xymongen_argv[newargi++] = outdir;
-		sprintf(csvdelimopt, "--csvdelim=%c", csvdelim);
+		snprintf(csvdelimopt, sizeof(csvdelimopt), "--csvdelim=%c", csvdelim);
 		xymongen_argv[newargi++] = csvdelimopt;
 	}
 
@@ -310,7 +317,7 @@ int main(int argc, char *argv[])
 			char msg[4096];
 
 			if (usemultipart) printf("--%s\n\n", htmldelim);
-			sprintf(msg, "Could not generate report.<br>\nCheck that the %s/www/rep/ directory has permissions '-rwxrwxr-x' (775)<br>\n and that is is set to group %d", xgetenv("XYMONHOME"), (int)getgid());
+			snprintf(msg, sizeof(msg), "Could not generate report.<br>\nCheck that the %s/www/rep/ directory has permissions '-rwxrwxr-x' (775)<br>\n and that is is set to group %d", xgetenv("XYMONHOME"), (int)getgid());
 			errormsg(msg);
 		}
 		else {

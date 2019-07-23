@@ -73,7 +73,7 @@ service_t	*httptest = NULL;		/* Identifies the httptest within svctree list */
 service_t	*ldaptest = NULL;		/* Identifies the ldaptest within svctree list */
 service_t	*rpctest = NULL;		/* Identifies the rpctest within svctree list */
 void *       testhosttree;			/* All tested hosts, has testedhost_t records */
-char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
+SBUF_DEFINE(nonetpage);				/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
 int 		timeout=10;			/* The timeout (seconds) for all TCP-tests */
 char		*contenttestname = "content";   /* Name of the content checks column */
@@ -96,7 +96,7 @@ int		checktcpresponse = 0;
 int		dotraceroute = 0;
 int		fqdn = 1;
 int		dosendflags = 1;
-char		*pingcmd = NULL;
+SBUF_DEFINE(pingcmd);
 char		pinglog[PATH_MAX];
 char		pingerrlog[PATH_MAX];
 pid_t		*pingpids;
@@ -107,8 +107,7 @@ int		bigfailure = 0;
 char		*defaultsourceip = NULL;
 int		loadhostsfromxymond = 0;
 int		sslminkeysize = 0;
-char		*warnbuf = NULL;
-static unsigned int warnbufsize = 0;
+STATIC_SBUF_DEFINE(warnbuf);
 
 void dump_hostlist(void)
 {
@@ -209,7 +208,7 @@ char *deptest_failed(testedhost_t *host, char *testname)
 	if (host->deptests == NULL) return NULL;
 
 	depcopy = strdup(host->deptests);
-	sprintf(depitem, "(%s:", testname);
+	snprintf(depitem, sizeof(depitem), "(%s:", testname);
 	p = strstr(depcopy, depitem);
 	if (p == NULL) { xfree(depcopy); return NULL; }
 
@@ -237,14 +236,14 @@ char *deptest_failed(testedhost_t *host, char *testname)
 		t = find_test(dephostname, deptestname);
 		if (t && !t->open) {
 			if (strlen(result) == 0) {
-				strcpy(result, "\nThis test depends on the following test(s) that failed:\n\n");
+				strncpy(result, "\nThis test depends on the following test(s) that failed:\n\n", sizeof(result));
 			}
 
 			if ((strlen(result) + strlen(dephostname) + strlen(deptestname) + 2) < sizeof(result)) {
-				strcat(result, dephostname);
-				strcat(result, "/");
-				strcat(result, deptestname);
-				strcat(result, "\n");
+				strncat(result, dephostname, (sizeof(result) - strlen(result)));
+				strncat(result, "/", (sizeof(result) - strlen(result)));
+				strncat(result, deptestname, (sizeof(result) - strlen(result)));
+				strncat(result, "\n", (sizeof(result) - strlen(result)));
 			}
 		}
 
@@ -252,9 +251,9 @@ char *deptest_failed(testedhost_t *host, char *testname)
 	}
 
 	xfree(depcopy);
-	if (strlen(result)) strcat(result, "\n\n");
+	if (*result) strncat(result, "\n\n", (sizeof(result) - strlen(result)));
 
-	return (strlen(result) ? result : NULL);
+	return (*result ? result : NULL);
 }
 
 
@@ -310,8 +309,8 @@ void load_services(void)
 	xfree(netsvcs);
 
 	/* Save NONETPAGE env. var in ",test1,test2," format for easy and safe grepping */
-	nonetpage = (char *) malloc(strlen(xgetenv("NONETPAGE"))+3);
-	sprintf(nonetpage, ",%s,", xgetenv("NONETPAGE"));
+	SBUF_MALLOC(nonetpage, strlen(xgetenv("NONETPAGE"))+3);
+	snprintf(nonetpage, nonetpage_buflen, ",%s,", xgetenv("NONETPAGE"));
 	for (p=nonetpage; (*p); p++) if (*p == ' ') *p = ',';
 }
 
@@ -394,7 +393,8 @@ int wanted_host(void *host, char *netstring)
 
 void load_tests(void)
 {
-	char *p, *routestring = NULL;
+	char *p;
+	SBUF_DEFINE(routestring);
 	void *hwalk;
 	testedhost_t *h;
 	int badtagsused = 0;
@@ -419,8 +419,8 @@ void load_tests(void)
 
 	/* Each network test tagged with NET:locationname */
 	if (strlen(location) > 0) {
-		routestring = (char *) malloc(strlen(location)+strlen("route_:")+1);
-		sprintf(routestring, "route_%s:", location);
+		SBUF_MALLOC(routestring, strlen(location)+strlen("route_:")+1);
+		snprintf(routestring, routestring_buflen, "route_%s:", location);
 	}
 
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
@@ -592,7 +592,7 @@ void load_tests(void)
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
 					char *userfmt = "cont=apache;%s;.";
 					char *deffmt = "cont=apache;http://%s/server-status?auto;.";
-					static char *statusurl = NULL;
+					STATIC_SBUF_DEFINE(statusurl);
 					char *userurl;
 
 					if (statusurl != NULL) xfree(statusurl);
@@ -608,15 +608,15 @@ void load_tests(void)
 							errprintf("Host %s: Invalid URL for apache test - ignored: %s\n", xmh_item(hwalk, XMH_HOSTNAME), testspec);
 						}
 						else {
-							statusurl = (char *)malloc(strlen(userurl) + strlen(userfmt) + 1);
-							sprintf(statusurl, userfmt, userurl);
+							SBUF_MALLOC(statusurl, strlen(userurl) + strlen(userfmt) + 1);
+							snprintf(statusurl, statusurl_buflen, userfmt, userurl);
 							s = httptest;
 						}
 					}
 					else {
 						char *ip = xmh_item(hwalk, XMH_IP);
-						statusurl = (char *)malloc(strlen(deffmt) + strlen(ip) + 1);
-						sprintf(statusurl, deffmt, ip);
+						SBUF_MALLOC(statusurl, strlen(deffmt) + strlen(ip) + 1);
+						snprintf(statusurl, statusurl_buflen, deffmt, ip);
 						s = httptest;
 					}
 
@@ -673,7 +673,7 @@ void load_tests(void)
 						 * XYMONNETSVCS - so it is known already.
 						 */
 						int specialport = 0;
-						char *specialname;
+						SBUF_DEFINE(specialname);
 						char *opt2 = strrchr(option, ':');
 
 						if (opt2) {
@@ -696,8 +696,8 @@ void load_tests(void)
 						}
 
 						if (specialport) {
-							specialname = (char *) malloc(strlen(s->testname)+10);
-							sprintf(specialname, "%s_%d", s->testname, specialport);
+							SBUF_MALLOC(specialname, strlen(s->testname)+10);
+							snprintf(specialname, specialname_buflen,"%s_%d", s->testname, specialport);
 							s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
 							xfree(specialname);
 						}
@@ -841,7 +841,7 @@ void load_tests(void)
 				errprintf("Host %s appears twice in hosts.cfg! This may cause strange results\n", h->hostname);
 			}
 	
-			strcpy(h->ip, xmh_item(hwalk, XMH_IP));
+			strncpy(h->ip, xmh_item(hwalk, XMH_IP), sizeof(h->ip));
 			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {
@@ -872,7 +872,7 @@ char *ip_to_test(testedhost_t *h)
 		dnsresult = dnsresolve(h->hostname);
 
 		if (dnsresult) {
-			strcpy(h->ip, dnsresult);
+			strncpy(h->ip, dnsresult, sizeof(h->ip));
 		}
 		else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
 			/* Already have the IP setup */
@@ -884,17 +884,15 @@ char *ip_to_test(testedhost_t *h)
 /* Make this a warning rather than an error
 			errprintf("xymonnet: Cannot resolve IP for host %s\n", h->hostname);
  */
-			sprintf(msg, "xymonnet: Cannot resolve IP for host %s\n", h->hostname);
+			snprintf(msg, sizeof(msg), "xymonnet: Cannot resolve IP for host %s\n", h->hostname);
 			if (warnbuf == NULL) {
-				warnbufsize = 8192;
-				warnbuf = (char *) malloc(warnbufsize);
+				SBUF_MALLOC(warnbuf, 8192);
 				*warnbuf = '\0';
 			}
-				else if ((strlen(warnbuf) + strlen(msg)) > warnbufsize) {
-				warnbufsize += 8192;
-				warnbuf = (char *) realloc(warnbuf, warnbufsize);
+			else if ((strlen(warnbuf) + strlen(msg)) > warnbuf_buflen) {
+				SBUF_REALLOC(warnbuf, warnbuf_buflen + 8192);
 			}
-			strcat(warnbuf, msg);
+			strncat(warnbuf, msg, (warnbuf_buflen - strlen(warnbuf)));
 		}
 	}
 
@@ -913,7 +911,7 @@ void load_ping_status(void)
 	xtreePos_t handle;
 	testedhost_t *h;
 
-	sprintf(statusfn, "%s/ping.%s.status", xgetenv("XYMONTMP"), location);
+	snprintf(statusfn, sizeof(statusfn), "%s/ping.%s.status", xgetenv("XYMONTMP"), location);
 	statusfd = fopen(statusfn, "r");
 	if (statusfd == NULL) return;
 
@@ -942,7 +940,7 @@ void save_ping_status(void)
 	testitem_t *t;
 	int didany = 0;
 
-	sprintf(statusfn, "%s/ping.%s.status", xgetenv("XYMONTMP"), location);
+	snprintf(statusfn, sizeof(statusfn), "%s/ping.%s.status", xgetenv("XYMONTMP"), location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
@@ -970,7 +968,7 @@ void load_test_status(service_t *test)
 	testedhost_t *h;
 	testitem_t *walk;
 
-	sprintf(statusfn, "%s/%s.%s.status", xgetenv("XYMONTMP"), test->testname, location);
+	snprintf(statusfn, sizeof(statusfn), "%s/%s.%s.status", xgetenv("XYMONTMP"), test->testname, location);
 	statusfd = fopen(statusfn, "r");
 	if (statusfd == NULL) return;
 
@@ -1003,7 +1001,7 @@ void save_test_status(service_t *test)
 	testitem_t *t;
 	int didany = 0;
 
-	sprintf(statusfn, "%s/%s.%s.status", xgetenv("XYMONTMP"), test->testname, location);
+	snprintf(statusfn, sizeof(statusfn), "%s/%s.%s.status", xgetenv("XYMONTMP"), test->testname, location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
@@ -1029,7 +1027,7 @@ void save_frequenttestlist(int argc, char *argv[])
 	int didany = 0;
 	int i;
 
-	sprintf(fn, "%s/frequenttests.%s", xgetenv("XYMONTMP"), location);
+	snprintf(fn, sizeof(fn), "%s/frequenttests.%s", xgetenv("XYMONTMP"), location);
 	fd = fopen(fn, "w");
 	if (fd == NULL) return;
 
@@ -1071,7 +1069,7 @@ void run_nslookup_service(service_t *service)
 void run_ntp_service(service_t *service)
 {
 	testitem_t	*t;
-	char		cmd[1024];
+	char		cmd[PATH_MAX+1024];
 	char		*p;
 	char		cmdpath[PATH_MAX];
 	int		use_sntp = 0;
@@ -1079,16 +1077,16 @@ void run_ntp_service(service_t *service)
 	p = getenv("SNTP");	/* Plain "getenv" as we want to know if it's unset */
 	use_sntp = (p != NULL);
 
-	strcpy(cmdpath, (use_sntp ? xgetenv("SNTP") : xgetenv("NTPDATE")) );
+	strncpy(cmdpath, (use_sntp ? xgetenv("SNTP") : xgetenv("NTPDATE")), sizeof(cmdpath));
 
 	for (t=service->items; (t); t = t->next) {
 		/* Do not run NTP test if host does not resolve in DNS or is down */
 		if (!t->host->dnserror && !t->host->pingerror) {
 			if (use_sntp) {
-				sprintf(cmd, "%s %s -d %d %s 2>&1", cmdpath, xgetenv("SNTPOPTS"), extcmdtimeout-1, ip_to_test(t->host));
+				snprintf(cmd, sizeof(cmd), "%s %s -d %d %s 2>&1", cmdpath, xgetenv("SNTPOPTS"), extcmdtimeout-1, ip_to_test(t->host));
 			}
 			else {
-				sprintf(cmd, "%s %s %s 2>&1", cmdpath, xgetenv("NTPDATEOPTS"), ip_to_test(t->host));
+				snprintf(cmd, sizeof(cmd), "%s %s %s 2>&1", cmdpath, xgetenv("NTPDATEOPTS"), ip_to_test(t->host));
 			}
 
 			t->open = (run_command(cmd, "no server suitable for synchronization", t->banner, 1, extcmdtimeout) == 0);
@@ -1100,16 +1098,16 @@ void run_ntp_service(service_t *service)
 void run_rpcinfo_service(service_t *service)
 {
 	testitem_t	*t;
-	char		cmd[1024];
+	char		cmd[PATH_MAX+1024];
 	char		*p;
 	char		cmdpath[PATH_MAX];
 
 	p = xgetenv("RPCINFO");
-	strcpy(cmdpath, (p ? p : "rpcinfo"));
+	strncpy(cmdpath, (p ? p : "rpcinfo"), sizeof(cmdpath));
 	for (t=service->items; (t); t = t->next) {
 		/* Do not run RPCINFO test if host does not resolve in DNS or is down */
 		if (!t->host->dnserror && (t->host->downcount == 0) && !t->host->pingerror) {
-			sprintf(cmd, "%s -p %s 2>&1", cmdpath, ip_to_test(t->host));
+			snprintf(cmd, sizeof(cmd), "%s -p %s 2>&1", cmdpath, ip_to_test(t->host));
 			t->open = (run_command(cmd, NULL, t->banner, 1, extcmdtimeout) == 0);
 		}
 	}
@@ -1134,7 +1132,7 @@ int start_ping_service(service_t *service)
 
 		if (t->host->dnserror || t->host->noping) continue;
 
-		strcpy(ip, ip_to_test(t->host));
+		strncpy(ip, ip_to_test(t->host), sizeof(ip));
 		handle = xtreeFind(iptree, ip);
 		if (handle == xtreeEnd(iptree)) {
 			rec = strdup(ip);
@@ -1169,11 +1167,11 @@ int start_ping_service(service_t *service)
 
 	pingcount = 0;
 	pingpids = calloc(pingchildcount, sizeof(pid_t));
-	pingcmd = malloc(strlen(xgetenv("FPING")) + strlen(xgetenv("FPINGOPTS")) + 2);
-	sprintf(pingcmd, "%s %s", xgetenv("FPING"), xgetenv("FPINGOPTS"));
+	SBUF_MALLOC(pingcmd, strlen(xgetenv("FPING")) + strlen(xgetenv("FPINGOPTS")) + 2);
+	snprintf(pingcmd, pingcmd_buflen, "%s %s", xgetenv("FPING"), xgetenv("FPINGOPTS"));
 
-	sprintf(pinglog, "%s/ping-stdout.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
-	sprintf(pingerrlog, "%s/ping-stderr.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
+	snprintf(pinglog, sizeof(pinglog), "%s/ping-stdout.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
+	snprintf(pingerrlog, sizeof(pingerrlog), "%s/ping-stderr.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
 
 	/* Setup command line and arguments */
 	cmdargs = setup_commandargs(pingcmd, &cmd);
@@ -1205,8 +1203,8 @@ int start_ping_service(service_t *service)
 			 */
 			int outfile, errfile;
 
-			sprintf(pinglog+strlen(pinglog), ".%02d", i);
-			sprintf(pingerrlog+strlen(pingerrlog), ".%02d", i);
+			snprintf(pinglog+strlen(pinglog), (sizeof(pinglog) - strlen(pinglog)), ".%02d", i);
+			snprintf(pingerrlog+strlen(pingerrlog), (sizeof(pingerrlog) - strlen(pingerrlog)), ".%02d", i);
 
 			outfile = open(pinglog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
 			if (outfile == -1) errprintf("Cannot create file %s : %s\n", pinglog, strerror(errno));
@@ -1240,7 +1238,7 @@ int start_ping_service(service_t *service)
 			for (handle = xtreeFirst(iptree), hnum = 0; ((feederror == 0) && (handle != xtreeEnd(iptree))); handle = xtreeNext(iptree, handle), hnum++) {
 				if ((hnum % pingchildcount) != i) continue;
 
-				sprintf(ip, "%s\n", xtreeKey(iptree, handle));
+				snprintf(ip, sizeof(ip), "%s\n", xtreeKey(iptree, handle));
 				if (write(pfd[1], ip, strlen(ip)) != strlen(ip)) {
 					errprintf("Cannot feed IP to ping tool: %s\n", strerror(errno));
 					feederror = 1;
@@ -1311,8 +1309,12 @@ int finish_ping_service(service_t *service)
 						pingcmd, WEXITSTATUS(pingstatus));
 		}
 
+		/* Ignore gcc warnings about truncating filenames when adding a number */
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wformat-truncation"
+
 		/* Open the new ping result file */
-		sprintf(fn, "%s.%02d", pinglog, i);
+		snprintf(fn, sizeof(fn), "%s.%02d", pinglog, i);
 		logfd = fopen(fn, "r");
 		if (logfd == NULL) { 
 			failed = 1;
@@ -1321,7 +1323,7 @@ int finish_ping_service(service_t *service)
 		if (!debug) unlink(fn);	/* We have an open filehandle, so it's ok to delete the file now */
 
 		/* Copy error messages to the Xymon logfile */
-		sprintf(fn, "%s.%02d", pingerrlog, i);
+		snprintf(fn, sizeof(fn), "%s.%02d", pingerrlog, i);
 		if (failed) {
 			FILE *errfd;
 			char buf[1024];
@@ -1333,6 +1335,7 @@ int finish_ping_service(service_t *service)
 			if (errfd) fclose(errfd);
 		}
 		if (!debug) unlink(fn);
+		#pragma GCC diagnostic pop
 
 		if (failed) {
 			/* Flag all ping tests as "undecided" */
@@ -1345,7 +1348,7 @@ int finish_ping_service(service_t *service)
 				p = strchr(l, '\n'); if (p) *p = '\0';
 				if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
 
-					sprintf(pingip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+					snprintf(pingip, sizeof(pingip), "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 
 					/*
 					 * Need to loop through all testitems - there may be multiple entries for
@@ -1386,7 +1389,7 @@ int finish_ping_service(service_t *service)
 		if (!t->open && t->host->routerdeps) {
 			testitem_t *router;
 
-			strcpy(l, t->host->routerdeps);
+			strncpy(l, t->host->routerdeps, sizeof(l));
 			p = strtok(l, ",");
 			while (p && (t->host->deprouterdown == NULL)) {
 				for (router=service->items; 
@@ -1501,10 +1504,10 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 
 			if (getenv("TRACEROUTEOPTS")) {
 				/* post 4.3.21 */
-				sprintf(cmd, "%s %s %s 2>&1", xgetenv("TRACEROUTE"), xgetenv("TRACEROUTEOPTS"), test->host->ip);
+				snprintf(cmd, sizeof(cmd), "%s %s %s 2>&1", xgetenv("TRACEROUTE"), xgetenv("TRACEROUTEOPTS"), test->host->ip);
 			}
 			else {
-				sprintf(cmd, "%s %s 2>&1", xgetenv("TRACEROUTE"), test->host->ip);
+				snprintf(cmd, sizeof(cmd), "%s %s 2>&1", xgetenv("TRACEROUTE"), test->host->ip);
 			}
 			test->host->traceroute = newstrbuffer(0);
 			run_command(cmd, NULL, test->host->traceroute, 0, extcmdtimeout);
@@ -1636,11 +1639,11 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 
 	/* If a NOPAGENET service, downgrade RED to YELLOW */
 	if (color == COL_RED) {
-		char *nopagename;
+		SBUF_DEFINE(nopagename);
 
 		/* Check if this service is a NOPAGENET service. */
-		nopagename = (char *) malloc(strlen(svcname)+3);
-		sprintf(nopagename, ",%s,", svcname);
+		SBUF_MALLOC(nopagename, strlen(svcname)+3);
+		snprintf(nopagename, nopagename_buflen, ",%s,", svcname);
 		if (strstr(nonetpage, nopagename) != NULL) color = COL_YELLOW;
 		xfree(nopagename);
 	}
@@ -1698,27 +1701,27 @@ void send_results(service_t *service, int failgoesclear)
 
 		init_status(color);
 		if (dosendflags) 
-			sprintf(msgline, "status+%d %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
+			snprintf(msgline, sizeof(msgline), "status+%d %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
 				validity, commafy(t->host->hostname), svcname, colorname(color), 
 				flags, timestamp, 
 				svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
 		else
-			sprintf(msgline, "status %s.%s %s %s %s %s ", 
+			snprintf(msgline, sizeof(msgline), "status %s.%s %s %s %s %s ", 
 				commafy(t->host->hostname), svcname, colorname(color), 
 				timestamp, 
 				svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
 
 		if (t->host->dnserror) {
-			strcat(msgline, ": DNS lookup failed");
-			sprintf(msgtext, "\nUnable to resolve hostname %s\n\n", t->host->hostname);
+			strncat(msgline, ": DNS lookup failed", (sizeof(msgline) - strlen(msgline)));
+			snprintf(msgtext, sizeof(msgtext), "\nUnable to resolve hostname %s\n\n", t->host->hostname);
 		}
 		else {
-			sprintf(msgtext, "\nService %s on %s is ", svcname, t->host->hostname);
+			snprintf(msgtext, sizeof(msgtext), "\nService %s on %s is ", svcname, t->host->hostname);
 			switch (color) {
 			  case COL_GREEN: 
-				  strcat(msgtext, "OK ");
-				  strcat(msgtext, (t->reverse ? "(down)" : "(up)"));
-				  strcat(msgtext, "\n");
+				  strncat(msgtext, "OK ", (sizeof(msgtext) - strlen(msgtext)));
+				  strncat(msgtext, (t->reverse ? "(down)" : "(up)"), (sizeof(msgtext) - strlen(msgtext)));
+				  strncat(msgtext, "\n", (sizeof(msgtext) - strlen(msgtext)));
 				  break;
 
 			  case COL_RED:
@@ -1730,23 +1733,23 @@ void send_results(service_t *service, int failgoesclear)
 					if (routertext == NULL) routertext = xgetenv("XYMONROUTERTEXT");
 					if (routertext == NULL) routertext = "router";
 
-					strcat(msgline, ": Intermediate ");
-					strcat(msgline, routertext);
-					strcat(msgline, " down");
+					strncat(msgline, ": Intermediate ", (sizeof(msgline) - strlen(msgline)));
+					strncat(msgline, routertext, (sizeof(msgline) - strlen(msgline)));
+					strncat(msgline, " down", (sizeof(msgline) - strlen(msgline)));
 
-					sprintf(msgtext+strlen(msgtext), 
+					snprintf(msgtext+strlen(msgtext), (sizeof(msgtext) - strlen(msgtext)),
 						"%s.\nThe %s %s (IP:%s) is not reachable, causing this host to be unreachable.\n",
 						failtext, routertext, 
 						((testedhost_t *)t->host->deprouterdown)->hostname,
 						((testedhost_t *)t->host->deprouterdown)->ip);
 				  }
 				  else {
-					sprintf(msgtext+strlen(msgtext), "%s : %s\n", failtext, causetext);
+					snprintf(msgtext+strlen(msgtext), (sizeof(msgtext) - strlen(msgtext)), "%s : %s\n", failtext, causetext);
 				  }
 				  break;
 
 			  case COL_CLEAR:
-				  strcat(msgtext, "OK\n");
+				  strncat(msgtext, "OK\n", (sizeof(msgtext) - strlen(msgtext)));
 				  if (service == pingtest) {
 					  if (t->host->deprouterdown) {
 						char *routertext;
@@ -1755,60 +1758,60 @@ void send_results(service_t *service, int failgoesclear)
 						if (routertext == NULL) routertext = xgetenv("XYMONROUTERTEXT");
 						if (routertext == NULL) routertext = "router";
 
-						strcat(msgline, ": Intermediate ");
-						strcat(msgline, routertext);
-						strcat(msgline, " down");
+						strncat(msgline, ": Intermediate ", (sizeof(msgline) - strlen(msgline)));
+						strncat(msgline, routertext, (sizeof(msgline) - strlen(msgline)));
+						strncat(msgline, " down", (sizeof(msgline) - strlen(msgline)));
 
-						strcat(msgtext, "\nThe ");
-						strcat(msgtext, routertext); strcat(msgtext, " ");
-						strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->hostname);
-						strcat(msgtext, " (IP:");
-						strcat(msgtext, ((testedhost_t *)t->host->deprouterdown)->ip);
-						strcat(msgtext, ") is not reachable, causing this host to be unreachable.\n");
+						strncat(msgtext, "\nThe ", (sizeof(msgtext) - strlen(msgtext)));
+						strncat(msgtext, routertext, (sizeof(msgtext) - strlen(msgtext))); strncat(msgtext, " ", (sizeof(msgtext) - strlen(msgtext)));
+						strncat(msgtext, ((testedhost_t *)t->host->deprouterdown)->hostname, (sizeof(msgtext) - strlen(msgtext)));
+						strncat(msgtext, " (IP:", (sizeof(msgtext) - strlen(msgtext)));
+						strncat(msgtext, ((testedhost_t *)t->host->deprouterdown)->ip, (sizeof(msgtext) - strlen(msgtext)));
+						strncat(msgtext, ") is not reachable, causing this host to be unreachable.\n", (sizeof(msgtext) - strlen(msgtext)));
 					  }
 					  else if (t->host->noping) {
-						  strcat(msgline, ": Disabled");
-						  strcat(msgtext, "Ping check disabled (noping)\n");
+						  strncat(msgline, ": Disabled", (sizeof(msgline) - strlen(msgline)));
+						  strncat(msgtext, "Ping check disabled (noping)\n", (sizeof(msgtext) - strlen(msgtext)));
 					  }
 					  else if (t->host->dialup) {
-						  strcat(msgline, ": Disabled (dialup host)");
-						  strcat(msgtext, "Dialup host\n");
+						  strncat(msgline, ": Disabled (dialup host)", (sizeof(msgline) - strlen(msgline)));
+						  strncat(msgtext, "Dialup host\n", (sizeof(msgtext) - strlen(msgtext)));
 					  }
 					  else if (t->open == -1) {
-						  strcat(msgline, ": System failure of the ping test");
-						  strcat(msgtext, "Xymon system error\n");
+						  strncat(msgline, ": System failure of the ping test", (sizeof(msgline) - strlen(msgline)));
+						  strncat(msgtext, "Xymon system error\n", (sizeof(msgtext) - strlen(msgtext)));
 					  }
 					  /* "clear" due to badconn: no extra text */
 				  }
 				  else {
 					  /* Non-ping test clear: Dialup test or failed ping */
-					  strcat(msgline, ": Ping failed, or dialup host/service");
-					  strcat(msgtext, "Dialup host/service, or test depends on another failed test\n");
-					  strcat(msgtext, causetext);
+					  strncat(msgline, ": Ping failed, or dialup host/service", (sizeof(msgline) - strlen(msgline)));
+					  strncat(msgtext, "Dialup host/service, or test depends on another failed test\n", (sizeof(msgtext) - strlen(msgtext)));
+					  strncat(msgtext, causetext, (sizeof(msgtext) - strlen(msgtext)));
 				  }
 				  break;
 			}
-			strcat(msgtext, "\n");
+			strncat(msgtext, "\n", (sizeof(msgtext) - strlen(msgtext)));
 		}
-		strcat(msgline, "\n");
+		strncat(msgline, "\n", (sizeof(msgline) - strlen(msgline)));
 		addtostatus(msgline);
 		addtostatus(msgtext);
 
 		if ((service == pingtest) && t->host->downcount) {
-			sprintf(msgtext, "\nSystem unreachable for %d poll periods (%u seconds)\n",
+			snprintf(msgtext, sizeof(msgtext), "\nSystem unreachable for %d poll periods (%u seconds)\n",
 				t->host->downcount, (unsigned int)(getcurrenttime(NULL) - t->host->downstart));
 			addtostatus(msgtext);
 		}
 
 		if (STRBUFLEN(t->banner)) {
 			if (service == pingtest) {
-				sprintf(msgtext, "\n&%s %s\n", colorname(t->open ? COL_GREEN : COL_RED), STRBUF(t->banner));
+				snprintf(msgtext, sizeof(msgtext), "\n&%s %s\n", colorname(t->open ? COL_GREEN : COL_RED), STRBUF(t->banner));
 				addtostatus(msgtext);
 				if (t->host->extrapings) {
 					ipping_t *walk;
 					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
 						if (STRBUFLEN(walk->banner)) {
-							sprintf(msgtext, "&%s %s\n", 
+							snprintf(msgtext, sizeof(msgtext), "&%s %s\n", 
 								colorname(walk->open ? COL_GREEN : COL_RED), STRBUF(walk->banner));
 							addtostatus(msgtext);
 						}
@@ -1827,7 +1830,7 @@ void send_results(service_t *service, int failgoesclear)
 		}
 
 		if (t->duration.tv_sec != -1) {
-			sprintf(msgtext, "\nSeconds: %u.%.9ld\n", 
+			snprintf(msgtext, sizeof(msgtext), "\nSeconds: %u.%.9ld\n", 
 				(unsigned int)t->duration.tv_sec, t->duration.tv_nsec);
 			addtostatus(msgtext);
 		}
@@ -1841,7 +1844,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 {
 	testitem_t	*t;
 	int		color;
-	char		msgline[1024];
+	char		msgline[2048];
 	char		*msgbuf;
 	char		causetext[1024];
 
@@ -1888,20 +1891,20 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 				}
 
 				if (svcfound) {
-					sprintf(msgline, "&%s Service %s (ID: %d) found on port %d\n", 
+					snprintf(msgline, sizeof(msgline), "&%s Service %s (ID: %d) found on port %d\n", 
 						colorname(COL_GREEN), rpcsvc, rpcinfo->r_number, aport);
 				}
 				else if (rpcinfo) {
 					color = COL_RED;
-					sprintf(msgline, "&%s Service %s (ID: %d) NOT found\n", 
+					snprintf(msgline, sizeof(msgline), "&%s Service %s (ID: %d) NOT found\n", 
 						colorname(COL_RED), rpcsvc, rpcinfo->r_number);
 				}
 				else {
 					color = COL_RED;
-					sprintf(msgline, "&%s Unknown RPC service %s\n",
+					snprintf(msgline, sizeof(msgline), "&%s Unknown RPC service %s\n",
 						colorname(COL_RED), rpcsvc);
 				}
-				strcat(msgbuf, msgline);
+				strncat(msgbuf, msgline, (sizeof(msgbuf) - strlen(msgbuf)));
 
 				rpcsvc = strtok(NULL, ",");
 			}
@@ -1910,7 +1913,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 		if (wantedrpcsvcs) xfree(wantedrpcsvcs);
 
 		init_status(color);
-		sprintf(msgline, "status+%d %s.%s %s %s %s %s, %s\n\n", 
+		snprintf(msgline, sizeof(msgline), "status+%d %s.%s %s %s %s %s, %s\n\n", 
 			validity, commafy(t->host->hostname), service->testname, colorname(color), timestamp, 
 			service->testname, 
 			( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"),
@@ -1927,7 +1930,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 				addtostrstatus(t->banner);
 			}
 			else {
-				sprintf(msgline, "\n\nNo output from rpcinfo -p %s\n", t->host->ip);
+				snprintf(msgline, sizeof(msgline), "\n\nNo output from rpcinfo -p %s\n", t->host->ip);
 				addtostatus(msgline);
 			}
 		}
@@ -1981,25 +1984,25 @@ void send_sslcert_status(testedhost_t *host)
 				}
 
 				if (t->certexpires > now) {
-					sprintf(msgline, "\n&%s SSL certificate for %s expires in %u days\n\n", 
+					snprintf(msgline, sizeof(msgline), "\n&%s SSL certificate for %s expires in %u days\n\n", 
 						colorname(sslcolor), certowner,
 						(unsigned int)((t->certexpires - now) / 86400));
 				}
 				else {
-					sprintf(msgline, "\n&%s SSL certificate for %s expired %u days ago\n\n", 
+					snprintf(msgline, sizeof(msgline), "\n&%s SSL certificate for %s expired %u days ago\n\n", 
 						colorname(sslcolor), certowner,
 						(unsigned int)((now - t->certexpires) / 86400));
 				}
 				addtobuffer(sslmsg, msgline);
 
 				if (host->mincipherbits) {
-					sprintf(msgline, "&%s Minimum available SSL encryption is %d bits (should be %d)\n",
+					snprintf(msgline, sizeof(msgline), "&%s Minimum available SSL encryption is %d bits (should be %d)\n",
 						colorname(ciphercolor), t->mincipherbits, host->mincipherbits);
 					addtobuffer(sslmsg, msgline);
 				}
 
 				if (keycolor != COL_GREEN) {
-					sprintf(msgline, "&%s Certificate public key size is less than %d bits\n", colorname(keycolor), sslminkeysize);
+					snprintf(msgline, sizeof(msgline), "&%s Certificate public key size is less than %d bits\n", colorname(keycolor), sslminkeysize);
 					addtobuffer(sslmsg, msgline);
 				}
 				addtobuffer(sslmsg, "\n");
@@ -2012,7 +2015,7 @@ void send_sslcert_status(testedhost_t *host)
 	if (color != -1) {
 		/* Send off the sslcert status report */
 		init_status(color);
-		sprintf(msgline, "status+%d %s.%s %s %s\n", 
+		snprintf(msgline, sizeof(msgline), "status+%d %s.%s %s %s\n", 
 			validity, commafy(host->hostname), ssltestname, colorname(color), timestamp);
 		addtostatus(msgline);
 		addtostrstatus(sslmsg);
@@ -2383,7 +2386,7 @@ int main(int argc, char *argv[])
 
 			for (t = s->items; (t); t = t->next) {
 				if (!t->host->dnserror) {
-					strcpy(tname, s->testname);
+					strncpy(tname, s->testname, sizeof(tname));
 					if (s->namelen) tname[s->namelen] = '\0';
 					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL,
 									   t->srcip,
@@ -2403,7 +2406,7 @@ int main(int argc, char *argv[])
 		char msg[512];
 
 		finish_ping_service(pingtest); 
-		sprintf(msg, "PING test completed (%d hosts)", pingcount);
+		snprintf(msg, sizeof(msg), "PING test completed (%d hosts)", pingcount);
 		add_timestamp(msg);
 
 		if (usebackfeedqueue)
@@ -2597,27 +2600,27 @@ int main(int argc, char *argv[])
 
 		if (usebackfeedqueue) combo_start_local(); else combo_start();
 		init_status(color);
-		sprintf(msgline, "status+%d %s.%s %s %s\n\n", validity, xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
+		snprintf(msgline, sizeof(msgline), "status+%d %s.%s %s %s\n\n", validity, xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
-		sprintf(msgline, "xymonnet version %s\n", VERSION);
+		snprintf(msgline, sizeof(msgline), "xymonnet version %s\n", VERSION);
 		addtostatus(msgline);
 		if (ssl_library_version) {
-			sprintf(msgline, "SSL library : %s\n", ssl_library_version);
+			snprintf(msgline, sizeof(msgline), "SSL library : %s\n", ssl_library_version);
 			addtostatus(msgline);
 		}
 		if (ldap_library_version) {
-			sprintf(msgline, "LDAP library: %s\n", ldap_library_version);
+			snprintf(msgline, sizeof(msgline), "LDAP library: %s\n", ldap_library_version);
 			addtostatus(msgline);
 		}
 
-		sprintf(msgline, "\nStatistics:\n Hosts total           : %8d\n Hosts with no tests   : %8d\n Total test count      : %8d\n Status messages       : %8d\n Alert status msgs     : %8d\n Transmissions         : %8d\n", 
+		snprintf(msgline, sizeof(msgline), "\nStatistics:\n Hosts total           : %8d\n Hosts with no tests   : %8d\n Total test count      : %8d\n Status messages       : %8d\n Alert status msgs     : %8d\n Transmissions         : %8d\n", 
 			hostcount, notesthostcount, testcount, xymonstatuscount, xymonnocombocount, xymonmsgcount);
 		addtostatus(msgline);
-		sprintf(msgline, "\nDNS statistics:\n # hostnames resolved  : %8d\n # successful          : %8d\n # failed              : %8d\n # calls to dnsresolve : %8d\n",
+		snprintf(msgline, sizeof(msgline), "\nDNS statistics:\n # hostnames resolved  : %8d\n # successful          : %8d\n # failed              : %8d\n # calls to dnsresolve : %8d\n",
 			dns_stats_total, dns_stats_success, dns_stats_failed, dns_stats_lookups);
 		addtostatus(msgline);
-		sprintf(msgline, "\nTCP test statistics:\n # TCP tests total     : %8d\n # HTTP tests          : %8d\n # Simple TCP tests    : %8d\n # Connection attempts : %8d\n # bytes written       : %8ld\n # bytes read          : %8ld\n",
+		snprintf(msgline, sizeof(msgline), "\nTCP test statistics:\n # TCP tests total     : %8d\n # HTTP tests          : %8d\n # Simple TCP tests    : %8d\n # Connection attempts : %8d\n # bytes written       : %8ld\n # bytes read          : %8ld\n",
 			tcp_stats_total, tcp_stats_http, tcp_stats_plain, tcp_stats_connects, 
 			tcp_stats_written, tcp_stats_read);
 		addtostatus(msgline);

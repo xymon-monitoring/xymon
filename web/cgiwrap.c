@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 {
 	char *cgifile = XYMONHOME "/etc/cgioptions.cfg";
 	char *pgm = strdup(argv[0]);
-	char *cgipgm = NULL;
+	SBUF_DEFINE(cgipgm);
 	char executable[PATH_MAX];
 	char xymoncmd[PATH_MAX];
 
@@ -67,9 +67,9 @@ int main(int argc, char **argv)
 
 	loadenv(cgifile, NULL);
 
-	cgipgm = (char *)malloc(strlen(pgm) + 5);
-	strcpy(cgipgm, basename(pgm));
-	if (strstr(cgipgm, ".sh")) strcpy(strstr(cgipgm, ".sh"), ".cgi");
+	SBUF_MALLOC(cgipgm, strlen(pgm) + 5);
+	strncpy(cgipgm, basename(pgm), cgipgm_buflen);
+	if (strstr(cgipgm, ".sh")) { char *p = strstr(cgipgm, ".sh"); strncpy(p, ".cgi", (cgipgm_buflen - (p - cgipgm))); }
 
 	if (strcmp(cgipgm, "cgiwrap") == 0) {
 		printf("\ncgiwrap is an executable wrapper program for xymon CGI scripts. It sets the environment according to the configuration specified in %s and then launches the CGI to response to the request.\n\nCGI scripts in the xymon-cgi or xymon-seccgi directories should be symlinked or hardlinked to this file. cgiwrap will do nothing if called directly.\n", cgifile);
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 	else if (strcmp(cgipgm, "appfeed-critical.cgi") == 0)    { cgipgm = "appfeed.cgi";      addoptl("CGI_APPFEED_OPTS");     addopt("--critical=/etc/xymon/critical.cfg"); }
 	else if (strcmp(cgipgm, "appfeed.cgi") == 0)             {                              addoptl("CGI_APPFEED_OPTS");     }
 	else if (strcmp(cgipgm, "certreport.cgi") == 0)          { cgipgm = "statusreport.cgi";                                  addopt("--column=sslcert"); addopt("--filter=color=red,yellow"); addopt("--all"); addopt("--no-colors"); }
-	else if (strcmp(cgipgm, "columndoc.cgi") == 0)           { cgipgm = "csvinfo.cgi";      addoptl("CGI_COLUMNDOC_OPTS");   if (getenv("QUERY_STRING")) { char *t = (char *)malloc(strlen(getenv("QUERY_STRING")) + 35); sprintf(t, "QUERY_STRING=db=columndoc.csv&key=%s", getenv("QUERY_STRING")); putenv(t); } }
+	else if (strcmp(cgipgm, "columndoc.cgi") == 0)           { cgipgm = "csvinfo.cgi";      addoptl("CGI_COLUMNDOC_OPTS");   if (getenv("QUERY_STRING")) { SBUF_DEFINE(t); SBUF_MALLOC(t, strlen(getenv("QUERY_STRING")) + 35); snprintf(t, t_buflen, "QUERY_STRING=db=columndoc.csv&key=%s", getenv("QUERY_STRING")); putenv(t); } }
 	else if (strcmp(cgipgm, "confreport-critical.cgi") == 0) { cgipgm = "confreport.cgi";   addoptl("CGI_CONFREPORT_OPTS");  addopt("--critical"); }
 	else if (strcmp(cgipgm, "confreport.cgi") == 0)          {                              addoptl("CGI_CONFREPORT_OPTS");  }
 	else if (strcmp(cgipgm, "criticaleditor.cgi") == 0)      {                              addoptl("CGI_CRITEDIT_OPTS");    }

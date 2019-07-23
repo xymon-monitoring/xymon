@@ -307,9 +307,9 @@ void format_rrdtime(char *t, char **tday, char **thm)
 	if (year < 100) year += 2000;
 
 	*tday = (char *)malloc(10);
-	sprintf(*tday, "%4d%02d%02d", year, month, day);
+	snprintf(*tday, 10, "%4d%02d%02d", year, month, day);
 	*thm = (char *)malloc(20);
-	sprintf(*thm, "%02d:%02d:%02d", hour, min, sec);
+	snprintf(*thm, 20, "%02d:%02d:%02d", hour, min, sec);
 }
 
 int main(int argc, char **argv)

@@ -26,18 +26,22 @@ int main(int argc, char *argv[])
 {
 	char *envarea = NULL;
 	char *server = NULL;
-	char *cookie, *pagefilter = "";
-	char *filter = NULL;
-	char *heading = NULL;
+	char *cookie;
+	SBUF_DEFINE(pagefilter);
+	SBUF_DEFINE(filter);
+	SBUF_DEFINE(heading);
 	int  showcolors = 1;
 	int  showcolumn = 0;
 	int  addlink = 0;
 	int  allhosts = 0;
 	int  summary = 0;
 	int  embedded = 0;
-	char *req, *board, *l;
+	SBUF_DEFINE(req);
+	char *board, *l;
 	int argi, res;
 	sendreturn_t *sres;
+
+	pagefilter = filter = "";
 
 	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {
@@ -54,24 +58,35 @@ int main(int argc, char *argv[])
 		}
 		else if ( argnmatch(argv[argi], "--column=") || argnmatch(argv[argi], "--test=")) {
 			char *p = strchr(argv[argi], '=');
-			int needed;
+			int needed, curlen = (filter ? strlen(filter) : 0);
 			
-			needed = 10 + strlen(p); if (filter) needed += strlen(filter);
-			filter = (char *)(filter ? realloc(filter, needed) : calloc(1, needed));
-			sprintf(filter + strlen(filter), " test=%s", p+1);
+			needed = 10 + strlen(p); if (filter) needed += curlen;
+			if (filter) {
+				SBUF_REALLOC(filter, needed);
+			}
+			else {
+				SBUF_CALLOC(filter, 1, needed);
+			}
+
+			snprintf(filter + curlen, filter_buflen - curlen, " test=%s", p+1);
 
 			if (!heading) {
-				heading = (char *)malloc(1024 + strlen(p) + strlen(timestamp));
-				sprintf(heading, "%s report on %s", p+1, timestamp);
+				SBUF_MALLOC(heading, 1024 + strlen(p) + strlen(timestamp));
+				snprintf(heading, heading_buflen, "%s report on %s", p+1, timestamp);
 			}
 		}
 		else if (argnmatch(argv[argi], "--filter=")) {
 			char *p = strchr(argv[argi], '=');
-			int needed;
-			
-			needed = 10 + strlen(p); if (filter) needed += strlen(filter);
-			filter = (char *)(filter ? realloc(filter, needed) : calloc(1, needed));
-			sprintf(filter + strlen(filter), " %s", p+1);
+			int needed, curlen = (filter ? strlen(filter) : 0);
+
+			needed = 10 + strlen(p); if (filter) needed += curlen;
+			if (filter) {
+				SBUF_REALLOC(filter, needed);
+			}
+			else {
+				SBUF_CALLOC(filter, 1, needed);
+			}
+			snprintf(filter + curlen, filter_buflen - curlen, " %s", p+1);
 		}
 		else if (argnmatch(argv[argi], "--heading=")) {
 			char *p = strchr(argv[argi], '=');
@@ -114,21 +129,24 @@ int main(int argc, char *argv[])
 		cookie = get_cookie("pagepath");
 		if (cookie && *cookie) {
 			pcre *dummy;
-			char *re = (char *)malloc(8 + 2*strlen(cookie));
+			SBUF_DEFINE(re);
 
-			sprintf(re, "^%s$|^%s/.+", cookie, cookie);
+			SBUF_MALLOC(re, 8 + 2*strlen(cookie));
+
+			snprintf(re, re_buflen, "^%s$|^%s/.+", cookie, cookie);
 			dummy = compileregex(re);
 			if (dummy)  {
 				freeregex(dummy);
-				pagefilter = malloc(10 + strlen(re));
-				sprintf(pagefilter, "page=%s", re);
+				SBUF_MALLOC(pagefilter, 10 + strlen(re));
+				snprintf(pagefilter, pagefilter_buflen, "page=%s", re);
 			}
+			xfree(re);
 		}
 	}
 
 	sres = newsendreturnbuf(1, NULL);
-	req = malloc(1024 + strlen(pagefilter) + strlen(filter));
-	sprintf(req, "xymondboard fields=hostname,testname,color,msg %s %s",
+	SBUF_MALLOC(req, 1024 + strlen(pagefilter) + strlen(filter));
+	snprintf(req, req_buflen, "xymondboard fields=hostname,testname,color,msg %s %s",
 		pagefilter, filter);
 	res = sendmessage(req, server, XYMON_TIMEOUT, sres);
 	board = getsendreturnstr(sres, 1);

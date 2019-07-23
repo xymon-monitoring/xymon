@@ -182,37 +182,6 @@ char *xstrdup(const char *s)
 	return result;
 }
 
-char *xstrcat(char *dest, const char *src)
-{
-	if (src == NULL) {
-		errprintf("xstrcat: NULL destination\n");
-		abort();
-	}
-
-	if (dest == NULL) {
-		errprintf("xstrcat: NULL destination\n");
-		abort();
-	}
-
-#ifdef MEMORY_DEBUG
-	dmem = find_in_memlist(dest);
-	if (dmem == NULL) {
-		errprintf("xstrcat: Bogus destination\n");
-		abort();
-	}
-
-	allocend = dmem->sdata + dmem->ssize - 1;
-	copyend = dest + strlen(dest) + strlen(src);
-	if ((void *)copyend > (void *)allocend) {
-		errprintf("xstrcat: Overwrite of %d bytes\n", (copyend - allocend));
-		abort();
-	}
-#endif
-
-	strcat(dest, src);
-	return dest;
-}
-
 char *xstrncat(char *dest, const char *src, size_t maxlen)
 {
 	if (src == NULL) {
@@ -249,37 +218,6 @@ char *xstrncat(char *dest, const char *src, size_t maxlen)
 #endif
 
 	strncat(dest, src, maxlen);
-	return dest;
-}
-
-char *xstrcpy(char *dest, const char *src)
-{
-	if (src == NULL) {
-		errprintf("xstrcpy: NULL destination\n");
-		abort();
-	}
-
-	if (dest == NULL) {
-		errprintf("xstrcpy: NULL destination\n");
-		abort();
-	}
-
-#ifdef MEMORY_DEBUG
-	dmem = find_in_memlist(dest);
-	if (dmem == NULL) {
-		errprintf("xstrcpy: Bogus destination\n");
-		abort();
-	}
-
-	allocend = dmem->sdata + dmem->ssize - 1;
-	copyend = dest + strlen(src);
-	if ((void *)copyend > (void *)allocend) {
-		errprintf("xstrcpy: Overwrite of %d bytes\n", (copyend - allocend));
-		abort();
-	}
-#endif
-
-	strcpy(dest, src);
 	return dest;
 }
 

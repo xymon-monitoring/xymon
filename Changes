@@ -1,8 +1,11 @@
 Changes from 4.3.28 -> 4.3.29 (23 Jul 2019)
 ===========================================
 
-* rev 
+* rev 8070
 
+* Security Fixes: A number of potential buffer overflows have been resolved
+  CVE-2019-13451, CVE-2019-13452, CVE-2019-13455, CVE-2019-13473, 
+  CVE-2019-13474, CVE-2019-13484, CVE-2019-13485, CVE-2019-13486
 * Deal with Set-Cookie deprecation on normal pages (Thanks, Erik Schminke)
 * Support glibc->tirpc migration on newer distributions
 * Fix certain flags not being set on GCC 8/9

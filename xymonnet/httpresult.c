@@ -79,11 +79,11 @@ static int statuscolor(testedhost_t *h, int status)
 static int statuscolor_by_set(testedhost_t *h, int status, char *okcodes, char *badcodes)
 {
 	int result = -1;
-	char codestr[10];
+	char codestr[15];
 	pcre *ptn;
 
 	/* Use code 999 to indicate we could not fetch the URL */
-	sprintf(codestr, "%d", (status ? status : 999));
+	snprintf(codestr, sizeof(codestr), "%d", (status ? status : 999));
 
 	if (okcodes) {
 		ptn = compileregex(okcodes);
@@ -116,7 +116,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	int	color = -1;
 	char    *svcname;
 	strbuffer_t *msgtext;
-	char    *nopagename;
+	SBUF_DEFINE(nopagename);
 	int     nopage = 0;
 	int	anydown = 0, totalreports = 0;
 
@@ -126,8 +126,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	if (httptest->namelen) svcname[httptest->namelen] = '\0';
 
 	/* Check if this service is a NOPAGENET service. */
-	nopagename = (char *) malloc(strlen(svcname)+3);
-	sprintf(nopagename, ",%s,", svcname);
+	SBUF_MALLOC(nopagename, strlen(svcname)+3);
+	snprintf(nopagename, nopagename_buflen, ",%s,", svcname);
 	nopage = (strstr(nonetpage, nopagename) != NULL);
 	xfree(nopagename);
 
@@ -211,7 +211,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			char m1[100];
 
 			if (req->weburl.okcodes || req->weburl.badcodes) {
-				sprintf(m1, "Unwanted HTTP status %d", req->httpstatus);
+				snprintf(m1, sizeof(m1), "Unwanted HTTP status %d", req->httpstatus);
 			}
 			else if (req->headers) {
 				char *p = req->headers;
@@ -229,7 +229,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 				p = m1 + strcspn(m1, "\n\r"); *p = '\0';
 			}
 			else {
-				sprintf(m1, "Connected, but got empty response (code: %d)", req->httpstatus);
+				snprintf(m1, sizeof(m1), "Connected, but got empty response (code: %d)", req->httpstatus);
 			}
 			addtobuffer(msgtext, m1);
 			req->errorcause = strdup(m1);
@@ -239,7 +239,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			if (req->weburl.okcodes || req->weburl.badcodes) {
 				char m1[100];
 
-				sprintf(m1, " (HTTP status %d)", req->httpstatus);
+				snprintf(m1, sizeof(m1), " (HTTP status %d)", req->httpstatus);
 				addtobuffer(msgtext, m1);
 			}
 		}
@@ -267,21 +267,21 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		/* Send off the http status report */
 		init_status(color);
-		sprintf(msgline, "status+%d %s.%s %s %s", 
+		snprintf(msgline, sizeof(msgline), "status+%d %s.%s %s %s", 
 			validity, commafy(host->hostname), svcname, colorname(color), timestamp);
 		addtostatus(msgline);
 		addtostrstatus(msgtext);
 		addtostatus("\n");
 
 		for (t=firsttest; (t && (t->host == host)); t = t->next) {
-			char *urlmsg;
+			SBUF_DEFINE(urlmsg);
 			http_data_t *req = (http_data_t *) t->privdata;
 
 			/* Skip the "data" reports */
 			if (t->senddata) continue;
 
-			urlmsg = (char *)malloc(1024 + strlen(req->url));
-			sprintf(urlmsg, "\n&%s %s - ", colorname(req->httpcolor), req->url);
+			SBUF_MALLOC(urlmsg, 1024 + strlen(req->url));
+			snprintf(urlmsg, urlmsg_buflen, "\n&%s %s - ", colorname(req->httpcolor), req->url);
 			addtostatus(urlmsg);
 
 			if (req->httpcolor == COL_GREEN) addtostatus("OK");
@@ -292,7 +292,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			if (req->weburl.okcodes || req->weburl.badcodes) {
 				char m1[100];
 
-				sprintf(m1, " (HTTP status %d)", req->httpstatus);
+				snprintf(m1, sizeof(m1), " (HTTP status %d)", req->httpstatus);
 				addtostatus(m1);
 			}
 			addtostatus("\n");
@@ -303,7 +303,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			}
 			if (req->faileddeps) addtostatus(req->faileddeps);
 
-			sprintf(urlmsg, "\nSeconds: %u.%.9ld\n\n", 
+			snprintf(urlmsg, urlmsg_buflen, "\nSeconds: %u.%.9ld\n\n", 
 				(unsigned int)req->tcptest->totaltime.tv_sec, 
 				req->tcptest->totaltime.tv_nsec);
 			addtostatus(urlmsg);
@@ -317,7 +317,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	for (t=firsttest; (t && (t->host == host)); t = t->next) {
 		int color;
 		char msgline[4096];
-		char *urlmsg;
+		SBUF_DEFINE(urlmsg);
 		http_data_t *req = (http_data_t *) t->privdata;
 
 		if ((t->senddata) || (!req->weburl.columnname) || (req->contentcheck != CONTENTCHECK_NONE)) continue;
@@ -334,7 +334,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		/* Send off the http status report */
 		init_status(color);
-		sprintf(msgline, "status+%d %s.%s %s %s", 
+		snprintf(msgline, sizeof(msgline), "status+%d %s.%s %s %s", 
 			validity, commafy(host->hostname), req->weburl.columnname, colorname(color), timestamp);
 		addtostatus(msgline);
 
@@ -343,13 +343,13 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		if (req->weburl.okcodes || req->weburl.badcodes) {
 			char m1[100];
 
-			sprintf(m1, " (HTTP status %d)", req->httpstatus);
+			snprintf(m1, sizeof(m1), " (HTTP status %d)", req->httpstatus);
 			addtostatus(m1);
 		}
 		addtostatus("\n");
 
-		urlmsg = (char *)malloc(1024 + strlen(req->url));
-		sprintf(urlmsg, "\n&%s %s - ", colorname(req->httpcolor), req->url);
+		SBUF_MALLOC(urlmsg, 1024 + strlen(req->url));
+		snprintf(urlmsg, urlmsg_buflen, "\n&%s %s - ", colorname(req->httpcolor), req->url);
 		addtostatus(urlmsg);
 		xfree(urlmsg);
 
@@ -366,7 +366,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		}
 		if (req->faileddeps) addtostatus(req->faileddeps);
 
-		sprintf(msgline, "\nSeconds: %u.%.9ld\n\n", 
+		snprintf(msgline, sizeof(msgline), "\nSeconds: %u.%.9ld\n\n", 
 			(unsigned int)req->tcptest->totaltime.tv_sec, 
 			req->tcptest->totaltime.tv_nsec);
 		addtostatus(msgline);
@@ -387,7 +387,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		req = (http_data_t *) t->privdata;
 		if (req->output) data = req->output;
 
-		sprintf(msgline, "data %s.%s\n", commafy(host->hostname), req->weburl.columnname);
+		snprintf(msgline, sizeof(msgline), "data %s.%s\n", commafy(host->hostname), req->weburl.columnname);
 		addtobuffer(msg, msgline);
 		addtobuffer(msg, data);
 		combo_add(msg);
@@ -418,17 +418,18 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 {
 	testitem_t *t, *firsttest;
 	int	color = -1;
-	char    *nopagename;
+	SBUF_DEFINE(nopagename);
 	int     nopage = 0;
-	char    *conttest;
+	SBUF_DEFINE(conttest);
 	int 	contentnum = 0;
-	conttest = (char *) malloc(128);
+
+	SBUF_MALLOC(conttest, 128);
 
 	if (host->firsthttp == NULL) return;
 
 	/* Check if this service is a NOPAGENET service. */
-	nopagename = (char *) malloc(strlen(contenttestname)+3);
-	sprintf(nopagename, ",%s,", contenttestname);
+	SBUF_MALLOC(nopagename, strlen(contenttestname)+3);
+	snprintf(nopagename, nopagename_buflen, ",%s,", contenttestname);
 	nopage = (strstr(nonetpage, nopagename) != NULL);
 	xfree(nopagename);
 
@@ -441,7 +442,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		void *hinfo = hostinfo(host->hostname);
 		int headermatch = (hinfo && xmh_item(hinfo, XMH_FLAG_HTTP_HEADER_MATCH));
 		char cause[100];
-		char *msgline;
+		SBUF_DEFINE(msgline);
 		int got_data = 1;
 
 		/* Skip the "data"-only messages */
@@ -449,7 +450,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		if (!req->contentcheck) continue;
 
 		/* We have a content check */
-		strcpy(cause, "Content OK");
+		strncpy(cause, "Content OK", sizeof(cause));
 		if (req->contstatus == 0) {
 			/* The content check passed initial checks of regexp etc. */
 			color = statuscolor(t->host, req->httpstatus);
@@ -522,7 +523,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 
 				req->contstatus = ((status == 0)  ? 200 : STATUS_CONTENTMATCH_FAILED);
 				color = statuscolor(t->host, req->contstatus);
-				if (color != COL_GREEN) strcpy(cause, "Content match failed");
+				if (color != COL_GREEN) strncpy(cause, "Content match failed", sizeof(cause));
 			}
 			else {
 				/*
@@ -531,7 +532,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 				 */
 				if (failgoesclear && !t->alwaystrue) color = COL_CLEAR;
 				got_data = 0;
-				strcpy(cause, "Failed to get webpage");
+				strncpy(cause, "Failed to get webpage", sizeof(cause));
 			}
 
 			if (nopage && (color == COL_RED)) color = COL_YELLOW;
@@ -539,44 +540,44 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		else {
 			/* This only happens upon internal errors in Xymon test system */
 			color = statuscolor(t->host, req->contstatus);
-			strcpy(cause, "Internal Xymon error");
+			strncpy(cause, "Internal Xymon error", sizeof(cause));
 		}
 
 		/* Send the content status message */
 		dbgprintf("Content check on %s is %s\n", req->url, colorname(color));
 
 		if (req->weburl.columnname) {
-			strcpy(conttest, req->weburl.columnname);
+			strncpy(conttest, req->weburl.columnname, conttest_buflen);
 		}
 		else {
-			if (contentnum > 0) sprintf(conttest, "%s%d", contenttestname, contentnum);
-			else strcpy(conttest, contenttestname);
+			if (contentnum > 0) snprintf(conttest, conttest_buflen, "%s%d", contenttestname, contentnum);
+			else strncpy(conttest, contenttestname, conttest_buflen);
 
 			contentnum++;
 		}
 
-		msgline = (char *)malloc(4096 + (2 * strlen(req->url)));
+		SBUF_MALLOC(msgline, 4096 + (2 * strlen(req->url)));
 		init_status(color);
-		sprintf(msgline, "status+%d %s.%s %s %s: %s\n", 
+		snprintf(msgline, msgline_buflen, "status+%d %s.%s %s %s: %s\n", 
 			validity, commafy(host->hostname), conttest, colorname(color), timestamp, cause);
 		addtostatus(msgline);
 
 		if (!got_data) {
 			if (host->hidehttp) {
-				sprintf(msgline, "\nContent check failed\n");
+				snprintf(msgline, msgline_buflen, "\nContent check failed\n");
 			}
 			else {
-				sprintf(msgline, "\nAn error occurred while testing <a href=\"%s\">URL %s</a>\n", 
+				snprintf(msgline, msgline_buflen, "\nAn error occurred while testing <a href=\"%s\">URL %s</a>\n", 
 					req->url, req->url);
 			}
 		}
 		else {
 			if (host->hidehttp) {
-				sprintf(msgline, "\n&%s Content check %s\n",
+				snprintf(msgline, msgline_buflen, "\n&%s Content check %s\n",
 					colorname(color), ((color == COL_GREEN) ? "OK" : "Failed"));
 			}
 			else {
-				sprintf(msgline, "\n&%s %s - Testing <a href=\"%s\">URL</a> yields:\n",
+				snprintf(msgline, msgline_buflen, "\n&%s %s - Testing <a href=\"%s\">URL</a> yields:\n",
 					colorname(color), req->url, req->url);
 			}
 		}

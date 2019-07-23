@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-static char selfurl[PATH_MAX];
+SBUF_DEFINE(selfurl);
 static time_t req_endtime = 0;
 static char *displayname = NULL;
 static int wantserviceid = 1;
@@ -605,8 +605,10 @@ static void parse_query(void)
 		 */
 
 		if (strcasecmp(cwalk->name, "HISTFILE") == 0) {
-			char *p = strrchr(cwalk->value, '.');
+			char *p = cwalk->value + strspn(cwalk->value, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,");
+			*p = '\0';
 
+			p = strrchr(cwalk->value, '.');
 			if (p) { *p = '\0'; service = strdup(p+1); }
 			hostname = strdup(basename(cwalk->value));
 			while ((p = strchr(hostname, ','))) *p = '.';
@@ -644,7 +646,6 @@ static void parse_query(void)
 int main(int argc, char *argv[])
 {
 	char histlogfn[PATH_MAX];
-	char tailcmd[PATH_MAX];
 	FILE *fd;
 	time_t start1d, start1w, start4w, start1y;
 	reportinfo_t repinfo1d, repinfo1w, repinfo4w, repinfo1y, dummyrep;
@@ -673,22 +674,25 @@ int main(int argc, char *argv[])
 	cgidata = cgi_request();
 	parse_query();
 
+	SBUF_MALLOC(selfurl, 4096);
+
 	/* Build our own URL */
-	sprintf(selfurl, "%s", histcgiurl(hostname, service));
+	snprintf(selfurl, selfurl_buflen, "%s", histcgiurl(hostname, service));
 
 	p = selfurl + strlen(selfurl);
-	sprintf(p, "&amp;BARSUMS=%d", barsums);
+	snprintf(p, selfurl_buflen - (p - selfurl), "&amp;BARSUMS=%d", barsums);
 
 	if (strlen(ip)) {
+		SBUF_REALLOC(selfurl, selfurl_buflen + 6*strlen(ip));
 		p = selfurl + strlen(selfurl);
-		sprintf(p, "&amp;IP=%s", htmlquoted(ip));
+		snprintf(p, selfurl_buflen - (p - selfurl), "&amp;IP=%s", htmlquoted(ip));
 	}
 
 	if (entrycount) {
 		p = selfurl + strlen(selfurl);
-		sprintf(p, "&amp;ENTRIES=%d", entrycount);
+		snprintf(p, selfurl_buflen - (p - selfurl), "&amp;ENTRIES=%d", entrycount);
 	}
-	else strcat(selfurl, "&amp;ENTRIES=ALL");
+	else strncat(selfurl, "&amp;ENTRIES=ALL", selfurl_buflen - strlen(selfurl));
 
 	if (usepct) {
 		/* Must modify 4-week charts to be 5-weeks, or the last day is 19% of the bar */
@@ -704,7 +708,7 @@ int main(int argc, char *argv[])
 		len1y = 10; bartitle1y = "10 month summary";
 	}
 
-	sprintf(histlogfn, "%s/%s.%s", xgetenv("XYMONHISTDIR"), commafy(hostname), service);
+	snprintf(histlogfn, sizeof(histlogfn), "%s/%s.%s", xgetenv("XYMONHISTDIR"), commafy(hostname), service);
 	fd = fopen(histlogfn, "r");
 	if (fd == NULL) {
 		errormsg("Cannot open history file");
@@ -752,9 +756,13 @@ int main(int argc, char *argv[])
 		fclose(fd);
 	}
 	else {
+		SBUF_DEFINE(tailcmd);
+
 		/* Last 50 entries - we cheat and use "tail" in a pipe to pick the entries */
 		fclose(fd);
-		sprintf(tailcmd, "tail -%d %s", entrycount, histlogfn);
+		SBUF_MALLOC(tailcmd, 1024 + strlen(histlogfn));
+
+		snprintf(tailcmd, tailcmd_buflen, "tail -%d %s", entrycount, histlogfn);
 		fd = popen(tailcmd, "r");
 		if (fd == NULL) errormsg("Cannot run tail on the histfile");
 		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, getcurrenttime(NULL), 1, reportwarnlevel, reportgreenlevel, reportwarnstops, NULL);

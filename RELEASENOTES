@@ -13,6 +13,39 @@ Changes file.
 Changes for 4.3.29
 ==================
 
+Several buffer overflow security issues have been resolved, as well as a potential
+XSS attack on certain CGI interfaces. Although the ability to exploit is limited, 
+all users are urged to upgrade. The assigned CVE numbers are:
+
+  CVE-2019-13451, CVE-2019-13452, CVE-2019-13455, CVE-2019-13473, 
+  CVE-2019-13474, CVE-2019-13484, CVE-2019-13485, CVE-2019-13486
+
+In addition, revisions have been made to a number of places throughout 
+the code to convert the most common sprintf statements to snprintf for 
+safer processing, which should reduce the impact of similar parsing. 
+Additional work on this will continue in the future.
+
+The affected CGIs are:
+
+	history.c (overflow of histlogfn) = CVE-2019-13451
+	reportlog.c (overflow of histlogfn) = CVE-2019-13452
+	csvinfo.c (overflow of dbfn) = CVE-2019-13273
+	csvinfo.c (reflected XSS) = CVE-2019-13274
+	acknowledge.c (overflow of msgline) = CVE-2019-13455
+
+	appfeed.c (overflow of errtxt) = CVE-2019-13484
+	history.c (overflow of selfurl) = CVE-2019-13485
+	svcstatus.c (overflow of errtxt) = CVE-2019-13486
+
+We would like to thank the University of Cambridge Computer Security 
+Incident Response Team for their assistance in reporting and helping 
+resolve these issues.
+
+
+
+
+Additional Changes:
+
 On Linux, a few additional tmpfs volumes are ignored by default
 on new (or unmodified) installs. This includes /run/user/<uid>,
 which is a transient, per-session tmpfs on some systems. To re-

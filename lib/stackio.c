@@ -204,13 +204,13 @@ FILE *stackfopen(char *filename, char *mode, void **v_listhead)
 
 		stackfd_mode = strdup(mode);
 
-		strcpy(stackfd_filename, filename);
+		strncpy(stackfd_filename, filename, sizeof(stackfd_filename));
 	}
 	else {
 		if (*filename == '/')
-			strcpy(stackfd_filename, filename);
+			strncpy(stackfd_filename, filename, sizeof(stackfd_filename));
 		else
-			sprintf(stackfd_filename, "%s/%s", stackfd_base, filename);
+			snprintf(stackfd_filename, sizeof(stackfd_filename), "%s/%s", stackfd_base, filename);
 	}
 
 	dbgprintf("Opening file %s\n", stackfd_filename);
@@ -335,7 +335,7 @@ static void addtofnlist(char *dirname, int is_optional, void **v_listhead)
 	int fnsz = 0;
 	int i;
 
-	if (*dirname == '/') strcpy(dirfn, dirname); else sprintf(dirfn, "%s/%s", stackfd_base, dirname);
+	if (*dirname == '/') strncpy(dirfn, dirname, sizeof(dirfn)); else snprintf(dirfn, sizeof(dirfn), "%s/%s", stackfd_base, dirname);
 
 	if ((dirfd = opendir(dirfn)) == NULL) {
 		if (!is_optional) errprintf("WARNING: Cannot open directory %s\n", dirfn);
@@ -380,7 +380,10 @@ static void addtofnlist(char *dirname, int is_optional, void **v_listhead)
 		if ((fnlen >= 8) && ((strcmp(d->d_name + fnlen - 8, ".rpmsave") == 0) || (strcmp(d->d_name + fnlen - 8, ".rpmorig") == 0) ) ) continue;
 		if ((fnlen >= 7) && (strcmp(d->d_name + fnlen - 7, ".rpmnew") == 0)) continue;
 
-		sprintf(fn, "%s/%s", dirfn, d->d_name);
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wformat-truncation"
+		snprintf(fn, sizeof(fn), "%s/%s", dirfn, d->d_name);
+		#pragma GCC diagnostic pop
 		if (stat(fn, &st) == -1) continue;
 
 		if (S_ISDIR(st.st_mode)) {
@@ -522,7 +525,7 @@ int main(int argc, char *argv[])
 	int done, linenum;
 
 	fn = strdup(argv[1]);
-	strcpy(cmd, "!");
+	strncpy(cmd, "!", sizeof(cmd));
 	done = 0;
 	while (!done) {
 		if (*cmd == '!') {
@@ -553,7 +556,7 @@ int main(int argc, char *argv[])
 		else {
 			xfree(fn); fn = strdup(cmd);
 			stackfclist(&listhead);
-			strcpy(cmd, "!");
+			strncpy(cmd, "!", sizeof(cmd));
 			continue;
 		}
 
