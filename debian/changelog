@@ -1,7 +1,15 @@
+xymon (4.3.30) stable; urgency=high
+
+   * rev 8072
+
+   * Fix reports with dashes or underscores not visible in history logs (Thanks, Tom Schmidt)
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, 05 Aug 2019 23:30:00 -0800
+
+
 xymon (4.3.29) stable; urgency=medium
 
    * rev 8070
-
 
    * Security Fixes: A number of potential buffer overflows have been resolved
      CVE-2019-13451, CVE-2019-13452, CVE-2019-13455, CVE-2019-13473, 

@@ -1,3 +1,12 @@
+Changes from 4.3.29 -> 4.3.30 (05 Aug 2019)
+===========================================
+
+* rev 8070
+
+* Fix reports with dashes or underscores not visible in history logs (Thanks, Tom Schmidt)
+
+
+
 Changes from 4.3.28 -> 4.3.29 (23 Jul 2019)
 ===========================================
 
