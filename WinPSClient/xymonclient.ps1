@@ -40,8 +40,8 @@ $xymondir = split-path -parent $MyInvocation.MyCommand.Definition
 
 # -----------------------------------------------------------------------------------
 
-$Version = '2.41'
-$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2019-03-07 zak.beck@accenture.com"
+$Version = '2.42'
+$XymonClientVersion = "${Id}: xymonclient.ps1  $Version 2019-03-11 zak.beck@accenture.com"
 # detect if we're running as 64 or 32 bit
 $XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 $XymonClientCfg = join-path $xymondir 'xymonclient_config.xml'
@@ -2496,57 +2496,60 @@ function XymonServiceCheck
             $days = ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')
             $serviceexclds = @($script:clientlocalcfg_entries.keys | where { $_ -match '^noservicecheck' })
             
-            foreach ($maintservice in $serviceexclds)
+            if ($serviceexclds -ne '')
             {
-                # parameter should be 'noservicecheck:<servicename>:<numeric day of week Sun=0>:<military start hour>:<duration in Hours>'
-                $checkMparams = $maintservice -split ':'
-                if ($checkparams[1] -eq $checkMparams[1])
+                foreach ($maintservice in $serviceexclds)
                 {
-                    # validation of number of parameters
-                    if ($checkMparams.length -ne 5)
+                    # parameter should be 'noservicecheck:<servicename>:<numeric day of week Sun=0>:<military start hour>:<duration in Hours>'
+                    $checkMparams = $maintservice -split ':'
+                    if ($checkparams[1] -eq $checkMparams[1])
                     {
-                        WriteLog ("ERROR: not enough parameters (noservicecheck:<servicename>:<numeric day of week Sun=0>:<start hour (24h)>:<duration Hrs> {0}" -f $checkMparams[1])
-                        continue
-                    }
-                    else
-                    {
-                        # get values
-                        $MaintDay = $checkMparams[2] -as [int]
-                        $MaintStartHour = $checkMparams[3] -as [int]
-                        $MaintDuration = $checkMparams[4] -as [int]
-                        # validation of basic values
-                        if ($checkMparams[1] -eq '' -or $MaintDuration -eq $null -or (0..6 -notcontains $MaintDay) -or (0..23 -notcontains $MaintStartHour))
+                        # validation of number of parameters
+                        if ($checkMparams.length -ne 5)
                         {
-                            WriteLog ("ERROR: config error (noservicecheck:<servicename>:<numeric day of week Sun=0>:<start hour (24h)>:<duration Hrs>) {0}" -f $checkMparams[1])
+                            WriteLog ("ERROR: not enough parameters (noservicecheck:<servicename>:<numeric day of week Sun=0>:<start hour (24h)>:<duration Hrs> {0}" -f $checkMparams[1])
                             continue
-                        }
-                        $MaintWeekDay = $days[$MaintDay]
-                    }
-                    
-                    if (((get-date).DayofWeek -eq $MaintWeekDay) -and ((get-date).Hour -eq $MaintStartHour) ) 
-                    { 
-                        if ($script:MaintChecks.ContainsKey($checkMparams[1])) 
-                        {
-                            $MaintWindowEnd = $script:MaintChecks[$checkMparams[1]].AddHours($MaintDuration)
-                            if ((get-date) -lt $MaintWindowEnd)
-                            {
-                                WriteLog (" Maintenance: Skipping Service Check until after $($MaintWindowEnd) for {0}" -f $checkMparams[1])
-                                continue
-                            }
-                            else
-                            {
-                                clear.variable $script:MaintChecks
-                            }
                         }
                         else
                         {
-                             WriteLog ("Not seen this NoServiceCheck before, starting Maintenance Window now for {0}" -f $checkMparams[1])
-                             $hourTop = (get-date).Minute
-                             $script:MaintChecks[$checkMparams[1]] = (get-date).AddMinutes(-($hourTop))
-                             continue
+                            # get values
+                            $MaintDay = $checkMparams[2] -as [int]
+                            $MaintStartHour = $checkMparams[3] -as [int]
+                            $MaintDuration = $checkMparams[4] -as [int]
+                            # validation of basic values
+                            if ($checkMparams[1] -eq '' -or $MaintDuration -eq $null -or (0..6 -notcontains $MaintDay) -or (0..23 -notcontains $MaintStartHour))
+                            {
+                                WriteLog ("ERROR: config error (noservicecheck:<servicename>:<numeric day of week Sun=0>:<start hour (24h)>:<duration Hrs>) {0}" -f $checkMparams[1])
+                                continue
+                            }
+                            $MaintWeekDay = $days[$MaintDay]
                         }
+                        
+                        if (((get-date).DayofWeek -eq $MaintWeekDay) -and ((get-date).Hour -eq $MaintStartHour) ) 
+                        { 
+                            if ($script:MaintChecks.ContainsKey($checkMparams[1])) 
+                            {
+                                $MaintWindowEnd = $script:MaintChecks[$checkMparams[1]].AddHours($MaintDuration)
+                                if ((get-date) -lt $MaintWindowEnd)
+                                {
+                                    WriteLog (" Maintenance: Skipping Service Check until after $($MaintWindowEnd) for {0}" -f $checkMparams[1])
+                                    continue
+                                }
+                                else
+                                {
+                                    clear.variable $script:MaintChecks
+                                }
+                            }
+                            else
+                            {
+                                 WriteLog ("Not seen this NoServiceCheck before, starting Maintenance Window now for {0}" -f $checkMparams[1])
+                                 $hourTop = (get-date).Minute
+                                 $script:MaintChecks[$checkMparams[1]] = (get-date).AddMinutes(-($hourTop))
+                                 continue
+                            }
+                        }
+                        # end of maintenance hold   
                     }
-                    # end of maintenance hold   
                 }
             }
             WriteLog ("Checking service {0}" -f $checkparams[1])
@@ -3262,6 +3265,7 @@ function XymonClientConfig($cfglines)
                 -or $l -match '^slimmode' `
                 -or $l -match '^noservicecheck:' `
                 -or $l -match '^enablediskpart' `
+                -or $l -match '^maxloop' `
                 )
             {
                 WriteLog "Found a command: $l"
@@ -3295,6 +3299,21 @@ function XymonClientConfig($cfglines)
                         ($script:clientlocalcfg_entries.slimmode.$_ -split ',')
                 }
             }
+        }
+        # parse maxloop if it's there (add if not)
+        $maxloop = @($script:clientlocalcfg_entries.keys | `
+            where { $_ -match '^maxloop:([0-9]+)$' })
+        if ($maxloop.length -gt 1)
+        {
+            WriteLog 'ERROR: more than one maxloop directive in config!'
+        }
+        elseif ($maxloop.Length -eq 1)
+        {
+            $script:maxloop = [int]$matches[1]
+        }
+        else
+        {
+            $script:maxloop = 0
         }
     }
     WriteLog "Cached config now contains: "
@@ -4162,6 +4181,14 @@ while ($running -eq $true) {
     WriteLog "UTC date/time: $UTCstr"
     WriteLog "This is collection number $($script:collectionnumber), loop count $loopcount"
     WriteLog "Next 'slow scan' is when loopcount reaches $($script:XymonSettings.slowscanrate)"
+    if ($script:maxloop -gt 0)
+    {
+        WriteLog "XymonPSClient service will restart when loopcount greater than $($script:maxloop)"
+    }
+    else
+    {
+        WriteLog 'XymonPSClient is configured to never automatically restart'
+    }
 
     $starttime = Get-Date
     $slowscan = $false
@@ -4229,7 +4256,15 @@ while ($running -eq $true) {
         # first run
         $delay = 30
     }
-    XymonLogSend
+    WriteLog "Status: maxloop: $($script:maxloop) collection number: $($script:collectionnumber)"
+    if ($script:maxloop -gt 0 -and $script:collectionnumber -gt $script:maxloop)
+    {
+        # restart service by exiting, NSSM will restart it
+        WriteLog "Maximum collections reached: collection $($script:collectionnumber), maxloop $($script:maxloop): restarting service..."
+        XymonLogSend
+        exit
+    }
     WriteLog "Delaying until next run: $delay seconds"
+    XymonLogSend
     if ($delay -gt 0) { sleep $delay }
 }
