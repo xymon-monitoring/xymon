@@ -3101,7 +3101,12 @@ strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagep
 	while (rule) {
 		int rulematch = 0;
 
-		if (!rule->rule.rrdds.rrdkey || !namematch(rrdkey, rule->rule.rrdds.rrdkey->pattern, rule->rule.rrdds.rrdkey->exp)) goto nextrule;
+		if (strcmp(rule->rule.rrdds.column, "http") == 0) {
+			if (!rule->rule.rrdds.rrdkey || !patternmatch(rrdkey, rule->rule.rrdds.rrdkey->pattern, rule->rule.rrdds.rrdkey->exp)) goto nextrule;
+		}
+		else {
+			if (!rule->rule.rrdds.rrdkey || !namematch(rrdkey, rule->rule.rrdds.rrdkey->pattern, rule->rule.rrdds.rrdkey->exp)) goto nextrule;
+		}
 
 		handle = xtreeFind(valnames, rule->rule.rrdds.rrdds);
 		if (handle == xtreeEnd(valnames)) goto nextrule;

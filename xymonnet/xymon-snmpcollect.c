@@ -726,18 +726,18 @@ void readconfig(char *cfgfn, int verbose)
 			continue;
 		}
 
-		if (strncmp(bot, "passphrase=", 10) == 0) {
-			reqitem->passphrase = strdup(bot+10);
+		if (strncmp(bot, "passphrase=", 11) == 0) {
+			reqitem->passphrase = strdup(bot+11);
 			continue;
 		}
 
-		if (strncmp(bot, "authmethod=", 10) == 0) {
-			if (strcasecmp(bot+10, "md5") == 0)
+		if (strncmp(bot, "authmethod=", 11) == 0) {
+			if (strcasecmp(bot+11, "md5") == 0)
 				reqitem->authmethod = SNMP_V3AUTH_MD5;
-			else if (strcasecmp(bot+10, "sha1") == 0)
+			else if (strcasecmp(bot+11, "sha1") == 0)
 				reqitem->authmethod = SNMP_V3AUTH_SHA1;
 			else
-				errprintf("Unknown SNMPv3 authentication method '%s'\n", bot+10);
+				errprintf("Unknown SNMPv3 authentication method '%s'\n", bot+11);
 
 			continue;
 		}

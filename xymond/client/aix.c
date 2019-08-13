@@ -78,19 +78,22 @@ void handle_aix_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	if (realmemstr && freememstr && swapmemstr) {
 		long memphystotal = 0, memphysfree = 0, memswaptotal = 0, memswappct = 0;
+		long memacttotal = 0, memactused = 0;
 		char *p;
 
 		if (strncmp(realmemstr, "realmem ", 8) == 0) memphystotal = atol(realmemstr+8) / 1024L;
 		if (sscanf(freememstr, "%*d %*d %*d %ld", &memphysfree) == 1) memphysfree /= 256L;
+		if (sscanf(freememstr, "%*d %*d %ld", &memactused) == 1) memactused /= 256;
 
 		p = strchr(swapmemstr, '\n'); if (p) p++;
 		if (p && (sscanf(p, " %ldMB %ld%%", &memswaptotal, &memswappct) != 2)) {
 			memswaptotal = memswappct = -1L;
 		}
+		memacttotal = memphystotal;
 
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 				memphystotal, (memphystotal - memphysfree), 
-				-1L, -1L,
+				memacttotal, memactused,
 				memswaptotal, ((memswaptotal * memswappct) / 100L));
 	}
 

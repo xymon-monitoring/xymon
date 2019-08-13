@@ -960,11 +960,9 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 	else invaliddata = 1;
 
 	if (memactused != -1) memactpct = (memacttotal > 0) ? ((100 * memactused) / memacttotal) : 0;
-	if (memactpct <= 100) {
+	/* Actual percentage can be above 100 */
 		if (memactpct  > actyellow)  actcolor  = COL_YELLOW;
 		if (memactpct  > actred)     actcolor  = COL_RED;
-	}
-	else invaliddata = 1;
 
 	if ((physcolor == COL_RED) || (swapcolor == COL_RED) || (actcolor == COL_RED)) {
 		memorycolor = COL_RED;
@@ -999,12 +997,8 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 	addtostatus(msgline);
 
 	if (memactused != -1) {
-		if (memactpct <= 100)
-			sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%%\n", 
-				colorname(actcolor), "Actual/Virtual", memactused, memacttotal, memactpct);
-		else
-			sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%% - invalid data\n", 
-				colorname(COL_YELLOW), "Actual/Virtual", memactused, memacttotal, 0L);
+		sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%%\n", 
+			colorname(actcolor), "Actual/Virtual", memactused, memacttotal, memactpct);
 			
 		addtostatus(msgline);
 	}
