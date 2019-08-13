@@ -56,6 +56,7 @@ extern struct rpcent *getrpcbyname(char *);
 #include "ldaptest.h"
 
 #define DEFAULT_PING_CHILD_COUNT 1
+#define MSGBUFSIZE 4096
 
 char *reqenv[] = {
 	"NONETPAGE",
@@ -1848,7 +1849,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 	char		*msgbuf;
 	char		causetext[1024];
 
-	msgbuf = (char *)malloc(4096);
+	msgbuf = (char *)malloc(MSGBUFSIZE);
 
 	for (t=service->items; (t); t = t->next) {
 		char *wantedrpcsvcs = NULL;
@@ -1904,7 +1905,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 					snprintf(msgline, sizeof(msgline), "&%s Unknown RPC service %s\n",
 						colorname(COL_RED), rpcsvc);
 				}
-				strncat(msgbuf, msgline, (sizeof(msgbuf) - strlen(msgbuf)));
+				strncat(msgbuf, msgline, (MSGBUFSIZE - strlen(msgbuf)));
 
 				rpcsvc = strtok(NULL, ",");
 			}
