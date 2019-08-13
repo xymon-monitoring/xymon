@@ -57,7 +57,7 @@ form of a book, CD or DVD is appreciated.
 The following files are distributed with Xymon and used by 
 Xymon, but written by others and are licensed under the GPL:
 
-* minilzo-2.09.tar.gz (SHA1: 32d43a04d16da65258427d978960ecf1bf751ec1)
+* minilzo-2.10.tar.gz (SHA1: c7432708d49017a3f0b4f44c99d336f8a1be84f5)
   Author: Markus Franz Xaver Johannes Oberhumer <markus@oberhumer.com>
   Files: lib/minilzo.c, lib/minilzo.h, lib/lzoconf.h, lib/lzodefs.h
   See the file 'README.LZO' for more information.
