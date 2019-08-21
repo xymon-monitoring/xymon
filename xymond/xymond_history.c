@@ -170,8 +170,11 @@ int main(int argc, char *argv[])
 		alleventsfd = fopen(alleventsfn, "a");
 		if (alleventsfd == NULL) {
 			errprintf("Cannot open the all-events file '%s'\n", alleventsfn);
+			return 1;
 		}
-		setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
+		else {
+			setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
+		}
 	}
 
 	/* For picking up lost children */

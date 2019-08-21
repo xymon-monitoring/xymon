@@ -6,6 +6,7 @@ xymon (4.3.30) stable; urgency=high
    * Really fix do_temperature.c report parsing for parentheses (Thanks, Tom Schmidt)
    * Fix truncation on exec strings causing missing custom RRD titles (Thanks, Tom Schmidt) 
    * RPC buffer calculation on snprintf taking improper sizeof (Thanks, Tom Schmidt)
+   * Don't crash on a missing allevents file
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, 05 Aug 2019 23:30:00 -0800
 
