@@ -8,6 +8,7 @@ Changes from 4.3.29 -> 4.3.30 (05 Aug 2019)
 * Fix truncation on exec strings causing missing custom RRD titles (Thanks, Tom Schmidt)
 * RPC buffer calculation on snprintf taking improper sizeof (Thanks, Tom Schmidt)
 * Don't crash on a missing allevents file
+* Fix assorted crashes with xymongen report generation after string changes
 
 
 Changes from 4.3.28 -> 4.3.29 (23 Jul 2019)
