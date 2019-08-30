@@ -1310,9 +1310,11 @@ int finish_ping_service(service_t *service)
 						pingcmd, WEXITSTATUS(pingstatus));
 		}
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 		/* Ignore gcc warnings about truncating filenames when adding a number */
 		#pragma GCC diagnostic push
 		#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif  // __GNUC__
 
 		/* Open the new ping result file */
 		snprintf(fn, sizeof(fn), "%s.%02d", pinglog, i);
@@ -1336,7 +1338,9 @@ int finish_ping_service(service_t *service)
 			if (errfd) fclose(errfd);
 		}
 		if (!debug) unlink(fn);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 		#pragma GCC diagnostic pop
+#endif  // __GNUC__
 
 		if (failed) {
 			/* Flag all ping tests as "undecided" */

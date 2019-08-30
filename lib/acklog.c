@@ -126,10 +126,14 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			/* Show only the first 30 characters in message */
 			if (strlen(ackmsg) > 30) ackmsg[30] = '\0';
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 			#pragma GCC diagnostic push
 			#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif  // __GNUC__
 			snprintf(ackfn, sizeof(ackfn), "%s/ack.%s", xgetenv("XYMONACKDIR"), hosttest);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 			#pragma GCC diagnostic pop
+#endif  // __GNUC__
 
 			testname = strrchr(hosttest, '.');
 			if (testname) {

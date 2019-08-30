@@ -8,6 +8,7 @@ xymon (4.3.30) stable; urgency=high
    * RPC buffer calculation on snprintf taking improper sizeof (Thanks, Tom Schmidt)
    * Don't crash on a missing allevents file
    * Fix assorted crashes with xymongen report generation after string changes  
+   * Add guards around GCC diagnostics pragma to allow for building on older vers
 
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, 05 Aug 2019 23:30:00 -0800

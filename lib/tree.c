@@ -472,8 +472,10 @@ void *xtreeDelete(void *treehandle, char *key)
 
 
 #ifdef STANDALONE
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
+#endif  // __GNUC__
 
 int main(int argc, char **argv)
 {
@@ -542,6 +544,8 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic pop
+#endif  // __GNUC__
 #endif
 
