@@ -262,7 +262,10 @@ int main(int argc, char *argv[])
 	}
 	else {
 		sprintf(outdir, "--csv=%s/%s.csv", xgetenv("XYMONREPDIR"), dirid);
-		if (xgetenv("XYMONREPDIR")) mkdir(xgetenv("XYMONREPDIR"), 0755); // superfluous, but handled here
+		if (mkdir(outdir, 0755) == -1) {
+			if (xgetenv("XYMONREPDIR") && mkdir(xgetenv("XYMONREPDIR"), 0755) != -1) dbgprintf("Created %s\n", xgetenv("XYMONREPDIR"));
+			if (mkdir(outdir, 0755) == -1) errormsg("Cannot create output directory");
+		}
 		xymongen_argv[newargi++] = outdir;
 		sprintf(csvdelimopt, "--csvdelim=%c", csvdelim);
 		xymongen_argv[newargi++] = csvdelimopt;

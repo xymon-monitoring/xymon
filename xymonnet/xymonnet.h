@@ -42,7 +42,7 @@ enum toolid_t { TOOL_CONTEST, TOOL_DNS, TOOL_NTP, TOOL_FPING, TOOL_HTTP, TOOL_LD
  *                                   banner                      nosslcert             |    |
  *                                   certinfo                    dodns                 |    |
  *                                   duration                    dnserror              |    |
- *                                   badtest                     //////////            |    |
+ *                                   badtest                     pingerror             |    |
  *                                   downcount                   repeattest            |    |
  *                                   downstart                   noconn                |    |
  *                                   privdata ----+              noping                |    |
@@ -91,6 +91,7 @@ typedef struct testedhost_t {
 	int hidehttp;		/* hidehttp flag */
 	int dodns;              /* set while loading tests if we need to do a DNS lookup */
 	int dnserror;		/* set internally if we cannot find the host's IP */
+	int pingerror;		/* set internally if host does not answer ping */
 	int repeattest;         /* Set if this host goes on the quick poll list */
 	char *hosttype;         /* For the "Intermediate HOSTTYPE is down" message */
 

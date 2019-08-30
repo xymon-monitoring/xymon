@@ -636,7 +636,7 @@ int main(int argc, char *argv[])
 	char *pagepattern = NULL, *hostpattern = NULL;
 	char *cookie = NULL, *nexthost;
 	char *xymoncmd = NULL, *procscmd = NULL, *svcscmd = NULL;
-        int alertcolors, alertinterval;
+	int alertcolors, alertinterval;
 	char configfn[PATH_MAX];
 	char *respbuf = NULL, *procsbuf = NULL, *svcsbuf = NULL;
 	hostlist_t *hwalk;

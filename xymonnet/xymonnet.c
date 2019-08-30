@@ -1078,7 +1078,8 @@ void run_ntp_service(service_t *service)
 	strcpy(cmdpath, (use_sntp ? xgetenv("SNTP") : xgetenv("NTPDATE")) );
 
 	for (t=service->items; (t); t = t->next) {
-		if (!t->host->dnserror) {
+		/* Do not run NTP test if host does not resolve in DNS or is down */
+		if (!t->host->dnserror && !t->host->pingerror) {
 			if (use_sntp) {
 				sprintf(cmd, "%s %s -d %d %s 2>&1", cmdpath, xgetenv("SNTPOPTS"), extcmdtimeout-1, ip_to_test(t->host));
 			}
@@ -1102,7 +1103,8 @@ void run_rpcinfo_service(service_t *service)
 	p = xgetenv("RPCINFO");
 	strcpy(cmdpath, (p ? p : "rpcinfo"));
 	for (t=service->items; (t); t = t->next) {
-		if (!t->host->dnserror && (t->host->downcount == 0)) {
+		/* Do not run RPCINFO test if host does not resolve in DNS or is down */
+		if (!t->host->dnserror && (t->host->downcount == 0) && !t->host->pingerror) {
 			sprintf(cmd, "%s -p %s 2>&1", cmdpath, ip_to_test(t->host));
 			t->open = (run_command(cmd, NULL, t->banner, 1, extcmdtimeout) == 0);
 		}
@@ -2635,8 +2637,8 @@ int main(int argc, char *argv[])
 			addtostatus(msgline);
 		}
 
-		sprintf(msgline, "\nStatistics:\n Hosts total           : %8d\n Hosts with no tests   : %8d\n Total test count      : %8d\n", 
-			hostcount, notesthostcount, testcount);
+		sprintf(msgline, "\nStatistics:\n Hosts total           : %8d\n Hosts with no tests   : %8d\n Total test count      : %8d\n Status messages       : %8d\n Alert status msgs     : %8d\n Transmissions         : %8d\n", 
+			hostcount, notesthostcount, testcount, xymonstatuscount, xymonnocombocount, xymonmsgcount);
 		addtostatus(msgline);
 		sprintf(msgline, "\nDNS statistics:\n # hostnames resolved  : %8d\n # successful          : %8d\n # failed              : %8d\n # calls to dnsresolve : %8d\n",
 			dns_stats_total, dns_stats_success, dns_stats_failed, dns_stats_lookups);
