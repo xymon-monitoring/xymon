@@ -41,12 +41,13 @@ typedef struct coltext_t {
 
 hostlist_t *hosthead = NULL;
 static char *pingcolumn = "conn";
-static char *pingplus = "conn=";
 static char *coldelim = ";";
 static coltext_t *chead = NULL;
 static int ccount = 0;
 static int criticalonly = 0;
 static int newcritconfig = 1;
+
+SBUF_DEFINE(pingplus);
 
 void errormsg(char *msg)
 {
@@ -116,13 +117,13 @@ static void print_disklist(char *hostname)
 	struct dirent *de;
 	char *p;
 
-	sprintf(dirname, "%s/%s", xgetenv("XYMONRRDS"), hostname);
+	snprintf(dirname, sizeof(dirname)-1, "%s/%s", xgetenv("XYMONRRDS"), hostname);
 	d = opendir(dirname);
 	if (!d) return;
 
 	while ((de = readdir(d)) != NULL) {
 		if (strncmp(de->d_name, "disk,", 5) == 0) {
-			strcpy(fn, de->d_name + 4);
+			strncpy(fn, de->d_name + 4, sizeof(fn));
 			p = strstr(fn, ".rrd"); if (!p) continue;
 			*p = '\0';
 			p = fn; while ((p = strchr(p, ',')) != NULL) *p = '/';
@@ -135,16 +136,16 @@ static void print_disklist(char *hostname)
 
 char *criticalval(char *hname, char *tname, char *alerts)
 {
-	static char *result = NULL;
+	STATIC_SBUF_DEFINE(result);
 
 	if (result) xfree(result);
 
 	if (newcritconfig) {
-		char *key;
+		SBUF_DEFINE(key);
 		critconf_t *critrec;
 
-		key = (char *)malloc(strlen(hname) + strlen(tname) + 2);
-		sprintf(key, "%s|%s", hname, tname);
+		SBUF_MALLOC(key, strlen(hname) + strlen(tname) + 2);
+		snprintf(key, key_buflen, "%s|%s", hname, tname);
 		critrec = get_critconfig(key, CRITCONF_FIRSTMATCH, NULL);
 		if (!critrec) {
 			result = strdup("No");
@@ -153,8 +154,8 @@ char *criticalval(char *hname, char *tname, char *alerts)
 			char *tspec;
 
 			tspec = (critrec->crittime ? timespec_text(critrec->crittime) : "24x7");
-			result = (char *)malloc(strlen(tspec) + 30);
-			sprintf(result, "%s&nbsp;prio&nbsp;%d", tspec, critrec->priority);
+			SBUF_MALLOC(result, strlen(tspec) + 30);
+			snprintf(result, result_buflen, "%s&nbsp;prio&nbsp;%d", tspec, critrec->priority);
 		}
 		xfree(key);
 	}
@@ -258,7 +259,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 						contidx++;
 					}
 					else {
-						sprintf(contcol, "content%d", contidx);
+						snprintf(contcol, sizeof(contcol)-1, "content%d", contidx);
 						colname = contcol;
 						contidx++;
 					}
@@ -515,7 +516,7 @@ void load_columndocs(void)
 	FILE *fd;
 	strbuffer_t *inbuf;
 
-	sprintf(fn, "%s/etc/columndoc.csv", xgetenv("XYMONHOME"));
+	snprintf(fn, sizeof(fn)-1, "%s/etc/columndoc.csv", xgetenv("XYMONHOME"));
 	fd = fopen(fn, "r"); if (!fd) return;
 
 	inbuf = newstrbuffer(0);
@@ -570,13 +571,13 @@ void print_columndocs(void)
 htnames_t *get_proclist(char *hostname, char *statusbuf)
 {
 	char *bol, *eol;
-	char *marker;
+	SBUF_DEFINE(marker);
 	htnames_t *head = NULL, *tail = NULL;
 
 	if (!statusbuf) return NULL;
 
-	marker = (char *)malloc(strlen(hostname) + 3);
-	sprintf(marker, "\n%s|", hostname);
+	SBUF_MALLOC(marker, strlen(hostname) + 3);
+	snprintf(marker, marker_buflen, "\n%s|", hostname);
 	if (strncmp(statusbuf, marker+1, strlen(marker)-1) == 0) {
 		/* Found at start of buffer */
 		bol = statusbuf;
@@ -635,7 +636,9 @@ int main(int argc, char *argv[])
 	int argi, hosti, testi;
 	char *pagepattern = NULL, *hostpattern = NULL;
 	char *cookie = NULL, *nexthost;
-	char *xymoncmd = NULL, *procscmd = NULL, *svcscmd = NULL;
+	SBUF_DEFINE(xymoncmd);
+	SBUF_DEFINE(procscmd);
+	SBUF_DEFINE(svcscmd);
 	int alertcolors, alertinterval;
 	char configfn[PATH_MAX];
 	char *respbuf = NULL, *procsbuf = NULL, *svcsbuf = NULL;
@@ -675,6 +678,8 @@ int main(int argc, char *argv[])
 	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	load_critconfig(critconfigfn);
 
+	SBUF_MALLOC(pingplus, 6); strncpy(pingplus, "conn=", pingplus_buflen);
+
 	/* Setup the filter we use for the report */
 	cookie = get_cookie("pagepath"); if (cookie && *cookie) pagepattern = strdup(cookie);
 	cookie = get_cookie("host");     if (cookie && *cookie) hostpattern = strdup(cookie);
@@ -682,21 +687,21 @@ int main(int argc, char *argv[])
 	/* Fetch the list of host+test statuses we currently know about */
 	if (pagepattern) {
 		pcre *dummy;
-		char *re;
+		SBUF_DEFINE(re);
 
-		re = (char *)malloc(8 + 2*strlen(pagepattern));
-		sprintf(re, "^%s$|^%s/.+", pagepattern, pagepattern);
+		SBUF_MALLOC(re, 8 + 2*strlen(pagepattern));
+		snprintf(re, re_buflen, "^%s$|^%s/.+", pagepattern, pagepattern);
 		dummy = compileregex(re);
 		if (dummy) {
 			freeregex(dummy);
 
-			xymoncmd = (char *)malloc(2*strlen(pagepattern) + 1024);
-			procscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
-			svcscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
+			SBUF_MALLOC(xymoncmd, 2*strlen(pagepattern) + 1024);
+			SBUF_MALLOC(procscmd, 2*strlen(pagepattern) + 1024);
+			SBUF_MALLOC(svcscmd, 2*strlen(pagepattern) + 1024);
 
-			sprintf(xymoncmd, "xymondboard page=%s fields=hostname,testname", re);
-			sprintf(procscmd,  "xymondboard page=%s test=procs fields=hostname,msg", re);
-			sprintf(svcscmd,   "xymondboard page=%s test=svcs fields=hostname,msg", re);
+			snprintf(xymoncmd, xymoncmd_buflen, "xymondboard page=%s fields=hostname,testname", re);
+			snprintf(procscmd, procscmd_buflen, "xymondboard page=%s test=procs fields=hostname,msg", re);
+			snprintf(svcscmd,  svcscmd_buflen,  "xymondboard page=%s test=svcs fields=hostname,msg", re);
 		}
 		else
 			patternerror = 1;
@@ -705,21 +710,21 @@ int main(int argc, char *argv[])
 	}
 	else if (hostpattern) {
 		pcre *dummy;
-		char *re;
+		SBUF_DEFINE(re);
 
-		re = (char *)malloc(3 + strlen(hostpattern));
-		sprintf(re, "^%s$", hostpattern);
+		SBUF_MALLOC(re,3 + strlen(hostpattern));
+		snprintf(re, re_buflen, "^%s$", hostpattern);
 		dummy = compileregex(re);
 		if (dummy) {
 			freeregex(dummy);
 
-			xymoncmd = (char *)malloc(strlen(hostpattern) + 1024);
-			procscmd = (char *)malloc(strlen(hostpattern) + 1024);
-			svcscmd = (char *)malloc(strlen(hostpattern) + 1024);
+			SBUF_MALLOC(xymoncmd, strlen(hostpattern) + 1024);
+			SBUF_MALLOC(procscmd, strlen(hostpattern) + 1024);
+			SBUF_MALLOC(svcscmd, strlen(hostpattern) + 1024);
 
-			sprintf(xymoncmd, "xymondboard host=^%s$ fields=hostname,testname", hostpattern);
-			sprintf(procscmd,  "xymondboard host=^%s$ test=procs fields=hostname,msg", hostpattern);
-			sprintf(svcscmd,   "xymondboard host=^%s$ test=svcs fields=hostname,msg", hostpattern);
+			snprintf(xymoncmd, xymoncmd_buflen, "xymondboard host=^%s$ fields=hostname,testname", hostpattern);
+			snprintf(procscmd, procscmd_buflen, "xymondboard host=^%s$ test=procs fields=hostname,msg", hostpattern);
+			snprintf(svcscmd,  svcscmd_buflen,  "xymondboard host=^%s$ test=svcs fields=hostname,msg", hostpattern);
 		}
 		else
 			patternerror = 1;
@@ -727,13 +732,13 @@ int main(int argc, char *argv[])
 		xfree(re);
 	}
 	else {
-		xymoncmd = (char *)malloc(1024);
-		procscmd = (char *)malloc(1024);
-		svcscmd = (char *)malloc(1024);
+		SBUF_MALLOC(xymoncmd, 1024);
+		SBUF_MALLOC(procscmd, 1024);
+		SBUF_MALLOC(svcscmd, 1024);
 
-		sprintf(xymoncmd, "xymondboard fields=hostname,testname");
-		sprintf(procscmd,  "xymondboard test=procs fields=hostname,msg");
-		sprintf(svcscmd,   "xymondboard test=svcs fields=hostname,msg");
+		snprintf(xymoncmd, xymoncmd_buflen, "xymondboard fields=hostname,testname");
+		snprintf(procscmd, procscmd_buflen, "xymondboard test=procs fields=hostname,msg");
+		snprintf(svcscmd, svcscmd_buflen,   "xymondboard test=svcs fields=hostname,msg");
 	}
 
 	if (patternerror) {
@@ -833,13 +838,13 @@ int main(int argc, char *argv[])
 	load_all_links();
 	init_tcp_services();
 	pingcolumn = xgetenv("PINGCOLUMN");
-	pingplus = (char *)malloc(strlen(pingcolumn) + 2);
-	sprintf(pingplus, "%s=", pingcolumn);
+	SBUF_REALLOC(pingplus, strlen(pingcolumn) + 3);
+	snprintf(pingplus, pingplus_buflen, "%s=", pingcolumn);
 
 	/* Load alert config */
 	alertcolors = colorset(xgetenv("ALERTCOLORS"), ((1 << COL_GREEN) | (1 << COL_BLUE)));
 	alertinterval = 60*atoi(xgetenv("ALERTREPEAT"));
-	sprintf(configfn, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
+	snprintf(configfn, sizeof(configfn)-1, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 	load_alertconfig(configfn, alertcolors, alertinterval);
 	load_columndocs();
 

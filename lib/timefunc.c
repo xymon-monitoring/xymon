@@ -54,7 +54,7 @@ void init_timestamp(void)
 	if (timestamp == NULL) timestamp = (char *)malloc(30);
 
         now = getcurrenttime(NULL);
-        strcpy(timestamp, ctime(&now));
+        strncpy(timestamp, ctime(&now), 30);
         timestamp[strlen(timestamp)-1] = '\0';
 
 }
@@ -63,7 +63,7 @@ void init_timestamp(void)
 char *timespec_text(char *spec)
 {
 	static char *daynames[7] = { NULL, };
-	static char *wkdays = NULL;
+	STATIC_SBUF_DEFINE(wkdays);
 	static strbuffer_t *result = NULL;
 	char *sCopy;
 	char *p;
@@ -85,8 +85,8 @@ char *timespec_text(char *spec)
 			now -= 86400;
 		}
 
-		wkdays = (char *)malloc(strlen(daynames[1]) + strlen(daynames[5]) + 2);
-		sprintf(wkdays, "%s-%s", daynames[1], daynames[5]);
+		SBUF_MALLOC(wkdays, strlen(daynames[1]) + strlen(daynames[5]) + 2);
+		snprintf(wkdays, wkdays_buflen, "%s-%s", daynames[1], daynames[5]);
 	}
 
 
@@ -304,17 +304,19 @@ int periodcoversnow(char *tag)
 	struct tm *now;
 
         int result = 1;
-        char *dayspec, *starttime, *endtime;
+	SBUF_DEFINE(dayspec);
+	SBUF_DEFINE(starttime);
+	SBUF_DEFINE(endtime);
 	unsigned int istart, iend, inow;
 	char *p;
 
         if ((tag == NULL) || (*tag != '-')) return 1;
 
-	dayspec = (char *) malloc(strlen(tag)+1+12); /* Leave room for expanding 'W' and '*' */
-	starttime = (char *) malloc(strlen(tag)+1); 
-	endtime = (char *) malloc(strlen(tag)+1); 
+	SBUF_MALLOC(dayspec, strlen(tag)+1+12); /* Leave room for expanding 'W' and '*' */
+	SBUF_MALLOC(starttime, strlen(tag)+1); 
+	SBUF_MALLOC(endtime, strlen(tag)+1); 
 
-	strcpy(dayspec, (tag+1));
+	strncpy(dayspec, (tag+1), dayspec_buflen);
 	for (p=dayspec; ((*p == 'W') || (*p == '*') || ((*p >= '0') && (*p <= '6'))); p++) ;
 	if (*p != '-') {
 		xfree(endtime); xfree(starttime); xfree(dayspec); return 1;
@@ -322,7 +324,7 @@ int periodcoversnow(char *tag)
 	*p = '\0';
 
 	p++;
-	strcpy(starttime, p); p = starttime;
+	strncpy(starttime, p, starttime_buflen); p = starttime;
 	if ( (strlen(starttime) < 4) || 
 	     !isdigit((int) *p)            || 
 	     !isdigit((int) *(p+1))        ||
@@ -332,7 +334,7 @@ int periodcoversnow(char *tag)
 	else *(starttime+4) = '\0';
 
 	p+=5;
-	strcpy(endtime, p); p = endtime;
+	strncpy(endtime, p, endtime_buflen); p = endtime;
 	if ( (strlen(endtime) < 4) || 
 	     !isdigit((int) *p)          || 
 	     !isdigit((int) *(p+1))      ||
@@ -349,8 +351,8 @@ int periodcoversnow(char *tag)
 	result = 0;
 
 	/* Check day-spec */
-	if (strchr(dayspec, 'W')) strcat(dayspec, "12345");
-	if (strchr(dayspec, '*')) strcat(dayspec, "0123456");
+	if (strchr(dayspec, 'W')) strncat(dayspec, "12345", (dayspec_buflen - strlen(dayspec)));
+	if (strchr(dayspec, '*')) strncat(dayspec, "0123456", (dayspec_buflen - strlen(dayspec)));
 	if (strchr(dayspec, ('0' + now->tm_wday)) == NULL) goto out;
 
 	/* Calculate minutes since midnight for start, end and now */
@@ -374,10 +376,10 @@ out:
 
 char *histlogtime(time_t histtime)
 {
-	static char *result = NULL;
+	STATIC_SBUF_DEFINE(result);
 	char d1[40],d2[3],d3[40];
 
-	if (result == NULL) result = (char *)malloc(30);
+	if (result == NULL) SBUF_MALLOC(result, 30);
 
 	/*
 	 * Historical logs use a filename like "Fri_Nov_7_16:01:08_2002 
@@ -390,7 +392,10 @@ char *histlogtime(time_t histtime)
 	if (d2[0] == '0') { d2[0] = d2[1]; d2[1] = '\0'; }
         strftime(d3, sizeof(d3), "_%H:%M:%S_%Y", localtime(&histtime));
 
-	snprintf(result, 29, "%s%s%s", d1, d2, d3);
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wformat-truncation"
+	snprintf(result, result_buflen, "%s%s%s", d1, d2, d3);
+	#pragma GCC diagnostic pop
 
 	return result;
 }
@@ -462,30 +467,30 @@ char *durationstring(time_t secs)
 
 	if (v >= ONE_WEEK) {
 		n = (int) (v / ONE_WEEK);
-		p += sprintf(p, "%dw ", n);
+		p += snprintf(p, (sizeof(result) - (p - result)), "%dw ", n);
 		v -= (n * ONE_WEEK);
 	}
 
 	if (v >= ONE_DAY) {
 		n = (int) (v / ONE_DAY);
-		p += sprintf(p, "%dd ", n);
+		p += snprintf(p, (sizeof(result) - (p - result)), "%dd ", n);
 		v -= (n * ONE_DAY);
 	}
 
 	if (v >= ONE_HOUR) {
 		n = (int) (v / ONE_HOUR);
-		p += sprintf(p, "%dh ", n);
+		p += snprintf(p, (sizeof(result) - (p - result)), "%dh ", n);
 		v -= (n * ONE_HOUR);
 	}
 
 	if (v >= ONE_MINUTE) {
 		n = (int) (v / ONE_MINUTE);
-		p += sprintf(p, "%dm ", n);
+		p += snprintf(p, (sizeof(result) - (p - result)), "%dm ", n);
 		v -= (n * ONE_MINUTE);
 	}
 
 	if (v > 0) {
-		p += sprintf(p, "%ds ", (int)v);
+		p += snprintf(p, (sizeof(result) - (p - result)), "%ds ", (int)v);
 	}
 
 	return result;
@@ -501,20 +506,20 @@ char *agestring(time_t secs)
 	p = result;
 
 	if (left > 86400) {
-		p += sprintf(p, "%ldd", (left / 86400));
+		p += snprintf(p, (sizeof(result) - (p - result)), "%ldd", (left / 86400));
 		left = (left % 86400);
 	}
 	if ((left > 3600) || *result) {
-		p += sprintf(p, (*result ? "%02ldh" : "%ldh"), (left / 3600));
+		p += snprintf(p, (sizeof(result) - (p - result)), (*result ? "%02ldh" : "%ldh"), (left / 3600));
 		left = (left % 3600);
 	}
 	if ((left > 60) || *result) {
-		p += sprintf(p, (*result ? "%02ldm" : "%ldm"), (left / 60));
+		p += snprintf(p, (sizeof(result) - (p - result)), (*result ? "%02ldm" : "%ldm"), (left / 60));
 		left = (left % 60);
 	}
 	/* Only show seconds if no other info */
 	if (*result == '\0') {
-		p += sprintf(p, "%02lds", left);
+		p += snprintf(p, (sizeof(result) - (p - result)), "%02lds", left);
 	}
 
 	*p = '\0';

@@ -30,5 +30,14 @@ extern char *htmlquoted(char *s);
 extern char *prehtmlquoted(char *s);
 extern strbuffer_t *replacetext(char *original, char *oldtext, char *newtext);
 
+#define SBUF_DEFINE(NAME) char *NAME = NULL; size_t NAME##_buflen = 0;
+#define STATIC_SBUF_DEFINE(NAME) static char *NAME = NULL; static size_t NAME##_buflen = 0;
+#define SBUF_MALLOC(NAME, LEN) { NAME##_buflen = (LEN); NAME = (char *)malloc((LEN)+1); }
+#define SBUF_CALLOC(NAME, NMEMB, LEN) { NAME##_buflen = (LEN); NAME = (char *)calloc(NMEMB, (LEN)+1); }
+#define SBUF_REALLOC(NAME, LEN) { NAME##_buflen = (LEN); NAME = (char *)realloc(NAME, (LEN)+1); }
+
+/* How much can a string expand when htmlquoted? ' ' --> '&nbsp;' */
+#define MAX_HTMLQUOTE_FACTOR 6
+
 #endif
 

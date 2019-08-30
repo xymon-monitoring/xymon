@@ -291,7 +291,8 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 	struct timespec starttime, endtime;
 	struct timespec *tspent;
 	char msg[100];
-	char *tspec, *tst;
+	SBUF_DEFINE(tspec);
+	char *tst;
 	dns_resp_t *responses = NULL;
 	dns_resp_t *walk = NULL;
 	int i;
@@ -317,6 +318,7 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 	}
 
 	tspec = strdup(hostname);
+	tspec_buflen = strlen(tspec) + 1;
 	getntimer(&starttime);
 	tst = strtok(tspec, ",");
 	do {
@@ -343,12 +345,12 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 	getntimer(&endtime);
 	tspent = tvdiff(&starttime, &endtime, NULL);
 	clearstrbuffer(banner); status = ARES_SUCCESS;
-	strcpy(tspec, hostname);
+	strncpy(tspec, hostname, tspec_buflen);
 	tst = strtok(tspec, ",");
 	for (walk = responses, i=1; (walk); walk = walk->next, i++) {
 		/* Print an identifying line if more than one query */
 		if ((walk != responses) || (walk->next)) {
-			sprintf(msg, "\n*** DNS lookup of '%s' ***\n", tst);
+			snprintf(msg, sizeof(msg), "\n*** DNS lookup of '%s' ***\n", tst);
 			addtobuffer(banner, msg);
 		}
 		addtostrbuffer(banner, walk->msgbuf);
@@ -357,7 +359,7 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 		tst = strtok(NULL, ",");
 	}
 	xfree(tspec);
-	sprintf(msg, "\nSeconds: %u.%.9ld\n", (unsigned int)tspent->tv_sec, tspent->tv_nsec);
+	snprintf(msg, sizeof(msg), "\nSeconds: %u.%.9ld\n", (unsigned int)tspent->tv_sec, tspent->tv_nsec);
 	addtobuffer(banner, msg);
 
 	ares_destroy(channel);

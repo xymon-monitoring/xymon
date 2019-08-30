@@ -40,7 +40,7 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 
 	result = 0;
 	if (banner && showcmd) { 
-		sprintf(l, "Command: %s\n\n", cmd); 
+		snprintf(l, sizeof(l), "Command: %s\n\n", cmd); 
 		addtobuffer(banner, l);
 	}
 

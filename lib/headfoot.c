@@ -123,8 +123,8 @@ void sethostenv_report(time_t reportstart, time_t reportend, double repwarn, dou
 	hostenv_reportstart = reportstart;
 	hostenv_reportend = reportend;
 
-	sprintf(hostenv_repwarn, "%.2f", repwarn);
-	sprintf(hostenv_reppanic, "%.2f", reppanic);
+	snprintf(hostenv_repwarn, 10, "%.2f", repwarn);
+	snprintf(hostenv_reppanic, 10, "%.2f", reppanic);
 }
 
 void sethostenv_snapshot(time_t snapshot)
@@ -362,7 +362,7 @@ char *wkdayselect(char wkday, char *valtxt, int isdefault)
 		else selstr = "";
 	}
 
-	sprintf(result, "<option value=\"%c\"%s>%s</option>\n", wkday, selstr, valtxt);
+	snprintf(result, sizeof(result), "<option value=\"%c\"%s>%s</option>\n", wkday, selstr, valtxt);
 
 	return result;
 }
@@ -880,10 +880,11 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 					xtreePos_t thandle;
 					hftreerec_t *trec;
 					char *bwalk, *tname, *p;
-					char *key = (char *)malloc(strlen(hrec->name) + 3);
+					SBUF_DEFINE(key);
+					SBUF_MALLOC(key, strlen(hrec->name) + 3);
 
 					/* Setup the search key and find the first occurrence. */
-					sprintf(key, "\n%s|", hrec->name);
+					snprintf(key, key_buflen, "\n%s|", hrec->name);
 					if (strncmp(statusboard, (key+1), strlen(key+1)) == 0)
 						bwalk = statusboard;
 					else {
@@ -1483,15 +1484,16 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 {
 	int	fd;
 	char 	filename[PATH_MAX];
-	char    *bulletinfile;
+	SBUF_DEFINE(bulletinfile);
 	struct  stat st;
 	char	*templatedata;
 	char	*hfpath;
 	int	have_pagepath = (hostenv_pagepath != NULL);
 
 	if (xgetenv("XYMONDREL") == NULL) {
-		char *xymondrel = (char *)malloc(12+strlen(VERSION));
-		sprintf(xymondrel, "XYMONDREL=%s", VERSION);
+		SBUF_DEFINE(xymondrel);
+		SBUF_MALLOC(xymondrel, 12+strlen(VERSION));
+		snprintf(xymondrel, xymondrel_buflen, "XYMONDREL=%s", VERSION);
 		putenv(xymondrel);
 	}
 
@@ -1520,24 +1522,24 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 		char *elemstart;
 
 		if (hostenv_templatedir) {
-			sprintf(filename, "%s/", hostenv_templatedir);
+			snprintf(filename, sizeof(filename), "%s/", hostenv_templatedir);
 		}
 		else {
-			sprintf(filename, "%s/web/", xgetenv("XYMONHOME"));
+			snprintf(filename, sizeof(filename), "%s/web/", xgetenv("XYMONHOME"));
 		}
 
 		p = strchr(hfpath, '/'); elemstart = hfpath;
 		while (p) {
 			*p = '\0';
-			strcat(filename, elemstart);
-			strcat(filename, "_");
+			strncat(filename, elemstart, (sizeof(filename) - strlen(filename)));
+			strncat(filename, "_", (sizeof(filename) - strlen(filename)));
 			*p = '/';
 			p++;
 			elemstart = p; p = strchr(elemstart, '/');
 		}
-		strcat(filename, elemstart);
-		strcat(filename, "_");
-		strcat(filename, head_or_foot);
+		strncat(filename, elemstart, (sizeof(filename) - strlen(filename)));
+		strncat(filename, "_", (sizeof(filename) - strlen(filename)));
+		strncat(filename, head_or_foot, (sizeof(filename) - strlen(filename)));
 
 		dbgprintf("Trying header/footer file '%s'\n", filename);
 		fd = open(filename, O_RDONLY);
@@ -1553,10 +1555,10 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	if (fd == -1) {
 		/* Fall back to default head/foot file. */
 		if (hostenv_templatedir) {
-			sprintf(filename, "%s/%s_%s", hostenv_templatedir, template, head_or_foot);
+			snprintf(filename, sizeof(filename), "%s/%s_%s", hostenv_templatedir, template, head_or_foot);
 		}
 		else {
-			sprintf(filename, "%s/web/%s_%s", xgetenv("XYMONHOME"), template, head_or_foot);
+			snprintf(filename, sizeof(filename), "%s/web/%s_%s", xgetenv("XYMONHOME"), template, head_or_foot);
 		}
 
 		dbgprintf("Trying header/footer file '%s'\n", filename);
@@ -1581,8 +1583,8 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	}
 
 	/* Check for bulletin files */
-	bulletinfile = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen("/web/bulletin_") + strlen(head_or_foot)+1);
-	sprintf(bulletinfile, "%s/web/bulletin_%s", xgetenv("XYMONHOME"), head_or_foot);
+	SBUF_MALLOC(bulletinfile, strlen(xgetenv("XYMONHOME")) + strlen("/web/bulletin_") + strlen(head_or_foot)+1);
+	snprintf(bulletinfile, bulletinfile_buflen, "%s/web/bulletin_%s", xgetenv("XYMONHOME"), head_or_foot);
 	fd = open(bulletinfile, O_RDONLY);
 	if (fd != -1) {
 		int n;
@@ -1610,7 +1612,7 @@ void showform(FILE *output, char *headertemplate, char *formtemplate, int color,
 	int formfile;
 	char formfn[PATH_MAX];
 
-	sprintf(formfn, "%s/web/%s", xgetenv("XYMONHOME"), formtemplate);
+	snprintf(formfn, sizeof(formfn), "%s/web/%s", xgetenv("XYMONHOME"), formtemplate);
 	formfile = open(formfn, O_RDONLY);
 
 	if (formfile >= 0) {

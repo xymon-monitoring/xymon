@@ -86,22 +86,6 @@ char *xstrdup(const char *s)
 	return result;
 }
 
-char *xstrcat(char *dest, const char *src)
-{
-	if (src == NULL) {
-		errprintf("xstrcat: NULL destination\n");
-		abort();
-	}
-
-	if (dest == NULL) {
-		errprintf("xstrcat: NULL destination\n");
-		abort();
-	}
-
-	strcat(dest, src);
-	return dest;
-}
-
 char *xstrncat(char *dest, const char *src, size_t maxlen)
 {
 	if (src == NULL) {
@@ -115,22 +99,6 @@ char *xstrncat(char *dest, const char *src, size_t maxlen)
 	}
 
 	strncat(dest, src, maxlen);
-	return dest;
-}
-
-char *xstrcpy(char *dest, const char *src)
-{
-	if (src == NULL) {
-		errprintf("xstrcpy: NULL destination\n");
-		abort();
-	}
-
-	if (dest == NULL) {
-		errprintf("xstrcpy: NULL destination\n");
-		abort();
-	}
-
-	strcpy(dest, src);
 	return dest;
 }
 

@@ -537,7 +537,7 @@ int main(int argc, char *argv[])
 	fclose(fd);
 	myRIPEMD160_Final(md, c);
 
-	for(i = 0, p = md_string; (i < sizeof(md)); i++) p += sprintf(p, "%02x", md[i]);
+	for(i = 0, p = md_string; (i < sizeof(md)); i++) p += snprintf(p, (sizeof(md_string) - (p - md_string)), "%02x", md[i]);
 	*p = '\0';
 	printf("%s\n", md_string);
 

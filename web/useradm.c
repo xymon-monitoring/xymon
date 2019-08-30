@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 	int argi, event;
 	char *hffile = "useradm";
 	int bgcolor = COL_BLUE;
-	char *passfile = NULL;
+	SBUF_DEFINE(passfile);
 	FILE *fd;
 	char *infomsg = NULL;
 
@@ -107,8 +107,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (passfile == NULL) {
-		passfile = (char *)malloc(strlen(xgetenv("XYMONHOME")) + 20);
-		sprintf(passfile, "%s/etc/xymonpasswd", xgetenv("XYMONHOME"));
+		SBUF_MALLOC(passfile, strlen(xgetenv("XYMONHOME")) + 20);
+		snprintf(passfile, passfile_buflen, "%s/etc/xymonpasswd", xgetenv("XYMONHOME"));
 	}
 
 	event = parse_query();

@@ -55,8 +55,8 @@ static int getboard(int mincolor)
 
 
 	if (!boardmaster) {
-		sprintf(msg, "xymondboard acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist color=%s", critacklevel,colorname(mincolor));
-		for (i=mincolor+1; (i < COL_COUNT); i++) sprintf(msg+strlen(msg), ",%s", colorname(i));
+		snprintf(msg, sizeof(msg), "xymondboard acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist color=%s", critacklevel,colorname(mincolor));
+		for (i=mincolor+1; (i < COL_COUNT); i++) snprintf(msg+strlen(msg), sizeof(msg)-strlen(msg), ",%s", colorname(i));
 
 		sres = newsendreturnbuf(1, NULL);
 		xymondresult = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
@@ -144,14 +144,17 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 					xfree(newitem);
 				}
 				else {
+					size_t key_buflen;
+
 					if (ackvtimestr && ackbystr && ackmsgstr) {
 						newitem->acktime = atoi(ackvtimestr);
 						newitem->ackedby = strdup(ackbystr);
 						newitem->ackmsg  = strdup(ackmsgstr);
 					}
 
-					newitem->key = (char *)malloc(strlen(newitem->hostname) + strlen(newitem->testname) + 2);
-					sprintf(newitem->key, "%s|%s", newitem->hostname, newitem->testname);
+					key_buflen = strlen(newitem->hostname) + strlen(newitem->testname) + 2;
+					newitem->key = (char *)malloc(key_buflen);
+					snprintf(newitem->key, key_buflen, "%s|%s", newitem->hostname, newitem->testname);
 					xtreeAdd(rbstate[treecount-1], newitem->key, newitem);
 				}
 			}
@@ -207,7 +210,7 @@ void print_colheaders(FILE *output, void * rbcolumns)
 
 void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * columns, int prio, int firsthost, int firsthostever)
 {
-	char *key;
+	SBUF_DEFINE(key);
 	time_t now;
 	xtreePos_t colhandle;
 
@@ -236,7 +239,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * col
 	/* Print the hostname with a link to the critical systems info page */
 	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL, usetooltips));
 
-	key = (char *)malloc(1024);
+	SBUF_MALLOC(key, 1024);
 	for (colhandle = xtreeFirst(columns); (colhandle != xtreeEnd(columns)); colhandle = xtreeNext(columns, colhandle)) {
 		char *colname;
 		xtreePos_t sthandle;
@@ -244,8 +247,8 @@ void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * col
 		fprintf(output, "<TD ALIGN=CENTER>");
 
 		colname = (char *)xtreeKey(columns, colhandle);
-		key = (char *)realloc(key, 2 + strlen(itm->hostname) + strlen(colname));
-		sprintf(key, "%s|%s", itm->hostname, colname);
+		SBUF_REALLOC(key, 2 + strlen(itm->hostname) + strlen(colname));
+		snprintf(key, key_buflen, "%s|%s", itm->hostname, colname);
 		sthandle = xtreeFind(statetree, key);
 		if (sthandle == xtreeEnd(statetree)) {
 			fprintf(output, "-");
@@ -375,17 +378,12 @@ static int wantacked = 0;
 
 static void selectenv(char *name, char *val)
 {
-	char *env;
+	SBUF_DEFINE(env);
 	char *p;
-	int envlen;
 
-	envlen = 20;
-	envlen += strlen(htmlquoted(name));
-	envlen += strlen(htmlquoted(val));
-
-	env = (char *)malloc(envlen);
-	sprintf(env, "SELECT_%s", htmlquoted(name));
-	sprintf(env+strlen(env), "_%s=SELECTED", htmlquoted(val));
+	SBUF_MALLOC(env, 20 + MAX_HTMLQUOTE_FACTOR*strlen(name) + MAX_HTMLQUOTE_FACTOR*strlen(val));
+	snprintf(env, env_buflen, "SELECT_%s", htmlquoted(name));
+	snprintf(env+strlen(env), env_buflen-strlen(env), "_%s=SELECTED", htmlquoted(val));
 
 	for (p=env; (*p); p++) *p = toupper((int)*p);
 	putenv(env);
@@ -476,9 +474,11 @@ int main(int argc, char *argv[])
 	}
 
 	if (!critconfig[0]) {
+		size_t c_buflen = strlen(xgetenv("XYMONHOME")) + strlen(DEFAULT_CRITCONFIGFN) + 2;
+
 		critconfig = (char **)realloc(critconfig, 2*sizeof(char *));
-		critconfig[0] = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen(DEFAULT_CRITCONFIGFN) + 2);
-		sprintf(critconfig[0], "%s/%s", xgetenv("XYMONHOME"), DEFAULT_CRITCONFIGFN);
+		critconfig[0] = (char *)malloc(c_buflen);
+		snprintf(critconfig[0], c_buflen, "%s/%s", xgetenv("XYMONHOME"), DEFAULT_CRITCONFIGFN);
 		critconfig[1] = NULL;
 	}
 
@@ -495,7 +495,8 @@ int main(int argc, char *argv[])
 
 	if (getboard(mincolor) == 0) {
 		int i;
-		char *oneconfig, *onename;
+		char *oneconfig;
+		SBUF_DEFINE(onename);
 		int *partcolor = NULL, *partprio = NULL;
 		xtreePos_t hhandle;
 
@@ -533,8 +534,8 @@ int main(int argc, char *argv[])
 			if (oneconfig) {
 				*oneconfig = '\0';
 				oneconfig++;
-				onename = (char *)malloc(strlen("DIVIDERTEXT=") + strlen(critconfig[i]) + 1);
-				sprintf(onename, "DIVIDERTEXT=%s", critconfig[i]);
+				SBUF_MALLOC(onename, strlen("DIVIDERTEXT=") + strlen(critconfig[i]) + 1);
+				snprintf(onename, onename_buflen, "DIVIDERTEXT=%s", critconfig[i]);
 				putenv(onename);
 			}
 			else {

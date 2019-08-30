@@ -199,7 +199,7 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	rule_t *currule = NULL;
 	recip_t *currcp = NULL, *rcptail = NULL;
 
-	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
+	if (configfn) strncpy(fn, configfn, sizeof(fn)); else snprintf(fn, sizeof(fn), "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -848,10 +848,14 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * have will get the recovery message.
 	 */
 	if (crit && (crit->groupspec || crit->exgroupspec) && ((alert->state != A_RECOVERED) && (alert->state != A_STALE) && (alert->state != A_DROPPED))) {
-		char *grouplist;
+		SBUF_DEFINE(grouplist);
 		char *tokptr;
 
-		grouplist = (alert->groups && (*(alert->groups))) ? strdup(alert->groups) : NULL;
+		if ((alert->groups && (*(alert->groups)))) {
+			SBUF_MALLOC(grouplist, strlen(alert->groups));
+			strncpy(grouplist, alert->groups, grouplist_buflen);
+		}
+
 		if (crit->groupspec) {
 			char *onegroup;
 			int iswanted = 0;
@@ -882,7 +886,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 			/* Excluded groups are only handled when the alert does have a group list */
 
-			strcpy(grouplist, alert->groups); /* Might have been used in the include list */
+			strncpy(grouplist, alert->groups, grouplist_buflen); /* Might have been used in the include list */
 			onegroup = strtok_r(grouplist, ",", &tokptr);
 			while (onegroup) {
 				if (namematch(onegroup, crit->exgroupspec, crit->exgroupspecre)) { 
@@ -1125,7 +1129,8 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	char l[4096];
 	int count = 0;
 	char *p, *fontspec;
-	char codes[20];
+	char codes[25];
+	unsigned int codes_bytesleft;
 
 	if (printmode == 2) {
 		/* For print-out usage - e.g. confreport.cgi */
@@ -1146,7 +1151,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 
 		addtobuffer(buf, "<tr>");
 		if (count == 1) {
-			sprintf(l, "<td valign=top rowspan=###>%s</td>", alert->testname);
+			snprintf(l, sizeof(l), "<td valign=top rowspan=###>%s</td>", alert->testname);
 			addtobuffer(buf, l);
 		}
 
@@ -1193,42 +1198,43 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 		     (recip->criteria && (recip->criteria->sendnotice == SR_WANTED)) ) notice = 1;
 
 		*codes = '\0';
+		codes_bytesleft = sizeof(codes);
 		if (recip->method == M_IGNORE) {
 			recip->recipient = "-- ignored --";
 		}
-		if (recip->noalerts) { if (strlen(codes)) strcat(codes, ",A"); else strcat(codes, "-A"); }
-		if (recovered && !recip->noalerts) { if (strlen(codes)) strcat(codes, ",R"); else strcat(codes, "R"); }
-		if (notice) { if (strlen(codes)) strcat(codes, ",N"); else strcat(codes, "N"); }
-		if (recip->stoprule) { if (strlen(codes)) strcat(codes, ",S"); else strcat(codes, "S"); }
-		if (recip->unmatchedonly) { if (strlen(codes)) strcat(codes, ",U"); else strcat(codes, "U"); }
+		if (recip->noalerts) { if (*codes) strncat(codes, ",A", codes_bytesleft); else strncat(codes, "-A", codes_bytesleft); codes_bytesleft -= 2; }
+		if (recovered && !recip->noalerts) { if (*codes) strncat(codes, ",R", codes_bytesleft); else strncat(codes, "R", codes_bytesleft); codes_bytesleft -= 2; }
+		if (notice) { if (*codes) strncat(codes, ",N", codes_bytesleft); else strncat(codes, "N", codes_bytesleft); codes_bytesleft -= 2; }
+		if (recip->stoprule) { if (*codes) strncat(codes, ",S", codes_bytesleft); else strncat(codes, "S", codes_bytesleft); codes_bytesleft -= 2; }
+		if (recip->unmatchedonly) { if (*codes) strncat(codes, ",U", codes_bytesleft); else strncat(codes, "U", codes_bytesleft); codes_bytesleft -= 2; }
 
 		if (strlen(codes) == 0)
-			sprintf(l, "<td><font %s>%s</font></td>", fontspec, recip->recipient);
+			snprintf(l, sizeof(l), "<td><font %s>%s</font></td>", fontspec, recip->recipient);
 		else
-			sprintf(l, "<td><font %s>%s (%s)</font></td>", fontspec, recip->recipient, codes);
+			snprintf(l, sizeof(l), "<td><font %s>%s (%s)</font></td>", fontspec, recip->recipient, codes);
 		addtobuffer(buf, l);
 
-		sprintf(l, "<td align=center>%s</td>", durationstring(mindur));
+		snprintf(l, sizeof(l), "<td align=center>%s</td>", durationstring(mindur));
 		addtobuffer(buf, l);
 
 		/* maxdur=INT_MAX means "no max duration". So set it to 0 for durationstring() to do the right thing */
 		if (maxdur == INT_MAX) maxdur = 0;
-		sprintf(l, "<td align=center>%s</td>", durationstring(maxdur));
+		snprintf(l, sizeof(l), "<td align=center>%s</td>", durationstring(maxdur));
 		addtobuffer(buf, l);
 
-		sprintf(l, "<td align=center>%s</td>", durationstring(recip->interval)); 
+		snprintf(l, sizeof(l), "<td align=center>%s</td>", durationstring(recip->interval)); 
 		addtobuffer(buf, l);
 
-		if (timespec && extimespec) sprintf(l, "<td align=center>%s, except %s</td>", timespec, extimespec);
-		else if (timespec) sprintf(l, "<td align=center>%s</td>", timespec);
-		else if (extimespec) sprintf(l, "<td align=center>all, except %s</td>", extimespec);
-		else strcpy(l, "<td align=center>-</td>");
+		if (timespec && extimespec) snprintf(l, sizeof(l), "<td align=center>%s, except %s</td>", timespec, extimespec);
+		else if (timespec) snprintf(l, sizeof(l), "<td align=center>%s</td>", timespec);
+		else if (extimespec) snprintf(l, sizeof(l), "<td align=center>all, except %s</td>", extimespec);
+		else strncpy(l, "<td align=center>-</td>", sizeof(l));
 		addtobuffer(buf, l);
 
 		addtobuffer(buf, "<td>");
 		for (i = 0; (i < COL_COUNT); i++) {
 			if ((1 << i) & colors) {
-				sprintf(l, "%s%s", (firstcolor ? "" : ","), colorname(i));
+				snprintf(l, sizeof(l), "%s%s", (firstcolor ? "" : ","), colorname(i));
 				addtobuffer(buf, l);
 				firstcolor = 0;
 			}
@@ -1241,7 +1247,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	}
 
 	/* This is hackish - patch up the "rowspan" value, so it matches the number of recipient lines */
-	sprintf(l, "%d   ", count);
+	snprintf(l, sizeof(l), "%d   ", count);
 	p = strstr(STRBUF(buf), "rowspan=###");
 	if (p) { p += strlen("rowspan="); memcpy(p, l, 3); }
 }

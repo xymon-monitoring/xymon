@@ -751,7 +751,8 @@ void readconfig(char *cfgfn, int verbose)
 		if (mib) {
 			int i;
 			mibidx_t *iwalk = NULL;
-			char *oid, *oidbuf;
+			char *oid;
+			SBUF_DEFINE(oidbuf);
 			char *devname;
 			oidset_t *swalk;
 
@@ -777,13 +778,14 @@ void readconfig(char *cfgfn, int verbose)
 
 					for (i=0; (i <= swalk->oidcount); i++) {
 						if (*mibidx) {
-							oid = oidbuf = (char *)malloc(strlen(swalk->oids[i].oid) + strlen(mibidx) + 2);
-							sprintf(oidbuf, "%s.%s", swalk->oids[i].oid, mibidx);
+							SBUF_MALLOC(oidbuf, strlen(swalk->oids[i].oid) + strlen(mibidx) + 2);
+							oid = oidbuf;
+							snprintf(oidbuf, oidbuf_buflen, "%s.%s", swalk->oids[i].oid, mibidx);
 							devname = mibidx;
 						}
 						else {
 							oid = swalk->oids[i].oid;
-							oidbuf = NULL;
+							oidbuf = NULL; oidbuf_buflen = 0;
 							devname = "-";
 						}
 
@@ -802,7 +804,7 @@ void readconfig(char *cfgfn, int verbose)
 				char endmarks[6];
 
 				mibidx++;	/* Skip the key-marker */
-				sprintf(endmarks, "%s%c", ")]}>", iwalk->marker);
+				snprintf(endmarks, sizeof(endmarks), "%s%c", ")]}>", iwalk->marker);
 				p = mibidx + strcspn(mibidx, endmarks); *p = '\0';
 				newitem->key = strdup(mibidx);
 				newitem->indexmethod = iwalk;
@@ -852,7 +854,7 @@ void resolvekeys(void)
 	keyrecord_t *kwalk;
 	oidset_t *swalk;
 	int i;
-	char *oid;
+	SBUF_DEFINE(oid);
 
 	/* Fetch the key data, and determine the indices we want to use */
 	dataoperation = GET_KEYS;
@@ -880,8 +882,8 @@ void resolvekeys(void)
 				rwalk->setnumber++;
 
 				for (i=0; (i <= swalk->oidcount); i++) {
-					oid = (char *)malloc(strlen(swalk->oids[i].oid) + strlen(kwalk->indexoid) + 2);
-					sprintf(oid, "%s.%s", swalk->oids[i].oid, kwalk->indexoid);
+					SBUF_MALLOC(oid, strlen(swalk->oids[i].oid) + strlen(kwalk->indexoid) + 2);
+					snprintf(oid, oid_buflen, "%s.%s", swalk->oids[i].oid, kwalk->indexoid);
 					make_oitem(kwalk->mib, kwalk->key, &swalk->oids[i], oid, rwalk);
 					xfree(oid);
 				}
@@ -919,7 +921,7 @@ void sendresult(void)
 		if (strcmp(rwalk->hostname, currhost) != 0) {
 			/* Flush buffer */
 			if (havemsg) {
-				sprintf(msgline, "\n.<!-- linecount=%d -->\n", itemcount);
+				snprintf(msgline, sizeof(msgline), "\n.<!-- linecount=%d -->\n", itemcount);
 				addtobuffer(clientmsg, msgline);
 				sendmessage(STRBUF(clientmsg), NULL, XYMON_TIMEOUT, NULL);
 			}
@@ -927,7 +929,7 @@ void sendresult(void)
 			havemsg = 0;
 			itemcount = 0;
 
-			sprintf(msgline, "client/snmpcollect %s.snmpcollect snmp\n\n", rwalk->hostname);
+			snprintf(msgline, sizeof(msgline), "client/snmpcollect %s.snmpcollect snmp\n\n", rwalk->hostname);
 			addtobuffer(clientmsg, msgline);
 		}
 
@@ -937,7 +939,7 @@ void sendresult(void)
 			clearstrbuffer(mib->resultbuf);
 			mib->haveresult = 0;
 
-			sprintf(msgline, "\n[%s]\nInterval=%d\nActiveIP=%s\n\n",
+			snprintf(msgline, sizeof(msgline), "\n[%s]\nInterval=%d\nActiveIP=%s\n\n",
 				mib->mibname,
 				atoi(xgetenv("TASKSLEEP")),
 				rwalk->hostip[rwalk->hostipidx]);
@@ -967,7 +969,7 @@ void sendresult(void)
 				  case OID_CONVERT_U32:
 					ival = atoi(owalk->result);
 					memcpy(&uval, &ival, sizeof(uval));
-					sprintf(msgline, "%u", uval);
+					snprintf(msgline, sizeof(msgline), "%u", uval);
 					addtobuffer(owalk->mib->resultbuf, msgline);
 					break;
 
@@ -1006,21 +1008,21 @@ void egoresult(int color, char *egocolumn)
 
 	combo_start();
 	init_status(color);
-	sprintf(msgline, "status %s.%s %s snmpcollect %s\n\n", 
+	snprintf(msgline, sizeof(msgline), "status %s.%s %s snmpcollect %s\n\n", 
 		xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 	addtostatus(msgline);
 
-	sprintf(msgline, "Variables  : %d\n", varcount);
+	snprintf(msgline, sizeof(msgline), "Variables  : %d\n", varcount);
 	addtostatus(msgline);
-	sprintf(msgline, "PDUs       : %d\n", pducount);
+	snprintf(msgline, sizeof(msgline), "PDUs       : %d\n", pducount);
 	addtostatus(msgline);
-	sprintf(msgline, "Responses  : %d\n", okcount);
+	snprintf(msgline, sizeof(msgline), "Responses  : %d\n", okcount);
 	addtostatus(msgline);
-	sprintf(msgline, "Timeouts   : %d\n", timeoutcount);
+	snprintf(msgline, sizeof(msgline), "Timeouts   : %d\n", timeoutcount);
 	addtostatus(msgline);
-	sprintf(msgline, "Too big    : %d\n", toobigcount);
+	snprintf(msgline, sizeof(msgline), "Too big    : %d\n", toobigcount);
 	addtostatus(msgline);
-	sprintf(msgline, "Errors     : %d\n", errorcount);
+	snprintf(msgline, sizeof(msgline), "Errors     : %d\n", errorcount);
 	addtostatus(msgline);
 
 	show_timestamps(&timestamps);
@@ -1038,7 +1040,7 @@ void egoresult(int color, char *egocolumn)
 int main (int argc, char **argv)
 {
 	int argi;
-	char *configfn = NULL;
+	SBUF_DEFINE(configfn);
 	int cfgcheck = 0;
 	int mibcheck = 0;
 
@@ -1074,6 +1076,7 @@ int main (int argc, char **argv)
 		}
 		else if (*argv[argi] != '-') {
 			configfn = strdup(argv[argi]);
+			configfn_buflen = strlen(configfn)+1;
 		}
 	}
 
@@ -1088,7 +1091,7 @@ int main (int argc, char **argv)
 
 	if (configfn == NULL) {
 		configfn = (char *)malloc(PATH_MAX);
-		sprintf(configfn, "%s/etc/snmphosts.cfg", xgetenv("XYMONHOME"));
+		snprintf(configfn, configfn_buflen, "%s/etc/snmphosts.cfg", xgetenv("XYMONHOME"));
 	}
 	readconfig(configfn, mibcheck);
 	if (cfgcheck) return 0;

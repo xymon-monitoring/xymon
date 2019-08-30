@@ -97,7 +97,7 @@ static char *stack_readdir(void)
 			d = NULL;
 		}
 		else {
-			sprintf(fname, "%s/%s", dirs->dirname, d->d_name);
+			snprintf(fname, sizeof(fname), "%s/%s", dirs->dirname, d->d_name);
 			if ((stat(fname, &st) == 0) && (S_ISDIR(st.st_mode))) {
 				stack_opendir(fname);
 				d = NULL;
@@ -113,8 +113,7 @@ static char *stack_readdir(void)
 
 static char *rrdlink_text(void *host, graph_t *rrd, time_t starttime, time_t endtime)
 {
-	static char *rrdlink = NULL;
-	static int rrdlinksize = 0;
+	STATIC_SBUF_DEFINE(rrdlink);
 	char *graphdef, *p;
 	char *hostdisplayname, *hostrrdgraphs;
 
@@ -179,10 +178,8 @@ static char *rrdlink_text(void *host, graph_t *rrd, time_t starttime, time_t end
 
 	/* It must be included. */
 	if (rrdlink == NULL) {
-		rrdlinksize = 4096;
-		rrdlink = (char *)malloc(rrdlinksize);
+		SBUF_MALLOC(rrdlink, 4096);
 	}
-
 	*rrdlink = '\0';
 
 	p = graphdef + strlen(rrd->gdef->xymonrrdname);
@@ -213,11 +210,10 @@ static char *rrdlink_text(void *host, graph_t *rrd, time_t starttime, time_t end
 			myrrd->next = NULL;
 			partlink = xymon_graph_data(xmh_item(host, XMH_HOSTNAME), hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
 						     HG_WITH_STALE_RRDS, 0, starttime, endtime);
-			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
-				rrdlinksize += strlen(partlink) + 4096;
-				rrdlink = (char *)realloc(rrdlink, rrdlinksize);
+			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlink_buflen) {
+				SBUF_REALLOC(rrdlink, rrdlink_buflen + strlen(partlink) + 4096);
 			}
-			strcat(rrdlink, partlink);
+			strncat(rrdlink, partlink, (rrdlink_buflen - strlen(rrdlink)));
 			*p = savechar;
 
 			graphdef = p;
@@ -249,13 +245,13 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 	int anyrrds = 0;
 	xymongraph_t *graph;
 	graph_t *rwalk;
-	char *allrrdlinks = NULL, *allrrdlinksend;
-	unsigned int allrrdlinksize = 0;
+	SBUF_DEFINE(allrrdlinks);
+	char *allrrdlinksend;
 
 	myhost = hostinfo(hostname);
 	if (!myhost) return NULL;
 
-	sprintf(hostrrddir, "%s/%s", xgetenv("XYMONRRDS"), hostname);
+	snprintf(hostrrddir, sizeof(hostrrddir), "%s/%s", xgetenv("XYMONRRDS"), hostname);
 	if (chdir(hostrrddir) != 0) {
 		errprintf("Cannot chdir to %s: %s\n", hostrrddir, strerror(errno));
 		return NULL;
@@ -293,8 +289,7 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 
 	if (!anyrrds) return NULL;
 
-	allrrdlinksize = 16384;
-	allrrdlinks = (char *) malloc(allrrdlinksize);
+	SBUF_MALLOC(allrrdlinks, 16384);
 	*allrrdlinks = '\0';
 	allrrdlinksend = allrrdlinks;
 
@@ -307,12 +302,11 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 
 			buflen = (allrrdlinksend - allrrdlinks);
 			onelink = rrdlink_text(myhost, rwalk, starttime, endtime);
-			if ((buflen + strlen(onelink)) >= allrrdlinksize) {
-				allrrdlinksize += (strlen(onelink) + 4096);
-				allrrdlinks = (char *) realloc(allrrdlinks, allrrdlinksize);
+			if ((buflen + strlen(onelink)) >= allrrdlinks_buflen) {
+				SBUF_REALLOC(allrrdlinks, allrrdlinks_buflen+4096);
 				allrrdlinksend = allrrdlinks + buflen;
 			}
-			allrrdlinksend += sprintf(allrrdlinksend, "%s", onelink);
+			allrrdlinksend += snprintf(allrrdlinksend, (allrrdlinks_buflen - (allrrdlinksend - allrrdlinks)), "%s", onelink);
 		}
 
 		graph++;

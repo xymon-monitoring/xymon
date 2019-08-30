@@ -159,18 +159,20 @@ int hexvalue(unsigned char c)
 
 char *commafy(char *hostname)
 {
-	static char *s = NULL;
+	STATIC_SBUF_DEFINE(s);
 	char *p;
 
 	if (s == NULL) {
-		s = strdup(hostname);
+		SBUF_MALLOC(s, strlen(hostname)+1);
+		strncpy(s, hostname, s_buflen);
 	}
 	else if (strlen(hostname) > strlen(s)) {
 		xfree(s);
-		s = strdup(hostname);
+		SBUF_MALLOC(s, strlen(hostname)+1);
+		strncpy(s, hostname, s_buflen);
 	}
 	else {
-		strcpy(s, hostname);
+		strncpy(s, hostname, s_buflen);
 	}
 
 	for (p = strchr(s, '.'); (p); p = strchr(s, '.')) *p = ',';
@@ -454,16 +456,20 @@ unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4)
 char *u32toIP(unsigned int ip32)
 {
 	int ip1, ip2, ip3, ip4;
-	static char *result = NULL;
+	STATIC_SBUF_DEFINE(result);
 
-	if (result == NULL) result = (char *)malloc(16);
+	if (result == NULL) SBUF_MALLOC(result, 16);
 
 	ip1 = ((ip32 >> 24) & 0xFF);
 	ip2 = ((ip32 >> 16) & 0xFF);
 	ip3 = ((ip32 >> 8) & 0xFF);
 	ip4 = (ip32 & 0xFF);
 
-	sprintf(result, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wformat-truncation"
+	#pragma GCC diagnostic pop
+
+	snprintf(result, result_buflen, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	return result;
 }
 
@@ -518,7 +524,7 @@ void do_extensions(FILE *output, char *extenv, char *family)
 		/* Don't redo the eventlog or acklog things */
 		if ((strcmp(p, "eventlog.sh") != 0) &&
 		    (strcmp(p, "acklog.sh") != 0)) {
-			sprintf(extfn, "%s/ext/%s/%s", xgetenv("XYMONHOME"), family, p);
+			snprintf(extfn, sizeof(extfn), "%s/ext/%s/%s", xgetenv("XYMONHOME"), family, p);
 			inpipe = popen(extfn, "r");
 			if (inpipe) {
 				initfgets(inpipe);
@@ -661,15 +667,16 @@ long long str2ll(char *s, char **errptr)
 }
 int checkalert(char *alertlist, char *testname)
 {
-	char *alist, *aname;
+	SBUF_DEFINE(alist);
+	SBUF_DEFINE(aname);
 	int result;
 
 	if (!alertlist) return 0;
 
-	alist = (char *) malloc(strlen(alertlist) + 3);
-	sprintf(alist, ",%s,", alertlist);
-	aname = (char *) malloc(strlen(testname) + 3);
-	sprintf(aname, ",%s,", testname);
+	SBUF_MALLOC(alist, strlen(alertlist) + 3);
+	snprintf(alist, alist_buflen, ",%s,", alertlist);
+	SBUF_MALLOC(aname, strlen(testname) + 3);
+	snprintf(aname, aname_buflen, ",%s,", testname);
 
 	result = (strstr(alist, aname) != NULL);
 

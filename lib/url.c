@@ -90,22 +90,19 @@ char *urldecode(char *envvar)
  */
 char *urlencode(char *s)
 {
-	static char *result = NULL;
-	static int resbufsz = 0;
+	STATIC_SBUF_DEFINE(result);
 	char *inp, *outp;
 
 	if (result == NULL) {
-		result = (char *)malloc(1024);
-		resbufsz = 1024;
+		SBUF_MALLOC(result, 1024);
 	}
 	outp = result;
 
 	for (inp = s; (*inp); inp++) {
-		if ((outp - result) > (resbufsz - 5)) {
+		if ((outp - result) > (result_buflen - 5)) {
 			int offset = (outp - result);
 
-			resbufsz += 1024;
-			result = (char *)realloc(result, resbufsz);
+			SBUF_REALLOC(result, result_buflen + 1024);
 			outp = result + offset;
 		}
 
@@ -116,7 +113,7 @@ char *urlencode(char *s)
 			outp++;
 		}
 		else {
-			sprintf(outp, "%%%0x", *inp);
+			snprintf(outp, (result_buflen - (outp - result)), "%%%0x", *inp);
 			outp += 3;
 		}
 	}
@@ -172,11 +169,11 @@ static void load_netrc(void)
 	loaded = 1;
 
 	/* Look for $XYMONHOME/etc/netrc first, then the default ~/.netrc */
-	sprintf(netrcfn, "%s/etc/netrc", xgetenv("XYMONHOME"));
+	snprintf(netrcfn, sizeof(netrcfn), "%s/etc/netrc", xgetenv("XYMONHOME"));
 	fd = fopen(netrcfn, "r");
 	/* Can HOME be undefined ? Yes, on Solaris when started during boot */
 	if ((fd == NULL) && getenv("HOME")) {
-		sprintf(netrcfn, "%s/.netrc", xgetenv("HOME"));
+		snprintf(netrcfn, sizeof(netrcfn), "%s/.netrc", xgetenv("HOME"));
 		fd = fopen(netrcfn, "r");
 	}
 
@@ -219,10 +216,11 @@ static void load_netrc(void)
 
 				if (host && login && password) {
 					loginlist_t *item = (loginlist_t *) malloc(sizeof(loginlist_t));
+					unsigned int login_len = strlen(login) + strlen(password) + 1;
 
 					item->host = host;
-					item->auth = (char *) malloc(strlen(login) + strlen(password) + 2);
-					sprintf(item->auth, "%s:%s", login, password);
+					item->auth = (char *) malloc(login_len + 1);
+					snprintf(item->auth, login_len, "%s:%s", login, password);
 					item->next = loginhead;
 					loginhead = item;
 					host = login = password = NULL;
@@ -389,7 +387,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 
 	if (fragment) *fragment = '#';
 	url->relurl = malloc(strlen(startp) + 2);
-	sprintf(url->relurl, "/%s", startp);
+	snprintf(url->relurl, (strlen(startp)+2), "/%s", startp);
 
 	if (url->auth == NULL) {
 		/* See if we have it in the .netrc list */
@@ -408,16 +406,15 @@ void parse_url(char *inputurl, urlelem_t *url)
 	canonurllen += strlen(url->relurl);
 
 	p = canonurl = (char *)malloc(canonurllen);
-	p += sprintf(p, "%s://", url->scheme);
+	p += snprintf(p, (canonurllen - (p - canonurl)), "%s://", url->scheme);
 	/*
 	 * Don't include authentication here, since it 
 	 * may show up in clear text on the info page.
 	 * And it is not used in URLs to access the site.
-	 * if (url->auth) p += sprintf(p, "%s@", url->auth);
 	 */
-	p += sprintf(p, "%s", url->host);
-	if (haveportspec) p += sprintf(p, ":%d", url->port);
-	p += sprintf(p, "%s", url->relurl);
+	p += snprintf(p, (canonurllen - (p - canonurl)), "%s", url->host);
+	if (haveportspec) p += snprintf(p, (canonurllen - (p - canonurl)), ":%d", url->port);
+	p += snprintf(p, (canonurllen - (p - canonurl)), "%s", url->relurl);
 	url->origform = canonurl;
 
 	xfree(tempurl);

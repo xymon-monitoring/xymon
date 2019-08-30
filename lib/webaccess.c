@@ -35,15 +35,15 @@ void *load_web_access_config(char *accessfn)
 	buf = newstrbuffer(0);
 	while (stackfgets(buf, NULL)) {
 		char *group, *member;
-		char *key;
+		SBUF_DEFINE(key);
 
 		group = strtok(STRBUF(buf), ": \n");
 		if (!group) continue;
 
 		member = strtok(NULL, ", \n");
 		while (member) {
-			key = (char *)malloc(strlen(group) + strlen(member) + 2);
-			sprintf(key, "%s %s", group, member);
+			SBUF_MALLOC(key, strlen(group) + strlen(member) + 2);
+			snprintf(key, key_buflen, "%s %s", group, member);
 			xtreeAdd(acctree, key, NULL);
 			member = strtok(NULL, ", \n");
 		}
@@ -57,14 +57,15 @@ int web_access_allowed(char *username, char *hostname, char *testname, web_acces
 {
 
 	void *hinfo;
-	char *pages, *onepg, *key;
+	char *pages, *onepg;
+	SBUF_DEFINE(key);
 
 	hinfo = hostinfo(hostname);
 	if (!hinfo || !acctree || !username) return 0;
 
 	/* Check for "root" access first */
-	key = (char *)malloc(strlen(username) + 6);
-	sprintf(key, "root %s", username);
+	SBUF_MALLOC(key, strlen(username) + 6);
+	snprintf(key, key_buflen, "root %s", username);
 	if (xtreeFind(acctree, key) != xtreeEnd(acctree)) {
 		xfree(key);
 		return 1;
@@ -78,8 +79,8 @@ int web_access_allowed(char *username, char *hostname, char *testname, web_acces
 
 		p = strchr(onepg, '/'); if (p) *p = '\0'; /* Will only look at the top-level path element */
 
-		key = (char *)malloc(strlen(onepg) + strlen(username) + 2);
-		sprintf(key, "%s %s", onepg, username);
+		SBUF_MALLOC(key, strlen(onepg) + strlen(username) + 2);
+		snprintf(key, key_buflen, "%s %s", onepg, username);
 		if (xtreeFind(acctree, key) != xtreeEnd(acctree)) {
 			xfree(key);
 			xfree(pages);
@@ -93,8 +94,8 @@ int web_access_allowed(char *username, char *hostname, char *testname, web_acces
 
 	if (hostname) {
 		/* See if user is a member of a group named by the hostname */
-		key = (char *)malloc(strlen(hostname) + strlen(username) + 2);
-		sprintf(key, "%s %s", hostname, username);
+		SBUF_MALLOC(key, strlen(hostname) + strlen(username) + 2);
+		snprintf(key, key_buflen, "%s %s", hostname, username);
 		if (xtreeFind(acctree, key) != xtreeEnd(acctree)) {
 			xfree(key);
 			return 1;
@@ -104,8 +105,8 @@ int web_access_allowed(char *username, char *hostname, char *testname, web_acces
 
 	if (testname) {
 		/* See if user is a member of a group named by the testname */
-		key = (char *)malloc(strlen(testname) + strlen(username) + 2);
-		sprintf(key, "%s %s", testname, username);
+		SBUF_MALLOC(key, strlen(testname) + strlen(username) + 2);
+		snprintf(key, key_buflen, "%s %s", testname, username);
 		if (xtreeFind(acctree, key) != xtreeEnd(acctree)) {
 			xfree(key);
 			return 1;

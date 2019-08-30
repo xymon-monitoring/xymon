@@ -156,7 +156,7 @@ void do_acknowledgementslog(FILE *output,
 	if (rcptregex && *rcptregex) rcptregexp = pcre_compile(rcptregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (exrcptregex && *exrcptregex) exrcptregexp = pcre_compile(exrcptregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 
-	sprintf(acknowledgementslogfilename, "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
+	snprintf(acknowledgementslogfilename, sizeof(acknowledgementslogfilename), "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
 	acknowledgementslog = fopen(acknowledgementslogfilename, "r");
 
 	if (acknowledgementslog && (stat(acknowledgementslogfilename, &st) == 0)) {
@@ -222,16 +222,16 @@ void do_acknowledgementslog(FILE *output,
 		    p = strrchr(host, '.');
 		    if (p) {
                         *p = '\0';
-			strcpy(svc,p+1);
+			strncpy(svc,p+1,  sizeof(svc));
                     }
 		    /* Xymon uses \n in the ack message, for the "acked by" data. Cut it off. */
 		    p = strstr(message, "\\nAcked by:");
 		    if (p) {
-			strcpy(recipient,p+12);
+			strncpy(recipient,p+12, sizeof(recipient));
                         *(p-1) = '\0';
 		    }
 		    else {
-			strcpy(recipient,"UnknownUser");
+			strncpy(recipient,"UnknownUser", sizeof(recipient));
                     }
 		    p = strchr(recipient, '('); if (p) *(p-1) = '\0';
                 }
@@ -346,11 +346,11 @@ void do_acknowledgementslog(FILE *output,
 		} while (walk && (count<maxcount));
 
 		if (maxminutes)  { 
-			sprintf(title, "%d acknowledgements in the past %u minutes", 
+			snprintf(title, sizeof(title), "%d acknowledgements in the past %u minutes", 
 				count, (unsigned int)((getcurrenttime(NULL) - lasttoshow->eventtime) / 60));
 		}
 		else {
-			sprintf(title, "%d events acknowledged.", count);
+			snprintf(title, sizeof(title), "%d events acknowledged.", count);
 		}
 
 		fprintf(output, "<BR><BR>\n");
@@ -390,9 +390,9 @@ void do_acknowledgementslog(FILE *output,
 	else {
 		/* No acknowledgements during the past maxminutes */
 		if (acknowledgementslog)
-			sprintf(title, "No events acknowledged in the last %d minutes", maxminutes);
+			snprintf(title, sizeof(title), "No events acknowledged in the last %d minutes", maxminutes);
 		else
-			strcpy(title, "No acknowledgements logged");
+			strncpy(title, "No acknowledgements logged", sizeof(title));
 
 		fprintf(output, "<CENTER><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);

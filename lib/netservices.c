@@ -118,7 +118,7 @@ static char *binview(unsigned char *buf, int buflen)
 
 char *init_tcp_services(void)
 {
-	static char *xymonnetsvcs = NULL;
+	STATIC_SBUF_DEFINE(xymonnetsvcs);
 	static void *svcflist = NULL;
 
 	char filename[PATH_MAX];
@@ -126,16 +126,16 @@ char *init_tcp_services(void)
 	FILE *fd = NULL;
 	strbuffer_t *inbuf;
 	svclist_t *head, *tail, *first, *walk;
-	char *searchstring;
+	SBUF_DEFINE(searchstring);
 	int svcnamebytes = 0;
 	int svccount = 0;
 	int i;
 
 	filename[0] = '\0';
 	if (xgetenv("XYMONHOME")) {
-		sprintf(filename, "%s/etc/", xgetenv("XYMONHOME"));
+		snprintf(filename, sizeof(filename), "%s/etc/", xgetenv("XYMONHOME"));
 	}
-	strcat(filename, "protocols.cfg");
+	strncat(filename, "protocols.cfg", (sizeof(filename) - strlen(filename)));
 
 	if ((stat(filename, &st) == 0) && xymonnetsvcs) {
 		/* See if we have already run and the file is unchanged - if so just pickup the result */
@@ -165,6 +165,7 @@ char *init_tcp_services(void)
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
 		xymonnetsvcs = strdup(xgetenv("XYMONNETSVCS"));
+		xymonnetsvcs_buflen = strlen(xymonnetsvcs)+1;
 		return xymonnetsvcs;
 	}
 
@@ -293,18 +294,19 @@ char *init_tcp_services(void)
 	}
 
 	searchstring = strdup(xgetenv("XYMONNETSVCS"));
-	xymonnetsvcs = (char *) malloc(strlen(xgetenv("XYMONNETSVCS")) + svcnamebytes + 1);
-	strcpy(xymonnetsvcs, xgetenv("XYMONNETSVCS"));
+	searchstring_buflen = strlen(searchstring) + 1;
+	SBUF_MALLOC(xymonnetsvcs, strlen(xgetenv("XYMONNETSVCS")) + svcnamebytes + 1);
+	strncpy(xymonnetsvcs, xgetenv("XYMONNETSVCS"), xymonnetsvcs_buflen);
 	for (i=0; (svcinfo[i].svcname); i++) {
 		char *p;
 
-		strcpy(searchstring, xgetenv("XYMONNETSVCS"));
+		strncpy(searchstring, xgetenv("XYMONNETSVCS"), searchstring_buflen);
 		p = strtok(searchstring, " ");
 		while (p && (strcmp(p, svcinfo[i].svcname) != 0)) p = strtok(NULL, " ");
 
 		if (p == NULL) {
-			strcat(xymonnetsvcs, " ");
-			strcat(xymonnetsvcs, svcinfo[i].svcname);
+			char *eos = xymonnetsvcs + strlen(xymonnetsvcs);
+			snprintf(eos, (xymonnetsvcs_buflen - (eos - xymonnetsvcs)), " %s", svcinfo[i].svcname);
 		}
 	}
 	xfree(searchstring);

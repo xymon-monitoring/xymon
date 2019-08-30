@@ -400,7 +400,7 @@ void add_http_test(testitem_t *t, int dousecookies)
 		{
 			FILE *contentfd;
 			char contentfn[PATH_MAX];
-			sprintf(contentfn, "%s/content/%s.substring", xgetenv("XYMONHOME"), commafy(t->host->hostname));
+			snprintf(contentfn, sizeof(contentfn), "%s/content/%s.substring", xgetenv("XYMONHOME"), commafy(t->host->hostname));
 			contentfd = fopen(contentfn, "r");
 			if (contentfd) {
 				char l[MAX_LINE_LEN];
@@ -547,7 +547,7 @@ void add_http_test(testitem_t *t, int dousecookies)
 	if ((httptest->weburl.desturl->port != 80) && (httptest->weburl.desturl->port != 443)) {
 		char hostporthdr[20];
 
-		sprintf(hostporthdr, ":%d", httptest->weburl.desturl->port);
+		snprintf(hostporthdr, sizeof(hostporthdr), ":%d", httptest->weburl.desturl->port);
 		addtobuffer(httprequest, hostporthdr);
 	}
 	addtobuffer(httprequest, "\r\n");
@@ -602,7 +602,7 @@ void add_http_test(testitem_t *t, int dousecookies)
 			addtobuffer(httprequest, "application/x-www-form-urlencoded");
 		addtobuffer(httprequest, "\r\n");
 
-		sprintf(hdr, "Content-Length: %d\r\n", contlen);
+		snprintf(hdr, sizeof(hdr), "Content-Length: %d\r\n", contlen);
 		addtobuffer(httprequest, hdr);
 	}
 	{
@@ -613,10 +613,10 @@ void add_http_test(testitem_t *t, int dousecookies)
 		if (hinfo) browser = xmh_item(hinfo, XMH_BROWSER);
 
 		if (browser) {
-			sprintf(useragent, "User-Agent: %s\r\n", browser);
+			snprintf(useragent, sizeof(useragent), "User-Agent: %s\r\n", browser);
 		}
 		else {
-			sprintf(useragent, "User-Agent: Xymon xymonnet/%s\r\n", VERSION);
+			snprintf(useragent, sizeof(useragent), "User-Agent: Xymon xymonnet/%s\r\n", VERSION);
 		}
 
 		addtobuffer(httprequest, useragent);

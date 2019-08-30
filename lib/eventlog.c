@@ -42,7 +42,11 @@ static int wanted_eventcolumn(char *service)
 
 	if (!eventignorecolumns || (strlen(service) > (sizeof(svc)-3))) return 1;
 
-	sprintf(svc, ",%s,", service);
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wformat-truncation"
+	snprintf(svc, sizeof(svc), ",%s,", service);
+	#pragma GCC diagnostic pop
+
 	result = (strstr(eventignorecolumns, svc) == NULL);
 
 	return result;
@@ -569,7 +573,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	if (extestregex && *extestregex) extestregexp = pcre_compile(extestregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (colrregex && *colrregex) colrregexp = pcre_compile(colrregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 
-	sprintf(eventlogfilename, "%s/allevents", xgetenv("XYMONHISTDIR"));
+	snprintf(eventlogfilename, sizeof(eventlogfilename), "%s/allevents", xgetenv("XYMONHISTDIR"));
 	eventlog = fopen(eventlogfilename, "r");
 
 	if (eventlog && (stat(eventlogfilename, &st) == 0)) {
@@ -755,15 +759,15 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			if (ewalk) ewalk->next = NULL;	/* Terminate list if any items left */
 
 			if (maxminutes > 0)  { 
-				sprintf(title, "%d events received in the past %u minutes", 
+				snprintf(title, sizeof(title), "%d events received in the past %u minutes", 
 					count, (unsigned int)((getcurrenttime(NULL) - lasttoshow->eventtime) / 60));
 			}
 			else {
-				sprintf(title, "%d events received.", count);
+				snprintf(title, sizeof(title), "%d events received.", count);
 			}
 		}
 		else {
-			strcpy(title, "Events in summary");
+			strncpy(title, "Events in summary", sizeof(title));
 		}
 
 		fprintf(output, "<BR><BR>\n");
@@ -819,9 +823,9 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	else if (output != NULL) {
 		/* No events during the past maxminutes */
 		if (eventlog)
-			sprintf(title, "No events received in the last %d minutes", maxminutes);
+			snprintf(title, sizeof(title), "No events received in the last %d minutes", maxminutes);
 		else
-			strcpy(title, "No events logged");
+			strncpy(title, "No events logged", sizeof(title));
 
 		fprintf(output, "<CENTER><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);

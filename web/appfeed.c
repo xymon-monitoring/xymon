@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 
 	FILE *output = stdout;
 
-	char *xymondreq;
+	SBUF_DEFINE(xymondreq);
 	sendreturn_t *sres;
 	int xymondresult;
 	char *log, *bol, *eoln, *endkey;
@@ -109,15 +109,17 @@ int main(int argc, char **argv)
 
 	/* Setup the query for xymond */
 	parse_query();
-	xymondreq = (char *)malloc(strlen(boardcmd) + strlen(fieldlist) + strlen(colorlist) + strlen(queryfilter) + 5);
-	sprintf(xymondreq, "%s %s %s %s", boardcmd, fieldlist, colorlist, queryfilter);
+	SBUF_MALLOC(xymondreq, strlen(boardcmd) + strlen(fieldlist) + strlen(colorlist) + strlen(queryfilter) + 5);
+	snprintf(xymondreq, xymondreq_buflen, "%s %s %s %s", boardcmd, fieldlist, colorlist, queryfilter);
 
 	/* Get the current status */
 	sres = newsendreturnbuf(1, NULL);
 	xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
 	if (xymondresult != XYMONSEND_OK) {
-		char *errtxt = (char *)malloc(1024 + strlen(xymondreq));
-		sprintf(errtxt, "Status not available: Req=%s, result=%d\n", htmlquoted(xymondreq), xymondresult);
+		SBUF_DEFINE(errtxt);
+
+		SBUF_MALLOC(errtxt, 1024 + MAX_HTMLQUOTE_FACTOR*strlen(xymondreq));
+		snprintf(errtxt, errtxt_buflen, "Status not available: Req=%s, result=%d\n", htmlquoted(xymondreq), xymondresult);
 		errormsg(errtxt);
 		return 1;
 	}

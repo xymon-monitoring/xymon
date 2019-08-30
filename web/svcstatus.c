@@ -31,7 +31,7 @@ static char rcsid[] = "$Id$";
 /* Command-line params */
 static enum { SRC_XYMOND, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_XYMOND;
 static int wantserviceid = 1;
-static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
+SBUF_DEFINE(multigraphs);
 static int locatorbased = 0;
 static char *critconfigfn = NULL;
 static char *accessfn = NULL;
@@ -42,12 +42,12 @@ static char *service = NULL;
 static char *tstamp = NULL;
 static char *nkprio = NULL, *nkttgroup = NULL, *nkttextra = NULL;
 static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
-static char *clienturi = NULL;
+STATIC_SBUF_DEFINE(clienturi);
 static int backsecs = 0;
 static time_t fromtime = 0, endtime = 0;
 
 static char errortxt[1000];
-static char *hostdatadir = NULL;
+STATIC_SBUF_DEFINE(hostdatadir);
 
 
 static void errormsg(int status, char *msg)
@@ -148,12 +148,13 @@ static int parse_query(void)
 
 	if (outform == FRM_STATUS) {
 		char *p, *req;
+		char *hostquoted = htmlquoted(hostname);
 
 		req = getenv("SCRIPT_NAME");
-		clienturi = (char *)malloc(strlen(req) + 10 + strlen(htmlquoted(hostname)));
-		strcpy(clienturi, req);
+		SBUF_MALLOC(clienturi, strlen(req) + 10 + strlen(hostquoted));
+		strncpy(clienturi, req, clienturi_buflen);
 		p = strchr(clienturi, '?'); if (p) *p = '\0'; else p = clienturi + strlen(clienturi);
-		sprintf(p, "?CLIENT=%s", htmlquoted(hostname));
+		snprintf(p, (clienturi_buflen - (clienturi - p)), "?CLIENT=%s", hostquoted);
 	}
 
 	return 0;
@@ -194,7 +195,8 @@ int do_request(void)
 	int color = 0, flapping = 0;
 	char timesincechange[100];
 	time_t logtime = 0, acktime = 0, disabletime = 0;
-	char *log = NULL, *firstline = NULL, *sender = NULL, *clientid = NULL, *flags = NULL;	/* These are free'd */
+	SBUF_DEFINE(firstline);
+	char *log = NULL, *sender = NULL, *clientid = NULL, *flags = NULL;	/* These are free'd */
 	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL, *acklist=NULL, *modifiers = NULL;	/* These are just used */
 	int ishtmlformatted = 0;
 	int clientavail = 0;
@@ -231,30 +233,32 @@ int do_request(void)
 		
 		s = xgetenv("CLIENTLOGS"); 
 		if (s) {
-			hostdatadir = (char *)malloc(strlen(s) + strlen(hostname) + 12);
-			sprintf(hostdatadir, "%s/%s", s, hostname);
+			SBUF_MALLOC(hostdatadir, strlen(s) + strlen(hostname) + 12);
+			snprintf(hostdatadir, hostdatadir_buflen, "%s/%s", s, hostname);
 		}
 		else {
 			s = xgetenv("XYMONVAR");
-			hostdatadir = (char *)malloc(strlen(s) + strlen(hostname) + 12);
-			sprintf(hostdatadir, "%s/hostdata/%s", s, hostname);
+			SBUF_MALLOC(hostdatadir, strlen(s) + strlen(hostname) + 12);
+			snprintf(hostdatadir, hostdatadir_buflen, "%s/hostdata/%s", s, hostname);
 		}
 	}
 
 	if (outform == FRM_CLIENT) {
 		if (source == SRC_XYMOND) {
-			char *xymondreq;
+			SBUF_DEFINE(xymondreq);
 			int xymondresult;
 			sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
-			xymondreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
-			sprintf(xymondreq, "clientlog %s", hostname);
-			if (service && *service) sprintf(xymondreq + strlen(xymondreq), " section=%s", service);
+			SBUF_MALLOC(xymondreq, 1024 + strlen(hostname) + (service ? strlen(service) : 0));
+			snprintf(xymondreq, xymondreq_buflen, "clientlog %s", hostname);
+			if (service && *service) snprintf(xymondreq + strlen(xymondreq), (xymondreq_buflen - strlen(xymondreq)), " section=%s", service);
 
 			xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
 			if (xymondresult != XYMONSEND_OK) {
-				char *errtxt = (char *)malloc(1024 + strlen(xymondreq));
-				sprintf(errtxt, "Status not available: %s\nRequest: %s\n", strxymonsendresult(xymondresult), htmlquoted(xymondreq));
+				SBUF_DEFINE(errtxt);
+
+				SBUF_MALLOC(errtxt, 1024 + MAX_HTMLQUOTE_FACTOR*strlen(xymondreq));
+				snprintf(errtxt, errtxt_buflen, "Status not available: %s\nRequest: %s\n", strxymonsendresult(xymondresult), htmlquoted(xymondreq));
 				errormsg(500, errtxt);
 				return 1;
 			}
@@ -267,7 +271,7 @@ int do_request(void)
 			char logfn[PATH_MAX];
 			FILE *fd;
 
-			sprintf(logfn, "%s/%s", hostdatadir, tstamp);
+			snprintf(logfn, sizeof(logfn), "%s/%s", hostdatadir, tstamp);
 			fd = fopen(logfn, "r");
 			if (!fd && (strtol(tstamp, NULL, 10) != 0)) {
 				sprintf(logfn, "%s/%s", hostdatadir, histlogtime((time_t)atoi(tstamp)));
@@ -299,7 +303,7 @@ int do_request(void)
 		sethostenv_refresh(600);
 		color = COL_GREEN;
 		logtime = getcurrenttime(NULL);
-		strcpy(timesincechange, "0 minutes");
+		strncpy(timesincechange, "0 minutes", sizeof(timesincechange));
 
 		if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
 			if (locatorbased) {
@@ -335,18 +339,20 @@ int do_request(void)
 		}
 	}
 	else if (source == SRC_XYMOND) {
-		char *xymondreq;
+		SBUF_DEFINE(xymondreq);
 		int xymondresult;
 		char *items[25];
 		int icount;
 		time_t logage, clntstamp;
-		char *sumline, *msg, *p, *compitem, *complist;
+		char *sumline, *msg, *compitem, *complist;
 		sendreturn_t *sres;
 
 		if (loadhostdata(hostname, &ip, &displayname, &compacts, 0) != 0) return 1;
 
 		complist = NULL;
 		if (compacts && *compacts) {
+			char *p;
+
 			compitem = strtok(compacts, ",");
 			while (compitem && !complist) {
 				p = strchr(compitem, '='); if (p) *p = '\0';
@@ -367,15 +373,15 @@ int do_request(void)
 			}
 
 			freeregex(dummy);
-			xymondreq = (char *)malloc(1024 + strlen(hostname) + strlen(service));
-			sprintf(xymondreq, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
+			SBUF_MALLOC(xymondreq, 1024 + strlen(hostname) + strlen(service));
+			snprintf(xymondreq, xymondreq_buflen, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
 		}
 		else {
 			pcre *dummy = NULL;
-			char *re;
+			SBUF_DEFINE(re);
 
-			re = (char *)malloc(5 + strlen(complist));
-			sprintf(re, "^(%s)$", complist);
+			SBUF_MALLOC(re, 5 + strlen(complist));
+			snprintf(re, re_buflen, "^(%s)$", complist);
 			dummy = compileregex(re);
 			if (dummy == NULL) {
 				errormsg(500, "Invalid testname pattern");
@@ -383,8 +389,8 @@ int do_request(void)
 			}
 
 			freeregex(dummy);
-			xymondreq = (char *)malloc(1024 + strlen(hostname) + strlen(re));
-			sprintf(xymondreq, "xymondboard host=^%s$ test=%s fields=testname,color,lastchange", hostname, re);
+			SBUF_MALLOC(xymondreq, 1024 + strlen(hostname) + strlen(re));
+			snprintf(xymondreq, xymondreq_buflen, "xymondboard host=^%s$ test=%s fields=testname,color,lastchange", hostname, re);
 		}
 
 		sres = newsendreturnbuf(1, NULL);
@@ -397,6 +403,8 @@ int do_request(void)
 		}
 
 		if (!complist) {
+			char *p;
+
 			sumline = log; p = strchr(log, '\n'); *p = '\0';
 			msg = (p+1); p = strchr(msg, '\n');
 			if (!p) {
@@ -442,20 +450,21 @@ int do_request(void)
 			color = parse_color(items[2]);
 			flags = strdup(items[3]);
 			logage = getcurrenttime(NULL) - atoi(items[4]);
-			timesincechange[0] = '\0'; p = timesincechange;
+			timesincechange[0] = '\0';
+			p = timesincechange;
 			{
 				int days = (int) (logage / 86400);
 				int hours = (int) ((logage % 86400) / 3600);
 				int minutes = (int) ((logage % 3600) / 60);
 
-				if (days > 1) p += sprintf(p, "%d days, ", days);
-				else if (days == 1) p += sprintf(p, "1 day, ");
+				if (days > 1) p += snprintf(p, (sizeof(timesincechange) - (p - timesincechange)), "%d days, ", days);
+				else if (days == 1) p += snprintf(p, (sizeof(timesincechange) - (p - timesincechange)), "1 day, ");
 
-				if (hours == 1) p += sprintf(p, "1 hour, ");
-				else p += sprintf(p, "%d hours, ", hours);
+				if (hours == 1) p += snprintf(p, (sizeof(timesincechange) - (p - timesincechange)), "1 hour, ");
+				else p += snprintf(p, (sizeof(timesincechange) - (p - timesincechange)), "%d hours, ", hours);
 
-				if (minutes == 1) p += sprintf(p, "1 minute");
-				else p += sprintf(p, "%d minutes", minutes);
+				if (minutes == 1) p += snprintf(p, (sizeof(timesincechange) - (p - timesincechange)), "1 minute");
+				else p += snprintf(p, (sizeof(timesincechange) - (p - timesincechange)), "%d minutes", minutes);
 			}
 			logtime = atoi(items[5]);
 			if (items[7] && strlen(items[7])) acktime = atoi(items[7]);
@@ -485,7 +494,7 @@ int do_request(void)
 			/* Compressed status display */
 			strbuffer_t *cmsg;
 			char *row, *p_row, *p_fld;
-			char *nonhistenv;
+			SBUF_DEFINE(nonhistenv);
 
 			color = COL_GREEN;
 
@@ -524,15 +533,15 @@ int do_request(void)
 			sethostenv(displayname, ip, service, colorname(color), hostname);
 			sethostenv_refresh(60);
 			logtime = getcurrenttime(NULL);
-			strcpy(timesincechange, "0 minutes");
+			strncpy(timesincechange, "0 minutes", sizeof(timesincechange));
 
 			log = restofmsg = grabstrbuffer(cmsg);
 
-			firstline = (char *)malloc(1024);
-			sprintf(firstline, "%s Compressed status display\n", colorname(color));
+			SBUF_MALLOC(firstline, 1024);
+			snprintf(firstline, firstline_buflen, "%s Compressed status display\n", colorname(color));
 
-			nonhistenv = (char *)malloc(10 + strlen(service));
-			sprintf(nonhistenv, "NONHISTS=%s", service);
+			SBUF_MALLOC(nonhistenv, 10 + strlen(service));
+			snprintf(nonhistenv, nonhistenv_buflen, "NONHISTS=%s", service);
 			putenv(nonhistenv);
 		}
 	}
@@ -557,9 +566,9 @@ int do_request(void)
 		hostnamedash = strdup(hostname);
 		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
-		sprintf(logfn, "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, service, tstamp);
+		snprintf(logfn, sizeof(logfn), "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, service, tstamp);
 		if (((stat(logfn, &st) == -1) || (st.st_size < 10) || (!S_ISREG(st.st_mode))) && (strtol(tstamp, NULL, 10) != 0)) {
-			sprintf(logfn, "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, service, histlogtime((time_t)atoi(tstamp)));
+			snprintf(logfn, sizeof(logfn), "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, service, histlogtime((time_t)atoi(tstamp)));
 		}
 		xfree(hostnamedash);
 		if (strtol(tstamp, NULL, 10) != 0) tstamp = strdup(histlogtime((time_t)atoi(tstamp)));
@@ -652,8 +661,8 @@ int do_request(void)
 					errprintf("Cannot find hostdata files for host %s\n", hostname);
 				}
 				else {
-					clienturi = (char *)realloc(clienturi, 1024 + strlen(cgiurl) + strlen(htmlquoted(hostname)) + strlen(clientid));
-					sprintf(clienturi, "%s/svcstatus.sh?CLIENT=%s&amp;TIMEBUF=%s", 
+					SBUF_REALLOC(clienturi, 1024 + strlen(cgiurl) + MAX_HTMLQUOTE_FACTOR*strlen(htmlquoted(hostname)) + strlen(clientid));
+					snprintf(clienturi, clienturi_buflen, "%s/svcstatus.sh?CLIENT=%s&amp;TIMEBUF=%s", 
 						cgiurl, htmlquoted(hostname), clientid);
 				}
 			}
@@ -661,12 +670,14 @@ int do_request(void)
 				char logfn[PATH_MAX];
 				struct stat st;
 
-				sprintf(logfn, "%s/%s", hostdatadir, clientid);
+				snprintf(logfn, sizeof(logfn), "%s/%s", hostdatadir, clientid);
 				clientavail = (stat(logfn, &st) == 0);
 
 				if (clientavail) {
-					clienturi = (char *)realloc(clienturi, 1024 + strlen(clienturi) + strlen(clientid));
-					sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
+					int curlen = strlen(clienturi);
+
+					SBUF_REALLOC(clienturi, 1024 + curlen + strlen(clientid));
+					snprintf(clienturi + curlen, (clienturi_buflen - curlen), "&amp;TIMEBUF=%s", clientid);
 				}
 			}
 		}
@@ -715,6 +726,8 @@ int main(int argc, char *argv[])
 {
 	int argi;
 
+	multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
+
 	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--historical") == 0) {
@@ -739,8 +752,8 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--multigraphs=")) {
 			char *p = strchr(argv[argi], '=');
-			multigraphs = (char *)malloc(strlen(p+1) + 3);
-			sprintf(multigraphs, ",%s,", p+1);
+			SBUF_MALLOC(multigraphs, strlen(p+1) + 3);
+			snprintf(multigraphs, multigraphs_buflen, ",%s,", p+1);
 		}
 		else if (strcmp(argv[argi], "--no-disable") == 0) {
 			showenadis = 0;

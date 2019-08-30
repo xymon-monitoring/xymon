@@ -31,7 +31,7 @@ static char *rq_service = NULL;
 static int rq_priority = 0;
 static char *rq_group = NULL;
 static char *rq_extra = NULL;
-static char *rq_crittime = NULL;
+STATIC_SBUF_DEFINE(rq_crittime);
 static time_t rq_start = 0;
 static time_t rq_end = 0;
 static char *rq_clonestoadd = NULL;
@@ -163,8 +163,8 @@ static void parse_query(void)
 			rq_end = mktime(&tm);
 		}
 
-		rq_crittime = (char *)malloc(strlen(rq_critwkdays) + strlen(rq_critslastart) + strlen(rq_critslaend) + 3);
-		sprintf(rq_crittime, "%s:%s:%s", rq_critwkdays, rq_critslastart, rq_critslaend);
+		SBUF_MALLOC(rq_crittime,strlen(rq_critwkdays) + strlen(rq_critslastart) + strlen(rq_critslaend) + 3);
+		snprintf(rq_crittime, rq_crittime_buflen, "%s:%s:%s", rq_critwkdays, rq_critslastart, rq_critslaend);
 	}
 	else if (editaction == CRITEDIT_ADDCLONE) {
 		if (!rq_clonestoadd && rq_clonestodrop) editaction = CRITEDIT_DROPCLONE;
@@ -182,13 +182,14 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	sethostenv_critclonelist_clear();
 
 	if (hostname && *hostname) {
-		char *key, *realkey, *clonekey;
+		SBUF_DEFINE(key);
+		char *realkey, *clonekey;
 		critconf_t *clonerec;
 
 		if (service && *service) {
 			/* First check if the host+service is really a clone of something else */
-			key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
-			sprintf(key, "%s|%s", hostname, service);
+			SBUF_MALLOC(key, strlen(hostname) + strlen(service) + 2);
+			snprintf(key, key_buflen, "%s|%s", hostname, service);
 			rec = get_critconfig(key, CRITCONF_FIRSTMATCH, &realkey);
 		}
 		else {
@@ -250,10 +251,10 @@ void nextrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 
 	/* First check if the host+service is really a clone of something else */
 	if (hostname && service) {
-		char *key;
+		SBUF_DEFINE(key);
 
-		key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
-		sprintf(key, "%s|%s", hostname, service);
+		SBUF_MALLOC(key, strlen(hostname) + strlen(service) + 2);
+		snprintf(key, key_buflen, "%s|%s", hostname, service);
 		rec = get_critconfig(key, CRITCONF_FIRSTMATCH, NULL);
 		if (rec) rec = get_critconfig(NULL, CRITCONF_NEXT, NULL);
 		xfree(key);
@@ -280,13 +281,15 @@ void updaterecord(char *hostname, char *service)
 	critconf_t *rec = NULL;
 
 	if (hostname && service) {
-		char *key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
+		SBUF_DEFINE(key);
 		char *realkey;
 		char datestr[20];
 		time_t now = getcurrenttime(NULL);
+		size_t upd_buflen;
 
+		SBUF_MALLOC(key, strlen(hostname) + strlen(service) + 2);
 		strftime(datestr, sizeof(datestr), "%Y-%m-%d %H:%M:%S", localtime(&now));
-		sprintf(key, "%s|%s", hostname, service);
+		snprintf(key, key_buflen, "%s|%s", hostname, service);
 		rec = get_critconfig(key, CRITCONF_FIRSTMATCH, &realkey);
 		if (rec == NULL) {
 			rec = (critconf_t *)calloc(1, sizeof(critconf_t));
@@ -309,8 +312,9 @@ void updaterecord(char *hostname, char *service)
 		if (rec->ttextra) xfree(rec->ttextra); 
 		rec->ttextra = (rq_extra ? strdup(rq_extra) : NULL);
 		if (rec->updinfo) xfree(rec->updinfo);
-		rec->updinfo = (char *)malloc(strlen(operator) + strlen(datestr) + 2);
-		sprintf(rec->updinfo, "%s %s", operator, datestr);
+		upd_buflen = strlen(operator) + strlen(datestr) + 2;
+		rec->updinfo = (char *)malloc(upd_buflen);
+		snprintf(rec->updinfo, upd_buflen, "%s %s", operator, datestr);
 
 		update_critconfig(rec);
 		xfree(key);
@@ -349,10 +353,10 @@ void dropclone(char *origin, char *drops, char *service)
 
 void deleterecord(char *hostname, char *service, int evenifcloned)
 {
-	char *key;
+	SBUF_DEFINE(key);
 
-	key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
-	sprintf(key, "%s|%s", hostname, service);
+	SBUF_MALLOC(key, strlen(hostname) + strlen(service) + 2);
+	snprintf(key, key_buflen, "%s|%s", hostname, service);
 	if (delete_critconfig(key, evenifcloned) == 0) {
 		update_critconfig(NULL);
 	}

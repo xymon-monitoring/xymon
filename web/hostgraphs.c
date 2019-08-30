@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 enum { A_SELECT, A_GENERATE } action = A_SELECT;
 
 char *hostpattern = NULL;
-char *pagepattern = NULL;
+SBUF_DEFINE(pagepattern);
 char *ippattern = NULL;
 char *classpattern = NULL;
 char **hosts = NULL;
@@ -188,15 +188,18 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *hffile = "hostgraphs";
-	char *formfile = "hostgraphs_form";
+	SBUF_DEFINE(formfile);
+
+	SBUF_MALLOC(formfile, 1024);
+	strncpy(formfile, "hostgraphs_form", formfile_buflen);
 
 	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--hffile=")) {
 			char *p = strchr(argv[argi], '=');
 			hffile = strdup(p+1);
-			formfile = (char *)malloc(strlen(hffile) + 6);
-			sprintf(formfile, "%s_form", hffile);
+			SBUF_REALLOC(formfile, strlen(hffile) + 6);
+			snprintf(formfile, formfile_buflen, "%s_form", hffile);
 		}
 		else if (standardoption(argv[argi])) {
 			if (showhelp) return 0;
@@ -214,8 +217,8 @@ int main(int argc, char *argv[])
 		cookie = get_cookie("pagepath");
 		if (!pagepattern && cookie && *cookie) {
 			/* Match the exact pagename and sub-pages */
-			pagepattern = (char *)malloc(10 + 2*strlen(cookie));
-			sprintf(pagepattern, "^%s$|^%s/.+", cookie, cookie);
+			SBUF_MALLOC(pagepattern, 10 + 2*strlen(cookie));
+			snprintf(pagepattern, pagepattern_buflen, "^%s$|^%s/.+", cookie, cookie);
 		}
 
 		if (hostpattern || pagepattern || ippattern || classpattern)

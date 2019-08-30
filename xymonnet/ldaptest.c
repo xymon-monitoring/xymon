@@ -43,7 +43,7 @@ int init_ldap_library(void)
 	char versionstring[100];
 
 	/* Doesnt really do anything except define the version-number string */
-	sprintf(versionstring, "%s %d", LDAP_VENDOR_NAME, LDAP_VENDOR_VERSION);
+	snprintf(versionstring, sizeof(versionstring), "%s %d", LDAP_VENDOR_NAME, LDAP_VENDOR_VERSION);
 	ldap_library_version = strdup(versionstring);
 #endif
 
@@ -322,7 +322,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		getntimer(&endtime);
 
 		response = newstrbuffer(0);
-		sprintf(buf, "Searching LDAP for %s yields %d results:\n\n", 
+		snprintf(buf, sizeof(buf), "Searching LDAP for %s yields %d results:\n\n", 
 			t->testspec, ldap_count_entries(ld, result));
 		addtobuffer(response, buf);
 
@@ -333,7 +333,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			char		**vals;
 
 			dn = ldap_get_dn(ld, e);
-			sprintf(buf, "DN: %s\n", dn); 
+			snprintf(buf, sizeof(buf), "DN: %s\n", dn); 
 			addtobuffer(response, buf);
 
 			/* Addtributes and values */
@@ -342,7 +342,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 					int i;
 
 					for(i = 0; (vals[i] != NULL); i++) {
-						sprintf(buf, "\t%s: %s\n", attribute, vals[i]);
+						snprintf(buf, sizeof(buf), "\t%s: %s\n", attribute, vals[i]);
 						addtobuffer(response, buf);
 					}
 				}
@@ -394,7 +394,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	testitem_t *t;
 	int	color = -1;
 	char	msgline[4096];
-	char    *nopagename;
+	SBUF_DEFINE(nopagename);
 	int     nopage = 0;
 	testitem_t *ldap1 = host->firstldap;
 	int	anydown = 0;
@@ -406,8 +406,8 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	if (ldaptest->namelen) svcname[ldaptest->namelen] = '\0';
 
 	/* Check if this service is a NOPAGENET service. */
-	nopagename = (char *) malloc(strlen(svcname)+3);
-	sprintf(nopagename, ",%s,", svcname);
+	SBUF_MALLOC(nopagename, strlen(svcname)+3);
+	snprintf(nopagename, nopagename_buflen, ",%s,", svcname);
 	nopage = (strstr(nonetpage, nopagename) != NULL);
 	xfree(nopagename);
 
@@ -459,14 +459,14 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 
 	/* Send off the ldap status report */
 	init_status(color);
-	sprintf(msgline, "status+%d %s.%s %s %s", 
+	snprintf(msgline, sizeof(msgline), "status+%d %s.%s %s %s", 
 		validity, commafy(host->hostname), svcname, colorname(color), timestamp);
 	addtostatus(msgline);
 
 	for (t=host->firstldap; (t && (t->host == host)); t = t->next) {
 		ldap_data_t *req = (ldap_data_t *) t->privdata;
 
-		sprintf(msgline, "\n&%s %s - %s\n\n", colorname(req->ldapcolor), t->testspec,
+		snprintf(msgline, sizeof(msgline), "\n&%s %s - %s\n\n", colorname(req->ldapcolor), t->testspec,
 			((req->ldapcolor != COL_GREEN) ? "failed" : "OK"));
 		addtostatus(msgline);
 
@@ -476,7 +476,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 		}
 		if (req->faileddeps) addtostatus(req->faileddeps);
 
-		sprintf(msgline, "\nSeconds: %u.%.9ld\n",
+		snprintf(msgline, sizeof(msgline), "\nSeconds: %u.%.9ld\n",
 			(unsigned int)req->duration.tv_sec, req->duration.tv_nsec);
 
 		addtostatus(msgline);

@@ -167,7 +167,8 @@ void rrd_cached_flush(char *hostname)
 void request_cacheflush(char *hostname)
 {
 	/* Build a cache-flush request, and send it to all of the $XYMONTMP/rrdctl.* sockets */
-	char *req, *bufp;
+	SBUF_DEFINE(req);
+	char *bufp;
 	int bytesleft;
 	DIR *dir;
 	struct dirent *d;
@@ -186,18 +187,28 @@ void request_cacheflush(char *hostname)
 		return;
 	}
 
-	req = (char *)malloc(strlen(hostname)+3);
-	sprintf(req, "/%s/", hostname);
+	SBUF_MALLOC(req, strlen(hostname)+3);
+	snprintf(req, req_buflen, "/%s/", hostname);
 
 	while ((d = readdir(dir)) != NULL) {
 		if (strncmp(d->d_name, "rrdctl.", 7) == 0) {
 			struct sockaddr_un myaddr;
 			socklen_t myaddrsz = 0;
 			int n, sendfailed = 0;
+			SBUF_DEFINE(fnam);
 
 			memset(&myaddr, 0, sizeof(myaddr));
 			myaddr.sun_family = AF_UNIX;
-			sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONRUNDIR"), d->d_name);
+
+			SBUF_MALLOC(fnam, strlen(xgetenv("XYMONRUNDIR"))+ strlen(d->d_name) + 2);
+			snprintf(fnam, fnam_buflen, "%s/%s", xgetenv("XYMONRUNDIR"), d->d_name);
+			if (strlen(fnam) > sizeof(myaddr.sun_path)) {
+				errprintf("rrdctl files located in XYMONRUNDIR with too long pathname - max %d characters\n", sizeof(myaddr.sun_path));
+				return;
+			}
+			strncpy(myaddr.sun_path, fnam, sizeof(myaddr.sun_path));
+			xfree(fnam);
+
 			myaddrsz = sizeof(myaddr);
 			bufp = req; bytesleft = strlen(req);
 			do {
@@ -397,7 +408,7 @@ void parse_query(void)
 		strftime(t1, sizeof(t1), "%d/%b/%Y", localtime(&graphstart));
 		strftime(t2, sizeof(t2), "%d/%b/%Y", localtime(&graphend));
 		glegend = (char *)malloc(40);
-		sprintf(glegend, "%s - %s", t1, t2);
+		snprintf(glegend, 40, "%s - %s", t1, t2);
 	}
 }
 
@@ -497,20 +508,23 @@ void load_gdefs(char *fn)
 char *lookup_meta(char *keybuf, char *rrdfn)
 {
 	FILE *fd;
-	char *metafn, *p;
+	SBUF_DEFINE(metafn);
+	char *p;
 	int servicelen = strlen(service);
 	int keylen = strlen(keybuf);
 	int found;
 	static char buf[1024]; /* Must be static since it is returned to caller */
 
+	SBUF_MALLOC(metafn, PATH_MAX);
+
 	p = strrchr(rrdfn, '/');
 	if (!p) {
-		metafn = strdup("rrd.meta");
+		strncpy(metafn, "rrd.meta", metafn_buflen);
 	}
 	else {
 		metafn = (char *)malloc(strlen(rrdfn) + 10);
 		*p = '\0';
-		sprintf(metafn, "%s/rrd.meta", rrdfn);
+		snprintf(metafn, metafn_buflen, "%s/rrd.meta", rrdfn);
 		*p = '/';
 	}
 	fd = fopen(metafn, "r");
@@ -545,6 +559,7 @@ char *lookup_meta(char *keybuf, char *rrdfn)
 
 char *colon_escape(char *buf)
 {
+	/* Change all colons to "\:" */
 	static char *result = NULL;
 	int count = 0;
 	char *p, *inp, *outp;
@@ -553,7 +568,7 @@ char *colon_escape(char *buf)
 	if (count == 0) return buf;
 
 	if (result) xfree(result);
-	result = (char *) malloc(strlen(buf) + count + 1);
+	result = (char *) malloc(strlen(buf) + count + 1); /* Add one backslash per colon */
 	*result = '\0';
 
 	inp = buf; outp = result;
@@ -614,7 +629,7 @@ char *expand_tokens(char *tpl)
 			if (rrddbs[rrdidx].rrdparam) {
 				char *val, *p;
 				int vallen;
-				char *resultstr;
+				SBUF_DEFINE(resultstr);
 
 				val = colon_escape(rrddbs[rrdidx].rrdparam);
 				p = val; while ((p = strchr(p, ',')) != NULL) *p = '/';
@@ -630,8 +645,8 @@ char *expand_tokens(char *tpl)
 				vallen = strlen(val);
 				if (vallen < paramlen) vallen = paramlen;
 
-				resultstr = (char *)malloc(vallen + 1);
-				sprintf(resultstr, "%-*s", paramlen, val);
+				SBUF_MALLOC(resultstr, vallen + 1);
+				snprintf(resultstr, resultstr_buflen, "%-*s", paramlen, val);
 				addtobuffer(result, resultstr);
 				xfree(resultstr);
 			}
@@ -656,7 +671,7 @@ char *expand_tokens(char *tpl)
 		else if (strncmp(inp, "@RRDIDX@", 8) == 0) {
 			char numstr[10];
 
-			sprintf(numstr, "%d", rrdidx);
+			snprintf(numstr, sizeof(numstr), "%d", rrdidx);
 			addtobuffer(result, numstr);
 			inp += 8;
 		}
@@ -687,13 +702,13 @@ char *expand_tokens(char *tpl)
 
 			if (rrdidx == 0) {
 #ifdef RRDTOOL12
-				strcpy(numstr, "");
+				strncpy(numstr, "", sizeof(numstr));
 #else
-				sprintf(numstr, "AREA");
+				snprintf(numstr, sizeof(numstr), "AREA");
 #endif
 			}
 			else {
-				sprintf(numstr, "STACK");
+				snprintf(numstr, sizeof(numstr), "STACK");
 			}
 			addtobuffer(result, numstr);
 			inp += 9;
@@ -899,7 +914,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	/* Find the graphs.cfg file and load it */
 	if (gdeffn == NULL) {
 		char fnam[PATH_MAX];
-		sprintf(fnam, "%s/etc/graphs.cfg", xgetenv("XYMONHOME"));
+		snprintf(fnam, sizeof(fnam), "%s/etc/graphs.cfg", xgetenv("XYMONHOME"));
 		gdeffn = strdup(fnam);
 	}
 	load_gdefs(gdeffn);
@@ -945,8 +960,10 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	}
 	if (gdef == NULL) errormsg("Unknown graph requested");
 	if (hostlist && (gdef->fnpat == NULL)) {
-		char *multiname = (char *)malloc(strlen(gdef->name) + 7);
-		sprintf(multiname, "%s-multi", gdef->name);
+		SBUF_DEFINE(multiname);
+
+		SBUF_MALLOC(multiname, strlen(gdef->name) + 7);
+		snprintf(multiname, multiname_buflen, "%s-multi", gdef->name);
 		for (gdef = gdefs; (gdef && strcmp(multiname, gdef->name)); gdef = gdef->next) ;
 		if (gdef == NULL) errormsg("Unknown multi-graph requested");
 		xfree(multiname);
@@ -966,8 +983,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	if (rrddir == NULL) {
 		char dnam[PATH_MAX];
 
-		if (hostlist) sprintf(dnam, "%s", xgetenv("XYMONRRDS"));
-		else sprintf(dnam, "%s/%s", xgetenv("XYMONRRDS"), hostname);
+		if (hostlist) snprintf(dnam, sizeof(dnam), "%s", xgetenv("XYMONRRDS"));
+		else snprintf(dnam, sizeof(dnam), "%s/%s", xgetenv("XYMONRRDS"), hostname);
 
 		rrddir = strdup(dnam);
 	}
@@ -991,27 +1008,33 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		rrddbs = (rrddb_t *)malloc((rrddbsize + 1) * sizeof(rrddb_t));
 
 		if (!hostlist) {
+			size_t buflen = strlen(gdef->name) + strlen(".rrd") + 1;
+
 			rrddbs[0].key = strdup(service);
-			rrddbs[0].rrdfn = (char *)malloc(strlen(gdef->name) + strlen(".rrd") + 1);
-			sprintf(rrddbs[0].rrdfn, "%s.rrd", gdef->name);
+			rrddbs[0].rrdfn = (char *)malloc(buflen);
+			snprintf(rrddbs[0].rrdfn, buflen, "%s.rrd", gdef->name);
 			rrddbs[0].rrdparam = NULL;
 		}
 		else {
 			int i, maxlen;
-			char paramfmt[10];
+			char paramfmt[20];
 
 			for (i=0, maxlen=0; (i < hostlistsize); i++) {
 				if (strlen(hostlist[i]) > maxlen) maxlen = strlen(hostlist[i]);
 			}
-			sprintf(paramfmt, "%%-%ds", maxlen+1);
+			snprintf(paramfmt, sizeof(paramfmt), "%%-%ds", maxlen+1);
 
 			for (i=0; (i < hostlistsize); i++) {
-				rrddbs[i].key = strdup(service);
-				rrddbs[i].rrdfn = (char *)malloc(strlen(hostlist[i]) + strlen(gdef->fnpat) + 2);
-				sprintf(rrddbs[i].rrdfn, "%s/%s", hostlist[i], gdef->fnpat);
+				size_t buflen;
 
-				rrddbs[i].rrdparam = (char *)malloc(maxlen + 2);
-				sprintf(rrddbs[i].rrdparam, paramfmt, hostlist[i]);
+				rrddbs[i].key = strdup(service);
+				buflen = strlen(hostlist[i]) + strlen(gdef->fnpat) + 2;
+				rrddbs[i].rrdfn = (char *)malloc(buflen);
+				snprintf(rrddbs[i].rrdfn, buflen, "%s/%s", hostlist[i], gdef->fnpat);
+
+				buflen = maxlen + 2;
+				rrddbs[i].rrdparam = (char *)malloc(buflen);
+				snprintf(rrddbs[i].rrdparam, buflen, paramfmt, hostlist[i]);
 			}
 		}
 	}
@@ -1113,8 +1136,9 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 					rrddbs[rrddbcount].rrdparam = strdup(",");
 				}
 				else if ((strcmp(gdef->name, "http") == 0) && (strncmp(param, "http", 4) != 0)) {
-					rrddbs[rrddbcount].rrdparam = (char *)malloc(strlen("http://")+strlen(param)+1);
-					sprintf(rrddbs[rrddbcount].rrdparam, "http://%s", param);
+					size_t buflen = strlen("http://")+strlen(param)+1;
+					rrddbs[rrddbcount].rrdparam = (char *)malloc(buflen);
+					snprintf(rrddbs[rrddbcount].rrdparam, buflen, "http://%s", param);
 				}
 				else {
 					rrddbs[rrddbcount].rrdparam = strdup(param);
@@ -1163,10 +1187,10 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		for (i=0; (i<rrddbcount); i++) pcmdlen += (strlen(rrddbs[i].rrdfn) + 3);
 
 		p = pcmd = (char *)malloc(pcmdlen+1);
-		p += sprintf(p, param_str, gdef->title+5, displayname, service, glegend);
+		p += snprintf(p, (pcmdlen - (p - pcmd)), param_str, gdef->title+5, displayname, service, glegend);
 		for (i=0; (i<rrddbcount); i++) {
 			if ((firstidx == -1) || ((i >= firstidx) && (i <= lastidx))) {
-				p += sprintf(p, " \"%s\"", rrddbs[i].rrdfn);
+				p += snprintf(p, (pcmdlen - (p - pcmd)), " \"%s\"", rrddbs[i].rrdfn);
 			}
 		}
 		pfd = popen(pcmd, "r");
@@ -1179,11 +1203,11 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		p = strchr(graphtitle, '\n'); if (p) *p = '\0';
 	}
 	else {
-		sprintf(graphtitle, "%s %s %s", displayname, gdef->title, glegend);
+		snprintf(graphtitle, sizeof(graphtitle), "%s %s %s", displayname, gdef->title, glegend);
 	}
 
-	sprintf(heightopt, "-h%d", graphheight);
-	sprintf(widthopt, "-w%d", graphwidth);
+	snprintf(heightopt, sizeof(heightopt), "-h%d", graphheight);
+	snprintf(widthopt, sizeof(widthopt), "-w%d", graphwidth);
 
 	/*
 	 * Grab user-provided additional rrd_graph options from RRDGRAPHOPTS
@@ -1229,21 +1253,21 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	rrdargs[argi++]  = "PNG";
 
 	if (haveupperlimit) {
-		sprintf(upperopt, "-u %f", upperlimit);
+		snprintf(upperopt, sizeof(upperopt), "-u %f", upperlimit);
 		rrdargs[argi++] = upperopt;
 	}
 	if (havelowerlimit) {
-		sprintf(loweropt, "-l %f", lowerlimit);
+		snprintf(loweropt, sizeof(loweropt), "-l %f", lowerlimit);
 		rrdargs[argi++] = loweropt;
 	}
 	if (haveupperlimit || havelowerlimit) rrdargs[argi++] = "--rigid";
 
-	if (graphstart) sprintf(startopt, "-s %u", (unsigned int) graphstart);
-	else sprintf(startopt, "-s %s", period);
+	if (graphstart) snprintf(startopt, sizeof(startopt), "-s %u", (unsigned int) graphstart);
+	else snprintf(startopt, sizeof(startopt), "-s %s", period);
 	rrdargs[argi++] = startopt;
 
 	if (graphend) {
-		sprintf(endopt, "-e %u", (unsigned int) graphend);
+		snprintf(endopt, sizeof(endopt), "-e %u", (unsigned int) graphend);
 		rrdargs[argi++] = endopt;
 	}
 
@@ -1345,7 +1369,7 @@ void generate_zoompage(char *selfURI)
 		char zoomjsfn[PATH_MAX];
 		struct stat st;
 
-		sprintf(zoomjsfn, "%s/web/zoom.js", xgetenv("XYMONHOME"));
+		snprintf(zoomjsfn, sizeof(zoomjsfn), "%s/web/zoom.js", xgetenv("XYMONHOME"));
 		if (stat(zoomjsfn, &st) == 0) {
 			FILE *fd;
 			char *buf;

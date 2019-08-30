@@ -20,7 +20,7 @@ static xtreePos_t nexthandle;
 
 int readmibs(char *cfgfn, int verbose)
 {
-	static char *fn = NULL;
+	STATIC_SBUF_DEFINE(fn);
 	static void *cfgfiles = NULL;
 	FILE *cfgfd;
 	strbuffer_t *inbuf;
@@ -87,8 +87,8 @@ int readmibs(char *cfgfn, int verbose)
 	if (fn) xfree(fn);
 	fn = cfgfn;
 	if (!fn) {
-		fn = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen("/etc/snmpmibs.cfg") + 1);
-		sprintf(fn, "%s/etc/snmpmibs.cfg", xgetenv("XYMONHOME"));
+		SBUF_MALLOC(fn, strlen(xgetenv("XYMONHOME")) + strlen("/etc/snmpmibs.cfg") + 1);
+		snprintf(fn, fn_buflen, "%s/etc/snmpmibs.cfg", xgetenv("XYMONHOME"));
 	}
 
 	cfgfd = stackfopen(fn, "r", &cfgfiles);
@@ -161,7 +161,7 @@ int readmibs(char *cfgfn, int verbose)
 			newidx->marker = *p; p++;
 			newidx->idxtype = (strncmp(bot, "keyidx", 6) == 0) ? MIB_INDEX_IN_OID : MIB_INDEX_IN_VALUE;
 			newidx->keyoid = strdup(p);
-			sprintf(endmarks, "%s%c", ")]}>", newidx->marker);
+			snprintf(endmarks, sizeof(endmarks), "%s%c", ")]}>", newidx->marker);
 			p = newidx->keyoid + strcspn(newidx->keyoid, endmarks); *p = '\0';
 			newidx->next = mib->idxlist;
 			mib->idxlist = newidx;

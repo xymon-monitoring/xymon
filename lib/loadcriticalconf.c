@@ -26,8 +26,8 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 static void * rbconf;
-static char *defaultfn = NULL;
-static char *configfn = NULL;
+STATIC_SBUF_DEFINE(defaultfn);
+STATIC_SBUF_DEFINE(configfn);
 
 
 static void flushrec(void *k1, void *k2)
@@ -61,8 +61,8 @@ int load_critconfig(char *fn)
 	if (!fn) {
 		if (!defaultfn) {
 			char *xymonhome = xgetenv("XYMONHOME");
-			defaultfn = (char *)malloc(strlen(xymonhome) + strlen(DEFAULT_CRITCONFIGFN) + 2);
-			sprintf(defaultfn, "%s/%s", xymonhome, DEFAULT_CRITCONFIGFN);
+			SBUF_MALLOC(defaultfn, strlen(xymonhome) + strlen(DEFAULT_CRITCONFIGFN) + 2);
+			snprintf(defaultfn, defaultfn_buflen, "%s/%s", xymonhome, DEFAULT_CRITCONFIGFN);
 		}
 		fn = defaultfn;
 	}
@@ -121,13 +121,17 @@ int load_critconfig(char *fn)
 		eservice = gettok(NULL, "|\n"); if (!eservice) continue;
 
 		if (*eservice == '=') {
-			char *key = (char *)malloc(strlen(ehost) + 2);
+			SBUF_DEFINE(key);
 			char *pointsto = strdup(eservice+1);
 
-			sprintf(key, "%s=", ehost);
+			SBUF_MALLOC(key, strlen(ehost) + 2);
+
+			snprintf(key, key_buflen, "%s=", ehost);
 			status = xtreeAdd(rbconf, key, pointsto);
 		}
 		else {
+			unsigned int key_buflen;
+
 			estart = gettok(NULL, "|\n"); if (!estart) continue;
 			eend = gettok(NULL, "|\n"); if (!eend) continue;
 			etime = gettok(NULL, "|\n"); if (!etime) continue;
@@ -137,8 +141,9 @@ int load_critconfig(char *fn)
 			updinfo = gettok(NULL, "|\n");
 
 			newitem = (critconf_t *)malloc(sizeof(critconf_t));
-			newitem->key = (char *)malloc(strlen(ehost) + strlen(eservice) + 15);
-			sprintf(newitem->key, "%s|%s", ehost, eservice);
+			key_buflen = strlen(ehost) + strlen(eservice) + 15;
+			newitem->key = (char *)malloc(key_buflen);
+			snprintf(newitem->key, key_buflen, "%s|%s", ehost, eservice);
 			newitem->starttime= ((estart && *estart) ? atoi(estart) : 0);
 			newitem->endtime  = ((eend && *eend) ? atoi(eend) : 0);
 			newitem->crittime = ((etime && *etime) ? strdup(etime) : NULL);
@@ -150,7 +155,7 @@ int load_critconfig(char *fn)
 			status = xtreeAdd(rbconf, newitem->key, newitem);
 			while (status == XTREE_STATUS_DUPLICATE_KEY) {
 				idx++;
-				sprintf(newitem->key, "%s|%s|%d", ehost, eservice, idx);
+				snprintf(newitem->key, key_buflen, "%s|%s|%d", ehost, eservice, idx);
 				status = xtreeAdd(rbconf, newitem->key, newitem);
 			}
 		}
@@ -179,7 +184,8 @@ static xtreePos_t findrec(char *key)
 	handle = xtreeFind(rbconf, key);
 	if (handle == xtreeEnd(rbconf)) {
 		/* Check if there's a clone pointer record */
-		char *clonekey, *p;
+		SBUF_DEFINE(clonekey);
+		char *p;
 
 		clonekey = strdup(key);
 		p = strchr(clonekey, '|'); 
@@ -196,8 +202,8 @@ static xtreePos_t findrec(char *key)
 			service = strchr(key, '|'); 
 			if (service) {
 				service++;
-				clonekey = (char *)malloc(strlen(pointsto) + strlen(service) + 2);
-				sprintf(clonekey, "%s|%s", pointsto, service);
+				SBUF_MALLOC(clonekey, strlen(pointsto) + strlen(service) + 2);
+				snprintf(clonekey, clonekey_buflen, "%s|%s", pointsto, service);
 
 				handle = xtreeFind(rbconf, clonekey);
 				xfree(clonekey);
@@ -329,7 +335,7 @@ critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 
 int update_critconfig(critconf_t *rec)
 {
-	char *bakfn;
+	SBUF_DEFINE(bakfn);
 	FILE *bakfd;
 	unsigned char buf[8192];
 	int n;
@@ -341,8 +347,8 @@ int update_critconfig(critconf_t *rec)
 	int result = 0;
 
 	/* First, copy the old file */
-	bakfn = (char *)malloc(strlen(configfn) + 5);
-	sprintf(bakfn, "%s.bak", configfn);
+	SBUF_MALLOC(bakfn, strlen(configfn) + 5);
+	snprintf(bakfn, bakfn_buflen, "%s.bak", configfn);
 	if (stat(configfn, &st) == 0) {
 		ut.actime = st.st_atime;
 		ut.modtime = st.st_mtime;
@@ -390,8 +396,8 @@ int update_critconfig(critconf_t *rec)
 			char startstr[20], endstr[20];
 
 			*startstr = *endstr = '\0';
-			if (onerec->starttime > 0) sprintf(startstr, "%d", (int)onerec->starttime);
-			if (onerec->endtime > 0) sprintf(endstr, "%d", (int)onerec->endtime);
+			if (onerec->starttime > 0) snprintf(startstr, sizeof(startstr), "%d", (int)onerec->starttime);
+			if (onerec->endtime > 0) snprintf(endstr, sizeof(endstr), "%d", (int)onerec->endtime);
 
 			fprintf(fd, "%s|%s|%s|%s|%d|%s|%s|%s\n",
 				onekey, 
@@ -413,11 +419,11 @@ int update_critconfig(critconf_t *rec)
 
 void addclone_critconfig(char *origin, char *newclone)
 {
-	char *newkey;
+	SBUF_DEFINE(newkey);
 	xtreePos_t handle;
 
-	newkey = (char *)malloc(strlen(newclone) + 2);
-	sprintf(newkey, "%s=", newclone);
+	SBUF_MALLOC(newkey, strlen(newclone) + 2);
+	snprintf(newkey, newkey_buflen, "%s=", newclone);
 	handle = xtreeFind(rbconf, newkey);
 	if (handle != xtreeEnd(rbconf)) dropclone_critconfig(newclone);
 	xtreeAdd(rbconf, newkey, strdup(origin));
@@ -426,11 +432,11 @@ void addclone_critconfig(char *origin, char *newclone)
 void dropclone_critconfig(char *drop)
 {
 	xtreePos_t handle;
-	char *key;
+	SBUF_DEFINE(key);
 	char *dropkey, *dropsrc;
 
-	key = (char *)malloc(strlen(drop) + 2);
-	sprintf(key, "%s=", drop);
+	SBUF_MALLOC(key, strlen(drop) + 2);
+	snprintf(key, key_buflen, "%s=", drop);
 	handle = xtreeFind(rbconf, key);
 	if (handle == xtreeEnd(rbconf)) return;
 

@@ -368,7 +368,7 @@ int load_holidays(int year)
 		year -= 1900;
 	}
 
-	sprintf(fn, "%s/etc/holidays.cfg", xgetenv("XYMONHOME"));
+	snprintf(fn, sizeof(fn), "%s/etc/holidays.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configholidays) {
@@ -590,7 +590,11 @@ void printholidays(char *key, strbuffer_t *buf, int mfirst, int mlast)
 			t = mktime(&tm);
 			if ((tm.tm_mon >= mfirst) && (tm.tm_mon <= mlast)) {
 				strftime(dstr, sizeof(dstr), fmt, localtime(&t));
-				sprintf(oneh, "<tr><td>%s</td><td>%s</td>\n", desc, dstr);
+
+				#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wformat-truncation"
+				snprintf(oneh, sizeof(oneh), "<tr><td>%s</td><td>%s</td>\n", desc, dstr);
+				#pragma GCC diagnostic pop
 				addtobuffer(buf, oneh);
 			}
 		}

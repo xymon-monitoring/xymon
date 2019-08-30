@@ -111,7 +111,7 @@ void cleandir(char *dirname)
 
 	while ((d = readdir(dir))) {
 		if (d->d_name[0] != '.') {
-			sprintf(fn, "%s/%s", dirname, d->d_name);
+			snprintf(fn, sizeof(fn), "%s/%s", dirname, d->d_name);
 			if ((stat(fn, &st) == 0) && (st.st_mtime < killtime)) {
 				if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
 					dbgprintf("rm %s\n", fn);
@@ -132,10 +132,10 @@ void cleandir(char *dirname)
 
 int main(int argc, char *argv[])
 {
-	char dirid[PATH_MAX];
+	char dirid[100];
 	char outdir[PATH_MAX];
-	char xymongencmd[PATH_MAX];
-	char xymonwebenv[PATH_MAX];
+	SBUF_DEFINE(xymongencmd);
+	SBUF_DEFINE(xymonwebenv);
 	char xymongentimeopt[100];
 	char *xymongen_argv[20];
 	pid_t childpid;
@@ -145,6 +145,9 @@ int main(int argc, char *argv[])
 	int argi, newargi;
 	char *useragent;
 	int usemultipart = 1;
+
+	SBUF_MALLOC(xymongencmd, 2048+PATH_MAX);
+	SBUF_MALLOC(xymonwebenv, 4096);
 
 	newargi = 0;
 	xymongen_argv[newargi++] = xymongencmd;
@@ -185,19 +188,19 @@ int main(int argc, char *argv[])
 	 * Need to set these up AFTER putting them into xymongen_argv, since we
 	 * need to have option parsing done first.
 	 */
-	if (xgetenv("XYMONGEN")) sprintf(xymongencmd, "%s", xgetenv("XYMONGEN"));
-	else sprintf(xymongencmd, "%s/bin/xymongen", xgetenv("XYMONHOME"));
+	if (xgetenv("XYMONGEN")) snprintf(xymongencmd, xymongencmd_buflen, "%s", xgetenv("XYMONGEN"));
+	else snprintf(xymongencmd, xymongencmd_buflen, "%s/bin/xymongen", xgetenv("XYMONHOME"));
 
 	snprintf(xymongentimeopt, sizeof(xymongentimeopt), "--snapshot=%u", (unsigned int)starttime);
 
-	sprintf(dirid, "%lu-%u", (unsigned long)getpid(), (unsigned int)getcurrenttime(NULL));
-	sprintf(outdir, "%s/%s", xgetenv("XYMONSNAPDIR"), dirid);
+	snprintf(dirid, sizeof(dirid), "%lu-%u", (unsigned long)getpid(), (unsigned int)getcurrenttime(NULL));
+	snprintf(outdir, sizeof(outdir), "%s/%s", xgetenv("XYMONSNAPDIR"), dirid);
 	if (mkdir(outdir, 0755) == -1) {
 		if (xgetenv("XYMONSNAPDIR") && mkdir(xgetenv("XYMONSNAPDIR"), 0755) != -1) dbgprintf("Created %s\n", xgetenv("XYMONSNAPDIR"));
 		if (mkdir(outdir, 0755) == -1) errormsg("Cannot create output directory");
 	}
 
-	sprintf(xymonwebenv, "XYMONWEB=%s/%s", xgetenv("XYMONSNAPURL"), dirid);
+	snprintf(xymonwebenv, xymonwebenv_buflen, "XYMONWEB=%s/%s", xgetenv("XYMONSNAPURL"), dirid);
 	putenv(xymonwebenv);
 
 	if (usemultipart) {

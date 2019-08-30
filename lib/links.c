@@ -32,8 +32,8 @@ typedef struct link_t {
 
 static int linksloaded = 0;
 static void * linkstree;
-static char *notesskin = NULL;
-static char *helpskin = NULL;
+STATIC_SBUF_DEFINE(notesskin);
+STATIC_SBUF_DEFINE(helpskin);
 static char *columndocurl = NULL;
 static char *hostdocurl = NULL;
 
@@ -98,7 +98,7 @@ static void load_links(char *directory, char *urlprefix, int softfail)
 
 		if (*(d->d_name) == '.') continue;
 
-		strcpy(fn, d->d_name);
+		strncpy(fn, d->d_name, sizeof(fn));
 		newlink = init_link(fn, urlprefix);
 		xtreeAdd(linkstree, newlink->key, newlink);
 	}
@@ -121,14 +121,14 @@ void load_all_links(void)
 
 	if (xgetenv("XYMONNOTESSKIN")) notesskin = strdup(xgetenv("XYMONNOTESSKIN"));
 	else { 
-		notesskin = (char *) malloc(strlen(xgetenv("XYMONWEB")) + strlen("/notes") + 1);
-		sprintf(notesskin, "%s/notes", xgetenv("XYMONWEB"));
+		SBUF_MALLOC(notesskin, strlen(xgetenv("XYMONWEB")) + strlen("/notes") + 1);
+		snprintf(notesskin, notesskin_buflen, "%s/notes", xgetenv("XYMONWEB"));
 	}
 
 	if (xgetenv("XYMONHELPSKIN")) helpskin = strdup(xgetenv("XYMONHELPSKIN"));
 	else { 
-		helpskin = (char *) malloc(strlen(xgetenv("XYMONWEB")) + strlen("/help") + 1);
-		sprintf(helpskin, "%s/help", xgetenv("XYMONWEB"));
+		SBUF_MALLOC(helpskin, strlen(xgetenv("XYMONWEB")) + strlen("/help") + 1);
+		snprintf(helpskin, helpskin_buflen, "%s/help", xgetenv("XYMONWEB"));
 	}
 
 	if (xgetenv("COLUMNDOCURL")) columndocurl = strdup(xgetenv("COLUMNDOCURL"));
@@ -142,8 +142,8 @@ void load_all_links(void)
 	/* If no XYMONHELPDIR, change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
 	if (xgetenv("XYMONHELPDIR")) strcpy(dirname, xgetenv("XYMONHELPDIR"));
 	else {
-		strcpy(dirname, xgetenv("XYMONNOTESDIR"));
-		p = strrchr(dirname, '/'); *p = '\0'; strcat(dirname, "/help");
+		strncpy(dirname, xgetenv("XYMONNOTESDIR"), sizeof(dirname));
+		p = strrchr(dirname, '/'); *p = '\0'; strncat(dirname, "/help", (sizeof(dirname) - strlen(dirname)));
 	}
 	load_links(dirname, helpskin, 0);
 
@@ -165,18 +165,18 @@ static link_t *find_link(char *key)
 
 char *columnlink(char *colname)
 {
-	static char *linkurl = NULL;
+	STATIC_SBUF_DEFINE(linkurl);
 	link_t *link;
 
-	if (linkurl == NULL) linkurl = (char *)malloc(PATH_MAX);
+	if (linkurl == NULL) SBUF_MALLOC(linkurl, PATH_MAX);
 	if (!linksloaded) load_all_links();
 
 	link = find_link(colname);
 	if (link) {
-		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
+		snprintf(linkurl, linkurl_buflen, "%s/%s", link->urlprefix, link->filename);
 	}
 	else if (columndocurl) {
-		sprintf(linkurl, columndocurl, colname);
+		snprintf(linkurl, linkurl_buflen, columndocurl, colname);
 	}
 	else {
 		*linkurl = '\0';
@@ -188,21 +188,21 @@ char *columnlink(char *colname)
 
 char *hostlink(char *hostname)
 {
-	static char *linkurl = NULL;
+	STATIC_SBUF_DEFINE(linkurl);
 	link_t *link;
 
-	if (linkurl == NULL) linkurl = (char *)malloc(PATH_MAX);
+	if (linkurl == NULL) SBUF_MALLOC(linkurl, PATH_MAX);
 	if (!linksloaded) load_all_links();
 
 	if (hostdocurl && *hostdocurl) {
-		snprintf(linkurl, PATH_MAX-1, hostdocurl, hostname);
+		snprintf(linkurl, linkurl_buflen, hostdocurl, hostname);
 		return linkurl;
 	}
 	else {
 		link = find_link(hostname);
 
 		if (link) {
-			sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
+			snprintf(linkurl, linkurl_buflen, "%s/%s", link->urlprefix, link->filename);
 			return linkurl;
 		}
 	}

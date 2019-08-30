@@ -26,14 +26,13 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-char *errbuf = NULL;
+SBUF_DEFINE(errbuf);
 static char msg[4096];
 static char timestr[20];
 static size_t timesize = sizeof(timestr);
 static struct timeval now;
 static time_t then = 0;
 int save_errbuf = 1;
-static unsigned int errbufsize = 0;
 static char *errappname = NULL;
 
 int debug = 0;
@@ -78,16 +77,14 @@ void errprintf(const char *fmt, ...)
 
 	if (save_errbuf) {
 		if (errbuf == NULL) {
-			errbufsize = 8192;
-			errbuf = (char *) malloc(errbufsize);
+			SBUF_MALLOC(errbuf, 8192);
 			*errbuf = '\0';
 		}
-		else if ((strlen(errbuf) + strlen(msg)) > errbufsize) {
-			errbufsize += 8192;
-			errbuf = (char *) realloc(errbuf, errbufsize);
+		else if ((strlen(errbuf) + strlen(msg)) > errbuf_buflen) {
+			SBUF_REALLOC(errbuf, errbuf_buflen+8192);
 		}
 
-		strcat(errbuf, msg);
+		strncat(errbuf, msg, (errbuf_buflen - strlen(errbuf)));
 	}
 }
 
@@ -214,12 +211,12 @@ void redirect_cgilog(char *cginame)
 		return;
 	}
 
-	sprintf(logfn, "%s/cgierror.log", cgilogdir);
+	snprintf(logfn, sizeof(logfn), "%s/cgierror.log", cgilogdir);
 	reopen_file(logfn, "a", stderr);
 
 	/* If debugging, setup the debug logfile too */
 	if (debug) {
-		sprintf(logfn, "%s/%s.dbg", cgilogdir, ( cginame ? cginame : "cgi"));
+		snprintf(logfn, sizeof(logfn), "%s/%s.dbg", cgilogdir, ( cginame ? cginame : "cgi"));
 		set_debugfile(logfn, 1);
 	}
 }

@@ -37,18 +37,18 @@ char *durationstr(time_t duration)
 	char dhelp[100];
 
 	if (duration <= 0) {
-		strcpy(dur, "none");
+		strncpy(dur, "none", sizeof(dur));
 	}
 	else {
 		dur[0] = '\0';
 		if (duration > 86400) {
-			sprintf(dhelp, "%u days ", (unsigned int)(duration / 86400));
+			snprintf(dhelp, sizeof(dhelp), "%u days ", (unsigned int)(duration / 86400));
 			duration %= 86400;
-			strcpy(dur, dhelp);
+			strncpy(dur, dhelp, sizeof(dur));
 		}
-		sprintf(dhelp, "%u:%02u:%02u", (unsigned int)(duration / 3600), 
+		snprintf(dhelp, sizeof(dhelp), "%u:%02u:%02u", (unsigned int)(duration / 3600), 
 			(unsigned int)((duration % 3600) / 60), (unsigned int)(duration % 60));
-		strcat(dur, dhelp);
+		strncat(dur, dhelp, (sizeof(dur) - strlen(dur)));
 	}
 
 	return dur;
@@ -162,9 +162,9 @@ static char *parse_histlogfile(char *hostname, char *servicename, char *timespec
 
 	cause[0] = '\0';
 
-	sprintf(fn, "%s/%s", xgetenv("XYMONHISTLOGS"), commafy(hostname));
+	snprintf(fn, sizeof(fn), "%s/%s", xgetenv("XYMONHISTLOGS"), commafy(hostname));
 	for (p = strrchr(fn, '/'); (*p); p++) if (*p == ',') *p = '_';
-	sprintf(p, "/%s/%s", servicename, timespec);
+	snprintf(p, (sizeof(fn) - (p - fn)), "/%s/%s", servicename, timespec);
 
 	dbgprintf("Looking for history logfile %s\n", fn);
 	fd = fopen(fn, "r");
@@ -184,8 +184,8 @@ static char *parse_histlogfile(char *hostname, char *servicename, char *timespec
 			if ((l[0] == '&') && (strncmp(l, "&green", 6) != 0)) {
 				p = skipwhitespace(skipword(l));
 				if ((strlen(cause) + strlen(p) + strlen("<BR>\n") + 1) < sizeof(cause)) {
-					strcat(cause, p);
-					strcat(cause, "<BR>\n");
+					strncat(cause, p, (sizeof(cause) - strlen(cause)));
+					strncat(cause, "<BR>\n", (sizeof(cause) - strlen(cause)));
 				}
 				else causefull = 1;
 			}
@@ -193,7 +193,7 @@ static char *parse_histlogfile(char *hostname, char *servicename, char *timespec
 
 #if 1
 		if (strlen(cause) == 0) {
-			strcpy(cause, "See detailed log");
+			strncpy(cause, "See detailed log", sizeof(cause));
 		}
 #else
 		/* What is this code supposed to do ? The sscanf seemingly never succeeds */
@@ -216,13 +216,13 @@ static char *parse_histlogfile(char *hostname, char *servicename, char *timespec
 
 		if (causefull) {
 			cause[sizeof(cause) - strlen(" [Truncated]") - 1] = '\0';
-			strcat(cause, " [Truncated]");
+			strncat(cause, " [Truncated]", (sizeof(cause) - strlen(cause)));
 		}
 
 		fclose(fd);
 	}
 	else {
-		strcpy(cause, "No historical status available");
+		strncpy(cause, "No historical status available", sizeof(cause));
 	}
 
 	return strdup(cause);
@@ -268,7 +268,7 @@ static char *get_historyline(char *buf, int bufsize, FILE *fd, int *err,
 
 static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 		char *buf, size_t bufsize, 
-		time_t *starttime, time_t *duration, char *colstr)
+		time_t *starttime, time_t *duration, char *colstr, unsigned int colstr_buflen)
 {
 	time_t start, dur;
 	unsigned int uistart, uidur;
@@ -285,7 +285,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	if (!get_historyline(buf, bufsize, fd, &err, colstr, &uistart, &uidur, &scanres)) {
 		*starttime = getcurrenttime(NULL);
 		*duration = 0;
-		strcpy(colstr, "clear");
+		strncpy(colstr, "clear", colstr_buflen);
 		return err;
 	}
 
@@ -295,7 +295,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	if (start > totime) {
 		*starttime = start;
 		*duration = dur;
-		strcpy(colstr, "clear");
+		strncpy(colstr, "clear", colstr_buflen);
 		return 0;
 	}
 
@@ -413,7 +413,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	/* If for_history and fromtime is 0, don't do any seeking */
 	if (!for_history || (fromtime > 0)) {
 		fileerrors = scan_historyfile(fd, fromtime, totime, 
-				      l, sizeof(l), &starttime, &duration, colstr);
+				      l, sizeof(l), &starttime, &duration, colstr, sizeof(colstr));
 	}
 	else {
 		/* Already positioned (probably in a pipe) */
@@ -423,7 +423,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		}
 		else {
 			starttime = getcurrenttime(NULL); duration = 0;
-			strcpy(colstr, "clear");
+			strncpy(colstr, "clear", sizeof(colstr));
 			fileerrors = 1;
 		}
 	}
@@ -446,7 +446,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	do {
 		/* If event ends after our reportend, adjust duration */
 		if ((starttime + duration) > totime) duration = (totime - starttime);
-		strcat(colstr, " "); color = parse_color(colstr);
+		strncat(colstr, " ", (sizeof(colstr) - strlen(colstr))); color = parse_color(colstr);
 
 		if (color != -1) {
 			unsigned long sladuration = 0;
@@ -569,9 +569,9 @@ int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogna
 	char *p;
 
 	*histlogname = NULL;
-	scan_historyfile(fd, snapshot, snapshot, l, sizeof(l), starttime, &duration, colstr);
+	scan_historyfile(fd, snapshot, snapshot, l, sizeof(l), starttime, &duration, colstr, sizeof(colstr));
 	
-	strcat(colstr, " ");
+	strncat(colstr, " ", (sizeof(colstr) - strlen(colstr)));
 	color = parse_color(colstr);
 	if ((color == COL_PURPLE) || (color == -1)) {
 		color = -2;
@@ -643,12 +643,12 @@ int main(int argc, char *argv[])
 		duration = rwalk->duration;
 		dur[0] = '\0';
 		if (duration > 86400) {
-			sprintf(dhelp, "%lu days ", (duration / 86400));
+			snprintf(dhelp, sizeof(dhelp), "%lu days ", (duration / 86400));
 			duration %= 86400;
-			strcpy(dur, dhelp);
+			strncpy(dur, dhelp, sizeof(dur));
 		}
-		sprintf(dhelp, "%lu:%02lu:%02lu", duration / 3600, ((duration % 3600) / 60), (duration % 60));
-		strcat(dur, dhelp);
+		snprintf(dhelp, sizeof(dhelp), "%lu:%02lu:%02lu", duration / 3600, ((duration % 3600) / 60), (duration % 60));
+		strncat(dur, dhelp, (sizeof(dur) - strlen(dur)));
 
 		dbgprintf("Start: %s, End: %s, Color: %s, Duration: %s, Cause: %s\n",
 			start, end, colorname(rwalk->color), dur, rwalk->cause);

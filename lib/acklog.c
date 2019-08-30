@@ -45,11 +45,11 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 	cutoff = ( (maxminutes) ? (getcurrenttime(NULL) - maxminutes*60) : 0);
 	if ((!maxcount) || (maxcount > 100)) maxcount = 100;
 
-	sprintf(acklogfilename, "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
+	snprintf(acklogfilename, sizeof(acklogfilename), "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
 	acklog = fopen(acklogfilename, "r");
 	if (!acklog) {
 		/* BB compatible naming */
-		sprintf(acklogfilename, "%s/acklog", xgetenv("XYMONACKDIR"));
+		snprintf(acklogfilename, sizeof(acklogfilename), "%s/acklog", xgetenv("XYMONACKDIR"));
 		acklog = fopen(acklogfilename, "r");
 	}
 	if (!acklog) {
@@ -126,7 +126,10 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			/* Show only the first 30 characters in message */
 			if (strlen(ackmsg) > 30) ackmsg[30] = '\0';
 
-			sprintf(ackfn, "%s/ack.%s", xgetenv("XYMONACKDIR"), hosttest);
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wformat-truncation"
+			snprintf(ackfn, sizeof(ackfn), "%s/ack.%s", xgetenv("XYMONACKDIR"), hosttest);
+			#pragma GCC diagnostic pop
 
 			testname = strrchr(hosttest, '.');
 			if (testname) {
@@ -168,7 +171,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 				acks[num].hostname = strdup(hosttest);
 				acks[num].testname = strdup(testname);
-				strcat(color, " "); acks[num].color = parse_color(color);
+				strncat(color, " ", (sizeof(color) - strlen(color))); acks[num].color = parse_color(color);
 				acks[num].ackmsg = strdup(ackmsg);
 				ackintime_count++;
 
@@ -193,7 +196,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			period = ((getcurrenttime(NULL)-acks[firstack].acktime) / 60);
 		}
 
-		sprintf(title, "%d events acknowledged in the past %u minutes", ackintime_count, period);
+		snprintf(title, sizeof(title), "%d events acknowledged in the past %u minutes", ackintime_count, period);
 
 		fprintf(output, "<BR><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
@@ -221,7 +224,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 	}
 	else {
-		sprintf(title, "No events acknowledged in the last %u minutes", maxminutes);
+		snprintf(title, sizeof(title), "No events acknowledged in the last %u minutes", maxminutes);
 
 		fprintf(output, "<BR><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);

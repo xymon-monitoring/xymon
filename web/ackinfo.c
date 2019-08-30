@@ -62,7 +62,7 @@ static void parse_query(void)
 int main(int argc, char *argv[])
 {
 	int argi;
-	char *xymonmsg;
+	SBUF_DEFINE(xymonmsg);
 
 	libxymon_init(argv[0]);
 	for (argi = 1; (argi < argc); argi++) {
@@ -115,14 +115,14 @@ int main(int argc, char *argv[])
 		p = strchr(ackmsg, '\n'); if (p) *p = '\0';
 
 		/* ackinfo HOST.TEST\nlevel\nvaliduntil\nackedby\nmsg */
-		xymonmsg = (char *)malloc(1024 + strlen(hostname) + strlen(testname) + strlen(ackedby) + strlen(ackmsg));
-		sprintf(xymonmsg, "ackinfo %s.%s\n%d\n%d\n%s\n%s\n",
+		SBUF_MALLOC(xymonmsg, 1024 + strlen(hostname) + strlen(testname) + strlen(ackedby) + strlen(ackmsg));
+		snprintf(xymonmsg, xymonmsg_buflen, "ackinfo %s.%s\n%d\n%d\n%s\n%s\n",
 			hostname, testname, level, validity, ackedby, ackmsg);
 		sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL);
 	}
 	else {
 		xymonmsg = (char *)malloc(1024 + (hostname ? strlen(hostname) : 9) + (testname ? strlen(testname) : 9) + (ackmsg ? strlen(ackmsg) : 9));
-		sprintf(xymonmsg, "error in input params: hostname=%s, testname=%s, ackmsg=%s, validity=%d\n",
+		snprintf(xymonmsg, xymonmsg_buflen, "error in input params: hostname=%s, testname=%s, ackmsg=%s, validity=%d\n",
 			(hostname ? hostname : "<unknown>"), (testname ? testname : "<unknown>"), (ackmsg ? ackmsg : "<unknown>"), validity);
 	}
 

@@ -100,7 +100,8 @@ int main(int argc, char *argv[])
 	parse_query();
 
 	if (cgi_method == CGI_POST) {
-		char *pagepath, *cookie, *endurl;
+		char *pagepath, *cookie;
+		SBUF_DEFINE(endurl);
 
 		cookie = get_cookie("pagepath");
 
@@ -132,17 +133,17 @@ int main(int argc, char *argv[])
 		switch (frmtype) {
 		  case FRM_DAY:
 			if ((year == -1) || (month == -1) || (day == -1)) errormsg("Invalid day-request");
-			sprintf(endurl, "%s/daily/%d/%02d/%02d/%s", urlprefix, year, month, day, pagepath);
+			snprintf(endurl, endurl_buflen, "%s/daily/%d/%02d/%02d/%s", urlprefix, year, month, day, pagepath);
 			break;
 
 		  case FRM_WEEK:
 			if ((year == -1) || (week == -1)) errormsg("Invalid week-request");
-			sprintf(endurl, "%s/weekly/%d/%02d/%s", urlprefix, year, week, pagepath);
+			snprintf(endurl, endurl_buflen, "%s/weekly/%d/%02d/%s", urlprefix, year, week, pagepath);
 			break;
 
 		  case FRM_MONTH:
 			if ((year == -1) || (month == -1)) errormsg("Invalid month-request");
-			sprintf(endurl, "%s/monthly/%d/%02d/%s", urlprefix, year, month, pagepath);
+			snprintf(endurl, endurl_buflen, "%s/monthly/%d/%02d/%s", urlprefix, year, month, pagepath);
 			break;
 
 		  case FRM_NONE:
@@ -165,17 +166,17 @@ int main(int argc, char *argv[])
 		switch (frmtype) {
 		  case FRM_DAY:
 			seltm->tm_mday -= 1; seltime = mktime(seltm);
-			sprintf(formfn, "%s_form_daily", hffile);
+			snprintf(formfn, sizeof(formfn), "%s_form_daily", hffile);
 			break;
 
 		  case FRM_WEEK:
 			seltm->tm_mday -= 7; seltime = mktime(seltm);
-			sprintf(formfn, "%s_form_weekly", hffile);
+			snprintf(formfn, sizeof(formfn), "%s_form_weekly", hffile);
 			break;
 
 		  case FRM_MONTH:
 			seltm->tm_mon -= 1; seltime = mktime(seltm);
-			sprintf(formfn, "%s_form_monthly", hffile);
+			snprintf(formfn, sizeof(formfn), "%s_form_monthly", hffile);
 			break;
 
 		  case FRM_NONE:
