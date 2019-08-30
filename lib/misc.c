@@ -465,10 +465,6 @@ char *u32toIP(unsigned int ip32)
 	ip3 = ((ip32 >> 8) & 0xFF);
 	ip4 = (ip32 & 0xFF);
 
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wformat-truncation"
-	#pragma GCC diagnostic pop
-
 	snprintf(result, result_buflen, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	return result;
 }

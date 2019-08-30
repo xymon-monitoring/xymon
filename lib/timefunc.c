@@ -392,10 +392,14 @@ char *histlogtime(time_t histtime)
 	if (d2[0] == '0') { d2[0] = d2[1]; d2[1] = '\0'; }
         strftime(d3, sizeof(d3), "_%H:%M:%S_%Y", localtime(&histtime));
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif  // __GNUC__
 	snprintf(result, result_buflen, "%s%s%s", d1, d2, d3);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 	#pragma GCC diagnostic pop
+#endif  // __GNUC__
 
 	return result;
 }

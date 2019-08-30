@@ -42,10 +42,14 @@ static int wanted_eventcolumn(char *service)
 
 	if (!eventignorecolumns || (strlen(service) > (sizeof(svc)-3))) return 1;
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif  // __GNUC__
 	snprintf(svc, sizeof(svc), ",%s,", service);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 	#pragma GCC diagnostic pop
+#endif  // __GNUC__
 
 	result = (strstr(eventignorecolumns, svc) == NULL);
 
