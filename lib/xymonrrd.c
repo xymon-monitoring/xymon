@@ -74,7 +74,9 @@ void rrd_destroy(void)
  */
 static void rrd_setup(void)
 {
-	char *lenv, *ldef, *p, *tcptests, *services;
+	SBUF_DEFINE(lenv);
+	char *ldef, *p, *services;
+	SBUF_DEFINE(tcptests);
 	int count;
 	xymonrrd_t *lrec;
 	xymongraph_t *grec;
@@ -84,15 +86,21 @@ static void rrd_setup(void)
 
 	/* Get the tcp services, and count how many there are */
 	services = init_tcp_services();
-	tcptests = strdup(services);
+	SBUF_MALLOC(tcptests, strlen(services)+1);
+	strncpy(tcptests, services, tcptests_buflen);
 	count = 0; p = strtok(tcptests, " "); while (p) { count++; p = strtok(NULL, " "); }
-	strcpy(tcptests, services);
+	strncpy(tcptests, services, tcptests_buflen);
 
 	/* Setup the xymonrrds table, mapping test-names to RRD files */
-	lenv = (char *)malloc(strlen(xgetenv("TEST2RRD")) + strlen(tcptests) + count*strlen(",=tcp") + 1);
-	strcpy(lenv, xgetenv("TEST2RRD")); 
+	SBUF_MALLOC(lenv, strlen(xgetenv("TEST2RRD")) + strlen(tcptests) + count*strlen(",=tcp") + 1);
+	strncpy(lenv, xgetenv("TEST2RRD"), lenv_buflen); 
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
-	p = strtok(tcptests, " "); while (p) { sprintf(lenv+strlen(lenv), ",%s=tcp", p); p = strtok(NULL, " "); }
+	p = strtok(tcptests, " "); 
+	while (p) {
+		unsigned int curlen = strlen(lenv);
+		snprintf(lenv+curlen, (lenv_buflen - curlen), ",%s=tcp", p); 
+		p = strtok(NULL, " ");
+	}
 	xfree(tcptests);
 	xfree(services);
 
@@ -199,11 +207,10 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 			      xymongraph_t *graphdef, int itemcount, hg_stale_rrds_t nostale, const char *fmt,
 			      int locatorbased, time_t starttime, time_t endtime)
 {
-	static char *rrdurl = NULL;
-	static int rrdurlsize = 0;
+	STATIC_SBUF_DEFINE(rrdurl);
 	static int gwidth = 0, gheight = 0;
-	char *svcurl;
-	int svcurllen, rrdparturlsize;
+	SBUF_DEFINE(svcurl);
+	int rrdparturlsize;
 	char rrdservicename[100];
 	char *cgiurl = xgetenv("CGIBINURL");
 
@@ -225,40 +232,39 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 		graphdef->xymonrrdname, textornull(graphdef->xymonpartname), graphdef->maxgraphs, itemcount);
 
 	if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "tcp") == 0)) {
-		sprintf(rrdservicename, "tcp:%s", service);
+		snprintf(rrdservicename, sizeof(rrdservicename), "tcp:%s", service);
 	}
 	else if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "ncv") == 0)) {
-		sprintf(rrdservicename, "ncv:%s", service);
+		snprintf(rrdservicename, sizeof(rrdservicename), "ncv:%s", service);
 	}
 	else if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "devmon") == 0)) {
-		sprintf(rrdservicename, "devmon:%s", service);
+		snprintf(rrdservicename, sizeof(rrdservicename), "devmon:%s", service);
 	}
 	else {
-		strcpy(rrdservicename, graphdef->xymonrrdname);
+		strncpy(rrdservicename, graphdef->xymonrrdname, sizeof(rrdservicename));
 	}
 
-	svcurllen = 2048                    + 
+	SBUF_MALLOC(svcurl, 
+		    2048                    + 
 		    strlen(cgiurl)          +
 		    strlen(hostname)        + 
 		    strlen(rrdservicename)  + 
-		    strlen(urlencode(dispname ? dispname : hostname));
-	svcurl = (char *) malloc(svcurllen);
+		    strlen(urlencode(dispname ? dispname : hostname)));
 
 	rrdparturlsize = 2048 +
 			 strlen(fmt)        +
-			 3*svcurllen        +
+			 3*svcurl_buflen    +
 			 strlen(rrdservicename) +
 			 strlen(xgetenv("XYMONSKIN")) +
 			 strlen(xgetenv("IMAGEFILETYPE"));
 
 	if (rrdurl == NULL) {
-		rrdurlsize = rrdparturlsize;
-		rrdurl = (char *) malloc(rrdurlsize);
+		SBUF_MALLOC(rrdurl, rrdparturlsize);
 	}
 	*rrdurl = '\0';
 
 	{
-		char *rrdparturl;
+		SBUF_DEFINE(rrdparturl);
 		int first = 1;
 		int step;
 
@@ -268,33 +274,34 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 			step = (itemcount / gcount);
 		}
 
-		rrdparturl = (char *) malloc(rrdparturlsize);
+		SBUF_MALLOC(rrdparturl, rrdparturlsize);
 		do {
 			if (itemcount > 0) {
-				sprintf(svcurl, "%s/showgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d&amp;first=%d&amp;count=%d", 
+				snprintf(svcurl, svcurl_buflen, 
+					"%s/showgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d&amp;first=%d&amp;count=%d", 
 					cgiurl, hostname, rrdservicename, 
 					gwidth, gheight,
 					first, step);
 			}
 			else {
-				sprintf(svcurl, "%s/showgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d", 
+				snprintf(svcurl, svcurl_buflen,
+					"%s/showgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d", 
 					cgiurl, hostname, rrdservicename,
 					gwidth, gheight);
 			}
 
-			strcat(svcurl, "&amp;disp=");
-			strcat(svcurl, urlencode(dispname ? dispname : hostname));
+			strncat(svcurl, "&amp;disp=", (svcurl_buflen - strlen(svcurl)));
+			strncat(svcurl, urlencode(dispname ? dispname : hostname), (svcurl_buflen - strlen(svcurl)));
 
-			if (nostale == HG_WITHOUT_STALE_RRDS) strcat(svcurl, "&amp;nostale");
-			if (bgcolor != -1) sprintf(svcurl+strlen(svcurl), "&amp;color=%s", colorname(bgcolor));
-			sprintf(svcurl+strlen(svcurl), "&amp;graph_start=%d&amp;graph_end=%d", (int)starttime, (int)endtime);
+			if (nostale == HG_WITHOUT_STALE_RRDS) strncat(svcurl, "&amp;nostale", (svcurl_buflen - strlen(svcurl)));
+			if (bgcolor != -1) snprintf(svcurl+strlen(svcurl), (svcurl_buflen - strlen(svcurl)), "&amp;color=%s", colorname(bgcolor));
+			snprintf(svcurl+strlen(svcurl), (svcurl_buflen - strlen(svcurl)), "&amp;graph_start=%d&amp;graph_end=%d", (int)starttime, (int)endtime);
 
-			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("XYMONSKIN"), xgetenv("IMAGEFILETYPE"));
-			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
-				rrdurlsize += (4096 + rrdparturlsize);
-				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
+			snprintf(rrdparturl, rrdparturl_buflen, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("XYMONSKIN"), xgetenv("IMAGEFILETYPE"));
+			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurl_buflen) {
+				SBUF_REALLOC(rrdurl, rrdurl_buflen + strlen(rrdparturl) + 4096);
 			}
-			strcat(rrdurl, rrdparturl);
+			strncat(rrdurl, rrdparturl, (rrdurl_buflen - strlen(rrdurl)));
 			first += step;
 		} while (first <= itemcount);
 		xfree(rrdparturl);
