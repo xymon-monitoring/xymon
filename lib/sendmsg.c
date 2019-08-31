@@ -530,8 +530,8 @@ static mytarget_t **build_targetlist(char *recips, int defaultport, size_t msgle
 			dbgprintf("Sending HTTP request:\n%s", targets[tcount]->httprequest);
 
 			/* We use the url.ip field for the destination address+port - it is only used for net-tests with http-requests using http://website=10.1.2.3/ notation */
-			url.ip = (char *)malloc(strlen(url.host) + 10);
-			sprintf(url.ip, "%s:%d", url.host, url.port);
+			url.ip = (char *)malloc(strlen(url.host) + 64);
+			snprintf(url.ip, (strlen(url.host) + 64), "%s:%d", url.host, url.port);
 			r = url.ip;
 		}
 
