@@ -42,6 +42,7 @@ typedef struct replog_t {
 
 extern replog_t *reploghead;
 
+#define MAXDURSIZE 30
 extern char *durationstr(time_t duration);
 extern int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, 
 				time_t fromtime, time_t totime, int for_history,

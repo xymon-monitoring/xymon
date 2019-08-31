@@ -605,7 +605,7 @@ static void parse_query(void)
 		 */
 
 		if (strcasecmp(cwalk->name, "HISTFILE") == 0) {
-			char *p = cwalk->value + strspn(cwalk->value, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.,");
+			char *p = cwalk->value + strspn(cwalk->value, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:,.\\/_-");
 			*p = '\0';
 
 			p = strrchr(cwalk->value, '.');

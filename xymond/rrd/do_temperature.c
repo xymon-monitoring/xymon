@@ -40,6 +40,19 @@ Device				Temp	High	Crit
 &green temp1                 	 37		 98
 -----------------------------------------------------
 
+Device                   Temp(C)  Temp(F)    Lo(C)  LoWarn(C)  HiWarn(C)  Hi(C)
+-------------------------------------------------------------------------------
+&green CPU 0 Die                79      174     (-10        0         88      90)
+&green CPU 0 Ambient            23       73     (-10        0         40      60)
+-------------------------------------------------------------------------------
+
+Device                  Temp(C)  Temp(F)  Threshold(C)
+------------------------------------------------------
+&green System Board Inlet Temp    21       69     ( 42)
+&green CPU1 Temp               32       89     ( 93)
+&green CPU2 Temp               31       87     ( 93)
+------------------------------------------------------
+
 */
 
 static char temperature_rcsid[] = "$Id$";
@@ -50,7 +63,7 @@ int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pa
 					      NULL };
 	static void *temperature_tpl	  = NULL;
 
-	char *bol, *eol, *p;
+	char *bol, *eol, *comment, *p;
 	int tmpC;
 
 	if (temperature_tpl == NULL) temperature_tpl = setup_template(temperature_params);
@@ -62,6 +75,11 @@ int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pa
 		bol = p + 1;
 		eol = strchr(bol, '\n'); if (eol) *eol = '\0';
 
+		/* See if there's a comment in parenthesis */
+		comment = strchr(bol, '('); /* Begin comment */
+		p = strchr(bol, ')');       /* End comment */
+		if (comment && p && (comment < p)) *comment = '\0'; /* Cut off the comment */
+
 		if	(strncmp(bol, "&green", 6) == 0)  { bol += 6; gotone = 1; }
 		else if (strncmp(bol, "&yellow", 7) == 0) { bol += 7; gotone = 1; }
 		else if (strncmp(bol, "&red", 4) == 0)	  { bol += 4; gotone = 1; }
@@ -69,6 +87,12 @@ int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pa
 
 		if (gotone) {
 			char savech;
+
+			/* Strip off any leading bold and italic HTML tags */
+			if      (strncasecmp(bol, "<i><b>", 6) == 0)  { bol += 6; }
+			else if (strncasecmp(bol, "<i>", 3) == 0)  { bol += 3; }
+			else if (strncasecmp(bol, "<b><i>", 6) == 0)  { bol += 6; }
+			else if (strncasecmp(bol, "<b>", 3) == 0)  { bol += 3; }
 
 			bol += strspn(bol, " \t");
 
@@ -83,6 +107,7 @@ int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pa
 			create_and_update_rrd(hostname, testname, classname, pagepaths, temperature_params, temperature_tpl);
 		}
 
+		if (comment) *comment = '(';
 		if (eol) *eol = '\n';
 	}
 
