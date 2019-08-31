@@ -35,6 +35,11 @@ available on the xymon website (http://xymon.sourceforge.net/).
 XYMON 4.4 ALPHA 1 RELEASE NOTES
 ===============================
 
+Crashes of any xymon components (and there may be several) will be reported
+under the "xymond" test. Singular crashes will be overwritten and no longer 
+need to be dropped manually as a spurious test. Recurring crashed will alert
+under xymond.
+
 By default, xymon sends using the existing, compatible message format used
 by all previous versions (and Big Brother). To send using the "V5" format
 (the size of the remaining message is prefixed, allowing truncated messages

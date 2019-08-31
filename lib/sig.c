@@ -93,7 +93,7 @@ void setup_signalhandler(char *programname)
 	strncpy(signal_xymoncmd, (getenv("XYMON") ? getenv("XYMON") : "xymon"), sizeof(signal_xymoncmd));
 	strncpy(signal_xymondserver, (getenv("XYMSRV") ? getenv("XYMSRV") : "0.0.0.0"), sizeof(signal_xymondserver));
 	strncpy(signal_tmpdir, (getenv("XYMONTMP") ? getenv("XYMONTMP") : "/tmp"), sizeof(signal_tmpdir));
-	snprintf(signal_msg, sizeof(signal_msg), "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
+	snprintf(signal_msg, sizeof(signal_msg), "status+1d/group:signal %s.xymond red %s program crashed\n\nFatal signal caught!\n",
 		(getenv("MACHINE") ? getenv("MACHINE") : (getenv("HOSTNAME") ? getenv("HOSTNAME") : "localhost") ), programname);
 
 	sigaction(SIGSEGV, &sa, NULL);
