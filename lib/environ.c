@@ -405,7 +405,8 @@ void xymon_default_xymonhome(char *programname)
 
 char *xgetenv(const char *name)
 {
-	char *result, *newstr;
+	char *result;
+	SBUF_DEFINE(newstr);
 	int i;
 
 
@@ -422,10 +423,13 @@ char *xgetenv(const char *name)
 		 * If we got a result, put it into the environment so it will stay there.
 		 * Allocate memory for this new environment string - this stays allocated.
 		 */
-		newstr = malloc(strlen(name) + strlen(result) + 2);
-		sprintf(newstr, "%s=%s", name, result);
+#ifdef HAVE_SETENV
+		setenv(name, result, 1);
+#else
+		SBUF_MALLOC(newstr, strlen(name) + strlen(result) + 2); 
+		snprintf(newstr, newstr_buflen, "%s=%s", name, result);
 		putenv(newstr);
-
+#endif
 		/*
 		 * Return pointer to the environment string.
 		 */
@@ -505,7 +509,9 @@ void loadenv(char *envfile, char *area)
 {
 	FILE *fd;
 	strbuffer_t *inbuf;
-	char *p, *marker, *evar, *oneenv;
+	char *p, *marker;
+	SBUF_DEFINE(evar);
+	SBUF_DEFINE(oneenv);
 
 	/* Being passed an actual NULL could be an unintentional bug */
 	if (!envfile) {
@@ -555,10 +561,16 @@ void loadenv(char *envfile, char *area)
 			if (*marker == '/') {
 				if (area) {
 					*marker = '\0';
-					if (strcasecmp(p, area) == 0) oneenv = strdup(expand_env(marker+1));
+					if (strcasecmp(p, area) == 0) {
+						oneenv = strdup(expand_env(marker+1));
+						oneenv_buflen = strlen(oneenv)+1;
+					}
 				}
 			}
-			else oneenv = strdup(expand_env(p));
+			else {
+				oneenv = strdup(expand_env(p));
+				oneenv_buflen = strlen(oneenv)+1;
+			}
 
 			if (oneenv) {
 				p = strchr(oneenv, '=');
@@ -577,14 +589,16 @@ void loadenv(char *envfile, char *area)
 
 					oldval = getenv(oneenv);
 					if (oldval) {
-						char *combinedenv = (char *)malloc(strlen(oneenv) + strlen(oldval) + strlen(addstring) + 2);
-						sprintf(combinedenv, "%s=%s%s", oneenv, oldval, (addstring));
+						SBUF_DEFINE(combinedenv);
+
+						SBUF_MALLOC(combinedenv, strlen(oneenv) + strlen(oldval) + strlen(addstring) + 2);
+						snprintf(combinedenv, combinedenv_buflen, "%s=%s%s", oneenv, oldval, (addstring));
 						xfree(oneenv);
 						oneenv = combinedenv;
 					}
 					else {
 						/* oneenv is now VARxxVALUE, so fix it to be a normal env. variable format */
-						strcat(oneenv, "=");
+						strncat(oneenv, "=", oneenv_buflen-strlen(oneenv));
 						memmove(oneenv+strlen(oneenv), addstring, strlen(addstring) + 1);
 					}
 				}
@@ -595,7 +609,7 @@ void loadenv(char *envfile, char *area)
 		stackfclose(fd);
 
 		evar = (char *)malloc(10+strlen(envfile));
-		sprintf(evar, "XYMONENV=%s", envfile);
+		snprintf(evar, (10+strlen(envfile)), "XYMONENV=%s", envfile);
 		dbgprintf("Setting %s\n", evar);
 		putenv(evar);
 
@@ -613,8 +627,9 @@ char *getenv_default(char *envname, char *envdefault, char **buf)
 
 	val = getenv(envname);	/* Don't use xgetenv() here! */
 	if (!val) {
-		val = (char *)malloc(strlen(envname) + strlen(envdefault) + 2);
-		sprintf(val, "%s=%s", envname, envdefault);
+		unsigned int val_buflen = strlen(envname) + strlen(envdefault) + 2;
+		val = (char *)malloc(val_buflen);
+		snprintf(val, val_buflen, "%s=%s", envname, envdefault);
 		putenv(val);
 		/* Don't free the string - it must be kept for the environment to work */
 		val = xgetenv(envname);	/* OK to use xgetenv here */
@@ -661,7 +676,7 @@ char *expand_env(char *s)
 			myxp->resultlen += strlen(bot) + 4096;
 			myxp->result = (char *)realloc(myxp->result, myxp->resultlen);
 		}
-		strcat(myxp->result, bot);
+		strncat(myxp->result, bot, (myxp->resultlen - strlen(myxp->result)));
 
 		if (tstart) {
 			tstart++;
@@ -694,7 +709,7 @@ char *expand_env(char *s)
 					myxp->resultlen += strlen(envval) + 4096;
 					myxp->result = (char *)realloc(myxp->result, myxp->resultlen);
 				}
-				strcat(myxp->result, envval);
+				strncat(myxp->result, envval, (myxp->resultlen - strlen(myxp->result)));
 			}
 		}
 		else {
