@@ -45,6 +45,11 @@ typedef struct sendreturn_t {
 	int fullresponse;
 } sendreturn_t;
 
+extern int xymonmsgcount;
+extern int xymonstatuscount;
+extern int xymonnocombocount;
+extern int dontsendmessages;
+
 extern void setproxy(char *proxy);
 extern sendresult_t sendmessage_safe(char *msg, size_t msglen, char *recipient, int timeout, sendreturn_t *response);
 

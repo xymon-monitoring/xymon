@@ -49,13 +49,15 @@ static char *multircptcmds[] = { "status", "combo", "extcombo", "compress", "dat
 static char *responsecmds[] = { "client", "hostinfo", "query", "config", "clientconfig", "download", "clientlog", "ping", "proxyping", "pullclient", "ghostlist", "multisrclist", "senderstats", NULL };
 static char errordetails[1024];
 
+/* Stuff for combo message handling */
+int		xymonmsgcount = 0;	/* Number of messages transmitted */
+int		xymonstatuscount = 0;	/* Number of status items reported */
+int		xymonnocombocount = 0;	/* Number of status items reported outside combo msgs */
+static int xymonmsgqueued;		/* Anything in the buffer ? */
+static strbuffer_t *xymonmsg = NULL;    /* Complete combo message buffer */
 static strbuffer_t *msgbuf = NULL;      /* message buffer for one status message */
 static int msgcolor;                    /* color of status message in msgbuf */
 static int combo_is_local = 0;
-static strbuffer_t *xymonmsg = NULL;    /* Complete combo message buffer */
-
-static int xymonmsgqueued;		/* Anything in the buffer ? */
-
 static int maxmsgspercombo = 100;       /* 0 = no limit. 100 is a reasonable default. */
 static int max_combosz = 256*1024;
 static int sleepbetweenmsgs = 0;
@@ -744,7 +746,7 @@ sendresult_t sendmessage_safe(char *msg, size_t msglen, char *recipient, int tim
 
 	/* Give it a break */
 	if (sleepbetweenmsgs) usleep(sleepbetweenmsgs);
-
+	xymonmsgcount++;
 	return res;
 }
 
@@ -936,6 +938,7 @@ void combo_add(strbuffer_t *buf)
 
 	addtostrbuffer(xymonmsg, buf);
 	combooffsets[++xymonmsgqueued] = STRBUFLEN(xymonmsg);
+	dbgprintf("%d status messages merged into %d transmissions\n", xymonstatuscount, xymonmsgcount);
 }
 
 void combo_end(void)
@@ -949,6 +952,7 @@ void init_status(int color)
 	if (msgbuf == NULL) msgbuf = newstrbuffer(0);
 	clearstrbuffer(msgbuf);
 	msgcolor = color;
+	xymonstatuscount++;
 }
 
 void addtostatus(char *p)
