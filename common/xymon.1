@@ -2,7 +2,7 @@
 .SH NAME
 xymon \- Xymon client communication program
 .SH SYNOPSIS
-.B "xymon [options] RECIPIENT message"
+.B "xymon [options] [RECIPIENT] \"message\""
 
 .SH DESCRIPTION
 .I xymon(1)
@@ -64,6 +64,10 @@ HTTP protocol (https is also supported). The
 .I xymoncgimsg.cgi(8)
 CGI tool (included in Xymon) must be installed on the webserver
 for the HTTP transport to work.
+
+If RECIPIENT is not given, first "$XYMSRV" and then "$XYMSERVERS"
+will be checked. If neither environment variable is set, localhost
+will be assumed.
 .br
 
 .IP MESSAGE
@@ -77,6 +81,8 @@ If you need to send longer status messages, you can specify "@"
 as the message: xymon will then read the status message from its
 stdin.
 
+If no message is given, the "$XYMMSG" variable will checked and,
+if present, used as the message.
 .SH XYMON MESSAGE SYNTAX
 
 This section lists the most commonly used messages in the Xymon

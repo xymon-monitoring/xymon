@@ -75,16 +75,37 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Unknown option %s\n", argv[argi]);
 		}
 		else {
-			/* No more options - pickup recipient and msg */
-			if (recipient == NULL) {
+			/* No more options - pickup recipient and/or msg */
+			/* If only a single argument remains, and XYMMSG isn't in the environment */
+			/* then we're given a message and (assuming localhost recipient later on) */
+			if (recipient == NULL && (argi+1 == argc) && !getenv("XYMMSG")) {
+				msg = dupstrbuffer(argv[argi]);			
+			}
+			else if (recipient == NULL) {
 				recipient = argv[argi];
 			}
 			else if (STRBUFLEN(msg) == 0) {
 				msg = dupstrbuffer(argv[argi]);
 			}
-			else {
-				showhelp=1;
-			}
+		}
+	}
+
+	if ((STRBUFLEN(msg) == 0) && getenv("XYMMSG")) {
+		msg = dupstrbuffer(xgetenv("XYMMSG"));
+		dbgprintf("Using XYMMSG from the environment\n");
+	}
+	if (recipient == NULL) {
+		if (getenv("XYMSRV") && (strcmp(xgetenv("XYMSRV"), "") != 0)) recipient = xgetenv("XYMSRV");
+		else if (getenv("XYMSERVERS") && (strcmp(xgetenv("XYMSERVERS"), "") != 0)) recipient = "0.0.0.0";
+		else if (usebackfeedqueue) {
+			// recipient =  (char *)malloc(22);			/* future use */
+			// sprintf(recipient, "%d", backfeedqueuenumber);	/* future use */
+			recipient = "0";
+			fprintf(stderr, "No recipient specified but bfq given (%d)\n", backfeedqueuenumber);
+		}
+		else {
+			recipient = "127.0.0.1";
+			fprintf(stderr, "No recipient specified - assuming localhost:1984\n");
 		}
 	}
 
