@@ -63,6 +63,11 @@ char *xymonsubpagehtaccess = NULL;
 
 char *hf_prefix[3];            /* header/footer prefixes for xymon, nongreen, critical pages*/
 
+#define PAGEGENBUFSIZ	64*1024		/* write buffer for pages */
+static char outputbuf[PAGEGENBUFSIZ];
+static char htmlrepbuf[PAGEGENBUFSIZ];
+static char textrepbuf[PAGEGENBUFSIZ];
+
 static int hostblkidx = 0;
 
 void select_headers_and_footers(char *prefix)
@@ -659,6 +664,12 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 
 							if (textrep && htmlrep) {
 								/* Pre-build the test-specific report */
+								int n;
+								n = setvbuf( htmlrep, htmlrepbuf, _IOFBF, PAGEGENBUFSIZ );
+								if (n) errprintf("setvbuf() returned %d on file '%s' for %lu bytes: %s\n", n, htmlrepfn, PAGEGENBUFSIZ, strerror(errno));
+								n = setvbuf( textrep, textrepbuf, _IOFBF, PAGEGENBUFSIZ );
+								if (n) errprintf("setvbuf() returned %d on file '%s' for %lu bytes: %s\n", n, textrepfn, PAGEGENBUFSIZ, strerror(errno));
+
 								restore_replogs(e->causes);
 								generate_replog(htmlrep, textrep, textrepurl,
 									h->hostname, e->column->name, e->color, reportstyle,
@@ -908,6 +919,7 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 	char	curdir[PATH_MAX];
 	char	*dirdelim;
 	char	*localtext;
+	int	n;
 
 	if (!getcwd(curdir, sizeof(curdir))) {
 		errprintf("Cannot get current directory: %s\n", strerror(errno));
@@ -997,6 +1009,8 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 				return;
 			}
 		}
+		n = setvbuf( output, outputbuf, _IOFBF, PAGEGENBUFSIZ );
+		if (n) errprintf("setvbuf() returned %d on file '%s' for %lu bytes: %s\n", n, tmpfilename, PAGEGENBUFSIZ, strerror(errno));
 
 		if (wantrss) {
 			/* Just create the RSS files - all the directory stuff is done */

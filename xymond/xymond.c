@@ -70,7 +70,7 @@ static char rcsid[] = "$Id$";
 #define XYMON_INBUF_INITIAL   (128*1024)
 
 /* How much the input buffer grows per re-allocation */
-#define XYMON_INBUF_INCREMENT (32*1024)
+#define XYMON_INBUF_INCREMENT (256*1024)
 
 /* How long to keep an ack after the status has recovered */
 #define ACKCLEARDELAY 720 /* 12 minutes */
