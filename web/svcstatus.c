@@ -40,6 +40,7 @@ static char *hostname = NULL;
 static char *service = NULL;
 static char *sectionfilter = NULL;
 static char *tstamp = NULL;
+static char *skiploc = NULL;
 static char *nkprio = NULL, *nkttgroup = NULL, *nkttextra = NULL;
 static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
 STATIC_SBUF_DEFINE(clienturi);
@@ -116,6 +117,9 @@ static int parse_query(void)
 		}
 		else if (strcasecmp(cwalk->name, "NKTTEXTRA") == 0) {
 			nkttextra = strdup(cwalk->value ? cwalk->value : "");
+		}
+		else if ((strcasecmp(cwalk->name, "SKIPLOC") == 0)   && cwalk->value && strlen(cwalk->value) && (strcmp(cwalk->value, "1") == 0)) {
+			skiploc = strdup(cwalk->value);
 		}
 		else if ((strcmp(cwalk->name, "backsecs") == 0)   && cwalk->value && strlen(cwalk->value)) {
 			backsecs += atoi(cwalk->value);
@@ -365,7 +369,7 @@ int do_request(void)
 		strncpy(timesincechange, "0 minutes", sizeof(timesincechange));
 
 		if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
-			if (locatorbased) {
+			if (locatorbased && !skiploc) {
 				char *cgiurl, *qres;
 
 				qres = locator_query(hostname, ST_RRD, &cgiurl);
@@ -374,7 +378,7 @@ int do_request(void)
 				}
 				else {
 					/* Redirect browser to the real server */
-					fprintf(stdout, "Location: %s/svcstatus.sh?HOST=%s&SERVICE=%s\n\n",
+					fprintf(stdout, "Location: %s/svcstatus.sh?HOST=%s&SERVICE=%s&SKIPLOC=1\n\n",
 						cgiurl, hostname, service);
 					return 0;
 				}
@@ -783,6 +787,7 @@ int do_request(void)
 	if (service) xfree(service);
 	if (sectionfilter) xfree(sectionfilter);
 	if (tstamp) xfree(tstamp);
+	if (skiploc) xfree(skiploc);
 
 	/* Cleanup main vars */
 	if (clientid) xfree(clientid);
@@ -866,7 +871,7 @@ int main(int argc, char *argv[])
 	redirect_cgilog("svcstatus");
 
 	*errortxt = '\0';
-	hostname = service = sectionfilter = tstamp = NULL;
+	hostname = service = sectionfilter = tstamp = skiploc = NULL;
 	if (do_request() != 0) {
 		fprintf(stdout, "%s", errortxt);
 		return 1;
