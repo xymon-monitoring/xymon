@@ -35,6 +35,9 @@ available on the xymon website (http://xymon.sourceforge.net/).
 XYMON 4.4 ALPHA 1 RELEASE NOTES
 ===============================
 
+Carefuly examine all apache config files for customizations. New snippets have
+been added for specifying report and snapshot subdirectories in the WWW root.
+
 Crashes of any xymon components (and there may be several) will be reported
 under the "xymond" test. Singular crashes will be overwritten and no longer 
 need to be dropped manually as a spurious test. Recurring crashed will alert
