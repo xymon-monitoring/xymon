@@ -62,7 +62,7 @@ static char rcsid[] = "$Id$";
 #define XYMON_INBUF_INITIAL   (128*1024)
 
 /* How much the input buffer grows per re-allocation */
-#define XYMON_INBUF_INCREMENT (32*1024)
+#define XYMON_INBUF_INCREMENT (256*1024)
 
 /* How long can the first line of a status message be? This is for the copy statically copied */
 #define MAXLINE1SIZE 255

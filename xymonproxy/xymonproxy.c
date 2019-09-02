@@ -99,15 +99,16 @@ typedef struct conn_t {
 	struct conn_t *next;
 } conn_t;
 
-#define MAX_SERVERS 3
-#define CONNECT_TRIES 3		/* How many connect-attempts against the server */
-#define CONNECT_INTERVAL 8	/* Seconds between each connection attempt */
-#define SEND_TRIES 2		/* How many times to try sending a message */
+#define MAX_SERVERS 5
+#define CONNECT_TRIES 5		/* How many connect-attempts against the server */
+#define CONNECT_INTERVAL 12	/* Seconds between each connection attempt */
+#define SEND_TRIES 4		/* How many times to try sending a message */
 #define BUFSZ_READ 2048		/* Minimum #bytes that must be free when read'ing into a buffer */
-#define BUFSZ_INC  8192		/* How much to grow the buffer when it is too small */
-#define MAX_OPEN_SOCKS 256
+#define BUFSZ_INIT  65535	/* Initial size of an input buffer -- make this large enough for most traffic */
+#define BUFSZ_INC  (128*1024)	/* How much to grow the buffer when it is too small */
+#define MAX_OPEN_SOCKS 1024
 #define MINIMUM_FOR_COMBO 2048	/* To start merging messages, at least have 2 KB free */
-#define MAXIMUM_FOR_COMBO 32768 /* Max. size of a combined message */
+#define MAXIMUM_FOR_COMBO 261120 /* Max. size of a combined message 256K - 1K */
 #define COMBO_DELAY 250000000	/* Delay before sending a combo message (in nanoseconds) */
 
 int keeprunning = 1;
@@ -1264,7 +1265,7 @@ int main(int argc, char *argv[])
 					newconn = malloc(sizeof(conn_t));
 					newconn->next = chead;
 					chead = newconn;
-					newconn->bufsize = BUFSZ_INC;
+					newconn->bufsize = BUFSZ_INIT;
 					newconn->buf = newconn->bufp = malloc(newconn->bufsize);
 				}
 
