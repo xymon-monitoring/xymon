@@ -9,6 +9,7 @@ xymon (4.3.30) stable; urgency=high
    * Don't crash on a missing allevents file
    * Fix assorted crashes with xymongen report generation after string changes  
    * Add guards around GCC diagnostics pragma to allow for building on older vers
+   * xymonclient-linux: Provide wide/untrimmed IP support in netstat port list
 
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, 05 Aug 2019 23:30:00 -0800

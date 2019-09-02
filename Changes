@@ -10,7 +10,7 @@ Changes from 4.3.29 -> 4.3.30 (05 Aug 2019)
 * Don't crash on a missing allevents file
 * Fix assorted crashes with xymongen report generation after string changes
 * Add guards around GCC diagnostics pragma to allow for building on older vers
-
+* xymonclient-linux: Provide wide/untrimmed IP support in netstat port list
 
 Changes from 4.3.28 -> 4.3.29 (23 Jul 2019)
 ===========================================
