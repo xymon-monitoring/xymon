@@ -67,8 +67,11 @@ netstat -rn
 echo "[netstat]"
 netstat -s
 echo "[ports]"
-# Bug in RedHat's netstat spews annoying error messages. 
-netstat -antu 2>/dev/null
+# For some reason, the option for Wide/unTrimmed display of IPs
+# changed in netstat versions and no one provided backwards compat,
+# so exactly ONE of these should work successfully:
+netstat -antuW 2>/dev/null
+netstat -antuT 2>/dev/null
 echo "[ifstat]"
 /sbin/ifconfig 2>/dev/null
 # Report mdstat data if it exists
