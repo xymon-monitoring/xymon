@@ -429,7 +429,9 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 		if (strncmp(bufpastwhitespace, "optional", 8) == 0) { optional = 1; bufpastwhitespace += 8 + strspn(bufpastwhitespace+8, " \t"); }
 
 		if ( (strncmp(bufpastwhitespace, "include ", 8) == 0) || (strncmp(bufpastwhitespace, "include\t", 8) == 0) ||
-		     (extraincl && (strncmp(bufpastwhitespace, extraincl, strlen(extraincl)) == 0)) ) {
+		     (extraincl && (strncmp(bufpastwhitespace, extraincl, strlen(extraincl)) == 0)) ||
+		     (!extraincl && (strncmp(bufpastwhitespace, "netinclude", 10) == 0)) ||
+		     (!extraincl && (strncmp(bufpastwhitespace, "dispinclude", 11) == 0)) ) {
 			char *newfn, *eol, eolchar = '\0';
 
 			eol = bufpastwhitespace + strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
