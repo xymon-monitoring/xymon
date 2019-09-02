@@ -711,7 +711,7 @@ int main(int argc, char *argv[])
 					/* If we're using the backfeed queue, isolate the message and put it
 					 * on the queue ASAP
 					 */
-					if (usebackfeedqueue) {
+					if (usebackfeedqueue && !extcombine) {
 						cwalk->snum = SNUM_ISBFQ; /* not a regular server */
 						cwalk->bufp = cwalk->buf+6;
 						cwalk->buflen -= 6;
@@ -745,7 +745,16 @@ int main(int argc, char *argv[])
 							cwalk->buflen += n;
 						}
 
-						cwalk->state = P_REQ_COMBINING;
+						if (usebackfeedqueue) {
+							cwalk->snum = SNUM_ISBFQ; /* not a regular server */
+							cwalk->bufp = cwalk->buf+6;
+							cwalk->buflen -= 6;
+							cwalk->bufpsave = cwalk->bufp;
+							cwalk->buflensave = cwalk->buflen;
+							cwalk->state = P_REQ_BFQING;
+						} else {
+							cwalk->state = P_REQ_COMBINING;
+						}
 						break;
 					}
 					else if (strncmp(cwalk->buf+6, "combo\n", 6) == 0) {
@@ -781,7 +790,71 @@ int main(int argc, char *argv[])
 								"combo\n%s\nStatus message received from %s\n", 
 								currmsg, inet_ntoa(*cwalk->clientip));
 							ctmp->bufp = ctmp->buf + ctmp->buflen;
-							ctmp->state = P_REQ_COMBINING;
+
+							if (usebackfeedqueue) {
+								ctmp->snum = SNUM_ISBFQ; /* not a regular server */
+								ctmp->bufp = ctmp->buf+6;
+								ctmp->buflen -= 6;
+								ctmp->bufpsave = ctmp->bufp;
+								ctmp->buflensave = ctmp->buflen;
+								ctmp->state = P_REQ_BFQING;
+							} else {
+								ctmp->state = P_REQ_COMBINING;
+							}
+							ctmp->next = chead;
+							chead = ctmp;
+
+							currmsg = nextmsg;
+						} while (currmsg);
+
+						/* We dont do anymore with this conn_t */
+						cwalk->state = P_CLEANUP;
+						break;
+					}
+					else if (strncmp(cwalk->buf+6, "combodata\n", 10) == 0) {
+						char *currmsg, *nextmsg;
+
+						msgs_combo++;
+
+						/*
+						 * Some clients (bbnt) send a trailing \0, so we cannot
+						 * rely on buflen being what we want it to be.
+						 */
+						cwalk->buflen = strlen(cwalk->buf);
+						cwalk->bufp = cwalk->buf + cwalk->buflen;
+
+						getntimer(&cwalk->timelimit);
+						cwalk->timelimit.tv_nsec += COMBO_DELAY;
+						if (cwalk->timelimit.tv_nsec >= 1000000000) {
+							cwalk->timelimit.tv_sec++;
+							cwalk->timelimit.tv_nsec -= 1000000000;
+						}
+
+						currmsg = cwalk->buf+16; /* Skip pre-def. "combo\n" and message "combodata\n" */
+						do {
+							nextmsg = strstr(currmsg, "\n\ndata");
+							if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
+
+							/* Create a duplicate conn_t record for all embedded messages */
+							ctmp = (conn_t *)malloc(sizeof(conn_t));
+							memcpy(ctmp, cwalk, sizeof(conn_t));
+							ctmp->bufsize = BUFSZ_INC*(((6 + strlen(currmsg) + 50) / BUFSZ_INC) + 1);
+							ctmp->buf = (char *)malloc(ctmp->bufsize);
+							ctmp->buflen = sprintf(ctmp->buf, 
+								"combo\n%s\nData message received from %s\n", 
+								currmsg, inet_ntoa(*cwalk->clientip));
+							ctmp->bufp = ctmp->buf + ctmp->buflen;
+
+							if (usebackfeedqueue) {
+								ctmp->snum = SNUM_ISBFQ; /* not a regular server */
+								ctmp->bufp = ctmp->buf+6;
+								ctmp->buflen -= 6;
+								ctmp->bufpsave = ctmp->bufp;
+								ctmp->buflensave = ctmp->buflen;
+								ctmp->state = P_REQ_BFQING;
+							} else {
+								ctmp->state = P_REQ_COMBINING;
+							}
 							ctmp->next = chead;
 							chead = ctmp;
 
@@ -799,6 +872,15 @@ int main(int argc, char *argv[])
 					}
 					else {
 						msgs_other++;
+						if (usebackfeedqueue) {
+							cwalk->snum = SNUM_ISBFQ; /* not a regular server */
+							cwalk->bufp = cwalk->buf+6;
+							cwalk->buflen -= 6;
+							cwalk->bufpsave = cwalk->bufp;
+							cwalk->buflensave = cwalk->buflen;
+							cwalk->state = P_REQ_BFQING;
+							break;
+						}
 					}
 				}
 

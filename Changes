@@ -235,7 +235,9 @@ Changes from 4.3.x -> 4.4-alpha
   is passed in to the xymon client utility.
 * The Hobbit and BB-style CGI URL rewrites have been moved to a separate
   apache config snippet file.
- 
+* xymonproxy will now recombine combo messages received in sending to xymond
+  over the backfeed queue.
+  
 
 
 Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)
