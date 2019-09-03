@@ -3546,7 +3546,7 @@ void get_sender(conn_t *msg, char *msgtext, char *prestring)
 		return;
 	}
 
-	if (msg->sender && (strcmp(msg->sender, "BFQ"))) return;
+	if (msg->sender && (strcmp(msg->sender, "BFQ") == 0)) return;
 
 	msgfrom = strstr(msgtext, prestring);
 	if (msgfrom) {
