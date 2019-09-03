@@ -204,7 +204,7 @@ TEST2RRD="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tc
 
 # This defines which RRD files to include on the "trends" column webpage,
 # and the order in which they appear.
-GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,clock,lines,deltalines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,devmon::1,if_load::1,temp,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts,xymongen,xymonnet,xymonproxy,xymond"
+GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat1,vmstat2,vmstat3,vmstat4,vmstat5,iostat,iostatx,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,clock,lines,deltalines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,devmon::1,if_load::1,temp,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts,xymongen,xymonnet,xymonproxy,xymond"
 
 # These two settings can be used to restrict what filesystems are being
 # tracked (i.e. have their utilisation graphed) by Xymon.
