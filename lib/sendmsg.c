@@ -63,6 +63,10 @@ static int max_combosz = 256*1024;
 static int sleepbetweenmsgs = 0;
 
 static int backfeedqueue = -1;
+       int backfeedqueuenumber = 0;	/* if passed in directly */
+static int bfqids[10];			/* queue ID storage */
+static int rotatebfq = 0;		/* rotate among destination bfq's? */
+static int currentbfq = 0;		/* current bfq */
 static int max_backfeedsz = 16384;
 #define ASSUMELARGEMEM 0		/* Reserve and persist larger buffer sizes instead of growing slowly */
 
@@ -571,14 +575,58 @@ target_done:
 	return targets;
 }
 
+void rotate_backfeedqueue(void)
+{
+
+	/* It's possible we'll want to send to multiple various BFQ's *
+	 * If so, keep the various allocated byffers here and switch through them 
+	 * as needed.
+	 */
+	if ((++currentbfq) > backfeedqueuenumber) currentbfq = 0;
+	dbgprintf("Rotating to BFQ %d\n", currentbfq);
+	backfeedqueue = bfqids[currentbfq];
+}
+
 int sendmessage_init_local(void)
 {
-        backfeedqueue = setup_feedback_queue(CHAN_CLIENT);
-	if (backfeedqueue == -1) return -1;
+	char *bfqoverride;
+	int i = 0;
+
+	bfqoverride = getenv("XYMON_SENDBFQ");
 
 	max_backfeedsz = 1024*shbufsz(C_FEEDBACK_QUEUE)-1;
 	dbgprintf("Max backfeed size set to: %ju\n", max_backfeedsz);
-	return max_backfeedsz;
+
+	dbgprintf("sendmessage_init_local: backfeedqueuenumber is %d, XYMON_SENDBFQ is %s\n", backfeedqueuenumber, (bfqoverride ? bfqoverride : "<NULL>") );
+
+	if (!bfqoverride) { 
+		/* Nothing special */
+		backfeedqueue = setup_feedback_queue(backfeedqueuenumber, CHAN_CLIENT);
+		return (backfeedqueue == -1) ? -1 : max_backfeedsz;
+	}
+
+
+	/* If positive, send only to that BFQ destination. If negative, set up all of them from 0-X and rotate */
+	i = backfeedqueuenumber = atoi(bfqoverride);
+	dbgprintf(" - XYMON_SENDBFQ override was set to %s (%d)\n", bfqoverride, backfeedqueuenumber);
+
+	if (backfeedqueuenumber < 0) {
+		rotatebfq = 1;
+		backfeedqueuenumber = abs(backfeedqueuenumber);
+		i = 0;	/* start at the bottom */
+
+		dbgprintf(" - Rotating BFQs from 0 - %d\n", backfeedqueuenumber);
+	}
+
+	for ( ; i <= backfeedqueuenumber; i++) {
+		bfqids[i]  = setup_feedback_queue(i, CHAN_CLIENT);
+		if (bfqids[i] == -1) { errprintf("Cannot setup backfeed-client channel %d\n", i); return 1; }
+	}
+
+	backfeedqueue = bfqids[backfeedqueuenumber];
+	currentbfq = backfeedqueuenumber;
+
+	return (backfeedqueue == -1) ? -1 : max_backfeedsz;
 }
 
 void sendmessage_finish_local(void)
@@ -637,9 +685,9 @@ sendresult_t sendmessage_local(char *msg, size_t msglen)
 	if (n == -1) {
 		errprintf("Sending %d bytes via backfeed channel failed: %s\n", msglen, strerror(errno));
 		if (errno == EIDRM) {
-			int newqueue = setup_feedback_queue(CHAN_CLIENT);
+			int newqueue = setup_feedback_queue(backfeedqueuenumber, CHAN_CLIENT);
 			if (newqueue != -1) {
-				backfeedqueue = newqueue;
+				bfqids[currentbfq] = backfeedqueue = newqueue;
 				/* Try one more time */
 #if defined(__OpenBSD__) || defined(__dietlibc__)
 				n = msgsnd(backfeedqueue, msg, (unsigned long)msglen, IPC_NOWAIT);
@@ -652,11 +700,17 @@ sendresult_t sendmessage_local(char *msg, size_t msglen)
 			else errprintf("BFQ re-scan failed; message lost\n");
 		}
 		if (cbuf) freestrbuffer(cbuf);
+
+		/* Rotate the BFQ (if configured) */
+		if (rotatebfq) rotate_backfeedqueue();
 		return XYMONSEND_ECONNFAILED;
 	}
 	// dbgprintf("Sending %d bytes via backfeed channel succeeded (%d retries)\n", msglen, tries);
 
 	if (cbuf) freestrbuffer(cbuf);
+
+	/* Rotate the BFQ (if configured) */
+	if (rotatebfq) rotate_backfeedqueue();
 	return XYMONSEND_OK;
 }
 

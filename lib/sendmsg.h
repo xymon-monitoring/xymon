@@ -39,6 +39,8 @@ extern char *strxymonsendresult(sendresult_t s);
 #define RESPONSE_ALL	2
 extern int msgwantsresponse(char *msg);
 
+extern int backfeedqueuenumber;
+
 typedef struct sendreturn_t {
 	FILE *respfd;
 	strbuffer_t *respstr;

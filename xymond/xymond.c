@@ -233,6 +233,8 @@ xymond_channel_t *userchn   = NULL;	/* Receives "usermsg" messages */
 static int backfeedqueue = -1;
 static unsigned long backfeedcount = 0;
 static unsigned long bfqchkcount = 0;
+static int bfqchannels = 0;
+int bfqids[10];
 static char *bf_buf = NULL;
 static size_t bf_bufsz = 0;
 
@@ -5944,8 +5946,13 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-download") == 0) {
 			 allow_downloads = 0;
 		}
-		else if (strcmp(argv[argi], "--bfq") == 0) {
+		else if (strncmp(argv[argi], "--bfq", 5) == 0) {
 			 create_backfeedqueue = 1;
+			 if (strncmp(argv[argi], "--bfq=", 6) == 0) {
+				char *p = strchr(argv[argi], '=');
+				bfqchannels = atoi(p+1);
+			 }
+			if ((bfqchannels < 0) || (bfqchannels > 9)) { errprintf("Invalid number of BFQ channels: %d\n", bfqchannels); return -1; }
 		}
 		else if (strcmp(argv[argi], "--no-bfq") == 0) {
 			 create_backfeedqueue = 0;
@@ -6076,10 +6083,17 @@ int main(int argc, char *argv[])
 	if (clichgchn == NULL) { errprintf("Cannot setup clichg channel\n"); return 1; }
 	userchn  = setup_channel(C_USER, CHAN_MASTER);
 	if (userchn == NULL) { errprintf("Cannot setup user channel\n"); return 1; }
+
+	/* Can create and loop over multiple bfq's */
 	if (create_backfeedqueue) {
-		logprintf("Setting up backfeed queue\n");
-		backfeedqueue  = setup_feedback_queue(CHAN_MASTER);
-		if (backfeedqueue == -1) { errprintf("Cannot setup backfeed-client channel\n"); return 1; }
+		int i;
+
+		for (i = 0; i <= bfqchannels; i++) {
+			logprintf("Setting up backfeed queue %d\n", i);
+			bfqids[i]  = setup_feedback_queue(i, CHAN_MASTER);
+			if (bfqids[i] == -1) { errprintf("Cannot setup backfeed-client channel %d\n", i); return 1; }
+		}
+
 		bf_bufsz = 1024*shbufsz(C_FEEDBACK_QUEUE);
 		logprintf("Backfeed queue buffer allocation: %d bytes\n", bf_bufsz);
 		bf_buf = (char *)calloc(1, bf_bufsz);
@@ -6143,6 +6157,7 @@ int main(int argc, char *argv[])
 		time_t now = getcurrenttime(NULL);
 		int childstat;
 		int backfeeddata;
+		int bfqempty = -1;
 		int bfqexiting = 0;
 
 		/* Pickup any finished child processes to avoid zombies */
@@ -6249,12 +6264,15 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		backfeeddata = (backfeedqueue >= 0);
-		while (backfeeddata && !bfqexiting) {
+		while (create_backfeedqueue && !bfqexiting) {
 			ssize_t sz;
 			conn_t msg;
+			static int qnumber = 0;
 
-			sz = msgrcv(backfeedqueue, bf_buf, bf_bufsz, 0L, IPC_NOWAIT);
+			if (qnumber > bfqchannels) qnumber = 0;
+
+			/* FIXME: This section has been patched so much, it needs a refactor and perf analysis -jc */			
+			sz = msgrcv(bfqids[qnumber++], bf_buf, bf_bufsz, 0L, IPC_NOWAIT);
 			backfeeddata = (sz > 0);
 
 			if ((sz == -1) && !((errno == ENOMSG) || (errno == EAGAIN) )) {
@@ -6293,7 +6311,9 @@ int main(int argc, char *argv[])
 					bfqchkcount += bfqchunksize; /* They both start at 0 on launch; only check time every XX messages */
 					if (getcurrenttime(NULL) >= nexttcpcheck) { bfqexiting=1; dbgprintf("Exiting bfq early (at %d, limit now %d) to handle TCP\n", backfeedcount, bfqchkcount); }
 				}
+				bfqempty = 0;
 			}
+			else if (++bfqempty > bfqchannels) bfqexiting = 1;
 		}
 
 		/*

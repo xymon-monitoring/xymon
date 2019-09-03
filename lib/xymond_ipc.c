@@ -159,24 +159,30 @@ void close_channel(xymond_channel_t *chn, int role)
 	if (chn->workmem) dbgprintf(" -> close_channel had working mem for %s at %p\n", channelnames[chn->channelid], chn->workmem);
 }
 
-int setup_feedback_queue(int role)
+int setup_feedback_queue(int bfqnum, int role)
 {
 	char *xymonhome = xgetenv("XYMONHOME");
 	struct stat st;
 	key_t key;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | FEEDBACKQUEUE_MODE) : 0);
-	int queueid;
+	int queueid, channelnumber = 0;
 
-	dbgprintf("- setting up feedback queue\n");
+	dbgprintf("- setting up feedback queue %d\n", bfqnum);
 
 	if ( (xymonhome == NULL) || (stat(xymonhome, &st) == -1) ) {
 		errprintf("XYMONHOME not defined, or points to invalid directory - cannot continue.\n");
 		return -1;
 	}
 
-	dbgprintf("- calling ftok('%s',%d)\n", xymonhome, C_FEEDBACK_QUEUE);
+	if ((bfqnum < 0) || (bfqnum > 9)) {	// for now.
+		errprintf("BFQ number %d given exceeds limit; cannot continue\n", bfqnum);
+		return -1;
+	}
+	channelnumber = C_FEEDBACK_QUEUE + bfqnum;
 
-	key = ftok(xymonhome, C_FEEDBACK_QUEUE);
+	dbgprintf("- calling ftok('%s',%d)\n", xymonhome, channelnumber);
+
+	key = ftok(xymonhome, channelnumber);
 	if (key == -1) {
 		errprintf("Could not generate backfeed key based on %s: %s\n", xymonhome, strerror(errno));
 		return -1;

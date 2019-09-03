@@ -2096,8 +2096,18 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-ares") == 0) {
 			use_ares_lookup = 0;
 		}
-		else if (strcmp(argv[argi], "--bfq") == 0) {
+		else if (strncmp(argv[argi], "--bfq", 5) == 0) {
 			force_backfeedqueue = 1;
+			if (strncmp(argv[argi], "--bfq=", 6) == 0) {
+				char *p = strchr(argv[argi], '=');
+				backfeedqueuenumber = atoi(p+1);
+				if ((backfeedqueuenumber < 0) || (backfeedqueuenumber > 9)) {
+					errprintf("Invalid BFQ channel: %d\n", backfeedqueuenumber);
+					return -1;
+				}
+				else dbgprintf("Going to use BFQ number: %d\n", backfeedqueuenumber);
+			}
+			/* else, backfeedqueuenumber = default */
 		}
 		else if (strcmp(argv[argi], "--no-bfq") == 0) {
 			force_backfeedqueue = -1;

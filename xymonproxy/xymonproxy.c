@@ -321,8 +321,18 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[opt], '=');
 			listenq = atoi(p+1);
 		}
-		else if (strcmp(argv[opt], "--bfq") == 0) {
+		else if (strncmp(argv[opt], "--bfq", 5) == 0) {
 			force_backfeedqueue = 1;
+			if (strncmp(argv[opt], "--bfq=", 6) == 0) {
+				char *p = strchr(argv[opt], '=');
+				backfeedqueuenumber = atoi(p+1);
+				if ((backfeedqueuenumber < 0) || (backfeedqueuenumber > 9)) {
+					errprintf("Invalid BFQ channel: %d\n", backfeedqueuenumber);
+					return -1;
+				}
+				else dbgprintf("Going to use BFQ number: %d\n", backfeedqueuenumber);
+			}
+			/* else, backfeedqueuenumber = default */
 		}
 		else if (strcmp(argv[opt], "--no-bfq") == 0) {
 			force_backfeedqueue = -1;
