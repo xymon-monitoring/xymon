@@ -654,8 +654,9 @@ Changes from 4.3.13 -> 4.3.14 (26 Jan 2014)
 * Document existing OPTIONAL setting in analysis.cfg for file-checks 
   on files which may not exist.
 * Document existing CLASS setting in alerts.cfg
-* Add new INFOCOLUMNGIF and TRENDSCOLUMNGIF settings so the icons 
-  used for these pages are configurable.
+* Add new INFOCOLUMNGIF, CLIENTCOLUMNGIF, TRENDSCOLUMNGIF variables so
+  so the icons used for these "statuses" are configurable, and sample icons.
+  NOTE for Distributors: CC-BY-ND should be added to the package licenses
 * Enhance Solaris client to correctly handle Solaris zones.
 * Add new search facilities to xymond to select hosts with the
   'xymondboard' and 'hostinfo' commands.
