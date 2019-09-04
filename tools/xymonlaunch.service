@@ -18,6 +18,8 @@ EnvironmentFile=-/etc/sysconfig/xymonlaunch
 User=xymon
 # We wrap in xymoncmd to eliminate the need for the bulk of the old init script
 ExecStart=/usr/bin/xymoncmd --no-env /usr/sbin/xymonlaunch --no-daemon $XYMONLAUNCHOPTS
+# xymoncmd exec's xymonlaunch, and xymonlaunch will propagate -HUP as needed
+ExecReload=/bin/kill -HUP $MAINPID
 Type=simple
 
 # Kill xymonlaunch, but don't send kills to the underlying procs, since they
@@ -25,5 +27,8 @@ Type=simple
 KillMode=process
 # SendSIGHUP=yes
 SendSIGKILL=no
+# Give an extra 6s beyond xymonlaunch to let things disconnect
+RestartSec=6
+Restart=on-failure
 
 
