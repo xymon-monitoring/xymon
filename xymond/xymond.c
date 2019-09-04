@@ -3554,7 +3554,7 @@ void get_sender(conn_t *msg, char *msgtext, char *prestring)
 
 		if (msg->sender) xfree(msg->sender);
 		s = strtok_r(msgfrom + strlen(prestring), " \r\n\t", &tokr);
-		msg->sender = strdup(s);
+		msg->sender = strdup(s ? s : "");
 	}
 	else {
 		if (!msg->sender) msg->sender = strdup("");
@@ -6298,10 +6298,12 @@ int main(int argc, char *argv[])
 				backfeedcount++;
 
 				msg.buf = bf_buf;
+				msg.msgsz = sz + 1;
 				msg.bufsz = msg.buflen = sz;
 				msg.bufp = msg.buf + msg.buflen;
 				msg.doingwhat = RECEIVING;
 				msg.sender = strdup("BFQ");
+				msg.certcn = NULL;
 
 				do_message(&msg, "", 1);
 				*bf_buf = '\0';
