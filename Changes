@@ -1,7 +1,7 @@
-Changes from 4.3.29 -> 4.3.30 (05 Aug 2019)
+Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
 ===========================================
 
-* rev 80xx
+* rev 8010
 
 * Fix reports with dashes or underscores not visible in history logs (Thanks, Tom Schmidt)
 * Really fix do_temperature.c report parsing for parentheses (Thanks, Tom Schmidt)
@@ -12,6 +12,7 @@ Changes from 4.3.29 -> 4.3.30 (05 Aug 2019)
 * Add guards around GCC diagnostics pragma to allow for building on older vers
 * xymonclient-linux: Provide wide/untrimmed IP support in netstat port list
 * Fix problems with meta-combostatuses (Thanks, Dominique Delporte)
+
 
 Changes from 4.3.28 -> 4.3.29 (23 Jul 2019)
 ===========================================

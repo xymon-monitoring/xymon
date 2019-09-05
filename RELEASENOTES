@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.29   * * *
+           * * *   Release notes for Xymon 4.3.30   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -8,6 +8,16 @@ changes you should be aware of when upgrading.
 
 For a full list of changes and enhancements, please see the 
 Changes file.
+
+
+Changes for 4.3.30
+==================
+
+Various crashes and bugs relating to string handling changes have been fixed, 
+including problems with hostnames with dashes in them.
+
+Combostatus tests propagated up from other combostatus tests should now
+display properly.
 
 
 Changes for 4.3.29
