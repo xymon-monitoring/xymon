@@ -13,6 +13,7 @@ however most users should notice little distinction in day-to-day usage.
 Among the many new features introduced are:
 
 - IPv6 support for testing and communication
+- SSL support for submission and/or client authentication
 - message compression, using zlib, LZO, or LZ4 algorithms
 - significant performance improvements to xymond and client
   algorithms (regressions expected in alpha)
@@ -32,8 +33,8 @@ available on the xymon website (http://xymon.sourceforge.net/).
 
 
 
-XYMON 4.4 ALPHA 1 RELEASE NOTES
-===============================
+XYMON 4.4 ALPHA 1 KNOWN ISSUES AND RELEASE NOTES
+================================================
 
 Carefuly examine all apache config files for customizations. New snippets have
 been added for specifying report and snapshot subdirectories in the WWW root.
@@ -42,6 +43,11 @@ Crashes of any xymon components (and there may be several) will be reported
 under the "xymond" test. Singular crashes will be overwritten and no longer 
 need to be dropped manually as a spurious test. Recurring crashed will alert
 under xymond.
+
+The "backfeed queue" is not enabled by default in xymond to facilitate 
+network stack testing, but will likely be turned on for the final release.
+Use --bfq/--no-bfq as necessary if this is or is not desired.
+See README.backfeed for more details.
 
 By default, xymon sends using the existing, compatible message format used
 by all previous versions (and Big Brother). To send using the "V5" format

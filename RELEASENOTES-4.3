@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.27   * * *
+           * * *   Release notes for Xymon 4.3.30   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -8,6 +8,114 @@ changes you should be aware of when upgrading.
 
 For a full list of changes and enhancements, please see the 
 Changes file.
+
+
+Changes for 4.3.30
+==================
+
+Various crashes and bugs relating to string handling changes have been fixed, 
+including problems with hostnames with dashes in them.
+
+Combostatus tests propagated up from other combostatus tests should now
+display properly.
+
+
+Changes for 4.3.29
+==================
+
+Several buffer overflow security issues have been resolved, as well as a potential
+XSS attack on certain CGI interfaces. Although the ability to exploit is limited, 
+all users are urged to upgrade. The assigned CVE numbers are:
+
+  CVE-2019-13451, CVE-2019-13452, CVE-2019-13455, CVE-2019-13473, 
+  CVE-2019-13474, CVE-2019-13484, CVE-2019-13485, CVE-2019-13486
+
+In addition, revisions have been made to a number of places throughout 
+the code to convert the most common sprintf statements to snprintf for 
+safer processing, which should reduce the impact of similar parsing. 
+Additional work on this will continue in the future.
+
+The affected CGIs are:
+
+	history.c (overflow of histlogfn) = CVE-2019-13451
+	reportlog.c (overflow of histlogfn) = CVE-2019-13452
+	csvinfo.c (overflow of dbfn) = CVE-2019-13273
+	csvinfo.c (reflected XSS) = CVE-2019-13274
+	acknowledge.c (overflow of msgline) = CVE-2019-13455
+
+	appfeed.c (overflow of errtxt) = CVE-2019-13484
+	history.c (overflow of selfurl) = CVE-2019-13485
+	svcstatus.c (overflow of errtxt) = CVE-2019-13486
+
+We would like to thank the University of Cambridge Computer Security 
+Incident Response Team for their assistance in reporting and helping 
+resolve these issues.
+
+
+
+Additional Changes:
+
+On Linux, a few additional tmpfs volumes are ignored by default
+on new (or unmodified) installs. This includes /run/user/<uid>,
+which is a transient, per-session tmpfs on some systems. To re-
+enable monitoring for this (if you are running services under
+a user with a login session), you may need to edit the analysis.cfg(5)
+file.
+
+After upgrade, these partitions will no longer be alerted on or
+tracked, and their associated RRD files may also be removed:
+
+ /run/user/<uid> (but NOT /run)
+ /dev (but NOT /dev/shm)
+ /sys/fs/cgroup
+ /lib/init/rw
+
+
+The default hard limit for an incoming message has been raised from 
+10MB to 64MB
+
+The secure apache config snippet no longer requires a xymongroups file
+to be present (and module loaded), since it's not used by default. This
+will not affect existing installs.
+
+A --no-cpu-listing option has been added to xymond_client to suppress the 
+'top' output in cpu test status messages.
+
+The conversation used in SMTP checks has been adjusted to perform a proper
+"EHLO" greeting against servers, using the host string 'xymonnet'. If the 
+string needs to be adjusted, however, see protocols.cfg(5)
+
+"Actual" memory usage (as a percentage) may be >100% on some platforms 
+in certain situations. This alone will not be tagged as "invalid" data and
+should be graphed in RRD.
+
+
+Changes for 4.3.28
+==================
+
+OpenSSL 1.1.0 is now supported.
+
+Specific TLS variants (1.0, 1.1, and 1.2) can be selected for 
+an HTTP test using new protocol tags (see hosts.cfg(5))
+OpenSSL 1.0.1+ is required.
+
+
+The bundled version of c-ares (for hosts without a system lib)
+has been updated to 1.12.0
+
+Xymond_alert should now provide more stable behavior when hosts
+are dropped or alerts go stale between launches.
+
+Summary messages are properly working again.
+
+SCRIPT message sizes are now limited only by environment memory
+and can be increased by adding a MAXMSG_ALERTSCRIPT variable to
+your xymonserver.cfg file
+
+A number of typos have been corrected.
+
+The RRD definition for the netstat graph has been tweaked to
+give a more readable layout.
 
 
 Changes for 4.3.27
