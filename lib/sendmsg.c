@@ -44,7 +44,7 @@ static char rcsid[] = "$Id$";
 #define SENDRETRIES 2
 
 /* These commands go to all Xymon servers */
-static char *multircptcmds[] = { "status", "combo", "extcombo", "compress", "data", "notify", "enable", "disable", "drop", "rename", "client", "clientsubmit", "dummy", NULL };
+static char *multircptcmds[] = { "status", "combo", "extcombo", "compress", "combodata", "data", "notify", "enable", "disable", "drop", "rename", "client", "clientsubmit", "dummy", NULL };
 /* These commands require a response -- Note: bare 'schedule', xymond* and hobbitd* are caught specially */
 static char *responsecmds[] = { "client", "hostinfo", "query", "config", "clientconfig", "download", "clientlog", "ping", "proxyping", "pullclient", "ghostlist", "multisrclist", "senderstats", NULL };
 static char errordetails[1024];

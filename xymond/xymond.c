@@ -276,6 +276,7 @@ typedef struct xymond_statistics_t {
 
 xymond_statistics_t xymond_stats[] = {
 	{ "extcombo", },
+	{ "combodata", },
 	{ "combo", },
 	{ "modify", },
 	{ "status", },
@@ -3865,6 +3866,73 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 					}
 					break;
 				}
+			}
+
+			currmsg = nextmsg;
+		} while (currmsg);
+	}
+	else if (strncmp(msg->buf, "combodata\n", 10) == 0) {
+		char *currmsg, *nextmsg;
+
+		char *hostname = NULL, *testname = NULL;
+		char *bhost, *ehost, *btest;
+		char savechar;
+
+		currmsg = msg->buf+10;
+		do {
+
+			nextmsg = strstr(currmsg, "\n\ndata");
+			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
+
+			/* Pick out the real sender of this message */
+			get_sender(msg, currmsg, "\nData message received from ");
+
+			bhost = currmsg + strlen("data"); bhost += strspn(bhost, " \t");
+			ehost = bhost + strcspn(bhost, " \t\r\n");
+			savechar = *ehost; *ehost = '\0';
+
+			btest = strrchr(bhost, '.');
+			if (btest) {
+				*btest = '\0';
+				hostname = strdup(bhost);
+				uncommafy(hostname);	/* For BB compatibility */
+				*btest = '.';
+				testname = strdup(btest+1);
+
+				if (*hostname == '\0') { errprintf("Invalid data message from %s - blank hostname\n", msg->sender); xfree(hostname); hostname = NULL; }
+				if (*testname == '\0') { errprintf("Invalid data message from %s - blank testname\n", msg->sender); xfree(testname); testname = NULL; }
+			}
+			else {
+				errprintf("Invalid data message - no testname in '%s'\n", bhost);
+			}
+
+			*ehost = savechar;
+
+			if (hostname && testname) {
+				char *hname, *hostip = NULL;
+
+				// MEMDEFINE(hostip);
+
+				hname = knownhost(hostname, &hostip, ghosthandling);
+
+				if (hname == NULL) {
+					hname = log_ghost(hostname, msg->sender, currmsg);
+				}
+
+				if (hname == NULL) {
+					/* Ignore it */
+				}
+				else if (!oksender(statussenders, hostip, msg->sender, currmsg)) {
+					/* Invalid sender */
+					errprintf("Invalid data message - sender %s not allowed for host %s\n", msg->sender, hostname);
+				}
+				else {
+					handle_data(currmsg, msg->sender, origin, hname, testname);
+				}
+
+				xfree(hostname); xfree(testname);
+
+				// MEMUNDEFINE(hostip);
 			}
 
 			currmsg = nextmsg;
