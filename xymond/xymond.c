@@ -2843,6 +2843,51 @@ int get_config(char *fn, conn_t *msg)
 	return 0;
 }
 
+int get_hostsconfig(char *fn, conn_t *msg)
+{
+	char fullfn[PATH_MAX];
+	FILE *fd = NULL;
+	strbuffer_t *inbuf, *result;
+	char *incache;
+	long flen;
+
+	dbgprintf("-> get_hostsconfig %s\n", fn);
+	sprintf(fullfn, "%s/etc/%s", xgetenv("XYMONHOME"), fn);
+
+	incache = get_filecache(fullfn, &flen);
+	if (incache) {
+		msg->buflen = flen;
+		msg->buf = incache;
+		msg->bufp = msg->buf + msg->buflen;
+
+		dbgprintf("<- get_hostsconfig (returning cached copy of host config)\n");
+		return 0;
+	}
+
+	fd = stackfopen(fullfn, "r", NULL);
+	if (fd == NULL) {
+		errprintf("Config file %s not found\n", fn);
+		return -1;
+	}
+
+	inbuf = newstrbuffer(0);
+	result = newstrbuffer(0);
+	while (stackfgets(inbuf, NULL) != NULL) addtostrbuffer(result, inbuf);
+	stackfclose(fd);
+	freestrbuffer(inbuf);
+
+	dbgprintf(" - get_hostsconfig: adding host config file to cache\n");
+	add_filecache(fullfn, STRBUF(result), STRBUFLEN(result));
+
+	msg->buflen = STRBUFLEN(result);
+	msg->buf = grabstrbuffer(result);
+	msg->bufp = msg->buf + msg->buflen;
+
+	dbgprintf("<- get_hostsconfig\n");
+
+	return 0;
+}
+
 int get_binary(char *fn, conn_t *msg)
 {
 	char fullfn[PATH_MAX];
@@ -4130,6 +4175,24 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 	}
 	else if (strncmp(msg->buf, "disable", 7) == 0) {
 		handle_enadis(0, msg, msg->sender, viabfq);
+	}
+	else if (strncmp(msg->buf, "config hosts.cfg", 16) == 0) {
+		char *conffn, *p;
+
+		if (!can_respond) { errprintf("Received 'config hosts.cfg' message, but can't respond; ignoring\n"); goto done; }
+		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+
+		/* This is special-cased, even if our actual hostfn is not "hosts.cfg" */
+		/* Send to get_hostsconfig, which caches until our next reloadconfig time */
+		p = msg->buf + 6; p += strspn(p, " \t");
+		p = strtok(p, " \t\r\n");
+		conffn = strdup(p);
+		xfree(msg->buf);
+		if (conffn && (strstr(conffn, "../") == NULL) && (get_hostsconfig(conffn, msg) == 0) ) {
+			msg->doingwhat = RESPONDING;
+			msg->bufp = msg->buf;
+		}
+		xfree(conffn);
 	}
 	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char *conffn, *p;
@@ -5939,6 +6002,7 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			dbghost = strdup(p+1);
 		}
+			flush_filecache();
 		else if (argnmatch(argv[argi], "--flap-seconds=")) {
 			char *p = strchr(argv[argi], '=');
 			flapthreshold = atoi(p+1);

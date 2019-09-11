@@ -239,6 +239,8 @@ Changes from 4.3.x -> 4.4-alpha
   over the backfeed queue.
 * You can now pass a value (1-10) to the --bfq parameter to set up multiple 
   backfeed queues to submit to xymond on. It will rotate through them.  
+* xymond: cache hosts.cfg on reload and return this copy instead of re-reading
+  for xymonnet and other builtins on loadhostsfromxymond requests.
 
 
 Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)
