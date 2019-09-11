@@ -12,6 +12,8 @@ Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
 * Add guards around GCC diagnostics pragma to allow for building on older vers
 * xymonclient-linux: Provide wide/untrimmed IP support in netstat port list
 * Fix problems with meta-combostatuses (Thanks, Dominique Delporte)
+* xymond: cache hosts.cfg on reload and return this copy instead of re-reading
+  for xymonnet and other builtins on loadhostsfromxymond requests.
 
 
 Changes from 4.3.28 -> 4.3.29 (23 Jul 2019)
