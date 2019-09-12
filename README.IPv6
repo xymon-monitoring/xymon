@@ -1,0 +1,21 @@
+Using Xymon with IPv6 - Alpha Notes
+===================================
+
+IPv6 transmission of messages (client->xymond, or xymonnet->xymond) 
+should be working properly.
+
+IPv6 ICMP checks (conn tests), whether specified with literals in 
+hosts.cfg or via DNS lookup, should work as expected.
+
+Other IPv6-only TCP checks (including HTTP) are not working correctly.
+
+IPv6 [literals] in URL checks are not parsed properly.
+
+
+Currently, xymond can only listen on a single address. If your system 
+supports IPv6 this will be the IPv6 interface, which means your system 
+must have the IPV6_ONLY option disabled (usually in sysctl) so as to 
+allow IPv4 connections to be completed over the IPv6 stack. Certain 
+"localhost" connections may be seen by xymond as coming from 
+"::ffff:127.0.0.1" and the IPV4-over-IPV6 addresses may be added to 
+--admin-senders in tasks.cfg to do what you want.
