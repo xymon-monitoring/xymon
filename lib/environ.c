@@ -116,6 +116,7 @@ const static struct {
 	{ "TEST2RRD", "cpu=la,disk,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,ntp=tcp,vmstat,iostat,netstat,temperature,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,xymongen,xymonnet,xymonproxy,xymond" },
 	{ "GRAPHS_ntp", "ntp.offset" },
 	{ "GRAPHS", "la,disk:disk_part:5,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,xymongen,xymonnet,xymonproxy,xymond" },
+	{ "RRDADDUPDATED", "TRUE" },
 	{ "SUMMARY_SET_BKG", "FALSE" },
 	{ "XYMONNONGREENEXT", "eventlog.sh acklog.sh" },
 	{ "DOTHEIGHT", "16" },
