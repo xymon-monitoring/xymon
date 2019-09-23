@@ -639,6 +639,21 @@ char *getenv_default(char *envname, char *envdefault, char **buf)
 	return val;
 }
 
+int getenv_check(const char *envname)
+{
+	char *result;
+	int i;
+
+	result = getenv(envname);	/* Don't use xgetenv() here! */
+	if (result) return 1;
+
+	for (i=0; (xymonenv[i].name && (strcmp(xymonenv[i].name, envname) != 0)); i++) ;
+	if (xymonenv[i].name) return 1; /* Simple existence check is sufficient here */
+
+	dbgprintf("getenv_check: Cannot find value for variable %s\n", envname);
+	return 0;
+}
+
 
 typedef struct envxp_t {
 	char *result;

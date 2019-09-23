@@ -1466,7 +1466,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			fprintf(output, "%s", (val ? val : ""));
 		}
 
-		else if (strlen(t_start) && xgetenv(t_start)) {
+		else if (strlen(t_start) && getenv_check(t_start)) {
 			fprintf(output, "%s", xgetenv(t_start));
 		}
 

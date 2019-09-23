@@ -241,6 +241,8 @@ Changes from 4.3.x -> 4.4-alpha
   backfeed queues to submit to xymond on. It will rotate through them.  
 * xymond: cache hosts.cfg on reload and return this copy instead of re-reading
   for xymonnet and other builtins on loadhostsfromxymond requests.
+* Don't print error messages when &STRING doesn't match known XYMONENV vars
+  in web templates.
 
 
 Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)

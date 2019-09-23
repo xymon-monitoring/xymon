@@ -18,6 +18,7 @@ extern void initenv(void);
 extern int loaddefaultenv(void);
 extern void loadenv(char *envfile, char *area);
 extern char *getenv_default(char *envname, char *envdefault, char **buf);
+extern int getenv_check(const char *envname);
 extern char *expand_env(char *s);
 
 #endif
