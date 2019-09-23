@@ -181,6 +181,9 @@ XYMONRRDS="$XYMONVAR/rrd"
 RRDHEIGHT="120"
 RRDWIDTH="576"		# The RRD's contain 576 data points, so this is a good value
 
+# Whether to add a comment to the graph indicating when it was last updated.
+RRDADDUPDATED="TRUE"
+
 # TEST2RRD defines the status- and data-messages you want to collect RRD data
 # about. You will normally not need to modify this, unless you have added a
 # script to pick up RRD data from custom tests (the xymond_rrd --extra-script

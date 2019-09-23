@@ -243,6 +243,8 @@ Changes from 4.3.x -> 4.4-alpha
   for xymonnet and other builtins on loadhostsfromxymond requests.
 * Don't print error messages when &STRING doesn't match known XYMONENV vars
   in web templates.
+* Add RRDADDUPDATED variable to control timestamping of RRD graphs
+  (Thanks, John Horne)
 
 
 Changes from 4.3.26 -> 4.3.27 (24 Mar 2016)
