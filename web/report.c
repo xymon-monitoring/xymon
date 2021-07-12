@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 	int argi, newargi;
 	char *envarea = NULL;
 	char *useragent = NULL;
-	int usemultipart = 1;
+	int usemultipart = 0;
 
 	SBUF_MALLOC(outdir, PATH_MAX+1024);
 	SBUF_MALLOC(xymonwebenv, PATH_MAX+1024);
