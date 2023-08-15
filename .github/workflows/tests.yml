@@ -14,9 +14,9 @@ jobs:
       fail-fast: False
       matrix:
         os:
-          #- name: freebsd
-          #  architecture: x86-64
-           # version: '13.2'
+          - name: freebsd
+            architecture: x86-64
+            version: '13.2'
 
          # - name: openbsd
          #   architecture: x86-64
@@ -102,9 +102,9 @@ jobs:
       fail-fast: False
       matrix:
         os:
-         # - name: freebsd
-         #   architecture: x86-64
-         #   version: '13.2'
+          - name: freebsd
+            architecture: x86-64
+            version: '13.2'
 
          # - name: openbsd
          #   architecture: x86-64
