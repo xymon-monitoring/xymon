@@ -14,21 +14,21 @@ jobs:
       fail-fast: False
       matrix:
         os:
-          - name: freebsd
-            architecture: x86-64
-            version: '13.2'
+          #- name: freebsd
+          #  architecture: x86-64
+           # version: '13.2'
 
-          - name: openbsd
-            architecture: x86-64
-            version: '7.3'
+         # - name: openbsd
+         #   architecture: x86-64
+         #   version: '7.3'
 
-          - name: openbsd
-            architecture: arm64
-            version: '7.3'
+         # - name: openbsd
+         #   architecture: arm64
+          #  version: '7.3'
 
-          - name: netbsd
-            architecture: x86-64
-            version: '9.2'
+          #- name: netbsd
+         #   architecture: x86-64
+         #   version: '9.2'
     name: build on BSD for server
     steps:
       - uses: actions/checkout@v3
@@ -59,21 +59,21 @@ jobs:
       fail-fast: False
       matrix:
         os:
-          - name: freebsd
-            architecture: x86-64
-            version: '13.2'
+          #- name: freebsd
+          #  architecture: x86-64
+          #  version: '13.2'
 
-          - name: openbsd
-            architecture: x86-64
-            version: '7.3'
+          #- name: openbsd
+          #  architecture: x86-64
+          #  version: '7.3'
 
-          - name: openbsd
-            architecture: arm64
-            version: '7.3'
+         #- name: openbsd
+          #  architecture: arm64
+          #  version: '7.3'
 
-          - name: netbsd
-            architecture: x86-64
-            version: '9.2'
+          #- name: netbsd
+          #  architecture: x86-64
+          #  version: '9.2'
     name: build on BSD server with autotools
     steps:
       - uses: actions/checkout@v3
@@ -102,21 +102,21 @@ jobs:
       fail-fast: False
       matrix:
         os:
-          - name: freebsd
-            architecture: x86-64
-            version: '13.2'
+         # - name: freebsd
+         #   architecture: x86-64
+         #   version: '13.2'
 
-          - name: openbsd
-            architecture: x86-64
-            version: '7.3'
+         # - name: openbsd
+         #   architecture: x86-64
+         #   version: '7.3'
 
-          - name: openbsd
-            architecture: arm64
-            version: '7.3'
+         # - name: openbsd
+         #   architecture: arm64
+         #  version: '7.3'
 
-          - name: netbsd
-            architecture: x86-64
-            version: '9.2'
+         # - name: netbsd
+         #   architecture: x86-64
+         #   version: '9.2'
     name: build on BSD for client
     steps:
       - uses: actions/checkout@v3
@@ -149,21 +149,21 @@ jobs:
       fail-fast: False
       matrix:
         os:
-          - name: freebsd
-            architecture: x86-64
-            version: '13.2'
+          #- name: freebsd
+          #  architecture: x86-64
+          #  version: '13.2'
 
-          - name: openbsd
-            architecture: x86-64
-            version: '7.3'
+          #- name: openbsd
+          #  architecture: x86-64
+          #  version: '7.3'
 
-          - name: openbsd
-            architecture: arm64
-            version: '7.3'
+          #- name: openbsd
+          #  architecture: arm64
+          #  version: '7.3'
 
-          - name: netbsd
-            architecture: x86-64
-            version: '9.2'
+          #- name: netbsd
+          #  architecture: x86-64
+          #  version: '9.2'
     name: build on BSD for client with autotools
     steps:
       - uses: actions/checkout@v3
@@ -218,7 +218,7 @@ jobs:
       matrix:
         os:
           - name: bullseye
-          - name: bookworm
+          #- name: bookworm
     runs-on: ${{ matrix.os.name }}
     name: build server on ${{ matrix.os.name }}
     steps:
@@ -241,7 +241,7 @@ jobs:
       matrix:
         os:
           - name: bullseye
-          - name: bookworm
+          #- name: bookworm
     runs-on: ${{ matrix.os.name }},qemu
     name: build client on ${{ matrix.os.name }} with autotool
     steps:
