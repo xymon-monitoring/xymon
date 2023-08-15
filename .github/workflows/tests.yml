@@ -5,7 +5,7 @@ name: Build and tests
 on:  # yamllint disable-line rule:truthy
   push:
   pull_request:
-
+  workflow_dispatch:
 jobs:
   build-bsd-server:
     runs-on: qemu
