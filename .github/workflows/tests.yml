@@ -3,18 +3,14 @@
 name: Build and tests
 
 on:  # yamllint disable-line rule:truthy
-  push:
-  pull_request:
   workflow_dispatch:
 jobs:
-  build-bullseye-original-client:
+  build-ubuntu-latest-client:
     strategy:
       fail-fast: False
       matrix:
         os:
           - name: ubuntu-latest
-          #- name: bullseye
-          #- name: bookworm
     runs-on: ${{ matrix.os.name }}
     name: build client on ${{ matrix.os.name }}
     steps:
@@ -31,14 +27,12 @@ jobs:
         run: sudo apt-get -y install libssl-dev librrd-dev libc-ares-dev
       - name: build with any optional deps
         run: make
-  build-bullseye-original-server:
+  build-ubuntu-latest-server:
     strategy:
       fail-fast: False
       matrix:
         os:
           - name: ubuntu-latest
-          #- name: bullseye
-          #- name: bookworm
     runs-on: ${{ matrix.os.name }}
     name: build server on ${{ matrix.os.name }}
     steps:
@@ -55,30 +49,7 @@ jobs:
         run: sudo apt-get -y install libssl-dev librrd-dev libc-ares-dev
       - name: build with any optional deps
         run: make
-  build-debian-client-autotool:
-    strategy:
-      fail-fast: False
-      matrix:
-        os:
-          - name: ubuntu_latest
-          #- name: bullseye
-          #- name: bookworm
-    runs-on: ${{ matrix.os.name }},qemu
-    name: build client on ${{ matrix.os.name }} with autotool
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install packages
-        run: sudo apt-get -y install autotools-dev build-essential automake
-      - name: Create xymon user
-        run: sudo useradd xymon
-      - name: Remove old makes
-        run: find -iname Makefile | xargs rm -v
-      - name: autoreconf
-        run: autoreconf --install
-      - name: configure
-        run: ./configure
-      - name: build without any optional deps
-        run: make
+  
       - name: Install optionnal packages
         run: sudo apt-get -y install libssl-dev librrd-dev libc-ares-dev
       - name: build with any optional deps
