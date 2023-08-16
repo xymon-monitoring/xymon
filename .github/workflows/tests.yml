@@ -12,8 +12,9 @@ jobs:
       fail-fast: False
       matrix:
         os:
-          - name: bullseye
-          - name: bookworm
+          - name: ubuntu-latest
+          #- name: bullseye
+          #- name: bookworm
     runs-on: ${{ matrix.os.name }}
     name: build client on ${{ matrix.os.name }}
     steps:
@@ -35,7 +36,8 @@ jobs:
       fail-fast: False
       matrix:
         os:
-          - name: bullseye
+          - name: ubuntu-latest
+          #- name: bullseye
           #- name: bookworm
     runs-on: ${{ matrix.os.name }}
     name: build server on ${{ matrix.os.name }}
@@ -58,7 +60,8 @@ jobs:
       fail-fast: False
       matrix:
         os:
-          - name: bullseye
+          - name: ubuntu_latest
+          #- name: bullseye
           #- name: bookworm
     runs-on: ${{ matrix.os.name }},qemu
     name: build client on ${{ matrix.os.name }} with autotool
