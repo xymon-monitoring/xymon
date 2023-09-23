@@ -61,8 +61,52 @@ This can be added in xymonclient.cfg, xymonserver.cfg,
 /etc/sysconfig/xymon-client or any other location where the sending 
 process will have it set. This may change for the final release.
 
-
 (Note: Previous trunk versions had an inverted version of this logic, requiring
 XYMONV4SERVER=1 to send to an older server.)
 
 
+The configure script is likely setting XYMONHOME/XYMONCLIENTHOME and
+XYMSRV/XYMSERVERS/XYMONSERVERS incorrectly, which will prevent xymonlaunch
+from correctly launching anything. Double check the xymon environment
+files (xymonserver/xymonclient.cfg) before starting either the server or
+client.
+
+The tools/xymon-client.default and tools/xymonlaunch files may be placed
+into /etc/{sysconfig,default}/{xymon-client,xymonlaunch} to more easily
+set $XYMONSERVERS
+
+Revealed by the above issue is a bug causing a crash in the client (or
+anywhere) when given an empty string as the destination argument (instead
+of 0, 127.0.0.1 or no variable set). Don't do this --> [ xymon '' "ping" ]
+
+The client and logfetch binary may be being re-compiled during 'make install'
+
+Compilation may fail if c-ares and at least one compression library is not
+present (lzo/lz4/zlib are all options). xxHash libraries are also highly
+recommended as the plan is for xxhash to replace md5 for checksumming
+functionality. libtirpc may be necessary on some platforms, and it's
+possible the build code is still expecting traditional (Sun) RPC
+
+
+
+Using Xymon with IPv6 - Alpha Notes
+===================================
+
+IPv6 transmission of messages (client->xymond, or xymonnet->xymond) 
+should be working properly.
+
+IPv6 ICMP checks (conn tests), whether specified with literals in 
+hosts.cfg or via DNS lookup, should work as expected.
+
+Other IPv6-only TCP checks (including HTTP) are not working correctly.
+
+IPv6 [literals] in URL checks are not parsed properly.
+
+
+Currently, xymond can only listen on a single address. If your system 
+supports IPv6 this will be the IPv6 interface, which means your system 
+must have the IPV6_ONLY option disabled (usually in sysctl) so as to 
+allow IPv4 connections to be completed over the IPv6 stack. Certain 
+"localhost" connections may be seen by xymond as coming from 
+"::ffff:127.0.0.1" and the IPV4-over-IPV6 addresses may be added to 
+--admin-senders in tasks.cfg to do what you want.

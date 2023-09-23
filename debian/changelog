@@ -1,6 +1,13 @@
-xymon (4.4.0-alpha1) unstable; urgency=low
+xymon (4.4.0-alpha2) unstable; urgency=low
 
    * rev ####
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, ## MMM 2023 00:00:00 +0100
+
+
+xymon (4.4.0-alpha1) unstable; urgency=low
+
+   * rev 8119
 
    * Support for IPv6 and TLS connections in xymond and xymon
    * Support for message compression has been added
@@ -232,21 +239,118 @@ xymon (4.4.0-alpha1) unstable; urgency=low
      (potentially different) compiled-in default).
    * Don't treat empty (0 byte) directory size as invalid 
      (Reported by Bert Willekens) 
+   * The XYMMSG environment variable will be checked for a message if none
+     is passed in to the xymon client utility.
+   * The Hobbit and BB-style CGI URL rewrites have been moved to a separate
+     apache config snippet file.
+   * xymonproxy will now recombine combo messages received in sending to xymond
+     over the backfeed queue.
+   * You can now pass a value (1-10) to the --bfq parameter to set up multiple
+     backfeed queues to submit to xymond on. It will rotate through them.
+   * xymond: cache hosts.cfg on reload and return this copy instead of re-reading
+     for xymonnet and other builtins on loadhostsfromxymond requests.
+   * Don't print error messages when &STRING doesn't match known XYMONENV vars
+     in web templates.
+   * Add RRDADDUPDATED variable to control timestamping of RRD graphs
+     (Thanks, John Horne)
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  XXX, ## MMM 2016 00:00:00 +0100
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Wed, 20 Sep 2023 00:00:00 +0100
+
+
+xymon (4.3.30) stable; urgency=high
+
+   * rev 8010
+
+   * Fix reports with dashes or underscores not visible in history logs (Thanks, Tom Schmidt)
+   * Really fix do_temperature.c report parsing for parentheses (Thanks, Tom Schmidt)
+   * Fix truncation on exec strings causing missing custom RRD titles (Thanks, Tom Schmidt) 
+   * RPC buffer calculation on snprintf taking improper sizeof (Thanks, Tom Schmidt)
+   * Don't crash on a missing allevents file
+   * Fix assorted crashes with xymongen report generation after string changes  
+   * Add guards around GCC diagnostics pragma to allow for building on older vers
+   * xymonclient-linux: Provide wide/untrimmed IP support in netstat port list
+   * Fix problems with meta-combostatuses (Thanks, Dominique Delporte)
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, 05 Sep 2019 13:00:00 -0800
+
+
+xymon (4.3.29) stable; urgency=medium
+
+   * rev 8070
+
+   * Security Fixes: A number of potential buffer overflows have been resolved
+     CVE-2019-13451, CVE-2019-13452, CVE-2019-13455, CVE-2019-13473, 
+     CVE-2019-13474, CVE-2019-13484, CVE-2019-13485, CVE-2019-13486
+   * Deal with Set-Cookie deprecation on normal pages (Thanks, Erik Schminke)
+   * Support glibc->tirpc migration on newer distributions
+   * Fix certain flags not being set on GCC 8/9
+   * Fix wrong doc for --merge-clientlocal option (Thanks, Thomas Eckert)
+   * Fix CSP errors on trends pages (Thanks, John Thurston)
+   * Accept minimum libcares version >= 1.5.1; update bundled to 1.15.0
+   * Fix RRD parsing for recent netstat (net-tools) on Linux
+   * Ensure Content-Type always set in HTML headers (Thanks, Christoph Berg)
+   * Ignore additional common tmpfs partitions on recent Linux
+   * Fix NONETPAGE parsing (Thanks, John Horne)
+   * Increase hard max xymon message size from 10MB to 64MB to match 4.4-alpha
+   * Fix line-off-by-one error in logfetch retrieval when triggers are used
+     (Thanks, Toshimitsu FUJIWARA)
+   * Fixes to do_temperature parsing (Thanks, Michael Pins)
+   * Add support for GNU Hurd and GNU/kFreeBSD
+   * Don't require apache authz_groupfile module by default when not needed
+   * Add --no-cpu-listing option to xymond_client to block 'top' output in         
+     cpu test (Thanks, John Horne)
+   * Double-quote the display name of host titles handed to RRD
+   * Ensure NTP checks not hung for unreachable hosts (Thanks, Tom Schmidt)
+   * Standardize xymonnet SMTP/s protocol conversation (Thanks, Tom Schmidt)
+   * AIX: Report Actual Memory and Phys/Entitled CPU capacity (Thanks, Stef Coene)
+   * snmp: Fix parsing error with SNMPv3 config parsing (Thanks, Jeremy Laidman)
+   * RRD: Fix parsing error with DS files containing commas - http* only (Thanks, John Horne)
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Tue, 23 Jul 2019 08:30:00 -0800
+
+
+xymon (4.3.28) stable; urgency=medium
+
+   * rev 8005
+
+   * Catch addition possible errors during SSL handshake
+     for standard TCP checks
+   * Fix misparsing of --timelimit and --huge options in
+     xymonnet (Reported by Foster Patch)
+   * Fix memory leak when processing netapp test reports 
+     (Reported by Peter Welter)
+   * The included version of c-ares has been bumped to version 1.12.0
+   * Fix for building on OpenSSL 1.1.0 (Thanks, Axel Beckert)
+   * Add TLS variant specification to http checks, using newer funcs
+     in OpenSSL 1.1.0 (From Henrik)
+   * Fix overflow when skipping >2G pending data in logfetch
+     (Reported by Sergey, a_s_y at sama.ru)
+   * xymond_alert will no longer exit and be relaunched if started
+     while there's no actual alertable condition. (Thanks, Franco G.)
+   * Fix mis-parsing of PCRE regex's in client-local.cfg when char
+     ranges are present (Reported by Erik D. Schminke)
+   * The size limit of message data passed to SCRIPT alerts is
+     configurable with the MAXMSG_ALERTSCRIPT variable.
+   * Summary messages should work again (Thanks, Axel)
+   * Many typos in comments and man pages have been corrected
+     (Thanks, Axel et al. at Debian)
+   * Change netstat RRD numbers to be slightly more human-readable
+     (Thanks Roland Rosenfeld)
+
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Tue, 17 Jan 2017 16:30:00 -0800
 
 
 xymon (4.3.27) stable; urgency=medium
 
    * rev 7957
 
-   * Don't treat empty (0 byte) directory size as invalid
+   * Don't treat empty (0 byte) directory size as invalid    
      (Reported by Bert Willekens)
    * Fix looping redirect on criticaleditor.sh
    * Allow NK-critical acknowledgements from status pages
    * Fix redirect to criticalview.sh, which is just a
      regular CGI
-   * Properly recognize https URLs as summary links (Thanks,
+   * Properly recognize https URLs as summary links (Thanks, 
      David Steinn Geirsson)
    * Add compile-time check for SSLv3 support
 
@@ -266,11 +370,11 @@ xymon (4.3.26) stable; urgency=medium
    * Restrict characters allowed for hostnames and testnames
    * HTML encode error log output on xymond/net/gen pages
    * HTML encode ghost hostnames output on xymond/ghostlist pages
-   * logfetch: only evaluate the first config of a given type seen for
+   * logfetch: only evaluate the first config of a given type seen for 
      the same file name
    * xymongen/reports: fix vague error message around missing history files
      and properly exclude clientlog statuses (Reported by Magdi Mahmoud)
-   * Ensure configured CLASS overrides in hosts.cfg are always passed on
+   * Ensure configured CLASS overrides in hosts.cfg are always passed on 
      to client workers, regardless of 'class' for that specific message
      (Reported by Steve Hill)
 
@@ -279,7 +383,7 @@ xymon (4.3.26) stable; urgency=medium
 
 xymon (4.3.25) stable; urgency=high
 
-   * rev 7894
+   * rev 7890
 
    * Resolve buffer overflow when handling "config" file requests (CVE-2016-2054)
    * Restrict "config" files to regular files inside the $XYMONHOME/etc/ directory 
@@ -331,16 +435,16 @@ xymon (4.3.25) stable; urgency=high
 
 xymon (4.3.24) stable; urgency=high
 
-   * rev 7805
+   * rev 7774
 
    * Fix occasional crash in xymond when handling group names (Thanks, Franco Gasperino)
-   * Fix non-special HTTP <400 status codes red instead of yellow >.<
+   * Fix non-special HTTP <400 status codes red instead of yellow >.<   
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, 23 Nov 2015 17:40:00 -0800
 
 
 xymon (4.3.23) unstable; urgency=high
- 
+
    * rev 7740
 
    * Fix broken 'TRACK' and 'OPTIONAL' identifiers in analysis.cfg
@@ -408,7 +512,7 @@ xymon (4.3.22) unstable; urgency=medium
    * Add ACK_COOKIE_EXPIRATION for environment control of cookie validity duration (Noted by Thomas Giordmaina)
    * combostatus: fix core dumps on Solaris when dealing with erroneous config
 
- -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 6 Nov 2015 08:00:00 -0700
+ -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Fri, 6 Nov 2015 06:00:00 -0800
 
 
 xymon (4.3.21) unstable; urgency=medium
