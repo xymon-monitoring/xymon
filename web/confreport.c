@@ -124,6 +124,7 @@ static void print_disklist(char *hostname)
 	while ((de = readdir(d)) != NULL) {
 		if (strncmp(de->d_name, "disk,", 5) == 0) {
 			strncpy(fn, de->d_name + 4, sizeof(fn));
+			fn[sizeof(fn)-1] = '\0'; /* Make sure it is null terminated */
 			p = strstr(fn, ".rrd"); if (!p) continue;
 			*p = '\0';
 			p = fn; while ((p = strchr(p, ',')) != NULL) *p = '/';
