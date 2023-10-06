@@ -1927,7 +1927,8 @@ void testmode(char *configfn)
 		oldhinfo = hinfo;
 
 		printf("Test (cpu, mem, disk, proc, log, port): "); fflush(stdout); 
-		if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
+		if (!fgets(s, sizeof(s), stdin)) return;
+		clean_instr(s);
 		if (strcmp(s, "cpu") == 0) {
 			float loadyellow, loadred;
 			int recentlimit, ancientlimit, uptimecolor;
@@ -1955,7 +1956,8 @@ void testmode(char *configfn)
 			char *groups;
 
 			printf("Filesystem: "); fflush(stdout);
-			if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
+			if (!fgets(s, sizeof(s), stdin)) return;
+			clean_instr(s);
 			get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, 
 						   &abswarn, &abspanic, &ignored, &groups);
 			if (ignored) 
@@ -1980,7 +1982,8 @@ void testmode(char *configfn)
 			printf("To read 'ps' data from a file, enter '@FILENAME' at the prompt\n");
 			do {
 				printf("ps command string: "); fflush(stdout);
-				if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
+				if (!fgets(s, sizeof(s), stdin)) return;
+				clean_instr(s);
 				if (*s == '@') {
 					fd = fopen(s+1, "r");
 					while (fd && fgets(s, sizeof(s), fd)) {
@@ -2006,7 +2009,8 @@ void testmode(char *configfn)
 			int logcolor;
 
 			printf("log filename: "); fflush(stdout);
-			if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
+			if (!fgets(s, sizeof(s), stdin)) return;
+			clean_instr(s);
 			sectname = (char *)malloc(strlen(s) + 20);
 			sprintf(sectname, "msgs:%s", s);
 
@@ -2017,7 +2021,8 @@ void testmode(char *configfn)
 			printf("To read log data from a file, enter '@FILENAME' at the prompt\n");
 			do {
 				printf("log line: "); fflush(stdout);
-				if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
+				if (!fgets(s, sizeof(s), stdin)) return;
+				clean_instr(s);
 				if (*s == '@') {
 					fd = fopen(s+1, "r");
 					while (fd && fgets(s, sizeof(s), fd)) {
@@ -2054,13 +2059,15 @@ void testmode(char *configfn)
 
 			printf("Need to know netstat columns for 'Local address', 'Remote address' and 'State'\n");
 			printf("Enter columns [%d %d %d]: ", localcol, remotecol, statecol); fflush(stdout);
-			if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
+			if (!fgets(s, sizeof(s), stdin)) return;
+			clean_instr(s);
 			if (*s) sscanf(s, "%d %d %d", &localcol, &remotecol, &statecol);
 
 			printf("To read 'netstat' data from a file, enter '@FILENAME' at the prompt\n");
 			do {
 				printf("netstat line: "); fflush(stdout);
-				if (!fgets(s, sizeof(s), stdin)) return; clean_instr(s);
+				if (!fgets(s, sizeof(s), stdin)) return;
+				clean_instr(s);
 				if (*s == '@') {
 					FILE *fd;
 

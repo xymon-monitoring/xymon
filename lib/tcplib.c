@@ -49,6 +49,7 @@ static int max_accepts = 0;
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
 #include <openssl/bio.h>
+#include <openssl/opensslv.h>
 
 /* SSL context (holds certificate, SSL protocol version etc) for server-mode operation */
 /* Note: Since this is global, we are limited to one server instance per process. */
@@ -408,7 +409,11 @@ char *conn_peer_certificate_cn(tcpconn_t *conn)
 
 		e = X509_NAME_get_entry(subj, cnpos);
 		if (e) d = X509_NAME_ENTRY_get_data(e);
+#if OPENSSL_VERSION_NUMBER < 0x101010bfL
 		if (d) cn = strdup(ASN1_STRING_data(d));
+#else
+		if (d) cn = strdup(ASN1_STRING_get0_data(d));
+#endif
 	}
 
 	if (peercert) X509_free(peercert);

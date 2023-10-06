@@ -1,3 +1,10 @@
+Changes from 4.4-alpha1 -> 4.4-alpha2
+===========================================
+
+* A large number of build warnings and possible buffer issues have been resolved
+  (Thanks, Tom Schmidt, with Ralph Mitchell)
+
+
 Changes from 4.3.x -> 4.4-alpha1
 ===========================================
 
@@ -245,7 +252,6 @@ Changes from 4.3.x -> 4.4-alpha1
   in web templates.
 * Add RRDADDUPDATED variable to control timestamping of RRD graphs
   (Thanks, John Horne)
-
 
 
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)

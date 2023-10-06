@@ -533,7 +533,7 @@ int main(int argc, char *argv[])
 			int ccount = 0;
 			unsigned long bufspace = 0;
 			unsigned long avgtime;	/* In millisecs */
-			char runtime_s[30];
+			char runtime_s[31];	/* Include room for null termination */
 			unsigned long runt = (unsigned long) (now-startuptime);
 			char *p;
 			unsigned long msgs_sent = msgs_total - msgs_total_last;

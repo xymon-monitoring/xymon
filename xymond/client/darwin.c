@@ -81,13 +81,17 @@ void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os,
 
 		if (pgsize != -1) {
 			p = strstr(meminfostr, "\nPages free:");
-			if (p) p = strchr(p, ':'); if (p) pagesfree = atol(p+1);
+			if (p) p = strchr(p, ':');
+			if (p) pagesfree = atol(p+1);
 			p = strstr(meminfostr, "\nPages active:");
-			if (p) p = strchr(p, ':'); if (p) pagesactive = atol(p+1);
+			if (p) p = strchr(p, ':');
+			if (p) pagesactive = atol(p+1);
 			p = strstr(meminfostr, "\nPages inactive:");
-			if (p) p = strchr(p, ':'); if (p) pagesinactive = atol(p+1);
+			if (p) p = strchr(p, ':');
+			if (p) pagesinactive = atol(p+1);
 			p = strstr(meminfostr, "\nPages wired down:");
-			if (p) p = strchr(p, ':'); if (p) pageswireddown = atol(p+1);
+			if (p) p = strchr(p, ':');
+			if (p) pageswireddown = atol(p+1);
 
 			if ((pagesfree >= 0) && (pagesactive >= 0) && (pagesinactive >= 0) && (pageswireddown >= 0)) {
 				unsigned long memphystotal, memphysused;

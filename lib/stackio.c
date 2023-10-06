@@ -203,10 +203,13 @@ FILE *stackfopen(char *filename, char *mode, void **v_listhead)
 		stackfd_mode = strdup(mode);
 
 		strncpy(stackfd_filename, filename, sizeof(stackfd_filename));
+		stackfd_filename[sizeof(stackfd_filename)-1] = '\0'; /* Make sure it is null terminated */
 	}
 	else {
-		if (*filename == '/')
+		if (*filename == '/') {
 			strncpy(stackfd_filename, filename, sizeof(stackfd_filename));
+			stackfd_filename[sizeof(stackfd_filename)-1] = '\0'; /* Make sure it is null terminated */
+		}
 		else
 			snprintf(stackfd_filename, sizeof(stackfd_filename), "%s/%s", stackfd_base, filename);
 	}
@@ -331,7 +334,12 @@ static void addtofnlist(char *dirname, int is_optional, void **v_listhead)
 	int fnsz = 0;
 	int i;
 
-	if (*dirname == '/') strncpy(dirfn, dirname, sizeof(dirfn)); else snprintf(dirfn, sizeof(dirfn), "%s/%s", stackfd_base, dirname);
+	if (*dirname == '/') {
+		strncpy(dirfn, dirname, sizeof(dirfn));
+		dirfn[sizeof(dirfn)-1] = '\0'; /* Make sure it is null terminated */
+	}
+	else
+		snprintf(dirfn, sizeof(dirfn), "%s/%s", stackfd_base, dirname);
 
 	if ((dirfd = opendir(dirfn)) == NULL) {
 		if (!is_optional) errprintf("WARNING: Cannot open directory %s\n", dirfn);

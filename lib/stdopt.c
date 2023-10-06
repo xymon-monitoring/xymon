@@ -14,6 +14,7 @@
 static char rcsid[] = "$Id: stdopt.c 7008 2012-06-02 09:22:02Z storner $";
 
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <libgen.h>
 #include <limits.h>

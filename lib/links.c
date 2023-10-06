@@ -143,6 +143,7 @@ void load_all_links(void)
 	if (xgetenv("XYMONHELPDIR")) strcpy(dirname, xgetenv("XYMONHELPDIR"));
 	else {
 		strncpy(dirname, xgetenv("XYMONNOTESDIR"), sizeof(dirname));
+		dirname[sizeof(dirname)-1] = '\0'; /* Make sure it is null terminated */
 		p = strrchr(dirname, '/'); *p = '\0'; strncat(dirname, "/help", (sizeof(dirname) - strlen(dirname)));
 	}
 	load_links(dirname, helpskin, 0);
