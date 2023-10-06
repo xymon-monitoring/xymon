@@ -104,6 +104,7 @@ char *getstring(char *databuf, char *beaindex, char *key)
 		eol = strchr(p, '\n');
 		if (eol) *eol = '\0';
 		strncpy(result, p, sizeof(result));
+		result[sizeof(result)-1] = '\0'; /* Make sure it is null terminated */
 		if (eol) *eol = '\n';
 	}
 

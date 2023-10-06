@@ -2031,35 +2031,34 @@ void handle_modify(char *msg, xymond_log_t *log, int color, time_t now)
 	}
 	else dbgprintf(" - parse of modify statement; source=%s, type=%d, validnum=%d, expires=%d, cause=%s\n", sourcename, type, validity, validtime, cause);
 
-		/* Got all tokens - find the modifier, if this is just an update */
-		n = strlen(sourcename);
-		for (mwalk = log->modifiers; (mwalk && strncmp(mwalk->source, sourcename, n)); mwalk = mwalk->next);
+	/* Got all tokens - find the modifier, if this is just an update */
+	n = strlen(sourcename);
+	for (mwalk = log->modifiers; (mwalk && strncmp(mwalk->source, sourcename, n)); mwalk = mwalk->next);
 
-			if (!mwalk) {
-				/* New modifier record */
-				dbgprintf(" - creating new modify record for '%s'\n", sourcename);
-				isnewcause = 1;
-				mwalk = (modifier_t *)calloc(1, sizeof(modifier_t));
-				mwalk->source = strdup(sourcename);
-				mwalk->next = log->modifiers;
-				log->modifiers = mwalk;
-			}
+	if (!mwalk) {
+		/* New modifier record */
+		dbgprintf(" - creating new modify record for '%s'\n", sourcename);
+		isnewcause = 1;
+		mwalk = (modifier_t *)calloc(1, sizeof(modifier_t));
+		mwalk->source = strdup(sourcename);
+		mwalk->next = log->modifiers;
+		log->modifiers = mwalk;
+	}
 
-			mwalk->color = color;
-			mwalk->validtime = validtime;	/* 0 if unset */
-			mwalk->valid = (validity ? validity : DEFAULT_MODIFY_VALIDITY); /* if duration ONLY, this will be < 0 */
-			mwalk->type = type;
-			if (mwalk->cause) xfree(mwalk->cause);
-			mwalk->cause = (char *)malloc(strlen(cause) + 10); /* 10 for maxlength of colorname + markers */
-			sprintf(mwalk->cause, "&%s %s\n", colnames[mwalk->color], cause);
+	mwalk->color = color;
+	mwalk->validtime = validtime;	/* 0 if unset */
+	mwalk->valid = (validity ? validity : DEFAULT_MODIFY_VALIDITY); /* if duration ONLY, this will be < 0 */
+	mwalk->type = type;
+	if (mwalk->cause) xfree(mwalk->cause);
+	mwalk->cause = (char *)malloc(strlen(cause) + 10); /* 10 for maxlength of colorname + markers */
+	sprintf(mwalk->cause, "&%s %s\n", colnames[mwalk->color], cause);
 
-		
-		/*
-		 * Modify messages always get sent to handle_status for evaluation.
-		 * It's possible a status change will result, or just a new status message.
-		 */
-			handle_status(log->message, log->sender,  
-				log->host->hostname, log->test->name, log->grouplist, log, log->color, NULL, (isnewcause ? 2 : 1) );
+	/*
+	 * Modify messages always get sent to handle_status for evaluation.
+	 * It's possible a status change will result, or just a new status message.
+	 */
+	handle_status(log->message, log->sender,  
+		log->host->hostname, log->test->name, log->grouplist, log, log->color, NULL, (isnewcause ? 2 : 1) );
 
 	dbgprintf("<-handle_modify\n");
 }
@@ -4926,7 +4925,8 @@ void do_message(conn_t *msg, char *origin, int viabfq)
 		else if (strncmp(line1, "clientconfig", 12) == 0) process_clientmsg = 0;
 
 		p = strtok(line1, " \t"); /* Skip the client.* keyword */
-		if (p) collectorid = strchr(p, '/'); if (collectorid) collectorid++;
+		if (p) collectorid = strchr(p, '/');
+		if (collectorid) collectorid++;
 		if (p) hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.CLIENTOS */
 		if (hostname) {
 			clientos = strrchr(hostname, '.'); 

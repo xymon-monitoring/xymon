@@ -156,7 +156,14 @@ static int parse_query(void)
 
 		req = getenv("SCRIPT_NAME");
 		SBUF_MALLOC(clienturi, strlen(req) + 10 + strlen(hostquoted));
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif  // __GNUC__
 		strncpy(clienturi, req, clienturi_buflen);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic pop
+#endif  // __GNUC__
 		p = strchr(clienturi, '?'); if (p) *p = '\0'; else p = clienturi + strlen(clienturi);
 		snprintf(p, (clienturi_buflen - (clienturi - p)), "?CLIENT=%s", hostquoted);
 	}

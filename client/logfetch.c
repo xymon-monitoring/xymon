@@ -326,8 +326,16 @@ char *logdata(char *filename, logdef_t *logdef)
 
 			dbgprintf(" - Last position was %u, found curpos location at %u in current buffer.\n", logdef->lastpos[1], bytesin);
 			t = strdup(fillpos);	/* need shuffle about to insert before this line */
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wstringop-truncation"
+			#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif  // __GNUC__
 			strncpy(fillpos, curpostxt, strlen(curpostxt));		/* add in the CURRENT + \n */
 			strncpy(fillpos+strlen(curpostxt), t, strlen(t));	/* add in whatever this line originally was */
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+			#pragma GCC diagnostic pop
+#endif  // __GNUC__
 			*(fillpos+strlen(curpostxt)+strlen(t)) = '\0';		/* and terminate it */
 			xfree(t);						/* free temp */
 			curpos = fillpos;					/* leave curpos to the beginning of the CURRENT flag */
@@ -496,11 +504,19 @@ char *logdata(char *filename, logdef_t *logdef)
 		       for (i = 0, pos = replacement; i < triggerptrs_count; i++) {
 		               dbgprintf("Copying buffer content for trigger %i.\n", (i + 1));
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+				#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wstringop-truncation"
+				#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif  // __GNUC__
 		               strncpy(pos, skiptxt, strlen(skiptxt));
 		               pos += strlen(skiptxt);
 
 		               size = strlen(triggerptrs[i][0]) - strlen(triggerptrs[i][1]);
 		               strncpy(pos, triggerptrs[i][0], size);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+				#pragma GCC diagnostic pop
+#endif  // __GNUC__
 		               pos += size;
 		       }
 
@@ -533,7 +549,15 @@ char *logdata(char *filename, logdef_t *logdef)
 
 				if (finalstartptr > lasttriggerptr) {
 					/* Add the final skip for completeness */
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+					#pragma GCC diagnostic push
+					#pragma GCC diagnostic ignored "-Wstringop-truncation"
+					#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif  // __GNUC__
 					strncpy(pos, skiptxt, strlen(skiptxt));
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+					#pragma GCC diagnostic pop
+#endif  // __GNUC__
 					pos += strlen(skiptxt);
 				}
 

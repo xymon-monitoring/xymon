@@ -123,7 +123,14 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	nextline = msg;
 	l[MAX_LINE_LEN - 1] = '\0';
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 	sprintf(fn, "%s/%s.%s.wml", wmldir, host->hostname, entry->column->name);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic pop
+#endif  // __GNUC__
 	fd = fopen(fn, "w");
 	if (fd == NULL) {
 		errprintf("Cannot create file %s\n", fn);
@@ -316,7 +323,14 @@ void do_wml_cards(char *webdir)
 	}
 
 	/* Start the non-green WML card */
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 	sprintf(nongreenfn, "%s/nongreen.wml.tmp", wmldir);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic pop
+#endif  // __GNUC__
 	nongreenfd = fopen(nongreenfn, "w");
 	if (nongreenfd == NULL) {
 		errprintf("Cannot open non-green WML file %s\n", nongreenfn);
@@ -340,7 +354,14 @@ void do_wml_cards(char *webdir)
 		if (h->hostentry->anywaps) {
 
 			/* Create the host WAP card, with links to individual test results */
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 			sprintf(hostfn, "%s/%s.wml", wmldir, h->hostentry->hostname);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+			#pragma GCC diagnostic pop
+#endif  // __GNUC__
 			hostfd = fopen(hostfn, "w");
 			if (hostfd == NULL) {
 				errprintf("Cannot create file %s\n", hostfn);
@@ -390,7 +411,14 @@ void do_wml_cards(char *webdir)
 				fclose(nongreenfd);
 
 				/* Start a new Nongreen WML card */
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+				#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 				sprintf(nongreenfn, "%s/nongreen-%d.wml", wmldir, nongreenpart);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+				#pragma GCC diagnostic pop
+#endif  // __GNUC__
 				nongreenfd = fopen(nongreenfn, "w");
 				if (nongreenfd == NULL) {
 					errprintf("Cannot open Nongreen WML file %s\n", nongreenfd);

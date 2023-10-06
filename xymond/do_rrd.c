@@ -292,7 +292,14 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	}
 
 	/* Watch out here - "rrdfn" may be very large. */
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif  // __GNUC__
 	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic pop
+#endif  // __GNUC__
 	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
 
 	/* 
@@ -603,7 +610,14 @@ static int rrddatasets(char *hostname, char ***dsnames)
 	unsigned long steptime, dscount;
 	rrd_value_t *rrddata;
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif  // __GNUC__
 	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic pop
+#endif  // __GNUC__
 	filedir[sizeof(filedir)-1] = '\0';
 	if (stat(filedir, &st) == -1) return 0;
 

@@ -648,8 +648,15 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 								pagepath, h->hostname, e->column->name, htmlextension);
 							sprintf(textrepfn, "%savail-%s-%s.txt",
 								pagepath, h->hostname, e->column->name);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+							#pragma GCC diagnostic push
+							#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 							sprintf(textrepurl, "%s/%s", 
 								xgetenv("XYMONWEB"), textrepfn);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+							#pragma GCC diagnostic pop
+#endif  // __GNUC__
 
 							htmlrep = fopen(htmlrepfn, "w");
 							if (!htmlrep) {
@@ -932,6 +939,10 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 		output = stdout;
 	}
 	else {
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 		if (page->parent == NULL) {
 			char	indexfilename[PATH_MAX];
 
@@ -960,6 +971,9 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 		}
 		sprintf(tmpfilename, "%s.tmp", filename);
 		sprintf(tmprssfilename, "%s.tmp", rssfilename);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic pop
+#endif  // __GNUC__
 
 
 		/* Try creating the output file. If it fails, we may need to create the directories */
@@ -1264,7 +1278,14 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype, char *filenamebas
 		break;
 	}
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 	sprintf(tmpfilename, "%s.tmp", filename);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic pop
+#endif  // __GNUC__
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
 		errprintf("Cannot create file %s: %s\n", tmpfilename, strerror(errno));
@@ -1272,7 +1293,14 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype, char *filenamebas
 	}
 
 	if (wantrss) {
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 		sprintf(tmprssfilename, "%s.tmp", rssfilename);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic pop
+#endif  // __GNUC__
 		rssoutput = fopen(tmprssfilename, "w");
 		if (rssoutput == NULL) {
 			errprintf("Cannot create RSS file %s: %s\n", tmpfilename, strerror(errno));

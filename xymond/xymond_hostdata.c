@@ -207,7 +207,14 @@ int main(int argc, char *argv[])
 
 				sprintf(hostdir, "%s/%s", clientlogdir, metadata[3]);
 				mkdir(hostdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+				#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 				sprintf(fn, "%s/%s", hostdir, metadata[4]);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+				#pragma GCC diagnostic pop
+#endif  // __GNUC__
 				fd = fopen(fn, "w");
 				if (fd == NULL) {
 					errprintf("Cannot create file %s: %s\n", fn, strerror(errno));

@@ -114,6 +114,7 @@ static int prepare_fromnet(void)
 	if (contentbuffer) freestrbuffer(contentbuffer);
 	contentbuffer = convertstrbuffer(fdata, 0);
 	strncpy(contentmd5, fhash, sizeof(contentmd5));
+	contentmd5[sizeof(contentmd5)-1] = '\0'; /* Make sure it is null terminated */
 
 	return 0;
 }

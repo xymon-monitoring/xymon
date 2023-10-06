@@ -200,7 +200,14 @@ void load_config(char *conffn)
 					char *newcmd = xcalloc(1, l1+l2+1);
 
 					strncpy(newcmd,curtask->cmd,l1);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+					#pragma GCC diagnostic push
+					#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif  // __GNUC__
 					strncpy(newcmd+l1,p,l2);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+					#pragma GCC diagnostic pop
+#endif  // __GNUC__
 					newcmd[l1]=' '; /* this also overwrites the + */
 
 					/* free and assign new */

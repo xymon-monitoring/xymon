@@ -199,7 +199,12 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	rule_t *currule = NULL;
 	recip_t *currcp = NULL, *rcptail = NULL;
 
-	if (configfn) strncpy(fn, configfn, sizeof(fn)); else snprintf(fn, sizeof(fn), "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
+	if (configfn) {
+		strncpy(fn, configfn, sizeof(fn));
+		fn[sizeof(fn)-1] = '\0'; /* Make sure it is null terminated */
+	}
+	else
+		snprintf(fn, sizeof(fn), "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -853,7 +858,15 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 		if ((alert->groups && (*(alert->groups)))) {
 			SBUF_MALLOC(grouplist, strlen(alert->groups));
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wstringop-truncation"
+			#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif  // __GNUC__
 			strncpy(grouplist, alert->groups, grouplist_buflen);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+			#pragma GCC diagnostic pop
+#endif  // __GNUC__
 		}
 
 		if (crit->groupspec) {
@@ -1202,11 +1215,18 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 		if (recip->method == M_IGNORE) {
 			recip->recipient = "-- ignored --";
 		}
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif  // __GNUC__
 		if (recip->noalerts) { if (*codes) strncat(codes, ",A", codes_bytesleft); else strncat(codes, "-A", codes_bytesleft); codes_bytesleft -= 2; }
 		if (recovered && !recip->noalerts) { if (*codes) strncat(codes, ",R", codes_bytesleft); else strncat(codes, "R", codes_bytesleft); codes_bytesleft -= 2; }
 		if (notice) { if (*codes) strncat(codes, ",N", codes_bytesleft); else strncat(codes, "N", codes_bytesleft); codes_bytesleft -= 2; }
 		if (recip->stoprule) { if (*codes) strncat(codes, ",S", codes_bytesleft); else strncat(codes, "S", codes_bytesleft); codes_bytesleft -= 2; }
 		if (recip->unmatchedonly) { if (*codes) strncat(codes, ",U", codes_bytesleft); else strncat(codes, "U", codes_bytesleft); codes_bytesleft -= 2; }
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic pop
+#endif  // __GNUC__
 
 		if (strlen(codes) == 0)
 			snprintf(l, sizeof(l), "<td><font %s>%s</font></td>", fontspec, recip->recipient);

@@ -222,12 +222,14 @@ void do_acknowledgementslog(FILE *output,
 		    p = strrchr(host, '.');
 		    if (p) {
                         *p = '\0';
-			strncpy(svc,p+1,  sizeof(svc));
+			strncpy(svc, p+1, sizeof(svc));
+			svc[sizeof(svc)-1] = '\0'; /* Make sure it is null terminated */
                     }
 		    /* Xymon uses \n in the ack message, for the "acked by" data. Cut it off. */
 		    p = strstr(message, "\\nAcked by:");
 		    if (p) {
-			strncpy(recipient,p+12, sizeof(recipient));
+			strncpy(recipient, p+12, sizeof(recipient));
+			recipient[sizeof(recipient)-1] = '\0'; /* Make sure it is null terminated */
                         *(p-1) = '\0';
 		    }
 		    else {

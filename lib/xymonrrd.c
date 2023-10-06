@@ -87,7 +87,14 @@ static void rrd_setup(void)
 	/* Get the tcp services, and count how many there are */
 	services = init_tcp_services();
 	SBUF_MALLOC(tcptests, strlen(services)+1);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif  // __GNUC__
 	strncpy(tcptests, services, tcptests_buflen);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic pop
+#endif  // __GNUC__
 	count = 0; p = strtok(tcptests, " "); while (p) { count++; p = strtok(NULL, " "); }
 	strncpy(tcptests, services, tcptests_buflen);
 
@@ -242,6 +249,7 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 	}
 	else {
 		strncpy(rrdservicename, graphdef->xymonrrdname, sizeof(rrdservicename));
+		rrdservicename[sizeof(rrdservicename)-1] = '\0'; /* Make sure it is null terminated */
 	}
 
 	SBUF_MALLOC(svcurl, 
