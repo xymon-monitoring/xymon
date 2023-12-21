@@ -426,8 +426,8 @@ int main(int argc, char *argv[])
 	char *pidfile = NULL;
 	char *envarea = NULL;
 	int cnid = -1;
-	pcre *msgfilter = NULL;
-	pcre *stdfilter = NULL;
+	pcre2_code *msgfilter = NULL;
+	pcre2_code *stdfilter = NULL;
 
 	int argi;
 	struct sigaction sa;

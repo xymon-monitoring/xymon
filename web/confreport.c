@@ -693,7 +693,7 @@ int main(int argc, char *argv[])
 
 	/* Fetch the list of host+test statuses we currently know about */
 	if (pagepattern) {
-		pcre *dummy;
+		pcre2_code *dummy;
 		SBUF_DEFINE(re);
 
 		SBUF_MALLOC(re, 8 + 2*strlen(pagepattern));
@@ -716,7 +716,7 @@ int main(int argc, char *argv[])
 		xfree(re);
 	}
 	else if (hostpattern) {
-		pcre *dummy;
+		pcre2_code *dummy;
 		SBUF_DEFINE(re);
 
 		SBUF_MALLOC(re,3 + strlen(hostpattern));

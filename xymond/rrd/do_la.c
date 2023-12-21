@@ -17,8 +17,8 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 	static char *clock_params[]       = { "DS:la:GAUGE:600:U:U", NULL }; /* "la" is a misnomer, but to stay compatiable with existing RRD files */
 	static void *clock_tpl            = NULL;
 
-	static pcre *as400_exp = NULL;
-	static pcre *zVM_exp = NULL;
+	static pcre2_code *as400_exp = NULL;
+	static pcre2_code *zVM_exp = NULL;
 	static time_t starttime = 0;
 
 	char *p, *eoln = NULL;
@@ -66,25 +66,28 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 		 * the operating system name is part of the message (as in the tests above).
 		 */
 
-		int ovector[30];
+		pcre2_match_data *ovector;
 		char w[100];
+		PCRE2_SIZE l = sizeof(w);
 		int res;
 
 		if (zVM_exp == NULL) {
-			const char *errmsg = NULL;
-			int errofs = 0;
+			int err;
+			PCRE2_SIZE errofs;
 
-			zVM_exp = pcre_compile(".* CPU Utilization *([0-9]+)%", PCRE_CASELESS, &errmsg, &errofs, NULL);
+			zVM_exp = pcre2_compile(".* CPU Utilization *([0-9]+)%", PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
 		}
 
-		res = pcre_exec(zVM_exp, NULL, msg, strlen(msg), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+		ovector = pcre2_match_data_create(30, NULL);
+		res = pcre2_match(zVM_exp, msg, strlen(msg), 0, 0, ovector, NULL);
 		if (res >= 0) {
 			/* We have a match - pick up the data. */
-			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 1, w, sizeof(w));
+			*w = '\0'; if (res > 0) pcre2_substring_copy_bynumber(ovector, 1, w, &l);
 			if (strlen(w)) {
 				load = atoi(w); gotload = 1;
 			}
 		}
+		pcre2_match_data_free(ovector);
 
 		goto done_parsing;
 	}
@@ -139,31 +142,34 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 		 * No "uptime" in message - could be from an AS/400. They look like this:
 		 * green March 21, 2005 12:33:24 PM EST deltacdc 108 users 45525 jobs(126 batch,0 waiting for message), load=26%
 		 */
-		int ovector[30];
+		pcre2_match_data *ovector;
 		char w[100];
+		PCRE2_SIZE l = sizeof(w);
 		int res;
 
 		if (as400_exp == NULL) {
-			const char *errmsg = NULL;
-			int errofs = 0;
+			int err;
+			PCRE2_SIZE errofs;
 
-			as400_exp = pcre_compile(".* ([0-9]+) users ([0-9]+) jobs.* load=([0-9]+)\\%", 
-						 PCRE_CASELESS, &errmsg, &errofs, NULL);
+			as400_exp = pcre2_compile(".* ([0-9]+) users ([0-9]+) jobs.* load=([0-9]+)\\%",
+			                          PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
 		}
 
-		res = pcre_exec(as400_exp, NULL, msg, strlen(msg), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+		ovector = pcre2_match_data_create(30, NULL);
+		res = pcre2_match(as400_exp, msg, strlen(msg), 0, 0, ovector, NULL);
 		if (res >= 0) {
 			/* We have a match - pick up the AS/400 data. */
-			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 1, w, sizeof(w));
+			*w = '\0'; if (res > 0) pcre2_substring_copy_bynumber(ovector, 1, w, &l);
 			if (strlen(w)) {
 				users = atoi(w); gotusers = 1;
 			}
 
-			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 3, w, sizeof(w));
+			*w = '\0'; l = sizeof(w); if (res > 0) pcre2_substring_copy_bynumber(ovector, 3, w, &l);
 			if (strlen(w)) {
 				load = atoi(w); gotload = 1;
 			}
 		}
+		pcre2_match_data_free(ovector);
 	}
 
 done_parsing:
