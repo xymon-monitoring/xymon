@@ -22,7 +22,8 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #include "libxymon.h"
 #include "version.h"
@@ -50,13 +51,13 @@ static char *statusboard = NULL;
 static char *scheduleboard = NULL;
 
 static char *hostpattern_text = NULL;
-static pcre *hostpattern = NULL;
+static pcre2_code *hostpattern = NULL;
 static char *pagepattern_text = NULL;
-static pcre *pagepattern = NULL;
+static pcre2_code *pagepattern = NULL;
 static char *ippattern_text = NULL;
-static pcre *ippattern = NULL;
+static pcre2_code *ippattern = NULL;
 static char *classpattern_text = NULL;
-static pcre *classpattern = NULL;
+static pcre2_code *classpattern = NULL;
 static void * hostnames;
 static void * testnames;
 
@@ -158,34 +159,34 @@ void sethostenv_pagepath(char *s)
 
 void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn, char *classptn)
 {
-	const char *errmsg;
-	int errofs;
+	int err;
+	PCRE2_SIZE errofs;
 
 	if (hostpattern_text) xfree(hostpattern_text);
-	if (hostpattern) { pcre_free(hostpattern); hostpattern = NULL; }
+	if (hostpattern) { pcre2_code_free(hostpattern); hostpattern = NULL; }
 	if (pagepattern_text) xfree(pagepattern_text);
-	if (pagepattern) { pcre_free(pagepattern); pagepattern = NULL; }
+	if (pagepattern) { pcre2_code_free(pagepattern); pagepattern = NULL; }
 	if (ippattern_text) xfree(ippattern_text);
-	if (ippattern) { pcre_free(ippattern); ippattern = NULL; }
+	if (ippattern) { pcre2_code_free(ippattern); ippattern = NULL; }
 	if (classpattern_text) xfree(classpattern_text);
-	if (classpattern) { pcre_free(classpattern); classpattern = NULL; }
+	if (classpattern) { pcre2_code_free(classpattern); classpattern = NULL; }
 
 	/* Setup the pattern to match names against */
 	if (hostptn) {
 		hostpattern_text = strdup(hostptn);
-		hostpattern = pcre_compile(hostptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+		hostpattern = pcre2_compile(hostptn, strlen(hostptn), PCRE2_CASELESS, &err, &errofs, NULL);
 	}
 	if (pageptn) {
 		pagepattern_text = strdup(pageptn);
-		pagepattern = pcre_compile(pageptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+		pagepattern = pcre2_compile(pageptn, strlen(pageptn), PCRE2_CASELESS, &err, &errofs, NULL);
 	}
 	if (ipptn) {
 		ippattern_text = strdup(ipptn);
-		ippattern = pcre_compile(ipptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+		ippattern = pcre2_compile(ipptn, strlen(ipptn), PCRE2_CASELESS, &err, &errofs, NULL);
 	}
 	if (classptn) {
 		classpattern_text = strdup(classptn);
-		classpattern = pcre_compile(classptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+		classpattern = pcre2_compile(classptn, strlen(classptn), PCRE2_CASELESS, &err, &errofs, NULL);
 	}
 }
 
@@ -371,38 +372,53 @@ char *wkdayselect(char wkday, char *valtxt, int isdefault)
 static void *wanted_host(char *hostname)
 {
 	void *hinfo = hostinfo(hostname);
-	int result, ovector[30];
+	int result;
+	pcre2_match_data *ovector;
 
 	if (!hinfo) return NULL;
 
+	ovector = pcre2_match_data_create(30, NULL);
 	if (hostpattern) {
-		result = pcre_exec(hostpattern, NULL, hostname, strlen(hostname), 0, 0,
-				ovector, (sizeof(ovector)/sizeof(int)));
-		if (result < 0) return NULL;
+		result = pcre2_match(hostpattern, hostname, strlen(hostname), 0, 0,
+				ovector, NULL);
+		if (result < 0) {
+			pcre2_match_data_free(ovector);
+			return NULL;
+		}
 	}
 
 	if (pagepattern && hinfo) {
 		char *pname = xmh_item(hinfo, XMH_PAGEPATH);
-		result = pcre_exec(pagepattern, NULL, pname, strlen(pname), 0, 0,
-				ovector, (sizeof(ovector)/sizeof(int)));
-		if (result < 0) return NULL;
+		result = pcre2_match(pagepattern, pname, strlen(pname), 0, 0,
+				ovector, NULL);
+		if (result < 0) {
+			pcre2_match_data_free(ovector);
+			return NULL;
+		}
 	}
 
 	if (ippattern && hinfo) {
 		char *hostip = xmh_item(hinfo, XMH_IP);
-		result = pcre_exec(ippattern, NULL, hostip, strlen(hostip), 0, 0,
-				ovector, (sizeof(ovector)/sizeof(int)));
-		if (result < 0) return NULL;
+		result = pcre2_match(ippattern, hostip, strlen(hostip), 0, 0,
+				ovector, NULL);
+		if (result < 0) {
+			pcre2_match_data_free(ovector);
+			return NULL;
+		}
 	}
 
 	if (classpattern && hinfo) {
 		char *hostclass = xmh_item(hinfo, XMH_CLASS);
 		if (!hostclass) return NULL;
 
-		result = pcre_exec(classpattern, NULL, hostclass, strlen(hostclass), 0, 0,
-				ovector, (sizeof(ovector)/sizeof(int)));
-		if (result < 0) return NULL;
+		result = pcre2_match(classpattern, hostclass, strlen(hostclass), 0, 0,
+				ovector, NULL);
+		if (result < 0) {
+			pcre2_match_data_free(ovector);
+			return NULL;
+		}
 	}
+	pcre2_match_data_free(ovector);
 
 	return hinfo;
 }

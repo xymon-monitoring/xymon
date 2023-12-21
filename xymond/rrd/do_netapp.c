@@ -492,8 +492,9 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
 
        char *eoln, *curline;
        static int ptnsetup = 0;
-       static pcre *inclpattern = NULL;
-       static pcre *exclpattern = NULL;
+       static pcre2_code *inclpattern = NULL;
+       static pcre2_code *exclpattern = NULL;
+       pcre2_match_data *ovector;
        int newdfreport;
 
 	newdfreport = (strstr(msg,"netappnewdf") != NULL);
@@ -501,22 +502,29 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
        if (netapp_disk_tpl == NULL) netapp_disk_tpl = setup_template(netapp_disk_params);
 
        if (!ptnsetup) {
-               const char *errmsg;
-               int errofs;
+               char errmsg[120];
+               int err;
+               PCRE2_SIZE errofs;
                char *ptn;
 
                ptnsetup = 1;
                ptn = getenv("RRDDISKS");
                if (ptn && strlen(ptn)) {
-                       inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n",
+                       inclpattern = pcre2_compile(ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
+                       if (!inclpattern) {
+                               pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+                               errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %zu\n",
                                                    ptn, errmsg, errofs);
+                       }
                }
                ptn = getenv("NORRDDISKS");
                if (ptn && strlen(ptn)) {
-                       exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n",
+                       exclpattern = pcre2_compile(ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
+                       if (!exclpattern) {
+                               pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+                               errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %zu\n",
                                                    ptn, errmsg, errofs);
+                       }
                }
        }
 
@@ -527,6 +535,7 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
         * line - we never have any disk reports there anyway.
         */
        curline = strchr(msg, '\n'); if (curline) curline++;
+       ovector = pcre2_match_data_create(30, NULL);
 
        while (curline)  {
                char *fsline, *p;
@@ -592,20 +601,18 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
                /* Check include/exclude patterns */
                wanteddisk = 1;
                if (exclpattern) {
-                       int ovector[30];
                        int result;
 
-                       result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+                       result = pcre2_match(exclpattern, diskname, strlen(diskname),
+                                            0, 0, ovector, NULL);
 
                        wanteddisk = (result < 0);
                }
                if (wanteddisk && inclpattern) {
-                       int ovector[30];
                        int result;
 
-                       result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+                       result = pcre2_match(inclpattern, diskname, strlen(diskname),
+                                            0, 0, ovector, NULL);
 
                        wanteddisk = (result >= 0);
                }
@@ -635,6 +642,7 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
 nextline:
                curline = (eoln ? (eoln+1) : NULL);
        }
+       pcre2_match_data_free(ovector);
 
        return 0;
 }

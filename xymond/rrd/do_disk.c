@@ -18,8 +18,9 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
 	char *eoln, *curline;
 	static int ptnsetup = 0;
-	static pcre *inclpattern = NULL;
-	static pcre *exclpattern = NULL;
+	static pcre2_code *inclpattern = NULL;
+	static pcre2_code *exclpattern = NULL;
+	pcre2_match_data *ovector;
 
 	if (strstr(msg, "netapp.pl")) return do_netapp_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	if (strstr(msg, "dbcheck.pl")) return do_dbcheck_tablespace_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
@@ -27,22 +28,29 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	if (disk_tpl == NULL) disk_tpl = setup_template(disk_params);
 
 	if (!ptnsetup) {
-		const char *errmsg;
-		int errofs;
+		char errmsg[120];
+		int err;
+		PCRE2_SIZE errofs;
 		char *ptn;
 
 		ptnsetup = 1;
 		ptn = getenv("RRDDISKS");
 		if (ptn && strlen(ptn)) {
-			inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n", 
+			inclpattern = pcre2_compile(ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
+			if (!inclpattern) {
+				pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+				errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %zu\n",
 						    ptn, errmsg, errofs);
+			}
 		}
 		ptn = getenv("NORRDDISKS");
 		if (ptn && strlen(ptn)) {
-			exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n", 
+			exclpattern = pcre2_compile(ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
+			if (!exclpattern) {
+				pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+				errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %zu\n",
 						    ptn, errmsg, errofs);
+			}
 		}
 	}
 
@@ -71,6 +79,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	 * line - we never have any disk reports there anyway.
 	 */
 	curline = strchr(msg, '\n'); if (curline) curline++;
+	ovector = pcre2_match_data_create(30, NULL);
 	while (curline)  {
 		char *fsline, *p;
 		char *columns[20];
@@ -164,20 +173,18 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		/* Check include/exclude patterns */
 		wanteddisk = 1;
 		if (exclpattern) {
-			int ovector[30];
 			int result;
 
-			result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname), 
-					   0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+			result = pcre2_match(exclpattern, diskname, strlen(diskname),
+					     0, 0, ovector, NULL);
 
 			wanteddisk = (result < 0);
 		}
 		if (wanteddisk && inclpattern) {
-			int ovector[30];
 			int result;
 
-			result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname), 
-					   0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+			result = pcre2_match(inclpattern, diskname, strlen(diskname),
+					     0, 0, ovector, NULL);
 
 			wanteddisk = (result >= 0);
 		}
@@ -207,6 +214,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 nextline:
 		curline = (eoln ? (eoln+1) : NULL);
 	}
+	pcre2_match_data_free(ovector);
 
 	return 0;
 }
