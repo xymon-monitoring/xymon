@@ -1102,19 +1102,19 @@ as a regular expression (except that <space> is not allowed)
 or as a message digest (typically using an MD5 sum or 
 SHA-1 hash).
 
-The regex is pre-processed for backslash "\\" escape
+The regex is pre-processed for backslash "\e" escape
 sequences. So you can really put any character in this
 string by escaping it first:
 .br
-   \\n     Newline (LF, ASCII 10 decimal)
+   \en     Newline (LF, ASCII 10 decimal)
 .br
-   \\r     Carriage return (CR, ASCII 13 decimal)
+   \er     Carriage return (CR, ASCII 13 decimal)
 .br
-   \\t     TAB (ASCII 8 decimal)
+   \et     TAB (ASCII 8 decimal)
 .br
-   \\\\    Backslash (ASCII 92 decimal)
+   \e\e    Backslash (ASCII 92 decimal)
 .br
-   \\XX    The character with ASCII hex-value XX
+   \eXX    The character with ASCII hex-value XX
 .br
 
 If you must have whitespace in the regex, use the
@@ -1206,10 +1206,10 @@ it by beginning the form-data with \fB(content\-type=TYPE)\fR,
 e.g. "(content\-type=text/xml)" followed by the POST data. Note
 that as with normal forms, the POST data should be specified using
 escape-sequences for reserved characters: "space" should be
-entered as "\\x20", double quote as "\\x22", newline as "\\n",
-carriage-return as "\\r", TAB as "\\t", backslash as "\\\\".
-Any byte value can be entered using "\\xNN" with NN being
-the hexadecimal value, e.g. "\\x20" is the space character.
+entered as "\ex20", double quote as "\ex22", newline as "\en",
+carriage-return as "\er", TAB as "\et", backslash as "\e\e".
+Any byte value can be entered using "\exNN" with NN being
+the hexadecimal value, e.g. "\ex20" is the space character.
 
 The [expected_data_regexp|#digesttype:digest] is the expected
 data returned from the server in response to the POST.

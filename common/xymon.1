@@ -293,16 +293,16 @@ Include only hosts with a xymon-xmh(5) variable matching this value
 Advanced Filtering
 .sp
 .BR msg=MESSAGE
-Include only tests with full content matching MESSAGE. Use "\\s" to escape 
+Include only tests with full content matching MESSAGE. Use "\es" to escape 
 spaces (or other PCRE strings)
 .sp
 .BR ackmsg=MESSAGE
-Include only tests with acknowledgement(s) MESSAGE. Use "\\s" to escape 
+Include only tests with acknowledgement(s) MESSAGE. Use "\es" to escape 
 spaces (or other PCRE strings)
 .sp
 .BR dismsg=MESSAGE
 Include only tests that have been disabled with strings matching MESSAGE. 
-Use "\\s" to escape spaces (or other PCRE strings). (It is most efficient
+Use "\es" to escape spaces (or other PCRE strings). (It is most efficient
 to pair this with color=blue.)
 
 
@@ -399,8 +399,8 @@ configuration settings. A full list of these can be found in the
 man-page.
 
 The ackmsg, dismsg and msg fields have certain characters encoded: Newline
-is "\\n", TAB is "\\t", carriage return is "\\r", a pipe-sign is "\\p", 
-and a backslash is "\\\\".
+is "\en", TAB is "\et", carriage return is "\er", a pipe-sign is "\ep", 
+and a backslash is "\e\e".
 
 If the "fields" parameter is omitted, a default set of
 hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1
