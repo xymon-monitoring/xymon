@@ -1027,7 +1027,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* We have a matching file! */
 			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
-			if (pcre2_substring_copy_bynumber(ovector, 1, param, &l) > 0) {
+			if (pcre2_substring_copy_bynumber(ovector, 1, param, &l) == 0) {
 				/*
 				 * This is ugly, but I cannot find a pretty way of un-mangling
 				 * the disk- and http-data that has been molested by the back-end.
