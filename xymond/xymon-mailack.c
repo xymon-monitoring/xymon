@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 	if (result >= 0) {
 		char delaytxt[4096];
 		l = sizeof(delaytxt);
-		if (pcre2_substring_copy_bynumber(ovector, 1, delaytxt, &l) > 0) {
+		if (pcre2_substring_copy_bynumber(ovector, 1, delaytxt, &l) == 0) {
 			duration = durationvalue(delaytxt);
 		}
 	}
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 	if (result >= 0) {
 		char msgtxt[4096];
 		l = sizeof(msgtxt);
-		if (pcre2_substring_copy_bynumber(ovector, 1, msgtxt, &l) > 0) {
+		if (pcre2_substring_copy_bynumber(ovector, 1, msgtxt, &l) == 0) {
 			firsttxtline = strdup(msgtxt);
 		}
 	}
