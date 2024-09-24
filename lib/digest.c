@@ -41,7 +41,7 @@ char *md5hash(char *input)
 	myMD5_Final(md_value, ctx->mdctx);
 
 	for(i = 0, p = md_string; (i < sizeof(md_value)); i++) 
-		p += snprintf(p, (sizeof(md_string) - (md_string - p)), "%02x", md_value[i]);
+		p += snprintf(p, (sizeof(md_string) - (p - md_string)), "%02x", md_value[i]);
 	*p = '\0';
 
 	return md_string;
