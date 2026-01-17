@@ -1,0 +1,63 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: build (${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [server, client]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            libc-ares-dev \
+            libldap-dev \
+            libpcre3-dev \
+            librrd-dev \
+            libssl-dev \
+            libtirpc-dev
+
+      - name: Configure (${{ matrix.variant }})
+        run: |
+          USEXYMONPING=y \
+          ENABLESSL=y \
+          ENABLELDAP=y \
+          ENABLELDAPSSL=y \
+          XYMONUSER=xymon \
+          XYMONTOPDIR=/usr/lib/xymon \
+          XYMONVAR=/var/lib/xymon \
+          XYMONHOSTURL=/xymon \
+          CGIDIR=/usr/lib/xymon/cgi-bin \
+          XYMONCGIURL=/xymon-cgi \
+          SECURECGIDIR=/usr/lib/xymon/cgi-secure \
+          SECUREXYMONCGIURL=/xymon-seccgi \
+          HTTPDGID=www-data \
+          XYMONLOGDIR=/var/log/xymon \
+          XYMONHOSTNAME=localhost \
+          XYMONHOSTIP=127.0.0.1 \
+          MANROOT=/usr/share/man \
+          INSTALLBINDIR=/usr/lib/xymon/server/bin \
+          INSTALLETCDIR=/etc/xymon \
+          INSTALLWEBDIR=/etc/xymon/web \
+          INSTALLEXTDIR=/usr/lib/xymon/server/ext \
+          INSTALLTMPDIR=/var/lib/xymon/tmp \
+          INSTALLWWWDIR=/var/lib/xymon/www \
+          ./configure --${{ matrix.variant }}
+
+      - name: Build
+        run: |
+          # FIXME: building in parallel causes issues
+          # see https://github.com/xymon-monitoring/xymon/issues/3
+          make -j1
