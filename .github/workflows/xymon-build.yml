@@ -31,7 +31,6 @@ jobs:
           ./genconfig.sh
           cd ..
           cp include/libxymon.h build/include/
-          cp build/include/config.h build/include/
 
       - name: Build Xymon
         run: |
