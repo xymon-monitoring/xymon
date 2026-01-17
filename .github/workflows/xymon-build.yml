@@ -21,7 +21,8 @@ jobs:
           sudo apt-get install -y \
             build-essential \
             perl \
-            libssl-dev
+            libssl-dev \
+            libpcre3-dev
 
       - name: Configure Xymon
         run: |
