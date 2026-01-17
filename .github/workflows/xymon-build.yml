@@ -26,11 +26,11 @@ jobs:
 
       - name: Configure Xymon
         run: |
-          mkdir -p build/include
+          mkdir -p build/include include
           cd build
           ./genconfig.sh
           cd ..
-          cp include/libxymon.h build/include/
+          cp build/include/config.h include/config.h
 
       - name: Build Xymon
         run: |
