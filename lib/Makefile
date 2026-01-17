@@ -3,14 +3,14 @@
 
 XYMONLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o compression.o crondate.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o xymonrrd.o holidays.o htmllog.o ipaccess.o loadalerts.o loadcriticalconf.o links.o matching.o md5.o memory.o misc.o msort.o netservices.o notifylog.o acknowledgementslog.o readmib.o reportlog.o rmd160c.o sha1.o sha2.o sig.o stackio.o stdopt.o strfunc.o suid.o timefunc.o tree.o url.o webaccess.o
 
-XYMONCOMMLIBOBJS = $(XYMONLIBOBJS) loadhosts.o locator.o sendmsg.o xymond_ipc.o xymond_buffer.o
+XYMONCOMMLIBOBJS = $(XYMONLIBOBJS) compression.o loadhosts.o locator.o minilzo.o sendmsg.o tcplib.o xymond_ipc.o xymond_buffer.o
 XYMONTIMELIBOBJS = run.o timing.o
 
 CLIENTLIBOBJS = osdefs.o cgiurls.o color-client.o crondate.o digest.o encoding.o environ-client.o errormsg.o holidays.o ipaccess.o md5.o memory.o misc.o msort.o rmd160c.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc-client.o tree.o
 ifeq ($(LOCALCLIENT),yes)
 	CLIENTLIBOBJS += matching.o
 endif
-XYMONCLIENTCOMMLIBOBJS = locator.o loadhosts.o sendmsg.o xymond_ipc.o xymond_buffer.o
+XYMONCLIENTCOMMLIBOBJS = compression.o locator.o loadhosts.o minilzo.o sendmsg.o xymond_ipc.o xymond_buffer.o
 
 XYMONCLIENTLIB = libxymonclient.a
 XYMONCLIENTLIBS = $(XYMONCLIENTLIB)
@@ -78,8 +78,14 @@ matching.o: matching.c
 sha1.o: sha1.c
 	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
+minilzo.o: minilzo.c
+        $(CC) $(CFLAGS) -s -fomit-frame-pointer `./test-endianness` -c -o $@ $<
+
 rmd160c.o: rmd160c.c
 	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
+
+tcplib.o: tcplib.c
+       $(CC) $(CFLAGS) $(SSLFLAGS) -c -o $@ $<
 
 environ.o: environ.c
 	$(CC) $(CFLAGS) -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ environ.c
