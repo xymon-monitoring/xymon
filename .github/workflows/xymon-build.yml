@@ -25,6 +25,7 @@ jobs:
 
       - name: Configure Xymon
         run: |
+          mkdir -p build/include
           cd build
           ./genconfig.sh
 
