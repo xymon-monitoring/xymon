@@ -79,13 +79,13 @@ sha1.o: sha1.c
 	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
 minilzo.o: minilzo.c
-        $(CC) $(CFLAGS) -s -fomit-frame-pointer `./test-endianness` -c -o $@ $<
+	$(CC) $(CFLAGS) -s -fomit-frame-pointer `./test-endianness` -c -o $@ $<
 
 rmd160c.o: rmd160c.c
 	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
 tcplib.o: tcplib.c
-       $(CC) $(CFLAGS) $(SSLFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(SSLFLAGS) -c -o $@ $<
 
 environ.o: environ.c
 	$(CC) $(CFLAGS) -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ environ.c
