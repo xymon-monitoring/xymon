@@ -23,6 +23,11 @@ jobs:
             perl \
             libssl-dev
 
+      - name: Configure Xymon
+        run: |
+          cd build
+          ./genconfig.sh
+
       - name: Build Xymon
         run: |
           make -C lib
