@@ -25,5 +25,6 @@ jobs:
 
       - name: Build Xymon
         run: |
+          cd build
           make
 
