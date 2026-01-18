@@ -9,7 +9,14 @@ on:
 
 jobs:
   build:
+    name: build (${{ matrix.variant }} / ${{ matrix.compiler }})
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [server, client]
+        compiler: [gcc, clang]
 
     steps:
       - name: Checkout source
@@ -18,20 +25,47 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get install -y --no-install-recommends \
             build-essential \
-            gmake \
+            clang \
             perl \
             fping \
             libssl-dev \
             libpcre3-dev \
             librrd-dev \
-            libldap2-dev
+            libldap2-dev \
+            libtirpc-dev
 
-      - name: Configure Xymon (srv)
+      - name: Create xymon user
         run: |
-          ./configure --server
+          id xymon >/dev/null 2>&1 || sudo useradd -r -m -d /home/xymon -s /usr/sbin/nologin xymon
+
+      - name: Ensure default Xymon home exists
+        run: |
+          sudo mkdir -p /home/xymon
+          sudo chown xymon:xymon /home/xymon
+
+      - name: Select compiler
+        run: |
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            echo "CC=clang" >> $GITHUB_ENV
+            echo "CXX=clang++" >> $GITHUB_ENV
+          else
+            echo "CC=gcc" >> $GITHUB_ENV
+            echo "CXX=g++" >> $GITHUB_ENV
+          fi
+
+      - name: Configure Xymon (${{ matrix.variant }}) with defaults
+        run: |
+          printf '\n%.0s' {1..50} | ./configure --${{ matrix.variant }}
+
+      - name: Disable PIE for client build
+        if: matrix.variant == 'client'
+        run: |
+          echo "CFLAGS=-fno-pie" >> $GITHUB_ENV
+          echo "LDFLAGS=-no-pie" >> $GITHUB_ENV
 
       - name: Build Xymon
         run: |
-          gmake
+          make -j1
+
