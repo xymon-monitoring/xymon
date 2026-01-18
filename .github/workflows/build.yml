@@ -6,12 +6,22 @@ on:
 
 jobs:
   build:
-    name: build (${{ matrix.variant }})
+    name: build (${{ matrix.name }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        variant: [server, client]
+        include:
+          - name: server
+            variant: server
+
+          - name: client, CT=client
+            variant: client
+            conftype: client
+
+          - name: client CT=server
+            variant: client
+            conftype: server
 
     steps:
       - name: Checkout
@@ -29,7 +39,9 @@ jobs:
             libssl-dev \
             libtirpc-dev
 
-      - name: Configure (${{ matrix.variant }})
+      - name: Configure (${{ matrix.name }})
+        env:
+          CONFTYPE: ${{ matrix.conftype }}
         run: |
           USEXYMONPING=y \
           ENABLESSL=y \
