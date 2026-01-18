@@ -1,0 +1,10 @@
+name: build-xymon
+description: Build Xymon
+
+runs:
+  using: composite
+  steps:
+    - run: |
+        make -j1
+      shell: bash
+

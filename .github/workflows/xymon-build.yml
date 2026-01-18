@@ -19,47 +19,17 @@ jobs:
         compiler: [gcc, clang]
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            clang \
-            perl \
-            fping \
-            libssl-dev \
-            libpcre3-dev \
-            librrd-dev \
-            libldap2-dev \
-            libtirpc-dev
+      - uses: ./.github/actions/setup-env
 
-      - name: Create xymon user
-        run: |
-          id xymon >/dev/null 2>&1 || sudo useradd -r -m -d /home/xymon -s /usr/sbin/nologin xymon
+      - uses: ./.github/actions/select-compiler
+        with:
+          compiler: ${{ matrix.compiler }}
 
-      - name: Ensure default Xymon home exists
-        run: |
-          sudo mkdir -p /home/xymon
-          sudo chown xymon:xymon /home/xymon
+      - uses: ./.github/actions/configure-xymon
+        with:
+          variant: ${{ matrix.variant }}
 
-      - name: Select compiler
-        run: |
-          if [ "${{ matrix.compiler }}" = "clang" ]; then
-            echo "CC=clang" >> $GITHUB_ENV
-            echo "CXX=clang++" >> $GITHUB_ENV
-          else
-            echo "CC=gcc" >> $GITHUB_ENV
-            echo "CXX=g++" >> $GITHUB_ENV
-          fi
-
-      - name: Configure Xymon (${{ matrix.variant }}) with defaults
-        run: |
-          printf '\n%.0s' {1..50} | ./configure --${{ matrix.variant }}
-
-      - name: Build Xymon
-        run: |
-          make -j1
+      - uses: ./.github/actions/build-xymon
 

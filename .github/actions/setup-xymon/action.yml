@@ -1,0 +1,9 @@
+name: Setup Xymon build environment
+description: Install dependencies and prepare xymon user
+
+runs:
+  using: composite
+  steps:
+    - run: ${{ github.action_path }}/setup.sh
+      shell: bash
+

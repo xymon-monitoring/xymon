@@ -1,0 +1,20 @@
+name: select-compiler
+description: Select gcc or clang
+
+inputs:
+  compiler:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - run: |
+        if [ "${{ inputs.compiler }}" = "clang" ]; then
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+        else
+          echo "CC=gcc" >> $GITHUB_ENV
+          echo "CXX=g++" >> $GITHUB_ENV
+        fi
+      shell: bash
+

@@ -1,0 +1,14 @@
+name: configure-xymon
+description: Run Xymon configure with default answers
+
+inputs:
+  variant:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - run: |
+        printf '\n%.0s' {1..50} | ./configure --${{ inputs.variant }}
+      shell: bash
+

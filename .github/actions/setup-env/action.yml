@@ -1,0 +1,26 @@
+name: setup-env
+description: Install build dependencies and prepare xymon user
+
+runs:
+  using: composite
+  steps:
+    - run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          build-essential \
+          clang \
+          perl \
+          fping \
+          libssl-dev \
+          libpcre3-dev \
+          librrd-dev \
+          libldap2-dev \
+          libtirpc-dev
+      shell: bash
+
+    - run: |
+        id xymon >/dev/null 2>&1 || sudo useradd -r -m -d /home/xymon -s /usr/sbin/nologin xymon
+        sudo mkdir -p /home/xymon
+        sudo chown xymon:xymon /home/xymon
+      shell: bash
+
