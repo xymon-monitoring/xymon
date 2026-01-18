@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 	int argi, newargi;
 	char *envarea = NULL;
 	char *useragent;
-	int usemultipart = 1;
+	int usemultipart = 0;
 
 	SBUF_MALLOC(xymongencmd, 2048+PATH_MAX);
 	SBUF_MALLOC(xymonwebenv, 4096);
