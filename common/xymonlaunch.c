@@ -69,7 +69,7 @@ typedef struct tasklist_t {
 	int beingkilled;
 	char *cronstr; /* pointer to cron string */
 	void *crondate; /* pointer to cron date-time structure */
-	int cronmin;	/* minute value of the last sucessful cron execution attempt */
+	int cronmin;	/* minute value of the last successful cron execution attempt */
 	struct tasklist_t *depends;
 	struct tasklist_t *next;
 	struct tasklist_t *copy;
@@ -321,7 +321,7 @@ void load_config(char *conffn)
 
 			xfreedup(curtask->onhostptn,p);
 
-			/* Match the hostname against the pattern; if it doesnt match then disable the task */
+			/* Match the hostname against the pattern; if it doesn't match then disable the task */
 			status = regcomp(&cpattern, curtask->onhostptn, REG_EXTENDED|REG_ICASE|REG_NOSUB);
 			if (status == 0) {
 				status = regexec(&cpattern, myhostname, 0, NULL, 0);
@@ -343,7 +343,7 @@ void load_config(char *conffn)
 				/* compare the current version with the new version and decide if we have changed */
 				int changed=0;
 				int reload=0;
-				/* first the nummeric ones */
+				/* first the numeric ones */
 				if (twalk->disabled!=twalk->copy->disabled) { changed++; }
 				if (twalk->interval!=twalk->copy->interval) { changed++; }
 				if (twalk->maxruntime!=twalk->copy->maxruntime) { changed++; }
