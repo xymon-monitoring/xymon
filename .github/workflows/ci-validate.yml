@@ -1,0 +1,34 @@
+name: CI validation (Linux)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        variant: [server, client]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-env
+        with:
+          profile: default
+
+      - uses: ./.github/actions/select-compiler
+        with:
+          compiler: gcc
+
+      - uses: ./.github/actions/configure-xymon
+        with:
+          variant: ${{ matrix.variant }}
+          profile: default
+
+      - uses: ./.github/actions/build-xymon
+

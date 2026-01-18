@@ -1,14 +1,46 @@
-name: configure-xymon
-description: Run Xymon configure with default answers
+name: Configure Xymon
+description: Run Xymon configure (default or debian profile)
 
 inputs:
   variant:
     required: true
+  profile:
+    required: false
+    default: default
 
 runs:
   using: composite
   steps:
-    - run: |
-        printf '\n%.0s' {1..50} | ./configure --${{ inputs.variant }}
-      shell: bash
+    - shell: bash
+      run: |
+        set -e
+
+        if [ "${{ inputs.profile }}" = "debian" ]; then
+          USEXYMONPING=y \
+          ENABLESSL=y \
+          ENABLELDAP=y \
+          ENABLELDAPSSL=y \
+          XYMONUSER=xymon \
+          XYMONTOPDIR=/usr/lib/xymon \
+          XYMONVAR=/var/lib/xymon \
+          XYMONHOSTURL=/xymon \
+          CGIDIR=/usr/lib/xymon/cgi-bin \
+          XYMONCGIURL=/xymon-cgi \
+          SECURECGIDIR=/usr/lib/xymon/cgi-secure \
+          SECUREXYMONCGIURL=/xymon-seccgi \
+          HTTPDGID=www-data \
+          XYMONLOGDIR=/var/log/xymon \
+          XYMONHOSTNAME=localhost \
+          XYMONHOSTIP=127.0.0.1 \
+          MANROOT=/usr/share/man \
+          INSTALLBINDIR=/usr/lib/xymon/server/bin \
+          INSTALLETCDIR=/etc/xymon \
+          INSTALLWEBDIR=/etc/xymon/web \
+          INSTALLEXTDIR=/usr/lib/xymon/server/ext \
+          INSTALLTMPDIR=/var/lib/xymon/tmp \
+          INSTALLWWWDIR=/usr/lib/xymon/www \
+          ./configure --${{ inputs.variant }}
+        else
+          printf '\n%.0s' {1..50} | ./configure --${{ inputs.variant }}
+        fi
 

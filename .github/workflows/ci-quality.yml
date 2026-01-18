@@ -1,0 +1,36 @@
+name: CI quality (extended)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [server, client]
+        compiler: [gcc, clang]
+        profile: [default, debian]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-env
+        with:
+          profile: ${{ matrix.profile }}
+
+      - uses: ./.github/actions/select-compiler
+        with:
+          compiler: ${{ matrix.compiler }}
+
+      - uses: ./.github/actions/configure-xymon
+        with:
+          variant: ${{ matrix.variant }}
+          profile: ${{ matrix.profile }}
+
+      - uses: ./.github/actions/build-xymon
+
