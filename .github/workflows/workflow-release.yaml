@@ -1,6 +1,6 @@
 name: Release tarball on tag
 concurrency: 
-  group: workflow-java
+  group: workflow-tarball
   cancel-in-progress: false
 on:
   push:
