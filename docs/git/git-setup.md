@@ -73,13 +73,22 @@ Differences indicate intentional or accidental divergence.
 
 BASELINE RESTORE (OPTIONAL)
 ---------------------------
-If you decide to realign with the fork:
+If you decide to realign with the fork, first attempt a non-destructive alignment:
 ```
-git reset --hard origin/main
-git reset --hard origin/4.x-master
+git fetch origin
+git rebase origin/main
 ```
 
-Use with care: this overwrites local changes.
+If this fails or is not applicable, use a safe restore preserving local changes:
+```
+git stash
+git reset --hard origin/main
+git stash pop
+```
+
+Repeat the same procedure for `4.x-master` if needed.
+
+Avoid direct `reset --hard` without a stash, as it permanently discards local changes.
 
 
 UPSTREAM INTEGRATION (PERSONAL -> UPSTREAM)
