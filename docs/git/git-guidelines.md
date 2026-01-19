@@ -7,7 +7,7 @@ This document provides non-normative guidance and best practices
 for working with Git in this project.
 
 Git governance, repository authority, and baseline rules are defined
-in `git-rules.md`.
+in `[git-rules.md](git-rules.md)`.
 
 This document does not define rules.
 
