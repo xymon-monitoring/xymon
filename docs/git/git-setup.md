@@ -4,12 +4,12 @@ GIT SETUP - PROCEDURES
 PURPOSE
 -------
 This document covers setup and maintenance procedures.
-Canonical rules live in `git-rules.md`.
+Canonical rules live in `[git-rules.md](git-rules.md)`.
 
 
 PREREQUISITES
 -------------
-See `git-installation.md`.
+See `[git-installation.md](git-installation.md)`.
 
 
 STEP 1 - CREATE PERSONAL FORK
