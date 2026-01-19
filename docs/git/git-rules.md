@@ -56,8 +56,8 @@ REFERENCE BASELINES
 -------------------
 At synchronization points, the following invariants MUST hold:
 
-<your-github-username>/xymon:main == xymon-monitoring/xymon:main
-<your-github-username>/xymon:4.x-master == xymon-monitoring/xymon:4.x-master
+- <your-github-username>/xymon:main == xymon-monitoring/xymon:main
+- <your-github-username>/xymon:4.x-master == xymon-monitoring/xymon:4.x-master
 
 These branches are baseline branches. They represent the upstream state.
 
