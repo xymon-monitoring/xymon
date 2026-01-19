@@ -6,9 +6,10 @@ PURPOSE
 This document defines the CI-specific contribution workflow
 used when modifying or validating GitHub Actions.
 
-Canonical rules live in `[git-rules.md](git-rules.md)`.
-The general contribution flow is defined in
-`[git-contribution-flow.md](git-contribution-flow.md)`.
+Canonical rules live in:
+- [git-rules.md](git-rules.md)
+The general contribution flow is defined in:
+- [git-contribution-flow.md](git-contribution-flow.md)
 
 
 SCOPE

@@ -22,7 +22,8 @@ Small, focused changes are always welcome.
 
 THE SIMPLE PATH
 ---------------
-Follow the steps in `[git-contribution-flow.md](git-contribution-flow.md)`.
+Follow the steps in:
+- [git-contribution-flow.md](git-contribution-flow.md)
 
 That's it.
 
@@ -34,6 +35,6 @@ Maintainers will review your PR and may suggest improvements.
 
 WANT TO GO FURTHER?
 -------------------
-- Quick start: `[git-quick-start.md](git-quick-start.md)`
-- Canonical rules: `[git-rules.md](git-rules.md)`
-- Best practices: `[git-guidelines.md](git-guidelines.md)`
+- Quick start: [git-quick-start.md](git-quick-start.md)
+- Canonical rules: [git-rules.md](git-rules.md)
+- Best practices: [git-guidelines.md](git-guidelines.md)
