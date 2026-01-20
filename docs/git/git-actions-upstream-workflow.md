@@ -141,7 +141,7 @@ STEP 2 - CREATE AN ACTION WORK BRANCH
 Create a dedicated branch for Actions changes.
 
 `main`, `devel`, and `action/*` are **baseline bases**.
-Direct commits are allowed but discouraged.
+Direct commits are allowed but strongly discouraged.
 
 From `main`:
 ```
@@ -244,5 +244,5 @@ KEY PRINCIPLES
 --------------
 - Upstream is the authoritative truth source.
 - `action/*` branches are canonical when used.
-- `main` and `devel` are integration targets, not development branches.
+- `main` is the stable integration target; `devel` is the active development baseline.
 - Any step not described here follows [git-contribution-flow.md](git-contribution-flow.md).

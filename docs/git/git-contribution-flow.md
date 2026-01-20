@@ -63,7 +63,7 @@ RULES
 - Upstream is the authoritative truth source.
 - All verification is done against upstream.
 - All writes go to the personal fork.
-- Direct development on `main` and `devel` is allowed but discouraged.
+- Direct development on `main` and `devel` is allowed but strongly discouraged.
 - `main` and `devel` are preferred as branching bases and merge targets.
 - All upstream changes happen via Pull Requests only.
 
@@ -106,7 +106,7 @@ git push -u origin <branch>
 ```
 
 IMPORTANT:
-Direct commits on `main` or `devel` are discouraged.
+Direct commits on `main` or `devel` are strongly discouraged.
 Work branches are preferred for non-trivial changes.
 
 
@@ -134,7 +134,7 @@ Do NOT sync if you have commits on `main` or `devel`.
 GitHub will warn that syncing will overwrite those changes.
 
 Move any work in progress to a dedicated branch first.
-This is why committing directly on `main` or `devel` is forbidden.
+This is why committing directly on `main` or `devel` is strongly discouraged.
 
 
 STEP 5 - OPTIONAL (RECOMMENDED): OPEN A FORK PR

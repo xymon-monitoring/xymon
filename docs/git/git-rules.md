@@ -77,6 +77,7 @@ HARD RULES
 - Upstream is fetch-only; no direct pushes or merges are allowed.
 - All write operations target PERSONAL or LOCAL only.
 - main and devel are baseline branches.
-- Direct development on baseline branches is allowed but discouraged.
+- main and devel are handled the same way: branch from them, avoid direct commits.
+- Direct development on baseline branches is allowed but strongly discouraged.
 - Work branches are preferred for non-trivial changes.
 - Any divergence from baselines must be intentional.
