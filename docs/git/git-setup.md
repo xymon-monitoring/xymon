@@ -39,29 +39,8 @@ PHASE 5           │ baseline verification
                   │
 PHASE 6           │ controlled restore (if required)
                   │
-PHASE 7           │ local development
-                  │ git commit / git push
-                  │
-                  ▼
-  ┌───────────────────────────────┐
-  │ PERSONAL FORK                 │
-  │ <user>/xymon                  │
-  │ (push allowed)                │
-  └───────────────┬───────────────┘
-                  │
-PHASE 8           │ Pull Request (GitHub UI)
-                  │
-                  ▼
-  ┌───────────────────────────────┐
-  │ UPSTREAM (READ-ONLY)          │
-  │ xymon-monitoring/xymon        │
-  │ authoritative source          │
-  └───────────────┬───────────────┘
-                  │
-PHASE 9           │ Sync fork (GitHub UI)
-                  │
-                  ▼
-  LOCAL + FORK realigned
+PHASE 7           │ contribution workflow
+                  │ see git-contribution-flow.md
 ```
 
 
@@ -138,7 +117,7 @@ git diff devel upstream/devel
 
 PHASE 6 - CONTROLLED RESTORE (OPTIONAL)
 --------------------------------------
-Non-destructive attempt:
+Non-destructive attempt (from the current local branch):
 ```
 git fetch upstream
 git rebase upstream/main
@@ -166,33 +145,10 @@ cp -a . ../xymon-backup
 ```
 
 
-PHASE 7 - DEVELOPMENT (LOCAL)
------------------------------
-- Branch from main  for fixes.
-- Branch from devel for development.
-- Commit locally.
-- Push to origin only.
-
-
-PHASE 8 - UPSTREAM INTEGRATION (PERSONAL -> UPSTREAM)
------------------------------------------------------
-GitHub UI:
-- Open Pull Request:
-  <user>/xymon:<branch> -> xymon-monitoring/xymon:<target-branch>
-
-
-PHASE 9 - POST-MERGE SYNC
-------------------------
-GitHub UI:
-- Sync fork on main.
-- Sync fork on devel.
-
-Optional local verification:
-```
-git fetch upstream
-git diff main upstream/main
-git diff devel upstream/devel
-```
+PHASE 7 - CONTRIBUTION WORKFLOW
+-------------------------------
+Day-to-day development, PR flow, and cleanup are defined in:
+- [git-contribution-flow.md](git-contribution-flow.md)
 
 
 END OF PROCEDURE
