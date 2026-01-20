@@ -58,6 +58,7 @@ PERSONAL ACTION FLOW (ASCII)
 This diagram shows how a user consumes and adapts upstream Actions
 in a personal or downstream repository.
 
+```text
 ────────────────────────────────────────────────────────────
 
 STEP 1 (IF USED)
@@ -85,6 +86,7 @@ STEP 3            │ execution
   LOCAL / PERSONAL VALIDATION
 
 ────────────────────────────────────────────────────────────
+```
 
 
 WORKFLOW STEPS

@@ -54,6 +54,7 @@ This diagram shows **Action-specific lifecycle steps**.
 All standard operations (branching, committing, PR rules) follow
 [git-contribution-flow.md](git-contribution-flow.md).
 
+```text
 ────────────────────────────────────────────────────────────
 
 STEP 1
@@ -113,6 +114,7 @@ STEP 7
   LOCAL + FORK cleaned
 
 ────────────────────────────────────────────────────────────
+```
 
 
 WORKFLOW STEPS
