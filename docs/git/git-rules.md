@@ -57,18 +57,26 @@ REFERENCE BASELINES
 At synchronization points, the following invariants MUST hold:
 
 - <your-github-username>/xymon:main == xymon-monitoring/xymon:main
-- <your-github-username>/xymon:4.x-master == xymon-monitoring/xymon:4.x-master
+- <your-github-username>/xymon:devel == xymon-monitoring/xymon:devel
 
 These branches are baseline branches. They represent the upstream state.
 
 They MAY diverge during active development. Any divergence MUST be intentional, visible, and temporary.
 
 
+ACTION BRANCHES
+---------------
+When used, `action/*` branches are the canonical source for GitHub Actions:
+- `action/*` branches should contain only `.github/` content.
+- Work branches may be created from `action/*`, but direct commits are discouraged.
+- Promotion to `main`/`devel` happens via Pull Request.
+
+
 HARD RULES
 ----------
-- No git command ever targets upstream
-- All git commands operate LOCAL <-> PERSONAL only
-- main and 4.x-master are baseline branches
-- Direct development on baseline branches is allowed but discouraged
-- Work branches are preferred for non-trivial changes
-- Any divergence from baselines must be intentional
+- Upstream is fetch-only; no direct pushes or merges are allowed.
+- All write operations target PERSONAL or LOCAL only.
+- main and devel are baseline branches.
+- Direct development on baseline branches is allowed but discouraged.
+- Work branches are preferred for non-trivial changes.
+- Any divergence from baselines must be intentional.

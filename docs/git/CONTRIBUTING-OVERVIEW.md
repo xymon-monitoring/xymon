@@ -15,6 +15,6 @@ RECOMMENDED READING ORDER
 4. [git-installation.md](git-installation.md)
 5. [git-setup.md](git-setup.md)
 6. [git-contribution-flow.md](git-contribution-flow.md)
-7. [git-github-actions-flow.md](git-github-actions-flow.md)
+7. [git-actions-upstream-workflow.md](git-actions-upstream-workflow.md)
 8. [git-rules.md](git-rules.md)
 9. [git-guidelines.md](git-guidelines.md)
