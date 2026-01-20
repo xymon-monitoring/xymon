@@ -4,6 +4,8 @@ GIT CONTRIBUTION FLOW - LOCAL -> PERSONAL -> UPSTREAM
 WELCOME
 -------
 This guide shows a simple and safe way to contribute.
+If you have not set up your fork and remotes yet, start with
+[git-setup.md](git-setup.md).
 
 
 AUTHORITATIVE FLOW (STEP-BASED)
