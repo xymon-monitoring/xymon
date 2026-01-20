@@ -108,11 +108,18 @@ git remote -v
 PHASE 5 - BASELINE VERIFICATION (AGAINST UPSTREAM)
 -------------------------------------------------
 Baseline verification is always performed against upstream.
+
+This step checks your local branches directly against upstream,
+so you see the authoritative state instead of your fork.
 ```
 git fetch upstream
 git diff main upstream/main
 git diff devel upstream/devel
 ```
+
+Expected result:
+- No output means your branch matches upstream.
+- Differences mean your branch is ahead or behind and should be aligned before you branch.
 
 
 PHASE 6 - CONTROLLED RESTORE (OPTIONAL)

@@ -28,12 +28,16 @@ STEP 2            │
   │ writable mirror               │
   └───────────────┬───────────────┘
                   │
-                  │ branch creation only
-                  │
 STEP 3            │
   ┌───────────────▼───────────────┐
   │ LOCAL WORKING COPY            │
   │ developer machine             │
+  │ create work branch            │
+  └───────────────┬───────────────┘
+                  │
+STEP 4            │
+  ┌───────────────▼───────────────┐
+  │ LOCAL WORKING COPY            │
   │ commit changes                │
   └───────────────┬───────────────┘
                   │
@@ -45,7 +49,11 @@ STEP 3            │
   │ feature branch                │
   └───────────────┬───────────────┘
                   │
-STEP 5 / 6        │ Pull Request
+STEP 5            │ sync fork/local
+                  │
+STEP 6 (Optional) │ fork PR
+                  │
+STEP 7            │ upstream PR
                   │
                   ▼
   ┌───────────────────────────────┐
@@ -53,7 +61,7 @@ STEP 5 / 6        │ Pull Request
   │ review and merge              │
   └───────────────┬───────────────┘
                   │
-STEP 7            │ cleanup
+STEP 8            │ cleanup
                   │
                   ▼
   LOCAL + FORK cleaned
@@ -72,47 +80,32 @@ RULES
 
 STEP 1 - CHECK UPSTREAM STATUS
 ------------------------------
-Verify the latest upstream state before creating any work branch.
+Use the baseline verification in [git-setup.md](git-setup.md) (PHASE 5).
 
-This step validates your local view against the authoritative source
-(upstream), not against your fork.
-
-Commands:
-```
-git fetch upstream
-git diff main upstream/main
-git diff devel upstream/devel
-```
-
-Alternatively, use "Sync fork" in the GitHub UI.
+STEP 2 - SYNC YOUR PERSONAL FORK (IF NEEDED)
+--------------------------------------------
+If your fork is behind, sync it in the GitHub UI:
+- Click "Sync fork"
+- Choose "Update branch"
 
 
-STEP 2 - CREATE A WORK BRANCH
+STEP 3 - CREATE A WORK BRANCH
 -----------------------------
-Avoid committing directly on `main` or `devel`; branch from them instead.
-
-From `main`:
+Branch from `main` or `devel`:
 ```
 git checkout main
-git pull origin main
 git switch -c <branch>
 git push -u origin <branch>
 ```
 
-From `devel`:
 ```
 git checkout devel
-git pull origin devel
 git switch -c <branch>
 git push -u origin <branch>
 ```
 
-IMPORTANT:
-Direct commits on `main` or `devel` are strongly discouraged.
-Work branches are preferred for non-trivial changes.
 
-
-STEP 3 - MAKE YOUR CHANGE
+STEP 4 - MAKE YOUR CHANGE
 -------------------------
 ```
 git add <files>
@@ -121,9 +114,9 @@ git push
 ```
 
 
-STEP 4 - SYNC YOUR FORK WITH UPSTREAM (RECOMMENDED)
+STEP 5 - SYNC YOUR FORK AND LOCAL WITH UPSTREAM (RECOMMENDED)
 ---------------------------------------------------
-Before opening any PR, make sure your fork is not behind upstream.
+Before opening any PR, make sure your fork and local branches are not behind upstream.
 
 If it is, sync it using the GitHub UI:
 - Click "Sync fork"
@@ -139,14 +132,14 @@ Move any work in progress to a dedicated branch first.
 This is why committing directly on `main` or `devel` is strongly discouraged.
 
 
-STEP 5 - OPTIONAL (RECOMMENDED): OPEN A FORK PR
+STEP 6 - OPTIONAL (RECOMMENDED): OPEN A FORK PR
 ----------------------------------------------
 It is recommended to open a Pull Request in your fork first,
 in order to run CI and validate changes before opening
 the upstream PR.
 
 
-STEP 6 - OPEN THE UPSTREAM PR
+STEP 7 - OPEN THE UPSTREAM PR
 -----------------------------
 Open the upstream PR:
 ```
@@ -155,7 +148,7 @@ Open the upstream PR:
 ```
 
 
-STEP 7 - CLEAN UP
+STEP 8 - CLEAN UP
 -----------------
 After merge:
 ```
