@@ -21,7 +21,7 @@ macOS:
 brew install git gh
 ```
 
-Windows:
+Windows (choose one):
 ```
 winget install Git.Git GitHub.cli
 ```

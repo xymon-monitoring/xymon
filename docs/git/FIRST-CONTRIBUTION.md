@@ -20,12 +20,13 @@ Great ways to start:
 Small, focused changes are always welcome.
 
 
-THE SIMPLE PATH
----------------
-Follow the steps in:
-- [git-contribution-flow.md](git-contribution-flow.md)
-
-That's it.
+MINIMUM VIABLE PATH
+-------------------
+Follow these in order:
+1. [git-quick-start.md](git-quick-start.md)
+2. [git-installation.md](git-installation.md)
+3. [git-setup.md](git-setup.md)
+4. [git-contribution-flow.md](git-contribution-flow.md)
 
 
 WHAT HAPPENS NEXT
@@ -35,6 +36,7 @@ Maintainers will review your PR and may suggest improvements.
 
 WANT TO GO FURTHER?
 -------------------
-- Quick start: [git-quick-start.md](git-quick-start.md)
 - Canonical rules: [git-rules.md](git-rules.md)
 - Best practices: [git-guidelines.md](git-guidelines.md)
+- GitHub Actions (upstream): [git-actions-upstream-workflow.md](git-actions-upstream-workflow.md)
+- GitHub Actions (personal): [git-actions-personal-workflow.md](git-actions-personal-workflow.md)

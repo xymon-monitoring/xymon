@@ -73,7 +73,7 @@ RULES
 - Upstream is fetch-only and modified ONLY via Pull Requests.
 - Push is allowed ONLY to the personal fork.
 - main  = stable / release
-- devel = active development
+- devel = active development baseline
 
 
 PHASE 0 - PREREQUISITES
@@ -155,6 +155,15 @@ Warnings:
 - Tracked changes are discarded.
 - Untracked files are preserved.
 - git clean is intentionally NOT used.
+- Back up anything important before running a destructive reset.
+
+Backup options (recommended):
+```
+git stash -u
+```
+```
+cp -a . ../xymon-backup
+```
 
 
 PHASE 7 - DEVELOPMENT (LOCAL)
