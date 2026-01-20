@@ -23,10 +23,15 @@ Small, focused changes are always welcome.
 MINIMUM VIABLE PATH
 -------------------
 Follow these in order:
-1. [git-quick-start.md](git-quick-start.md)
-2. [git-installation.md](git-installation.md)
-3. [git-setup.md](git-setup.md)
-4. [git-contribution-flow.md](git-contribution-flow.md)
+1. [git-installation.md](git-installation.md)
+2. [git-setup.md](git-setup.md)
+3. [git-contribution-flow.md](git-contribution-flow.md)
+
+QUICK START (SAME STEPS)
+------------------------
+1. Install tools and authenticate: [git-installation.md](git-installation.md)
+2. Run setup procedures: [git-setup.md](git-setup.md)
+3. Follow the contribution flow: [git-contribution-flow.md](git-contribution-flow.md)
 
 
 WHAT HAPPENS NEXT
