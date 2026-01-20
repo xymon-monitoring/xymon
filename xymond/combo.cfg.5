@@ -60,10 +60,10 @@ out as non-zero, the combined test is green.
 Note: If the expression involves hostnames with a character that is also
 an operator - e.g. if you have a host "t1-router-newyork.foo.com" with a
 dash in the hostname - then the operator-character must be escaped with
-a backslash '\\' in the expression, or it will be interpreted as an operator. 
+a backslash '\e' in the expression, or it will be interpreted as an operator. 
 E.g. like this:
 
- nyc.conn = (t1\\-router\\-nyc.conn || backup\\-router\\-nyc.conn)
+ nyc.conn = (t1\e-router\e-nyc.conn || backup\e-router\e-nyc.conn)
 
 
 .SH EXAMPLE

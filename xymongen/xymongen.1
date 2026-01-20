@@ -495,8 +495,8 @@ you define - i.e. create an extension script like this:
 .nf
 #!/bin/sh
 
-XYMONWEB="/xymon/os" $XYMONHOME/bin/xymongen \\
-	\-\-pageset=os \-\-template=os \\
+XYMONWEB="/xymon/os" $XYMONHOME/bin/xymongen \e
+	\-\-pageset=os \-\-template=os \e
 	$XYMONHOME/www/os/
 .fi
 .LP
@@ -672,11 +672,11 @@ So a typical invocation of xymongen for a static report would be:
 
   START=`date +%s \-\-date="22 Jun 2003 00:00:00"`
   END=`date +%s \-\-date="22 Jun 2003 23:59:59"`
-  XYMONWEB=/reports/bigbrother/daily/2003/06/22 \\
-  XYMONHELPSKIN=/xymon/help \\
-  XYMONNOTESSKIN=/xymon/notes \\
-  xymongen \-\-reportopts=$START:$END:1:crit \\
-        \-\-subpagecolumns=2 \\
+  XYMONWEB=/reports/bigbrother/daily/2003/06/22 \e
+  XYMONHELPSKIN=/xymon/help \e
+  XYMONNOTESSKIN=/xymon/notes \e
+  xymongen \-\-reportopts=$START:$END:1:crit \e
+        \-\-subpagecolumns=2 \e
         /var/www/docroot/reports/xymon/daily/2003/06/22
 
 The "XYMONWEB" setting means that the report will be available with

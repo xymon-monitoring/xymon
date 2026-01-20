@@ -22,7 +22,7 @@ the SMTP service would be this:
 .sp
    [smtp]
 .br
-      send "mail\\r\\nquit\\r\\n"
+      send "mail\er\enquit\er\en"
 .br
       expect "220"
 .br
@@ -30,7 +30,7 @@ the SMTP service would be this:
 .br
 .sp
 This defines a service called "smtp". When the connection is
-first established, xymonnet will send the string "mail\\r\\nquit\\r\\n"
+first established, xymonnet will send the string "mail\er\enquit\er\en"
 to the service. It will then expect a response beginning with "220".
 Any data returned by the service (a so-called "banner") will be recorded 
 and included in the status message.
@@ -53,9 +53,9 @@ may be omitted, in which case
 will simply not send any data, or match a response against anything.
 
 The send- and expect-strings use standard escaping for non-printable
-characters. "\\r" represents a carriage-return (ASCII 13), "\\n"
-represents a line-feed (ASCII 10), "\\t" represents a TAB (ASCII 8). 
-Binary data is input as "\\xNN" with NN being the hexadecimal value
+characters. "\er" represents a carriage-return (ASCII 13), "\en"
+represents a line-feed (ASCII 10), "\et" represents a TAB (ASCII 8). 
+Binary data is input as "\exNN" with NN being the hexadecimal value
 of the byte.
 
 .IP "port NUMBER"
