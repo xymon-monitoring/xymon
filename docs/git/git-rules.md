@@ -1,26 +1,21 @@
 GIT GOVERNANCE - CANONICAL RULES
 ================================
 
-DOCUMENT AUTHORITY
-------------------
-This document is the single authoritative source for Git governance
-in this project.
+GOVERNANCE INTENT
+-----------------
+These rules protect baseline branches (`main`, `devel`)
+and the long-term health of the project.
 
-All rules defined here are normative.
-All other Git-related documents (processes, workflows, CI flows)
-must defer to this document and must not redefine these rules.
+They do not restrict who may contribute
+or how contributors work in their own forks.
 
-Any deviation from this document is considered a governance defect.
-
+All contributions are welcome via Pull Requests.
 
 SCOPE
 -----
-This document defines the mandatory setup and operating rules for:
 - local development environments
 - personal GitHub forks
 - safe contribution to the upstream repository
-
-It applies to all contributors and all workflows.
 
 
 REPOSITORY ROLES
@@ -30,54 +25,60 @@ PERSONAL  : contributor fork (integration, testing, CI)
 LOCAL     : developer working copy
 
 
-ROLE FLOW (ASCII)
------------------
-            +---------------------------------+
-            |  UPSTREAM (authority)           |
-            |  xymon-monitoring/xymon         |
-            |  Pull Request + merge (UI)      |
-            +---------------------------------+
-                         ^
-                         |
-            +---------------------------------+
-            |  PERSONAL FORK (origin)         |
-            |  <your-github-username>/xymon   |
-            |  development / CI               |
-            +---------------------------------+
-                         ^
-                         |
-            +---------------------------------+
-            |  LOCAL (working copy)           |
-            |  developer machine              |
-            +---------------------------------+
-
-
 REFERENCE BASELINES
 -------------------
-At synchronization points, the following invariants MUST hold:
+When you sync, make sure `main` and `devel` match upstream.
 
-- <your-github-username>/xymon:main == xymon-monitoring/xymon:main
-- <your-github-username>/xymon:devel == xymon-monitoring/xymon:devel
+BASELINE PROTECTION
+-------------------
+`main` and `devel` are long-term reference branches.
 
-These branches are baseline branches. They represent the upstream state.
+Any change reaching a baseline branch is considered high-impact
+and therefore requires explicit human validation.
 
-They MAY diverge during active development. Any divergence MUST be intentional, visible, and temporary.
+- `main` represents a production-quality state
+- `devel` is the active development baseline
 
 
 ACTION BRANCHES
 ---------------
-When used, `action/*` branches are the canonical source for GitHub Actions:
-- `action/*` branches should contain only `.github/` content.
-- Work branches may be created from `action/*`, but direct commits are discouraged.
-- Promotion to `main`/`devel` happens via Pull Request.
+When used, `action/*` branches are the canonical location
+for GitHub Actions changes:
 
+- `action/*` branches should contain only `.github/` content
+- Work branches may be created from `action/*`
+- Direct commits are discouraged to keep changes reviewable
+- Promotion to `main` or `devel` happens via Pull Request
+
+
+REVIEW AND MERGE POLICY
+-----------------------
+Integration into `main` or `devel` requires review by two people:
+- one author
+- one independent reviewer
+
+If an exception is needed, it must be clearly explained
+in the Pull Request.
+
+Allowed merge modes include:
+- squash
+- merge commit
+- rebase
 
 HARD RULES
 ----------
-- Upstream is fetch-only; no direct pushes or merges are allowed.
-- All write operations target PERSONAL or LOCAL only.
-- main and devel are baseline branches.
-- main and devel are handled the same way: branch from them, avoid direct commits.
-- Direct development on baseline branches is allowed but strongly discouraged.
-- Work branches are preferred for non-trivial changes.
-- Any divergence from baselines must be intentional.
+- Upstream is fetch-only; make all changes in PERSONAL or LOCAL
+- Treat `main` and `devel` the same way: branch from them and avoid direct commits
+- Use work branches for non-trivial changes
+- Any divergence from baselines must be intentional
+
+
+DOCUMENT AUTHORITY
+------------------
+This document is the authoritative reference for Git governance
+in this project.
+
+All other Git-related documents (processes, workflows, CI flows)
+must align with these rules and must not redefine them.
+
+If something conflicts with this document, this document takes precedence.

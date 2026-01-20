@@ -6,6 +6,29 @@ PURPOSE
 This document is the complete index for contributors.
 It links to the right document for each topic.
 
+ROLE FLOW (ASCII)
+-----------------
+```text
+            +---------------------------------+
+            |  UPSTREAM (authority)           |
+            |  xymon-monitoring/xymon         |
+            |  Pull Request + merge (UI)      |
+            +---------------------------------+
+                         ^
+                         |
+            +---------------------------------+
+            |  PERSONAL FORK (origin)         |
+            |  <your-github-username>/xymon   |
+            |  development / CI               |
+            +---------------------------------+
+                         ^
+                         |
+            +---------------------------------+
+            |  LOCAL (working copy)           |
+            |  developer machine              |
+            +---------------------------------+
+```
+
 
 TOPICS
 ------

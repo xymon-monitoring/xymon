@@ -1,12 +1,12 @@
 GIT GUIDELINES - BEST PRACTICES
-===============================
+==============================
 
 PURPOSE
 -------
-This document provides non-normative guidance and best practices
+This document gives simple, practical advice
 for working with Git in this project.
 
-Git governance, repository authority, and baseline rules are defined in:
+Official Git rules and repository governance are defined in:
 - [git-rules.md](git-rules.md)
 
 This document does not define rules.
@@ -14,36 +14,54 @@ This document does not define rules.
 
 SCOPE
 -----
-These practices apply to day-to-day development activities
-and complement the canonical setup and workflows.
+These guidelines apply to everyday development work.
 
 
 WORKING GUIDELINES
 ------------------
-- Prefer work branches for non-trivial changes
-- Keep commits focused, readable, and intentional
-- Maintain a clear and understandable history
-- Use personal forks as integration and testing spaces
-- Clean up temporary branches once work is complete
+- Keep commits focused so the project history stays easy to read
+- Use your personal fork to test and integrate changes
+
+
+BRANCH PRACTICES
+----------------
+- Use a separate branch for any change that is more than a small fix
+- Keep branches short-lived and remove them after merge
+
+
+COMMIT MESSAGES
+---------------
+- Write clear commit messages
+- Avoid unnecessary or purely automatic commits
+- A squashed commit should still clearly describe the change
+
+
+PULL REQUEST PRACTICES
+----------------------
+- Split large changes into smaller PRs when possible
+- If a change must be large, explain why in the PR description
+
+
+REVIEW PRACTICES
+----------------
+- Explain what your PR does and why
+- Avoid mixing refactoring and behavior changes if possible
 
 
 THINGS TO AVOID
 ---------------
-- Large, unfocused commits
-- Long-lived temporary branches
-- Unreviewed risky changes on baseline branches
-- Rewriting shared history without coordination
+- Very large or unclear commits
+- Long-lived branches without a clear purpose
+- Risky changes on main branches without review
+- Changing shared history without coordination
 
 
-FAILURE HANDLING
-----------------
-If something goes wrong:
-- Pause and assess the situation
-- Identify the last known good state
-- Restore deliberately
-- Continue with intent
+IF SOMETHING GOES WRONG
+-----------------------
+- Find the last working state
+- Fix or restore carefully
 
 
-KEY PRINCIPLE
--------------
-Prefer clarity, responsibility, and intent over rigid process.
+KEY IDEA
+--------
+Prefer clear, careful work over rigid process.
