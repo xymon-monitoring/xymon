@@ -15,6 +15,7 @@ This document is procedural and scoped to the contributor workflow.
 AUTHORITATIVE FLOW (PHASED)
 ==========================
 
+```text
 PHASE 1
   ┌───────────────────────────────┐
   │ GitHub UI                     │
@@ -61,6 +62,7 @@ PHASE 9           │ Sync fork (GitHub UI)
                   │
                   ▼
   LOCAL + FORK realigned
+```
 
 
 RULES

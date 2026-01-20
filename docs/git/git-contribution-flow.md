@@ -9,6 +9,7 @@ This guide shows a simple and safe way to contribute.
 AUTHORITATIVE FLOW (STEP-BASED)
 ===============================
 
+```text
 STEP 1
   ┌───────────────────────────────┐
   │ UPSTREAM (READ-ONLY)          │
@@ -54,6 +55,7 @@ STEP 7            │ cleanup
                   │
                   ▼
   LOCAL + FORK cleaned
+```
 
 
 RULES
