@@ -11,7 +11,6 @@ TOPICS
 ------
 Getting started:
 - [FIRST-CONTRIBUTION.md](FIRST-CONTRIBUTION.md)
-- [git-quick-start.md](git-quick-start.md)
 - [git-installation.md](git-installation.md)
 - [git-setup.md](git-setup.md)
 
