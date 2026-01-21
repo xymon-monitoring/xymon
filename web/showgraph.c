@@ -1232,13 +1232,22 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 	/* Was it OK ? */
 	if (rrd_test_error() || (result != 0)) {
-		if (calcpr) { 
+		char *error_msg = rrd_get_error();
+
+		/* Log the error to server logs before displaying to user */
+		errprintf("RRD graph generation failed for host='%s' service='%s' graph='%s': %s\n",
+			  (hostname ? hostname : "unknown"),
+			  (service ? service : "unknown"),
+			  (gtype ? gtype : "unknown"),
+			  (error_msg ? error_msg : "unknown error"));
+
+		if (calcpr) {
 			int i;
 			for (i=0; (calcpr[i]); i++) xfree(calcpr[i]);
 			calcpr = NULL;
 		}
 
-		errormsg(rrd_get_error());
+		errormsg(error_msg);
 	}
 
 	if (useroptval) xfree(useroptval);
