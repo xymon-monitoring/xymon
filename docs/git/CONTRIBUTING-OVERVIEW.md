@@ -11,15 +11,15 @@ You can start small. Nothing here requires expert knowledge.
 
 HOW IT WORKS
 ------------
-You make changes on your computer,
-push them to your own GitHub fork,
-and open a Pull Request to the main project.
+1. Make changes on your computer
+2. Push them to your own GitHub fork
+3. Open a Pull Request to the main project
 
 That’s it.
 
 
-ROLE FLOW (AT A GLANCE)
------------------------
+HOW CHANGES MOVE
+----------------
 ```text
             +---------------------------------+
             |  UPSTREAM (main project)        |
