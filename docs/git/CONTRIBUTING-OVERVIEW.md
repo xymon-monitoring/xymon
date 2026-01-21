@@ -1,47 +1,64 @@
 CONTRIBUTING OVERVIEW
 =====================
 
-PURPOSE
+WELCOME
 -------
-This document is the complete index for contributors.
-It links to the right document for each topic.
+Want to contribute? You are in the right place.
 
-ROLE FLOW (ASCII)
------------------
+This page gives a quick overview and points you to the right documents.
+You can start small. Nothing here requires expert knowledge.
+
+
+HOW IT WORKS
+------------
+You make changes on your computer,
+push them to your own GitHub fork,
+and open a Pull Request to the main project.
+
+That’s it.
+
+
+ROLE FLOW (AT A GLANCE)
+-----------------------
 ```text
             +---------------------------------+
-            |  UPSTREAM (authority)           |
+            |  UPSTREAM (main project)        |
             |  xymon-monitoring/xymon         |
-            |  Pull Request + merge (UI)      |
             +---------------------------------+
                          ^
+                         |  Pull Request
                          |
             +---------------------------------+
-            |  PERSONAL FORK (origin)         |
+            |  YOUR FORK                      |
             |  <your-github-username>/xymon   |
-            |  development / CI               |
             +---------------------------------+
                          ^
                          |
             +---------------------------------+
-            |  LOCAL (working copy)           |
-            |  developer machine              |
+            |  YOUR COMPUTER                  |
             +---------------------------------+
 ```
 
 
-TOPICS
-------
-Getting started:
-- [FIRST-CONTRIBUTION.md](FIRST-CONTRIBUTION.md)
-- [git-installation.md](git-installation.md)
-- [git-setup.md](git-setup.md)
+WHERE TO START
+--------------
+New here?
+Start with [FIRST-CONTRIBUTION.md](FIRST-CONTRIBUTION.md)
 
-Contribution workflow:
-- [git-contribution-flow.md](git-contribution-flow.md)
-- [git-rules.md](git-rules.md)
-- [git-guidelines.md](git-guidelines.md)
+Need Git help?
+[git-installation.md](git-installation.md)
+[git-setup.md](git-setup.md)
 
-GitHub Actions workflows:
-- [git-actions-upstream-workflow.md](git-actions-upstream-workflow.md)
-- [git-actions-personal-workflow.md](git-actions-personal-workflow.md)
+
+MORE DETAILS (WHEN YOU NEED THEM)
+---------------------------------
+How to contribute:
+[git-contribution-flow.md](git-contribution-flow.md)
+
+Rules and good practices:
+[git-rules.md](git-rules.md)
+[git-guidelines.md](git-guidelines.md)
+
+Working on CI?
+[git-actions-upstream-workflow.md](git-actions-upstream-workflow.md)
+[git-actions-personal-workflow.md](git-actions-personal-workflow.md)
