@@ -3896,7 +3896,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "config hosts.cfg", 16) == 0) {
 		char *conffn, *p;
 
-		if (!can_respond) { errprintf("Received 'config hosts.cfg' message, but can't respond; ignoring\n"); goto done; }
+		if (msg->sock == -1) { errprintf("Received 'config hosts.cfg' message, but can't respond; ignoring\n"); goto done; }
 		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		/* This is special-cased, even if our actual hostfn is not "hosts.cfg" */
@@ -5438,7 +5438,6 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			dbghost = strdup(p+1);
 		}
-			flush_filecache();
 		else if (argnmatch(argv[argi], "--flap-seconds=")) {
 			char *p = strchr(argv[argi], '=');
 			flapthreshold = atoi(p+1);
