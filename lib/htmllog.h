@@ -17,9 +17,9 @@ enum histbutton_t { HIST_TOP, HIST_BOTTOM, HIST_NONE };
 
 extern enum histbutton_t histlocation;
 
-extern void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
-		       int color, int flapping, char *sender, char *flags, 
-		       time_t logtime, char *timesincechange, 
+extern void generate_html_log(char *hostname, char *displayname, char *service, char *ip,
+		       int color, int flapping, char *sender, char *flags,
+		       time_t logtime, char *timesincechange,
 		       char *firstline, char *restofmsg, char *modifiers,
 		       time_t acktime, char *ackmsg, char *acklist,
 		       time_t disabletime, char *dismsg,
@@ -27,7 +27,7 @@ extern void generate_html_log(char *hostname, char *displayname, char *service, 
 		       char *multigraphs,
 		       char *linktoclient,
 		       char *nkprio, char *nkttgroup, char *nkttextra,
-		       int graphtime,
+		       int graphtime, int render_graphs,
 		       FILE *output);
 extern char *alttag(char *columnname, int color, int acked, int propagate, char *age);
 
