@@ -20,8 +20,8 @@ Great ways to start:
 Small, focused changes are always welcome.
 
 
-MINIMUM VIABLE PATH
--------------------
+START HERE
+----------
 Follow these in order:
 1. [git-installation.md](git-installation.md)
 2. [git-setup.md](git-setup.md)

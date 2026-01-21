@@ -62,3 +62,9 @@ Rules and good practices:
 Working on CI?
 - [git-actions-upstream-workflow.md](git-actions-upstream-workflow.md)
 - [git-actions-personal-workflow.md](git-actions-personal-workflow.md)
+
+
+DOCUMENTATION FORMAT
+--------------------
+When editing documentation, please follow:
+- [DOCUMENTATION-FORMAT.md](DOCUMENTATION-FORMAT.md)
