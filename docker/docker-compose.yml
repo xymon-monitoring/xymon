@@ -1,0 +1,20 @@
+---
+services:
+  bullseye:
+    build:
+      context: ..
+      dockerfile: docker/debian/Dockerfile
+      args:
+        OS: debian:bullseye
+  bookworm:
+    build:
+      context: ..
+      dockerfile: docker/debian/Dockerfile
+      args:
+        OS: debian:bookworm
+  trixie:
+    build:
+      context: ..
+      dockerfile: docker/debian/Dockerfile
+      args:
+        OS: debian:trixie
