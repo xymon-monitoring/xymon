@@ -9,8 +9,22 @@ This page gives a quick overview and points you to the right documents.
 You can start small. Nothing here requires expert knowledge.
 
 
-HOW IT WORKS
-------------
+HOW THE PROJECT WORKS
+---------------------
+Xymon is a community project. Everyone is welcome.
+
+All kinds of help are appreciated, from small fixes to larger contributions.
+No prior permission is required.
+
+Technical discussions and decisions happen on
+xymon@xymon.com.
+
+GitHub is used for hosting and tracking,
+but the mailing list remains the main place for discussion and support.
+
+
+WORKING WITH GITHUB
+-------------------
 1. Make changes on your computer
 2. Push them to your own GitHub fork
 3. Open a Pull Request to the main project
@@ -50,8 +64,8 @@ Need Git help?
 - [git-setup.md](git-setup.md)
 
 
-MORE DETAILS (WHEN YOU NEED THEM)
----------------------------------
+MORE DETAILS
+------------
 How to contribute:
 - [git-contribution-flow.md](git-contribution-flow.md)
 
