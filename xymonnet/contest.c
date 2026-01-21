@@ -484,6 +484,12 @@ static void setup_ssl(tcptest_t *item)
 #endif
 
 		switch (item->ssloptions->sslversion) {
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+		  case SSLVERSION_TLS13:
+			SSL_CTX_set_min_proto_version(item->sslctx, TLS1_3_VERSION);
+			SSL_CTX_set_max_proto_version(item->sslctx, TLS1_3_VERSION);
+			break;
+#endif
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		  case SSLVERSION_TLS12:
 			SSL_CTX_set_min_proto_version(item->sslctx, TLS1_2_VERSION);

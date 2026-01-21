@@ -63,6 +63,7 @@ extern int snienabled;
 #define SSLVERSION_TLS10   3
 #define SSLVERSION_TLS11   4
 #define SSLVERSION_TLS12   5
+#define SSLVERSION_TLS13   6
 
 typedef struct {
 	char *cipherlist;
