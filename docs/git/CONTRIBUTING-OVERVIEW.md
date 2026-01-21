@@ -43,22 +43,22 @@ ROLE FLOW (AT A GLANCE)
 WHERE TO START
 --------------
 New here?
-Start with [FIRST-CONTRIBUTION.md](FIRST-CONTRIBUTION.md)
+- Start with [FIRST-CONTRIBUTION.md](FIRST-CONTRIBUTION.md)
 
 Need Git help?
-[git-installation.md](git-installation.md)
-[git-setup.md](git-setup.md)
+- [git-installation.md](git-installation.md)
+- [git-setup.md](git-setup.md)
 
 
 MORE DETAILS (WHEN YOU NEED THEM)
 ---------------------------------
 How to contribute:
-[git-contribution-flow.md](git-contribution-flow.md)
+- [git-contribution-flow.md](git-contribution-flow.md)
 
 Rules and good practices:
-[git-rules.md](git-rules.md)
-[git-guidelines.md](git-guidelines.md)
+- [git-rules.md](git-rules.md)
+- [git-guidelines.md](git-guidelines.md)
 
 Working on CI?
-[git-actions-upstream-workflow.md](git-actions-upstream-workflow.md)
-[git-actions-personal-workflow.md](git-actions-personal-workflow.md)
+- [git-actions-upstream-workflow.md](git-actions-upstream-workflow.md)
+- [git-actions-personal-workflow.md](git-actions-personal-workflow.md)
