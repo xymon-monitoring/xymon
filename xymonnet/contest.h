@@ -68,6 +68,7 @@ typedef struct {
 	char *cipherlist;
 	int  sslversion;
 	char *clientcert;
+	char *alpns;		/* ALPN protocols (comma-separated) */
 } ssloptions_t;
 
 typedef int (*f_callback_data)(unsigned char *buffer, unsigned int size, void *privdata);
