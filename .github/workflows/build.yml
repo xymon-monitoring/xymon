@@ -193,7 +193,7 @@ jobs:
             [[ -x client/openbsd-meminfo ]] && ./client/openbsd-meminfo
             [[ -x client/netbsd-meminfo ]] && ./client/netbsd-meminfo
             [[ -x client/freebsd-meminfo ]] && ./client/freebsd-meminfo
-  build-debian:
+  build-docker:
     strategy:
       fail-fast: False
       matrix:
@@ -201,6 +201,8 @@ jobs:
           - name: bullseye
           - name: bookworm
           - name: trixie
+          - name: rockylinux10
+          - name: fedora
     runs-on: ubuntu-latest
     name: build on ${{ matrix.os.name }}
     steps:

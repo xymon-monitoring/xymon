@@ -6,7 +6,7 @@ cd xymon
 ./configure --server || exit $?
 make || exit $?
 
-apt-get install libc-ares-dev libldap-dev librrd-dev libssl-dev libtirpc-dev || exit $?
+yum -y install c-ares-devel openldap-devel rrdtool-devel openssl-devel libtirpc-devel || exit $?
 
 # build with full deps
 ./configure --server || exit $?

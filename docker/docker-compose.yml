@@ -18,3 +18,15 @@ services:
       dockerfile: docker/debian/Dockerfile
       args:
         OS: debian:trixie
+  fedora:
+    build:
+      context: ..
+      dockerfile: docker/rpm/Dockerfile
+      args:
+        OS: fedora:latest
+  rockylinux10:
+    build:
+      context: ..
+      dockerfile: docker/rpm/Dockerfile
+      args:
+        OS: rockylinux/rockylinux:10
