@@ -65,17 +65,18 @@ xymon_server_core Library
 
 ### Role
 
-`xymon_server_core` contains **only**:
+`xymon_server_core` contains:
 - Xymon server-specific code,
 - modules requiring server execution context,
 - server-owned behavior.
 
 It may depend on `xymon_common`.
 
-### Current Scope (B6.5 baseline)
+### Current Scope (B6.5 baseline – adjusted)
 
 - server bootstrap / stub
-- server logging logic only
+- server logging logic
+- server-side configuration loaders required at startup
 
 ### Files (B6.5)
 
@@ -87,18 +88,68 @@ It may depend on `xymon_common`.
 - htmllog.c
 - reportlog.c
 
-### Explicit Exclusions (current state)
+**Configuration loaders (server-scoped, TRANSITIONAL)**
+- loadalerts.c
+- loadcriticalconf.c
+- loadhosts.c
 
-- configuration loaders (`loadhosts*`, `loadalerts*`, etc.)
-- host/page/tree ownership
+These loaders are included **temporarily** and were subject to
+explicit dependency analysis (B6.6).
+
+They are included **only as long as**:
+- they depend exclusively on `xymon_common`,
+- they do not introduce runtime network protocol handling,
+- they do not transfer ownership of core server data structures.
+
+### Loader analysis references
+
+- loadhosts.c  
+  → docs/architecture/loaders/loadhosts.md
+- loadalerts.c  
+  → docs/architecture/loaders/loadalerts.md
+- loadcriticalconf.c  
+  → docs/architecture/loaders/loadcriticalconf.md
+
+### Loader Migration Status (B6.6)
+
+- loadhosts.c  
+  Classification: NON-EXTRACTABLE  
+  Reasons:
+  - direct inclusion of .c submodules
+  - reliance on server-global mutable state
+  - indirect network access via loader components
+
+- loadalerts.c  
+  Classification: CANDIDAT EXTRACTABLE  
+  Notes:
+  - depends on xymon_common and libpcre
+  - no network access
+  - no direct runtime I/O
+  - eligible for future isolation in xymon_server_loaders
+
+- loadcriticalconf.c  
+  Classification: NON-EXTRACTABLE  
+  Reasons:
+  - persistent configuration writes
+  - clone and alias management
+  - shared global configuration state
+
+### Explicit Exclusions (B6.5)
+
 - network protocol handling
+- runtime daemon logic
+- client-side behavior
+- cross-mode shared ownership of server data
 
-These modules remain **outside the server core boundary**
-until their dependency surfaces are fully isolated.
+### Constraints
+
+- server-only semantics
+- no reverse dependency into `xymon_common`
+- loader code must remain dependency-auditable
 
 ### Evolution Rules
 
-- any migration into `xymon_server_core` must be:
+- any migration into or out of `xymon_server_core` must be:
   - explicit,
   - documented,
   - dependency-complete,
@@ -127,12 +178,12 @@ It is used to:
 
 
 Global Architecture Rules
--------------------------
+------------------------
 
 - strictly unidirectional dependencies
 - `xymon_common` must never include server semantics
 - `xymon_server_core` owns server-only behavior
-- loaders must not move without full dependency resolution
+- loaders may reside in server core **only if dependency-clean**
 - all changes must:
   - keep the build green,
   - be atomic,
@@ -142,8 +193,10 @@ Global Architecture Rules
 Status
 ------
 
-- Architecture frozen at **B6.5**
+- Architecture baseline: **B6.5**
 - Baseline validated by CI
-- Next phase: **B6.6 – dependency analysis of loader modules**
+- Loader analysis completed (B6.6)
+- Loader classification frozen
+- Next phase (optional): **B6.7 – isolate loadalerts.c**
 - This document is updated **only after validated structural changes**
 
