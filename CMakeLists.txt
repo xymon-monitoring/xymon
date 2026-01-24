@@ -57,7 +57,7 @@ target_compile_options(xymon_common PRIVATE
     -Werror=implicit-int
 )
 
-# ---- xymon_server_core: server-only (logs + loadalerts, B6.5.4) ----
+# ---- xymon_server_core: server-only (logs + migrated loaders, B6.5.6) ----
 add_library(xymon_server_core STATIC
     lib/server_stub.c
 
@@ -67,8 +67,10 @@ add_library(xymon_server_core STATIC
     lib/htmllog.c
     lib/reportlog.c
 
-    # server configuration (first migrated non-log module)
+    # server configuration loaders
     lib/loadalerts.c
+    lib/loadcriticalconf.c
+    lib/loadhosts.c
 )
 
 target_include_directories(xymon_server_core PUBLIC
