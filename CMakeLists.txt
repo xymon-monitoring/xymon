@@ -42,7 +42,7 @@ else()
     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 endif()
 
-# ---- Bibliotheque commune minimale (OPTION B - B4.3) ----
+# ---- Bibliotheque commune minimale (OPTION B - B4.2) ----
 # Reactivation incrementale, sans dependances externes
 add_library(xymon_common STATIC
     lib/errormsg.c
@@ -51,7 +51,6 @@ add_library(xymon_common STATIC
     lib/md5.c
     lib/strfunc.c
     lib/timefunc.c
-    lib/log.c
 )
 
 target_include_directories(xymon_common PUBLIC
