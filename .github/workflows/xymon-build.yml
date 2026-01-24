@@ -9,27 +9,41 @@ on:
 
 jobs:
   build:
-    name: build (${{ matrix.variant }} / ${{ matrix.compiler }})
+    name: build (${{ matrix.name }})
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        variant: [server, client]
-        compiler: [gcc, clang]
+        include:
+          - name: server
+            variant: server
+
+          - name: client, CT=client
+            variant: client
+            conftype: client
+
+          - name: client CT=server
+            variant: client
+            conftype: server
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/setup-env
+        with:
+          profile: debian
 
       - uses: ./.github/actions/select-compiler
         with:
-          compiler: ${{ matrix.compiler }}
+          compiler: gcc
 
       - uses: ./.github/actions/configure-xymon
         with:
           variant: ${{ matrix.variant }}
+          profile: debian
+        env:
+          CONFTYPE: ${{ matrix.conftype }}
 
       - uses: ./.github/actions/build-xymon
 
