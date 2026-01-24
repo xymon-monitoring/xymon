@@ -182,7 +182,7 @@ char *xgetenv(const char *name)
 		setenv(name, oneenv, 1);
 		xfree(oneenv);
 #else
-		SBUF_MALLOC(10 + strlen(xgetenv("MACHINEDOTS")));
+		SBUF_MALLOC(oneenv, 10 + strlen(xgetenv("MACHINEDOTS")));
 		snprintf(oneenv, oneenv_buflen, "%s=%s", name, xgetenv("MACHINEDOTS"));
 		p = oneenv; while ((p = strchr(p, '.')) != NULL) *p = ',';
 		putenv(oneenv);
