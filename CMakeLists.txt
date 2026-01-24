@@ -61,11 +61,22 @@ target_compile_options(xymon_common PRIVATE
     -Werror=implicit-int
 )
 
+# ---- B6.1: librairie serveur (scaffold vide) ----
+add_library(xymon_server_core STATIC
+)
+
+target_include_directories(xymon_server_core PUBLIC
+    include
+    lib
+    ${CMAKE_BINARY_DIR}
+)
+
 add_executable(xymond_channel
     cmake/smoke.c
 )
 
 target_link_libraries(xymond_channel
     xymon_common
+    xymon_server_core
 )
 
