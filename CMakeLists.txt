@@ -43,20 +43,12 @@ else()
     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 endif()
 
-# ---- Cible réelle minimale : xymond ----
-add_executable(xymond
-    xymond/xymond.c
+# ---- Cible réelle minimale : xymond_channel ----
+add_executable(xymond_channel
     xymond/xymond_channel.c
-    xymond/xymond_client.c
-    xymond/xymond_worker.c
-    xymond/xymond_alert.c
-    xymond/xymond_hostdata.c
-    xymond/xymond_locator.c
-    xymond/xymond_distribute.c
-    xymond/xymond_filestore.c
 )
 
-target_include_directories(xymond PRIVATE
+target_include_directories(xymond_channel PRIVATE
     xymond
     include
     ${CMAKE_BINARY_DIR}
@@ -65,7 +57,7 @@ target_include_directories(xymond PRIVATE
     ${LDAP_INCLUDE}
 )
 
-target_link_libraries(xymond
+target_link_libraries(xymond_channel
     ${CARES_LIB}
     ${PCRE_LIB}
     ${LDAP_LIB}
