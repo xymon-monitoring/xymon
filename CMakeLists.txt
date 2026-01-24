@@ -41,6 +41,11 @@ add_library(xymon_common STATIC
     lib/matching.c
     lib/timing.c
     lib/crondate.c
+
+    lib/eventlog.c
+    lib/notifylog.c
+    lib/htmllog.c
+    lib/reportlog.c
 )
 
 target_include_directories(xymon_common PUBLIC
