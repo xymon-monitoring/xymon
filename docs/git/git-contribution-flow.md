@@ -147,6 +147,15 @@ Open the upstream PR:
 -> xymon-monitoring/xymon:main (or devel)
 ```
 
+Step 7a - Accidental upstream Pull Request
+-----------------------------------------
+If a Pull Request is opened to upstream by mistake:
+
+- Open the Pull Request
+- Click "Close pull request"
+- Optional comment:
+  "Closed – PR opened by mistake, branch preserved in personal fork."
+
 
 STEP 8 - CLEAN UP
 -----------------
