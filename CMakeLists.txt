@@ -37,10 +37,9 @@ else()
     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 endif()
 
-# ---- Cible minimale ----
-# NOTE: adapter src/main.c si nécessaire
+# ---- Cible factice (smoke test CI) ----
 add_executable(xymon
-    src/main.c
+    cmake/smoke.c
 )
 
 target_include_directories(xymon PRIVATE
