@@ -1,9 +1,11 @@
+ARCHITECTURE.md
+===============
 
 No reverse dependency is allowed.
 
 
 xymon_common Library
---------------------
+-------------------
 
 ### Role
 
@@ -14,42 +16,48 @@ xymon_common Library
 
 It must **never** depend on server-specific code.
 
-### Current Scope
+### Current Scope (B6.5 baseline)
 
 - memory, string, time, and hash utilities
 - generic data structures
 - shared IPC and buffer handling
-- non-server-specific logging code
+- low-level helpers reusable by client and server
 
-### Files (B6.x)
+### Files (B6.5)
 
-- errormsg.c  
-- tree.c  
-- memory.c  
-- md5.c  
-- strfunc.c  
-- timefunc.c  
-- digest.c  
-- encoding.c  
-- calc.c  
-- misc.c  
-- msort.c  
-- files.c  
-- stackio.c  
-- sig.c  
-- suid.c  
-- xymond_buffer.c  
-- xymond_ipc.c  
-- matching.c  
-- timing.c  
-- crondate.c  
-- reportlog.c  
+- errormsg.c
+- tree.c
+- memory.c
+- md5.c
+- strfunc.c
+- timefunc.c
+- digest.c
+- encoding.c
+- calc.c
+- misc.c
+- msort.c
+- files.c
+- stackio.c
+- sig.c
+- suid.c
+- xymond_buffer.c
+- xymond_ipc.c
+- matching.c
+- timing.c
+- crondate.c
+
+### Explicit Exclusions
+
+- no server business logic
+- no server networking
+- no configuration loaders
+- no ownership of server data structures
 
 ### Constraints
 
-- no server network access
-- no server business logic
 - stable and reusable API
+- suitable for client and server builds
+- must remain dependency-clean
 
 
 xymon_server_core Library
@@ -59,31 +67,44 @@ xymon_server_core Library
 
 `xymon_server_core` contains **only**:
 - Xymon server-specific code,
-- modules requiring server mode,
-- server business logic.
+- modules requiring server execution context,
+- server-owned behavior.
 
 It may depend on `xymon_common`.
 
-### Current Scope (B6.x)
+### Current Scope (B6.5 baseline)
 
-- server stubs
-- server logging logic
-- HTML and notification handling
+- server bootstrap / stub
+- server logging logic only
 
-### Files (B6.x)
+### Files (B6.5)
 
-- server_stub.c  
-- eventlog.c  
-- notifylog.c  
-- htmllog.c  
+- server_stub.c
+
+**Logs**
+- eventlog.c
+- notifylog.c
+- htmllog.c
+- reportlog.c
+
+### Explicit Exclusions (current state)
+
+- configuration loaders (`loadhosts*`, `loadalerts*`, etc.)
+- host/page/tree ownership
+- network protocol handling
+
+These modules remain **outside the server core boundary**
+until their dependency surfaces are fully isolated.
 
 ### Evolution Rules
 
-- any migration from `xymon_common` must be:
+- any migration into `xymon_server_core` must be:
   - explicit,
   - documented,
-  - done in small, controlled batches (B6.5).
-- no new server code may be introduced elsewhere.
+  - dependency-complete,
+  - reversible.
+- partial or speculative moves are forbidden.
+- failed migrations must be reverted immediately.
 
 
 xymond_channel Binary
@@ -101,7 +122,7 @@ It is used to:
 ### Constraints
 
 - no business logic
-- no functional extension
+- no functional behavior
 - internal use only (test / CI)
 
 
@@ -109,17 +130,20 @@ Global Architecture Rules
 -------------------------
 
 - strictly unidirectional dependencies
-- no server code in `xymon_common`
-- any new separation must:
+- `xymon_common` must never include server semantics
+- `xymon_server_core` owns server-only behavior
+- loaders must not move without full dependency resolution
+- all changes must:
   - keep the build green,
-  - be introduced via atomic commits,
-  - comply with this architecture
+  - be atomic,
+  - be architecture-compliant
 
 
 Status
 ------
 
-- Architecture frozen at **B6.x**
-- Next step: **B6.5 – controlled migration of non-log server modules**
-- This document must be updated **only** when a validated structural change occurs.
+- Architecture frozen at **B6.5**
+- Baseline validated by CI
+- Next phase: **B6.6 – dependency analysis of loader modules**
+- This document is updated **only after validated structural changes**
 
