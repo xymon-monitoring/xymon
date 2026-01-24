@@ -43,6 +43,25 @@ else()
     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 endif()
 
+# ---- Bibliothèque commune minimale ----
+add_library(xymon_common STATIC
+    lib/debug.c
+    lib/errprintf.c
+    lib/environ.c
+    lib/memory.c
+    lib/stackio.c
+    lib/xtree.c
+    lib/regex.c
+    lib/locator.c
+    lib/md5.c
+)
+
+target_include_directories(xymon_common PRIVATE
+    lib
+    include
+    ${CMAKE_BINARY_DIR}
+)
+
 # ---- Cible réelle minimale : xymond_channel ----
 add_executable(xymond_channel
     xymond/xymond_channel.c
@@ -58,6 +77,7 @@ target_include_directories(xymond_channel PRIVATE
 )
 
 target_link_libraries(xymond_channel
+    xymon_common
     ${CARES_LIB}
     ${PCRE_LIB}
     ${LDAP_LIB}
