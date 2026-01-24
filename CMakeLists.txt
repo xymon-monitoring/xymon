@@ -42,45 +42,28 @@ configure_file(
 #     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 # endif()
 
-# ---- Bibliotheque commune (DESACTIVE pour A) ----
-# add_library(xymon_common STATIC
-#     lib/errormsg.c
-#     lib/tree.c
-#     lib/environ.c
-#     lib/memory.c
-#     lib/timefunc.c
-#     lib/matching.c
-#     lib/locator.c
-#     lib/md5.c
-# )
-#
-# target_include_directories(xymon_common PUBLIC
-#     include
-#     lib
-#     ${CMAKE_BINARY_DIR}
-#     ${CARES_INCLUDE}
-#     ${PCRE_INCLUDE}
-#     ${LDAP_INCLUDE}
-# )
-#
-# target_link_libraries(xymon_common
-#     ${CARES_LIB}
-#     ${PCRE_LIB}
-#     ${LDAP_LIB}
-#     OpenSSL::SSL
-#     OpenSSL::Crypto
-# )
+# ---- Bibliotheque commune minimale (OPTION B - B1) ----
+# Reactivation incrementale, sans dependances externes
+add_library(xymon_common STATIC
+    lib/errormsg.c
+    lib/tree.c
+    lib/memory.c
+    lib/md5.c
+)
 
-# ---- Binaire smoke-test (SEUL element actif pour A) ----
+target_include_directories(xymon_common PUBLIC
+    include
+    lib
+    ${CMAKE_BINARY_DIR}
+)
+
+# ---- Binaire smoke-test (conserve) ----
 add_executable(xymond_channel
     cmake/smoke.c
 )
 
-# target_include_directories(xymond_channel PRIVATE
-#     xymond
-# )
-
-# target_link_libraries(xymond_channel
-#     xymon_common
-# )
+# ---- Lien minimal vers la lib commune (OPTION B - B2) ----
+target_link_libraries(xymond_channel
+    xymon_common
+)
 
