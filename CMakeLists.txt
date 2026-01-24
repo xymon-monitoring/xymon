@@ -55,6 +55,8 @@ target_include_directories(xymon_common PUBLIC
 )
 
 target_compile_options(xymon_common PRIVATE
+    -Wall
+    -Wextra
     -Werror=implicit-function-declaration
     -Werror=implicit-int
 )
