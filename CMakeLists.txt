@@ -52,6 +52,7 @@ add_executable(xymond
 
 target_include_directories(xymond PRIVATE
     xymond
+    include
     ${CARES_INCLUDE}
     ${PCRE_INCLUDE}
     ${LDAP_INCLUDE}
