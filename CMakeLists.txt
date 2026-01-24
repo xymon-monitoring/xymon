@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+icmake_minimum_required(VERSION 3.16)
 
 project(xymon C)
 
@@ -20,7 +20,7 @@ else()
     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 endif()
 
-# ---- xymon_common: utilitaires + code partage ----
+# ---- xymon_common: utilitaires + code partage + loaders ----
 add_library(xymon_common STATIC
     lib/errormsg.c
     lib/tree.c
@@ -42,6 +42,12 @@ add_library(xymon_common STATIC
     lib/matching.c
     lib/timing.c
     lib/crondate.c
+
+    # loaders (structurels, non isolables en B6.5)
+    lib/loadhosts.c
+    lib/loadhosts_file.c
+    lib/loadalerts.c
+    lib/loadcriticalconf.c
 )
 
 target_include_directories(xymon_common PUBLIC
@@ -57,19 +63,13 @@ target_compile_options(xymon_common PRIVATE
     -Werror=implicit-int
 )
 
-# ---- xymon_server_core: code serveur (logs + chargement config) ----
+# ---- xymon_server_core: code serveur autonome (logs uniquement) ----
 add_library(xymon_server_core STATIC
     lib/server_stub.c
-
     lib/eventlog.c
     lib/notifylog.c
     lib/htmllog.c
     lib/reportlog.c
-
-    lib/loadhosts.c
-    lib/loadhosts_file.c
-    lib/loadalerts.c
-    lib/loadcriticalconf.c
 )
 
 target_include_directories(xymon_server_core PUBLIC
