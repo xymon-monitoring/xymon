@@ -12,6 +12,12 @@ option(ENABLE_LDAP "Enable LDAP support" ON)
 message(STATUS "System: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Compiler: ${CMAKE_C_COMPILER}")
 
+# ---- Génération minimale de config.h ----
+configure_file(
+    ${CMAKE_SOURCE_DIR}/config.h.in
+    ${CMAKE_BINARY_DIR}/config.h
+)
+
 # ---- Dépendances minimales ----
 find_library(CARES_LIB cares REQUIRED)
 find_path(CARES_INCLUDE ares.h REQUIRED)
@@ -53,6 +59,7 @@ add_executable(xymond
 target_include_directories(xymond PRIVATE
     xymond
     include
+    ${CMAKE_BINARY_DIR}
     ${CARES_INCLUDE}
     ${PCRE_INCLUDE}
     ${LDAP_INCLUDE}
