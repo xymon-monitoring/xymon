@@ -17,22 +17,6 @@ configure_file(
     ${CMAKE_BINARY_DIR}/config.h
 )
 
-# ---- Dependances (DESACTIVEES) ----
-# find_library(CARES_LIB cares REQUIRED)
-# find_path(CARES_INCLUDE ares.h REQUIRED)
-#
-# find_library(PCRE_LIB pcre REQUIRED)
-# find_path(PCRE_INCLUDE pcre.h REQUIRED)
-#
-# if(ENABLE_SSL)
-#     find_package(OpenSSL REQUIRED)
-# endif()
-#
-# if(ENABLE_LDAP)
-#     find_library(LDAP_LIB ldap REQUIRED)
-#     find_path(LDAP_INCLUDE ldap.h REQUIRED)
-# endif()
-
 # ---- Definitions (OPTION B - B3) ----
 if(XYMON_VARIANT STREQUAL "server")
     add_compile_definitions(XYMON_SERVER)
@@ -42,8 +26,7 @@ else()
     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 endif()
 
-# ---- Bibliotheque commune minimale (OPTION B - B4.4) ----
-# Reactivation incrementale, sans dependances externes
+# ---- Bibliotheque commune (OPTION B - FAST B4) ----
 add_library(xymon_common STATIC
     lib/errormsg.c
     lib/tree.c
@@ -51,7 +34,12 @@ add_library(xymon_common STATIC
     lib/md5.c
     lib/strfunc.c
     lib/timefunc.c
+
     lib/digest.c
+    lib/encoding.c
+    lib/calc.c
+    lib/misc.c
+    lib/msort.c
 )
 
 target_include_directories(xymon_common PUBLIC
@@ -60,12 +48,11 @@ target_include_directories(xymon_common PUBLIC
     ${CMAKE_BINARY_DIR}
 )
 
-# ---- Binaire smoke-test (conserve) ----
+# ---- Binaire smoke-test ----
 add_executable(xymond_channel
     cmake/smoke.c
 )
 
-# ---- Lien minimal vers la lib commune (OPTION B - B2) ----
 target_link_libraries(xymond_channel
     xymon_common
 )
