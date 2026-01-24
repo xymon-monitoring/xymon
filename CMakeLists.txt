@@ -57,19 +57,13 @@ target_compile_options(xymon_common PRIVATE
     -Werror=implicit-int
 )
 
-# ---- xymon_server_core: server-only code ----
+# ---- xymon_server_core: server-only (logs ONLY, B6.5 boundary) ----
 add_library(xymon_server_core STATIC
     lib/server_stub.c
-
     lib/eventlog.c
     lib/notifylog.c
     lib/htmllog.c
     lib/reportlog.c
-
-    lib/loadhosts.c
-    lib/loadhosts_file.c
-    lib/loadalerts.c
-    lib/loadcriticalconf.c
 )
 
 target_include_directories(xymon_server_core PUBLIC
