@@ -37,18 +37,27 @@ else()
     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 endif()
 
-# ---- Cible factice (smoke test CI) ----
-add_executable(xymon
-    cmake/smoke.c
+# ---- Cible réelle minimale : xymond ----
+add_executable(xymond
+    xymond/xymond.c
+    xymond/xymond_channel.c
+    xymond/xymond_client.c
+    xymond/xymond_worker.c
+    xymond/xymond_alert.c
+    xymond/xymond_hostdata.c
+    xymond/xymond_locator.c
+    xymond/xymond_distribute.c
+    xymond/xymond_filestore.c
 )
 
-target_include_directories(xymon PRIVATE
+target_include_directories(xymond PRIVATE
+    xymond
     ${CARES_INCLUDE}
     ${PCRE_INCLUDE}
     ${LDAP_INCLUDE}
 )
 
-target_link_libraries(xymon
+target_link_libraries(xymond
     ${CARES_LIB}
     ${PCRE_LIB}
     ${LDAP_LIB}
