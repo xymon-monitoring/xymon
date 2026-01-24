@@ -39,11 +39,16 @@ add_library(xymon_common STATIC
     lib/calc.c
     lib/misc.c
     lib/msort.c
-
     lib/files.c
     lib/stackio.c
     lib/sig.c
     lib/suid.c
+
+    lib/xymond_buffer.c
+    lib/xymond_ipc.c
+    lib/matching.c
+    lib/timing.c
+    lib/crondate.c
 )
 
 target_include_directories(xymon_common PUBLIC
