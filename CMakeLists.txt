@@ -26,7 +26,7 @@ else()
     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 endif()
 
-# ---- Bibliotheque commune (OPTION B - continue sources: files.c) ----
+# ---- Bibliotheque commune (OPTION B - continue sources, grouped) ----
 add_library(xymon_common STATIC
     lib/errormsg.c
     lib/tree.c
@@ -39,7 +39,11 @@ add_library(xymon_common STATIC
     lib/calc.c
     lib/misc.c
     lib/msort.c
+
     lib/files.c
+    lib/stackio.c
+    lib/sig.c
+    lib/suid.c
 )
 
 target_include_directories(xymon_common PUBLIC
@@ -48,7 +52,7 @@ target_include_directories(xymon_common PUBLIC
     ${CMAKE_BINARY_DIR}
 )
 
-# ---- Garde-fou minimal C (conserve) ----
+# ---- Garde-fou minimal C ----
 target_compile_options(xymon_common PRIVATE
     -Werror=implicit-function-declaration
     -Werror=implicit-int
