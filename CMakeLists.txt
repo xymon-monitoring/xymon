@@ -41,14 +41,6 @@ add_library(xymon_common STATIC
     lib/matching.c
     lib/timing.c
     lib/crondate.c
-
-    lib/loadhosts.c
-    lib/loadhosts_file.c
-    lib/loadhosts_net.c
-    lib/netservices.c
-    lib/ipaccess.c
-    lib/url.c
-    lib/webaccess.c
 )
 
 target_include_directories(xymon_common PUBLIC
