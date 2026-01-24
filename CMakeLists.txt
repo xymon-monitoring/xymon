@@ -42,8 +42,6 @@ add_library(xymon_common STATIC
     lib/matching.c
     lib/timing.c
     lib/crondate.c
-
-    lib/reportlog.c
 )
 
 target_include_directories(xymon_common PUBLIC
@@ -59,12 +57,13 @@ target_compile_options(xymon_common PRIVATE
     -Werror=implicit-int
 )
 
-# ---- xymon_server_core: code serveur ----
+# ---- xymon_server_core: code serveur (logs complets) ----
 add_library(xymon_server_core STATIC
     lib/server_stub.c
     lib/eventlog.c
     lib/notifylog.c
     lib/htmllog.c
+    lib/reportlog.c
 )
 
 target_include_directories(xymon_server_core PUBLIC
