@@ -57,13 +57,19 @@ target_compile_options(xymon_common PRIVATE
     -Werror=implicit-int
 )
 
-# ---- xymon_server_core: code serveur (logs complets) ----
+# ---- xymon_server_core: code serveur (logs + chargement config) ----
 add_library(xymon_server_core STATIC
     lib/server_stub.c
+
     lib/eventlog.c
     lib/notifylog.c
     lib/htmllog.c
     lib/reportlog.c
+
+    lib/loadhosts.c
+    lib/loadhosts_file.c
+    lib/loadalerts.c
+    lib/loadcriticalconf.c
 )
 
 target_include_directories(xymon_server_core PUBLIC
