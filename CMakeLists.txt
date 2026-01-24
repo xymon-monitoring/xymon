@@ -61,8 +61,9 @@ target_compile_options(xymon_common PRIVATE
     -Werror=implicit-int
 )
 
-# ---- B6.1: librairie serveur (scaffold vide) ----
+# ---- B6.1: librairie serveur (scaffold avec stub) ----
 add_library(xymon_server_core STATIC
+    lib/server_stub.c
 )
 
 target_include_directories(xymon_server_core PUBLIC
