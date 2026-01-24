@@ -67,7 +67,7 @@ add_library(xymon_server_core STATIC
     lib/htmllog.c
     lib/reportlog.c
 
-    # server config (first migrated module)
+    # server configuration (first migrated non-log module)
     lib/loadalerts.c
 )
 
