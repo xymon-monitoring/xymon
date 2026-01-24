@@ -20,7 +20,7 @@ else()
     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 endif()
 
-# ---- xymon_common: shared utilities + loaders (B6.5: not isolable yet) ----
+# ---- xymon_common: shared utilities ONLY ----
 add_library(xymon_common STATIC
     lib/errormsg.c
     lib/tree.c
@@ -42,12 +42,6 @@ add_library(xymon_common STATIC
     lib/matching.c
     lib/timing.c
     lib/crondate.c
-
-    # loaders (still shared in B6.5)
-    lib/loadhosts.c
-    lib/loadhosts_file.c
-    lib/loadalerts.c
-    lib/loadcriticalconf.c
 )
 
 target_include_directories(xymon_common PUBLIC
@@ -63,13 +57,19 @@ target_compile_options(xymon_common PRIVATE
     -Werror=implicit-int
 )
 
-# ---- xymon_server_core: server-only, clean boundary (logs only) ----
+# ---- xymon_server_core: server-only code ----
 add_library(xymon_server_core STATIC
     lib/server_stub.c
+
     lib/eventlog.c
     lib/notifylog.c
     lib/htmllog.c
     lib/reportlog.c
+
+    lib/loadhosts.c
+    lib/loadhosts_file.c
+    lib/loadalerts.c
+    lib/loadcriticalconf.c
 )
 
 target_include_directories(xymon_server_core PUBLIC
