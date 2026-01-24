@@ -34,7 +34,6 @@ add_library(xymon_common STATIC
     lib/md5.c
     lib/strfunc.c
     lib/timefunc.c
-
     lib/digest.c
     lib/encoding.c
     lib/calc.c
@@ -46,6 +45,14 @@ target_include_directories(xymon_common PUBLIC
     include
     lib
     ${CMAKE_BINARY_DIR}
+)
+
+# ---- Audit strict headers (OPTION B - B5.1) ----
+target_compile_options(xymon_common PRIVATE
+    -Wall
+    -Wextra
+    -Werror=implicit-function-declaration
+    -Werror=implicit-int
 )
 
 # ---- Binaire smoke-test ----
