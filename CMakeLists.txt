@@ -1,26 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
-
-project(xymon C)
-
-set(XYMON_VARIANT "server" CACHE STRING "Build variant (server or client)")
-
-message(STATUS "System: ${CMAKE_SYSTEM_NAME}")
-message(STATUS "Compiler: ${CMAKE_C_COMPILER}")
-
-configure_file(
-    ${CMAKE_SOURCE_DIR}/config.h.in
-    ${CMAKE_BINARY_DIR}/config.h
-)
-
-if(XYMON_VARIANT STREQUAL "server")
-    add_compile_definitions(XYMON_SERVER)
-elseif(XYMON_VARIANT STREQUAL "client")
-    add_compile_definitions(XYMON_CLIENT)
-else()
-    message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
-endif()
-
-# ---- xymon_common: shared utilities ONLY ----
+# ---- xymon_common: shared utilities + loaders (non isolables) ----
 add_library(xymon_common STATIC
     lib/errormsg.c
     lib/tree.c
@@ -42,50 +20,20 @@ add_library(xymon_common STATIC
     lib/matching.c
     lib/timing.c
     lib/crondate.c
-)
 
-target_include_directories(xymon_common PUBLIC
-    include
-    lib
-    ${CMAKE_BINARY_DIR}
-)
-
-target_compile_options(xymon_common PRIVATE
-    -Wall
-    -Wextra
-    -Werror=implicit-function-declaration
-    -Werror=implicit-int
-)
-
-# ---- xymon_server_core: server-only code ----
-add_library(xymon_server_core STATIC
-    lib/server_stub.c
-
-    # logs
-    lib/eventlog.c
-    lib/notifylog.c
-    lib/htmllog.c
-    lib/reportlog.c
-
-    # configuration loaders (SERVER)
+    # loaders (B6.5: not yet isolable)
     lib/loadhosts.c
     lib/loadhosts_file.c
     lib/loadalerts.c
     lib/loadcriticalconf.c
 )
 
-target_include_directories(xymon_server_core PUBLIC
-    include
-    lib
-    ${CMAKE_BINARY_DIR}
-)
-
-add_executable(xymond_channel
-    cmake/smoke.c
-)
-
-target_link_libraries(xymond_channel
-    xymon_common
-    xymon_server_core
+# ---- xymon_server_core: server-only, clean boundary ----
+add_library(xymon_server_core STATIC
+    lib/server_stub.c
+    lib/eventlog.c
+    lib/notifylog.c
+    lib/htmllog.c
+    lib/reportlog.c
 )
 
