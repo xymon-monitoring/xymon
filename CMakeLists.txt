@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project(xymon C)
 
-# ---- Options (DESACTIVEES pour A) ----
-# set(XYMON_VARIANT "server" CACHE STRING "Build variant (server or client)")
+# ---- Options (OPTION B - B3) ----
+set(XYMON_VARIANT "server" CACHE STRING "Build variant (server or client)")
 # option(ENABLE_SSL "Enable SSL support" ON)
 # option(ENABLE_LDAP "Enable LDAP support" ON)
 
@@ -17,7 +17,7 @@ configure_file(
     ${CMAKE_BINARY_DIR}/config.h
 )
 
-# ---- Dependances (DESACTIVEES pour A) ----
+# ---- Dependances (DESACTIVEES) ----
 # find_library(CARES_LIB cares REQUIRED)
 # find_path(CARES_INCLUDE ares.h REQUIRED)
 #
@@ -33,14 +33,14 @@ configure_file(
 #     find_path(LDAP_INCLUDE ldap.h REQUIRED)
 # endif()
 
-# ---- Definitions (DESACTIVEES pour A) ----
-# if(XYMON_VARIANT STREQUAL "server")
-#     add_compile_definitions(XYMON_SERVER)
-# elseif(XYMON_VARIANT STREQUAL "client")
-#     add_compile_definitions(XYMON_CLIENT)
-# else()
-#     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
-# endif()
+# ---- Definitions (OPTION B - B3) ----
+if(XYMON_VARIANT STREQUAL "server")
+    add_compile_definitions(XYMON_SERVER)
+elseif(XYMON_VARIANT STREQUAL "client")
+    add_compile_definitions(XYMON_CLIENT)
+else()
+    message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
+endif()
 
 # ---- Bibliotheque commune minimale (OPTION B - B1) ----
 # Reactivation incrementale, sans dependances externes
