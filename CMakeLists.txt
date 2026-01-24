@@ -20,6 +20,7 @@ else()
     message(FATAL_ERROR "Invalid XYMON_VARIANT: ${XYMON_VARIANT}")
 endif()
 
+# ---- xymon_common: utilitaires + code partage ----
 add_library(xymon_common STATIC
     lib/errormsg.c
     lib/tree.c
@@ -42,8 +43,6 @@ add_library(xymon_common STATIC
     lib/timing.c
     lib/crondate.c
 
-    lib/notifylog.c
-    lib/htmllog.c
     lib/reportlog.c
 )
 
@@ -60,10 +59,12 @@ target_compile_options(xymon_common PRIVATE
     -Werror=implicit-int
 )
 
-# ---- B6.2: librairie serveur (eventlog déplacé) ----
+# ---- xymon_server_core: code serveur ----
 add_library(xymon_server_core STATIC
     lib/server_stub.c
     lib/eventlog.c
+    lib/notifylog.c
+    lib/htmllog.c
 )
 
 target_include_directories(xymon_server_core PUBLIC
