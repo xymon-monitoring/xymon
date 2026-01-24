@@ -1,0 +1,36 @@
+name: Xymon build (CMake)
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  build:
+    name: cmake build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-env
+        with:
+          profile: debian
+
+      - uses: ./.github/actions/select-compiler
+        with:
+          compiler: gcc
+
+      - name: Configure (CMake)
+        run: |
+          mkdir build
+          cd build
+          cmake \
+            -DXYMON_VARIANT=server \
+            -DENABLE_SSL=ON \
+            -DENABLE_LDAP=ON \
+            ..
+
+      - name: Build (CMake)
+        run: |
+          cmake --build build --parallel 1
+
