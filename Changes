@@ -1,3 +1,19 @@
+Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
+===========================================
+
+* Fix typo \fb (instead of \fB) in some man pages (#10)
+* Fix typos in man pages (#11)
+* Fix buffer overflow in md5hash() (#8)
+* Fix Snapshort and Availability Report on Firefox (#6)
+* Create a build pipeline for server and client. (#4)
+* Write backslash in man pages as \e (not \\) (#9)
+* Added a build pipeline for new release versions that triggers on rel-*
+* Send (reformatted) dpkg -l output with client message (#48)
+* Make the date header of html man pages reproducible (#52)
+* Fix compatibility errors with rrdtool 1.9.0 (#57)
+* Add missing stdlib.h include to lib/suid.c (#59)
+
+
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
 ===========================================
 
