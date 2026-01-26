@@ -22,13 +22,13 @@ echo "[who]"
 who
 echo "[df]"
 # The sed stuff is to make sure lines are not split into two.
-df -H -tnonfs,nullfs,cd9660,procfs,devfs,linprocfs,fdescfs | sed -e '/^[^ 	][^ 	]*$/{
+df -H -tnonfs,nullfs,cd9660,procfs,devfs,linprocfs,fdescfs,autofs | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
 echo "[inode]"
 # The sed stuff is to make sure lines are not split into two.
-df -i -tnonfs,nullfs,cd9660,procfs,devfs,linprocfs,fdescfs | sed -e '/^[^ 	][^ 	]*$/{
+df -i -tnonfs,nullfs,cd9660,procfs,devfs,linprocfs,fdescfs,autofs,zfs | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' | awk '
