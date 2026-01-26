@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export LANG=C
-DATE=`date +"%e %b %Y"`
+DATE=`date +"%e %b %Y" --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}"`
 VERSION="$1"
 if [ "$VERSION" = "" ]
 then
@@ -23,7 +23,7 @@ do
 				NAME=`head -n 1 $FILE | awk '{print $2}'`;
 				SECTION=`head -n 1 $FILE | awk '{print $3}'`;
 				(echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Xymon\""; tail -n +2 $FILE) | \
-				man2html -r - | tail -n +2 >docs/manpages/man$SECT/`basename $FILE`.html
+				man2html -H localhost -r - | tail -n +2 >docs/manpages/man$SECT/`basename $FILE`.html
 			fi
 		done
 	done
