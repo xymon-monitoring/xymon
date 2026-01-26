@@ -75,13 +75,19 @@
 	RRDOK="YES"
 	if test "$RRDINC" != ""; then INCOPT="-I$RRDINC"; fi
 	if test "$RRDLIB" != ""; then LIBOPT="-L$RRDLIB"; fi
+	if pkg-config --atleast-version=1.9.0 librrd > /dev/null 2>&1; then
+		echo "Found RRDtool >= 1.9.0 via pkg-config"
+		RRDDEF="-DRRDTOOL19"
+	else
+		echo "Found RRDtool < 1.9.0 via pkg-config"
+	fi
 	cd build
 	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
 	OS=`uname -s | sed -e's@/@_@g'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile 2>/dev/null
 	if test $? -ne 0; then
 		# See if it's the new RRDtool 1.2.x
 		echo "Not RRDtool 1.0.x, checking for 1.2.x"
-		RRDDEF="-DRRDTOOL12"
+		RRDDEF="$RRDDEF -DRRDTOOL12"
 		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
 		OS=`uname -s | sed -e's@/@_@g'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile
 	fi

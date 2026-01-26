@@ -216,7 +216,11 @@ static void setupinterval(int intvl)
 static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 {
 	/* Flush any updates we've cached */
+#ifdef RRDTOOL19
+	const char *updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
+#else
 	char *updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
+#endif
 	int i, pcount, result;
 
 	dbgprintf("Flushing '%s' with %d updates pending, template '%s'\n", 
@@ -378,7 +382,11 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		 * we MUST reset this before every call.
 		 */
 		optind = opterr = 0; rrd_clear_error();
+#ifdef RRDTOOL19
+		result = rrd_create(4+pcount, (const char **)rrdcreate_params);
+#else
 		result = rrd_create(4+pcount, rrdcreate_params);
+#endif
 		xfree(rrdcreate_params);
 		if (rrakey) xfree(rrakey);
 
@@ -590,7 +598,11 @@ static int rrddatasets(char *hostname, char ***dsnames)
 	struct stat st;
 
 	int result;
+#ifdef RRDTOOL19
+	const char *fetch_params[] = { "rrdfetch", filedir, "AVERAGE", "-s", "-30m", NULL };
+#else
 	char *fetch_params[] = { "rrdfetch", filedir, "AVERAGE", "-s", "-30m", NULL };
+#endif
 	time_t starttime, endtime;
 	unsigned long steptime, dscount;
 	rrd_value_t *rrddata;

@@ -4,7 +4,11 @@
 
 int main(int argc, char *argv[])
 {
+#ifdef RRDTOOL19
+	const char *rrdargs[] = {
+#else
 	char *rrdargs[] = {
+#endif
 		"rrdgraph",
 		"xymongen.png",
 		"-s", "e - 48d",

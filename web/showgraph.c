@@ -1215,7 +1215,11 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	rrd_clear_error();
 
 #ifdef RRDTOOL12
+    #ifdef RRDTOOL19
+	result = rrd_graph(rrdargcount, (const char **)rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
+    #else
 	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
+    #endif
 
 	/*
 	 * If we have neither the upper- nor lower-limits of the graph, AND we allow vertical 
