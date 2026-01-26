@@ -1,3 +1,26 @@
+Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
+===========================================
+
+* Fix typo \fb (instead of \fB) in some man pages (#10)
+* Fix typos in man pages (#11)
+* Fix buffer overflow in md5hash() (#8)
+* Fix Snapshort and Availability Report on Firefox (#6)
+* Create a build pipeline for server and client. (#4)
+* Write backslash in man pages as \e (not \\) (#9)
+* Added a build pipeline for new release versions that triggers on rel-*
+* Send (reformatted) dpkg -l output with client message (#48)
+* Make the date header of html man pages reproducible (#52)
+* Fix compatibility errors with rrdtool 1.9.0 (#57)
+* Add missing stdlib.h include to lib/suid.c (#59)
+* Convert unknown-recent.gif and unknown.gif from PNG to GIF (#63)
+* Fix reading service banners from TLS-1.3-enabled hosts (#7)
+* Fix ldap build problems on newer GCC versions (#62)
+* Allow specifying TLSv1.3 for xymonnet tests (#33)
+* Improve explanation of escaping hex chars in man page (#67)
+* Fix NetBSD meminfo build (#65)
+* Fix handling of $CARESLIB in configure.server (#69)
+
+
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
 ===========================================
 
