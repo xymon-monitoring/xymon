@@ -1347,13 +1347,12 @@ restartselect:
 							}
 						}
 
-						if ((item->svcinfo->flags & TCP_HTTP) && 
-						    ((res > 0) || item->sslagain)     &&
-						    (!datadone) ) {
+						if (((item->svcinfo->flags & TCP_HTTP) && res > 0) || item->sslagain) {
 							/*
-							 * HTTP : Grab the entire response.
+							 * Grab the entire HTTP response or wait for
+							 * TLS handshake to complete.
 							 */
-							wantmoredata = 1;
+							wantmoredata = !datadone;
 						}
 
 						if (!wantmoredata) {
