@@ -15,6 +15,7 @@ static char rcsid[] = "$Id$";
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "libxymon.h"
@@ -71,4 +72,3 @@ void drop_root_and_removesuid(char *fn)
 
 	drop_root();
 }
-
