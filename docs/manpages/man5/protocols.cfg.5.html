@@ -56,6 +56,21 @@ to the service. It will then expect a response beginning with &quot;220&quot;.
 Any data returned by the service (a so-called &quot;banner&quot;) will be recorded 
 and included in the status message.
 <P>
+For services that require ALPN protocol negotiation (such as IMAPS multiplexed 
+by Nginx on the same port as HTTPS), you can define:
+<BR>
+
+<P>
+<BR>&nbsp;&nbsp;&nbsp;[imaps443]
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;options&nbsp;ssl,alpn=imap
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;port&nbsp;443
+<BR>
+
+<P>
 The full set of commands available for the protocols.cfg file are:
 <P>
 <DL COMPACT>
@@ -100,6 +115,9 @@ Defines test options. The possible options are
 <BR>
 
 <BR>&nbsp;&nbsp;&nbsp;telnet&nbsp;-&nbsp;service&nbsp;is&nbsp;telnet,&nbsp;so&nbsp;exchange&nbsp;telnet&nbsp;options
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;alpn=protocol1,protocol2&nbsp;-&nbsp;specify&nbsp;ALPN&nbsp;protocols&nbsp;to&nbsp;negotiate&nbsp;during&nbsp;SSL&nbsp;handshake
 <P>
 <P>
 </DL>

@@ -18,6 +18,7 @@
 #define TCP_TELNET     0x0002
 #define TCP_SSL        0x0004
 #define TCP_HTTP       0x0008
+#define TCP_ALPN       0x0010
 
 typedef struct svcinfo_t {
 	char *svcname;
@@ -27,6 +28,7 @@ typedef struct svcinfo_t {
 	int  expofs, explen;
 	unsigned int flags;
 	int port;
+	char *alpns;
 } svcinfo_t;
 
 extern char *init_tcp_services(void);
