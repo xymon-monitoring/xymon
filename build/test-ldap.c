@@ -2,6 +2,7 @@
 #include <sys/time.h>
 #include <stdio.h>
 
+#define LDAP_DEPRECATED 1
 #include <ldap.h>
 #include <lber.h>
 
@@ -21,14 +22,14 @@ int main(int argc, char *argv[])
 		}
 	}
 	else {
-		LDAPURLDesc ludp;
+		LDAPURLDesc ludp,*pludp = &ludp;
 		int protocol, rc;
 		struct timeval nettimeout;
 
 		protocol = LDAP_VERSION3;
 		nettimeout.tv_sec = 1; nettimeout.tv_usec = 0;
 
-		rc = ldap_url_parse("ldap://ldap.example.com/cn=xymon,ou=development,o=xymon", &ludp);
+		rc = ldap_url_parse("ldap://ldap.example.com/cn=xymon,ou=development,o=xymon", &pludp);
 		ld = ldap_init(ludp.lud_host, ludp.lud_port);
 		rc = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol);
 		rc = ldap_set_option(ld, LDAP_OPT_NETWORK_TIMEOUT, &nettimeout);
