@@ -87,6 +87,23 @@ git clone https://github.com/<your-github-username>/xymon.git
 cd xymon
 ```
 
+PHASE 2A - VERIFY / CONFIGURE GIT IDENTITY
+-----------------------------------------
+
+Verify:
+```
+git config --show-origin --get user.name
+git config --show-origin --get user.email
+```
+
+Configure if needed:
+```
+git config --global user.name "Username"
+git config --global user.email "your@email"
+```
+GitHub-provided no-reply addresses are valid:
+<id+username@users.noreply.github.com>
+
 
 PHASE 3 - DECLARE UPSTREAM (FETCH-ONLY)
 --------------------------------------
