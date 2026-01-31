@@ -1,3 +1,8 @@
+Changes from 4.3.30 -> 4.3.31 (XX YYY ZZZZ)
+===========================================
+
+* Allow specifying TLSv1.3 for xymonnet tests
+
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
 ===========================================
 
