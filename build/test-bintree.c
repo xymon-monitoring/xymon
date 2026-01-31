@@ -45,6 +45,7 @@ int main(void)
 			free(ptr);
 	}
 	twalk(root, action);
+	tdestroy(root, free);
 	exit(EXIT_SUCCESS);
 }
 
