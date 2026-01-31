@@ -1079,6 +1079,7 @@ void run_ntp_service(service_t *service)
 	use_sntp = (p != NULL);
 
 	strncpy(cmdpath, (use_sntp ? xgetenv("SNTP") : xgetenv("NTPDATE")), sizeof(cmdpath));
+	cmdpath[sizeof(cmdpath)-1] = '\0'; /* Make sure it is null terminated */
 
 	for (t=service->items; (t); t = t->next) {
 		/* Do not run NTP test if host does not resolve in DNS or is down */
@@ -1105,6 +1106,7 @@ void run_rpcinfo_service(service_t *service)
 
 	p = xgetenv("RPCINFO");
 	strncpy(cmdpath, (p ? p : "rpcinfo"), sizeof(cmdpath));
+	cmdpath[sizeof(cmdpath)-1] = '\0'; /* Make sure it is null terminated */
 	for (t=service->items; (t); t = t->next) {
 		/* Do not run RPCINFO test if host does not resolve in DNS or is down */
 		if (!t->host->dnserror && (t->host->downcount == 0) && !t->host->pingerror) {
@@ -1315,7 +1317,6 @@ int finish_ping_service(service_t *service)
 		#pragma GCC diagnostic push
 		#pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif  // __GNUC__
-
 		/* Open the new ping result file */
 		snprintf(fn, sizeof(fn), "%s.%02d", pinglog, i);
 		logfd = fopen(fn, "r");
@@ -1326,7 +1327,10 @@ int finish_ping_service(service_t *service)
 		if (!debug) unlink(fn);	/* We have an open filehandle, so it's ok to delete the file now */
 
 		/* Copy error messages to the Xymon logfile */
-		snprintf(fn, sizeof(fn), "%s.%02d", pingerrlog, i);
+		snprintf(fn, PATH_MAX, "%s.%02d", pingerrlog, i);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic pop
+#endif  // __GNUC__
 		if (failed) {
 			FILE *errfd;
 			char buf[1024];
@@ -1338,9 +1342,6 @@ int finish_ping_service(service_t *service)
 			if (errfd) fclose(errfd);
 		}
 		if (!debug) unlink(fn);
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-		#pragma GCC diagnostic pop
-#endif  // __GNUC__
 
 		if (failed) {
 			/* Flag all ping tests as "undecided" */
@@ -1395,6 +1396,7 @@ int finish_ping_service(service_t *service)
 			testitem_t *router;
 
 			strncpy(l, t->host->routerdeps, sizeof(l));
+			l[sizeof(l)-1] = '\0'; /* Make sure it is null terminated */
 			p = strtok(l, ",");
 			while (p && (t->host->deprouterdown == NULL)) {
 				for (router=service->items; 
@@ -2392,6 +2394,7 @@ int main(int argc, char *argv[])
 			for (t = s->items; (t); t = t->next) {
 				if (!t->host->dnserror) {
 					strncpy(tname, s->testname, sizeof(tname));
+					tname[sizeof(tname)-1] = '\0'; /* Make sure it is null terminated */
 					if (s->namelen) tname[s->namelen] = '\0';
 					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL,
 									   t->srcip,

@@ -207,6 +207,7 @@ char *locator_cmd(char *cmd)
 	int res;
 
 	strncpy(pingbuf, cmd, sizeof(pingbuf));
+	pingbuf[sizeof(pingbuf)-1] = '\0'; /* Make sure it is null terminated */
 	res = call_locator(pingbuf, sizeof(pingbuf));
 
 	return (res == 0) ? pingbuf : NULL;

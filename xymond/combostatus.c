@@ -351,7 +351,14 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 	result = compute(expr, &error);
 
 	if (error) {
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 		sprintf(errtext, "compute(%s) returned error %d\n", expr, error);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		#pragma GCC diagnostic pop
+#endif  // __GNUC__
 		if (*errbuf == NULL) {
 			*errbuf = strdup(errtext);
 		}

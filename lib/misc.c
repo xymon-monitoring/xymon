@@ -162,6 +162,10 @@ char *commafy(char *hostname)
 	STATIC_SBUF_DEFINE(s);
 	char *p;
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif  // __GNUC__
 	if (s == NULL) {
 		SBUF_MALLOC(s, strlen(hostname)+1);
 		strncpy(s, hostname, s_buflen);
@@ -174,6 +178,9 @@ char *commafy(char *hostname)
 	else {
 		strncpy(s, hostname, s_buflen);
 	}
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+	#pragma GCC diagnostic pop
+#endif  // __GNUC__
 
 	for (p = strchr(s, '.'); (p); p = strchr(s, '.')) *p = ',';
 	return s;
