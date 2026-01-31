@@ -47,3 +47,27 @@ Verify:
 ```
 gh auth status
 ```
+
+VERIFY / CONFIGURE GIT IDENTITY
+------------------------------
+
+After authentication, verify that a Git identity is configured.
+
+Verify:
+```
+git config --show-origin --get user.name
+git config --show-origin --get user.email
+```
+
+If required, configure one:
+
+Global (all repositories):
+``
+git config --global user.name "Username"
+`git config --global user.email "your@email"
+```
+
+GitHub-provided no-reply addresses are valid:
+<id+username@users.noreply.github.com>
+
+
