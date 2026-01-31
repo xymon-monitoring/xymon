@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 	int argi, res;
 	sendreturn_t *sres;
 	char *cookie;
-	pcre *dummy;
+	pcre2_code *dummy;
 
 	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {

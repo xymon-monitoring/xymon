@@ -16,11 +16,13 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #include "libxymon.h"
 
 typedef struct clientconfig_t {
-	pcre *hostptn, *classptn, *osptn;
+	pcre2_code *hostptn, *classptn, *osptn;
 	strbuffer_t *config;
 	struct clientconfig_t *next;
 } clientconfig_t;
@@ -117,7 +119,7 @@ void load_clientconfig(void)
 
 		if (!insection) {
 			if (*STRBUF(buf) == '[') {
-				pcre *hostptn = NULL, *classptn = NULL, *osptn = NULL;
+				pcre2_code *hostptn = NULL, *classptn = NULL, *osptn = NULL;
 				clientconfig_t *newrec;
 
 				p = STRBUF(buf) + strcspn(STRBUF(buf), "\r\n");

@@ -16,7 +16,8 @@
 
 /* The clients probably don't have the pcre headers */
 #if defined(LOCALCLIENT) || !defined(CLIENTONLY)
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 typedef enum { A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_NOTIFY, A_DEAD } astate_t;
 
@@ -50,29 +51,29 @@ typedef struct criteria_t {
 	int cfid;
 	char *cfline;
 	char *pagespec;		/* Pages to include */
-	pcre *pagespecre;
+	pcre2_code *pagespecre;
 	char *expagespec;	/* Pages to exclude */
-	pcre *expagespecre;
+	pcre2_code *expagespecre;
 	char *dgspec;		/* Display groups to include */
-	pcre *dgspecre;
+	pcre2_code *dgspecre;
 	char *exdgspec;		/* Display groups to exclude */
-	pcre *exdgspecre;
+	pcre2_code *exdgspecre;
 	char *hostspec;		/* Hosts to include */
-	pcre *hostspecre;
+	pcre2_code *hostspecre;
 	char *exhostspec;	/* Hosts to exclude */
-	pcre *exhostspecre;
+	pcre2_code *exhostspecre;
 	char *svcspec;		/* Services to include */
-	pcre *svcspecre;
+	pcre2_code *svcspecre;
 	char *exsvcspec;	/* Services to exclude */
-	pcre *exsvcspecre;
+	pcre2_code *exsvcspecre;
 	char *classspec;
-	pcre *classspecre;
+	pcre2_code *classspecre;
 	char *exclassspec;
-	pcre *exclassspecre;
+	pcre2_code *exclassspecre;
 	char *groupspec;
-	pcre *groupspecre;
+	pcre2_code *groupspecre;
 	char *exgroupspec;
-	pcre *exgroupspecre;
+	pcre2_code *exgroupspecre;
 	int colors;
 	char *timespec;
 	char *extimespec;
