@@ -12,6 +12,7 @@
 
 static char rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -21,8 +22,6 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#include <pcre.h>
 
 #include "libxymon.h"
 #include "version.h"

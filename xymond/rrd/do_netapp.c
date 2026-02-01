@@ -10,6 +10,8 @@
 
 static char netapp_rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
+
 int do_netapp_stats_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 static char *netapp_stats_params[] = { "DS:NETread:GAUGE:600:0:U",
@@ -492,8 +494,9 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
 
        char *eoln, *curline;
        static int ptnsetup = 0;
-       static pcre *inclpattern = NULL;
-       static pcre *exclpattern = NULL;
+       static pcre_pattern_t *inclpattern = NULL;
+       static pcre_pattern_t *exclpattern = NULL;
+       pcre_match_data_t *match_data = NULL;
        int newdfreport;
 
 	newdfreport = (strstr(msg,"netappnewdf") != NULL);
@@ -501,23 +504,7 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
        if (netapp_disk_tpl == NULL) netapp_disk_tpl = setup_template(netapp_disk_params);
 
        if (!ptnsetup) {
-               const char *errmsg;
-               int errofs;
-               char *ptn;
-
-               ptnsetup = 1;
-               ptn = getenv("RRDDISKS");
-               if (ptn && strlen(ptn)) {
-                       inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n",
-                                                   ptn, errmsg, errofs);
-               }
-               ptn = getenv("NORRDDISKS");
-               if (ptn && strlen(ptn)) {
-                       exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n",
-                                                   ptn, errmsg, errofs);
-               }
+               setup_disk_patterns(&inclpattern, &exclpattern, &ptnsetup);
        }
 
        /*
@@ -527,6 +514,7 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
         * line - we never have any disk reports there anyway.
         */
        curline = strchr(msg, '\n'); if (curline) curline++;
+       match_data = pcre_match_data_create_compat();
 
        while (curline)  {
                char *fsline, *p;
@@ -590,25 +578,7 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
 
 
                /* Check include/exclude patterns */
-               wanteddisk = 1;
-               if (exclpattern) {
-                       int ovector[30];
-                       int result;
-
-                       result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-                       wanteddisk = (result < 0);
-               }
-               if (wanteddisk && inclpattern) {
-                       int ovector[30];
-                       int result;
-
-                       result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-                       wanteddisk = (result >= 0);
-               }
+               wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
 
                if (wanteddisk && diskname && (pused != -1)) {
                        p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
@@ -635,6 +605,7 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
 nextline:
                curline = (eoln ? (eoln+1) : NULL);
        }
+       pcre_match_data_free_compat(match_data);
 
        return 0;
 }

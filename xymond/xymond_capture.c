@@ -14,6 +14,7 @@
 
 static char rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -34,13 +35,12 @@ int main(int argc, char *argv[])
 	int running;
 	int argi, seq;
 	struct timespec *timeout = NULL;
-	pcre *hostexp = NULL;
-	pcre *exhostexp = NULL;
-	pcre *testexp = NULL;
-	pcre *extestexp = NULL;
-	pcre *colorexp = NULL;
-        const char *errmsg = NULL;
-	int errofs = 0;
+	pcre_pattern_t *hostexp = NULL;
+	pcre_pattern_t *exhostexp = NULL;
+	pcre_pattern_t *testexp = NULL;
+	pcre_pattern_t *extestexp = NULL;
+	pcre_pattern_t *colorexp = NULL;
+	pcre_match_data_t *match_data = NULL;
 	FILE *logfd = stdout;
 	int batchtimeout = 30;
 	char *batchcmd = NULL;
@@ -75,28 +75,23 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			hostexp = pcre_compile(exp, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (hostexp == NULL) printf("Invalid expression '%s'\n", exp);
+			hostexp = compile_pattern_with_error(exp, "hosts filter");
 		}
 		else if (argnmatch(argv[argi], "--exhosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			exhostexp = pcre_compile(exp, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (exhostexp == NULL) printf("Invalid expression '%s'\n", exp);
+			exhostexp = compile_pattern_with_error(exp, "exhosts filter");
 		}
 		else if (argnmatch(argv[argi], "--tests=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			testexp = pcre_compile(exp, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (testexp == NULL) printf("Invalid expression '%s'\n", exp);
+			testexp = compile_pattern_with_error(exp, "tests filter");
 		}
 		else if (argnmatch(argv[argi], "--extests=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			extestexp = pcre_compile(exp, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (extestexp == NULL) printf("Invalid expression '%s'\n", exp);
+			extestexp = compile_pattern_with_error(exp, "extests filter");
 		}
 		else if (argnmatch(argv[argi], "--colors=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			colorexp = pcre_compile(exp, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (colorexp == NULL) printf("Invalid expression '%s'\n", exp);
+			colorexp = compile_pattern_with_error(exp, "colors filter");
 		}
 		else if (argnmatch(argv[argi], "--outfile=")) {
 			char *fn = strchr(argv[argi], '=') + 1;
@@ -127,6 +122,7 @@ int main(int argc, char *argv[])
 
 	signal(SIGCHLD, SIG_IGN);
 
+	match_data = pcre_match_data_create_compat();
 	running = 1;
 	while (running) {
 		char *eoln, *restofmsg, *p;
@@ -298,23 +294,23 @@ int main(int argc, char *argv[])
 
 
 			if (hostexp) {
-				match = (pcre_exec(hostexp, NULL, hostname, strlen(hostname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				match = (pcre_exec_compat(hostexp, hostname, strlen(hostname), match_data) >= 0);
 				if (!match) continue;
 			}
 			if (exhostexp) {
-				match = (pcre_exec(exhostexp, NULL, hostname, strlen(hostname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				match = (pcre_exec_compat(exhostexp, hostname, strlen(hostname), match_data) >= 0);
 				if (match) continue;
 			}
 			if (testexp) {
-				match = (pcre_exec(testexp, NULL, testname, strlen(testname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				match = (pcre_exec_compat(testexp, testname, strlen(testname), match_data) >= 0);
 				if (!match) continue;
 			}
 			if (extestexp) {
-				match = (pcre_exec(extestexp, NULL, testname, strlen(testname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				match = (pcre_exec_compat(extestexp, testname, strlen(testname), match_data) >= 0);
 				if (match) continue;
 			}
 			if (colorexp) {
-				match = (pcre_exec(colorexp, NULL, color, strlen(color), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				match = (pcre_exec_compat(colorexp, color, strlen(color), match_data) >= 0);
 				if (!match) continue;
 			}
 
@@ -338,6 +334,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	pcre_match_data_free_compat(match_data);
 
 	return 0;
 }

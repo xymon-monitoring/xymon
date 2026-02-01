@@ -15,6 +15,7 @@
 
 static char rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -426,8 +427,8 @@ int main(int argc, char *argv[])
 	char *pidfile = NULL;
 	char *envarea = NULL;
 	int cnid = -1;
-	pcre *msgfilter = NULL;
-	pcre *stdfilter = NULL;
+	pcre_pattern_t *msgfilter = NULL;
+	pcre_pattern_t *stdfilter = NULL;
 
 	int argi;
 	struct sigaction sa;

@@ -10,6 +10,8 @@
 
 static char disk_rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
+
 int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *disk_params[] = { "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", NULL };
@@ -18,8 +20,9 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
 	char *eoln, *curline;
 	static int ptnsetup = 0;
-	static pcre *inclpattern = NULL;
-	static pcre *exclpattern = NULL;
+	static pcre_pattern_t *inclpattern = NULL;
+	static pcre_pattern_t *exclpattern = NULL;
+	pcre_match_data_t *match_data = NULL;
 
 	if (strstr(msg, "netapp.pl")) return do_netapp_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	if (strstr(msg, "dbcheck.pl")) return do_dbcheck_tablespace_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
@@ -27,23 +30,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	if (disk_tpl == NULL) disk_tpl = setup_template(disk_params);
 
 	if (!ptnsetup) {
-		const char *errmsg;
-		int errofs;
-		char *ptn;
-
-		ptnsetup = 1;
-		ptn = getenv("RRDDISKS");
-		if (ptn && strlen(ptn)) {
-			inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n", 
-						    ptn, errmsg, errofs);
-		}
-		ptn = getenv("NORRDDISKS");
-		if (ptn && strlen(ptn)) {
-			exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n", 
-						    ptn, errmsg, errofs);
-		}
+		setup_disk_patterns(&inclpattern, &exclpattern, &ptnsetup);
 	}
 
 	if (strstr(msg, " xfs ") || strstr(msg, " efs ") || strstr(msg, " cxfs ")) dsystype = DT_IRIX;
@@ -71,6 +58,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	 * line - we never have any disk reports there anyway.
 	 */
 	curline = strchr(msg, '\n'); if (curline) curline++;
+	match_data = pcre_match_data_create_compat();
 	while (curline)  {
 		char *fsline, *p;
 		char *columns[20];
@@ -162,25 +150,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		}
 
 		/* Check include/exclude patterns */
-		wanteddisk = 1;
-		if (exclpattern) {
-			int ovector[30];
-			int result;
-
-			result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname), 
-					   0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-			wanteddisk = (result < 0);
-		}
-		if (wanteddisk && inclpattern) {
-			int ovector[30];
-			int result;
-
-			result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname), 
-					   0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-			wanteddisk = (result >= 0);
-		}
+		wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
 
 		if (wanteddisk && diskname && (pused != -1)) {
 			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
@@ -207,6 +177,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 nextline:
 		curline = (eoln ? (eoln+1) : NULL);
 	}
+	pcre_match_data_free_compat(match_data);
 
 	return 0;
 }

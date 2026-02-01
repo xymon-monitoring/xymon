@@ -13,11 +13,11 @@
 
 /* The clients probably don't have the pcre headers */
 #if defined(LOCALCLIENT) || !defined(CLIENTONLY)
-#include <pcre.h>
+#include "pcre_compat.h"
 #include <stdarg.h>
 
-extern pcre *compileregex(const char *pattern);
-extern pcre *compileregex_opts(const char *pattern, int flags);
+extern pcre_pattern_t *compileregex(const char *pattern);
+extern pcre_pattern_t *compileregex_opts(const char *pattern, int flags);
 #ifdef PCRE_FIRSTLINE
 #define firstlineregex(P) compileregex_opts(P, PCRE_FIRSTLINE);
 #define firstlineregexnocase(P) compileregex_opts(P, PCRE_CASELESS|PCRE_FIRSTLINE);

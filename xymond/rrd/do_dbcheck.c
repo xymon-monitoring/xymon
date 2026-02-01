@@ -10,6 +10,8 @@
 
 static char dbcheck_rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
+
 int do_dbcheck_memreq_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 static char *dbcheck_memreq_params[] = { 
@@ -223,29 +225,14 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 
        char *eoln, *curline;
        static int ptnsetup = 0;
-       static pcre *inclpattern = NULL;
-       static pcre *exclpattern = NULL;
+       static pcre_pattern_t *inclpattern = NULL;
+       static pcre_pattern_t *exclpattern = NULL;
+       pcre_match_data_t *match_data = NULL;
 
        if (tablespace_tpl == NULL) tablespace_tpl = setup_template(tablespace_params);
 
        if (!ptnsetup) {
-               const char *errmsg;
-               int errofs;
-               char *ptn;
-
-               ptnsetup = 1;
-               ptn = getenv("RRDDISKS");
-               if (ptn && strlen(ptn)) {
-                       inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n",
-                                                   ptn, errmsg, errofs);
-               }
-               ptn = getenv("NORRDDISKS");
-               if (ptn && strlen(ptn)) {
-                       exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n",
-                                                   ptn, errmsg, errofs);
-               }
+               setup_disk_patterns(&inclpattern, &exclpattern, &ptnsetup);
        }
 
        /*
@@ -261,6 +248,7 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
                eoln = strchr(curline, '\n');
                curline = (eoln ? (eoln+1) : NULL);
        }
+       match_data = pcre_match_data_create_compat();
 
        while (curline)  {
                char *fsline, *p;
@@ -305,12 +293,10 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 
 
                /* Check include/exclude patterns */
-               wanteddisk = 1;
-               if (exclpattern) {
-                       int ovector[30];
-                       int result;
+               wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
+                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
 
-                       result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname),
+                       wanteddisk = (result < 0);
                                           0, 0, ovector, (sizeof(ovector)/sizeof(int)));
 
                        wanteddisk = (result < 0);
@@ -350,6 +336,7 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 nextline:
                curline = (eoln ? (eoln+1) : NULL);
        }
+       pcre_match_data_free_compat(match_data);
 
        return 0;
 }

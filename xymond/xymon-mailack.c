@@ -17,7 +17,8 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <pcre.h>
+
+#include "pcre_compat.h"
 
 #include "libxymon.h"
 
@@ -31,10 +32,8 @@ int main(int argc, char *argv[])
 	char *firsttxtline = NULL;
 	int inheaders = 1;
 	char *p;
-	pcre *subjexp;
-	const char *errmsg;
-	int errofs, result;
-	int ovector[30];
+	pcre_pattern_t *subjexp;
+	pcre_match_data_t *match_data = NULL;
 	char cookie[10];
 	int duration = 0;
 	int argi;
@@ -96,51 +95,26 @@ int main(int argc, char *argv[])
 	}
 
 	/* Get the alert cookie */
-	subjexp = pcre_compile(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (subjexp == NULL) {
-		dbgprintf("pcre compile failed - 1\n");
-		return 2;
-	}
-	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-	if (result < 0) {
+	if (match_and_extract(subjectline, ".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", 2, cookie, sizeof(cookie), &match_data) < 0) {
 		dbgprintf("Subject line did not match pattern\n");
-		return 3; /* Subject did not match what we expected */
+		return 3;
 	}
-	if (pcre_copy_substring(subjectline, ovector, result, 2, cookie, sizeof(cookie)) <= 0) {
-		dbgprintf("Could not find cookie value\n");
-		return 4; /* No cookie */
-	}
-	pcre_free(subjexp);
 
 	/* See if there's a "DELAY=" delay-value also */
-	subjexp = pcre_compile(".*DELAY[ =]+([0-9]+[mhdw]*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (subjexp == NULL) {
-		dbgprintf("pcre compile failed - 2\n");
-		return 2;
-	}
-	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-	if (result >= 0) {
+	if (match_and_extract(subjectline, ".*DELAY[ =]+([0-9]+[mhdw]*)", 1, NULL, 0, &match_data) >= 0) {
 		char delaytxt[4096];
-		if (pcre_copy_substring(subjectline, ovector, result, 1, delaytxt, sizeof(delaytxt)) > 0) {
+		if (match_and_extract(subjectline, ".*DELAY[ =]+([0-9]+[mhdw]*)", 1, delaytxt, sizeof(delaytxt), &match_data) >= 0) {
 			duration = durationvalue(delaytxt);
 		}
 	}
-	pcre_free(subjexp);
 
 	/* See if there's a "msg" text also */
-	subjexp = pcre_compile(".*MSG[ =]+(.*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (subjexp == NULL) {
-		dbgprintf("pcre compile failed - 3\n");
-		return 2;
-	}
-	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-	if (result >= 0) {
+	if (match_and_extract(subjectline, ".*MSG[ =]+(.*)", 1, NULL, 0, &match_data) >= 0) {
 		char msgtxt[4096];
-		if (pcre_copy_substring(subjectline, ovector, result, 1, msgtxt, sizeof(msgtxt)) > 0) {
+		if (match_and_extract(subjectline, ".*MSG[ =]+(.*)", 1, msgtxt, sizeof(msgtxt), &match_data) >= 0) {
 			firsttxtline = strdup(msgtxt);
 		}
 	}
-	pcre_free(subjexp);
 
 	/* Use the "return-path:" header if we didn't see a From: line */
 	if ((fromline == NULL) && returnpathline) fromline = returnpathline;
@@ -166,6 +140,7 @@ int main(int argc, char *argv[])
 	}
 
 	sendmessage(ackbuf, NULL, XYMON_TIMEOUT, NULL);
+	pcre_match_data_free_compat(match_data);
 	return 0;
 }
 
