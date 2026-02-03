@@ -107,7 +107,7 @@ void calc_pagecolors(xymongen_page_t *phead)
 						     (e->color > color) &&
 						     wantedcolumn(e->column->name, g->onlycols) )
 							color = e->color;
-							oldage &= e->oldage;
+						oldage &= e->oldage;
 					}
 
 					/* Blue and clear is not propagated upwards */
@@ -127,7 +127,7 @@ void calc_pagecolors(xymongen_page_t *phead)
 						     (e->color > color) &&
 						     !wantedcolumn(e->column->name, g->exceptcols) )
 							color = e->color;
-							oldage &= e->oldage;
+						oldage &= e->oldage;
 					}
 
 					/* Blue and clear is not propagated upwards */
