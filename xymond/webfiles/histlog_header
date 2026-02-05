@@ -25,7 +25,7 @@
 <TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
 <TR>
   <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
-    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMONLOGO</B></FONT>
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B><A HREF="&XYMONSERVERWWWURL">&XYMONLOGO</A></B></FONT>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
     <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Historical Status<BR>&XYMWEBHOST - &XYMWEBSVC</B></FONT></CENTER>
@@ -34,6 +34,22 @@
    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Log time<BR>&LOGTIME</B></FONT>
   </TD>
 </TR>
+<TR>
+  <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="-1" COLOR="silver">
+<A HREF="&XYMONSERVERCGIURL/eventlog.sh?MAXTIME=5760&MAXCOUNT=400&HOSTMATCH=^&XYMWEBHOST%24">All Host Events</A> | 
+<A HREF="&XYMONSERVERCGIURL/history.sh?HISTFILE=&XYMWEBHOST.&XYMWEBSVC&ENTRIES=100">Service History</A> | 
+<A HREF="&XYMONSERVERCGIURL/svcstatus.sh?CLIENT=&XYMWEBHOST">Current Client Report</A> | 
+<A HREF="&XYMONSERVERCGIURL/svcstatus.sh?HOST=&XYMWEBHOST&SERVICE=info">Info</A> | 
+<A HREF="&XYMONSERVERCGIURL/svcstatus.sh?HOST=&XYMWEBHOST&SERVICE=trends">Trends</A>
+</FONT></CENTER>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
+  </TD>
+</TR>
+<TR>
 <TR>
   <TD COLSPAN=3> <HR WIDTH="100%"> </TD>
 </TR>
