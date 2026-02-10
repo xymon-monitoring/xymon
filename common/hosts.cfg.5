@@ -1104,9 +1104,9 @@ as a regular expression (except that <space> is not allowed)
 or as a message digest (typically using an MD5 sum or 
 SHA-1 hash).
 
-The regex is pre-processed for backslash "\e" escape
-sequences. So you can really put any character in this
-string by escaping it first:
+The regex is pre-processed for the following specific backslash "\e" escape
+sequences. You can therefore include arbitrary characters by using their
+hex values (e.g. \ex2E for a literal full stop):
 .br
    \en     Newline (LF, ASCII 10 decimal)
 .br
@@ -1116,7 +1116,7 @@ string by escaping it first:
 .br
    \e\e    Backslash (ASCII 92 decimal)
 .br
-   \eXX    The character with ASCII hex-value XX
+   \exNN    The character with ASCII hex-value NN
 .br
 
 If you must have whitespace in the regex, use the
