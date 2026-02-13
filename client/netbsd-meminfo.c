@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 int main(int argc, char *argv[])
 {
 	int hw_physmem[] = { CTL_HW, HW_PHYSMEM64 };
-int64_t physmem;
+	int64_t physmem;
 
 	int hw_pagesize[] = { CTL_HW, HW_PAGESIZE };
 	int pagesize;
