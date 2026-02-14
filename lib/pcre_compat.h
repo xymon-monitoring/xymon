@@ -27,10 +27,17 @@ int pcre_exec_legacy(const pcre_pattern_t *code, const pcre_extra *extra, const 
 void pcre_free_legacy(void *ptr);
 int pcre_copy_substring_legacy(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, int buffersize);
 
+/*
+ * Legacy shim mapping:
+ * Keep default-on for untouched code paths, but make it trivially disableable
+ * in the future when all call sites use compat APIs.
+ */
+#ifndef XYMON_DISABLE_PCRE_LEGACY_SHIMS
 #define pcre_compile pcre_compile_legacy
 #define pcre_exec pcre_exec_legacy
 #define pcre_free pcre_free_legacy
 #define pcre_copy_substring pcre_copy_substring_legacy
+#endif
 
 #else
 #include <pcre.h>

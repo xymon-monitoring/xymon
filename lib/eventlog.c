@@ -176,9 +176,9 @@ void dump_countlists(countlist_t *hosthead, countlist_t *svchead)
 }
 
 static int  eventfilter(void *hinfo, char *testname,
-			pcre *pageregexp, pcre *expageregexp,
-			pcre *hostregexp, pcre *exhostregexp,
-			pcre *testregexp, pcre *extestregexp,
+			pcre_pattern_t *pageregexp, pcre_pattern_t *expageregexp,
+			pcre_pattern_t *hostregexp, pcre_pattern_t *exhostregexp,
+			pcre_pattern_t *testregexp, pcre_pattern_t *extestregexp,
 			int ignoredialups, f_hostcheck hostcheck)
 {
 	int pagematch, hostmatch, testmatch;
@@ -231,9 +231,9 @@ static int  eventfilter(void *hinfo, char *testname,
 
 
 static void count_duration(time_t fromtime, time_t totime,
-			   pcre *pageregexp, pcre *expageregexp,
-			   pcre *hostregexp, pcre *exhostregexp,
-			   pcre *testregexp, pcre *extestregexp,
+			   pcre_pattern_t *pageregexp, pcre_pattern_t *expageregexp,
+			   pcre_pattern_t *hostregexp, pcre_pattern_t *exhostregexp,
+			   pcre_pattern_t *testregexp, pcre_pattern_t *extestregexp,
 			   int ignoredialups, f_hostcheck hostcheck,
 			   event_t *eventhead, countlist_t **hostcounthead, countlist_t **svccounthead)
 {
@@ -497,13 +497,13 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	/* For the PCRE matching */
 	const char *errmsg = NULL;
 	int errofs = 0;
-	pcre *pageregexp = NULL;
-	pcre *expageregexp = NULL;
-	pcre *hostregexp = NULL;
-	pcre *exhostregexp = NULL;
-	pcre *testregexp = NULL;
-	pcre *extestregexp = NULL;
-	pcre *colrregexp = NULL;
+	pcre_pattern_t *pageregexp = NULL;
+	pcre_pattern_t *expageregexp = NULL;
+	pcre_pattern_t *hostregexp = NULL;
+	pcre_pattern_t *exhostregexp = NULL;
+	pcre_pattern_t *testregexp = NULL;
+	pcre_pattern_t *extestregexp = NULL;
+	pcre_pattern_t *colrregexp = NULL;
 	countlist_t *hostcounthead = NULL, *svccounthead = NULL;
 
 	if (eventlist) *eventlist = NULL;

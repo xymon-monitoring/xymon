@@ -105,14 +105,14 @@ void do_acknowledgementslog(FILE *output,
 	/* For the PCRE matching */
 	const char *errmsg = NULL;
 	int errofs = 0;
-	pcre *pageregexp = NULL;
-	pcre *expageregexp = NULL;
-	pcre *hostregexp = NULL;
-	pcre *exhostregexp = NULL;
-	pcre *testregexp = NULL;
-	pcre *extestregexp = NULL;
-	pcre *rcptregexp = NULL;
-	pcre *exrcptregexp = NULL;
+	pcre_pattern_t *pageregexp = NULL;
+	pcre_pattern_t *expageregexp = NULL;
+	pcre_pattern_t *hostregexp = NULL;
+	pcre_pattern_t *exhostregexp = NULL;
+	pcre_pattern_t *testregexp = NULL;
+	pcre_pattern_t *extestregexp = NULL;
+	pcre_pattern_t *rcptregexp = NULL;
+	pcre_pattern_t *exrcptregexp = NULL;
 
 	if (maxminutes && (fromtime || totime)) {
 		fprintf(output, "<B>Only one time interval type is allowed!</B>");
