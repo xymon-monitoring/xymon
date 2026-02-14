@@ -73,3 +73,144 @@ jobs:
           # FIXME: building in parallel causes issues
           # see https://github.com/xymon-monitoring/xymon/issues/3
           make -j1
+  build-bsd-server:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: False
+      matrix:
+        os:
+          - name: freebsd
+            architecture: x86-64
+            version: '15.0'
+
+          - name: openbsd
+            architecture: x86-64
+            version: '7.8'
+
+          - name: netbsd
+            architecture: x86-64
+            version: '10.1'
+    name: build on BSD for server
+    steps:
+      - uses: actions/checkout@v3
+      - name: test ${{ matrix.os.name }}
+        uses: cross-platform-actions/action@v0.32.0
+        with:
+          operating_system: ${{ matrix.os.name }}
+          architecture: ${{ matrix.os.architecture }}
+          version: ${{ matrix.os.version }}
+          shell: bash
+          memory: 512M
+          cpu_count: 1
+          run: |
+            uname -a
+            sh .github/workflows/install-deps.sh
+            USEXYMONPING=y \
+            ENABLESSL=y \
+            ENABLELDAP=y \
+            ENABLELDAPSSL=y \
+            XYMONUSER=xymon \
+            XYMONTOPDIR=/usr/lib/xymon \
+            XYMONVAR=/var/lib/xymon \
+            XYMONHOSTURL=/xymon \
+            CGIDIR=/usr/lib/xymon/cgi-bin \
+            XYMONCGIURL=/xymon-cgi \
+            SECURECGIDIR=/usr/lib/xymon/cgi-secure \
+            SECUREXYMONCGIURL=/xymon-seccgi \
+            HTTPDGID=www-data \
+            XYMONLOGDIR=/var/log/xymon \
+            XYMONHOSTIP=127.0.0.1 \
+            MANROOT=/usr/share/man \
+            INSTALLBINDIR=/usr/lib/xymon/server/bin \
+            INSTALLETCDIR=/etc/xymon \
+            INSTALLWEBDIR=/etc/xymon/web \
+            INSTALLEXTDIR=/usr/lib/xymon/server/ext \
+            INSTALLTMPDIR=/var/lib/xymon/tmp \
+            INSTALLWWWDIR=/var/lib/xymon/www \
+            XYMONHOSTNAME=$(hostname) \
+            HTTPDGID=apache \
+            SYSTEMCARES=yes MAKE=gmake ./configure --server
+            grep CARES Makefile
+            gmake
+            ls -l
+  build-bsd-client:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: False
+      matrix:
+        os:
+          - name: freebsd
+            architecture: x86-64
+            version: '15.0'
+
+          - name: openbsd
+            architecture: x86-64
+            version: '7.8'
+
+          - name: netbsd
+            architecture: x86-64
+            version: '10.1'
+    name: build on BSD for client
+    steps:
+      - uses: actions/checkout@v3
+      - name: test ${{ matrix.os.name }}
+        uses: cross-platform-actions/action@v0.32.0
+        with:
+          operating_system: ${{ matrix.os.name }}
+          architecture: ${{ matrix.os.architecture }}
+          version: ${{ matrix.os.version }}
+          shell: bash
+          memory: 512M
+          cpu_count: 1
+          environment_variables: "http_proxy https_proxy"
+          run: |
+            uname -a
+            sh .github/workflows/install-deps.sh
+            XYMONTOPDIR=/usr/local/xymon \
+            XYMONHOSTURL=/xymon \
+            CGIDIR=/usr/local/xymon/cgi-bin \
+            XYMONCGIURL=/xymon-cgi \
+            SECURECGIDIR=/usr/local/xymon/cgi-secure \
+            SECUREXYMONCGIURL=/xymon-seccgi \
+            XYMONHOSTNAME=$(hostname) \
+            XYMONLOGDIR=/var/log/xymon \
+            HTTPDGID=apache \
+            XYMONHOSTIP=127.0.0.1 \
+            MANROOT=/usr/local/man \
+            USEXYMONPING=n \
+            ENABLESSL=n \
+            ENABLELDAP=n \
+            XYMONUSER=xymon \
+            SYSTEMCARES=yes \
+            MAKE=gmake \
+            ./configure --client
+            echo "Running gmake""
+            gmake
+            echo "Running gmake end"
+            ls -l
+            [[ -x client/openbsd-meminfo ]] && ./client/openbsd-meminfo
+            [[ -x client/netbsd-meminfo ]] && ./client/netbsd-meminfo
+            [[ -x client/freebsd-meminfo ]] && ./client/freebsd-meminfo
+  build-docker:
+    strategy:
+      fail-fast: False
+      matrix:
+        os:
+          - name: bullseye
+          - name: bookworm
+          - name: trixie
+          - name: rockylinux10
+          - name: fedora
+    runs-on: ubuntu-latest
+    name: build on ${{ matrix.os.name }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build docker
+        run: |
+          pwd
+          ls -l
+          cd docker
+          docker compose build ${{ matrix.os.name }}
+          docker compose up --abort-on-container-exit ${{ matrix.os.name }}
