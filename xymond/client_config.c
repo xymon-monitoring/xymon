@@ -145,6 +145,7 @@ typedef struct c_paging_t {
 #define FCHK_SHA224   (1 << 29)
 #define FCHK_SHA384   (1 << 30)
 #define FCHK_RMD160   (1 << 31)
+#define FCHK_IFEXIST  (1 << 32)
 
 #define CHK_OPTIONAL  (1 << 0)
 #define CHK_TRACKIT   (1 << 1)
@@ -1062,6 +1063,9 @@ int load_client_config(char *configfn)
 					if (strcasecmp(tok, "noexist") == 0) {
 						currule->flags |= FCHK_NOEXIST;
 					}
+					else if (strcasecmp(tok, "ifexist") == 0) {
+						currule->flags |= FCHK_IFEXIST;
+					}
 					else if (strncasecmp(tok, "type=", 5) == 0) {
 						currule->flags |= FCHK_TYPE;
 						if (strcasecmp(tok+5, "socket") == 0) currule->rule.fcheck.ftype = S_IFSOCK;
@@ -1715,6 +1719,8 @@ void dump_client_config(void)
 
 			if (rwalk->flags & FCHK_NOEXIST) 
 				printf(" noexist");
+			if (rwalk->flags & FCHK_IFEXIST)
+				printf(" ifexist");
 			if (rwalk->flags & FCHK_TYPE)
 				printf(" type=%s", ftypestr(rwalk->rule.fcheck.ftype));
 			if (rwalk->flags & FCHK_MODE) 
@@ -2745,6 +2751,7 @@ int check_file(void *hinfo, char *classname,
 		*anyrules = 1;
 		if (!exists) {
 			if (rwalk->chkflags & CHK_OPTIONAL) goto nextcheck;
+			if (rwalk->chkflags & FCHK_IFEXIST) goto nextcheck;
 
 			if (!(rwalk->flags & FCHK_NOEXIST)) {
 				/* Required file does not exist */
