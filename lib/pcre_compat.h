@@ -28,11 +28,18 @@ void pcre_free_legacy(void *ptr);
 int pcre_copy_substring_legacy(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, int buffersize);
 
 /*
- * Legacy shim mapping:
- * Keep default-on for untouched code paths, but make it trivially disableable
- * in the future when all call sites use compat APIs.
+ * Legacy shim mapping (default on):
+ * Existing code can keep calling pcre_* while we migrate incrementally.
+ *
+ * Human-friendly removal switch:
+ * Build with `-DXYMON_ENABLE_PCRE_LEGACY_SHIMS=0` to find the remaining
+ * legacy call sites and remove this mapping block when done.
  */
-#ifndef XYMON_DISABLE_PCRE_LEGACY_SHIMS
+#ifndef XYMON_ENABLE_PCRE_LEGACY_SHIMS
+#define XYMON_ENABLE_PCRE_LEGACY_SHIMS 1
+#endif
+
+#if XYMON_ENABLE_PCRE_LEGACY_SHIMS
 #define pcre_compile pcre_compile_legacy
 #define pcre_exec pcre_exec_legacy
 #define pcre_free pcre_free_legacy
