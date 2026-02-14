@@ -140,12 +140,34 @@ int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_dat
 
 pcre_pattern_t *pcre_compile_optional(const char *pattern, int options, const char **errmsg, int *errofs) {
     if (!pattern || !*pattern) return NULL;
+#ifdef PCRE2
+    return pcre_compile_legacy(pattern, options, errmsg, errofs, NULL);
+#else
     return pcre_compile(pattern, options, errmsg, errofs, NULL);
+#endif
 }
 
 int pcre_exec_match(const pcre_pattern_t *pattern, const char *subject, int *ovector, size_t ovector_size) {
     if (!pattern || !subject || !ovector || (ovector_size == 0)) return 0;
-    return (pcre_exec(pattern, NULL, subject, strlen(subject), 0, 0, ovector, (int)ovector_size) >= 0);
+    return (pcre_exec_capture(pattern, subject, ovector, ovector_size) >= 0);
+}
+
+int pcre_exec_capture(const pcre_pattern_t *pattern, const char *subject, int *ovector, size_t ovector_size) {
+    if (!pattern || !subject || !ovector || (ovector_size == 0)) return -1;
+#ifdef PCRE2
+    return pcre_exec_legacy(pattern, NULL, subject, strlen(subject), 0, 0, ovector, (int)ovector_size);
+#else
+    return pcre_exec(pattern, NULL, subject, strlen(subject), 0, 0, ovector, (int)ovector_size);
+#endif
+}
+
+int pcre_copy_substring_ovector(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, size_t buffer_size) {
+    if (!subject || !ovector || !buffer || (buffer_size == 0)) return -1;
+#ifdef PCRE2
+    return pcre_copy_substring_legacy(subject, ovector, stringcount, stringnumber, buffer, (int)buffer_size);
+#else
+    return pcre_copy_substring(subject, ovector, stringcount, stringnumber, buffer, (int)buffer_size);
+#endif
 }
 
 int pcre_match_pagelist(void *hostinfo, const pcre_pattern_t *pattern) {
@@ -165,7 +187,11 @@ int pcre_match_pagelist(void *hostinfo, const pcre_pattern_t *pattern) {
 
 void pcre_free_pattern(pcre_pattern_t **pattern) {
     if (pattern && *pattern) {
+#ifdef PCRE2
+        pcre_free_legacy(*pattern);
+#else
         pcre_free(*pattern);
+#endif
         *pattern = NULL;
     }
 }

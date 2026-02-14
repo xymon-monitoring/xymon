@@ -65,6 +65,8 @@ int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_dat
 /* Legacy-call-site helpers for compile/match/free patterns safely. */
 pcre_pattern_t *pcre_compile_optional(const char *pattern, int options, const char **errmsg, int *errofs);
 int pcre_exec_match(const pcre_pattern_t *pattern, const char *subject, int *ovector, size_t ovector_size);
+int pcre_exec_capture(const pcre_pattern_t *pattern, const char *subject, int *ovector, size_t ovector_size);
+int pcre_copy_substring_ovector(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, size_t buffer_size);
 int pcre_match_pagelist(void *hostinfo, const pcre_pattern_t *pattern);
 void pcre_free_pattern(pcre_pattern_t **pattern);
 

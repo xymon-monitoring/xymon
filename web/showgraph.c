@@ -950,7 +950,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	}
 	else {
 		struct dirent *d;
-		pcre *pat, *expat = NULL;
+		pcre_pattern_t *pat, *expat = NULL;
 		const char *errmsg;
 		int errofs, result;
 		int ovector[30];
@@ -961,7 +961,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		dir = opendir("."); if (dir == NULL) errormsg("Unexpected error while accessing RRD directory");
 
 		/* Setup the pattern to match filenames against */
-		pat = pcre_compile(gdef->fnpat, PCRE_CASELESS, &errmsg, &errofs, NULL);
+		pat = pcre_compile_optional(gdef->fnpat, PCRE_CASELESS, &errmsg, &errofs);
 		if (!pat) {
 			char msg[8192];
 
@@ -970,7 +970,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			errormsg(msg);
 		}
 		if (gdef->exfnpat) {
-			expat = pcre_compile(gdef->exfnpat, PCRE_CASELESS, &errmsg, &errofs, NULL);
+			expat = pcre_compile_optional(gdef->exfnpat, PCRE_CASELESS, &errmsg, &errofs);
 			if (!expat) {
 				char msg[8192];
 
@@ -996,14 +996,12 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* First check the exclude pattern. */
 			if (expat) {
-				result = pcre_exec(expat, NULL, d->d_name, strlen(d->d_name), 0, 0, 
-						   ovector, (sizeof(ovector)/sizeof(int)));
+				result = pcre_exec_capture(expat, d->d_name, ovector, (sizeof(ovector)/sizeof(ovector[0])));
 				if (result >= 0) continue;
 			}
 
 			/* Then see if the include pattern matches. */
-			result = pcre_exec(pat, NULL, d->d_name, strlen(d->d_name), 0, 0, 
-					   ovector, (sizeof(ovector)/sizeof(int)));
+			result = pcre_exec_capture(pat, d->d_name, ovector, (sizeof(ovector)/sizeof(ovector[0])));
 			if (result < 0) continue;
 
 			if (wantsingle) {
@@ -1021,7 +1019,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* We have a matching file! */
 			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
-			if (pcre_copy_substring(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
+			if (pcre_copy_substring_ovector(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
 				/*
 				 * This is ugly, but I cannot find a pretty way of un-mangling
 				 * the disk- and http-data that has been molested by the back-end.
@@ -1059,8 +1057,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 				rrddbs = (rrddb_t *)realloc(rrddbs, (rrddbsize+1) * sizeof(rrddb_t));
 			}
 		}
-		pcre_free(pat);
-		if (expat) pcre_free(expat);
+		pcre_free_pattern(&pat);
+		pcre_free_pattern(&expat);
 		closedir(dir);
 	}
 	rrddbs[rrddbcount].key = rrddbs[rrddbcount].rrdfn = rrddbs[rrddbcount].rrdparam = NULL;
@@ -1363,4 +1361,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
