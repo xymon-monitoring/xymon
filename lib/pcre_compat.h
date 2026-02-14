@@ -9,6 +9,16 @@ typedef pcre2_code pcre_pattern_t;
 typedef pcre2_match_data pcre_match_data_t;
 /* Keep legacy type name available for existing call sites. */
 typedef pcre_pattern_t pcre;
+/* Legacy PCRE option name compatibility for existing call sites. */
+#ifndef PCRE_CASELESS
+#define PCRE_CASELESS PCRE2_CASELESS
+#endif
+#ifndef PCRE_MULTILINE
+#define PCRE_MULTILINE PCRE2_MULTILINE
+#endif
+#ifndef PCRE_FIRSTLINE
+#define PCRE_FIRSTLINE PCRE2_FIRSTLINE
+#endif
 
 #else
 #include <pcre.h>

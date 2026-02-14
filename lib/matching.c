@@ -145,7 +145,7 @@ pcre **compile_exprs(char *id, const char **patterns, int count)
 		result[i] = compileregex(patterns[i]);
 		if (!result[i]) {
 			errprintf("Internal error: %s pickdata PCRE-compile failed\n", id);
-			for (i=0; (i < count); i++) if (result[i]) pcre_free(result[i]);
+			for (i=0; (i < count); i++) if (result[i]) pcre_free_compat((pcre_pattern_t *)result[i]);
 			xfree(result);
 			return NULL;
 		}
