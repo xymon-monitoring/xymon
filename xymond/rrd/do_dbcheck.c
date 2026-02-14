@@ -294,22 +294,6 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 
                /* Check include/exclude patterns */
                wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-                       wanteddisk = (result < 0);
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-                       wanteddisk = (result < 0);
-               }
-               if (wanteddisk && inclpattern) {
-                       int ovector[30];
-                       int result;
-
-                       result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-                       wanteddisk = (result >= 0);
-               }
 
                if (wanteddisk && diskname && (pused != -1)) {
                        p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
@@ -340,5 +324,4 @@ nextline:
 
        return 0;
 }
-
 

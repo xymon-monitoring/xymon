@@ -12,7 +12,7 @@
 
 static char rcsid[] = "$Id$";
 
-#include "pcre_compat.h"
+#include "../lib/pcre_compat.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -310,4 +310,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-

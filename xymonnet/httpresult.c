@@ -12,7 +12,7 @@
 
 static char rcsid[] = "$Id$";
 
-#include "pcre_compat.h"
+#include "../lib/pcre_compat.h"
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -654,4 +654,3 @@ void show_http_test_results(service_t *httptest)
 		printf("------------------------------------------------------\n");
 	}
 }
-
