@@ -8,7 +8,7 @@ XYMONTIMELIBOBJS = run.o timing.o
 
 CLIENTLIBOBJS = osdefs.o cgiurls.o color-client.o crondate.o digest.o encoding.o environ-client.o errormsg.o holidays.o ipaccess.o md5.o memory.o misc.o msort.o rmd160c.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc-client.o tree.o
 ifeq ($(LOCALCLIENT),yes)
-	CLIENTLIBOBJS += matching.o
+	CLIENTLIBOBJS += matching.o pcre_compat.o
 endif
 XYMONCLIENTCOMMLIBOBJS = locator.o loadhosts.o sendmsg.o xymond_ipc.o xymond_buffer.o
 
@@ -119,4 +119,3 @@ tree: tree.c
 
 clean:
 	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator tree
-
