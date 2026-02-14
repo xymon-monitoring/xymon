@@ -7,6 +7,7 @@
 
 typedef pcre2_code pcre_pattern_t;
 typedef pcre2_match_data pcre_match_data_t;
+typedef void pcre_extra;
 /* Keep legacy type name available for existing call sites. */
 typedef pcre_pattern_t pcre;
 /* Legacy PCRE option name compatibility for existing call sites. */
@@ -19,6 +20,15 @@ typedef pcre_pattern_t pcre;
 #ifndef PCRE_FIRSTLINE
 #define PCRE_FIRSTLINE PCRE2_FIRSTLINE
 #endif
+
+/* Legacy API wrappers used by existing call sites when building with PCRE2. */
+pcre_pattern_t *pcre_compile_legacy(const char *pattern, int options, const char **errmsg, int *errofs, const unsigned char *tableptr);
+int pcre_exec_legacy(const pcre_pattern_t *code, const pcre_extra *extra, const char *subject, int length, int startoffset, int options, int *ovector, int ovecsize);
+void pcre_free_legacy(void *ptr);
+
+#define pcre_compile pcre_compile_legacy
+#define pcre_exec pcre_exec_legacy
+#define pcre_free pcre_free_legacy
 
 #else
 #include <pcre.h>
