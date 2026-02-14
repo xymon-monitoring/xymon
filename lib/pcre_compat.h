@@ -48,6 +48,12 @@ void pcre_match_data_free_compat(pcre_match_data_t *match_data);
 void pcre_free_compat(pcre_pattern_t *pattern);
 int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_data, int n, char *buffer, size_t buffer_size);
 
+/* Legacy-call-site helpers for compile/match/free patterns safely. */
+pcre_pattern_t *pcre_compile_optional(const char *pattern, int options, const char **errmsg, int *errofs);
+int pcre_exec_match(const pcre_pattern_t *pattern, const char *subject, int *ovector, size_t ovector_size);
+int pcre_match_pagelist(void *hostinfo, const pcre_pattern_t *pattern);
+void pcre_free_pattern(pcre_pattern_t **pattern);
+
 /* Helper function declarations */
 pcre_pattern_t *compile_pattern_with_error(const char *pattern, const char *pattern_name);
 void setup_disk_patterns(pcre_pattern_t **inclpattern, pcre_pattern_t **exclpattern, int *ptnsetup);

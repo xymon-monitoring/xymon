@@ -138,6 +138,38 @@ int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_dat
 
 #endif
 
+pcre_pattern_t *pcre_compile_optional(const char *pattern, int options, const char **errmsg, int *errofs) {
+    if (!pattern || !*pattern) return NULL;
+    return pcre_compile(pattern, options, errmsg, errofs, NULL);
+}
+
+int pcre_exec_match(const pcre_pattern_t *pattern, const char *subject, int *ovector, size_t ovector_size) {
+    if (!pattern || !subject || !ovector || (ovector_size == 0)) return 0;
+    return (pcre_exec(pattern, NULL, subject, strlen(subject), 0, 0, ovector, (int)ovector_size) >= 0);
+}
+
+int pcre_match_pagelist(void *hostinfo, const pcre_pattern_t *pattern) {
+    int ovector[30];
+    char *pagename;
+
+    if (!pattern) return 0;
+
+    pagename = xmh_item_multi(hostinfo, XMH_PAGEPATH);
+    while (pagename) {
+        if (pcre_exec_match(pattern, pagename, ovector, (sizeof(ovector) / sizeof(ovector[0])))) return 1;
+        pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
+    }
+
+    return 0;
+}
+
+void pcre_free_pattern(pcre_pattern_t **pattern) {
+    if (pattern && *pattern) {
+        pcre_free(*pattern);
+        *pattern = NULL;
+    }
+}
+
 /* Helper function implementations */
 pcre_pattern_t *compile_pattern_with_error(const char *pattern, const char *pattern_name) {
     char errmsg[120];
