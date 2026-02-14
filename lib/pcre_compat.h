@@ -7,6 +7,8 @@
 
 typedef pcre2_code pcre_pattern_t;
 typedef pcre2_match_data pcre_match_data_t;
+/* Keep legacy type name available for existing call sites. */
+typedef pcre_pattern_t pcre;
 
 #else
 #include <pcre.h>
