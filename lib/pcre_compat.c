@@ -48,6 +48,24 @@ void pcre_free_legacy(void *ptr) {
     pcre2_code_free((pcre2_code *)ptr);
 }
 
+int pcre_copy_substring_legacy(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, int buffersize) {
+    int start, end, len;
+    (void)stringcount;
+
+    if (!subject || !ovector || !buffer || (buffersize <= 0) || (stringnumber < 0)) return -1;
+    if ((stringcount <= 0) || (stringnumber >= stringcount)) return -1;
+
+    start = ovector[2 * stringnumber];
+    end = ovector[2 * stringnumber + 1];
+    if ((start < 0) || (end < start)) return -1;
+
+    len = end - start;
+    if (len >= buffersize) len = buffersize - 1;
+    memcpy(buffer, subject + start, (size_t)len);
+    buffer[len] = '\0';
+    return len;
+}
+
 pcre_pattern_t *pcre_compile_compat(const char *pattern, int options, char *errmsg, size_t errmsg_size, int *errofs) {
     int err;
     PCRE2_SIZE errofs_pcre2;

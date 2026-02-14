@@ -25,10 +25,12 @@ typedef pcre_pattern_t pcre;
 pcre_pattern_t *pcre_compile_legacy(const char *pattern, int options, const char **errmsg, int *errofs, const unsigned char *tableptr);
 int pcre_exec_legacy(const pcre_pattern_t *code, const pcre_extra *extra, const char *subject, int length, int startoffset, int options, int *ovector, int ovecsize);
 void pcre_free_legacy(void *ptr);
+int pcre_copy_substring_legacy(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, int buffersize);
 
 #define pcre_compile pcre_compile_legacy
 #define pcre_exec pcre_exec_legacy
 #define pcre_free pcre_free_legacy
+#define pcre_copy_substring pcre_copy_substring_legacy
 
 #else
 #include <pcre.h>
