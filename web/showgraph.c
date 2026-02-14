@@ -31,6 +31,7 @@ static char rcsid[] = "$Id$";
 #include <rrd.h>
 
 #include "libxymon.h"
+#include "rrd_compat.h"
 
 #define HOUR_GRAPH  "e-48h"
 #define DAY_GRAPH   "e-12d"
@@ -1214,24 +1215,18 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	/* All set - generate the graph */
 	rrd_clear_error();
 
-#ifdef RRDTOOL12
-    #ifdef RRDTOOL19
-	result = rrd_graph(rrdargcount, (const char **)rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-    #else
-	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-    #endif
+	result = xymon_rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, &ymin, &ymax);
 
 	/*
 	 * If we have neither the upper- nor lower-limits of the graph, AND we allow vertical 
 	 * zooming of this graph, then save the upper/lower limit values and flag that we have 
 	 * them. The values are then used for the zoom URL we construct later on.
 	 */
+#ifdef RRDTOOL12
 	if (!haveupperlimit && !havelowerlimit) {
 		upperlimit = ymax; haveupperlimit = 1;
 		lowerlimit = ymin; havelowerlimit = 1;
 	}
-#else
-	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize);
 #endif
 
 	/* Was it OK ? */
@@ -1363,4 +1358,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-

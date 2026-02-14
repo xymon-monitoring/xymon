@@ -1,14 +1,10 @@
 #include <stdio.h>
+#include "rrd_compat.h"
 
-#include <rrd.h>
-
-int main(int argc, char *argv[])
+int main(void)
 {
-#ifdef RRDTOOL19
-	const char *rrdargs[] = {
-#else
-	char *rrdargs[] = {
-#endif
+	/* Compile-time ABI surface checks for all wrapped RRDtool entry points. */
+	xymon_rrd_argv_item_t graphargs[] = {
 		"rrdgraph",
 		"xymongen.png",
 		"-s", "e - 48d",
@@ -21,19 +17,25 @@ int main(int argc, char *argv[])
 		"COMMENT: Timestamp",
 		NULL
 	};
+	xymon_rrd_argv_item_t updateargs[] = { "rrdupdate", "dummy.rrd", NULL };
+	xymon_rrd_argv_item_t createargs[] = { "rrdcreate", "dummy.rrd", NULL };
+	xymon_rrd_argv_item_t fetchargs[]  = { "rrdfetch", "dummy.rrd", NULL };
 	char **calcpr=NULL;
 
 	int pcount, result, xsize, ysize;
 	double ymin, ymax;
+	unsigned long start = 0, end = 0, step = 0, dscount = 0;
+	char **dsnames = NULL;
+	rrd_value_t *data = NULL;
 
-	for (pcount = 0; (rrdargs[pcount]); pcount++);
+	for (pcount = 0; (graphargs[pcount]); pcount++);
 	rrd_clear_error();
-#ifdef RRDTOOL12
-	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-#else
-	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize);
-#endif
+	/* We only need these calls to type-check against the active RRDtool headers. */
+	(void)xymon_rrd_update(3, updateargs);
+	(void)xymon_rrd_create(3, createargs);
+	(void)xymon_rrd_fetch(3, fetchargs, &start, &end, &step, &dscount, &dsnames, &data);
+	/* Keep one graph invocation to validate the graph ABI shape as well. */
+	result = xymon_rrd_graph(pcount, graphargs, &calcpr, &xsize, &ysize, &ymin, &ymax);
 
 	return 0;
 }
-
