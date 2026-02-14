@@ -371,33 +371,33 @@ char *wkdayselect(char wkday, char *valtxt, int isdefault)
 static void *wanted_host(char *hostname)
 {
 	void *hinfo = hostinfo(hostname);
-	int result, ovector[30];
+	int match_result, match_offsets[30];
 
 	if (!hinfo) return NULL;
 
 	if (hostpattern) {
-		result = pcre_exec_capture(hostpattern, hostname, ovector, (sizeof(ovector)/sizeof(ovector[0])));
-		if (result < 0) return NULL;
+		match_result = pcre_exec_capture(hostpattern, hostname, match_offsets, (sizeof(match_offsets)/sizeof(match_offsets[0])));
+		if (match_result < 0) return NULL;
 	}
 
 	if (pagepattern && hinfo) {
 		char *pname = xmh_item(hinfo, XMH_PAGEPATH);
-		result = pcre_exec_capture(pagepattern, pname, ovector, (sizeof(ovector)/sizeof(ovector[0])));
-		if (result < 0) return NULL;
+		match_result = pcre_exec_capture(pagepattern, pname, match_offsets, (sizeof(match_offsets)/sizeof(match_offsets[0])));
+		if (match_result < 0) return NULL;
 	}
 
 	if (ippattern && hinfo) {
 		char *hostip = xmh_item(hinfo, XMH_IP);
-		result = pcre_exec_capture(ippattern, hostip, ovector, (sizeof(ovector)/sizeof(ovector[0])));
-		if (result < 0) return NULL;
+		match_result = pcre_exec_capture(ippattern, hostip, match_offsets, (sizeof(match_offsets)/sizeof(match_offsets[0])));
+		if (match_result < 0) return NULL;
 	}
 
 	if (classpattern && hinfo) {
 		char *hostclass = xmh_item(hinfo, XMH_CLASS);
 		if (!hostclass) return NULL;
 
-		result = pcre_exec_capture(classpattern, hostclass, ovector, (sizeof(ovector)/sizeof(ovector[0])));
-		if (result < 0) return NULL;
+		match_result = pcre_exec_capture(classpattern, hostclass, match_offsets, (sizeof(match_offsets)/sizeof(match_offsets[0])));
+		if (match_result < 0) return NULL;
 	}
 
 	return hinfo;

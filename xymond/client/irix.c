@@ -70,7 +70,7 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 		char *memline, *eoln = NULL;
 		int res;
 		int ovector[20];
-		char w[20];
+		char valuebuf[20];
 		long memphystotal = -1, memphysused = -1, memphysfree = 0,
 		     memacttotal = -1, memactused = -1, memactfree = -1,
 		     memswaptotal = -1, memswapused = -1, memswapfree = 0;
@@ -89,28 +89,28 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 		else res = -1;
 
 		if (res > 1) {
-			pcre_copy_substring_ovector(memline, ovector, res, 1, w, sizeof(w));
-			memphystotal = atol(w);
+			pcre_copy_substring_ovector(memline, ovector, res, 1, valuebuf, sizeof(valuebuf));
+			memphystotal = atol(valuebuf);
 		}
 		if (res > 2) {
-			pcre_copy_substring_ovector(memline, ovector, res, 2, w, sizeof(w));
-			memactfree = atol(w);
+			pcre_copy_substring_ovector(memline, ovector, res, 2, valuebuf, sizeof(valuebuf));
+			memactfree = atol(valuebuf);
 			memacttotal = memphystotal;
 			memactused = memphystotal - memactfree;
 		}
 		if (res > 3) {
-			pcre_copy_substring_ovector(memline, ovector, res, 3, w, sizeof(w));
-			memphysfree = atol(w);
+			pcre_copy_substring_ovector(memline, ovector, res, 3, valuebuf, sizeof(valuebuf));
+			memphysfree = atol(valuebuf);
 			memphysused = memphystotal - memphysfree;
 		}
 
 		if (res > 4) {
-			pcre_copy_substring_ovector(memline, ovector, res, 4, w, sizeof(w));
-			memswaptotal = atol(w);
+			pcre_copy_substring_ovector(memline, ovector, res, 4, valuebuf, sizeof(valuebuf));
+			memswaptotal = atol(valuebuf);
 		}
 		if (res > 5) {
-			pcre_copy_substring_ovector(memline, ovector, res, 5, w, sizeof(w));
-			memswapfree = atol(w);
+			pcre_copy_substring_ovector(memline, ovector, res, 5, valuebuf, sizeof(valuebuf));
+			memswapfree = atol(valuebuf);
 		}
 		memswapused = memswaptotal - memswapfree;
 

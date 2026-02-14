@@ -67,7 +67,7 @@ pcre_pattern_t *pcre_compile_optional(const char *pattern, int options, const ch
 int pcre_exec_match(const pcre_pattern_t *pattern, const char *subject, int *ovector, size_t ovector_size);
 int pcre_exec_capture(const pcre_pattern_t *pattern, const char *subject, int *ovector, size_t ovector_size);
 int pcre_copy_substring_ovector(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, size_t buffer_size);
-int pcre_match_pagelist(void *hostinfo, const pcre_pattern_t *pattern);
+int pcre_match_pagelist(void *host_info, const pcre_pattern_t *pattern);
 void pcre_free_pattern(pcre_pattern_t **pattern);
 
 /* Helper function declarations */

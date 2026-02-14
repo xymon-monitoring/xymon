@@ -950,10 +950,10 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	}
 	else {
 		struct dirent *d;
-		pcre_pattern_t *pat, *expat = NULL;
+		pcre_pattern_t *include_pattern, *exclude_pattern = NULL;
 		const char *errmsg;
-		int errofs, result;
-		int ovector[30];
+		int errofs, match_result;
+		int match_offsets[30];
 		struct stat st;
 		time_t now = getcurrenttime(NULL);
 
@@ -961,8 +961,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		dir = opendir("."); if (dir == NULL) errormsg("Unexpected error while accessing RRD directory");
 
 		/* Setup the pattern to match filenames against */
-		pat = pcre_compile_optional(gdef->fnpat, PCRE_CASELESS, &errmsg, &errofs);
-		if (!pat) {
+		include_pattern = pcre_compile_optional(gdef->fnpat, PCRE_CASELESS, &errmsg, &errofs);
+		if (!include_pattern) {
 			char msg[8192];
 
 			snprintf(msg, sizeof(msg), "graphs.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
@@ -970,8 +970,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			errormsg(msg);
 		}
 		if (gdef->exfnpat) {
-			expat = pcre_compile_optional(gdef->exfnpat, PCRE_CASELESS, &errmsg, &errofs);
-			if (!expat) {
+			exclude_pattern = pcre_compile_optional(gdef->exfnpat, PCRE_CASELESS, &errmsg, &errofs);
+			if (!exclude_pattern) {
 				char msg[8192];
 
 				snprintf(msg, sizeof(msg), 
@@ -995,14 +995,14 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			if ((ext <= d->d_name) || (strcmp(ext, ".rrd") != 0)) continue;
 
 			/* First check the exclude pattern. */
-			if (expat) {
-				result = pcre_exec_capture(expat, d->d_name, ovector, (sizeof(ovector)/sizeof(ovector[0])));
-				if (result >= 0) continue;
+			if (exclude_pattern) {
+				match_result = pcre_exec_capture(exclude_pattern, d->d_name, match_offsets, (sizeof(match_offsets)/sizeof(match_offsets[0])));
+				if (match_result >= 0) continue;
 			}
 
 			/* Then see if the include pattern matches. */
-			result = pcre_exec_capture(pat, d->d_name, ovector, (sizeof(ovector)/sizeof(ovector[0])));
-			if (result < 0) continue;
+			match_result = pcre_exec_capture(include_pattern, d->d_name, match_offsets, (sizeof(match_offsets)/sizeof(match_offsets[0])));
+			if (match_result < 0) continue;
 
 			if (wantsingle) {
 				/* "Single" graph, i.e. a graph for a service normally included in a bundle (tcp) */
@@ -1019,7 +1019,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* We have a matching file! */
 			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
-			if (pcre_copy_substring_ovector(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
+			if (pcre_copy_substring_ovector(d->d_name, match_offsets, match_result, 1, param, sizeof(param)) > 0) {
 				/*
 				 * This is ugly, but I cannot find a pretty way of un-mangling
 				 * the disk- and http-data that has been molested by the back-end.
@@ -1057,8 +1057,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 				rrddbs = (rrddb_t *)realloc(rrddbs, (rrddbsize+1) * sizeof(rrddb_t));
 			}
 		}
-		pcre_free_pattern(&pat);
-		pcre_free_pattern(&expat);
+		pcre_free_pattern(&include_pattern);
+		pcre_free_pattern(&exclude_pattern);
 		closedir(dir);
 	}
 	rrddbs[rrddbcount].key = rrddbs[rrddbcount].rrdfn = rrddbs[rrddbcount].rrdparam = NULL;

@@ -5,14 +5,14 @@
 
 #ifdef PCRE2
 
-static void copy_ovector_to_ints(PCRE2_SIZE *pairs, int pair_count, int *ovector, int ovecsize) {
-    int i, maxcopy;
+static void copy_ovector_to_ints(PCRE2_SIZE *offset_pairs, int pair_count, int *match_offsets, int offset_count) {
+    int i, max_copy;
 
-    if (!pairs || !ovector || (ovecsize <= 0)) return;
+    if (!offset_pairs || !match_offsets || (offset_count <= 0)) return;
 
-    maxcopy = pair_count * 2;
-    if (maxcopy > ovecsize) maxcopy = ovecsize;
-    for (i = 0; i < maxcopy; i++) ovector[i] = (int)pairs[i];
+    max_copy = pair_count * 2;
+    if (max_copy > offset_count) max_copy = offset_count;
+    for (i = 0; i < max_copy; i++) match_offsets[i] = (int)offset_pairs[i];
 }
 
 pcre_pattern_t *pcre_compile_legacy(const char *pattern, int options, const char **errmsg, int *errofs, const unsigned char *tableptr) {
@@ -170,16 +170,16 @@ int pcre_copy_substring_ovector(const char *subject, int *ovector, int stringcou
 #endif
 }
 
-int pcre_match_pagelist(void *hostinfo, const pcre_pattern_t *pattern) {
-    int ovector[30];
-    char *pagename;
+int pcre_match_pagelist(void *host_info, const pcre_pattern_t *pattern) {
+    int match_offsets[30];
+    char *page_name;
 
     if (!pattern) return 0;
 
-    pagename = xmh_item_multi(hostinfo, XMH_PAGEPATH);
-    while (pagename) {
-        if (pcre_exec_match(pattern, pagename, ovector, (sizeof(ovector) / sizeof(ovector[0])))) return 1;
-        pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
+    page_name = xmh_item_multi(host_info, XMH_PAGEPATH);
+    while (page_name) {
+        if (pcre_exec_match(pattern, page_name, match_offsets, (sizeof(match_offsets) / sizeof(match_offsets[0])))) return 1;
+        page_name = xmh_item_multi(NULL, XMH_PAGEPATH);
     }
 
     return 0;
