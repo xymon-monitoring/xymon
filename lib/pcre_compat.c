@@ -5,6 +5,16 @@
 
 #ifdef PCRE2
 
+static void copy_ovector_to_ints(PCRE2_SIZE *pairs, int pair_count, int *ovector, int ovecsize) {
+    int i, maxcopy;
+
+    if (!pairs || !ovector || (ovecsize <= 0)) return;
+
+    maxcopy = pair_count * 2;
+    if (maxcopy > ovecsize) maxcopy = ovecsize;
+    for (i = 0; i < maxcopy; i++) ovector[i] = (int)pairs[i];
+}
+
 pcre_pattern_t *pcre_compile_legacy(const char *pattern, int options, const char **errmsg, int *errofs, const unsigned char *tableptr) {
     static char errbuf[256];
     int err;
@@ -24,8 +34,7 @@ pcre_pattern_t *pcre_compile_legacy(const char *pattern, int options, const char
 }
 
 int pcre_exec_legacy(const pcre_pattern_t *code, const pcre_extra *extra, const char *subject, int length, int startoffset, int options, int *ovector, int ovecsize) {
-    int i, rc, maxcopy;
-    PCRE2_SIZE *pairs;
+    int rc;
     pcre2_match_data *mdata;
     (void)extra;
 
@@ -33,12 +42,7 @@ int pcre_exec_legacy(const pcre_pattern_t *code, const pcre_extra *extra, const 
     if (!mdata) return -1;
 
     rc = pcre2_match(code, (PCRE2_SPTR)subject, length, startoffset, options, mdata, NULL);
-    if ((rc > 0) && ovector && (ovecsize > 0)) {
-        pairs = pcre2_get_ovector_pointer(mdata);
-        maxcopy = rc * 2;
-        if (maxcopy > ovecsize) maxcopy = ovecsize;
-        for (i = 0; i < maxcopy; i++) ovector[i] = (int)pairs[i];
-    }
+    if (rc > 0) copy_ovector_to_ints(pcre2_get_ovector_pointer(mdata), rc, ovector, ovecsize);
 
     pcre2_match_data_free(mdata);
     return rc;
@@ -70,9 +74,9 @@ pcre_pattern_t *pcre_compile_compat(const char *pattern, int options, char *errm
     int err;
     PCRE2_SIZE errofs_pcre2;
     pcre2_code *result = pcre2_compile(pattern, strlen(pattern), options, &err, &errofs_pcre2, NULL);
-    if (!result && errmsg) {
-        pcre2_get_error_message(err, errmsg, errmsg_size);
-        *errofs = (int)errofs_pcre2;
+    if (!result) {
+        if (errmsg && (errmsg_size > 0)) pcre2_get_error_message(err, (PCRE2_UCHAR *)errmsg, errmsg_size);
+        if (errofs) *errofs = (int)errofs_pcre2;
     }
     return result;
 }
@@ -103,7 +107,7 @@ int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_dat
 pcre_pattern_t *pcre_compile_compat(const char *pattern, int options, char *errmsg, size_t errmsg_size, int *errofs) {
     const char *error;
     pcre *result = pcre_compile(pattern, options, &error, errofs, NULL);
-    if (!result && errmsg && error) {
+    if (!result && errmsg && error && (errmsg_size > 0)) {
         strncpy(errmsg, error, errmsg_size - 1);
         errmsg[errmsg_size - 1] = '\0';
     }
