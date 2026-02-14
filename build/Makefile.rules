@@ -8,7 +8,7 @@
 # Build targets
 #####################
 
-CFLAGS += -I$(BUILDTOPDIR)/include
+CFLAGS += -I$(BUILDTOPDIR)/include $(PCREDEF)
 
 ifeq ($(CLIENTONLY),yes)
 	BUILDTARGETS = client

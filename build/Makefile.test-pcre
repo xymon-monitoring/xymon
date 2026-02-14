@@ -1,11 +1,15 @@
 include Makefile.$(OS)
 
+PCRETESTSRC ?= test-pcre.c
+PCRETESTOBJ ?= test-pcre.o
+PCRETESTBIN ?= test-pcre
+PCRELINKLIB ?= -lpcre
+
 test-compile:
-	@$(CC) $(CFLAGS) $(PCREINC) -o test-pcre.o -c test-pcre.c
+	@$(CC) $(CFLAGS) $(PCREINC) -o $(PCRETESTOBJ) -c $(PCRETESTSRC)
 
 test-link:
-	@$(CC) $(CFLAGS) $(PCRELIB) -o test-pcre test-pcre.o -lpcre
+	@$(CC) $(CFLAGS) $(PCRELIB) -o $(PCRETESTBIN) $(PCRETESTOBJ) $(PCRELINKLIB)
 
 clean:
-	@rm -f test-pcre.o test-pcre
-
+	@rm -f test-pcre.o test-pcre test-pcre2.o test-pcre2
