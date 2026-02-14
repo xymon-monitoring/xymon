@@ -172,11 +172,11 @@ void do_acknowledgementslog(FILE *output,
 				fseeko(acknowledgementslog, -maxcount*80, SEEK_CUR); 
 				if (fgets(l, sizeof(l), acknowledgementslog) && /* Skip to start of line */
 				    fgets(l, sizeof(l), acknowledgementslog)) {
-                                        /* 2015-03-07 18:17:03 myserver disk andy 1 1425724570 1425752223 1425838623 testing message */
+					/* 2015-03-07 18:17:03 myserver disk andy 1 1425724570 1425752223 1425838623 testing message */
 					if ( sscanf(l, "%*u-%*u-%*u %*u:%*u:%*u %*s %*s %*s %*u %*u %u %*u %*s", &uicurtime) == 0 ) {
-					    /* that didnt work - try the old format
+						/* that didnt work - try the old format
 						1430040985      630949  30      630949  np_filename_not_used    myserver.procs red     testing log format \nAcked by: andy (127.0.0.1) */
-					    sscanf(l, "%u\t%*u\t%*u\t%*u\tnp_filename_not_used\t%*s\t%*s\t%*s", &uicurtime);
+						sscanf(l, "%u\t%*u\t%*u\t%*u\tnp_filename_not_used\t%*s\t%*s\t%*s", &uicurtime);
 					}
 					curtime = uicurtime;
 					done = (curtime < firstevent);
@@ -213,28 +213,28 @@ void do_acknowledgementslog(FILE *output,
 		struct htnames_t *eventcolumn;
 		int ovector[30];
 
-                /* 2015-03-07 18:17:03 myserver disk andy 1 1425724570 1425752223 1425838623 testing message */
+		/* 2015-03-07 18:17:03 myserver disk andy 1 1425724570 1425752223 1425838623 testing message */
 		itemsfound = sscanf(l, "%*u-%*u-%*u %*u:%*u:%*u %s %s %s %*u %*u %u %u %[^\t\n]", host, svc, recipient, &etim, &valid, message);
 		if (itemsfound != 6) {
-		    /* 1430040985      630949  30      630949  np_filename_not_used    myserver.procs red     testing log format \nAcked by: andy (127.0.0.1) */
-		    itemsfound = sscanf(l, "%u\t%*u\t%d\t%*u\tnp_filename_not_used\t%s\t%*s\t%[^\n]", &etim, &duration, host, message);
-		    if (itemsfound != 4) continue;
-		    p = strrchr(host, '.');
-		    if (p) {
-                        *p = '\0';
-			strncpy(svc,p+1,  sizeof(svc));
-                    }
-		    /* Xymon uses \n in the ack message, for the "acked by" data. Cut it off. */
-		    p = strstr(message, "\\nAcked by:");
-		    if (p) {
-			strncpy(recipient,p+12, sizeof(recipient));
-                        *(p-1) = '\0';
-		    }
-		    else {
-			strncpy(recipient,"UnknownUser", sizeof(recipient));
-                    }
-		    p = strchr(recipient, '('); if (p) *(p-1) = '\0';
-                }
+			/* 1430040985      630949  30      630949  np_filename_not_used    myserver.procs red     testing log format \nAcked by: andy (127.0.0.1) */
+			itemsfound = sscanf(l, "%u\t%*u\t%d\t%*u\tnp_filename_not_used\t%s\t%*s\t%[^\n]", &etim, &duration, host, message);
+			if (itemsfound != 4) continue;
+			p = strrchr(host, '.');
+			if (p) {
+				*p = '\0';
+				strncpy(svc,p+1,  sizeof(svc));
+			}
+			/* Xymon uses \n in the ack message, for the "acked by" data. Cut it off. */
+			p = strstr(message, "\\nAcked by:");
+			if (p) {
+				strncpy(recipient,p+12, sizeof(recipient));
+				*(p-1) = '\0';
+			}
+			else {
+				strncpy(recipient,"UnknownUser", sizeof(recipient));
+			}
+			p = strchr(recipient, '('); if (p) *(p-1) = '\0';
+		}
 		eventtime = etim;
 		if (eventtime < firstevent) continue;
 		if (eventtime > lastevent) break;
