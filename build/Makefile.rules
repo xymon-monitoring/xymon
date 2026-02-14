@@ -8,7 +8,18 @@
 # Build targets
 #####################
 
-CFLAGS += -I$(BUILDTOPDIR)/include $(PCREDEF)
+CFLAGS += -I$(BUILDTOPDIR)/include -I$(BUILDTOPDIR)/lib $(PCREDEF)
+
+# Provide a fallback for PCRE include dir on BSD if configure did not set it.
+ifeq ($(strip $(PCREINCDIR)),)
+ifneq (,$(wildcard /usr/local/include/pcre.h))
+	PCREINCDIR := -I/usr/local/include
+else ifneq (,$(wildcard /usr/pkg/include/pcre.h))
+	PCREINCDIR := -I/usr/pkg/include
+endif
+endif
+
+export PCREINCDIR
 
 ifeq ($(CLIENTONLY),yes)
 	BUILDTARGETS = client
@@ -360,4 +371,3 @@ install-clientmsg:
 
 install-localclient:
 	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient
-
