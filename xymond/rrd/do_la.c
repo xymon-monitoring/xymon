@@ -74,6 +74,7 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 
 		compile_single_pattern(&zVM_exp, ".* CPU Utilization *([0-9]+)%", "zVM CPU pattern");
 		match_data = pcre_match_data_create_compat();
+		if (!match_data) goto done_parsing;
 
 		res = pcre_exec_compat(zVM_exp, msg, strlen(msg), match_data);
 		if (res >= 0) {
