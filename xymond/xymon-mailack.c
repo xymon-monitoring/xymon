@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	int firsttxtline_alloc = 0;
 	int inheaders = 1;
 	char *p;
-	pcre *subjexp = NULL;
+	pcre_pattern_t *subjexp = NULL;
 	const char *errmsg;
 	int errofs, result;
 	int ovector[30];
@@ -112,13 +112,14 @@ int main(int argc, char *argv[])
 	}
 
 	/* Get the alert cookie */
-	subjexp = pcre_compile(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile_legacy(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 1\n");
 		rc = 2;
 		goto cleanup;
 	}
-	result = pcre_exec(subjexp, NULL, subjectline, (int)strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+
+	result = pcre_exec_capture(subjexp, subjectline, ovector, (sizeof(ovector)/sizeof(ovector[0])));
 	if (result < 0) {
 		dbgprintf("Subject line did not match pattern\n");
 		rc = 3; /* Subject did not match what we expected */
@@ -133,13 +134,13 @@ int main(int argc, char *argv[])
 	subjexp = NULL;
 
 	/* See if there's a "DELAY=" delay-value also */
-	subjexp = pcre_compile(".*DELAY[ =]+([0-9]+[mhdw]*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile_legacy(".*DELAY[ =]+([0-9]+[mhdw]*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 2\n");
 		rc = 2;
 		goto cleanup;
 	}
-	result = pcre_exec(subjexp, NULL, subjectline, (int)strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	result = pcre_exec_capture(subjexp, subjectline, ovector, (sizeof(ovector)/sizeof(ovector[0])));
 	if (result >= 0) {
 		char delaytxt[4096];
 		if (pcre_copy_substring(subjectline, ovector, result, 1, delaytxt, sizeof(delaytxt)) > 0) {
@@ -150,13 +151,13 @@ int main(int argc, char *argv[])
 	subjexp = NULL;
 
 	/* See if there's a "msg" text also */
-	subjexp = pcre_compile(".*MSG[ =]+(.*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile_legacy(".*MSG[ =]+(.*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 3\n");
 		rc = 2;
 		goto cleanup;
 	}
-	result = pcre_exec(subjexp, NULL, subjectline, (int)strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	result = pcre_exec_capture(subjexp, subjectline, ovector, (sizeof(ovector)/sizeof(ovector[0])));
 	if (result >= 0) {
 		char msgtxt[4096];
 		if (pcre_copy_substring(subjectline, ovector, result, 1, msgtxt, sizeof(msgtxt)) > 0) {
