@@ -230,37 +230,37 @@ void do_notifylog(FILE *output,
 		if (pagematch) continue;
 
 		if (hostregexp)
-			hostmatch = pcre_exec_match(hostregexp, hostname, ovector, (sizeof(ovector) / sizeof(ovector[0])));
+			hostmatch = (pcre_exec_capture(hostregexp, hostname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			hostmatch = 1;
 		if (!hostmatch) continue;
 
 		if (exhostregexp)
-			hostmatch = pcre_exec_match(exhostregexp, hostname, ovector, (sizeof(ovector) / sizeof(ovector[0])));
+			hostmatch = (pcre_exec_capture(exhostregexp, hostname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			hostmatch = 0;
 		if (hostmatch) continue;
 
 		if (testregexp)
-			testmatch = pcre_exec_match(testregexp, svcname, ovector, (sizeof(ovector) / sizeof(ovector[0])));
+			testmatch = (pcre_exec_capture(testregexp, svcname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			testmatch = 1;
 		if (!testmatch) continue;
 
 		if (extestregexp)
-			testmatch = pcre_exec_match(extestregexp, svcname, ovector, (sizeof(ovector) / sizeof(ovector[0])));
+			testmatch = (pcre_exec_capture(extestregexp, svcname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			testmatch = 0;
 		if (testmatch) continue;
 
 		if (rcptregexp)
-			rcptmatch = pcre_exec_match(rcptregexp, recipient, ovector, (sizeof(ovector) / sizeof(ovector[0])));
+			rcptmatch = (pcre_exec_capture(rcptregexp, recipient, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			rcptmatch = 1;
 		if (!rcptmatch) continue;
 
 		if (exrcptregexp)
-			rcptmatch = pcre_exec_match(exrcptregexp, recipient, ovector, (sizeof(ovector) / sizeof(ovector[0])));
+			rcptmatch = (pcre_exec_capture(exrcptregexp, recipient, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			rcptmatch = 0;
 		if (rcptmatch) continue;

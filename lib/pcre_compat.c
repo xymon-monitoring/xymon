@@ -147,11 +147,6 @@ pcre_pattern_t *pcre_compile_optional(const char *pattern, int options, const ch
 #endif
 }
 
-int pcre_exec_match(const pcre_pattern_t *pattern, const char *subject, int *ovector, size_t ovector_size) {
-    if (!pattern || !subject || !ovector || (ovector_size == 0)) return 0;
-    return (pcre_exec_capture(pattern, subject, ovector, ovector_size) >= 0);
-}
-
 int pcre_exec_capture(const pcre_pattern_t *pattern, const char *subject, int *ovector, size_t ovector_size) {
     if (!pattern || !subject || !ovector || (ovector_size == 0)) return -1;
 #ifdef PCRE2
@@ -178,7 +173,7 @@ int pcre_match_pagelist(void *host_info, const pcre_pattern_t *pattern) {
 
     page_name = xmh_item_multi(host_info, XMH_PAGEPATH);
     while (page_name) {
-        if (pcre_exec_match(pattern, page_name, match_offsets, (sizeof(match_offsets) / sizeof(match_offsets[0])))) return 1;
+        if (pcre_exec_capture(pattern, page_name, match_offsets, (sizeof(match_offsets) / sizeof(match_offsets[0]))) >= 0) return 1;
         page_name = xmh_item_multi(NULL, XMH_PAGEPATH);
     }
 

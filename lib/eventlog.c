@@ -203,25 +203,25 @@ static int  eventfilter(void *hinfo, char *testname,
 	if (pagematch) return 0;
 
 	if (hostregexp)
-		hostmatch = pcre_exec_match(hostregexp, hostname, ovector, (sizeof(ovector) / sizeof(ovector[0])));
+		hostmatch = (pcre_exec_capture(hostregexp, hostname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 	else
 		hostmatch = 1;
 	if (!hostmatch) return 0;
 
 	if (exhostregexp)
-		hostmatch = pcre_exec_match(exhostregexp, hostname, ovector, (sizeof(ovector) / sizeof(ovector[0])));
+		hostmatch = (pcre_exec_capture(exhostregexp, hostname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 	else
 		hostmatch = 0;
 	if (hostmatch) return 0;
 
 	if (testregexp)
-		testmatch = pcre_exec_match(testregexp, testname, ovector, (sizeof(ovector) / sizeof(ovector[0])));
+		testmatch = (pcre_exec_capture(testregexp, testname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 	else
 		testmatch = 1;
 	if (!testmatch) return 0;
 
 	if (extestregexp)
-		testmatch = pcre_exec_match(extestregexp, testname, ovector, (sizeof(ovector) / sizeof(ovector[0])));
+		testmatch = (pcre_exec_capture(extestregexp, testname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 	else
 		testmatch = 0;
 	if (testmatch) return 0;
@@ -637,8 +637,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 
 			/* For duration counts, record all events. We'll filter out the colors later. */
 			if (colrregexp && (counttype != XYMON_COUNT_DURATION)) {
-				colrmatch = (pcre_exec_match(colrregexp, newcolname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) ||
-					     pcre_exec_match(colrregexp, oldcolname, ovector, (sizeof(ovector) / sizeof(ovector[0]))));
+				colrmatch = ((pcre_exec_capture(colrregexp, newcolname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0) ||
+					     (pcre_exec_capture(colrregexp, oldcolname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0));
 			}
 			else
 				colrmatch = 1;
