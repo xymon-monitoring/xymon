@@ -53,13 +53,13 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 
 	/*
 	 * Francesco Duranti noticed that if we use the "/group" option
-	 * when sending the status message, this tricks the parser to 
+	 * when sending the status message, this tricks the parser to
 	 * create an extra filesystem called "/group". So skip the first
 	 * line - we never have any disk reports there anyway.
 	 */
 	curline = strchr(msg, '\n'); if (curline) curline++;
 	match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
-	if (!match_data) return 1; 
+	if (!match_data) return 1;
 
 	while (curline)  {
 		char *fsline, *p;
@@ -80,7 +80,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 
 		/* red/yellow filesystems show up twice */
 		if ((dsystype != DT_NETAPP) && (dsystype != DT_NETWARE) && (dsystype != DT_AS400)) {
-			if (*curline == '&') goto nextline; 
+			if (*curline == '&') goto nextline;
 			if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
 		}
 
@@ -88,7 +88,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
 		while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
 
-		/* 
+		/*
 		 * Some Unix filesystem reports contain the word "Filesystem".
 		 * So check if there's a slash in the NT filesystem letter - if yes,
 		 * then it's really a Unix system after all.
@@ -106,11 +106,11 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		  case DT_AS400:
 			diskname = xstrdup("/DASD");
 			p = strchr(columns[columncount-1], '%'); if (p) *p = ' ';
-			/* 
+			/*
 			 * Yikes ... the format of this line varies depending on the color.
 			 * Red:
-			 *    March 23, 2005 12:32:54 PM EST DASD on deltacdc at panic level at 90.4967% 
-			 * Yellow: 
+			 *    March 23, 2005 12:32:54 PM EST DASD on deltacdc at panic level at 90.4967%
+			 * Yellow:
 			 *    April 4, 2005 9:20:26 AM EST DASD on deltacdc at warning level at 81.8919%
 			 * Green:
 			 *    April 3, 2005 7:53:53 PM EST DASD on deltacdc OK at 79.6986%
@@ -161,8 +161,8 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 				strcpy(diskname, ",root");
 			}
 
-			/* 
-			 * Use testname here. 
+			/*
+			 * Use testname here.
 			 * The disk-handler also gets data from NetAPP inode- and qtree-messages,
 			 * that are virtually identical to the disk-messages. So lets just handle
 			 * all of it by using the testname as part of the filename.

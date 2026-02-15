@@ -191,7 +191,7 @@ int pcre_exec_compat(const pcre_pattern_t *pattern, const char *subject, int len
     return pcre_exec((const pcre *)pattern, NULL, subject, length, 0, 0, *match_data, 30);
 }
 
-pcre_match_data_t *pcre_match_data_create_compat(const pcre_pattern_t *pattern) {	
+pcre_match_data_t *pcre_match_data_create_compat(const pcre_pattern_t *pattern) {
     (void)pattern;
     return calloc(1, sizeof(pcre_match_data_t));
 }
