@@ -112,61 +112,70 @@ int main(int argc, char *argv[])
 	}
 
 	/* Get the alert cookie */
-	subjexp = pcre_compile_legacy(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile_optional(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*",
+									PCRE_CASELESS, &errmsg, &errofs);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 1\n");
 		rc = 2;
 		goto cleanup;
 	}
 
-	result = pcre_exec_capture(subjexp, subjectline, ovector, (sizeof(ovector)/sizeof(ovector[0])));
+	result = pcre_exec_capture(subjexp, subjectline, ovector,
+							   (sizeof(ovector)/sizeof(ovector[0])));
 	if (result < 0) {
 		dbgprintf("Subject line did not match pattern\n");
 		rc = 3; /* Subject did not match what we expected */
 		goto cleanup;
 	}
-	if (pcre_copy_substring(subjectline, ovector, result, 2, cookie, sizeof(cookie)) <= 0) {
+	if (pcre_copy_substring_ovector(subjectline, ovector, result, 2,
+									cookie, sizeof(cookie)) <= 0) {
 		dbgprintf("Could not find cookie value\n");
 		rc = 4; /* No cookie */
 		goto cleanup;
 	}
-	pcre_free(subjexp);
+	pcre_free_compat(subjexp);
 	subjexp = NULL;
 
 	/* See if there's a "DELAY=" delay-value also */
-	subjexp = pcre_compile_legacy(".*DELAY[ =]+([0-9]+[mhdw]*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile_optional(".*DELAY[ =]+([0-9]+[mhdw]*)",
+									PCRE_CASELESS, &errmsg, &errofs);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 2\n");
 		rc = 2;
 		goto cleanup;
 	}
-	result = pcre_exec_capture(subjexp, subjectline, ovector, (sizeof(ovector)/sizeof(ovector[0])));
+	result = pcre_exec_capture(subjexp, subjectline, ovector,
+							   (sizeof(ovector)/sizeof(ovector[0])));
 	if (result >= 0) {
 		char delaytxt[4096];
-		if (pcre_copy_substring(subjectline, ovector, result, 1, delaytxt, sizeof(delaytxt)) > 0) {
+		if (pcre_copy_substring_ovector(subjectline, ovector, result, 1,
+										delaytxt, sizeof(delaytxt)) > 0) {
 			duration = durationvalue(delaytxt);
 		}
 	}
-	pcre_free(subjexp);
+	pcre_free_compat(subjexp);
 	subjexp = NULL;
 
 	/* See if there's a "msg" text also */
-	subjexp = pcre_compile_legacy(".*MSG[ =]+(.*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile_optional(".*MSG[ =]+(.*)",
+									PCRE_CASELESS, &errmsg, &errofs);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 3\n");
 		rc = 2;
 		goto cleanup;
 	}
-	result = pcre_exec_capture(subjexp, subjectline, ovector, (sizeof(ovector)/sizeof(ovector[0])));
+	result = pcre_exec_capture(subjexp, subjectline, ovector,
+							   (sizeof(ovector)/sizeof(ovector[0])));
 	if (result >= 0) {
 		char msgtxt[4096];
-		if (pcre_copy_substring(subjectline, ovector, result, 1, msgtxt, sizeof(msgtxt)) > 0) {
+		if (pcre_copy_substring_ovector(subjectline, ovector, result, 1,
+										msgtxt, sizeof(msgtxt)) > 0) {
 			if (firsttxtline_alloc) free(firsttxtline);
 			firsttxtline = strdup(msgtxt);
 			firsttxtline_alloc = 1;
 		}
 	}
-	pcre_free(subjexp);
+	pcre_free_compat(subjexp);
 	subjexp = NULL;
 
 	/* Use the "return-path:" header if we didn't see a From: line */
@@ -198,7 +207,7 @@ int main(int argc, char *argv[])
 	rc = 0;
 
 cleanup:
-	if (subjexp) pcre_free(subjexp);
+	if (subjexp) pcre_free_compat(subjexp);
 
 	free(ackbuf);
 	free(subjectline);
