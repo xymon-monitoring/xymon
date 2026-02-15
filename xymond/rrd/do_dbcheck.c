@@ -223,28 +223,36 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 
        char *eoln, *curline;
        static int ptnsetup = 0;
-       static pcre *inclpattern = NULL;
-       static pcre *exclpattern = NULL;
+       static pcre2_code *inclpattern = NULL;
+       static pcre2_code *exclpattern = NULL;
+       pcre2_match_data *ovector;
 
        if (tablespace_tpl == NULL) tablespace_tpl = setup_template(tablespace_params);
 
        if (!ptnsetup) {
-               const char *errmsg;
-               int errofs;
+               char errmsg[120];
+               int err;
+               PCRE2_SIZE errofs;
                char *ptn;
 
                ptnsetup = 1;
                ptn = getenv("RRDDISKS");
                if (ptn && strlen(ptn)) {
-                       inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n",
+                       inclpattern = pcre2_compile(ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
+                       if (!inclpattern) {
+                               pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+                               errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %zu\n",
                                                    ptn, errmsg, errofs);
+                       }
                }
                ptn = getenv("NORRDDISKS");
                if (ptn && strlen(ptn)) {
-                       exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n",
+                       exclpattern = pcre2_compile(ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
+                       if (!exclpattern) {
+                               pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+                               errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %zu\n",
                                                    ptn, errmsg, errofs);
+                       }
                }
        }
 
@@ -261,6 +269,7 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
                eoln = strchr(curline, '\n');
                curline = (eoln ? (eoln+1) : NULL);
        }
+       ovector = pcre2_match_data_create(30, NULL);
 
        while (curline)  {
                char *fsline, *p;
@@ -307,20 +316,18 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
                /* Check include/exclude patterns */
                wanteddisk = 1;
                if (exclpattern) {
-                       int ovector[30];
                        int result;
 
-                       result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+                       result = pcre2_match(exclpattern, diskname, strlen(diskname),
+                                            0, 0, ovector, NULL);
 
                        wanteddisk = (result < 0);
                }
                if (wanteddisk && inclpattern) {
-                       int ovector[30];
                        int result;
 
-                       result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+                       result = pcre2_match(inclpattern, diskname, strlen(diskname),
+                                            0, 0, ovector, NULL);
 
                        wanteddisk = (result >= 0);
                }
@@ -350,6 +357,7 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 nextline:
                curline = (eoln ? (eoln+1) : NULL);
        }
+       pcre2_match_data_free(ovector);
 
        return 0;
 }

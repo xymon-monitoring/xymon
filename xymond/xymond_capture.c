@@ -34,13 +34,14 @@ int main(int argc, char *argv[])
 	int running;
 	int argi, seq;
 	struct timespec *timeout = NULL;
-	pcre *hostexp = NULL;
-	pcre *exhostexp = NULL;
-	pcre *testexp = NULL;
-	pcre *extestexp = NULL;
-	pcre *colorexp = NULL;
-        const char *errmsg = NULL;
-	int errofs = 0;
+	pcre2_code *hostexp = NULL;
+	pcre2_code *exhostexp = NULL;
+	pcre2_code *testexp = NULL;
+	pcre2_code *extestexp = NULL;
+	pcre2_code *colorexp = NULL;
+	pcre2_match_data *ovector;
+	int err;
+	PCRE2_SIZE errofs;
 	FILE *logfd = stdout;
 	int batchtimeout = 30;
 	char *batchcmd = NULL;
@@ -75,27 +76,27 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			hostexp = pcre_compile(exp, PCRE_CASELESS, &errmsg, &errofs, NULL);
+			hostexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (hostexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--exhosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			exhostexp = pcre_compile(exp, PCRE_CASELESS, &errmsg, &errofs, NULL);
+			exhostexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (exhostexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--tests=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			testexp = pcre_compile(exp, PCRE_CASELESS, &errmsg, &errofs, NULL);
+			testexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (testexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--extests=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			extestexp = pcre_compile(exp, PCRE_CASELESS, &errmsg, &errofs, NULL);
+			extestexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (extestexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--colors=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			colorexp = pcre_compile(exp, PCRE_CASELESS, &errmsg, &errofs, NULL);
+			colorexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (colorexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--outfile=")) {
@@ -127,6 +128,7 @@ int main(int argc, char *argv[])
 
 	signal(SIGCHLD, SIG_IGN);
 
+	ovector = pcre2_match_data_create(30, NULL);
 	running = 1;
 	while (running) {
 		char *eoln, *restofmsg, *p;
@@ -245,7 +247,6 @@ int main(int argc, char *argv[])
 		 * Process this message.
 		 */
 		else {
-			int ovector[30];
 			int match, i;
 			char *hostname = metadata[hostnameitem];
 			char *testname = metadata[testnameitem];
@@ -298,23 +299,23 @@ int main(int argc, char *argv[])
 
 
 			if (hostexp) {
-				match = (pcre_exec(hostexp, NULL, hostname, strlen(hostname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				match = (pcre2_match(hostexp, hostname, strlen(hostname), 0, 0, ovector, NULL) >= 0);
 				if (!match) continue;
 			}
 			if (exhostexp) {
-				match = (pcre_exec(exhostexp, NULL, hostname, strlen(hostname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				match = (pcre2_match(exhostexp, hostname, strlen(hostname), 0, 0, ovector, NULL) >= 0);
 				if (match) continue;
 			}
 			if (testexp) {
-				match = (pcre_exec(testexp, NULL, testname, strlen(testname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				match = (pcre2_match(testexp, testname, strlen(testname), 0, 0, ovector, NULL) >= 0);
 				if (!match) continue;
 			}
 			if (extestexp) {
-				match = (pcre_exec(extestexp, NULL, testname, strlen(testname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				match = (pcre2_match(extestexp, testname, strlen(testname), 0, 0, ovector, NULL) >= 0);
 				if (match) continue;
 			}
 			if (colorexp) {
-				match = (pcre_exec(colorexp, NULL, color, strlen(color), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				match = (pcre2_match(colorexp, color, strlen(color), 0, 0, ovector, NULL) >= 0);
 				if (!match) continue;
 			}
 
@@ -338,6 +339,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	pcre2_match_data_free(ovector);
 
 	return 0;
 }

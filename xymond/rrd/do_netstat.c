@@ -65,7 +65,7 @@ static void prepare_update(char *outp)
 	outp += sprintf(outp, ":%s", (tcpretranspackets ? tcpretranspackets : "U")); if (tcpretranspackets) xfree(tcpretranspackets);
 }
 
-static int handle_pcre_netstat(char *msg, pcre **pcreset, char *outp)
+static int handle_pcre_netstat(char *msg, pcre2_code **pcreset, char *outp)
 {
 	enum { AT_NONE, AT_TCP, AT_UDP } sect = AT_NONE;
 	int havedata = 0;
@@ -432,12 +432,12 @@ static int do_valbeforemarker(char *layout[], char *msg, char *outp)
 int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static int pcres_compiled = 0;
-	static pcre **netstat_osf_pcres = NULL;
-	static pcre **netstat_aix_pcres = NULL;
-	static pcre **netstat_irix_pcres = NULL;
-	static pcre **netstat_hpux_pcres = NULL;
-	static pcre **netstat_bsd_pcres = NULL;
-	static pcre **netstat_sco_sv_pcres = NULL;
+	static pcre2_code **netstat_osf_pcres = NULL;
+	static pcre2_code **netstat_aix_pcres = NULL;
+	static pcre2_code **netstat_irix_pcres = NULL;
+	static pcre2_code **netstat_hpux_pcres = NULL;
+	static pcre2_code **netstat_bsd_pcres = NULL;
+	static pcre2_code **netstat_sco_sv_pcres = NULL;
 
 	enum ostype_t ostype;
 	char *datapart = msg;

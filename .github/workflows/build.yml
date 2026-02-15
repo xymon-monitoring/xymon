@@ -34,7 +34,7 @@ jobs:
             build-essential \
             libc-ares-dev \
             libldap-dev \
-            libpcre3-dev \
+            libpcre2-dev \
             librrd-dev \
             libssl-dev \
             libtirpc-dev
