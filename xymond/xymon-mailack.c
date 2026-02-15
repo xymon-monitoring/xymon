@@ -20,7 +20,6 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 
 #include "pcre_compat.h"
-
 #include "libxymon.h"
 
 int main(int argc, char *argv[])
@@ -34,7 +33,7 @@ int main(int argc, char *argv[])
 	int firsttxtline_alloc = 0;
 	int inheaders = 1;
 	char *p;
-	pcre *subjexp;
+	pcre *subjexp = NULL;
 	const char *errmsg;
 	int errofs, result;
 	int ovector[30];
@@ -54,7 +53,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--area=")) {
 			char *p = strchr(argv[argi], '=');
-			if (envarea) free(envarea);
+			free(envarea);
 			envarea = strdup(p+1);
 		}
 	}
@@ -73,7 +72,7 @@ int main(int argc, char *argv[])
 			else if ((strncasecmp(STRBUF(inbuf), "ack=", 4) == 0) || (strncasecmp(STRBUF(inbuf), "ack ", 4) == 0)) {
 				/* Some systems cannot generate a subject. Allow them to ack
 				 * via text in the message body. */
-				if (subjectline) free(subjectline);
+				free(subjectline);
 				subjectline = (char *)malloc(STRBUFLEN(inbuf) + 1024);
 				sprintf(subjectline, "Subject: Xymon [%s]", STRBUF(inbuf)+4);
 			}
@@ -91,7 +90,7 @@ int main(int argc, char *argv[])
 
 		/* Is it one of those we want to keep ? */
 		if (strncasecmp(STRBUF(inbuf), "return-path:", 12) == 0) {
-			if (returnpathline) free(returnpathline);
+			free(returnpathline);
 			returnpathline = strdup(skipwhitespace(STRBUF(inbuf)+12));
 		}
 		else if (strncasecmp(STRBUF(inbuf), "from:", 5) == 0) {
@@ -99,7 +98,7 @@ int main(int argc, char *argv[])
 			fromline = strdup(skipwhitespace(STRBUF(inbuf)+5));
 		}
 		else if (strncasecmp(STRBUF(inbuf), "subject:", 8) == 0) {
-			if (subjectline) free(subjectline);
+			free(subjectline);
 			subjectline = strdup(skipwhitespace(STRBUF(inbuf)+8));
 		}
 	}
@@ -161,7 +160,7 @@ int main(int argc, char *argv[])
 	if (result >= 0) {
 		char msgtxt[4096];
 		if (pcre_copy_substring(subjectline, ovector, result, 1, msgtxt, sizeof(msgtxt)) > 0) {
-			if (firsttxtline && firsttxtline_alloc) free(firsttxtline);
+			if (firsttxtline_alloc) free(firsttxtline);
 			firsttxtline = strdup(msgtxt);
 			firsttxtline_alloc = 1;
 		}
@@ -186,9 +185,7 @@ int main(int argc, char *argv[])
 	ackbuf = (char *)malloc(4096 + strlen(firsttxtline) + (fromline ? strlen(fromline) : 0));
 	p = ackbuf;
 	p += sprintf(p, "xymondack %s %d %s", cookie, duration, firsttxtline);
-	if (fromline) {
-		p += sprintf(p, "\nAcked by: %s", fromline);
-	}
+	if (fromline) p += sprintf(p, "\nAcked by: %s", fromline);
 
 	if (debug) {
 		printf("%s\n", ackbuf);
@@ -202,14 +199,14 @@ int main(int argc, char *argv[])
 cleanup:
 	if (subjexp) pcre_free(subjexp);
 
-	if (ackbuf) free(ackbuf);
-	if (subjectline) free(subjectline);
+	free(ackbuf);
+	free(subjectline);
 
 	if (fromline && (fromline != returnpathline)) free(fromline);
-	if (returnpathline) free(returnpathline);
+	free(returnpathline);
 
-	if (firsttxtline && firsttxtline_alloc) free(firsttxtline);
-	if (envarea) free(envarea);
+	if (firsttxtline_alloc) free(firsttxtline);
+	free(envarea);
 
 	return rc;
 }
