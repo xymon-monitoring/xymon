@@ -115,6 +115,7 @@ pcre_pattern_t *pcre_compile_compat(const char *pattern, int options, char *errm
 }
 
 int pcre_exec_compat(pcre_pattern_t *pattern, const char *subject, int length, pcre_match_data_t *match_data) {
+    if (!pattern || !subject || !match_data) return -1;
     return pcre2_match((pcre2_code *)pattern, (PCRE2_SPTR)subject, (PCRE2_SIZE)length, 0, 0, (pcre2_match_data *)match_data, NULL);
 }
 
