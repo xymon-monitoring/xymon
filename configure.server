@@ -462,18 +462,28 @@ else
     echo "SYSTEMCARES = no"              >>Makefile
 fi
 echo ""                                  >>Makefile
-
 echo "# PCRE settings"                   >>Makefile
 if test "$PCREOK" = "YES"
 then
+    echo "PCREDEF = $PCREDEF"            >>Makefile
+
     if test "$PCREINC" != ""; then
-	echo "PCREINCDIR = -I$PCREINC"   >>Makefile
+        echo "PCREINCDIR = -I$PCREINC"   >>Makefile
     fi
+
     if test "$PCRELIB" != ""; then
-	echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
-	echo "RPATHVAL += ${PCRELIB}"       >>Makefile
+        if test "$PCRE_MAJOR" = "2"; then
+            echo "PCRELIBS = -L$PCRELIB -lpcre2-8" >>Makefile
+        else
+            echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
+        fi
+        echo "RPATHVAL += ${PCRELIB}"    >>Makefile
     else
-	echo "PCRELIBS = -lpcre"         >>Makefile
+        if test "$PCRE_MAJOR" = "2"; then
+            echo "PCRELIBS = -lpcre2-8"  >>Makefile
+        else
+            echo "PCRELIBS = -lpcre"     >>Makefile
+        fi
     fi
 fi
 echo ""                                  >>Makefile

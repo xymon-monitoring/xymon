@@ -17,21 +17,23 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <pcre.h>
+#include <stdlib.h>
 
+#include "pcre_compat.h"
 #include "libxymon.h"
 
 int main(int argc, char *argv[])
 {
 	strbuffer_t *inbuf;
-	char *ackbuf;
+	char *ackbuf = NULL;
 	char *subjectline = NULL;
 	char *returnpathline = NULL;
 	char *fromline = NULL;
 	char *firsttxtline = NULL;
+	int firsttxtline_alloc = 0;
 	int inheaders = 1;
 	char *p;
-	pcre *subjexp;
+	pcre_pattern_t *subjexp = NULL;
 	const char *errmsg;
 	int errofs, result;
 	int ovector[30];
@@ -39,6 +41,7 @@ int main(int argc, char *argv[])
 	int duration = 0;
 	int argi;
 	char *envarea = NULL;
+	int rc = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -50,6 +53,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--area=")) {
 			char *p = strchr(argv[argi], '=');
+			free(envarea);
 			envarea = strdup(p+1);
 		}
 	}
@@ -68,12 +72,14 @@ int main(int argc, char *argv[])
 			else if ((strncasecmp(STRBUF(inbuf), "ack=", 4) == 0) || (strncasecmp(STRBUF(inbuf), "ack ", 4) == 0)) {
 				/* Some systems cannot generate a subject. Allow them to ack
 				 * via text in the message body. */
+				free(subjectline);
 				subjectline = (char *)malloc(STRBUFLEN(inbuf) + 1024);
 				sprintf(subjectline, "Subject: Xymon [%s]", STRBUF(inbuf)+4);
 			}
 			else if (*STRBUF(inbuf) && !firsttxtline) {
 				/* Save the first line of the message body, but ignore blank lines */
 				firsttxtline = strdup(STRBUF(inbuf));
+				firsttxtline_alloc = 1;
 			}
 
 			continue;	/* We don't care about the rest of the message body */
@@ -83,64 +89,94 @@ int main(int argc, char *argv[])
 		if (inheaders && (STRBUFLEN(inbuf) == 0)) { inheaders = 0; continue; }
 
 		/* Is it one of those we want to keep ? */
-		if (strncasecmp(STRBUF(inbuf), "return-path:", 12) == 0) returnpathline = strdup(skipwhitespace(STRBUF(inbuf)+12));
-		else if (strncasecmp(STRBUF(inbuf), "from:", 5) == 0)    fromline = strdup(skipwhitespace(STRBUF(inbuf)+5));
-		else if (strncasecmp(STRBUF(inbuf), "subject:", 8) == 0) subjectline = strdup(skipwhitespace(STRBUF(inbuf)+8));
+		if (strncasecmp(STRBUF(inbuf), "return-path:", 12) == 0) {
+			free(returnpathline);
+			returnpathline = strdup(skipwhitespace(STRBUF(inbuf)+12));
+		}
+		else if (strncasecmp(STRBUF(inbuf), "from:", 5) == 0) {
+			if (fromline && (fromline != returnpathline)) free(fromline);
+			fromline = strdup(skipwhitespace(STRBUF(inbuf)+5));
+		}
+		else if (strncasecmp(STRBUF(inbuf), "subject:", 8) == 0) {
+			free(subjectline);
+			subjectline = strdup(skipwhitespace(STRBUF(inbuf)+8));
+		}
 	}
 	freestrbuffer(inbuf);
 
 	/* No subject ? No deal */
 	if (subjectline == NULL) {
 		dbgprintf("Subject-line not found\n");
-		return 1;
+		rc = 1;
+		goto cleanup;
 	}
 
 	/* Get the alert cookie */
-	subjexp = pcre_compile(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile_optional(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*",
+									PCRE_CASELESS, &errmsg, &errofs);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 1\n");
-		return 2;
+		rc = 2;
+		goto cleanup;
 	}
-	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+
+	result = pcre_exec_capture(subjexp, subjectline, ovector,
+							   (sizeof(ovector)/sizeof(ovector[0])));
 	if (result < 0) {
 		dbgprintf("Subject line did not match pattern\n");
-		return 3; /* Subject did not match what we expected */
+		rc = 3; /* Subject did not match what we expected */
+		goto cleanup;
 	}
-	if (pcre_copy_substring(subjectline, ovector, result, 2, cookie, sizeof(cookie)) <= 0) {
+	if (pcre_copy_substring_ovector(subjectline, ovector, result, 2,
+									cookie, sizeof(cookie)) <= 0) {
 		dbgprintf("Could not find cookie value\n");
-		return 4; /* No cookie */
+		rc = 4; /* No cookie */
+		goto cleanup;
 	}
-	pcre_free(subjexp);
+	pcre_free_compat(subjexp);
+	subjexp = NULL;
 
 	/* See if there's a "DELAY=" delay-value also */
-	subjexp = pcre_compile(".*DELAY[ =]+([0-9]+[mhdw]*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile_optional(".*DELAY[ =]+([0-9]+[mhdw]*)",
+									PCRE_CASELESS, &errmsg, &errofs);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 2\n");
-		return 2;
+		rc = 2;
+		goto cleanup;
 	}
-	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	result = pcre_exec_capture(subjexp, subjectline, ovector,
+							   (sizeof(ovector)/sizeof(ovector[0])));
 	if (result >= 0) {
 		char delaytxt[4096];
-		if (pcre_copy_substring(subjectline, ovector, result, 1, delaytxt, sizeof(delaytxt)) > 0) {
+		if (pcre_copy_substring_ovector(subjectline, ovector, result, 1,
+										delaytxt, sizeof(delaytxt)) > 0) {
 			duration = durationvalue(delaytxt);
 		}
 	}
-	pcre_free(subjexp);
+	pcre_free_compat(subjexp);
+	subjexp = NULL;
 
 	/* See if there's a "msg" text also */
-	subjexp = pcre_compile(".*MSG[ =]+(.*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile_optional(".*MSG[ =]+(.*)",
+									PCRE_CASELESS, &errmsg, &errofs);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 3\n");
-		return 2;
+		rc = 2;
+		goto cleanup;
 	}
-	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	result = pcre_exec_capture(subjexp, subjectline, ovector,
+							   (sizeof(ovector)/sizeof(ovector[0])));
 	if (result >= 0) {
 		char msgtxt[4096];
-		if (pcre_copy_substring(subjectline, ovector, result, 1, msgtxt, sizeof(msgtxt)) > 0) {
+		if (pcre_copy_substring_ovector(subjectline, ovector, result, 1,
+										msgtxt, sizeof(msgtxt)) > 0) {
+			if (firsttxtline_alloc) free(firsttxtline);
 			firsttxtline = strdup(msgtxt);
+			firsttxtline_alloc = 1;
 		}
 	}
-	pcre_free(subjexp);
+	pcre_free_compat(subjexp);
+	subjexp = NULL;
 
 	/* Use the "return-path:" header if we didn't see a From: line */
 	if ((fromline == NULL) && returnpathline) fromline = returnpathline;
@@ -152,20 +188,35 @@ int main(int argc, char *argv[])
 
 	/* Setup the acknowledge message */
 	if (duration == 0) duration = 60;	/* Default: Ack for 60 minutes */
-	if (firsttxtline == NULL) firsttxtline = "<No cause specified>";
+	if (firsttxtline == NULL) {
+		firsttxtline = "<No cause specified>";
+		firsttxtline_alloc = 0;
+	}
 	ackbuf = (char *)malloc(4096 + strlen(firsttxtline) + (fromline ? strlen(fromline) : 0));
 	p = ackbuf;
 	p += sprintf(p, "xymondack %s %d %s", cookie, duration, firsttxtline);
-	if (fromline) {
-		p += sprintf(p, "\nAcked by: %s", fromline);
-	}
+	if (fromline) p += sprintf(p, "\nAcked by: %s", fromline);
 
 	if (debug) {
 		printf("%s\n", ackbuf);
-		return 0;
+		rc = 0;
+		goto cleanup;
 	}
 
 	sendmessage(ackbuf, NULL, XYMON_TIMEOUT, NULL);
-	return 0;
-}
+	rc = 0;
 
+cleanup:
+	if (subjexp) pcre_free_compat(subjexp);
+
+	free(ackbuf);
+	free(subjectline);
+
+	if (fromline && (fromline != returnpathline)) free(fromline);
+	free(returnpathline);
+
+	if (firsttxtline_alloc) free(firsttxtline);
+	free(envarea);
+
+	return rc;
+}

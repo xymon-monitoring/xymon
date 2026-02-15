@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <errno.h>
 
-#include <pcre.h>
+#include "pcre_compat.h"
 
 #include "libxymon.h"
 
@@ -164,29 +164,29 @@ static void free_criteria(criteria_t *crit)
 {
 	if (crit->cfline)        xfree(crit->cfline);
 	if (crit->pagespec)      xfree(crit->pagespec);
-	if (crit->pagespecre)    pcre_free(crit->pagespecre);
+	pcre_free_pattern(&crit->pagespecre);
 	if (crit->expagespec)    xfree(crit->expagespec);
-	if (crit->expagespecre)  pcre_free(crit->expagespecre);
+	pcre_free_pattern(&crit->expagespecre);
 	if (crit->dgspec)        xfree(crit->dgspec);
-	if (crit->dgspecre)      pcre_free(crit->dgspecre);
+	pcre_free_pattern(&crit->dgspecre);
 	if (crit->exdgspec)      xfree(crit->exdgspec);
-	if (crit->exdgspecre)    pcre_free(crit->exdgspecre);
+	pcre_free_pattern(&crit->exdgspecre);
 	if (crit->hostspec)      xfree(crit->hostspec);
-	if (crit->hostspecre)    pcre_free(crit->hostspecre);
+	pcre_free_pattern(&crit->hostspecre);
 	if (crit->exhostspec)    xfree(crit->exhostspec);
-	if (crit->exhostspecre)  pcre_free(crit->exhostspecre);
+	pcre_free_pattern(&crit->exhostspecre);
 	if (crit->svcspec)       xfree(crit->svcspec);
-	if (crit->svcspecre)     pcre_free(crit->svcspecre);
+	pcre_free_pattern(&crit->svcspecre);
 	if (crit->exsvcspec)     xfree(crit->exsvcspec);
-	if (crit->exsvcspecre)   pcre_free(crit->exsvcspecre);
+	pcre_free_pattern(&crit->exsvcspecre);
 	if (crit->classspec)     xfree(crit->classspec);
-	if (crit->classspecre)   pcre_free(crit->classspecre);
+	pcre_free_pattern(&crit->classspecre);
 	if (crit->exclassspec)   xfree(crit->exclassspec);
-	if (crit->exclassspecre) pcre_free(crit->exclassspecre);
+	pcre_free_pattern(&crit->exclassspecre);
 	if (crit->groupspec)     xfree(crit->groupspec);
-	if (crit->groupspecre)   pcre_free(crit->groupspecre);
+	pcre_free_pattern(&crit->groupspecre);
 	if (crit->exgroupspec)   xfree(crit->exgroupspec);
-	if (crit->exgroupspecre) pcre_free(crit->exgroupspecre);
+	pcre_free_pattern(&crit->exgroupspecre);
 	if (crit->timespec)      xfree(crit->timespec);
 	if (crit->extimespec)    xfree(crit->extimespec);
 }
@@ -1269,4 +1269,3 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	MEMUNDEFINE(l);
 	MEMUNDEFINE(codes);
 }
-

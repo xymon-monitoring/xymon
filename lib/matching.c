@@ -18,18 +18,18 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include <pcre.h>
+#include "pcre_compat.h"
 
 #include "libxymon.h"
 
-pcre *compileregex_opts(const char *pattern, int flags)
+pcre_pattern_t *compileregex_opts(const char *pattern, int flags)
 {
-	pcre *result;
-	const char *errmsg;
+	pcre_pattern_t *result;
+	char errmsg[256];
 	int errofs;
 
 	dbgprintf("Compiling regex %s\n", pattern);
-	result = pcre_compile(pattern, flags, &errmsg, &errofs, NULL);
+	result = pcre_compile_compat(pattern, flags, errmsg, sizeof(errmsg), &errofs);
 	if (result == NULL) {
 		errprintf("pcre compile '%s' failed (offset %d): %s\n", pattern, errofs, errmsg);
 		return NULL;
@@ -38,35 +38,40 @@ pcre *compileregex_opts(const char *pattern, int flags)
 	return result;
 }
 
-pcre *compileregex(const char *pattern)
+pcre_pattern_t *compileregex(const char *pattern)
 {
 	return compileregex_opts(pattern, PCRE_CASELESS);
 }
 
-pcre *multilineregex(const char *pattern)
+pcre_pattern_t *multilineregex(const char *pattern)
 {
 	return compileregex_opts(pattern, PCRE_CASELESS|PCRE_MULTILINE);
 }
 
-int matchregex(const char *needle, pcre *pcrecode)
+int matchregex(const char *needle, pcre_pattern_t *pcrecode)
 {
-	int ovector[30];
 	int result;
+	pcre_match_data_t *match_data;
 
 	if (!needle || !pcrecode) return 0;
 
-	result = pcre_exec(pcrecode, NULL, needle, strlen(needle), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	match_data = pcre_match_data_create_compat(pcrecode);
+	if (!match_data) return 0;
+
+	result = pcre_exec_compat(pcrecode, needle, strlen(needle), match_data);
+	pcre_match_data_free_compat(match_data);
+
 	return (result >= 0);
 }
 
-void freeregex(pcre *pcrecode)
+void freeregex(pcre_pattern_t *pcrecode)
 {
 	if (!pcrecode) return;
 
-	pcre_free(pcrecode);
+	pcre_free_compat(pcrecode);
 }
 
-int namematch(const char *needle, char *haystack, pcre *pcrecode)
+int namematch(const char *needle, char *haystack, pcre_pattern_t *pcrecode)
 {
 	char *xhay;
 	char *tokbuf = NULL, *tok;
@@ -109,7 +114,7 @@ int namematch(const char *needle, char *haystack, pcre *pcrecode)
 	}
 	xfree(xhay);
 
-	/* 
+	/*
 	 * If we didn't find it, and the list is exclusively negative matches,
 	 * we must return a positive result for "no match".
 	 */
@@ -118,7 +123,7 @@ int namematch(const char *needle, char *haystack, pcre *pcrecode)
 	return result;
 }
 
-int patternmatch(char *datatosearch, char *pattern, pcre *pcrecode)
+int patternmatch(char *datatosearch, char *pattern, pcre_pattern_t *pcrecode)
 {
 	if (pcrecode) {
 		/* Do regex matching. The regex has already been compiled for us. */
@@ -133,17 +138,17 @@ int patternmatch(char *datatosearch, char *pattern, pcre *pcrecode)
 	return (strstr(datatosearch, pattern) != NULL);
 }
 
-pcre **compile_exprs(char *id, const char **patterns, int count)
+pcre_pattern_t **compile_exprs(char *id, const char **patterns, int count)
 {
-	pcre **result = NULL;
+	pcre_pattern_t **result = NULL;
 	int i;
 
-	result = (pcre **)calloc(count, sizeof(pcre *));
+	result = (pcre_pattern_t **)calloc(count, sizeof(pcre_pattern_t *));
 	for (i=0; (i < count); i++) {
 		result[i] = compileregex(patterns[i]);
 		if (!result[i]) {
 			errprintf("Internal error: %s pickdata PCRE-compile failed\n", id);
-			for (i=0; (i < count); i++) if (result[i]) pcre_free(result[i]);
+			for (i=0; (i < count); i++) if (result[i]) pcre_free_compat(result[i]);
 			xfree(result);
 			return NULL;
 		}
@@ -152,24 +157,30 @@ pcre **compile_exprs(char *id, const char **patterns, int count)
 	return result;
 }
 
-int pickdata(char *buf, pcre *expr, int dupok, ...)
+int pickdata(char *buf, pcre_pattern_t *expr, int dupok, ...)
 {
 	int res, i;
-	int ovector[30];
 	va_list ap;
 	char **ptr;
 	char w[100];
+	pcre_match_data_t *match_data;
 
 	if (!expr) return 0;
 
-	res = pcre_exec(expr, NULL, buf, strlen(buf), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-	if (res < 0) return 0;
+	match_data = pcre_match_data_create_compat(expr);
+	if (!match_data) return 0;
+
+	res = pcre_exec_compat(expr, buf, strlen(buf), match_data);
+	if (res < 0) {
+		pcre_match_data_free_compat(match_data);
+		return 0;
+	}
 
 	va_start(ap, dupok);
 
 	for (i=1; (i < res); i++) {
 		*w = '\0';
-		pcre_copy_substring(buf, ovector, res, i, w, sizeof(w));
+		pcre_copy_substring_compat(buf, match_data, i, w, sizeof(w));
 		ptr = va_arg(ap, char **);
 		if (dupok) {
 			if (*ptr) xfree(*ptr);
@@ -186,10 +197,10 @@ int pickdata(char *buf, pcre *expr, int dupok, ...)
 	}
 
 	va_end(ap);
+	pcre_match_data_free_compat(match_data);
 
 	return 1;
 }
-
 
 int timematch(char *holidaykey, char *tspec)
 {
@@ -199,5 +210,3 @@ int timematch(char *holidaykey, char *tspec)
 
 	return result;
 }
-
-

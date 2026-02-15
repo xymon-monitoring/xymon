@@ -10,6 +10,8 @@
 
 static char disk_rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
+
 int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *disk_params[] = { "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", NULL };
@@ -18,8 +20,9 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
 	char *eoln, *curline;
 	static int ptnsetup = 0;
-	static pcre *inclpattern = NULL;
-	static pcre *exclpattern = NULL;
+	static pcre_pattern_t *inclpattern = NULL;
+	static pcre_pattern_t *exclpattern = NULL;
+	pcre_match_data_t *match_data = NULL;
 
 	if (strstr(msg, "netapp.pl")) return do_netapp_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	if (strstr(msg, "dbcheck.pl")) return do_dbcheck_tablespace_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
@@ -27,23 +30,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	if (disk_tpl == NULL) disk_tpl = setup_template(disk_params);
 
 	if (!ptnsetup) {
-		const char *errmsg;
-		int errofs;
-		char *ptn;
-
-		ptnsetup = 1;
-		ptn = getenv("RRDDISKS");
-		if (ptn && strlen(ptn)) {
-			inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n", 
-						    ptn, errmsg, errofs);
-		}
-		ptn = getenv("NORRDDISKS");
-		if (ptn && strlen(ptn)) {
-			exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n", 
-						    ptn, errmsg, errofs);
-		}
+		setup_disk_patterns(&inclpattern, &exclpattern, &ptnsetup);
 	}
 
 	if (strstr(msg, " xfs ") || strstr(msg, " efs ") || strstr(msg, " cxfs ")) dsystype = DT_IRIX;
@@ -66,11 +53,16 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 
 	/*
 	 * Francesco Duranti noticed that if we use the "/group" option
-	 * when sending the status message, this tricks the parser to 
+	 * when sending the status message, this tricks the parser to
 	 * create an extra filesystem called "/group". So skip the first
 	 * line - we never have any disk reports there anyway.
 	 */
 	curline = strchr(msg, '\n'); if (curline) curline++;
+	if (inclpattern || exclpattern) {
+		match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
+		if (!match_data) errprintf("Failed to allocate PCRE match data, continuing without disk filtering\n");
+	}
+
 	while (curline)  {
 		char *fsline, *p;
 		char *columns[20];
@@ -90,7 +82,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 
 		/* red/yellow filesystems show up twice */
 		if ((dsystype != DT_NETAPP) && (dsystype != DT_NETWARE) && (dsystype != DT_AS400)) {
-			if (*curline == '&') goto nextline; 
+			if (*curline == '&') goto nextline;
 			if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
 		}
 
@@ -98,7 +90,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
 		while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
 
-		/* 
+		/*
 		 * Some Unix filesystem reports contain the word "Filesystem".
 		 * So check if there's a slash in the NT filesystem letter - if yes,
 		 * then it's really a Unix system after all.
@@ -116,11 +108,11 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		  case DT_AS400:
 			diskname = xstrdup("/DASD");
 			p = strchr(columns[columncount-1], '%'); if (p) *p = ' ';
-			/* 
+			/*
 			 * Yikes ... the format of this line varies depending on the color.
 			 * Red:
-			 *    March 23, 2005 12:32:54 PM EST DASD on deltacdc at panic level at 90.4967% 
-			 * Yellow: 
+			 *    March 23, 2005 12:32:54 PM EST DASD on deltacdc at panic level at 90.4967%
+			 * Yellow:
 			 *    April 4, 2005 9:20:26 AM EST DASD on deltacdc at warning level at 81.8919%
 			 * Green:
 			 *    April 3, 2005 7:53:53 PM EST DASD on deltacdc OK at 79.6986%
@@ -162,25 +154,10 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		}
 
 		/* Check include/exclude patterns */
-		wanteddisk = 1;
-		if (exclpattern) {
-			int ovector[30];
-			int result;
-
-			result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname), 
-					   0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-			wanteddisk = (result < 0);
-		}
-		if (wanteddisk && inclpattern) {
-			int ovector[30];
-			int result;
-
-			result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname), 
-					   0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-			wanteddisk = (result >= 0);
-		}
+		if (match_data)
+			wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
+		else
+			wanteddisk = 1;
 
 		if (wanteddisk && diskname && (pused != -1)) {
 			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
@@ -189,8 +166,8 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 				strcpy(diskname, ",root");
 			}
 
-			/* 
-			 * Use testname here. 
+			/*
+			 * Use testname here.
 			 * The disk-handler also gets data from NetAPP inode- and qtree-messages,
 			 * that are virtually identical to the disk-messages. So lets just handle
 			 * all of it by using the testname as part of the filename.
@@ -207,6 +184,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 nextline:
 		curline = (eoln ? (eoln+1) : NULL);
 	}
+	if (match_data) pcre_match_data_free_compat(match_data);
 
 	return 0;
 }

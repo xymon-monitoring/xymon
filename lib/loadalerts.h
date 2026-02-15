@@ -16,7 +16,7 @@
 
 /* The clients probably don't have the pcre headers */
 #if defined(LOCALCLIENT) || !defined(CLIENTONLY)
-#include <pcre.h>
+#include "pcre_compat.h"
 
 typedef enum { A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_NOTIFY, A_DEAD } astate_t;
 
@@ -50,29 +50,29 @@ typedef struct criteria_t {
 	int cfid;
 	char *cfline;
 	char *pagespec;		/* Pages to include */
-	pcre *pagespecre;
+	pcre_pattern_t *pagespecre;
 	char *expagespec;	/* Pages to exclude */
-	pcre *expagespecre;
+	pcre_pattern_t *expagespecre;
 	char *dgspec;		/* Display groups to include */
-	pcre *dgspecre;
+	pcre_pattern_t *dgspecre;
 	char *exdgspec;		/* Display groups to exclude */
-	pcre *exdgspecre;
+	pcre_pattern_t *exdgspecre;
 	char *hostspec;		/* Hosts to include */
-	pcre *hostspecre;
+	pcre_pattern_t *hostspecre;
 	char *exhostspec;	/* Hosts to exclude */
-	pcre *exhostspecre;
+	pcre_pattern_t *exhostspecre;
 	char *svcspec;		/* Services to include */
-	pcre *svcspecre;
+	pcre_pattern_t *svcspecre;
 	char *exsvcspec;	/* Services to exclude */
-	pcre *exsvcspecre;
+	pcre_pattern_t *exsvcspecre;
 	char *classspec;
-	pcre *classspecre;
+	pcre_pattern_t *classspecre;
 	char *exclassspec;
-	pcre *exclassspecre;
+	pcre_pattern_t *exclassspecre;
 	char *groupspec;
-	pcre *groupspecre;
+	pcre_pattern_t *groupspecre;
 	char *exgroupspec;
-	pcre *exgroupspecre;
+	pcre_pattern_t *exgroupspecre;
 	int colors;
 	char *timespec;
 	char *extimespec;
@@ -106,4 +106,3 @@ extern void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf);
 #endif
 
 #endif
-

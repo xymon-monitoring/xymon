@@ -11,6 +11,8 @@
 
 static char devmon_rcsid[] = "$Id $";
 
+#include "pcre_compat.h"
+
 int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 #define MAXCOLS 20
@@ -18,8 +20,8 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 
 	char *eoln, *curline;
 	static int ptnsetup = 0;
-	static pcre *inclpattern = NULL;
-	static pcre *exclpattern = NULL;
+	static pcre_pattern_t *inclpattern = NULL;
+	static pcre_pattern_t *exclpattern = NULL;
 	int in_devmon = 1;
 	int numds = 0;
 	char *rrdbasename;

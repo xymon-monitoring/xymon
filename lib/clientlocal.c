@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 typedef struct clientconfig_t {
-	pcre *hostptn, *classptn, *osptn;
+	pcre_pattern_t *hostptn, *classptn, *osptn;
 	strbuffer_t *config;
 	struct clientconfig_t *next;
 } clientconfig_t;
@@ -117,7 +117,7 @@ void load_clientconfig(void)
 
 		if (!insection) {
 			if (*STRBUF(buf) == '[') {
-				pcre *hostptn = NULL, *classptn = NULL, *osptn = NULL;
+				pcre_pattern_t *hostptn = NULL, *classptn = NULL, *osptn = NULL;
 				clientconfig_t *newrec;
 
 				p = STRBUF(buf) + strcspn(STRBUF(buf), "\r\n");

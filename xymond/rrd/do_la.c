@@ -10,6 +10,8 @@
 
 static char la_rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
+
 int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *la_params[]          = { "DS:la:GAUGE:600:U:U", NULL };
@@ -17,8 +19,8 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 	static char *clock_params[]       = { "DS:la:GAUGE:600:U:U", NULL }; /* "la" is a misnomer, but to stay compatiable with existing RRD files */
 	static void *clock_tpl            = NULL;
 
-	static pcre *as400_exp = NULL;
-	static pcre *zVM_exp = NULL;
+	static pcre_pattern_t *as400_exp = NULL;
+	static pcre_pattern_t *zVM_exp = NULL;
 	static time_t starttime = 0;
 
 	char *p, *eoln = NULL;
@@ -66,25 +68,23 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 		 * the operating system name is part of the message (as in the tests above).
 		 */
 
-		int ovector[30];
+		pcre_match_data_t *match_data = NULL;
 		char w[100];
 		int res;
 
-		if (zVM_exp == NULL) {
-			const char *errmsg = NULL;
-			int errofs = 0;
+		compile_single_pattern(&zVM_exp, ".* CPU Utilization *([0-9]+)%", "zVM CPU pattern");
+		match_data = pcre_match_data_create_compat(zVM_exp);
+		if (!match_data) goto done_parsing;
 
-			zVM_exp = pcre_compile(".* CPU Utilization *([0-9]+)%", PCRE_CASELESS, &errmsg, &errofs, NULL);
-		}
-
-		res = pcre_exec(zVM_exp, NULL, msg, strlen(msg), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+		res = pcre_exec_compat(zVM_exp, msg, strlen(msg), match_data);
 		if (res >= 0) {
 			/* We have a match - pick up the data. */
-			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 1, w, sizeof(w));
+			*w = '\0'; if (res > 0) pcre_copy_substring_compat(msg, match_data, 1, w, sizeof(w));
 			if (strlen(w)) {
 				load = atoi(w); gotload = 1;
 			}
 		}
+		pcre_match_data_free_compat(match_data);
 
 		goto done_parsing;
 	}
@@ -139,31 +139,28 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 		 * No "uptime" in message - could be from an AS/400. They look like this:
 		 * green March 21, 2005 12:33:24 PM EST deltacdc 108 users 45525 jobs(126 batch,0 waiting for message), load=26%
 		 */
-		int ovector[30];
+		pcre_match_data_t *match_data = NULL;
 		char w[100];
 		int res;
 
-		if (as400_exp == NULL) {
-			const char *errmsg = NULL;
-			int errofs = 0;
+		compile_single_pattern(&as400_exp, ".* ([0-9]+) users ([0-9]+) jobs.* load=([0-9]+)\\%", "AS400 pattern");
+		match_data = pcre_match_data_create_compat(as400_exp);
+		if (!match_data) goto done_parsing;
 
-			as400_exp = pcre_compile(".* ([0-9]+) users ([0-9]+) jobs.* load=([0-9]+)\\%", 
-						 PCRE_CASELESS, &errmsg, &errofs, NULL);
-		}
-
-		res = pcre_exec(as400_exp, NULL, msg, strlen(msg), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+		res = pcre_exec_compat(as400_exp, msg, strlen(msg), match_data);
 		if (res >= 0) {
 			/* We have a match - pick up the AS/400 data. */
-			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 1, w, sizeof(w));
+			*w = '\0'; if (res > 0) pcre_copy_substring_compat(msg, match_data, 1, w, sizeof(w));
 			if (strlen(w)) {
 				users = atoi(w); gotusers = 1;
 			}
 
-			*w = '\0'; if (res > 0) pcre_copy_substring(msg, ovector, res, 3, w, sizeof(w));
+			*w = '\0'; if (res > 0) pcre_copy_substring_compat(msg, match_data, 3, w, sizeof(w));
 			if (strlen(w)) {
 				load = atoi(w); gotload = 1;
 			}
 		}
+		pcre_match_data_free_compat(match_data);
 	}
 
 done_parsing:

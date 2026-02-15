@@ -26,7 +26,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <time.h>
 
-#include <pcre.h>
+#include "pcre_compat.h"
 
 #include "libxymon.h"
 
@@ -103,14 +103,14 @@ void do_notifylog(FILE *output,
 	/* For the PCRE matching */
 	const char *errmsg = NULL;
 	int errofs = 0;
-	pcre *pageregexp = NULL;
-	pcre *expageregexp = NULL;
-	pcre *hostregexp = NULL;
-	pcre *exhostregexp = NULL;
-	pcre *testregexp = NULL;
-	pcre *extestregexp = NULL;
-	pcre *rcptregexp = NULL;
-	pcre *exrcptregexp = NULL;
+	pcre_pattern_t *pageregexp = NULL;
+	pcre_pattern_t *expageregexp = NULL;
+	pcre_pattern_t *hostregexp = NULL;
+	pcre_pattern_t *exhostregexp = NULL;
+	pcre_pattern_t *testregexp = NULL;
+	pcre_pattern_t *extestregexp = NULL;
+	pcre_pattern_t *rcptregexp = NULL;
+	pcre_pattern_t *exrcptregexp = NULL;
 
 	if (maxminutes && (fromtime || totime)) {
 		fprintf(output, "<B>Only one time interval type is allowed!</B>");
@@ -145,14 +145,14 @@ void do_notifylog(FILE *output,
 
 	if (!maxcount) maxcount = 100;
 
-	if (pageregex && *pageregex) pageregexp = pcre_compile(pageregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (expageregex && *expageregex) expageregexp = pcre_compile(expageregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (hostregex && *hostregex) hostregexp = pcre_compile(hostregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (exhostregex && *exhostregex) exhostregexp = pcre_compile(exhostregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (testregex && *testregex) testregexp = pcre_compile(testregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (extestregex && *extestregex) extestregexp = pcre_compile(extestregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (rcptregex && *rcptregex) rcptregexp = pcre_compile(rcptregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
-	if (exrcptregex && *exrcptregex) exrcptregexp = pcre_compile(exrcptregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	pageregexp = pcre_compile_optional(pageregex, PCRE_CASELESS, &errmsg, &errofs);
+	expageregexp = pcre_compile_optional(expageregex, PCRE_CASELESS, &errmsg, &errofs);
+	hostregexp = pcre_compile_optional(hostregex, PCRE_CASELESS, &errmsg, &errofs);
+	exhostregexp = pcre_compile_optional(exhostregex, PCRE_CASELESS, &errmsg, &errofs);
+	testregexp = pcre_compile_optional(testregex, PCRE_CASELESS, &errmsg, &errofs);
+	extestregexp = pcre_compile_optional(extestregex, PCRE_CASELESS, &errmsg, &errofs);
+	rcptregexp = pcre_compile_optional(rcptregex, PCRE_CASELESS, &errmsg, &errofs);
+	exrcptregexp = pcre_compile_optional(exrcptregex, PCRE_CASELESS, &errmsg, &errofs);
 
 	snprintf(notifylogfilename, sizeof(notifylogfilename), "%s/notifications.log", xgetenv("XYMONSERVERLOGS"));
 	notifylog = fopen(notifylogfilename, "r");
@@ -216,73 +216,51 @@ void do_notifylog(FILE *output,
 		p = strchr(recipient, '['); if (p) *p = '\0';
 
 		if (pageregexp) {
-			char *pagename;
-
-			pagename = xmh_item_multi(eventhost, XMH_PAGEPATH);
-			pagematch = 0;
-			while (!pagematch && pagename) {
-			pagematch = (pcre_exec(pageregexp, NULL, pagename, strlen(pagename), 0, 0, 
-					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
-				pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
-			}
+			pagematch = pcre_match_pagelist(eventhost, pageregexp);
 		}
 		else
 			pagematch = 1;
 		if (!pagematch) continue;
 
 		if (expageregexp) {
-			char *pagename;
-
-			pagename = xmh_item_multi(eventhost, XMH_PAGEPATH);
-			pagematch = 0;
-			while (!pagematch && pagename) {
-			pagematch = (pcre_exec(expageregexp, NULL, pagename, strlen(pagename), 0, 0, 
-					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
-				pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
-			}
+			pagematch = pcre_match_pagelist(eventhost, expageregexp);
 		}
 		else
 			pagematch = 0;
 		if (pagematch) continue;
 
 		if (hostregexp)
-			hostmatch = (pcre_exec(hostregexp, NULL, hostname, strlen(hostname), 0, 0, 
-					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			hostmatch = (pcre_exec_capture(hostregexp, hostname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			hostmatch = 1;
 		if (!hostmatch) continue;
 
 		if (exhostregexp)
-			hostmatch = (pcre_exec(exhostregexp, NULL, hostname, strlen(hostname), 0, 0, 
-					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			hostmatch = (pcre_exec_capture(exhostregexp, hostname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			hostmatch = 0;
 		if (hostmatch) continue;
 
 		if (testregexp)
-			testmatch = (pcre_exec(testregexp, NULL, svcname, strlen(svcname), 0, 0, 
-					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			testmatch = (pcre_exec_capture(testregexp, svcname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			testmatch = 1;
 		if (!testmatch) continue;
 
 		if (extestregexp)
-			testmatch = (pcre_exec(extestregexp, NULL, svcname, strlen(svcname), 0, 0, 
-					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			testmatch = (pcre_exec_capture(extestregexp, svcname, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			testmatch = 0;
 		if (testmatch) continue;
 
 		if (rcptregexp)
-			rcptmatch = (pcre_exec(rcptregexp, NULL, recipient, strlen(recipient), 0, 0, 
-					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			rcptmatch = (pcre_exec_capture(rcptregexp, recipient, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			rcptmatch = 1;
 		if (!rcptmatch) continue;
 
 		if (exrcptregexp)
-			rcptmatch = (pcre_exec(exrcptregexp, NULL, recipient, strlen(recipient), 0, 0, 
-					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			rcptmatch = (pcre_exec_capture(exrcptregexp, recipient, ovector, (sizeof(ovector) / sizeof(ovector[0]))) >= 0);
 		else
 			rcptmatch = 0;
 		if (rcptmatch) continue;
@@ -367,13 +345,12 @@ void do_notifylog(FILE *output,
 
 	if (notifylog) fclose(notifylog);
 
-	if (pageregexp)   pcre_free(pageregexp);
-	if (expageregexp) pcre_free(expageregexp);
-	if (hostregexp)   pcre_free(hostregexp);
-	if (exhostregexp) pcre_free(exhostregexp);
-	if (testregexp)   pcre_free(testregexp);
-	if (extestregexp) pcre_free(extestregexp);
-	if (rcptregexp)   pcre_free(rcptregexp);
-	if (exrcptregexp) pcre_free(exrcptregexp);
+	pcre_free_pattern(&pageregexp);
+	pcre_free_pattern(&expageregexp);
+	pcre_free_pattern(&hostregexp);
+	pcre_free_pattern(&exhostregexp);
+	pcre_free_pattern(&testregexp);
+	pcre_free_pattern(&extestregexp);
+	pcre_free_pattern(&rcptregexp);
+	pcre_free_pattern(&exrcptregexp);
 }
-

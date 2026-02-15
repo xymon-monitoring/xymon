@@ -233,15 +233,26 @@ fi
 echo "" >>Makefile
 if test "$CONFTYPE" = "client"
 then
-	if test "$PCREINC" != ""; then
-		echo "PCREINCDIR = -I$PCREINC"   >>Makefile
-    	fi
-    	if test "$PCRELIB" != ""; then
-		echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
-		echo "RPATHVAL += ${PCRELIB}"       >>Makefile
-	else
-		echo "PCRELIBS = -lpcre"         >>Makefile
-    	fi
+        echo "PCREDEF = $PCREDEF" >>Makefile
+
+        if test "$PCREINC" != ""; then
+                echo "PCREINCDIR = -I$PCREINC" >>Makefile
+        fi
+
+        if test "$PCRELIB" != ""; then
+                if test "$PCRE_MAJOR" = "2"; then
+                        echo "PCRELIBS = -L$PCRELIB -lpcre2-8" >>Makefile
+                else
+                        echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
+                fi
+                echo "RPATHVAL += ${PCRELIB}" >>Makefile
+        else
+                if test "$PCRE_MAJOR" = "2"; then
+                        echo "PCRELIBS = -lpcre2-8" >>Makefile
+                else
+                        echo "PCRELIBS = -lpcre" >>Makefile
+                fi
+        fi
 fi
 echo "#"                                 >>Makefile
 echo "# Add local CFLAGS etc. settings here" >>Makefile

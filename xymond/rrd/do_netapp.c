@@ -10,17 +10,19 @@
 
 static char netapp_rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
+
 int do_netapp_stats_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 static char *netapp_stats_params[] = { "DS:NETread:GAUGE:600:0:U",
-                                       "DS:NETwrite:GAUGE:600:0:U",
-                                       "DS:DISKread:GAUGE:600:0:U",
-                                       "DS:DISKwrite:GAUGE:600:0:U",
-                                       "DS:TAPEread:GAUGE:600:0:U",
-                                       "DS:TAPEwrite:GAUGE:600:0:U",
-                                       "DS:FCPin:GAUGE:600:0:U",
-                                       "DS:FCPout:GAUGE:600:0:U",
-                                        NULL };
+									   "DS:NETwrite:GAUGE:600:0:U",
+									   "DS:DISKread:GAUGE:600:0:U",
+									   "DS:DISKwrite:GAUGE:600:0:U",
+									   "DS:TAPEread:GAUGE:600:0:U",
+									   "DS:TAPEwrite:GAUGE:600:0:U",
+									   "DS:FCPin:GAUGE:600:0:U",
+									   "DS:FCPout:GAUGE:600:0:U",
+										NULL };
 static void *netapp_stats_tpl      = NULL;
 
 	unsigned long netread=0, netwrite=0, diskread=0, diskwrite=0, taperead=0, tapewrite=0, fcpin=0, fcpout=0;
@@ -57,14 +59,14 @@ static void *netapp_stats_tpl      = NULL;
 int do_netapp_cifs_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 static char *netapp_cifs_params[] = { "DS:sessions:GAUGE:600:0:U",
-                                      "DS:openshares:GAUGE:600:0:U",
-                                      "DS:openfiles:GAUGE:600:0:U",
-                                      "DS:locks:GAUGE:600:0:U",
-                                      "DS:credentials:GAUGE:600:0:U",
-                                      "DS:opendirectories:GAUGE:600:0:U",
-                                      "DS:ChangeNotifies:GAUGE:600:0:U",
-                                      "DS:sessionsusingsecuri:GAUGE:600:0:U",
-                                      NULL };
+									  "DS:openshares:GAUGE:600:0:U",
+									  "DS:openfiles:GAUGE:600:0:U",
+									  "DS:locks:GAUGE:600:0:U",
+									  "DS:credentials:GAUGE:600:0:U",
+									  "DS:opendirectories:GAUGE:600:0:U",
+									  "DS:ChangeNotifies:GAUGE:600:0:U",
+									  "DS:sessionsusingsecuri:GAUGE:600:0:U",
+									  NULL };
 static void *netapp_cifs_tpl      = NULL;
 
 	unsigned long sess=0, share=0, file=0, lock=0, cred=0, dir=0, change=0, secsess=0;
@@ -90,7 +92,7 @@ static void *netapp_cifs_tpl      = NULL;
 		dbgprintf("netapp: host %s test %s ChangeNotif %ld SecureSess %ld\n",
 			hostname, testname, change, secsess);
 		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
-                      	(int) tstamp, sess, share, file, lock, cred, dir, change,secsess);
+					  	(int) tstamp, sess, share, file, lock, cred, dir, change,secsess);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_cifs_params, netapp_cifs_tpl);
 	}
 	return 0;
@@ -100,12 +102,12 @@ static void *netapp_cifs_tpl      = NULL;
 int do_netapp_ops_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 static char *netapp_ops_params[] = { "DS:NFSops:GAUGE:600:0:U",
-                                     "DS:CIFSops:GAUGE:600:0:U",
-                                     "DS:iSCSIops:GAUGE:600:0:U",
-                                     "DS:HTTPops:GAUGE:600:0:U",
-                                     "DS:FCPops:GAUGE:600:0:U",
-                                     "DS:Totalops:GAUGE:600:0:U",
-                                     NULL };
+									 "DS:CIFSops:GAUGE:600:0:U",
+									 "DS:iSCSIops:GAUGE:600:0:U",
+									 "DS:HTTPops:GAUGE:600:0:U",
+									 "DS:FCPops:GAUGE:600:0:U",
+									 "DS:Totalops:GAUGE:600:0:U",
+									 NULL };
 static void *netapp_ops_tpl      = NULL;
 
 	unsigned long nfsops=0, cifsops=0, httpops=0, iscsiops=0, fcpops=0, totalops=0;
@@ -127,7 +129,7 @@ static void *netapp_ops_tpl      = NULL;
 		dbgprintf("netapp: host %s test %s iscsiops %ld totalops %ld\n",
 			hostname, testname, iscsiops, totalops);
 		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld:%ld:%ld:%ld",
-                       	(int) tstamp, nfsops, cifsops, httpops, fcpops, iscsiops, totalops);
+					   	(int) tstamp, nfsops, cifsops, httpops, fcpops, iscsiops, totalops);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_ops_params, netapp_ops_tpl);
 	}
 	return 0;
@@ -138,36 +140,36 @@ int do_netapp_snapmirror_rrd(char *hostname, char *testname, char *classname, ch
 static char *netapp_snapmirror_params[] = { "DS:size:GAUGE:600:0:U", NULL };
 static void *netapp_snapmirror_tpl      = NULL;
 
-        char *eoln, *curline, *start, *end;
+		char *eoln, *curline, *start, *end;
 	dbgprintf("netapp: host %s test %s\n",hostname, testname);
 	
 	if (strstr(msg, "netapp.pl")) {
 		if (netapp_snapmirror_tpl == NULL) netapp_snapmirror_tpl = setup_template(netapp_snapmirror_params);
-                if ((start=strstr(msg, "<!--"))==NULL) return 0;
-                if ((end=strstr(start,"-->"))==NULL) return 0;
-                *end='\0';
-                eoln = strchr(start, '\n');
-                curline = (eoln ? (eoln+1) : NULL);
+				if ((start=strstr(msg, "<!--"))==NULL) return 0;
+				if ((end=strstr(start,"-->"))==NULL) return 0;
+				*end='\0';
+				eoln = strchr(start, '\n');
+				curline = (eoln ? (eoln+1) : NULL);
 		while (curline && (*curline))  {
-                	char *equalsign;
+					char *equalsign;
 			long long size;
-                	eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
+					eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 			equalsign=strchr(curline,'='); 
 			if (equalsign) {
 				*(equalsign++)= '\0'; 
 				size=str2ll(equalsign,NULL);
-                		dbgprintf("netapp: host %s test %s SNAPMIRROR %s size %lld\n",
-                       			hostname, testname, curline, size);
+						dbgprintf("netapp: host %s test %s SNAPMIRROR %s size %lld\n",
+					   			hostname, testname, curline, size);
 
 				setupfn2("%s,%s.rrd", testname, curline);
 				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lld", (int)tstamp, size);
 				create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_snapmirror_params, netapp_snapmirror_tpl);
 				*(--equalsign)='=';
 			}
-	                if (eoln) *eoln = '\n';
-	                curline = (eoln ? (eoln+1) : NULL);
+					if (eoln) *eoln = '\n';
+					curline = (eoln ? (eoln+1) : NULL);
 		}
-                *end='-';
+				*end='-';
 	}
 	return 0;
 }
@@ -178,24 +180,24 @@ int do_netapp_snaplist_rrd(char *hostname, char *testname, char *classname, char
 static char *netapp_snaplist_params[] = { "DS:youngsize:GAUGE:600:0:U", "DS:oldsize:GAUGE:600:0:U", NULL };
 static void *netapp_snaplist_tpl      = NULL;
 
-        char *eoln, *curline, *start, *end;
+		char *eoln, *curline, *start, *end;
 	dbgprintf("netapp: host %s test %s\n",hostname, testname);
 	
 	if (strstr(msg, "netapp.pl")) {
 		if (netapp_snaplist_tpl == NULL) netapp_snaplist_tpl = setup_template(netapp_snaplist_params);
-                if ((start=strstr(msg, "<!--"))==NULL) return 0;
-                if ((end=strstr(start,"-->"))==NULL) return 0;
-                *end='\0';
-                eoln = strchr(start, '\n');
-                curline = (eoln ? (eoln+1) : NULL);
+				if ((start=strstr(msg, "<!--"))==NULL) return 0;
+				if ((end=strstr(start,"-->"))==NULL) return 0;
+				*end='\0';
+				eoln = strchr(start, '\n');
+				curline = (eoln ? (eoln+1) : NULL);
 		while (curline && (*curline))  {
-                	char *fsline, *p;
-        	        char *columns[5];
-	                int columncount;
-	                char *volname = NULL;
+					char *fsline, *p;
+					char *columns[5];
+					int columncount;
+					char *volname = NULL;
 			long long young,old;
 
-                	eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
+					eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 		
 			for (columncount=0; (columncount<5); columncount++) columns[columncount] = "";
 			fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, "=");
@@ -203,19 +205,19 @@ static void *netapp_snaplist_tpl      = NULL;
 			volname = xstrdup(columns[0]);
 			young=str2ll(columns[1],NULL);
 			old=str2ll(columns[2],NULL);
-                	dbgprintf("netapp: host %s test %s vol  %s young %lld old %lld\n",
-                       		hostname, testname, volname, young, old);
+					dbgprintf("netapp: host %s test %s vol  %s young %lld old %lld\n",
+					   		hostname, testname, volname, young, old);
 
 			setupfn2("%s,%s.rrd", testname, volname);
-                        snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lld:%lld", (int)tstamp, young, old);
-                        create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_snaplist_params, netapp_snaplist_tpl);
-                	if (volname) { xfree(volname); volname = NULL; }
+						snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lld:%lld", (int)tstamp, young, old);
+						create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_snaplist_params, netapp_snaplist_tpl);
+					if (volname) { xfree(volname); volname = NULL; }
 
-	                if (eoln) *eoln = '\n';
+					if (eoln) *eoln = '\n';
 			xfree(fsline);
-	                curline = (eoln ? (eoln+1) : NULL);
+					curline = (eoln ? (eoln+1) : NULL);
 		}
-                *end='-';
+				*end='-';
 	}
 	return 0;
 }
@@ -234,11 +236,11 @@ static rrdtpldata_t *netapp_tpl = NULL;
 		if ((*tpl) == NULL) *tpl = setup_template(params);
 		netapp_tpl = *tpl;
 	}
-        curline = msg;
+		curline = msg;
 
 	dbgprintf("MESSAGE=%s\n",msg);
-        rrdp = rrdvalues + snprintf(rrdvalues, sizeof(rrdvalues), "%d", (int)tstamp);
-        while (curline && (*curline))  {
+		rrdp = rrdvalues + snprintf(rrdvalues, sizeof(rrdvalues), "%d", (int)tstamp);
+		while (curline && (*curline))  {
 		char *fsline, *p, *sep, *fname=NULL;
 		char *columns[30];
 		int columncount;
@@ -272,7 +274,7 @@ static rrdtpldata_t *netapp_tpl = NULL;
 					sep++;
 					dbgprintf("Checking %s len=%d\n",p,l);
 					flag=0;
-			        	i = 0; 
+						i = 0; 
 					while ((flag==0) && (varlist[i])) {
 						dbgprintf("with %s\n",varlist[i]);
 						if (strncmp(varlist[i], p, l) == 0) {
@@ -301,7 +303,7 @@ static rrdtpldata_t *netapp_tpl = NULL;
 			}
 		}
 
-                create_and_update_rrd(hostname, testname, classname, pagepaths, params, netapp_tpl);
+				create_and_update_rrd(hostname, testname, classname, pagepaths, params, netapp_tpl);
 
 		if (volname) { xfree(volname); volname = NULL; }
 
@@ -453,20 +455,20 @@ static rrdtpldata_t *processor_tpl = NULL;
 static rrdtpldata_t *disk_tpl = NULL;
 static rrdtpldata_t *system_tpl = NULL;
 
-        char *ifnetstr;
-        char *qtreestr;
-        char *aggregatestr;
-        char *volumestr;
-        char *lunstr;
-        char *diskstr;
+		char *ifnetstr;
+		char *qtreestr;
+		char *aggregatestr;
+		char *volumestr;
+		char *lunstr;
+		char *diskstr;
 
-        splitmsg(msg);
-        ifnetstr = getdata("ifnet");
-        qtreestr = getdata("qtree");
-        aggregatestr = getdata("aggregate");
-        volumestr = getdata("volume");
-        lunstr = getdata("lun");
-        diskstr = getdata("disk");
+		splitmsg(msg);
+		ifnetstr = getdata("ifnet");
+		qtreestr = getdata("qtree");
+		aggregatestr = getdata("aggregate");
+		volumestr = getdata("volume");
+		lunstr = getdata("lun");
+		diskstr = getdata("disk");
 	
 	if (ifnet_tpl == NULL) ifnet_tpl = setup_template(netapp_ifnet_params);
 	if (qtree_tpl == NULL) qtree_tpl = setup_template(netapp_qtree_params);
@@ -487,156 +489,132 @@ static rrdtpldata_t *system_tpl = NULL;
 
 int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-       static char *netapp_disk_params[] = { "DS:pct:GAUGE:600:0:U", "DS:used:GAUGE:600:0:U", NULL };
-       static rrdtpldata_t *netapp_disk_tpl      = NULL;
+	static char *netapp_disk_params[] = { "DS:pct:GAUGE:600:0:U", "DS:used:GAUGE:600:0:U", NULL };
+	static rrdtpldata_t *netapp_disk_tpl      = NULL;
 
-       char *eoln, *curline;
-       static int ptnsetup = 0;
-       static pcre *inclpattern = NULL;
-       static pcre *exclpattern = NULL;
-       int newdfreport;
+	char *eoln, *curline;
+	static int ptnsetup = 0;
+	static pcre_pattern_t *inclpattern = NULL;
+	static pcre_pattern_t *exclpattern = NULL;
+	pcre_match_data_t *match_data = NULL;
+	int newdfreport;
 
 	newdfreport = (strstr(msg,"netappnewdf") != NULL);
 
-       if (netapp_disk_tpl == NULL) netapp_disk_tpl = setup_template(netapp_disk_params);
+	if (netapp_disk_tpl == NULL) netapp_disk_tpl = setup_template(netapp_disk_params);
 
-       if (!ptnsetup) {
-               const char *errmsg;
-               int errofs;
-               char *ptn;
+	if (!ptnsetup) {
+		setup_disk_patterns(&inclpattern, &exclpattern, &ptnsetup);
+	}
 
-               ptnsetup = 1;
-               ptn = getenv("RRDDISKS");
-               if (ptn && strlen(ptn)) {
-                       inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n",
-                                                   ptn, errmsg, errofs);
-               }
-               ptn = getenv("NORRDDISKS");
-               if (ptn && strlen(ptn)) {
-                       exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n",
-                                                   ptn, errmsg, errofs);
-               }
-       }
+	/*
+	 * Francesco Duranti noticed that if we use the "/group" option
+	 * when sending the status message, this tricks the parser to
+	 * create an extra filesystem called "/group". So skip the first
+	 * line - we never have any disk reports there anyway.
+	 */
+	curline = strchr(msg, '\n'); if (curline) curline++;
+	if (inclpattern || exclpattern) {
+		match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
+		if (!match_data) errprintf("Failed to allocate PCRE match data, continuing without disk filtering\n");
+	}
 
-       /*
-        * Francesco Duranti noticed that if we use the "/group" option
-        * when sending the status message, this tricks the parser to
-        * create an extra filesystem called "/group". So skip the first
-        * line - we never have any disk reports there anyway.
-        */
-       curline = strchr(msg, '\n'); if (curline) curline++;
+	while (curline)  {
+		char *fsline, *p;
+		char *columns[20];
+		int columncount;
+		char *diskname = NULL;
+		int pused = -1;
+		int wanteddisk = 1;
+		long long aused = 0;
+		/* FD: Using double instead of long long because we can have decimal on Netapp and DbCheck */
+		double dused = 0;
+		/* FD: used to add a column if the filesystem is named "snap reserve" for netapp.pl */
+		int snapreserve=0;
 
-       while (curline)  {
-               char *fsline, *p;
-               char *columns[20];
-               int columncount;
-               char *diskname = NULL;
-               int pused = -1;
-               int wanteddisk = 1;
-               long long aused = 0;
-               /* FD: Using double instead of long long because we can have decimal on Netapp and DbCheck */
-               double dused = 0;
-               /* FD: used to add a column if the filesystem is named "snap reserve" for netapp.pl */
-               int snapreserve=0;
-
-               eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
+		eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 
 
-               /* FD: netapp.pl snapshot line that start with "snap reserve" need a +1 */
-               if (strstr(curline, "snap reserve")) snapreserve=1;
+		/* FD: netapp.pl snapshot line that start with "snap reserve" need a +1 */
+		if (strstr(curline, "snap reserve")) snapreserve=1;
 
-               /* All clients except AS/400 and DBCHECK report the mount-point with slashes - ALSO Win32 clients. */
-               if (strchr(curline, '/') == NULL) goto nextline;
+		/* All clients except AS/400 and DBCHECK report the mount-point with slashes - ALSO Win32 clients. */
+		if (strchr(curline, '/') == NULL) goto nextline;
 
-               /* red/yellow filesystems show up twice */
-               if (*curline == '&') goto nextline;
-               if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
+		/* red/yellow filesystems show up twice */
+		if (*curline == '&') goto nextline;
+		if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
 
-               for (columncount=0; (columncount<20); columncount++) columns[columncount] = "";
-               fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
-               while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
+		for (columncount=0; (columncount<20); columncount++) columns[columncount] = "";
+		fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
+		while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
 
-               /* FD: Name column can contain "spaces" so it could be split in multiple
-                  columns, create a unique string from columns[5] that point to the
-                  complete disk name
-               */
-               while (columncount-- > 6+snapreserve) {
-                       p = strchr(columns[columncount-1],0);
-                       if (p) *p = '_';
-               }
-               /* FD: Add an initial "/" to qtree and quotas */
-	       if (newdfreport) {
+		/* FD: Name column can contain "spaces" so it could be split in multiple
+		   columns, create a unique string from columns[5] that point to the
+		   complete disk name
+		*/
+		while (columncount-- > 6+snapreserve) {
+			p = strchr(columns[columncount-1],0);
+			if (p) *p = '_';
+		}
+		/* FD: Add an initial "/" to qtree and quotas */
+		if (newdfreport) {
 			diskname = xstrdup(columns[0]);
 		} else if (*columns[5+snapreserve] != '/') {
-                       diskname=xmalloc(strlen(columns[5+snapreserve])+2);
-                       sprintf(diskname,"/%s",columns[5+snapreserve]);
-               } else {
-                       diskname = xstrdup(columns[5+snapreserve]);
-               }
-               p = strchr(columns[4+snapreserve], '%'); if (p) *p = ' ';
-               pused = atoi(columns[4+snapreserve]);
-               p = columns[2+snapreserve] + strspn(columns[2+snapreserve], "0123456789.");
-               /* Using double instead of long long because we can have decimal */
-               dused = str2ll(columns[2+snapreserve], NULL);
-               /* snapshot and qtree contains M/G/T
-                  Convert to KB if there's a modifier after the numbers
-               */
-               if (*p == 'M') dused *= 1024;
-               else if (*p == 'G') dused *= (1024*1024);
-               else if (*p == 'T') dused *= (1024*1024*1024);
-               aused=(long long) dused;
+			diskname=xmalloc(strlen(columns[5+snapreserve])+2);
+			sprintf(diskname,"/%s",columns[5+snapreserve]);
+		} else {
+			diskname = xstrdup(columns[5+snapreserve]);
+		}
+		p = strchr(columns[4+snapreserve], '%'); if (p) *p = ' ';
+		pused = atoi(columns[4+snapreserve]);
+		p = columns[2+snapreserve] + strspn(columns[2+snapreserve], "0123456789.");
+		/* Using double instead of long long because we can have decimal */
+		dused = str2ll(columns[2+snapreserve], NULL);
+		/* snapshot and qtree contains M/G/T
+		   Convert to KB if there's a modifier after the numbers
+		*/
+		if (*p == 'M') dused *= 1024;
+		else if (*p == 'G') dused *= (1024*1024);
+		else if (*p == 'T') dused *= (1024*1024*1024);
+		aused=(long long) dused;
 
 
-               /* Check include/exclude patterns */
-               wanteddisk = 1;
-               if (exclpattern) {
-                       int ovector[30];
-                       int result;
+		/* Check include/exclude patterns */
+		if (match_data)
+			wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
+		else
+			wanteddisk = 1;  /* fallback: accept all disks */
 
-                       result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+		if (wanteddisk && diskname && (pused != -1)) {
+			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
+			if (strcmp(diskname, ",") == 0) {
+				diskname = xrealloc(diskname, 6);
+				strcpy(diskname, ",root");
+			}
 
-                       wanteddisk = (result < 0);
-               }
-               if (wanteddisk && inclpattern) {
-                       int ovector[30];
-                       int result;
+			/*
+			 * Use testname here.
+			 * The disk-handler also gets data from NetAPP inode- and qtree-messages,
+			 * that are virtually identical to the disk-messages. So lets just handle
+			 * all of it by using the testname as part of the filename.
+			 */
+			setupfn2("%s%s.rrd", testname, diskname);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%lld", (int)tstamp, pused, aused);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_disk_params, netapp_disk_tpl);
+		}
+		if (diskname) { xfree(diskname); diskname = NULL; }
 
-                       result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-                       wanteddisk = (result >= 0);
-               }
-
-               if (wanteddisk && diskname && (pused != -1)) {
-                       p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
-                       if (strcmp(diskname, ",") == 0) {
-                               diskname = xrealloc(diskname, 6);
-                               strcpy(diskname, ",root");
-                       }
-
-                       /*
-                        * Use testname here.
-                        * The disk-handler also gets data from NetAPP inode- and qtree-messages,
-                        * that are virtually identical to the disk-messages. So lets just handle
-                        * all of it by using the testname as part of the filename.
-                        */
-                       setupfn2("%s%s.rrd", testname, diskname);
-                       snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%lld", (int)tstamp, pused, aused);
-                       create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_disk_params, netapp_disk_tpl);
-               }
-               if (diskname) { xfree(diskname); diskname = NULL; }
-
-               if (eoln) *eoln = '\n';
-               xfree(fsline);
+		if (eoln) *eoln = '\n';
+		xfree(fsline);
 
 nextline:
-               curline = (eoln ? (eoln+1) : NULL);
-       }
+		curline = (eoln ? (eoln+1) : NULL);
+	}
+	if (match_data) pcre_match_data_free_compat(match_data);
 
-       return 0;
+	return 0;
 }
+
 
 

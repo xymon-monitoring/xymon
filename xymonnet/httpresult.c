@@ -12,6 +12,7 @@
 
 static char rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -80,7 +81,7 @@ static int statuscolor_by_set(testedhost_t *h, int status, char *okcodes, char *
 {
 	int result = -1;
 	char codestr[15];
-	pcre *ptn;
+	pcre_pattern_t *ptn;
 
 	/* Use code 999 to indicate we could not fetch the URL */
 	snprintf(codestr, sizeof(codestr), "%d", (status ? status : 999));
@@ -653,4 +654,3 @@ void show_http_test_results(service_t *httptest)
 		printf("------------------------------------------------------\n");
 	}
 }
-

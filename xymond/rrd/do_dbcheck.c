@@ -10,16 +10,17 @@
 
 static char dbcheck_rcsid[] = "$Id$";
 
+#include "pcre_compat.h"
 int do_dbcheck_memreq_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 static char *dbcheck_memreq_params[] = { 
-                                     "DS:ResFree:GAUGE:600:0:U",
-                                     "DS:ResAvgFree:GAUGE:600:0:U",
-                                     "DS:ResUsed:GAUGE:600:0:U",
-                                     "DS:ResAvgUsed:GAUGE:600:0:U",
-                                     "DS:ReqFail:DERIVE:600:0:U",
-                                     "DS:FailSize:GAUGE:600:0:U",
-                                     NULL };
+					 "DS:ResFree:GAUGE:600:0:U",
+					 "DS:ResAvgFree:GAUGE:600:0:U",
+					 "DS:ResUsed:GAUGE:600:0:U",
+					 "DS:ResAvgUsed:GAUGE:600:0:U",
+					 "DS:ReqFail:DERIVE:600:0:U",
+					 "DS:FailSize:GAUGE:600:0:U",
+					 NULL };
 static void *dbcheck_memreq_tpl      = NULL;
 
 	unsigned long free=0,used=0,reqf=0,fsz=0;	
@@ -28,8 +29,8 @@ static void *dbcheck_memreq_tpl      = NULL;
 	dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
 	if (strstr(msg, "dbcheck.pl")) {
 		if (dbcheck_memreq_tpl == NULL) dbcheck_memreq_tpl = setup_template(dbcheck_memreq_params);
-                if ((start=strstr(msg, "<!--"))==NULL) return 0;
-                if ((end=strstr(start,"-->"))==NULL) return 0;
+		if ((start=strstr(msg, "<!--"))==NULL) return 0;
+		if ((end=strstr(start,"-->"))==NULL) return 0;
 		*end='\0';
 		free=get_long_data(start,"ResFree");
 		avfr=get_double_data(start,"ResAvgFree");
@@ -55,16 +56,16 @@ static void *dbcheck_memreq_tpl      = NULL;
 int do_dbcheck_hitcache_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 static char *dbcheck_hitcache_params[] = { "DS:PinSQLArea:GAUGE:600:0:100",
-                                     "DS:PinTblProc:GAUGE:600:0:100",
-                                     "DS:PinBody:GAUGE:600:0:100",
-                                     "DS:PinTrigger:GAUGE:600:0:100",
-                                     "DS:HitSQLArea:GAUGE:600:0:100",
-                                     "DS:HitTblProc:GAUGE:600:0:100",
-                                     "DS:HitBody:GAUGE:600:0:100",
-                                     "DS:HitTrigger:GAUGE:600:0:100",
-                                     "DS:BlBuffHit:GAUGE:600:0:100",
-                                     "DS:RowCache:GAUGE:600:0:100",
-                                     NULL };
+					 "DS:PinTblProc:GAUGE:600:0:100",
+					 "DS:PinBody:GAUGE:600:0:100",
+					 "DS:PinTrigger:GAUGE:600:0:100",
+					 "DS:HitSQLArea:GAUGE:600:0:100",
+					 "DS:HitTblProc:GAUGE:600:0:100",
+					 "DS:HitBody:GAUGE:600:0:100",
+					 "DS:HitTrigger:GAUGE:600:0:100",
+					 "DS:BlBuffHit:GAUGE:600:0:100",
+					 "DS:RowCache:GAUGE:600:0:100",
+					 NULL };
 static void *dbcheck_hitcache_tpl      = NULL;
 
 	double pinsql=0, pintbl=0, pinbody=0, pintrig=0, hitsql=0, hittbl=0, hitbody=0, hittrig=0, blbuff=0, rowchache=0;
@@ -97,20 +98,19 @@ static void *dbcheck_hitcache_tpl      = NULL;
 	return 0;
 }
 
-
 int do_dbcheck_session_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 
 static char *dbcheck_session_params[] = { "DS:MaxSession:GAUGE:600:0:U",
-                                     "DS:CurrSession:GAUGE:600:0:U",
-                                     "DS:SessUsedPct:GAUGE:600:0:100",
-                                     "DS:MaxProcs:GAUGE:600:0:U",
-                                     "DS:CurrProcs:GAUGE:600:0:U",
-                                     "DS:ProcsUsedPct:GAUGE:600:0:100",
-                                     NULL };
+					 "DS:CurrSession:GAUGE:600:0:U",
+					 "DS:SessUsedPct:GAUGE:600:0:100",
+					 "DS:MaxProcs:GAUGE:600:0:U",
+					 "DS:CurrProcs:GAUGE:600:0:U",
+					 "DS:ProcsUsedPct:GAUGE:600:0:100",
+					 NULL };
 static void *dbcheck_session_tpl      = NULL;
 
-        unsigned long maxsess=0, currsess=0, maxproc=0, currproc=0 ;
+	unsigned long maxsess=0, currsess=0, maxproc=0, currproc=0 ;
 	double pctsess=0, pctproc=0;
 	dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
 	
@@ -127,8 +127,8 @@ static void *dbcheck_session_tpl      = NULL;
 		hostname, testname, maxsess, currsess, pctsess);
 			dbgprintf("dbcheck: host %s test %s maxproc %ld currproc %ld pctproc %5.2f\n",
 		hostname, testname, maxproc, currproc, pctproc);
-                        sprintf(rrdvalues, "%d:%ld:%ld:%05.2f:%ld:%ld:%05.2f",
-                       	(int) tstamp, maxsess, currsess, pctsess, maxproc, currproc, pctproc);
+			sprintf(rrdvalues, "%d:%ld:%ld:%05.2f:%ld:%ld:%05.2f",
+			   	(int) tstamp, maxsess, currsess, pctsess, maxproc, currproc, pctproc);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_session_params, dbcheck_session_tpl);
 	}
 	return 0;
@@ -140,218 +140,195 @@ int do_dbcheck_rb_rrd(char *hostname, char *testname, char *classname, char *pag
 static char *dbcheck_rb_params[] = { "DS:pct:GAUGE:28800:0:100", NULL };
 static void *dbcheck_rb_tpl    = NULL;
 
-        char *curline;
-        char *eoln;
-        dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
+	char *curline;
+	char *eoln;
+	dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
 
-        if (strstr(msg, "dbcheck.pl")) {
-                if (dbcheck_rb_tpl == NULL) dbcheck_rb_tpl = setup_template(dbcheck_rb_params);
-                curline=strstr(msg, "Rollback Checking");
-                if (curline) {
-                        eoln = strchr(curline, '\n');
-                        curline = (eoln ? (eoln+1) : NULL);
-                }
-                while (curline) {
-                        float pct=0;
-                        char *execname=NULL;
+	if (strstr(msg, "dbcheck.pl")) {
+		if (dbcheck_rb_tpl == NULL) dbcheck_rb_tpl = setup_template(dbcheck_rb_params);
+		curline=strstr(msg, "Rollback Checking");
+		if (curline) {
+			eoln = strchr(curline, '\n');
+			curline = (eoln ? (eoln+1) : NULL);
+		}
+		while (curline) {
+			float pct=0;
+			char *execname=NULL;
 			char *start;
 			if ((start = strstr(curline,"ROLLBACK")) == NULL) break;
-                        if ((eoln = strchr(start, '\n')) == NULL) break;
-                        *eoln = '\0';
+			if ((eoln = strchr(start, '\n')) == NULL) break;
+			*eoln = '\0';
 			dbgprintf("dbcheck: host %s test %s line %s\n", hostname, testname, start);
-			execname=xmalloc(strlen(start));
-                        if ( sscanf(start,"ROLLBACK percentage for %s is %f",execname,&pct) !=2) goto nextline;
-                        setupfn2("%s,%s.rrd",testname,execname);
-                        dbgprintf("dbcheck: host %s test %s name %s pct %5.2f\n", hostname, testname, execname, pct);
-                        sprintf(rrdvalues, "%d:%05.2f", (int) tstamp, pct);
-                        create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_rb_params, dbcheck_rb_tpl);
+			execname=xmalloc(strlen(start)+1);
+			if ( sscanf(start,"ROLLBACK percentage for %s is %f",execname,&pct) !=2) goto nextline;
+			setupfn2("%s,%s.rrd",testname,execname);
+			dbgprintf("dbcheck: host %s test %s name %s pct %5.2f\n", hostname, testname, execname, pct);
+			sprintf(rrdvalues, "%d:%05.2f", (int) tstamp, pct);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_rb_params, dbcheck_rb_tpl);
 nextline:
-                        if (execname) { xfree(execname); execname = NULL; }
-                        if (eoln) *(eoln)='\n';
-                        curline = (eoln ? (eoln+1) : NULL);
-                }
-        }
-        return 0;
+			if (execname) { xfree(execname); execname = NULL; }
+			if (eoln) *(eoln)='\n';
+			curline = (eoln ? (eoln+1) : NULL);
+		}
+	}
+	return 0;
 }
 
 int do_dbcheck_invobj_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 /* This check can be done in slow mode so put a long heartbeat */
 static char *dbcheck_invobj_params[] = { "DS:red:GAUGE:28800:0:U",
-                                        "DS:yellow:GAUGE:28800:0:U",
-                                        "DS:green:GAUGE:28800:0:U",
-                                        NULL };
+					"DS:yellow:GAUGE:28800:0:U",
+					"DS:green:GAUGE:28800:0:U",
+					NULL };
 static void *dbcheck_invobj_tpl    = NULL;
 
-        char *curline;
-        char *eoln;
+	char *curline;
+	char *eoln;
 	unsigned long yellow=0,red=0,green=0;
-        dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
+	dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
 
-        if (strstr(msg, "dbcheck.pl")) {
-                if (dbcheck_invobj_tpl == NULL) dbcheck_invobj_tpl = setup_template(dbcheck_invobj_params);
-                curline=strstr(msg, "Invalid Object Checking");
-                if (curline) {
-                        eoln = strchr(curline, '\n');
-                        curline = (eoln ? (eoln+1) : NULL);
-                }
-                while (curline) {
+	if (strstr(msg, "dbcheck.pl")) {
+		if (dbcheck_invobj_tpl == NULL) dbcheck_invobj_tpl = setup_template(dbcheck_invobj_params);
+		curline=strstr(msg, "Invalid Object Checking");
+		if (curline) {
+			eoln = strchr(curline, '\n');
+			curline = (eoln ? (eoln+1) : NULL);
+		}
+		while (curline) {
 			if ( *curline == '\n') { curline++; continue; }
-                        if ((eoln = strchr(curline, '\n')) == NULL) break;
-                        *eoln = '\0';
+			if ((eoln = strchr(curline, '\n')) == NULL) break;
+			*eoln = '\0';
 			if ( *curline =='&' ) curline++;
 			if ( strstr(curline,"red") == curline) red++;
 			if ( strstr(curline,"yellow") == curline) yellow++;
 			if ( strstr(curline,"green") == curline) green++;
 
-                        if (eoln) *(eoln)='\n';
-                        curline = (eoln ? (eoln+1) : NULL);
-                }
-                setupfn("%s.rrd",testname);
-                dbgprintf("dbcheck: host %s test %s  red %ld yellow %ld green %ld\n", 
+			if (eoln) *(eoln)='\n';
+			curline = (eoln ? (eoln+1) : NULL);
+		}
+		setupfn("%s.rrd",testname);
+		dbgprintf("dbcheck: host %s test %s  red %ld yellow %ld green %ld\n", 
 			hostname, testname, red,yellow,green);
-                snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld", (int) tstamp, red,yellow,green);
-                        create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_invobj_params, dbcheck_invobj_tpl);
-        }
-        return 0;
+		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%ld:%ld:%ld", (int) tstamp, red,yellow,green);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_invobj_params, dbcheck_invobj_tpl);
+	}
+	return 0;
 }
 
 int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-       static char *tablespace_params[] = { "DS:pct:GAUGE:600:0:U", "DS:used:GAUGE:600:0:U", NULL };
-       static rrdtpldata_t *tablespace_tpl      = NULL;
+	static char *tablespace_params[] = { "DS:pct:GAUGE:600:0:U", "DS:used:GAUGE:600:0:U", NULL };
+	static rrdtpldata_t *tablespace_tpl = NULL;
 
-       char *eoln, *curline;
-       static int ptnsetup = 0;
-       static pcre *inclpattern = NULL;
-       static pcre *exclpattern = NULL;
+	char *eoln, *curline;
+	static int ptnsetup = 0;
+	static pcre_pattern_t *inclpattern = NULL;
+	static pcre_pattern_t *exclpattern = NULL;
+	pcre_match_data_t *match_data = NULL;
 
-       if (tablespace_tpl == NULL) tablespace_tpl = setup_template(tablespace_params);
+	if (tablespace_tpl == NULL) tablespace_tpl = setup_template(tablespace_params);
 
-       if (!ptnsetup) {
-               const char *errmsg;
-               int errofs;
-               char *ptn;
+	if (!ptnsetup) {
+		setup_disk_patterns(&inclpattern, &exclpattern, &ptnsetup);
+	}
 
-               ptnsetup = 1;
-               ptn = getenv("RRDDISKS");
-               if (ptn && strlen(ptn)) {
-                       inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n",
-                                                   ptn, errmsg, errofs);
-               }
-               ptn = getenv("NORRDDISKS");
-               if (ptn && strlen(ptn)) {
-                       exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
-                       if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n",
-                                                   ptn, errmsg, errofs);
-               }
-       }
+	/*
+	 * Francesco Duranti noticed that if we use the "/group" option
+	 * when sending the status message, this tricks the parser to
+	 * create an extra filesystem called "/group". So skip the first
+	 * line - we never have any disk reports there anyway.
+	 */
+	curline = strchr(msg, '\n'); if (curline) curline++;
+	/* FD: For dbcheck.pl move after the Header */
+	curline = strstr(curline, "TableSpace/DBSpace");
+	if (curline) {
+		eoln = strchr(curline, '\n');
+		curline = (eoln ? (eoln + 1) : NULL);
+	}
 
-       /*
-        * Francesco Duranti noticed that if we use the "/group" option
-        * when sending the status message, this tricks the parser to
-        * create an extra filesystem called "/group". So skip the first
-        * line - we never have any disk reports there anyway.
-        */
-       curline = strchr(msg, '\n'); if (curline) curline++;
-       /* FD: For dbcheck.pl move after the Header */
-       curline=strstr(curline, "TableSpace/DBSpace");
-       if (curline) {
-               eoln = strchr(curline, '\n');
-               curline = (eoln ? (eoln+1) : NULL);
-       }
+	if (inclpattern || exclpattern) {
+		match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
+		if (!match_data)
+			errprintf("Failed to allocate PCRE match data, continuing without tablespace filtering\n");
+	}
 
-       while (curline)  {
-               char *fsline, *p;
-               char *columns[20];
-               int columncount;
-               char *diskname = NULL;
-               int pused = -1;
-               int wanteddisk = 1;
-               long long aused = 0;
-               /* FD: Using double instead of long long because we can have decimal on Netapp and DbCheck */
-               double dused = 0;
+	while (curline) {
+		char *fsline, *p;
+		char *columns[20];
+		int columncount;
+		char *diskname = NULL;
+		int pused = -1;
+		int wanteddisk = 1;
+		long long aused = 0;
+		/* FD: Using double instead of long long because we can have decimal on Netapp and DbCheck */
+		double dused = 0;
 
-               eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
+		eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 
-               /* FD: Exit if doing DBCHECK and the end of the tablespaces are reached */
-               if (strstr(eoln+1, "dbcheck.pl") == (eoln+1)) break;
+		/* FD: Exit if doing DBCHECK and the end of the tablespaces are reached */
+		if (strstr(eoln + 1, "dbcheck.pl") == (eoln + 1)) break;
 
-               /* red/yellow filesystems show up twice */
-               if (*curline == '&') goto nextline;
-               if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
+		/* red/yellow filesystems show up twice */
+		if (*curline == '&') goto nextline;
+		if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
 
-               for (columncount=0; (columncount<20); columncount++) columns[columncount] = "";
-               fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
-               while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
+		for (columncount = 0; (columncount < 20); columncount++) columns[columncount] = "";
+		fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
+		while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
 
-               /* FD: Check TableSpace from dbcheck.pl */
-               /* FD: Add an initial "/" to TblSpace Name so they're reported in the trends column */
-               diskname=xmalloc(strlen(columns[0])+2);
-               sprintf(diskname,"/%s",columns[0]);
-               p = strchr(columns[4], '%'); if (p) *p = ' ';
-               pused = atoi(columns[4]);
-               p = columns[2] + strspn(columns[2], "0123456789.");
-               /* FD: Using double instead of long long because we can have decimal */
-               dused = str2ll(columns[2], NULL);
-               /* FD: dbspace report contains M/G/T
-                  Convert to KB if there's a modifier after the numbers
-               */
-               if (*p == 'M') dused *= 1024;
-               else if (*p == 'G') dused *= (1024*1024);
-               else if (*p == 'T') dused *= (1024*1024*1024);
-               aused=(long long)dused;
+		/* FD: Check TableSpace from dbcheck.pl */
+		/* FD: Add an initial "/" to TblSpace Name so they're reported in the trends column */
+		diskname = xmalloc(strlen(columns[0]) + 2);
+		sprintf(diskname, "/%s", columns[0]);
+		p = strchr(columns[4], '%'); if (p) *p = ' ';
+		pused = atoi(columns[4]);
+		p = columns[2] + strspn(columns[2], "0123456789.");
+		/* FD: Using double instead of long long because we can have decimal */
+		dused = str2ll(columns[2], NULL);
+		/* FD: dbspace report contains M/G/T
+		   Convert to KB if there's a modifier after the numbers
+		 */
+		if (*p == 'M') dused *= 1024;
+		else if (*p == 'G') dused *= (1024 * 1024);
+		else if (*p == 'T') dused *= (1024 * 1024 * 1024);
+		aused=(long long)dused;
 
+		
+		/* Check include/exclude patterns */
+		if (match_data)
+			wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
+		else
+			wanteddisk = 1;
 
-               /* Check include/exclude patterns */
-               wanteddisk = 1;
-               if (exclpattern) {
-                       int ovector[30];
-                       int result;
+		if (wanteddisk && diskname && (pused != -1)) {
+			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
+			if (strcmp(diskname, ",") == 0) {
+				diskname = xrealloc(diskname, 6);
+				strcpy(diskname, ",root");
+			}
 
-                       result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+			/*
+			 * Use testname here.
+			 * The disk-handler also gets data from NetAPP inode- and qtree-messages,
+			 * that are virtually identical to the disk-messages. So lets just handle
+			 * all of it by using the testname as part of the filename.
+			 */
+			setupfn2("%s%s.rrd", testname, diskname);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%lld", (int)tstamp, pused, aused);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, tablespace_params, tablespace_tpl);
+		}
+		if (diskname) { xfree(diskname); diskname = NULL; }
 
-                       wanteddisk = (result < 0);
-               }
-               if (wanteddisk && inclpattern) {
-                       int ovector[30];
-                       int result;
-
-                       result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname),
-                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-
-                       wanteddisk = (result >= 0);
-               }
-
-               if (wanteddisk && diskname && (pused != -1)) {
-                       p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
-                       if (strcmp(diskname, ",") == 0) {
-                               diskname = xrealloc(diskname, 6);
-                               strcpy(diskname, ",root");
-                       }
-
-                       /*
-                        * Use testname here.
-                        * The disk-handler also gets data from NetAPP inode- and qtree-messages,
-                        * that are virtually identical to the disk-messages. So lets just handle
-                        * all of it by using the testname as part of the filename.
-                        */
-                       setupfn2("%s%s.rrd", testname,diskname);
-                       snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%lld", (int)tstamp, pused, aused);
-                       create_and_update_rrd(hostname, testname, classname, pagepaths, tablespace_params, tablespace_tpl);
-               }
-               if (diskname) { xfree(diskname); diskname = NULL; }
-
-               if (eoln) *eoln = '\n';
-               xfree(fsline);
+		if (eoln) *eoln = '\n';
+		xfree(fsline);
 
 nextline:
-               curline = (eoln ? (eoln+1) : NULL);
-       }
+		curline = (eoln ? (eoln + 1) : NULL);
+	}
+	if (match_data) pcre_match_data_free_compat(match_data);
 
-       return 0;
+	return 0;
 }
 
 
