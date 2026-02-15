@@ -44,21 +44,21 @@ pcre_pattern_t *pcre_compile_legacy(const char *pattern, int options, const char
 
 int pcre_exec_legacy(const pcre_pattern_t *pattern, const pcre_extra *extra, const char *subject, int length, int startoffset, int options, int *ovector, int ovecsize) {
     int rc;
-    pcre2_match_data *matchdata;
+    pcre2_match_data *match_data;
     (void)extra;
 
-    matchdata = pcre2_match_data_create_from_pattern((pcre2_code *)pattern, NULL);
-    if (!matchdata) {
+    match_data = pcre2_match_data_create_from_pattern((pcre2_code *)pattern, NULL);
+    if (!match_data) {
         return -1;
     }
 
-    rc = pcre2_match((pcre2_code *)pattern, (PCRE2_SPTR)subject, (PCRE2_SIZE)length, (PCRE2_SIZE)startoffset, (uint32_t)options, matchdata, NULL);
+    rc = pcre2_match((pcre2_code *)pattern, (PCRE2_SPTR)subject, (PCRE2_SIZE)length, (PCRE2_SIZE)startoffset, (uint32_t)options, match_data, NULL);
 
     if (rc > 0) {
-        copy_ovector_to_ints(pcre2_get_ovector_pointer(matchdata), rc, ovector, ovecsize);
+        copy_ovector_to_ints(pcre2_get_ovector_pointer(match_data), rc, ovector, ovecsize);
     }
 
-    pcre2_match_data_free(matchdata);
+    pcre2_match_data_free(match_data);
     return rc;
 }
 
@@ -114,27 +114,27 @@ pcre_pattern_t *pcre_compile_compat(const char *pattern, int options, char *errm
     return (pcre_pattern_t *)code;
 }
 
-int pcre_exec_compat(pcre_pattern_t *pattern, const char *subject, int length, pcre_match_data_t *matchdata) {
-    return pcre2_match((pcre2_code *)pattern, (PCRE2_SPTR)subject, (PCRE2_SIZE)length, 0, 0, (pcre2_match_data *)matchdata, NULL);
+int pcre_exec_compat(pcre_pattern_t *pattern, const char *subject, int length, pcre_match_data_t *match_data) {
+    return pcre2_match((pcre2_code *)pattern, (PCRE2_SPTR)subject, (PCRE2_SIZE)length, 0, 0, (pcre2_match_data *)match_data, NULL);
 }
 
 pcre_match_data_t *pcre_match_data_create_compat(void) {
     return (pcre_match_data_t *)pcre2_match_data_create(30, NULL);
 }
 
-void pcre_match_data_free_compat(pcre_match_data_t *matchdata) {
-    pcre2_match_data_free((pcre2_match_data *)matchdata);
+void pcre_match_data_free_compat(pcre_match_data_t *match_data) {
+    pcre2_match_data_free((pcre2_match_data *)match_data);
 }
 
 void pcre_free_compat(pcre_pattern_t *pattern) {
     pcre2_code_free((pcre2_code *)pattern);
 }
 
-int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *matchdata, int stringnumber, char *buffer, size_t buffersize) {
+int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_data, int stringnumber, char *buffer, size_t buffersize) {
     PCRE2_SIZE len = (PCRE2_SIZE)buffersize;
     (void)subject;
 
-    if (pcre2_substring_copy_bynumber((pcre2_match_data *)matchdata, (uint32_t)stringnumber, (PCRE2_UCHAR *)buffer, &len) == 0) {
+    if (pcre2_substring_copy_bynumber((pcre2_match_data *)match_data, (uint32_t)stringnumber, (PCRE2_UCHAR *)buffer, &len) == 0) {
         return (int)len;
     }
 
@@ -155,32 +155,32 @@ pcre_pattern_t *pcre_compile_compat(const char *pattern, int options, char *errm
     return (pcre_pattern_t *)regexp;
 }
 
-int pcre_exec_compat(pcre_pattern_t *pattern, const char *subject, int length, pcre_match_data_t *matchdata) {
-    if (!matchdata) {
+int pcre_exec_compat(pcre_pattern_t *pattern, const char *subject, int length, pcre_match_data_t *match_data) {
+    if (!match_data) {
         return -1;
     }
 
-    return pcre_exec((pcre *)pattern, NULL, subject, length, 0, 0, *matchdata, 30);
+    return pcre_exec((pcre *)pattern, NULL, subject, length, 0, 0, *match_data, 30);
 }
 
 pcre_match_data_t *pcre_match_data_create_compat(void) {
     return calloc(1, sizeof(pcre_match_data_t));
 }
 
-void pcre_match_data_free_compat(pcre_match_data_t *matchdata) {
-    free(matchdata);
+void pcre_match_data_free_compat(pcre_match_data_t *match_data) {
+    free(match_data);
 }
 
 void pcre_free_compat(pcre_pattern_t *pattern) {
     pcre_free((pcre *)pattern);
 }
 
-int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *matchdata, int stringnumber, char *buffer, size_t buffersize) {
-    if (!matchdata) {
+int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_data, int stringnumber, char *buffer, size_t buffersize) {
+    if (!match_data) {
         return -1;
     }
 
-    return pcre_copy_substring(subject, *matchdata, 30, stringnumber, buffer, (int)buffersize);
+    return pcre_copy_substring(subject, *match_data, 30, stringnumber, buffer, (int)buffersize);
 }
 
 #endif
@@ -289,16 +289,16 @@ void setup_disk_patterns(pcre_pattern_t **inclpattern, pcre_pattern_t **exclpatt
     }
 }
 
-int disk_wanted(const char *diskname, pcre_pattern_t *inclpattern, pcre_pattern_t *exclpattern, pcre_match_data_t *matchdata) {
+int disk_wanted(const char *diskname, pcre_pattern_t *inclpattern, pcre_pattern_t *exclpattern, pcre_match_data_t *match_data) {
     int wanted = 1;
     int len = (int)strlen(diskname);
 
     if (exclpattern) {
-        wanted = (pcre_exec_compat(exclpattern, diskname, len, matchdata) < 0);
+        wanted = (pcre_exec_compat(exclpattern, diskname, len, match_data) < 0);
     }
 
     if (wanted && inclpattern) {
-        wanted = (pcre_exec_compat(inclpattern, diskname, len, matchdata) >= 0);
+        wanted = (pcre_exec_compat(inclpattern, diskname, len, match_data) >= 0);
     }
 
     return wanted;
@@ -313,7 +313,7 @@ pcre_pattern_t *compile_single_pattern(pcre_pattern_t **pattern, const char *reg
     return *pattern;
 }
 
-int match_and_extract(const char *subject, const char *pattern, int stringnumber, char *buffer, size_t buffersize, pcre_match_data_t **matchdata) {
+int match_and_extract(const char *subject, const char *pattern, int stringnumber, char *buffer, size_t buffersize, pcre_match_data_t **match_data) {
     pcre_pattern_t *compiled;
     int rc;
 
@@ -322,14 +322,18 @@ int match_and_extract(const char *subject, const char *pattern, int stringnumber
         return -1;
     }
 
-    if (!*matchdata) {
-        *matchdata = pcre_match_data_create_compat();
+    if (!*match_data) {
+        *match_data = pcre_match_data_create_compat();
+        if (!*match_data) {
+            pcre_free_compat(compiled);
+            return -1;
+        }
     }
 
-    rc = pcre_exec_compat(compiled, subject, (int)strlen(subject), *matchdata);
+    rc = pcre_exec_compat(compiled, subject, (int)strlen(subject), *match_data);
 
     if (rc >= 0 && stringnumber > 0 && buffer) {
-        pcre_copy_substring_compat(subject, *matchdata, stringnumber, buffer, buffersize);
+        pcre_copy_substring_compat(subject, *match_data, stringnumber, buffer, buffersize);
     }
 
     pcre_free_compat(compiled);

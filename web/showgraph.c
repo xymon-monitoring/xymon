@@ -952,8 +952,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		struct dirent *d;
 		pcre_pattern_t *include_pattern, *exclude_pattern = NULL;
 		const char *errmsg;
-		int errofs, match_result;
-		int match_offsets[30];
+		int errofs, result;
+		int ovector[30];
 		struct stat st;
 		time_t now = getcurrenttime(NULL);
 
@@ -996,13 +996,13 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* First check the exclude pattern. */
 			if (exclude_pattern) {
-				match_result = pcre_exec_capture(exclude_pattern, d->d_name, match_offsets, (sizeof(match_offsets)/sizeof(match_offsets[0])));
-				if (match_result >= 0) continue;
+				result = pcre_exec_capture(exclude_pattern, d->d_name, ovector, (sizeof(ovector)/sizeof(ovector[0])));
+				if (result >= 0) continue;
 			}
 
 			/* Then see if the include pattern matches. */
-			match_result = pcre_exec_capture(include_pattern, d->d_name, match_offsets, (sizeof(match_offsets)/sizeof(match_offsets[0])));
-			if (match_result < 0) continue;
+			result = pcre_exec_capture(include_pattern, d->d_name, ovector, (sizeof(ovector)/sizeof(ovector[0])));
+			if (result < 0) continue;
 
 			if (wantsingle) {
 				/* "Single" graph, i.e. a graph for a service normally included in a bundle (tcp) */
@@ -1019,7 +1019,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* We have a matching file! */
 			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
-			if (pcre_copy_substring_ovector(d->d_name, match_offsets, match_result, 1, param, sizeof(param)) > 0) {
+			if (pcre_copy_substring_ovector(d->d_name, ovector, result, 1, param, sizeof(param)) > 0) {
 				/*
 				 * This is ugly, but I cannot find a pretty way of un-mangling
 				 * the disk- and http-data that has been molested by the back-end.
