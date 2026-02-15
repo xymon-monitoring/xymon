@@ -3,6 +3,7 @@ name: build2 (pcre2)
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build-pcre2:
@@ -27,7 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build dependencies (PCRE2)
+      - name: Install build dependencies (PCRE2 only)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -38,6 +39,7 @@ jobs:
             librrd-dev \
             libssl-dev \
             libtirpc-dev
+
       - name: Configure (${{ matrix.name }})
         env:
           CONFTYPE: ${{ matrix.conftype }}
@@ -67,11 +69,12 @@ jobs:
           INSTALLTMPDIR=/var/lib/xymon/tmp \
           INSTALLWWWDIR=/var/lib/xymon/www \
           ./configure --${{ matrix.variant }}
-      - name: Build (PCRE2 flags)
+
+      - name: Build (PCRE2 strict flags)
         run: |
-          # Dedicated PCRE2 build lane. Requires the PCRE2 compatibility code path.
           make \
             PCREDEF=-DPCRE2 \
             PCREINCDIR=-I/usr/include \
             PCRELIBS=-lpcre2-8 \
             -j1
+
