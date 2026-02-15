@@ -123,6 +123,8 @@ int main(int argc, char *argv[])
 	signal(SIGCHLD, SIG_IGN);
 
 	match_data = pcre_match_data_create_compat();
+	if (!match_data) return 1;
+
 	running = 1;
 	while (running) {
 		char *eoln, *restofmsg, *p;

@@ -59,6 +59,8 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	 */
 	curline = strchr(msg, '\n'); if (curline) curline++;
 	match_data = pcre_match_data_create_compat();
+	if (!match_data) return 1; 
+
 	while (curline)  {
 		char *fsline, *p;
 		char *columns[20];

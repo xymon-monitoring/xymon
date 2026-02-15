@@ -249,6 +249,7 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
                curline = (eoln ? (eoln+1) : NULL);
        }
        match_data = pcre_match_data_create_compat();
+       if (!match_data) return 1;
 
        while (curline)  {
                char *fsline, *p;
