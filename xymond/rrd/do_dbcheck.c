@@ -98,7 +98,6 @@ static void *dbcheck_hitcache_tpl      = NULL;
 	return 0;
 }
 
-
 int do_dbcheck_session_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 
@@ -248,8 +247,12 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 		curline = (eoln ? (eoln + 1) : NULL);
 	}
 
-	match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
-	if (!match_data) return 0;
+	if (inclpattern || exclpattern) {
+    	match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
+    	if (!match_data)
+        	errprintf("Failed to allocate PCRE match data, continuing without tablespace filtering\n");
+	}
+
 	while (curline) {
 		char *fsline, *p;
 		char *columns[20];
@@ -291,9 +294,12 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 		else if (*p == 'T') dused *= (1024 * 1024 * 1024);
 		aused=(long long)dused;
 
-
+		
 		/* Check include/exclude patterns */
-		wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
+		if (match_data)
+			wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
+		else
+			wanteddisk = 1;
 
 		if (wanteddisk && diskname && (pused != -1)) {
 			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
