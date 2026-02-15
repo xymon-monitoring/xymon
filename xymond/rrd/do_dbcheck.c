@@ -248,7 +248,7 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
                eoln = strchr(curline, '\n');
                curline = (eoln ? (eoln+1) : NULL);
        }
-       match_data = pcre_match_data_create_compat();
+       match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
        if (!match_data) return 1;
 
        while (curline)  {

@@ -514,7 +514,7 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
         * line - we never have any disk reports there anyway.
         */
        curline = strchr(msg, '\n'); if (curline) curline++;
-       match_data = pcre_match_data_create_compat();
+       match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
        if (!match_data) return 1;
 
        while (curline)  {

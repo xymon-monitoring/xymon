@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 
 	signal(SIGCHLD, SIG_IGN);
 
-	match_data = pcre_match_data_create_compat();
+	match_data = pcre_match_data_create_compat(hostexp ? hostexp : exhostexp ? exhostexp : testexp ? testexp : extestexp ? extestexp : colorexp);
 	if (!match_data) return 1;
 
 	running = 1;
@@ -337,6 +337,12 @@ int main(int argc, char *argv[])
 		}
 	}
 	pcre_match_data_free_compat(match_data);
+
+	pcre_free_pattern(&hostexp);
+        pcre_free_pattern(&exhostexp);
+        pcre_free_pattern(&testexp);
+        pcre_free_pattern(&extestexp);
+        pcre_free_pattern(&colorexp);
 
 	return 0;
 }

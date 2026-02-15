@@ -56,7 +56,7 @@ typedef int pcre_match_data_t[30];
 /* Compatibility API */
 pcre_pattern_t *pcre_compile_compat(const char *pattern, int options, char *errmsg, size_t errmsg_size, int *errofs);
 int pcre_exec_compat(pcre_pattern_t *pattern, const char *subject, int length, pcre_match_data_t *match_data);
-pcre_match_data_t *pcre_match_data_create_compat(void);
+pcre_match_data_t *pcre_match_data_create_compat(pcre_pattern_t *pattern);
 void pcre_match_data_free_compat(pcre_match_data_t *match_data);
 void pcre_free_compat(pcre_pattern_t *pattern);
 int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_data, int stringnumber, char *buffer, size_t buffersize);
@@ -73,6 +73,6 @@ pcre_pattern_t *compile_pattern_with_error(const char *pattern, const char *patt
 void setup_disk_patterns(pcre_pattern_t **inclpattern, pcre_pattern_t **exclpattern, int *ptnsetup);
 int disk_wanted(const char *diskname, pcre_pattern_t *inclpattern, pcre_pattern_t *exclpattern, pcre_match_data_t *match_data);
 pcre_pattern_t *compile_single_pattern(pcre_pattern_t **pattern, const char *regex, const char *patternname);
-int match_and_extract(const char *subject, const char *pattern, int stringnumber, char *buffer, size_t buffersize, pcre_match_data_t **match_data);
+int match_and_extract(const char *subject, const char *pattern, int stringnumber, char *buffer, size_t buffersize, pcre_pattern_t *compiled_pattern, pcre_match_data_t **match_data);
 
 #endif /* __PCRE_COMPAT_H__ */

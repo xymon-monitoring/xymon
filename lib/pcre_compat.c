@@ -119,8 +119,10 @@ int pcre_exec_compat(pcre_pattern_t *pattern, const char *subject, int length, p
     return pcre2_match((pcre2_code *)pattern, (PCRE2_SPTR)subject, (PCRE2_SIZE)length, 0, 0, (pcre2_match_data *)match_data, NULL);
 }
 
-pcre_match_data_t *pcre_match_data_create_compat(void) {
-    return (pcre_match_data_t *)pcre2_match_data_create(30, NULL);
+pcre_match_data_t *pcre_match_data_create_compat(pcre_pattern_t *pattern) {
+    if (!pattern) return NULL;
+    return (pcre_match_data_t *)
+        pcre2_match_data_create_from_pattern((pcre2_code *)pattern, NULL);
 }
 
 void pcre_match_data_free_compat(pcre_match_data_t *match_data) {
@@ -164,7 +166,8 @@ int pcre_exec_compat(pcre_pattern_t *pattern, const char *subject, int length, p
     return pcre_exec((pcre *)pattern, NULL, subject, length, 0, 0, *match_data, 30);
 }
 
-pcre_match_data_t *pcre_match_data_create_compat(void) {
+pcre_match_data_t *pcre_match_data_create_compat(pcre_pattern_t *pattern) {
+    (void)pattern;
     return calloc(1, sizeof(pcre_match_data_t));
 }
 
@@ -317,17 +320,17 @@ pcre_pattern_t *compile_single_pattern(pcre_pattern_t **pattern, const char *reg
     return *pattern;
 }
 
-int match_and_extract(const char *subject, const char *pattern, int stringnumber, char *buffer, size_t buffersize, pcre_match_data_t **match_data) {
+int match_and_extract(const char *subject, const char *pattern, int stringnumber, char *buffer, size_t buffersize, pcre_pattern_t *compiled_pattern, pcre_match_data_t **match_data) {
     pcre_pattern_t *compiled;
     int rc;
 
-    compiled = compile_pattern_with_error(pattern, "pattern");
+    compiled = compiled_pattern ? compiled_pattern : compile_pattern_with_error(pattern, "pattern");
     if (!compiled) {
         return -1;
     }
 
     if (!*match_data) {
-        *match_data = pcre_match_data_create_compat();
+	*match_data = pcre_match_data_create_compat(compiled);
         if (!*match_data) {
             pcre_free_compat(compiled);
             return -1;
@@ -340,6 +343,8 @@ int match_and_extract(const char *subject, const char *pattern, int stringnumber
         pcre_copy_substring_compat(subject, *match_data, stringnumber, buffer, buffersize);
     }
 
-    pcre_free_compat(compiled);
+    if (!compiled_pattern) {
+        pcre_free_compat(compiled);
+    }
     return rc;
 }
