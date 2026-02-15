@@ -99,7 +99,6 @@ static void *dbcheck_hitcache_tpl      = NULL;
 	return 0;
 }
 
-
 int do_dbcheck_session_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 
@@ -161,7 +160,7 @@ static void *dbcheck_rb_tpl    = NULL;
                         if ((eoln = strchr(start, '\n')) == NULL) break;
                         *eoln = '\0';
 			dbgprintf("dbcheck: host %s test %s line %s\n", hostname, testname, start);
-			execname=xmalloc(strlen(start));
+			execname=xmalloc(strlen(start)+1);
                         if ( sscanf(start,"ROLLBACK percentage for %s is %f",execname,&pct) !=2) goto nextline;
                         setupfn2("%s,%s.rrd",testname,execname);
                         dbgprintf("dbcheck: host %s test %s name %s pct %5.2f\n", hostname, testname, execname, pct);
@@ -248,8 +247,9 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
                eoln = strchr(curline, '\n');
                curline = (eoln ? (eoln+1) : NULL);
        }
+
        match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
-       if (!match_data) return 1;
+       if (!match_data) return 0;
 
        while (curline)  {
                char *fsline, *p;
@@ -292,7 +292,6 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
                else if (*p == 'T') dused *= (1024*1024*1024);
                aused=(long long)dused;
 
-
                /* Check include/exclude patterns */
                wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
 
@@ -321,8 +320,8 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 nextline:
                curline = (eoln ? (eoln+1) : NULL);
        }
+
        pcre_match_data_free_compat(match_data);
 
        return 0;
 }
-
