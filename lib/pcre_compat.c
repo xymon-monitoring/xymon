@@ -393,4 +393,3 @@ int match_and_extract(const char *subject, const char *pattern, int stringnumber
 
     return rc;
 }
-
