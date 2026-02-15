@@ -102,22 +102,23 @@ int main(int argc, char *argv[])
                 goto cleanup;
         }
 
-        if (match_and_extract(subjectline, ".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", 2, cookie, sizeof(cookie), &match_data) < 0) {
+	if (match_and_extract(subjectline, ".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", 2, cookie, sizeof(cookie), NULL, &match_data) < 0) {
             dbgprintf("Subject line did not match pattern\n");
                 rc = 3;
                 goto cleanup;
         }
 
-        if (match_and_extract(subjectline, ".*DELAY[ =]+([0-9]+[mhdw]*)", 1, NULL, 0, &match_data) >= 0) {
+	if (match_and_extract(subjectline, ".*DELAY[ =]+([0-9]+[mhdw]*)", 1, NULL, 0, NULL, &match_data) >= 0) {
                 char delaytxt[4096];
-                if (match_and_extract(subjectline, ".*DELAY[ =]+([0-9]+[mhdw]*)", 1, delaytxt, sizeof(delaytxt), &match_data) >= 0) {
+		if (match_and_extract(subjectline, ".*DELAY[ =]+([0-9]+[mhdw]*)", 1, delaytxt, sizeof(delaytxt), NULL, &match_data) >= 0) {
                         duration = durationvalue(delaytxt);
                 }
         }
 
-        if (match_and_extract(subjectline, ".*MSG[ =]+(.*)", 1, NULL, 0, &match_data) >= 0) {
+	if (match_and_extract(subjectline, ".*MSG[ =]+(.*)", 1, NULL, 0, NULL, &match_data) >= 0) {
+
                 char msgtxt[4096];
-                if (match_and_extract(subjectline, ".*MSG[ =]+(.*)", 1, msgtxt, sizeof(msgtxt), &match_data) >= 0) {
+		if (match_and_extract(subjectline, ".*MSG[ =]+(.*)", 1, msgtxt, sizeof(msgtxt), NULL, &match_data) >= 0) {
                         if (firsttxtline && firsttxtline_alloc) free(firsttxtline);
                         firsttxtline = strdup(msgtxt);
                         firsttxtline_alloc = 1;
