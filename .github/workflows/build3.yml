@@ -68,6 +68,7 @@ jobs:
           INSTALLEXTDIR=/usr/lib/xymon/server/ext \
           INSTALLTMPDIR=/var/lib/xymon/tmp \
           INSTALLWWWDIR=/var/lib/xymon/www \
+          CFLAGS="-DXYMON_ENABLE_PCRE_LEGACY_SHIMS=0" \
           ./configure --${{ matrix.variant }}
 
       - name: Build (PCRE2 strict, no legacy shims)
@@ -76,6 +77,5 @@ jobs:
             PCREDEF=-DPCRE2 \
             PCREINCDIR=-I/usr/include \
             PCRELIBS=-lpcre2-8 \
-            CFLAGS="-DXYMON_ENABLE_PCRE_LEGACY_SHIMS=0" \
             -j1
 
