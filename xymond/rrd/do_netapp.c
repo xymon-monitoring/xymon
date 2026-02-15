@@ -489,131 +489,131 @@ static rrdtpldata_t *system_tpl = NULL;
 
 int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-    static char *netapp_disk_params[] = { "DS:pct:GAUGE:600:0:U", "DS:used:GAUGE:600:0:U", NULL };
-    static rrdtpldata_t *netapp_disk_tpl      = NULL;
+	static char *netapp_disk_params[] = { "DS:pct:GAUGE:600:0:U", "DS:used:GAUGE:600:0:U", NULL };
+	static rrdtpldata_t *netapp_disk_tpl      = NULL;
 
-    char *eoln, *curline;
-    static int ptnsetup = 0;
-    static pcre_pattern_t *inclpattern = NULL;
-    static pcre_pattern_t *exclpattern = NULL;
-    pcre_match_data_t *match_data = NULL;
-    int newdfreport;
+	char *eoln, *curline;
+	static int ptnsetup = 0;
+	static pcre_pattern_t *inclpattern = NULL;
+	static pcre_pattern_t *exclpattern = NULL;
+	pcre_match_data_t *match_data = NULL;
+	int newdfreport;
 
-    newdfreport = (strstr(msg,"netappnewdf") != NULL);
+	newdfreport = (strstr(msg,"netappnewdf") != NULL);
 
-    if (netapp_disk_tpl == NULL) netapp_disk_tpl = setup_template(netapp_disk_params);
+	if (netapp_disk_tpl == NULL) netapp_disk_tpl = setup_template(netapp_disk_params);
 
-    if (!ptnsetup) {
-        setup_disk_patterns(&inclpattern, &exclpattern, &ptnsetup);
-    }
-
-    /*
-     * Francesco Duranti noticed that if we use the "/group" option
-     * when sending the status message, this tricks the parser to
-     * create an extra filesystem called "/group". So skip the first
-     * line - we never have any disk reports there anyway.
-     */
-    curline = strchr(msg, '\n'); if (curline) curline++;
-    if (inclpattern || exclpattern) {
-    	match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
-    	if (!match_data) errprintf("Failed to allocate PCRE match data, continuing without disk filtering\n");
+	if (!ptnsetup) {
+		setup_disk_patterns(&inclpattern, &exclpattern, &ptnsetup);
 	}
 
-    while (curline)  {
-        char *fsline, *p;
-        char *columns[20];
-        int columncount;
-        char *diskname = NULL;
-        int pused = -1;
-        int wanteddisk = 1;
-        long long aused = 0;
-        /* FD: Using double instead of long long because we can have decimal on Netapp and DbCheck */
-        double dused = 0;
-        /* FD: used to add a column if the filesystem is named "snap reserve" for netapp.pl */
-        int snapreserve=0;
+	/*
+	 * Francesco Duranti noticed that if we use the "/group" option
+	 * when sending the status message, this tricks the parser to
+	 * create an extra filesystem called "/group". So skip the first
+	 * line - we never have any disk reports there anyway.
+	 */
+	curline = strchr(msg, '\n'); if (curline) curline++;
+	if (inclpattern || exclpattern) {
+		match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
+		if (!match_data) errprintf("Failed to allocate PCRE match data, continuing without disk filtering\n");
+	}
 
-        eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
+	while (curline)  {
+		char *fsline, *p;
+		char *columns[20];
+		int columncount;
+		char *diskname = NULL;
+		int pused = -1;
+		int wanteddisk = 1;
+		long long aused = 0;
+		/* FD: Using double instead of long long because we can have decimal on Netapp and DbCheck */
+		double dused = 0;
+		/* FD: used to add a column if the filesystem is named "snap reserve" for netapp.pl */
+		int snapreserve=0;
 
-
-        /* FD: netapp.pl snapshot line that start with "snap reserve" need a +1 */
-        if (strstr(curline, "snap reserve")) snapreserve=1;
-
-        /* All clients except AS/400 and DBCHECK report the mount-point with slashes - ALSO Win32 clients. */
-        if (strchr(curline, '/') == NULL) goto nextline;
-
-        /* red/yellow filesystems show up twice */
-        if (*curline == '&') goto nextline;
-        if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
-
-        for (columncount=0; (columncount<20); columncount++) columns[columncount] = "";
-        fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
-        while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
-
-        /* FD: Name column can contain "spaces" so it could be split in multiple
-           columns, create a unique string from columns[5] that point to the
-           complete disk name
-        */
-        while (columncount-- > 6+snapreserve) {
-            p = strchr(columns[columncount-1],0);
-            if (p) *p = '_';
-        }
-        /* FD: Add an initial "/" to qtree and quotas */
-        if (newdfreport) {
-            diskname = xstrdup(columns[0]);
-        } else if (*columns[5+snapreserve] != '/') {
-            diskname=xmalloc(strlen(columns[5+snapreserve])+2);
-            sprintf(diskname,"/%s",columns[5+snapreserve]);
-        } else {
-            diskname = xstrdup(columns[5+snapreserve]);
-        }
-        p = strchr(columns[4+snapreserve], '%'); if (p) *p = ' ';
-        pused = atoi(columns[4+snapreserve]);
-        p = columns[2+snapreserve] + strspn(columns[2+snapreserve], "0123456789.");
-        /* Using double instead of long long because we can have decimal */
-        dused = str2ll(columns[2+snapreserve], NULL);
-        /* snapshot and qtree contains M/G/T
-           Convert to KB if there's a modifier after the numbers
-        */
-        if (*p == 'M') dused *= 1024;
-        else if (*p == 'G') dused *= (1024*1024);
-        else if (*p == 'T') dused *= (1024*1024*1024);
-        aused=(long long) dused;
+		eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 
 
-        /* Check include/exclude patterns */
-        if (match_data)
-    		wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
+		/* FD: netapp.pl snapshot line that start with "snap reserve" need a +1 */
+		if (strstr(curline, "snap reserve")) snapreserve=1;
+
+		/* All clients except AS/400 and DBCHECK report the mount-point with slashes - ALSO Win32 clients. */
+		if (strchr(curline, '/') == NULL) goto nextline;
+
+		/* red/yellow filesystems show up twice */
+		if (*curline == '&') goto nextline;
+		if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
+
+		for (columncount=0; (columncount<20); columncount++) columns[columncount] = "";
+		fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
+		while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
+
+		/* FD: Name column can contain "spaces" so it could be split in multiple
+		   columns, create a unique string from columns[5] that point to the
+		   complete disk name
+		*/
+		while (columncount-- > 6+snapreserve) {
+			p = strchr(columns[columncount-1],0);
+			if (p) *p = '_';
+		}
+		/* FD: Add an initial "/" to qtree and quotas */
+		if (newdfreport) {
+			diskname = xstrdup(columns[0]);
+		} else if (*columns[5+snapreserve] != '/') {
+			diskname=xmalloc(strlen(columns[5+snapreserve])+2);
+			sprintf(diskname,"/%s",columns[5+snapreserve]);
+		} else {
+			diskname = xstrdup(columns[5+snapreserve]);
+		}
+		p = strchr(columns[4+snapreserve], '%'); if (p) *p = ' ';
+		pused = atoi(columns[4+snapreserve]);
+		p = columns[2+snapreserve] + strspn(columns[2+snapreserve], "0123456789.");
+		/* Using double instead of long long because we can have decimal */
+		dused = str2ll(columns[2+snapreserve], NULL);
+		/* snapshot and qtree contains M/G/T
+		   Convert to KB if there's a modifier after the numbers
+		*/
+		if (*p == 'M') dused *= 1024;
+		else if (*p == 'G') dused *= (1024*1024);
+		else if (*p == 'T') dused *= (1024*1024*1024);
+		aused=(long long) dused;
+
+
+		/* Check include/exclude patterns */
+		if (match_data)
+			wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
 		else
-    		wanteddisk = 1;  /* fallback: accept all disks */
+			wanteddisk = 1;  /* fallback: accept all disks */
 
-        if (wanteddisk && diskname && (pused != -1)) {
-            p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
-            if (strcmp(diskname, ",") == 0) {
-                diskname = xrealloc(diskname, 6);
-                strcpy(diskname, ",root");
-            }
+		if (wanteddisk && diskname && (pused != -1)) {
+			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
+			if (strcmp(diskname, ",") == 0) {
+				diskname = xrealloc(diskname, 6);
+				strcpy(diskname, ",root");
+			}
 
-            /*
-             * Use testname here.
-             * The disk-handler also gets data from NetAPP inode- and qtree-messages,
-             * that are virtually identical to the disk-messages. So lets just handle
-             * all of it by using the testname as part of the filename.
-             */
-            setupfn2("%s%s.rrd", testname, diskname);
-            snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%lld", (int)tstamp, pused, aused);
-            create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_disk_params, netapp_disk_tpl);
-        }
-        if (diskname) { xfree(diskname); diskname = NULL; }
+			/*
+			 * Use testname here.
+			 * The disk-handler also gets data from NetAPP inode- and qtree-messages,
+			 * that are virtually identical to the disk-messages. So lets just handle
+			 * all of it by using the testname as part of the filename.
+			 */
+			setupfn2("%s%s.rrd", testname, diskname);
+			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%lld", (int)tstamp, pused, aused);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_disk_params, netapp_disk_tpl);
+		}
+		if (diskname) { xfree(diskname); diskname = NULL; }
 
-        if (eoln) *eoln = '\n';
-        xfree(fsline);
+		if (eoln) *eoln = '\n';
+		xfree(fsline);
 
 nextline:
-        curline = (eoln ? (eoln+1) : NULL);
-    }
-    pcre_match_data_free_compat(match_data);
+		curline = (eoln ? (eoln+1) : NULL);
+	}
+	pcre_match_data_free_compat(match_data);
 
-    return 0;
+	return 0;
 }
 
 

@@ -248,9 +248,9 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 	}
 
 	if (inclpattern || exclpattern) {
-    	match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
-    	if (!match_data)
-        	errprintf("Failed to allocate PCRE match data, continuing without tablespace filtering\n");
+		match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
+		if (!match_data)
+			errprintf("Failed to allocate PCRE match data, continuing without tablespace filtering\n");
 	}
 
 	while (curline) {
