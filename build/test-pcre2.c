@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-	int errofs = 0;
+	PCRE2_SIZE errofs = 0;
 	int errnum = 0;
 	pcre2_code *result;
 	PCRE2_SPTR pattern = (PCRE2_SPTR)"xymon.*";
