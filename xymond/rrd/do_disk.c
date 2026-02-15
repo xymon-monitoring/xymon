@@ -58,8 +58,10 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	 * line - we never have any disk reports there anyway.
 	 */
 	curline = strchr(msg, '\n'); if (curline) curline++;
-	match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
-	if (!match_data) return 1;
+	if (inclpattern || exclpattern) {
+		match_data = pcre_match_data_create_compat(inclpattern ? inclpattern : exclpattern);
+		if (!match_data) errprintf("Failed to allocate PCRE match data, continuing without disk filtering\n");
+	}
 
 	while (curline)  {
 		char *fsline, *p;
@@ -152,7 +154,10 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		}
 
 		/* Check include/exclude patterns */
-		wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
+		if (match_data)
+			wanteddisk = disk_wanted(diskname, inclpattern, exclpattern, match_data);
+		else
+			wanteddisk = 1;
 
 		if (wanteddisk && diskname && (pused != -1)) {
 			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
@@ -179,7 +184,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 nextline:
 		curline = (eoln ? (eoln+1) : NULL);
 	}
-	pcre_match_data_free_compat(match_data);
+	if (match_data) pcre_match_data_free_compat(match_data);
 
 	return 0;
 }

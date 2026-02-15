@@ -326,7 +326,7 @@ int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, c
 nextline:
 		curline = (eoln ? (eoln + 1) : NULL);
 	}
-	pcre_match_data_free_compat(match_data);
+	if (match_data) pcre_match_data_free_compat(match_data);
 
 	return 0;
 }

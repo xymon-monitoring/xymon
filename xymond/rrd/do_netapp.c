@@ -611,7 +611,7 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
 nextline:
 		curline = (eoln ? (eoln+1) : NULL);
 	}
-	pcre_match_data_free_compat(match_data);
+	if (match_data) pcre_match_data_free_compat(match_data);
 
 	return 0;
 }
