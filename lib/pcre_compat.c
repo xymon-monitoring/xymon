@@ -292,6 +292,9 @@ void setup_disk_patterns(pcre_pattern_t **inclpattern, pcre_pattern_t **exclpatt
 
 int disk_wanted(const char *diskname, pcre_pattern_t *inclpattern, pcre_pattern_t *exclpattern, pcre_match_data_t *match_data) {
     int wanted = 1;
+
+    if (!diskname || !match_data) return 0;
+
     int len = (int)strlen(diskname);
 
     if (exclpattern) {
