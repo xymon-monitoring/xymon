@@ -33,17 +33,6 @@ int pcre_copy_substring_legacy(const char *subject, int *ovector, int stringcoun
  * Legacy shim mapping
  * Disable with: -DXYMON_ENABLE_PCRE_LEGACY_SHIMS=0
  */
-#ifndef XYMON_ENABLE_PCRE_LEGACY_SHIMS
-#define XYMON_ENABLE_PCRE_LEGACY_SHIMS 1
-#endif
-
-#if XYMON_ENABLE_PCRE_LEGACY_SHIMS
-#define pcre_compile pcre_compile_legacy
-#define pcre_exec pcre_exec_legacy
-#define pcre_free pcre_free_legacy
-#define pcre_copy_substring pcre_copy_substring_legacy
-#endif
-
 #else
 
 #include <pcre.h>

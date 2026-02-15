@@ -319,7 +319,7 @@ void format_rrdtime(char *t, char **tday, char **thm)
 
 int main(int argc, char **argv)
 {
-	pcre *hostptn, *exhostptn, *pageptn, *expageptn;
+	pcre_pattern_t *hostptn, *exhostptn, *pageptn, *expageptn;
 	void *hwalk;
 	char *hostname, *pagename;
 

@@ -173,7 +173,7 @@ int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_dat
 
 pcre_pattern_t *pcre_compile_compat(const char *pattern, int options, char *errmsg, size_t errmsg_size, int *errofs) {
 	const char *err;
-	pcre *regexp = pcre_compile(pattern, options, &err, errofs, NULL);
+	pcre_pattern_t *regexp = pcre_compile(pattern, options, &err, errofs, NULL);
 
 	if (!regexp && errmsg && err && errmsg_size > 0) {
 		strncpy(errmsg, err, errmsg_size - 1);
@@ -188,7 +188,7 @@ int pcre_exec_compat(const pcre_pattern_t *pattern, const char *subject, int len
 		return -1;
 	}
 
-	return pcre_exec((const pcre *)pattern, NULL, subject, length, 0, 0, *match_data, 30);
+	return pcre_exec((const pcre_pattern_t *)pattern, NULL, subject, length, 0, 0, *match_data, 30);
 }
 
 pcre_match_data_t *pcre_match_data_create_compat(const pcre_pattern_t *pattern) {
@@ -204,7 +204,7 @@ void pcre_free_compat(const pcre_pattern_t *pattern) {
 	if (!pattern) {
 		return;
 	}
-	pcre_free((const pcre *)pattern);
+	pcre_free((const pcre_pattern_t *)pattern);
 }
 
 int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_data, int stringnumber, char *buffer, size_t buffersize) {
@@ -237,7 +237,7 @@ int pcre_exec_capture(const pcre_pattern_t *pattern, const char *subject, int *o
 #ifdef PCRE2
 	return pcre_exec_legacy(pattern, NULL, subject, (int)strlen(subject), 0, 0, ovector, (int)ovecsize);
 #else
-	return pcre_exec((pcre *)pattern, NULL, subject, (int)strlen(subject), 0, 0, ovector, (int)ovecsize);
+	return pcre_exec((pcre_pattern_t *)pattern, NULL, subject, (int)strlen(subject), 0, 0, ovector, (int)ovecsize);
 #endif
 }
 
@@ -281,7 +281,7 @@ void pcre_free_pattern(pcre_pattern_t **pattern) {
 #ifdef PCRE2
 	pcre_free_legacy(*pattern);
 #else
-	pcre_free((pcre *)*pattern);
+	pcre_free((pcre_pattern_t *)*pattern);
 #endif
 
 	*pattern = NULL;

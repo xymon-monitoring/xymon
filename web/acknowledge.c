@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 
 			if (obeycookies && !gotfilter && ((hostname = get_cookie("host")) != NULL)) {
 				if (*hostname) {
-					pcre *dummy;
+					pcre_pattern_t *dummy;
 					SBUF_DEFINE(re);
 
 					SBUF_MALLOC(re, 3+strlen(hostname));
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 
 			if (obeycookies && !gotfilter && ((pagename = get_cookie("pagepath")) != NULL)) {
 				if (*pagename) {
-					pcre *dummy;
+					pcre_pattern_t *dummy;
 					SBUF_DEFINE(re);
 
 					SBUF_MALLOC(re, 8 + strlen(pagename)*2);
