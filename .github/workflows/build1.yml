@@ -28,9 +28,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build dependencies (PCRE1)
+      - name: Install build dependencies (PCRE1 only)
         run: |
           sudo apt-get update
+          sudo apt-get remove -y libpcre2-dev || true
           sudo apt-get install -y --no-install-recommends \
             build-essential \
             libc-ares-dev \
@@ -39,6 +40,7 @@ jobs:
             librrd-dev \
             libssl-dev \
             libtirpc-dev
+
       - name: Configure (${{ matrix.name }})
         env:
           CONFTYPE: ${{ matrix.conftype }}
@@ -67,9 +69,12 @@ jobs:
           INSTALLTMPDIR=/var/lib/xymon/tmp \
           INSTALLWWWDIR=/var/lib/xymon/www \
           ./configure --${{ matrix.variant }}
-      - name: Build (PCRE1 flags)
+
+      - name: Build (PCRE1 strict)
         run: |
           make \
+            PCREDEF= \
             PCREINCDIR=-I/usr/include \
             PCRELIBS=-lpcre \
             -j1
+
