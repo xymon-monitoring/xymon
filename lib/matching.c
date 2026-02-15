@@ -56,6 +56,9 @@ int matchregex(const char *needle, pcre_pattern_t *pcrecode)
 	if (!needle || !pcrecode) return 0;
 
 	match_data = pcre_match_data_create_compat();
+        if (!match_data) {
+                return 0;
+        }
 	result = pcre_exec_compat(pcrecode, needle, strlen(needle), match_data);
 	pcre_match_data_free_compat(match_data);
 	return (result >= 0);
@@ -165,6 +168,8 @@ int pickdata(char *buf, pcre_pattern_t *expr, int dupok, ...)
 	if (!expr) return 0;
 
 	match_data = pcre_match_data_create_compat();
+	if (!match_data) return 0;
+
 	res = pcre_exec_compat(expr, buf, strlen(buf), match_data);
 	if (res < 0) {
 		pcre_match_data_free_compat(match_data);
