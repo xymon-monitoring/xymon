@@ -26,7 +26,7 @@ typedef pcre_pattern_t pcre;
 /* Legacy API wrappers */
 pcre_pattern_t *pcre_compile_legacy(const char *pattern, int options, const char **errmsg, int *errofs, const unsigned char *tableptr);
 int pcre_exec_legacy(const pcre_pattern_t *pattern, const pcre_extra *extra, const char *subject, int length, int startoffset, int options, int *ovector, int ovecsize);
-void pcre_free_legacy(void *pattern);
+void pcre_free_legacy(const pcre_pattern_t *pattern);
 int pcre_copy_substring_legacy(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, int buffersize);
 
 /*
@@ -55,10 +55,10 @@ typedef int pcre_match_data_t[30];
 
 /* Compatibility API */
 pcre_pattern_t *pcre_compile_compat(const char *pattern, int options, char *errmsg, size_t errmsg_size, int *errofs);
-int pcre_exec_compat(pcre_pattern_t *pattern, const char *subject, int length, pcre_match_data_t *match_data);
-pcre_match_data_t *pcre_match_data_create_compat(pcre_pattern_t *pattern);
+int pcre_exec_compat(const pcre_pattern_t *pattern, const char *subject, int length, pcre_match_data_t *match_data);
+pcre_match_data_t *pcre_match_data_create_compat(const pcre_pattern_t *pattern);
 void pcre_match_data_free_compat(pcre_match_data_t *match_data);
-void pcre_free_compat(pcre_pattern_t *pattern);
+void pcre_free_compat(const pcre_pattern_t *pattern);
 int pcre_copy_substring_compat(const char *subject, pcre_match_data_t *match_data, int stringnumber, char *buffer, size_t buffersize);
 
 /* Safe helper wrappers */
