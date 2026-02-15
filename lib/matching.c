@@ -56,11 +56,11 @@ int matchregex(const char *needle, pcre_pattern_t *pcrecode)
 	if (!needle || !pcrecode) return 0;
 
 	match_data = pcre_match_data_create_compat(pcrecode);
-        if (!match_data) {
-                return 0;
-        }
+	if (!match_data) return 0;
+
 	result = pcre_exec_compat(pcrecode, needle, strlen(needle), match_data);
 	pcre_match_data_free_compat(match_data);
+
 	return (result >= 0);
 }
 
@@ -114,7 +114,7 @@ int namematch(const char *needle, char *haystack, pcre_pattern_t *pcrecode)
 	}
 	xfree(xhay);
 
-	/* 
+	/*
 	 * If we didn't find it, and the list is exclusively negative matches,
 	 * we must return a positive result for "no match".
 	 */
@@ -148,7 +148,7 @@ pcre_pattern_t **compile_exprs(char *id, const char **patterns, int count)
 		result[i] = compileregex(patterns[i]);
 		if (!result[i]) {
 			errprintf("Internal error: %s pickdata PCRE-compile failed\n", id);
-				for (i=0; (i < count); i++) if (result[i]) pcre_free_compat(result[i]);
+			for (i=0; (i < count); i++) if (result[i]) pcre_free_compat(result[i]);
 			xfree(result);
 			return NULL;
 		}
@@ -201,7 +201,6 @@ int pickdata(char *buf, pcre_pattern_t *expr, int dupok, ...)
 
 	return 1;
 }
-
 
 int timematch(char *holidaykey, char *tspec)
 {
