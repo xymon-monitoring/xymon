@@ -619,8 +619,8 @@ char *expand_tokens(char *tpl)
 			char numstr[10];
 
 			if (rrdidx == 0) {
-			}
 				numstr[0] = '\0';
+			}
 			else {
 				snprintf(numstr, sizeof(numstr), "STACK");
 			}
