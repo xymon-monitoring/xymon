@@ -513,6 +513,7 @@ char *expand_tokens(char *tpl)
 {
 	static strbuffer_t *result = NULL;
 	char *inp, *p;
+	char numstr[10];
 
 	if (strchr(tpl, '@') == NULL) return tpl;
 
