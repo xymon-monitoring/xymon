@@ -148,10 +148,6 @@ EOF
 		head -n 20 "$FIRSTCOMPILELOG"
 		echo "RRD: full diagnostics saved at: $FIRSTCOMPILELOG"
 		# Initial compile failed; retry with the legacy RRD graph ABI macro.
-		echo "RRD: retrying compile probe with RRDTOOL12 compatibility"
-		RRDDEF="$RRDDEF -DRRDTOOL12"
-		OS=$OS $MAKE -f Makefile.test-rrd clean
-		try_rrd_compile
 	}
 
 	try_rrd_link_with_fallbacks() {

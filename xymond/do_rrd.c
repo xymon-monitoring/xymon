@@ -242,7 +242,7 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	optind = opterr = 0; rrd_clear_error();
 	result = xymon_rrd_update(pcount, updparams);
 
-#if defined(LINUX) && defined(RRDTOOL12)
+#if defined(LINUX)
 	/*
 	 * RRDtool 1.2+ uses mmap'ed I/O, but the Linux kernel does not update timestamps when
 	 * doing file I/O on mmap'ed files. This breaks our check for stale/nostale RRD's.

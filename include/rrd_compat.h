@@ -58,16 +58,10 @@ static inline int xymon_rrd_fetch(int argc, xymon_rrd_argv_item_t *argv,
 	return rrd_fetch(argc, xymon_rrd_api_argv(argv), start, end, step, dscount, dsnames, data);
 }
 
-static inline int xymon_rrd_graph(int argc, xymon_rrd_argv_item_t *argv,
+static inline int xymon_rrd_graph(int argc, xymon_rrd_argv_item_t *argv, 
 				  char ***calcpr, int *xsize, int *ysize, double *ymin, double *ymax)
-{
-#if defined(RRDTOOL12)
-	return rrd_graph(argc, xymon_rrd_api_argv(argv), calcpr, xsize, ysize, NULL, ymin, ymax);
-#else
-	(void)ymin;
-	(void)ymax;
-	return rrd_graph(argc, xymon_rrd_api_argv(argv), calcpr, xsize, ysize);
-#endif
+{ 
+	return rrd_graph(argc, xymon_rrd_api_argv(argv), calcpr, xsize, ysize, NULL, ymin, ymax); 
 }
 
 #endif /* XYMON_RRD_COMPAT_H */
