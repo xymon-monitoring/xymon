@@ -409,7 +409,10 @@ static void *wanted_host(char *hostname)
 
 	if (classpattern && hinfo) {
 		char *hostclass = xmh_item(hinfo, XMH_CLASS);
-		if (!hostclass) return NULL;
+		if (!hostclass) {
+			pcre2_match_data_free(ovector);
+			return NULL;
+		}
 
 		result = pcre2_match(classpattern, hostclass, strlen(hostclass), 0, 0,
 				ovector, NULL);
