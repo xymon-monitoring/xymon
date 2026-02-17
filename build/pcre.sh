@@ -37,25 +37,32 @@ PCRELINKLIB="-lpcre"
 # ------------------------------------------------------------
 # Manual directory probing
 # ------------------------------------------------------------
-for DIR in /opt/pcre* /usr/local/pcre* /usr/local /usr/pkg /opt/csw /opt/sfw
-do
-        if test "$PCRE_MAJOR" = "2"; then
-                if test -f "$DIR/include/pcre2.h"; then PCREINC=$DIR/include; fi
-                if test -f "$DIR/include/pcre2/pcre2.h"; then PCREINC=$DIR/include/pcre2; fi
+probe_pcre_paths() {
+        PCREINC=""
+        PCRELIB=""
 
-                if test -f "$DIR/lib/libpcre2-8.so" -o -f "$DIR/lib/libpcre2-8.a"; then PCRELIB=$DIR/lib; fi
-                if test -f "$DIR/lib64/libpcre2-8.so" -o -f "$DIR/lib64/libpcre2-8.a"; then PCRELIB=$DIR/lib64; fi
-        else
-                if test -f "$DIR/include/pcre.h"; then PCREINC=$DIR/include; fi
-                if test -f "$DIR/include/pcre/pcre.h"; then PCREINC=$DIR/include/pcre; fi
+        for DIR in /opt/pcre* /usr/local/pcre* /usr/local /usr/pkg /opt/csw /opt/sfw
+        do
+                if test "$PCRE_MAJOR" = "2"; then
+                        if test -f "$DIR/include/pcre2.h"; then PCREINC=$DIR/include; fi
+                        if test -f "$DIR/include/pcre2/pcre2.h"; then PCREINC=$DIR/include/pcre2; fi
 
-                if test -f "$DIR/lib/libpcre.so" -o -f "$DIR/lib/libpcre.a"; then PCRELIB=$DIR/lib; fi
-                if test -f "$DIR/lib64/libpcre.so" -o -f "$DIR/lib64/libpcre.a"; then PCRELIB=$DIR/lib64; fi
-        fi
-done
+                        if test -f "$DIR/lib/libpcre2-8.so" -o -f "$DIR/lib/libpcre2-8.a"; then PCRELIB=$DIR/lib; fi
+                        if test -f "$DIR/lib64/libpcre2-8.so" -o -f "$DIR/lib64/libpcre2-8.a"; then PCRELIB=$DIR/lib64; fi
+                else
+                        if test -f "$DIR/include/pcre.h"; then PCREINC=$DIR/include; fi
+                        if test -f "$DIR/include/pcre/pcre.h"; then PCREINC=$DIR/include/pcre; fi
 
-if test "$USERPCREINC" != ""; then PCREINC="$USERPCREINC"; fi
-if test "$USERPCRELIB" != ""; then PCRELIB="$USERPCRELIB"; fi
+                        if test -f "$DIR/lib/libpcre.so" -o -f "$DIR/lib/libpcre.a"; then PCRELIB=$DIR/lib; fi
+                        if test -f "$DIR/lib64/libpcre.so" -o -f "$DIR/lib64/libpcre.a"; then PCRELIB=$DIR/lib64; fi
+                fi
+        done
+
+        if test "$USERPCREINC" != ""; then PCREINC="$USERPCREINC"; fi
+        if test "$USERPCRELIB" != ""; then PCRELIB="$USERPCRELIB"; fi
+}
+
+probe_pcre_paths
 
 # ------------------------------------------------------------
 # Setup test parameters
@@ -77,6 +84,8 @@ cd build || {
         exit 1
 }
 
+INCOPT=""
+LIBOPT=""
 if test "$PCREINC" != ""; then INCOPT="-I$PCREINC"; fi
 if test "$PCRELIB" != ""; then LIBOPT="-L$PCRELIB"; fi
 
@@ -102,6 +111,12 @@ if test $? -ne 0 -a "$PCRE_MAJOR" = "2"; then
         PCRETESTOBJ="test-pcre.o"
         PCRETESTBIN="test-pcre"
         PCRELINKLIB="-lpcre"
+
+        probe_pcre_paths
+        INCOPT=""
+        LIBOPT=""
+        if test "$PCREINC" != ""; then INCOPT="-I$PCREINC"; fi
+        if test "$PCRELIB" != ""; then LIBOPT="-L$PCRELIB"; fi
 
         OS=$(uname -s | sed -e 's@/@_@g') $MAKE -f Makefile.test-pcre clean
         OS=$(uname -s | sed -e 's@/@_@g') \

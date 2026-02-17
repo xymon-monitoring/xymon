@@ -94,7 +94,8 @@ int pcre_copy_substring_legacy(const char *subject, int *ovector, int stringcoun
 
 	len = end - start;
 	if (len >= buffersize) {
-		len = buffersize - 1;
+		/* Match legacy pcre_copy_substring() behavior: fail if buffer is too small. */
+		return -1;
 	}
 
 	memcpy(buffer, subject + start, (size_t)len);
