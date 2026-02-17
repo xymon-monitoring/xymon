@@ -38,9 +38,12 @@ static char rcsid[] = "$Id$";
 #define WEEK_GRAPH  "e-48d"
 #define MONTH_GRAPH "e-576d"
 
-/* RRDtool 1.0.x handles graphs with no DS definitions just fine. 1.2.x does not. */
+/* Keep a blank-image fallback when no graph data is available. */
+#ifndef HIDE_EMPTYGRAPH
+#define HIDE_EMPTYGRAPH 1
+#endif
 
-#ifdef HIDE_EMPTYGRAPH
+#if HIDE_EMPTYGRAPH
 unsigned char blankimg[] = "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\x04\x67\x41\x4d\x41\x00\x00\xb1\x8f\x0b\xfc\x61\x05\x00\x00\x00\x06\x62\x4b\x47\x44\x00\xff\x00\xff\x00\xff\xa0\xbd\xa7\x93\x00\x00\x00\x09\x70\x48\x59\x73\x00\x00\x0b\x12\x00\x00\x0b\x12\x01\xd2\xdd\x7e\xfc\x00\x00\x00\x07\x74\x49\x4d\x45\x07\xd1\x01\x14\x12\x21\x14\x7e\x4a\x3a\xd2\x00\x00\x00\x0d\x49\x44\x41\x54\x78\xda\x63\x60\x60\x60\x60\x00\x00\x00\x05\x00\x01\x7a\xa8\x57\x50\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82";
 #endif
 
@@ -1190,13 +1193,13 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		printf("%s\n", expirehdr);
 		printf("\n");
 
-#ifdef HIDE_EMPTYGRAPH
-		/* It works, but we still get the "zoom" magnifying glass which looks odd */
-		if (rrddbcount == 0) {
-			/* No graph */
-			fwrite(blankimg, 1, sizeof(blankimg), stdout);
-			return;
-		}
+#if HIDE_EMPTYGRAPH
+			/* It works, but we still get the "zoom" magnifying glass which looks odd */
+			if (rrddbcount == 0) {
+				/* No graph */
+				fwrite(blankimg, 1, sizeof(blankimg), stdout);
+				return;
+			}
 #endif
 	}
 
