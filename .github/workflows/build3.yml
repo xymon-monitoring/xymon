@@ -1,4 +1,4 @@
-name: build3 (pcre2-strict-no-shims)
+name: build3 (pcre2-strict-no-shims, complements build1)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-pcre2-strict:
-    name: build-pcre2-strict (${{ matrix.name }})
+    name: build-pcre2-strict (alongside build-pcre1) (${{ matrix.name }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
