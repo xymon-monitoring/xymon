@@ -28,7 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build dependencies (PCRE1 only, strict)
+      - name: Install build dependencies (PCRE1/libpcre3 only, strict)
         run: |
           sudo apt-get update
           sudo apt-get remove -y libpcre2-dev || true
@@ -71,7 +71,7 @@ jobs:
           INSTALLWWWDIR=/var/lib/xymon/www \
           ./configure --${{ matrix.variant }}
 
-      - name: Build (PCRE1 strict)
+      - name: Build (PCRE1/libpcre3 strict)
         run: |
           make \
             PCREDEF= \
