@@ -80,9 +80,9 @@ cd build || {
 if test "$PCREINC" != ""; then INCOPT="-I$PCREINC"; fi
 if test "$PCRELIB" != ""; then LIBOPT="-L$PCRELIB"; fi
 
-OS=$(uname -s | sed -e's@/@_@g') $MAKE -f Makefile.test-pcre clean
+OS=$(uname -s | sed -e 's@/@_@g') $MAKE -f Makefile.test-pcre clean
 
-OS=$(uname -s | sed -e's@/@_@g') \
+OS=$(uname -s | sed -e 's@/@_@g') \
         PCREINC="$INCOPT" \
         PCRETESTSRC="$PCRETESTSRC" \
         PCRETESTOBJ="$PCRETESTOBJ" \
@@ -103,8 +103,8 @@ if test $? -ne 0 -a "$PCRE_MAJOR" = "2"; then
         PCRETESTBIN="test-pcre"
         PCRELINKLIB="-lpcre"
 
-        OS=$(uname -s | sed -e's@/@_@g') $MAKE -f Makefile.test-pcre clean
-        OS=$(uname -s | sed -e's@/@_@g') \
+        OS=$(uname -s | sed -e 's@/@_@g') $MAKE -f Makefile.test-pcre clean
+        OS=$(uname -s | sed -e 's@/@_@g') \
                 PCREINC="$INCOPT" \
                 PCRETESTSRC="$PCRETESTSRC" \
                 PCRETESTOBJ="$PCRETESTOBJ" \
@@ -120,7 +120,7 @@ else
         PCREOK="NO"
 fi
 
-OS=$(uname -s | sed -e's@/@_@g') \
+OS=$(uname -s | sed -e 's@/@_@g') \
         PCRELIB="$LIBOPT" \
         PCRETESTSRC="$PCRETESTSRC" \
         PCRETESTOBJ="$PCRETESTOBJ" \
@@ -135,7 +135,7 @@ else
         PCREOK="NO"
 fi
 
-OS=$(uname -s | sed -e's@/@_@g') $MAKE -f Makefile.test-pcre clean
+OS=$(uname -s | sed -e 's@/@_@g') $MAKE -f Makefile.test-pcre clean
 cd .. || {
         echo "ERROR: Cannot return from build directory"
         exit 1
