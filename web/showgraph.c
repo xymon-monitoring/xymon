@@ -598,25 +598,10 @@ char *expand_tokens(char *tpl)
 		else if (strncmp(inp, "@STACKIT@", 9) == 0) {
 			/* Contributed by Gildas Le Nadan <gn1@sanger.ac.uk> */
 
-			/* the STACK behavior changed between rrdtool 1.0.x
-			 * and 1.2.x, hence the ifdef:
-			 * - in 1.0.x, you replace the graph type (AREA|LINE)
-			 *  for the graph you want to stack with the  STACK
-			 *  keyword
-			 * - in 1.2.x, you add the STACK keyword at the end
-			 *  of the definition
-			 *
-			 * Please note that in both cases the first entry
-			 * mustn't contain the keyword STACK at all, so
-			 * we need a different treatment for the first rrdidx
-			 *
-			 * examples of graphs.cfg entries:
-			 *
-			 * - rrdtool 1.0.x
-			 * @STACKIT@:la@RRDIDX@#@COLOR@:@RRDPARAM@
-			 *
-			 * - rrdtool 1.2.x
-			 * AREA::la@RRDIDX@#@COLOR@:@RRDPARAM@:@STACKIT@
+			/*
+			 * Keep the first series unstacked; add "STACK" for subsequent
+			 * series. Graph templates should place @STACKIT@ where RRDtool
+			 * expects the stacking keyword.
 			 */
 			char numstr[10];
 
