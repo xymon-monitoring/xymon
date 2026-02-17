@@ -22,9 +22,10 @@ int main(void)
 	xymon_rrd_argv_item_t fetchargs[]  = { "rrdfetch", "dummy.rrd", NULL };
 	char **calcpr=NULL;
 
-	int pcount, result, xsize, ysize;
+	int pcount, xsize, ysize;
 	double ymin, ymax;
-	unsigned long start = 0, end = 0, step = 0, dscount = 0;
+	time_t start = 0, end = 0;
+	unsigned long step = 0, dscount = 0;
 	char **dsnames = NULL;
 	rrd_value_t *data = NULL;
 
@@ -35,7 +36,7 @@ int main(void)
 	(void)xymon_rrd_create(3, createargs);
 	(void)xymon_rrd_fetch(3, fetchargs, &start, &end, &step, &dscount, &dsnames, &data);
 	/* Keep one graph invocation to validate the graph ABI shape as well. */
-	result = xymon_rrd_graph(pcount, graphargs, &calcpr, &xsize, &ysize, &ymin, &ymax);
+	(void)xymon_rrd_graph(pcount, graphargs, &calcpr, &xsize, &ysize, &ymin, &ymax);
 
 	return 0;
 }
