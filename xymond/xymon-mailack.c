@@ -106,11 +106,13 @@ int main(int argc, char *argv[])
 	ovector = pcre2_match_data_create(30, NULL);
 	result = pcre2_match(subjexp, subjectline, strlen(subjectline), 0, 0, ovector, NULL);
 	if (result < 0) {
+		pcre2_code_free(subjexp);
 		pcre2_match_data_free(ovector);
 		dbgprintf("Subject line did not match pattern\n");
 		return 3; /* Subject did not match what we expected */
 	}
 	if (pcre2_substring_copy_bynumber(ovector, 2, cookie, &l) <= 0) {
+		pcre2_code_free(subjexp);
 		pcre2_match_data_free(ovector);
 		dbgprintf("Could not find cookie value\n");
 		return 4; /* No cookie */
@@ -171,10 +173,12 @@ int main(int argc, char *argv[])
 
 	if (debug) {
 		printf("%s\n", ackbuf);
+		pcre2_match_data_free(ovector);
 		return 0;
 	}
 
 	sendmessage(ackbuf, NULL, XYMON_TIMEOUT, NULL);
+	pcre2_match_data_free(ovector);
 	return 0;
 }
 
