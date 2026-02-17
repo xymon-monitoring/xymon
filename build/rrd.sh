@@ -147,7 +147,8 @@ EOF
 		echo "RRD: initial compile probe failed; first diagnostics:"
 		head -n 20 "$FIRSTCOMPILELOG"
 		echo "RRD: full diagnostics saved at: $FIRSTCOMPILELOG"
-		# Initial compile failed; retry with the legacy RRD graph ABI macro.
+		# Hard-fail here so the caller reports compile probe failure accurately.
+		return 1
 	}
 
 	try_rrd_link_with_fallbacks() {

@@ -20,7 +20,9 @@
 /*
  * Ad-hoc/manual builds that skip configure must opt in explicitly.
  */
-#if defined(XYMON_ASSUME_RRD_MUTABLE_ARGS)
+#if defined(RRDTOOL12)
+#define RRD_CONST_ARGS 0
+#elif defined(XYMON_ASSUME_RRD_MUTABLE_ARGS)
 #define RRD_CONST_ARGS 0
 #else
 #error "RRD_CONST_ARGS is not defined. Run configure or define XYMON_ASSUME_RRD_MUTABLE_ARGS=1."
