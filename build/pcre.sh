@@ -72,7 +72,10 @@ fi
 
 echo "PCRE probe mode: PCRE$PCRE_MAJOR"
 
-cd build
+cd build || {
+        echo "ERROR: Cannot enter build directory"
+        exit 1
+}
 
 if test "$PCREINC" != ""; then INCOPT="-I$PCREINC"; fi
 if test "$PCRELIB" != ""; then LIBOPT="-L$PCRELIB"; fi
@@ -133,7 +136,10 @@ else
 fi
 
 OS=$(uname -s | sed -e's@/@_@g') $MAKE -f Makefile.test-pcre clean
-cd ..
+cd .. || {
+        echo "ERROR: Cannot return from build directory"
+        exit 1
+}
 
 if test "$PCREOK" = "NO"; then
         echo "Missing PCRE include- or library-files. These are REQUIRED for xymond"
