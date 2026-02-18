@@ -634,8 +634,8 @@ char *expand_tokens(char *tpl)
 
 int rrd_name_compare(const void *v1, const void *v2)
 {
-	rrddb_t *r1 = (rrddb_t *)v1;
-	rrddb_t *r2 = (rrddb_t *)v2;
+	const rrddb_t *r1 = v1;
+	const rrddb_t *r2 = v2;
 	char *endptr;
 	long numkey1, numkey2;
 	int key1isnumber, key2isnumber;
