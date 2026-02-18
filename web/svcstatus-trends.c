@@ -240,10 +240,8 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 {
 	void *myhost;
 	char hostrrddir[PATH_MAX];
-	char *fn;
 	int anyrrds = 0;
 	xymongraph_t *graph;
-	graph_t *rwalk;
 	SBUF_DEFINE(allrrdlinks);
 	char *allrrdlinksend;
 
@@ -251,56 +249,38 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 	if (!myhost) return NULL;
 
 	snprintf(hostrrddir, sizeof(hostrrddir), "%s/%s", xgetenv("XYMONRRDS"), hostname);
-	if (chdir(hostrrddir) != 0) {
-		errprintf("Cannot chdir to %s: %s\n", hostrrddir, strerror(errno));
-		return NULL;
-	}
-	stack_opendir(".");
-
-	while ((fn = stack_readdir())) {
-		/* Check if the filename ends in ".rrd", and we know how to handle this RRD */
-		if ((strlen(fn) <= 4) || (strcmp(fn+strlen(fn)-4, ".rrd") != 0)) continue;
-		graph = find_xymon_graph(fn); if (!graph) continue;
-
-		dbgprintf("Got RRD %s\n", fn);
-		anyrrds++;
-
-		for (rwalk = (graph_t *)xmh_item(myhost, XMH_DATA); (rwalk && (rwalk->gdef != graph)); rwalk = rwalk->next) ;
-		if (rwalk == NULL) {
-			graph_t *newrrd = (graph_t *) malloc(sizeof(graph_t));
-
-			newrrd->gdef = graph;
-			newrrd->count = 1;
-			newrrd->next = (graph_t *)xmh_item(myhost, XMH_DATA);
-			xmh_set_item(myhost, XMH_DATA, newrrd);
-			rwalk = newrrd;
-			dbgprintf("New rrd for host:%s, rrd:%s\n", hostname, graph->xymonrrdname);
-		}
-		else {
-			rwalk->count++;
-
-			dbgprintf("Extra RRD for host %s, rrd %s   count:%d\n", 
-				hostname, 
-				rwalk->gdef->xymonrrdname, rwalk->count);
-		}
-	}
-	stack_closedir();
-
-	if (!anyrrds) return NULL;
 
 	SBUF_MALLOC(allrrdlinks, 16384);
 	*allrrdlinks = '\0';
 	allrrdlinksend = allrrdlinks;
 
+	/* Initialize RRD and graph definitions before using them */
+	rrd_setup();
+
+	/* Iterate through all graphs defined in GRAPHS variable */
 	graph = xymongraphs;
 	while (graph->xymonrrdname) {
-		for (rwalk = (graph_t *)xmh_item(myhost, XMH_DATA); (rwalk && (rwalk->gdef->xymonrrdname != graph->xymonrrdname)); rwalk = rwalk->next) ;
-		if (rwalk) {
-			int buflen;
-			char *onelink;
+		int rrd_count;
+		char *onelink;
+		int buflen;
 
+		/* Use count_rrd_files_for_graph to check if this graph has matching RRD files */
+		rrd_count = count_rrd_files_for_graph(hostname, graph->xymonrrdname);
+
+		if (rrd_count > 0) {
+			graph_t mygraph;
+
+			anyrrds++;
+			dbgprintf("Graph %s has %d matching RRD file(s) for host %s\n",
+				graph->xymonrrdname, rrd_count, hostname);
+
+			/* Create a temporary graph_t structure for rrdlink_text */
+			mygraph.gdef = graph;
+			mygraph.count = rrd_count;
+			mygraph.next = NULL;
+
+			onelink = rrdlink_text(myhost, &mygraph, 0, starttime, endtime);
 			buflen = (allrrdlinksend - allrrdlinks);
-			onelink = rrdlink_text(myhost, rwalk, 0, starttime, endtime);
 			if ((buflen + strlen(onelink)) >= allrrdlinks_buflen) {
 				SBUF_REALLOC(allrrdlinks, allrrdlinks_buflen+4096);
 				allrrdlinksend = allrrdlinks + buflen;
@@ -309,6 +289,11 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 		}
 
 		graph++;
+	}
+
+	if (!anyrrds) {
+		xfree(allrrdlinks);
+		return NULL;
 	}
 
 	return allrrdlinks;

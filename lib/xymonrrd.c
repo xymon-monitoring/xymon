@@ -19,9 +19,15 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <limits.h>
+#include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <pcre.h>
 
 #include "libxymon.h"
 #include "version.h"
+#include "stackio.h"
 
 /* This is for mapping a status-name -> RRD file */
 xymonrrd_t *xymonrrds = NULL;
@@ -39,7 +45,7 @@ static const char *metafmt = "<RRDGraph>\n  <GraphType>%s</GraphType>\n  <GraphL
  * Define the mapping between Xymon columns and RRD graphs.
  * Normally they are identical, but some RRD's use different names.
  */
-static void rrd_setup(void)
+void rrd_setup(void)
 {
 	static int setup_done = 0;
 	SBUF_DEFINE(lenv);
@@ -369,6 +375,202 @@ rrdtpldata_t *setup_template(char *params[])
 	}
 
 	return result;
+}
+
+int count_rrd_files_for_graph(char *hostname, char *graphname)
+{
+	char rrdpath[PATH_MAX];
+	char *saved_cwd = NULL;
+	int need_chdir_back = 0;
+	int rrd_count = 0;
+
+	snprintf(rrdpath, sizeof(rrdpath), "%s/%s", xgetenv("XYMONRRDS"), hostname);
+
+	/* Save current directory before chdir */
+	saved_cwd = getcwd(NULL, 0);
+	if (chdir(rrdpath) != 0) {
+		errprintf("Cannot chdir to RRD directory '%s' for host '%s': %s\n",
+			  rrdpath, hostname, strerror(errno));
+		if (saved_cwd) free(saved_cwd);
+		return 0;
+	}
+	need_chdir_back = 1;
+
+	/* Load the graph definition to get FNPATTERN and EXFNPATTERN */
+	char graphcfgfn[PATH_MAX];
+	FILE *graphcfg;
+	char line[1024];
+	char *fnpattern = NULL;
+	char *exfnpattern = NULL;
+	int insection = 0;
+
+	snprintf(graphcfgfn, sizeof(graphcfgfn), "%s/etc/graphs.cfg", xgetenv("XYMONHOME"));
+	graphcfg = stackfopen(graphcfgfn, "r", NULL);
+
+	if (!graphcfg) {
+		errprintf("Cannot open graphs.cfg at '%s': %s\n",
+			  graphcfgfn, strerror(errno));
+	}
+
+	if (graphcfg) {
+		strbuffer_t *linebuf = newstrbuffer(0);
+		char *lineptr;
+
+		while ((lineptr = stackfgets(linebuf, NULL)) != NULL) {
+			strncpy(line, STRBUF(linebuf), sizeof(line)-1);
+			line[sizeof(line)-1] = '\0';
+
+			/* Remove newline */
+			char *nl = strchr(line, '\n');
+			if (nl) *nl = '\0';
+			nl = strchr(line, '\r');
+			if (nl) *nl = '\0';
+
+			/* Check for section header like [smart-temp] */
+			if (line[0] == '[' && line[strlen(line)-1] == ']') {
+				line[strlen(line)-1] = '\0';  /* remove ']' */
+				if (strcmp(line+1, graphname) == 0) {
+					insection = 1;
+				} else {
+					/* Exiting our section - stop parsing */
+					if (insection) break;
+					insection = 0;
+				}
+			}
+			else if (insection) {
+				/* Check for FNPATTERN and EXFNPATTERN with possible leading whitespace */
+				char *line_start = line + strspn(line, " \t");
+				if (strncasecmp(line_start, "EXFNPATTERN", 11) == 0) {
+					char *pval = line_start + 11;
+					pval += strspn(pval, " \t=");  /* Skip whitespace and equals */
+					if (!exfnpattern) exfnpattern = strdup(pval);
+				}
+				else if (strncasecmp(line_start, "FNPATTERN", 9) == 0) {
+					char *pval = line_start + 9;
+					pval += strspn(pval, " \t=");  /* Skip whitespace and equals */
+					if (!fnpattern) fnpattern = strdup(pval);
+				}
+			}
+		}
+		freestrbuffer(linebuf);
+		stackfclose(graphcfg);
+	}
+
+	/*
+	 * Now count RRD files matching this graph.
+	 *
+	 * Performance note: This function is called by the CGI when rendering status pages,
+	 * NOT by xymond_filestore during status updates. This architectural decision moves
+	 * the RRD scanning cost from the background daemon (called continuously) to the web
+	 * interface (called only when humans view pages).
+	 *
+	 * We optimize for two common cases:
+	 *
+	 * 1. FNPATTERN graphs (e.g., disk with pattern ".*\.rrd"): Must scan directory
+	 *    to find all matching files. Uses readdir() which benefits from kernel VFS
+	 *    caching of directory entries (dentries on Linux, directory buffer on FreeBSD).
+	 *    Subsequent scans of the same directory are fast due to this caching.
+	 *
+	 * 2. Single-file graphs (e.g., cpu.rrd, memory.rrd): Direct stat() lookup is
+	 *    much faster than scanning - O(1) vs O(n). This avoids reading potentially
+	 *    hundreds of directory entries to find a single known filename.
+	 */
+	if (fnpattern) {
+		/*
+		 * FNPATTERN specified: need to scan directory and match pattern.
+		 * Example: disk graphs use FNPATTERN ".*,(.*)\.rrd" to match all
+		 * disk partition RRDs like "/dev/sda1.rrd", "/dev/sda2.rrd", etc.
+		 *
+		 * EXFNPATTERN can be used to exclude certain files from the match.
+		 * Example: [tcp] graph uses FNPATTERN "^tcp.(.+).rrd" to match all tcp files,
+		 * but EXFNPATTERN "^tcp.http.(.+).rrd" to exclude http tests (which have their own graph).
+		 */
+		DIR *dir = opendir(".");
+		if (!dir) {
+			errprintf("Cannot open RRD directory for host '%s' graph '%s': %s\n",
+				  hostname, graphname, strerror(errno));
+		}
+
+		if (dir) {
+			struct dirent *entry;
+			const char *errmsg;
+			int errofs;
+			pcre *pat;
+			pcre *expat = NULL;
+
+			pat = pcre_compile(fnpattern, PCRE_CASELESS, &errmsg, &errofs, NULL);
+			if (!pat) {
+				errprintf("PCRE compilation failed for pattern '%s' (graph=%s, host=%s): %s at offset %d\n",
+					  fnpattern, graphname, hostname, errmsg, errofs);
+			}
+
+			/* Compile exclusion pattern if present */
+			if (exfnpattern) {
+				expat = pcre_compile(exfnpattern, PCRE_CASELESS, &errmsg, &errofs, NULL);
+				if (!expat) {
+					errprintf("PCRE compilation failed for exclusion pattern '%s' (graph=%s, host=%s): %s at offset %d\n",
+						  exfnpattern, graphname, hostname, errmsg, errofs);
+				}
+			}
+
+			if (pat) {
+				/*
+				 * Scan directory for matching files. readdir() benefits from kernel
+				 * VFS caching, so repeated scans of the same directory are fast.
+				 */
+				while ((entry = readdir(dir)) != NULL) {
+					if (strlen(entry->d_name) > 4 &&
+						strcmp(entry->d_name + strlen(entry->d_name) - 4, ".rrd") == 0) {
+						int result = pcre_exec(pat, NULL, entry->d_name, strlen(entry->d_name), 0, 0, NULL, 0);
+						if (result >= 0) {
+							/* Matched FNPATTERN - now check if it should be excluded */
+							int excluded = 0;
+							if (expat) {
+								int exresult = pcre_exec(expat, NULL, entry->d_name, strlen(entry->d_name), 0, 0, NULL, 0);
+								if (exresult >= 0) {
+									excluded = 1;
+								}
+							}
+							if (!excluded) {
+								rrd_count++;
+							}
+						}
+					}
+				}
+				pcre_free(pat);
+				if (expat) pcre_free(expat);
+			}
+			closedir(dir);
+		}
+		xfree(fnpattern);
+		if (exfnpattern) xfree(exfnpattern);
+	} else {
+		/*
+		 * No FNPATTERN: simple 1:1 mapping (e.g., cpu -> cpu.rrd).
+		 * Use direct stat() lookup instead of directory scan for much better performance.
+		 * This is an O(1) operation vs O(n) directory scan, and avoids reading potentially
+		 * hundreds of directory entries just to find one specific file.
+		 */
+		char expected_rrd[PATH_MAX];
+		struct stat st;
+
+		snprintf(expected_rrd, sizeof(expected_rrd), "%s.rrd", graphname);
+		if (stat(expected_rrd, &st) == 0) {
+			rrd_count = 1;
+		}
+	}
+
+	/* Restore original directory */
+	if (need_chdir_back && saved_cwd) {
+		if (chdir(saved_cwd) != 0) {
+			errprintf("CRITICAL: Failed to restore directory to '%s' after RRD count (hostname=%s, graph=%s): %s\n",
+				  saved_cwd, hostname, graphname, strerror(errno));
+			/* This is critical - if we can't restore the directory, subsequent operations will fail */
+		}
+	}
+	if (saved_cwd) free(saved_cwd);
+
+	return rrd_count;
 }
 
 

@@ -201,15 +201,20 @@ int do_request(void)
 	int ishtmlformatted = 0;
 	int clientavail = 0;
 	char *ip = NULL, *displayname = NULL, *compacts;
+	char *trendscolumn, *infocolumn;
 
 	if (parse_query() != 0) return 1;
 
-	{ 
+	/* Get these once and check for NULL to avoid segfaults in strcmp */
+	trendscolumn = xgetenv("TRENDSCOLUMN");
+	infocolumn = xgetenv("INFOCOLUMN");
+
+	{
 	  char *p = NULL;
 	  if (!service || !strlen(service)) p = csp_header("svcstatus");
 	  else {
-		if (strcasecmp(service, xgetenv("INFOCOLUMN")) == 0) p = csp_header("svcstatus-info");
-		else if (strcasecmp(service, xgetenv("TRENDSCOLUMN")) == 0) p = csp_header("svcstatus-trends");
+		if (infocolumn && strcasecmp(service, infocolumn) == 0) p = csp_header("svcstatus-info");
+		else if (trendscolumn && strcasecmp(service, trendscolumn) == 0) p = csp_header("svcstatus-trends");
 		else {
 			int d = atoi(xgetenv("XYMWEBREFRESH"));
 			fprintf(stdout, "Refresh: %d\n", ((d > 0) ? d : 60) );
@@ -289,8 +294,8 @@ int do_request(void)
 
 		restofmsg = (log ? log : strdup("<No data>\n"));
 	}
-	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
-		int fullload = (strcmp(service, xgetenv("INFOCOLUMN")) == 0);
+	else if ((trendscolumn && strcmp(service, trendscolumn) == 0) || (infocolumn && strcmp(service, infocolumn) == 0)) {
+		int fullload = (infocolumn && strcmp(service, infocolumn) == 0);
 
 		if (loadhostdata(hostname, &ip, &displayname, &compacts, fullload) != 0) return 1;
 
@@ -301,7 +306,7 @@ int do_request(void)
 		logtime = getcurrenttime(NULL);
 		strncpy(timesincechange, "0 minutes", sizeof(timesincechange));
 
-		if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
+		if (trendscolumn && strcmp(service, trendscolumn) == 0) {
 			if (locatorbased) {
 				char *cgiurl, *qres;
 
@@ -330,7 +335,7 @@ int do_request(void)
 				log = restofmsg = generate_trends(hostname, fromtime, endtime);
 			}
 		}
-		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
+		else if (infocolumn && strcmp(service, infocolumn) == 0) {
 			log = restofmsg = generate_info(hostname, critconfigfn);
 		}
 	}
@@ -674,27 +679,41 @@ int do_request(void)
 			}
 		}
 
+		int render_graphs;
+
+		/*
+		 * Determine if we should render graphs: only for current status of regular services.
+		 * Never render for:
+		 * - Historical logs
+		 * - "trends" meta-page (graph list itself)
+		 * - "info" meta-page (host information)
+		 */
+		render_graphs = (source != SRC_HISTLOGS) &&
+		                (strcmp(service, "trends") != 0) &&
+		                (strcmp(service, "info") != 0);
+
 		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-		generate_html_log(hostname, 
+		generate_html_log(hostname,
 			  displayname,
-			  service, 
+			  service,
 			  ip,
 		          color, flapping,
-			  (sender ? sender : "Xymon"), 
+			  (sender ? sender : "Xymon"),
 			  (flags ? flags : ""),
-		          logtime, timesincechange, 
-		          (firstline ? firstline : ""), 
-			  (restofmsg ? restofmsg : ""), 
+		          logtime, timesincechange,
+		          (firstline ? firstline : ""),
+			  (restofmsg ? restofmsg : ""),
 			  modifiers,
 			  acktime, ackmsg, acklist,
 			  disabletime, dismsg,
-		          (source == SRC_HISTLOGS), 
-			  wantserviceid, 
+		          (source == SRC_HISTLOGS),
+			  wantserviceid,
 			  ishtmlformatted,
 			  locatorbased,
 			  multigraphs, (clientavail ? clienturi : NULL),
 			  nkprio, nkttgroup, nkttextra,
 			  backsecs,
+			  render_graphs,
 			  stdout);
 	}
 
