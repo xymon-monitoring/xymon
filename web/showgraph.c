@@ -781,7 +781,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 	/* Options for rrd_graph() */
 	int  rrdargcount;
-	char **rrdargs = NULL;	/* The full argv[] table of string pointers to arguments */
+	xymon_rrd_argv_item_t *rrdargs = NULL;	/* The full argv[] table of string pointers to arguments */
 	char heightopt[30];	/* -h HEIGHT */
 	char widthopt[30];	/* -w WIDTH */
 	char upperopt[30];	/* -u MAX */
@@ -1111,7 +1111,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	 * there are multiple RRD-files to handle).
 	 */
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
-	rrdargs = (char **) calloc(16 + pcount*rrddbcount + useroptcount + 1, sizeof(char *));
+	rrdargs = (xymon_rrd_argv_item_t *) calloc(16 + pcount*rrddbcount + useroptcount + 1, sizeof(xymon_rrd_argv_item_t));
 
 
 	argi = 0;
