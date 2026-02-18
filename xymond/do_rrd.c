@@ -351,7 +351,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		sprintf(stepsetting, "%d", pollinterval);
 
 		rrddefinitions = get_rrd_definition((rrakey ? rrakey : testname), &rrddefcount);
-		rrdcreate_params = (xymon_rrd_argv_item_t *)calloc(4 + pcount + rrddefcount + 1, sizeof(xymon_rrd_argv_item_t));
+		rrdcreate_params = calloc(4 + pcount + rrddefcount + 1, sizeof(*rrdcreate_params));
 		rrdcreate_params[0] = "rrdcreate";
 		rrdcreate_params[1] = filedir;
 

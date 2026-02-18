@@ -1111,7 +1111,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	 * there are multiple RRD-files to handle).
 	 */
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
-	rrdargs = (xymon_rrd_argv_item_t *) calloc(16 + pcount*rrddbcount + useroptcount + 1, sizeof(xymon_rrd_argv_item_t));
+	rrdargs = calloc(16 + pcount*rrddbcount + useroptcount + 1, sizeof(*rrdargs));
 
 
 	argi = 0;
