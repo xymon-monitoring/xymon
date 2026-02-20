@@ -4523,7 +4523,8 @@ void do_message(conn_t *msg, char *origin)
 		line1 = strdup(msg->buf); if (p) *p = savech;
 
 		p = strtok(line1, " \t"); /* Skip the client keyword */
-		if (p) collectorid = strchr(p, '/'); if (collectorid) collectorid++;
+		if (p) collectorid = strchr(p, '/');
+		if (collectorid) collectorid++;
 		if (p) hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.CLIENTOS */
 		if (hostname) {
 			clientos = strrchr(hostname, '.'); 

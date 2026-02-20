@@ -415,7 +415,8 @@ static int do_valbeforemarker(char *layout[], char *msg, char *outp)
 			while (ln && (ln > msg) && (*ln != '\n')) ln--;
 			if (ln) {
 				int numlen;
-				if (*ln == '\n') ln++; ln += strspn(ln, " \t");
+				if (*ln == '\n') ln++;
+				ln += strspn(ln, " \t");
 				numlen = strspn(ln, "0123456789");
 				*outp = ':'; outp++; memcpy(outp, ln, numlen); outp += numlen; *outp = '\0';
 				gotany = gotval = 1;
