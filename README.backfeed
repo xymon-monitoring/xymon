@@ -32,16 +32,29 @@ E.g. on Linux, defaults for these are 16 kB and 8 Kb, respectively.
 Since Xymon by default permits status messages of up to 256 kB
 in size, these settings are inadequate.
 
+You can verify the current limits by running "ipcs -l" - you should
+see lines like the following:
+   ------ Messages Limits --------
+   max queues system wide = 32000
+   max size of message (bytes) = 8192
+   default max size of queue (bytes) = 16384
+
+
 On Linux, you change the settings via the "sysctl" utility. Most
-Linux systems have these settings defined in /etc/sysctl.conf, so
-you add these parameters:
-	kernel.msgmax=262144
-	kernel.msgmnb=1048576
-The "msgmax" setting should match your MAXMSG_STATUS setting in
-xymonserver.cfg, converted to bytes (MAXMSG_STATUS is in kB, so
-you must multiply it by 1024 for the kernel.msgmax value).
-"msgmnb" should be 4 times the msgmax setting. After setting these,
-either run "sysctl -f /etc/sysctl.conf" or reboot the server
+Linux systems have these settings defined in /etc/sysctl.conf or by
+reading in files in /etc/sysctl.d/, so you add these parameters:
+	kernel.msgmax=5242880
+	kernel.msgmnb=20971520
+
+The "msgmax" setting must be at least your MAXMSG_BFQ setting in
+xymonserver.cfg, converted to bytes (MAXMSG_BFQ is in kB, so
+you must multiply it by 1024 for the kernel.msgmax value), but in
+practice should be 5-50x this size (up to MAXMSGSPERCOMBO=100) to
+allow for internally-generated combination messages from xymonnet
+or xymond_client.
+
+"msgmnb" should be at least 4 times the msgmax setting. After setting 
+these, either run "sysctl -f /etc/sysctl.conf" or reboot the server
 to enable the new settings.
 
 For other systems, please refer to your OS documentation.
@@ -77,6 +90,11 @@ NOTE: The backfeed queue is "one-way", so it can only be used for "status",
 "data", "drop" and "rename" messages - i.e., any message where xymond does
 not return a response.
 
+xymond_client, xymonnet, and xymonproxy may all show errors if the
+system MAXMSG size (see above) is set too low. These may be rather cyptic,
+such as: "Sending xxxx bytes via backfeed channel failed: Invalid argument"
+If tests above work but you repeatedly see these errors in logs, then 
+you may need to increase your sysctl values.
 
 Checking if the queue is used
 -----------------------------

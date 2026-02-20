@@ -46,11 +46,11 @@ STATUSLIFETIME="30"		# Default number of minutes a status is valid after an upda
 
 PINGCOLUMN="conn"		# Column where the ping-test reports results.
 INFOCOLUMN="info"		# Column where the info-pages are reported.
-INFOCOLUMNGIF="green.gif"	# Icon file used for the info-column.
+INFOCOLUMNGIF="info.gif"	# Icon file used for the info-column.
 TRENDSCOLUMN="trends"		# Column where the RRD graphs are reported.
-TRENDSCOLUMNGIF="green.gif"	# Icon file used for the trends-column.
+TRENDSCOLUMNGIF="trends.gif"	# Icon file used for the trends-column.
 CLIENTCOLUMN="clientlog"	# Column where raw client logs are reported.
-CLIENTCOLUMNGIF="green.gif"	# Icon file used for the client-column.
+CLIENTCOLUMNGIF="clientlog.gif"	# Icon file used for the client-column.
 
 MAXMSGSPERCOMBO="100"           # How many individual messages to combine in a combo-message. 0=unlimited.
 SLEEPBETWEENMSGS="0"            # Delay between sending each combo message, in milliseconds.
@@ -150,6 +150,9 @@ XYMONRRDS="$XYMONVAR/rrd"
 RRDHEIGHT="120"
 RRDWIDTH="576"		# The RRD's contain 576 data points, so this is a good value
 
+# Whether to add a comment to the graph indicating when it was last updated.
+RRDADDUPDATED="TRUE"
+
 # TEST2RRD defines the status- and data-messages you want to collect RRD data
 # about. You will normally not need to modify this, unless you have added a
 # script to pick up RRD data from custom tests (the xymond_rrd --extra-script
@@ -173,7 +176,7 @@ TEST2RRD="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tc
 
 # This defines which RRD files to include on the "trends" column webpage,
 # and the order in which they appear.
-GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,clock,lines,deltalines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,devmon::1,if_load::1,temp,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts,xymongen,xymonnet,xymonproxy,xymond"
+GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat1,vmstat2,vmstat3,vmstat4,vmstat5,iostat,iostatx,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,clock,lines,deltalines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,devmon::1,if_load::1,temp,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts,xymongen,xymonnet,xymonproxy,xymond"
 
 # These two settings can be used to restrict what filesystems are being
 # tracked (i.e. have their utilisation graphed) by Xymon.

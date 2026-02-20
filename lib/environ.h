@@ -15,6 +15,7 @@ extern char *xgetenv(const char *name);
 extern void envcheck(char *envvars[]);
 extern void loadenv(char *envfile, char *area);
 extern char *getenv_default(char *envname, char *envdefault, char **buf);
+extern int getenv_check(const char *envname);
 extern char *expand_env(char *s);
 
 #endif
