@@ -45,25 +45,30 @@ static inline char **xymon_rrd_api_argv(xymon_rrd_argv_item_t *argv)
 
 static inline int xymon_rrd_update(int argc, xymon_rrd_argv_item_t *argv)
 {
-	return rrd_update(argc, xymon_rrd_api_argv(argv));
+	/*
+	 * Some build paths may define RRDTOOL12 without defining RRD_CONST_ARGS.
+	 * Cast through void* so either rrd_update(int,char**) or
+	 * rrd_update(int,const char**) is accepted by the compiler.
+	 */
+	return rrd_update(argc, (void *)xymon_rrd_api_argv(argv));
 }
 
 static inline int xymon_rrd_create(int argc, xymon_rrd_argv_item_t *argv)
 {
-	return rrd_create(argc, xymon_rrd_api_argv(argv));
+	return rrd_create(argc, (void *)xymon_rrd_api_argv(argv));
 }
 
 static inline int xymon_rrd_fetch(int argc, xymon_rrd_argv_item_t *argv,
 				  time_t *start, time_t *end, unsigned long *step, unsigned long *dscount,
 				  char ***dsnames, rrd_value_t **data)
 {
-	return rrd_fetch(argc, xymon_rrd_api_argv(argv), start, end, step, dscount, dsnames, data);
+	return rrd_fetch(argc, (void *)xymon_rrd_api_argv(argv), start, end, step, dscount, dsnames, data);
 }
 
 static inline int xymon_rrd_graph(int argc, xymon_rrd_argv_item_t *argv, 
 				  char ***calcpr, int *xsize, int *ysize, double *ymin, double *ymax)
 { 
-	return rrd_graph(argc, xymon_rrd_api_argv(argv), calcpr, xsize, ysize, NULL, ymin, ymax); 
+	return rrd_graph(argc, (void *)xymon_rrd_api_argv(argv), calcpr, xsize, ysize, NULL, ymin, ymax); 
 }
 
 #endif /* XYMON_RRD_COMPAT_H */
