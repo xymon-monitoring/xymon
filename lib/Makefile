@@ -75,10 +75,10 @@ loadalerts.o: loadalerts.c
 matching.o: matching.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
-sha1.o: sha1.c
+sha1.o: sha1.c test-endianness
 	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
-rmd160c.o: rmd160c.c
+rmd160c.o: rmd160c.c test-endianness
 	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
 environ.o: environ.c
@@ -102,16 +102,16 @@ stackio: stackio.c libxymon.a
 availability: availability.c libxymon.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c $(XYMONLIBS)
 
-md5: md5.c
+md5: md5.c test-endianness
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ md5.c
 
-sha1: sha1.c
+sha1: sha1.c test-endianness
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ sha1.c
 
-rmd160: rmd160c.c
+rmd160: rmd160c.c test-endianness
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ rmd160c.c
 
-locator: locator.c
+locator: locator.c $(XYMONCOMMLIB) $(XYMONLIB)
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ locator.c $(XYMONCOMMLIBS) $(XYMONLIBS)
 
 tree: tree.c
@@ -119,4 +119,3 @@ tree: tree.c
 
 clean:
 	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator tree
-
