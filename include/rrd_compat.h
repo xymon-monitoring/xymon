@@ -63,9 +63,9 @@ static inline int xymon_rrd_fetch(int argc, xymon_rrd_argv_item_t *argv,
 	return rrd_fetch(argc, (void *)xymon_rrd_api_argv(argv), start, end, step, dscount, dsnames, data);
 }
 
-static inline int xymon_rrd_graph(int argc, xymon_rrd_argv_item_t *argv, 
+static inline int xymon_rrd_graph(int argc, xymon_rrd_argv_item_t *argv,
 				  char ***calcpr, int *xsize, int *ysize, double *ymin, double *ymax)
-{ 
+{
 	return rrd_graph(argc, (void *)xymon_rrd_api_argv(argv), calcpr, xsize, ysize, NULL, ymin, ymax);
 }
 
