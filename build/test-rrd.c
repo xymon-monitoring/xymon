@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "rrd_compat.h"
 
 int main(void)

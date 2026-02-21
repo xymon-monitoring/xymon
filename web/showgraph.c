@@ -28,7 +28,6 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 
 #include <pcre.h>
-#include <rrd.h>
 
 #include "libxymon.h"
 #include "rrd_compat.h"
@@ -605,15 +604,8 @@ char *expand_tokens(char *tpl)
 			 * Graph templates should place @STACKIT@ where RRDtool expects
 			 * the stacking keyword.
 			 */
-			char numstr[10];
-
-			if (rrdidx == 0) {
-				numstr[0] = '\0';
-			}
-			else {
-				snprintf(numstr, sizeof(numstr), "STACK");
-			}
-			addtobuffer(result, numstr);
+			const char *stackkw = (rrdidx == 0) ? "" : "STACK";
+			addtobuffer(result, stackkw);
 			inp += 9;
 		}
 		else if (strncmp(inp, "@SERVICE@", 9) == 0) {

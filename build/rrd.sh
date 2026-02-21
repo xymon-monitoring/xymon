@@ -73,7 +73,7 @@
 
 	# Probe + compile/link validation
 	RRDOK="YES"
-	OS=`uname -s | sed -e's@/@_@g'`
+	OS=$(uname -s | sed -e's@/@_@g')
 	if test "$RRDINC" != ""; then INCOPT="-I$RRDINC"; fi
 	if test "$RRDLIB" != ""; then LIBOPT="-L$RRDLIB"; fi
 
@@ -83,19 +83,19 @@
 		f=
 		n=0
 		if command -v mktemp >/dev/null 2>&1; then
-			f=`mktemp "${TMPDIR:-/tmp}/${prefix}.XXXXXX" 2>/dev/null` && { echo "$f"; return 0; }
+			f=$(mktemp "${TMPDIR:-/tmp}/${prefix}.XXXXXX" 2>/dev/null) && { echo "$f"; return 0; }
 		fi
 		while test $n -lt 50; do
 			f="${TMPDIR:-/tmp}/${prefix}.$$.$n"
 			(umask 077; : > "$f") 2>/dev/null && { echo "$f"; return 0; }
-			n=`expr $n + 1`
+			n=$(expr "$n" + 1)
 		done
 		return 1
 	}
 
 	# Probe whether rrd_update() expects const char ** (newer) or char ** (legacy).
 	detect_rrd_const_args() {
-		TESTOBJ=`mktemp_xymon "xymon-rrd-abi-obj"` || return 2
+		TESTOBJ=$(mktemp_xymon "xymon-rrd-abi-obj") || return 2
 		CONSTOK=0
 		MUTABLEOK=0
 		RRD_PROBE_CFLAGS=""
@@ -205,7 +205,7 @@ EOF
 			echo "RRD: ABI override -> mutable argv pointers (USERRRDCONSTARGS=$USERRRDCONSTARGS)"
 			;;
 		""|auto)
-			RRD_CONST_ARGS_DETECTED=`detect_rrd_const_args`
+			RRD_CONST_ARGS_DETECTED=$(detect_rrd_const_args)
 			RRD_CONST_PROBE_STATUS=$?
 			;;
 		*)
