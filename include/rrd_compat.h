@@ -24,8 +24,6 @@
 #define RRD_CONST_ARGS 1
 #elif defined(XYMON_ASSUME_RRD_MUTABLE_ARGS)
 #define RRD_CONST_ARGS 0
-#elif defined(RRDTOOL12)
-/* RRDTOOL12 is obsolete and intentionally ignored. */
 #endif
 #ifndef RRD_CONST_ARGS
 #error "RRD_CONST_ARGS is not defined. Run configure or define RRDTOOL19 (or RRD_CONST_ARGS directly)."
