@@ -244,9 +244,8 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 
 #if defined(LINUX)
 	/*
-	 * RRDtool 1.2+ uses mmap'ed I/O, but the Linux kernel does not update timestamps when
-	 * doing file I/O on mmap'ed files. This breaks our check for stale/nostale RRD's.
-	 * So do an explicit timestamp update on the file here.
+	 * RRDtool >= 1.2 uses mmap'ed I/O, but Linux does not update file timestamps for
+	 * mmap writes. This breaks our stale/nostale checks, so force a timestamp update.
 	 */
 	utimes(filedir, NULL);
 #endif

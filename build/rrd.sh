@@ -95,19 +95,24 @@
 
 	# Probe whether rrd_update() expects const char ** (newer) or char ** (legacy).
 	detect_rrd_const_args() {
-		CONSTTESTSRC=`mktemp_xymon "xymon-rrd-const"` || return 2
-		CONSTTESTOBJ=`mktemp_xymon "xymon-rrd-const-obj"` || { rm -f "$CONSTTESTSRC"; return 2; }
-		STRICT_CFLAGS=""
-		FLAGTESTOBJ=`mktemp_xymon "xymon-rrd-flag-obj"` || { rm -f "$CONSTTESTSRC" "$CONSTTESTOBJ"; return 2; }
-		if ${CC:-cc} -Werror=incompatible-pointer-types -x c -c -o "$FLAGTESTOBJ" - >/dev/null 2>&1 <<EOF
+		TESTOBJ=`mktemp_xymon "xymon-rrd-abi-obj"` || return 2
+		CONSTOK=0
+		MUTABLEOK=0
+		RRD_PROBE_CFLAGS=""
+
+		if ${CC:-cc} -Werror=incompatible-pointer-types -x c -c -o "$TESTOBJ" - >/dev/null 2>&1 <<EOF
 int main(void) { return 0; }
 EOF
 		then
-			STRICT_CFLAGS="-Werror=incompatible-pointer-types"
+			RRD_PROBE_CFLAGS="-Werror=incompatible-pointer-types"
+		elif ${CC:-cc} -Werror -x c -c -o "$TESTOBJ" - >/dev/null 2>&1 <<EOF
+int main(void) { return 0; }
+EOF
+		then
+			RRD_PROBE_CFLAGS="-Werror"
 		fi
-		rm -f "$FLAGTESTOBJ"
 
-		cat > "$CONSTTESTSRC" <<EOF
+		if ${CC:-cc} ${INCOPT} ${RRD_PROBE_CFLAGS} -x c -c -o "$TESTOBJ" - >/dev/null 2>&1 <<EOF
 #include <stddef.h>
 #include <rrd.h>
 int main(void)
@@ -116,15 +121,43 @@ int main(void)
 	return rrd_update(2, args);
 }
 EOF
-		if ${CC:-cc} ${INCOPT} ${STRICT_CFLAGS} -x c -c "$CONSTTESTSRC" -o "$CONSTTESTOBJ" >/dev/null 2>&1; then
-			rm -f "$CONSTTESTSRC" "$CONSTTESTOBJ"
-			echo "const"
-			return 0
+		then
+			CONSTOK=1
+		fi
+		if ${CC:-cc} ${INCOPT} ${RRD_PROBE_CFLAGS} -x c -c -o "$TESTOBJ" - >/dev/null 2>&1 <<EOF
+#include <stddef.h>
+#include <rrd.h>
+int main(void)
+{
+	char *args[] = { "rrdupdate", "dummy.rrd", NULL };
+	return rrd_update(2, args);
+}
+EOF
+		then
+			MUTABLEOK=1
 		fi
 
-		rm -f "$CONSTTESTSRC" "$CONSTTESTOBJ"
-		echo "mutable"
-		return 0
+		rm -f "$TESTOBJ"
+		case "$CONSTOK:$MUTABLEOK" in
+			1:0)
+				echo "const"
+				return 0
+				;;
+			0:1)
+				echo "mutable"
+				return 0
+				;;
+			1:1)
+				echo "RRD: detect ABI is ambiguous (both const and mutable probes compiled)." >&2
+				echo "RRD: set USERRRDCONSTARGS=0 or USERRRDCONSTARGS=1 to override." >&2
+				return 3
+				;;
+			*)
+				echo "RRD: detect ABI failed (neither const nor mutable probe compiled)." >&2
+				echo "RRD: set USERRRDCONSTARGS=0 or USERRRDCONSTARGS=1 to override." >&2
+				return 4
+				;;
+		esac
 	}
 
 	try_rrd_compile() {
@@ -135,20 +168,9 @@ EOF
 		OS=$OS RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 	}
 
-	try_rrd_compile_with_legacy_fallback() {
-		FIRSTCOMPILELOG=`mktemp_xymon "xymon-rrd-first-compile.log"` || FIRSTCOMPILELOG="/tmp/xymon-rrd-first-compile.log.$$"
-
+	try_rrd_compile_probe() {
 		# test-rrd.c exercises update/create/fetch/graph signatures through rrd_compat.h.
-		if try_rrd_compile >/dev/null 2>"$FIRSTCOMPILELOG"; then
-			rm -f "$FIRSTCOMPILELOG"
-			return 0
-		fi
-
-		echo "RRD: initial compile probe failed; first diagnostics:"
-		head -n 20 "$FIRSTCOMPILELOG"
-		echo "RRD: full diagnostics saved at: $FIRSTCOMPILELOG"
-		# Hard-fail here so the caller reports compile probe failure accurately.
-		return 1
+		try_rrd_compile >/dev/null 2>&1
 	}
 
 	try_rrd_link_with_fallbacks() {
@@ -171,53 +193,73 @@ EOF
 	# --- Phase 1: ABI detection ---
 	# Detect whether RRDtool APIs use const argv pointers.
 	# Newer headers expect const char **, older expect char **.
-	RRD_CONST_ARGS_DETECTED=`detect_rrd_const_args`
-	RRD_CONST_PROBE_STATUS=$?
+	RRD_CONST_ARGS_DETECTED=""
+	RRD_CONST_PROBE_STATUS=0
+	case "$USERRRDCONSTARGS" in
+		1)
+			RRD_CONST_ARGS_DETECTED="const"
+			echo "RRD: ABI override -> const argv pointers (USERRRDCONSTARGS=$USERRRDCONSTARGS)"
+			;;
+		0)
+			RRD_CONST_ARGS_DETECTED="mutable"
+			echo "RRD: ABI override -> mutable argv pointers (USERRRDCONSTARGS=$USERRRDCONSTARGS)"
+			;;
+		""|auto)
+			RRD_CONST_ARGS_DETECTED=`detect_rrd_const_args`
+			RRD_CONST_PROBE_STATUS=$?
+			;;
+		*)
+			echo "RRD: invalid USERRRDCONSTARGS value '$USERRRDCONSTARGS' (expected 0, 1, or auto)"
+			RRD_CONST_PROBE_STATUS=9
+			;;
+	esac
 	if test "$RRD_CONST_PROBE_STATUS" -ne 0; then
-		echo "RRD: detect ABI -> error (status=$RRD_CONST_PROBE_STATUS)"
+		echo "RRD: detect ABI -> failed (status=$RRD_CONST_PROBE_STATUS)"
 		RRDOK="NO"
-		RRD_CONST_ARGS_DETECTED=mutable
 	fi
 	if test "$RRD_CONST_ARGS_DETECTED" = "const"; then
 		echo "RRD: detect ABI -> const argv pointers"
 		RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1"
-	else
+	elif test "$RRD_CONST_ARGS_DETECTED" = "mutable"; then
 		echo "RRD: detect ABI -> mutable argv pointers"
 		RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0"
+	else
+		echo "RRD: detect ABI -> unresolved"
+		RRDOK="NO"
 	fi
 
 	# --- Phase 2: compile/link probes ---
 	cd build
 	OS=$OS $MAKE -f Makefile.test-rrd clean
-	if try_rrd_compile_with_legacy_fallback; then
-		echo "RRD: compile probe -> ok"
+	if try_rrd_compile_probe; then
+		echo "Compiling with RRDtool works OK"
 	else
-		echo "RRD: compile probe -> failed"
+		echo "ERROR: Cannot compile with RRDtool."
 		RRDOK="NO"
 	fi
 	echo "RRD: selected compatibility flags -> $RRDDEF"
 
 	if try_rrd_link_with_fallbacks; then
-		echo "RRD: link probe -> ok"
+		echo "Linking with RRDtool works OK"
 		if test "$PNGLIB" != ""; then
-			echo "RRD: link probe required extra libraries: $PNGLIB"
+			echo "Linking RRD needs extra library: $PNGLIB"
 		fi
 	else
-		echo "RRD: link probe -> failed"
+		echo "ERROR: Linking with RRDtool fails"
 		RRDOK="NO"
 	fi
 	OS=$OS $MAKE -f Makefile.test-rrd clean
 	cd ..
 
 	if test "$RRDOK" = "NO"; then
-		echo "RRDtool include files or libraries were not found."
-		echo "These are required for trend graph support in Xymon, but Xymon can"
-		echo "be built without them (for example, for a network-probe-only installation)."
+		echo "RRDtool include- or library-files not found."
+		echo "These are REQUIRED for trend-graph support in Xymon, but Xymon can"
+		echo "be built without them (e.g. for a network-probe only installation."
 		echo ""
 		echo "RRDtool can be found at http://oss.oetiker.ch/rrdtool/"
 		echo "If you have RRDtool installed, use the \"--rrdinclude DIR\" and \"--rrdlib DIR\""
 		echo "options to configure to specify where they are."
 		echo ""
-		echo "Continuing with trend graph support disabled."
+		echo "Continuing with all trend-graph support DISABLED"
 		sleep 3
 	fi

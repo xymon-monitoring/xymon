@@ -600,8 +600,10 @@ char *expand_tokens(char *tpl)
 
 			/*
 			 * Keep the first series unstacked; add "STACK" for subsequent
-			 * series. Graph templates should place @STACKIT@ where RRDtool
-			 * expects the stacking keyword.
+			 * series. This is intentional: emitting STACK for series #0 causes
+			 * invalid/ugly output with current RRDtool graph semantics.
+			 * Graph templates should place @STACKIT@ where RRDtool expects
+			 * the stacking keyword.
 			 */
 			char numstr[10];
 
@@ -1158,6 +1160,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		}
 	}
 
+	/* Escape ':' in COMMENT text so RRDtool does not parse timestamp fields as option separators. */
 	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated\\: %d-%b-%Y %H\\:%M\\:%S", localtime(&now));
 	rrdargs[argi++] = strdup(timestamp);
 
@@ -1249,6 +1252,10 @@ void generate_zoompage(char *selfURI)
 				n = fread(buf, 1, st.st_size, fd);
 				fclose(fd);
 
+				/*
+				 * Safe no-op when marker is absent: only patch if this exact JS field exists.
+				 * Keeping this unconditional avoids brittle RRDtool-version checks.
+				 */
 				zoomrightoffsetp = strstr(buf, zoomrightoffsetmarker);
 				if (zoomrightoffsetp) {
 					zoomrightoffsetp += strlen(zoomrightoffsetmarker);
