@@ -25,7 +25,6 @@ Linking RRD with PNG library: -L/usr/lib -lpng
 Manual-build note:
 If you compile without running configure, define RRD_CONST_ARGS to match your
 RRDtool headers (0 for mutable char ** argv, 1 for const char ** argv).
-Compatibility macro: RRDTOOL19 is the preferred gate for modern RRDtool.
 
 
 Checking for PCRE ...
