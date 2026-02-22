@@ -298,14 +298,43 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 		if (rwalk) {
 			int buflen;
 			char *onelink;
+			size_t onelinklen;
+			size_t available;
+			int written;
 
 			buflen = (allrrdlinksend - allrrdlinks);
 			onelink = rrdlink_text(myhost, rwalk, 0, starttime, endtime);
-			if ((buflen + strlen(onelink)) >= allrrdlinks_buflen) {
-				SBUF_REALLOC(allrrdlinks, allrrdlinks_buflen+4096);
+			onelinklen = strlen(onelink);
+
+			/* Ensure we have enough space for the string plus null terminator */
+			if ((buflen + onelinklen + 1) > allrrdlinks_buflen) {
+				size_t newsize = allrrdlinks_buflen;
+				/* Grow buffer to accommodate the new content plus extra headroom */
+				while ((buflen + onelinklen + 1) > newsize) {
+					newsize += 4096;
+				}
+				SBUF_REALLOC(allrrdlinks, newsize);
 				allrrdlinksend = allrrdlinks + buflen;
 			}
-			allrrdlinksend += snprintf(allrrdlinksend, (allrrdlinks_buflen - (allrrdlinksend - allrrdlinks)), "%s", onelink);
+
+			available = allrrdlinks_buflen - buflen;
+			written = snprintf(allrrdlinksend, available, "%s", onelink);
+
+			/* Check if snprintf truncated the output */
+			if (written < 0) {
+				errprintf("Error writing graph link for %s\n", graph->xymonrrdname);
+			}
+			else if ((size_t)written >= available) {
+				/* Output was truncated - this should not happen due to our check above */
+				errprintf("Buffer overflow prevented for graph %s (needed %d, had %zu)\n",
+					graph->xymonrrdname, written, available);
+				/* Only advance by what was actually written */
+				allrrdlinksend += (available - 1);
+			}
+			else {
+				/* Success - advance pointer by actual bytes written */
+				allrrdlinksend += written;
+			}
 		}
 
 		graph++;
