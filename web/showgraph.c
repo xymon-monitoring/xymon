@@ -1180,12 +1180,12 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		printf("\n");
 
 #if HIDE_EMPTYGRAPH
-			/* It works, but we still get the "zoom" magnifying glass which looks odd */
-			if (rrddbcount == 0) {
-				/* No graph */
-				fwrite(blankimg, 1, sizeof(blankimg), stdout);
-				return;
-			}
+		/* It works, but we still get the "zoom" magnifying glass which looks odd */
+		if (rrddbcount == 0) {
+			/* No graph */
+			fwrite(blankimg, 1, sizeof(blankimg), stdout);
+			return;
+		}
 #endif
 	}
 
@@ -1251,10 +1251,6 @@ void generate_zoompage(char *selfURI)
 				n = fread(buf, 1, st.st_size, fd);
 				fclose(fd);
 
-				/*
-				 * Safe no-op when marker is absent: only patch if this exact JS field exists.
-				 * Keeping this unconditional avoids brittle RRDtool-version checks.
-				 */
 				zoomrightoffsetp = strstr(buf, zoomrightoffsetmarker);
 				if (zoomrightoffsetp) {
 					zoomrightoffsetp += strlen(zoomrightoffsetmarker);
