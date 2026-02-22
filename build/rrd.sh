@@ -70,61 +70,87 @@
 	if test "$USERRRDLIB" != ""; then
 		RRDLIB="$USERRRDLIB"
 	fi
-
-	# See if it builds
+    
+	# Probe + compile/link validation
 	RRDOK="YES"
-	if test "$RRDINC" != ""; then INCOPT="-I$RRDINC"; fi
-	if test "$RRDLIB" != ""; then LIBOPT="-L$RRDLIB"; fi
-	if pkg-config --atleast-version=1.9.0 librrd > /dev/null 2>&1; then
-		echo "Found RRDtool >= 1.9.0 via pkg-config"
-		RRDDEF="-DRRDTOOL19"
-	else
-		echo "Found RRDtool < 1.9.0 via pkg-config"
-	fi
-	cd build
-	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
-	OS=`uname -s | sed -e's@/@_@g'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile 2>/dev/null
-	if test $? -ne 0; then
-		# See if it's the new RRDtool 1.2.x
-		echo "Not RRDtool 1.0.x, checking for 1.2.x"
-		RRDDEF="$RRDDEF -DRRDTOOL12"
-		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
-		OS=`uname -s | sed -e's@/@_@g'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile
-	fi
-	if test $? -eq 0; then
+	OS="$(uname -s | sed 's@/@_@g')"
+
+	test -n "$RRDINC" && INCOPT="-I$RRDINC"
+	test -n "$RRDLIB" && LIBOPT="-L$RRDLIB"
+
+	detect_rrd_const_args() {
+		${CC:-cc} ${INCOPT} -Werror=incompatible-pointer-types \
+			-x c -c -o /dev/null - >/dev/null 2>&1 <<EOF
+#include <rrd.h>
+int main(void) {
+	const char *args[] = { "rrdupdate", "dummy.rrd", NULL };
+	return rrd_update(2, args);
+}
+EOF
+		test $? -eq 0 && return 1
+
+		${CC:-cc} ${INCOPT} -Werror=incompatible-pointer-types \
+			-x c -c -o /dev/null - >/dev/null 2>&1 <<EOF
+#include <rrd.h>
+int main(void) {
+	char *args[] = { "rrdupdate", "dummy.rrd", NULL };
+	return rrd_update(2, args);
+}
+EOF
+		test $? -eq 0 && return 0
+
+	return 2
+	}
+
+	# --- ABI detection ---
+	case "$USERRRDCONSTARGS" in
+		1) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1" ;;
+		0) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0" ;;
+		""|auto)
+			detect_rrd_const_args || RRDOK="NO"
+			case $? in
+			1) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1" ;;
+			0) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0" ;;
+			*) RRDOK="NO" ;;
+			esac
+			;;
+		*) RRDOK="NO" ;;
+	esac
+
+	# --- Compile / Link ---
+	cd build || exit 1
+	OS=$OS $MAKE -f Makefile.test-rrd clean
+
+	if OS=$OS RRDDEF="$RRDDEF" RRDINC="$INCOPT" \
+		$MAKE -f Makefile.test-rrd test-compile >/dev/null 2>&1
+	then
 		echo "Compiling with RRDtool works OK"
 	else
 		echo "ERROR: Cannot compile with RRDtool."
 		RRDOK="NO"
 	fi
 
-	OS=`uname -s | sed -e's@/@_@g'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
-	if test $? -ne 0; then
-		# Could be that we need -lz for RRD
-		PNGLIB="$PNGLIB $ZLIB"
-	fi
-	OS=`uname -s | sed -e's@/@_@g'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
-	if test $? -ne 0; then
-		# Could be that we need -lm for RRD
-		PNGLIB="$PNGLIB -lm"
-	fi
-	OS=`uname -s | sed -e's@/@_@g'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
-	if test $? -ne 0; then
-		# Could be that we need -L/usr/X11R6/lib (OpenBSD)
-		LIBOPT="$LIBOPT -L/usr/X11R6/lib"
-		RRDLIB="$RRDLIB -L/usr/X11R6/lib"
-	fi
-	OS=`uname -s | sed -e's@/@_@g'` RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
-	if test $? -eq 0; then
-		echo "Linking with RRDtool works OK"
-		if test "$PNGLIB" != ""; then
-			echo "Linking RRD needs extra library: $PNGLIB"
+	LINKOK=0
+	for EXTRA in "" "$ZLIB" "-lm" "-L/usr/X11R6/lib"
+	do
+		test -n "$EXTRA" && PNGLIB="$PNGLIB $EXTRA"
+		if OS=$OS RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" \
+			$MAKE -f Makefile.test-rrd test-link >/dev/null 2>&1
+		then
+			LINKOK=1
+			break
 		fi
+	done
+
+	if test "$LINKOK" -eq 1; then
+		echo "Linking with RRDtool works OK"
+		test -n "$PNGLIB" && echo "Linking RRD needs extra library: $PNGLIB"
 	else
 		echo "ERROR: Linking with RRDtool fails"
 		RRDOK="NO"
 	fi
-	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
+
+	OS=$OS $MAKE -f Makefile.test-rrd clean
 	cd ..
 
 	if test "$RRDOK" = "NO"; then
@@ -137,7 +163,5 @@
 		echo "options to configure to specify where they are."
 		echo ""
 		echo "Continuing with all trend-graph support DISABLED"
-		sleep 3
+		sleep 1
 	fi
-
-

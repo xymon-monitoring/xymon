@@ -22,10 +22,10 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <utime.h>
 
-#include <rrd.h>
 #include <pcre.h>
 
 #include "libxymon.h"
+#include "rrd_compat.h"
 
 #include "xymond_rrd.h"
 #include "do_rrd.h"
@@ -216,11 +216,7 @@ static void setupinterval(int intvl)
 static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 {
 	/* Flush any updates we've cached */
-#ifdef RRDTOOL19
-	const char *updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
-#else
-	char *updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
-#endif
+	xymon_rrd_argv_item_t updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
 	int i, pcount, result;
 
 	dbgprintf("Flushing '%s' with %d updates pending, template '%s'\n", 
@@ -243,13 +239,12 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 
 	for (pcount = 0; (updparams[pcount]); pcount++);
 	optind = opterr = 0; rrd_clear_error();
-	result = rrd_update(pcount, updparams);
+	result = xymon_rrd_update(pcount, updparams);
 
-#if defined(LINUX) && defined(RRDTOOL12)
+#if defined(LINUX)
 	/*
-	 * RRDtool 1.2+ uses mmap'ed I/O, but the Linux kernel does not update timestamps when
-	 * doing file I/O on mmap'ed files. This breaks our check for stale/nostale RRD's.
-	 * So do an explicit timestamp update on the file here.
+	 * RRDtool >= 1.2 uses mmap'ed I/O, but Linux does not update file timestamps for
+	 * mmap writes. This breaks our stale/nostale checks, so force a timestamp update.
 	 */
 	utimes(filedir, NULL);
 #endif
@@ -281,7 +276,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	pollinterval = rrdinterval;
 	rrdinterval = DEFAULT_RRD_INTERVAL;
 
-	if ((rrdfn == NULL) || (strlen(rrdfn) == 0)) {
+	if (strlen(rrdfn) == 0) {
 		errprintf("RRD update for no file\n");
 		return -1;
 	}
@@ -334,7 +329,8 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 	/* If the RRD file doesn't exist, create it immediately */
 	if (stat(filedir, &st) == -1) {
-		char **rrdcreate_params, **rrddefinitions;
+		xymon_rrd_argv_item_t *rrdcreate_params;
+		char **rrddefinitions;
 		int rrddefcount, i;
 		char *rrakey = NULL;
 		char stepsetting[10];
@@ -353,7 +349,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		sprintf(stepsetting, "%d", pollinterval);
 
 		rrddefinitions = get_rrd_definition((rrakey ? rrakey : testname), &rrddefcount);
-		rrdcreate_params = (char **)calloc(4 + pcount + rrddefcount + 1, sizeof(char *));
+		rrdcreate_params = calloc(4 + pcount + rrddefcount + 1, sizeof(*rrdcreate_params));
 		rrdcreate_params[0] = "rrdcreate";
 		rrdcreate_params[1] = filedir;
 
@@ -382,11 +378,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		 * we MUST reset this before every call.
 		 */
 		optind = opterr = 0; rrd_clear_error();
-#ifdef RRDTOOL19
-		result = rrd_create(4+pcount, (const char **)rrdcreate_params);
-#else
-		result = rrd_create(4+pcount, rrdcreate_params);
-#endif
+		result = xymon_rrd_create(4+pcount, rrdcreate_params);
 		xfree(rrdcreate_params);
 		if (rrakey) xfree(rrakey);
 
@@ -598,11 +590,7 @@ static int rrddatasets(char *hostname, char ***dsnames)
 	struct stat st;
 
 	int result;
-#ifdef RRDTOOL19
-	const char *fetch_params[] = { "rrdfetch", filedir, "AVERAGE", "-s", "-30m", NULL };
-#else
-	char *fetch_params[] = { "rrdfetch", filedir, "AVERAGE", "-s", "-30m", NULL };
-#endif
+	xymon_rrd_argv_item_t fetch_params[] = { "rrdfetch", filedir, "AVERAGE", "-s", "-30m", NULL };
 	time_t starttime, endtime;
 	unsigned long steptime, dscount;
 	rrd_value_t *rrddata;
@@ -612,7 +600,7 @@ static int rrddatasets(char *hostname, char ***dsnames)
 	if (stat(filedir, &st) == -1) return 0;
 
 	optind = opterr = 0; rrd_clear_error();
-	result = rrd_fetch(5, fetch_params, &starttime, &endtime, &steptime, &dscount, dsnames, &rrddata);
+	result = xymon_rrd_fetch(5, fetch_params, &starttime, &endtime, &steptime, &dscount, dsnames, &rrddata);
 	if (result == -1) {
 		errprintf("Error while retrieving RRD dataset names from %s: %s\n",
 			  filedir, rrd_get_error());
@@ -787,4 +775,3 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 
 	MEMUNDEFINE(rrdvalues);
 }
-

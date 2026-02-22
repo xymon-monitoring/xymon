@@ -22,6 +22,10 @@ Found RRDtool include files in /usr/include
 Found RRDtool libraries in /usr/lib
 Linking RRD with PNG library: -L/usr/lib -lpng
 
+Manual-build note:
+If you compile without running configure, define RRD_CONST_ARGS to match your
+RRDtool headers (0 for mutable char ** argv, 1 for const char ** argv).
+
 
 Checking for PCRE ...
 Found PCRE include files in /usr/include

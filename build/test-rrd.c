@@ -1,14 +1,9 @@
-#include <stdio.h>
+#include "rrd_compat.h"
 
-#include <rrd.h>
-
-int main(int argc, char *argv[])
+int main(void)
 {
-#ifdef RRDTOOL19
-	const char *rrdargs[] = {
-#else
-	char *rrdargs[] = {
-#endif
+	/* Compile/link probe target for the compat graph wrapper. */
+	xymon_rrd_argv_item_t graphargs[] = {
 		"rrdgraph",
 		"xymongen.png",
 		"-s", "e - 48d",
@@ -21,19 +16,14 @@ int main(int argc, char *argv[])
 		"COMMENT: Timestamp",
 		NULL
 	};
-	char **calcpr=NULL;
+	char **calcpr = NULL;
 
-	int pcount, result, xsize, ysize;
+	int pcount, xsize, ysize;
 	double ymin, ymax;
 
-	for (pcount = 0; (rrdargs[pcount]); pcount++);
+	for (pcount = 0; (graphargs[pcount]); pcount++);
 	rrd_clear_error();
-#ifdef RRDTOOL12
-	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-#else
-	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize);
-#endif
+	(void)xymon_rrd_graph(pcount, graphargs, &calcpr, &xsize, &ysize, &ymin, &ymax);
 
 	return 0;
 }
-
