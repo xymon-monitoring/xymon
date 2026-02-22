@@ -71,97 +71,97 @@
 		RRDLIB="$USERRRDLIB"
 	fi
     
-        # Probe + compile/link validation
-        RRDOK="YES"
-        OS="$(uname -s | sed 's@/@_@g')"
+	# Probe + compile/link validation
+	RRDOK="YES"
+	OS="$(uname -s | sed 's@/@_@g')"
 
-        test -n "$RRDINC" && INCOPT="-I$RRDINC"
-        test -n "$RRDLIB" && LIBOPT="-L$RRDLIB"
+	test -n "$RRDINC" && INCOPT="-I$RRDINC"
+	test -n "$RRDLIB" && LIBOPT="-L$RRDLIB"
 
-        detect_rrd_const_args() {
-                ${CC:-cc} ${INCOPT} -Werror=incompatible-pointer-types \
-                        -x c -c -o /dev/null - >/dev/null 2>&1 <<EOF
+	detect_rrd_const_args() {
+		${CC:-cc} ${INCOPT} -Werror=incompatible-pointer-types \
+			-x c -c -o /dev/null - >/dev/null 2>&1 <<EOF
 #include <rrd.h>
 int main(void) {
-        const char *args[] = { "rrdupdate", "dummy.rrd", NULL };
-        return rrd_update(2, args);
+	const char *args[] = { "rrdupdate", "dummy.rrd", NULL };
+	return rrd_update(2, args);
 }
 EOF
-                test $? -eq 0 && return 1
+		test $? -eq 0 && return 1
 
-                ${CC:-cc} ${INCOPT} -Werror=incompatible-pointer-types \
-                        -x c -c -o /dev/null - >/dev/null 2>&1 <<EOF
+		${CC:-cc} ${INCOPT} -Werror=incompatible-pointer-types \
+			-x c -c -o /dev/null - >/dev/null 2>&1 <<EOF
 #include <rrd.h>
 int main(void) {
-        char *args[] = { "rrdupdate", "dummy.rrd", NULL };
-        return rrd_update(2, args);
+	char *args[] = { "rrdupdate", "dummy.rrd", NULL };
+	return rrd_update(2, args);
 }
 EOF
-                test $? -eq 0 && return 0
+		test $? -eq 0 && return 0
 
-        return 2
-        }
+	return 2
+	}
 
-        # --- ABI detection ---
-        case "$USERRRDCONSTARGS" in
-                1) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1" ;;
-                0) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0" ;;
-                ""|auto)
-                        detect_rrd_const_args || RRDOK="NO"
-                        case $? in
-                        1) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1" ;;
-                        0) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0" ;;
-                        *) RRDOK="NO" ;;
-                        esac
-                        ;;
-                *) RRDOK="NO" ;;
-        esac
+	# --- ABI detection ---
+	case "$USERRRDCONSTARGS" in
+		1) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1" ;;
+		0) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0" ;;
+		""|auto)
+			detect_rrd_const_args || RRDOK="NO"
+			case $? in
+			1) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1" ;;
+			0) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0" ;;
+			*) RRDOK="NO" ;;
+			esac
+			;;
+		*) RRDOK="NO" ;;
+	esac
 
-        # --- Compile / Link ---
-        cd build || exit 1
-        OS=$OS $MAKE -f Makefile.test-rrd clean
+	# --- Compile / Link ---
+	cd build || exit 1
+	OS=$OS $MAKE -f Makefile.test-rrd clean
 
-        if OS=$OS RRDDEF="$RRDDEF" RRDINC="$INCOPT" \
-                $MAKE -f Makefile.test-rrd test-compile >/dev/null 2>&1
-        then
-                echo "Compiling with RRDtool works OK"
-        else
-                echo "ERROR: Cannot compile with RRDtool."
-                RRDOK="NO"
-        fi
+	if OS=$OS RRDDEF="$RRDDEF" RRDINC="$INCOPT" \
+		$MAKE -f Makefile.test-rrd test-compile >/dev/null 2>&1
+	then
+		echo "Compiling with RRDtool works OK"
+	else
+		echo "ERROR: Cannot compile with RRDtool."
+		RRDOK="NO"
+	fi
 
-        LINKOK=0
-        for EXTRA in "" "$ZLIB" "-lm" "-L/usr/X11R6/lib"
-        do
-                test -n "$EXTRA" && PNGLIB="$PNGLIB $EXTRA"
-                if OS=$OS RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" \
-                        $MAKE -f Makefile.test-rrd test-link >/dev/null 2>&1
-                then
-                        LINKOK=1
-                        break
-                fi
-        done
+	LINKOK=0
+	for EXTRA in "" "$ZLIB" "-lm" "-L/usr/X11R6/lib"
+	do
+		test -n "$EXTRA" && PNGLIB="$PNGLIB $EXTRA"
+		if OS=$OS RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" \
+			$MAKE -f Makefile.test-rrd test-link >/dev/null 2>&1
+		then
+			LINKOK=1
+			break
+		fi
+	done
 
-        if test "$LINKOK" -eq 1; then
-                echo "Linking with RRDtool works OK"
-                test -n "$PNGLIB" && echo "Linking RRD needs extra library: $PNGLIB"
-        else
-                echo "ERROR: Linking with RRDtool fails"
-                RRDOK="NO"
-        fi
+	if test "$LINKOK" -eq 1; then
+		echo "Linking with RRDtool works OK"
+		test -n "$PNGLIB" && echo "Linking RRD needs extra library: $PNGLIB"
+	else
+		echo "ERROR: Linking with RRDtool fails"
+		RRDOK="NO"
+	fi
 
-        OS=$OS $MAKE -f Makefile.test-rrd clean
-        cd ..
+	OS=$OS $MAKE -f Makefile.test-rrd clean
+	cd ..
 
-        if test "$RRDOK" = "NO"; then
-                echo "RRDtool include- or library-files not found."
-                echo "These are REQUIRED for trend-graph support in Xymon, but Xymon can"
-                echo "be built without them (e.g. for a network-probe only installation."
-                echo ""
-                echo "RRDtool can be found at http://oss.oetiker.ch/rrdtool/"
-                echo "If you have RRDtool installed, use the \"--rrdinclude DIR\" and \"--rrdlib DIR\""
-                echo "options to configure to specify where they are."
-                echo ""
-                echo "Continuing with all trend-graph support DISABLED"
-                sleep 1
-        fi
+	if test "$RRDOK" = "NO"; then
+		echo "RRDtool include- or library-files not found."
+		echo "These are REQUIRED for trend-graph support in Xymon, but Xymon can"
+		echo "be built without them (e.g. for a network-probe only installation."
+		echo ""
+		echo "RRDtool can be found at http://oss.oetiker.ch/rrdtool/"
+		echo "If you have RRDtool installed, use the \"--rrdinclude DIR\" and \"--rrdlib DIR\""
+		echo "options to configure to specify where they are."
+		echo ""
+		echo "Continuing with all trend-graph support DISABLED"
+		sleep 1
+	fi
