@@ -77,9 +77,16 @@
 
 	test -n "$RRDINC" && INCOPT="-I$RRDINC"
 	test -n "$RRDLIB" && LIBOPT="-L$RRDLIB"
+	PTRTYPE_WERROR="-Werror=incompatible-pointer-types"
+	if ! ${CC:-cc} ${PTRTYPE_WERROR} -x c -c -o /dev/null - >/dev/null 2>&1 <<'EOF'
+int main(void) { return 0; }
+EOF
+	then
+		PTRTYPE_WERROR=""
+	fi
 
 	detect_rrd_const_args() {
-		${CC:-cc} ${INCOPT} -Werror=incompatible-pointer-types \
+		${CC:-cc} ${INCOPT} ${PTRTYPE_WERROR} \
 			-x c -c -o /dev/null - >/dev/null 2>&1 <<EOF
 #include <rrd.h>
 int main(void) {
@@ -89,7 +96,7 @@ int main(void) {
 EOF
 		test $? -eq 0 && return 1
 
-		${CC:-cc} ${INCOPT} -Werror=incompatible-pointer-types \
+		${CC:-cc} ${INCOPT} ${PTRTYPE_WERROR} \
 			-x c -c -o /dev/null - >/dev/null 2>&1 <<EOF
 #include <rrd.h>
 int main(void) {
