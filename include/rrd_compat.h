@@ -18,13 +18,14 @@
  */
 #ifndef RRD_CONST_ARGS
 /*
- * Ad-hoc/manual builds that skip configure must opt in explicitly.
+ * Ad-hoc/manual builds that skip configure must define RRD_CONST_ARGS.
+ * Keep RRDTOOL19 as a legacy compatibility fallback.
  */
 #if defined(RRDTOOL19)
 #define RRD_CONST_ARGS 1
 #endif
 #ifndef RRD_CONST_ARGS
-#error "RRD_CONST_ARGS is not defined. Run configure or define RRDTOOL19 (or RRD_CONST_ARGS directly)."
+#error "RRD_CONST_ARGS is not defined. Run configure or define RRD_CONST_ARGS (0 or 1)."
 #endif
 #endif
 
