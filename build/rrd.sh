@@ -115,7 +115,16 @@ EOF
 	case "$RRD_CONST_ARGS_DETECTED" in
 	1) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1" ;;
 	0) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0" ;;
-	*) RRDOK="NO" ;;
+	*)
+		if pkg-config --atleast-version=1.9.0 librrd >/dev/null 2>&1; then
+			RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1"
+		elif pkg-config --exists librrd >/dev/null 2>&1; then
+			RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0"
+		else
+			echo "ERROR: Unable to determine RRDtool argv ABI (probe + pkg-config failed)."
+			RRDOK="NO"
+		fi
+		;;
 	esac
 
 	# --- Compile / Link ---
