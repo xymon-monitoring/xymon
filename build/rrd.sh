@@ -103,18 +103,12 @@ EOF
 	}
 
 	# --- ABI detection ---
-	case "$USERRRDCONSTARGS" in
-		1) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1" ;;
-		0) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0" ;;
-		""|auto)
-			detect_rrd_const_args || RRDOK="NO"
-			case $? in
-			1) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1" ;;
-			0) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0" ;;
-			*) RRDOK="NO" ;;
-			esac
-			;;
-		*) RRDOK="NO" ;;
+	detect_rrd_const_args
+	RRD_CONST_ARGS_DETECTED=$?
+	case "$RRD_CONST_ARGS_DETECTED" in
+	1) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=1" ;;
+	0) RRDDEF="$RRDDEF -DRRD_CONST_ARGS=0" ;;
+	*) RRDOK="NO" ;;
 	esac
 
 	# --- Compile / Link ---
@@ -130,21 +124,28 @@ EOF
 		RRDOK="NO"
 	fi
 
-	LINKOK=0
-	for EXTRA in "" "$ZLIB" "-lm" "-L/usr/X11R6/lib"
-	do
-		test -n "$EXTRA" && PNGLIB="$PNGLIB $EXTRA"
-		if OS=$OS RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" \
-			$MAKE -f Makefile.test-rrd test-link >/dev/null 2>&1
-		then
-			LINKOK=1
-			break
-		fi
-	done
-
-	if test "$LINKOK" -eq 1; then
+	OS=$OS RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link >/dev/null 2>&1
+	if test $? -ne 0; then
+		# Could be that we need -lz for RRD
+		PNGLIB="$PNGLIB $ZLIB"
+	fi
+	OS=$OS RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link >/dev/null 2>&1
+	if test $? -ne 0; then
+		# Could be that we need -lm for RRD
+		PNGLIB="$PNGLIB -lm"
+	fi
+	OS=$OS RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link >/dev/null 2>&1
+	if test $? -ne 0; then
+		# Could be that we need -L/usr/X11R6/lib (OpenBSD)
+		LIBOPT="$LIBOPT -L/usr/X11R6/lib"
+		RRDLIB="$RRDLIB -L/usr/X11R6/lib"
+	fi
+	OS=$OS RRDLIB="$LIBOPT" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link >/dev/null 2>&1
+	if test $? -eq 0; then
 		echo "Linking with RRDtool works OK"
-		test -n "$PNGLIB" && echo "Linking RRD needs extra library: $PNGLIB"
+		if test "$PNGLIB" != ""; then
+			echo "Linking RRD needs extra library: $PNGLIB"
+		fi
 	else
 		echo "ERROR: Linking with RRDtool fails"
 		RRDOK="NO"
