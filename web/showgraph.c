@@ -32,16 +32,18 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
+#ifndef RRD_CONST_ARGS
+#error "RRD_CONST_ARGS is not defined. Run configure or define RRD_CONST_ARGS (0 or 1)."
+#endif
+
 #define HOUR_GRAPH  "e-48h"
 #define DAY_GRAPH   "e-12d"
 #define WEEK_GRAPH  "e-48d"
 #define MONTH_GRAPH "e-576d"
 
 /* RRDtool 1.0.x handles graphs with no DS definitions just fine. 1.2.x does not. */
-#ifdef RRDTOOL12
 #ifndef HIDE_EMPTYGRAPH
 #define HIDE_EMPTYGRAPH 1
-#endif
 #endif
 
 #ifdef HIDE_EMPTYGRAPH
@@ -599,34 +601,17 @@ char *expand_tokens(char *tpl)
 		else if (strncmp(inp, "@STACKIT@", 9) == 0) {
 			/* Contributed by Gildas Le Nadan <gn1@sanger.ac.uk> */
 
-			/* the STACK behavior changed between rrdtool 1.0.x
-			 * and 1.2.x, hence the ifdef:
-			 * - in 1.0.x, you replace the graph type (AREA|LINE)
-			 *  for the graph you want to stack with the  STACK
-			 *  keyword
-			 * - in 1.2.x, you add the STACK keyword at the end
-			 *  of the definition
-			 *
-			 * Please note that in both cases the first entry
-			 * mustn't contain the keyword STACK at all, so
-			 * we need a different treatment for the first rrdidx
-			 *
-			 * examples of graphs.cfg entries:
-			 *
-			 * - rrdtool 1.0.x
-			 * @STACKIT@:la@RRDIDX@#@COLOR@:@RRDPARAM@
-			 *
-			 * - rrdtool 1.2.x
-			 * AREA::la@RRDIDX@#@COLOR@:@RRDPARAM@:@STACKIT@
+			/*
+			 * Keep the first series unstacked; add "STACK" for subsequent
+			 * series. This is intentional: emitting STACK for series #0 causes
+			 * invalid/ugly output with current RRDtool graph semantics.
+			 * Graph templates should place @STACKIT@ where RRDtool expects
+			 * the stacking keyword.
 			 */
 			char numstr[10];
 
 			if (rrdidx == 0) {
-#ifdef RRDTOOL12
-				strncpy(numstr, "", sizeof(numstr));
-#else
-				snprintf(numstr, sizeof(numstr), "AREA");
-#endif
+				numstr[0] = '\0';
 			}
 			else {
 				snprintf(numstr, sizeof(numstr), "STACK");
@@ -801,7 +786,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 	/* Options for rrd_graph() */
 	int  rrdargcount;
-	char **rrdargs = NULL;	/* The full argv[] table of string pointers to arguments */
+	xymon_rrd_argv_item_t *rrdargs = NULL;	/* The full argv[] table of string pointers to arguments */
 	char heightopt[30];	/* -h HEIGHT */
 	char widthopt[30];	/* -w WIDTH */
 	char upperopt[30];	/* -u MAX */
@@ -1131,7 +1116,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	 * there are multiple RRD-files to handle).
 	 */
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
-	rrdargs = (char **) calloc(16 + pcount*rrddbcount + useroptcount + 1, sizeof(char *));
+	rrdargs = calloc(16 + pcount*rrddbcount + useroptcount + 1, sizeof(*rrdargs));
 
 
 	argi = 0;
@@ -1178,11 +1163,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		}
 	}
 
-#ifdef RRDTOOL12
 	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated\\: %d-%b-%Y %H\\:%M\\:%S", localtime(&now));
-#else
-	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated: %d-%b-%Y %H:%M:%S", localtime(&now));
-#endif
 	rrdargs[argi++] = strdup(timestamp);
 
 
@@ -1214,12 +1195,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	/* All set - generate the graph */
 	rrd_clear_error();
 
-#ifdef RRDTOOL12
-    #ifdef RRDTOOL19
-	result = rrd_graph(rrdargcount, (const char **)rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-    #else
-	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-    #endif
+	result = xymon_rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
 
 	/*
 	 * If we have neither the upper- nor lower-limits of the graph, AND we allow vertical 
@@ -1230,9 +1206,6 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		upperlimit = ymax; haveupperlimit = 1;
 		lowerlimit = ymin; havelowerlimit = 1;
 	}
-#else
-	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize);
-#endif
 
 	/* Was it OK ? */
 	if (rrd_test_error() || (result != 0)) {
@@ -1281,13 +1254,11 @@ void generate_zoompage(char *selfURI)
 				n = fread(buf, 1, st.st_size, fd);
 				fclose(fd);
 
-#ifdef RRDTOOL12
 				zoomrightoffsetp = strstr(buf, zoomrightoffsetmarker);
 				if (zoomrightoffsetp) {
 					zoomrightoffsetp += strlen(zoomrightoffsetmarker);
 					memcpy(zoomrightoffsetp, "30", 2);
 				}
-#endif
 
 				fwrite(buf, 1, n, stdout);
 			}
@@ -1363,4 +1334,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-

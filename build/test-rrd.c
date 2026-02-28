@@ -1,14 +1,15 @@
 #include <stdio.h>
 
 #include <rrd.h>
+#include "../lib/xymonrrd.h"
+
+#ifndef RRD_CONST_ARGS
+#error "RRD_CONST_ARGS is not defined. Run configure or define RRD_CONST_ARGS (0 or 1)."
+#endif
 
 int main(int argc, char *argv[])
 {
-#ifdef RRDTOOL19
-	const char *rrdargs[] = {
-#else
-	char *rrdargs[] = {
-#endif
+	xymon_rrd_argv_item_t rrdargs[] = {
 		"rrdgraph",
 		"xymongen.png",
 		"-s", "e - 48d",
@@ -26,14 +27,11 @@ int main(int argc, char *argv[])
 	int pcount, result, xsize, ysize;
 	double ymin, ymax;
 
+	(void)argc; (void)argv;
 	for (pcount = 0; (rrdargs[pcount]); pcount++);
 	rrd_clear_error();
-#ifdef RRDTOOL12
-	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-#else
-	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize);
-#endif
+	result = xymon_rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
+	(void)result;
 
 	return 0;
 }
-
