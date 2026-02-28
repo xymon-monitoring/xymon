@@ -8,4 +8,3 @@ test-link:
 
 clean:
 	@rm -f test-rrd.o test-rrd xymongen.png
-
