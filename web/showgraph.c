@@ -989,7 +989,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		rrddbsize = 5;
 		rrddbs = (rrddb_t *) malloc((rrddbsize+1) * sizeof(rrddb_t));
 
-		ovector = pcre2_match_data_create(30, NULL);
+		ovector = pcre2_match_data_create_from_pattern(pat, NULL);
+		if (!ovector) errormsg("Internal error allocating regex match data");
 		while ((d = readdir(dir)) != NULL) {
 			char *ext;
 			char param[PATH_MAX];
@@ -1370,4 +1371,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-

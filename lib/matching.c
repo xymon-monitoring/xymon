@@ -58,7 +58,8 @@ int matchregex(const char *needle, pcre2_code *pcrecode)
 
 	if (!needle || !pcrecode) return 0;
 
-	ovector = pcre2_match_data_create(30, NULL);
+	ovector = pcre2_match_data_create_from_pattern(pcrecode, NULL);
+	if (!ovector) return 0;
 	result = pcre2_match(pcrecode, needle, strlen(needle), 0, 0, ovector, NULL);
 	pcre2_match_data_free(ovector);
 	return (result >= 0);
@@ -213,4 +214,3 @@ int timematch(char *holidaykey, char *tspec)
 
 	return result;
 }
-
