@@ -433,9 +433,10 @@ void startonehost(struct req_t *req, int ipchange)
 				s.securityAuthKeyLen = USM_AUTH_KU_LEN;
 				break;
 #else
-				errprintf("SNMPv3 authmethod MD5 requested for host %s, but Net-SNMP was built without MD5 support. Falling back to SHA1.\n",
+				errprintf("SNMPv3 authmethod MD5 requested for host %s, but Net-SNMP was built without MD5 support.\n",
 					  req->hostname);
-				/* FALLTHROUGH */
+				xfree(s.securityName);
+				return;
 #endif
 
 			  case SNMP_V3AUTH_SHA1:
@@ -746,12 +747,10 @@ void readconfig(char *cfgfn, int verbose)
 		if (strncmp(bot, "authmethod=", 11) == 0) {
 			if (strcasecmp(bot+11, "md5") == 0) {
 #ifdef NETSNMP_DISABLE_MD5
-				errprintf("SNMPv3 authmethod MD5 requested for host %s, but Net-SNMP was built without MD5 support. Using SHA1.\n",
+				errprintf("SNMPv3 authmethod MD5 requested for host %s, but Net-SNMP was built without MD5 support.\n",
 					  reqitem->hostname);
-				reqitem->authmethod = SNMP_V3AUTH_SHA1;
-#else
-				reqitem->authmethod = SNMP_V3AUTH_MD5;
 #endif
+				reqitem->authmethod = SNMP_V3AUTH_MD5;
 			}
 			else if (strcasecmp(bot+11, "sha1") == 0)
 				reqitem->authmethod = SNMP_V3AUTH_SHA1;
@@ -1132,4 +1131,3 @@ int main (int argc, char **argv)
 
 	return 0;
 }
-
