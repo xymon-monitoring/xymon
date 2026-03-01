@@ -390,19 +390,30 @@ char *wkdayselect(char wkday, char *valtxt, int isdefault)
 
 static void *wanted_host(char *hostname)
 {
-	void *hinfo = hostinfo(hostname);
+	void *hinfo = hostinfo(hostname), *wanted = NULL;
 	int result;
-	pcre2_match_data *ovector;
+	pcre2_match_data *ovector = NULL;
+	pcre2_code *match_re;
 
 	if (!hinfo) return NULL;
+	wanted = hinfo;
 
-	ovector = pcre2_match_data_create(30, NULL);
+	match_re = (hostpattern ? hostpattern :
+		    pagepattern ? pagepattern :
+		    ippattern ? ippattern :
+		    classpattern);
+	ovector = (match_re ? pcre2_match_data_create_from_pattern(match_re, NULL) : NULL);
+	if (match_re && !ovector) {
+		errprintf("Cannot allocate PCRE match data for host filter\n");
+		wanted = NULL;
+		goto cleanup;
+	}
 	if (hostpattern) {
 		result = pcre2_match(hostpattern, hostname, strlen(hostname), 0, 0,
 				ovector, NULL);
 		if (result < 0) {
-			pcre2_match_data_free(ovector);
-			return NULL;
+			wanted = NULL;
+			goto cleanup;
 		}
 	}
 
@@ -411,8 +422,8 @@ static void *wanted_host(char *hostname)
 		result = pcre2_match(pagepattern, pname, strlen(pname), 0, 0,
 				ovector, NULL);
 		if (result < 0) {
-			pcre2_match_data_free(ovector);
-			return NULL;
+			wanted = NULL;
+			goto cleanup;
 		}
 	}
 
@@ -421,28 +432,30 @@ static void *wanted_host(char *hostname)
 		result = pcre2_match(ippattern, hostip, strlen(hostip), 0, 0,
 				ovector, NULL);
 		if (result < 0) {
-			pcre2_match_data_free(ovector);
-			return NULL;
+			wanted = NULL;
+			goto cleanup;
 		}
 	}
 
 	if (classpattern && hinfo) {
 		char *hostclass = xmh_item(hinfo, XMH_CLASS);
 		if (!hostclass) {
-			pcre2_match_data_free(ovector);
-			return NULL;
+			wanted = NULL;
+			goto cleanup;
 		}
 
 		result = pcre2_match(classpattern, hostclass, strlen(hostclass), 0, 0,
 				ovector, NULL);
 		if (result < 0) {
-			pcre2_match_data_free(ovector);
-			return NULL;
+			wanted = NULL;
+			goto cleanup;
 		}
 	}
-	pcre2_match_data_free(ovector);
 
-	return hinfo;
+cleanup:
+	if (ovector) pcre2_match_data_free(ovector);
+
+	return wanted;
 }
 
 
@@ -1713,4 +1726,3 @@ void showform(FILE *output, char *headertemplate, char *formtemplate, int color,
 		xfree(inbuf);
 	}
 }
-
