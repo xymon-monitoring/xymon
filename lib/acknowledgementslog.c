@@ -94,7 +94,7 @@ void do_acknowledgementslog(FILE *output,
 		  char *testregex, char *extestregex,
 		  char *rcptregex, char *exrcptregex)
 {
-	FILE *acknowledgementslog;
+	FILE *acknowledgementslog = NULL;
 	char acknowledgementslogfilename[PATH_MAX];
 	time_t firstevent = 0;
 	time_t lastevent = getcurrenttime(NULL);
@@ -114,7 +114,8 @@ void do_acknowledgementslog(FILE *output,
 	pcre2_code *extestregexp = NULL;
 	pcre2_code *rcptregexp = NULL;
 	pcre2_code *exrcptregexp = NULL;
-	pcre2_match_data *ovector;
+	pcre2_match_data *ovector = NULL;
+	pcre2_code *match_re;
 
 	if (maxminutes && (fromtime || totime)) {
 		fprintf(output, "<B>Only one time interval type is allowed!</B>");
@@ -157,6 +158,14 @@ void do_acknowledgementslog(FILE *output,
 	if (extestregex && *extestregex) extestregexp = pcre2_compile(extestregex, strlen(extestregex), PCRE2_CASELESS, &err, &errofs, NULL);
 	if (rcptregex && *rcptregex) rcptregexp = pcre2_compile(rcptregex, strlen(rcptregex), PCRE2_CASELESS, &err, &errofs, NULL);
 	if (exrcptregex && *exrcptregex) exrcptregexp = pcre2_compile(exrcptregex, strlen(exrcptregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	match_re = (pageregexp ? pageregexp :
+		    expageregexp ? expageregexp :
+		    hostregexp ? hostregexp :
+		    exhostregexp ? exhostregexp :
+		    testregexp ? testregexp :
+		    extestregexp ? extestregexp :
+		    rcptregexp ? rcptregexp :
+		    exrcptregexp);
 
 	snprintf(acknowledgementslogfilename, sizeof(acknowledgementslogfilename), "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
 	acknowledgementslog = fopen(acknowledgementslogfilename, "r");
@@ -185,7 +194,7 @@ void do_acknowledgementslog(FILE *output,
 				}
 				else { 
 					fprintf(output, "Error reading logfile %s: %s\n", acknowledgementslogfilename, strerror(errno));
-					return;
+					goto cleanup;
 				}
 			}
 			else {
@@ -196,7 +205,13 @@ void do_acknowledgementslog(FILE *output,
 	}
 	
 	head = NULL;
-	ovector = pcre2_match_data_create(30, NULL);
+	/* ovector sized from match_re but reused across all page/host/test patterns below; safe because we only check match/no-match, not substrings */
+	ovector = (match_re ? pcre2_match_data_create_from_pattern(match_re, NULL) : NULL);
+	if (match_re && !ovector) {
+		errprintf("Cannot allocate PCRE match data for acknowledgements log\n");
+		fprintf(output, "<B>Internal error allocating regex match data</B>");
+		goto cleanup;
+	}
 
 	while (acknowledgementslog && (fgets(l, sizeof(l), acknowledgementslog))) {
 
@@ -405,6 +420,7 @@ void do_acknowledgementslog(FILE *output,
 		fprintf(output, "</CENTER>\n");
 	}
 
+cleanup:
 	if (acknowledgementslog) fclose(acknowledgementslog);
 
 	if (pageregexp)   pcre2_code_free(pageregexp);
@@ -415,6 +431,5 @@ void do_acknowledgementslog(FILE *output,
 	if (extestregexp) pcre2_code_free(extestregexp);
 	if (rcptregexp)   pcre2_code_free(rcptregexp);
 	if (exrcptregexp) pcre2_code_free(exrcptregexp);
-	pcre2_match_data_free(ovector);
+	if (ovector) pcre2_match_data_free(ovector);
 }
-
