@@ -80,47 +80,54 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 			memptn = compileregex("^Memory: (\\d+)M max, (\\d+)M avail, (\\d+)M free, (\\d+)M swap, (\\d+)M free swap");
 		}
 
-		ovector = pcre2_match_data_create(20, NULL);
-		memline = strstr(topstr, "\nMemory:");
-		if (memline) {
-			memline++;
-			eoln = strchr(memline, '\n'); if (eoln) *eoln = '\0';
+		if (memptn) {
+			ovector = pcre2_match_data_create_from_pattern(memptn, NULL);
+			if (!ovector) {
+				errprintf("Cannot allocate PCRE match data for IRIX memory report\n");
+			}
+			else {
+				memline = strstr(topstr, "\nMemory:");
+				if (memline) {
+					memline++;
+					eoln = strchr(memline, '\n'); if (eoln) *eoln = '\0';
 
-			res = pcre2_match(memptn, memline, strlen(memline), 0, 0, ovector, NULL);
-		}
-		else res = -1;
+					res = pcre2_match(memptn, memline, strlen(memline), 0, 0, ovector, NULL);
+				}
+				else res = -1;
 
-		if (res > 1) {
-			l = sizeof(w);
-			pcre2_substring_copy_bynumber(ovector, 1, w, &l);
-			memphystotal = atol(w);
-		}
-		if (res > 2) {
-			l = sizeof(w);
-			pcre2_substring_copy_bynumber(ovector, 2, w, &l);
-			memactfree = atol(w);
-			memacttotal = memphystotal;
-			memactused = memphystotal - memactfree;
-		}
-		if (res > 3) {
-			l = sizeof(w);
-			pcre2_substring_copy_bynumber(ovector, 3, w, &l);
-			memphysfree = atol(w);
-			memphysused = memphystotal - memphysfree;
-		}
+				if (res > 1) {
+					l = sizeof(w);
+					pcre2_substring_copy_bynumber(ovector, 1, w, &l);
+					memphystotal = atol(w);
+				}
+				if (res > 2) {
+					l = sizeof(w);
+					pcre2_substring_copy_bynumber(ovector, 2, w, &l);
+					memactfree = atol(w);
+					memacttotal = memphystotal;
+					memactused = memphystotal - memactfree;
+				}
+				if (res > 3) {
+					l = sizeof(w);
+					pcre2_substring_copy_bynumber(ovector, 3, w, &l);
+					memphysfree = atol(w);
+					memphysused = memphystotal - memphysfree;
+				}
 
-		if (res > 4) {
-			l = sizeof(w);
-			pcre2_substring_copy_bynumber(ovector, 4, w, &l);
-			memswaptotal = atol(w);
+				if (res > 4) {
+					l = sizeof(w);
+					pcre2_substring_copy_bynumber(ovector, 4, w, &l);
+					memswaptotal = atol(w);
+				}
+				if (res > 5) {
+					l = sizeof(w);
+					pcre2_substring_copy_bynumber(ovector, 5, w, &l);
+					memswapfree = atol(w);
+				}
+				memswapused = memswaptotal - memswapfree;
+				pcre2_match_data_free(ovector);
+			}
 		}
-		if (res > 5) {
-			l = sizeof(w);
-			pcre2_substring_copy_bynumber(ovector, 5, w, &l);
-			memswapfree = atol(w);
-		}
-		memswapused = memswaptotal - memswapfree;
-		pcre2_match_data_free(ovector);
 
 		if (eoln) *eoln = '\n';
 
@@ -130,4 +137,3 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	splitmsg_done();
 }
-
