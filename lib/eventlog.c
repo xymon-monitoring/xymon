@@ -182,14 +182,27 @@ static int  eventfilter(void *hinfo, char *testname,
 			pcre2_code *testregexp, pcre2_code *extestregexp,
 			int ignoredialups, f_hostcheck hostcheck)
 {
-	int pagematch, hostmatch, testmatch;
+	int pagematch, hostmatch, testmatch, result = 1;
 	char *hostname = xmh_item(hinfo, XMH_HOSTNAME);
-	pcre2_match_data *ovector;
+	pcre2_match_data *ovector = NULL;
+	pcre2_code *match_re;
 
 	if (ignoredialups && xmh_item(hinfo, XMH_FLAG_DIALUP)) return 0;
 	if (hostcheck && (hostcheck(hostname) == 0)) return 0;
 
-	ovector = pcre2_match_data_create(30, NULL);
+	match_re = (pageregexp ? pageregexp :
+		    expageregexp ? expageregexp :
+		    hostregexp ? hostregexp :
+		    exhostregexp ? exhostregexp :
+		    testregexp ? testregexp :
+		    extestregexp);
+	/* ovector sized from match_re but reused across all page/host/test patterns below; safe because we only check match/no-match, not substrings */
+	ovector = (match_re ? pcre2_match_data_create_from_pattern(match_re, NULL) : NULL);
+	if (match_re && !ovector) {
+		errprintf("Cannot allocate PCRE match data for event filter\n");
+		result = 0;
+		goto cleanup;
+	}
 	if (pageregexp) {
 		char *pagename;
 
@@ -204,8 +217,8 @@ static int  eventfilter(void *hinfo, char *testname,
 	else
 		pagematch = 1;
 	if (!pagematch) {
-		pcre2_match_data_free(ovector);
-		return 0;
+		result = 0;
+		goto cleanup;
 	}
 
 	if (expageregexp) {
@@ -222,8 +235,8 @@ static int  eventfilter(void *hinfo, char *testname,
 	else
 		pagematch = 0;
 	if (pagematch) {
-		pcre2_match_data_free(ovector);
-		return 0;
+		result = 0;
+		goto cleanup;
 	}
 
 	if (hostregexp)
@@ -232,8 +245,8 @@ static int  eventfilter(void *hinfo, char *testname,
 	else
 		hostmatch = 1;
 	if (!hostmatch) {
-		pcre2_match_data_free(ovector);
-		return 0;
+		result = 0;
+		goto cleanup;
 	}
 
 	if (exhostregexp)
@@ -242,8 +255,8 @@ static int  eventfilter(void *hinfo, char *testname,
 	else
 		hostmatch = 0;
 	if (hostmatch) {
-		pcre2_match_data_free(ovector);
-		return 0;
+		result = 0;
+		goto cleanup;
 	}
 
 	if (testregexp)
@@ -252,8 +265,8 @@ static int  eventfilter(void *hinfo, char *testname,
 	else
 		testmatch = 1;
 	if (!testmatch) {
-		pcre2_match_data_free(ovector);
-		return 0;
+		result = 0;
+		goto cleanup;
 	}
 
 	if (extestregexp)
@@ -262,12 +275,14 @@ static int  eventfilter(void *hinfo, char *testname,
 	else
 		testmatch = 0;
 	if (testmatch) {
-		pcre2_match_data_free(ovector);
-		return 0;
+		result = 0;
+		goto cleanup;
 	}
-	pcre2_match_data_free(ovector);
 
-	return 1;
+cleanup:
+	if (ovector) pcre2_match_data_free(ovector);
+
+	return result;
 }
 
 
@@ -526,7 +541,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		event_t **eventlist, countlist_t **hostcounts, countlist_t **servicecounts,
 		countsummary_t counttype, eventsummary_t sumtype, char *periodstring)
 {
-	FILE *eventlog;
+	FILE *eventlog = NULL;
 	char eventlogfilename[PATH_MAX];
 	time_t firstevent = 0;
 	time_t lastevent = getcurrenttime(NULL);
@@ -545,7 +560,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	pcre2_code *testregexp = NULL;
 	pcre2_code *extestregexp = NULL;
 	pcre2_code *colrregexp = NULL;
-	pcre2_match_data *ovector;
+	pcre2_match_data *ovector = NULL;
+	pcre2_code *match_re;
 	countlist_t *hostcounthead = NULL, *svccounthead = NULL;
 
 	if (eventlist) *eventlist = NULL;
@@ -598,6 +614,13 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	if (testregex && *testregex) testregexp = pcre2_compile(testregex, strlen(testregex), PCRE2_CASELESS, &err, &errofs, NULL);
 	if (extestregex && *extestregex) extestregexp = pcre2_compile(extestregex, strlen(extestregex), PCRE2_CASELESS, &err, &errofs, NULL);
 	if (colrregex && *colrregex) colrregexp = pcre2_compile(colrregex, strlen(colrregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	match_re = (pageregexp ? pageregexp :
+		    expageregexp ? expageregexp :
+		    hostregexp ? hostregexp :
+		    exhostregexp ? exhostregexp :
+		    testregexp ? testregexp :
+		    extestregexp ? extestregexp :
+		    colrregexp);
 
 	snprintf(eventlogfilename, sizeof(eventlogfilename), "%s/allevents", xgetenv("XYMONHISTDIR"));
 	eventlog = fopen(eventlogfilename, "r");
@@ -625,7 +648,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 					}
 					else {
 						if (output) fprintf(output,"Error reading eventlog file %s: %s\n", eventlogfilename, strerror(errno));
-						return;
+						goto cleanup;
 					}
 				}
 				else {
@@ -640,7 +663,12 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	}
 	
 	eventhead = NULL;
-	ovector = pcre2_match_data_create(30, NULL);
+	ovector = (match_re ? pcre2_match_data_create_from_pattern(match_re, NULL) : NULL);
+	if (match_re && !ovector) {
+		errprintf("Cannot allocate PCRE match data for event log\n");
+		if (output) fprintf(output, "<B>Internal error allocating regex match data</B>");
+		goto cleanup;
+	}
 
 	while (eventlog && (fgets(l, sizeof(l), eventlog))) {
 
@@ -862,13 +890,17 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		fprintf(output, "</CENTER>\n");
 	}
 
+cleanup:
 	if (eventlog) fclose(eventlog);
 
 	if (pageregexp) pcre2_code_free(pageregexp);
+	if (expageregexp) pcre2_code_free(expageregexp);
 	if (hostregexp) pcre2_code_free(hostregexp);
+	if (exhostregexp) pcre2_code_free(exhostregexp);
 	if (testregexp) pcre2_code_free(testregexp);
+	if (extestregexp) pcre2_code_free(extestregexp);
 	if (colrregexp) pcre2_code_free(colrregexp);
-	pcre2_match_data_free(ovector);
+	if (ovector) pcre2_match_data_free(ovector);
 
 	/* Return the event- and count-lists, if wanted - or clean them up */
 	if (eventlist) {
@@ -896,4 +928,3 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		while (swalk) { zombie = swalk; swalk = swalk->next; xfree(zombie); }
 	}
 }
-

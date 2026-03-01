@@ -21,6 +21,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	static pcre2_code *inclpattern = NULL;
 	static pcre2_code *exclpattern = NULL;
 	pcre2_match_data *ovector;
+	pcre2_code *match_re;
 
 	if (strstr(msg, "netapp.pl")) return do_netapp_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	if (strstr(msg, "dbcheck.pl")) return do_dbcheck_tablespace_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
@@ -79,7 +80,13 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	 * line - we never have any disk reports there anyway.
 	 */
 	curline = strchr(msg, '\n'); if (curline) curline++;
-	ovector = pcre2_match_data_create(30, NULL);
+	match_re = (exclpattern ? exclpattern : inclpattern);
+	/* ovector sized from match_re but reused for matches against both incl/excl patterns; safe because we only check match/no-match, not substrings */
+	ovector = (match_re ? pcre2_match_data_create_from_pattern(match_re, NULL) : NULL);
+	if (match_re && !ovector) {
+		errprintf("Cannot allocate PCRE match data for disk filtering\n");
+		return 0;
+	}
 	while (curline)  {
 		char *fsline, *p;
 		char *columns[20];
@@ -214,8 +221,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 nextline:
 		curline = (eoln ? (eoln+1) : NULL);
 	}
-	pcre2_match_data_free(ovector);
+	if (ovector) pcre2_match_data_free(ovector);
 
 	return 0;
 }
-
