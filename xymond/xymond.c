@@ -361,7 +361,7 @@ enum filtertype_t { FILTER_XMH, FILTER_PAGEPATH, FILTER_TEST, FILTER_FIELD, FILT
 
 typedef struct hostfilter_rec_t {
 	enum filtertype_t filtertype;
-	pcre *wantedptn; int wantedvalue;
+	pcre2_code *wantedptn; int wantedvalue;
 	struct hostfilter_rec_t *next;
 	enum xmh_item_t field;	/* Only for filtertype == FILTER_XMH */
 	enum boardfield_t boardfield;	/* Only for filtertype == FILTER_FIELD(TIME) */
@@ -2870,7 +2870,7 @@ hostfilter_rec_t *setup_filter(char *buf, char **fields, int *acklevel, int *hav
 {
 	char *tok;
 	hostfilter_rec_t *filterhead = NULL, *filtertail = NULL;
-	static pcre *xmhptn = NULL;
+	static pcre2_code *xmhptn = NULL;
 
 	dbgprintf("-> setup_filter: %s\n", buf);
 

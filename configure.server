@@ -470,10 +470,10 @@ then
 	echo "PCREINCDIR = -I$PCREINC"   >>Makefile
     fi
     if test "$PCRELIB" != ""; then
-	echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
+	echo "PCRELIBS = -L$PCRELIB -lpcre2-8" >>Makefile
 	echo "RPATHVAL += ${PCRELIB}"       >>Makefile
     else
-	echo "PCRELIBS = -lpcre"         >>Makefile
+	echo "PCRELIBS = -lpcre2-8"      >>Makefile
     fi
 fi
 echo ""                                  >>Makefile

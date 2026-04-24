@@ -18,55 +18,60 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #include "libxymon.h"
 
-pcre *compileregex_opts(const char *pattern, int flags)
+pcre2_code *compileregex_opts(const char *pattern, uint32_t flags)
 {
-	pcre *result;
-	const char *errmsg;
-	int errofs;
+	pcre2_code *result;
+	char errmsg[120];
+	int err;
+	PCRE2_SIZE errofs;
 
 	dbgprintf("Compiling regex %s\n", pattern);
-	result = pcre_compile(pattern, flags, &errmsg, &errofs, NULL);
+	result = pcre2_compile(pattern, strlen(pattern), flags, &err, &errofs, NULL);
 	if (result == NULL) {
-		errprintf("pcre compile '%s' failed (offset %d): %s\n", pattern, errofs, errmsg);
+		pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+		errprintf("pcre compile '%s' failed (offset %zu): %s\n", pattern, errofs, errmsg);
 		return NULL;
 	}
 
 	return result;
 }
 
-pcre *compileregex(const char *pattern)
+pcre2_code *compileregex(const char *pattern)
 {
-	return compileregex_opts(pattern, PCRE_CASELESS);
+	return compileregex_opts(pattern, PCRE2_CASELESS);
 }
 
-pcre *multilineregex(const char *pattern)
+pcre2_code *multilineregex(const char *pattern)
 {
-	return compileregex_opts(pattern, PCRE_CASELESS|PCRE_MULTILINE);
+	return compileregex_opts(pattern, PCRE2_CASELESS|PCRE2_MULTILINE);
 }
 
-int matchregex(const char *needle, pcre *pcrecode)
+int matchregex(const char *needle, pcre2_code *pcrecode)
 {
-	int ovector[30];
+	pcre2_match_data *ovector;
 	int result;
 
 	if (!needle || !pcrecode) return 0;
 
-	result = pcre_exec(pcrecode, NULL, needle, strlen(needle), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	ovector = pcre2_match_data_create(30, NULL);
+	result = pcre2_match(pcrecode, needle, strlen(needle), 0, 0, ovector, NULL);
+	pcre2_match_data_free(ovector);
 	return (result >= 0);
 }
 
-void freeregex(pcre *pcrecode)
+void freeregex(pcre2_code *pcrecode)
 {
 	if (!pcrecode) return;
 
-	pcre_free(pcrecode);
+	pcre2_code_free(pcrecode);
 }
 
-int namematch(const char *needle, char *haystack, pcre *pcrecode)
+int namematch(const char *needle, char *haystack, pcre2_code *pcrecode)
 {
 	char *xhay;
 	char *tokbuf = NULL, *tok;
@@ -118,7 +123,7 @@ int namematch(const char *needle, char *haystack, pcre *pcrecode)
 	return result;
 }
 
-int patternmatch(char *datatosearch, char *pattern, pcre *pcrecode)
+int patternmatch(char *datatosearch, char *pattern, pcre2_code *pcrecode)
 {
 	if (pcrecode) {
 		/* Do regex matching. The regex has already been compiled for us. */
@@ -133,17 +138,17 @@ int patternmatch(char *datatosearch, char *pattern, pcre *pcrecode)
 	return (strstr(datatosearch, pattern) != NULL);
 }
 
-pcre **compile_exprs(char *id, const char **patterns, int count)
+pcre2_code **compile_exprs(char *id, const char **patterns, int count)
 {
-	pcre **result = NULL;
+	pcre2_code **result = NULL;
 	int i;
 
-	result = (pcre **)calloc(count, sizeof(pcre *));
+	result = (pcre2_code **)calloc(count, sizeof(pcre2_code *));
 	for (i=0; (i < count); i++) {
 		result[i] = compileregex(patterns[i]);
 		if (!result[i]) {
 			errprintf("Internal error: %s pickdata PCRE-compile failed\n", id);
-			for (i=0; (i < count); i++) if (result[i]) pcre_free(result[i]);
+			for (i=0; (i < count); i++) if (result[i]) pcre2_code_free(result[i]);
 			xfree(result);
 			return NULL;
 		}
@@ -152,24 +157,30 @@ pcre **compile_exprs(char *id, const char **patterns, int count)
 	return result;
 }
 
-int pickdata(char *buf, pcre *expr, int dupok, ...)
+int pickdata(char *buf, pcre2_code *expr, int dupok, ...)
 {
 	int res, i;
-	int ovector[30];
+	pcre2_match_data *ovector;
 	va_list ap;
 	char **ptr;
 	char w[100];
+	PCRE2_SIZE l;
 
 	if (!expr) return 0;
 
-	res = pcre_exec(expr, NULL, buf, strlen(buf), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-	if (res < 0) return 0;
+	ovector = pcre2_match_data_create(30, NULL);
+	res = pcre2_match(expr, buf, strlen(buf), 0, 0, ovector, NULL);
+	if (res < 0) {
+		pcre2_match_data_free(ovector);
+		return 0;
+	}
 
 	va_start(ap, dupok);
 
 	for (i=1; (i < res); i++) {
 		*w = '\0';
-		pcre_copy_substring(buf, ovector, res, i, w, sizeof(w));
+		l = sizeof(w);
+		pcre2_substring_copy_bynumber(ovector, i, w, &l);
 		ptr = va_arg(ap, char **);
 		if (dupok) {
 			if (*ptr) xfree(*ptr);
@@ -186,6 +197,7 @@ int pickdata(char *buf, pcre *expr, int dupok, ...)
 	}
 
 	va_end(ap);
+	pcre2_match_data_free(ovector);
 
 	return 1;
 }

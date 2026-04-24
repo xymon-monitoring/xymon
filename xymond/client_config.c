@@ -28,14 +28,15 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <errno.h>
 
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #include "libxymon.h"
 #include "client_config.h"
 
 typedef struct exprlist_t {
 	char *pattern;
-	pcre *exp;
+	pcre2_code *exp;
 	struct exprlist_t *next;
 } exprlist_t;
 
@@ -591,7 +592,7 @@ int load_client_config(char *configfn)
 		exprlist_t *tmp = exprhead;
 		exprhead = exprhead->next;
 		if (tmp->pattern) xfree(tmp->pattern);
-		if (tmp->exp) pcre_free(tmp->exp);
+		if (tmp->exp) pcre2_code_free(tmp->exp);
 		xfree(tmp);
 	}
 	exprhead = NULL;

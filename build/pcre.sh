@@ -4,28 +4,28 @@
 	PCRELIB=""
 	for DIR in /opt/pcre* /usr/local/pcre* /usr/local /usr/pkg /opt/csw /opt/sfw
 	do
-		if test -f $DIR/include/pcre.h
+		if test -f $DIR/include/pcre2.h
 		then
 			PCREINC=$DIR/include
 		fi
-		if test -f $DIR/include/pcre/pcre.h
+		if test -f $DIR/include/pcre/pcre2.h
 		then
 			PCREINC=$DIR/include/pcre
 		fi
 
-		if test -f $DIR/lib/libpcre.so
+		if test -f $DIR/lib/libpcre2-8.so
 		then
 			PCRELIB=$DIR/lib
 		fi
-		if test -f $DIR/lib/libpcre.a
+		if test -f $DIR/lib/libpcre2-8.a
 		then
 			PCRELIB=$DIR/lib
 		fi
-		if test -f $DIR/lib64/libpcre.so
+		if test -f $DIR/lib64/libpcre2-8.so
 		then
 			PCRELIB=$DIR/lib64
 		fi
-		if test -f $DIR/lib64/libpcre.a
+		if test -f $DIR/lib64/libpcre2-8.a
 		then
 			PCRELIB=$DIR/lib64
 		fi
