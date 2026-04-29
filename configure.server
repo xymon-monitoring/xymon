@@ -101,7 +101,12 @@ echo ""; echo ""
 . build/rrd.sh
 if test "$RRDOK" = "NO"
 then
-	ENABLERRD="n"
+	echo ""
+	echo "RRDtool support is required for Xymon server builds."
+	echo "Configuration aborted because the RRDtool probe failed."
+	echo "Fix the RRDtool installation or probe compatibility and rerun configure."
+	echo "If you only need the client build, use './configure --client' instead."
+	exit 1
 else
 	ENABLERRD="y"
 fi
@@ -587,4 +592,3 @@ echo ""
 echo "Configuration complete - now run $MAKE (GNU make) to build the tools"
 
 exit 0
-
