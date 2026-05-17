@@ -1,0 +1,2 @@
+# exclude .gitignore and .github from archive
+.git* export-ignore

@@ -40,7 +40,6 @@ jobs:
           git archive \
             --format=tar \
             --prefix="${PREFIX}" \
-            --exclude='.github/*' \
             "${{ steps.vars.outputs.tag }}" \
           | gzip -9 > "${{ steps.vars.outputs.asset }}"
 #---------------------------------------------------
@@ -49,6 +48,7 @@ jobs:
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
           name: ${{ steps.vars.outputs.tag }}
+          draft: true
           generate_release_notes: "true"
           files: |
             ${{ steps.vars.outputs.asset }}
