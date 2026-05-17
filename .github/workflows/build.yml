@@ -70,6 +70,5 @@ jobs:
 
       - name: Build
         run: |
-          # FIXME: building in parallel causes issues
-          # see https://github.com/xymon-monitoring/xymon/issues/3
-          make -j1
+          echo "running make with $(nproc) parallel processes"
+          make -j$(nproc)
