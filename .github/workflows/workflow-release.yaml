@@ -40,7 +40,6 @@ jobs:
           git archive \
             --format=tar \
             --prefix="${PREFIX}" \
-            --exclude='.github/*' \
             "${{ steps.vars.outputs.tag }}" \
           | gzip -9 > "${{ steps.vars.outputs.asset }}"
 #---------------------------------------------------
