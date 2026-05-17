@@ -49,6 +49,7 @@ jobs:
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
           name: ${{ steps.vars.outputs.tag }}
+          draft: true
           generate_release_notes: "true"
           files: |
             ${{ steps.vars.outputs.asset }}
