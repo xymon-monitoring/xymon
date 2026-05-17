@@ -45,7 +45,7 @@ jobs:
           | gzip -9 > "${{ steps.vars.outputs.asset }}"
 #---------------------------------------------------
       - name: Create GitHub Release and upload tarball
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
           name: ${{ steps.vars.outputs.tag }}
