@@ -165,7 +165,7 @@ directory (recommended for better security), you will also need to setup the
 password-file that controls access to this directory. Use the <tt>htpasswd</tt>
 command both to create the password file and to add or delete users:<br>
 <pre><tt>
-	# /usr/sbin/htpasswd -c /usr/local/xymon/server/etc/xymonpasswd admin
+	# /usr/sbin/htpasswd -c @INSTALLETCDIR@/xymonpasswd admin
 	New password:
 	Re-type new password:
 	Adding password for user admin
@@ -564,7 +564,7 @@ packages to build Xymon:</p>
 
 <p>After installing these, you must set PATH and LD_LIBRARY_PATH to pick up the new tools, then you can compile Xymon the usual way:</p>
 <pre><tt>groupadd xymon
-useradd -d /usr/local/xymon xymon
+useradd -d @XYMONTOPDIR@ @XYMONUSER@
 PATH=$PATH:/usr/local/bin:/usr/ccs/bin; export PATH
 LD_LIBRARY_PATH=/usr/local/lib; export LD_LIBRARY_PATH
 ./configure
