@@ -63,6 +63,13 @@ static int netok(char *netstring, char *curnet, int testuntagged)
 		 (testuntagged && (curnet == NULL)) );
 }
 
+static int dialupok(void *hinfo, int nodialup)
+{
+	if (!nodialup) return 1;
+	if (xmh_item(hinfo, XMH_FLAG_DIALUP)) return 0;
+	return 1;
+}
+
 static int downok(char *hostname, int nodownhosts)
 {
 	char *mark, *colorstr;
@@ -112,6 +119,7 @@ int main(int argc, char *argv[])
 	int extras = 1;
 	int testuntagged = 0;
 	int nodownhosts = 0;
+	int nodialup = 0;
 	int loadhostsfromxymond = 0;
 	int onlypreferredentry = 0;
 	char *p;
@@ -145,6 +153,9 @@ int main(int argc, char *argv[])
 			nodownhosts = 1;
 			p = strchr(argv[argi], '=');
 			if (p) testcolumn = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--no-dialup") == 0) {
+			nodialup = 1;
 		}
 		else if (strcmp(argv[argi], "--version") == 0) {
 			printf("xymongrep version %s\n", VERSION);
@@ -213,7 +224,7 @@ int main(int argc, char *argv[])
 		 * Must also check if the host is currently down (not responding to ping).
 		 * And if the host is OK with knownhost(), because it may be time-limited.
 		 */
-		if (netok(netstring, curnet, testuntagged) && downok(curname, nodownhosts) && knownhost(curname, hostip, GH_IGNORE)) {
+		if (netok(netstring, curnet, testuntagged) && downok(curname, nodownhosts) && dialupok(hwalk, nodialup) && knownhost(curname, hostip, GH_IGNORE)) {
 			char *item;
 
 			clearstrbuffer(wantedtags);
