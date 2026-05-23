@@ -18,7 +18,7 @@
 set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
-ROOT=$(git rev-parse --show-toplevel)
+ROOT=$(find_root)
 
 [ -f "$ROOT/configure.server" ] || skip "configure.server missing (CMake-only tree?)"
 [ -f "$ROOT/build/rrd.sh" ]     || skip "build/rrd.sh missing"

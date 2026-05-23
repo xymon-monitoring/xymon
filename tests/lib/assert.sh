@@ -106,6 +106,19 @@ mktempdir() {
 	printf '%s' "$d"
 }
 
+# ---- repo location -----------------------------------------------------------
+
+# find_root -- print the absolute path of the repo root, derived from the
+# calling test's own location (tests/<area>/<name>.sh -> repo root is two
+# dirs up). Independent of cwd, so the test produces the same result
+# whether invoked from the repo top, a sibling worktree, or anywhere
+# else. Prefer this over `git rev-parse --show-toplevel`, which honours
+# cwd and silently picks the wrong tree when a test is launched from
+# outside its own worktree.
+find_root() {
+	cd "$(dirname "${BASH_SOURCE[1]}")/../.." && pwd
+}
+
 # ---- binary discovery --------------------------------------------------------
 
 # require_bin VAR DEFAULT -- ensure $VAR (or DEFAULT if unset) points to an

@@ -24,7 +24,7 @@
 set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
-ROOT=$(git rev-parse --show-toplevel)
+ROOT=$(find_root)
 RULES="$ROOT/build/Makefile.rules"
 LIB="$ROOT/lib/Makefile"
 
