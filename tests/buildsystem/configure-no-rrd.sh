@@ -54,6 +54,14 @@ EOF
 
 cd "$SRC"
 
+# configure.server sources build/fping.sh before build/rrd.sh. On hosts
+# where fping is present-but-unusable (or USEXYMONPING=n with a failing
+# FPING), fping.sh enters an interactive prompt loop; with stdin closed
+# that loop spins forever, so the RRD assertion below is never reached.
+# Force the non-interactive xymonping path so this test is pinned to
+# the RRD probe regardless of host fping state.
+export USEXYMONPING=y
+
 LOG="$TMP/configure.log"
 set +e
 ./configure --server </dev/null >"$LOG" 2>&1
