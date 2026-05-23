@@ -60,17 +60,23 @@ set +e
 rc=$?
 set -e
 
-if [ "$rc" -eq 0 ]; then
+dump_log() {
 	echo "--- configure log ---" >&2
 	cat "$LOG" >&2
 	echo "--- end log ---" >&2
+}
+
+if [ "$rc" -eq 0 ]; then
+	dump_log
 	fail "configure --server exited 0 with RRDOK=NO; expected non-zero (regression of #84)"
 fi
 
-# Optional belt-and-braces: the post-#84 log mentions the abort reason.
-# Don't hard-fail on phrasing changes -- a non-zero exit is the load-
-# bearing assertion -- but if the message is present, surface it as
-# evidence of the right code path.
-if grep -q "Configuration aborted because the RRDtool probe failed" "$LOG"; then
-	: ok
+# A non-zero exit alone is not sufficient: on a clean runner the rest
+# of configure --server has plenty of unrelated ways to fail later
+# (missing xymon user, missing libs, ...), so rc != 0 could be
+# satisfied even if pre-#84 silent-continue behavior were reintroduced.
+# Pin the failure to the RRD abort code path in configure.server.
+if ! grep -q "RRDtool probe failed" "$LOG"; then
+	dump_log
+	fail "configure --server exited $rc but not via the RRD abort path (regression of #84)"
 fi
