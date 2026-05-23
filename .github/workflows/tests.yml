@@ -1,0 +1,63 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    name: shell regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run tests/**/*.sh
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          # Discover every executable .sh under tests/. Skip lib/ helpers
+          # (sourced, not run). Sort for stable ordering across runs.
+          mapfile -t tests < <(
+            find tests -type f -name '*.sh' -executable \
+              -not -path 'tests/lib/*' \
+              | sort
+          )
+
+          if [ ${#tests[@]} -eq 0 ]; then
+            echo "::notice::No executable tests found under tests/"
+            exit 0
+          fi
+
+          pass=0; fail=0; skip=0
+          failed_tests=()
+
+          for t in "${tests[@]}"; do
+            printf '::group::%s\n' "$t"
+            set +e
+            "$t"
+            rc=$?
+            set -e
+            case $rc in
+              0)  printf '  ok\n';                   pass=$((pass+1)) ;;
+              77) printf '  skip (rc=77)\n';         skip=$((skip+1)) ;;
+              *)  printf '::error::%s FAILED (rc=%d)\n' "$t" "$rc"
+                  fail=$((fail+1))
+                  failed_tests+=("$t (rc=$rc)") ;;
+            esac
+            printf '::endgroup::\n'
+          done
+
+          printf '\n----- summary -----\n'
+          printf 'passed:  %d\n' "$pass"
+          printf 'skipped: %d\n' "$skip"
+          printf 'failed:  %d\n' "$fail"
+          if [ "$fail" -gt 0 ]; then
+            printf '\nfailing tests:\n'
+            printf '  - %s\n' "${failed_tests[@]}"
+            exit 1
+          fi
