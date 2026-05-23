@@ -20,12 +20,12 @@ jobs:
         run: |
           set -uo pipefail
 
-          # Discover every executable .sh under tests/. Skip lib/ helpers
-          # (sourced, not run). Sort for stable ordering across runs.
+          # Discover every executable .sh under tests/. Sourced helpers
+          # (tests/lib/) and shared data files (tests/fixtures/) are not
+          # +x and therefore not picked up -- see tests/README.md.
+          # Sort for stable ordering across runs.
           mapfile -t tests < <(
-            find tests -type f -name '*.sh' -executable \
-              -not -path 'tests/lib/*' \
-              | sort
+            find tests -type f -name '*.sh' -executable | sort
           )
 
           if [ ${#tests[@]} -eq 0 ]; then

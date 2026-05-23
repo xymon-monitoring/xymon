@@ -15,6 +15,36 @@ Designed as the implementation of RFC [#97](https://github.com/xymon-monitoring/
   (`xymonnet/test-evheap.c`, `lib/test-endianness.c`, etc.) and are
   built/run by the existing per-directory Makefiles.
 
+## Directory layout
+
+Tests are organised by **domain area**, not by source path. Source
+paths shift over time (CMake migration is in flight); domains don't.
+Cross-cutting scenarios that don't map to a single source dir (e.g.
+shipped-file invariants) get their own area.
+
+| Area              | What lives here                                        |
+| ----------------- | ------------------------------------------------------ |
+| `tests/client/`   | xymon client tools and behaviours                      |
+| `tests/server/`   | xymond-side tools (xymongrep, xymoncgimsg, alert routing) |
+| `tests/network/`  | xymonnet probes (xymonping, network checks)            |
+| `tests/web/`      | CGIs, HTML rendering paths                             |
+| `tests/packaging/`| cross-cutting: shipped files, paths, generated configs |
+| `tests/buildsystem/` | parallel make, configure probes, CMake feature detection |
+| `tests/integration/` | end-to-end scenarios spanning multiple components   |
+| `tests/lib/`      | sourced helpers (`assert.sh`, future `net.sh` etc.)    |
+| `tests/fixtures/` | shared data files (config snippets, expected outputs)  |
+
+Add a new area by PR when an existing one doesn't fit. Don't bend a
+test to fit the wrong area just to avoid creating a new directory.
+
+### Runnable vs sourced/data files
+
+Only the **test entry point** has the executable bit set. Helpers
+under `lib/` are sourced; files under `fixtures/` are read. Neither
+is `+x`. The CI discovery rule (`find tests -type f -name '*.sh'
+-executable`) relies on this — there is no path-based exclude list to
+maintain.
+
 ## Conventions
 
 - **One file per scenario set.** Filename describes the area, not the
@@ -23,6 +53,10 @@ Designed as the implementation of RFC [#97](https://github.com/xymon-monitoring/
 - **Executable. Bash. Strict mode.** First line:
   `#!/usr/bin/env bash`. Second line: `set -euo pipefail`.
   POSIX-sh compatibility is a non-goal.
+- **Quiet on success, verbose on failure.** Don't print per-step
+  progress on the happy path; CI logs are noisy enough. On failure
+  the `fail` helper prints to stderr and exits, which is usually
+  enough context.
 - **Exit codes:**
   - `0` — pass
   - `77` — skip (matches the autotools / autopkgtest convention; CI
