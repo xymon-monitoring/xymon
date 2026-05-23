@@ -107,6 +107,14 @@ run_snippet() {
 	printf ' %s ' "$(cat "$DF_LOG")"
 }
 
+# Callers pass per-case env vars via the inline prefix on the
+# `args=$(VAR=val run_snippet)` invocation. Do NOT also set them on
+# the outer `args=$(...)` -- e.g. `VAR=val args=$(VAR=val run_snippet)`
+# is a *single* simple command with no command word, which makes both
+# assignments target the calling shell. The outer one then leaks VAR
+# into every subsequent case. Use a single inline prefix on the
+# command-substitution side only.
+
 # --- default behaviour: -P -l, every nodev (except rootfs) excluded ---------
 
 args=$(run_snippet)
@@ -123,7 +131,7 @@ assert_not_contains " -x ext4 " "$args" "default must NOT exclude ext4 (non-node
 
 # --- XYMONCLIENT_FS_INCLUDE_TYPES un-excludes one type ----------------------
 
-XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs args=$(XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs run_snippet)
+args=$(XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs run_snippet)
 assert_not_contains " -x tmpfs " "$args" \
 	"XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs must drop tmpfs from -x list"
 assert_contains " -x sysfs " "$args" \
