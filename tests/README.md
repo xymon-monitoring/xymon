@@ -68,6 +68,12 @@ maintain.
   condition, not for a wall-clock duration.
 - **No persistent side effects.** Use `mktemp -d` for scratch space and
   register cleanup via `register_cleanup` (see `lib/assert.sh`).
+- **No git assumption.** Tests must run against an extracted release
+  tarball or a Debian source package, where `.git` is absent. Use
+  `find_root` (script-location-based, not `git rev-parse`). When you
+  need to isolate from the source tree before mutating files, copy the
+  paths you actually need with `cp -r` into a `mktempdir`; do not use
+  `git worktree`, `git stash`, or any other git invocation.
 - **Path discovery via env var with default.** When a test needs a
   built binary, read it from an env var and default to the in-tree
   build path:
