@@ -124,9 +124,9 @@ void update_htmlfile(char *fn, char *msg,
 			firstline, restofmsg, NULL,
 			acktime, ackmsg, NULL,
 			disabletime, dismsg,
-			0, 1, 0, locatorbased, multigraphs, NULL, 
+			0, 1, 0, locatorbased, multigraphs, NULL,
 			NULL, NULL, NULL,
-			0,
+			0, 0,  /* graphtime=0, render_graphs=0: skip graph generation in background daemon */
 			output);
 
 		fclose(output);
