@@ -148,7 +148,7 @@ const static struct {
 	{ "XYMONPAGEHTACCESS", "" },
 	{ "XYMONSUBPAGEHTACCESS", "" },
 	{ "XYMONNETSVCS", "smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp" },
-	{ "HTMLCONTENTTYPE", "text/html" },
+	{ "HTMLCONTENTTYPE", "text/html; charset=UTF-8" },
 	{ "HOLIDAYFORMAT", "%d/%m" },
 	{ "WEEKSTART", "1" },
 	{ "XYMONBODYCSS", "$XYMONSKIN/xymonbody.css" },
