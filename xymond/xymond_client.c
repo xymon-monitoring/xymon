@@ -1795,11 +1795,8 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/openbsd.c"
 #include "client/solaris.c"
 #include "client/hpux.c"
-#include "client/osf.c"
 #include "client/aix.c"
 #include "client/darwin.c"
-#include "client/irix.c"
-#include "client/sco_sv.c"
 #include "client/bbwin.c"
 #include "client/powershell.c"	/* Must go after client/bbwin.c */
 #include "client/zvm.c"
@@ -2262,20 +2259,8 @@ int main(int argc, char *argv[])
                                 handle_hpux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
                                 break;
 
-                          case OS_OSF:
-                                handle_osf_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-                                break;
-
                           case OS_AIX:
                                 handle_aix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-                                break;
-
-                          case OS_IRIX:
-                                handle_irix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-                                break;
-
-                          case OS_SCO_SV:
-                                handle_sco_sv_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
                                 break;
 
                           case OS_WIN32_BBWIN:
