@@ -30,6 +30,21 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * PCRE2: fix leaks in headfoot/mailack, harden pickdata sizing (#89)
 * Fix parallel race: serialize common-client after common-build (#92)
 
+Migration notes (DRAFT — finalise when the underlying PRs land):
+
+* PCRE2: PCRE1 is no longer supported. Configurations using regex
+  features specific to PCRE1 syntax should be reviewed for PCRE2
+  compatibility (most patterns are unaffected). See PRs #5, #89, #93.
+
+* RRDtool: argv ABI is now detected by header signature rather than
+  RRDtool version. Both upstream RRDtool >= 1.9 and distro-backported
+  1.8 (e.g. Oracle Linux 10) are supported automatically. See PR #80.
+
+* Net-SNMP: when Net-SNMP is built without MD5 (NETSNMP_DISABLE_MD5),
+  an MD5-requested SNMPv3 auth falls back to SHA1 with a one-time
+  runtime warning. Update SNMPv3 auth to SHA1 to silence the warning.
+  See PR #75.
+
 
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
 ===========================================
