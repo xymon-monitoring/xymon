@@ -246,13 +246,14 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	optind = opterr = 0; rrd_clear_error();
 	result = rrd_update(pcount, updparams);
 
-#if defined(LINUX) && defined(RRDTOOL12)
+#if defined(LINUX)
 	/*
-	 * RRDtool 1.2+ uses mmap'ed I/O, but the Linux kernel does not update timestamps when
-	 * doing file I/O on mmap'ed files. This breaks our check for stale/nostale RRD's.
-	 * So do an explicit timestamp update on the file here.
+	 * RRDtool >= 1.2 uses mmap'ed I/O, but Linux does not update file timestamps for
+	 * mmap writes. This breaks our stale/nostale checks, so force a timestamp update --
+	 * but only on a successful update. Refreshing the mtime after a failed rrd_update()
+	 * would mask the failure from the stale/nostale detection.
 	 */
-	utimes(filedir, NULL);
+	if (result == 0) utimes(filedir, NULL);
 #endif
 
 	/* Clear the cached data */
