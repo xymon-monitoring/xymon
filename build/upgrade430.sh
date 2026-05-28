@@ -279,12 +279,9 @@ renameandlink hobbitclient-aix.sh xymonclient-aix.sh
 renameandlink hobbitclient-darwin.sh xymonclient-darwin.sh
 renameandlink hobbitclient-freebsd.sh xymonclient-freebsd.sh
 renameandlink hobbitclient-hp-ux.sh xymonclient-hp-ux.sh
-renameandlink hobbitclient-irix.sh xymonclient-irix.sh
 renameandlink hobbitclient-linux.sh xymonclient-linux.sh
 renameandlink hobbitclient-netbsd.sh xymonclient-netbsd.sh
 renameandlink hobbitclient-openbsd.sh xymonclient-openbsd.sh
-renameandlink hobbitclient-osf1.sh xymonclient-osf1.sh
-renameandlink hobbitclient-sco_sv.sh xymonclient-sco_sv.sh
 renameandlink hobbitclient.sh xymonclient.sh
 renameandlink hobbitclient-sunos.sh xymonclient-sunos.sh
 renameandlink hobbitlaunch xymonlaunch
