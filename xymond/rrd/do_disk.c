@@ -15,7 +15,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	static char *disk_params[] = { "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", NULL };
 	static void *disk_tpl      = NULL;
 
-	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
+	enum { DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
 	char *eoln, *curline;
 	static int ptnsetup = 0;
 	static pcre2_code *inclpattern = NULL;
@@ -54,8 +54,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		}
 	}
 
-	if (strstr(msg, " xfs ") || strstr(msg, " efs ") || strstr(msg, " cxfs ")) dsystype = DT_IRIX;
-	else if (strstr(msg, "DASD")) dsystype = DT_AS400;
+	if (strstr(msg, "DASD")) dsystype = DT_AS400;
 	else if (strstr(msg, "NetWare Volumes")) dsystype = DT_NETWARE;
 	else if (strstr(msg, "NetAPP")) dsystype = DT_NETAPP;
 	else if (strstr(msg, "Summary")) dsystype = DT_BBWIN; /* BBWin > 0.10 is almost like Windows/NT */
@@ -116,12 +115,6 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 			dsystype = DT_UNIX;
 
 		switch (dsystype) {
-		  case DT_IRIX:
-			diskname = xstrdup(columns[6]);
-			p = strchr(columns[5], '%'); if (p) *p = ' ';
-			pused = atoi(columns[5]);
-			aused = str2ll(columns[3], NULL);
-			break;
 		  case DT_AS400:
 			diskname = xstrdup("/DASD");
 			p = strchr(columns[columncount-1], '%'); if (p) *p = ' ';
