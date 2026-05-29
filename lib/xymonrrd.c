@@ -241,7 +241,7 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 		snprintf(rrdservicename, sizeof(rrdservicename), "devmon:%s", service);
 	}
 	else {
-		strncpy(rrdservicename, graphdef->xymonrrdname, sizeof(rrdservicename));
+		snprintf(rrdservicename, sizeof(rrdservicename), "%s", graphdef->xymonrrdname);
 	}
 
 	SBUF_MALLOC(svcurl, 
