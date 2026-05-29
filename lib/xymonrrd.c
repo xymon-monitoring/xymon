@@ -242,6 +242,7 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 	}
 	else {
 		strncpy(rrdservicename, graphdef->xymonrrdname, sizeof(rrdservicename));
+		rrdservicename[sizeof(rrdservicename)-1] = '\0'; /* Make sure it is null terminated */
 	}
 
 	SBUF_MALLOC(svcurl, 
