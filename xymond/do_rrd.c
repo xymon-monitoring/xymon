@@ -300,8 +300,8 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		}
 	}
 	/* Watch out here - "rrdfn" may be very large. */
-	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
-	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
+	if (snprintf(filedir, sizeof(filedir), "%s/%s/%s", rrddir, hostname, rrdfn) >= (int)sizeof(filedir))
+		errprintf("RRD path truncated: %s/%s/%s\n", rrddir, hostname, rrdfn);
 
 	/* 
 	 * Prepare to cache the update. Create the cache tree, and find/create a cache record.
@@ -608,8 +608,8 @@ static int rrddatasets(char *hostname, char ***dsnames)
 	unsigned long steptime, dscount;
 	rrd_value_t *rrddata;
 
-	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
-	filedir[sizeof(filedir)-1] = '\0';
+	if (snprintf(filedir, sizeof(filedir), "%s/%s/%s", rrddir, hostname, rrdfn) >= (int)sizeof(filedir))
+		errprintf("RRD path truncated: %s/%s/%s\n", rrddir, hostname, rrdfn);
 	if (stat(filedir, &st) == -1) return 0;
 
 	optind = opterr = 0; rrd_clear_error();

@@ -119,7 +119,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	nextline = msg;
 	l[MAX_LINE_LEN - 1] = '\0';
 
-	sprintf(fn, "%s/%s.%s.wml", wmldir, host->hostname, entry->column->name);
+	snprintf(fn, sizeof(fn), "%s/%s.%s.wml", wmldir, host->hostname, entry->column->name);
 	fd = fopen(fn, "w");
 	if (fd == NULL) {
 		errprintf("Cannot create file %s\n", fn);
@@ -312,7 +312,7 @@ void do_wml_cards(char *webdir)
 	}
 
 	/* Start the non-green WML card */
-	sprintf(nongreenfn, "%s/nongreen.wml.tmp", wmldir);
+	snprintf(nongreenfn, sizeof(nongreenfn), "%s/nongreen.wml.tmp", wmldir);
 	nongreenfd = fopen(nongreenfn, "w");
 	if (nongreenfd == NULL) {
 		errprintf("Cannot open non-green WML file %s\n", nongreenfn);
@@ -336,7 +336,7 @@ void do_wml_cards(char *webdir)
 		if (h->hostentry->anywaps) {
 
 			/* Create the host WAP card, with links to individual test results */
-			sprintf(hostfn, "%s/%s.wml", wmldir, h->hostentry->hostname);
+			snprintf(hostfn, sizeof(hostfn), "%s/%s.wml", wmldir, h->hostentry->hostname);
 			hostfd = fopen(hostfn, "w");
 			if (hostfd == NULL) {
 				errprintf("Cannot create file %s\n", hostfn);
@@ -386,7 +386,7 @@ void do_wml_cards(char *webdir)
 				fclose(nongreenfd);
 
 				/* Start a new Nongreen WML card */
-				sprintf(nongreenfn, "%s/nongreen-%d.wml", wmldir, nongreenpart);
+				snprintf(nongreenfn, sizeof(nongreenfn), "%s/nongreen-%d.wml", wmldir, nongreenpart);
 				nongreenfd = fopen(nongreenfn, "w");
 				if (nongreenfd == NULL) {
 					errprintf("Cannot open Nongreen WML file %s\n", nongreenfd);

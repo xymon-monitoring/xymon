@@ -351,7 +351,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 	result = compute(expr, &error);
 
 	if (error) {
-		sprintf(errtext, "compute(%s) returned error %d\n", expr, error);
+		snprintf(errtext, sizeof(errtext), "compute(%s) returned error %d\n", expr, error);
 		if (*errbuf == NULL) {
 			*errbuf = strdup(errtext);
 		}
