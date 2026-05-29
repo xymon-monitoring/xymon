@@ -152,9 +152,9 @@ static int parse_query(void)
 
 		req = getenv("SCRIPT_NAME");
 		SBUF_MALLOC(clienturi, strlen(req) + 10 + strlen(hostquoted));
-		strncpy(clienturi, req, clienturi_buflen);
+		strcpy(clienturi, req);
 		p = strchr(clienturi, '?'); if (p) *p = '\0'; else p = clienturi + strlen(clienturi);
-		snprintf(p, (clienturi_buflen - (clienturi - p)), "?CLIENT=%s", hostquoted);
+		snprintf(p, (clienturi_buflen + 1 - (p - clienturi)), "?CLIENT=%s", hostquoted);
 	}
 
 	return 0;

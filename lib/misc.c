@@ -164,15 +164,15 @@ char *commafy(char *hostname)
 
 	if (s == NULL) {
 		SBUF_MALLOC(s, strlen(hostname)+1);
-		strncpy(s, hostname, s_buflen);
+		snprintf(s, s_buflen, "%s", hostname);
 	}
 	else if (strlen(hostname) > strlen(s)) {
 		xfree(s);
 		SBUF_MALLOC(s, strlen(hostname)+1);
-		strncpy(s, hostname, s_buflen);
+		snprintf(s, s_buflen, "%s", hostname);
 	}
 	else {
-		strncpy(s, hostname, s_buflen);
+		snprintf(s, s_buflen, "%s", hostname);
 	}
 
 	for (p = strchr(s, '.'); (p); p = strchr(s, '.')) *p = ',';
