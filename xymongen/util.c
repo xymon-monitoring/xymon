@@ -43,7 +43,7 @@ char *hostpage_link(host_t *host)
 		sprintf(pagelink, "%s%s", ((xymongen_page_t *)host->parent)->name, htmlextension);
 		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
 			if (strlen(pgwalk->name)) {
-				sprintf(tmppath, "%s/%s", pgwalk->name, pagelink);
+				snprintf(tmppath, sizeof(tmppath), "%s/%s", pgwalk->name, pagelink);
 				strcpy(pagelink, tmppath);
 			}
 		}
