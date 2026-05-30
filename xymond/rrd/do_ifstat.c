@@ -101,16 +101,6 @@ static const char *ifstat_hpux_exprs[] = {
 	"^Outbound Octets\\s+= (\\d+)",
 };
 
-/*
-Name  Mtu   Network     Address         Ipkts    Ierrs Opkts    Oerrs  Coll 
-net0  1500  195.75.9    10.1.1.2        13096313 0     12257642 0      0     
-lo0   8232  127         127.0.0.1       26191    0     26191    0      0
-Attention, theses numbers are packets, not bytes !
-*/
-static const char *ifstat_sco_sv_exprs[] = {
-	"^([a-z]+[0-9]+)\\s+[0-9]+\\s+[0-9.]+\\s+[0-9.]+\\s+([0-9]+)\\s+[0-9]+\\s+([0-9]+)\\s+"
-};
-
 /* IP          Ibytes Obytes */
 /* 192.168.0.1 1818   1802  */
 static const char *ifstat_bbwin_exprs[] = {
@@ -129,7 +119,6 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	static pcre2_code **ifstat_solaris_pcres = NULL;
 	static pcre2_code **ifstat_aix_pcres = NULL;
 	static pcre2_code **ifstat_hpux_pcres = NULL;
-	static pcre2_code **ifstat_sco_sv_pcres = NULL;
 	static pcre2_code **ifstat_bbwin_pcres = NULL;
 
 	enum ostype_t ostype;
@@ -165,11 +154,9 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 						 (sizeof(ifstat_solaris_exprs) / sizeof(ifstat_solaris_exprs[0])));
 		ifstat_aix_pcres = compile_exprs("AIX", ifstat_aix_exprs, 
 						 (sizeof(ifstat_aix_exprs) / sizeof(ifstat_aix_exprs[0])));
-		ifstat_hpux_pcres = compile_exprs("HPUX", ifstat_hpux_exprs, 
+		ifstat_hpux_pcres = compile_exprs("HPUX", ifstat_hpux_exprs,
 						 (sizeof(ifstat_hpux_exprs) / sizeof(ifstat_hpux_exprs[0])));
-		ifstat_sco_sv_pcres = compile_exprs("SCO_SV", ifstat_sco_sv_exprs, 
-						 (sizeof(ifstat_sco_sv_exprs) / sizeof(ifstat_sco_sv_exprs[0])));
-		ifstat_bbwin_pcres = compile_exprs("BBWIN", ifstat_bbwin_exprs, 
+		ifstat_bbwin_pcres = compile_exprs("BBWIN", ifstat_bbwin_exprs,
 						 (sizeof(ifstat_bbwin_exprs) / sizeof(ifstat_bbwin_exprs[0])));
 	}
 
@@ -295,11 +282,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		  case OS_DARWIN:
 			if (pickdata(bol, ifstat_darwin_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
-			
- 		  case OS_SCO_SV:
-		        if (pickdata(bol, ifstat_sco_sv_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
-			break;
-			
+
 		  case OS_WIN32_BBWIN:
 		  case OS_WIN_POWERSHELL:
 			if (pickdata(bol, ifstat_bbwin_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
