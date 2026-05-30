@@ -83,14 +83,7 @@
 	fi
 	cd build
 	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
-	OS=`uname -s | sed -e's@/@_@g'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile 2>/dev/null
-	if test $? -ne 0; then
-		# See if it's the new RRDtool 1.2.x
-		echo "Not RRDtool 1.0.x, checking for 1.2.x"
-		RRDDEF="$RRDDEF -DRRDTOOL12"
-		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
-		OS=`uname -s | sed -e's@/@_@g'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile
-	fi
+	OS=`uname -s | sed -e's@/@_@g'` RRDDEF="$RRDDEF" RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-compile
 	if test $? -eq 0; then
 		echo "Compiling with RRDtool works OK"
 	else

@@ -28,11 +28,7 @@ int main(int argc, char *argv[])
 
 	for (pcount = 0; (rrdargs[pcount]); pcount++);
 	rrd_clear_error();
-#ifdef RRDTOOL12
 	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-#else
-	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize);
-#endif
 
 	return 0;
 }
