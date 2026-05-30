@@ -309,10 +309,10 @@ filter out any unwanted strings that happen to match &quot;pattern&quot;.
 The <B>OPTIONAL</B> keyword causes the check to be skipped if the logfile
 does not exist.
 <P>
-Example: Trigger a red alert when the string &quot;ERROR&quot; appears in the &quot;/var/adm/syslog&quot; file:
+Example: Trigger a red alert when the string &quot;ERROR&quot; appears in the &quot;/var/log/syslog&quot; file:
 <BR>
 
-<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>LOG /var/adm/syslog ERROR<BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>LOG /var/log/syslog ERROR<BR>
 <P>
 Example: Trigger a yellow warning on all occurrences of the word &quot;WARNING&quot;
 or &quot;NOTICE&quot; in the &quot;daemon.log&quot; file, except those from the &quot;lpr&quot; system:

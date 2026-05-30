@@ -247,9 +247,9 @@ filter out any unwanted strings that happen to match "pattern".
 The \fBOPTIONAL\fR keyword causes the check to be skipped if the logfile
 does not exist.
 .sp
-Example: Trigger a red alert when the string "ERROR" appears in the "/var/adm/syslog" file:
+Example: Trigger a red alert when the string "ERROR" appears in the "/var/log/syslog" file:
 .br
-	LOG /var/adm/syslog ERROR
+	LOG /var/log/syslog ERROR
 .sp
 Example: Trigger a yellow warning on all occurrences of the word "WARNING"
 or "NOTICE" in the "daemon.log" file, except those from the "lpr" system:
