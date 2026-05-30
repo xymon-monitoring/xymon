@@ -1,8 +1,14 @@
 #!/bin/bash
+set -euo pipefail
 
 export LANG=C
-DATE=`date +"%e %b %Y" --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}"`
-VERSION="$1"
+if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+	DATE=$(date -u -d "@$SOURCE_DATE_EPOCH" +"%e %b %Y" 2>/dev/null) \
+		|| DATE=$(date -u -r "$SOURCE_DATE_EPOCH" +"%e %b %Y")
+else
+	DATE=$(date +"%e %b %Y")
+fi
+VERSION="${1:-}"
 if [ "$VERSION" = "" ]
 then
 	echo "Usage: $0 VERSION"

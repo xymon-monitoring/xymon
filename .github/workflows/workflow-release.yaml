@@ -41,7 +41,7 @@ jobs:
             --format=tar \
             --prefix="${PREFIX}" \
             "${{ steps.vars.outputs.tag }}" \
-          | gzip -9 > "${{ steps.vars.outputs.asset }}"
+          | gzip -n -9 > "${{ steps.vars.outputs.asset }}"
 #---------------------------------------------------
       - name: Create GitHub Release and upload tarball
         uses: softprops/action-gh-release@v3
