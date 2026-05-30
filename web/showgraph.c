@@ -32,6 +32,7 @@ static char rcsid[] = "$Id$";
 #include <rrd.h>
 
 #include "libxymon.h"
+#include "../lib/rrd_api_compat.h"
 
 #define HOUR_GRAPH  "e-48h"
 #define DAY_GRAPH   "e-12d"
@@ -773,7 +774,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 	/* Options for rrd_graph() */
 	int  rrdargcount;
-	char **rrdargs = NULL;	/* The full argv[] table of string pointers to arguments */
+	xymon_rrd_argv_item_t *rrdargs = NULL;	/* The full argv[] table of string pointers to arguments */
 	char heightopt[30];	/* -h HEIGHT */
 	char widthopt[30];	/* -w WIDTH */
 	char upperopt[30];	/* -u MAX */
@@ -1109,7 +1110,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	 * there are multiple RRD-files to handle).
 	 */
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
-	rrdargs = (char **) calloc(16 + pcount*rrddbcount + useroptcount + 1, sizeof(char *));
+	rrdargs = calloc(16 + pcount*rrddbcount + useroptcount + 1, sizeof(*rrdargs));
 
 
 	argi = 0;
@@ -1186,11 +1187,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	/* All set - generate the graph */
 	rrd_clear_error();
 
-#ifdef RRDTOOL19
-	result = rrd_graph(rrdargcount, (const char **)rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-#else
-	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-#endif
+	result = xymon_rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
 
 	/*
 	 * If we have neither the upper- nor lower-limits of the graph, AND we allow vertical

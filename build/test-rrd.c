@@ -1,14 +1,11 @@
 #include <stdio.h>
 
 #include <rrd.h>
+#include "../lib/rrd_api_compat.h"
 
-int main(int argc, char *argv[])
+int main(void)
 {
-#ifdef RRDTOOL19
-	const char *rrdargs[] = {
-#else
-	char *rrdargs[] = {
-#endif
+	xymon_rrd_argv_item_t rrdargs[] = {
 		"rrdgraph",
 		"xymongen.png",
 		"-s", "e - 48d",
@@ -28,7 +25,8 @@ int main(int argc, char *argv[])
 
 	for (pcount = 0; (rrdargs[pcount]); pcount++);
 	rrd_clear_error();
-	result = rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
+	result = xymon_rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
+	(void)result;
 
 	return 0;
 }
