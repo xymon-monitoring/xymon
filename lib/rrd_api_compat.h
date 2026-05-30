@@ -8,9 +8,15 @@
  * "const char **". This header hides that difference behind a single argv
  * item type and a set of thin wrappers, so callers do not need their own
  * per-call casts or #ifdefs.
+ *
+ * RRD_CONST_ARGS (0 or 1) is determined by build/rrd.sh, which probes rrd.h.
  */
 
-#ifdef RRDTOOL19
+#ifndef RRD_CONST_ARGS
+#error "RRD_CONST_ARGS is not defined. Run configure or define RRD_CONST_ARGS (0 or 1)."
+#endif
+
+#if RRD_CONST_ARGS
 typedef const char *xymon_rrd_argv_item_t;
 static const char **xymon_rrd_api_argv(xymon_rrd_argv_item_t *argv)
 {
