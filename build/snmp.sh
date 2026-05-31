@@ -3,7 +3,7 @@
 	SNMPINC=""
 	SNMPLIB=""
 
-	VERSION=`net-snmp-config --version`
+	VERSION=`net-snmp-config --version 2>/dev/null`
 	if test $? -eq 0
 	then
 		echo "Found Net-SNMP version $VERSION"
