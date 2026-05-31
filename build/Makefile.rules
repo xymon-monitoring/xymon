@@ -140,6 +140,13 @@ win32: include/config.h
 	CC="$(CC)" CFLAGS="$(CFLAGS) -DXYMONWINCLIENT -DCLIENTONLY" LDFLAGS="$(LDFLAGS)" RPATHOPT="$(RPATHOPT)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" LIBRTDEF="$(LIBRTDEF)" XYMONHOME="$(XYMONHOME)" XYMONTOPDIR="$(XYMONTOPDIR)" XYMONLOGDIR="$(XYMONLOGDIR)" XYMONHOSTNAME="$(XYMONHOSTNAME)" XYMONHOSTIP="$(XYMONHOSTIP)" XYMONHOSTOS="$(XYMONHOSTOS)" $(MAKE) -C common xymon.exe
 
 #####################
+# Regression testsuite
+#####################
+# Runs every executable test under tests/ via the shared runner. The runner
+# resolves the repo root itself, so it works from any cwd. See tests/README.md.
+test:
+	$(BUILDTOPDIR)/tests/testsuite
+
 # Cleanup targets
 #####################
 distclean: allclean

@@ -7,6 +7,19 @@ can re-run the check without re-reading the PR.
 
 Designed as the implementation of RFC [#97](https://github.com/xymon-monitoring/xymon/issues/97).
 
+## Running the tests
+
+From a fresh checkout, no build required:
+
+    ./tests/testsuite
+
+It discovers every executable `tests/**/*.sh`, runs each, and prints a
+pass/skip/fail summary (exit `0` = pass, `77` = skip, anything else = fail).
+Output adapts on its own: plain text on a terminal, GitHub Actions annotations
+under CI — the workflow and a developer run the exact same runner.
+
+Once the tree is configured, `make test` runs the same thing.
+
 ## What lives here, what doesn't
 
 - **Here:** shell-level integration scenarios that exercise binaries,
