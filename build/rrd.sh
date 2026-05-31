@@ -64,6 +64,40 @@
 		fi
 	done
 
+	# MacPorts (/opt/local) and Homebrew (/opt/homebrew) install RRDtool outside the
+	# prefixes scanned above. Consult them only when the standard search found nothing,
+	# so this stays a pure fallback that leaves detection on other systems unchanged.
+	# macOS shared libraries use the .dylib extension.
+	if test "$RRDINC" = ""
+	then
+		for DIR in /opt/local /opt/homebrew
+		do
+			if test -f $DIR/include/rrd.h
+			then
+				RRDINC=$DIR/include
+			fi
+
+			if test -f $DIR/lib/librrd.dylib
+			then
+				RRDLIB=$DIR/lib
+			fi
+			if test -f $DIR/lib/librrd.a
+			then
+				RRDLIB=$DIR/lib
+			fi
+
+			if test -f $DIR/lib/libpng.dylib
+			then
+				PNGLIB="-L$DIR/lib -lpng"
+			fi
+
+			if test -f $DIR/lib/libz.dylib
+			then
+				ZLIB="-L$DIR/lib -lz"
+			fi
+		done
+	fi
+
 	if test "$USERRRDINC" != ""; then
 		RRDINC="$USERRRDINC"
 	fi
