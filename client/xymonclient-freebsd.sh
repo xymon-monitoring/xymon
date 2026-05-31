@@ -55,6 +55,8 @@ echo "[ports]"
 echo "[ps]"
 # Don't use "args". "command" works also in FreeBSD 4.x.
 ps -axd -ww -o pid,ppid,user,start,state,pri,pcpu,cputime,pmem,rss,vsz,command
+echo "[pkg"]
+pkg query %n-%v
 
 # $TOP must be set, the install utility should do that for us if it exists.
 if test "$TOP" != ""
