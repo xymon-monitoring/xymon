@@ -85,29 +85,14 @@ contest: contest.c httptest.o dns.o dns2.o httpcookies.o $(XYMONCOMMLIB) $(XYMON
 	$(CC) $(CFLAGS) -o contest -I../include $(CARESINC) -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o $(CARESLIBS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
 
 
-# net-snmp-config exports the distro's full build policy along with the
-# interface: -Werror=declaration-after-statement (newer net-snmp), the EL9
-# hardened-ld -specs (forces PIE links against our non-PIC objects), LTO,
-# fortify options, and more. Keep only what we actually need from it:
-# for compiling, include dirs and defines; for linking, library names,
-# dirs and runtime paths.
-SNMPCFLAGS := $(shell for flag in `net-snmp-config --cflags 2>/dev/null`; do \
-		case $$flag in \
-			(-I*|-D*|-U*|-pthread) echo $$flag ;; \
-		esac; \
-	done)
-
-SNMPLIBS := $(shell for flag in `net-snmp-config --libs 2>/dev/null`; do \
-		case $$flag in \
-			(-l*|-L*|-Wl,-rpath*|-Wl,-R*|-pthread) echo $$flag ;; \
-		esac; \
-	done)
-
+# SNMPINCDIR and SNMPLIBS come from configure (build/snmp.sh), which keeps
+# only the interface flags from net-snmp-config's output - see the filtering
+# note there.
 xymon-snmpcollect: xymon-snmpcollect.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
 	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o $(SNMPLIBS) ../lib/libxymon.a $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
 
 xymon-snmpcollect.o: xymon-snmpcollect.c
-	$(CC) $(CFLAGS) -I. $(SNMPCFLAGS) -c -o $@ xymon-snmpcollect.c
+	$(CC) $(CFLAGS) -I. $(SNMPINCDIR) -c -o $@ xymon-snmpcollect.c
 
 ################################################
 # Default compilation rules
