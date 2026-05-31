@@ -43,7 +43,14 @@ char *hostpage_link(host_t *host)
 		sprintf(pagelink, "%s%s", ((xymongen_page_t *)host->parent)->name, htmlextension);
 		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
 			if (strlen(pgwalk->name)) {
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+				#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 				sprintf(tmppath, "%s/%s", pgwalk->name, pagelink);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+				#pragma GCC diagnostic pop
+#endif  // __GNUC__
 				strcpy(pagelink, tmppath);
 			}
 		}

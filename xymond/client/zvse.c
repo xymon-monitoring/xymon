@@ -532,6 +532,7 @@ static void zvse_getvis_report(char *hostname, char *clientclass, enum ostype_t 
                 q = strchr(jinfo, '-');              /* Check if jobname passed  */
                 if (q) {
                         strncpy(pid, jinfo, 2);          /*  Copy partition ID  */
+			pid[sizeof(pid)-1] = '\0';       /*  Make sure it is null terminated */
                         q++;                             /*  Increment pointer  */
 			strcpy(jobname,q);		 /*  Copy jobname       */
                         }
