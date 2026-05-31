@@ -2,7 +2,7 @@
 
 	OSSLINC=""
 	OSSLLIB=""
-	for DIR in /opt/openssl* /opt/ssl* /usr/local/openssl* /usr/local/ssl* /usr/local /usr/pkg /opt/csw /opt/sfw/*ssl* /usr/sfw /usr/sfw/*ssl*
+	for DIR in /opt/openssl* /opt/ssl* /usr/local/openssl* /usr/local/ssl* /usr/local /usr/pkg /opt/csw /opt/sfw/*ssl* /usr/sfw /usr/sfw/*ssl* /usr/local/opt/openssl@3 /opt/homebrew/opt/openssl@3 /opt/local
 	do
 		if test -d $DIR/include/openssl
 		then
@@ -10,6 +10,10 @@
 		fi
 
 		if test -f $DIR/lib/libcrypto.so
+		then
+			OSSLLIB=$DIR/lib
+		fi
+		if test -f $DIR/lib/libcrypto.dylib
 		then
 			OSSLLIB=$DIR/lib
 		fi
