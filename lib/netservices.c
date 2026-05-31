@@ -151,6 +151,7 @@ char *init_tcp_services(void)
 				if (svcinfo[i].svcname) xfree(svcinfo[i].svcname);
 				if (svcinfo[i].sendtxt) xfree(svcinfo[i].sendtxt);
 				if (svcinfo[i].exptext) xfree(svcinfo[i].exptext);
+				if (svcinfo[i].alpns) xfree(svcinfo[i].alpns);
 			}
 			xfree(svcinfo);
 			svcinfo = default_svcinfo;
@@ -243,6 +244,9 @@ char *init_tcp_services(void)
 					if      (strcmp(opt, "ssl") == 0)    first->rec->flags |= TCP_SSL;
 					else if (strcmp(opt, "banner") == 0) first->rec->flags |= TCP_GET_BANNER;
 					else if (strcmp(opt, "telnet") == 0) first->rec->flags |= TCP_TELNET;
+					else if (strncmp(opt, "alpn=", 5) == 0) {
+						first->rec->alpns = strdup(opt+5);
+					}
 					else errprintf("Unknown option: %s\n", opt);
 
 					opt = strtok(NULL, ",");
@@ -276,6 +280,7 @@ char *init_tcp_services(void)
 		svcinfo[i].expofs  = walk->rec->expofs;
 		svcinfo[i].flags   = walk->rec->flags;
 		svcinfo[i].port    = walk->rec->port;
+		svcinfo[i].alpns   = walk->rec->alpns;
 	}
 	memset(&svcinfo[svccount], 0, sizeof(svcinfo_t));
 
