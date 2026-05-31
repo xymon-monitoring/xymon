@@ -77,8 +77,13 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 
 			zVM_exp = pcre2_compile(".* CPU Utilization *([0-9]+)%", PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
 		}
+		if (zVM_exp == NULL) goto done_parsing;
 
-		ovector = pcre2_match_data_create(30, NULL);
+		ovector = pcre2_match_data_create_from_pattern(zVM_exp, NULL);
+		if (!ovector) {
+			errprintf("Cannot allocate PCRE match data for z/VM load parsing\n");
+			goto done_parsing;
+		}
 		res = pcre2_match(zVM_exp, msg, strlen(msg), 0, 0, ovector, NULL);
 		if (res >= 0) {
 			/* We have a match - pick up the data. */
@@ -154,8 +159,13 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 			as400_exp = pcre2_compile(".* ([0-9]+) users ([0-9]+) jobs.* load=([0-9]+)\\%",
 			                          PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
 		}
+		if (as400_exp == NULL) goto done_parsing;
 
-		ovector = pcre2_match_data_create(30, NULL);
+		ovector = pcre2_match_data_create_from_pattern(as400_exp, NULL);
+		if (!ovector) {
+			errprintf("Cannot allocate PCRE match data for AS/400 load parsing\n");
+			goto done_parsing;
+		}
 		res = pcre2_match(as400_exp, msg, strlen(msg), 0, 0, ovector, NULL);
 		if (res >= 0) {
 			/* We have a match - pick up the AS/400 data. */
@@ -275,4 +285,3 @@ done_parsing:
 
 	return 0;
 }
-
