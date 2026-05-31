@@ -1,17 +1,27 @@
 	echo "Checking for Net-SNMP ..."
 
-	SNMPINC=""
-	SNMPLIB=""
+	SNMPOK="NO"
+	SNMPINCDIR=""
+	SNMPLIBS=""
 
-	VERSION=`net-snmp-config --version`
-	if test $? -eq 0
+	if test "$USERSNMPINC" != "" -o "$USERSNMPLIB" != ""
 	then
-		echo "Found Net-SNMP version $VERSION"
-		DOSNMP=yes
+		# Location specified explicitly via --snmpinclude / --snmplib.
+		if test "$USERSNMPINC" != ""; then SNMPINCDIR="-I$USERSNMPINC"; fi
+		if test "$USERSNMPLIB" != ""; then SNMPLIBS="-L$USERSNMPLIB -lnetsnmp"; fi
+		SNMPOK="YES"
+		echo "Using user-specified Net-SNMP location"
 	else
-		sleep 3
-		echo "Could not find Net-SNMP (net-snmp-config command fails)"
-		echo "Continuing with SNMP support disabled."
-		DOSNMP=no
+		VERSION=`net-snmp-config --version 2>/dev/null`
+		if test $? -eq 0
+		then
+			echo "Found Net-SNMP version $VERSION"
+			SNMPINCDIR=`net-snmp-config --cflags`
+			SNMPLIBS=`net-snmp-config --libs`
+			SNMPOK="YES"
+		else
+			echo "Could not find Net-SNMP (net-snmp-config command fails)"
+			echo "SNMP support will not be available."
+		fi
 	fi
 
