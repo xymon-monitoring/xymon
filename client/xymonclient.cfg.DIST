@@ -18,6 +18,38 @@ XYMONCLIENTLOGS="$XYMONHOME/logs"     # Where we store the client logfiles
 LOGFETCHOPTS=""
 
 
+# Filesystem reporting (Linux client) -- used by xymonclient-linux.sh when
+# collecting df and inode data. Unset (the default) means current behavior:
+# exclude every nodev pseudo filesystem except rootfs, and pass -l to df.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated FS types that should
+#    appear in the report even though they would otherwise be excluded as
+#    nodev. Examples:
+#      "tmpfs squashfs"      -- surface tmpfs and squashfs mounts.
+#      "nfs nfs4 ceph"       -- include remote filesystems (requires
+#                               XYMONCLIENT_FS_DF_LOCAL_ONLY=no, since
+#                               df -l hides remote mounts).
+#
+# XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to also
+#    exclude, on top of the nodev default. Useful when container runtimes
+#    or other tools register filesystem types that you do not want to see
+#    in the disk report. Examples:
+#      "overlay fuse"        -- drop container-runtime mounts.
+#
+# XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) passes -l to df, hiding
+#    remote filesystems. Set to "no" to report nfs/ceph/etc.
+#    WARNING: with "no", df can hang for the whole client cycle if any
+#    remote mount is stale. Use XYMONCLIENT_FS_DF_TIMEOUT to cap the wait.
+#
+# XYMONCLIENT_FS_DF_TIMEOUT: seconds before df is killed by timeout(1),
+#    default "30". Set empty to disable the wrapper.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES=""
+# XYMONCLIENT_FS_EXCLUDE_TYPES=""
+# XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
+# XYMONCLIENT_FS_DF_TIMEOUT="30"
+
+
 # Local Mode (Only) Options
 #
 # Running the Xymon client in local-config mode will cause threshold evaluation to

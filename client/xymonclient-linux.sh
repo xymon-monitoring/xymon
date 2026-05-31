@@ -45,14 +45,57 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-EXCLUDES=`cat /proc/filesystems | grep nodev | grep -v rootfs | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g'`
+# Default: exclude every nodev (pseudo) filesystem in df/inode output, except
+# rootfs. This is the historical upstream behavior.
+if [ -r /proc/filesystems ]; then
+	EXCLUDES=`awk '/nodev/ {print $2}' /proc/filesystems | grep -v '^rootfs$' | xargs echo`
+else
+	echo "xymonclient-linux: /proc/filesystems not readable, filesystem filter disabled" >&2
+	EXCLUDES=""
+fi
+# XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated FS types that should
+# appear in the output even though they would otherwise be excluded
+# (e.g. "tmpfs squashfs" to surface tmpfs mounts, or "nfs nfs4 ceph" to
+# include remote filesystems -- the latter also requires
+# XYMONCLIENT_FS_DF_LOCAL_ONLY=no since df -l hides remote mounts).
+if [ -n "$XYMONCLIENT_FS_INCLUDE_TYPES" ]; then
+	for t in $XYMONCLIENT_FS_INCLUDE_TYPES; do
+		EXCLUDES=`echo " $EXCLUDES " | sed -e "s! $t ! !g"`
+	done
+fi
+# XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to ALSO
+# exclude, on top of the nodev default (e.g. "overlay fuse" to drop
+# container-runtime mounts that would otherwise leak into the report).
+if [ -n "$XYMONCLIENT_FS_EXCLUDE_TYPES" ]; then
+	for t in $XYMONCLIENT_FS_EXCLUDE_TYPES; do
+		case " $EXCLUDES " in
+			*" $t "*) ;;  # already in list
+			*) EXCLUDES="$EXCLUDES $t" ;;
+		esac
+	done
+fi
+EXCLUDES=`echo $EXCLUDES | sed -e 's! ! -x !g'`
+# XYMONCLIENT_FS_DF_LOCAL_ONLY: defaults to "yes" (current upstream behavior,
+# passes -l to df). Set to "no" to drop -l so that remote filesystems
+# (nfs, ceph, ...) appear in the output.
+DFOPTS="-P"
+[ "${XYMONCLIENT_FS_DF_LOCAL_ONLY:-yes}" = "yes" ] && DFOPTS="$DFOPTS -l"
+# XYMONCLIENT_FS_DF_TIMEOUT: seconds before df is killed (default 30).
+# Set to empty string ("") to disable. df can hang on stale NFS/CIFS mounts
+# -- particularly relevant when XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+DFTIMEOUT="${XYMONCLIENT_FS_DF_TIMEOUT-30}"
+if [ -n "$DFTIMEOUT" ] && command -v timeout >/dev/null 2>&1; then
+	DFCMD="timeout ${DFTIMEOUT}s df"
+else
+	DFCMD="df"
+fi
 ROOTFS=`readlink -m /dev/root`
-df -Pl -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
+$DFCMD $DFOPTS -x iso9660 ${EXCLUDES:+-x $EXCLUDES} | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' -e "s&^rootfs&${ROOTFS}&"
 echo "[inode]"
-df -Pil -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
+$DFCMD $DFOPTS -i -x iso9660 ${EXCLUDES:+-x $EXCLUDES} | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' -e "s&^rootfs&${ROOTFS}&"
