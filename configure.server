@@ -29,6 +29,10 @@ do
 
   The script will search a number of standard directories for
   all of these files, so you normally do not have to specify any options.
+
+  RRDtool argv API override (normally auto-detected):
+     RRD_CONST_ARGS=1 ./configure.server   # rrd.h uses const char **
+     RRD_CONST_ARGS=0 ./configure.server   # rrd.h uses char **
 EOF
 		exit 0
 		;;
