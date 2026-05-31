@@ -208,9 +208,9 @@ int main(int argc, char *argv[])
 				for (i = 10; (i > 0); i--) itm->tstamp[i+1] = itm->tstamp[i];
 				itm->tstamp[0] = now;
 
-				sprintf(hostdir, "%s/%s", clientlogdir, metadata[3]);
+				snprintf(hostdir, sizeof(hostdir), "%s/%s", clientlogdir, metadata[3]);
 				mkdir(hostdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-				sprintf(fn, "%s/%s", hostdir, metadata[4]);
+				snprintf(fn, sizeof(fn), "%s/%s", hostdir, metadata[4]);
 				fd = fopen(fn, "w");
 				if (fd == NULL) {
 					errprintf("Cannot create file %s: %s\n", fn, strerror(errno));
