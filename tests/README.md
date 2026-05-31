@@ -109,10 +109,9 @@ Standalone — what reviewers do:
 ./tests/client/fs-filter.sh
 ```
 
-All of them at once — what CI does:
+All of them at once — what CI and developers both run:
 ```sh
-find tests -type f -executable -name '*.sh' -print0 \
-  | xargs -0 -n1 -I{} bash -c '{}'
+./tests/testsuite
 ```
 
 ## How to add a regression scenario

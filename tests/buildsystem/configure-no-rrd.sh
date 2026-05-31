@@ -21,6 +21,7 @@
 # chroot, where .git is absent. See tests/README.md.
 
 set -euo pipefail
+# shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
 
 ROOT=$(find_root)

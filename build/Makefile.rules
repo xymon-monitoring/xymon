@@ -144,6 +144,7 @@ win32: include/config.h
 #####################
 # Runs every executable test under tests/ via the shared runner. The runner
 # resolves the repo root itself, so it works from any cwd. See tests/README.md.
+.PHONY: test
 test:
 	$(BUILDTOPDIR)/tests/testsuite
 

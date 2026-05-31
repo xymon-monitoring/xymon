@@ -14,7 +14,7 @@
 set -u
 
 # Resolve the repo root from this script's own location, so it works from any cwd.
-root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd) || exit 2
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd) || exit 2
 cd "$root" || exit 2
 
 if [ "${GITHUB_ACTIONS:-}" = "true" ]; then gh=1; else gh=0; fi

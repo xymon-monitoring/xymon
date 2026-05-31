@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
+# shellcheck shell=bash
 #
 # tests/lib/assert.sh -- minimal helpers for tests/ scenarios.
 #

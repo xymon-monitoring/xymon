@@ -26,6 +26,7 @@
 # others, which is more surface than the test buys back.
 
 set -euo pipefail
+# shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
 
 ROOT=$(find_root)
