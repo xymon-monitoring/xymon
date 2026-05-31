@@ -60,6 +60,19 @@ y
 
 
 
+Checking for Net-SNMP ...
+Found Net-SNMP version 5.9.4
+
+Xymon can use the Net-SNMP library for the xymon-snmpcollect tool.
+This SNMP support is EXPERIMENTAL and is disabled by default. To enable it,
+answer "y" here (or pass ENABLESNMP=y; use --snmpinclude/--snmplib to point
+at a non-standard Net-SNMP location).
+
+Do you want to enable SNMP support (n) ?
+n
+
+
+
 Setting up for a Xymon server
 
 
