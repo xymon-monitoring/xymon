@@ -181,7 +181,7 @@ echo ""; echo "";
 . build/clock-gettime-librt.sh
 echo ""; echo ""
 
-if test "$SNMP" = "1"
+if test "$SNMP" != "0" -a "$SNMP" != "n"
 then
 	. build/snmp.sh
 	echo ""; echo ""
