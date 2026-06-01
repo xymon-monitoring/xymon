@@ -53,6 +53,20 @@ echo "Checking for RRDtool ... (mocked: forcing RRDOK=NO)"
 RRDOK="NO"
 EOF
 
+# configure.server sources build/c-ares.sh before build/rrd.sh, and since
+# c-ares became a hard requirement (#18, #138) a host without the c-ares
+# dev package aborts configure right there -- the RRD stub below would
+# never run and the assertion would see the wrong abort path. Stub the
+# probe to succeed so this test stays pinned to the RRD probe regardless
+# of host c-ares state (same isolation as USEXYMONPING below for fping).
+cat > "$SRC/build/c-ares.sh" <<'EOF'
+# Stub for tests/buildsystem/configure-no-rrd.sh -- pretend the system
+# c-ares probe succeeded so configure proceeds to the RRD probe.
+echo "Checking for C-ARES library ... (mocked: forcing success)"
+CARESINC=""
+CARESLIB=""
+EOF
+
 cd "$SRC"
 
 # configure.server sources build/fping.sh before build/rrd.sh. On hosts
