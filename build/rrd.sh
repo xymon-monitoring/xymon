@@ -5,7 +5,7 @@
 	RRDLIB=""
 	PNGLIB=""
 	ZLIB=""
-	for DIR in /opt/rrdtool* /usr/local/rrdtool* /usr/local /usr/pkg /opt/csw /opt/sfw /usr/sfw
+	for DIR in /opt/rrdtool* /usr/local/rrdtool* /usr/local /usr/pkg /opt/csw /opt/sfw /usr/sfw /opt/homebrew /opt/local
 	do
 		if test -f $DIR/include/rrd.h
 		then
@@ -13,6 +13,10 @@
 		fi
 
 		if test -f $DIR/lib/librrd.so
+		then
+			RRDLIB=$DIR/lib
+		fi
+		if test -f $DIR/lib/librrd.dylib
 		then
 			RRDLIB=$DIR/lib
 		fi
@@ -33,6 +37,10 @@
 		then
 			PNGLIB="-L$DIR/lib -lpng"
 		fi
+		if test -f $DIR/lib/libpng.dylib
+		then
+			PNGLIB="-L$DIR/lib -lpng"
+		fi
 		if test -f $DIR/lib/libpng.a
 		then
 			PNGLIB="-L$DIR/lib -lpng"
@@ -47,6 +55,10 @@
 		fi
 
 		if test -f $DIR/lib/libz.so
+		then
+			ZLIB="-L$DIR/lib -lz"
+		fi
+		if test -f $DIR/lib/libz.dylib
 		then
 			ZLIB="-L$DIR/lib -lz"
 		fi
