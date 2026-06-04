@@ -2,16 +2,26 @@ Source: xymon
 Section: net
 Priority: extra
 Maintainer: Henrik Stoerner <henrik@hswn.dk>
-Build-Depends: debhelper (>= 7), libc-ares-dev, librrd2-dev, libssl-dev, libldap2-dev, libpcre3-dev
+Build-Depends: debhelper (>= 7),
+               libc-ares-dev,
+               libldap-dev,
+               libpcre2-dev,
+               librrd-dev,
+               libssl-dev,
+               libtirpc-dev
 Standards-Version: 3.8.3
 Homepage: http://xymon.sourceforge.net/
 
 Package: xymon
 Architecture: any
-Conflicts: hobbit, hobbit-client
+Conflicts: hobbit,
+           hobbit-client
 Provides: xymon
-Replaces: hobbit, hobbit-client
-Depends: xymon-client, ${shlibs:Depends}, ${misc:Depends}
+Replaces: hobbit,
+          hobbit-client
+Depends: xymon-client,
+         ${misc:Depends},
+         ${shlibs:Depends}
 Description: monitoring system for systems, networks and applications
  Xymon (previously called Hobbit) is a network- and applications-
  monitoring system designed for use in large-scale networks. But it will
@@ -27,13 +37,17 @@ Description: monitoring system for systems, networks and applications
 
 Package: xymon-client
 Architecture: any
-Conflicts: hobbit, hobbit-client
+Conflicts: hobbit,
+           hobbit-client
 Provides: xymon-client
-Replaces: hobbit, hobbit-client
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base
+Replaces: hobbit,
+          hobbit-client
+Depends: adduser,
+         lsb-base,
+         ${misc:Depends},
+         ${shlibs:Depends}
 Description: client for the Xymon network monitor
  Client data collection package for Xymon (previously known as Hobbit).
  This gathers statistics and data from a single system and reports it to
  the Xymon monitor. You should run this on all systems if you have a
  Xymon server installed.
-

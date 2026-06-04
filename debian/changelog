@@ -1,3 +1,9 @@
+xymon (4.3.31~alpha.1) UNRELEASED; urgency=medium
+
+  * New (unreleased) version 4.3.31.
+
+ -- Roland Rosenfeld <roland@spinnaker.de>  Thu, 04 Jun 2026 14:20:24 +0200
+
 xymon (4.3.30) stable; urgency=high
 
    * rev 8010
