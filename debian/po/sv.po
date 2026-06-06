@@ -1,0 +1,82 @@
+# Translation of xymon debconf to Swedish
+# Copyright (C) 2015 Martin Bagge <brother@bsnet.se>
+# This file is distributed under the same license as the xymon package.
+#
+# Martin Ågren <martin.agren@gmail.com>, 2008.
+# Martin Bagge <brother@bsnet.se>, 2015.
+msgid ""
+msgstr ""
+"Project-Id-Version: xymon_4.2.0.dfsg-13_sv\n"
+"Report-Msgid-Bugs-To: xymon@packages.debian.org\n"
+"POT-Creation-Date: 2026-06-06 15:13+0200\n"
+"PO-Revision-Date: 2015-04-01 16:23+0100\n"
+"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.6.10\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid "Xymon server:"
+msgstr "Xymonserver:"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid ""
+"Please enter the network address used to access the Xymon server(s). If you "
+"use multiple servers, use a space-separated list of addresses."
+msgstr ""
+"Var vänlig skriv in den nätverksadress som används för att ansluta till "
+"Xymonservern/-servrarna. Om du använder flera servrar, separera adresserna "
+"med blanksteg."
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid ""
+"Using host names instead of IP addresses is discouraged in case the network "
+"experiences DNS failures."
+msgstr ""
+"Användande av värdnamn istället för IP-adresser är inte rekommenderat ifall "
+"nätverket upplever DNS-problem."
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:2001
+msgid "Client hostname:"
+msgstr "Klientens värdnamn:"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:2001
+msgid ""
+"Please enter the host name used by the Xymon client when sending reports to "
+"the Xymon server. This name must match the name used in the hosts.cfg file "
+"on the Xymon server."
+msgstr ""
+"Var vänlig ange det värdnamn som används av Xymonklienten för att sända "
+"rapporter till Xymonservern. Detta namn måste stämma överens med det namn "
+"som används i hosts.cfg-filen på Xymonservern."
+
+#~ msgid "Automatically migrate old hobbit files to xymon?"
+#~ msgstr "Ska gamla hobbit-filer automatiskt migreras till xymon?"
+
+#~ msgid ""
+#~ "The operating system user was renamed from \"hobbit\" to \"xymon\", and "
+#~ "all configuration, state, log directories and files have been renamed as "
+#~ "well. The package postinst scripts can do the migration automatically. "
+#~ "This is usually a good idea, but might not work so well if your config "
+#~ "differs substantially from the default."
+#~ msgstr ""
+#~ "Operativsystemets användare \"hobbit\" har bytt namn till \"xymon\" "
+#~ "tillsammans med alla inställningar, status, logkataloger och filer. "
+#~ "Paketets skript för efterbehandling kan migrera detta automatiskt. "
+#~ "Vanligen är detta en bra idé men det kan finnas omständigheter som inte "
+#~ "fungerar så bra om dina inställningar skiljer sig mycket från "
+#~ "standardvärdena."
