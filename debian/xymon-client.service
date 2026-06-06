@@ -1,0 +1,25 @@
+[Unit]
+Description=Xymon systems and network monitor client
+Documentation=man:xymon(7) man:xymonlaunch(8) man:xymon(1)
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+# Do not start, if xymon server is installed:
+ExecCondition=test ! -x /usr/lib/xymon/server/bin/xymond
+
+User=xymon
+
+# create includefiles, rundir, and TMPFS:
+ExecStartPre=+/usr/share/xymon/xymon-client-prepare.sh
+
+ExecStart=/usr/share/xymon/xymon-client-env-wrapper.sh \
+    /usr/lib/xymon/client/bin/xymonlaunch --no-daemon \
+    --config=/etc/xymon/clientlaunch.cfg --log=/var/log/xymon/clientlaunch.log
+
+Type=simple
+
+RestartSec=6
+Restart=on-failure
