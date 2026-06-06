@@ -1,0 +1,81 @@
+# Dutch translation of xymon debconf templates.
+# Copyright (C) YEAR THE 'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the  package.
+# Frans Spiesschaert <Frans.Spiesschaert@yucom.be>, 2014.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: xymon\n"
+"Report-Msgid-Bugs-To: xymon@packages.debian.org\n"
+"POT-Creation-Date: 2026-06-06 15:13+0200\n"
+"PO-Revision-Date: 2014-11-04 12:02+0100\n"
+"Last-Translator: Frans Spiesschaert <Frans.Spiesschaert@yucom.be>\n"
+"Language-Team: Debian Dutch l10n Team <debian-l10n-dutch@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Dutch\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid "Xymon server:"
+msgstr "Xymon-server:"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid ""
+"Please enter the network address used to access the Xymon server(s). If you "
+"use multiple servers, use a space-separated list of addresses."
+msgstr ""
+"Geef aan met welk netwerkadres de Xymon-server(s) benaderd kan/kunnen "
+"worden. Als u meerdere servers gebruikt dient u de adressen met spaties van "
+"elkaar te scheiden."
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid ""
+"Using host names instead of IP addresses is discouraged in case the network "
+"experiences DNS failures."
+msgstr ""
+"Gebruik van computernamen in plaats van IP-adressen wordt afgeraden (IP-"
+"adressen blijven werken als het netwerk DNS-problemen ondervindt). "
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:2001
+msgid "Client hostname:"
+msgstr "Computernaam van de client:"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:2001
+msgid ""
+"Please enter the host name used by the Xymon client when sending reports to "
+"the Xymon server. This name must match the name used in the hosts.cfg file "
+"on the Xymon server."
+msgstr ""
+"Geef aan welke computernaam de Xymon-client gebruikt om rapporten naar de "
+"Xymon-server te versturen. Deze naam dient overeen te komen met de naam die "
+"in het bestand 'hosts.cfg' op de Xymon-server gebruikt wordt."
+
+#~ msgid "Automatically migrate old hobbit files to xymon?"
+#~ msgstr "Oude hobbit-bestanden automatisch omzetten naar xymon?"
+
+#~ msgid ""
+#~ "The operating system user was renamed from \"hobbit\" to \"xymon\", and "
+#~ "all configuration, state, log directories and files have been renamed as "
+#~ "well. The package postinst scripts can do the migration automatically. "
+#~ "This is usually a good idea, but might not work so well if your config "
+#~ "differs substantially from the default."
+#~ msgstr ""
+#~ "De gebruikersnaam in het besturingssysteem is veranderd van \"hobbit\" "
+#~ "naar \"xymon\" en alle configuratie-, status- en logmappen en -bestanden "
+#~ "veranderden ook van naam. De postinstallatiescripts van het pakket kunnen "
+#~ "de veranderingen automatisch doorvoeren. Meestal is dit een goede "
+#~ "werkwijze, maar indien uw configuratie substantieel verschilt van de "
+#~ "standaard, kan het zijn dat dit niet zo goed verloopt."

@@ -1,4 +1,4 @@
-# common init functions for Xymon and Xymon-client
+# common init functions for xymon and xymon-client
 
 create_includefiles ()
 {
@@ -27,28 +27,22 @@ create_includefiles ()
 		test -e $cfg && echo "include $cfg"
 	done > /var/run/xymon/clientlaunch-include.cfg
 
-	if test -d /etc/xymon/xymonlaunch.d ; then
-		for cfg in /etc/xymon/xymonlaunch.d/*.cfg ; do
-			test -e $cfg && echo "include $cfg"
-		done > /var/run/xymon/xymonlaunch-include.cfg
-	fi
+	for cfg in /etc/xymon/xymonclient.d/*.cfg ; do
+		test -e $cfg && echo "include $cfg"
+	done > /var/run/xymon/xymonclient-include.cfg
 
-	if test -d /etc/xymon/xymongraph.d ; then
-		for cfg in /etc/xymon/xymongraph.d/*.cfg ; do
+	if test -x /usr/lib/xymon/server/bin/xymond ; then
+		for cfg in /etc/xymon/tasks.d/*.cfg ; do
 			test -e $cfg && echo "include $cfg"
-		done > /var/run/xymon/xymongraph-include.cfg
-	fi
+		done > /var/run/xymon/tasks-include.cfg
 
-	if test -d /etc/xymon/xymonserver.d ; then
+		for cfg in /etc/xymon/graphs.d/*.cfg ; do
+			test -e $cfg && echo "include $cfg"
+		done > /var/run/xymon/graphs-include.cfg
+
 		for cfg in /etc/xymon/xymonserver.d/*.cfg ; do
 			test -e $cfg && echo "include $cfg"
 		done > /var/run/xymon/xymonserver-include.cfg
-	fi
-
-	if test -d /etc/xymon/xymonclient.d ; then
-		for cfg in /etc/xymon/xymonclient.d/*.cfg ; do
-			test -e $cfg && echo "include $cfg"
-		done > /var/run/xymon/xymonclient-include.cfg
 	fi
 
 	return 0

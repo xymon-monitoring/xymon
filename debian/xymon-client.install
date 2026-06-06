@@ -1,1 +1,4 @@
+debian/clientlaunch.d/README etc/xymon/clientlaunch.d
 debian/init-common.sh usr/share/xymon
+debian/xymon-client-env-wrapper.sh usr/share/xymon
+debian/xymon-client-prepare.sh usr/share/xymon
