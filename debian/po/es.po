@@ -1,0 +1,105 @@
+# xymon translation to spanish
+# Copyright (C) 2008 Software in the Public Interest, SPI Inc.
+# This file is distributed under the same license as the xymon package.
+#
+# Changes:
+# 	- Initial translation
+# 		Enrique Monge <emonge@debian.org.sv> , 2008
+#
+# Traductores, si no conoce el formato PO, merece la pena leer la
+# documentación de gettext, especialmente las secciones dedicadas a este
+# formato, por ejemplo ejecutando:
+# 	info -n '(gettext)PO Files'
+# 	info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+#
+# 	- El proyecto de traducción de Debian al español
+# 	http://www.debian.org/intl/spanish/
+# 	especialmente las notas y normas de traducción en
+# 	http://www.debian.org/intl/spanish/notas
+#
+# 	 - La guía de traducción de po's de debconf:
+# 	/usr/share/doc/po-debconf/README-trans
+# 	o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+# Si tiene dudas o consultas sobre esta traducción consulte con el último
+# traductor (campo Last-Translator) y ponga en copia a la lista de
+# traducción de Debian al español (<debian-l10n-spanish@lists.debian.org>)
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: xymon 4.2.0.dfsg-14\n"
+"Report-Msgid-Bugs-To: xymon@packages.debian.org\n"
+"POT-Creation-Date: 2026-06-06 15:13+0200\n"
+"PO-Revision-Date: 2022-08-16 15:42+0200\n"
+"Last-Translator: Camaleón <noelamac@gmail.com>\n"
+"Language-Team: Debian Spanish <debian-l10n-spanish@lists.debian.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.2\n"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid "Xymon server:"
+msgstr "Servidor Xymon:"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid ""
+"Please enter the network address used to access the Xymon server(s). If you "
+"use multiple servers, use a space-separated list of addresses."
+msgstr ""
+"Introduzca la dirección de red para acceder al servidor (o servidores) "
+"Xymon. Si usa varios servidores, use un espacio para separar la lista de "
+"direcciones."
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid ""
+"Using host names instead of IP addresses is discouraged in case the network "
+"experiences DNS failures."
+msgstr ""
+"Usar los nombres de equipo en lugar de direcciones IP no es recomendable en "
+"caso que la red experimente fallos de DNS."
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:2001
+msgid "Client hostname:"
+msgstr "Nombre de equipo del cliente:"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:2001
+msgid ""
+"Please enter the host name used by the Xymon client when sending reports to "
+"the Xymon server. This name must match the name used in the hosts.cfg file "
+"on the Xymon server."
+msgstr ""
+"Introduzca el nombre del equipo que utilizará el cliente Xymon para enviar "
+"informes al servidor Xymon. Este nombre debe coincidir con el nombre usado "
+"en el archivo «hosts.cfg» en el servidor Xymon."
+
+#~ msgid "Automatically migrate old hobbit files to xymon?"
+#~ msgstr "¿Migrar automáticamente los archivos hobbit antiguos a xymon?"
+
+#~ msgid ""
+#~ "The operating system user was renamed from \"hobbit\" to \"xymon\", and "
+#~ "all configuration, state, log directories and files have been renamed as "
+#~ "well. The package postinst scripts can do the migration automatically. "
+#~ "This is usually a good idea, but might not work so well if your config "
+#~ "differs substantially from the default."
+#~ msgstr ""
+#~ "El usuario del sistema operativo se ha renombrado de «hobbit» a «xymon» y "
+#~ "todas las configuraciones, estados, directorios de registro y archivos "
+#~ "también han sido renombrados. Los guiones post-instalación del paquete "
+#~ "pueden realizar la migración automáticamente, lo cual normalmente es una "
+#~ "buena idea, pero puede que no funcione bien si sus archivos de "
+#~ "configuración difieren sustancialmente de los predeterminados."
