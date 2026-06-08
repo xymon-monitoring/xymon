@@ -406,8 +406,13 @@ static char *xymon_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 	int len, i;
 	int century=0,year=0,month=0,day=0,hour=0,minute=0,second=0;
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	len=ASN1_STRING_length(tm);
+	asn1_string=(char *)ASN1_STRING_get0_data(tm);
+#else
 	len=tm->length;
 	asn1_string=(char *)tm->data;
+#endif
 
 	result[0] = '\0';
 	if (len < 10) return result;
