@@ -89,7 +89,7 @@ static int parse_query(void)
 		else if (strcasecmp(cwalk->name, "CLIENT") == 0) {
 			char *p;
 
-			hostname = strdup(cwalk->value);
+			hostname = strdup(basename(cwalk->value));
 			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
 			service = strdup("");
 			outform = FRM_CLIENT;
