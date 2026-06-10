@@ -41,7 +41,17 @@ jobs:
             --format=tar \
             --prefix="${PREFIX}" \
             "${{ steps.vars.outputs.tag }}" \
-          | gzip -9 > "${{ steps.vars.outputs.asset }}"
+          | gzip -n -9 > "${{ steps.vars.outputs.asset }}"
+#---------------------------------------------------
+      - name: Generate sha256 checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The tarball is reproducible (git archive of the tag + gzip -n),
+          # so a published checksum lets anyone verify a download against
+          # a rebuild from the same tag.
+          sha256sum "${{ steps.vars.outputs.asset }}" > "${{ steps.vars.outputs.asset }}.sha256"
+          cat "${{ steps.vars.outputs.asset }}.sha256"
 #---------------------------------------------------
       - name: Create GitHub Release and upload tarball
         uses: softprops/action-gh-release@v3
@@ -52,5 +62,6 @@ jobs:
           generate_release_notes: "true"
           files: |
             ${{ steps.vars.outputs.asset }}
+            ${{ steps.vars.outputs.asset }}.sha256
 
 
