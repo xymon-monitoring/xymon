@@ -498,15 +498,24 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 	/* At this point, we will commit the update to disk */
 	result = flush_cached_updates(cacheitem, rrdvalues);
+
+	/*
+	 * Re-stat the file on the next update, whatever the flush result: if the
+	 * flush failed because the RRD was removed/rotated, the next update must
+	 * recreate it rather than keep failing forever. Resetting before the error
+	 * return below preserves the original per-update self-healing behaviour.
+	 */
+	cacheitem->fileok = 0;
+
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
 		if (strstr(msg, "(minimum one second step)") != NULL) {
-			dbgprintf("RRD error updating %s from %s: %s\n", 
+			dbgprintf("RRD error updating %s from %s: %s\n",
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}
 		else {
-			errprintf("RRD error updating %s from %s: %s\n", 
+			errprintf("RRD error updating %s from %s: %s\n",
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}
 
@@ -514,10 +523,6 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		MEMUNDEFINE(rrdvalues);
 		return 2;
 	}
-
-	/* We just flushed to disk; re-stat the file on the next update so a
-	   deleted/rotated RRD gets recreated. */
-	cacheitem->fileok = 0;
 
 	MEMUNDEFINE(filedir);
 	MEMUNDEFINE(rrdvalues);
