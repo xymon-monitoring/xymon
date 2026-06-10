@@ -21,7 +21,6 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <libgen.h>
 
 #include "libxymon.h"
 #include "version.h"
@@ -67,35 +66,35 @@ static int parse_query(void)
 	cwalk = cgidata;
 	while (cwalk) {
 		if (strcasecmp(cwalk->name, "HOST") == 0) {
-			hostname = strdup(basename(cwalk->value));
+			hostname = strdup(safe_basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
-			service = strdup(basename(cwalk->value));
+			service = strdup(safe_basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "HOSTSVC") == 0) {
 			/* For backwards compatibility */
 			char *p = strrchr(cwalk->value, '.');
 			if (p) {
 				*p = '\0';
-				hostname = strdup(basename(cwalk->value));
-				service = strdup(basename(p+1));
+				hostname = strdup(safe_basename(cwalk->value));
+				service = strdup(safe_basename(p+1));
 				for (p=strchr(hostname, ','); (p); p = strchr(p, ',')) *p = '.';
 			}
 		}
 		else if (strcasecmp(cwalk->name, "TIMEBUF") == 0) {
 			/* Only for the historical logs */
-			tstamp = strdup(basename(cwalk->value));
+			tstamp = strdup(safe_basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "CLIENT") == 0) {
 			char *p;
 
-			hostname = strdup(basename(cwalk->value));
+			hostname = strdup(safe_basename(cwalk->value));
 			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
 			service = strdup("");
 			outform = FRM_CLIENT;
 		}
 		else if (strcasecmp(cwalk->name, "SECTION") == 0) {
-			service = strdup(basename(cwalk->value));
+			service = strdup(safe_basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "NKPRIO") == 0) {
 			nkprio = strdup(cwalk->value);
@@ -140,7 +139,7 @@ static int parse_query(void)
 
 	if (strcmp(service, xgetenv("CLIENTCOLUMN")) == 0) {
 		/* Make this a client request */
-		char *p = strdup(basename(hostname));
+		char *p = strdup(safe_basename(hostname));
 		xfree(hostname); hostname = p;	/* no need to convert to dots, since we'll already have them */
 		xfree(service);			/* service does double-duty as the 'section' param */
 		outform = FRM_CLIENT;
