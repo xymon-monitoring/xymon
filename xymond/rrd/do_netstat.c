@@ -118,41 +118,6 @@ static int handle_pcre_netstat(char *msg, pcre2_code **pcreset, char *outp)
 }
 
 
-/* PCRE for OSF/1 */
-static const char *netstat_osf_exprs[] = {
-	/* TCP patterns */
-	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\) retransmitted$",
-	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\)$",
-	"^[\t ]*([0-9]+) packets \\(([0-9]+) bytes\\) received in-sequence$",
-	"^[\t ]*([0-9]+) out-of-order packets \\(([0-9]+) bytes\\)$",
-	"^[\t ]*([0-9]+) connection requests$",
-	"^[\t ]*([0-9]+) connection accepts$",
-	/* UDP patterns */
-	"^[\t ]*([0-9]+) packets received$",
-	"^[\t ]*([0-9]+) packets sent$",
-	"^[\t ]*([0-9]+) incomplete headers$",
-	"^[\t ]*([0-9]+) bad data length fields$",
-	"^[\t ]*([0-9]+) bad checksums$"
-};
-
-/* PCRE for SCO_SV */
-static const char *netstat_sco_sv_exprs[] = {
-	/* TCP patterns */
-    	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\)$",
-	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\) retransmitted$",
-	"^[\t ]*([0-9]+) packets \\(([0-9]+) bytes\\) received in-sequence$",
-	"^[\t ]*([0-9]+) out-of-order packets \\(([0-9]+) bytes\\)$",
-	"^[\t ]*([0-9]+) connection requests$",
-	"^[\t ]*([0-9]+) connection accepts$",
-	/* UDP patterns */
-	"^[\t ]*([0-9]+) incomplete headers$",
-	"^[\t ]*([0-9]+) bad data length fields$",
-	"^[\t ]*([0-9]+) bad checksums$"
-	"^[\t ]*([0-9]+) input packets delivered$",
-	"^[\t ]*([0-9]+) packets sent$"
-};
-
-
 /* PCRE for AIX: Matches AIX 4.3.3 5.1 5.2 5.3 and probably others */
 static const char *netstat_aix_exprs[] = {
 	/* TCP patterns */
@@ -171,23 +136,6 @@ static const char *netstat_aix_exprs[] = {
 };
 
 
-
-/* PCRE for IRIX: Matches IRIX 6.5, possibly others. */
-static const char *netstat_irix_exprs[] = {
-	/* TCP patterns */
-	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\) retransmitted$",
-	"^[\t ]*([0-9]+) data packets \\(([0-9]+) bytes\\)$",
-	"^[\t ]*([0-9]+) packets \\(([0-9]+) bytes\\) received in-sequence$",
-	"^[\t ]*([0-9]+) out-of-order packets \\(([0-9]+) bytes\\)$",
-	"^[\t ]*([0-9]+) connection requests$",
-	"^[\t ]*([0-9]+) connection accepts$",
-	/* UDP patterns */
-	"^[\t ]*([0-9]+) total datagrams received$",
-	"^[\t ]*([0-9]+) datagrams output$",
-	"^[\t ]*([0-9]+) incomplete header$",
-	"^[\t ]*([0-9]+) bad data length field$",
-	"^[\t ]*([0-9]+) bad checksum$"
-};
 
 /* PCRE for HP-UX: Matches HP-UX 11.11, possibly others */
 static const char *netstat_hpux_exprs[] = {
@@ -307,27 +255,6 @@ static char *netstat_linux_markers[] = {
 	NULL
 };
 
-// /* This one matches sco_sv systems -- useless :( */
-// static char *netstat_sco_sv_markers[] = {
-//         "input packets delivered",
-// 	"packets sent",
-// 	"", /* may be "system errors during input" */
-// 	"connection requests",
-// 	"connection accepts",
-// 	"failed connect and accept requests",
-// 	"resets received while established",
-// 	"connections established",
-// 	"", /* XX data packets (YY bytes) */
-// 	"", /* check: XX packets (YY bytes) received in-sequence */
-// 	"", /* check: XX out-of-order packets (YY bytes) */
-// 	"", /* XX data packets (YY bytes) retransmitted */
-// 	"", /* maybe "data packets" ? */
-// 	"", /* check: XX packets (YY bytes) received in-sequence */
-// 	"out-of-order packets",
-// 	"", /* data packets (YY bytes) retransmitted */
-// 	NULL
-// };
-
 /* This one matches the "snmpnetstat" output from UCD-SNMP */
 static char *netstat_snmp_markers[] = {
 	"total datagrams received",
@@ -432,12 +359,9 @@ static int do_valbeforemarker(char *layout[], char *msg, char *outp)
 int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static int pcres_compiled = 0;
-	static pcre2_code **netstat_osf_pcres = NULL;
 	static pcre2_code **netstat_aix_pcres = NULL;
-	static pcre2_code **netstat_irix_pcres = NULL;
 	static pcre2_code **netstat_hpux_pcres = NULL;
 	static pcre2_code **netstat_bsd_pcres = NULL;
-	static pcre2_code **netstat_sco_sv_pcres = NULL;
 
 	enum ostype_t ostype;
 	char *datapart = msg;
@@ -447,18 +371,12 @@ int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepa
 	if (netstat_tpl == NULL) netstat_tpl = setup_template(netstat_params);
 	if (pcres_compiled == 0) {
 		pcres_compiled = 1;
-		netstat_osf_pcres = compile_exprs("OSF", netstat_osf_exprs, 
-						 (sizeof(netstat_osf_exprs) / sizeof(netstat_osf_exprs[0])));
-		netstat_aix_pcres = compile_exprs("AIX", netstat_aix_exprs, 
+		netstat_aix_pcres = compile_exprs("AIX", netstat_aix_exprs,
 						 (sizeof(netstat_aix_exprs) / sizeof(netstat_aix_exprs[0])));
-		netstat_irix_pcres = compile_exprs("IRIX", netstat_irix_exprs, 
-						 (sizeof(netstat_irix_exprs) / sizeof(netstat_irix_exprs[0])));
-		netstat_hpux_pcres= compile_exprs("HP-UX", netstat_hpux_exprs, 
+		netstat_hpux_pcres = compile_exprs("HP-UX", netstat_hpux_exprs,
 						 (sizeof(netstat_hpux_exprs) / sizeof(netstat_hpux_exprs[0])));
-		netstat_bsd_pcres = compile_exprs("BSD", netstat_bsd_exprs, 
+		netstat_bsd_pcres = compile_exprs("BSD", netstat_bsd_exprs,
 						 (sizeof(netstat_bsd_exprs) / sizeof(netstat_bsd_exprs[0])));
-		netstat_sco_sv_pcres = compile_exprs("SCO_SV", netstat_sco_sv_exprs, 
-						 (sizeof(netstat_sco_sv_exprs) / sizeof(netstat_sco_sv_exprs[0])));
 	}
 
 	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "data", 4) == 0)) {
@@ -491,24 +409,16 @@ int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepa
 		havedata = do_valaftermarkerequal(netstat_unix_markers, datapart, outp);
 		break;
 
-	  case OS_OSF:
-		havedata = handle_pcre_netstat(datapart, netstat_osf_pcres, outp);
-		break;
-
-	  case OS_AIX: 
+	  case OS_AIX:
 		havedata = handle_pcre_netstat(datapart, netstat_aix_pcres, outp);
 		/* Handle the bf-netstat output, for old clients */
 		if (!havedata) havedata = do_valaftermarkerequal(netstat_unix_markers, datapart, outp);
 		break;
 
-	  case OS_HPUX: 
+	  case OS_HPUX:
 		havedata = handle_pcre_netstat(datapart, netstat_hpux_pcres, outp);
 		/* Handle the bf-netstat output, for old clients */
 		if (!havedata) havedata = do_valaftermarkerequal(netstat_unix_markers, datapart, outp);
-		break;
-
-	  case OS_IRIX:
-		havedata = handle_pcre_netstat(datapart, netstat_irix_pcres, outp);
 		break;
 
 	  case OS_FREEBSD:
@@ -545,10 +455,6 @@ int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepa
 	  case OS_WIN32_BBWIN:
 	  case OS_WIN_POWERSHELL:
 		havedata = do_valaftermarkerequal(netstat_win32_markers, datapart, outp);
-		break;
-
- 	  case OS_SCO_SV:
-	        havedata = handle_pcre_netstat(datapart, netstat_sco_sv_pcres, outp);
 		break;
 
 	  case OS_UNKNOWN:

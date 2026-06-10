@@ -37,25 +37,6 @@ static vmstat_layout_t vmstat_solaris_layout[] = {
 	{ -1, NULL }
 };
 
-/* This one for OSF */
-/* LARRD 0.43c compatible */
-static vmstat_layout_t vmstat_osf_layout[] = {
-	{ 0, "cpu_r" },
-	{ 1, "cpu_b" },
-	{ 2, "cpu_w" },
-	{ 4, "mem_free" },
-	{ 6, "mem_mf" },
-	{ 10, "mem_pi" },
-	{ 11, "mem_po" },
-	{ 12, "cpu_int" },
-	{ 13, "cpu_syc" },
-	{ 14, "cpu_csw" },
-	{ 15, "cpu_usr" },
-	{ 16, "cpu_sys" },
-	{ 17, "cpu_idl" },
-	{ -1, NULL }
-};
-
 /* This one for AIX */
 /* LARRD 0.43c compatible */
 static vmstat_layout_t vmstat_aix_layout[] = {
@@ -102,17 +83,6 @@ static vmstat_layout_t vmstat_aix_power5_layout[] = {
 	{ 16, "cpu_wait" },
 	{ 17, "cpu_pc" },
 	{ 18, "cpu_ec" },
-	{ -1, NULL }
-};
-
-/* This one for Christian Perrier's hacked IRIX "vmstat" done with sar */
-static vmstat_layout_t vmstat_irix_layout[] = {
-	{ 1, "cpu_usr" },
-	{ 2, "cpu_sys" },
-	{ 3, "cpu_int" },
-	{ 4, "cpu_wait" },
-	{ 5, "cpu_idl" },
-	{ -1, "cpu_csw" },	/* Not available, but having it in the RRD makes vmstat3 graph (int+csw) work */
 	{ -1, NULL }
 };
 
@@ -282,33 +252,6 @@ static vmstat_layout_t vmstat_linux22_layout[] = {
 	{ -1, NULL }
 };
 
-/*This one is for sco_sv */
-/* NOT compatible with LARRD 0.43c */
-static vmstat_layout_t vmstat_sco_sv_layout[] = {
-	{ 0, "cpu_r" },
-	{ 1, "cpu_b" },
-	{ 2, "cpu_w" },
-	{ 3, "mem_free" },
-	{ 4, "mem_dmd" },
-	{ 5, "mem_swpd" },
-	{ 6, "mem_cach" },
-	{ 7, "mem_fil" },
-	{ 8, "mem_flt" },
-	{ 9, "mem_frd" },
-	{ 10, "mem_pos" },
-	{ 11, "mem_pif" },
-	{ 12, "mem_pis" },
-	{ 13, "mem_so" },
-	{ 14, "mem_si" },
-	{ 15, "sys_calls" },
-	{ 16, "cpu_csw" },
-	{ 17, "cpu_usr" },
-        { 18, "cpu_sys" },
-        { 19, "cpu_idl" },
-	/* { -1, "cpu_wait" }, */
-	{ -1, NULL }
-};
-
 #define MAX_VMSTAT_VALUES 30
 
 int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
@@ -366,12 +309,10 @@ int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	setupfn("%s.rrd", "vmstat");
 
 	switch (ostype) {
-	  case OS_SOLARIS: 
+	  case OS_SOLARIS:
 		layout = vmstat_solaris_layout; break;
-	  case OS_OSF:
-		layout = vmstat_osf_layout; break;
 
-	  case OS_AIX: 
+	  case OS_AIX:
 		/* Special, because there are two layouts for AIX */
 		{
 			char **dsnames = NULL;
@@ -388,9 +329,7 @@ int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		}
 		break;
 
-	  case OS_IRIX:
-		layout = vmstat_irix_layout; break;
-	  case OS_HPUX: 
+	  case OS_HPUX:
 		layout = vmstat_hpux_layout; break;
 	  case OS_FREEBSD:
 		layout = vmstat_freebsd_layout; break;
@@ -407,8 +346,6 @@ int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		layout = vmstat_linux_layout; break;
 	  case OS_RHEL3:
 		layout = vmstat_rhel3_layout; break;
-          case OS_SCO_SV:
-                layout = vmstat_sco_sv_layout; break;
 	  case OS_UNKNOWN:
 		errprintf("Host '%s' reports vmstat for an unknown OS\n", hostname);
 		return -1;
