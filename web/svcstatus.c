@@ -78,7 +78,7 @@ static int parse_query(void)
 			if (p) {
 				*p = '\0';
 				hostname = strdup(basename(cwalk->value));
-				service = strdup(p+1);
+				service = strdup(basename(p+1));
 				for (p=strchr(hostname, ','); (p); p = strchr(p, ',')) *p = '.';
 			}
 		}
@@ -95,7 +95,7 @@ static int parse_query(void)
 			outform = FRM_CLIENT;
 		}
 		else if (strcasecmp(cwalk->name, "SECTION") == 0) {
-			service = strdup(cwalk->value);
+			service = strdup(basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "NKPRIO") == 0) {
 			nkprio = strdup(cwalk->value);
