@@ -1,4 +1,4 @@
-# This file is for Apache 1.3.x and Apache 2.x
+# This file is for Apache 2.4 and later.
 #
 # Add this to your Apache configuration, it makes
 # the Xymon webpages and cgi-scripts available in the
@@ -14,28 +14,14 @@
 Alias @XYMONHOSTURL@  "@INSTALLWWWDIR@"
 <Directory "@INSTALLWWWDIR@">
     Options Indexes FollowSymLinks Includes MultiViews
-    <IfModule mod_authz_core.c>
-        # Apache 2.4+
-        Require all granted
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order deny,allow
-        Allow from all
-    </IfModule>
+    Require all granted
 </Directory>
 
 ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
 <Directory "@CGIDIR@">
     AllowOverride None
     Options ExecCGI Includes
-    <IfModule mod_authz_core.c>
-        # Apache 2.4+
-        Require all granted
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order deny,allow
-        Allow from all
-    </IfModule>
+    Require all granted
 </Directory>
 
 
