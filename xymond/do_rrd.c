@@ -66,6 +66,7 @@ static void * updcache;
 typedef struct updcacheitem_t {
 	char *key;
 	rrdtpldata_t *tpl;
+	int fileok;		/* Cache the RRD-file-exists check to skip a stat() per update */
 	int valcount;
 	char *vals[CACHESZ];
 	int updseq[CACHESZ];
@@ -330,8 +331,13 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		if (!template) template = cacheitem->tpl;
 	}
 
-	/* If the RRD file doesn't exist, create it immediately */
-	if (stat(filedir, &st) == -1) {
+	/*
+	 * If the RRD file doesn't exist, create it immediately. Once we have seen
+	 * the file (here or right after creating it), remember that in the cache
+	 * item so we don't stat() it on every single update; re-check after each
+	 * flush (below) so a deleted file still gets recreated.
+	 */
+	if (!cacheitem->fileok && !((stat(filedir, &st) != -1) && ++cacheitem->fileok)) {
 		xymon_rrd_argv_item_t *rrdcreate_params;
 		char **rrddefinitions;
 		int rrddefcount, i;
@@ -391,6 +397,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			MEMUNDEFINE(rrdvalues);
 			return 1;
 		}
+		else cacheitem->fileok++;	/* Just created it - it's there now */
 	}
 
 	updtime = atoi(rrdvalues);
@@ -507,6 +514,10 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		MEMUNDEFINE(rrdvalues);
 		return 2;
 	}
+
+	/* We just flushed to disk; re-stat the file on the next update so a
+	   deleted/rotated RRD gets recreated. */
+	cacheitem->fileok = 0;
 
 	MEMUNDEFINE(filedir);
 	MEMUNDEFINE(rrdvalues);
