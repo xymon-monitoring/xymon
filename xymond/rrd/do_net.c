@@ -85,52 +85,70 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 	}
 	else if (strcmp(testname, "ntp") == 0) {
 		/*
-		 * sntp output: 
+		 * sntp (4.2.6 and older) output - note the sign is a separate token:
 		 *    2009 Nov 13 11:29:10.000313 + 0.038766 +/- 0.052900 secs
-		 * ntpdate output: 
+		 * ntpdate output:
 		 *    server 172.16.10.2, stratum 3, offset -0.040324, delay 0.02568
 		 *    13 Nov 11:29:06 ntpdate[7038]: adjust time server 172.16.10.2 offset -0.040324 sec
+		 * ntpdig (ntpsec) and sntp 4.2.7+ output:
+		 *    2015-10-14 13:46:04.534916 (+0500) -0.000007 +/- 0.084075 localhost 127.0.0.1 s2 no-leap
+		 * macOS sntp output (no timestamp prefix):
+		 *    +0.009083 +/- 0.013184 pool.ntp.org 193.134.29.12
+		 * chronyd -Q output:
+		 *    2026-06-11T22:28:28Z System clock wrong by 0.368564 seconds (ignored)
+		 *
+		 * All of these report the offset in seconds. The ntpstat RRD stores
+		 * milliseconds (its other feed is the client-side "ntpstat" test
+		 * with "ntpq -c rv" output, which is in ms), so convert at the end.
 		 */
 
 		char dataforntpstat[100];
-		char *offsetval = NULL;
-		char offsetbuf[40];
+		double offsetsecs = 0.0;
+		int gotoffset = 0;
 		char *msgcopy = strdup(msg);
 
-		if (strstr(msgcopy, "ntpdate") != NULL) {
-			/* Old-style "ntpdate" output */
-			char *p;
+		if ((strstr(msgcopy, "ntpdate") != NULL) && ((p = strstr(msgcopy, "offset ")) != NULL)) {
+			/* Old-style "ntpdate" output. The ntpsec ntpdate wrapper outputs the ntpdig format instead, handled below. */
+			char *endptr;
 
-			p = strstr(msgcopy, "offset ");
-			if (p) {
-				p += 7;
-				offsetval = strtok(p, " \r\n\t");
+			p += 7;
+			offsetsecs = strtod(p, &endptr);
+			gotoffset = (endptr != p);
+		}
+		else if ((p = strstr(msgcopy, " +/- ")) != NULL) {
+			/* ntpdig / sntp : the clock offset is the field just before the "+/-" error bound */
+			char *tokstart, *endptr;
+
+			*p = '\0';
+			tokstart = p;
+			while ((tokstart > msgcopy) &&
+			       (*(tokstart-1) != ' ') && (*(tokstart-1) != '\t') &&
+			       (*(tokstart-1) != '\n') && (*(tokstart-1) != '\r')) tokstart--;
+			offsetsecs = strtod(tokstart, &endptr);
+			if ((endptr != tokstart) && (*endptr == '\0')) {
+				/* The whole token parses as a number - looks sane */
+				gotoffset = 1;
+
+				if ((*tokstart != '+') && (*tokstart != '-') && (tokstart >= msgcopy+2) &&
+				    (*(tokstart-2) == '-') &&
+				    ((tokstart-2 == msgcopy) || (*(tokstart-3) == ' ') || (*(tokstart-3) == '\t') ||
+				     (*(tokstart-3) == '\n') || (*(tokstart-3) == '\r'))) {
+					/* sntp 4.2.6 and older print an unsigned offset with the sign as a separate token */
+					offsetsecs = -offsetsecs;
+				}
 			}
 		}
-		else if (strstr(msgcopy, " secs") != NULL) {
-			/* Probably new "sntp" output */
-			char *year, *tm, *offsetdirection, *offset, *plusminus, *errorbound, *secs;
+		else if ((p = strstr(msgcopy, " wrong by ")) != NULL) {
+			/* chronyd -Q : same sign convention as the ntp offset (positive = local clock behind) */
+			char *endptr;
 
-			tm = offsetdirection = plusminus = errorbound = secs = NULL;
-			year = strtok(msgcopy, " ");
-			tm = year ? strtok(NULL, " ") : NULL;
-			offsetdirection = tm ? strtok(NULL, " ") : NULL;
-			offset = offsetdirection ? strtok(NULL, " ") : NULL;
-			plusminus = offset ? strtok(NULL, " ") : NULL;
-			errorbound = plusminus ? strtok(NULL, " ") : NULL;
-			secs = errorbound ? strtok(NULL, " ") : NULL;
-
-			if ( offsetdirection && ((strcmp(offsetdirection, "+") == 0) || (strcmp(offsetdirection, "-") == 0)) &&
-			     plusminus && (strcmp(plusminus, "+/-") == 0) && 
-			     secs && (strcmp(secs, "secs") == 0) ) {
-				/* Looks sane */
-				snprintf(offsetbuf, sizeof(offsetbuf), "%s%s", offsetdirection, offset);
-				offsetval = offsetbuf;
-			}
+			p += 10;
+			offsetsecs = strtod(p, &endptr);
+			gotoffset = (endptr != p);
 		}
-		
-		if (offsetval) {
-			snprintf(dataforntpstat, sizeof(dataforntpstat), "offset=%s", offsetval);
+
+		if (gotoffset) {
+			snprintf(dataforntpstat, sizeof(dataforntpstat), "offset=%.6f", offsetsecs * 1000.0);
 			do_ntpstat_rrd(hostname, testname, classname, pagepaths, dataforntpstat, tstamp);
 		}
 

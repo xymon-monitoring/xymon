@@ -702,19 +702,79 @@ TRACEROUTEOPTS for mtr are &quot;-c 2 -n --report&quot;
 Note that mtr needs to be installed suid-root 
 on most systems.
 <P>
+<DT>NTPTOOL<DD>
+Priority list for the tool used by the &quot;ntp&quot; test: a &quot;|&quot;-separated
+list of &quot;ntpdate&quot;, &quot;ntpdig&quot;, &quot;sntp&quot; and &quot;chronyd&quot;. The first tool in
+the list that is installed is used, so a single name forces that
+tool. ntpdig leads the default order because ntpsec systems ship
+ntpdate only as a wrapper around it. The program location and options
+for each tool are taken from the NTPDATE, NTPDIG, SNTP and CHRONYD
+settings and their *OPTS counterparts.
+Default: &quot;ntpdig|ntpdate|sntp|chronyd&quot;
+<P>
 <DT>NTPDATE<DD>
-Defines the 
+Defines the
 <I><A HREF="../man1/ntpdate.1.html">ntpdate</A>(1)</I>
 
-program used for the &quot;ntp&quot; test.  
+program used for the &quot;ntp&quot; test when ntpdig is not installed.
 Default: &quot;ntpdate&quot;
 <P>
 <DT>NTPDATEOPTS<DD>
-Options used for the 
+Options used for the
 <I><A HREF="../man1/ntpdate.1.html">ntpdate</A>(1)</I>
 
-program.
+program. &quot;-p 1&quot; keeps the per-host query time at one sample
+(roughly 2 seconds instead of 8); the ntpdate compatibility wrapper
+shipped by ntpsec warns that -p is unsupported, but ntpdig is
+preferred over ntpdate on those systems anyway.
 Default: &quot;-u -q -p 1&quot;
+<P>
+<DT>NTPDIG<DD>
+Defines the
+<I><A HREF="../man1/ntpdig.1.html">ntpdig</A>(1)</I>
+
+program (from ntpsec), the preferred tool for the &quot;ntp&quot; test.
+Default: &quot;ntpdig&quot;
+<P>
+<DT>NTPDIGOPTS<DD>
+Options used for the
+<I><A HREF="../man1/ntpdig.1.html">ntpdig</A>(1)</I>
+
+program. A timeout option is added automatically.
+Default: &quot;&quot;
+<P>
+<DT>SNTP<DD>
+Defines the
+<I><A HREF="../man1/sntp.1.html">sntp</A>(1)</I>
+
+program, used for the &quot;ntp&quot; test when neither ntpdig nor ntpdate is
+installed. Setting this in the environment also forces the &quot;ntp&quot;
+test to use sntp (deprecated - use NTPTOOL=&quot;sntp&quot; instead).
+Default: &quot;sntp&quot;
+<P>
+<DT>SNTPOPTS<DD>
+Options used for the
+<I><A HREF="../man1/sntp.1.html">sntp</A>(1)</I>
+
+program. A timeout option is added automatically.
+Default: &quot;&quot;
+<P>
+<DT>CHRONYD<DD>
+Defines the
+<I><A HREF="../man8/chronyd.8.html">chronyd</A>(8)</I>
+
+program (from chrony), used for the &quot;ntp&quot; test as a last resort when
+none of ntpdig, ntpdate and sntp is installed. It is run with -Q
+(query only), which never adjusts the clock and does not require
+root privileges.
+Default: &quot;chronyd&quot;
+<P>
+<DT>CHRONYDOPTS<DD>
+Options used for the
+<I><A HREF="../man8/chronyd.8.html">chronyd</A>(8)</I>
+
+program. The -Q option and a timeout are added automatically.
+Default: &quot;&quot;
 <P>
 <DT>RPCINFO<DD>
 Defines the

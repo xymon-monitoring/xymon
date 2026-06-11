@@ -31,11 +31,18 @@ file in $XYMONHOME/etc/protocols.cfg.
 In addition, it implements the "dns" and "dig" tests for
 testing DNS servers.
 
-xymonnet also implements a check for NTP servers - this test 
-is called "ntp". If you want to use it, you must define the
-NTPDATE environment variable to point at the location of your
-.I ntpdate(1)
-program.
+xymonnet also implements a check for NTP servers - this test
+is called "ntp". It uses the first of
+.I ntpdig(1)
+(from ntpsec),
+.I ntpdate(8),
+.I sntp(1)
+(from ntp.org) and
+.I chronyd(8)
+(from chrony, run in query-only mode) that is installed. The NTPTOOL
+environment variable can change this priority list; a single name
+forces a specific tool. See the NTPTOOL, NTPDIG, NTPDATE, SNTP and
+CHRONYD entries in the ENVIRONMENT VARIABLES section.
 
 Note: xymonnet performs the connectivity test (ping) based on the
 hostname, unless the host is tagged with "testip" or the 
@@ -552,10 +559,37 @@ utility, or an equivalent tool e.g.
 Optionally used when a connectivity test fails to pinpoint the
 network location that is causing the failure.
 
+.IP NTPTOOL
+Priority list for the tool used by the "ntp" service: a "|"-separated
+list of "ntpdate", "ntpdig", "sntp" and "chronyd". The first tool in
+the list that is installed is used, so a single name forces that
+tool. Default: "ntpdig|ntpdate|sntp|chronyd".
+
+.IP NTPDIG
+Location of the
+.I ntpdig(1)
+utility (from ntpsec). The preferred tool for the "ntp" service -
+ntpsec systems ship ntpdate only as a wrapper around ntpdig.
+
 .IP NTPDATE
-Location of the 
-.I ntpdate(1) 
-utility. Used by xymonnet when checking the "ntp" service.
+Location of the
+.I ntpdate(8)
+utility. Used for the "ntp" service when ntpdig is not installed.
+
+.IP SNTP
+Location of the
+.I sntp(1)
+utility. Used for the "ntp" service when neither ntpdig nor ntpdate
+is installed. Setting this in the environment also forces the "ntp"
+test to use sntp (deprecated - use NTPTOOL="sntp" instead).
+
+.IP CHRONYD
+Location of the
+.I chronyd(8)
+program (from chrony). Used for the "ntp" service as a last resort
+when none of ntpdig, ntpdate and sntp is installed. It is run with
+\-Q (query only), which never adjusts the clock and does not require
+root privileges.
 
 .IP RPCINFO
 Location of the 
@@ -616,5 +650,6 @@ runs, and read by xymonnet-again.sh.
 
 .SH "SEE ALSO"
 hosts.cfg(5), protocols.cfg(5), xymonserver.cfg(5), xymonping(1),
-curl(1), ftp(1), fping(1), ntpdate(1), rpcinfo(8)
+curl(1), ftp(1), fping(1), ntpdate(8), ntpdig(1), sntp(1),
+chronyd(8), rpcinfo(8)
 

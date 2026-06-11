@@ -49,12 +49,22 @@ file in $XYMONHOME/etc/protocols.cfg.
 In addition, it implements the &quot;dns&quot; and &quot;dig&quot; tests for
 testing DNS servers.
 <P>
-xymonnet also implements a check for NTP servers - this test 
-is called &quot;ntp&quot;. If you want to use it, you must define the
-NTPDATE environment variable to point at the location of your
-<I><A HREF="../man1/ntpdate.1.html">ntpdate</A>(1)</I>
+xymonnet also implements a check for NTP servers - this test
+is called &quot;ntp&quot;. It uses the first of
+<I><A HREF="../man1/ntpdig.1.html">ntpdig</A>(1)</I>
 
-program.
+(from ntpsec),
+<I><A HREF="../man1/ntpdate.1.html">ntpdate</A>(1),</I>
+
+<I><A HREF="../man1/sntp.1.html">sntp</A>(1)</I>
+
+(from ntp.org) and
+<I><A HREF="../man8/chronyd.8.html">chronyd</A>(8)</I>
+
+(from chrony, run in query-only mode) that is installed. The NTPTOOL
+environment variable can change this priority list; a single name
+forces a specific tool. See the NTPTOOL, NTPDIG, NTPDATE, SNTP and
+CHRONYD entries in the ENVIRONMENT VARIABLES section.
 <P>
 Note: xymonnet performs the connectivity test (ping) based on the
 hostname, unless the host is tagged with &quot;testip&quot; or the 
@@ -643,11 +653,41 @@ utility, or an equivalent tool e.g.
 Optionally used when a connectivity test fails to pinpoint the
 network location that is causing the failure.
 <P>
-<DT>NTPDATE<DD>
-Location of the 
-<I><A HREF="../man1/ntpdate.1.html">ntpdate</A>(1) </I>
+<DT>NTPTOOL<DD>
+Priority list for the tool used by the &quot;ntp&quot; service: a &quot;|&quot;-separated
+list of &quot;ntpdate&quot;, &quot;ntpdig&quot;, &quot;sntp&quot; and &quot;chronyd&quot;. The first tool in
+the list that is installed is used, so a single name forces that
+tool. Default: &quot;ntpdig|ntpdate|sntp|chronyd&quot;.
+<P>
+<DT>NTPDIG<DD>
+Location of the
+<I><A HREF="../man1/ntpdig.1.html">ntpdig</A>(1)</I>
 
-utility. Used by xymonnet when checking the &quot;ntp&quot; service.
+utility (from ntpsec). The preferred tool for the &quot;ntp&quot; service -
+ntpsec systems ship ntpdate only as a wrapper around ntpdig.
+<P>
+<DT>NTPDATE<DD>
+Location of the
+<I><A HREF="../man1/ntpdate.1.html">ntpdate</A>(1)</I>
+
+utility. Used for the &quot;ntp&quot; service when ntpdig is not installed.
+<P>
+<DT>SNTP<DD>
+Location of the
+<I><A HREF="../man1/sntp.1.html">sntp</A>(1)</I>
+
+utility. Used for the &quot;ntp&quot; service when neither ntpdig nor ntpdate
+is installed. Setting this in the environment also forces the &quot;ntp&quot;
+test to use sntp (deprecated - use NTPTOOL=&quot;sntp&quot; instead).
+<P>
+<DT>CHRONYD<DD>
+Location of the
+<I><A HREF="../man8/chronyd.8.html">chronyd</A>(8)</I>
+
+program (from chrony). Used for the &quot;ntp&quot; service as a last resort
+when none of ntpdig, ntpdate and sntp is installed. It is run with
+-Q (query only), which never adjusts the clock and does not require
+root privileges.
 <P>
 <DT>RPCINFO<DD>
 Location of the 
@@ -723,7 +763,8 @@ runs, and read by xymonnet-again.sh.
 <H2>SEE ALSO</H2>
 
 <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/protocols.cfg.5.html">protocols.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man1/xymonping.1.html">xymonping</A>(1),
-<A HREF="../man1/curl.1.html">curl</A>(1), <A HREF="../man1/ftp.1.html">ftp</A>(1), <A HREF="../man1/fping.1.html">fping</A>(1), <A HREF="../man1/ntpdate.1.html">ntpdate</A>(1), <A HREF="../man8/rpcinfo.8.html">rpcinfo</A>(8)
+<A HREF="../man1/curl.1.html">curl</A>(1), <A HREF="../man1/ftp.1.html">ftp</A>(1), <A HREF="../man1/fping.1.html">fping</A>(1), <A HREF="../man1/ntpdate.1.html">ntpdate</A>(1), <A HREF="../man1/ntpdig.1.html">ntpdig</A>(1), <A HREF="../man1/sntp.1.html">sntp</A>(1),
+<A HREF="../man8/chronyd.8.html">chronyd</A>(8), <A HREF="../man8/rpcinfo.8.html">rpcinfo</A>(8)
 <P>
 <P>
 
