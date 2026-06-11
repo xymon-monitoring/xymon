@@ -288,16 +288,14 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	MEMDEFINE(rrdvalues);
 	MEMDEFINE(filedir);
 
-	sprintf(filedir, "%s/%s", rrddir, hostname);
-	if (stat(filedir, &st) == -1) {
-		if (mkdir(filedir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
-			errprintf("Cannot create rrd directory %s : %s\n", filedir, strerror(errno));
-			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues);
-			return -1;
-		}
-	}
-	/* Watch out here - "rrdfn" may be very large. */
+	/*
+	 * The per-host RRD directory (rrddir/hostname) only needs to exist when we
+	 * are about to create an RRD file - if the file already exists, so does its
+	 * directory. So the directory check/mkdir is done lazily in the create path
+	 * below (see issue #153), not on every single update.
+	 *
+	 * Watch out here - "rrdfn" may be very large.
+	 */
 	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
 	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
 
@@ -344,6 +342,20 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		char *rrakey = NULL;
 		char stepsetting[10];
 		int havestepsetting = 0, fixcount = 2;
+		char hostdir[PATH_MAX];
+
+		/*
+		 * About to create the file - make sure its directory exists first.
+		 * (Moved here from the per-update path; see issue #153.) A missing
+		 * directory is recreated, so a deleted rrddir/hostname self-heals.
+		 */
+		snprintf(hostdir, sizeof(hostdir), "%s/%s", rrddir, hostname);
+		if ((stat(hostdir, &st) == -1) && (mkdir(hostdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1)) {
+			errprintf("Cannot create rrd directory %s : %s\n", hostdir, strerror(errno));
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return -1;
+		}
 
 		dbgprintf("Creating rrd %s\n", filedir);
 
