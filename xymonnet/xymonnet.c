@@ -1067,28 +1067,74 @@ void run_nslookup_service(service_t *service)
 	}
 }
 
+static int is_executable_file(char *fn)
+{
+	struct stat st;
+
+	/* access(2) alone is not enough: X_OK on a directory succeeds */
+	return ((stat(fn, &st) == 0) && S_ISREG(st.st_mode) && (access(fn, X_OK) == 0));
+}
+
+static int cmd_is_available(char *cmd)
+{
+	char *path, *pathcopy, *dir;
+	char fn[PATH_MAX];
+	int found = 0;
+
+	if (!cmd || !*cmd) return 0;
+	if (strchr(cmd, '/')) return is_executable_file(cmd);
+
+	path = getenv("PATH");
+	if (!path) return 0;
+
+	pathcopy = strdup(path);
+	dir = strtok(pathcopy, ":");
+	while (dir && !found) {
+		snprintf(fn, sizeof(fn), "%s/%s", dir, cmd);
+		found = is_executable_file(fn);
+		dir = strtok(NULL, ":");
+	}
+	xfree(pathcopy);
+
+	return found;
+}
+
+/*
+ * NTP tool selection and command construction live in ntpcmd.c (see there) so
+ * the test harness can #include them directly. The default order is
+ * "ntpdig|ntpdate|sntp|chronyd" - ntpdig first, because on ntpsec systems
+ * ntpdate is only a wrapper around ntpdig. An explicit SNTP still forces sntp
+ * (backwards compatibility, deprecated in favor of NTPTOOL="sntp").
+ */
+#include "ntpcmd.c"
+
+/* Availability probe passed to ntp_select_tool(): is the tool with index idx
+ * installed? Resolves the tool's command setting via xgetenv. */
+static int ntp_tool_available(int idx, void *ud)
+{
+	(void)ud;
+	return cmd_is_available(xgetenv(ntp_toolenv[idx]));
+}
+
 void run_ntp_service(service_t *service)
 {
 	testitem_t	*t;
 	char		cmd[PATH_MAX+1024];
 	char		*p;
 	char		cmdpath[PATH_MAX];
-	int		use_sntp = 0;
+	enum ntptool_t	ntptool;
+	static const char *toolopts[4] = { "NTPDATEOPTS", "NTPDIGOPTS", "SNTPOPTS", "CHRONYDOPTS" };
 
-	p = getenv("SNTP");	/* Plain "getenv" as we want to know if it's unset */
-	use_sntp = (p != NULL);
+	p = getenv("NTPTOOL");	/* Plain "getenv" as we want to know if it's unset */
+	ntptool = ntp_select_tool(p, (getenv("SNTP") != NULL), ntp_tool_available, NULL);
 
-	strncpy(cmdpath, (use_sntp ? xgetenv("SNTP") : xgetenv("NTPDATE")), sizeof(cmdpath));
+	strncpy(cmdpath, xgetenv(ntp_toolenv[ntptool]), sizeof(cmdpath));
 
 	for (t=service->items; (t); t = t->next) {
 		/* Do not run NTP test if host does not resolve in DNS or is down */
 		if (!t->host->dnserror && !t->host->pingerror) {
-			if (use_sntp) {
-				snprintf(cmd, sizeof(cmd), "%s %s -d %d %s 2>&1", cmdpath, xgetenv("SNTPOPTS"), extcmdtimeout-1, ip_to_test(t->host));
-			}
-			else {
-				snprintf(cmd, sizeof(cmd), "%s %s %s 2>&1", cmdpath, xgetenv("NTPDATEOPTS"), ip_to_test(t->host));
-			}
+			ntp_build_cmd(cmd, sizeof(cmd), ntptool, cmdpath,
+				      xgetenv(toolopts[ntptool]), ip_to_test(t->host), extcmdtimeout-1);
 
 			t->open = (run_command(cmd, "no server suitable for synchronization", t->banner, 1, extcmdtimeout) == 0);
 		}

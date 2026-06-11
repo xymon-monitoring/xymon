@@ -616,17 +616,71 @@ TRACEROUTEOPTS for mtr are "\-c 2 \-n \-\-report"
 Note that mtr needs to be installed suid-root 
 on most systems.
 
+.IP NTPTOOL
+Priority list for the tool used by the "ntp" test: a "|"-separated
+list of "ntpdate", "ntpdig", "sntp" and "chronyd". The first tool in
+the list that is installed is used, so a single name forces that
+tool. ntpdig leads the default order because ntpsec systems ship
+ntpdate only as a wrapper around it. The program location and options
+for each tool are taken from the NTPDATE, NTPDIG, SNTP and CHRONYD
+settings and their *OPTS counterparts.
+Default: "ntpdig|ntpdate|sntp|chronyd"
+
 .IP NTPDATE
-Defines the 
+Defines the
 .I ntpdate(1)
-program used for the "ntp" test.  
+program used for the "ntp" test when ntpdig is not installed.
 Default: "ntpdate"
 
 .IP NTPDATEOPTS
-Options used for the 
+Options used for the
 .I ntpdate(1)
-program.
+program. "\-p 1" keeps the per\-host query time at one sample
+(roughly 2 seconds instead of 8); the ntpdate compatibility wrapper
+shipped by ntpsec warns that \-p is unsupported, but ntpdig is
+preferred over ntpdate on those systems anyway.
 Default: "\-u \-q \-p 1"
+
+.IP NTPDIG
+Defines the
+.I ntpdig(1)
+program (from ntpsec), the preferred tool for the "ntp" test.
+Default: "ntpdig"
+
+.IP NTPDIGOPTS
+Options used for the
+.I ntpdig(1)
+program. A timeout option is added automatically.
+Default: ""
+
+.IP SNTP
+Defines the
+.I sntp(1)
+program, used for the "ntp" test when neither ntpdig nor ntpdate is
+installed. Setting this in the environment also forces the "ntp"
+test to use sntp (deprecated - use NTPTOOL="sntp" instead).
+Default: "sntp"
+
+.IP SNTPOPTS
+Options used for the
+.I sntp(1)
+program. A timeout option is added automatically.
+Default: ""
+
+.IP CHRONYD
+Defines the
+.I chronyd(8)
+program (from chrony), used for the "ntp" test as a last resort when
+none of ntpdig, ntpdate and sntp is installed. It is run with \-Q
+(query only), which never adjusts the clock and does not require
+root privileges.
+Default: "chronyd"
+
+.IP CHRONYDOPTS
+Options used for the
+.I chronyd(8)
+program. The \-Q option and a timeout are added automatically.
+Default: ""
 
 .IP RPCINFO
 Defines the
