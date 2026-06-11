@@ -144,9 +144,13 @@ void load_all_links(void)
 		load_links(dirname, notesskin);
 	}
 
-	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
-	strncpy(dirname, xgetenv("XYMONNOTESDIR"), sizeof(dirname));
-	p = strrchr(dirname, '/'); *p = '\0'; strncat(dirname, "/help", (sizeof(dirname) - strlen(dirname)));
+	/* If no XYMONHELPDIR, change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
+	if (xgetenv("XYMONHELPDIR")) strcpy(dirname, xgetenv("XYMONHELPDIR"));
+	else {
+		strncpy(dirname, xgetenv("XYMONNOTESDIR"), sizeof(dirname));
+		dirname[sizeof(dirname)-1] = '\0'; /* Make sure it is null terminated */
+		p = strrchr(dirname, '/'); *p = '\0'; strncat(dirname, "/help", (sizeof(dirname) - strlen(dirname)));
+	}
 	load_links(dirname, helpskin);
 
 	linksloaded = 1;

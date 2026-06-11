@@ -333,7 +333,14 @@ void trim_logs(time_t cutoff)
 
 					ltime = logtime(lent->d_name);
 					if ((ltime > 0) && (ltime < cutoff)) {
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+						#pragma GCC diagnostic push
+						#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif  // __GNUC__
 						sprintf(fn2, "%s/%s", fn1, lent->d_name);
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+						#pragma GCC diagnostic pop
+#endif  // __GNUC__
 						if (unlink(fn2) == -1) {
 							errprintf("Failed to unlink %s: %s\n", fn2, strerror(errno));
 						}
