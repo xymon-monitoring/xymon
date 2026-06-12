@@ -124,7 +124,14 @@ maintenance.
   will fail on features that artefact predates -- that is the
   skip-only-for-environment policy above working as designed, not a bug.
   (In Debian CI the contract holds automatically: tests and debs are
-  built from the same source package.)
+  built from the same source package.) The override is also an
+  **existence assertion**: a test may `skip` when the in-tree default is
+  absent (binary not built in this configuration), but an explicitly
+  exported path that points at nothing must `fail` -- a broken build or
+  package layout is precisely what the exporting caller (CMake,
+  autopkgtest) runs the suite to catch, and skipping would green-light
+  it. `require_bin` implements both halves; installed-script tests
+  guard `$XYMONCLIENT_LINUX` the same way.
 - **License.** GPL-2.0+, matching the rest of the repo. A short
   SPDX-style header at the top of each test is sufficient:
   ```bash

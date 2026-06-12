@@ -149,8 +149,13 @@ find_root() {
 # ---- binary discovery --------------------------------------------------------
 
 # require_bin VAR DEFAULT -- ensure $VAR (or DEFAULT if unset) points to an
-# executable; export VAR with the resolved path. Skip if absent so tests
-# don't fail when the binary just wasn't built in this configuration.
+# executable; export VAR with the resolved path. Skip if the in-tree DEFAULT
+# is absent (the binary just wasn't built in this configuration), but FAIL if
+# an explicit $VAR override points at nothing: the override is the caller
+# asserting the binary exists there (CMake passes the build product's path,
+# autopkgtest the installed one), so a dangling path means a broken build or
+# package layout -- exactly what those callers run this suite to catch -- and
+# must not skip green.
 #
 # Usage:
 #     require_bin XYMONGREP common/xymongrep
@@ -166,6 +171,7 @@ find_root() {
 require_bin() {
 	local var=$1 default=$2
 	local cur=${!var:-}
+	local explicit=$cur
 	# No override: resolve the in-tree default against the repo root, not cwd.
 	# A relative default like ./xymonnet/xymonping is only valid from the repo
 	# top; a standalone test launched from elsewhere would otherwise probe the
@@ -178,6 +184,9 @@ require_bin() {
 		esac
 	fi
 	if [ ! -x "$cur" ]; then
+		if [ -n "$explicit" ]; then
+			fail "$var explicitly set to '$cur' but no executable is there -- broken build or package layout, not a skip"
+		fi
 		skip "$var ($cur) not built or not executable"
 	fi
 	# shellcheck disable=SC2163

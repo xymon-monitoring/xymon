@@ -29,7 +29,13 @@ ROOT=$(find_root)
 # tests/README.md.
 SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"
 
-[ -f "$SCRIPT" ] || skip "$SCRIPT absent"
+# Same fail-on-explicit-override contract as require_bin (lib/assert.sh):
+# $XYMONCLIENT_LINUX set means the caller asserts the installed script exists
+# there, so a dangling path is a broken package layout and must not skip green.
+if [ ! -f "$SCRIPT" ]; then
+	[ -z "${XYMONCLIENT_LINUX:-}" ] || fail "XYMONCLIENT_LINUX explicitly set to '$SCRIPT' but no such file -- broken package layout, not a skip"
+	skip "$SCRIPT absent"
+fi
 command -v awk >/dev/null 2>&1 || skip "no awk"
 
 # The client script ships in the same tree as this test, so a missing dpkg

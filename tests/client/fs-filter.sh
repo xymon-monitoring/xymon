@@ -37,12 +37,18 @@ ROOT=$(find_root)
 # tests/README.md.
 SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"
 
+# Same fail-on-explicit-override contract as require_bin (lib/assert.sh):
+# $XYMONCLIENT_LINUX set means the caller asserts the installed script exists
+# there, so a dangling path is a broken package layout and must not skip green.
+if [ ! -f "$SCRIPT" ]; then
+	[ -z "${XYMONCLIENT_LINUX:-}" ] || fail "XYMONCLIENT_LINUX explicitly set to '$SCRIPT' but no such file -- broken package layout, not a skip"
+	skip "$SCRIPT missing"
+fi
 # The #49 env-var FS filter is a separate feature (PR #96) that is not yet
 # merged into this branch, so its absence here is "feature not landed", not a
 # regression of in-tree code -- this guard skips green until #49 arrives, then
 # starts exercising the env-var logic, including the [inode] block guarded
 # alongside the [df] block below.
-[ -f "$SCRIPT" ] || skip "$SCRIPT missing"
 grep -q XYMONCLIENT_FS_INCLUDE_TYPES "$SCRIPT" \
 	|| skip "xymonclient-linux.sh has no #49 env-var FS filter yet (PR #96 not in this branch)"
 
