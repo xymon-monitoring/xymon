@@ -575,6 +575,63 @@ make install
 <pre><tt>	crle -c /var/ld/ld.config -l /usr/lib:/usr/lib/secure:/usr/local/lib </tt></pre></p>
 <p>The latter method using &quot;crle&quot; is the recommended method, since LD_LIBRARY_PATH settings can be difficult to setup so they work for all invocations of the Xymon binaries.</p>
 
+<h4><a name="commonmacoshomebrew">macOS (Apple Silicon and Intel) using Homebrew</a></h4>
+<p>The easiest way to install Xymon on a modern Mac is through the official
+<a href="https://github.com/xymon-monitoring/homebrew-xymon">Homebrew tap</a>,
+which provides a full server formula and a lighter client-only formula:</p>
+<pre><tt>
+brew tap xymon-monitoring/xymon
+brew install --HEAD xymon-monitoring/xymon/xymon-server     # full server
+brew install --HEAD xymon-monitoring/xymon/xymon-client     # client only
+</tt></pre>
+<p>and run it under launchd with:</p>
+<pre><tt>
+brew services start xymon-server      # or: xymon-client
+</tt></pre>
+<p>The formulas install everything under the Homebrew prefix (the server tree
+ends up in <tt>$(brew --prefix)/opt/xymon-server/server</tt>) and provide a
+launchd service. They do <i>not</i> create a dedicated "xymon" user or
+configure a webserver - edit <tt>etc/hosts.cfg</tt> (server) or the XYMSRV
+setting in <tt>etc/xymonclient.cfg</tt> (client), and set up the web frontend
+as described in the "Configuring your webserver" section above. As no Xymon
+release tarballs are published yet, the formulas are <tt>--HEAD</tt>-only and
+build the latest Git revision; see the
+<a href="https://github.com/xymon-monitoring/homebrew-xymon">tap README</a>
+for how to upgrade a HEAD install. The SYSV IPC requirements described in the
+prerequisites apply on macOS too (check <tt>sysctl kern.sysv.shmseg</tt>).</p>
+
+<p>To build from source instead, install the dependencies with Homebrew:</p>
+<pre><tt>
+brew install pcre2 rrdtool fping openssl@3 openldap
+</tt></pre>
+<p>then run <tt>./configure --server</tt>, <tt>make</tt> and <tt>make install</tt>
+as described above. The configure script automatically detects libraries
+installed under the Homebrew prefix (/opt/homebrew on Apple Silicon, /usr/local
+on Intel Macs), including the keg-only openssl@3 and openldap packages which
+Homebrew does not symlink into the main prefix; MacPorts (/opt/local) is
+detected as well.</p>
+
+<p><b>Testing a development branch or pull request:</b> the formulas always
+build the "main" branch. To build a feature branch instead (e.g. to test a
+pending pull request on a Mac), point the <tt>head</tt> stanza of your local
+tap checkout at that branch and rebuild:</p>
+<pre><tt>
+brew edit xymon-monitoring/xymon/xymon-server
+   # change:  head "https://github.com/xymon-monitoring/xymon.git", branch: "main"
+   # to:      head "https://github.com/&lt;fork&gt;/xymon.git", branch: "&lt;feature-branch&gt;"
+brew reinstall --HEAD xymon-monitoring/xymon/xymon-server
+</tt></pre>
+<p>When done, restore the tap to its pristine state and rebuild from main:</p>
+<pre><tt>
+git -C "$(brew --repository xymon-monitoring/xymon)" checkout -- .
+brew reinstall --HEAD xymon-monitoring/xymon/xymon-server
+</tt></pre>
+<p>Two things to be aware of: the edited tap is a dirty git checkout, so
+<tt>brew update</tt> will warn about it until you revert the change; and a
+HEAD reinstall replaces the entire keg <i>including its etc/ directory</i>,
+so back up your edited configuration files (hosts.cfg, xymonserver.cfg,
+xymonclient.cfg) before rebuilding.</p>
+
 <h4><a name="commonmacosx">Mac OSX 10.6, 10.7 and 10.8</a></h4>
 <p>Xymon is available for OSX 10.6, 10.7 and 10.8 through the <a href="http://www.macports.org/">macports project</a>.</p>
 
