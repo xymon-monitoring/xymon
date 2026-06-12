@@ -17,7 +17,6 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <libgen.h>
 
 #include "libxymon.h"
 
@@ -609,8 +608,8 @@ static void parse_query(void)
 			*p = '\0';
 
 			p = strrchr(cwalk->value, '.');
-			if (p) { *p = '\0'; service = strdup(p+1); }
-			hostname = strdup(basename(cwalk->value));
+			if (p) { *p = '\0'; service = strdup(safe_basename(p+1)); }
+			hostname = strdup(safe_basename(cwalk->value));
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
 		else if (strcasecmp(cwalk->name, "IP") == 0) {
