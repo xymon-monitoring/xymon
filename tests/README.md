@@ -109,14 +109,22 @@ maintenance.
   paths you actually need with `cp -r` into a `mktempdir`; do not use
   `git worktree`, `git stash`, or any other git invocation.
 - **Path discovery via env var with default.** When a test needs a
-  built binary, read it from an env var and default to the in-tree
-  build path:
+  built binary or an installed artefact, read it from an env var and
+  default to the in-tree path -- `require_bin` (lib/assert.sh) does this
+  for binaries:
   ```bash
-  XYMONPING="${XYMONPING:-./xymonnet/xymonping}"
+  require_bin XYMONGREP common/xymongrep          # binaries
+  SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"  # scripts
   ```
   This keeps tests usable in CMake out-of-source builds (the build
   system passes the real path), in the in-tree Makefile build (default
-  matches), and in autopkgtest (which exports installed paths).
+  matches), and in autopkgtest (the control file exports installed
+  paths). The override contract assumes test and artefact come from the
+  **same version**: pointing a newer test at an older installed artefact
+  will fail on features that artefact predates -- that is the
+  skip-only-for-environment policy above working as designed, not a bug.
+  (In Debian CI the contract holds automatically: tests and debs are
+  built from the same source package.)
 - **License.** GPL-2.0+, matching the rest of the repo. A short
   SPDX-style header at the top of each test is sufficient:
   ```bash
@@ -149,6 +157,29 @@ revisit.
 
 Debian's [autopkgtest](https://wiki.debian.org/autopkgtest) is an
 intended consumer (see [#97](https://github.com/xymon-monitoring/xymon/issues/97)
-discussion). Tests should be portable to a minimal Debian chroot:
-declare any non-trivial host dependency at the top of the file with a
-`skip` if it's missing, rather than failing.
+discussion). autopkgtest runs test commands from the root of the
+**unpacked, unbuilt source package** (read-only -- another reason for
+the copy-into-`mktempdir` convention) against the **installed binary
+packages**. The suite maps onto that as a single test entry, roughly:
+
+```
+Test-Command: XYMONGREP=/usr/lib/xymon/client/bin/xymongrep \
+              XYMONCLIENT_LINUX=/usr/lib/xymon/client/bin/xymonclient-linux.sh \
+              ./tests/testsuite
+Depends: xymon, xymon-client, gcc, make
+Restrictions: skippable
+```
+
+`Restrictions: skippable` maps the runner's all-skip exit `77` to SKIP
+instead of FAIL; `gcc`/`make` in `Depends` keep the compile-probe tests
+alive (autopkgtest does not provide build-dependencies by default). The
+env overrides point binary-driving tests (`require_bin`) and
+installed-artefact tests at the package's files -- those are the tests
+that give Debian's library-transition CI something that can break at
+runtime. Source-reading tests run against the unpacked (patched) source
+tree; for the installed-package use case they are *supplementary*
+signal, which is why new tests that can drive a built binary should.
+
+Tests should be portable to a minimal Debian chroot: declare any
+non-trivial host dependency at the top of the file with a `skip` if
+it's missing, rather than failing.

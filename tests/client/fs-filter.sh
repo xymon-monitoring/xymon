@@ -30,14 +30,19 @@ set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
 ROOT=$(find_root)
-SCRIPT="$ROOT/client/xymonclient-linux.sh"
+# Default: the in-tree script. $XYMONCLIENT_LINUX (autopkgtest) points at the
+# INSTALLED script -- /usr/lib/xymon/client/bin/xymonclient-linux.sh on Debian
+# -- so the test exercises what the package actually ships, distro patches
+# included. Same-version artifacts only; see "Path discovery" in
+# tests/README.md.
+SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"
 
 # The #49 env-var FS filter is a separate feature (PR #96) that is not yet
 # merged into this branch, so its absence here is "feature not landed", not a
 # regression of in-tree code -- this guard skips green until #49 arrives, then
 # starts exercising the env-var logic, including the [inode] block guarded
 # alongside the [df] block below.
-[ -f "$SCRIPT" ] || skip "client/xymonclient-linux.sh missing"
+[ -f "$SCRIPT" ] || skip "$SCRIPT missing"
 grep -q XYMONCLIENT_FS_INCLUDE_TYPES "$SCRIPT" \
 	|| skip "xymonclient-linux.sh has no #49 env-var FS filter yet (PR #96 not in this branch)"
 

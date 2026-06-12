@@ -22,9 +22,14 @@ set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
 ROOT=$(find_root)
-SCRIPT="$ROOT/client/xymonclient-linux.sh"
+# Default: the in-tree script. $XYMONCLIENT_LINUX (autopkgtest) points at the
+# INSTALLED script -- /usr/lib/xymon/client/bin/xymonclient-linux.sh on Debian
+# -- so the test exercises what the package actually ships, distro patches
+# included. Same-version artifacts only; see "Path discovery" in
+# tests/README.md.
+SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"
 
-[ -f "$SCRIPT" ] || skip "client/xymonclient-linux.sh absent"
+[ -f "$SCRIPT" ] || skip "$SCRIPT absent"
 command -v awk >/dev/null 2>&1 || skip "no awk"
 
 # The client script ships in the same tree as this test, so a missing dpkg

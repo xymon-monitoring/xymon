@@ -87,19 +87,13 @@ jobs:
       # there. Run it here too, where the binaries this variant produced are on
       # disk, so those tests actually execute against the build.
       #
-      # SCAFFOLDING -- as of today NO test calls require_bin: every test reads
-      # committed source or compiles its own probe, so none consumes a build
-      # artefact. That makes this step currently REDUNDANT with tests.yml (same
-      # checks, same results, after an unnecessary rebuild). It is kept on
-      # purpose: the moment a behavioural test drives a compiled tool, this is
-      # the only job where that test runs instead of skipping. Drop this step
-      # together with require_bin if the binary-test direction is abandoned.
+      # First such test: tests/server/xymongrep-filter.sh, which drives the
+      # common/xymongrep this leg just built. This step is the only place in
+      # CI where it executes instead of skipping.
       #
-      # Gated to the server leg only: until a require_bin test exists, running
-      # the identical suite in all three matrix legs triples the redundancy for
-      # nothing. The server build produces the broadest binary set, so it stays
-      # the scaffolding leg; widen the gate (or drop it) when the first test
-      # needs a binary this leg doesn't build.
+      # Gated to the server leg only: it produces the broadest binary set
+      # (including common/xymongrep). Widen the gate when a test needs a
+      # binary this leg doesn't build.
       - name: Run regression tests against the build
         if: matrix.variant == 'server'
         run: |

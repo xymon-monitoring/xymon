@@ -153,17 +153,16 @@ find_root() {
 # don't fail when the binary just wasn't built in this configuration.
 #
 # Usage:
-#     require_bin XYMONPING ./xymonnet/xymonping
-#     "$XYMONPING" --help
+#     require_bin XYMONGREP common/xymongrep
+#     "$XYMONGREP" --hosts=...
 #
-# SCAFFOLDING -- no current test calls this. Every test today reads committed
-# source (or compiles its own probe), so none needs a built binary. It is kept
-# deliberately as the entry point for the first behavioural test that drives a
-# compiled tool: such a test reads its binary via require_bin, which is also
-# what makes the post-build run in .github/workflows/build.yml meaningful (see
-# the note there). Until that test lands, build.yml's suite run is redundant
-# with tests.yml. Remove this helper and that build.yml step together if the
-# binary-test direction is abandoned.
+# First consumer: tests/server/xymongrep-filter.sh. This helper is what lets
+# the same test run against an in-tree build (the DEFAULT path, resolved from
+# the repo root), a CMake out-of-source build, or an installed package under
+# Debian autopkgtest (both export an absolute $VAR). It is also what makes the
+# post-build suite run in .github/workflows/build.yml meaningful (see the note
+# there): under tests.yml nothing is built, so require_bin tests skip; after a
+# build they execute against the produced binary.
 require_bin() {
 	local var=$1 default=$2
 	local cur=${!var:-}
