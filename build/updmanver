@@ -1,8 +1,18 @@
 #!/bin/bash
+set -euo pipefail
+# A directory without manpages must leave the glob empty, not literal —
+# head(1) on the literal '*.[1-9]' would abort the whole prep under set -e.
+shopt -s nullglob
 
-export LANG=C 
-DATE=`date +"%e %b %Y"`
-VERSION=$1
+# LC_ALL, not LANG: LANG=C is overridden by any LC_* the caller has set.
+export LC_ALL=C
+if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+	DATE=$(date -u -d "@$SOURCE_DATE_EPOCH" +"%e %b %Y" 2>/dev/null) \
+		|| DATE=$(date -u -r "$SOURCE_DATE_EPOCH" +"%e %b %Y")
+else
+	DATE=$(date +"%e %b %Y")
+fi
+VERSION="${1:-}"
 
 if [ "$VERSION" = "" ]
 then
@@ -14,18 +24,18 @@ fi
 
 for DIR in xymongen xymonnet xymonproxy common xymond web
 do
-   pushd $DIR
+   pushd "$DIR" >/dev/null
 
    # co -l RCS/*.[1-9],v
    for f in *.[1-9]
    do
-      NAME=`head -n 1 $f | awk '{print $2}'`;
-      SECTION=`head -n 1 $f | awk '{print $3}'`;
-      (echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Xymon\""; tail -n +2 $f) >$f.new
-      mv -f $f.new $f
+      NAME=$(head -n 1 "$f" | awk '{print $2}')
+      SECTION=$(head -n 1 "$f" | awk '{print $3}')
+      (echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Xymon\""; tail -n +2 "$f") >"$f.new"
+      mv -f "$f.new" "$f"
       # ci -u -m"Version update" -q -f $f
    done
 
-   popd
+   popd >/dev/null
 done
 
