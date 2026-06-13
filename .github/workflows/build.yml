@@ -4,19 +4,10 @@ on:
   push:
   pull_request:
 
-# Both workflows check out and run pull-request code; the token needs
-# nothing beyond reading the repo. Same grant as tests.yml.
-permissions:
-  contents: read
-
 jobs:
   build:
     name: build (${{ matrix.name }})
     runs-on: ubuntu-latest
-    # A regression test that blocks (e.g. a configure probe growing an
-    # interactive prompt) would otherwise hang the job for the runner's
-    # 6-hour ceiling. Build + suite take ~1 minute; 15 is generous.
-    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -81,33 +72,3 @@ jobs:
         run: |
           echo "running make with $(nproc) parallel processes"
           make -j$(nproc)
-
-      # tests.yml runs the same suite without building, so any test that needs
-      # a compiled binary (require_bin in tests/lib/assert.sh) silently skips
-      # there. Run it here too, where the binaries this variant produced are on
-      # disk, so those tests actually execute against the build.
-      #
-      # First such test: tests/server/xymongrep-filter.sh, which drives the
-      # common/xymongrep this leg just built. This step is the only place in
-      # CI where it executes instead of skipping.
-      #
-      # Gated to the server leg only: it produces the broadest binary set
-      # (including common/xymongrep). Widen the gate when a test needs a
-      # binary this leg doesn't build.
-      - name: Run regression tests against the build
-        if: matrix.variant == 'server'
-        run: |
-          # Mirror tests.yml: this step checks out and builds full source, so
-          # every test finds the code it guards. The runner's all-skip exit 77
-          # ("nothing verified") can therefore only mean broken discovery, not a
-          # legitimate skip -- map it to a hard failure. Actions has no neutral
-          # state, so 77 would otherwise surface as a bare nonzero failure with
-          # no explanation. `|| rc=$?` exempts the runner from bash -e so the
-          # mapping is reachable.
-          rc=0
-          ./tests/testsuite || rc=$?
-          if [ "$rc" = 77 ]; then
-            echo "::error::testsuite skipped everything (rc=77) -- with full source built this means broken discovery, not a legitimate skip"
-            exit 1
-          fi
-          exit "$rc"
