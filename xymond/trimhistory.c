@@ -333,7 +333,7 @@ void trim_logs(time_t cutoff)
 
 					ltime = logtime(lent->d_name);
 					if ((ltime > 0) && (ltime < cutoff)) {
-						sprintf(fn2, "%s/%s", fn1, lent->d_name);
+						snprintf(fn2, sizeof(fn2), "%s/%s", fn1, lent->d_name);
 						if (unlink(fn2) == -1) {
 							errprintf("Failed to unlink %s: %s\n", fn2, strerror(errno));
 						}

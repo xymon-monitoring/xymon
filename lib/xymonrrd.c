@@ -82,9 +82,9 @@ static void rrd_setup(void)
 	/* Get the tcp services, and count how many there are */
 	services = strdup(init_tcp_services());
 	SBUF_MALLOC(tcptests, strlen(services)+1);
-	strncpy(tcptests, services, tcptests_buflen);
+	snprintf(tcptests, tcptests_buflen, "%s", services);
 	count = 0; p = strtok(tcptests, " "); while (p) { count++; p = strtok(NULL, " "); }
-	strncpy(tcptests, services, tcptests_buflen);
+	snprintf(tcptests, tcptests_buflen, "%s", services);
 
 	/* Setup the xymonrrds table, mapping test-names to RRD files */
 	SBUF_MALLOC(lenv, strlen(xgetenv("TEST2RRD")) + strlen(tcptests) + count*strlen(",=tcp") + 1);
