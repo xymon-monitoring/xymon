@@ -266,7 +266,7 @@ will just show up on the "msgs" column with status OK (green).
 
 .SH FILES STATUS COLUMN SETTINGS
 .sp
-.BR "FILE filename [color] [things to check] [OPTIONAL] [TRACK]"
+.BR "FILE filename [color] [things to check] [OPTIONAL|IFEXIST] [TRACK]"
 .sp
 .BR "DIR directoryname [color] [size<MAXSIZE] [size>MINSIZE] [TRACK]"
 .sp
@@ -285,6 +285,8 @@ not exist. E.g. you can use this to check if files that should be temporary are
 not deleted, by checking that they are not older than the max time you would
 expect them to stick around, and then using OPTIONAL to ignore the state
 where no files exist.
+\fBIFEXIST\fR is an alias for \fBOPTIONAL\fR, accepted for compatibility with
+existing configurations.
 
 The \fBTRACK\fR keyword causes the size of the file or directory to be tracked
 in an RRD file, and presented in a graph on the "files" status display.

@@ -333,7 +333,7 @@ will just show up on the &quot;msgs&quot; column with status OK (green).
 <H2>FILES STATUS COLUMN SETTINGS</H2>
 
 <P>
-<B>FILE filename [color] [things to check] [OPTIONAL] [TRACK]</B>
+<B>FILE filename [color] [things to check] [OPTIONAL|IFEXIST] [TRACK]</B>
 
 <P>
 <B>DIR directoryname [color] [size&lt;MAXSIZE] [size&gt;MINSIZE] [TRACK]</B>
@@ -354,6 +354,8 @@ not exist. E.g. you can use this to check if files that should be temporary are
 not deleted, by checking that they are not older than the max time you would
 expect them to stick around, and then using OPTIONAL to ignore the state
 where no files exist.
+<B>IFEXIST</B> is an alias for <B>OPTIONAL</B>, accepted for compatibility with
+existing configurations.
 <P>
 The <B>TRACK</B> keyword causes the size of the file or directory to be tracked
 in an RRD file, and presented in a graph on the &quot;files&quot; status display.
