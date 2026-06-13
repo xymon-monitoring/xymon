@@ -72,8 +72,15 @@ EOF
 check() {                      # $1 = legacy|const   $2 = RRD_CONST_ARGS value
 	write_mock_rrd_h "$1"
 	printf '  %-7s API (RRD_CONST_ARGS=%s) ... ' "$1" "$2"
+	# -iquote (not -I) for lib/: the probe reaches rrd_api_compat.h via a
+	# quoted include, so -iquote suffices -- and it keeps lib/ off the angle-
+	# bracket (<...>) search path. With -I, lib/availability.h shadows the
+	# macOS SDK's <Availability.h> on a case-insensitive filesystem (the names
+	# differ only in case), so the SDK's own <time.h>/<stdio.h> pull in the
+	# wrong header and the probe fails to compile with bogus errors. $WORK
+	# stays on -I because rrd_api_compat.h includes the mock <rrd.h>.
 	if ! "$CC" -std=c99 -Wall -Wextra -Werror "-DRRD_CONST_ARGS=$2" \
-		-I"$WORK" -I"$ROOT/lib" \
+		-I"$WORK" -iquote "$ROOT/lib" \
 		-c "$WORK/probe.c" -o "$WORK/probe.o" 2>"$WORK/err"; then
 		echo "FAILED"
 		fail "rrd_api_compat.h does not compile for the $1 argv API:
