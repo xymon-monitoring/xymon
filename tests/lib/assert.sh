@@ -30,6 +30,31 @@ skip() {
 	exit 77
 }
 
+# need_variant VARIANT [VARIANT...] -- skip unless the build variant being
+# exercised is one of those listed. The variant comes from $XYMON_VARIANT, which
+# the CI lane test stage exports (server|client|localclient). When it is unset
+# -- a developer run, a release tarball, or the build-free tests.yml lane --
+# there is no variant restriction and the test runs, preserving prior behaviour.
+# Use this for tests that exercise a component absent from some builds (the
+# server configure, RRD, xymonnet, the web CGIs), so a client-only lane does not
+# run server-only checks.
+#
+# A set XYMON_VARIANT must name a real variant. A typo in the CI matrix (e.g.
+# "sever") is non-empty and matches no test's allow-list, so every scoped test
+# would skip and the lane go green having verified nothing. Reject an unknown
+# value outright rather than skip silently -- the set is closed and known.
+need_variant() {
+	[ -n "${XYMON_VARIANT:-}" ] || return 0
+	case "${XYMON_VARIANT}" in
+		server|client|localclient) ;;
+		*) fail "XYMON_VARIANT='${XYMON_VARIANT}' is not a known variant (server|client|localclient) -- likely a CI-matrix typo; refusing to skip scoped tests silently" ;;
+	esac
+	for _nv in "$@"; do
+		[ "${XYMON_VARIANT}" = "${_nv}" ] && return 0
+	done
+	skip "not applicable to the ${XYMON_VARIANT} build (needs variant: $*)"
+}
+
 # pass [MSG] -- cosmetic; tests that reach the end without failing already
 # pass. Useful only when a test wants to emit a one-line success summary.
 pass() {
@@ -166,8 +191,9 @@ find_root() {
 # the repo root), a CMake out-of-source build, or an installed package under
 # Debian autopkgtest (both export an absolute $VAR). It is also what makes the
 # post-build suite run in .github/workflows/build.yml meaningful (see the note
-# there): under tests.yml nothing is built, so require_bin tests skip; after a
-# build they execute against the produced binary.
+# there): each leg builds its variant first, so require_bin tests execute
+# against the produced binary instead of skipping -- whereas in the build-free
+# tests.yml lane nothing is built, so they skip with 77.
 require_bin() {
 	local var=$1 default=$2
 	local cur=${!var:-}

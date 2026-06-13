@@ -25,6 +25,10 @@ set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
 ROOT=$(find_root)
+
+# Server-only: ALPN lives in xymonnet, which client/localclient builds omit.
+need_variant server
+
 HDR="$ROOT/lib/netservices.h"
 SRC="$ROOT/lib/netservices.c"
 SSL="$ROOT/xymonnet/contest.c"
