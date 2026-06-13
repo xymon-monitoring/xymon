@@ -39,11 +39,29 @@ skip() {
 # server configure, RRD, xymonnet, the web CGIs), so a client-only lane does not
 # run server-only checks.
 #
-# A set XYMON_VARIANT must name a real variant. A typo in the CI matrix (e.g.
-# "sever") is non-empty and matches no test's allow-list, so every scoped test
-# would skip and the lane go green having verified nothing. Reject an unknown
-# value outright rather than skip silently -- the set is closed and known.
+# The variant set is closed and known (server|client|localclient), so both
+# sides of the comparison are validated against it:
+#
+#   * The arguments -- the test's own allow-list. A typo there (e.g.
+#     "need_variant sever") can never match a real $XYMON_VARIANT, so the test
+#     would skip in every scoped lane and never run. Caught regardless of
+#     whether $XYMON_VARIANT is set, because it is a bug in the test itself.
+#   * A set $XYMON_VARIANT -- the CI matrix's selection. A typo there (e.g.
+#     "sever") is non-empty and matches no allow-list, so every scoped test
+#     would skip and the lane go green having verified nothing.
+#
+# Either typo fails loudly rather than skipping silently. An unset or empty
+# $XYMON_VARIANT (a developer run, a release tarball, or the build-free
+# tests.yml lane) still imposes no restriction.
 need_variant() {
+	[ "$#" -ge 1 ] || fail "need_variant: called with no variant -- test bug"
+	local _nv
+	for _nv in "$@"; do
+		case "${_nv}" in
+			server|client|localclient) ;;
+			*) fail "need_variant: '${_nv}' is not a known variant (server|client|localclient) -- test typo in the allow-list" ;;
+		esac
+	done
 	[ -n "${XYMON_VARIANT:-}" ] || return 0
 	case "${XYMON_VARIANT}" in
 		server|client|localclient) ;;
