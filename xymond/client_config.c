@@ -1203,7 +1203,8 @@ int load_client_config(char *configfn)
 						currule->chkflags |= CHK_TRACKIT;
 						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
 					}
-					else if (strcasecmp(tok, "optional") == 0) {
+					else if ((strcasecmp(tok, "optional") == 0) || (strcasecmp(tok, "ifexist") == 0)) {
+						/* IFEXIST is an alias for OPTIONAL: skip the check if the file does not exist */
 						currule->chkflags |= CHK_OPTIONAL;
 					}
 					else {
