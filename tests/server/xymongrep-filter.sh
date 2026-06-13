@@ -9,8 +9,9 @@
 # require_bin consumer that tests/lib/assert.sh and the post-build suite run
 # in .github/workflows/build.yml were staged for. It runs in three
 # environments:
-#   - build.yml (server leg): common/xymongrep was just built; the in-tree
-#     default below finds it;
+#   - build.yml: a server leg builds common/xymongrep, a clean client leg
+#     builds client/xymongrep; the in-tree default below finds whichever the
+#     leg produced;
 #   - tests.yml (no build): require_bin skips with 77;
 #   - Debian autopkgtest: the control file exports
 #     XYMONGREP=/usr/lib/xymon/client/bin/xymongrep (or the server-package

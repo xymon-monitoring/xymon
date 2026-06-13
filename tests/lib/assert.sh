@@ -30,6 +30,49 @@ skip() {
 	exit 77
 }
 
+# need_variant VARIANT [VARIANT...] -- skip unless the build variant being
+# exercised is one of those listed. The variant comes from $XYMON_VARIANT, which
+# the CI lane test stage exports (server|client|localclient). When it is unset
+# -- a developer run, a release tarball, or the build-free tests.yml lane --
+# there is no variant restriction and the test runs, preserving prior behaviour.
+# Use this for tests that exercise a component absent from some builds (the
+# server configure, RRD, xymonnet, the web CGIs), so a client-only lane does not
+# run server-only checks.
+#
+# The variant set is closed and known (server|client|localclient), so both
+# sides of the comparison are validated against it:
+#
+#   * The arguments -- the test's own allow-list. A typo there (e.g.
+#     "need_variant sever") can never match a real $XYMON_VARIANT, so the test
+#     would skip in every scoped lane and never run. Caught regardless of
+#     whether $XYMON_VARIANT is set, because it is a bug in the test itself.
+#   * A set $XYMON_VARIANT -- the CI matrix's selection. A typo there (e.g.
+#     "sever") is non-empty and matches no allow-list, so every scoped test
+#     would skip and the lane go green having verified nothing.
+#
+# Either typo fails loudly rather than skipping silently. An unset or empty
+# $XYMON_VARIANT (a developer run, a release tarball, or the build-free
+# tests.yml lane) still imposes no restriction.
+need_variant() {
+	[ "$#" -ge 1 ] || fail "need_variant: called with no variant -- test bug"
+	local _nv
+	for _nv in "$@"; do
+		case "${_nv}" in
+			server|client|localclient) ;;
+			*) fail "need_variant: '${_nv}' is not a known variant (server|client|localclient) -- test typo in the allow-list" ;;
+		esac
+	done
+	[ -n "${XYMON_VARIANT:-}" ] || return 0
+	case "${XYMON_VARIANT}" in
+		server|client|localclient) ;;
+		*) fail "XYMON_VARIANT='${XYMON_VARIANT}' is not a known variant (server|client|localclient) -- likely a CI-matrix typo; refusing to skip scoped tests silently" ;;
+	esac
+	for _nv in "$@"; do
+		[ "${XYMON_VARIANT}" = "${_nv}" ] && return 0
+	done
+	skip "not applicable to the ${XYMON_VARIANT} build (needs variant: $*)"
+}
+
 # pass [MSG] -- cosmetic; tests that reach the end without failing already
 # pass. Useful only when a test wants to emit a one-line success summary.
 pass() {
@@ -166,8 +209,9 @@ find_root() {
 # the repo root), a CMake out-of-source build, or an installed package under
 # Debian autopkgtest (both export an absolute $VAR). It is also what makes the
 # post-build suite run in .github/workflows/build.yml meaningful (see the note
-# there): under tests.yml nothing is built, so require_bin tests skip; after a
-# build they execute against the produced binary.
+# there): each leg builds its variant first, so require_bin tests execute
+# against the produced binary instead of skipping -- whereas in the build-free
+# tests.yml lane nothing is built, so they skip with 77.
 require_bin() {
 	local var=$1 default=$2
 	local cur=${!var:-}

@@ -21,6 +21,10 @@ set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
 ROOT=$(find_root)
+
+# Server-only: RRD is a server feature; client/localclient builds never use it.
+need_variant server
+
 HEADER="$ROOT/lib/rrd_api_compat.h"
 CC="${CC:-cc}"
 

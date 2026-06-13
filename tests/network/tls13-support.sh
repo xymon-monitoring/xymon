@@ -23,6 +23,10 @@ set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
 ROOT=$(find_root)
+
+# Server-only: the TLS 1.3 selector lives in xymonnet, omitted from client builds.
+need_variant server
+
 HDR="$ROOT/xymonnet/contest.h"
 SSL="$ROOT/xymonnet/contest.c"
 HTTP="$ROOT/xymonnet/httptest.c"

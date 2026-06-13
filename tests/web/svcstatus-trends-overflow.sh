@@ -26,6 +26,10 @@ set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
 ROOT=$(find_root)
+
+# Server-only: svcstatus is a web CGI, not part of a client build.
+need_variant server
+
 FILE="$ROOT/web/svcstatus-trends.c"
 
 [ -f "$FILE" ] || skip "web/svcstatus-trends.c absent"
