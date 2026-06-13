@@ -646,6 +646,15 @@ int rrd_name_compare(const void *v1, const void *v2)
 	return strcmp(r1->key, r2->key);
 }
 
+static int rrd_param_matches_service(const char *param, const char *svc)
+{
+	if ((param == NULL) || (svc == NULL) || (*svc == '\0')) return 0;
+
+	/* For bundled fallback graph definitions, FNPATTERN captures the service
+	 * component; e.g. [tcp] captures "conn" from tcp.conn.rrd. */
+	return (strcmp(param, svc) == 0);
+}
+
 void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 {
 	time_t gstart, gend;
@@ -767,6 +776,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 {
 	gdef_t *gdef = NULL, *gdefuser = NULL;
 	int wantsingle = 0;
+	int rrdparamisservice = 0;
 	DIR *dir;
 	time_t now = getcurrenttime(NULL);
 
@@ -813,6 +823,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		char *realservice;
 
 		*delim = '\0';
+		if (*(delim+1) == '\0') errormsg("Missing graph service name");
 		realservice = strdup(delim+1);
 
 		/* The requested gdef only acts as a fall-back solution so don't set gdef here. */
@@ -832,12 +843,14 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	if (gdef == NULL) {
 		if (gdefuser) {
 			gdef = gdefuser;
+			rrdparamisservice = 1;
 		}
 		else {
 			xymonrrd_t *ldef = find_xymon_rrd(service, NULL);
 			if (ldef) {
 				for (gdef = gdefs; (gdef && strcmp(ldef->xymonrrdname, gdef->name)); gdef = gdef->next) ;
 				wantsingle = 1;
+				rrdparamisservice = 1;
 			}
 		}
 	}
@@ -966,6 +979,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			char *ext;
 			char param[PATH_MAX];
 			PCRE2_SIZE l = sizeof(param);
+			int haveparam;
 
 			/* Ignore dot-files and files with names shorter than ".rrd" */
 			if (*(d->d_name) == '.') continue;
@@ -983,9 +997,22 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			result = pcre2_match(pat, d->d_name, strlen(d->d_name), 0, 0,
 					     ovector, NULL);
 			if (result < 0) continue;
+			haveparam = (pcre2_substring_copy_bynumber(ovector, 1, param, &l) == 0);
 
-			if (wantsingle) {
-				/* "Single" graph, i.e. a graph for a service normally included in a bundle (tcp) */
+			if (wantsingle && rrdparamisservice) {
+				/* "Single" graph, i.e. a graph for a service normally included in a bundle (tcp).
+				 * Match "service" against the filename component captured by FNPATTERN, not
+				 * as an unanchored filename substring: otherwise service "conn" would also
+				 * pick up tcp.proxyconn.rrd or tcp.connfoo.rrd (SF bug, issue #20).
+				 * A graph definition with no capture group (e.g. [la] "la.rrd", reached via the
+				 * cpu=la TEST2RRD mapping) cannot be a bundle, so there is nothing to
+				 * disambiguate - keep the file rather than dropping it. */
+				if (haveparam && !rrd_param_matches_service(param, service)) continue;
+			}
+			else if (wantsingle) {
+				/* A separator request may resolve to its own graph definition instead of the
+				 * bundled graph (e.g. tcp.http -> [http], ncv:slab -> [slab]). In those
+				 * graphs, the captured parameter is often a subitem, not the service name. */
 				if (strstr(d->d_name, service) == NULL) continue;
 			}
 
@@ -999,7 +1026,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* We have a matching file! */
 			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
-			if (pcre2_substring_copy_bynumber(ovector, 1, param, &l) == 0) {
+			if (haveparam) {
 				/*
 				 * This is ugly, but I cannot find a pretty way of un-mangling
 				 * the disk- and http-data that has been molested by the back-end.
@@ -1326,4 +1353,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
