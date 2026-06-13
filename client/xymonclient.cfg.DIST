@@ -17,6 +17,13 @@ XYMONCLIENTLOGS="$XYMONHOME/logs"     # Where we store the client logfiles
 # Options to logfetch, the xymon binary which examines log files for recent changes.
 LOGFETCHOPTS=""
 
+# Filesystem types reported in the "disk" and "inode" status columns.
+# INCLUDE adds types to the platform defaults, EXCLUDE removes from them.
+# Currently honored by the Darwin (macOS) client, where the defaults are
+# apfs, hfs, exfat and msdos.
+#XYMONCLIENT_FS_INCLUDE_TYPES=""
+#XYMONCLIENT_FS_EXCLUDE_TYPES=""
+
 
 # Local Mode (Only) Options
 #
