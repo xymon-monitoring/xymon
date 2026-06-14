@@ -46,15 +46,14 @@ echo "[who]"
 who
 echo "[df]"
 # Default: exclude every nodev (pseudo) filesystem in df/inode output, except
-# rootfs, plus the historical explicit iso9660 exclusion (iso9660 is not a
-# nodev type, so it is added unconditionally at run_df below). This is the
-# historical upstream behavior.
+# rootfs. The always-100%-full read-only images (iso9660, squashfs) are not
+# nodev types and are excluded via XYMONCLIENT_FS_EXCLUDE_TYPES below.
 if [ -r /proc/filesystems ]; then
 	EXCLUDES=$(awk '$1 == "nodev" && $2 != "rootfs" { printf "%s%s", sep, $2; sep=" " }' /proc/filesystems)
 else
-	# Only the dynamic nodev exclusions are disabled here; the explicit iso9660
-	# exclusion and the local-only df -l behavior still apply.
-	echo "xymonclient-linux: /proc/filesystems not readable, dynamic nodev exclusions disabled (iso9660 exclusion and df -l still apply)" >&2
+	# Only the dynamic nodev exclusions are disabled here; the EXCLUDE_TYPES
+	# defaults (iso9660/squashfs) and the local-only df -l behavior still apply.
+	echo "xymonclient-linux: /proc/filesystems not readable, dynamic nodev exclusions disabled (EXCLUDE_TYPES and df -l still apply)" >&2
 	EXCLUDES=""
 fi
 # Filesystem types are literal tokens, so pathname expansion must not turn a
@@ -63,11 +62,15 @@ case $- in
 	*f*) FSRESTOREGLOB=no ;;
 	*) FSRESTOREGLOB=yes; set -f ;;
 esac
-# XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated FS types that should
-# appear in the output even though they would otherwise be excluded
-# (e.g. "tmpfs zfs" to surface tmpfs/zfs mounts, or "nfs nfs4 ceph" to
-# include remote filesystems -- the latter also requires
-# XYMONCLIENT_FS_DF_LOCAL_ONLY=no since df -l hides remote mounts).
+# XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated FS types to surface even
+# though they are flagged nodev and would otherwise be dropped. Defaults to the
+# real local filesystems that merely happen to be nodev: zfs (pools have no
+# single block device), virtiofs (VM-shared storage) and tmpfs (RAM-backed --
+# the noisy /run* tmpfs mounts are filtered server-side in analysis.cfg). Set
+# to "" to restore the historical "exclude every nodev type" behaviour, or add
+# remote types e.g. "nfs nfs4 ceph" (which also needs
+# XYMONCLIENT_FS_DF_LOCAL_ONLY=no, since df -l hides remote mounts).
+: "${XYMONCLIENT_FS_INCLUDE_TYPES=zfs virtiofs tmpfs}"
 if [ -n "$XYMONCLIENT_FS_INCLUDE_TYPES" ]; then
 	# Exact token comparison -- a type is matched literally, never as a
 	# regex/glob, so e.g. "fuse.sshfs" cannot collide with another token.
@@ -81,11 +84,15 @@ if [ -n "$XYMONCLIENT_FS_INCLUDE_TYPES" ]; then
 	done
 	EXCLUDES="$keep"
 fi
-# XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to ALSO
-# exclude, on top of the nodev default. Matching is on the exact df type
-# token; nodev types (overlay, fuse, ...) are already excluded, so an
-# effective entry names a non-nodev type, e.g. "fuse.sshfs vfat" to drop a
-# specific FUSE subtype and a device-backed mount.
+# XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to ALSO exclude,
+# on top of the nodev default. Defaults to "iso9660 squashfs" -- both are
+# read-only images reported 100% full by design (snap mounts one squashfs per
+# revision), and neither is a nodev type, so they must be named here. Matching
+# is on the exact df type token; nodev types (overlay, fuse, ...) are already
+# excluded, so other effective entries name a non-nodev type, e.g. adding
+# "fuse.sshfs vfat" to drop a specific FUSE subtype and a device-backed mount.
+# Set to "" to monitor iso9660/squashfs too.
+: "${XYMONCLIENT_FS_EXCLUDE_TYPES=iso9660 squashfs}"
 if [ -n "$XYMONCLIENT_FS_EXCLUDE_TYPES" ]; then
 	for t in $XYMONCLIENT_FS_EXCLUDE_TYPES; do
 		case " $EXCLUDES " in
@@ -126,17 +133,10 @@ case "$DFTIMEOUT" in
 		DFTIMEOUT=30
 		;;
 esac
-# Strip leading zeros so a value like 00030 is treated as decimal 30, not as
-# an over-length string (the length guard below keys on character count, not
-# magnitude, so 00001 would otherwise clamp to 3600) nor as octal in the
-# numeric comparison. The case above guarantees DFTIMEOUT is all digits with at
-# least one non-zero, so this loop always terminates with a non-empty value.
-while :; do
-	case "$DFTIMEOUT" in
-		0?*) DFTIMEOUT="${DFTIMEOUT#0}" ;;
-		*) break ;;
-	esac
-done
+# Normalise to decimal (expr is decimal by spec) so a zero-padded value like
+# 00030 becomes 30: the length guard below keys on character count, and the
+# numeric comparison would otherwise read a leading zero as octal.
+DFTIMEOUT=`expr "$DFTIMEOUT" + 0`
 # Cap at 3600s. BusyBox timeout(1) rejects an out-of-range duration with a
 # nonzero exit before df runs, which would silently empty both the df and
 # inode sections; an hour is already far past any sane df wait. The length
@@ -152,7 +152,6 @@ run_df()
 	set -- -P
 	[ "$DFLOCALONLY" = yes ] && set -- "$@" -l
 	[ "$DFINODES" = yes ] && set -- "$@" -i
-	set -- "$@" -x iso9660
 
 	case $- in
 		*f*) DFRESTOREGLOB=no ;;
@@ -170,24 +169,12 @@ run_df()
 	fi
 }
 # emit_df INODEFLAG LABEL
-# Run df (optionally in inode mode) and reproduce the historical sed join, but
-# guard the hung-filesystem case. timeout(1) reports 124 (timed out) or 137
-# (128+9, our `-s KILL` case) when it has to kill df; whatever partial output it
-# managed to print first is untrustworthy -- it can list the healthy mounts and
-# omit the very one that hung -- so we discard it and emit an explicit failure
-# marker instead of a silent (empty) section. The server reads an *empty*
-# [inode] section as green ("No filesystems reporting inode data"), so a silent
-# hang would otherwise be a false green; a non-empty marker that carries no
-# recognisable df header drives the server's yellow "expected strings not found"
-# path instead, and the same marker yellows the disk section. The same false
-# green can come from any nonzero exit that prints nothing at all -- e.g.
-# timeout(1) itself failing to launch df (status 125/126/127) or a BusyBox
-# timeout rejecting its arguments before df runs -- so an empty section is
-# emitted as a failure marker whenever the exit status was nonzero, not only for
-# the kill codes. df's own nonzero exits that still print the healthy mounts
-# (e.g. a single unreadable mount, exit 1) keep their partial output and flow
-# through unchanged, preserving prior behaviour; an empty section with a clean
-# exit 0 (the Solaris all-ZFS inode case) is also left untouched.
+# Run df (optionally in inode mode) and reproduce the historical sed join.
+# The server reads an empty section as green, so a hung/failed df must not pass
+# silently: on a timeout kill (124/137) or any nonzero exit with no output, emit
+# a failure marker (no recognisable df header) to drive the server yellow. A
+# nonzero exit that still prints mounts (e.g. one unreadable mount) and a clean
+# empty exit 0 (Solaris all-ZFS inodes) keep their output unchanged.
 emit_df()
 {
 	DFOUT=`run_df "$1"`
