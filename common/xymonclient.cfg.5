@@ -35,6 +35,53 @@ $XYMONHOME/logs
 .IP XYMONTMP
 Directory used for temporary files. Default: $XYMONHOME/tmp/
 
+.IP XYMONCLIENT_FS_INCLUDE_TYPES
+Whitespace-separated Linux filesystem types to include in the
+client's disk and inode reports even when they are normally excluded
+as pseudo filesystems. Types are matched as exact df type tokens.
+For example, \fBtmpfs zfs\fR includes those types. Including remote
+filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+
+.IP XYMONCLIENT_FS_EXCLUDE_TYPES
+Whitespace-separated Linux filesystem types to exclude in addition
+to the default pseudo-filesystem exclusions. Matching is on the exact
+df type token, and nodev types (overlay, fuse, ...) are already excluded
+by default, so an effective entry names a type that is not a nodev
+default \(em a device-backed type, or a specific FUSE subtype such as
+\fBfuse.sshfs\fR that the bare nodev \fBfuse\fR default cannot match.
+If a type appears in
+both include and exclude settings, exclusion takes precedence.
+The default exclusion list is derived from the \fBnodev\fR entries in
+/proc/filesystems (rootfs is always kept), together with an explicit
+\fBiso9660\fR exclusion (iso9660 is not a nodev type). When
+/proc/filesystems is not readable the dynamic nodev exclusions are
+disabled; the explicit iso9660 exclusion and the local-only \fBdf \-l\fR
+behaviour remain active. The script does not fall back to deriving
+exclusions from mount(8), so it is not a drop-in replacement for distro
+patches (such as Debian's) that do.
+
+.IP XYMONCLIENT_FS_DF_LOCAL_ONLY
+Set to \fByes\fR (the default) to pass \fB\-l\fR to df and report
+local filesystems only. Set to \fBno\fR to report remote filesystems
+as well. Invalid values produce a warning and use the safe default.
+With \fBno\fR, df can hang for the whole client cycle if a remote mount
+is stale; use XYMONCLIENT_FS_DF_TIMEOUT to cap the wait.
+
+.IP XYMONCLIENT_FS_DF_TIMEOUT
+Positive integer seconds before timeout(1) sends SIGKILL to each df
+invocation. The disk and inode reports are two separate invocations, so
+two stale mounts can delay the client by up to twice this value.
+The default is 30 seconds when timeout(1) is available.
+An empty or unset value falls back to the default; zero and other
+invalid values produce a warning and also use the default. The timeout
+cannot be disabled through this setting and may be set up to a maximum
+of 3600 seconds. A process
+stuck in an uninterruptible kernel wait cannot be terminated until the
+kernel call returns. If df is killed on timeout, or otherwise exits
+non-zero while producing no output, the affected df or inode report is
+marked failed (yellow) instead of being left empty, so a hung or failed
+filesystem probe is not silently reported green.
+
 .IP XYMON
 Full path to the 
 .I xymon(1)
@@ -66,4 +113,3 @@ of the "runclient.sh" script.
 
 .SH "SEE ALSO"
 xymon(7)
-

@@ -18,6 +18,57 @@ XYMONCLIENTLOGS="$XYMONHOME/logs"     # Where we store the client logfiles
 LOGFETCHOPTS=""
 
 
+# Filesystem reporting (Linux client) -- used by xymonclient-linux.sh when
+# collecting df and inode data. By default it excludes the nodev pseudo
+# filesystems (except rootfs) and the always-full iso9660/squashfs images,
+# reports the real local filesystems including zfs/virtiofs/tmpfs, and passes
+# -l to df. The noisy tmpfs mounts (/run, /run/lock, /run/user/N) are filtered
+# server-side by the CLASS=linux block in analysis.cfg, not here.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated nodev FS types to surface
+#    (they would otherwise be dropped). Defaults to "zfs virtiofs tmpfs" -- the
+#    real local filesystems that merely happen to be nodev. Examples:
+#      ""                    -- restore the historical "exclude every nodev
+#                               type" behaviour (drops zfs/virtiofs/tmpfs too).
+#      "zfs virtiofs tmpfs nfs nfs4 ceph"
+#                            -- also include remote filesystems (requires
+#                               XYMONCLIENT_FS_DF_LOCAL_ONLY=no, since
+#                               df -l hides remote mounts).
+#
+# XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to also exclude,
+#    on top of the nodev default. Defaults to "iso9660 squashfs" -- read-only
+#    images always reported 100% full by design (snap mounts one squashfs per
+#    revision). Matching is on the exact df type token, and nodev types
+#    (overlay, fuse, ...) are already excluded by default, so other effective
+#    entries name a type that is NOT a nodev default -- a device-backed type, or
+#    a specific FUSE subtype the bare nodev "fuse" default cannot match.
+#    Examples:
+#      ""                    -- monitor iso9660/squashfs too.
+#      "iso9660 squashfs fuse.sshfs vfat"
+#                            -- keep the defaults and also drop a specific FUSE
+#                               subtype and a device-backed mount.
+#    If a type appears in both lists, EXCLUDE wins (it is applied after
+#    INCLUDE), so the type stays excluded.
+#
+# XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) passes -l to df, hiding
+#    remote filesystems. Set to "no" to report nfs/ceph/etc. Any other
+#    value produces a warning and falls back to "yes".
+#    WARNING: with "no", df can hang for the whole client cycle if any
+#    remote mount is stale. Use XYMONCLIENT_FS_DF_TIMEOUT to cap the wait.
+#
+# XYMONCLIENT_FS_DF_TIMEOUT: positive integer seconds before timeout(1) sends
+#    SIGKILL to df, default "30" (applied per df invocation -- disk and inode
+#    are separate, so two stale mounts can cost up to twice this). Empty/unset
+#    or an invalid value falls back to "30" (with a warning); it cannot be
+#    disabled and is capped at 3600. On a kill, that report is marked failed
+#    (yellow) rather than left empty, so a hung filesystem is not reported green.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES="zfs virtiofs tmpfs"
+# XYMONCLIENT_FS_EXCLUDE_TYPES="iso9660 squashfs"
+# XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
+# XYMONCLIENT_FS_DF_TIMEOUT="30"
+
+
 # Local Mode (Only) Options
 #
 # Running the Xymon client in local-config mode will cause threshold evaluation to
@@ -51,4 +102,3 @@ BBHOME="$XYMONHOME"
 BB="$XYMON"
 BBTMP="$XYMONTMP"
 BBCLIENTLOGS="$XYMONCLIENTLOGS"
-
