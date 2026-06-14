@@ -66,6 +66,7 @@ static void * updcache;
 typedef struct updcacheitem_t {
 	char *key;
 	rrdtpldata_t *tpl;
+	int fileok;		/* Cache the RRD-file-exists check to skip a stat() per update */
 	int valcount;
 	char *vals[CACHESZ];
 	int updseq[CACHESZ];
@@ -330,8 +331,13 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		if (!template) template = cacheitem->tpl;
 	}
 
-	/* If the RRD file doesn't exist, create it immediately */
-	if (stat(filedir, &st) == -1) {
+	/*
+	 * If the RRD file doesn't exist, create it immediately. Once we have seen
+	 * the file (here or right after creating it), remember that in the cache
+	 * item so we don't stat() it on every single update; re-check after each
+	 * flush (below) so a deleted file still gets recreated.
+	 */
+	if (!cacheitem->fileok && !((stat(filedir, &st) != -1) && ++cacheitem->fileok)) {
 		xymon_rrd_argv_item_t *rrdcreate_params;
 		char **rrddefinitions;
 		int rrddefcount, i;
@@ -391,6 +397,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			MEMUNDEFINE(rrdvalues);
 			return 1;
 		}
+		else cacheitem->fileok++;	/* Just created it - it's there now */
 	}
 
 	updtime = atoi(rrdvalues);
@@ -491,15 +498,24 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 	/* At this point, we will commit the update to disk */
 	result = flush_cached_updates(cacheitem, rrdvalues);
+
+	/*
+	 * Re-stat the file on the next update, whatever the flush result: if the
+	 * flush failed because the RRD was removed/rotated, the next update must
+	 * recreate it rather than keep failing forever. Resetting before the error
+	 * return below preserves the original per-update self-healing behaviour.
+	 */
+	cacheitem->fileok = 0;
+
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
 		if (strstr(msg, "(minimum one second step)") != NULL) {
-			dbgprintf("RRD error updating %s from %s: %s\n", 
+			dbgprintf("RRD error updating %s from %s: %s\n",
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}
 		else {
-			errprintf("RRD error updating %s from %s: %s\n", 
+			errprintf("RRD error updating %s from %s: %s\n",
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}
 
