@@ -36,15 +36,15 @@ LOGFETCHOPTS=""
 #                               df -l hides remote mounts).
 #
 # XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to also exclude,
-#    on top of the nodev default. Defaults to "iso9660 squashfs" -- read-only
-#    images always reported 100% full by design (snap mounts one squashfs per
-#    revision). Matching is on the exact df type token, and nodev types
-#    (overlay, fuse, ...) are already excluded by default, so other effective
-#    entries name a type that is NOT a nodev default -- a device-backed type, or
-#    a specific FUSE subtype the bare nodev "fuse" default cannot match.
-#    Examples:
-#      ""                    -- monitor iso9660/squashfs too.
-#      "iso9660 squashfs fuse.sshfs vfat"
+#    on top of the nodev default. Defaults to "iso9660 squashfs fuse.snapfuse"
+#    -- read-only images always reported 100% full by design (snaps mount as
+#    squashfs, or as fuse.snapfuse where snapd falls back to FUSE). Matching is
+#    on the exact df type token, and nodev types (overlay, bare fuse, ...) are
+#    already excluded by default, so other effective entries name a type that is
+#    NOT a nodev default -- a device-backed type, or a specific FUSE subtype the
+#    bare nodev "fuse" default cannot match. Examples:
+#      ""                    -- monitor iso9660/squashfs/snaps too.
+#      "iso9660 squashfs fuse.snapfuse fuse.sshfs vfat"
 #                            -- keep the defaults and also drop a specific FUSE
 #                               subtype and a device-backed mount.
 #    If a type appears in both lists, EXCLUDE wins (it is applied after
@@ -64,7 +64,7 @@ LOGFETCHOPTS=""
 #    (yellow) rather than left empty, so a hung filesystem is not reported green.
 #
 # XYMONCLIENT_FS_INCLUDE_TYPES="zfs virtiofs tmpfs"
-# XYMONCLIENT_FS_EXCLUDE_TYPES="iso9660 squashfs"
+# XYMONCLIENT_FS_EXCLUDE_TYPES="iso9660 squashfs fuse.snapfuse"
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
 # XYMONCLIENT_FS_DF_TIMEOUT="30"
 

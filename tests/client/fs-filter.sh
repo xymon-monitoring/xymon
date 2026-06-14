@@ -196,6 +196,7 @@ assert_contains " -P "        "$args" "default must pass -P to df"
 assert_contains " -l "        "$args" "default must pass -l to df (local only)"
 assert_contains " -x iso9660 " "$args" "default must exclude iso9660 (always-full image)"
 assert_contains " -x squashfs " "$args" "default must exclude squashfs (always-full image)"
+assert_contains " -x fuse.snapfuse " "$args" "default must exclude fuse.snapfuse (snap FUSE image, always 100%)"
 assert_contains " -x sysfs "  "$args" "default must exclude sysfs (pseudo nodev)"
 assert_contains " -x overlay " "$args" "default must exclude overlay (pseudo nodev)"
 assert_contains " -x nfs "    "$args" "default must exclude nfs (pseudo nodev)"
@@ -516,3 +517,48 @@ assert_contains "Inode collection failed: df exited 127" "$fail_out" \
 	"a nonzero df with empty output must emit an inode failure marker (empty inode reads as green)"
 assert_not_contains "Capacity" "$fail_out" \
 	"failed-df output must not contain df headers that could parse as a healthy report"
+
+# --- inode report drops filesystems with no inode limit (df prints "-") -------
+#
+# btrfs/zfs/9p/many-fuse have no fixed inode table; df -i prints "-" in the
+# IUse% column (and sometimes bogus counts, e.g. a negative IUsed on 9p). Such a
+# filesystem can never run out of inodes, so emit_df must drop it from the
+# [inode] report -- while its disk row (a real %) stays in [df]. Drive the
+# combined block with a df stub that returns a "-" inode row for "dynfs".
+INODEDIR="$TMP/bin-inode"
+mkdir -p "$INODEDIR"
+cat > "$INODEDIR/df" <<'EOF'
+#!/bin/sh
+case " $* " in
+  *" -i "*)
+	printf 'Filesystem Inodes IUsed IFree IUse%% Mounted on\n'
+	printf '/dev/sda1 1000 100 900 10%% /\n'
+	printf 'dynfs 0 0 0 - /data\n'
+	;;
+  *)
+	printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\n'
+	printf '/dev/sda1 1000000 500000 500000 50%% /\n'
+	printf 'dynfs 2000 1000 1000 50%% /data\n'
+	;;
+esac
+EOF
+chmod +x "$INODEDIR/df"
+ln -s "$STUB/readlink" "$INODEDIR/readlink"
+ln -s "$STUB/timeout"  "$INODEDIR/timeout"
+for prog in sh bash awk sed; do
+	p=$(PATH="$REALPATH" command -v "$prog") \
+		|| fail "inode-drop test needs a real '$prog' on PATH"
+	ln -s "$p" "$INODEDIR/$prog"
+done
+
+inode_out=$(
+	cd "$TMP"
+	PATH="$INODEDIR" /bin/sh "$COMBINED" 2>/dev/null
+)
+inode_section=$(printf '%s\n' "$inode_out" | sed -n '/^\[inode\]/,$p')
+assert_contains     "/dev/sda1" "$inode_section" \
+	"inode report keeps a normal filesystem"
+assert_not_contains "dynfs" "$inode_section" \
+	"inode report drops a no-inode-limit filesystem (IUse% '-')"
+assert_contains "dynfs" "$inode_out" \
+	"the same filesystem still appears in [df] (it has a real disk %)"

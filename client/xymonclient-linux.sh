@@ -85,14 +85,14 @@ if [ -n "$XYMONCLIENT_FS_INCLUDE_TYPES" ]; then
 	EXCLUDES="$keep"
 fi
 # XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to ALSO exclude,
-# on top of the nodev default. Defaults to "iso9660 squashfs" -- both are
-# read-only images reported 100% full by design (snap mounts one squashfs per
-# revision), and neither is a nodev type, so they must be named here. Matching
-# is on the exact df type token; nodev types (overlay, fuse, ...) are already
-# excluded, so other effective entries name a non-nodev type, e.g. adding
-# "fuse.sshfs vfat" to drop a specific FUSE subtype and a device-backed mount.
-# Set to "" to monitor iso9660/squashfs too.
-: "${XYMONCLIENT_FS_EXCLUDE_TYPES=iso9660 squashfs}"
+# on top of the nodev default. Defaults to "iso9660 squashfs fuse.snapfuse" --
+# read-only images reported 100% full by design (snaps mount as squashfs, or as
+# fuse.snapfuse where snapd falls back to FUSE), none a nodev type, so they must
+# be named here. Matching is on the exact df type token; nodev types (overlay,
+# bare fuse, ...) are already excluded, so other effective entries name a
+# non-nodev type, e.g. adding "fuse.sshfs vfat" to drop a specific FUSE subtype
+# and a device-backed mount. Set to "" to monitor these too.
+: "${XYMONCLIENT_FS_EXCLUDE_TYPES=iso9660 squashfs fuse.snapfuse}"
 if [ -n "$XYMONCLIENT_FS_EXCLUDE_TYPES" ]; then
 	for t in $XYMONCLIENT_FS_EXCLUDE_TYPES; do
 		case " $EXCLUDES " in
@@ -198,10 +198,17 @@ emit_df()
 		echo "$2 collection failed: df exited $DFRC with no output"
 		return
 	fi
+	# Inode report ("$1" = yes) only: drop filesystems with no inode limit. df
+	# prints "-" in the IUse% column (field 5) for them (btrfs, zfs, 9p, many
+	# fuse); they can never run out of inodes, so the row is noise and may carry
+	# bogus counts (e.g. a negative IUsed on 9p). The header (NR==1) is kept; for
+	# the disk report the awk is a pass-through. (awk is already required above,
+	# so this adds no new dependency.)
 	printf '%s\n' "$DFOUT" | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
-}' -e "s&^rootfs&${ROOTFS}&"
+}' -e "s&^rootfs&${ROOTFS}&" \
+	| awk -v ino="$1" 'NR == 1 || ino != "yes" || $5 != "-"'
 }
 ROOTFS=`readlink -m /dev/root`
 emit_df no Disk
