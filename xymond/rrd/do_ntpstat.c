@@ -25,11 +25,14 @@ int do_ntpstat_rrd(char *hostname, char *testname, char *classname, char *pagepa
 	p = strstr(msg, "\nOffset:");
 	gotdata = (p && (sscanf(p+1, "Offset: %f", &offset) == 1));
 
-	/* Or maybe it's just the "ntpq -c rv" output */
+	/* Or maybe it's just the "ntpq -c rv" output - or the "offset=..."
+	 * handoff from the network ntp test in do_net.c, which starts the
+	 * message with the token (so p == msg must be accepted, and *(p-1)
+	 * must not be read in that case). */
 	if (!gotdata) {
 		p = strstr(msg, "offset=");
-		if (p && (isspace((int)*(p-1)) || (*(p-1) == ','))) {
-			gotdata = (p && (sscanf(p, "offset=%f", &offset) == 1));
+		if (p && ((p == msg) || isspace((int)*(p-1)) || (*(p-1) == ','))) {
+			gotdata = (sscanf(p, "offset=%f", &offset) == 1);
 		}
 	}
 

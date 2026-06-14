@@ -133,8 +133,19 @@ IPTEST_2_CLEAR_ON_FAILED_CONN="TRUE"		# If TRUE, then failing network tests go C
 NONETPAGE=""					# Network tests that go YELLOW upon failure
 FPING="@FPING@"					# Path and options for the ping program.
 FPINGOPTS="-Ae"					# Standard options to fping/xymonping
+# The "ntp" test queries hosts with the first installed tool from the
+# NTPTOOL priority list - a "|"-separated list of "ntpdate", "ntpdig" (ntpsec),
+# "sntp" (ntp.org) and "chronyd" (chrony, run with -Q so it never touches the
+# clock). The default is NTPTOOL="ntpdig|ntpdate|sntp|chronyd"; a single name
+# (e.g. NTPTOOL="chronyd") forces that tool.
+# Setting SNTP also forces the sntp program (deprecated - use NTPTOOL="sntp").
 NTPDATE="ntpdate"				# Path to the 'ntpdate' program
 NTPDATEOPTS="-u -q -p 1"			# Standard options to ntpdate
+NTPDIG="ntpdig"					# Path to the 'ntpdig' program
+NTPDIGOPTS=""					# Standard options to ntpdig (a timeout is added automatically)
+SNTPOPTS=""					# Standard options to sntp (a timeout is added automatically)
+CHRONYD="chronyd"				# Path to the 'chronyd' program
+CHRONYDOPTS=""					# Standard options to chronyd (-Q and a timeout are added automatically)
 TRACEROUTE="traceroute"                         # How to do traceroute on failing ping tests. Requires "trace" in hosts.cfg .
 TRACEROUTEOPTS="-n -q 2 -w 2 -m 15"		# Standard options to traceroute
 XYMONROUTERTEXT="router"			# What to call a failing intermediate network device.
