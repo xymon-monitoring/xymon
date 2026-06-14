@@ -82,8 +82,10 @@ if [ -n "$XYMONCLIENT_FS_INCLUDE_TYPES" ]; then
 	EXCLUDES="$keep"
 fi
 # XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to ALSO
-# exclude, on top of the nodev default (e.g. "overlay fuse" to drop
-# container-runtime mounts that would otherwise leak into the report).
+# exclude, on top of the nodev default. Matching is on the exact df type
+# token; nodev types (overlay, fuse, ...) are already excluded, so an
+# effective entry names a non-nodev type, e.g. "fuse.sshfs vfat" to drop a
+# specific FUSE subtype and a device-backed mount.
 if [ -n "$XYMONCLIENT_FS_EXCLUDE_TYPES" ]; then
 	for t in $XYMONCLIENT_FS_EXCLUDE_TYPES; do
 		case " $EXCLUDES " in

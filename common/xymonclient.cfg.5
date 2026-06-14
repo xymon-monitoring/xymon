@@ -38,9 +38,9 @@ Directory used for temporary files. Default: $XYMONHOME/tmp/
 .IP XYMONCLIENT_FS_INCLUDE_TYPES
 Whitespace-separated Linux filesystem types to include in the
 client's disk and inode reports even when they are normally excluded
-as pseudo filesystems. For example, \fBtmpfs zfs\fR includes
-those types. Including remote filesystems also requires
-XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+as pseudo filesystems. Types are matched as exact df type tokens.
+For example, \fBtmpfs zfs\fR includes those types. Including remote
+filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
 
 .IP XYMONCLIENT_FS_EXCLUDE_TYPES
 Whitespace-separated Linux filesystem types to exclude in addition
@@ -64,6 +64,8 @@ patches (such as Debian's) that do.
 Set to \fByes\fR (the default) to pass \fB\-l\fR to df and report
 local filesystems only. Set to \fBno\fR to report remote filesystems
 as well. Invalid values produce a warning and use the safe default.
+With \fBno\fR, df can hang for the whole client cycle if a remote mount
+is stale; use XYMONCLIENT_FS_DF_TIMEOUT to cap the wait.
 
 .IP XYMONCLIENT_FS_DF_TIMEOUT
 Positive integer seconds before timeout(1) sends SIGKILL to each df
@@ -75,9 +77,10 @@ invalid values produce a warning and also use the default. The timeout
 cannot be disabled through this setting and may be set up to a maximum
 of 3600 seconds. A process
 stuck in an uninterruptible kernel wait cannot be terminated until the
-kernel call returns. If timeout(1) has to kill df, the affected df and
-inode report is marked failed (yellow) instead of being left empty, so a
-hung filesystem is not silently reported green.
+kernel call returns. If df is killed on timeout, or otherwise exits
+non-zero while producing no output, the affected df or inode report is
+marked failed (yellow) instead of being left empty, so a hung or failed
+filesystem probe is not silently reported green.
 
 .IP XYMON
 Full path to the 
