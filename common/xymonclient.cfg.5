@@ -35,6 +35,40 @@ $XYMONHOME/logs
 .IP XYMONTMP
 Directory used for temporary files. Default: $XYMONHOME/tmp/
 
+.IP XYMONCLIENT_FS_INCLUDE_TYPES
+Whitespace-separated Linux filesystem types to include in the
+client's disk and inode reports even when they are normally excluded
+as pseudo filesystems. For example, \fBtmpfs squashfs\fR includes
+those types. Including remote filesystems also requires
+XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+
+.IP XYMONCLIENT_FS_EXCLUDE_TYPES
+Whitespace-separated Linux filesystem types to exclude in addition
+to the default pseudo-filesystem exclusions. If a type appears in
+both include and exclude settings, exclusion takes precedence.
+The default exclusion list is derived from the \fBnodev\fR entries in
+/proc/filesystems (rootfs is always kept). When /proc/filesystems is
+not readable the default filter is disabled and no filesystem types are
+excluded by default; the script does not fall back to deriving
+exclusions from mount(8), so it is not a drop-in replacement for distro
+patches (such as Debian's) that do.
+
+.IP XYMONCLIENT_FS_DF_LOCAL_ONLY
+Set to \fByes\fR (the default) to pass \fB\-l\fR to df and report
+local filesystems only. Set to \fBno\fR to report remote filesystems
+as well. Invalid values produce a warning and use the safe default.
+
+.IP XYMONCLIENT_FS_DF_TIMEOUT
+Positive integer seconds before timeout(1) sends SIGKILL to each df
+invocation. The default is 30 seconds when timeout(1) is available.
+An empty or unset value falls back to the default; zero and other
+invalid values produce a warning and also use the default. The cap
+cannot be disabled, only raised, up to a maximum of 3600. A process
+stuck in an uninterruptible kernel wait cannot be terminated until the
+kernel call returns. If timeout(1) has to kill df, the affected df and
+inode report is marked failed (yellow) instead of being left empty, so a
+hung filesystem is not silently reported green.
+
 .IP XYMON
 Full path to the 
 .I xymon(1)
@@ -66,4 +100,3 @@ of the "runclient.sh" script.
 
 .SH "SEE ALSO"
 xymon(7)
-
