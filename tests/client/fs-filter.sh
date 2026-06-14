@@ -383,9 +383,9 @@ XYMONCLIENT_FS_DF_TIMEOUT="" /bin/sh "$MISSING_SNIPPET" >/dev/null 2>"$TMP/stder
 args=$(printf ' %s ' "$(cat "$DF_LOG")")
 
 # NB: our sed rewrite of /proc/filesystems also rewrites the warning text,
-# so we assert on the surviving "not readable, filesystem filter disabled"
-# tail rather than the path.
-assert_contains "not readable, filesystem filter disabled" "$(cat "$TMP/stderr")" \
+# so we assert on the surviving "not readable, dynamic nodev exclusions
+# disabled" tail rather than the path.
+assert_contains "not readable, dynamic nodev exclusions disabled" "$(cat "$TMP/stderr")" \
 	"unreadable filesystem-list must produce a warning on stderr"
 assert_contains "xymonclient-linux:" "$(cat "$TMP/stderr")" \
 	"warning must be tagged so it's identifiable in client logs"

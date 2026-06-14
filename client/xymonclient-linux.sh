@@ -46,11 +46,15 @@ echo "[who]"
 who
 echo "[df]"
 # Default: exclude every nodev (pseudo) filesystem in df/inode output, except
-# rootfs. This is the historical upstream behavior.
+# rootfs, plus the historical explicit iso9660 exclusion (iso9660 is not a
+# nodev type, so it is added unconditionally at run_df below). This is the
+# historical upstream behavior.
 if [ -r /proc/filesystems ]; then
 	EXCLUDES=$(awk '$1 == "nodev" && $2 != "rootfs" { printf "%s%s", sep, $2; sep=" " }' /proc/filesystems)
 else
-	echo "xymonclient-linux: /proc/filesystems not readable, filesystem filter disabled" >&2
+	# Only the dynamic nodev exclusions are disabled here; the explicit iso9660
+	# exclusion and the local-only df -l behavior still apply.
+	echo "xymonclient-linux: /proc/filesystems not readable, dynamic nodev exclusions disabled (iso9660 exclusion and df -l still apply)" >&2
 	EXCLUDES=""
 fi
 # Filesystem types are literal tokens, so pathname expansion must not turn a
@@ -61,7 +65,7 @@ case $- in
 esac
 # XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated FS types that should
 # appear in the output even though they would otherwise be excluded
-# (e.g. "tmpfs squashfs" to surface tmpfs mounts, or "nfs nfs4 ceph" to
+# (e.g. "tmpfs zfs" to surface tmpfs/zfs mounts, or "nfs nfs4 ceph" to
 # include remote filesystems -- the latter also requires
 # XYMONCLIENT_FS_DF_LOCAL_ONLY=no since df -l hides remote mounts).
 if [ -n "$XYMONCLIENT_FS_INCLUDE_TYPES" ]; then
@@ -103,7 +107,8 @@ esac
 # XYMONCLIENT_FS_DF_TIMEOUT: seconds before timeout(1) sends SIGKILL to df
 # (default 30). df can hang on stale NFS/CIFS mounts -- particularly relevant
 # when XYMONCLIENT_FS_DF_LOCAL_ONLY=no. Empty or unset falls back to the
-# default; the cap cannot be disabled, only raised.
+# default; the timeout cannot be disabled through this setting, and its value
+# can be raised only up to the fixed 3600s cap below.
 DFTIMEOUT="${XYMONCLIENT_FS_DF_TIMEOUT:-30}"
 # A non-numeric value or zero is rejected (zero means "no timeout" under GNU
 # coreutils but "fire immediately" under BusyBox, so it is never safe) and
