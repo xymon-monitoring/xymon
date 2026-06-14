@@ -33,8 +33,14 @@ LOGFETCHOPTS=""
 # XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to also
 #    exclude, on top of the nodev default. Useful when container runtimes
 #    or other tools register filesystem types that you do not want to see
-#    in the disk report. Examples:
-#      "overlay fuse"        -- drop container-runtime mounts.
+#    in the disk report. Matching is on the exact df type token, and nodev
+#    types (overlay, fuse, ...) are already excluded by default, so an
+#    effective entry names a type that is NOT a nodev default -- a device-backed
+#    type, or a specific FUSE subtype the bare nodev "fuse" default cannot
+#    match. Examples:
+#      "fuse.sshfs vfat"     -- drop a specific FUSE subtype (the nodev "fuse"
+#                               default does not match the "fuse.sshfs" token)
+#                               and a device-backed mount.
 #    If a type appears in both lists, EXCLUDE wins (it is applied after
 #    INCLUDE), so the type stays excluded.
 #
@@ -45,10 +51,13 @@ LOGFETCHOPTS=""
 #    remote mount is stale. Use XYMONCLIENT_FS_DF_TIMEOUT to cap the wait.
 #
 # XYMONCLIENT_FS_DF_TIMEOUT: positive integer seconds before timeout(1) sends
-#    SIGKILL to df, default "30". Empty or unset falls back to "30"; zero or
-#    another invalid value produces a warning and also falls back to "30". The
-#    timeout cannot be disabled through this setting and may be set up to a
-#    maximum of 3600 seconds -- df must never hang the client cycle. A process
+#    SIGKILL to df, default "30". The limit applies per df invocation, and the
+#    disk and inode reports are two separate invocations, so two stale mounts
+#    can delay the client by up to twice this value. Empty or unset falls back
+#    to "30"; zero or another invalid value produces a warning and also falls
+#    back to "30". The timeout cannot be disabled through this setting and may
+#    be set up to a maximum of 3600 seconds -- df must never hang the client
+#    cycle. A process
 #    stuck in an uninterruptible kernel wait cannot be terminated until the
 #    kernel call returns. If timeout(1) has to kill df, the affected df and
 #    inode report is marked failed (yellow) instead of being left empty, so a
