@@ -162,16 +162,51 @@ run_df()
 		df "$@"
 	fi
 }
+# emit_df INODEFLAG LABEL
+# Run df (optionally in inode mode) and reproduce the historical sed join, but
+# guard the hung-filesystem case. timeout(1) reports 124 (timed out) or 137
+# (128+9, our `-s KILL` case) when it has to kill df; whatever partial output it
+# managed to print first is untrustworthy -- it can list the healthy mounts and
+# omit the very one that hung -- so we discard it and emit an explicit failure
+# marker instead of a silent (empty) section. The server reads an *empty*
+# [inode] section as green ("No filesystems reporting inode data"), so a silent
+# hang would otherwise be a false green; a non-empty marker that carries no
+# recognisable df header drives the server's yellow "expected strings not found"
+# path instead, and the same marker yellows the disk section. The same false
+# green can come from any nonzero exit that prints nothing at all -- e.g.
+# timeout(1) itself failing to launch df (status 125/126/127) or a BusyBox
+# timeout rejecting its arguments before df runs -- so an empty section is
+# emitted as a failure marker whenever the exit status was nonzero, not only for
+# the kill codes. df's own nonzero exits that still print the healthy mounts
+# (e.g. a single unreadable mount, exit 1) keep their partial output and flow
+# through unchanged, preserving prior behaviour; an empty section with a clean
+# exit 0 (the Solaris all-ZFS inode case) is also left untouched.
+emit_df()
+{
+	DFOUT=`run_df "$1"`
+	DFRC=$?
+	case $DFRC in
+		124|137)
+			echo "xymonclient-linux: df $2 collection timed out after ${DFTIMEOUT}s (timeout status $DFRC); reporting data as unavailable" >&2
+			echo "$2 collection failed: df timed out after ${DFTIMEOUT}s (status $DFRC)"
+			return
+			;;
+	esac
+	if [ -z "$DFOUT" ]; then
+		[ "$DFRC" -eq 0 ] && return
+		echo "xymonclient-linux: df $2 collection failed (status $DFRC) with no output; reporting data as unavailable" >&2
+		echo "$2 collection failed: df exited $DFRC with no output"
+		return
+	fi
+	printf '%s\n' "$DFOUT" | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}' -e "s&^rootfs&${ROOTFS}&"
+}
 ROOTFS=`readlink -m /dev/root`
-run_df no | sed -e '/^[^ 	][^ 	]*$/{
-N
-s/[ 	]*\n[ 	]*/ /
-}' -e "s&^rootfs&${ROOTFS}&"
+emit_df no Disk
 echo "[inode]"
-run_df yes | sed -e '/^[^ 	][^ 	]*$/{
-N
-s/[ 	]*\n[ 	]*/ /
-}' -e "s&^rootfs&${ROOTFS}&"
+emit_df yes Inode
 echo "[mount]"
 mount
 echo "[free]"

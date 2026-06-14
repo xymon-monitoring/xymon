@@ -44,13 +44,10 @@ if [ ! -f "$SCRIPT" ]; then
 	[ -z "${XYMONCLIENT_LINUX:-}" ] || fail "XYMONCLIENT_LINUX explicitly set to '$SCRIPT' but no such file -- broken package layout, not a skip"
 	skip "$SCRIPT missing"
 fi
-# The #49 env-var FS filter is a separate feature (PR #96) that is not yet
-# merged into this branch, so its absence here is "feature not landed", not a
-# regression of in-tree code -- this guard skips green until #49 arrives, then
-# starts exercising the env-var logic, including the [inode] block guarded
-# alongside the [df] block below.
-grep -q XYMONCLIENT_FS_INCLUDE_TYPES "$SCRIPT" \
-	|| skip "xymonclient-linux.sh has no #49 env-var FS filter yet (PR #96 not in this branch)"
+# The #49 env-var FS filter has landed (PR #96), so this is now a real
+# regression guard: if the env-var logic ever disappears from the script the
+# assertions below must FAIL, not skip. Do not reinstate a "feature not landed"
+# skip here -- absence of the filter is a regression, per tests/README.md.
 
 TMP=$(mktempdir)
 
@@ -428,3 +425,89 @@ assert_contains " -x tmpfs " "$args" \
 	"nodev excludes must still apply when timeout(1) is absent"
 assert_equal "" "$(cat "$TIMEOUT_LOG")" \
 	"timeout wrapper must be skipped when timeout(1) is absent"
+
+# --- a hung df must yellow, never false-green --------------------------------
+#
+# Regression for the inode false-green (xymon-monitoring/xymon#96 review): when
+# df hangs on a stale mount, timeout(1) kills it (exit 137 under -s KILL) and df
+# emits nothing. The server reads an *empty* [inode] section as green ("No
+# filesystems reporting inode data"), so the collection failure must instead
+# surface as a non-empty marker line the server cannot mistake for a healthy
+# report. Unlike the argv-only assertions above, this drives the REAL timeout(1)
+# against a df stub that sleeps past a 1s deadline -- only the genuine kill path
+# proves the right payload is emitted.
+HANGDIR="$TMP/bin-hang"
+mkdir -p "$HANGDIR"
+# df stub that hangs: sleep well past the 1s deadline, so the header below is
+# never printed and timeout must SIGKILL it.
+cat > "$HANGDIR/df" <<'EOF'
+#!/usr/bin/env bash
+sleep 5
+printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\n'
+EOF
+chmod +x "$HANGDIR/df"
+ln -s "$STUB/readlink" "$HANGDIR/readlink"
+# Resolve the REAL timeout/sleep (and shells/tools) from the PATH as it was
+# before $STUB was prepended -- a plain `command -v timeout` would find the
+# argv-recording timeout stub above, which exec's df without enforcing any
+# deadline, so df would never be killed and this test would silently pass even
+# if the guard regressed.
+REALPATH=${PATH#"$STUB:"}
+for prog in sh bash awk sed timeout sleep; do
+	p=$(PATH="$REALPATH" command -v "$prog") \
+		|| fail "sleeping-df test needs a real '$prog' on PATH"
+	ln -s "$p" "$HANGDIR/$prog"
+done
+
+# Run the combined [df]+[inode] block with a 1s cap; both df invocations hang
+# and are killed, so the block should take ~2s and emit two markers.
+hang_out=$(
+	cd "$TMP"
+	PATH="$HANGDIR" XYMONCLIENT_FS_DF_TIMEOUT=1 /bin/sh "$COMBINED" 2>/dev/null
+)
+assert_contains "Disk collection failed: df timed out" "$hang_out" \
+	"a hung df must emit an explicit disk failure marker, not an empty section"
+assert_contains "Inode collection failed: df timed out" "$hang_out" \
+	"a hung df must emit an explicit inode failure marker (an empty inode section reads as green)"
+# The marker carries none of df's column headers, so the server's header
+# detection fails and the section yellows rather than greens. If "Capacity"
+# leaked through, df had printed real output and the kill path was not taken.
+assert_not_contains "Capacity" "$hang_out" \
+	"hung-df output must not contain df headers that could parse as a healthy report"
+
+# --- a non-kill df failure with empty output must yellow too -----------------
+#
+# Regression for the second inode false-green (xymon-monitoring/xymon#96
+# review): the kill codes 124/137 are not the only way to get a nonzero exit
+# with no output. timeout(1) itself can fail to launch df -- status 125 (timeout
+# error), 126 (df not invocable), 127 (df not found) -- and a BusyBox timeout
+# rejecting its duration exits nonzero before df runs. Each leaves an empty
+# section the server reads as green. emit_df must surface ANY nonzero exit with
+# empty output as a failure marker, not just the kill codes. Drive this with the
+# argv-recording timeout stub (it exec's df, preserving df's exit status) and a
+# df stub that exits 127 while printing nothing.
+FAILDIR="$TMP/bin-fail"
+mkdir -p "$FAILDIR"
+cat > "$FAILDIR/df" <<'EOF'
+#!/usr/bin/env bash
+exit 127
+EOF
+chmod +x "$FAILDIR/df"
+ln -s "$STUB/readlink" "$FAILDIR/readlink"
+ln -s "$STUB/timeout"  "$FAILDIR/timeout"
+for prog in sh bash awk sed; do
+	p=$(PATH="$REALPATH" command -v "$prog") \
+		|| fail "failing-df test needs a real '$prog' on PATH"
+	ln -s "$p" "$FAILDIR/$prog"
+done
+
+fail_out=$(
+	cd "$TMP"
+	PATH="$FAILDIR" /bin/sh "$COMBINED" 2>/dev/null
+)
+assert_contains "Disk collection failed: df exited 127" "$fail_out" \
+	"a nonzero df with empty output must emit a disk failure marker, not an empty section"
+assert_contains "Inode collection failed: df exited 127" "$fail_out" \
+	"a nonzero df with empty output must emit an inode failure marker (empty inode reads as green)"
+assert_not_contains "Capacity" "$fail_out" \
+	"failed-df output must not contain df headers that could parse as a healthy report"
