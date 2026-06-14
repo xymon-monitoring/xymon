@@ -100,10 +100,10 @@ case "$DFLOCALONLY" in
 		DFLOCALONLY=yes
 		;;
 esac
-# XYMONCLIENT_FS_DF_TIMEOUT: seconds before df is killed by timeout(1) (default
-# 30). df can hang on stale NFS/CIFS mounts -- particularly relevant when
-# XYMONCLIENT_FS_DF_LOCAL_ONLY=no. Empty or unset falls back to the default; the
-# cap cannot be disabled, only raised.
+# XYMONCLIENT_FS_DF_TIMEOUT: seconds before timeout(1) sends SIGKILL to df
+# (default 30). df can hang on stale NFS/CIFS mounts -- particularly relevant
+# when XYMONCLIENT_FS_DF_LOCAL_ONLY=no. Empty or unset falls back to the
+# default; the cap cannot be disabled, only raised.
 DFTIMEOUT="${XYMONCLIENT_FS_DF_TIMEOUT:-30}"
 # A non-numeric value or zero is rejected (zero means "no timeout" under GNU
 # coreutils but "fire immediately" under BusyBox, so it is never safe) and
@@ -119,6 +119,26 @@ case "$DFTIMEOUT" in
 		DFTIMEOUT=30
 		;;
 esac
+# Strip leading zeros so a value like 00030 is treated as decimal 30, not as
+# an over-length string (the length guard below keys on character count, not
+# magnitude, so 00001 would otherwise clamp to 3600) nor as octal in the
+# numeric comparison. The case above guarantees DFTIMEOUT is all digits with at
+# least one non-zero, so this loop always terminates with a non-empty value.
+while :; do
+	case "$DFTIMEOUT" in
+		0?*) DFTIMEOUT="${DFTIMEOUT#0}" ;;
+		*) break ;;
+	esac
+done
+# Cap at 3600s. BusyBox timeout(1) rejects an out-of-range duration with a
+# nonzero exit before df runs, which would silently empty both the df and
+# inode sections; an hour is already far past any sane df wait. The length
+# guard short-circuits the numeric comparison so it never overflows the
+# shell's integer type on an absurdly long digit string.
+if [ "${#DFTIMEOUT}" -gt 4 ] || [ "$DFTIMEOUT" -gt 3600 ]; then
+	echo "xymonclient-linux: XYMONCLIENT_FS_DF_TIMEOUT '$DFTIMEOUT' exceeds 3600, using 3600" >&2
+	DFTIMEOUT=3600
+fi
 run_df()
 {
 	DFINODES="$1"
@@ -137,7 +157,7 @@ run_df()
 	[ "$DFRESTOREGLOB" = yes ] && set +f
 
 	if command -v timeout >/dev/null 2>&1; then
-		timeout "${DFTIMEOUT}s" df "$@"
+		timeout -s KILL "${DFTIMEOUT}s" df "$@"
 	else
 		df "$@"
 	fi
