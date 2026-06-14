@@ -71,6 +71,11 @@ nodev	nfs4
 nodev	rootfs
 EOF
 
+# Matching filenames expose accidental pathname expansion of configured
+# filesystem type tokens when snippets run with $TMP as their working directory.
+: > "$TMP/tmpfs"
+: > "$TMP/fuse.sshfs"
+
 # Extract just the [df] block from xymonclient-linux.sh and rewrite the
 # /proc/filesystems reference. Drop the trailing `echo "[inode]"` line with
 # `sed '$d'` (portable last-line delete; `head -n -1` is a GNU extension and
@@ -129,6 +134,7 @@ chmod +x "$STUB/readlink"
 # record here the duration timeout was handed, then exec the wrapped command
 # so every df assertion above still holds with the wrapper active.
 TIMEOUT_LOG="$TMP/timeout.args"
+STDERR_LOG="$TMP/stderr"
 cat > "$STUB/timeout" <<EOF
 #!/usr/bin/env bash
 echo "\$1" >> "$TIMEOUT_LOG"
@@ -151,7 +157,11 @@ run_snippet() {
 	: > "$DF_LOG"
 	: > "$INODE_LOG"
 	: > "$TIMEOUT_LOG"
-	/bin/sh "$SNIPPET" >/dev/null 2>&1
+	: > "$STDERR_LOG"
+	(
+		cd "$TMP"
+		/bin/sh "$SNIPPET" >/dev/null 2>"$STDERR_LOG"
+	)
 	# Pad with spaces so substring assertions for " -x tmpfs " work even
 	# at the ends of the line.
 	printf ' %s ' "$(cat "$DF_LOG")"
@@ -164,7 +174,11 @@ run_inode() {
 	: > "$DF_LOG"
 	: > "$INODE_LOG"
 	: > "$TIMEOUT_LOG"
-	/bin/sh "$COMBINED" >/dev/null 2>&1
+	: > "$STDERR_LOG"
+	(
+		cd "$TMP"
+		/bin/sh "$COMBINED" >/dev/null 2>"$STDERR_LOG"
+	)
 	printf ' %s ' "$(cat "$INODE_LOG")"
 }
 
@@ -204,6 +218,12 @@ assert_not_contains " -x tmpfs "   "$args" "multi-include must drop tmpfs"
 assert_not_contains " -x overlay " "$args" "multi-include must drop overlay"
 assert_contains     " -x sysfs "   "$args" "multi-include must leave sysfs"
 
+# Type tokens are literal, not shell globs. The matching $TMP/tmpfs file must
+# not turn "tmp*" into "tmpfs" and accidentally un-exclude tmpfs.
+args=$(XYMONCLIENT_FS_INCLUDE_TYPES='tmp*' run_snippet)
+assert_contains " -x tmpfs " "$args" \
+	"include type tokens must not undergo pathname expansion"
+
 # --- XYMONCLIENT_FS_EXCLUDE_TYPES adds extra exclusions ---------------------
 
 args=$(XYMONCLIENT_FS_EXCLUDE_TYPES=ext4 run_snippet)
@@ -220,6 +240,13 @@ tmpfs_count=$((tmpfs_count))
 assert_equal 1 "$tmpfs_count" \
 	"XYMONCLIENT_FS_EXCLUDE_TYPES=tmpfs must not duplicate an existing exclude"
 
+# The matching $TMP/fuse.sshfs file must not rewrite the configured literal.
+args=$(XYMONCLIENT_FS_EXCLUDE_TYPES='fuse.*' run_snippet)
+assert_contains " -x fuse.* " "$args" \
+	"exclude type tokens must not undergo pathname expansion"
+assert_not_contains " -x fuse.sshfs " "$args" \
+	"exclude type glob must not expand to a working-directory filename"
+
 # --- XYMONCLIENT_FS_DF_LOCAL_ONLY=no drops the -l flag ----------------------
 
 args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=no run_snippet)
@@ -228,6 +255,13 @@ assert_not_contains " -l " "$args" "DF_LOCAL_ONLY=no must drop -l"
 
 args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=yes run_snippet)
 assert_contains " -l " "$args" "DF_LOCAL_ONLY=yes must still pass -l"
+
+# An invalid value must fail safe rather than silently exposing remote mounts.
+args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=YES run_snippet)
+assert_contains " -l " "$args" \
+	"invalid DF_LOCAL_ONLY value must fall back to local-only mode"
+assert_contains "invalid XYMONCLIENT_FS_DF_LOCAL_ONLY" "$(cat "$STDERR_LOG")" \
+	"invalid DF_LOCAL_ONLY value must produce a warning"
 
 # --- XYMONCLIENT_FS_DF_TIMEOUT wraps df in `timeout <n>s` --------------------
 #
@@ -246,10 +280,25 @@ XYMONCLIENT_FS_DF_TIMEOUT=5 run_snippet >/dev/null
 assert_equal "5s" "$(cat "$TIMEOUT_LOG")" \
 	"XYMONCLIENT_FS_DF_TIMEOUT=5 must wrap df in 'timeout 5s'"
 
-# Empty string disables the wrapper: df is invoked directly, timeout untouched.
+# Empty string falls back to the default: the cap cannot be disabled.
 XYMONCLIENT_FS_DF_TIMEOUT="" run_snippet >/dev/null
-assert_equal "" "$(cat "$TIMEOUT_LOG")" \
-	'XYMONCLIENT_FS_DF_TIMEOUT="" must invoke df without a timeout wrapper'
+assert_equal "30s" "$(cat "$TIMEOUT_LOG")" \
+	'XYMONCLIENT_FS_DF_TIMEOUT="" must fall back to the default timeout'
+
+# Invalid values must not prevent df from running.
+XYMONCLIENT_FS_DF_TIMEOUT=invalid run_snippet >/dev/null
+assert_equal "30s" "$(cat "$TIMEOUT_LOG")" \
+	"invalid XYMONCLIENT_FS_DF_TIMEOUT must fall back to 30 seconds"
+assert_contains "invalid XYMONCLIENT_FS_DF_TIMEOUT" "$(cat "$STDERR_LOG")" \
+	"invalid timeout value must produce a warning"
+
+# Zero has incompatible semantics across timeout implementations (disabled by
+# GNU coreutils, immediate timeout by BusyBox), so it must use the safe default.
+XYMONCLIENT_FS_DF_TIMEOUT=0 run_snippet >/dev/null
+assert_equal "30s" "$(cat "$TIMEOUT_LOG")" \
+	"XYMONCLIENT_FS_DF_TIMEOUT=0 must fall back to 30 seconds"
+assert_contains "invalid XYMONCLIENT_FS_DF_TIMEOUT" "$(cat "$STDERR_LOG")" \
+	"zero timeout value must produce a warning"
 
 # --- [inode] report must be filtered the same way as [df] -------------------
 #

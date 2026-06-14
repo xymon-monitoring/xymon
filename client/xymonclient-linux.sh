@@ -45,14 +45,110 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-EXCLUDES=`cat /proc/filesystems | grep nodev | grep -v rootfs | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g'`
+# Default: exclude every nodev (pseudo) filesystem in df/inode output, except
+# rootfs. This is the historical upstream behavior.
+if [ -r /proc/filesystems ]; then
+	EXCLUDES=$(awk '$1 == "nodev" && $2 != "rootfs" { printf "%s%s", sep, $2; sep=" " }' /proc/filesystems)
+else
+	echo "xymonclient-linux: /proc/filesystems not readable, filesystem filter disabled" >&2
+	EXCLUDES=""
+fi
+# Filesystem types are literal tokens, so pathname expansion must not turn a
+# configured type such as "fuse.*" into filenames from the working directory.
+case $- in
+	*f*) FSRESTOREGLOB=no ;;
+	*) FSRESTOREGLOB=yes; set -f ;;
+esac
+# XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated FS types that should
+# appear in the output even though they would otherwise be excluded
+# (e.g. "tmpfs squashfs" to surface tmpfs mounts, or "nfs nfs4 ceph" to
+# include remote filesystems -- the latter also requires
+# XYMONCLIENT_FS_DF_LOCAL_ONLY=no since df -l hides remote mounts).
+if [ -n "$XYMONCLIENT_FS_INCLUDE_TYPES" ]; then
+	# Exact token comparison -- a type is matched literally, never as a
+	# regex/glob, so e.g. "fuse.sshfs" cannot collide with another token.
+	keep=""
+	for e in $EXCLUDES; do
+		drop=no
+		for t in $XYMONCLIENT_FS_INCLUDE_TYPES; do
+			[ "$e" = "$t" ] && { drop=yes; break; }
+		done
+		[ "$drop" = no ] && keep="$keep $e"
+	done
+	EXCLUDES="$keep"
+fi
+# XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to ALSO
+# exclude, on top of the nodev default (e.g. "overlay fuse" to drop
+# container-runtime mounts that would otherwise leak into the report).
+if [ -n "$XYMONCLIENT_FS_EXCLUDE_TYPES" ]; then
+	for t in $XYMONCLIENT_FS_EXCLUDE_TYPES; do
+		case " $EXCLUDES " in
+			*" $t "*) ;;  # already in list
+			*) EXCLUDES="$EXCLUDES $t" ;;
+		esac
+	done
+fi
+[ "$FSRESTOREGLOB" = yes ] && set +f
+# XYMONCLIENT_FS_DF_LOCAL_ONLY: defaults to "yes" (current upstream behavior,
+# passes -l to df). Set to "no" to drop -l so that remote filesystems
+# (nfs, ceph, ...) appear in the output.
+DFLOCALONLY="${XYMONCLIENT_FS_DF_LOCAL_ONLY:-yes}"
+case "$DFLOCALONLY" in
+	yes|no) ;;
+	*)
+		echo "xymonclient-linux: invalid XYMONCLIENT_FS_DF_LOCAL_ONLY '$DFLOCALONLY', using yes" >&2
+		DFLOCALONLY=yes
+		;;
+esac
+# XYMONCLIENT_FS_DF_TIMEOUT: seconds before df is killed by timeout(1) (default
+# 30). df can hang on stale NFS/CIFS mounts -- particularly relevant when
+# XYMONCLIENT_FS_DF_LOCAL_ONLY=no. Empty or unset falls back to the default; the
+# cap cannot be disabled, only raised.
+DFTIMEOUT="${XYMONCLIENT_FS_DF_TIMEOUT:-30}"
+# A non-numeric value or zero is rejected (zero means "no timeout" under GNU
+# coreutils but "fire immediately" under BusyBox, so it is never safe) and
+# falls back to the 30s default with a warning.
+case "$DFTIMEOUT" in
+	*[!0-9]*)
+		echo "xymonclient-linux: invalid XYMONCLIENT_FS_DF_TIMEOUT '$DFTIMEOUT', using 30" >&2
+		DFTIMEOUT=30
+		;;
+	*[1-9]*) ;;
+	*)
+		echo "xymonclient-linux: invalid XYMONCLIENT_FS_DF_TIMEOUT '$DFTIMEOUT', using 30" >&2
+		DFTIMEOUT=30
+		;;
+esac
+run_df()
+{
+	DFINODES="$1"
+	set -- -P
+	[ "$DFLOCALONLY" = yes ] && set -- "$@" -l
+	[ "$DFINODES" = yes ] && set -- "$@" -i
+	set -- "$@" -x iso9660
+
+	case $- in
+		*f*) DFRESTOREGLOB=no ;;
+		*) DFRESTOREGLOB=yes; set -f ;;
+	esac
+	for t in $EXCLUDES; do
+		set -- "$@" -x "$t"
+	done
+	[ "$DFRESTOREGLOB" = yes ] && set +f
+
+	if command -v timeout >/dev/null 2>&1; then
+		timeout "${DFTIMEOUT}s" df "$@"
+	else
+		df "$@"
+	fi
+}
 ROOTFS=`readlink -m /dev/root`
-df -Pl -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
+run_df no | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' -e "s&^rootfs&${ROOTFS}&"
 echo "[inode]"
-df -Pil -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
+run_df yes | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' -e "s&^rootfs&${ROOTFS}&"
@@ -104,4 +200,3 @@ sleep 5
 if test -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $XYMONTMP/xymon_vmstat.$MACHINEDOTS; rm -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; fi
 
 exit
-
