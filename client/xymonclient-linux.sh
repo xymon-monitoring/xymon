@@ -133,10 +133,16 @@ case "$DFTIMEOUT" in
 		DFTIMEOUT=30
 		;;
 esac
-# Normalise to decimal (expr is decimal by spec) so a zero-padded value like
-# 00030 becomes 30: the length guard below keys on character count, and the
-# numeric comparison would otherwise read a leading zero as octal.
-DFTIMEOUT=`expr "$DFTIMEOUT" + 0`
+# Strip leading zeros in pure shell (no external tool) so the length guard
+# below isn't fooled by padding (00001 is 1, not an over-length string) and the
+# numeric comparison doesn't read a leading zero as octal. The case above
+# guarantees at least one non-zero digit, so this terminates non-empty.
+while :; do
+	case "$DFTIMEOUT" in
+		0?*) DFTIMEOUT="${DFTIMEOUT#0}" ;;
+		*) break ;;
+	esac
+done
 # Cap at 3600s. BusyBox timeout(1) rejects an out-of-range duration with a
 # nonzero exit before df runs, which would silently empty both the df and
 # inode sections; an hour is already far past any sane df wait. The length

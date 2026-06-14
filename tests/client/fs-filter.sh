@@ -53,12 +53,14 @@ TMP=$(mktempdir)
 
 # --- fixtures ----------------------------------------------------------------
 
-# Representative /proc/filesystems: pseudo-FS that should default-exclude
-# (sysfs, tmpfs, proc, overlay, nfs, nfs4), one that must never be excluded
-# (rootfs), and two real disk FS that must not appear in the nodev list.
+# Representative /proc/filesystems. Genuine pseudo-FS that must default-exclude
+# (sysfs, proc, overlay, nfs, nfs4); real local FS that merely happen to be nodev
+# and so are default-INCLUDED (tmpfs, zfs); the never-excluded special case
+# (rootfs); and two device-backed FS that must not appear in the nodev list.
 cat > "$TMP/proc.filesystems" <<'EOF'
 nodev	sysfs
 nodev	tmpfs
+nodev	zfs
 nodev	proc
 	ext4
 	xfs
@@ -192,13 +194,15 @@ args=$(run_snippet)
 
 assert_contains " -P "        "$args" "default must pass -P to df"
 assert_contains " -l "        "$args" "default must pass -l to df (local only)"
-assert_contains " -x iso9660 " "$args" "default must exclude iso9660"
-assert_contains " -x sysfs "  "$args" "default must exclude sysfs (nodev)"
-assert_contains " -x tmpfs "  "$args" "default must exclude tmpfs (nodev)"
-assert_contains " -x overlay " "$args" "default must exclude overlay (nodev)"
-assert_contains " -x nfs "    "$args" "default must exclude nfs (nodev)"
+assert_contains " -x iso9660 " "$args" "default must exclude iso9660 (always-full image)"
+assert_contains " -x squashfs " "$args" "default must exclude squashfs (always-full image)"
+assert_contains " -x sysfs "  "$args" "default must exclude sysfs (pseudo nodev)"
+assert_contains " -x overlay " "$args" "default must exclude overlay (pseudo nodev)"
+assert_contains " -x nfs "    "$args" "default must exclude nfs (pseudo nodev)"
+assert_not_contains " -x tmpfs " "$args" "default must INCLUDE tmpfs (real local fs that is nodev)"
+assert_not_contains " -x zfs "   "$args" "default must INCLUDE zfs (real local fs that is nodev)"
 assert_not_contains " -x rootfs " "$args" "default must NOT exclude rootfs (special case)"
-assert_not_contains " -x ext4 " "$args" "default must NOT exclude ext4 (non-nodev)"
+assert_not_contains " -x ext4 " "$args" "default must NOT exclude ext4 (device-backed)"
 
 # --- XYMONCLIENT_FS_INCLUDE_TYPES un-excludes one type ----------------------
 
@@ -356,9 +360,9 @@ assert_equal "-s KILL 3600s" "$(cat "$TIMEOUT_LOG")" \
 # rules hold there.
 
 iargs=$(run_inode)
-assert_contains     " -x sysfs "  "$iargs" "inode report must exclude sysfs (nodev), same as df"
-assert_contains     " -x tmpfs "  "$iargs" "inode report must exclude tmpfs (nodev), same as df"
-assert_contains     " -x overlay " "$iargs" "inode report must exclude overlay (nodev), same as df"
+assert_contains     " -x sysfs "  "$iargs" "inode report must exclude sysfs (pseudo nodev), same as df"
+assert_not_contains " -x tmpfs "  "$iargs" "inode report must INCLUDE tmpfs (real local fs), same as df"
+assert_contains     " -x overlay " "$iargs" "inode report must exclude overlay (pseudo nodev), same as df"
 assert_not_contains " -x ext4 "   "$iargs" "inode report must NOT exclude ext4 (non-nodev)"
 assert_not_contains " -x rootfs " "$iargs" "inode report must NOT exclude rootfs (special case)"
 
@@ -389,7 +393,8 @@ assert_contains "not readable, dynamic nodev exclusions disabled" "$(cat "$TMP/s
 	"unreadable filesystem-list must produce a warning on stderr"
 assert_contains "xymonclient-linux:" "$(cat "$TMP/stderr")" \
 	"warning must be tagged so it's identifiable in client logs"
-assert_contains     " -x iso9660 " "$args" "iso9660 must still be excluded"
+assert_contains     " -x iso9660 " "$args" "iso9660 must still be excluded (EXCLUDE_TYPES default)"
+assert_contains     " -x squashfs " "$args" "squashfs must still be excluded (EXCLUDE_TYPES default)"
 assert_not_contains " -x sysfs "   "$args" "no nodev excludes when /proc/filesystems unreadable"
 
 # --- timeout(1) absent: df runs unwrapped, never errors ---------------------
@@ -421,7 +426,7 @@ done
 args=$(printf ' %s ' "$(cat "$DF_LOG")")
 assert_contains " -x iso9660 " "$args" \
 	"df must still run when timeout(1) is absent"
-assert_contains " -x tmpfs " "$args" \
+assert_contains " -x sysfs " "$args" \
 	"nodev excludes must still apply when timeout(1) is absent"
 assert_equal "" "$(cat "$TIMEOUT_LOG")" \
 	"timeout wrapper must be skipped when timeout(1) is absent"
