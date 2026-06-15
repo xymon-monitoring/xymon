@@ -84,6 +84,8 @@ enum locator_servicetype_t locatorservice = ST_MAX;
 
 static int running = 1;
 static int gotalarm = 0;
+static int dologswitch = 0;
+static int hupchildren = 0;
 static int pendingcount = 0;
 static int messagetimeout = 30;
 static int reconnect_interval = 10;	/* seconds between connect attempts to a network peer (--reconnect-interval) */
@@ -455,6 +457,12 @@ void sig_handler(int signum)
 		running = 0;
 		break;
 
+	  case SIGHUP:
+		/* Rotate our log file */
+		dologswitch = 1;
+		hupchildren = 1;
+		break;
+
 	  case SIGCHLD:
 		/* Our worker child died. Avoid zombies. */
 		deadpid = wait(&childexit);
@@ -595,6 +603,13 @@ int main(int argc, char *argv[])
 			  reconnect_interval, messagetimeout);
 	}
 
+	if (!logfn && getenv("XYMONLAUNCH_LOGFILENAME")) {
+		/* No log file on the command line, but our STDOUT is already */
+		/* being piped somewhere. Record this for when it's time to re-open on rotation */
+		logfn = xgetenv("XYMONLAUNCH_LOGFILENAME");
+		dbgprintf("xymond_channel: Already logging out to %s, per xymonlaunch\n", logfn);
+	}
+
 	/* Do cache responses to avoid doing too many lookups */
 	if (locatorbased) locator_prepcache(locatorservice, 0);
 
@@ -626,6 +641,7 @@ int main(int argc, char *argv[])
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 	signal(SIGALRM, SIG_IGN);
@@ -666,6 +682,16 @@ int main(int argc, char *argv[])
 			else if (WIFSIGNALED(childexit)) { cause = "Signal"; ecode = WTERMSIG(childexit); }
 			errprintf("Child process %d died: %s %d\n", deadpid, cause, ecode);
 			deadpid = 0;
+		}
+
+		if (hupchildren) {
+			/* Propagate HUP to children, but only if they're already up */
+			for (handle = xtreeFirst(peers); (handle != xtreeEnd(peers)); handle = xtreeNext(peers, handle)) {
+				xymon_peer_t *pwalk;
+				pwalk = (xymon_peer_t *) xtreeData(peers, handle);
+				if (pwalk->peerstatus == P_UP && pwalk->peertype == P_LOCAL && pwalk->childpid > 0) kill(pwalk->childpid, SIGHUP);
+			}
+			hupchildren = 0;
 		}
 
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = ((pendingcount > 0) ? IPC_NOWAIT : 0);
@@ -739,8 +765,7 @@ int main(int argc, char *argv[])
 				 * the worker module as well, but must handle our own logfile.
 				 */
 				if (strncmp(inbuf+checksumsize, "@@logrotate", 11) == 0) {
-					reopen_file(logfn, "a", stdout);
-					reopen_file(logfn, "a", stderr);
+					dologswitch = 1;
 				}
 
 				if (checksumsize > 0) {
@@ -929,6 +954,15 @@ int main(int argc, char *argv[])
 					if (pwalk->peerstatus != P_UP) pwalk->peerstatus = P_FAILED;
 				}
 			}
+		}
+		if (dologswitch) {
+			logprintf("xymond_channel: reopening logfiles\n");
+			if (logfn) {
+				reopen_file(logfn, "a", stdout);
+				reopen_file(logfn, "a", stderr);
+				logprintf("xymond_channel: reopened logfiles\n");
+			}
+			dologswitch = 0;
 		}
 	}
 
