@@ -209,6 +209,10 @@ void load_config(char *conffn)
 		twalk->cmd = NULL;
 		twalk->interval = 0;
 		twalk->maxruntime = 0;
+		/* To their defaults, not to zero: for these two the absence of the
+		   keyword means "the default", where for the others it means "off". */
+		twalk->delay = DELAY;
+		twalk->faildelay = FAIL_DELAY;
 		twalk->group = NULL;
 		twalk->logfile = NULL;
 		twalk->pidfile = NULL;
@@ -767,7 +771,7 @@ int main(int argc, char *argv[])
 			if (twalk->disabled)     printf("\tDISABLED\n");
 			if (twalk->group)        printf("\tGROUP %s\n", twalk->group->groupname);
 			if (twalk->depends)      printf("\tNEEDS %s\n", twalk->depends->key);
-			if (twalk->delay)        printf("\tDELAY %d\n", twalk->delay);
+			if (twalk->delay != DELAY) printf("\tDELAY %d\n", twalk->delay);
 			if (twalk->interval > 0) printf("\tINTERVAL %d\n", twalk->interval);
 			if (twalk->cronstr)      printf("\tCRONDATE %s\n", twalk->cronstr);
 			if (twalk->maxruntime)   printf("\tMAXTIME %d\n", twalk->maxruntime);
@@ -881,7 +885,7 @@ int main(int argc, char *argv[])
 					errprintf("Task %s terminated by signal %d\n", twalk->key, abs(twalk->exitcode));
 				}
 
-				if (twalk->failcount > MAX_FAILS) errprintf("Postponing restart of [%s] for %d seconds from last start due to multiple failures\n", twalk->key, twalk->faildelay);
+				if (twalk->faildelay && (twalk->failcount > MAX_FAILS)) errprintf("Postponing restart of [%s] for %d seconds from last start due to multiple failures\n", twalk->key, twalk->faildelay);
 				if (twalk->group) twalk->group->currentuse--;
 
 				/* Tasks that depend on this task should be killed ... */

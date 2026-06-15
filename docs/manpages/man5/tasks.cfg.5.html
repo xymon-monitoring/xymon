@@ -53,6 +53,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
           NEEDS xymond
           GROUP webupdates
           INTERVAL 5m
+          DELAY 30
+          FAILDELAY 600
           ONHOST localhost
           MAXTIME 10m
           LOGFILE /var/log/xymon/updateweb.log
@@ -81,11 +83,20 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     &quot;regular expression&quot;; if the hostname where xymonlaunch runs
     matches this expression, then the task will run. If it doesn't match, then
     the task is treated as if it were DISABLED.</p>
+<p class="Pp">The <b>DELAY</b> keyword sets an intial holding period after
+    launch before this task is started. By default all tasks are launched
+    immediately, or no later than 5s after any NEEDS have been fulfulled.</p>
 <p class="Pp">The <b>MAXTIME</b> keyword sets a maximum time that the task may
     run; if exceeded, xymonlaunch will kill the task. The time is in seconds by
     default, you can specify minutes, hours or days by adding an &quot;m&quot;,
     &quot;h&quot; or &quot;d&quot; after the number. By default there is no
     upper limit on how long a taskmay run.</p>
+<p class="Pp">The <b>FAILDELAY</b> keyword sets a how long to hold off on re-
+    launching a task that has exited with a non-zero error value <b>5</b> times
+    in that length of time. For example, if a process had to be re-launched (due
+    to error) more than 5 times in a 15 minute period, 15 minutes would have to
+    pass before it is tried again. This fail &quot;penalty&quot; is cleared if
+    it stays up for a subsequent 15 minutes. Default: 10m</p>
 <p class="Pp">The <b>NEEDS</b> instructs xymonlaunch not to run this task unless
     the task defined by the NEEDS keyword is already running. This is used e.g.
     to delay the start of some application until the needed daemons have been
