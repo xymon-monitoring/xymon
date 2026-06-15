@@ -45,6 +45,8 @@ An entry looks like this:
           LOGFILE /var/log/xymon/updateweb.log
 .br
           PIDFILE /var/log/xymon/updateweb.pid
+.br
+          SENDHUP
 .sp
     [monthlyreport]
 .br
@@ -137,6 +139,14 @@ goes to the same location as the xymonlaunch output.
 
 The \fBPIDFILE\fR setting defines a pidfile for the task.
 xymonlaunch will start the task and write the pid to this file. 
+
+The \fBSENDHUP\fR option tells xymonlaunch to forward a HUP 
+to the task when it receives one (typically due to being asked
+to rotate log files by the system, but potentially for any
+reason). If you're using the --locator functionality and have
+daemons running directly from tasks.cfg that are listening to 
+channels on other systems, this should be enabled if you want
+them to rotate logs by local command.
 
 .SH "SEE ALSO"
 xymonlaunch(8), xymond(8), crontab(5), xymon(7)

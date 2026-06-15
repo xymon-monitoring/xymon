@@ -64,6 +64,7 @@ typedef struct tasklist_t {
 	char *envfile, *envarea, *onhostptn;
 	pid_t pid;
 	time_t laststart;
+	int sendhup;
 	int exitcode;
 	int failcount;
 	int cfload;	/* Used while reloading a configuration */
@@ -133,6 +134,7 @@ void load_config(char *conffn)
 		twalk->group = NULL;
 		twalk->logfile = NULL;
 		twalk->pidfile = NULL;
+		twalk->sendhup = 0;
 		twalk->envfile = NULL;
 		twalk->envarea = NULL;
 		twalk->onhostptn = NULL;
@@ -291,6 +293,9 @@ void load_config(char *conffn)
 			p += 7;
 			p += strspn(p, " \t");
 			xfreedup(curtask->pidfile,p);
+		}
+		else if (curtask && (strcasecmp(p, "SENDHUP") == 0)) {
+			curtask->sendhup = 1;
 		}
 		else if (curtask && (strncasecmp(p, "NEEDS ", 6) == 0)) {
 			p += 6;
@@ -594,6 +599,7 @@ int main(int argc, char *argv[])
 			if (twalk->maxruntime)   printf("\tMAXTIME %d\n", twalk->maxruntime);
 			if (twalk->logfile)      printf("\tLOGFILE %s\n", twalk->logfile);
 			if (twalk->pidfile)      printf("\tPIDFILE %s\n", twalk->pidfile);
+			if (twalk->sendhup)      printf("\tSENDHUP\n");
 			if (twalk->envfile)      printf("\tENVFILE %s\n", twalk->envfile);
 			if (twalk->envarea)      printf("\tENVAREA %s\n", twalk->envarea);
 			if (twalk->onhostptn)    printf("\tONHOST %s\n", twalk->onhostptn);

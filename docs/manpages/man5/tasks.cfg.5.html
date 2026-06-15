@@ -71,6 +71,9 @@ An entry looks like this:
 <BR>
 
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PIDFILE&nbsp;/var/log/xymon/updateweb.pid
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SENDHUP
 <P>
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;[monthlyreport]
 <BR>
@@ -168,6 +171,14 @@ goes to the same location as the xymonlaunch output.
 <P>
 The <B>PIDFILE</B> setting defines a pidfile for the task.
 xymonlaunch will start the task and write the PID to this file.
+<P>
+The <B>SENDHUP</B> option tells xymonlaunch to forward a HUP 
+to the task when it receives one (typically due to being asked
+to rotate log files by the system, but potentially for any
+reason). If you're using the --locator functionality and have
+daemons running directly from tasks.cfg that are listening to 
+channels on other systems, this should be enabled if you want
+them to rotate logs by local command.
 <P>
 <A NAME="lbAF">&nbsp;</A>
 <H2>SEE ALSO</H2>
