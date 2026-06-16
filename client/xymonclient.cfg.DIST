@@ -53,20 +53,19 @@ LOGFETCHOPTS=""
 # XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) passes -l to df, hiding
 #    remote filesystems. Set to "no" to report nfs/ceph/etc. Any other
 #    value produces a warning and falls back to "yes".
-#    WARNING: with "no", df can hang for the whole client cycle if any
-#    remote mount is stale. Use XYMONCLIENT_FS_DF_TIMEOUT to cap the wait.
+#    WARNING: with "no", a stale or hard-blocked remote mount can wedge df
+#    indefinitely (an uninterruptible D-state wait). The client run never
+#    finishes, so the whole host goes PURPLE -- no data for ALL metrics,
+#    not just disk -- until the mount recovers or the host reboots.
 #
-# XYMONCLIENT_FS_DF_TIMEOUT: positive integer seconds before timeout(1) sends
-#    SIGKILL to df, default "30" (applied per df invocation -- disk and inode
-#    are separate, so two stale mounts can cost up to twice this). Empty/unset
-#    or an invalid value falls back to "30" (with a warning); it cannot be
-#    disabled and is capped at 3600. On a kill, that report is marked failed
-#    (yellow) rather than left empty, so a hung filesystem is not reported green.
+#    A df that *exits* non-zero with no output (a real error, not a hang)
+#    is marked failed (yellow) rather than left empty, so a failed probe is
+#    not silently reported green. This does not cover the hang above: a
+#    wedged df never exits.
 #
 # XYMONCLIENT_FS_INCLUDE_TYPES="zfs virtiofs tmpfs"
 # XYMONCLIENT_FS_EXCLUDE_TYPES="iso9660 squashfs fuse.snapfuse"
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
-# XYMONCLIENT_FS_DF_TIMEOUT="30"
 
 
 # Local Mode (Only) Options

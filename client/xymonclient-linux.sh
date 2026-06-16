@@ -113,45 +113,6 @@ case "$DFLOCALONLY" in
 		DFLOCALONLY=yes
 		;;
 esac
-# XYMONCLIENT_FS_DF_TIMEOUT: seconds before timeout(1) sends SIGKILL to df
-# (default 30). df can hang on stale NFS/CIFS mounts -- particularly relevant
-# when XYMONCLIENT_FS_DF_LOCAL_ONLY=no. Empty or unset falls back to the
-# default; the timeout cannot be disabled through this setting, and its value
-# can be raised only up to the fixed 3600s cap below.
-DFTIMEOUT="${XYMONCLIENT_FS_DF_TIMEOUT:-30}"
-# A non-numeric value or zero is rejected (zero means "no timeout" under GNU
-# coreutils but "fire immediately" under BusyBox, so it is never safe) and
-# falls back to the 30s default with a warning.
-case "$DFTIMEOUT" in
-	*[!0-9]*)
-		echo "xymonclient-linux: invalid XYMONCLIENT_FS_DF_TIMEOUT '$DFTIMEOUT', using 30" >&2
-		DFTIMEOUT=30
-		;;
-	*[1-9]*) ;;
-	*)
-		echo "xymonclient-linux: invalid XYMONCLIENT_FS_DF_TIMEOUT '$DFTIMEOUT', using 30" >&2
-		DFTIMEOUT=30
-		;;
-esac
-# Strip leading zeros in pure shell (no external tool) so the length guard
-# below isn't fooled by padding (00001 is 1, not an over-length string) and the
-# numeric comparison doesn't read a leading zero as octal. The case above
-# guarantees at least one non-zero digit, so this terminates non-empty.
-while :; do
-	case "$DFTIMEOUT" in
-		0?*) DFTIMEOUT="${DFTIMEOUT#0}" ;;
-		*) break ;;
-	esac
-done
-# Cap at 3600s. BusyBox timeout(1) rejects an out-of-range duration with a
-# nonzero exit before df runs, which would silently empty both the df and
-# inode sections; an hour is already far past any sane df wait. The length
-# guard short-circuits the numeric comparison so it never overflows the
-# shell's integer type on an absurdly long digit string.
-if [ "${#DFTIMEOUT}" -gt 4 ] || [ "$DFTIMEOUT" -gt 3600 ]; then
-	echo "xymonclient-linux: XYMONCLIENT_FS_DF_TIMEOUT '$DFTIMEOUT' exceeds 3600, using 3600" >&2
-	DFTIMEOUT=3600
-fi
 run_df()
 {
 	DFINODES="$1"
@@ -168,30 +129,19 @@ run_df()
 	done
 	[ "$DFRESTOREGLOB" = yes ] && set +f
 
-	if command -v timeout >/dev/null 2>&1; then
-		timeout -s KILL "${DFTIMEOUT}s" df "$@"
-	else
-		df "$@"
-	fi
+	df "$@"
 }
 # emit_df INODEFLAG LABEL
 # Run df (optionally in inode mode) and reproduce the historical sed join.
-# The server reads an empty section as green, so a hung/failed df must not pass
-# silently: on a timeout kill (124/137) or any nonzero exit with no output, emit
-# a failure marker (no recognisable df header) to drive the server yellow. A
-# nonzero exit that still prints mounts (e.g. one unreadable mount) and a clean
-# empty exit 0 (Solaris all-ZFS inodes) keep their output unchanged.
+# The server reads an empty section as green, so a failed df must not pass
+# silently: on any nonzero exit with no output, emit a failure marker (no
+# recognisable df header) to drive the server yellow. A nonzero exit that still
+# prints mounts (e.g. one unreadable mount) and a clean empty exit 0 (Solaris
+# all-ZFS inodes) keep their output unchanged.
 emit_df()
 {
 	DFOUT=`run_df "$1"`
 	DFRC=$?
-	case $DFRC in
-		124|137)
-			echo "xymonclient-linux: df $2 collection timed out after ${DFTIMEOUT}s (timeout status $DFRC); reporting data as unavailable" >&2
-			echo "$2 collection failed: df timed out after ${DFTIMEOUT}s (status $DFRC)"
-			return
-			;;
-	esac
 	if [ -z "$DFOUT" ]; then
 		[ "$DFRC" -eq 0 ] && return
 		echo "xymonclient-linux: df $2 collection failed (status $DFRC) with no output; reporting data as unavailable" >&2

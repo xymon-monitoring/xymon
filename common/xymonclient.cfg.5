@@ -64,23 +64,15 @@ patches (such as Debian's) that do.
 Set to \fByes\fR (the default) to pass \fB\-l\fR to df and report
 local filesystems only. Set to \fBno\fR to report remote filesystems
 as well. Invalid values produce a warning and use the safe default.
-With \fBno\fR, df can hang for the whole client cycle if a remote mount
-is stale; use XYMONCLIENT_FS_DF_TIMEOUT to cap the wait.
-
-.IP XYMONCLIENT_FS_DF_TIMEOUT
-Positive integer seconds before timeout(1) sends SIGKILL to each df
-invocation. The disk and inode reports are two separate invocations, so
-two stale mounts can delay the client by up to twice this value.
-The default is 30 seconds when timeout(1) is available.
-An empty or unset value falls back to the default; zero and other
-invalid values produce a warning and also use the default. The timeout
-cannot be disabled through this setting and may be set up to a maximum
-of 3600 seconds. A process
-stuck in an uninterruptible kernel wait cannot be terminated until the
-kernel call returns. If df is killed on timeout, or otherwise exits
-non-zero while producing no output, the affected df or inode report is
-marked failed (yellow) instead of being left empty, so a hung or failed
-filesystem probe is not silently reported green.
+With \fBno\fR, a stale or hard-blocked remote mount can wedge df
+indefinitely (an uninterruptible D-state wait): the client run never
+finishes, so the whole host goes purple \(em no data for all metrics,
+not just disk \(em until the mount recovers or the host reboots.
+.IP
+A df that \fIexits\fR non-zero with no output (a real error, not a hang)
+is marked failed (yellow) rather than left empty, so a failed filesystem
+probe is not silently reported green. This does not cover the hang
+above: a wedged df never exits.
 
 .IP XYMON
 Full path to the 

@@ -10,7 +10,6 @@
 #   XYMONCLIENT_FS_INCLUDE_TYPES   types to un-exclude (e.g. tmpfs)
 #   XYMONCLIENT_FS_EXCLUDE_TYPES   additional types to exclude
 #   XYMONCLIENT_FS_DF_LOCAL_ONLY   yes (default, df -l) vs no
-#   XYMONCLIENT_FS_DF_TIMEOUT      seconds (default 30); empty/invalid -> 30
 #
 # The script reads /proc/filesystems directly and shells out to df.
 # To test in isolation we extract the [df] section from the script,
@@ -127,34 +126,19 @@ echo "/dev/sda1"
 EOF
 chmod +x "$STUB/readlink"
 
-# timeout stub: #49 wraps df in `timeout -s KILL <n>s df ...` (default 30s).
-# timeout exec's df with the same argv, so the df stub above cannot tell
-# whether it was wrapped. Record the timeout options, then exec the wrapped
-# command so every df assertion above still holds with the wrapper active.
-TIMEOUT_LOG="$TMP/timeout.args"
 STDERR_LOG="$TMP/stderr"
-cat > "$STUB/timeout" <<EOF
-#!/usr/bin/env bash
-echo "\$1 \$2 \$3" >> "$TIMEOUT_LOG"
-shift 3
-exec "\$@"
-EOF
-chmod +x "$STUB/timeout"
 
 export PATH="$STUB:$PATH"
 
 # --- runner ------------------------------------------------------------------
 
 # run_snippet: invoke the extracted block in a fresh subshell, return the
-# command-line df was called with. The default timeout wrapper is left in
-# place (the timeout stub records it and exec's df), so the exclude/include
-# assertions and the dedicated timeout assertions share one code path.
-# Per-case env vars are passed via an inline prefix on the caller's
-# `args=$(VAR=val run_snippet)`; see the leak warning below.
+# command-line df was called with. Per-case env vars are passed via an inline
+# prefix on the caller's `args=$(VAR=val run_snippet)`; see the leak warning
+# below.
 run_snippet() {
 	: > "$DF_LOG"
 	: > "$INODE_LOG"
-	: > "$TIMEOUT_LOG"
 	: > "$STDERR_LOG"
 	(
 		cd "$TMP"
@@ -171,7 +155,6 @@ run_snippet() {
 run_inode() {
 	: > "$DF_LOG"
 	: > "$INODE_LOG"
-	: > "$TIMEOUT_LOG"
 	: > "$STDERR_LOG"
 	(
 		cd "$TMP"
@@ -273,84 +256,6 @@ assert_contains " -l " "$args" \
 assert_contains "invalid XYMONCLIENT_FS_DF_LOCAL_ONLY" "$(cat "$STDERR_LOG")" \
 	"invalid DF_LOCAL_ONLY value must produce a warning"
 
-# --- XYMONCLIENT_FS_DF_TIMEOUT wraps df in timeout with SIGKILL ---------------
-#
-# df can hang on stale NFS/CIFS mounts, so #49 runs it under timeout(1).
-# TIMEOUT_LOG holds the options the timeout stub was handed (empty if df
-# was invoked directly). Assertions read the log after each run rather than
-# the returned df args, since the wrapper is invisible at the df layer.
-
-# Default (variable unset): df is wrapped in `timeout -s KILL 30s`.
-run_snippet >/dev/null
-assert_equal "-s KILL 30s" "$(cat "$TIMEOUT_LOG")" \
-	"default must wrap df in 'timeout -s KILL 30s'"
-
-# A custom value is honoured verbatim.
-XYMONCLIENT_FS_DF_TIMEOUT=5 run_snippet >/dev/null
-assert_equal "-s KILL 5s" "$(cat "$TIMEOUT_LOG")" \
-	"XYMONCLIENT_FS_DF_TIMEOUT=5 must wrap df in 'timeout -s KILL 5s'"
-
-# Empty string falls back to the default: the cap cannot be disabled.
-XYMONCLIENT_FS_DF_TIMEOUT="" run_snippet >/dev/null
-assert_equal "-s KILL 30s" "$(cat "$TIMEOUT_LOG")" \
-	'XYMONCLIENT_FS_DF_TIMEOUT="" must fall back to the default timeout'
-
-# Invalid values must not prevent df from running.
-XYMONCLIENT_FS_DF_TIMEOUT=invalid run_snippet >/dev/null
-assert_equal "-s KILL 30s" "$(cat "$TIMEOUT_LOG")" \
-	"invalid XYMONCLIENT_FS_DF_TIMEOUT must fall back to 30 seconds"
-assert_contains "invalid XYMONCLIENT_FS_DF_TIMEOUT" "$(cat "$STDERR_LOG")" \
-	"invalid timeout value must produce a warning"
-
-# Zero has incompatible semantics across timeout implementations (disabled by
-# GNU coreutils, immediate timeout by BusyBox), so it must use the safe default.
-XYMONCLIENT_FS_DF_TIMEOUT=0 run_snippet >/dev/null
-assert_equal "-s KILL 30s" "$(cat "$TIMEOUT_LOG")" \
-	"XYMONCLIENT_FS_DF_TIMEOUT=0 must fall back to 30 seconds"
-assert_contains "invalid XYMONCLIENT_FS_DF_TIMEOUT" "$(cat "$STDERR_LOG")" \
-	"zero timeout value must produce a warning"
-
-# Values past the 3600s ceiling are clamped: an out-of-range duration makes
-# BusyBox timeout(1) exit nonzero before df runs, which would silently empty
-# both the df and inode sections.
-XYMONCLIENT_FS_DF_TIMEOUT=99999 run_snippet >/dev/null
-assert_equal "-s KILL 3600s" "$(cat "$TIMEOUT_LOG")" \
-	"timeout above 3600 must be clamped to 3600"
-assert_contains "exceeds 3600" "$(cat "$STDERR_LOG")" \
-	"clamped timeout must produce a warning"
-
-# An absurdly long digit string must clamp too, without overflowing the
-# shell's integer arithmetic in the range check.
-XYMONCLIENT_FS_DF_TIMEOUT=18446744073709551616 run_snippet >/dev/null
-assert_equal "-s KILL 3600s" "$(cat "$TIMEOUT_LOG")" \
-	"oversized timeout must clamp to 3600 without an arithmetic error"
-
-# The 3600s ceiling itself is honoured verbatim (boundary).
-XYMONCLIENT_FS_DF_TIMEOUT=3600 run_snippet >/dev/null
-assert_equal "-s KILL 3600s" "$(cat "$TIMEOUT_LOG")" \
-	"3600 is the maximum and must pass through unchanged"
-
-# Leading zeros are decimal, not octal, and must not trip the length-based
-# clamp: 00001 is one second, not an over-length (5-char) string that the
-# guard would otherwise force to 3600 -- a 3600x inflation of the operator's
-# intended timeout.
-XYMONCLIENT_FS_DF_TIMEOUT=00001 run_snippet >/dev/null
-assert_equal "-s KILL 1s" "$(cat "$TIMEOUT_LOG")" \
-	"leading-zero 00001 must normalize to 1 second, not clamp to 3600"
-
-XYMONCLIENT_FS_DF_TIMEOUT=000030 run_snippet >/dev/null
-assert_equal "-s KILL 30s" "$(cat "$TIMEOUT_LOG")" \
-	"leading-zero 000030 must normalize to 30 seconds"
-
-# A leading-zero value at/above the ceiling still clamps on magnitude.
-XYMONCLIENT_FS_DF_TIMEOUT=03600 run_snippet >/dev/null
-assert_equal "-s KILL 3600s" "$(cat "$TIMEOUT_LOG")" \
-	"leading-zero 03600 must normalize to the 3600 boundary"
-
-XYMONCLIENT_FS_DF_TIMEOUT=03601 run_snippet >/dev/null
-assert_equal "-s KILL 3600s" "$(cat "$TIMEOUT_LOG")" \
-	"leading-zero 03601 must clamp to 3600"
-
 # --- [inode] report must be filtered the same way as [df] -------------------
 #
 # The [inode] block runs `df -Pil -x iso9660 -x $EXCLUDES`, reusing the exact
@@ -384,7 +289,7 @@ MISSING_SNIPPET="$TMP/df-section-missing.sh"
 sed "s!$TMP/proc.filesystems!$TMP/does-not-exist!g" "$SNIPPET" > "$MISSING_SNIPPET"
 
 : > "$DF_LOG"
-XYMONCLIENT_FS_DF_TIMEOUT="" /bin/sh "$MISSING_SNIPPET" >/dev/null 2>"$TMP/stderr"
+/bin/sh "$MISSING_SNIPPET" >/dev/null 2>"$TMP/stderr"
 args=$(printf ' %s ' "$(cat "$DF_LOG")")
 
 # NB: our sed rewrite of /proc/filesystems also rewrites the warning text,
@@ -398,100 +303,14 @@ assert_contains     " -x iso9660 " "$args" "iso9660 must still be excluded (EXCL
 assert_contains     " -x squashfs " "$args" "squashfs must still be excluded (EXCLUDE_TYPES default)"
 assert_not_contains " -x sysfs "   "$args" "no nodev excludes when /proc/filesystems unreadable"
 
-# --- timeout(1) absent: df runs unwrapped, never errors ---------------------
+# --- a df failure with empty output must yellow, never false-green -----------
 #
-# When no timeout(1) is on PATH the script must fall back to the
-# `else df "$@"` branch rather than failing. Build a PATH holding the df and
-# readlink stubs plus the real interpreters/tools the snippet needs, but NO
-# timeout, and confirm df still receives the full argv while TIMEOUT_LOG
-# stays empty. (The default PATH always has a real /usr/bin/timeout, so this
-# branch is otherwise never exercised.)
-NOTIMEOUT="$TMP/bin-notimeout"
-mkdir -p "$NOTIMEOUT"
-ln -s "$STUB/df" "$NOTIMEOUT/df"
-ln -s "$STUB/readlink" "$NOTIMEOUT/readlink"
-# sh/bash run the snippet and the bash-shebang stubs; awk/sed are used inside
-# the [df] block. Anything missing here would fail for a reason unrelated to
-# the timeout fallback, so resolve each from the real PATH up front.
-for prog in sh bash awk sed; do
-	p=$(command -v "$prog") || fail "no-timeout test needs '$prog' on PATH"
-	ln -s "$p" "$NOTIMEOUT/$prog"
-done
-: > "$DF_LOG"
-: > "$TIMEOUT_LOG"
-: > "$STDERR_LOG"
-(
-	cd "$TMP"
-	PATH="$NOTIMEOUT" /bin/sh "$SNIPPET" >/dev/null 2>"$STDERR_LOG"
-)
-args=$(printf ' %s ' "$(cat "$DF_LOG")")
-assert_contains " -x iso9660 " "$args" \
-	"df must still run when timeout(1) is absent"
-assert_contains " -x sysfs " "$args" \
-	"nodev excludes must still apply when timeout(1) is absent"
-assert_equal "" "$(cat "$TIMEOUT_LOG")" \
-	"timeout wrapper must be skipped when timeout(1) is absent"
-
-# --- a hung df must yellow, never false-green --------------------------------
-#
-# Regression for the inode false-green (xymon-monitoring/xymon#96 review): when
-# df hangs on a stale mount, timeout(1) kills it (exit 137 under -s KILL) and df
-# emits nothing. The server reads an *empty* [inode] section as green ("No
-# filesystems reporting inode data"), so the collection failure must instead
-# surface as a non-empty marker line the server cannot mistake for a healthy
-# report. Unlike the argv-only assertions above, this drives the REAL timeout(1)
-# against a df stub that sleeps past a 1s deadline -- only the genuine kill path
-# proves the right payload is emitted.
-HANGDIR="$TMP/bin-hang"
-mkdir -p "$HANGDIR"
-# df stub that hangs: sleep well past the 1s deadline, so the header below is
-# never printed and timeout must SIGKILL it.
-cat > "$HANGDIR/df" <<'EOF'
-#!/usr/bin/env bash
-sleep 5
-printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\n'
-EOF
-chmod +x "$HANGDIR/df"
-ln -s "$STUB/readlink" "$HANGDIR/readlink"
-# Resolve the REAL timeout/sleep (and shells/tools) from the PATH as it was
-# before $STUB was prepended -- a plain `command -v timeout` would find the
-# argv-recording timeout stub above, which exec's df without enforcing any
-# deadline, so df would never be killed and this test would silently pass even
-# if the guard regressed.
+# Regression for the inode false-green (xymon-monitoring/xymon#96 review): a df
+# that exits nonzero while printing nothing leaves an empty section the server
+# reads as green ("No filesystems reporting inode data"). emit_df must surface
+# ANY nonzero exit with empty output as a failure marker, not pass it silently.
+# Drive this with a df stub that exits 127 while printing nothing.
 REALPATH=${PATH#"$STUB:"}
-for prog in sh bash awk sed timeout sleep; do
-	p=$(PATH="$REALPATH" command -v "$prog") \
-		|| fail "sleeping-df test needs a real '$prog' on PATH"
-	ln -s "$p" "$HANGDIR/$prog"
-done
-
-# Run the combined [df]+[inode] block with a 1s cap; both df invocations hang
-# and are killed, so the block should take ~2s and emit two markers.
-hang_out=$(
-	cd "$TMP"
-	PATH="$HANGDIR" XYMONCLIENT_FS_DF_TIMEOUT=1 /bin/sh "$COMBINED" 2>/dev/null
-)
-assert_contains "Disk collection failed: df timed out" "$hang_out" \
-	"a hung df must emit an explicit disk failure marker, not an empty section"
-assert_contains "Inode collection failed: df timed out" "$hang_out" \
-	"a hung df must emit an explicit inode failure marker (an empty inode section reads as green)"
-# The marker carries none of df's column headers, so the server's header
-# detection fails and the section yellows rather than greens. If "Capacity"
-# leaked through, df had printed real output and the kill path was not taken.
-assert_not_contains "Capacity" "$hang_out" \
-	"hung-df output must not contain df headers that could parse as a healthy report"
-
-# --- a non-kill df failure with empty output must yellow too -----------------
-#
-# Regression for the second inode false-green (xymon-monitoring/xymon#96
-# review): the kill codes 124/137 are not the only way to get a nonzero exit
-# with no output. timeout(1) itself can fail to launch df -- status 125 (timeout
-# error), 126 (df not invocable), 127 (df not found) -- and a BusyBox timeout
-# rejecting its duration exits nonzero before df runs. Each leaves an empty
-# section the server reads as green. emit_df must surface ANY nonzero exit with
-# empty output as a failure marker, not just the kill codes. Drive this with the
-# argv-recording timeout stub (it exec's df, preserving df's exit status) and a
-# df stub that exits 127 while printing nothing.
 FAILDIR="$TMP/bin-fail"
 mkdir -p "$FAILDIR"
 cat > "$FAILDIR/df" <<'EOF'
@@ -500,7 +319,6 @@ exit 127
 EOF
 chmod +x "$FAILDIR/df"
 ln -s "$STUB/readlink" "$FAILDIR/readlink"
-ln -s "$STUB/timeout"  "$FAILDIR/timeout"
 for prog in sh bash awk sed; do
 	p=$(PATH="$REALPATH" command -v "$prog") \
 		|| fail "failing-df test needs a real '$prog' on PATH"
@@ -544,7 +362,6 @@ esac
 EOF
 chmod +x "$INODEDIR/df"
 ln -s "$STUB/readlink" "$INODEDIR/readlink"
-ln -s "$STUB/timeout"  "$INODEDIR/timeout"
 for prog in sh bash awk sed; do
 	p=$(PATH="$REALPATH" command -v "$prog") \
 		|| fail "inode-drop test needs a real '$prog' on PATH"
