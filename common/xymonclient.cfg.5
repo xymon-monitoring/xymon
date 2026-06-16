@@ -36,23 +36,36 @@ $XYMONHOME/logs
 Directory used for temporary files. Default: $XYMONHOME/tmp/
 
 .IP XYMONCLIENT_FS_INCLUDE_TYPES
-Whitespace-separated Linux filesystem types to include in the
-client's disk and inode reports even when they are normally excluded
-as pseudo (\fBnodev\fR) filesystems. Types are matched as exact df type
-tokens. Defaults to \fBzfs virtiofs tmpfs\fR \(em real local filesystems
+Whitespace-separated filesystem types to include in the client's disk
+(and, where supported, inode) reports even when the client's defaults
+would exclude them. Types are matched as exact df type tokens; the
+default exclusions and the mechanism are per-OS, and clients not
+listed here do not use the variable.
+.br
+On Linux: types normally excluded
+as pseudo (\fBnodev\fR) filesystems. Defaults to \fBzfs virtiofs tmpfs\fR
+\(em real local filesystems
 that merely happen to be flagged nodev. Set to "" to restore the
 historical behaviour of dropping every nodev type. Including remote
 filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+.br
+On NetBSD: names types from the default df exclude set
+(\fBkernfs procfs cd9660 null\fR, passed to df as \fB\-t no<list>\fR)
+to surface again. Empty by default. NetBSD has no inode report.
 
 .IP XYMONCLIENT_FS_EXCLUDE_TYPES
-Whitespace-separated Linux filesystem types to exclude in addition
-to the default pseudo-filesystem exclusions. Matching is on the exact
-df type token, and nodev types (overlay, fuse, ...) are already excluded
+Whitespace-separated filesystem types to exclude in addition to the
+client's default exclusions. Matching is on the exact df type token.
+If a type appears in both include and exclude settings, exclusion
+takes precedence on every OS.
+.br
+On NetBSD: adds types to the \fBdf \-t no<list>\fR exclude set
+(default \fBkernfs procfs cd9660 null\fR). Empty by default.
+.br
+On Linux: nodev types (overlay, fuse, ...) are already excluded
 by default, so an effective entry names a type that is not a nodev
 default \(em a device-backed type, or a specific FUSE subtype such as
 \fBfuse.sshfs\fR that the bare nodev \fBfuse\fR default cannot match.
-If a type appears in
-both include and exclude settings, exclusion takes precedence.
 Defaults to \fBiso9660 squashfs fuse.snapfuse\fR \(em read-only images
 reported 100% full by design (snaps mount as squashfs, or as
 fuse.snapfuse where snapd falls back to FUSE); none is a nodev type, so

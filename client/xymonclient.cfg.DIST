@@ -109,6 +109,32 @@ LOGFETCHOPTS=""
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
 
 
+# Filesystem reporting (NetBSD client) -- used by xymonclient-netbsd.sh when
+# collecting df data (NetBSD has no inode report). Exclusions are passed to
+# df as "-t no<csv>"; the default excluded types are kernfs, procfs, cd9660
+# and null, and df runs with -l (local mounts only) by default.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated default-excluded types
+#    to surface again (e.g. "procfs"). Empty by default.
+#
+# XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to exclude on
+#    top of the defaults (e.g. "tmpfs mfs"). Empty by default. If a type
+#    appears in both lists, EXCLUDE wins (it is applied after INCLUDE).
+#
+# XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) passes -l to df, hiding
+#    remote (nfs) mounts; "no" reports them too. Any other value produces a
+#    warning and falls back to "yes". The same WARNING as for Linux above
+#    applies: with "no", a stale or hard-blocked remote mount can wedge df
+#    and turn the whole host PURPLE until the mount recovers.
+#
+#    A df that exits non-zero with no output is marked failed (yellow)
+#    rather than left empty, so a failed probe is not silently green.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES=""
+# XYMONCLIENT_FS_EXCLUDE_TYPES=""
+# XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
+
+
 # Local Mode (Only) Options
 #
 # Running the Xymon client in local-config mode will cause threshold evaluation to
