@@ -48,6 +48,52 @@ $XYMONHOME/logs
 <DT>XYMONTMP<DD>
 Directory used for temporary files. Default: $XYMONHOME/tmp/
 <P>
+<DT>XYMONCLIENT_FS_INCLUDE_TYPES<DD>
+Whitespace-separated Linux filesystem types to include in the
+client's disk and inode reports even when they are normally excluded
+as pseudo (<B>nodev</B>) filesystems. Types are matched as exact df type
+tokens. Defaults to <B>zfs virtiofs tmpfs</B> &mdash; real local filesystems
+that merely happen to be flagged nodev. Set to "" to restore the
+historical behaviour of dropping every nodev type. Including remote
+filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+<P>
+<DT>XYMONCLIENT_FS_EXCLUDE_TYPES<DD>
+Whitespace-separated Linux filesystem types to exclude in addition
+to the default pseudo-filesystem exclusions. Matching is on the exact
+df type token, and nodev types (overlay, fuse, ...) are already excluded
+by default, so an effective entry names a type that is not a nodev
+default &mdash; a device-backed type, or a specific FUSE subtype such as
+<B>fuse.sshfs</B> that the bare nodev <B>fuse</B> default cannot match.
+If a type appears in
+both include and exclude settings, exclusion takes precedence.
+Defaults to <B>iso9660 squashfs fuse.snapfuse</B> &mdash; read-only images
+reported 100% full by design (snaps mount as squashfs, or as
+fuse.snapfuse where snapd falls back to FUSE); none is a nodev type, so
+they must be named here. Set to "" to monitor these too.
+The full default exclusion list is the <B>nodev</B> entries in
+/proc/filesystems (rootfs is always kept, and the
+XYMONCLIENT_FS_INCLUDE_TYPES above are kept back), together with the
+explicit XYMONCLIENT_FS_EXCLUDE_TYPES above. When
+/proc/filesystems is not readable the dynamic nodev exclusions are
+disabled; the explicit XYMONCLIENT_FS_EXCLUDE_TYPES and the local-only
+<B>df -l</B> behaviour remain active. The script does not fall back to
+deriving exclusions from mount(8), so it is not a drop-in replacement for
+distro patches (such as Debian's) that do.
+<P>
+<DT>XYMONCLIENT_FS_DF_LOCAL_ONLY<DD>
+Set to <B>yes</B> (the default) to pass <B>-l</B> to df and report
+local filesystems only. Set to <B>no</B> to report remote filesystems
+as well. Invalid values produce a warning and use the safe default.
+With <B>no</B>, a stale or hard-blocked remote mount can wedge df
+indefinitely (an uninterruptible D-state wait): the client run never
+finishes, so the whole host goes purple &mdash; no data for all metrics,
+not just disk &mdash; until the mount recovers or the host reboots.
+<P>
+A df that <I>exits</I> non-zero with no output (a real error, not a hang)
+is marked failed (yellow) rather than left empty, so a failed filesystem
+probe is not silently reported green. This does not cover the hang above:
+a wedged df never exits.
+<P>
 <DT>XYMON<DD>
 Full path to the 
 <I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
