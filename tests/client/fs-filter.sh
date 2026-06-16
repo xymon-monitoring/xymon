@@ -258,8 +258,9 @@ assert_contains "invalid XYMONCLIENT_FS_DF_LOCAL_ONLY" "$(cat "$STDERR_LOG")" \
 
 # --- [inode] report must be filtered the same way as [df] -------------------
 #
-# The [inode] block runs `df -Pil -x iso9660 -x $EXCLUDES`, reusing the exact
-# exclude set the [df] block built. Extracting [df] alone (the SNIPPET above)
+# The [inode] block runs `df -Pil -x $EXCLUDES`, reusing the exact exclude set
+# the [df] block built (iso9660 is part of that set via the EXCLUDE_TYPES
+# default, no longer a separate hardcoded -x). Extracting [df] alone (the SNIPPET above)
 # never exercises this second df invocation, so a regression that leaves the
 # inode report unfiltered would go unnoticed. run_inode runs both blocks and
 # returns the *inode* invocation's argv; assert the same nodev/rootfs/real-FS

@@ -38,8 +38,10 @@ Directory used for temporary files. Default: $XYMONHOME/tmp/
 .IP XYMONCLIENT_FS_INCLUDE_TYPES
 Whitespace-separated Linux filesystem types to include in the
 client's disk and inode reports even when they are normally excluded
-as pseudo filesystems. Types are matched as exact df type tokens.
-For example, \fBtmpfs zfs\fR includes those types. Including remote
+as pseudo (\fBnodev\fR) filesystems. Types are matched as exact df type
+tokens. Defaults to \fBzfs virtiofs tmpfs\fR \(em real local filesystems
+that merely happen to be flagged nodev. Set to "" to restore the
+historical behaviour of dropping every nodev type. Including remote
 filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
 
 .IP XYMONCLIENT_FS_EXCLUDE_TYPES
@@ -51,14 +53,19 @@ default \(em a device-backed type, or a specific FUSE subtype such as
 \fBfuse.sshfs\fR that the bare nodev \fBfuse\fR default cannot match.
 If a type appears in
 both include and exclude settings, exclusion takes precedence.
-The default exclusion list is derived from the \fBnodev\fR entries in
-/proc/filesystems (rootfs is always kept), together with an explicit
-\fBiso9660\fR exclusion (iso9660 is not a nodev type). When
+Defaults to \fBiso9660 squashfs fuse.snapfuse\fR \(em read-only images
+reported 100% full by design (snaps mount as squashfs, or as
+fuse.snapfuse where snapd falls back to FUSE); none is a nodev type, so
+they must be named here. Set to "" to monitor these too.
+The full default exclusion list is the \fBnodev\fR entries in
+/proc/filesystems (rootfs is always kept, and the
+XYMONCLIENT_FS_INCLUDE_TYPES above are kept back), together with the
+explicit XYMONCLIENT_FS_EXCLUDE_TYPES above. When
 /proc/filesystems is not readable the dynamic nodev exclusions are
-disabled; the explicit iso9660 exclusion and the local-only \fBdf \-l\fR
-behaviour remain active. The script does not fall back to deriving
-exclusions from mount(8), so it is not a drop-in replacement for distro
-patches (such as Debian's) that do.
+disabled; the explicit XYMONCLIENT_FS_EXCLUDE_TYPES and the local-only
+\fBdf \-l\fR behaviour remain active. The script does not fall back to
+deriving exclusions from mount(8), so it is not a drop-in replacement for
+distro patches (such as Debian's) that do.
 
 .IP XYMONCLIENT_FS_DF_LOCAL_ONLY
 Set to \fByes\fR (the default) to pass \fB\-l\fR to df and report
