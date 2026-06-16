@@ -20,17 +20,79 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -k -tnonfs,kernfs,procfs,cd9660 | sed -e '/^[^ 	][^ 	]*$/{
+# --- filesystem filter (configurable; see xymonclient.cfg.DIST) --------------
+# Exclude FS types via df "-t no<csv>": a default set, minus INCLUDE_TYPES, plus
+# EXCLUDE_TYPES. Remote (nfs) mounts are hidden by df -l (DF_LOCAL_ONLY=yes), not
+# by type, so DF_LOCAL_ONLY=no can surface them.
+# tmpfs is deliberately kept in BOTH reports, unlike FreeBSD's inode report:
+# OpenBSD's tmpfs statfs reports memory-derived inode counts (f_files scales
+# with available RAM, sys/tmpfs/tmpfs_vfsops.c), a real exhaustion signal -
+# not FreeBSD's constant INT_MAX cap, which carries none.
+: "${XYMONCLIENT_FS_INCLUDE_TYPES=}"
+: "${XYMONCLIENT_FS_EXCLUDE_TYPES=}"
+fs_excl_opt() {
+	# noglob: treat a type like "tmp*" as a literal token, not a filename glob.
+	case $- in *f*) _restoreglob=no ;; *) _restoreglob=yes; set -f ;; esac
+	_l=""
+	# Default excludes, minus any INCLUDE_TYPES.
+	for _t in kernfs procfs cd9660; do
+		for _i in $XYMONCLIENT_FS_INCLUDE_TYPES; do [ "$_t" = "$_i" ] && continue 2; done
+		case " $_l " in *" $_t "*) ;; *) _l="$_l $_t" ;; esac
+	done
+	# EXCLUDE_TYPES last, so a type in both lists stays excluded (EXCLUDE wins).
+	for _t in $XYMONCLIENT_FS_EXCLUDE_TYPES; do
+		case " $_l " in *" $_t "*) ;; *) _l="$_l $_t" ;; esac
+	done
+	_csv=`echo $_l | tr ' ' ','`
+	[ "$_restoreglob" = yes ] && set +f
+	[ -n "$_csv" ] && printf -- '-tno%s' "$_csv"
+}
+DFLOCALONLY="${XYMONCLIENT_FS_DF_LOCAL_ONLY:-yes}"
+case "$DFLOCALONLY" in
+	yes|no) ;;
+	*) echo "xymonclient-openbsd: invalid XYMONCLIENT_FS_DF_LOCAL_ONLY '$DFLOCALONLY', using yes" >&2; DFLOCALONLY=yes ;;
+esac
+DFLOCAL=""; [ "$DFLOCALONLY" = yes ] && DFLOCAL="-l"
+# run_df FLAG [extra-excludes...]: df rows for one report behind the FS filter
+# and local-only flag. The seam where the remote-df sentinel will hook.
+run_df() {
+	_flag="$1"; shift
+	_excl=`fs_excl_opt "$@"`
+	df "$_flag" $DFLOCAL $_excl
+}
+# emit_df KIND LABEL FLAG [extra-excludes...]: run_df + failure guard. On a
+# non-zero df with no output, print a one-line marker (no df header) so the
+# server goes yellow not green, and return 1 so the caller skips formatting; else
+# leave the rows in $_out and return 0 to format. A non-zero df that still prints
+# mounts flows through unchanged.
+emit_df() {
+	_kind="$1"; _label="$2"; shift 2
+	_out=`run_df "$@"`; _rc=$?
+	if [ -z "$_out" ] && [ "$_rc" -ne 0 ]; then
+		echo "xymonclient-openbsd: df $_kind collection failed (status $_rc) with no output; reporting data as unavailable" >&2
+		echo "$_label report collection failed: df exited $_rc with no output"
+		return 1
+	fi
+	return 0
+}
+# The sed joins lines df split in two.
+if emit_df disk Disk -k; then
+printf '%s\n' "$_out" | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+fi
 echo "[inode]"
-df -i -tnonfs,kernfs,procfs,cd9660 | sed -e '/^[^       ][^     ]*$/{
+# Same failure guard. Drop filesystems with no inode limit (df prints "-" in
+# the %iused column, field 8): they cannot run out of inodes, so the row is noise.
+if emit_df inode Inode -i; then
+printf '%s\n' "$_out" | sed -e '/^[^ 	][^ 	]*$/{
 N
-s/[     ]*\n[   ]*/ /
+s/[ 	]*\n[ 	]*/ /
 }' | awk '
 NR<2{printf "%-20s %10s %10s %10s %10s %s\n", $1, "itotal", $6, $7, $8, $9} 
-NR>=2{printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}'
+(NR>=2 && $8 != "-"){printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}'
+fi
 echo "[mount]"
 mount
 echo "[meminfo]"
