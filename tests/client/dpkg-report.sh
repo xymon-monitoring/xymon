@@ -96,4 +96,4 @@ assert_contains "rc oldpkg 1.0" "$out" "dpkg report dropped the non-installed (r
 assert_not_contains "GNU Bourne Again SHell" "$out" "dpkg report still carries the description column (#48)"
 assert_not_contains "Architecture" "$out" "dpkg report still carries the table header (#48)"
 
-pass "xymonclient-linux.sh emits the compact #48 dpkg report (status/name/version only)"
+exit 0

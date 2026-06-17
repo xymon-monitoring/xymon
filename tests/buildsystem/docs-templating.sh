@@ -50,4 +50,4 @@ assert_contains "/opt/xymon" "$(cat "$work/install.html")" \
 assert_contains "/var/www/xymon" "$(cat "$work/xymon-apacheconf.txt")" \
 	"xymon-apacheconf.txt did not substitute INSTALLWWWDIR (#90)"
 
-pass "docs templating substitutes @VARs@ with no leftover placeholders"
+exit 0

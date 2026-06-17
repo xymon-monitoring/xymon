@@ -78,4 +78,4 @@ grep -Eq 'SSL_CTX_set_alpn_protos\(item->sslctx, *alpn_buffer,' "$SSL" \
 assert_contains "alpn=" "$(cat "$MAN")" \
 	"protocols.cfg.5 no longer documents the alpn= option (#37)"
 
-pass "xymonnet keeps the #37 ALPN wiring (flag, parser, SSL setup, manpage)"
+exit 0

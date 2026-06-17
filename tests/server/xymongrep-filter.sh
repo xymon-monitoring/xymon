@@ -85,4 +85,4 @@ assert_not_contains "db.example.com" "$out" \
 out=$("$XYMONGREP" --noextras --hosts="$work/hosts.cfg" 'http*')
 assert_not_contains "dialup" "$out" "--noextras must drop the dialup flag"
 
-pass "xymongrep tag selection contract holds (exact, prefix-*, echoed tags, dialup flag)"
+exit 0
