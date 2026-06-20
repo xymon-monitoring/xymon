@@ -1105,6 +1105,7 @@ void run_rpcinfo_service(service_t *service)
 
 	p = xgetenv("RPCINFO");
 	strncpy(cmdpath, (p ? p : "rpcinfo"), sizeof(cmdpath));
+	cmdpath[sizeof(cmdpath)-1] = '\0';	/* strncpy may not terminate */
 	for (t=service->items; (t); t = t->next) {
 		/* Do not run RPCINFO test if host does not resolve in DNS or is down */
 		if (!t->host->dnserror && (t->host->downcount == 0) && !t->host->pingerror) {
