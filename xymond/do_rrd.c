@@ -20,6 +20,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>
+#include <math.h>		/* isfinite() in do_ntpstat.c */
 #include <utime.h>
 
 #include <rrd.h>

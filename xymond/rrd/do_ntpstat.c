@@ -33,7 +33,11 @@ int do_ntpstat_rrd(char *hostname, char *testname, char *classname, char *pagepa
 		}
 	}
 
-	if (gotdata) {
+	/* sscanf("%f") also accepts "nan"/"inf"; RRDtool then stores "inf"/"-inf" as
+	 * real infinities that corrupt AVERAGE/MAX consolidation ("nan" lands as a
+	 * harmless UNKNOWN). Record only a finite offset, matching the network "ntp"
+	 * path (parse_ntp_offset, lib/ntpoffset.c). */
+	if (gotdata && isfinite(offset)) {
 		setupfn("%s.rrd", "ntpstat");
 		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%.6f", (int)tstamp, offset);
 		return create_and_update_rrd(hostname, testname, classname, pagepaths, ntpstat_params, ntpstat_tpl);
