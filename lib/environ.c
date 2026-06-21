@@ -106,7 +106,7 @@ const static struct {
 	{ "SNTP", "sntp" },
 	{ "SNTPOPTS", "-u" },
 	{ "NTPDATE", "ntpdate" },
-	{ "NTPDATEOPTS", "-u -q -p 1" },
+	{ "NTPDATEOPTS", "-u -q" },
 	{ "TRACEROUTE", "traceroute" },
 	{ "TRACEROUTEOPTS", "-n -q 2 -w 2 -m 15" },
 	{ "RPCINFO", "rpcinfo" },
