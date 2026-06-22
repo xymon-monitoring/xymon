@@ -16,19 +16,14 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+# shellcheck source=tests/client/fs-filter-common.sh
+. "$(dirname "$0")/fs-filter-common.sh"
 
-ROOT=$(find_root)
-SCRIPT="${XYMONCLIENT_FREEBSD:-$ROOT/client/xymonclient-freebsd.sh}"
-if [ ! -f "$SCRIPT" ]; then
-	[ -z "${XYMONCLIENT_FREEBSD:-}" ] || fail "XYMONCLIENT_FREEBSD set to '$SCRIPT' but no such file -- broken layout, not a skip"
-	skip "$SCRIPT missing"
-fi
-grep -q 'XYMONCLIENT_FS_INCLUDE_TYPES' "$SCRIPT" || fail "FS filter missing from $SCRIPT (regressed)"
-
-TMP=$(mktempdir)
-STUB="$TMP/bin"; mkdir -p "$STUB"
-DF_LOG="$TMP/df.args"; INODE_LOG="$TMP/inode.args"
-STDERR_LOG="$TMP/stderr"
+# Resolve SCRIPT (in-tree default; $XYMONCLIENT_FREEBSD points at the installed
+# copy), apply the dangling-override / skip-if-absent contract, assert the FS
+# filter is still present (its absence is a regression, not a skip), and set up
+# TMP/STUB/DF_LOG/INODE_LOG/STDERR_LOG/PATH.
+fsf_setup freebsd XYMONCLIENT_FREEBSD
 
 # df stub: record argv (inode -i calls routed separately) and emit a table. The
 # inode table includes a "tank" row with "-" %iused (a no-inode-limit fs).
@@ -48,21 +43,18 @@ else
 fi
 EOF
 chmod +x "$STUB/df"
-export PATH="$STUB:$PATH"
 
 # Decoy files in the snippet's working directory ($TMP): if the script let a
 # configured type token glob, "procf*"/"fuse.*" would expand to these filenames.
 : > "$TMP/procfs"
 : > "$TMP/fuse.sshfs"
 
+# Combined [df]+[inode] block (default stop at [mount]); the [inode] block reuses
+# the exclude list the [df] block built, so they run together. run() is a thin
+# shim over fsf_run (fs-filter-common.sh) returning the disk df argv, padded.
 SNIPPET="$TMP/df-section.sh"
-sed -n '/^echo "\[df\]"/,/^echo "\[mount\]"/p' "$SCRIPT" | sed '$d' > "$SNIPPET"
-
-run() {  # run the block; echo the disk df argv (newlines flattened, padded)
-	: > "$DF_LOG"; : > "$INODE_LOG"; : > "$STDERR_LOG"
-	( cd "$TMP"; /bin/sh "$SNIPPET" >/dev/null 2>"$STDERR_LOG" )
-	printf ' %s ' "$(tr '\n' ' ' < "$DF_LOG")"
-}
+fsf_extract "$SNIPPET"
+run() { fsf_run "$SNIPPET" "$DF_LOG"; }
 
 # --- default behaviour ------------------------------------------------------
 args=$(run)
