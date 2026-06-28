@@ -915,9 +915,9 @@ test to end up with a green status, all lookups must succeed.
 .SH OTHER NETWORK TESTS
 .IP ntp
 Check for a running NTP (Network Time Protocol) server on this
-host. This test uses the "ntpdate" utility to check for a
-NTP server - you should either have ntpdate in your PATH, or
-set the location of the ntpdate program in $XYMONHOME/etc/xymonserver.cfg
+host. By default this uses a built-in SNTP probe and needs no external
+program. Set NTPDATE to the ntpdate program (on ntpsec, "ntpdig") to use
+that instead.
 
 .IP rpc[=rpcservice1,rpcservice2,...]
 Check for one or more available RPC services. This check is indirect

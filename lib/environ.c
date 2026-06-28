@@ -105,7 +105,7 @@ const static struct {
 	{ "FPINGOPTS", "-Ae" },
 	{ "SNTP", "sntp" },
 	{ "SNTPOPTS", "-u" },
-	{ "NTPDATE", "ntpdate" },
+	{ "NTPDATE", "" },		/* ntpdate program; empty = built-in SNTP probe */
 	{ "NTPDATEOPTS", "-u -q" },
 	{ "TRACEROUTE", "traceroute" },
 	{ "TRACEROUTEOPTS", "-n -q 2 -w 2 -m 15" },

@@ -31,11 +31,11 @@ file in $XYMONHOME/etc/protocols.cfg.
 In addition, it implements the "dns" and "dig" tests for
 testing DNS servers.
 
-xymonnet also implements a check for NTP servers - this test 
-is called "ntp". If you want to use it, you must define the
-NTPDATE environment variable to point at the location of your
-.I ntpdate(1)
-program.
+xymonnet also implements an NTP server check, the "ntp" test. By default it uses
+a built-in SNTP (RFC 4330/5905) probe - a single in-process UDP query on port 123
+(retransmitted a few times if the reply is lost), no external program. Set
+NTPDATE to the ntpdate program (on ntpsec, "ntpdig") to use that instead; empty
+NTPDATE selects the built-in probe.
 
 Note: xymonnet performs the connectivity test (ping) based on the
 hostname, unless the host is tagged with "testip" or the 
@@ -66,8 +66,11 @@ This option is deprecated, and will be ignored. Use the
 \-\-timeout option instead.
 
 .IP \-\-cmdtimeout=N
-This option sets a timeout for the external commands used for
-testing of NTP and RPC services, and to perform traceroute.
+This option sets a timeout for the external commands used by the RPC and
+traceroute tests and by the external NTP backends (ntpdate/sntp). The
+built-in NTP probe is not governed by it: the probe bounds itself with a
+short, fixed retransmission budget (a few attempts), so it can never hang
+and does not need an external kill timer.
 
 .IP \-\-concurrency=N 
 Determines the number of network tests that
@@ -502,8 +505,8 @@ every test to require a timeout. Since the most normal use of Xymon
 is to check for services that are active, you should have a lot
 less timeouts.
 
-The "ntp" and "rpcinfo" checks rely on external programs to 
-do each test.
+The "ntp" check needs no external program by default (it uses the built-in
+probe), while the "rpcinfo" check relies on an external program for each test.
 
 .SH ENVIRONMENT VARIABLES
 .IP XYMONNETWORK
@@ -553,9 +556,21 @@ Optionally used when a connectivity test fails to pinpoint the
 network location that is causing the failure.
 
 .IP NTPDATE
-Location of the 
-.I ntpdate(1) 
-utility. Used by xymonnet when checking the "ntp" service.
+Path to the external ntpdate program for the "ntp" service; the target IP is
+appended. Empty (the default) selects the built-in SNTP probe. On ntpsec, where
+ntpdate is unavailable, set this to "ntpdig".
+.IP NTPDATEOPTS
+Options passed to the ntpdate program (used only when NTPDATE is set).
+Default: "\-u \-q".
+
+.IP SNTP
+Location of the
+.I sntp(1)
+utility. A legacy, explicitly-set SNTP forces sntp for the "ntp" service.
+.IP SNTPOPTS
+Options passed to the
+.I sntp(1)
+utility. Default: "\-u".
 
 .IP RPCINFO
 Location of the 

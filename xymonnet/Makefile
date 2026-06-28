@@ -35,7 +35,7 @@ xymonnet: $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIBS)
 xymonping: $(PINGTESTOBJS) $(XYMONTIMELIB) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS)
 
-xymonnet.o: xymonnet.c
+xymonnet.o: xymonnet.c ntpprobe.c udpquery.h
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ xymonnet.c
 
 udpquery.o: udpquery.c udpquery.h

@@ -133,8 +133,12 @@ IPTEST_2_CLEAR_ON_FAILED_CONN="TRUE"		# If TRUE, then failing network tests go C
 NONETPAGE=""					# Network tests that go YELLOW upon failure
 FPING="@FPING@"					# Path and options for the ping program.
 FPINGOPTS="-Ae"					# Standard options to fping/xymonping
-NTPDATE="ntpdate"				# Path to the 'ntpdate' program
-NTPDATEOPTS="-u -q"				# Standard options to ntpdate (-p deprecated)
+# The "ntp" test uses a built-in SNTP probe by default (no external program).
+# Set NTPDATE to the external ntpdate program to use that instead (the target IP
+# is appended); empty selects the built-in probe. On ntpsec, where ntpdate is
+# unavailable, set NTPDATE="ntpdig".
+#NTPDATE="ntpdate"				# ntpdate program; empty = built-in probe
+NTPDATEOPTS="-u -q"				# Options for ntpdate (-p deprecated)
 TRACEROUTE="traceroute"                         # How to do traceroute on failing ping tests. Requires "trace" in hosts.cfg .
 TRACEROUTEOPTS="-n -q 2 -w 2 -m 15"		# Standard options to traceroute
 XYMONROUTERTEXT="router"			# What to call a failing intermediate network device.

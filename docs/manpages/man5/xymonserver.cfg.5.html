@@ -703,17 +703,13 @@ Note that mtr needs to be installed suid-root
 on most systems.
 <P>
 <DT>NTPDATE<DD>
-Defines the 
-<I><A HREF="../man1/ntpdate.1.html">ntpdate</A>(1)</I>
-
-program used for the &quot;ntp&quot; test.  
-Default: &quot;ntpdate&quot;
+Path to the external ntpdate program for the &quot;ntp&quot; test; the target IP is
+appended. Leave empty (the default) to use the built-in SNTP probe, which needs
+no external program. On ntpsec, where ntpdate is unavailable, set this to &quot;ntpdig&quot;.
+Default: &quot;&quot; (built-in probe)
 <P>
 <DT>NTPDATEOPTS<DD>
-Options used for the 
-<I><A HREF="../man1/ntpdate.1.html">ntpdate</A>(1)</I>
-
-program.
+Options for the ntpdate program (used only when NTPDATE is set).
 Default: &quot;-u -q&quot;
 <P>
 <DT>RPCINFO<DD>
