@@ -10,6 +10,8 @@
 
 static char do_net_rcsid[] = "$Id$";
 
+#include <math.h>	/* isfinite() - reject nan/inf offset tokens */
+
 int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *xymonnet_params[]       = { "DS:sec:GAUGE:600:0:U", NULL };
@@ -90,22 +92,25 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		 * ntpdate output: 
 		 *    server 172.16.10.2, stratum 3, offset -0.040324, delay 0.02568
 		 *    13 Nov 11:29:06 ntpdate[7038]: adjust time server 172.16.10.2 offset -0.040324 sec
+		 * built-in SNTP probe banner:
+		 *    ... stratum 2, offset +0.001234 +/- 0.005678 sec, delay 0.000900 sec
 		 */
 
-		char dataforntpstat[100];
+		static char *ntp_params[] = { "DS:offset:GAUGE:600:U:U",
+					      "DS:rootdist:GAUGE:600:0:U", NULL };
+		static void *ntp_tpl = NULL;
+
 		char *offsetval = NULL;
 		char offsetbuf[40];
+		char rdbuf[24];
+		double rootdist_ms = -1.0;
 		char *msgcopy = strdup(msg);
 
-		if (strstr(msgcopy, "ntpdate") != NULL) {
-			/* Old-style "ntpdate" output */
-			char *p;
+		if (ntp_tpl == NULL) ntp_tpl = setup_template(ntp_params);
 
-			p = strstr(msgcopy, "offset ");
-			if (p) {
-				p += 7;
-				offsetval = strtok(p, " \r\n\t");
-			}
+		if ((p = strstr(msgcopy, "offset ")) != NULL) {
+			/* ntpdate and the built-in SNTP probe both report "offset <seconds>". */
+			offsetval = strtok(p + 7, " \r\n\t");
 		}
 		else if (strstr(msgcopy, " secs") != NULL) {
 			/* Probably new "sntp" output */
@@ -129,11 +134,38 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 			}
 		}
 		
+		/* The built-in probe banner also carries the "+/-" root distance - the RFC
+		 * 5905 accuracy bound (which folds in root dispersion). Record it next to
+		 * the offset so the graph can draw offset +/- rootdist. ntpdate omits it, so
+		 * it is optional ("U" when absent). Parsed from the untouched message, since
+		 * msgcopy is strtok-chewed by the offset parser above. */
+		if ((p = strstr(msg, "+/- ")) != NULL) {
+			char *rdend;
+			double rd = strtod(p + 4, &rdend);
+			/* Only record a real, finite number; "+/- " with no parseable
+			 * value (or a nan/inf token) stays "U". */
+			if (rdend != p + 4 && isfinite(rd)) rootdist_ms = rd * 1000.0;
+		}
+
 		if (offsetval) {
-			/* ntpdate/sntp report the offset in seconds; the ntpstat RRD DS is
-			 * milliseconds (offsetms), so scale before recording. */
-			snprintf(dataforntpstat, sizeof(dataforntpstat), "offset=%.6f", atof(offsetval) * 1000.0);
-			do_ntpstat_rrd(hostname, testname, classname, pagepaths, dataforntpstat, tstamp);
+			char *offend;
+			double offset_sec = strtod(offsetval, &offend);
+			/* Fully validate the token rather than just requiring a numeric
+			 * prefix: strtod must consume at least one character, the value
+			 * must be finite (reject "nan"/"inf"), and the only trailing
+			 * character allowed is the comma ntpdate appends ("offset <sec>,").
+			 * Anything else - an error word like "unavailable", or junk like
+			 * "12junk" - is skipped rather than recorded as a misleading sample. */
+			if ((offend != offsetval) && isfinite(offset_sec) &&
+			    ((*offend == '\0') || ((*offend == ',') && (offend[1] == '\0')))) {
+				/* Both numbers are reported in seconds; the RRD records milliseconds. */
+				if (rootdist_ms >= 0.0) snprintf(rdbuf, sizeof(rdbuf), "%.6f", rootdist_ms);
+				else                    strcpy(rdbuf, "U");
+				setupfn("%s.rrd", "ntp");
+				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%.6f:%s",
+					 (int)tstamp, offset_sec * 1000.0, rdbuf);
+				create_and_update_rrd(hostname, testname, classname, pagepaths, ntp_params, ntp_tpl);
+			}
 		}
 
 		xfree(msgcopy);
