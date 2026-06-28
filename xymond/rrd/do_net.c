@@ -130,7 +130,9 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		}
 		
 		if (offsetval) {
-			snprintf(dataforntpstat, sizeof(dataforntpstat), "offset=%s", offsetval);
+			/* ntpdate/sntp report the offset in seconds; the ntpstat RRD DS is
+			 * milliseconds (offsetms), so scale before recording. */
+			snprintf(dataforntpstat, sizeof(dataforntpstat), "offset=%.6f", atof(offsetval) * 1000.0);
 			do_ntpstat_rrd(hostname, testname, classname, pagepaths, dataforntpstat, tstamp);
 		}
 
