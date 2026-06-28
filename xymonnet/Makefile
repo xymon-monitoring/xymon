@@ -25,7 +25,7 @@ PROGRAMS += $(SNMPPROGRAMS)
 endif
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
-NETTESTOBJS = xymonnet.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
+NETTESTOBJS = xymonnet.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o udpquery.o
 PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o
 
@@ -37,6 +37,8 @@ xymonping: $(PINGTESTOBJS) $(XYMONTIMELIB) ../lib/libxymon.a
 
 xymonnet.o: xymonnet.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ xymonnet.c
+
+udpquery.o: udpquery.c udpquery.h
 
 ldaptest.o: ldaptest.c
 	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -c -o $@ ldaptest.c
