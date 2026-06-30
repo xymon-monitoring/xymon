@@ -36,27 +36,16 @@ static const char *metafmt = "<RRDGraph>\n  <GraphType>%s</GraphType>\n  <GraphL
 
 
 /*
- * Define the mapping between Xymon columns and RRD graphs.
- * Normally they are identical, but some RRD's use different names.
+ * Free the RRD-definition tables built by rrd_setup().
+ * Mainly so daemons can release them on shutdown (clean valgrind exit).
  */
-static void rrd_setup(void)
+void rrd_destroy(void)
 {
-	static int setup_done = 0;
-	SBUF_DEFINE(lenv);
-	char *ldef, *p, *services;
-	SBUF_DEFINE(tcptests);
-	int count;
 	xymonrrd_t *lrec;
 	xymongraph_t *grec;
 
-
-	/* Do nothing if we have been called within the past 5 minutes */
-	if ((setup_done + 300) >= getcurrenttime(NULL)) return;
-
-
-	/* 
-	 * Must free any old data first.
-	 * NB: These lists are NOT null-terminated ! 
+	/*
+	 * NB: These lists are NOT null-terminated !
 	 *     Stop when svcname becomes a NULL.
 	 */
 	lrec = xymonrrds;
@@ -69,6 +58,8 @@ static void rrd_setup(void)
 		xfree(xymonrrds);
 		xtreeDestroy(xymonrrdtree);
 	}
+	xymonrrds = NULL;
+	xymonrrdtree = NULL;
 
 	grec = xymongraphs;
 	while (grec && grec->xymonrrdname) {
@@ -77,6 +68,30 @@ static void rrd_setup(void)
 		grec++;
 	}
 	if (xymongraphs) xfree(xymongraphs);
+	xymongraphs = NULL;
+}
+
+
+/*
+ * Define the mapping between Xymon columns and RRD graphs.
+ * Normally they are identical, but some RRD's use different names.
+ */
+static void rrd_setup(void)
+{
+	SBUF_DEFINE(lenv);
+	char *ldef, *p, *services;
+	SBUF_DEFINE(tcptests);
+	int count;
+	xymonrrd_t *lrec;
+	xymongraph_t *grec;
+
+
+	/*
+	 * The tables are derived entirely from environment variables (TEST2RRD,
+	 * GRAPHS) and the compiled-in TCP service list, all fixed at startup -
+	 * so they never change while we run. Build them once.
+	 */
+	if (xymonrrdtree != NULL) return;
 
 
 	/* Get the tcp services, and count how many there are */
@@ -152,8 +167,6 @@ static void rrd_setup(void)
 		grec++;
 	}
 	xfree(lenv);
-
-	setup_done = getcurrenttime(NULL);
 }
 
 
