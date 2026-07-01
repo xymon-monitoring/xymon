@@ -506,7 +506,7 @@ normally not need to modify this, unless you have added a
 custom TCP-based test to the protocols.cfg file, and want to collect data about
 the response-time, OR if you are using the
 .I xymond_rrd(8)
-external script mechanism to collect data from custom tests. 
+external script mechanism to collect data from custom tests.
 Note: All TCP tests are automatically added.
 
 .IP GRAPHS_<COLUMNAME>
@@ -617,16 +617,14 @@ Note that mtr needs to be installed suid-root
 on most systems.
 
 .IP NTPDATE
-Defines the 
-.I ntpdate(1)
-program used for the "ntp" test.  
-Default: "ntpdate"
+Path to the external ntpdate program for the "ntp" test; the target IP is
+appended. Leave empty (the default) to use the built-in SNTP probe, which needs
+no external program. On ntpsec, where ntpdate is unavailable, set this to "ntpdig".
+Default: "" (built-in probe)
 
 .IP NTPDATEOPTS
-Options used for the 
-.I ntpdate(1)
-program.
-Default: "\-u \-q \-p 1"
+Options for the ntpdate program (used only when NTPDATE is set).
+Default: "\-u \-q"
 
 .IP RPCINFO
 Defines the

@@ -200,6 +200,13 @@ server, using the output from the &quot;ntpq -c rv&quot; command.
 A simple script to collect these data is included in the
 Xymon contrib/ directory.
 <P>
+<DT>ntp<DD>
+Tracks the clock offset between the local system and an NTP server,
+together with the RFC 5905 root distance (the &quot;+/-&quot; accuracy bound),
+as measured by the built-in SNTP probe in xymonnet (or by an external
+&quot;ntpdate&quot;/&quot;sntp&quot; command). The graph plots the offset with the root
+distance as an error band.
+<P>
 <DT>citrix<DD>
 Tracks the number of active sessions on a Citrix server using
 the &quot;query session&quot; command. An extension for the BBNT client

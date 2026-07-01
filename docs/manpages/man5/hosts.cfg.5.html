@@ -1019,9 +1019,9 @@ test to end up with a green status, all lookups must succeed.
 <DL COMPACT>
 <DT>ntp<DD>
 Check for a running NTP (Network Time Protocol) server on this
-host. This test uses the &quot;ntpdate&quot; utility to check for a
-NTP server - you should either have ntpdate in your PATH, or
-set the location of the ntpdate program in $XYMONHOME/etc/xymonserver.cfg
+host. By default this uses a built-in SNTP probe and needs no external
+program. Set NTPDATE to the ntpdate program (on ntpsec, &quot;ntpdig&quot;) to use
+that instead.
 <P>
 <DT>rpc[=rpcservice1,rpcservice2,...]<DD>
 Check for one or more available RPC services. This check is indirect
