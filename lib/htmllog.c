@@ -186,7 +186,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	xymongraph_t *graph = NULL;
 	char *tplfile = "hostsvc";
 	SBUF_DEFINE(graphs);
-	char *graphsenv;
+	char *graphsenv = NULL;
 	char *graphsptr;
 	time_t now = getcurrenttime(NULL);
 
@@ -421,8 +421,18 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 					  service, rrd->xymonrrdname);
 			}
 		}
+
+		/* GRAPHS_<service> custom graphs render even when the service has no
+		 * default graph (issue #31) - but never for reverse tests, which
+		 * collect no RRD data. */
+		SBUF_MALLOC(graphs, 7 + strlen(service) + 1);
+		snprintf(graphs, graphs_buflen, "GRAPHS_%s", service);
+		graphsenv = getenv(graphs);
+		if (graphsenv && (*graphsenv == '\0')) graphsenv = NULL;	/* set-but-empty = not set */
+		if (flags && strchr(flags, 'R')) graphsenv = NULL;
+		xfree(graphs);
 	}
-	if (rrd && graph) {
+	if ((rrd && graph) || graphsenv) {
 		int may_have_rrd = 1;
 
 		/*
@@ -443,7 +453,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			if (multigraphs == NULL) multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 
 			/* Not all devmon statuses have graphs, so try to avoid generating graph links unless there is one */
-			if (strncmp(rrd->xymonrrdname,"devmon",6) == 0) may_have_rrd=0;
+			if (rrd && (strncmp(rrd->xymonrrdname,"devmon",6) == 0)) may_have_rrd=0;
 
 			/* 
 			 * Some reports (disk) use the number of lines as a rough measure for how many
@@ -504,10 +514,6 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			fprintf(output, "<!-- linecount=%d -->\n", linecount);
 			fprintf(output, "<a name=\"begingraph\">&nbsp;</a>\n");
 
-			/* Get the GRAPHS_* environment setting */
-			SBUF_MALLOC(graphs, 7 + strlen(service) + 1);
-			snprintf(graphs, graphs_buflen, "GRAPHS_%s", service);
-			graphsenv=getenv(graphs);
 			if (graphsenv) {
 				/* strtok on a copy - the getenv() result is the live environment */
 				char *graphscopy = strdup(graphsenv);
@@ -537,7 +543,6 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			else {
 				fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
 			}
-			xfree(graphs);
 		}
 	}
 
