@@ -518,7 +518,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				/* strtok on a copy - the getenv() result is the live environment */
 				char *graphscopy = strdup(graphsenv);
 
-				fprintf(output, "<!-- GRAPHS_%s: %s -->\n", service, graphsenv);
+				fprintf(output, "<!-- GRAPHS_%s: %s -->\n", service, htmlquoted(graphsenv));
 				graphsptr = strtok(graphscopy,",");
 				while (graphsptr != NULL) {
 					xymongraph_t localgraph, *owngdef;
