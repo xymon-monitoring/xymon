@@ -242,6 +242,39 @@ Save the file, and when you click on the <b>trends</b> column you should
 see the slab graph at the bottom of the page.
 
 
+<h2>Show the graph on a status page: GRAPHS_&lt;columnname&gt;</h2>
+<p>To display graphs on a specific status page - including a custom column
+that has no default graph of its own - set GRAPHS_&lt;columnname&gt; in
+~xymon/server/etc/xymonserver.cfg to a comma-separated list of graph
+definitions:</p>
+
+<pre><tt>
+	GRAPHS_smart=&quot;smart-temp,tcp:smtp&quot;
+</tt></pre>
+
+<p>Each name needs a matching graphs.cfg section; <tt>bundle:instance</tt>
+(or <tt>bundle.instance</tt>) shows a single instance of a multi-file graph,
+like the smtp response time from the [tcp] section above. The setting
+<i>overrides</i> the column's default graph, so include that in the list to
+keep it (GRAPHS_cpu=&quot;la,smart-temp&quot;). Adding the graph to GRAPHS is
+only needed for the <b>trends</b> column - the status page works from
+GRAPHS_&lt;columnname&gt; alone.</p>
+
+<p>By default the page shows one image containing every RRD file the graph's
+FNPATTERN matches. To split it into groups of instances the way the
+<b>disk</b> column does, put the instance count in the body of the status
+message your script sends: <tt>&lt;!-- linecount=12 --&gt;</tt>. Groups hold
+5 instances unless the graph sets its own size in GRAPHS - note the double
+colon, and GRAPHS only, never inside GRAPHS_&lt;columnname&gt;:</p>
+
+<pre><tt>
+	GRAPHS=&quot;...,smart-temp::4,...&quot;
+</tt></pre>
+
+<p>On the <b>trends</b> column both the instance count and the splitting are
+automatic.</p>
+
+
 <h2>Common problems and pitfalls</h2>
 <h3>If your graph nearly always shows 0</h3>
 <p>You probably used the wrong RRD datatype for your data - see step 4.
