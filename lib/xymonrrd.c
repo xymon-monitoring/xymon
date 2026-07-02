@@ -23,7 +23,6 @@ static char rcsid[] = "$Id$";
 #include <dirent.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include <pcre.h>
 
 #include "libxymon.h"
 #include "version.h"
@@ -377,200 +376,208 @@ rrdtpldata_t *setup_template(char *params[])
 	return result;
 }
 
+/*
+ * Cached graphs.cfg section patterns. graphs.cfg is parsed ONCE per process
+ * (it does not change during a CGI run) instead of once per graph. The trends
+ * page counts dozens of graphs per host, so reparsing the file - and re-walking
+ * the RRD directory - on every iteration was the bulk of the cost.
+ */
+typedef struct rrdgraphsection_t {
+	char *section;
+	char *fnpattern;
+	char *exfnpattern;
+	char *defrrd;
+	struct rrdgraphsection_t *next;
+} rrdgraphsection_t;
+static rrdgraphsection_t *rrdgraphsections = NULL;
+static rrdgraphsection_t *rrdgraphsections_tail = NULL;
+static int rrdgraphsections_loaded = 0;
+
+static void load_graphs_cfg(void)
+{
+	char graphcfgfn[PATH_MAX];
+	FILE *graphcfg;
+	rrdgraphsection_t *cursect = NULL;
+	strbuffer_t *linebuf;
+
+	if (rrdgraphsections_loaded) return;
+	rrdgraphsections_loaded = 1;
+
+	snprintf(graphcfgfn, sizeof(graphcfgfn), "%s/etc/graphs.cfg", xgetenv("XYMONHOME"));
+	graphcfg = stackfopen(graphcfgfn, "r", NULL);	/* stackfgets() follows "include" directives */
+	if (!graphcfg) {
+		errprintf("Cannot open graphs.cfg at '%s': %s\n", graphcfgfn, strerror(errno));
+		return;
+	}
+
+	linebuf = newstrbuffer(0);
+	while (stackfgets(linebuf, NULL) != NULL) {
+		char *line = STRBUF(linebuf);
+		char *p = line + strcspn(line, "\r\n"); *p = '\0';	/* strip CR/LF on the dynamic buffer */
+
+		if (line[0] == '[') {
+			char *delim = strchr(line, ']');
+			if (delim) {
+				rrdgraphsection_t *ns = (rrdgraphsection_t *)calloc(1, sizeof(rrdgraphsection_t));
+				*delim = '\0';
+				ns->section = strdup(line+1);
+				/* Append in file order so a section lookup returns the first occurrence */
+				if (rrdgraphsections_tail) rrdgraphsections_tail->next = ns;
+				else                       rrdgraphsections = ns;
+				rrdgraphsections_tail = ns;
+				cursect = ns;
+			}
+		}
+		else if (cursect) {
+			char *line_start = line + strspn(line, " \t");
+			if (*line_start == '#') continue;	/* skip comments */
+			if (strncasecmp(line_start, "EXFNPATTERN", 11) == 0) {
+				char *pval = line_start + 11; pval += strspn(pval, " \t=");
+				if (!cursect->exfnpattern) cursect->exfnpattern = strdup(pval);
+			}
+			else if (strncasecmp(line_start, "FNPATTERN", 9) == 0) {
+				char *pval = line_start + 9; pval += strspn(pval, " \t=");
+				if (!cursect->fnpattern) cursect->fnpattern = strdup(pval);
+			}
+			else if (strncasecmp(line_start, "DEF:", 4) == 0) {
+				/*
+				 * No-FNPATTERN sections (e.g. [vmstat1]) draw from a hard-coded
+				 * RRD file named in the first DEF line - "DEF:var=file.rrd:ds:CF".
+				 * Capture that filename so the section name (vmstat1) is not
+				 * mistaken for the RRD file (vmstat.rrd).
+				 */
+				char *eq = strchr(line_start, '=');
+				char *colon = eq ? strchr(eq + 1, ':') : NULL;
+				if (eq && colon && !cursect->defrrd) {
+					size_t len = colon - (eq + 1);
+					cursect->defrrd = (char *)malloc(len + 1);
+					memcpy(cursect->defrrd, eq + 1, len); cursect->defrrd[len] = '\0';
+				}
+			}
+		}
+	}
+	freestrbuffer(linebuf);
+	stackfclose(graphcfg);
+}
+
+static rrdgraphsection_t *find_graph_section(const char *name)
+{
+	rrdgraphsection_t *s, *hit = NULL;
+	if (!name) return NULL;
+	/*
+	 * Return the LAST matching section. showgraph.c's load_gdefs() prepends as
+	 * it reads, so its lookup finds the last-defined section - i.e. a later
+	 * "include" that redefines a stock section wins. Match that here so the
+	 * counted definition is the same one that gets rendered.
+	 */
+	for (s = rrdgraphsections; s; s = s->next)
+		if (strcmp(s->section, name) == 0) hit = s;
+	return hit;
+}
+
+/*
+ * Cached listing of a host's RRD directory (.rrd files only). The trends page
+ * counts every graph for one host, so the directory is read ONCE and reused;
+ * a different hostname rebuilds the cache.
+ */
+static char *rrddir_host = NULL;
+static char **rrddir_files = NULL;
+static int rrddir_count = 0;
+static int rrddir_alloc = 0;
+
+static void load_rrd_dir(const char *hostname, const char *rrdpath)
+{
+	DIR *dir;
+	struct dirent *entry;
+	int i;
+
+	if (rrddir_host && (strcmp(rrddir_host, hostname) == 0)) return;	/* already cached */
+
+	for (i = 0; i < rrddir_count; i++) xfree(rrddir_files[i]);
+	rrddir_count = 0;
+	if (rrddir_host) xfree(rrddir_host);
+	rrddir_host = strdup(hostname);
+
+	/* Absolute path to opendir() so the CGI's working directory is never changed. */
+	dir = opendir(rrdpath);
+	if (!dir) {
+		errprintf("Cannot open RRD directory '%s' for host '%s': %s\n",
+			  rrdpath, hostname, strerror(errno));
+		return;
+	}
+	while ((entry = readdir(dir)) != NULL) {
+		size_t n = strlen(entry->d_name);
+		if ((n > 4) && (strcmp(entry->d_name + n - 4, ".rrd") == 0)) {
+			if (rrddir_count >= rrddir_alloc) {
+				rrddir_alloc = rrddir_alloc ? rrddir_alloc * 2 : 64;
+				rrddir_files = (char **)realloc(rrddir_files, rrddir_alloc * sizeof(char *));
+			}
+			rrddir_files[rrddir_count++] = strdup(entry->d_name);
+		}
+	}
+	closedir(dir);
+}
+
 int count_rrd_files_for_graph(char *hostname, char *graphname)
 {
 	char rrdpath[PATH_MAX];
-	char *saved_cwd = NULL;
-	int need_chdir_back = 0;
+	rrdgraphsection_t *sect;
+	char *fnpattern, *exfnpattern, *defrrd;
 	int rrd_count = 0;
+	int i;
 
 	snprintf(rrdpath, sizeof(rrdpath), "%s/%s", xgetenv("XYMONRRDS"), hostname);
 
-	/* Save current directory before chdir */
-	saved_cwd = getcwd(NULL, 0);
-	if (chdir(rrdpath) != 0) {
-		errprintf("Cannot chdir to RRD directory '%s' for host '%s': %s\n",
-			  rrdpath, hostname, strerror(errno));
-		if (saved_cwd) free(saved_cwd);
-		return 0;
-	}
-	need_chdir_back = 1;
-
-	/* Load the graph definition to get FNPATTERN and EXFNPATTERN */
-	char graphcfgfn[PATH_MAX];
-	FILE *graphcfg;
-	char line[1024];
-	char *fnpattern = NULL;
-	char *exfnpattern = NULL;
-	int insection = 0;
-
-	snprintf(graphcfgfn, sizeof(graphcfgfn), "%s/etc/graphs.cfg", xgetenv("XYMONHOME"));
-	graphcfg = stackfopen(graphcfgfn, "r", NULL);
-
-	if (!graphcfg) {
-		errprintf("Cannot open graphs.cfg at '%s': %s\n",
-			  graphcfgfn, strerror(errno));
-	}
-
-	if (graphcfg) {
-		strbuffer_t *linebuf = newstrbuffer(0);
-		char *lineptr;
-
-		while ((lineptr = stackfgets(linebuf, NULL)) != NULL) {
-			strncpy(line, STRBUF(linebuf), sizeof(line)-1);
-			line[sizeof(line)-1] = '\0';
-
-			/* Remove newline */
-			char *nl = strchr(line, '\n');
-			if (nl) *nl = '\0';
-			nl = strchr(line, '\r');
-			if (nl) *nl = '\0';
-
-			/* Check for section header like [smart-temp] */
-			if (line[0] == '[' && line[strlen(line)-1] == ']') {
-				line[strlen(line)-1] = '\0';  /* remove ']' */
-				if (strcmp(line+1, graphname) == 0) {
-					insection = 1;
-				} else {
-					/* Exiting our section - stop parsing */
-					if (insection) break;
-					insection = 0;
-				}
-			}
-			else if (insection) {
-				/* Check for FNPATTERN and EXFNPATTERN with possible leading whitespace */
-				char *line_start = line + strspn(line, " \t");
-				if (strncasecmp(line_start, "EXFNPATTERN", 11) == 0) {
-					char *pval = line_start + 11;
-					pval += strspn(pval, " \t=");  /* Skip whitespace and equals */
-					if (!exfnpattern) exfnpattern = strdup(pval);
-				}
-				else if (strncasecmp(line_start, "FNPATTERN", 9) == 0) {
-					char *pval = line_start + 9;
-					pval += strspn(pval, " \t=");  /* Skip whitespace and equals */
-					if (!fnpattern) fnpattern = strdup(pval);
-				}
-			}
-		}
-		freestrbuffer(linebuf);
-		stackfclose(graphcfg);
-	}
-
 	/*
-	 * Now count RRD files matching this graph.
-	 *
-	 * Performance note: This function is called by the CGI when rendering status pages,
-	 * NOT by xymond_filestore during status updates. This architectural decision moves
-	 * the RRD scanning cost from the background daemon (called continuously) to the web
-	 * interface (called only when humans view pages).
-	 *
-	 * We optimize for two common cases:
-	 *
-	 * 1. FNPATTERN graphs (e.g., disk with pattern ".*\.rrd"): Must scan directory
-	 *    to find all matching files. Uses readdir() which benefits from kernel VFS
-	 *    caching of directory entries (dentries on Linux, directory buffer on FreeBSD).
-	 *    Subsequent scans of the same directory are fast due to this caching.
-	 *
-	 * 2. Single-file graphs (e.g., cpu.rrd, memory.rrd): Direct stat() lookup is
-	 *    much faster than scanning - O(1) vs O(n). This avoids reading potentially
-	 *    hundreds of directory entries to find a single known filename.
+	 * This runs in the CGI when rendering status/trends pages, NOT in
+	 * xymond_filestore during status updates - the RRD scanning cost lands on
+	 * page views, not on every status message. Both the graphs.cfg parse and the
+	 * directory scan are cached, so a trends page pays each cost once, not per graph.
 	 */
+	load_graphs_cfg();
+	load_rrd_dir(hostname, rrdpath);
+
+	sect = find_graph_section(graphname);
+
+	fnpattern   = sect ? sect->fnpattern   : NULL;
+	exfnpattern = sect ? sect->exfnpattern : NULL;
+	defrrd      = sect ? sect->defrrd      : NULL;
+
 	if (fnpattern) {
-		/*
-		 * FNPATTERN specified: need to scan directory and match pattern.
-		 * Example: disk graphs use FNPATTERN ".*,(.*)\.rrd" to match all
-		 * disk partition RRDs like "/dev/sda1.rrd", "/dev/sda2.rrd", etc.
-		 *
-		 * EXFNPATTERN can be used to exclude certain files from the match.
-		 * Example: [tcp] graph uses FNPATTERN "^tcp.(.+).rrd" to match all tcp files,
-		 * but EXFNPATTERN "^tcp.http.(.+).rrd" to exclude http tests (which have their own graph).
-		 */
-		DIR *dir = opendir(".");
-		if (!dir) {
-			errprintf("Cannot open RRD directory for host '%s' graph '%s': %s\n",
-				  hostname, graphname, strerror(errno));
+		/* FNPATTERN graphs (e.g. disk): count cached RRD names matching the pattern,
+		   honouring EXFNPATTERN exclusions. */
+		pcre2_code *pat = compileregex(fnpattern);		/* PCRE2, PCRE2_CASELESS */
+		pcre2_code *expat = exfnpattern ? compileregex(exfnpattern) : NULL;
+
+		if (!pat) {
+			errprintf("Bad FNPATTERN '%s' (graph=%s host=%s)\n", fnpattern, graphname, hostname);
 		}
-
-		if (dir) {
-			struct dirent *entry;
-			const char *errmsg;
-			int errofs;
-			pcre *pat;
-			pcre *expat = NULL;
-
-			pat = pcre_compile(fnpattern, PCRE_CASELESS, &errmsg, &errofs, NULL);
-			if (!pat) {
-				errprintf("PCRE compilation failed for pattern '%s' (graph=%s, host=%s): %s at offset %d\n",
-					  fnpattern, graphname, hostname, errmsg, errofs);
-			}
-
-			/* Compile exclusion pattern if present */
-			if (exfnpattern) {
-				expat = pcre_compile(exfnpattern, PCRE_CASELESS, &errmsg, &errofs, NULL);
-				if (!expat) {
-					errprintf("PCRE compilation failed for exclusion pattern '%s' (graph=%s, host=%s): %s at offset %d\n",
-						  exfnpattern, graphname, hostname, errmsg, errofs);
+		else {
+			for (i = 0; i < rrddir_count; i++) {
+				if (matchregex(rrddir_files[i], pat) &&
+				    !(expat && matchregex(rrddir_files[i], expat))) {
+					rrd_count++;
 				}
 			}
-
-			if (pat) {
-				/*
-				 * Scan directory for matching files. readdir() benefits from kernel
-				 * VFS caching, so repeated scans of the same directory are fast.
-				 */
-				while ((entry = readdir(dir)) != NULL) {
-					if (strlen(entry->d_name) > 4 &&
-						strcmp(entry->d_name + strlen(entry->d_name) - 4, ".rrd") == 0) {
-						int result = pcre_exec(pat, NULL, entry->d_name, strlen(entry->d_name), 0, 0, NULL, 0);
-						if (result >= 0) {
-							/* Matched FNPATTERN - now check if it should be excluded */
-							int excluded = 0;
-							if (expat) {
-								int exresult = pcre_exec(expat, NULL, entry->d_name, strlen(entry->d_name), 0, 0, NULL, 0);
-								if (exresult >= 0) {
-									excluded = 1;
-								}
-							}
-							if (!excluded) {
-								rrd_count++;
-							}
-						}
-					}
-				}
-				pcre_free(pat);
-				if (expat) pcre_free(expat);
-			}
-			closedir(dir);
 		}
-		xfree(fnpattern);
-		if (exfnpattern) xfree(exfnpattern);
-	} else {
+		freeregex(pat);		/* freeregex() is NULL-safe */
+		freeregex(expat);
+	}
+	else {
 		/*
-		 * No FNPATTERN: simple 1:1 mapping (e.g., cpu -> cpu.rrd).
-		 * Use direct stat() lookup instead of directory scan for much better performance.
-		 * This is an O(1) operation vs O(n) directory scan, and avoids reading potentially
-		 * hundreds of directory entries just to find one specific file.
+		 * No FNPATTERN: single RRD file. Prefer the filename from the section's
+		 * DEF line (so [vmstat1] -> vmstat.rrd), falling back to "<graphname>.rrd"
+		 * for the common 1:1 case (e.g. la -> la.rrd).
 		 */
 		char expected_rrd[PATH_MAX];
-		struct stat st;
 
-		snprintf(expected_rrd, sizeof(expected_rrd), "%s.rrd", graphname);
-		if (stat(expected_rrd, &st) == 0) {
-			rrd_count = 1;
+		if (defrrd) snprintf(expected_rrd, sizeof(expected_rrd), "%s", defrrd);
+		else        snprintf(expected_rrd, sizeof(expected_rrd), "%s.rrd", graphname);
+		for (i = 0; i < rrddir_count; i++) {
+			if (strcmp(rrddir_files[i], expected_rrd) == 0) { rrd_count = 1; break; }
 		}
 	}
-
-	/* Restore original directory */
-	if (need_chdir_back && saved_cwd) {
-		if (chdir(saved_cwd) != 0) {
-			errprintf("CRITICAL: Failed to restore directory to '%s' after RRD count (hostname=%s, graph=%s): %s\n",
-				  saved_cwd, hostname, graphname, strerror(errno));
-			/* This is critical - if we can't restore the directory, subsequent operations will fail */
-		}
-	}
-	if (saved_cwd) free(saved_cwd);
 
 	return rrd_count;
 }
-
 
