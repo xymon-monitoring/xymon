@@ -149,6 +149,7 @@ typedef struct clientmsg_list_t {
 	char *collectorid;
 	time_t timestamp;
 	char *msg;
+	char *sections;		/* Newline-delimited section names in "msg" - issue #201 */
 	struct clientmsg_list_t *next;
 } clientmsg_list_t;
 
@@ -2317,6 +2318,72 @@ void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 	return;
 }
 
+/*
+ * Issue #201: log when a section vanishes between one collector's consecutive
+ * reports - the client changed what it collects (e.g. a class flip), so the
+ * columns it fed will go purple although the host keeps reporting. Diagnostic
+ * only; per-collector scope keeps sub-collector purges from triggering it.
+ */
+static void update_clientsections(xymond_hostlist_t *hwalk, clientmsg_list_t *cwalk)
+{
+	strbuffer_t *nb;
+	char *p, *newset, *tok;
+
+	nb = newstrbuffer(0);
+	addtobuffer(nb, "\n");
+	p = cwalk->msg;
+	while ((p = strstr(p, "\n[")) != NULL) {
+		char *nend = strchr(p+2, ']');
+		char *eoln = strchr(p+2, '\n');
+
+		if (!nend) break;
+		/* A section header is exactly "[name]" alone on its line. logfetch
+		 * mangles data lines beginning with '[', but be strict anyway. */
+		if (eoln && (eoln < nend)) { p = eoln; continue; }
+		if ((*(nend+1) != '\n') && (*(nend+1) != '\r') && (*(nend+1) != '\0')) { p = nend; continue; }
+		*nend = '\0'; addtobuffer(nb, p+2); addtobuffer(nb, "\n"); *nend = ']';
+		p = nend;
+	}
+	newset = STRBUF(nb);
+
+	if (cwalk->sections && (strcmp(cwalk->sections, newset) == 0)) {
+		/* No change - the common case */
+		freestrbuffer(nb);
+		return;
+	}
+
+	if (cwalk->sections) {
+		strbuffer_t *gone = NULL;
+
+		tok = strtok(cwalk->sections, "\n");	/* Destructive is fine - replaced below */
+		while (tok) {
+			int missing = 1;
+
+			/* newset entries are framed by newlines, so match "\ntok\n" in place */
+			for (p = strstr(newset, tok); (p && missing); p = strstr(p+1, tok)) {
+				if ((*(p-1) == '\n') && (*(p+strlen(tok)) == '\n')) missing = 0;
+			}
+			if (missing) {
+				if (!gone) gone = newstrbuffer(0); else addtobuffer(gone, "], [");
+				addtobuffer(gone, tok);
+			}
+			tok = strtok(NULL, "\n");
+		}
+
+		if (gone) {
+			errprintf("Client report change: host '%s'%s%s no longer sends section(s) [%s] - columns fed by them will go purple although the host keeps reporting; if intentional (e.g. an OS/class change), retire them with 'xymon drop %s <testname>'\n",
+				  hwalk->hostname,
+				  (*cwalk->collectorid ? " collector " : ""), cwalk->collectorid,
+				  STRBUF(gone), hwalk->hostname);
+			freestrbuffer(gone);
+		}
+
+		xfree(cwalk->sections);
+	}
+
+	cwalk->sections = grabstrbuffer(nb);
+}
+
 void handle_client(char *msg, char *sender, char *hostname, char *collectorid, 
 		   char *clientos, char *clientclass)
 {
@@ -2359,6 +2426,8 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 
 			hwalk->clientmsgtstamp = cwalk->timestamp = gettimer();
 
+			update_clientsections(hwalk, cwalk);	/* Issue #201: log vanished sections */
+
 			/* Purge any outdated client sub-messages */
 			chead = ctail = NULL;
 			cwalk = hwalk->clientmsgs; 
@@ -2369,6 +2438,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 					cwalk = cwalk->next;
 					xfree(czombie->msg);
 					xfree(czombie->collectorid);
+					if (czombie->sections) xfree(czombie->sections);
 					xfree(czombie);
 				}
 				else {
@@ -2606,6 +2676,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 			xfree(czombie->collectorid);
 			xfree(czombie->msg);
+			if (czombie->sections) xfree(czombie->sections);
 			xfree(czombie);
 		}
 		xfree(hwalk);
