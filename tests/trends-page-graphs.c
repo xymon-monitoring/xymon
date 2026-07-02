@@ -49,6 +49,8 @@ int main(void)
 		expect_contains("default trends include custom graph", trends, "service=smart-temp&amp;graph_width");
 		expect_contains("default trends include custom graph count", trends, "service=smart-temp&amp;graph_width=576&amp;graph_height=120&amp;first=1&amp;count=2");
 		expect_contains("default trends include bundled tcp graph", trends, "service=tcp&amp;graph_width=576&amp;graph_height=120&amp;first=1&amp;count=2");
+		expect_contains("default trends include dotted tcp graph", trends, "service=tcp.smtp&amp;graph_width=576&amp;graph_height=120&amp;first=1&amp;count=1");
+		expect_contains("default trends include primary dotted graph", trends, "service=tcp.http&amp;graph_width=576&amp;graph_height=120&amp;first=1&amp;count=1");
 		expect_contains("default trends include plain graph", trends, "service=la&amp;graph_width=576&amp;graph_height=120");
 		expect_contains("default trends preserve start time", trends, "graph_start=100");
 		expect_contains("default trends preserve end time", trends, "graph_end=200");
@@ -60,6 +62,14 @@ int main(void)
 		expect_contains("TRENDS allowlist includes smart graph", trends, "service=smart-temp&amp;graph_width");
 		expect_not_contains("TRENDS allowlist excludes bundled tcp graph", trends, "service=tcp&amp;graph_width");
 		expect_not_contains("TRENDS allowlist excludes dotted tcp graph", trends, "service=tcp.smtp&amp;graph_width");
+		free(trends);
+	}
+
+	trends = render_trends("mappedhost");
+	if (trends) {
+		expect_contains("TRENDS mapping includes custom status graph", trends, "service=smart&amp;graph_width");
+		expect_contains("TRENDS mapping keeps explicit rrd graph", trends, "service=smart-temp&amp;graph_width");
+		expect_not_contains("TRENDS mapping excludes unmapped tcp graph", trends, "service=tcp&amp;graph_width");
 		free(trends);
 	}
 

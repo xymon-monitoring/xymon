@@ -7,7 +7,7 @@ static int failures = 0;
 
 static void expect_count(const char *host, const char *graph, int want)
 {
-	int got = count_rrd_files_for_graph((char *)host, (char *)graph);
+	int got = count_rrd_files_for_graph((char *)host, (char *)graph, NULL);
 
 	if (got != want) {
 		fprintf(stderr, "count_rrd_files_for_graph(%s, %s): got %d, want %d\n",
