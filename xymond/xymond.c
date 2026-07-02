@@ -5177,6 +5177,26 @@ void check_purple_status(void)
 						if (!lwalk->dismsg) lwalk->dismsg = strdup(cause);                                         
 					}
 
+					/*
+					 * Issue #201: flag a client-column reconciliation problem.
+					 * If the host is still sending client data (its last client
+					 * report is at/after this column's expiry) yet this column has
+					 * gone purple, the client has stopped producing a column it
+					 * used to send - typically retired by a config or class change
+					 * (e.g. linux -> freebsd after a reinstall). Such a column ages
+					 * to purple and keeps alerting with no removal path. We do NOT
+					 * drop it here (a manual "xymon drop" remains the fix, made
+					 * durable by the drop-checkpoint change); instead we warn via
+					 * the xymond column so an operator can tell this apart from a
+					 * genuinely dead client and retire it. The conn/ping column is
+					 * server-generated, not sent by the client, so it is excluded.
+					 */
+					if ((newcolor == COL_PURPLE) && hwalk->clientmsgs && (lwalk != hwalk->pinglog) &&
+					    ((hwalk->clientmsgtstamp + (now - gettimer())) >= lwalk->validtime)) {
+						errprintf("Client-column reconciliation: host '%s' still reports client data but column '%s' has gone purple (no longer sent) - likely retired by a config/class change; investigate or 'xymon drop %s %s'\n",
+							hwalk->hostname, lwalk->test->name, hwalk->hostname, lwalk->test->name);
+					}
+
 					handle_status(lwalk->message, "xymond", 
 						hwalk->hostname, lwalk->test->name, lwalk->grouplist, lwalk, newcolor, NULL, 0);
 					lwalk = lwalk->next;
