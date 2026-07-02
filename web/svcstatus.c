@@ -682,15 +682,13 @@ int do_request(void)
 		int render_graphs;
 
 		/*
-		 * Determine if we should render graphs: only for current status of regular services.
-		 * Never render for:
-		 * - Historical logs
-		 * - "trends" meta-page (graph list itself)
-		 * - "info" meta-page (host information)
+		 * Render graphs only for the current status of a regular service.
+		 * Never for historical logs, nor for the "trends"/"info" meta-pages
+		 * (compared against the configurable column names, not literals).
 		 */
 		render_graphs = (source != SRC_HISTLOGS) &&
-		                (strcmp(service, "trends") != 0) &&
-		                (strcmp(service, "info") != 0);
+		                !(trendscolumn && strcmp(service, trendscolumn) == 0) &&
+		                !(infocolumn && strcmp(service, infocolumn) == 0);
 
 		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		generate_html_log(hostname,
@@ -812,4 +810,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
