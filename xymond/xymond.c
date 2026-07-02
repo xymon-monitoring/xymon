@@ -1436,7 +1436,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			  textornull(hostname), textornull(testname), textornull(sender));
 		return;
 	}
-	if (msg_data(msg, 0) == (char *)msg, 0) {
+	if (msg_data(msg, 0) == (char *)msg) {
 		errprintf("Bogus status message: msg_data finds no host.test. Sent from: '%s', data:'%s'\n",
 			  sender, msg);
 		return;
