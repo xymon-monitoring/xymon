@@ -515,8 +515,21 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				fprintf(output, "<!-- GRAPHS_%s: %s -->\n", service, graphsenv);
 				graphsptr = strtok(graphscopy,",");
 				while (graphsptr != NULL) {
-					graph->xymonrrdname = strdup(graphsptr);
-					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+					xymongraph_t localgraph, *owngdef;
+
+					/*
+					 * A stack-local gdef keeps the entry verbatim in the link
+					 * (a prefix-matched table entry would rewrite it to its
+					 * base name) and leaves the shared table unwritten - the
+					 * legacy strdup() into it leaked and corrupted later
+					 * lookups. maxgraphs: the entry's own GRAPHS record, else
+					 * the service's default graph.
+					 */
+					owngdef = find_xymon_graph(graphsptr);
+					memset(&localgraph, 0, sizeof(localgraph));
+					localgraph.xymonrrdname = graphsptr;
+					localgraph.maxgraphs = (owngdef ? owngdef->maxgraphs : (graph ? graph->maxgraphs : 0));
+					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, &localgraph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
 					graphsptr = strtok(NULL,",");
 				}
 				xfree(graphscopy);
