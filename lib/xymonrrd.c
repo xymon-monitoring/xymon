@@ -518,11 +518,14 @@ static void load_rrd_dir(const char *hostname, const char *rrdpath)
 	closedir(dir);
 }
 
-int count_rrd_files_for_graph(char *hostname, char *graphname)
+int count_rrd_files_for_graph(char *hostname, char *graphname, char *svcfilter)
 {
 	char rrdpath[PATH_MAX];
+	char gname[PATH_MAX];
+	char *primary, *fallback = NULL;
 	rrdgraphsection_t *sect;
 	char *fnpattern, *exfnpattern, *defrrd;
+	char *singlefilter = svcfilter;
 	int rrd_count = 0;
 	int i;
 
@@ -537,7 +540,33 @@ int count_rrd_files_for_graph(char *hostname, char *graphname)
 	load_graphs_cfg();
 	load_rrd_dir(hostname, rrdpath);
 
-	sect = find_graph_section(graphname);
+	/*
+	 * Resolve the section name the same way showgraph.c does: a graph name like
+	 * "tcp.http" is drawn by the "[http]" section (the part after the first
+	 * '.'/':'), falling back to "[tcp]" (the part before). A plain name like
+	 * "disk" or a custom "smart-temp" is looked up verbatim. Without this split
+	 * the trends page would silently drop dotted multi-graphs such as tcp.http.
+	 */
+	strncpy(gname, graphname, sizeof(gname)-1); gname[sizeof(gname)-1] = '\0';
+	{
+		char *delim = gname + strcspn(gname, ":.");
+		if (*delim) { *delim = '\0'; fallback = gname; primary = delim + 1; }
+		else        { primary = gname; }
+	}
+
+	/*
+	 * Primary section wins. If it does not exist, fall back to the
+	 * before-delimiter section the way showgraph.c uses gdefuser. When that
+	 * happens, showgraph also filters the bundle to the after-delimiter service.
+	 */
+	sect = find_graph_section(primary);
+	if (fallback && !sect) {
+		rrdgraphsection_t *fb = find_graph_section(fallback);
+		if (fb) {
+			sect = fb;
+			if (!singlefilter) singlefilter = primary;
+		}
+	}
 
 	fnpattern   = sect ? sect->fnpattern   : NULL;
 	exfnpattern = sect ? sect->exfnpattern : NULL;
@@ -554,6 +583,14 @@ int count_rrd_files_for_graph(char *hostname, char *graphname)
 		}
 		else {
 			for (i = 0; i < rrddir_count; i++) {
+				/*
+				 * svcfilter mirrors showgraph.c's "wantsingle" filter: a
+				 * bundle section (e.g. [tcp]) matches every tcp.*.rrd, but when
+				 * we render one service of the bundle (tcp:smtp) showgraph keeps
+				 * only files whose name contains the service. Count the same set
+				 * so rrdcount is not inflated to the whole bundle.
+				 */
+				if (singlefilter && !strstr(rrddir_files[i], singlefilter)) continue;
 				if (matchregex(rrddir_files[i], pat) &&
 				    !(expat && matchregex(rrddir_files[i], expat))) {
 					rrd_count++;

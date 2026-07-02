@@ -268,7 +268,7 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 		int written;
 
 		/* Use count_rrd_files_for_graph to check if this graph has matching RRD files */
-		rrd_count = count_rrd_files_for_graph(hostname, graph->xymonrrdname);
+		rrd_count = count_rrd_files_for_graph(hostname, graph->xymonrrdname, NULL);
 
 		if (rrd_count > 0) {
 			graph_t mygraph;
@@ -327,4 +327,3 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 
 	return allrrdlinks;
 }
-

@@ -54,7 +54,7 @@ extern char *xymon_graph_data(char *hostname, char *dispname, char *service, int
 		hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,
 		time_t starttime, time_t endtime);
 extern rrdtpldata_t *setup_template(char *params[]);
-extern int count_rrd_files_for_graph(char *hostname, char *graphname);
+extern int count_rrd_files_for_graph(char *hostname, char *graphname, char *svcfilter);
 extern void rrd_setup(void);
 
 #endif

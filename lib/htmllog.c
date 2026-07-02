@@ -451,7 +451,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			fprintf(output, "<a name=\"begingraph\">&nbsp;</a>\n");
 			while (graphsptr != NULL) {
 				/* Count RRD files for this graph */
-				int rrd_count = count_rrd_files_for_graph(hostname, graphsptr);
+				int rrd_count = count_rrd_files_for_graph(hostname, graphsptr, NULL);
 
 				// Only generate graph if matching RRD files were found
 				if (rrd_count > 0) {
@@ -472,8 +472,31 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			xfree(graphscopy);
 		}
 		else if (rrd && graph) {
-			/* Count RRD files for auto-detected graph */
-			int rrd_count = count_rrd_files_for_graph(hostname, service);
+			/*
+			 * Count RRD files for the auto-detected graph. Try the visible
+			 * service name first - this covers services with their own
+			 * graphs.cfg section (e.g. http -> [http]). If nothing matches,
+			 * fall back to the TEST2RRD-resolved RRD name, since defaults like
+			 * cpu=la, time=ntpstat and procs=processes store under a different
+			 * name than the column (cpu -> la.rrd, not cpu.rrd).
+			 */
+			int rrd_count = count_rrd_files_for_graph(hostname, service, NULL);
+			if ((rrd_count == 0) && rrd->xymonrrdname &&
+			    (strcmp(rrd->xymonrrdname, service) != 0)) {
+				/*
+				 * The RRD name differs from the service. For the bundle types
+				 * (tcp/ncv/devmon) xymon_graph_data renders a single service of
+				 * a multi-file section (tcp:smtp), so count only the RRDs for
+				 * THIS service - matching showgraph's filter - instead of the
+				 * whole bundle. Other mappings (cpu->la, procs->processes) count
+				 * the resolved name as-is.
+				 */
+				int isbundle = ((strcmp(rrd->xymonrrdname, "tcp") == 0) ||
+						(strcmp(rrd->xymonrrdname, "ncv") == 0) ||
+						(strcmp(rrd->xymonrrdname, "devmon") == 0));
+				rrd_count = count_rrd_files_for_graph(hostname, rrd->xymonrrdname,
+								      isbundle ? service : NULL);
+			}
 
 			if (rrd_count > 0) {
 				fprintf(output, "<!-- rrdcount=%d -->\n", rrd_count);
@@ -485,7 +508,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			// Handle case where RRD exists but no graph definition
 			errprintf("Service %s has RRD data but no graph definition\n", service);
 		}
-		
+
 		xfree(graphs);
 	}
 
