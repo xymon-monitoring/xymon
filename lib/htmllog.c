@@ -509,17 +509,17 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			snprintf(graphs, graphs_buflen, "GRAPHS_%s", service);
 			graphsenv=getenv(graphs);
 			if (graphsenv) {
+				/* strtok on a copy - the getenv() result is the live environment */
+				char *graphscopy = strdup(graphsenv);
+
 				fprintf(output, "<!-- GRAPHS_%s: %s -->\n", service, graphsenv);
-				/* check for strtokens */
-				graphsptr = strtok(graphsenv,",");
+				graphsptr = strtok(graphscopy,",");
 				while (graphsptr != NULL) {
-					// fprintf(output, "<!-- found: %s -->\n", graphsptr);
 					graph->xymonrrdname = strdup(graphsptr);
 					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
-					// next token
 					graphsptr = strtok(NULL,",");
 				}
-
+				xfree(graphscopy);
 			}
 			else {
 				fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
