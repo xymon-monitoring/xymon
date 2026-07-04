@@ -210,7 +210,7 @@ void trim_files(time_t cutoff)
 			FILE *fd;
 			long pid = -1;
 
-			sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
+			sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONRUNDIR"));
 			fd = fopen(pidfn, "r");
 			if (fd) {
 				char l[100];

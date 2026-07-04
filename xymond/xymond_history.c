@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 	/* Don't save the error buffer */
 	save_errbuf = 0;
 
-	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
+	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONRUNDIR"));
 	if (xgetenv("XYMONALLHISTLOG")) save_allevents = (strcmp(xgetenv("XYMONALLHISTLOG"), "TRUE") == 0);
 	if (xgetenv("XYMONHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("XYMONHOSTHISTLOG"), "TRUE") == 0);
 	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strncmp(xgetenv("SAVESTATUSLOG"), "FALSE", 5) != 0);
