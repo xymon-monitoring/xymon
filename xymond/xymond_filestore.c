@@ -57,7 +57,12 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 	}
 
 	logfd = fopen(tmpfn, mode);
-	fwrite(msg, strlen(msg), 1, logfd);
+	if (!logfd) {
+		errprintf("Could not open '%s' (for %s), mode %s: %s\n", tmpfn, fn, mode, strerror(errno));
+		MEMUNDEFINE(tmpfn);
+		return;
+	}
+	if (strlen(msg) && (fwrite(msg, strlen(msg), 1, logfd) != 1)) errprintf("Write to '%s' (for %s) failed: %s\n", tmpfn, fn, strerror(errno));
 	if (sender) fprintf(logfd, "\n\nMessage received from %s\n", sender);
 	if (timesincechange >= 0) {
 		char timestr[100];
@@ -356,7 +361,13 @@ int main(int argc, char *argv[])
 			/* @@notes|timestamp|sender|hostname */
 			hostname = metadata[3];
 			statusdata = msg_data(statusdata, 0); if (*statusdata == '\n') statusdata++;
-			sprintf(logfn, "%s/%s", basename(filedir), hostname);
+			/*
+			 * xymond does not validate the ID on "notes" messages, so
+			 * never use it as a raw path component. basename() strips
+			 * any directory part; filedir (not its basename) is the
+			 * configured absolute destination.
+			 */
+			snprintf(logfn, sizeof(logfn), "%s/%s", filedir, basename(hostname));
 			expiretime = 0;
 			update_file(logfn, "w", statusdata, expiretime, NULL, -1, seq);
 		}
