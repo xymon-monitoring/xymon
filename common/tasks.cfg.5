@@ -129,15 +129,23 @@ to this file. If this option is not present, then the output
 goes to the same location as the xymonlaunch output.
 
 The \fBPIDFILE\fR setting defines a pidfile for the task.
-xymonlaunch will start the task and write the pid to this file. 
+xymonlaunch will start the task and write the pid to this file.
+It removes the file when the task exits, when the task leaves the
+configuration or its PIDFILE changes, and when xymonlaunch stops.
+xymonlaunch expands the path itself as well as the task does, so it
+must read the same settings: start it with --env naming the file the
+tasks load with ENVFILE.
 
-The \fBSENDHUP\fR option tells xymonlaunch to forward a HUP 
+The \fBSENDHUP\fR option tells xymonlaunch to forward a HUP
 to the task when it receives one (typically due to being asked
 to rotate log files by the system, but potentially for any
 reason). If you're using the --locator functionality and have
-daemons running directly from tasks.cfg that are listening to 
+daemons running directly from tasks.cfg that are listening to
 channels on other systems, this should be enabled if you want
 them to rotate logs by local command.
+A task started with LOGFILE finds that file's name in
+$XYMONLAUNCH_LOGFILENAME. SENDHUP is of use only for a program that
+reopens that file on SIGHUP; xymond, xymonproxy and xymonfetch do.
 
 .SH "SEE ALSO"
 xymonlaunch(8), xymond(8), crontab(5), xymon(7)
