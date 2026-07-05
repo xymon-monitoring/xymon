@@ -36,7 +36,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <h1 class="Sh" id="FILE_FORMAT"><a class="permalink" href="#FILE_FORMAT">FILE
   FORMAT</a></h1>
 <p class="Pp">A task is defined by a <b>key</b>, a <b>command</b>, and
-    optionally also <b>interval</b>, <b>environment</b>, and <b>logfile</b>.</p>
+    optionally also <b>interval</b>, <b>environment</b>, <b>logfile</b>, and
+    <b>pidfile</b>.</p>
 <p class="Pp">Blank lines and lines starting with a hash mark (#) are treated as
     comments and ignored. Long lines can be broken up by putting a backslash at
     the end of the line and continuing the entry on the next line.</p>
@@ -54,7 +55,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
           INTERVAL 5m
           ONHOST localhost
           MAXTIME 10m
-          LOGFILE /var/log/xymon/updateweb.log</pre>
+          LOGFILE /var/log/xymon/updateweb.log
+          PIDFILE /var/log/xymon/updateweb.pid
+          SENDHUP</pre>
 <p class="Pp"></p>
 <pre>    [monthlyreport]
           ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
@@ -121,6 +124,14 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     xymonlaunch will start the task with stdout and stderr redirected to this
     file. If this option is not present, then the output goes to the same
     location as the xymonlaunch output.</p>
+<p class="Pp">The <b>PIDFILE</b> setting defines a pidfile for the task.
+    xymonlaunch will start the task and write the pid to this file.</p>
+<p class="Pp">The <b>SENDHUP</b> option tells xymonlaunch to forward a HUP to
+    the task when it receives one (typically due to being asked to rotate log
+    files by the system, but potentially for any reason). If you're using the
+    --locator functionality and have daemons running directly from tasks.cfg
+    that are listening to channels on other systems, this should be enabled if
+    you want them to rotate logs by local command.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
