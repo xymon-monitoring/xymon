@@ -401,6 +401,25 @@ void shutdownconnection(xymon_peer_t *peer)
 }
 
 
+/*
+ * Called twice around the loop, and both matter: the SIGHUP interrupts the
+ * blocking wait, whose EINTR path continues straight back to it, so a check
+ * placed only after the wait never runs on an idle channel. A @@logrotate
+ * message arrives inside the loop instead, and is handled where it lands.
+ */
+static void do_logswitch(void)
+{
+	if (!dologswitch) return;
+
+	logprintf("xymond_channel: reopening logfiles\n");
+	if (logfn) {
+		reopen_file(logfn, "a", stdout);
+		reopen_file(logfn, "a", stderr);
+		logprintf("xymond_channel: reopened logfiles\n");
+	}
+	dologswitch = 0;
+}
+
 void sig_handler(int signum)
 {
 	switch (signum) {
@@ -624,6 +643,8 @@ int main(int argc, char *argv[])
 			hupchildren = 0;
 		}
 
+		do_logswitch();
+
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = ((pendingcount > 0) ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
 
@@ -837,15 +858,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-		if (dologswitch) {
-			logprintf("xymond_channel: reopening logfiles\n");
-			if (logfn) {
-				reopen_file(logfn, "a", stdout);
-				reopen_file(logfn, "a", stderr);
-				logprintf("xymond_channel: reopened logfiles\n");
-			}
-			dologswitch = 0;
-		}
+		do_logswitch();
 	}
 
 	/* Detach from channels */
