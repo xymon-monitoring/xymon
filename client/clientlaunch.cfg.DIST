@@ -26,3 +26,6 @@
 	LOGFILE $XYMONCLIENTLOGS/xymonclient.log
 	INTERVAL 5m
 
+
+# Local additions: any file dropped into the directory below is included
+optional directory @XYMONHOME@/etc/clientlaunch.d
