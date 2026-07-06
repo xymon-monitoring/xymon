@@ -439,7 +439,8 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 		        Note: there is no shell equivalent for the "directory" directive. */
 		     (strncmp(bufpastwhitespace, "source ", 7) == 0) || (strncmp(bufpastwhitespace, "source\t", 7) == 0) ||
 		     (strncmp(bufpastwhitespace, ". ", 2) == 0) || (strncmp(bufpastwhitespace, ".\t", 2) == 0) ||
-		     (extraincl && (strncmp(bufpastwhitespace, extraincl, strlen(extraincl)) == 0)) ) {
+		     (extraincl && (strncmp(bufpastwhitespace, extraincl, strlen(extraincl)) == 0) &&
+		      ((*(bufpastwhitespace+strlen(extraincl)) == ' ') || (*(bufpastwhitespace+strlen(extraincl)) == '\t'))) ) {
 			char *newfn, *eol, eolchar = '\0';
 
 			eol = bufpastwhitespace + strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
