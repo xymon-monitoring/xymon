@@ -300,7 +300,7 @@ void load_services(void)
 	char *netsvcs;
 	char *p;
 
-	netsvcs = init_tcp_services();
+	netsvcs = strdup(init_tcp_services());
 
 	/* Keep the services db open. Don't close since we use it later in 
 	 * SSL handshake checking and URL parsing...
