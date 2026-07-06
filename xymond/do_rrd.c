@@ -45,6 +45,7 @@ int no_rrd = 0;                /* Write to rrd by default */
 
 static int  processorfd = 0;
 static FILE *processorstream = NULL;
+static int  processorflush = 0;   /* fflush the external processor after every write? (RRD_EXTPROC_DOFLUSH) */
 
 static char *exthandler = NULL;
 static char **extids = NULL;
@@ -105,12 +106,18 @@ void setup_extprocessor(char *cmd)
 {
 
 	int n;
+	size_t processorbufsz;
 	int pfd[2];
 	pid_t childpid;
 
 	if (!cmd) return;
 
 	processorfd = 0;
+	/* Default: rely on the stdio buffer (flushed when it fills and on teardown),
+	   which cuts a write syscall per RRD update. Set RRD_EXTPROC_DOFLUSH to flush
+	   after every write instead; RRD_EXTPROC_BUFSIZ tunes the buffer size. */
+	processorflush = (getenv("RRD_EXTPROC_DOFLUSH") != NULL);
+	processorbufsz = getenv("RRD_EXTPROC_BUFSIZ") ? atol(getenv("RRD_EXTPROC_BUFSIZ")) : BUFSIZ;
 
 	n = pipe(pfd);
 	if (n == -1) {
@@ -141,6 +148,12 @@ void setup_extprocessor(char *cmd)
 			close(pfd[0]);
 			processorfd = pfd[1];
 			processorstream = fdopen(processorfd, "w");
+			if (processorstream) {
+				/* NB: arg order matches the format (n, cmd, size) - the
+				   original had cmd/n swapped, crashing on setvbuf failure. */
+				n = setvbuf(processorstream, (char *)NULL, _IOFBF, processorbufsz);
+				if (n) errprintf("setvbuf() returned %d on processor '%s' for %lu bytes: %s\n", n, cmd, (unsigned long)processorbufsz, strerror(errno));
+			}
 			errprintf("External processor '%s' started\n", cmd);
 		}
 	}
@@ -460,7 +473,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		n = fprintf(processorstream, "%s %s %s", ((rrdtpldata_t *)template)->template, rrdvalues, hostname);
 		for (i=0; ((n >= 0) && fnparams[i]); i++) n = fprintf(processorstream, " %s", fnparams[i]);
 		if (n >= 0) n = fprintf(processorstream, "\n");
-		if (n >= 0) fflush(processorstream);
+		if (processorflush && (n >= 0)) fflush(processorstream);
 
 		if (n == -1) {
 			errprintf("Ext-processor write failed: %s\n", strerror(errno));
