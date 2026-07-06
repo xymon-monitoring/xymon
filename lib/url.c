@@ -223,7 +223,7 @@ static void load_netrc(void)
 
 					item->host = host;
 					item->auth = (char *) malloc(login_len + 1);
-					snprintf(item->auth, login_len, "%s:%s", login, password);
+					snprintf(item->auth, login_len + 1, "%s:%s", login, password);
 					item->next = loginhead;
 					loginhead = item;
 					host = login = password = NULL;
