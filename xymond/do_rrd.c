@@ -150,7 +150,12 @@ void shutdown_extprocessor(void)
 {
 	if (!processorfd) return;
 
-	close(processorfd);
+	/* Close via the stdio stream so any buffered data is flushed to the
+	   external processor and the FILE is freed. A bare close() on the fd
+	   would leak the FILE and, if the stream is buffered, silently discard
+	   un-flushed data. Fall back to close() if fdopen() had failed. */
+	if (processorstream) fclose(processorstream);
+	else close(processorfd);
 	processorfd = 0;
 	processorstream = NULL;
 
