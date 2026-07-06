@@ -85,7 +85,7 @@ static void rrd_setup(void)
 	rrd_destroy();
 
 	/* Get the tcp services, and count how many there are */
-	services = init_tcp_services();
+	services = strdup(init_tcp_services());
 	SBUF_MALLOC(tcptests, strlen(services)+1);
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 	#pragma GCC diagnostic push
