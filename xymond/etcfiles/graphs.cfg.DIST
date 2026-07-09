@@ -2137,3 +2137,6 @@
 
 ########### end of ifmib graphs ###########
 
+
+# Local additions: any file dropped into the directory below is included
+optional directory @XYMONHOME@/etc/graphs.d

@@ -12,3 +12,6 @@
 # See the combo.cfg(5) man-page for details on how you can
 # define tests.
 
+
+# Local additions: any file dropped into the directory below is included
+optional directory @XYMONHOME@/etc/combo.d

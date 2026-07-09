@@ -116,3 +116,6 @@
 #    DOWNSECS      - Number of seconds the service has been down.
 #    DOWNSECSMSG   - When recovered, holds the text "Event duration : N" where
 #                    N is the DOWNSECS value.
+
+# Local additions: any file dropped into the directory below is included
+optional directory @XYMONHOME@/etc/alerts.d
