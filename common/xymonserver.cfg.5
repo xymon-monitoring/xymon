@@ -347,6 +347,24 @@ becomes a formatting string for the documentation URL. E.g. for the host
 Default: Not set, so host documentation will be retrieved from the
 XYMONNOTES directory.
 
+.IP HOSTTYPEURL
+Format string used to build a link for the host-type part of a
+.I hosts.cfg(5)
+"DESCR:Hosttype:Description" tag, shown on the host's info page. If set,
+this string becomes a formatting string for the link URL, e.g.
+HOSTTYPEURL="https://wiki.example.com/systems/%s" will turn a host-type of
+"linux" into a link to "https://wiki.example.com/systems/linux".
+Default: Not set, so the host-type is shown as plain text.
+
+.IP HOSTDESCURL
+Format string used to build a link for the description part of a
+.I hosts.cfg(5)
+"DESCR:Hosttype:Description" tag, shown on the host's info page. If set,
+this string becomes a formatting string for the link URL, e.g.
+HOSTDESCURL="https://cmdb.example.com/ci/%s" will turn a description of
+"CIID1234" into a link to "https://cmdb.example.com/ci/CIID1234".
+Default: Not set, so the description is shown as plain text.
+
 
 .SH SETTINGS FOR SENDING MESSAGES TO XYMON
 .IP XYMSRV

@@ -1028,17 +1028,37 @@ char *generate_info(char *hostname, char *critconfigfn)
 
 	val = xmh_item(hostwalk, XMH_DESCRIPTION);
 	if (val) {
-		char *delim;
+		char *delim, *typeurl, *descrurl;
+		char linkurl[PATH_MAX];
+
+		typeurl = xgetenv("HOSTTYPEURL"); if (typeurl && !*typeurl) typeurl = NULL;
+		descrurl = xgetenv("HOSTDESCURL"); if (descrurl && !*descrurl) descrurl = NULL;
 
 		delim = strchr(val, ':'); if (delim) *delim = '\0';
 		addtobuffer(infobuf, "<tr><th align=left>Host type:</th><td align=left>");
-		addtobuffer(infobuf, val);
+		if (typeurl) {
+			snprintf(linkurl, sizeof(linkurl), typeurl, urlencode(val));
+			addtobuffer(infobuf, "<a href=\"");
+			addtobuffer(infobuf, linkurl);
+			addtobuffer(infobuf, "\">");
+			addtobuffer(infobuf, val);
+			addtobuffer(infobuf, "</a>");
+		}
+		else addtobuffer(infobuf, val);
 		addtobuffer(infobuf, "</td></tr>\n");
 		if (delim) { 
 			*delim = ':'; 
 			delim++;
 			addtobuffer(infobuf, "<tr><th align=left>Description:</th><td align=left>");
-			addtobuffer(infobuf, delim);
+			if (descrurl) {
+				snprintf(linkurl, sizeof(linkurl), descrurl, urlencode(delim));
+				addtobuffer(infobuf, "<a href=\"");
+				addtobuffer(infobuf, linkurl);
+				addtobuffer(infobuf, "\">");
+				addtobuffer(infobuf, delim);
+				addtobuffer(infobuf, "</a>");
+			}
+			else addtobuffer(infobuf, delim);
 			addtobuffer(infobuf, "</td></tr>\n");
 		}
 		addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
