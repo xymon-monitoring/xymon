@@ -3085,9 +3085,11 @@ strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagep
 	rrdtplnames_t *tpl;
 	double val;
 	void *hinfo;
+	strbuffer_t *seen;
 
 	if (!resbuf) resbuf = newstrbuffer(0);
 	clearstrbuffer(resbuf);
+	seen = newstrbuffer(0);
 
 	hinfo = hostinfo(hostname);
 	rule = getrule(hostname, pagepaths, classname, hinfo, C_RRDDS);
@@ -3122,6 +3124,20 @@ strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagep
 
 		if (vallist[tpl->idx] == NULL) goto nextrule;
 		val = atof(vallist[tpl->idx]);
+
+		/*
+		 * First match wins per (column, dataset, severity). Once a rule of a
+		 * given colour applies to this target, later rules for the same target
+		 * and colour are shadowed - even if this rule's threshold does not
+		 * trigger - matching the top-to-bottom first-match semantics documented
+		 * for analysis.cfg (put the specific settings first, the generic ones
+		 * last). Different colours are kept, so a yellow and a red threshold on
+		 * one dataset both still apply. Issue #32.
+		 */
+		snprintf(msgline, sizeof(msgline), "\001%s\002%s\002%s\001",
+			 rule->rule.rrdds.column, rule->rule.rrdds.rrdds, colorname(rule->rule.rrdds.color));
+		if (strstr(STRBUF(seen), msgline)) goto nextrule;
+		addtobuffer(seen, msgline);
 
 		/* Do the checks */
 		if (rule->flags & RRDDSCHK_INTVL) {
@@ -3214,6 +3230,7 @@ nextrule:
 
 	if (valscopy) xfree(valscopy);
 	if (vallist) xfree(vallist);
+	freestrbuffer(seen);
 
 	return (STRBUFLEN(resbuf) > 0) ? resbuf : NULL;
 }
