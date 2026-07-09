@@ -2639,6 +2639,14 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		break;
 	}
 
+	/*
+	 * Persist this mutation promptly: the main loop checkpoints only when
+	 * "now > nextcheckpoint", so forcing it to 0 triggers a checkpoint next
+	 * cycle instead of waiting up to checkpointinterval - closing the window
+	 * where a restart would reload a stale checkpoint and resurrect the drop.
+	 */
+	nextcheckpoint = 0;
+
 done:
 	MEMUNDEFINE(hostip);
 
