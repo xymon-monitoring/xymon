@@ -123,9 +123,17 @@ with \fBdelayred=disk:10,cpu:30\fR, a red disk-status will not appear
 on the Xymon webpages until it has been red for at least 10 minutes.
 Note: Since most tests only execute once every 5 minutes, it will
 usually not make sense to set N to anything but a multiple of 5. The
-exception is network tests, since 
+exception is network tests, since
 .I xymonnet\-again.sh(1)
 will re-run failed network tests once a minute for up to 30 minutes.
+
+Note: while the change to red is deferred, the status is shown as
+yellow - it does not stay green - so alert rules matching a yellow
+status will still trigger. To keep the status unchanged during the
+delay, list the status column in both \fBdelayred\fR and
+\fBdelayyellow\fR. A status that has gone purple (no data) is an
+exception: the first report that arrives after the data gap takes
+effect immediately, without any delay.
 
 .IP delayyellow=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]
 Same as \fBdelayred\fR, but defers the change to a yellow status.
