@@ -19,6 +19,11 @@
 # pattern of files (see e.g. "[memory]" how this is used). "@COLOR@" picks
 # a new color for each graph automatically.
 #
+# For a bundle viewed one service at a time (e.g. "tcp:conn"), FNPATTERN
+# capture group 1 must be exactly the service component: showgraph uses it
+# both as the legend (@RRDPARAM@) and to select the single service - see
+# "[tcp]", where "^tcp.(.+).rrd" captures "conn" from tcp.conn.rrd.
+#
 # The "foo-multi" graph definitions are used by the "Metrics report"
 # utility. The have an FNPATTERN definition, but in this case you can NOT
 # use a regular expression pattern. The FNPATTERN definition for multi-
