@@ -96,8 +96,8 @@ static void hostsvc_setup(void)
 static void historybutton(char *cgibinurl, char *hostname, char *service, char *ip, char *displayname, char *btntxt, FILE *output) 
 {
 	SBUF_DEFINE(tmp1);
-	SBUF_DEFINE(tmp2)
-		
+	SBUF_DEFINE(tmp2);
+
 	SBUF_MALLOC(tmp2, strlen(service)+3);
 
 	getenv_default("NONHISTS", "info,trends", NULL);
