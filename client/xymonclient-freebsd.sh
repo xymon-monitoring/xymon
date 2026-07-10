@@ -25,7 +25,10 @@ echo "[df]"
 # Exclude FS types via df "-t no<csv>": a default set, minus INCLUDE_TYPES, plus
 # EXCLUDE_TYPES. Remote (nfs) mounts are hidden by df -l (DF_LOCAL_ONLY=yes), not
 # by type, so DF_LOCAL_ONLY=no can surface them. The inode report also drops zfs
-# (no usable inode counts).
+# and tmpfs, whose inode counts carry no signal: zfs has no inode limit at all,
+# and FreeBSD tmpfs reports a constant itotal of 2^31-1 regardless of memory.
+# tmpfs/mfs are deliberately NOT excluded from the disk report: RAM-backed
+# capacity is real and fills up, matching the Linux client's default.
 : "${XYMONCLIENT_FS_INCLUDE_TYPES=}"
 : "${XYMONCLIENT_FS_EXCLUDE_TYPES=}"
 fs_excl_opt() {
@@ -86,7 +89,9 @@ fi
 echo "[inode]"
 # Same failure guard. Drop filesystems with no inode limit (df prints "-" in the
 # %iused column, field 8): they cannot run out of inodes, so the row is noise.
-if emit_df inode Inode -i zfs; then
+# tmpfs is excluded by type instead: its itotal is the 2^31-1 sentinel (not "-"),
+# identical on a 4GB and a 128GB box, so the row-level guard cannot catch it.
+if emit_df inode Inode -i zfs tmpfs; then
 	printf '%s\n' "$_out" | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /

@@ -7,7 +7,9 @@
 # xymonclient-freebsd.sh (issue #170). FreeBSD df excludes by type with
 # "-t no<csv>"; the script builds that list from XYMONCLIENT_FS_{INCLUDE,
 # EXCLUDE}_TYPES, hides remote fs with df -l (XYMONCLIENT_FS_DF_LOCAL_ONLY),
-# and drops no-inode-limit rows ("-") from [inode].
+# drops no-inode-limit rows ("-") from [inode], and excludes zfs and tmpfs
+# from [inode] by type (zfs has no inode limit; FreeBSD tmpfs reports the
+# 2^31-1 sentinel as itotal, so the "-" row guard cannot catch it).
 #
 # Mock-tested on any host: extract the [df]..[mount] block, run it with a df
 # stub that records argv, and assert the constructed options. (Real FreeBSD df
@@ -67,6 +69,17 @@ assert_not_contains "nonfs" "$args" "nfs is hidden by df -l, not by the type lis
 inode_args=$(printf ' %s ' "$(tr '\n' ' ' < "$INODE_LOG")")
 assert_contains " -i " "$inode_args" "inode df uses -i"
 assert_contains "zfs" "$inode_args" "inode report excludes zfs by default"
+assert_contains "tmpfs" "$inode_args" \
+	"inode report excludes tmpfs (itotal is the 2^31-1 sentinel, not a limit)"
+assert_not_contains "tmpfs" "$args" \
+	"the disk report keeps tmpfs (RAM-backed capacity is real)"
+
+# The per-report excludes go through the INCLUDE filter, so an admin who wants
+# the tmpfs inode rows back has the documented escape hatch.
+args=$(XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs run)
+inode_args=$(printf ' %s ' "$(tr '\n' ' ' < "$INODE_LOG")")
+assert_not_contains "tmpfs" "$inode_args" \
+	"INCLUDE_TYPES=tmpfs un-excludes tmpfs from the inode report"
 
 # --- INCLUDE / EXCLUDE_TYPES ------------------------------------------------
 args=$(XYMONCLIENT_FS_INCLUDE_TYPES=nullfs run)
@@ -121,4 +134,4 @@ assert_contains "Inode report collection failed" "$out" \
 assert_not_contains "Filesystem" "$out" \
 	"failure marker carries no df header (server reads a header-less section as yellow)"
 
-pass "xymonclient-freebsd.sh FS filter: types, local-only, inode '-' drop, df-failure marker"
+pass "xymonclient-freebsd.sh FS filter: types, local-only, inode zfs/tmpfs+'-' drop, df-failure marker"
