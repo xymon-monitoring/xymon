@@ -88,6 +88,9 @@ else
 fi
 printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\n'
 printf '/dev/sda1 1000000 500000 500000 50%% /\n'
+printf 'zdata/photos 2000000 100000 1900000 5%% /zdata/photos\n'
+printf 'zdata/poudriere 2000000 100000 1900000 5%% /poudriere/data\n'
+printf 'zdata/poudriere2 2000000 100000 1900000 5%% /poudriere/jails\n'
 EOF
 chmod +x "$STUB/df"
 
@@ -326,3 +329,38 @@ assert_not_contains "dynfs" "$inode_section" \
 	"inode report drops a no-inode-limit filesystem (IUse% '-')"
 assert_contains "dynfs" "$inode_out" \
 	"the same filesystem still appears in [df] (it has a real disk %)"
+
+# --- XYMONCLIENT_FS_EXCLUDE_MOUNTS: drop mounts by glob pattern -------------
+# Output-level cases (the type filters above assert on df argv; this filter
+# runs on df's OUTPUT): the stub df emits /, /zdata/photos, /poudriere/data
+# and /poudriere/jails.
+
+run_df_output() {
+	: > "$DF_LOG"
+	: > "$INODE_LOG"
+	: > "$STDERR_LOG"
+	(
+		cd "$TMP"
+		/bin/sh "$SNIPPET" 2>"$STDERR_LOG"
+	)
+}
+
+out=$(run_df_output)
+assert_contains "/poudriere/data" "$out" "default: no mounts are excluded"
+
+out=$(XYMONCLIENT_FS_EXCLUDE_MOUNTS='/poudriere/*' run_df_output)
+assert_contains     "Mounted on"       "$out" "header row survives the mount filter"
+assert_contains     "/dev/sda1"        "$out" "the root filesystem is kept"
+assert_contains     "/zdata/photos"    "$out" "non-matching mounts are kept"
+assert_not_contains "/poudriere/data"  "$out" "glob excludes a matching mount"
+assert_not_contains "/poudriere/jails" "$out" "glob excludes every matching mount"
+
+out=$(XYMONCLIENT_FS_EXCLUDE_MOUNTS='/poudriere/jails /zdata/*' run_df_output)
+assert_contains     "/poudriere/data" "$out" "an exact pattern excludes only its own mount"
+assert_not_contains "/zdata/photos"   "$out" "every listed pattern applies"
+
+# A bare '*' must act as a match-everything pattern (noglob: it must not
+# expand against files in the working directory) and never eat the header.
+out=$(XYMONCLIENT_FS_EXCLUDE_MOUNTS='*' run_df_output)
+assert_contains     "Mounted on" "$out" "header row survives even a '*' pattern"
+assert_not_contains "/dev/sda1"  "$out" "'*' drops every mount row"

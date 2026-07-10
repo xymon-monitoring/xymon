@@ -81,6 +81,17 @@ is marked failed (yellow) rather than left empty, so a failed filesystem
 probe is not silently reported green. This does not cover the hang
 above: a wedged df never exits.
 
+.IP XYMONCLIENT_FS_EXCLUDE_MOUNTS
+Whitespace-separated shell glob patterns matched against the mount
+point; matching filesystems are dropped from the disk and inode reports
+entirely \(em no status line, no trending, no alerts. Use for high-churn
+mounts that should not be monitored at all, e.g.
+"/poudriere/* /var/lib/docker/*". This complements the server-side
+NORRDDISKS/RRDDISKS settings in
+.I xymonserver.cfg(5),
+which keep the filesystem visible on the status page and only skip
+trending it. Default: empty (no mounts excluded).
+
 .IP XYMON
 Full path to the 
 .I xymon(1)

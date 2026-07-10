@@ -57,6 +57,38 @@ case "$DFLOCALONLY" in
 	*) echo "xymonclient-freebsd: invalid XYMONCLIENT_FS_DF_LOCAL_ONLY '$DFLOCALONLY', using yes" >&2; DFLOCALONLY=yes ;;
 esac
 DFLOCAL=""; [ "$DFLOCALONLY" = yes ] && DFLOCAL="-l"
+# XYMONCLIENT_FS_EXCLUDE_MOUNTS: shell globs matched against the mount point
+# (last df column); matching filesystems are dropped from the disk and inode
+# reports entirely. Default: empty. (NORRDDISKS on the server keeps them
+# visible and only skips trending.)
+: "${XYMONCLIENT_FS_EXCLUDE_MOUNTS=}"
+# Header row always kept; shell builtins only; noglob as in fs_excl_opt.
+fs_filter_mounts() {
+	if [ -z "$XYMONCLIENT_FS_EXCLUDE_MOUNTS" ]; then
+		while IFS= read -r _fmline; do
+			printf '%s\n' "$_fmline"
+		done
+		return
+	fi
+	case $- in *f*) _fmrestoreglob=no ;; *) _fmrestoreglob=yes; set -f ;; esac
+	_fmheader=yes
+	while IFS= read -r _fmline; do
+		if [ "$_fmheader" = yes ]; then
+			_fmheader=no
+			printf '%s\n' "$_fmline"
+			continue
+		fi
+		_fmmnt=${_fmline##*[ 	]}
+		_fmkeep=yes
+		for _fmpat in $XYMONCLIENT_FS_EXCLUDE_MOUNTS; do
+			case "$_fmmnt" in
+				$_fmpat) _fmkeep=no; break ;;
+			esac
+		done
+		[ "$_fmkeep" = yes ] && printf '%s\n' "$_fmline"
+	done
+	[ "$_fmrestoreglob" = yes ] && set +f
+}
 # run_df FLAG [extra-excludes...]: df rows for one report behind the FS filter
 # and local-only flag. The seam where the remote-df sentinel will hook.
 run_df() {
@@ -84,7 +116,7 @@ if emit_df disk Disk -H; then
 	printf '%s\n' "$_out" | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
-}'
+}' | fs_filter_mounts
 fi
 echo "[inode]"
 # Same failure guard. Drop filesystems with no inode limit (df prints "-" in the
@@ -97,7 +129,7 @@ N
 s/[ 	]*\n[ 	]*/ /
 }' | awk '
 NR<2{printf "%-20s %10s %10s %10s %10s %s\n", $1, "itotal", $6, $7, $8, $9}
-(NR>=2 && $8 != "-"){printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}'
+(NR>=2 && $8 != "-"){printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}' | fs_filter_mounts
 fi
 echo "[mount]"
 mount

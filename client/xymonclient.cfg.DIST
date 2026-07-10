@@ -63,9 +63,15 @@ LOGFETCHOPTS=""
 #    not silently reported green. This does not cover the hang above: a
 #    wedged df never exits.
 #
+# XYMONCLIENT_FS_EXCLUDE_MOUNTS: shell glob patterns matched against the
+#    mount point; matching filesystems are dropped from the disk and inode
+#    reports entirely (high-churn mounts: poudriere, docker). NORRDDISKS on
+#    the server keeps them visible and only skips trending. Default: empty.
+#
 # XYMONCLIENT_FS_INCLUDE_TYPES="zfs virtiofs tmpfs"
 # XYMONCLIENT_FS_EXCLUDE_TYPES="iso9660 squashfs fuse.snapfuse"
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
+# XYMONCLIENT_FS_EXCLUDE_MOUNTS="/poudriere/* /var/lib/docker/*"
 
 
 # Local Mode (Only) Options

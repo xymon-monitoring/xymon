@@ -113,6 +113,43 @@ case "$DFLOCALONLY" in
 		DFLOCALONLY=yes
 		;;
 esac
+# XYMONCLIENT_FS_EXCLUDE_MOUNTS: shell globs matched against the mount point
+# (last df column); matching filesystems are dropped from the disk and inode
+# reports entirely. Default: empty. (NORRDDISKS on the server keeps them
+# visible and only skips trending.)
+: "${XYMONCLIENT_FS_EXCLUDE_MOUNTS=}"
+# Header row always kept; shell builtins only (no new external commands);
+# noglob so a '*' pattern stays a pattern.
+fs_filter_mounts()
+{
+	if [ -z "$XYMONCLIENT_FS_EXCLUDE_MOUNTS" ]; then
+		while IFS= read -r fmline; do
+			printf '%s\n' "$fmline"
+		done
+		return
+	fi
+	case $- in
+		*f*) FMRESTOREGLOB=no ;;
+		*) FMRESTOREGLOB=yes; set -f ;;
+	esac
+	fmheader=yes
+	while IFS= read -r fmline; do
+		if [ "$fmheader" = yes ]; then
+			fmheader=no
+			printf '%s\n' "$fmline"
+			continue
+		fi
+		fmmnt=${fmline##*[ 	]}
+		fmkeep=yes
+		for fmpat in $XYMONCLIENT_FS_EXCLUDE_MOUNTS; do
+			case "$fmmnt" in
+				$fmpat) fmkeep=no; break ;;
+			esac
+		done
+		[ "$fmkeep" = yes ] && printf '%s\n' "$fmline"
+	done
+	[ "$FMRESTOREGLOB" = yes ] && set +f
+}
 run_df()
 {
 	DFINODES="$1"
@@ -158,7 +195,8 @@ emit_df()
 N
 s/[ 	]*\n[ 	]*/ /
 }' -e "s&^rootfs&${ROOTFS}&" \
-	| awk -v ino="$1" 'NR == 1 || ino != "yes" || $5 != "-"'
+	| awk -v ino="$1" 'NR == 1 || ino != "yes" || $5 != "-"' \
+	| fs_filter_mounts
 }
 ROOTFS=`readlink -m /dev/root`
 emit_df no Disk

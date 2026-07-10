@@ -38,10 +38,14 @@ if [[ " \$* " =~ " -i " ]]; then
 	printf 'Filesystem Size Used Avail Capacity iused ifree %%iused Mounted on\n'
 	printf '/dev/ada0p2 100 50 50 50%% 1000 9000 10%% /\n'
 	printf 'tank 200 1 199 1%% 0 0 - /tank\n'
+	printf 'zdata/poudriere 200 1 199 1%% 5 95 5%% /poudriere/data\n'
 else
 	echo "\$*" >> "$DF_LOG"
 	printf 'Filesystem Size Used Avail Capacity Mounted on\n'
 	printf '/dev/ada0p2 100G 50G 50G 50%% /\n'
+	printf 'zdata/photos 200G 10G 190G 5%% /zdata/photos\n'
+	printf 'zdata/poudriere 200G 10G 190G 5%% /poudriere/data\n'
+	printf 'zdata/poudriere2 200G 10G 190G 5%% /poudriere/jails\n'
 fi
 EOF
 chmod +x "$STUB/df"
@@ -125,6 +129,29 @@ inode_section=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p')
 assert_not_contains "/tank" "$inode_section" \
 	"inode report drops the no-inode-limit filesystem (%iused '-')"
 
+# --- XYMONCLIENT_FS_EXCLUDE_MOUNTS: drop mounts by glob pattern --------------
+# Output-level cases (the type filters assert on df argv; this filter runs on
+# df's OUTPUT): the stub emits /, /zdata/photos, /poudriere/data and
+# /poudriere/jails in [df], and /, /tank, /poudriere/data in [inode].
+out=$( cd "$TMP"; /bin/sh "$SNIPPET" 2>/dev/null )
+assert_contains "/poudriere/data" "$out" "default: no mounts are excluded"
+
+out=$( cd "$TMP"; XYMONCLIENT_FS_EXCLUDE_MOUNTS='/poudriere/*' /bin/sh "$SNIPPET" 2>/dev/null )
+disk_section=$(printf '%s\n' "$out" | sed -n '1,/^\[inode\]/p')
+inode_section=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p')
+assert_contains     "Mounted on"        "$disk_section" "header row survives the mount filter"
+assert_contains     "/zdata/photos"     "$disk_section" "non-matching mounts are kept"
+assert_not_contains "/poudriere/data"   "$disk_section" "glob excludes a matching mount from [df]"
+assert_not_contains "/poudriere/jails"  "$disk_section" "glob excludes every matching mount"
+assert_not_contains "/poudriere/data"   "$inode_section" "glob excludes the mount from [inode] too"
+assert_contains     "/dev/ada0p2"       "$inode_section" "non-matching inode rows are kept"
+
+# A bare '*' must act as a match-everything pattern (noglob: it must not
+# expand against the decoy files in the working directory) and keep headers.
+out=$( cd "$TMP"; XYMONCLIENT_FS_EXCLUDE_MOUNTS='*' /bin/sh "$SNIPPET" 2>/dev/null )
+assert_contains     "Mounted on"  "$out" "header rows survive even a '*' pattern"
+assert_not_contains "/dev/ada0p2" "$out" "'*' drops every mount row"
+
 # --- false-green guard: df fails with no output -> marker, not empty section --
 out=$( cd "$TMP"; DF_FAIL=1 /bin/sh "$SNIPPET" 2>/dev/null )
 assert_contains "Disk report collection failed" "$out" \
@@ -134,4 +161,4 @@ assert_contains "Inode report collection failed" "$out" \
 assert_not_contains "Filesystem" "$out" \
 	"failure marker carries no df header (server reads a header-less section as yellow)"
 
-pass "xymonclient-freebsd.sh FS filter: types, local-only, inode zfs/tmpfs+'-' drop, df-failure marker"
+pass "xymonclient-freebsd.sh FS filter: types, mounts, local-only, inode zfs/tmpfs+'-' drop, df-failure marker"
