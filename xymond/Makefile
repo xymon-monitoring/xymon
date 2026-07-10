@@ -58,8 +58,10 @@ xymond_history: $(HISTORYOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
 xymond_alert: $(ALERTOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(ALERTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
+# -lm: do_net.c uses isfinite(), which glibc inlines as a compiler builtin but
+# the BSDs resolve to __isfinite in libm (issue #232). Harmless where unneeded.
 xymond_rrd: $(RRDOBJS) $(XYMONCOMMLIB)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(RRDLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(RRDLIBS) $(PCRELIBS) -lm
 
 xymond.o: xymond.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) -c -o $@ xymond.c
