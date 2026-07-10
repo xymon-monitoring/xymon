@@ -253,7 +253,18 @@ int main(int argc, char *argv[])
 
 	/* Setup the control socket that receives cache-flush commands */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
-	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
+	{
+		/* sun_path is tiny (~108 bytes); an unchecked sprintf of a deep XYMONTMP
+		 * overflows it and aborts the daemon at startup with no logged cause.
+		 * showgraph guards the sender side of this socket the same way. */
+		int n = snprintf(ctlsockaddr.sun_path, sizeof(ctlsockaddr.sun_path),
+				 "%s/rrdctl.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
+		if ((n < 0) || (n >= (int)sizeof(ctlsockaddr.sun_path))) {
+			errprintf("Cannot set up cache-control socket: XYMONTMP is too long for a socket path (max %d characters)\n",
+				  (int)(sizeof(ctlsockaddr.sun_path) - 1));
+			return 1;
+		}
+	}
 	unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
 	ctlsockaddr.sun_family = AF_UNIX;
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
