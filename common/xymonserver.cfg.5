@@ -14,6 +14,16 @@ syntax \fBNAME+=VALUE\fR. VALUE is then appended to the existing
 value of the NAME variable. If NAME has not been defined, then
 this acts as if it were a normal definition.
 
+Other files can be pulled in with \fBinclude FILENAME\fR. Because
+this file uses shell syntax and may also be sourced directly by
+shell scripts, the shell's own include directives \fBsource
+FILENAME\fR and \fB. FILENAME\fR are accepted as aliases for
+"include" \- the same reference is then followed both by a shell
+sourcing the file and by the Xymon tools reading it. Any of them
+can be prefixed with \fBoptional\fR to silence the error when the
+file does not exist \- but note a shell does not understand that
+prefix, so use it only in files read exclusively by Xymon.
+
 .SH ENVIRONMENT AREAS
 In some cases it may be useful to have different values for an environment
 variable, depending on where it is used. This is possible by defining
