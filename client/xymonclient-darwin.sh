@@ -54,6 +54,12 @@ echo "[mount]"
 mount
 echo "[meminfo]"
 vm_stat
+# The kernel's own memory-health verdict (1=normal, 2=warn, 4=critical)
+# drives a darwin-only "swap" status server-side. macOS swap capacity is
+# dynamic (the swapfile set grows on demand), so used/total percentages
+# carry no signal; vm.swapusage rides along as trend data only.
+sysctl kern.memorystatus_vm_pressure_level 2>/dev/null
+sysctl vm.swapusage 2>/dev/null
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
