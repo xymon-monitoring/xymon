@@ -130,6 +130,46 @@ void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os,
 					   memphystotal, memphysused,
 					   memphystotal, memactused,
 					   memswaptotal, memswapused);
+
+			/*
+			 * Darwin-only "swap" status, driven by the kernel's memory-pressure
+			 * verdict (kern.memorystatus_vm_pressure_level: 1=normal, 2=warn,
+			 * 4=critical) - the signal Apple provides because swap capacity is
+			 * dynamic and a used/total percentage would false-alarm on healthy
+			 * machines. The swap growth ceiling (container free space) is
+			 * already covered by the disk report. Body lines are NCV-formatted,
+			 * so graphing needs no new code. Use the split variant - one RRD per
+			 * metric, so mixed units graph separately and future metrics need no
+			 * DS surgery:
+			 * TEST2RRD+=",swap=ncv" SPLITNCV_swap="Pressure:GAUGE,SwapUsedMB:GAUGE"
+			 */
+			p = strstr(meminfostr, "kern.memorystatus_vm_pressure_level:");
+			if (p) {
+				long presslevel = -1;
+				int presscolor;
+				char *pressname;
+				char msgline[1024];
+
+				sscanf(p, "kern.memorystatus_vm_pressure_level: %ld", &presslevel);
+				if (presslevel == 1)      { presscolor = COL_GREEN;  pressname = "normal"; }
+				else if (presslevel == 2) { presscolor = COL_YELLOW; pressname = "warn"; }
+				else if (presslevel >= 4) { presscolor = COL_RED;    pressname = "critical"; }
+				else                      { presscolor = COL_YELLOW; pressname = "unknown"; }
+
+				init_status(presscolor);
+				snprintf(msgline, sizeof(msgline), "status %s.swap %s %s - Memory pressure %s\n",
+					 commafy(hostname), colorname(presscolor),
+					 (timestr ? timestr : "<no timestamp data>"), pressname);
+				addtostatus(msgline);
+				snprintf(msgline, sizeof(msgline), "\nPressure : %ld\n", presslevel);
+				addtostatus(msgline);
+				if (memswapused != -1) {
+					snprintf(msgline, sizeof(msgline), "SwapUsedMB : %ld\nSwapTotalMB : %ld\n", memswapused, memswaptotal);
+					addtostatus(msgline);
+				}
+				if (fromline && !localmode) addtostatus(fromline);
+				finish_status();
+			}
 		}
 	}
 
