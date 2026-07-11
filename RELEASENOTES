@@ -49,6 +49,12 @@ The AIX client now requires AIX 7.1 or later, and keeps df off remote mounts by
 default like the others -- AIX df spells that "-T local", which 6.1 and earlier
 lack.
 
+macOS hosts get a new "swap" column, coloured by the kernel's memory-pressure
+level: green when normal, yellow on warn or an unknown level, red when
+critical. It appears once both the client and the server are upgraded. An alert
+rule that matches every service will page on it; exclude swap in alerts.cfg if
+that is not wanted.
+
 The NetBSD client now reports inodes, sharing the filtering above. Set
 XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep reporting /dev/pts.
 
