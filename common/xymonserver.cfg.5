@@ -521,7 +521,19 @@ include a graph.
 
 .IP GRAPHS
 List of the RRD databases, that should be shown as a graph on
-the "trends" column.
+the "trends" column. Each entry is "name[::N]": N is the maximum
+number of RRD files drawn per graph image before the graph is
+split into multiple images (default: 5). E.g. "mrtg::1" draws one
+file per image. N governs the graph wherever it is rendered: on
+the "trends" page, on the test's own status page, and for
+GRAPHS_<column> entries. On status pages the split only happens
+for columns listed in the "\-\-multigraphs" option of
+.I svcstatus.cgi(1);
+a column not listed there shows all its curves in one image.
+Note: a "DISK filesystem IGNORE" rule in
+.I analysis.cfg(5)
+removes a filesystem from the status, the alerts and the graphs;
+NORRDDISKS below removes only the graph.
 
 .IP NORRDDISKS
 This is used to disable the tracking of certain filesystems. By default
