@@ -286,7 +286,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		return -1;
 	}
 
-	/* RRDEXCLUDE/RRDINCLUDE: generic per-test trending filter (issue #244) */
+	/* RRDEXCLUDE/RRDINCLUDE: generic per-RRD-file trending filter (issue #244) */
 	if (rrd_is_filtered(testname, rrdfn)) return 0;
 
 	MEMDEFINE(rrdvalues);
@@ -783,4 +783,3 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 
 	MEMUNDEFINE(rrdvalues);
 }
-

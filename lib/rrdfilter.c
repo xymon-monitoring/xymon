@@ -1,11 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* Generic RRDEXCLUDE/RRDINCLUDE trending filter (issue #244). One implementation,    */
-/* two consumers: xymond's RRD writer decides which files exist, and the      */
-/* graph-paging line counter in htmllog.c mirrors the same decision - shared  */
-/* code is what guarantees they can never disagree (the NORRDDISKS paging     */
-/* divergence of issue #234 is exactly what happens when they do).            */
+/* Generic per-RRD-file RRDEXCLUDE/RRDINCLUDE trending filter (issue #244).   */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -17,6 +13,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <limits.h>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -26,20 +23,24 @@ static char rcsid[] = "$Id$";
 #include "rrdfilter.h"
 
 /*
- * Generic trending filter (issue #244): RRDEXCLUDE and RRDINCLUDE hold
- * whitespace-separated "testname:regex" entries (whitespace, because the
- * instance names regexes must match are full of commas), matched against the RRD
- * filename with the ".rrd" suffix stripped - the instance name as it
- * appears in the host's RRD directory (e.g. "disk,poudriere,data3",
- * "iostat.da15"). A file matching a RRDEXCLUDE entry for its test is not
- * created or updated; when RRDINCLUDE has entries for a test, only matching
- * files are. The disk-family RRDDISKS/NORRDDISKS filters (do_disk.c,
- * matching raw mount points) are unchanged and evaluated first.
- * NOTE: for the disk family, prefer NORRDDISKS - the status-page graph
- * paging mirrors those patterns; RRDEXCLUDE does not feed that mirror (yet).
+ * RRDEXCLUDE and RRDINCLUDE hold whitespace-separated "scope:regex" entries.
+ * The regex is matched against the RRD filename with ".rrd" stripped, i.e. the
+ * file as it appears in the host's RRD directory. The scope matches either the
+ * incoming Xymon test/column name, the RRD filename prefix before '.' or ',',
+ * or "*" for all RRD files. Examples:
+ *
+ *   iostat:^iostat.da1[5-9]$
+ *   ifstat:^ifstat.docker
+ *   tcp:^tcp.http
+ *   *:,tmp,
+ *
+ * A file matching RRDEXCLUDE is not created or updated. When RRDINCLUDE has
+ * entries for a file's scope, only matching files are trended. Exclude wins.
+ * The disk-family RRDDISKS/NORRDDISKS filters are unchanged and run before
+ * this generic filter.
  */
 typedef struct rrdfilter_t {
-	char *testname;
+	char *scope;
 	pcre2_code *pattern;
 	struct rrdfilter_t *next;
 } rrdfilter_t;
@@ -68,7 +69,7 @@ static rrdfilter_t *parse_rrdfilter(char *envname)
 			pat = pcre2_compile((PCRE2_SPTR)ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (pat) {
 				newitem = (rrdfilter_t *)calloc(1, sizeof(rrdfilter_t));
-				newitem->testname = strdup(tok);
+				newitem->scope = strdup(tok);
 				newitem->pattern = pat;
 				newitem->next = head;
 				head = newitem;
@@ -79,7 +80,7 @@ static rrdfilter_t *parse_rrdfilter(char *envname)
 					  envname, tok, ptn, errmsg, errofs);
 			}
 		}
-		else errprintf("Ignoring malformed %s entry '%s' (want testname:regex)\n", envname, tok);
+		else errprintf("Ignoring malformed %s entry '%s' (want scope:regex)\n", envname, tok);
 		tok = strtok_r(NULL, " \t", &saveptr);
 	}
 	free(val);
@@ -97,13 +98,30 @@ static int rrdfiltermatch(rrdfilter_t *item, char *instance)
 	return (result >= 0);
 }
 
+static void rrd_scope(char *scope, size_t scopelen, char *instance)
+{
+	char *p;
+
+	snprintf(scope, scopelen, "%s", instance);
+	p = scope + strcspn(scope, ".,");
+	*p = '\0';
+}
+
+static int rrdfilterscope(rrdfilter_t *item, char *testname, char *rrdscope)
+{
+	if (strcmp(item->scope, "*") == 0) return 1;
+	if (strcasecmp(item->scope, testname) == 0) return 1;
+	return (strcasecmp(item->scope, rrdscope) == 0);
+}
+
 /* Returns 1 when RRDEXCLUDE/RRDINCLUDE say this file must not be tracked */
 int rrd_is_filtered(char *testname, char *fn)
 {
 	rrdfilter_t *walk;
 	char instance[PATH_MAX];
+	char rrdscope[PATH_MAX];
 	char *p;
-	int havetest;
+	int havescope;
 
 	if (!rrdfiltersetup) {
 		rrdfiltersetup = 1;
@@ -115,17 +133,17 @@ int rrd_is_filtered(char *testname, char *fn)
 	snprintf(instance, sizeof(instance), "%s", fn);
 	p = strrchr(instance, '.');
 	if (p && (strcmp(p, ".rrd") == 0)) *p = '\0';
+	rrd_scope(rrdscope, sizeof(rrdscope), instance);
 
 	for (walk = excludelist; (walk); walk = walk->next) {
-		if ((strcmp(walk->testname, testname) == 0) && rrdfiltermatch(walk, instance)) return 1;
+		if (rrdfilterscope(walk, testname, rrdscope) && rrdfiltermatch(walk, instance)) return 1;
 	}
 
-	havetest = 0;
+	havescope = 0;
 	for (walk = includelist; (walk); walk = walk->next) {
-		if (strcmp(walk->testname, testname) != 0) continue;
+		if (!rrdfilterscope(walk, testname, rrdscope)) continue;
 		if (rrdfiltermatch(walk, instance)) return 0;
-		havetest = 1;
+		havescope = 1;
 	}
-	return havetest;
+	return havescope;
 }
-

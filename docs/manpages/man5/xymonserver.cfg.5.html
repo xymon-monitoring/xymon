@@ -599,6 +599,24 @@ include a graph.
 List of the RRD databases, that should be shown as a graph on
 the &quot;trends&quot; column.
 <P>
+<DT>RRDEXCLUDE<DD>
+Generic per-RRD-file trending filter: whitespace-separated &quot;scope:regex&quot;
+entries. The regex is matched case-insensitively against the RRD filename
+without &quot;.rrd&quot;, i.e. the name as it appears in the host's RRD directory.
+The scope matches the status/data test name, the RRD filename prefix before
+&quot;.&quot; or &quot;,&quot;, or &quot;*&quot; for all RRD files. For example,
+RRDEXCLUDE=&quot;iostat:^iostat.da1[5-9]$ ifstat:^ifstat.docker *:,tmp,&quot;
+prevents matching files from being created or updated.
+This filters whole RRD files only; it does not filter individual datasources
+inside one RRD file, status text, or alerts. It does not remove already
+existing RRD files; matching existing files simply stop receiving updates.
+The NORRDDISKS/RRDDISKS settings below are a separate, unchanged mechanism
+for filesystem graphs.
+<P>
+<DT>RRDINCLUDE<DD>
+The include direction of RRDEXCLUDE: when entries exist for a file's scope,
+only matching RRD files are created or updated. A RRDEXCLUDE match still wins.
+<P>
 <DT>NORRDDISKS<DD>
 This is used to disable the tracking of certain filesystems. By default
 all filesystems reported by a client are tracked. In some cases you may want 

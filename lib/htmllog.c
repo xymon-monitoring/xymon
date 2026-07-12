@@ -27,7 +27,6 @@ static char rcsid[] = "$Id$";
 #include "version.h"
 
 #include "htmllog.h"
-#include "rrdfilter.h"
 
 static char *cgibinurl = NULL;
 static char *colfont = NULL;
@@ -167,44 +166,6 @@ static void textwithcolorimg(char *msg, FILE *output)
 		}
 	} while (restofmsg);
 }
-
-/*
- * The generic RRDEXCLUDE/RRDINCLUDE trending filter (issue #244) is honoured when
- * counting the lines that size the disk-family graph paging: a filesystem
- * those settings keep out of the RRDs must not claim a paging slot, or the
- * page requests graph slices with no files behind them. The line's mount
- * point (its last field, only when it starts with '/') is converted to the
- * RRD instance name exactly as do_disk builds filenames ("/" -> ",root",
- * other "/" -> ",", space -> "_", testname prefixed) and passed to the same
- * rrd_is_filtered() the writer uses - shared code, identical decision.
- * The legacy NORRDDISKS/RRDDISKS settings are deliberately NOT consulted
- * here; their behavior is unchanged.
- */
-static int trendfilter_skips_line(char *service, char *bol, char *eoln)
-{
-	char instance[PATH_MAX];
-	char *mnt, *end, *q;
-	int n;
-
-	end = eoln;
-	while ((end > bol) && isspace((int)*(end-1))) end--;
-	mnt = end;
-	while ((mnt > bol) && !isspace((int)*(mnt-1))) mnt--;
-	if ((mnt >= end) || (*mnt != '/')) return 0;
-
-	if (((end - mnt) == 1) && (*mnt == '/'))
-		n = snprintf(instance, sizeof(instance), "%s,root", service);
-	else
-		n = snprintf(instance, sizeof(instance), "%s%.*s", service, (int)(end - mnt), mnt);
-	if ((n <= 0) || (n >= (int)sizeof(instance))) return 0;
-
-	for (q = instance + strlen(service); (*q); q++) {
-		if (*q == '/') *q = ',';
-		else if (*q == ' ') *q = '_';
-	}
-	return rrd_is_filtered(service, instance);
-}
-
 
 void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
 		       int color, int flapping, char *sender, char *flags, 
@@ -503,10 +464,6 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			SBUF_MALLOC(multikey, strlen(service) + 3);
 			snprintf(multikey, multikey_buflen, ",%s,", service);
 			if (strstr(multigraphs, multikey)) {
-				/* Columns whose RRDs come from do_disk, where the
-				 * RRDEXCLUDE/RRDINCLUDE filters apply (issue #244) */
-				int diskfamily = (strstr(",disk,inode,qtree,quotas,snapshot,TblSpace,", multikey) != NULL);
-
 				/* The "disk" report from the NetWare client puts a "warning light" on all entries */
 				int netwarediskreport = (strstr(firstline, "NetWare Volumes") != NULL);
 
@@ -528,12 +485,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 						}
 						else {
 							/* We found something that is not blank, so one more line */
-							char *eoln = strchr(p, '\n');
-
-							if (!eoln) eoln = p + strlen(p);
-							/* ...unless RRDEXCLUDE/RRDINCLUDE keep its RRD from existing:
-							 * counting it would page into a graph with no data */
-							if (!netwarediskreport && !(diskfamily && trendfilter_skips_line(service, p, eoln))) linecount++;
+							if (!netwarediskreport) linecount++;
 						}
 
 						if (strlen(p) > 10 &&  *p == '<' ) {
@@ -741,4 +693,3 @@ char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip)
 #endif  // __GNUC__
 	return result;
 }
-

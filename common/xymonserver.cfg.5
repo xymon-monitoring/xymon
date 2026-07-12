@@ -524,17 +524,22 @@ List of the RRD databases, that should be shown as a graph on
 the "trends" column.
 
 .IP RRDEXCLUDE
-Generic trending filter: whitespace-separated "testname:regex" entries.
-An RRD file whose name (minus ".rrd") matches an entry for its test is
-not created or updated, e.g. RRDEXCLUDE="disk:poudriere iostat:^iostat.da1"
-- the instance names are the filenames in the host's RRD directory.
-The status-page graph paging accounts for RRDEXCLUDE/RRDINCLUDE on the
-disk-family columns. The NORRDDISKS/RRDDISKS settings below are a
-separate, unchanged mechanism.
+Generic per-RRD-file trending filter: whitespace-separated "scope:regex"
+entries. The regex is matched case-insensitively against the RRD filename
+without ".rrd", i.e. the name as it appears in the host's RRD directory.
+The scope matches the status/data test name, the RRD filename prefix before
+"." or ",", or "*" for all RRD files. For example,
+RRDEXCLUDE="iostat:^iostat.da1[5-9]$ ifstat:^ifstat.docker *:,tmp,"
+prevents matching files from being created or updated.
+This filters whole RRD files only; it does not filter individual datasources
+inside one RRD file, status text, or alerts. It does not remove already
+existing RRD files; matching existing files simply stop receiving updates.
+The NORRDDISKS/RRDDISKS settings below are a separate, unchanged mechanism
+for filesystem graphs.
 
 .IP RRDINCLUDE
-The include direction of RRDEXCLUDE: when entries exist for a test, only
-matching instances are trended. A RRDEXCLUDE match still wins.
+The include direction of RRDEXCLUDE: when entries exist for a file's scope,
+only matching RRD files are created or updated. A RRDEXCLUDE match still wins.
 
 .IP NORRDDISKS
 This is used to disable the tracking of certain filesystems. By default
@@ -782,4 +787,3 @@ the options you normally used when building Xymon webpages.
 
 .SH "SEE ALSO"
 xymon(7)
-
