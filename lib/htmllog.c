@@ -23,6 +23,9 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
 #include "libxymon.h"
 #include "version.h"
 
@@ -165,6 +168,75 @@ static void textwithcolorimg(char *msg, FILE *output)
 			restofmsg = NULL;
 		}
 	} while (restofmsg);
+}
+
+/*
+ * Mirror do_disk.c's NORRDDISKS/RRDDISKS filtering when counting the status
+ * lines that size the graph paging (issue #234). Filesystems held back by
+ * those patterns keep their status line but never get an RRD file, so
+ * counting their lines pages into graph images with nothing behind them.
+ * Same patterns, same subject (the mount point - the line's last field, as
+ * do_disk extracts it), same precedence (exclude wins; when an include
+ * pattern is set, only matching filesystems count). Lines whose last field
+ * does not start with '/' (df header, decorations) are never filtered.
+ * Caveat: assumes the rendering host shares the RRD host's xymonserver.cfg
+ * settings, which is the case everywhere the RRD directory is local.
+ */
+static int rrd_skips_fs(char *bol, char *eoln)
+{
+	static int ptnsetup = 0;
+	static pcre2_code *inclpattern = NULL;
+	static pcre2_code *exclpattern = NULL;
+	pcre2_match_data *ovector;
+	char *mnt, *end;
+	int result;
+
+	if (!ptnsetup) {
+		char errmsg[120];
+		int err;
+		PCRE2_SIZE errofs;
+		char *ptn;
+
+		ptnsetup = 1;
+		ptn = getenv("RRDDISKS");
+		if (ptn && strlen(ptn)) {
+			inclpattern = pcre2_compile((PCRE2_SPTR)ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
+			if (!inclpattern) {
+				pcre2_get_error_message(err, (PCRE2_UCHAR *)errmsg, sizeof(errmsg));
+				errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %zu\n", ptn, errmsg, errofs);
+			}
+		}
+		ptn = getenv("NORRDDISKS");
+		if (ptn && strlen(ptn)) {
+			exclpattern = pcre2_compile((PCRE2_SPTR)ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
+			if (!exclpattern) {
+				pcre2_get_error_message(err, (PCRE2_UCHAR *)errmsg, sizeof(errmsg));
+				errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %zu\n", ptn, errmsg, errofs);
+			}
+		}
+	}
+	if (!inclpattern && !exclpattern) return 0;
+
+	/* The mount point is the line's last whitespace-separated field */
+	end = eoln;
+	while ((end > bol) && isspace((int)*(end-1))) end--;
+	mnt = end;
+	while ((mnt > bol) && !isspace((int)*(mnt-1))) mnt--;
+	if ((mnt >= end) || (*mnt != '/')) return 0;
+
+	if (exclpattern) {
+		ovector = pcre2_match_data_create_from_pattern(exclpattern, NULL);
+		result = pcre2_match(exclpattern, (PCRE2_SPTR)mnt, (end - mnt), 0, 0, ovector, NULL);
+		pcre2_match_data_free(ovector);
+		if (result >= 0) return 1;
+	}
+	if (inclpattern) {
+		ovector = pcre2_match_data_create_from_pattern(inclpattern, NULL);
+		result = pcre2_match(inclpattern, (PCRE2_SPTR)mnt, (end - mnt), 0, 0, ovector, NULL);
+		pcre2_match_data_free(ovector);
+		if (result < 0) return 1;
+	}
+	return 0;
 }
 
 
@@ -465,6 +537,10 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			SBUF_MALLOC(multikey, strlen(service) + 3);
 			snprintf(multikey, multikey_buflen, ",%s,", service);
 			if (strstr(multigraphs, multikey)) {
+				/* Columns whose RRDs come from do_disk, where the
+				 * NORRDDISKS/RRDDISKS filters apply (issue #234) */
+				int diskfamily = (strstr(",disk,inode,qtree,quotas,snapshot,TblSpace,", multikey) != NULL);
+
 				/* The "disk" report from the NetWare client puts a "warning light" on all entries */
 				int netwarediskreport = (strstr(firstline, "NetWare Volumes") != NULL);
 
@@ -486,7 +562,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 						}
 						else {
 							/* We found something that is not blank, so one more line */
-							if (!netwarediskreport) linecount++;
+							char *eoln = strchr(p, '\n');
+
+							if (!eoln) eoln = p + strlen(p);
+							/* ...unless its RRD is filtered by NORRDDISKS/RRDDISKS:
+							 * counting it would page into a graph with no data (#234) */
+							if (!netwarediskreport && !(diskfamily && rrd_skips_fs(p, eoln))) linecount++;
 						}
 
 						if (strlen(p) > 10 &&  *p == '<' ) {

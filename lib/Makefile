@@ -57,6 +57,9 @@ $(XYMONCLIENTCOMMLIB): $(XYMONCLIENTCOMMLIBOBJS)
 loadhosts.o: loadhosts.c loadhosts_file.c loadhosts_net.c
 	$(CC) $(CFLAGS) -c -o $@ loadhosts.c
 
+htmllog.o: htmllog.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+
 eventlog.o: eventlog.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
