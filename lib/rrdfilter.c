@@ -34,10 +34,9 @@ static char rcsid[] = "$Id$";
  *   tcp:^tcp.http
  *   *:,tmp,
  *
- * A file matching RRDEXCLUDE is not created or updated. When RRDINCLUDE has
- * entries for a file's scope, only matching files are trended. Exclude wins.
- * The disk-family RRDDISKS/NORRDDISKS filters are unchanged and run before
- * this generic filter.
+ * A file matching RRDEXCLUDE is not created, updated, or selected for graph
+ * display. When RRDINCLUDE has entries for a file's scope, only matching
+ * files are trended and graphed. Exclude wins.
  */
 typedef struct rrdfilter_t {
 	char *scope;
@@ -114,7 +113,7 @@ static int rrdfilterscope(rrdfilter_t *item, char *testname, char *rrdscope)
 	return (strcasecmp(item->scope, rrdscope) == 0);
 }
 
-/* Returns 1 when RRDEXCLUDE/RRDINCLUDE say this file must not be tracked */
+/* Returns 1 when RRDEXCLUDE/RRDINCLUDE say this file must not be tracked or graphed */
 int rrd_is_filtered(char *testname, char *fn)
 {
 	rrdfilter_t *walk;

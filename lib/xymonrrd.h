@@ -49,6 +49,8 @@ extern xymongraph_t *xymongraphs;
 
 extern xymonrrd_t *find_xymon_rrd(char *service, char *flags);
 extern xymongraph_t *find_xymon_graph(char *rrdname);
+extern int xymon_graph_count(char *hostname, char *service, xymongraph_t *graphdef,
+		hg_stale_rrds_t nostale, int locatorbased, time_t now);
 extern char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 		xymongraph_t *graphdef, int itemcount, 
 		hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,
@@ -56,4 +58,3 @@ extern char *xymon_graph_data(char *hostname, char *dispname, char *service, int
 extern rrdtpldata_t *setup_template(char *params[]);
 
 #endif
-

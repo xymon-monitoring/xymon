@@ -12,7 +12,8 @@
 #define __RRDFILTER_H__
 
 /* Returns 1 when RRDEXCLUDE/RRDINCLUDE say the RRD instance "fn" (with or
- * without a trailing ".rrd") of test "testname" must not be tracked. */
+ * without a trailing ".rrd") of test "testname" must not be tracked or
+ * graphed. */
 extern int rrd_is_filtered(char *testname, char *fn);
 
 #endif

@@ -14,13 +14,20 @@
 static char rcsid[] = "$Id$";
 
 #include <ctype.h>
+#include <dirent.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <time.h>
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
 #include "libxymon.h"
+#include "rrdfilter.h"
 #include "version.h"
 
 /* This is for mapping a status-name -> RRD file */
@@ -200,6 +207,235 @@ xymongraph_t *find_xymon_graph(char *rrdname)
 	return (found ? grec : NULL);
 }
 
+typedef struct graphcountdef_t {
+	char *name;
+	char *fnpat;
+	char *exfnpat;
+	struct graphcountdef_t *next;
+} graphcountdef_t;
+
+static graphcountdef_t *graphcountdefs = NULL;
+static time_t graphcountsetup = 0;
+
+static void free_graph_count_defs(void)
+{
+	graphcountdef_t *walk, *next;
+
+	for (walk = graphcountdefs; (walk); walk = next) {
+		next = walk->next;
+		if (walk->name) xfree(walk->name);
+		if (walk->fnpat) xfree(walk->fnpat);
+		if (walk->exfnpat) xfree(walk->exfnpat);
+		xfree(walk);
+	}
+	graphcountdefs = NULL;
+}
+
+static void load_graph_count_defs(void)
+{
+	char fn[PATH_MAX];
+	FILE *fd;
+	strbuffer_t *inbuf;
+	char *p;
+	graphcountdef_t *newitem = NULL;
+
+	if ((graphcountsetup + 300) >= getcurrenttime(NULL)) return;
+	free_graph_count_defs();
+	graphcountsetup = getcurrenttime(NULL);
+
+	snprintf(fn, sizeof(fn), "%s/etc/graphs.cfg", xgetenv("XYMONHOME"));
+	fd = stackfopen(fn, "r", NULL);
+	if (fd == NULL) return;
+
+	inbuf = newstrbuffer(0);
+	while (stackfgets(inbuf, NULL)) {
+		p = strchr(STRBUF(inbuf), '\n'); if (p) *p = '\0';
+		p = STRBUF(inbuf); p += strspn(p, " \t");
+		if ((strlen(p) == 0) || (*p == '#')) continue;
+
+		if (*p == '[') {
+			char *delim;
+
+			newitem = (graphcountdef_t *)calloc(1, sizeof(graphcountdef_t));
+			delim = strchr(p, ']'); if (delim) *delim = '\0';
+			newitem->name = strdup(p+1);
+			newitem->next = graphcountdefs;
+			graphcountdefs = newitem;
+		}
+		else if (newitem && (strncasecmp(p, "FNPATTERN", 9) == 0)) {
+			p += 9; p += strspn(p, " \t");
+			if (newitem->fnpat) xfree(newitem->fnpat);
+			newitem->fnpat = strdup(p);
+		}
+		else if (newitem && (strncasecmp(p, "EXFNPATTERN", 11) == 0)) {
+			p += 11; p += strspn(p, " \t");
+			if (newitem->exfnpat) xfree(newitem->exfnpat);
+			newitem->exfnpat = strdup(p);
+		}
+	}
+	stackfclose(fd);
+	freestrbuffer(inbuf);
+}
+
+static graphcountdef_t *find_graph_count_def(char *name)
+{
+	graphcountdef_t *walk;
+
+	load_graph_count_defs();
+	for (walk = graphcountdefs; (walk && strcmp(walk->name, name)); walk = walk->next) ;
+	return walk;
+}
+
+static int rrd_param_matches_service(const char *param, const char *svc)
+{
+	if ((param == NULL) || (svc == NULL) || (*svc == '\0')) return 0;
+	return (strcmp(param, svc) == 0);
+}
+
+static void rrd_graph_service_name(char *rrdservicename, size_t rrdservicenamesz,
+				   char *service, xymongraph_t *graphdef)
+{
+	if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "tcp") == 0)) {
+		snprintf(rrdservicename, rrdservicenamesz, "tcp:%s", service);
+	}
+	else if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "ncv") == 0)) {
+		snprintf(rrdservicename, rrdservicenamesz, "ncv:%s", service);
+	}
+	else if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "devmon") == 0)) {
+		snprintf(rrdservicename, rrdservicenamesz, "devmon:%s", service);
+	}
+	else {
+		snprintf(rrdservicename, rrdservicenamesz, "%s", graphdef->xymonrrdname);
+	}
+}
+
+/*
+ * Return the number of RRD files showgraph.cgi would select for this graph
+ * link, after graph FNPATTERN/EXFNPATTERN, stale-RRD suppression, and the
+ * generic RRDEXCLUDE/RRDINCLUDE filter. -1 means "cannot know here"; callers
+ * should keep their legacy estimate.
+ */
+int xymon_graph_count(char *hostname, char *service, xymongraph_t *graphdef,
+		      hg_stale_rrds_t nostale, int locatorbased, time_t now)
+{
+	char request[100], reqcopy[100];
+	char *svcname, *delim;
+	graphcountdef_t *gdef = NULL, *gdefuser = NULL;
+	int wantsingle = 0, rrdparamisservice = 0;
+	char rrddir[PATH_MAX];
+	DIR *dir;
+	pcre2_code *pat, *expat = NULL;
+	pcre2_match_data *ovector;
+	char errmsg[120];
+	int err, result, count = 0;
+	PCRE2_SIZE errofs;
+	struct dirent *d;
+
+	if (!hostname || !graphdef || locatorbased) return -1;
+	if (!xgetenv("XYMONRRDS") || !xgetenv("XYMONHOME")) return -1;
+
+	rrd_graph_service_name(request, sizeof(request), service, graphdef);
+	snprintf(reqcopy, sizeof(reqcopy), "%s", request);
+	svcname = reqcopy;
+
+	delim = svcname + strcspn(svcname, ":.");
+	if (*delim) {
+		*delim = '\0';
+		if (*(delim+1) == '\0') return -1;
+		gdefuser = find_graph_count_def(svcname);
+		svcname = delim+1;
+		wantsingle = 1;
+	}
+
+	gdef = find_graph_count_def(svcname);
+	if (gdef == NULL) {
+		if (gdefuser) {
+			gdef = gdefuser;
+			rrdparamisservice = 1;
+		}
+		else {
+			xymonrrd_t *ldef = find_xymon_rrd(svcname, NULL);
+			if (ldef) {
+				gdef = find_graph_count_def(ldef->xymonrrdname);
+				wantsingle = 1;
+				rrdparamisservice = 1;
+			}
+		}
+	}
+	if ((gdef == NULL) || (gdef->fnpat == NULL)) return -1;
+
+	snprintf(rrddir, sizeof(rrddir), "%s/%s", xgetenv("XYMONRRDS"), hostname);
+	dir = opendir(rrddir);
+	if (dir == NULL) return -1;
+
+	pat = pcre2_compile((PCRE2_SPTR)gdef->fnpat, strlen(gdef->fnpat), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (!pat) {
+		pcre2_get_error_message(err, (PCRE2_UCHAR *)errmsg, sizeof(errmsg));
+		errprintf("graphs.cfg error, PCRE pattern %s invalid: %s, offset %zu\n",
+			  gdef->fnpat, errmsg, errofs);
+		closedir(dir);
+		return -1;
+	}
+	if (gdef->exfnpat) {
+		expat = pcre2_compile((PCRE2_SPTR)gdef->exfnpat, strlen(gdef->exfnpat), PCRE2_CASELESS, &err, &errofs, NULL);
+		if (!expat) {
+			pcre2_get_error_message(err, (PCRE2_UCHAR *)errmsg, sizeof(errmsg));
+			errprintf("graphs.cfg error, PCRE pattern %s invalid: %s, offset %zu\n",
+				  gdef->exfnpat, errmsg, errofs);
+			pcre2_code_free(pat);
+			closedir(dir);
+			return -1;
+		}
+	}
+
+	ovector = pcre2_match_data_create(30, NULL);
+	while ((d = readdir(dir)) != NULL) {
+		char *ext;
+		char param[PATH_MAX];
+		PCRE2_SIZE l = sizeof(param);
+		int haveparam;
+
+		if (*(d->d_name) == '.') continue;
+		ext = d->d_name + strlen(d->d_name) - strlen(".rrd");
+		if ((ext <= d->d_name) || (strcmp(ext, ".rrd") != 0)) continue;
+		if (rrd_is_filtered(svcname, d->d_name)) continue;
+
+		if (expat) {
+			result = pcre2_match(expat, (PCRE2_SPTR)d->d_name, strlen(d->d_name), 0, 0, ovector, NULL);
+			if (result >= 0) continue;
+		}
+
+		result = pcre2_match(pat, (PCRE2_SPTR)d->d_name, strlen(d->d_name), 0, 0, ovector, NULL);
+		if (result < 0) continue;
+		l = sizeof(param);
+		haveparam = (pcre2_substring_copy_bynumber(ovector, 1, (PCRE2_UCHAR *)param, &l) == 0);
+
+		if (rrdparamisservice && haveparam) {
+			if (!rrd_param_matches_service(param, svcname)) continue;
+		}
+		else if (wantsingle) {
+			if (strstr(d->d_name, svcname) == NULL) continue;
+		}
+
+		if (nostale == HG_WITHOUT_STALE_RRDS) {
+			char fn[PATH_MAX];
+			struct stat st;
+
+			if (snprintf(fn, sizeof(fn), "%s/%s", rrddir, d->d_name) >= (int)sizeof(fn)) continue;
+			if ((stat(fn, &st) == 0) && ((now - st.st_mtime) > 86400)) continue;
+		}
+
+		count++;
+	}
+
+	pcre2_match_data_free(ovector);
+	pcre2_code_free(pat);
+	if (expat) pcre2_code_free(expat);
+	closedir(dir);
+
+	return count;
+}
+
 
 static char *xymon_graph_text(char *hostname, char *dispname, char *service, int bgcolor,
 			      xymongraph_t *graphdef, int itemcount, hg_stale_rrds_t nostale, const char *fmt,
@@ -231,18 +467,7 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 		hostname, 
 		graphdef->xymonrrdname, textornull(graphdef->xymonpartname), graphdef->maxgraphs, itemcount);
 
-	if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "tcp") == 0)) {
-		snprintf(rrdservicename, sizeof(rrdservicename), "tcp:%s", service);
-	}
-	else if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "ncv") == 0)) {
-		snprintf(rrdservicename, sizeof(rrdservicename), "ncv:%s", service);
-	}
-	else if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "devmon") == 0)) {
-		snprintf(rrdservicename, sizeof(rrdservicename), "devmon:%s", service);
-	}
-	else {
-		strncpy(rrdservicename, graphdef->xymonrrdname, sizeof(rrdservicename));
-	}
+	rrd_graph_service_name(rrdservicename, sizeof(rrdservicename), service, graphdef);
 
 	SBUF_MALLOC(svcurl, 
 		    2048                    + 
@@ -370,5 +595,3 @@ rrdtpldata_t *setup_template(char *params[])
 
 	return result;
 }
-
-
