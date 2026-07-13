@@ -571,27 +571,30 @@ tag (e.g. "disk:disk1|disk2", see
 ignore N and use the default of 5.
 Note: a "DISK filesystem IGNORE" rule in
 .I analysis.cfg(5)
-removes a filesystem from the status, the alerts and the graphs;
-NORRDDISKS below removes only the graph.
+removes a filesystem from the status, the alerts and the graphs.
+This is usually the preferred replacement for the deprecated
+NORRDDISKS/RRDDISKS settings below.
 
 .IP NORRDDISKS
-This is used to disable the tracking of certain filesystems. By default
-all filesystems reported by a client are tracked. In some cases you may want 
-to disable this for certain filesystems, e.g. database filesystems since they
-are always completely full. This setting is a regular expression that is matched
-against the filesystem name (the Unix mount-point, or the Windows disk-letter) -
-if the filesystem name matches this expression, then it will not be tracked
-by Xymon.
+Deprecated legacy setting. It is retained for compatibility with old
+configurations, but should be considered unsupported for new use.
+Use
+.I analysis.cfg(5)
+rules such as "DISK filesystem IGNORE" or "INODE filesystem IGNORE"
+instead whenever the filesystem should be removed from status, alerts
+and graphs.
+NORRDDISKS only disables RRD graph tracking for matching filesystems.
+The value is a regular expression matched against the filesystem name
+(the Unix mount-point, or the Windows disk-letter).
 .br
 Note: Setting this does not affect filesystems that are already being tracked
 by Xymon - to remove them, you must remove the RRD files for the unwanted filesystems
 from the ~xymon/data/rrd/HOSTNAME/ directory.
 
 .IP RRDDISKS
-This is used to enable tracking of only selected filesystems (see the NORRDDISKS
-setting above). By default all filesystems are being tracked, setting this changes 
-that default so that only those filesystems that match this pattern will be 
-tracked.
+Deprecated legacy setting, with the same compatibility-only status as
+NORRDDISKS. It changes the default so that only filesystems matching
+this regular expression are tracked for RRD graphs.
 
 
 .SH XYMONNET NETWORK TEST SETTINGS

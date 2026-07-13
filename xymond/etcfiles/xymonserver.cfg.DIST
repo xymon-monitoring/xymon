@@ -196,10 +196,12 @@ GRAPHS_ntp="ntp.offset"
 # automatically for columns listed in its --multigraphs option.
 GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,clock,lines,deltalines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,devmon::1,if_load::1,temp,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts,xymongen,xymonnet,xymonproxy,xymond"
 
-# These two settings can be used to restrict what filesystems are being
-# tracked (i.e. have their utilisation graphed) by Xymon.
-# NORRDDISKS=""		# Filesystems that will NOT be tracked
-# RRDDISKS=""		# Only track these filesystems
+# Deprecated legacy filesystem graph filters. Prefer DISK/INODE filesystem
+# IGNORE rules in analysis.cfg when a filesystem should be removed from status,
+# alerts and graphs. These settings are retained only for old configurations and
+# affect RRD graph tracking only.
+# NORRDDISKS=""		# Filesystems that will NOT be tracked for graphs
+# RRDDISKS=""		# Only graph these filesystems
 
 
 ###############################################################
