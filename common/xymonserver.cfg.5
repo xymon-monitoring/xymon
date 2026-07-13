@@ -540,19 +540,27 @@ The graph names must match graph definitions from
 or instance names handled by those definitions.
 
 .IP GRAPHS
-List of graph names that should be shown on the "trends" column,
-in display order. The matching RRD files are selected by the
-corresponding graph definition in
+List of graph names known to the graph display code. On the
+"trends" column, this list also defines which graphs are shown
+and in what order. The matching RRD files are selected by the
+corresponding graph definitions in
 .I graphs.cfg(5).
 Each entry is either "name" or "name::N": "name" is the graph name,
 and N is the maximum number of RRD files drawn per graph image after
 the graph has been split; the default is 5 per image. The double colon
 is literal, so "mrtg::1" draws one file per image.
+N counts RRD files, not lines: each RRD file may hold several data sets
+(DS), each drawn as its own curve, so an image showing N files can
+contain several times N lines. Choose N with the per-file DS count in
+mind - a 2-DS graph at "::2" draws 4 lines, while a 1-DS graph at "::5"
+draws 5.
 A legacy middle field is accepted by the parser for compatibility, but
 it is ignored and should not be used in new configurations.
-The N value belongs in GRAPHS, not in GRAPHS_<COLUMNNAME>. Status
-page GRAPHS_<COLUMNNAME> entries inherit N when they name the same
-graph definition. If a graph is used only from GRAPHS_<COLUMNNAME>
+The N value belongs in GRAPHS, not in GRAPHS_<COLUMNNAME>, and is
+used whenever graph links are generated for that graph. This includes
+the "trends" page, a test column's default status-page graph from
+TEST2RRD, and status-page GRAPHS_<COLUMNNAME> entries that name the
+same graph definition. If a graph is used only from GRAPHS_<COLUMNNAME>
 and has no matching entry in GRAPHS, it uses the default split size.
 On the "trends" page, the RRD file count is known automatically.
 On status pages, splitting only happens when

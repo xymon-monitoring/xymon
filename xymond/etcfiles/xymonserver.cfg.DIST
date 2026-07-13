@@ -182,15 +182,18 @@ TEST2RRD="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tc
 
 GRAPHS_ntp="ntp.offset"
 
-# This defines which graph names to include on the "trends" column webpage,
-# and the order in which they appear. The matching RRD files are selected by
-# graphs.cfg. Entries use name or name::N; N caps the RRD files per graph image
-# once a graph is split, so "mrtg::1" means one file per image. A legacy middle
-# field is accepted by the parser but ignored; use name::N for new settings.
-# Put ::N here, not in GRAPHS_<columnname>; status page entries inherit N when
-# they name the same graph definition. If a graph is used only from
-# GRAPHS_<columnname> and has no matching entry here, it uses the default split
-# size.
+# This defines graph names known to the graph display code. On the "trends"
+# column, it also defines which graphs are shown and in what order. The matching
+# RRD files are selected by graphs.cfg. Entries use name or name::N; N caps the
+# RRD files per graph image once a graph is split, so "mrtg::1" means one file
+# per image. N counts files, not lines: one RRD file can hold several DS, each
+# drawn as its own curve, so N files may show several times N lines (a 2-DS
+# graph at ::2 draws 4 lines). A legacy middle field is accepted but ignored; use
+# name::N for new settings. Put ::N here, not in GRAPHS_<columnname>; it applies
+# on the trends page, on a test column's default status-page graph, and on
+# GRAPHS_<columnname> entries that name the same graph definition. If a graph is
+# used only from GRAPHS_<columnname> and has no matching entry here, it uses the
+# default split size.
 # On status pages, splitting also needs an instance count: either the status
 # message includes "<!-- linecount=N -->", or svcstatus.cgi computes it
 # automatically for columns listed in its --multigraphs option.
