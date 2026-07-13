@@ -184,11 +184,13 @@ GRAPHS_ntp="ntp.offset"
 
 # This defines which graph names to include on the "trends" column webpage,
 # and the order in which they appear. The matching RRD files are selected by
-# graphs.cfg. Entries use name[:partname][:N]; N caps the RRD files per graph
-# image once a graph is split, so "mrtg::1" means one file per image. Put ::N
-# here, not in GRAPHS_<columnname>; status page entries inherit N when they name
-# the same graph definition. If a graph is used only from GRAPHS_<columnname>
-# and has no matching entry here, it uses the default split size.
+# graphs.cfg. Entries use name or name::N; N caps the RRD files per graph image
+# once a graph is split, so "mrtg::1" means one file per image. A legacy middle
+# field is accepted by the parser but ignored; use name::N for new settings.
+# Put ::N here, not in GRAPHS_<columnname>; status page entries inherit N when
+# they name the same graph definition. If a graph is used only from
+# GRAPHS_<columnname> and has no matching entry here, it uses the default split
+# size.
 # On status pages, splitting also needs an instance count: either the status
 # message includes "<!-- linecount=N -->", or svcstatus.cgi computes it
 # automatically for columns listed in its --multigraphs option.

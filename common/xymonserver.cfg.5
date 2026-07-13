@@ -544,14 +544,12 @@ List of graph names that should be shown on the "trends" column,
 in display order. The matching RRD files are selected by the
 corresponding graph definition in
 .I graphs.cfg(5).
-Each entry uses the syntax
-"name[:partname][:N]": "name" is the graph name, "partname" is a
-rarely used graph part name from
-.I graphs.cfg(5)
-\- hence the double colon when only N is given, e.g. "mrtg::1".
-N is the maximum number of RRD files drawn per graph image after
-the graph has been split; the default is 5 per image. For example,
-"mrtg::1" draws one file per image.
+Each entry is either "name" or "name::N": "name" is the graph name,
+and N is the maximum number of RRD files drawn per graph image after
+the graph has been split; the default is 5 per image. The double colon
+is literal, so "mrtg::1" draws one file per image.
+A legacy middle field is accepted by the parser for compatibility, but
+it is ignored and should not be used in new configurations.
 The N value belongs in GRAPHS, not in GRAPHS_<COLUMNNAME>. Status
 page GRAPHS_<COLUMNNAME> entries inherit N when they name the same
 graph definition. If a graph is used only from GRAPHS_<COLUMNNAME>
@@ -822,4 +820,3 @@ the options you normally used when building Xymon webpages.
 
 .SH "SEE ALSO"
 xymon(7)
-
