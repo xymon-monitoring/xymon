@@ -1036,7 +1036,8 @@ char *generate_info(char *hostname, char *critconfigfn)
 
 		delim = strchr(val, ':'); if (delim) *delim = '\0';
 		addtobuffer(infobuf, "<tr><th align=left>Host type:</th><td align=left>");
-		if (typeurl) {
+		/* Value may already contain raw HTML (e.g. a link) - don't urlencode/wrap it. */
+		if (typeurl && !strchr(val, '<')) {
 			snprintf(linkurl, sizeof(linkurl), typeurl, urlencode(val));
 			addtobuffer(infobuf, "<a href=\"");
 			addtobuffer(infobuf, linkurl);
@@ -1050,7 +1051,8 @@ char *generate_info(char *hostname, char *critconfigfn)
 			*delim = ':'; 
 			delim++;
 			addtobuffer(infobuf, "<tr><th align=left>Description:</th><td align=left>");
-			if (descrurl) {
+			/* Same guard as above. */
+			if (descrurl && !strchr(delim, '<')) {
 				snprintf(linkurl, sizeof(linkurl), descrurl, urlencode(delim));
 				addtobuffer(infobuf, "<a href=\"");
 				addtobuffer(infobuf, linkurl);

@@ -365,6 +365,11 @@ HOSTDESCURL="https://cmdb.example.com/ci/%s" will turn a description of
 "CIID1234" into a link to "https://cmdb.example.com/ci/CIID1234".
 Default: Not set, so the description is shown as plain text.
 
+Note: if a host's DESCR value contains "<" (see the raw-HTML case in
+.I hosts.cfg(5)
+), HOSTTYPEURL/HOSTDESCURL leaves it as-is rather than urlencoding it into
+the link template, so no link is added for that host.
+
 
 .SH SETTINGS FOR SENDING MESSAGES TO XYMON
 .IP XYMSRV
