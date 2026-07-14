@@ -555,6 +555,9 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	char *dname;
 	int dmin, dmax, dcount, dcolor;
 	char *group;
+	int fscount = 0;	/* filesystems shown = RRD files created; the exact
+				 * graph-paging count, stated so the renderer need
+				 * not re-count status lines (see below). */
 
 	if (!want_msgtype(hinfo, MSG_DISK)) return;
 	if (!dfstr) return;
@@ -645,6 +648,8 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
+				/* A shown filesystem = one disk RRD file. */
+				if (!ignored) fscount++;
 			}
 
 			xfree(p);
@@ -710,6 +715,12 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 		addtostatus("\n");
 	}
 
+	/* State the exact number of filesystems - one RRD file each - so the
+	 * status page pages the graph precisely, instead of re-counting the
+	 * df lines. The renderer honours an explicit linecount override. */
+	snprintf(msgline, sizeof(msgline), "<!-- linecount=%d -->\n", fscount);
+	addtostatus(msgline);
+
 	/* And the full df output */
 	addtostrstatus(dfstr_filtered);
 
@@ -735,6 +746,8 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 	char *iname;
 	int imin, imax, icount, icolor;
 	char *group;
+	int fscount = 0;	/* filesystems shown = inode RRD files; the exact
+				 * graph-paging count. */
 
 	if (!want_msgtype(hinfo, MSG_INODE)) return;
 	if (!dfstr) return;
@@ -825,6 +838,8 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
+				/* A shown filesystem = one inode RRD file. */
+				if (!ignored) fscount++;
 			}
 
 			xfree(p);
@@ -897,6 +912,11 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 		addtostrstatus(monmsg);
 		addtostatus("\n");
 	}
+
+	/* State the exact number of filesystems - one RRD file each - so the
+	 * status page pages the graph precisely (see unix_disk_report). */
+	snprintf(msgline, sizeof(msgline), "<!-- linecount=%d -->\n", fscount);
+	addtostatus(msgline);
 
 	/* And the full df output */
 	addtostrstatus(dfstr_filtered);
