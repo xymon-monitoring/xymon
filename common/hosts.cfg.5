@@ -299,6 +299,25 @@ this text unescaped, so raw HTML placed directly in "Description" (e.g.
 an \fB<a href=...>\fR link) is also rendered as a link, independently of
 HOSTDESCURL, and can be used to link different hosts to different targets.
 
+.IP "DOC:URL"
+Define a URL with documentation for the host, shown as a "Documentation:"
+row on the host's "Info" column page. The URL may contain a \fB%s\fR
+conversion, which is replaced with the hostname, e.g.
+DOC:"https://cmdb.example.com/host/%s". A literal "%" in the URL must be
+escaped as "%%".
+DOC: can be set on the ".default." host (see the
+.B DEFAULT HOST
+section below) to provide a fleet-wide default documentation link, with a
+per-host DOC: tag taking precedence. It is also exported to alert scripts
+as XMH_DOCURL (see
+.I xymon\-xmh(5)
+).
+HOSTDOCURL in
+.I xymonserver.cfg(5)
+is a global hostname-keyed template for a "Notes:" row. E.g.
+with HOSTDOCURL="/docs/%s.php" set in xymonserver.cfg, a host "myhost"
+gets a "Notes:" link to "/docs/myhost.php".
+
 .IP "CLASS:Classname"
 Force the host to belong to a specific class. Class-names are used
 when configuring log-file monitoring (they can be used as references in
@@ -554,6 +573,18 @@ basis, instead of using a global setting for all hosts. The
 threshold is defined as the percentage of the time that the host
 must be available, e.g. "WARNPCT:98.5" if you want the threshold to
 be at 98.5%
+
+.IP WARNSTOPS:count
+Sets a threshold on the number of separate down-periods ("stops" - i.e.
+times the status went above yellow) allowed within the reporting
+interval. If the number of down-periods exceeds "count", the report is
+shown as red - even if WARNPCT's availability-percentage threshold
+would otherwise show green or yellow. This catches hosts that flap
+frequently (many short outages) but still have a high overall
+availability percentage.
+E.g. "WARNSTOPS:5" turns the report red once a 6th outage occurs in
+the reporting interval.
+Default: -1 (disabled - no limit on the number of down-periods).
 
 .IP "noflap[=test1,test2,...]"
 Disable flap detection for this host, or for specific tests on this
@@ -1411,10 +1442,10 @@ per-host definitions will override the default ones. To apply to all hosts
 this should be listed FIRST in your file.
 
 \fBNOTE:\fR The ".default." host entry will only accept the following
-tags - others are silently ignored: delayyellow, delayred, NOCOLUMNS, 
-COMMENT, DESCR, CLASS, dialup, testip, nonongreen, nodisp, noinfo, 
+tags - others are silently ignored: delayred, delayyellow, NOCOLUMNS, 
+COMMENT, DESCR, DOC, CLASS, dialup, nonongreen, nodisp, noinfo, 
 notrends, noclient, TRENDS, NOPROPRED, NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, 
-REPORTTIME, WARNPCT, NET, noclear, nosslcert, ssldays, DOWNTIME, depends, 
+REPORTTIME, WARNPCT, WARNSTOPS, testip, NET, noclear, nosslcert, ssldays, DOWNTIME, depends, 
 noping, noconn, trace, notrace, HIDEHTTP, browser, pulldata. Specifically, 
 note that network tests, "badTEST" settings, and alternate pageset 
 relations cannot be listed on the ".default." host.
