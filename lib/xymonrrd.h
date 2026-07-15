@@ -49,6 +49,7 @@ extern xymongraph_t *xymongraphs;
 
 extern xymonrrd_t *find_xymon_rrd(char *service, char *flags);
 extern xymongraph_t *find_xymon_graph(char *rrdname);
+extern void rrd_destroy(void);
 extern char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 		xymongraph_t *graphdef, int itemcount, 
 		hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,

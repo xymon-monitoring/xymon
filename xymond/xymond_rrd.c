@@ -370,6 +370,8 @@ int main(int argc, char *argv[])
 				testname = metadata[5];
 				classname = (metadata[17] ? metadata[17] : "");
 				pagepaths = (metadata[18] ? metadata[18] : "");
+				/* Reverse tests carry no metric data - skip the RRD */
+				if (metadata[8] && (strchr(metadata[8], 'R') != NULL)) break;
 				ldef = find_xymon_rrd(testname, metadata[8]);
 				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 				break;
@@ -472,6 +474,9 @@ int main(int argc, char *argv[])
 	unlink(ctlsockaddr.sun_path);
 
 	sendmessage_finish_local();
+
+	/* Release the RRD-definition tables (clean valgrind exit) */
+	rrd_destroy();
 
 	return 0;
 }
