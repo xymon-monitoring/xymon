@@ -38,6 +38,15 @@ int main(int argc, char *argv[])
 	sendreturn_t *sres;
 	int wantresponse = 0, mergeinput = 0, usebackfeedqueue = 0;
 
+	/* An XYMON_TIMEOUT environment variable overrides the compiled default.
+	   Ignore empty/non-numeric/non-positive values (atoi() would yield 0,
+	   and a 0 timeout means select() blocks forever) - keep the default then.
+	   A --timeout= option on the command line still wins, being parsed below. */
+	{
+		char *envtimeout = getenv("XYMON_TIMEOUT");
+		if (envtimeout && (atoi(envtimeout) > 0)) timeout = atoi(envtimeout);
+	}
+
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
