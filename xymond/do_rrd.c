@@ -66,6 +66,7 @@ static void * updcache;
 typedef struct updcacheitem_t {
 	char *key;
 	rrdtpldata_t *tpl;
+	int fileok;		/* Cache the RRD-file-exists check to skip a stat() per update */
 	int valcount;
 	char *vals[CACHESZ];
 	int updseq[CACHESZ];
@@ -287,16 +288,14 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	MEMDEFINE(rrdvalues);
 	MEMDEFINE(filedir);
 
-	sprintf(filedir, "%s/%s", rrddir, hostname);
-	if (stat(filedir, &st) == -1) {
-		if (mkdir(filedir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
-			errprintf("Cannot create rrd directory %s : %s\n", filedir, strerror(errno));
-			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues);
-			return -1;
-		}
-	}
-	/* Watch out here - "rrdfn" may be very large. */
+	/*
+	 * The per-host RRD directory (rrddir/hostname) only needs to exist when we
+	 * are about to create an RRD file - if the file already exists, so does its
+	 * directory. So the directory check/mkdir is done lazily in the create path
+	 * below (see issue #153), not on every single update.
+	 *
+	 * Watch out here - "rrdfn" may be very large.
+	 */
 	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
 	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
 
@@ -330,14 +329,33 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		if (!template) template = cacheitem->tpl;
 	}
 
-	/* If the RRD file doesn't exist, create it immediately */
-	if (stat(filedir, &st) == -1) {
+	/*
+	 * If the RRD file doesn't exist, create it immediately. Once we have seen
+	 * the file (here or right after creating it), remember that in the cache
+	 * item so we don't stat() it on every single update; re-check after each
+	 * flush (below) so a deleted file still gets recreated.
+	 */
+	if (!cacheitem->fileok && !((stat(filedir, &st) != -1) && ++cacheitem->fileok)) {
 		xymon_rrd_argv_item_t *rrdcreate_params;
 		char **rrddefinitions;
 		int rrddefcount, i;
 		char *rrakey = NULL;
 		char stepsetting[10];
 		int havestepsetting = 0, fixcount = 2;
+		char hostdir[PATH_MAX];
+
+		/*
+		 * About to create the file - make sure its directory exists first.
+		 * (Moved here from the per-update path; see issue #153.) A missing
+		 * directory is recreated, so a deleted rrddir/hostname self-heals.
+		 */
+		snprintf(hostdir, sizeof(hostdir), "%s/%s", rrddir, hostname);
+		if ((stat(hostdir, &st) == -1) && (mkdir(hostdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1)) {
+			errprintf("Cannot create rrd directory %s : %s\n", hostdir, strerror(errno));
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return -1;
+		}
 
 		dbgprintf("Creating rrd %s\n", filedir);
 
@@ -391,6 +409,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			MEMUNDEFINE(rrdvalues);
 			return 1;
 		}
+		else cacheitem->fileok++;	/* Just created it - it's there now */
 	}
 
 	updtime = atoi(rrdvalues);
@@ -491,15 +510,24 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 	/* At this point, we will commit the update to disk */
 	result = flush_cached_updates(cacheitem, rrdvalues);
+
+	/*
+	 * Re-stat the file on the next update, whatever the flush result: if the
+	 * flush failed because the RRD was removed/rotated, the next update must
+	 * recreate it rather than keep failing forever. Resetting before the error
+	 * return below preserves the original per-update self-healing behaviour.
+	 */
+	cacheitem->fileok = 0;
+
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
 		if (strstr(msg, "(minimum one second step)") != NULL) {
-			dbgprintf("RRD error updating %s from %s: %s\n", 
+			dbgprintf("RRD error updating %s from %s: %s\n",
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}
 		else {
-			errprintf("RRD error updating %s from %s: %s\n", 
+			errprintf("RRD error updating %s from %s: %s\n",
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}
 
