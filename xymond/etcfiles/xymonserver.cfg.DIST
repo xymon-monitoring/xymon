@@ -211,7 +211,7 @@ COLUMNDOCURL="$CGIBINURL/columndoc.sh?%s"	# URL formatting string for column-lin
 
 
 # HTML content
-HTMLCONTENTTYPE="text/html"                     # You can add charset options here.
+HTMLCONTENTTYPE="text/html; charset=UTF-8"      # Change the charset if your hosts emit a different encoding (e.g. iso-8859-1, euc-jp).
 
 # Fonts and texts
 XYMONLOGO="Xymon"                               # HTML inserted on all header pages at top-left corner.
