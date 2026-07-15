@@ -269,8 +269,16 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 
 		step = (graphdef->maxgraphs ? graphdef->maxgraphs : 5);
 		if (itemcount) {
+			/* Spread itemcount instances evenly over the needed number of
+			 * graphs. gcount is the graph count (ceil); the per-graph step
+			 * must round UP too, otherwise a count that gcount does not
+			 * divide leaves every graph under-filled below maxgraphs and
+			 * spawns extra graphs - e.g. 25 items at maxgraphs=2 gives
+			 * gcount=13 but a floored step=1, so 25 single-item graphs
+			 * instead of 13. Rounding up yields step=2 (last graph holds
+			 * the remainder), never exceeding maxgraphs. */
 			int gcount = (itemcount / step); if ((gcount*step) != itemcount) gcount++;
-			step = (itemcount / gcount);
+			step = ((itemcount + gcount - 1) / gcount);
 		}
 
 		SBUF_MALLOC(rrdparturl, rrdparturlsize);
