@@ -405,6 +405,10 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	return head;
 }
 
+/* Line currently being parsed by load_client_config(), so pattern-compile
+ * errors can report where the bad pattern came from. */
+static int curparseline = 0;
+
 static exprlist_t *setup_expr(char *ptn, int multiline)
 {
 	exprlist_t *newitem = (exprlist_t *)calloc(1, sizeof(exprlist_t));
@@ -415,6 +419,26 @@ static exprlist_t *setup_expr(char *ptn, int multiline)
 			newitem->exp = multilineregex(ptn+1);
 		else
 			newitem->exp = compileregex(ptn+1);
+		if (newitem->exp == NULL) {
+			/* compileregex() logged the pcre error, but without saying
+			 * where the pattern came from. A common cause is a pattern
+			 * containing a space: the config is tokenized on whitespace,
+			 * so the pattern gets truncated mid-way - which usually
+			 * shows up as unbalanced parentheses or brackets. */
+			int i, parens = 0, brackets = 0;
+			for (i = 0; ptn[i]; i++) {
+				switch (ptn[i]) {
+				  case '\\': if (ptn[i+1]) i++; break;
+				  case '(': parens++; break;
+				  case ')': parens--; break;
+				  case '[': brackets++; break;
+				  case ']': brackets--; break;
+				}
+			}
+			errprintf("Invalid pattern '%s' at line %d%s\n", ptn, curparseline,
+				  ((parens != 0) || (brackets != 0)) ?
+				  " (hint: if the pattern contains a space, the config splits tokens on whitespace - write [[:space:]] instead)" : "");
+		}
 	}
 	newitem->next = exprhead;
 	exprhead = newitem;
@@ -626,7 +650,7 @@ int load_client_config(char *configfn)
 		char *newtime, *newextime, *newtext, *newgroup;
 		int unknowntok = 0;
 
-		cfid++;
+		cfid++; curparseline = cfid;
 		sanitize_input(inbuf, 1, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
 		newhost = newpage = newexhost = newexpage = newclass = newexclass = newdg = newexdg = NULL;
