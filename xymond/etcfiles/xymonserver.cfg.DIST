@@ -181,8 +181,19 @@ GRAPHS_ntp="ntp.offset"
 # and the order in which they appear.
 GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,clock,lines,deltalines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,devmon::1,if_load::1,temp,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts,xymongen,xymonnet,xymonproxy,xymond"
 
-# These two settings can be used to restrict what filesystems are being
-# tracked (i.e. have their utilisation graphed) by Xymon.
+# These two settings can be used to restrict which RRD files xymond_rrd
+# creates, updates, and selects for graph display. Entries are
+# whitespace-separated "scope:regex" pairs.
+# The scope is the status/data test name, the RRD filename prefix before "."
+# or ",", or "*" for all RRD files. The regex matches the RRD filename without
+# ".rrd", e.g. "iostat.,scratch,a" or "ifstat.docker0".
+# RRDEXCLUDE=""		# RRD files that will NOT be tracked or graphed
+# RRDINCLUDE=""		# Only track/graph matching RRD files for each matching scope
+
+# These legacy settings can restrict what filesystems are being tracked
+# (i.e. have their utilisation graphed) by Xymon. For new configurations,
+# prefer RRDEXCLUDE/RRDINCLUDE above; they filter by generated RRD filename
+# and also keep graph paging aligned with the filtered files.
 # NORRDDISKS=""		# Filesystems that will NOT be tracked
 # RRDDISKS=""		# Only track these filesystems
 

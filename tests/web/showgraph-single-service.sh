@@ -56,7 +56,8 @@ touch "$rrds/tcp.conn.rrd" "$rrds/tcp.proxyconn.rrd" \
 	"$rrds/tcp.connfoo.rrd" "$rrds/tcp.conn.extra.rrd" \
 	"$rrds/tcp.dns.rrd" "$rrds/tcp.dnsmadeeasy.rrd" \
 	"$rrds/tcp.http.a.rrd" "$rrds/tcp.http.b.rrd" \
-	"$rrds/nocap.x.rrd" "$rrds/nocap.y.rrd"
+	"$rrds/nocap.x.rrd" "$rrds/nocap.y.rrd" \
+	"$rrds/la.rrd"
 
 # Stock graphs.cfg plus a fall-back definition without a capture group
 cp "$ROOT/xymond/etcfiles/graphs.cfg.DIST" "$work/graphs.cfg"
@@ -73,11 +74,14 @@ EOF
 # Run one CGI request; rrd_graph fails on the stub files, but the --debug
 # argument dump (which carries the selected filenames) comes out first.
 render() {
-	REQUEST_METHOD=GET \
-	QUERY_STRING="host=testhost&service=$1&graph=hourly&action=view" \
-	XYMONHOME="$work" TEST2RRD="dns=tcp" \
-		"$work/showgraph" --debug --config="$work/graphs.cfg" \
-		--rrddir="$rrds" 2>/dev/null || true
+	svc=$1; shift
+	{
+		env "$@" REQUEST_METHOD=GET \
+		QUERY_STRING="host=testhost&service=$svc&graph=hourly&action=view" \
+		XYMONHOME="$work" TEST2RRD="dns=tcp" \
+			"$work/showgraph" --debug --config="$work/graphs.cfg" \
+			--rrddir="$rrds" 2>/dev/null || true
+	} | tr -d '\000'
 }
 
 # The issue #20 case: bundle fall-back selects on the FNPATTERN capture
@@ -97,6 +101,24 @@ assert_not_contains "dnsmadeeasy.rrd" "$out" "bare TEST2RRD service"
 out=$(render "tcp.http")
 assert_contains     "=tcp.http.a.rrd:" "$out" "own-gdef request"
 assert_contains     "=tcp.http.b.rrd:" "$out" "own-gdef request"
+
+out=$(render "tcp.http" RRDEXCLUDE='tcp:^tcp\.http\.b')
+assert_contains     "=tcp.http.a.rrd:" "$out" "RRDEXCLUDE hides existing graph RRDs"
+assert_not_contains "tcp.http.b.rrd"   "$out" "RRDEXCLUDE hides existing graph RRDs"
+
+out=$(render "tcp.http" RRDINCLUDE='http:^tcp\.http\.a')
+assert_contains     "=tcp.http.a.rrd:" "$out" "RRDINCLUDE limits existing graph RRDs"
+assert_not_contains "tcp.http.b.rrd"   "$out" "RRDINCLUDE limits existing graph RRDs"
+
+# Single-file graph definitions without FNPATTERN must use the same filter.
+out=$(render "la")
+assert_contains     "=la.rrd:" "$out" "single-file graph"
+
+out=$(render "la" RRDEXCLUDE='la:^la$')
+assert_not_contains "=la.rrd:" "$out" "RRDEXCLUDE hides single-file graph RRDs"
+
+out=$(render "la" RRDINCLUDE='la:^tcp$')
+assert_not_contains "=la.rrd:" "$out" "RRDINCLUDE limits single-file graph RRDs"
 
 # A fall-back definition without a capture group falls back to the
 # substring match instead of keeping the whole bundle

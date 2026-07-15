@@ -33,6 +33,7 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 #include "../lib/rrd_api_compat.h"
+#include "../lib/rrdfilter.h"
 
 #define HOUR_GRAPH  "e-48h"
 #define DAY_GRAPH   "e-12d"
@@ -910,6 +911,12 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			rrddbs[0].rrdfn = (char *)malloc(buflen);
 			snprintf(rrddbs[0].rrdfn, buflen, "%s.rrd", gdef->name);
 			rrddbs[0].rrdparam = NULL;
+			if (rrd_is_filtered(service, rrddbs[0].rrdfn)) {
+				xfree(rrddbs[0].key);
+				xfree(rrddbs[0].rrdfn);
+				rrddbcount = 0;
+				rrddbs[0].key = rrddbs[0].rrdfn = rrddbs[0].rrdparam = NULL;
+			}
 		}
 		else {
 			int i, maxlen;
@@ -985,6 +992,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			if (*(d->d_name) == '.') continue;
 			ext = d->d_name + strlen(d->d_name) - strlen(".rrd");
 			if ((ext <= d->d_name) || (strcmp(ext, ".rrd") != 0)) continue;
+			if (rrd_is_filtered(service, d->d_name)) continue;
 
 			/* First check the exclude pattern. */
 			if (expat) {
