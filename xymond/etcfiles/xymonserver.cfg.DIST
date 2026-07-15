@@ -154,37 +154,57 @@ XYMONRRDS="$XYMONVAR/rrd"
 RRDHEIGHT="120"
 RRDWIDTH="576"		# The RRD's contain 576 data points, so this is a good value
 
-# TEST2RRD defines the status- and data-messages you want to collect RRD data
-# about. You will normally not need to modify this, unless you have added a
-# script to pick up RRD data from custom tests (the xymond_rrd --extra-script
-# and --extra-tests options).
-# Note that network tests defined in the protocols.cfg file are automatically
-# included.
-# The format here is "COLUMN=RRDSERVICE". If you leave out the "=RRDSERVICE"
-# part, it is assumed to be the same as the COLUMN value.
+# These settings have separate roles:
+# - TEST2RRD maps status/data columns to the RRD graph name used for storing
+#   data and for the column's default status-page graph.
+# - GRAPHS_<columnname> changes only what graphs are shown on that column's
+#   status page; it does not make xymond_rrd collect new data.
+# - GRAPHS defines the graph list and order on the trends page, and also stores
+#   graph-display metadata such as the per-image split size.
 
-# GRAPHS_<columnname> entries define what graphs to display on COLUMNs, if not the 
-# default ones indicated above. This can allow you to display additional graphs on
-# a status page, even if xymond_rrd is not using the TEST2RRD data above.
-# If present, overrides the column RRD value above for display purposes, so be sure
-# to include the that, if desired
-# eg, GRAPHS_cpu="la,vmstat1"
+# TEST2RRD format: COLUMN[=RRDSERVICE]. If "=RRDSERVICE" is omitted, the
+# RRD graph name is the same as the COLUMN value. You will normally not need to
+# modify this, unless you have added a script to pick up RRD data from custom
+# tests (the xymond_rrd --extra-script and --extra-tests options). Network
+# tests defined in protocols.cfg are automatically included.
+
+# GRAPHS_<columnname> entries define what graphs to display on COLUMNs, instead
+# of the default graph named by TEST2RRD. This can display additional graphs on a
+# status page, even when xymond_rrd is not using TEST2RRD for those graphs.
+# If present, this overrides the default column graph for display purposes, so
+# include the original graph too if you still want it.
+# Example: GRAPHS_cpu="la,vmstat1"
 
 #
-# TEST2RRD and GRAPHS_* are used by the svcstatus.cgi script to determine if the detailed
+# TEST2RRD and GRAPHS_* are used by svcstatus.cgi to determine if the detailed
 # status view of a test should include a graph.
 TEST2RRD="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,ntp=tcp,vmstat,iostat,netstat,temperature,apache,bind,sendmail,mailq,nmailq=mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,files,procs=processes,ports,clock,lines,deltalines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,if_load=devmon,temp=devmon,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts,xymongen,xymonnet,xymonproxy,xymond"
 
 GRAPHS_ntp="ntp.offset"
 
-# This defines which RRD files to include on the "trends" column webpage,
-# and the order in which they appear.
+# This defines graph names known to the graph display code. On the "trends"
+# column, it also defines which graphs are shown and in what order. The matching
+# RRD files are selected by graphs.cfg. Entries use name or name::N; N caps the
+# RRD files per graph image once a graph is split, so "mrtg::1" means one file
+# per image. N counts files, not lines: one RRD file can hold several DS, each
+# drawn as its own curve, so N files may show several times N lines (a 2-DS
+# graph at ::2 draws 4 lines). A legacy middle field is accepted but ignored; use
+# name::N for new settings. Put ::N here, not in GRAPHS_<columnname>; it applies
+# on the trends page, on a test column's default status-page graph, and on
+# GRAPHS_<columnname> entries that name the same graph definition. If a graph is
+# used only from GRAPHS_<columnname> and has no matching entry here, it uses the
+# default split size.
+# On status pages, splitting also needs an instance count: either the status
+# message includes "<!-- linecount=N -->", or svcstatus.cgi computes it
+# automatically for columns listed in its --multigraphs option.
 GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,clock,lines,deltalines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,devmon::1,if_load::1,temp,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts,xymongen,xymonnet,xymonproxy,xymond"
 
-# These two settings can be used to restrict what filesystems are being
-# tracked (i.e. have their utilisation graphed) by Xymon.
-# NORRDDISKS=""		# Filesystems that will NOT be tracked
-# RRDDISKS=""		# Only track these filesystems
+# Deprecated legacy filesystem graph filters. Prefer DISK/INODE filesystem
+# IGNORE rules in analysis.cfg when a filesystem should be removed from status,
+# alerts and graphs. These settings are retained only for old configurations and
+# affect RRD graph tracking only.
+# NORRDDISKS=""		# Filesystems that will NOT be tracked for graphs
+# RRDDISKS=""		# Only graph these filesystems
 
 
 ###############################################################
