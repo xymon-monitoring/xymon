@@ -1395,11 +1395,7 @@ Apache configuration. The following configuration is needed:
 .br
         SetHandler server\-status
 .br
-        Order deny,allow
-.br
-        Deny from all
-.br
-        allow from 127.0.0.1
+        Require ip 127.0.0.1
 .br
     </Location>
 .br
