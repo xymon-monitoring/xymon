@@ -290,6 +290,14 @@ text that will be shown on the "Info" column page; this can
 e.g. be used to store information about the physical location
 of the device, contact persons etc. If the text contain whitespace,
 you must enclose it in double-quotes, e.g.  DESCR:"switch:4th floor Marketing switch"
+"Hosttype" and "Description" are split at the \fBfirst\fR colon, so
+"Hosttype" must not itself contain a colon.
+HOSTDESCURL in
+.I xymonserver.cfg(5)
+can turn the description into a link on the info page. The info page renders
+this text unescaped, so raw HTML placed directly in "Description" (e.g.
+an \fB<a href=...>\fR link) is also rendered as a link, independently of
+HOSTDESCURL, and can be used to link different hosts to different targets.
 
 .IP "CLASS:Classname"
 Force the host to belong to a specific class. Class-names are used

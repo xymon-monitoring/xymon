@@ -125,6 +125,7 @@ const static struct {
 	{ "RRDWIDTH", "576" },
 	{ "COLUMNDOCURL", "$CGIBINURL/columndoc.sh?%s" },
 	{ "HOSTDOCURL", "" },
+	{ "HOSTDESCURL", "" },
 	{ "XYMONLOGO", "Xymon" },
 	{ "XYMONPAGELOCAL", "<B><I>Pages Hosted Locally</I></B>" },
 	{ "XYMONPAGEREMOTE", "<B><I>Remote Status Display</I></B>" },

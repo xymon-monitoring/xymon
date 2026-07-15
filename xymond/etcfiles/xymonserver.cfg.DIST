@@ -203,6 +203,12 @@ COLUMNDOCURL="$CGIBINURL/columndoc.sh?%s"	# URL formatting string for column-lin
 #
 # HOSTDOCURL="$XYMONNOTESSKIN/%s.html"
 
+# HOSTDESCURL is a formatting string for turning the description part of a
+# hosts.cfg "DESCR:Hosttype:Description" tag into a link on the info page. If NOT set
+# (the default), the value is shown as plain text.
+#
+# HOSTDESCURL="https://cmdb.example.com/ci/%s"           # Makes the DESCR description a link on the info page
+
 
 # HTML content
 HTMLCONTENTTYPE="text/html"                     # You can add charset options here.
