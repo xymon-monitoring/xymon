@@ -4,8 +4,8 @@
 # tests/rrd/ntp-offset-parse.sh
 #
 # Compiles and runs ntp-offset-parse-harness.c, which drives the real do_net.c +
-# do_ntpstat.c offset parsing for the "ntp" test across the three backends
-# (built-in probe banner, ntpdate, sntp) and the do_ntpstat "offset=" path, with
+# do_ntpstat.c offset parsing for the "ntp" test across both backends
+# (built-in probe banner, ntpdate) and the do_ntpstat "offset=" path, with
 # the RRD plumbing stubbed. Fails if any offset is parsed or scaled wrongly.
 
 set -euo pipefail

@@ -6,11 +6,13 @@
  * and do_ntpstat.c - the same way xymond/do_rrd.c #includes them, with the RRD
  * plumbing stubbed so the values that WOULD be written to ntp.rrd are captured.
  *
- * Pins, across all three backends, that the clock offset is parsed and stored in
+ * Pins, across both backends, that the clock offset is parsed and stored in
  * milliseconds (seconds x 1000):
  *   - the built-in SNTP probe banner  ("... offset +0.001234 +/- 0.005678 sec ...")
  *   - ntpdate                          ("... offset -0.040324, delay ...")
- *   - sntp                             ("... + 0.038766 +/- 0.052900 secs")
+ * and that standalone sntp/ntpdig output records nothing (the external sntp
+ * call-out and its " secs" parser were removed - issue #199; the parser never
+ * matched any real tool output anyway),
  * plus that the probe's "+/-" root distance is recorded as the 2nd DS ("U" when a
  * backend omits it), and that do_ntpstat parses "offset=" even at the very start
  * of the message (the #183 out-of-bounds-read case) without scaling its ms value.
@@ -76,12 +78,12 @@ int main(void)
 	check("ntpdate",
 	      record_ntp("server 1.2.3.4, stratum 3, offset -0.040324, delay 0.02568\n"),
 	      -40.324);
-	/* sntp: "<date> <time> <sign> <offset> +/- <err> secs" (the parser reads the
-	 * date/time as the first two whitespace tokens and requires "secs" as the last,
-	 * so an ISO date stays one token and there is no trailing newline). */
-	check("sntp",
-	      record_ntp("2009-11-13 11:29:10.000313 + 0.038766 +/- 0.052900 secs"),
-	      38.766);
+	/* The external sntp call-out was removed (#199): its " secs" output style,
+	 * old or modern, must not be recorded as an offset. */
+	check("legacy msntp-style output -> nothing recorded",
+	      record_ntp("2009 Nov 13 11:29:10.000313 + 0.038766 +/- 0.052900 secs") == NO_RECORD ? 0.0 : 1.0, 0.0);
+	check("modern sntp/ntpdig output -> nothing recorded",
+	      record_ntp("2026-07-16 21:00:00.123456 (+0000) +0.591 +/- 0.902 h1 192.0.2.1 s2 no-leap") == NO_RECORD ? 0.0 : 1.0, 0.0);
 	check("no offset -> nothing recorded",
 	      record_ntp("server 1.2.3.4 is unreachable\n") == NO_RECORD ? 0.0 : 1.0, 0.0);
 	/* A non-numeric "offset" token must be skipped, not silently recorded as 0:
