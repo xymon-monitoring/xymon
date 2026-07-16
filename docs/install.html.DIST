@@ -88,7 +88,16 @@ files installed as well. Often these are in packages called "something<em>-dev</
 	use one of these - many Linux- and *BSD-systems have pre-packaged
 	versions of it.<br>
 	Note that RRDtool requires various graphics-libraries. RRDtool 1.2.x uses
-	libpng, newer versions rely on the Cairo graphics library.</li>
+	libpng, newer versions rely on the Cairo graphics library.<br>
+	<em>NetBSD:</em> the pre-built rrdtool package links against the base X11
+	sets in <tt>/usr/X11R7</tt> (e.g. <tt>libfontconfig.so.2</tt>). These are
+	not present on systems installed without X11, and cannot be added with
+	pkg_add. Install the xbase set - no reinstall needed (adjust release and
+	architecture):<br>
+	<tt>ftp https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/amd64/binary/sets/xbase.tar.xz</tt><br>
+	<tt>tar -xJpf xbase.tar.xz -C /</tt><br>
+	Without it, the RRDtool link test fails and Xymon builds with trend-graph
+	support disabled.</li>
 
 	<li>OpenSSL is a library for communicating with network services, that
 	use SSL encryption - e.g. secure websites. Although this library is
