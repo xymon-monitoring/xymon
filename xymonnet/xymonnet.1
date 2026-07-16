@@ -67,7 +67,7 @@ This option is deprecated, and will be ignored. Use the
 
 .IP \-\-cmdtimeout=N
 This option sets a timeout for the external commands used by the RPC and
-traceroute tests and by the external NTP backends (ntpdate/sntp). The
+traceroute tests and by the external NTP backend (NTPDATE). The
 built-in NTP probe is not governed by it: the probe bounds itself with a
 short, fixed retransmission budget (a few attempts), so it can never hang
 and does not need an external kill timer.
@@ -556,21 +556,18 @@ Optionally used when a connectivity test fails to pinpoint the
 network location that is causing the failure.
 
 .IP NTPDATE
-Path to the external ntpdate program for the "ntp" service; the target IP is
+Path to an external NTP client for the "ntp" service; the target IP is
 appended. Empty (the default) selects the built-in SNTP probe. On ntpsec, where
 ntpdate is unavailable, set this to "ntpdig".
 .IP NTPDATEOPTS
-Options passed to the ntpdate program (used only when NTPDATE is set).
+Options passed to the NTPDATE program (used only when NTPDATE is set).
 Default: "\-u \-q".
-
-.IP SNTP
-Location of the
-.I sntp(1)
-utility. A legacy, explicitly-set SNTP forces sntp for the "ntp" service.
-.IP SNTPOPTS
-Options passed to the
-.I sntp(1)
-utility. Default: "\-u".
+.PP
+Note: the legacy SNTP and SNTPOPTS variables (an external msntp/sntp call-out
+for the "ntp" service) have been removed; the invocation predated current sntp
+implementations and no longer worked with any of them. Use the built-in probe
+(the default), or set NTPDATE to an external client such as "ntpdig", "sntp"
+or "msntp".
 
 .IP RPCINFO
 Location of the 
