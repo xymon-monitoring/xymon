@@ -72,4 +72,4 @@ grep -q 'set_max_proto_version(.*TLS1_3_VERSION)' <<<"$tls13_case" \
 grep -Eq 'strstr\(.*schemeopts, *"d"\).*SSLVERSION_TLS13' "$HTTP" \
 	|| fail "httptest.c no longer maps the httpsd:// scheme char (\"d\") to TLS 1.3 (#33)"
 
-pass "xymonnet keeps the #33 TLSv1.3 wiring (selector, proto-version pin, scheme)"
+exit 0

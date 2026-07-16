@@ -39,7 +39,7 @@ assert_not_contains "sizeof(md_string) - (md_string - p)" "$src" \
 
 # (2) behavioural demo of the property, if we can compile.
 if ! command -v "$CC" >/dev/null 2>&1; then
-	pass "digest.c keeps the #8 fix (static check; no C compiler for the run)"
+	exit 0
 fi
 
 WORK=$(mktempdir)
@@ -82,4 +82,4 @@ $(cat "$WORK/err")"
 fi
 "$WORK/t" || fail "md5hash format probe failed: the loop overran or the size property broke (#8)"
 
-pass "digest.c keeps the #8 fix (32 hex chars, canary intact, size argument bounded)"
+exit 0

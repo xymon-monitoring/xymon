@@ -48,4 +48,4 @@ assert_contains "(size_t)written >= available" "$src" \
 assert_contains "allrrdlinksend += written;" "$src" \
 	"trends no longer advances by bytes actually written (#38)"
 
-pass "svcstatus-trends.c keeps the #38 buffer-overflow guards"
+exit 0

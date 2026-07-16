@@ -30,12 +30,10 @@ skip() {
 	exit 77
 }
 
-# pass [MSG] -- cosmetic; tests that reach the end without failing already
-# pass. Useful only when a test wants to emit a one-line success summary.
-pass() {
-	printf 'PASS: %s\n' "${*:-ok}"
-	exit 0
-}
+# Success is silent by design: a test that reaches its end (exit 0) is reported
+# as "ok" by the runner. Per tests/README.md "quiet on success, verbose on
+# failure", there is no `pass` helper -- only `fail`/`skip` carry a reason the
+# runner can't know. A test that wants an explicit terminal success uses `exit 0`.
 
 # ---- assertions --------------------------------------------------------------
 
