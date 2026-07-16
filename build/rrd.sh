@@ -170,6 +170,18 @@ PROBE
 		fi
 	else
 		echo "ERROR: Linking with RRDtool fails"
+		if test "`uname -s`" = "NetBSD" -a ! -f /usr/X11R7/lib/libfontconfig.so.2
+		then
+			echo ""
+			echo "NOTE: On NetBSD, the pre-built rrdtool package links against the base"
+			echo "X11 sets in /usr/X11R7 (e.g. libfontconfig.so.2). These are not present"
+			echo "on systems installed without X11, and pkg_add cannot provide them."
+			echo "Install the xbase set - no reinstall needed:"
+			echo "  ftp https://cdn.netbsd.org/pub/NetBSD/NetBSD-`uname -r`/`uname -m`/binary/sets/xbase.tar.xz"
+			echo "  tar -xJpf xbase.tar.xz -C /"
+			echo "See https://github.com/xymon-monitoring/xymon/issues/70 for details."
+			echo ""
+		fi
 		RRDOK="NO"
 	fi
 	OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-rrd clean
