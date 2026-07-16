@@ -127,6 +127,9 @@ typedef struct xymond_log_t {
 	char *grouplist;        /* For extended status reports (e.g. from xymond_client) */
 	char sender[IP_ADDR_STRLEN];
 	time_t *lastchange;	/* Table of times when the currently logged status began */
+	time_t *flapchange;	/* Table of the most recent status-change times, used for flap detection */
+	time_t prepurplelastchange;	/* The "lastchange" value saved when the status went purple (no data) */
+	int prepurplecolor;	/* The color before the status went purple, or NO_COLOR */
 	time_t logtime;		/* time when last update was received */
 	time_t validtime;	/* time when status is no longer valid */
 	time_t enabletime;	/* time when test auto-enables after a disable */
@@ -1278,8 +1281,10 @@ void get_hts(char *msg, char *sender, char *origin,
 		for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
 			lwalk = (xymond_log_t *)calloc(1, sizeof(xymond_log_t));
-			lwalk->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
+			lwalk->lastchange = (time_t *)calloc(1, sizeof(time_t));
 			lwalk->lastchange[0] = getcurrenttime(NULL);
+			lwalk->flapchange = (flapcount > 0) ? (time_t *)calloc(flapcount, sizeof(time_t)) : NULL;
+			lwalk->prepurplecolor = NO_COLOR;
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
@@ -1508,10 +1513,10 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	if (modifyonly || issummary) {
 		/* Nothing */
 	}
-	else if ((flapcount > 0) && ((now - log->lastchange[flapcount-1]) < flapthreshold) && (!isset_noflap(hinfo, testname, hostname))) {
+	else if ((flapcount > 0) && ((now - log->flapchange[flapcount-1]) < flapthreshold) && (!isset_noflap(hinfo, testname, hostname))) {
 		if (!log->flapping) {
 			errprintf("Flapping detected for %s:%s - %d changes in %d seconds\n",
-				  hostname, testname, flapcount, (now - log->lastchange[flapcount-1]));
+				  hostname, testname, flapcount, (now - log->flapchange[flapcount-1]));
 			log->flapping = 1;
 			log->oldflapcolor = log->color;
 			log->currflapcolor = newcolor;
@@ -1521,20 +1526,27 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			log->currflapcolor = newcolor;
 		}
 
-		/* Make sure we maintain the most critical level reported by the flapping unit */
-		if (newcolor < log->color) newcolor = log->color;
-
-		/* 
-		 * If the status is actually changing, but we've detected it's a
-		 * flap and therefore suppress atatus change events, then we must
-		 * update the lastchange-times here because it won't be done in
-		 * the status-change handler.
+		/*
+		 * Make sure we maintain the most critical level reported by the flapping unit.
+		 * Purple is exempt: it means "no data", and pinning the old color would
+		 * record a status that was never reported.
 		 */
-		if ((log->oldflapcolor != log->currflapcolor) && (newcolor == log->color)) {
+		if ((newcolor != COL_PURPLE) && (newcolor < log->color)) newcolor = log->color;
+
+		/*
+		 * If the status is actually changing, but we've detected it's a
+		 * flap and therefore suppress status change events, then we must
+		 * record the change-time here because it won't be done in
+		 * the status-change handler. Note that "lastchange" is NOT
+		 * updated: the recorded color does not change, so its hold-time
+		 * keeps running. Like the status-change handler, don't record
+		 * anything while DOWNTIME is active.
+		 */
+		if (!log->downtimeactive && (log->oldflapcolor != log->currflapcolor) && (newcolor == log->color)) {
 			int i;
 			for (i=flapcount-1; (i > 0); i--)
-				log->lastchange[i] = log->lastchange[i-1];
-			log->lastchange[0] = now;
+				log->flapchange[i] = log->flapchange[i-1];
+			log->flapchange[0] = now;
 		}
 	}
 	else {
@@ -1814,16 +1826,37 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		if (!log->downtimeactive && (log->oldcolor != newcolor)) {
 			int i;
 			if (log->host->clientmsgs && (newalertstatus == A_ALERT) && log->test->clientsave) {
-				posttochannel(clichgchn, channelnames[C_CLICHG], msg, sender, 
+				posttochannel(clichgchn, channelnames[C_CLICHG], msg, sender,
 						hostname, log, NULL);
 			}
 
 			if (flapcount > 0) {
-				/* We keep track of flaps, so update the lastchange table */
+				/* We keep track of flaps, so update the change-time table */
 				for (i=flapcount-1; (i > 0); i--)
-					log->lastchange[i] = log->lastchange[i-1];
+					log->flapchange[i] = log->flapchange[i-1];
+				log->flapchange[0] = now;
 			}
-			log->lastchange[0] = now;
+
+			if (newcolor == COL_PURPLE) {
+				/* Save the hold-time data, so a same-color resume can bridge the no-data gap */
+				log->prepurplecolor = log->oldcolor;
+				log->prepurplelastchange = log->lastchange[0];
+				log->lastchange[0] = now;
+			}
+			else if ((log->oldcolor == COL_PURPLE) && (newcolor == log->prepurplecolor)) {
+				/*
+				 * Resuming with the same color as before the purple interlude:
+				 * bridge the gap, so "lastchange" reflects the true hold-time
+				 * of the recorded color. The gap itself counts as hold-time. A
+				 * resume with a different color starts a fresh hold-time below.
+				 */
+				log->lastchange[0] = log->prepurplelastchange;
+				log->prepurplecolor = NO_COLOR;
+			}
+			else {
+				log->lastchange[0] = now;
+				log->prepurplecolor = NO_COLOR;
+			}
 			log->statuschangecount++;
 		}
 	}
@@ -2480,6 +2513,7 @@ void free_log_t(xymond_log_t *zombie)
 	if (zombie->ackmsg) xfree(zombie->ackmsg);
 	if (zombie->grouplist) xfree(zombie->grouplist);
 	if (zombie->lastchange) xfree(zombie->lastchange);
+	if (zombie->flapchange) xfree(zombie->flapchange);
 	if (zombie->testflags) xfree(zombie->testflags);
 	flush_acklist(zombie, 1);
 	xfree(zombie);
@@ -3402,9 +3436,9 @@ strbuffer_t *generate_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, xy
 			break;
 
 		  case F_FLAPINFO:
-			snprintf(l, sizeof(l), "%d/%ld/%ld/%s/%s", 
-				 lwalk->flapping, 
-				 lwalk->lastchange[0], (flapcount > 0) ? lwalk->lastchange[flapcount-1] : 0,
+			snprintf(l, sizeof(l), "%d/%ld/%ld/%s/%s",
+				 lwalk->flapping,
+				 lwalk->lastchange[0], (flapcount > 0) ? lwalk->flapchange[flapcount-1] : 0,
 				 colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor]);
 			addtobuffer(buf, l);
 			break;
@@ -4082,6 +4116,7 @@ void do_message(conn_t *msg, char *origin)
 			faketestinit = 1;
 		}
 		clientlogrec.lastchange = infologrec.lastchange = trendslogrec.lastchange = dummytimes;
+		clientlogrec.flapchange = infologrec.flapchange = trendslogrec.flapchange = dummytimes;
 
 
 		for (hosthandle = xtreeFirst(rbhosts); (hosthandle != xtreeEnd(rbhosts)); hosthandle = xtreeNext(rbhosts, hosthandle)) {
@@ -4814,6 +4849,14 @@ void save_checkpoint(void)
 			if (lwalk->ackmsg) msgstr = nlencode(lwalk->ackmsg); else msgstr = "";
 			if (iores >= 0) iores = fprintf(fd, "|%s", msgstr);
 			if (iores >= 0) iores = fprintf(fd, "|%d|%d", (int)lwalk->redstart, (int)lwalk->yellowstart);
+			if (iores >= 0) iores = fprintf(fd, "|%d|%s|%d", lwalk->flapping,
+					colnames[lwalk->prepurplecolor], (int)lwalk->prepurplelastchange);
+			if (iores >= 0) {
+				int fi;
+				for (fi = 0; ((fi < flapcount) && (iores >= 0)); fi++)
+					iores = fprintf(fd, "%s%d", ((fi == 0) ? "|" : ","), (int)lwalk->flapchange[fi]);
+				if ((flapcount == 0) && (iores >= 0)) iores = fprintf(fd, "|");
+			}
 			if (iores >= 0) iores = fprintf(fd, "\n");
 
 			for (awalk = lwalk->acklist; (awalk && (iores >= 0)); awalk = awalk->next) {
@@ -4864,9 +4907,9 @@ void load_checkpoint(char *fn)
 	testinfo_t *t = NULL;
 	char *origin = NULL;
 	xymond_log_t *ltail = NULL;
-	char *originname, *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg, *cookie; 
-	time_t logtime, lastchange, validtime, enabletime, acktime, cookieexpires, yellowstart, redstart;
-	int color = COL_GREEN, oldcolor = COL_GREEN;
+	char *originname, *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg, *cookie, *flapchangestr;
+	time_t logtime, lastchange, validtime, enabletime, acktime, cookieexpires, yellowstart, redstart, prepurplelastchange;
+	int color = COL_GREEN, oldcolor = COL_GREEN, flapping = 0, prepurplecolor = NO_COLOR;
 	int count = 0;
 
 	fd = fopen(fn, "r");
@@ -4880,8 +4923,9 @@ void load_checkpoint(char *fn)
 	inbuf = newstrbuffer(0);
 	initfgets(fd);
 	while (unlimfgets(inbuf, fd)) {
-		originname = hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = cookie = NULL;
-		logtime = lastchange = validtime = enabletime = acktime = cookieexpires = yellowstart = redstart = 0;
+		originname = hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = cookie = flapchangestr = NULL;
+		logtime = lastchange = validtime = enabletime = acktime = cookieexpires = yellowstart = redstart = prepurplelastchange = 0;
+		flapping = 0; prepurplecolor = NO_COLOR;
 		err = 0;
 
 		if ((strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.task.|", 22) == 0) || (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.task.|", 23) == 0)) {
@@ -4987,6 +5031,10 @@ void load_checkpoint(char *fn)
 			  case 17: ackmsg = item; break;
 			  case 18: redstart = atoi(item); break;
 			  case 19: yellowstart = atoi(item); break;
+			  case 20: flapping = atoi(item); break;
+			  case 21: prepurplecolor = parse_color(item); if (prepurplecolor == -1) prepurplecolor = NO_COLOR; break;
+			  case 22: prepurplelastchange = atoi(item); break;
+			  case 23: flapchangestr = item; break;
 			  default: err = 1;
 			}
 
@@ -5065,8 +5113,21 @@ void load_checkpoint(char *fn)
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
 		strcpy(ltail->sender, sender);
 		ltail->logtime = logtime;
-		ltail->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
+		ltail->lastchange = (time_t *)calloc(1, sizeof(time_t));
 		ltail->lastchange[0] = lastchange;
+		ltail->flapchange = (flapcount > 0) ? (time_t *)calloc(flapcount, sizeof(time_t)) : NULL;
+		if (flapchangestr && (flapcount > 0)) {
+			char *fp = flapchangestr;
+			int fi = 0;
+
+			while (fp && (fi < flapcount)) {
+				ltail->flapchange[fi++] = (time_t)atoi(fp);
+				fp = strchr(fp, ','); if (fp) fp++;
+			}
+		}
+		ltail->flapping = flapping;
+		ltail->prepurplecolor = prepurplecolor;
+		ltail->prepurplelastchange = prepurplelastchange;
 		ltail->validtime = validtime;
 		ltail->enabletime = enabletime;
 		if (ltail->enabletime == DISABLED_UNTIL_OK) ltail->validtime = INT_MAX;
