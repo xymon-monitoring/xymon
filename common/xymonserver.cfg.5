@@ -175,6 +175,12 @@ is the home-directory for the user running Xymon.
 The directory for the Xymon's own logfiles (NOT the status-logs
 from the monitored hosts).
 
+.IP XYMONRUNDIR
+The directory for Xymon's runtime files - pidfiles and control
+sockets. Defaults to $XYMONSERVERLOGS. Point it at a tmpfs-backed
+directory (e.g. /run/xymon) to comply with the FHS; it must be
+writable by the user running Xymon.
+
 .IP XYMONHOME
 The Xymon server directory, where programs and configurations are kept.
 Default: $XYMONSERVERROOT/server/ .
