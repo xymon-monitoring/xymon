@@ -238,9 +238,10 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
   <dt id="ntp"><a class="permalink" href="#ntp"><b>ntp</b></a></dt>
   <dd>Tracks the clock offset between the local system and an NTP server,
       together with the RFC 5905 root distance (the &quot;+/-&quot; accuracy
-      bound), as measured by the built-in SNTP probe in xymonnet (or by an
-      external &quot;ntpdate&quot;/&quot;sntp&quot; command). The graph plots
-      the offset with the root distance as an error band.
+      bound), as measured by the built-in SNTP probe in xymonnet or by an
+      external ntpdate command (NTPDATE). Output from other external NTP clients
+      (sntp, ntpdig) is not parsed, so no ntp data is recorded when they are
+      used. The graph plots the offset with the root distance as an error band.
     <p class="Pp"></p>
   </dd>
   <dt id="citrix"><a class="permalink" href="#citrix"><b>citrix</b></a></dt>

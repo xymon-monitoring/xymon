@@ -1108,7 +1108,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   <dd>Check for a running NTP (Network Time Protocol) server on this host. By
       default this uses a built-in SNTP probe and needs no external program. Set
       NTPDATE to the ntpdate program (on ntpsec, &quot;ntpdig&quot;) to use that
-      instead.
+      instead, and adapt NTPDATEOPTS to the chosen client (its default is
+      ntpdate syntax).
     <p class="Pp"></p>
   </dd>
   <dt id="rpc"><a class="permalink" href="#rpc"><b>rpc</b>[=<i>rpcservice1</i>,<i>rpcservice2</i>,...]</a></dt>

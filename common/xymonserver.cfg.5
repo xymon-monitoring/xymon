@@ -712,8 +712,10 @@ no external program. On ntpsec, where ntpdate is unavailable, set this to "ntpdi
 Default: "" (built-in probe)
 
 .IP "\fBNTPDATEOPTS\fR"
-Options for the ntpdate program (used only when NTPDATE is set).
+Options for the NTPDATE program (used only when NTPDATE is set).
 Default: "\-u \-q"
+The default is ntpdate syntax; when NTPDATE is set to a different client
+(such as "ntpdig"), clear or adapt these options to ones that client accepts.
 
 .IP "\fBRPCINFO\fR"
 Defines the
