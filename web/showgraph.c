@@ -625,22 +625,26 @@ char *expand_tokens(char *tpl)
 	return STRBUF(result);
 }
 
+/* Sort mode for rrd_name_compare, decided ONCE for the whole set before
+ * qsort. Deciding per pair (numeric only when BOTH keys of that pair were
+ * numeric) made the comparator intransitive on mixed sets - 9 < 10 < "1a"
+ * yet "1a" < 9 - which is undefined behaviour for qsort(3): the resulting
+ * display (and paging) order depended on readdir() order. */
+static int rrd_keys_all_numeric = 0;
+
 int rrd_name_compare(const void *v1, const void *v2)
 {
 	rrddb_t *r1 = (rrddb_t *)v1;
 	rrddb_t *r2 = (rrddb_t *)v2;
-	char *endptr;
-	long numkey1, numkey2;
-	int key1isnumber, key2isnumber;
 
-	/* See if the keys are all numeric; if yes, then do a numeric sort */
-	numkey1 = strtol(r1->key, &endptr, 10); key1isnumber = (*endptr == '\0');
-	numkey2 = strtol(r2->key, &endptr, 10); key2isnumber = (*endptr == '\0');
+	if (rrd_keys_all_numeric) {
+		long numkey1 = atol(r1->key);
+		long numkey2 = atol(r2->key);
 
-	if (key1isnumber && key2isnumber) {
 		if (numkey1 < numkey2) return -1;
 		else if (numkey1 > numkey2) return 1;
-		else return 0;
+		/* Distinct keys must never compare equal ("007" vs "7"), or
+		 * their relative order is unspecified: break ties on the text. */
 	}
 
 	return strcmp(r1->key, r2->key);
@@ -1074,7 +1078,20 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			errprintf("showgraph: no RRD file matched service '%s'\n", service);
 	}
 
-	/* Sort them so the display looks prettier */
+	/* Sort them so the display looks prettier. Numeric sort only when ALL
+	 * keys are numeric (what the comparator always intended), so the
+	 * comparison mode cannot change from pair to pair. */
+	{
+		int i;
+
+		rrd_keys_all_numeric = (rrddbcount > 0);
+		for (i = 0; (i < rrddbcount) && rrd_keys_all_numeric; i++) {
+			char *endptr;
+
+			strtol(rrddbs[i].key, &endptr, 10);
+			rrd_keys_all_numeric = ((endptr != rrddbs[i].key) && (*endptr == '\0'));
+		}
+	}
 	qsort(&rrddbs[0], rrddbcount, sizeof(rrddb_t), rrd_name_compare);
 
 	/* Setup the title */
