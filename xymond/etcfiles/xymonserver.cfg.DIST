@@ -160,7 +160,8 @@ RRDWIDTH="576"		# The RRD's contain 576 data points, so this is a good value
 # - GRAPHS_<columnname> changes only what graphs are shown on that column's
 #   status page; it does not make xymond_rrd collect new data.
 # - GRAPHS defines the graph list and order on the trends page, and also stores
-#   graph-display metadata such as the per-image split size.
+#   graph-display metadata such as the maximum number of instances (RRD
+#   files) shown per graph image.
 
 # TEST2RRD format: COLUMN[=RRDSERVICE]. If "=RRDSERVICE" is omitted, the
 # RRD graph name is the same as the COLUMN value. You will normally not need to
@@ -185,15 +186,15 @@ GRAPHS_ntp="ntp.offset"
 # This defines graph names known to the graph display code. On the "trends"
 # column, it also defines which graphs are shown and in what order. The matching
 # RRD files are selected by graphs.cfg. Entries use name or name::N; N caps the
-# RRD files per graph image once a graph is split, so "mrtg::1" means one file
-# per image. N counts files, not lines: one RRD file can hold several DS, each
+# instances (RRD files) per graph image once a graph is split, so "mrtg::1" means one file
+# per image. N counts instances (files), not lines: one RRD file can hold several DS, each
 # drawn as its own curve, so N files may show several times N lines (a 2-DS
 # graph at ::2 draws 4 lines). A legacy middle field is accepted but ignored; use
 # name::N for new settings. Put ::N here, not in GRAPHS_<columnname>; it applies
 # on the trends page, on a test column's default status-page graph, and on
 # GRAPHS_<columnname> entries that name the same graph definition. If a graph is
 # used only from GRAPHS_<columnname> and has no matching entry here, it uses the
-# default split size.
+# default limit of instances per image.
 # On status pages, splitting also needs an instance count: either the status
 # message includes "<!-- linecount=N -->", or svcstatus.cgi computes it
 # automatically for columns listed in its --multigraphs option.
