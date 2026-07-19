@@ -19,6 +19,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # The build-independent fast lane: full source, NO build, no toolchain
+      # or apt install. It exercises the source-reading tests (fs-filter,
+      # dpkg-report, ...) in seconds and -- unlike the build legs in build.yml
+      # -- still reports if configure or a dependency breaks, so a pure
+      # shell/harness regression stays visible when the build itself is red.
+      # require_bin tests (e.g. xymongrep-filter) skip here by design; they run
+      # against real binaries in build.yml. Coverage here is a subset of the
+      # build legs; the point is the independent, build-free signal.
+      #
       # The runner lives in tests/testsuite so developers can run the exact
       # same thing locally (./tests/testsuite or make test). It auto-detects
       # GitHub Actions and emits log annotations here, plain output on a CLI.
@@ -26,10 +35,10 @@ jobs:
       # testsuite exits 77 ("everything skipped -- nothing verified"). Actions
       # has no neutral state: any nonzero exit is a failure, so we must map 77
       # explicitly rather than let it surface as a bare "exit code 77". This job
-      # checks out the full source, so every test finds the code it guards and
-      # runs -- an all-skip here is never the legitimate "tests shipped without
-      # source" case, it means discovery or the tree itself is broken. Treat it
-      # as a hard failure with a clear message.
+      # checks out the full source, so every source-reading test finds the code
+      # it guards and runs -- an all-skip here is never the legitimate "tests
+      # shipped without source" case, it means discovery or the tree itself is
+      # broken. Treat it as a hard failure with a clear message.
       - name: Run testsuite
         run: |
           # GitHub runs steps with `bash -e`, which would abort on testsuite's

@@ -28,6 +28,28 @@ Conventions). The runner itself is POSIX sh, and on a host without bash it
 skips the whole suite with exit `77` rather than reporting interpreter
 failures as test failures.
 
+### `XYMON_VARIANT` — scoping tests to a build
+
+Some tests exercise a component absent from certain builds (the server
+configure, RRD, xymonnet, the web CGIs). They gate on `XYMON_VARIANT` via
+`need_variant` (lib/assert.sh):
+
+| `XYMON_VARIANT`          | Behaviour                                          |
+| ------------------------ | -------------------------------------------------- |
+| unset / empty            | no restriction — every test runs (developer run, release tarball, build-free `tests.yml` lane) |
+| `server` / `client` / `localclient` | scoped tests run only in matching lanes; others skip with `77` |
+| anything else            | `fail` — an unknown value is a CI-matrix typo, not a reason to skip silently |
+
+The build legs of `build.yml` export the variant they just built; the
+build-free `tests.yml` lane leaves it unset. Leave it unset for a normal
+developer run.
+
+> **"No build required" is not "build-independent."** Running `./tests/testsuite`
+> in a tree you have already compiled will exercise those built binaries via
+> `require_bin` rather than skipping them. To reproduce the truly
+> build-independent lane, run from a clean checkout or a fresh
+> `git worktree add --detach`, with `XYMON_VARIANT` unset.
+
 ## What lives here, what doesn't
 
 - **Here:** shell-level integration scenarios that exercise binaries,

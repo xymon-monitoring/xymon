@@ -26,6 +26,10 @@ set -euo pipefail
 
 ROOT=$(find_root)
 
+# Server-only: exercises './configure --server'. A client/localclient lane has
+# no server build and lacks server deps (c-ares, ...), so skip there.
+need_variant server
+
 [ -f "$ROOT/configure" ]        || skip "configure missing (CMake-only tree?)"
 [ -f "$ROOT/configure.server" ] || skip "configure.server missing"
 [ -d "$ROOT/build" ]            || skip "build/ missing"
@@ -86,20 +90,24 @@ fi
 # satisfied even if pre-#84 silent-continue behavior were reintroduced.
 # Pin the failure to the RRD abort code path in configure.server.
 if ! grep -q "RRDtool probe failed" "$LOG"; then
-	# configure.server checks a few prerequisites *before* it reaches the
-	# RRD stub: GNU make (it bails with "GNU make is required ...") and a
-	# usable PCRE (build/pcre.sh exits with "Missing PCRE include- or
-	# library-files ..."). If one of those is absent on this host the run
-	# aborts early and never exercises the RRD path -- that's a missing
-	# precondition, not a #84 regression, so skip rather than false-fail.
-	# (Matches the tarball/autopkgtest portability goal: declare the host
-	# dependency and skip when it's not met.)
-	if grep -q "GNU make is required" "$LOG"; then
-		skip "GNU make unavailable -- configure aborts before the RRD probe"
+	# configure.server runs several prerequisite probes *before* it reaches the
+	# mocked RRD stub: GNU make, then build/{fping,pcre,c-ares}.sh. PCRE and
+	# c-ares each exit non-zero and abort configure when their -dev package is
+	# missing -- common on a client-only lane (e.g. ct-server), where the
+	# server/xymonnet dependencies (libc-ares-dev in particular) are not
+	# installed. If our stub never ran, the RRD path was never exercised, so an
+	# early abort is an unmet host prerequisite, not a #84 regression.
+	#
+	# Detect that generically via the stub's own marker rather than enumerating
+	# every prerequisite's error string (the c-ares case is exactly what slips
+	# through an enumerated list). Skip rather than false-fail, matching the
+	# tarball/autopkgtest portability goal: declare the host dependency and skip
+	# when it's not met.
+	if ! grep -q "forcing RRDOK=NO" "$LOG"; then
+		skip "configure aborted before the RRD probe (unmet server prerequisite: GNU make / PCRE / c-ares / ...)"
 	fi
-	if grep -q "Missing PCRE include- or library-files" "$LOG"; then
-		skip "usable PCRE unavailable -- configure aborts before the RRD probe"
-	fi
+	# The stub ran (RRD path reached) but configure did not abort via it: that
+	# is the actual #84 regression -- silent ENABLERRD=n continue.
 	dump_log
-	fail "configure --server exited $rc but not via the RRD abort path (regression of #84)"
+	fail "configure --server reached the RRD probe but did not abort via it (regression of #84)"
 fi
