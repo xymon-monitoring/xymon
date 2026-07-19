@@ -23,7 +23,7 @@ typedef struct {
 typedef struct {
    char *xymonrrdname;
    char *xymonpartname;
-   int  maxgraphs;
+   int  maxinstancesperimage;
 } xymongraph_t;
 
 typedef enum {

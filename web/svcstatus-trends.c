@@ -204,7 +204,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 
 			myrrd->gdef->xymonrrdname = graphdef;
 			myrrd->gdef->xymonpartname = NULL;
-			myrrd->gdef->maxgraphs = 0;
+			myrrd->gdef->maxinstancesperimage = 0;
 			myrrd->count = rrd->count;
 			myrrd->next = NULL;
 			partlink = xymon_graph_data(xmh_item(host, XMH_HOSTNAME), hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
