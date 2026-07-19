@@ -20,10 +20,34 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <limits.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include "libxymon.h"
 
 #define MAX_REQ_SIZE (1024*1024)
+
+/*
+ * basename() that also neutralizes "." and "..".
+ *
+ * POSIX basename() strips directory components, so "../../etc/passwd"
+ * becomes "passwd" -- but it returns ".." for "..", and "." for "." or an
+ * empty/"/" input. A lone ".." pasted into a filesystem path is still a
+ * single-level traversal, so basename() alone is not enough to keep
+ * attacker-controlled CGI parameters from escaping their intended directory.
+ *
+ * This returns "" for those cases, leaving every other result untouched.
+ * Callers that strdup() the result get a safe single path component (or an
+ * empty string, which their existing validation rejects or which collapses
+ * harmlessly in the constructed path). Like basename(3), it may modify the
+ * string pointed to by path, so callers must not rely on path afterwards.
+ */
+char *safe_basename(char *path)
+{
+	char *b = basename(path);
+
+	if (!b || (strcmp(b, ".") == 0) || (strcmp(b, "..") == 0)) return "";
+	return b;
+}
 
 enum cgi_method_t cgi_method = CGI_OTHER;
 
