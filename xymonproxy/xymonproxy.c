@@ -562,11 +562,16 @@ int main(int argc, char *argv[])
 				 * at the front of the buffer, we need to skip that when looking at
 				 * what type of message it is. Hence the "cwalk->buf+6".
 				 */
-				if (strncmp(cwalk->buf+6, "client", 6) == 0) {
+				if ((strncmp(cwalk->buf+6, "client ", 7) == 0) || (strncmp(cwalk->buf+6, "client/", 7) == 0)) {
 					/*
-					 * "client" messages go to all Xymon servers, but
+					 * "client" data messages go to all Xymon servers, but
 					 * we will only pass back the response from one of them
 					 * (the last one).
+					 * Match "client " and "client/" exactly: the client-
+					 * prefixed query commands ("clientlog", "clientsubmit",
+					 * "clientconfig") are two-way requests handled below and
+					 * must not be broadcast or get the [proxy] section
+					 * appended.
 					 */
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
@@ -581,12 +586,20 @@ int main(int argc, char *argv[])
 					}
 				}
 				else if ((strncmp(cwalk->buf+6, "query", 5) == 0)  ||
+				         (strncmp(cwalk->buf+6, "client", 6) == 0) ||
+				         (strncmp(cwalk->buf+6, "xymond", 6) == 0) ||
+				         (strncmp(cwalk->buf+6, "hobbitd", 7) == 0) ||
+				         (strncmp(cwalk->buf+6, "hostinfo", 8) == 0) ||
 				         (strncmp(cwalk->buf+6, "config", 6) == 0) ||
+				         (strncmp(cwalk->buf+6, "ghostlist", 9) == 0) ||
 				         (strncmp(cwalk->buf+6, "ping", 4) == 0) ||
 				         (strncmp(cwalk->buf+6, "download", 8) == 0)) {
-					/* 
-					 * These requests get a response back, but send no data.
-					 * Send these to the last of the Xymon servers only.
+					/*
+					 * Two-way requests: these get a response back but send
+					 * no data, so send them to one server only (the last)
+					 * rather than broadcasting. Includes the client-prefixed
+					 * query commands (clientlog etc.) and the board/log
+					 * queries (xymond*, hobbitd*, hostinfo, ghostlist).
 					 */
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;

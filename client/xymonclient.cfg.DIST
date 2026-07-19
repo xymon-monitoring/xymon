@@ -102,3 +102,6 @@ BBHOME="$XYMONHOME"
 BB="$XYMON"
 BBTMP="$XYMONTMP"
 BBCLIENTLOGS="$XYMONCLIENTLOGS"
+
+# Local additions: any file dropped into the directory below is included
+optional directory @XYMONHOME@/etc/xymonclient.cfg.d

@@ -21,7 +21,7 @@ under CI — the workflow and a developer run the exact same runner.
 Once the tree is configured, `make test` runs the same thing. A single
 test also runs standalone — what reviewers do:
 
-    ./tests/client/fs-filter.sh
+    ./tests/client/fs-filter-linux.sh
 
 `bash` is a hard prerequisite of the suite (every test uses it; see
 Conventions). The runner itself is POSIX sh, and on a host without bash it
@@ -73,7 +73,7 @@ maintenance.
 ## Conventions
 
 - **One file per scenario set.** Filename describes the area, not the
-  PR: `tests/client/fs-filter.sh`, `tests/packaging/fhs-paths.sh`.
+  PR: `tests/client/fs-filter-linux.sh`, `tests/packaging/fhs-paths.sh`.
   Split when a file passes ~200 lines.
 - **Executable. Bash. Strict mode.** First line:
   `#!/usr/bin/env bash`. Second line: `set -euo pipefail`.

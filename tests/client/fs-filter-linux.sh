@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/client/fs-filter.sh
+# tests/client/fs-filter-linux.sh
 #
 # Regression guard for xymon-monitoring/xymon#96 (refs #49):
 # xymonclient-linux.sh respects four environment variables that tune
@@ -27,28 +27,16 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+# shellcheck source=tests/client/fs-filter-common.sh
+. "$(dirname "$0")/fs-filter-common.sh"
 
-ROOT=$(find_root)
-# Default: the in-tree script. $XYMONCLIENT_LINUX (autopkgtest) points at the
-# INSTALLED script -- /usr/lib/xymon/client/bin/xymonclient-linux.sh on Debian
-# -- so the test exercises what the package actually ships, distro patches
-# included. Same-version artifacts only; see "Path discovery" in
-# tests/README.md.
-SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"
-
-# Same fail-on-explicit-override contract as require_bin (lib/assert.sh):
-# $XYMONCLIENT_LINUX set means the caller asserts the installed script exists
-# there, so a dangling path is a broken package layout and must not skip green.
-if [ ! -f "$SCRIPT" ]; then
-	[ -z "${XYMONCLIENT_LINUX:-}" ] || fail "XYMONCLIENT_LINUX explicitly set to '$SCRIPT' but no such file -- broken package layout, not a skip"
-	skip "$SCRIPT missing"
-fi
-# The #49 env-var FS filter has landed (PR #96), so this is now a real
-# regression guard: if the env-var logic ever disappears from the script the
-# assertions below must FAIL, not skip. Do not reinstate a "feature not landed"
-# skip here -- absence of the filter is a regression, per tests/README.md.
-
-TMP=$(mktempdir)
+# Resolve SCRIPT (in-tree default; $XYMONCLIENT_LINUX, set by autopkgtest, points
+# at the INSTALLED script so we test what the package ships -- same-version
+# artifacts only, see "Path discovery" in tests/README.md), apply the
+# fail-on-dangling-override / skip-if-absent contract, assert the #49/#96 FS
+# filter is still present (its absence is a regression, not a skip, per
+# tests/README.md), and set up TMP/STUB/DF_LOG/INODE_LOG/STDERR_LOG/PATH.
+fsf_setup linux XYMONCLIENT_LINUX
 
 # --- fixtures ----------------------------------------------------------------
 
@@ -74,38 +62,23 @@ EOF
 : > "$TMP/tmpfs"
 : > "$TMP/fuse.sshfs"
 
-# Extract just the [df] block from xymonclient-linux.sh and rewrite the
-# /proc/filesystems reference. Drop the trailing `echo "[inode]"` line with
-# `sed '$d'` (portable last-line delete; `head -n -1` is a GNU extension and
-# OpenBSD head(1) rejects a negative count) so we exit cleanly after one df
-# invocation per run.
+# Extract just the [df] block (stop at [inode]) and the combined [df]+[inode]
+# block (stop at [mount]), rewriting the /proc/filesystems reference at the
+# fixture in both. The [inode] block reuses the EXCLUDES/ROOTFS the [df] block
+# computed, so the combined block must run them together -- a lone [inode]
+# snippet would see an empty EXCLUDES.
+PROC_REWRITE="s!/proc/filesystems!$TMP/proc.filesystems!g"
 SNIPPET="$TMP/df-section.sh"
-sed -n '/^echo "\[df\]"/,/^echo "\[inode\]"/p' "$SCRIPT" \
-	| sed '$d' \
-	| sed "s!/proc/filesystems!$TMP/proc.filesystems!g" \
-	> "$SNIPPET"
-
-# Combined [df]+[inode] block (stops before [mount], drops that trailing echo).
-# The [inode] block reuses the EXCLUDES/ROOTFS computed at the top of the [df]
-# block, so the two must be extracted together to run the inode invocation in
-# isolation -- a lone [inode] snippet would see an empty EXCLUDES.
+fsf_extract "$SNIPPET" "$PROC_REWRITE" '\[inode\]'
 COMBINED="$TMP/df-inode-section.sh"
-sed -n '/^echo "\[df\]"/,/^echo "\[mount\]"/p' "$SCRIPT" \
-	| sed '$d' \
-	| sed "s!/proc/filesystems!$TMP/proc.filesystems!g" \
-	> "$COMBINED"
+fsf_extract "$COMBINED" "$PROC_REWRITE"
 
 # --- stubs -------------------------------------------------------------------
-
-STUB="$TMP/bin"
-mkdir -p "$STUB"
 
 # df stub: append its full argv to a log file, emit a minimal valid table
 # so the downstream `sed` in the script has something to chew on. The [df] and
 # [inode] blocks both shell out to df; route the inode invocation (`df -Pil` /
 # `df -i`) to its own log so each block's flags can be asserted independently.
-DF_LOG="$TMP/df.args"
-INODE_LOG="$TMP/inode.args"
 cat > "$STUB/df" <<EOF
 #!/usr/bin/env bash
 if [[ " \$* " =~ -P[a-zA-Z]*i ]] || [[ " \$* " =~ " -i " ]]; then
@@ -126,42 +99,15 @@ echo "/dev/sda1"
 EOF
 chmod +x "$STUB/readlink"
 
-STDERR_LOG="$TMP/stderr"
-
-export PATH="$STUB:$PATH"
-
 # --- runner ------------------------------------------------------------------
 
-# run_snippet: invoke the extracted block in a fresh subshell, return the
-# command-line df was called with. Per-case env vars are passed via an inline
-# prefix on the caller's `args=$(VAR=val run_snippet)`; see the leak warning
-# below.
-run_snippet() {
-	: > "$DF_LOG"
-	: > "$INODE_LOG"
-	: > "$STDERR_LOG"
-	(
-		cd "$TMP"
-		/bin/sh "$SNIPPET" >/dev/null 2>"$STDERR_LOG"
-	)
-	# Pad with spaces so substring assertions for " -x tmpfs " work even
-	# at the ends of the line.
-	printf ' %s ' "$(cat "$DF_LOG")"
-}
-
-# run_inode: run the combined [df]+[inode] block and return the argv the
-# *inode* df invocation was called with (the df stub routes it to INODE_LOG).
-# Per-case env vars are passed via an inline prefix, same as run_snippet.
-run_inode() {
-	: > "$DF_LOG"
-	: > "$INODE_LOG"
-	: > "$STDERR_LOG"
-	(
-		cd "$TMP"
-		/bin/sh "$COMBINED" >/dev/null 2>"$STDERR_LOG"
-	)
-	printf ' %s ' "$(cat "$INODE_LOG")"
-}
+# run_snippet runs the [df]-only block and returns the df argv; run_inode runs
+# the combined block and returns the *inode* invocation's argv (the df stub
+# routes it to INODE_LOG). Both are thin shims over fsf_run (fs-filter-common.sh)
+# so the call sites and the inline per-case env prefix stay unchanged; see the
+# leak warning below.
+run_snippet() { fsf_run "$SNIPPET" "$DF_LOG"; }
+run_inode()   { fsf_run "$COMBINED" "$INODE_LOG"; }
 
 # Callers pass per-case env vars via the inline prefix on the
 # `args=$(VAR=val run_snippet)` invocation. Do NOT also set them on

@@ -124,6 +124,11 @@ but these options allow you to set a default value for the delays.
 The value N is in minutes. Default: 0 minutes (no delay).
 Note: Since most tests only execute once every 5 minutes, it will
 usually not make sense to set N to anything but a multiple of 5.
+.br
+While the change to red is deferred the status is shown as yellow, not
+green; use both delays to keep the status unchanged. A status
+recovering from purple (no data) is updated immediately, without any
+delay.
 
 .IP "\-\-env=FILENAME"
 Loads the content of FILENAME as environment settings before starting

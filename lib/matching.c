@@ -100,11 +100,11 @@ int namematch(const char *needle, char *haystack, pcre2_code *pcrecode)
 
 		if (!found) {
 			if (*tok == '!') {
-				found = (strcmp(tok+1, needle) == 0);
+				found = (strcasecmp(tok+1, needle) == 0);
 				if (found) result = 0;
 			}
 			else {
-				found = (strcmp(tok, needle) == 0);
+				found = (strcasecmp(tok, needle) == 0);
 				if (found) result = 1;
 			}
 		}

@@ -35,3 +35,6 @@
 	# 576 datapoints w/ 288*5 minute averaged = 576 days @ 1 day avg.
 	RRA:AVERAGE:0.5:288:576
 
+
+# Local additions: any file dropped into the directory below is included
+optional directory @XYMONHOME@/etc/rrddefinitions.d
