@@ -514,6 +514,54 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	return 0;
 }
 
+/* Remove one host's cache entries. Flushed first on rename - the files
+ * are about to move, the pending data must land in them before they do.
+ * Discarded on drophost - a flush would write into the directory the
+ * forked deletion is tearing down, and the values are the dropped
+ * host's data anyway. (rrdcacheflushhost() is not usable here: it
+ * expects "/host"-shaped keys and rate-limits to one flush per 60s.) */
+void rrdcache_drop_host(char *hostname, int flushfirst)
+{
+	xtreePos_t handle;
+	char prefix[PATH_MAX];
+	size_t plen;
+	char **keys = NULL;
+	int nkeys = 0, i;
+
+	if ((updcache_keyofs == -1) || !hostname) return;
+	snprintf(prefix, sizeof(prefix), "/%s/", hostname);
+	plen = strlen(prefix);
+
+	/* Two phases: deleting while traversing the tree is not safe */
+	for (handle = xtreeFirst(updcache); (handle != xtreeEnd(updcache)); handle = xtreeNext(updcache, handle)) {
+		updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
+		if (strncasecmp(cacheitem->key, prefix, plen) != 0) continue;
+		keys = (char **)realloc(keys, (nkeys+1) * sizeof(char *));
+		keys[nkeys++] = cacheitem->key;
+	}
+
+	for (i = 0; (i < nkeys); i++) {
+		handle = xtreeFind(updcache, keys[i]);
+		if (handle != xtreeEnd(updcache)) {
+			updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
+			int v;
+
+			if (flushfirst && (cacheitem->valcount > 0)) {
+				sprintf(filedir, "%s%s", rrddir, cacheitem->key);
+				flush_cached_updates(cacheitem, NULL);
+			}
+			xtreeDelete(updcache, cacheitem->key);
+			for (v = 0; (v < cacheitem->valcount); v++)
+				if (cacheitem->vals[v]) xfree(cacheitem->vals[v]);
+			xfree(cacheitem->key);
+			xfree(cacheitem);
+		}
+	}
+	if (nkeys) dbgprintf("updcache: %s %d entries for host %s\n",
+			     (flushfirst ? "flushed and dropped" : "discarded"), nkeys, hostname);
+	if (keys) xfree(keys);
+}
+
 void rrdcacheflushall(void)
 {
 	xtreePos_t handle;

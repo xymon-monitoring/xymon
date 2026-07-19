@@ -72,6 +72,42 @@ static void sig_handler(int signum)
 	}
 }
 
+/* Drop barrier: the forked directory deletion races messages for the
+ * host still queued in the channel, which would recreate files inside
+ * the dying directory. Remember recent drops and discard the stragglers.
+ * A host re-added after the window resumes normally. */
+#define DROPBARRIER 300		/* seconds */
+static void *recentdrops = NULL;
+
+static void note_hostdrop(char *hostname)
+{
+	xtreePos_t handle;
+	time_t now = gettimer();
+
+	if (!recentdrops) recentdrops = xtreeNew(strcasecmp);
+	handle = xtreeFind(recentdrops, hostname);
+	if (handle != xtreeEnd(recentdrops)) {
+		*(time_t *)xtreeData(recentdrops, handle) = now;
+	}
+	else {
+		time_t *ts = (time_t *)malloc(sizeof(time_t));
+		*ts = now;
+		xtreeAdd(recentdrops, strdup(hostname), ts);
+	}
+}
+
+static int hostdrop_barrier(char *hostname)
+{
+	xtreePos_t handle;
+
+	if (!recentdrops) return 0;
+	handle = xtreeFind(recentdrops, hostname);
+	if (handle == xtreeEnd(recentdrops)) return 0;
+	/* Expired entries stay (one record per ever-dropped name - bounded;
+	 * xtreeDelete cannot release the key) and re-arm on the next drop. */
+	return ((gettimer() - *(time_t *)xtreeData(recentdrops, handle)) < DROPBARRIER);
+}
+
 static void update_locator_hostdata(char *id)
 {
 	DIR *fd;
@@ -370,6 +406,10 @@ int main(int argc, char *argv[])
 				testname = metadata[5];
 				classname = (metadata[17] ? metadata[17] : "");
 				pagepaths = (metadata[18] ? metadata[18] : "");
+				if (hostdrop_barrier(hostname)) {
+					dbgprintf("Dropping straggler status for recently dropped host %s\n", hostname);
+					break;
+				}
 				ldef = find_xymon_rrd(testname, metadata[8]);
 				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 				break;
@@ -387,8 +427,13 @@ int main(int argc, char *argv[])
 			testname = metadata[5];
 			classname = (metadata[6] ? metadata[6] : "");
 			pagepaths = (metadata[7] ? metadata[7] : "");
-			ldef = find_xymon_rrd(testname, "");
-			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
+			if (hostdrop_barrier(hostname)) {
+				dbgprintf("Dropping straggler data for recently dropped host %s\n", hostname);
+			}
+			else {
+				ldef = find_xymon_rrd(testname, "");
+				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
+			}
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
@@ -416,6 +461,10 @@ int main(int argc, char *argv[])
 			MEMDEFINE(hostdir);
 
 			sprintf(hostdir, "%s/%s", rrddir, basename(hostname));
+			/* Barrier and discard cached updates BEFORE the forked
+			 * deletion starts - nothing may write into the dying dir. */
+			note_hostdrop(hostname);
+			rrdcache_drop_host(hostname, 0);
 			dropdirectory(hostdir, 1);
 
 			MEMUNDEFINE(hostdir);
@@ -439,6 +488,10 @@ int main(int argc, char *argv[])
 			newhostname = metadata[4];
 			sprintf(oldhostdir, "%s/%s", rrddir, hostname);
 			sprintf(newhostdir, "%s/%s", rrddir, newhostname);
+			/* Flush pending updates into the old-named files BEFORE
+			 * they move, then barrier the old name against stragglers. */
+			rrdcache_drop_host(hostname, 1);
+			note_hostdrop(hostname);
 			rename(oldhostdir, newhostdir);
 
 			if (net_worker_locatorbased()) locator_rename_host(hostname, newhostname, ST_RRD);
