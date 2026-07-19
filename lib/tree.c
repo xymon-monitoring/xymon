@@ -60,7 +60,19 @@ void *xtreeNew(int(*xtreeCompare)(const char *a, const char *b))
 
 void xtreeDestroy(void *treehandle)
 {
-	free(treehandle);
+	xtree_t *tree = treehandle;
+
+	if (!tree) return;
+	/* No tdestroy() outside glibc, so delete the root record until the
+	 * tree is empty (*(rec **)root is the POSIX-documented node layout):
+	 * tdelete frees the internal nodes, we free the record wrappers.
+	 * Keys and userdata belong to the caller, as always. */
+	while (tree->root) {
+		treerec_t *rec = *(treerec_t **)tree->root;
+		tdelete(rec, &tree->root, xtree_i_compare);
+		free(rec);
+	}
+	free(tree);
 }
 
 xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
