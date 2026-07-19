@@ -3,6 +3,7 @@ name: build
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 # Both workflows check out and run pull-request code; the token needs
 # nothing beyond reading the repo. Same grant as tests.yml.
