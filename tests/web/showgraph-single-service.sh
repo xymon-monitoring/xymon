@@ -41,6 +41,7 @@ fi
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-showgraph.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
+[ -w "$ROOT/lib" ] || skip "source tree not writable (cannot refresh libxymoncomm.a)"
 make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
