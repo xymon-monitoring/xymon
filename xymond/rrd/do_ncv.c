@@ -30,27 +30,42 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 	params = (char **)calloc(1, sizeof(char *));
 	paridx = 0;
 
-	/* Get the NCV_* or SPLITNCV_* environment setting */
-	envnam = (char *)malloc(9 + strlen(testname) + 1);
-	sprintf(envnam, "SPLITNCV_%s", testname);
-	l = getenv(envnam);
-	if (l) {
-		split_ncv = 1;
-		dslen = 200;
-	}
-	else {
-		split_ncv = 0;
-		dslen = 19;
-		setupfn("%s.rrd", testname);
-		sprintf(envnam, "NCV_%s", testname);
-		l = getenv(envnam);
+	/* test.cfg's per-metric NCV/SPLITNCV spec overrides the
+	 * NCV_<col>/SPLITNCV_<col> environment; env is the fallback. */
+	{
+		int tcsplit = 0;
+		const char *tcncv = testcfg_ncv(testname, &tcsplit);
+		if (tcncv) {
+			split_ncv = tcsplit;
+			dslen = tcsplit ? 200 : 19;
+			if (!tcsplit) setupfn("%s.rrd", testname);
+			l = (char *)tcncv;
+			envnam = NULL;
+		}
+		else {
+			/* Get the NCV_* or SPLITNCV_* environment setting */
+			envnam = (char *)malloc(9 + strlen(testname) + 1);
+			sprintf(envnam, "SPLITNCV_%s", testname);
+			l = getenv(envnam);
+			if (l) {
+				split_ncv = 1;
+				dslen = 200;
+			}
+			else {
+				split_ncv = 0;
+				dslen = 19;
+				setupfn("%s.rrd", testname);
+				sprintf(envnam, "NCV_%s", testname);
+				l = getenv(envnam);
+			}
+		}
 	}
 
 	if (l) {
 		dstypes = (char *)malloc(strlen(l)+3);
 		sprintf(dstypes, ",%s,", l);
 	}
-	xfree(envnam);
+	if (envnam) xfree(envnam);	/* NULL when the spec came from test.cfg; xfree(NULL) aborts */
 
 	l = strchr(msg, '\n'); if (l) l++;
 	while (l && *l && strncmp(l, "@@\n", 3)) {

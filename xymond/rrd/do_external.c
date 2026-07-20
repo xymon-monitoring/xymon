@@ -145,6 +145,15 @@ int do_external_rrd(char *hostname, char *testname, char *classname, char *pagep
 		unlink(fn);
 		freestrbuffer(inbuf);
 
+		/*
+		 * Like the update cache above, the fileset index lives in this
+		 * child's memory only: baselines, schema and freshness noted by
+		 * create_and_update_rrd() die with exit() unless pushed to disk
+		 * here. The flush is a locked read-merge-write against the
+		 * on-disk file, so it cannot clobber the parent's copy.
+		 */
+		fsidx_flush_now(rrddir, hostname);
+
 		exit(0);
 	}
 	else if (childpid > 0) {

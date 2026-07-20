@@ -72,6 +72,58 @@ static void sig_handler(int signum)
 	}
 }
 
+/* Drop barrier: the forked directory deletion races messages for the
+ * host still queued in the channel, which would recreate files - and
+ * the fileset index - inside the dying directory. Remember recent drops
+ * and discard the stragglers. A host re-added after the window resumes
+ * normally. */
+#define DROPBARRIER 300		/* seconds */
+static void *recentdrops = NULL;
+
+static void note_hostdrop(char *hostname)
+{
+	xtreePos_t handle;
+	time_t now = gettimer();
+
+	if (!recentdrops) recentdrops = xtreeNew(strcasecmp);
+	handle = xtreeFind(recentdrops, hostname);
+	if (handle != xtreeEnd(recentdrops)) {
+		*(time_t *)xtreeData(recentdrops, handle) = now;
+	}
+	else {
+		time_t *ts = (time_t *)malloc(sizeof(time_t));
+		*ts = now;
+		xtreeAdd(recentdrops, strdup(hostname), ts);
+	}
+}
+
+static int hostdrop_barrier(char *hostname)
+{
+	xtreePos_t handle;
+
+	if (!recentdrops) return 0;
+	handle = xtreeFind(recentdrops, hostname);
+	if (handle == xtreeEnd(recentdrops)) return 0;
+	/* Expired entries stay (one record per ever-dropped name - bounded;
+	 * xtreeDelete cannot release the key) and re-arm on the next drop. */
+	return ((gettimer() - *(time_t *)xtreeData(recentdrops, handle)) < DROPBARRIER);
+}
+
+/* Hourly: evict cache entries idle > 6h (bounds memory under instance
+ * churn; pending values are flushed first, so nothing is lost). Called
+ * from both the status- and data-channel message paths - each worker
+ * process has its own cache. */
+static void cache_evict_hourly(void)
+{
+	static time_t nextevict = 0;
+	time_t enow = gettimer();
+
+	if (enow > nextevict) {
+		rrdcache_evict_idle(6*3600);
+		nextevict = enow + 3600;
+	}
+}
+
 static void update_locator_hostdata(char *id)
 {
 	DIR *fd;
@@ -251,10 +303,18 @@ int main(int argc, char *argv[])
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
 
-	/* Setup the control socket that receives cache-flush commands */
+	/* Setup the control socket that receives cache-flush commands. The
+	 * AF_UNIX path is limited to sizeof(sun_path) (typically 108): a
+	 * long $XYMONTMP overflowed the sprintf and aborted the daemon at
+	 * startup - check it and run without the socket instead. */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
-	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
-	unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
+	if ((size_t)snprintf(ctlsockaddr.sun_path, sizeof(ctlsockaddr.sun_path), "%s/rrdctl.%lu",
+			     xgetenv("XYMONTMP"), (unsigned long)getpid()) >= sizeof(ctlsockaddr.sun_path)) {
+		errprintf("XYMONTMP path too long for the cache-control socket (max %d) - cache flushing on demand disabled\n",
+			  (int)sizeof(ctlsockaddr.sun_path) - 20);
+		ctlsockaddr.sun_path[0] = '\0';
+	}
+	if (ctlsockaddr.sun_path[0]) unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
 	ctlsockaddr.sun_family = AF_UNIX;
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (ctlsocket == -1) {
@@ -262,13 +322,15 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	fcntl(ctlsocket, F_SETFL, O_NONBLOCK);
-	if (bind(ctlsocket, (struct sockaddr *)&ctlsockaddr, sizeof(ctlsockaddr)) == -1) {
-		errprintf("Cannot bind to cache-control socket (%s)\n", strerror(errno));
-		return 1;
-	}
-	/* Linux obeys filesystem permissions on the socket file, so make it world-accessible */
-	if (chmod(ctlsockaddr.sun_path, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) == -1) {
-		errprintf("Setting permissions on cache-control socket failed: %s\n", strerror(errno));
+	if (ctlsockaddr.sun_path[0]) {
+		if (bind(ctlsocket, (struct sockaddr *)&ctlsockaddr, sizeof(ctlsockaddr)) == -1) {
+			errprintf("Cannot bind to cache-control socket (%s)\n", strerror(errno));
+			return 1;
+		}
+		/* Linux obeys filesystem permissions on the socket file, so make it world-accessible */
+		if (chmod(ctlsockaddr.sun_path, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) == -1) {
+			errprintf("Setting permissions on cache-control socket failed: %s\n", strerror(errno));
+		}
 	}
 
 	/* Load the RRD definitions */
@@ -300,7 +362,9 @@ int main(int argc, char *argv[])
 
 		/* See if we have any cache-control messages pending */
 		do {
-			n = recv(ctlsocket, ctlbuf, sizeof(ctlbuf), 0);
+			/* Leave room for the NUL below: a datagram of exactly
+			 * sizeof(ctlbuf) bytes must not terminate past the end */
+			n = recv(ctlsocket, ctlbuf, sizeof(ctlbuf)-1, 0);
 			gotcachectlmessage = (n > 0);
 			if (gotcachectlmessage) {
 				/* We have a control message */
@@ -366,12 +430,25 @@ int main(int argc, char *argv[])
 			  case COL_CLEAR: /* Clear is OK, because it could still contain valid metric data */
 				tstamp = atoi(metadata[1]);
 				sender = metadata[2];
-				hostname = metadata[4]; 
+				hostname = metadata[4];
 				testname = metadata[5];
 				classname = (metadata[17] ? metadata[17] : "");
 				pagepaths = (metadata[18] ? metadata[18] : "");
+				if (hostdrop_barrier(hostname)) {
+					dbgprintf("Dropping straggler status for recently dropped host %s\n", hostname);
+					break;
+				}
 				ldef = find_xymon_rrd(testname, metadata[8]);
 				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
+
+				/* AGGDS aggregate rules run once per message, after
+				 * its whole batch of RRD updates completed */
+				{
+					strbuffer_t *aggmsg = check_aggds_thresholds(hostname, classname, pagepaths);
+					if (aggmsg) combo_add(aggmsg);
+				}
+				fsidx_flush(rrddir, hostname);
+				cache_evict_hourly();
 				break;
 
 			  default:
@@ -383,12 +460,24 @@ int main(int argc, char *argv[])
 			/* @@data|timestamp|sender|origin|hostname|testname|classname|pagepaths */
 			tstamp = atoi(metadata[1]);
 			sender = metadata[2];
-			hostname = metadata[4]; 
+			hostname = metadata[4];
 			testname = metadata[5];
 			classname = (metadata[6] ? metadata[6] : "");
 			pagepaths = (metadata[7] ? metadata[7] : "");
-			ldef = find_xymon_rrd(testname, "");
-			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
+			if (hostdrop_barrier(hostname)) {
+				dbgprintf("Dropping straggler data for recently dropped host %s\n", hostname);
+			}
+			else {
+				ldef = find_xymon_rrd(testname, "");
+				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
+
+				{
+					strbuffer_t *aggmsg = check_aggds_thresholds(hostname, classname, pagepaths);
+					if (aggmsg) combo_add(aggmsg);
+				}
+				fsidx_flush(rrddir, hostname);
+				cache_evict_hourly();
+			}
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
@@ -416,7 +505,13 @@ int main(int argc, char *argv[])
 			MEMDEFINE(hostdir);
 
 			sprintf(hostdir, "%s/%s", rrddir, basename(hostname));
+			/* Barrier and discard cached updates BEFORE the forked
+			 * deletion starts - nothing may write into the dying dir. */
+			note_hostdrop(hostname);
+			rrdcache_drop_host(hostname, 0);
 			dropdirectory(hostdir, 1);
+			flush_aggds_store(hostname);
+			fsidx_drop(rrddir, hostname);
 
 			MEMUNDEFINE(hostdir);
 		}
@@ -439,7 +534,28 @@ int main(int argc, char *argv[])
 			newhostname = metadata[4];
 			sprintf(oldhostdir, "%s/%s", rrddir, hostname);
 			sprintf(newhostdir, "%s/%s", rrddir, newhostname);
-			rename(oldhostdir, newhostdir);
+			/* Flush pending updates into the old-named files BEFORE
+			 * they move, then barrier the old name against stragglers. */
+			rrdcache_drop_host(hostname, 1);
+			/* The flush's freshness must reach the index file before it
+			 * moves - _now bypasses the timestamp-only throttle that
+			 * would otherwise skip it (the in-memory tree holding the
+			 * newer timestamps is dropped below). */
+			fsidx_flush_now(rrddir, hostname);
+			note_hostdrop(hostname);
+			flush_aggds_store(hostname);	/* repopulates under the new name */
+			if ((rename(oldhostdir, newhostdir) == -1) && (errno != ENOENT)) {
+				/* ENOENT = the host never wrote RRD data: nothing to
+				 * move, nothing to keep. Anything else leaves the old
+				 * files in place - keep their live index too. */
+				errprintf("renamehost: cannot rename %s to %s: %s - keeping the old name's index\n",
+					  oldhostdir, newhostdir, strerror(errno));
+			}
+			else {
+				/* The index file moved with the directory; only the old
+				 * name's in-memory tree must go (its file path is gone). */
+				fsidx_drop(rrddir, hostname);
+			}
 
 			if (net_worker_locatorbased()) locator_rename_host(hostname, newhostname, ST_RRD);
 
@@ -462,6 +578,7 @@ int main(int argc, char *argv[])
 	/* Flush all cached updates to disk */
 	errprintf("Shutting down, flushing cached updates to disk\n");
 	rrdcacheflushall();
+	fsidx_flush_all(rrddir);
 	errprintf("Cache flush completed\n");
 
 	/* Close the external processor */

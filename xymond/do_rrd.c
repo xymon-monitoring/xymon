@@ -66,11 +66,35 @@ static void * updcache;
 typedef struct updcacheitem_t {
 	char *key;
 	rrdtpldata_t *tpl;
+	int tplowned;		/* tpl was built by setup_template() for this entry
+				 * (handler passed none) - evict/drop must free it.
+				 * Built-in handlers pass a shared static template. */
 	int valcount;
 	char *vals[CACHESZ];
 	int updseq[CACHESZ];
 	time_t updtime[CACHESZ];
+	time_t lasttouch;	/* for idle eviction under instance churn */
 } updcacheitem_t;
+
+/* Free a cache entry's owned template: the per-entry rrdtpldata_t that
+ * setup_template() built (template string, dsnames tree and its records).
+ * Shared static templates (tplowned == 0) are left alone. */
+static void free_owned_tpl(updcacheitem_t *cacheitem)
+{
+	rrdtpldata_t *tpl = cacheitem->tpl;
+	xtreePos_t handle;
+
+	if (!cacheitem->tplowned || !tpl) return;
+	for (handle = xtreeFirst(tpl->dsnames); (handle != xtreeEnd(tpl->dsnames)); handle = xtreeNext(tpl->dsnames, handle)) {
+		rrdtplnames_t *nam = (rrdtplnames_t *)xtreeData(tpl->dsnames, handle);
+		if (nam->dsnam) xfree(nam->dsnam);
+		xfree(nam);
+	}
+	xtreeDestroy(tpl->dsnames);
+	if (tpl->template) xfree(tpl->template);
+	xfree(tpl);
+	cacheitem->tpl = NULL;
+}
 
 static void * flushtree;
 static int have_flushtree = 0;
@@ -183,6 +207,31 @@ static void setupfn2(char *format, char *param1, char *param2)
 	snprintf(rrdfn, sizeof(rrdfn)-1, format, param1, param2);
 	rrdfn[sizeof(rrdfn)-1] = '\0';
 	while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
+
+	if (strlen(rrdfn) >= (NAME_MAX - 50)) {
+		/*
+		 * Filename is too long for one directory entry (instance names
+		 * reach here from arbitrary status content, and the reversible
+		 * encoding can triple their length). Same md5 fallback as
+		 * setupfn3(): a bounded, stable, collision-free name.
+		 */
+		char *hash = md5hash(rrdfn+(NAME_MAX-50));
+
+		sprintf(rrdfn+(NAME_MAX-50), "_%s.rrd", hash);
+	}
+}
+
+/* Finish a caller-reconstructed LEGACY basename the way setupfn2() did
+ * when the file was originally created: space mangling, nothing more. The
+ * legacy writer never shortened names - anything up to NAME_MAX landed on
+ * disk verbatim - so the migration candidate must be the raw name;
+ * applying today's md5 shortening here would miss every legacy file in
+ * the [NAME_MAX-50, NAME_MAX) range and silently restart its history. */
+static void legacyfn_finish(char *fn)
+{
+	char *p;
+
+	while ((p = strchr(fn, ' ')) != NULL) *p = '_';
 }
 
 static void setupfn3(char *format, char *param1, char *param2, char *param3)
@@ -220,6 +269,16 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	/* Flush any updates we've cached */
 	xymon_rrd_argv_item_t updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
 	int i, pcount, result;
+	time_t maxts = 0;
+
+	/* The newest data timestamp in this batch - committed to the fileset
+	 * index below IF rrdtool accepts the batch. */
+	for (i=0; (i < cacheitem->valcount); i++)
+		if (cacheitem->updtime[i] > maxts) maxts = cacheitem->updtime[i];
+	if (newdata) {
+		time_t newts = (time_t)atol(newdata);
+		if (newts > maxts) maxts = newts;
+	}
 
 	dbgprintf("Flushing '%s' with %d updates pending, template '%s'\n", 
 		  cacheitem->key, (newdata ? 1 : 0) + cacheitem->valcount, cacheitem->tpl->template);
@@ -247,9 +306,12 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	/*
 	 * RRDtool 1.2+ uses mmap'ed I/O, but the Linux kernel does not update timestamps when
 	 * doing file I/O on mmap'ed files. This breaks our check for stale/nostale RRD's.
-	 * So do an explicit timestamp update on the file here.
+	 * So do an explicit timestamp update on the file here - but only for an ACCEPTED
+	 * update: the mtime is the file's durable freshness (stale filters, fileset-index
+	 * readers), and touching it for a rejected batch would make a chronically broken
+	 * producer look fresh forever.
 	 */
-	utimes(filedir, NULL);
+	if (result == 0) utimes(filedir, NULL);
 #endif
 
 	/* Clear the cached data */
@@ -259,6 +321,24 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 		if (cacheitem->vals[i]) xfree(cacheitem->vals[i]);
 	}
 	cacheitem->valcount = 0;
+
+	/* Accepted data advances the fileset index's freshness; a rejected
+	 * batch (dropped above either way) leaves it alone. The cache key is
+	 * "/<host>/<rrdfn>" - split it back apart for the note. */
+	if ((result == 0) && maxts) {
+		char *keyhost = cacheitem->key + 1;
+		char *slash = strchr(keyhost, '/');
+
+		if (slash) {
+			char savedhost[PATH_MAX];
+			size_t hlen = slash - keyhost;
+
+			if (hlen < sizeof(savedhost)) {
+				memcpy(savedhost, keyhost, hlen); savedhost[hlen] = '\0';
+				fsidx_note_commit(rrddir, savedhost, slash+1, maxts);
+			}
+		}
+	}
 
 	return result;
 }
@@ -296,9 +376,22 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			return -1;
 		}
 	}
-	/* Watch out here - "rrdfn" may be very large. */
-	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
-	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
+	/* Watch out here - "rrdfn" may be very large. A truncated path
+	 * could hit the wrong file; refuse instead. */
+	if ((size_t)snprintf(filedir, sizeof(filedir), "%s/%s/%s", rrddir, hostname, rrdfn) >= sizeof(filedir)) {
+		errprintf("RRD path for %s/%s exceeds PATH_MAX - update dropped\n", hostname, rrdfn);
+		MEMUNDEFINE(filedir);
+		MEMUNDEFINE(rrdvalues);
+		return -1;
+	}
+
+	/* The graph definition's storage filters: EXSTOREPATTERN drops the
+	 * instance entirely, STOREPATTERN keeps only matching instances. */
+	if (!xymon_gdef_store_allowed(rrdfn)) {
+		dbgprintf("Store filter drops %s\n", rrdfn);
+		MEMUNDEFINE(filedir); MEMUNDEFINE(rrdvalues);
+		return 0;
+	}
 
 	/* 
 	 * Prepare to cache the update. Create the cache tree, and find/create a cache record.
@@ -312,10 +405,12 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	updcachekey = filedir + updcache_keyofs;
 	handle = xtreeFind(updcache, updcachekey);
 	if (handle == xtreeEnd(updcache)) {
-		if (!template) template = setup_template(creparams);
+		int tplowned = 0;
+
+		if (!template) { template = setup_template(creparams); tplowned = 1; }
 		if (!template) {
 			errprintf("BUG: setup_template() returns NULL! host=%s,test=%s,cp[0]=%s, cp[1]=%s\n",
-				  hostname, testname, 
+				  hostname, testname,
 				  (creparams[0] ? creparams[0] : "NULL"),
 				  (creparams[1] ? creparams[1] : "NULL"));
 			return -1;
@@ -323,17 +418,21 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		cacheitem = (updcacheitem_t *)calloc(1, sizeof(updcacheitem_t));
 		cacheitem->key = strdup(updcachekey);
 		cacheitem->tpl = template;
+		cacheitem->tplowned = tplowned;
 		xtreeAdd(updcache, cacheitem->key, cacheitem);
 	}
 	else {
 		cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
 		if (!template) template = cacheitem->tpl;
 	}
+	cacheitem->lasttouch = gettimer();
 
 	/* If the RRD file doesn't exist, create it immediately */
 	if (stat(filedir, &st) == -1) {
 		xymon_rrd_argv_item_t *rrdcreate_params;
 		char **rrddefinitions;
+		char *cfextras[16];
+		int cfextracount = 0;
 		int rrddefcount, i;
 		char *rrakey = NULL;
 		char stepsetting[10];
@@ -352,7 +451,48 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		sprintf(stepsetting, "%d", pollinterval);
 
 		rrddefinitions = get_rrd_definition((rrakey ? rrakey : testname), &rrddefcount);
-		rrdcreate_params = calloc(4 + pcount + rrddefcount + 1, sizeof(*rrdcreate_params));
+
+		/* Derived consolidations: gdefs matching this file may read
+		 * MIN/MAX/LAST DEFs - clone each AVERAGE archive per extra CF
+		 * the gdefs declare, unless the definition set already carries
+		 * that CF. A file no gdef reads beyond AVERAGE gets exactly
+		 * the stock archive set (safe by default). Late gdef changes
+		 * are the parked schema-evolution tune-pass, forward-only. */
+		{
+			int cfs = xymon_gdef_cfs_forfile(rrdfn) & ~XYMON_CF_AVERAGE;
+			struct { int bit; char *name; } cfnames[] = {
+				{ XYMON_CF_MIN, "MIN" }, { XYMON_CF_MAX, "MAX" }, { XYMON_CF_LAST, "LAST" }, { 0, NULL }
+			};
+			int c;
+
+			cfextracount = 0;
+			for (c = 0; (cfs && cfnames[c].name); c++) {
+				int have = 0;
+				char prefix[32];
+
+				if (!(cfs & cfnames[c].bit)) continue;
+				snprintf(prefix, sizeof(prefix), "RRA:%s:", cfnames[c].name);
+				for (i = 0; (!have && (i < rrddefcount)); i++)
+					have = (strncmp(rrddefinitions[i], prefix, strlen(prefix)) == 0);
+				if (have) continue;
+				for (i = 0; (i < rrddefcount); i++) {
+					if (strncmp(rrddefinitions[i], "RRA:AVERAGE:", 12) != 0) continue;
+					if (cfextracount >= (int)(sizeof(cfextras)/sizeof(cfextras[0]))) {
+						errprintf("%s: derived-RRA cap (%d) reached, some %s archives skipped - rrdreconcile --apply can add them later\n",
+							  rrdfn, cfextracount, cfnames[c].name);
+						break;
+					}
+					{
+						size_t xlen = strlen(cfnames[c].name) + strlen(rrddefinitions[i]) + 8;
+						cfextras[cfextracount] = (char *)malloc(xlen);
+						snprintf(cfextras[cfextracount], xlen, "RRA:%s:%s", cfnames[c].name, rrddefinitions[i] + 12);
+						cfextracount++;
+					}
+				}
+			}
+		}
+
+		rrdcreate_params = calloc(6 + pcount + rrddefcount + cfextracount + 1, sizeof(*rrdcreate_params));
 		rrdcreate_params[0] = "rrdcreate";
 		rrdcreate_params[1] = filedir;
 
@@ -369,6 +509,8 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			rrdcreate_params[fixcount+i]      = creparams[i];
 		for (i=0; (i < rrddefcount); i++, pcount++)
 			rrdcreate_params[fixcount+pcount] = rrddefinitions[i];
+		for (i=0; (i < cfextracount); i++, pcount++)
+			rrdcreate_params[fixcount+pcount] = cfextras[i];
 
 		if (debug) {
 			for (i = 0; (rrdcreate_params[i]); i++) {
@@ -381,8 +523,9 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		 * we MUST reset this before every call.
 		 */
 		optind = opterr = 0; rrd_clear_error();
-		result = xymon_rrd_create(4+pcount, rrdcreate_params);
+		result = xymon_rrd_create(fixcount+pcount, rrdcreate_params);
 		xfree(rrdcreate_params);
+		for (i=0; (i < cfextracount); i++) xfree(cfextras[i]);
 		if (rrakey) xfree(rrakey);
 
 		if (result != 0) {
@@ -441,10 +584,13 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 
 	/*
-	 * Match the RRD data against any DS client-configuration modifiers.
+	 * Match the RRD data against any DS client-configuration modifiers,
+	 * and feed the current-values store used by AGGDS aggregate rules
+	 * (evaluated at message-batch end, not per file).
 	 */
 	modifymsg = check_rrdds_thresholds(hostname, classname, pagepaths, rrdfn, ((rrdtpldata_t *)template)->dsnames, rrdvalues);
 	if (modifymsg) combo_add(modifymsg);
+	update_aggds_store(hostname, rrdfn, ((rrdtpldata_t *)template)->dsnames, rrdvalues);
 
 	/*
 	 * See if we want the data to go to an external handler.
@@ -465,6 +611,12 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 	/* Are we actually handling the writing of RRD files? */
 	if (no_rrd) return 0;
+
+	/* Bookkeep the fileset index: the entry and its declared schema are
+	 * noted now; the freshness timestamp advances only when the update
+	 * COMMITS (flush_cached_updates), so a chronically rejected update
+	 * cannot keep an instance looking fresh forever. */
+	fsidx_note_schema(rrddir, hostname, rrdfn, (time_t)updtime);
 
 	/* 
 	 * We cannot just cache data every time because then after CACHESZ updates
@@ -512,6 +664,164 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	MEMUNDEFINE(rrdvalues);
 
 	return 0;
+}
+
+/* Evict update-cache entries idle beyond maxage. The cache is pure
+ * batching: flushing an idle entry's pending values and dropping it
+ * loses nothing - this
+ * bounds the memory that instance churn (container mounts, rotating
+ * names) used to grow forever. Keys are collected first: deleting
+ * while traversing the tree is not safe. A per-entry template (built by
+ * setup_template for handlers that pass none) is freed with the entry;
+ * shared static templates are not. */
+void rrdcache_evict_idle(time_t maxage)
+{
+	xtreePos_t handle;
+	time_t now = gettimer();
+	char **keys = NULL;
+	int nkeys = 0, i;
+	char **hosts = NULL;
+	int nhosts = 0;
+
+	if (updcache_keyofs == -1) return;
+
+	for (handle = xtreeFirst(updcache); (handle != xtreeEnd(updcache)); handle = xtreeNext(updcache, handle)) {
+		updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
+		if ((now - cacheitem->lasttouch) <= maxage) continue;
+		keys = (char **)realloc(keys, (nkeys+1) * sizeof(char *));
+		keys[nkeys++] = cacheitem->key;
+	}
+
+	for (i = 0; (i < nkeys); i++) {
+		handle = xtreeFind(updcache, keys[i]);
+		if (handle != xtreeEnd(updcache)) {
+			updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
+			int v;
+
+			if (cacheitem->valcount > 0) {
+				sprintf(filedir, "%s%s", rrddir, cacheitem->key);
+				flush_cached_updates(cacheitem, NULL);
+
+				/* That flush noted a freshness commit in the in-memory
+				 * index only. An idle host gets no later message-driven
+				 * fsidx_flush(), so remember the host ("/<host>/<rrdfn>"
+				 * key) and push its index to disk below. */
+				{
+					char *keyhost = cacheitem->key + 1;
+					char *slash = strchr(keyhost, '/');
+
+					if (slash) {
+						size_t hlen = slash - keyhost;
+
+						for (v = 0; (v < nhosts); v++)
+							if ((strncasecmp(hosts[v], keyhost, hlen) == 0) && (hosts[v][hlen] == '\0')) break;
+						if (v == nhosts) {
+							hosts = (char **)realloc(hosts, (nhosts+1) * sizeof(char *));
+							hosts[nhosts] = (char *)malloc(hlen + 1);
+							memcpy(hosts[nhosts], keyhost, hlen); hosts[nhosts][hlen] = '\0';
+							nhosts++;
+						}
+					}
+				}
+			}
+			xtreeDelete(updcache, cacheitem->key);
+			for (v = 0; (v < cacheitem->valcount); v++)
+				if (cacheitem->vals[v]) xfree(cacheitem->vals[v]);
+			free_owned_tpl(cacheitem);
+			xfree(cacheitem->key);
+			xfree(cacheitem);
+		}
+	}
+	if (nkeys) dbgprintf("updcache: evicted %d idle entries\n", nkeys);
+	if (keys) xfree(keys);
+
+	for (i = 0; (i < nhosts); i++) {
+		fsidx_flush_now(rrddir, hosts[i]);
+		xfree(hosts[i]);
+	}
+	if (hosts) xfree(hosts);
+
+	if (nkeys) {
+		/* The fallback array-backed xtree reclaims a deleted slot only
+		 * when the same key is re-added, and churned instance names never
+		 * return - each eviction would leave a tombstone (slot + private
+		 * key copy) forever, defeating the point of evicting. Rebuild the
+		 * tree with the survivors; xtreeDestroy frees only tombstone
+		 * copies, never live keys, so moving the entries is safe on both
+		 * xtree variants. */
+		void *rebuilt = xtreeNew(strcasecmp);
+
+		for (handle = xtreeFirst(updcache); (handle != xtreeEnd(updcache)); handle = xtreeNext(updcache, handle)) {
+			updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
+			xtreeAdd(rebuilt, cacheitem->key, cacheitem);
+		}
+		xtreeDestroy(updcache);
+		updcache = rebuilt;
+	}
+}
+
+/* Remove one host's cache entries. Flushed first on rename - the files
+ * are about to move, the pending data must land in them before they do.
+ * Discarded on drophost - a flush would write into the directory the
+ * forked deletion is tearing down, and the values are the dropped
+ * host's data anyway. (rrdcacheflushhost() is not usable here: it
+ * expects "/host"-shaped keys and rate-limits to one flush per 60s.) */
+void rrdcache_drop_host(char *hostname, int flushfirst)
+{
+	xtreePos_t handle;
+	char prefix[PATH_MAX];
+	size_t plen;
+	char **keys = NULL;
+	int nkeys = 0, i;
+
+	if ((updcache_keyofs == -1) || !hostname) return;
+	snprintf(prefix, sizeof(prefix), "/%s/", hostname);
+	plen = strlen(prefix);
+
+	/* Two phases: deleting while traversing the tree is not safe */
+	for (handle = xtreeFirst(updcache); (handle != xtreeEnd(updcache)); handle = xtreeNext(updcache, handle)) {
+		updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
+		if (strncasecmp(cacheitem->key, prefix, plen) != 0) continue;
+		keys = (char **)realloc(keys, (nkeys+1) * sizeof(char *));
+		keys[nkeys++] = cacheitem->key;
+	}
+
+	for (i = 0; (i < nkeys); i++) {
+		handle = xtreeFind(updcache, keys[i]);
+		if (handle != xtreeEnd(updcache)) {
+			updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
+			int v;
+
+			if (flushfirst && (cacheitem->valcount > 0)) {
+				sprintf(filedir, "%s%s", rrddir, cacheitem->key);
+				flush_cached_updates(cacheitem, NULL);
+			}
+			xtreeDelete(updcache, cacheitem->key);
+			for (v = 0; (v < cacheitem->valcount); v++)
+				if (cacheitem->vals[v]) xfree(cacheitem->vals[v]);
+			free_owned_tpl(cacheitem);
+			xfree(cacheitem->key);
+			xfree(cacheitem);
+		}
+	}
+	if (nkeys) dbgprintf("updcache: %s %d entries for host %s\n",
+			     (flushfirst ? "flushed and dropped" : "discarded"), nkeys, hostname);
+	if (keys) xfree(keys);
+
+	if (nkeys) {
+		/* Same tombstone economics as rrdcache_evict_idle: on the
+		 * array-backed xtree a deleted slot (and its private key copy)
+		 * is reclaimed only if the same key is re-added, and a dropped
+		 * host that never returns would leak its slots forever. */
+		void *rebuilt = xtreeNew(strcasecmp);
+
+		for (handle = xtreeFirst(updcache); (handle != xtreeEnd(updcache)); handle = xtreeNext(updcache, handle)) {
+			updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
+			xtreeAdd(rebuilt, cacheitem->key, cacheitem);
+		}
+		xtreeDestroy(updcache);
+		updcache = rebuilt;
+	}
 }
 
 void rrdcacheflushall(void)
@@ -598,8 +908,7 @@ static int rrddatasets(char *hostname, char ***dsnames)
 	unsigned long steptime, dscount;
 	rrd_value_t *rrddata;
 
-	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
-	filedir[sizeof(filedir)-1] = '\0';
+	if ((size_t)snprintf(filedir, sizeof(filedir), "%s/%s/%s", rrddir, hostname, rrdfn) >= sizeof(filedir)) return 0;
 	if (stat(filedir, &st) == -1) return 0;
 
 	optind = opterr = 0; rrd_clear_error();
@@ -687,7 +996,18 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	if (ldef) id = ldef->xymonrrdname; else id = testname;
 	senderip = sender;
 
-	if      (strcmp(id, "bbgen") == 0)       do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	/*
+	 * Self-describing beats built-in: a status carrying a store block
+	 * (XYMON METRICS / legacy DEVMON RRD) is written by the block
+	 * writer, and ONLY by it - falling through to a built-in handler
+	 * would write the same samples twice under two schemas. Emitting a
+	 * block is deliberate: a column only reroutes when its producer
+	 * chose to add one, so block-less statuses hit the exact same
+	 * built-in chain as before.
+	 */
+	if      (xymon_markers_have_store(msg)) do_devmon_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+
+	else if (strcmp(id, "bbgen") == 0)       do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "xymongen") == 0)    do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "bbtest") == 0)      do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "xymonnet") == 0)    do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
