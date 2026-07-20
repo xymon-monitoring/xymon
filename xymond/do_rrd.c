@@ -74,6 +74,8 @@ typedef struct updcacheitem_t {
 	int updseq[CACHESZ];
 	time_t updtime[CACHESZ];
 	time_t lasttouch;	/* for idle eviction under instance churn */
+	char *thin_lastvals;	/* write-thinning: last values accepted for writing */
+	time_t thin_lastts;	/* ... and their data timestamp (keepalive base) */
 } updcacheitem_t;
 
 /* Free a cache entry's owned template: the per-entry rrdtpldata_t that
@@ -343,6 +345,53 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	return result;
 }
 
+/* Do the colon-separated value lists differ? Numeric components compare
+ * numerically ("5" == "5.0"); a component count change differs; and a
+ * 'U' ANYWHERE differs by fiat - thinning unknowns would invent
+ * continuity over genuinely unknown periods. */
+static int thin_values_differ(char *v, char *b)
+{
+	while (v || b) {
+		size_t vlen, blen;
+		char *vend, *bend;
+		double vd, bd;
+		int vnum, bnum;
+
+		if (!v || !b) return 1;	/* different number of components */
+		vlen = strcspn(v, ":"); blen = strcspn(b, ":");
+		if (((vlen == 1) && (*v == 'U')) || ((blen == 1) && (*b == 'U'))) return 1;
+		vd = strtod(v, &vend); vnum = ((vlen > 0) && (vend == v + vlen));
+		bd = strtod(b, &bend); bnum = ((blen > 0) && (bend == b + blen));
+		if (vnum && bnum) {
+			if (vd != bd) return 1;
+		}
+		else if ((vlen != blen) || (strncmp(v, b, vlen) != 0)) return 1;
+
+		v = strchr(v, ':'); if (v) v++;
+		b = strchr(b, ':'); if (b) b++;
+	}
+
+	return 0;
+}
+
+/* The write-thinning keepalive interval for the current block's file:
+ * half the smallest DECLARED heartbeat - the client's declaration is
+ * the consent to sparse updates; a block declaring nothing (or the
+ * stock 2*step) thins nothing. ABSOLUTE DSes exclude the file: their
+ * value resets on read, so equal readings are new information and a
+ * thinned gap would inflate the rate by its length. */
+static int thin_interval(char *creparams[])
+{
+	int hb = fsidx_pending_min_heartbeat();
+	int i;
+
+	if (hb <= 0) return 0;
+	for (i = 0; (creparams[i]); i++) {
+		if (strstr(creparams[i], ":ABSOLUTE:")) return 0;
+	}
+	return hb / 2;
+}
+
 static int create_and_update_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *creparams[], void *template)
 {
 	static int callcounter = 0;
@@ -354,6 +403,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	int pollinterval;
 	strbuffer_t *modifymsg;
 	time_t updtime = 0;
+	int thin_pending = 0;
 
 	/* Reset the RRD poll interval */
 	pollinterval = rrdinterval;
@@ -618,6 +668,53 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 * cannot keep an instance looking fresh forever. */
 	fsidx_note_schema(rrddir, hostname, rrdfn, (time_t)updtime);
 
+	/* Write-thinning: a sample carrying no NEW information need not be
+	 * written - RRD interpolates a constant across the declared
+	 * heartbeat. Skip when the values equal the last written ones and
+	 * the keepalive (half the declared heartbeat) is not yet due; on a
+	 * change after a gap, pre-write the old values one step earlier
+	 * first, or rrdtool would back-fill the whole gap with the NEW
+	 * value (and smear a counter delta across it). Everything above -
+	 * DS modifiers, the AGGDS store, the external processor, the index
+	 * bookkeeping - already saw the sample; only the file write thins. */
+	{
+		int thin_r = thin_interval(creparams);
+		char *vals = strchr(rrdvalues, ':');
+
+		if (vals) vals++;
+		if ((thin_r > pollinterval) && vals) {
+			if (cacheitem->thin_lastvals &&
+			    !thin_values_differ(vals, cacheitem->thin_lastvals) &&
+			    (((time_t)updtime - cacheitem->thin_lastts) < thin_r)) {
+				dbgprintf("Thinning: %s unchanged, keepalive in %ds\n",
+					  rrdfn, (int)(thin_r - ((time_t)updtime - cacheitem->thin_lastts)));
+				MEMUNDEFINE(filedir);
+				MEMUNDEFINE(rrdvalues);
+				return 0;
+			}
+			if (cacheitem->thin_lastvals &&
+			    thin_values_differ(vals, cacheitem->thin_lastvals) &&
+			    (((time_t)updtime - cacheitem->thin_lastts) > pollinterval) &&
+			    (cacheitem->valcount < CACHESZ)) {
+				char prebuf[MAX_LINE_LEN];
+
+				if ((size_t)snprintf(prebuf, sizeof(prebuf), "%d:%s",
+						     (int)((time_t)updtime - pollinterval), cacheitem->thin_lastvals) < sizeof(prebuf)) {
+					cacheitem->updseq[cacheitem->valcount] = seq;
+					cacheitem->updtime[cacheitem->valcount] = (time_t)updtime - pollinterval;
+					cacheitem->vals[cacheitem->valcount] = strdup(prebuf);
+					cacheitem->valcount += 1;
+				}
+			}
+			/* The comparison baseline advances only when the sample is
+			 * ACCEPTED (cached below, or flushed cleanly) - a rejected
+			 * write must not become the value we thin against, or a
+			 * skip would suppress samples equal to a value that was
+			 * never stored. thin_pending marks the intent. */
+			thin_pending = 1;
+		}
+	}
+
 	/* 
 	 * We cannot just cache data every time because then after CACHESZ updates
 	 * of each RRD, we will flush all of the data at once (all of the caches 
@@ -634,6 +731,12 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			cacheitem->updtime[cacheitem->valcount] = updtime;
 			cacheitem->vals[cacheitem->valcount] = strdup(rrdvalues);
 			cacheitem->valcount += 1;
+			if (thin_pending) {
+				char *vals = strchr(rrdvalues, ':');
+				if (cacheitem->thin_lastvals) xfree(cacheitem->thin_lastvals);
+				cacheitem->thin_lastvals = strdup(vals+1);
+				cacheitem->thin_lastts = (time_t)updtime;
+			}
 			MEMUNDEFINE(filedir);
 			MEMUNDEFINE(rrdvalues);
 			return 0;
@@ -643,6 +746,12 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 	/* At this point, we will commit the update to disk */
 	result = flush_cached_updates(cacheitem, rrdvalues);
+	if ((result == 0) && thin_pending) {
+		char *vals = strchr(rrdvalues, ':');
+		if (cacheitem->thin_lastvals) xfree(cacheitem->thin_lastvals);
+		cacheitem->thin_lastvals = strdup(vals+1);
+		cacheitem->thin_lastts = (time_t)updtime;
+	}
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
@@ -727,6 +836,7 @@ void rrdcache_evict_idle(time_t maxage)
 			xtreeDelete(updcache, cacheitem->key);
 			for (v = 0; (v < cacheitem->valcount); v++)
 				if (cacheitem->vals[v]) xfree(cacheitem->vals[v]);
+			if (cacheitem->thin_lastvals) xfree(cacheitem->thin_lastvals);
 			free_owned_tpl(cacheitem);
 			xfree(cacheitem->key);
 			xfree(cacheitem);
@@ -799,6 +909,7 @@ void rrdcache_drop_host(char *hostname, int flushfirst)
 			xtreeDelete(updcache, cacheitem->key);
 			for (v = 0; (v < cacheitem->valcount); v++)
 				if (cacheitem->vals[v]) xfree(cacheitem->vals[v]);
+			if (cacheitem->thin_lastvals) xfree(cacheitem->thin_lastvals);
 			free_owned_tpl(cacheitem);
 			xfree(cacheitem->key);
 			xfree(cacheitem);

@@ -349,6 +349,18 @@ File creation is eager: every instance's RRD file is created on the
 first sample. Unknown banner attributes are ignored, so the dialect
 stays forward-compatible.
 
+Write-thinning: a block whose DS specs declare a heartbeat larger than
+twice the polling step consents to sparse updates - a sample whose
+values equal the last written ones is then skipped until a keepalive
+(half the smallest declared heartbeat) falls due; RRD interpolates the
+constant across the declared heartbeat, so the graph is identical. On
+a value change the old values are pre-written one step earlier,
+pinning the step edge (and a counter's delta) in the right bucket.
+The stock heartbeat (600) declares no tolerance and thins nothing;
+ABSOLUTE datasets and unknown ('U') values always write. Analysis
+rules, aggregates and the external processor see every sample - only
+the file write thins.
+
 To display graphs of these files on the status page, add one
 
 .nf
