@@ -75,6 +75,22 @@ out=$(feed_status diskio "$work/body-encode")
 assert_contains "diskpath.%2Fdata.rrd" "$out" "METRICS instance '/data' is percent-encoded, not ',data'"
 assert_contains "diskpath.%2Fa,b.rrd" "$out" "'/a,b' stays distinct from what '/a/b' would encode to"
 
+# An instance name with SPACES (a mount point / folder like "/media/My Book"):
+# the value token is the last whitespace field, so the instance keeps its
+# spaces (encoded to %20) instead of being split off at the first space.
+cat >"$work/body-space" <<'EOF'
+<!--XYMON METRICS: diskpath
+DS:v:GAUGE:600:0:U
+/media/My Book 34
+plain 7
+-->
+status text
+EOF
+out=$(feed_status diskio "$work/body-space")
+assert_contains "diskpath.%2Fmedia%2FMy%20Book.rrd" "$out" "space-bearing instance is kept whole and encoded, not split at the first space"
+assert_not_contains "diskpath.%2Fmedia%2FMy.rrd" "$out" "instance must not be truncated at the first space"
+assert_contains "diskpath.plain.rrd" "$out" "a plain single-word instance still writes normally"
+
 # Block names become RRD filename prefixes, so invalid names skip the whole
 # block - but a valid block later in the same message is still written.
 cat >"$work/body-evil" <<'EOF'

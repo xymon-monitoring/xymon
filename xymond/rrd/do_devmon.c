@@ -296,10 +296,6 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		}
 
 		dbgprintf("Found %d columns in devmon rrd data\n",columncount);
-		if (columncount > 2) {
-			dbgprintf("Skipping line %d, found %d (max 2) columns in devmon rrd data, space in repeater name?\n",lineno,columncount);
-			goto nextline;
-		}
 
 		/* Now we should be on to values:
 		 * eth0.0 4678222:9966777
@@ -309,8 +305,39 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			dbgprintf("Skipping line %d, block has no DS definitions\n",lineno);
 			goto nextline;
 		}
-		ifname = xstrdup(columns[0]);
-		dsval = strtok(columns[1],":");
+		/* Split the instance from its values. The value token is the
+		 * LAST whitespace field - colon-separated DS values never carry
+		 * a space - so the instance is everything before it, and a mount
+		 * point or folder name may thus contain spaces (encoded to %20
+		 * for the filename by rrdinstance_encode). Legacy DEVMON blocks
+		 * keep the strict two-column form: their repeater names never had
+		 * spaces, and a >2-column line was always dropped as malformed. */
+		if (metrics_block) {
+			char *vp = strrchr(curline, ' ');
+			size_t ilen;
+
+			if (!vp || (vp == curline)) {
+				dbgprintf("Skipping line %d, no instance/value split\n",lineno);
+				goto nextline;
+			}
+			ilen = (size_t)(vp - curline);
+			while ((ilen > 0) && (curline[ilen-1] == ' ')) ilen--;	/* trim the split run */
+			if (ilen == 0) {
+				dbgprintf("Skipping line %d, empty instance\n",lineno);
+				goto nextline;
+			}
+			ifname = (char *)xmalloc(ilen + 1);
+			memcpy(ifname, curline, ilen); ifname[ilen] = '\0';
+			dsval = strtok(vp + 1, ":");
+		}
+		else {
+			if (columncount > 2) {
+				dbgprintf("Skipping line %d, found %d (max 2) columns in devmon rrd data, space in repeater name?\n",lineno,columncount);
+				goto nextline;
+			}
+			ifname = xstrdup(columns[0]);
+			dsval = strtok(columns[1],":");
+		}
 		if (dsval == NULL) {
 			dbgprintf("Skipping line %d, line is malformed\n",lineno);
 			goto nextline;

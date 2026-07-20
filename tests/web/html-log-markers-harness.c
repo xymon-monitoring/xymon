@@ -170,9 +170,12 @@ int main(void)
 		"service=diskio_busy2&amp;graph_width=576&amp;graph_height=120&amp;first=1&amp;count=3");
 	free(html);
 
-	/* Only "instance value" lines create RRD files, so only those count:
-	 * three-field lines (which the writer skips) must not inflate the
-	 * paging into empty slices. 2 valid + 2 invalid lines -> count 2. */
+	/* Only lines the writer will actually store count, and the count
+	 * mirrors the writer's right-split: the value token is the LAST
+	 * whitespace field, so "disk one 50" is the instance "disk one"
+	 * (spaces allowed - a folder/mount name) with value 50, and DOES
+	 * count. "lonely" has no value token and is written by neither, so
+	 * it does not. 3 instances -> count 3. */
 	html = render_log_msg("diskio", 0, "",
 		"<!--XYMON METRICS: diskio_mixed\n"
 		"DS:v:GAUGE:600:0:U\n"
@@ -183,7 +186,7 @@ int main(void)
 		"-->\n"
 		"<!--XYMON GRAPH: diskio_mixed -->\n"
 		"status text\n");
-	expect_contains("count matches what the writer writes", html, "service=diskio_mixed&amp;graph_width=576&amp;graph_height=120&amp;first=1&amp;count=2");
+	expect_contains("count matches what the writer writes", html, "service=diskio_mixed&amp;graph_width=576&amp;graph_height=120&amp;first=1&amp;count=3");
 	free(html);
 
 	/* GRAPH attributes are writer-style words - blank-delimited, matched

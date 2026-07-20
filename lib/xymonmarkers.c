@@ -210,7 +210,6 @@ xymonmarker_t *xymon_markers_parse(char *msg)
 			else {
 				char *p = bol + strspn(bol, " ");
 				size_t kwlen = strspn(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-				size_t f1;
 
 				/* In a METRICS block, an ALL-CAPS keyword ending in ':'
 				 * opens a declaration line (DS: is the known one) - never
@@ -219,22 +218,31 @@ xymonmarker_t *xymon_markers_parse(char *msg)
 				 * DEVMON blocks predate the contract and may carry
 				 * instances named like a keyword ("CPU:1"). */
 				if (block_metrics && (kwlen > 0) && (p[kwlen] == ':')) continue;
-				f1 = strcspn(p, " \r\n");
-				if ((f1 > 0) && (p[f1] == ' ')) {
-					char *q = p + f1 + strspn(p + f1, " ");
-					size_t f2 = strcspn(q, " \r\n");
-					char *rest = q + f2 + strspn(q + f2, " ");
-					if ((f2 > 0) && ((*rest == '\0') || (*rest == '\n') || (*rest == '\r'))) {
-						/* Count only lines the writer will actually
-						 * write: one non-empty colon-separated value
-						 * per declared DS, and a DS line must exist. */
-						int vals = 0;
-						size_t vi = 0;
-						while (vi < f2) {
-							while ((vi < f2) && (q[vi] == ':')) vi++;
-							if (vi < f2) { vals++; while ((vi < f2) && (q[vi] != ':')) vi++; }
+				/* Right-split, matching the block writer: the value
+				 * token is the LAST whitespace field (colon-separated
+				 * DS values, never a space); the instance is everything
+				 * before it, so it may contain spaces (a folder/mount
+				 * name). Count only lines the writer will actually write:
+				 * one non-empty value per declared DS, DS line present. */
+				{
+					size_t linelen = strcspn(p, "\r\n");
+					size_t e = linelen, vs;
+
+					while ((e > 0) && (p[e-1] == ' ')) e--;		/* trim trailing */
+					vs = e;
+					while ((vs > 0) && (p[vs-1] != ' ')) vs--;	/* start of value token */
+					if ((vs > 0) && (e > vs)) {
+						size_t inst_end = vs;
+						while ((inst_end > 0) && (p[inst_end-1] == ' ')) inst_end--;
+						if (inst_end > 0) {
+							int vals = 0;
+							size_t vi = vs;
+							while (vi < e) {
+								while ((vi < e) && (p[vi] == ':')) vi++;
+								if (vi < e) { vals++; while ((vi < e) && (p[vi] != ':')) vi++; }
+							}
+							if ((blockds > 0) && (vals >= blockds)) block->blockinstances++;
 						}
-						if ((blockds > 0) && (vals >= blockds)) block->blockinstances++;
 					}
 				}
 			}
