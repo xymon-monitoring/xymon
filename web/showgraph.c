@@ -104,6 +104,29 @@ int firstidx = -1;
 int idxcount = -1;
 int lastidx = 0;
 
+/* Quote a value for safe inclusion as a single word in a /bin/sh command
+ * line: wrap it in single quotes and render each embedded single quote as
+ * '\'' (close, escaped quote, reopen). The result contains no shell-active
+ * character outside the admin's own command, so a CGI-supplied value
+ * cannot break out. Caller frees. */
+static char *shellquote(const char *s)
+{
+	strbuffer_t *b = newstrbuffer(0);
+	const char *p;
+	char *result;
+
+	addtobuffer(b, "'");
+	for (p = (s ? s : ""); (*p); p++) {
+		if (*p == '\'') addtobuffer(b, "'\\''");
+		else addtobufferraw(b, (char *)p, 1);
+	}
+	addtobuffer(b, "'");
+	result = strdup(STRBUF(b));
+	freestrbuffer(b);
+
+	return result;
+}
+
 void errormsg(char *msg)
 {
 	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
@@ -1080,27 +1103,35 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	/* Setup the title */
 	if (!gdef->title) gdef->title = strdup("");
 	if (strncmp(gdef->title, "exec:", 5) == 0) {
-		char *pcmd;
-		int i, pcmdlen = 7;
+		strbuffer_t *cmd = newstrbuffer(0);
 		FILE *pfd;
 		char *p;
-		char *param_str = "%s \"%s\" %s \"%s\"";
+		int i;
 
-		pcmdlen += (strlen(gdef->title+5) + strlen(displayname) + strlen(service) + strlen(glegend));
-		for (i=0; (i<rrddbcount); i++) pcmdlen += (strlen(rrddbs[i].rrdfn) + 3);
-
-		p = pcmd = (char *)malloc(pcmdlen+1);
-		p += snprintf(p, pcmdlen+1, param_str, gdef->title+5, displayname, service, glegend);
+		/* The admin's command line (gdef->title+5, from graphs.cfg)
+		 * runs verbatim - it is trusted and may carry its own options
+		 * or pipes on purpose. Every value appended after it, however,
+		 * is CGI- or filename-derived (displayname from the "disp="
+		 * parameter, the matched RRD filenames), so each is shell-quoted
+		 * and reaches the command as one literal argument, whatever
+		 * characters it contains. */
+		addtobuffer(cmd, gdef->title+5);
+		p = shellquote(displayname); addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
+		p = shellquote(service);     addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
+		p = shellquote(glegend);     addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
 		for (i=0; (i<rrddbcount); i++) {
 			if ((firstidx == -1) || ((i >= firstidx) && (i <= lastidx))) {
-				p += snprintf(p, (pcmdlen - (p - pcmd) + 1), " \"%s\"", rrddbs[i].rrdfn);
+				p = shellquote(rrddbs[i].rrdfn);
+				addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
 			}
 		}
-		pfd = popen(pcmd, "r");
+
+		pfd = popen(STRBUF(cmd), "r");
 		if (pfd) {
 			if (fgets(graphtitle, sizeof(graphtitle), pfd) == NULL) *graphtitle = '\0';
 			pclose(pfd);
 		}
+		freestrbuffer(cmd);
 
 		/* Drop any newline at end of the title */
 		p = strchr(graphtitle, '\n'); if (p) *p = '\0';
