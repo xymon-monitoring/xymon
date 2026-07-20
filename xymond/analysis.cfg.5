@@ -462,6 +462,53 @@ Example: Flag "conn" status a yellow if responsetime exceeds
 .br
 	DS conn tcp.conn.rrd:sec >0.1 COLOR=yellow TEXT="Response time &V exceeds &U seconds"
 .sp
+NOTE: The disk and inode RRD filenames changed from the legacy
+comma-separated form (e.g. "disk,var.rrd") to a form with the
+mountpoint URL-encoded ("disk.%2Fvar.rrd"). DS and AGGDS rules whose
+filename or filepattern was written for the legacy names (e.g.
+"DS disk disk,var.rrd:pct ..." or a "%^disk,.*" pattern) silently stop
+matching after an upgrade and must be updated to the encoded names.
+.sp
+.SH AGGDS - RRD based status override on an aggregate
+.sp
+.BR "AGGDS column fn(filepattern:dataset) rules maxage=N COLOR=colorname TEXT=explanation"
+.sp
+Like DS, but the compared value is an aggregate over a whole set of
+RRD files instead of one value from one file: "fn" is one of "sum",
+"avg", "max", "min" or "count", and "filepattern" is a pattern (use a
+"%" prefix for a regular expression) matched against the RRD
+filenames of the host. No whitespace is allowed inside the
+parentheses. E.g. the total read rate across all disks:
+.br
+	AGGDS diskio sum(%diskio_ops\\..+\\.rrd:reads) >5000 COLOR=yellow TEXT="Total reads &V ops/s (> &L)"
+.sp
+The aggregate is computed from the most recent value of each matching
+file, and is evaluated once per incoming message after all of its RRD
+updates completed - never per file, so it cannot see a half-updated
+set. Values from files not updated within "maxage" seconds (default
+600, must be a number of seconds > 0) are excluded, so retired
+instances do not haunt the aggregates. With no fresh matching values
+at all, a sum/avg/max/min rule is skipped - but "count" evaluates the
+empty set as 0 and can fire: alerting on "the instances disappeared"
+is what count is for. The value store is rebuilt from live updates
+after a restart or configuration reload; while the rules are younger
+than a rule's own maxage window, that rule is skipped whenever the
+writer-kept fileset index still knows more fresh matching instances
+than values have been re-seen - so a restart never fires a false
+"instances disappeared" alert while the store warms up. In the TEXT placeholders, "&N" is the aggregate
+name, e.g. "sum(%diskio_ops\\..+\\.rrd:reads)". The same first-match
+rule as DS applies, per column, aggregate and color; the file pattern
+is part of the aggregate's identity, so two rules aggregating the
+same dataset over different filesets never shadow each other. The
+GAUGE-only note above applies here too, and - as with DS rules - the
+operator and threshold form one token (">90", not "> 90").
+
+Each (aggregate, severity) pair recolors the column through its own
+modifier slot ("aggds:sum(%diskio_ops\\..+\\.rrd:reads):yellow"), so
+several AGGDS rules - including a warning and a critical rule on the
+same aggregate - may drive one status column without overwriting each
+other's verdicts.
+.sp
 .SH MQ Series SETTINGS
 .sp
 .BR "MQ_QUEUE queuename [age\-warning=N] [age\-critical=N] [depth\-warning=N] [depth\-critical=N]"

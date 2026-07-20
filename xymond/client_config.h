@@ -66,6 +66,9 @@ extern int check_mibvals(void *hinfo, char *classname,
 		  	 strbuffer_t *summarybuf, int *anyrules);
 
 extern strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, void *valnames, char *vals);
+extern void update_aggds_store(char *hostname, char *rrdkey, void *valnames, char *vals);
+extern void flush_aggds_store(char *hostname);
+extern strbuffer_t *check_aggds_thresholds(char *hostname, char *classname, char *pagepaths);
 
 
 extern int scan_log(void *hinfo, char *classname, 
