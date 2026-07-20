@@ -324,11 +324,15 @@ xtreePos_t xtreeFind(void *treehandle, char *key)
 xtreePos_t xtreeFirst(void *treehandle)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
+	xtreePos_t pos = 0;
 
 	/* Does tree exist ? Is it empty? */
 	if ((treehandle == NULL) || (mytree->treesz == 0)) return -1;
 
-	return 0;
+	/* Skip deleted records: their userdata is stale (usually freed) */
+	while ((pos < mytree->treesz) && mytree->entries[pos].deleted) pos++;
+
+	return (pos < mytree->treesz) ? pos : -1;
 }
 
 xtreePos_t xtreeNext(void *treehandle, xtreePos_t pos)
@@ -336,11 +340,12 @@ xtreePos_t xtreeNext(void *treehandle, xtreePos_t pos)
 	xtree_t *mytree = (xtree_t *)treehandle;
 
 	/* Does tree exist ? Is it empty? */
-	if ((treehandle == NULL) || (mytree->treesz == 0) || (pos >= (mytree->treesz - 1)) || (pos < 0)) return -1;
+	if ((treehandle == NULL) || (mytree->treesz == 0) || (pos < 0)) return -1;
 
+	/* Skip deleted records; bounds-check before touching an entry */
 	do {
 		pos++;
-	} while (mytree->entries[pos].deleted && (pos < mytree->treesz));
+	} while ((pos < mytree->treesz) && mytree->entries[pos].deleted);
 
 	return (pos < mytree->treesz) ? pos : -1;
 }
