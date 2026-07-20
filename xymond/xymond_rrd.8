@@ -286,6 +286,111 @@ documentation of "How to create graph custom data" available in
 the Help menu section on your Xymon server.
 
 
+.SH SELF-DESCRIBING STATUS MESSAGES (XYMON METRICS MARKERS)
+A status message may carry its own RRD storage schema in a hidden
+block, with no TEST2RRD setting needed - the message is routed to the
+RRD writer by content:
+
+.nf
+   <!--XYMON METRICS: diskio_ops
+   DS:reads:GAUGE:600:0:U DS:writes:GAUGE:600:0:U
+   ada0 10:20
+   ada1 5:6
+   \-\->
+.fi
+
+This creates or updates one multi-dataset RRD file per instance line,
+named "diskio_ops.ada0.rrd" etc. The block name is restricted to
+letters, digits, "_" and "-" (max 64 characters); an invalid name
+skips the whole block. A message may carry several blocks. The block
+is invisible on the rendered status page.
+
+The routing is by content: a status whose text merely QUOTES a marker
+line at the start of a line (a log checker echoing one, for instance)
+is taken for a self-describing status, and the column's built-in RRD
+handler is bypassed for that message. Scripts that may reproduce
+foreign log content verbatim should indent it.
+
+A DS spec may carry an optional seventh colon-separated field
+declaring the metric's unit, e.g. "DS:temp:GAUGE:600:\-30:50:degC".
+The writer strips the suffix before the spec reaches rrdtool, so a
+declared unit never affects storage; a spec without it is unchanged.
+
+Inside a block, any line whose first token is an ALL-CAPS keyword
+ending in ":" is a declaration line. Unknown declarations are ignored,
+and declaration lines are never instances, so the block dialect can
+grow new keyword lines without breaking deployed servers. Consequently,
+an instance name must not have the form of a declaration keyword.
+This version knows two: "DS:" (above) and
+
+.nf
+   THRESHOLD:<base\-ds>:<relop><operand>[:<severity>]
+.fi
+
+which declares that crossing <operand> (another DS of the same block,
+or a literal number) in the <relop> direction (one of > < >= <=, glued
+to the operand) means <severity> ("warn" or "crit", default crit) for
+<base\-ds>. The relation is a declared fact, never a display command:
+the graph renderer derives from it - the threshold DS plots as a
+threshold-styled curve instead of a peer metric (single\-instance
+images only), a literal becomes a flat HRULE, and "THRESHOLDS OFF" in
+the graphs.cfg(5) definition suppresses the co-plot entirely. Both
+DS names must be declared in the same block; invalid relations are
+ignored.
+
+The server itself uses this mechanism: the disk and inode statuses
+generated from client data carry METRICS blocks with the same
+datasets the built-in disk handler stores, so disk is an ordinary
+declared metric written by the block writer - same files, continuous
+history. The built-in handler remains as the fallback for statuses
+without a block.
+
+File creation is eager: every instance's RRD file is created on the
+first sample. Unknown banner attributes are ignored, so the dialect
+stays forward-compatible.
+
+To display graphs of these files on the status page, add one
+
+.nf
+   <!--XYMON GRAPH: diskio_ops \-\->
+.fi
+
+marker per graph. The graph paging count is exact by construction:
+it is taken from the instance-line count of the same-named METRICS
+block in the same message. A marker may instead specify "instances=N"
+explicitly (for graphs whose files are written elsewhere) or
+"instances=all" to render one unsliced image regardless of any ::N
+split size (useful for stacked-total graphs, which must never be
+split). Graph appearance comes from the graphs.cfg(5) entry of the
+same name; if none exists,
+.I showgraph.cgi(1)
+synthesizes a generic definition (one line per dataset) from the
+files themselves, so no server-side configuration is required.
+
+To alert on an aggregate over the stored values (e.g. the total of a
+dataset across all instances) without storing the total anywhere, see
+the AGGDS rules in
+.I analysis.cfg(5),
+and to graph such a total see the aggregate tokens ("@SUMNAN:" and
+friends) in
+.I graphs.cfg(5).
+
+The legacy "<!--DEVMON RRD:" banner emitted by the devmon SNMP
+collector is the ancestor of this mechanism and is accepted forever;
+it implies both store and show, and is now also routed by content
+(previously it required TEST2RRD="<column>=devmon", which still
+works). Content routing takes precedence over explicit TEST2RRD
+mappings and over built-in column handlers (disk, memory, ncv, ...) -
+deliberately so: the disk METRICS block must beat the built-in disk
+handler, or the declared-metrics cutover could never happen. The flip
+side: a message carrying a line-anchored marker banner is stored by
+the block writer INSTEAD of its column's normal handler, so a column
+that echoes third-party text verbatim at line starts (log excerpts,
+service banners) should not be given a TEST2RRD/built-in handler it
+relies on - hostile or accidental marker-shaped content would divert
+it.
+
+
 .SH SENDING METRIC DATA TO AN ADDITIONAL PROCESS
 xymond_rrd provides a mechanism to send a copy of isolated metric 
 data to a single external processor for further processing. This can

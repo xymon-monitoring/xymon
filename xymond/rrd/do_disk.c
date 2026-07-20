@@ -190,21 +190,56 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		}
 
 		if (wanteddisk && diskname && (pused != -1)) {
+			char *encname;
+			char oldfn[PATH_MAX], oldpath[PATH_MAX], newpath[PATH_MAX];
+			struct stat st;
+
+			/*
+			 * The mount point is the variable part of the RRD filename. Encode
+			 * it reversibly (rrdinstance_encode: '/' -> %2F, ',' -> %2C, ...) so
+			 * distinct mounts never share a file - the old '/'->',' scheme
+			 * aliased "/a/b" and "/a,b" onto one file. showgraph decodes it back
+			 * for the legend.
+			 */
+			encname = rrdinstance_encode(diskname);
+
+			/*
+			 * The legacy name this mount used before the cutover ('/'->',', and
+			 * a bare "/" as ",root"), so an existing RRD can be carried across.
+			 */
 			p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
 			if (strcmp(diskname, ",") == 0) {
 				diskname = xrealloc(diskname, 6);
 				strcpy(diskname, ",root");
 			}
 
-			/* 
-			 * Use testname here. 
-			 * The disk-handler also gets data from NetAPP inode- and qtree-messages,
-			 * that are virtually identical to the disk-messages. So lets just handle
-			 * all of it by using the testname as part of the filename.
+			/*
+			 * One-time, lossless migration: if only the legacy file exists,
+			 * rename it to the encoded name on this update. We hold the live
+			 * mount point, so the mapping is exact (no guessing from the lossy
+			 * old filename). A fresh post-upgrade process has an empty RRD
+			 * cache, so no pending cached update races this rename.
+			 *
+			 * Use testname as the prefix: the disk-handler also stores inode,
+			 * qtree, quotas, snapshot and tablespace data, all keyed by testname.
 			 */
-			setupfn2("%s%s.rrd", testname, diskname);
+			/* setupfn2() first: it owns the final filename, including
+			 * the md5 shortening of over-long encoded names - deriving
+			 * the target here from the raw encoded name would migrate
+			 * onto a file the writer then never updates. */
+			setupfn2("%s.%s.rrd", testname, encname);
+			int fits = ((size_t)snprintf(oldfn, sizeof(oldfn), "%s%s.rrd", testname, diskname) < sizeof(oldfn));
+			legacyfn_finish(oldfn);
+			fits = fits && ((size_t)snprintf(oldpath, sizeof(oldpath), "%s/%s/%s", rrddir, hostname, oldfn) < sizeof(oldpath));
+			fits = fits && ((size_t)snprintf(newpath, sizeof(newpath), "%s/%s/%s", rrddir, hostname, rrdfn) < sizeof(newpath));
+			if (fits && (stat(newpath, &st) != 0) && (stat(oldpath, &st) == 0)) {
+				if (rename(oldpath, newpath) != 0)
+					errprintf("disk RRD migrate: rename %s -> %s failed: %s\n",
+						  oldpath, newpath, strerror(errno));
+			}
 			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d:%lld", (int)tstamp, pused, aused);
 			create_and_update_rrd(hostname, testname, classname, pagepaths, disk_params, disk_tpl);
+			xfree(encname);
 		}
 		if (diskname) { xfree(diskname); diskname = NULL; }
 
