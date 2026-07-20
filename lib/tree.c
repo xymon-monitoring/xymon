@@ -58,9 +58,29 @@ void *xtreeNew(int(*xtreeCompare)(const char *a, const char *b))
 	return newtree;
 }
 
+static int xtree_i_matchroot(const void *pa, const void *pb)
+{
+	/* Always "found": makes tdelete remove whatever node it looks at
+	 * first (the root) without ever dereferencing the record keys -
+	 * callers may already have freed them before destroying the tree. */
+	return 0;
+}
+
 void xtreeDestroy(void *treehandle)
 {
-	free(treehandle);
+	xtree_t *tree = treehandle;
+
+	if (!tree) return;
+	/* No tdestroy() outside glibc, so delete the root record until the
+	 * tree is empty (*(rec **)root is the POSIX-documented node layout):
+	 * tdelete frees the internal nodes, we free the record wrappers.
+	 * Keys and userdata belong to the caller, as always. */
+	while (tree->root) {
+		treerec_t *rec = *(treerec_t **)tree->root;
+		tdelete(rec, &tree->root, xtree_i_matchroot);
+		free(rec);
+	}
+	free(tree);
 }
 
 xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
@@ -312,11 +332,15 @@ xtreePos_t xtreeFind(void *treehandle, char *key)
 xtreePos_t xtreeFirst(void *treehandle)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
+	xtreePos_t pos = 0;
 
 	/* Does tree exist ? Is it empty? */
 	if ((treehandle == NULL) || (mytree->treesz == 0)) return -1;
 
-	return 0;
+	/* Skip deleted records: their userdata is stale (usually freed) */
+	while ((pos < mytree->treesz) && mytree->entries[pos].deleted) pos++;
+
+	return (pos < mytree->treesz) ? pos : -1;
 }
 
 xtreePos_t xtreeNext(void *treehandle, xtreePos_t pos)
@@ -324,11 +348,12 @@ xtreePos_t xtreeNext(void *treehandle, xtreePos_t pos)
 	xtree_t *mytree = (xtree_t *)treehandle;
 
 	/* Does tree exist ? Is it empty? */
-	if ((treehandle == NULL) || (mytree->treesz == 0) || (pos >= (mytree->treesz - 1)) || (pos < 0)) return -1;
+	if ((treehandle == NULL) || (mytree->treesz == 0) || (pos < 0)) return -1;
 
+	/* Skip deleted records; bounds-check before touching an entry */
 	do {
 		pos++;
-	} while (mytree->entries[pos].deleted && (pos < mytree->treesz));
+	} while ((pos < mytree->treesz) && mytree->entries[pos].deleted);
 
 	return (pos < mytree->treesz) ? pos : -1;
 }
