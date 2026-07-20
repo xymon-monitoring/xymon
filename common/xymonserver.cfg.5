@@ -613,6 +613,11 @@ and graphs.
 NORRDDISKS only disables RRD graph tracking for matching filesystems.
 The value is a regular expression matched against the filesystem name
 (the Unix mount-point, or the Windows disk-letter).
+Note: the disk status page's paging count still includes the
+filesystems these settings filter out (the count is derived from the
+status message, which shows them), so paged disk graphs may end with
+empty slots - one more reason to prefer the analysis.cfg rules, which
+remove the filesystem from the status as well.
 .br
 Note: Setting this does not affect filesystems that are already being tracked
 by Xymon - to remove them, you must remove the RRD files for the unwanted filesystems
