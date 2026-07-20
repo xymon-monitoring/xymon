@@ -63,6 +63,9 @@ loadhosts.o: loadhosts.c loadhosts_file.c loadhosts_net.c
 eventlog.o: eventlog.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
+xymonrrd.o: xymonrrd.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+
 filesetindex.o: filesetindex.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 

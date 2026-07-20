@@ -49,6 +49,23 @@ extern xymongraph_t *xymongraphs;
 
 extern xymonrrd_t *find_xymon_rrd(char *service, char *flags);
 extern xymongraph_t *find_xymon_graph(char *rrdname);
+extern int xymon_gdef_maxinstancesperimage(char *name);
+extern int xymon_gdef_store_allowed(char *fn);
+extern int xymon_gdef_fileset_unknown(char *name);
+extern int xymon_gdef_fileset_count(char *hostname, char *name);
+extern int xymon_gdef_thresholds_off(char *name);
+/* The staleness window is one fixed number - main's historic value.
+ * Instances a graph's EXSTALEPATTERN matches are exempt: never stale. */
+#define XYMON_STALE_WINDOW 86400
+extern int xymon_gdef_stale_exempt(char *name, char *fn);
+
+/* Consolidation-function bits for xymon_gdef_cfs_forfile() */
+#define XYMON_CF_AVERAGE 1
+#define XYMON_CF_MIN     2
+#define XYMON_CF_MAX     4
+#define XYMON_CF_LAST    8
+extern int xymon_gdef_cfs_forfile(char *fn);
+extern void xymon_gdef_meta_source(char *fn);
 extern char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 		xymongraph_t *graphdef, int itemcount, 
 		hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,

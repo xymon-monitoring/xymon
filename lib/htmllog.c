@@ -167,8 +167,28 @@ static void textwithcolorimg(char *msg, FILE *output)
 	} while (restofmsg);
 }
 
+/* Is "name" one of the comma-separated entries in "csv" (ignoring any
+ * ::N split-size suffix on the entry)? Used to avoid rendering a
+ * marker-declared graph twice when GRAPHS_<service> already lists it. */
+static int name_in_csv(char *csv, char *name)
+{
+	char *p = csv;
+	int namelen = strlen(name);
 
-void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
+	while (p && *p) {
+		int entrylen = strcspn(p, ",:");
+
+		if ((entrylen == namelen) && (strncmp(p, name, namelen) == 0)) return 1;
+		p += entrylen;
+		p += strcspn(p, ",");
+		if (*p == ',') p++;
+	}
+
+	return 0;
+}
+
+
+void generate_html_log(char *hostname, char *displayname, char *service, char *ip,
 		       int color, int flapping, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
 		       char *firstline, char *restofmsg, char *modifiers,
@@ -188,6 +208,8 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	SBUF_DEFINE(graphs);
 	char *graphsenv = NULL;
 	char *graphsptr;
+	xymonmarker_t *markers = NULL;
+	int markershow = 0;
 	time_t now = getcurrenttime(NULL);
 
 	if (graphtime == 0) {
@@ -422,18 +444,36 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			}
 		}
 
-		/* GRAPHS_<service> custom graphs render even when the service has no
-		 * default graph (issue #31) - but never for reverse tests, which
-		 * collect no RRD data. */
-		SBUF_MALLOC(graphs, 7 + strlen(service) + 1);
-		snprintf(graphs, graphs_buflen, "GRAPHS_%s", service);
-		graphsenv = getenv(graphs);
-		if (graphsenv && (*graphsenv == '\0')) graphsenv = NULL;	/* set-but-empty = not set */
+		/* The status-page graph list: test.cfg's per-test GRAPHS override
+		 * wins over the GRAPHS_<service> environment (env is the fallback
+		 * for tests with no section). Custom graphs render even when the
+		 * service has no default graph (issue #31) - but never for reverse
+		 * tests, which collect no RRD data. */
+		{
+			tc_test_t *tct = testcfg_find(testcfg_load(), service);
+			if (tct && tct->graphs && *tct->graphs) graphsenv = tct->graphs;
+		}
+		if (!graphsenv) {
+			SBUF_MALLOC(graphs, 7 + strlen(service) + 1);
+			snprintf(graphs, graphs_buflen, "GRAPHS_%s", service);
+			graphsenv = getenv(graphs);
+			if (graphsenv && (*graphsenv == '\0')) graphsenv = NULL;	/* set-but-empty = not set */
+			xfree(graphs);
+		}
 		if (flags && strchr(flags, 'R')) graphsenv = NULL;
-		xfree(graphs);
+		/* Self-describing statuses: XYMON GRAPH markers in the message
+		 * declare the graphs this page shows, each with its own paging
+		 * count. Reverse tests collect no RRD data here either. */
+		if (restofmsg && !(flags && strchr(flags, 'R'))) {
+			xymonmarker_t *mwalk;
+
+			markers = xymon_markers_parse(restofmsg);
+			for (mwalk = markers; (mwalk); mwalk = mwalk->next) markershow += (mwalk->show != 0);
+		}
 	}
-	if ((rrd && graph) || graphsenv) {
+	if ((rrd && graph) || graphsenv || markershow) {
 		int may_have_rrd = 1;
+		int fallbackrendered = 0;
 
 		/*
 		 * See if there is already a linecount in the report.
@@ -464,7 +504,9 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			 */
 			SBUF_MALLOC(multikey, strlen(service) + 3);
 			snprintf(multikey, multikey_buflen, ",%s,", service);
-			if (strstr(multigraphs, multikey)) {
+			/* A test.cfg COUNTLINES metric joins the line-counting set,
+			 * regardless of the built-in/--multigraphs list. */
+			if (strstr(multigraphs, multikey) || testcfg_countlines(service)) {
 				/* The "disk" report from the NetWare client puts a "warning light" on all entries */
 				int netwarediskreport = (strstr(firstline, "NetWare Volumes") != NULL);
 
@@ -510,11 +552,11 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			xfree(multikey);
 		}
 
-		if (may_have_rrd) {
+		if (may_have_rrd || markershow) {
 			fprintf(output, "<!-- linecount=%d -->\n", linecount);
 			fprintf(output, "<a name=\"begingraph\">&nbsp;</a>\n");
 
-			if (graphsenv) {
+			if (may_have_rrd && graphsenv) {
 				/* strtok on a copy - the getenv() result is the live environment */
 				char *graphscopy = strdup(graphsenv);
 
@@ -522,6 +564,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				graphsptr = strtok(graphscopy,",");
 				while (graphsptr != NULL) {
 					xymongraph_t localgraph, *owngdef;
+					int gcount = linecount;
 
 					/*
 					 * A stack-local gdef keeps the entry verbatim in the link
@@ -534,17 +577,96 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 					owngdef = find_xymon_graph(graphsptr);
 					memset(&localgraph, 0, sizeof(localgraph));
 					localgraph.xymonrrdname = graphsptr;
-					localgraph.maxgraphs = (owngdef ? owngdef->maxgraphs : (graph ? graph->maxgraphs : 0));
-					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, &localgraph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+					if (!owngdef) localgraph.maxgraphs = xymon_gdef_maxinstancesperimage(graphsptr);
+					if (localgraph.maxgraphs == 0) localgraph.maxgraphs = (owngdef ? owngdef->maxgraphs : (graph ? graph->maxgraphs : 0));
+					/* A store-filtered graph's file set is not
+					 * derivable from the message - the writer-kept
+					 * fileset index knows it exactly (FNPATTERN-
+					 * matched); without an index, render unsliced. */
+					if (xymon_gdef_fileset_unknown(graphsptr)) {
+						int n = xymon_gdef_fileset_count(hostname, graphsptr);
+						gcount = (n > 0 ? n : 0);
+					}
+					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, &localgraph, gcount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
 					graphsptr = strtok(NULL,",");
 				}
 				xfree(graphscopy);
 			}
-			else {
-				fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+			else if (may_have_rrd && rrd && graph &&
+				 !(markershow && (strncmp(rrd->xymonrrdname, "devmon", 6) == 0) &&
+				   !xymon_markers_devmon_unparsed(restofmsg))) {
+				/* A devmon-mapped column whose message carries DEVMON
+				 * banners renders through the marker path below: the
+				 * banners say exactly which graphs this status holds,
+				 * with exact counts - this service-level fallback link
+				 * would render a second, imprecise copy of each.
+				 * Exception: a banner name outside the marker charset
+				 * stores RRDs (the writer accepts any name) but parses
+				 * to no marker - suppressing the fallback would lose
+				 * that block's graphs, so it stays; the parsed markers'
+				 * graphs then render twice, which beats vanishing. */
+				int gcount = linecount;
+				if (xymon_gdef_fileset_unknown(graph->xymonrrdname)) {
+					int n = xymon_gdef_fileset_count(hostname, graph->xymonrrdname);
+					gcount = (n > 0 ? n : 0);
+				}
+				fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, gcount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+				fallbackrendered = 1;
+			}
+
+			if (markershow) {
+				xymonmarker_t *mwalk;
+
+				for (mwalk = markers; (mwalk); mwalk = mwalk->next) {
+					xymongraph_t localgraph, *owngdef;
+
+					if (!mwalk->show) continue;
+
+					/* Skip graphs the config-driven paths above already
+					 * rendered. The service-level fallback only counts
+					 * when it actually ran - when it was suppressed in
+					 * favour of this marker path (devmon banners), the
+					 * marker is the sole renderer and must not be
+					 * deduplicated against it. */
+					if (may_have_rrd && graphsenv && name_in_csv(graphsenv, mwalk->name)) continue;
+					if (fallbackrendered &&
+					    ((strcmp(mwalk->name, service) == 0) || (strcmp(mwalk->name, graph->xymonrrdname) == 0))) continue;
+
+					/* Same stack-local gdef pattern as the GRAPHS_ entries
+					 * above; the paging count is the marker's own - the
+					 * instances= attribute, else the instance count of the
+					 * message's METRICS block, else 0 = unsliced. The
+					 * lookup is effectively exact for marker names: its
+					 * prefix matching applies only across a '.' or ','
+					 * boundary, which the marker charset cannot contain. */
+					owngdef = find_xymon_graph(mwalk->name);
+					memset(&localgraph, 0, sizeof(localgraph));
+					localgraph.xymonrrdname = mwalk->name;
+					localgraph.maxgraphs = (owngdef ? owngdef->maxgraphs : xymon_gdef_maxinstancesperimage(mwalk->name));
+					/* When the fileset is not derivable from the
+					 * message (store filters), the writer-kept
+					 * fileset index knows it exactly - only without
+					 * an index does the graph fall back to an
+					 * unsliced render. Explicit instances= wins. */
+					{
+						int gcount = xymon_marker_instancecount(mwalk);
+						if ((mwalk->instancespec < 0) && xymon_gdef_fileset_unknown(mwalk->name)) {
+							/* The one staleness window (with the graph's
+							 * EXSTALEPATTERN exemptions) - the same the
+							 * stale-file filter applies, so the count
+							 * equals what actually renders. FNPATTERN-
+							 * aware: a hand-written gdef's fileset counts
+							 * by its own pattern. */
+							int n = xymon_gdef_fileset_count(hostname, mwalk->name);
+							gcount = (n > 0 ? n : 0);
+						}
+						fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, mwalk->name, color, &localgraph, gcount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+					}
+				}
 			}
 		}
 	}
+	xymon_markers_free(markers);
 
 	if (histlocation == HIST_BOTTOM) {
 		historybutton(cgibinurl, hostname, service, ip, displayname,
