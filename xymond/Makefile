@@ -9,7 +9,7 @@ PROGRAMS = xymon.sh xymond xymond_channel xymond_locator xymond_filestore xymond
 CLIENTPROGRAMS = ../client/xymond_client
 
 ifeq ($(DORRD),yes)
-	PROGRAMS += xymond_rrd
+	PROGRAMS += xymond_rrd rrdreconcile
 endif
 
 XYMONDOBJS    = xymond.o
@@ -30,6 +30,7 @@ TRIMHISTOBJS  = trimhistory.o
 FETCHOBJS     = xymonfetch.o
 CONVERTNKOBJS = convertnk.o
 RRDCACHECTLOBJS = rrdcachectl.o
+RRDRECONCILEOBJS = rrdreconcile.o
 
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
 
@@ -119,6 +120,9 @@ convertnk: $(CONVERTNKOBJS) $(XYMONCOMMLIB)
 
 rrdcachectl: $(RRDCACHECTLOBJS) $(XYMONCOMMLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(RRDCACHECTLOBJS) $(XYMONCOMMLIBS)
+
+rrdreconcile: $(RRDRECONCILEOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDRECONCILEOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 xymon.sh: xymon.sh.DIST
 	cat $< | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONLOGDIR@!$(XYMONLOGDIR)!g' | sed -e 's!@XYMONUSER@!$(XYMONUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
