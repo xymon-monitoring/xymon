@@ -64,7 +64,7 @@ The GNU C compiler works fine on HP-UX. More details in
 <a href="http://www.xymon.com/archive/2005/06/msg00079.html">this e-mail</a> from
 the Xymon mailing list.</p>
 
-<h4>PCRE, RRDtool, OpenSSL, OpenLDAP libraries.</h4>
+<h4>PCRE, RRDtool, c-ares, OpenSSL, OpenLDAP libraries.</h4>
 <p>Xymon relies on a number of Open-Source libraries - these must be installed
 before you start building Xymon. On many systems you already have these 
 pre-installed - they are commonly installed by default on Linux systems, and
@@ -89,6 +89,12 @@ files installed as well. Often these are in packages called "something<em>-dev</
 	versions of it.<br>
 	Note that RRDtool requires various graphics-libraries. RRDtool 1.2.x uses
 	libpng, newer versions rely on the Cairo graphics library.</li>
+
+	<li>c-ares is an asynchronous DNS resolver library, required to build the
+	"xymonnet" network test tool. Xymon no longer ships a bundled copy, so the
+	c-ares development files must be installed (packages are commonly named
+	libc-ares-dev, c-ares-devel or c-ares). It is available from
+	<a href="https://c-ares.org/">https://c-ares.org/</a></li>
 
 	<li>OpenSSL is a library for communicating with network services, that
 	use SSL encryption - e.g. secure websites. Although this library is
@@ -260,7 +266,7 @@ cd fping-3.2
 make &amp;&amp; make install
 cd ..
 
-yum install pcre-devel openssl-devel openldap-devel rrdtool-devel
+yum install pcre-devel openssl-devel openldap-devel rrdtool-devel c-ares-devel
 cd xymon-4.3.10
 ./configure --server
 make &amp;&amp; make install
@@ -301,7 +307,7 @@ cd rrdtool-1.2.30
 make &amp;&amp; make install
 cd ..
 
-yum install pcre-devel openssl-devel openldap-devel
+yum install pcre-devel openssl-devel openldap-devel c-ares-devel
 cd xymon-4.3.10
 ./configure --server
 make &amp;&amp; make install
@@ -344,7 +350,7 @@ cd rrdtool-1.2.30
 make &amp;&amp; make install
 cd ..
 
-yum install pcre-devel openssl-devel openldap-devel
+yum install pcre-devel openssl-devel openldap-devel c-ares-devel
 cd xymon-4.3.10
 ./configure --server --pcreinclude /usr/include/pcre --sslinclude /usr/include/openssl
 make &amp;&amp; make install
@@ -373,7 +379,7 @@ chkconfig xymon on
 <h4><a name="commondebian6">Debian 6 (Squeeze)</a></h4>
 <p>NOTE: Pre-compiled Debian packages are provided on Sourceforge, along with the source distribution file.</p>
 <p>Debian 6 has all of the necessary tools included in the core distribution.</p>
-<pre><tt>apt-get install apache2 rrdtool librrd-dev libpcre3-dev libssl-dev ldap-utils libldap2-dev fping
+<pre><tt>apt-get install apache2 rrdtool librrd-dev libpcre3-dev libc-ares-dev libssl-dev ldap-utils libldap2-dev fping
 
 # Enable mod_rewrite in Apache
 cd /etc/apache2/mods-enabled/
@@ -397,6 +403,7 @@ dpkg -i xymon*deb
 <p>Perform a standard install, make sure to install the "ports" collection. FreeBSD - in a minimal configuration - does not install any of the Xymon prerequisites, so starting from a minimal configuration you must run these commands to install the various tools and libraries needed. For those packages that have some configuration items, the defaults work fine:</p>
 <pre><tt>cd /usr/ports/devel/gmake; make; make install
 cd /usr/ports/devel/pcre; make; make install
+cd /usr/ports/dns/c-ares; make; make install
 cd /usr/ports/databases/rrdtool12; make; make install
 cd /usr/ports/security/openssl; make; make install
 cd /usr/ports/net/openldap23-client; make; make install
@@ -459,7 +466,7 @@ in the apache_start() and apache_stop() functions, respectively.</p>
 <p>All of the necessary packages are available from the OpenBSD &quot;ports&quot; collection. Note that when installing OpenBSD, you must install the &quot;xbase&quot; package, since this contains a library that is needed by RRDtool.</p>
 <p>After installing the core OpenBSD system, use the ports-collection to install the necessary packages. See <a href="http://www.openbsd.org/faq/faq15.html#Intro">OpenBSD FAQ</a> for details about using this.</p>
 <pre><tt>export PKG_PATH=ftp://ftp.openbsd.org/pub/OpenBSD/`uname -r`/packages/`uname -m`/
-pkg_add -v gmake pcre rrdtool openldap-client fping apache-httpd
+pkg_add -v gmake pcre libcares rrdtool openldap-client fping apache-httpd
 </tt></pre>
 <p>Note: Check permissions on /usr/local/sbin/fping* - they must be suid root. On OpenBSD 4.6 it has been observed that this is not the case by default, so you must run<br><tt>chmod u+s /usr/local/sbin/fping*</tt><br>for them to be usable by the xymon user.</p>
 
@@ -501,6 +508,7 @@ and libraries that Xymon will use:<br>
 <pre><tt>pkgutil -i -y gcc4core gcc4g++ gmake
 pkgutil -i -y pcre libpcre_dev
 pkgutil -i -y rrdtool rrdtool_dev
+pkgutil -i -y libcares_dev
 pkgutil -i -y openssl libssl_dev
 pkgutil -i -y openldap_client openldap_dev
 pkgutil -i -y fping</tt></pre></p>
