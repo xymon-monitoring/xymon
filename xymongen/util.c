@@ -40,16 +40,16 @@ char *hostpage_link(host_t *host)
 	xymongen_page_t *pgwalk;
 
 	if (host->parent && (strlen(((xymongen_page_t *)host->parent)->name) > 0)) {
-		sprintf(pagelink, "%s%s", ((xymongen_page_t *)host->parent)->name, htmlextension);
+		snprintf(pagelink, sizeof(pagelink), "%s%s", ((xymongen_page_t *)host->parent)->name, htmlextension);
 		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
 			if (strlen(pgwalk->name)) {
-				sprintf(tmppath, "%s/%s", pgwalk->name, pagelink);
-				strcpy(pagelink, tmppath);
+				snprintf(tmppath, sizeof(tmppath), "%s/%s", pgwalk->name, pagelink);
+				snprintf(pagelink, sizeof(pagelink), "%s", tmppath);
 			}
 		}
 	}
 	else {
-		sprintf(pagelink, "xymon%s", htmlextension);
+		snprintf(pagelink, sizeof(pagelink), "xymon%s", htmlextension);
 	}
 
 	return pagelink;
