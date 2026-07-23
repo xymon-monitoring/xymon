@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
 				}
 
 				if (statuslogfd) {
-					if (logexists) {
+					if (logexists && *oldcol) {
 						struct tm oldtm;
 
 						/* Re-print the old record, now with the final duration */
