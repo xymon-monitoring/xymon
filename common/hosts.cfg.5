@@ -564,27 +564,33 @@ that cross into/out of a REPORTTIME interval.
 If no REPORTTIME is given, the standard 24x7 calculation is used.
 
 .IP WARNPCT:percentage
-Xymon's reporting facility uses a computed availability threshold
-to color services green (100% available), yellow (above threshold,
-but less than 100%), or red (below threshold) in the reports.
+Xymon's reporting facility colors each service in the availability
+report by comparing the computed availability percentage against two
+thresholds: green when the availability is above the green level
+(default 99.995%, set globally with the XYMONREPGREEN environment
+setting), yellow when it is at or above the warning threshold but
+not above the green level, and red when it is below the warning
+threshold.
 
-This option allows you to set the threshold value on a host-by-host
-basis, instead of using a global setting for all hosts. The
-threshold is defined as the percentage of the time that the host
+This option sets the warning threshold on a host-by-host basis,
+instead of the global setting (default 97%, XYMONREPWARN environment
+setting). The threshold is the percentage of the time that the host
 must be available, e.g. "WARNPCT:98.5" if you want the threshold to
 be at 98.5%
 
 .IP WARNSTOPS:count
-Sets a threshold on the number of separate down-periods ("stops" - i.e.
-times the status went above yellow) allowed within the reporting
-interval. If the number of down-periods exceeds "count", the report is
-shown as red - even if WARNPCT's availability-percentage threshold
-would otherwise show green or yellow. This catches hosts that flap
-frequently (many short outages) but still have a high overall
-availability percentage.
-E.g. "WARNSTOPS:5" turns the report red once a 6th outage occurs in
-the reporting interval.
-Default: -1 (disabled - no limit on the number of down-periods).
+In availability reports, turn the report status red when the service
+had more than "count" outages (status changes to red) during the
+reporting period, regardless of the computed availability
+percentage. This catches unstable services that fail often but
+briefly, which a percentage threshold alone does not see. When
+REPORTTIME is set, only outages within those service hours are
+counted. When WARNSTOPS is active, the report shows the outage count
+in parentheses next to the availability percentage.
+
+There is no global default: outage-count checking is disabled unless
+the host carries this tag (possibly inherited from the ".default."
+host). E.g. "WARNSTOPS:3" turns the report red on the fourth outage.
 
 .IP "noflap[=test1,test2,...]"
 Disable flap detection for this host, or for specific tests on this
