@@ -108,14 +108,20 @@ Rule matching an alert by the time-of-day. This is specified as the DOWNTIME tim
 .BR "EXTIME=timespecification"
 Rule excluding an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the hosts.cfg file.
 .sp
-.BR "DURATION>time, DURATION<time"
-Rule matching an alert if the event has lasted longer/shorter than the given duration. E.g. DURATION>1h (lasted longer than 1 hour) or DURATION<30 (only sends alerts the first 30 minutes). The duration is specified as a number, optionally followed by 'm' (minutes, default), 'h' (hours) or 'd' (days).
+.BR "DURATION>time, DURATION>=time, DURATION<time, DURATION<=time"
+Rule matching an alert if the event has lasted longer/shorter than the given duration. E.g. DURATION>1h (lasted longer than 1 hour) or DURATION<30 (only sends alerts the first 30 minutes). The duration is specified as a number, optionally followed by 'm' (minutes, default), 'h' (hours), 'd' (days) or 'w' (weeks).
 .sp
 .BR RECOVERED
-Rule matches if the alert has recovered from an alert state.
+Send recovery and disabled-state messages to matching recipients. This can be set on a rule or on an individual recipient.
+.sp
+.BR NORECOVERED
+Suppress recovery and disabled-state messages. On a recipient, this overrides a RECOVERED setting inherited from the rule.
 .sp
 .BR NOTICE
-Rule matches if the message is a "notify" message. This type of message is sent when a host or test is disabled or enabled.
+Send "notify" messages to matching recipients. This type of message is sent when a host or test is disabled or enabled.
+.sp
+.BR NONOTICE
+Suppress notify messages. On a recipient, this overrides a NOTICE setting inherited from the rule.
 
 The "targetstring" is either a simple pagename, hostname or servicename, OR a '%' 
 followed by a Perl-compatible regular expression. E.g. "HOST=%www(.*)" will match 
@@ -143,19 +149,36 @@ is matched, no more recipients will be considered. So the location of this recip
 set of recipients is important.
 .sp
 .BR "FORMAT=formatstring"
-Format of the text message with the alert. Default is "TEXT" (suitable for e-mail alerts). "PLAIN" is the same as text, but without the URL link to the status webpage. "SMS" is a short message with no subject for SMS alerts. "SCRIPT" is a brief message template for scripts.
+Format of the text message with the alert. Default is "TEXT" (suitable for e-mail alerts). "PLAIN" is the same as text, but without the URL link to the status webpage. "SMS" is a short message with no subject for SMS alerts. "PAGER" produces an empty message body. "SCRIPT" is a brief message template for scripts.
 .sp
 .BR "REPEAT=time"
-How often an alert gets repeated. As with DURATION, time is a number optionally followed by 'm', 'h' or 'd'.
+How often an alert gets repeated. Time is a number optionally followed by 'm' (minutes, default), 'h' (hours), 'd' (days) or 'w' (weeks).
 .sp
 .BR UNMATCHED
 The alert is sent to this recipient ONLY if no other recipients received an alert for this event.
+.PP
+For example, place an UNMATCHED recipient after more specific rules to provide a fallback:
+.IP
+.nf
+HOST=database.example.com SERVICE=cpu
+	MAIL database-team@example.com
+
+HOST=%.*
+	MAIL operations@example.com UNMATCHED
+.fi
+.LP
+The operations recipient is used only when an earlier recipient did not receive the alert, so recipient order is significant.
 .sp
 .BR STOP
 Stop looking for more recipients after this one matches. This is implicit on IGNORE recipients.
 .sp
-.BR Rules
-You can specify rules for a recipient also. This limits the alerts sent to this particular recipient.
+.BR NOALERT
+Suppress paging, recovery and disabled-state messages for this recipient. Notify messages are still allowed.
+.sp
+.BR "Recipient rules"
+You can specify rule filters after a recipient on the same logical line. This limits the alerts sent to that recipient. End a physical line with a backslash to continue the logical line. If multiple recipients occur on one logical line, trailing rule filters apply to all recipients on that line.
+
+FORMAT, REPEAT, STOP, UNMATCHED and NOALERT are recipient-only modifiers. They can also be placed on a following line, where they modify the preceding recipient.
 
 .SH MACROS
 It is possible to use \fBmacros\fR in the configuration file. To define a macro:
@@ -171,6 +194,9 @@ It is possible to nest macros, as long as the macro is defined before it is used
 .SH "ALERT SCRIPTS"
 Alerts can go out via custom scripts, by using the SCRIPT keyword for a recipient.
 Such scripts have access to the following environment variables:
+.sp
+.BR BBCOLORLEVEL
+The color of the alert: "red", "yellow" or "purple".
 .sp
 .BR BBALPHAMSG
 The full text of the status log triggering the alert
@@ -209,7 +235,7 @@ recovered, "2" if the service was disabled.
 .BR EVENTSTART
 Timestamp when the current status (color) began.
 .sp
-.BR SECS
+.BR DOWNSECS
 Number of seconds the service has been down.
 .sp
 .BR DOWNSECSMSG
@@ -218,8 +244,18 @@ When recovered, holds the text "Event duration : N" where N is the DOWNSECS valu
 .BR CFID
 Line-number in the alerts.cfg file that caused the script to be invoked.
 Can be useful when troubleshooting alert configuration rules.
+.sp
+.BR ALERTID
+Unique identifier derived from the host, service and event start time.
+.PP
+Available host metadata is also exported as
+.B XMH_*
+environment variables.
+See
+.I xymon-xmh(5)
+for the full list and descriptions.
 
 .SH "SEE ALSO"
-xymond_alert(8), xymond(8), xymon(7), the "Configuring Xymon Alerts"
+xymond_alert(8), xymond(8), xymon(7), xymon-xmh(5), the "Configuring Xymon Alerts"
 guide in the Online documentation.
 
