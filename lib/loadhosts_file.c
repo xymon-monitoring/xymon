@@ -110,7 +110,7 @@ static int prepare_fromnet(void)
 
 	if (contentbuffer) freestrbuffer(contentbuffer);
 	contentbuffer = convertstrbuffer(fdata, 0);
-	strncpy(contentmd5, fhash, sizeof(contentmd5));
+	snprintf(contentmd5, sizeof(contentmd5), "%s", fhash);
 
 	return 0;
 }

@@ -1126,8 +1126,7 @@ void run_rpcinfo_service(service_t *service)
 	char		cmdpath[PATH_MAX];
 
 	p = xgetenv("RPCINFO");
-	strncpy(cmdpath, (p ? p : "rpcinfo"), sizeof(cmdpath));
-	cmdpath[sizeof(cmdpath)-1] = '\0';	/* strncpy may not terminate */
+	snprintf(cmdpath, sizeof(cmdpath), "%s", (p ? p : "rpcinfo"));
 	for (t=service->items; (t); t = t->next) {
 		/* Do not run RPCINFO test if host does not resolve in DNS or is down */
 		if (!t->host->dnserror && (t->host->downcount == 0) && !t->host->pingerror) {
@@ -1417,7 +1416,7 @@ int finish_ping_service(service_t *service)
 		if (!t->open && t->host->routerdeps) {
 			testitem_t *router;
 
-			strncpy(l, t->host->routerdeps, sizeof(l));
+			snprintf(l, sizeof(l), "%s", t->host->routerdeps);
 			p = strtok(l, ",");
 			while (p && (t->host->deprouterdown == NULL)) {
 				for (router=service->items; 
@@ -2414,7 +2413,7 @@ int main(int argc, char *argv[])
 
 			for (t = s->items; (t); t = t->next) {
 				if (!t->host->dnserror) {
-					strncpy(tname, s->testname, sizeof(tname));
+					snprintf(tname, sizeof(tname), "%s", s->testname);
 					if (s->namelen) tname[s->namelen] = '\0';
 					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL,
 									   t->srcip,
