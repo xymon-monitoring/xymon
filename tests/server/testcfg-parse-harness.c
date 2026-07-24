@@ -149,5 +149,29 @@ int main(void)
 	testcfg_free(tests);
 
 	printf(failures ? "FAILED\n" : "ALL OK\n");
+	/* --- groups (the testgroup tier) --- */
+	{
+		tc_group_t *groups, *g;
+
+		groups = testcfg_groups_parse(
+			"TEST smarttemp { SOURCE client }\n"	/* TEST sections are ignored here */
+			"group smart {\n"
+			"        member smarttemp\n"
+			"        member smartsata\n"
+			"        rollup worst\n"
+			"}\n"
+			"group net { member ping http }\n", err, sizeof(err));
+		ck("groups parse", groups != NULL);
+		g = testcfg_group_of(groups, "smarttemp");
+		ck("test resolves to its group", g && (strcmp(g->name, "smart") == 0));
+		ck("group keeps both members", g && (g->nmembers == 2));
+		ck("member order preserved", g && (strcmp(g->members[0], "smarttemp") == 0) && (strcmp(g->members[1], "smartsata") == 0));
+		ck("rollup defaults to worst", g && (g->rollup == TC_ROLLUP_WORST));
+		ck("one line, several members", testcfg_group_of(groups, "http") && (strcmp(testcfg_group_of(groups, "http")->name, "net") == 0));
+		ck("non-member test -> NULL", testcfg_group_of(groups, "nobody") == NULL);
+		ck("a TEST section is not a group", testcfg_groups_parse("TEST solo { SOURCE client }\n", err, sizeof(err)) == NULL);
+		testcfg_groups_free(groups);
+	}
+
 	return failures ? 1 : 0;
 }

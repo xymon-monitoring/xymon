@@ -84,4 +84,28 @@ extern const char *testcfg_ncv(const char *testname, int *split);
  * membership), regardless of the built-in/env list. */
 extern int testcfg_countlines(const char *testname);
 
+/* --- The testgroup tier: a display-only aggregator over member tests. --- */
+
+/* Rollup rule for a group's aggregate colour. */
+#define TC_ROLLUP_WORST 0
+
+/* One "group <name> { member <test>... ; rollup worst }" section. Members
+ * stay independent status tests; the group governs only how they are shown
+ * and rolled up (the aggregator light + the merged detail page). */
+typedef struct tc_group_t {
+	char *name;
+	char **members;			/* member test names, in file order */
+	int nmembers;
+	int rollup;			/* TC_ROLLUP_* (worst for now) */
+	struct tc_group_t *next;
+} tc_group_t;
+
+/* Parse the group sections from test.cfg text (pure; free with the below). */
+extern tc_group_t *testcfg_groups_parse(const char *text, char *errbuf, int errbufsz);
+extern void testcfg_groups_free(tc_group_t *head);
+/* Load + cache the groups from $XYMONHOME/etc/test.cfg (NULL if none). */
+extern tc_group_t *testcfg_groups(void);
+/* The group a test belongs to, or NULL. Case-insensitive, like testcfg_find. */
+extern tc_group_t *testcfg_group_of(tc_group_t *head, const char *test);
+
 #endif

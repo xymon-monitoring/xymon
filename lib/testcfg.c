@@ -344,3 +344,105 @@ int testcfg_countlines(const char *testname)
 	for (m = t->metrics; (m); m = m->next) if (m->countlines) return 1;
 	return 0;
 }
+
+/* --- groups (the testgroup aggregator tier) --- */
+
+static tc_group_t *load_group(bracenode_t *gnode)
+{
+	tc_group_t *g = (tc_group_t *)xcalloc(1, sizeof(tc_group_t));
+	int i;
+
+	g->name = xstrdup((gnode->nwords >= 2) ? gnode->words[1] : "");
+	g->rollup = TC_ROLLUP_WORST;
+	for (i = 0; i < gnode->nchildren; i++) {
+		bracenode_t *c = gnode->children[i];
+		if (c->nwords < 1) continue;
+		if (strcasecmp(c->words[0], "member") == 0) {
+			int j;
+			/* One line may list several members: "member a b c". */
+			for (j = 1; j < c->nwords; j++) {
+				size_t sz = (g->nmembers + 1) * sizeof(char *);
+				g->members = (char **)(g->members ? xrealloc(g->members, sz) : xmalloc(sz));
+				g->members[g->nmembers++] = xstrdup(c->words[j]);
+			}
+		}
+		else if ((strcasecmp(c->words[0], "rollup") == 0) && (c->nwords >= 2)) {
+			/* Only "worst" is defined today; anything else keeps the default. */
+			g->rollup = TC_ROLLUP_WORST;
+		}
+	}
+	return g;
+}
+
+tc_group_t *testcfg_groups_parse(const char *text, char *errbuf, int errbufsz)
+{
+	bracenode_t *root;
+	tc_group_t *head = NULL, *tail = NULL;
+	int i;
+
+	root = braceparse(text, errbuf, errbufsz);
+	if (!root) return NULL;
+	for (i = 0; i < root->nchildren; i++) {
+		bracenode_t *c = root->children[i];
+		tc_group_t *g;
+		if ((c->nwords < 1) || strcasecmp(c->words[0], "group")) continue;
+		g = load_group(c);
+		if (tail) tail->next = g; else head = g;
+		tail = g;
+	}
+	braceparse_free(root);
+	return head;
+}
+
+void testcfg_groups_free(tc_group_t *head)
+{
+	while (head) {
+		tc_group_t *g = head; head = head->next;
+		int i;
+		xfree(g->name);
+		for (i = 0; i < g->nmembers; i++) xfree(g->members[i]);
+		if (g->members) xfree(g->members);
+		xfree(g);
+	}
+}
+
+tc_group_t *testcfg_group_of(tc_group_t *head, const char *test)
+{
+	tc_group_t *g;
+	int i;
+
+	if (!test) return NULL;
+	for (g = head; (g); g = g->next)
+		for (i = 0; i < g->nmembers; i++)
+			if (strcasecmp(g->members[i], test) == 0) return g;
+	return NULL;
+}
+
+tc_group_t *testcfg_groups(void)
+{
+	static int loaded = 0;
+	static tc_group_t *cache = NULL;
+	char fn[PATH_MAX];
+	FILE *fd;
+	strbuffer_t *inbuf, *all;
+	char err[200];
+
+	if (loaded) return cache;
+	loaded = 1;
+
+	snprintf(fn, sizeof(fn), "%s/etc/test.cfg", xgetenv("XYMONHOME"));
+	errno = 0;
+	fd = stackfopen(fn, "r", NULL);
+	if (fd == NULL) return NULL;
+
+	inbuf = newstrbuffer(0); all = newstrbuffer(0);
+	while (stackfgets(inbuf, NULL)) addtobuffer(all, STRBUF(inbuf));
+	stackfclose(fd);
+	freestrbuffer(inbuf);
+
+	err[0] = '\0';
+	cache = testcfg_groups_parse(STRBUF(all), err, sizeof(err));
+	if (!cache && *err) errprintf("test.cfg: %s\n", err);
+	freestrbuffer(all);
+	return cache;
+}

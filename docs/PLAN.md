@@ -133,9 +133,10 @@ never a real status column (combostatus-style):**
   per member) + their graphs + a rollup band. Join-key stability relies on the branch's
   **reversible instance encoding** (KEEP item) so `sda` == `sda` across members.
 - Rollup color: reuse AGGDS / COMPACT worst-of.
-- Home: a **`testgroup`** block in test.cfg. **[V]** `braceparse` supports arbitrary
-  nesting (`BP_MAXDEPTH 64`); testcfg walks a fixed TEST→METRIC→backend tree and would
-  gain a testgroup level.
+- Home: a **`testgroup`** block in test.cfg. **[DONE 6125c262a — 3a]** `group <name>
+  { member <test>…; rollup worst }` parses into `tc_group_t`; API `testcfg_groups()` +
+  `testcfg_group_of(head, test)`. Remaining: **3b** merged group page (reuse
+  `render_metrics_table`), **3c** matrix rollup light (COMPACT reuse + link retarget).
 - **[O]** The merged detail page is net-new rendering — no existing multi-test merged page to reuse.
 - **[O]** Dynamic (CGI) host-matrix path, if any, not traced; static `xymongen` authoritative for layout.
 - **[DECIDED 2026-07-24]** Model (a): the **test** is the alert/ack atom — one test →
