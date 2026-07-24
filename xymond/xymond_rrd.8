@@ -74,7 +74,7 @@ processor (the \-\-extra\-script or \-\-processor options).
 
 .SH ENVIRONMENT
 .IP TEST2RRD
-Defines the mapping between a status-log columnname and the corresponding
+Defines the mapping between a status-log testname and the corresponding
 RRD database format. This is normally defined in the 
 .I xymonserver.cfg(5)
 file.
@@ -92,7 +92,7 @@ is, it creates one rrd file per "NAME : value" line found in the
 status message. It is useful when the list of NCV lines is varying.
 
 .IP TRACKMAX
-Comma-separated list of columnname for which you want to keep the
+Comma-separated list of testname for which you want to keep the
 maximum values along with the default average values. This only works
  for the NCV backend.
 
@@ -119,7 +119,7 @@ on the monitored server.
 .IP netstat
 Records TCP and UDP statistics. Data is collected from the "netstat"
 status report; however, this data is often sent via the Xymon
-"data" protocol, so there need not be a "netstat" column visible
+"data" protocol, so there need not be a "netstat" test visible
 on the Xymon display. To get these data, the LARRD netstat bottom-feeder
 script must be running on the monitored server.
 
@@ -127,7 +127,7 @@ script must be running on the monitored server.
 Records system performance metrics from the "vmstat" command.
 Data is collected from the "vmstat" status report; however, this 
 data is often sent via the Xymon "data" protocol, so there need 
-not be a "vmstat" column visible on the Xymon display. To get 
+not be a "vmstat" test visible on the Xymon display. To get 
 these data, the LARRD vmstat bottom-feeder script must be running on
 the monitored server.
 
@@ -239,23 +239,23 @@ the top of your message and use "<!\-\- ncv_end \-\->" once your data
 is complete.
 
 
-To enable the ncv module for a status, add a "COLUMNNAME=ncv" to the 
-TEST2RRD setting and the COLUMNNAME to the GRAPHS setting in
+To enable the ncv module for a status, add a "TESTNAME=ncv" to the 
+TEST2RRD setting and the TESTNAME to the GRAPHS setting in
 .I xymonserver.cfg(5)
 , then restart Xymon. Xymon will now send
-all status-messages for the column COLUMNNAME through the xymond_rrd
+all status-messages for the test TESTNAME through the xymond_rrd
 ncv-handler.
 
-The name of the RRD file will be COLUMNNAME.rrd. When using SPLITNCV,
-the name of the RRD file will be COLUMNAME,DATASETNAME.rrd.
+The name of the RRD file will be TESTNAME.rrd. When using SPLITNCV,
+the name of the RRD file will be TESTNAME,DATASETNAME.rrd.
 
 By default, all of the datasets are generated as the RRD type "DERIVE"
 which works for all types of monotonically increasing counters. If you 
 have data that are of the type GAUGE, you can override the default via
-an environment variable NCV_COLUMNNAME (or SPLITNCV_COLUMNAME). 
+an environment variable NCV_TESTNAME (or SPLITNCV_TESTNAME). 
 
 E.g. if you are using the bb-mysqlstatus script from www.deadcat.net to 
-collect data about your MySQL server, it generates a report in the column 
+collect data about your MySQL server, it generates a report in the test 
 called "mysql". One data item is the average number of queries/second,
 which must be logged in the RRD file as type "GAUGE". To do that, add
 the following to xymonserver.cfg:
@@ -307,7 +307,7 @@ is invisible on the rendered status page.
 
 The routing is by content: a status whose text merely QUOTES a marker
 line at the start of a line (a log checker echoing one, for instance)
-is taken for a self-describing status, and the column's built-in RRD
+is taken for a self-describing status, and the test's built-in RRD
 handler is bypassed for that message. Scripts that may reproduce
 foreign log content verbatim should indent it.
 
@@ -390,13 +390,13 @@ friends) in
 The legacy "<!--DEVMON RRD:" banner emitted by the devmon SNMP
 collector is the ancestor of this mechanism and is accepted forever;
 it implies both store and show, and is now also routed by content
-(previously it required TEST2RRD="<column>=devmon", which still
+(previously it required TEST2RRD="<test>=devmon", which still
 works). Content routing takes precedence over explicit TEST2RRD
-mappings and over built-in column handlers (disk, memory, ncv, ...) -
+mappings and over built-in test handlers (disk, memory, ncv, ...) -
 deliberately so: the disk METRICS block must beat the built-in disk
 handler, or the declared-metrics cutover could never happen. The flip
 side: a message carrying a line-anchored marker banner is stored by
-the block writer INSTEAD of its column's normal handler, so a column
+the block writer INSTEAD of its test's normal handler, so a test
 that echoes third-party text verbatim at line starts (log excerpts,
 service banners) should not be given a TEST2RRD/built-in handler it
 relies on - hostile or accidental marker-shaped content would divert
@@ -509,7 +509,7 @@ A shell-script to track all of these variables could be written like this:
 .nf
 #!/bin/sh
 
-# Input parameters: Hostname, testname (column), and messagefile
+# Input parameters: Hostname, testname, and messagefile
 HOSTNAME="$1"
 TESTNAME="$2"
 FNAME="$3"

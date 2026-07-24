@@ -10,7 +10,7 @@
 /*                                                                            */
 /*   <!--XYMON GRAPH: <name> [instances=<N>|instances=all] -->                       */
 /*                                      show: render gdef <name> on this     */
-/*                                      column's page                        */
+/*                                      test's page                          */
 /*                                                                            */
 /*   <!--DEVMON RRD: <name> ...        legacy alias (devmon SNMP collector): */
 /*   ...                          -->   store and show combined              */

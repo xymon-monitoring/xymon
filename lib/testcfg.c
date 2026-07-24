@@ -83,7 +83,7 @@ static tc_metric_t *load_metric(bracenode_t *mnode)
 	tc_metric_t *m;
 	int i;
 
-	/* A nameless METRIC would bind its column to an empty rrd name -
+	/* A nameless METRIC would bind its test to an empty rrd name -
 	 * a nonexistent handler, killing collection with no trace. Config
 	 * errors fail loudly, never silently rebind. */
 	if (mnode->nwords < 2) {
@@ -296,7 +296,7 @@ tc_test_t *testcfg_load(void)
 tc_test_t *testcfg_find(tc_test_t *head, const char *name)
 {
 	tc_test_t *t;
-	/* Case-insensitive like the column->RRD tree (lib/xymonrrd.c), or a
+	/* Case-insensitive like the test->RRD tree (lib/xymonrrd.c), or a
 	 * wrong-case section would change the RRD binding but silently miss
 	 * the NCV/COUNTLINES overlays. */
 	for (t = head; (t && strcasecmp(t->name, name)); t = t->next) ;

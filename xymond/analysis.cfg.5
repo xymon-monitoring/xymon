@@ -8,7 +8,7 @@ analysis.cfg \- Configuration file for the xymond_client module
 .SH DESCRIPTION
 The analysis.cfg file controls what color is assigned to
 the status-messages that are generated from the Xymon client
-data - typically the cpu, disk, memory, procs- and msgs-columns. Color
+data - typically the cpu, disk, memory, procs- and msgs-tests. Color
 is decided on the basis of some \fBsettings\fR defined in this file;
 settings apply to specific hosts through a set of \fBrules\fR.
 
@@ -21,7 +21,7 @@ Blank lines and lines starting with a hash mark (#) are treated as
 comments and ignored. 
 
 
-.SH CPU STATUS COLUMN SETTINGS
+.SH CPU STATUS TEST SETTINGS
 .sp
 .BR "LOAD warnlevel paniclevel"
 .sp
@@ -71,7 +71,7 @@ CLOCK 15 red
 .fi
 .LP
 
-.SH DISK STATUS COLUMN SETTINGS
+.SH DISK STATUS TEST SETTINGS
 .sp
 .BR "DISK filesystem warnlevel paniclevel"
 .br
@@ -89,7 +89,7 @@ For the latter type of check, the "warnlevel" must be followed by the
 letter "U", e.g. "1024U".
 
 The special keyword "IGNORE" causes this filesystem to be ignored
-completely, i.e. it will not appear in the "disk" status column and
+completely, i.e. it will not appear in the "disk" status test and
 it will not be tracked in a graph. This is useful for e.g. removable
 devices, backup-disks and similar hardware.
 
@@ -106,7 +106,7 @@ Defaults DISK: warnlevel=90%, paniclevel=95%
 Defaults INODE: warnlevel=70%, paniclevel=90%
 
 
-.SH MEMORY STATUS COLUMN SETTINGS
+.SH MEMORY STATUS TEST SETTINGS
 .sp
 .BR "MEMPHYS warnlevel paniclevel"
 .br
@@ -137,7 +137,7 @@ MEMACT  warnlevel=90 paniclevel=97
 .fi
 .LP
 
-.SH PROCS STATUS COLUMN SETTINGS
+.SH PROCS STATUS TEST SETTINGS
 .sp
 .BR "PROC processname minimumcount maximumcount color [TRACK=id] [TEXT=text]"
 .sp
@@ -213,7 +213,7 @@ Defaults:
 .br
 	Note that no processes are checked by default.
 
-.SH MSGS STATUS COLUMN SETTINGS
+.SH MSGS STATUS TEST SETTINGS
 .sp
 .BR "LOG logfilename pattern [COLOR=color] [IGNORE=excludepattern] [OPTIONAL]"
 .sp
@@ -231,7 +231,7 @@ will be matched against this rule.  Note that "logfilename" can be a regular
 expression (if prefixed with a '%' character).
 .sp
 "pattern" is a string or regular expression. If the logfile data matches 
-"pattern", it will trigger the "msgs" column to change color. If
+"pattern", it will trigger the "msgs" test to change color. If
 no "color" parameter is present, the default is to go "red" when
 the pattern is matched. To match against a regular expression, "pattern"
 must begin with a '%' sign - e.g "%WARNING|NOTICE" will match any lines
@@ -261,16 +261,16 @@ Defaults:
 	color="red", no "excludepattern".
 .sp
 Note that no logfiles are checked by default. Any log data reported by a client 
-will just show up on the "msgs" column with status OK (green).
+will just show up on the "msgs" test with status OK (green).
 
 
-.SH FILES STATUS COLUMN SETTINGS
+.SH FILES STATUS TEST SETTINGS
 .sp
 .BR "FILE filename [color] [things to check] [OPTIONAL|IFEXIST] [TRACK]"
 .sp
 .BR "DIR directoryname [color] [size<MAXSIZE] [size>MINSIZE] [TRACK]"
 .sp
-These entries control the status of the "files" column. They allow you to
+These entries control the status of the "files" test. They allow you to
 check on various data for files and directories.
 
 \fBfilename\fR and \fBdirectoryname\fR are names of files or directories,
@@ -357,7 +357,7 @@ of the file must be less than 600 seconds - if not, the file status will
 go red".
 
 
-.SH PORTS STATUS COLUMN SETTINGS
+.SH PORTS STATUS TEST SETTINGS
 .sp
 .BR "PORT criteria [MIN=mincount] [MAX=maxcount] [COLOR=color] [TRACK=id] [TEXT=displaytext]"
 .sp
@@ -433,9 +433,9 @@ number of active SSH connections, and warn if there are more than 5.
 .sp
 .SH DS - RRD based status override
 .sp
-.BR "DS column filename:dataset rules COLOR=colorname TEXT=explanation"
+.BR "DS test filename:dataset rules COLOR=colorname TEXT=explanation"
 .sp
-"column" is the statuscolumn that will be modified. "filename" is
+"test" is the status test that will be modified. "filename" is
 the name of the RRD file holding the data you use for comparison.
 "dataset" is the name of the dataset in the RRD file - the "rrdtool info"
 command is useful when determining these.
@@ -471,7 +471,7 @@ matching after an upgrade and must be updated to the encoded names.
 .sp
 .SH AGGDS - RRD based status override on an aggregate
 .sp
-.BR "AGGDS column fn(filepattern:dataset) rules maxage=N COLOR=colorname TEXT=explanation"
+.BR "AGGDS test fn(filepattern:dataset) rules maxage=N COLOR=colorname TEXT=explanation"
 .sp
 Like DS, but the compared value is an aggregate over a whole set of
 RRD files instead of one value from one file: "fn" is one of "sum",
@@ -497,16 +497,16 @@ writer-kept fileset index still knows more fresh matching instances
 than values have been re-seen - so a restart never fires a false
 "instances disappeared" alert while the store warms up. In the TEXT placeholders, "&N" is the aggregate
 name, e.g. "sum(%diskio_ops\\..+\\.rrd:reads)". The same first-match
-rule as DS applies, per column, aggregate and color; the file pattern
+rule as DS applies, per test, aggregate and color; the file pattern
 is part of the aggregate's identity, so two rules aggregating the
 same dataset over different filesets never shadow each other. The
 GAUGE-only note above applies here too, and - as with DS rules - the
 operator and threshold form one token (">90", not "> 90").
 
-Each (aggregate, severity) pair recolors the column through its own
+Each (aggregate, severity) pair recolors the test through its own
 modifier slot ("aggds:sum(%diskio_ops\\..+\\.rrd:reads):yellow"), so
 several AGGDS rules - including a warning and a critical rule on the
-same aggregate - may drive one status column without overwriting each
+same aggregate - may drive one status test without overwriting each
 other's verdicts.
 .sp
 .SH MQ Series SETTINGS

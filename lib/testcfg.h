@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* test.cfg: the test/column registry. A test == its column - one section per */
+/* test.cfg: the test registry. A test is the status unit - one section per   */
 /* test, holding how it is measured (SOURCE/CMD/...), the METRICs it produces */
 /* (each with per-metric, per-backend storage policy), and overrides for the  */
 /* derived defaults (HANDLER, GRAPHS). Parsed from the brace-config grammar    */
@@ -48,7 +48,7 @@ typedef struct tc_metric_t {
 } tc_metric_t;
 
 typedef struct tc_test_t {
-	char *name;			/* == the status column */
+	char *name;			/* == the status test */
 	char *source;			/* client | network | script | server | ... */
 	char *cmd;			/* SOURCE script: command */
 	char *interval;			/* e.g. "5m" */
@@ -74,12 +74,12 @@ extern tc_test_t *testcfg_find(tc_test_t *head, const char *name);
 extern tc_metric_t *testcfg_metric(tc_test_t *test, const char *name);
 extern tc_backend_t *testcfg_backend(tc_metric_t *metric, const char *name);  /* name NULL -> the default (rrd) */
 
-/* The NCV/SPLITNCV parse spec for a column (the first metric of the test that
+/* The NCV/SPLITNCV parse spec for a test (the first metric of the test that
  * carries one), or NULL. *split (if non-NULL) is set to 1 for SPLITNCV. Used
  * by the RRD writer to overlay the NCV_<col>/SPLITNCV_<col> environment. */
 extern const char *testcfg_ncv(const char *testname, int *split);
 
-/* Does any metric of this column carry COUNTLINES? Then the status page
+/* Does any metric of this test carry COUNTLINES? Then the status page
  * derives its graph-paging count from the status lines (the --multigraphs
  * membership), regardless of the built-in/env list. */
 extern int testcfg_countlines(const char *testname);
