@@ -156,6 +156,19 @@ int main(void)
 	expect_contains("marker adds a graph beside the default", html, "service=extra_cpu&amp;");
 	free(html);
 
+	/* An UNNAMED METRICS block + an UNNAMED GRAPH both default to the test
+	 * name, so the graph renders from the message alone (name-optional). */
+	html = render_log_msg("smart", 0, "",
+		"<!--XYMON METRICS\n"
+		"DS:temp:GAUGE:600:0:U\n"
+		"sda 32\n"
+		"nvme0 29\n"
+		"-->\n"
+		"<!--XYMON GRAPH -->\n"
+		"status text\n");
+	expect_contains("unnamed METRICS+GRAPH default to the test name", html, "service=smart&amp;");
+	free(html);
+
 	/* Marker names are exact identities: "diskio_busy2" must not inherit
 	 * the ::2 split of the GRAPHS entry "diskio_busy" it prefix-matches -
 	 * it pages on the default base (3 instances -> one slice of 3). */

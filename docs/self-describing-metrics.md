@@ -19,6 +19,16 @@ spelling; new code speaks the glossary (instancespec, instancecount - not
 countspec, itemcount). The marker attribute is instances=N / instances=all
 (renamed from the earlier count= while unshipped, history rewritten).
 
+## Homogeneous test doctrine (settled)
+
+One homogeneous METRICS block per test. The block name is OPTIONAL and defaults
+to the test (implemented: the marker is `<!--XYMON METRICS` with an optional
+`: <name>`; likewise `<!--XYMON GRAPH`). A test measures one homogeneous thing -
+one unit, one instance-set; heterogeneous data is modelled as several small
+homogeneous tests. Grouping them for display is a **testgroup** - a server-side,
+display-only aggregator (COMPACT-style, emits no status/alert/ack), never a wire
+concern. See docs/PLAN.md.
+
 ## Marker design doctrine (settled)
 
 Two markers, and the axes on which that decision was made - so it is not

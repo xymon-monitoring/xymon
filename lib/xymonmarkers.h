@@ -9,7 +9,7 @@
 /*   <instance> <v1>[:<v2>...]          block writer (do_devmon.c)           */
 /*   -->                                                                     */
 /*                                                                            */
-/*   <!--XYMON GRAPH: <name> [instances=<N>|instances=all] -->                       */
+/*   <!--XYMON GRAPH[: <name>] [instances=<N>|instances=all] -->  (name optional) */
 /*                                      show: render gdef <name> on this     */
 /*                                      test's page                          */
 /*                                                                            */
@@ -32,7 +32,7 @@
 #define __XYMONMARKERS_H__
 
 #define XYMON_METRICS_MARKER "<!--XYMON METRICS"
-#define XYMON_GRAPH_MARKER   "<!--XYMON GRAPH: "
+#define XYMON_GRAPH_MARKER   "<!--XYMON GRAPH"
 #define DEVMON_RRD_MARKER    "<!--DEVMON RRD: "
 
 /*

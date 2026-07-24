@@ -5,8 +5,8 @@
 /* test, holding how it is measured (SOURCE/CMD/...), the METRICs it produces */
 /* (each with per-metric, per-backend storage policy), and overrides for the  */
 /* derived defaults (HANDLER, GRAPHS). Parsed from the brace-config grammar    */
-/* (see braceparse.h). This layer is the typed model + loader; it does not     */
-/* yet reroute any existing consumer.                                          */
+/* (see braceparse.h). This layer is the typed model + loader, overlaid onto  */
+/* the env tables by htmllog, xymonrrd and do_ncv.                            */
 /*                                                                            */
 /* Lifetime: the file is read ONCE per process (at first use) and never       */
 /* re-stat'ed - xymond_rrd and the CGIs must be restarted to pick up edits.   */

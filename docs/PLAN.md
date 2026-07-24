@@ -58,13 +58,15 @@ server-side derivation or test.cfg view config. No new markers. No presentation 
 - **[V]** Heterogeneity is emergent from allowing >1 `METRICS` block per test
   (marker parser returns a list; `do_devmon` writes per-block files; htmllog renders
   one graph per marker in order). It is NOT a subsystem to delete.
-- **[P]** Doctrine: **one homogeneous `METRICS` block per test** (the atomic status
-  unit — one color/alert/ack); a **testgroup** then aggregates multiple tests (display-only, §5).
+- **[DONE 65aa7d3ba]** Doctrine (design doc): **one homogeneous `METRICS` block per test**
+  (the atomic status unit — one color/alert/ack); a **testgroup** then aggregates multiple
+  tests (display-only, §5). Also fixed the stale `testcfg.h` "does not yet reroute" comment.
 - **[DONE 751dc2f07]** `METRICS` **name optional** — marker is now `<!--XYMON METRICS`
   with optional `: <name>`; unnamed defaults to the test name. Shared helper
   `xymon_metrics_marker()` (display parser + block writer agree); present-but-invalid
   name still falls back to the built-in handler; `xymon_markers_parse(msg, defname)`;
-  proving tests added. `GRAPH` name-optional deferred (1c: `instances=` vs name ambiguity).
+  proving tests added. **`GRAPH` name-optional also DONE (1c, 65aa7d3ba)**: absent name or
+  an attribute-only `instances=` token → default to the test; invalid name → ignored.
 - **[P]** Leave the multi-marker render loop **dormant** (lower risk than trimming).
 - **[V]** Only consumer of the parser is `htmllog.c:470` (passes `service`); no consumer
   assumes marker-name ≠ test.

@@ -176,7 +176,27 @@ xymonmarker_t *xymon_markers_parse(char *msg, const char *defname)
 		}
 		else if (strncmp(bol, XYMON_GRAPH_MARKER, strlen(XYMON_GRAPH_MARKER)) == 0) {
 			char *p = bol + strlen(XYMON_GRAPH_MARKER);
-			char *name = marker_name(p, " \t");
+			char *name = NULL;
+
+			/* A delimiter must follow "GRAPH" (else "<!--XYMON GRAPHFOO").
+			 * The first token is the name only if it is a bare word; an
+			 * attribute ("instances=5") is not a name, so the graph is
+			 * unnamed and defaults to the test. Name optional, like METRICS. */
+			if ((*p == ':') || (*p == ' ') || (*p == '\t') ||
+			    (*p == '\0') || (*p == '\n') || (strncmp(p, "-->", 3) == 0)) {
+				char *after = p + strspn(p, ": \t");
+				if ((*after == '\0') || (*after == '\n') || (strncmp(after, "-->", 3) == 0)) {
+					/* No name token -> unnamed, default to the test. */
+					if (defname) name = xstrdup(defname);
+				}
+				else if ((name = marker_name(after, " \t")) == NULL) {
+					/* Not a valid name. An attribute-only first token
+					 * ("instances=5") means unnamed-with-attributes ->
+					 * default to the test; a malformed name is ignored. */
+					size_t toklen = strcspn(after, " \t\n");
+					if (memchr(after, '=', toklen) && defname) name = xstrdup(defname);
+				}
+			}
 			if (name) {
 				xymonmarker_t *marker = find_or_add(&head, &tail, &count, name);
 				if (marker) {
