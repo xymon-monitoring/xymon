@@ -18,11 +18,13 @@
 # you want to run).
 [xymond]
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
-	CMD xymond --pidfile=$XYMONSERVERLOGS/xymond.pid \
+	CMD xymond \
 		--restart=$XYMONTMP/xymond.chk --checkpoint-file=$XYMONTMP/xymond.chk --checkpoint-interval=600 \
 		--log=$XYMONSERVERLOGS/xymond.log \
 		--admin-senders=127.0.0.1,$XYMONSERVERIP \
 		--store-clientlogs=!msgs
+	PIDFILE $XYMONRUNDIR/xymond.pid
+	SENDHUP
 
 # "history" keeps track of the status changes that happen.
 [history]
@@ -100,8 +102,10 @@
 [xymonproxy]
 	DISABLED
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
-	CMD $XYMONHOME/bin/xymonproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.xymonproxy --no-daemon --pidfile=$XYMONSERVERLOGS/xymonproxy.pid
+	CMD $XYMONHOME/bin/xymonproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.xymonproxy --no-daemon
 	LOGFILE $XYMONSERVERLOGS/xymonproxy.log
+	PIDFILE $XYMONRUNDIR/xymonproxy.pid
+	SENDHUP
 
 
 # "xymonfetch" is used when you have clients that cannot connect to your Xymon server,
@@ -115,8 +119,10 @@
 [xymonfetch]
 	DISABLED
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
-	CMD $XYMONHOME/bin/xymonfetch --server=YOUR.XYMON.SERVER.IP --no-daemon --pidfile=$XYMONSERVERLOGS/xymonfetch.pid
+	CMD $XYMONHOME/bin/xymonfetch --server=YOUR.XYMON.SERVER.IP --no-daemon
 	LOGFILE $XYMONSERVERLOGS/xymonfetch.log
+	PIDFILE $XYMONRUNDIR/xymonfetch.pid
+	SENDHUP
 
 
 ######################################################################################
