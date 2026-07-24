@@ -60,10 +60,14 @@ server-side derivation or test.cfg view config. No new markers. No presentation 
   one graph per marker in order). It is NOT a subsystem to delete.
 - **[P]** Doctrine: **one homogeneous `METRICS` block per test** (the atomic status
   unit — one color/alert/ack); a **testgroup** then aggregates multiple tests (display-only, §5).
-- **[P]** Make block/GRAPH **name optional, default = the test name** (small change in
-  `lib/xymonmarkers.c` name parse).
+- **[DONE 751dc2f07]** `METRICS` **name optional** — marker is now `<!--XYMON METRICS`
+  with optional `: <name>`; unnamed defaults to the test name. Shared helper
+  `xymon_metrics_marker()` (display parser + block writer agree); present-but-invalid
+  name still falls back to the built-in handler; `xymon_markers_parse(msg, defname)`;
+  proving tests added. `GRAPH` name-optional deferred (1c: `instances=` vs name ambiguity).
 - **[P]** Leave the multi-marker render loop **dormant** (lower risk than trimming).
-- **[O]** Confirm no consumer assumes marker-name ≠ test before defaulting.
+- **[V]** Only consumer of the parser is `htmllog.c:470` (passes `service`); no consumer
+  assumes marker-name ≠ test.
 
 ---
 

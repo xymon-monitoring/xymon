@@ -3,7 +3,8 @@
 /*                                                                            */
 /* Parser for self-describing metric markers carried in status messages:     */
 /*                                                                            */
-/*   <!--XYMON METRICS: <name>          store: RRD block, one value line     */
+/*   <!--XYMON METRICS[: <name>]        store: RRD block, one value line;    */
+/*                                      name optional, defaults to the test  */
 /*   DS:<ds>:<type>:<hb>:<min>:<max>    per instance, parsed by the devmon   */
 /*   <instance> <v1>[:<v2>...]          block writer (do_devmon.c)           */
 /*   -->                                                                     */
@@ -30,7 +31,7 @@
 #ifndef __XYMONMARKERS_H__
 #define __XYMONMARKERS_H__
 
-#define XYMON_METRICS_MARKER "<!--XYMON METRICS: "
+#define XYMON_METRICS_MARKER "<!--XYMON METRICS"
 #define XYMON_GRAPH_MARKER   "<!--XYMON GRAPH: "
 #define DEVMON_RRD_MARKER    "<!--DEVMON RRD: "
 
@@ -51,7 +52,12 @@ typedef struct xymonmarker_t {
 	struct xymonmarker_t *next;
 } xymonmarker_t;
 
-extern xymonmarker_t *xymon_markers_parse(char *msg);
+/* Recognize the (optionally-named) XYMON METRICS marker at line start `bol`.
+ * Returns 2 = named block (*name = malloc'd copy, caller owns it);
+ *         1 = unnamed block (*name = NULL; caller supplies the test name);
+ *         0 = not a METRICS marker (*name = NULL). */
+extern int xymon_metrics_marker(char *bol, char **name);
+extern xymonmarker_t *xymon_markers_parse(char *msg, const char *defname);
 extern void xymon_markers_free(xymonmarker_t *head);
 extern int xymon_marker_instancecount(xymonmarker_t *marker);
 extern int xymon_markers_have_store(char *msg);

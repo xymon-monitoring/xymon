@@ -89,7 +89,40 @@ static xymonmarker_t *find_or_add(xymonmarker_t **head, xymonmarker_t **tail, in
 	return walk;
 }
 
-xymonmarker_t *xymon_markers_parse(char *msg)
+/* See xymonmarkers.h. Shared by the display parser (below) and the block
+ * writer (do_devmon.c) so both agree on what an (un)named METRICS marker is:
+ * a delimiter (':', space, tab, end-of-line, or "-->") must separate the name
+ * from "METRICS", or "<!--XYMON METRICSFOO" would masquerade as a named block. */
+int xymon_metrics_marker(char *bol, char **name)
+{
+	size_t mlen = strlen(XYMON_METRICS_MARKER);
+	char *p;
+
+	*name = NULL;
+	if (strncmp(bol, XYMON_METRICS_MARKER, mlen) != 0) return 0;
+	p = bol + mlen;
+
+	if ((*p == ':') || (*p == ' ') || (*p == '\t')) {
+		p += strspn(p, ": \t");	/* consume the delimiter run */
+	}
+	else if ((*p == '\0') || (*p == '\n') || (strncmp(p, "-->", 3) == 0)) {
+		return 1;		/* bare / self-closed: unnamed */
+	}
+	else return 0;			/* "<!--XYMON METRICSFOO": not a marker */
+
+	/* After the delimiter: nothing -> unnamed (default to the test);
+	 * a valid token -> named; a present-but-malformed token -> reject
+	 * (return 0), so the message falls back to the built-in handler -
+	 * matching the pre-optional "invalid name is not ours" behaviour. */
+	if ((*p == '\0') || (*p == '\n') || (strncmp(p, "-->", 3) == 0)) return 1;
+	{
+		char *nm = marker_name(p, " \t");
+		if (nm) { *name = nm; return 2; }
+	}
+	return 0;
+}
+
+xymonmarker_t *xymon_markers_parse(char *msg, const char *defname)
 {
 	xymonmarker_t *head = NULL, *tail = NULL;
 	int count = 0;
@@ -103,6 +136,7 @@ xymonmarker_t *xymon_markers_parse(char *msg)
 	for (bol = msg; (bol && *bol); bol = (eoln ? eoln+1 : NULL)) {
 		char *close;
 		int selfclosed;
+		char *mname = NULL;
 
 		eoln = strchr(bol, '\n');
 		/* A banner carrying its own "-->" is an empty, self-closed block. */
@@ -112,17 +146,15 @@ xymonmarker_t *xymon_markers_parse(char *msg)
 		/* Marker banners are recognized even inside an open block, like
 		 * the block writer does - a new banner simply starts the next
 		 * block. Everything else on block lines is content. */
-		if (strncmp(bol, XYMON_METRICS_MARKER, strlen(XYMON_METRICS_MARKER)) == 0) {
-			char *name = marker_name(bol + strlen(XYMON_METRICS_MARKER), " \t");
-			if (name) {
-				block = find_or_add(&head, &tail, &count, name);
+		if (xymon_metrics_marker(bol, &mname)) {
+			/* Unnamed block -> the test name (one homogeneous block per
+			 * test). Unknown banner attributes are ignored - forward compat. */
+			if (!mname && defname) mname = xstrdup((char *)defname);
+			if (mname) {
+				block = find_or_add(&head, &tail, &count, mname);
 				block_metrics = 1;
 				blockds = 0;
-				if (block) {
-					block->store = 1;
-					/* Unknown banner attributes are ignored - the
-					 * dialect's generic forward compatibility. */
-				}
+				if (block) block->store = 1;
 				if (selfclosed) block = NULL;
 			}
 		}
@@ -298,9 +330,9 @@ int xymon_markers_have_store(char *msg)
 			 * writer will reject must not divert the status away from
 			 * its built-in handler - that would store NOTHING, where
 			 * either storing or falling back would be correct. */
-			if (strncmp(p, XYMON_METRICS_MARKER, strlen(XYMON_METRICS_MARKER)) == 0) {
-				char *name = marker_name(p + strlen(XYMON_METRICS_MARKER), " \t");
-				if (name) { xfree(name); return 1; }
+			{
+				char *name;
+				if (xymon_metrics_marker(p, &name)) { if (name) xfree(name); return 1; }
 			}
 			if (strncmp(p, DEVMON_RRD_MARKER, strlen(DEVMON_RRD_MARKER)) == 0) return 1;
 		}

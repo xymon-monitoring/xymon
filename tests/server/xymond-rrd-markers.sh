@@ -60,6 +60,31 @@ assert_contains "diskio_ops.ada1.rrd" "$out" "METRICS block creates one file per
 assert_contains "diskio_busy.ada0.rrd" "$out" "second METRICS block in the same message written too"
 assert_contains "diskio_busy.ada1.rrd" "$out" "second METRICS block in the same message written too"
 
+# An UNNAMED "<!--XYMON METRICS" block defaults its RRD prefix to the test name
+# (name-optional: one homogeneous block per test).
+cat >"$work/body-unnamed" <<'EOF'
+<!--XYMON METRICS
+DS:temp:GAUGE:600:0:U
+sda 32
+nvme0 29
+-->
+
+Disk temperatures
+EOF
+out=$(feed_status smarttemp "$work/body-unnamed")
+assert_contains "smarttemp.sda.rrd" "$out" "unnamed METRICS block defaults its RRD prefix to the test name"
+assert_contains "smarttemp.nvme0.rrd" "$out" "unnamed METRICS block: every instance uses the test name"
+
+# The bare-colon spelling with no name behaves identically.
+cat >"$work/body-unnamed2" <<'EOF'
+<!--XYMON METRICS:
+DS:temp:GAUGE:600:0:U
+sdb 30
+-->
+EOF
+out=$(feed_status smarttemp "$work/body-unnamed2")
+assert_contains "smarttemp.sdb.rrd" "$out" "unnamed METRICS with a bare colon also defaults to the test name"
+
 # A METRICS instance is reversibly encoded (rrdinstance_encode): a mount
 # point or a name containing a comma round-trips to one unambiguous file,
 # instead of the legacy lossy '/'->',' that aliased "/a/b" and "/a,b".

@@ -82,23 +82,24 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			goto nextline;
 		}
 		if(!strncmp(curline, XYMON_METRICS_MARKER, strlen(XYMON_METRICS_MARKER))) {
-			/* Same block format as the devmon banner, but the name becomes
-			 * an RRD filename prefix from an arbitrary status message, so
-			 * it is restricted to [A-Za-z0-9_-]. An invalid name opens no
-			 * block (if an earlier block is still unclosed, its lines keep
-			 * accumulating there - same as the legacy banner behaves). */
+			/* Same block format as the devmon banner. The name is optional
+			 * (defaults to the test); the shared marker helper handles the
+			 * (un)named / self-closed forms identically to the display parser
+			 * (lib/xymonmarkers.c). A named block's name is [A-Za-z0-9_-]. */
 			int selfclosed = (strstr(curline, "-->") != NULL);
-			char *name = strtok(curline + strlen(XYMON_METRICS_MARKER), " \t");
-			int namelen = (name ? strspn(name, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-") : 0);
+			char *name = NULL;
 
-			if (name && (namelen > 0) && (namelen <= XYMON_MARKER_NAMELEN_MAX) && (name[namelen] == '\0')) {
-				char *attr;
+			if (xymon_metrics_marker(curline, &name)) {
+				char *slash;
 
 				/* Self-closed one-line banner: an empty block. */
 				in_devmon = (selfclosed ? 1 : 0);
 				metrics_block = (selfclosed ? 0 : 1);
 				for (i = 0; (devmon_params[i]); i++) { xfree(devmon_params[i]); devmon_params[i] = NULL; }
-				rrdbasename = name;
+				if (ownedbasename) xfree(ownedbasename);
+				ownedbasename = (name ? name : xstrdup(testname));
+				rrdbasename = ownedbasename;
+				while ((slash = strchr(rrdbasename, '/')) != NULL) *slash = ',';
 				dbgprintf("METRICS: changing testname from %s to %s\n",testname,rrdbasename);
 				numds = 0;
 				fsidx_set_units(NULL);
@@ -106,14 +107,9 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 				fsidx_set_heartbeats(NULL);
 				fsidx_set_thresholds(NULL);
 				clearstrbuffer(thrspec);
-				/* Unknown block attributes are ignored - the dialect's
-				 * generic forward compatibility. */
-				while ((attr = strtok(NULL, " \t")) != NULL) {
-					if (strcmp(attr, "-->") == 0) break;
-				}
 			}
 			else {
-				dbgprintf("METRICS: invalid block name, skipping block\n");
+				dbgprintf("METRICS: not a valid marker, skipping\n");
 			}
 			goto nextline;
 		}

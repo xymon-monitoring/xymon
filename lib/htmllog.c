@@ -467,7 +467,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		if (restofmsg && !(flags && strchr(flags, 'R'))) {
 			xymonmarker_t *mwalk;
 
-			markers = xymon_markers_parse(restofmsg);
+			markers = xymon_markers_parse(restofmsg, service);
 			for (mwalk = markers; (mwalk); mwalk = mwalk->next) markershow += (mwalk->show != 0);
 		}
 	}
