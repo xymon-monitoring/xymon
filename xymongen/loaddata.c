@@ -400,6 +400,76 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 }
 
 
+/* Synthesise a worst-of rollup column for every test.cfg `group`, mirroring
+ * generate_compactitems() but driven by testcfg_groups() rather than the
+ * per-host COMPACT tag. Member tests are hidden from the matrix; the synthetic
+ * column is named after the group so its light links to
+ * svcstatus.cgi?SERVICE=<group>, which renders the merged group page. */
+void generate_groupitems(state_t **topstate)
+{
+	tc_group_t *groups = testcfg_groups();
+	tc_group_t **garr;
+	int ngroups = 0, i, m;
+	int *gcolor;
+	time_t *gage;
+	hostlist_t *h;
+	entry_t *e;
+	state_t *newstate;
+	time_t now = getcurrenttime(NULL);
+	tc_group_t *g;
+
+	if (!groups) return;
+
+	for (g = groups; (g); g = g->next) ngroups++;
+	garr = (tc_group_t **)malloc(ngroups * sizeof(tc_group_t *));
+	gcolor = (int *)malloc(ngroups * sizeof(int));
+	gage = (time_t *)malloc(ngroups * sizeof(time_t));
+	for (i = 0, g = groups; (g); g = g->next) garr[i++] = g;
+
+	for (h = hostlistBegin(); (h); h = hostlistNext()) {
+		for (i = 0; (i < ngroups); i++) { gcolor[i] = -1; gage[i] = 0; }
+
+		for (e = h->hostentry->entries; (e); e = e->next) {
+			for (i = 0; (i < ngroups); i++) {
+				for (m = 0; (m < garr[i]->nmembers); m++) {
+					if (strcasecmp(e->column->name, garr[i]->members[m]) == 0) {
+						e->compacted = 1;
+						if (e->color > gcolor[i]) gcolor[i] = e->color;
+						if (e->fileage > gage[i]) gage[i] = e->fileage;
+						break;
+					}
+				}
+			}
+		}
+
+		for (i = 0; (i < ngroups); i++) {
+			logdata_t log;
+			char fn[PATH_MAX];
+
+			if (gcolor[i] < 0) continue;	/* no member of this group on this host */
+			memset(&log, 0, sizeof(log));
+			sprintf(fn, "%s.%s", commafy(h->hostentry->hostname), garr[i]->name);
+			log.hostname = h->hostentry->hostname;
+			log.testname = garr[i]->name;
+			log.color = gcolor[i];
+			log.testflags = "";
+			log.lastchange = now - gage[i];
+			log.logtime = now;
+			log.validtime = log.logtime + 300;
+			log.sender = "";
+			log.msg = "";
+			newstate = init_state(fn, &log);
+			if (newstate) {
+				newstate->next = *topstate;
+				*topstate = newstate;
+			}
+		}
+	}
+
+	xfree(garr); xfree(gcolor); xfree(gage);
+}
+
+
 void generate_compactitems(state_t **topstate)
 {
 	void *xmh;
@@ -636,6 +706,7 @@ state_t *load_state(dispsummary_t **sumhead)
 	}
 
 	generate_compactitems(&topstate);
+	generate_groupitems(&topstate);
 
 	if (reportstart) sethostenv_report(oldestentry, reportend, reportwarnlevel, reportgreenlevel);
 	if (purplelog) fclose(purplelog);

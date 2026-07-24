@@ -143,7 +143,14 @@ never a real status column (combostatus-style):**
   the frameless `generate_html_log` (`htmllog_frameless=1`) — so each member renders its
   own METRICS table + graphs. Compile+link verified; the live xymondlog path needs a
   running xymond, not covered by the local suite.
-- Remaining: **3c** matrix rollup light (COMPACT reuse + link retarget to `SERVICE=<group>`).
+- **[DONE — 3c]** Matrix rollup light in `xymongen/loaddata.c`: `generate_groupitems()`
+  (called after `generate_compactitems()`) mirrors the COMPACT machinery but is driven by
+  `testcfg_groups()` instead of the per-host `COMPACT` tag. For each host it worst-of's the
+  member entries, sets `e->compacted=1` (members drop out of the matrix), and injects one
+  synthetic column named `group->name`. No `pagegen` change needed: the synthetic column's
+  light already links via `hostsvcurl(host, group->name)` → `svcstatus.cgi?SERVICE=<group>`,
+  which `do_request()` now routes to `generate_group_page` (3b). Compile+link verified;
+  matrix layout is integration-level (no isolated xymongen board harness), same caveat as 3b.
 - **[O]** The merged detail page is net-new rendering — no existing multi-test merged page to reuse.
 - **[O]** Dynamic (CGI) host-matrix path, if any, not traced; static `xymongen` authoritative for layout.
 - **[DECIDED 2026-07-24]** Model (a): the **test** is the alert/ack atom — one test →
