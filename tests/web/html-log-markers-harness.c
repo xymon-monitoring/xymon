@@ -179,6 +179,29 @@ int main(void)
 	expect_contains("crit-band value coloured red (72>65)", html, "alt=\"red\"");
 	free(html);
 
+	/* Frameless mode (for the group detail page): the same status renders its
+	 * CONTENT (body/table + graphs) but no page header/footer frame. */
+	{
+		char *full, *bare;
+		const char *m =
+			"<!--XYMON METRICS\nDS:temp:GAUGE:600:0:U\n"
+			"THRESHOLD:temp:>30:crit\nsda 38\n-->\n"
+			"<!--XYMON GRAPH -->\nstatus text\n";
+		full = render_log_msg("smart", 0, "", m);
+		htmllog_frameless = 1;
+		bare = render_log_msg("smart", 0, "", m);
+		htmllog_frameless = 0;
+		expect_contains("frameless keeps the table", bare, "<table");
+		expect_contains("frameless keeps the coloured cell", bare, "alt=\"red\"");
+		expect_contains("frameless keeps the graph", bare, "service=smart&amp;");
+		if (strlen(bare) >= strlen(full)) {
+			fprintf(stderr, "frameless drops the frame: expected shorter, bare=%lu full=%lu\n",
+				(unsigned long)strlen(bare), (unsigned long)strlen(full));
+			failures++;
+		}
+		free(full); free(bare);
+	}
+
 	/* Marker names are exact identities: "diskio_busy2" must not inherit
 	 * the ::2 split of the GRAPHS entry "diskio_busy" it prefix-matches -
 	 * it pages on the default base (3 instances -> one slice of 3). */

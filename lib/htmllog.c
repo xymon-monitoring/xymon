@@ -43,6 +43,11 @@ static int hostpopup = (HOSTPOPUP_COMMENT | HOSTPOPUP_DESCR | HOSTPOPUP_IP);
 
 enum histbutton_t histlocation = HIST_BOTTOM;
 
+/* When set, generate_html_log() emits only a status's CONTENT (its body/table
+ * and graphs) - no page header/footer or history buttons - so several statuses
+ * can be stacked inside one page (the testgroup detail page). */
+int htmllog_frameless = 0;
+
 static void hostpopup_setup(void)
 {
 	static int setup_done = 0;
@@ -324,7 +329,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) tplfile = "info";
 	else if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) tplfile = "trends";
 
-	headfoot(output, tplfile, "", "header", color);
+	if (!htmllog_frameless) headfoot(output, tplfile, "", "header", color);
 
 	if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
 		int formfile;
@@ -430,7 +435,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	if (flapping) fprintf(output, "<CENTER><B>WARNING: Flapping status</B></CENTER>\n");
 
-	if (histlocation == HIST_TOP) {
+	if (!htmllog_frameless && (histlocation == HIST_TOP)) {
 		historybutton(cgibinurl, hostname, service, ip, displayname,
 			      (is_history ? "Full History" : "HISTORY"), output);
 	}
@@ -805,13 +810,13 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	}
 	xymon_markers_free(markers);
 
-	if (histlocation == HIST_BOTTOM) {
+	if (!htmllog_frameless && (histlocation == HIST_BOTTOM)) {
 		historybutton(cgibinurl, hostname, service, ip, displayname,
 			      (is_history ? "Full History" : "HISTORY"), output);
 	}
 
 	fprintf(output,"</CENTER>\n");
-	headfoot(output, tplfile, "", "footer", color);
+	if (!htmllog_frameless) headfoot(output, tplfile, "", "footer", color);
 }
 
 char *alttag(char *columnname, int color, int acked, int propagate, char *age)

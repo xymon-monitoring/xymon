@@ -16,6 +16,7 @@
 enum histbutton_t { HIST_TOP, HIST_BOTTOM, HIST_NONE };
 
 extern enum histbutton_t histlocation;
+extern int htmllog_frameless;
 
 extern void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
 		       int color, int flapping, char *sender, char *flags, 
