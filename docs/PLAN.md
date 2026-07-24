@@ -80,8 +80,10 @@ Parsed at `do_devmon.c:232` → `fsidx` `t=` field; the ONLY consumer is
 `showgraph.c:1325` (draws reference lines). **No per-instance verdict is computed
 anywhere.** Per-cell alarm colors do not exist today.
 
-**[P] The leverage:** build ONE function `evaluate(value, t=spec) → {ok|warn|crit}`.
-It serves **both**:
+**[DONE 7bd8a627b — 2a] The engine:** `threshold_eval(spec, ds, value, getval)` in
+`lib/threshold.{c,h}` returns the worst firing severity (ok/warn/crit); relops
+`> < >= <=`, numeric or DS-name operands, sev defaults to crit; self-contained,
+18-assertion unit test. It serves **both**:
 1. the **table**: rows from the `METRICS` block in `restofmsg`, cols = DS, each cell
    coloured by evaluating its value against `fsidx_thresholds()`.
 2. **#218's shared `evaluate()` engine (Phase 1)**: the same function is exactly the

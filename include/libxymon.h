@@ -92,6 +92,7 @@ typedef struct strbuffer_t {
 #include "../lib/rmd160c.h"
 #include "../lib/rrdinstance.h"
 #include "../lib/run.h"
+#include "../lib/threshold.h"
 #include "../lib/sendmsg.h"
 #include "../lib/sha1.h"
 #include "../lib/sha2.h"
