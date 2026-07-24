@@ -804,6 +804,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	char **useropts = NULL;
 	int useroptcount = 0, useroptidx;
 
+	int addrrdupdated = (strcmp(xgetenv("RRDADDUPDATED"), "TRUE") == 0);
+
 	/* Find the graphs.cfg file and load it */
 	if (gdeffn == NULL) {
 		char fnam[PATH_MAX];
@@ -1187,8 +1189,10 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		}
 	}
 
-	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated\\: %d-%b-%Y %H\\:%M\\:%S", localtime(&now));
-	rrdargs[argi++] = strdup(timestamp);
+	if (addrrdupdated) {
+		strftime(timestamp, sizeof(timestamp), "COMMENT:Updated\\: %d-%b-%Y %H\\:%M\\:%S", localtime(&now));
+		rrdargs[argi++] = strdup(timestamp);
+	}
 
 
 	rrdargcount = argi; rrdargs[argi++] = NULL;
