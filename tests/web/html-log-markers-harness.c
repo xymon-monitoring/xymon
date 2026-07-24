@@ -157,16 +157,26 @@ int main(void)
 	free(html);
 
 	/* An UNNAMED METRICS block + an UNNAMED GRAPH both default to the test
-	 * name, so the graph renders from the message alone (name-optional). */
+	 * name (name-optional). The block is ALSO rendered in place as a status
+	 * table whose value cells are coloured by their declared THRESHOLDs. */
 	html = render_log_msg("smart", 0, "",
 		"<!--XYMON METRICS\n"
-		"DS:temp:GAUGE:600:0:U\n"
-		"sda 32\n"
+		"DS:temp:GAUGE:600:0:U:Celsius\n"
+		"THRESHOLD:temp:>55:warn\n"
+		"THRESHOLD:temp:>65:crit\n"
+		"sda 38\n"
 		"nvme0 29\n"
+		"sdb 58\n"
+		"hot 72\n"
 		"-->\n"
 		"<!--XYMON GRAPH -->\n"
 		"status text\n");
 	expect_contains("unnamed METRICS+GRAPH default to the test name", html, "service=smart&amp;");
+	expect_contains("METRICS block renders a status table", html, "<table");
+	expect_contains("table header is the DS name", html, ">temp</th>");
+	expect_contains("table shows the raw value", html, "38</td>");
+	expect_contains("warn-band value coloured yellow (58>55)", html, "alt=\"yellow\"");
+	expect_contains("crit-band value coloured red (72>65)", html, "alt=\"red\"");
 	free(html);
 
 	/* Marker names are exact identities: "diskio_busy2" must not inherit

@@ -94,9 +94,13 @@ anywhere.** Per-cell alarm colors do not exist today.
 - **[V]** Values source: re-parse the `METRICS` block out of `restofmsg` (present at
   render time, raw, no color). Fileset index stores predicates + units, **not values**.
   No RRD last-value accessor on the web path.
-- **[P]** New render element in `lib/htmllog.c` (own slot, default above graphs);
-  default table synthesized (DS names = headers, instances = rows); custom format = test.cfg.
-- **[O]** Decide where the evaluator runs (ingest in xymond vs display in htmllog) — leaning display, reading `restofmsg` + `fsidx_thresholds`.
+- **[DONE 055a05006 — 2b]** `render_metrics_table()` in `lib/htmllog.c`: each METRICS
+  block is replaced **in place** (Bruno's call — not a separate slot) by an HTML table,
+  rows=instances, cols=DS, cells coloured by `threshold_eval`. Parsed entirely from
+  `restofmsg` (no fsidx/RRD reads); DS-vs-DS operands resolved per row. Proving test:
+  warn/crit thresholds → yellow/red cells. Custom column format = **2c** (test.cfg), deferred.
+- **[RESOLVED]** Evaluator runs at **display** (htmllog), reading the block straight from
+  `restofmsg` — the message carries schema + THRESHOLDs + values, so no ingest-time state.
 
 ---
 

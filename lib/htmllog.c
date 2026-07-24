@@ -167,6 +167,104 @@ static void textwithcolorimg(char *msg, FILE *output)
 	} while (restofmsg);
 }
 
+/* Resolve a DS-name threshold operand to its value in the current table row. */
+struct tablerow_t {
+	char **dsname;
+	double *val;
+	char *have;
+	int numds;
+};
+static int tablerow_getval(const char *ds, double *out, void *ud)
+{
+	struct tablerow_t *r = (struct tablerow_t *)ud;
+	int i;
+	for (i = 0; (i < r->numds); i++)
+		if (r->have[i] && (strcmp(ds, r->dsname[i]) == 0)) { *out = r->val[i]; return 1; }
+	return 0;
+}
+
+/* Render one XYMON METRICS block [bstart,bend) as an HTML table in place of
+ * the raw block: one row per instance, one column per DS, each value cell
+ * coloured by threshold_eval() against the block's THRESHOLD declarations (a
+ * DS-name operand is resolved from the same row's other DS values). */
+static void render_metrics_table(char *bstart, char *bend, FILE *output)
+{
+	size_t blen = (size_t)(bend - bstart);
+	char *buf = (char *)xmalloc(blen + 1);
+	char *dsname[32];
+	int numds = 0, i, first;
+	strbuffer_t *thr = newstrbuffer(0);
+	char *line, *nl;
+
+	/* Pass 1: DS names + combined threshold spec (a private, mutable copy). */
+	memcpy(buf, bstart, blen); buf[blen] = '\0';
+	for (line = buf, first = 1; (line && *line); line = nl) {
+		nl = strchr(line, '\n'); if (nl) *nl++ = '\0';
+		if (first) { first = 0; continue; }		/* the banner line */
+		if (strncmp(line, "-->", 3) == 0) break;
+		if ((strncmp(line, "DS:", 3) == 0) && (numds < 32)) {
+			char *n = line + 3, *e = strchr(n, ':');
+			if (e) { *e = '\0'; dsname[numds++] = xstrdup(n); }
+		}
+		else if (strncmp(line, "THRESHOLD:", 10) == 0) {
+			if (STRBUFLEN(thr)) addtobuffer(thr, ",");
+			addtobuffer(thr, line + 10);
+		}
+	}
+	if (numds == 0) { xfree(buf); freestrbuffer(thr); return; }
+
+	fprintf(output, "<table border=1 cellpadding=3 cellspacing=0 summary=\"metrics\">\n<tr><th>&nbsp;</th>");
+	for (i = 0; (i < numds); i++) fprintf(output, "<th>%s</th>", htmlquoted(dsname[i]));
+	fprintf(output, "</tr>\n");
+
+	/* Pass 2: one row per instance line (fresh copy - pass 1 mutated buf). */
+	memcpy(buf, bstart, blen); buf[blen] = '\0';
+	for (line = buf, first = 1; (line && *line); line = nl) {
+		char *vp, *inst, *v; int idx;
+		double dval[32]; char dhave[32]; char *dstr[32];
+		struct tablerow_t row;
+
+		nl = strchr(line, '\n'); if (nl) *nl++ = '\0';
+		if (first) { first = 0; continue; }
+		if (strncmp(line, "-->", 3) == 0) break;
+		if ((strncmp(line, "DS:", 3) == 0) || (strncmp(line, "THRESHOLD:", 10) == 0)) continue;
+
+		vp = strrchr(line, ' ');
+		if (!vp || (vp == line)) continue;		/* no instance/value split */
+		*vp = '\0'; inst = line; v = vp + 1;
+		while ((vp > inst) && (*(vp - 1) == ' ')) *(--vp) = '\0';
+		if (!*inst || !strchr("0123456789+-.U", *v)) continue;	/* not an instance row */
+
+		for (i = 0; (i < numds); i++) { dhave[i] = 0; dval[i] = 0.0; dstr[i] = (char *)""; }
+		for (idx = 0; (v && (idx < numds)); idx++) {
+			char *c = strchr(v, ':'), *endp;
+			if (c) *c = '\0';
+			dstr[idx] = v;
+			dval[idx] = strtod(v, &endp);
+			dhave[idx] = (char)((endp != v) && (*endp == '\0'));
+			v = c ? c + 1 : NULL;
+		}
+
+		row.dsname = dsname; row.val = dval; row.have = dhave; row.numds = numds;
+		fprintf(output, "<tr><td align=left>%s</td>", htmlquoted(inst));
+		for (i = 0; (i < numds); i++) {
+			int sev = dhave[i] ? threshold_eval(STRBUF(thr), dsname[i], dval[i], tablerow_getval, &row) : THRESHOLD_OK;
+			int col = (sev == THRESHOLD_CRIT) ? COL_RED : ((sev == THRESHOLD_WARN) ? COL_YELLOW : COL_GREEN);
+			fprintf(output, "<td align=center>");
+			if (dhave[i])
+				fprintf(output, "<img src=\"%s/%s\" alt=\"%s\" height=\"%s\" width=\"%s\" border=0> ",
+					xgetenv("XYMONSKIN"), dotgiffilename(col, 0, 1), colorname(col),
+					xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
+			fprintf(output, "%s</td>", htmlquoted(dstr[i]));
+		}
+		fprintf(output, "</tr>\n");
+	}
+	fprintf(output, "</table>\n");
+
+	for (i = 0; (i < numds); i++) xfree(dsname[i]);
+	xfree(buf); freestrbuffer(thr);
+}
+
 /* Is "name" one of the comma-separated entries in "csv" (ignoring any
  * ::N split-size suffix on the entry)? Used to avoid rendering a
  * marker-declared graph twice when GRAPHS_<service> already lists it. */
@@ -394,9 +492,48 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		fprintf(output, "\n");
 	}
 
-	if (!htmlfmt) fprintf(output, "<PRE>\n");
-	textwithcolorimg(restofmsg, output);
-	if (!htmlfmt) fprintf(output, "\n</PRE>\n");
+	/* Walk the body; each XYMON METRICS block is replaced, in place, by a
+	 * rendered status table (threshold-coloured cells). Prose around the
+	 * blocks renders as before. Work on a copy so restofmsg stays intact
+	 * for the marker/graph parsing further down. */
+	{
+		char *bodycopy = xstrdup(restofmsg);
+		char *seg = bodycopy;
+
+		while (seg && *seg) {
+			char *bstart = NULL, *scan = seg, *bend, *close, saved;
+
+			while ((scan = strstr(scan, XYMON_METRICS_MARKER)) != NULL) {
+				if ((scan == bodycopy) || (*(scan - 1) == '\n')) {
+					char *nm = NULL;
+					if (xymon_metrics_marker(scan, &nm)) { if (nm) xfree(nm); bstart = scan; break; }
+				}
+				scan++;
+			}
+			if (!bstart) {
+				if (!htmlfmt) fprintf(output, "<PRE>\n");
+				textwithcolorimg(seg, output);
+				if (!htmlfmt) fprintf(output, "\n</PRE>\n");
+				break;
+			}
+
+			close = strstr(bstart, "-->");
+			if (!close) bend = bstart + strlen(bstart);
+			else { char *e = strchr(close, '\n'); bend = e ? e + 1 : close + strlen(close); }
+
+			saved = *bstart; *bstart = '\0';
+			if (*seg) {
+				if (!htmlfmt) fprintf(output, "<PRE>\n");
+				textwithcolorimg(seg, output);
+				if (!htmlfmt) fprintf(output, "\n</PRE>\n");
+			}
+			*bstart = saved;
+
+			render_metrics_table(bstart, bend, output);
+			seg = bend;
+		}
+		xfree(bodycopy);
+	}
 
 	fprintf(output, "</TD></TR></TABLE>\n");
 
