@@ -135,8 +135,15 @@ never a real status column (combostatus-style):**
 - Rollup color: reuse AGGDS / COMPACT worst-of.
 - Home: a **`testgroup`** block in test.cfg. **[DONE 6125c262a — 3a]** `group <name>
   { member <test>…; rollup worst }` parses into `tc_group_t`; API `testcfg_groups()` +
-  `testcfg_group_of(head, test)`. Remaining: **3b** merged group page (reuse
-  `render_metrics_table`), **3c** matrix rollup light (COMPACT reuse + link retarget).
+  `testcfg_group_of(head, test)`.
+- **[DONE — 3b]** Merged group page in `web/svcstatus.c`: `SERVICE=<group>` is matched
+  against `testcfg_groups()` (`do_request`), then `generate_group_page()` fetches each
+  member live (`xymondlog host=H test=M fields=color`, worst-of rollup), emits the page
+  frame + a status band of the members, then stacks each member's full content below via
+  the frameless `generate_html_log` (`htmllog_frameless=1`) — so each member renders its
+  own METRICS table + graphs. Compile+link verified; the live xymondlog path needs a
+  running xymond, not covered by the local suite.
+- Remaining: **3c** matrix rollup light (COMPACT reuse + link retarget to `SERVICE=<group>`).
 - **[O]** The merged detail page is net-new rendering — no existing multi-test merged page to reuse.
 - **[O]** Dynamic (CGI) host-matrix path, if any, not traced; static `xymongen` authoritative for layout.
 - **[DECIDED 2026-07-24]** Model (a): the **test** is the alert/ack atom — one test →

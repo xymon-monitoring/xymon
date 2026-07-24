@@ -191,6 +191,73 @@ int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts,
 	return 0;
 }
 
+/* The testgroup aggregator page: a rollup band of the member statuses, then
+ * each member's content (body/table + graphs) stacked below via the frameless
+ * htmllog render. Members are fetched live from xymond, one xymondlog each. */
+static void generate_group_page(char *hostname, char *ip, char *displayname, tc_group_t *group, FILE *output)
+{
+	int i, worst = COL_GREEN;
+	int *mcolor;
+	char **mbody, **mlog;
+
+	if (group->nmembers <= 0) return;
+	mcolor = (int *)xcalloc(group->nmembers, sizeof(int));
+	mbody  = (char **)xcalloc(group->nmembers, sizeof(char *));
+	mlog   = (char **)xcalloc(group->nmembers, sizeof(char *));
+
+	/* Fetch each member's current colour + status body from xymond. */
+	for (i = 0; i < group->nmembers; i++) {
+		size_t reqsz = 64 + strlen(hostname) + strlen(group->members[i]);
+		char *req = (char *)xmalloc(reqsz);
+		sendreturn_t *sres;
+		char *log = NULL, *p;
+
+		mcolor[i] = COL_CLEAR; mbody[i] = "";
+		snprintf(req, reqsz, "xymondlog host=%s test=%s fields=color", hostname, group->members[i]);
+		sres = newsendreturnbuf(1, NULL);
+		if (sendmessage(req, NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) log = getsendreturnstr(sres, 1);
+		freesendreturnbuf(sres);
+		xfree(req);
+		if (log && *log) {
+			mlog[i] = log;
+			p = strchr(log, '\n');
+			if (p) { *p = '\0'; mcolor[i] = parse_color(log); mbody[i] = p + 1; }
+			else mcolor[i] = parse_color(log);
+			if (mcolor[i] > worst) worst = mcolor[i];
+		}
+	}
+
+	sethostenv(displayname, ip, group->name, colorname(worst), hostname);
+	headfoot(output, "hostsvc", "", "header", worst);
+
+	/* Rollup band: every member's status, side by side. */
+	fprintf(output, "<center>\n<table border=0 cellpadding=4 summary=\"group\"><tr>\n");
+	for (i = 0; i < group->nmembers; i++)
+		fprintf(output, "<td align=center><img src=\"%s/%s\" alt=\"%s\" border=0> %s</td>\n",
+			xgetenv("XYMONSKIN"), dotgiffilename(mcolor[i], 0, 1),
+			colorname(mcolor[i]), htmlquoted(group->members[i]));
+	fprintf(output, "</tr></table>\n<hr width=\"90%%\">\n");
+
+	/* Each member's content (body/table + graphs), stacked, frameless. */
+	htmllog_frameless = 1;
+	for (i = 0; i < group->nmembers; i++) {
+		fprintf(output, "<h3>%s</h3>\n", htmlquoted(group->members[i]));
+		generate_html_log(hostname, displayname, group->members[i], ip,
+				  mcolor[i], 0, "Xymon", "",
+				  getcurrenttime(NULL), "",
+				  "", mbody[i], NULL,
+				  0, NULL, NULL, 0, NULL,
+				  0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, output);
+	}
+	htmllog_frameless = 0;
+	fprintf(output, "</center>\n");
+
+	headfoot(output, "hostsvc", "", "footer", worst);
+
+	for (i = 0; i < group->nmembers; i++) if (mlog[i]) xfree(mlog[i]);
+	xfree(mcolor); xfree(mbody); xfree(mlog);
+}
+
 int do_request(void)
 {
 	int color = 0, flapping = 0;
@@ -229,10 +296,23 @@ int do_request(void)
 		}
 	}
 
+	/* A testgroup name (from test.cfg) renders the merged aggregator page
+	 * instead of a single status. */
+	if (service && *service) {
+		tc_group_t *g;
+		for (g = testcfg_groups(); (g); g = g->next)
+			if (strcasecmp(g->name, service) == 0) break;
+		if (g) {
+			if (loadhostdata(hostname, &ip, &displayname, &compacts, 0) != 0) return 1;
+			generate_group_page(hostname, (ip ? ip : ""), (displayname ? displayname : hostname), g, stdout);
+			return 0;
+		}
+	}
+
 	{
 		char *s;
-		
-		s = xgetenv("CLIENTLOGS"); 
+
+		s = xgetenv("CLIENTLOGS");
 		if (s) {
 			SBUF_MALLOC(hostdatadir, strlen(s) + strlen(hostname) + 12);
 			snprintf(hostdatadir, hostdatadir_buflen, "%s/%s", s, hostname);
