@@ -679,6 +679,7 @@ void add_http_test(testitem_t *t)
 		sslopt->cipherlist = sslopt_ciphers;
 		sslopt->sslversion = sslopt_version;
 		sslopt->clientcert = sslopt_clientcert;
+		sslopt->alpns = NULL;
 	}
 
 	/* Add to TCP test queue */
