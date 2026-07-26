@@ -564,8 +564,16 @@ static void setup_ssl(tcptest_t *item)
 		SSL_CTX_set_quiet_shutdown(item->sslctx, 1);
 
 		/* Limit set of ciphers, if user wants to */
-		if (item->ssloptions->cipherlist) 
-			SSL_CTX_set_cipher_list(item->sslctx, item->ssloptions->cipherlist);
+		if (item->ssloptions->cipherlist && !SSL_CTX_set_cipher_list(item->sslctx, item->ssloptions->cipherlist)) {
+			char sslerrmsg[256];
+
+			ERR_error_string(ERR_get_error(), sslerrmsg);
+			errprintf("Cannot set cipher list '%s' - IP %s, service %s: %s\n",
+				   item->ssloptions->cipherlist, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
+			item->sslrunning = 0;
+			item->errcode = CONTEST_ESSL;
+			return;
+		}
 
 		/* Set ALPN protocols if specified */
 		/* First check service definition for ALPN, then fallback to ssloptions */
