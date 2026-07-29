@@ -173,7 +173,7 @@ static void xmh_item_list_setup(void)
 	xmh_item_key[XMH_NOFLAP]               = "NOFLAP";
 	xmh_item_name[XMH_NOFLAP]              = "XMH_NOFLAP";
 	xmh_item_key[XMH_FLAG_MULTIHOMED]      = "MULTIHOMED";
-	xmh_item_name[XMH_FLAG_MULTIHOMED]     = "XMH_MULTIHOMED";
+	xmh_item_name[XMH_FLAG_MULTIHOMED]     = "XMH_FLAG_MULTIHOMED";
 	xmh_item_key[XMH_FLAG_HTTP_HEADER_MATCH]             = "headermatch";
 	xmh_item_name[XMH_FLAG_HTTP_HEADER_MATCH]            = "XMH_FLAG_HTTP_HEADER_MATCH";
 	xmh_item_key[XMH_FLAG_SNI]             = "sni";			// Enable SNI (Server name Indication) for TLS requests
