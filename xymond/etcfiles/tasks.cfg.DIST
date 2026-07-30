@@ -108,7 +108,7 @@
 # but the Xymon server can connect to the client. Normally the clients will initiate
 # a connection to the Xymon server to deliver the data they collect, but this is
 # forbidden in some firewall setups. By enabling the xymonfetch task, hosts that have
-# the "pulldata" tag in the hosts.cfg file will be polled by xymonfetch for their data.
+# the "PULLDATA" tag in the hosts.cfg file will be polled by xymonfetch for their data.
 #
 # NOTE: On the clients you must enable the "msgcache" task, since this is what 
 #       xymonfetch is talking to.

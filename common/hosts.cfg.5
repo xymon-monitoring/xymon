@@ -80,7 +80,7 @@ the file or directory is not present on a system.
 
 
 .SH GENERAL PER-HOST OPTIONS
-.IP noclear
+.IP NOCLEAR
 Controls whether stale status messages go purple or clear when
 a host is down. Normally, when a host is down the client statuses
 ("cpu", "disk", "memory" etc) will stop updating - this would usually
@@ -88,9 +88,9 @@ make them go "purple" which can trigger alerts. To avoid that, Xymon
 checks if the "conn" test has failed, and if that is true then the
 other tests will go "clear" instead of purple so you only get alerts
 for the "conn" test. If you do want the stale statuses to go purple,
-you can use the "noclear" tag to override this behaviour.
+you can use the "NOCLEAR" tag to override this behaviour.
 
-Note that "noclear" also affects the behaviour of network tests;
+Note that "NOCLEAR" also affects the behaviour of network tests;
 see below.
 
 .IP prefer
@@ -107,7 +107,7 @@ Note: This only applies to hosts that are defined multiple
 times in the hosts.cfg file, although it will not hurt to add it
 on other hosts as well.
 
-.IP multihomed
+.IP MULTIHOMED
 Tell Xymon that data from the host can arrive from multiple IP-addresses.
 By default, Xymon will warn if it sees data for one host coming from
 different IP-addresses, because this usually indicates a mis-configuration
@@ -586,7 +586,7 @@ E.g. "WARNSTOPS:5" turns the report red once a 6th outage occurs in
 the reporting interval.
 Default: -1 (disabled - no limit on the number of down-periods).
 
-.IP "noflap[=test1,test2,...]"
+.IP "NOFLAP[=test1,test2,...]"
 Disable flap detection for this host, or for specific tests on this
 host. Flap detection is globally controlled by options given to 
 xymond on the command line, but, if enabled, it can be disabled 
@@ -613,23 +613,23 @@ Note: The "\-\-test\-untagged" option modifies this behaviour,
 see
 .I xymonnet(1)
 
-.IP noclear
+.IP NOCLEAR
 Some network tests depend on others. E.g. if the host does not
 respond to ping, then there's a good chance that the entire host 
 is down and all network tests will fail. Or if the http server
 is down, then any web content checks are also likely to fail.
 To avoid floods of alerts, the default behaviour is for xymonnet
 to change the status of these tests that fail because of another
-problem to "clear" instead of "red". The "noclear" tag disables this
+problem to "clear" instead of "red". The "NOCLEAR" tag disables this
 behaviour and causes all failing tests to be reported with their
 true color.
 
 This behaviour can also be implemented on a per-test basis by
 putting the "~" flag on any network test.
 
-Note that "noclear" also affects whether stale status messages
+Note that "NOCLEAR" also affects whether stale status messages
 from e.g. a client on the host go purple or clear when the
-host is down; see the "noclear" description in the
+host is down; see the "NOCLEAR" description in the
 "GENERAL PER-HOST OPTIONS" section above.
 
 .IP nosslcert
@@ -1445,8 +1445,8 @@ this should be listed FIRST in your file.
 tags - others are silently ignored: delayred, delayyellow, NOCOLUMNS, 
 COMMENT, DESCR, DOC, CLASS, dialup, nonongreen, nodisp, noinfo, 
 notrends, noclient, TRENDS, NOPROPRED, NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, 
-REPORTTIME, WARNPCT, WARNSTOPS, testip, NET, noclear, nosslcert, ssldays, DOWNTIME, depends, 
-noping, noconn, trace, notrace, HIDEHTTP, browser, pulldata. Specifically, 
+REPORTTIME, WARNPCT, WARNSTOPS, testip, NET, NOCLEAR, nosslcert, ssldays, DOWNTIME, depends, 
+noping, noconn, trace, notrace, HIDEHTTP, browser, PULLDATA. Specifically, 
 note that network tests, "badTEST" settings, and alternate pageset 
 relations cannot be listed on the ".default." host.
 
@@ -1494,7 +1494,7 @@ the URL must point to a web page from the default set of Xymon webpages.
 
 
 .SH OTHER TAGS
-.IP pulldata[=[IP][:port]]
+.IP PULLDATA[=[IP][:port]]
 This option is recognized by the
 .I xymonfetch(8)
 utility, and causes it to poll the host for client data. The optional
