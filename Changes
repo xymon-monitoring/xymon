@@ -82,6 +82,8 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Report an SSL error when OpenSSL rejects a configured cipher list (#275) (Thanks, Markus Häll)
 * Add a configurable df/inode filesystem filter to the macOS client (#170, #178, #291)
 * Document the WARNSTOPS tag and correct the WARNPCT threshold description (#252, #257)
+* Fix hosts.cfg noflap= lists losing effect after the first test evaluated (#276) (Thanks, Markus Häll)
+* Register XMH_FLAG_MULTIHOMED under its documented name (#277) (Thanks, Markus Häll)
 
 
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
