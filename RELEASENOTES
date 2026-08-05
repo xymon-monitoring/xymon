@@ -19,6 +19,19 @@ cipher list. Such tests may therefore turn red after upgrading Xymon, or after
 an OpenSSL upgrade invalidates a previously accepted restriction. xymonnet tests
 without a cipher-list restriction are unaffected.
 
+PCRE1 is no longer supported; Xymon now builds against PCRE2 only. Most
+patterns are unaffected, but configurations relying on syntax specific to
+PCRE1 should be reviewed.
+
+The RRDtool argv ABI is now detected from the header signature rather than
+from the RRDtool version, so upstream RRDtool 1.9 and later, and distribution
+backports to 1.8 such as the one in Oracle Linux 10, are both supported with
+no configuration.
+
+When Net-SNMP is built without MD5 (NETSNMP_DISABLE_MD5), an SNMPv3
+authentication configured for MD5 now falls back to SHA1 and logs a warning
+once at startup. Change the SNMPv3 authentication to SHA1 to silence it.
+
 
 Changes for 4.3.30
 ==================
