@@ -80,6 +80,8 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Document HTTP content-check examples in hosts.cfg(5) (#272) (Thanks, Markus Häll)
 * Pass exec-title arguments to the title script as literal words (#265) (Thanks, Markus Häll)
 * Report an SSL error when OpenSSL rejects a configured cipher list (#275) (Thanks, Markus Häll)
+* Add a configurable df/inode filesystem filter to the macOS client (#170, #178, #291)
+* Document the WARNSTOPS tag and correct the WARNPCT threshold description (#252, #257)
 
 
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
