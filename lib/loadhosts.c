@@ -200,7 +200,6 @@ static void xmh_item_list_setup(void)
 	xmh_item_name[XMH_ACCEPT_ONLY]         = "XMH_ACCEPT_ONLY";
 
 	xmh_item_name[XMH_IP]                  = "XMH_IP";
-	xmh_item_name[XMH_CLIENTALIAS]         = "XMH_CLIENTALIAS";
 	xmh_item_name[XMH_HOSTNAME]            = "XMH_HOSTNAME";
 	xmh_item_name[XMH_PAGENAME]            = "XMH_PAGENAME";
 	xmh_item_name[XMH_PAGEPATH]            = "XMH_PAGEPATH";
