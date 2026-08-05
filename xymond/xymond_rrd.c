@@ -425,11 +425,29 @@ int main(int argc, char *argv[])
 		}
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
 			char hostdir[PATH_MAX];
+			char *dropname;
+
 			hostname = metadata[3];
 
 			MEMDEFINE(hostdir);
 
-			sprintf(hostdir, "%s/%s", rrddir, basename(hostname));
+			/*
+			 * basename() is not enough here: it returns ".." for
+			 * ".." and "/" for "/", and this deletes recursively -
+			 * so an unconfined component takes out the parent of
+			 * the RRD directory, i.e. the historical data. Confine
+			 * it to one component and drop the message if nothing
+			 * is left, rather than letting an empty element collapse
+			 * the path onto $RRDDIR itself.
+			 */
+			dropname = safe_basename(hostname);
+			if (!*dropname) {
+				errprintf("Ignoring drophost for invalid hostname '%s'\n", hostname);
+				MEMUNDEFINE(hostdir);
+				continue;
+			}
+
+			snprintf(hostdir, sizeof(hostdir), "%s/%s", rrddir, dropname);
 			dropdirectory(hostdir, 1);
 
 			MEMUNDEFINE(hostdir);
@@ -445,14 +463,27 @@ int main(int argc, char *argv[])
 			char oldhostdir[PATH_MAX];
 			char newhostdir[PATH_MAX];
 			char *newhostname;
+			char *oldname, *newname;
 
 			MEMDEFINE(oldhostdir);
 			MEMDEFINE(newhostdir);
 
 			hostname = metadata[3];
 			newhostname = metadata[4];
-			sprintf(oldhostdir, "%s/%s", rrddir, hostname);
-			sprintf(newhostdir, "%s/%s", rrddir, newhostname);
+
+			/* Both names become path components - confine them. */
+			oldname = safe_basename(hostname);
+			newname = safe_basename(newhostname);
+			if (!*oldname || !*newname) {
+				errprintf("Ignoring renamehost '%s' -> '%s': invalid hostname\n",
+					  hostname, newhostname);
+				MEMUNDEFINE(newhostdir);
+				MEMUNDEFINE(oldhostdir);
+				continue;
+			}
+
+			snprintf(oldhostdir, sizeof(oldhostdir), "%s/%s", rrddir, oldname);
+			snprintf(newhostdir, sizeof(newhostdir), "%s/%s", rrddir, newname);
 			rename(oldhostdir, newhostdir);
 
 			if (net_worker_locatorbased()) locator_rename_host(hostname, newhostname, ST_RRD);
