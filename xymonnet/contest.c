@@ -571,6 +571,7 @@ static void setup_ssl(tcptest_t *item)
 			errprintf("Cannot set cipher list '%s' - IP %s, service %s: %s\n",
 				   item->ssloptions->cipherlist, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
+			SSL_CTX_free(item->sslctx);
 			item->errcode = CONTEST_ESSL;
 			return;
 		}
@@ -637,6 +638,7 @@ static void setup_ssl(tcptest_t *item)
 				errprintf("Cannot load SSL client certificate/key %s: %s\n", 
 					  item->ssloptions->clientcert, sslerrmsg);
 				item->sslrunning = 0;
+				SSL_CTX_free(item->sslctx);
 				item->errcode = CONTEST_ESSL;
 				return;
 			}
@@ -671,6 +673,8 @@ static void setup_ssl(tcptest_t *item)
 			if (!SSL_CTX_check_private_key(item->sslctx)) {
 				errprintf("Private/public key mismatch for certificate %s\n", item->ssloptions->clientcert);
 				item->sslrunning = 0;
+				SSL_free(item->ssldata);
+				SSL_CTX_free(item->sslctx);
 				item->errcode = CONTEST_ESSL;
 				return;
 			}

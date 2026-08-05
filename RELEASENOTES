@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.30   * * *
+           * * *   Release notes for Xymon 4.3.31   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -8,6 +8,16 @@ changes you should be aware of when upgrading.
 
 For a full list of changes and enhancements, please see the 
 Changes file.
+
+
+Changes for 4.3.31
+==================
+
+xymonnet tests with a configured cipher-list restriction now report an SSL error
+when OpenSSL rejects the restriction, instead of silently using the default
+cipher list. Such tests may therefore turn red after upgrading Xymon, or after
+an OpenSSL upgrade invalidates a previously accepted restriction. xymonnet tests
+without a cipher-list restriction are unaffected.
 
 
 Changes for 4.3.30
