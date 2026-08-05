@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __HTTPTESTT_H_
+#ifndef __HTTPTEST_H_
 #define __HTTPTEST_H_
 
 extern int  tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv);

@@ -10,35 +10,28 @@
 
 static char ntpstat_rcsid[] = "$Id$";
 
+/* Find a marker in the message and read the number that follows it. */
+static int ntpstat_offset(const char *msg, const char *marker, double *offset)
+{
+	const char *p = strstr(msg, marker);
+	return p && sscanf(p + strlen(marker), "%lf", offset) == 1;
+}
+
 int do_ntpstat_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *ntpstat_params[]     = { "DS:offsetms:GAUGE:600:U:U", NULL };
 	static void *ntpstat_tpl          = NULL;
 
-	char *p;
-	float offset;
-	int gotdata = 0;
+	double offset;
 
 	if (ntpstat_tpl == NULL) ntpstat_tpl = setup_template(ntpstat_params);
 
-	/* First check for the old LARRD ntpstat BF script */
-	p = strstr(msg, "\nOffset:");
-	gotdata = (p && (sscanf(p+1, "Offset: %f", &offset) == 1));
+	/* "Offset:" = old LARRD script line; "offset=" = "ntpq -c rv" output. */
+	if (!ntpstat_offset(msg, "\nOffset:", &offset) &&
+	    !ntpstat_offset(msg, "offset=",   &offset)) return 0;
 
-	/* Or maybe it's just the "ntpq -c rv" output */
-	if (!gotdata) {
-		p = strstr(msg, "offset=");
-		if (p && (isspace((int)*(p-1)) || (*(p-1) == ','))) {
-			gotdata = (p && (sscanf(p, "offset=%f", &offset) == 1));
-		}
-	}
-
-	if (gotdata) {
-		setupfn("%s.rrd", "ntpstat");
-		snprintf(rrdvalues, sizeof(rrdvalues), "%d:%.6f", (int)tstamp, offset);
-		return create_and_update_rrd(hostname, testname, classname, pagepaths, ntpstat_params, ntpstat_tpl);
-	}
-
-	return 0;
+	setupfn("%s.rrd", "ntpstat");
+	snprintf(rrdvalues, sizeof(rrdvalues), "%d:%.6f", (int)tstamp, offset);
+	return create_and_update_rrd(hostname, testname, classname, pagepaths, ntpstat_params, ntpstat_tpl);
 }
 

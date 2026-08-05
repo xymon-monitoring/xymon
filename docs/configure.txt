@@ -22,6 +22,12 @@ Found RRDtool include files in /usr/include
 Found RRDtool libraries in /usr/lib
 Linking RRD with PNG library: -L/usr/lib -lpng
 
+RRDtool argv API note:
+The build probes rrd.h to decide whether RRDtool's argv parameters are
+"char **" (RRD_CONST_ARGS=0) or "const char **" (RRD_CONST_ARGS=1). If the
+probe is ambiguous, re-run configure with RRD_CONST_ARGS set explicitly. If
+you compile without running configure, define RRD_CONST_ARGS manually.
+
 
 Checking for PCRE ...
 Found PCRE include files in /usr/include

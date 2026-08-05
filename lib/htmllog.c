@@ -96,8 +96,8 @@ static void hostsvc_setup(void)
 static void historybutton(char *cgibinurl, char *hostname, char *service, char *ip, char *displayname, char *btntxt, FILE *output) 
 {
 	SBUF_DEFINE(tmp1);
-	SBUF_DEFINE(tmp2)
-		
+	SBUF_DEFINE(tmp2);
+
 	SBUF_MALLOC(tmp2, strlen(service)+3);
 
 	getenv_default("NONHISTS", "info,trends", NULL);
@@ -186,7 +186,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	xymongraph_t *graph = NULL;
 	char *tplfile = "hostsvc";
 	SBUF_DEFINE(graphs);
-	char *graphsenv;
+	char *graphsenv = NULL;
 	char *graphsptr;
 	time_t now = getcurrenttime(NULL);
 
@@ -421,8 +421,18 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 					  service, rrd->xymonrrdname);
 			}
 		}
+
+		/* GRAPHS_<service> custom graphs render even when the service has no
+		 * default graph (issue #31) - but never for reverse tests, which
+		 * collect no RRD data. */
+		SBUF_MALLOC(graphs, 7 + strlen(service) + 1);
+		snprintf(graphs, graphs_buflen, "GRAPHS_%s", service);
+		graphsenv = getenv(graphs);
+		if (graphsenv && (*graphsenv == '\0')) graphsenv = NULL;	/* set-but-empty = not set */
+		if (flags && strchr(flags, 'R')) graphsenv = NULL;
+		xfree(graphs);
 	}
-	if (rrd && graph) {
+	if ((rrd && graph) || graphsenv) {
 		int may_have_rrd = 1;
 
 		/*
@@ -443,7 +453,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			if (multigraphs == NULL) multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 
 			/* Not all devmon statuses have graphs, so try to avoid generating graph links unless there is one */
-			if (strncmp(rrd->xymonrrdname,"devmon",6) == 0) may_have_rrd=0;
+			if (rrd && (strncmp(rrd->xymonrrdname,"devmon",6) == 0)) may_have_rrd=0;
 
 			/* 
 			 * Some reports (disk) use the number of lines as a rough measure for how many
@@ -504,27 +514,35 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			fprintf(output, "<!-- linecount=%d -->\n", linecount);
 			fprintf(output, "<a name=\"begingraph\">&nbsp;</a>\n");
 
-			/* Get the GRAPHS_* environment setting */
-			SBUF_MALLOC(graphs, 7 + strlen(service) + 1);
-			snprintf(graphs, graphs_buflen, "GRAPHS_%s", service);
-			graphsenv=getenv(graphs);
 			if (graphsenv) {
-				fprintf(output, "<!-- GRAPHS_%s: %s -->\n", service, graphsenv);
-				/* check for strtokens */
-				graphsptr = strtok(graphsenv,",");
+				/* strtok on a copy - the getenv() result is the live environment */
+				char *graphscopy = strdup(graphsenv);
+
+				fprintf(output, "<!-- GRAPHS_%s: %s -->\n", service, htmlquoted(graphsenv));
+				graphsptr = strtok(graphscopy,",");
 				while (graphsptr != NULL) {
-					// fprintf(output, "<!-- found: %s -->\n", graphsptr);
-					graph->xymonrrdname = strdup(graphsptr);
-					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
-					// next token
+					xymongraph_t localgraph, *owngdef;
+
+					/*
+					 * A stack-local gdef keeps the entry verbatim in the link
+					 * (a prefix-matched table entry would rewrite it to its
+					 * base name) and leaves the shared table unwritten - the
+					 * legacy strdup() into it leaked and corrupted later
+					 * lookups. maxgraphs: the entry's own GRAPHS record, else
+					 * the service's default graph.
+					 */
+					owngdef = find_xymon_graph(graphsptr);
+					memset(&localgraph, 0, sizeof(localgraph));
+					localgraph.xymonrrdname = graphsptr;
+					localgraph.maxgraphs = (owngdef ? owngdef->maxgraphs : (graph ? graph->maxgraphs : 0));
+					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, &localgraph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
 					graphsptr = strtok(NULL,",");
 				}
-
+				xfree(graphscopy);
 			}
 			else {
 				fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
 			}
-			xfree(graphs);
 		}
 	}
 

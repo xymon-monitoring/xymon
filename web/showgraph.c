@@ -32,22 +32,14 @@ static char rcsid[] = "$Id$";
 #include <rrd.h>
 
 #include "libxymon.h"
+#include "../lib/rrd_api_compat.h"
 
 #define HOUR_GRAPH  "e-48h"
 #define DAY_GRAPH   "e-12d"
 #define WEEK_GRAPH  "e-48d"
 #define MONTH_GRAPH "e-576d"
 
-/* RRDtool 1.0.x handles graphs with no DS definitions just fine. 1.2.x does not. */
-#ifdef RRDTOOL12
-#ifndef HIDE_EMPTYGRAPH
-#define HIDE_EMPTYGRAPH 1
-#endif
-#endif
-
-#ifdef HIDE_EMPTYGRAPH
 unsigned char blankimg[] = "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\x04\x67\x41\x4d\x41\x00\x00\xb1\x8f\x0b\xfc\x61\x05\x00\x00\x00\x06\x62\x4b\x47\x44\x00\xff\x00\xff\x00\xff\xa0\xbd\xa7\x93\x00\x00\x00\x09\x70\x48\x59\x73\x00\x00\x0b\x12\x00\x00\x0b\x12\x01\xd2\xdd\x7e\xfc\x00\x00\x00\x07\x74\x49\x4d\x45\x07\xd1\x01\x14\x12\x21\x14\x7e\x4a\x3a\xd2\x00\x00\x00\x0d\x49\x44\x41\x54\x78\xda\x63\x60\x60\x60\x60\x00\x00\x00\x05\x00\x01\x7a\xa8\x57\x50\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82";
-#endif
 
 
 char *hostname = NULL;
@@ -111,6 +103,29 @@ int paramlen = 0;
 int firstidx = -1;
 int idxcount = -1;
 int lastidx = 0;
+
+/* Quote a value for safe inclusion as a single word in a /bin/sh command
+ * line: wrap it in single quotes and render each embedded single quote as
+ * '\'' (close, escaped quote, reopen). The result contains no shell-active
+ * character outside the admin's own command, so a CGI-supplied value
+ * cannot break out. Caller frees. */
+static char *shellquote(const char *s)
+{
+	strbuffer_t *b = newstrbuffer(0);
+	const char *p;
+	char *result;
+
+	addtobuffer(b, "'");
+	for (p = (s ? s : ""); (*p); p++) {
+		if (*p == '\'') addtobuffer(b, "'\\''");
+		else addtobufferraw(b, (char *)p, 1);
+	}
+	addtobuffer(b, "'");
+	result = strdup(STRBUF(b));
+	freestrbuffer(b);
+
+	return result;
+}
 
 void errormsg(char *msg)
 {
@@ -600,34 +615,14 @@ char *expand_tokens(char *tpl)
 		else if (strncmp(inp, "@STACKIT@", 9) == 0) {
 			/* Contributed by Gildas Le Nadan <gn1@sanger.ac.uk> */
 
-			/* the STACK behavior changed between rrdtool 1.0.x
-			 * and 1.2.x, hence the ifdef:
-			 * - in 1.0.x, you replace the graph type (AREA|LINE)
-			 *  for the graph you want to stack with the  STACK
-			 *  keyword
-			 * - in 1.2.x, you add the STACK keyword at the end
-			 *  of the definition
-			 *
-			 * Please note that in both cases the first entry
-			 * mustn't contain the keyword STACK at all, so
-			 * we need a different treatment for the first rrdidx
-			 *
-			 * examples of graphs.cfg entries:
-			 *
-			 * - rrdtool 1.0.x
-			 * @STACKIT@:la@RRDIDX@#@COLOR@:@RRDPARAM@
-			 *
-			 * - rrdtool 1.2.x
-			 * AREA::la@RRDIDX@#@COLOR@:@RRDPARAM@:@STACKIT@
+			/* Note that the first entry mustn't contain the keyword
+			 * STACK at all, so we need a different treatment for the
+			 * first rrdidx.
 			 */
 			char numstr[10];
 
 			if (rrdidx == 0) {
-#ifdef RRDTOOL12
 				strncpy(numstr, "", sizeof(numstr));
-#else
-				snprintf(numstr, sizeof(numstr), "AREA");
-#endif
 			}
 			else {
 				snprintf(numstr, sizeof(numstr), "STACK");
@@ -672,6 +667,14 @@ int rrd_name_compare(const void *v1, const void *v2)
 	}
 
 	return strcmp(r1->key, r2->key);
+}
+
+static int rrd_param_matches_service(const char *param, const char *svc)
+{
+	if ((param == NULL) || (svc == NULL) || (*svc == '\0')) return 0;
+
+	/* For bundle fall-backs, FNPATTERN group 1 is exactly the service component */
+	return (strcmp(param, svc) == 0);
 }
 
 void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
@@ -795,6 +798,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 {
 	gdef_t *gdef = NULL, *gdefuser = NULL;
 	int wantsingle = 0;
+	int rrdparamisservice = 0;
+	int svcrejects = 0;
 	DIR *dir;
 	time_t now = getcurrenttime(NULL);
 
@@ -802,7 +807,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 	/* Options for rrd_graph() */
 	int  rrdargcount;
-	char **rrdargs = NULL;	/* The full argv[] table of string pointers to arguments */
+	xymon_rrd_argv_item_t *rrdargs = NULL;	/* The full argv[] table of string pointers to arguments */
 	char heightopt[30];	/* -h HEIGHT */
 	char widthopt[30];	/* -w WIDTH */
 	char upperopt[30];	/* -u MAX */
@@ -841,6 +846,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		char *realservice;
 
 		*delim = '\0';
+		if (*(delim+1) == '\0') errormsg("Missing graph service name");
 		realservice = strdup(delim+1);
 
 		/* The requested gdef only acts as a fall-back solution so don't set gdef here. */
@@ -860,12 +866,14 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	if (gdef == NULL) {
 		if (gdefuser) {
 			gdef = gdefuser;
+			rrdparamisservice = 1;
 		}
 		else {
 			xymonrrd_t *ldef = find_xymon_rrd(service, NULL);
 			if (ldef) {
 				for (gdef = gdefs; (gdef && strcmp(ldef->xymonrrdname, gdef->name)); gdef = gdef->next) ;
 				wantsingle = 1;
+				rrdparamisservice = 1;
 			}
 		}
 	}
@@ -994,6 +1002,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			char *ext;
 			char param[PATH_MAX];
 			PCRE2_SIZE l = sizeof(param);
+			int haveparam;
 
 			/* Ignore dot-files and files with names shorter than ".rrd" */
 			if (*(d->d_name) == '.') continue;
@@ -1011,10 +1020,19 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			result = pcre2_match(pat, d->d_name, strlen(d->d_name), 0, 0,
 					     ovector, NULL);
 			if (result < 0) continue;
+			haveparam = (pcre2_substring_copy_bynumber(ovector, 1, param, &l) == 0);
 
-			if (wantsingle) {
-				/* "Single" graph, i.e. a graph for a service normally included in a bundle (tcp) */
-				if (strstr(d->d_name, service) == NULL) continue;
+			if (rrdparamisservice && haveparam) {
+				/* Single service out of a bundle (tcp): match against the FNPATTERN
+				 * capture, not an unanchored substring - "conn" must not pick up
+				 * tcp.proxyconn.rrd (issue #20). */
+				if (!rrd_param_matches_service(param, service)) { svcrejects++; continue; }
+			}
+			else if (wantsingle) {
+				/* Resolved to its own gdef (tcp.http -> [http], ncv:slab -> [slab]),
+				 * where the capture is a subitem rather than the service - or a
+				 * fall-back without a capture group: keep the substring match. */
+				if (strstr(d->d_name, service) == NULL) { svcrejects++; continue; }
 			}
 
 			/* 
@@ -1027,7 +1045,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* We have a matching file! */
 			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
-			if (pcre2_substring_copy_bynumber(ovector, 1, param, &l) == 0) {
+			if (haveparam) {
 				/*
 				 * This is ugly, but I cannot find a pretty way of un-mangling
 				 * the disk- and http-data that has been molested by the back-end.
@@ -1072,33 +1090,48 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	}
 	rrddbs[rrddbcount].key = rrddbs[rrddbcount].rrdfn = rrddbs[rrddbcount].rrdparam = NULL;
 
+	if ((rrddbcount == 0) && svcrejects) {
+		if (rrdparamisservice)
+			errprintf("showgraph: no RRD file matched service '%s' - check that FNPATTERN group 1 captures the service component\n", service);
+		else
+			errprintf("showgraph: no RRD file matched service '%s'\n", service);
+	}
+
 	/* Sort them so the display looks prettier */
 	qsort(&rrddbs[0], rrddbcount, sizeof(rrddb_t), rrd_name_compare);
 
 	/* Setup the title */
 	if (!gdef->title) gdef->title = strdup("");
 	if (strncmp(gdef->title, "exec:", 5) == 0) {
-		char *pcmd;
-		int i, pcmdlen = 7;
+		strbuffer_t *cmd = newstrbuffer(0);
 		FILE *pfd;
 		char *p;
-		char *param_str = "%s \"%s\" %s \"%s\"";
+		int i;
 
-		pcmdlen += (strlen(gdef->title+5) + strlen(displayname) + strlen(service) + strlen(glegend));
-		for (i=0; (i<rrddbcount); i++) pcmdlen += (strlen(rrddbs[i].rrdfn) + 3);
-
-		p = pcmd = (char *)malloc(pcmdlen+1);
-		p += snprintf(p, pcmdlen+1, param_str, gdef->title+5, displayname, service, glegend);
+		/* The admin's command line (gdef->title+5, from graphs.cfg)
+		 * runs verbatim - it is trusted and may carry its own options
+		 * or pipes on purpose. Every value appended after it, however,
+		 * is CGI- or filename-derived (displayname from the "disp="
+		 * parameter, the matched RRD filenames), so each is shell-quoted
+		 * and reaches the command as one literal argument, whatever
+		 * characters it contains. */
+		addtobuffer(cmd, gdef->title+5);
+		p = shellquote(displayname); addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
+		p = shellquote(service);     addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
+		p = shellquote(glegend);     addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
 		for (i=0; (i<rrddbcount); i++) {
 			if ((firstidx == -1) || ((i >= firstidx) && (i <= lastidx))) {
-				p += snprintf(p, (pcmdlen - (p - pcmd) + 1), " \"%s\"", rrddbs[i].rrdfn);
+				p = shellquote(rrddbs[i].rrdfn);
+				addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
 			}
 		}
-		pfd = popen(pcmd, "r");
+
+		pfd = popen(STRBUF(cmd), "r");
 		if (pfd) {
 			if (fgets(graphtitle, sizeof(graphtitle), pfd) == NULL) *graphtitle = '\0';
 			pclose(pfd);
 		}
+		freestrbuffer(cmd);
 
 		/* Drop any newline at end of the title */
 		p = strchr(graphtitle, '\n'); if (p) *p = '\0';
@@ -1138,7 +1171,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	 * there are multiple RRD-files to handle).
 	 */
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
-	rrdargs = (char **) calloc(16 + pcount*rrddbcount + useroptcount + 1, sizeof(char *));
+	rrdargs = calloc(16 + pcount*rrddbcount + useroptcount + 1, sizeof(*rrdargs));
 
 
 	argi = 0;
@@ -1185,11 +1218,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		}
 	}
 
-#ifdef RRDTOOL12
 	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated\\: %d-%b-%Y %H\\:%M\\:%S", localtime(&now));
-#else
-	strftime(timestamp, sizeof(timestamp), "COMMENT:Updated: %d-%b-%Y %H:%M:%S", localtime(&now));
-#endif
 	rrdargs[argi++] = strdup(timestamp);
 
 
@@ -1208,38 +1237,28 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		printf("%s\n", expirehdr);
 		printf("\n");
 
-#ifdef HIDE_EMPTYGRAPH
 		/* It works, but we still get the "zoom" magnifying glass which looks odd */
 		if (rrddbcount == 0) {
 			/* No graph */
 			fwrite(blankimg, 1, sizeof(blankimg), stdout);
 			return;
 		}
-#endif
 	}
 
 	/* All set - generate the graph */
 	rrd_clear_error();
 
-#ifdef RRDTOOL12
-    #ifdef RRDTOOL19
-	result = rrd_graph(rrdargcount, (const char **)rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-    #else
-	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
-    #endif
+	result = xymon_rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
 
 	/*
-	 * If we have neither the upper- nor lower-limits of the graph, AND we allow vertical 
-	 * zooming of this graph, then save the upper/lower limit values and flag that we have 
+	 * If we have neither the upper- nor lower-limits of the graph, AND we allow vertical
+	 * zooming of this graph, then save the upper/lower limit values and flag that we have
 	 * them. The values are then used for the zoom URL we construct later on.
 	 */
 	if (!haveupperlimit && !havelowerlimit) {
 		upperlimit = ymax; haveupperlimit = 1;
 		lowerlimit = ymin; havelowerlimit = 1;
 	}
-#else
-	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize);
-#endif
 
 	/* Was it OK ? */
 	if (rrd_test_error() || (result != 0)) {
@@ -1288,13 +1307,11 @@ void generate_zoompage(char *selfURI)
 				n = fread(buf, 1, st.st_size, fd);
 				fclose(fd);
 
-#ifdef RRDTOOL12
 				zoomrightoffsetp = strstr(buf, zoomrightoffsetmarker);
 				if (zoomrightoffsetp) {
 					zoomrightoffsetp += strlen(zoomrightoffsetmarker);
 					memcpy(zoomrightoffsetp, "30", 2);
 				}
-#endif
 
 				fwrite(buf, 1, n, stdout);
 			}
@@ -1370,4 +1387,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-

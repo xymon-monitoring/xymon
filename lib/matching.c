@@ -100,11 +100,11 @@ int namematch(const char *needle, char *haystack, pcre2_code *pcrecode)
 
 		if (!found) {
 			if (*tok == '!') {
-				found = (strcmp(tok+1, needle) == 0);
+				found = (strcasecmp(tok+1, needle) == 0);
 				if (found) result = 0;
 			}
 			else {
-				found = (strcmp(tok, needle) == 0);
+				found = (strcasecmp(tok, needle) == 0);
 				if (found) result = 1;
 			}
 		}
@@ -168,9 +168,11 @@ int pickdata(char *buf, pcre2_code *expr, int dupok, ...)
 
 	if (!expr) return 0;
 
-	ovector = pcre2_match_data_create(30, NULL);
+	ovector = pcre2_match_data_create_from_pattern(expr, NULL);
+	if (!ovector) return 0;
+
 	res = pcre2_match(expr, buf, strlen(buf), 0, 0, ovector, NULL);
-	if (res < 0) {
+	if (res <= 0) {
 		pcre2_match_data_free(ovector);
 		return 0;
 	}
@@ -211,5 +213,4 @@ int timematch(char *holidaykey, char *tspec)
 
 	return result;
 }
-
 

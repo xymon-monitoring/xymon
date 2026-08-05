@@ -1,0 +1,48 @@
+# This file is for Apache 2.4 and later.
+#
+# It is generated at configure/build time from xymon-apacheconf.txt.DIST
+# with the install paths substituted in. The authoritative copy of this
+# Apache configuration is also produced as xymon-apache.conf during
+# installation; either file can be used.
+
+# NB: The "Alias" line below must NOT be used if you have
+#     the Xymon webfiles as the root URL. In that case,
+#     you should instead set this:
+#
+#          DocumentRoot @INSTALLWWWDIR@
+
+Alias /xymon/ "@INSTALLWWWDIR@/"
+<Directory "@INSTALLWWWDIR@/">
+    Options Indexes FollowSymLinks Includes MultiViews
+    Require all granted
+</Directory>
+
+ScriptAlias /xymon-cgi/ "@CGIDIR@/"
+<Directory "@CGIDIR@">
+    AllowOverride None
+    Options ExecCGI Includes
+    Require all granted
+</Directory>
+
+ScriptAlias /xymon-seccgi/ "@SECURECGIDIR@/"
+<Directory "@SECURECGIDIR@">
+    AllowOverride None
+    Options ExecCGI Includes
+
+    # NB: Do NOT add "Require all granted" here. In Apache 2.4 multiple
+    # Require directives at the same level are combined with an implicit
+    # <RequireAny>, so "Require all granted" would satisfy access on its
+    # own and bypass the authentication enforced below.
+
+    # Password file where users with access to these scripts are kept.
+    # Create it with:
+    #     htpasswd -c @INSTALLETCDIR@/xymonpasswd USERNAME
+    #
+    # Add more users / change passwords with:
+    #     htpasswd @INSTALLETCDIR@/xymonpasswd USERNAME
+
+    AuthUserFile @INSTALLETCDIR@/xymonpasswd
+    AuthType Basic
+    AuthName "Xymon Administration"
+    Require valid-user
+</Directory>

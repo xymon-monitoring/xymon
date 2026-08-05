@@ -207,11 +207,12 @@ static int getxymondvalue(char *hostname, char *testname, char **errptr)
 		xymondresult = sendmessage("xymondboard fields=hostname,testname,color", NULL, XYMON_TIMEOUT, sres);
 		board = getsendreturnstr(sres, 1);
 
-		if ((xymondresult != XYMONSEND_OK) || (board == NULL)) {
+		if (xymondresult != XYMONSEND_OK) {
 			board = "";
 			*errptr += sprintf(*errptr, "Could not access xymond board, error %d\n", xymondresult);
 			return COL_CLEAR;
 		}
+		if (board == NULL) board = "";	/* Empty board is not a failure; treat as no match and avoid the NULL-deref below. */
 
 		freesendreturnbuf(sres);
 	}
@@ -351,7 +352,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 	result = compute(expr, &error);
 
 	if (error) {
-		sprintf(errtext, "compute(%s) returned error %d\n", expr, error);
+		snprintf(errtext, sizeof(errtext), "compute(%s) returned error %d\n", expr, error);
 		if (*errbuf == NULL) {
 			*errbuf = strdup(errtext);
 		}

@@ -2,7 +2,7 @@
 
 	CARESINC=""
 	CARESLIB=""
-	for DIR in /opt/c*ares* /usr/local/c*ares* /usr/local /usr/pkg /opt/csw /opt/sfw
+	for DIR in /opt/c*ares* /usr/local/c*ares* /usr/local /usr/pkg /opt/csw /opt/sfw /opt/homebrew /opt/local
 	do
 		if test -f $DIR/include/ares.h
 		then
@@ -14,6 +14,10 @@
 		fi
 
 		if test -f $DIR/lib/libcares.so
+		then
+			CARESLIB=$DIR/lib
+		fi
+		if test -f $DIR/lib/libcares.dylib
 		then
 			CARESLIB=$DIR/lib
 		fi

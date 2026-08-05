@@ -171,6 +171,13 @@ server, using the output from the "ntpq \-c rv" command.
 A simple script to collect these data is included in the
 Xymon contrib/ directory.
 
+.IP ntp
+Tracks the clock offset between the local system and an NTP server,
+together with the RFC 5905 root distance (the "+/\-" accuracy bound),
+as measured by the built\-in SNTP probe in xymonnet (or by an external
+"ntpdate"/"sntp" command). The graph plots the offset with the root
+distance as an error band.
+
 .IP citrix
 Tracks the number of active sessions on a Citrix server using
 the "query session" command. An extension for the BBNT client

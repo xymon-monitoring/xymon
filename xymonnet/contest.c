@@ -70,7 +70,7 @@ int snienabled = 0;	/* SNI disabled by default */
 
 static svcinfo_t svcinfo_http  = { "http", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP), 80 };
 static svcinfo_t svcinfo_https = { "https", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP|TCP_SSL), 443 };
-static ssloptions_t default_sslopt = { NULL, SSLVERSION_DEFAULT, NULL };
+static ssloptions_t default_sslopt = { NULL, SSLVERSION_DEFAULT, NULL, NULL };
 
 static time_t sslcert_expiretime(char *timestr)
 {
@@ -210,7 +210,8 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->certinfo = NULL;
 	newtest->certissuer = NULL;
 	newtest->certexpires = 0;
-	newtest->sslrunning = ((newtest->svcinfo->flags & TCP_SSL) ? SSLSETUP_PENDING : 0);
+	/* If ALPN is configured, SSL is also necessarily enabled */
+	newtest->sslrunning = (((newtest->svcinfo->flags & TCP_SSL) || (newtest->svcinfo->flags & TCP_ALPN)) ? SSLSETUP_PENDING : 0);
 	newtest->sslagain = 0;
 
 	newtest->banner = NULL;
@@ -405,8 +406,13 @@ static char *xymon_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 	int len, i;
 	int century=0,year=0,month=0,day=0,hour=0,minute=0,second=0;
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	len=ASN1_STRING_length(tm);
+	asn1_string=(char *)ASN1_STRING_get0_data(tm);
+#else
 	len=tm->length;
 	asn1_string=(char *)tm->data;
+#endif
 
 	result[0] = '\0';
 	if (len < 10) return result;
@@ -558,8 +564,59 @@ static void setup_ssl(tcptest_t *item)
 		SSL_CTX_set_quiet_shutdown(item->sslctx, 1);
 
 		/* Limit set of ciphers, if user wants to */
-		if (item->ssloptions->cipherlist) 
-			SSL_CTX_set_cipher_list(item->sslctx, item->ssloptions->cipherlist);
+		if (item->ssloptions->cipherlist && !SSL_CTX_set_cipher_list(item->sslctx, item->ssloptions->cipherlist)) {
+			char sslerrmsg[256];
+
+			ERR_error_string(ERR_get_error(), sslerrmsg);
+			errprintf("Cannot set cipher list '%s' - IP %s, service %s: %s\n",
+				   item->ssloptions->cipherlist, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
+			item->sslrunning = 0;
+			SSL_CTX_free(item->sslctx);
+			item->errcode = CONTEST_ESSL;
+			return;
+		}
+
+		/* Set ALPN protocols if specified */
+		/* First check service definition for ALPN, then fallback to ssloptions */
+		const char *alpn_protocols = NULL;
+		if (item->svcinfo && item->svcinfo->alpns) {
+			alpn_protocols = item->svcinfo->alpns;
+		} else if (item->ssloptions && item->ssloptions->alpns) {
+			alpn_protocols = item->ssloptions->alpns;
+		}
+		
+		if (alpn_protocols) {
+			char *alpn_copy = strdup(alpn_protocols);
+			char *ptr, *token, *saveptr;
+			unsigned char alpn_buffer[256];
+			int offset = 0;
+			
+			/* Parse comma-separated protocol list */
+			ptr = alpn_copy;
+			while ((token = strtok_r(ptr, ",", &saveptr)) != NULL) {
+				ptr = NULL;
+				
+				/* Remove leading/trailing whitespace */
+				while (*token == ' ' || *token == '\t') token++;
+				int len = strlen(token);
+				while (len > 0 && (token[len-1] == ' ' || token[len-1] == '\t')) {
+					token[len-1] = '\0';
+					len--;
+				}
+				
+				if (len > 0 && (offset + len + 1) < sizeof(alpn_buffer)) {
+					alpn_buffer[offset] = len;
+					memcpy(&alpn_buffer[offset + 1], token, len);
+					offset += len + 1;
+				}
+			}
+			
+			if (offset > 0) {
+				SSL_CTX_set_alpn_protos(item->sslctx, alpn_buffer, offset);
+			}
+			
+			free(alpn_copy);
+		}
 
 		if (item->ssloptions->clientcert) {
 			int status;
@@ -581,6 +638,7 @@ static void setup_ssl(tcptest_t *item)
 				errprintf("Cannot load SSL client certificate/key %s: %s\n", 
 					  item->ssloptions->clientcert, sslerrmsg);
 				item->sslrunning = 0;
+				SSL_CTX_free(item->sslctx);
 				item->errcode = CONTEST_ESSL;
 				return;
 			}
@@ -615,6 +673,8 @@ static void setup_ssl(tcptest_t *item)
 			if (!SSL_CTX_check_private_key(item->sslctx)) {
 				errprintf("Private/public key mismatch for certificate %s\n", item->ssloptions->clientcert);
 				item->sslrunning = 0;
+				SSL_free(item->ssldata);
+				SSL_CTX_free(item->sslctx);
 				item->errcode = CONTEST_ESSL;
 				return;
 			}

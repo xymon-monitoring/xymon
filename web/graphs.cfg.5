@@ -37,6 +37,11 @@ file in the set. "@RRDPARAM@" contains the first word extracted from the
 pattern of files (see e.g. "[memory]" how this is used). "@COLOR@" picks
 a new color for each graph automatically.
 
+For a bundle viewed one service at a time (e.g. "tcp:conn"), FNPATTERN
+capture group 1 must be exactly the service component: showgraph uses it
+both as the legend (@RRDPARAM@) and to select the single service \- see
+"[tcp]", where "^tcp.(.+).rrd" captures "conn" from tcp.conn.rrd.
+
 The remainder of the lines in each definition are passed directly to the
 RRDtool rrd_graph() routine.
 

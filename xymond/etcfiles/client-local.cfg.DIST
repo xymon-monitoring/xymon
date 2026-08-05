@@ -129,3 +129,6 @@ log:/var/log/system.log:10240
 [sco_sv]
 log:/var/adm/syslog:10240
 
+
+# Local additions: any file dropped into the directory below is included
+optional directory @XYMONHOME@/etc/client-local.d

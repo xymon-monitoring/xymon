@@ -35,6 +35,17 @@ to the service. It will then expect a response beginning with "220".
 Any data returned by the service (a so-called "banner") will be recorded 
 and included in the status message.
 .sp
+For services that require ALPN protocol negotiation (such as IMAPS multiplexed 
+by Nginx on the same port as HTTPS), you can define:
+.br
+.sp
+   [imaps443]
+.br
+      options ssl,alpn=imap
+.br
+      port 443
+.br
+.sp
 The full set of commands available for the protocols.cfg file are:
 
 .IP "[NAME]"
@@ -73,6 +84,8 @@ Defines test options. The possible options are
    ssl - service uses SSL so perform an SSL handshake
 .br
    telnet - service is telnet, so exchange telnet options
+.br
+   alpn=protocol1,protocol2 - specify ALPN protocols to negotiate during SSL handshake
 
 
 .SH FILES

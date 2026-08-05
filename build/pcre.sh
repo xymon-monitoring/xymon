@@ -2,7 +2,7 @@
 
 	PCREINC=""
 	PCRELIB=""
-	for DIR in /opt/pcre* /usr/local/pcre* /usr/local /usr/pkg /opt/csw /opt/sfw
+	for DIR in /opt/pcre* /usr/local/pcre* /usr/local /usr/pkg /opt/csw /opt/sfw /opt/homebrew /opt/local
 	do
 		if test -f $DIR/include/pcre2.h
 		then
@@ -14,6 +14,10 @@
 		fi
 
 		if test -f $DIR/lib/libpcre2-8.so
+		then
+			PCRELIB=$DIR/lib
+		fi
+		if test -f $DIR/lib/libpcre2-8.dylib
 		then
 			PCRELIB=$DIR/lib
 		fi

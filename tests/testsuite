@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+# Run every executable regression test under tests/. Exit 0 if at least one
+# test passed and none failed; 1 if any failed; 77 if every test skipped
+# (suite verified nothing -- see the all-skip note near the end). Individual
+# tests follow the tests/README.md contract: exit 0 = pass, 77 = skip,
+# anything else = fail.
+#
+# Output adapts automatically: GitHub Actions log annotations when run under
+# Actions ($GITHUB_ACTIONS=true), plain human-readable output otherwise. Both
+# the CI workflow and a developer run the same code path.
+#
+# Usage: ./tests/testsuite        (from anywhere; resolves the repo root itself)
+#        make test
+#
+set -u
+
+# Resolve the repo root from this script's own location, so it works from any cwd.
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd) || exit 2
+cd "$root" || exit 2
+
+if [ "${GITHUB_ACTIONS:-}" = "true" ]; then gh=1; else gh=0; fi
+
+# Every test is bash by contract (tests/README.md); this runner stays POSIX sh
+# so it can deliver the skip below even where bash is absent. Without this
+# check, each test's exec would fail with rc=127 and count as FAIL -- but a
+# missing interpreter is a missing host dependency, not a regression, so skip
+# the whole suite the same way an individual test skips a missing tool.
+if ! command -v bash >/dev/null 2>&1; then
+	printf 'SKIP: bash not found -- every test requires bash (see tests/README.md)\n' >&2
+	exit 77
+fi
+
+group() {
+	if [ "$gh" = 1 ]; then printf '::group::%s\n' "$1"; else printf '\n----- %s -----\n' "$1"; fi
+}
+endgroup() {
+	if [ "$gh" = 1 ]; then printf '::endgroup::\n'; fi
+}
+errline() {
+	if [ "$gh" = 1 ]; then printf '::error::%s\n' "$1"; else printf 'FAIL: %s\n' "$1"; fi
+}
+
+# Discover executable *.sh under tests/. Sourced helpers (tests/lib/) and shared
+# data (tests/fixtures/) are not +x, so they are not picked up -- see README.
+# This runner has no .sh extension, so it never discovers itself.
+#
+# The explicit lib/ and fixtures/ excludes back up the exec-bit rule on
+# checkouts where every file reads as executable (FAT/NTFS mounts, trees with
+# core.fileMode=false): there, a shebang-less helper like lib/assert.sh would
+# otherwise be discovered, run as sh, define its functions, exit 0 -- and count
+# as a pass that verified nothing.
+tests=$(find tests -type f -name '*.sh' -perm -u+x \
+	! -path 'tests/lib/*' ! -path 'tests/fixtures/*' | sort)
+
+# Zero discovered tests is a failure, not a quiet success: the runner ships
+# alongside the tests, so an empty result means something is wrong -- lost
+# executable bits, a packaging omission, or a broken discovery path -- and
+# treating it as green would let CI go green while running nothing.
+if [ -z "$tests" ]; then
+	errline "No executable tests found under tests/ (lost +x bit, packaging omission, or broken discovery)"
+	exit 1
+fi
+
+pass=0; skip=0; fail=0; failed=''
+# Iterate line-by-line rather than `for t in $tests`: unquoted word-splitting
+# breaks on any path containing a space (find emits newline-separated paths, but
+# the default IFS splits on spaces and tabs too). The here-doc keeps the loop in
+# this shell -- not a `| while` subshell -- so the counters below survive it.
+while IFS= read -r t; do
+	[ -n "$t" ] || continue
+	group "$t"
+	"./$t"
+	rc=$?
+	case $rc in
+		0)  printf '  ok\n';           pass=$((pass + 1)) ;;
+		77) printf '  skip (rc=77)\n'; skip=$((skip + 1)) ;;
+		*)  errline "$t FAILED (rc=$rc)"
+		    fail=$((fail + 1))
+		    failed="${failed}  - ${t} (rc=${rc})
+" ;;
+	esac
+	endgroup
+done <<EOF
+$tests
+EOF
+
+printf '\n----- summary -----\n'
+printf 'passed:  %d\n' "$pass"
+printf 'skipped: %d\n' "$skip"
+printf 'failed:  %d\n' "$fail"
+
+if [ "$fail" -gt 0 ]; then
+	printf '\nfailing tests:\n%s' "$failed"
+	exit 1
+fi
+
+# Every discovered test skipped means the suite exercised nothing: in a tree
+# that ships tests/ without the code those tests guard (a packaging omission,
+# or an autopkgtest run against an installed package with no source), each test
+# hits an absent precondition and skips. Reporting exit 0 here is a false green
+# -- CI/autopkgtest would record a pass while nothing was actually verified.
+# Propagate the all-skip upward as a skip (exit 77, the same convention the
+# individual tests use; see skip() in tests/lib/assert.sh) so the layer above
+# sees "skipped", not "passed". The empty-discovery case already exited above,
+# so reaching here with pass=0 and fail=0 means skip>0.
+if [ "$pass" -eq 0 ]; then
+	printf 'SKIP: every test skipped -- suite verified nothing (tests/ shipped without the code under test?)\n' >&2
+	exit 77
+fi
+exit 0

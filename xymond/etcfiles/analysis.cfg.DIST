@@ -178,7 +178,7 @@
 #             Example: Go red if the text "I/O error" or "read error" appears.
 #                 LOG %/var/(adm|log)/messages %(I/O|read).error COLOR=red
 #
-#    FILE filename [things to check] [color] [TRACK]
+#    FILE filename [things to check] [color] [OPTIONAL|IFEXIST] [TRACK]
 #             NB: The files you wish to monitor must be listed in a "file:..."
 #             entry in the client-local.cfg file, in order for the client to 
 #             report any data about them.
@@ -218,8 +218,11 @@
 #             - "MD5=md5sum", "SHA1=sha1sum", and so on for RMD160, SHA256, SHA512, 
 #               SHA224, and SHA384 trigger a warning if the file checksum using the 
 #               specified message digest algorithm does not match the one configured here. 
-#               Note: The "file" entry in the client-local.cfg file must specify which 
+#               Note: The "file" entry in the client-local.cfg file must specify which
 #               algorithm to use as that is the only one that will be sent.
+#             - "OPTIONAL" skips this check entirely if the file does not exist
+#               (no warning is raised for the missing file). "IFEXIST" is an
+#               accepted alias, for compatibility with existing configurations.
 #
 #             "TRACK" causes the size of this file to be tracked in an RRD file, and
 #             shown on the graph on the "files" display.
@@ -349,14 +352,21 @@
 
 
 CLASS=linux
-	# Ignore some usually uninteresting tmpfs mounts.
+	# Ignore some usually uninteresting tmpfs mounts. The Linux client reports
+	# tmpfs by default; /run and friends are RAM-backed scratch space sized at
+	# total RAM, so suppress them here rather than have them clutter the report.
+	# /dev/shm is intentionally left monitored (a full one is a real incident).
 	DISK	/dev IGNORE
 	DISK	/lib/init/rw IGNORE
 	DISK	/sys/fs/cgroup IGNORE
+	DISK	/run IGNORE
+	DISK	/run/lock IGNORE
 	DISK	%^/run/user/\d+$ IGNORE
 	INODE	/dev IGNORE
 	INODE	/lib/init/rw IGNORE
 	INODE	/sys/fs/cgroup IGNORE
+	INODE	/run IGNORE
+	INODE	/run/lock IGNORE
 	INODE	%^/run/user/\d+$ IGNORE
 
 
@@ -379,3 +389,6 @@ DEFAULT
 	MEMSWAP 50 80
 	MEMACT  90 97
 
+
+# Local additions: any file dropped into the directory below is included
+optional directory @XYMONHOME@/etc/analysis.d

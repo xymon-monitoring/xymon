@@ -2,7 +2,7 @@
 
 	echo "Checking for fping ..."
 
-	for DIR in / /usr /usr/local /opt /usr/pkg /opt/csw
+	for DIR in / /usr /usr/local /opt /usr/pkg /opt/csw /opt/homebrew /opt/local
 	do
 		if test "$DIR" = "/"; then DIR=""; fi
 
