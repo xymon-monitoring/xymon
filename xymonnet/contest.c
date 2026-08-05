@@ -564,8 +564,17 @@ static void setup_ssl(tcptest_t *item)
 		SSL_CTX_set_quiet_shutdown(item->sslctx, 1);
 
 		/* Limit set of ciphers, if user wants to */
-		if (item->ssloptions->cipherlist) 
-			SSL_CTX_set_cipher_list(item->sslctx, item->ssloptions->cipherlist);
+		if (item->ssloptions->cipherlist && !SSL_CTX_set_cipher_list(item->sslctx, item->ssloptions->cipherlist)) {
+			char sslerrmsg[256];
+
+			ERR_error_string(ERR_get_error(), sslerrmsg);
+			errprintf("Cannot set cipher list '%s' - IP %s, service %s: %s\n",
+				   item->ssloptions->cipherlist, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
+			item->sslrunning = 0;
+			SSL_CTX_free(item->sslctx);
+			item->errcode = CONTEST_ESSL;
+			return;
+		}
 
 		/* Set ALPN protocols if specified */
 		/* First check service definition for ALPN, then fallback to ssloptions */
@@ -629,6 +638,7 @@ static void setup_ssl(tcptest_t *item)
 				errprintf("Cannot load SSL client certificate/key %s: %s\n", 
 					  item->ssloptions->clientcert, sslerrmsg);
 				item->sslrunning = 0;
+				SSL_CTX_free(item->sslctx);
 				item->errcode = CONTEST_ESSL;
 				return;
 			}
@@ -663,6 +673,8 @@ static void setup_ssl(tcptest_t *item)
 			if (!SSL_CTX_check_private_key(item->sslctx)) {
 				errprintf("Private/public key mismatch for certificate %s\n", item->ssloptions->clientcert);
 				item->sslrunning = 0;
+				SSL_free(item->ssldata);
+				SSL_CTX_free(item->sslctx);
 				item->errcode = CONTEST_ESSL;
 				return;
 			}
