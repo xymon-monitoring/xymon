@@ -1173,6 +1173,25 @@ Note that this may depend on your particular implementation
 of the regex functions found in your C library. Thanks to 
 Charles Goyard for this tip.
 
+For example, the complete content-check tag is:
+.br
+   cont;https://example.com/;All[[:space:]]is[[:space:]]OK
+.br
+The regular expression follows the second semicolon directly and is
+written without surrounding slash delimiters.
+To report the result in a custom column and match "OK", optionally
+followed by a line ending:
+.br
+   cont=health;https://example.com/health;^OK[[:cntrl:]]*$
+.br
+This reports in the "health" column and rejects additional printable text.
+For a byte-exact response check, use the message-digest form described above.
+For a more advanced match, grouping and alternation can accept multiple values:
+.br
+   cont=api;https://example.com/api;status=(ok|ready)
+.br
+This matches either "status=ok" or "status=ready" in the response.
+
 Note: If you are migrating from the "cont2.sh" script,
 you must change the '_' used as wildcards by cont2.sh 
 into '.' which is the regular-expression wildcard character.
