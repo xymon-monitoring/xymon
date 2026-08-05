@@ -25,6 +25,9 @@ directory given by the XYMONHISTLOGS environment is used.
 Sets the minimum percentage of free filesystem space on the $XYMONHISTLOGS
 directory. If there is less than N% free space, xymond_history will
 not save the detailed status-logs.
+N is a percentage between 0 and 100; 0 disables the free-space check.
+The value must be a plain integer; anything else (including a "%"
+suffix) falls back to the default. Out-of-range values are clamped.
 Default: 5
 
 .IP "\fB\-\-pidfile\fR=\fIFILENAME\fR"
