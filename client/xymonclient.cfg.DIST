@@ -68,6 +68,43 @@ LOGFETCHOPTS=""
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
 
 
+# Filesystem reporting (macOS client) -- used by xymonclient-darwin.sh. Same
+# three variables as above, matched on mount ATTRIBUTES rather than filesystem
+# type: macOS df has no "-t", and type would not help anyway, since the sealed
+# root, the system helper volumes and the volume holding every user file are
+# all "apfs". Both variables therefore accept attributes as well as types.
+#
+# By default it drops "nobrowse" and "read-only" mounts -- devfs, the autofs
+# map, the system helpers and the sealed root, none of which carries a
+# meaningful capacity signal -- and keeps every other local mount. The data
+# volume, which Apple flags "root data", is exempt and always reported. The
+# inode report also skips apfs, whose ifree comes from the shared container
+# and never signals exhaustion.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES: types or attributes to surface. Empty by
+#    default. Naming an attribute is the only way to switch off a default drop:
+#      "nobrowse"  -- report volumes hidden from the Finder. WARNING: this
+#                     switches the drop off entirely, so devfs (/dev) and the
+#                     autofs map come back too, both permanently 100% full.
+#                     Pair it with XYMONCLIENT_FS_EXCLUDE_TYPES="devfs autofs".
+#
+# XYMONCLIENT_FS_EXCLUDE_TYPES: types or attributes to exclude on top of the
+#    defaults. Empty by default. Wins over XYMONCLIENT_FS_INCLUDE_TYPES and over
+#    the "root data" exemption:
+#      "lifs fusefs"  -- drop external FAT/exFAT/NTFS media (macOS Ventura and
+#                     later mount these through LiveFiles as "lifs") and macFUSE
+#                     volumes such as NTFS-3G. Both are kept by default.
+#    Beware attributes most mounts carry: excluding "local" drops everything.
+#
+# XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) reports only mounts flagged
+#    "local", hiding nfs and smbfs; "no" surfaces them. The warning above about
+#    stale remote mounts wedging df applies here too.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES=""
+# XYMONCLIENT_FS_EXCLUDE_TYPES="lifs fusefs"
+# XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
+
+
 # Local Mode (Only) Options
 #
 # Running the Xymon client in local-config mode will cause threshold evaluation to
