@@ -91,9 +91,13 @@ LOGFETCHOPTS=""
 # XYMONCLIENT_FS_EXCLUDE_TYPES: types or attributes to exclude on top of the
 #    defaults. Empty by default. Wins over XYMONCLIENT_FS_INCLUDE_TYPES and over
 #    the "root data" exemption:
-#      "lifs fusefs"  -- drop external FAT/exFAT/NTFS media (macOS Ventura and
-#                     later mount these through LiveFiles as "lifs") and macFUSE
-#                     volumes such as NTFS-3G. Both are kept by default.
+#      "lifs"      -- drop external FAT/exFAT/NTFS media (macOS Ventura and
+#                     later mount these through LiveFiles as "lifs"). They are
+#                     local disks, so they are reported by default.
+#      "fusefs"    -- drop macFUSE volumes such as NTFS-3G. Only useful for
+#                     volumes mounted "-o local", or with DF_LOCAL_ONLY="no":
+#                     macFUSE marks its volumes non-local by default, so the
+#                     local filter already drops them.
 #    Beware attributes most mounts carry: excluding "local" drops everything.
 #
 # XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) reports only mounts flagged
@@ -101,7 +105,7 @@ LOGFETCHOPTS=""
 #    stale remote mounts wedging df applies here too.
 #
 # XYMONCLIENT_FS_INCLUDE_TYPES=""
-# XYMONCLIENT_FS_EXCLUDE_TYPES="lifs fusefs"
+# XYMONCLIENT_FS_EXCLUDE_TYPES="lifs"
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
 
 
