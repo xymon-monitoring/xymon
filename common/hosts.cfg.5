@@ -1179,11 +1179,13 @@ For example, the complete content-check tag is:
 .br
 The regular expression follows the second semicolon directly and is
 written without surrounding slash delimiters.
-To report the result in a custom column and require an exact response:
+To report the result in a custom column and match "OK", optionally
+followed by a line ending:
 .br
-   cont=health;https://example.com/health;^OK$
+   cont=health;https://example.com/health;^OK[[:cntrl:]]*$
 .br
-This reports in the "health" column and matches only the response "OK".
+This reports in the "health" column and rejects additional printable text.
+For a byte-exact response check, use the message-digest form described above.
 For a more advanced match, grouping and alternation can accept multiple values:
 .br
    cont=api;https://example.com/api;status=(ok|ready)
