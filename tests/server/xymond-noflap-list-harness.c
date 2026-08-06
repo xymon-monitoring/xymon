@@ -12,14 +12,10 @@
  * stored tag permanently -- so every later status update saw only the first
  * test.
  *
- * Why this mirrors the function instead of calling it: isset_noflap() is
- * static in xymond/xymond.c and xymond has no library form, so it cannot be
- * linked here. The copy below is kept identical to the real one, and the
- * companion shell test asserts at the source level that xymond.c still
- * copies before tokenizing -- that source assertion, not this file, is what
- * stops the two drifting apart. What this file adds is proof that the
- * copy-first logic actually produces the right answers on real host records
- * loaded through the real lib/loadhosts.c.
+ * The companion shell test prepends xymond/xymond.c's real static
+ * isset_noflap() implementation when it builds the harness. This file adds
+ * only the assertions that drive it against real host records loaded through
+ * the real lib/loadhosts.c.
  *
  * The list assertions deliberately share one host and run in sequence: the
  * old defect only appeared on the SECOND and later evaluations, because the
@@ -27,12 +23,6 @@
  * where isset_noflap() runs once per incoming status message. A test using
  * a fresh host per test name would have passed even before the fix.
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "libxymon.h"
-
 static int failures = 0;
 
 static void expect(const char *label, int cond, const char *detail)
@@ -41,33 +31,6 @@ static void expect(const char *label, int cond, const char *detail)
 		fprintf(stderr, "%s: %s\n", label, detail);
 		failures++;
 	}
-}
-
-/* Kept identical to xymond/xymond.c's isset_noflap(), minus its dbgprintf. */
-static int isset_noflap(void *hinfo, char *testname, char *hostname)
-{
-	char *tok, *dstr, *dbuf;
-	int keylen, listed;
-
-	dstr = xmh_item(hinfo, XMH_NOFLAP);
-	if (!dstr) return 0;
-
-	if (strcmp(dstr, "NOFLAP") == 0) return 1;
-
-	if (*dstr == '=') dstr++;
-
-	dbuf = strdup(dstr);
-	if (!dbuf) return 0;
-
-	keylen = strlen(testname);
-	tok = strtok(dbuf, ",");
-	while (tok && (strncmp(testname, tok, keylen) != 0)) tok = strtok(NULL, ",");
-	listed = (tok != NULL);
-	xfree(dbuf);
-
-	if (!listed) return 0;
-
-	return 1;
 }
 
 int main(int argc, char *argv[])

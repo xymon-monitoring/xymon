@@ -22,16 +22,10 @@
 # case mirrors flag semantics for it, so isset_noflap() short-circuits
 # before tokenizing.
 #
-# Two halves, because isset_noflap() is static in xymond/xymond.c and xymond
-# has no library form to link against:
-#   1. a source assertion that xymond.c still copies before tokenizing --
-#      this is what actually guards the fix in the real file;
-#   2. a C harness (xymond-noflap-list-harness.c) that keeps an identical
-#      copy of the function and drives it against real host records loaded
-#      through the real lib/loadhosts.c, proving the copy-first logic gives
-#      the right answers and leaves the record intact.
-# The source assertion is what keeps the harness's copy from drifting from
-# the original.
+# Since isset_noflap() is static and xymond has no library form, the test
+# extracts the real function from xymond.c into a generated translation unit,
+# then appends assertions that drive it against real host records loaded
+# through the real lib/loadhosts.c.
 #
 # Not fixed here, and deliberately left alone: xymongen/loaddata.c tokenizes
 # the XMH_COMPACT value in place the same way. No user-visible symptom has
@@ -48,22 +42,8 @@ here=$(dirname "$0")
 XYMOND_C="$ROOT/xymond/xymond.c"
 [ -f "$XYMOND_C" ] || skip "xymond/xymond.c not present in this checkout"
 
-# --- 1. Source assertion: the real isset_noflap() must not hand the pointer
-# xmh_item() returned straight to strtok(). Scoped to the function body so an
-# unrelated strtok() elsewhere in xymond.c cannot mask a regression here.
 body=$(awk '/^static int isset_noflap/,/^}/' "$XYMOND_C")
 [ -n "$body" ] || fail "could not locate isset_noflap() in xymond/xymond.c"
-
-assert_contains 'strdup(' "$body" \
-	"isset_noflap() must copy the XMH_NOFLAP value before tokenizing it -- xmh_item() \
-returns a pointer into the host record's own tag buffer, and strtok() would truncate \
-the stored noflap list at its first comma"
-
-assert_not_contains 'strtok(dstr' "$body" \
-	"isset_noflap() still tokenizes the xmh_item() result directly (strtok(dstr, ...)), \
-which corrupts the host record's noflap list"
-
-# --- 2. Behavioural half.
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 
@@ -75,6 +55,14 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
+ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
+
+{
+	printf '#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n'
+	printf '#include "libxymon.h"\n'
+	printf '%s\n' "$body"
+	cat "$here/xymond-noflap-list-harness.c"
+} > "$work/harness.c"
 
 # Tags are spelled lowercase here because that is what hosts.cfg(5)
 # documents ("noflap[=test1,test2,...]"), even though the key table in
@@ -86,8 +74,8 @@ cat > "$work/hosts.cfg" <<'EOF'
 EOF
 
 "$CC" -I"$ROOT/include" -I"$ROOT/lib" -o "$work/harness" \
-	"$here/xymond-noflap-list-harness.c" "$ROOT/lib/libxymoncomm.a" \
-	-lssl -lcrypto 2>"$work/cc.log" \
+	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" \
+	$ssllibs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 "$work/harness" "$work/hosts.cfg" 2>"$work/stderr.log" \
