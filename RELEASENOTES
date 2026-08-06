@@ -35,9 +35,7 @@ once at startup. Change the SNMPv3 authentication to SHA1 to silence it.
 The host attribute previously exposed as XMH_MULTIHOMED is now
 XMH_FLAG_MULTIHOMED, the name xymon-xmh(5) has always documented. Scripts,
 web templates and xymondboard or hostinfo field selectors using the old name
-must be updated. These names also travel between xymond and clients that pull
-host information, and an unrecognised field is dropped without a warning, so
-this attribute is missing until both ends are upgraded.
+must be updated.
 
 
 Changes for 4.3.30
