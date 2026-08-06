@@ -16,31 +16,31 @@ purposes, e.g. to rename or delete hosts, or to disable
 hosts that are down for longer periods of time.
 
 .SH OPTIONS AND PARAMETERS
-.IP "\-\-debug"
+.IP "\fB\-\-debug\fR"
 Enable debugging. This prints out details about how the
 connection to the Xymon server is being established.
 
-.IP "\-\-proxy=http://PROXYSERVER:PROXYPORT/"
+.IP "\fB\-\-proxy=http://PROXYSERVER:PROXYPORT/\fR"
 When sending the status messages via HTTP, use this server
 as an HTTP proxy instead of connecting directly to the Xymon
 server.
 
-.IP "\-\-timeout=N"
+.IP "\fB\-\-timeout=N\fR"
 Specifies the timeout for connecting to the Xymon server, in
 seconds. The default is 5 seconds.
 
-.IP "\-\-response"
+.IP "\fB\-\-response\fR"
 The xymon utility normally knows when to expect a response 
 from the server, so this option is not required. However,
 it will cause any response from the server to be displayed.
 
-.IP "\-\-merge"
+.IP "\fB\-\-merge\fR"
 Merge the command line message text with the data provided
 on standard input, and send the result to the Xymon server.
 The message text provided on the command line becomes the
 first line of the merged message.
 
-.IP "RECIPIENT"
+.IP "\fBRECIPIENT\fR"
 The \fBRECIPIENT\fR parameter defines which server receives
 the message. If RECIPIENT is given as "0.0.0.0", then the
 message is sent to all of the servers listed in the XYMSERVERS
@@ -59,7 +59,7 @@ CGI tool (included in Xymon) must be installed on the webserver
 for the HTTP transport to work.
 .br
 
-.IP MESSAGE
+.IP "\fBMESSAGE\fR"
 The \fBmessage\fR parameter is the message to be sent across
 to the Xymon server. Messages must be enclosed in quotes,
 but by doing so they can span multiple lines. The maximum size
@@ -143,9 +143,9 @@ status of this test to be listed as "blue" on the Xymon server,
 and no alerts for this host/test will be generated. If DURATION is
 given as a number followed by s/m/h/d, it is interpreted as being
 in seconds/minutes/hours/days respectively.
-.br
+.BR
 To disable a test until it becomes OK, use "\-1" as the DURATION.
-.br
+.BR
 To disable all tests for a host, use an asterisk "*" for TESTNAME.
 
 .IP "enable HOSTNAME.TESTNAME"
@@ -362,7 +362,7 @@ If the "fields" parameter is omitted, a default set of
 hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1
 is used.
 
-.IP "xymondxboard"
+.IP "\fBxymondxboard\fR"
 Retrieves an XML string with the summary of all status logs
 as for the "xymondboard" command.
 
@@ -396,18 +396,18 @@ normal client data.
 Retrieves the current raw client message last sent by HOSTNAME. The optional
 "section" filter is used to select specific sections of the client data.
 
-.IP "ping"
+.IP "\fBping\fR"
 Attempts to contact the Xymon server. If successful, the Xymon server version ID
 is reported.
 
-.IP "pullclient"
+.IP "\fBpullclient\fR"
 This message is used when fetching client data via the "pull" mechanism implemented by
 .I xymonfetch(8)
 and
 .I msgcache(8)
 for clients that cannot connect directly to the Xymon server.
 
-.IP "ghostlist"
+.IP "\fBghostlist\fR"
 Report a list of \fBghost\fR clients seen by the Xymon server. Ghosts are systems
 that report data to the Xymon server, but are not listed in the hosts.cfg file.
 

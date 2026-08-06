@@ -31,11 +31,11 @@ for easier use by scripts that want to check if the current
 time is inside or outside the expected uptime window.
 
 .SH OPTIONS
-.IP "\-\-noextras"
+.IP "\fB\-\-noextras\fR"
 Remove the "testip", "dialup", "INSIDESLA" and "OUTSIDESLA" tags 
 from the output.
 
-.IP "\-\-test\-untagged"
+.IP "\fB\-\-test\-untagged\fR"
 When using the XYMONNETWORK environment variable to test
 only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any "NET:x" tag.
@@ -46,7 +46,7 @@ With this option, hosts with no NET: tag are included
 in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 
-.IP "\-\-no\-down[=TESTNAME]"
+.IP "\fB\-\-no\-down[=TESTNAME]\fR"
 xymongrep will query the Xymon server for the current
 status of the "conn" test, and if TESTNAME is specified
 also for the current state of the specified test. If
@@ -56,15 +56,15 @@ host is ignored and will not be included in the output.
 This can be used to ignore hosts that are down, or hosts
 where the custom test is disabled.
 
-.IP "\-\-web"
+.IP "\fB\-\-web\fR"
 Search the hosts.cfg file following include statements as a
 Xymon web-server would.
 
-.IP "\-\-net"
+.IP "\fB\-\-net\fR"
 Search the hosts.cfg file following include statements as 
 when running xymonnet.
 
-.IP "\-\-loadhostsfromxymond"
+.IP "\fB\-\-loadhostsfromxymond\fR"
 xymongrep will normally attempt to load the HOSTSCFG file
 by itself when searching for lines to transmit. If the file
 is unreadable, it will exit out. With this option, it will
@@ -114,17 +114,17 @@ Instead of the grep, we will use xymongrep. It then becomes
 which is simpler, less error-prone and more efficient.
 
 .SH ENVIRONMENT VARIABLES
-.IP XYMONNETWORK
+.IP "\fBXYMONNETWORK\fR"
 If set, xymongrep outputs only lines from hosts.cfg that have
 a matching NET:$XYMONNETWORK setting.
 .sp
-.IP HOSTSCFG
+.IP "\fBHOSTSCFG\fR"
 Filename for the Xymon
 .I hosts.cfg(5)
 file.
 
 .SH FILES
-.IP $HOSTSCFG
+.IP "\fB$HOSTSCFG\fR"
 The Xymon hosts.cfg file
 
 .SH "SEE ALSO"

@@ -24,7 +24,7 @@ if the service no longer has a valid status-report logged in the
 current Xymon status.
 
 .SH OPTIONS
-.IP "\-\-cutoff=TIME"
+.IP "\fB\-\-cutoff=TIME\fR"
 This defines the cutoff-time when processing the history logs. Entries
 dated before this time are discarded. TIME is specified as the number
 of seconds since the beginning of the Epoch. This is easily generated 
@@ -36,60 +36,60 @@ entries prior to Oct. 1st 2004:
 .sp
     trimhistory \-\-cutoff=`date +%s \-\-date="1 Oct 2004"`
 
-.IP "\-\-outdir=DIRECTORY"
+.IP "\fB\-\-outdir=DIRECTORY\fR"
 Normally, files in the XYMONHISTDIR directory are replaced. This option causes
 trimhistory to save the shortened history logfiles to another directory,
 so you can verify that the operation works as intended. The output directory
 must exist.
 
-.IP \-\-drop
+.IP "\fB\-\-drop\fR"
 Causes trimhistory to delete files from hosts that are not listed in the
 .I hosts.cfg(5)
 file.
 
-.IP \-\-dropsvcs
+.IP "\fB\-\-dropsvcs\fR"
 Causes trimhistory to delete files from services that are not currently
 tracked by Xymon. Normally these files would be left untouched if only
 the host exists.
 
-.IP \-\-droplogs
+.IP "\fB\-\-droplogs\fR"
 Process the XYMONHISTLOGS directory also, and delete status-logs from events
 prior to the cut-off time. Note that this can dramatically increase the
 processing time, since there are often lots and lots of files to process.
 
-.IP "\-\-progress[=N]"
+.IP "\fB\-\-progress[=N]\fR"
 This will cause trimhistory to output a status line for every N history
 logs or status-log collections it processes, to indicate how far it has
 progressed. The default setting for N is 100.
 
-.IP "\-\-env=FILENAME"
+.IP "\fB\-\-env=FILENAME\fR"
 Loads the environment from FILENAME before executing trimhistory.
 
-.IP \-\-debug
+.IP "\fB\-\-debug\fR"
 Enable debugging output.
 
 
 .SH FILES
-.IP "$XYMONHISTDIR/allevents"
+.IP "\fB$XYMONHISTDIR/allevents\fR"
 The eventlog of all events that have happened in Xymon.
 
-.IP "$XYMONHISTDIR/HOSTNAME"
+.IP "\fB$XYMONHISTDIR/HOSTNAME\fR"
 The per-host eventlogs.
 
-.IP "$XYMONHISTDIR/HOSTNAME.SERVICE"
+.IP "\fB$XYMONHISTDIR/HOSTNAME.SERVICE\fR"
 The per-service eventlogs.
 
-.IP "$XYMONHISTLOGS/*/*"
+.IP "\fB$XYMONHISTLOGS/*/*\fR"
 The historical status-logs.
 
 .SH "ENVIRONMENT VARIABLES"
-.IP XYMONHISTDIR
+.IP "\fBXYMONHISTDIR\fR"
 The directory holding all history logs.
 
-.IP XYMONHISTLOGS
+.IP "\fBXYMONHISTLOGS\fR"
 The top-level directory for the historical status-log collections.
 
-.IP HOSTSCFG
+.IP "\fBHOSTSCFG\fR"
 The location of the hosts.cfg file, holding the list of currently 
 known hosts in Xymon.
 

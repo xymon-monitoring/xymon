@@ -31,21 +31,21 @@ with xymongen, you access it via the URL /xymon/help/findhost.html.
 Loads the environment from FILENAME before executing the CGI.
 
 .SH FILES
-.IP "$XYMONHOME/web/findhost_header"
+.IP "\fB$XYMONHOME/web/findhost_header\fR"
 HTML header file for the generated web page
 
-.IP "$XYMONHOME/web/findhost_footer"
+.IP "\fB$XYMONHOME/web/findhost_footer\fR"
 HTML footer file for the generated web page
 
-.IP "$XYMONHOME/web/findhost_form"
+.IP "\fB$XYMONHOME/web/findhost_form\fR"
 Query form displayed when findhost.cgi is called with no parameters.
 
 .SH "ENVIRONMENT VARIABLES"
-.IP HOSTSCFG
+.IP "\fBHOSTSCFG\fR"
 findhost.cgi uses the HOSTSCFG environment variable to find the
 hosts.cfg file listing all known hosts and their page locations.
 
-.IP XYMONHOME
+.IP "\fBXYMONHOME\fR"
 Used to locate the template files for the generated web pages.
 
 .SH "SEE ALSO"

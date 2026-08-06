@@ -19,48 +19,48 @@ provided in versions of Xymon prior to version 4.2. Although the
 that You switch to the newer Critical Systems view provided by this CGI.
 
 .SH OPTIONS
-.IP "\-\-acklevel=NUMBER"
+.IP "\fB\-\-acklevel=NUMBER\fR"
 Sets the acknowledgment level for acknowledgments sent via the
 .I ackinfo.cgi(1)
 page. Note that this may be overridden by the configuration of the
 ackinfo.cgi utility.
 
-.IP "\-\-tooltips"
+.IP "\fB\-\-tooltips\fR"
 Hide the host description in a "tooltip", i.e. it will be shown when your
 mouse hovers over the hostname on the webpage. This saves space on the 
 display so there is more room for the status columns.
 
-.IP "\-\-hffile=PREFIX"
+.IP "\fB\-\-hffile=PREFIX\fR"
 Define the header/footer files used when building the webpage. The actual
 files used will be PREFIX_header and PREFIX_footer found in the ~xymon/server/web/ 
 directory. Default: critical.
 
-.IP "\-\-env=FILENAME"
+.IP "\fB\-\-env=FILENAME\fR"
 Loads the environment defined in FILENAME before executing the CGI script.
 
-.IP "\-\-area=NAME"
+.IP "\fB\-\-area=NAME\fR"
 Load environment variables for a specific area. NB: if used,
 this option must appear before any \-\-env=FILENAME option.
 
-.IP "\-\-debug"
+.IP "\fB\-\-debug\fR"
 Enables debugging output.
 
-.IP "\-\-config=FILENAME"
+.IP "\fB\-\-config=FILENAME\fR"
 Use FILENAME as the configuration file for the Critical 
 Systems information. The default is to load this from
 $XYMONHOME/etc/critical.cfg
 
-.IP "\-\-config=ID:FILENAME
+.IP "\fB\-\-config=ID:FILENAME\fR"
 Allows the use of multiple Critical Systems configuration files
 on a single webpage. "ID" is a text that will be shown on the web
 page prior to the critical systems from FILENAME. This option can be
 repeated to include critical systems from multiple configurations.
 
 .SH "ENVIRONMENT VARIABLES"
-.IP XYMONHOME
+.IP "\fBXYMONHOME\fR"
 Used to locate the template files for the generated web pages.
 
-.IP QUERY_STRING
+.IP "\fBQUERY_STRING\fR"
 Contains the parameters for the CGI script.
 
 .SH "SEE ALSO"

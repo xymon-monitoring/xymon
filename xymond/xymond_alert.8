@@ -18,25 +18,25 @@ file. This file holds the definition of rules and recipients,
 that determine who gets alerts, how often, for what servers etc.
 
 .SH OPTIONS
-.IP "\-\-config=FILENAME"
+.IP "\fB\-\-config=FILENAME\fR"
 Sets the filename for the 
 .I alerts.cfg
 file. The default value is "etc/alerts.cfg" below the Xymon
 server directory.
 
-.IP "\-\-dump\-config"
+.IP "\fB\-\-dump\-config\fR"
 Dumps the configuration after parsing it. May be useful to track
 down problems with configuration file errors.
 
-.IP "\-\-checkpoint\-file=FILENAME"
+.IP "\fB\-\-checkpoint\-file=FILENAME\fR"
 File where the current state of the xymond_alert module is saved. 
 When starting up, xymond_alert will also read this file to restore
 the previous state.
 
-.IP "\-\-checkpoint\-interval=N"
+.IP "\fB\-\-checkpoint\-interval=N\fR"
 Defines how often (in seconds) the checkpoint-file is saved.
 
-.IP "\-\-cfid"
+.IP "\fB\-\-cfid\fR"
 If this option is present, alert messages will include a line with
 "cfid:N" where N is the linenumber in the alerts.cfg file that
 caused this message to be sent. This can be useful to track down
@@ -64,12 +64,12 @@ The TIMESTRING parameter is the time-of-day for the alert, expressed as an
 absolute time in the epoch format (seconds since Jan 1 1970). This is
 easily obtained with the GNU date utility using the "+%s" output format.
 
-.IP "\-\-trace=FILENAME"
+.IP "\fB\-\-trace=FILENAME\fR"
 Send trace output to FILENAME, This allows for more detailed
 analysis of how alerts trigger, without having the full debugging
 enabled.
 
-.IP "\-\-debug"
+.IP "\fB\-\-debug\fR"
 Enable debugging output.
 
 .SH HOW XYMON DECIDES WHEN TO SEND ALERTS
@@ -115,13 +115,13 @@ process starts all over again.
 
 
 .SH ENVIRONMENT
-.IP MAIL
+.IP "\fBMAIL\fR"
 The first part of a command line used to send out an e-mail with a 
 subject, typically set to "/usr/bin/mail \-s" . xymond_alert will add
 the subject and the mail recipients to form the command line used
 for sending out email alerts.
 
-.IP MAILC
+.IP "\fBMAILC\fR"
 The first part of a command line used to send out an e-mail without
 a subject. Typically this will be "/usr/bin/mail". xymond_alert will
 add the mail recipients to form the command line used for sending

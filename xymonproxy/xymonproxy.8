@@ -34,7 +34,7 @@ to be delayed for up to 0.25 seconds before being sent off
 to the Xymon server.
 
 .SH OPTIONS
-.IP "\-\-server=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
+.IP "\fB\-\-server=SERVERIP[:PORT][,SERVER2IP[:PORT]]\fR"
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
 standard Xymon port number. If you have setup the normal
@@ -46,17 +46,17 @@ sending their data via this proxy, note that the clients will
 receive their configuration data from the LAST of the servers
 listed here.  This option is required.
 
-.IP "\-\-listen=LOCALIP[:PORT]"
+.IP "\fB\-\-listen=LOCALIP[:PORT]\fR"
 Specifies the IP-adress where xymonproxy listens for incoming 
 connections. By default, xymonproxy listens on all IP-addresses
 assigned to the host. If no portnumber is given, port 1984
 will be used.
 
-.IP "\-\-timeout=N"
+.IP "\fB\-\-timeout=N\fR"
 Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
 
-.IP "\-\-report=[PROXYHOSTNAME.]SERVICE"
+.IP "\fB\-\-report=[PROXYHOSTNAME.]SERVICE\fR"
 If given, this option causes xymonproxy to send a status report
 every 5 minutes to the Xymon server about itself. If you
 have set the standard Xymon environment, you can use
@@ -66,31 +66,31 @@ is the $MACHINE environment variable, i.e. the hostname of the
 server running xymonproxy. See REPORT OUTPUT below for an 
 explanation of the report contents.
 
-.IP "\-\-lqueue=N"
+.IP "\fB\-\-lqueue=N\fR"
 Size of the listen-queue where incoming connections can
 queue up before being processed. This should be large to
 accommodate bursts of activity from clients. Default: 512.
 
-.IP "\-\-daemon"
+.IP "\fB\-\-daemon\fR"
 Run in daemon mode, i.e. detach and run as a background process.
 This is the default.
 
-.IP "\-\-no\-daemon"
+.IP "\fB\-\-no\-daemon\fR"
 Runs xymonproxy as a foreground process.
 
-.IP "\-\-pidfile=FILENAME"
+.IP "\fB\-\-pidfile=FILENAME\fR"
 Specifies the location of a file containing the process-ID 
 of the xymonproxy daemon process. Default: /var/run/xymonproxy.pid.
 
-.IP "\-\-logfile=FILENAME"
+.IP "\fB\-\-logfile=FILENAME\fR"
 Sends all logging output to the specified file instead of stderr.
 
-.IP "\-\-log\-details"
+.IP "\fB\-\-log\-details\fR"
 Log details (IP-address, message type and hostname) to the logfile.
 This can also be enabled and disabled at run-time by sending the
 xymonproxy process a SIGUSR1 signal.
 
-.IP "\-\-debug"
+.IP "\fB\-\-debug\fR"
 Enable debugging output.
 
 .SH "REPORT OUTPUT"
@@ -196,13 +196,13 @@ because messages in transit are not included in the
 "Outbound messages" count until they have been fully sent.
 
 .SH SIGNALS
-.IP SIGHUP
+.IP "\fBSIGHUP\fR"
 Re-opens the logfile, e.g. after it has been rotated.
 
-.IP SIGTERM
+.IP "\fBSIGTERM\fR"
 Shut down the proxy.
 
-.IP SIGUSR1
+.IP "\fBSIGUSR1\fR"
 Toggles logging of individual messages.
 
 .SH "SEE ALSO"

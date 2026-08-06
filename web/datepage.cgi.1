@@ -18,13 +18,13 @@ The URL is constructed from the URLPREFIX, the type-parameter, the
 value of the "pagepath" or "host" cookie, and the users' selection 
 as follows:
 
-.IP type=day
+.IP "\fBtype=day\fR"
 The final URL is \fBURLPREFIX/daily/YEAR/MONTH/DAY/PAGEPATH\fR.
 
-.IP type=week
+.IP "\fBtype=week\fR"
 The final URL is \fBURLPREFIX/weekly/YEAR/WEEK/PAGEPATH\fR.
 
-.IP type=month
+.IP "\fBtype=month\fR"
 The final URL is \fBURLPREFIX/monthly/YEAR/MONTH/PAGEPATH\fR.
 
 YEAR is the full year (4 digits, including century). MONTH is the
@@ -37,42 +37,42 @@ is found is used for PAGEPATH. These two cookies are set by the
 default web-header templates supplied with Xymon.
 
 .SH OPTIONS
-.IP "\-\-url=URLPREFIX"
+.IP "\fB\-\-url=URLPREFIX\fR"
 This specifies the initial part of the final URL. This option is required.
 
-.IP "\-\-hffile=FILENAME"
+.IP "\fB\-\-hffile=FILENAME\fR"
 Specifies the template files (from $XYMONHOME/web/) to use. The default is 
 "\-\-hffile=report".
 
-.IP "\-\-color=COLOR"
+.IP "\fB\-\-color=COLOR\fR"
 Sets the background color of the generated webpage. The default is blue.
 
-.IP "\-\-env=FILENAME"
+.IP "\fB\-\-env=FILENAME\fR"
 Loads the environment defined in FILENAME before executing the CGI script.
 
-.IP "\-\-debug"
+.IP "\fB\-\-debug\fR"
 Enables debugging output.
 
-.IP "$XYMONHOME/web/report_form_daily"
+.IP "\fB$XYMONHOME/web/report_form_daily\fR"
 HTML form template for the date selection form when type=daily.
 
-.IP "$XYMONHOME/web/report_form_weekly"
+.IP "\fB$XYMONHOME/web/report_form_weekly\fR"
 HTML form template for the date selection form when type=weekly.
 
-.IP "$XYMONHOME/web/report_form_monthly"
+.IP "\fB$XYMONHOME/web/report_form_monthly\fR"
 HTML form template for the date selection form when type=monthly.
 
-.IP "$XYMONHOME/web/report_header"
+.IP "\fB$XYMONHOME/web/report_header\fR"
 HTML header file for the generated web page
 
-.IP "$XYMONHOME/web/report_footer"
+.IP "\fB$XYMONHOME/web/report_footer\fR"
 HTML footer file for the generated web page
 
 .SH "ENVIRONMENT VARIABLES"
-.IP XYMONHOME
+.IP "\fBXYMONHOME\fR"
 Used to locate the template files for the generated web pages.
 
-.IP QUERY_STRING
+.IP "\fBQUERY_STRING\fR"
 Contains the parameters for the CGI script.
 
 .SH "SEE ALSO"

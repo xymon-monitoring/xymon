@@ -34,25 +34,25 @@ by invoking
 with the proper "\-\-snapshot" option.
 
 .SH OPTIONS
-.IP "\-\-env=FILENAME"
+.IP "\fB\-\-env=FILENAME\fR"
 Load environment from FILENAME before executing the CGI.
 
-.IP "xymongen-options"
+.IP "\fBxymongen-options\fR"
 All options except "\-\-env" are passed on to the 
 .I xymongen(1)
 program building the snapshot files.
 
 .SH ENVIRONMENT VARIABLES
-.IP XYMONGENSNAPOPTS
+.IP "\fBXYMONGENSNAPOPTS\fR"
 xymongen options passed by default to the snapshot.cgi script. 
 This happens in the snapshot.sh CGI wrapper script.
-.IP XYMONHOME
+.IP "\fBXYMONHOME\fR"
 Home directory of the Xymon server files
-.IP XYMONSNAPDIR
+.IP "\fBXYMONSNAPDIR\fR"
 Directory where generated snapshots are stored. This directory must
 be writable by the userid executing the CGI script, typically
 "www", "apache" or "nobody". Default: $XYMONHOME/www/snap/
-.IP XYMONSNAPURL
+.IP "\fBXYMONSNAPURL\fR"
 The URL prefix to use when accessing the reports via a browser.
 Default: $XYMONWEB/snap
 

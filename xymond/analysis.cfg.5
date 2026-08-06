@@ -102,7 +102,7 @@ any filesystem whose mountpoint begins with "/oracle".
 the filesystem instead of the amount of disk space.
 .sp
 Defaults DISK: warnlevel=90%, paniclevel=95%
-.br
+.BR
 Defaults INODE: warnlevel=70%, paniclevel=90%
 
 
@@ -293,21 +293,21 @@ The \fBTRACK\fR keyword causes the size of the file or directory to be tracked
 in an RRD file, and presented in a graph on the "files" status display.
 
 For files, you can check one or more of the following:
-.IP "noexist"
+.IP "\fBnoexist\fR"
 triggers a warning if the file exists. By default,
 a warning is triggered for files that have a FILE entry, but
 which do not exist.
-.IP "type=TYPE"
+.IP "\fBtype=TYPE\fR"
 where TYPE is one of "file", "dir", "char", "block",
 "fifo", or "socket". Triggers warning if the file is not of the
 specified type.
-.IP "ownerid=OWNER"
+.IP "\fBownerid=OWNER\fR"
 triggers a warning if the owner does not match what is listed here.
 OWNER is specified either with the numeric uid, or the user name.
-.IP "groupid=GROUP"
+.IP "\fBgroupid=GROUP\fR"
 triggers a warning if the group does not match what is listed here.
 GROUP is specified either with the numeric gid, or the group name.
-.IP "mode=MODE"
+.IP "\fBmode=MODE\fR"
 triggers a warning if the file permissions are not
 as listed. MODE is written in the standard octal notation, e.g.
 "644" for the rw\-r\-\-r\-\- permissions.
@@ -323,7 +323,7 @@ checks how long ago the file was last modified (in seconds). E.g.
 to check if a file was updated within the past 10 minutes (600 
 seconds): \fBmtime<600\fR. Or to check that a file has NOT been updated 
 in the past 24 hours: \fBmtime>86400\fR.
-.IP "mtime=TIMESTAMP"
+.IP "\fBmtime=TIMESTAMP\fR"
 checks if a file was last modified at TIMESTAMP.  TIMESTAMP is a unix epoch 
 time (seconds since midnight Jan 1 1970 UTC).
 .IP "ctime>MIN.CTIME, ctime<MAX.CTIME, ctime=TIMESTAMP"
@@ -364,21 +364,21 @@ go red".
 .sp
 The "netstat" listing sent by the client will be scanned for how many
 sockets match the \fBcriteria\fR listed.  The criteria you can use are:
-.IP "LOCAL=addr"
+.IP "\fBLOCAL=addr\fR"
 "addr" is a (partial) local address specification in the format used on
 the output from netstat.
-.IP "EXLOCAL=addr"
+.IP "\fBEXLOCAL=addr\fR"
 Exclude certain local addresses from the rule.
-.IP "REMOTE=addr"
+.IP "\fBREMOTE=addr\fR"
 "addr" is a (partial) remote address specification in the format used on
 the output from netstat.
-.IP "EXREMOTE=addr"
+.IP "\fBEXREMOTE=addr\fR"
 Exclude certain remote addresses from the rule.
-.IP "STATE=state"
+.IP "\fBSTATE=state\fR"
 Causes only the sockets in the specified state to be included, "state"
 is usually LISTEN or ESTABLISHED but can be any socket state reported by
 the clients "netstat" command.
-.IP "EXSTATE=state"
+.IP "\fBEXSTATE=state\fR"
 Exclude certain states from the rule.
 .LP
 "addr" is typically "10.0.0.1:80" for the IP 10.0.0.1, port 80. 

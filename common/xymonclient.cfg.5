@@ -10,32 +10,32 @@ Each line in this file is of the form \fBNAME=VALUE\fR and defines
 one environment variable NAME with the value VALUE.
 
 .SH SETTINGS
-.IP XYMSRV
+.IP "\fBXYMSRV\fR"
 The IP-address used to contact the Xymon server. Default:
 Chosen when the Xymon client was compiled.
 
-.IP XYMSERVERS
+.IP "\fBXYMSERVERS\fR"
 List of IP-addresses of Xymon servers. Data will be sent to
 all of the servers listed here. This setting is only used if 
 XYMSRV=0.0.0.0.
 
-.IP XYMONDPORT
+.IP "\fBXYMONDPORT\fR"
 The port number for used to contact the Xymon server.
 Default: 1984.
 
-.IP XYMONHOME
+.IP "\fBXYMONHOME\fR"
 The Xymon client top-level directory. Default: The
 $XYMONCLIENTHOME setting inherited from the "runclient.sh"
 script which starts the Xymon client.
 
-.IP XYMONCLIENTLOGS
+.IP "\fBXYMONCLIENTLOGS\fR"
 The directory for the Xymon clients' own log files. Default:
 $XYMONHOME/logs
 
-.IP XYMONTMP
+.IP "\fBXYMONTMP\fR"
 Directory used for temporary files. Default: $XYMONHOME/tmp/
 
-.IP XYMONCLIENT_FS_INCLUDE_TYPES
+.IP "\fBXYMONCLIENT_FS_INCLUDE_TYPES\fR"
 Whitespace-separated Linux filesystem types to include in the
 client's disk and inode reports even when they are normally excluded
 as pseudo (\fBnodev\fR) filesystems. Types are matched as exact df type
@@ -44,7 +44,7 @@ that merely happen to be flagged nodev. Set to "" to restore the
 historical behaviour of dropping every nodev type. Including remote
 filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
 
-.IP XYMONCLIENT_FS_EXCLUDE_TYPES
+.IP "\fBXYMONCLIENT_FS_EXCLUDE_TYPES\fR"
 Whitespace-separated Linux filesystem types to exclude in addition
 to the default pseudo-filesystem exclusions. Matching is on the exact
 df type token, and nodev types (overlay, fuse, ...) are already excluded
@@ -67,7 +67,7 @@ disabled; the explicit XYMONCLIENT_FS_EXCLUDE_TYPES and the local-only
 deriving exclusions from mount(8), so it is not a drop-in replacement for
 distro patches (such as Debian's) that do.
 
-.IP XYMONCLIENT_FS_DF_LOCAL_ONLY
+.IP "\fBXYMONCLIENT_FS_DF_LOCAL_ONLY\fR"
 Set to \fByes\fR (the default) to pass \fB\-l\fR to df and report
 local filesystems only. Set to \fBno\fR to report remote filesystems
 as well. Invalid values produce a warning and use the safe default.
@@ -81,12 +81,12 @@ is marked failed (yellow) rather than left empty, so a failed filesystem
 probe is not silently reported green. This does not cover the hang
 above: a wedged df never exits.
 
-.IP XYMON
+.IP "\fBXYMON\fR"
 Full path to the 
 .I xymon(1)
 client program. Default: $XYMONHOME/bin/xymon.
 
-.IP Commands
+.IP "\fBCommands\fR"
 Many extension scripts expect a series of environment variables to
 point at various system utilities. These are included in the file
 when the client is built.
@@ -95,18 +95,18 @@ when the client is built.
 Some environment variables are inherited from the "runclient.sh"
 script which launches the Xymon client:
 
-.IP MACHINEDOTS
+.IP "\fBMACHINEDOTS\fR"
 The hostname of the local system. Default: Taken from "uname \-n".
 
-.IP MACHINE
+.IP "\fBMACHINE\fR"
 The hostname of the local system, with dots replaced by commas.
 For compatibility with Big Brother extension scripts.
 
-.IP SERVEROSTYPE
+.IP "\fBSERVEROSTYPE\fR"
 The operating system of the local system, in lowercase. Default:
 taken from "uname \-s".
 
-.IP XYMONCLIENTHOME
+.IP "\fBXYMONCLIENTHOME\fR"
 The top-level directory for the Xymon client. Default: The location
 of the "runclient.sh" script.
 

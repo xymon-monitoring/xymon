@@ -51,7 +51,7 @@ then only those servers are tested.
 
 .SH GENERAL OPTIONS
 
-.IP \-\-timeout=N
+.IP "\fB\-\-timeout=N\fR"
 Determines the timeout (in seconds) for each
 service that is tested. For TCP tests (those from XYMONNETSVCS),
 if the connection to the service does not succeed within N 
@@ -61,18 +61,18 @@ to the webserver (the time needed to connect to the server,
 plus the time it takes the server to respond to the request).
 Default: 10 seconds
 
-.IP \-\-conntimeout=N
+.IP "\fB\-\-conntimeout=N\fR"
 This option is deprecated, and will be ignored. Use the
 \-\-timeout option instead.
 
-.IP \-\-cmdtimeout=N
+.IP "\fB\-\-cmdtimeout=N\fR"
 This option sets a timeout for the external commands used by the RPC and
 traceroute tests and by the external NTP backends (ntpdate/sntp). The
 built-in NTP probe is not governed by it: the probe bounds itself with a
 short, fixed retransmission budget (a few attempts), so it can never hang
 and does not need an external kill timer.
 
-.IP \-\-concurrency=N 
+.IP "\fB\-\-concurrency=N\fR"
 Determines the number of network tests that
 run in parallel. Default is operating system dependent,
 but will usually be 256. If xymonnet begins to complain 
@@ -88,11 +88,11 @@ an error.
 Note: If you use the \-\-no\-ares option, timeout of DNS
 lookups cannot be controlled by xymonnet.
 
-.IP \-\-dns\-max\-all=N
+.IP "\fB\-\-dns\-max\-all=N\fR"
 Same as "\-\-dns\-timeout=N". The "\-\-dns\-max\-all" option is 
 deprecated and should not be used.
 
-.IP \-\-dns=[ip|only|standard]
+.IP "\fB\-\-dns=[ip|only|standard]\fR"
 Determines how xymonnet finds the IP addresses of the hosts to test. 
 By default (the "standard"), xymonnet does a DNS lookup of the hostname 
 to determine the IP address, unless the host has the "testip" 
@@ -111,7 +111,7 @@ lookup for the hostname given in the URL; see the
 "xymonnet tags for HTTP tests" section in
 .I hosts.cfg(5)
 
-.IP \-\-no\-ares
+.IP "\fB\-\-no\-ares\fR"
 Disable the ARES resolver built into xymonnet. This makes
 xymonnet resolve hostnames using your system resolver
 function. You should only use this as a last resort if xymonnet
@@ -125,17 +125,17 @@ DNS or NIS server is down, xymonnet can take a very long time
 to run. The \-\-dns\-timeout option is effectively disabled when
 using this option.
 
-.IP \-\-dnslog=FILENAME
+.IP "\fB\-\-dnslog=FILENAME\fR"
 Log failed hostname lookups to the file FILENAME. FILENAME should 
 be a full pathname.
 
-.IP \-\-report[=COLUMNNAME]
+.IP "\fB\-\-report[=COLUMNNAME]\fR"
 With this option, xymonnet will send a status message with details 
 of how many hosts were processed, how many tests were generated, 
 any errors that occurred during the run, and some timing statistics. 
 The default columnname is "xymonnet".
 
-.IP \-\-test\-untagged
+.IP "\fB\-\-test\-untagged\fR"
 When using the XYMONNETWORK environment variable to test
 only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any "NET:x" tag.
@@ -146,14 +146,14 @@ With this option, hosts with no NET: tag are included
 in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 
-.IP \-\-frequenttestlimit=N
+.IP "\fB\-\-frequenttestlimit=N\fR"
 Used with the
 .I xymonnet\-again.sh(1)
 Xymon extension. This option determines how long failed tests
 remain in the frequent-test queue. The default is 1800
 seconds (30 minutes).
 
-.IP \-\-timelimit=N
+.IP "\fB\-\-timelimit=N\fR"
 Causes xymonnet to generate a warning if the run-time
 of xymonnet exceeds N seconds. By default N is set to
 the value of TASKSLEEP, so a warning triggers if the
@@ -163,7 +163,7 @@ option has no effect, i.e. it will not terminate xymonnet
 prematurely. So to eliminate any such warnings, use this
 option with a very high value of N.
 
-.IP \-\-huge=N
+.IP "\fB\-\-huge=N\fR"
 Warn if the response from a TCP test is more than N bytes.
 If you see from the xymonnet status report that you are
 transferring large amounts of data for your tests, you can
@@ -171,20 +171,20 @@ enable this option to see which tests have large replies.
 .br
 Default: 0 (disabled).
 
-.IP \-\-validity=N
+.IP "\fB\-\-validity=N\fR"
 Make the test results valid for N minutes before they go purple. 
 By default test results are valid for 30 minutes; if you run xymonnet
 less often than that, the results will go purple before the next run
 of xymonnet. This option lets you change how long the status is 
 valid.
 
-.IP \-\-source\-ip=IPADDRESS
+.IP "\fB\-\-source\-ip=IPADDRESS\fR"
 On multi-homed hosts, this option can be used to explicitly
 select the source IP address used for the network tests.
 "IPADDRESS" must be a valid IP-address on the host running
 xymonnet.
 
-.IP \-\-loadhostsfromxymond
+.IP "\fB\-\-loadhostsfromxymond\fR"
 Instead of reading the hosts.cfg file, xymonnet will load the
 hosts.cfg configuration from the xymond daemon. This eliminates
 the need for reading the hosts.cfg, and if you have xymond and
@@ -194,7 +194,7 @@ for copying the hosts.cfg file between systems. Note that the
 enabled.
 
 .SH OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES
-.IP \-\-checkresponse[=COLOR]
+.IP "\fB\-\-checkresponse[=COLOR]\fR"
 When testing well-known services (e.g. FTP, SSH, SMTP, POP-2, POP-3, 
 IMAP, NNTP and rsync), xymonnet will look for a valid service-specific
 "OK" response. If another response is seen, this will cause
@@ -206,14 +206,14 @@ yellow for the status message when the response is wrong.
 E.g. "\-\-checkresponse=red" will cause a "red" status message
 to be sent when the service does not respond as expected.
 
-.IP \-\-no\-flags
+.IP "\fB\-\-no\-flags\fR"
 By default, xymonnet sends some extra information in the
 status messages, called "flags". These are used by xymongen
 e.g. to pick different icons for reversed tests when
 generating the Xymon webpages. This option makes
 xymonnet omit these flags from the status messages.
 
-.IP \-\-shuffle
+.IP "\fB\-\-shuffle\fR"
 By default, TCP tests run roughly in the order that the hosts
 are listed in the hosts.cfg file. If you have many tests for
 one server, this may result in an exceptionally large
@@ -233,7 +233,7 @@ utility. See
 for a description of how to customize this, e.g. if you
 need to run it with "sudo" or a similar tool.
 
-.IP \-\-ping
+.IP "\fB\-\-ping\fR"
 Enables xymonnet's ping test. The column name used for
 ping test results is defined by the PINGCOLUMN environment 
 variable in 
@@ -245,11 +245,11 @@ or not. So if you prefer to use another tool to implement
 ping checks, either set the CONNTEST environment variable 
 to false, or run xymonnet with the "\-\-noping".
 
-.IP \-\-noping
+.IP "\fB\-\-noping\fR"
 Disable the connectivity test.
 
-.IP "\-\-trace"
-.IP "\-\-notrace"
+.IP "\fB\-\-trace\fR"
+.IP "\fB\-\-notrace\fR"
 Enable/disable the use of traceroute when a ping-test fails.
 Performing a traceroute for failed ping tests is a slow
 operation, so the default is not to do any traceroute, unless
@@ -260,7 +260,7 @@ the default becomes to run traceroute on all hosts where
 the ping test fails; you can then disable it on specific 
 hosts by putting a "notrace" tag on the host-entry.
 
-.IP \-\-ping\-tasks=N
+.IP "\fB\-\-ping\-tasks=N\fR"
 Spread the task of pinging the hosts over N processes. If you have
 a very large number of hosts the time it takes to ping all of them 
 can be substantial, even with the use of tools like fping or xymonping
@@ -270,12 +270,12 @@ be divided evenly between these processes.
 
 
 .SH OPTIONS FOR HTTP (WEB) TESTS
-.IP \-\-content=CONTENTTESTNAME 
+.IP "\fB\-\-content=CONTENTTESTNAME\fR"
 Determines the name of the column Xymon displays for content checks. 
 The default is "content".  If you have used the "cont.sh" or "cont2.sh" 
 scripts earlier, you may want to use "\-\-content=cont" to report content
 checks using the same test name as these scripts do.
-.IP \-\-bb\-proxy\-syntax
+.IP "\fB\-\-bb\-proxy\-syntax\fR"
 Adhere to the Big Brother syntax for a URL, which allows specifying 
 a HTTP proxy as part of a URL. See \fB"HTTP Testing via proxy"\fR in the
 .I hosts.cfg(5) 
@@ -284,19 +284,19 @@ by default since URL's that include other URL's are now much more
 common. This option restores the old Big Brother-compatible behaviour.
 
 .SH OPTIONS FOR SSL CERTIFICATE TESTS
-.IP \-\-ssl=SSLCERTTESTNAME
+.IP "\fB\-\-ssl=SSLCERTTESTNAME\fR"
 Determines the name of the column Xymon displays for the SSL certificate checks.
 The default is "sslcert".
-.IP \-\-no\-ssl
+.IP "\fB\-\-no\-ssl\fR"
 Disables reporting of the SSL certificate check.
 
-.IP \-\-sslwarn=N
-.IP \-\-sslalarm=N
+.IP "\fB\-\-sslwarn=N\fR"
+.IP "\fB\-\-sslalarm=N\fR"
 Determines the number of days before an SSL certificate
 expires, where xymonnet will generate a warning or
 alarm status for the SSL certificate column.
 
-.IP \-\-sslbits=N
+.IP "\fB\-\-sslbits=N\fR"
 Enables checking that the encryption supported by the
 SSL protocol uses an encryption key of at least N bits.
 E.g. to trigger an alert if your SSL-enabled website 
@@ -305,7 +305,7 @@ Note: This can be enabled on a per-host basis using the
 "sslbits=N" setting in 
 .I hosts.cfg(5)
 
-.IP \-\-sslkeysize=N
+.IP "\fB\-\-sslkeysize=N\fR"
 Enables checking of the length of the public key in SSL certificates.
 N is the minimum size of the SSL public key, typically such keys
 are 2048 bits, but some older certificates may use keys with 1024 bits
@@ -313,13 +313,13 @@ or less. If you specify this, SSL certificates with keys less than N
 bits will result in the "sslcert" status going yellow.
 Default: 0, i.e. this check is disabled.
 
-.IP \-\-no\-cipherlist
+.IP "\fB\-\-no\-cipherlist\fR"
 Do not show encryption cipher details on the "sslcert" status.
 
-.IP \-\-showallciphers
+.IP "\fB\-\-showallciphers\fR"
 List ALL locally available encryption ciphers on the "sslcert" status.
 
-.IP \-\-sni=[on|off]
+.IP "\fB\-\-sni=[on|off]\fR"
 Sets the default for whether SSL connections use SNI (Server Name
 Indication). This can also be set with the "sni" or "nosni"
 options in hosts.cfg for each host - the hosts.cfg entries
@@ -327,11 +327,11 @@ override this  option.
 Default: off
 
 .SH DEBUGGING OPTIONS
-.IP \-\-no\-update
+.IP "\fB\-\-no\-update\fR"
 Don't send any status updates to the Xymon server. Instead,
 all messages are dumped to stdout.
 
-.IP \-\-timing
+.IP "\fB\-\-timing\fR"
 Causes xymonnet to collect information about
 the time spent in different parts of the program.
 The information is printed on stdout just before
@@ -339,11 +339,11 @@ the program ends. Note that this information is also
 included in the status report sent with the "\-\-report"
 option.
 
-.IP \-\-debug
+.IP "\fB\-\-debug\fR"
 Dumps a bunch of status about the tests as they
 progress to stdout.
 
-.IP \-\-dump[=before|=after|=both]
+.IP "\fB\-\-dump[=before|=after|=both]\fR"
 Dumps internal memory structures before and/or after the
 tests have executed.
 
@@ -509,14 +509,14 @@ The "ntp" check needs no external program by default (it uses the built-in
 probe), while the "rpcinfo" check relies on an external program for each test.
 
 .SH ENVIRONMENT VARIABLES
-.IP XYMONNETWORK
+.IP "\fBXYMONNETWORK\fR"
 Defines the network segment where xymonnet is currently running.
 This is used to filter out only the entries in the
 .I hosts.cfg(5)
 file that have a matching "NET:LOCATION" tag, and execute the
 tests for only those hosts.
 
-.IP MAXMSGSPERCOMBO 
+.IP "\fBMAXMSGSPERCOMBO\fR"
 Defines the maximum number of status messages that can be sent in 
 one combo message. Default is 0 - no limit.
 .br
@@ -526,7 +526,7 @@ size is 32 KB, but that will easily accommodate 100 status
 messages per transmission. So if you want to experiment
 with this setting, I suggest starting with a value of 10.
 
-.IP SLEEPBETWEENMSGS
+.IP "\fBSLEEPBETWEENMSGS\fR"
 Defines a a delay (in microseconds) after each 
 message is transmitted to the Xymon server. The default 
 is 0, i.e.  send the messages as fast as possible.
@@ -539,7 +539,7 @@ define a delay of half a second, this must be set to
 the value "500000"; a delay of 1 second is achieved by
 setting this to "1000000" (one million).
 
-.IP FPING
+.IP "\fBFPING\fR"
 Command used to run the 
 .I xymonping(1) 
 utility. Used by xymonnet for connectivity (ping) testing.  See 
@@ -547,7 +547,7 @@ utility. Used by xymonnet for connectivity (ping) testing.  See
 for more information about how to customize the program that is
 executed to do ping tests.
 
-.IP TRACEROUTE
+.IP "\fBTRACEROUTE\fR"
 Location of the 
 .I traceroute(8)
 utility, or an equivalent tool e.g.
@@ -555,24 +555,24 @@ utility, or an equivalent tool e.g.
 Optionally used when a connectivity test fails to pinpoint the
 network location that is causing the failure.
 
-.IP NTPDATE
+.IP "\fBNTPDATE\fR"
 Path to the external ntpdate program for the "ntp" service; the target IP is
 appended. Empty (the default) selects the built-in SNTP probe. On ntpsec, where
 ntpdate is unavailable, set this to "ntpdig".
-.IP NTPDATEOPTS
+.IP "\fBNTPDATEOPTS\fR"
 Options passed to the ntpdate program (used only when NTPDATE is set).
 Default: "\-u \-q".
 
-.IP SNTP
+.IP "\fBSNTP\fR"
 Location of the
 .I sntp(1)
 utility. A legacy, explicitly-set SNTP forces sntp for the "ntp" service.
-.IP SNTPOPTS
+.IP "\fBSNTPOPTS\fR"
 Options passed to the
 .I sntp(1)
 utility. Default: "\-u".
 
-.IP RPCINFO
+.IP "\fBRPCINFO\fR"
 Location of the 
 .I rpcinfo(8) 
 utility. Used by xymonnet for the "rpc" service checks.
@@ -602,7 +602,7 @@ http://machinename/ URL setting - it need not be the one you
 use for the system-name in Xymon.
 
 .sp
-.IP "$XYMONHOME/etc/cookies"
+.IP "\fB$XYMONHOME/etc/cookies\fR"
 This file may contain website cookies, in the Netscape HTTP
 Cookie format. If a website requires a static cookie to be 
 present in order for the check to complete, then you can add
@@ -622,7 +622,7 @@ in turn decides if this test should be included in the tests done by
 It is also used internally by xymonnet when determining the
 color for tests that use the "badconn" or "badTESTNAME" tags.
 .sp
-.IP $XYMONTMP/frequenttests.[LOCATION]
+.IP "\fB$XYMONTMP/frequenttests.[LOCATION]\fR"
 This file contains the hostnames of those hosts that should be
 retested by the
 .I xymonnet-again.sh(1)

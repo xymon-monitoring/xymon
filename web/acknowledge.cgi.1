@@ -25,40 +25,40 @@ not to contact you about the problem, or inform them when the problem
 is expected to be resolved.
 
 .SH OPTIONS
-.IP "\-\-no\-pin"
+.IP "\fB\-\-no\-pin\fR"
 acknowledge.cgi normally requires the user to enter the acknowledgment code
 received in an alert message. If you run it with this option, the user
 will instead get a list of the current non-green statuses, and he may
 send an acknowledge without knowing the code.
 
-.IP "\-\-no\-cookies"
+.IP "\fB\-\-no\-cookies\fR"
 Normally, acknowledge.cgi uses a cookie sent by the browser to initially 
 filter the list of hosts presented. If this is not desired, you can
 turn off this behaviour by calling acknowledge.cgi with the \-\-no\-cookies
 option. This would normally be placed in the CGI_ACK_OPTS setting in
 .I cgioptions.cfg(5)
 
-.IP "\-\-env=FILENAME"
+.IP "\fB\-\-env=FILENAME\fR"
 Loads the environment defined in FILENAME before executing the CGI script.
 
-.IP "\-\-debug"
+.IP "\fB\-\-debug\fR"
 Enables debugging output.
 
 .SH FILES
-.IP "$XYMONHOME/web/acknowledge_header"
+.IP "\fB$XYMONHOME/web/acknowledge_header\fR"
 HTML header file for the generated web page
 
-.IP "$XYMONHOME/web/acknowledge_footer"
+.IP "\fB$XYMONHOME/web/acknowledge_footer\fR"
 HTML footer file for the generated web page
 
-.IP "$XYMONHOME/web/acknowledge_form"
+.IP "\fB$XYMONHOME/web/acknowledge_form\fR"
 Query form displayed when acknowledge.cgi is called with no parameters.
 
 .SH "ENVIRONMENT VARIABLES"
-.IP XYMONHOME
+.IP "\fBXYMONHOME\fR"
 Used to locate the template files for the generated web pages.
 
-.IP QUERY_STRING
+.IP "\fBQUERY_STRING\fR"
 Contains the parameters for the CGI script.
 
 .SH BUGS
