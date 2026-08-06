@@ -195,47 +195,34 @@ Rename data about a single test (column).
 Retrieve the Xymon status-log for a single test. The first line of the
 response contains a series of fields separated by a pipe-sign:
 .sp
-.BR hostname
+.IP "\fBhostname\fR"
 The name of the host
-.sp
-.BR testname
+.IP "\fBtestname\fR"
 The name of the test
-.sp
-.BR color
+.IP "\fBcolor\fR"
 Status color (green, yellow, red, blue, clear, purple)
-.sp
-.BR testflags
+.IP "\fBtestflags\fR"
 For network tests, the flags indicating details about the test (used by xymongen).
-.sp
-.BR lastchange
+.IP "\fBlastchange\fR"
 Unix timestamp when the status color last changed.
-.sp
-.BR logtime
+.IP "\fBlogtime\fR"
 Unix timestamp when the log message was received.
-.sp
-.BR validtime
+.IP "\fBvalidtime\fR"
 Unix timestamp when the log message is no longer valid (it goes purple at this time).
-.sp
-.BR acktime
+.IP "\fBacktime\fR"
 Either \-1 or Unix timestamp when an active acknowledgement expires.
-.sp
-.BR disabletime
+.IP "\fBdisabletime\fR"
 Either \-1 or Unix timestamp when the status is no longer disabled.
-.sp
-.BR sender
+.IP "\fBsender\fR"
 IP address where the status was received from.
-.sp
-.BR cookie
+.IP "\fBcookie\fR"
 Either \-1 or the cookie value used to acknowledge an alert.
-.sp
-.BR ackmsg
+.IP "\fBackmsg\fR"
 Empty or the acknowledgment message sent when the status was acknowledged.
 Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
-.sp
-.BR dismsg
+.IP "\fBdismsg\fR"
 Empty or the message sent when the status was disabled.
 Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
-.sp
 After the first line comes the full status log in plain text format.
 
 .IP "xymondxlog HOSTNAME.TESTNAME"
@@ -262,50 +249,40 @@ XMH_ filters when possible, before globally filtering with COLOR, *MSG,
 You can filter on, for example, both a hostname and a testname.
 
 .sp
-.BR page=PAGEPATH
+.IP "\fBpage=PAGEPATH\fR"
 Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
 file.
-.sp
-.BR net=NETWORK
+.IP "\fBnet=NETWORK\fR"
 Include only tests from hosts with this NET: tag
-.sp
 .BR ip=IP Address
 Include only tests from hosts with this IP address. This is a regex, not CIDR.
 .sp
-.BR host=HOSTNAME
+.IP "\fBhost=HOSTNAME\fR"
 Include only tests from the host HOSTNAME
-.sp
-.BR test=TESTNAME
+.IP "\fBtest=TESTNAME\fR"
 Include only tests with the testname TESTNAME
-.sp
-.BR color=COLORNAME
+.IP "\fBcolor=COLORNAME\fR"
 Include only tests where the status color is COLORNAME
-.sp
-.BR tag=TAGNAME
+.IP "\fBtag=TAGNAME\fR"
 Include only hosts with a certain tag specified in the hosts.cfg(5) line.
 Note that only items known to xymon components are included here; arbitrary
 text is not included
-.sp
-.BR XMH_string=VALUE
+.IP "\fBXMH_string=VALUE\fR"
 Include only hosts with a xymon-xmh(5) variable matching this value
-.sp
 
 Advanced Filtering
 .sp
-.BR msg=MESSAGE
+.IP "\fBmsg=MESSAGE\fR"
 Include only tests with full content matching MESSAGE. Use "\es" to escape 
 spaces (or other PCRE strings)
-.sp
-.BR ackmsg=MESSAGE
+.IP "\fBackmsg=MESSAGE\fR"
 Include only tests with acknowledgement(s) MESSAGE. Use "\es" to escape 
 spaces (or other PCRE strings)
-.sp
-.BR dismsg=MESSAGE
+.IP "\fBdismsg=MESSAGE\fR"
 Include only tests that have been disabled with strings matching MESSAGE. 
 Use "\es" to escape spaces (or other PCRE strings). (It is most efficient
 to pair this with color=blue.)
-
-
+.PP
 Timestamp Filters
 
 Certain fields (explained below) can be filtered with unix timestamps
@@ -319,85 +296,64 @@ a number of fields, separated by a pipe-sign. You can select which
 fields to retrieve by listing them in the FIELDLIST. The following
 fields are available:
 .sp
-.BR hostname
+.IP "\fBhostname\fR"
 The name of the host
-.sp
-.BR testname
+.IP "\fBtestname\fR"
 The name of the test
-.sp
-.BR color
+.IP "\fBcolor\fR"
 Status color (green, yellow, red, blue, clear, purple)
-.sp
-.BR flags
+.IP "\fBflags\fR"
 For network tests, the flags indicating details about the test (used by xymongen).
-.sp
-.BR lastchange
+.IP "\fBlastchange\fR"
 Unix timestamp when the status color last changed.
-.sp
-.BR logtime
+.IP "\fBlogtime\fR"
 Unix timestamp when the log message was received.
-.sp
-.BR validtime
+.IP "\fBvalidtime\fR"
 Unix timestamp when the log message is no longer valid (it goes purple at this time).
-.sp
-.BR acktime
+.IP "\fBacktime\fR"
 Either \-1 or Unix timestamp when an active acknowledgement expires.
-.sp
-.BR disabletime
+.IP "\fBdisabletime\fR"
 Either \-1 or Unix timestamp when the status is no longer disabled.
-.sp
-.BR sender
+.IP "\fBsender\fR"
 IP address where the status was received from.
-.sp
-.BR cookie
+.IP "\fBcookie\fR"
 Either \-1 or the cookie value used to acknowledge an alert.
-.sp
-.BR line1
+.IP "\fBline1\fR"
 First line of status log.
-.sp
-.BR ackmsg
+.IP "\fBackmsg\fR"
 Empty (if no acknowledgement is active), or the text of the acknowledge
 message.
-.sp
-.BR dismsg
+.IP "\fBdismsg\fR"
 Empty (if the status is currently enabled), or the text of the disable message.
-.sp
-.BR msg
+.IP "\fBmsg\fR"
 The full text of the current status message.
-.sp
-.BR client
+.IP "\fBclient\fR"
 Shows "Y" if there is client data available, "N" if not.
-.sp
-.BR clntstamp
+.IP "\fBclntstamp\fR"
 Timestamp when the last client message was received, in Unix "epoch" format.
-.sp
-.BR acklist
+.IP "\fBacklist\fR"
 List of the current acknowledgements for a test. This is a text string with multiple
 fields, delimited by a colon character. There are 5 fields: Timestamp for when the ack 
 was generated and when it expires; the the "ack level"; the user who sent the ack; and 
 the acknowledgement text.
-.sp
-.BR flapinfo
+.IP "\fBflapinfo\fR"
 Tells if the status is flapping. 5 fields, delimited by "/": A "0" if the status
 is not flapping and "1" if it is flapping; timestamp when the latest status change
 was recorded and when the first statuschange was recorded; and the two colors that 
 the status is flapping between.
-.sp
-.BR stats
+.IP "\fBstats\fR"
 Number of status-changes that have been recorded for this status since xymond was
 started.
-.sp
-.BR modifiers
+.IP "\fBmodifiers\fR"
 Lists all active modifiers for this status (i.e. updates sent using a "modify" 
 command).
-.sp
-.BR XMH_*
+.IP "\fBXMH_*\fR"
 The XMH-tags refer to the Xymon
 .I hosts.cfg(5)
 configuration settings. A full list of these can be found in the
 .I xymon\-xmh(5)
 man-page.
-
+.PP
 The ackmsg, dismsg and msg fields have certain characters encoded: Newline
 is "\en", TAB is "\et", carriage return is "\er", a pipe-sign is "\ep", 
 and a backslash is "\e\e".

@@ -3,8 +3,7 @@
 protocols.cfg \- Configuration of TCP network services
 
 .SH SYNOPSIS
-.BR $XYMONHOME/etc/protocols.cfg
-
+.IP "\fB$XYMONHOME/etc/protocols.cfg\fR"
 .SH DESCRIPTION
 \fBprotocols.cfg\fR contains definitions of how 
 .I xymonnet(1)
@@ -20,14 +19,12 @@ protocols.cfg is a text file. A simple service definition for
 the SMTP service would be this:
 .br
 .sp
-   [smtp]
-.br
-      send "mail\er\enquit\er\en"
-.br
-      expect "220"
-.br
-      options banner
-.br
+.nf
+\&   [smtp]
+\&      send "mail\er\enquit\er\en"
+\&      expect "220"
+\&      options banner
+.fi
 .sp
 This defines a service called "smtp". When the connection is
 first established, xymonnet will send the string "mail\er\enquit\er\en"
@@ -39,12 +36,11 @@ For services that require ALPN protocol negotiation (such as IMAPS multiplexed
 by Nginx on the same port as HTTPS), you can define:
 .br
 .sp
-   [imaps443]
-.br
-      options ssl,alpn=imap
-.br
-      port 443
-.br
+.nf
+\&   [imaps443]
+\&      options ssl,alpn=imap
+\&      port 443
+.fi
 .sp
 The full set of commands available for the protocols.cfg file are:
 
@@ -79,18 +75,16 @@ file.
 .IP "options option1[,option2][,option3]"
 Defines test options. The possible options are
 .br
-   banner - include received data in the status message
-.br
-   ssl - service uses SSL so perform an SSL handshake
-.br
-   telnet - service is telnet, so exchange telnet options
-.br
-   alpn=protocol1,protocol2 - specify ALPN protocols to negotiate during SSL handshake
+.nf
+\&   banner - include received data in the status message
+\&   ssl - service uses SSL so perform an SSL handshake
+\&   telnet - service is telnet, so exchange telnet options
+\&   alpn=protocol1,protocol2 - specify ALPN protocols to negotiate during SSL handshake
+.fi
 
 
 .SH FILES
-.BR $XYMONHOME/etc/protocols.cfg
-
+.IP "\fB$XYMONHOME/etc/protocols.cfg\fR"
 .SH "SEE ALSO"
 xymonnet(1)
 

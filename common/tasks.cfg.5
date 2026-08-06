@@ -20,37 +20,30 @@ next line.
 
 An entry looks like this:
 .sp
-    [xymond]
-.br
-          ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
-.br
-          CMD /usr/local/xymon/server/bin/xymond
+.nf
+\&    [xymond]
+\&          ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+\&          CMD /usr/local/xymon/server/bin/xymond
+.fi
 .sp
-    [updateweb]
-.br
-          ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
-.br
-          CMD /usr/local/xymon/server/bin/xymongen
-.br
-          NEEDS xymond
-.br
-          GROUP webupdates
-.br
-          INTERVAL 5m
-.br
-          ONHOST localhost
-.br
-          MAXTIME 10m
-.br
-          LOGFILE /var/log/xymon/updateweb.log
+.nf
+\&    [updateweb]
+\&          ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+\&          CMD /usr/local/xymon/server/bin/xymongen
+\&          NEEDS xymond
+\&          GROUP webupdates
+\&          INTERVAL 5m
+\&          ONHOST localhost
+\&          MAXTIME 10m
+\&          LOGFILE /var/log/xymon/updateweb.log
+.fi
 .sp
-    [monthlyreport]
-.br
-          ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
-.br
-          CMD /usr/local/xymon/server/ext/monthlyreport.sh
-.br
-          CRONDATE 30 4 1 * *
+.nf
+\&    [monthlyreport]
+\&          ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+\&          CMD /usr/local/xymon/server/ext/monthlyreport.sh
+\&          CRONDATE 30 4 1 * *
+.fi
 .sp
 The \fBkey\fR is enclosed in angle brackets, and must be unique
 for each task. You can choose your key-names as you like, they

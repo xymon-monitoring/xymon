@@ -216,21 +216,18 @@ will also need a C compiler and some additional libraries, but
 many systems come with the required development tools and 
 libraries pre-installed. The required libraries are:
 .sp
-.BR RRDtool
+.IP "\fBRRDtool\fR"
 This library is used to store and present trend-data. It is required.
-.sp
-.BR libpcre
+.IP "\fBlibpcre\fR"
 This library is used for advanced pattern-matching of text strings
 in configuration files. This library is required.
-.sp
-.BR OpenSSL
+.IP "\fBOpenSSL\fR"
 This library is used for communication with SSL-enabled network services.
 Although optional, it is recommended that you install this for Xymon
 since many network tests do use SSL.
-.sp
-.BR OpenLDAP
+.IP "\fBOpenLDAP\fR"
 This library is used for testing LDAP servers. Use of this is optional.
-
+.PP
 For more detailed information about Xymon system requirements and
 how to install Xymon, refer to the on-line documentation "Installing
 Xymon" available from the Xymon web server (via the "Help" menu),

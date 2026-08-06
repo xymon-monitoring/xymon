@@ -209,9 +209,10 @@ Example: Check that at least 5 "httpd" processes are running, but not more than 
 .sp
 Defaults:
 .br
-	mincount=1, maxcount=\-1 (unlimited), color="red".
-.br
-	Note that no processes are checked by default.
+.nf
+\&	mincount=1, maxcount=\-1 (unlimited), color="red".
+\&	Note that no processes are checked by default.
+.fi
 
 .SH MSGS STATUS COLUMN SETTINGS
 .sp
@@ -422,9 +423,10 @@ Note: No ports are checked by default.
 Example: Check that the SSH daemon is listening on port 22. Track the
 number of active SSH connections, and warn if there are more than 5.
 .br
-        PORT LOCAL=%[.:]22$ STATE=LISTEN "TEXT=SSH listener"
-.br
-        PORT LOCAL=%[.:]22$ STATE=ESTABLISHED MAX=5 TRACK=ssh TEXT=SSH
+.nf
+\&        PORT LOCAL=%[.:]22$ STATE=LISTEN "TEXT=SSH listener"
+\&        PORT LOCAL=%[.:]22$ STATE=ESTABLISHED MAX=5 TRACK=ssh TEXT=SSH
+.fi
 .sp
 .sp
 .SH SVCS status (Microsoft Windows clients)
@@ -506,7 +508,7 @@ this is identical to the rule definitions used in the
 .I alerts.cfg(5)
 file).
 
-.BR "PAGE=targetstring"
+.IP "\fBPAGE=targetstring\fR"
 Rule matching an alert by the name of the page in Xymon. "targetstring" is the path of
 the page as defined in the hosts.cfg file. E.g. if you have this setup:
 .IP
@@ -523,36 +525,36 @@ Then the "All servers" page is found with \fBPAGE=servers\fR, the
 page is \fBPAGE=servers/db\fR. Note that you can also use regular expressions 
 to specify the page name, e.g. \fBPAGE=%.*/db\fR would find the "Database
 servers" page regardless of where this page was placed in the hierarchy.
-
+.PP
 The top-level page has a the fixed name \fB/\fR, e.g. \fBPAGE=/\fR would 
 match all hosts on the Xymon frontpage. If you need it in a regular
 expression, use \fBPAGE=%^/\fR to avoid matching the forward-slash
 present in subpage-names.
 
-.BR "EXPAGE=targetstring"
+.IP "\fBEXPAGE=targetstring\fR"
 Rule excluding a host if the pagename matches.
-
-.BR "HOST=targetstring"
+.PP
+.IP "\fBHOST=targetstring\fR"
 Rule matching a host by the hostname.
 "targetstring" is either a comma-separated list of hostnames (from the hosts.cfg file),
 "*" to indicate "all hosts", or a Perl-compatible regular expression.
 E.g. "HOST=dns.foo.com,www.foo.com" identifies two specific hosts;
 "HOST=%www.*.foo.com EXHOST=www\-test.foo.com" matches all hosts with a name
 beginning with "www", except the "www\-test" host.
-
-.BR "EXHOST=targetstring"
+.PP
+.IP "\fBEXHOST=targetstring\fR"
 Rule excluding a host by matching the hostname.
-
-.BR "CLASS=classname"
+.PP
+.IP "\fBCLASS=classname\fR"
 Rule match by the client class-name. You specify the class-name 
 for a host when starting the client through the "\-\-class=NAME"
 option to the runclient.sh script. If no class is specified, the
 host by default goes into a class named by the operating system.
-
-.BR "EXCLASS=classname"
+.PP
+.IP "\fBEXCLASS=classname\fR"
 Exclude all hosts belonging to "classname" from this rule.
-
-.BR "DISPLAYGROUP=groupstring"
+.PP
+.IP "\fBDISPLAYGROUP=groupstring\fR"
 Rule matching an alert by the text of the display-group (text following the group, 
 group-only, group-except heading) in the hosts.cfg file. "groupstring" is the text
 for the group, stripped of any HTML tags. E.g. if you have this setup:
@@ -569,23 +571,22 @@ Then the hosts in the Web-group can be matched with \fBDISPLAYGROUP=Web\fR,
 and the database servers can be matched with \fBDISPLAYGROUP="Production databases"\fR.
 Note that you can also use regular expressions, e.g. \fBDISPLAYGROUP=%database\fR.
 If there is no group-setting for the host, use "DISPLAYGROUP=NONE".
-
-.BR "EXDISPLAYGROUP=groupstring"
+.PP
+.IP "\fBEXDISPLAYGROUP=groupstring\fR"
 Rule excluding a group by matching the display-group string.
-
-.BR "TIME=timespecification"
+.PP
+.IP "\fBTIME=timespecification\fR"
 Rule matching by the time-of-day. This is specified as the DOWNTIME 
 time specification in the hosts.cfg file.  E.g. "TIME=W:0800:2200"
 applied to a rule will make this rule active only on week-days between
 8AM and 10PM.
-
-.BR "EXTIME=timespecification"
+.PP
+.IP "\fBEXTIME=timespecification\fR"
 Rule excluding by the time-of-day. This is also specified as the DOWNTIME 
 time specification in the hosts.cfg file.  E.g. "TIME=W:0400:0600"
 applied to a rule will make this rule exclude on week-days between
 4AM and 6AM. This applies on top of any TIME= specification, so both
 must match.
-
 .SH DIRECTING ALERTS TO GROUPS
 For some tests - e.g. "procs" or "msgs" - the right group of people
 to alert in case of a failure may be different, depending on which 

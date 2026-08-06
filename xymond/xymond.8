@@ -257,15 +257,13 @@ the "alert" colors (from the "ALERTCOLORS" setting) and the "OK" colors
 (from the "OKCOLORS" setting). The old and new color falls into one of three
 categories:
 .sp
-.BR OK:
+.IP "\fBOK:\fR"
 The color is one of the "OK" colors (e.g. "green").
-.sp
-.BR ALERT:
+.IP "\fBALERT:\fR"
 The color is one of the "alert" colors (e.g. "red").
-.sp
-.BR UNDECIDED:
+.IP "\fBUNDECIDED:\fR"
 The color is neither an "alert" color nor an "OK" color (e.g. "yellow").
-
+.PP
 If the new status shows an ALERT state, then a message to the
 .I xymond_alert(8) 
 module is triggered. This may be a repeat of a previous alert, but 
@@ -298,37 +296,30 @@ program.
 
 The following channels are provided by xymond:
 .sp
-.BR status
+.IP "\fBstatus\fR"
 This channel is fed the contents of all incoming "status" and
 "summary" messages.
-.sp
-.BR stachg
+.IP "\fBstachg\fR"
 This channel is fed information about tests that change status,
 i.e. the color of the status-log changes.
-.sp
-.BR page
+.IP "\fBpage\fR"
 This channel is fed information about tests where the color changes
 between an alert color and a non-alert color. It also receives 
 information about "ack" messages.
-.sp
-.BR data
+.IP "\fBdata\fR"
 This channel is fed information about all "data" messages.
-.sp
-.BR notes
+.IP "\fBnotes\fR"
 This channel is fed information about all "notes" messages.
-.sp
-.BR enadis
+.IP "\fBenadis\fR"
 This channel is fed information about hosts or tests that are
 being disabled or enabled.
-.sp
-.BR client
+.IP "\fBclient\fR"
 This channel is fed the contents of the client messages sent
 by Xymon clients installed on the monitored servers.
-.sp
-.BR clichg
+.IP "\fBclichg\fR"
 This channel is fed the contents of a host client messages,
 whenever a status for that host goes red, yellow or purple.
-
+.PP
 Information about the data stream passed on these channels is
 in the Xymon source-tree, see the "xymond/new\-daemon.txt" file.
 

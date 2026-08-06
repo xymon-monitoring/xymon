@@ -73,9 +73,10 @@ To do this you must use
 where <expression> is a Perl-compatible regular expression. The same 
 kind of matching can be done on operating system or host class, using
 .sp
-    [os=<expresssion>]
-.br
-    [class=<expression>]
+.nf
+\&    [os=<expresssion>]
+\&    [class=<expression>]
+.fi
 
 
 Apart from the section delimiter, the file format is free-form, or
@@ -84,11 +85,11 @@ rather it is defined by the tools that make use of the configuration.
 .SH LOGFILE CONFIGURATION ENTRIES
 A logfile configuration entry looks like this:
 .sp
-    log:/var/log/messages:10240
-.br
-    ignore MARK
-.br
-    trigger Oops
+.nf
+\&    log:/var/log/messages:10240
+\&    ignore MARK
+\&    trigger Oops
+.fi
 .sp
 The \fBlog:FILENAME:SIZE\fR line defines the filename of the log, and the
 maximum amount of data (in bytes) to send to the Xymon server. FILENAME
@@ -118,11 +119,11 @@ A special type of log-handling is possible, where the number of lines matching
 a regular expressions are merely counted. This is \fBlinecount:FILENAME\fR,
 followed by a number of lines of the form \fBID:PATTERN\fR. E.g.
 .sp
-    linecount:/var/log/messages
-.br
-    diskerrors:I/O error.*device.*hd
-.br
-    badlogins:Failed login
+.nf
+\&    linecount:/var/log/messages
+\&    diskerrors:I/O error.*device.*hd
+\&    badlogins:Failed login
+.fi
 .sp
 
 .SH FILE CONFIGURATION ENTRIES

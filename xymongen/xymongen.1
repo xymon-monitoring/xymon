@@ -302,17 +302,14 @@ include it in the $XYMONHOME/web/stdnormal_header file):
 .br
 function addNetscapePanel() {
 .br
-   if ((typeof window.sidebar == "object") && 
-       (typeof window.sidebar.addPanel == "function"))
-.br
-      window.sidebar.addPanel ("Xymon", 
-.br
-            "http://your.server.com/nstab.html","");
-.br
-   else
-.br
-      alert("Sidebar only for Mozilla or Netscape 6+");
-.br
+.nf
+\&   if ((typeof window.sidebar == "object") &&
+\&       (typeof window.sidebar.addPanel == "function"))
+\&      window.sidebar.addPanel ("Xymon",
+\&            "http://your.server.com/nstab.html","");
+\&   else
+\&      alert("Sidebar only for Mozilla or Netscape 6+");
+.fi
 }
 .br
 //\-\->
@@ -326,13 +323,12 @@ and then you can include a "Add this to sidebar" link using this as a template:
 or if you prefer to have the standard Netscape "Add tab" button, you 
 would do it with
 .sp
-   <A HREF="javascript:addNetscapePanel();">
-.br
-      <IMG SRC="/gifs/add\-button.gif" HEIGHT=45 WIDTH=100
-.br
-           ALT="[Add Sidebar]" STYLE="border:0">
-.br
-   </A>
+.nf
+\&   <A HREF="javascript:addNetscapePanel();">
+\&      <IMG SRC="/gifs/add\-button.gif" HEIGHT=45 WIDTH=100
+\&           ALT="[Add Sidebar]" STYLE="border:0">
+\&   </A>
+.fi
 .sp
 The "add\-button.gif" is available from Netscape at
 http://developer.netscape.com/docs/manuals/browser/sidebar/add\-button.gif.
@@ -507,17 +503,18 @@ to run it.
 This generates the pages. There are some important options used here:
 .br
 * XYMONWEB="/xymon/os" environment variable, and the 
-  "$XYMONHOME/www/os/" option work together, and places the 
-  new pageset HTML files in a subdirectory off the normal 
-  Xymon webroot. If you normally access the Xymon pages as 
-  "http://xymon.acme.com/xymon/", you will then access 
-  the new pageset as "http://xymon.acme.com/xymon/os/"
-  NB: The directory given as XYMONWEB must contain a symbolic 
-  link to the $XYMONHOME/www/html/ directory, or links to 
-  individual status messages will not work. Similar links 
-  should be made for the gifs/, help/ and notes/ 
-  directories.
-.br
+.nf
+\&  "$XYMONHOME/www/os/" option work together, and places the
+\&  new pageset HTML files in a subdirectory off the normal
+\&  Xymon webroot. If you normally access the Xymon pages as
+\&  "http://xymon.acme.com/xymon/", you will then access
+\&  the new pageset as "http://xymon.acme.com/xymon/os/"
+\&  NB: The directory given as XYMONWEB must contain a symbolic
+\&  link to the $XYMONHOME/www/html/ directory, or links to
+\&  individual status messages will not work. Similar links
+\&  should be made for the gifs/, help/ and notes/
+\&  directories.
+.fi
 * "\-\-pageset=os" tells xymongen to structure the webpages 
   using the "os" layout, instead of the default layout.
 .br

@@ -465,17 +465,15 @@ where the alert will show up on the NK page.
 
 The time specification consists of
 .sp
-.BR day-of-week:
+.IP "\fBday-of-week:\fR"
 \fBW\fR means Mon-Fri ("weekdays"), \fB*\fR means all days, \fB0\fR .. \fB6\fR = Sunday .. Saturday. 
 Listing multiple days is possible, e.g. "60" is valid meaning "Saturday and Sunday".
-.sp
-.BR starttime:
+.IP "\fBstarttime:\fR"
 Time to start showing errors, must be in 24-hour clock format as HHMM hours/minutes. 
 E.g. for 8 am enter "0800", for 9.30 pm enter "2130"
-.sp
-.BR endtime:
+.IP "\fBendtime:\fR"
 Time to stop showing errors.
-
+.PP
 If necessary, multiple periods can be specified. E.g. to
 monitor a site 24x7, except between noon and 1 pm, use
 NKTIME=*:0000:1159,*:1300:2359
@@ -1194,16 +1192,13 @@ The regex is pre-processed for the following specific backslash "\e" escape
 sequences. You can therefore include arbitrary characters by using their
 hex values (e.g. \ex2E for a literal full stop):
 .br
-   \en     Newline (LF, ASCII 10 decimal)
-.br
-   \er     Carriage return (CR, ASCII 13 decimal)
-.br
-   \et     TAB (ASCII 8 decimal)
-.br
-   \e\e     Backslash (ASCII 92 decimal)
-.br
-   \exNN   The character with ASCII hex-value NN
-.br
+.nf
+\&   \en     Newline (LF, ASCII 10 decimal)
+\&   \er     Carriage return (CR, ASCII 13 decimal)
+\&   \et     TAB (ASCII 8 decimal)
+\&   \e\e     Backslash (ASCII 92 decimal)
+\&   \exNN   The character with ASCII hex-value NN
+.fi
 
 If you must have whitespace in the regex, use the
 [[:space:]] syntax, e.g. if you want to test for 
@@ -1290,15 +1285,13 @@ forms.
 
 E.g. if you have a web form defined like this:
 
-   <form action="/cgi\-bin/form.cgi" method="post">
-.br
-     <p>Given name<input type="text" name="givenname"></p>
-.br
-     <p>Surname<input type="text" name="surname"></p>
-.br
-     <input type="submit" value="Send">
-.br
-   </form>
+.nf
+\&   <form action="/cgi\-bin/form.cgi" method="post">
+\&     <p>Given name<input type="text" name="givenname"></p>
+\&     <p>Surname<input type="text" name="surname"></p>
+\&     <input type="submit" value="Send">
+\&   </form>
+.fi
 
 and you want to post the value "John" to the first field
 and "Doe Jr." to the second field, then the form data field
@@ -1480,15 +1473,13 @@ to the server-status page.
 Note that you need to enable the server-status URL in your
 Apache configuration. The following configuration is needed:
 .sp
-    <Location /server\-status>
-.br
-        SetHandler server\-status
-.br
-        Require ip 127.0.0.1
-.br
-    </Location>
-.br
-    ExtendedStatus On
+.nf
+\&    <Location /server\-status>
+\&        SetHandler server\-status
+\&        Require ip 127.0.0.1
+\&    </Location>
+\&    ExtendedStatus On
+.fi
 .sp
 Change "127.0.0.1" to the IP-address of the server that runs your
 network tests.
@@ -1538,9 +1529,10 @@ status is, and what is the status of the servers on the critical
 Sales department back-office servers in Las Vegas. So you configure
 the Las Vegas Xymon server to send \fBtwo\fR summaries:
 .sp
-    summary Vegas.All 10.0.1.1 http://vegas.foo.com/xymon/
-.br
-    summary Vegas.Sales 10.0.1.1 http://vegas.foo.com/xymon/sales/
+.nf
+\&    summary Vegas.All 10.0.1.1 http://vegas.foo.com/xymon/
+\&    summary Vegas.Sales 10.0.1.1 http://vegas.foo.com/xymon/sales/
+.fi
 .sp
 
 This gives you one summary line for Baltimore, with two columns: An
@@ -1562,8 +1554,7 @@ daemon is listening on a non-standard IP-address or port-number.
 
 
 .SH FILES
-.BR ~xymon/server/etc/hosts.cfg
-
+.IP "\fB~xymon/server/etc/hosts.cfg\fR"
 .SH "SEE ALSO"
 xymongen(1), xymonnet(1), xymondigest(1), xymonserver.cfg(5), xymon(7)
 
