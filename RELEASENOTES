@@ -37,6 +37,23 @@ XMH_FLAG_MULTIHOMED, the name xymon-xmh(5) has always documented. Scripts,
 web templates and xymondboard or hostinfo field selectors using the old name
 must be updated.
 
+The default web charset is now UTF-8: HTMLCONTENTTYPE defaults to
+"text/html; charset=UTF-8" so non-ASCII status content renders correctly
+without relying on the web server to supply a default charset (which Debian's
+Apache does but FreeBSD's does not). Sites whose hosts emit a different encoding
+(e.g. iso-8859-1, euc-jp) and relied on browser auto-detection should set
+HTMLCONTENTTYPE explicitly in xymonserver.cfg.
+
+The Linux, FreeBSD and macOS clients now filter the filesystems they report,
+where previously they reported whatever df listed. Pseudo and image
+filesystems are dropped by default - iso9660, squashfs and snap mounts on
+Linux, nullfs, procfs, devfs and autofs on FreeBSD, and mounts the system
+hides from the Finder or mounts read-only on macOS. A filesystem that stops
+being reported also stops raising alerts, so check that nothing you monitor
+has gone quiet after upgrading. Each client reads XYMONCLIENT_FS_INCLUDE_TYPES
+and XYMONCLIENT_FS_EXCLUDE_TYPES from xymonclient.cfg to override the
+defaults; see the comments there for the per-platform lists.
+
 
 Changes for 4.3.30
 ==================
@@ -46,13 +63,6 @@ including problems with hostnames with dashes in them.
 
 Combostatus tests propagated up from other combostatus tests should now
 display properly.
-
-The default web charset is now UTF-8: HTMLCONTENTTYPE defaults to
-"text/html; charset=UTF-8" so non-ASCII status content renders correctly
-without relying on the web server to supply a default charset (which Debian's
-Apache does but FreeBSD's does not). Sites whose hosts emit a different encoding
-(e.g. iso-8859-1, euc-jp) and relied on browser auto-detection should set
-HTMLCONTENTTYPE explicitly in xymonserver.cfg.
 
 
 Changes for 4.3.29
