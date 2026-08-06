@@ -19,13 +19,13 @@ utility on the client, and using \fBxymonfetch\fR on the Xymon
 server to collect data from the clients.
 
 xymonfetch will only collect data from clients that have the
-\fBpulldata\fR tag listed in the
+\fBPULLDATA\fR tag listed in the
 .I hosts.cfg(5)
 file. The IP-address listed in the hosts.cfg file must be correct,
 since this is the IP-address where xymonfetch will attempt to contact
 the client.  If the msgcache daemon is running on a non-standard 
 IP-address or portnumber, you can specify the portnumber as in
-\fBpulldata=192.168.1.2:8084\fR for contacting the msgcache daemon 
+\fBPULLDATA=192.168.1.2:8084\fR for contacting the msgcache daemon
 using IP 192.168.1.2 port 8084. If the IP-address is omitted, the
 default IP in the hosts.cfg file is used. If the port number is
 omitted, the portnumber from the XYMONDPORT setting in

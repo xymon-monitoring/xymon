@@ -3,14 +3,11 @@
 #
 # tests/packaging/hosts-cfg-tag-case.sh
 #
-# hosts.cfg(5) must spell each tag the same way lib/loadhosts.c stores it in
-# xmh_item_key[]. The case matters: xmh_find_item() matches a tag
-# case-insensitively (so either spelling sets the attribute), but
-# xmh_item_idx() -- which web/svcstatus-info.c uses to decide a tag is
-# already a recognized attribute, and xymonnet/xymonnet.c to decide a tag is
-# not a network test -- matches case-sensitively. A tag written in the
-# documented case therefore has to match the stored key exactly, or following
-# the manual produces a tag that works yet is reported as unrecognized.
+# A tag written the way hosts.cfg(5) documents it must be recognized by
+# xmh_item_idx(). Today that function compares case-sensitively, so the
+# documented spelling has to match the stored xmh_item_key[] entry exactly.
+# If xmh_item_idx() becomes case-insensitive, the manual's tag case is free and
+# this test must not preserve the old case policy as an accidental invariant.
 #
 # Four tags used to be documented lower-case while stored upper-case
 # (noclear, pulldata, noflap, multihomed); they were the only tags where
@@ -39,6 +36,16 @@ command -v awk >/dev/null 2>&1 || skip "awk not available"
 
 work=$(mktempdir)
 
+# Mirror the comparison xmh_item_idx() actually performs instead of fixing a
+# case policy that the implementation may deliberately change.
+idx_body=$(awk '/^int xmh_item_idx/,/^}/' "$LOADHOSTS")
+[ -n "$idx_body" ] || fail "could not locate xmh_item_idx() in lib/loadhosts.c"
+case "$idx_body" in
+	*strncasecmp*) pass "xmh_item_idx() matches case-insensitively, so the manual's tag case is free" ;;
+	*strncmp*) ;;
+	*) fail "xmh_item_idx() no longer compares keys with strncmp()/strncasecmp() -- this test needs updating" ;;
+esac
+
 # Stored keys, minus the ':' / '=' value separator: "COMMENT:" -> COMMENT
 sed -nE 's/.*xmh_item_key\[XMH_[A-Z0-9_]+\][[:space:]]*=[[:space:]]*"([^"]*)".*/\1/p' \
 	"$LOADHOSTS" | sed -E 's/[:=]$//' | sort -u > "$work/keys"
@@ -59,4 +66,4 @@ mismatched=$(awk '
 Because xmh_item_idx() matches case-sensitively, the documented spelling must match the stored key exactly:
 $mismatched"
 
-pass "hosts.cfg(5) documents every tag in the case lib/loadhosts.c stores it"
+pass "hosts.cfg(5) documents every tag in the case-sensitive form xmh_item_idx() recognizes"
