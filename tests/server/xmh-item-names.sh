@@ -38,8 +38,8 @@ LOADHOSTS_C="$ROOT/lib/loadhosts.c"
 # --- Source check: xmh_item_name[XMH_X] must register the string "XMH_X".
 # A mismatch is invisible at runtime (the wrong name still resolves to its own
 # slot), so this has to be checked against the source.
-mismatched=$(grep -o 'xmh_item_name\[XMH_[A-Z0-9_]*\][[:space:]]*=[[:space:]]*"XMH_[A-Z0-9_]*"' "$LOADHOSTS_C" \
-	| sed -E 's/xmh_item_name\[(XMH_[A-Z0-9_]*)\][[:space:]]*=[[:space:]]*"(XMH_[A-Z0-9_]*)"/\1 \2/' \
+mismatched=$(grep -o 'xmh_item_name\[XMH_[A-Z0-9_]*\][[:space:]]*=[[:space:]]*"[^"]*"' "$LOADHOSTS_C" \
+	| sed -E 's/xmh_item_name\[(XMH_[A-Z0-9_]*)\][[:space:]]*=[[:space:]]*"([^"]*)"/\1 \2/' \
 	| awk '$1 != $2 { printf "  %s registered as \"%s\"\n", $1, $2 }')
 [ -z "$mismatched" ] || fail "xmh_item_name[] entries disagree with their enum names -- \
 the registered string is the public field name (xymon-xmh(5), xymondboard/hostinfo, web \
@@ -51,6 +51,8 @@ command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 
 [ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
+
+ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-xmh-item-names.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
@@ -65,7 +67,7 @@ EOF
 
 "$CC" -I"$ROOT/include" -I"$ROOT/lib" -o "$work/harness" \
 	"$here/xmh-item-names-harness.c" "$ROOT/lib/libxymoncomm.a" \
-	-lssl -lcrypto 2>"$work/cc.log" \
+	$ssllibs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 "$work/harness" "$work/hosts.cfg" 2>"$work/stderr.log" \
