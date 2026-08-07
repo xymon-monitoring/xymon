@@ -299,6 +299,7 @@ int main(int argc, char *argv[])
 					 */
 					off_t pos = -1;
 					char l[1024];
+					char scancol[100];
 					int gotit;
 
 					MEMDEFINE(l);
@@ -323,14 +324,15 @@ int main(int argc, char *argv[])
 						if (fgets(l, sizeof(l)-1, statuslogfd)) {
 							/* Sun Oct 10 06:49:42 2004 red   1097383782 602 */
 
-							if ((strlen(l) > 24) && 
-							    (sscanf(l+24, " %s %d %d", oldcol, &lastchg_i, &dur_i) == 2) &&
-							    (parse_color(oldcol) != -1)) {
-								/* 
+							if ((strlen(l) > 24) &&
+							    (sscanf(l+24, " %99s %d %d", scancol, &lastchg_i, &dur_i) == 2) &&
+							    (parse_color(scancol) != -1)) {
+								/*
 								 * Record the start location of the line
 								 */
 								pos = tmppos;
 								lastchg = lastchg_i;
+								strncpy(oldcol, scancol, sizeof(oldcol));
 							}
 						}
 						else {
@@ -339,13 +341,27 @@ int main(int argc, char *argv[])
 					}
 
 					if (pos == -1) {
-						/* 
+						/*
 						 * Couldnt find anything in the log.
 						 * Take lastchg from the timestamp of the logfile,
 						 * and just append the data.
 						 */
 						lastchg = st.st_mtime;
 						fseeko(statuslogfd, 0, SEEK_END);
+						if (st.st_size > 0) {
+							char lastbyte;
+
+							/*
+							 * If the last line is unterminated garbage, terminate it
+							 * so the record we append below starts on a line of its own.
+							 */
+							fseeko(statuslogfd, -1, SEEK_END);
+							if ((fread(&lastbyte, 1, 1, statuslogfd) == 1) && (lastbyte != '\n')) {
+								fseeko(statuslogfd, 0, SEEK_END);
+								fputc('\n', statuslogfd);
+							}
+							fseeko(statuslogfd, 0, SEEK_END);
+						}
 					}
 					else {
 						/*
@@ -387,7 +403,7 @@ int main(int argc, char *argv[])
 				}
 
 				if (statuslogfd) {
-					if (logexists) {
+					if (logexists && *oldcol) {
 						struct tm oldtm;
 
 						/* Re-print the old record, now with the final duration */
@@ -401,6 +417,19 @@ int main(int argc, char *argv[])
 					memcpy(&tstamptm, localtime(&tstamp), sizeof(tstamptm));
 					strftime(timestamp, sizeof(timestamp), "%a %b %e %H:%M:%S %Y", &tstamptm);
 					fprintf(statuslogfd, "%s %s %d", timestamp, colorname(newcolor), (int)tstamp);
+
+					/*
+					 * When we seek-back rewrote inside the file (open record
+					 * followed by a malformed tail), stale bytes may remain
+					 * past what we just wrote; drop them so the open record
+					 * is the last thing in the file. A no-op in the append
+					 * paths, where the position is already EOF.
+					 */
+					fflush(statuslogfd);
+					if (ftruncate(fileno(statuslogfd), ftello(statuslogfd)) != 0) {
+						errprintf("Cannot truncate status historyfile '%s' : %s\n",
+							statuslogfn, strerror(errno));
+					}
 
 					fclose(statuslogfd);
 				}
