@@ -106,7 +106,7 @@ the file or directory is not present on a system.
 <H2>GENERAL PER-HOST OPTIONS</H2>
 
 <DL COMPACT>
-<DT>noclear<DD>
+<DT>NOCLEAR<DD>
 Controls whether stale status messages go purple or clear when
 a host is down. Normally, when a host is down the client statuses
 (&quot;cpu&quot;, &quot;disk&quot;, &quot;memory&quot; etc) will stop updating - this would usually
@@ -114,9 +114,9 @@ make them go &quot;purple&quot; which can trigger alerts. To avoid that, Xymon
 checks if the &quot;conn&quot; test has failed, and if that is true then the
 other tests will go &quot;clear&quot; instead of purple so you only get alerts
 for the &quot;conn&quot; test. If you do want the stale statuses to go purple,
-you can use the &quot;noclear&quot; tag to override this behaviour.
+you can use the &quot;NOCLEAR&quot; tag to override this behaviour.
 <P>
-Note that &quot;noclear&quot; also affects the behaviour of network tests;
+Note that &quot;NOCLEAR&quot; also affects the behaviour of network tests;
 see below.
 <P>
 <DT>prefer<DD>
@@ -133,7 +133,7 @@ Note: This only applies to hosts that are defined multiple
 times in the hosts.cfg file, although it will not hurt to add it
 on other hosts as well.
 <P>
-<DT>multihomed<DD>
+<DT>MULTIHOMED<DD>
 Tell Xymon that data from the host can arrive from multiple IP-addresses.
 By default, Xymon will warn if it sees data for one host coming from
 different IP-addresses, because this usually indicates a mis-configuration
@@ -611,7 +611,7 @@ threshold is defined as the percentage of the time that the host
 must be available, e.g. &quot;WARNPCT:98.5&quot; if you want the threshold to
 be at 98.5%
 <P>
-<DT>noflap[=test1,test2,...]<DD>
+<DT>NOFLAP[=test1,test2,...]<DD>
 Disable flap detection for this host, or for specific tests on this
 host. Flap detection is globally controlled by options given to 
 xymond on the command line, but, if enabled, it can be disabled 
@@ -643,23 +643,23 @@ see
 <I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
 
 <P>
-<DT>noclear<DD>
+<DT>NOCLEAR<DD>
 Some network tests depend on others. E.g. if the host does not
 respond to ping, then there's a good chance that the entire host 
 is down and all network tests will fail. Or if the http server
 is down, then any web content checks are also likely to fail.
 To avoid floods of alerts, the default behaviour is for xymonnet
 to change the status of these tests that fail because of another
-problem to &quot;clear&quot; instead of &quot;red&quot;. The &quot;noclear&quot; tag disables this
+problem to &quot;clear&quot; instead of &quot;red&quot;. The &quot;NOCLEAR&quot; tag disables this
 behaviour and causes all failing tests to be reported with their
 true color.
 <P>
 This behaviour can also be implemented on a per-test basis by
 putting the &quot;~&quot; flag on any network test.
 <P>
-Note that &quot;noclear&quot; also affects whether stale status messages
+Note that &quot;NOCLEAR&quot; also affects whether stale status messages
 from e.g. a client on the host go purple or clear when the
-host is down; see the &quot;noclear&quot; description in the
+host is down; see the &quot;NOCLEAR&quot; description in the
 &quot;GENERAL PER-HOST OPTIONS&quot; section above.
 <P>
 <DT>nosslcert<DD>
@@ -1564,8 +1564,8 @@ this should be listed FIRST in your file.
 tags - others are silently ignored: delayyellow, delayred, NOCOLUMNS, 
 COMMENT, DESCR, CLASS, dialup, testip, nonongreen, nodisp, noinfo, 
 notrends, noclient, TRENDS, NOPROPRED, NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, 
-REPORTTIME, WARNPCT, NET, noclear, nosslcert, ssldays, DOWNTIME, depends, 
-noping, noconn, trace, notrace, HIDEHTTP, browser, pulldata. Specifically, 
+REPORTTIME, WARNPCT, NET, NOCLEAR, nosslcert, ssldays, DOWNTIME, depends,
+noping, noconn, trace, notrace, HIDEHTTP, browser, PULLDATA. Specifically,
 note that network tests, &quot;badTEST&quot; settings, and alternate pageset 
 relations cannot be listed on the &quot;.default.&quot; host.
 <P>
@@ -1621,7 +1621,7 @@ the URL must point to a web page from the default set of Xymon webpages.
 <H2>OTHER TAGS</H2>
 
 <DL COMPACT>
-<DT>pulldata[=[IP][:port]]<DD>
+<DT>PULLDATA[=[IP][:port]]<DD>
 This option is recognized by the
 <I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
 
