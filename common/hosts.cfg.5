@@ -116,7 +116,7 @@ with multiple IP-addresses may use different IP's for sending data to
 Xymon, however. This tag disables the check of source IP when receiving
 data.
 
-.IP "\fBdelayred=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]\fR"
+.IP "\fBdelayred\fR=\fISTATUSCOLUMN\fR:\fIDELAY\fR[,\fISTATUSCOLUMN\fR:\fIDELAY\fR...]"
 Usually, status changes happen immediately. This tag is used to defer
 an update to red for the STATUSCOLUMN status for DELAY minutes. E.g.
 with \fBdelayred=disk:10,cpu:30\fR, a red disk-status will not appear
@@ -135,7 +135,7 @@ delay, list the status column in both \fBdelayred\fR and
 exception: the first report that arrives after the data gap takes
 effect immediately, without any delay.
 
-.IP "\fBdelayyellow=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]\fR"
+.IP "\fBdelayyellow\fR=\fISTATUSCOLUMN\fR:\fIDELAY\fR[,\fISTATUSCOLUMN\fR:\fIDELAY\fR...]"
 Same as \fBdelayred\fR, but defers the change to a yellow status.
 
 .IP holidays=SET
@@ -406,7 +406,7 @@ netstat3 graphs. Instead of the combined tcp graphs showing
 all services, there will be three: One for each of
 the http, conn and smtp services.
 .br
-.IP "\fBCOMPACT:COLUMN=COLUMN1|COLUMN2|COLUMN3[,ditto]\fR"
+.IP "\fBCOMPACT\fR:\fICOLUMN\fR=\fICOLUMN1\fR|\fICOLUMN2\fR|\fICOLUMN3\fR[,\fIditto\fR]"
 Collapses a series of statuses into a single column on
 the overview web page.
 .br
@@ -450,7 +450,7 @@ critical.html page, specify all the tests separated by commas.
 The test names correspond to the column names (e.g. 
 https tests are covered by an "NK:http" tag).
 
-.IP "\fBNKTIME=day:starttime:endtime[,day:starttime:endtime]\fR"
+.IP "\fBNKTIME\fR=\fIday\fR:\fIstarttime\fR:\fIendtime\fR[,\fIday\fR:\fIstarttime\fR:\fIendtime\fR]"
 This tag limits the time when an active alert is presented
 on the NK web page.
 
@@ -547,7 +547,7 @@ reports are processed (see
 .I report.cgi(1)
 for details about availability reports).
 
-.IP "\fBREPORTTIME=day:starttime:endtime[,day:starttime:endtime]\fR"
+.IP "\fBREPORTTIME\fR=\fIday\fR:\fIstarttime\fR:\fIendtime\fR[,\fIday\fR:\fIstarttime\fR:\fIendtime\fR]"
 This tag defines the time interval where you measure uptime
 of a service for reporting purposes.
 
@@ -623,7 +623,7 @@ There is no global default: outage-count checking is disabled unless
 the host carries this tag (possibly inherited from the ".default."
 host). E.g. "WARNSTOPS:3" turns the report red on the fourth outage.
 
-.IP "\fBnoflap[=test1,test2,...]\fR"
+.IP "\fBnoflap\fR[=\fItest1\fR,\fItest2\fR,...]"
 Disable flap detection for this host, or for specific tests on this
 host. Flap detection is globally controlled by options given to 
 xymond on the command line, but, if enabled, it can be disabled 
@@ -676,7 +676,7 @@ a second test result is generated with information about
 the SSL certificate - this tag disables the SSL certificate
 checks for the host.
 
-.IP "\fBssldays=WARNDAYS:ALARMDAYS\fR"
+.IP "\fBssldays\fR=\fIWARNDAYS\fR:\fIALARMDAYS\fR"
 Define the number of days before an SSL certificate expires,
 in which the sslcert status shows a warning (yellow) or
 alarm (red) status. These default to the values from the
@@ -708,8 +708,8 @@ default, and the "sni" and "nosni" tags were introduced together
 with the "--sni" option for xymonnet.
 
 
-.IP "\fBDOWNTIME=day:starttime:endtime[,day:starttime:endtime]\fR"
-.IP "\fBDOWNTIME=columns:day:starttime:endtime:cause[,columns:day:starttime:endtime:cause]\fR"
+.IP "\fBDOWNTIME\fR=\fIday\fR:\fIstarttime\fR:\fIendtime\fR[,\fIday\fR:\fIstarttime\fR:\fIendtime\fR]"
+.IP "\fBDOWNTIME\fR=\fIcolumns\fR:\fIday\fR:\fIstarttime\fR:\fIendtime\fR:\fIcause\fR[,\fIcolumns\fR:\fIday\fR:\fIstarttime\fR:\fIendtime\fR:\fIcause\fR]"
 This tag can be used to ignore failed checks during
 specific times of the day - e.g. if you run services that
 are only monitored e.g. Mon-Fri 8am-5pm, or you always 
@@ -730,14 +730,14 @@ the system is down.
 The syntax for DOWNTIME is the same as the one used
 by the NKTIME parameter.
 
-.IP "\fBSLA=day:starttime:endtime[,day:starttime:endtime]\fR"
+.IP "\fBSLA\fR=\fIday\fR:\fIstarttime\fR:\fIendtime\fR[,\fIday\fR:\fIstarttime\fR:\fIendtime\fR]"
 This tag is now deprecated. Use the DOWNTIME tag instead.
 
 This tag works the opposite of the DOWNTIME tag - you use 
 it to specify the periods of the day that the service should be 
 green. Failures OUTSIDE the SLA interval are reported as blue.
 
-.IP "\fBdepends=(testA:host1/test1,host2/test2),(testB:host3/test3),[...]\fR"
+.IP "\fBdepends\fR=(\fItestA\fR:\fIhost1\fR/\fItest1\fR,\fIhost2\fR/\fItest2\fR),(\fItestB\fR:\fIhost3\fR/\fItest3\fR),[...]"
 This tag allows you to define dependencies between tests.
 If "testA" for the current host depends on "test1" for host "host1"
 and test "test2" for "host2", this can be defined with
@@ -837,7 +837,7 @@ The actual name of the tag - "conn" by default - depends
 on the "\-\-ping=TESTNAME" option for xymonnet, as that
 decides the testname for the connectivity test.
 
-.IP "\fBconn={best,|worst,}IP1[,IP2...]\fR"
+.IP "\fBconn\fR={\fBbest\fR,|\fBworst\fR,}\fIIP1\fR[,\fIIP2\fR...]"
 This adds additional IP-addresses that are pinged during the
 normal "conn" test. So the normal "conn" test must be enabled
 (the default) before this tag has any effect. The IP-addresses
@@ -978,8 +978,8 @@ and "dig" tests are handled identically, so all of the facilities
 for testing described for the "dns" test are also available for
 the "dig" test.
 
-.IP "\fBdns=hostname\fR"
-.IP "\fBdns=TYPE:lookup[,TYPE:lookup...]\fR"
+.IP "\fBdns\fR=\fIhostname\fR"
+.IP "\fBdns\fR=\fITYPE\fR:\fIlookup\fR[,\fITYPE\fR:\fIlookup\fR...]"
 The default DNS tests will attempt a DNS lookup
 of the DNS' servers own hostname. You can specify the hostname
 to lookup on a DNS server by listing it on each test.
@@ -1003,7 +1003,7 @@ host. By default this uses a built-in SNTP probe and needs no external
 program. Set NTPDATE to the ntpdate program (on ntpsec, "ntpdig") to use
 that instead.
 
-.IP "\fBrpc[=rpcservice1,rpcservice2,...]\fR"
+.IP "\fBrpc\fR[=\fIrpcservice1\fR,\fIrpcservice2\fR,...]"
 Check for one or more available RPC services. This check is indirect
 in that it only queries the RPC Portmapper on the host, not the
 actual service. 
@@ -1174,7 +1174,7 @@ Note that it is not possible to test https-sites via a proxy,
 nor is it possible to use https for connecting to the proxy 
 itself.
 
-.IP "\fBcont[=COLUMN];URL;[expected_data_regexp|#digesttype:digest]\fR"
+.IP "\fBcont\fR[=\fICOLUMN\fR];\fIURL\fR;[\fIexpected_data_regexp\fR|#\fIdigesttype\fR:\fIdigest\fR]"
 This tag is used to specify a http/https check, where 
 it is also checked that specific content is present in
 the server response.
@@ -1272,7 +1272,7 @@ by adding the \fBHIDEHTTP\fR tag to the host entry.
 This syntax is deprecated. You should use the "cont"
 tag instead, see above.
 
-.IP "\fBpost[=COLUMN];URL;form\-data;[expected_data_regexp|#digesttype:digest]\fR"
+.IP "\fBpost\fR[=\fICOLUMN\fR];\fIURL\fR;\fIform\-data\fR;[\fIexpected_data_regexp\fR|#\fIdigesttype\fR:\fIdigest\fR]"
 This tag can be used to test web pages, that use an input
 form. Data can be posted to the form by specifying them 
 in the form-data field, and the result can be checked
@@ -1318,28 +1318,28 @@ in knowing if it is possible to submit the form (but don't care
 about the data), this can be an empty string - but the ';' at the 
 end is required.
 
-.IP "\fBnocont[=COLUMN];URL;forbidden_data_regexp\fR"
+.IP "\fBnocont\fR[=\fICOLUMN\fR];\fIURL\fR;\fIforbidden_data_regexp\fR"
 This tag works just like "cont" tag, but reverses the test. 
 It is green when the "forbidden_data_regexp" is NOT found in
 the response, and red when it IS found. So it can be used to 
 watch for data that should NOT be present in the response,
 e.g. a server error message.
 
-.IP "\fBnopost[=COLUMN];URL;form\-data;expected_data_regexp\fR"
+.IP "\fBnopost\fR[=\fICOLUMN\fR];\fIURL\fR;\fIform\-data\fR;\fIexpected_data_regexp\fR"
 This tag works just like "post" tag, but reverses the test. 
 It is green when the "forbidden_data_regexp" is NOT found in
 the response, and red when it IS found. So it can be used to 
 watch for data that should NOT be present in the response,
 e.g. a server error message.
 
-.IP "\fBtype[=COLUMN];URL;expected_content_type\fR"
+.IP "\fBtype\fR[=\fICOLUMN\fR];\fIURL\fR;\fIexpected_content_type\fR"
 This is a variant of the content check - instead of checking
 the content data, it checks the type of the data as given by 
 the HTTP Content\-Type: header. This can used to check if a
 URL returns e.g. a PDF file, regardless of what is inside the
 PDF file.
 
-.IP "\fBsoap[=COLUMN];URL;SOAPMESSAGE;[expected_data_regexp|#digesttype:digest]\fR"
+.IP "\fBsoap\fR[=\fICOLUMN\fR];\fIURL\fR;\fISOAPMESSAGE\fR;[\fIexpected_data_regexp\fR|#\fIdigesttype\fR:\fIdigest\fR]"
 Send SOAP message over HTTP. This is identical to the "cont"
 test, except that the request sent to the server uses a
 Content\-type of "application/soap+xml", and it also sends
@@ -1355,17 +1355,17 @@ and post it to the URL http://soap.foo.bar/bas?wsdl
 Note that SOAP XML documents usually must begin with the XML
 version line, \fB<?xml version="1.0">\fR
 
-.IP "\fBnosoap[=COLUMN];URL;SOAPMESSAGE;[forbidden_data_regexp|#digesttype:digest]\fR"
+.IP "\fBnosoap\fR[=\fICOLUMN\fR];\fIURL\fR;\fISOAPMESSAGE\fR;[\fIforbidden_data_regexp\fR|#\fIdigesttype\fR:\fIdigest\fR]"
 This tag works just like "soap" tag, but reverses the test.
 It is green when the "forbidden_data_regexp" is NOT found in
 the response, and red when it IS found. So it can be used to
 watch for data that should NOT be present in the response,
 e.g. a server error message.
 
-.IP "\fBhttphead[=COLUMN];URL\fR"
+.IP "\fBhttphead\fR[=\fICOLUMN\fR];\fIURL\fR"
 This is used to perform an HTTP HEAD request instead of a GET.
 
-.IP "\fBhttpstatus[=COLUMN];URL;okstatusexpr;notokstatusexpr\fR"
+.IP "\fBhttpstatus\fR[=\fICOLUMN\fR];\fIURL\fR;\fIokstatusexpr\fR;\fInotokstatusexpr\fR"
 This is used to explicitly test for certain HTTP statuscodes
 returned when the URL is requested. The \fBokstatusexpr\fR and
 \fBnokokstatusexpr\fR expressions are Perl-compatible regular
@@ -1442,7 +1442,7 @@ an LDAP server that requires TLS encryption. See
 for a discussion of the different ways of running LDAP servers
 with SSL/TLS, and which of these are supported by xymonnet.
 
-.IP "\fBldaplogin=username:password\fR"
+.IP "\fBldaplogin\fR=\fIusername\fR:\fIpassword\fR"
 Define a username and password to use when binding to the LDAP
 server for ldap URI tests. If not specified, xymonnet will
 attempt an anonymous bind.
@@ -1454,7 +1454,7 @@ as "red" (alarm). This tag reduces a search failure to a
 "yellow" (warning) status.
 
 .SH PERFORMANCE MONITORING TESTS
-.IP "\fBapache[=URL]\fR"
+.IP "\fBapache\fR[=\fIURL\fR]"
 If you are running an Apache web server, adding this tag makes
 .I xymonnet(1)
 collect performance statistics from the Apache web server by
@@ -1544,7 +1544,7 @@ the URL must point to a web page from the default set of Xymon webpages.
 
 
 .SH OTHER TAGS
-.IP "\fBpulldata[=[IP][:port]]\fR"
+.IP "\fBpulldata\fR[=[\fIIP\fR][:\fIport\fR]]"
 This option is recognized by the
 .I xymonfetch(8)
 utility, and causes it to poll the host for client data. The optional

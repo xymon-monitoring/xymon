@@ -34,7 +34,7 @@ to be delayed for up to 0.25 seconds before being sent off
 to the Xymon server.
 
 .SH OPTIONS
-.IP "\fB\-\-server=SERVERIP[:PORT][,SERVER2IP[:PORT]]\fR"
+.IP "\fB\-\-server\fR=\fISERVERIP\fR[:\fIPORT\fR][,\fISERVER2IP\fR[:\fIPORT\fR]]"
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
 standard Xymon port number. If you have setup the normal
@@ -46,7 +46,7 @@ sending their data via this proxy, note that the clients will
 receive their configuration data from the LAST of the servers
 listed here.  This option is required.
 
-.IP "\fB\-\-listen=LOCALIP[:PORT]\fR"
+.IP "\fB\-\-listen\fR=\fILOCALIP\fR[:\fIPORT\fR]"
 Specifies the IP-adress where xymonproxy listens for incoming 
 connections. By default, xymonproxy listens on all IP-addresses
 assigned to the host. If no portnumber is given, port 1984
@@ -56,7 +56,7 @@ will be used.
 Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
 
-.IP "\fB\-\-report=[PROXYHOSTNAME.]SERVICE\fR"
+.IP "\fB\-\-report\fR=[\fIPROXYHOSTNAME\fR.]\fISERVICE\fR"
 If given, this option causes xymonproxy to send a status report
 every 5 minutes to the Xymon server about itself. If you
 have set the standard Xymon environment, you can use

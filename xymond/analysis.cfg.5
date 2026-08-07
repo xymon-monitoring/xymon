@@ -364,21 +364,21 @@ go red".
 .sp
 The "netstat" listing sent by the client will be scanned for how many
 sockets match the \fBcriteria\fR listed.  The criteria you can use are:
-.IP "\fBLOCAL=addr\fR"
+.IP "\fBLOCAL\fR=\fIaddr\fR"
 "addr" is a (partial) local address specification in the format used on
 the output from netstat.
-.IP "\fBEXLOCAL=addr\fR"
+.IP "\fBEXLOCAL\fR=\fIaddr\fR"
 Exclude certain local addresses from the rule.
-.IP "\fBREMOTE=addr\fR"
+.IP "\fBREMOTE\fR=\fIaddr\fR"
 "addr" is a (partial) remote address specification in the format used on
 the output from netstat.
-.IP "\fBEXREMOTE=addr\fR"
+.IP "\fBEXREMOTE\fR=\fIaddr\fR"
 Exclude certain remote addresses from the rule.
-.IP "\fBSTATE=state\fR"
+.IP "\fBSTATE\fR=\fIstate\fR"
 Causes only the sockets in the specified state to be included, "state"
 is usually LISTEN or ESTABLISHED but can be any socket state reported by
 the clients "netstat" command.
-.IP "\fBEXSTATE=state\fR"
+.IP "\fBEXSTATE\fR=\fIstate\fR"
 Exclude certain states from the rule.
 .LP
 "addr" is typically "10.0.0.1:80" for the IP 10.0.0.1, port 80. 
@@ -508,7 +508,7 @@ this is identical to the rule definitions used in the
 .I alerts.cfg(5)
 file).
 
-.IP "\fBPAGE=targetstring\fR"
+.IP "\fBPAGE\fR=\fItargetstring\fR"
 Rule matching an alert by the name of the page in Xymon. "targetstring" is the path of
 the page as defined in the hosts.cfg file. E.g. if you have this setup:
 .IP
@@ -531,10 +531,10 @@ match all hosts on the Xymon frontpage. If you need it in a regular
 expression, use \fBPAGE=%^/\fR to avoid matching the forward-slash
 present in subpage-names.
 
-.IP "\fBEXPAGE=targetstring\fR"
+.IP "\fBEXPAGE\fR=\fItargetstring\fR"
 Rule excluding a host if the pagename matches.
 .PP
-.IP "\fBHOST=targetstring\fR"
+.IP "\fBHOST\fR=\fItargetstring\fR"
 Rule matching a host by the hostname.
 "targetstring" is either a comma-separated list of hostnames (from the hosts.cfg file),
 "*" to indicate "all hosts", or a Perl-compatible regular expression.
@@ -542,19 +542,19 @@ E.g. "HOST=dns.foo.com,www.foo.com" identifies two specific hosts;
 "HOST=%www.*.foo.com EXHOST=www\-test.foo.com" matches all hosts with a name
 beginning with "www", except the "www\-test" host.
 .PP
-.IP "\fBEXHOST=targetstring\fR"
+.IP "\fBEXHOST\fR=\fItargetstring\fR"
 Rule excluding a host by matching the hostname.
 .PP
-.IP "\fBCLASS=classname\fR"
+.IP "\fBCLASS\fR=\fIclassname\fR"
 Rule match by the client class-name. You specify the class-name 
 for a host when starting the client through the "\-\-class=NAME"
 option to the runclient.sh script. If no class is specified, the
 host by default goes into a class named by the operating system.
 .PP
-.IP "\fBEXCLASS=classname\fR"
+.IP "\fBEXCLASS\fR=\fIclassname\fR"
 Exclude all hosts belonging to "classname" from this rule.
 .PP
-.IP "\fBDISPLAYGROUP=groupstring\fR"
+.IP "\fBDISPLAYGROUP\fR=\fIgroupstring\fR"
 Rule matching an alert by the text of the display-group (text following the group, 
 group-only, group-except heading) in the hosts.cfg file. "groupstring" is the text
 for the group, stripped of any HTML tags. E.g. if you have this setup:
@@ -572,16 +572,16 @@ and the database servers can be matched with \fBDISPLAYGROUP="Production databas
 Note that you can also use regular expressions, e.g. \fBDISPLAYGROUP=%database\fR.
 If there is no group-setting for the host, use "DISPLAYGROUP=NONE".
 .PP
-.IP "\fBEXDISPLAYGROUP=groupstring\fR"
+.IP "\fBEXDISPLAYGROUP\fR=\fIgroupstring\fR"
 Rule excluding a group by matching the display-group string.
 .PP
-.IP "\fBTIME=timespecification\fR"
+.IP "\fBTIME\fR=\fItimespecification\fR"
 Rule matching by the time-of-day. This is specified as the DOWNTIME 
 time specification in the hosts.cfg file.  E.g. "TIME=W:0800:2200"
 applied to a rule will make this rule active only on week-days between
 8AM and 10PM.
 .PP
-.IP "\fBEXTIME=timespecification\fR"
+.IP "\fBEXTIME\fR=\fItimespecification\fR"
 Rule excluding by the time-of-day. This is also specified as the DOWNTIME 
 time specification in the hosts.cfg file.  E.g. "TIME=W:0400:0600"
 applied to a rule will make this rule exclude on week-days between

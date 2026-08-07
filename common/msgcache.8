@@ -39,12 +39,12 @@ This means that the automatic client update facility will
 not work for clients communicating via msgcache.
 
 .SH OPTIONS
-.IP "\fB--listen=IPADDRESS[:PORT]\fR"
+.IP "\fB--listen\fR=\fIIPADDRESS\fR[:\fIPORT\fR]"
 Defines the IP-address and portnumber where msgcache listens for 
 incoming connections. By default, msgcache listens for connections
 on all network interfaces, port 1984.
 
-.IP "\fB--server=IPADDRESS[,IPADDRESS]\fR"
+.IP "\fB--server\fR=\fIIPADDRESS\fR[,\fIIPADDRESS\fR]"
 Restricts which servers are allowed to pick up the cached messages.
 By default anyone can contact the msgcache utility and request all
 of the cached messages. This option allows only the listed servers

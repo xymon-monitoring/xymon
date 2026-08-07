@@ -64,16 +64,16 @@ must run with "XYMONLOGSTATUS=static".
 The directory where HTML-versions of the status logs are stored.
 Default: $XYMONHTMLSTATUSDIR
 
-.IP "\fB\-\-htmlext=.EXT\fR"
+.IP "\fB\-\-htmlext\fR=\fI.EXT\fR"
 Set the filename extension for generated HTML files. By default, HTML
 files are saved with a ".html" extension.
 
-.IP "\fB\-\-multigraphs=TEST1[,TEST2]\fR"
+.IP "\fB\-\-multigraphs\fR=\fITEST1\fR[,\fITEST2\fR]"
 This causes xymond_filestore to generate HTML status pages with links to 
 service graphs that are split up into multiple images, with at most 5 graphs
 per image. If not specified, only the "disk" status is split up this way.
 
-.IP "\fB\-\-only=test[,test,test]\fR"
+.IP "\fB\-\-only\fR=\fItest\fR[,\fItest\fR,\fItest\fR]"
 Save status messages only for the listed set of tests. This can be useful
 if you have an external script that needs to parse some of the status logs,
 but you do not want to save all status logs.

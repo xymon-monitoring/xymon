@@ -38,19 +38,19 @@ for a description of the "\-l" option.
 Set the starttime of the graph. This is used in zoom-mode.
 .IP "\fBgraph_end\fR"
 Set the end-time of the graph. This is used in zoom-mode.
-.IP "\fBaction=menu\fR"
+.IP "\fBaction\fR=\fBmenu\fR"
 Generate an HTML page with links to 4 graphs, representing the
 hourly, weekly, monthly and yearly graphs. Doesn't actually generate
 any graphs, only the HTML that links to the graphs.
-.IP "\fBaction=selzoom\fR"
+.IP "\fBaction\fR=\fBselzoom\fR"
 Generate an HTML page with link to single graph, and with JavaScript code 
 that lets the user select part of the graph for a zoom-operation. The 
 JavaScript invokes showgraph.cgi with "action=showzoom" to generate the
 zoomed graph webpage.
-.IP "\fBaction=showzoom\fR"
+.IP "\fBaction\fR=\fBshowzoom\fR"
 Generate HTML with a link to the zoomed graph image. This link goes to
 an "action=view" invocation of showgraph.cgi.
-.IP "\fBaction=view\fR"
+.IP "\fBaction\fR=\fBview\fR"
 Generate a single graph image.
 .SH OPTIONS
 .IP "\fB\-\-config\fR=\fIFILENAME\fR"

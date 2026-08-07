@@ -47,7 +47,7 @@ checkpoint. When starting up, xymond will restore its internal state
 from the information in this file. You can use the same filename for
 "\-\-checkpoint\-file" and "\-\-restart".
 
-.IP "\fB\-\-ghosts={allow|drop|log|match}\fR"
+.IP "\fB\-\-ghosts\fR={\fBallow\fR|\fBdrop\fR|\fBlog\fR|\fBmatch\fR}"
 How to handle status messages from unknown hosts. The "allow" setting
 accepts all status messages, regardless of whether the host is known
 in the hosts.cfg file or not. "drop" silently ignores reports from unknown 
@@ -70,7 +70,7 @@ client, looking for a hostname, classname or OS match (in that order).
 This option causes xymond to merge all matching entries together into 
 one and return all of it to the client.
 
-.IP "\fB\-\-listen=IP[:PORT]\fR"
+.IP "\fB\-\-listen\fR=\fIIP\fR[:\fIPORT\fR]"
 Specifies the IP-address and port where xymond will listen for incoming
 connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
 addresses available on the host) and port 1984.
@@ -144,7 +144,7 @@ $XYMONSERVERLOGS/xymond.pid.
 .IP "\fB\-\-log\fR=\fIFILENAME\fR"
 Redirect all output from xymond to FILENAME.
 
-.IP "\fB\-\-store\-clientlogs[=[!]COLUMN]\fR"
+.IP "\fB\-\-store\-clientlogs\fR[=[!]\fICOLUMN\fR]"
 Determines which status columns can cause a client message to be
 broadcast to the CLICHG channel. By default, no client messages 
 are pushed to the CLICHG channel. If this option is specified with
@@ -156,7 +156,7 @@ CLICHG channel. Several column names can be listed, separated by
 commas. If all columns are given as "!COLUMNNAME", then all status
 columns except those listed will cause the client data to be sent.
 
-.IP "\fB\-\-status\-senders=IP[/MASK][,IP/MASK]\fR"
+.IP "\fB\-\-status\-senders\fR=\fIIP\fR[/\fIMASK\fR][,\fIIP\fR/\fIMASK\fR]"
 Controls which hosts may send "status", "combo", "config" and "query"
 commands to xymond.
 
@@ -179,7 +179,7 @@ would use
 .br
     \-\-status\-senders=172.16.10.2,10.0.2.0/24
 
-.IP "\fB\-\-maint\-senders=IP[/MASK][,IP/MASK]\fR"
+.IP "\fB\-\-maint\-senders\fR=\fIIP\fR[/\fIMASK\fR][,\fIIP\fR/\fIMASK\fR]"
 Controls which hosts may send maintenance commands to xymond. Maintenance
 commands are the "enable", "disable", "ack" and "notes" commands. Format
 of this option is as for the \-\-status\-senders option. It is strongly
@@ -192,7 +192,7 @@ are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
 include the address of a server running xymonproxy in the list of allowed addresses.
 
-.IP "\fB\-\-www\-senders=IP[/MASK][,IP/MASK]\fR"
+.IP "\fB\-\-www\-senders\fR=\fIIP\fR[/\fIMASK\fR][,\fIIP\fR/\fIMASK\fR]"
 Controls which hosts may send commands to retrieve the state of xymond. These
 are the "xymondlog", "xymondboard" and "xymondxboard" commands, which are used
 by
@@ -206,7 +206,7 @@ are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
 include the address of a server running xymonproxy in the list of allowed addresses.
 
-.IP "\fB\-\-admin\-senders=IP[/MASK][,IP/MASK]\fR"
+.IP "\fB\-\-admin\-senders\fR=\fIIP\fR[/\fIMASK\fR][,\fIIP\fR/\fIMASK\fR]"
 Controls which hosts may send administrative commands to xymond. These
 commands are the "drop" and "rename" commands. Access to these should be 
 restricted, since they provide an un-authenticated means of completely
