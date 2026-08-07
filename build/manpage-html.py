@@ -187,18 +187,21 @@ def rename_anchors(html):
 
 
 def main():
-    # Called by makehtml.sh before the pipeline starts, to check that this
-    # script runs at all - see the comment there.
-    if "--selftest" in sys.argv[1:]:
-        return
-
     # makehtml.sh exports LC_ALL=C, and under a C locale Python decodes stdin
     # as ASCII up to 3.6; 3.7 promotes it to UTF-8 (PEP 538/540). The pages are
     # ASCII today, so nothing breaks either way - but the first accented
     # character in a manual page would fail with a traceback on the older
     # interpreter. Say what the encoding is instead of inheriting it.
+    # reconfigure() itself only exists from 3.7 on, which is why it runs
+    # before the selftest exit: an interpreter too old to have it must be
+    # refused by the selftest, not fail halfway through the pipeline.
     sys.stdin.reconfigure(encoding="utf-8")
     sys.stdout.reconfigure(encoding="utf-8")
+
+    # Called by makehtml.sh before the pipeline starts, to check that this
+    # script runs at all - see the comment there.
+    if "--selftest" in sys.argv[1:]:
+        return
 
     known = set(sys.argv[1:])
     html = sys.stdin.read()
