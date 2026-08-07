@@ -43,22 +43,38 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     service name to a graph via the TEST2RRD environment variable. So calling
     showgraph.cgi with &quot;service=cpu&quot; or &quot;service=la&quot; will
     end up producing the same graph.</p>
-<p class="Pp">A graph definition needs to have a TITLE and a YAXIS setting.
-    These are texts shown as the title of the graph, and the YAXIS heading
-    respectively. (The X-axis is always time-based).</p>
+<p class="Pp">A graph definition needs to have a TITLE and a YAXIS setting. (The
+    X-axis is always time-based).</p>
+<dl class="Bl-tag">
+  <dt id="TITLE"><a class="permalink" href="#TITLE"><b>TITLE</b></a></dt>
+  <dd>text shown as the title of the graph.</dd>
+  <dt id="YAXIS"><a class="permalink" href="#YAXIS"><b>YAXIS</b></a></dt>
+  <dd>text shown as the YAXIS heading.</dd>
+</dl>
 <p class="Pp">If a fixed set of RRD files are used for the graph, you just write
     those in the RRDtool definitions. Note that Xymon keeps all RRD files for a
     host in a separate directory per host, so you need not worry about the
     hostname being part of the RRD filename.</p>
-<p class="Pp">For graphs that use multiple RRD files as input, you specify a
-    filename pattern in the FNPATTERN statement, and optionally a pattern of
-    files to exclude from the graph with EXFNPATTERN (see &quot;[tcp]&quot; for
-    an example). When FNPATTERN is used, you can use &quot;@RRDFN@&quot; in the
-    RRDtool definitions to pick up each filename. &quot;@RRDIDX@&quot; is an
-    index (starting at 0) for each file in the set. &quot;@RRDPARAM@&quot;
-    contains the first word extracted from the pattern of files (see e.g.
-    &quot;[memory]&quot; how this is used). &quot;@COLOR@&quot; picks a new
-    color for each graph automatically.</p>
+<p class="Pp">For graphs that use multiple RRD files as input:</p>
+<dl class="Bl-tag">
+  <dt id="FNPATTERN"><a class="permalink" href="#FNPATTERN"><b>FNPATTERN</b></a></dt>
+  <dd>a filename pattern.</dd>
+  <dt id="EXFNPATTERN"><a class="permalink" href="#EXFNPATTERN"><b>EXFNPATTERN</b></a></dt>
+  <dd>optionally, a pattern of files to exclude from the graph (see
+      &quot;[tcp]&quot; for an example).</dd>
+</dl>
+<p class="Pp">When FNPATTERN is used, you can use</p>
+<dl class="Bl-tag">
+  <dt>&quot;@RRDFN@&quot;</dt>
+  <dd>in the RRDtool definitions to pick up each filename.</dd>
+  <dt>&quot;@RRDIDX@&quot;</dt>
+  <dd>is an index (starting at 0) for each file in the set.</dd>
+  <dt>&quot;@RRDPARAM@&quot;</dt>
+  <dd>contains the first word extracted from the pattern of files (see e.g.
+      &quot;[memory]&quot; how this is used).</dd>
+  <dt>&quot;@COLOR@&quot;</dt>
+  <dd>picks a new color for each graph automatically.</dd>
+</dl>
 <p class="Pp">For a bundle viewed one service at a time (e.g.
     &quot;tcp:conn&quot;), FNPATTERN capture group 1 must be exactly the service
     component: showgraph uses it both as the legend (@RRDPARAM@) and to select
@@ -69,38 +85,37 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <p class="Pp">The following is an example of how the &quot;la&quot; (cpu) graph
     is defined. This is a simple definition that uses a single RRD-file,
   la.rrd:</p>
-<p class="Pp">[la]
-  <br/>
-</p>
-<pre>        TITLE CPU Load
+<p class="Pp"></p>
+<pre>[la]
+        TITLE CPU Load
         YAXIS Load
         DEF:avg=la.rrd:la:AVERAGE
         CDEF:la=avg,100,/
         AREA:la#00CC00:CPU Load Average
-        GPRINT:la:LAST:  %5.1lf (cur)
-        GPRINT:la:MAX:  %5.1lf (max)
-        GPRINT:la:MIN:  %5.1lf (min)
-        GPRINT:la:AVERAGE:  %5.1lf (avg)\n</pre>
+        -u 1.0
+        GPRINT:la:LAST: \: %5.1lf (cur)
+        GPRINT:la:MAX: \: %5.1lf (max)
+        GPRINT:la:MIN: \: %5.1lf (min)
+        GPRINT:la:AVERAGE: \: %5.1lf (avg)\n</pre>
 <p class="Pp"></p>
 <p class="Pp">Here is an example of a graph that uses multiple RRD-files,
     determined automatically at run-time via the FNPATTERN setting. Note how it
     uses the @RRDIDX@ to define a unique RRD parameter per input-file, and the
     @COLOR@ and @RRDPARAM@ items to pick unique colors and a matching text for
     the graph legend:</p>
-<p class="Pp">[disk]
-  <br/>
-</p>
-<pre>        FNPATTERN disk(.*).rrd
+<p class="Pp"></p>
+<pre>[disk]
+        FNPATTERN ^disk(.*).rrd
         TITLE Disk Utilization
         YAXIS % Full
         DEF:p@RRDIDX@=@RRDFN@:pct:AVERAGE
         LINE2:p@RRDIDX@#@COLOR@:@RRDPARAM@
         -u 100
         -l 0
-        GPRINT:p@RRDIDX@:LAST:  %5.1lf (cur)
-        GPRINT:p@RRDIDX@:MAX:  %5.1lf (max)
-        GPRINT:p@RRDIDX@:MIN:  %5.1lf (min)
-        GPRINT:p@RRDIDX@:AVERAGE:  %5.1lf (avg)\n</pre>
+        GPRINT:p@RRDIDX@:LAST: \: %5.1lf (cur)
+        GPRINT:p@RRDIDX@:MAX: \: %5.1lf (max)
+        GPRINT:p@RRDIDX@:MIN: \: %5.1lf (min)
+        GPRINT:p@RRDIDX@:AVERAGE: \: %5.1lf (avg)\n</pre>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
@@ -113,7 +128,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     RRD files from MRTG into Xymon. In that case you can setup the TITLE
     definition so that it runs a custom script to determine the graph title.
     Like this:</p>
-<p class="Pp">	TITLE exec:/usr/local/bin/graphitle</p>
+<p class="Pp"></p>
+<pre>	TITLE exec:/usr/local/bin/graphitle</pre>
 <p class="Pp">The <b>/usr/local/bin/graphtitle</b> command is then called with
     the hostname, the graphtype, the period string, and all of the RRD files
     used as parameters. The script must generate one line of output, which is
@@ -126,7 +142,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <h1 class="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
 <dl class="Bl-tag">
   <dt id="TEST2RRD"><a class="permalink" href="#TEST2RRD"><b>TEST2RRD</b></a></dt>
-  <dd>Maps service names to graph definitions.</dd>
+  <dd>Maps service names to graph definitions.
+    <p class="Pp"></p>
+  </dd>
 </dl>
 </section>
 <section class="Sh">
@@ -142,7 +160,6 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
   ALSO</a></h1>
 <p class="Pp"><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5), rrdtool(1), rrdgraph(1)</p>
-<p class="Pp"></p>
 </section>
 <p>&#160;</p>
 <h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
