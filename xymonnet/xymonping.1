@@ -15,7 +15,7 @@ It is normally invoked by the
 utility, which performs all of the Xymon network tests.
 
 Optionally, if a list of IP-addresses is passed as command-line
-arguments, it will ping those IP's instead of reading them 
+arguments, it will ping those IP's instead of reading them
 from stdin.
 
 xymonping only handles IP-addresses, not hostnames.
@@ -24,7 +24,7 @@ xymonping was inspired by the
 .I fping(1)
 tool, but has been written from scratch to implement a fast
 ping tester without much of the overhead found in other
-such utilities. The output from xymonping is similar to that 
+such utilities. The output from xymonping is similar to that
 of "fping \-Ae".
 
 xymonping probes multiple systems in parallel, and the runtime
@@ -44,7 +44,7 @@ operations: Obtaining the raw socket, and optionally binding
 it to a specific source address. These operations are performed
 as root, the rest of the time xymonping runs with normal user
 privileges. Specifically, no user-supplied data or network data
-is used while running with root privileges. Therefore it 
+is used while running with root privileges. Therefore it
 should be safe to provide xymonping with the necessary
 suid-root privileges.
 
@@ -52,7 +52,7 @@ suid-root privileges.
 .IP "\fB\-\-retries\fR=\fIN\fR"
 Sets the number of retries for hosts that fail to respond to
 the initial ping, i.e. the number of ping probes sent in addition
-to the initial probe. The default is \-\-retries=2, to ping a host 
+to the initial probe. The default is \-\-retries=2, to ping a host
 3 times before concluding that it is not responding.
 
 .IP "\fB\-\-timeout\fR=\fIN\fR"

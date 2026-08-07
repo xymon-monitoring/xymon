@@ -1,6 +1,6 @@
 .TH XYMOND_HISTORY 8 "Version 4.3.30:  4 Sep 2019" "Xymon"
 .SH NAME
-xymond_history \- xymond worker module for logging status changes 
+xymond_history \- xymond worker module for logging status changes
 .SH SYNOPSIS
 .B "xymond_channel \-\-channel=stachg xymond_history [options]"
 
@@ -8,8 +8,8 @@ xymond_history \- xymond worker module for logging status changes
 xymond_history is a worker module for xymond, and as such it is normally
 run via the
 .I xymond_channel(8)
-program. It receives xymond status-change messages from the "stachg" 
-channel via stdin, and uses these to update the history logfiles in a manner 
+program. It receives xymond status-change messages from the "stachg"
+channel via stdin, and uses these to update the history logfiles in a manner
 that is compatible with the standard Big Brother daemon, bbd.
 
 .SH OPTIONS
@@ -39,7 +39,7 @@ Enable debugging output.
 .IP "\fBXYMONALLHISTLOG\fR"
 This environment variable controls if the $XYMONHISTDIR/allevents
 logfile is updated. This file is used by the event-log display on the
-nongreen html page and the eventlog-webpage, among other things. 
+nongreen html page and the eventlog-webpage, among other things.
 You can disable it by setting XYMONALLHISTLOGS=FALSE, but this is not
 recommended.
 
@@ -59,7 +59,7 @@ do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
 If you want to save all except some specific logs, use SAVESTATUSLOG=TRUE,!TEST1[,!TEST2...]
 If you want to save none except some specific logs, use SAVESTATUSLOG=FALSE,TEST1[,TEST2...]
 .br
-NOTE: Status logs will not be saved if there is less than 5% free space on 
+NOTE: Status logs will not be saved if there is less than 5% free space on
 the filesystem hosting the $XYMONHISTLOGS directory. The threshold can
 be tuned via the "\-\-minimum\-free" option.
 

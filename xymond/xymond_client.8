@@ -15,7 +15,7 @@ procs-columns. It also feeds Xymon data messages with the netstat-
 and vmstat-data collected by the client.
 
 When generating these status messages from the client data, xymond_client
-will use the configuration rules defined in the 
+will use the configuration rules defined in the
 .I analysis.cfg(5)
 file to determine the color of each status message.
 
@@ -59,14 +59,14 @@ received from the client. If you prefer to just have the monitored
 cpu load shown, this option will turn off the full cpu-listing.
 
 .IP "\fB\-\-uptime\-status\fR"
-Generate a separate "uptime" status column. The uptime is normally 
+Generate a separate "uptime" status column. The uptime is normally
 just reported in the "cpu" status column, but if you would like a
-separate status column for the uptime, you can use this option. It 
-is useful if you want to generate an alert in case of a reboot, 
+separate status column for the uptime, you can use this option. It
+is useful if you want to generate an alert in case of a reboot,
 without having this alert mixed in with the cpu load alerts.
 
 .IP "\fB\-\-config\fR=\fIFILENAME\fR"
-Sets the filename for the 
+Sets the filename for the
 .I analysis.cfg
 file. The default value is "etc/analysis.cfg" below the Xymon
 server directory.

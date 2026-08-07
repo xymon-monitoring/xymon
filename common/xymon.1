@@ -30,7 +30,7 @@ Specifies the timeout for connecting to the Xymon server, in
 seconds. The default is 5 seconds.
 
 .IP "\fB\-\-response\fR"
-The xymon utility normally knows when to expect a response 
+The xymon utility normally knows when to expect a response
 from the server, so this option is not required. However,
 it will cause any response from the server to be displayed.
 
@@ -46,16 +46,16 @@ the message. If RECIPIENT is given as "0.0.0.0", then the
 message is sent to all of the servers listed in the XYMSERVERS
 environment variable.
 
-Usually, a client will use "$XYMSRV" for the \fBRECIPIENT\fR 
+Usually, a client will use "$XYMSRV" for the \fBRECIPIENT\fR
 parameter, as this is defined for the client scripts
 to automatically contain the correct value.
 
 The \fBRECIPIENT\fR parameter may be a URL for a webserver
 that has the xymoncgimsg.cgi or similar script installed. This
-tunnels the Xymon messages to the Xymon server using standard 
-HTTP protocol. The 
+tunnels the Xymon messages to the Xymon server using standard
+HTTP protocol. The
 .I xymoncgimsg.cgi(8)
-CGI tool (included in Xymon) must be installed on the webserver 
+CGI tool (included in Xymon) must be installed on the webserver
 for the HTTP transport to work.
 .br
 
@@ -64,9 +64,9 @@ The \fBmessage\fR parameter is the message to be sent across
 to the Xymon server. Messages must be enclosed in quotes,
 but by doing so they can span multiple lines. The maximum size
 of a message is defined by the maximum allowed length of your
-shell\(aqs command-line, and is typically 8-32 KB. 
+shell\(aqs command-line, and is typically 8-32 KB.
 
-If you need to send longer status messages, you can specify "@" 
+If you need to send longer status messages, you can specify "@"
 as the message: xymon will then read the status message from its
 stdin.
 
@@ -113,14 +113,14 @@ e.g. to direct alerts for a "procs" status to different people, depending on
 exactly which process is down.
 
 .IP "\fBnotify\fR \fIHOSTNAME.TESTNAME\fR <\fImessage\fR \fItext\fR>"
-This triggers an informational message to be sent to those who 
-receive alerts for this HOSTNAME+TESTNAME combination, 
+This triggers an informational message to be sent to those who
+receive alerts for this HOSTNAME+TESTNAME combination,
 according to the rules defined in
 .I alerts.cfg(5)
-This is used by the 
+This is used by the
 .I enadis.cgi(1)
-tool to notify people about hosts being disabled or 
-enabled, but can also serve as a general way of notifying 
+tool to notify people about hosts being disabled or
+enabled, but can also serve as a general way of notifying
 server administrators.
 
 .IP "\fBdata\fR \fIHOSTNAME.DATANAME\fR<\fInewline\fR><\fIadditional\fR \fItext\fR>"
@@ -132,7 +132,7 @@ green identity. It is used by RRD bottom-feeder modules, among
 others. In Xymon, data messages are by default processed only by the
 .I xymond_rrd(8)
 module. If you want to handle data-messages using an external application,
-you may want to enable the 
+you may want to enable the
 .I xymond_filestore(8)
 module for data-messages, to store data-messages in a format compatible
 with how the Big Brother daemon does.
@@ -155,7 +155,7 @@ Re-enables a test that had been disabled.
 Query the Xymon server for the latest status reported for this
 particular test. If the host/test status is known, the response is
 the first line of the status report - the current color will be the
-first word on the line. Additional lines of text that might be 
+first word on the line. Additional lines of text that might be
 present on the status message cannot be retrieved.
 .br
 This allows any Xymon client to determine the status of a particular
@@ -171,10 +171,10 @@ automatic recovery action should be initiated.
 Retrieve one of the Xymon configuration files from the
 server. This command allows a client to pull files from the
 $XYMONHOME/etc/ directory on the server, allowing for semi-automatic
-updates of the client configuration. Since the configuration files 
-are designed to have a common file for the configuration of all hosts 
-in the system - and this is in fact the recommended way of configuring 
-your clients - this makes it easier to keep the configuration 
+updates of the client configuration. Since the configuration files
+are designed to have a common file for the configuration of all hosts
+in the system - and this is in fact the recommended way of configuring
+your clients - this makes it easier to keep the configuration
 files synchronized.
 
 .IP "\fBdrop\fR \fIHOSTNAME\fR"
@@ -226,25 +226,25 @@ Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
 After the first line comes the full status log in plain text format.
 
 .IP "\fBxymondxlog\fR \fIHOSTNAME.TESTNAME\fR"
-Retrieves an XML string containing the status log as with the 
+Retrieves an XML string containing the status log as with the
 "xymondlog" command.
 
 .IP "\fBxymondboard\fR [\fICRITERIA\fR] [\fBfields\fR=\fIFIELDLIST\fR]"
 Retrieves a summary of the status of all known tests available to
-the Xymon daemon. 
+the Xymon daemon.
 
-By default - if no CRITERIA is provided - it returns one line for all 
+By default - if no CRITERIA is provided - it returns one line for all
 status messages that are found in Xymon. You can filter the response
-by selection specific page, host, test, color or various other fields. The 
-PAGEPATH, NETWORK, HOSTNAME, TESTNAME, and *MSG parameters are interpreted 
-perl-compatible regular expressions; the COLOR parameter accepts multiple 
+by selection specific page, host, test, color or various other fields. The
+PAGEPATH, NETWORK, HOSTNAME, TESTNAME, and *MSG parameters are interpreted
+perl-compatible regular expressions; the COLOR parameter accepts multiple
 colors separated by commas; the *TIME values accept unix epoch timestamps.
 Other variables identified in xymon-xmh(5) may also be used.
 
-Because host filtration is done before test filtration, it's more efficient 
-(with very large data sets) to use PAGEPATH, HOSTNAME, NETWORK, and other 
-XMH_ filters when possible, before globally filtering with COLOR, *MSG, 
-*TIME, or TESTNAME. 
+Because host filtration is done before test filtration, it's more efficient
+(with very large data sets) to use PAGEPATH, HOSTNAME, NETWORK, and other
+XMH_ filters when possible, before globally filtering with COLOR, *MSG,
+*TIME, or TESTNAME.
 
 You can filter on, for example, both a hostname and a testname.
 
@@ -273,20 +273,20 @@ Include only hosts with a xymon-xmh(5) variable matching this value
 Advanced Filtering
 .sp
 .IP "\fBmsg\fR=\fIMESSAGE\fR"
-Include only tests with full content matching MESSAGE. Use "\es" to escape 
+Include only tests with full content matching MESSAGE. Use "\es" to escape
 spaces (or other PCRE strings)
 .IP "\fBackmsg\fR=\fIMESSAGE\fR"
-Include only tests with acknowledgement(s) MESSAGE. Use "\es" to escape 
+Include only tests with acknowledgement(s) MESSAGE. Use "\es" to escape
 spaces (or other PCRE strings)
 .IP "\fBdismsg\fR=\fIMESSAGE\fR"
-Include only tests that have been disabled with strings matching MESSAGE. 
+Include only tests that have been disabled with strings matching MESSAGE.
 Use "\es" to escape spaces (or other PCRE strings). (It is most efficient
 to pair this with color=blue.)
 .PP
 Timestamp Filters
 
 Certain fields (explained below) can be filtered with unix timestamps
-and with the following inequalities:  >= > <= < = != 
+and with the following inequalities:  >= > <= < = !=
 
 These filters are: lastchange, logtime, validtime, acktime, disabletime
 
@@ -333,19 +333,19 @@ Shows "Y" if there is client data available, "N" if not.
 Timestamp when the last client message was received, in Unix "epoch" format.
 .IP "\fBacklist\fR"
 List of the current acknowledgements for a test. This is a text string with multiple
-fields, delimited by a colon character. There are 5 fields: Timestamp for when the ack 
-was generated and when it expires; the the "ack level"; the user who sent the ack; and 
+fields, delimited by a colon character. There are 5 fields: Timestamp for when the ack
+was generated and when it expires; the the "ack level"; the user who sent the ack; and
 the acknowledgement text.
 .IP "\fBflapinfo\fR"
 Tells if the status is flapping. 5 fields, delimited by "/": A "0" if the status
 is not flapping and "1" if it is flapping; timestamp when the latest status change
-was recorded and when the first statuschange was recorded; and the two colors that 
+was recorded and when the first statuschange was recorded; and the two colors that
 the status is flapping between.
 .IP "\fBstats\fR"
 Number of status-changes that have been recorded for this status since xymond was
 started.
 .IP "\fBmodifiers\fR"
-Lists all active modifiers for this status (i.e. updates sent using a "modify" 
+Lists all active modifiers for this status (i.e. updates sent using a "modify"
 command).
 .IP "\fBXMH_*\fR"
 The XMH-tags refer to the Xymon
@@ -355,7 +355,7 @@ configuration settings. A full list of these can be found in the
 man-page.
 .PP
 The ackmsg, dismsg and msg fields have certain characters encoded: Newline
-is "\en", TAB is "\et", carriage return is "\er", a pipe-sign is "\ep", 
+is "\en", TAB is "\et", carriage return is "\er", a pipe-sign is "\ep",
 and a backslash is "\e\e".
 
 If the "fields" parameter is omitted, a default set of
@@ -367,7 +367,7 @@ Retrieves an XML string with the summary of all status logs
 as for the "xymondboard" command.
 
 .IP "\fBhostinfo\fR [\fICRITERIA\fR]"
-Retrieves the current configuration of a host (i.e. the 
+Retrieves the current configuration of a host (i.e. the
 .I hosts.cfg(5)
 definition). CRITERIA selects which host(s) to report, and is
 identical to the CRITERIA in the xymondboard command.
@@ -375,7 +375,7 @@ identical to the CRITERIA in the xymondboard command.
 The response is one line for each host that matches the CRITERIA,
 or all hosts if no criteria is specified. The line is composed of
 a number of fields, separated by a pipe-sign. The first two fields
-will always be the hostname and the IP-address. The remaining fields 
+will always be the hostname and the IP-address. The remaining fields
 - if any - are the hosts.cfg tags in no particular order.
 
 .IP "\fBdownload\fR \fIFILENAME\fR"
@@ -427,8 +427,8 @@ used. JOBID is a number provided as the first item in the output from the schedu
 
 .IP "\fBnotes\fR \fIFILENAME\fR"
 The message text will be stored in $XYMONHOME/notes/FILENAME which is then used as
-hyperlinks from hostnames or column names. This requires that the "storenotes" 
-task is enabled in tasks.cfg (it is disabled by default). FILENAME 
+hyperlinks from hostnames or column names. This requires that the "storenotes"
+task is enabled in tasks.cfg (it is disabled by default). FILENAME
 cannot contain any directory path - these are stripped automatically.
 
 .IP "\fBusermsg\fR \fIID\fR"
@@ -445,7 +445,7 @@ determined outside the normal flow of a status. E.g. the normal
 whether a host can be ping'ed or not; the RRD handler can then
 use a "modify" command to override this is the actual ping
 responsetime exceeds a given threshold. (See the "DS" configuration
-setting in 
+setting in
 .I analysis.cfg(5)
 for how to do this). SOURCE is some identification of the module
 that generates the "modify" message - future modifications must
@@ -480,12 +480,12 @@ if we get a response):
 .br
 
    $ $XYMON $XYMSRV "config mytest.cfg" >/tmp/mytest.cfg.new
-   $ if [ \-s /tmp/mytest.cfg.new ]; then 
+   $ if [ \-s /tmp/mytest.cfg.new ]; then
        mv /tmp/mytest.cfg.new $XYMONHOME/etc/mytest.cfg
      fi
 
 Send a very large status message that has been built in the
-file "statusmsg.txt". Instead of providing it on the command-line, 
+file "statusmsg.txt". Instead of providing it on the command-line,
 pass it via stdin to the xymon command:
 
    $ cat statusmsg.txt | $XYMON $XYMSRV "@"

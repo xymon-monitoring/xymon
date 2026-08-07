@@ -5,11 +5,11 @@ xymond_channel \- Feed a xymond channel to a worker module
 .B "xymond_channel --channel=CHANNEL [options] workerprogram [worker-options]"
 
 .SH DESCRIPTION
-xymond_channel hooks into one of the 
+xymond_channel hooks into one of the
 .I xymond(8)
 channels that provide information about events occurring in the Xymon system.
 It retrieves messages from the xymond daemon, and passes them on to the
-\fBworkerprogram\fR on the STDIN (file descripter 1) of the worker program. 
+\fBworkerprogram\fR on the STDIN (file descripter 1) of the worker program.
 Worker programs can then handle messages as they like.
 
 A number of worker programs are shipped with xymond, e.g.
@@ -42,9 +42,9 @@ This option is required. The following channels are available:
 "enadis" receives information about hosts being disabled or enabled.
 
 .IP "\fB--filter\fR=\fIEXPRESSION\fR"
-EXPRESSION is a Perl-compatible regular expression. xymond_channel will match 
+EXPRESSION is a Perl-compatible regular expression. xymond_channel will match
 the first line of each message against this expression, and silently drops any
-message that does not match the expression. Especially useful for custom 
+message that does not match the expression. Especially useful for custom
 worker modules and during testing, to limit the amount of data that the module
 must process.
 .br
@@ -58,7 +58,7 @@ If a message is not handled within this time, it is considered lost. You normall
 do not have to modify this unless you have an extremely busy server.
 
 .IP "\fB--daemon\fR"
-xymond_channel is normally started by 
+xymond_channel is normally started by
 .I xymonlaunch(8)
 as a task defined in the
 .I tasks.cfg(5)
@@ -66,14 +66,14 @@ file. If you are not using xymonlaunch, then starting xymond_channel with this
 option causes it to run as a stand-alone background task.
 
 .IP "\fB--pidfile\fR=\fIFILENAME\fR"
-If running as a stand-alone daemon, xymond_channel will save the process-ID 
+If running as a stand-alone daemon, xymond_channel will save the process-ID
 of the daemon in FILENAME. This is useful for automated startup- and shutdown-
 scripts.
 
 .IP "\fB--env\fR=\fIFILENAME\fR"
 Loads the environment variables defined in FILENAME before starting xymond_channel.
 This is normally used only when running as a stand-alone daemon; if xymond_channel
-is started by xymonlaunch, then the environment is controlled by the task definition 
+is started by xymonlaunch, then the environment is controlled by the task definition
 in the
 .I tasks.cfg(5)
 file.

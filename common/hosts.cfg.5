@@ -9,14 +9,14 @@ hosts.cfg \- Main Xymon configuration file
 The
 .I hosts.cfg(5)
 file is the most important configuration file for all of the
-Xymon programs.  This file contains the full list of 
-all the systems monitored by Xymon, including the set 
+Xymon programs.  This file contains the full list of
+all the systems monitored by Xymon, including the set
 of tests and other configuration items stored for each host.
 
 .SH FILE FORMAT
 Each line of the file defines a host. Blank lines and lines
 starting with a hash mark (#) are treated as comments and ignored.
-Long lines can be broken up by putting a backslash at the end of 
+Long lines can be broken up by putting a backslash at the end of
 the line and continuing the entry on the next line.
 .sp
 The format of an entry in the hosts.cfg file is as follows:
@@ -28,12 +28,12 @@ Listing a host with only IP-address and hostname will cause a network
 test to be executed for the host - the connectivity test is enabled
 by default, but no other tests.
 
-The optional tags are then used to define which tests are 
+The optional tags are then used to define which tests are
 relevant for the host, and also to set e.g. the time-interval used
 for availability reporting by
 .I xymongen(1)
 
-An example of setting up the hosts.cfg file is in the Xymon on-line 
+An example of setting up the hosts.cfg file is in the Xymon on-line
 documentation (from the Help menu, choose "Configuring Monitoring").
 The following describes the possible settings in a hosts.cfg
 file supported by Xymon.
@@ -47,12 +47,12 @@ file at run-time, allowing for a large hosts.cfg file to be
 split up into more manageable pieces.
 
 The "filename" argument should point to a file that uses the
-same syntax as hosts.cfg. The filename can be an absolute 
+same syntax as hosts.cfg. The filename can be an absolute
 filename (if it begins with a '/'), or a relative filename -
 relative file names are prefixed with the directory where
 the main hosts.cfg file is located (usually $XYMONHOME/etc/).
 
-You can nest include tags, i.e. a file that is included 
+You can nest include tags, i.e. a file that is included
 from the main hosts.cfg file can itself include other files.
 
 .IP "\fBdispinclude\fR \fIfilename\fR"
@@ -66,7 +66,7 @@ Acts like the "include" tag, but only for the xymonnet tool.
 .IP "\fBdirectory\fR \fIdirectoryname\fR"
 This tag is used to include all files in the named directory.
 Files are included in alphabetical order. If there are sub-
-directories, these are recursively included also. The following 
+directories, these are recursively included also. The following
 files are ignored: Files that begin with a dot, files that end
 with a tilde, RCS files that end with ",v", RPM package manager
 files ending in ".rpmsave" or ".rpmnew", DPKG package manager
@@ -173,13 +173,13 @@ without \fBNOTAFTER\fR has no end, and \fBNOTAFTER\fR without
 
 
 .SH XYMONGEN DISPLAY OPTIONS
-These tags are processed by the 
+These tags are processed by the
 .I xymongen(1)
 tool when generating the Xymon webpages or reports.
 
 .IP "\fBpage\fR \fINAME\fR [\fIPage-title\fR]"
 This defines a page at the level below the entry page. All
-hosts following the "page" directive appear on this page, until 
+hosts following the "page" directive appear on this page, until
 a new "page", "subpage" or "subparent" line is found.
 
 .IP "\fBsubpage\fR \fINAME\fR [\fIPage-title\fR]"
@@ -226,7 +226,7 @@ it easy to implement.
 .IP "\fBvsubpage\fR"
 .IP "\fBvsubparent\fR"
 These are page-definitions similar to the "page", "subpage" and
-"subparent" definitions. However, on these pages the rows are 
+"subparent" definitions. However, on these pages the rows are
 the tests, and the columns are the hosts (normal pages have it
 the other way around). This is useful if you have a very large
 number of tests for a few hosts, and prefer to have them listed
@@ -255,7 +255,7 @@ not listed will be ignored for these hosts.
 
 .IP "\fBgroup\-except\fR \fICOLUMN1\fR|\fICOLUMN2\fR|\fICOLUMN3\fR [\fIgroup-title\fR]"
 Same as the "group\-only" lines, but includes all columns EXCEPT
-those explicitly listed in the group. Any columns listed will 
+those explicitly listed in the group. Any columns listed will
 be ignored for these hosts - all other columns are shown.
 
 .IP "\fBtitle\fR Page, group or host title text"
@@ -266,13 +266,13 @@ groups or hosts.
 The title tag operates on the next item in the hosts.cfg
 file following the title tag.
 
-If a title tag precedes a host entry, the title is 
+If a title tag precedes a host entry, the title is
 shown just before the host is listed on the status
 page. The column headings present for the host will
 be repeated just after the heading.
 
 If a title tag precedes a group entry, the title is
-show just before the group on the status page. 
+show just before the group on the status page.
 
 If a title tag precedes a page/subpage/subparent
 entry, the title text replaces the normal "Pages hosted
@@ -304,7 +304,7 @@ hosts.cfg.
 Used to drop certain of the status columns generated by the
 Xymon client. \fBcolumn\fR is one of \fBcpu\fR, \fBdisk\fR,
 \fBfiles\fR, \fBmemory\fR, \fBmsgs\fR, \fBports\fR, \fBprocs\fR.
-This setting stops these columns from being updated for the 
+This setting stops these columns from being updated for the
 host. Note: If the columns already exist, you must use the
 .I xymon(1)
 utility to \fBdrop\fR them, or they will go purple.
@@ -358,7 +358,7 @@ when configuring log-file monitoring (they can be used as references in
 .I analysis.cfg(5)
 and
 .I alerts.cfg(5)
-to group log file checks or alerts). Normally, class-names are controlled on the 
+to group log file checks or alerts). Normally, class-names are controlled on the
 client by starting the Xymon client with the "\-\-class=Classname" option.
 If you specify it in the hosts.cfg file on the Xymon server, it overrides
 any class name that the client reports. If not set, then the host belongs
@@ -386,7 +386,7 @@ Defines the RRD graphs to include in the "trends" column
 generated by xymongen.  This option syntax is complex.
 .br
 If this option is not present, xymongen provides graphs
-matching the standard set of RRD files: la, disk, memory, 
+matching the standard set of RRD files: la, disk, memory,
 users, vmstat, iostat, netstat, tcp, bind, apache, sendmail
 .br
 * If this option is specified, the list of graphs to
@@ -394,13 +394,13 @@ include start out as being empty (no graphs).
 .br
 * To include all default graphs, use an asterisk.  E.g. "TRENDS:*"
 .br
-* To exclude a certain graph, specify it prefixed with '!'. E.g. 
+* To exclude a certain graph, specify it prefixed with '!'. E.g.
 to see all graphs except users: "TRENDS:*,!users"
 .br
 * The netstat, vmstat and tcp graphs have many "subgraphs".
 Which of these are shown can be specified like this:
 "TRENDS:*,netstat:netstat2|netstat3,tcp:http|smtp|conn"
-This will show all graphs, but instead of the normal 
+This will show all graphs, but instead of the normal
 netstat graph, there will be two: The netstat2 and
 netstat3 graphs. Instead of the combined tcp graphs showing
 all services, there will be three: One for each of
@@ -413,7 +413,7 @@ the overview web page.
 .IP "\fBINTERFACES:REGEXP\fR"
 On systems with multiple network interfaces, the operating
 system may report a number of network interface where the
-statistics are of no interest. By default Xymon tracks and 
+statistics are of no interest. By default Xymon tracks and
 graphs the traffic on all network interfaces. This option
 defines a regular expression, and only those interfaces whose
 name matches the expression are tracked.
@@ -440,14 +440,14 @@ NOTE: This has been deprecated, you should use
 instead of the NK tag.
 
 Define the tests that you want included on the critical page.
-E.g. if you have a host where you only want to see the 
+E.g. if you have a host where you only want to see the
 http tests on critical.html, you specify it as
 
   12.34.56.78  www.acme.com  # http://www.acme.com/ NK:http
 
 If you want multiple tests for a host to show up on the
 critical.html page, specify all the tests separated by commas.
-The test names correspond to the column names (e.g. 
+The test names correspond to the column names (e.g.
 https tests are covered by an "NK:http" tag).
 
 .IP "\fBNKTIME\fR=\fIday\fR:\fIstarttime\fR:\fIendtime\fR[,\fIday\fR:\fIstarttime\fR:\fIendtime\fR]"
@@ -461,15 +461,15 @@ working hours - if, for example, the host is not being
 serviced during week-ends.
 
 You can then use the NKTIME tag to define the time periods
-where the alert will show up on the NK page. 
+where the alert will show up on the NK page.
 
 The time specification consists of
 .sp
 .IP "\fBday-of-week:\fR"
-\fBW\fR means Mon-Fri ("weekdays"), \fB*\fR means all days, \fB0\fR .. \fB6\fR = Sunday .. Saturday. 
+\fBW\fR means Mon-Fri ("weekdays"), \fB*\fR means all days, \fB0\fR .. \fB6\fR = Sunday .. Saturday.
 Listing multiple days is possible, e.g. "60" is valid meaning "Saturday and Sunday".
 .IP "\fBstarttime:\fR"
-Time to start showing errors, must be in 24-hour clock format as HHMM hours/minutes. 
+Time to start showing errors, must be in 24-hour clock format as HHMM hours/minutes.
 E.g. for 8 am enter "0800", for 9.30 pm enter "2130"
 .IP "\fBendtime:\fR"
 Time to stop showing errors.
@@ -489,17 +489,17 @@ WAP-capable device, e.g. a PDA or cell-phone.
 
 .IP "\fBWML:[+|\-]testname[,[+|\-]testname]\fR"
 This tag determines which tests for this hosts are included
-in the WML (WAP) page. Syntax is identical to the NK: tag.  
+in the WML (WAP) page. Syntax is identical to the NK: tag.
 
 The default set of WML tests are taken from the \-\-wml
-command line option.  If no "WML:" tag is specified, the 
+command line option.  If no "WML:" tag is specified, the
 "NK:" tag is used if present.
 
 
 .SH XYMON STATUS PROPAGATION OPTIONS
 These tags affect how a status propagates upwards from a single
-test to the page and higher. This can also be done with the 
-command-line options \-\-nopropyellow and \-\-nopropred, but the tags 
+test to the page and higher. This can also be done with the
+command-line options \-\-nopropyellow and \-\-nopropred, but the tags
 apply to individual hosts, whereas the command line options are global.
 
 .IP "\fBNOPROPRED:[+|\-]testname[,[+|\-]testname]\fR"
@@ -509,7 +509,7 @@ the (sub)page status color, and further on to xymon.html
 or nongreen.html
 
 If a host-specific tag begins with a '\-' or a '+', the
-host-specific tags are removed/added to the default 
+host-specific tags are removed/added to the default
 setting from the command-line option. If the host-specific
 tag does not begin with a '+' or a '\-', the default setting
 is ignored for this host and the NOPROPRED applies to the
@@ -537,7 +537,7 @@ Similar to NOPROPRED: tag, but applies to propagating a purple
 status upwards.
 
 .IP "\fBNOPROPACK:[+|\-]testname[,[+|\-]testname]\fR"
-Similar to NOPROPRED: tag, but applies to propagating an 
+Similar to NOPROPRED: tag, but applies to propagating an
 acknowledged status upwards.
 
 
@@ -552,7 +552,7 @@ This tag defines the time interval where you measure uptime
 of a service for reporting purposes.
 
 When xymongen generates a report, it computes the availability
-of each service - i.e. the percentage of time that the 
+of each service - i.e. the percentage of time that the
 service is reported as available (meaning: not red).
 
 By default, this calculation is done on a 24x7 basis, so
@@ -577,9 +577,9 @@ happens like this:
 * Only measurements done during the given time period is used for the calculation.
 .br
 * "blue" time reduces the length of the report interval,
-so if you are generating a report for a 10-hour period 
+so if you are generating a report for a 10-hour period
 and there are 20 minutes of "blue" time, then the
-availability calculation will consider the reporting 
+availability calculation will consider the reporting
 period to be 580 minutes (10 hours minus 20 minutes).
 This allows you to have scheduled downtime during the
 REPORTTIME interval without hurting your availability;
@@ -625,9 +625,9 @@ host). E.g. "WARNSTOPS:3" turns the report red on the fourth outage.
 
 .IP "\fBnoflap\fR[=\fItest1\fR,\fItest2\fR,...]"
 Disable flap detection for this host, or for specific tests on this
-host. Flap detection is globally controlled by options given to 
-xymond on the command line, but, if enabled, it can be disabled 
-using this option. 
+host. Flap detection is globally controlled by options given to
+xymond on the command line, but, if enabled, it can be disabled
+using this option.
 
 
 .SH NETWORK TEST SETTINGS
@@ -642,8 +642,8 @@ This tag defines the host as being tested from a specific location.
 If xymonnet sees that the environment variable XYMONNETWORK
 is set, it will only test the hosts that have a matching
 "NET:location" tag in the hosts.cfg file. So this tag is useful
-if you have more than one system running network tests, but you 
-still want to keep a consolidated hosts.cfg file for all your 
+if you have more than one system running network tests, but you
+still want to keep a consolidated hosts.cfg file for all your
 systems.
 
 Note: The "\-\-test\-untagged" option modifies this behaviour,
@@ -652,7 +652,7 @@ see
 
 .IP "\fBnoclear\fR"
 Some network tests depend on others. E.g. if the host does not
-respond to ping, then there's a good chance that the entire host 
+respond to ping, then there's a good chance that the entire host
 is down and all network tests will fail. Or if the http server
 is down, then any web content checks are also likely to fail.
 To avoid floods of alerts, the default behaviour is for xymonnet
@@ -672,7 +672,7 @@ host is down; see the "noclear" description in the
 .IP "\fBnosslcert\fR"
 Disables the standard check of any SSL certificates for
 this host. By default, if an SSL-enabled service is tested,
-a second test result is generated with information about 
+a second test result is generated with information about
 the SSL certificate - this tag disables the SSL certificate
 checks for the host.
 
@@ -697,8 +697,8 @@ strong encryption (128 bits or better), use "sslbits=128".
 Enables or disables use of SNI (Server Name Indication) for SSL tests.
 
 Some SSL implementations cannot handle SSL handshakes with SNI
-data, so Xymon by default does not use SNI. This default can be 
-changed with the "--sni" option for 
+data, so Xymon by default does not use SNI. This default can be
+changed with the "--sni" option for
 .I xymonnet(1)
 but can also be managed per host with these tags.
 
@@ -712,19 +712,19 @@ with the "--sni" option for xymonnet.
 .IP "\fBDOWNTIME\fR=\fIcolumns\fR:\fIday\fR:\fIstarttime\fR:\fIendtime\fR:\fIcause\fR[,\fIcolumns\fR:\fIday\fR:\fIstarttime\fR:\fIendtime\fR:\fIcause\fR]"
 This tag can be used to ignore failed checks during
 specific times of the day - e.g. if you run services that
-are only monitored e.g. Mon-Fri 8am-5pm, or you always 
+are only monitored e.g. Mon-Fri 8am-5pm, or you always
 reboot a server every Monday between 5 and 6 pm.
 
-What happens is that if a test fails during the specified time, 
-it is reported with status BLUE instead of red, yellow, or purple. Thus 
-you can still see when the service was unavailable, but alarms 
-will not be triggered and the downtime is not counted in the 
+What happens is that if a test fails during the specified time,
+it is reported with status BLUE instead of red, yellow, or purple. Thus
+you can still see when the service was unavailable, but alarms
+will not be triggered and the downtime is not counted in the
 availability calculations generated by the Xymon reports.
 
-The "columns" and "cause" settings are optional, but both or 
-neither must be specified. "columns" may be a comma-separated 
-list of status columns to which DOWNTIME will apply.  The "cause" 
-string will be displayed on the status web page to explain why 
+The "columns" and "cause" settings are optional, but both or
+neither must be specified. "columns" may be a comma-separated
+list of status columns to which DOWNTIME will apply.  The "cause"
+string will be displayed on the status web page to explain why
 the system is down.
 
 The syntax for DOWNTIME is the same as the one used
@@ -733,8 +733,8 @@ by the NKTIME parameter.
 .IP "\fBSLA\fR=\fIday\fR:\fIstarttime\fR:\fIendtime\fR[,\fIday\fR:\fIstarttime\fR:\fIendtime\fR]"
 This tag is now deprecated. Use the DOWNTIME tag instead.
 
-This tag works the opposite of the DOWNTIME tag - you use 
-it to specify the periods of the day that the service should be 
+This tag works the opposite of the DOWNTIME tag - you use
+it to specify the periods of the day that the service should be
 green. Failures OUTSIDE the SLA interval are reported as blue.
 
 .IP "\fBdepends\fR=(\fItestA\fR:\fIhost1\fR/\fItest1\fR,\fIhost2\fR/\fItest2\fR),(\fItestB\fR:\fIhost3\fR/\fItest3\fR),[...]"
@@ -745,7 +745,7 @@ and test "test2" for "host2", this can be defined with
    depends=(testA:host1/test1,host2/test2)
 
 When deciding the color to report for testA, if either host1/test1
-failed or host2/test2 failed, if testA has failed also then the color 
+failed or host2/test2 failed, if testA has failed also then the color
 of testA will be "clear" instead of red or yellow.
 
 Since all tests are actually run before the dependencies are evaluated,
@@ -782,14 +782,14 @@ red immediately.  With a "badTEST:x:y:z" tag this behaviour changes:
 * While fewer than "x" successive tests fail, the column stays GREEN.
 
 The optional time specification can be used to limit this
-"badTEST" setting to a particular time of day, e.g. to 
+"badTEST" setting to a particular time of day, e.g. to
 require a longer period of downtime before raising an
 alarm during out-of-office hours. The time-specification
 uses:
 .br
 * Weekdays: The weekdays this badTEST tag applies, from
 0 (Sunday) through 6 (Saturday). Putting "W" here counts
-as "12345", i.e. all working days. Putting "*" here 
+as "12345", i.e. all working days. Putting "*" here
 counts as all days of the week, equivalent to "0123456".
 .br
 * start time and end time are specified using 24-hour clocks,
@@ -826,10 +826,10 @@ on the web display.
 .IP "\fBconn\fR"
 The "conn" test (which does a ping of the host) is enabled
 for all hosts by default, and normally you just want to
-disable it using "noconn" or "noping". However, on the 
+disable it using "noconn" or "noping". However, on the
 rare occasion where you may want to check that a host is
 NOT up, you can specify it as an explicit test, and use
-the normal test modifiers, e.g. "!conn" will be green 
+the normal test modifiers, e.g. "!conn" will be green
 when the host is NOT up, and red if it does appear on
 the network.
 
@@ -845,10 +845,10 @@ listed here are pinged in addition to the main IP-address.
 
 When multiple IP's are pinged, you can choose if ALL IP's
 must respond (the "worst" method), or AT LEAST one IP
-must respond (the "best" setting). All of the IP's are 
+must respond (the "best" setting). All of the IP's are
 reported in a single "conn" status, whose color is determined
 from the result of pinging the IP's and the best/worst setting.
-The default method is "best" - so it will report green if 
+The default method is "best" - so it will report green if
 just one of the IP's respond to ping.
 
 .IP "\fBbadconn[\-weekdays\-starttime\-endtime]:x:y:z\fR"
@@ -869,7 +869,7 @@ in the list - separate hosts with commas.
 This tag changes the color reported for a ping check that
 fails, when one or more of the hosts in the "route" list
 is also down. A "red" status becomes "yellow" - other colors
-are unchanged. The status message will include information 
+are unchanged. The status message will include information
 about the hosts in the router-list that are down, to aid
 tracking down which router is the root cause of the problem.
 
@@ -879,7 +879,7 @@ will report a status of "clear".
 
 .IP "\fBroute_LOCATION:router1,router2,...\fR"
 If the XYMONNETWORK environment variable is defined, a tag
-of "route_XYMONNETWORK:" is recognized by xymonnet with 
+of "route_XYMONNETWORK:" is recognized by xymonnet with
 the same effect as the normal "route:" tag (see above).
 This allows you to have different route: tags for each
 server running xymonnet. The actual text for the tag then must
@@ -891,7 +891,7 @@ If the connectivity test fails, run a "traceroute"
 and include the output from this in the status message
 from the failed connectivity test. Note: For this to
 work, you may have to define the TRACEROUTE environment
-variable, see 
+variable, see
 .I xymonserver.cfg(5)
 
 .IP "\fBnotrace\fR"
@@ -929,27 +929,27 @@ test specification, \fBafter\fR any other modifiers or port number.
 "IPADDRESS" must be a valid dotted IP-address (not hostname) which
 is assigned to the host running the network tests.
 
-The name of the test also determines the column name that the test 
+The name of the test also determines the column name that the test
 result will appear with in the Xymon webpages.
 
-By prefixing a test with "!" it becomes a reverse test: Xymon will 
+By prefixing a test with "!" it becomes a reverse test: Xymon will
 expect the service NOT to be available, and send a green status if
 it does NOT respond. If a connection to the service succeeds, the
 status will go red.
 
 By prefixing a test with "?" errors will be reported with a "clear"
 status instead of red. This is known as a test for a "dialup" service,
-and allows you to run tests of hosts that are not always online, 
+and allows you to run tests of hosts that are not always online,
 without getting alarms while they are off-line.
 
 .IP "\fBftp ssh telnet smtp pop3 imap nntp rsync clamd oratns qmtp qmqp\fR"
-These tags are for testing services offering the FTP, Secure Shell (ssh), 
+These tags are for testing services offering the FTP, Secure Shell (ssh),
 SMTP, POP3, IMAP, NNTP, rsync, CLAM anti-virus daemon (clamd), Oracle TNS
 listener (oratns), qmail QMTP and QMQP protocols.
 
 .IP "\fBftps telnets smtps pop3s imaps nntps\fR"
 These tags are for testing of the SSL-tunneled versions of
-the standard ftp, telnet, smtp, pop3, imap and nntp protocols. 
+the standard ftp, telnet, smtp, pop3, imap and nntp protocols.
 If Xymon was configured with support for SSL, you can test these
 services like any other network service - xymonnet will
 setup an SSL-encrypted session while testing the service.
@@ -984,14 +984,14 @@ The default DNS tests will attempt a DNS lookup
 of the DNS' servers own hostname. You can specify the hostname
 to lookup on a DNS server by listing it on each test.
 
-The second form of the test allows you to perform multiple 
+The second form of the test allows you to perform multiple
 queries of the DNS server, requesting different types of
 DNS records. The TYPE defines the type of DNS data: A (IP-address),
-MX (Mail eXchanger), PTR (reverse), CNAME (alias), SOA (Start-Of-Authority), 
+MX (Mail eXchanger), PTR (reverse), CNAME (alias), SOA (Start-Of-Authority),
 NS (Name Server) are among the more common ones used. The
 "lookup" is the query. E.g. to lookup the MX records for the
 "foo.com" domain, you would use "dns=mx:foo.com". Or to lookup
-the nameservers for the "bar.org" domain, "dns=ns:bar.org". 
+the nameservers for the "bar.org" domain, "dns=ns:bar.org".
 You can list multiple lookups, separated by commas. For the
 test to end up with a green status, all lookups must succeed.
 
@@ -1006,11 +1006,11 @@ that instead.
 .IP "\fBrpc\fR[=\fIrpcservice1\fR,\fIrpcservice2\fR,...]"
 Check for one or more available RPC services. This check is indirect
 in that it only queries the RPC Portmapper on the host, not the
-actual service. 
+actual service.
 
 If only "rpc" is given, the test only verifies that the port mapper
 is available on the remote host. If you want to check that one or
-more RPC services are registered with the port mapper, list the 
+more RPC services are registered with the port mapper, list the
 names of the desired RPC services after the equals-sign. E.g. for
 a working NFS server the "mount", "nlockmgr" and "nfs" services
 must be available; this can be checked with "rpc=mount,nlockmgr,nfs".
@@ -1033,7 +1033,7 @@ URL's.
 If the URL requires authentication in the form of a
 username and password, it is most likely using the
 HTTP "Basic" authentication. xymonnet support this,
-and you can provide the username and password either 
+and you can provide the username and password either
 by embedding them in the URL e.g.
 .br
     http://USERNAME:PASSWORD@www.sample.com/
@@ -1062,7 +1062,7 @@ From the MSIE Tools-Options menu, pick the Content tab,
 click on Certificates, choose the Personal tab, select the
 certificate and click Export. Make sure you export the
 private key also. In the Export File Format, choose
-PKCS 12 (.PFX), check the "Include all certificates" 
+PKCS 12 (.PFX), check the "Include all certificates"
 checkbox and uncheck the "Enable strong protection".
 Provide a temporary password for the exported file,
 and select a filename for the PFX-file.
@@ -1119,7 +1119,7 @@ Note that SSLv2 support is disabled in all current OpenSSL releases.
 TLS version-specific scheme testing requires OpenSSL 1.0.1 or higher.
 
 .IP "Testing sites by IP-address"
-xymonnet ignores the "testip" tag normally used to force a 
+xymonnet ignores the "testip" tag normally used to force a
 test to use the IP-address from the hosts.cfg file instead of
 the hostname, when it performs http and https tests.
 
@@ -1127,7 +1127,7 @@ The reason for this is that it interacts badly with virtual
 hosts, especially if these are IP-based as is common with
 https-websites.
 
-Instead the IP-address to connect to can be overridden by 
+Instead the IP-address to connect to can be overridden by
 specifying it as:
 
 	http://www.sample.com=1.2.3.4/index.html
@@ -1149,7 +1149,7 @@ add the "\-\-bb\-proxy\-syntax" option when running
 if you want to use this.
 
 xymonnet supports the Big Brother syntax for
-specifying an HTTP proxy to use when performing http 
+specifying an HTTP proxy to use when performing http
 tests. This syntax just joins the proxy- and the target-URL
 into one, e.g.
 .br
@@ -1158,7 +1158,7 @@ into one, e.g.
 would be the syntax for testing the www.foo.com website
 via the proxy running on "webproxy.sample.com" port 3128.
 
-If the proxy port number is not specified, the default 
+If the proxy port number is not specified, the default
 HTTP port number (80) is used.
 
 If your proxy requires authentication, you can specify the
@@ -1171,11 +1171,11 @@ a password of "Wilma1", before requesting the proxy to fetch
 the www.foo.com homepage.
 
 Note that it is not possible to test https-sites via a proxy,
-nor is it possible to use https for connecting to the proxy 
+nor is it possible to use https for connecting to the proxy
 itself.
 
 .IP "\fBcont\fR[=\fICOLUMN\fR];\fIURL\fR;[\fIexpected_data_regexp\fR|#\fIdigesttype\fR:\fIdigest\fR]"
-This tag is used to specify a http/https check, where 
+This tag is used to specify a http/https check, where
 it is also checked that specific content is present in
 the server response.
 
@@ -1185,7 +1185,7 @@ is part of the URL, and which semicolon acts as a delimiter.
 
 The data that must be returned can be specified either
 as a regular expression (except that <space> is not allowed)
-or as a message digest (typically using an MD5 sum or 
+or as a message digest (typically using an MD5 sum or
 SHA-1 hash).
 
 The regex is pre-processed for the following specific backslash "\e" escape
@@ -1201,10 +1201,10 @@ hex values (e.g. \ex2E for a literal full stop):
 .fi
 
 If you must have whitespace in the regex, use the
-[[:space:]] syntax, e.g. if you want to test for 
+[[:space:]] syntax, e.g. if you want to test for
 the string "All is OK", use "All[[:space:]]is[[:space:]]OK".
-Note that this may depend on your particular implementation 
-of the regex functions found in your C library. Thanks to 
+Note that this may depend on your particular implementation
+of the regex functions found in your C library. Thanks to
 Charles Goyard for this tip.
 
 For example, the complete content-check tag is:
@@ -1227,13 +1227,13 @@ For a more advanced match, grouping and alternation can accept multiple values:
 This matches either "status=ok" or "status=ready" in the response.
 
 Note: If you are migrating from the "cont2.sh" script,
-you must change the '_' used as wildcards by cont2.sh 
+you must change the '_' used as wildcards by cont2.sh
 into '.' which is the regular-expression wildcard character.
 
 Message digests can use whatever digest algorithms your
-libcrypto implementation (usually OpenSSL) supports. 
-Common message digests are "md5", "sha1", "sha256" or "sha512". 
-The digest is calculated on the data portion of the response 
+libcrypto implementation (usually OpenSSL) supports.
+Common message digests are "md5", "sha1", "sha256" or "sha512".
+The digest is calculated on the data portion of the response
 from the server, i.e. HTTP headers are not included in the
 digest (as they change from one request to the next).
 
@@ -1242,16 +1242,16 @@ The expected digest value can be computed with the
 utility.
 
 "cont" tags in hosts.cfg result in two status reports: One
-status with the "http" check, and another with the "content" 
+status with the "http" check, and another with the "content"
 check.
 
 As with normal URL's, the extended syntax described above
-can be used e.g. when testing SSL sites that require the use of 
+can be used e.g. when testing SSL sites that require the use of
 SSLv2 or strong ciphers.
 
 The column name for the result of the content check is by default
 called "content" - you can change the default with the "\-\-content=NAME"
-option to xymonnet. See 
+option to xymonnet. See
 .I xymonnet(1)
 for a description of this option.
 
@@ -1265,7 +1265,7 @@ Column-names cannot include whitespace or semi-colon.
 
 The content-check status by default includes the full URL
 that was requested, and the HTML data returned by the server.
-You can hide the HTML data on a per-host (not per-test) basis 
+You can hide the HTML data on a per-host (not per-test) basis
 by adding the \fBHIDEHTTP\fR tag to the host entry.
 
 .IP "\fBcontent\fR=\fIURL\fR"
@@ -1274,7 +1274,7 @@ tag instead, see above.
 
 .IP "\fBpost\fR[=\fICOLUMN\fR];\fIURL\fR;\fIform\-data\fR;[\fIexpected_data_regexp\fR|#\fIdigesttype\fR:\fIdigest\fR]"
 This tag can be used to test web pages, that use an input
-form. Data can be posted to the form by specifying them 
+form. Data can be posted to the form by specifying them
 in the form-data field, and the result can be checked
 as if it was a normal content check (see above for a description
 of the cont-tag and the restrictions on how the URL must be written).
@@ -1313,28 +1313,28 @@ the hexadecimal value, e.g. "\ex20" is the space character.
 
 The [expected_data_regexp|#digesttype:digest] is the expected
 data returned from the server in response to the POST.
-See the "cont;" tag above for details. If you are only interested 
-in knowing if it is possible to submit the form (but don't care 
-about the data), this can be an empty string - but the ';' at the 
+See the "cont;" tag above for details. If you are only interested
+in knowing if it is possible to submit the form (but don't care
+about the data), this can be an empty string - but the ';' at the
 end is required.
 
 .IP "\fBnocont\fR[=\fICOLUMN\fR];\fIURL\fR;\fIforbidden_data_regexp\fR"
-This tag works just like "cont" tag, but reverses the test. 
+This tag works just like "cont" tag, but reverses the test.
 It is green when the "forbidden_data_regexp" is NOT found in
-the response, and red when it IS found. So it can be used to 
+the response, and red when it IS found. So it can be used to
 watch for data that should NOT be present in the response,
 e.g. a server error message.
 
 .IP "\fBnopost\fR[=\fICOLUMN\fR];\fIURL\fR;\fIform\-data\fR;\fIexpected_data_regexp\fR"
-This tag works just like "post" tag, but reverses the test. 
+This tag works just like "post" tag, but reverses the test.
 It is green when the "forbidden_data_regexp" is NOT found in
-the response, and red when it IS found. So it can be used to 
+the response, and red when it IS found. So it can be used to
 watch for data that should NOT be present in the response,
 e.g. a server error message.
 
 .IP "\fBtype\fR[=\fICOLUMN\fR];\fIURL\fR;\fIexpected_content_type\fR"
 This is a variant of the content check - instead of checking
-the content data, it checks the type of the data as given by 
+the content data, it checks the type of the data as given by
 the HTTP Content\-Type: header. This can used to check if a
 URL returns e.g. a PDF file, regardless of what is inside the
 PDF file.
@@ -1382,7 +1382,7 @@ webpages.
 
 .IP "\fBheadermatch\fR"
 Content checks by default only search the HTML body returned by
-the webserver. This option causes it to also search the HTTP 
+the webserver. This option causes it to also search the HTTP
 headers for the string that must / must not be present.
 
 .IP "\fBbrowser\fR=\fIBROWSERNAME\fR"
@@ -1448,9 +1448,9 @@ server for ldap URI tests. If not specified, xymonnet will
 attempt an anonymous bind.
 
 .IP "\fBldapyellowfail\fR"
-Used with an LDAP URL test. If the LDAP query fails during the 
+Used with an LDAP URL test. If the LDAP query fails during the
 search of the directory, the ldap status is normally reported
-as "red" (alarm). This tag reduces a search failure to a 
+as "red" (alarm). This tag reduces a search failure to a
 "yellow" (warning) status.
 
 .SH PERFORMANCE MONITORING TESTS
@@ -1462,11 +1462,11 @@ querying the URL \fBhttp://IP.ADDRESS.OF.HOST/server\-status?auto\fR.
 The response is sent as a data-report and processed by the Xymon
 xymond_rrd module into an RRD file and an "apache" graph. If
 your web server requires e.g. authentication, or runs on a different
-URL for the server-status, you can provide the full URL needed to 
-fetch the server-status page, e.g. 
-\fBapache=http://LOGIN:PASSWORD@10.0.0.1/server\-status?auto\fR 
+URL for the server-status, you can provide the full URL needed to
+fetch the server-status page, e.g.
+\fBapache=http://LOGIN:PASSWORD@10.0.0.1/server\-status?auto\fR
 for a password protected server\-status page, or
-\fBapache=http://10.0.0.1:8080/apache/server\-status?auto\fR 
+\fBapache=http://10.0.0.1:8080/apache/server\-status?auto\fR
 for a server listening on port 8080 and with a different path
 to the server-status page.
 
@@ -1491,20 +1491,20 @@ per-host definitions will override the default ones. To apply to all hosts
 this should be listed FIRST in your file.
 
 \fBNOTE:\fR The ".default." host entry will only accept the following
-tags - others are silently ignored: delayred, delayyellow, NOCOLUMNS, 
-COMMENT, DESCR, DOC, CLASS, dialup, nonongreen, nodisp, noinfo, 
-notrends, noclient, TRENDS, NOPROPRED, NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, 
-REPORTTIME, WARNPCT, WARNSTOPS, testip, NET, noclear, nosslcert, ssldays, DOWNTIME, depends, 
-noping, noconn, trace, notrace, HIDEHTTP, browser, pulldata. Specifically, 
-note that network tests, "badTEST" settings, and alternate pageset 
+tags - others are silently ignored: delayred, delayyellow, NOCOLUMNS,
+COMMENT, DESCR, DOC, CLASS, dialup, nonongreen, nodisp, noinfo,
+notrends, noclient, TRENDS, NOPROPRED, NOPROPYELLOW, NOPROPPURPLE, NOPROPACK,
+REPORTTIME, WARNPCT, WARNSTOPS, testip, NET, noclear, nosslcert, ssldays, DOWNTIME, depends,
+noping, noconn, trace, notrace, HIDEHTTP, browser, pulldata. Specifically,
+note that network tests, "badTEST" settings, and alternate pageset
 relations cannot be listed on the ".default." host.
 
 .SH SENDING SUMMARIES TO REMOTE XYMON SERVERS
 .IP "\fBsummary\fR \fIROW.COLUMN\fR \fIIP\fR \fIURL\fR"
-If you have multiple Xymon servers, the "summary" directive lets you 
+If you have multiple Xymon servers, the "summary" directive lets you
 form a hierarchy of servers by sending the overall status of this server
 to a remote Xymon server, which then displays this in a special summary
-section. E.g. if your offices are spread over three locations, you can 
+section. E.g. if your offices are spread over three locations, you can
 have a Xymon server at each office. These branch-office Xymon have
 a "summary" definition in their hosts.cfg file that makes them report
 the overall status of their branch Xymon to the central Xymon server
@@ -1516,7 +1516,7 @@ The ROW.COLUMN setting defines how this summary is presented on the
 server that receives the summary. The ROW text will be used as the
 heading for a summary line, and the COLUMN defines the name of the
 column where this summary is shown - like the hostname and testname
-used in the normal displays. The IP is the IP-address of the \fBremote\fR 
+used in the normal displays. The IP is the IP-address of the \fBremote\fR
 (upstream) Xymon server, where this summary is sent). The URL is the
 URL of your \fBlocal\fR Xymon server.
 
@@ -1524,7 +1524,7 @@ The URL need not be that of your Xymon server's main page - it could
 be the URL of a sub-page on the local Xymon server. Xymon will report
 the summary using the color of the page found at the URL you specify.
 E.g. on your corporate Xymon server you want a summary from the
-Las Vegas office - but you would like to know both what the overall 
+Las Vegas office - but you would like to know both what the overall
 status is, and what is the status of the servers on the critical
 Sales department back-office servers in Las Vegas. So you configure
 the Las Vegas Xymon server to send \fBtwo\fR summaries:

@@ -7,7 +7,7 @@ snapshot.cgi \- CGI program to rebuild the Xymon webpages for a specific point i
 .SH DESCRIPTION
 \fBsnapshot.cgi\fR
 is invoked as a CGI script via the snapshot.sh CGI wrapper.
-It rebuilds the Xymon web pages to the look they had 
+It rebuilds the Xymon web pages to the look they had
 at a particular point in time, based upon the historical information
 logged about events.
 
@@ -24,12 +24,12 @@ following parameters:
 The "month" parameters must be specified as the three-letter
 english month name abbreviation: Jan, Feb, Mar ...
 
-"day" must be in the range 1..31; "yr" must be specified 
-including century (e.g. "2003"). "hour" must be specified 
+"day" must be in the range 1..31; "yr" must be specified
+including century (e.g. "2003"). "hour" must be specified
 using a 24-hour clock.
 
-All of the processing involved in generating the report is done 
-by invoking 
+All of the processing involved in generating the report is done
+by invoking
 .I xymongen(1)
 with the proper "\-\-snapshot" option.
 
@@ -38,13 +38,13 @@ with the proper "\-\-snapshot" option.
 Load environment from FILENAME before executing the CGI.
 
 .IP "\fBxymongen-options\fR"
-All options except "\-\-env" are passed on to the 
+All options except "\-\-env" are passed on to the
 .I xymongen(1)
 program building the snapshot files.
 
 .SH ENVIRONMENT VARIABLES
 .IP "\fBXYMONGENSNAPOPTS\fR"
-xymongen options passed by default to the snapshot.cgi script. 
+xymongen options passed by default to the snapshot.cgi script.
 This happens in the snapshot.sh CGI wrapper script.
 .IP "\fBXYMONHOME\fR"
 Home directory of the Xymon server files

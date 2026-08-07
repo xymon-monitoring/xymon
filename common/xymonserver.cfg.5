@@ -5,7 +5,7 @@ xymonserver.cfg \- Xymon environment variables
 .SH DESCRIPTION
 Xymon programs use multiple environment variables beside the
 normal set of variables.  The environment definitions
-are stored in the ~Xymon/server/etc/xymonserver.cfg file. 
+are stored in the ~Xymon/server/etc/xymonserver.cfg file.
 Each line in this file is of the form \fBNAME=VALUE\fR and defines
 one environment variable NAME with the value VALUE.
 
@@ -28,7 +28,7 @@ by an application in the "management" area, you would do this:
 \&  management/XYMSERVERS="10.1.0.5"  # Definition in the "management" area
 .fi
 .LP
-Areas are invoked by using the "\-\-area" option for all tools, or via the 
+Areas are invoked by using the "\-\-area" option for all tools, or via the
 ENVAREA setting in the
 .I tasks.cfg(5)
 file.
@@ -46,7 +46,7 @@ URL's in the Xymon webpages. Default is the XYMONSERVERHOSTNAME.
 The public IP-address of the server that is running Xymon.
 
 .IP "\fBXYMONSERVEROS\fR"
-A name identifying the operating system of the Xymon server. The 
+A name identifying the operating system of the Xymon server. The
 known names are currently "linux", "freebsd", "solaris", "hpux",
 "aix" and "osf".
 
@@ -58,7 +58,7 @@ set to TRUE. Default: TRUE.
 
 .IP "\fBXYMONLOGSTATUS\fR"
 Controls how the HTML page for a status log is generated. If set to
-DYNAMIC, the HTML logs are generated on-demand by the 
+DYNAMIC, the HTML logs are generated on-demand by the
 .I svcstatus.cgi(1)
 script. If set to STATIC, you must activate the
 .I xymond_filestore(8)
@@ -71,7 +71,7 @@ I/O load on the Xymon server will increase significantly.
 .IP "\fBPINGCOLUMN\fR"
 Defines the name of the column for "ping" test status. The data from
 the "ping" test is used internally by Xymon, so it must be defined
-here so all of the Xymon tools know which column to watch for this 
+here so all of the Xymon tools know which column to watch for this
 data. The default setting is PINGCOLUMN=conn.
 
 .IP "\fBINFOCOLUMN\fR"
@@ -111,16 +111,16 @@ for a Japanese character sets. Note: Some webservers will automatically
 add this, if configured to do so.
 
 .IP "\fBXYMWEBREFRESH\fR"
-The default HTTP page reload interval for many xymongen and status pages. 
-Note that while this can be overridden in the header template files for 
-regular pages, dynamically generated status logs displayed with 
+The default HTTP page reload interval for many xymongen and status pages.
+Note that while this can be overridden in the header template files for
+regular pages, dynamically generated status logs displayed with
 svcstatus.cgi(1) use this value in the HTTP response header and for
 security reasons the value in hostsvc_header may be ignored on many
 modern browsers. (default [seconds]: 60)
 
 
 .IP "\fBHOLIDAYS\fR"
-Defines the default set of holidays used if there is no "holidays" 
+Defines the default set of holidays used if there is no "holidays"
 tag for a host in the hosts.cfg file. Holiday sets are defined in the
 .I holidays.cfg(5)
 file. If not defined, only the default holidays (those defined outside
@@ -146,11 +146,11 @@ included. Default: Empty.
 URL for the Xymon menu CSS file. Default: "$XYMONMENUSKIN/xymonmenu.css"
 
 .IP "\fBHOSTPOPUP\fR"
-Determines what is used as the host comment on the webpages. The comment 
-by default appears as a pop-up when the mouse hovers over the hostname, 
+Determines what is used as the host comment on the webpages. The comment
+by default appears as a pop-up when the mouse hovers over the hostname,
 and is also shown on the "info" status page. This setting must be one or
 more of the letters "C" (COMMENT), "D" (DESCRIPTION) or "I" (IP-address).
-Including "C" uses the COMMENT setting for the host, including "D" uses 
+Including "C" uses the COMMENT setting for the host, including "D" uses
 the DESCR setting for the host, and "I" uses the IP-address of the host.
 If more than one of these is set, then COMMENT takes precedence over
 DESCR which again has precedence over IP.
@@ -168,7 +168,7 @@ Default: 30 minutes
 .SH DIRECTORIES
 
 .IP "\fBXYMONSERVERROOT\fR"
-The top-level directory for the Xymon installation. The default 
+The top-level directory for the Xymon installation. The default
 is the home-directory for the user running Xymon.
 
 .IP "\fBXYMONSERVERLOGS\fR"
@@ -193,19 +193,19 @@ Default: $XYMONHOME/www/notes/
 .IP "\fBXYMONREPDIR\fR"
 Directory for Xymon availability reports. The $XYMONREPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
-use the 
+use the
 .I report.cgi(1)
 CGI script to generate reports on-demand. Default: $XYMONHOME/www/rep/
 
 .IP "\fBXYMONSNAPDIR\fR"
 Directory for Xymon snapshots. The $XYMONSNAPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
-use the 
+use the
 .I snapshot.cgi(1)
 CGI script to generate snapshots on-demand. Default: $XYMONHOME/www/snap/
 
 .IP "\fBXYMONVAR\fR"
-Directory for all data stored about the monitored items. 
+Directory for all data stored about the monitored items.
 Default: $XYMONSERVERROOT/data/
 
 .IP "\fBXYMONRAWSTATUSDIR\fR"
@@ -270,7 +270,7 @@ Full path to the Xymon
 configuration file. Default: $XYMONHOME/etc/hosts.cfg.
 
 .IP "\fBXYMON\fR"
-Full path to the 
+Full path to the
 .I xymon(1)
 client program. Default: $XYMONHOME/bin/xymon.
 
@@ -391,7 +391,7 @@ combo message.  Default: 100.
 
 .IP "\fBSLEEPBETWEENMSGS\fR"
 Length of a pause introduced between each successive transmission
-of a combo-message by xymonnet, in microseconds. Default: 0 
+of a combo-message by xymonnet, in microseconds. Default: 0
 (send messages as quickly as possible).
 
 
@@ -410,13 +410,13 @@ The default is "green,clear,blue".
 
 .IP "\fBALERTREPEAT\fR"
 How often alerts get repeated while a status is in an alert state.
-This is the default setting, which may be changed in the 
+This is the default setting, which may be changed in the
 .I alerts.cfg(5)
 file.
 
 .IP "\fBMAXMSG_STATUS\fR"
 The maximum size of a "status" message in kB, default: 256.
-Status messages are the ones that end up as columns on the 
+Status messages are the ones that end up as columns on the
 web display. The default size should be adequate in most
 cases, but some extension scripts can generate very large
 status messages - close to 1024 kB. You should only change
@@ -440,18 +440,18 @@ data messages being truncated.
 .IP "\fBMAXMSG_NOTES\fR"
 The maximum size of a "notes" message in kB, default: 256.
 "notes" messages provide a way for uploading documentation
-about a host to Xymon; it is not enabled by default. If you 
+about a host to Xymon; it is not enabled by default. If you
 want to upload large documents, you may need to change this
 setting.
 
 .IP "\fBMAXMSG_STACHG\fR"
-The maximum size of a "status change" message in kB, default: 
-Current value of the MAXMSG_STATUS setting.  Status-change 
-messages occur when a status changes color. There is no 
+The maximum size of a "status change" message in kB, default:
+Current value of the MAXMSG_STATUS setting.  Status-change
+messages occur when a status changes color. There is no
 reason to change this setting.
 
 .IP "\fBMAXMSG_PAGE\fR"
-The maximum size of a "page" message in kB, default: 
+The maximum size of a "page" message in kB, default:
 Current value of the MAXMSG_STATUS setting. "page" messages
 are alerts, and include the status message that triggers the
 alert. There is no reason to change this setting.
@@ -462,10 +462,10 @@ The maximum size of an "enadis" message in kB, default: 32.
 hosts and tests, so the default size should be adequate.
 
 .IP "\fBMAXMSG_CLICHG\fR"
-The maximum size of a "client change" message in kB, default: 
-Current value of the MAXMSG_CLIENT setting.  Client-change 
+The maximum size of a "client change" message in kB, default:
+Current value of the MAXMSG_CLIENT setting.  Client-change
 messages occur when a status changes color to one of the
-alert-colors, usually red, yellow and purple. There is no 
+alert-colors, usually red, yellow and purple. There is no
 reason to change this setting.
 
 .IP "\fBMAXMSG_USER\fR"
@@ -483,7 +483,7 @@ If set to TRUE,
 will update the $XYMONHISTDIR/allevents file logging all changes to
 a status. The allevents file is used by the
 .I eventlog.cgi(1)
-tool to show the list of recent events on the "All non-green" 
+tool to show the list of recent events on the "All non-green"
 webpage.
 
 .IP "\fBXYMONHOSTHISTLOG\fR"
@@ -647,9 +647,9 @@ With todays network topologies, the router could be a switch or
 another network device; if you define this environment variable
 the word "router" will be replaced with whatever you put into
 the variable. So to inform the users that an intermediate switch
-or router is down, use XYMONROUTERTEXT="switch or router".  This can 
+or router is down, use XYMONROUTERTEXT="switch or router".  This can
 also be set on a per-host basis using the "DESCR:hosttype:description"
-tag in the 
+tag in the
 .I hosts.cfg(5)
 file.
 
@@ -662,7 +662,7 @@ you can change it to "FAILED" or customize it as you like.
 The command used to run the
 .I xymonping(1)
 tool for the connectivity test. (The name FPING is due to the fact that
-the "fping" utility was used until Xymon version 4.2). This may include 
+the "fping" utility was used until Xymon version 4.2). This may include
 suid-root wrappers and xymonping options.
 Default: "xymonping"
 
@@ -671,7 +671,7 @@ Options used for the
 .I fping(1)
 or
 .I xymonping(1)
-tool for the connectivity test. Note that xymonnet will still expect the 
+tool for the connectivity test. Note that xymonnet will still expect the
 output to match the default format.
 Default: "-Ae"
 
@@ -682,7 +682,7 @@ any options needed to run it. traceroute is used by
 the connectivity test when the ping test fails; if
 requested via the "trace" tag, the TRACEROUTE command
 is executed to try to indicate the point in the
-network that is causing the problem. For backwards compatibility, 
+network that is causing the problem. For backwards compatibility,
 with prior versions, if TRACEROUTEOPTS is unset, TRACEROUTE is assumed
 to have whatever options are desired and no addl options are used.
 Recommended defaults are:  "\-n \-q 2 \-w 2 \-m 15"
@@ -694,7 +694,7 @@ If you have the
 tool installed - available from http://www.bitwizard.nl/mtr/ - I
 strongly recommend using this instead. The recommended
 TRACEROUTEOPTS for mtr are "\-c 2 \-n \-\-report"
-Note that mtr needs to be installed suid-root 
+Note that mtr needs to be installed suid-root
 on most systems.
 
 .IP "\fBNTPDATE\fR"
@@ -718,8 +718,8 @@ Default: "rpcinfo"
 
 .IP "\fBXYMONLOGO\fR"
 HTML code that is inserted on all standard headers. The default is to add
-the text "Xymon" in the upper-left corner of the page, but you can easily 
-replace this with e.g. a company logo. If you do, I suggest that you keep 
+the text "Xymon" in the upper-left corner of the page, but you can easily
+replace this with e.g. a company logo. If you do, I suggest that you keep
 it at about 30-35 pixels high, and 100-150 pixels wide.
 
 .IP "\fBXYMONPAGELOCAL\fR"
@@ -735,11 +735,11 @@ The string "Remote status display" that appears about the summary
 statuses displayed on the min Xymon webpage.
 
 .IP "\fBXYMONPAGETITLE\fR"
-HTML tags designed to go in a <FONT> tag, to choose the font for 
+HTML tags designed to go in a <FONT> tag, to choose the font for
 titles of the webpages.
 
 .IP "\fBXYMONPAGEROWFONT\fR"
-HTML tags designed to go in a <FONT> tag, to choose the font for 
+HTML tags designed to go in a <FONT> tag, to choose the font for
 row headings (hostnames) on the webpages.
 
 .IP "\fBXYMONPAGECOLFONT\fR"
@@ -770,14 +770,14 @@ Default value: 86400
 On webpages generated by xymongen, the default header includes
 the current date and time. Normally this looks like "Tue Aug 24
 21:59:47 2004". The XYMONDATEFORMAT controls the format of this
-timestamp - you can define the format using the controls in the 
+timestamp - you can define the format using the controls in the
 .I strftime(3)
 routine. E.g. to have it show up as "2004\-08\-24 21:59:47 +0200"
 you would set XYMONDATEFORMAT="%Y\-%m\-%d %H:%M:%S %z"
 
 .IP "\fBHOLIDAYFORMAT\fR"
 How holiday dates are displayed. The default is "%d/%m" which
-show the day and month. American users may want to change this 
+show the day and month. American users may want to change this
 to "%m/%d" to suit their preferred date-display style. This
 is a formatting string for the system
 .I strftime(3)
@@ -786,12 +786,12 @@ routine, so any controls available for this routine may be used.
 .IP "\fBXYMONPAGECOLREPEAT\fR"
 Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
 the maximum number of rows before repeating the column headings
-on a webpage. This sets the default value for the 
+on a webpage. This sets the default value for the
 .I xymongen(1)
 "\-\-maxrows" option; if the command-line option is also specified,
 then it overrides this environment variable. Note that unlike
-Jeff's patch, xymongen implements this for both the "All non-green" 
-page and all other pages (xymon.html, subpages, critical.html). 
+Jeff's patch, xymongen implements this for both the "All non-green"
+page and all other pages (xymon.html, subpages, critical.html).
 
 .IP "\fBSUMMARY_SET_BKG\fR"
 If set to TRUE, then summaries will affect the color of the
@@ -838,7 +838,7 @@ Default: 97 (percent)
 
 .IP "\fBXYMONGENREPOPTS\fR"
 Default xymongen options used for reports. This will typically include
-such options as "\-\-subpagecolumns", and also "\-\-ignorecolumns" if 
+such options as "\-\-subpagecolumns", and also "\-\-ignorecolumns" if
 you wish to exclude certain tests from reports by default.
 
 .IP "\fBXYMONGENSNAPOPTS\fR"

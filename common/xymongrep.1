@@ -10,7 +10,7 @@ xymongrep \- pick out lines in hosts.cfg
 
 .SH DESCRIPTION
 .I xymongrep(1)
-is for use by extension scripts that need to pick out the entries 
+is for use by extension scripts that need to pick out the entries
 in a hosts.cfg file that are relevant to the script.
 
 The utility accepts test names as parameters, and will then
@@ -25,14 +25,14 @@ included files.
 
 If the DOWNTIME or SLA tags are used in the
 .I hosts.cfg(5)
-file, these are interpreted relative to the current time. 
+file, these are interpreted relative to the current time.
 xymongrep then outputs a "INSIDESLA" or "OUTSIDESLA" tag
 for easier use by scripts that want to check if the current
 time is inside or outside the expected uptime window.
 
 .SH OPTIONS
 .IP "\fB\-\-noextras\fR"
-Remove the "testip", "dialup", "INSIDESLA" and "OUTSIDESLA" tags 
+Remove the "testip", "dialup", "INSIDESLA" and "OUTSIDESLA" tags
 from the output.
 
 .IP "\fB\-\-test\-untagged\fR"
@@ -51,7 +51,7 @@ xymongrep will query the Xymon server for the current
 status of the "conn" test, and if TESTNAME is specified
 also for the current state of the specified test. If
 the status of the "conn" test for a host is non-green,
-or the status of the TESTNAME test is disabled, then this 
+or the status of the TESTNAME test is disabled, then this
 host is ignored and will not be included in the output.
 This can be used to ignore hosts that are down, or hosts
 where the custom test is disabled.
@@ -61,7 +61,7 @@ Search the hosts.cfg file following include statements as a
 Xymon web-server would.
 
 .IP "\fB\-\-net\fR"
-Search the hosts.cfg file following include statements as 
+Search the hosts.cfg file following include statements as
 when running xymonnet.
 
 .IP "\fB\-\-loadhostsfromxymond\fR"
@@ -70,7 +70,7 @@ by itself when searching for lines to transmit. If the file
 is unreadable, it will exit out. With this option, it will
 query the xymond server (set via the XYMONSERVER environment)
 for the hosts file. This can be used if you're running this
-on a client or remote system and can't or don't want to 
+on a client or remote system and can't or don't want to
 have the hosts.cfg file synchronized across your servers.
 
 .SH EXAMPLE
@@ -95,14 +95,14 @@ defined by Xymon (the dial-up and always-true modifiers).
 If your extension scripts use more than one tag, just list
 all of the interesting tags on the command line.
 
-xymongrep also supports the "NET:location" tag used by 
-xymonnet, so if your script performs network checks then 
+xymongrep also supports the "NET:location" tag used by
+xymonnet, so if your script performs network checks then
 it will see only the hosts that are relevant for the test
 location that the script currently executes on.
 
 .SH USE IN EXTENSION SCRIPTS
 To integrate xymongrep into an existing script, look for
-the line in the script that grep's in the $HOSTSCFG file. 
+the line in the script that grep's in the $HOSTSCFG file.
 Typically it will look somewhat like this:
 
    $GREP \-i "^[0\-9].*#.*TESTNAME" $HOSTSCFG | ... code to handle test

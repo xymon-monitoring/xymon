@@ -15,11 +15,11 @@ sent to
 daemon. These filters are described in detail in the
 .I xymon(1)
 manual. Typically, the filter will specify hosts found on a specific (sub)page
-to be returned, e.g. "filter=page=webservers" will cause appfeed.cgi to only 
+to be returned, e.g. "filter=page=webservers" will cause appfeed.cgi to only
 return hosts that are present on the "webservers" page in Xymon.
 
 If no filter is specified, appfeed.cgi returns data for all red, yellow or purple
-statuses (equivalent to the data present on the "All non-green" page), or if invoked 
+statuses (equivalent to the data present on the "All non-green" page), or if invoked
 with the "\-\-critical" option it returns data from the "Critical systems" page.
 
 The output is an XML document with the current status of the selected hosts/services.

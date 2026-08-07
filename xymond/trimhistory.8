@@ -13,13 +13,13 @@ webpages.
 
 Purging old entries can be done while Xymon is running, since the
 tool takes care not to commit updates to a file if it changes mid-way
-through the operation. In that case, the update is aborted and the 
+through the operation. In that case, the update is aborted and the
 existing logfile is left untouched.
 
-Optionally, this tool will also remove logfiles from hosts that are 
-no longer defined in the Xymon 
+Optionally, this tool will also remove logfiles from hosts that are
+no longer defined in the Xymon
 .I hosts.cfg(5)
-file. As an extension, even logfiles from services can be removed, 
+file. As an extension, even logfiles from services can be removed,
 if the service no longer has a valid status-report logged in the
 current Xymon status.
 
@@ -27,10 +27,10 @@ current Xymon status.
 .IP "\fB\-\-cutoff\fR=\fITIME\fR"
 This defines the cutoff-time when processing the history logs. Entries
 dated before this time are discarded. TIME is specified as the number
-of seconds since the beginning of the Epoch. This is easily generated 
+of seconds since the beginning of the Epoch. This is easily generated
 by the GNU
 .I date(1)
-utility, e.g. the following command will trim history logs of all 
+utility, e.g. the following command will trim history logs of all
 entries prior to Oct. 1st 2004:
 .br
 .sp
@@ -90,7 +90,7 @@ The directory holding all history logs.
 The top-level directory for the historical status-log collections.
 
 .IP "\fBHOSTSCFG\fR"
-The location of the hosts.cfg file, holding the list of currently 
+The location of the hosts.cfg file, holding the list of currently
 known hosts in Xymon.
 
 

@@ -6,15 +6,15 @@ xymond \- Master network daemon for a Xymon server
 
 .SH DESCRIPTION
 xymond is the core daemon in the Xymon Monitor.
-It is designed to handle monitoring of a large number of hosts, 
-with a strong focus on being a high-speed, low-overhead implementation 
+It is designed to handle monitoring of a large number of hosts,
+with a strong focus on being a high-speed, low-overhead implementation
 of a Big Brother compatible server.
 
 To achieve this, xymond stores all information about the state
 of the monitored systems in memory, instead of storing it in
 the host filesystem. A number of plug-ins can be enabled to
 enhance the basic operation; e.g. a set of plugins are provided
-to implement persistent storage in a way that is compatible 
+to implement persistent storage in a way that is compatible
 with the Big Brother daemon. However, even with these
 plugins enabled, xymond still performs much faster than the
 standard bbd daemon.
@@ -33,7 +33,7 @@ If this option is omitted, the default path used is set by the HOSTSCFG
 environment variable.
 
 .IP "\fB\-\-checkpoint\-file\fR=\fIFILENAME\fR"
-With regular intervals, xymond will dump all of its internal state 
+With regular intervals, xymond will dump all of its internal state
 to this check-point file. It is also dumped when xymond terminates,
 or when it receives a SIGUSR1 signal.
 
@@ -42,7 +42,7 @@ Specifies the interval (in seconds) between dumps to the check-point
 file. The default is 900 seconds (15 minutes).
 
 .IP "\fB\-\-restart\fR=\fIFILENAME\fR"
-Specifies an existing file containing a previously generated xymond 
+Specifies an existing file containing a previously generated xymond
 checkpoint. When starting up, xymond will restore its internal state
 from the information in this file. You can use the same filename for
 "\-\-checkpoint\-file" and "\-\-restart".
@@ -50,11 +50,11 @@ from the information in this file. You can use the same filename for
 .IP "\fB\-\-ghosts\fR={\fBallow\fR|\fBdrop\fR|\fBlog\fR|\fBmatch\fR}"
 How to handle status messages from unknown hosts. The "allow" setting
 accepts all status messages, regardless of whether the host is known
-in the hosts.cfg file or not. "drop" silently ignores reports from unknown 
+in the hosts.cfg file or not. "drop" silently ignores reports from unknown
 hosts. "log" works like drop, but logs the event in the xymond output file.
-"match" will try to match the name of the unknown host reporting with 
+"match" will try to match the name of the unknown host reporting with
 the known names by ignoring any domain-names - if a match is found, then
-a temporary client alias is automatically generated. The default is "log". 
+a temporary client alias is automatically generated. The default is "log".
 
 .IP "\fB\-\-no\-purple\fR"
 Prevent status messages from going purple when they are no longer valid.
@@ -65,9 +65,9 @@ The
 .I client-local.cfg(5)
 file contains client-configuration which can be found matching a client
 against its hostname, its classname, or the name of the OS the client is
-running. By default xymond will return one entry from the file to the 
+running. By default xymond will return one entry from the file to the
 client, looking for a hostname, classname or OS match (in that order).
-This option causes xymond to merge all matching entries together into 
+This option causes xymond to merge all matching entries together into
 one and return all of it to the client.
 
 .IP "\fB\-\-listen\fR=\fIIP\fR[:\fIPORT\fR]"
@@ -97,20 +97,20 @@ Default: 10 seconds.
 
 .IP "\fB\-\-flap\-count\fR=\fIN\fR"
 Track the N latest status-changes for flap-detection. See the
-\fB\-\-flap\-seconds\fR option also. To disable flap-checks globally, 
-set N to zero. To disable for a specific host, you must use the 
+\fB\-\-flap\-seconds\fR option also. To disable flap-checks globally,
+set N to zero. To disable for a specific host, you must use the
 "noflap" option in \fIhosts.cfg(5)\fR.
 Default: 5
 
 .IP "\fB\-\-flap\-seconds\fR=\fIN\fR"
-If a status changes more than \fBflap\-count\fR times in N seconds or 
-less, then it is considered to be flapping. In that case, the status 
-is locked at the most severe level until the flapping stops. The 
-history information is not updated after the flapping is detected. 
-\fBNOTE:\fR If this is set higher than the default value, you should 
-also use the \fB\-\-flap\-count\fR option to ensure that enough status-changes 
+If a status changes more than \fBflap\-count\fR times in N seconds or
+less, then it is considered to be flapping. In that case, the status
+is locked at the most severe level until the flapping stops. The
+history information is not updated after the flapping is detected.
+\fBNOTE:\fR If this is set higher than the default value, you should
+also use the \fB\-\-flap\-count\fR option to ensure that enough status-changes
 are stored for flap detection to work. The flap\-count setting should be
-at least (N/300)\-1, e.g. if you set flap\-seconds to 3600 (1 hour), then 
+at least (N/300)\-1, e.g. if you set flap\-seconds to 3600 (1 hour), then
 flap\-count should be at least (3600/300)\-1, i.e. 11.
 Default: 1800 seconds (30 minutes).
 
@@ -146,7 +146,7 @@ Redirect all output from xymond to FILENAME.
 
 .IP "\fB\-\-store\-clientlogs\fR[=[!]\fICOLUMN\fR]"
 Determines which status columns can cause a client message to be
-broadcast to the CLICHG channel. By default, no client messages 
+broadcast to the CLICHG channel. By default, no client messages
 are pushed to the CLICHG channel. If this option is specified with
 no parameter list, all status columns that go into an alert state
 will trigger the client data to be sent to the CLICHG channel. If
@@ -160,15 +160,15 @@ columns except those listed will cause the client data to be sent.
 Controls which hosts may send "status", "combo", "config" and "query"
 commands to xymond.
 
-By default, any host can send status-updates. If this option is used, 
-then status-updates are accepted only if they are sent by one of the 
-IP-addresses listed here, or if they are sent from the IP-address of the 
+By default, any host can send status-updates. If this option is used,
+then status-updates are accepted only if they are sent by one of the
+IP-addresses listed here, or if they are sent from the IP-address of the
 host that the updates pertains to (this is to allow Xymon clients to send in their
 own status updates, without having to list all clients here). So typically
 you will need to list your servers running network tests here.
 
 The format of this option is a list of IP-addresses, optionally with a
-network mask in the form of the number of bits. E.g. if you want to 
+network mask in the form of the number of bits. E.g. if you want to
 accept status-updates from the host 172.16.10.2, you would use
 .br
     \-\-status\-senders=172.16.10.2
@@ -208,7 +208,7 @@ include the address of a server running xymonproxy in the list of allowed addres
 
 .IP "\fB\-\-admin\-senders\fR=\fIIP\fR[/\fIMASK\fR][,\fIIP\fR/\fIMASK\fR]"
 Controls which hosts may send administrative commands to xymond. These
-commands are the "drop" and "rename" commands. Access to these should be 
+commands are the "drop" and "rename" commands. Access to these should be
 restricted, since they provide an un-authenticated means of completely
 disabling monitoring of a host, and can be used to remove all traces of e.g.
 a system compromise from the Xymon monitor.
@@ -219,28 +219,28 @@ proxy server address. It is therefore strongly recommended that you do NOT
 include the address of a server running xymonproxy in the list of allowed addresses.
 
 .IP "\fB\-\-no\-download\fR"
-Disable the "download" command which can be used by clients to pull files 
-from the Xymon server. The use of these may be seen as a security risk since 
+Disable the "download" command which can be used by clients to pull files
+from the Xymon server. The use of these may be seen as a security risk since
 they allow file downloads.
 
 .IP "\fB\-\-ack\-each\-color\fR"
 By default, sending an ACK for a yellow status stops alerts from being sent
 while the status remains yellow or red. A status change from yellow to red
 will not re-enable alerts - the ACK covers all non-green statuses.
-With this option, an ACK is valid only for the color of the status when the 
+With this option, an ACK is valid only for the color of the status when the
 ACK was sent. So an ACK for a yellow status is ignored if the status later
 changes to red, but an ACK for a red status covers both yellow and red.
 .br
-Note: An ACK for a red status will clear any existing yellow acks. This 
+Note: An ACK for a red status will clear any existing yellow acks. This
 means that a long-lived ack for yellow is lost when you send a short-lived
 ack for red. Hence alerts will restart when the red ack expires, even if
 the status by then has changed to yellow.
 
 .IP "\fB\-\-ack\-log\fR=\fIFILENAME\fR"
-Log acknowledgements created on the Critical Systems page to FILENAME.  
-NB, acknowledgements created by the Acknowledge Alert CGI are 
-automatically written to acknowledge.log in the Xymon server log 
-directory.  Alerts from the Critical Systems page can be directed to the 
+Log acknowledgements created on the Critical Systems page to FILENAME.
+NB, acknowledgements created by the Acknowledge Alert CGI are
+automatically written to acknowledge.log in the Xymon server log
+directory.  Alerts from the Critical Systems page can be directed to the
 same log.
 
 .IP "\fB\-\-debug\fR"
@@ -253,7 +253,7 @@ dump all traffic from a single host to the file "/tmp/xymond.dbg".
 
 .SH HOW ALERTS TRIGGER
 When a status arrives, xymond matches the old and new color against
-the "alert" colors (from the "ALERTCOLORS" setting) and the "OK" colors 
+the "alert" colors (from the "ALERTCOLORS" setting) and the "OK" colors
 (from the "OKCOLORS" setting). The old and new color falls into one of three
 categories:
 .sp
@@ -265,15 +265,15 @@ The color is one of the "alert" colors (e.g. "red").
 The color is neither an "alert" color nor an "OK" color (e.g. "yellow").
 .PP
 If the new status shows an ALERT state, then a message to the
-.I xymond_alert(8) 
-module is triggered. This may be a repeat of a previous alert, but 
+.I xymond_alert(8)
+module is triggered. This may be a repeat of a previous alert, but
 .I xymond_alert(8)
 will handle that internally, and only send alert messages with the
-interval configured in 
+interval configured in
 .I alerts.cfg(5).
 
-If the status goes from a not-OK state (ALERT or UNDECIDED) to OK, 
-and there is a record of having been in a ALERT state previously, 
+If the status goes from a not-OK state (ALERT or UNDECIDED) to OK,
+and there is a record of having been in a ALERT state previously,
 then a recovery message is triggered.
 
 The use of the OK, ALERT and UNDECIDED states make it possible to
@@ -304,7 +304,7 @@ This channel is fed information about tests that change status,
 i.e. the color of the status-log changes.
 .IP "\fBpage\fR"
 This channel is fed information about tests where the color changes
-between an alert color and a non-alert color. It also receives 
+between an alert color and a non-alert color. It also receives
 information about "ack" messages.
 .IP "\fBdata\fR"
 This channel is fed information about all "data" messages.

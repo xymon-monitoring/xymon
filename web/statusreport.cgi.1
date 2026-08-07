@@ -9,7 +9,7 @@ statusreport.cgi \- CGI program to report a status for a group of servers
 report showing the current status of a single column for a group of
 Xymon hosts.
 
-E.g. You can use this report to get an overview of all of the SSL 
+E.g. You can use this report to get an overview of all of the SSL
 certificates that are about to expire.
 
 The generated webpage is a simple HTML table, suitable for copying
@@ -40,7 +40,7 @@ cookie).
 .IP "\fB\-\-filter\fR=\fICRITERIA\fR"
 Only report on statuses that match the CRITERIA setting. See the
 .I xymon(1)
-man-page - in the "xymondboard" command description - for 
+man-page - in the "xymondboard" command description - for
 details about specifying filters.
 
 .IP "\fB\-\-heading\fR=\fIHTML\fR"
@@ -51,7 +51,7 @@ HTML code.
 Include the column name in the display.
 
 .IP "\fB\-\-show\-colors\fR"
-Show the status color on the generated webpage. The default is 
+Show the status color on the generated webpage. The default is
 to not show the status color.
 
 .IP "\fB\-\-no\-colors\fR"
@@ -60,10 +60,10 @@ the report. This is the default.
 
 .IP "\fB\-\-show\-summary\fR"
 Show only a summary of the important lines in the status message.
-By default, the entire status message appears in the generated 
+By default, the entire status message appears in the generated
 HTML code. This option causes the first non-blank line of the status
 message to be shown, and also any lines beginning with "&COLOR" which
-is used by many status messages to point out lines of interest 
+is used by many status messages to point out lines of interest
 (non-green lines only, though).
 
 .IP "\fB\-\-show\-message\fR"

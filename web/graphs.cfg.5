@@ -12,7 +12,7 @@ build graphs from the RRD files collected by Xymon.
 
 .SH FILE FORMAT
 Each definition of a graph type begins with a "[SERVICE]" indicator,
-this is the name passed as the "service" parameter to 
+this is the name passed as the "service" parameter to
 .I showgraph.cgi(1).
 If the service name passed to showgraph.cgi is not found, it will
 attempt to match the service name to a graph via the TEST2RRD environment
@@ -27,8 +27,8 @@ text shown as the title of the graph.
 text shown as the YAXIS heading.
 .PP
 If a fixed set of RRD files are used for the graph, you just write those
-in the RRDtool definitions. Note that Xymon keeps all RRD files for a host 
-in a separate directory per host, so you need not worry about the hostname 
+in the RRDtool definitions. Note that Xymon keeps all RRD files for a host
+in a separate directory per host, so you need not worry about the hostname
 being part of the RRD filename.
 
 For graphs that use multiple RRD files as input:
@@ -111,8 +111,8 @@ script to determine the graph title. Like this:
 \&	TITLE exec:/usr/local/bin/graphitle
 .fi
 .sp
-The \fB/usr/local/bin/graphtitle\fR command is then called with 
-the hostname, the graphtype, the period string, and all of the 
+The \fB/usr/local/bin/graphtitle\fR command is then called with
+the hostname, the graphtype, the period string, and all of the
 RRD files used as parameters. The script must generate one line of output,
 which is then used as the title of the graph. Each of the RRD pathname
 parameters will be enclosed in double quotes.
@@ -122,7 +122,7 @@ parameters will be enclosed in double quotes.
 Maps service names to graph definitions.
 
 .SH NOTES
-Most of the RRD graph definitions shipped with Xymon have been ported 
+Most of the RRD graph definitions shipped with Xymon have been ported
 from the definitions in the \fBlarrd\-grapher.cgi\fR CGI from LARRD 0.43c.
 
 .SH "SEE ALSO"

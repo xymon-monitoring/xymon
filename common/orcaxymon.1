@@ -13,13 +13,13 @@ NCV data handler in
 to process ORCA data, if you have an urgent need to do so.
 
 .SH DESCRIPTION
-\fBorcaxymon\fR is an add-on tool for the Xymon client. It is 
-used to grab data collected by the ORCA data collection tool 
+\fBorcaxymon\fR is an add-on tool for the Xymon client. It is
+used to grab data collected by the ORCA data collection tool
 (orcallator.se), and send it to the Xymon server in NCV format.
 
 orcaxymon should run from the client
 .I xymonlaunch(8)
-utility, i.e. there must be an entry in the 
+utility, i.e. there must be an entry in the
 .I clientlaunch.cfg(5)
 file for orcaxymon.
 
@@ -27,7 +27,7 @@ file for orcaxymon.
 .IP "\fB--orca\fR=\fIPREFIX\fR"
 The filename prefix for the ORCA data log. Typically this is the
 directory for the ORCA logs, followed by "orcallator". The actual
-filename for the ORCA logs include a timestamp and sequence number, 
+filename for the ORCA logs include a timestamp and sequence number,
 e.g. "orcallator-2006-06-20-000". This option is required.
 
 .IP "\fB--debug\fR"

@@ -11,8 +11,8 @@ is invoked as a CGI script via the findhost.sh CGI wrapper.
 findhost.cgi is passed a QUERY_STRING environment variable with the
 "host=REGEX" parameter. The REGEX is a Posix regular expression (see
 .I regex(7)
-) describing the hostnames to look for.  A trailing wildcard is assumed on all 
-hostnames - e.g. requesting the hostname "www" will match any host whose 
+) describing the hostnames to look for.  A trailing wildcard is assumed on all
+hostnames - e.g. requesting the hostname "www" will match any host whose
 name begins with "www".
 
 It then produces a single web page, listing all of the hosts that

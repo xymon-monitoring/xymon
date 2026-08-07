@@ -8,10 +8,10 @@ acknowledge.cgi \- Xymon CGI script to acknowledge alerts
 \fBacknowledge.cgi\fR is invoked as a CGI script via the acknowledge.sh CGI wrapper.
 
 acknowledge.cgi is passed a QUERY_STRING environment variable with the
-ACTION, NUMBER, DELAY and MESSAGE parameters. 
+ACTION, NUMBER, DELAY and MESSAGE parameters.
 
 .SH PARAMETERS
-ACTION is the action to perform. The only supported action is "Ack" 
+ACTION is the action to perform. The only supported action is "Ack"
 to acknowledge an alert.
 
 NUMBER is the number identifying the host/service to be acknowledged.
@@ -32,7 +32,7 @@ will instead get a list of the current non-green statuses, and he may
 send an acknowledge without knowing the code.
 
 .IP "\fB\-\-no\-cookies\fR"
-Normally, acknowledge.cgi uses a cookie sent by the browser to initially 
+Normally, acknowledge.cgi uses a cookie sent by the browser to initially
 filter the list of hosts presented. If this is not desired, you can
 turn off this behaviour by calling acknowledge.cgi with the \-\-no\-cookies
 option. This would normally be placed in the CGI_ACK_OPTS setting in

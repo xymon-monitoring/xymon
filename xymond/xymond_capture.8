@@ -13,7 +13,7 @@ select messages based on the hostname, testname or color of the status.
 By default the resulting messages are printed on stdout, but they can also
 be fed into a command for further processing.
 
-xymond_capture supports the \fBstatus\fR, \fBdata\fR, \fBclient\fR and 
+xymond_capture supports the \fBstatus\fR, \fBdata\fR, \fBclient\fR and
 \fBhostdata\fR channels.
 
 .SH OPTIONS
@@ -21,18 +21,18 @@ xymond_capture supports the \fBstatus\fR, \fBdata\fR, \fBclient\fR and
 Select messages only from hosts matching PATTERN (regular expression).
 
 .IP "\fB\-\-exhosts\fR=\fIPATTERN\fR"
-Exclude messages from hosts matching PATTERN. If used with the \-\-hosts option, 
+Exclude messages from hosts matching PATTERN. If used with the \-\-hosts option,
 then the hostname must match the \-\-hosts pattern, but NOT the \-\-exhosts pattern.
 
 .IP "\fB\-\-tests\fR=\fIPATTERN\fR"
 Select messages only from tests matching PATTERN (regular expression).
 
 .IP "\fB\-\-extests\fR=\fIPATTERN\fR"
-Exclude messages from tests matching PATTERN. If used with the \-\-tests option, 
+Exclude messages from tests matching PATTERN. If used with the \-\-tests option,
 then the testname must match the \-\-tests pattern, but NOT the \-\-extests pattern.
 
 .IP "\fB\-\-colors\fR=\fICOLOR\fR[,\fIcolor\fR]"
-Select messages based on the color of the status message. Multiple colors can be 
+Select messages based on the color of the status message. Multiple colors can be
 listed, separated by comma. Default: Accept all colors.
 
 .IP "\fB\-\-batch\-command\fR=\fICOMMAND\fR"

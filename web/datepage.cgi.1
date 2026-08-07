@@ -14,8 +14,8 @@ day/week/month selection boxes, and based on the users' selection a
 resulting url is built from the URLPREFIX and the time selection.
 The browser is then redirected to this URL.
 
-The URL is constructed from the URLPREFIX, the type-parameter, the 
-value of the "pagepath" or "host" cookie, and the users' selection 
+The URL is constructed from the URLPREFIX, the type-parameter, the
+value of the "pagepath" or "host" cookie, and the users' selection
 as follows:
 
 .IP "\fBtype\fR=\fBday\fR"
@@ -28,12 +28,12 @@ The final URL is \fBURLPREFIX/weekly/YEAR/WEEK/PAGEPATH\fR.
 The final URL is \fBURLPREFIX/monthly/YEAR/MONTH/PAGEPATH\fR.
 
 YEAR is the full year (4 digits, including century). MONTH is the
-two-digit number of the month (01..12). DAY is the number of the 
-day in the month (01..31). WEEK is the ISO 8601:1988 week-number 
+two-digit number of the month (01..12). DAY is the number of the
+day in the month (01..31). WEEK is the ISO 8601:1988 week-number
 (01..53). PAGEPATH is the current value of the "pagepath" cookie
 if set; if it is not set but the "host" cookie is set, then this
 host is looked up in the hosts.cfg file and the page where this host
-is found is used for PAGEPATH. These two cookies are set by the 
+is found is used for PAGEPATH. These two cookies are set by the
 default web-header templates supplied with Xymon.
 
 .SH OPTIONS
@@ -41,7 +41,7 @@ default web-header templates supplied with Xymon.
 This specifies the initial part of the final URL. This option is required.
 
 .IP "\fB\-\-hffile\fR=\fIFILENAME\fR"
-Specifies the template files (from $XYMONHOME/web/) to use. The default is 
+Specifies the template files (from $XYMONHOME/web/) to use. The default is
 "\-\-hffile=report".
 
 .IP "\fB\-\-color\fR=\fICOLOR\fR"

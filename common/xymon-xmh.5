@@ -6,8 +6,8 @@ Xymon-XMH-variables \- Configuration items available online
 The
 .I hosts.cfg(5)
 file is the most important configuration file for all of the
-Xymon programs.  This file contains the full list of 
-all the systems monitored by Xymon, including the set 
+Xymon programs.  This file contains the full list of
+all the systems monitored by Xymon, including the set
 of tests and other configuration items stored for each host.
 
 Although the file is in text format and can be searched
@@ -15,7 +15,7 @@ using tools like
 .I xymongrep(1)
 it can be difficult to pick out specific fields from the
 configuration due to quoting and other text parsing issues.
-So Xymon allows for querying this information directly 
+So Xymon allows for querying this information directly
 from the
 .I xymond
 daemon via the "xymondboard" command. So the information
@@ -24,8 +24,8 @@ a host and/or test. This is done by adding a "fields"
 definition to the "xymondboard" command.
 
 .SH XMH items
-Except where specified below, all items return the text of a 
-particular setting from the hosts.cfg file, or an empty string 
+Except where specified below, all items return the text of a
+particular setting from the hosts.cfg file, or an empty string
 if the setting has not been set for the host that is queried.
 
 .IP "\fBXMH_ALLPAGEPATHS\fR"
@@ -36,7 +36,7 @@ hierarchy page path.
 Value of the "browser" tag.
 
 .IP "\fBXMH_CLASS\fR"
-The host "class" (if reported by a Xymon client), or the 
+The host "class" (if reported by a Xymon client), or the
 value of the CLASS tag.
 
 .IP "\fBXMH_CLIENTALIAS\fR"
@@ -55,7 +55,7 @@ Value of the DEPENDS tag.
 Value of the DESCR tag.
 
 .IP "\fBXMH_DGNAME\fR"
-The text string from the hosts.cfg "group" definition (group, group-only, group-except) 
+The text string from the hosts.cfg "group" definition (group, group-only, group-except)
 in which the host is defined.
 
 .IP "\fBXMH_DISPLAYNAME\fR"
@@ -126,7 +126,7 @@ Value of the "testip" tag.
 Value of the "trace" tag.
 
 .IP "\fBXMH_GROUPID\fR"
-Number of the group where the host is listed - first group is 0. 
+Number of the group where the host is listed - first group is 0.
 If a host is present on multiple pages, this is the number of the
 group for the first page where the host is found.
 
@@ -179,11 +179,11 @@ Value of the NOTAFTER tag.
 Value of the NOTBEFORE tag.
 
 .IP "\fBXMH_OS\fR"
-The host operating system (if reported by a Xymon client), or the 
+The host operating system (if reported by a Xymon client), or the
 value of the OS tag.
 
 .IP "\fBXMH_PAGEINDEX\fR"
-Index of the host on the page where it is shown, first host has 
+Index of the host on the page where it is shown, first host has
 index 0.
 
 .IP "\fBXMH_PAGENAME\fR"

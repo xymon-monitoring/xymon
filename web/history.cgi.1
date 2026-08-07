@@ -12,7 +12,7 @@ following parameters:
 
    HISTFILE (a Xymon service history file)
    ENTRIES (the number of entries to show)
- 
+
 The following non-standard parameters are handled by the
 Xymon version of history.cgi:
 
@@ -30,15 +30,15 @@ of time for each status (green, yellow, red, purple, blue, clear).
 Finally, a summary of the last N events is given, with links to
 the actual event logs.
 
-Unlike the standard history.sh script, history.cgi provides 
-a colorbar and statistics summaries also covering the past 
-1 week, 4 weeks and 1 year of data. Via links it is possible 
+Unlike the standard history.sh script, history.cgi provides
+a colorbar and statistics summaries also covering the past
+1 week, 4 weeks and 1 year of data. Via links it is possible
 to browse the entire history of the service at the requested
 interval.
 
 Note that since the resolution of the display is limited,
 events may be too short to show up on a colorbar; also,
-the exact placement of an event may not fully match up 
+the exact placement of an event may not fully match up
 with the time-markers.
 
 The graphs should correctly handle the display of months
@@ -64,7 +64,7 @@ The width of the colorbar graph in pixels. If this is
 set to 0, a percentage-based graph will be shown, similar
 to the one provided by the standard history.sh script.
 Pixel-based graphs can have a higher resolution, but do
-not resize automatically to suit the size of a browser 
+not resize automatically to suit the size of a browser
 window. The default value for this parameter is defined
 at compile-time; 960 is a good value for displays with
 a 1024x768 resolution.

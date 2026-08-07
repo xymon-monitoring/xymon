@@ -8,8 +8,8 @@ xymond_alert \- xymond worker module for sending out alerts
 xymond_alert is a worker module for xymond, and as such it is normally
 run via the
 .I xymond_channel(8)
-program. It receives xymond page- and ack-messages from the "page" 
-channel via stdin, and uses these to send out alerts about failed 
+program. It receives xymond page- and ack-messages from the "page"
+channel via stdin, and uses these to send out alerts about failed
 and recovered hosts and services.
 
 The operation of this module is controlled by the
@@ -19,7 +19,7 @@ that determine who gets alerts, how often, for what servers etc.
 
 .SH OPTIONS
 .IP "\fB\-\-config\fR=\fIFILENAME\fR"
-Sets the filename for the 
+Sets the filename for the
 .I alerts.cfg
 file. The default value is "etc/alerts.cfg" below the Xymon
 server directory.
@@ -29,7 +29,7 @@ Dumps the configuration after parsing it. May be useful to track
 down problems with configuration file errors.
 
 .IP "\fB\-\-checkpoint\-file\fR=\fIFILENAME\fR"
-File where the current state of the xymond_alert module is saved. 
+File where the current state of the xymond_alert module is saved.
 When starting up, xymond_alert will also read this file to restore
 the previous state.
 
@@ -45,7 +45,7 @@ problems with duplicate alerts.
 .IP "\fB\-\-test\fR \fIHOST\fR \fISERVICE\fR [\fIoptions\fR]"
 Shows which alert rules matches the given HOST/SERVICE combination.
 Useful to debug configuration problems, and see what rules are used
-for an alert. 
+for an alert.
 
 The possible options are:
 .br
@@ -53,7 +53,7 @@ The possible options are:
 The COLORNAME parameter is the color of the alert: red, yellow or purple.
 .br
 .BI "\-\-duration=MINUTES"
-The MINUTES parameter is the duration of the alert in minutes. 
+The MINUTES parameter is the duration of the alert in minutes.
 .br
 .BI "\-\-group=GROUPNAME"
 The GROUPNAME parameter is a groupid string from the analysis.cfg
@@ -102,7 +102,7 @@ It can happen that a status first goes yellow and triggers an alert,
 and later it goes red - e.g. a disk filling up. In that case, xymond_alert
 clears the internal timer for when the next (repeat) alert is due
 for all recipients. You generally want to be told when something that
-has been in a warning state becomes critical, so in that case the REPEAT 
+has been in a warning state becomes critical, so in that case the REPEAT
 setting is ignored and the alert is sent. This only happens the first
 time such a change occurs - if the status switches between yellow and red
 multiple times, only the first transition from yellow->red causes this
@@ -116,7 +116,7 @@ process starts all over again.
 
 .SH ENVIRONMENT
 .IP "\fBMAIL\fR"
-The first part of a command line used to send out an e-mail with a 
+The first part of a command line used to send out an e-mail with a
 subject, typically set to "/usr/bin/mail \-s" . xymond_alert will add
 the subject and the mail recipients to form the command line used
 for sending out email alerts.

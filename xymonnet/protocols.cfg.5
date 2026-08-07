@@ -5,7 +5,7 @@ protocols.cfg \- Configuration of TCP network services
 .SH SYNOPSIS
 .IP "\fB$XYMONHOME/etc/protocols.cfg\fR"
 .SH DESCRIPTION
-\fBprotocols.cfg\fR contains definitions of how 
+\fBprotocols.cfg\fR contains definitions of how
 .I xymonnet(1)
 should test a TCP-based network service (i.e. all common
 network services except HTTP and DNS).
@@ -29,10 +29,10 @@ the SMTP service would be this:
 This defines a service called "smtp". When the connection is
 first established, xymonnet will send the string "mail\er\enquit\er\en"
 to the service. It will then expect a response beginning with "220".
-Any data returned by the service (a so-called "banner") will be recorded 
+Any data returned by the service (a so-called "banner") will be recorded
 and included in the status message.
 .sp
-For services that require ALPN protocol negotiation (such as IMAPS multiplexed 
+For services that require ALPN protocol negotiation (such as IMAPS multiplexed
 by Nginx on the same port as HTTPS), you can define:
 .br
 .sp
@@ -46,7 +46,7 @@ The full set of commands available for the protocols.cfg file are:
 
 .IP "[NAME]"
 Define the name of the TCP service, which will also be the column-name
-in the resulting display on the test status. If multiple tests share 
+in the resulting display on the test status. If multiple tests share
 a common definition (e.g. ssh, ssh1 and ssh2 are tested identically),
 you may list these in a single "[ssh|ssh1|ssh2]" definition,
 separating each service-name with a pipe-sign.
@@ -61,7 +61,7 @@ will simply not send any data, or match a response against anything.
 
 The send- and expect-strings use standard escaping for non-printable
 characters. "\er" represents a carriage-return (ASCII 13), "\en"
-represents a line-feed (ASCII 10), "\et" represents a TAB (ASCII 8). 
+represents a line-feed (ASCII 10), "\et" represents a TAB (ASCII 8).
 Binary data is input as "\exNN" with NN being the hexadecimal value
 of the byte.
 
@@ -69,7 +69,7 @@ of the byte.
 Define the default TCP port-number for this service. If no portnumber
 is defined,
 .I xymonnet(1)
-will attempt to lookup the portnumber in the standard /etc/services 
+will attempt to lookup the portnumber in the standard /etc/services
 file.
 
 .IP "\fBoptions\fR \fIoption1\fR[,\fIoption2\fR][,\fIoption3\fR]"

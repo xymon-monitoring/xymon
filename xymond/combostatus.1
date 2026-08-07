@@ -10,12 +10,12 @@ combostatus \- Xymon combination test tool
 
 .SH DESCRIPTION
 \fBcombostatus\fR
-is a Xymon extension script that runs on the Xymon server. 
+is a Xymon extension script that runs on the Xymon server.
 It combines the results of one or more of the normal
 Xymon test results into a combined test result, using
 standard arithmetic og logical operators.
 
-The resulting tests are sent to the Xymon display server as any 
+The resulting tests are sent to the Xymon display server as any
 normal test - so all of the standard Xymon functions (history,
 statistics etc.) are available for the combined tests.
 
@@ -25,7 +25,7 @@ But other uses are possible.
 
 .SH OPTIONS
 .IP "\fB\-\-error\-colors\fR=\fICOLOR\fR[,\fICOLOR\fR]"
-Specify which colors trigger an error status. By default only a "red" 
+Specify which colors trigger an error status. By default only a "red"
 status counts as an error color - all other colors, including yellow,
 will count as "green" when evaluating the combined status. COLOR
 is "red", "yellow", "blue", "purple" or "clear".

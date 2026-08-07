@@ -4,8 +4,8 @@ xymonclient.cfg \- Xymon client environment variables
 
 .SH DESCRIPTION
 Xymon programs use multiple environment variables beside the
-normal set of variables.  For the Xymon client, the environment 
-definitions are stored in the ~xymon/client/etc/xymonclient.cfg file. 
+normal set of variables.  For the Xymon client, the environment
+definitions are stored in the ~xymon/client/etc/xymonclient.cfg file.
 Each line in this file is of the form \fBNAME=VALUE\fR and defines
 one environment variable NAME with the value VALUE.
 
@@ -16,7 +16,7 @@ Chosen when the Xymon client was compiled.
 
 .IP "\fBXYMSERVERS\fR"
 List of IP-addresses of Xymon servers. Data will be sent to
-all of the servers listed here. This setting is only used if 
+all of the servers listed here. This setting is only used if
 XYMSRV=0.0.0.0.
 
 .IP "\fBXYMONDPORT\fR"
@@ -82,7 +82,7 @@ probe is not silently reported green. This does not cover the hang
 above: a wedged df never exits.
 
 .IP "\fBXYMON\fR"
-Full path to the 
+Full path to the
 .I xymon(1)
 client program. Default: $XYMONHOME/bin/xymon.
 

@@ -14,8 +14,8 @@ xymond_filestore \- xymond worker module for storing Xymon data
 xymond_filestore is a worker module for xymond, and as such it is normally
 run via the
 .I xymond_channel(8)
-program. It receives xymond messages from a xymond channel via stdin, and 
-stores these in the filesystem in a manner that is compatible with the 
+program. It receives xymond messages from a xymond channel via stdin, and
+stores these in the filesystem in a manner that is compatible with the
 Big Brother daemon, bbd.
 
 This program can be started multiple times, if you want to store
@@ -24,12 +24,12 @@ messages for more than one channel.
 .SH OPTIONS
 .IP "\fB\-\-status\fR"
 Incoming messages are "status" messages, they will be stored in the
-$XYMONRAWSTATUSDIR/ directory. If you are using 
+$XYMONRAWSTATUSDIR/ directory. If you are using
 .I xymon(7)
 throughout your Xymon server, you will not need to run this
-module to save status messages, unless you have a third-party 
+module to save status messages, unless you have a third-party
 add-on that reads the status-logs directly.
-This module is NOT needed to get trend graphs, you should run the 
+This module is NOT needed to get trend graphs, you should run the
 .I xymond_rrd(8)
 module instead.
 
@@ -37,18 +37,18 @@ module instead.
 Incoming messages are "data" messages, they will be stored in the
 $XYMONDATADIR directory. This module is not needed, unless you have a
 third-party module that processes the data-files. This module is
-NOT needed to get trend graphs, you should run the 
+NOT needed to get trend graphs, you should run the
 .I xymond_rrd(8)
 module instead.
 
 .IP "\fB\-\-notes\fR"
 Incoming messages are "notes" messages, they will be stored in the
-$XYMONNOTESDIR directory. This modules is only needed if you want to 
+$XYMONNOTESDIR directory. This modules is only needed if you want to
 allow people to remotely update the notes-files available on the
 Xymon webpages.
 
 .IP "\fB\-\-enadis\fR"
-Incoming messages are enable/disable messages, they will update 
+Incoming messages are enable/disable messages, they will update
 files in the $XYMONDISABLEDDIR directory. This is only needed if you have
 third-party add-ons that use these files.
 
@@ -57,7 +57,7 @@ Overrides the default output directory.
 
 .IP "\fB\-\-html\fR"
 Used together with "\-\-status". Tells xymond_filestore to also save
-an HTML version of the status-log. Should not be used unless you 
+an HTML version of the status-log. Should not be used unless you
 must run with "XYMONLOGSTATUS=static".
 
 .IP "\fB\-\-htmldir\fR=\fIDIRECTORY\fR"
@@ -69,7 +69,7 @@ Set the filename extension for generated HTML files. By default, HTML
 files are saved with a ".html" extension.
 
 .IP "\fB\-\-multigraphs\fR=\fITEST1\fR[,\fITEST2\fR]"
-This causes xymond_filestore to generate HTML status pages with links to 
+This causes xymond_filestore to generate HTML status pages with links to
 service graphs that are split up into multiple images, with at most 5 graphs
 per image. If not specified, only the "disk" status is split up this way.
 
