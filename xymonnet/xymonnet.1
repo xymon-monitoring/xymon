@@ -79,7 +79,7 @@ but will usually be 256. If xymonnet begins to complain
 about not being able to get a "socket", try running
 xymonnet with a lower value like 50 or 100.
 
-.IP "\-\-dns\-timeout=N (default: 30 seconds)"
+.IP "\fB\-\-dns\-timeout\fR=\fIN\fR (default: 30 seconds)"
 xymonnet will timeout all DNS lookups after N seconds.
 Any pending DNS lookups are regarded as failed, i.e. the
 network tests that depend on this DNS lookup will report
@@ -349,7 +349,7 @@ tests have executed.
 
 
 .SH INFORMATIONAL OPTIONS
-.IP "--help or -?"
+.IP "\fB--help\fR or \fB-?\fR"
 Provide a summary of available command-line options.
 
 .IP "\fB--version\fR"
@@ -586,7 +586,7 @@ defining services in the protocols.cfg file. See
 .I protocols.cfg(5)
 for details on this file.
 
-.IP "$XYMONHOME/etc/netrc - authentication data for password-protected webs"
+.IP "\fB$XYMONHOME/etc/netrc\fR - authentication data for password-protected webs"
 If you have password-protected sites, you can put the usernames and 
 passwords for these here. They will then get picked up automatically
 when running your network tests.  This works for web-sites that use 
@@ -611,7 +611,7 @@ HTTP request. To get the cookies into this file, you can use
 the "curl --cookie-jar FILE" to request the URL that sets
 the cookie.
 .sp
-.IP "$XYMONTMP/*.status - test status summary"
+.IP "\fB$XYMONTMP/*.status\fR - test status summary"
 Each time xymonnet runs, if any tests fail (i.e. they result
 in a red status) then they will be listed in a file name
 TESTNAME.[LOCATION].status. The LOCATION part may be null. This

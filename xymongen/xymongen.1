@@ -33,7 +33,7 @@ by it.
 
 .SH GENERAL OPTIONS
 .sp
-.IP "\-\-help or \-?"
+.IP "\fB\-\-help\fR or \fB\-?\fR"
 Provide a summary of available command-line options.
 .sp
 .IP "\fB\-\-version\fR"
@@ -99,7 +99,7 @@ the past N minutes. Default: 240.
 .IP "\fB\-\-no\-acklog\fR"
 Disable the acknowledgement log normally displayed on the "All non-green" page.
 .sp
-.IP "\-\-cricitcallog[=Critical log column]"
+.IP "\fB\-\-cricitcallog\fR[=\fICritical log column\fR]"
 This generates a text-based log of what is shown on the critical.html
 status page, and sends a status message for the Xymon server itself
 reflecting the color of the Critical status page. This allows you to track
@@ -245,7 +245,7 @@ and NOPROPYELLOW tags in the
 .I hosts.cfg(5)
 file to apply similar limits on a per-host basis.
 .sp
-.IP "\-\-nopropyellow=test[,test] or \-\-noprop=test[,test]
+.IP "\fB\-\-nopropyellow\fR=\fItest\fR[,\fItest\fR] or \fB\-\-noprop\fR=\fItest\fR[,\fItest\fR]"
 Disable upwards status propagation when YELLOW. The "\-\-noprop" option
 is deprecated and should not be used.
 .sp

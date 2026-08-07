@@ -80,7 +80,7 @@ a HOSTNAME is specified, it must have any dots in the hostname changed
 to commas if the Xymon FQDN setting is enabled (which is the default).
 So the host "www.foo.com", for example, would report as "www,foo,com".
 
-.IP "status[+LIFETIME][/group:GROUP] HOSTNAME.TESTNAME COLOR <additional text>"
+.IP "\fBstatus\fR[+\fILIFETIME\fR][/\fBgroup\fR:\fIGROUP\fR] \fIHOSTNAME.TESTNAME\fR \fICOLOR\fR <\fIadditional\fR \fItext\fR>"
 This sends in a status message for a single test (column) on a single host.
 TESTNAME is the name of the column where this test will show up; any
 name is valid except that using dots in the testname will not work.
@@ -112,7 +112,7 @@ It is currently used for status generated from the Xymon clients\(aq data,
 e.g. to direct alerts for a "procs" status to different people, depending on
 exactly which process is down.
 
-.IP "notify HOSTNAME.TESTNAME <message text>"
+.IP "\fBnotify\fR \fIHOSTNAME.TESTNAME\fR <\fImessage\fR \fItext\fR>"
 This triggers an informational message to be sent to those who 
 receive alerts for this HOSTNAME+TESTNAME combination, 
 according to the rules defined in
@@ -123,7 +123,7 @@ tool to notify people about hosts being disabled or
 enabled, but can also serve as a general way of notifying 
 server administrators.
 
-.IP "data HOSTNAME.DATANAME<newline><additional text>"
+.IP "\fBdata\fR \fIHOSTNAME.DATANAME\fR<\fInewline\fR><\fIadditional\fR \fItext\fR>"
 The "data" message allows tools to send data about a host, without
 it appearing as a column on the Xymon webpages. This
 is used, for example, to report statistics about a host, e.g. vmstat data, which
@@ -137,7 +137,7 @@ you may want to enable the
 module for data-messages, to store data-messages in a format compatible
 with how the Big Brother daemon does.
 
-.IP "disable HOSTNAME.TESTNAME DURATION <additional text>"
+.IP "\fBdisable\fR \fIHOSTNAME.TESTNAME\fR \fIDURATION\fR <\fIadditional\fR \fItext\fR>"
 Disables a specific test for DURATION minutes. This will cause the
 status of this test to be listed as "blue" on the Xymon server,
 and no alerts for this host/test will be generated. If DURATION is
@@ -148,10 +148,10 @@ To disable a test until it becomes OK, use "\-1" as the DURATION.
 .BR
 To disable all tests for a host, use an asterisk "*" for TESTNAME.
 
-.IP "enable HOSTNAME.TESTNAME"
+.IP "\fBenable\fR \fIHOSTNAME.TESTNAME\fR"
 Re-enables a test that had been disabled.
 
-.IP "query HOSTNAME.TESTNAME"
+.IP "\fBquery\fR \fIHOSTNAME.TESTNAME\fR"
 Query the Xymon server for the latest status reported for this
 particular test. If the host/test status is known, the response is
 the first line of the status report - the current color will be the
@@ -167,7 +167,7 @@ This will typically be useful to Xymon client extension scripts, that
 need to determine the status of other hosts, for example, to decide if an
 automatic recovery action should be initiated.
 
-.IP "config FILENAME"
+.IP "\fBconfig\fR \fIFILENAME\fR"
 Retrieve one of the Xymon configuration files from the
 server. This command allows a client to pull files from the
 $XYMONHOME/etc/ directory on the server, allowing for semi-automatic
@@ -177,21 +177,21 @@ in the system - and this is in fact the recommended way of configuring
 your clients - this makes it easier to keep the configuration 
 files synchronized.
 
-.IP "drop HOSTNAME"
+.IP "\fBdrop\fR \fIHOSTNAME\fR"
 Removes all data stored about the host HOSTNAME. It is assumed that you
 have already deleted the host from the hosts.cfg configuration file.
 
-.IP "drop HOSTNAME TESTNAME"
+.IP "\fBdrop\fR \fIHOSTNAME\fR \fITESTNAME\fR"
 Remove data about a single test (column).
 
-.IP "rename OLDHOSTNAME NEWHOSTNAME"
+.IP "\fBrename\fR \fIOLDHOSTNAME\fR \fINEWHOSTNAME\fR"
 Rename all data for a host that has had its name changed. You should do this
 after changing the hostname in the hosts.cfg configuration file.
 
-.IP "rename HOSTNAME OLDTESTNAME NEWTESTNAME"
+.IP "\fBrename\fR \fIHOSTNAME\fR \fIOLDTESTNAME\fR \fINEWTESTNAME\fR"
 Rename data about a single test (column).
 
-.IP "xymondlog HOSTNAME.TESTNAME"
+.IP "\fBxymondlog\fR \fIHOSTNAME.TESTNAME\fR"
 Retrieve the Xymon status-log for a single test. The first line of the
 response contains a series of fields separated by a pipe-sign:
 .sp
@@ -225,11 +225,11 @@ Empty or the message sent when the status was disabled.
 Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
 After the first line comes the full status log in plain text format.
 
-.IP "xymondxlog HOSTNAME.TESTNAME"
+.IP "\fBxymondxlog\fR \fIHOSTNAME.TESTNAME\fR"
 Retrieves an XML string containing the status log as with the 
 "xymondlog" command.
 
-.IP "xymondboard [CRITERIA] [fields=FIELDLIST]"
+.IP "\fBxymondboard\fR [\fICRITERIA\fR] [\fBfields\fR=\fIFIELDLIST\fR]"
 Retrieves a summary of the status of all known tests available to
 the Xymon daemon. 
 
@@ -366,7 +366,7 @@ is used.
 Retrieves an XML string with the summary of all status logs
 as for the "xymondboard" command.
 
-.IP "hostinfo [CRITERIA]"
+.IP "\fBhostinfo\fR [\fICRITERIA\fR]"
 Retrieves the current configuration of a host (i.e. the 
 .I hosts.cfg(5)
 definition). CRITERIA selects which host(s) to report, and is
@@ -378,10 +378,10 @@ a number of fields, separated by a pipe-sign. The first two fields
 will always be the hostname and the IP-address. The remaining fields 
 - if any - are the hosts.cfg tags in no particular order.
 
-.IP "download FILENAME"
+.IP "\fBdownload\fR \fIFILENAME\fR"
 Download a file from the Xymon server\(aqs download directory.
 
-.IP "client[/COLLECTORID] HOSTNAME.OSTYPE [HOSTCLASS]"
+.IP "\fBclient\fR[/\fICOLLECTORID\fR] \fIHOSTNAME.OSTYPE\fR [\fIHOSTCLASS\fR]"
 Used to send a "client" message to the Xymon server. Client messages
 are generated by the Xymon client; when sent to the Xymon server they
 are matched against the rules in the
@@ -392,7 +392,7 @@ The COLLECTORID is used when sending client-data that are additions
 to the standard client data. The data will be concatenated with the
 normal client data.
 
-.IP "clientlog HOSTNAME [section=SECTIONNAME[,SECTIONNAME...]]"
+.IP "\fBclientlog\fR \fIHOSTNAME\fR [\fBsection\fR=\fISECTIONNAME\fR[,\fISECTIONNAME\fR...]]"
 Retrieves the current raw client message last sent by HOSTNAME. The optional
 "section" filter is used to select specific sections of the client data.
 
@@ -411,7 +411,7 @@ for clients that cannot connect directly to the Xymon server.
 Report a list of \fBghost\fR clients seen by the Xymon server. Ghosts are systems
 that report data to the Xymon server, but are not listed in the hosts.cfg file.
 
-.IP "schedule [TIMESTAMP COMMAND]"
+.IP "\fBschedule\fR [\fITIMESTAMP\fR \fICOMMAND\fR]"
 Schedules a command sent to the Xymon server for execution at a later time. E.g.
 used to schedule disabling of a host or service at sometime in the future. COMMAND
 is a complete Xymon command such as the ones listed above. TIMESTAMP is the
@@ -425,18 +425,18 @@ string.
 To cancel a previously scheduled command, \fB"schedule cancel JOBID"\fR can be
 used. JOBID is a number provided as the first item in the output from the schedule list.
 
-.IP "notes FILENAME"
+.IP "\fBnotes\fR \fIFILENAME\fR"
 The message text will be stored in $XYMONHOME/notes/FILENAME which is then used as
 hyperlinks from hostnames or column names. This requires that the "storenotes" 
 task is enabled in tasks.cfg (it is disabled by default). FILENAME 
 cannot contain any directory path - these are stripped automatically.
 
-.IP "usermsg ID"
+.IP "\fBusermsg\fR \fIID\fR"
 These messages will be relayed directly to modules listening on the "user"
 channel of the Xymon daemon. This is intended for custom communication
 between client-side modules and the Xymon server.
 
-.IP "modify HOSTNAME.TESTNAME COLOR SOURCE CAUSE"
+.IP "\fBmodify\fR \fIHOSTNAME.TESTNAME\fR \fICOLOR\fR \fISOURCE\fR \fICAUSE\fR"
 Modify the color of a specific status, without generating a complete
 status message. This is for backend processors (e.g. RRD graphs)
 that can override the color of a status based on some criteria
