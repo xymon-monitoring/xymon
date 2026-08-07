@@ -1,152 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMOND_CLIENT(8)</title>
+</head>
+<body>
+<h1 class="head-name">XYMOND_CLIENT</h1>
+Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMOND_CLIENT</TITLE>
-</HEAD><BODY>
-<H1>XYMOND_CLIENT</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymond_client - xymond worker module for client data</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymond_channel --channel=client xymond_client [options]</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">xymond_client is a worker module for xymond, and as such it is
+    normally run via the <i><a href="../man8/xymond_channel.8.html">xymond_channel</a>(8)</i> program. It receives xymond
+    client messages sent from systems that have the the Xymon client installed,
+    and use the client data to generate the Xymon status messages for the cpu-,
+    disk-, memory- and procs-columns. It also feeds Xymon data messages with the
+    netstat- and vmstat-data collected by the client.</p>
+<p class="Pp">When generating these status messages from the client data,
+    xymond_client will use the configuration rules defined in the
+    <i><a href="../man5/analysis.cfg.5.html">analysis.cfg</a>(5)</i> file to determine the color of each status
+  message.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="clear-color"><a class="permalink" href="#clear-color"><b>--clear-color</b>=<i>COLOR</i></a></dt>
+  <dd>Define the color used when sending &quot;msgs&quot;, &quot;files&quot; or
+      &quot;ports&quot; reports and there are no rules to check for these
+      statuses. The default is to show a &quot;clear&quot; status, but some
+      people prefer to have it &quot;green&quot;. If you would rather prefer not
+      to see these status columns at all, then you can use the
+      &quot;--no-clear-msgs&quot;, &quot;--no-clear-files&quot; and
+      &quot;--no-clear-ports&quot; options instead.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-clear-msgs"><a class="permalink" href="#no-clear-msgs"><b>--no-clear-msgs</b></a></dt>
+  <dd>If there are no logfile checks, the &quot;msgs&quot; column will show a
+      &quot;clear&quot; status. If you would rather avoid having a
+      &quot;msgs&quot; column, this option causes xymond_client to not send in a
+      clear &quot;msgs&quot; status.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-clear-files"><a class="permalink" href="#no-clear-files"><b>--no-clear-files</b></a></dt>
+  <dd>If there are no file checks, the &quot;files&quot; column will show a
+      &quot;clear&quot; status. If you would rather avoid having a
+      &quot;files&quot; column, this option causes xymond_client to not send in
+      a clear &quot;files&quot; status.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-clear-ports"><a class="permalink" href="#no-clear-ports"><b>--no-clear-ports</b></a></dt>
+  <dd>If there are no port checks, the &quot;ports&quot; column will show a
+      &quot;clear&quot; status. If you would rather avoid having a
+      &quot;ports&quot; column, this option causes xymond_client to not send in
+      a clear &quot;ports&quot; status.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-ps-listing"><a class="permalink" href="#no-ps-listing"><b>--no-ps-listing</b></a></dt>
+  <dd>Normally the &quot;procs&quot; status message includes the full
+      process-listing received from the client. If you prefer to just have the
+      monitored processes shown, this option will turn off the full ps-listing.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-port-listing"><a class="permalink" href="#no-port-listing"><b>--no-port-listing</b></a></dt>
+  <dd>Normally the &quot;ports&quot; status message includes the full
+      netstat-listing received from the client. If you prefer to just have the
+      monitored ports shown, this option will turn off the full netstat-listing.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-cpu-listing"><a class="permalink" href="#no-cpu-listing"><b>--no-cpu-listing</b></a></dt>
+  <dd>Normally the &quot;cpu&quot; status message includes the full cpu-listing
+      received from the client. If you prefer to just have the monitored cpu
+      load shown, this option will turn off the full cpu-listing.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="uptime-status"><a class="permalink" href="#uptime-status"><b>--uptime-status</b></a></dt>
+  <dd>Generate a separate &quot;uptime&quot; status column. The uptime is
+      normally just reported in the &quot;cpu&quot; status column, but if you
+      would like a separate status column for the uptime, you can use this
+      option. It is useful if you want to generate an alert in case of a reboot,
+      without having this alert mixed in with the cpu load alerts.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="config"><a class="permalink" href="#config"><b>--config</b>=<i>FILENAME</i></a></dt>
+  <dd>Sets the filename for the <i>analysis.cfg</i> file. The default value is
+      &quot;etc/analysis.cfg&quot; below the Xymon server directory.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="unknownclientosok"><a class="permalink" href="#unknownclientosok"><b>--unknownclientosok</b></a></dt>
+  <dd>Expect and attempt to parse clients with unknown CLIENTOS types. Useful if
+      you're submitting custom host responses with file or msgs data that you'd
+      like to parse.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="dump-config"><a class="permalink" href="#dump-config"><b>--dump-config</b></a></dt>
+  <dd>Dumps the configuration after parsing it. May be useful to track down
+      problems with configuration file errors.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="test"><a class="permalink" href="#test"><b>--test</b></a></dt>
+  <dd>Starts an interactive session where you can test the analysis.cfg
+      configuration.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="collectors"><a class="permalink" href="#collectors"><b>--collectors</b>=<i>COLLECTOR1</i>[,<i>COLLECTOR2</i>,...]</a></dt>
+  <dd>Limit the set of collector modules that xymond_client will handle. This is
+      not normally used except for running experimental versions of the program.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enable debugging output.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt>~xymon/server/etc/analysis.cfg</dt>
+  <dd>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="BUGS"><a class="permalink" href="#BUGS">BUGS</a></h1>
+<p class="Pp">The &quot;disk&quot; status cannot handle filesystems containing
+    whitespace in the filesystem (device) name.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man5/analysis.cfg.5.html">analysis.cfg</a>(5), <a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man8/xymond_channel.8.html">xymond_channel</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#BUGS">BUGS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymond_client - xymond worker module for client data
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>xymond_channel --channel=client xymond_client [options]</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-xymond_client is a worker module for xymond, and as such it is normally
-run via the
-<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
-
-program. It receives xymond client messages sent from systems that
-have the the Xymon client installed, and use the client data to
-generate the Xymon status messages for the cpu-, disk-, memory- and
-procs-columns. It also feeds Xymon data messages with the netstat-
-and vmstat-data collected by the client.
-<P>
-When generating these status messages from the client data, xymond_client
-will use the configuration rules defined in the 
-<I><A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5)</I>
-
-file to determine the color of each status message.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--clear-color=COLOR<DD>
-Define the color used when sending &quot;msgs&quot;, &quot;files&quot; or &quot;ports&quot; reports
-and there are no rules to check for these statuses. The default is
-to show a &quot;clear&quot; status, but some people prefer to have it &quot;green&quot;.
-If you would rather prefer not to see these status columns at all, then
-you can use the &quot;--no-clear-msgs&quot;, &quot;--no-clear-files&quot; and &quot;--no-clear-ports&quot;
-options instead.
-<P>
-<DT>--no-clear-msgs<DD>
-If there are no logfile checks, the &quot;msgs&quot; column will show a &quot;clear&quot;
-status. If you would rather avoid having a &quot;msgs&quot; column, this option
-causes xymond_client to not send in a clear &quot;msgs&quot; status.
-<P>
-<DT>--no-clear-files<DD>
-If there are no file checks, the &quot;files&quot; column will show a &quot;clear&quot;
-status. If you would rather avoid having a &quot;files&quot; column, this option
-causes xymond_client to not send in a clear &quot;files&quot; status.
-<P>
-<DT>--no-clear-ports<DD>
-If there are no port checks, the &quot;ports&quot; column will show a &quot;clear&quot;
-status. If you would rather avoid having a &quot;ports&quot; column, this option
-causes xymond_client to not send in a clear &quot;ports&quot; status.
-<P>
-<DT>--no-ps-listing<DD>
-Normally the &quot;procs&quot; status message includes the full process-listing
-received from the client. If you prefer to just have the monitored
-processes shown, this option will turn off the full ps-listing.
-<P>
-<DT>--no-port-listing<DD>
-Normally the &quot;ports&quot; status message includes the full netstat-listing
-received from the client. If you prefer to just have the monitored
-ports shown, this option will turn off the full netstat-listing.
-<P>
-<DT>--no-cpu-listing<DD>
-Normally the &quot;cpu&quot; status message includes the full cpu-listing
-received from the client. If you prefer to just have the monitored
-cpu load shown, this option will turn off the full cpu-listing.
-<P>
-<DT>--uptime-status<DD>
-Generate a separate &quot;uptime&quot; status column. The uptime is normally 
-just reported in the &quot;cpu&quot; status column, but if you would like a
-separate status column for the uptime, you can use this option. It 
-is useful if you want to generate an alert in case of a reboot, 
-without having this alert mixed in with the cpu load alerts.
-<P>
-<DT>--config=FILENAME<DD>
-Sets the filename for the 
-<I>analysis.cfg</I>
-
-file. The default value is &quot;etc/analysis.cfg&quot; below the Xymon
-server directory.
-<P>
-<DT>--unknownclientosok<DD>
-Expect and attempt to parse clients with unknown CLIENTOS types.
-Useful if you're submitting custom host responses with file or msgs
-data that you'd like to parse.
-<P>
-<DT>--dump-config<DD>
-Dumps the configuration after parsing it. May be useful to track
-down problems with configuration file errors.
-<P>
-<DT>--test<DD>
-Starts an interactive session where you can test the analysis.cfg
-configuration.
-<P>
-<DT>--collectors=COLLECTOR1[,COLLECTOR2,...]<DD>
-Limit the set of collector modules that xymond_client will handle. This
-is not normally used except for running experimental versions of the
-program.
-<P>
-<DT>--debug<DD>
-Enable debugging output.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>FILES</H2>
-
-<DL COMPACT>
-<DT>~xymon/server/etc/analysis.cfg<DD>
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>BUGS</H2>
-
-The &quot;disk&quot; status cannot handle filesystems containing whitespace in the
-filesystem (device) name.
-<P>
-<A NAME="lbAH">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">FILES</A><DD>
-<DT><A HREF="#lbAG">BUGS</A><DD>
-<DT><A HREF="#lbAH">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

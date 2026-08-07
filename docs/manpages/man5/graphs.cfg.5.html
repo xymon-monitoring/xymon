@@ -1,190 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>GRAPHS.CFG(5)</title>
+</head>
+<body>
+<h1 class="head-name">GRAPHS.CFG</h1>
+Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of GRAPHS.CFG</TITLE>
-</HEAD><BODY>
-<H1>GRAPHS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">graphs.cfg - Configuration of the showgraph CGI</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>$XYMONHOME/etc/graphs.cfg</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><i><a href="../man1/showgraph.cgi.1.html">showgraph.cgi</a>(1)</i> uses the configuration file
+    $XYMONHOME/etc/graphs.cfg to build graphs from the RRD files collected by
+    Xymon.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILE_FORMAT"><a class="permalink" href="#FILE_FORMAT">FILE
+  FORMAT</a></h1>
+<p class="Pp">Each definition of a graph type begins with a
+    &quot;[SERVICE]&quot; indicator, this is the name passed as the
+    &quot;service&quot; parameter to <i><a href="../man1/showgraph.cgi.1.html">showgraph.cgi</a>(1).</i> If the service
+    name passed to showgraph.cgi is not found, it will attempt to match the
+    service name to a graph via the TEST2RRD environment variable. So calling
+    showgraph.cgi with &quot;service=cpu&quot; or &quot;service=la&quot; will
+    end up producing the same graph.</p>
+<p class="Pp">A graph definition needs to have a TITLE and a YAXIS setting.
+    These are texts shown as the title of the graph, and the YAXIS heading
+    respectively. (The X-axis is always time-based).</p>
+<p class="Pp">If a fixed set of RRD files are used for the graph, you just write
+    those in the RRDtool definitions. Note that Xymon keeps all RRD files for a
+    host in a separate directory per host, so you need not worry about the
+    hostname being part of the RRD filename.</p>
+<p class="Pp">For graphs that use multiple RRD files as input, you specify a
+    filename pattern in the FNPATTERN statement, and optionally a pattern of
+    files to exclude from the graph with EXFNPATTERN (see &quot;[tcp]&quot; for
+    an example). When FNPATTERN is used, you can use &quot;@RRDFN@&quot; in the
+    RRDtool definitions to pick up each filename. &quot;@RRDIDX@&quot; is an
+    index (starting at 0) for each file in the set. &quot;@RRDPARAM@&quot;
+    contains the first word extracted from the pattern of files (see e.g.
+    &quot;[memory]&quot; how this is used). &quot;@COLOR@&quot; picks a new
+    color for each graph automatically.</p>
+<p class="Pp">For a bundle viewed one service at a time (e.g.
+    &quot;tcp:conn&quot;), FNPATTERN capture group 1 must be exactly the service
+    component: showgraph uses it both as the legend (@RRDPARAM@) and to select
+    the single service - see &quot;[tcp]&quot;, where &quot;^tcp.(.+).rrd&quot;
+    captures &quot;conn&quot; from tcp.conn.rrd.</p>
+<p class="Pp">The remainder of the lines in each definition are passed directly
+    to the RRDtool rrd_graph() routine.</p>
+<p class="Pp">The following is an example of how the &quot;la&quot; (cpu) graph
+    is defined. This is a simple definition that uses a single RRD-file,
+  la.rrd:</p>
+<p class="Pp">[la]
+  <br/>
+</p>
+<pre>        TITLE CPU Load
+        YAXIS Load
+        DEF:avg=la.rrd:la:AVERAGE
+        CDEF:la=avg,100,/
+        AREA:la#00CC00:CPU Load Average
+        GPRINT:la:LAST:  %5.1lf (cur)
+        GPRINT:la:MAX:  %5.1lf (max)
+        GPRINT:la:MIN:  %5.1lf (min)
+        GPRINT:la:AVERAGE:  %5.1lf (avg)\n</pre>
+<p class="Pp"></p>
+<p class="Pp">Here is an example of a graph that uses multiple RRD-files,
+    determined automatically at run-time via the FNPATTERN setting. Note how it
+    uses the @RRDIDX@ to define a unique RRD parameter per input-file, and the
+    @COLOR@ and @RRDPARAM@ items to pick unique colors and a matching text for
+    the graph legend:</p>
+<p class="Pp">[disk]
+  <br/>
+</p>
+<pre>        FNPATTERN disk(.*).rrd
+        TITLE Disk Utilization
+        YAXIS % Full
+        DEF:p@RRDIDX@=@RRDFN@:pct:AVERAGE
+        LINE2:p@RRDIDX@#@COLOR@:@RRDPARAM@
+        -u 100
+        -l 0
+        GPRINT:p@RRDIDX@:LAST:  %5.1lf (cur)
+        GPRINT:p@RRDIDX@:MAX:  %5.1lf (max)
+        GPRINT:p@RRDIDX@:MIN:  %5.1lf (min)
+        GPRINT:p@RRDIDX@:AVERAGE:  %5.1lf (avg)\n</pre>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ADVANCED_GRAPH_TITLES"><a class="permalink" href="#ADVANCED_GRAPH_TITLES">ADVANCED
+  GRAPH TITLES</a></h1>
+<p class="Pp">Normally the title of a graph is a static text defined in the
+    graphs.cfg file. However, there may be situations where you want to use
+    different titles for the same type of graph, e.g. if you are incorporating
+    RRD files from MRTG into Xymon. In that case you can setup the TITLE
+    definition so that it runs a custom script to determine the graph title.
+    Like this:</p>
+<p class="Pp">	TITLE exec:/usr/local/bin/graphitle</p>
+<p class="Pp">The <b>/usr/local/bin/graphtitle</b> command is then called with
+    the hostname, the graphtype, the period string, and all of the RRD files
+    used as parameters. The script must generate one line of output, which is
+    then used as the title of the graph. Each of the RRD pathname parameters
+    will be enclosed in double quotes.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
+<dl class="Bl-tag">
+  <dt id="TEST2RRD"><a class="permalink" href="#TEST2RRD"><b>TEST2RRD</b></a></dt>
+  <dd>Maps service names to graph definitions.</dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NOTES"><a class="permalink" href="#NOTES">NOTES</a></h1>
+<p class="Pp">Most of the RRD graph definitions shipped with Xymon have been
+    ported from the definitions in the <b>larrd-grapher.cgi</b> CGI from LARRD
+    0.43c.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5), rrdtool(1), rrdgraph(1)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#FILE_FORMAT">FILE FORMAT</a></dt>
+<dt><a href="#ADVANCED_GRAPH_TITLES">ADVANCED GRAPH TITLES</a></dt>
+<dt><a href="#ENVIRONMENT">ENVIRONMENT</a></dt>
+<dt><a href="#NOTES">NOTES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-graphs.cfg - Configuration of the showgraph CGI
-<P>
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>$XYMONHOME/etc/graphs.cfg</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<I><A HREF="../man1/showgraph.cgi.1.html">showgraph.cgi</A>(1)</I>
-
-uses the configuration file $XYMONHOME/etc/graphs.cfg to
-build graphs from the RRD files collected by Xymon.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>FILE FORMAT</H2>
-
-Each definition of a graph type begins with a &quot;[SERVICE]&quot; indicator,
-this is the name passed as the &quot;service&quot; parameter to 
-<I><A HREF="../man1/showgraph.cgi.1.html">showgraph.cgi</A>(1).</I>
-
-If the service name passed to showgraph.cgi is not found, it will
-attempt to match the service name to a graph via the TEST2RRD environment
-variable. So calling showgraph.cgi with &quot;service=cpu&quot; or &quot;service=la&quot;
-will end up producing the same graph.
-<P>
-A graph definition needs to have a TITLE and a YAXIS setting. These are
-texts shown as the title of the graph, and the YAXIS heading respectively.
-(The X-axis is always time-based).
-<P>
-If a fixed set of RRD files are used for the graph, you just write those
-in the RRDtool definitions. Note that Xymon keeps all RRD files for a host 
-in a separate directory per host, so you need not worry about the hostname 
-being part of the RRD filename.
-<P>
-For graphs that use multiple RRD files as input, you specify a filename
-pattern in the FNPATTERN statement, and optionally a pattern of files
-to exclude from the graph with EXFNPATTERN (see &quot;[tcp]&quot; for an example).
-When FNPATTERN is used, you can use &quot;@RRDFN@&quot; in the RRDtool definitions
-to pick up each filename. &quot;@RRDIDX@&quot; is an index (starting at 0) for each
-file in the set. &quot;@RRDPARAM@&quot; contains the first word extracted from the
-pattern of files (see e.g. &quot;[memory]&quot; how this is used). &quot;@COLOR@&quot; picks
-a new color for each graph automatically.
-<P>
-The remainder of the lines in each definition are passed directly to the
-RRDtool rrd_graph() routine.
-<P>
-The following is an example of how the &quot;la&quot; (cpu) graph is defined. This
-is a simple definition that uses a single RRD-file, la.rrd:
-<P>
-[la]
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TITLE&nbsp;CPU&nbsp;Load
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;YAXIS&nbsp;Load
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DEF:avg=la.rrd:la:AVERAGE
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CDEF:la=avg,100,/
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AREA:la#00CC00:CPU&nbsp;Load&nbsp;Average
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:LAST:&nbsp;:&nbsp;%5.1lf&nbsp;(cur)
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:MAX:&nbsp;:&nbsp;%5.1lf&nbsp;(max)
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:MIN:&nbsp;:&nbsp;%5.1lf&nbsp;(min)
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:AVERAGE:&nbsp;:&nbsp;%5.1lf&nbsp;(avg)\n
-<P>
-<P>
-Here is an example of a graph that uses multiple RRD-files, determined
-automatically at run-time via the FNPATTERN setting. Note how it uses
-the @RRDIDX@ to define a unique RRD parameter per input-file, and the
-@COLOR@ and @RRDPARAM@ items to pick unique colors and a matching text
-for the graph legend:
-<P>
-[disk]
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FNPATTERN&nbsp;disk(.*).rrd
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TITLE&nbsp;Disk&nbsp;Utilization
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;YAXIS&nbsp;%&nbsp;Full
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DEF:p@RRDIDX@=@RRDFN@:pct:AVERAGE
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LINE2:p@RRDIDX@#@COLOR@:@RRDPARAM@
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-u&nbsp;100
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-l&nbsp;0
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:LAST:&nbsp;:&nbsp;%5.1lf&nbsp;(cur)
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:MAX:&nbsp;:&nbsp;%5.1lf&nbsp;(max)
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:MIN:&nbsp;:&nbsp;%5.1lf&nbsp;(min)
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:AVERAGE:&nbsp;:&nbsp;%5.1lf&nbsp;(avg)\n
-<P>
-<A NAME="lbAF">&nbsp;</A>
-<H2>ADVANCED GRAPH  TITLES</H2>
-
-Normally the title of a graph is a static text defined in
-the graphs.cfg file. However, there may be situations where
-you want to use different titles for the same type of graph, e.g.
-if you are incorporating RRD files from MRTG into Xymon. In that
-case you can setup the TITLE definition so that it runs a custom
-script to determine the graph title. Like this:
-<P>
-<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>TITLE exec:/usr/local/bin/graphitle<BR>
-<P>
-The <B>/usr/local/bin/graphtitle</B> command is then called with 
-the hostname, the graphtype, the period string, and all of the 
-RRD files used as parameters. The script must generate one line of output,
-which is then used as the title of the graph. Each of the RRD pathname
-parameters will be enclosed in double quotes.
-<P>
-<A NAME="lbAG">&nbsp;</A>
-<H2>ENVIRONMENT</H2>
-
-<B>TEST2RRD</B>
-
-Maps service names to graph definitions.
-<P>
-<A NAME="lbAH">&nbsp;</A>
-<H2>NOTES</H2>
-
-Most of the RRD graph definitions shipped with Xymon have been ported 
-from the definitions in the <B>larrd-grapher.cgi</B> CGI from LARRD 0.43c.
-<P>
-<A NAME="lbAI">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man1/rrdtool.1.html">rrdtool</A>(1), <A HREF="../man1/rrdgraph.1.html">rrdgraph</A>(1)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">FILE FORMAT</A><DD>
-<DT><A HREF="#lbAF">ADVANCED GRAPH  TITLES</A><DD>
-<DT><A HREF="#lbAG">ENVIRONMENT</A><DD>
-<DT><A HREF="#lbAH">NOTES</A><DD>
-<DT><A HREF="#lbAI">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

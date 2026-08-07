@@ -1,322 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>ALERTS.CFG(5)</title>
+</head>
+<body>
+<h1 class="head-name">ALERTS.CFG</h1>
+Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of ALERTS.CFG</TITLE>
-</HEAD><BODY>
-<H1>ALERTS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
-
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-alerts.cfg - Configuration for for xymond_alert module
-<P>
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>~xymon/server/etc/alerts.cfg</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-The alerts.cfg file controls the sending of alerts by Xymon
-when monitoring detects a failure.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>FILE FORMAT</H2>
-
-The configuration file consists of <B>rules</B>, that may have one
-or more <B>recipients</B> associated. A recipient specification may
-include additional rules that limit the circumstances when this 
-recipient is eligible for receiving an alert.
-<P>
-Blank lines and lines starting with a hash mark (#) are treated as 
-comments and ignored.  Long lines can be broken up by putting a 
-backslash at the end of the line and continuing the entry on the 
-next line.
-<P>
-<A NAME="lbAF">&nbsp;</A>
-<H2>RULES</H2>
-
-A rule consists of one of more filters using these keywords:
-<P>
-<B>PAGE=targetstring</B>
-
-Rule matching an alert by the name of the page in Xymon. This is the path of
-the page as defined in the hosts.cfg file. E.g. if you have this setup:
-<DL COMPACT>
-<DT><DD>
-<PRE>
-page servers All Servers
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">alerts.cfg - Configuration for for xymond_alert module</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>~xymon/server/etc/alerts.cfg</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">The alerts.cfg file controls the sending of alerts by Xymon when
+    monitoring detects a failure.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILE_FORMAT"><a class="permalink" href="#FILE_FORMAT">FILE
+  FORMAT</a></h1>
+<p class="Pp">The configuration file consists of <b>rules</b>, that may have one
+    or more <b>recipients</b> associated. A recipient specification may include
+    additional rules that limit the circumstances when this recipient is
+    eligible for receiving an alert.</p>
+<p class="Pp">Blank lines and lines starting with a hash mark (#) are treated as
+    comments and ignored. Long lines can be broken up by putting a backslash at
+    the end of the line and continuing the entry on the next line.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="RULES"><a class="permalink" href="#RULES">RULES</a></h1>
+<p class="Pp">A rule consists of one of more filters using these keywords:</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="PAGE"><a class="permalink" href="#PAGE"><b>PAGE</b>=<i>targetstring</i></a></dt>
+  <dd>Rule matching an alert by the name of the page in Xymon. This is the path
+      of the page as defined in the hosts.cfg file. E.g. if you have this
+    setup:</dd>
+  <dt></dt>
+  <dd>
+    <pre>page servers All Servers
 subpage web Webservers
 10.0.0.1 www1.foo.com
 subpage db Database servers
-10.0.0.2 db1.foo.com
-</PRE>
-
-</DL>
-<P>
-
-Then the &quot;All servers&quot; page is found with <B>PAGE=servers</B>, the 
-&quot;Webservers&quot; page is <B>PAGE=servers/web</B> and the &quot;Database servers&quot;
-page is <B>PAGE=servers/db</B>. Note that you can also use regular expressions 
-to specify the page name, e.g. <B>PAGE=%.*/db</B> would find the &quot;Database
-servers&quot; page regardless of where this page was placed in the hierarchy.
-<P>
-The PAGE name of top-level page is an empty string. To match this, use
-<B>PAGE=%^$</B> to match the empty string.
-<P>
-<P>
-<B>EXPAGE=targetstring</B>
-
-Rule excluding an alert if the pagename matches.
-<P>
-<B>DISPLAYGROUP=groupstring</B>
-
-Rule matching an alert by the text of the display-group (text following the group, 
-group-only, group-except heading) in the hosts.cfg file. &quot;groupstring&quot; is the text
-for the group, stripped of any HTML tags. E.g. if you have this setup:
-<DL COMPACT>
-<DT><DD>
-<PRE>
-group Web
+10.0.0.2 db1.foo.com</pre>
+  </dd>
+</dl>
+<p class="Pp">Then the &quot;All servers&quot; page is found with
+    <b>PAGE=servers</b>, the &quot;Webservers&quot; page is
+    <b>PAGE=servers/web</b> and the &quot;Database servers&quot; page is
+    <b>PAGE=servers/db</b>. Note that you can also use regular expressions to
+    specify the page name, e.g. <b>PAGE=%.*/db</b> would find the &quot;Database
+    servers&quot; page regardless of where this page was placed in the
+    hierarchy.</p>
+<p class="Pp">The PAGE name of top-level page is an empty string. To match this,
+    use <b>PAGE=%^$</b> to match the empty string.</p>
+<p class="Pp"></p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="EXPAGE"><a class="permalink" href="#EXPAGE"><b>EXPAGE</b>=<i>targetstring</i></a></dt>
+  <dd>Rule excluding an alert if the pagename matches.</dd>
+  <dt id="DISPLAYGROUP"><a class="permalink" href="#DISPLAYGROUP"><b>DISPLAYGROUP</b>=<i>groupstring</i></a></dt>
+  <dd>Rule matching an alert by the text of the display-group (text following
+      the group, group-only, group-except heading) in the hosts.cfg file.
+      &quot;groupstring&quot; is the text for the group, stripped of any HTML
+      tags. E.g. if you have this setup:</dd>
+  <dt></dt>
+  <dd>
+    <pre>group Web
 10.0.0.1 www1.foo.com
 10.0.0.2 www2.foo.com
 group Production databases
-10.0.1.1 db1.foo.com
-</PRE>
+10.0.1.1 db1.foo.com</pre>
+  </dd>
+</dl>
+<p class="Pp">Then the hosts in the Web-group can be matched with
+    <b>DISPLAYGROUP=Web</b>, and the database servers can be matched with
+    <b>DISPLAYGROUP=&quot;Production databases&quot;</b>. Note that you can also
+    use regular expressions, e.g. <b>DISPLAYGROUP=%database</b>. If there is no
+    group-setting for the host, use &quot;DISPLAYGROUP=NONE&quot;.</p>
+<dl class="Bl-tag">
+  <dt id="EXDISPLAYGROUP"><a class="permalink" href="#EXDISPLAYGROUP"><b>EXDISPLAYGROUP</b>=<i>groupstring</i></a></dt>
+  <dd>Rule excluding a group by matching the display-group string.</dd>
+  <dt id="HOST"><a class="permalink" href="#HOST"><b>HOST</b>=<i>targetstring</i></a></dt>
+  <dd>Rule matching an alert by the hostname.</dd>
+  <dt id="EXHOST"><a class="permalink" href="#EXHOST"><b>EXHOST</b>=<i>targetstring</i></a></dt>
+  <dd>Rule excluding an alert by matching the hostname.</dd>
+  <dt id="SERVICE"><a class="permalink" href="#SERVICE"><b>SERVICE</b>=<i>targetstring</i></a></dt>
+  <dd>Rule matching an alert by the service name.</dd>
+  <dt id="EXSERVICE"><a class="permalink" href="#EXSERVICE"><b>EXSERVICE</b>=<i>targetstring</i></a></dt>
+  <dd>Rule excluding an alert by matching the service name.</dd>
+  <dt id="GROUP"><a class="permalink" href="#GROUP"><b>GROUP</b>=<i>groupname</i></a></dt>
+  <dd>Rule matching an alert by the group name. Groupnames are assigned to a
+      status via the GROUP setting in the analysis.cfg file.</dd>
+  <dt id="EXGROUP"><a class="permalink" href="#EXGROUP"><b>EXGROUP</b>=<i>groupname</i></a></dt>
+  <dd>Rule excluding an alert by the group name. Groupnames are assigned to a
+      status via the GROUP setting in the analysis.cfg file.</dd>
+  <dt id="CLASS"><a class="permalink" href="#CLASS"><b>CLASS</b>=<i>classname</i></a></dt>
+  <dd>Rule matching an alert by the class that the host belongs to. By default,
+      the classname is the operating system name; you can set another class
+      either in <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> using the CLASS tag, or a client running on
+      the server can set the class (via a parameter to the client
+      startup-script).</dd>
+  <dt id="EXCLASS"><a class="permalink" href="#EXCLASS"><b>EXCLASS</b>=<i>classname</i></a></dt>
+  <dd>Rule excluding an alert by the class name.</dd>
+  <dt id="COLOR"><a class="permalink" href="#COLOR"><b>COLOR</b>=<i>color</i>[,<i>color</i>]</a></dt>
+  <dd>Rule matching an alert by color. Can be &quot;red&quot;,
+      &quot;yellow&quot;, or &quot;purple&quot;. The forms &quot;!red&quot;,
+      &quot;!yellow&quot; and &quot;!purple&quot; can also be used to NOT send
+      an alert if the color is the specified one.</dd>
+  <dt id="TIME"><a class="permalink" href="#TIME"><b>TIME</b>=<i>timespecification</i></a></dt>
+  <dd>Rule matching an alert by the time-of-day. This is specified as the
+      DOWNTIME timespecification in the hosts.cfg file.</dd>
+  <dt id="EXTIME"><a class="permalink" href="#EXTIME"><b>EXTIME</b>=<i>timespecification</i></a></dt>
+  <dd>Rule excluding an alert by the time-of-day. This is specified as the
+      DOWNTIME timespecification in the hosts.cfg file.</dd>
+  <dt id="DURATION&gt;time"><a class="permalink" href="#DURATION&gt;time"><b>DURATION&gt;</b><i>time</i>,
+    <b>DURATION&gt;=</b><i>time</i>, <b>DURATION&lt;</b><i>time</i>,
+    <b>DURATION&lt;=</b><i>time</i></a></dt>
+  <dd>Rule matching an alert if the event has lasted longer/shorter than the
+      given duration. E.g. DURATION&gt;1h (lasted longer than 1 hour) or
+      DURATION&lt;30 (only sends alerts the first 30 minutes). The duration is
+      specified as a number, optionally followed by 'm' (minutes, default), 'h'
+      (hours), 'd' (days) or 'w' (weeks).</dd>
+  <dt id="RECOVERED"><a class="permalink" href="#RECOVERED"><b>RECOVERED</b></a></dt>
+  <dd>Send recovery and disabled-state messages to matching recipients. This can
+      be set on a rule or on an individual recipient.</dd>
+  <dt id="NORECOVERED"><a class="permalink" href="#NORECOVERED"><b>NORECOVERED</b></a></dt>
+  <dd>Suppress recovery and disabled-state messages. On a recipient, this
+      overrides a RECOVERED setting inherited from the rule.</dd>
+  <dt id="NOTICE"><a class="permalink" href="#NOTICE"><b>NOTICE</b></a></dt>
+  <dd>Send &quot;notify&quot; messages to matching recipients. This type of
+      message is sent when a host or test is disabled or enabled.</dd>
+  <dt id="NONOTICE"><a class="permalink" href="#NONOTICE"><b>NONOTICE</b></a></dt>
+  <dd>Suppress notify messages. On a recipient, this overrides a NOTICE setting
+      inherited from the rule.</dd>
+</dl>
+<p class="Pp">The &quot;targetstring&quot; is either a simple pagename, hostname
+    or servicename, OR a '%' followed by a Perl-compatible regular expression.
+    E.g. &quot;HOST=%www(.*)&quot; will match any hostname that begins with
+    &quot;www&quot;. The same for the &quot;groupname&quot; setting.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="RECIPIENTS"><a class="permalink" href="#RECIPIENTS">RECIPIENTS</a></h1>
+<p class="Pp">The recipients are listed after the initial rule. The following
+    keywords can be used to define recipients:</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="MAIL"><a class="permalink" href="#MAIL"><b>MAIL
+    address[,address]</b></a></dt>
+  <dd>Recipient who receives an e-mail alert. This takes one parameter, the
+      e-mail address. The strings &quot;&amp;host&amp;&quot;,
+      &quot;&amp;service&amp;&quot; and &quot;&amp;color&amp;&quot; in an
+      address will be replaced with the hostname, service and color of the
+      alert, respectively.</dd>
+  <dt id="SCRIPT"><a class="permalink" href="#SCRIPT"><b>SCRIPT /path/to/script
+    recipientID</b></a></dt>
+  <dd>Recipient that invokes a script. This takes two parameters: The script
+      filename, and the recipient that gets passed to the script. The strings
+      &quot;&amp;host&amp;&quot;, &quot;&amp;service&amp;&quot; and
+      &quot;&amp;color&amp;&quot; in the recipientID will be replaced with the
+      hostname, service and color of the alert, respectively.</dd>
+  <dt id="IGNORE"><a class="permalink" href="#IGNORE"><b>IGNORE</b></a></dt>
+  <dd>This is used to define a recipient that does NOT trigger any alerts, and
+      also terminates the search for more recipients. It is useful if you have a
+      rule that handles most alerts, but there is just that one particular
+      server where you don't want cpu alerts on Monday morning. Note that the
+      IGNORE recipient always has the STOP flag defined, so when the IGNORE
+      recipient is matched, no more recipients will be considered. So the
+      location of this recipient in your set of recipients is important.</dd>
+  <dt id="FORMAT"><a class="permalink" href="#FORMAT"><b>FORMAT</b>=<i>formatstring</i></a></dt>
+  <dd>Format of the text message with the alert. Default is &quot;TEXT&quot;
+      (suitable for e-mail alerts). &quot;PLAIN&quot; is the same as text, but
+      without the URL link to the status webpage. &quot;SMS&quot; is a short
+      message with no subject for SMS alerts. &quot;PAGER&quot; produces an
+      empty message body. &quot;SCRIPT&quot; is a brief message template for
+      scripts.</dd>
+  <dt id="REPEAT"><a class="permalink" href="#REPEAT"><b>REPEAT</b>=<i>time</i></a></dt>
+  <dd>How often an alert gets repeated. Time is a number optionally followed by
+      'm' (minutes, default), 'h' (hours), 'd' (days) or 'w' (weeks).</dd>
+  <dt id="UNMATCHED"><a class="permalink" href="#UNMATCHED"><b>UNMATCHED</b></a></dt>
+  <dd>The alert is sent to this recipient ONLY if no other recipients received
+      an alert for this event.</dd>
+</dl>
+<p class="Pp">For example, place an UNMATCHED recipient after more specific
+    rules to provide a fallback:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>
+    <pre>HOST=database.example.com SERVICE=cpu
+	MAIL database-team@example.com</pre>
+  </dd>
+</dl>
+<pre>HOST=%.*
+	MAIL operations@example.com UNMATCHED</pre>
+<p class="Pp">The operations recipient is used only when an earlier recipient
+    did not receive the alert, so recipient order is significant.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="STOP"><a class="permalink" href="#STOP"><b>STOP</b></a></dt>
+  <dd>Stop looking for more recipients after this one matches. This is implicit
+      on IGNORE recipients.</dd>
+  <dt id="NOALERT"><a class="permalink" href="#NOALERT"><b>NOALERT</b></a></dt>
+  <dd>Suppress paging, recovery and disabled-state messages for this recipient.
+      Notify messages are still allowed.</dd>
+  <dt id="Recipient"><a class="permalink" href="#Recipient"><b>Recipient
+    rules</b></a></dt>
+  <dd>You can specify rule filters after a recipient on the same logical line.
+      This limits the alerts sent to that recipient. End a physical line with a
+      backslash to continue the logical line. If multiple recipients occur on
+      one logical line, trailing rule filters apply to all recipients on that
+      line.</dd>
+</dl>
+<p class="Pp">FORMAT, REPEAT, STOP, UNMATCHED and NOALERT are recipient-only
+    modifiers. They can also be placed on a following line, where they modify
+    the preceding recipient.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="MACROS"><a class="permalink" href="#MACROS">MACROS</a></h1>
+<p class="Pp">It is possible to use <b>macros</b> in the configuration file. To
+    define a macro:</p>
+<p class="Pp">	$MYMACRO=text extending to end of line</p>
+<p class="Pp">After the definition of a macro, it can be used throughout the
+    file. Wherever the text $MYMACRO appears, it will be substituted with the
+    text of the macro before any processing of rules and recipients.</p>
+<p class="Pp">It is possible to nest macros, as long as the macro is defined
+    before it is used.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ALERT_SCRIPTS"><a class="permalink" href="#ALERT_SCRIPTS">ALERT
+  SCRIPTS</a></h1>
+<p class="Pp">Alerts can go out via custom scripts, by using the SCRIPT keyword
+    for a recipient. Such scripts have access to the following environment
+    variables:</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="BBCOLORLEVEL"><a class="permalink" href="#BBCOLORLEVEL"><b>BBCOLORLEVEL</b></a></dt>
+  <dd>The color of the alert: &quot;red&quot;, &quot;yellow&quot; or
+      &quot;purple&quot;.</dd>
+  <dt id="BBALPHAMSG"><a class="permalink" href="#BBALPHAMSG"><b>BBALPHAMSG</b></a></dt>
+  <dd>The full text of the status log triggering the alert</dd>
+  <dt id="ACKCODE"><a class="permalink" href="#ACKCODE"><b>ACKCODE</b></a></dt>
+  <dd>The &quot;cookie&quot; that can be used to acknowledge the alert</dd>
+  <dt id="RCPT"><a class="permalink" href="#RCPT"><b>RCPT</b></a></dt>
+  <dd>The recipientID from the SCRIPT entry</dd>
+  <dt id="BBHOSTNAME"><a class="permalink" href="#BBHOSTNAME"><b>BBHOSTNAME</b></a></dt>
+  <dd>The name of the host that the alert is about</dd>
+  <dt id="MACHIP"><a class="permalink" href="#MACHIP"><b>MACHIP</b></a></dt>
+  <dd>The IP-address of the host that has a problem</dd>
+  <dt id="BBSVCNAME"><a class="permalink" href="#BBSVCNAME"><b>BBSVCNAME</b></a></dt>
+  <dd>The name of the service that the alert is about</dd>
+  <dt id="BBSVCNUM"><a class="permalink" href="#BBSVCNUM"><b>BBSVCNUM</b></a></dt>
+  <dd>The numeric code for the service. From the SVCCODES definition.</dd>
+  <dt id="BBHOSTSVC"><a class="permalink" href="#BBHOSTSVC"><b>BBHOSTSVC</b></a></dt>
+  <dd>HOSTNAME.SERVICE that the alert is about.</dd>
+  <dt id="BBHOSTSVCCOMMAS"><a class="permalink" href="#BBHOSTSVCCOMMAS"><b>BBHOSTSVCCOMMAS</b></a></dt>
+  <dd>As BBHOSTSVC, but dots in the hostname replaced with commas</dd>
+  <dt id="BBNUMERIC"><a class="permalink" href="#BBNUMERIC"><b>BBNUMERIC</b></a></dt>
+  <dd>A 22-digit number made by BBSVCNUM, MACHIP and ACKCODE.</dd>
+  <dt id="RECOVERED~2"><a class="permalink" href="#RECOVERED~2"><b>RECOVERED</b></a></dt>
+  <dd>Is &quot;0&quot; if the service is alerting, &quot;1&quot; if the service
+      has recovered, &quot;2&quot; if the service was disabled.</dd>
+  <dt id="EVENTSTART"><a class="permalink" href="#EVENTSTART"><b>EVENTSTART</b></a></dt>
+  <dd>Timestamp when the current status (color) began.</dd>
+  <dt id="DOWNSECS"><a class="permalink" href="#DOWNSECS"><b>DOWNSECS</b></a></dt>
+  <dd>Number of seconds the service has been down.</dd>
+  <dt id="DOWNSECSMSG"><a class="permalink" href="#DOWNSECSMSG"><b>DOWNSECSMSG</b></a></dt>
+  <dd>When recovered, holds the text &quot;Event duration : N&quot; where N is
+      the DOWNSECS value.</dd>
+  <dt id="CFID"><a class="permalink" href="#CFID"><b>CFID</b></a></dt>
+  <dd>Line-number in the alerts.cfg file that caused the script to be invoked.
+      Can be useful when troubleshooting alert configuration rules.</dd>
+  <dt id="ALERTID"><a class="permalink" href="#ALERTID"><b>ALERTID</b></a></dt>
+  <dd>Unique identifier derived from the host, service and event start
+    time.</dd>
+</dl>
+<p class="Pp">Available host metadata is also exported as <b>XMH_*</b>
+    environment variables. See <i><a href="../man5/xymon-xmh.5.html">xymon-xmh</a>(5)</i> for the full list and
+    descriptions.</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man8/xymond_alert.8.html">xymond_alert</a>(8), <a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7), <a href="../man5/xymon-xmh.5.html">xymon-xmh</a>(5), the
+    &quot;Configuring Xymon Alerts&quot; guide in the Online documentation.</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#FILE_FORMAT">FILE FORMAT</a></dt>
+<dt><a href="#RULES">RULES</a></dt>
+<dt><a href="#RECIPIENTS">RECIPIENTS</a></dt>
+<dt><a href="#MACROS">MACROS</a></dt>
+<dt><a href="#ALERT_SCRIPTS">ALERT SCRIPTS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-</DL>
-<P>
-
-Then the hosts in the Web-group can be matched with <B>DISPLAYGROUP=Web</B>,
-and the database servers can be matched with <B>DISPLAYGROUP=&quot;Production databases&quot;</B>.
-Note that you can also use regular expressions, e.g. <B>DISPLAYGROUP=%database</B>.
-If there is no group-setting for the host, use &quot;DISPLAYGROUP=NONE&quot;.
-<P>
-<B>EXDISPLAYGROUP=groupstring</B>
-
-Rule excluding a group by matching the display-group string.
-<P>
-<B>HOST=targetstring</B>
-
-Rule matching an alert by the hostname.
-<P>
-<B>EXHOST=targetstring</B>
-
-Rule excluding an alert by matching the hostname.
-<P>
-<B>SERVICE=targetstring</B>
-
-Rule matching an alert by the service name.
-<P>
-<B>EXSERVICE=targetstring</B>
-
-Rule excluding an alert by matching the service name.
-<P>
-<B>GROUP=groupname</B>
-
-Rule matching an alert by the group name. Groupnames are assigned to a status via the GROUP
-setting in the analysis.cfg file.
-<P>
-<B>EXGROUP=groupname</B>
-
-Rule excluding an alert by the group name. Groupnames are assigned to a status via the GROUP
-setting in the analysis.cfg file.
-<P>
-<B>CLASS=classname</B>
-
-Rule matching an alert by the class that the host belongs to. By default, the classname is
-the operating system name; you can set another class either in 
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-using the CLASS tag, or a client running on the server can set the class (via a parameter
-to the client startup-script).
-<P>
-<B>EXCLASS=classname</B>
-
-Rule excluding an alert by the class name.
-<P>
-<B>COLOR=color[,color]</B>
-
-Rule matching an alert by color. Can be &quot;red&quot;, &quot;yellow&quot;, or &quot;purple&quot;. The forms &quot;!red&quot;, &quot;!yellow&quot; and &quot;!purple&quot; can also be used to NOT send an alert if the color is the specified one.
-<P>
-<B>TIME=timespecification</B>
-
-Rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the hosts.cfg file.
-<P>
-<B>EXTIME=timespecification</B>
-
-Rule excluding an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the hosts.cfg file.
-<P>
-<B>DURATION&gt;time, DURATION&lt;time</B>
-
-Rule matching an alert if the event has lasted longer/shorter than the given duration. E.g. DURATION&gt;1h (lasted longer than 1 hour) or DURATION&lt;30 (only sends alerts the first 30 minutes). The duration is specified as a number, optionally followed by 'm' (minutes, default), 'h' (hours) or 'd' (days).
-<P>
-<B>RECOVERED</B>
-
-Rule matches if the alert has recovered from an alert state.
-<P>
-<B>NOTICE</B>
-
-Rule matches if the message is a &quot;notify&quot; message. This type of message is sent when a host or test is disabled or enabled.
-<P>
-The &quot;targetstring&quot; is either a simple pagename, hostname or servicename, OR a '%' 
-followed by a Perl-compatible regular expression. E.g. &quot;HOST=%www(.*)&quot; will match 
-any hostname that begins with &quot;www&quot;. The same for the &quot;groupname&quot; setting.
-<P>
-<A NAME="lbAG">&nbsp;</A>
-<H2>RECIPIENTS</H2>
-
-The recipients are listed after the initial rule. The following keywords can be used to define recipients:
-<P>
-<B>MAIL address[,address]</B>
-
-Recipient who receives an e-mail alert. This takes one parameter, the e-mail address.
-The strings &quot;&amp;host&amp;&quot;, &quot;&amp;service&amp;&quot; and &quot;&amp;color&amp;&quot; in an address will be replaced with
-the hostname, service and color of the alert, respectively.
-<P>
-<B>SCRIPT /path/to/script recipientID</B>
-
-Recipient that invokes a script. This takes two parameters: The script filename, and the recipient that gets passed to the script.
-The strings &quot;&amp;host&amp;&quot;, &quot;&amp;service&amp;&quot; and &quot;&amp;color&amp;&quot; in the recipientID will be replaced with
-the hostname, service and color of the alert, respectively.
-<P>
-<B>IGNORE</B>
-
-This is used to define a recipient that does NOT trigger any alerts, and also terminates the
-search for more recipients. It is useful if you have a rule that handles most alerts, but
-there is just that one particular server where you don't want cpu alerts on Monday morning.
-Note that the IGNORE recipient always has the STOP flag defined, so when the IGNORE recipient
-is matched, no more recipients will be considered. So the location of this recipient in your
-set of recipients is important.
-<P>
-<B>FORMAT=formatstring</B>
-
-Format of the text message with the alert. Default is &quot;TEXT&quot; (suitable for e-mail alerts). &quot;PLAIN&quot; is the same as text, but without the URL link to the status webpage. &quot;SMS&quot; is a short message with no subject for SMS alerts. &quot;SCRIPT&quot; is a brief message template for scripts.
-<P>
-<B>REPEAT=time</B>
-
-How often an alert gets repeated. As with DURATION, time is a number optionally followed by 'm', 'h' or 'd'.
-<P>
-<B>UNMATCHED</B>
-
-The alert is sent to this recipient ONLY if no other recipients received an alert for this event.
-<P>
-<B>STOP</B>
-
-Stop looking for more recipients after this one matches. This is implicit on IGNORE recipients.
-<P>
-<B>Rules</B>
-
-You can specify rules for a recipient also. This limits the alerts sent to this particular recipient.
-<P>
-<A NAME="lbAH">&nbsp;</A>
-<H2>MACROS</H2>
-
-It is possible to use <B>macros</B> in the configuration file. To define a macro:
-<P>
-<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>$MYMACRO=text extending to end of line<BR>
-<P>
-After the definition of a macro, it can be used throughout the file. Wherever the
-text $MYMACRO appears, it will be substituted with the text of the macro before
-any processing of rules and recipients.
-<P>
-It is possible to nest macros, as long as the macro is defined before it is used.
-<P>
-<A NAME="lbAI">&nbsp;</A>
-<H2>ALERT SCRIPTS</H2>
-
-Alerts can go out via custom scripts, by using the SCRIPT keyword for a recipient.
-Such scripts have access to the following environment variables:
-<P>
-<B>BBALPHAMSG</B>
-
-The full text of the status log triggering the alert
-<P>
-<B>ACKCODE</B>
-
-The &quot;cookie&quot; that can be used to acknowledge the alert
-<P>
-<B>RCPT</B>
-
-The recipientID from the SCRIPT entry
-<P>
-<B>BBHOSTNAME</B>
-
-The name of the host that the alert is about
-<P>
-<B>MACHIP</B>
-
-The IP-address of the host that has a problem
-<P>
-<B>BBSVCNAME</B>
-
-The name of the service that the alert is about
-<P>
-<B>BBSVCNUM</B>
-
-The numeric code for the service. From the SVCCODES definition.
-<P>
-<B>BBHOSTSVC</B>
-
-HOSTNAME.SERVICE that the alert is about.
-<P>
-<B>BBHOSTSVCCOMMAS</B>
-
-As BBHOSTSVC, but dots in the hostname replaced with commas
-<P>
-<B>BBNUMERIC</B>
-
-A 22-digit number made by BBSVCNUM, MACHIP and ACKCODE.
-<P>
-<B>RECOVERED</B>
-
-Is &quot;0&quot; if the service is alerting, &quot;1&quot; if the service has 
-recovered, &quot;2&quot; if the service was disabled.
-<P>
-<B>EVENTSTART</B>
-
-Timestamp when the current status (color) began.
-<P>
-<B>SECS</B>
-
-Number of seconds the service has been down.
-<P>
-<B>DOWNSECSMSG</B>
-
-When recovered, holds the text &quot;Event duration : N&quot; where N is the DOWNSECS value.
-<P>
-<B>CFID</B>
-
-Line-number in the alerts.cfg file that caused the script to be invoked.
-Can be useful when troubleshooting alert configuration rules.
-<P>
-<A NAME="lbAJ">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7), the &quot;Configuring Xymon Alerts&quot;
-guide in the Online documentation.
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">FILE FORMAT</A><DD>
-<DT><A HREF="#lbAF">RULES</A><DD>
-<DT><A HREF="#lbAG">RECIPIENTS</A><DD>
-<DT><A HREF="#lbAH">MACROS</A><DD>
-<DT><A HREF="#lbAI">ALERT SCRIPTS</A><DD>
-<DT><A HREF="#lbAJ">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

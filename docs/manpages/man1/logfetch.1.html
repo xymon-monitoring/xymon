@@ -1,123 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>LOGFETCH(1)</title>
+</head>
+<body>
+<h1 class="head-name">LOGFETCH</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of LOGFETCH</TITLE>
-</HEAD><BODY>
-<H1>LOGFETCH</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">logfetch - Xymon client data collector</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>logfetch [options] CONFIGFILE STATUSFILE</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>logfetch</b> is part of the Xymon client. It is responsible for
+    collecting data from logfiles, and other file-related data, which is then
+    sent to the Xymon server for analysis.</p>
+<p class="Pp">logfetch uses a configuration file, which is automatically
+    retrieved from the Xymon server. There is no configuration done locally. The
+    configuration file is usually stored in the
+    <b>$XYMONHOME/tmp/logfetch.cfg</b> file, but editing this file has no effect
+    since it is re-written with data from the Xymon server each time the client
+    runs.</p>
+<p class="Pp">logfetch stores information about what parts of the monitored
+    logfiles have been processed already in the
+    <b>$XYMONHOME/tmp/logfetch.status</b> file. This file is an internal file
+    used by logfetch, and should not be edited. If deleted, it will be
+    re-created automatically.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b>[=<b>stderr</b>]</a></dt>
+  <dd>Enables debug mode. Note that when run by the xymonclient, debug output
+      may be written into the client data report, which can cause false
+      positives and other unintended side effects. Use '=stderr' to cause the
+      output to be written to stderr instead.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="noexec"><a class="permalink" href="#noexec"><b>--noexec</b></a></dt>
+  <dd>The <a href="../man5/client-local.cfg.5.html">client-local.cfg</a>(5) section for this host, class, or OS is
+      automatically retrieved from the server during client submission. Logfetch
+      can be requested to execute arbitrary commands to generate a list of log
+      files to examine dynamically, but this can present a security risk in some
+      environments. Set this option to prevent logfetch from executing requested
+      commands
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SECURITY"><a class="permalink" href="#SECURITY">SECURITY</a></h1>
+<p class="Pp">logfetch needs read access to the logfiles it should monitor. If
+    you configure monitoring of files or directories through the
+    &quot;file:&quot; and &quot;dir:&quot; entries in <i><a href="../man5/client-local.cfg.5.html">client-local.cfg</a>(5)</i>
+    then logfetch will require at least read-access to the directory where the
+    file is located. If you request checksum calculation for a file, then it
+    must be readable by the Xymon client user.</p>
+<p class="Pp">Do <b>NOT</b> install logfetch as suid-root. There is no way that
+    logfetch can check whether the configuration file it uses has been tampered
+    with, so installing logfetch with suid-root privileges could allow an
+    attacker to read any file on the system by using a hand-crafted
+    configuration file. In fact, logfetch will attempt to remove its own
+    suid-root setup if it detects that it has been installed suid-root.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT_VARIABLES"><a class="permalink" href="#ENVIRONMENT_VARIABLES">ENVIRONMENT
+  VARIABLES</a></h1>
+<dl class="Bl-tag">
+  <dt id="DU"><a class="permalink" href="#DU"><b>DU</b></a></dt>
+  <dd>Command used to collect information about the size of directories. By
+      default, this is the command <b>du -k</b>. If the local du-command on the
+      client does not recognize the &quot;-k&quot; option, you should set the DU
+      environment variable in the <b>$XYMONHOME/etc/xymonclient.cfg</b> file to
+      a command that does report directory sizes in kilobytes.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><b>$XYMONHOME/tmp/logfetch.cfg</b></dt>
+  <dd></dd>
+  <dt><b>$XYMONHOME/tmp/logfetch.status</b></dt>
+  <dd>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man7/xymon.7.html">xymon</a>(7), <a href="../man5/analysis.cfg.5.html">analysis.cfg</a>(5), <a href="../man5/client-local.cfg.5.html">client-local.cfg</a>(5)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#SECURITY">SECURITY</a></dt>
+<dt><a href="#ENVIRONMENT_VARIABLES">ENVIRONMENT VARIABLES</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-logfetch - Xymon client data collector
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>logfetch [options] CONFIGFILE STATUSFILE</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>logfetch</B> is part of the Xymon client. It is responsible
-for collecting data from logfiles, and other file-related data,
-which is then sent to the Xymon server for analysis.
-<P>
-logfetch uses a configuration file, which is automatically
-retrieved from the Xymon server. There is no configuration
-done locally. The configuration file is usually stored in
-the <B>$XYMONHOME/tmp/logfetch.cfg</B> file, but editing this file has
-no effect since it is re-written with data from the Xymon 
-server each time the client runs.
-<P>
-logfetch stores information about what parts of the monitored
-logfiles have been processed already in the <B>$XYMONHOME/tmp/logfetch.status</B> 
-file. This file is an internal file used by logfetch, and should
-not be edited. If deleted, it will be re-created automatically.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--debug[=stderr]<DD>
-Enables debug mode. Note that when run by the xymonclient, debug 
-output may be written into the client data report, which can cause
-false positives and other unintended side effects. Use '=stderr' to
-cause the output to be written to stderr instead.
-<P>
-<DT>--noexec<DD>
-The <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5) section for this host, class, or OS is
-automatically retrieved from the server during client submission. 
-Logfetch can be requested to execute arbitrary commands to generate
-a list of log files to examine dynamically, but this can present a
-security risk in some environments. Set this option to prevent
-logfetch from executing requested commands
-<P>
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>SECURITY</H2>
-
-logfetch needs read access to the logfiles it should monitor. If you 
-configure monitoring of files or directories through the &quot;file:&quot;
-and &quot;dir:&quot; entries in 
-<I><A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)</I>
-
-then logfetch will require at least read-access to the directory
-where the file is located. If you request checksum calculation
-for a file, then it must be readable by the Xymon client user.
-<P>
-Do <B>NOT</B> install logfetch as suid-root. There is no
-way that logfetch can check whether the configuration file it uses
-has been tampered with, so installing logfetch with suid-root
-privileges could allow an attacker to read any file on the system
-by using a hand-crafted configuration file. In fact, logfetch will
-attempt to remove its own suid-root setup if it detects that it
-has been installed suid-root.
-<P>
-<A NAME="lbAG">&nbsp;</A>
-<H2>ENVIRONMENT VARIABLES</H2>
-
-<DL COMPACT>
-<DT>DU<DD>
-Command used to collect information about the size of directories.
-By default, this is the command <B>du -k</B>. If the local
-du-command on the client does not recognize the &quot;-k&quot; option,
-you should set the DU environment variable in the 
-<B>$XYMONHOME/etc/xymonclient.cfg</B> file to a command that
-does report directory sizes in kilobytes.
-<P>
-</DL>
-<A NAME="lbAH">&nbsp;</A>
-<H2>FILES</H2>
-
-<DL COMPACT>
-<DT>$XYMONHOME/tmp/logfetch.cfg<DD>
-<DT>$XYMONHOME/tmp/logfetch.status<DD>
-<P>
-</DL>
-<A NAME="lbAI">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5), <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">SECURITY</A><DD>
-<DT><A HREF="#lbAG">ENVIRONMENT VARIABLES</A><DD>
-<DT><A HREF="#lbAH">FILES</A><DD>
-<DT><A HREF="#lbAI">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

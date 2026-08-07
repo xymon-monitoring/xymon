@@ -1,81 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>ORCAXYMON(1)</title>
+</head>
+<body>
+<h1 class="head-name">ORCAXYMON</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of ORCAXYMON</TITLE>
-</HEAD><BODY>
-<H1>ORCAXYMON</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">orcaxymon - Xymon client utility to grab data from ORCA</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>orcaxymon --orca=PREFIX [options]</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NOTICE"><a class="permalink" href="#NOTICE">NOTICE</a></h1>
+<p class="Pp">This utility is included in the client distribution for Xymon 4.2.
+    However, the backend module to parse the data it sends it <b>NOT</b>
+    included in Xymon 4.2. It is possible to use the generic Xymon NCV data
+    handler in <i><a href="../man8/xymond_rrd.8.html">xymond_rrd</a>(8)</i> to process ORCA data, if you have an urgent
+    need to do so.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>orcaxymon</b> is an add-on tool for the Xymon client. It is
+    used to grab data collected by the ORCA data collection tool
+    (orcallator.se), and send it to the Xymon server in NCV format.</p>
+<p class="Pp">orcaxymon should run from the client <i><a href="../man8/xymonlaunch.8.html">xymonlaunch</a>(8)</i>
+    utility, i.e. there must be an entry in the <i><a href="../man5/clientlaunch.cfg.5.html">clientlaunch.cfg</a>(5)</i> file
+    for orcaxymon.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="orca"><a class="permalink" href="#orca"><b>--orca</b>=<i>PREFIX</i></a></dt>
+  <dd>The filename prefix for the ORCA data log. Typically this is the directory
+      for the ORCA logs, followed by &quot;orcallator&quot;. The actual filename
+      for the ORCA logs include a timestamp and sequence number, e.g.
+      &quot;orcallator-2006-06-20-000&quot;. This option is required.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enable debugging output.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man7/xymon.7.html">xymon</a>(7), <a href="../man5/clientlaunch.cfg.5.html">clientlaunch.cfg</a>(5)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#NOTICE">NOTICE</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-orcaxymon - Xymon client utility to grab data from ORCA
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>orcaxymon --orca=PREFIX [options]</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>NOTICE</H2>
-
-This utility is included in the client distribution for Xymon 4.2.
-However, the backend module to parse the data it sends it <B>NOT</B>
-included in Xymon 4.2. It is possible to use the generic Xymon
-NCV data handler in
-<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
-
-to process ORCA data, if you have an urgent need to do so.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>orcaxymon</B> is an add-on tool for the Xymon client. It is 
-used to grab data collected by the ORCA data collection tool 
-(orcallator.se), and send it to the Xymon server in NCV format.
-<P>
-orcaxymon should run from the client
-<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
-
-utility, i.e. there must be an entry in the 
-<I><A HREF="../man5/clientlaunch.cfg.5.html">clientlaunch.cfg</A>(5)</I>
-
-file for orcaxymon.
-<P>
-<A NAME="lbAF">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--orca=PREFIX<DD>
-The filename prefix for the ORCA data log. Typically this is the
-directory for the ORCA logs, followed by &quot;orcallator&quot;. The actual
-filename for the ORCA logs include a timestamp and sequence number, 
-e.g. &quot;orcallator-2006-06-20-000&quot;. This option is required.
-<P>
-<DT>--debug<DD>
-Enable debugging output.
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/clientlaunch.cfg.5.html">clientlaunch.cfg</A>(5)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">NOTICE</A><DD>
-<DT><A HREF="#lbAE">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAF">OPTIONS</A><DD>
-<DT><A HREF="#lbAG">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

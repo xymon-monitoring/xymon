@@ -1,90 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>REPORTLOG.CGI(1)</title>
+</head>
+<body>
+<h1 class="head-name">REPORTLOG.CGI</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of REPORTLOG.CGI</TITLE>
-</HEAD><BODY>
-<H1>REPORTLOG.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">reportlog.cgi - CGI program to report service availability log</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>reportlog.cgi</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>reportlog.cgi</b> is invoked as a CGI script via the
+    reportlog.sh CGI wrapper. Based on the parameters it receives, it generates
+    an availability report for a specific host-service combination for the
+    requested time-period. The availability report includes a calculation of the
+    availability percentage (split out on percent green, yellow, red time), and
+    an eventlog for the period listing the status changes that have occurred to
+    allow for drill-down to the test reports that indicate a problem. Access to
+    the individual historical status logs go via the <i><a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1)</i> CGI
+    script.</p>
+<p class="Pp">reportlog.cgi is passed a QUERY_STRING environment variable with
+    the following parameters:</p>
+<p class="Pp">
+  <br/>
+   HOSTSVC (the host and service to report on)
+  <br/>
+   STYLE (report style: &quot;crit&quot;, &quot;non-crit&quot;, &quot;all&quot;)
+  <br/>
+   ST (starttime in seconds since 1-1-1970 00:00 UTC)
+  <br/>
+   END (endtime in seconds since 1-1-1970 00:00 UTC)</p>
+<p class="Pp">The following non-standard parameters are handled by the Xymon
+    version of history.cgi:</p>
+<p class="Pp">
+  <br/>
+   IP (IP address of host - for display purposes only)
+  <br/>
+   REPORTTIME (the REPORTTIME: setting for this host)
+  <br/>
+   WARNPCT (the WARNPCT: setting for this host)</p>
+<p class="Pp">The REPORTTIME and WARNPCT options are taken from the
+    <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> definition for the host, or the defaults are used. These
+    modify the availability calculation to handle reporting against agreed
+    Service Level Agreements re. the time of day when the service must be
+    available, and the agreed availability level.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="env"><a class="permalink" href="#env"><b>--env</b>=<i>FILENAME</i></a></dt>
+  <dd>Loads environment from FILENAME before executing the CGI.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5), <a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-reportlog.cgi - CGI program to report service availability log
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>reportlog.cgi</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>reportlog.cgi</B>
-is invoked as a CGI script via the reportlog.sh CGI wrapper.
-Based on the parameters it receives, it generates an
-availability report for a specific host-service combination
-for the requested time-period. The availability report 
-includes a calculation of the availability percentage (split
-out on percent green, yellow, red time), and an eventlog for
-the period listing the status changes that have occurred to
-allow for drill-down to the test reports that indicate a
-problem. Access to the individual historical status logs
-go via the
-<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
-
-CGI script.
-<P>
-reportlog.cgi is passed a QUERY_STRING environment variable 
-with the following parameters:
-<P>
-<BR>&nbsp;&nbsp;&nbsp;HOSTSVC&nbsp;(the&nbsp;host&nbsp;and&nbsp;service&nbsp;to&nbsp;report&nbsp;on)
-<BR>&nbsp;&nbsp;&nbsp;STYLE&nbsp;(report&nbsp;style:&nbsp;&quot;crit&quot;,&nbsp;&quot;non-crit&quot;,&nbsp;&quot;all&quot;)
-<BR>&nbsp;&nbsp;&nbsp;ST&nbsp;(starttime&nbsp;in&nbsp;seconds&nbsp;since&nbsp;1-1-1970&nbsp;00:00&nbsp;UTC)
-<BR>&nbsp;&nbsp;&nbsp;END&nbsp;(endtime&nbsp;in&nbsp;seconds&nbsp;since&nbsp;1-1-1970&nbsp;00:00&nbsp;UTC)
-<P>
-The following non-standard parameters are handled by the
-Xymon version of history.cgi:
-<P>
-<BR>&nbsp;&nbsp;&nbsp;IP&nbsp;(IP&nbsp;address&nbsp;of&nbsp;host&nbsp;-&nbsp;for&nbsp;display&nbsp;purposes&nbsp;only)
-<BR>&nbsp;&nbsp;&nbsp;REPORTTIME&nbsp;(the&nbsp;REPORTTIME:&nbsp;setting&nbsp;for&nbsp;this&nbsp;host)
-<BR>&nbsp;&nbsp;&nbsp;WARNPCT&nbsp;(the&nbsp;WARNPCT:&nbsp;setting&nbsp;for&nbsp;this&nbsp;host)
-<P>
-The REPORTTIME and WARNPCT options are taken from the
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-definition for the host, or the defaults are used. These
-modify the availability calculation to handle reporting
-against agreed Service Level Agreements re. the time of
-day when the service must be available, and the agreed
-availability level.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--env=FILENAME<DD>
-Loads environment from FILENAME before executing the CGI.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

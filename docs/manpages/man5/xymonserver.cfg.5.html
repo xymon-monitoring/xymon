@@ -1,904 +1,1031 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMONSERVER.CFG(5)</title>
+</head>
+<body>
+<h1 class="head-name">XYMONSERVER.CFG</h1>
+Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMONSERVER.CFG</TITLE>
-</HEAD><BODY>
-<H1>XYMONSERVER.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymonserver.cfg - Xymon environment variables</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">Xymon programs use multiple environment variables beside the
+    normal set of variables. The environment definitions are stored in the
+    ~Xymon/server/etc/xymonserver.cfg file. Each line in this file is of the
+    form <b>NAME=VALUE</b> and defines one environment variable NAME with the
+    value VALUE.</p>
+<p class="Pp">You can also append data to existing variables, using the syntax
+    <b>NAME+=VALUE</b>. VALUE is then appended to the existing value of the NAME
+    variable. If NAME has not been defined, then this acts as if it were a
+    normal definition.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT_AREAS"><a class="permalink" href="#ENVIRONMENT_AREAS">ENVIRONMENT
+  AREAS</a></h1>
+<p class="Pp">In some cases it may be useful to have different values for an
+    environment variable, depending on where it is used. This is possible by
+    defining variables with an associated &quot;area&quot;. Such definitions
+    have the form <b>AREA/NAME=VALUE</b>.</p>
+<p class="Pp">E.g. to define a special setup of the XYMSERVERS variable when it
+    is used by an application in the &quot;management&quot; area, you would do
+    this:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>
+    <pre>  XYMSERVERS=&quot;127.0.0.1&quot;            # Default definition
+  management/XYMSERVERS=&quot;10.1.0.5&quot;  # Definition in the &quot;management&quot; area</pre>
+  </dd>
+</dl>
+<p class="Pp">Areas are invoked by using the &quot;--area&quot; option for all
+    tools, or via the ENVAREA setting in the <i><a href="../man5/tasks.cfg.5.html">tasks.cfg</a>(5)</i> file.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="GENERAL_SETTINGS"><a class="permalink" href="#GENERAL_SETTINGS">GENERAL
+  SETTINGS</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMONSERVERHOSTNAME"><a class="permalink" href="#XYMONSERVERHOSTNAME"><b>XYMONSERVERHOSTNAME</b></a></dt>
+  <dd>The fully-qualified hostname of the server that is running Xymon.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONSERVERWWWNAME"><a class="permalink" href="#XYMONSERVERWWWNAME"><b>XYMONSERVERWWWNAME</b></a></dt>
+  <dd>The hostname used to access this servers' web-pages, used to construct
+      URL's in the Xymon webpages. Default is the XYMONSERVERHOSTNAME.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONSERVERIP"><a class="permalink" href="#XYMONSERVERIP"><b>XYMONSERVERIP</b></a></dt>
+  <dd>The public IP-address of the server that is running Xymon.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONSERVEROS"><a class="permalink" href="#XYMONSERVEROS"><b>XYMONSERVEROS</b></a></dt>
+  <dd>A name identifying the operating system of the Xymon server. The known
+      names are currently &quot;linux&quot;, &quot;freebsd&quot;,
+      &quot;solaris&quot;, &quot;hpux&quot;, &quot;aix&quot; and
+      &quot;osf&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="FQDN"><a class="permalink" href="#FQDN"><b>FQDN</b></a></dt>
+  <dd>If set to TRUE, Xymon will use fully-qualified hostnames throughout. If
+      set to FALSE, hostnames are stripped of their domain-part before being
+      processed. It is <b>highly recommended</b> that you keep this set to TRUE.
+      Default: TRUE.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONLOGSTATUS"><a class="permalink" href="#XYMONLOGSTATUS"><b>XYMONLOGSTATUS</b></a></dt>
+  <dd>Controls how the HTML page for a status log is generated. If set to
+      DYNAMIC, the HTML logs are generated on-demand by the
+      <i><a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1)</i> script. If set to STATIC, you must activate the
+      <i><a href="../man8/xymond_filestore.8.html">xymond_filestore</a>(8)</i> module (through an entry in the
+      <i><a href="../man5/tasks.cfg.5.html">tasks.cfg</a>(5)</i> file) to create and store the HTML logs whenever a
+      status update is received. Setting &quot;XYMONLOGSTATUS=STATIC&quot; is
+      <b>discouraged</b> since the I/O load on the Xymon server will increase
+      significantly.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="PINGCOLUMN"><a class="permalink" href="#PINGCOLUMN"><b>PINGCOLUMN</b></a></dt>
+  <dd>Defines the name of the column for &quot;ping&quot; test status. The data
+      from the &quot;ping&quot; test is used internally by Xymon, so it must be
+      defined here so all of the Xymon tools know which column to watch for this
+      data. The default setting is PINGCOLUMN=conn.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="INFOCOLUMN"><a class="permalink" href="#INFOCOLUMN"><b>INFOCOLUMN</b></a></dt>
+  <dd>Defines the name of the column for the &quot;info&quot; pages.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="TRENDSCOLUMN"><a class="permalink" href="#TRENDSCOLUMN"><b>TRENDSCOLUMN</b></a></dt>
+  <dd>Defines the name of the column for the RRD graph pages.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="RRDHEIGHT"><a class="permalink" href="#RRDHEIGHT"><b>RRDHEIGHT</b></a></dt>
+  <dd>The default height (in pixels) of the RRD graph images. Default: 120
+      pixels.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="RRDWIDTH"><a class="permalink" href="#RRDWIDTH"><b>RRDWIDTH</b></a></dt>
+  <dd>The default width (in pixels) of the RRD graph images. Default: 576
+      pixels.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="RRDGRAPHOPTS"><a class="permalink" href="#RRDGRAPHOPTS"><b>RRDGRAPHOPTS</b></a></dt>
+  <dd>Extra options for the RRD graph command. These are passed directly to the
+      &quot;rrdgraph&quot; command used to generate graphs, see the
+      <i>rrdgraph(1)</i> man-page for details of the options.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="TRENDSECONDS"><a class="permalink" href="#TRENDSECONDS"><b>TRENDSECONDS</b></a></dt>
+  <dd>The graphs on the &quot;trends&quot; page show data for the past
+      TRENDSECONDS seconds. Default: 172800 seconds, i.e. 48 hours.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="HTMLCONTENTTYPE"><a class="permalink" href="#HTMLCONTENTTYPE"><b>HTMLCONTENTTYPE</b></a></dt>
+  <dd>The Content-type reported by the CGI scripts that generate web pages. By
+      default, this it &quot;text/html&quot;. If you have on-line help texts in
+      character sets other than the ISO-8859-1 (western european) character set,
+      it may be necessary to modify this to include a character set. E.g.
+    <br/>
+     HTMLCONTENTTYPE=&quot;text/html; charset=euc-jp&quot;
+    <br/>
+    for a Japanese character sets. Note: Some webservers will automatically add
+      this, if configured to do so.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMWEBREFRESH"><a class="permalink" href="#XYMWEBREFRESH"><b>XYMWEBREFRESH</b></a></dt>
+  <dd>The default HTTP page reload interval for many xymongen and status pages.
+      Note that while this can be overridden in the header template files for
+      regular pages, dynamically generated status logs displayed with
+      <a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1) use this value in the HTTP response header and for
+      security reasons the value in hostsvc_header may be ignored on many modern
+      browsers. (default [seconds]: 60)
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="HOLIDAYS"><a class="permalink" href="#HOLIDAYS"><b>HOLIDAYS</b></a></dt>
+  <dd>Defines the default set of holidays used if there is no
+      &quot;holidays&quot; tag for a host in the hosts.cfg file. Holiday sets
+      are defined in the <i>holidays.cfg(5)</i> file. If not defined, only the
+      default holidays (those defined outside a named holiday set) will be
+      considered as holidays.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="WEEKSTART"><a class="permalink" href="#WEEKSTART"><b>WEEKSTART</b></a></dt>
+  <dd>Defines which day is the first day of the week. Set to &quot;0&quot; for
+      Sunday, &quot;1&quot; for Monday. Default: 1 (Monday).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONBODYHEADER"><a class="permalink" href="#XYMONBODYHEADER"><b>XYMONBODYHEADER</b></a></dt>
+  <dd>Text that is included in the Xymon web pages at the location specified by
+      ~xymon/server/web/*_header templates. If this is set to a value beginning
+      with &quot;file:&quot;, then the contents of the specified file is
+      included. Default: &quot;file:$XYMONHOME/etc/xymonmenu.cfg&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONBODYFOOTER"><a class="permalink" href="#XYMONBODYFOOTER"><b>XYMONBODYFOOTER</b></a></dt>
+  <dd>Text that is included in the Xymon web pages at the location specified by
+      ~xymon/server/web/*_footer templates. If this is set to a value beginning
+      with &quot;file:&quot;, then the contents of the specified file is
+      included. Default: Empty.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONBODYMENUCSS"><a class="permalink" href="#XYMONBODYMENUCSS"><b>XYMONBODYMENUCSS</b></a></dt>
+  <dd>URL for the Xymon menu CSS file. Default:
+      &quot;$XYMONMENUSKIN/xymonmenu.css&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="HOSTPOPUP"><a class="permalink" href="#HOSTPOPUP"><b>HOSTPOPUP</b></a></dt>
+  <dd>Determines what is used as the host comment on the webpages. The comment
+      by default appears as a pop-up when the mouse hovers over the hostname,
+      and is also shown on the &quot;info&quot; status page. This setting must
+      be one or more of the letters &quot;C&quot; (COMMENT), &quot;D&quot;
+      (DESCRIPTION) or &quot;I&quot; (IP-address). Including &quot;C&quot; uses
+      the COMMENT setting for the host, including &quot;D&quot; uses the DESCR
+      setting for the host, and &quot;I&quot; uses the IP-address of the host.
+      If more than one of these is set, then COMMENT takes precedence over DESCR
+      which again has precedence over IP. Note that DESCR and IP only appear in
+      pop-up windows (if enabled), whereas the COMMENT is always used - if
+      pop-up's have been disabled, then the COMMENT value is displayed next to
+      the hostname on the webpages. Default: CDI
+    <p class="Pp"></p>
+  </dd>
+  <dt id="STATUSLIFETIME"><a class="permalink" href="#STATUSLIFETIME"><b>STATUSLIFETIME</b></a></dt>
+  <dd>The number of minutes that a status is considered valid after an update.
+      After this time elapses, the status will go purple. Default: 30 minutes
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DIRECTORIES"><a class="permalink" href="#DIRECTORIES">DIRECTORIES</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMONSERVERROOT"><a class="permalink" href="#XYMONSERVERROOT"><b>XYMONSERVERROOT</b></a></dt>
+  <dd>The top-level directory for the Xymon installation. The default is the
+      home-directory for the user running Xymon.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONSERVERLOGS"><a class="permalink" href="#XYMONSERVERLOGS"><b>XYMONSERVERLOGS</b></a></dt>
+  <dd>The directory for the Xymon's own logfiles (NOT the status-logs from the
+      monitored hosts).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONHOME"><a class="permalink" href="#XYMONHOME"><b>XYMONHOME</b></a></dt>
+  <dd>The Xymon server directory, where programs and configurations are kept.
+      Default: $XYMONSERVERROOT/server/ .
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONTMP"><a class="permalink" href="#XYMONTMP"><b>XYMONTMP</b></a></dt>
+  <dd>Directory used for temporary files. Default: $XYMONHOME/tmp/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONWWWDIR"><a class="permalink" href="#XYMONWWWDIR"><b>XYMONWWWDIR</b></a></dt>
+  <dd>Directory for Xymon webfiles. The $XYMONWEB URL must map to this
+      directory. Default: $XYMONHOME/www/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONNOTESDIR"><a class="permalink" href="#XYMONNOTESDIR"><b>XYMONNOTESDIR</b></a></dt>
+  <dd>Directory for Xymon notes-files. The $XYMONNOTESSKIN URL must map to this
+      directory. Default: $XYMONHOME/www/notes/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONREPDIR"><a class="permalink" href="#XYMONREPDIR"><b>XYMONREPDIR</b></a></dt>
+  <dd>Directory for Xymon availability reports. The $XYMONREPURL URL must map to
+      this directory. Note also that your webserver must have write-access to
+      this directory, if you want to use the <i><a href="../man1/report.cgi.1.html">report.cgi</a>(1)</i> CGI script to
+      generate reports on-demand. Default: $XYMONHOME/www/rep/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONSNAPDIR"><a class="permalink" href="#XYMONSNAPDIR"><b>XYMONSNAPDIR</b></a></dt>
+  <dd>Directory for Xymon snapshots. The $XYMONSNAPURL URL must map to this
+      directory. Note also that your webserver must have write-access to this
+      directory, if you want to use the <i><a href="../man1/snapshot.cgi.1.html">snapshot.cgi</a>(1)</i> CGI script to
+      generate snapshots on-demand. Default: $XYMONHOME/www/snap/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONVAR"><a class="permalink" href="#XYMONVAR"><b>XYMONVAR</b></a></dt>
+  <dd>Directory for all data stored about the monitored items. Default:
+      $XYMONSERVERROOT/data/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONRAWSTATUSDIR"><a class="permalink" href="#XYMONRAWSTATUSDIR"><b>XYMONRAWSTATUSDIR</b></a></dt>
+  <dd>Directory for storing the raw status-logs. Not used unless
+      &quot;xymond_filestore --status&quot; is running, which is
+      <b>discouraged</b> since it increases the load on the Xymon server
+      significantly. Default: $XYMONVAR/logs/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONHTMLSTATUSDIR"><a class="permalink" href="#XYMONHTMLSTATUSDIR"><b>XYMONHTMLSTATUSDIR</b></a></dt>
+  <dd>Directory for storing HTML status-logs. Not used unless
+      &quot;xymond_filestore --status --html&quot; is running, which is
+      <b>discouraged</b> since it increases the load on the Xymon server
+      significantly. Default: $XYMONHOME/www/html/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONHISTDIR"><a class="permalink" href="#XYMONHISTDIR"><b>XYMONHISTDIR</b></a></dt>
+  <dd>Directory for storing the history of monitored items. Default:
+      $XYMONVAR/hist/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONHISTLOGS"><a class="permalink" href="#XYMONHISTLOGS"><b>XYMONHISTLOGS</b></a></dt>
+  <dd>Directory for storing the detailed status-log of historical events.
+      Default: $XYMONVAR/histlogs/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONACKDIR"><a class="permalink" href="#XYMONACKDIR"><b>XYMONACKDIR</b></a></dt>
+  <dd>Directory for storing information about alerts that have been
+      acknowledged. Default: $XYMONVAR/acks/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONDISABLEDDIR"><a class="permalink" href="#XYMONDISABLEDDIR"><b>XYMONDISABLEDDIR</b></a></dt>
+  <dd>Directory for storing information about tests that have been disabled.
+      Default: $XYMONVAR/disabled/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONDATADIR"><a class="permalink" href="#XYMONDATADIR"><b>XYMONDATADIR</b></a></dt>
+  <dd>Directory for storing incoming &quot;data&quot; messages. Default:
+      $XYMONVAR/data/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONRRDS"><a class="permalink" href="#XYMONRRDS"><b>XYMONRRDS</b></a></dt>
+  <dd>Top-level directory for storing RRD files (the databases with
+      trend-information used to generate graphs). Default: $XYMONVAR/rrd/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CLIENTLOGS"><a class="permalink" href="#CLIENTLOGS"><b>CLIENTLOGS</b></a></dt>
+  <dd>Directory for storing the data sent by a Xymon client around the time a
+      status changes to a warning (yellow) or critical (red) state. Used by the
+      <i><a href="../man8/xymond_hostdata.8.html">xymond_hostdata</a>(8)</i> module. Default: $XYMONVAR/hostdata/
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONCGILOGDIR"><a class="permalink" href="#XYMONCGILOGDIR"><b>XYMONCGILOGDIR</b></a></dt>
+  <dd>Directory where debug output from CGI applications are stored. If not
+      specified, it defaults to $XYMONSERVERLOGS, but this is often a directory
+      that is not writable by the userid running the CGI applications. It is
+      therefore recommended when using &quot;--debug&quot; on CGI applications
+      that you create a separate directory owned by the user running your
+      webserver, and point XYMONCGILOGDIR to this directory.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYSTEM_FILES"><a class="permalink" href="#SYSTEM_FILES">SYSTEM
+  FILES</a></h1>
+<dl class="Bl-tag">
+  <dt id="HOSTSCFG"><a class="permalink" href="#HOSTSCFG"><b>HOSTSCFG</b></a></dt>
+  <dd>Full path to the Xymon <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> configuration file. Default:
+      $XYMONHOME/etc/hosts.cfg.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMON"><a class="permalink" href="#XYMON"><b>XYMON</b></a></dt>
+  <dd>Full path to the <i><a href="../man1/xymon.1.html">xymon</a>(1)</i> client program. Default:
+      $XYMONHOME/bin/xymon.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONGEN"><a class="permalink" href="#XYMONGEN"><b>XYMONGEN</b></a></dt>
+  <dd>Full path to the <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i> webpage generator program. Default:
+      $XYMONHOME/bin/xymongen.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="URLS"><a class="permalink" href="#URLS">URLS</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMONSERVERWWWURL"><a class="permalink" href="#XYMONSERVERWWWURL"><b>XYMONSERVERWWWURL</b></a></dt>
+  <dd>The root URL for the Xymon webpages, without the hostname. This URL must
+      be mapped to the ~/server/www/ directory in your webserver configuration.
+      See the sample Apache configuration in ~/server/etc/xymon-apache.conf.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONSERVERCGIURL"><a class="permalink" href="#XYMONSERVERCGIURL"><b>XYMONSERVERCGIURL</b></a></dt>
+  <dd>The root URL for the Xymon CGI-scripts, without the hostname. This
+      directory must be mapped to the ~/cgi-bin/ directory in your webserver
+      configuration, and must be flagged as holding executable scripts. See the
+      sample Apache configuration in ~/server/etc/xymon-apache.conf.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONWEBHOST"><a class="permalink" href="#XYMONWEBHOST"><b>XYMONWEBHOST</b></a></dt>
+  <dd>Initial part of the Xymon URL, including just the protocol and the
+      hostname, e.g. &quot;http://www.foo.com&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONWEBHOSTURL"><a class="permalink" href="#XYMONWEBHOSTURL"><b>XYMONWEBHOSTURL</b></a></dt>
+  <dd>Prefix for all of the static Xymon webpages, e.g.
+      &quot;http://www.foo.com/xymon&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONWEBHTMLLOGS"><a class="permalink" href="#XYMONWEBHTMLLOGS"><b>XYMONWEBHTMLLOGS</b></a></dt>
+  <dd>URL prefix for the static HTML status-logs generated when
+      XYMONLOGSTATUS=STATIC. Note that this setting is <b>discouraged</b> so
+      this setting should not be used.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONWEB"><a class="permalink" href="#XYMONWEB"><b>XYMONWEB</b></a></dt>
+  <dd>URL prefix (without hostname) of the Xymon webpages. E.g.
+      &quot;/xymon&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONSKIN"><a class="permalink" href="#XYMONSKIN"><b>XYMONSKIN</b></a></dt>
+  <dd>URL prefix (without hostname) of the Xymon graphics. E.g.
+      &quot;/xymon/gifs&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONHELPSKIN"><a class="permalink" href="#XYMONHELPSKIN"><b>XYMONHELPSKIN</b></a></dt>
+  <dd>URL prefix (without hostname) of the Xymon on-line help files. E.g
+      &quot;/xymon/help&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONMENUSKIN"><a class="permalink" href="#XYMONMENUSKIN"><b>XYMONMENUSKIN</b></a></dt>
+  <dd>URL prefix (without hostname) of the Xymon menu files. E.g
+      &quot;/xymon/menu&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONNOTESSKIN"><a class="permalink" href="#XYMONNOTESSKIN"><b>XYMONNOTESSKIN</b></a></dt>
+  <dd>URL prefix (without hostname) of the Xymon on-line notes files. E.g
+      &quot;/xymon/notes&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONREPURL"><a class="permalink" href="#XYMONREPURL"><b>XYMONREPURL</b></a></dt>
+  <dd>URL prefix (without hostname) of the Xymon availability reports. E.g.
+      &quot;/xymon/rep&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONSNAPURL"><a class="permalink" href="#XYMONSNAPURL"><b>XYMONSNAPURL</b></a></dt>
+  <dd>URL prefix (without hostname) of the Xymon snapshots. E.g.
+      &quot;/xymon/snap&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONWAP"><a class="permalink" href="#XYMONWAP"><b>XYMONWAP</b></a></dt>
+  <dd>URL prefix (without hostname) of the Xymon WAP/WML files. E.g.
+      &quot;/xymon/wml&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGIBINURL"><a class="permalink" href="#CGIBINURL"><b>CGIBINURL</b></a></dt>
+  <dd>URL prefix (without hostname) of the Xymon CGI-scripts. Default:
+      $XYMONSERVERCGIURL .
+    <p class="Pp"></p>
+  </dd>
+  <dt id="COLUMNDOCURL"><a class="permalink" href="#COLUMNDOCURL"><b>COLUMNDOCURL</b></a></dt>
+  <dd>Format string used to build a link to the documentation for a column
+      heading. Default: &quot;$CGIBINURL/columndoc.sh?%s&quot;, which causes
+      links to use the <i>columndoc.sh(1)</i> script to document a column.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="HOSTDOCURL"><a class="permalink" href="#HOSTDOCURL"><b>HOSTDOCURL</b></a></dt>
+  <dd>Format string used to build a link to the documentation for a host. If not
+      set, then Xymon falls back to scanning the XYMONNOTES directory for files
+      matching the hostname, or the hostname together with a common filename
+      extension (.php, .html, .doc and so on). If set, this string becomes a
+      formatting string for the documentation URL. E.g. for the host
+      &quot;myhost&quot;, a setting of HOSTDOCURL=&quot;/docs/%s.php&quot; will
+      generate a link to &quot;/docs/myhost.php&quot;. Default: Not set, so host
+      documentation will be retrieved from the XYMONNOTES directory.
+    <p class="Pp">Note: for a per-host, overridable link (shown on its own
+        &quot;Documentation:&quot; row), use the DOC: tag in <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i>
+        instead.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="HOSTDESCURL"><a class="permalink" href="#HOSTDESCURL"><b>HOSTDESCURL</b></a></dt>
+  <dd>Format string used to build a link for the description part of a
+      <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> &quot;DESCR:Hosttype:Description&quot; tag, shown on
+      the host's info page. If set, this string becomes a formatting string for
+      the link URL, e.g. HOSTDESCURL=&quot;https://cmdb.example.com/ci/%s&quot;
+      will turn a description of &quot;CIID1234&quot; into a link to
+      &quot;https://cmdb.example.com/ci/CIID1234&quot;. Default: Not set, so the
+      description is shown as plain text.
+    <p class="Pp">Note: if a host's DESCR value contains &quot;&lt;&quot; (see
+        the raw-HTML case in <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> ), HOSTDESCURL leaves it as-is
+        rather than urlencoding it into the link template, so no link is added
+        for that host.</p>
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SETTINGS_FOR_SENDING_MESSAGES_TO_XYMON"><a class="permalink" href="#SETTINGS_FOR_SENDING_MESSAGES_TO_XYMON">SETTINGS
+  FOR SENDING MESSAGES TO XYMON</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMSRV"><a class="permalink" href="#XYMSRV"><b>XYMSRV</b></a></dt>
+  <dd>The IP-address used to contact the <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> service. Used by
+      clients and the tools that perform network tests. Default: $XYMONSERVERIP
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMSERVERS"><a class="permalink" href="#XYMSERVERS"><b>XYMSERVERS</b></a></dt>
+  <dd>List of IP-addresses. Clients and network test tools will try to send
+      status reports to a Xymon server running on each of these addresses. This
+      setting is only used if XYMSRV=0.0.0.0.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONDPORT"><a class="permalink" href="#XYMONDPORT"><b>XYMONDPORT</b></a></dt>
+  <dd>The portnumber for used to contact the <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> service. Used by
+      clients and the tools that perform network tests. Default: 1984.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAXMSGSPERCOMBO"><a class="permalink" href="#MAXMSGSPERCOMBO"><b>MAXMSGSPERCOMBO</b></a></dt>
+  <dd>The maximum number of status messages to combine into one combo message.
+      Default: 100.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="SLEEPBETWEENMSGS"><a class="permalink" href="#SLEEPBETWEENMSGS"><b>SLEEPBETWEENMSGS</b></a></dt>
+  <dd>Length of a pause introduced between each successive transmission of a
+      combo-message by xymonnet, in microseconds. Default: 0 (send messages as
+      quickly as possible).
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMOND_SETTINGS"><a class="permalink" href="#XYMOND_SETTINGS">XYMOND
+  SETTINGS</a></h1>
+<dl class="Bl-tag">
+  <dt id="ALERTCOLORS"><a class="permalink" href="#ALERTCOLORS"><b>ALERTCOLORS</b></a></dt>
+  <dd>Comma-separated list of the colors that may trigger an alert-message. The
+      default is &quot;red,yellow,purple&quot;. Note that alerts may further be
+      generated or suppressed based on the configuration in the
+      <i><a href="../man5/alerts.cfg.5.html">alerts.cfg</a>(5)</i> file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="OKCOLORS"><a class="permalink" href="#OKCOLORS"><b>OKCOLORS</b></a></dt>
+  <dd>Comma-separated list of the colors that may trigger a recovery-message.
+      The default is &quot;green,clear,blue&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ALERTREPEAT"><a class="permalink" href="#ALERTREPEAT"><b>ALERTREPEAT</b></a></dt>
+  <dd>How often alerts get repeated while a status is in an alert state. This is
+      the default setting, which may be changed in the <i><a href="../man5/alerts.cfg.5.html">alerts.cfg</a>(5)</i>
+      file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAXMSG_STATUS"><a class="permalink" href="#MAXMSG_STATUS"><b>MAXMSG_STATUS</b></a></dt>
+  <dd>The maximum size of a &quot;status&quot; message in kB, default: 256.
+      Status messages are the ones that end up as columns on the web display.
+      The default size should be adequate in most cases, but some extension
+      scripts can generate very large status messages - close to 1024 kB. You
+      should only change this if you see messages in the xymond log file about
+      status messages being truncated.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAXMSG_CLIENT"><a class="permalink" href="#MAXMSG_CLIENT"><b>MAXMSG_CLIENT</b></a></dt>
+  <dd>The maximum size of a &quot;client&quot; message in kB, default: 512.
+      &quot;client&quot; messages are generated by the Xymon client, and often
+      include large process-listings. You should only change this if you see
+      messages in the xymond log file about client messages being truncated.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAXMSG_DATA"><a class="permalink" href="#MAXMSG_DATA"><b>MAXMSG_DATA</b></a></dt>
+  <dd>The maximum size of a &quot;data&quot; message in kB, default: 256.
+      &quot;data&quot; messages are typically used for client reports of e.g.
+      netstat or vmstat data. You should only change this setting if you see
+      messages in the xymond log file about data messages being truncated.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAXMSG_NOTES"><a class="permalink" href="#MAXMSG_NOTES"><b>MAXMSG_NOTES</b></a></dt>
+  <dd>The maximum size of a &quot;notes&quot; message in kB, default: 256.
+      &quot;notes&quot; messages provide a way for uploading documentation about
+      a host to Xymon; it is not enabled by default. If you want to upload large
+      documents, you may need to change this setting.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAXMSG_STACHG"><a class="permalink" href="#MAXMSG_STACHG"><b>MAXMSG_STACHG</b></a></dt>
+  <dd>The maximum size of a &quot;status change&quot; message in kB, default:
+      Current value of the MAXMSG_STATUS setting. Status-change messages occur
+      when a status changes color. There is no reason to change this setting.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAXMSG_PAGE"><a class="permalink" href="#MAXMSG_PAGE"><b>MAXMSG_PAGE</b></a></dt>
+  <dd>The maximum size of a &quot;page&quot; message in kB, default: Current
+      value of the MAXMSG_STATUS setting. &quot;page&quot; messages are alerts,
+      and include the status message that triggers the alert. There is no reason
+      to change this setting.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAXMSG_ENADIS"><a class="permalink" href="#MAXMSG_ENADIS"><b>MAXMSG_ENADIS</b></a></dt>
+  <dd>The maximum size of an &quot;enadis&quot; message in kB, default: 32.
+      &quot;enadis&quot; are small messages used when enabling or disabling
+      hosts and tests, so the default size should be adequate.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAXMSG_CLICHG"><a class="permalink" href="#MAXMSG_CLICHG"><b>MAXMSG_CLICHG</b></a></dt>
+  <dd>The maximum size of a &quot;client change&quot; message in kB, default:
+      Current value of the MAXMSG_CLIENT setting. Client-change messages occur
+      when a status changes color to one of the alert-colors, usually red,
+      yellow and purple. There is no reason to change this setting.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAXMSG_USER"><a class="permalink" href="#MAXMSG_USER"><b>MAXMSG_USER</b></a></dt>
+  <dd>The maximum size of a &quot;user&quot; message in kB, default: 128.
+      &quot;user&quot; messages are for communication between custom Xymon
+      modules you have installed, it is not used directly by Xymon.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMOND_HISTORY_SETTINGS"><a class="permalink" href="#XYMOND_HISTORY_SETTINGS">XYMOND_HISTORY
+  SETTINGS</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMONALLHISTLOG"><a class="permalink" href="#XYMONALLHISTLOG"><b>XYMONALLHISTLOG</b></a></dt>
+  <dd>If set to TRUE, <i><a href="../man8/xymond_history.8.html">xymond_history</a>(8)</i> will update the
+      $XYMONHISTDIR/allevents file logging all changes to a status. The
+      allevents file is used by the <i><a href="../man1/eventlog.cgi.1.html">eventlog.cgi</a>(1)</i> tool to show the list
+      of recent events on the &quot;All non-green&quot; webpage.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONHOSTHISTLOG"><a class="permalink" href="#XYMONHOSTHISTLOG"><b>XYMONHOSTHISTLOG</b></a></dt>
+  <dd>If set to TRUE, <i><a href="../man8/xymond_history.8.html">xymond_history</a>(8)</i> will update the host-specific
+      eventlog that keeps record of all status changes for a host. This logfile
+      is not used by any Xymon tool.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="SAVESTATUSLOG"><a class="permalink" href="#SAVESTATUSLOG"><b>SAVESTATUSLOG</b></a></dt>
+  <dd>If set to TRUE, <i><a href="../man8/xymond_history.8.html">xymond_history</a>(8)</i> will save historical detailed
+      status-logs to the $XYMONHISTLOGS directory.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMOND_ALERT_SETTINGS"><a class="permalink" href="#XYMOND_ALERT_SETTINGS">XYMOND_ALERT
+  SETTINGS</a></h1>
+<dl class="Bl-tag">
+  <dt id="MAIL"><a class="permalink" href="#MAIL"><b>MAIL</b></a></dt>
+  <dd>Command used to send alerts via e-mail, including a &quot;Subject:&quot;
+      header in the mail. Default: &quot;mail -s&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAILC"><a class="permalink" href="#MAILC"><b>MAILC</b></a></dt>
+  <dd>Command used to send alerts via e-mail in a form that does not have a
+      &quot;Subject&quot; in the mail. Default: &quot;mail&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="SVCCODES"><a class="permalink" href="#SVCCODES"><b>SVCCODES</b></a></dt>
+  <dd>Maps status-columns to numeric service-codes. The numeric codes are used
+      when sending an alert using a script, where the numeric code of the
+      service is provided in the BBSVCNUM variable.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMOND_RRD_SETTINGS"><a class="permalink" href="#XYMOND_RRD_SETTINGS">XYMOND_RRD
+  SETTINGS</a></h1>
+<p class="Pp">The RRD graph settings have three separate roles. TEST2RRD maps
+    status- and data-message column names to the RRD graph name used for storing
+    data and for the column's default status-page graph.
+    GRAPHS_&lt;COLUMNNAME&gt; changes only what graphs are shown on that
+    column's status page. GRAPHS defines the graph list and order on the
+    &quot;trends&quot; page, and also stores graph-display metadata such as the
+    per-image split size.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="TEST2RRD"><a class="permalink" href="#TEST2RRD"><b>TEST2RRD</b></a></dt>
+  <dd>List of &quot;COLUMNNAME[=RRDSERVICE]&quot; settings. This tells
+      <i><a href="../man8/xymond_rrd.8.html">xymond_rrd</a>(8)</i> which status- and data-messages have RRD data, and
+      which RRD graph name should be used for that column. If
+      &quot;=RRDSERVICE&quot; is omitted, the RRD graph name is the same as the
+      column name. For example, &quot;cpu=la&quot; stores the &quot;cpu&quot;
+      column in the &quot;la&quot; RRD graph, while &quot;disk&quot; uses
+      &quot;disk&quot; for both names. The same mapping is also used by
+      <i><a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1)</i> as the default graph to show on the detailed
+      status page for that column. You will normally not need to modify this,
+      unless you have added a custom TCP-based test to the protocols.cfg file
+      and want to collect response-time data, or if you are using the
+      <i><a href="../man8/xymond_rrd.8.html">xymond_rrd</a>(8)</i> external script mechanism to collect data from custom
+      tests. Note: All TCP tests are automatically added.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="GRAPHS_&lt;COLUMNNAME&gt"><a class="permalink" href="#GRAPHS_&lt;COLUMNNAME&gt"><b>GRAPHS_&lt;COLUMNNAME&gt;</b></a></dt>
+  <dd>Comma-separated list of graph names to display on the detailed status page
+      for COLUMNNAME. This is a display setting only; it does not cause
+      <i><a href="../man8/xymond_rrd.8.html">xymond_rrd</a>(8)</i> to collect new data. If GRAPHS_&lt;COLUMNNAME&gt; is
+      set, it replaces the default status-page graph from TEST2RRD, so include
+      the original graph too if you still want it. For example,
+      GRAPHS_cpu=&quot;la,vmstat1&quot; shows both graphs on the cpu status
+      page. The graph names must match graph definitions from
+      <i><a href="../man5/graphs.cfg.5.html">graphs.cfg</a>(5)</i> or instance names handled by those definitions.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="GRAPHS"><a class="permalink" href="#GRAPHS"><b>GRAPHS</b></a></dt>
+  <dd>List of graph names known to the graph display code. On the
+      &quot;trends&quot; column, this list also defines which graphs are shown
+      and in what order. The matching RRD files are selected by the
+      corresponding graph definitions in <i><a href="../man5/graphs.cfg.5.html">graphs.cfg</a>(5).</i> Each entry is
+      either &quot;name&quot; or &quot;name::N&quot;: &quot;name&quot; is the
+      graph name, and N is the maximum number of RRD files drawn per graph image
+      after the graph has been split; the default is 5 per image. The double
+      colon is literal, so &quot;mrtg::1&quot; draws one file per image. N
+      counts RRD files, not lines: each RRD file may hold several data sets
+      (DS), each drawn as its own curve, so an image showing N files can contain
+      several times N lines. Choose N with the per-file DS count in mind - a
+      2-DS graph at &quot;::2&quot; draws 4 lines, while a 1-DS graph at
+      &quot;::5&quot; draws 5. A legacy middle field is accepted by the parser
+      for compatibility, but it is ignored and should not be used in new
+      configurations. The N value belongs in GRAPHS, not in
+      GRAPHS_&lt;COLUMNNAME&gt;, and is used whenever graph links are generated
+      for that graph. This includes the &quot;trends&quot; page, a test column's
+      default status-page graph from TEST2RRD, and status-page
+      GRAPHS_&lt;COLUMNNAME&gt; entries that name the same graph definition. If
+      a graph is used only from GRAPHS_&lt;COLUMNNAME&gt; and has no matching
+      entry in GRAPHS, it uses the default split size. On the &quot;trends&quot;
+      page, the RRD file count is known automatically. On status pages,
+      splitting only happens when <i><a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1)</i> has an instance count
+      for the graph. A status message can provide this explicitly with a
+      &quot;&lt;!-- linecount=N --&gt;&quot; marker. If no marker is present,
+      <i><a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1)</i> computes the count automatically only for columns
+      listed in the &quot;--multigraphs&quot; option (built-in default: disk,
+      inode, qtree, quotas, snapshot, TblSpace, if_load); any other column draws
+      all matching RRD files in one image. Exception: entries with an explicit
+      graph list in a host's TRENDS tag (e.g. &quot;disk:disk1|disk2&quot;, see
+      <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5))</i> ignore N and use the default of 5. Note: a &quot;DISK
+      filesystem IGNORE&quot; rule in <i><a href="../man5/analysis.cfg.5.html">analysis.cfg</a>(5)</i> removes a
+      filesystem from the status, the alerts and the graphs. This is usually the
+      preferred replacement for the deprecated NORRDDISKS/RRDDISKS settings
+      below.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NORRDDISKS"><a class="permalink" href="#NORRDDISKS"><b>NORRDDISKS</b></a></dt>
+  <dd>Deprecated legacy setting. It is retained for compatibility with old
+      configurations, but should be considered unsupported for new use. Use
+      <i><a href="../man5/analysis.cfg.5.html">analysis.cfg</a>(5)</i> rules such as &quot;DISK filesystem IGNORE&quot; or
+      &quot;INODE filesystem IGNORE&quot; instead whenever the filesystem should
+      be removed from status, alerts and graphs. NORRDDISKS only disables RRD
+      graph tracking for matching filesystems. The value is a regular expression
+      matched against the filesystem name (the Unix mount-point, or the Windows
+      disk-letter).
+    <br/>
+    Note: Setting this does not affect filesystems that are already being
+      tracked by Xymon - to remove them, you must remove the RRD files for the
+      unwanted filesystems from the ~xymon/data/rrd/HOSTNAME/ directory.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="RRDDISKS"><a class="permalink" href="#RRDDISKS"><b>RRDDISKS</b></a></dt>
+  <dd>Deprecated legacy setting, with the same compatibility-only status as
+      NORRDDISKS. It changes the default so that only filesystems matching this
+      regular expression are tracked for RRD graphs.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMONNET_NETWORK_TEST_SETTINGS"><a class="permalink" href="#XYMONNET_NETWORK_TEST_SETTINGS">XYMONNET
+  NETWORK TEST SETTINGS</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMONNETWORK"><a class="permalink" href="#XYMONNETWORK"><b>XYMONNETWORK</b></a></dt>
+  <dd>If this variable is defined, then only the hosts that have been tagged
+      with &quot;NET:$XYMONNETWORK&quot; will be tested by the xymonnet tool.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CONNTEST"><a class="permalink" href="#CONNTEST"><b>CONNTEST</b></a></dt>
+  <dd>If set to TRUE, the connectivity (ping) test will be performed.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="IPTEST_2_CLEAR_ON_FAILED_CONN"><a class="permalink" href="#IPTEST_2_CLEAR_ON_FAILED_CONN"><b>IPTEST_2_CLEAR_ON_FAILED_CONN</b></a></dt>
+  <dd>If set to TRUE, then failing network tests go CLEAR if the conn-test
+      fails.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NONETPAGE"><a class="permalink" href="#NONETPAGE"><b>NONETPAGE</b></a></dt>
+  <dd>List of network services (separated with &lt;space&gt;) that should go
+      yellow upon failure instead of red.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONROUTERTEXT"><a class="permalink" href="#XYMONROUTERTEXT"><b>XYMONROUTERTEXT</b></a></dt>
+  <dd>When using the &quot;router&quot; or &quot;depends&quot; tags for a host,
+      a failure status will include text that an &quot;Intermediate router is
+      down&quot;. With todays network topologies, the router could be a switch
+      or another network device; if you define this environment variable the
+      word &quot;router&quot; will be replaced with whatever you put into the
+      variable. So to inform the users that an intermediate switch or router is
+      down, use XYMONROUTERTEXT=&quot;switch or router&quot;. This can also be
+      set on a per-host basis using the &quot;DESCR:hosttype:description&quot;
+      tag in the <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NETFAILTEXT"><a class="permalink" href="#NETFAILTEXT"><b>NETFAILTEXT</b></a></dt>
+  <dd>When a network test fails, the status message reports &quot;SERVICENAME
+      not OK&quot;. The &quot;not OK&quot; message can be changed via this
+      variable, e.g. you can change it to &quot;FAILED&quot; or customize it as
+      you like.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="FPING"><a class="permalink" href="#FPING"><b>FPING</b></a></dt>
+  <dd>The command used to run the <i><a href="../man1/xymonping.1.html">xymonping</a>(1)</i> tool for the connectivity
+      test. (The name FPING is due to the fact that the &quot;fping&quot;
+      utility was used until Xymon version 4.2). This may include suid-root
+      wrappers and xymonping options. Default: &quot;xymonping&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="FPINGOPTS"><a class="permalink" href="#FPINGOPTS"><b>FPINGOPTS</b></a></dt>
+  <dd>Options used for the <i>fping(1)</i> or <i><a href="../man1/xymonping.1.html">xymonping</a>(1)</i> tool for the
+      connectivity test. Note that xymonnet will still expect the output to
+      match the default format. Default: &quot;-Ae&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="TRACEROUTE"><a class="permalink" href="#TRACEROUTE"><b>TRACEROUTE</b></a></dt>
+  <dd></dd>
+  <dt id="TRACEROUTEOPTS"><a class="permalink" href="#TRACEROUTEOPTS"><b>TRACEROUTEOPTS</b></a></dt>
+  <dd>Defines the location of the &quot;traceroute&quot; tool and any options
+      needed to run it. traceroute is used by the connectivity test when the
+      ping test fails; if requested via the &quot;trace&quot; tag, the
+      TRACEROUTE command is executed to try to indicate the point in the network
+      that is causing the problem. For backwards compatibility, with prior
+      versions, if TRACEROUTEOPTS is unset, TRACEROUTE is assumed to have
+      whatever options are desired and no addl options are used. Recommended
+      defaults are: &quot;-n -q 2 -w 2 -m 15&quot; (no DNS lookup, max. 2
+      probes, wait 2 seconds per hop, max 15 hops).
+    <p class="Pp">If you have the <i>mtr(8)</i> tool installed - available from
+        http://www.bitwizard.nl/mtr/ - I strongly recommend using this instead.
+        The recommended TRACEROUTEOPTS for mtr are &quot;-c 2 -n --report&quot;
+        Note that mtr needs to be installed suid-root on most systems.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NTPDATE"><a class="permalink" href="#NTPDATE"><b>NTPDATE</b></a></dt>
+  <dd>Path to the external ntpdate program for the &quot;ntp&quot; test; the
+      target IP is appended. Leave empty (the default) to use the built-in SNTP
+      probe, which needs no external program. On ntpsec, where ntpdate is
+      unavailable, set this to &quot;ntpdig&quot;. Default: &quot;&quot;
+      (built-in probe)
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NTPDATEOPTS"><a class="permalink" href="#NTPDATEOPTS"><b>NTPDATEOPTS</b></a></dt>
+  <dd>Options for the ntpdate program (used only when NTPDATE is set). Default:
+      &quot;-u -q&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="RPCINFO"><a class="permalink" href="#RPCINFO"><b>RPCINFO</b></a></dt>
+  <dd>Defines the <i>rpcinfo(8)</i> program used for &quot;rpc&quot; tests.
+      Default: &quot;rpcinfo&quot;
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMONGEN_WEBPAGE_GENERATOR_SETTINGS"><a class="permalink" href="#XYMONGEN_WEBPAGE_GENERATOR_SETTINGS">XYMONGEN
+  WEBPAGE GENERATOR SETTINGS</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMONLOGO"><a class="permalink" href="#XYMONLOGO"><b>XYMONLOGO</b></a></dt>
+  <dd>HTML code that is inserted on all standard headers. The default is to add
+      the text &quot;Xymon&quot; in the upper-left corner of the page, but you
+      can easily replace this with e.g. a company logo. If you do, I suggest
+      that you keep it at about 30-35 pixels high, and 100-150 pixels wide.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONPAGELOCAL"><a class="permalink" href="#XYMONPAGELOCAL"><b>XYMONPAGELOCAL</b></a></dt>
+  <dd>The string &quot;Pages hosted locally&quot; that appears above all of the
+      pages linked from the main Xymon webpage.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONPAGESUBLOCAL"><a class="permalink" href="#XYMONPAGESUBLOCAL"><b>XYMONPAGESUBLOCAL</b></a></dt>
+  <dd>The string &quot;Subpages hosted locally&quot; that appears above all of
+      the sub-pages linked from pages below the main Xymon webpage.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONPAGEREMOTE"><a class="permalink" href="#XYMONPAGEREMOTE"><b>XYMONPAGEREMOTE</b></a></dt>
+  <dd>The string &quot;Remote status display&quot; that appears about the
+      summary statuses displayed on the min Xymon webpage.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONPAGETITLE"><a class="permalink" href="#XYMONPAGETITLE"><b>XYMONPAGETITLE</b></a></dt>
+  <dd>HTML tags designed to go in a &lt;FONT&gt; tag, to choose the font for
+      titles of the webpages.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONPAGEROWFONT"><a class="permalink" href="#XYMONPAGEROWFONT"><b>XYMONPAGEROWFONT</b></a></dt>
+  <dd>HTML tags designed to go in a &lt;FONT&gt; tag, to choose the font for row
+      headings (hostnames) on the webpages.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONPAGECOLFONT"><a class="permalink" href="#XYMONPAGECOLFONT"><b>XYMONPAGECOLFONT</b></a></dt>
+  <dd>HTML tags designed to go in a &lt;FONT&gt; tag, to chose the font for
+      column headings (test names) on the webpages.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONPAGEACKFONT"><a class="permalink" href="#XYMONPAGEACKFONT"><b>XYMONPAGEACKFONT</b></a></dt>
+  <dd>HTML tags designed to go in a &lt;FONT&gt; tag, to chose the font for the
+      acknowledgement text displayed on the status-log HTML page for an
+      acknowledged status.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ACKUNTILMSG"><a class="permalink" href="#ACKUNTILMSG"><b>ACKUNTILMSG</b></a></dt>
+  <dd>When displaying the detailed status of an acknowledged test, Xymon will
+      include the time that the acknowledge expires using the print-format
+      defined in this setting. You can define the timeformat using the controls
+      in your systems <i>strftime(3)</i> routine, and add the text suitable for
+      your setup.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ACK_COOKIE_EXPIRATION"><a class="permalink" href="#ACK_COOKIE_EXPIRATION"><b>ACK_COOKIE_EXPIRATION</b></a></dt>
+  <dd>The valid length of an acknowledgement cookie. You want to set this large
+      enough so that a late-answered acknowledgement for an alert is still
+      processed properly. Default value: 86400
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONDATEFORMAT"><a class="permalink" href="#XYMONDATEFORMAT"><b>XYMONDATEFORMAT</b></a></dt>
+  <dd>On webpages generated by xymongen, the default header includes the current
+      date and time. Normally this looks like &quot;Tue Aug 24 21:59:47
+      2004&quot;. The XYMONDATEFORMAT controls the format of this timestamp -
+      you can define the format using the controls in the <i>strftime(3)</i>
+      routine. E.g. to have it show up as &quot;2004-08-24 21:59:47 +0200&quot;
+      you would set XYMONDATEFORMAT=&quot;%Y-%m-%d %H:%M:%S %z&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="HOLIDAYFORMAT"><a class="permalink" href="#HOLIDAYFORMAT"><b>HOLIDAYFORMAT</b></a></dt>
+  <dd>How holiday dates are displayed. The default is &quot;%d/%m&quot; which
+      show the day and month. American users may want to change this to
+      &quot;%m/%d&quot; to suit their preferred date-display style. This is a
+      formatting string for the system <i>strftime(3)</i> routine, so any
+      controls available for this routine may be used.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONPAGECOLREPEAT"><a class="permalink" href="#XYMONPAGECOLREPEAT"><b>XYMONPAGECOLREPEAT</b></a></dt>
+  <dd>Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines the
+      maximum number of rows before repeating the column headings on a webpage.
+      This sets the default value for the <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i>
+      &quot;--maxrows&quot; option; if the command-line option is also
+      specified, then it overrides this environment variable. Note that unlike
+      Jeff's patch, xymongen implements this for both the &quot;All
+      non-green&quot; page and all other pages (xymon.html, subpages,
+      critical.html).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="SUMMARY_SET_BKG"><a class="permalink" href="#SUMMARY_SET_BKG"><b>SUMMARY_SET_BKG</b></a></dt>
+  <dd>If set to TRUE, then summaries will affect the color of the main Xymon
+      webpage. Default: FALSE.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="DOTHEIGHT"><a class="permalink" href="#DOTHEIGHT"><b>DOTHEIGHT</b></a></dt>
+  <dd>The height (in pixels) of the icons showing the color of a status.
+      Default: 16, which matches the default icons.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="DOTWIDTH"><a class="permalink" href="#DOTWIDTH"><b>DOTWIDTH</b></a></dt>
+  <dd>The width (in pixels) of the icons showing the color of a status. Default:
+      16, which matches the default icons.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CLIENTSVCS"><a class="permalink" href="#CLIENTSVCS"><b>CLIENTSVCS</b></a></dt>
+  <dd>List of the status logs fed by data from the Xymon client. These status
+      logs will - if there are Xymon client data available for the host -
+      include a link to the raw data sent by the client. Default:
+      cpu,disk,memory,procs,svcs.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONRSSTITLE"><a class="permalink" href="#XYMONRSSTITLE"><b>XYMONRSSTITLE</b></a></dt>
+  <dd>If defined, this is the title of the RSS/RDF documents generated when
+      <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i> is invoked with the &quot;--rss&quot; option. The
+      default value is &quot;Xymon Alerts&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="WMLMAXCHARS"><a class="permalink" href="#WMLMAXCHARS"><b>WMLMAXCHARS</b></a></dt>
+  <dd>Maximum size of a WAP/WML output &quot;card&quot; when generating these.
+      Default: 1500.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONNONGREENEXT"><a class="permalink" href="#XYMONNONGREENEXT"><b>XYMONNONGREENEXT</b></a></dt>
+  <dd>List of scripts to run as extensions to the &quot;All non-green&quot;
+      page. Note that two scripts, &quot;eventlog.sh&quot; and
+      &quot;acklog.sh&quot; are handled specially: They are handled internally
+      by xymongen, but the script names must be listed in this variable for this
+      function to be enabled.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONHISTEXT"><a class="permalink" href="#XYMONHISTEXT"><b>XYMONHISTEXT</b></a></dt>
+  <dd>List of scripts to run as extensions to a history page.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONREPWARN"><a class="permalink" href="#XYMONREPWARN"><b>XYMONREPWARN</b></a></dt>
+  <dd>Default threshold for listing the availability as &quot;critical&quot;
+      (red) when generating the availability report. This can be set on a
+      per-host basis with the WARNPCT setting in <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5).</i> Default:
+      97 (percent)
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONGENREPOPTS"><a class="permalink" href="#XYMONGENREPOPTS"><b>XYMONGENREPOPTS</b></a></dt>
+  <dd>Default xymongen options used for reports. This will typically include
+      such options as &quot;--subpagecolumns&quot;, and also
+      &quot;--ignorecolumns&quot; if you wish to exclude certain tests from
+      reports by default.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONGENSNAPOPTS"><a class="permalink" href="#XYMONGENSNAPOPTS"><b>XYMONGENSNAPOPTS</b></a></dt>
+  <dd>Default xymongen options used by snapshots. This should be identical to
+      the options you normally used when building Xymon webpages.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><b>~xymon/server/etc/xymonserver.cfg</b></dt>
+  <dd></dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man7/xymon.7.html">xymon</a>(7)</p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#ENVIRONMENT_AREAS">ENVIRONMENT AREAS</a></dt>
+<dt><a href="#GENERAL_SETTINGS">GENERAL SETTINGS</a></dt>
+<dt><a href="#DIRECTORIES">DIRECTORIES</a></dt>
+<dt><a href="#SYSTEM_FILES">SYSTEM FILES</a></dt>
+<dt><a href="#URLS">URLS</a></dt>
+<dt><a href="#SETTINGS_FOR_SENDING_MESSAGES_TO_XYMON">SETTINGS FOR SENDING MESSAGES TO XYMON</a></dt>
+<dt><a href="#XYMOND_SETTINGS">XYMOND SETTINGS</a></dt>
+<dt><a href="#XYMOND_HISTORY_SETTINGS">XYMOND_HISTORY SETTINGS</a></dt>
+<dt><a href="#XYMOND_ALERT_SETTINGS">XYMOND_ALERT SETTINGS</a></dt>
+<dt><a href="#XYMOND_RRD_SETTINGS">XYMOND_RRD SETTINGS</a></dt>
+<dt><a href="#XYMONNET_NETWORK_TEST_SETTINGS">XYMONNET NETWORK TEST SETTINGS</a></dt>
+<dt><a href="#XYMONGEN_WEBPAGE_GENERATOR_SETTINGS">XYMONGEN WEBPAGE GENERATOR SETTINGS</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymonserver.cfg - Xymon environment variables
-<P>
-<A NAME="lbAC">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-Xymon programs use multiple environment variables beside the
-normal set of variables.  The environment definitions
-are stored in the ~Xymon/server/etc/xymonserver.cfg file. 
-Each line in this file is of the form <B>NAME=VALUE</B> and defines
-one environment variable NAME with the value VALUE.
-<P>
-You can also append data to existing variables, using the
-syntax <B>NAME+=VALUE</B>. VALUE is then appended to the existing
-value of the NAME variable. If NAME has not been defined, then
-this acts as if it were a normal definition.
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>ENVIRONMENT AREAS</H2>
-
-In some cases it may be useful to have different values for an environment
-variable, depending on where it is used. This is possible by defining
-variables with an associated &quot;area&quot;. Such definitions have the form
-<B>AREA/NAME=VALUE</B>.
-<P>
-E.g. to define a special setup of the XYMSERVERS variable when it is used
-by an application in the &quot;management&quot; area, you would do this:
-<DL COMPACT>
-<DT><DD>
-<PRE>
-  XYMSERVERS=&quot;127.0.0.1&quot;            # Default definition
-  management/XYMSERVERS=&quot;10.1.0.5&quot;  # Definition in the &quot;management&quot; area
-</PRE>
-
-</DL>
-<P>
-
-Areas are invoked by using the &quot;--area&quot; option for all tools, or via the 
-ENVAREA setting in the
-<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
-
-file.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>GENERAL SETTINGS</H2>
-
-<P>
-<DL COMPACT>
-<DT>XYMONSERVERHOSTNAME<DD>
-The fully-qualified hostname of the server that is running Xymon.
-<P>
-<DT>XYMONSERVERWWWNAME<DD>
-The hostname used to access this servers' web-pages, used to construct
-URL's in the Xymon webpages. Default is the XYMONSERVERHOSTNAME.
-<P>
-<DT>XYMONSERVERIP<DD>
-The public IP-address of the server that is running Xymon.
-<P>
-<DT>XYMONSERVEROS<DD>
-A name identifying the operating system of the Xymon server. The 
-known names are currently &quot;linux&quot;, &quot;freebsd&quot;, &quot;solaris&quot;, &quot;hpux&quot;,
-&quot;aix&quot; and &quot;osf&quot;.
-<P>
-<DT>FQDN<DD>
-If set to TRUE, Xymon will use fully-qualified hostnames throughout.
-If set to FALSE, hostnames are stripped of their domain-part before
-being processed. It is <B>highly recommended</B> that you keep this
-set to TRUE. Default: TRUE.
-<P>
-<DT>XYMONLOGSTATUS<DD>
-Controls how the HTML page for a status log is generated. If set to
-DYNAMIC, the HTML logs are generated on-demand by the 
-<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
-
-script. If set to STATIC, you must activate the
-<I><A HREF="../man8/xymond_filestore.8.html">xymond_filestore</A>(8)</I>
-
-module (through an entry in the
-<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
-
-file) to create and store the HTML logs whenever a status update is
-received. Setting &quot;XYMONLOGSTATUS=STATIC&quot; is <B>discouraged</B> since the
-I/O load on the Xymon server will increase significantly.
-<P>
-<DT>PINGCOLUMN<DD>
-Defines the name of the column for &quot;ping&quot; test status. The data from
-the &quot;ping&quot; test is used internally by Xymon, so it must be defined
-here so all of the Xymon tools know which column to watch for this 
-data. The default setting is PINGCOLUMN=conn.
-<P>
-<DT>INFOCOLUMN<DD>
-Defines the name of the column for the &quot;info&quot; pages.
-<P>
-<DT>TRENDSCOLUMN<DD>
-Defines the name of the column for the RRD graph pages.
-<P>
-<DT>RRDHEIGHT<DD>
-The default height (in pixels) of the RRD graph images.
-Default: 120 pixels.
-<P>
-<DT>RRDWIDTH<DD>
-The default width (in pixels) of the RRD graph images.
-Default: 576 pixels.
-<P>
-<DT>RRDGRAPHOPTS<DD>
-Extra options for the RRD graph command. These are passed directly to
-the &quot;rrdgraph&quot; command used to generate graphs, see the
-<I><A HREF="../man1/rrdgraph.1.html">rrdgraph</A>(1)</I>
-
-man-page for details of the options.
-<P>
-<DT>TRENDSECONDS<DD>
-The graphs on the &quot;trends&quot; page show data for the past TRENDSECONDS
-seconds. Default: 172800 seconds, i.e. 48 hours.
-<P>
-<DT>HTMLCONTENTTYPE<DD>
-The Content-type reported by the CGI scripts that generate web pages.
-By default, this it &quot;text/html&quot;. If you have on-line help texts in
-character sets other than the ISO-8859-1 (western european) character
-set, it may be necessary to modify this to include a character set.
-E.g.
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;HTMLCONTENTTYPE=&quot;text/html;&nbsp;charset=euc-jp&quot;
-<BR>
-
-for a Japanese character sets. Note: Some webservers will automatically
-add this, if configured to do so.
-<P>
-<DT>XYMWEBREFRESH<DD>
-The default HTTP page reload interval for many xymongen and status pages. 
-Note that while this can be overridden in the header template files for 
-regular pages, dynamically generated status logs displayed with 
-<A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1) use this value in the HTTP response header and for
-security reasons the value in hostsvc_header may be ignored on many
-modern browsers. (default [seconds]: 60)
-<P>
-<P>
-<DT>HOLIDAYS<DD>
-Defines the default set of holidays used if there is no &quot;holidays&quot; 
-tag for a host in the hosts.cfg file. Holiday sets are defined in the
-<I><A HREF="../man5/holidays.cfg.5.html">holidays.cfg</A>(5)</I>
-
-file. If not defined, only the default holidays (those defined outside
-a named holiday set) will be considered as holidays.
-<P>
-<DT>WEEKSTART<DD>
-Defines which day is the first day of the week. Set to &quot;0&quot; for Sunday,
-&quot;1&quot; for Monday. Default: 1 (Monday).
-<P>
-<DT>XYMONBODYHEADER<DD>
-Text that is included in the Xymon web pages at the location specified
-by ~xymon/server/web/*_header templates. If this is set to a value
-beginning with &quot;file:&quot;, then the contents of the specified file is
-included. Default: &quot;file:$XYMONHOME/etc/xymonmenu.cfg&quot;
-<P>
-<DT>XYMONBODYFOOTER<DD>
-Text that is included in the Xymon web pages at the location specified
-by ~xymon/server/web/*_footer templates. If this is set to a value
-beginning with &quot;file:&quot;, then the contents of the specified file is
-included. Default: Empty.
-<P>
-<DT>XYMONBODYMENUCSS<DD>
-URL for the Xymon menu CSS file. Default: &quot;$XYMONMENUSKIN/xymonmenu.css&quot;
-<P>
-<DT>HOSTPOPUP<DD>
-Determines what is used as the host comment on the webpages. The comment 
-by default appears as a pop-up when the mouse hovers over the hostname, 
-and is also shown on the &quot;info&quot; status page. This setting must be one or
-more of the letters &quot;C&quot; (COMMENT), &quot;D&quot; (DESCRIPTION) or &quot;I&quot; (IP-address).
-Including &quot;C&quot; uses the COMMENT setting for the host, including &quot;D&quot; uses 
-the DESCR setting for the host, and &quot;I&quot; uses the IP-address of the host.
-If more than one of these is set, then COMMENT takes precedence over
-DESCR which again has precence over IP.
-Note that DESCR and IP only appear in pop-up windows (if enabled),
-whereas the COMMENT is always used - if pop-up's have been disabled, then
-the COMMENT value is displayed next to the hostname on the webpages.
-Default: CDI
-<P>
-<DT>STATUSLIFETIME<DD>
-The number of minutes that a status is considered valid after an update.
-After this time elapses, the status will go purple.
-Default: 30 minutes
-<P>
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>DIRECTORIES</H2>
-
-<P>
-<DL COMPACT>
-<DT>XYMONSERVERROOT<DD>
-The top-level directory for the Xymon installation. The default 
-is the home-directory for the user running Xymon.
-<P>
-<DT>XYMONSERVERLOGS<DD>
-The directory for the Xymon's own logfiles (NOT the status-logs
-from the monitored hosts).
-<P>
-<DT>XYMONHOME<DD>
-The Xymon server directory, where programs and configurations are kept.
-Default: $XYMONSERVERROOT/server/ .
-<P>
-<DT>XYMONTMP<DD>
-Directory used for temporary files. Default: $XYMONHOME/tmp/
-<P>
-<DT>XYMONWWWDIR<DD>
-Directory for Xymon webfiles. The $XYMONWEB URL must map to this directory.
-Default: $XYMONHOME/www/
-<P>
-<DT>XYMONNOTESDIR<DD>
-Directory for Xymon notes-files. The $XYMONNOTESSKIN URL must map to this directory.
-Default: $XYMONHOME/www/notes/
-<P>
-<DT>XYMONREPDIR<DD>
-Directory for Xymon availability reports. The $XYMONREPURL URL must map to this directory.
-Note also that your webserver must have write-access to this directory, if you want to
-use the 
-<I><A HREF="../man1/report.cgi.1.html">report.cgi</A>(1)</I>
-
-CGI script to generate reports on-demand. Default: $XYMONHOME/www/rep/
-<P>
-<DT>XYMONSNAPDIR<DD>
-Directory for Xymon snapshots. The $XYMONSNAPURL URL must map to this directory.
-Note also that your webserver must have write-access to this directory, if you want to
-use the 
-<I><A HREF="../man1/snapshot.cgi.1.html">snapshot.cgi</A>(1)</I>
-
-CGI script to generate snapshots on-demand. Default: $XYMONHOME/www/snap/
-<P>
-<DT>XYMONVAR<DD>
-Directory for all data stored about the monitored items. 
-Default: $XYMONSERVERROOT/data/
-<P>
-<DT>XYMONRAWSTATUSDIR<DD>
-Directory for storing the raw status-logs. Not used unless
-&quot;xymond_filestore --status&quot; is running, which is <B>discouraged</B>
-since it increases the load on the Xymon server significantly.
-Default: $XYMONVAR/logs/
-<P>
-<DT>XYMONHTMLSTATUSDIR<DD>
-Directory for storing HTML status-logs. Not used unless
-&quot;xymond_filestore --status --html&quot; is running, which is <B>discouraged</B>
-since it increases the load on the Xymon server significantly.
-Default: $XYMONHOME/www/html/
-<P>
-<DT>XYMONHISTDIR<DD>
-Directory for storing the history of monitored items.
-Default: $XYMONVAR/hist/
-<P>
-<DT>XYMONHISTLOGS<DD>
-Directory for storing the detailed status-log of historical events.
-Default: $XYMONVAR/histlogs/
-<P>
-<DT>XYMONACKDIR<DD>
-Directory for storing information about alerts that have been acknowledged.
-Default: $XYMONVAR/acks/
-<P>
-<DT>XYMONDISABLEDDIR<DD>
-Directory for storing information about tests that have been disabled.
-Default: $XYMONVAR/disabled/
-<P>
-<DT>XYMONDATADIR<DD>
-Directory for storing incoming &quot;data&quot; messages.
-Default: $XYMONVAR/data/
-<P>
-<DT>XYMONRRDS<DD>
-Top-level directory for storing RRD files (the databases with
-trend-information used to generate graphs).
-Default: $XYMONVAR/rrd/
-<P>
-<DT>CLIENTLOGS<DD>
-Directory for storing the data sent by a Xymon client around the
-time a status changes to a warning (yellow) or critical (red) state.
-Used by the
-<I><A HREF="../man8/xymond_hostdata.8.html">xymond_hostdata</A>(8)</I>
-
-module.
-Default: $XYMONVAR/hostdata/
-<P>
-<DT>XYMONCGILOGDIR<DD>
-Directory where debug output from CGI applications are stored. If not
-specified, it defaults to $XYMONSERVERLOGS, but this is often a directory
-that is not writable by the userid running the CGI applications. It
-is therefore recommended when using &quot;--debug&quot; on CGI applications that
-you create a separate directory owned by the user running your webserver,
-and point XYMONCGILOGDIR to this directory.
-<P>
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>SYSTEM FILES</H2>
-
-<P>
-<DL COMPACT>
-<DT>HOSTSCFG<DD>
-Full path to the Xymon
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-configuration file. Default: $XYMONHOME/etc/hosts.cfg.
-<P>
-<DT>XYMON<DD>
-Full path to the 
-<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
-
-client program. Default: $XYMONHOME/bin/xymon.
-<P>
-<DT>XYMONGEN<DD>
-Full path to the
-<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
-
-webpage generator program. Default: $XYMONHOME/bin/xymongen.
-<P>
-<P>
-</DL>
-<A NAME="lbAH">&nbsp;</A>
-<H2>URLS</H2>
-
-<DL COMPACT>
-<DT>XYMONSERVERWWWURL<DD>
-The root URL for the Xymon webpages, without the hostname. This
-URL must be mapped to the ~/server/www/ directory in your webserver
-configuration. See the sample Apache configuration in ~/server/etc/xymon-apache.conf.
-<P>
-<DT>XYMONSERVERCGIURL<DD>
-The root URL for the Xymon CGI-scripts, without the hostname. This
-directory must be mapped to the ~/cgi-bin/ directory in your webserver
-configuration, and must be flagged as holding executable scripts. See
-the sample Apache configuration in ~/server/etc/xymon-apache.conf.
-<P>
-<DT>XYMONWEBHOST<DD>
-Initial part of the Xymon URL, including just the protocol and the
-hostname, e.g. &quot;<A HREF="http://www.foo.com">http://www.foo.com</A>&quot;
-<P>
-<DT>XYMONWEBHOSTURL<DD>
-Prefix for all of the static Xymon webpages, e.g. &quot;<A HREF="http://www.foo.com/xymon">http://www.foo.com/xymon</A>&quot;
-<P>
-<DT>XYMONWEBHTMLLOGS<DD>
-URL prefix for the static HTML status-logs generated when XYMONLOGSTATUS=STATIC.
-Note that this setting is <B>discouraged</B> so this setting should not be used.
-<P>
-<DT>XYMONWEB<DD>
-URL prefix (without hostname) of the Xymon webpages. E.g. &quot;/xymon&quot;.
-<P>
-<DT>XYMONSKIN<DD>
-URL prefix (without hostname) of the Xymon graphics. E.g. &quot;/xymon/gifs&quot;.
-<P>
-<DT>XYMONHELPSKIN<DD>
-URL prefix (without hostname) of the Xymon on-line help files. E.g &quot;/xymon/help&quot;.
-<P>
-<DT>XYMONMENUSKIN<DD>
-URL prefix (without hostname) of the Xymon menu files. E.g &quot;/xymon/menu&quot;.
-<P>
-<DT>XYMONNOTESSKIN<DD>
-URL prefix (without hostname) of the Xymon on-line notes files. E.g &quot;/xymon/notes&quot;.
-<P>
-<DT>XYMONREPURL<DD>
-URL prefix (without hostname) of the Xymon availability reports. E.g. &quot;/xymon/rep&quot;.
-<P>
-<DT>XYMONSNAPURL<DD>
-URL prefix (without hostname) of the Xymon snapshots. E.g. &quot;/xymon/snap&quot;.
-<P>
-<DT>XYMONWAP<DD>
-URL prefix (without hostname) of the Xymon WAP/WML files. E.g. &quot;/xymon/wml&quot;.
-<P>
-<DT>CGIBINURL<DD>
-URL prefix (without hostname) of the Xymon CGI-scripts. Default: $XYMONSERVERCGIURL .
-<P>
-<DT>COLUMNDOCURL<DD>
-Format string used to build a link to the documentation for a column heading.
-Default: &quot;$CGIBINURL/columndoc.sh?%s&quot;, which causes links to use the
-<I><A HREF="../man1/columndoc.sh.1.html">columndoc.sh</A>(1)</I>
-
-script to document a column.
-<P>
-<DT>HOSTDOCURL<DD>
-Format string used to build a link to the documentation for a host.
-If not set, then Xymon falls back to scanning the XYMONNOTES directory
-for files matching the hostname, or the hostname together with a common
-filename extension (.php, .html, .doc and so on). If set, this string
-becomes a formatting string for the documentation URL. E.g. for the host
-&quot;myhost&quot;, a setting of HOSTDOCURL=&quot;/docs/%s.php&quot; will generate a link to
-&quot;/docs/myhost.php&quot;.
-Default: Not set, so host documentation will be retrieved from the
-XYMONNOTES directory.
-<P>
-<P>
-</DL>
-<A NAME="lbAI">&nbsp;</A>
-<H2>SETTINGS FOR SENDING MESSAGES TO XYMON</H2>
-
-<DL COMPACT>
-<DT>XYMSRV<DD>
-The IP-address used to contact the
-<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
-
-service. Used by clients and the tools that perform network tests.
-Default: $XYMONSERVERIP
-<P>
-<DT>XYMSERVERS<DD>
-List of IP-addresses. Clients and network test tools will try to
-send status reports to a Xymon server running on each of these
-addresses. This setting is only used if XYMSRV=0.0.0.0.
-<P>
-<DT>XYMONDPORT<DD>
-The portnumber for used to contact the
-<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
-
-service. Used by clients and the tools that perform network tests.
-Default: 1984.
-<P>
-<DT>MAXMSGSPERCOMBO<DD>
-The maximum number of status messages to combine into one
-combo message.  Default: 100.
-<P>
-<DT>SLEEPBETWEENMSGS<DD>
-Length of a pause introduced between each successive transmission
-of a combo-message by xymonnet, in microseconds. Default: 0 
-(send messages as quickly as possible).
-<P>
-<P>
-</DL>
-<A NAME="lbAJ">&nbsp;</A>
-<H2>XYMOND SETTINGS</H2>
-
-<P>
-<DL COMPACT>
-<DT>ALERTCOLORS<DD>
-Comma-separated list of the colors that may trigger an alert-message.
-The default is &quot;red,yellow,purple&quot;. Note that alerts may further be
-generated or suppresed based on the configuration in the
-<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
-
-file.
-<P>
-<DT>OKCOLORS<DD>
-Comma-separated list of the colors that may trigger a recovery-message.
-The default is &quot;green,clear,blue&quot;.
-<P>
-<DT>ALERTREPEAT<DD>
-How often alerts get repeated while a status is in an alert state.
-This is the default setting, which may be changed in the 
-<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
-
-file.
-<P>
-<DT>MAXMSG_STATUS<DD>
-The maximum size of a &quot;status&quot; message in kB, default: 256.
-Status messages are the ones that end up as columns on the 
-web display. The default size should be adequate in most
-cases, but some extension scripts can generate very large
-status messages - close to 1024 kB. You should only change
-this if you see messages in the xymond log file about status
-messages being truncated.
-<P>
-<DT>MAXMSG_CLIENT<DD>
-The maximum size of a &quot;client&quot; message in kB, default: 512.
-&quot;client&quot; messages are generated by the Xymon client, and often
-include large process-listings. You should only change
-this if you see messages in the xymond log file about client
-messages being truncated.
-<P>
-<DT>MAXMSG_DATA<DD>
-The maximum size of a &quot;data&quot; message in kB, default: 256.
-&quot;data&quot; messages are typically used for client reports of
-e.g. netstat or vmstat data. You should only change this
-setting if you see messages in the xymond log file about
-data messages being truncated.
-<P>
-<DT>MAXMSG_NOTES<DD>
-The maximum size of a &quot;notes&quot; message in kB, default: 256.
-&quot;notes&quot; messages provide a way for uploading documentation
-about a host to Xymon; it is not enabled by default. If you 
-want to upload large documents, you may need to change this
-setting.
-<P>
-<DT>MAXMSG_STACHG<DD>
-The maximum size of a &quot;status change&quot; message in kB, default: 
-Current value of the MAXMSG_STATUS setting.  Status-change 
-messages occur when a status changes color. There is no 
-reason to change this setting.
-<P>
-<DT>MAXMSG_PAGE<DD>
-The maximum size of a &quot;page&quot; message in kB, default: 
-Current value of the MAXMSG_STATUS setting. &quot;page&quot; messages
-are alerts, and include the status message that triggers the
-alert. There is no reason to change this setting.
-<P>
-<DT>MAXMSG_ENADIS<DD>
-The maximum size of an &quot;enadis&quot; message in kB, default: 32.
-&quot;enadis&quot; are small messages used when enabling or disabling
-hosts and tests, so the default size should be adequate.
-<P>
-<DT>MAXMSG_CLICHG<DD>
-The maximum size of a &quot;client change&quot; message in kB, default: 
-Current value of the MAXMSG_CLIENT setting.  Client-change 
-messages occur when a status changes color to one of the
-alert-colors, usually red, yellow and purple. There is no 
-reason to change this setting.
-<P>
-<DT>MAXMSG_USER<DD>
-The maximum size of a &quot;user&quot; message in kB, default: 128.
-&quot;user&quot; messages are for communication between custom Xymon
-modules you have installed, it is not used directly by
-Xymon.
-<P>
-<P>
-</DL>
-<A NAME="lbAK">&nbsp;</A>
-<H2>XYMOND_HISTORY SETTINGS</H2>
-
-<P>
-<DL COMPACT>
-<DT>XYMONALLHISTLOG<DD>
-If set to TRUE,
-<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
-
-will update the $XYMONHISTDIR/allevents file logging all changes to
-a status. The allevents file is used by the
-<I><A HREF="../man1/eventlog.cgi.1.html">eventlog.cgi</A>(1)</I>
-
-tool to show the list of recent events on the &quot;All non-green&quot; 
-webpage.
-<P>
-<DT>XYMONHOSTHISTLOG<DD>
-If set to TRUE,
-<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
-
-will update the host-specific eventlog that keeps record
-of all status changes for a host. This logfile is not used
-by any Xymon tool.
-<P>
-<DT>SAVESTATUSLOG<DD>
-If set to TRUE,
-<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
-
-will save historical detailed status-logs to the $XYMONHISTLOGS
-directory.
-<P>
-<P>
-</DL>
-<A NAME="lbAL">&nbsp;</A>
-<H2>XYMOND_ALERT SETTINGS</H2>
-
-<P>
-<DL COMPACT>
-<DT>MAIL<DD>
-Command used to send alerts via e-mail, including a &quot;Subject:&quot;
-header in the mail. Default: &quot;mail -s&quot;
-<P>
-<DT>MAILC<DD>
-Command used to send alerts via e-mail in a form that does not
-have a &quot;Subject&quot; in the mail. Default: &quot;mail&quot;
-<P>
-<DT>SVCCODES<DD>
-Maps status-columns to numeric service-codes. The numeric codes are
-used when sending an alert using a script, where the numeric code of
-the service is provided in the BBSVCNUM variable.
-<P>
-<P>
-</DL>
-<A NAME="lbAM">&nbsp;</A>
-<H2>XYMOND_RRD SETTINGS</H2>
-
-<P>
-<DL COMPACT>
-<DT>TEST2RRD<DD>
-List of &quot;COLUMNNAME[=RRDSERVICE]&quot; settings, that define which
-status- and data-messages have a corresponding RRD graph. You will 
-normally not need to modify this, unless you have added a
-custom TCP-based test to the protocols.cfg file, and want to collect data about
-the response-time, OR if you are using the
-<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
-
-external script mechanism to collect data from custom tests. 
-Note: All TCP tests are automatically added.
-<P>
-<DT>GRAPHS_&lt;COLUMNAME&gt;<DD>
-List of GRAPHs that should be displayed on the corresponding colmn page. Note
-this will override the default, so to add multiple graphs you should include
-the original one (e.g. GRAPHS_cpu=&quot;la,vmstat1&quot;).
-<P>
-These are used together by the 
-<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1) </I>
-
-script to determine if the detailed status view of a test should 
-include a graph.
-<P>
-<DT>GRAPHS<DD>
-List of the RRD databases, that should be shown as a graph on
-the &quot;trends&quot; column.
-<P>
-<DT>NORRDDISKS<DD>
-This is used to disable the tracking of certain filesystems. By default
-all filesystems reported by a client are tracked. In some cases you may want 
-to disable this for certain filesystems, e.g. database filesystems since they
-are always completely full. This setting is a regular expression that is matched
-against the filesystem name (the Unix mount-point, or the Windows disk-letter) -
-if the filesystem name matches this expression, then it will not be tracked
-by Xymon.
-<BR>
-
-Note: Setting this does not affect filesystems that are already being tracked
-by Xymon - to remove them, you must remove the RRD files for the unwanted filesystems
-from the ~xymon/data/rrd/HOSTNAME/ directory.
-<P>
-<DT>RRDDISKS<DD>
-This is used to enable tracking of only selected filesystems (see the NORRDDISKS
-setting above). By default all filesystems are being tracked, setting this changes 
-that default so that only those filesystems that match this pattern will be 
-tracked.
-<P>
-<P>
-</DL>
-<A NAME="lbAN">&nbsp;</A>
-<H2>XYMONNET NETWORK TEST SETTINGS</H2>
-
-<P>
-<DL COMPACT>
-<DT>XYMONNETWORK<DD>
-If this variable is defined, then only the hosts that have been tagged
-with &quot;NET:$XYMONNETWORK&quot; will be tested by the xymonnet tool.
-<P>
-<DT>CONNTEST<DD>
-If set to TRUE, the connectivity (ping) test will be performed.
-<P>
-<DT>IPTEST_2_CLEAR_ON_FAILED_CONN<DD>
-If set to TRUE, then failing network tests go CLEAR if the conn-test fails.
-<P>
-<DT>NONETPAGE<DD>
-List of network services (separated with &lt;space&gt;) that should go yellow
-upon failure instead of red.
-<P>
-<DT>XYMONROUTERTEXT<DD>
-When using the &quot;router&quot; or &quot;depends&quot; tags for a host, a failure
-status will include text that an &quot;Intermediate router is down&quot;.
-With todays network topologies, the router could be a switch or
-another network device; if you define this environment variable
-the word &quot;router&quot; will be replaced with whatever you put into
-the variable. So to inform the users that an intermediate switch
-or router is down, use XYMONROUTERTEXT=&quot;switch or router&quot;.  This can 
-also be set on a per-host basis using the &quot;DESCR:hosttype:description&quot;
-tag in the 
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-file.
-<P>
-<DT>NETFAILTEXT<DD>
-When a network test fails, the status message reports &quot;SERVICENAME
-not OK&quot;. The &quot;not OK&quot; message can be changed via this variable, e.g.
-you can change it to &quot;FAILED&quot; or customize it as you like.
-<P>
-<DT>FPING<DD>
-The command used to run the
-<I><A HREF="../man1/xymonping.1.html">xymonping</A>(1)</I>
-
-tool for the connectivity test. (The name FPING is due to the fact that
-the &quot;fping&quot; utility was used until Xymon version 4.2). This may include 
-suid-root wrappers and xymonping options.
-Default: &quot;xymonping&quot;
-<P>
-<DT>FPINGOPTS<DD>
-Options used for the
-<I><A HREF="../man1/fping.1.html">fping</A>(1)</I>
-
-or
-<I><A HREF="../man1/xymonping.1.html">xymonping</A>(1)</I>
-
-tool for the connectivity test. Note that xymonnet will still expect the 
-output to match the default format.
-Default: &quot;-Ae&quot;
-<P>
-<DT>TRACEROUTE<DD>
-<DT>TRACEROUTEOPTS<DD>
-Defines the location of the &quot;traceroute&quot; tool and
-any options needed to run it. traceroute is used by
-the connectivity test when the ping test fails; if
-requested via the &quot;trace&quot; tag, the TRACEROUTE command
-is executed to try to indicate the point in the
-network that is causing the problem. For backwards compatibility, 
-with prior versions, if TRACEROUTEOPTS is unset, TRACEROUTE is assumed
-to have whatever options are desired and no addl options are used.
-Recommended defaults are:  &quot;-n -q 2 -w 2 -m 15&quot;
-(no DNS lookup, max. 2 probes, wait 2 seconds per hop,
-max 15 hops).
-<P>
-If you have the
-<I><A HREF="../man8/mtr.8.html">mtr</A>(8)</I>
-
-tool installed - available from <A HREF="http://www.bitwizard.nl/mtr/">http://www.bitwizard.nl/mtr/</A> - I
-strongly recommend using this instead. The recommended
-TRACEROUTEOPTS for mtr are &quot;-c 2 -n --report&quot;
-Note that mtr needs to be installed suid-root 
-on most systems.
-<P>
-<DT>NTPDATE<DD>
-Path to the external ntpdate program for the &quot;ntp&quot; test; the target IP is
-appended. Leave empty (the default) to use the built-in SNTP probe, which needs
-no external program. On ntpsec, where ntpdate is unavailable, set this to &quot;ntpdig&quot;.
-Default: &quot;&quot; (built-in probe)
-<P>
-<DT>NTPDATEOPTS<DD>
-Options for the ntpdate program (used only when NTPDATE is set).
-Default: &quot;-u -q&quot;
-<P>
-<DT>RPCINFO<DD>
-Defines the
-<I><A HREF="../man8/rpcinfo.8.html">rpcinfo</A>(8)</I>
-
-program used for &quot;rpc&quot; tests.
-Default: &quot;rpcinfo&quot;
-<P>
-<P>
-</DL>
-<A NAME="lbAO">&nbsp;</A>
-<H2>XYMONGEN WEBPAGE GENERATOR SETTINGS</H2>
-
-<P>
-<DL COMPACT>
-<DT>XYMONLOGO<DD>
-HTML code that is inserted on all standard headers. The default is to add
-the text &quot;Xymon&quot; in the upper-left corner of the page, but you can easily 
-replace this with e.g. a company logo. If you do, I suggest that you keep 
-it at about 30-35 pixels high, and 100-150 pixels wide.
-<P>
-<DT>XYMONPAGELOCAL<DD>
-The string &quot;Pages hosted locally&quot; that appears above all of the pages
-linked from the main Xymon webpage.
-<P>
-<DT>XYMONPAGESUBLOCAL<DD>
-The string &quot;Subpages hosted locally&quot; that appears above all of the sub-pages
-linked from pages below the main Xymon webpage.
-<P>
-<DT>XYMONPAGEREMOTE<DD>
-The string &quot;Remote status display&quot; that appears about the summary
-statuses displayed on the min Xymon webpage.
-<P>
-<DT>XYMONPAGETITLE<DD>
-HTML tags designed to go in a &lt;FONT&gt; tag, to choose the font for 
-titles of the webpages.
-<P>
-<DT>XYMONPAGEROWFONT<DD>
-HTML tags designed to go in a &lt;FONT&gt; tag, to choose the font for 
-row headings (hostnames) on the webpages.
-<P>
-<DT>XYMONPAGECOLFONT<DD>
-HTML tags designed to go in a &lt;FONT&gt; tag, to chose the font for
-column headings (test names) on the webpages.
-<P>
-<DT>XYMONPAGEACKFONT<DD>
-HTML tags designed to go in a &lt;FONT&gt; tag, to chose the font for
-the acknowledgement text displayed on the status-log HTML page
-for an acknowledged status.
-<P>
-<DT>ACKUNTILMSG<DD>
-When displaying the detailed status of an acknowledged test,
-Xymon will include the time that the acknowledge expires
-using the print-format defined in this setting. You can define
-the timeformat using the controls in your systems
-<I><A HREF="../man3/strftime.3.html">strftime</A>(3)</I>
-
-routine, and add the text suitable for your setup.
-<P>
-<DT>ACK_COOKIE_EXPIRATION<DD>
-The valid length of an acknowledgement cookie. You want to set
-this large enough so that a late-answered acknowledgement for
-an alert is still processed properly.
-Default value: 86400
-<P>
-<P>
-<DT>XYMONDATEFORMAT<DD>
-On webpages generated by xymongen, the default header includes
-the current date and time. Normally this looks like &quot;Tue Aug 24
-21:59:47 2004&quot;. The XYMONDATEFORMAT controls the format of this
-timestamp - you can define the format using the controls in the 
-<I><A HREF="../man3/strftime.3.html">strftime</A>(3)</I>
-
-routine. E.g. to have it show up as &quot;2004-08-24 21:59:47 +0200&quot;
-you would set XYMONDATEFORMAT=&quot;%Y-%m-%d %H:%M:%S %z&quot;
-<P>
-<DT>HOLIDAYFORMAT<DD>
-How holiday dates are displayed. The default is &quot;%d/%m&quot; which
-show the day and month. American users may want to change this 
-to &quot;%m/%d&quot; to suit their preferred date-display style. This
-is a formatting string for the system
-<I><A HREF="../man3/strftime.3.html">strftime</A>(3)</I>
-
-routine, so any controls available for this routine may be used.
-<P>
-<DT>XYMONPAGECOLREPEAT<DD>
-Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
-the maximum number of rows before repeating the column headings
-on a webpage. This sets the default value for the 
-<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
-
-&quot;--maxrows&quot; option; if the command-line option is also specified,
-then it overrides this environment variable. Note that unlike
-Jeff's patch, xymongen implements this for both the &quot;All non-green&quot; 
-page and all other pages (xymon.html, subpages, critical.html). 
-<P>
-<DT>SUMMARY_SET_BKG<DD>
-If set to TRUE, then summaries will affect the color of the
-main Xymon webpage. Default: FALSE.
-<P>
-<DT>DOTHEIGHT<DD>
-The height (in pixels) of the icons showing the color of a status.
-Default: 16, which matches the default icons.
-<P>
-<DT>DOTWIDTH<DD>
-The width (in pixels) of the icons showing the color of a status.
-Default: 16, which matches the default icons.
-<P>
-<DT>CLIENTSVCS<DD>
-List of the status logs fed by data from the Xymon client. These
-status logs will - if there are Xymon client data available for
-the host - include a link to the raw data sent by the client.
-Default: cpu,disk,memory,procs,svcs.
-<P>
-<DT>XYMONRSSTITLE<DD>
-If defined, this is the title of the RSS/RDF documents generated when
-<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
-
-is invoked with the &quot;--rss&quot; option. The default value is &quot;Xymon Alerts&quot;.
-<P>
-<DT>WMLMAXCHARS<DD>
-Maximum size of a WAP/WML output &quot;card&quot; when generating these.
-Default: 1500.
-<P>
-<DT>XYMONNONGREENEXT<DD>
-List of scripts to run as extensions to the &quot;All non-green&quot; page. Note that
-two scripts, &quot;eventlog.sh&quot; and &quot;acklog.sh&quot; are handled specially:
-They are handled internally by xymongen, but the script names must
-be listed in this variable for this function to be enabled.
-<P>
-<DT>XYMONHISTEXT<DD>
-List of scripts to run as extensions to a history page.
-<P>
-<DT>XYMONREPWARN<DD>
-Default threshold for listing the availability as &quot;critical&quot; (red) when
-generating the availability report. This can be set on a per-host basis
-with the WARNPCT setting in
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5).</I>
-
-Default: 97 (percent)
-<P>
-<DT>XYMONGENREPOPTS<DD>
-Default xymongen options used for reports. This will typically include
-such options as &quot;--subpagecolumns&quot;, and also &quot;--ignorecolumns&quot; if 
-you wish to exclude certain tests from reports by default.
-<P>
-<DT>XYMONGENSNAPOPTS<DD>
-Default xymongen options used by snapshots. This should be identical to
-the options you normally used when building Xymon webpages.
-<P>
-</DL>
-<A NAME="lbAP">&nbsp;</A>
-<H2>FILES</H2>
-
-<B>~xymon/server/etc/xymonserver.cfg</B>
-
-<P>
-<A NAME="lbAQ">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAD">ENVIRONMENT AREAS</A><DD>
-<DT><A HREF="#lbAE">GENERAL SETTINGS</A><DD>
-<DT><A HREF="#lbAF">DIRECTORIES</A><DD>
-<DT><A HREF="#lbAG">SYSTEM FILES</A><DD>
-<DT><A HREF="#lbAH">URLS</A><DD>
-<DT><A HREF="#lbAI">SETTINGS FOR SENDING MESSAGES TO XYMON</A><DD>
-<DT><A HREF="#lbAJ">XYMOND SETTINGS</A><DD>
-<DT><A HREF="#lbAK">XYMOND_HISTORY SETTINGS</A><DD>
-<DT><A HREF="#lbAL">XYMOND_ALERT SETTINGS</A><DD>
-<DT><A HREF="#lbAM">XYMOND_RRD SETTINGS</A><DD>
-<DT><A HREF="#lbAN">XYMONNET NETWORK TEST SETTINGS</A><DD>
-<DT><A HREF="#lbAO">XYMONGEN WEBPAGE GENERATOR SETTINGS</A><DD>
-<DT><A HREF="#lbAP">FILES</A><DD>
-<DT><A HREF="#lbAQ">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>
