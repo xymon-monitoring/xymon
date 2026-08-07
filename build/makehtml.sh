@@ -2,30 +2,48 @@
 #
 # Generate docs/manpages/manN/*.html from the manual page sources.
 #
-#   build/makehtml.sh VERSION                       regenerate every page
-#   build/makehtml.sh VERSION common/hosts.cfg.5    regenerate one page
+#   build/makehtml.sh --version 4.3.31              regenerate every page (release)
+#   build/makehtml.sh                               regenerate every page
+#   build/makehtml.sh common/hosts.cfg.5            regenerate one page
 #
-# The second form exists so that editing one manual page does not mean
+# The last form exists so that editing one manual page does not mean
 # rewriting all 69 HTML files, which buries the real change in the diff.
 set -euo pipefail
 
 # LC_ALL, not LANG: LANG=C is overridden by any LC_* the caller has set.
 export LC_ALL=C
-if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
-	DATE=$(date -u -d "@$SOURCE_DATE_EPOCH" +"%e %b %Y" 2>/dev/null) \
-		|| DATE=$(date -u -r "$SOURCE_DATE_EPOCH" +"%e %b %Y")
-else
-	DATE=$(date +"%e %b %Y")
-fi
-VERSION="${1:-}"
-if [ "$VERSION" = "" ]
+
+# dorelease.sh passes --version with the version it is releasing, and that is
+# the only time the .TH line is rewritten: updmanver writes the same version
+# into the sources in the same run, so the two agree by construction.
+#
+# Without --version, the .TH line is left exactly as the source has it. There
+# is no number to invent, nothing derived from a commit that could name the
+# wrong one, and nothing that moves when the tree moves - the page says what
+# its source says, which is the only thing worth guaranteeing between
+# releases. Regenerating changes a page when its source changed, and not
+# otherwise.
+#
+# The version is a flag rather than a positional argument so that a mistyped
+# page path can never be mistaken for a version: anything that is not
+# --version must be a readable source file, or the run fails.
+VERSION=""
+if [ "${1:-}" = "--version" ]
 then
-	echo "Usage: $0 VERSION [manpage-source ...]"
-	echo "       $0 4.3.31                      # every page"
-	echo "       $0 4.3.31 common/hosts.cfg.5   # just this one"
-	exit 1
+	if [ -z "${2:-}" ]
+	then
+		echo "$0: --version needs a value" >&2
+		exit 1
+	fi
+	VERSION="$2"
+	shift 2
+	if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+		DATE=$(date -u -d "@$SOURCE_DATE_EPOCH" +"%e %b %Y" 2>/dev/null) \
+			|| DATE=$(date -u -r "$SOURCE_DATE_EPOCH" +"%e %b %Y")
+	else
+		DATE=$(date +"%e %b %Y")
+	fi
 fi
-shift
 
 POST="`dirname "$0"`/manpage-html.py"
 if [ ! -x "$POST" ]
@@ -82,7 +100,12 @@ onepage()
 	fi
 
 	mkdir -p "docs/manpages/man$SECT"
-	(echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Xymon\""; tail -n +2 "$FILE") | \
+	if [ -n "$VERSION" ]
+	then
+		(echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Xymon\""; tail -n +2 "$FILE")
+	else
+		cat "$FILE"
+	fi | \
 	mandoc -T html -O style=../mandoc.css | \
 	"$POST" $KNOWN >"docs/manpages/man$SECT/`basename $FILE`.html"
 }

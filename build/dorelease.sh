@@ -10,8 +10,6 @@ fi
 ./build/generate-md5.sh >build/md5.dat.new
 mv build/md5.dat.new build/md5.dat
 
-./build/updmanver $VERSION
-./build/makehtml.sh $VERSION
-
-exit 0
+./build/updmanver "$VERSION"
+./build/makehtml.sh --version "$VERSION"
 
