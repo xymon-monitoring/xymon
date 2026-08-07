@@ -87,6 +87,9 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Fix parsing of the nosoap reverse SOAP test specification (#273) (Thanks, Markus Häll)
 * Fix a crash in xymonnet HTTPS tests using SSL options or a client cert (#274) (Thanks, Markus Häll)
 * Update github workflow: actions/checkout v6->v7 (#297) (Thanks, Markus Häll)
+* Document the holidays=, NOTBEFORE: and NOTAFTER: hosts.cfg tags (#280) (Thanks, Markus Häll)
+* Drop the duplicate XMH_CLIENTALIAS name registration in loadhosts (#294, #296)
+* Fix NOTBEFORE:/NOTAFTER: reading an uninitialised time and corrupting the host record (#298, #299)
 
 
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
