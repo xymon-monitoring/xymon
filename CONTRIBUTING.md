@@ -51,6 +51,35 @@ entry and you are not sure where it should go, say so in the pull request and a
 maintainer will place it — it is easier than untangling two entries for the same
 release afterwards.
 
+## Manual pages
+
+Every manual page exists twice: the man(7) source next to the code it
+documents (`common/hosts.cfg.5`, `xymond/analysis.cfg.5`, ...) and a generated
+HTML copy under `docs/manpages/`. The source is the original. Never edit the
+HTML by hand — it is overwritten at the next regeneration, and the diff of a
+hand-edited page tells a reviewer nothing about what actually changed.
+
+After editing a source, regenerate its HTML copy and commit the two together:
+
+```
+build/makehtml.sh common/hosts.cfg.5
+```
+
+The script needs `mandoc` and `python3`. Run with no argument it regenerates
+all pages; that is for changes to the generation itself (the stylesheet, the
+post-processor), not for a one-page edit — regenerating 69 files to change one
+buries the real change in the diff. The `--version` flag is for the release
+scripts only: between releases the `.TH` line says what the source says, so do
+not bump the version or date in a pull request.
+
+Two properties are worth checking before you push, and both amount to running
+the script again:
+
+- Regeneration is idempotent. A second run after yours must leave the tree
+  clean; if it does not, source and HTML were committed out of step.
+- The sources carry no trailing whitespace. `git diff --check` on your change
+  must be quiet.
+
 ## Pull requests
 
 - One change per pull request. A fix and the cleanup you noticed next to it are
