@@ -25,7 +25,7 @@ file. This illustrates how to easily fetch and parse messages.
 .SH OPTIONS
 xymond_channel accepts a few options.
 
-.IP "--channel=CHANNELNAME"
+.IP "\fB--channel=CHANNELNAME\fR"
 Specifies the channel to receive messages from, only one channel can be used.
 This option is required. The following channels are available:
 .br
@@ -41,7 +41,7 @@ This option is required. The following channels are available:
 .br
 "enadis" receives information about hosts being disabled or enabled.
 
-.IP "--filter=EXPRESSION"
+.IP "\fB--filter=EXPRESSION\fR"
 EXPRESSION is a Perl-compatible regular expression. xymond_channel will match 
 the first line of each message against this expression, and silently drops any
 message that does not match the expression. Especially useful for custom 
@@ -52,12 +52,12 @@ Note that messages for "logrotate", "shutdown", "drophost", "renamehost",
 "droptest" and "renametest" are always forwarded by xymond_channel, whether
 they match the filter or not.
 
-.IP "--msgtimeout=TIMEOUT"
+.IP "\fB--msgtimeout=TIMEOUT\fR"
 Modify the default timeout (30 seconds) for the worker module to handle a message.
 If a message is not handled within this time, it is considered lost. You normally
 do not have to modify this unless you have an extremely busy server.
 
-.IP "--daemon"
+.IP "\fB--daemon\fR"
 xymond_channel is normally started by 
 .I xymonlaunch(8)
 as a task defined in the
@@ -65,12 +65,12 @@ as a task defined in the
 file. If you are not using xymonlaunch, then starting xymond_channel with this
 option causes it to run as a stand-alone background task.
 
-.IP "--pidfile=FILENAME"
+.IP "\fB--pidfile=FILENAME\fR"
 If running as a stand-alone daemon, xymond_channel will save the process-ID 
 of the daemon in FILENAME. This is useful for automated startup- and shutdown-
 scripts.
 
-.IP "--env=FILENAME"
+.IP "\fB--env=FILENAME\fR"
 Loads the environment variables defined in FILENAME before starting xymond_channel.
 This is normally used only when running as a stand-alone daemon; if xymond_channel
 is started by xymonlaunch, then the environment is controlled by the task definition 
@@ -78,7 +78,7 @@ in the
 .I tasks.cfg(5)
 file.
 
-.IP "--log=FILENAME"
+.IP "\fB--log=FILENAME\fR"
 Redirect output to this log-file.
 
 .IP "--md5 / --no-md5"
@@ -87,7 +87,7 @@ module. This may be useful if you suspect that data may be corrupted, e.g. when
 sent to a remote worker module. Note that enabling this may break communication
 with old versions of Xymon worker modules. Default: Disabled.
 
-.IP "--debug"
+.IP "\fB--debug\fR"
 Enable debugging output.
 
 .SH FILES

@@ -33,16 +33,16 @@ omitted, the portnumber from the XYMONDPORT setting in
 is used (normally, this is port 1984).
 
 .SH OPTIONS
-.IP "--server=XYMON.SERVER.IP"
+.IP "\fB--server=XYMON.SERVER.IP\fR"
 Defines the IP address of the Xymon server where the collected client
 messages are forwarded to. By default, messages are sent to the
 loopback address 127.0.0.1, i.e. to a Xymon server running on the same 
 host as xymonfetch.
 
-.IP "--interval=N"
+.IP "\fB--interval=N\fR"
 Sets the interval (in seconds) between polls of a client. Default: 60 seconds.
 
-.IP "--id=N"
+.IP "\fB--id=N\fR"
 Used when you have a setup with multiple Xymon servers. In that case, you
 must run xymonfetch on each of the Xymon servers, with xymonfetch instance
 using a different value of N. This allows several Xymon servers to pick up
@@ -51,13 +51,13 @@ which messages have already been forwarded to which server.
 .br
 N is a number in the range 1-31.
 
-.IP "--log-interval=N"
+.IP "\fB--log-interval=N\fR"
 Limit how often xymonfetch will log problems with fetching data from a
 host, in seconds. Default: 900 seconds (15 minutes). This is to prevent
 a host that is down or where msgcache has not been started from flooding
 the xymonfetch logs. Note that this is ignored when debugging is enabled.
 
-.IP "--debug"
+.IP "\fB--debug\fR"
 Enable debugging output.
 
 .SH "SEE ALSO"

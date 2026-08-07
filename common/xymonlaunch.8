@@ -20,13 +20,13 @@ each component of the Xymon system, instead of getting output
 from all components logged to a single file.
 
 .SH OPTIONS
-.IP "--env=FILENAME"
+.IP "\fB--env=FILENAME\fR"
 Loads the environment from FILENAME before starting other tools.
 The environment defined by FILENAME is the default, it can be
 overridden by the ENVFILE option in 
 .I tasks.cfg(5)
 
-.IP "--config=FILENAME"
+.IP "\fB--config=FILENAME\fR"
 This option defines the file that xymonlaunch scans for tasks it
 must launch. A description of this file is in 
 .I tasks.cfg(5)
@@ -34,28 +34,28 @@ If not specified, files at /etc/tasks.cfg, /etc/xymon/tasks.cfg,
 and /etc/xymon-client/clientlaunch.cfg are searched for, as
 well as ~/server/etc/tasks.cfg.
 
-.IP "--log=FILENAME"
+.IP "\fB--log=FILENAME\fR"
 Defines the logfile where xymonlaunch logs information about
 failures to launch tasks and other data about the operation of
 xymonlaunch. Logs from individual tasks are defined in the tasks.cfg
 file. By default this is logged to stdout.
 
-.IP "--pidfile=FILENAME"
+.IP "\fB--pidfile=FILENAME\fR"
 Filename which xymonlaunch saves its own process-ID to. Commonly used by
 automated start/stop scripts.
 
-.IP "--verbose"
+.IP "\fB--verbose\fR"
 Logs the launch of all tasks to the logfile. Note that the logfile
 may become quite large if you enable this.
 
-.IP "--dump"
+.IP "\fB--dump\fR"
 Just dump the contents of the tasks.cfg file after parsing it.
 Used for debugging.
 
-.IP "--debug"
+.IP "\fB--debug\fR"
 Enable debugging output while running.
 
-.IP "--no-daemon"
+.IP "\fB--no-daemon\fR"
 xymonlaunch normally detaches from the controlling tty and runs as a
 background task. This option keeps it running in the foreground.
 

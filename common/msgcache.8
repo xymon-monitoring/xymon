@@ -39,39 +39,39 @@ This means that the automatic client update facility will
 not work for clients communicating via msgcache.
 
 .SH OPTIONS
-.IP "--listen=IPADDRESS[:PORT]"
+.IP "\fB--listen=IPADDRESS[:PORT]\fR"
 Defines the IP-address and portnumber where msgcache listens for 
 incoming connections. By default, msgcache listens for connections
 on all network interfaces, port 1984.
 
-.IP "--server=IPADDRESS[,IPADDRESS]"
+.IP "\fB--server=IPADDRESS[,IPADDRESS]\fR"
 Restricts which servers are allowed to pick up the cached messages.
 By default anyone can contact the msgcache utility and request all
 of the cached messages. This option allows only the listed servers
 to request the cached messages.
 
-.IP "--max-age=N"
+.IP "\fB--max-age=N\fR"
 Defines how long cached messages are kept. If the message has not 
 been picked up with N seconds after being delivered to msgcache,
 it is silently discarded. Default: N=600 seconds (10 minutes).
 
-.IP "--daemon"
+.IP "\fB--daemon\fR"
 Run as a daemon, i.e. msgcache will detach from the terminal and
 run as a background task
 
-.IP "--no-daemon"
+.IP "\fB--no-daemon\fR"
 Run as a foreground task. This option must be used when msgcache
 is started by
 .I xymonlaunch(8)
 which is the normal way of running msgcache.
 
-.IP "--pidfile=FILENAME"
+.IP "\fB--pidfile=FILENAME\fR"
 Store the process ID of the msgcache task in FILENAME.
 
-.IP "--logfile=FILENAME"
+.IP "\fB--logfile=FILENAME\fR"
 Log msgcache output to FILENAME.
 
-.IP "--debug"
+.IP "\fB--debug\fR"
 Enable debugging output.
 
 .SH "SEE ALSO"
