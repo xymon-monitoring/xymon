@@ -109,8 +109,8 @@ modified or pushed:
 ./build/dryrelease.sh 9.9.9
 ```
 
-Run it twice: the checksum must be identical. Requires `man2html`
-(`apt-get install man2html`).
+Run it twice: the checksum must be identical. Requires `mandoc`
+(`apt-get install mandoc`).
 
 ## Invariants — don't break these
 
@@ -122,8 +122,9 @@ Run it twice: the checksum must be identical. Requires `man2html`
   upgrades distinguish "untouched old file" from "locally modified by
   the admin". `generate-md5.sh` folds the old `md5.dat` in on purpose;
   regenerating it from scratch would break upgrade detection.
-- **The prep job is pinned to `ubuntu-24.04`**, because `man2html`
-  output differs between versions and would churn the generated HTML.
+- **The prep job is pinned to `ubuntu-24.04`**, because the manual page
+  converter's output differs between versions and would churn the
+  generated HTML.
 - **The prep scripts are fail-fast** (`set -euo pipefail` throughout,
   digest checks in `generate-md5.sh`). A half-failed generation aborts
   the workflow before anything is committed or pushed; keep it that way

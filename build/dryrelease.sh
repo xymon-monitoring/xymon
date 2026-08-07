@@ -11,10 +11,10 @@ set -euo pipefail
 # Run it twice: the printed sha256 must be identical both times. That is
 # the reproducibility guarantee, verified on your machine.
 #
-# Requires man2html (Debian/Ubuntu: apt-get install man2html). Note that
-# man2html output differs between versions, so the HTML generated locally
-# may differ from CI's — the tarball checksum is only comparable between
-# runs on the same machine.
+# Requires mandoc (Debian/Ubuntu: apt-get install mandoc). Note that mandoc
+# output differs between versions, so the HTML generated locally may differ
+# from CI's - the tarball checksum is only comparable between runs on the
+# same machine.
 
 VERSION="${1:-}"
 OUTDIR="${2:-/tmp}"
@@ -28,8 +28,8 @@ fi
 mkdir -p "$OUTDIR"
 OUTDIR=$(cd "$OUTDIR" && pwd)
 
-command -v man2html >/dev/null || {
-	echo "man2html is required (apt-get install man2html)" >&2
+command -v mandoc >/dev/null || {
+	echo "mandoc is required (apt-get install mandoc)" >&2
 	exit 1
 }
 

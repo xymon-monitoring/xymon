@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   prep:
-    runs-on: ubuntu-24.04   # pinned: man2html output is version-sensitive (see #52)
+    runs-on: ubuntu-24.04   # pinned: the converter's output is version-sensitive (see #52)
     steps:
       - name: Validate version
         shell: bash
@@ -48,10 +48,10 @@ jobs:
             exit 1
           fi
 #---------------------------------------------------
-      - name: Install man2html
+      - name: Install mandoc
         run: |
           sudo apt-get update
-          sudo apt-get install -y man2html
+          sudo apt-get install -y mandoc
 #---------------------------------------------------
       - name: Configure git identity
         run: |
