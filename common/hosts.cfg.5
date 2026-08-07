@@ -148,7 +148,10 @@ The holiday set matters wherever a time-specification is matched against
 the current time, such as alert rules, analysis.cfg thresholds and
 \fBDOWNTIME\fR windows, because on a holiday the day is treated as a
 different weekday. Which one is set by HOLIDAYLIKEWEEKDAY in
-holidays.cfg; the default is Sunday.
+holidays.cfg. Xymon's default holidays.cfg sets HOLIDAYLIKEWEEKDAY=0,
+so holidays are treated as Sundays. If the setting is omitted or set
+to -1, the actual weekday is used and holidays have no effect on time
+specifications.
 
 If this tag is not present, the set named by the HOLIDAYS setting in
 .I xymonserver.cfg(5)
