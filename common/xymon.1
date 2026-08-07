@@ -398,6 +398,15 @@ normal client data.
 Retrieves the current raw client message last sent by HOSTNAME. The optional
 "section" filter is used to select specific sections of the client data.
 
+.IP "\fBhostdatasave HOSTNAME [MINUTES]\fR"
+Requests that the next client message received from HOSTNAME be sent to the
+hostdata worker for storage. The request expires after 30 minutes unless the
+optional MINUTES value specifies another lifetime between 1 and 1440 minutes.
+It is held in memory and consumed by the next client message only; dropping or
+renaming the host, or restarting xymond, cancels it. Cached client messages must
+be enabled, and the hostdata worker must be running. The hostdata worker's
+normal recent-save limits apply.
+
 .IP "\fBping\fR"
 Attempts to contact the Xymon server. If successful, the Xymon server version ID
 is reported.
