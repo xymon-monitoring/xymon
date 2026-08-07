@@ -112,3 +112,68 @@ jobs:
             exit 1
           fi
           exit "$rc"
+
+  # The 69 HTML manual pages under docs/manpages/ are generated from the roff
+  # sources and committed alongside them, and nothing ever checked that the two
+  # agree. They drifted for seven years: the last full regeneration is the
+  # 4.3.30 release of September 2019 - all 69 pages still carry its two
+  # generation timestamps, one second apart - while the sources changed eleven
+  # times since. The pages that did follow were patched by hand, keeping that
+  # 2019 footer, and eleven others were simply left behind.
+  #
+  # That was rational while regenerating cost 69 files: man2html restamped
+  # every footer from the clock, so a one-line fix produced a 69-file diff.
+  # mandoc is reproducible and makehtml.sh now takes a single page, so the
+  # correct gesture is finally cheaper than the wrong one - and this job is
+  # what keeps it that way.
+  #
+  # It fails rather than warns, but it uploads what it generated: a contributor
+  # without mandoc downloads the artifact instead of installing anything.
+  manpages:
+    name: manual pages match their sources
+    runs-on: ubuntu-24.04   # pinned: the converter's output is version-sensitive (see #52)
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # python3 as well as mandoc: makehtml.sh pipes through
+      # build/manpage-html.py. The runner image happens to carry python3, but
+      # relying on that leaves the dependency invisible until an image change
+      # removes it.
+      - name: Install the documentation toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mandoc python3
+
+      - name: Regenerate and compare
+        run: |
+          set -euo pipefail
+          before=$(mktemp -d)
+          cp -R docs/manpages/. "$before/"
+          ./build/makehtml.sh
+          if diff -ru "$before" docs/manpages >/tmp/manpages.diff; then
+            echo "docs/manpages is up to date with the roff sources"
+            exit 0
+          fi
+          {
+            echo "The committed HTML does not match what the sources produce."
+            echo
+            echo "Regenerate the pages you changed, and commit them:"
+            echo
+            echo "    build/makehtml.sh common/hosts.cfg.5"
+            echo
+            echo "Or take them from the manpages-regenerated artifact of this run,"
+            echo "which needs neither mandoc nor python3 on your machine."
+            echo
+            sed -n '1,200p' /tmp/manpages.diff
+          } >&2
+          echo "::error::docs/manpages is out of date - see the job log and the manpages-regenerated artifact"
+          exit 1
+
+      - name: Upload the regenerated pages
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manpages-regenerated
+          path: docs/manpages/
