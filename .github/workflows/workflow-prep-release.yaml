@@ -42,7 +42,7 @@ jobs:
           VERSION: ${{ github.event.inputs.version }}
         run: |
           set -euo pipefail
-          # checkout@v6 fetches tags with fetch-depth: 0, so this is authoritative.
+          # checkout@v7 fetches tags with fetch-depth: 0, so this is authoritative.
           if git rev-parse --verify --quiet "refs/tags/rel-$VERSION" >/dev/null; then
             echo "Tag rel-$VERSION already exists; refusing to prep an already-released version." >&2
             exit 1
