@@ -138,7 +138,7 @@ effect immediately, without any delay.
 .IP "\fBdelayyellow\fR=\fISTATUSCOLUMN\fR:\fIDELAY\fR[,\fISTATUSCOLUMN\fR:\fIDELAY\fR...]"
 Same as \fBdelayred\fR, but defers the change to a yellow status.
 
-.IP holidays=SET
+.IP "\fBholidays\fR=\fISET\fR"
 Selects which set of holidays applies to this host. Holiday sets are the
 named sections of the holidays.cfg file, so \fBholidays=us\fR selects the
 "[us]" set. Holidays listed before any named section are common to all
@@ -157,8 +157,8 @@ If this tag is not present, the set named by the HOLIDAYS setting in
 .I xymonserver.cfg(5)
 is used. If that is unset too, only the common holidays apply.
 
-.IP NOTBEFORE:YYYYMMDDHHMM
-.IP NOTAFTER:YYYYMMDDHHMM
+.IP "\fBNOTBEFORE:\fR\fIYYYYMMDDHHMM\fR"
+.IP "\fBNOTAFTER:\fR\fIYYYYMMDDHHMM\fR"
 Limit the period in which this host definition is active, so that a host
 can be scheduled in or out of monitoring without editing hosts.cfg.
 Outside the period the host is treated as if it were not listed in
