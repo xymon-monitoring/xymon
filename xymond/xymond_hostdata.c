@@ -184,6 +184,7 @@ int main(int argc, char *argv[])
 			savetimes_t *itm;
 			int i, recentcount;
 			time_t now = gettimer();
+			time_t cutoff;
 			char hostdir[PATH_MAX];
 			char fn[PATH_MAX];
 			FILE *fd;
@@ -199,8 +200,15 @@ int main(int argc, char *argv[])
 				xtreeAdd(savetimes, itm->hostname, itm);
 			}
 
-			/* See how many times we've saved the hostdata recently (within the past 'recentperiod' seconds) */
-			for (i=0, recentcount=0; ((i < 12) && (itm->tstamp[i] > (now - recentperiod))); i++) recentcount++;
+			/*
+			 * See how many times we've saved the hostdata recently (within the past 'recentperiod' seconds).
+			 * Floor the cutoff at 0: gettimer() is monotonic (seconds since boot), so
+			 * a never-saved host's calloc'ed zero tstamps would otherwise count as
+			 * recent saves whenever uptime is below 'recentperiod', and all client
+			 * data would be dropped unlogged until the machine has been up that long.
+			 */
+			cutoff = (now > recentperiod) ? (now - recentperiod) : 0;
+			for (i=0, recentcount=0; ((i < 12) && (itm->tstamp[i] > cutoff)); i++) recentcount++;
 			/* If it's been saved less than 'maxrecentcount' times, then save it. Otherwise just drop it */
 			if (!logdirfull && (recentcount < maxrecentcount)) {
 				int written, closestatus, ok = 1;
