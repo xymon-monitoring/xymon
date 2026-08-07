@@ -88,8 +88,15 @@ def add_index(html):
         for i, t in heads)
     block = ('<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">'
              'Index</a></h1>\n<dl class="Bl-tag">\n' + items + '\n</dl>\n')
-    return html.replace('</div>\n<table class="foot"',
-                        block + '</div>\n<table class="foot"', 1)
+    # The insertion point is the footer table, which rewrite_footer() replaces
+    # later in main(). Run these two in the other order and str.replace finds
+    # nothing, drops the index from every page and says so to no one - so say
+    # it here instead of returning the document unchanged.
+    anchor = '</div>\n<table class="foot"'
+    if anchor not in html:
+        sys.exit("manpage-html: no footer table to insert the index before - "
+                 "has rewrite_footer() already run?")
+    return html.replace(anchor, block + anchor, 1)
 
 
 def rewrite_banner(html):
@@ -180,6 +187,19 @@ def rename_anchors(html):
 
 
 def main():
+    # Called by makehtml.sh before the pipeline starts, to check that this
+    # script runs at all - see the comment there.
+    if "--selftest" in sys.argv[1:]:
+        return
+
+    # makehtml.sh exports LC_ALL=C, and under a C locale Python decodes stdin
+    # as ASCII up to 3.6; 3.7 promotes it to UTF-8 (PEP 538/540). The pages are
+    # ASCII today, so nothing breaks either way - but the first accented
+    # character in a manual page would fail with a traceback on the older
+    # interpreter. Say what the encoding is instead of inheriting it.
+    sys.stdin.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
+
     known = set(sys.argv[1:])
     html = sys.stdin.read()
     html = linkify(html, known)

@@ -7,10 +7,17 @@
 #
 # The second form exists so that editing one manual page does not mean
 # rewriting all 69 HTML files, which buries the real change in the diff.
+set -euo pipefail
 
-export LANG=C
-DATE=`date +"%e %b %Y" --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}"`
-VERSION="$1"
+# LC_ALL, not LANG: LANG=C is overridden by any LC_* the caller has set.
+export LC_ALL=C
+if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+	DATE=$(date -u -d "@$SOURCE_DATE_EPOCH" +"%e %b %Y" 2>/dev/null) \
+		|| DATE=$(date -u -r "$SOURCE_DATE_EPOCH" +"%e %b %Y")
+else
+	DATE=$(date +"%e %b %Y")
+fi
+VERSION="${1:-}"
 if [ "$VERSION" = "" ]
 then
 	echo "Usage: $0 VERSION [manpage-source ...]"
@@ -26,6 +33,14 @@ then
 	echo "$0: $POST is missing or not executable" >&2
 	exit 1
 fi
+# The post-processor is Python, and being executable does not mean its
+# interpreter is installed: without one the shebang fails inside the pipeline,
+# after the output file has already been truncated, leaving a 0-byte page and
+# a bare "command not found". Refuse first, the way mandoc is refused.
+"$POST" --selftest </dev/null >/dev/null 2>&1 || {
+	echo "$0: cannot run $POST - is python3 installed?" >&2
+	exit 1
+}
 command -v mandoc >/dev/null 2>&1 || {
 	echo "$0: mandoc is not installed (Debian/Ubuntu: mandoc, RHEL: mandoc)" >&2
 	exit 1
@@ -83,8 +98,11 @@ then
 	done
 else
 	# Everything. Clear the output first, so that a page removed from the
-	# sources does not leave its HTML behind.
-	rm -f docs/*~ docs/manpages/index.html* \
+	# sources does not leave its HTML behind. Only the output: the list used
+	# to start with docs/manpages/index.html, which this script has never
+	# written - it is the hand-kept docs/man-index.html, put there by
+	# docs/Makefile at install time.
+	rm -f docs/*~ \
 	      docs/manpages/man1/* docs/manpages/man5/* \
 	      docs/manpages/man7/* docs/manpages/man8/*
 
