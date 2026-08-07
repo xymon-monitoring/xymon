@@ -25,14 +25,14 @@ with the "\-\-critical" option it returns data from the "Critical systems" page.
 The output is an XML document with the current status of the selected hosts/services.
 
 .SH OPTIONS
-.IP "\fB\-\-env=FILENAME\fR"
+.IP "\fB\-\-env\fR=\fIFILENAME\fR"
 Loads the environment from FILENAME before executing the CGI.
 
 .IP "\fB\-\-critical[=FILENAME]\fR"
 FILENAME specifies the "Critical Systems" configuration file (default: critical.cfg).
 appfeed.cgi will only return the statuses currently on the "Critical Systems" view.
 
-.IP "\fB\-\-access=FILENAME\fR"
+.IP "\fB\-\-access\fR=\fIFILENAME\fR"
 In addition to the filtering done by the "filter" parameter or the "\-\-critical" option,
 this option limits the output to hosts that the user has access to as defined in the
 Apache-compatible group-definitions in FILENAME. See

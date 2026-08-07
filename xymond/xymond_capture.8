@@ -17,17 +17,17 @@ xymond_capture supports the \fBstatus\fR, \fBdata\fR, \fBclient\fR and
 \fBhostdata\fR channels.
 
 .SH OPTIONS
-.IP "\fB\-\-hosts=PATTERN\fR"
+.IP "\fB\-\-hosts\fR=\fIPATTERN\fR"
 Select messages only from hosts matching PATTERN (regular expression).
 
-.IP "\fB\-\-exhosts=PATTERN\fR"
+.IP "\fB\-\-exhosts\fR=\fIPATTERN\fR"
 Exclude messages from hosts matching PATTERN. If used with the \-\-hosts option, 
 then the hostname must match the \-\-hosts pattern, but NOT the \-\-exhosts pattern.
 
-.IP "\fB\-\-tests=PATTERN\fR"
+.IP "\fB\-\-tests\fR=\fIPATTERN\fR"
 Select messages only from tests matching PATTERN (regular expression).
 
-.IP "\fB\-\-extests=PATTERN\fR"
+.IP "\fB\-\-extests\fR=\fIPATTERN\fR"
 Exclude messages from tests matching PATTERN. If used with the \-\-tests option, 
 then the testname must match the \-\-tests pattern, but NOT the \-\-extests pattern.
 
@@ -35,11 +35,11 @@ then the testname must match the \-\-tests pattern, but NOT the \-\-extests patt
 Select messages based on the color of the status message. Multiple colors can be 
 listed, separated by comma. Default: Accept all colors.
 
-.IP "\fB\-\-batch\-command=COMMAND\fR"
+.IP "\fB\-\-batch\-command\fR=\fICOMMAND\fR"
 Instead of printing the messages to stdout, feed them to COMMAND on stdin. COMMAND
 can be any command which accepts the mssage on standard input.
 
-.IP "\fB\-\-batch\-timeout=SECONDS\fR"
+.IP "\fB\-\-batch\-timeout\fR=\fISECONDS\fR"
 Collect messages until no messages have arrived in SECONDS seconds, before sending
 them to the \-\-batch\-command COMMAND.
 

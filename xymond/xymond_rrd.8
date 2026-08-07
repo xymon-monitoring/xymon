@@ -30,7 +30,7 @@ See the COMPATIBILITY section below.
 .IP "\fB\-\-debug\fR"
 Enable debugging output.
 
-.IP "\fB\-\-rrddir=DIRECTORY\fR"
+.IP "\fB\-\-rrddir\fR=\fIDIRECTORY\fR"
 Defines the directory where the RRD-files are stored. xymond_rrd
 will use the location pointed to by the XYMONRRDS environment if this
 option is not present.
@@ -42,7 +42,7 @@ a 30 minute period before being committed to disk in one update.
 This option disables caching of the data, so that data is stored
 on disk immediately.
 
-.IP "\fB\-\-processor=FILENAME\fR"
+.IP "\fB\-\-processor\fR=\fIFILENAME\fR"
 xymond_rrd can send a parallel copy of all RRD updates to a single
 external process as a stream on its STDIN. The data will be in a 
 format similar to that used by rrdupdate(1):
@@ -51,7 +51,7 @@ format similar to that used by rrdupdate(1):
 If the process exits, xymond_rrd will re-launch it.
 
 
-.IP "\fB\-\-extra\-script=FILENAME\fR"
+.IP "\fB\-\-extra\-script\fR=\fIFILENAME\fR"
 Defines the script that is run to get the RRD data for tests that are not
 built into xymond_rrd. You must also specify which tests are handled
 by the external script in the \fB\-\-extra\-tests\fR option. This option

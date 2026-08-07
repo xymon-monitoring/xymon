@@ -50,7 +50,7 @@ By default anyone can contact the msgcache utility and request all
 of the cached messages. This option allows only the listed servers
 to request the cached messages.
 
-.IP "\fB--max-age=N\fR"
+.IP "\fB--max-age\fR=\fIN\fR"
 Defines how long cached messages are kept. If the message has not 
 been picked up with N seconds after being delivered to msgcache,
 it is silently discarded. Default: N=600 seconds (10 minutes).
@@ -65,10 +65,10 @@ is started by
 .I xymonlaunch(8)
 which is the normal way of running msgcache.
 
-.IP "\fB--pidfile=FILENAME\fR"
+.IP "\fB--pidfile\fR=\fIFILENAME\fR"
 Store the process ID of the msgcache task in FILENAME.
 
-.IP "\fB--logfile=FILENAME\fR"
+.IP "\fB--logfile\fR=\fIFILENAME\fR"
 Log msgcache output to FILENAME.
 
 .IP "\fB--debug\fR"

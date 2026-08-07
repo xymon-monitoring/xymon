@@ -53,21 +53,21 @@ an "action=view" invocation of showgraph.cgi.
 .IP "\fBaction=view\fR"
 Generate a single graph image.
 .SH OPTIONS
-.IP "\fB\-\-config=FILENAME\fR"
+.IP "\fB\-\-config\fR=\fIFILENAME\fR"
 Loads the graph configuration file from FILENAME. If not specified,
 the file $XYMONHOME/etc/graphs.cfg is used. See the
 .I graphs.cfg(5)
 for details about this file.
 
-.IP "\fB\-\-env=FILENAME\fR"
+.IP "\fB\-\-env\fR=\fIFILENAME\fR"
 Loads the environment settings defined in FILENAME before executing
 the CGI.
 
-.IP "\fB\-\-rrddir=DIRECTORY\fR"
+.IP "\fB\-\-rrddir\fR=\fIDIRECTORY\fR"
 The top-level directory for the RRD files. If not specified, the
 directory given by the XYMONRRDS environment is used.
 
-.IP "\fB\-\-save=FILENAME\fR"
+.IP "\fB\-\-save\fR=\fIFILENAME\fR"
 Instead of returning the image via the CGI interface (i.e. on stdout),
 save the generated image to FILENAME.
 

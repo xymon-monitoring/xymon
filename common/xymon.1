@@ -25,7 +25,7 @@ When sending the status messages via HTTP, use this server
 as an HTTP proxy instead of connecting directly to the Xymon
 server.
 
-.IP "\fB\-\-timeout=N\fR"
+.IP "\fB\-\-timeout\fR=\fIN\fR"
 Specifies the timeout for connecting to the Xymon server, in
 seconds. The default is 5 seconds.
 
@@ -249,36 +249,36 @@ XMH_ filters when possible, before globally filtering with COLOR, *MSG,
 You can filter on, for example, both a hostname and a testname.
 
 .sp
-.IP "\fBpage=PAGEPATH\fR"
+.IP "\fBpage\fR=\fIPAGEPATH\fR"
 Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
 file.
-.IP "\fBnet=NETWORK\fR"
+.IP "\fBnet\fR=\fINETWORK\fR"
 Include only tests from hosts with this NET: tag
 .BR ip=IP Address
 Include only tests from hosts with this IP address. This is a regex, not CIDR.
 .sp
-.IP "\fBhost=HOSTNAME\fR"
+.IP "\fBhost\fR=\fIHOSTNAME\fR"
 Include only tests from the host HOSTNAME
-.IP "\fBtest=TESTNAME\fR"
+.IP "\fBtest\fR=\fITESTNAME\fR"
 Include only tests with the testname TESTNAME
-.IP "\fBcolor=COLORNAME\fR"
+.IP "\fBcolor\fR=\fICOLORNAME\fR"
 Include only tests where the status color is COLORNAME
-.IP "\fBtag=TAGNAME\fR"
+.IP "\fBtag\fR=\fITAGNAME\fR"
 Include only hosts with a certain tag specified in the hosts.cfg(5) line.
 Note that only items known to xymon components are included here; arbitrary
 text is not included
-.IP "\fBXMH_string=VALUE\fR"
+.IP "\fBXMH_string\fR=\fIVALUE\fR"
 Include only hosts with a xymon-xmh(5) variable matching this value
 
 Advanced Filtering
 .sp
-.IP "\fBmsg=MESSAGE\fR"
+.IP "\fBmsg\fR=\fIMESSAGE\fR"
 Include only tests with full content matching MESSAGE. Use "\es" to escape 
 spaces (or other PCRE strings)
-.IP "\fBackmsg=MESSAGE\fR"
+.IP "\fBackmsg\fR=\fIMESSAGE\fR"
 Include only tests with acknowledgement(s) MESSAGE. Use "\es" to escape 
 spaces (or other PCRE strings)
-.IP "\fBdismsg=MESSAGE\fR"
+.IP "\fBdismsg\fR=\fIMESSAGE\fR"
 Include only tests that have been disabled with strings matching MESSAGE. 
 Use "\es" to escape spaces (or other PCRE strings). (It is most efficient
 to pair this with color=blue.)

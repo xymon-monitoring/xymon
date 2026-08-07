@@ -20,13 +20,13 @@ each component of the Xymon system, instead of getting output
 from all components logged to a single file.
 
 .SH OPTIONS
-.IP "\fB--env=FILENAME\fR"
+.IP "\fB--env\fR=\fIFILENAME\fR"
 Loads the environment from FILENAME before starting other tools.
 The environment defined by FILENAME is the default, it can be
 overridden by the ENVFILE option in 
 .I tasks.cfg(5)
 
-.IP "\fB--config=FILENAME\fR"
+.IP "\fB--config\fR=\fIFILENAME\fR"
 This option defines the file that xymonlaunch scans for tasks it
 must launch. A description of this file is in 
 .I tasks.cfg(5)
@@ -34,13 +34,13 @@ If not specified, files at /etc/tasks.cfg, /etc/xymon/tasks.cfg,
 and /etc/xymon-client/clientlaunch.cfg are searched for, as
 well as ~/server/etc/tasks.cfg.
 
-.IP "\fB--log=FILENAME\fR"
+.IP "\fB--log\fR=\fIFILENAME\fR"
 Defines the logfile where xymonlaunch logs information about
 failures to launch tasks and other data about the operation of
 xymonlaunch. Logs from individual tasks are defined in the tasks.cfg
 file. By default this is logged to stdout.
 
-.IP "\fB--pidfile=FILENAME\fR"
+.IP "\fB--pidfile\fR=\fIFILENAME\fR"
 Filename which xymonlaunch saves its own process-ID to. Commonly used by
 automated start/stop scripts.
 

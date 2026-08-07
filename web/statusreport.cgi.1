@@ -28,7 +28,7 @@ from a web browser through a URL referencing the script in the
 Xymon CGI directory (e.g. "/xymon\-cgi/xymon\-nongreen.sh").
 
 .SH OPTIONS
-.IP "\fB\-\-column=COLUMNNAME\fR"
+.IP "\fB\-\-column\fR=\fICOLUMNNAME\fR"
 Report the status of the COLUMNNAME column.
 
 .IP "\fB\-\-all\fR"
@@ -37,13 +37,13 @@ this tool reports only on the hosts found on the current page
 from where the CGI was invoked (by looking at the "pagepath"
 cookie).
 
-.IP "\fB\-\-filter=CRITERIA\fR"
+.IP "\fB\-\-filter\fR=\fICRITERIA\fR"
 Only report on statuses that match the CRITERIA setting. See the
 .I xymon(1)
 man-page - in the "xymondboard" command description - for 
 details about specifying filters.
 
-.IP "\fB\-\-heading=HTML\fR"
+.IP "\fB\-\-heading\fR=\fIHTML\fR"
 Defines the webpage heading - i.e. the "title" tag in the generated
 HTML code.
 
@@ -76,10 +76,10 @@ Include HTML links to the host "info" page, and the status page.
 Only generate the HTML table, not a full webpage. This can be used
 to embed the status report into an external webpage.
 
-.IP "\fB\-\-env=FILENAME\fR"
+.IP "\fB\-\-env\fR=\fIFILENAME\fR"
 Load the environment from FILENAME before executing the CGI.
 
-.IP "\fB\-\-area=NAME\fR"
+.IP "\fB\-\-area\fR=\fINAME\fR"
 Load environment variables for a specific area. NB: if used,
 this option must appear before any \-\-env=FILENAME option.
 

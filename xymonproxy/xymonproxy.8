@@ -52,7 +52,7 @@ connections. By default, xymonproxy listens on all IP-addresses
 assigned to the host. If no portnumber is given, port 1984
 will be used.
 
-.IP "\fB\-\-timeout=N\fR"
+.IP "\fB\-\-timeout\fR=\fIN\fR"
 Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
 
@@ -66,7 +66,7 @@ is the $MACHINE environment variable, i.e. the hostname of the
 server running xymonproxy. See REPORT OUTPUT below for an 
 explanation of the report contents.
 
-.IP "\fB\-\-lqueue=N\fR"
+.IP "\fB\-\-lqueue\fR=\fIN\fR"
 Size of the listen-queue where incoming connections can
 queue up before being processed. This should be large to
 accommodate bursts of activity from clients. Default: 512.
@@ -78,11 +78,11 @@ This is the default.
 .IP "\fB\-\-no\-daemon\fR"
 Runs xymonproxy as a foreground process.
 
-.IP "\fB\-\-pidfile=FILENAME\fR"
+.IP "\fB\-\-pidfile\fR=\fIFILENAME\fR"
 Specifies the location of a file containing the process-ID 
 of the xymonproxy daemon process. Default: /var/run/xymonproxy.pid.
 
-.IP "\fB\-\-logfile=FILENAME\fR"
+.IP "\fB\-\-logfile\fR=\fIFILENAME\fR"
 Sends all logging output to the specified file instead of stderr.
 
 .IP "\fB\-\-log\-details\fR"

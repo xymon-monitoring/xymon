@@ -13,21 +13,21 @@ channel via stdin, and uses these to update the history logfiles in a manner
 that is compatible with the standard Big Brother daemon, bbd.
 
 .SH OPTIONS
-.IP "\fB\-\-histdir=DIRECTORY\fR"
+.IP "\fB\-\-histdir\fR=\fIDIRECTORY\fR"
 The directory for the history files. If not specified, the
 directory given by the XYMONHISTDIR environment is used.
 
-.IP "\fB\-\-histlogdir=DIRECTORY\fR"
+.IP "\fB\-\-histlogdir\fR=\fIDIRECTORY\fR"
 The directory for the historical status-logs. If not specified, the
 directory given by the XYMONHISTLOGS environment is used.
 
-.IP "\fB\-\-minimum\-free=N\fR"
+.IP "\fB\-\-minimum\-free\fR=\fIN\fR"
 Sets the minimum percentage of free filesystem space on the $XYMONHISTLOGS
 directory. If there is less than N% free space, xymond_history will
 not save the detailed status-logs.
 Default: 5
 
-.IP "\fB\-\-pidfile=FILENAME\fR"
+.IP "\fB\-\-pidfile\fR=\fIFILENAME\fR"
 xymond_history writes the process-ID it is running with to this file.
 This is for use in automated startup scripts. The default file is
 $XYMONSERVERLOGS/xymond_history.pid.

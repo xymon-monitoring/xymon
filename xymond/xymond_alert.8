@@ -18,7 +18,7 @@ file. This file holds the definition of rules and recipients,
 that determine who gets alerts, how often, for what servers etc.
 
 .SH OPTIONS
-.IP "\fB\-\-config=FILENAME\fR"
+.IP "\fB\-\-config\fR=\fIFILENAME\fR"
 Sets the filename for the 
 .I alerts.cfg
 file. The default value is "etc/alerts.cfg" below the Xymon
@@ -28,12 +28,12 @@ server directory.
 Dumps the configuration after parsing it. May be useful to track
 down problems with configuration file errors.
 
-.IP "\fB\-\-checkpoint\-file=FILENAME\fR"
+.IP "\fB\-\-checkpoint\-file\fR=\fIFILENAME\fR"
 File where the current state of the xymond_alert module is saved. 
 When starting up, xymond_alert will also read this file to restore
 the previous state.
 
-.IP "\fB\-\-checkpoint\-interval=N\fR"
+.IP "\fB\-\-checkpoint\-interval\fR=\fIN\fR"
 Defines how often (in seconds) the checkpoint-file is saved.
 
 .IP "\fB\-\-cfid\fR"
@@ -64,7 +64,7 @@ The TIMESTRING parameter is the time-of-day for the alert, expressed as an
 absolute time in the epoch format (seconds since Jan 1 1970). This is
 easily obtained with the GNU date utility using the "+%s" output format.
 
-.IP "\fB\-\-trace=FILENAME\fR"
+.IP "\fB\-\-trace\fR=\fIFILENAME\fR"
 Send trace output to FILENAME, This allows for more detailed
 analysis of how alerts trigger, without having the full debugging
 enabled.

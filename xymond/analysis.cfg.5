@@ -297,17 +297,17 @@ For files, you can check one or more of the following:
 triggers a warning if the file exists. By default,
 a warning is triggered for files that have a FILE entry, but
 which do not exist.
-.IP "\fBtype=TYPE\fR"
+.IP "\fBtype\fR=\fITYPE\fR"
 where TYPE is one of "file", "dir", "char", "block",
 "fifo", or "socket". Triggers warning if the file is not of the
 specified type.
-.IP "\fBownerid=OWNER\fR"
+.IP "\fBownerid\fR=\fIOWNER\fR"
 triggers a warning if the owner does not match what is listed here.
 OWNER is specified either with the numeric uid, or the user name.
-.IP "\fBgroupid=GROUP\fR"
+.IP "\fBgroupid\fR=\fIGROUP\fR"
 triggers a warning if the group does not match what is listed here.
 GROUP is specified either with the numeric gid, or the group name.
-.IP "\fBmode=MODE\fR"
+.IP "\fBmode\fR=\fIMODE\fR"
 triggers a warning if the file permissions are not
 as listed. MODE is written in the standard octal notation, e.g.
 "644" for the rw\-r\-\-r\-\- permissions.
@@ -323,7 +323,7 @@ checks how long ago the file was last modified (in seconds). E.g.
 to check if a file was updated within the past 10 minutes (600 
 seconds): \fBmtime<600\fR. Or to check that a file has NOT been updated 
 in the past 24 hours: \fBmtime>86400\fR.
-.IP "\fBmtime=TIMESTAMP\fR"
+.IP "\fBmtime\fR=\fITIMESTAMP\fR"
 checks if a file was last modified at TIMESTAMP.  TIMESTAMP is a unix epoch 
 time (seconds since midnight Jan 1 1970 UTC).
 .IP "ctime>MIN.CTIME, ctime<MAX.CTIME, ctime=TIMESTAMP"

@@ -39,12 +39,12 @@ Provide a summary of available command-line options.
 .IP "\fB\-\-version\fR"
 Prints the version number of xymongen
 .sp
-.IP "\fB\-\-docurl=URL\fR"
+.IP "\fB\-\-docurl\fR=\fIURL\fR"
 This option is deprecated, use the HOSTDOCURL setting in
 .I xymonserver.cfg(5)
 instead.
 .sp
-.IP "\fB\-\-doccgi=URL\fR"
+.IP "\fB\-\-doccgi\fR=\fIURL\fR"
 This option is deprecated, use the HOSTDOCURL setting in
 .I xymonserver.cfg(5)
 instead.
@@ -79,20 +79,20 @@ page is inserted.
 The XYMONSUBPAGEHTACCESS variable may contain two "%s" instances: The first is
 replaced with the pagename, the second with the subpagename.
 .sp
-.IP "\fB\-\-max\-eventcount=N\fR"
+.IP "\fB\-\-max\-eventcount\fR=\fIN\fR"
 Limit the eventlog on the "All non-green" page to only N events. Default: 100.
 .sp
-.IP "\fB\-\-max\-eventtime=N\fR"
+.IP "\fB\-\-max\-eventtime\fR=\fIN\fR"
 Limit the eventlog on the "All non-green" page to events that happened within
 the past N minutes. Default: 240.
 .sp
 .IP "\fB\-\-no\-eventlog\fR"
 Disable the eventlog normally displayed on the "All non-green" page
 .sp
-.IP "\fB\-\-max\-ackcount=N\fR"
+.IP "\fB\-\-max\-ackcount\fR=\fIN\fR"
 Limit the acknowledgment log on the "All non-green" page to only N events. Default: 25.
 .sp
-.IP "\fB\-\-max\-acktime=N\fR"
+.IP "\fB\-\-max\-acktime\fR=\fIN\fR"
 Limit the acknowledgment log on the "All non-green" page to acks that happened within
 the past N minutes. Default: 240.
 .sp
@@ -128,11 +128,11 @@ Put page- and subpage-links before hosts (default).
 These two options decide whether a page with links to subpages and hosts 
 have the hosts or the subpages first.
 .sp
-.IP "\fB\-\-subpagecolumns=N\fR"
+.IP "\fB\-\-subpagecolumns\fR=\fIN\fR"
 Determines the number of columns used for links to pages 
 and subpages. The default is N=1.
 .sp
-.IP "\fB\-\-maxrows=N\fR"
+.IP "\fB\-\-maxrows\fR=\fIN\fR"
 Column headings on a page are by default only shown at the beginning
 of a page, subpage or group of hosts. This options causes the column
 headings to repeat for every N hosts shown.
@@ -173,14 +173,14 @@ listed in alphabetical order, use this option - the page will then generate
 "group-only" groups like it generates normal groups, and sort the tests
 alphabetically.
 .sp
-.IP "\fB\-\-dialupskin=URL\fR"
+.IP "\fB\-\-dialupskin\fR=\fIURL\fR"
 If you want to visually show that a test is a dialup-test, you can use
 an alternate set of icons for the green/red/yellow>/etc. images by
 specifying this option. The URL parameter specified here overrides the
 normal setting from the XYMONSKIN environment variable, but only for dialup
 tests.
 .sp
-.IP "\fB\-\-reverseskin=URL\fR"
+.IP "\fB\-\-reverseskin\fR=\fIURL\fR"
 Same as "\-\-dialupskin", but for reverse tests (tests with '!' in front).
 .sp
 .IP "\fB\-\-tooltips=[always,never,main]\fR"
@@ -265,16 +265,16 @@ Purple statuses occur when reporting of a test status stops.
 A test status is valid for a limited amount of time - normally
 30 minutes - and after this time, the test becomes purple.
 .sp
-.IP "\fB\-\-purplelog=FILENAME\fR"
+.IP "\fB\-\-purplelog\fR=\fIFILENAME\fR"
 Generate a logfile of all purple status messages.
 
 .SH ALTERNATE PAGESET OPTIONS
 .sp
-.IP "\fB\-\-pageset=PAGESETNAME\fR"
+.IP "\fB\-\-pageset\fR=\fIPAGESETNAME\fR"
 Build webpages for an alternate pageset than the default. See
 the PAGESETS section below.
 .sp
-.IP "\fB\-\-template=TEMPLATE\fR"
+.IP "\fB\-\-template\fR=\fITEMPLATE\fR"
 Use an alternate template for header and footer files. Typically used
 together the the "\-\-pageset" option; see the PAGESETS section below.
 
@@ -290,7 +290,7 @@ tags in the
 .I hosts.cfg(5)
 file. If no tests are specified, all tests will be included.
 .sp
-.IP "\fB\-\-nstab=FILENAME\fR"
+.IP "\fB\-\-nstab\fR=\fIFILENAME\fR"
 Generate an HTML file suitable for a Netscape 6/Mozilla sidebar
 entry. To actually enable your users to obtain such a sidebar
 entry, you need this Javascript code in a webpage (e.g. you can
@@ -336,7 +336,7 @@ http://developer.netscape.com/docs/manuals/browser/sidebar/add\-button.gif.
 If FILENAME does not begin with a slash, the Netscape sidebar file
 is placed in the $XYMONHOME/www/ directory.
 
-.IP "\fB\-\-nslimit=COLOR\fR"
+.IP "\fB\-\-nslimit\fR=\fICOLOR\fR"
 The minimum color to include in the Netscape Sidebar - default is "red",
 meaning only critical alerts are included. If you want to include
 warnings also, use "\-\-nslimit=yellow".
@@ -365,7 +365,7 @@ The desired output format of the RSS/RDF feed. Version 0.91 appears to
 be the most commonly used format, and is the default if this option is
 omitted.
 .sp
-.IP "\fB\-\-rsslimit=COLOR\fR"
+.IP "\fB\-\-rsslimit\fR=\fICOLOR\fR"
 The minimum color to include in the RSS feed - default is "red",
 meaning only critical alerts are included. If you want to include
 warnings also, use "\-\-rsslimit=yellow".
@@ -383,7 +383,7 @@ the report; DYNAMIC is 0 for a pre-built report and 1 for a dynamic
 events, "nongr" to include all non-green events, and "all" to
 include all events.
 .sp
-.IP "\fB\-\-csv=FILENAME\fR"
+.IP "\fB\-\-csv\fR=\fIFILENAME\fR"
 Used together with \-\-reportopts, this causes xymongen to generate an
 availability report in the form of a comma-separated values (CSV) file.
 This format is commonly used for importing into spreadsheets for further
@@ -395,7 +395,7 @@ you have the Unix timestamp in the cell C2) can be used. The result cell
 should be formatted as a date/time field. Note that the timestamps are in 
 UTC, so you may also need to handle local timezone and DST issues yourself.
 .sp
-.IP "\fB\-\-csvdelim=DELIMITER\fR"
+.IP "\fB\-\-csvdelim\fR=\fIDELIMITER\fR"
 By default, a comma is used to delimit fields in the CSV output. Some
 non-english spreadsheets use a different delimiter, typically semi-colon.
 To generate a CSV file with the proper delimiter, you can use this option
@@ -403,7 +403,7 @@ to set the character used as delimiter. E.g. "\-\-csvdelim=;" - note that
 this normally should be in double quotes, to prevent the Unix shell from
 interpreting the delimiter character as a command-line delimiter.
 .sp
-.IP "\fB\-\-snapshot=TIME\fR"
+.IP "\fB\-\-snapshot\fR=\fITIME\fR"
 Generate a snapshot of the Xymon pages, as they appeared at
 TIME. TIME is given as seconds since Jan 1st 1970 00:00 UTC. Normally
 used via the

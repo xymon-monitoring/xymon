@@ -20,7 +20,7 @@ will use the configuration rules defined in the
 file to determine the color of each status message.
 
 .SH OPTIONS
-.IP "\fB\-\-clear\-color=COLOR\fR"
+.IP "\fB\-\-clear\-color\fR=\fICOLOR\fR"
 Define the color used when sending "msgs", "files" or "ports" reports
 and there are no rules to check for these statuses. The default is
 to show a "clear" status, but some people prefer to have it "green".
@@ -65,7 +65,7 @@ separate status column for the uptime, you can use this option. It
 is useful if you want to generate an alert in case of a reboot, 
 without having this alert mixed in with the cpu load alerts.
 
-.IP "\fB\-\-config=FILENAME\fR"
+.IP "\fB\-\-config\fR=\fIFILENAME\fR"
 Sets the filename for the 
 .I analysis.cfg
 file. The default value is "etc/analysis.cfg" below the Xymon

@@ -685,7 +685,7 @@ alarm (red) status. These default to the values from the
 tool; the values specified in the "ssldays" tag overrides
 the default.
 
-.IP "\fBsslbits=MINIMUMKEYBITS\fR"
+.IP "\fBsslbits\fR=\fIMINIMUMKEYBITS\fR"
 Enable checking of the encryption strength of the SSL protocol
 offered by the server. If the server offers encryption using
 a key with fewer than MINIMUMKEYBITS bits, the "sslcert"
@@ -1268,7 +1268,7 @@ that was requested, and the HTML data returned by the server.
 You can hide the HTML data on a per-host (not per-test) basis 
 by adding the \fBHIDEHTTP\fR tag to the host entry.
 
-.IP "\fBcontent=URL\fR"
+.IP "\fBcontent\fR=\fIURL\fR"
 This syntax is deprecated. You should use the "cont"
 tag instead, see above.
 
@@ -1385,7 +1385,7 @@ Content checks by default only search the HTML body returned by
 the webserver. This option causes it to also search the HTTP 
 headers for the string that must / must not be present.
 
-.IP "\fBbrowser=BROWSERNAME\fR"
+.IP "\fBbrowser\fR=\fIBROWSERNAME\fR"
 By default, Xymon sends an HTTP "User\-Agent" header identifying
 it a "Xymon". Some websites require that you use a specific
 browser, typically Internet Explorer. To cater for testing of
@@ -1400,7 +1400,7 @@ URL "javascript:document.writeln(navigator.userAgent)" (just copy this
 into the "Open URL" dialog. The text that shows up is what the browser
 sends as the User\-Agent header.
 
-.IP "\fBhttphdr=STRING\fR"
+.IP "\fBhttphdr\fR=\fISTRING\fR"
 Xymon can be send additional headers when performing HTTP checks, to
 allow for validation of any custom configurations needed for your
 site. Note that this is a host-wide configuration. The string will

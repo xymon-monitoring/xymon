@@ -51,7 +51,7 @@ then only those servers are tested.
 
 .SH GENERAL OPTIONS
 
-.IP "\fB\-\-timeout=N\fR"
+.IP "\fB\-\-timeout\fR=\fIN\fR"
 Determines the timeout (in seconds) for each
 service that is tested. For TCP tests (those from XYMONNETSVCS),
 if the connection to the service does not succeed within N 
@@ -61,18 +61,18 @@ to the webserver (the time needed to connect to the server,
 plus the time it takes the server to respond to the request).
 Default: 10 seconds
 
-.IP "\fB\-\-conntimeout=N\fR"
+.IP "\fB\-\-conntimeout\fR=\fIN\fR"
 This option is deprecated, and will be ignored. Use the
 \-\-timeout option instead.
 
-.IP "\fB\-\-cmdtimeout=N\fR"
+.IP "\fB\-\-cmdtimeout\fR=\fIN\fR"
 This option sets a timeout for the external commands used by the RPC and
 traceroute tests and by the external NTP backends (ntpdate/sntp). The
 built-in NTP probe is not governed by it: the probe bounds itself with a
 short, fixed retransmission budget (a few attempts), so it can never hang
 and does not need an external kill timer.
 
-.IP "\fB\-\-concurrency=N\fR"
+.IP "\fB\-\-concurrency\fR=\fIN\fR"
 Determines the number of network tests that
 run in parallel. Default is operating system dependent,
 but will usually be 256. If xymonnet begins to complain 
@@ -88,7 +88,7 @@ an error.
 Note: If you use the \-\-no\-ares option, timeout of DNS
 lookups cannot be controlled by xymonnet.
 
-.IP "\fB\-\-dns\-max\-all=N\fR"
+.IP "\fB\-\-dns\-max\-all\fR=\fIN\fR"
 Same as "\-\-dns\-timeout=N". The "\-\-dns\-max\-all" option is 
 deprecated and should not be used.
 
@@ -125,7 +125,7 @@ DNS or NIS server is down, xymonnet can take a very long time
 to run. The \-\-dns\-timeout option is effectively disabled when
 using this option.
 
-.IP "\fB\-\-dnslog=FILENAME\fR"
+.IP "\fB\-\-dnslog\fR=\fIFILENAME\fR"
 Log failed hostname lookups to the file FILENAME. FILENAME should 
 be a full pathname.
 
@@ -146,14 +146,14 @@ With this option, hosts with no NET: tag are included
 in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 
-.IP "\fB\-\-frequenttestlimit=N\fR"
+.IP "\fB\-\-frequenttestlimit\fR=\fIN\fR"
 Used with the
 .I xymonnet\-again.sh(1)
 Xymon extension. This option determines how long failed tests
 remain in the frequent-test queue. The default is 1800
 seconds (30 minutes).
 
-.IP "\fB\-\-timelimit=N\fR"
+.IP "\fB\-\-timelimit\fR=\fIN\fR"
 Causes xymonnet to generate a warning if the run-time
 of xymonnet exceeds N seconds. By default N is set to
 the value of TASKSLEEP, so a warning triggers if the
@@ -163,7 +163,7 @@ option has no effect, i.e. it will not terminate xymonnet
 prematurely. So to eliminate any such warnings, use this
 option with a very high value of N.
 
-.IP "\fB\-\-huge=N\fR"
+.IP "\fB\-\-huge\fR=\fIN\fR"
 Warn if the response from a TCP test is more than N bytes.
 If you see from the xymonnet status report that you are
 transferring large amounts of data for your tests, you can
@@ -171,14 +171,14 @@ enable this option to see which tests have large replies.
 .br
 Default: 0 (disabled).
 
-.IP "\fB\-\-validity=N\fR"
+.IP "\fB\-\-validity\fR=\fIN\fR"
 Make the test results valid for N minutes before they go purple. 
 By default test results are valid for 30 minutes; if you run xymonnet
 less often than that, the results will go purple before the next run
 of xymonnet. This option lets you change how long the status is 
 valid.
 
-.IP "\fB\-\-source\-ip=IPADDRESS\fR"
+.IP "\fB\-\-source\-ip\fR=\fIIPADDRESS\fR"
 On multi-homed hosts, this option can be used to explicitly
 select the source IP address used for the network tests.
 "IPADDRESS" must be a valid IP-address on the host running
@@ -260,7 +260,7 @@ the default becomes to run traceroute on all hosts where
 the ping test fails; you can then disable it on specific 
 hosts by putting a "notrace" tag on the host-entry.
 
-.IP "\fB\-\-ping\-tasks=N\fR"
+.IP "\fB\-\-ping\-tasks\fR=\fIN\fR"
 Spread the task of pinging the hosts over N processes. If you have
 a very large number of hosts the time it takes to ping all of them 
 can be substantial, even with the use of tools like fping or xymonping
@@ -270,7 +270,7 @@ be divided evenly between these processes.
 
 
 .SH OPTIONS FOR HTTP (WEB) TESTS
-.IP "\fB\-\-content=CONTENTTESTNAME\fR"
+.IP "\fB\-\-content\fR=\fICONTENTTESTNAME\fR"
 Determines the name of the column Xymon displays for content checks. 
 The default is "content".  If you have used the "cont.sh" or "cont2.sh" 
 scripts earlier, you may want to use "\-\-content=cont" to report content
@@ -284,19 +284,19 @@ by default since URL's that include other URL's are now much more
 common. This option restores the old Big Brother-compatible behaviour.
 
 .SH OPTIONS FOR SSL CERTIFICATE TESTS
-.IP "\fB\-\-ssl=SSLCERTTESTNAME\fR"
+.IP "\fB\-\-ssl\fR=\fISSLCERTTESTNAME\fR"
 Determines the name of the column Xymon displays for the SSL certificate checks.
 The default is "sslcert".
 .IP "\fB\-\-no\-ssl\fR"
 Disables reporting of the SSL certificate check.
 
-.IP "\fB\-\-sslwarn=N\fR"
-.IP "\fB\-\-sslalarm=N\fR"
+.IP "\fB\-\-sslwarn\fR=\fIN\fR"
+.IP "\fB\-\-sslalarm\fR=\fIN\fR"
 Determines the number of days before an SSL certificate
 expires, where xymonnet will generate a warning or
 alarm status for the SSL certificate column.
 
-.IP "\fB\-\-sslbits=N\fR"
+.IP "\fB\-\-sslbits\fR=\fIN\fR"
 Enables checking that the encryption supported by the
 SSL protocol uses an encryption key of at least N bits.
 E.g. to trigger an alert if your SSL-enabled website 
@@ -305,7 +305,7 @@ Note: This can be enabled on a per-host basis using the
 "sslbits=N" setting in 
 .I hosts.cfg(5)
 
-.IP "\fB\-\-sslkeysize=N\fR"
+.IP "\fB\-\-sslkeysize\fR=\fIN\fR"
 Enables checking of the length of the public key in SSL certificates.
 N is the minimum size of the SSL public key, typically such keys
 are 2048 bits, but some older certificates may use keys with 1024 bits
