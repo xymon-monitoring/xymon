@@ -12,5 +12,5 @@ fi
 mv build/md5.dat.new build/md5.dat
 
 ./build/updmanver "$VERSION"
-./build/makehtml.sh "$VERSION"
+./build/makehtml.sh --version "$VERSION"
 
