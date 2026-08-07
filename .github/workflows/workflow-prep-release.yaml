@@ -48,10 +48,13 @@ jobs:
             exit 1
           fi
 #---------------------------------------------------
-      - name: Install mandoc
+      # python3 as well as mandoc: dorelease.sh runs makehtml.sh, which pipes
+      # through build/manpage-html.py. The hosted runners happen to ship
+      # python3, but the release path should not depend on that.
+      - name: Install mandoc and python3
         run: |
           sudo apt-get update
-          sudo apt-get install -y mandoc
+          sudo apt-get install -y mandoc python3
 #---------------------------------------------------
       - name: Configure git identity
         run: |
