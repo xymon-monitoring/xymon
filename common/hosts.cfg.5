@@ -138,6 +138,39 @@ effect immediately, without any delay.
 .IP delayyellow=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]
 Same as \fBdelayred\fR, but defers the change to a yellow status.
 
+.IP holidays=SET
+Selects which set of holidays applies to this host. Holiday sets are the
+named sections of the holidays.cfg file, so \fBholidays=us\fR selects the
+"[us]" set. Holidays listed before any named section are common to all
+sets and always apply as well.
+
+The holiday set matters wherever a time-specification is matched against
+the current time, such as alert rules, analysis.cfg thresholds and
+\fBDOWNTIME\fR windows, because on a holiday the day is treated as a
+different weekday. Which one is set by HOLIDAYLIKEWEEKDAY in
+holidays.cfg. Xymon's default holidays.cfg sets HOLIDAYLIKEWEEKDAY=0,
+so holidays are treated as Sundays. If the setting is omitted or set
+to -1, the actual weekday is used and holidays have no effect on time
+specifications.
+
+If this tag is not present, the set named by the HOLIDAYS setting in
+.I xymonserver.cfg(5)
+is used. If that is unset too, only the common holidays apply.
+
+.IP NOTBEFORE:YYYYMMDDHHMM
+.IP NOTAFTER:YYYYMMDDHHMM
+Limit the period in which this host definition is active, so that a host
+can be scheduled in or out of monitoring without editing hosts.cfg.
+Outside the period the host is treated as if it were not listed in
+hosts.cfg: it is left off the generated web pages, and xymond treats
+status messages about it as coming from an unknown host.
+
+The timestamp is exactly 12 digits - year, month, day, hour and minute -
+in local time. A value of any other length is reported in the log file
+and otherwise ignored. Either tag can be used on its own: \fBNOTBEFORE\fR
+without \fBNOTAFTER\fR has no end, and \fBNOTAFTER\fR without
+\fBNOTBEFORE\fR has no beginning.
+
 
 .SH XYMONGEN DISPLAY OPTIONS
 These tags are processed by the 
