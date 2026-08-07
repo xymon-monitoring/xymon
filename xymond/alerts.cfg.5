@@ -138,10 +138,10 @@ For example, place an UNMATCHED recipient after more specific rules to provide a
 .IP
 .nf
 HOST=database.example.com SERVICE=cpu
-	MAIL database-team@example.com
+\&	MAIL database-team@example.com
 .PP
 HOST=%.*
-	MAIL operations@example.com UNMATCHED
+\&	MAIL operations@example.com UNMATCHED
 .fi
 .LP
 The operations recipient is used only when an earlier recipient did not receive the alert, so recipient order is significant.

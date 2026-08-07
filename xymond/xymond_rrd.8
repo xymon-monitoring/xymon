@@ -399,23 +399,23 @@ FNAME="$3"
 
 if [ "$TESTNAME" = "weather" ]
 then
-	# Analyze the message we got
-	TEMP=`grep "^Temperature:" $FNAME | awk '{print $2}'`
-	WIND=`grep "^Wind:" $FNAME | awk '{print $2}'`
-	HMTY=`grep "^Humidity:" $FNAME | awk '{print $2}'`
-	RAIN=`grep "^Rainfall:" $FNAME | awk '{print $2}'`
+\&	# Analyze the message we got
+\&	TEMP=`grep "^Temperature:" $FNAME | awk '{print $2}'`
+\&	WIND=`grep "^Wind:" $FNAME | awk '{print $2}'`
+\&	HMTY=`grep "^Humidity:" $FNAME | awk '{print $2}'`
+\&	RAIN=`grep "^Rainfall:" $FNAME | awk '{print $2}'`
 
-	# The RRD dataset definitions
-	echo "DS:temperature:GAUGE:600:\-30:50"
-	echo "DS:wind:GAUGE:600:0:U"
-	echo "DS:humidity:GAUGE:600:0:100"
-	echo "DS:rainfall:DERIVE:600:0:100"
+\&	# The RRD dataset definitions
+\&	echo "DS:temperature:GAUGE:600:\-30:50"
+\&	echo "DS:wind:GAUGE:600:0:U"
+\&	echo "DS:humidity:GAUGE:600:0:100"
+\&	echo "DS:rainfall:DERIVE:600:0:100"
 
-	# The filename
-	echo "weather.rrd"
+\&	# The filename
+\&	echo "weather.rrd"
 
-	# The data
-	echo "$TEMP:$WIND:$HMTY:$RAIN"
+\&	# The data
+\&	echo "$TEMP:$WIND:$HMTY:$RAIN"
 fi
 
 exit 0
