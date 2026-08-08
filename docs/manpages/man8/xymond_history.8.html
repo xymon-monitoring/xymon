@@ -41,34 +41,38 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
 <dl class="Bl-tag">
   <dt id="histdir"><a class="permalink" href="#histdir"><b>--histdir</b>=<i>DIRECTORY</i></a></dt>
   <dd>The directory for the history files. If not specified, the directory given
-      by the XYMONHISTDIR environment is used.
+      by the XYMONHISTDIR environment is used. An empty directory name produces
+      an error and prevents xymond_history from starting.
     <p class="Pp"></p>
   </dd>
   <dt id="histlogdir"><a class="permalink" href="#histlogdir"><b>--histlogdir</b>=<i>DIRECTORY</i></a></dt>
   <dd>The directory for the historical status-logs. If not specified, the
-      directory given by the XYMONHISTLOGS environment is used.
+      directory given by the XYMONHISTLOGS environment is used. An empty
+      directory name produces an error and prevents xymond_history from
+      starting.
     <p class="Pp"></p>
   </dd>
   <dt id="minimum-free"><a class="permalink" href="#minimum-free"><b>--minimum-free</b>=<i>N</i></a></dt>
   <dd>Sets the minimum percentage of free filesystem space on the $XYMONHISTLOGS
       directory. If there is less than N% free space, xymond_history will not
       save the detailed status-logs. N is a percentage between 0 and 100; 0
-      disables the free-space check. The value must be a plain integer; anything
-      else (including a &quot;%&quot; suffix) falls back to the default.
-      Out-of-range values are clamped. Default: 5
+      disables the free-space check. The value must be a plain integer; invalid
+      or negative values produce a warning and use the default of 5. Values
+      above 100 produce a warning and are capped at 100.
     <p class="Pp"></p>
   </dd>
   <dt id="pidfile"><a class="permalink" href="#pidfile"><b>--pidfile</b>=<i>FILENAME</i></a></dt>
   <dd>xymond_history writes the process-ID it is running with to this file. This
       is for use in automated startup scripts. The default file is
-      $XYMONSERVERLOGS/xymond_history.pid.
+      $XYMONSERVERLOGS/xymond_history.pid. An empty filename produces an error
+      and prevents xymond_history from starting.
     <p class="Pp"></p>
   </dd>
   <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
-  <dd>Enable debugging output.
-    <p class="Pp"></p>
-  </dd>
+  <dd>Enable debugging output.</dd>
 </dl>
+<p class="Pp">Unknown options produce a warning and are ignored.</p>
+<p class="Pp"></p>
 </section>
 <section class="Sh">
 <p>&#160;</p>

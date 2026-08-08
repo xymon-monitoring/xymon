@@ -59,13 +59,33 @@ typedef struct columndef_t {
 } columndef_t;
 void * columndefs;
 
+static int parse_minimum_free(char *arg)
+{
+	char *value = strchr(arg, '=') + 1;
+	char *endp;
+	long result;
+
+	errno = 0;
+	result = strtol(value, &endp, 10);
+	if ((endp == value) || (*endp != '\0') || (result < 0)) {
+		errprintf("%s is invalid (must be 0 through 100), using default %d\n", arg, DEFAULT_MINLOGSPACE);
+		return DEFAULT_MINLOGSPACE;
+	}
+	if ((errno == ERANGE) || (result > 100)) {
+		errprintf("%s is too large, capping at 100\n", arg);
+		return 100;
+	}
+
+	return (int)result;
+}
+
 int main(int argc, char *argv[])
 {
 	time_t starttime = gettimer();
 	char *histdir = NULL;
 	char *histlogdir = NULL;
 	char *msg;
-	int argi, seq;
+	int argi, seq, pathlen;
 	int save_allevents = 1;
 	int save_hostevents = 1;
 	int save_statusevents = 1;
@@ -76,11 +96,10 @@ int main(int argc, char *argv[])
 	char newcol2[3];
 	char oldcol2[3];
 	char alleventsfn[PATH_MAX];
-	char pidfn[PATH_MAX];
+	char *pidfile = NULL;
 	int logdirfull = 0;
 	int minlogspace = DEFAULT_MINLOGSPACE;
 
-	MEMDEFINE(pidfn);
 	MEMDEFINE(alleventsfn);
 	MEMDEFINE(newcol2);
 	MEMDEFINE(oldcol2);
@@ -88,7 +107,6 @@ int main(int argc, char *argv[])
 	/* Don't save the error buffer */
 	save_errbuf = 0;
 
-	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
 	if (xgetenv("XYMONALLHISTLOG")) save_allevents = (strcmp(xgetenv("XYMONALLHISTLOG"), "TRUE") == 0);
 	if (xgetenv("XYMONHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("XYMONHOSTHISTLOG"), "TRUE") == 0);
 	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strncmp(xgetenv("SAVESTATUSLOG"), "FALSE", 5) != 0);
@@ -101,22 +119,29 @@ int main(int argc, char *argv[])
 			histlogdir = strchr(argv[argi], '=')+1;
 		}
 		else if (argnmatch(argv[argi], "--pidfile=")) {
-			strcpy(pidfn, strchr(argv[argi], '=')+1);
+			char *value = strchr(argv[argi], '=')+1;
+			if (*value == '\0') {
+				errprintf("Pidfile path cannot be empty\n");
+				return 1;
+			}
+			if (pidfile != NULL) xfree(pidfile);
+			pidfile = strdup(value);
 		}
 		else if (argnmatch(argv[argi], "--minimum-free=")) {
-			/* Percent of filesystem space; 0 disables the check, and
-			 * negatives clamp to it (they also disabled it with atoi). */
-			minlogspace = parse_int_opt(argv[argi], 0, 100, DEFAULT_MINLOGSPACE);
+			minlogspace = parse_minimum_free(argv[argi]);
 		}
-		else if (argnmatch(argv[argi], "--debug")) {
+		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else {
+			errprintf("Unknown option '%s' - ignored\n", argv[argi]);
 		}
 	}
 
 	if (xgetenv("XYMONHISTDIR") && (histdir == NULL)) {
 		histdir = strdup(xgetenv("XYMONHISTDIR"));
 	}
-	if (histdir == NULL) {
+	if ((histdir == NULL) || (*histdir == '\0')) {
 		errprintf("No history directory given, aborting\n");
 		return 1;
 	}
@@ -124,9 +149,18 @@ int main(int argc, char *argv[])
 	if (save_histlogs && (histlogdir == NULL) && xgetenv("XYMONHISTLOGS")) {
 		histlogdir = strdup(xgetenv("XYMONHISTLOGS"));
 	}
-	if (save_histlogs && (histlogdir == NULL)) {
+	if (save_histlogs && ((histlogdir == NULL) || (*histlogdir == '\0'))) {
 		errprintf("No history-log directory given, aborting\n");
 		return 1;
+	}
+	if (!save_histlogs && (histlogdir != NULL) && (*histlogdir == '\0')) {
+		errprintf("History-log directory cannot be empty\n");
+		return 1;
+	}
+	if (pidfile == NULL) {
+		char *logdir = xgetenv("XYMONSERVERLOGS");
+		pidfile = (char *)malloc(strlen(logdir) + sizeof("/xymond_history.pid"));
+		sprintf(pidfile, "%s/xymond_history.pid", logdir);
 	}
 
 	columndefs = xtreeNew(strcmp);
@@ -162,14 +196,21 @@ int main(int argc, char *argv[])
 	}
 
 	{
-		FILE *pidfd = fopen(pidfn, "w");
+		FILE *pidfd = fopen(pidfile, "w");
 		if (pidfd) {
 			fprintf(pidfd, "%lu\n", (unsigned long)getpid());
 			fclose(pidfd);
 		}
+		else {
+			errprintf("Cannot open PID file: %s\n", strerror(errno));
+		}
 	}
 
-	sprintf(alleventsfn, "%s/allevents", histdir);
+	pathlen = snprintf(alleventsfn, sizeof(alleventsfn), "%s/allevents", histdir);
+	if ((pathlen < 0) || (pathlen >= (int)sizeof(alleventsfn))) {
+		errprintf("History directory path is too long\n");
+		return 1;
+	}
 	if (save_allevents) {
 		alleventsfd = fopen(alleventsfn, "a");
 		if (alleventsfd == NULL) {
@@ -815,10 +856,10 @@ int main(int argc, char *argv[])
 	MEMUNDEFINE(newcol2);
 	MEMUNDEFINE(oldcol2);
 	MEMUNDEFINE(alleventsfn);
-	MEMUNDEFINE(pidfn);
 
 	fclose(alleventsfd);
-	unlink(pidfn);
+	unlink(pidfile);
+	xfree(pidfile);
 
 	return 0;
 }
