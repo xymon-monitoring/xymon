@@ -20,10 +20,18 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -P -tnonfs,kernfs,procfs,cd9660,null | sed -e '/^[^ 	][^ 	]*$/{
+df -P -tnonfs,kernfs,procfs,cd9660,null,ptyfs | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+echo "[inode]"
+df -i -tnonfs,kernfs,procfs,cd9660,null,ptyfs | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}' | awk '
+NR == 1 { print "Filesystem itotal iused ifree %iused Mounted on"; next }
+{ printf "%s %d %d %d %s %s\n", $1, $6+$7, $6, $7, $8, $9 }
+'
 echo "[mount]"
 mount
 echo "[meminfo]"
