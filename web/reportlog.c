@@ -18,7 +18,6 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <libgen.h>
 
 #include "libxymon.h"
 
@@ -55,23 +54,18 @@ static void parse_query(void)
 		 */
 
 		if (strcasecmp(cwalk->name, "HOSTSVC") == 0) {
-			char *p = cwalk->value + strspn(cwalk->value, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:,.\\/_-");
-			*p = '\0';
-
-			p = strrchr(cwalk->value, '.');
-			if (p) { *p = '\0'; service = strdup(p+1); }
-			hostname = strdup(basename(cwalk->value));
-			while ((p = strchr(hostname, ','))) *p = '.';
+			cgi_split_hostsvc(cwalk->value, &hostname, &service);
 		}
 		else if (strcasecmp(cwalk->name, "HOST") == 0) {
-			char *p = cwalk->value + strspn(cwalk->value, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:,._-");
-			*p = '\0';
-			hostname = strdup(basename(cwalk->value));
+			/* Verbatim spelling (replogurl() emits the raw name, no
+			 * comma-encoding). Reject the whole value on anything but
+			 * a single legal component, like svcstatus -- do not
+			 * truncate and serve a prefix ("web bar" must not become
+			 * the "web" report). */
+			hostname = cgi_pathcomponent(cwalk->value, 0);
 		}
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
-			char *p = cwalk->value + strspn(cwalk->value, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:\\/_-");
-			*p = '\0';
-			service = strdup(basename(cwalk->value));
+			service = cgi_pathcomponent(cwalk->value, 0);
 		}
 		else if (strcasecmp(cwalk->name, "REPORTTIME") == 0) {
 			SBUF_MALLOC(reporttime, strlen(cwalk->value)+strlen("REPORTTIME=")+1);
@@ -138,6 +132,10 @@ int main(int argc, char *argv[])
 
 	cgidata = cgi_request();
 	parse_query();
+
+	/* NULL = absent or rejected (not a single path component). */
+	if (!hostname || !service) errormsg("Invalid request");
+
 	load_hostinfo(hostname);
         if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");

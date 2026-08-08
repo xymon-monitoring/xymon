@@ -17,7 +17,6 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <libgen.h>
 
 #include "libxymon.h"
 
@@ -605,13 +604,7 @@ static void parse_query(void)
 		 */
 
 		if (strcasecmp(cwalk->name, "HISTFILE") == 0) {
-			char *p = cwalk->value + strspn(cwalk->value, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:,.\\/_-");
-			*p = '\0';
-
-			p = strrchr(cwalk->value, '.');
-			if (p) { *p = '\0'; service = strdup(p+1); }
-			hostname = strdup(basename(cwalk->value));
-			while ((p = strchr(hostname, ','))) *p = '.';
+			cgi_split_hostsvc(cwalk->value, &hostname, &service);
 		}
 		else if (strcasecmp(cwalk->name, "IP") == 0) {
 			ip = strdup(cwalk->value);
@@ -639,7 +632,9 @@ static void parse_query(void)
 		cwalk = cwalk->next;
 	}
 
-	if (!displayname) displayname = strdup(hostname);
+	/* hostname is NULL when HISTFILE was rejected; main() refuses the
+	 * request just below, but this runs first -- don't strdup(NULL). */
+	if (!displayname) displayname = strdup(hostname ? hostname : "");
 }
 
 
@@ -673,6 +668,14 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 	cgidata = cgi_request();
 	parse_query();
+
+	/*
+	 * Refuse an absent, empty or rejected component. hostname/service
+	 * start as "" (the globals above), and cgi_split_hostsvc() leaves
+	 * service untouched for a dotless HISTFILE, so check emptiness too,
+	 * not just NULL -- both spellings must reach the refusal.
+	 */
+	if (!hostname || !*hostname || !service || !*service) errormsg("Invalid request");
 
 	SBUF_MALLOC(selfurl, 4096);
 
@@ -758,7 +761,13 @@ int main(int argc, char *argv[])
 	else {
 		SBUF_DEFINE(tailcmd);
 
-		/* Last 50 entries - we cheat and use "tail" in a pipe to pick the entries */
+		/* Last 50 entries - we cheat and use "tail" in a pipe to pick the entries.
+		 * histlogfn is passed unquoted to the shell here, so it MUST stay free of
+		 * shell metacharacters: hostname and service both come from the strict
+		 * cgi_split_hostsvc()/cgi_pathcomponent() confinement (CGI_NAMECHARS has
+		 * no ';','|','`','$',space,...) and XYMONHISTDIR is admin config. Do not
+		 * loosen the service confinement to a free-form set without also fixing
+		 * this call (it would reopen shell injection). */
 		fclose(fd);
 		SBUF_MALLOC(tailcmd, 1024 + strlen(histlogfn));
 
