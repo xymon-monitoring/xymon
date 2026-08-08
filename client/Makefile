@@ -27,7 +27,7 @@ COMMONTOOLS=xymon xymoncmd xymongrep xymoncfg xymondigest
 all: $(PROGRAMS) $(COMMONTOOLS) xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS)
 
 xymonclient.cfg: xymonclient.cfg.DIST
-	cat xymonclient.cfg.DIST | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >xymonclient.cfg
+	cat xymonclient.cfg.DIST | sed -e 's!@XYMONTOPDIR@!$(XYMONTOPDIR)!g' -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' -e 's!@XYMONHOME@!$(XYMONHOME)!g' >xymonclient.cfg
 	../build/bb-commands.sh >>xymonclient.cfg
 
 clientlaunch.cfg: clientlaunch.cfg.DIST

@@ -1,0 +1,26 @@
+## Xymon client policy notes:
+##
+## xymonclient.sh runs under the initrc_t type when started via initscripts.
+# Certain system binaries get a domain transition if they're normally run 
+# more restrictively (eg, ifconfig can only write to certain files).
+# 
+## Allow ifconfig to write out to our tmp file in /var/tmp or /dev/shm
+# 
+
+module xymon-client VERSION;
+
+require {
+	type ifconfig_t;
+	type initrc_state_t;
+	type initrc_tmp_t;
+        type mount_t;
+        type tmpfs_t;
+        type tmp_t;
+	class file { append getattr };
+}
+
+#============= ifconfig_t ==============
+allow ifconfig_t { initrc_state_t initrc_tmp_t tmpfs_t tmp_t }:file { getattr append };
+
+#============= mount_t ==============
+allow mount_t { initrc_state_t }:file append;

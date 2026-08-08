@@ -1,0 +1,54 @@
+## Xymon server/daemon policy notes:
+## 
+## showgraph needs to flush rrd pipes (handled via sendto on the rrdctl sockets, and possibly connectto for rrdcached)
+##	xymond_rrd is unconfined_service_t in EL7, so sendto needs access to files by that
+## ping_t is for fping input/output tmp files
+## Read to var_log_t:file needed for acknowledgements and notifications.cgi's to work
+## httpd_cache_t is for /rep and /snap in /var/cache/xymon/
+##	add write/unlink/rename to httpd_cache_t:file
+##	add read to httpd_cache_t:lnk_file
+##
+## see also: http://fportase.wordpress.com/selinux-policies/nagios-and-rhel-5-xx-and-6-xx-working-with-selinux-enabled/
+##
+
+module xymon VERSION;
+
+require {
+	type var_lib_t;
+	type ping_t;
+	type initrc_t;
+	type tmp_t;
+        type mount_t;
+	type var_log_t;
+	type var_run_t;
+	type httpd_cache_t;
+	type initrc_tmp_t;
+	type initrc_state_t;
+	type initrc_var_run_t;
+	type httpd_sys_script_t;
+	type unconfined_service_t;
+	class unix_dgram_socket sendto;
+	class unix_stream_socket connectto;
+	class sock_file write;
+	class lnk_file { create read };
+	class file { open read write rename getattr append unlink };
+	class file create_file_perms;
+	class dir list_dir_perms;
+	class dir manage_dir_perms;
+}
+
+#============= httpd_sys_script_t ==============
+allow httpd_sys_script_t { var_run_t initrc_var_run_t }:dir list_dir_perms;
+allow httpd_sys_script_t { initrc_var_run_t initrc_t unconfined_service_t }:unix_dgram_socket sendto;
+allow httpd_sys_script_t { initrc_t }:unix_stream_socket connectto;
+allow httpd_sys_script_t initrc_var_run_t:sock_file write;
+allow httpd_sys_script_t httpd_cache_t:dir manage_dir_perms;
+allow httpd_sys_script_t httpd_cache_t:file { create_file_perms write unlink rename };
+allow httpd_sys_script_t httpd_cache_t:lnk_file { create read };
+allow httpd_sys_script_t var_log_t:file { open read };
+
+#============= ping_t ==============
+allow ping_t { tmp_t initrc_tmp_t var_lib_t }:file { getattr write };
+
+#============= mount_t ==============
+allow mount_t { initrc_state_t }:file append;
