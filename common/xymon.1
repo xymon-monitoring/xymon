@@ -404,8 +404,10 @@ hostdata worker for storage. The request expires after 30 minutes unless the
 optional MINUTES value specifies another lifetime between 1 and 1440 minutes.
 It is held in memory and consumed by the next client message only; dropping or
 renaming the host, or restarting xymond, cancels it. Cached client messages must
-be enabled, and the hostdata worker must be running. The hostdata worker's
-normal recent-save limits apply.
+be enabled, and the hostdata worker must be running. The command reports whether
+the request was armed or rejected. Explicitly requested saves bypass the
+hostdata worker's recent-save limit, but its free-space check still applies;
+therefore an armed response does not guarantee that the report reaches disk.
 
 .IP "\fBping\fR"
 Attempts to contact the Xymon server. If successful, the Xymon server version ID
