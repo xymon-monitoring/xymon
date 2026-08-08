@@ -36,24 +36,21 @@ $XYMONHOME/logs
 Directory used for temporary files. Default: $XYMONHOME/tmp/
 
 .IP XYMONCLIENT_FS_INCLUDE_TYPES
-Whitespace-separated Linux filesystem types to include in the
+Whitespace-separated filesystem types to include in the
 client's disk and inode reports even when they are normally excluded
-as pseudo (\fBnodev\fR) filesystems. Types are matched as exact df type
-tokens. Defaults to \fBzfs virtiofs tmpfs\fR \(em real local filesystems
-that merely happen to be flagged nodev. Set to "" to restore the
-historical behaviour of dropping every nodev type. Including remote
-filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+by the operating-system client. Types are matched as exact df type tokens.
+On Linux this defaults to \fBzfs virtiofs tmpfs\fR \(em real local
+filesystems that merely happen to be flagged nodev. On NetBSD it defaults
+to empty and may be used to restore a type from the default exclusion list.
+Including remote filesystems also requires
+XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
 
 .IP XYMONCLIENT_FS_EXCLUDE_TYPES
-Whitespace-separated Linux filesystem types to exclude in addition
-to the default pseudo-filesystem exclusions. Matching is on the exact
-df type token, and nodev types (overlay, fuse, ...) are already excluded
-by default, so an effective entry names a type that is not a nodev
-default \(em a device-backed type, or a specific FUSE subtype such as
-\fBfuse.sshfs\fR that the bare nodev \fBfuse\fR default cannot match.
+Whitespace-separated filesystem types to exclude in addition to the
+operating-system defaults. Matching is on the exact df type token.
 If a type appears in
 both include and exclude settings, exclusion takes precedence.
-Defaults to \fBiso9660 squashfs fuse.snapfuse\fR \(em read-only images
+On Linux this defaults to \fBiso9660 squashfs fuse.snapfuse\fR \(em read-only images
 reported 100% full by design (snaps mount as squashfs, or as
 fuse.snapfuse where snapd falls back to FUSE); none is a nodev type, so
 they must be named here. Set to "" to monitor these too.
@@ -66,6 +63,11 @@ disabled; the explicit XYMONCLIENT_FS_EXCLUDE_TYPES and the local-only
 \fBdf \-l\fR behaviour remain active. The script does not fall back to
 deriving exclusions from mount(8), so it is not a drop-in replacement for
 distro patches (such as Debian's) that do.
+.IP
+On NetBSD, both disk and inode reports exclude
+\fBkernfs procfs cd9660 null ptyfs\fR by default. The explicit exclude
+setting defaults to empty. NetBSD tmpfs is retained because its inode
+counts are memory-derived and can provide a meaningful exhaustion signal.
 
 .IP XYMONCLIENT_FS_DF_LOCAL_ONLY
 Set to \fByes\fR (the default) to pass \fB\-l\fR to df and report
