@@ -399,15 +399,13 @@ Retrieves the current raw client message last sent by HOSTNAME. The optional
 "section" filter is used to select specific sections of the client data.
 
 .IP "\fBhostdatasave HOSTNAME [MINUTES]\fR"
-Requests that the next client message received from HOSTNAME be sent to the
-hostdata worker for storage. The request expires after 30 minutes unless the
-optional MINUTES value specifies another lifetime between 1 and 1440 minutes.
-It is held in memory and consumed by the next client message only; dropping or
-renaming the host, or restarting xymond, cancels it. Cached client messages must
-be enabled, and the hostdata worker must be running. The command reports whether
-the request was armed or rejected. Explicitly requested saves bypass the
-hostdata worker's recent-save limit, but its free-space check still applies;
-therefore an armed response does not guarantee that the report reaches disk.
+Requests storage of the next client message received from HOSTNAME. The request
+expires after 30 minutes, or after MINUTES when specified (1 to 1440), and is
+consumed by the next client message. Pending requests are canceled when the host
+is dropped or renamed, or when xymond restarts. Cached client messages and the
+hostdata worker must be enabled. Requested saves bypass the recent-save limit,
+but still require sufficient free space. The response reports whether the
+request was armed, not whether the message was written to disk.
 
 .IP "\fBping\fR"
 Attempts to contact the Xymon server. If successful, the Xymon server version ID
