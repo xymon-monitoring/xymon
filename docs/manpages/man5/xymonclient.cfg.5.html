@@ -62,53 +62,114 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENT_FS_INCLUDE_TYPES"><a class="permalink" href="#XYMONCLIENT_FS_INCLUDE_TYPES"><b>XYMONCLIENT_FS_INCLUDE_TYPES</b></a></dt>
-  <dd>Whitespace-separated filesystem types to include in the client's disk and
-      inode reports even when they are normally excluded by the operating-system
-      client. Types are matched as exact df type tokens. On Linux this defaults
-      to <b>zfs virtiofs tmpfs</b> &#x2014; real local filesystems that merely
-      happen to be flagged nodev. Set it to &quot;&quot; to restore the
-      historical behavior of dropping every nodev filesystem type. On NetBSD it
-      defaults to empty and may be used to restore a type from the default
-      exclusion list. Including remote filesystems also requires
+  <dd>Whitespace-separated filesystem types to include in the client's disk
+      (and, where supported, inode) reports even when the client's defaults
+      would exclude them. Types are matched as exact df type tokens (on macOS,
+      mount attributes are matched as well). The default exclusions and the
+      mechanism are per-OS, and clients not listed here do not use the variable.
+      Including remote filesystems also requires
       XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+    <br/>
+    On Linux: types normally excluded as pseudo (<b>nodev</b>) filesystems.
+      Defaults to <b>zfs virtiofs tmpfs</b> &#x2014; real local filesystems that
+      merely happen to be flagged nodev. Set to &quot;&quot; to restore the
+      historical behaviour of dropping every nodev type. The noisy tmpfs mounts
+      (/run, /run/lock, /run/user/N) are filtered server-side by the CLASS=linux
+      block in analysis.cfg, not here.
+    <br/>
+    On FreeBSD: names types from the default df exclude set (<b>nullfs</b>
+      <b>cd9660 procfs devfs linprocfs fdescfs autofs</b>, passed to df as one
+      comma-joined <b>-tno&lt;list&gt;</b> argument) to surface again. Empty by
+      default. The inode report additionally drops <b>zfs</b> and <b>tmpfs</b>,
+      whose inode counts carry no signal (zfs has no inode limit; FreeBSD tmpfs
+      reports a constant itotal of 2^31-1); naming them here restores them to
+      the inode report as well.
+    <br/>
+    On NetBSD: names types from the default df exclude set (<b>kernfs</b>
+      <b>procfs cd9660 null ptyfs</b>, passed to df as <b>-tno&lt;list&gt;</b>)
+      to surface again. Empty by default. The <b>ptyfs</b> exclusion is an
+      upgrade-visible change; set XYMONCLIENT_FS_INCLUDE_TYPES=&quot;ptyfs&quot;
+      to report it again. The inode report additionally drops <b>zfs</b> (no
+      fixed inode pool) and rows without usable inode accounting; naming zfs
+      here restores it to the inode report as well. NetBSD tmpfs is kept in both
+      reports &#x2014; its inode counts are memory-derived, so they can signal
+      exhaustion.
+    <br/>
+    On OpenBSD: names types from the default df exclude set (<b>kernfs</b>
+      <b>procfs cd9660</b>, passed to df as <b>-tno&lt;list&gt;</b>) to surface
+      again. Empty by default. The inode report additionally drops rows without
+      usable inode accounting (OpenBSD df -i reports those as itotal 0, not as
+      &quot;-&quot;). OpenBSD tmpfs is kept in both reports, for the same reason
+      as on NetBSD.
+    <br/>
+    On macOS: values are mount attributes as well as types; the defaults drop
+      <b>nobrowse</b> and <b>read-only</b> mounts, and the inode report skips
+      apfs. Empty by default. The &quot;root data&quot; volume &#x2014; the one
+      holding every user file, which Catalina and later flag nobrowse &#x2014;
+      is exempt from those two default drops, so it is still reported; an
+      explicit XYMONCLIENT_FS_EXCLUDE_TYPES entry that matches it (for instance
+      &quot;apfs&quot;) still removes it. Including &quot;nobrowse&quot;
+      switches that default drop off entirely &#x2014; devfs and the autofs map
+      come back too &#x2014; so pair it with
+      XYMONCLIENT_FS_EXCLUDE_TYPES=&quot;devfs autofs&quot;.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENT_FS_EXCLUDE_TYPES"><a class="permalink" href="#XYMONCLIENT_FS_EXCLUDE_TYPES"><b>XYMONCLIENT_FS_EXCLUDE_TYPES</b></a></dt>
-  <dd>Whitespace-separated filesystem types to exclude in addition to the
-      operating-system defaults. Matching is on the exact df type token. If a
-      type appears in both include and exclude settings, exclusion takes
-      precedence. On Linux this defaults to <b>iso9660 squashfs
-      fuse.snapfuse</b> &#x2014; read-only images reported 100% full by design
-      (snaps mount as squashfs, or as fuse.snapfuse where snapd falls back to
-      FUSE); none is a nodev type, so they must be named here. Set to
-      &quot;&quot; to monitor these too. The full default exclusion list is the
-      <b>nodev</b> entries in /proc/filesystems (rootfs is always kept, and the
-      XYMONCLIENT_FS_INCLUDE_TYPES above are kept back), together with the
-      explicit XYMONCLIENT_FS_EXCLUDE_TYPES above. When /proc/filesystems is not
-      readable the dynamic nodev exclusions are disabled; the explicit
-      XYMONCLIENT_FS_EXCLUDE_TYPES and the local-only <b>df -l</b> behaviour
-      remain active. The script does not fall back to deriving exclusions from
-      mount(8), so it is not a drop-in replacement for distro patches (such as
-      Debian's) that do.</dd>
-  <dt></dt>
-  <dd>On NetBSD, both disk and inode reports exclude <b>kernfs procfs cd9660
-      null ptyfs</b> by default. The explicit exclude setting defaults to empty.
-      The <b>ptyfs</b> exclusion is an upgrade-visible change; set
-      XYMONCLIENT_FS_INCLUDE_TYPES=&quot;ptyfs&quot; to report it again. The
-      inode report additionally excludes <b>zfs</b> because it has no fixed
-      inode pool, and drops rows without usable inode accounting. NetBSD tmpfs
-      is retained because its inode counts are memory-derived and can provide a
-      meaningful exhaustion signal.
+  <dd>Whitespace-separated filesystem types (attributes as well, on macOS) to
+      exclude in addition to the client's default exclusions. Matching is on the
+      exact df type token. If a type appears in both include and exclude
+      settings, exclusion takes precedence on every OS.
+    <br/>
+    On Linux: nodev types (overlay, fuse, ...) are already excluded by default,
+      so an effective entry names a type that is not a nodev default &#x2014; a
+      device-backed type, or a specific FUSE subtype such as <b>fuse.sshfs</b>
+      that the bare nodev <b>fuse</b> default cannot match. Defaults to
+      <b>iso9660 squashfs fuse.snapfuse</b> &#x2014; read-only images reported
+      100% full by design (snaps mount as squashfs, or as fuse.snapfuse where
+      snapd falls back to FUSE); none is a nodev type, so they must be named
+      here. Set to &quot;&quot; to monitor these too. The full default exclusion
+      list is the <b>nodev</b> entries in /proc/filesystems (rootfs is always
+      kept, and the XYMONCLIENT_FS_INCLUDE_TYPES above are kept back), together
+      with the explicit XYMONCLIENT_FS_EXCLUDE_TYPES above. When
+      /proc/filesystems is not readable the dynamic nodev exclusions are
+      disabled; the explicit XYMONCLIENT_FS_EXCLUDE_TYPES and the local-only
+      <b>df -l</b> behaviour remain active. The script does not fall back to
+      deriving exclusions from mount(8), so it is not a drop-in replacement for
+      distro patches (such as Debian's) that do.
+    <br/>
+    On FreeBSD: adds types to the <b>df -tno&lt;list&gt;</b> exclude set
+      (default <b>nullfs cd9660 procfs devfs linprocfs fdescfs autofs</b>).
+      Empty by default. tmpfs and mfs are deliberately kept in the disk report
+      &#x2014; RAM-backed capacity is real and fills up &#x2014; so name them
+      here to drop them.
+    <br/>
+    On NetBSD: adds types to the <b>df -tno&lt;list&gt;</b> exclude set (default
+      <b>kernfs procfs cd9660 null ptyfs</b>). Empty by default. tmpfs is kept
+      in both reports, so name it here to drop it.
+    <br/>
+    On OpenBSD: adds types to the <b>df -tno&lt;list&gt;</b> exclude set
+      (default <b>kernfs procfs cd9660</b>). Empty by default. tmpfs is kept in
+      both reports, so name it here to drop it.
+    <br/>
+    On macOS: excludes types or attributes on top of the defaults. Empty by
+      default. It is applied unconditionally, so it wins over both an include
+      entry and the &quot;root data&quot; exemption above. Useful entries
+      include <b>lifs</b> (external FAT/exFAT/NTFS media, mounted through
+      LiveFiles on Ventura and later) and <b>fusefs</b> (macFUSE volumes mounted
+      &quot;-o local&quot;). Beware attributes most mounts carry: excluding
+      &quot;local&quot; drops everything.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENT_FS_DF_LOCAL_ONLY"><a class="permalink" href="#XYMONCLIENT_FS_DF_LOCAL_ONLY"><b>XYMONCLIENT_FS_DF_LOCAL_ONLY</b></a></dt>
   <dd>Set to <b>yes</b> (the default) to pass <b>-l</b> to df and report local
       filesystems only. Set to <b>no</b> to report remote filesystems as well.
-      Invalid values produce a warning and use the safe default. With <b>no</b>,
-      a stale or hard-blocked remote mount can wedge df indefinitely (an
-      uninterruptible D-state wait): the client run never finishes, so the whole
-      host goes purple &#x2014; no data for all metrics, not just disk &#x2014;
-      until the mount recovers or the host reboots.</dd>
+      Invalid values produce a warning and use the safe default. On macOS, where
+      df is invoked per path, the same effect is achieved by keeping only mounts
+      flagged &quot;local&quot; (MNT_LOCAL, what <b>df -l</b> selects
+      elsewhere). With <b>no</b>, a stale or hard-blocked remote mount can wedge
+      df indefinitely (an uninterruptible D-state wait): the client run never
+      finishes, so the whole host goes purple &#x2014; no data for all metrics,
+      not just disk &#x2014; until the mount recovers or the host reboots.</dd>
   <dt></dt>
   <dd>A df that <i>exits</i> non-zero with no output (a real error, not a hang)
       is marked failed (yellow) rather than left empty, so a failed filesystem
