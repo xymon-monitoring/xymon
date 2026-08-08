@@ -32,21 +32,33 @@ ROOT=$(find_root)
 
 # ---- (A) shipped configs still declare their drop-in directory -------------
 #
+# These .DIST files are the shipped config *sources*. A build tree or an
+# installed package may not carry them, so gate the whole section on the
+# source tree being present (xymond/etcfiles). Once it is, every expected
+# declaration MUST be there: a deleted file or a commented-out directive is a
+# regression to catch, not a per-file skip.
+[ -d "$ROOT/xymond/etcfiles" ] || skip "shipped config sources absent (xymond/etcfiles) -- not a source tree"
+
 # name -> shipped file. The directive is "optional directory
 # @XYMONHOME@/etc/<name>.d", except the two configs whose basename already
 # carries .cfg keep it in the directory name (xymonserver.cfg.d,
 # xymonclient.cfg.d) -- so assert per-file on its own expected suffix.
 check_declares() {  # check_declares <file> <expected-dir-suffix>
-	local f=$1 suffix=$2
-	[ -f "$f" ] || { skipped_artefacts="$skipped_artefacts $f"; return; }
-	local want="optional directory @XYMONHOME@/etc/$suffix"
-	assert_contains "$want" "$(cat "$f")" \
-		"shipped $(basename "$f") no longer declares its drop-in directory '$want' (#222)"
-	checked_artefacts=$((checked_artefacts + 1))
+	local f=$1 suffix=$2 re
+	# A sparse checkout (e.g. server-only, no client/) may lack a whole
+	# subtree; only require files whose directory is actually present, so such
+	# a tree skips them rather than failing. Within a present directory the
+	# file MUST exist.
+	[ -d "$(dirname "$f")" ] || return 0
+	assert_file_exists "$f" "shipped config $(basename "$f") is missing (#222)"
+	# Match an ACTIVE, whole-line declaration: a commented "# optional
+	# directory ..." (or a fragment on another line) must not satisfy the
+	# guard. Escape the '.' in the suffix so it stays literal in the ERE --
+	# otherwise "alerts.d" would also match "alertsXd".
+	re=$(printf '%s' "$suffix" | sed 's/[.]/\\./g')
+	grep -qE "^[[:space:]]*optional directory @XYMONHOME@/etc/${re}[[:space:]]*\$" "$f" \
+		|| fail "shipped $(basename "$f") has no active 'optional directory @XYMONHOME@/etc/$suffix' line (#222)"
 }
-
-checked_artefacts=0
-skipped_artefacts=""
 
 check_declares "$ROOT/xymond/etcfiles/alerts.cfg.DIST"          "alerts.d"
 check_declares "$ROOT/xymond/etcfiles/analysis.cfg.DIST"        "analysis.d"
@@ -58,9 +70,6 @@ check_declares "$ROOT/xymond/etcfiles/rrddefinitions.cfg.DIST"  "rrddefinitions.
 check_declares "$ROOT/xymond/etcfiles/xymonserver.cfg.DIST"     "xymonserver.cfg.d"
 check_declares "$ROOT/client/clientlaunch.cfg.DIST"             "clientlaunch.d"
 check_declares "$ROOT/client/xymonclient.cfg.DIST"              "xymonclient.cfg.d"
-
-[ "$checked_artefacts" -gt 0 ] || skip "no shipped .DIST configs present in this checkout"
-[ -z "$skipped_artefacts" ] || echo "note: shipped configs absent, not checked:$skipped_artefacts" >&2
 
 # ---- (B) the directive actually works, via the real stackio reader ---------
 
