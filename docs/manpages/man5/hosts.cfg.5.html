@@ -52,6 +52,18 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     optional. Listing a host with only IP-address and hostname will cause a
     network test to be executed for the host - the connectivity test is enabled
     by default, but no other tests.</p>
+<p class="Pp">The hostname is the host's canonical name: it keys the status
+    database and appears in web-page URLs and RRD file paths. It is reachable
+    through the web interface only when built from the characters <b>A-Z a-z
+    0-9</b> and <b>:</b>.<b>_</b>- (letters, digits, colon, period, underscore
+    and hyphen). A host whose name contains any other character - other
+    punctuation, a literal comma (which the web URLs use to encode a period, so
+    it cannot appear in a name), or a non-ASCII byte - is still monitored, but
+    <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> writes a warning to the Xymon log when it loads the
+    configuration and its status pages are not reachable through the web
+    interface. To show a non-ASCII or otherwise decorated name in the web
+    interface, give the host an ASCII canonical name and carry the display
+    spelling in the <b>NAME:</b> tag (see below).</p>
 <p class="Pp">The optional tags are then used to define which tests are relevant
     for the host, and also to set e.g. the time-interval used for availability
     reporting by <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i></p>
