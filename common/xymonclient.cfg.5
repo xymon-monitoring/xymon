@@ -40,7 +40,9 @@ Whitespace-separated filesystem types to include in the
 client's disk and inode reports even when they are normally excluded
 by the operating-system client. Types are matched as exact df type tokens.
 On Linux this defaults to \fBzfs virtiofs tmpfs\fR \(em real local
-filesystems that merely happen to be flagged nodev. On NetBSD it defaults
+filesystems that merely happen to be flagged nodev. Set it to "" to restore
+the historical behavior of dropping every nodev filesystem type.
+On NetBSD it defaults
 to empty and may be used to restore a type from the default exclusion list.
 Including remote filesystems also requires
 XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
@@ -66,8 +68,12 @@ distro patches (such as Debian's) that do.
 .IP
 On NetBSD, both disk and inode reports exclude
 \fBkernfs procfs cd9660 null ptyfs\fR by default. The explicit exclude
-setting defaults to empty. NetBSD tmpfs is retained because its inode
-counts are memory-derived and can provide a meaningful exhaustion signal.
+setting defaults to empty. The \fBptyfs\fR exclusion is an upgrade-visible
+change; set XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to report it again.
+The inode report additionally excludes \fBzfs\fR because it has no fixed
+inode pool, and drops rows without usable inode accounting. NetBSD tmpfs is
+retained because its inode counts are memory-derived and can provide a
+meaningful exhaustion signal.
 
 .IP XYMONCLIENT_FS_DF_LOCAL_ONLY
 Set to \fByes\fR (the default) to pass \fB\-l\fR to df and report

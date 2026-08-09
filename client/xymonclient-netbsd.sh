@@ -67,12 +67,13 @@ s/[ 	]*\n[ 	]*/ /
 }'
 fi
 echo "[inode]"
-if emit_df inode Inode -i; then
+if emit_df inode Inode -i zfs; then
     printf '%s\n' "$_out" | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' | awk '
 NR == 1 { print "Filesystem itotal iused ifree %iused Mounted on"; next }
+($6 + $7) <= 0 { next }
 { printf "%s %d %d %d %s %s\n", $1, $6+$7, $6, $7, $8, $9 }
 '
 fi

@@ -72,7 +72,10 @@ LOGFETCHOPTS=""
 # three variables for both disk-capacity and inode reports. By default it
 # excludes kernfs, procfs, cd9660, null and ptyfs, and passes -l to df so remote
 # filesystems are hidden. NetBSD tmpfs remains included: its inode counts are
-# memory-derived and can provide a meaningful exhaustion signal.
+# memory-derived and can provide a meaningful exhaustion signal. The inode
+# report additionally excludes zfs and rows without usable inode accounting.
+# The ptyfs exclusion is new; set XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep
+# reporting it after an upgrade.
 #
 # XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated types to remove from the
 #    default exclusion list. For example, "ptyfs" reports ptyfs despite the

@@ -18,6 +18,7 @@ if [[ " \$* " =~ " -i " ]]; then
 	printf 'Filesystem 512-blocks Used Available Capacity iUsed iAvail %%iCap Mounted on\n'
 	printf '/dev/ld0a 3837980 2953852 692232 81%% 41013 218057 15%% /\n'
 	printf 'tmpfs 1048576 8 1048568 0%% 1 999999 0%% /tmp\n'
+	printf 'zfs 1048576 8 1048568 0%% - - - /zfs\n'
 else
 	echo "\$*" >> "$DF_LOG"
 	printf 'Filesystem 512-blocks Used Available Capacity Mounted on\n'
@@ -43,8 +44,8 @@ assert_not_contains "nonfs" "$args" "nfs is controlled by df -l"
 inode_args=$(printf ' %s ' "$(tr '\n' ' ' < "$INODE_LOG")")
 assert_contains " -i " "$inode_args" "inode df uses -i"
 assert_contains " -l " "$inode_args" "inode df shares local-only behavior"
-assert_contains " -tnokernfs,procfs,cd9660,null,ptyfs " "$inode_args" \
-	"inode df shares type exclusions"
+assert_contains " -tnokernfs,procfs,cd9660,null,ptyfs,zfs " "$inode_args" \
+	"inode df adds the inode-only zfs exclusion"
 assert_not_contains "tmpfs" "$inode_args" \
 	"NetBSD tmpfs inode counts remain reportable"
 
@@ -81,6 +82,8 @@ assert_contains "/dev/ld0a 259070 41013 218057 15% /" "$output" \
 	"inode output normalizes NetBSD df values"
 assert_contains "tmpfs 1000000 1 999999 0% /tmp" "$output" \
 	"inode output retains meaningful NetBSD tmpfs values"
+assert_not_contains "/zfs" "$output" \
+	"inode output drops rows without usable inode accounting"
 
 output=$(cd "$TMP" && DF_FAIL=1 /bin/sh "$SNIPPET" 2>/dev/null)
 assert_contains "Disk report collection failed" "$output" \
