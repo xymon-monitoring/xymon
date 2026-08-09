@@ -1,153 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>PROTOCOLS.CFG(5)</title>
+</head>
+<body>
+<h1 class="head-name">PROTOCOLS.CFG</h1>
+Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of PROTOCOLS.CFG</TITLE>
-</HEAD><BODY>
-<H1>PROTOCOLS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">protocols.cfg - Configuration of TCP network services</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<dl class="Bl-tag">
+  <dt><b>$XYMONHOME/etc/protocols.cfg</b></dt>
+  <dd></dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>protocols.cfg</b> contains definitions of how
+    <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> should test a TCP-based network service (i.e. all common
+    network services except HTTP and DNS). For each service, a simple dialogue
+    can be defined to check that the service is functioning normally, and
+    optional flags determine if the service has e.g. a banner or requires SSL-
+    or telnet-style handshaking to be tested.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILE_FORMAT"><a class="permalink" href="#FILE_FORMAT">FILE
+  FORMAT</a></h1>
+<p class="Pp">protocols.cfg is a text file. A simple service definition for the
+    SMTP service would be this:</p>
+<p class="Pp"></p>
+<pre>   [smtp]
+      send &quot;mail\r\nquit\r\n&quot;
+      expect &quot;220&quot;
+      options banner</pre>
+<p class="Pp">This defines a service called &quot;smtp&quot;. When the
+    connection is first established, xymonnet will send the string
+    &quot;mail\r\nquit\r\n&quot; to the service. It will then expect a response
+    beginning with &quot;220&quot;. Any data returned by the service (a
+    so-called &quot;banner&quot;) will be recorded and included in the status
+    message.</p>
+<p class="Pp">For services that require ALPN protocol negotiation (such as IMAPS
+    multiplexed by Nginx on the same port as HTTPS), you can define:</p>
+<p class="Pp"></p>
+<pre>   [imaps443]
+      options ssl,alpn=imap
+      port 443</pre>
+<p class="Pp">The full set of commands available for the protocols.cfg file
+  are:</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt>[NAME]</dt>
+  <dd>Define the name of the TCP service, which will also be the column-name in
+      the resulting display on the test status. If multiple tests share a common
+      definition (e.g. ssh, ssh1 and ssh2 are tested identically), you may list
+      these in a single &quot;[ssh|ssh1|ssh2]&quot; definition, separating each
+      service-name with a pipe-sign.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="send"><a class="permalink" href="#send"><b>send</b>
+    <i>STRING</i></a></dt>
+  <dd></dd>
+  <dt id="expect"><a class="permalink" href="#expect"><b>expect</b>
+    <i>STRING</i></a></dt>
+  <dd>Defines the strings to send to the service after a connection is
+      established, and the response that is expected. Either of these may be
+      omitted, in which case <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> will simply not send any data,
+      or match a response against anything.
+    <p class="Pp">The send- and expect-strings use standard escaping for
+        non-printable characters. &quot;\r&quot; represents a carriage-return
+        (ASCII 13), &quot;\n&quot; represents a line-feed (ASCII 10),
+        &quot;\t&quot; represents a TAB (ASCII 8). Binary data is input as
+        &quot;\xNN&quot; with NN being the hexadecimal value of the byte.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="port"><a class="permalink" href="#port"><b>port</b>
+    <i>NUMBER</i></a></dt>
+  <dd>Define the default TCP port-number for this service. If no portnumber is
+      defined, <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> will attempt to lookup the portnumber in the
+      standard /etc/services file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="options"><a class="permalink" href="#options"><b>options</b>
+    <i>option1</i>[,<i>option2</i>][,<i>option3</i>]</a></dt>
+  <dd>Defines test options. The possible options are
+    <br/>
+    <pre>   banner - include received data in the status message
+   ssl - service uses SSL so perform an SSL handshake
+   telnet - service is telnet, so exchange telnet options
+   alpn=protocol1,protocol2 - specify ALPN protocols to negotiate during SSL handshake</pre>
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><b>$XYMONHOME/etc/protocols.cfg</b></dt>
+  <dd></dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#FILE_FORMAT">FILE FORMAT</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-protocols.cfg - Configuration of TCP network services
-<P>
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>$XYMONHOME/etc/protocols.cfg</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>protocols.cfg</B> contains definitions of how 
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-should test a TCP-based network service (i.e. all common
-network services except HTTP and DNS).
-For each service, a simple dialogue can be defined to
-check that the service is functioning normally, and optional
-flags determine if the service has e.g. a banner or requires
-SSL- or telnet-style handshaking to be tested.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>FILE FORMAT</H2>
-
-protocols.cfg is a text file. A simple service definition for
-the SMTP service would be this:
-<BR>
-
-<P>
-<BR>&nbsp;&nbsp;&nbsp;[smtp]
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;send&nbsp;&quot;mail\r\nquit\r\n&quot;
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;expect&nbsp;&quot;220&quot;
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;options&nbsp;banner
-<BR>
-
-<P>
-This defines a service called &quot;smtp&quot;. When the connection is
-first established, xymonnet will send the string &quot;mail\r\nquit\r\n&quot;
-to the service. It will then expect a response beginning with &quot;220&quot;.
-Any data returned by the service (a so-called &quot;banner&quot;) will be recorded 
-and included in the status message.
-<P>
-For services that require ALPN protocol negotiation (such as IMAPS multiplexed 
-by Nginx on the same port as HTTPS), you can define:
-<BR>
-
-<P>
-<BR>&nbsp;&nbsp;&nbsp;[imaps443]
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;options&nbsp;ssl,alpn=imap
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;port&nbsp;443
-<BR>
-
-<P>
-The full set of commands available for the protocols.cfg file are:
-<P>
-<DL COMPACT>
-<DT>[NAME]<DD>
-Define the name of the TCP service, which will also be the column-name
-in the resulting display on the test status. If multiple tests share 
-a common definition (e.g. ssh, ssh1 and ssh2 are tested identically),
-you may list these in a single &quot;[ssh|ssh1|ssh2]&quot; definition,
-separating each service-name with a pipe-sign.
-<P>
-<DT>send STRING<DD>
-<DT>expect STRING<DD>
-Defines the strings to send to the service after a connection is
-established, and the response that is expected. Either of these
-may be omitted, in which case
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-will simply not send any data, or match a response against anything.
-<P>
-The send- and expect-strings use standard escaping for non-printable
-characters. &quot;\r&quot; represents a carriage-return (ASCII 13), &quot;\n&quot;
-represents a line-feed (ASCII 10), &quot;\t&quot; represents a TAB (ASCII 8). 
-Binary data is input as &quot;\xNN&quot; with NN being the hexadecimal value
-of the byte.
-<P>
-<DT>port NUMBER<DD>
-Define the default TCP port-number for this service. If no portnumber
-is defined,
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-will attempt to lookup the portnumber in the standard /etc/services 
-file.
-<P>
-<DT>options option1[,option2][,option3]<DD>
-Defines test options. The possible options are
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;banner&nbsp;-&nbsp;include&nbsp;received&nbsp;data&nbsp;in&nbsp;the&nbsp;status&nbsp;message
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;ssl&nbsp;-&nbsp;service&nbsp;uses&nbsp;SSL&nbsp;so&nbsp;perform&nbsp;an&nbsp;SSL&nbsp;handshake
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;telnet&nbsp;-&nbsp;service&nbsp;is&nbsp;telnet,&nbsp;so&nbsp;exchange&nbsp;telnet&nbsp;options
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;alpn=protocol1,protocol2&nbsp;-&nbsp;specify&nbsp;ALPN&nbsp;protocols&nbsp;to&nbsp;negotiate&nbsp;during&nbsp;SSL&nbsp;handshake
-<P>
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>FILES</H2>
-
-<B>$XYMONHOME/etc/protocols.cfg</B>
-
-<P>
-<A NAME="lbAG">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">FILE FORMAT</A><DD>
-<DT><A HREF="#lbAF">FILES</A><DD>
-<DT><A HREF="#lbAG">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

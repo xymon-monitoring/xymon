@@ -1,93 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMON-WEBACCESS(5)</title>
+</head>
+<body>
+<h1 class="head-name">XYMON-WEBACCESS</h1>
+Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMON\-WEBACCESS</TITLE>
-</HEAD><BODY>
-<H1>XYMON\-WEBACCESS</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymon-webaccess - Web-based access controls in Xymon</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">Xymon does not provide any built-in authentication (login)
+    mechanism. Instead, it relies on the access controls available in your web
+    server, e.g. the Apache <b>mod_auth</b> modules.</p>
+<p class="Pp">This provides a simple way of controlling access to the physical
+    directories that make up the pages and subpages with the hosts defined in
+    your Xymon <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> setup - you can use the Apache
+    &quot;require&quot; setting to allow or deny access to information on any
+    page, usually through the use of a &quot;Require group ...&quot; setting.
+    The group name then refers to one or more groups in an Apache
+    <b>AuthGroupFile</b> file.</p>
+<p class="Pp">However, this does not work for the Xymon CGI programs since they
+    are used to fetch information about all hosts in Xymon, but there is only a
+    single directory holding all of the CGI's. So here you can only require that
+    the user is logged-in (the Apache &quot;Require valid-user&quot; directive).
+    A user with a login can - if he knows the hostname - manipulate the request
+    sent to the webserver and fetch information about any status by use of the
+    Xymon CGI programs, even though he cannot see the overview webpages.</p>
+<p class="Pp">To alleviate this situation, the following Xymon CGI's support a
+    &quot;--access=FILENAME&quot; option, where FILENAME is an Apache compatible
+    group-definitions file:
+  <br/>
+  <i><a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1)</i>
+  <br/>
+  <i><a href="../man1/acknowledge.cgi.1.html">acknowledge.cgi</a>(1)</i>
+  <br/>
+  <i>enadis.cgi(1)</i>
+  <br/>
+  <i><a href="../man1/appfeed.cgi.1.html">appfeed.cgi</a>(1)</i></p>
+<p class="Pp">When invoked with this option the CGI will read the Apache
+    group-definitions file, and assume that an Apache <b>group</b> maps to a
+    Xymon <b>page</b>, and then - based on the logged-in userid - determine
+    which pages and hosts the user is allowed access to. Only information about
+    those hosts will be made available by the CGI tool.</p>
+<p class="Pp">Members of the group <b>root</b> has access to all hosts.</p>
+<p class="Pp">Access will also be granted, if the user is a member of a group
+    with the same name as the <b>host</b> being requested, or as the
+    <b>statuscolumn</b> being requested.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp">The Apache &quot;Authentication, Authorization and Access
+    Control&quot; documentation,
+    http://httpd.apache.org/docs/2.2/howto/auth.html</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymon-webaccess - Web-based access controls in Xymon
-<P>
-<A NAME="lbAC">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-Xymon does not provide any built-in authentication (login) mechanism.
-Instead, it relies on the access controls available in your web server,
-e.g. the Apache <B>mod_auth</B> modules.
-<P>
-This provides a simple way of controlling access to the physical
-directories that make up the pages and subpages with the hosts
-defined in your Xymon
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-setup - you can use the Apache &quot;require&quot; setting to allow or deny
-access to information on any page, usually through the use of a
-&quot;Require group ...&quot; setting. The group name then refers to one
-or more groups in an Apache <B>AuthGroupFile</B> file.
-<P>
-However, this does not work for the Xymon CGI programs since they 
-are used to fetch information about all hosts in Xymon, but there
-is only a single directory holding all of the CGI's. So here you
-can only require that the user is logged-in (the Apache &quot;Require valid-user&quot;
-directive). A user with a login can - if he knows the hostname - 
-manipulate the request sent to the webserver and fetch information
-about any status by use of the Xymon CGI programs, even though he
-cannot see the overview webpages.
-<P>
-To alleviate this situation, the following Xymon CGI's support a
-&quot;--access=FILENAME&quot; option, where FILENAME is an Apache compatible
-group-definitions file:
-<BR>
-
-<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
-
-<BR>
-
-<I><A HREF="../man1/acknowledge.cgi.1.html">acknowledge.cgi</A>(1)</I>
-
-<BR>
-
-<I><A HREF="../man1/enadis.cgi.1.html">enadis.cgi</A>(1)</I>
-
-<BR>
-
-<I><A HREF="../man1/appfeed.cgi.1.html">appfeed.cgi</A>(1)</I>
-
-<P>
-When invoked with this option the CGI will read the Apache
-group-definitions file, and assume that an Apache <B>group</B>
-maps to a Xymon <B>page</B>, and then - based on the logged-in userid - 
-determine which pages and hosts the user is allowed access to.
-Only information about those hosts will be made available by the CGI
-tool.
-<P>
-Members of the group <B>root</B> has access to all hosts.
-<P>
-Access will also be granted, if the user is a member of a group
-with the same name as the <B>host</B> being requested, or as the
-<B>statuscolumn</B> being requested.
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-The Apache &quot;Authentication, Authorization and Access Control&quot; documentation,
-<A HREF="http://httpd.apache.org/docs/2.2/howto/auth.html">http://httpd.apache.org/docs/2.2/howto/auth.html</A>
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAD">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

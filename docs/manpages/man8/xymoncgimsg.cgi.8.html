@@ -1,82 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMONCGIMSG.CGI(8)</title>
+</head>
+<body>
+<h1 class="head-name">XYMONCGIMSG.CGI</h1>
+Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMONCGIMSG.CGI</TITLE>
-</HEAD><BODY>
-<H1>XYMONCGIMSG.CGI</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<p class="Pp"></p>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymoncgimsg.cgi - CGI utility used for proxying Xymon data over
+    HTTP</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymoncgimsg.cgi</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><i><a href="../man8/xymoncgimsg.cgi.8.html">xymoncgimsg.cgi</a>(8)</i> is the server-side utility receiving
+    Xymon messages sent by the <i><a href="../man1/xymon.1.html">xymon</a>(1)</i> utility over an HTTP transport.
+    The <b>xymon</b> utility normally sends data over a dedicated TCP protocol,
+    but it may use HTTP to go through proxies or through restrictive firewalls.
+    In that case, the webserver must have this CGI utility installed, which
+    takes care of receiving the message via HTTP, and forwards it to a local
+    Xymon server through the normal Xymon transport.</p>
+<p class="Pp">The CGI expects to be invoked from an HTTP &quot;POST&quot;
+    request, with the POST-data being the status-message. <b>xymoncgimsg.cgi</b>
+    simply collects all of the POST data, and send it off as a message to the
+    Xymon daemon running on IP 127.0.0.1. This destination IP currently cannot
+    be changed.</p>
+<p class="Pp">The CGI will return any output provided by the Xymon daemon back
+    to the requestor as the response to the HTTP POST, so this allows for all
+    normal Xymon commands to work.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SECURITY"><a class="permalink" href="#SECURITY">SECURITY</a></h1>
+<p class="Pp"><b>xymoncgimsg.cgi</b> will only send data to a Xymon server
+    through the loopback interface, i.e. IP-address 127.0.0.1.</p>
+<p class="Pp">Access to the CGI should be restricted through webserver access
+    controls, since the CGI provides no authentication at all to validate
+    incoming messages.</p>
+<p class="Pp">If possible, consider using the <i><a href="../man8/xymonproxy.8.html">xymonproxy</a>(8)</i> utility
+    instead for native proxying of Xymon data between networks.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/xymon.1.html">xymon</a>(1), <a href="../man8/xymonproxy.8.html">xymonproxy</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#SECURITY">SECURITY</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<P>
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymoncgimsg.cgi - CGI utility used for proxying Xymon data over HTTP
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>xymoncgimsg.cgi</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<I><A HREF="../man8/xymoncgimsg.cgi.8.html">xymoncgimsg.cgi</A>(8)</I>
-
-is the server-side utility receiving Xymon messages sent by the
-<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
-
-utility over an HTTP transport. The <B>xymon</B> utility normally sends
-data over a dedicated TCP protocol, but it may use HTTP to go through
-proxies or through restrictive firewalls. In that case, the webserver
-must have this CGI utility installed, which takes care of receiving the
-message via HTTP, and forwards it to a local Xymon server through the
-normal Xymon transport.
-<P>
-The CGI expects to be invoked from an HTTP &quot;POST&quot; request,
-with the POST-data being the status-message.
-<B>xymoncgimsg.cgi</B>
-simply collects all of the POST data, and send it off as
-a message to the Xymon daemon running on IP 127.0.0.1. This
-destination IP currently cannot be changed.
-<P>
-The CGI will return any output provided by the Xymon daemon
-back to the requestor as the response to the HTTP POST,
-so this allows for all normal Xymon commands to work.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>SECURITY</H2>
-
-<B>xymoncgimsg.cgi</B> will only send data to a Xymon server through the
-loopback interface, i.e. IP-address 127.0.0.1.
-<P>
-Access to the CGI should be restricted through webserver access controls,
-since the CGI provides no authentication at all to validate incoming
-messages.
-<P>
-If possible, consider using the
-<I><A HREF="../man8/xymonproxy.8.html">xymonproxy</A>(8)</I>
-
-utility instead for native proxying of Xymon data between networks.
-<P>
-<A NAME="lbAF">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man1/xymon.1.html">xymon</A>(1), <A HREF="../man8/xymonproxy.8.html">xymonproxy</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">SECURITY</A><DD>
-<DT><A HREF="#lbAF">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

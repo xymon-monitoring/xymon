@@ -13,24 +13,24 @@ logfetch uses a configuration file, which is automatically
 retrieved from the Xymon server. There is no configuration
 done locally. The configuration file is usually stored in
 the \fB$XYMONHOME/tmp/logfetch.cfg\fR file, but editing this file has
-no effect since it is re-written with data from the Xymon 
+no effect since it is re-written with data from the Xymon
 server each time the client runs.
 
 logfetch stores information about what parts of the monitored
-logfiles have been processed already in the \fB$XYMONHOME/tmp/logfetch.status\fR 
+logfiles have been processed already in the \fB$XYMONHOME/tmp/logfetch.status\fR
 file. This file is an internal file used by logfetch, and should
 not be edited. If deleted, it will be re-created automatically.
 
 .SH OPTIONS
-.IP "\-\-debug[=stderr]"
-Enables debug mode. Note that when run by the xymonclient, debug 
+.IP "\fB\-\-debug\fR[=\fBstderr\fR]"
+Enables debug mode. Note that when run by the xymonclient, debug
 output may be written into the client data report, which can cause
 false positives and other unintended side effects. Use '=stderr' to
 cause the output to be written to stderr instead.
 
-.IP "\-\-noexec"
+.IP "\fB\-\-noexec\fR"
 The client-local.cfg(5) section for this host, class, or OS is
-automatically retrieved from the server during client submission. 
+automatically retrieved from the server during client submission.
 Logfetch can be requested to execute arbitrary commands to generate
 a list of log files to examine dynamically, but this can present a
 security risk in some environments. Set this option to prevent
@@ -38,9 +38,9 @@ logfetch from executing requested commands
 
 
 .SH SECURITY
-logfetch needs read access to the logfiles it should monitor. If you 
+logfetch needs read access to the logfiles it should monitor. If you
 configure monitoring of files or directories through the "file:"
-and "dir:" entries in 
+and "dir:" entries in
 .I client\-local.cfg(5)
 then logfetch will require at least read-access to the directory
 where the file is located. If you request checksum calculation
@@ -55,17 +55,17 @@ attempt to remove its own suid-root setup if it detects that it
 has been installed suid-root.
 
 .SH "ENVIRONMENT VARIABLES"
-.IP DU
+.IP "\fBDU\fR"
 Command used to collect information about the size of directories.
 By default, this is the command \fBdu \-k\fR. If the local
 du-command on the client does not recognize the "\-k" option,
-you should set the DU environment variable in the 
+you should set the DU environment variable in the
 \fB$XYMONHOME/etc/xymonclient.cfg\fR file to a command that
 does report directory sizes in kilobytes.
 
 .SH FILES
-.IP $XYMONHOME/tmp/logfetch.cfg
-.IP $XYMONHOME/tmp/logfetch.status
+.IP "\fB$XYMONHOME/tmp/logfetch.cfg\fR"
+.IP "\fB$XYMONHOME/tmp/logfetch.status\fR"
 
 .SH "SEE ALSO"
 xymon(7), analysis.cfg(5), client-local.cfg(5)

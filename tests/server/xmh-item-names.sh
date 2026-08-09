@@ -46,10 +46,8 @@ the registered string is the public field name (xymon-xmh(5), xymondboard/hostin
 templates) and also what xmh_item_isflag[] is derived from:
 $mismatched"
 
-CC=${CC:-cc}
-command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
-
-[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
+require_c_buildenv "$ROOT"
+[ -f "$ROOT/lib/libxymoncomm.a" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
@@ -57,8 +55,7 @@ ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-xmh-item-names.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
 cat > "$work/hosts.cfg" <<'EOF'
 127.0.0.1 taghost.example.com # conn dialup MULTIHOMED

@@ -21,7 +21,6 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <libgen.h>
 
 #include "libxymon.h"
 #include "version.h"
@@ -39,6 +38,7 @@ static char *accessfn = NULL;
 /* CGI params */
 static char *hostname = NULL;
 static char *service = NULL;
+static char *sectionfilter = NULL;
 static char *tstamp = NULL;
 static char *nkprio = NULL, *nkttgroup = NULL, *nkttextra = NULL;
 static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
@@ -63,48 +63,59 @@ static int parse_query(void)
 {
 	cgidata_t *cgidata = cgi_request();
 	cgidata_t *cwalk;
+	char *rawsection = NULL;
+	int sectionseen = 0;
 
 	cwalk = cgidata;
 	while (cwalk) {
 		if (strcasecmp(cwalk->name, "HOST") == 0) {
-			hostname = strdup(basename(cwalk->value));
+			/* Verbatim spelling: hostsvcurl() emits the raw name
+			 * (no comma-encoding). */
+			hostname = cgi_pathcomponent(cwalk->value, 0);
 		}
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
-			service = strdup(basename(cwalk->value));
+			/* Free-form: SERVICE is compiled as a PCRE testname
+			 * pattern for the aggregate view (do_request), so
+			 * metacharacters must survive; confined against control
+			 * bytes and traversal only. */
+			service = cgi_component(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "HOSTSVC") == 0) {
 			/* For backwards compatibility */
-			char *p = strrchr(cwalk->value, '.');
-			if (p) {
-				*p = '\0';
-				hostname = strdup(basename(cwalk->value));
-				service = strdup(basename(p+1));
-				for (p=strchr(hostname, ','); (p); p = strchr(p, ',')) *p = '.';
-			}
+			cgi_split_hostsvc(cwalk->value, &hostname, &service);
 		}
 		else if (strcasecmp(cwalk->name, "TIMEBUF") == 0) {
-			/* Only for the historical logs */
-			tstamp = strdup(basename(cwalk->value));
+			/* Only for the historical logs. NULL on rejection, like
+			 * the other parameters -- one convention in this function. */
+			tstamp = cgi_pathcomponent(cwalk->value, 0);
 		}
 		else if (strcasecmp(cwalk->name, "CLIENT") == 0) {
-			char *p;
-
-			hostname = strdup(basename(cwalk->value));
-			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+			/* CLIENT arrives comma-encoded (192,168,1,1). */
+			hostname = cgi_pathcomponent(cwalk->value, 1);
 			service = strdup("");
 			outform = FRM_CLIENT;
 		}
 		else if (strcasecmp(cwalk->name, "SECTION") == 0) {
-			service = strdup(basename(cwalk->value));
+			/*
+			 * Only capture the raw value here; it is resolved after
+			 * the loop. SECTION and CLIENT both write "service", and
+			 * an invalid SECTION must refuse the request rather than
+			 * fall back to CLIENT's "whole client log" -- deferring
+			 * makes that hold whatever order the two arrive in, and
+			 * NULL-guards a value cgi_request() never finalized.
+			 */
+			sectionseen = 1;
+			if (rawsection) xfree(rawsection);
+			rawsection = cwalk->value ? strdup(cwalk->value) : NULL;
 		}
 		else if (strcasecmp(cwalk->name, "NKPRIO") == 0) {
-			nkprio = strdup(cwalk->value);
+			nkprio = strdup(cwalk->value ? cwalk->value : "");
 		}
 		else if (strcasecmp(cwalk->name, "NKTTGROUP") == 0) {
-			nkttgroup = strdup(cwalk->value);
+			nkttgroup = strdup(cwalk->value ? cwalk->value : "");
 		}
 		else if (strcasecmp(cwalk->name, "NKTTEXTRA") == 0) {
-			nkttextra = strdup(cwalk->value);
+			nkttextra = strdup(cwalk->value ? cwalk->value : "");
 		}
 		else if ((strcmp(cwalk->name, "backsecs") == 0)   && cwalk->value && strlen(cwalk->value)) {
 			backsecs += atoi(cwalk->value);
@@ -133,16 +144,69 @@ static int parse_query(void)
 		else backsecs = 48*60*60;
 	}
 
+	/*
+	 * Resolve SECTION now that every parameter has been seen, so the
+	 * result does not depend on whether CLIENT came before or after it.
+	 * The raw value is the xymond "section=" filter -- section names
+	 * legitimately contain '/' (e.g. "msgs:/var/log/messages"), so it is
+	 * not confined to a path component or the filter would be dropped and
+	 * the whole client dump served. The "service" copy is the section's
+	 * final path component, free-form as basename() historically produced
+	 * (client section names legitimately carry spaces, brackets, etc., so
+	 * it is NOT held to CGI_NAMECHARS) -- it only feeds the access-control
+	 * check and, on the historical path, a filename that safe_basename()
+	 * re-confines, so it is confined here against traversal alone. A
+	 * control byte anywhere in the section would reach a xymond protocol
+	 * line, so it rejects the whole value: service=NULL, which the guard
+	 * below refuses, overriding any "" a CLIENT parameter set.
+	 */
+	if (sectionseen) {
+		if (service) { xfree(service); service = NULL; }
+		if (sectionfilter) { xfree(sectionfilter); sectionfilter = NULL; }
+
+		if (rawsection && !cgi_hasctrl(rawsection)) {
+			char *p, *leaf, *sb;
+			size_t n = strlen(rawsection);
+
+			sectionfilter = strdup(rawsection);
+			while ((n > 0) && (rawsection[n-1] == '/')) rawsection[--n] = '\0';
+			p = strrchr(rawsection, '/');
+			leaf = p ? p+1 : rawsection;
+			sb = safe_basename(leaf);	/* free-form; only "/", ".", ".." and "" reject */
+			service = *sb ? strdup(sb) : NULL;
+		}
+	}
+	if (rawsection) xfree(rawsection);
+
+	/*
+	 * NULL means absent or rejected: cgi_pathcomponent() returns NULL
+	 * for any value that is not a single path component, so a refused
+	 * parameter cannot arrive here as a partial or empty spelling.
+	 * service is "" only where a handler set it deliberately (CLIENT
+	 * means "the whole client log"); it is confined again where it
+	 * becomes a path component, at the historical-log path below.
+	 */
 	if (!hostname || !service || ((source == SRC_HISTLOGS) && !tstamp) ) {
 		errormsg(403, "Invalid request");
 		return 1;
 	}
 
-	if (strcmp(service, xgetenv("CLIENTCOLUMN")) == 0) {
-		/* Make this a client request */
-		char *p = strdup(basename(hostname));
-		xfree(hostname); hostname = p;	/* no need to convert to dots, since we'll already have them */
-		xfree(service);			/* service does double-duty as the 'section' param */
+	if (strcmp(service, xgetenv("CLIENTCOLUMN")) == 0 &&
+	    (!sectionfilter || strcmp(sectionfilter, service) == 0)) {
+		/*
+		 * The client column ("clientlog") as a whole value means "the
+		 * whole client log": make it a client request (hostname is
+		 * already validated) and drop service, which doubled as the
+		 * section param in the old single-variable code. This fires for
+		 * a bare SERVICE/HOSTSVC=clientlog (no filter) and for
+		 * SECTION=clientlog (filter == the column name). It must NOT
+		 * fire when only the section's LEAF is "clientlog"
+		 * (e.g. SECTION="msgs:/var/log/clientlog") -- that is a request
+		 * for one section, so keep its filter rather than dumping the
+		 * whole log.
+		 */
+		xfree(service);
+		if (sectionfilter) xfree(sectionfilter);
 		outform = FRM_CLIENT;
 	}
 
@@ -250,9 +314,9 @@ int do_request(void)
 			int xymondresult;
 			sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
-			SBUF_MALLOC(xymondreq, 1024 + strlen(hostname) + (service ? strlen(service) : 0));
+			SBUF_MALLOC(xymondreq, 1024 + strlen(hostname) + (sectionfilter ? strlen(sectionfilter) : 0));
 			snprintf(xymondreq, xymondreq_buflen, "clientlog %s", hostname);
-			if (service && *service) snprintf(xymondreq + strlen(xymondreq), (xymondreq_buflen - strlen(xymondreq)), " section=%s", service);
+			if (sectionfilter && *sectionfilter) snprintf(xymondreq + strlen(xymondreq), (xymondreq_buflen - strlen(xymondreq)), " section=%s", sectionfilter);
 
 			xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
 			if (xymondresult != XYMONSEND_OK) {
@@ -276,13 +340,11 @@ int do_request(void)
 			fd = fopen(logfn, "r");
 			if (fd) {
 				struct stat st;
-				int n;
 
 				fstat(fileno(fd), &st);
 				if (S_ISREG(st.st_mode)) {
 					log = (char *)malloc(st.st_size + 1);
-					n = fread(log, 1, st.st_size, fd);
-					if (n >= 0) *(log+n) = '\0'; else *log = '\0';
+					if (log) { size_t nread = fread(log, 1, st.st_size, fd); log[nread] = '\0'; }
 				}
 				fclose(fd);
 			}
@@ -559,16 +621,25 @@ int do_request(void)
 		char *statusunchangedtext = "Status unchanged in ";
 		char *receivedfromtext = "Message received from ";
 		char *clientidtext = "Client data ID ";
-		char *p, *unchangedstr, *receivedfromstr, *clientidstr, *hostnamedash;
+		char *p, *unchangedstr, *receivedfromstr, *clientidstr, *hostnamedash, *safesvc;
 		int n;
 
 		if (!tstamp) { errormsg(500, "Invalid request"); return 1; }
+
+		/* service becomes a path component here. Every site that assigns
+		 * it already excludes '/', '.', '..' and "" (cgi_component /
+		 * cgi_pathcomponent / the SECTION leaf), so this re-confinement is
+		 * defense-in-depth at the path-construction sink, not a live check
+		 * -- kept deliberately: this series has more than once seen an
+		 * upstream confinement slip, and the cost here is one comparison. */
+		safesvc = safe_basename(service);
+		if (!*safesvc) { errormsg(403, "Invalid request"); return 1; }
 
 		if (loadhostdata(hostname, &ip, &displayname, &compacts, 0) != 0) return 1;
 		hostnamedash = strdup(hostname);
 		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
-		snprintf(logfn, sizeof(logfn), "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, service, tstamp);
+		snprintf(logfn, sizeof(logfn), "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, safesvc, tstamp);
 		xfree(hostnamedash);
 		p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
 		sethostenv_histlog(tstamp);
@@ -584,14 +655,14 @@ int do_request(void)
 			return 1;
 		}
 		log = (char *)malloc(st.st_size+1);
-		n = fread(log, 1, st.st_size, fd);
-		if (n >= 0) *(log+n) = '\0'; else *log = '\0';
+		if (!log) { errormsg(500, "Cannot read historical logfile\n"); fclose(fd); return 1; }
+		{ size_t nread = fread(log, 1, st.st_size, fd); log[nread] = '\0'; }
 		fclose(fd);
 
-		p = strchr(log, '\n'); 
+		p = strchr(log, '\n');
 		if (!p) {
 			firstline = strdup(log);
-			restofmsg = NULL;
+			restofmsg = log + strlen(log);	/* empty, not NULL: the strstr()s below must not deref it */
 		}
 		else { 
 			*p = '\0'; 
@@ -626,7 +697,10 @@ int do_request(void)
 		p = unchangedstr = strstr(restofmsg, statusunchangedtext);
 		if (p) {
 			p += strlen(statusunchangedtext);
-			n = strcspn(p, "\n"); if (n >= sizeof(timesincechange)) n = sizeof(timesincechange);
+			/* Clamp to sizeof-1: timesincechange[n]='\0' below must
+			 * land inside the buffer, so n may reach the last index
+			 * at most, not sizeof itself. */
+			n = strcspn(p, "\n"); if (n >= sizeof(timesincechange)) n = sizeof(timesincechange) - 1;
 			strncpy(timesincechange, p, n);
 			timesincechange[n] = '\0';
 		}
@@ -707,6 +781,7 @@ int do_request(void)
 	/* Cleanup CGI params */
 	if (hostname) xfree(hostname);
 	if (service) xfree(service);
+	if (sectionfilter) xfree(sectionfilter);
 	if (tstamp) xfree(tstamp);
 
 	/* Cleanup main vars */
@@ -791,7 +866,7 @@ int main(int argc, char *argv[])
 	redirect_cgilog("svcstatus");
 
 	*errortxt = '\0';
-	hostname = service = tstamp = NULL;
+	hostname = service = sectionfilter = tstamp = NULL;
 	if (do_request() != 0) {
 		fprintf(stdout, "%s", errortxt);
 		return 1;
