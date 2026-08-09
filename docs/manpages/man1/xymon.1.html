@@ -51,7 +51,8 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   </dd>
   <dt id="timeout"><a class="permalink" href="#timeout"><b>--timeout</b>=<i>N</i></a></dt>
   <dd>Specifies the timeout for connecting to the Xymon server, in seconds. The
-      default is 5 seconds.
+      default is 15 seconds; an XYMON_TIMEOUT environment variable overrides
+      that default (see ENVIRONMENT below), and this option overrides both.
     <p class="Pp"></p>
   </dd>
   <dt id="response"><a class="permalink" href="#response"><b>--response</b></a></dt>
@@ -575,6 +576,20 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
 </section>
 <section class="Sh">
 <p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMON_TIMEOUT"><a class="permalink" href="#XYMON_TIMEOUT"><b>XYMON_TIMEOUT</b></a></dt>
+  <dd>Sets the default request timeout, in seconds, overriding the compiled-in
+      15 - so it can be set once (e.g. in <i>xymonserver.cfg</i>(5)) rather than
+      passing --timeout= on every call. A non-positive or non-numeric value is
+      reported on stderr and ignored. A --timeout= option on the command line
+      takes precedence.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
 <h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
   ALSO</a></h1>
 <p class="Pp"><a href="../man1/combostatus.1.html">combostatus</a>(1), <a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
@@ -589,6 +604,7 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
 <dt><a href="#OPTIONS_AND_PARAMETERS">OPTIONS AND PARAMETERS</a></dt>
 <dt><a href="#XYMON_MESSAGE_SYNTAX">XYMON MESSAGE SYNTAX</a></dt>
 <dt><a href="#EXAMPLE">EXAMPLE</a></dt>
+<dt><a href="#ENVIRONMENT">ENVIRONMENT</a></dt>
 <dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
 </dl>
 </div>

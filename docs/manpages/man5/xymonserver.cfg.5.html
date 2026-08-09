@@ -485,6 +485,14 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       setting is only used if XYMSRV=0.0.0.0.
     <p class="Pp"></p>
   </dd>
+  <dt id="XYMON_TIMEOUT"><a class="permalink" href="#XYMON_TIMEOUT"><b>XYMON_TIMEOUT</b></a></dt>
+  <dd>Default request timeout, in seconds, for the <i><a href="../man1/xymon.1.html">xymon</a>(1)</i> command-line
+      tool. Must be a positive integer; invalid values are reported and ignored,
+      keeping the compiled-in default of 15 seconds. A --timeout= option on the
+      xymon command line takes precedence. Default: unset (compiled-in 15
+      seconds)
+    <p class="Pp"></p>
+  </dd>
   <dt id="XYMONDPORT"><a class="permalink" href="#XYMONDPORT"><b>XYMONDPORT</b></a></dt>
   <dd>The portnumber for used to contact the <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> service. Used by
       clients and the tools that perform network tests. Default: 1984.
