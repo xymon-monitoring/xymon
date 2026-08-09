@@ -18,10 +18,10 @@ if [ -r "$here/../lib/assert.sh" ]; then
 else
 	fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 	skip() { printf 'SKIP: %s\n' "$*" >&2; exit 77; }
+	require_cc() { CC=${CC:-cc}; command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"; }
 fi
 
-CC=${CC:-cc}
-command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
+require_cc
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT

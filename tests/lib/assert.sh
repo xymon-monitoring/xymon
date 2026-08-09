@@ -133,6 +133,35 @@ mktempdir() {
 	printf '%s' "$d"
 }
 
+# ---- C harness scaffolding ---------------------------------------------------
+
+# require_cc -- skip unless a C compiler is present. Sets/keeps CC (default
+# cc). For tests that compile a standalone harness with no in-tree libraries.
+require_cc() {
+	CC=${CC:-cc}
+	command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
+}
+
+# require_c_buildenv ROOT -- skip unless a C compiler, make, and a configured
+# tree (include/config.h) are present. The shared baseline for every test
+# that compiles a harness against the in-tree libraries, so a new shared
+# skip condition lands in one place; a test may still add stricter
+# conditions of its own (e.g. "tree already built") next to its call.
+require_c_buildenv() {
+	require_cc
+	command -v make >/dev/null 2>&1 || skip "make not available"
+	[ -f "$1/include/config.h" ] || skip "tree not configured (no include/config.h)"
+}
+
+# build_xymon_libs ROOT LOGFILE ARCHIVE... -- build the named archives in
+# ROOT/lib, dumping the build log on stderr and failing if the build breaks.
+build_xymon_libs() {
+	local root=$1 log=$2
+	shift 2
+	make -C "$root/lib" "$@" >"$log" 2>&1 \
+		|| { cat "$log" >&2; fail "cannot build $*"; }
+}
+
 # ---- repo location -----------------------------------------------------------
 
 # find_root -- print the absolute path of the repo root, derived from the
