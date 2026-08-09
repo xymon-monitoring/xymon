@@ -157,20 +157,22 @@ jobs:
             exit 0
           fi
           {
-            echo "The committed HTML does not match what the sources produce."
+            echo "The HTML under docs/manpages/ is out of date with the man-page"
+            echo "sources (the .1/.5/.8 roff files). Update it to match the sources"
+            echo "and commit."
             echo
-            echo "Out-of-date HTML files:"
+            echo "Out-of-date pages:"
             git status --porcelain -- docs/manpages | sed 's/^/  /'
             echo
-            echo "Fix it either way, then commit the HTML:"
-            echo
-            echo "  1. Regenerate locally (needs mandoc + python3), per changed source:"
+            echo "  1. With mandoc + python3, rebuild each changed page's HTML from its source:"
             echo "         build/makehtml.sh common/hosts.cfg.5"
             echo
-            echo "  2. Or download the pages this run already generated (no toolchain needed)"
-            echo "     straight into place:"
+            echo "  2. Without any toolchain, download the HTML this run already built from"
+            echo "     the sources -- this overwrites the stale pages under docs/manpages/:"
             echo "         gh run download $GITHUB_RUN_ID -n manpages-regenerated -D docs/manpages"
             echo "     run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo "Then commit:  git add docs/manpages && git commit"
             echo
             echo "Diff (first 200 lines):"
             sed -n '1,200p' /tmp/manpages.diff
