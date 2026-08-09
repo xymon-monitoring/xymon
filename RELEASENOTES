@@ -44,20 +44,24 @@ Apache does but FreeBSD's does not). Sites whose hosts emit a different encoding
 (e.g. iso-8859-1, euc-jp) and relied on browser auto-detection should set
 HTMLCONTENTTYPE explicitly in xymonserver.cfg.
 
-The Linux, FreeBSD and macOS clients now filter the filesystems they report,
-where previously they reported whatever df listed. Pseudo and image
+The Linux, FreeBSD, NetBSD and macOS clients now filter the filesystems they
+report, where previously they reported whatever df listed. Pseudo and image
 filesystems are dropped by default - iso9660, squashfs and snap mounts on
-Linux, nullfs, procfs, devfs and autofs on FreeBSD, and mounts the system
-hides from the Finder or mounts read-only on macOS. A filesystem that stops
-being reported also stops raising alerts, so check that nothing you monitor
-has gone quiet after upgrading. Each client reads XYMONCLIENT_FS_INCLUDE_TYPES
-and XYMONCLIENT_FS_EXCLUDE_TYPES from xymonclient.cfg to override the
-defaults; see the comments there for the per-platform lists.
+Linux, nullfs, procfs, devfs and autofs on FreeBSD, kernfs, procfs, cd9660,
+null and ptyfs on NetBSD, and mounts the system hides from the Finder or
+mounts read-only on macOS. The FreeBSD and NetBSD clients also pass -l to df
+now, so remote filesystems other than nfs, which was already excluded, are no
+longer reported by default; set XYMONCLIENT_FS_DF_LOCAL_ONLY=no to restore
+them. A filesystem that stops being reported also stops raising alerts, so
+check that nothing you monitor has gone quiet after upgrading. Each client
+reads XYMONCLIENT_FS_INCLUDE_TYPES and XYMONCLIENT_FS_EXCLUDE_TYPES from
+xymonclient.cfg to override the defaults; see the comments there for the
+per-platform lists.
 
-The NetBSD client now provides an inode report. The ptyfs (/dev/pts) filesystem
-is omitted from both the disk and inode reports by default. Set
-XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to restore the previous disk-report
-behavior and include that filesystem in both reports.
+The NetBSD client now provides an inode report, sharing the filesystem
+filtering described above. Set XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep
+reporting the ptyfs (/dev/pts) filesystem after an upgrade, and
+XYMONCLIENT_FS_DF_LOCAL_ONLY=no to keep reporting remote filesystems.
 
 
 Changes for 4.3.30
