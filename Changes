@@ -97,6 +97,9 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Match noflap= entries by exact test name, not by prefix (#293, #295)
 * Add regression tests for seven under-tested fixes and features (#307)
 * Add an inode report and configurable filesystem filtering to the NetBSD client (#311, #313) (Thanks, Markus Häll)
+* Confine the CGI host/service/section request parameters to a safe path component, closing a path traversal and protocol injection (#146, #147)
+* Render the manual pages to HTML with a reproducible mandoc converter, give them linkable definitions, and check on every pull request that the committed HTML matches its source (#302, #303, #304, #102)
+* Add a pre-tag release-prep workflow (#99, #102)
 
 
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)

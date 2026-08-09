@@ -63,6 +63,14 @@ filtering described above. Set XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep
 reporting the ptyfs (/dev/pts) filesystem after an upgrade, and
 XYMONCLIENT_FS_DF_LOCAL_ONLY=no to keep reporting remote filesystems.
 
+The svcstatus, history and reportlog CGIs now confine the host, service and
+section values taken from a request to a single safe path component, closing a
+path traversal and xymond-protocol injection reachable in a default install.
+As a side effect a host whose canonical name (field 2 of hosts.cfg) contains
+characters outside letters, digits and ":,._-" is no longer reachable through
+these pages; give it an ASCII canonical name and carry the original spelling in
+the NAME: display tag.
+
 
 Changes for 4.3.30
 ==================
