@@ -7,7 +7,7 @@ xymonnet\-again.sh \- Xymon network re-test tool
 .SH DESCRIPTION
 \fBxymonnet\-again.sh\fR
 is an extension script for Xymon that runs on the network
-test server.  It picks up the failing network tests executed by the 
+test server.  It picks up the failing network tests executed by the
 .I xymonnet(1)
 program, and repeats these tests with a faster test cycle
 than the normal xymonnet schedule. This means that when
@@ -18,7 +18,7 @@ downtime.
 Only tests whose first failure occurred within 30 minutes
 are included in the tests that are run by xymonnet\-again.sh.
 The 30 minute limit is there to avoid hosts that are down for
-longer periods of time to bog down xymonnet\-again.sh.  You can change 
+longer periods of time to bog down xymonnet\-again.sh.  You can change
 this limit with the "\-\-frequenttestlimit=SECONDS" when you run
 xyxmonnet.
 
@@ -30,9 +30,9 @@ file.
 
 
 .SH FILES
-.IP $XYMONTMP/TESTNAME.LOCATION.status
+.IP "\fB$XYMONTMP/TESTNAME.LOCATION.status\fR"
 Temporary status file managed by xyxmonnet with status of tests that have currently failed.
-.IP $XYMONTMP/frequenttests.LOCATION
+.IP "\fB$XYMONTMP/frequenttests.LOCATION\fR"
 Temporary file managed by xymonnet with the hostnames that xymonnet\-again.sh should test.
 
 .SH "SEE ALSO"

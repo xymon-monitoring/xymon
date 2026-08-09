@@ -19,8 +19,8 @@ that are already used in your Xymon hosts.cfg file. These are
 then combined using normal logical operators - "||" for "or", "&&" for
 "and" etc.
 
-A simple test - e.g. "Web1.http" - results in the value "1" if 
-the "http" test for server "Web1" is green, yellow or clear. It yields the 
+A simple test - e.g. "Web1.http" - results in the value "1" if
+the "http" test for server "Web1" is green, yellow or clear. It yields the
 value "0" if it is red, purple or blue.
 
 Apart from the logical operations, you can also do integer arithmetic
@@ -54,13 +54,13 @@ use the transcription "(host.test == 0)" instead of "!host.test".
 NB: All operators have EQUAL PRECEDENCE. If you need something evaluated
 in a specific order, use parentheses to group the expressions together.
 
-If the expression comes out as "0", the combined test goes red. If it comes 
+If the expression comes out as "0", the combined test goes red. If it comes
 out as non-zero, the combined test is green.
 
 Note: If the expression involves hostnames with a character that is also
 an operator - e.g. if you have a host "t1-router-newyork.foo.com" with a
 dash in the hostname - then the operator-character must be escaped with
-a backslash '\e' in the expression, or it will be interpreted as an operator. 
+a backslash '\e' in the expression, or it will be interpreted as an operator.
 E.g. like this:
 
  nyc.conn = (t1\e-router\e-nyc.conn || backup\e-router\e-nyc.conn)
@@ -74,7 +74,7 @@ AppSrvCluster.procs = (AppSrv1.conn && AppSrv1.procs) || (AppSrv2.conn && AppSrv
 Customer.cluster = WebCluster.http && AppSrvCluster.procs
 .br
 
-The first line defines a new test, with hostname "WebCluster" and the 
+The first line defines a new test, with hostname "WebCluster" and the
 columnname "http". It will be green if the http test on either the
 "Web1" or the "Web2" server is green.
 
@@ -89,8 +89,7 @@ test, defining a test that shows the overall health of the system.
 
 
 .SH FILES
-.BR "$XYMONHOME/etc/combo.cfg"
-
+.IP "\fB$XYMONHOME/etc/combo.cfg\fR"
 .SH "SEE ALSO"
 combostatus(1)
 

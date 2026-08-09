@@ -16,11 +16,11 @@ access to information on any page, usually through the use of a
 "Require group ..." setting. The group name then refers to one
 or more groups in an Apache \fBAuthGroupFile\fR file.
 
-However, this does not work for the Xymon CGI programs since they 
+However, this does not work for the Xymon CGI programs since they
 are used to fetch information about all hosts in Xymon, but there
 is only a single directory holding all of the CGI's. So here you
 can only require that the user is logged-in (the Apache "Require valid\-user"
-directive). A user with a login can - if he knows the hostname - 
+directive). A user with a login can - if he knows the hostname -
 manipulate the request sent to the webserver and fetch information
 about any status by use of the Xymon CGI programs, even though he
 cannot see the overview webpages.
@@ -39,7 +39,7 @@ group-definitions file:
 
 When invoked with this option the CGI will read the Apache
 group-definitions file, and assume that an Apache \fBgroup\fR
-maps to a Xymon \fBpage\fR, and then - based on the logged-in userid - 
+maps to a Xymon \fBpage\fR, and then - based on the logged-in userid -
 determine which pages and hosts the user is allowed access to.
 Only information about those hosts will be made available by the CGI
 tool.

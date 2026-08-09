@@ -13,7 +13,7 @@ clients behind a firewall, so they cannot send status
 messages to the Xymon server directly.
 
 xymonproxy serves three purposes. First, it acts as a regular
-proxy server, allowing clients that cannot connect directly to 
+proxy server, allowing clients that cannot connect directly to
 the Xymon servers to send data. Although xymonproxy is optimized for handling
 status messages, it will forward all types of messages, including
 notes- and data-messages.
@@ -29,72 +29,72 @@ at a reasonable pace.
 Third, xymonproxy merges small "status" messages into larger
 "combo" messages. This can dramatically decrease the number
 of connections that need to go from xymonproxy to the Xymon
-server.  The merging of messages causes "status" messages 
-to be delayed for up to 0.25 seconds before being sent off 
+server.  The merging of messages causes "status" messages
+to be delayed for up to 0.25 seconds before being sent off
 to the Xymon server.
 
 .SH OPTIONS
-.IP "\-\-server=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
+.IP "\fB\-\-server\fR=\fISERVERIP\fR[:\fIPORT\fR][,\fISERVER2IP\fR[:\fIPORT\fR]]"
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
 standard Xymon port number. If you have setup the normal
 Xymon environment, you can use "\-\-server=$XYMSRV". Up
 to 3 servers can be specified; incoming messages are sent to
-all of them (except "config", "query" and "download" messages, 
+all of them (except "config", "query" and "download" messages,
 which go to the LAST server only). If you have Xymon clients
 sending their data via this proxy, note that the clients will
 receive their configuration data from the LAST of the servers
 listed here.  This option is required.
 
-.IP "\-\-listen=LOCALIP[:PORT]"
-Specifies the IP-adress where xymonproxy listens for incoming 
+.IP "\fB\-\-listen\fR=\fILOCALIP\fR[:\fIPORT\fR]"
+Specifies the IP-adress where xymonproxy listens for incoming
 connections. By default, xymonproxy listens on all IP-addresses
 assigned to the host. If no portnumber is given, port 1984
 will be used.
 
-.IP "\-\-timeout=N"
+.IP "\fB\-\-timeout\fR=\fIN\fR"
 Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
 
-.IP "\-\-report=[PROXYHOSTNAME.]SERVICE"
+.IP "\fB\-\-report\fR=[\fIPROXYHOSTNAME\fR.]\fISERVICE\fR"
 If given, this option causes xymonproxy to send a status report
 every 5 minutes to the Xymon server about itself. If you
 have set the standard Xymon environment, you can use
 "\-\-report=xymonproxy" to have xymonproxy report its status to a
 "xymonproxy" column in Xymon. The default for PROXYHOSTNAME
 is the $MACHINE environment variable, i.e. the hostname of the
-server running xymonproxy. See REPORT OUTPUT below for an 
+server running xymonproxy. See REPORT OUTPUT below for an
 explanation of the report contents.
 
-.IP "\-\-lqueue=N"
+.IP "\fB\-\-lqueue\fR=\fIN\fR"
 Size of the listen-queue where incoming connections can
 queue up before being processed. This should be large to
 accommodate bursts of activity from clients. Default: 512.
 
-.IP "\-\-daemon"
+.IP "\fB\-\-daemon\fR"
 Run in daemon mode, i.e. detach and run as a background process.
 This is the default.
 
-.IP "\-\-no\-daemon"
+.IP "\fB\-\-no\-daemon\fR"
 Runs xymonproxy as a foreground process.
 
-.IP "\-\-pidfile=FILENAME"
-Specifies the location of a file containing the process-ID 
+.IP "\fB\-\-pidfile\fR=\fIFILENAME\fR"
+Specifies the location of a file containing the process-ID
 of the xymonproxy daemon process. Default: /var/run/xymonproxy.pid.
 
-.IP "\-\-logfile=FILENAME"
+.IP "\fB\-\-logfile\fR=\fIFILENAME\fR"
 Sends all logging output to the specified file instead of stderr.
 
-.IP "\-\-log\-details"
+.IP "\fB\-\-log\-details\fR"
 Log details (IP-address, message type and hostname) to the logfile.
 This can also be enabled and disabled at run-time by sending the
 xymonproxy process a SIGUSR1 signal.
 
-.IP "\-\-debug"
+.IP "\fB\-\-debug\fR"
 Enable debugging output.
 
 .SH "REPORT OUTPUT"
-If enabled via the "\-\-report" option, xymonproxy will send a 
+If enabled via the "\-\-report" option, xymonproxy will send a
 status message about itself to the Xymon server once
 every 5 minutes.
 
@@ -102,11 +102,11 @@ The status message includes the following information:
 
 .IP "Incoming messages"
 The total number of connections accepted from clients
-since the proxy started. The "(N msgs/second)" is the 
+since the proxy started. The "(N msgs/second)" is the
 average number of messages per second over the past 5 minutes.
 
 .IP "Outbound messages"
-The total number of messages sent to the Xymon server. 
+The total number of messages sent to the Xymon server.
 Note that this is probably smaller than
 the number of incoming messages, since xymonproxy merges
 messages before sending them.
@@ -116,7 +116,7 @@ The number of "combo" messages received from a client.
 
 .IP "Incoming - Status messages"
 The number of "status" messages received from a client.
-xymonproxy attempts to merge these into "combo" messages. 
+xymonproxy attempts to merge these into "combo" messages.
 The "Messages merged" is the number of "status" messages
 that were merged into a combo message, the "Resulting combos"
 is the number of "combo" messages that resulted from the
@@ -149,7 +149,7 @@ to the Xymon server timed out after a connection
 was established.
 
 .IP "Timeout details - recovered"
-When a timeout happens while sending the status message to 
+When a timeout happens while sending the status message to
 the server, xymonproxy will attempt to recover the message and
 retry sending it to the server after waiting a few seconds.
 This number is the number of messages that were recovered,
@@ -172,23 +172,22 @@ The average time it took the proxy to process a message,
 calculated from the messages that have passed through the
 proxy during the past 5 minutes. This number is computed
 from the messages that actually end up establishing a
-connection to the Xymon server, i.e. status 
+connection to the Xymon server, i.e. status
 messages that were combined into combo-messages do not
 go into the calculation - if they did, it would reduce the
 average time, since it is faster to merge messages than
 send them out over the network.
-
-.SH ""
+.PP
 If you think the numbers do not add up, here is how they relate.
 
-The "Incoming messages" should be equal to the sum of the 
+The "Incoming messages" should be equal to the sum of the
 "Incoming Combo/Status/Page/Other messages", or slightly
 more because messages in transit are not included
 in the per-type message counts.
 
 The "Outbound messages" should be equal to sum of the
 "Incoming Combo/Page/Other messages", plus the "Resulting
-combos" count, plus "Incoming Status messages" minus 
+combos" count, plus "Incoming Status messages" minus
 "Messages merged" (this latter number is the number of status
 messages that were NOT merged into combos, but sent directly).
 The "Outbound messages" may be slightly lower than that,
@@ -196,13 +195,13 @@ because messages in transit are not included in the
 "Outbound messages" count until they have been fully sent.
 
 .SH SIGNALS
-.IP SIGHUP
+.IP "\fBSIGHUP\fR"
 Re-opens the logfile, e.g. after it has been rotated.
 
-.IP SIGTERM
+.IP "\fBSIGTERM\fR"
 Shut down the proxy.
 
-.IP SIGUSR1
+.IP "\fBSIGUSR1\fR"
 Toggles logging of individual messages.
 
 .SH "SEE ALSO"
