@@ -1389,7 +1389,7 @@ static int changedelay(void *hinfo, int newcolor, char *testname, int currcolor)
 static int isset_noflap(void *hinfo, char *testname, char *hostname)
 {
 	char *tok, *dstr, *dbuf;
-	int keylen, listed;
+	int listed;
 
 	dstr = xmh_item(hinfo, XMH_NOFLAP);
 	if (!dstr) return 0; /* no 'noflap' set */
@@ -1406,9 +1406,10 @@ static int isset_noflap(void *hinfo, char *testname, char *hostname)
 	dbuf = strdup(dstr);
 	if (!dbuf) return 0;	/* OOM - don't let strtok(NULL, ...) resume stale state */
 
-	keylen = strlen(testname);
+	/* Compare whole names: strncmp() over strlen(testname) made a listed entry
+	 * cover its own prefixes, so "noflap=imaps" also silenced the imap test. */
 	tok = strtok(dbuf, ",");
-	while (tok && (strncmp(testname, tok, keylen) != 0)) tok = strtok(NULL, ",");
+	while (tok && (strcmp(testname, tok) != 0)) tok = strtok(NULL, ",");
 	listed = (tok != NULL);
 	xfree(dbuf);
 
@@ -4539,7 +4540,8 @@ void do_message(conn_t *msg, char *origin)
 		line1 = strdup(msg->buf); if (p) *p = savech;
 
 		p = strtok(line1, " \t"); /* Skip the client keyword */
-		if (p) collectorid = strchr(p, '/'); if (collectorid) collectorid++;
+		if (p) collectorid = strchr(p, '/');
+		if (collectorid) collectorid++;
 		if (p) hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.CLIENTOS */
 		if (hostname) {
 			clientos = strrchr(hostname, '.'); 

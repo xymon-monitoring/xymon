@@ -181,6 +181,14 @@ Default: $XYMONSERVERROOT/server/ .
 
 .IP "\fBXYMONTMP\fR"
 Directory used for temporary files. Default: $XYMONHOME/tmp/
+.br
+Note:
+.I xymond_rrd(8)
+creates its cache-control Unix socket ("rrdctl.<pid>") in this
+directory, and Unix socket paths have a small, platform-dependent
+length limit (around 92 to 107 bytes for the complete path, depending
+on the OS). xymond_rrd refuses to start when XYMONTMP is too deep for
+the socket path to fit, so keep this directory path short.
 
 .IP "\fBXYMONWWWDIR\fR"
 Directory for Xymon webfiles. The $XYMONWEB URL must map to this directory.

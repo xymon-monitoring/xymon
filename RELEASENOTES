@@ -19,6 +19,11 @@ cipher list. Such tests may therefore turn red after upgrading Xymon, or after
 an OpenSSL upgrade invalidates a previously accepted restriction. xymonnet tests
 without a cipher-list restriction are unaffected.
 
+The NetBSD client now provides an inode report. The ptyfs (/dev/pts) filesystem
+is omitted from both the disk and inode reports by default. Set
+XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to restore the previous disk-report
+behavior and include that filesystem in both reports.
+
 
 Changes for 4.3.30
 ==================
