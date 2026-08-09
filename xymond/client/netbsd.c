@@ -50,7 +50,7 @@ void handle_netbsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	dfstr = getdata("df");
 	inodestr = getdata("inode");
 	meminfostr = getdata("meminfo");
-	msgsstr = getdata("msgsstr");
+	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
 	ifstatstr = getdata("ifstat");
 	portsstr = getdata("ports");
