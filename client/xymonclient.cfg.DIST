@@ -68,6 +68,73 @@ LOGFETCHOPTS=""
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
 
 
+# Filesystem reporting (NetBSD client) -- xymonclient-netbsd.sh uses the same
+# three variables for both disk-capacity and inode reports. By default it
+# excludes kernfs, procfs, cd9660, null and ptyfs, and passes -l to df so remote
+# filesystems are hidden. NetBSD tmpfs remains included: its inode counts are
+# memory-derived and can provide a meaningful exhaustion signal. The inode
+# report additionally excludes zfs and rows without usable inode accounting.
+# The ptyfs exclusion is new; set XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep
+# reporting it after an upgrade.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated types to remove from the
+#    default exclusion list. For example, "ptyfs" reports ptyfs despite the
+#    default. Types are exact tokens, not shell patterns.
+#
+# XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated types to add to the
+#    exclusion list. If a type appears in both settings, exclusion wins.
+#
+# XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) passes -l to df. Set to "no"
+#    to report remote filesystems. The stale-remote-mount warning above applies.
+#    A df invocation that exits non-zero with no output marks the corresponding
+#    disk or inode report failed (yellow) instead of silently reporting green.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES=""
+# XYMONCLIENT_FS_EXCLUDE_TYPES=""
+# XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
+
+
+# Filesystem reporting (macOS client) -- used by xymonclient-darwin.sh. Same
+# three variables as above, matched on mount ATTRIBUTES rather than filesystem
+# type: macOS df has no "-t", and type would not help anyway, since the sealed
+# root, the system helper volumes and the volume holding every user file are
+# all "apfs". Both variables therefore accept attributes as well as types.
+#
+# By default it drops "nobrowse" and "read-only" mounts -- devfs, the autofs
+# map, the system helpers and the sealed root, none of which carries a
+# meaningful capacity signal -- and keeps every other local mount. The data
+# volume, which Apple flags "root data", is exempt and always reported. The
+# inode report also skips apfs, whose ifree comes from the shared container
+# and never signals exhaustion.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES: types or attributes to surface. Empty by
+#    default. Naming an attribute is the only way to switch off a default drop:
+#      "nobrowse"  -- report volumes hidden from the Finder. WARNING: this
+#                     switches the drop off entirely, so devfs (/dev) and the
+#                     autofs map come back too, both permanently 100% full.
+#                     Pair it with XYMONCLIENT_FS_EXCLUDE_TYPES="devfs autofs".
+#
+# XYMONCLIENT_FS_EXCLUDE_TYPES: types or attributes to exclude on top of the
+#    defaults. Empty by default. Wins over XYMONCLIENT_FS_INCLUDE_TYPES and over
+#    the "root data" exemption:
+#      "lifs"      -- drop external FAT/exFAT/NTFS media (macOS Ventura and
+#                     later mount these through LiveFiles as "lifs"). They are
+#                     local disks, so they are reported by default.
+#      "fusefs"    -- drop macFUSE volumes such as NTFS-3G. Only useful for
+#                     volumes mounted "-o local", or with DF_LOCAL_ONLY="no":
+#                     macFUSE marks its volumes non-local by default, so the
+#                     local filter already drops them.
+#    Beware attributes most mounts carry: excluding "local" drops everything.
+#
+# XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) reports only mounts flagged
+#    "local", hiding nfs and smbfs; "no" surfaces them. The warning above about
+#    stale remote mounts wedging df applies here too.
+#
+# XYMONCLIENT_FS_INCLUDE_TYPES=""
+# XYMONCLIENT_FS_EXCLUDE_TYPES="lifs"
+# XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
+
+
 # Local Mode (Only) Options
 #
 # Running the Xymon client in local-config mode will cause threshold evaluation to

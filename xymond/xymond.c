@@ -1388,8 +1388,8 @@ static int changedelay(void *hinfo, int newcolor, char *testname, int currcolor)
 
 static int isset_noflap(void *hinfo, char *testname, char *hostname)
 {
-	char *tok, *dstr;
-	int keylen;
+	char *tok, *dstr, *dbuf;
+	int listed;
 
 	dstr = xmh_item(hinfo, XMH_NOFLAP);
 	if (!dstr) return 0; /* no 'noflap' set */
@@ -1400,11 +1400,20 @@ static int isset_noflap(void *hinfo, char *testname, char *hostname)
 
 	/* if not 'NOFLAP', we should receive "=test1,test2". Skip the = */
 	if (*dstr == '=') dstr++;
-	
-	keylen = strlen(testname);
-	tok = strtok(dstr, ",");
-	while (tok && (strncmp(testname, tok, keylen) != 0)) tok = strtok(NULL, ",");
-	if (!tok) return 0; /* specifies noflap, but this test is not in the list */
+
+	/* Copy first: xmh_item() points into the host's own tag buffer, and strtok()
+	 * would truncate the stored list at its first comma. */
+	dbuf = strdup(dstr);
+	if (!dbuf) return 0;	/* OOM - don't let strtok(NULL, ...) resume stale state */
+
+	/* Compare whole names: strncmp() over strlen(testname) made a listed entry
+	 * cover its own prefixes, so "noflap=imaps" also silenced the imap test. */
+	tok = strtok(dbuf, ",");
+	while (tok && (strcmp(testname, tok) != 0)) tok = strtok(NULL, ",");
+	listed = (tok != NULL);
+	xfree(dbuf);
+
+	if (!listed) return 0; /* specifies noflap, but this test is not in the list */
 
 	/* do not use flapping for the test */
 	dbgprintf("Ignoring flapping for %s:%s due to noflap set.\n", hostname, testname);

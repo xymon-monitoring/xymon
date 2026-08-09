@@ -350,10 +350,15 @@ int do_request(void)
 		if (compacts && *compacts) {
 			char *p;
 
+			/* Copy first: compacts points into the host record, and strtok()
+			 * would truncate the stored tag. complist keeps pointing into
+			 * the copy, which lives until this CGI exits. */
+			compacts = xstrdup(compacts);
 			compitem = strtok(compacts, ",");
 			while (compitem && !complist) {
 				p = strchr(compitem, '='); if (p) *p = '\0';
-				if (strcmp(service, compitem) == 0) complist = p+1;
+				/* An entry without '=' has no member list */
+				if (p && (strcmp(service, compitem) == 0)) complist = p+1;
 				compitem = strtok(NULL, ",");
 			}
 		}

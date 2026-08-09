@@ -54,6 +54,11 @@ has gone quiet after upgrading. Each client reads XYMONCLIENT_FS_INCLUDE_TYPES
 and XYMONCLIENT_FS_EXCLUDE_TYPES from xymonclient.cfg to override the
 defaults; see the comments there for the per-platform lists.
 
+The NetBSD client now provides an inode report. The ptyfs (/dev/pts) filesystem
+is omitted from both the disk and inode reports by default. Set
+XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to restore the previous disk-report
+behavior and include that filesystem in both reports.
+
 
 Changes for 4.3.30
 ==================
