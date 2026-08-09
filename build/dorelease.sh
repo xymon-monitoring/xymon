@@ -1,6 +1,7 @@
 #!/bin/sh
+set -eu
 
-VERSION="$1"
+VERSION="${1:-}"
 if [ "$VERSION" = "" ]
 then
 	echo "$0 VERSION"
