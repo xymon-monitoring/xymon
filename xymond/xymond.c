@@ -983,6 +983,41 @@ void posttoall(char *msg)
 }
 
 
+/*
+ * True if a hostname uses only web-servable characters (XYMON_HOSTNAME_CHARS,
+ * shared with the CGIs). A configured host whose canonical name fails this
+ * still loads and is monitored, but its svcstatus/history/reportlog pages are
+ * unreachable; warn_unreachable_hostnames() reports that once per config load.
+ * Single scan, one definition for both the ghost-name guard and that warning.
+ * (issue #309)
+ */
+static int hostname_web_safe(const char *name)
+{
+	return name[strspn(name, XYMON_HOSTNAME_CHARS)] == '\0';
+}
+
+/*
+ * Warn about configured hosts whose canonical name the web interface cannot
+ * serve. Called once after each hosts.cfg (re)load in the daemon, NOT from the
+ * shared loader -- that runs in every short-lived CGI process and would repeat
+ * the warning on every page render.
+ */
+static void warn_unreachable_hostnames(void)
+{
+	void *hrec;
+
+	for (hrec = first_host(); hrec; hrec = next_host(hrec, 0)) {
+		char *name = xmh_item(hrec, XMH_HOSTNAME);
+
+		/* A literal comma is web-unreachable even though XYMON_HOSTNAME_CHARS
+		 * lists it (the CGIs need it for the 192,168,1,1 IP spelling): every
+		 * generated URL runs the name through uncommafy(), so a configured
+		 * "foo,bar" resolves to "foo.bar" -- a different host. */
+		if (name && (!hostname_web_safe(name) || strchr(name, ',')))
+			errprintf("Warning: hostname '%s' in hosts.cfg has characters the web interface cannot serve; it is monitored but its web pages are not reachable. Use an ASCII canonical name and a NAME: tag for the displayed spelling.\n", name);
+	}
+}
+
 char *log_ghost(char *hostname, char *sender, char *msg)
 {
 	xtreePos_t ghandle;
@@ -1004,7 +1039,7 @@ char *log_ghost(char *hostname, char *sender, char *msg)
 	gwalk = (ghandle != xtreeEnd(rbghosts)) ? (ghostlist_t *)xtreeData(rbghosts, ghandle) : NULL;
 
 	/* Disallow weird test names - Note: a future version may restrict these to valid hostname + DNS labels and not preserve case */
-	if (!gwalk && (strlen(hostname) != strspn(hostname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:,._-")) ) {
+	if (!gwalk && !hostname_web_safe(hostname) ) {
 		errprintf("Bogus message from %s: Invalid new hostname '%s'\n", sender, hostname);
 		return NULL;
 	}
@@ -5646,6 +5681,11 @@ int main(int argc, char *argv[])
 		reopen_file(logfn, "a", stderr);
 	}
 
+	/* Warn about web-unreachable canonical hostnames only now that stderr
+	 * points at the log, so startup warnings land there and not just on the
+	 * launching terminal -- matching the reload path. */
+	warn_unreachable_hostnames();
+
 	if (ackinfologfn) {
 		ackinfologfd = fopen(ackinfologfn, "a");
 		if (ackinfologfd == NULL) {
@@ -5704,6 +5744,8 @@ int main(int argc, char *argv[])
 			loadresult = load_hostnames(hostsfn, NULL, get_fqdn());
 
 			if (loadresult == 0) {
+				warn_unreachable_hostnames();
+
 				/* Scan our list of hosts and weed out those we do not know about any more */
 				hosthandle = xtreeFirst(rbhosts);
 				while (hosthandle != xtreeEnd(rbhosts)) {
