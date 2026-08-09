@@ -82,6 +82,14 @@ file.
 .IP XYMONRRDS
 Default directory where RRD files are stored.
 
+.IP XYMONTMP
+Directory where xymond_rrd creates the cache-control Unix socket
+("rrdctl.<pid>") used to flush cached updates when a graph is shown.
+Unix socket paths have a small, platform-dependent length limit
+(around 92 to 107 bytes for the complete path), so xymond_rrd refuses
+to start - with an error stating the actual limit - when XYMONTMP is
+too deep for the socket path to fit.
+
 .IP NCV_testname
 Defines the types of data collected by the "ncv" module in xymond_rrd.
 See below for more information.
