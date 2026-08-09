@@ -107,7 +107,7 @@ char *getstring(char *databuf, char *beaindex, char *key)
 	if (p) {
 		eol = strchr(p, '\n');
 		if (eol) *eol = '\0';
-		strncpy(result, p, sizeof(result));
+		snprintf(result, sizeof(result), "%s", p);
 		if (eol) *eol = '\n';
 	}
 
