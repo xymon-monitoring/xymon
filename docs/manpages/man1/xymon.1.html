@@ -1,655 +1,599 @@
-
-<HTML><HEAD><TITLE>Manpage of XYMON</TITLE>
-</HEAD><BODY>
-<H1>XYMON</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
-
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymon - Xymon client communication program
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>xymon [options] RECIPIENT message</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
-
-is the client program used to communicate with a
-Xymon server. It is frequently used by Xymon
-client systems to send in status messages and pager
-alerts on local tests.
-<P>
-In Xymon, the xymon program is also used for administrative
-purposes, e.g. to rename or delete hosts, or to disable
-hosts that are down for longer periods of time.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS AND PARAMETERS</H2>
-
-<DL COMPACT>
-<DT>--debug<DD>
-Enable debugging. This prints out details about how the
-connection to the Xymon server is being established.
-<P>
-<DT>--proxy=<A HREF="http://PROXYSERVER:PROXYPORT/">http://PROXYSERVER:PROXYPORT/</A><DD>
-When sending the status messages via HTTP, use this server
-as an HTTP proxy instead of connecting directly to the Xymon
-server.
-<P>
-<DT>--timeout=N<DD>
-Specifies the timeout for connecting to the Xymon server, in
-seconds. The default is 5 seconds.
-<P>
-<DT>--response<DD>
-The xymon utility normally knows when to expect a response 
-from the server, so this option is not required. However,
-it will cause any response from the server to be displayed.
-<P>
-<DT>--merge<DD>
-Merge the command line message text with the data provided
-on standard input, and send the result to the Xymon server.
-The message text provided on the command line becomes the
-first line of the merged message.
-<P>
-<DT>RECIPIENT<DD>
-The <B>RECIPIENT</B> parameter defines which server receives
-the message. If RECIPIENT is given as &quot;0.0.0.0&quot;, then the
-message is sent to all of the servers listed in the XYMSERVERS
-environment variable.
-<P>
-Usually, a client will use &quot;$XYMSRV&quot; for the <B>RECIPIENT</B> 
-parameter, as this is defined for the client scripts
-to automatically contain the correct value.
-<P>
-The <B>RECIPIENT</B> parameter may be a URL for a webserver
-that has the xymoncgimsg.cgi or similar script installed. This
-tunnels the Xymon messages to the Xymon server using standard 
-HTTP protocol. The 
-<I><A HREF="../man8/xymoncgimsg.cgi.8.html">xymoncgimsg.cgi</A>(8)</I>
-
-CGI tool (included in Xymon) must be installed on the webserver 
-for the HTTP transport to work.
-<BR>
-
-<P>
-<DT>MESSAGE<DD>
-The <B>message</B> parameter is the message to be sent across
-to the Xymon server. Messages must be enclosed in quotes,
-but by doing so they can span multiple lines. The maximum size
-of a message is defined by the maximum allowed length of your
-shellaqs command-line, and is typically 8-32 KB. 
-<P>
-If you need to send longer status messages, you can specify &quot;@&quot; 
-as the message: xymon will then read the status message from its
-stdin.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>XYMON MESSAGE SYNTAX</H2>
-
-<P>
-This section lists the most commonly used messages in the Xymon
-protocol.
-<P>
-Each message must begin with one of the Xymon commands. Where
-a HOSTNAME is specified, it must have any dots in the hostname changed
-to commas if the Xymon FQDN setting is enabled (which is the default).
-So the host &quot;<A HREF="http://www.foo.com">www.foo.com</A>&quot;, for example, would report as &quot;www,foo,com&quot;.
-<P>
-<DL COMPACT>
-<DT>status[+LIFETIME][/group:GROUP] HOSTNAME.TESTNAME COLOR &lt;additional text&gt;<DD>
-This sends in a status message for a single test (column) on a single host.
-TESTNAME is the name of the column where this test will show up; any
-name is valid except that using dots in the testname will not work.
-COLOR must be one of the valid colors: &quot;green&quot;, &quot;yellow&quot;, &quot;red&quot; or &quot;clear&quot;.
-The colors &quot;blue&quot; and &quot;purple&quot; - although valid colors - should not be sent in a
-status message, as these are handled specially by the Xymon server.
-As a special case (for supporting older clients), &quot;client&quot; can be
-used as the name of the color. This causes the status message to be
-handled by Xymon as a &quot;client&quot; data message, and the TESTNAME
-parameter is used as the &quot;collector id&quot;.
-<BR>
-
-The &quot;additional text&quot; normally includes a local timestamp and a summary
-of the test result on the first line. Any lines following the first one
-are free-form, and can include any information that may be useful to
-diagnose the problem being reported.
-<BR>
-
-The LIFETIME defines how long this status is valid after being received
-by the Xymon server. The default is 30 minutes, but you can set any
-period you like. E.g. for a custom test that runs once an hour, you will
-want to set this to at least 60 minutes - otherwise the status will go
-purple after 30 minutes. It is a good idea to set the LIFETIME to
-slightly longer than the interval between your tests, to allow for variations
-in the time it takes your test to complete. The LIFETIME is in minutes,
-unless you add an &quot;h&quot; (hours), &quot;d&quot; (days) or &quot;w&quot; (weeks) immediately after
-the number, e.g. &quot;status+5h&quot; for a status that is valid for 5 hours.
-<BR>
-
-The GROUP option is used to direct alerts from the status to a specific group.
-It is currently used for status generated from the Xymon clientsaq data,
-e.g. to direct alerts for a &quot;procs&quot; status to different people, depending on
-exactly which process is down.
-<P>
-<DT>notify HOSTNAME.TESTNAME &lt;message text&gt;<DD>
-This triggers an informational message to be sent to those who 
-receive alerts for this HOSTNAME+TESTNAME combination, 
-according to the rules defined in
-<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
-
-This is used by the 
-<I><A HREF="../man1/enadis.cgi.1.html">enadis.cgi</A>(1)</I>
-
-tool to notify people about hosts being disabled or 
-enabled, but can also serve as a general way of notifying 
-server administrators.
-<P>
-<DT>data HOSTNAME.DATANAME&lt;newline&gt;&lt;additional text&gt;<DD>
-The &quot;data&quot; message allows tools to send data about a host, without
-it appearing as a column on the Xymon webpages. This
-is used, for example, to report statistics about a host, e.g. vmstat data, which
-does not in itself represent something that has a red, yellow or
-green identity. It is used by RRD bottom-feeder modules, among
-others. In Xymon, data messages are by default processed only by the
-<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
-
-module. If you want to handle data-messages using an external application,
-you may want to enable the 
-<I><A HREF="../man8/xymond_filestore.8.html">xymond_filestore</A>(8)</I>
-
-module for data-messages, to store data-messages in a format compatible
-with how the Big Brother daemon does.
-<P>
-<DT>disable HOSTNAME.TESTNAME DURATION &lt;additional text&gt;<DD>
-Disables a specific test for DURATION minutes. This will cause the
-status of this test to be listed as &quot;blue&quot; on the Xymon server,
-and no alerts for this host/test will be generated. If DURATION is
-given as a number followed by s/m/h/d, it is interpreted as being
-in seconds/minutes/hours/days respectively.
-<B>To</B>disable<B>a</B>test<B>until</B>it<B>becomes</B>OK,<B>use</B>-1<B>as</B>the<B>DURATION.</B>
-
-<B>To</B>disable<B>all</B>tests<B>for</B>a<B>host,</B>use<B>an</B>asterisk<B>*</B>for<B>TESTNAME.</B>
-
-<P>
-<DT>enable HOSTNAME.TESTNAME<DD>
-Re-enables a test that had been disabled.
-<P>
-<DT>query HOSTNAME.TESTNAME<DD>
-Query the Xymon server for the latest status reported for this
-particular test. If the host/test status is known, the response is
-the first line of the status report - the current color will be the
-first word on the line. Additional lines of text that might be 
-present on the status message cannot be retrieved.
-<BR>
-
-This allows any Xymon client to determine the status of a particular
-test, whether it is one pertaining to the host where the client
-is running, some other host, or perhaps the result of a combined
-test from multiple hosts managed by
-<I><A HREF="../man1/combostatus.1.html">combostatus</A>(1)</I>
-
-This will typically be useful to Xymon client extension scripts, that
-need to determine the status of other hosts, for example, to decide if an
-automatic recovery action should be initiated.
-<P>
-<DT>config FILENAME<DD>
-Retrieve one of the Xymon configuration files from the
-server. This command allows a client to pull files from the
-$XYMONHOME/etc/ directory on the server, allowing for semi-automatic
-updates of the client configuration. Since the configuration files 
-are designed to have a common file for the configuration of all hosts 
-in the system - and this is in fact the recommended way of configuring 
-your clients - this makes it easier to keep the configuration 
-files synchronized.
-<P>
-<DT>drop HOSTNAME<DD>
-Removes all data stored about the host HOSTNAME. It is assumed that you
-have already deleted the host from the hosts.cfg configuration file.
-<P>
-<DT>drop HOSTNAME TESTNAME<DD>
-Remove data about a single test (column).
-<P>
-<DT>rename OLDHOSTNAME NEWHOSTNAME<DD>
-Rename all data for a host that has had its name changed. You should do this
-after changing the hostname in the hosts.cfg configuration file.
-<P>
-<DT>rename HOSTNAME OLDTESTNAME NEWTESTNAME<DD>
-Rename data about a single test (column).
-<P>
-<DT>xymondlog HOSTNAME.TESTNAME<DD>
-Retrieve the Xymon status-log for a single test. The first line of the
-response contains a series of fields separated by a pipe-sign:
-<P>
-<B>hostname</B>
-
-The name of the host
-<P>
-<B>testname</B>
-
-The name of the test
-<P>
-<B>color</B>
-
-Status color (green, yellow, red, blue, clear, purple)
-<P>
-<B>testflags</B>
-
-For network tests, the flags indicating details about the test (used by xymongen).
-<P>
-<B>lastchange</B>
-
-Unix timestamp when the status color last changed.
-<P>
-<B>logtime</B>
-
-Unix timestamp when the log message was received.
-<P>
-<B>validtime</B>
-
-Unix timestamp when the log message is no longer valid (it goes purple at this time).
-<P>
-<B>acktime</B>
-
-Either -1 or Unix timestamp when an active acknowledgement expires.
-<P>
-<B>disabletime</B>
-
-Either -1 or Unix timestamp when the status is no longer disabled.
-<P>
-<B>sender</B>
-
-IP address where the status was received from.
-<P>
-<B>cookie</B>
-
-Either -1 or the cookie value used to acknowledge an alert.
-<P>
-<B>ackmsg</B>
-
-Empty or the acknowledgment message sent when the status was acknowledged.
-Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
-<P>
-<B>dismsg</B>
-
-Empty or the message sent when the status was disabled.
-Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
-<P>
-After the first line comes the full status log in plain text format.
-<P>
-<DT>xymondxlog HOSTNAME.TESTNAME<DD>
-Retrieves an XML string containing the status log as with the 
-&quot;xymondlog&quot; command.
-<P>
-<DT>xymondboard [CRITERIA] [fields=FIELDLIST]<DD>
-Retrieves a summary of the status of all known tests available to
-the Xymon daemon. 
-<P>
-By default - if no CRITERIA is provided - it returns one line for all 
-status messages that are found in Xymon. You can filter the response
-by selection specific page, host, test, color or various other fields. The 
-PAGEPATH, NETWORK, HOSTNAME, TESTNAME, and *MSG parameters are interpreted 
-perl-compatible regular expressions; the COLOR parameter accepts multiple 
-colors separated by commas; the *TIME values accept unix epoch timestamps.
-Other variables identified in <A HREF="../man5/xymon-xmh.5.html">xymon-xmh</A>(5) may also be used.
-<P>
-Because host filtration is done before test filtration, it's more efficient 
-(with very large data sets) to use PAGEPATH, HOSTNAME, NETWORK, and other 
-XMH_ filters when possible, before globally filtering with COLOR, *MSG, 
-*TIME, or TESTNAME. 
-<P>
-You can filter on, for example, both a hostname and a testname.
-<P>
-<P>
-<B>page=PAGEPATH</B>
-
-Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
-file.
-<P>
-<B>net=NETWORK</B>
-
-Include only tests from hosts with this NET: tag
-<P>
-<B>ip=IP</B>Address
-
-Include only tests from hosts with this IP address. This is a regex, not CIDR.
-<P>
-<B>host=HOSTNAME</B>
-
-Include only tests from the host HOSTNAME
-<P>
-<B>test=TESTNAME</B>
-
-Include only tests with the testname TESTNAME
-<P>
-<B>color=COLORNAME</B>
-
-Include only tests where the status color is COLORNAME
-<P>
-<B>tag=TAGNAME</B>
-
-Include only hosts with a certain tag specified in the <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5) line.
-Note that only items known to xymon components are included here; arbitrary
-text is not included
-<P>
-<B>XMH_string=VALUE</B>
-
-Include only hosts with a <A HREF="../man5/xymon-xmh.5.html">xymon-xmh</A>(5) variable matching this value
-<P>
-<P>
-Advanced Filtering
-<P>
-<B>msg=MESSAGE</B>
-
-Include only tests with full content matching MESSAGE. Use &quot;\s&quot; to escape 
-spaces (or other PCRE strings)
-<P>
-<B>ackmsg=MESSAGE</B>
-
-Include only tests with acknowledgement(s) MESSAGE. Use &quot;\s&quot; to escape 
-spaces (or other PCRE strings)
-<P>
-<B>dismsg=MESSAGE</B>
-
-Include only tests that have been disabled with strings matching MESSAGE. 
-Use &quot;\s&quot; to escape spaces (or other PCRE strings). (It is most efficient
-to pair this with color=blue.)
-<P>
-<P>
-Timestamp Filters
-<P>
-Certain fields (explained below) can be filtered with unix timestamps
-and with the following inequalities:  &gt;= &gt; &lt;= &lt; = != 
-<P>
-These filters are: lastchange, logtime, validtime, acktime, disabletime
-<P>
-The response is one line for each status that matches the CRITERIA,
-or all statuses if no criteria is specified. The line is composed of
-a number of fields, separated by a pipe-sign. You can select which
-fields to retrieve by listing them in the FIELDLIST. The following
-fields are available:
-<P>
-<B>hostname</B>
-
-The name of the host
-<P>
-<B>testname</B>
-
-The name of the test
-<P>
-<B>color</B>
-
-Status color (green, yellow, red, blue, clear, purple)
-<P>
-<B>flags</B>
-
-For network tests, the flags indicating details about the test (used by xymongen).
-<P>
-<B>lastchange</B>
-
-Unix timestamp when the status color last changed.
-<P>
-<B>logtime</B>
-
-Unix timestamp when the log message was received.
-<P>
-<B>validtime</B>
-
-Unix timestamp when the log message is no longer valid (it goes purple at this time).
-<P>
-<B>acktime</B>
-
-Either -1 or Unix timestamp when an active acknowledgement expires.
-<P>
-<B>disabletime</B>
-
-Either -1 or Unix timestamp when the status is no longer disabled.
-<P>
-<B>sender</B>
-
-IP address where the status was received from.
-<P>
-<B>cookie</B>
-
-Either -1 or the cookie value used to acknowledge an alert.
-<P>
-<B>line1</B>
-
-First line of status log.
-<P>
-<B>ackmsg</B>
-
-Empty (if no acknowledgement is active), or the text of the acknowledge
-message.
-<P>
-<B>dismsg</B>
-
-Empty (if the status is currently enabled), or the text of the disable message.
-<P>
-<B>msg</B>
-
-The full text of the current status message.
-<P>
-<B>client</B>
-
-Shows &quot;Y&quot; if there is client data available, &quot;N&quot; if not.
-<P>
-<B>clntstamp</B>
-
-Timestamp when the last client message was received, in Unix &quot;epoch&quot; format.
-<P>
-<B>acklist</B>
-
-List of the current acknowledgements for a test. This is a text string with multiple
-fields, delimited by a colon character. There are 5 fields: Timestamp for when the ack 
-was generated and when it expires; the the &quot;ack level&quot;; the user who sent the ack; and 
-the acknowledgement text.
-<P>
-<B>flapinfo</B>
-
-Tells if the status is flapping. 5 fields, delimited by &quot;/&quot;: A &quot;0&quot; if the status
-is not flapping and &quot;1&quot; if it is flapping; timestamp when the latest status change
-was recorded and when the first statuschange was recorded; and the two colors that 
-the status is flapping between.
-<P>
-<B>stats</B>
-
-Number of status-changes that have been recorded for this status since xymond was
-started.
-<P>
-<B>modifiers</B>
-
-Lists all active modifiers for this status (i.e. updates sent using a &quot;modify&quot; 
-command).
-<P>
-<B>XMH_*</B>
-
-The XMH-tags refer to the Xymon
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-configuration settings. A full list of these can be found in the
-<I><A HREF="../man5/xymon-xmh.5.html">xymon-xmh</A>(5)</I>
-
-man-page.
-<P>
-The ackmsg, dismsg and msg fields have certain characters encoded: Newline
-is &quot;\n&quot;, TAB is &quot;\t&quot;, carriage return is &quot;\r&quot;, a pipe-sign is &quot;\p&quot;, 
-and a backslash is &quot;\\&quot;.
-<P>
-If the &quot;fields&quot; parameter is omitted, a default set of
-hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1
-is used.
-<P>
-<DT>xymondxboard<DD>
-Retrieves an XML string with the summary of all status logs
-as for the &quot;xymondboard&quot; command.
-<P>
-<DT>hostinfo [CRITERIA]<DD>
-Retrieves the current configuration of a host (i.e. the 
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-definition). CRITERIA selects which host(s) to report, and is
-identical to the CRITERIA in the xymondboard command.
-<P>
-The response is one line for each host that matches the CRITERIA,
-or all hosts if no criteria is specified. The line is composed of
-a number of fields, separated by a pipe-sign. The first two fields
-will always be the hostname and the IP-address. The remaining fields 
-- if any - are the hosts.cfg tags in no particular order.
-<P>
-<DT>download FILENAME<DD>
-Download a file from the Xymon serveraqs download directory.
-<P>
-<DT>client[/COLLECTORID] HOSTNAME.OSTYPE [HOSTCLASS]<DD>
-Used to send a &quot;client&quot; message to the Xymon server. Client messages
-are generated by the Xymon client; when sent to the Xymon server they
-are matched against the rules in the
-<I><A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5)</I>
-
-configuration file, and status messages are generated for the client-side
-tests.
-The COLLECTORID is used when sending client-data that are additions
-to the standard client data. The data will be concatenated with the
-normal client data.
-<P>
-<DT>clientlog HOSTNAME [section=SECTIONNAME[,SECTIONNAME...]]<DD>
-Retrieves the current raw client message last sent by HOSTNAME. The optional
-&quot;section&quot; filter is used to select specific sections of the client data.
-<P>
-<DT>ping<DD>
-Attempts to contact the Xymon server. If successful, the Xymon server version ID
-is reported.
-<P>
-<DT>pullclient<DD>
-This message is used when fetching client data via the &quot;pull&quot; mechanism implemented by
-<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
-
-and
-<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
-
-for clients that cannot connect directly to the Xymon server.
-<P>
-<DT>ghostlist<DD>
-Report a list of <B>ghost</B> clients seen by the Xymon server. Ghosts are systems
-that report data to the Xymon server, but are not listed in the hosts.cfg file.
-<P>
-<DT>schedule [TIMESTAMP COMMAND]<DD>
-Schedules a command sent to the Xymon server for execution at a later time. E.g.
-used to schedule disabling of a host or service at sometime in the future. COMMAND
-is a complete Xymon command such as the ones listed above. TIMESTAMP is the
-Unix epoch time when the command will be executed.
-<BR>
-
-If no parameters are given, the currently scheduled tasks are listed in the response.
-The response is one line per scheduled command, with the job-id, the time when the
-command will be executed, the IP address from which this was sent, and the full command
-string.
-<BR>
-
-To cancel a previously scheduled command, <B>&quot;schedule cancel JOBID&quot;</B> can be
-used. JOBID is a number provided as the first item in the output from the schedule list.
-<P>
-<DT>notes FILENAME<DD>
-The message text will be stored in $XYMONHOME/notes/FILENAME which is then used as
-hyperlinks from hostnames or column names. This requires that the &quot;storenotes&quot; 
-task is enabled in tasks.cfg (it is disabled by default). FILENAME 
-cannot contain any directory path - these are stripped automatically.
-<P>
-<DT>usermsg ID<DD>
-These messages will be relayed directly to modules listening on the &quot;user&quot;
-channel of the Xymon daemon. This is intended for custom communication
-between client-side modules and the Xymon server.
-<P>
-<DT>modify HOSTNAME.TESTNAME COLOR SOURCE CAUSE<DD>
-Modify the color of a specific status, without generating a complete
-status message. This is for backend processors (e.g. RRD graphs)
-that can override the color of a status based on some criteria
-determined outside the normal flow of a status. E.g. the normal
-&quot;conn&quot; status may appear to be green since it merely checks on
-whether a host can be ping'ed or not; the RRD handler can then
-use a &quot;modify&quot; command to override this is the actual ping
-responsetime exceeds a given threshold. (See the &quot;DS&quot; configuration
-setting in 
-<I><A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5)</I>
-
-for how to do this). SOURCE is some identification of the module
-that generates the &quot;modify&quot; message - future modifications must
-use the same source. There may be several sources that modify
-the same status (the most severe status then becomes the actual
-color of the status). CAUSE is a one-line text string explaining
-the reason for overriding the normal status color - it will be
-displayed on the status webpage.
-<P>
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>EXAMPLE</H2>
-
-<P>
-Send a normal status message to the Xymon server, using the
-standard Xymon protocol on TCP port 1984:
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$XYMON&nbsp;$XYMSRV&nbsp;&quot;status&nbsp;www,foo,com.http&nbsp;green&nbsp;`date`&nbsp;Web&nbsp;OK&quot;
-<P>
-Send the same status message, but using HTTP protocol via the
-webserveraqs xymoncgimsg.cgi script:
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$XYMON&nbsp;<A HREF="http://bb.foo.com/cgi-bin/xymoncgimsg.cgi">http://bb.foo.com/cgi-bin/xymoncgimsg.cgi</A>&nbsp;&quot;status&nbsp;www,foo,com.http&nbsp;green&nbsp;`date`&nbsp;Web&nbsp;OK&quot;
-<P>
-Use &quot;query&quot; message to determine the color of the &quot;www&quot; test, and
-restart Apache if it is red:
-<BR>
-
-<P>
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;WWW=`$XYMON&nbsp;$XYMSRV&nbsp;&quot;query&nbsp;www,foo,com.www&quot;&nbsp;|&nbsp;awk&nbsp;aq{print&nbsp;$1}aq`
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;if&nbsp;[&nbsp;&quot;$WWW&quot;&nbsp;=&nbsp;&quot;red&quot;&nbsp;];&nbsp;then&nbsp;/etc/init.d/apache&nbsp;restart;&nbsp;fi
-<P>
-Use &quot;config&quot; message to update a local mytest.cfg file (but only
-if we get a response):
-<BR>
-
-<P>
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$XYMON&nbsp;$XYMSRV&nbsp;&quot;config&nbsp;mytest.cfg&quot;&nbsp;&gt;/tmp/mytest.cfg.new
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;if&nbsp;[&nbsp;-s&nbsp;/tmp/mytest.cfg.new&nbsp;];&nbsp;then&nbsp;
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mv&nbsp;/tmp/mytest.cfg.new&nbsp;$XYMONHOME/etc/mytest.cfg
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fi
-<P>
-Send a very large status message that has been built in the
-file &quot;statusmsg.txt&quot;. Instead of providing it on the command-line, 
-pass it via stdin to the xymon command:
-<P>
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;cat&nbsp;statusmsg.txt&nbsp;|&nbsp;$XYMON&nbsp;$XYMSRV&nbsp;&quot;@&quot;
-<P>
-<A NAME="lbAH">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man1/combostatus.1.html">combostatus</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS AND PARAMETERS</A><DD>
-<DT><A HREF="#lbAF">XYMON MESSAGE SYNTAX</A><DD>
-<DT><A HREF="#lbAG">EXAMPLE</A><DD>
-<DT><A HREF="#lbAH">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMON(1)</title>
+</head>
+<body>
+<h1 class="head-name">XYMON</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
+
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymon - Xymon client communication program</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymon [options] RECIPIENT message</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><i><a href="../man1/xymon.1.html">xymon</a>(1)</i> is the client program used to communicate with a
+    Xymon server. It is frequently used by Xymon client systems to send in
+    status messages and pager alerts on local tests.</p>
+<p class="Pp">In Xymon, the xymon program is also used for administrative
+    purposes, e.g. to rename or delete hosts, or to disable hosts that are down
+    for longer periods of time.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS_AND_PARAMETERS"><a class="permalink" href="#OPTIONS_AND_PARAMETERS">OPTIONS
+  AND PARAMETERS</a></h1>
+<dl class="Bl-tag">
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enable debugging. This prints out details about how the connection to the
+      Xymon server is being established.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="proxy"><a class="permalink" href="#proxy"><b>--proxy</b>=<b>http</b>://<i>PROXYSERVER</i>:<i>PROXYPORT</i>/</a></dt>
+  <dd>When sending the status messages via HTTP, use this server as an HTTP
+      proxy instead of connecting directly to the Xymon server.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="timeout"><a class="permalink" href="#timeout"><b>--timeout</b>=<i>N</i></a></dt>
+  <dd>Specifies the timeout for connecting to the Xymon server, in seconds. The
+      default is 5 seconds.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="response"><a class="permalink" href="#response"><b>--response</b></a></dt>
+  <dd>The xymon utility normally knows when to expect a response from the
+      server, so this option is not required. However, it will cause any
+      response from the server to be displayed.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="merge"><a class="permalink" href="#merge"><b>--merge</b></a></dt>
+  <dd>Merge the command line message text with the data provided on standard
+      input, and send the result to the Xymon server. The message text provided
+      on the command line becomes the first line of the merged message.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="RECIPIENT"><a class="permalink" href="#RECIPIENT"><b>RECIPIENT</b></a></dt>
+  <dd>The <b>RECIPIENT</b> parameter defines which server receives the message.
+      If RECIPIENT is given as &quot;0.0.0.0&quot;, then the message is sent to
+      all of the servers listed in the XYMSERVERS environment variable.
+    <p class="Pp">Usually, a client will use &quot;$XYMSRV&quot; for the
+        <b>RECIPIENT</b> parameter, as this is defined for the client scripts to
+        automatically contain the correct value.</p>
+    <p class="Pp">The <b>RECIPIENT</b> parameter may be a URL for a webserver
+        that has the xymoncgimsg.cgi or similar script installed. This tunnels
+        the Xymon messages to the Xymon server using standard HTTP protocol. The
+        <i><a href="../man8/xymoncgimsg.cgi.8.html">xymoncgimsg.cgi</a>(8)</i> CGI tool (included in Xymon) must be installed
+        on the webserver for the HTTP transport to work.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MESSAGE"><a class="permalink" href="#MESSAGE"><b>MESSAGE</b></a></dt>
+  <dd>The <b>message</b> parameter is the message to be sent across to the Xymon
+      server. Messages must be enclosed in quotes, but by doing so they can span
+      multiple lines. The maximum size of a message is defined by the maximum
+      allowed length of your shell's command-line, and is typically 8-32 KB.
+    <p class="Pp">If you need to send longer status messages, you can specify
+        &quot;@&quot; as the message: xymon will then read the status message
+        from its stdin.</p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMON_MESSAGE_SYNTAX"><a class="permalink" href="#XYMON_MESSAGE_SYNTAX">XYMON
+  MESSAGE SYNTAX</a></h1>
+<p class="Pp">This section lists the most commonly used messages in the Xymon
+    protocol.</p>
+<p class="Pp">Each message must begin with one of the Xymon commands. Where a
+    HOSTNAME is specified, it must have any dots in the hostname changed to
+    commas if the Xymon FQDN setting is enabled (which is the default). So the
+    host &quot;www.foo.com&quot;, for example, would report as
+    &quot;www,foo,com&quot;.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="status[+LIFETIME][/group:GROUP"><a class="permalink" href="#status[+LIFETIME][/group:GROUP"><b>status</b>[+<i>LIFETIME</i>][/<b>group</b>:<i>GROUP</i>]
+    <i>HOSTNAME.TESTNAME</i> <i>COLOR</i> &lt;<i>additional</i>
+    <i>text</i>&gt;</a></dt>
+  <dd>This sends in a status message for a single test (column) on a single
+      host. TESTNAME is the name of the column where this test will show up; any
+      name is valid except that using dots in the testname will not work. COLOR
+      must be one of the valid colors: &quot;green&quot;, &quot;yellow&quot;,
+      &quot;red&quot; or &quot;clear&quot;. The colors &quot;blue&quot; and
+      &quot;purple&quot; - although valid colors - should not be sent in a
+      status message, as these are handled specially by the Xymon server. As a
+      special case (for supporting older clients), &quot;client&quot; can be
+      used as the name of the color. This causes the status message to be
+      handled by Xymon as a &quot;client&quot; data message, and the TESTNAME
+      parameter is used as the &quot;collector id&quot;.
+    <br/>
+    The &quot;additional text&quot; normally includes a local timestamp and a
+      summary of the test result on the first line. Any lines following the
+      first one are free-form, and can include any information that may be
+      useful to diagnose the problem being reported.
+    <br/>
+    The LIFETIME defines how long this status is valid after being received by
+      the Xymon server. The default is 30 minutes, but you can set any period
+      you like. E.g. for a custom test that runs once an hour, you will want to
+      set this to at least 60 minutes - otherwise the status will go purple
+      after 30 minutes. It is a good idea to set the LIFETIME to slightly longer
+      than the interval between your tests, to allow for variations in the time
+      it takes your test to complete. The LIFETIME is in minutes, unless you add
+      an &quot;h&quot; (hours), &quot;d&quot; (days) or &quot;w&quot; (weeks)
+      immediately after the number, e.g. &quot;status+5h&quot; for a status that
+      is valid for 5 hours.
+    <br/>
+    The GROUP option is used to direct alerts from the status to a specific
+      group. It is currently used for status generated from the Xymon clients'
+      data, e.g. to direct alerts for a &quot;procs&quot; status to different
+      people, depending on exactly which process is down.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="notify"><a class="permalink" href="#notify"><b>notify</b>
+    <i>HOSTNAME.TESTNAME</i> &lt;<i>message</i> <i>text</i>&gt;</a></dt>
+  <dd>This triggers an informational message to be sent to those who receive
+      alerts for this HOSTNAME+TESTNAME combination, according to the rules
+      defined in <i><a href="../man5/alerts.cfg.5.html">alerts.cfg</a>(5)</i> This is used by the <i>enadis.cgi(1)</i>
+      tool to notify people about hosts being disabled or enabled, but can also
+      serve as a general way of notifying server administrators.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="data"><a class="permalink" href="#data"><b>data</b>
+    <i>HOSTNAME.DATANAME</i>&lt;<i>newline</i>&gt;&lt;<i>additional</i>
+    <i>text</i>&gt;</a></dt>
+  <dd>The &quot;data&quot; message allows tools to send data about a host,
+      without it appearing as a column on the Xymon webpages. This is used, for
+      example, to report statistics about a host, e.g. vmstat data, which does
+      not in itself represent something that has a red, yellow or green
+      identity. It is used by RRD bottom-feeder modules, among others. In Xymon,
+      data messages are by default processed only by the <i><a href="../man8/xymond_rrd.8.html">xymond_rrd</a>(8)</i>
+      module. If you want to handle data-messages using an external application,
+      you may want to enable the <i><a href="../man8/xymond_filestore.8.html">xymond_filestore</a>(8)</i> module for
+      data-messages, to store data-messages in a format compatible with how the
+      Big Brother daemon does.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="disable"><a class="permalink" href="#disable"><b>disable</b>
+    <i>HOSTNAME.TESTNAME</i> <i>DURATION</i> &lt;<i>additional</i>
+    <i>text</i>&gt;</a></dt>
+  <dd>Disables a specific test for DURATION minutes. This will cause the status
+      of this test to be listed as &quot;blue&quot; on the Xymon server, and no
+      alerts for this host/test will be generated. If DURATION is given as a
+      number followed by s/m/h/d, it is interpreted as being in
+      seconds/minutes/hours/days respectively.
+    <br/>
+    To disable a test until it becomes OK, use &quot;-1&quot; as the DURATION.
+    <br/>
+    To disable all tests for a host, use an asterisk &quot;*&quot; for TESTNAME.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="enable"><a class="permalink" href="#enable"><b>enable</b>
+    <i>HOSTNAME.TESTNAME</i></a></dt>
+  <dd>Re-enables a test that had been disabled.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="query"><a class="permalink" href="#query"><b>query</b>
+    <i>HOSTNAME.TESTNAME</i></a></dt>
+  <dd>Query the Xymon server for the latest status reported for this particular
+      test. If the host/test status is known, the response is the first line of
+      the status report - the current color will be the first word on the line.
+      Additional lines of text that might be present on the status message
+      cannot be retrieved.
+    <br/>
+    This allows any Xymon client to determine the status of a particular test,
+      whether it is one pertaining to the host where the client is running, some
+      other host, or perhaps the result of a combined test from multiple hosts
+      managed by <i><a href="../man1/combostatus.1.html">combostatus</a>(1)</i> This will typically be useful to Xymon
+      client extension scripts, that need to determine the status of other
+      hosts, for example, to decide if an automatic recovery action should be
+      initiated.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="config"><a class="permalink" href="#config"><b>config</b>
+    <i>FILENAME</i></a></dt>
+  <dd>Retrieve one of the Xymon configuration files from the server. This
+      command allows a client to pull files from the $XYMONHOME/etc/ directory
+      on the server, allowing for semi-automatic updates of the client
+      configuration. Since the configuration files are designed to have a common
+      file for the configuration of all hosts in the system - and this is in
+      fact the recommended way of configuring your clients - this makes it
+      easier to keep the configuration files synchronized.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="drop"><a class="permalink" href="#drop"><b>drop</b>
+    <i>HOSTNAME</i></a></dt>
+  <dd>Removes all data stored about the host HOSTNAME. It is assumed that you
+      have already deleted the host from the hosts.cfg configuration file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="drop~2"><a class="permalink" href="#drop~2"><b>drop</b>
+    <i>HOSTNAME</i> <i>TESTNAME</i></a></dt>
+  <dd>Remove data about a single test (column).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="rename"><a class="permalink" href="#rename"><b>rename</b>
+    <i>OLDHOSTNAME</i> <i>NEWHOSTNAME</i></a></dt>
+  <dd>Rename all data for a host that has had its name changed. You should do
+      this after changing the hostname in the hosts.cfg configuration file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="rename~2"><a class="permalink" href="#rename~2"><b>rename</b>
+    <i>HOSTNAME</i> <i>OLDTESTNAME</i> <i>NEWTESTNAME</i></a></dt>
+  <dd>Rename data about a single test (column).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="xymondlog"><a class="permalink" href="#xymondlog"><b>xymondlog</b>
+    <i>HOSTNAME.TESTNAME</i></a></dt>
+  <dd>Retrieve the Xymon status-log for a single test. The first line of the
+      response contains a series of fields separated by a pipe-sign:
+    <p class="Pp"></p>
+  </dd>
+  <dt id="hostname"><a class="permalink" href="#hostname"><b>hostname</b></a></dt>
+  <dd>The name of the host</dd>
+  <dt id="testname"><a class="permalink" href="#testname"><b>testname</b></a></dt>
+  <dd>The name of the test</dd>
+  <dt id="color"><a class="permalink" href="#color"><b>color</b></a></dt>
+  <dd>Status color (green, yellow, red, blue, clear, purple)</dd>
+  <dt id="testflags"><a class="permalink" href="#testflags"><b>testflags</b></a></dt>
+  <dd>For network tests, the flags indicating details about the test (used by
+      xymongen).</dd>
+  <dt id="lastchange"><a class="permalink" href="#lastchange"><b>lastchange</b></a></dt>
+  <dd>Unix timestamp when the status color last changed.</dd>
+  <dt id="logtime"><a class="permalink" href="#logtime"><b>logtime</b></a></dt>
+  <dd>Unix timestamp when the log message was received.</dd>
+  <dt id="validtime"><a class="permalink" href="#validtime"><b>validtime</b></a></dt>
+  <dd>Unix timestamp when the log message is no longer valid (it goes purple at
+      this time).</dd>
+  <dt id="acktime"><a class="permalink" href="#acktime"><b>acktime</b></a></dt>
+  <dd>Either -1 or Unix timestamp when an active acknowledgement expires.</dd>
+  <dt id="disabletime"><a class="permalink" href="#disabletime"><b>disabletime</b></a></dt>
+  <dd>Either -1 or Unix timestamp when the status is no longer disabled.</dd>
+  <dt id="sender"><a class="permalink" href="#sender"><b>sender</b></a></dt>
+  <dd>IP address where the status was received from.</dd>
+  <dt id="cookie"><a class="permalink" href="#cookie"><b>cookie</b></a></dt>
+  <dd>Either -1 or the cookie value used to acknowledge an alert.</dd>
+  <dt id="ackmsg"><a class="permalink" href="#ackmsg"><b>ackmsg</b></a></dt>
+  <dd>Empty or the acknowledgment message sent when the status was acknowledged.
+      Newline, pipe-signs and backslashes are escaped with a backslash,
+    C-style.</dd>
+  <dt id="dismsg"><a class="permalink" href="#dismsg"><b>dismsg</b></a></dt>
+  <dd>Empty or the message sent when the status was disabled. Newline,
+      pipe-signs and backslashes are escaped with a backslash, C-style. After
+      the first line comes the full status log in plain text format.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="xymondxlog"><a class="permalink" href="#xymondxlog"><b>xymondxlog</b>
+    <i>HOSTNAME.TESTNAME</i></a></dt>
+  <dd>Retrieves an XML string containing the status log as with the
+      &quot;xymondlog&quot; command.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="xymondboard"><a class="permalink" href="#xymondboard"><b>xymondboard</b>
+    [<i>CRITERIA</i>] [<b>fields</b>=<i>FIELDLIST</i>]</a></dt>
+  <dd>Retrieves a summary of the status of all known tests available to the
+      Xymon daemon.
+    <p class="Pp">By default - if no CRITERIA is provided - it returns one line
+        for all status messages that are found in Xymon. You can filter the
+        response by selection specific page, host, test, color or various other
+        fields. The PAGEPATH, NETWORK, HOSTNAME, TESTNAME, and *MSG parameters
+        are interpreted perl-compatible regular expressions; the COLOR parameter
+        accepts multiple colors separated by commas; the *TIME values accept
+        unix epoch timestamps. Other variables identified in <a href="../man5/xymon-xmh.5.html">xymon-xmh</a>(5) may
+        also be used.</p>
+    <p class="Pp">Because host filtration is done before test filtration, it's
+        more efficient (with very large data sets) to use PAGEPATH, HOSTNAME,
+        NETWORK, and other XMH_ filters when possible, before globally filtering
+        with COLOR, *MSG, *TIME, or TESTNAME.</p>
+    <p class="Pp">You can filter on, for example, both a hostname and a
+        testname.</p>
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="page"><a class="permalink" href="#page"><b>page</b>=<i>PAGEPATH</i></a></dt>
+  <dd>Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
+      file.</dd>
+  <dt id="net"><a class="permalink" href="#net"><b>net</b>=<i>NETWORK</i></a></dt>
+  <dd>Include only tests from hosts with this NET: tag <b>ip=IP</b>Address
+      Include only tests from hosts with this IP address. This is a regex, not
+      CIDR.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="host"><a class="permalink" href="#host"><b>host</b>=<i>HOSTNAME</i></a></dt>
+  <dd>Include only tests from the host HOSTNAME</dd>
+  <dt id="test"><a class="permalink" href="#test"><b>test</b>=<i>TESTNAME</i></a></dt>
+  <dd>Include only tests with the testname TESTNAME</dd>
+  <dt id="color~2"><a class="permalink" href="#color~2"><b>color</b>=<i>COLORNAME</i></a></dt>
+  <dd>Include only tests where the status color is COLORNAME</dd>
+  <dt id="tag"><a class="permalink" href="#tag"><b>tag</b>=<i>TAGNAME</i></a></dt>
+  <dd>Include only hosts with a certain tag specified in the <a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5) line.
+      Note that only items known to xymon components are included here;
+      arbitrary text is not included</dd>
+  <dt id="XMH_string"><a class="permalink" href="#XMH_string"><b>XMH_string</b>=<i>VALUE</i></a></dt>
+  <dd>Include only hosts with a <a href="../man5/xymon-xmh.5.html">xymon-xmh</a>(5) variable matching this value
+    <p class="Pp">Advanced Filtering</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="msg"><a class="permalink" href="#msg"><b>msg</b>=<i>MESSAGE</i></a></dt>
+  <dd>Include only tests with full content matching MESSAGE. Use &quot;\s&quot;
+      to escape spaces (or other PCRE strings)</dd>
+  <dt id="ackmsg~2"><a class="permalink" href="#ackmsg~2"><b>ackmsg</b>=<i>MESSAGE</i></a></dt>
+  <dd>Include only tests with acknowledgement(s) MESSAGE. Use &quot;\s&quot; to
+      escape spaces (or other PCRE strings)</dd>
+  <dt id="dismsg~2"><a class="permalink" href="#dismsg~2"><b>dismsg</b>=<i>MESSAGE</i></a></dt>
+  <dd>Include only tests that have been disabled with strings matching MESSAGE.
+      Use &quot;\s&quot; to escape spaces (or other PCRE strings). (It is most
+      efficient to pair this with color=blue.)</dd>
+</dl>
+<p class="Pp">Timestamp Filters</p>
+<p class="Pp">Certain fields (explained below) can be filtered with unix
+    timestamps and with the following inequalities: &gt;= &gt; &lt;= &lt; =
+  !=</p>
+<p class="Pp">These filters are: lastchange, logtime, validtime, acktime,
+    disabletime</p>
+<p class="Pp">The response is one line for each status that matches the
+    CRITERIA, or all statuses if no criteria is specified. The line is composed
+    of a number of fields, separated by a pipe-sign. You can select which fields
+    to retrieve by listing them in the FIELDLIST. The following fields are
+    available:</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="hostname~2"><a class="permalink" href="#hostname~2"><b>hostname</b></a></dt>
+  <dd>The name of the host</dd>
+  <dt id="testname~2"><a class="permalink" href="#testname~2"><b>testname</b></a></dt>
+  <dd>The name of the test</dd>
+  <dt id="color~3"><a class="permalink" href="#color~3"><b>color</b></a></dt>
+  <dd>Status color (green, yellow, red, blue, clear, purple)</dd>
+  <dt id="flags"><a class="permalink" href="#flags"><b>flags</b></a></dt>
+  <dd>For network tests, the flags indicating details about the test (used by
+      xymongen).</dd>
+  <dt id="lastchange~2"><a class="permalink" href="#lastchange~2"><b>lastchange</b></a></dt>
+  <dd>Unix timestamp when the status color last changed.</dd>
+  <dt id="logtime~2"><a class="permalink" href="#logtime~2"><b>logtime</b></a></dt>
+  <dd>Unix timestamp when the log message was received.</dd>
+  <dt id="validtime~2"><a class="permalink" href="#validtime~2"><b>validtime</b></a></dt>
+  <dd>Unix timestamp when the log message is no longer valid (it goes purple at
+      this time).</dd>
+  <dt id="acktime~2"><a class="permalink" href="#acktime~2"><b>acktime</b></a></dt>
+  <dd>Either -1 or Unix timestamp when an active acknowledgement expires.</dd>
+  <dt id="disabletime~2"><a class="permalink" href="#disabletime~2"><b>disabletime</b></a></dt>
+  <dd>Either -1 or Unix timestamp when the status is no longer disabled.</dd>
+  <dt id="sender~2"><a class="permalink" href="#sender~2"><b>sender</b></a></dt>
+  <dd>IP address where the status was received from.</dd>
+  <dt id="cookie~2"><a class="permalink" href="#cookie~2"><b>cookie</b></a></dt>
+  <dd>Either -1 or the cookie value used to acknowledge an alert.</dd>
+  <dt id="line1"><a class="permalink" href="#line1"><b>line1</b></a></dt>
+  <dd>First line of status log.</dd>
+  <dt id="ackmsg~3"><a class="permalink" href="#ackmsg~3"><b>ackmsg</b></a></dt>
+  <dd>Empty (if no acknowledgement is active), or the text of the acknowledge
+      message.</dd>
+  <dt id="dismsg~3"><a class="permalink" href="#dismsg~3"><b>dismsg</b></a></dt>
+  <dd>Empty (if the status is currently enabled), or the text of the disable
+      message.</dd>
+  <dt id="msg~2"><a class="permalink" href="#msg~2"><b>msg</b></a></dt>
+  <dd>The full text of the current status message.</dd>
+  <dt id="client"><a class="permalink" href="#client"><b>client</b></a></dt>
+  <dd>Shows &quot;Y&quot; if there is client data available, &quot;N&quot; if
+      not.</dd>
+  <dt id="clntstamp"><a class="permalink" href="#clntstamp"><b>clntstamp</b></a></dt>
+  <dd>Timestamp when the last client message was received, in Unix
+      &quot;epoch&quot; format.</dd>
+  <dt id="acklist"><a class="permalink" href="#acklist"><b>acklist</b></a></dt>
+  <dd>List of the current acknowledgements for a test. This is a text string
+      with multiple fields, delimited by a colon character. There are 5 fields:
+      Timestamp for when the ack was generated and when it expires; the the
+      &quot;ack level&quot;; the user who sent the ack; and the acknowledgement
+      text.</dd>
+  <dt id="flapinfo"><a class="permalink" href="#flapinfo"><b>flapinfo</b></a></dt>
+  <dd>Tells if the status is flapping. 5 fields, delimited by &quot;/&quot;: A
+      &quot;0&quot; if the status is not flapping and &quot;1&quot; if it is
+      flapping; timestamp when the latest status change was recorded and when
+      the first statuschange was recorded; and the two colors that the status is
+      flapping between.</dd>
+  <dt id="stats"><a class="permalink" href="#stats"><b>stats</b></a></dt>
+  <dd>Number of status-changes that have been recorded for this status since
+      xymond was started.</dd>
+  <dt id="modifiers"><a class="permalink" href="#modifiers"><b>modifiers</b></a></dt>
+  <dd>Lists all active modifiers for this status (i.e. updates sent using a
+      &quot;modify&quot; command).</dd>
+  <dt id="XMH_*"><a class="permalink" href="#XMH_*"><b>XMH_*</b></a></dt>
+  <dd>The XMH-tags refer to the Xymon <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> configuration
+      settings. A full list of these can be found in the <i><a href="../man5/xymon-xmh.5.html">xymon-xmh</a>(5)</i>
+      man-page.</dd>
+</dl>
+<p class="Pp">The ackmsg, dismsg and msg fields have certain characters encoded:
+    Newline is &quot;\n&quot;, TAB is &quot;\t&quot;, carriage return is
+    &quot;\r&quot;, a pipe-sign is &quot;\p&quot;, and a backslash is
+    &quot;\\&quot;.</p>
+<p class="Pp">If the &quot;fields&quot; parameter is omitted, a default set of
+    hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1
+    is used.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="xymondxboard"><a class="permalink" href="#xymondxboard"><b>xymondxboard</b></a></dt>
+  <dd>Retrieves an XML string with the summary of all status logs as for the
+      &quot;xymondboard&quot; command.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="hostinfo"><a class="permalink" href="#hostinfo"><b>hostinfo</b>
+    [<i>CRITERIA</i>]</a></dt>
+  <dd>Retrieves the current configuration of a host (i.e. the
+      <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> definition). CRITERIA selects which host(s) to report,
+      and is identical to the CRITERIA in the xymondboard command.
+    <p class="Pp">The response is one line for each host that matches the
+        CRITERIA, or all hosts if no criteria is specified. The line is composed
+        of a number of fields, separated by a pipe-sign. The first two fields
+        will always be the hostname and the IP-address. The remaining fields -
+        if any - are the hosts.cfg tags in no particular order.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="download"><a class="permalink" href="#download"><b>download</b>
+    <i>FILENAME</i></a></dt>
+  <dd>Download a file from the Xymon server's download directory.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="client[/COLLECTORID"><a class="permalink" href="#client[/COLLECTORID"><b>client</b>[/<i>COLLECTORID</i>]
+    <i>HOSTNAME.OSTYPE</i> [<i>HOSTCLASS</i>]</a></dt>
+  <dd>Used to send a &quot;client&quot; message to the Xymon server. Client
+      messages are generated by the Xymon client; when sent to the Xymon server
+      they are matched against the rules in the <i><a href="../man5/analysis.cfg.5.html">analysis.cfg</a>(5)</i>
+      configuration file, and status messages are generated for the client-side
+      tests. The COLLECTORID is used when sending client-data that are additions
+      to the standard client data. The data will be concatenated with the normal
+      client data.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="clientlog"><a class="permalink" href="#clientlog"><b>clientlog</b>
+    <i>HOSTNAME</i>
+    [<b>section</b>=<i>SECTIONNAME</i>[,<i>SECTIONNAME</i>...]]</a></dt>
+  <dd>Retrieves the current raw client message last sent by HOSTNAME. The
+      optional &quot;section&quot; filter is used to select specific sections of
+      the client data.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ping"><a class="permalink" href="#ping"><b>ping</b></a></dt>
+  <dd>Attempts to contact the Xymon server. If successful, the Xymon server
+      version ID is reported.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="pullclient"><a class="permalink" href="#pullclient"><b>pullclient</b></a></dt>
+  <dd>This message is used when fetching client data via the &quot;pull&quot;
+      mechanism implemented by <i><a href="../man8/xymonfetch.8.html">xymonfetch</a>(8)</i> and <i><a href="../man8/msgcache.8.html">msgcache</a>(8)</i> for
+      clients that cannot connect directly to the Xymon server.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ghostlist"><a class="permalink" href="#ghostlist"><b>ghostlist</b></a></dt>
+  <dd>Report a list of <b>ghost</b> clients seen by the Xymon server. Ghosts are
+      systems that report data to the Xymon server, but are not listed in the
+      hosts.cfg file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="schedule"><a class="permalink" href="#schedule"><b>schedule</b>
+    [<i>TIMESTAMP</i> <i>COMMAND</i>]</a></dt>
+  <dd>Schedules a command sent to the Xymon server for execution at a later
+      time. E.g. used to schedule disabling of a host or service at sometime in
+      the future. COMMAND is a complete Xymon command such as the ones listed
+      above. TIMESTAMP is the Unix epoch time when the command will be executed.
+    <br/>
+    If no parameters are given, the currently scheduled tasks are listed in the
+      response. The response is one line per scheduled command, with the job-id,
+      the time when the command will be executed, the IP address from which this
+      was sent, and the full command string.
+    <br/>
+    To cancel a previously scheduled command, <b>&quot;schedule cancel
+      JOBID&quot;</b> can be used. JOBID is a number provided as the first item
+      in the output from the schedule list.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="notes"><a class="permalink" href="#notes"><b>notes</b>
+    <i>FILENAME</i></a></dt>
+  <dd>The message text will be stored in $XYMONHOME/notes/FILENAME which is then
+      used as hyperlinks from hostnames or column names. This requires that the
+      &quot;storenotes&quot; task is enabled in tasks.cfg (it is disabled by
+      default). FILENAME cannot contain any directory path - these are stripped
+      automatically.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="usermsg"><a class="permalink" href="#usermsg"><b>usermsg</b>
+    <i>ID</i></a></dt>
+  <dd>These messages will be relayed directly to modules listening on the
+      &quot;user&quot; channel of the Xymon daemon. This is intended for custom
+      communication between client-side modules and the Xymon server.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="modify"><a class="permalink" href="#modify"><b>modify</b>
+    <i>HOSTNAME.TESTNAME</i> <i>COLOR</i> <i>SOURCE</i> <i>CAUSE</i></a></dt>
+  <dd>Modify the color of a specific status, without generating a complete
+      status message. This is for backend processors (e.g. RRD graphs) that can
+      override the color of a status based on some criteria determined outside
+      the normal flow of a status. E.g. the normal &quot;conn&quot; status may
+      appear to be green since it merely checks on whether a host can be ping'ed
+      or not; the RRD handler can then use a &quot;modify&quot; command to
+      override this is the actual ping responsetime exceeds a given threshold.
+      (See the &quot;DS&quot; configuration setting in <i><a href="../man5/analysis.cfg.5.html">analysis.cfg</a>(5)</i>
+      for how to do this). SOURCE is some identification of the module that
+      generates the &quot;modify&quot; message - future modifications must use
+      the same source. There may be several sources that modify the same status
+      (the most severe status then becomes the actual color of the status).
+      CAUSE is a one-line text string explaining the reason for overriding the
+      normal status color - it will be displayed on the status webpage.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="EXAMPLE"><a class="permalink" href="#EXAMPLE">EXAMPLE</a></h1>
+<p class="Pp">Send a normal status message to the Xymon server, using the
+    standard Xymon protocol on TCP port 1984:
+  <br/>
+   $ $XYMON $XYMSRV &quot;status www,foo,com.http green `date` Web OK&quot;</p>
+<p class="Pp">Send the same status message, but using HTTP protocol via the
+    webserver's xymoncgimsg.cgi script:
+  <br/>
+   $ $XYMON http://bb.foo.com/cgi-bin/xymoncgimsg.cgi &quot;status
+    www,foo,com.http green `date` Web OK&quot;</p>
+<p class="Pp">Use &quot;query&quot; message to determine the color of the
+    &quot;www&quot; test, and restart Apache if it is red:</p>
+<p class="Pp">
+  <br/>
+   $ WWW=`$XYMON $XYMSRV &quot;query www,foo,com.www&quot; | awk '{print $1}'`
+  <br/>
+   $ if [ &quot;$WWW&quot; = &quot;red&quot; ]; then /etc/init.d/apache restart;
+    fi</p>
+<p class="Pp">Use &quot;config&quot; message to update a local mytest.cfg file
+    (but only if we get a response):</p>
+<p class="Pp">
+  <br/>
+   $ $XYMON $XYMSRV &quot;config mytest.cfg&quot; &gt;/tmp/mytest.cfg.new
+  <br/>
+   $ if [ -s /tmp/mytest.cfg.new ]; then
+  <br/>
+   mv /tmp/mytest.cfg.new $XYMONHOME/etc/mytest.cfg
+  <br/>
+   fi</p>
+<p class="Pp">Send a very large status message that has been built in the file
+    &quot;statusmsg.txt&quot;. Instead of providing it on the command-line, pass
+    it via stdin to the xymon command:</p>
+<p class="Pp">
+  <br/>
+   $ cat statusmsg.txt | $XYMON $XYMSRV &quot;@&quot;</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/combostatus.1.html">combostatus</a>(1), <a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS_AND_PARAMETERS">OPTIONS AND PARAMETERS</a></dt>
+<dt><a href="#XYMON_MESSAGE_SYNTAX">XYMON MESSAGE SYNTAX</a></dt>
+<dt><a href="#EXAMPLE">EXAMPLE</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
+
+</body>
+</html>

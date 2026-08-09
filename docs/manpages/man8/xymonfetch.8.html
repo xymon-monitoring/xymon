@@ -1,106 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMONFETCH(8)</title>
+</head>
+<body>
+<h1 class="head-name">XYMONFETCH</h1>
+Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMONFETCH</TITLE>
-</HEAD><BODY>
-<H1>XYMONFETCH</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymonfetch - fetch client data from passive clients</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymonfetch [--server=XYMON.SERVER.IP] [options]</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">This utility is used to collect data from Xymon clients.</p>
+<p class="Pp">Normally, Xymon clients will themselves take care of sending all
+    of their data directly to the Xymon server. In that case, you do not need
+    this utility at all. However, in some network setups clients may be
+    prohibited from establishing a connection to an external server such as the
+    Xymon server, due to firewall policies. In such a setup you can configure
+    the client to store all of the client data locally by enabling the
+    <i><a href="../man8/msgcache.8.html">msgcache</a>(8)</i> utility on the client, and using <b>xymonfetch</b> on the
+    Xymon server to collect data from the clients.</p>
+<p class="Pp">xymonfetch will only collect data from clients that have the
+    <b>pulldata</b> tag listed in the <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> file. The IP-address
+    listed in the hosts.cfg file must be correct, since this is the IP-address
+    where xymonfetch will attempt to contact the client. If the msgcache daemon
+    is running on a non-standard IP-address or portnumber, you can specify the
+    portnumber as in <b>pulldata=192.168.1.2:8084</b> for contacting the
+    msgcache daemon using IP 192.168.1.2 port 8084. If the IP-address is
+    omitted, the default IP in the hosts.cfg file is used. If the port number is
+    omitted, the portnumber from the XYMONDPORT setting in
+    <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> is used (normally, this is port 1984).</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="server"><a class="permalink" href="#server"><b>--server</b>=<i>XYMON.SERVER.IP</i></a></dt>
+  <dd>Defines the IP address of the Xymon server where the collected client
+      messages are forwarded to. By default, messages are sent to the loopback
+      address 127.0.0.1, i.e. to a Xymon server running on the same host as
+      xymonfetch.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="interval"><a class="permalink" href="#interval"><b>--interval</b>=<i>N</i></a></dt>
+  <dd>Sets the interval (in seconds) between polls of a client. Default: 60
+      seconds.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="id"><a class="permalink" href="#id"><b>--id</b>=<i>N</i></a></dt>
+  <dd>Used when you have a setup with multiple Xymon servers. In that case, you
+      must run xymonfetch on each of the Xymon servers, with xymonfetch instance
+      using a different value of N. This allows several Xymon servers to pick up
+      data from the clients running msgcache, and msgcache can distinguish
+      between which messages have already been forwarded to which server.
+    <br/>
+    N is a number in the range 1-31.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="log-interval"><a class="permalink" href="#log-interval"><b>--log-interval</b>=<i>N</i></a></dt>
+  <dd>Limit how often xymonfetch will log problems with fetching data from a
+      host, in seconds. Default: 900 seconds (15 minutes). This is to prevent a
+      host that is down or where msgcache has not been started from flooding the
+      xymonfetch logs. Note that this is ignored when debugging is enabled.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enable debugging output.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man8/msgcache.8.html">msgcache</a>(8), <a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymonfetch - fetch client data from passive clients
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>xymonfetch [--server=XYMON.SERVER.IP] [options]</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-This utility is used to collect data from Xymon clients.
-<P>
-Normally, Xymon clients will themselves take care of sending
-all of their data directly to the Xymon server. In that case,
-you do not need this utility at all. However, in some network 
-setups clients may be prohibited from establishing a connection
-to an external server such as the Xymon server, due to firewall 
-policies. In such a setup you can configure the client to store
-all of the client data locally by enabling the
-<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
-
-utility on the client, and using <B>xymonfetch</B> on the Xymon
-server to collect data from the clients.
-<P>
-xymonfetch will only collect data from clients that have the
-<B>pulldata</B> tag listed in the
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-file. The IP-address listed in the hosts.cfg file must be correct,
-since this is the IP-address where xymonfetch will attempt to contact
-the client.  If the msgcache daemon is running on a non-standard 
-IP-address or portnumber, you can specify the portnumber as in
-<B>pulldata=192.168.1.2:8084</B> for contacting the msgcache daemon 
-using IP 192.168.1.2 port 8084. If the IP-address is omitted, the
-default IP in the hosts.cfg file is used. If the port number is
-omitted, the portnumber from the XYMONDPORT setting in
-<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
-
-is used (normally, this is port 1984).
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--server=XYMON.SERVER.IP<DD>
-Defines the IP address of the Xymon server where the collected client
-messages are forwarded to. By default, messages are sent to the
-loopback address 127.0.0.1, i.e. to a Xymon server running on the same 
-host as xymonfetch.
-<P>
-<DT>--interval=N<DD>
-Sets the interval (in seconds) between polls of a client. Default: 60 seconds.
-<P>
-<DT>--id=N<DD>
-Used when you have a setup with multiple Xymon servers. In that case, you
-must run xymonfetch on each of the Xymon servers, with xymonfetch instance
-using a different value of N. This allows several Xymon servers to pick up
-data from the clients running msgcache, and msgcache can distinguish between
-which messages have already been forwarded to which server.
-<BR>
-
-N is a number in the range 1-31.
-<P>
-<DT>--log-interval=N<DD>
-Limit how often xymonfetch will log problems with fetching data from a
-host, in seconds. Default: 900 seconds (15 minutes). This is to prevent
-a host that is down or where msgcache has not been started from flooding
-the xymonfetch logs. Note that this is ignored when debugging is enabled.
-<P>
-<DT>--debug<DD>
-Enable debugging output.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man8/msgcache.8.html">msgcache</A>(8), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

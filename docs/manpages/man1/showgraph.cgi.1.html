@@ -1,174 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>SHOWGRAPH.CGI(1)</title>
+</head>
+<body>
+<h1 class="head-name">SHOWGRAPH.CGI</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of SHOWGRAPH.CGI</TITLE>
-</HEAD><BODY>
-<H1>SHOWGRAPH.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">showgraph.cgi - CGI to generate Xymon trend graphs</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>showgraph [options]</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>showgraph.cgi</b> is invoked as a CGI script via the
+    showgraph.sh CGI wrapper.</p>
+<p class="Pp">showgraph.cgi is passed a QUERY_STRING environment variable with
+    the following parameters:</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="host"><a class="permalink" href="#host"><b>host</b></a></dt>
+  <dd>Name of the host to generate a graph for</dd>
+  <dt id="service"><a class="permalink" href="#service"><b>service</b></a></dt>
+  <dd>Name of the service to generate a graph for</dd>
+  <dt id="disp"><a class="permalink" href="#disp"><b>disp</b></a></dt>
+  <dd>Display-name of the host, used on the generated graphs instead of
+      hostname.</dd>
+  <dt id="graph"><a class="permalink" href="#graph"><b>graph</b></a></dt>
+  <dd>Can be &quot;hourly&quot;, &quot;daily&quot;, &quot;weekly&quot; or
+      &quot;monthly&quot; to select the time period that the graph covers.</dd>
+  <dt id="first"><a class="permalink" href="#first"><b>first</b></a></dt>
+  <dd>Used to split multi-graphs into multiple graphs. This causes showgraph.cgi
+      to generate only the graphs starting with the &quot;first'th&quot; graph
+      and continuing for &quot;count&quot;.</dd>
+  <dt id="count"><a class="permalink" href="#count"><b>count</b></a></dt>
+  <dd>Number of graphs in a multi-graph.</dd>
+  <dt id="upper"><a class="permalink" href="#upper"><b>upper</b></a></dt>
+  <dd>Set the upper limit of the graph. See <i>rrdgraph(1)</i> for a description
+      of the &quot;-u&quot; option.</dd>
+  <dt id="lower"><a class="permalink" href="#lower"><b>lower</b></a></dt>
+  <dd>Set the lower limit of the graph. See <i>rrdgraph(1)</i> for a description
+      of the &quot;-l&quot; option.</dd>
+  <dt id="graph_start"><a class="permalink" href="#graph_start"><b>graph_start</b></a></dt>
+  <dd>Set the starttime of the graph. This is used in zoom-mode.</dd>
+  <dt id="graph_end"><a class="permalink" href="#graph_end"><b>graph_end</b></a></dt>
+  <dd>Set the end-time of the graph. This is used in zoom-mode.</dd>
+  <dt id="action"><a class="permalink" href="#action"><b>action</b>=<b>menu</b></a></dt>
+  <dd>Generate an HTML page with links to 4 graphs, representing the hourly,
+      weekly, monthly and yearly graphs. Doesn't actually generate any graphs,
+      only the HTML that links to the graphs.</dd>
+  <dt id="action~2"><a class="permalink" href="#action~2"><b>action</b>=<b>selzoom</b></a></dt>
+  <dd>Generate an HTML page with link to single graph, and with JavaScript code
+      that lets the user select part of the graph for a zoom-operation. The
+      JavaScript invokes showgraph.cgi with &quot;action=showzoom&quot; to
+      generate the zoomed graph webpage.</dd>
+  <dt id="action~3"><a class="permalink" href="#action~3"><b>action</b>=<b>showzoom</b></a></dt>
+  <dd>Generate HTML with a link to the zoomed graph image. This link goes to an
+      &quot;action=view&quot; invocation of showgraph.cgi.</dd>
+  <dt id="action~4"><a class="permalink" href="#action~4"><b>action</b>=<b>view</b></a></dt>
+  <dd>Generate a single graph image.</dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="config"><a class="permalink" href="#config"><b>--config</b>=<i>FILENAME</i></a></dt>
+  <dd>Loads the graph configuration file from FILENAME. If not specified, the
+      file $XYMONHOME/etc/graphs.cfg is used. See the <i><a href="../man5/graphs.cfg.5.html">graphs.cfg</a>(5)</i> for
+      details about this file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="env"><a class="permalink" href="#env"><b>--env</b>=<i>FILENAME</i></a></dt>
+  <dd>Loads the environment settings defined in FILENAME before executing the
+      CGI.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="rrddir"><a class="permalink" href="#rrddir"><b>--rrddir</b>=<i>DIRECTORY</i></a></dt>
+  <dd>The top-level directory for the RRD files. If not specified, the directory
+      given by the XYMONRRDS environment is used.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="save"><a class="permalink" href="#save"><b>--save</b>=<i>FILENAME</i></a></dt>
+  <dd>Instead of returning the image via the CGI interface (i.e. on stdout),
+      save the generated image to FILENAME.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enable debugging output.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
+<dl class="Bl-tag">
+  <dt id="QUERY_STRING"><a class="permalink" href="#QUERY_STRING"><b>QUERY_STRING</b></a></dt>
+  <dd>Provided by the webserver CGI interface, this decides what graph to
+      generate.</dd>
+  <dt id="RRDGRAPHOPTS"><a class="permalink" href="#RRDGRAPHOPTS"><b>RRDGRAPHOPTS</b></a></dt>
+  <dd>RRD-specific options for the graph. This is usually set in the
+      <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> file.</dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt id="graphs.cfg"><a class="permalink" href="#graphs.cfg"><b>graphs.cfg:</b></a></dt>
+  <dd>The configuration file determining how graphs are generated from RRD
+      files.</dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man5/graphs.cfg.5.html">graphs.cfg</a>(5), <a href="../man7/xymon.7.html">xymon</a>(7), rrdtool(1)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#ENVIRONMENT">ENVIRONMENT</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-showgraph.cgi - CGI to generate Xymon trend graphs
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>showgraph [options]</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>showgraph.cgi</B>
-is invoked as a CGI script via the showgraph.sh CGI wrapper.
-<P>
-showgraph.cgi is passed a QUERY_STRING environment variable with the
-following parameters:
-<P>
-<B>host</B>
-
-Name of the host to generate a graph for
-<P>
-<B>service</B>
-
-Name of the service to generate a graph for
-<P>
-<B>disp</B>
-
-Display-name of the host, used on the generated graphs instead of hostname.
-<P>
-<B>graph</B>
-
-Can be &quot;hourly&quot;, &quot;daily&quot;, &quot;weekly&quot; or &quot;monthly&quot; to select the time period
-that the graph covers.
-<P>
-<B>first</B>
-
-Used to split multi-graphs into multiple graphs. This causes showgraph.cgi
-to generate only the graphs starting with the &quot;first'th&quot; graph and continuing
-for &quot;count&quot;.
-<P>
-<B>count</B>
-
-Number of graphs in a multi-graph.
-<P>
-<B>upper</B>
-
-Set the upper limit of the graph. See
-<I><A HREF="../man1/rrdgraph.1.html">rrdgraph</A>(1)</I>
-
-for a description of the &quot;-u&quot; option.
-<P>
-<B>lower</B>
-
-Set the lower limit of the graph. See
-<I><A HREF="../man1/rrdgraph.1.html">rrdgraph</A>(1)</I>
-
-for a description of the &quot;-l&quot; option.
-<P>
-<B>graph_start</B>
-
-Set the starttime of the graph. This is used in zoom-mode.
-<P>
-<B>graph_end</B>
-
-Set the end-time of the graph. This is used in zoom-mode.
-<P>
-<B>action=menu</B>
-
-Generate an HTML page with links to 4 graphs, representing the
-hourly, weekly, monthly and yearly graphs. Doesn't actually generate
-any graphs, only the HTML that links to the graphs.
-<P>
-<B>action=selzoom</B>
-
-Generate an HTML page with link to single graph, and with JavaScript code 
-that lets the user select part of the graph for a zoom-operation. The 
-JavaScript invokes showgraph.cgi with &quot;action=showzoom&quot; to generate the
-zoomed graph webpage.
-<P>
-<B>action=showzoom</B>
-
-Generate HTML with a link to the zoomed graph image. This link goes to
-an &quot;action=view&quot; invocation of showgraph.cgi.
-<P>
-<B>action=view</B>
-
-Generate a single graph image.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--config=FILENAME<DD>
-Loads the graph configuration file from FILENAME. If not specified,
-the file $XYMONHOME/etc/graphs.cfg is used. See the
-<I><A HREF="../man5/graphs.cfg.5.html">graphs.cfg</A>(5)</I>
-
-for details about this file.
-<P>
-<DT>--env=FILENAME<DD>
-Loads the environment settings defined in FILENAME before executing
-the CGI.
-<P>
-<DT>--rrddir=DIRECTORY<DD>
-The top-level directory for the RRD files. If not specified, the
-directory given by the XYMONRRDS environment is used.
-<P>
-<DT>--save=FILENAME<DD>
-Instead of returning the image via the CGI interface (i.e. on stdout),
-save the generated image to FILENAME.
-<P>
-<DT>--debug<DD>
-Enable debugging output.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>ENVIRONMENT</H2>
-
-<P>
-<B>QUERY_STRING</B>
-
-Provided by the webserver CGI interface, this decides what graph
-to generate.
-<P>
-<B>RRDGRAPHOPTS</B>
-
-RRD-specific options for the graph. This is usually set in the
-<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
-
-file.
-<P>
-<A NAME="lbAG">&nbsp;</A>
-<H2>FILES</H2>
-
-<P>
-<B>graphs.cfg:</B>
-
-The configuration file determining how graphs are generated from
-RRD files.
-<P>
-<A NAME="lbAH">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man5/graphs.cfg.5.html">graphs.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man1/rrdtool.1.html">rrdtool</A>(1)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">ENVIRONMENT</A><DD>
-<DT><A HREF="#lbAG">FILES</A><DD>
-<DT><A HREF="#lbAH">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

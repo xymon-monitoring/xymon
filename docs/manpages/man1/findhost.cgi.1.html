@@ -1,102 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>FINDHOST.CGI(1)</title>
+</head>
+<body>
+<h1 class="head-name">FINDHOST.CGI</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of FINDHOST.CGI</TITLE>
-</HEAD><BODY>
-<H1>FINDHOST.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">findhost.cgi - Xymon CGI script to find hosts</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>findhost.cgi?host=REGEX</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>findhost.cgi</b> is invoked as a CGI script via the findhost.sh
+    CGI wrapper.</p>
+<p class="Pp">findhost.cgi is passed a QUERY_STRING environment variable with
+    the &quot;host=REGEX&quot; parameter. The REGEX is a Posix regular
+    expression (see <i>regex(7)</i> ) describing the hostnames to look for. A
+    trailing wildcard is assumed on all hostnames - e.g. requesting the hostname
+    &quot;www&quot; will match any host whose name begins with
+  &quot;www&quot;.</p>
+<p class="Pp">It then produces a single web page, listing all of the hosts that
+    matched any of the hostnames, with links to the Xymon webpages where they
+    are located.</p>
+<p class="Pp">The output page lists hosts in the order they appear in the
+    <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> file.</p>
+<p class="Pp">A sample web page implementing the search facility is included
+    with xymongen, you access it via the URL /xymon/help/findhost.html.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="env"><a class="permalink" href="#env"><b>--env</b>=<i>FILENAME</i></a></dt>
+  <dd>Loads the environment from FILENAME before executing the CGI.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><b>$XYMONHOME/web/findhost_header</b></dt>
+  <dd>HTML header file for the generated web page
+    <p class="Pp"></p>
+  </dd>
+  <dt><b>$XYMONHOME/web/findhost_footer</b></dt>
+  <dd>HTML footer file for the generated web page
+    <p class="Pp"></p>
+  </dd>
+  <dt><b>$XYMONHOME/web/findhost_form</b></dt>
+  <dd>Query form displayed when findhost.cgi is called with no parameters.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT_VARIABLES"><a class="permalink" href="#ENVIRONMENT_VARIABLES">ENVIRONMENT
+  VARIABLES</a></h1>
+<dl class="Bl-tag">
+  <dt id="HOSTSCFG"><a class="permalink" href="#HOSTSCFG"><b>HOSTSCFG</b></a></dt>
+  <dd>findhost.cgi uses the HOSTSCFG environment variable to find the hosts.cfg
+      file listing all known hosts and their page locations.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONHOME"><a class="permalink" href="#XYMONHOME"><b>XYMONHOME</b></a></dt>
+  <dd>Used to locate the template files for the generated web pages.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/xymongen.1.html">xymongen</a>(1), <a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#ENVIRONMENT_VARIABLES">ENVIRONMENT VARIABLES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-findhost.cgi - Xymon CGI script to find hosts
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>findhost.cgi?host=REGEX</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>findhost.cgi</B>
-is invoked as a CGI script via the findhost.sh CGI wrapper.
-<P>
-findhost.cgi is passed a QUERY_STRING environment variable with the
-&quot;host=REGEX&quot; parameter. The REGEX is a Posix regular expression (see
-<I><A HREF="../man7/regex.7.html">regex</A>(7)</I>
-
-) describing the hostnames to look for.  A trailing wildcard is assumed on all 
-hostnames - e.g. requesting the hostname &quot;www&quot; will match any host whose 
-name begins with &quot;www&quot;.
-<P>
-It then produces a single web page, listing all of the hosts that
-matched any of the hostnames, with links to the Xymon webpages
-where they are located.
-<P>
-The output page lists hosts in the order they appear in the
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-file.
-<P>
-A sample web page implementing the search facility is included
-with xymongen, you access it via the URL /xymon/help/findhost.html.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--env=FILENAME<DD>
-Loads the environment from FILENAME before executing the CGI.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>FILES</H2>
-
-<DL COMPACT>
-<DT>$XYMONHOME/web/findhost_header<DD>
-HTML header file for the generated web page
-<P>
-<DT>$XYMONHOME/web/findhost_footer<DD>
-HTML footer file for the generated web page
-<P>
-<DT>$XYMONHOME/web/findhost_form<DD>
-Query form displayed when findhost.cgi is called with no parameters.
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>ENVIRONMENT VARIABLES</H2>
-
-<DL COMPACT>
-<DT>HOSTSCFG<DD>
-findhost.cgi uses the HOSTSCFG environment variable to find the
-hosts.cfg file listing all known hosts and their page locations.
-<P>
-<DT>XYMONHOME<DD>
-Used to locate the template files for the generated web pages.
-<P>
-</DL>
-<A NAME="lbAH">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man1/xymongen.1.html">xymongen</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">FILES</A><DD>
-<DT><A HREF="#lbAG">ENVIRONMENT VARIABLES</A><DD>
-<DT><A HREF="#lbAH">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

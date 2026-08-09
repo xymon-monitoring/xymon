@@ -1,118 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMOND_HISTORY(8)</title>
+</head>
+<body>
+<h1 class="head-name">XYMOND_HISTORY</h1>
+Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMOND_HISTORY</TITLE>
-</HEAD><BODY>
-<H1>XYMOND_HISTORY</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymond_history - xymond worker module for logging status
+  changes</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymond_channel --channel=stachg xymond_history
+  [options]</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">xymond_history is a worker module for xymond, and as such it is
+    normally run via the <i><a href="../man8/xymond_channel.8.html">xymond_channel</a>(8)</i> program. It receives xymond
+    status-change messages from the &quot;stachg&quot; channel via stdin, and
+    uses these to update the history logfiles in a manner that is compatible
+    with the standard Big Brother daemon, bbd.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="histdir"><a class="permalink" href="#histdir"><b>--histdir</b>=<i>DIRECTORY</i></a></dt>
+  <dd>The directory for the history files. If not specified, the directory given
+      by the XYMONHISTDIR environment is used.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="histlogdir"><a class="permalink" href="#histlogdir"><b>--histlogdir</b>=<i>DIRECTORY</i></a></dt>
+  <dd>The directory for the historical status-logs. If not specified, the
+      directory given by the XYMONHISTLOGS environment is used.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="minimum-free"><a class="permalink" href="#minimum-free"><b>--minimum-free</b>=<i>N</i></a></dt>
+  <dd>Sets the minimum percentage of free filesystem space on the $XYMONHISTLOGS
+      directory. If there is less than N% free space, xymond_history will not
+      save the detailed status-logs. Default: 5
+    <p class="Pp"></p>
+  </dd>
+  <dt id="pidfile"><a class="permalink" href="#pidfile"><b>--pidfile</b>=<i>FILENAME</i></a></dt>
+  <dd>xymond_history writes the process-ID it is running with to this file. This
+      is for use in automated startup scripts. The default file is
+      $XYMONSERVERLOGS/xymond_history.pid.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enable debugging output.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMONALLHISTLOG"><a class="permalink" href="#XYMONALLHISTLOG"><b>XYMONALLHISTLOG</b></a></dt>
+  <dd>This environment variable controls if the $XYMONHISTDIR/allevents logfile
+      is updated. This file is used by the event-log display on the nongreen
+      html page and the eventlog-webpage, among other things. You can disable it
+      by setting XYMONALLHISTLOGS=FALSE, but this is not recommended.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONHOSTHISTLOG"><a class="permalink" href="#XYMONHOSTHISTLOG"><b>XYMONHOSTHISTLOG</b></a></dt>
+  <dd>This environment variable controls if the $XYMONHISTDIR/HOSTNAME logfile
+      is updated. This file holds a list of all status changes seen for a single
+      host, but is not used by any of the standard Xymon tools. If you do not
+      want to save this, you can disable it by setting XYMONHOSTHISTLOG=FALSE.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="SAVESTATUSLOG"><a class="permalink" href="#SAVESTATUSLOG"><b>SAVESTATUSLOG</b></a></dt>
+  <dd>This environment variable controls if the historical status-logs are saved
+      whenever a status change occurs. These logfiles are stored in the
+      $XYMONHISTLOGS directory, and are used for the detailed log-display of a
+      status from the Xymon &quot;History&quot; page. If you do not want to save
+      these, you can disable it by setting SAVESTATUSLOG=FALSE. If you want to
+      save all except some specific logs, use
+      SAVESTATUSLOG=TRUE,!TEST1[,!TEST2...] If you want to save none except some
+      specific logs, use SAVESTATUSLOG=FALSE,TEST1[,TEST2...]
+    <br/>
+    NOTE: Status logs will not be saved if there is less than 5% free space on
+      the filesystem hosting the $XYMONHISTLOGS directory. The threshold can be
+      tuned via the &quot;--minimum-free&quot; option.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<p class="Pp">This module does not rely on any configuration files.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man8/xymond_channel.8.html">xymond_channel</a>(8), <a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#ENVIRONMENT">ENVIRONMENT</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymond_history - xymond worker module for logging status changes 
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>xymond_channel --channel=stachg xymond_history [options]</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-xymond_history is a worker module for xymond, and as such it is normally
-run via the
-<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
-
-program. It receives xymond status-change messages from the &quot;stachg&quot; 
-channel via stdin, and uses these to update the history logfiles in a manner 
-that is compatible with the standard Big Brother daemon, bbd.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--histdir=DIRECTORY<DD>
-The directory for the history files. If not specified, the
-directory given by the XYMONHISTDIR environment is used.
-<P>
-<DT>--histlogdir=DIRECTORY<DD>
-The directory for the historical status-logs. If not specified, the
-directory given by the XYMONHISTLOGS environment is used.
-<P>
-<DT>--minimum-free=N<DD>
-Sets the minimum percentage of free filesystem space on the $XYMONHISTLOGS
-directory. If there is less than N% free space, xymond_history will
-not save the detailed status-logs.
-Default: 5
-<P>
-<DT>--pidfile=FILENAME<DD>
-xymond_history writes the process-ID it is running with to this file.
-This is for use in automated startup scripts. The default file is
-$XYMONSERVERLOGS/xymond_history.pid.
-<P>
-<DT>--debug<DD>
-Enable debugging output.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>ENVIRONMENT</H2>
-
-<DL COMPACT>
-<DT>XYMONALLHISTLOG<DD>
-This environment variable controls if the $XYMONHISTDIR/allevents
-logfile is updated. This file is used by the event-log display on the
-nongreen html page and the eventlog-webpage, among other things. 
-You can disable it by setting XYMONALLHISTLOGS=FALSE, but this is not
-recommended.
-<P>
-<DT>XYMONHOSTHISTLOG<DD>
-This environment variable controls if the $XYMONHISTDIR/HOSTNAME
-logfile is updated. This file holds a list of all status changes seen
-for a single host, but is not used by any of the standard Xymon
-tools. If you do not want to save this, you can disable it by setting
-XYMONHOSTHISTLOG=FALSE.
-<P>
-<DT>SAVESTATUSLOG<DD>
-This environment variable controls if the historical
-status-logs are saved whenever a status change occurs. These logfiles
-are stored in the $XYMONHISTLOGS directory, and are used for the detailed
-log-display of a status from the Xymon &quot;History&quot; page. If you
-do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
-If you want to save all except some specific logs, use SAVESTATUSLOG=TRUE,!TEST1[,!TEST2...]
-If you want to save none except some specific logs, use SAVESTATUSLOG=FALSE,TEST1[,TEST2...]
-<BR>
-
-NOTE: Status logs will not be saved if there is less than 5% free space on 
-the filesystem hosting the $XYMONHISTLOGS directory. The threshold can
-be tuned via the &quot;--minimum-free&quot; option.
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>FILES</H2>
-
-This module does not rely on any configuration files.
-<P>
-<A NAME="lbAH">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">ENVIRONMENT</A><DD>
-<DT><A HREF="#lbAG">FILES</A><DD>
-<DT><A HREF="#lbAH">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

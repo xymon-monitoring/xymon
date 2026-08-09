@@ -1,196 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMOND_ALERT(8)</title>
+</head>
+<body>
+<h1 class="head-name">XYMOND_ALERT</h1>
+Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMOND_ALERT</TITLE>
-</HEAD><BODY>
-<H1>XYMOND_ALERT</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymond_alert - xymond worker module for sending out alerts</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymond_channel --channel=page xymond_alert [options]</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">xymond_alert is a worker module for xymond, and as such it is
+    normally run via the <i><a href="../man8/xymond_channel.8.html">xymond_channel</a>(8)</i> program. It receives xymond
+    page- and ack-messages from the &quot;page&quot; channel via stdin, and uses
+    these to send out alerts about failed and recovered hosts and services.</p>
+<p class="Pp">The operation of this module is controlled by the
+    <i><a href="../man5/alerts.cfg.5.html">alerts.cfg</a>(5)</i> file. This file holds the definition of rules and
+    recipients, that determine who gets alerts, how often, for what servers
+  etc.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="config"><a class="permalink" href="#config"><b>--config</b>=<i>FILENAME</i></a></dt>
+  <dd>Sets the filename for the <i>alerts.cfg</i> file. The default value is
+      &quot;etc/alerts.cfg&quot; below the Xymon server directory.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="dump-config"><a class="permalink" href="#dump-config"><b>--dump-config</b></a></dt>
+  <dd>Dumps the configuration after parsing it. May be useful to track down
+      problems with configuration file errors.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="checkpoint-file"><a class="permalink" href="#checkpoint-file"><b>--checkpoint-file</b>=<i>FILENAME</i></a></dt>
+  <dd>File where the current state of the xymond_alert module is saved. When
+      starting up, xymond_alert will also read this file to restore the previous
+      state.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="checkpoint-interval"><a class="permalink" href="#checkpoint-interval"><b>--checkpoint-interval</b>=<i>N</i></a></dt>
+  <dd>Defines how often (in seconds) the checkpoint-file is saved.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="cfid"><a class="permalink" href="#cfid"><b>--cfid</b></a></dt>
+  <dd>If this option is present, alert messages will include a line with
+      &quot;cfid:N&quot; where N is the linenumber in the alerts.cfg file that
+      caused this message to be sent. This can be useful to track down problems
+      with duplicate alerts.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="test"><a class="permalink" href="#test"><b>--test</b> <i>HOST</i>
+    <i>SERVICE</i> [<i>options</i>]</a></dt>
+  <dd>Shows which alert rules matches the given HOST/SERVICE combination. Useful
+      to debug configuration problems, and see what rules are used for an alert.
+    <p class="Pp">The possible options are:
+      <br/>
+      <b>--color=COLORNAME</b> The COLORNAME parameter is the color of the
+        alert: red, yellow or purple.
+      <br/>
+      <b>--duration=MINUTES</b> The MINUTES parameter is the duration of the
+        alert in minutes.
+      <br/>
+      <b>--group=GROUPNAME</b> The GROUPNAME parameter is a groupid string from
+        the analysis.cfg file.
+      <br/>
+      <b>--time=TIMESTRING</b> The TIMESTRING parameter is the time-of-day for
+        the alert, expressed as an absolute time in the epoch format (seconds
+        since Jan 1 1970). This is easily obtained with the GNU date utility
+        using the &quot;+%s&quot; output format.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="trace"><a class="permalink" href="#trace"><b>--trace</b>=<i>FILENAME</i></a></dt>
+  <dd>Send trace output to FILENAME, This allows for more detailed analysis of
+      how alerts trigger, without having the full debugging enabled.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enable debugging output.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="HOW_XYMON_DECIDES_WHEN_TO_SEND_ALERTS"><a class="permalink" href="#HOW_XYMON_DECIDES_WHEN_TO_SEND_ALERTS">HOW
+  XYMON DECIDES WHEN TO SEND ALERTS</a></h1>
+<p class="Pp">The xymond_alert module is responsible for sending out all alerts.
+    When a status first goes to one of the ALERTCOLORS, xymond_alert is notified
+    of this change. It notes that the status is now in an alert state, and
+    records the <b>timestamp</b> when this event started, and adds the alert to
+    the list statuses that may potentially trigger one or more alert
+  messages.</p>
+<p class="Pp">This list is then matched against the alerts.cfg configuration.
+    This happens at least once a minute, but may happen more often. E.g. when
+    status first goes into an alert state, this will always trigger the matching
+    to happen.</p>
+<p class="Pp">When scanning the configuration, xymond_alert looks at all of the
+    configuration rules. It also checks the DURATION setting against how long
+    time has elapsed since the event started - i.e. against the timestamp logged
+    when xymond_alert first heard of this event.</p>
+<p class="Pp">When an alert recipient is found, the alert is sent and it is
+    recorded when this recipient is due for his next alert message, based on the
+    REPEAT setting defined for this recipient. The next time xymond_alert scans
+    the configuration for what alerts to send, it will still find this recipient
+    because all of the configuration rules are fulfilled, but an alert message
+    will not be generated until the repeat interval has elapsed.</p>
+<p class="Pp">It can happen that a status first goes yellow and triggers an
+    alert, and later it goes red - e.g. a disk filling up. In that case,
+    xymond_alert clears the internal timer for when the next (repeat) alert is
+    due for all recipients. You generally want to be told when something that
+    has been in a warning state becomes critical, so in that case the REPEAT
+    setting is ignored and the alert is sent. This only happens the first time
+    such a change occurs - if the status switches between yellow and red
+    multiple times, only the first transition from yellow-&gt;red causes this
+    override.</p>
+<p class="Pp">When an status recovers, a recovery message may be sent -
+    depending on the configuration - and then xymond_alert forgets everything
+    about this status. So the next time it goes into an alert state, the entire
+    process starts all over again.</p>
+<p class="Pp"></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
+<dl class="Bl-tag">
+  <dt id="MAIL"><a class="permalink" href="#MAIL"><b>MAIL</b></a></dt>
+  <dd>The first part of a command line used to send out an e-mail with a
+      subject, typically set to &quot;/usr/bin/mail -s&quot; . xymond_alert will
+      add the subject and the mail recipients to form the command line used for
+      sending out email alerts.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="MAILC"><a class="permalink" href="#MAILC"><b>MAILC</b></a></dt>
+  <dd>The first part of a command line used to send out an e-mail without a
+      subject. Typically this will be &quot;/usr/bin/mail&quot;. xymond_alert
+      will add the mail recipients to form the command line used for sending out
+      email alerts.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt>~xymon/server/etc/alerts.cfg</dt>
+  <dd>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man5/alerts.cfg.5.html">alerts.cfg</a>(5), <a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man8/xymond_channel.8.html">xymond_channel</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#HOW_XYMON_DECIDES_WHEN_TO_SEND_ALERTS">HOW XYMON DECIDES WHEN TO SEND ALERTS</a></dt>
+<dt><a href="#ENVIRONMENT">ENVIRONMENT</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymond_alert - xymond worker module for sending out alerts
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>xymond_channel --channel=page xymond_alert [options]</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-xymond_alert is a worker module for xymond, and as such it is normally
-run via the
-<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
-
-program. It receives xymond page- and ack-messages from the &quot;page&quot; 
-channel via stdin, and uses these to send out alerts about failed 
-and recovered hosts and services.
-<P>
-The operation of this module is controlled by the
-<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
-
-file. This file holds the definition of rules and recipients,
-that determine who gets alerts, how often, for what servers etc.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--config=FILENAME<DD>
-Sets the filename for the 
-<I>alerts.cfg</I>
-
-file. The default value is &quot;etc/alerts.cfg&quot; below the Xymon
-server directory.
-<P>
-<DT>--dump-config<DD>
-Dumps the configuration after parsing it. May be useful to track
-down problems with configuration file errors.
-<P>
-<DT>--checkpoint-file=FILENAME<DD>
-File where the current state of the xymond_alert module is saved. 
-When starting up, xymond_alert will also read this file to restore
-the previous state.
-<P>
-<DT>--checkpoint-interval=N<DD>
-Defines how often (in seconds) the checkpoint-file is saved.
-<P>
-<DT>--cfid<DD>
-If this option is present, alert messages will include a line with
-&quot;cfid:N&quot; where N is the linenumber in the alerts.cfg file that
-caused this message to be sent. This can be useful to track down
-problems with duplicate alerts.
-<P>
-<DT>--test HOST SERVICE [options]<DD>
-Shows which alert rules matches the given HOST/SERVICE combination.
-Useful to debug configuration problems, and see what rules are used
-for an alert. 
-<P>
-The possible options are:
-<BR>
-
-<B>--color=COLORNAME</B>
-
-The COLORNAME parameter is the color of the alert: red, yellow or purple.
-<BR>
-
-<B>--duration=MINUTES</B>
-
-The MINUTES parameter is the duration of the alert in minutes. 
-<BR>
-
-<B>--group=GROUPNAME</B>
-
-The GROUPNAME parameter is a groupid string from the analysis.cfg
-file.
-<BR>
-
-<B>--time=TIMESTRING</B>
-
-The TIMESTRING parameter is the time-of-day for the alert, expressed as an
-absolute time in the epoch format (seconds since Jan 1 1970). This is
-easily obtained with the GNU date utility using the &quot;+%s&quot; output format.
-<P>
-<DT>--trace=FILENAME<DD>
-Send trace output to FILENAME, This allows for more detailed
-analysis of how alerts trigger, without having the full debugging
-enabled.
-<P>
-<DT>--debug<DD>
-Enable debugging output.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>HOW XYMON DECIDES WHEN TO SEND ALERTS</H2>
-
-The xymond_alert module is responsible for sending out all alerts.
-When a status first goes to one of the ALERTCOLORS, xymond_alert
-is notified of this change. It notes that the status is now in an
-alert state, and records the <B>timestamp</B> when this event started,
-and adds the alert to the list statuses that may potentially trigger
-one or more alert messages.
-<P>
-This list is then matched against the alerts.cfg configuration.
-This happens at least once a minute, but may happen more often. E.g.
-when status first goes into an alert state, this will always trigger
-the matching to happen.
-<P>
-When scanning the configuration, xymond_alert looks at all of the
-configuration rules. It also checks the DURATION setting against
-how long time has elapsed since the event started - i.e. against
-the timestamp logged when xymond_alert first heard of this event.
-<P>
-When an alert recipient is found, the alert is sent and it is recorded
-when this recipient is due for his next alert message, based on the
-REPEAT setting defined for this recipient. The next time xymond_alert
-scans the configuration for what alerts to send, it will still find
-this recipient because all of the configuration rules are fulfilled,
-but an alert message will not be generated until the repeat interval
-has elapsed.
-<P>
-It can happen that a status first goes yellow and triggers an alert,
-and later it goes red - e.g. a disk filling up. In that case, xymond_alert
-clears the internal timer for when the next (repeat) alert is due
-for all recipients. You generally want to be told when something that
-has been in a warning state becomes critical, so in that case the REPEAT 
-setting is ignored and the alert is sent. This only happens the first
-time such a change occurs - if the status switches between yellow and red
-multiple times, only the first transition from yellow-&gt;red causes this
-override.
-<P>
-When an status recovers, a recovery message may be sent - depending
-on the configuration - and then xymond_alert forgets everything about
-this status. So the next time it goes into an alert state, the entire
-process starts all over again.
-<P>
-<P>
-<A NAME="lbAG">&nbsp;</A>
-<H2>ENVIRONMENT</H2>
-
-<DL COMPACT>
-<DT>MAIL<DD>
-The first part of a command line used to send out an e-mail with a 
-subject, typically set to &quot;/usr/bin/mail -s&quot; . xymond_alert will add
-the subject and the mail recipients to form the command line used
-for sending out email alerts.
-<P>
-<DT>MAILC<DD>
-The first part of a command line used to send out an e-mail without
-a subject. Typically this will be &quot;/usr/bin/mail&quot;. xymond_alert will
-add the mail recipients to form the command line used for sending
-out email alerts.
-<P>
-</DL>
-<A NAME="lbAH">&nbsp;</A>
-<H2>FILES</H2>
-
-<DL COMPACT>
-<DT>~xymon/server/etc/alerts.cfg<DD>
-<P>
-</DL>
-<A NAME="lbAI">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">HOW XYMON DECIDES WHEN TO SEND ALERTS</A><DD>
-<DT><A HREF="#lbAG">ENVIRONMENT</A><DD>
-<DT><A HREF="#lbAH">FILES</A><DD>
-<DT><A HREF="#lbAI">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>
