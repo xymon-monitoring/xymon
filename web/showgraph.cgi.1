@@ -11,100 +11,83 @@ is invoked as a CGI script via the showgraph.sh CGI wrapper.
 showgraph.cgi is passed a QUERY_STRING environment variable with the
 following parameters:
 .sp
-.BR host
+.IP "\fBhost\fR"
 Name of the host to generate a graph for
-.sp
-.BR service
+.IP "\fBservice\fR"
 Name of the service to generate a graph for
-.sp
-.BR disp
+.IP "\fBdisp\fR"
 Display-name of the host, used on the generated graphs instead of hostname.
-.sp
-.BR graph
+.IP "\fBgraph\fR"
 Can be "hourly", "daily", "weekly" or "monthly" to select the time period
 that the graph covers.
-.sp
-.BR first
+.IP "\fBfirst\fR"
 Used to split multi-graphs into multiple graphs. This causes showgraph.cgi
 to generate only the graphs starting with the "first'th" graph and continuing
 for "count".
-.sp
-.BR count
+.IP "\fBcount\fR"
 Number of graphs in a multi-graph.
-.sp
-.BR upper
+.IP "\fBupper\fR"
 Set the upper limit of the graph. See
 .I rrdgraph(1)
 for a description of the "\-u" option.
-.sp
-.BR lower
+.IP "\fBlower\fR"
 Set the lower limit of the graph. See
 .I rrdgraph(1)
 for a description of the "\-l" option.
-.sp
-.BR graph_start
+.IP "\fBgraph_start\fR"
 Set the starttime of the graph. This is used in zoom-mode.
-.sp
-.BR graph_end
+.IP "\fBgraph_end\fR"
 Set the end-time of the graph. This is used in zoom-mode.
-.sp
-.BR action=menu
+.IP "\fBaction\fR=\fBmenu\fR"
 Generate an HTML page with links to 4 graphs, representing the
 hourly, weekly, monthly and yearly graphs. Doesn't actually generate
 any graphs, only the HTML that links to the graphs.
-.sp
-.BR action=selzoom
-Generate an HTML page with link to single graph, and with JavaScript code 
-that lets the user select part of the graph for a zoom-operation. The 
+.IP "\fBaction\fR=\fBselzoom\fR"
+Generate an HTML page with link to single graph, and with JavaScript code
+that lets the user select part of the graph for a zoom-operation. The
 JavaScript invokes showgraph.cgi with "action=showzoom" to generate the
 zoomed graph webpage.
-.sp
-.BR action=showzoom
+.IP "\fBaction\fR=\fBshowzoom\fR"
 Generate HTML with a link to the zoomed graph image. This link goes to
 an "action=view" invocation of showgraph.cgi.
-.sp
-.BR action=view
+.IP "\fBaction\fR=\fBview\fR"
 Generate a single graph image.
-
 .SH OPTIONS
-.IP "\-\-config=FILENAME"
+.IP "\fB\-\-config\fR=\fIFILENAME\fR"
 Loads the graph configuration file from FILENAME. If not specified,
 the file $XYMONHOME/etc/graphs.cfg is used. See the
 .I graphs.cfg(5)
 for details about this file.
 
-.IP "\-\-env=FILENAME"
+.IP "\fB\-\-env\fR=\fIFILENAME\fR"
 Loads the environment settings defined in FILENAME before executing
 the CGI.
 
-.IP "\-\-rrddir=DIRECTORY"
+.IP "\fB\-\-rrddir\fR=\fIDIRECTORY\fR"
 The top-level directory for the RRD files. If not specified, the
 directory given by the XYMONRRDS environment is used.
 
-.IP "\-\-save=FILENAME"
+.IP "\fB\-\-save\fR=\fIFILENAME\fR"
 Instead of returning the image via the CGI interface (i.e. on stdout),
 save the generated image to FILENAME.
 
-.IP "\-\-debug"
+.IP "\fB\-\-debug\fR"
 Enable debugging output.
 
 .SH ENVIRONMENT
 .sp
-.BR QUERY_STRING
+.IP "\fBQUERY_STRING\fR"
 Provided by the webserver CGI interface, this decides what graph
 to generate.
-.sp
-.BR RRDGRAPHOPTS
+.IP "\fBRRDGRAPHOPTS\fR"
 RRD-specific options for the graph. This is usually set in the
 .I xymonserver.cfg(5)
 file.
-
 .SH FILES
 .sp
-.BR graphs.cfg:
+.IP "\fBgraphs.cfg:\fR"
 The configuration file determining how graphs are generated from
 RRD files.
-
 .SH "SEE ALSO"
 graphs.cfg(5), xymon(7), rrdtool(1)
 

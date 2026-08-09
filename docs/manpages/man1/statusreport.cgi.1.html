@@ -1,129 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>STATUSREPORT.CGI(1)</title>
+</head>
+<body>
+<h1 class="head-name">STATUSREPORT.CGI</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of STATUSREPORT.CGI</TITLE>
-</HEAD><BODY>
-<H1>STATUSREPORT.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">statusreport.cgi - CGI program to report a status for a group of
+    servers</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>statusreport.cgi --column=COLUMNNAME [options]</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>statusreport.cgi</b> is a CGI tool to generate a simple HTML
+    report showing the current status of a single column for a group of Xymon
+    hosts.</p>
+<p class="Pp">E.g. You can use this report to get an overview of all of the SSL
+    certificates that are about to expire.</p>
+<p class="Pp">The generated webpage is a simple HTML table, suitable for copying
+    into other documents or e-mail.</p>
+<p class="Pp">statusreport.cgi runs as a CGI program, invoked by your webserver.
+    It is normally run via a wrapper shell-script in the CGI directory for
+    Xymon.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
+<p class="Pp">The Xymon installation includes two web report scripts using this
+    CGI tool: The <b>certreport.sh</b> script generates a list of SSL server
+    certificates that are yellow or red (i.e. they will expire soon); and the
+    <b>nongreen.sh</b> script generates a report of all statuses that are
+    currently non-green. These can be accessed from a web browser through a URL
+    referencing the script in the Xymon CGI directory (e.g.
+    &quot;/xymon-cgi/xymon-nongreen.sh&quot;).</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="column"><a class="permalink" href="#column"><b>--column</b>=<i>COLUMNNAME</i></a></dt>
+  <dd>Report the status of the COLUMNNAME column.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="all"><a class="permalink" href="#all"><b>--all</b></a></dt>
+  <dd>Report the status for all hosts known to Xymon. By default, this tool
+      reports only on the hosts found on the current page from where the CGI was
+      invoked (by looking at the &quot;pagepath&quot; cookie).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="filter"><a class="permalink" href="#filter"><b>--filter</b>=<i>CRITERIA</i></a></dt>
+  <dd>Only report on statuses that match the CRITERIA setting. See the
+      <i><a href="../man1/xymon.1.html">xymon</a>(1)</i> man-page - in the &quot;xymondboard&quot; command
+      description - for details about specifying filters.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="heading"><a class="permalink" href="#heading"><b>--heading</b>=<i>HTML</i></a></dt>
+  <dd>Defines the webpage heading - i.e. the &quot;title&quot; tag in the
+      generated HTML code.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="show-column"><a class="permalink" href="#show-column"><b>--show-column</b></a></dt>
+  <dd>Include the column name in the display.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="show-colors"><a class="permalink" href="#show-colors"><b>--show-colors</b></a></dt>
+  <dd>Show the status color on the generated webpage. The default is to not show
+      the status color.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-colors"><a class="permalink" href="#no-colors"><b>--no-colors</b></a></dt>
+  <dd>Do not include text showing the current color of each status in the
+      report. This is the default.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="show-summary"><a class="permalink" href="#show-summary"><b>--show-summary</b></a></dt>
+  <dd>Show only a summary of the important lines in the status message. By
+      default, the entire status message appears in the generated HTML code.
+      This option causes the first non-blank line of the status message to be
+      shown, and also any lines beginning with &quot;&amp;COLOR&quot; which is
+      used by many status messages to point out lines of interest (non-green
+      lines only, though).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="show-message"><a class="permalink" href="#show-message"><b>--show-message</b></a></dt>
+  <dd>Show the entire message on the webpage. This is the default.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="link"><a class="permalink" href="#link"><b>--link</b></a></dt>
+  <dd>Include HTML links to the host &quot;info&quot; page, and the status page.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="embedded"><a class="permalink" href="#embedded"><b>--embedded</b></a></dt>
+  <dd>Only generate the HTML table, not a full webpage. This can be used to
+      embed the status report into an external webpage.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="env"><a class="permalink" href="#env"><b>--env</b>=<i>FILENAME</i></a></dt>
+  <dd>Load the environment from FILENAME before executing the CGI.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="area"><a class="permalink" href="#area"><b>--area</b>=<i>NAME</i></a></dt>
+  <dd>Load environment variables for a specific area. NB: if used, this option
+      must appear before any --env=FILENAME option.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#EXAMPLES">EXAMPLES</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-statusreport.cgi - CGI program to report a status for a group of servers
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>statusreport.cgi --column=COLUMNNAME [options]</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>statusreport.cgi</B> is a CGI tool to generate a simple HTML
-report showing the current status of a single column for a group of
-Xymon hosts.
-<P>
-E.g. You can use this report to get an overview of all of the SSL 
-certificates that are about to expire.
-<P>
-The generated webpage is a simple HTML table, suitable for copying
-into other documents or e-mail.
-<P>
-statusreport.cgi runs as a CGI program, invoked by your webserver.
-It is normally run via a wrapper shell-script in the CGI directory for Xymon.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>EXAMPLES</H2>
-
-The Xymon installation includes two web report scripts using this
-CGI tool: The <B>certreport.sh</B> script generates a list of
-SSL server certificates that are yellow or red (i.e. they will expire
-soon); and the <B>nongreen.sh</B> script generates a report
-of all statuses that are currently non-green. These can be accessed
-from a web browser through a URL referencing the script in the
-Xymon CGI directory (e.g. &quot;/xymon-cgi/xymon-nongreen.sh&quot;).
-<P>
-<A NAME="lbAF">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--column=COLUMNNAME<DD>
-Report the status of the COLUMNNAME column.
-<P>
-<DT>--all<DD>
-Report the status for all hosts known to Xymon. By default,
-this tool reports only on the hosts found on the current page
-from where the CGI was invoked (by looking at the &quot;pagepath&quot;
-cookie).
-<P>
-<DT>--filter=CRITERIA<DD>
-Only report on statuses that match the CRITERIA setting. See the
-<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
-
-man-page - in the &quot;xymondboard&quot; command description - for 
-details about specifying filters.
-<P>
-<DT>--heading=HTML<DD>
-Defines the webpage heading - i.e. the &quot;title&quot; tag in the generated
-HTML code.
-<P>
-<DT>--show-column<DD>
-Include the column name in the display.
-<P>
-<DT>--show-colors<DD>
-Show the status color on the generated webpage. The default is 
-to not show the status color.
-<P>
-<DT>--no-colors<DD>
-Do not include text showing the current color of each status in
-the report. This is the default.
-<P>
-<DT>--show-summary<DD>
-Show only a summary of the important lines in the status message.
-By default, the entire status message appears in the generated 
-HTML code. This option causes the first non-blank line of the status
-message to be shown, and also any lines beginning with &quot;&amp;COLOR&quot; which
-is used by many status messages to point out lines of interest 
-(non-green lines only, though).
-<P>
-<DT>--show-message<DD>
-Show the entire message on the webpage. This is the default.
-<P>
-<DT>--link<DD>
-Include HTML links to the host &quot;info&quot; page, and the status page.
-<P>
-<DT>--embedded<DD>
-Only generate the HTML table, not a full webpage. This can be used
-to embed the status report into an external webpage.
-<P>
-<DT>--env=FILENAME<DD>
-Load the environment from FILENAME before executing the CGI.
-<P>
-<DT>--area=NAME<DD>
-Load environment variables for a specific area. NB: if used,
-this option must appear before any --env=FILENAME option.
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">EXAMPLES</A><DD>
-<DT><A HREF="#lbAF">OPTIONS</A><DD>
-<DT><A HREF="#lbAG">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

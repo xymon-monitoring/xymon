@@ -11,7 +11,7 @@ a single test, all tests for a host, or multiple hosts - immediately
 or at a future point in time.
 
 enadis.cgi runs as a CGI program, invoked by your webserver.
-It is normally run via a wrapper shell-script in the secured CGI 
+It is normally run via a wrapper shell-script in the secured CGI
 directory for Xymon.
 
 enadis.cgi is the back-end script for the enable/disable
@@ -21,22 +21,22 @@ users to select what to enable or disable.
 
 
 .SH OPTIONS
-.IP "\-\-no\-cookies"
-Normally, enadis.cgi uses a cookie sent by the browser to initially 
+.IP "\fB\-\-no\-cookies\fR"
+Normally, enadis.cgi uses a cookie sent by the browser to initially
 filter the list of hosts presented. If this is not desired, you can
 turn off this behaviour by calling acknowledge.cgi with the \-\-no\-cookies
 option. This would normally be placed in the CGI_ENADIS_OPTS setting in
 .I cgioptions.cfg(5)
 
-.IP "\-\-env=FILENAME"
+.IP "\fB\-\-env\fR=\fIFILENAME\fR"
 Load the environment from FILENAME before executing the CGI.
 
-.IP "\-\-area=NAME"
+.IP "\fB\-\-area\fR=\fINAME\fR"
 Load environment variables for a specific area. NB: if used,
 this option must appear before any \-\-env=FILENAME option.
 
 .SH FILES
-.IP "$XYMONHOME/web/maint_{header,form,footer}"
+.IP "\fB$XYMONHOME/web/maint_{header,form,footer}\fR"
 HTML template header
 
 .SH BUGS

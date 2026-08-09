@@ -1,0 +1,55 @@
+/* Make mandoc(1) HTML render like the man2html output Xymon ships today.
+ *
+ * man2html emits no stylesheet at all, so what users see is the browser's own
+ * default rendering. The closest match to "no stylesheet" is therefore to add
+ * as little as possible: both converters emit the same elements for the body
+ * text - p, dl, dt, dd, pre, b, i, a, br, hr - and those already render
+ * identically without help.
+ *
+ * Only four things differ in markup, and only those are styled here.
+ */
+
+/* 1. Sections. man2html emits <H2>; mandoc emits <h1 class="Sh">. Restore the
+ *    <h2> defaults so size and spacing are unchanged. */
+h1.Sh {
+	font-size: 1.5em;
+	margin: .83em 0;
+}
+h2.Ss {					/* subsections, where man2html has <H3> */
+	font-size: 1.17em;
+	margin: 1em 0;
+}
+
+/* 2. Anchors. mandoc wraps every heading and every tag in <a class="permalink">;
+ *    man2html has none. Left alone they would paint 1454 headings blue and
+ *    underlined, which would be the most visible change of all. Keep them
+ *    clickable, reveal them on hover. */
+a.permalink {
+	color: inherit;
+	text-decoration: none;
+}
+a.permalink:hover {
+	text-decoration: underline;
+}
+
+/* 3. Footer. man2html closes with a rule and a line of text; mandoc uses a
+ *    two-cell table. Give it the rule, and spread the cells. */
+table.foot {
+	width: 100%;
+	border-top: 1px solid;
+	margin-top: 1em;
+}
+td.foot-os {
+	text-align: right;
+}
+
+/* 4. mandoc indents literal displays with a wrapper div. Match the 40px that
+ *    <dd> gets from the browser, which is what man2html's blocks sit at. */
+div.Bd-indent {
+	margin-left: 40px;
+}
+
+/* Everything else - the page title <h1>, paragraphs, definition lists, <pre>,
+ * <b>, <i>, <a>, <hr> - is deliberately left to the browser, because relying
+ * on those defaults is precisely what man2html does.
+ */

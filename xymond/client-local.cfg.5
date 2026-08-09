@@ -6,7 +6,7 @@ client\-local.cfg \- Local configuration settings for Xymon clients
 .B ~xymon/server/etc/client\-local.cfg
 
 .SH DESCRIPTION
-The client\-local.cfg file contains settings that are used by each 
+The client\-local.cfg file contains settings that are used by each
 Xymon client when it runs on a monitored host. It provides a
 convenient way of configuring clients from a central location
 without having to setup special configuration maintenance tools on
@@ -17,14 +17,14 @@ the client should fetch data from, to be used as the basis for the
 "msgs" status column; and to configure which files and directories
 are being monitored in the "files" status column.
 
-Note that there is a dependency between the client\-local.cfg file 
-and the 
+Note that there is a dependency between the client\-local.cfg file
+and the
 .I analysis.cfg(5)
-file. When monitoring e.g. a logfile, you must first enter it into the 
-client\-local.cfg file, to trigger the Xymon client into reporting any 
-data about the logfile. Next, you must configure analysis.cfg 
-so the Xymon server knows what to look for in the file data sent by 
-the client. So: client\-local.cfg defines what raw data is collected 
+file. When monitoring e.g. a logfile, you must first enter it into the
+client\-local.cfg file, to trigger the Xymon client into reporting any
+data about the logfile. Next, you must configure analysis.cfg
+so the Xymon server knows what to look for in the file data sent by
+the client. So: client\-local.cfg defines what raw data is collected
 by the client, and analysis.cfg defines how to analyze them.
 
 .SH PROPAGATION TO CLIENTS
@@ -32,7 +32,7 @@ The client\-local.cfg file resides on the Xymon server.
 
 When clients connect to the Xymon server to send in their client
 data, they will receive part of this file back from the Xymon server.
-The configuration received by the client is then used the next time 
+The configuration received by the client is then used the next time
 the client runs.
 
 This method of propagating the configuration means that there is a
@@ -56,8 +56,8 @@ will be sent back to the client.
 
 .SH FILE FORMAT
 The file is divided into sections, delimited by "[name]" lines.
-A section name can be either an operating system identifier - 
-linux, solaris, hp-ux, aix, freebsd, openbsd, netbsd, darwin - 
+A section name can be either an operating system identifier -
+linux, solaris, hp-ux, aix, freebsd, openbsd, netbsd, darwin -
 a class, or a hostname. When deciding which section to send to a client,
 Xymon will first look for a section named after the hostname of
 the client; if such a section does not exist, it will look for
@@ -70,12 +70,13 @@ To do this you must use
 .sp
     [host=<expression>]
 .sp
-where <expression> is a Perl-compatible regular expression. The same 
+where <expression> is a Perl-compatible regular expression. The same
 kind of matching can be done on operating system or host class, using
 .sp
-    [os=<expresssion>]
-.br
-    [class=<expression>]
+.nf
+\&    [os=<expresssion>]
+\&    [class=<expression>]
+.fi
 
 
 Apart from the section delimiter, the file format is free-form, or
@@ -84,16 +85,16 @@ rather it is defined by the tools that make use of the configuration.
 .SH LOGFILE CONFIGURATION ENTRIES
 A logfile configuration entry looks like this:
 .sp
-    log:/var/log/messages:10240
-.br
-    ignore MARK
-.br
-    trigger Oops
+.nf
+\&    log:/var/log/messages:10240
+\&    ignore MARK
+\&    trigger Oops
+.fi
 .sp
 The \fBlog:FILENAME:SIZE\fR line defines the filename of the log, and the
 maximum amount of data (in bytes) to send to the Xymon server. FILENAME
 is usually an explicit full-path filename on the client. If it is enclosed
-in backticks, it is a command which the Xymon client runs and each line 
+in backticks, it is a command which the Xymon client runs and each line
 of output from this command is then used as a filename. This allows
 scripting which files to monitor, e.g. if you have logfiles that are
 named with some sort of timestamp. If FILENAME is enclosed in angle brackets
@@ -118,11 +119,11 @@ A special type of log-handling is possible, where the number of lines matching
 a regular expressions are merely counted. This is \fBlinecount:FILENAME\fR,
 followed by a number of lines of the form \fBID:PATTERN\fR. E.g.
 .sp
-    linecount:/var/log/messages
-.br
-    diskerrors:I/O error.*device.*hd
-.br
-    badlogins:Failed login
+.nf
+\&    linecount:/var/log/messages
+\&    diskerrors:I/O error.*device.*hd
+\&    badlogins:Failed login
+.fi
 .sp
 
 .SH FILE CONFIGURATION ENTRIES
@@ -132,10 +133,10 @@ group, size, permissions, checksum etc. It looks like this:
     file:/var/log/messages[:HASH]
 .sp
 The \fBfile:FILENAME\fR line defines the filename of the file to monitor.
-As with the "log:" entries, a filename enclosed in backticks means a 
-command which will generate the filenames dynamically. The optional 
-[:HASH] setting defines what type of hash to compute for the file: 
-\fBmd5\fR, \fBrmd160\fR, \fBsha1\fR, or \fBsha256, \fBsha512\fR, 
+As with the "log:" entries, a filename enclosed in backticks means a
+command which will generate the filenames dynamically. The optional
+[:HASH] setting defines what type of hash to compute for the file:
+\fBmd5\fR, \fBrmd160\fR, \fBsha1\fR, or \fBsha256, \fBsha512\fR,
 \fBsha224\fR, or \fBsha384\fR. By default, no hash is calculated.
 .br
 \fBNOTE:\fR If
@@ -144,31 +145,31 @@ a command to generate the filenames. Putting wildcards directly into
 the \fBfile:\fR entry will not work.
 
 .SH DIRECTORY CONFIGURATION ENTRIES
-A directory monitoring entry is used to watch the size of a directory 
+A directory monitoring entry is used to watch the size of a directory
 and any sub-directories. It looks like this:
 .sp
     dir:DIRECTORYNAME
 .sp
 The \fBdir:DIRECTORYNAME\fR line defines the filename of the file to monitor.
-As with the "log:" entries, a filename enclosed in backticks means a 
-command which will generate the filenames dynamically and a filename enclosed 
+As with the "log:" entries, a filename enclosed in backticks means a
+command which will generate the filenames dynamically and a filename enclosed
 in angle brackets will be treated as a fileglob. The Xymon client
 will run the
 .I du(1)
 command with the directoryname as parameter, and send the output back to the
 Xymon server.
 .br
-\fBNOTE:\fR If you want to check multiple directories using a 
-wildcard, you \fBmust\fR use a command or glob to generate the directory names. 
-Putting wildcards directly into the \fBdir:\fR entry will not work. E.g. use 
+\fBNOTE:\fR If you want to check multiple directories using a
+wildcard, you \fBmust\fR use a command or glob to generate the directory names.
+Putting wildcards directly into the \fBdir:\fR entry will not work. E.g. use
 something like
 .br
 	dir:`find /var/log \-maxdepth 1 \-type d`
 
-The "du" command used can be configured through the \fBDU\fR environment 
-variable in the xymonclient.cfg file if needed. If not specified, \fBdu \-k\fR 
-is used, as on some systems by default \fBdu\fR reports data in disk blocks 
-instead of KB (e.g. Solaris). 
+The "du" command used can be configured through the \fBDU\fR environment
+variable in the xymonclient.cfg file if needed. If not specified, \fBdu \-k\fR
+is used, as on some systems by default \fBdu\fR reports data in disk blocks
+instead of KB (e.g. Solaris).
 
 .SH NOTES
 The ability of the Xymon client to calculate file hashes and monitor those

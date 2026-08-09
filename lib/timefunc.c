@@ -537,19 +537,45 @@ time_t timestr2timet(char *s)
 {
 	/* Convert a string "YYYYMMDDHHMM" to time_t value */
 	struct tm tm;
+	int year, mon, day, hour, min;
+	time_t result;
 
-	if (strlen(s) != 12) {
+	/* sscanf() does not enforce the format: "%d" skips whitespace and takes a
+	 * sign. strlen() for the length, strspn() for the digits. */
+	if ((strlen(s) != 12) || (strspn(s, "0123456789") != 12)) {
 		errprintf("Invalid timestring: '%s'\n", s);
 		return -1;
 	}
 
-	tm.tm_min = atoi(s+10); *(s+10) = '\0';
-	tm.tm_hour = atoi(s+8); *(s+8) = '\0';
-	tm.tm_mday = atoi(s+6); *(s+6) = '\0';
-	tm.tm_mon = atoi(s+4) - 1; *(s+4) = '\0';
-	tm.tm_year = atoi(s) - 1900; *(s+4) = '\0';
+	/* sscanf(), not atoi() over truncated copies: the callers pass the pointer
+	 * xmh_item() returned, which aliases the host record's own tag buffer. */
+	if (sscanf(s, "%4d%2d%2d%2d%2d", &year, &mon, &day, &hour, &min) != 5) {
+		errprintf("Invalid timestring: '%s'\n", s);
+		return -1;
+	}
+
+	/* mktime() reads every field, and normalizes an uninitialized tm_sec into
+	 * the result. */
+	memset(&tm, 0, sizeof(tm));
+	tm.tm_year = year - 1900;
+	tm.tm_mon = mon - 1;
+	tm.tm_mday = day;
+	tm.tm_hour = hour;
+	tm.tm_min = min;
 	tm.tm_isdst = -1;
-	return mktime(&tm);
+
+	result = mktime(&tm);
+	if (result == -1) return -1;
+
+	/* mktime() turns 31 February into 2 March rather than failing, rewriting
+	 * the struct as it goes - compare the fields back to catch it. */
+	if ((tm.tm_year != year - 1900) || (tm.tm_mon != mon - 1) ||
+	    (tm.tm_mday != day) || (tm.tm_hour != hour) || (tm.tm_min != min)) {
+		errprintf("Invalid timestring: '%s'\n", s);
+		return -1;
+	}
+
+	return result;
 }
 
 
