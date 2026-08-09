@@ -387,6 +387,14 @@ List of IP-addresses. Clients and network test tools will try to
 send status reports to a Xymon server running on each of these
 addresses. This setting is only used if XYMSRV=0.0.0.0.
 
+.IP "\fBXYMON_TIMEOUT\fR"
+Default request timeout, in seconds, for the
+.I xymon(1)
+command-line tool. Must be a positive integer; invalid values are
+reported and ignored, keeping the compiled-in default of 15 seconds.
+A \-\-timeout= option on the xymon command line takes precedence.
+Default: unset (compiled-in 15 seconds)
+
 .IP "\fBXYMONDPORT\fR"
 The portnumber for used to contact the
 .I xymond(8)
