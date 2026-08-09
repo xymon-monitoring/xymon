@@ -1,263 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMON-XMH(5)</title>
+</head>
+<body>
+<h1 class="head-name">XYMON-XMH</h1>
+Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMON-XMH</TITLE>
-</HEAD><BODY>
-<H1>XYMON-XMH</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">Xymon-XMH-variables - Configuration items available online</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">The <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> file is the most important configuration
+    file for all of the Xymon programs. This file contains the full list of all
+    the systems monitored by Xymon, including the set of tests and other
+    configuration items stored for each host.</p>
+<p class="Pp">Although the file is in text format and can be searched using
+    tools like <i><a href="../man1/xymongrep.1.html">xymongrep</a>(1)</i> it can be difficult to pick out specific
+    fields from the configuration due to quoting and other text parsing issues.
+    So Xymon allows for querying this information directly from the
+    <i>xymond</i> daemon via the &quot;xymondboard&quot; command. So the
+    information can be provided together with the current status of a host
+    and/or test. This is done by adding a &quot;fields&quot; definition to the
+    &quot;xymondboard&quot; command.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XMH_items"><a class="permalink" href="#XMH_items">XMH
+  items</a></h1>
+<p class="Pp">Except where specified below, all items return the text of a
+    particular setting from the hosts.cfg file, or an empty string if the
+    setting has not been set for the host that is queried.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="XMH_ALLPAGEPATHS"><a class="permalink" href="#XMH_ALLPAGEPATHS"><b>XMH_ALLPAGEPATHS</b></a></dt>
+  <dd>List of all pages where the host is found, using the filename hierarchy
+      page path.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_BROWSER"><a class="permalink" href="#XMH_BROWSER"><b>XMH_BROWSER</b></a></dt>
+  <dd>Value of the &quot;browser&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_CLASS"><a class="permalink" href="#XMH_CLASS"><b>XMH_CLASS</b></a></dt>
+  <dd>The host &quot;class&quot; (if reported by a Xymon client), or the value
+      of the CLASS tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_CLIENTALIAS"><a class="permalink" href="#XMH_CLIENTALIAS"><b>XMH_CLIENTALIAS</b></a></dt>
+  <dd>Value of the CLIENT tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_COMMENT"><a class="permalink" href="#XMH_COMMENT"><b>XMH_COMMENT</b></a></dt>
+  <dd>Value of the COMMENT tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_COMPACT"><a class="permalink" href="#XMH_COMPACT"><b>XMH_COMPACT</b></a></dt>
+  <dd>Value of the COMPACT tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_DEPENDS"><a class="permalink" href="#XMH_DEPENDS"><b>XMH_DEPENDS</b></a></dt>
+  <dd>Value of the DEPENDS tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_DESCRIPTION"><a class="permalink" href="#XMH_DESCRIPTION"><b>XMH_DESCRIPTION</b></a></dt>
+  <dd>Value of the DESCR tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_DGNAME"><a class="permalink" href="#XMH_DGNAME"><b>XMH_DGNAME</b></a></dt>
+  <dd>The text string from the hosts.cfg &quot;group&quot; definition (group,
+      group-only, group-except) in which the host is defined.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_DISPLAYNAME"><a class="permalink" href="#XMH_DISPLAYNAME"><b>XMH_DISPLAYNAME</b></a></dt>
+  <dd>Value of the NAME tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_DOCURL"><a class="permalink" href="#XMH_DOCURL"><b>XMH_DOCURL</b></a></dt>
+  <dd>Value of the DOC tag, with any %s conversion already substituted with the
+      hostname.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_DOWNTIME"><a class="permalink" href="#XMH_DOWNTIME"><b>XMH_DOWNTIME</b></a></dt>
+  <dd>Value of the DOWNTIME tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_PULLDATA"><a class="permalink" href="#XMH_PULLDATA"><b>XMH_PULLDATA</b></a></dt>
+  <dd>Value of the PULLDATA tag (including IP:PORT, if any)
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_DIALUP"><a class="permalink" href="#XMH_FLAG_DIALUP"><b>XMH_FLAG_DIALUP</b></a></dt>
+  <dd>Value of the &quot;dialup&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_HIDEHTTP"><a class="permalink" href="#XMH_FLAG_HIDEHTTP"><b>XMH_FLAG_HIDEHTTP</b></a></dt>
+  <dd>Value of the HIDEHTTP tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_LDAPFAILYELLOW"><a class="permalink" href="#XMH_FLAG_LDAPFAILYELLOW"><b>XMH_FLAG_LDAPFAILYELLOW</b></a></dt>
+  <dd>Value of the &quot;ldapyellowfail&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_MULTIHOMED"><a class="permalink" href="#XMH_FLAG_MULTIHOMED"><b>XMH_FLAG_MULTIHOMED</b></a></dt>
+  <dd>Value of the MULTIHOMED tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NOBB2"><a class="permalink" href="#XMH_FLAG_NOBB2"><b>XMH_FLAG_NOBB2</b></a></dt>
+  <dd>Value of the &quot;nobb2&quot; tag (deprecated, use NONONGREEN instead).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NOCLEAR"><a class="permalink" href="#XMH_FLAG_NOCLEAR"><b>XMH_FLAG_NOCLEAR</b></a></dt>
+  <dd>Value of the NOCLEAR tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NOCLIENT"><a class="permalink" href="#XMH_FLAG_NOCLIENT"><b>XMH_FLAG_NOCLIENT</b></a></dt>
+  <dd>Value of the &quot;noclient&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NOCONN"><a class="permalink" href="#XMH_FLAG_NOCONN"><b>XMH_FLAG_NOCONN</b></a></dt>
+  <dd>Value of the &quot;noconn&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NODISP"><a class="permalink" href="#XMH_FLAG_NODISP"><b>XMH_FLAG_NODISP</b></a></dt>
+  <dd>Value of the &quot;nodisp&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NOINFO"><a class="permalink" href="#XMH_FLAG_NOINFO"><b>XMH_FLAG_NOINFO</b></a></dt>
+  <dd>Value of the &quot;noinfo&quot; atg.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NONONGREEN"><a class="permalink" href="#XMH_FLAG_NONONGREEN"><b>XMH_FLAG_NONONGREEN</b></a></dt>
+  <dd>Value of the &quot;nonongreen&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NOPING"><a class="permalink" href="#XMH_FLAG_NOPING"><b>XMH_FLAG_NOPING</b></a></dt>
+  <dd>Value of the &quot;noping&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NOSSLCERT"><a class="permalink" href="#XMH_FLAG_NOSSLCERT"><b>XMH_FLAG_NOSSLCERT</b></a></dt>
+  <dd>Value of the &quot;nosslcert&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NOTRACE"><a class="permalink" href="#XMH_FLAG_NOTRACE"><b>XMH_FLAG_NOTRACE</b></a></dt>
+  <dd>Value of the &quot;notrace&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_NOTRENDS"><a class="permalink" href="#XMH_FLAG_NOTRENDS"><b>XMH_FLAG_NOTRENDS</b></a></dt>
+  <dd>Value of the &quot;notrends&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_PREFER"><a class="permalink" href="#XMH_FLAG_PREFER"><b>XMH_FLAG_PREFER</b></a></dt>
+  <dd>Value of the &quot;prefer&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_TESTIP"><a class="permalink" href="#XMH_FLAG_TESTIP"><b>XMH_FLAG_TESTIP</b></a></dt>
+  <dd>Value of the &quot;testip&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_FLAG_TRACE"><a class="permalink" href="#XMH_FLAG_TRACE"><b>XMH_FLAG_TRACE</b></a></dt>
+  <dd>Value of the &quot;trace&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_GROUPID"><a class="permalink" href="#XMH_GROUPID"><b>XMH_GROUPID</b></a></dt>
+  <dd>Number of the group where the host is listed - first group is 0. If a host
+      is present on multiple pages, this is the number of the group for the
+      first page where the host is found.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_HOLIDAYS"><a class="permalink" href="#XMH_HOLIDAYS"><b>XMH_HOLIDAYS</b></a></dt>
+  <dd>Value of the &quot;holidays&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_HOSTNAME"><a class="permalink" href="#XMH_HOSTNAME"><b>XMH_HOSTNAME</b></a></dt>
+  <dd>The name of the host.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_HTTPHEADERS"><a class="permalink" href="#XMH_HTTPHEADERS"><b>XMH_HTTPHEADERS</b></a></dt>
+  <dd>Value of the &quot;httphdr&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_IP"><a class="permalink" href="#XMH_IP"><b>XMH_IP</b></a></dt>
+  <dd>The IP-address of the host (as specified in hosts.cfg).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_LDAPLOGIN"><a class="permalink" href="#XMH_LDAPLOGIN"><b>XMH_LDAPLOGIN</b></a></dt>
+  <dd>Value of the &quot;ldaplogin&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NET"><a class="permalink" href="#XMH_NET"><b>XMH_NET</b></a></dt>
+  <dd>Value of the NET tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NK"><a class="permalink" href="#XMH_NK"><b>XMH_NK</b></a></dt>
+  <dd>Value of the NK tag (deprecated).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NKTIME"><a class="permalink" href="#XMH_NKTIME"><b>XMH_NKTIME</b></a></dt>
+  <dd>Value of the NKTIME tag (deprecated).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NOCOLUMNS"><a class="permalink" href="#XMH_NOCOLUMNS"><b>XMH_NOCOLUMNS</b></a></dt>
+  <dd>Value of the NOCOLUMNS tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NOPROP"><a class="permalink" href="#XMH_NOPROP"><b>XMH_NOPROP</b></a></dt>
+  <dd>Value of the NOPROP tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NOPROPACK"><a class="permalink" href="#XMH_NOPROPACK"><b>XMH_NOPROPACK</b></a></dt>
+  <dd>Value of the NOPROPACK tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NOPROPPURPLE"><a class="permalink" href="#XMH_NOPROPPURPLE"><b>XMH_NOPROPPURPLE</b></a></dt>
+  <dd>Value of the NOPROPPURPLE tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NOPROPRED"><a class="permalink" href="#XMH_NOPROPRED"><b>XMH_NOPROPRED</b></a></dt>
+  <dd>Value of the NOPROPRED tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NOPROPYELLOW"><a class="permalink" href="#XMH_NOPROPYELLOW"><b>XMH_NOPROPYELLOW</b></a></dt>
+  <dd>Value of the NOPROPYELLOW tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NOTAFTER"><a class="permalink" href="#XMH_NOTAFTER"><b>XMH_NOTAFTER</b></a></dt>
+  <dd>Value of the NOTAFTER tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_NOTBEFORE"><a class="permalink" href="#XMH_NOTBEFORE"><b>XMH_NOTBEFORE</b></a></dt>
+  <dd>Value of the NOTBEFORE tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_OS"><a class="permalink" href="#XMH_OS"><b>XMH_OS</b></a></dt>
+  <dd>The host operating system (if reported by a Xymon client), or the value of
+      the OS tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_PAGEINDEX"><a class="permalink" href="#XMH_PAGEINDEX"><b>XMH_PAGEINDEX</b></a></dt>
+  <dd>Index of the host on the page where it is shown, first host has index 0.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_PAGENAME"><a class="permalink" href="#XMH_PAGENAME"><b>XMH_PAGENAME</b></a></dt>
+  <dd>Name of the page where the host is shown (see also XMH_PAGEPATH).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_PAGEPATH"><a class="permalink" href="#XMH_PAGEPATH"><b>XMH_PAGEPATH</b></a></dt>
+  <dd>File path to the page where the host is shown.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_PAGEPATHTITLE"><a class="permalink" href="#XMH_PAGEPATHTITLE"><b>XMH_PAGEPATHTITLE</b></a></dt>
+  <dd>Title of the full path to the page where the host is shown.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_PAGETITLE"><a class="permalink" href="#XMH_PAGETITLE"><b>XMH_PAGETITLE</b></a></dt>
+  <dd>Title of the page where the host is shown.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_RAW"><a class="permalink" href="#XMH_RAW"><b>XMH_RAW</b></a></dt>
+  <dd>All configuration settings for the host. Settings are separated by a
+      pipe-sign.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_REPORTTIME"><a class="permalink" href="#XMH_REPORTTIME"><b>XMH_REPORTTIME</b></a></dt>
+  <dd>Value of the REPORTTIME tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_SSLDAYS"><a class="permalink" href="#XMH_SSLDAYS"><b>XMH_SSLDAYS</b></a></dt>
+  <dd>Value of the &quot;ssldays&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_SSLMINBITS"><a class="permalink" href="#XMH_SSLMINBITS"><b>XMH_SSLMINBITS</b></a></dt>
+  <dd>Value of the &quot;sslbits&quot; tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_TRENDS"><a class="permalink" href="#XMH_TRENDS"><b>XMH_TRENDS</b></a></dt>
+  <dd>Value of the TRENDS tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_WARNPCT"><a class="permalink" href="#XMH_WARNPCT"><b>XMH_WARNPCT</b></a></dt>
+  <dd>Value of the WARNPCT tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_WARNSTOPS"><a class="permalink" href="#XMH_WARNSTOPS"><b>XMH_WARNSTOPS</b></a></dt>
+  <dd>Value of the WARNSTOPS tag.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XMH_WML"><a class="permalink" href="#XMH_WML"><b>XMH_WML</b></a></dt>
+  <dd>Value of the WML tag.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/xymon.1.html">xymon</a>(1), <a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man1/xymongrep.1.html">xymongrep</a>(1)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#XMH_items">XMH items</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-Xymon-XMH-variables - Configuration items available online
-<P>
-<A NAME="lbAC">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-The
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-file is the most important configuration file for all of the
-Xymon programs.  This file contains the full list of 
-all the systems monitored by Xymon, including the set 
-of tests and other configuration items stored for each host.
-<P>
-Although the file is in text format and can be searched
-using tools like
-<I><A HREF="../man1/xymongrep.1.html">xymongrep</A>(1)</I>
-
-it can be difficult to pick out specific fields from the
-configuration due to quoting and other text parsing issues.
-So Xymon allows for querying this information directly 
-from the
-<I>xymond</I>
-
-daemon via the &quot;xymondboard&quot; command. So the information
-can be provided together with the current status of
-a host and/or test. This is done by adding a &quot;fields&quot;
-definition to the &quot;xymondboard&quot; command.
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>XMH items</H2>
-
-Except where specified below, all items return the text of a 
-particular setting from the hosts.cfg file, or an empty string 
-if the setting has not been set for the host that is queried.
-<P>
-<DL COMPACT>
-<DT>XMH_ALLPAGEPATHS<DD>
-List of all pages where the host is found, using the filename
-hierarchy page path.
-<P>
-<DT>XMH_BROWSER<DD>
-Value of the &quot;browser&quot; tag.
-<P>
-<DT>XMH_CLASS<DD>
-The host &quot;class&quot; (if reported by a Xymon client), or the 
-value of the CLASS tag.
-<P>
-<DT>XMH_CLIENTALIAS<DD>
-Value of the CLIENT tag.
-<P>
-<DT>XMH_COMMENT<DD>
-Value of the COMMENT tag.
-<P>
-<DT>XMH_COMPACT<DD>
-Value of the COMPACT tag.
-<P>
-<DT>XMH_DEPENDS<DD>
-Value of the DEPENDS tag.
-<P>
-<DT>XMH_DESCRIPTION<DD>
-Value of the DESCR tag.
-<P>
-<DT>XMH_DGNAME<DD>
-The text string from the hosts.cfg &quot;group&quot; definition (group, group-only, group-except) 
-in which the host is defined.
-<P>
-<DT>XMH_DISPLAYNAME<DD>
-Value of the NAME tag.
-<P>
-<DT>XMH_DOCURL<DD>
-Value of the DOC tag.
-<P>
-<DT>XMH_DOWNTIME<DD>
-Value of the DOWNTIME tag.
-<P>
-<DT>XMH_PULLDATA<DD>
-Value of the PULLDATA tag (including IP:PORT, if any)
-<P>
-<DT>XMH_FLAG_DIALUP<DD>
-Value of the &quot;dialup&quot; tag.
-<P>
-<DT>XMH_FLAG_HIDEHTTP<DD>
-Value of the HIDEHTTP tag.
-<P>
-<DT>XMH_FLAG_LDAPFAILYELLOW<DD>
-Value of the &quot;ldapyellowfail&quot; tag.
-<P>
-<DT>XMH_FLAG_MULTIHOMED<DD>
-Value of the MULTIHOMED tag.
-<P>
-<DT>XMH_FLAG_NOBB2<DD>
-Value of the &quot;nobb2&quot; tag (deprecated, use NONONGREEN instead).
-<P>
-<DT>XMH_FLAG_NOCLEAR<DD>
-Value of the NOCLEAR tag.
-<P>
-<DT>XMH_FLAG_NOCLIENT<DD>
-Value of the &quot;noclient&quot; tag.
-<P>
-<DT>XMH_FLAG_NOCONN<DD>
-Value of the &quot;noconn&quot; tag.
-<P>
-<DT>XMH_FLAG_NODISP<DD>
-Value of the &quot;nodisp&quot; tag.
-<P>
-<DT>XMH_FLAG_NOINFO<DD>
-Value of the &quot;noinfo&quot; atg.
-<P>
-<DT>XMH_FLAG_NONONGREEN<DD>
-Value of the &quot;nonongreen&quot; tag.
-<P>
-<DT>XMH_FLAG_NOPING<DD>
-Value of the &quot;noping&quot; tag.
-<P>
-<DT>XMH_FLAG_NOSSLCERT<DD>
-Value of the &quot;nosslcert&quot; tag.
-<P>
-<DT>XMH_FLAG_NOTRACE<DD>
-Value of the &quot;notrace&quot; tag.
-<P>
-<DT>XMH_FLAG_NOTRENDS<DD>
-Value of the &quot;notrends&quot; tag.
-<P>
-<DT>XMH_FLAG_PREFER<DD>
-Value of the &quot;prefer&quot; tag.
-<P>
-<DT>XMH_FLAG_TESTIP<DD>
-Value of the &quot;testip&quot; tag.
-<P>
-<DT>XMH_FLAG_TRACE<DD>
-Value of the &quot;trace&quot; tag.
-<P>
-<DT>XMH_GROUPID<DD>
-Number of the group where the host is listed - first group is 0. 
-If a host is present on multiple pages, this is the number of the
-group for the first page where the host is found.
-<P>
-<DT>XMH_HOLIDAYS<DD>
-Value of the &quot;holidays&quot; tag.
-<P>
-<DT>XMH_HOSTNAME<DD>
-The name of the host.
-<P>
-<DT>XMH_HTTPHEADERS<DD>
-Value of the &quot;httphdr&quot; tag.
-<P>
-<DT>XMH_IP<DD>
-The IP-address of the host (as specified in hosts.cfg).
-<P>
-<DT>XMH_LDAPLOGIN<DD>
-Value of the &quot;ldaplogin&quot; tag.
-<P>
-<DT>XMH_NET<DD>
-Value of the NET tag.
-<P>
-<DT>XMH_NK<DD>
-Value of the NK tag (deprecated).
-<P>
-<DT>XMH_NKTIME<DD>
-Value of the NKTIME tag (deprecated).
-<P>
-<DT>XMH_NOCOLUMNS<DD>
-Value of the NOCOLUMNS tag.
-<P>
-<DT>XMH_NOPROP<DD>
-Value of the NOPROP tag.
-<P>
-<DT>XMH_NOPROPACK<DD>
-Value of the NOPROPACK tag.
-<P>
-<DT>XMH_NOPROPPURPLE<DD>
-Value of the NOPROPPURPLE tag.
-<P>
-<DT>XMH_NOPROPRED<DD>
-Value of the NOPROPRED tag.
-<P>
-<DT>XMH_NOPROPYELLOW<DD>
-Value of the NOPROPYELLOW tag.
-<P>
-<DT>XMH_NOTAFTER<DD>
-Value of the NOTAFTER tag.
-<P>
-<DT>XMH_NOTBEFORE<DD>
-Value of the NOTBEFORE tag.
-<P>
-<DT>XMH_OS<DD>
-The host operating system (if reported by a Xymon client), or the 
-value of the OS tag.
-<P>
-<DT>XMH_PAGEINDEX<DD>
-Index of the host on the page where it is shown, first host has 
-index 0.
-<P>
-<DT>XMH_PAGENAME<DD>
-Name of the page where the host is shown (see also XMH_PAGEPATH).
-<P>
-<DT>XMH_PAGEPATH<DD>
-File path to the page where the host is shown.
-<P>
-<DT>XMH_PAGEPATHTITLE<DD>
-Title of the full path to the page where the host is shown.
-<P>
-<DT>XMH_PAGETITLE<DD>
-Title of the page where the host is shown.
-<P>
-<DT>XMH_RAW<DD>
-All configuration settings for the host. Settings are separated by a pipe-sign.
-<P>
-<DT>XMH_REPORTTIME<DD>
-Value of the REPORTTIME tag.
-<P>
-<DT>XMH_SSLDAYS<DD>
-Value of the &quot;ssldays&quot; tag.
-<P>
-<DT>XMH_SSLMINBITS<DD>
-Value of the &quot;sslbits&quot; tag.
-<P>
-<DT>XMH_TRENDS<DD>
-Value of the TRENDS tag.
-<P>
-<DT>XMH_WARNPCT<DD>
-Value of the WARNPCT tag.
-<P>
-<DT>XMH_WARNSTOPS<DD>
-Value of the WARNSTOPS tag.
-<P>
-<DT>XMH_WML<DD>
-Value of the WML tag.
-<P>
-<P>
-</DL>
-<A NAME="lbAE">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man1/xymon.1.html">xymon</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man1/xymongrep.1.html">xymongrep</A>(1)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAD">XMH items</A><DD>
-<DT><A HREF="#lbAE">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

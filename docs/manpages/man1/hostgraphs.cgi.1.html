@@ -1,91 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>HOSTGRAPHS.CGI(1)</title>
+</head>
+<body>
+<h1 class="head-name">HOSTGRAPHS.CGI</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of HOSTGRAPHS.CGI</TITLE>
-</HEAD><BODY>
-<H1>HOSTGRAPHS.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">hostgraphs.cgi - CGI program to show multiple graphs</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>hostgraph.cgi</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>hostgraph.cgi</b> is invoked as a CGI script via the
+    hostgraph.sh CGI wrapper.</p>
+<p class="Pp">If no parameters are provided when invoked, it will present a form
+    where the user can select a time period, one or more hosts, and a set of
+    graphs.</p>
+<p class="Pp">The parameters selected by the user are passed to a second
+    invocation of hostgraph.cgi, and result in a webpage showing a list of graph
+    images based on the trend data stored about the hosts.</p>
+<p class="Pp">If multiple graph-types are selected, hostgraph.cgi will display a
+    list of graphs, with one graph per type.</p>
+<p class="Pp">If multiple hosts are selected, hostgraph.cgi will attempt to
+    display a multi-host graph for each type where the graphs for all hosts are
+    overlayed in a single image, allowing for easy comparison of the hosts.</p>
+<p class="Pp">The hostlist uses the PAGEPATH cookie provided by Xymon webpages
+    to select the list of hosts to present. Only the hosts visible on the page
+    where hostgraph.cgi is invoked from will be visible.</p>
+<p class="Pp">The resulting graph page can be bookmarked, but the bookmark also
+    fixates the time period shown.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="env"><a class="permalink" href="#env"><b>--env</b>=<i>FILENAME</i></a></dt>
+  <dd>Loads the environment defined in FILENAME before executing the CGI script.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="BUGS"><a class="permalink" href="#BUGS">BUGS</a></h1>
+<p class="Pp">This utility is experimental. It may change in a future release of
+    Xymon.</p>
+<p class="Pp">It is possible for the user to select graphs which do not exist.
+    This results in broken image links.</p>
+<p class="Pp">The set of graph-types is fixed in the server/web/hostgraphs_form
+    template and does not adjust to which graphs are available.</p>
+<p class="Pp">If the tool is invoked directly, all hosts defined in Xymon will
+    be listed.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#BUGS">BUGS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-hostgraphs.cgi - CGI program to show multiple graphs
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>hostgraph.cgi</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>hostgraph.cgi</B>
-is invoked as a CGI script via the hostgraph.sh CGI wrapper.
-<P>
-If no parameters are provided when invoked, it will present a form
-where the user can select a time period, one or more hosts, and a
-set of graphs.
-<P>
-The parameters selected by the user are passed to a second invocation
-of hostgraph.cgi, and result in a webpage showing a list of
-graph images based on the trend data stored about the hosts.
-<P>
-If multiple graph-types are selected, hostgraph.cgi will display
-a list of graphs, with one graph per type.
-<P>
-If multiple hosts are selected, hostgraph.cgi will attempt to
-display a multi-host graph for each type where the graphs for all
-hosts are overlayed in a single image, allowing for easy comparison
-of the hosts.
-<P>
-The hostlist uses the PAGEPATH cookie provided by Xymon webpages to
-select the list of hosts to present. Only the hosts visible on the
-page where hostgraph.cgi is invoked from will be visible.
-<P>
-The resulting graph page can be bookmarked, but the bookmark
-also fixates the time period shown.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--env=FILENAME<DD>
-Loads the environment defined in FILENAME before executing the CGI script.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>BUGS</H2>
-
-This utility is experimental. It may change in a future release of Xymon.
-<P>
-It is possible for the user to select graphs which do not exist. This results
-in broken image links.
-<P>
-The set of graph-types is fixed in the server/web/hostgraphs_form template 
-and does not adjust to which graphs are available.
-<P>
-If the tool is invoked directly, all hosts defined in Xymon will be listed.
-<P>
-<A NAME="lbAG">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">BUGS</A><DD>
-<DT><A HREF="#lbAG">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>
