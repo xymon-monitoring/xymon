@@ -5,8 +5,8 @@ because they are not visible from the source tree.
 
 ## Where a change gets written down
 
-The changelog (`Changes`) and the upgrade notes (`RELEASENOTES`) are
-maintained by the maintainers on this branch — the **`Changes`** branch — with
+The changelog (`Changes`) and the upgrade notes (`RELEASENOTES`) are handled
+by the release manager on this branch — the **`Changes`** branch — with
 one entry per merged pull request: one line, starting with a verb, with a
 `(Thanks, Name)` credit for the contributor. The full construction rules —
 entry format, credit order, what belongs in which file — are in
@@ -15,8 +15,8 @@ entry format, credit order, what belongs in which file — are in
 Do not open a new `Changes from X -> Y` section or bump the version in
 `RELEASENOTES`; maintainers do that at release time. If your pull request
 needs an entry and you are not sure what it should say, note it in the pull
-request and a maintainer will place it — easier than untangling two entries
-for the same release afterwards.
+request and the release manager will place it — easier than untangling two
+entries for the same release afterwards.
 
 ## Manual pages
 
@@ -46,6 +46,16 @@ the script again:
   clean; if it does not, source and HTML were committed out of step.
 - The sources carry no trailing whitespace. `git diff --check` on your change
   must be quiet.
+
+Every pull request is checked: the "manual pages match their sources" job
+regenerates the HTML and fails if what is committed differs. You do not need
+mandoc to recover from that — the failed job uploads exactly what it
+generated as a `manpages-regenerated` artifact; download it over
+`docs/manpages/` and commit:
+
+```
+gh run download <run-id> -n manpages-regenerated -D docs/manpages
+```
 
 ## Pull requests
 
