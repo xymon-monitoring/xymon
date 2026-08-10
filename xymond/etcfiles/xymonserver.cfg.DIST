@@ -37,6 +37,7 @@ DELAYYELLOW=""			# Format: status:delay[,status:delay - e.g. "cpu:15,disk:30"
 # General settings
 XYMONDPORT="1984"		# Portnumber where xymond listens
 XYMSRV="$XYMONSERVERIP"		# IP of a single Xymon server
+#XYMON_TIMEOUT="15"			# Default request timeout (seconds) for the xymon CLI tool; --timeout= wins
 XYMSERVERS=""			# IP of multiple Xymon servers. If used, XYMSRV must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
 XYMONLOGSTATUS="DYNAMIC"	# Are HTML status logs statically or dynamically generated?

@@ -38,6 +38,30 @@ int main(int argc, char *argv[])
 	sendreturn_t *sres;
 	int wantresponse = 0, mergeinput = 0, usebackfeedqueue = 0;
 
+	/* An XYMON_TIMEOUT environment variable overrides the compiled default.
+	   Parse it strictly - full string, in range, positive: atoi() would accept
+	   numeric prefixes ("60junk" -> 60), overflow into an unintended value,
+	   and yield 0 for empty/garbage input - and a 0 timeout makes select()
+	   block forever. Invalid values are reported and ignored, keeping the
+	   default. A --timeout= option still wins, being parsed below. */
+	{
+		char *envtimeout = getenv("XYMON_TIMEOUT");
+
+		if (envtimeout) {
+			char *endp;
+			long v;
+
+			errno = 0;
+			v = strtol(envtimeout, &endp, 10);
+			if ((endp == envtimeout) || (*endp != '\0') || (errno == ERANGE) || (v <= 0) || (v > INT_MAX)) {
+				errprintf("Ignoring invalid XYMON_TIMEOUT '%s' - using default %d\n", envtimeout, timeout);
+			}
+			else {
+				timeout = (int)v;
+			}
+		}
+	}
+
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;

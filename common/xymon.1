@@ -27,7 +27,9 @@ server.
 
 .IP "\fB\-\-timeout\fR=\fIN\fR"
 Specifies the timeout for connecting to the Xymon server, in
-seconds. The default is 5 seconds.
+seconds. The default is 15 seconds; an XYMON_TIMEOUT environment
+variable overrides that default (see ENVIRONMENT below), and this
+option overrides both.
 
 .IP "\fB\-\-response\fR"
 The xymon utility normally knows when to expect a response
@@ -489,6 +491,15 @@ file "statusmsg.txt". Instead of providing it on the command-line,
 pass it via stdin to the xymon command:
 
    $ cat statusmsg.txt | $XYMON $XYMSRV "@"
+
+.SH ENVIRONMENT
+.IP "\fBXYMON_TIMEOUT\fR"
+Sets the default request timeout, in seconds, overriding the compiled-in
+15 - so it can be set once (e.g. in
+.IR xymonserver.cfg (5))
+rather than passing \-\-timeout= on every call. A non-positive or
+non-numeric value is reported on stderr and ignored. A \-\-timeout=
+option on the command line takes precedence.
 
 .SH "SEE ALSO"
 combostatus(1), hosts.cfg(5), xymonserver.cfg(5), xymon(7)

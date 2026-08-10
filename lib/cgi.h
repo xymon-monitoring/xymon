@@ -21,6 +21,17 @@ typedef struct cgidata_t {
 enum cgi_method_t { CGI_OTHER, CGI_GET, CGI_POST };
 extern enum cgi_method_t cgi_method;
 
+/*
+ * The character set a Xymon canonical hostname (and the CGI host/service
+ * parameters derived from it) may use: ASCII letters and digits plus the
+ * punctuation real names need -- ':' (IPv6), ',' (the URL spelling of '.'),
+ * '.' (FQDNs / host.service), '_' and '-'. Single point of record so the
+ * hosts.cfg loader, the xymond ghost-name guard and the web CGIs all accept
+ * the same set; widening it (e.g. to UTF-8) is a deliberate policy change
+ * made here, once. See issue #309.
+ */
+#define XYMON_HOSTNAME_CHARS "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:,._-"
+
 extern char *cgi_error(void);
 extern int cgi_ispost(void);
 extern cgidata_t *cgi_request(void);

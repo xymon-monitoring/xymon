@@ -52,8 +52,10 @@ char *safe_basename(char *path)
  * not survive on a backend where '\\' separates directories. One set, one
  * rule, every parameter; widening it (e.g. to accept UTF-8) is a
  * documented policy change for another day (see hosts.cfg(5) discussion).
+ * The set itself is XYMON_HOSTNAME_CHARS (cgi.h), shared with the hosts.cfg
+ * loader and the xymond ghost-name guard so all three agree.
  */
-#define CGI_NAMECHARS "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:,._-"
+#define CGI_NAMECHARS XYMON_HOSTNAME_CHARS
 
 /*
  * Confine a CGI value to a single legal path component -- the one policy
