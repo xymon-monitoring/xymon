@@ -80,48 +80,31 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Document HTTP content-check examples in hosts.cfg(5) (#272) (Thanks, Markus Häll)
 * Pass exec-title arguments to the title script as literal words (#265) (Thanks, Markus Häll)
 * Report an SSL error when OpenSSL rejects a configured cipher list (#275) (Thanks, Markus Häll)
-* Add a configurable df/inode filesystem filter to the macOS client (#170, #178, #291, #292)
-  (Thanks, Markus Häll)
-* Document the WARNSTOPS tag and correct the WARNPCT threshold description (#252, #257) (Thanks,
-  Markus Häll)
-* Fix hosts.cfg noflap= lists losing effect after the first test evaluated (#276) (Thanks, Markus
-  Häll)
+* Add the df/inode filesystem filter to the macOS client (#178, #291, #292) (Thanks, Markus Häll)
+* Document WARNSTOPS and correct the WARNPCT description (#252, #257) (Thanks, Markus Häll)
+* Fix noflap= lists losing effect after the first test evaluated (#276) (Thanks, Markus Häll)
 * Register XMH_FLAG_MULTIHOMED under its documented name (#277) (Thanks, Markus Häll)
 * Fix parsing of the nosoap reverse SOAP test specification (#273) (Thanks, Markus Häll)
-* Fix a crash in xymonnet HTTPS tests using SSL options or a client cert (#274) (Thanks, Markus
-  Häll)
+* Fix a crash in xymonnet HTTPS tests with SSL options or a client cert (#274) (Thanks, Markus Häll)
 * Update github workflow: actions/checkout v6->v7 (#297) (Thanks, Markus Häll)
 * Document the holidays=, NOTBEFORE: and NOTAFTER: hosts.cfg tags (#280) (Thanks, Markus Häll)
-* Drop the duplicate XMH_CLIENTALIAS name registration in loadhosts (#294, #296) (Thanks, Markus
-  Häll)
-* Fix NOTBEFORE:/NOTAFTER: reading an uninitialised time and corrupting the host record (#298, #299)
-  (Thanks, Markus Häll)
-* Stop xymond_hostdata dropping client data while uptime is below its recent-period (#285, #286)
-  (Thanks, Markus Häll)
-* Fix the RRD argv-API test probe shadowing the macOS Availability.h header (#168, #169) (Thanks,
-  Markus Häll)
+* Drop the duplicate XMH_CLIENTALIAS registration in loadhosts (#294, #296) (Thanks, Markus Häll)
+* Fix NOTBEFORE:/NOTAFTER: uninitialised time corrupts records (#298, #299) (Thanks, Markus Häll)
+* Stop xymond_hostdata dropping client data during early uptime (#285, #286) (Thanks, Markus Häll)
+* Fix the RRD argv-API probe shadowing macOS Availability.h (#168, #169) (Thanks, Markus Häll)
 * Copy the COMPACT: tag before tokenising it in xymongen (#300, #301) (Thanks, Markus Häll)
 * Fix COMPACT: tag parsing in svcstatus (#306) (Thanks, Markus Häll)
 * Match noflap= entries by exact test name, not by prefix (#293, #295) (Thanks, Markus Häll)
 * Add regression tests for seven under-tested fixes and features (#307) (Thanks, Markus Häll)
-* Add an inode report and configurable filesystem filtering to the NetBSD client (#311, #313)
-  (Thanks, Markus Häll)
-* Confine the CGI host/service/section request parameters to a safe path component, closing a path
-  traversal and protocol injection (#146, #147) (Thanks, Markus Häll)
-* Render the manual pages to HTML with a reproducible mandoc converter, give them linkable
-  definitions, and check on every pull request that the committed HTML matches its source (#302,
-  #303, #304, #102) (Thanks, Markus Häll)
+* Add inode reporting and fs filtering to the NetBSD client (#311, #313) (Thanks, Markus Häll)
+* Confine CGI host/service parameters, closing a path traversal (#146, #147) (Thanks, Markus Häll)
+* Render the man pages to HTML with mandoc, checked per PR (#302, #303, #304) (Thanks, Markus Häll)
 * Add a pre-tag release-prep workflow (#99, #102)
-* Do not write a closing history record with an empty color when the hist file lacks a valid open
-  record (#269, #270) (Thanks, Markus Häll)
-* Warn at hosts.cfg load about canonical hostnames the web CGIs cannot serve (#309, #314) (Thanks,
-  Markus Häll)
-* Add configurable df/inode filesystem filtering to the OpenBSD client (#170, #176) (Thanks, Roland
-  Rosenfeld and Markus Häll)
-* Fix two xtree lifecycle bugs: the tsearch-variant teardown leak and array-variant iteration over
-  deleted records (#263) (Thanks, Markus Häll)
-* Let the XYMON_TIMEOUT environment variable set the xymon CLI request-timeout default (TBT 129)
-  (#224) (from J. Cleaver) (Thanks, Markus Häll)
+* Do not write a closing hist record with an empty color (#269, #270) (Thanks, Markus Häll)
+* Warn about canonical hostnames the web CGIs cannot serve (#309, #314) (Thanks, Markus Häll)
+* Add filesystem filtering to the OpenBSD client (#176) (Thanks, Roland Rosenfeld and Markus Häll)
+* Fix the xtree teardown leak and deleted-record iteration (#263) (Thanks, Markus Häll)
+* XYMON_TIMEOUT sets the xymon CLI timeout default (#224) (from J. Cleaver) (Thanks, Markus Häll)
 
 
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
@@ -354,22 +337,22 @@ Changes from 4.3.21 -> 4.3.22 (6 Nov 2015)
 * Ensure that nostale is passed down during graph zooming (Thanks, Stef Coene)
 * Add missing XMH_DATA in loadhosts (Thanks, Jacek Tomasiak)
 * Search in more locations for default environment files when using xymoncmd
-* Add a "noflap" override to disable flap detection for any/all tests on a given host (Thanks, Martin Lenko)
+* Add a "noflap" override to disable flap detection per host (Thanks, Martin Lenko)
 * Simplify default HTTP error code settings for xymonnet (2xx = green; 3xx = yellow; 4xx/5xx = red)
-* The protocol.cfg entry for RDP network tests has been updated and should work again (Thanks, Rob Steuer)
+* Update the protocol.cfg RDP entry so RDP tests work again (Thanks, Rob Steuer)
 * Add UDP ports to netstat output returned from darwin clients (Mac OS X)
 * Fixes to df/inode parsing on darwin clients (Mac OS X) (Thanks, Jason White et al.)
 * Add httphdr= tag to hosts.cfg to inject arbitrary headers into xymonnet HTTP tests for that host.
 * Turn memory test yellow if nonsensical numbers are found (>100% used for 'Actual' or Swap)
 * "optional include" and "optional directory" support actually added
-* xymongrep: load from the hosts.cfg file and error if unable, unless --loadhostsfromxymond is specified
+* xymongrep: load hosts.cfg and error if unable, unless --loadhostsfromxymond is given
 * Collect number of total cores in client data
 * combostatus: Fix parenthesis processing (Thanks, Andy Smith)
 * Add per-group anchors to generated pages when a group title is present (Thanks, Thomas Giordmaina)
-* xymongen: Display group tables even if group has no test results yet unless --no-showemptygroups given
-* Add chpasswd CGI for user-level htpasswd file updates. Requires Apache 2.4.5 or later (Thanks, Andy Smith)
+* xymongen: show group tables with no test results unless --no-showemptygroups is given
+* Add chpasswd CGI for htpasswd updates; needs Apache 2.4.5+ (Thanks, Andy Smith)
 * Fix memory/display on multihost hostgraphs.cgi reports; remove multi-disk (which won't work as-is)
-* Add ACK_COOKIE_EXPIRATION for environment control of cookie validity duration (Noted by Thomas Giordmaina)
+* Add ACK_COOKIE_EXPIRATION to control cookie validity (Noted by Thomas Giordmaina)
 * combostatus: fix core dumps on Solaris when dealing with erroneous config
 
 
@@ -675,13 +658,13 @@ Changes from 4.3.11 -> 4.3.12 (24 Jul 2013)
 * Security fix: Guard against directory traversal via hostname in "drophost" commands
 * Fix crash in xymongen introduced in 4.3.11
 * SCO client: Fix overflow in memory calculation when >2 GB memory
-* Fix so "include" and "directory" definitions in configuration files now handle <tab> after the keyword
+* Fix "include" and "directory" config definitions to handle <tab> after the keyword
 * Fix for the Xymon webpage menu on iPad's and Android (touch devices)
 * Fix "drophost" handling so the host data directory is also cleared
 * xymond_rrd now processes data from "clear" status messages
 * Xymon clients now report the version number in the client data
 * Linux clients now align "ps" output so it is more readable.
-* New "generic" client message handler allows log/file monitoring from systems that are not known to Xymon.
+* New "generic" client handler: log/file monitoring from hosts unknown to Xymon.
 * The Xymon client now works if invoked with a relative path to the runclient.sh script
 * Other minor / internal bugfixes
 
