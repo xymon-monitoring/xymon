@@ -16,9 +16,9 @@ for someone running Xymon:
 * Fix single-service graphs matching unrelated RRD files (#139) (Thanks, Mark Felder)
 ```
 
-Keep the entry on one line. Searching is what this file is for, and a folded
-entry returns half a sentence to `grep`. Tighten the wording rather than
-breaking the line.
+Keep the entry on one line of at most 100 characters. Searching is what this
+file is for, and a folded entry returns half a sentence to `grep`. Tighten the
+wording rather than breaking the line.
 
 **`RELEASENOTES`** is for what someone needs to know *before upgrading*: a
 default that changed, a setting that stops working, a dependency that is now
@@ -39,6 +39,10 @@ work rather than the pull request, in this order:
 Use the person's name, not their login. If you do not know it, ask rather than
 guess.
 
+A change ported from an external patch set keeps its origin attribution in
+place of, or in addition to, the thanks — `(from J. Cleaver)` for the
+Terabithia patches.
+
 ## Version sections
 
 Do not open a new `Changes from X -> Y` section, and do not bump the version in
@@ -50,6 +54,9 @@ branch, not on `main`. If your pull request needs a `Changes` or `RELEASENOTES`
 entry and you are not sure where it should go, say so in the pull request and a
 maintainer will place it — it is easier than untangling two entries for the same
 release afterwards.
+
+The mechanics of cutting the release itself — the prep workflow, tagging, the
+reproducible tarball — are documented in `.github/RELEASING.md`.
 
 ## Manual pages
 
