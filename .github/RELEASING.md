@@ -1,7 +1,7 @@
 # Releasing Xymon
 
 How to cut a release, what happens at each step, and why it is built this
-way. The process is two workflows plus four small manual actions; the
+way. The process is two workflows plus five small manual actions; the
 manual actions are the review gates, everything mechanical is automated.
 
 This file lives under `.github/` on purpose: `.gitattributes` excludes
@@ -21,9 +21,58 @@ the release tarballs users download.
   regenerated)
 ```
 
+## The changelog
+
+`Changes` and `RELEASENOTES` are prepared on the **`Changes`** branch
+between releases. The ritual there: merge `main` in, then one catch-up commit
+adding entries for the pull requests merged since. Bring the branch up
+to date and merge it into `main` before running the prep workflow (step
+1 of the checklist below) — the tarball ships whatever the tag contains.
+
+The two files have different jobs.
+
+**`Changes`** is the full list — one line per merged pull request, so
+`grep` finds it later. Entries start with a verb and say what the change
+does for someone running Xymon, in at most 100 characters; tighten the
+wording rather than folding the line, since a folded entry returns half
+a sentence to `grep`:
+
+```
+* Fix single-service graphs matching unrelated RRD files (#139) (Thanks, Mark Felder)
+```
+
+Credit follows the work, as `(Thanks, Name)` — the person's name, not
+their login. In order: whoever wrote the change; whoever reported the
+problem, if a maintainer wrote the fix; whoever reviewed it, when there
+is nobody else to name. A change ported from an external patch set
+keeps its origin attribution — `(from J. Cleaver)` for the Terabithia
+patches. A cosmetic change with no user-visible behavior gets no entry.
+
+**`RELEASENOTES`** is what an administrator needs to know *before
+upgrading*: a default that changed, a setting that stops working, a
+dependency that is now required. Prose, not bullets, and no pull-request
+numbers — the reader is planning an upgrade, not tracing a commit. Most
+changes do not belong here; if it cannot break a working installation,
+it needs no entry.
+
+The next version's `Changes from X -> Y` heading sits open with a
+placeholder date between releases; the date is filled in when the
+release is cut (step 1 below). Neither that nor the RELEASENOTES
+version bump happens in feature pull requests.
+
 ## Step by step
 
-### 1. Run the prep workflow
+### 1. Close out the changelog
+
+On the `Changes` branch: check every merged pull request has its entry,
+fill the release date into the top `Changes from X -> Y (XX Xxx XXXX)`
+heading and the RELEASENOTES version, then merge the branch into
+`main`. Nothing later touches these files — `dorelease.sh` regenerates
+`md5.dat` and manpage stamps only — so a release cut without this step
+ships a changelog missing everything since the previous release, with a
+placeholder where the date should be.
+
+### 2. Run the prep workflow
 
 GitHub → Actions → **Pre-tag release prep** → *Run workflow* → enter the
 version as `X.Y.Z` (for example `4.3.30`).
@@ -45,7 +94,7 @@ Reruns are safe: the branch is always recreated from `main`, never
 patched on top of an old prep, and an existing `rel-X.Y.Z` tag makes the
 workflow refuse to run at all.
 
-### 2. Review and merge the prep PR
+### 3. Review and merge the prep PR
 
 Check that the diff is only version stamps and `md5.dat`, and that the
 checks are green, then merge.
@@ -57,7 +106,7 @@ will not re-run automatically if someone pushes to the branch by hand;
 the branch is workflow-owned, so don't do that — rerun the prep workflow
 instead.
 
-### 3. Tag the merge commit
+### 4. Tag the merge commit
 
 The prep run's summary gives you the exact commands, with the PR URL
 already filled in:
@@ -77,7 +126,7 @@ Pushing the tag triggers the release workflow, which builds
 `xymon-X.Y.Z.tar.gz` (`git archive` of the tag, `gzip -n -9`), generates
 its `.sha256`, and creates a **draft** GitHub release with both attached.
 
-### 4. Publish the draft release
+### 5. Publish the draft release
 
 Open the draft release, check the generated notes and the attached
 files, publish. This is the last look before it is public.
@@ -136,7 +185,7 @@ Run it twice: the checksum must be identical. Requires `mandoc`
   already released; you want a new version number.
 - **Prep fails with "dorelease.sh produced no changes"** — `main`
   already contains the prep for this version, most likely because the
-  prep PR was already merged. Just continue at step 3 (tag it).
+  prep PR was already merged. Just continue at step 4 (tag it).
 - **Rerunning prep after the previous prep PR was closed unmerged** —
   fine; a fresh PR is opened (the workflow only treats *open* PRs as
   existing).
