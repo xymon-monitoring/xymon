@@ -26,36 +26,26 @@ HTML copy under `docs/manpages/`. The source is the original. Never edit the
 HTML by hand — it is overwritten at the next regeneration, and the diff of a
 hand-edited page tells a reviewer nothing about what actually changed.
 
-After editing a source, regenerate its HTML copy and commit the two together:
-
-```
-build/makehtml.sh common/hosts.cfg.5
-```
-
-The script needs `mandoc` and `python3`. Run with no argument it regenerates
-all pages; that is for changes to the generation itself (the stylesheet, the
-post-processor), not for a one-page edit — regenerating 69 files to change one
-buries the real change in the diff. The `--version` flag is for the release
-scripts only: between releases the `.TH` line says what the source says, so do
-not bump the version or date in a pull request.
-
-Two properties are worth checking before you push, and both amount to running
-the script again:
-
-- Regeneration is idempotent. A second run after yours must leave the tree
-  clean; if it does not, source and HTML were committed out of step.
-- The sources carry no trailing whitespace. `git diff --check` on your change
-  must be quiet.
-
-Every pull request is checked: the "manual pages match their sources" job
-regenerates the HTML and fails if what is committed differs. You do not need
-mandoc to recover from that — the failed job uploads exactly what it
-generated as a `manpages-regenerated` artifact; download it over
-`docs/manpages/` and commit:
+You do not need any tooling for this pair. Edit the source and push; the
+"manual pages match their sources" check on your pull request regenerates the
+HTML, fails if what is committed differs, and uploads exactly what it
+generated as a `manpages-regenerated` artifact. Download it over
+`docs/manpages/`, commit, push again:
 
 ```
 gh run download <run-id> -n manpages-regenerated -D docs/manpages
 ```
+
+If you have `mandoc` and `python3` installed you can regenerate locally
+instead — `build/makehtml.sh common/hosts.cfg.5` for the one page you edited
+(regenerating all 69 pages is for changes to the generation itself, not a
+one-page edit). But the converter's output differs between mandoc versions
+(the check pins one), so if the check still disagrees with your local run,
+take the artifact — it is the output that counts.
+
+Whichever way the HTML was generated, do not bump the version or date in the
+`.TH` line — that happens at release time — and keep `git diff --check`
+quiet: the sources carry no trailing whitespace.
 
 ## Pull requests
 
