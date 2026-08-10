@@ -5,58 +5,18 @@ because they are not visible from the source tree.
 
 ## Where a change gets written down
 
-Two files, two different jobs. A change usually belongs in one, sometimes in
-both, and the distinction is not cosmetic.
+The changelog (`Changes`) and the upgrade notes (`RELEASENOTES`) are
+maintained by the maintainers on this branch — the **`Changes`** branch — with
+one entry per merged pull request: one line, starting with a verb, with a
+`(Thanks, Name)` credit for the contributor. The full construction rules —
+entry format, credit order, what belongs in which file — are in
+`.github/RELEASING.md` with the rest of the release process.
 
-**`Changes`** is the full list — one line per merged pull request, so that
-`grep` finds it later. Entries start with a verb and say what the change does
-for someone running Xymon:
-
-```
-* Fix single-service graphs matching unrelated RRD files (#139) (Thanks, Mark Felder)
-```
-
-Keep the entry on one line of at most 100 characters. Searching is what this
-file is for, and a folded entry returns half a sentence to `grep`. Tighten the
-wording rather than breaking the line.
-
-**`RELEASENOTES`** is for what someone needs to know *before upgrading*: a
-default that changed, a setting that stops working, a dependency that is now
-required. Prose, not bullets, and no pull-request numbers — the reader is an
-administrator planning an upgrade, not someone tracing a commit. Most changes
-do not belong here. If yours cannot break a working installation, it does not
-need an entry.
-
-## Credit
-
-Contributors are credited in `Changes` as `(Thanks, Name)`. Credit follows the
-work rather than the pull request, in this order:
-
-1. whoever wrote the change;
-2. whoever reported the problem, if a maintainer wrote the fix;
-3. whoever reviewed it, when there is nobody else to name.
-
-Use the person's name, not their login. If you do not know it, ask rather than
-guess.
-
-A change ported from an external patch set keeps its origin attribution in
-place of, or in addition to, the thanks — `(from J. Cleaver)` for the
-Terabithia patches.
-
-## Version sections
-
-Do not open a new `Changes from X -> Y` section, and do not bump the version in
-`RELEASENOTES`. Add your entry to the section already at the top of the file;
-maintainers open the next one at release time.
-
-Release documentation for the next version is prepared on the **`Changes`**
-branch, not on `main`. If your pull request needs a `Changes` or `RELEASENOTES`
-entry and you are not sure where it should go, say so in the pull request and a
-maintainer will place it — it is easier than untangling two entries for the same
-release afterwards.
-
-The mechanics of cutting the release itself — the prep workflow, tagging, the
-reproducible tarball — are documented in `.github/RELEASING.md`.
+Do not open a new `Changes from X -> Y` section or bump the version in
+`RELEASENOTES`; maintainers do that at release time. If your pull request
+needs an entry and you are not sure what it should say, note it in the pull
+request and a maintainer will place it — easier than untangling two entries
+for the same release afterwards.
 
 ## Manual pages
 
