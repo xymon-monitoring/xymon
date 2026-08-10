@@ -390,13 +390,17 @@ diff -u "$work/selftest.expected" "$work/selftest.out" >&2 \
 	|| fail "self-test: scanner output differs from expected (diff above)"
 
 # --- The real scan -----------------------------------------------------------
-# Tracked sources when this tree is the tracked one; otherwise (a tarball,
-# even one unpacked inside some other git repo) everything present.
+# Tracked sources when this tree is the tracked one; otherwise (a tarball, even
+# one unpacked inside some other git repo) everything present. The untracked
+# branch selects with find, not "grep --include": that option is GNU-only, and
+# busybox grep -- the whole of Alpine and any container without GNU grep --
+# rejects it, leaving an empty list that reads as a stale parser.
 cd "$ROOT"
 if git ls-files --error-unmatch lib/loadhosts.c >/dev/null 2>&1; then
 	git ls-files -- '*.c' | { xargs -r grep -l 'xmh_item' || true; } > "$work/files"
 else
-	grep -rl 'xmh_item' --include=*.c . > "$work/files" || true
+	find . -name '*.c' -type f -print \
+		| { xargs -r grep -l 'xmh_item' || true; } > "$work/files"
 fi
 [ -s "$work/files" ] || fail "found no xmh_item() call sites -- the parser is stale"
 
