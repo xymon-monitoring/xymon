@@ -28,6 +28,65 @@ Conventions). The runner itself is POSIX sh, and on a host without bash it
 skips the whole suite with exit `77` rather than reporting interpreter
 failures as test failures.
 
+### `XYMON_VARIANT` — what the build promised
+
+**A test runs wherever its inputs exist.** Nothing filters the suite by build
+variant: a test that reads a source file runs in every tree, built or not,
+because the file is always there. An unbuilt tree is "light" only as a
+consequence — it compiled no variant, so the tests needing a compiled program
+are the ones that cannot run.
+
+`XYMON_VARIANT` is not a filter. It names **which variant produced this tree**,
+so `require_bin` can tell apart two situations that are otherwise the same
+silent `skip 77`:
+
+| Situation | Without a variant | With `XYMON_VARIANT` set |
+| --------- | ----------------- | ------------------------ |
+| the variant is defined to build this program, and it is missing | `skip 77` | **`fail`** — build regression |
+| the variant never builds this program | `skip 77` | `skip`, with the manifest as the reason |
+
+The manifest lives in `lib/assert.sh`. Variants nest — a server build compiles
+the whole client tool set too, and a localclient build is a client build plus
+the local data analyser, a server capability running locally:
+
+| capability | provided by |
+| ---------- | ----------- |
+| `client` | server, localclient, client |
+| `localclient` | server, localclient |
+| `server` | server |
+
+Each build product is then declared once, as a *role*: the capability it
+belongs to, and where each providing variant puts it. `XYMOND_CLIENT` is a
+`localclient` capability, at `xymond/xymond_client` in a server build and
+`client/xymond_client` in a localclient one. That single declaration is also
+what lets one test find its program under whichever variant is built, instead
+of each test hand-rolling a path probe.
+
+The two tables are cross-checked: a role must have a path for exactly the
+variants that provide its capability. Forgetting one would otherwise read as
+"this variant does not build it" and skip green, so it is a loud table error.
+
+The manifest is deliberately partial: only products a variant builds
+*unconditionally*. RRD- and web-dependent ones turn on build options rather
+than the variant, so listing them would false-fail a legitimate `--server`
+build made without RRD.
+
+| `XYMON_VARIANT`          | Behaviour                                          |
+| ------------------------ | -------------------------------------------------- |
+| unset / empty            | nothing was built, so nothing is promised — `require_bin` probes and skips (developer run, release tarball, build-free `tests.yml` lane) |
+| `server` / `client` / `localclient` | the manifest applies: promised-but-missing fails, never-built skips |
+| anything else            | `fail` — an unknown value matches no manifest row, so every promise would silently evaporate; a CI-matrix typo must not skip green |
+
+The build legs of `build.yml` export the variant they just built; the
+build-free `tests.yml` lane leaves it unset. Leave it unset for a normal
+developer run.
+
+> **"No build required" is not "build-independent."** Running `./tests/testsuite`
+> in a tree you have already compiled will exercise those built binaries via
+> `require_bin` rather than skipping them. To reproduce the truly
+> build-independent lane, run from a clean checkout or a fresh
+> `git worktree add --detach`, with `XYMON_VARIANT` unset.
+
 ## What lives here, what doesn't
 
 - **Here:** shell-level integration scenarios that exercise binaries,

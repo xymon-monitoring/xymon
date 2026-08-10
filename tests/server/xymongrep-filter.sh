@@ -9,8 +9,8 @@
 # require_bin consumer that tests/lib/assert.sh and the post-build suite run
 # in .github/workflows/build.yml were staged for. It runs in three
 # environments:
-#   - build.yml (server leg): common/xymongrep was just built; the in-tree
-#     default below finds it;
+#   - build.yml: a server leg builds common/xymongrep, a client leg builds
+#     client/xymongrep; the variant manifest maps each leg to its own path;
 #   - tests.yml (no build): require_bin skips with 77;
 #   - Debian autopkgtest: the control file exports
 #     XYMONGREP=/usr/lib/xymon/client/bin/xymongrep (or the server-package
@@ -35,16 +35,12 @@ set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
 
-# Server builds produce common/xymongrep; client-only builds ship the same
-# tool as client/xymongrep. Probe the server path first, fall back to the
-# client one; an explicit $XYMONGREP (CMake out-of-source, autopkgtest) is
-# used verbatim by require_bin.
-default="common/xymongrep"
-if [ -z "${XYMONGREP:-}" ] && [ ! -x "$(find_root)/$default" ] \
-		&& [ -x "$(find_root)/client/xymongrep" ]; then
-	default="client/xymongrep"
-fi
-require_bin XYMONGREP "$default"
+# Server builds produce common/xymongrep, client and localclient builds the
+# same tool as client/xymongrep. Both paths are rows in the manifest in
+# lib/assert.sh, so require_bin resolves whichever the variant under test
+# promises -- and fails, rather than skipping, if that variant stopped
+# producing it.
+require_bin XYMONGREP common/xymongrep
 
 work=$(mktempdir)
 cat >"$work/hosts.cfg" <<'EOF'
