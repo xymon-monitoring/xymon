@@ -186,8 +186,8 @@ void load_config(char *conffn)
 					int l2 = strlen(p);
 					char *newcmd = xcalloc(1, l1+l2+1);
 
-					strncpy(newcmd,curtask->cmd,l1);
-					strncpy(newcmd+l1,p,l2);
+					memcpy(newcmd, curtask->cmd, l1);
+					memcpy(newcmd+l1, p, l2);
 					newcmd[l1]=' '; /* this also overwrites the + */
 
 					/* free and assign new */

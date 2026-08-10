@@ -263,6 +263,16 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	return result;
 }
 
+/* Build "rrddir/hostname/rrdfn" into buf; returns -1 (and logs) if it would not fit. */
+static int build_rrd_filedir(char *buf, size_t bufsz, char *hostname, char *rrdfn)
+{
+	if (snprintf(buf, bufsz, "%s/%s/%s", rrddir, hostname, rrdfn) >= (int)bufsz) {
+		errprintf("RRD path truncated, skipping: %s/%s/%s\n", rrddir, hostname, rrdfn);
+		return -1;
+	}
+	return 0;
+}
+
 static int create_and_update_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *creparams[], void *template)
 {
 	static int callcounter = 0;
@@ -287,7 +297,12 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	MEMDEFINE(rrdvalues);
 	MEMDEFINE(filedir);
 
-	sprintf(filedir, "%s/%s", rrddir, hostname);
+	if (snprintf(filedir, sizeof(filedir), "%s/%s", rrddir, hostname) >= (int)sizeof(filedir)) {
+		errprintf("RRD directory path truncated, skipping: %s/%s\n", rrddir, hostname);
+		MEMUNDEFINE(filedir);
+		MEMUNDEFINE(rrdvalues);
+		return -1;
+	}
 	if (stat(filedir, &st) == -1) {
 		if (mkdir(filedir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
 			errprintf("Cannot create rrd directory %s : %s\n", filedir, strerror(errno));
@@ -297,8 +312,11 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		}
 	}
 	/* Watch out here - "rrdfn" may be very large. */
-	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
-	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
+	if (build_rrd_filedir(filedir, sizeof(filedir), hostname, rrdfn)) {
+		MEMUNDEFINE(filedir);
+		MEMUNDEFINE(rrdvalues);
+		return -1;
+	}
 
 	/* 
 	 * Prepare to cache the update. Create the cache tree, and find/create a cache record.
@@ -598,8 +616,7 @@ static int rrddatasets(char *hostname, char ***dsnames)
 	unsigned long steptime, dscount;
 	rrd_value_t *rrddata;
 
-	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
-	filedir[sizeof(filedir)-1] = '\0';
+	if (build_rrd_filedir(filedir, sizeof(filedir), hostname, rrdfn)) return 0;
 	if (stat(filedir, &st) == -1) return 0;
 
 	optind = opterr = 0; rrd_clear_error();
