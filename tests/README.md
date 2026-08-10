@@ -81,6 +81,32 @@ The build legs of `build.yml` export the variant they just built; the
 build-free `tests.yml` lane leaves it unset. Leave it unset for a normal
 developer run.
 
+### The coverage floor
+
+`XYMON_VARIANT` says which build this is; `XYMON_TESTS_STRICT=1` says the
+environment is *complete* — the dependency list is installed and the variant is
+built, so nothing is missing that the host merely failed to provide. The build
+legs of `build.yml` set both.
+
+With both set, the runner asserts a floor: **every test in an area this build
+produces must run.** A skip there is a coverage regression — a test that
+stopped exercising something this very build contains.
+
+| areas required to run | in |
+| --------------------- | -- |
+| `buildsystem`, `packaging`, `client` | every variant |
+| `server`, `web`, `network`, `xymond`, `rrd` | server |
+
+Areas outside a variant's list are unconstrained: they may run, they may skip,
+both are correct. That asymmetry is deliberate — **the floor is not a filter.**
+Many `tests/server/` and `tests/network/` tests read source and pass perfectly
+well in a client build; measured, `tests/server/` splits about half-and-half
+there and `tests/network/` runs in full. Using the directory to decide what to
+*run* would throw those results away. It is only reliable for the weaker claim
+the floor makes: a domain either exists in this build or it does not.
+
+A developer run declares nothing and is never held to the floor.
+
 > **"No build required" is not "build-independent."** Running `./tests/testsuite`
 > in a tree you have already compiled will exercise those built binaries via
 > `require_bin` rather than skipping them. To reproduce the truly

@@ -62,7 +62,28 @@ if [ -z "$tests" ]; then
 	exit 1
 fi
 
-pass=0; skip=0; fail=0; failed=''
+# required_areas VARIANT -- the test areas whose subject this build actually
+# produces, so every test in them must run. A skip there is a regression in
+# coverage, not a scoping decision: it means a test stopped exercising
+# something this very build contains.
+#
+# Areas, not tests: tests/ is organised by domain (see tests/README.md), and a
+# domain either exists in a build or it does not. That is the only thing the
+# directory reliably tells us. It deliberately does NOT decide what to *run* --
+# many tests/server/ and tests/network/ tests read source and pass fine in a
+# client build, and filtering by area would throw those away. This is a floor,
+# never a filter.
+#
+# Areas absent from a variant's list are unconstrained: they may run, they may
+# skip, both are correct.
+required_areas() {
+	case $1 in
+		server)             echo 'buildsystem packaging client server web network xymond rrd' ;;
+		localclient|client) echo 'buildsystem packaging client' ;;
+	esac
+}
+
+pass=0; skip=0; fail=0; failed=''; skipped_in=''
 # Iterate line-by-line rather than `for t in $tests`: unquoted word-splitting
 # breaks on any path containing a space (find emits newline-separated paths, but
 # the default IFS splits on spaces and tabs too). The here-doc keeps the loop in
@@ -74,7 +95,10 @@ while IFS= read -r t; do
 	rc=$?
 	case $rc in
 		0)  printf '  ok\n';           pass=$((pass + 1)) ;;
-		77) printf '  skip (rc=77)\n'; skip=$((skip + 1)) ;;
+		77) printf '  skip (rc=77)\n'; skip=$((skip + 1))
+		    a=${t#tests/}; a=${a%%/*}
+		    skipped_in="${skipped_in}${a} ${t}
+" ;;
 		*)  errline "$t FAILED (rc=$rc)"
 		    fail=$((fail + 1))
 		    failed="${failed}  - ${t} (rc=${rc})
@@ -94,6 +118,31 @@ if [ "$fail" -gt 0 ]; then
 	printf '\nfailing tests:\n%s' "$failed"
 	exit 1
 fi
+
+# Coverage floor. Only in an environment that declares itself complete: CI
+# exports XYMON_TESTS_STRICT after installing the dependency list and building
+# the variant, so anything still missing there is the image or the build, not
+# the host. A developer box declares nothing and is never held to this.
+if [ "${XYMON_TESTS_STRICT:-}" = 1 ] && [ -n "${XYMON_VARIANT:-}" ]; then
+	required=" $(required_areas "$XYMON_VARIANT") "
+	breached=''
+	while IFS= read -r line; do
+		[ -n "$line" ] || continue
+		area=${line%% *}
+		case $required in
+			*" $area "*) breached="${breached}  - ${line#* }
+" ;;
+		esac
+	done <<EOF2
+$skipped_in
+EOF2
+	if [ -n "$breached" ]; then
+		errline "coverage floor: the ${XYMON_VARIANT} build produces these areas, so every test in them must run -- these skipped"
+		printf '%s' "$breached" >&2
+		exit 1
+	fi
+fi
+
 
 # Every discovered test skipped means the suite exercised nothing: in a tree
 # that ships tests/ without the code those tests guard (a packaging omission,

@@ -108,6 +108,12 @@ jobs:
           # build, hence its own variant name. Otherwise the build variant
           # (server | client) names the tree.
           XYMON_VARIANT: ${{ matrix.conftype == 'client' && 'localclient' || matrix.variant }}
+          # This leg installed the dependency list and built the variant, so it
+          # is a complete environment: a test that skips in an area this build
+          # produces is a coverage regression, not a host limitation. Assert
+          # that (required_areas in tests/testsuite). A developer box declares
+          # nothing and is never held to it.
+          XYMON_TESTS_STRICT: 1
         run: |
           # This leg builds the full source for its variant, so every applicable
           # test finds the code/binaries it guards. The runner's all-skip exit
