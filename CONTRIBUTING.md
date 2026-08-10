@@ -26,26 +26,19 @@ HTML copy under `docs/manpages/`. The source is the original. Never edit the
 HTML by hand — it is overwritten at the next regeneration, and the diff of a
 hand-edited page tells a reviewer nothing about what actually changed.
 
-You do not need any tooling for this pair. Edit the source and push; the
-"manual pages match their sources" check on your pull request regenerates the
-HTML, fails if what is committed differs, and uploads exactly what it
-generated as a `manpages-regenerated` artifact. Download it over
-`docs/manpages/`, commit, push again:
+No tooling is needed to keep the pair in step: edit the source and push. If
+the HTML is out of date, the "manual pages match their sources" check fails
+and its log says exactly how to recover — it uploads the pages it generated
+and prints the download command, run id filled in.
 
-```
-gh run download <run-id> -n manpages-regenerated -D docs/manpages
-```
+With `mandoc` and `python3` installed you can instead run
+`build/makehtml.sh common/hosts.cfg.5` and commit both halves together. The
+converter's output differs between mandoc versions and the check pins one,
+so if it still disagrees with your local run, its artifact wins.
 
-If you have `mandoc` and `python3` installed you can regenerate locally
-instead — `build/makehtml.sh common/hosts.cfg.5` for the one page you edited
-(regenerating all 69 pages is for changes to the generation itself, not a
-one-page edit). But the converter's output differs between mandoc versions
-(the check pins one), so if the check still disagrees with your local run,
-take the artifact — it is the output that counts.
-
-Whichever way the HTML was generated, do not bump the version or date in the
-`.TH` line — that happens at release time — and keep `git diff --check`
-quiet: the sources carry no trailing whitespace.
+Either way, do not bump the version or date in the `.TH` line — that happens
+at release time — and keep `git diff --check` quiet: the sources carry no
+trailing whitespace.
 
 ## Pull requests
 
