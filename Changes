@@ -102,9 +102,9 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Add a pre-tag release-prep workflow (#99, #102)
 * Do not write a closing history record with an empty color when the hist file lacks a valid open record (#269, #270)
 * Warn at hosts.cfg load about canonical hostnames the web CGIs cannot serve (#309, #314)
-* Add configurable df/inode filesystem filtering to the OpenBSD client (#170, #176)
+* Add configurable df/inode filesystem filtering to the OpenBSD client (#170, #176) (Thanks, Roland Rosenfeld)
 * Fix two xtree lifecycle bugs: the tsearch-variant teardown leak and array-variant iteration over deleted records (#263)
-* Let the XYMON_TIMEOUT environment variable set the xymon CLI request-timeout default (TBT 129) (#224)
+* Let the XYMON_TIMEOUT environment variable set the xymon CLI request-timeout default (TBT 129) (#224) (from J. Cleaver)
 
 
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
