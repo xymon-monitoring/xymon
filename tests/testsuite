@@ -62,25 +62,40 @@ if [ -z "$tests" ]; then
 	exit 1
 fi
 
-# required_areas VARIANT -- the test areas whose subject this build actually
-# produces, so every test in them must run. A skip there is a regression in
-# coverage, not a scoping decision: it means a test stopped exercising
-# something this very build contains.
+# provided_areas VARIANT -- the test areas whose subject this build actually
+# contains. One table, two uses:
 #
-# Areas, not tests: tests/ is organised by domain (see tests/README.md), and a
-# domain either exists in a build or it does not. That is the only thing the
-# directory reliably tells us. It deliberately does NOT decide what to *run* --
-# many tests/server/ and tests/network/ tests read source and pass fine in a
-# client build, and filtering by area would throw those away. This is a floor,
-# never a filter.
+#   filter -- a test in an area this build does not contain has nothing here to
+#     exercise, so it is skipped as not applicable. That is what stops a client
+#     leg compiling server web-CGI code (and writing lib/libxymon*.a into its
+#     tree as a side effect, which is what made the suite non-idempotent).
+#   floor  -- inside the areas it does contain, every test must run. A skip
+#     there is a coverage regression: a test stopped exercising something this
+#     build has.
 #
-# Areas absent from a variant's list are unconstrained: they may run, they may
-# skip, both are correct.
-required_areas() {
+# The filter is deliberately not the only way in. A test that calls require_bin
+# runs regardless of its area, because the manifest in lib/assert.sh knows which
+# variants ship which binary and the directory does not: tests/server/ holds
+# tests that drive client/xymongrep and client/xymond_client, and those must
+# keep running in a client leg. Domain and driver are different questions -- the
+# area answers the first, require_bin the second.
+provided_areas() {
 	case $1 in
 		server)             echo 'buildsystem packaging common client server web network xymond rrd' ;;
 		localclient|client) echo 'buildsystem packaging common client' ;;
 	esac
+}
+
+# not_applicable TESTPATH -- true when this variant contains neither the test's
+# domain nor a build product it asks for.
+not_applicable() {
+	[ -n "${XYMON_VARIANT:-}" ] || return 1
+	na_area=${1#tests/}; na_area=${na_area%%/*}
+	case " $(provided_areas "$XYMON_VARIANT") " in
+		*" $na_area "*) return 1 ;;
+	esac
+	grep -q 'require_bin' "$1" 2>/dev/null && return 1
+	return 0
 }
 
 pass=0; skip=0; fail=0; failed=''; skipped_in=''
@@ -91,6 +106,14 @@ pass=0; skip=0; fail=0; failed=''; skipped_in=''
 while IFS= read -r t; do
 	[ -n "$t" ] || continue
 	group "$t"
+	if not_applicable "$t"; then
+		printf 'SKIP: the %s build contains neither the %s domain nor a build product this test asks for\n' \
+			"$XYMON_VARIANT" "$na_area" >&2
+		printf '  skip (rc=77)\n'
+		skip=$((skip + 1))
+		endgroup
+		continue
+	fi
 	"./$t"
 	rc=$?
 	case $rc in
@@ -124,7 +147,7 @@ fi
 # the variant, so anything still missing there is the image or the build, not
 # the host. A developer box declares nothing and is never held to this.
 if [ "${XYMON_TESTS_STRICT:-}" = 1 ] && [ -n "${XYMON_VARIANT:-}" ]; then
-	required=" $(required_areas "$XYMON_VARIANT") "
+	required=" $(provided_areas "$XYMON_VARIANT") "
 	breached=''
 	while IFS= read -r line; do
 		[ -n "$line" ] || continue

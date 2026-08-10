@@ -88,22 +88,35 @@ environment is *complete* — the dependency list is installed and the variant i
 built, so nothing is missing that the host merely failed to provide. The build
 legs of `build.yml` set both.
 
-With both set, the runner asserts a floor: **every test in an area this build
-produces must run.** A skip there is a coverage regression — a test that
+`XYMON_VARIANT` alone also **filters**: a test in an area this build does not
+contain is skipped as not applicable — that is what stops a client leg
+compiling server web-CGI code, and writing `lib/libxymon*.a` into its tree as a
+side effect, which is what made the suite non-idempotent. The filter is not the
+only way in: a test that calls `require_bin` runs regardless of its area,
+because the manifest knows which variants ship which binary and the directory
+does not (`tests/server/` holds tests that drive `client/xymongrep` and
+`client/xymond_client`).
+
+With `XYMON_TESTS_STRICT` as well, the runner asserts a floor: **every test in
+an area this build produces must run.** A skip there is a coverage regression — a test that
 stopped exercising something this very build contains.
 
-| areas required to run | in |
-| --------------------- | -- |
-| `buildsystem`, `packaging`, `client` | every variant |
+| area | contained in |
+| ---- | ------------ |
+| `buildsystem`, `packaging`, `common`, `client` | every variant |
 | `server`, `web`, `network`, `xymond`, `rrd` | server |
 
-Areas outside a variant's list are unconstrained: they may run, they may skip,
-both are correct. That asymmetry is deliberate — **the floor is not a filter.**
-Many `tests/server/` and `tests/network/` tests read source and pass perfectly
-well in a client build; measured, `tests/server/` splits about half-and-half
-there and `tests/network/` runs in full. Using the directory to decide what to
-*run* would throw those results away. It is only reliable for the weaker claim
-the floor makes: a domain either exists in this build or it does not.
+One table, both jobs: outside a variant's areas a test is skipped as not
+applicable, inside them it must run.
+
+**The directory is never the only say.** It is reliable for one weak claim —
+a domain either exists in this build or it does not — and unreliable for the
+question that actually decides a run, which is *what does this test need*.
+`tests/server/` holds tests that drive `client/xymongrep` and
+`client/xymond_client`; filtering them out by folder would delete precisely the
+coverage a client leg exists for. So a test calling `require_bin` is exempt from
+the filter and left to the manifest, which knows which variants ship which
+binary.
 
 A developer run declares nothing and is never held to the floor.
 
