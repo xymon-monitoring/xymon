@@ -44,12 +44,13 @@ Apache does but FreeBSD's does not). Sites whose hosts emit a different encoding
 (e.g. iso-8859-1, euc-jp) and relied on browser auto-detection should set
 HTMLCONTENTTYPE explicitly in xymonserver.cfg.
 
-The Linux, FreeBSD, NetBSD and macOS clients now filter the filesystems they
+The Linux, FreeBSD, NetBSD, OpenBSD and macOS clients now filter the filesystems they
 report, where previously they reported whatever df listed. Pseudo and image
 filesystems are dropped by default - iso9660, squashfs and snap mounts on
 Linux, nullfs, procfs, devfs and autofs on FreeBSD, kernfs, procfs, cd9660,
-null and ptyfs on NetBSD, and mounts the system hides from the Finder or
-mounts read-only on macOS. The FreeBSD and NetBSD clients also pass -l to df
+null and ptyfs on NetBSD, kernfs, procfs and cd9660 on OpenBSD, and mounts
+the system hides from the Finder or
+mounts read-only on macOS. The FreeBSD, NetBSD and OpenBSD clients also pass -l to df
 now, so remote filesystems other than nfs, which was already excluded, are no
 longer reported by default; set XYMONCLIENT_FS_DF_LOCAL_ONLY=no to restore
 them. A filesystem that stops being reported also stops raising alerts, so
@@ -69,7 +70,9 @@ path traversal and xymond-protocol injection reachable in a default install.
 As a side effect a host whose canonical name (field 2 of hosts.cfg) contains
 characters outside letters, digits and ":,._-" is no longer reachable through
 these pages; give it an ASCII canonical name and carry the original spelling in
-the NAME: display tag.
+the NAME: display tag. The hosts.cfg loader now logs a warning at startup for
+canonical names outside this set, so affected hosts are visible before anyone
+hits the broken page.
 
 
 Changes for 4.3.30
