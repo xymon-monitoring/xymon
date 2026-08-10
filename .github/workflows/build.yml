@@ -5,8 +5,8 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Both workflows check out and run pull-request code; the token needs
-# nothing beyond reading the repo. Same grant as tests.yml.
+# This workflow checks out and runs pull-request code; the token needs
+# nothing beyond reading the repo.
 permissions:
   contents: read
 
@@ -83,28 +83,33 @@ jobs:
           echo "running make with $(nproc) parallel processes"
           make -j$(nproc)
 
-      # tests.yml runs the same suite without building, so any test that needs
-      # a compiled binary (require_bin in tests/lib/assert.sh) silently skips
-      # there. Run it here too, where the binaries this variant produced are on
-      # disk, so those tests actually execute against the build.
-      #
-      # First such test: tests/server/xymongrep-filter.sh, which drives the
-      # common/xymongrep this leg just built. This step is the only place in
-      # CI where it executes instead of skipping.
-      #
-      # Gated to the server leg only: it produces the broadest binary set
-      # (including common/xymongrep). Widen the gate when a test needs a
-      # binary this leg doesn't build.
+      # Run the regression suite against the binaries this variant just built.
+      # Every test runs wherever its inputs exist -- the suite is not filtered by
+      # variant. XYMON_VARIANT instead names which variant produced this tree, so
+      # the manifest in tests/lib/assert.sh can tell two cases apart that are
+      # otherwise the same silent skip: a binary this variant is defined to
+      # produce but didn't (a build regression -> fail), and one it never builds
+      # (-> a declared skip). E.g. tests/server/xymongrep-filter.sh drives
+      # common/xymongrep in the server leg and client/xymongrep in a client leg,
+      # and fails in either if that leg stopped producing it. This is the only
+      # place in CI the binary tests run at all; the separate no-build lane
+      # (tests.yml) covers the source-reading tests independently of the build,
+      # so they stay visible when the build is red.
       - name: Run regression tests against the build
-        if: matrix.variant == 'server'
+        env:
+          # CONFTYPE=client builds LOCALCLIENT=yes (configure.client), which adds
+          # client/xymond_client -- a different promise than a plain client
+          # build, hence its own variant name. Otherwise the build variant
+          # (server | client) names the tree.
+          XYMON_VARIANT: ${{ matrix.conftype == 'client' && 'localclient' || matrix.variant }}
         run: |
-          # Mirror tests.yml: this step checks out and builds full source, so
-          # every test finds the code it guards. The runner's all-skip exit 77
-          # ("nothing verified") can therefore only mean broken discovery, not a
-          # legitimate skip -- map it to a hard failure. Actions has no neutral
-          # state, so 77 would otherwise surface as a bare nonzero failure with
-          # no explanation. `|| rc=$?` exempts the runner from bash -e so the
-          # mapping is reachable.
+          # This leg builds the full source for its variant, so every applicable
+          # test finds the code/binaries it guards. The runner's all-skip exit
+          # 77 ("nothing verified") can therefore only mean broken discovery,
+          # not a legitimate skip -- map it to a hard failure. Actions has no
+          # neutral state, so 77 would otherwise surface as a bare nonzero
+          # failure with no explanation. `|| rc=$?` exempts the runner from
+          # bash -e so the mapping is reachable.
           rc=0
           ./tests/testsuite || rc=$?
           if [ "$rc" = 77 ]; then
