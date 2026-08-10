@@ -1019,7 +1019,8 @@ test to end up with a green status, all lookups must succeed.
 Check for a running NTP (Network Time Protocol) server on this
 host. By default this uses a built-in SNTP probe and needs no external
 program. Set NTPDATE to the ntpdate program (on ntpsec, "ntpdig") to use
-that instead.
+that instead, and adapt NTPDATEOPTS to the chosen client (its default is
+ntpdate syntax).
 
 .IP "\fBrpc\fR[=\fIrpcservice1\fR,\fIrpcservice2\fR,...]"
 Check for one or more available RPC services. This check is indirect

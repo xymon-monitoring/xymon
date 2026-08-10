@@ -139,7 +139,7 @@ FPINGOPTS="-Ae"					# Standard options to fping/xymonping
 # is appended); empty selects the built-in probe. On ntpsec, where ntpdate is
 # unavailable, set NTPDATE="ntpdig".
 #NTPDATE="ntpdate"				# ntpdate program; empty = built-in probe
-NTPDATEOPTS="-u -q"				# Options for ntpdate (-p deprecated)
+NTPDATEOPTS="-u -q"				# ntpdate syntax; clear/adapt if NTPDATE is another client (e.g. ntpdig)
 TRACEROUTE="traceroute"                         # How to do traceroute on failing ping tests. Requires "trace" in hosts.cfg .
 TRACEROUTEOPTS="-n -q 2 -w 2 -m 15"		# Standard options to traceroute
 XYMONROUTERTEXT="router"			# What to call a failing intermediate network device.
