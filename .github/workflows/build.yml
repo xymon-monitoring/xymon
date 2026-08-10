@@ -47,7 +47,13 @@ jobs:
             libpcre2-dev \
             librrd-dev \
             libssl-dev \
-            libtirpc-dev
+            libtirpc-dev \
+            rrdtool
+          # librrd-dev builds xymond_rrd; the rrdtool CLI is a separate
+          # package and is what tests/rrd/inode-netbsd.sh reads the produced
+          # RRD back with. Without it that test skipped in the one leg that
+          # builds xymond_rrd, so the RRD write path was never verified
+          # end to end anywhere in CI.
 
       - name: Configure (${{ matrix.name }})
         env:
