@@ -30,9 +30,12 @@ svcstatus_setup --no-daemon
 # Prefer an ASAN build so the long-line case below detects a stack write
 # past the parse buffer as a crash instead of silent corruption. An ASAN
 # error must not exit 1 (render treats 1 as an ordinary refusal), so make
-# it exit 99. Fall back to a plain build where ASAN is unavailable.
+# it exit 99. Fall back to a plain build where ASAN is unavailable -- which
+# asan_usable settles by running a probe, because a host can link the
+# sanitizer and still not load it, and the CGI would then die at startup
+# with exit 127, indistinguishable here from the crash we are hunting.
 export ASAN_OPTIONS="exitcode=99${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
-svcstatus_build -g -O1 -fsanitize=address,undefined \
+{ asan_usable && svcstatus_build -g -O1 -fsanitize=address,undefined; } \
 	|| svcstatus_build \
 	|| { cat "$work/cc.log" >&2; fail "svcstatus does not build -- cannot verify histlog serving"; }
 

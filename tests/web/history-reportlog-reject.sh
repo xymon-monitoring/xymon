@@ -32,7 +32,12 @@ require_c_buildenv "$ROOT"
 # the pre-daemon rejection path, so the dead-port endpoint is unused.
 svcstatus_setup
 
+# "Where available" is settled by running a probe, not by compiling one: a
+# host can link the sanitizer and still fail to load it, and the CGI would
+# then exit 127 at startup -- which run_cgi below reads as the very crash
+# this test hunts for. Without it, build plain and keep the weaker check.
 cflags="-g -O1 -fsanitize=address,undefined"
+asan_usable || cflags=""
 export ASAN_OPTIONS="exitcode=99${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
 for cgi in history reportlog; do
 	"$CC" $cflags -I"$ROOT/include" -I"$ROOT/lib" -I"$ROOT/web" -o "$work/$cgi" \
