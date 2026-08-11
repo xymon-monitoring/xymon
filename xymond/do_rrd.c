@@ -45,7 +45,7 @@ int no_rrd = 0;                /* Write to rrd by default */
 
 static int  processorfd = 0;
 static FILE *processorstream = NULL;
-static int  processorflush = 0;
+static int  processorflush = 0;   /* fflush the external processor after every write? (RRD_EXTPROC_DOFLUSH) */
 
 static char *exthandler = NULL;
 static char **extids = NULL;
@@ -113,6 +113,9 @@ void setup_extprocessor(char *cmd)
 	if (!cmd) return;
 
 	processorfd = 0;
+	/* Default: rely on the stdio buffer (flushed when it fills and on teardown),
+	   which cuts a write syscall per RRD update. Set RRD_EXTPROC_DOFLUSH to flush
+	   after every write instead; RRD_EXTPROC_BUFSIZ tunes the buffer size. */
 	processorflush = (getenv("RRD_EXTPROC_DOFLUSH") != NULL);
 	processorbufsz = getenv("RRD_EXTPROC_BUFSIZ") ? atol(getenv("RRD_EXTPROC_BUFSIZ")) : BUFSIZ;
 
@@ -145,9 +148,13 @@ void setup_extprocessor(char *cmd)
 			close(pfd[0]);
 			processorfd = pfd[1];
 			processorstream = fdopen(processorfd, "w");
-			n = setvbuf( processorstream, (char *)NULL, _IOFBF, processorbufsz );
-			if (n) errprintf("setvbuf() returned %d on processor '%s' for %lu bytes: %s\n", cmd, n, processorbufsz, strerror(errno));
-			logprintf("External processor '%s' started\n", cmd);
+			if (processorstream) {
+				/* NB: arg order matches the format (n, cmd, size) - the
+				   original had cmd/n swapped, crashing on setvbuf failure. */
+				n = setvbuf(processorstream, (char *)NULL, _IOFBF, processorbufsz);
+				if (n) errprintf("setvbuf() returned %d on processor '%s' for %lu bytes: %s\n", n, cmd, (unsigned long)processorbufsz, strerror(errno));
+			}
+			errprintf("External processor '%s' started\n", cmd);
 		}
 	}
 }
@@ -156,7 +163,12 @@ void shutdown_extprocessor(void)
 {
 	if (!processorfd) return;
 
-	close(processorfd);
+	/* Close via the stdio stream so any buffered data is flushed to the
+	   external processor and the FILE is freed. A bare close() on the fd
+	   would leak the FILE and, if the stream is buffered, silently discard
+	   un-flushed data. Fall back to close() if fdopen() had failed. */
+	if (processorstream) fclose(processorstream);
+	else close(processorfd);
 	processorfd = 0;
 	processorstream = NULL;
 
