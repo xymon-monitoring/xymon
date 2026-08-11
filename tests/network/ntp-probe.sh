@@ -19,6 +19,8 @@ if [ -r "$here/../lib/assert.sh" ]; then
 else
 	fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 	skip() { printf 'SKIP: %s\n' "$*" >&2; exit 77; }
+	# Standalone copy, no assert.sh to probe with: take the plain build.
+	asan_usable() { return 1; }
 fi
 
 CC=${CC:-cc}
@@ -27,8 +29,11 @@ command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
+# The sanitized build is a bonus, so fall back to a plain one whenever it is
+# not available -- including where -fsanitize links but will not run (see
+# asan_usable), which no compile check can see.
 harness="$work/ntp-probe"
-if ! "$CC" -g -O1 -fsanitize=address,undefined -o "$harness" \
+if ! asan_usable || ! "$CC" -g -O1 -fsanitize=address,undefined -o "$harness" \
 		"$here/ntp-probe-harness.c" 2>"$work/cc-asan.log"; then
 	"$CC" -g -O1 -o "$harness" "$here/ntp-probe-harness.c" 2>"$work/cc.log" \
 		|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }

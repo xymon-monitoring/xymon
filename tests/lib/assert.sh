@@ -142,6 +142,43 @@ require_cc() {
 	command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 }
 
+# asan_usable -- true when $CC can build a sanitized binary AND the result
+# runs. Compiling is not the question: distros that ship the sanitizer
+# runtime in its own package (Amazon Linux 2023 and the other RPM families,
+# where it is libasan/libubsan) link -fsanitize=address happily, and only
+# the finished binary fails, at startup, with
+#
+#     error while loading shared libraries: libasan.so.6: ...
+#
+# and exit 127. A caller that gated on the compile alone then reads that as
+# a crash in the code under test -- the symptom this helper exists to stop.
+# So the probe is executed, not just built.
+#
+# Callers use it to pick between a sanitized build and a plain one, or to
+# skip outright when the sanitizer is the point of the test. The verdict
+# cannot change inside one test process, so it is computed once.
+#
+# The probe directory is removed here rather than left to the EXIT trap
+# registered at the top of this file: several callers install a trap of
+# their own for their work dir, which replaces that one, and the probe
+# would then survive the run. A helper cannot assume the shared cleanup is
+# still armed by the time it is called, so it cleans up after itself.
+asan_usable() {
+	if [ -z "${__xymon_tests_asan_usable:-}" ]; then
+		local probe
+		__xymon_tests_asan_usable=no
+		probe=$(mktempdir)
+		printf 'int main(void){return 0;}\n' >"$probe/probe.c"
+		if "${CC:-cc}" -fsanitize=address,undefined -o "$probe/probe" \
+					"$probe/probe.c" 2>/dev/null \
+				&& "$probe/probe" >/dev/null 2>&1; then
+			__xymon_tests_asan_usable=yes
+		fi
+		rm -rf "$probe"
+	fi
+	[ "$__xymon_tests_asan_usable" = yes ]
+}
+
 # require_c_buildenv ROOT -- skip unless a C compiler, make, and a configured
 # tree (include/config.h) are present. The shared baseline for every test
 # that compiles a harness against the in-tree libraries, so a new shared
