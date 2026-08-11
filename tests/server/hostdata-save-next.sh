@@ -54,7 +54,7 @@ assert_contains 'ERROR: hostdatasave requires HOSTNAME' "$response" \
 response=$("$XYMON" "127.0.0.1:$port" 'hostdatasave unknown-host 5')
 assert_equal 'ERROR: unknown host unknown-host' "$response"
 response=$("$XYMON" "127.0.0.1:$port" 'hostdatasave testhost 5')
-assert_equal 'ERROR: no hostdata worker is listening' "$response"
+assert_equal 'ERROR: no CLICHG channel reader is listening' "$response"
 
 "$XYMOND_CHANNEL" --env="$work/xymonserver.cfg" --channel=clichg \
 	--pidfile="$work/channel.pid" --daemon --log="$work/logs/hostdata.log" \

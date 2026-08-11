@@ -4526,7 +4526,7 @@ void do_message(conn_t *msg, char *origin)
 			snprintf(response, sizeof(response), "ERROR: cached client messages are disabled\n");
 		}
 		else if (semctl(clichgchn->semid, CLIENTCOUNT, GETVAL) <= 0) {
-			snprintf(response, sizeof(response), "ERROR: no hostdata worker is listening\n");
+			snprintf(response, sizeof(response), "ERROR: no CLICHG channel reader is listening\n");
 		}
 		else {
 			hosthandle = xtreeFind(rbhosts, canonhostname);
