@@ -535,6 +535,19 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       file.
     <p class="Pp"></p>
   </dd>
+  <dt id="DELAYRED"><a class="permalink" href="#DELAYRED"><b>DELAYRED</b></a></dt>
+  <dd>Default setting for the <b>delayred</b> tag in <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> applied
+      to hosts that do not have the tag. The format is the same as the tag:
+      &quot;STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]&quot; with DELAY in
+      minutes, e.g. &quot;cpu:15,disk:30&quot;. Note: a <b>delayred</b> tag on a
+      host replaces this default entirely for that host - per-test values are
+      not merged. Default: empty (no delay).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="DELAYYELLOW"><a class="permalink" href="#DELAYYELLOW"><b>DELAYYELLOW</b></a></dt>
+  <dd>Same as DELAYRED, but the default for the <b>delayyellow</b> tag.
+    <p class="Pp"></p>
+  </dd>
   <dt id="MAXMSG_STATUS"><a class="permalink" href="#MAXMSG_STATUS"><b>MAXMSG_STATUS</b></a></dt>
   <dd>The maximum size of a &quot;status&quot; message in kB, default: 256.
       Status messages are the ones that end up as columns on the web display.

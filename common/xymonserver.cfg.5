@@ -430,6 +430,18 @@ This is the default setting, which may be changed in the
 .I alerts.cfg(5)
 file.
 
+.IP "\fBDELAYRED\fR"
+Default setting for the \fBdelayred\fR tag in
+.I hosts.cfg(5)
+applied to hosts that do not have the tag. The format is the same
+as the tag: "STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]" with DELAY
+in minutes, e.g. "cpu:15,disk:30". Note: a \fBdelayred\fR tag on a
+host replaces this default entirely for that host - per-test values
+are not merged. Default: empty (no delay).
+
+.IP "\fBDELAYYELLOW\fR"
+Same as DELAYRED, but the default for the \fBdelayyellow\fR tag.
+
 .IP "\fBMAXMSG_STATUS\fR"
 The maximum size of a "status" message in kB, default: 256.
 Status messages are the ones that end up as columns on the
