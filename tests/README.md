@@ -28,6 +28,31 @@ Conventions). The runner itself is POSIX sh, and on a host without bash it
 skips the whole suite with exit `77` rather than reporting interpreter
 failures as test failures.
 
+### `XYMON_VARIANT` — telling the suite which build this is
+
+Most tests only execute against a build, so run one first. The suite then needs
+to know *which* build, because the same program lives at different paths
+depending on the variant:
+
+    ./configure --server && make -j$(nproc)
+    XYMON_VARIANT=server ./tests/testsuite
+
+| variant | configured with | `xymongrep` | `xymond_client` |
+| ------- | --------------- | ----------- | --------------- |
+| `server` | `./configure --server` | `common/xymongrep` | `xymond/xymond_client` |
+| `localclient` | `CONFTYPE=client ./configure --client` | `client/xymongrep` | `client/xymond_client` |
+| `client` | `./configure --client` | `client/xymongrep` | not built |
+
+The full table is `variant_products()` in `lib/assert.sh`; it also covers
+`xymond_rrd` and `svcstatus.cgi`, both server-only.
+
+Leaving it unset is the default and stays supported: each test falls back to its
+own in-tree path, which is what a developer run, a release tarball and the
+build-free `tests.yml` lane all do. Setting it is what lets one test run against
+whichever variant a build produced — without it,
+`tests/localclient/analysis-file-ifexist.sh` skips in a localclient build while
+the program it wants sits in `client/`.
+
 ## What lives here, what doesn't
 
 - **Here:** shell-level integration scenarios that exercise binaries,
@@ -38,15 +63,29 @@ failures as test failures.
 
 ## Directory layout
 
-Tests are organised by **domain area**, not by source path. Source
-paths shift over time (CMake migration is in flight); domains don't.
-Cross-cutting scenarios that don't map to a single source dir (e.g.
-shipped-file invariants) get their own area.
+**A test's folder is decided by which builds contain the thing it drives.**
+The folder name labels a set of variants, not a subject.
+
+1. What does the test execute or compile — a binary, a source file, a shipped
+   config, or nothing (a pure scan)?
+2. Which variants produce that thing?
+3. File it in the area below whose row lists exactly those variants.
+
+A test needing several things takes the most restrictive — it needs all of
+them. Among areas covering the same variants the choice is readability, not
+correctness, so settle the variant set first and the name second.
+
+Not by topic: a test *about* server behaviour that only compiles `lib/` code
+runs in every build, and filing it under `server` would skip it in the client
+legs. Not by source path either — those shift (the CMake migration is in
+flight) and one test often spans several.
 
 | Area              | What lives here                                        |
 | ----------------- | ------------------------------------------------------ |
+| `tests/common/`   | tools every variant ships (xymon, xymoncmd, xymongrep, xymoncfg, xymondigest) |
 | `tests/client/`   | xymon client tools and behaviours                      |
-| `tests/server/`   | xymond-side tools (xymongrep, xymoncgimsg, alert routing) |
+| `tests/localclient/` | the local client-data analyser (`client/xymond_client`) |
+| `tests/server/`   | xymond-side tools (xymoncgimsg, alert routing, config parsing) |
 | `tests/network/`  | xymonnet probes (xymonping, network checks)            |
 | `tests/web/`      | CGIs, HTML rendering paths                             |
 | `tests/packaging/`| cross-cutting: shipped files, paths, generated configs |
@@ -54,6 +93,13 @@ shipped-file invariants) get their own area.
 | `tests/integration/` | end-to-end scenarios spanning multiple components   |
 | `tests/lib/`      | sourced helpers (`assert.sh`, future `net.sh` etc.)    |
 | `tests/fixtures/` | shared data files (config snippets, expected outputs)  |
+
+Worked through: `xymongrep-filter.sh` reads as server-side work, but the binary
+it drives is one every variant builds -- `common/xymongrep` in a server tree,
+`client/xymongrep` in a client one -- so it goes under `common/`, and a client
+build gets the coverage it exists for. `analysis-file-ifexist.sh` drives
+`xymond_client`, which only a localclient or server build produces, so it goes
+under `localclient/`.
 
 Add a new area by PR when an existing one doesn't fit. Don't bend a
 test to fit the wrong area just to avoid creating a new directory.
@@ -141,6 +187,13 @@ maintenance.
   require_bin XYMONGREP common/xymongrep          # binaries
   SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"  # scripts
   ```
+  `require_bin` resolves in three steps, first match wins: an explicitly
+  exported `$VAR`; then, if `XYMON_VARIANT` is set and the table knows this
+  role, the path that variant builds it at; then the caller's default. A role
+  the table names but this variant's row omits is a `skip` -- that build
+  genuinely does not produce it. A role the table does not mention at all
+  falls through to the default, so an undeclared product degrades to a probe
+  rather than a false claim.
   This keeps tests usable in CMake out-of-source builds (the build
   system passes the real path), in the in-tree Makefile build (default
   matches), and in autopkgtest (the control file exports installed
