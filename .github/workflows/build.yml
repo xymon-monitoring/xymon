@@ -88,7 +88,7 @@ jobs:
       # there. Run it here too, where the binaries this variant produced are on
       # disk, so those tests actually execute against the build.
       #
-      # First such test: tests/server/xymongrep-filter.sh, which drives the
+      # First such test: tests/common/xymongrep-filter.sh, which drives the
       # common/xymongrep this leg just built. This step is the only place in
       # CI where it executes instead of skipping.
       #
