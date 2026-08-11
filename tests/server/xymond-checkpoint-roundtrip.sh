@@ -23,6 +23,11 @@
 #      the file. The file says "flapping when we checkpointed", which after a
 #      long stop is not "flapping now".
 #
+#   4. A no-data gap is carried while it can still bridge a hold-time, and
+#      dropped once it cannot. A gap only ends when the recorded color becomes
+#      the reporter's own again, which never happens while something overrides
+#      it, so without the second half the record is written forever.
+#
 # Needs a built tree: xymond itself and the xymon client.
 
 set -euo pipefail
@@ -195,4 +200,46 @@ esac
 
 stop_xymond
 
-pass "checkpoint round-trip keeps the released status record, carries the flap state, and re-derives flapping"
+# ---- a gap is carried while it can still bridge, and not once it cannot -----
+#
+# The gap fields exist to let a resumed test carry its hold-time across the
+# silence, which holdtime_bridges() refuses past GAPBRIDGE_VALIDITIES report
+# validities. Past that the gap decides nothing, so it must not be written --
+# otherwise a test whose color xymond permanently overrides (an RRDDS modifier,
+# refreshed by xymond_client every client cycle) carries a record in every
+# checkpoint from the first override until the modifier stops.
+#
+# Both halves restore and save without sending a status, so the gap is written
+# back exactly as the daemon holds it. The restored validity is defaultvalidity,
+# 30 minutes, so the window is two hours.
+
+# write_gap_checkpoint GAPSTART -- conn showing the CLEAR xymond invented, with
+# a gap open since GAPSTART carrying a red held from an hour ago.
+write_gap_checkpoint() {
+	local gapstart=$1 held=$(( $(date +%s) - 3600 ))
+
+	printf '@@XYMONDCHK-V1||testhost.example.com|conn|127.0.0.1|clear||red|%s|%s|%s|0|0|0|0|status testhost,example,com.conn clear invented|||0|0\n' \
+		"$held" "$held" "$(( $(date +%s) + 86400 ))" > "$work/chk.gap"
+	printf '@@XYMONDCHK-V1|.flapstate.|testhost.example.com|conn|0|none|none|red|%s|%s|0,0,0,0,0\n' \
+		"$held" "$gapstart" >> "$work/chk.gap"
+}
+
+# saved_gapcolor -- the gap color in the checkpoint xymond just wrote, or
+# "none" when it wrote no .flapstate. record at all.
+saved_gapcolor() {
+	awk -F'|' '$2 == ".flapstate." { print $8; found=1 } END { if (!found) print "none" }' "$work/chk"
+}
+
+write_gap_checkpoint "$(( $(date +%s) - 60 ))"
+start_xymond --restart="$work/chk.gap"
+stop_xymond
+[ "$(saved_gapcolor)" = "red" ] \
+	|| fail "a gap 60s old was not carried through a restart (got $(saved_gapcolor)); the hold-time it would bridge is lost"
+
+write_gap_checkpoint "$(( $(date +%s) - 86400 ))"
+start_xymond --restart="$work/chk.gap"
+stop_xymond
+[ "$(saved_gapcolor)" = "none" ] \
+	|| fail "a day-old gap was written back as $(saved_gapcolor); nothing can bridge it any more, so it is state that never goes away"
+
+pass "checkpoint round-trip keeps the released status record, carries the flap state, re-derives flapping, and drops a gap past its bridge window"

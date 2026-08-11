@@ -32,6 +32,11 @@ XYMOND_C="$ROOT/xymond/xymond.c"
 limit=$(sed -n 's/^#define GAPBRIDGE_VALIDITIES *\([0-9][0-9]*\).*/\1/p' "$XYMOND_C")
 [ -n "$limit" ] || fail "could not read GAPBRIDGE_VALIDITIES from xymond/xymond.c"
 
+# Both halves of the rule: holdtime_bridges() decides the colour and defers the
+# length to gap_within_window(), which save_checkpoint() also asks on its own.
+window=$(awk '/^static int gap_within_window/,/^}/' "$XYMOND_C")
+[ -n "$window" ] || fail "could not locate gap_within_window() in xymond/xymond.c"
+
 body=$(awk '/^static int holdtime_bridges/,/^}/' "$XYMOND_C")
 [ -n "$body" ] || fail "could not locate holdtime_bridges() in xymond/xymond.c"
 
@@ -48,6 +53,7 @@ ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 	printf '#include "libxymon.h"\n'
 	printf '#define NO_COLOR (COL_COUNT)\n'
 	printf '#define GAPBRIDGE_VALIDITIES %s\n' "$limit"
+	printf '%s\n' "$window"
 	printf '%s\n' "$body"
 	cat "$here/xymond-holdtime-bridge-harness.c"
 } > "$work/harness.c"

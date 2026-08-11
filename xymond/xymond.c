@@ -1514,19 +1514,30 @@ static int isset_noflap(void *hinfo, char *testname, char *hostname)
 #define GAPBRIDGE_VALIDITIES 4
 
 /*
+ * gap_within_window -- is a gap still short enough to carry a hold-time across?
+ * Split out from the test below because a gap that fails this one can no longer
+ * affect any decision, whatever color arrives next. VALIDITY is the test's
+ * report validity in minutes.
+ */
+static int gap_within_window(time_t gaplen, int validity)
+{
+	/* time_t, not int: validity comes from the reporter ("status+NNN"), and a
+	 * large one overflows an int product and wraps. */
+	return (gaplen <= (time_t)GAPBRIDGE_VALIDITIES * validity * 60);
+}
+
+/*
  * holdtime_bridges -- may a test that is reporting again carry its hold-time
  * across the silence? Only if nothing suggests the status moved while we were
  * blind: same color as before, and not gone long. PREGAPCOLOR is NO_COLOR when
- * there was no gap; VALIDITY is the test's report validity in minutes.
+ * there was no gap.
  */
 static int holdtime_bridges(int newcolor, int pregapcolor, time_t gaplen, int validity)
 {
 	if (pregapcolor == NO_COLOR) return 0;		/* no gap to bridge */
 	if (newcolor != pregapcolor) return 0;		/* it changed while we were blind */
 
-	/* time_t, not int: validity comes from the reporter ("status+NNN"), and a
-	 * large one overflows an int product and wraps. */
-	return (gaplen <= (time_t)GAPBRIDGE_VALIDITIES * validity * 60);
+	return gap_within_window(gaplen, validity);
 }
 
 
@@ -4950,6 +4961,7 @@ void save_checkpoint(void)
 	scheduletask_t *swalk;
 	ackinfo_t *awalk;
 	int iores = 0;
+	int gapopen = 0;
 
 	if (checkpointfn == NULL) return;
 
@@ -5007,8 +5019,19 @@ void save_checkpoint(void)
 			 * flapchange[0] alone is not state worth carrying -- every log is
 			 * seeded with its creation time, on both paths -- and testing it
 			 * would put a record after every status. Real history means two.
+			 *
+			 * A gap past its bridge window is not state either: no color can
+			 * carry a hold-time across it any more, so it is over whatever
+			 * happens next. Saying so here is what keeps it from being saved
+			 * for as long as the override lasts -- xymond_client refreshes an
+			 * RRDDS modifier every client cycle, and while one is in force the
+			 * color being recorded is never the reporter's, so nothing ever
+			 * closes the gap.
 			 */
-			if ((iores >= 0) && (lwalk->flapping || (lwalk->pregapcolor != NO_COLOR) ||
+			gapopen = ((lwalk->pregapcolor != NO_COLOR) &&
+				   gap_within_window(now - lwalk->gapstart, lwalk->validity));
+
+			if ((iores >= 0) && (lwalk->flapping || gapopen ||
 					     ((flapcount > 1) && lwalk->flapchange[1]))) {
 				int fi;
 
@@ -5019,8 +5042,9 @@ void save_checkpoint(void)
 						hwalk->hostname, lwalk->test->name,
 						lwalk->flapping,
 						colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor],
-						colnames[lwalk->pregapcolor], (long)lwalk->pregaplastchange,
-						(long)lwalk->gapstart);
+						colnames[gapopen ? lwalk->pregapcolor : NO_COLOR],
+						(long)(gapopen ? lwalk->pregaplastchange : 0),
+						(long)(gapopen ? lwalk->gapstart : 0));
 				for (fi = 0; ((fi < flapcount) && (iores >= 0)); fi++)
 					iores = fprintf(fd, "%s%ld", ((fi == 0) ? "" : ","), (long)lwalk->flapchange[fi]);
 				if (iores >= 0) iores = fprintf(fd, "\n");
