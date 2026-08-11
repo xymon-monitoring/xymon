@@ -252,7 +252,8 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   <dd>For network tests, the flags indicating details about the test (used by
       xymongen).</dd>
   <dt id="lastchange"><a class="permalink" href="#lastchange"><b>lastchange</b></a></dt>
-  <dd>Unix timestamp when the status color last changed.</dd>
+  <dd>Unix timestamp when the current status color began, i.e. the hold-time of
+      the color shown. See &quot;Hold-time and no-data gaps&quot; below.</dd>
   <dt id="logtime"><a class="permalink" href="#logtime"><b>logtime</b></a></dt>
   <dd>Unix timestamp when the log message was received.</dd>
   <dt id="validtime"><a class="permalink" href="#validtime"><b>validtime</b></a></dt>
@@ -344,6 +345,18 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   !=</p>
 <p class="Pp">These filters are: lastchange, logtime, validtime, acktime,
     disabletime</p>
+<p class="Pp">Hold-time and no-data gaps</p>
+<p class="Pp"><b>lastchange</b> is the hold-time of the color shown: when that
+    color began, not when a message last moved it. If a test stops reporting and
+    later resumes with the same color, the silence counts as hold-time and the
+    value is unchanged across it - the status did not move while it was out of
+    sight. A gap longer than four times the report validity is not bridged, and
+    a resume with a different color starts a new hold-time. The gap is measured
+    from when the status went stale, itself one report validity after the last
+    report.</p>
+<p class="Pp">This value can therefore move backwards, which matters for the
+    <b>lastchange</b> filter above: a poller asking for changes since its last
+    look will not see a bridged recovery.</p>
 <p class="Pp">The response is one line for each status that matches the
     CRITERIA, or all statuses if no criteria is specified. The line is composed
     of a number of fields, separated by a pipe-sign. You can select which fields
@@ -361,7 +374,8 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   <dd>For network tests, the flags indicating details about the test (used by
       xymongen).</dd>
   <dt id="lastchange~2"><a class="permalink" href="#lastchange~2"><b>lastchange</b></a></dt>
-  <dd>Unix timestamp when the status color last changed.</dd>
+  <dd>Unix timestamp when the current status color began, i.e. the hold-time of
+      the color shown. See &quot;Hold-time and no-data gaps&quot; below.</dd>
   <dt id="logtime~2"><a class="permalink" href="#logtime~2"><b>logtime</b></a></dt>
   <dd>Unix timestamp when the log message was received.</dd>
   <dt id="validtime~2"><a class="permalink" href="#validtime~2"><b>validtime</b></a></dt>

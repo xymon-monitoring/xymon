@@ -126,7 +126,12 @@ typedef struct xymond_log_t {
 	char *testflags;
 	char *grouplist;        /* For extended status reports (e.g. from xymond_client) */
 	char sender[IP_ADDR_STRLEN];
-	time_t *lastchange;	/* Table of times when the currently logged status began */
+	time_t lastchange;	/* When the currently recorded color began: its hold-time */
+	time_t *flapchange;	/* Table of the most recent status-change times, used for flap detection */
+	time_t pregaplastchange;	/* The "lastchange" saved when a no-data gap began */
+	time_t gapstart;	/* When that gap began; bounds how far a resume may bridge */
+	int pregapcolor;	/* The color recorded before the gap, or NO_COLOR when not in one */
+	int validity;		/* Minutes this test's reports stay valid; sizes the bridge bound */
 	time_t logtime;		/* time when last update was received */
 	time_t validtime;	/* time when status is no longer valid */
 	time_t enabletime;	/* time when test auto-enables after a disable */
@@ -738,7 +743,7 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 				colnames[log->color], 				/*  7 */
 				(log->testflags ? log->testflags : ""),		/*  8 */
 				colnames[log->oldcolor], 			/*  9 */
-				(int) log->lastchange[0]); 			/* 10 */
+				(int) log->lastchange); 			/* 10 */
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 11+12 */
 					(int)log->acktime, nlencode(log->ackmsg));
@@ -796,7 +801,7 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 				(int) log->validtime,				/*  6 */ 
 				colnames[log->color],				/*  7 */ 
 				colnames[log->oldcolor],			/*  8 */ 
-				(int) log->lastchange[0])			/*  9 */;
+				(int) log->lastchange)			/*  9 */;
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 10+11 */
 					(int)log->enabletime, nlencode(log->dismsg));
@@ -867,7 +872,7 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 					channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 					sender, hostname, 
 					log->test->name, log->host->ip, (int) log->validtime, 
-					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange[0],
+					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
 					pagepath, 
 					(log->cookie ? log->cookie : ""), 
 					osname, classname, 
@@ -1313,8 +1318,16 @@ void get_hts(char *msg, char *sender, char *origin,
 		for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
 			lwalk = (xymond_log_t *)calloc(1, sizeof(xymond_log_t));
-			lwalk->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
-			lwalk->lastchange[0] = getcurrenttime(NULL);
+			lwalk->lastchange = getcurrenttime(NULL);
+			lwalk->flapchange = (flapcount > 0) ? (time_t *)calloc(flapcount, sizeof(time_t)) : NULL;
+			/*
+			 * Seed with the creation time, which the ring used to get free
+			 * from the shared array; without it detection needs one more
+			 * colour change and a new test gets an extra alert out first.
+			 */
+			if (flapcount > 0) lwalk->flapchange[0] = getcurrenttime(NULL);
+			lwalk->pregapcolor = NO_COLOR;
+			lwalk->validity = defaultvalidity;
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
@@ -1421,6 +1434,41 @@ static int changedelay(void *hinfo, int newcolor, char *testname, int currcolor)
 	return result;
 }
 
+/*
+ * flap_pinned_color -- hold a flapping test at the most critical level it
+ * reported, so the display does not follow every oscillation.
+ *
+ * Purple is exempt on both sides: it is "no data", not a level. Incoming, it
+ * would record a status never sent. Recorded, it outranks green/clear/blue, so
+ * it would rewrite every report from a resumed test back to no-data -- and page
+ * for it -- until the flap window expired.
+ */
+/*
+ * record_flapchange -- push NOW onto the ring flap detection reads. Both the
+ * flapping and the ordinary status-change paths record into it; written out
+ * separately they drifted, one growing a DOWNTIME guard the other lacked.
+ */
+static void record_flapchange(xymond_log_t *log, time_t now)
+{
+	int i;
+
+	if (flapcount <= 0) return;
+
+	for (i = flapcount-1; (i > 0); i--)
+		log->flapchange[i] = log->flapchange[i-1];
+	log->flapchange[0] = now;
+}
+
+
+static int flap_pinned_color(int newcolor, int logcolor)
+{
+	if (newcolor == COL_PURPLE) return newcolor;
+	if (logcolor == COL_PURPLE) return newcolor;
+
+	return (newcolor < logcolor) ? logcolor : newcolor;
+}
+
+
 static int isset_noflap(void *hinfo, char *testname, char *hostname)
 {
 	char *tok, *dstr, *dbuf;
@@ -1456,14 +1504,59 @@ static int isset_noflap(void *hinfo, char *testname, char *hostname)
 	return 1;
 }
 
-void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, char *grouplist, 
-		   xymond_log_t *log, int newcolor, char *downcause, int modifyonly)
+/*
+ * Longest gap we will bridge, in report-validity periods -- two hours at the
+ * default, measured from when the status went stale rather than from the last
+ * report, so the silence tolerated is one validity longer again. Nothing caps
+ * how long a status may sit stale, and the longer the silence the likelier
+ * "red, gone, red" is two incidents, not one.
+ */
+#define GAPBRIDGE_VALIDITIES 4
+
+/*
+ * gap_within_window -- is a gap still short enough to carry a hold-time across?
+ * Split out from the test below because a gap that fails this one can no longer
+ * affect any decision, whatever color arrives next. VALIDITY is the test's
+ * report validity in minutes.
+ */
+static int gap_within_window(time_t gaplen, int validity)
+{
+	/* time_t, not int: validity comes from the reporter ("status+NNN"), and a
+	 * large one overflows an int product and wraps. */
+	return (gaplen <= (time_t)GAPBRIDGE_VALIDITIES * validity * 60);
+}
+
+/*
+ * holdtime_bridges -- may a test that is reporting again carry its hold-time
+ * across the silence? Only if nothing suggests the status moved while we were
+ * blind: same color as before, and not gone long. PREGAPCOLOR is NO_COLOR when
+ * there was no gap.
+ */
+static int holdtime_bridges(int newcolor, int pregapcolor, time_t gaplen, int validity)
+{
+	if (pregapcolor == NO_COLOR) return 0;		/* no gap to bridge */
+	if (newcolor != pregapcolor) return 0;		/* it changed while we were blind */
+
+	return gap_within_window(gaplen, validity);
+}
+
+
+void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, char *grouplist,
+		   xymond_log_t *log, int reportedcolor, char *downcause, int modifyonly, int synthetic)
 {
 	int validity = defaultvalidity;
 	time_t now = getcurrenttime(NULL);
+	time_t prevlastchange;
 	int msglen, issummary;
 	enum alertstate_t oldalertstatus, newalertstatus;
 	int delayval = 0;
+	/*
+	 * "reportedcolor" is what the reporter said; "newcolor" is what we decide
+	 * to record. A disable, a change delay, the flap pin and a modifier all
+	 * rewrite the latter below, and the gap bookkeeping needs to tell the two
+	 * apart -- see there.
+	 */
+	int newcolor = reportedcolor;
 	void *hinfo = hostinfo(hostname);
 
 	dbgprintf("->handle_status\n");
@@ -1552,10 +1645,10 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	if (modifyonly || issummary) {
 		/* Nothing */
 	}
-	else if ((flapcount > 0) && ((now - log->lastchange[flapcount-1]) < flapthreshold) && (!isset_noflap(hinfo, testname, hostname))) {
+	else if ((flapcount > 0) && ((now - log->flapchange[flapcount-1]) < flapthreshold) && (!isset_noflap(hinfo, testname, hostname))) {
 		if (!log->flapping) {
-			errprintf("Flapping detected for %s:%s - %d changes in %d seconds\n",
-				  hostname, testname, flapcount, (now - log->lastchange[flapcount-1]));
+			errprintf("Flapping detected for %s:%s - %d changes in %ld seconds\n",
+				  hostname, testname, flapcount, (long)(now - log->flapchange[flapcount-1]));
 			log->flapping = 1;
 			log->oldflapcolor = log->color;
 			log->currflapcolor = newcolor;
@@ -1565,20 +1658,20 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			log->currflapcolor = newcolor;
 		}
 
-		/* Make sure we maintain the most critical level reported by the flapping unit */
-		if (newcolor < log->color) newcolor = log->color;
+		/* Maintain the most critical level reported by the flapping unit. */
+		newcolor = flap_pinned_color(newcolor, log->color);
 
-		/* 
+		/*
 		 * If the status is actually changing, but we've detected it's a
-		 * flap and therefore suppress atatus change events, then we must
-		 * update the lastchange-times here because it won't be done in
-		 * the status-change handler.
+		 * flap and therefore suppress status change events, then we must
+		 * record the change-time here because it won't be done in
+		 * the status-change handler. Note that "lastchange" is NOT
+		 * updated: the recorded color does not change, so its hold-time
+		 * keeps running. Like the status-change handler, don't record
+		 * anything while DOWNTIME is active.
 		 */
-		if ((log->oldflapcolor != log->currflapcolor) && (newcolor == log->color)) {
-			int i;
-			for (i=flapcount-1; (i > 0); i--)
-				log->lastchange[i] = log->lastchange[i-1];
-			log->lastchange[0] = now;
+		if (!log->downtimeactive && (log->oldflapcolor != log->currflapcolor) && (newcolor == log->color)) {
+			record_flapchange(log, now);
 		}
 	}
 	else {
@@ -1654,6 +1747,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 *
 		 * Same tweak must be done for disabled tests.
 		 */
+		log->validity = validity;
 		log->validtime = now + validity*60;
 		if (log->acktime    && (log->acktime > log->validtime))    log->validtime = log->acktime;
 		if (log->enabletime) {
@@ -1737,6 +1831,10 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		if ((now - log->yellowstart) < delayval) newcolor = log->color; /* Keep current color */
 	}
 
+
+	/* For the gap bookkeeping below: opening a gap records when the color we
+	 * are about to stop seeing began, not when we stopped seeing it. */
+	prevlastchange = log->lastchange;
 
 	log->oldcolor = log->color;
 	log->color = newcolor;
@@ -1856,19 +1954,59 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * (It is only seen as active if the color has been forced BLUE).
 		 */
 		if (!log->downtimeactive && (log->oldcolor != newcolor)) {
-			int i;
 			if (log->host->clientmsgs && (newalertstatus == A_ALERT) && log->test->clientsave) {
-				posttochannel(clichgchn, channelnames[C_CLICHG], msg, sender, 
+				posttochannel(clichgchn, channelnames[C_CLICHG], msg, sender,
 						hostname, log, NULL);
 			}
 
-			if (flapcount > 0) {
-				/* We keep track of flaps, so update the lastchange table */
-				for (i=flapcount-1; (i > 0); i--)
-					log->lastchange[i] = log->lastchange[i-1];
-			}
-			log->lastchange[0] = now;
+			/* We keep track of flaps, so update the change-time table */
+			record_flapchange(log, now);
+
+			log->lastchange = now;
 			log->statuschangecount++;
+		}
+	}
+
+	/*
+	 * Deliberately outside the test above: whether we can see the reporter's
+	 * own color has nothing to do with whether that color changed, nor with
+	 * DOWNTIME, which hides it just as a silence does. Keying the gap on a
+	 * color change leaves it open when a test resumes with the color xymond
+	 * invented -- that report moves nothing, so nothing in there runs -- and
+	 * a later change then bridges across a period the test was demonstrably
+	 * reporting.
+	 */
+	if (!issummary) {
+		if (synthetic || log->downtimeactive || (newcolor != reportedcolor)) {
+			/*
+			 * xymond chose this color, not the reporter: it invented one
+			 * because no data arrived (synthetic), get_hts() rewrote it for
+			 * DOWNTIME before we were called, or a disable, a change delay,
+			 * the flap pin or a modifier rewrote it above. Only the first
+			 * such update opens the gap; a later one would overwrite the
+			 * color to resume to with one xymond invented, which no real
+			 * report could match.
+			 */
+			if ((log->pregapcolor == NO_COLOR) && (log->oldcolor >= 0) && (log->oldcolor < COL_COUNT)) {
+				/* The range test keeps COL_CLIENT (99), which parse_color()
+				 * accepts, out of colnames[] at checkpoint time. */
+				log->pregapcolor = log->oldcolor;
+				log->pregaplastchange = prevlastchange;
+				log->gapstart = now;
+			}
+		}
+		else if (log->pregapcolor != NO_COLOR) {
+			/*
+			 * What we are recording is the reporter's own color again, so the
+			 * gap ends whatever that color is.
+			 *
+			 * Same color as before, after a short enough gap: the problem did
+			 * not go away while we could not see it, so the hold-time carries
+			 * across. alerts.cfg DURATION reads this.
+			 */
+			if (holdtime_bridges(newcolor, log->pregapcolor, (now - log->gapstart), log->validity))
+				log->lastchange = log->pregaplastchange;
+			log->pregapcolor = NO_COLOR;
 		}
 	}
 
@@ -2016,8 +2154,8 @@ void handle_modify(char *msg, xymond_log_t *log, int color)
 
 		if (newcolor != log->color) {
 			/* Color change - trigger a status update */
-			handle_status(log->message, log->sender, 
-				log->host->hostname, log->test->name, log->grouplist, log, newcolor, NULL, 1);
+			handle_status(log->message, log->sender,
+				log->host->hostname, log->test->name, log->grouplist, log, newcolor, NULL, 1, 1);
 		}
 	}
 
@@ -2204,7 +2342,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg->buf, sender, log->host->hostname, log, NULL);
 				/* Trigger an immediate status update */
-				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL, 0);
+				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL, 0, 1);
 			}
 		}
 		else {
@@ -2219,7 +2357,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 				posttochannel(enadischn, channelnames[C_ENADIS], msg->buf, sender, log->host->hostname, log, NULL);
 
 				/* Trigger an immediate status update */
-				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL, 0);
+				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL, 0, 1);
 			}
 		}
 
@@ -2327,7 +2465,7 @@ void handle_ackinfo(char *msg, char *sender, xymond_log_t *log)
 			fprintf(ackinfologfd, "%s %s %s %s %d %d %d %d %s\n",
 				timestamp, log->host->hostname, log->test->name,
 				newack->ackedby, newack->level, 
-				(int)log->lastchange[0], (int)newack->received, (int)newack->validuntil, 
+				(int)log->lastchange, (int)newack->received, (int)newack->validuntil,
 				nlencode(newack->msg));
 			fflush(ackinfologfd);
 		}
@@ -2523,7 +2661,7 @@ void free_log_t(xymond_log_t *zombie)
 	if (zombie->dismsg) xfree(zombie->dismsg);
 	if (zombie->ackmsg) xfree(zombie->ackmsg);
 	if (zombie->grouplist) xfree(zombie->grouplist);
-	if (zombie->lastchange) xfree(zombie->lastchange);
+	if (zombie->flapchange) xfree(zombie->flapchange);
 	if (zombie->testflags) xfree(zombie->testflags);
 	flush_acklist(zombie, 1);
 	xfree(zombie);
@@ -3348,7 +3486,7 @@ int match_test_filter(xymond_log_t *log, hostfilter_rec_t *filter)
 
 		  case FILTER_FIELDTIME:
 			switch (fwalk->boardfield) {
-			  case F_LASTCHANGE: testedval = log->lastchange[0]; break;
+			  case F_LASTCHANGE: testedval = log->lastchange; break;
 			  case F_LOGTIME: testedval = log->logtime; break;
 			  case F_VALIDTIME: testedval = log->validtime; break;
 			  case F_ACKTIME: testedval = log->acktime; break;
@@ -3411,7 +3549,7 @@ strbuffer_t *generate_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, xy
 		  case F_TESTNAME: addtobuffer(buf, lwalk->test->name); break;
 		  case F_COLOR: addtobuffer(buf, colnames[lwalk->color]); break;
 		  case F_FLAGS: if (lwalk->testflags) addtobuffer(buf, lwalk->testflags); break;
-		  case F_LASTCHANGE: snprintf(l, sizeof(l), "%d", (int)lwalk->lastchange[0]); addtobuffer(buf, l); break;
+		  case F_LASTCHANGE: snprintf(l, sizeof(l), "%d", (int)lwalk->lastchange); addtobuffer(buf, l); break;
 		  case F_LOGTIME: snprintf(l, sizeof(l), "%d", (int)lwalk->logtime); addtobuffer(buf, l); break;
 		  case F_VALIDTIME: snprintf(l, sizeof(l), "%d", (int)lwalk->validtime); addtobuffer(buf, l); break;
 		  case F_ACKTIME: snprintf(l, sizeof(l), "%d", (int)lwalk->acktime); addtobuffer(buf, l); break;
@@ -3446,9 +3584,16 @@ strbuffer_t *generate_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, xy
 			break;
 
 		  case F_FLAPINFO:
-			snprintf(l, sizeof(l), "%d/%ld/%ld/%s/%s", 
-				 lwalk->flapping, 
-				 lwalk->lastchange[0], (flapcount > 0) ? lwalk->lastchange[flapcount-1] : 0,
+			/*
+			 * xymon.1 defines these as the latest and the first status
+			 * change: both ends of the flap ring. lastchange is neither
+			 * any more, and using it could invert the pair. Cast rather
+			 * than assume time_t is long, or the two %s shift.
+			 */
+			snprintf(l, sizeof(l), "%d/%ld/%ld/%s/%s",
+				 lwalk->flapping,
+				 (long)((flapcount > 0) ? lwalk->flapchange[0] : 0),
+				 (long)((flapcount > 0) ? lwalk->flapchange[flapcount-1] : 0),
 				 colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor]);
 			addtobuffer(buf, l);
 			break;
@@ -3698,7 +3843,7 @@ void do_message(conn_t *msg, char *origin)
 					update_statistics(currmsg);
 
 					if (h && t && log && (color != -1)) {
-						handle_status(currmsg, sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
+						handle_status(currmsg, sender, h->hostname, t->name, grouplist, log, color, downcause, 0, 0);
 					}
 					break;
 				}
@@ -3771,7 +3916,7 @@ void do_message(conn_t *msg, char *origin)
 
 		  default:
 			if (h && t && log && (color != -1)) {
-				handle_status(msg->buf, sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
+				handle_status(msg->buf, sender, h->hostname, t->name, grouplist, log, color, downcause, 0, 0);
 			}
 			break;
 		}
@@ -3839,7 +3984,7 @@ void do_message(conn_t *msg, char *origin)
 		/* Summaries are always allowed. Or should we ? */
 		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 		if (h && t && log && (color != -1)) {
-			handle_status(msg->buf, sender, h->hostname, t->name, NULL, log, color, NULL, 0);
+			handle_status(msg->buf, sender, h->hostname, t->name, NULL, log, color, NULL, 0, 0);
 		}
 	}
 	else if ((strncmp(msg->buf, "notes", 5) == 0) || (strncmp(msg->buf, "usermsg", 7) == 0)) {
@@ -4041,7 +4186,7 @@ void do_message(conn_t *msg, char *origin)
 				"  <Type>", 		log->test->name, 			"</Type>\n",
 				"  <Status>", 		colnames[log->color], 			"</Status>\n",
 				"  <TestFlags>", 	(log->testflags ? log->testflags : ""), "</TestFlags>\n",
-				"  <LastChange>", 	timestr(log->lastchange[0]), 		"</LastChange>\n",
+				"  <LastChange>", 	timestr(log->lastchange), 		"</LastChange>\n",
 				"  <LogTime>", 		timestr(log->logtime), 			"</LogTime>\n",
 				"  <ValidTime>", 	timestr(log->validtime), 		"</ValidTime>\n",
 				"  <AckTime>", 		timestr(log->acktime), 			"</AckTime>\n",
@@ -4125,7 +4270,8 @@ void do_message(conn_t *msg, char *origin)
 			clientlogrec.message = infologrec.message = trendslogrec.message = "";
 			faketestinit = 1;
 		}
-		clientlogrec.lastchange = infologrec.lastchange = trendslogrec.lastchange = dummytimes;
+		clientlogrec.lastchange = infologrec.lastchange = trendslogrec.lastchange = 0;
+		clientlogrec.flapchange = infologrec.flapchange = trendslogrec.flapchange = dummytimes;
 
 
 		for (hosthandle = xtreeFirst(rbhosts); (hosthandle != xtreeEnd(rbhosts)); hosthandle = xtreeNext(rbhosts, hosthandle)) {
@@ -4259,7 +4405,7 @@ void do_message(conn_t *msg, char *origin)
 					"    <Type>", lwalk->test->name, "</Type>\n",
 					"    <Status>", colorname(lwalk->color), "</Status>\n",
 					"    <TestFlags>", (lwalk->testflags ? lwalk->testflags : ""), "</TestFlags>\n",
-					"    <LastChange>", timestr(lwalk->lastchange[0]), "</LastChange>\n",
+					"    <LastChange>", timestr(lwalk->lastchange), "</LastChange>\n",
 					"    <LogTime>", timestr(lwalk->logtime), "</LogTime>\n",
 					"    <ValidTime>", timestr(lwalk->validtime), "</ValidTime>\n",
 					"    <AckTime>", timestr(lwalk->acktime), "</AckTime>\n",
@@ -4815,6 +4961,7 @@ void save_checkpoint(void)
 	scheduletask_t *swalk;
 	ackinfo_t *awalk;
 	int iores = 0;
+	int gapopen = 0;
 
 	if (checkpointfn == NULL) return;
 
@@ -4850,7 +4997,7 @@ void save_checkpoint(void)
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
 				colnames[lwalk->oldcolor],
-				(int)lwalk->logtime, (int) lwalk->lastchange[0], (int) lwalk->validtime, 
+				(int)lwalk->logtime, (int) lwalk->lastchange, (int) lwalk->validtime,
 				(int) lwalk->enabletime, (int) lwalk->acktime, 
 				(lwalk->cookie ? lwalk->cookie : ""), (int) lwalk->cookieexpires,
 				nlencode(lwalk->message));
@@ -4860,6 +5007,48 @@ void save_checkpoint(void)
 			if (iores >= 0) iores = fprintf(fd, "|%s", msgstr);
 			if (iores >= 0) iores = fprintf(fd, "|%d|%d", (int)lwalk->redstart, (int)lwalk->yellowstart);
 			if (iores >= 0) iores = fprintf(fd, "\n");
+
+			/*
+			 * Own record, not extra fields on the status record: that one is
+			 * positional and its reader errors on any field it does not know,
+			 * so appending would make an older xymond discard the whole board
+			 * on a rollback. Unrecognised ".name." records are already skipped
+			 * by every released reader. Written only when there is state.
+			 */
+			/*
+			 * flapchange[0] alone is not state worth carrying -- every log is
+			 * seeded with its creation time, on both paths -- and testing it
+			 * would put a record after every status. Real history means two.
+			 *
+			 * A gap past its bridge window is not state either: no color can
+			 * carry a hold-time across it any more, so it is over whatever
+			 * happens next. Saying so here is what keeps it from being saved
+			 * for as long as the override lasts -- xymond_client refreshes an
+			 * RRDDS modifier every client cycle, and while one is in force the
+			 * color being recorded is never the reporter's, so nothing ever
+			 * closes the gap.
+			 */
+			gapopen = ((lwalk->pregapcolor != NO_COLOR) &&
+				   gap_within_window(now - lwalk->gapstart, lwalk->validity));
+
+			if ((iores >= 0) && (lwalk->flapping || gapopen ||
+					     ((flapcount > 1) && lwalk->flapchange[1]))) {
+				int fi;
+
+				/* long, not int: truncating these to 32 bits would
+				 * return negative after 2038, giving hold-times in 1901
+				 * and silently disabling flap detection. */
+				iores = fprintf(fd, "@@XYMONDCHK-V1|.flapstate.|%s|%s|%d|%s|%s|%s|%ld|%ld|",
+						hwalk->hostname, lwalk->test->name,
+						lwalk->flapping,
+						colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor],
+						colnames[gapopen ? lwalk->pregapcolor : NO_COLOR],
+						(long)(gapopen ? lwalk->pregaplastchange : 0),
+						(long)(gapopen ? lwalk->gapstart : 0));
+				for (fi = 0; ((fi < flapcount) && (iores >= 0)); fi++)
+					iores = fprintf(fd, "%s%ld", ((fi == 0) ? "" : ","), (long)lwalk->flapchange[fi]);
+				if (iores >= 0) iores = fprintf(fd, "\n");
+			}
 
 			for (awalk = lwalk->acklist; (awalk && (iores >= 0)); awalk = awalk->next) {
 				iores = fprintf(fd, "@@XYMONDCHK-V1|.acklist.|%s|%s|%d|%d|%d|%d|%s|%s\n",
@@ -4897,6 +5086,20 @@ void save_checkpoint(void)
 }
 
 
+/*
+ * restore_color -- a checkpoint color name, as an index safe for colnames[].
+ * parse_color() answers -1 for an unknown name and COL_CLIENT (99) for
+ * "client"; colnames[] holds COL_COUNT+1 entries, so either would read past
+ * its end on the next save. Anything that is not a status color reads as none.
+ */
+static int restore_color(char *name)
+{
+	int c = parse_color(name);
+
+	return ((c >= 0) && (c <= NO_COLOR)) ? c : NO_COLOR;
+}
+
+
 void load_checkpoint(char *fn)
 {
 	FILE *fd;
@@ -4909,7 +5112,7 @@ void load_checkpoint(char *fn)
 	testinfo_t *t = NULL;
 	char *origin = NULL;
 	xymond_log_t *ltail = NULL;
-	char *originname, *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg, *cookie; 
+	char *originname, *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg, *cookie;
 	time_t logtime, lastchange, validtime, enabletime, acktime, cookieexpires, yellowstart, redstart;
 	int color = COL_GREEN, oldcolor = COL_GREEN;
 	int count = 0;
@@ -5002,6 +5205,77 @@ void load_checkpoint(char *fn)
 				if (newack->ackedby) xfree(newack->ackedby);
 				if (newack->msg) xfree(newack->msg);
 				xfree(newack);
+			}
+
+			continue;
+		}
+
+		if (strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.flapstate.|", 27) == 0) {
+			xymond_log_t *log = NULL;
+			int flapping = 0, oldflapcolor = NO_COLOR, currflapcolor = NO_COLOR;
+			int pregapcolor = NO_COLOR;
+			time_t pregaplastchange = 0, gapstart = 0;
+			char *flapchangestr = NULL;
+
+			hitem = NULL; t = NULL;
+
+			item = gettok(STRBUF(inbuf), "|\n"); i = 0;
+			while (item) {
+				switch (i) {
+				  case 0: break;
+				  case 1: break;
+				  case 2:
+					hosthandle = xtreeFind(rbhosts, item);
+					hitem = (hosthandle == xtreeEnd(rbhosts)) ? NULL : xtreeData(rbhosts, hosthandle);
+					break;
+				  case 3:
+					testhandle = xtreeFind(rbtests, item);
+					t = (testhandle == xtreeEnd(rbtests)) ? NULL : xtreeData(rbtests, testhandle);
+					break;
+				  case 4: flapping = atoi(item); break;
+				  case 5: oldflapcolor = restore_color(item); break;
+				  case 6: currflapcolor = restore_color(item); break;
+				  case 7: pregapcolor = restore_color(item); break;
+				  case 8: pregaplastchange = (time_t)strtol(item, NULL, 10); break;
+				  case 9: gapstart = (time_t)strtol(item, NULL, 10); break;
+				  case 10: flapchangestr = item; break;
+				  default: break;
+				}
+				item = gettok(NULL, "|\n"); i++;
+			}
+
+			if (hitem && t) {
+				for (log = hitem->logs; (log && (log->test != t)); log = log->next) ;
+			}
+
+			if (log) {
+				/*
+				 * Both flap colors, or the first update after a restart
+				 * compares a real color against the "none" they start as
+				 * and records a status change that never happened.
+				 */
+				log->oldflapcolor = oldflapcolor;
+				log->currflapcolor = currflapcolor;
+				log->pregapcolor = pregapcolor;
+				log->pregaplastchange = pregaplastchange;
+				log->gapstart = gapstart;
+				if (flapchangestr && (flapcount > 0) && log->flapchange) {
+					char *fp = flapchangestr;
+					int fi = 0;
+
+					while (fp && (fi < flapcount)) {
+						log->flapchange[fi++] = (time_t)strtol(fp, NULL, 10);
+						fp = strchr(fp, ','); if (fp) fp++;
+					}
+				}
+
+				/*
+				 * The saved flag means "flapping when we checkpointed", not
+				 * "flapping now" -- xymond may have been down for hours. Re-derive
+				 * from the restored ring, the same test handle_status() runs.
+				 */
+				log->flapping = (flapping && (flapcount > 0) && log->flapchange &&
+						 ((getcurrenttime(NULL) - log->flapchange[flapcount-1]) < flapthreshold));
 			}
 
 			continue;
@@ -5110,8 +5384,23 @@ void load_checkpoint(char *fn)
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
 		strcpy(ltail->sender, sender);
 		ltail->logtime = logtime;
-		ltail->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
-		ltail->lastchange[0] = lastchange;
+		ltail->lastchange = lastchange;
+		ltail->flapchange = (flapcount > 0) ? (time_t *)calloc(flapcount, sizeof(time_t)) : NULL;
+		/*
+		 * Seed the ring as get_hts() does: a checkpoint written before the ring
+		 * existed carries no ".flapstate." record to fill it, and an all-zero
+		 * ring costs one extra colour change before detection can trigger.
+		 * A ".flapstate." record, when one follows, overwrites this.
+		 */
+		if (flapcount > 0) ltail->flapchange[0] = lastchange;
+		/* The rest of the flap and hold-time state arrives in that record. */
+		ltail->pregapcolor = NO_COLOR;
+		/* Not checkpointed: the test's next report sets its real validity,
+		 * which arrives within one validity period by definition. */
+		ltail->validity = defaultvalidity;
+		/* Same default a fresh log gets from calloc, so flapinfo reads the
+		 * same for a never-flapped test either side of a restart. */
+		ltail->oldflapcolor = ltail->currflapcolor = COL_GREEN;
 		ltail->validtime = validtime;
 		ltail->enabletime = enabletime;
 		if (ltail->enabletime == DISABLED_UNTIL_OK) ltail->validtime = INT_MAX;
@@ -5230,8 +5519,8 @@ void check_purple_status(void)
 						if (!lwalk->dismsg) lwalk->dismsg = strdup(cause);                                         
 					}
 
-					handle_status(lwalk->message, "xymond", 
-						hwalk->hostname, lwalk->test->name, lwalk->grouplist, lwalk, newcolor, NULL, 0);
+					handle_status(lwalk->message, "xymond",
+						hwalk->hostname, lwalk->test->name, lwalk->grouplist, lwalk, newcolor, NULL, 0, 1);
 					lwalk = lwalk->next;
 				}
 			}
@@ -5794,7 +6083,7 @@ int main(int argc, char *argv[])
 					  xgetenv("MACHINE"));
 			}
 			else {
-				handle_status(buf, "xymond", h->hostname, t->name, NULL, log, color, NULL, 0);
+				handle_status(buf, "xymond", h->hostname, t->name, NULL, log, color, NULL, 0, 0);
 			}
 			last_stats_time = now;
 			flush_errbuf();
