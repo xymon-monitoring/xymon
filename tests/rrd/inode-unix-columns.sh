@@ -16,7 +16,7 @@ mkdir -p "$work/home/etc" "$work/tmp" "$work/rrd"
 : > "$work/home/etc/analysis.cfg"
 : > "$work/hosts.cfg"
 
-buildflags_output=$(make -s -C "$ROOT" -f Makefile -f - inode-test-flags <<'EOF'
+buildflags_output=$("$XYMON_MAKE" -s -C "$ROOT" -f Makefile -f - inode-test-flags <<'EOF'
 .PHONY: inode-test-flags
 inode-test-flags:
 	@printf '%s\n' 'ldflags=$(LDFLAGS)' 'rpathopt=$(RPATHOPT)' \

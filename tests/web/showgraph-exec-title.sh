@@ -19,7 +19,7 @@ ROOT=$(find_root)
 
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
-command -v make >/dev/null 2>&1 || skip "make not available"
+require_gnu_make
 [ -f "$ROOT/web/showgraph.cgi" ] || skip "tree built without RRD support (no showgraph.cgi)"
 
 rrddef=$(sed -n 's/^RRDDEF *= *//p' "$ROOT/Makefile")
@@ -36,7 +36,7 @@ fi
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-showgraph-exec.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
+"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
 "$CC" -I"$ROOT/include" -I"$ROOT/lib" $rrddef -o "$work/showgraph" \

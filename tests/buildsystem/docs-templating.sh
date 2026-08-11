@@ -19,9 +19,8 @@ set -euo pipefail
 
 ROOT=$(find_root)
 DOCS="$ROOT/docs"
-MAKE="${MAKE:-make}"
 
-command -v "$MAKE" >/dev/null 2>&1 || skip "no make"
+require_gnu_make
 for f in Makefile install.html.DIST xymon-apacheconf.txt.DIST; do
 	[ -f "$DOCS/$f" ] || skip "docs/$f absent -- predates #90"
 done
@@ -30,7 +29,7 @@ work=$(mktempdir)
 cp "$DOCS/Makefile" "$DOCS/install.html.DIST" \
    "$DOCS/xymon-apacheconf.txt.DIST" "$work/"
 
-"$MAKE" -C "$work" install.html xymon-apacheconf.txt \
+"$XYMON_MAKE" -C "$work" install.html xymon-apacheconf.txt \
 	INSTALLETCDIR=/etc/xymon XYMONTOPDIR=/opt/xymon XYMONUSER=xymonuser \
 	INSTALLWWWDIR=/var/www/xymon CGIDIR=/cgi SECURECGIDIR=/secure-cgi \
 	>"$work/make.log" 2>&1 \

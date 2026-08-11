@@ -48,14 +48,14 @@ CLIENT_CONFIG_C="$ROOT/xymond/client_config.c"
 
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
-command -v make  >/dev/null 2>&1 || skip "make not available"
+require_gnu_make
 
 [ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktempdir)
 
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
+"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
 ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")

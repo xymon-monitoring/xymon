@@ -179,14 +179,50 @@ asan_usable() {
 	[ "$__xymon_tests_asan_usable" = yes ]
 }
 
-# require_c_buildenv ROOT -- skip unless a C compiler, make, and a configured
-# tree (include/config.h) are present. The shared baseline for every test
-# that compiles a harness against the in-tree libraries, so a new shared
+# require_gnu_make -- resolve GNU make into $XYMON_MAKE, or skip.
+#
+# Every Makefile in the tree is GNU make: lib/Makefile opens with an `ifeq`,
+# build/Makefile.rules uses pattern rules. On the BSDs /usr/bin/make is BSD
+# make, which stops at the first conditional --
+#
+#     make: lib/Makefile:10: Invalid line "ifeq ($(LOCALCLIENT),yes)"
+#
+# -- so a test that ran `make` there hard-failed on a tree that builds
+# perfectly well with gmake, which is what the build itself uses.
+#
+# Resolution order: $MAKE if the caller exported one (autopkgtest, a distro
+# build), then gmake, then make. Each candidate must identify itself as GNU
+# make; a candidate that exists but is not GNU make is passed over rather
+# than trusted, because "a program named make is on PATH" is the assumption
+# that produced the failure above.
+#
+# No GNU make at all is a missing host dependency, so it skips -- same
+# contract as a missing compiler (tests/README.md). Resolved once: PATH
+# cannot change inside one test process.
+require_gnu_make() {
+	[ -n "${XYMON_MAKE:-}" ] && return 0
+	local candidate
+	for candidate in ${MAKE:-} gmake make; do
+		command -v "$candidate" >/dev/null 2>&1 || continue
+		# Matched on the whole banner rather than `--version | head -1`:
+		# every test runs under `set -o pipefail`, and head exiting after
+		# the first line can SIGPIPE the writer, failing the pipeline for
+		# a candidate that answered correctly.
+		case $("$candidate" --version 2>/dev/null) in
+			"GNU Make"*) XYMON_MAKE=$candidate; return 0 ;;
+		esac
+	done
+	skip "GNU make not found (the tree's Makefiles are GNU make -- install gmake)"
+}
+
+# require_c_buildenv ROOT -- skip unless a C compiler, GNU make, and a
+# configured tree (include/config.h) are present. The shared baseline for every
+# test that compiles a harness against the in-tree libraries, so a new shared
 # skip condition lands in one place; a test may still add stricter
 # conditions of its own (e.g. "tree already built") next to its call.
 require_c_buildenv() {
 	require_cc
-	command -v make >/dev/null 2>&1 || skip "make not available"
+	require_gnu_make
 	[ -f "$1/include/config.h" ] || skip "tree not configured (no include/config.h)"
 }
 
@@ -195,7 +231,8 @@ require_c_buildenv() {
 build_xymon_libs() {
 	local root=$1 log=$2
 	shift 2
-	make -C "$root/lib" "$@" >"$log" 2>&1 \
+	require_gnu_make
+	"$XYMON_MAKE" -C "$root/lib" "$@" >"$log" 2>&1 \
 		|| { cat "$log" >&2; fail "cannot build $*"; }
 }
 
