@@ -27,7 +27,7 @@ build_xymond_worker() {
 	cc=${CC:-cc}
 
 	command -v "$cc" >/dev/null 2>&1 || skip "no C compiler available (CC=$cc)"
-	command -v make >/dev/null 2>&1 || skip "make not available"
+	require_gnu_make
 	[ -f "$root/include/config.h" ] || skip "tree not configured (no include/config.h)"
 	[ -f "$root/Makefile" ] || skip "tree not configured (no Makefile)"
 
@@ -37,7 +37,7 @@ build_xymond_worker() {
 	# If make cannot run the stdin-makefile probe, harvest the same four
 	# variables from the Makefile plus the files it includes.
 	treelibs=$(printf '__testlibs:\n\t@echo $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)\n' \
-			| make -s -C "$root" -f Makefile -f - __testlibs 2>/dev/null) || {
+			| "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __testlibs 2>/dev/null) || {
 		mkfiles="$root/Makefile"
 		while read -r inc; do
 			[ -n "$inc" ] && mkfiles="$mkfiles $root/$inc"
@@ -56,7 +56,7 @@ build_xymond_worker() {
 	fi
 	[ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
-	make -C "$root/lib" libxymon.a libxymoncomm.a libxymontime.a >"$outdir/libbuild.log" 2>&1 \
+	"$XYMON_MAKE" -C "$root/lib" libxymon.a libxymoncomm.a libxymontime.a >"$outdir/libbuild.log" 2>&1 \
 		|| { cat "$outdir/libbuild.log" >&2; fail "the xymon libraries do not build in this configured tree"; }
 
 	srcs=()

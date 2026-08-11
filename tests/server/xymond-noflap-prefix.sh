@@ -37,7 +37,8 @@ command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-noflap-prefix.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
+require_gnu_make
+"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
 # Tags are spelled lowercase, as hosts.cfg(5) documents them, even though the
