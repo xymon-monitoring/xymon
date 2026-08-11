@@ -80,7 +80,7 @@ int main(void)
 }
 EOF
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" -o "$work/harness" \
+"$CC" -iquote "$ROOT/include" -iquote "$ROOT/lib" -o "$work/harness" \
 	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" $ssllibs $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 

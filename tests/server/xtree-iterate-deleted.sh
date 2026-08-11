@@ -112,13 +112,13 @@ mkdir -p "$work/shim-tsearch" "$work/shim-fallback"
 echo '#define HAVE_BINARY_TREE 1' >"$work/shim-tsearch/config.h"
 echo '#undef HAVE_BINARY_TREE' >"$work/shim-fallback/config.h"
 
-"$CC" -g -fsanitize=address -I"$work/shim-tsearch" -I"$ROOT/lib" \
+"$CC" -g -fsanitize=address -I"$work/shim-tsearch" -iquote "$ROOT/lib" \
 	-o "$work/t-tsearch" "$work/harness.c" "$ROOT/lib/tree.c" 2>"$work/cc1.log" \
 	|| { cat "$work/cc1.log" >&2; fail "tsearch-variant harness does not compile"; }
 "$work/t-tsearch" >"$work/out1" 2>&1 \
 	|| fail "tsearch variant visits deleted records (rc=$?): $(tail -15 "$work/out1")"
 
-"$CC" -g -fsanitize=address -I"$work/shim-fallback" -I"$ROOT/lib" \
+"$CC" -g -fsanitize=address -I"$work/shim-fallback" -iquote "$ROOT/lib" \
 	-o "$work/t-fallback" "$work/harness.c" "$ROOT/lib/tree.c" 2>"$work/cc2.log" \
 	|| { cat "$work/cc2.log" >&2; fail "fallback-variant harness does not compile"; }
 "$work/t-fallback" >"$work/out2" 2>&1 \
