@@ -34,7 +34,7 @@ HISTFILE="$WORK/hist/junk,host.disk"
 
 # Valid open record, then a malformed suffix shorter than the scan window.
 printf 'Mon Apr  6 22:37:31 2020 green 1586205451\n' > "$HISTFILE"
-head -c 300 /dev/zero | tr '\0' 'G' >> "$HISTFILE"
+dd if=/dev/zero bs=300 count=1 2>/dev/null | tr '\0' 'G' >> "$HISTFILE"
 
 # Two consecutive status changes: green->red, then red->yellow.
 printf '@@stachg#1|1586206051.00000|127.0.0.1|xymond|junk.host|disk|1586206351|red|green|1586205451|0||0|0|\nbody\n@@\n@@stachg#2|1586209651.00000|127.0.0.1|xymond|junk.host|disk|1586209951|yellow|red|1586206051|0||0|0|\nbody\n@@\n' \

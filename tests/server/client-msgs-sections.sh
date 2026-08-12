@@ -6,7 +6,10 @@ set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
 CLIENT_DIR=$(find_root)/xymond/client
-mapfile -t handlers < <(grep -l 'msgs_report(' "$CLIENT_DIR"/*.c | sort)
+# No mapfile here: it is a bash 4 builtin and macOS ships bash 3.2.
+handlers=()
+while IFS= read -r line; do handlers+=("$line"); done \
+	< <(grep -l 'msgs_report(' "$CLIENT_DIR"/*.c | sort)
 ((${#handlers[@]} > 0)) || fail "no client handlers call msgs_report"
 
 for handler in "${handlers[@]}"; do

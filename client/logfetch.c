@@ -326,8 +326,8 @@ char *logdata(char *filename, logdef_t *logdef)
 
 			dbgprintf(" - Last position was %u, found curpos location at %u in current buffer.\n", logdef->lastpos[1], bytesin);
 			t = strdup(fillpos);	/* need shuffle about to insert before this line */
-			strncpy(fillpos, curpostxt, strlen(curpostxt));		/* add in the CURRENT + \n */
-			strncpy(fillpos+strlen(curpostxt), t, strlen(t));	/* add in whatever this line originally was */
+			memcpy(fillpos, curpostxt, strlen(curpostxt));		/* add in the CURRENT + \n */
+			memcpy(fillpos+strlen(curpostxt), t, strlen(t));	/* add in whatever this line originally was */
 			*(fillpos+strlen(curpostxt)+strlen(t)) = '\0';		/* and terminate it */
 			xfree(t);						/* free temp */
 			curpos = fillpos;					/* leave curpos to the beginning of the CURRENT flag */
@@ -496,11 +496,11 @@ char *logdata(char *filename, logdef_t *logdef)
 		       for (i = 0, pos = replacement; i < triggerptrs_count; i++) {
 		               dbgprintf("Copying buffer content for trigger %i.\n", (i + 1));
 
-		               strncpy(pos, skiptxt, strlen(skiptxt));
+		               memcpy(pos, skiptxt, strlen(skiptxt));
 		               pos += strlen(skiptxt);
 
 		               size = strlen(triggerptrs[i][0]) - strlen(triggerptrs[i][1]);
-		               strncpy(pos, triggerptrs[i][0], size);
+		               memcpy(pos, triggerptrs[i][0], size);
 		               pos += size;
 		       }
 
@@ -533,13 +533,13 @@ char *logdata(char *filename, logdef_t *logdef)
 
 				if (finalstartptr > lasttriggerptr) {
 					/* Add the final skip for completeness */
-					strncpy(pos, skiptxt, strlen(skiptxt));
+					memcpy(pos, skiptxt, strlen(skiptxt));
 					pos += strlen(skiptxt);
 				}
 
 				/* And copy the the rest of the original buffer content */
 				dbgprintf("Copying %zu final bytes of non-trigger content\n", nontriggerbytes);
-				strncpy(pos, finalstartptr, nontriggerbytes);
+				memcpy(pos, finalstartptr, nontriggerbytes);
 				*(pos + nontriggerbytes) = '\0';	/* re-terminate */
 		       }
 

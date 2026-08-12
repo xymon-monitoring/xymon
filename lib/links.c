@@ -140,13 +140,13 @@ void load_all_links(void)
 	if (xgetenv("HOSTDOCURL")) hostdocurl = strdup(xgetenv("HOSTDOCURL"));
 
 	if (!hostdocurl || (strlen(hostdocurl) == 0)) {
-		strncpy(dirname, xgetenv("XYMONNOTESDIR"), sizeof(dirname));
+		snprintf(dirname, sizeof(dirname), "%s", xgetenv("XYMONNOTESDIR"));
 		load_links(dirname, notesskin);
 	}
 
 	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
-	strncpy(dirname, xgetenv("XYMONNOTESDIR"), sizeof(dirname));
-	p = strrchr(dirname, '/'); *p = '\0'; strncat(dirname, "/help", (sizeof(dirname) - strlen(dirname)));
+	snprintf(dirname, sizeof(dirname), "%s", xgetenv("XYMONNOTESDIR"));
+	p = strrchr(dirname, '/'); *p = '\0'; strncat(dirname, "/help", (sizeof(dirname) - strlen(dirname) - 1));
 	load_links(dirname, helpskin);
 
 	linksloaded = 1;

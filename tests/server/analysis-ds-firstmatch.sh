@@ -48,14 +48,14 @@ CLIENT_CONFIG_C="$ROOT/xymond/client_config.c"
 
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
-command -v make  >/dev/null 2>&1 || skip "make not available"
+require_gnu_make
 
 [ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktempdir)
 
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
+"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
 ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
@@ -65,7 +65,8 @@ if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 fi
 [ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" -I"$ROOT/xymond" -o "$work/harness" \
+harness_cflags=$(xymon_cflags "$ROOT")
+"$CC" $harness_cflags -iquote "$ROOT/xymond" -o "$work/harness" \
 	"$here/analysis-ds-firstmatch-harness.c" "$CLIENT_CONFIG_C" \
 	"$ROOT/lib/libxymoncomm.a" $ssllibs $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }

@@ -18,120 +18,42 @@ XYMONCLIENTLOGS="$XYMONHOME/logs"     # Where we store the client logfiles
 LOGFETCHOPTS=""
 
 
-# Filesystem reporting (Linux client) -- used by xymonclient-linux.sh when
-# collecting df and inode data. By default it excludes the nodev pseudo
-# filesystems (except rootfs) and the always-full iso9660/squashfs images,
-# reports the real local filesystems including zfs/virtiofs/tmpfs, and passes
-# -l to df. The noisy tmpfs mounts (/run, /run/lock, /run/user/N) are filtered
-# server-side by the CLASS=linux block in analysis.cfg, not here.
+# Filesystem reporting -- the XYMONCLIENT_FS_* variables tune which mounts the
+# client's disk and inode reports include. The full contract - per-OS
+# mechanisms, matching rules, examples - lives in xymonclient.cfg(5); the
+# blocks below list only each OS's defaults. Unlisted OSes ignore the
+# variables. WARNING: XYMONCLIENT_FS_DF_LOCAL_ONLY=no can hang df on a stale
+# remote mount and turn the whole host purple - see the manual first.
 #
-# XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated nodev FS types to surface
-#    (they would otherwise be dropped). Defaults to "zfs virtiofs tmpfs" -- the
-#    real local filesystems that merely happen to be nodev. Examples:
-#      ""                    -- restore the historical "exclude every nodev
-#                               type" behaviour (drops zfs/virtiofs/tmpfs too).
-#      "zfs virtiofs tmpfs nfs nfs4 ceph"
-#                            -- also include remote filesystems (requires
-#                               XYMONCLIENT_FS_DF_LOCAL_ONLY=no, since
-#                               df -l hides remote mounts).
-#
-# XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated FS types to also exclude,
-#    on top of the nodev default. Defaults to "iso9660 squashfs fuse.snapfuse"
-#    -- read-only images always reported 100% full by design (snaps mount as
-#    squashfs, or as fuse.snapfuse where snapd falls back to FUSE). Matching is
-#    on the exact df type token, and nodev types (overlay, bare fuse, ...) are
-#    already excluded by default, so other effective entries name a type that is
-#    NOT a nodev default -- a device-backed type, or a specific FUSE subtype the
-#    bare nodev "fuse" default cannot match. Examples:
-#      ""                    -- monitor iso9660/squashfs/snaps too.
-#      "iso9660 squashfs fuse.snapfuse fuse.sshfs vfat"
-#                            -- keep the defaults and also drop a specific FUSE
-#                               subtype and a device-backed mount.
-#    If a type appears in both lists, EXCLUDE wins (it is applied after
-#    INCLUDE), so the type stays excluded.
-#
-# XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) passes -l to df, hiding
-#    remote filesystems. Set to "no" to report nfs/ceph/etc. Any other
-#    value produces a warning and falls back to "yes".
-#    WARNING: with "no", a stale or hard-blocked remote mount can wedge df
-#    indefinitely (an uninterruptible D-state wait). The client run never
-#    finishes, so the whole host goes PURPLE -- no data for ALL metrics,
-#    not just disk -- until the mount recovers or the host reboots.
-#
-#    A df that *exits* non-zero with no output (a real error, not a hang)
-#    is marked failed (yellow) rather than left empty, so a failed probe is
-#    not silently reported green. This does not cover the hang above: a
-#    wedged df never exits.
-#
+# Linux (xymonclient-linux.sh) - excludes nodev pseudo-filesystems and the
+# always-full iso9660/squashfs images:
 # XYMONCLIENT_FS_INCLUDE_TYPES="zfs virtiofs tmpfs"
 # XYMONCLIENT_FS_EXCLUDE_TYPES="iso9660 squashfs fuse.snapfuse"
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
-
-
-# Filesystem reporting (NetBSD client) -- xymonclient-netbsd.sh uses the same
-# three variables for both disk-capacity and inode reports. By default it
-# excludes kernfs, procfs, cd9660, null and ptyfs, and passes -l to df so remote
-# filesystems are hidden. NetBSD tmpfs remains included: its inode counts are
-# memory-derived and can provide a meaningful exhaustion signal. The inode
-# report additionally excludes zfs and rows without usable inode accounting.
-# The ptyfs exclusion is new; set XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep
-# reporting it after an upgrade.
 #
-# XYMONCLIENT_FS_INCLUDE_TYPES: whitespace-separated types to remove from the
-#    default exclusion list. For example, "ptyfs" reports ptyfs despite the
-#    default. Types are exact tokens, not shell patterns.
-#
-# XYMONCLIENT_FS_EXCLUDE_TYPES: whitespace-separated types to add to the
-#    exclusion list. If a type appears in both settings, exclusion wins.
-#
-# XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) passes -l to df. Set to "no"
-#    to report remote filesystems. The stale-remote-mount warning above applies.
-#    A df invocation that exits non-zero with no output marks the corresponding
-#    disk or inode report failed (yellow) instead of silently reporting green.
-#
+# FreeBSD (xymonclient-freebsd.sh) - excludes via df -tno<csv>; the inode
+# report also drops zfs/tmpfs:
 # XYMONCLIENT_FS_INCLUDE_TYPES=""
 # XYMONCLIENT_FS_EXCLUDE_TYPES=""
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
-
-
-# Filesystem reporting (macOS client) -- used by xymonclient-darwin.sh. Same
-# three variables as above, matched on mount ATTRIBUTES rather than filesystem
-# type: macOS df has no "-t", and type would not help anyway, since the sealed
-# root, the system helper volumes and the volume holding every user file are
-# all "apfs". Both variables therefore accept attributes as well as types.
 #
-# By default it drops "nobrowse" and "read-only" mounts -- devfs, the autofs
-# map, the system helpers and the sealed root, none of which carries a
-# meaningful capacity signal -- and keeps every other local mount. The data
-# volume, which Apple flags "root data", is exempt and always reported. The
-# inode report also skips apfs, whose ifree comes from the shared container
-# and never signals exhaustion.
-#
-# XYMONCLIENT_FS_INCLUDE_TYPES: types or attributes to surface. Empty by
-#    default. Naming an attribute is the only way to switch off a default drop:
-#      "nobrowse"  -- report volumes hidden from the Finder. WARNING: this
-#                     switches the drop off entirely, so devfs (/dev) and the
-#                     autofs map come back too, both permanently 100% full.
-#                     Pair it with XYMONCLIENT_FS_EXCLUDE_TYPES="devfs autofs".
-#
-# XYMONCLIENT_FS_EXCLUDE_TYPES: types or attributes to exclude on top of the
-#    defaults. Empty by default. Wins over XYMONCLIENT_FS_INCLUDE_TYPES and over
-#    the "root data" exemption:
-#      "lifs"      -- drop external FAT/exFAT/NTFS media (macOS Ventura and
-#                     later mount these through LiveFiles as "lifs"). They are
-#                     local disks, so they are reported by default.
-#      "fusefs"    -- drop macFUSE volumes such as NTFS-3G. Only useful for
-#                     volumes mounted "-o local", or with DF_LOCAL_ONLY="no":
-#                     macFUSE marks its volumes non-local by default, so the
-#                     local filter already drops them.
-#    Beware attributes most mounts carry: excluding "local" drops everything.
-#
-# XYMONCLIENT_FS_DF_LOCAL_ONLY: "yes" (default) reports only mounts flagged
-#    "local", hiding nfs and smbfs; "no" surfaces them. The warning above about
-#    stale remote mounts wedging df applies here too.
-#
+# NetBSD (xymonclient-netbsd.sh) - excludes kernfs/procfs/cd9660/null/ptyfs;
+# the inode report also drops zfs:
 # XYMONCLIENT_FS_INCLUDE_TYPES=""
-# XYMONCLIENT_FS_EXCLUDE_TYPES="lifs"
+# XYMONCLIENT_FS_EXCLUDE_TYPES=""
+# XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
+#
+# OpenBSD (xymonclient-openbsd.sh) - excludes kernfs/procfs/cd9660; tmpfs is
+# kept in both reports:
+# XYMONCLIENT_FS_INCLUDE_TYPES=""
+# XYMONCLIENT_FS_EXCLUDE_TYPES=""
+# XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
+#
+# macOS (xymonclient-darwin.sh) - matches mount attributes as well as types;
+# drops nobrowse/read-only mounts (the root data volume is exempt from those
+# two defaults, but not from an explicit exclude):
+# XYMONCLIENT_FS_INCLUDE_TYPES=""
+# XYMONCLIENT_FS_EXCLUDE_TYPES=""
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
 
 

@@ -395,8 +395,21 @@ to the standard client data. The data will be concatenated with the
 normal client data.
 
 .IP "\fBclientlog\fR \fIHOSTNAME\fR [\fBsection\fR=\fISECTIONNAME\fR[,\fISECTIONNAME\fR...]]"
-Retrieves the current raw client message last sent by HOSTNAME. The optional
-"section" filter is used to select specific sections of the client data.
+Retrieves the current raw client message (hostdata) last sent by
+HOSTNAME. The optional "section" filter selects specific sections of the data.
+
+.IP "\fBhostdatasave HOSTNAME [MINUTES]\fR"
+Requests that the next client message received from HOSTNAME be saved as
+hostdata. The request expires after 30 minutes, or after MINUTES when specified
+(1 to 1440), and is consumed by the next client message. Pending requests are
+canceled when the host is dropped or renamed, or when xymond restarts. Cached
+client messages and the
+hostdata worker must be enabled. Requested saves bypass the recent-save limit,
+but still require sufficient free space. Requests are rejected when no CLICHG
+channel reader is connected. A connected reader does not prove that the
+hostdata worker is running. The response reports whether the request was armed,
+not whether the hostdata was written to disk. Hostdata is the client data shown
+as the clientlog service in the web interface.
 
 .IP "\fBping\fR"
 Attempts to contact the Xymon server. If successful, the Xymon server version ID

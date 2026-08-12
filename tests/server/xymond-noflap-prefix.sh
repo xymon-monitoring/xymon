@@ -37,7 +37,8 @@ command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-noflap-prefix.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
+require_gnu_make
+"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
 # Tags are spelled lowercase, as hosts.cfg(5) documents them, even though the
@@ -107,7 +108,8 @@ EOF
 # --no-ssl build, and carries the -L a non-standard OpenSSL prefix needs.
 ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" -o "$work/harness" \
+harness_cflags=$(xymon_cflags "$ROOT")
+"$CC" $harness_cflags -o "$work/harness" \
 	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" \
 	$ssllibs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }

@@ -19,7 +19,7 @@ ROOT=$(find_root)
 
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
-command -v make >/dev/null 2>&1 || skip "make not available"
+require_gnu_make
 [ -f "$ROOT/web/showgraph.cgi" ] || skip "tree built without RRD support (no showgraph.cgi)"
 
 rrddef=$(sed -n 's/^RRDDEF *= *//p' "$ROOT/Makefile")
@@ -36,10 +36,11 @@ fi
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-showgraph-exec.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
+"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" $rrddef -o "$work/showgraph" \
+harness_cflags=$(xymon_cflags "$ROOT")
+"$CC" $harness_cflags $rrddef -o "$work/showgraph" \
 	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
 	$pcre_libs $rrdlibs $ssllibs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }
@@ -68,6 +69,14 @@ cat >>"$work/graphs.cfg" <<EOF
 	LINE2:p@RRDIDX@#@COLOR@:x
 EOF
 
+# The SIDEEFFECT assertions below are checks that a file does *not* exist, so
+# they are only decidable because showgraph has finished with the title script
+# by the time this returns: it runs it under popen() and then pclose()s, and
+# pclose() waits for the child (web/showgraph.c). Reading the title off the
+# pipe would not be enough -- that proves the script wrote, not that it exited.
+# If that pclose() ever goes away, or the child is abandoned on a timeout, an
+# injected "touch" could land after the check and every one of those
+# assertions would start passing while the injection actually worked.
 render() {  # render <disp-value>
 	rm -f "$work/SIDEEFFECT" "$work/args.out"
 	REQUEST_METHOD=GET \

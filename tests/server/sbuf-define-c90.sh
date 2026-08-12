@@ -46,7 +46,7 @@ int check(void)
 EOF
 
 "$CC" -fsyntax-only -Wall -Werror=declaration-after-statement \
-	-I"$ROOT/lib" "$work/sbuf-c90.c" 2>"$work/cc.log" \
+	-iquote "$ROOT/lib" "$work/sbuf-c90.c" 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; \
 	     fail "SBUF_DEFINE followed by a declaration trips -Werror=declaration-after-statement (macro ends in ';'?)"; }
 

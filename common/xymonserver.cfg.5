@@ -430,6 +430,18 @@ This is the default setting, which may be changed in the
 .I alerts.cfg(5)
 file.
 
+.IP "\fBDELAYRED\fR"
+Default setting for the \fBdelayred\fR tag in
+.I hosts.cfg(5)
+applied to hosts that do not have the tag. The format is the same
+as the tag: "STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]" with DELAY
+in minutes, e.g. "cpu:15,disk:30". Note: a \fBdelayred\fR tag on a
+host replaces this default entirely for that host - per-test values
+are not merged. Default: empty (no delay).
+
+.IP "\fBDELAYYELLOW\fR"
+Same as DELAYRED, but the default for the \fBdelayyellow\fR tag.
+
 .IP "\fBMAXMSG_STATUS\fR"
 The maximum size of a "status" message in kB, default: 256.
 Status messages are the ones that end up as columns on the
@@ -539,7 +551,7 @@ for storing data and for the column's default status-page graph.
 GRAPHS_<COLUMNNAME> changes only what graphs are shown on that
 column's status page. GRAPHS defines the graph list and order on
 the "trends" page, and also stores graph-display metadata such
-as the per-image split size.
+as the maximum number of instances (RRD files) shown per graph image.
 
 .IP "\fBTEST2RRD\fR"
 List of "COLUMNNAME[=RRDSERVICE]" settings. This tells
@@ -581,10 +593,10 @@ and in what order. The matching RRD files are selected by the
 corresponding graph definitions in
 .I graphs.cfg(5).
 Each entry is either "name" or "name::N": "name" is the graph name,
-and N is the maximum number of RRD files drawn per graph image after
+and N is the maximum number of instances (RRD files) drawn per graph image after
 the graph has been split; the default is 5 per image. The double colon
 is literal, so "mrtg::1" draws one file per image.
-N counts RRD files, not lines: each RRD file may hold several data sets
+N counts instances (RRD files), not lines: each RRD file may hold several data sets
 (DS), each drawn as its own curve, so an image showing N files can
 contain several times N lines. Choose N with the per-file DS count in
 mind - a 2-DS graph at "::2" draws 4 lines, while a 1-DS graph at "::5"
@@ -596,7 +608,8 @@ used whenever graph links are generated for that graph. This includes
 the "trends" page, a test column's default status-page graph from
 TEST2RRD, and status-page GRAPHS_<COLUMNNAME> entries that name the
 same graph definition. If a graph is used only from GRAPHS_<COLUMNNAME>
-and has no matching entry in GRAPHS, it uses the default split size.
+and has no matching entry in GRAPHS, it uses the default limit of
+instances per image.
 On the "trends" page, the RRD file count is known automatically.
 On status pages, splitting only happens when
 .I svcstatus.cgi(1)
@@ -720,8 +733,10 @@ no external program. On ntpsec, where ntpdate is unavailable, set this to "ntpdi
 Default: "" (built-in probe)
 
 .IP "\fBNTPDATEOPTS\fR"
-Options for the ntpdate program (used only when NTPDATE is set).
+Options for the NTPDATE program (used only when NTPDATE is set).
 Default: "\-u \-q"
+The default is ntpdate syntax; when NTPDATE is set to a different client
+(such as "ntpdig"), clear or adapt these options to ones that client accepts.
 
 .IP "\fBRPCINFO\fR"
 Defines the

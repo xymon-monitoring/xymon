@@ -205,7 +205,10 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 	MEMDEFINE(fn);
 
-	if (configfn) strncpy(fn, configfn, sizeof(fn)); else snprintf(fn, sizeof(fn), "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
+	if (configfn) {
+		snprintf(fn, sizeof(fn), "%s", configfn);
+	}
+	else snprintf(fn, sizeof(fn), "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -866,7 +869,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 		if ((alert->groups && (*(alert->groups)))) {
 			SBUF_MALLOC(grouplist, strlen(alert->groups));
-			strncpy(grouplist, alert->groups, grouplist_buflen);
+			snprintf(grouplist, grouplist_buflen+1, "%s", alert->groups);
 		}
 
 		if (crit->groupspec) {
@@ -899,7 +902,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 			/* Excluded groups are only handled when the alert does have a group list */
 
-			strncpy(grouplist, alert->groups, grouplist_buflen); /* Might have been used in the include list */
+			snprintf(grouplist, grouplist_buflen+1, "%s", alert->groups); /* Might have been used in the include list */
 			onegroup = strtok_r(grouplist, ",", &tokptr);
 			while (onegroup) {
 				if (namematch(onegroup, crit->exgroupspec, crit->exgroupspecre)) { 
@@ -1143,7 +1146,6 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	int count = 0;
 	char *p, *fontspec;
 	char codes[25];
-	unsigned int codes_bytesleft;
 
 	MEMDEFINE(l);
 	MEMDEFINE(codes);
@@ -1214,15 +1216,15 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 		     (recip->criteria && (recip->criteria->sendnotice == SR_WANTED)) ) notice = 1;
 
 		*codes = '\0';
-		codes_bytesleft = sizeof(codes);
 		if (recip->method == M_IGNORE) {
 			recip->recipient = "-- ignored --";
 		}
-		if (recip->noalerts) { if (*codes) strncat(codes, ",A", codes_bytesleft); else strncat(codes, "-A", codes_bytesleft); codes_bytesleft -= 2; }
-		if (recovered && !recip->noalerts) { if (*codes) strncat(codes, ",R", codes_bytesleft); else strncat(codes, "R", codes_bytesleft); codes_bytesleft -= 2; }
-		if (notice) { if (*codes) strncat(codes, ",N", codes_bytesleft); else strncat(codes, "N", codes_bytesleft); codes_bytesleft -= 2; }
-		if (recip->stoprule) { if (*codes) strncat(codes, ",S", codes_bytesleft); else strncat(codes, "S", codes_bytesleft); codes_bytesleft -= 2; }
-		if (recip->unmatchedonly) { if (*codes) strncat(codes, ",U", codes_bytesleft); else strncat(codes, "U", codes_bytesleft); codes_bytesleft -= 2; }
+		/* Append flag codes, always bounding strncat by the space actually left in codes[] */
+		if (recip->noalerts) strncat(codes, (*codes ? ",A" : "-A"), sizeof(codes)-strlen(codes)-1);
+		if (recovered && !recip->noalerts) strncat(codes, (*codes ? ",R" : "R"), sizeof(codes)-strlen(codes)-1);
+		if (notice) strncat(codes, (*codes ? ",N" : "N"), sizeof(codes)-strlen(codes)-1);
+		if (recip->stoprule) strncat(codes, (*codes ? ",S" : "S"), sizeof(codes)-strlen(codes)-1);
+		if (recip->unmatchedonly) strncat(codes, (*codes ? ",U" : "U"), sizeof(codes)-strlen(codes)-1);
 
 		if (strlen(codes) == 0)
 			snprintf(l, sizeof(l), "<td><font %s>%s</font></td>", fontspec, recip->recipient);

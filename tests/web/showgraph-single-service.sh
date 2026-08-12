@@ -17,7 +17,7 @@ ROOT=$(find_root)
 
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
-command -v make >/dev/null 2>&1 || skip "make not available"
+require_gnu_make
 
 # Needs a configured/built tree (bare-tree CI skips; the post-build suite
 # runs it for real) and one built WITH RRD support.
@@ -41,10 +41,11 @@ fi
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-showgraph.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
+"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" $rrddef -o "$work/showgraph" \
+harness_cflags=$(xymon_cflags "$ROOT")
+"$CC" $harness_cflags $rrddef -o "$work/showgraph" \
 	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
 	$pcre_libs $rrdlibs $ssllibs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }
