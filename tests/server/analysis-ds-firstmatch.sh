@@ -65,7 +65,7 @@ if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 fi
 [ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" -I"$ROOT/xymond" -o "$work/harness" \
+"$CC" -iquote "$ROOT/include" -iquote "$ROOT/lib" -iquote "$ROOT/xymond" -o "$work/harness" \
 	"$here/analysis-ds-firstmatch-harness.c" "$CLIENT_CONFIG_C" \
 	"$ROOT/lib/libxymoncomm.a" $ssllibs $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }

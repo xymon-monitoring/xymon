@@ -116,7 +116,7 @@ svcstatus_build() {
 		return 0
 	fi
 
-	"$CC" "$@" -I"$ROOT/include" -I"$ROOT/lib" -I"$ROOT/web" -o "$work/svcstatus" \
+	"$CC" "$@" -iquote "$ROOT/include" -iquote "$ROOT/lib" -iquote "$ROOT/web" -o "$work/svcstatus" \
 		"$ROOT/web/svcstatus.c" "$ROOT/web/svcstatus-info.c" "$ROOT/web/svcstatus-trends.c" \
 		"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
 		$pcre_libs $ssllibs $netlibs $librtdef 2>"$work/cc.log" || return 1

@@ -34,7 +34,7 @@ rrdlibs=${buildflags[4]#rrdlibs=}
 
 # Configured flags are deliberate word-split lists.
 # shellcheck disable=SC2086
-"$CC" $ldflags -I"$ROOT/include" $rrddef $rrdincdir \
+"$CC" $ldflags -iquote "$ROOT/include" $rrddef $rrdincdir \
 	-o "$work/rrd-lastupdate" $rpathopt \
 	"$ROOT/tests/rrd/inode-unix-columns-harness.c" $rrdlibs \
 	2>"$work/cc.log" || {

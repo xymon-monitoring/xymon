@@ -62,7 +62,7 @@ cat > "$work/hosts.cfg" <<'EOF'
 127.0.0.1 plainhost.example.com # conn
 EOF
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" -o "$work/harness" \
+"$CC" -iquote "$ROOT/include" -iquote "$ROOT/lib" -o "$work/harness" \
 	"$here/xmh-item-names-harness.c" "$ROOT/lib/libxymoncomm.a" \
 	$ssllibs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }

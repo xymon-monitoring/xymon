@@ -23,7 +23,7 @@ work=$(mktempdir)
 
 build_xymon_libs "$ROOT" "$work/libbuild.log" libxymon.a
 
-"$CC" -I"$ROOT/include" -o "$work/harness" \
+"$CC" -iquote "$ROOT/include" -o "$work/harness" \
 	"$(dirname "$0")/cgi-split-hostsvc-harness.c" "$ROOT/lib/libxymon.a" \
 	2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }

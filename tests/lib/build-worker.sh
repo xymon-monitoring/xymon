@@ -63,7 +63,7 @@ build_xymond_worker() {
 	for src in "$@"; do srcs+=("$root/$src"); done
 
 	# Archives listed twice rather than --start-group, which is GNU ld only.
-	"$cc" -I"$root/include" -I"$root/lib" -I"$root/xymond" -o "$outdir/$prog" \
+	"$cc" -iquote "$root/include" -iquote "$root/lib" -iquote "$root/xymond" -o "$outdir/$prog" \
 		"${srcs[@]}" \
 		"$root/lib/libxymon.a" "$root/lib/libxymoncomm.a" "$root/lib/libxymontime.a" \
 		"$root/lib/libxymon.a" \
