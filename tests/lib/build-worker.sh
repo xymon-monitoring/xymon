@@ -21,7 +21,7 @@
 __XYMON_TESTS_BUILD_WORKER_SOURCED=1
 
 build_xymond_worker() {
-	local outdir=$1 prog=$2 root cc treelibs pcre_libs src srcs mkfiles inc
+	local outdir=$1 prog=$2 root cc treelibs pcre_libs harness_cflags src srcs mkfiles inc
 	shift 2
 	root=$(find_root)
 	cc=${CC:-cc}
@@ -55,6 +55,7 @@ build_xymond_worker() {
 		pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
 	fi
 	[ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
+	harness_cflags=$(xymon_cflags "$root")
 
 	"$XYMON_MAKE" -C "$root/lib" libxymon.a libxymoncomm.a libxymontime.a >"$outdir/libbuild.log" 2>&1 \
 		|| { cat "$outdir/libbuild.log" >&2; fail "the xymon libraries do not build in this configured tree"; }
@@ -63,7 +64,7 @@ build_xymond_worker() {
 	for src in "$@"; do srcs+=("$root/$src"); done
 
 	# Archives listed twice rather than --start-group, which is GNU ld only.
-	"$cc" -iquote "$root/include" -iquote "$root/lib" -iquote "$root/xymond" -o "$outdir/$prog" \
+	"$cc" $harness_cflags -iquote "$root/xymond" -o "$outdir/$prog" \
 		"${srcs[@]}" \
 		"$root/lib/libxymon.a" "$root/lib/libxymoncomm.a" "$root/lib/libxymontime.a" \
 		"$root/lib/libxymon.a" \

@@ -88,7 +88,8 @@ if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 fi
 [ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
-"$CC" -DSTANDALONE -iquote "$ROOT/include" -iquote "$ROOT/lib" -o "$work/stackio" \
+harness_cflags=$(xymon_cflags "$ROOT")
+"$CC" -DSTANDALONE $harness_cflags -o "$work/stackio" \
 	"$ROOT/lib/stackio.c" "$ROOT/lib/libxymoncomm.a" $ssllibs $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "standalone stackio does not compile"; }
 
