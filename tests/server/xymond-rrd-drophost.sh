@@ -3,20 +3,20 @@
 #
 # tests/server/xymond-rrd-drophost.sh
 #
-# The drophost straggler race: @@drophost forks the host directory
-# deletion, but messages for that host already queued in the channel can
-# still arrive afterwards and recreate RRD files inside (or after) the
-# dying directory - leaving a half-resurrected host behind.
+# @@drophost and @@renamehost in the RRD writer.
 #
-# The writer decides "straggler" by message time: a message at or before the
-# drop's own timestamp was already on its way, anything later means the name
-# is in use again. Every assertion here is therefore driven by the timestamps
-# in the messages, not by sleeping - the only sleep is the one that lets the
-# forked deletion finish, which is what makes the losing interleaving happen.
+#   - the deletion is synchronous, so a message that follows the drop in the
+#     channel cannot land inside it and leave orphaned RRD files behind;
+#   - pending cached updates are discarded before the files are deleted and
+#     flushed before they are renamed (without the flush they are lost on
+#     every rename: the cache is keyed on the old path);
+#   - both names are confined to a single path component, so a "." or ".."
+#     cannot turn a recursive delete loose on the RRD tree or its parent.
 #
-# The barrier table is process-local, so assertions about it have to be made
-# inside one worker lifetime: a second invocation starts with an empty table
-# and would accept anything.
+# Message ordering here matches the real channel: xymond stamps metadata[1] at
+# post time and delivers in that order, so a status that follows a drop marker
+# is always stamped at or after it. Nothing here depends on a stream the
+# channel cannot produce.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -26,6 +26,7 @@ require_bin XYMOND_RRD "xymond/xymond_rrd"
 
 work=$(mktempdir)
 ts=$(date +%s)
+mkdir -p "$work/tmp"
 
 status_msg() {  # status_msg <msg-timestamp> [hostname]
 	printf '@@status|%s|127.0.0.1|origin|%s|disk|%s|green||green|%s|0||0||%s|0|linux|/\n' \
@@ -41,134 +42,91 @@ run_worker() {  # run_worker <rrddir> [extra args...]
 		"$XYMOND_RRD" --rrddir="$dir" "$@"
 }
 
-mkdir -p "$work/tmp"
-
-# ---- the race itself: a message older than the drop must not resurrect it ----
-# Its own run: in the combined stream below a legitimate later message
-# recreates the directory, so "does it exist at the end" could not tell a held
-# barrier from a broken one.
+# ---- the drop removes the host's directory ---------------------------------
+# The deletion used to be forked, so a status read while the child was still
+# emptying the directory recreated it and the child's final rmdir() failed,
+# leaving orphaned RRD files for a host that no longer exists. A synchronous
+# delete completes before the next message is read.
 rrd1="$work/rrd1"; mkdir -p "$rrd1"
 {
 	status_msg "$ts"
 	printf '@@drophost|%s|127.0.0.1|testhost\n@@\n' $((ts+10))
-	# Let the forked deletion FINISH before the straggler arrives. Without
-	# it the child's rm usually runs last and hides the recreation by timing
-	# luck - the losing interleaving is the one worth pinning.
-	sleep 2
-	status_msg $((ts+5))		# generated before the drop: a straggler
 } | run_worker "$rrd1" --no-cache 2>/dev/null
-sleep 1
 [ -e "$rrd1/testhost" ] \
-	&& fail "a straggler older than the drop recreated the host directory: $(ls "$rrd1/testhost")"
+	&& fail "the host directory survived the drop: $(ls "$rrd1/testhost")"
 
-# ---- isolation and re-add, in one worker lifetime ----------------------------
-rrd2="$work/rrd2"; mkdir -p "$rrd2"
-{
-	status_msg "$ts"
-	printf '@@drophost|%s|127.0.0.1|testhost\n@@\n' $((ts+10))
-	sleep 2
-	status_msg $((ts+5))			# straggler: dropped
-	status_msg $((ts+11)) otherhost		# never dropped: must land
-	status_msg $((ts+20))			# host is back: must land
-} | run_worker "$rrd2" --no-cache 2>/dev/null
-sleep 1
-[ -d "$rrd2/otherhost" ] \
-	|| fail "an unrelated host's updates were dropped while another host was barriered"
-[ -d "$rrd2/testhost" ] \
-	|| fail "a message newer than the drop was refused - a re-added host stays blackholed"
+# ---- a drop deletes nothing but the host it names ---------------------------
+# basename("..") is "..", so appending it to rrddir named the parent of the
+# whole RRD tree and handed it to a recursive delete. safe_basename() refuses
+# these outright rather than reducing them.
+for name in "." ".." "/" "foo/testhost"; do
+	rrdx="$work/rrdx"; rm -rf "$rrdx"; mkdir -p "$rrdx/testhost" "$rrdx/otherhost"
+	printf 'canary\n'         >"$rrdx/otherhost/keep.rrd"
+	printf 'canary\n'         >"$rrdx/testhost/keep.rrd"
+	printf 'sibling canary\n' >"$work/SIBLING.txt"
+	printf '@@drophost|%s|127.0.0.1|%s\n@@\n' $((ts+10)) "$name" \
+		| run_worker "$rrdx" --no-cache 2>/dev/null
+	[ -f "$rrdx/otherhost/keep.rrd" ] \
+		|| fail "drop '$name' deleted an unrelated host's RRDs"
+	[ -f "$rrdx/testhost/keep.rrd" ] \
+		|| fail "drop '$name' deleted testhost, which it did not name"
+	[ -f "$work/SIBLING.txt" ] \
+		|| fail "drop '$name' escaped the RRD directory entirely"
+done
 
-# ---- rename, then rename back ------------------------------------------------
-# The barrier is armed on the OLD name, which is a name that can be reused
-# immediately. A window-based barrier discards the returning host's data for
-# the length of the window; deciding by message time lets it resume at once.
+# ---- rename moves the directory ---------------------------------------------
 rrd3="$work/rrd3"; mkdir -p "$rrd3"
 {
 	status_msg "$ts"
 	printf '@@renamehost|%s|127.0.0.1|testhost|newhost\n@@\n' $((ts+10))
-	status_msg $((ts+20))			# testhost is a live name again
 } | run_worker "$rrd3" --no-cache 2>/dev/null
 [ -d "$rrd3/newhost" ]  || fail "rename did not move the host directory"
-[ -d "$rrd3/testhost" ] \
-	|| fail "the old name stayed barriered after it was legitimately reused"
+[ -e "$rrd3/testhost" ] && fail "old directory survived the rename"
 
-# ---- a rename must barrier the old name too ----------------------------------
-# The stock install runs one xymond_rrd per channel over a shared rrddir
-# (tasks.cfg.DIST [rrdstatus] and [rrddata]) and xymond posts the marker to
-# both, so the second worker to see it finds the directory already gone. It
-# still has its own queue of stragglers for the old name, and they must not
-# recreate it. Driving one worker, the equivalent is: rename, then a message
-# that predates the rename.
-rrd3b="$work/rrd3b"; mkdir -p "$rrd3b"
+# ---- ...and confines both of its names --------------------------------------
+for pair in "..|newhost" "testhost|.." "foo/testhost|newhost" "testhost|foo/newhost"; do
+	rrdy="$work/rrdy"; rm -rf "$rrdy"; mkdir -p "$rrdy/testhost"
+	printf 'canary\n'         >"$rrdy/testhost/keep.rrd"
+	printf 'sibling canary\n' >"$work/SIBLING.txt"
+	printf '@@renamehost|%s|127.0.0.1|%s|%s\n@@\n' $((ts+10)) "${pair%|*}" "${pair#*|}" \
+		| run_worker "$rrdy" --no-cache 2>/dev/null
+	[ -f "$rrdy/testhost/keep.rrd" ] \
+		|| fail "rename '${pair%|*}' -> '${pair#*|}' moved a directory it did not name"
+	[ -f "$work/SIBLING.txt" ] \
+		|| fail "rename '${pair%|*}' -> '${pair#*|}' escaped the RRD directory"
+done
+
+# ---- the cache: flushed before a rename, discarded before a delete ----------
+# Both need the cache on. With --no-cache every reading is written immediately
+# and valcount stays 0, so rrdcache_drop_host() has nothing to act on and
+# neither branch runs at all.
+rrd4="$work/rrd4"; mkdir -p "$rrd4"
 {
 	status_msg "$ts"
 	printf '@@renamehost|%s|127.0.0.1|testhost|newhost\n@@\n' $((ts+10))
-	status_msg $((ts+5))			# predates the rename: a straggler
-} | run_worker "$rrd3b" --no-cache 2>/dev/null
-[ -d "$rrd3b/newhost" ] || fail "rename did not move the host directory"
-[ -e "$rrd3b/testhost" ] \
-	&& fail "a straggler older than the rename recreated the old host directory"
+} | run_worker "$rrd4" --debug >"$work/rename.log" 2>&1
+[ -d "$rrd4/newhost" ] || fail "rename did not move the host directory (cached run)"
+# The reading must be flushed BEFORE the rename, not swept up by the worker's
+# shutdown flush - by then the old path is gone and the write fails. Ordering
+# against the shutdown line is what separates the two: the "flushed and dropped
+# N entries" summary is printed from the match count whether or not anything
+# was written, and flush_cached_updates() logs the same line in both cases.
+fl=$(grep -n "Flushing '/testhost/" "$work/rename.log" | head -1 | cut -d: -f1)
+sd=$(grep -n "Shutting down, flushing cached updates" "$work/rename.log" | head -1 | cut -d: -f1)
+[ -n "$fl" ] || fail "the pending update was never flushed: $(grep -iE 'updcache|Flushing' "$work/rename.log")"
+[ -n "$sd" ] || fail "no shutdown-flush line to order against: $(cat "$work/rename.log")"
+[ "$fl" -lt "$sd" ] \
+	|| fail "the pending update was flushed at shutdown, after the rename moved its file, not before"
+[ -n "$(find "$rrd4/newhost" -name '*.rrd' 2>/dev/null)" ] \
+	|| fail "the flushed reading did not land in the renamed directory"
 
-# ---- a rename that FAILS must not blackhole the old host ---------------------
-# rename() fails on an occupied destination (and on a cross-device rrddir, and
-# on a permission problem). The files never moved, so the old host is still
-# live and must keep getting updates.
-rrd4="$work/rrd4"; mkdir -p "$rrd4/testhost" "$rrd4/newhost"
-printf 'occupied\n' >"$rrd4/newhost/occupied.rrd"
-{
-	printf '@@renamehost|%s|127.0.0.1|testhost|newhost\n@@\n' $((ts+10))
-	status_msg $((ts+20))
-} | run_worker "$rrd4" --no-cache 2>/dev/null
-[ -d "$rrd4/testhost" ] \
-	|| fail "the rename should have failed on an occupied destination, but the source is gone"
-[ -n "$(find "$rrd4/testhost" -name '*.rrd' 2>/dev/null)" ] \
-	|| fail "a failed rename blackholed the old host: its next update was discarded"
-
-# ---- the drop is barriered under the name that is actually deleted -----------
-# The hostname arrives as the admin typed it. dropdirectory() reduces it to a
-# basename, so if the barrier and the cache purge keep the unreduced form, a
-# straggler for the host that really was deleted walks straight past them.
-rrd4b="$work/rrd4b"; mkdir -p "$rrd4b"
-{
-	status_msg "$ts"
-	printf '@@drophost|%s|127.0.0.1|foo/testhost\n@@\n' $((ts+10))
-	sleep 2
-	status_msg $((ts+5))			# straggler for the deleted name
-} | run_worker "$rrd4b" --no-cache 2>/dev/null
-sleep 1
-[ -e "$rrd4b/testhost" ] \
-	&& fail "a slash-bearing drop deleted testhost but barriered another name, so the straggler recreated it"
-
-# ...and the cache purge uses that same name. Needs the cache on: with
-# --no-cache there is never a pending value for either name to match.
-rrd4c="$work/rrd4c"; mkdir -p "$rrd4c"
-{
-	status_msg "$ts"
-	printf '@@drophost|%s|127.0.0.1|foo/testhost\n@@\n' $((ts+10))
-} | run_worker "$rrd4c" --debug >"$work/slashdrop.log" 2>&1
-sleep 1
-grep -q "discarded 1 entries for host testhost" "$work/slashdrop.log" \
-	|| fail "a slash-bearing drop purged the cache under the unreduced name: $(grep -i updcache "$work/slashdrop.log")"
-
-# ---- the cache: flush on rename, discard on drop -----------------------------
-# Both need the cache ON. With --no-cache every reading is written immediately
-# and valcount is always 0, so rrdcache_drop_host() has nothing to act on and
-# neither branch is exercised at all.
 rrd5="$work/rrd5"; mkdir -p "$rrd5"
 {
 	status_msg "$ts"
-	printf '@@renamehost|%s|127.0.0.1|testhost|newhost\n@@\n' $((ts+10))
-} | run_worker "$rrd5" --debug >"$work/rename.log" 2>&1
-[ -d "$rrd5/newhost" ] || fail "rename did not move the host directory (cached run)"
-grep -q "flushed and dropped 1 entries for host testhost" "$work/rename.log" \
-	|| fail "pending update not flushed before the rename: $(grep -i updcache "$work/rename.log")"
-
-rrd6="$work/rrd6"; mkdir -p "$rrd6"
-{
-	status_msg "$ts"
 	printf '@@drophost|%s|127.0.0.1|testhost\n@@\n' $((ts+10))
-} | run_worker "$rrd6" --debug >"$work/drop.log" 2>&1
-sleep 1
+} | run_worker "$rrd5" --debug >"$work/drop.log" 2>&1
 grep -q "discarded 1 entries for host testhost" "$work/drop.log" \
 	|| fail "the dropped host's cached update was not discarded: $(grep -i updcache "$work/drop.log")"
+[ -e "$rrd5/testhost" ] && fail "the dropped host's directory survived (cached run)"
 
-pass "drophost discards stragglers by message time, leaves other hosts alone, lets a reused name resume, and survives a failed rename"
+pass "drophost deletes only the host it names and cannot be raced; renamehost flushes the cache and confines both names"
