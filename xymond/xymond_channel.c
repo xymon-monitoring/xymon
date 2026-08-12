@@ -601,11 +601,18 @@ int main(int argc, char *argv[])
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = ((pendingcount > 0) ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
 
-		/* This is where we'll first find some fatal errors */
-		if ((n == -1) && (errno != EAGAIN) && (errno != EINTR) ) {
-			dbgprintf("xymond_channel: Semaphore wait failed; can't continue: %s\n", strerror(errno));
+		/*
+		 * EAGAIN is the IPC_NOWAIT "nothing pending" answer and EINTR a
+		 * signal; both are normal and the loop retries. Anything else is
+		 * permanent - EIDRM or EINVAL once the semaphore set is gone -
+		 * and the "Semaphore wait aborted" path below just continues,
+		 * which turns a blocking wait into a full-core busy-loop that
+		 * runs until the process is killed. Stop instead.
+		 */
+		if ((n == -1) && (errno != EAGAIN) && (errno != EINTR)) {
+			errprintf("Semaphore wait failed, cannot continue: %s\n", strerror(errno));
 			running = 0;
-		} 
+		}
 
 		if (n == 0) {
 			/*
