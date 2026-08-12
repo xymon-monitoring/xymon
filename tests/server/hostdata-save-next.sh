@@ -10,6 +10,11 @@ require_bin XYMOND_CHANNEL xymond/xymond_channel
 require_bin XYMOND_HOSTDATA xymond/xymond_hostdata
 require_bin XYMON common/xymon
 
+# This is the only test that starts a real xymond, so it is the only one that
+# needs the channel shared-memory segments. The count is read from the source
+# rather than hardcoded, so adding a channel cannot silently outgrow the check.
+require_shm_segments "$(grep -c 'setup_channel(C_[A-Z_]*, CHAN_MASTER)' "$(find_root)/xymond/xymond.c")"
+
 work=$(mktempdir)
 port=$((20000 + ($$ % 20000)))
 mkdir -p "$work"/{home/etc,home/tmp,var,logs,hostdata}

@@ -287,6 +287,33 @@ xymon_cflags() {
 	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")"
 }
 
+# require_shm_segments N -- skip unless one process may attach N SysV
+# shared-memory segments. xymond attaches one per channel, and macOS ships
+# kern.sysv.shmseg=8 against the nine channels xymond sets up, so a stock Mac
+# cannot start xymond at all.
+#
+# Worth a named check rather than letting the run fail: shmat() reports the
+# limit as EMFILE, which strerror() renders "Too many open files", so the
+# error points at file descriptors and says nothing about the sysctl actually
+# responsible. The skip names the knob and the value so it is actionable.
+#
+# Linux has no comparable per-process cap (SHMSEG is effectively unlimited)
+# and exposes no such sysctl, so an absent knob means "no limit to check".
+require_shm_segments() {
+	local want=$1 have knob found=
+
+	for knob in kern.sysv.shmseg kern.ipc.shmseg; do
+		have=$(sysctl -n "$knob" 2>/dev/null) || continue
+		case $have in ''|*[!0-9]*) continue ;; esac
+		found=$knob
+		break
+	done
+	[ -n "$found" ] || return 0
+	[ "$have" -ge "$want" ] && return 0
+
+	skip "$found is $have, need >= $want (xymond attaches one shared-memory segment per channel) -- raise it with: sudo sysctl -w $found=$want"
+}
+
 # ---- repo location -----------------------------------------------------------
 
 # find_root -- print the absolute path of the repo root, derived from the
