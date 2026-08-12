@@ -35,7 +35,8 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
-"$CC" -iquote "$ROOT/include" -iquote "$ROOT/lib" -o "$work/harness" \
+harness_cflags=$(xymon_cflags "$ROOT")
+"$CC" $harness_cflags -o "$work/harness" \
 	"$here/html-log-custom-graphs-harness.c" "$ROOT/lib/libxymoncomm.a" \
 	$pcre_libs -lssl -lcrypto 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }

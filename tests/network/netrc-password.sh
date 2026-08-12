@@ -86,7 +86,8 @@ EOF
 
 # lib/url.c goes before the archive so its fresh objects satisfy the netrc
 # symbols and the archive's (possibly stale) url.o is never pulled in.
-"$CC" -iquote "$ROOT/include" -iquote "$ROOT/lib" -o "$work/harness" \
+harness_cflags=$(xymon_cflags "$ROOT")
+"$CC" $harness_cflags -o "$work/harness" \
 	"$work/harness.c" "$SRC" "$ROOT/lib/libxymoncomm.a" $ssllibs $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "netrc harness does not compile"; }
 
