@@ -137,7 +137,7 @@ void errormsg(char *msg)
 
 void request_cacheflush(char *hostname)
 {
-	/* Build a cache-flush request, and send it to all of the $XYMONTMP/rrdctl.* sockets */
+	/* Build a cache-flush request, and send it to all of the $XYMONRUNDIR/rrdctl.* sockets */
 	SBUF_DEFINE(req);
 	char *bufp;
 	int bytesleft;
@@ -154,7 +154,7 @@ void request_cacheflush(char *hostname)
 
 	dir = opendir(xgetenv("XYMONRUNDIR"));
 	if (!dir) {
-		errprintf("Cannot acces $XYMONRUNDIR directory: %s\n", strerror(errno));
+		errprintf("Cannot access $XYMONRUNDIR directory: %s\n", strerror(errno));
 		return;
 	}
 
@@ -170,7 +170,24 @@ void request_cacheflush(char *hostname)
 
 			memset(&myaddr, 0, sizeof(myaddr));
 			myaddr.sun_family = AF_UNIX;
-			sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONRUNDIR"), d->d_name);
+
+			SBUF_MALLOC(fnam, strlen(xgetenv("XYMONRUNDIR"))+ strlen(d->d_name) + 2);
+			snprintf(fnam, fnam_buflen, "%s/%s", xgetenv("XYMONRUNDIR"), d->d_name);
+			/*
+			 * ">=", not ">": at exactly sizeof(sun_path) the strncpy()
+			 * below leaves no terminator, and xymond_rrd refuses that
+			 * length. Skipped rather than returned - the socket and the
+			 * directory handle belong to the caller.
+			 */
+			if (strlen(fnam) >= sizeof(myaddr.sun_path)) {
+				errprintf("rrdctl socket path too long, skipping %s (max %d characters)\n",
+					  d->d_name, (int)sizeof(myaddr.sun_path) - 1);
+				xfree(fnam);
+				continue;
+			}
+			strncpy(myaddr.sun_path, fnam, sizeof(myaddr.sun_path));
+			xfree(fnam);
+
 			myaddrsz = sizeof(myaddr);
 			bufp = req; bytesleft = strlen(req);
 			do {

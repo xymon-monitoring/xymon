@@ -49,7 +49,16 @@ int init_svc(char *sockfn)
 
 	memset(&myaddr, 0, sizeof(myaddr));
 	myaddr.sun_family = AF_UNIX;
-	sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONTMP"), sockfn);
+	/* XYMONRUNDIR, as xymond_rrd binds it and showgraph reads it: the
+	   sockets moved out of XYMONTMP, and looking in the old place found
+	   nothing. Bounded, sun_path being ~108 bytes. */
+	if (snprintf(myaddr.sun_path, sizeof(myaddr.sun_path), "%s/%s",
+		     xgetenv("XYMONRUNDIR"), sockfn) >= (int)sizeof(myaddr.sun_path)) {
+		errprintf("Socket path does not fit: %s/%s\n", xgetenv("XYMONRUNDIR"), sockfn);
+		close(ctlsocket);
+		ctlsocket = -1;
+		return -1;
+	}
 	myaddrsz = sizeof(myaddr);
 
 	if (connect(ctlsocket, (struct sockaddr *)&myaddr, myaddrsz) == -1) {

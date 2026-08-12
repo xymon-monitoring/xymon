@@ -28,6 +28,9 @@ const static struct {
 	{ "XYMONSERVERROOT", XYMONTOPDIR },
 	{ "XYMONSERVERLOGS", XYMONLOGDIR },
 	{ "XYMONRUNDIR", XYMONLOGDIR },
+	/* The client's own runtime directory. Defaulting to XYMONRUNDIR keeps a
+	   client config that still sets the generic name working. */
+	{ "XYMONCLIENTRUNDIR", "$XYMONRUNDIR" },
 	{ "XYMONSERVERHOSTNAME", XYMONHOSTNAME },
 	{ "XYMONSERVERIP", XYMONHOSTIP },
 	{ "XYMONSERVEROS", XYMONHOSTOS },
