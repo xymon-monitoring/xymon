@@ -68,6 +68,14 @@ cat >>"$work/graphs.cfg" <<EOF
 	LINE2:p@RRDIDX@#@COLOR@:x
 EOF
 
+# The SIDEEFFECT assertions below are checks that a file does *not* exist, so
+# they are only decidable because showgraph has finished with the title script
+# by the time this returns: it runs it under popen() and then pclose()s, and
+# pclose() waits for the child (web/showgraph.c). Reading the title off the
+# pipe would not be enough -- that proves the script wrote, not that it exited.
+# If that pclose() ever goes away, or the child is abandoned on a timeout, an
+# injected "touch" could land after the check and every one of those
+# assertions would start passing while the injection actually worked.
 render() {  # render <disp-value>
 	rm -f "$work/SIDEEFFECT" "$work/args.out"
 	REQUEST_METHOD=GET \
