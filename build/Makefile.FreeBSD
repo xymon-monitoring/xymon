@@ -10,7 +10,7 @@ CC ?= cc
 CFLAGS = -g -O2 -Wall -Wno-unused -Wno-pointer-sign -D_REENTRANT -I/usr/local/include -L/usr/local/lib $(LFSDEF) $(OSDEF)
 
 
-RPATH = "-Wl,--rpath,"
+RPATH = -Wl,--rpath,
 
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT -I/usr/local/include -L/usr/local/lib $(LFSDEF) $(OSDEF)
