@@ -71,7 +71,7 @@ assert_equal 'OK: next client report for testhost armed for 5 minutes' "$respons
 "$XYMON" "127.0.0.1:$port" $'client testhost.linux\n[test]\nforced payload'
 saved=''
 for attempt in {1..1000}; do
-	saved=$(find "$work/hostdata/testhost" -type f -print -quit 2>/dev/null || true)
+	saved=$(find "$work/hostdata/testhost" -type f -print 2>/dev/null | sed -n '1p' || true)
 	[ -n "$saved" ] && break
 done
 assert_file_exists "$saved" "the armed client report must reach the hostdata worker"
@@ -79,7 +79,7 @@ assert_contains 'forced payload' "$(cat "$saved")" \
 	"the forced snapshot payload changed"
 
 "$XYMON" "127.0.0.1:$port" $'client testhost.linux\n[test]\nsecond payload'
-assert_equal '1' "$(find "$work/hostdata/testhost" -type f | wc -l)" \
+assert_equal '1' "$(find "$work/hostdata/testhost" -type f -print | awk 'END { print NR }')" \
 	"the request must be consumed after one client report"
 assert_not_contains 'second payload' "$(cat "$saved")" \
 	"a consumed request was applied to a later client report"
