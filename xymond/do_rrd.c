@@ -532,6 +532,66 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	return 0;
 }
 
+/* Remove one host's cache entries. Flushed first on rename - the files
+ * are about to move, the pending data must land in them before they do.
+ * Discarded on drophost - a flush would write into the directory the
+ * forked deletion is tearing down, and the values are the dropped
+ * host's data anyway. (rrdcacheflushhost() is not usable here: it
+ * expects "/host"-shaped keys and rate-limits to one flush per 60s.) */
+void rrdcache_drop_host(char *hostname, int flushfirst)
+{
+	xtreePos_t handle;
+	char prefix[PATH_MAX];
+	size_t plen;
+	int nhit = 0;
+
+	if ((updcache_keyofs == -1) || !hostname) return;
+	snprintf(prefix, sizeof(prefix), "/%s/", hostname);
+	plen = strlen(prefix);
+
+	/*
+	 * The cache records themselves stay. They are persistent by design (see
+	 * create_and_update_rrd above), and each owns its cacheitem->tpl - which,
+	 * for a caller that passed no template, is the only pointer to it. Deleting
+	 * the record would leak that template, its dsnames tree and every DS name
+	 * in it, once per drop, for every host handled by a NULL-template module.
+	 *
+	 * Only the pending values go, which is all this is for: nothing may be
+	 * written into a directory that is being torn down or moved. Keeping the
+	 * records also makes this a single pass, with nothing removed from the tree
+	 * while it is being walked.
+	 */
+	for (handle = xtreeFirst(updcache); (handle != xtreeEnd(updcache)); handle = xtreeNext(updcache, handle)) {
+		updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
+
+		if (strncasecmp(cacheitem->key, prefix, plen) != 0) continue;
+		if (cacheitem->valcount == 0) continue;
+		nhit++;
+
+		if (flushfirst) {
+			/* flush_cached_updates() frees the values and zeroes the count
+			 * itself. Say so when it fails: the readings are gone either
+			 * way, and this is the one path that has no other chance to
+			 * write them - the files are about to move. */
+			snprintf(filedir, sizeof(filedir), "%s%s", rrddir, cacheitem->key);
+			if (flush_cached_updates(cacheitem, NULL) != 0) {
+				errprintf("Could not flush cached updates for %s before the rename: %s\n",
+					  cacheitem->key, rrd_get_error());
+			}
+		}
+		else {
+			int v;
+
+			for (v = 0; (v < cacheitem->valcount); v++)
+				if (cacheitem->vals[v]) xfree(cacheitem->vals[v]);
+			cacheitem->valcount = 0;
+		}
+	}
+
+	if (nhit) dbgprintf("updcache: %s %d entries for host %s\n",
+			    (flushfirst ? "flushed and dropped" : "discarded"), nhit, hostname);
+}
+
 void rrdcacheflushall(void)
 {
 	xtreePos_t handle;

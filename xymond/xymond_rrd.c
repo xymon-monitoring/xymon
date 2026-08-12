@@ -72,6 +72,93 @@ static void sig_handler(int signum)
 	}
 }
 
+/* Drop barrier: @@drophost forks the host directory deletion, and messages
+ * for that host already queued in the channel can still arrive afterwards
+ * and recreate files inside the dying directory.
+ *
+ * A straggler is told apart from a legitimate message by *message time*,
+ * not by a wall-clock window. Anything generated before the drop was issued
+ * carries a timestamp at or before the drop's own; anything the host sends
+ * once the name is in use again carries a later one. So the barrier lifts
+ * itself the moment that happens - re-adding a dropped host, renaming a host
+ * back, or renaming a name onto itself all resume with the very next message.
+ *
+ * A fixed window cannot do that. It goes on discarding a live host's data for
+ * the length of the window, with nothing to show for it above --debug, and
+ * that is a worse failure than the race it closes: the race needs a drop and
+ * an unlucky interleaving, while "rename a host and rename it back" is a
+ * thing operators do on purpose.
+ */
+static void *recentdrops = NULL;
+
+/* Nothing sitting in a channel backlog is an hour old, so an entry older than
+ * this can only match messages that can no longer arrive. Pruned whenever the
+ * next drop is recorded, so a site that churns hostnames does not accumulate
+ * one record per name for the life of the process. */
+#define DROPKEEP 3600
+
+static void prune_hostdrops(time_t now)
+{
+	xtreePos_t handle;
+	char **stale = NULL, **grown;
+	int nstale = 0, i;
+
+	/* Two phases: deleting while traversing the tree is not safe. */
+	for (handle = xtreeFirst(recentdrops); (handle != xtreeEnd(recentdrops)); handle = xtreeNext(recentdrops, handle)) {
+		if ((now - *(time_t *)xtreeData(recentdrops, handle)) <= DROPKEEP) continue;
+		grown = (char **)realloc(stale, (nstale+1) * sizeof(char *));
+		if (!grown) { if (stale) xfree(stale); return; }	/* prune next time */
+		stale = grown;
+		stale[nstale++] = xtreeKey(recentdrops, handle);
+	}
+
+	for (i = 0; (i < nstale); i++) {
+		/* xtreeDelete() releases the record but not the key, and stops
+		 * referencing it - so the key is ours to free afterwards. */
+		time_t *ts = (time_t *)xtreeDelete(recentdrops, stale[i]);
+		if (ts) xfree(ts);
+		xfree(stale[i]);
+	}
+	if (stale) xfree(stale);
+}
+
+static void note_hostdrop(char *hostname, time_t droptime)
+{
+	xtreePos_t handle;
+
+	if (!recentdrops) recentdrops = xtreeNew(strcasecmp);
+	prune_hostdrops(droptime);
+
+	handle = xtreeFind(recentdrops, hostname);
+	if (handle != xtreeEnd(recentdrops)) {
+		time_t *ts = (time_t *)xtreeData(recentdrops, handle);
+		if (droptime > *ts) *ts = droptime;
+	}
+	else {
+		time_t *ts = (time_t *)malloc(sizeof(time_t));
+
+		if (!ts) {
+			errprintf("Out of memory recording the drop of host %s - a straggler for it may recreate its RRD files\n",
+				  hostname);
+			return;
+		}
+		*ts = droptime;
+		xtreeAdd(recentdrops, strdup(hostname), ts);
+	}
+}
+
+static int hostdrop_barrier(char *hostname, time_t msgtime)
+{
+	xtreePos_t handle;
+
+	if (!recentdrops) return 0;
+	handle = xtreeFind(recentdrops, hostname);
+	if (handle == xtreeEnd(recentdrops)) return 0;
+	/* At or before the drop: this message was already on its way when the
+	 * host went. Later than it: the name is legitimately in use again. */
+	return (msgtime <= *(time_t *)xtreeData(recentdrops, handle));
+}
+
 static void update_locator_hostdata(char *id)
 {
 	DIR *fd;
@@ -384,6 +471,10 @@ int main(int argc, char *argv[])
 				testname = metadata[5];
 				classname = (metadata[17] ? metadata[17] : "");
 				pagepaths = (metadata[18] ? metadata[18] : "");
+				if (hostdrop_barrier(hostname, tstamp)) {
+					dbgprintf("Dropping straggler status (predates the drop) for host %s\n", hostname);
+					break;
+				}
 				ldef = find_xymon_rrd(testname, metadata[8]);
 				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 				break;
@@ -401,8 +492,13 @@ int main(int argc, char *argv[])
 			testname = metadata[5];
 			classname = (metadata[6] ? metadata[6] : "");
 			pagepaths = (metadata[7] ? metadata[7] : "");
-			ldef = find_xymon_rrd(testname, "");
-			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
+			if (hostdrop_barrier(hostname, tstamp)) {
+				dbgprintf("Dropping straggler data (predates the drop) for host %s\n", hostname);
+			}
+			else {
+				ldef = find_xymon_rrd(testname, "");
+				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
+			}
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
@@ -425,11 +521,24 @@ int main(int argc, char *argv[])
 		}
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
 			char hostdir[PATH_MAX];
-			hostname = metadata[3];
+			char *safehost;
 
 			MEMDEFINE(hostdir);
 
-			sprintf(hostdir, "%s/%s", rrddir, basename(hostname));
+			tstamp = atoi(metadata[1]);
+			/* One name for all three. The directory that is deleted,
+			 * the barrier that guards it and the cache entries that are
+			 * discarded must agree: the name arrives as the admin typed
+			 * it, and if only the path is reduced to a basename then a
+			 * straggler for the host that was actually deleted walks
+			 * straight past a barrier held under the unreduced name. */
+			safehost = basename(metadata[3]);
+			hostname = safehost;
+			sprintf(hostdir, "%s/%s", rrddir, safehost);
+			/* Barrier and discard cached updates BEFORE the forked
+			 * deletion starts - nothing may write into the dying dir. */
+			note_hostdrop(safehost, tstamp);
+			rrdcache_drop_host(safehost, 0);
 			dropdirectory(hostdir, 1);
 
 			MEMUNDEFINE(hostdir);
@@ -453,8 +562,40 @@ int main(int argc, char *argv[])
 			newhostname = metadata[4];
 			sprintf(oldhostdir, "%s/%s", rrddir, hostname);
 			sprintf(newhostdir, "%s/%s", rrddir, newhostname);
-			rename(oldhostdir, newhostdir);
+			tstamp = atoi(metadata[1]);
 
+			/* Flush pending updates into the old-named files BEFORE
+			 * they move. Safe whether or not the rename then works:
+			 * the values land in the files they were cached for. */
+			rrdcache_drop_host(hostname, 1);
+
+			/* Barrier the old name unconditionally - including when
+			 * the rename fails.
+			 *
+			 * It costs nothing when the files did not move: the
+			 * barrier only discards messages older than this one, so a
+			 * host still living under the old name keeps writing. And
+			 * it is needed exactly when the rename "fails" because a
+			 * sibling already did it: the stock install runs one
+			 * xymond_rrd per channel over a shared rrddir
+			 * (tasks.cfg.DIST [rrdstatus] and [rrddata]) and xymond
+			 * posts the marker to both, so the second worker to see it
+			 * finds the directory gone - and still has its own queue of
+			 * stragglers to stop. Skipping the barrier there would
+			 * leave the race open in that worker on every rename. */
+			note_hostdrop(hostname, tstamp);
+
+			if ((rename(oldhostdir, newhostdir) != 0) && (errno != ENOENT)) {
+				/* ENOENT is routine, not an error: a host that has
+				 * produced no RRD data has no directory, and neither
+				 * does one the sibling worker already renamed. */
+				errprintf("Cannot rename RRD directory %s to %s: %s\n",
+					  oldhostdir, newhostdir, strerror(errno));
+			}
+
+			/* The locator maps names to servers, not directories, so it
+			 * is told regardless of whether this worker held any files -
+			 * a host with no RRDs yet still gets renamed. */
 			if (net_worker_locatorbased()) locator_rename_host(hostname, newhostname, ST_RRD);
 
 			MEMUNDEFINE(newhostdir);
