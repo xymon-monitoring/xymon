@@ -314,6 +314,9 @@ for prog in sh bash awk sed; do
 		|| fail "inode-drop test needs a real '$prog' on PATH"
 	ln -s "$p" "$INODEDIR/$prog"
 done
+printf_path=$(PATH="$REALPATH" type -P printf) \
+	|| fail "inode-drop test needs a real 'printf' on PATH"
+ln -s "$printf_path" "$INODEDIR/printf"
 
 inode_out=$(
 	cd "$TMP"
