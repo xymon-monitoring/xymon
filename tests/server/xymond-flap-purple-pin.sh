@@ -47,7 +47,14 @@ ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 	cat "$here/xymond-flap-purple-pin-harness.c"
 } > "$work/harness.c"
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" -o "$work/harness" \
+# The configured compile flags, not just the in-tree include dirs: on the
+# BSDs PCRE2 lives under /usr/local/include or /usr/pkg/include, and
+# libxymon.h pulls in pcre2.h, so a hand-rolled -I list fails to compile
+# there on a tree that builds perfectly well. The Makefiles already carry
+# those paths.
+harness_cflags=$(xymon_cflags "$ROOT")
+# shellcheck disable=SC2086
+"$CC" $harness_cflags -I"$ROOT/lib" -o "$work/harness" \
 	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" \
 	$ssllibs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }

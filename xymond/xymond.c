@@ -133,6 +133,7 @@ typedef struct xymond_log_t {
 	time_t pregaplastchange;	/* The "lastchange" saved when a no-data gap began */
 	time_t gapstart;	/* When that gap began; bounds how far a resume may bridge */
 	int pregapcolor;	/* The color recorded before the gap, or NO_COLOR when not in one */
+	int pregapvalidity;	/* The report validity in force when the gap began, in minutes */
 	int validity;		/* Minutes this test's reports stay valid; sizes the bridge bound */
 	time_t logtime;		/* time when last update was received */
 	time_t validtime;	/* time when status is no longer valid */
@@ -1346,6 +1347,7 @@ void get_hts(char *msg, char *sender, char *origin,
 			 */
 			if (flapcount > 0) lwalk->flapchange[0] = getcurrenttime(NULL);
 			lwalk->pregapcolor = NO_COLOR;
+			lwalk->pregapvalidity = defaultvalidity;
 			lwalk->validity = defaultvalidity;
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->host = hwalk;
@@ -1560,12 +1562,68 @@ static int holdtime_bridges(int newcolor, int pregapcolor, time_t gaplen, int va
 }
 
 
+/*
+ * Open or close the no-data gap that hold-time bridging rests on.
+ *
+ * "xymondchose" is true when the colour being recorded is not the reporter's:
+ * xymond invented one because no data arrived, DOWNTIME rewrote it, or a
+ * disable, a change delay, the flap pin or a modifier did. That, and not a
+ * colour change, is what opens a gap -- see the caller.
+ *
+ * Named rather than inlined so the regression test can drive it: reaching this
+ * through a live daemon means waiting out a report validity, which a test
+ * cannot do.
+ */
+static void update_gapstate(xymond_log_t *log, int newcolor, int xymondchose,
+			    time_t now, time_t prevlastchange, int prevvalidity)
+{
+	if (xymondchose) {
+		/*
+		 * Only the first such update opens the gap; a later one would
+		 * overwrite the colour to resume to with one xymond invented, which
+		 * no real report could match.
+		 */
+		if ((log->pregapcolor == NO_COLOR) && (log->oldcolor >= 0) && (log->oldcolor < COL_COUNT)) {
+			/* The range test keeps COL_CLIENT (99), which parse_color()
+			 * accepts, out of colnames[] at checkpoint time. */
+			log->pregapcolor = log->oldcolor;
+			log->pregaplastchange = prevlastchange;
+			log->pregapvalidity = prevvalidity;
+			log->gapstart = now;
+		}
+	}
+	else if (log->pregapcolor != NO_COLOR) {
+		/*
+		 * What we are recording is the reporter's own colour again, so the
+		 * gap ends whatever that colour is.
+		 *
+		 * Same colour as before, after a short enough gap: the problem did
+		 * not go away while we could not see it, so the hold-time carries
+		 * across. alerts.cfg DURATION reads this.
+		 *
+		 * The window is the one that applied when the gap opened, not the
+		 * returning report's own promise. Sizing it from the latter let a
+		 * test that fell silent while reporting every five minutes come back
+		 * announcing four hours and bridge an hour of silence it had no
+		 * business bridging - and the reverse rejected a gap it should have
+		 * carried across.
+		 */
+		if (holdtime_bridges(newcolor, log->pregapcolor, (now - log->gapstart), log->pregapvalidity))
+			log->lastchange = log->pregaplastchange;
+		log->pregapcolor = NO_COLOR;
+	}
+}
+
 void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, char *grouplist,
 		   xymond_log_t *log, int reportedcolor, char *downcause, int modifyonly, int synthetic)
 {
 	int validity = defaultvalidity;
 	time_t now = getcurrenttime(NULL);
 	time_t prevlastchange;
+	/* The validity in force before this update replaces it below. A gap is
+	 * sized by what the test was promising when it fell silent, not by what
+	 * the report that ends the silence happens to promise. */
+	int prevvalidity = log->validity;
 	int msglen, issummary;
 	enum alertstate_t oldalertstatus, newalertstatus;
 	int delayval = 0;
@@ -1995,39 +2053,10 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	 * a later change then bridges across a period the test was demonstrably
 	 * reporting.
 	 */
-	if (!issummary) {
-		if (synthetic || log->downtimeactive || (newcolor != reportedcolor)) {
-			/*
-			 * xymond chose this color, not the reporter: it invented one
-			 * because no data arrived (synthetic), get_hts() rewrote it for
-			 * DOWNTIME before we were called, or a disable, a change delay,
-			 * the flap pin or a modifier rewrote it above. Only the first
-			 * such update opens the gap; a later one would overwrite the
-			 * color to resume to with one xymond invented, which no real
-			 * report could match.
-			 */
-			if ((log->pregapcolor == NO_COLOR) && (log->oldcolor >= 0) && (log->oldcolor < COL_COUNT)) {
-				/* The range test keeps COL_CLIENT (99), which parse_color()
-				 * accepts, out of colnames[] at checkpoint time. */
-				log->pregapcolor = log->oldcolor;
-				log->pregaplastchange = prevlastchange;
-				log->gapstart = now;
-			}
-		}
-		else if (log->pregapcolor != NO_COLOR) {
-			/*
-			 * What we are recording is the reporter's own color again, so the
-			 * gap ends whatever that color is.
-			 *
-			 * Same color as before, after a short enough gap: the problem did
-			 * not go away while we could not see it, so the hold-time carries
-			 * across. alerts.cfg DURATION reads this.
-			 */
-			if (holdtime_bridges(newcolor, log->pregapcolor, (now - log->gapstart), log->validity))
-				log->lastchange = log->pregaplastchange;
-			log->pregapcolor = NO_COLOR;
-		}
-	}
+	if (!issummary)
+		update_gapstate(log, newcolor,
+				(synthetic || log->downtimeactive || (newcolor != reportedcolor)),
+				now, prevlastchange, prevvalidity);
 
 	if (!issummary) {
 		if (newalertstatus == A_ALERT) {
@@ -5108,7 +5137,7 @@ void save_checkpoint(void)
 			 * closes the gap.
 			 */
 			gapopen = ((lwalk->pregapcolor != NO_COLOR) &&
-				   gap_within_window(now - lwalk->gapstart, lwalk->validity));
+				   gap_within_window(now - lwalk->gapstart, lwalk->pregapvalidity));
 
 			if ((iores >= 0) && (lwalk->flapping || gapopen ||
 					     ((flapcount > 1) && lwalk->flapchange[1]))) {
@@ -5117,13 +5146,24 @@ void save_checkpoint(void)
 				/* long, not int: truncating these to 32 bits would
 				 * return negative after 2038, giving hold-times in 1901
 				 * and silently disabling flap detection. */
-				iores = fprintf(fd, "@@XYMONDCHK-V1|.flapstate.|%s|%s|%d|%s|%s|%s|%ld|%ld|",
+				/*
+				 * The gap's validity rides along as a suffix on gapstart
+				 * rather than as a field of its own: the record is parsed by
+				 * position, so a new field would shift the flap-change list
+				 * and misread every checkpoint written before this change.
+				 * strtol() stops at the ':', so an older file still restores.
+				 * Without it a restored gap came back with defaultvalidity,
+				 * and the next checkpoint dropped a gap whose real window was
+				 * longer - the hold-time was lost on the second restart.
+				 */
+				iores = fprintf(fd, "@@XYMONDCHK-V1|.flapstate.|%s|%s|%d|%s|%s|%s|%ld|%ld:%d|",
 						hwalk->hostname, lwalk->test->name,
 						lwalk->flapping,
 						colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor],
 						colnames[gapopen ? lwalk->pregapcolor : NO_COLOR],
 						(long)(gapopen ? lwalk->pregaplastchange : 0),
-						(long)(gapopen ? lwalk->gapstart : 0));
+						(long)(gapopen ? lwalk->gapstart : 0),
+						(gapopen ? lwalk->pregapvalidity : 0));
 				for (fi = 0; ((fi < flapcount) && (iores >= 0)); fi++)
 					iores = fprintf(fd, "%s%ld", ((fi == 0) ? "" : ","), (long)lwalk->flapchange[fi]);
 				if (iores >= 0) iores = fprintf(fd, "\n");
@@ -5292,7 +5332,7 @@ void load_checkpoint(char *fn)
 		if (strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.flapstate.|", 27) == 0) {
 			xymond_log_t *log = NULL;
 			int flapping = 0, oldflapcolor = NO_COLOR, currflapcolor = NO_COLOR;
-			int pregapcolor = NO_COLOR;
+			int pregapcolor = NO_COLOR, pregapvalidity = defaultvalidity;
 			time_t pregaplastchange = 0, gapstart = 0;
 			char *flapchangestr = NULL;
 
@@ -5316,7 +5356,15 @@ void load_checkpoint(char *fn)
 				  case 6: currflapcolor = restore_color(item); break;
 				  case 7: pregapcolor = restore_color(item); break;
 				  case 8: pregaplastchange = (time_t)strtol(item, NULL, 10); break;
-				  case 9: gapstart = (time_t)strtol(item, NULL, 10); break;
+				  case 9: {
+					/* "<gapstart>[:<validity>]". The suffix is absent from
+					 * checkpoints written before it existed; such a gap keeps
+					 * defaultvalidity, exactly as it did then. */
+					char *vp;
+					gapstart = (time_t)strtol(item, &vp, 10);
+					if (vp && (*vp == ':')) pregapvalidity = atoi(vp+1);
+					}
+					break;
 				  case 10: flapchangestr = item; break;
 				  default: break;
 				}
@@ -5337,6 +5385,7 @@ void load_checkpoint(char *fn)
 				log->currflapcolor = currflapcolor;
 				log->pregapcolor = pregapcolor;
 				log->pregaplastchange = pregaplastchange;
+				log->pregapvalidity = pregapvalidity;
 				log->gapstart = gapstart;
 				if (flapchangestr && (flapcount > 0) && log->flapchange) {
 					char *fp = flapchangestr;
@@ -5351,10 +5400,14 @@ void load_checkpoint(char *fn)
 				/*
 				 * The saved flag means "flapping when we checkpointed", not
 				 * "flapping now" -- xymond may have been down for hours. Re-derive
-				 * from the restored ring, the same test handle_status() runs.
+				 * from the restored ring, the same test handle_status() runs,
+				 * NOFLAP included: it may have been added while xymond was down,
+				 * and without it the restored flag stood until the next status
+				 * arrived - long enough for another checkpoint to save it again.
 				 */
 				log->flapping = (flapping && (flapcount > 0) && log->flapchange &&
-						 ((getcurrenttime(NULL) - log->flapchange[flapcount-1]) < flapthreshold));
+						 ((getcurrenttime(NULL) - log->flapchange[flapcount-1]) < flapthreshold) &&
+						 !isset_noflap(hostinfo(hitem->hostname), t->name, hitem->hostname));
 			}
 
 			continue;
