@@ -36,9 +36,10 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
 harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
 	"$here/html-log-custom-graphs-harness.c" "$ROOT/lib/libxymoncomm.a" \
-	$pcre_libs -lssl -lcrypto 2>"$work/cc.log" \
+	$pcre_libs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 XYMONHOME="$work" \

@@ -55,11 +55,9 @@ command -v "$CC" >/dev/null 2>&1 \
 
 work=$(mktempdir)
 
-# Link flags for the prebuilt library. Tolerate an absent top-level Makefile
-# (e.g. only lib/ configured): fall back to no extra SSL flags rather than
-# letting sed abort the script under 'set -e'.
-ssllibs=""
-[ -f "$ROOT/Makefile" ] && ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
+# PCRE is a test-specific dependency, so it stays here; the rest of the link
+# flags (search path, rpath, the libraries libxymoncomm.a needs) come from
+# xymon_ldflags below.
 pcre_libs=${PCRELIBS:-}
 if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 	pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
@@ -87,8 +85,9 @@ EOF
 # lib/url.c goes before the archive so its fresh objects satisfy the netrc
 # symbols and the archive's (possibly stale) url.o is never pulled in.
 harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$SRC" "$ROOT/lib/libxymoncomm.a" $ssllibs $pcre_libs 2>"$work/cc.log" \
+	"$work/harness.c" "$SRC" "$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "netrc harness does not compile"; }
 
 # A password whose last byte matters: the off-by-one drops the trailing 't'.

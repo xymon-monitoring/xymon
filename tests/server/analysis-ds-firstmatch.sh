@@ -58,7 +58,6 @@ work=$(mktempdir)
 "$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
-ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 pcre_libs=${PCRELIBS:-}
 if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 	pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
@@ -66,9 +65,10 @@ fi
 [ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
 harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -iquote "$ROOT/xymond" -o "$work/harness" \
 	"$here/analysis-ds-firstmatch-harness.c" "$CLIENT_CONFIG_C" \
-	"$ROOT/lib/libxymoncomm.a" $ssllibs $pcre_libs 2>"$work/cc.log" \
+	"$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 cat >"$work/hosts.cfg" <<'EOF'

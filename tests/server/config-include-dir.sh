@@ -81,7 +81,6 @@ fi
 
 work=$(mktempdir)
 
-ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 pcre_libs=${PCRELIBS:-}
 if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 	pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
@@ -89,8 +88,9 @@ fi
 [ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
 harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" -DSTANDALONE $harness_cflags -o "$work/stackio" \
-	"$ROOT/lib/stackio.c" "$ROOT/lib/libxymoncomm.a" $ssllibs $pcre_libs 2>"$work/cc.log" \
+	"$ROOT/lib/stackio.c" "$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "standalone stackio does not compile"; }
 
 # The STANDALONE reader reads argv[1] via stackfgets() (which expands include
