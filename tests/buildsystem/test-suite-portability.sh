@@ -129,6 +129,14 @@ report "include-shadow" '\-I *"?\$\{?ROOT' \
 # name the path anyway -- the native ones -- reads it, it does not sed it.
 report "path-rewrite" 'sed.*/proc/' \
 	"replace the helper by name (fsf_stub_helper), not the path it reads"
+# The rrdtool command-line tool is a separate package from the library the
+# tree links against, and is not installed on every lane. A test that gates on
+# it does not fail there - it quietly checks less, which is worse: the half it
+# skips is usually the value, and the half it keeps is usually the filename.
+# Read a RRD through librrd instead; tests/rrd/inode-unix-columns-harness.c is
+# the shape to copy.
+report "rrdtool-cli" '(command -v|which) +rrdtool|(^|[^-[:alnum:]_])rrdtool +(lastupdate|fetch|info|create|update|graph)' \
+	"the rrdtool CLI is not installed everywhere; read the RRD through librrd"
 
 # The runner defines errline() and run_one() for itself. A test does not have
 # them: it is sourced with tests/lib/assert.sh and nothing else, so a call to
@@ -306,10 +314,11 @@ probe="$work/probe.sh"
 	printf 'sed s#/proc/mounts#f# x\n'
 	printf 'errline "boom"\n'
 	printf 'register_cleanup "kill $pid 2>/dev/null || true"\n'
+	printf 'rrdtool lastupdate x.rrd\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "11" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "12" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # The cleanup-function rule the same way: a function that kills and does not
 # wait is reported, one that waits or uses stop_process is not.
