@@ -23,9 +23,16 @@ work=$(mktempdir)
 
 build_xymon_libs "$ROOT" "$work/libbuild.log" libxymon.a
 
-"$CC" -iquote "$ROOT/include" -o "$work/harness" \
+# The configured compile and link flags: libxymon.h pulls in pcre2.h, which
+# sits under /usr/local/include or /usr/pkg/include on the BSDs, and the link
+# needs the matching search path and runtime path.
+harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
+
+# shellcheck disable=SC2086
+"$CC" $harness_cflags -iquote "$ROOT/include" -o "$work/harness" \
 	"$(dirname "$0")/cgi-split-hostsvc-harness.c" "$ROOT/lib/libxymon.a" \
-	2>"$work/cc.log" \
+	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 "$work/harness" >"$work/run.log" 2>&1 \
