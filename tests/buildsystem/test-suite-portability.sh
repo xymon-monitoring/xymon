@@ -155,6 +155,14 @@ report "include-shadow" '\-I *"?\$\{?ROOT' \
 # name the path anyway -- the native ones -- reads it, it does not sed it.
 report "path-rewrite" 'sed.*/proc/' \
 	"replace the helper by name (fsf_stub_helper), not the path it reads"
+# The rrdtool command-line tool is a separate package from the library the
+# tree links against, and is not installed on every lane. A test that gates on
+# it does not fail there - it quietly checks less, which is worse: the half it
+# skips is usually the value, and the half it keeps is usually the filename.
+# Read a RRD through librrd instead; tests/rrd/inode-unix-columns-harness.c is
+# the shape to copy.
+report "rrdtool-cli" '(command -v|which) +rrdtool|(^|[^-[:alnum:]_])rrdtool +(lastupdate|fetch|info|create|update|graph)' \
+	"the rrdtool CLI is not installed everywhere; read the RRD through librrd"
 
 # A test reaches the build it runs against through the helpers, never through
 # the make tree's own files. A CMake or packaged build has no top-level
@@ -464,10 +472,11 @@ probe="$work/probe.sh"
 	printf 'libs=$(sed -n s/^PCRELIBS=//p "$ROOT/Makefile")\n'
 	printf 'cc x.c "$root/lib/libxymon.a"\n'
 	printf 'out=$("$XYMON_MAKE" -s -C "$ROOT" -f Makefile -f - probe <<EOF)\n'
+	printf 'rrdtool lastupdate x.rrd\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "15" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "16" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # And not over-eager: the helpers that replace those, and a test that only
 # asks whether the make tree is there, match none of the patterns.
