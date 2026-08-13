@@ -352,6 +352,25 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
     nearly suitable for injection using <i>rrdupdate(1)</i> and easily
     transformable to other formats. If the process exits, xymond_rrd will
     re-launch it automatically.</p>
+<p class="Pp">The stream is fully buffered, so an update is normally written to
+    the processor only once the buffer fills. On a busy server that is
+    invisible; on a quiet one an update may wait a long time before it is
+    written. Set <b>RRD_EXTPROC_DOFLUSH</b> in <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> to
+    flush after every update instead, at the cost of one write per update -- use
+    it when the processor forwards to something that expects a live stream.
+    <b>RRD_EXTPROC_BUFSIZ</b> sets the size of the buffer, in bytes; the default
+    is the system's BUFSIZ.</p>
+<p class="Pp">The buffer reaches the processor only if the processor is still
+    running when the stream is closed. That holds on an orderly stop: xymond_rrd
+    flushes the stream to the processor before exiting, so a normal shutdown
+    loses nothing.</p>
+<p class="Pp">If the processor exits first, everything still buffered is lost.
+    xymond_rrd notices only on its next write to the stream -- which, with the
+    stream buffered, is the write that fills the buffer -- and it is that late
+    in re-launching the processor as well. Up to <b>RRD_EXTPROC_BUFSIZ</b> bytes
+    of updates can go to a processor that is already gone; with
+    <b>RRD_EXTPROC_DOFLUSH</b> set the same failure costs at most a single
+    update.</p>
 <p class="Pp"></p>
 <p class="Pp"></p>
 </section>

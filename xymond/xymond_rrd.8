@@ -306,6 +306,29 @@ in a format nearly suitable for injection using
 and easily transformable to other formats. If the process exits,
 xymond_rrd will re-launch it automatically.
 
+The stream is fully buffered, so an update is normally written to the
+processor only once the buffer fills. On a busy server that is invisible;
+on a quiet one an update may wait a long time before it is written. Set
+\fBRRD_EXTPROC_DOFLUSH\fR in
+.I xymonserver.cfg(5)
+to flush after every update instead, at the cost of one write per update
+\-\- use it when the processor forwards to something that expects a live
+stream. \fBRRD_EXTPROC_BUFSIZ\fR sets the size of the buffer, in bytes;
+the default is the system's BUFSIZ.
+
+The buffer reaches the processor only if the processor is still running
+when the stream is closed. That holds on an orderly stop: xymond_rrd
+flushes the stream to the processor before exiting, so a normal shutdown
+loses nothing.
+
+If the processor exits first, everything still buffered is lost.
+xymond_rrd notices only on its next write to the stream \-\- which, with
+the stream buffered, is the write that fills the buffer \-\- and it is
+that late in re\-launching the processor as well. Up to
+\fBRRD_EXTPROC_BUFSIZ\fR bytes of updates can go to a processor that is
+already gone; with \fBRRD_EXTPROC_DOFLUSH\fR set the same failure costs
+at most a single update.
+
 
 .SH CUSTOM RRD DATA VIA SCRIPTS
 xymond_rrd provides a simple mechanism for adding custom graphs
