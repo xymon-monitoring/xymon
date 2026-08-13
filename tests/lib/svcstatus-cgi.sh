@@ -100,23 +100,31 @@ svcstatus_setup() {
 # libxymon.h, ...) changes, bumping its mtime. So any code change in the tree
 # is newer than the cache and forces a rebuild; the cache never hides one.
 svcstatus_build() {
-	local flagkey bin harness_cflags harness_ldflags
+	local flagkey bin harness_cflags harness_ldflags ccpath
 	harness_cflags=$(xymon_cflags "$ROOT")
 	harness_ldflags=$(xymon_ldflags "$ROOT")
+	# The compiler decides the binary as much as the flags do. Left out of the
+	# key, a cache filled by one compiler is handed straight to a run that
+	# asked for another, and the test passes without that compiler ever being
+	# invoked -- a gcc-built binary satisfying a run meant to exercise clang.
+	# The resolved path as well as the name: "cc" is a different compiler on
+	# different hosts, and PATH can put another one under the same name.
+	ccpath=$(command -v "${CC%% *}" 2>/dev/null) || ccpath=$CC
 	# The key has to cover everything that changes the binary, not just the
 	# arguments this was called with: the configured compile and link flags
 	# decide the result too. Keyed on the arguments alone, changing SSLLIBS,
 	# a library search path or the rpath reuses a stale cached binary, and
 	# the test passes without ever exercising the configuration it claims to.
 	# Hashed rather than spelled out because the flags carry absolute paths.
-	flagkey=$(printf '%s' "$* $harness_cflags $harness_ldflags $pcre_libs" | cksum | tr -cd '0-9')
+	flagkey=$(printf '%s' "$CC $ccpath $* $harness_cflags $harness_ldflags $pcre_libs" | cksum | tr -cd '0-9')
 	bin="${TMPDIR:-/tmp}/xymon-svcstatus-cache.$(id -u)/$(printf '%s' "$ROOT" | tr -c 'A-Za-z0-9' '_').${flagkey:-plain}"
 	mkdir -p "$(dirname "$bin")"
 
 	if [ -x "$bin" ] && [ -z "$(find \
 			"$ROOT/web/svcstatus.c" "$ROOT/web/svcstatus-info.c" "$ROOT/web/svcstatus-trends.c" \
 			"$ROOT/web/svcstatus-info.h" "$ROOT/web/svcstatus-trends.h" "$ROOT/include/version.h" \
-			"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" -newer "$bin" 2>/dev/null)" ]; then
+			"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" \
+			"$ccpath" -newer "$bin" 2>/dev/null)" ]; then
 		cp "$bin" "$work/svcstatus"
 		return 0
 	fi
