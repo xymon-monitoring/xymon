@@ -2387,6 +2387,29 @@ void handle_notify(char *msg, char *sender, char *hostname, char *testname)
  * columns it fed will go purple although the host keeps reporting. Diagnostic
  * only; per-collector scope keeps sub-collector purges from triggering it.
  */
+/*
+ * Take a returning report into an existing collector entry, and stamp it.
+ *
+ * An entry that has outlived MAX_SUBCLIENT_LIFETIME would have been purged had
+ * this report not arrived first, so its section list describes a report that no
+ * longer counts. Comparing against it announces every section as vanished the
+ * moment a slow collector comes back - the opposite of the intent, which is to
+ * say nothing when a collector was purged between runs. Drop the list so the
+ * returning report becomes the new baseline.
+ *
+ * Named rather than inlined into the caller so the regression test can drive
+ * this decision with timestamps of its own: waiting out MAX_SUBCLIENT_LIFETIME
+ * is not something a test can do.
+ */
+static void clientmsg_refresh(clientmsg_list_t *cwalk, time_t now)
+{
+	if (cwalk->sections && ((cwalk->timestamp + MAX_SUBCLIENT_LIFETIME) < now)) {
+		xfree(cwalk->sections);
+		cwalk->sections = NULL;
+	}
+	cwalk->timestamp = now;
+}
+
 static void update_clientsections(xymond_hostlist_t *hwalk, clientmsg_list_t *cwalk)
 {
 	strbuffer_t *nb;
@@ -2487,7 +2510,8 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 				cwalk->msg = strdup(msg);
 			}
 
-			hwalk->clientmsgtstamp = cwalk->timestamp = gettimer();
+			hwalk->clientmsgtstamp = gettimer();
+			clientmsg_refresh(cwalk, hwalk->clientmsgtstamp);
 
 			update_clientsections(hwalk, cwalk);	/* Issue #201: log vanished sections */
 
