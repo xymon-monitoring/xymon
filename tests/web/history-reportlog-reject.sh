@@ -39,16 +39,17 @@ svcstatus_setup
 cflags="-g -O1 -fsanitize=address,undefined"
 asan_usable || cflags=""
 harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
 export ASAN_OPTIONS="exitcode=99${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
 for cgi in history reportlog; do
 	"$CC" $cflags $harness_cflags -iquote "$ROOT/web" -o "$work/$cgi" \
 		"$ROOT/web/$cgi.c" \
 		"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
-		$pcre_libs $ssllibs $netlibs $librtdef 2>"$work/cc-$cgi.log" \
+		$pcre_libs $harness_ldflags 2>"$work/cc-$cgi.log" \
 	|| { "$CC" $harness_cflags -iquote "$ROOT/web" -o "$work/$cgi" \
 			"$ROOT/web/$cgi.c" \
 			"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
-			$pcre_libs $ssllibs $netlibs $librtdef 2>"$work/cc-$cgi.log" \
+			$pcre_libs $harness_ldflags 2>"$work/cc-$cgi.log" \
 		|| { cat "$work/cc-$cgi.log" >&2; fail "$cgi.cgi does not build"; }; }
 done
 
