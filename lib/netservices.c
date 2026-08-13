@@ -293,11 +293,12 @@ char *init_tcp_services(void)
 	/* Free the temp. svclist list */
 	while (head) {
 		/*
-		 * Note: Don't free the strings inside the records, 
-		 * as they are now owned by the svcinfo records.
+		 * Note: free the record struct itself, but NOT the strings
+		 * inside it - those are now owned by the svcinfo records.
 		 */
 		walk = head;
 		head = head->next;
+		xfree(walk->rec);
 		xfree(walk);
 	}
 

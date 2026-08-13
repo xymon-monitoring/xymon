@@ -389,3 +389,6 @@ DEFAULT
 	MEMSWAP 50 80
 	MEMACT  90 97
 
+
+# Local additions: any file dropped into the directory below is included
+optional directory @XYMONHOME@/etc/analysis.d

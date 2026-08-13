@@ -25,6 +25,127 @@ static char rcsid[] = "$Id$";
 
 #define MAX_REQ_SIZE (1024*1024)
 
+/*
+ * Validate a CGI value as a single path component. A validator, not a
+ * normalizer: '/' (even in "../realhost", which basename() would reduce to
+ * a legitimate name), ".", ".." and "" all yield "", everything else is
+ * returned unchanged. Callers MUST reject the empty result -- appended to a
+ * path it collapses onto the parent dir and still serves a file. path is
+ * never modified and the result is read-only; copy it (callers strdup()).
+ */
+char *safe_basename(char *path)
+{
+	if (!path) return "";
+	if (!*path || strchr(path, '/') ||
+	    (strcmp(path, ".") == 0) || (strcmp(path, "..") == 0)) return path + strlen(path);
+
+	return path;
+}
+
+/*
+ * The one byte set legal in a confined CGI hostname or column name: ASCII
+ * letters and digits plus the punctuation real xymon names use -- ':'
+ * (IPv6), ',' (the URL spelling of '.' in IP hosts, and literal-comma
+ * names), '.' (FQDNs and the host.service separator), and '_' '-'. Both
+ * path separators are excluded: '/' (POSIX) and '\\' (Windows/SMB) -- the
+ * confinement below only special-cases '/', so a '\\'-bearing value must
+ * not survive on a backend where '\\' separates directories. One set, one
+ * rule, every parameter; widening it (e.g. to accept UTF-8) is a
+ * documented policy change for another day (see hosts.cfg(5) discussion).
+ * The set itself is XYMON_HOSTNAME_CHARS (cgi.h), shared with the hosts.cfg
+ * loader and the xymond ghost-name guard so all three agree.
+ */
+#define CGI_NAMECHARS XYMON_HOSTNAME_CHARS
+
+/*
+ * Confine a CGI value to a single legal path component -- the one policy
+ * behind every host/service parameter. The value must be a single
+ * component of CGI_NAMECHARS or it is refused as a whole (NULL): never
+ * truncated, normalized, or partially served, so a stray byte (space,
+ * control char, '/', '(' ...), ".", ".." and "" all reject rather than
+ * yield a servable prefix. If decode_commas, the IP URL spelling
+ * (192,168,1,1 -> 192.168.1.1, commafy() in lib/cgiurls.c) is decoded
+ * first; only the parameters generated that way pass 1 (HOST is emitted
+ * verbatim, so a literal-comma name stays reachable). The single-component
+ * check runs after decoding, so "," / ",," cannot slip through as
+ * "." / "..". Returns a newly allocated copy, or NULL when refused.
+ */
+char *cgi_pathcomponent(const char *value, int decode_commas)
+{
+	char *raw;
+
+	if (!value || value[strspn(value, CGI_NAMECHARS)]) return NULL;
+
+	raw = strdup(value);
+	if (decode_commas) uncommafy(raw);
+	if (!*safe_basename(raw)) { xfree(raw); return NULL; }
+
+	return raw;
+}
+
+/*
+ * True if the value carries a control byte (< 0x20 or DEL). Such a byte in
+ * a host/service/section value would inject a second line into a xymond
+ * protocol request (test=%s, section=%s), so callers refuse the whole
+ * value. The single definition of "dangerous byte" for every confinement
+ * helper and call site -- keep it here, not open-coded.
+ */
+int cgi_hasctrl(const char *value)
+{
+	const unsigned char *u;
+
+	for (u = (const unsigned char *)value; *u; u++)
+		if ((*u < 0x20) || (*u == 0x7f)) return 1;
+	return 0;
+}
+
+/*
+ * Confine a free-form service component -- a column name, a client section
+ * leaf, or a PCRE testname pattern (svcstatus's aggregate view compiles
+ * SERVICE as a regex, so 'cpu|disk', '^(a|b)$' must pass). Unlike a
+ * hostname it is not held to CGI_NAMECHARS: metacharacters are allowed.
+ * It is refused (NULL) only when it carries a control byte -- which would
+ * inject a second xymond protocol line where SERVICE becomes "test=%s" --
+ * or is not a single path component (safe_basename(): '/', '.', '..', "").
+ * Where it later becomes a filename the caller's path build stays confined
+ * because '/' and traversal are already excluded. Returns a newly
+ * allocated copy, or NULL.
+ */
+char *cgi_component(const char *value)
+{
+	char *raw;
+
+	if (!value || cgi_hasctrl(value)) return NULL;
+
+	raw = strdup(value);
+	if (!*safe_basename(raw)) { xfree(raw); return NULL; }
+
+	return raw;
+}
+
+/*
+ * Split a "host.service" parameter (history HISTFILE, reportlog HOSTSVC)
+ * at the last '.'. Both halves take the STRICT name confinement
+ * (cgi_pathcomponent): here the service is a plain column name that becomes
+ * a filename -- history.cgi even passes it to popen("tail ... <file>"), so
+ * it must stay clear of shell metacharacters, unlike svcstatus's free-form
+ * SERVICE (a regex, never shelled). The host half is comma-decoded. Both
+ * outputs are always written: NULL for a rejected, absent, or (for service)
+ * no-'.' component, otherwise a newly allocated copy the caller frees.
+ * value is modified in place (the split point).
+ */
+void cgi_split_hostsvc(char *value, char **hostname, char **service)
+{
+	char *p;
+
+	*hostname = *service = NULL;
+	if (!value) return;
+
+	p = strrchr(value, '.');
+	if (p) { *p = '\0'; *service = cgi_pathcomponent(p+1, 0); }
+	*hostname = cgi_pathcomponent(value, 1);
+}
+
 enum cgi_method_t cgi_method = CGI_OTHER;
 
 static char *cgi_error_text = NULL;

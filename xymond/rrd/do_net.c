@@ -87,9 +87,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 	}
 	else if (strcmp(testname, "ntp") == 0) {
 		/*
-		 * sntp output: 
-		 *    2009 Nov 13 11:29:10.000313 + 0.038766 +/- 0.052900 secs
-		 * ntpdate output: 
+		 * ntpdate output:
 		 *    server 172.16.10.2, stratum 3, offset -0.040324, delay 0.02568
 		 *    13 Nov 11:29:06 ntpdate[7038]: adjust time server 172.16.10.2 offset -0.040324 sec
 		 * built-in SNTP probe banner:
@@ -101,7 +99,6 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		static void *ntp_tpl = NULL;
 
 		char *offsetval = NULL;
-		char offsetbuf[40];
 		char rdbuf[24];
 		double rootdist_ms = -1.0;
 		char *msgcopy = strdup(msg);
@@ -112,28 +109,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 			/* ntpdate and the built-in SNTP probe both report "offset <seconds>". */
 			offsetval = strtok(p + 7, " \r\n\t");
 		}
-		else if (strstr(msgcopy, " secs") != NULL) {
-			/* Probably new "sntp" output */
-			char *year, *tm, *offsetdirection, *offset, *plusminus, *errorbound, *secs;
 
-			tm = offsetdirection = plusminus = errorbound = secs = NULL;
-			year = strtok(msgcopy, " ");
-			tm = year ? strtok(NULL, " ") : NULL;
-			offsetdirection = tm ? strtok(NULL, " ") : NULL;
-			offset = offsetdirection ? strtok(NULL, " ") : NULL;
-			plusminus = offset ? strtok(NULL, " ") : NULL;
-			errorbound = plusminus ? strtok(NULL, " ") : NULL;
-			secs = errorbound ? strtok(NULL, " ") : NULL;
-
-			if ( offsetdirection && ((strcmp(offsetdirection, "+") == 0) || (strcmp(offsetdirection, "-") == 0)) &&
-			     plusminus && (strcmp(plusminus, "+/-") == 0) && 
-			     secs && (strcmp(secs, "secs") == 0) ) {
-				/* Looks sane */
-				snprintf(offsetbuf, sizeof(offsetbuf), "%s%s", offsetdirection, offset);
-				offsetval = offsetbuf;
-			}
-		}
-		
 		/* The built-in probe banner also carries the "+/-" root distance - the RFC
 		 * 5905 accuracy bound (which folds in root dispersion). Record it next to
 		 * the offset so the graph can draw offset +/- rootdist. ntpdate omits it, so

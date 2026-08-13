@@ -1,97 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>ENADIS.CGI(8)</title>
+</head>
+<body>
+<h1 class="head-name">ENADIS.CGI</h1>
+Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of ENADIS.CGI</TITLE>
-</HEAD><BODY>
-<H1>ENADIS.CGI</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">enadis.cgi - CGI program to enable/disable Xymon tests</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>enadis.cgi (invoked via CGI from webserver)</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>enadis.cgi</b> is a CGI tool for disabling and enabling hosts
+    and tests monitored by Xymon. You can disable monitoring of a single test,
+    all tests for a host, or multiple hosts - immediately or at a future point
+    in time.</p>
+<p class="Pp">enadis.cgi runs as a CGI program, invoked by your webserver. It is
+    normally run via a wrapper shell-script in the secured CGI directory for
+    Xymon.</p>
+<p class="Pp">enadis.cgi is the back-end script for the enable/disable form
+    present on the &quot;info&quot; status-pages. It can also run in
+    &quot;stand-alone&quot; mode, in which case it displays a web form allowing
+    users to select what to enable or disable.</p>
+<p class="Pp"></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="no-cookies"><a class="permalink" href="#no-cookies"><b>--no-cookies</b></a></dt>
+  <dd>Normally, enadis.cgi uses a cookie sent by the browser to initially filter
+      the list of hosts presented. If this is not desired, you can turn off this
+      behaviour by calling acknowledge.cgi with the --no-cookies option. This
+      would normally be placed in the CGI_ENADIS_OPTS setting in
+      <i><a href="../man5/cgioptions.cfg.5.html">cgioptions.cfg</a>(5)</i>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="env"><a class="permalink" href="#env"><b>--env</b>=<i>FILENAME</i></a></dt>
+  <dd>Load the environment from FILENAME before executing the CGI.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="area"><a class="permalink" href="#area"><b>--area</b>=<i>NAME</i></a></dt>
+  <dd>Load environment variables for a specific area. NB: if used, this option
+      must appear before any --env=FILENAME option.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><b>$XYMONHOME/web/maint_{header,form,footer}</b></dt>
+  <dd>HTML template header
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="BUGS"><a class="permalink" href="#BUGS">BUGS</a></h1>
+<p class="Pp">When using alternate pagesets, hosts will only show up on the
+    Enable/Disable page if this is accessed from the primary page in which they
+    are defined. So if you have hosts on multiple pages, they will only be
+    visible for disabling from their main page which is not what you would
+    expect.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#BUGS">BUGS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-enadis.cgi - CGI program to enable/disable Xymon tests
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>enadis.cgi (invoked via CGI from webserver)</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>enadis.cgi</B> is a CGI tool for disabling and enabling
-hosts and tests monitored by Xymon. You can disable monitoring of
-a single test, all tests for a host, or multiple hosts - immediately
-or at a future point in time.
-<P>
-enadis.cgi runs as a CGI program, invoked by your webserver.
-It is normally run via a wrapper shell-script in the secured CGI 
-directory for Xymon.
-<P>
-enadis.cgi is the back-end script for the enable/disable
-form present on the &quot;info&quot; status-pages. It can also run in
-&quot;stand-alone&quot; mode, in which case it displays a web form allowing
-users to select what to enable or disable.
-<P>
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--no-cookies<DD>
-Normally, enadis.cgi uses a cookie sent by the browser to initially 
-filter the list of hosts presented. If this is not desired, you can
-turn off this behaviour by calling acknowledge.cgi with the --no-cookies
-option. This would normally be placed in the CGI_ENADIS_OPTS setting in
-<I><A HREF="../man5/cgioptions.cfg.5.html">cgioptions.cfg</A>(5)</I>
-
-<P>
-<DT>--env=FILENAME<DD>
-Load the environment from FILENAME before executing the CGI.
-<P>
-<DT>--area=NAME<DD>
-Load environment variables for a specific area. NB: if used,
-this option must appear before any --env=FILENAME option.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>FILES</H2>
-
-<DL COMPACT>
-<DT>$XYMONHOME/web/maint_{header,form,footer}<DD>
-HTML template header
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>BUGS</H2>
-
-When using alternate pagesets, hosts will only show up on the
-Enable/Disable page if this is accessed from the primary page
-in which they are defined. So if you have hosts on multiple
-pages, they will only be visible for disabling from their
-main page which is not what you would expect.
-<P>
-<A NAME="lbAH">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">FILES</A><DD>
-<DT><A HREF="#lbAG">BUGS</A><DD>
-<DT><A HREF="#lbAH">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

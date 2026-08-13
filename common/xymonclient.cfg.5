@@ -4,55 +4,99 @@ xymonclient.cfg \- Xymon client environment variables
 
 .SH DESCRIPTION
 Xymon programs use multiple environment variables beside the
-normal set of variables.  For the Xymon client, the environment 
-definitions are stored in the ~xymon/client/etc/xymonclient.cfg file. 
+normal set of variables.  For the Xymon client, the environment
+definitions are stored in the ~xymon/client/etc/xymonclient.cfg file.
 Each line in this file is of the form \fBNAME=VALUE\fR and defines
 one environment variable NAME with the value VALUE.
 
 .SH SETTINGS
-.IP XYMSRV
+.IP "\fBXYMSRV\fR"
 The IP-address used to contact the Xymon server. Default:
 Chosen when the Xymon client was compiled.
 
-.IP XYMSERVERS
+.IP "\fBXYMSERVERS\fR"
 List of IP-addresses of Xymon servers. Data will be sent to
-all of the servers listed here. This setting is only used if 
+all of the servers listed here. This setting is only used if
 XYMSRV=0.0.0.0.
 
-.IP XYMONDPORT
+.IP "\fBXYMONDPORT\fR"
 The port number for used to contact the Xymon server.
 Default: 1984.
 
-.IP XYMONHOME
+.IP "\fBXYMONHOME\fR"
 The Xymon client top-level directory. Default: The
 $XYMONCLIENTHOME setting inherited from the "runclient.sh"
 script which starts the Xymon client.
 
-.IP XYMONCLIENTLOGS
+.IP "\fBXYMONCLIENTLOGS\fR"
 The directory for the Xymon clients' own log files. Default:
 $XYMONHOME/logs
 
-.IP XYMONTMP
+.IP "\fBXYMONTMP\fR"
 Directory used for temporary files. Default: $XYMONHOME/tmp/
 
-.IP XYMONCLIENT_FS_INCLUDE_TYPES
-Whitespace-separated Linux filesystem types to include in the
-client's disk and inode reports even when they are normally excluded
-as pseudo (\fBnodev\fR) filesystems. Types are matched as exact df type
-tokens. Defaults to \fBzfs virtiofs tmpfs\fR \(em real local filesystems
+.IP "\fBXYMONCLIENT_FS_INCLUDE_TYPES\fR"
+Whitespace-separated filesystem types to include in the client's disk
+(and, where supported, inode) reports even when the client's defaults
+would exclude them. Types are matched as exact df type tokens (on
+macOS, mount attributes are matched as well). The default exclusions
+and the mechanism are per-OS, and clients not listed here do not use
+the variable. Including remote filesystems also requires
+XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+.br
+On Linux: types normally excluded as pseudo (\fBnodev\fR) filesystems.
+Defaults to \fBzfs virtiofs tmpfs\fR \(em real local filesystems
 that merely happen to be flagged nodev. Set to "" to restore the
-historical behaviour of dropping every nodev type. Including remote
-filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+historical behaviour of dropping every nodev type. The noisy tmpfs
+mounts (/run, /run/lock, /run/user/N) are filtered server-side by the
+CLASS=linux block in analysis.cfg, not here.
+.br
+On FreeBSD: names types from the default df exclude set (\fBnullfs
+cd9660 procfs devfs linprocfs fdescfs autofs\fR, passed to df as
+one comma-joined \fB\-tno<list>\fR argument) to surface again. Empty by
+default. The inode report additionally drops \fBzfs\fR and \fBtmpfs\fR,
+whose inode counts
+carry no signal (zfs has no inode limit; FreeBSD tmpfs reports a
+constant itotal of 2^31\-1); naming them here restores them to the
+inode report as well.
+.br
+On NetBSD: names types from the default df exclude set (\fBkernfs
+procfs cd9660 null ptyfs\fR, passed to df as \fB\-tno<list>\fR) to
+surface again. Empty by default. The \fBptyfs\fR exclusion is an
+upgrade-visible change; set XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to
+report it again. The inode report additionally drops \fBzfs\fR (no
+fixed inode pool) and rows without usable inode accounting; naming zfs
+here restores it to the inode report as well. NetBSD tmpfs is kept in
+both reports \(em its inode counts are memory-derived, so they can
+signal exhaustion.
+.br
+On OpenBSD: names types from the default df exclude set (\fBkernfs
+procfs cd9660\fR, passed to df as \fB\-tno<list>\fR) to surface again.
+Empty by default. The inode report additionally drops rows without
+usable inode accounting (OpenBSD df \-i reports those as itotal 0, not
+as "-"). OpenBSD tmpfs is kept in both reports, for the same reason as
+on NetBSD.
+.br
+On macOS: values are mount attributes as well as types; the defaults
+drop \fBnobrowse\fR and \fBread\-only\fR mounts, and the inode report
+skips apfs. Empty by default. The "root data" volume \(em the one
+holding every user file, which Catalina and later flag nobrowse \(em is
+exempt from those two default drops, so it is still reported; an
+explicit XYMONCLIENT_FS_EXCLUDE_TYPES entry that matches it (for
+instance "apfs") still removes it. Including "nobrowse" switches that
+default drop off entirely \(em devfs and the autofs map come back too
+\(em so pair it with XYMONCLIENT_FS_EXCLUDE_TYPES="devfs autofs".
 
-.IP XYMONCLIENT_FS_EXCLUDE_TYPES
-Whitespace-separated Linux filesystem types to exclude in addition
-to the default pseudo-filesystem exclusions. Matching is on the exact
-df type token, and nodev types (overlay, fuse, ...) are already excluded
+.IP "\fBXYMONCLIENT_FS_EXCLUDE_TYPES\fR"
+Whitespace-separated filesystem types (attributes as well, on macOS)
+to exclude in addition to the client's default exclusions. Matching is
+on the exact df type token. If a type appears in both include and
+exclude settings, exclusion takes precedence on every OS.
+.br
+On Linux: nodev types (overlay, fuse, ...) are already excluded
 by default, so an effective entry names a type that is not a nodev
 default \(em a device-backed type, or a specific FUSE subtype such as
 \fBfuse.sshfs\fR that the bare nodev \fBfuse\fR default cannot match.
-If a type appears in
-both include and exclude settings, exclusion takes precedence.
 Defaults to \fBiso9660 squashfs fuse.snapfuse\fR \(em read-only images
 reported 100% full by design (snaps mount as squashfs, or as
 fuse.snapfuse where snapd falls back to FUSE); none is a nodev type, so
@@ -66,11 +110,36 @@ disabled; the explicit XYMONCLIENT_FS_EXCLUDE_TYPES and the local-only
 \fBdf \-l\fR behaviour remain active. The script does not fall back to
 deriving exclusions from mount(8), so it is not a drop-in replacement for
 distro patches (such as Debian's) that do.
+.br
+On FreeBSD: adds types to the \fBdf \-tno<list>\fR exclude set
+(default \fBnullfs cd9660 procfs devfs linprocfs fdescfs autofs\fR).
+Empty by default. tmpfs and mfs are deliberately kept in the disk
+report \(em RAM-backed capacity is real and fills up \(em so name them
+here to drop them.
+.br
+On NetBSD: adds types to the \fBdf \-tno<list>\fR exclude set (default
+\fBkernfs procfs cd9660 null ptyfs\fR). Empty by default. tmpfs is kept
+in both reports, so name it here to drop it.
+.br
+On OpenBSD: adds types to the \fBdf \-tno<list>\fR exclude set (default
+\fBkernfs procfs cd9660\fR). Empty by default. tmpfs is kept in both
+reports, so name it here to drop it.
+.br
+On macOS: excludes types or attributes on top of the defaults. Empty by
+default. It is applied unconditionally, so it wins over both an include
+entry and the "root data" exemption above. Useful entries include
+\fBlifs\fR (external FAT/exFAT/NTFS media, mounted through LiveFiles on
+Ventura and later) and \fBfusefs\fR (macFUSE volumes mounted
+"-o local"). Beware attributes most mounts carry: excluding "local"
+drops everything.
 
-.IP XYMONCLIENT_FS_DF_LOCAL_ONLY
+.IP "\fBXYMONCLIENT_FS_DF_LOCAL_ONLY\fR"
 Set to \fByes\fR (the default) to pass \fB\-l\fR to df and report
 local filesystems only. Set to \fBno\fR to report remote filesystems
 as well. Invalid values produce a warning and use the safe default.
+On macOS, where df is invoked per path, the same effect is achieved by
+keeping only mounts flagged "local" (MNT_LOCAL, what \fBdf \-l\fR
+selects elsewhere).
 With \fBno\fR, a stale or hard-blocked remote mount can wedge df
 indefinitely (an uninterruptible D-state wait): the client run never
 finishes, so the whole host goes purple \(em no data for all metrics,
@@ -81,12 +150,12 @@ is marked failed (yellow) rather than left empty, so a failed filesystem
 probe is not silently reported green. This does not cover the hang
 above: a wedged df never exits.
 
-.IP XYMON
-Full path to the 
+.IP "\fBXYMON\fR"
+Full path to the
 .I xymon(1)
 client program. Default: $XYMONHOME/bin/xymon.
 
-.IP Commands
+.IP "\fBCommands\fR"
 Many extension scripts expect a series of environment variables to
 point at various system utilities. These are included in the file
 when the client is built.
@@ -95,18 +164,18 @@ when the client is built.
 Some environment variables are inherited from the "runclient.sh"
 script which launches the Xymon client:
 
-.IP MACHINEDOTS
+.IP "\fBMACHINEDOTS\fR"
 The hostname of the local system. Default: Taken from "uname \-n".
 
-.IP MACHINE
+.IP "\fBMACHINE\fR"
 The hostname of the local system, with dots replaced by commas.
 For compatibility with Big Brother extension scripts.
 
-.IP SERVEROSTYPE
+.IP "\fBSERVEROSTYPE\fR"
 The operating system of the local system, in lowercase. Default:
 taken from "uname \-s".
 
-.IP XYMONCLIENTHOME
+.IP "\fBXYMONCLIENTHOME\fR"
 The top-level directory for the Xymon client. Default: The location
 of the "runclient.sh" script.
 

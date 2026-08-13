@@ -1,4 +1,4 @@
-# This file is for Apache 1.3.x and Apache 2.x.
+# This file is for Apache 2.4 and later.
 #
 # It is generated at configure/build time from xymon-apacheconf.txt.DIST
 # with the install paths substituted in. The authoritative copy of this
@@ -14,39 +14,25 @@
 Alias /xymon/ "@INSTALLWWWDIR@/"
 <Directory "@INSTALLWWWDIR@/">
     Options Indexes FollowSymLinks Includes MultiViews
-    <IfModule mod_authz_core.c>
-        Require all granted
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order deny,allow
-        Allow from all
-    </IfModule>
+    Require all granted
 </Directory>
 
 ScriptAlias /xymon-cgi/ "@CGIDIR@/"
 <Directory "@CGIDIR@">
     AllowOverride None
     Options ExecCGI Includes
-    <IfModule mod_authz_core.c>
-        Require all granted
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order deny,allow
-        Allow from all
-    </IfModule>
+    Require all granted
 </Directory>
 
 ScriptAlias /xymon-seccgi/ "@SECURECGIDIR@/"
 <Directory "@SECURECGIDIR@">
     AllowOverride None
     Options ExecCGI Includes
-    <IfModule mod_authz_core.c>
-        Require all granted
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order deny,allow
-        Allow from all
-    </IfModule>
+
+    # NB: Do NOT add "Require all granted" here. In Apache 2.4 multiple
+    # Require directives at the same level are combined with an implicit
+    # <RequireAny>, so "Require all granted" would satisfy access on its
+    # own and bypass the authentication enforced below.
 
     # Password file where users with access to these scripts are kept.
     # Create it with:

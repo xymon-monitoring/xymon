@@ -14,23 +14,23 @@ server, the server responds with the section of the
 .I client\-local.cfg(5)
 file that is relevant to this client. Included in this may be
 a "clientversion" value. The clientversion received from the server
-is compared against the current clientversion installed on the client, 
+is compared against the current clientversion installed on the client,
 as determined by the contents of the $XYMONHOME/etc/clientversion.cfg
 file. If the two versions are not identical, clientupdate is
 launched to update the client installation.
 
 .SH OPTIONS
-.IP "\-\-level"
+.IP "\fB\-\-level\fR"
 Report the current clientversion.
 
-.IP "\-\-update=NEWVERSION"
+.IP "\fB\-\-update\fR=\fINEWVERSION\fR"
 Attempt to update the client to NEWVERSION by fetching this version
 of the client software from the Xymon server.
 
-.IP "\-\-reexec"
+.IP "\fB\-\-reexec\fR"
 Used internally during the update process, see \fBOPERATION\fR below.
 
-.IP "\-\-remove\-self"
+.IP "\fB\-\-remove\-self\fR"
 Used internally during the update process. This option causes
 the running clientupdate utility to delete itself - it is used
 during the update to purge a temporary copy of the clientupdate
@@ -52,24 +52,24 @@ You can add files - e.g. extension scripts in the ext/ directory -
 but the clientupdate utility cannot delete or rename files.
 
 .IP "Package the client"
-When your new client software is ready, create a tar-file of the 
-new client. All files in the tar archive must have file names 
+When your new client software is ready, create a tar-file of the
+new client. All files in the tar archive must have file names
 relative to the clients' $XYMONHOME (usually, ~xymon/client/).
-Save the tar file on the Xymon server in 
+Save the tar file on the Xymon server in
 ~xymon/server/download/somefile.tar.  Don't compress it.
-It is recommended that you use some sort of operating-system 
-and version-numbering scheme for the filename, but you can choose 
+It is recommended that you use some sort of operating-system
+and version-numbering scheme for the filename, but you can choose
 whatever filename suits you - the only requirement is that it must
 end with ".tar". The part of the filename preceding ".tar" is
 what Xymon will use as the "clientversion" ID.
 
 .IP "Configure which hosts receive the new client"
-In the 
+In the
 .I client\-local.cfg(5)
 file, you must now setup a \fBclientversion:ID\fR line
 where the \fBID\fR matches the filename you used for the
 tar-file. So if you have packaged the new client into the
-file \fBlinux.v2.tar\fR, then the corresponding 
+file \fBlinux.v2.tar\fR, then the corresponding
 entry in client\-local.cfg would be \fBclientversion:linux.v2\fR.
 
 .IP "Wait for xymond to reload client\-local.cfg"
@@ -88,7 +88,7 @@ the next time, it will use the new client software.
 \fBclientupdate\fR runs in two steps:
 
 .IP "Re-exec step"
-The first step is when clientupdate is first invoked from the xymonclient.sh 
+The first step is when clientupdate is first invoked from the xymonclient.sh
 script with the "\-\-re\-exec" option. This step copies the clientupdate
 program from $XYMONHOME/bin/ to a temporary file in the $XYMONTMP directory.
 This is to avoid conflicts when the update procedure installs a new

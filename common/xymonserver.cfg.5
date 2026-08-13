@@ -5,7 +5,7 @@ xymonserver.cfg \- Xymon environment variables
 .SH DESCRIPTION
 Xymon programs use multiple environment variables beside the
 normal set of variables.  The environment definitions
-are stored in the ~Xymon/server/etc/xymonserver.cfg file. 
+are stored in the ~Xymon/server/etc/xymonserver.cfg file.
 Each line in this file is of the form \fBNAME=VALUE\fR and defines
 one environment variable NAME with the value VALUE.
 
@@ -24,41 +24,41 @@ E.g. to define a special setup of the XYMSERVERS variable when it is used
 by an application in the "management" area, you would do this:
 .IP
 .nf
-  XYMSERVERS="127.0.0.1"            # Default definition
-  management/XYMSERVERS="10.1.0.5"  # Definition in the "management" area
+\&  XYMSERVERS="127.0.0.1"            # Default definition
+\&  management/XYMSERVERS="10.1.0.5"  # Definition in the "management" area
 .fi
 .LP
-Areas are invoked by using the "\-\-area" option for all tools, or via the 
+Areas are invoked by using the "\-\-area" option for all tools, or via the
 ENVAREA setting in the
 .I tasks.cfg(5)
 file.
 
 .SH GENERAL SETTINGS
 
-.IP XYMONSERVERHOSTNAME
+.IP "\fBXYMONSERVERHOSTNAME\fR"
 The fully-qualified hostname of the server that is running Xymon.
 
-.IP XYMONSERVERWWWNAME
+.IP "\fBXYMONSERVERWWWNAME\fR"
 The hostname used to access this servers' web-pages, used to construct
 URL's in the Xymon webpages. Default is the XYMONSERVERHOSTNAME.
 
-.IP XYMONSERVERIP
+.IP "\fBXYMONSERVERIP\fR"
 The public IP-address of the server that is running Xymon.
 
-.IP XYMONSERVEROS
-A name identifying the operating system of the Xymon server. The 
+.IP "\fBXYMONSERVEROS\fR"
+A name identifying the operating system of the Xymon server. The
 known names are currently "linux", "freebsd", "solaris", "hpux",
 "aix" and "osf".
 
-.IP FQDN
+.IP "\fBFQDN\fR"
 If set to TRUE, Xymon will use fully-qualified hostnames throughout.
 If set to FALSE, hostnames are stripped of their domain-part before
 being processed. It is \fBhighly recommended\fR that you keep this
 set to TRUE. Default: TRUE.
 
-.IP XYMONLOGSTATUS
+.IP "\fBXYMONLOGSTATUS\fR"
 Controls how the HTML page for a status log is generated. If set to
-DYNAMIC, the HTML logs are generated on-demand by the 
+DYNAMIC, the HTML logs are generated on-demand by the
 .I svcstatus.cgi(1)
 script. If set to STATIC, you must activate the
 .I xymond_filestore(8)
@@ -68,37 +68,37 @@ file) to create and store the HTML logs whenever a status update is
 received. Setting "XYMONLOGSTATUS=STATIC" is \fBdiscouraged\fR since the
 I/O load on the Xymon server will increase significantly.
 
-.IP PINGCOLUMN
+.IP "\fBPINGCOLUMN\fR"
 Defines the name of the column for "ping" test status. The data from
 the "ping" test is used internally by Xymon, so it must be defined
-here so all of the Xymon tools know which column to watch for this 
+here so all of the Xymon tools know which column to watch for this
 data. The default setting is PINGCOLUMN=conn.
 
-.IP INFOCOLUMN
+.IP "\fBINFOCOLUMN\fR"
 Defines the name of the column for the "info" pages.
 
-.IP TRENDSCOLUMN
+.IP "\fBTRENDSCOLUMN\fR"
 Defines the name of the column for the RRD graph pages.
 
-.IP RRDHEIGHT
+.IP "\fBRRDHEIGHT\fR"
 The default height (in pixels) of the RRD graph images.
 Default: 120 pixels.
 
-.IP RRDWIDTH
+.IP "\fBRRDWIDTH\fR"
 The default width (in pixels) of the RRD graph images.
 Default: 576 pixels.
 
-.IP RRDGRAPHOPTS
+.IP "\fBRRDGRAPHOPTS\fR"
 Extra options for the RRD graph command. These are passed directly to
 the "rrdgraph" command used to generate graphs, see the
 .I rrdgraph(1)
 man-page for details of the options.
 
-.IP TRENDSECONDS
+.IP "\fBTRENDSECONDS\fR"
 The graphs on the "trends" page show data for the past TRENDSECONDS
 seconds. Default: 172800 seconds, i.e. 48 hours.
 
-.IP HTMLCONTENTTYPE
+.IP "\fBHTMLCONTENTTYPE\fR"
 The Content-type reported by the CGI scripts that generate web pages.
 By default, this it "text/html". If you have on-line help texts in
 character sets other than the ISO\-8859\-1 (western european) character
@@ -110,47 +110,47 @@ E.g.
 for a Japanese character sets. Note: Some webservers will automatically
 add this, if configured to do so.
 
-.IP XYMWEBREFRESH
-The default HTTP page reload interval for many xymongen and status pages. 
-Note that while this can be overridden in the header template files for 
-regular pages, dynamically generated status logs displayed with 
+.IP "\fBXYMWEBREFRESH\fR"
+The default HTTP page reload interval for many xymongen and status pages.
+Note that while this can be overridden in the header template files for
+regular pages, dynamically generated status logs displayed with
 svcstatus.cgi(1) use this value in the HTTP response header and for
 security reasons the value in hostsvc_header may be ignored on many
 modern browsers. (default [seconds]: 60)
 
 
-.IP HOLIDAYS
-Defines the default set of holidays used if there is no "holidays" 
+.IP "\fBHOLIDAYS\fR"
+Defines the default set of holidays used if there is no "holidays"
 tag for a host in the hosts.cfg file. Holiday sets are defined in the
 .I holidays.cfg(5)
 file. If not defined, only the default holidays (those defined outside
 a named holiday set) will be considered as holidays.
 
-.IP WEEKSTART
+.IP "\fBWEEKSTART\fR"
 Defines which day is the first day of the week. Set to "0" for Sunday,
 "1" for Monday. Default: 1 (Monday).
 
-.IP XYMONBODYHEADER
+.IP "\fBXYMONBODYHEADER\fR"
 Text that is included in the Xymon web pages at the location specified
 by ~xymon/server/web/*_header templates. If this is set to a value
 beginning with "file:", then the contents of the specified file is
 included. Default: "file:$XYMONHOME/etc/xymonmenu.cfg"
 
-.IP XYMONBODYFOOTER
+.IP "\fBXYMONBODYFOOTER\fR"
 Text that is included in the Xymon web pages at the location specified
 by ~xymon/server/web/*_footer templates. If this is set to a value
 beginning with "file:", then the contents of the specified file is
 included. Default: Empty.
 
-.IP XYMONBODYMENUCSS
+.IP "\fBXYMONBODYMENUCSS\fR"
 URL for the Xymon menu CSS file. Default: "$XYMONMENUSKIN/xymonmenu.css"
 
-.IP HOSTPOPUP
-Determines what is used as the host comment on the webpages. The comment 
-by default appears as a pop-up when the mouse hovers over the hostname, 
+.IP "\fBHOSTPOPUP\fR"
+Determines what is used as the host comment on the webpages. The comment
+by default appears as a pop-up when the mouse hovers over the hostname,
 and is also shown on the "info" status page. This setting must be one or
 more of the letters "C" (COMMENT), "D" (DESCRIPTION) or "I" (IP-address).
-Including "C" uses the COMMENT setting for the host, including "D" uses 
+Including "C" uses the COMMENT setting for the host, including "D" uses
 the DESCR setting for the host, and "I" uses the IP-address of the host.
 If more than one of these is set, then COMMENT takes precedence over
 DESCR which again has precedence over IP.
@@ -159,7 +159,7 @@ whereas the COMMENT is always used - if pop-up's have been disabled, then
 the COMMENT value is displayed next to the hostname on the webpages.
 Default: CDI
 
-.IP STATUSLIFETIME
+.IP "\fBSTATUSLIFETIME\fR"
 The number of minutes that a status is considered valid after an update.
 After this time elapses, the status will go purple.
 Default: 30 minutes
@@ -167,85 +167,93 @@ Default: 30 minutes
 
 .SH DIRECTORIES
 
-.IP XYMONSERVERROOT
-The top-level directory for the Xymon installation. The default 
+.IP "\fBXYMONSERVERROOT\fR"
+The top-level directory for the Xymon installation. The default
 is the home-directory for the user running Xymon.
 
-.IP XYMONSERVERLOGS
+.IP "\fBXYMONSERVERLOGS\fR"
 The directory for the Xymon's own logfiles (NOT the status-logs
 from the monitored hosts).
 
-.IP XYMONHOME
+.IP "\fBXYMONHOME\fR"
 The Xymon server directory, where programs and configurations are kept.
 Default: $XYMONSERVERROOT/server/ .
 
-.IP XYMONTMP
+.IP "\fBXYMONTMP\fR"
 Directory used for temporary files. Default: $XYMONHOME/tmp/
+.br
+Note:
+.I xymond_rrd(8)
+creates its cache-control Unix socket ("rrdctl.<pid>") in this
+directory, and Unix socket paths have a small, platform-dependent
+length limit (around 92 to 107 bytes for the complete path, depending
+on the OS). xymond_rrd refuses to start when XYMONTMP is too deep for
+the socket path to fit, so keep this directory path short.
 
-.IP XYMONWWWDIR
+.IP "\fBXYMONWWWDIR\fR"
 Directory for Xymon webfiles. The $XYMONWEB URL must map to this directory.
 Default: $XYMONHOME/www/
 
-.IP XYMONNOTESDIR
+.IP "\fBXYMONNOTESDIR\fR"
 Directory for Xymon notes-files. The $XYMONNOTESSKIN URL must map to this directory.
 Default: $XYMONHOME/www/notes/
 
-.IP XYMONREPDIR
+.IP "\fBXYMONREPDIR\fR"
 Directory for Xymon availability reports. The $XYMONREPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
-use the 
+use the
 .I report.cgi(1)
 CGI script to generate reports on-demand. Default: $XYMONHOME/www/rep/
 
-.IP XYMONSNAPDIR
+.IP "\fBXYMONSNAPDIR\fR"
 Directory for Xymon snapshots. The $XYMONSNAPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
-use the 
+use the
 .I snapshot.cgi(1)
 CGI script to generate snapshots on-demand. Default: $XYMONHOME/www/snap/
 
-.IP XYMONVAR
-Directory for all data stored about the monitored items. 
+.IP "\fBXYMONVAR\fR"
+Directory for all data stored about the monitored items.
 Default: $XYMONSERVERROOT/data/
 
-.IP XYMONRAWSTATUSDIR
+.IP "\fBXYMONRAWSTATUSDIR\fR"
 Directory for storing the raw status-logs. Not used unless
 "xymond_filestore \-\-status" is running, which is \fBdiscouraged\fR
 since it increases the load on the Xymon server significantly.
 Default: $XYMONVAR/logs/
 
-.IP XYMONHTMLSTATUSDIR
+.IP "\fBXYMONHTMLSTATUSDIR\fR"
 Directory for storing HTML status-logs. Not used unless
 "xymond_filestore \-\-status \-\-html" is running, which is \fBdiscouraged\fR
 since it increases the load on the Xymon server significantly.
 Default: $XYMONHOME/www/html/
 
-.IP XYMONHISTDIR
+.IP "\fBXYMONHISTDIR\fR"
 Directory for storing the history of monitored items.
 Default: $XYMONVAR/hist/
 
-.IP XYMONHISTLOGS
+.IP "\fBXYMONHISTLOGS\fR"
 Directory for storing the detailed status-log of historical events.
 Default: $XYMONVAR/histlogs/
 
-.IP XYMONACKDIR
+.IP "\fBXYMONACKDIR\fR"
 Directory for storing information about alerts that have been acknowledged.
 Default: $XYMONVAR/acks/
 
-.IP XYMONDISABLEDDIR
+.IP "\fBXYMONDISABLEDDIR\fR"
 Directory for storing information about tests that have been disabled.
 Default: $XYMONVAR/disabled/
 
-.IP XYMONDATADIR
+.IP "\fBXYMONDATADIR\fR"
 Directory for storing incoming "data" messages.
 Default: $XYMONVAR/data/
 
-.IP XYMONRRDS
+.IP "\fBXYMONRRDS\fR"
 Top-level directory for storing RRD files (the databases with
 trend-information used to generate graphs).
 Default: $XYMONVAR/rrd/
 
-.IP CLIENTLOGS
+.IP "\fBCLIENTLOGS\fR"
 Directory for storing the data sent by a Xymon client around the
 time a status changes to a warning (yellow) or critical (red) state.
 Used by the
@@ -253,7 +261,7 @@ Used by the
 module.
 Default: $XYMONVAR/hostdata/
 
-.IP XYMONCGILOGDIR
+.IP "\fBXYMONCGILOGDIR\fR"
 Directory where debug output from CGI applications are stored. If not
 specified, it defaults to $XYMONSERVERLOGS, but this is often a directory
 that is not writable by the userid running the CGI applications. It
@@ -264,79 +272,79 @@ and point XYMONCGILOGDIR to this directory.
 
 .SH SYSTEM FILES
 
-.IP HOSTSCFG
+.IP "\fBHOSTSCFG\fR"
 Full path to the Xymon
 .I hosts.cfg(5)
 configuration file. Default: $XYMONHOME/etc/hosts.cfg.
 
-.IP XYMON
-Full path to the 
+.IP "\fBXYMON\fR"
+Full path to the
 .I xymon(1)
 client program. Default: $XYMONHOME/bin/xymon.
 
-.IP XYMONGEN
+.IP "\fBXYMONGEN\fR"
 Full path to the
 .I xymongen(1)
 webpage generator program. Default: $XYMONHOME/bin/xymongen.
 
 
 .SH URLS
-.IP XYMONSERVERWWWURL
+.IP "\fBXYMONSERVERWWWURL\fR"
 The root URL for the Xymon webpages, without the hostname. This
 URL must be mapped to the ~/server/www/ directory in your webserver
 configuration. See the sample Apache configuration in ~/server/etc/xymon\-apache.conf.
 
-.IP XYMONSERVERCGIURL
+.IP "\fBXYMONSERVERCGIURL\fR"
 The root URL for the Xymon CGI-scripts, without the hostname. This
 directory must be mapped to the ~/cgi\-bin/ directory in your webserver
 configuration, and must be flagged as holding executable scripts. See
 the sample Apache configuration in ~/server/etc/xymon\-apache.conf.
 
-.IP XYMONWEBHOST
+.IP "\fBXYMONWEBHOST\fR"
 Initial part of the Xymon URL, including just the protocol and the
 hostname, e.g. "http://www.foo.com"
 
-.IP XYMONWEBHOSTURL
+.IP "\fBXYMONWEBHOSTURL\fR"
 Prefix for all of the static Xymon webpages, e.g. "http://www.foo.com/xymon"
 
-.IP XYMONWEBHTMLLOGS
+.IP "\fBXYMONWEBHTMLLOGS\fR"
 URL prefix for the static HTML status-logs generated when XYMONLOGSTATUS=STATIC.
 Note that this setting is \fBdiscouraged\fR so this setting should not be used.
 
-.IP XYMONWEB
+.IP "\fBXYMONWEB\fR"
 URL prefix (without hostname) of the Xymon webpages. E.g. "/xymon".
 
-.IP XYMONSKIN
+.IP "\fBXYMONSKIN\fR"
 URL prefix (without hostname) of the Xymon graphics. E.g. "/xymon/gifs".
 
-.IP XYMONHELPSKIN
+.IP "\fBXYMONHELPSKIN\fR"
 URL prefix (without hostname) of the Xymon on-line help files. E.g "/xymon/help".
 
-.IP XYMONMENUSKIN
+.IP "\fBXYMONMENUSKIN\fR"
 URL prefix (without hostname) of the Xymon menu files. E.g "/xymon/menu".
 
-.IP XYMONNOTESSKIN
+.IP "\fBXYMONNOTESSKIN\fR"
 URL prefix (without hostname) of the Xymon on-line notes files. E.g "/xymon/notes".
 
-.IP XYMONREPURL
+.IP "\fBXYMONREPURL\fR"
 URL prefix (without hostname) of the Xymon availability reports. E.g. "/xymon/rep".
 
-.IP XYMONSNAPURL
+.IP "\fBXYMONSNAPURL\fR"
 URL prefix (without hostname) of the Xymon snapshots. E.g. "/xymon/snap".
 
-.IP XYMONWAP
+.IP "\fBXYMONWAP\fR"
 URL prefix (without hostname) of the Xymon WAP/WML files. E.g. "/xymon/wml".
 
-.IP CGIBINURL
+.IP "\fBCGIBINURL\fR"
 URL prefix (without hostname) of the Xymon CGI-scripts. Default: $XYMONSERVERCGIURL .
 
-.IP COLUMNDOCURL
+.IP "\fBCOLUMNDOCURL\fR"
 Format string used to build a link to the documentation for a column heading.
 Default: "$CGIBINURL/columndoc.sh?%s", which causes links to use the
 .I columndoc.sh(1)
 script to document a column.
 
-.IP HOSTDOCURL
+.IP "\fBHOSTDOCURL\fR"
 Format string used to build a link to the documentation for a host.
 If not set, then Xymon falls back to scanning the XYMONNOTES directory
 for files matching the hostname, or the hostname together with a common
@@ -347,109 +355,148 @@ becomes a formatting string for the documentation URL. E.g. for the host
 Default: Not set, so host documentation will be retrieved from the
 XYMONNOTES directory.
 
+Note: for a per-host, overridable link (shown on its own "Documentation:"
+row), use the DOC: tag in
+.I hosts.cfg(5)
+instead.
+
+.IP "\fBHOSTDESCURL\fR"
+Format string used to build a link for the description part of a
+.I hosts.cfg(5)
+"DESCR:Hosttype:Description" tag, shown on the host's info page. If set,
+this string becomes a formatting string for the link URL, e.g.
+HOSTDESCURL="https://cmdb.example.com/ci/%s" will turn a description of
+"CIID1234" into a link to "https://cmdb.example.com/ci/CIID1234".
+Default: Not set, so the description is shown as plain text.
+
+Note: if a host's DESCR value contains "<" (see the raw-HTML case in
+.I hosts.cfg(5)
+), HOSTDESCURL leaves it as-is rather than urlencoding it into
+the link template, so no link is added for that host.
+
 
 .SH SETTINGS FOR SENDING MESSAGES TO XYMON
-.IP XYMSRV
+.IP "\fBXYMSRV\fR"
 The IP-address used to contact the
 .I xymond(8)
 service. Used by clients and the tools that perform network tests.
 Default: $XYMONSERVERIP
 
-.IP XYMSERVERS
+.IP "\fBXYMSERVERS\fR"
 List of IP-addresses. Clients and network test tools will try to
 send status reports to a Xymon server running on each of these
 addresses. This setting is only used if XYMSRV=0.0.0.0.
 
-.IP XYMONDPORT
+.IP "\fBXYMON_TIMEOUT\fR"
+Default request timeout, in seconds, for the
+.I xymon(1)
+command-line tool. Must be a positive integer; invalid values are
+reported and ignored, keeping the compiled-in default of 15 seconds.
+A \-\-timeout= option on the xymon command line takes precedence.
+Default: unset (compiled-in 15 seconds)
+
+.IP "\fBXYMONDPORT\fR"
 The portnumber for used to contact the
 .I xymond(8)
 service. Used by clients and the tools that perform network tests.
 Default: 1984.
 
-.IP MAXMSGSPERCOMBO
+.IP "\fBMAXMSGSPERCOMBO\fR"
 The maximum number of status messages to combine into one
 combo message.  Default: 100.
 
-.IP SLEEPBETWEENMSGS
+.IP "\fBSLEEPBETWEENMSGS\fR"
 Length of a pause introduced between each successive transmission
-of a combo-message by xymonnet, in microseconds. Default: 0 
+of a combo-message by xymonnet, in microseconds. Default: 0
 (send messages as quickly as possible).
 
 
 .SH XYMOND SETTINGS
 
-.IP ALERTCOLORS
+.IP "\fBALERTCOLORS\fR"
 Comma-separated list of the colors that may trigger an alert-message.
 The default is "red,yellow,purple". Note that alerts may further be
 generated or suppressed based on the configuration in the
 .I alerts.cfg(5)
 file.
 
-.IP OKCOLORS
+.IP "\fBOKCOLORS\fR"
 Comma-separated list of the colors that may trigger a recovery-message.
 The default is "green,clear,blue".
 
-.IP ALERTREPEAT
+.IP "\fBALERTREPEAT\fR"
 How often alerts get repeated while a status is in an alert state.
-This is the default setting, which may be changed in the 
+This is the default setting, which may be changed in the
 .I alerts.cfg(5)
 file.
 
-.IP MAXMSG_STATUS
+.IP "\fBDELAYRED\fR"
+Default setting for the \fBdelayred\fR tag in
+.I hosts.cfg(5)
+applied to hosts that do not have the tag. The format is the same
+as the tag: "STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]" with DELAY
+in minutes, e.g. "cpu:15,disk:30". Note: a \fBdelayred\fR tag on a
+host replaces this default entirely for that host - per-test values
+are not merged. Default: empty (no delay).
+
+.IP "\fBDELAYYELLOW\fR"
+Same as DELAYRED, but the default for the \fBdelayyellow\fR tag.
+
+.IP "\fBMAXMSG_STATUS\fR"
 The maximum size of a "status" message in kB, default: 256.
-Status messages are the ones that end up as columns on the 
+Status messages are the ones that end up as columns on the
 web display. The default size should be adequate in most
 cases, but some extension scripts can generate very large
 status messages - close to 1024 kB. You should only change
 this if you see messages in the xymond log file about status
 messages being truncated.
 
-.IP MAXMSG_CLIENT
+.IP "\fBMAXMSG_CLIENT\fR"
 The maximum size of a "client" message in kB, default: 512.
 "client" messages are generated by the Xymon client, and often
 include large process-listings. You should only change
 this if you see messages in the xymond log file about client
 messages being truncated.
 
-.IP MAXMSG_DATA
+.IP "\fBMAXMSG_DATA\fR"
 The maximum size of a "data" message in kB, default: 256.
 "data" messages are typically used for client reports of
 e.g. netstat or vmstat data. You should only change this
 setting if you see messages in the xymond log file about
 data messages being truncated.
 
-.IP MAXMSG_NOTES
+.IP "\fBMAXMSG_NOTES\fR"
 The maximum size of a "notes" message in kB, default: 256.
 "notes" messages provide a way for uploading documentation
-about a host to Xymon; it is not enabled by default. If you 
+about a host to Xymon; it is not enabled by default. If you
 want to upload large documents, you may need to change this
 setting.
 
-.IP MAXMSG_STACHG
-The maximum size of a "status change" message in kB, default: 
-Current value of the MAXMSG_STATUS setting.  Status-change 
-messages occur when a status changes color. There is no 
+.IP "\fBMAXMSG_STACHG\fR"
+The maximum size of a "status change" message in kB, default:
+Current value of the MAXMSG_STATUS setting.  Status-change
+messages occur when a status changes color. There is no
 reason to change this setting.
 
-.IP MAXMSG_PAGE
-The maximum size of a "page" message in kB, default: 
+.IP "\fBMAXMSG_PAGE\fR"
+The maximum size of a "page" message in kB, default:
 Current value of the MAXMSG_STATUS setting. "page" messages
 are alerts, and include the status message that triggers the
 alert. There is no reason to change this setting.
 
-.IP MAXMSG_ENADIS
+.IP "\fBMAXMSG_ENADIS\fR"
 The maximum size of an "enadis" message in kB, default: 32.
 "enadis" are small messages used when enabling or disabling
 hosts and tests, so the default size should be adequate.
 
-.IP MAXMSG_CLICHG
-The maximum size of a "client change" message in kB, default: 
-Current value of the MAXMSG_CLIENT setting.  Client-change 
+.IP "\fBMAXMSG_CLICHG\fR"
+The maximum size of a "client change" message in kB, default:
+Current value of the MAXMSG_CLIENT setting.  Client-change
 messages occur when a status changes color to one of the
-alert-colors, usually red, yellow and purple. There is no 
+alert-colors, usually red, yellow and purple. There is no
 reason to change this setting.
 
-.IP MAXMSG_USER
+.IP "\fBMAXMSG_USER\fR"
 The maximum size of a "user" message in kB, default: 128.
 "user" messages are for communication between custom Xymon
 modules you have installed, it is not used directly by
@@ -458,23 +505,23 @@ Xymon.
 
 .SH XYMOND_HISTORY SETTINGS
 
-.IP XYMONALLHISTLOG
+.IP "\fBXYMONALLHISTLOG\fR"
 If set to TRUE,
 .I xymond_history(8)
 will update the $XYMONHISTDIR/allevents file logging all changes to
 a status. The allevents file is used by the
 .I eventlog.cgi(1)
-tool to show the list of recent events on the "All non-green" 
+tool to show the list of recent events on the "All non-green"
 webpage.
 
-.IP XYMONHOSTHISTLOG
+.IP "\fBXYMONHOSTHISTLOG\fR"
 If set to TRUE,
 .I xymond_history(8)
 will update the host-specific eventlog that keeps record
 of all status changes for a host. This logfile is not used
 by any Xymon tool.
 
-.IP SAVESTATUSLOG
+.IP "\fBSAVESTATUSLOG\fR"
 If set to TRUE,
 .I xymond_history(8)
 will save historical detailed status-logs to the $XYMONHISTLOGS
@@ -483,125 +530,188 @@ directory.
 
 .SH XYMOND_ALERT SETTINGS
 
-.IP MAIL
+.IP "\fBMAIL\fR"
 Command used to send alerts via e-mail, including a "Subject:"
 header in the mail. Default: "mail \-s"
 
-.IP MAILC
+.IP "\fBMAILC\fR"
 Command used to send alerts via e-mail in a form that does not
 have a "Subject" in the mail. Default: "mail"
 
-.IP SVCCODES
+.IP "\fBSVCCODES\fR"
 Maps status-columns to numeric service-codes. The numeric codes are
 used when sending an alert using a script, where the numeric code of
 the service is provided in the BBSVCNUM variable.
 
 
 .SH XYMOND_RRD SETTINGS
+The RRD graph settings have three separate roles. TEST2RRD maps
+status- and data-message column names to the RRD graph name used
+for storing data and for the column's default status-page graph.
+GRAPHS_<COLUMNNAME> changes only what graphs are shown on that
+column's status page. GRAPHS defines the graph list and order on
+the "trends" page, and also stores graph-display metadata such
+as the maximum number of instances (RRD files) shown per graph image.
 
-.IP TEST2RRD
-List of "COLUMNNAME[=RRDSERVICE]" settings, that define which
-status- and data-messages have a corresponding RRD graph. You will 
-normally not need to modify this, unless you have added a
-custom TCP-based test to the protocols.cfg file, and want to collect data about
-the response-time, OR if you are using the
+.IP "\fBTEST2RRD\fR"
+List of "COLUMNNAME[=RRDSERVICE]" settings. This tells
+.I xymond_rrd(8)
+which status- and data-messages have RRD data, and which RRD
+graph name should be used for that column. If "=RRDSERVICE" is
+omitted, the RRD graph name is the same as the column name. For
+example, "cpu=la" stores the "cpu" column in the "la" RRD graph,
+while "disk" uses "disk" for both names.
+The same mapping is also used by
+.I svcstatus.cgi(1)
+as the default graph to show on the detailed status page for
+that column.
+You will normally not need to modify this, unless you have added
+a custom TCP-based test to the protocols.cfg file and want to
+collect response-time data, or if you are using the
 .I xymond_rrd(8)
 external script mechanism to collect data from custom tests.
 Note: All TCP tests are automatically added.
 
-.IP GRAPHS_<COLUMNAME>
-List of GRAPHs that should be displayed on the corresponding column page. Note
-this will override the default, so to add multiple graphs you should include
-the original one (e.g. GRAPHS_cpu="la,vmstat1").
+.IP "\fBGRAPHS_<COLUMNNAME>\fR"
+Comma-separated list of graph names to display on the detailed
+status page for COLUMNNAME. This is a display setting only; it
+does not cause
+.I xymond_rrd(8)
+to collect new data.
+If GRAPHS_<COLUMNNAME> is set, it replaces the default status-page
+graph from TEST2RRD, so include the original graph too if you still
+want it. For example, GRAPHS_cpu="la,vmstat1" shows both graphs on
+the cpu status page.
+The graph names must match graph definitions from
+.I graphs.cfg(5)
+or instance names handled by those definitions.
 
-These are used together by the 
-.I svcstatus.cgi(1) 
-script to determine if the detailed status view of a test should 
-include a graph.
+.IP "\fBGRAPHS\fR"
+List of graph names known to the graph display code. On the
+"trends" column, this list also defines which graphs are shown
+and in what order. The matching RRD files are selected by the
+corresponding graph definitions in
+.I graphs.cfg(5).
+Each entry is either "name" or "name::N": "name" is the graph name,
+and N is the maximum number of instances (RRD files) drawn per graph image after
+the graph has been split; the default is 5 per image. The double colon
+is literal, so "mrtg::1" draws one file per image.
+N counts instances (RRD files), not lines: each RRD file may hold several data sets
+(DS), each drawn as its own curve, so an image showing N files can
+contain several times N lines. Choose N with the per-file DS count in
+mind - a 2-DS graph at "::2" draws 4 lines, while a 1-DS graph at "::5"
+draws 5.
+A legacy middle field is accepted by the parser for compatibility, but
+it is ignored and should not be used in new configurations.
+The N value belongs in GRAPHS, not in GRAPHS_<COLUMNNAME>, and is
+used whenever graph links are generated for that graph. This includes
+the "trends" page, a test column's default status-page graph from
+TEST2RRD, and status-page GRAPHS_<COLUMNNAME> entries that name the
+same graph definition. If a graph is used only from GRAPHS_<COLUMNNAME>
+and has no matching entry in GRAPHS, it uses the default limit of
+instances per image.
+On the "trends" page, the RRD file count is known automatically.
+On status pages, splitting only happens when
+.I svcstatus.cgi(1)
+has an instance count for the graph. A status message can provide
+this explicitly with a "<!-- linecount=N -->" marker. If no marker
+is present,
+.I svcstatus.cgi(1)
+computes the count automatically only for columns listed in the
+"\-\-multigraphs" option (built-in default: disk, inode, qtree,
+quotas, snapshot, TblSpace, if_load); any other column draws all
+matching RRD files in one image.
+Exception: entries with an explicit graph list in a host's TRENDS
+tag (e.g. "disk:disk1|disk2", see
+.I hosts.cfg(5))
+ignore N and use the default of 5.
+Note: a "DISK filesystem IGNORE" rule in
+.I analysis.cfg(5)
+removes a filesystem from the status, the alerts and the graphs.
+This is usually the preferred replacement for the deprecated
+NORRDDISKS/RRDDISKS settings below.
 
-.IP GRAPHS
-List of the RRD databases, that should be shown as a graph on
-the "trends" column.
-
-.IP NORRDDISKS
-This is used to disable the tracking of certain filesystems. By default
-all filesystems reported by a client are tracked. In some cases you may want 
-to disable this for certain filesystems, e.g. database filesystems since they
-are always completely full. This setting is a regular expression that is matched
-against the filesystem name (the Unix mount-point, or the Windows disk-letter) -
-if the filesystem name matches this expression, then it will not be tracked
-by Xymon.
+.IP "\fBNORRDDISKS\fR"
+Deprecated legacy setting. It is retained for compatibility with old
+configurations, but should be considered unsupported for new use.
+Use
+.I analysis.cfg(5)
+rules such as "DISK filesystem IGNORE" or "INODE filesystem IGNORE"
+instead whenever the filesystem should be removed from status, alerts
+and graphs.
+NORRDDISKS only disables RRD graph tracking for matching filesystems.
+The value is a regular expression matched against the filesystem name
+(the Unix mount-point, or the Windows disk-letter).
 .br
 Note: Setting this does not affect filesystems that are already being tracked
 by Xymon - to remove them, you must remove the RRD files for the unwanted filesystems
 from the ~xymon/data/rrd/HOSTNAME/ directory.
 
-.IP RRDDISKS
-This is used to enable tracking of only selected filesystems (see the NORRDDISKS
-setting above). By default all filesystems are being tracked, setting this changes 
-that default so that only those filesystems that match this pattern will be 
-tracked.
+.IP "\fBRRDDISKS\fR"
+Deprecated legacy setting, with the same compatibility-only status as
+NORRDDISKS. It changes the default so that only filesystems matching
+this regular expression are tracked for RRD graphs.
 
 
 .SH XYMONNET NETWORK TEST SETTINGS
 
-.IP XYMONNETWORK
+.IP "\fBXYMONNETWORK\fR"
 If this variable is defined, then only the hosts that have been tagged
 with "NET:$XYMONNETWORK" will be tested by the xymonnet tool.
 
-.IP CONNTEST
+.IP "\fBCONNTEST\fR"
 If set to TRUE, the connectivity (ping) test will be performed.
 
-.IP IPTEST_2_CLEAR_ON_FAILED_CONN
+.IP "\fBIPTEST_2_CLEAR_ON_FAILED_CONN\fR"
 If set to TRUE, then failing network tests go CLEAR if the conn-test fails.
 
-.IP NONETPAGE
+.IP "\fBNONETPAGE\fR"
 List of network services (separated with <space>) that should go yellow
 upon failure instead of red.
 
-.IP XYMONROUTERTEXT
+.IP "\fBXYMONROUTERTEXT\fR"
 When using the "router" or "depends" tags for a host, a failure
 status will include text that an "Intermediate router is down".
 With todays network topologies, the router could be a switch or
 another network device; if you define this environment variable
 the word "router" will be replaced with whatever you put into
 the variable. So to inform the users that an intermediate switch
-or router is down, use XYMONROUTERTEXT="switch or router".  This can 
+or router is down, use XYMONROUTERTEXT="switch or router".  This can
 also be set on a per-host basis using the "DESCR:hosttype:description"
-tag in the 
+tag in the
 .I hosts.cfg(5)
 file.
 
-.IP NETFAILTEXT
+.IP "\fBNETFAILTEXT\fR"
 When a network test fails, the status message reports "SERVICENAME
 not OK". The "not OK" message can be changed via this variable, e.g.
 you can change it to "FAILED" or customize it as you like.
 
-.IP FPING
+.IP "\fBFPING\fR"
 The command used to run the
 .I xymonping(1)
 tool for the connectivity test. (The name FPING is due to the fact that
-the "fping" utility was used until Xymon version 4.2). This may include 
+the "fping" utility was used until Xymon version 4.2). This may include
 suid-root wrappers and xymonping options.
 Default: "xymonping"
 
-.IP FPINGOPTS
+.IP "\fBFPINGOPTS\fR"
 Options used for the
 .I fping(1)
 or
 .I xymonping(1)
-tool for the connectivity test. Note that xymonnet will still expect the 
+tool for the connectivity test. Note that xymonnet will still expect the
 output to match the default format.
 Default: "-Ae"
 
-.IP TRACEROUTE
-.IP TRACEROUTEOPTS
+.IP "\fBTRACEROUTE\fR"
+.IP "\fBTRACEROUTEOPTS\fR"
 Defines the location of the "traceroute" tool and
 any options needed to run it. traceroute is used by
 the connectivity test when the ping test fails; if
 requested via the "trace" tag, the TRACEROUTE command
 is executed to try to indicate the point in the
-network that is causing the problem. For backwards compatibility, 
+network that is causing the problem. For backwards compatibility,
 with prior versions, if TRACEROUTEOPTS is unset, TRACEROUTE is assumed
 to have whatever options are desired and no addl options are used.
 Recommended defaults are:  "\-n \-q 2 \-w 2 \-m 15"
@@ -613,20 +723,22 @@ If you have the
 tool installed - available from http://www.bitwizard.nl/mtr/ - I
 strongly recommend using this instead. The recommended
 TRACEROUTEOPTS for mtr are "\-c 2 \-n \-\-report"
-Note that mtr needs to be installed suid-root 
+Note that mtr needs to be installed suid-root
 on most systems.
 
-.IP NTPDATE
+.IP "\fBNTPDATE\fR"
 Path to the external ntpdate program for the "ntp" test; the target IP is
 appended. Leave empty (the default) to use the built-in SNTP probe, which needs
 no external program. On ntpsec, where ntpdate is unavailable, set this to "ntpdig".
 Default: "" (built-in probe)
 
-.IP NTPDATEOPTS
-Options for the ntpdate program (used only when NTPDATE is set).
+.IP "\fBNTPDATEOPTS\fR"
+Options for the NTPDATE program (used only when NTPDATE is set).
 Default: "\-u \-q"
+The default is ntpdate syntax; when NTPDATE is set to a different client
+(such as "ntpdig"), clear or adapt these options to ones that client accepts.
 
-.IP RPCINFO
+.IP "\fBRPCINFO\fR"
 Defines the
 .I rpcinfo(8)
 program used for "rpc" tests.
@@ -635,42 +747,42 @@ Default: "rpcinfo"
 
 .SH XYMONGEN WEBPAGE GENERATOR SETTINGS
 
-.IP XYMONLOGO
+.IP "\fBXYMONLOGO\fR"
 HTML code that is inserted on all standard headers. The default is to add
-the text "Xymon" in the upper-left corner of the page, but you can easily 
-replace this with e.g. a company logo. If you do, I suggest that you keep 
+the text "Xymon" in the upper-left corner of the page, but you can easily
+replace this with e.g. a company logo. If you do, I suggest that you keep
 it at about 30-35 pixels high, and 100-150 pixels wide.
 
-.IP XYMONPAGELOCAL
+.IP "\fBXYMONPAGELOCAL\fR"
 The string "Pages hosted locally" that appears above all of the pages
 linked from the main Xymon webpage.
 
-.IP XYMONPAGESUBLOCAL
+.IP "\fBXYMONPAGESUBLOCAL\fR"
 The string "Subpages hosted locally" that appears above all of the sub-pages
 linked from pages below the main Xymon webpage.
 
-.IP XYMONPAGEREMOTE
+.IP "\fBXYMONPAGEREMOTE\fR"
 The string "Remote status display" that appears about the summary
 statuses displayed on the min Xymon webpage.
 
-.IP XYMONPAGETITLE
-HTML tags designed to go in a <FONT> tag, to choose the font for 
+.IP "\fBXYMONPAGETITLE\fR"
+HTML tags designed to go in a <FONT> tag, to choose the font for
 titles of the webpages.
 
-.IP XYMONPAGEROWFONT
-HTML tags designed to go in a <FONT> tag, to choose the font for 
+.IP "\fBXYMONPAGEROWFONT\fR"
+HTML tags designed to go in a <FONT> tag, to choose the font for
 row headings (hostnames) on the webpages.
 
-.IP XYMONPAGECOLFONT
+.IP "\fBXYMONPAGECOLFONT\fR"
 HTML tags designed to go in a <FONT> tag, to chose the font for
 column headings (test names) on the webpages.
 
-.IP XYMONPAGEACKFONT
+.IP "\fBXYMONPAGEACKFONT\fR"
 HTML tags designed to go in a <FONT> tag, to chose the font for
 the acknowledgement text displayed on the status-log HTML page
 for an acknowledged status.
 
-.IP ACKUNTILMSG
+.IP "\fBACKUNTILMSG\fR"
 When displaying the detailed status of an acknowledged test,
 Xymon will include the time that the acknowledge expires
 using the print-format defined in this setting. You can define
@@ -678,95 +790,93 @@ the timeformat using the controls in your systems
 .I strftime(3)
 routine, and add the text suitable for your setup.
 
-.IP ACK_COOKIE_EXPIRATION
+.IP "\fBACK_COOKIE_EXPIRATION\fR"
 The valid length of an acknowledgement cookie. You want to set
 this large enough so that a late-answered acknowledgement for
 an alert is still processed properly.
 Default value: 86400
 
 
-.IP XYMONDATEFORMAT
+.IP "\fBXYMONDATEFORMAT\fR"
 On webpages generated by xymongen, the default header includes
 the current date and time. Normally this looks like "Tue Aug 24
 21:59:47 2004". The XYMONDATEFORMAT controls the format of this
-timestamp - you can define the format using the controls in the 
+timestamp - you can define the format using the controls in the
 .I strftime(3)
 routine. E.g. to have it show up as "2004\-08\-24 21:59:47 +0200"
 you would set XYMONDATEFORMAT="%Y\-%m\-%d %H:%M:%S %z"
 
-.IP HOLIDAYFORMAT
+.IP "\fBHOLIDAYFORMAT\fR"
 How holiday dates are displayed. The default is "%d/%m" which
-show the day and month. American users may want to change this 
+show the day and month. American users may want to change this
 to "%m/%d" to suit their preferred date-display style. This
 is a formatting string for the system
 .I strftime(3)
 routine, so any controls available for this routine may be used.
 
-.IP XYMONPAGECOLREPEAT
+.IP "\fBXYMONPAGECOLREPEAT\fR"
 Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
 the maximum number of rows before repeating the column headings
-on a webpage. This sets the default value for the 
+on a webpage. This sets the default value for the
 .I xymongen(1)
 "\-\-maxrows" option; if the command-line option is also specified,
 then it overrides this environment variable. Note that unlike
-Jeff's patch, xymongen implements this for both the "All non-green" 
-page and all other pages (xymon.html, subpages, critical.html). 
+Jeff's patch, xymongen implements this for both the "All non-green"
+page and all other pages (xymon.html, subpages, critical.html).
 
-.IP SUMMARY_SET_BKG
+.IP "\fBSUMMARY_SET_BKG\fR"
 If set to TRUE, then summaries will affect the color of the
 main Xymon webpage. Default: FALSE.
 
-.IP DOTHEIGHT
+.IP "\fBDOTHEIGHT\fR"
 The height (in pixels) of the icons showing the color of a status.
 Default: 16, which matches the default icons.
 
-.IP DOTWIDTH
+.IP "\fBDOTWIDTH\fR"
 The width (in pixels) of the icons showing the color of a status.
 Default: 16, which matches the default icons.
 
-.IP CLIENTSVCS
+.IP "\fBCLIENTSVCS\fR"
 List of the status logs fed by data from the Xymon client. These
 status logs will - if there are Xymon client data available for
 the host - include a link to the raw data sent by the client.
 Default: cpu,disk,memory,procs,svcs.
 
-.IP XYMONRSSTITLE
+.IP "\fBXYMONRSSTITLE\fR"
 If defined, this is the title of the RSS/RDF documents generated when
 .I xymongen(1)
 is invoked with the "\-\-rss" option. The default value is "Xymon Alerts".
 
-.IP WMLMAXCHARS
+.IP "\fBWMLMAXCHARS\fR"
 Maximum size of a WAP/WML output "card" when generating these.
 Default: 1500.
 
-.IP XYMONNONGREENEXT
+.IP "\fBXYMONNONGREENEXT\fR"
 List of scripts to run as extensions to the "All non-green" page. Note that
 two scripts, "eventlog.sh" and "acklog.sh" are handled specially:
 They are handled internally by xymongen, but the script names must
 be listed in this variable for this function to be enabled.
 
-.IP XYMONHISTEXT
+.IP "\fBXYMONHISTEXT\fR"
 List of scripts to run as extensions to a history page.
 
-.IP XYMONREPWARN
+.IP "\fBXYMONREPWARN\fR"
 Default threshold for listing the availability as "critical" (red) when
 generating the availability report. This can be set on a per-host basis
 with the WARNPCT setting in
 .I hosts.cfg(5).
 Default: 97 (percent)
 
-.IP XYMONGENREPOPTS
+.IP "\fBXYMONGENREPOPTS\fR"
 Default xymongen options used for reports. This will typically include
-such options as "\-\-subpagecolumns", and also "\-\-ignorecolumns" if 
+such options as "\-\-subpagecolumns", and also "\-\-ignorecolumns" if
 you wish to exclude certain tests from reports by default.
 
-.IP XYMONGENSNAPOPTS
+.IP "\fBXYMONGENSNAPOPTS\fR"
 Default xymongen options used by snapshots. This should be identical to
 the options you normally used when building Xymon webpages.
 
 .SH FILES
-.BR "~xymon/server/etc/xymonserver.cfg"
-
+.IP "\fB~xymon/server/etc/xymonserver.cfg\fR"
 .SH "SEE ALSO"
 xymon(7)
-

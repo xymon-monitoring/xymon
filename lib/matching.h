@@ -19,6 +19,7 @@
 
 extern pcre2_code *compileregex(const char *pattern);
 extern pcre2_code *compileregex_opts(const char *pattern, uint32_t flags);
+extern pcre2_code *compileregex_ext(const char *pattern, uint32_t flags, int *errcode, PCRE2_SIZE *erroffset);
 #ifdef PCRE_FIRSTLINE
 #define firstlineregex(P) compileregex_opts(P, PCRE_FIRSTLINE);
 #define firstlineregexnocase(P) compileregex_opts(P, PCRE_CASELESS|PCRE_FIRSTLINE);

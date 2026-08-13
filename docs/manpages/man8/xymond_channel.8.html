@@ -1,153 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMOND_CHANNEL(8)</title>
+</head>
+<body>
+<h1 class="head-name">XYMOND_CHANNEL</h1>
+Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMOND_CHANNEL</TITLE>
-</HEAD><BODY>
-<H1>XYMOND_CHANNEL</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymond_channel - Feed a xymond channel to a worker module</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymond_channel --channel=CHANNEL [options] workerprogram
+    [worker-options]</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">xymond_channel hooks into one of the <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> channels
+    that provide information about events occurring in the Xymon system. It
+    retrieves messages from the xymond daemon, and passes them on to the
+    <b>workerprogram</b> on the STDIN (file descripter 1) of the worker program.
+    Worker programs can then handle messages as they like.</p>
+<p class="Pp">A number of worker programs are shipped with xymond, e.g.
+    <i><a href="../man8/xymond_filestore.8.html">xymond_filestore</a>(8)</i> <i><a href="../man8/xymond_history.8.html">xymond_history</a>(8)</i> <i><a href="../man8/xymond_alert.8.html">xymond_alert</a>(8)</i>
+    <i><a href="../man8/xymond_rrd.8.html">xymond_rrd</a>(8)</i></p>
+<p class="Pp">If you want to write your own worker module, a sample worker
+    module is provided as part of the xymond distribution in the xymond_sample.c
+    file. This illustrates how to easily fetch and parse messages.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<p class="Pp">xymond_channel accepts a few options.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="channel"><a class="permalink" href="#channel"><b>--channel</b>=<i>CHANNELNAME</i></a></dt>
+  <dd>Specifies the channel to receive messages from, only one channel can be
+      used. This option is required. The following channels are available:
+    <br/>
+    &quot;status&quot; receives all Xymon status- and summary-messages
+    <br/>
+    &quot;stachg&quot; receives information about status changes
+    <br/>
+    &quot;page&quot; receives information about statuses triggering alerts
+    <br/>
+    &quot;data&quot; receives all Xymon &quot;data&quot; messages
+    <br/>
+    &quot;notes&quot; receives all Xymon &quot;notes&quot; messages
+    <br/>
+    &quot;enadis&quot; receives information about hosts being disabled or
+      enabled.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="filter"><a class="permalink" href="#filter"><b>--filter</b>=<i>EXPRESSION</i></a></dt>
+  <dd>EXPRESSION is a Perl-compatible regular expression. xymond_channel will
+      match the first line of each message against this expression, and silently
+      drops any message that does not match the expression. Especially useful
+      for custom worker modules and during testing, to limit the amount of data
+      that the module must process.
+    <br/>
+    Note that messages for &quot;logrotate&quot;, &quot;shutdown&quot;,
+      &quot;drophost&quot;, &quot;renamehost&quot;, &quot;droptest&quot; and
+      &quot;renametest&quot; are always forwarded by xymond_channel, whether
+      they match the filter or not.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="msgtimeout"><a class="permalink" href="#msgtimeout"><b>--msgtimeout</b>=<i>TIMEOUT</i></a></dt>
+  <dd>Modify the default timeout (30 seconds) for the worker module to handle a
+      message. If a message is not handled within this time, it is considered
+      lost. You normally do not have to modify this unless you have an extremely
+      busy server.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="daemon"><a class="permalink" href="#daemon"><b>--daemon</b></a></dt>
+  <dd>xymond_channel is normally started by <i><a href="../man8/xymonlaunch.8.html">xymonlaunch</a>(8)</i> as a task
+      defined in the <i><a href="../man5/tasks.cfg.5.html">tasks.cfg</a>(5)</i> file. If you are not using xymonlaunch,
+      then starting xymond_channel with this option causes it to run as a
+      stand-alone background task.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="pidfile"><a class="permalink" href="#pidfile"><b>--pidfile</b>=<i>FILENAME</i></a></dt>
+  <dd>If running as a stand-alone daemon, xymond_channel will save the
+      process-ID of the daemon in FILENAME. This is useful for automated
+      startup- and shutdown- scripts.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="env"><a class="permalink" href="#env"><b>--env</b>=<i>FILENAME</i></a></dt>
+  <dd>Loads the environment variables defined in FILENAME before starting
+      xymond_channel. This is normally used only when running as a stand-alone
+      daemon; if xymond_channel is started by xymonlaunch, then the environment
+      is controlled by the task definition in the <i><a href="../man5/tasks.cfg.5.html">tasks.cfg</a>(5)</i> file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="log"><a class="permalink" href="#log"><b>--log</b>=<i>FILENAME</i></a></dt>
+  <dd>Redirect output to this log-file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="md5"><a class="permalink" href="#md5"><b>--md5</b> /
+    <b>--no-md5</b></a></dt>
+  <dd>Enable/disable checksumming of messages passed from xymond_channel to the
+      worker module. This may be useful if you suspect that data may be
+      corrupted, e.g. when sent to a remote worker module. Note that enabling
+      this may break communication with old versions of Xymon worker modules.
+      Default: Disabled.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enable debugging output.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<p class="Pp">This program does not use any configuration files.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymond_channel - Feed a xymond channel to a worker module
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>xymond_channel --channel=CHANNEL [options] workerprogram [worker-options]</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-xymond_channel hooks into one of the 
-<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
-
-channels that provide information about events occurring in the Xymon system.
-It retrieves messages from the xymond daemon, and passes them on to the
-<B>workerprogram</B> on the STDIN (file descripter 1) of the worker program. 
-Worker programs can then handle messages as they like.
-<P>
-A number of worker programs are shipped with xymond, e.g.
-<I><A HREF="../man8/xymond_filestore.8.html">xymond_filestore</A>(8)</I>
-
-<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
-
-<I><A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8)</I>
-
-<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
-
-<P>
-If you want to write your own worker module, a sample worker module
-is provided as part of the xymond distribution in the xymond_sample.c
-file. This illustrates how to easily fetch and parse messages.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-xymond_channel accepts a few options.
-<P>
-<DL COMPACT>
-<DT>--channel=CHANNELNAME<DD>
-Specifies the channel to receive messages from, only one channel can be used.
-This option is required. The following channels are available:
-<BR>
-
-&quot;status&quot; receives all Xymon status- and summary-messages
-<BR>
-
-&quot;stachg&quot; receives information about status changes
-<BR>
-
-&quot;page&quot; receives information about statuses triggering alerts
-<BR>
-
-&quot;data&quot; receives all Xymon &quot;data&quot; messages
-<BR>
-
-&quot;notes&quot; receives all Xymon &quot;notes&quot; messages
-<BR>
-
-&quot;enadis&quot; receives information about hosts being disabled or enabled.
-<P>
-<DT>--filter=EXPRESSION<DD>
-EXPRESSION is a Perl-compatible regular expression. xymond_channel will match 
-the first line of each message against this expression, and silently drops any
-message that does not match the expression. Especially useful for custom 
-worker modules and during testing, to limit the amount of data that the module
-must process.
-<BR>
-
-Note that messages for &quot;logrotate&quot;, &quot;shutdown&quot;, &quot;drophost&quot;, &quot;renamehost&quot;,
-&quot;droptest&quot; and &quot;renametest&quot; are always forwarded by xymond_channel, whether
-they match the filter or not.
-<P>
-<DT>--msgtimeout=TIMEOUT<DD>
-Modify the default timeout (30 seconds) for the worker module to handle a message.
-If a message is not handled within this time, it is considered lost. You normally
-do not have to modify this unless you have an extremely busy server.
-<P>
-<DT>--daemon<DD>
-xymond_channel is normally started by 
-<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
-
-as a task defined in the
-<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
-
-file. If you are not using xymonlaunch, then starting xymond_channel with this
-option causes it to run as a stand-alone background task.
-<P>
-<DT>--pidfile=FILENAME<DD>
-If running as a stand-alone daemon, xymond_channel will save the process-ID 
-of the daemon in FILENAME. This is useful for automated startup- and shutdown-
-scripts.
-<P>
-<DT>--env=FILENAME<DD>
-Loads the environment variables defined in FILENAME before starting xymond_channel.
-This is normally used only when running as a stand-alone daemon; if xymond_channel
-is started by xymonlaunch, then the environment is controlled by the task definition 
-in the
-<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
-
-file.
-<P>
-<DT>--log=FILENAME<DD>
-Redirect output to this log-file.
-<P>
-<DT>--md5 / --no-md5<DD>
-Enable/disable checksumming of messages passed from xymond_channel to the worker
-module. This may be useful if you suspect that data may be corrupted, e.g. when
-sent to a remote worker module. Note that enabling this may break communication
-with old versions of Xymon worker modules. Default: Disabled.
-<P>
-<DT>--debug<DD>
-Enable debugging output.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>FILES</H2>
-
-This program does not use any configuration files.
-<P>
-<A NAME="lbAG">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">FILES</A><DD>
-<DT><A HREF="#lbAG">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

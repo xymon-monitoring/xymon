@@ -1,1689 +1,1721 @@
-
-<HTML><HEAD><TITLE>Manpage of HOSTS.CFG</TITLE>
-</HEAD><BODY>
-<H1>HOSTS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
-
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-hosts.cfg - Main Xymon configuration file
-<P>
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<DL COMPACT>
-<DT>hosts.cfg<DD>
-<P>
-</DL>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-The
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-file is the most important configuration file for all of the
-Xymon programs.  This file contains the full list of 
-all the systems monitored by Xymon, including the set 
-of tests and other configuration items stored for each host.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>FILE FORMAT</H2>
-
-Each line of the file defines a host. Blank lines and lines
-starting with a hash mark (#) are treated as comments and ignored.
-Long lines can be broken up by putting a backslash at the end of 
-the line and continuing the entry on the next line.
-<P>
-The format of an entry in the hosts.cfg file is as follows:
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;IP-address&nbsp;hostname&nbsp;#&nbsp;tag1&nbsp;tag2&nbsp;...
-<P>
-The IP-address and hostname are mandatory; all of the tags are optional.
-Listing a host with only IP-address and hostname will cause a network
-test to be executed for the host - the connectivity test is enabled
-by default, but no other tests.
-<P>
-The optional tags are then used to define which tests are 
-relevant for the host, and also to set e.g. the time-interval used
-for availability reporting by
-<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
-
-<P>
-An example of setting up the hosts.cfg file is in the Xymon on-line 
-documentation (from the Help menu, choose &quot;Configuring Monitoring&quot;).
-The following describes the possible settings in a hosts.cfg
-file supported by Xymon.
-<P>
-<P>
-<A NAME="lbAF">&nbsp;</A>
-<H2>TAGS RECOGNIZED BY ALL TOOLS</H2>
-
-<P>
-<DL COMPACT>
-<DT>include filename<DD>
-This tag is used to include another file into the hosts.cfg
-file at run-time, allowing for a large hosts.cfg file to be
-split up into more manageable pieces.
-<P>
-The &quot;filename&quot; argument should point to a file that uses the
-same syntax as hosts.cfg. The filename can be an absolute 
-filename (if it begins with a '/'), or a relative filename -
-relative file names are prefixed with the directory where
-the main hosts.cfg file is located (usually $XYMONHOME/etc/).
-<P>
-You can nest include tags, i.e. a file that is included 
-from the main hosts.cfg file can itself include other files.
-<P>
-<DT>dispinclude filename<DD>
-Acts like the &quot;include&quot; tag, but only for the xymongen tool.
-Can be used e.g. to put a group of hosts on multiple sub-pages,
-without having to repeat the host definitions.
-<P>
-<DT>netinclude filename<DD>
-Acts like the &quot;include&quot; tag, but only for the xymonnet tool.
-<P>
-<DT>directory directoryname<DD>
-This tag is used to include all files in the named directory.
-Files are included in alphabetical order. If there are sub-
-directories, these are recursively included also. The following 
-files are ignored: Files that begin with a dot, files that end
-with a tilde, RCS files that end with &quot;,v&quot;, RPM package manager
-files ending in &quot;.rpmsave&quot; or &quot;.rpmnew&quot;, DPKG package manager
-files ending in &quot;.dpkg-new&quot; or &quot;.dpkg-orig&quot;, and all special
-files (devices, sockets, pipes etc).
-<P>
-<DT>optional include/directory<DD>
-Both &quot;include&quot; and &quot;directory&quot; can be prefixed with the tag
-&quot;optional&quot;, which will preven an error message being logged if
-the file or directory is not present on a system.
-<P>
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>GENERAL PER-HOST OPTIONS</H2>
-
-<DL COMPACT>
-<DT>noclear<DD>
-Controls whether stale status messages go purple or clear when
-a host is down. Normally, when a host is down the client statuses
-(&quot;cpu&quot;, &quot;disk&quot;, &quot;memory&quot; etc) will stop updating - this would usually
-make them go &quot;purple&quot; which can trigger alerts. To avoid that, Xymon
-checks if the &quot;conn&quot; test has failed, and if that is true then the
-other tests will go &quot;clear&quot; instead of purple so you only get alerts
-for the &quot;conn&quot; test. If you do want the stale statuses to go purple,
-you can use the &quot;noclear&quot; tag to override this behaviour.
-<P>
-Note that &quot;noclear&quot; also affects the behaviour of network tests;
-see below.
-<P>
-<DT>prefer<DD>
-When a single host is defined multiple time in the hosts.cfg file,
-xymongen tries to guess which definition is the best to use for
-the information used on the &quot;info&quot; column, or for the NOPROPRED
-and other xymongen-specific settings. Host definitions that have
-a &quot;noconn&quot; tag or an IP of 0.0.0.0 get lower priority.
-<P>
-By using the &quot;prefer&quot; tag you tell xymongen that this host definition
-should be used.
-<P>
-Note: This only applies to hosts that are defined multiple
-times in the hosts.cfg file, although it will not hurt to add it
-on other hosts as well.
-<P>
-<DT>multihomed<DD>
-Tell Xymon that data from the host can arrive from multiple IP-addresses.
-By default, Xymon will warn if it sees data for one host coming from
-different IP-addresses, because this usually indicates a mis-configuration
-of the hostname on at least one of the servers involved. Some hosts
-with multiple IP-addresses may use different IP's for sending data to
-Xymon, however. This tag disables the check of source IP when receiving
-data.
-<P>
-<DT>delayred=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]<DD>
-Usually, status changes happen immediately. This tag is used to defer
-an update to red for the STATUSCOLUMN status for DELAY minutes. E.g.
-with <B>delayred=disk:10,cpu:30</B>, a red disk-status will not appear
-on the Xymon webpages until it has been red for at least 10 minutes.
-Note: Since most tests only execute once every 5 minutes, it will
-usually not make sense to set N to anything but a multiple of 5. The
-exception is network tests, since 
-<I><A HREF="../man1/xymonnet-again.sh.1.html">xymonnet-again.sh</A>(1)</I>
-
-will re-run failed network tests once a minute for up to 30 minutes.
-<P>
-<DT>delayyellow=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]<DD>
-Same as <B>delayred</B>, but defers the change to a yellow status.
-<P>
-<P>
-</DL>
-<A NAME="lbAH">&nbsp;</A>
-<H2>XYMONGEN DISPLAY OPTIONS</H2>
-
-These tags are processed by the 
-<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
-
-tool when generating the Xymon webpages or reports.
-<P>
-<DL COMPACT>
-<DT>page NAME [Page-title]<DD>
-This defines a page at the level below the entry page. All
-hosts following the &quot;page&quot; directive appear on this page, until 
-a new &quot;page&quot;, &quot;subpage&quot; or &quot;subparent&quot; line is found.
-<P>
-<DT>subpage NAME [Page-title]<DD>
-This defines a sub-page in the second level below the entry page.
-You must have a previous &quot;page&quot; line to hook this sub-page to.
-<P>
-<DT>subparent parentpage newpage [Page-title]<DD>
-This is used to define sub-pages in whatever levels you may
-wish. Just like the standard &quot;subpage&quot; tag, &quot;subparent&quot; defines a
-new Xymon web page; however with &quot;subparent&quot; you explicitly
-list which page it should go as a sub-page to. You can pick
-any page as the parent - pages, sub-pages or even other
-subparent pages. So this allows you to define any tree
-structure of pages that you like.
-<P>
-E.g. with this in hosts.cfg:
-<P>
-<BR>&nbsp;&nbsp;&nbsp;page&nbsp;USA&nbsp;United&nbsp;States
-<BR>&nbsp;&nbsp;&nbsp;subpage&nbsp;NY&nbsp;New&nbsp;York
-<BR>&nbsp;&nbsp;&nbsp;subparent&nbsp;NY&nbsp;manhattan&nbsp;Manhattan&nbsp;data&nbsp;centers
-<BR>&nbsp;&nbsp;&nbsp;subparent&nbsp;manhattan&nbsp;wallstreet&nbsp;Wall&nbsp;Street&nbsp;center
-<P>
-you get this hierarchy of pages:
-<P>
-<BR>&nbsp;&nbsp;&nbsp;USA&nbsp;(United&nbsp;States)
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NY&nbsp;(New&nbsp;York)
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;manhattan&nbsp;(Manhattan&nbsp;data&nbsp;centers)
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wallstreet&nbsp;(Wall&nbsp;Street&nbsp;center)
-<P>
-Note: The parent page must be defined before you define
-the subparent. If not, the page will not be generated,
-and you get a message in the log file.
-<P>
-Note: xymongen is case-sensitive, when trying to match the
-name of the parent page.
-<P>
-The inspiration for this came from Craig Cook's mkbb.pl
-script, and I am grateful to Craig for suggesting that
-I implement it in xymongen. The idea to explicitly list
-the parent page in the &quot;subparent&quot; tag was what made
-it easy to implement.
-<P>
-<DT>vpage<DD>
-<DT>vsubpage<DD>
-<DT>vsubparent<DD>
-These are page-definitions similar to the &quot;page&quot;, &quot;subpage&quot; and
-&quot;subparent&quot; definitions. However, on these pages the rows are 
-the tests, and the columns are the hosts (normal pages have it
-the other way around). This is useful if you have a very large
-number of tests for a few hosts, and prefer to have them listed
-on a page that can be scrolled vertically.
-<BR>
-
-Note that the &quot;group&quot; directives have no effect on these types
-of pages.
-<P>
-<DT>group [group-title]<DD>
-<DT>group-compress [group-title]<DD>
-Defines a group of hosts, that appear together on the web page,
-with a single header-line listing all of the columns. Hosts
-following the &quot;group&quot; line appear inside the group, until a
-new &quot;group&quot; or page-line is found. The two group-directives
-are handled identically by Xymon and xymongen, but both forms
-are allowed for backwards compatibility.
-<P>
-<DT>group-sorted [group-title]<DD>
-Same as the &quot;group&quot; line, but will sort the hosts inside the
-group so they appear in strict lexicographic order.
-<P>
-<DT>group-only COLUMN1|COLUMN2|COLUMN3 [group-title]<DD>
-Same as the &quot;group&quot; and &quot;group-compress&quot; lines, but includes
-only the columns explicitly listed in the group. Any columns
-not listed will be ignored for these hosts.
-<P>
-<DT>group-except COLUMN1|COLUMN2|COLUMN3 [group-title]<DD>
-Same as the &quot;group-only&quot; lines, but includes all columns EXCEPT
-those explicitly listed in the group. Any columns listed will 
-be ignored for these hosts - all other columns are shown.
-<P>
-<DT>title Page, group or host title text<DD>
-The &quot;title&quot; tag is used to put custom headings into the
-pages generated by xymongen, in front of page/subpage links,
-groups or hosts.
-<P>
-The title tag operates on the next item in the hosts.cfg
-file following the title tag.
-<P>
-If a title tag precedes a host entry, the title is 
-shown just before the host is listed on the status
-page. The column headings present for the host will
-be repeated just after the heading.
-<P>
-If a title tag precedes a group entry, the title is
-show just before the group on the status page. 
-<P>
-If a title tag precedes a page/subpage/subparent
-entry, the title text replaces the normal &quot;Pages hosted
-locally&quot; heading normally inserted by Xymon. This
-appears on the page that links to the sub-pages,
-not on the sub-page itself. To get a custom heading on
-the sub-page, you may want to use the &quot;--pagetext-heading&quot;
-when running
-<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
-
-<P>
-<DT>NAME:hostname<DD>
-Overrides the default hostname used on the overview web pages.
-If &quot;hostname&quot; contains spaces, it must be enclosed in double
-quotes, e.g. NAME:&quot;R&amp;D Oracle Server&quot;
-<P>
-<DT>CLIENT:hostname<DD>
-Defines an alias for a host, which will be used when identifying
-status messages. This is typically used to accommodate a local
-client that sends in status reports with a different hostname,
-e.g. if you use hostnames with domains in your Xymon configuration,
-but the client is a silly Window box that does not include the
-hostname. Or vice-versa. Whatever the reason, this can be used
-to match status reports with the hosts you define in your
-hosts.cfg file. It causes incoming status reports with the
-specified hostname to be filed using the hostname defined in
-hosts.cfg.
-<P>
-<DT>NOCOLUMNS:column[,column]<DD>
-Used to drop certain of the status columns generated by the
-Xymon client. <B>column</B> is one of <B>cpu</B>, <B>disk</B>,
-<B>files</B>, <B>memory</B>, <B>msgs</B>, <B>ports</B>, <B>procs</B>.
-This setting stops these columns from being updated for the 
-host. Note: If the columns already exist, you must use the
-<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
-
-utility to <B>drop</B> them, or they will go purple.
-<P>
-<DT>COMMENT:Host comment<DD>
-Adds a small text after the hostname on the web page. This can
-be used to describe the host, without completely changing its
-display-name as the NAME: tag does. If the comment includes
-whitespace, it must be in double-quotes, e.g. COMMENT:&quot;Sun web server&quot;
-<P>
-<DT>DESCR:Hosttype:Description<DD>
-Define some informational text about the host. The &quot;Hosttype&quot;
-is a text describing the type of this device - &quot;router&quot;, &quot;switch&quot;,
-&quot;hub&quot;, &quot;server&quot; etc. The &quot;Description&quot; is an informational
-text that will be shown on the &quot;Info&quot; column page; this can
-e.g. be used to store information about the physical location
-of the device, contact persons etc. If the text contain whitespace,
-you must enclose it in double-quotes, e.g.  DESCR:&quot;switch:4th floor Marketing switch&quot;
-<P>
-<DT>CLASS:Classname<DD>
-Force the host to belong to a specific class. Class-names are used
-when configuring log-file monitoring (they can be used as references in
-<I><A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5),</I>
-
-<I><A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5)</I>
-
-and
-<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
-
-to group log file checks or alerts). Normally, class-names are controlled on the 
-client by starting the Xymon client with the &quot;--class=Classname&quot; option.
-If you specify it in the hosts.cfg file on the Xymon server, it overrides
-any class name that the client reports. If not set, then the host belongs
-to a class named by the operating system the Xymon client is running on.
-<P>
-<DT>dialup<DD>
-The keyword &quot;dialup&quot; for a host means that it is OK for it to be
-off-line - this should not trigger an alert. All network tests
-will go &quot;clear&quot; upon failure, and any missing reports from e.g.
-cpu- and disk-status will not go purple when they are not updated.
-<P>
-<DT>nonongreen<DD>
-Ignore this host on the &quot;All non-green&quot; page. Even if it has an active alert,
-it will not be included in the &quot;All non-green&quot; page. This also removes the
-host from the event-log display.
-<P>
-<DT>nodisp<DD>
-Ignore this host completely when generating the Xymon webpages.
-Can be useful for monitoring a host without having it show up on
-the webpages, e.g. because it is not yet in production use. Or for
-hiding a host that is shown only on a second pageset.
-<P>
-<DT>TRENDS:[*,][![graph,...]]<DD>
-Defines the RRD graphs to include in the &quot;trends&quot; column
-generated by xymongen.  This option syntax is complex.
-<BR>
-
-If this option is not present, xymongen provides graphs
-matching the standard set of RRD files: la, disk, memory, 
-users, vmstat, iostat, netstat, tcp, bind, apache, sendmail
-<BR>
-
-* If this option is specified, the list of graphs to
-include start out as being empty (no graphs).
-<BR>
-
-* To include all default graphs, use an asterisk.  E.g. &quot;TRENDS:*&quot;
-<BR>
-
-* To exclude a certain graph, specify it prefixed with '!'. E.g. 
-to see all graphs except users: &quot;TRENDS:*,!users&quot;
-<BR>
-
-* The netstat, vmstat and tcp graphs have many &quot;subgraphs&quot;.
-Which of these are shown can be specified like this:
-&quot;TRENDS:*,netstat:netstat2|netstat3,tcp:http|smtp|conn&quot;
-This will show all graphs, but instead of the normal 
-netstat graph, there will be two: The netstat2 and
-netstat3 graphs. Instead of the combined tcp graphs showing
-all services, there will be three: One for each of
-the http, conn and smtp services.
-<BR>
-
-<DT>COMPACT:COLUMN=COLUMN1|COLUMN2|COLUMN3[,ditto]<DD>
-Collapses a series of statuses into a single column on
-the overview web page.
-<BR>
-
-<DT>INTERFACES:REGEXP<DD>
-On systems with multiple network interfaces, the operating
-system may report a number of network interface where the
-statistics are of no interest. By default Xymon tracks and 
-graphs the traffic on all network interfaces. This option
-defines a regular expression, and only those interfaces whose
-name matches the expression are tracked.
-<P>
-</DL>
-<A NAME="lbAI">&nbsp;</A>
-<H2>XYMON TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE</H2>
-
-<B>NOTE:</B> The &quot;NK&quot; set of tags is deprecated. They will
-be supported for Xymon 4.x, but will be dropped in version 5.
-It is recommended that you move your critical systems
-view to the
-<I><A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1)</I>
-
-viewer, which has a separate configuration tool,
-<I><A HREF="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</A>(1)</I>
-
-with more facilities than the NK tags in hosts.cfg.
-<P>
-xymongen will create three sets of pages: The main page xymon.html,
-the all-non-green-statuses page (nongreen.html), and a specially
-reduced version of nongreen.html with only selected tests (critical.html).
-This page includes selected tests that currently have a red
-or yellow status.
-<P>
-<DL COMPACT>
-<DT>NK:testname[,testname]<DD>
-NOTE: This has been deprecated, you should use
-<I><A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1)</I>
-
-instead of the NK tag.
-<P>
-Define the tests that you want included on the critical page.
-E.g. if you have a host where you only want to see the 
-http tests on critical.html, you specify it as
-<P>
-<BR>&nbsp;&nbsp;12.34.56.78&nbsp;&nbsp;<A HREF="http://www.acme.com">www.acme.com</A>&nbsp;&nbsp;#&nbsp;<A HREF="http://www.acme.com/">http://www.acme.com/</A>&nbsp;NK:http
-<P>
-If you want multiple tests for a host to show up on the
-critical.html page, specify all the tests separated by commas.
-The test names correspond to the column names (e.g. 
-https tests are covered by an &quot;NK:http&quot; tag).
-<P>
-<DT>NKTIME=day:starttime:endtime[,day:starttime:endtime]<DD>
-This tag limits the time when an active alert is presented
-on the NK web page.
-<P>
-By default, tests with a red or yellow status that are listed
-in the &quot;NK:testname&quot; tag will appear on the NK page. However,
-you may not want the test to be shown outside of normal
-working hours - if, for example, the host is not being
-serviced during week-ends.
-<P>
-You can then use the NKTIME tag to define the time periods
-where the alert will show up on the NK page. 
-<P>
-The time specification consists of
-<P>
-<B>day-of-week:</B>
-
-<B>W</B> means Mon-Fri (&quot;weekdays&quot;), <B>*</B> means all days, <B>0</B> .. <B>6</B> = Sunday .. Saturday. 
-Listing multiple days is possible, e.g. &quot;60&quot; is valid meaning &quot;Saturday and Sunday&quot;.
-<P>
-<B>starttime:</B>
-
-Time to start showing errors, must be in 24-hour clock format as HHMM hours/minutes. 
-E.g. for 8 am enter &quot;0800&quot;, for 9.30 pm enter &quot;2130&quot;
-<P>
-<B>endtime:</B>
-
-Time to stop showing errors.
-<P>
-If necessary, multiple periods can be specified. E.g. to
-monitor a site 24x7, except between noon and 1 pm, use
-NKTIME=*:0000:1159,*:1300:2359
-<P>
-The interval between start time and end time may cross midnight, e.g. <B>*:2330:0200</B>
-would be valid and have the same effect as <B>*:2330:2400,*:0000:0200</B>.
-<P>
-<P>
-</DL>
-<A NAME="lbAJ">&nbsp;</A>
-<H2>XYMON TAGS FOR THE WML (WAP) CARDS</H2>
-
-If xymongen is run with the &quot;--wml&quot; option, it will generate a
-set of WAP-format output &quot;cards&quot; that can be viewed with a
-WAP-capable device, e.g. a PDA or cell-phone.
-<P>
-<DL COMPACT>
-<DT>WML:[+|-]testname[,[+|-]testname]<DD>
-This tag determines which tests for this hosts are included
-in the WML (WAP) page. Syntax is identical to the NK: tag.  
-<P>
-The default set of WML tests are taken from the --wml
-command line option.  If no &quot;WML:&quot; tag is specified, the 
-&quot;NK:&quot; tag is used if present.
-<P>
-<P>
-</DL>
-<A NAME="lbAK">&nbsp;</A>
-<H2>XYMON STATUS PROPAGATION OPTIONS</H2>
-
-These tags affect how a status propagates upwards from a single
-test to the page and higher. This can also be done with the 
-command-line options --nopropyellow and --nopropred, but the tags 
-apply to individual hosts, whereas the command line options are global.
-<P>
-<DL COMPACT>
-<DT>NOPROPRED:[+|-]testname[,[+|-]testname]<DD>
-This tag is used to inhibit a yellow or red status from
-propagating upwards - i.e. from a test status color to
-the (sub)page status color, and further on to xymon.html
-or nongreen.html
-<P>
-If a host-specific tag begins with a '-' or a '+', the
-host-specific tags are removed/added to the default 
-setting from the command-line option. If the host-specific
-tag does not begin with a '+' or a '-', the default setting
-is ignored for this host and the NOPROPRED applies to the
-tests given with this tag.
-<P>
-E.g.: xymongen runs with &quot;--nopropred=ftp,smtp&quot;.
-&quot;NOPROPRED:+dns,-smtp&quot; gives a NOPROPRED setting of &quot;ftp,dns&quot;
-(dns is added to the default, smtp is removed).
-&quot;NOPROPRED:dns&quot; gives a setting of &quot;dns&quot; only (the default
-is ignored).
-<P>
-Note: If you set use the &quot;--nopropred=*&quot; command line
-option to disable propagation of all alerts, you cannot use
-the &quot;+&quot; and &quot;-&quot; methods to add or remove from the wildcard
-setting. In that case, do not use the &quot;+&quot; or &quot;-&quot; setting,
-but simply list the required tests that you want to keep
-from propagating.
-<P>
-<DT>NOPROPYELLOW:[+|-]testname[,[+|-]testname]<DD>
-Similar to NOPROPRED: tag, but applies to propagating a yellow
-status upwards.
-<P>
-<DT>NOPROPPURPLE:[+|-]testname[,[+|-]testname]<DD>
-Similar to NOPROPRED: tag, but applies to propagating a purple
-status upwards.
-<P>
-<DT>NOPROPACK:[+|-]testname[,[+|-]testname]<DD>
-Similar to NOPROPRED: tag, but applies to propagating an 
-acknowledged status upwards.
-<P>
-<P>
-</DL>
-<A NAME="lbAL">&nbsp;</A>
-<H2>XYMON AVAILABILITY REPORT OPTIONS</H2>
-
-These options affect the way the Xymon availability
-reports are processed (see
-<I><A HREF="../man1/report.cgi.1.html">report.cgi</A>(1)</I>
-
-for details about availability reports).
-<P>
-<DL COMPACT>
-<DT>REPORTTIME=day:starttime:endtime[,day:starttime:endtime]<DD>
-This tag defines the time interval where you measure uptime
-of a service for reporting purposes.
-<P>
-When xymongen generates a report, it computes the availability
-of each service - i.e. the percentage of time that the 
-service is reported as available (meaning: not red).
-<P>
-By default, this calculation is done on a 24x7 basis, so
-no matter when an outage occurs, it counts as downtime.
-<P>
-The REPORTTIME tag allows you to specify a period of time
-other than 24x7 for the service availability calculation.
-If you have systems where you only guarantee availability
-from e.g. 7 AM to 8 PM on weekdays, you can use
-<BR>
-
-<BR>&nbsp;&nbsp;REPORTTIME=W:0700:2000
-<BR>
-
-and the availability calculation will only be performed
-for the service with measurements from this time interval.
-<P>
-The syntax for REPORTTIME is the same as the one used
-by the NKTIME parameter.
-<P>
-When REPORTTIME is specified, the availability calculation
-happens like this:
-<P>
-* Only measurements done during the given time period is used for the calculation.
-<BR>
-
-* &quot;blue&quot; time reduces the length of the report interval,
-so if you are generating a report for a 10-hour period 
-and there are 20 minutes of &quot;blue&quot; time, then the
-availability calculation will consider the reporting 
-period to be 580 minutes (10 hours minus 20 minutes).
-This allows you to have scheduled downtime during the
-REPORTTIME interval without hurting your availability;
-this is (I believe) the whole idea of the downtime being
-&quot;planned&quot;.
-<BR>
-
-* &quot;red&quot; and &quot;clear&quot; status counts as downtime; &quot;yellow&quot;
-and &quot;green&quot; count as uptime. &quot;purple&quot; time is ignored.
-<P>
-The availability calculation correctly handles status changes
-that cross into/out of a REPORTTIME interval.
-<P>
-If no REPORTTIME is given, the standard 24x7 calculation is used.
-<P>
-<DT>WARNPCT:percentage<DD>
-Xymon's reporting facility uses a computed availability threshold
-to color services green (100% available), yellow (above threshold,
-but less than 100%), or red (below threshold) in the reports.
-<P>
-This option allows you to set the threshold value on a host-by-host
-basis, instead of using a global setting for all hosts. The
-threshold is defined as the percentage of the time that the host
-must be available, e.g. &quot;WARNPCT:98.5&quot; if you want the threshold to
-be at 98.5%
-<P>
-<DT>noflap[=test1,test2,...]<DD>
-Disable flap detection for this host, or for specific tests on this
-host. Flap detection is globally controlled by options given to 
-xymond on the command line, but, if enabled, it can be disabled 
-using this option. 
-<P>
-<P>
-</DL>
-<A NAME="lbAM">&nbsp;</A>
-<H2>NETWORK TEST SETTINGS</H2>
-
-<P>
-<DL COMPACT>
-<DT>testip<DD>
-By default, Xymon will perform a name lookup of the hostname
-to get the IP address it will use for network tests. This tag
-causes Xymon to use the IP listed in the hosts.cfg file.
-<P>
-<DT>NET:location<DD>
-This tag defines the host as being tested from a specific location.
-If xymonnet sees that the environment variable XYMONNETWORK
-is set, it will only test the hosts that have a matching
-&quot;NET:location&quot; tag in the hosts.cfg file. So this tag is useful
-if you have more than one system running network tests, but you 
-still want to keep a consolidated hosts.cfg file for all your 
-systems.
-<P>
-Note: The &quot;--test-untagged&quot; option modifies this behaviour,
-see
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-<P>
-<DT>noclear<DD>
-Some network tests depend on others. E.g. if the host does not
-respond to ping, then there's a good chance that the entire host 
-is down and all network tests will fail. Or if the http server
-is down, then any web content checks are also likely to fail.
-To avoid floods of alerts, the default behaviour is for xymonnet
-to change the status of these tests that fail because of another
-problem to &quot;clear&quot; instead of &quot;red&quot;. The &quot;noclear&quot; tag disables this
-behaviour and causes all failing tests to be reported with their
-true color.
-<P>
-This behaviour can also be implemented on a per-test basis by
-putting the &quot;~&quot; flag on any network test.
-<P>
-Note that &quot;noclear&quot; also affects whether stale status messages
-from e.g. a client on the host go purple or clear when the
-host is down; see the &quot;noclear&quot; description in the
-&quot;GENERAL PER-HOST OPTIONS&quot; section above.
-<P>
-<DT>nosslcert<DD>
-Disables the standard check of any SSL certificates for
-this host. By default, if an SSL-enabled service is tested,
-a second test result is generated with information about 
-the SSL certificate - this tag disables the SSL certificate
-checks for the host.
-<P>
-<DT>ssldays=WARNDAYS:ALARMDAYS<DD>
-Define the number of days before an SSL certificate expires,
-in which the sslcert status shows a warning (yellow) or
-alarm (red) status. These default to the values from the
-&quot;--sslwarn&quot; and &quot;--sslalarm&quot; options for the
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-tool; the values specified in the &quot;ssldays&quot; tag overrides
-the default.
-<P>
-<DT>sslbits=MINIMUMKEYBITS<DD>
-Enable checking of the encryption strength of the SSL protocol
-offered by the server. If the server offers encryption using
-a key with fewer than MINIMUMKEYBITS bits, the &quot;sslcert&quot;
-test will go red. E.g. to check that your server only uses
-strong encryption (128 bits or better), use &quot;sslbits=128&quot;.
-<P>
-<DT>sni<DD>
-<DT>nosni<DD>
-Enables or disables use of SNI (Server Name Indication) for SSL tests.
-<P>
-Some SSL implementations cannot handle SSL handshakes with SNI
-data, so Xymon by default does not use SNI. This default can be 
-changed with the &quot;--sni&quot; option for 
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-but can also be managed per host with these tags.
-<P>
-SNI support was added in Xymon 4.3.13, where the default was to
-use SNI. This was changed in 4.3.14 so SNI support is disabled by
-default, and the &quot;sni&quot; and &quot;nosni&quot; tags were introduced together
-with the &quot;--sni&quot; option for xymonnet.
-<P>
-<P>
-<DT>DOWNTIME=day:starttime:endtime[,day:starttime:endtime]<DD>
-<DT>DOWNTIME=columns:day:starttime:endtime:cause[,columns:day:starttime:endtime:cause]<DD>
-This tag can be used to ignore failed checks during
-specific times of the day - e.g. if you run services that
-are only monitored e.g. Mon-Fri 8am-5pm, or you always 
-reboot a server every Monday between 5 and 6 pm.
-<P>
-What happens is that if a test fails during the specified time, 
-it is reported with status BLUE instead of red, yellow, or purple. Thus 
-you can still see when the service was unavailable, but alarms 
-will not be triggered and the downtime is not counted in the 
-availability calculations generated by the Xymon reports.
-<P>
-The &quot;columns&quot; and &quot;cause&quot; settings are optional, but both or 
-neither must be specified. &quot;columns&quot; may be a comma-separated 
-list of status columns to which DOWNTIME will apply.  The &quot;cause&quot; 
-string will be displayed on the status web page to explain why 
-the system is down.
-<P>
-The syntax for DOWNTIME is the same as the one used
-by the NKTIME parameter.
-<P>
-<DT>SLA=day:starttime:endtime[,day:starttime:endtime]<DD>
-This tag is now deprecated. Use the DOWNTIME tag instead.
-<P>
-This tag works the opposite of the DOWNTIME tag - you use 
-it to specify the periods of the day that the service should be 
-green. Failures OUTSIDE the SLA interval are reported as blue.
-<P>
-<DT>depends=(testA:host1/test1,host2/test2),(testB:host3/test3),[...]<DD>
-This tag allows you to define dependencies between tests.
-If &quot;testA&quot; for the current host depends on &quot;test1&quot; for host &quot;host1&quot;
-and test &quot;test2&quot; for &quot;host2&quot;, this can be defined with
-<P>
-<BR>&nbsp;&nbsp;&nbsp;depends=(testA:host1/test1,host2/test2)
-<P>
-When deciding the color to report for testA, if either host1/test1
-failed or host2/test2 failed, if testA has failed also then the color 
-of testA will be &quot;clear&quot; instead of red or yellow.
-<P>
-Since all tests are actually run before the dependencies are evaluated,
-you can use any host/test in the dependency - regardless of the actual
-sequence that the hosts are listed, or the tests run. It is also valid
-to use tests from the same host that the dependency is for. E.g.
-<P>
-<BR>&nbsp;&nbsp;&nbsp;1.2.3.4&nbsp;&nbsp;foo&nbsp;#&nbsp;<A HREF="http://foo/">http://foo/</A>&nbsp;webmin&nbsp;depends=(webmin:foo/http)
-<P>
-is valid; if both the http and the webmin tests fail, then webmin
-will be reported as clear.
-<P>
-Note: The &quot;depends&quot; tag is evaluated by xymonnet while
-running the network tests. It can therefore only refer to other
-network tests that are handled by the same server - there
-is currently no way to use the e.g. the status of locally
-run tests (disk, cpu, msgs) or network tests from other
-servers in a dependency definition. Such dependencies are
-silently ignored.
-<P>
-<DT>badTEST[-weekdays-starttime-endtime]:x:y:z<DD>
-NOTE: This has been deprecated, use the <B>delayred</B> and
-<B>delayyellow</B> settings instead.
-<P>
-Normally when a network test fails, the status changes to
-red immediately.  With a &quot;badTEST:x:y:z&quot; tag this behaviour changes:
-<BR>
-
-* While &quot;z&quot; or more successive tests fail, the column goes RED.
-<BR>
-
-* While &quot;y&quot; or more successive tests fail, but fewer than &quot;z&quot;, the column goes YELLOW.
-<BR>
-
-* While &quot;x&quot; or more successive tests fail, but fewer than &quot;y&quot;, the column goes CLEAR.
-<BR>
-
-* While fewer than &quot;x&quot; successive tests fail, the column stays GREEN.
-<P>
-The optional time specification can be used to limit this
-&quot;badTEST&quot; setting to a particular time of day, e.g. to 
-require a longer period of downtime before raising an
-alarm during out-of-office hours. The time-specification
-uses:
-<BR>
-
-* Weekdays: The weekdays this badTEST tag applies, from
-0 (Sunday) through 6 (Saturday). Putting &quot;W&quot; here counts
-as &quot;12345&quot;, i.e. all working days. Putting &quot;*&quot; here 
-counts as all days of the week, equivalent to &quot;0123456&quot;.
-<BR>
-
-* start time and end time are specified using 24-hour clocks,
-e.g. &quot;badTEST-W-0900-2000&quot; is valid for working days
-between 9 AM (09:00) and 8 PM (20:00).
-<P>
-When using multiple badTEST tags, the LAST one specified
-with a matching time-spec is used.
-<P>
-Note: The &quot;TEST&quot; is replaced by the name of the test, e.g.
-<P>
-<BR>&nbsp;12.34.56.78&nbsp;&nbsp;<A HREF="http://www.foo.com">www.foo.com</A>&nbsp;&nbsp;#&nbsp;<A HREF="http://www.foo.com/">http://www.foo.com/</A>&nbsp;badhttp:1:2:4
-<P>
-defines a http test that goes &quot;clear&quot; after the first failure,
-&quot;yellow&quot; after two successive failures, and &quot;red&quot; after four
-successive failures.
-<P>
-For LDAP tests using URL's, use the option &quot;badldapurl&quot;.
-For the other network tests, use &quot;badftp&quot;, &quot;badssh&quot; etc.
-<P>
-<P>
-</DL>
-<A NAME="lbAN">&nbsp;</A>
-<H2>CONNECTIVITY (PING) TEST</H2>
-
-These tags affect the behaviour of the xymonnet connectivity
-test.
-<P>
-<DL COMPACT>
-<DT>noping<DD>
-Disables the ping-test, but will keep the &quot;conn&quot; column
-on the web display with a notice that it has been disabled.
-<P>
-<DT>noconn<DD>
-Disables the ping-test, and does not put a &quot;conn&quot; column
-on the web display.
-<P>
-<DT>conn<DD>
-The &quot;conn&quot; test (which does a ping of the host) is enabled
-for all hosts by default, and normally you just want to
-disable it using &quot;noconn&quot; or &quot;noping&quot;. However, on the 
-rare occasion where you may want to check that a host is
-NOT up, you can specify it as an explicit test, and use
-the normal test modifiers, e.g. &quot;!conn&quot; will be green 
-when the host is NOT up, and red if it does appear on
-the network.
-<P>
-The actual name of the tag - &quot;conn&quot; by default - depends
-on the &quot;--ping=TESTNAME&quot; option for xymonnet, as that
-decides the testname for the connectivity test.
-<P>
-<DT>conn={best,|worst,}IP1[,IP2...]<DD>
-This adds additional IP-addresses that are pinged during the
-normal &quot;conn&quot; test. So the normal &quot;conn&quot; test must be enabled
-(the default) before this tag has any effect. The IP-addresses
-listed here are pinged in addition to the main IP-address.
-<P>
-When multiple IP's are pinged, you can choose if ALL IP's
-must respond (the &quot;worst&quot; method), or AT LEAST one IP
-must respond (the &quot;best&quot; setting). All of the IP's are 
-reported in a single &quot;conn&quot; status, whose color is determined
-from the result of pinging the IP's and the best/worst setting.
-The default method is &quot;best&quot; - so it will report green if 
-just one of the IP's respond to ping.
-<P>
-<DT>badconn[-weekdays-starttime-endtime]:x:y:z<DD>
-This is taken directly from the &quot;fping.sh&quot; connectivity-
-testing script, and is used by xymonnet when it runs
-with ping testing enabled (the default). See the description
-of the &quot;badTEST&quot; tag.
-<P>
-<DT>route:router1,router2,....<DD>
-This tag is taken from the &quot;fping.sh&quot; script, and is used
-by xymonnet when run with the &quot;--ping&quot; option to enable
-ping testing.
-<P>
-The router1,router2,... is a comma-separated list of hosts
-elsewhere in the hosts.cfg file. You cannot have any spaces
-in the list - separate hosts with commas.
-<P>
-This tag changes the color reported for a ping check that
-fails, when one or more of the hosts in the &quot;route&quot; list
-is also down. A &quot;red&quot; status becomes &quot;yellow&quot; - other colors
-are unchanged. The status message will include information 
-about the hosts in the router-list that are down, to aid
-tracking down which router is the root cause of the problem.
-<P>
-Note: Internally, the ping test will still be handled as
-&quot;failed&quot;, and therefore any other tests run for this host
-will report a status of &quot;clear&quot;.
-<P>
-<DT>route_LOCATION:router1,router2,...<DD>
-If the XYMONNETWORK environment variable is defined, a tag
-of &quot;route_XYMONNETWORK:&quot; is recognized by xymonnet with 
-the same effect as the normal &quot;route:&quot; tag (see above).
-This allows you to have different route: tags for each
-server running xymonnet. The actual text for the tag then must
-match the value you have for the XYMONNETWORK setting.
-E.g. with XYMONNETWORK=dmz, the tag becomes &quot;route_dmz:&quot;
-<P>
-<DT>trace<DD>
-If the connectivity test fails, run a &quot;traceroute&quot;
-and include the output from this in the status message
-from the failed connectivity test. Note: For this to
-work, you may have to define the TRACEROUTE environment
-variable, see 
-<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
-
-<P>
-<DT>notrace<DD>
-Similar to the &quot;trace&quot; option, this disables the running
-of a traceroute for the host after a failed connectivity
-test. It is only used if running traceroute is made the
-default via the --trace option.
-<P>
-</DL>
-<A NAME="lbAO">&nbsp;</A>
-<H2>SIMPLE NETWORK TESTS</H2>
-
-These tests perform a simple network test of a service by connecting
-to the port and possibly checking that a banner is shown by the
-server.
-<P>
-How these tests operate are configured in the
-<I><A HREF="../man5/protocols.cfg.5.html">protocols.cfg</A>(5)</I>
-
-configuration file, which controls which port to use for the service,
-whether to send any data to the service, whether to check for
-a response from the service etc.
-<P>
-You can modify the behaviour of these tests on a per-test basis by
-adding one or more modifiers to the test: <B>:NUMBER</B> changes the
-port number from the default to the one you specify for this test.
-E.g. to test ssh running on port 8022, specify the test as <B>ssh:8022</B>.
-<P>
-<B>:s</B> makes the test silent, i.e. it does not send any data to
-the service. E.g. to do a silent test of an smtp server, enter
-<B>smtp:s</B>.
-<P>
-You can combine these two: <B>ftp:8021:s</B> is valid.
-<P>
-If you must test a service from a multi-homed host (i.e. using a
-specific source IP-address instead of the one your operating system
-provides), you can use the modifier &quot;@IPADDRESS&quot; at the end of the
-test specification, <B>after</B> any other modifiers or port number.
-&quot;IPADDRESS&quot; must be a valid dotted IP-address (not hostname) which
-is assigned to the host running the network tests.
-<P>
-The name of the test also determines the column name that the test 
-result will appear with in the Xymon webpages.
-<P>
-By prefixing a test with &quot;!&quot; it becomes a reverse test: Xymon will 
-expect the service NOT to be available, and send a green status if
-it does NOT respond. If a connection to the service succeeds, the
-status will go red.
-<P>
-By prefixing a test with &quot;?&quot; errors will be reported with a &quot;clear&quot;
-status instead of red. This is known as a test for a &quot;dialup&quot; service,
-and allows you to run tests of hosts that are not always online, 
-without getting alarms while they are off-line.
-<P>
-<DL COMPACT>
-<DT>ftp ssh telnet smtp pop3 imap nntp rsync clamd oratns qmtp qmqp<DD>
-These tags are for testing services offering the FTP, Secure Shell (ssh), 
-SMTP, POP3, IMAP, NNTP, rsync, CLAM anti-virus daemon (clamd), Oracle TNS
-listener (oratns), qmail QMTP and QMQP protocols.
-<P>
-<DT>ftps telnets smtps pop3s imaps nntps<DD>
-These tags are for testing of the SSL-tunneled versions of
-the standard ftp, telnet, smtp, pop3, imap and nntp protocols. 
-If Xymon was configured with support for SSL, you can test these
-services like any other network service - xymonnet will
-setup an SSL-encrypted session while testing the service.
-The server certificate is validated and information about
-it sent in the &quot;sslcert&quot; column. Note that smtps does not
-have a standard port number assignment, so you will need to enter
-this into the protocols.cfg file or your /etc/services file.
-<P>
-<DT>bbd<DD>
-Test that a Big Brother compatible daemon is running. This check
-works both for the Xymon
-<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
-
-daemon, and the original Big Brother bbd daemon.
-<P>
-<P>
-</DL>
-<A NAME="lbAP">&nbsp;</A>
-<H2>DNS SERVER TESTS</H2>
-
-These tags are used to setup monitoring of DNS servers.
-<P>
-<DL COMPACT>
-<DT>dns<DD>
-Simple DNS test. It will attempt to lookup the A record for
-the hostname of the DNS server.
-<P>
-<DT>dig<DD>
-This is an alias for the &quot;dns&quot; test. In xymonnet, the &quot;dns&quot;
-and &quot;dig&quot; tests are handled identically, so all of the facilities
-for testing described for the &quot;dns&quot; test are also available for
-the &quot;dig&quot; test.
-<P>
-<DT>dns=hostname<DD>
-<DT>dns=TYPE:lookup[,TYPE:lookup...]<DD>
-The default DNS tests will attempt a DNS lookup
-of the DNS' servers own hostname. You can specify the hostname
-to lookup on a DNS server by listing it on each test.
-<P>
-The second form of the test allows you to perform multiple 
-queries of the DNS server, requesting different types of
-DNS records. The TYPE defines the type of DNS data: A (IP-address),
-MX (Mail eXchanger), PTR (reverse), CNAME (alias), SOA (Start-Of-Authority), 
-NS (Name Server) are among the more common ones used. The
-&quot;lookup&quot; is the query. E.g. to lookup the MX records for the
-&quot;foo.com&quot; domain, you would use &quot;dns=mx:foo.com&quot;. Or to lookup
-the nameservers for the &quot;bar.org&quot; domain, &quot;dns=ns:bar.org&quot;. 
-You can list multiple lookups, separated by commas. For the
-test to end up with a green status, all lookups must succeed.
-<P>
-<P>
-</DL>
-<A NAME="lbAQ">&nbsp;</A>
-<H2>OTHER NETWORK TESTS</H2>
-
-<DL COMPACT>
-<DT>ntp<DD>
-Check for a running NTP (Network Time Protocol) server on this
-host. By default this uses a built-in SNTP probe and needs no external
-program. Set NTPDATE to the ntpdate program (on ntpsec, &quot;ntpdig&quot;) to use
-that instead.
-<P>
-<DT>rpc[=rpcservice1,rpcservice2,...]<DD>
-Check for one or more available RPC services. This check is indirect
-in that it only queries the RPC Portmapper on the host, not the
-actual service. 
-<P>
-If only &quot;rpc&quot; is given, the test only verifies that the port mapper
-is available on the remote host. If you want to check that one or
-more RPC services are registered with the port mapper, list the 
-names of the desired RPC services after the equals-sign. E.g. for
-a working NFS server the &quot;mount&quot;, &quot;nlockmgr&quot; and &quot;nfs&quot; services
-must be available; this can be checked with &quot;rpc=mount,nlockmgr,nfs&quot;.
-<P>
-This test uses the rpcinfo tool for the actual test; if this tool
-is not available in the PATH of xymonnet, you must define the
-RPCINFO environment variable to point at this tool. See
-<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
-
-<P>
-<P>
-</DL>
-<A NAME="lbAR">&nbsp;</A>
-<H2>HTTP TESTS</H2>
-
-Simple testing of a http URL is done simply by putting the
-URL into the hosts.cfg file. Note that this only applies to
-URL's that begin with &quot;http:&quot; or &quot;https:&quot;.
-<P>
-The following items describe more advanced forms of http
-URL's.
-<P>
-<DL COMPACT>
-<DT>Basic Authentication with username/password<DD>
-If the URL requires authentication in the form of a
-username and password, it is most likely using the
-HTTP &quot;Basic&quot; authentication. xymonnet support this,
-and you can provide the username and password either 
-by embedding them in the URL e.g.
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://USERNAME:PASSWORD@www.sample.com/">http://USERNAME:PASSWORD@www.sample.com/</A>
-<BR>
-
-or by putting the username and password into the ~/.netrc
-file (see
-<I><A HREF="../man1/ftp.1.html">ftp</A>(1)</I>
-
-for details).
-<P>
-<DT>Authentication with SSL client certificates<DD>
-An SSL client certificate can be used for authentication.
-To use this, the client certificate must be stored in a
-PEM-formatted file together with the client certificate
-key, in the $XYMONHOME/certs/ directory. The URL is then given as
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://CERT:FILENAME@www.sample.com/">http://CERT:FILENAME@www.sample.com/</A>
-<BR>
-
-The &quot;CERT:&quot; part is literal - i.e. you write C-E-R-T-colon
-and then the filename of the PEM-formatted certificate.
-<BR>
-
-A PEM-formatted certificate file can be generated based on
-certificates stored in Microsoft Internet Explorer and
-OpenSSL. Do as follows:
-<BR>
-
-From the MSIE Tools-Options menu, pick the Content tab,
-click on Certificates, choose the Personal tab, select the
-certificate and click Export. Make sure you export the
-private key also. In the Export File Format, choose
-PKCS 12 (.PFX), check the &quot;Include all certificates&quot; 
-checkbox and uncheck the &quot;Enable strong protection&quot;.
-Provide a temporary password for the exported file,
-and select a filename for the PFX-file.
-<BR>
-
-Now run &quot;openssl pkcs12 -in file.pfx -out file.pem&quot;. When
-prompted for the &quot;Import Password&quot;, provide the temporary
-password you gave when exporting the certificate. Then
-provide a &quot;PEM pass phrase&quot; (twice) when prompted for one.
-<BR>
-
-The file.pem file is the one you should use in the FILENAME
-field in the URL - this file must be kept in $XYMONHOME/certs/.
-The PEM pass phrase must be put into a file named the
-same as the certificate, but with extension &quot;.pass&quot;. E.g.
-if you have the PEM certificate in $XYMONHOME/certs/client.pem,
-you must put the pass phrase into the $XYMONHOME/certs/client.pass
-file. Make sure to protect this file with Unix permissions,
-so that only the user running Xymon can read it.
-<P>
-<DT>Forcing an HTTP or SSL version<DD>
-Some SSL sites will only allow you to connect, if you use
-specific &quot;dialects&quot; of HTTP or SSL. Normally this is auto-negotiated,
-but experience shows that this fails on some systems.
-<P>
-xymonnet can be told to use specific dialects, by adding
-one or more &quot;dialect names&quot; to the URL scheme, i.e. the
-&quot;http&quot; or &quot;https&quot; in the URL:
-<P>
-* &quot;2&quot;,  e.g. https2://<A HREF="http://www.sample.com">www.sample.com</A>/ : use only SSLv2
-<BR>
-
-* &quot;3&quot;,  e.g. https3://<A HREF="http://www.sample.com">www.sample.com</A>/ : use only SSLv3
-<BR>
-
-* &quot;t&quot;,  e.g. <A HREF="httpst://www.sample.com/">httpst://www.sample.com/</A> : use only TLSv1.0
-<BR>
-
-* &quot;a&quot;,  e.g. <A HREF="httpsa://www.sample.com/">httpsa://www.sample.com/</A> : use only TLSv1.0
-<BR>
-
-* &quot;b&quot;,  e.g. <A HREF="httpsb://www.sample.com/">httpsb://www.sample.com/</A> : use only TLSv1.1
-<BR>
-
-* &quot;c&quot;,  e.g. <A HREF="httpsc://www.sample.com/">httpsc://www.sample.com/</A> : use only TLSv1.2
-<BR>
-
-* &quot;d&quot;,  e.g. <A HREF="httpsd://www.sample.com/">httpsc://www.sample.com/</A> : use only TLSv1.3
-<BR>
-
-* &quot;m&quot;,  e.g. <A HREF="httpsm://www.sample.com/">httpsm://www.sample.com/</A> : use only 128-bit ciphers
-<BR>
-
-* &quot;h&quot;,  e.g. <A HREF="httpsh://www.sample.com/">httpsh://www.sample.com/</A> : use only &gt;128-bit ciphers
-<BR>
-
-* &quot;10&quot;, e.g. http10://<A HREF="http://www.sample.com">www.sample.com</A>/ : use HTTP 1.0
-<BR>
-
-* &quot;11&quot;, e.g. http11://<A HREF="http://www.sample.com">www.sample.com</A>/ : use HTTP 1.1
-<P>
-These can be combined where it makes sense, e.g to force
-TLS1.2 and HTTP 1.0 you would use &quot;httpsc10&quot;.
-<P>
-Note that SSLv2 support is disabled in all current OpenSSL releases.
-TLS version-specific scheme testing requires OpenSSL 1.0.1 or higher.
-<P>
-<DT>Testing sites by IP-address<DD>
-xymonnet ignores the &quot;testip&quot; tag normally used to force a 
-test to use the IP-address from the hosts.cfg file instead of
-the hostname, when it performs http and https tests.
-<P>
-The reason for this is that it interacts badly with virtual
-hosts, especially if these are IP-based as is common with
-https-websites.
-<P>
-Instead the IP-address to connect to can be overridden by 
-specifying it as:
-<P>
-<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT><A HREF="http://www.sample.com=1.2.3.4/index.html">http://www.sample.com=1.2.3.4/index.html</A><BR>
-<P>
-The &quot;=1.2.3.4&quot; will case xymonnet to run the test against
-the IP-address &quot;1.2.3.4&quot;, but still trying to access a virtual
-website with the name &quot;<A HREF="http://www.sample.com">www.sample.com</A>&quot;.
-<P>
-The &quot;=ip.address.of.host&quot; must be the last part of the hostname,
-so if you need to combine this with e.g. an explicit port number,
-it should be done as
-<P>
-<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT><A HREF="http://www.sample.com:3128=1.2.3.4/index.html">http://www.sample.com:3128=1.2.3.4/index.html</A><BR>
-<P>
-<DT>HTTP Testing via proxy<DD>
-<B>NOTE:</B> This is not enabled by default. You must
-add the &quot;--bb-proxy-syntax&quot; option when running
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-if you want to use this.
-<P>
-xymonnet supports the Big Brother syntax for
-specifying an HTTP proxy to use when performing http 
-tests. This syntax just joins the proxy- and the target-URL
-into one, e.g.
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://webproxy.sample.com:3128/http://www.foo.com/">http://webproxy.sample.com:3128/http://www.foo.com/</A>
-<BR>
-
-would be the syntax for testing the <A HREF="http://www.foo.com">www.foo.com</A> website
-via the proxy running on &quot;webproxy.sample.com&quot; port 3128.
-<P>
-If the proxy port number is not specified, the default 
-HTTP port number (80) is used.
-<P>
-If your proxy requires authentication, you can specify the
-username and password inside the proxy-part of the URL, e.g.
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://fred:Wilma1@webproxy.sample.com:3128/http://www.foo.com/">http://fred:Wilma1@webproxy.sample.com:3128/http://www.foo.com/</A>
-<BR>
-
-will authenticate to the proxy using a username of &quot;fred&quot; and
-a password of &quot;Wilma1&quot;, before requesting the proxy to fetch
-the <A HREF="http://www.foo.com">www.foo.com</A> homepage.
-<P>
-Note that it is not possible to test https-sites via a proxy,
-nor is it possible to use https for connecting to the proxy 
-itself.
-<P>
-<DT>cont[=COLUMN];URL;[expected_data_regexp|#digesttype:digest]<DD>
-This tag is used to specify a http/https check, where 
-it is also checked that specific content is present in
-the server response.
-<P>
-If the URL itself includes a semi-colon, this must be
-escaped as '%3B' to avoid confusion over which semicolon
-is part of the URL, and which semicolon acts as a delimiter.
-<P>
-The data that must be returned can be specified either
-as a regular expression (except that &lt;space&gt; is not allowed)
-or as a message digest (typically using an MD5 sum or 
-SHA-1 hash).
-<P>
-The regex is pre-processed for backslash &quot;\&quot; escape
-sequences. So you can really put any character in this
-string by escaping it first:
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Newline&nbsp;(LF,&nbsp;ASCII&nbsp;10&nbsp;decimal)
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;\r&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Carriage&nbsp;return&nbsp;(CR,&nbsp;ASCII&nbsp;13&nbsp;decimal)
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TAB&nbsp;(ASCII&nbsp;8&nbsp;decimal)
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;\\&nbsp;&nbsp;&nbsp;&nbsp;Backslash&nbsp;(ASCII&nbsp;92&nbsp;decimal)
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;\XX&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;character&nbsp;with&nbsp;ASCII&nbsp;hex-value&nbsp;XX
-<BR>
-
-<P>
-If you must have whitespace in the regex, use the
-[[:space:]] syntax, e.g. if you want to test for 
-the string &quot;All is OK&quot;, use &quot;All[[:space:]]is[[:space:]]OK&quot;.
-Note that this may depend on your particular implementation 
-of the regex functions found in your C library. Thanks to 
-Charles Goyard for this tip.
-<P>
-Note: If you are migrating from the &quot;cont2.sh&quot; script,
-you must change the '_' used as wildcards by cont2.sh 
-into '.' which is the regular-expression wildcard character.
-<P>
-Message digests can use whatever digest algorithms your
-libcrypto implementation (usually OpenSSL) supports. 
-Common message digests are &quot;md5&quot;, &quot;sha1&quot;, &quot;sha256&quot; or &quot;sha512&quot;. 
-The digest is calculated on the data portion of the response 
-from the server, i.e. HTTP headers are not included in the
-digest (as they change from one request to the next).
-<P>
-The expected digest value can be computed with the
-<I><A HREF="../man1/xymondigest.1.html">xymondigest</A>(1)</I>
-
-utility.
-<P>
-&quot;cont&quot; tags in hosts.cfg result in two status reports: One
-status with the &quot;http&quot; check, and another with the &quot;content&quot; 
-check.
-<P>
-As with normal URL's, the extended syntax described above
-can be used e.g. when testing SSL sites that require the use of 
-SSLv2 or strong ciphers.
-<P>
-The column name for the result of the content check is by default
-called &quot;content&quot; - you can change the default with the &quot;--content=NAME&quot;
-option to xymonnet. See 
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-for a description of this option.
-<P>
-If more than one content check is present for a host, the first
-content check is reported in the column &quot;content&quot;, the second is
-reported in the column &quot;content1&quot;, the third in &quot;content2&quot; etc.
-<P>
-You can also specify the column name directly in the test
-specification, by writing it as &quot;cont=COLUMN;<A HREF="http://...">http://...</A>&quot;.
-Column-names cannot include whitespace or semi-colon.
-<P>
-The content-check status by default includes the full URL
-that was requested, and the HTML data returned by the server.
-You can hide the HTML data on a per-host (not per-test) basis 
-by adding the <B>HIDEHTTP</B> tag to the host entry.
-<P>
-<DT>content=URL<DD>
-This syntax is deprecated. You should use the &quot;cont&quot;
-tag instead, see above.
-<P>
-<DT>post[=COLUMN];URL;form-data;[expected_data_regexp|#digesttype:digest]<DD>
-This tag can be used to test web pages, that use an input
-form. Data can be posted to the form by specifying them 
-in the form-data field, and the result can be checked
-as if it was a normal content check (see above for a description
-of the cont-tag and the restrictions on how the URL must be written).
-<P>
-The form-data field must be entered in &quot;application/x-www-form-urlencoded&quot;
-format, which is the most commonly used format for web
-forms.
-<P>
-E.g. if you have a web form defined like this:
-<P>
-<BR>&nbsp;&nbsp;&nbsp;&lt;form&nbsp;action=&quot;/cgi-bin/form.cgi&quot;&nbsp;method=&quot;post&quot;&gt;
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Given&nbsp;name&lt;input&nbsp;type=&quot;text&quot;&nbsp;name=&quot;givenname&quot;&gt;&lt;/p&gt;
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Surname&lt;input&nbsp;type=&quot;text&quot;&nbsp;name=&quot;surname&quot;&gt;&lt;/p&gt;
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;input&nbsp;type=&quot;submit&quot;&nbsp;value=&quot;Send&quot;&gt;
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&lt;/form&gt;
-<P>
-and you want to post the value &quot;John&quot; to the first field
-and &quot;Doe Jr.&quot; to the second field, then the form data field
-would be
-<P>
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;givenname=John&amp;surname=Doe+Jr.
-<P>
-Note that any spaces in the input value is replaced with '+'.
-<P>
-If your form-data requires a different content-type, you can specify
-it by beginning the form-data with <B>(content-type=TYPE)</B>,
-e.g. &quot;(content-type=text/xml)&quot; followed by the POST data. Note
-that as with normal forms, the POST data should be specified using
-escape-sequences for reserved characters: &quot;space&quot; should be
-entered as &quot;\x20&quot;, double quote as &quot;\x22&quot;, newline as &quot;\n&quot;,
-carriage-return as &quot;\r&quot;, TAB as &quot;\t&quot;, backslash as &quot;\\&quot;.
-Any byte value can be entered using &quot;\xNN&quot; with NN being
-the hexadecimal value, e.g. &quot;\x20&quot; is the space character.
-<P>
-The [expected_data_regexp|#digesttype:digest] is the expected
-data returned from the server in response to the POST.
-See the &quot;cont;&quot; tag above for details. If you are only interested 
-in knowing if it is possible to submit the form (but don't care 
-about the data), this can be an empty string - but the ';' at the 
-end is required.
-<P>
-<DT>nocont[=COLUMN];URL;forbidden_data_regexp<DD>
-This tag works just like &quot;cont&quot; tag, but reverses the test. 
-It is green when the &quot;forbidden_data_regexp&quot; is NOT found in
-the response, and red when it IS found. So it can be used to 
-watch for data that should NOT be present in the response,
-e.g. a server error message.
-<P>
-<DT>nopost[=COLUMN];URL;form-data;expected_data_regexp<DD>
-This tag works just like &quot;post&quot; tag, but reverses the test. 
-It is green when the &quot;forbidden_data_regexp&quot; is NOT found in
-the response, and red when it IS found. So it can be used to 
-watch for data that should NOT be present in the response,
-e.g. a server error message.
-<P>
-<DT>type[=COLUMN];URL;expected_content_type<DD>
-This is a variant of the content check - instead of checking
-the content data, it checks the type of the data as given by 
-the HTTP Content-Type: header. This can used to check if a
-URL returns e.g. a PDF file, regardless of what is inside the
-PDF file.
-<P>
-<DT>soap[=COLUMN];URL;SOAPMESSAGE;[expected_data_regexp|#digesttype:digest]<DD>
-Send SOAP message over HTTP. This is identical to the &quot;cont&quot;
-test, except that the request sent to the server uses a
-Content-type of &quot;application/soap+xml&quot;, and it also sends
-a &quot;SOAPAction&quot; header with the URL. SOAPMESSAGE is the SOAP
-message sent to the server. Since SOAP messages are usually
-XML documents, you can store this in a separate file by
-specifying &quot;file:FILENAME&quot; as the SOAPMESSAGE parameter.
-E.g. a test specification of
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;soap=echo;<A HREF="http://soap.foo.bar/baz?wsdl;file:/home/foo/msg.xml;.">http://soap.foo.bar/baz?wsdl;file:/home/foo/msg.xml;.</A>
-will read the SOAP message from the file /home/foo/msg.xml
-and post it to the URL <A HREF="http://soap.foo.bar/bas?wsdl">http://soap.foo.bar/bas?wsdl</A>
-<P>
-Note that SOAP XML documents usually must begin with the XML
-version line, <B>&lt;?xml version=&quot;1.0&quot;&gt;</B>
-<P>
-<DT>nosoap[=COLUMN];URL;SOAPMESSAGE;[forbidden_data_regexp|#digesttype:digest]<DD>
-This tag works just like &quot;soap&quot; tag, but reverses the test.
-It is green when the &quot;forbidden_data_regexp&quot; is NOT found in
-the response, and red when it IS found. So it can be used to
-watch for data that should NOT be present in the response,
-e.g. a server error message.
-<P>
-<DT>httphead[=COLUMN];URL<DD>
-This is used to perform an HTTP HEAD request instead of a GET.
-<P>
-<DT>httpstatus[=COLUMN];URL;okstatusexpr;notokstatusexpr<DD>
-This is used to explicitly test for certain HTTP statuscodes
-returned when the URL is requested. The <B>okstatusexpr</B> and
-<B>nokokstatusexpr</B> expressions are Perl-compatible regular
-expressions, e.g. &quot;2..|302&quot; will match all OK codes and the
-redirect (302) status code. If the URL cannot be retrieved,
-the status is &quot;999&quot;.
-<P>
-<DT>HIDEHTTP<DD>
-The status display for HTTP checks usually includes the URL,
-and for content checks also the actual data from the web page.
-If you would like to hide these from view, then the HIDEHTTP
-tag will keep this information from showing up on the status
-webpages.
-<P>
-<DT>headermatch<DD>
-Content checks by default only search the HTML body returned by
-the webserver. This option causes it to also search the HTTP 
-headers for the string that must / must not be present.
-<P>
-<DT>browser=BROWSERNAME<DD>
-By default, Xymon sends an HTTP &quot;User-Agent&quot; header identifying
-it a &quot;Xymon&quot;. Some websites require that you use a specific
-browser, typically Internet Explorer. To cater for testing of
-such sites, this tag can be used to modify the data sent in the
-User-Agent header.
-<BR>
-
-E.g. to perform an HTTP test with Xymon masquerading as an Internet
-Explorer 6.0 browser, use <B>browser=&quot;Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)&quot;</B>.
-If you do not know what the User-Agent header should be, open up
-the browser that works with this particular site, and open the
-URL &quot;javascript:document.writeln(navigator.userAgent)&quot; (just copy this
-into the &quot;Open URL&quot; dialog. The text that shows up is what the browser
-sends as the User-Agent header.
-<P>
-<DT>httphdr=STRING<DD>
-Xymon can be send additional headers when performing HTTP checks, to
-allow for validation of any custom configurations needed for your
-site. Note that this is a host-wide configuration. The string will
-be added directly to the headers for all URLs on that host. There is
-currently no way to have this occur only for specific URLs checked.
-<BR>
-
-The string should be encased in quotes, like <B>httphdr=&quot;X-Requested-With: XMLHttpRequest&quot;</B>.
-Newlines can be included, however the string MUST NOT end with a newline
-as that may cause premature ending of the headers sent.
-<P>
-</DL>
-<A NAME="lbAS">&nbsp;</A>
-<H2>LDAP (DIRECTORY SERVER) TESTS</H2>
-
-<DL COMPACT>
-<DT>ldap<DD>
-<DT>ldaps<DD>
-Simple check for an LDAP service. This check merely looks for
-any service running on the ldap/ldaps service port, but does
-not perform any actual LDAP transaction.
-<P>
-<DT><A HREF="ldap://hostport/dn[?attrs[?scope[?filter[?exts]]]]">ldap://hostport/dn[?attrs[?scope[?filter[?exts]]]]</A><DD>
-Check for an LDAP service by performing an LDAP request. This
-tag is in the form of an LDAP URI (cf. RFC 2255). This type of
-LDAP test requires that
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-was built with support for LDAP, e.g. via the OpenLDAP library.
-The components of the LDAP URI are:
-<PRE>
-  <I>hostport</I> is a host name with an optional &quot;:portnumber&quot;
-  <I>dn</I> is the search base
-  <I>attrs</I> is a comma separated list of attributes to request
-  <I>scope</I> is one of these three strings:
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>HOSTS.CFG(5)</title>
+</head>
+<body>
+<h1 class="head-name">HOSTS.CFG</h1>
+Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
+
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">hosts.cfg - Main Xymon configuration file</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<dl class="Bl-tag">
+  <dt id="hosts.cfg"><a class="permalink" href="#hosts.cfg"><b>hosts.cfg</b></a></dt>
+  <dd>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">The <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> file is the most important configuration
+    file for all of the Xymon programs. This file contains the full list of all
+    the systems monitored by Xymon, including the set of tests and other
+    configuration items stored for each host.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILE_FORMAT"><a class="permalink" href="#FILE_FORMAT">FILE
+  FORMAT</a></h1>
+<p class="Pp">Each line of the file defines a host. Blank lines and lines
+    starting with a hash mark (#) are treated as comments and ignored. Long
+    lines can be broken up by putting a backslash at the end of the line and
+    continuing the entry on the next line.</p>
+<p class="Pp">The format of an entry in the hosts.cfg file is as follows:
+  <br/>
+   IP-address hostname # tag1 tag2 ...</p>
+<p class="Pp">The IP-address and hostname are mandatory; all of the tags are
+    optional. Listing a host with only IP-address and hostname will cause a
+    network test to be executed for the host - the connectivity test is enabled
+    by default, but no other tests.</p>
+<p class="Pp">The hostname is the host's canonical name: it keys the status
+    database and appears in web-page URLs and RRD file paths. It is reachable
+    through the web interface only when built from the characters <b>A-Z a-z
+    0-9</b> and <b>:</b>.<b>_</b>- (letters, digits, colon, period, underscore
+    and hyphen). A host whose name contains any other character - other
+    punctuation, a literal comma (which the web URLs use to encode a period, so
+    it cannot appear in a name), or a non-ASCII byte - is still monitored, but
+    <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> writes a warning to the Xymon log when it loads the
+    configuration and its status pages are not reachable through the web
+    interface. To show a non-ASCII or otherwise decorated name in the web
+    interface, give the host an ASCII canonical name and carry the display
+    spelling in the <b>NAME:</b> tag (see below).</p>
+<p class="Pp">The optional tags are then used to define which tests are relevant
+    for the host, and also to set e.g. the time-interval used for availability
+    reporting by <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i></p>
+<p class="Pp">An example of setting up the hosts.cfg file is in the Xymon
+    on-line documentation (from the Help menu, choose &quot;Configuring
+    Monitoring&quot;). The following describes the possible settings in a
+    hosts.cfg file supported by Xymon.</p>
+<p class="Pp"></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="TAGS_RECOGNIZED_BY_ALL_TOOLS"><a class="permalink" href="#TAGS_RECOGNIZED_BY_ALL_TOOLS">TAGS
+  RECOGNIZED BY ALL TOOLS</a></h1>
+<dl class="Bl-tag">
+  <dt id="include"><a class="permalink" href="#include"><b>include</b>
+    <i>filename</i></a></dt>
+  <dd>This tag is used to include another file into the hosts.cfg file at
+      run-time, allowing for a large hosts.cfg file to be split up into more
+      manageable pieces.
+    <p class="Pp">The &quot;filename&quot; argument should point to a file that
+        uses the same syntax as hosts.cfg. The filename can be an absolute
+        filename (if it begins with a '/'), or a relative filename - relative
+        file names are prefixed with the directory where the main hosts.cfg file
+        is located (usually $XYMONHOME/etc/).</p>
+    <p class="Pp">You can nest include tags, i.e. a file that is included from
+        the main hosts.cfg file can itself include other files.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="dispinclude"><a class="permalink" href="#dispinclude"><b>dispinclude</b>
+    <i>filename</i></a></dt>
+  <dd>Acts like the &quot;include&quot; tag, but only for the xymongen tool. Can
+      be used e.g. to put a group of hosts on multiple sub-pages, without having
+      to repeat the host definitions.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="netinclude"><a class="permalink" href="#netinclude"><b>netinclude</b>
+    <i>filename</i></a></dt>
+  <dd>Acts like the &quot;include&quot; tag, but only for the xymonnet tool.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="directory"><a class="permalink" href="#directory"><b>directory</b>
+    <i>directoryname</i></a></dt>
+  <dd>This tag is used to include all files in the named directory. Files are
+      included in alphabetical order. If there are sub- directories, these are
+      recursively included also. The following files are ignored: Files that
+      begin with a dot, files that end with a tilde, RCS files that end with
+      &quot;,v&quot;, RPM package manager files ending in &quot;.rpmsave&quot;
+      or &quot;.rpmnew&quot;, DPKG package manager files ending in
+      &quot;.dpkg-new&quot; or &quot;.dpkg-orig&quot;, and all special files
+      (devices, sockets, pipes etc).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="optional"><a class="permalink" href="#optional"><b>optional
+    include/directory</b></a></dt>
+  <dd>Both &quot;include&quot; and &quot;directory&quot; can be prefixed with
+      the tag &quot;optional&quot;, which will prevent an error message being
+      logged if the file or directory is not present on a system.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="GENERAL_PER-HOST_OPTIONS"><a class="permalink" href="#GENERAL_PER-HOST_OPTIONS">GENERAL
+  PER-HOST OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="noclear"><a class="permalink" href="#noclear"><b>noclear</b></a></dt>
+  <dd>Controls whether stale status messages go purple or clear when a host is
+      down. Normally, when a host is down the client statuses (&quot;cpu&quot;,
+      &quot;disk&quot;, &quot;memory&quot; etc) will stop updating - this would
+      usually make them go &quot;purple&quot; which can trigger alerts. To avoid
+      that, Xymon checks if the &quot;conn&quot; test has failed, and if that is
+      true then the other tests will go &quot;clear&quot; instead of purple so
+      you only get alerts for the &quot;conn&quot; test. If you do want the
+      stale statuses to go purple, you can use the &quot;noclear&quot; tag to
+      override this behaviour.
+    <p class="Pp">Note that &quot;noclear&quot; also affects the behaviour of
+        network tests; see below.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="prefer"><a class="permalink" href="#prefer"><b>prefer</b></a></dt>
+  <dd>When a single host is defined multiple time in the hosts.cfg file,
+      xymongen tries to guess which definition is the best to use for the
+      information used on the &quot;info&quot; column, or for the NOPROPRED and
+      other xymongen-specific settings. Host definitions that have a
+      &quot;noconn&quot; tag or an IP of 0.0.0.0 get lower priority.
+    <p class="Pp">By using the &quot;prefer&quot; tag you tell xymongen that
+        this host definition should be used.</p>
+    <p class="Pp">Note: This only applies to hosts that are defined multiple
+        times in the hosts.cfg file, although it will not hurt to add it on
+        other hosts as well.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="multihomed"><a class="permalink" href="#multihomed"><b>multihomed</b></a></dt>
+  <dd>Tell Xymon that data from the host can arrive from multiple IP-addresses.
+      By default, Xymon will warn if it sees data for one host coming from
+      different IP-addresses, because this usually indicates a mis-configuration
+      of the hostname on at least one of the servers involved. Some hosts with
+      multiple IP-addresses may use different IP's for sending data to Xymon,
+      however. This tag disables the check of source IP when receiving data.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="delayred"><a class="permalink" href="#delayred"><b>delayred</b>=<i>STATUSCOLUMN</i>:<i>DELAY</i>[,<i>STATUSCOLUMN</i>:<i>DELAY</i>...]</a></dt>
+  <dd>Usually, status changes happen immediately. This tag is used to defer an
+      update to red for the STATUSCOLUMN status for DELAY minutes. E.g. with
+      <b>delayred=disk:10,cpu:30</b>, a red disk-status will not appear on the
+      Xymon webpages until it has been red for at least 10 minutes. Note: Since
+      most tests only execute once every 5 minutes, it will usually not make
+      sense to set N to anything but a multiple of 5. The exception is network
+      tests, since <i><a href="../man1/xymonnet-again.sh.1.html">xymonnet-again.sh</a>(1)</i> will re-run failed network tests
+      once a minute for up to 30 minutes.
+    <p class="Pp">Note: while the change to red is deferred, the status is shown
+        as yellow - it does not stay green - so alert rules matching a yellow
+        status will still trigger. To keep the status unchanged during the
+        delay, list the status column in both <b>delayred</b> and
+        <b>delayyellow</b>. A status that has gone purple (no data) is an
+        exception: the first report that arrives after the data gap takes effect
+        immediately, without any delay.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="delayyellow"><a class="permalink" href="#delayyellow"><b>delayyellow</b>=<i>STATUSCOLUMN</i>:<i>DELAY</i>[,<i>STATUSCOLUMN</i>:<i>DELAY</i>...]</a></dt>
+  <dd>Same as <b>delayred</b>, but defers the change to a yellow status.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="holidays"><a class="permalink" href="#holidays"><b>holidays</b>=<i>SET</i></a></dt>
+  <dd>Selects which set of holidays applies to this host. Holiday sets are the
+      named sections of the holidays.cfg file, so <b>holidays=us</b> selects the
+      &quot;[us]&quot; set. Holidays listed before any named section are common
+      to all sets and always apply as well.
+    <p class="Pp">The holiday set matters wherever a time-specification is
+        matched against the current time, such as alert rules, analysis.cfg
+        thresholds and <b>DOWNTIME</b> windows, because on a holiday the day is
+        treated as a different weekday. Which one is set by HOLIDAYLIKEWEEKDAY
+        in holidays.cfg. Xymon's default holidays.cfg sets HOLIDAYLIKEWEEKDAY=0,
+        so holidays are treated as Sundays. If the setting is omitted or set to
+        -1, the actual weekday is used and holidays have no effect on time
+        specifications.</p>
+    <p class="Pp">If this tag is not present, the set named by the HOLIDAYS
+        setting in <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> is used. If that is unset too, only
+        the common holidays apply.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NOTBEFORE:YYYYMMDDHHMM"><a class="permalink" href="#NOTBEFORE:YYYYMMDDHHMM"><b>NOTBEFORE:</b><i>YYYYMMDDHHMM</i></a></dt>
+  <dd></dd>
+  <dt id="NOTAFTER:YYYYMMDDHHMM"><a class="permalink" href="#NOTAFTER:YYYYMMDDHHMM"><b>NOTAFTER:</b><i>YYYYMMDDHHMM</i></a></dt>
+  <dd>Limit the period in which this host definition is active, so that a host
+      can be scheduled in or out of monitoring without editing hosts.cfg.
+      Outside the period the host is treated as if it were not listed in
+      hosts.cfg: it is left off the generated web pages, and xymond treats
+      status messages about it as coming from an unknown host.
+    <p class="Pp">The timestamp is exactly 12 digits - year, month, day, hour
+        and minute - in local time. A value of any other length is reported in
+        the log file and otherwise ignored. Either tag can be used on its own:
+        <b>NOTBEFORE</b> without <b>NOTAFTER</b> has no end, and <b>NOTAFTER</b>
+        without <b>NOTBEFORE</b> has no beginning.</p>
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMONGEN_DISPLAY_OPTIONS"><a class="permalink" href="#XYMONGEN_DISPLAY_OPTIONS">XYMONGEN
+  DISPLAY OPTIONS</a></h1>
+<p class="Pp">These tags are processed by the <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i> tool when
+    generating the Xymon webpages or reports.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="page"><a class="permalink" href="#page"><b>page</b> <i>NAME</i>
+    [<i>Page-title</i>]</a></dt>
+  <dd>This defines a page at the level below the entry page. All hosts following
+      the &quot;page&quot; directive appear on this page, until a new
+      &quot;page&quot;, &quot;subpage&quot; or &quot;subparent&quot; line is
+      found.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="subpage"><a class="permalink" href="#subpage"><b>subpage</b>
+    <i>NAME</i> [<i>Page-title</i>]</a></dt>
+  <dd>This defines a sub-page in the second level below the entry page. You must
+      have a previous &quot;page&quot; line to hook this sub-page to.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="subparent"><a class="permalink" href="#subparent"><b>subparent</b>
+    <i>parentpage</i> <i>newpage</i> [<i>Page-title</i>]</a></dt>
+  <dd>This is used to define sub-pages in whatever levels you may wish. Just
+      like the standard &quot;subpage&quot; tag, &quot;subparent&quot; defines a
+      new Xymon web page; however with &quot;subparent&quot; you explicitly list
+      which page it should go as a sub-page to. You can pick any page as the
+      parent - pages, sub-pages or even other subparent pages. So this allows
+      you to define any tree structure of pages that you like.
+    <p class="Pp">E.g. with this in hosts.cfg:</p>
+    <p class="Pp">
+      <br/>
+       page USA United States
+      <br/>
+       subpage NY New York
+      <br/>
+       subparent NY manhattan Manhattan data centers
+      <br/>
+       subparent manhattan wallstreet Wall Street center</p>
+    <p class="Pp">you get this hierarchy of pages:</p>
+    <p class="Pp">
+      <br/>
+       USA (United States)
+      <br/>
+       NY (New York)
+      <br/>
+       manhattan (Manhattan data centers)
+      <br/>
+       wallstreet (Wall Street center)</p>
+    <p class="Pp">Note: The parent page must be defined before you define the
+        subparent. If not, the page will not be generated, and you get a message
+        in the log file.</p>
+    <p class="Pp">Note: xymongen is case-sensitive, when trying to match the
+        name of the parent page.</p>
+    <p class="Pp">The inspiration for this came from Craig Cook's mkbb.pl
+        script, and I am grateful to Craig for suggesting that I implement it in
+        xymongen. The idea to explicitly list the parent page in the
+        &quot;subparent&quot; tag was what made it easy to implement.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="vpage"><a class="permalink" href="#vpage"><b>vpage</b></a></dt>
+  <dd></dd>
+  <dt id="vsubpage"><a class="permalink" href="#vsubpage"><b>vsubpage</b></a></dt>
+  <dd></dd>
+  <dt id="vsubparent"><a class="permalink" href="#vsubparent"><b>vsubparent</b></a></dt>
+  <dd>These are page-definitions similar to the &quot;page&quot;,
+      &quot;subpage&quot; and &quot;subparent&quot; definitions. However, on
+      these pages the rows are the tests, and the columns are the hosts (normal
+      pages have it the other way around). This is useful if you have a very
+      large number of tests for a few hosts, and prefer to have them listed on a
+      page that can be scrolled vertically.
+    <br/>
+    Note that the &quot;group&quot; directives have no effect on these types of
+      pages.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="group"><a class="permalink" href="#group"><b>group</b>
+    [<i>group-title</i>]</a></dt>
+  <dd></dd>
+  <dt id="group-compress"><a class="permalink" href="#group-compress"><b>group-compress</b>
+    [<i>group-title</i>]</a></dt>
+  <dd>Defines a group of hosts, that appear together on the web page, with a
+      single header-line listing all of the columns. Hosts following the
+      &quot;group&quot; line appear inside the group, until a new
+      &quot;group&quot; or page-line is found. The two group-directives are
+      handled identically by Xymon and xymongen, but both forms are allowed for
+      backwards compatibility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="group-sorted"><a class="permalink" href="#group-sorted"><b>group-sorted</b>
+    [<i>group-title</i>]</a></dt>
+  <dd>Same as the &quot;group&quot; line, but will sort the hosts inside the
+      group so they appear in strict lexicographic order.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="group-only"><a class="permalink" href="#group-only"><b>group-only</b>
+    <i>COLUMN1</i>|<i>COLUMN2</i>|<i>COLUMN3</i> [<i>group-title</i>]</a></dt>
+  <dd>Same as the &quot;group&quot; and &quot;group-compress&quot; lines, but
+      includes only the columns explicitly listed in the group. Any columns not
+      listed will be ignored for these hosts.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="group-except"><a class="permalink" href="#group-except"><b>group-except</b>
+    <i>COLUMN1</i>|<i>COLUMN2</i>|<i>COLUMN3</i> [<i>group-title</i>]</a></dt>
+  <dd>Same as the &quot;group-only&quot; lines, but includes all columns EXCEPT
+      those explicitly listed in the group. Any columns listed will be ignored
+      for these hosts - all other columns are shown.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="title"><a class="permalink" href="#title"><b>title</b> Page, group or
+    host title text</a></dt>
+  <dd>The &quot;title&quot; tag is used to put custom headings into the pages
+      generated by xymongen, in front of page/subpage links, groups or hosts.
+    <p class="Pp">The title tag operates on the next item in the hosts.cfg file
+        following the title tag.</p>
+    <p class="Pp">If a title tag precedes a host entry, the title is shown just
+        before the host is listed on the status page. The column headings
+        present for the host will be repeated just after the heading.</p>
+    <p class="Pp">If a title tag precedes a group entry, the title is show just
+        before the group on the status page.</p>
+    <p class="Pp">If a title tag precedes a page/subpage/subparent entry, the
+        title text replaces the normal &quot;Pages hosted locally&quot; heading
+        normally inserted by Xymon. This appears on the page that links to the
+        sub-pages, not on the sub-page itself. To get a custom heading on the
+        sub-page, you may want to use the &quot;--pagetext-heading&quot; when
+        running <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i></p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NAME:hostname"><a class="permalink" href="#NAME:hostname"><b>NAME:hostname</b></a></dt>
+  <dd>Overrides the default hostname used on the overview web pages. If
+      &quot;hostname&quot; contains spaces, it must be enclosed in double
+      quotes, e.g. NAME:&quot;R&amp;D Oracle Server&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CLIENT:hostname"><a class="permalink" href="#CLIENT:hostname"><b>CLIENT:hostname</b></a></dt>
+  <dd>Defines an alias for a host, which will be used when identifying status
+      messages. This is typically used to accommodate a local client that sends
+      in status reports with a different hostname, e.g. if you use hostnames
+      with domains in your Xymon configuration, but the client is a silly Window
+      box that does not include the hostname. Or vice-versa. Whatever the
+      reason, this can be used to match status reports with the hosts you define
+      in your hosts.cfg file. It causes incoming status reports with the
+      specified hostname to be filed using the hostname defined in hosts.cfg.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NOCOLUMNS:column[,column"><a class="permalink" href="#NOCOLUMNS:column[,column"><b>NOCOLUMNS:column[,column]</b></a></dt>
+  <dd>Used to drop certain of the status columns generated by the Xymon client.
+      <b>column</b> is one of <b>cpu</b>, <b>disk</b>, <b>files</b>,
+      <b>memory</b>, <b>msgs</b>, <b>ports</b>, <b>procs</b>. This setting stops
+      these columns from being updated for the host. Note: If the columns
+      already exist, you must use the <i><a href="../man1/xymon.1.html">xymon</a>(1)</i> utility to <b>drop</b>
+      them, or they will go purple.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="COMMENT:Host"><a class="permalink" href="#COMMENT:Host"><b>COMMENT:</b><i>Host
+    comment</i></a></dt>
+  <dd>Adds a small text after the hostname on the web page. This can be used to
+      describe the host, without completely changing its display-name as the
+      NAME: tag does. If the comment includes whitespace, it must be in
+      double-quotes, e.g. COMMENT:&quot;Sun web server&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="DESCR:Hosttype:Description"><a class="permalink" href="#DESCR:Hosttype:Description"><b>DESCR:Hosttype:Description</b></a></dt>
+  <dd>Define some informational text about the host. The &quot;Hosttype&quot; is
+      a text describing the type of this device - &quot;router&quot;,
+      &quot;switch&quot;, &quot;hub&quot;, &quot;server&quot; etc. The
+      &quot;Description&quot; is an informational text that will be shown on the
+      &quot;Info&quot; column page; this can e.g. be used to store information
+      about the physical location of the device, contact persons etc. If the
+      text contain whitespace, you must enclose it in double-quotes, e.g.
+      DESCR:&quot;switch:4th floor Marketing switch&quot; &quot;Hosttype&quot;
+      and &quot;Description&quot; are split at the <b>first</b> colon, so
+      &quot;Hosttype&quot; must not itself contain a colon. HOSTDESCURL in
+      <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> can turn the description into a link on the info
+      page. The info page renders this text unescaped, so raw HTML placed
+      directly in &quot;Description&quot; (e.g. an <b>&lt;a href=...&gt;</b>
+      link) is also rendered as a link, independently of HOSTDESCURL, and can be
+      used to link different hosts to different targets.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="DOC:URL"><a class="permalink" href="#DOC:URL"><b>DOC:URL</b></a></dt>
+  <dd>Define a URL with documentation for the host, shown as a
+      &quot;Documentation:&quot; row on the host's &quot;Info&quot; column page.
+      The URL may contain a <b>%s</b> conversion, which is replaced with the
+      hostname, e.g. DOC:&quot;https://cmdb.example.com/host/%s&quot;. A literal
+      &quot;%&quot; in the URL must be escaped as &quot;%%&quot;. DOC: can be
+      set on the &quot;.default.&quot; host (see the <b>DEFAULT HOST</b> section
+      below) to provide a fleet-wide default documentation link, with a per-host
+      DOC: tag taking precedence. It is also exported to alert scripts as
+      XMH_DOCURL (see <i><a href="../man5/xymon-xmh.5.html">xymon-xmh</a>(5)</i> ). HOSTDOCURL in
+      <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> is a global hostname-keyed template for a
+      &quot;Notes:&quot; row. E.g. with HOSTDOCURL=&quot;/docs/%s.php&quot; set
+      in xymonserver.cfg, a host &quot;myhost&quot; gets a &quot;Notes:&quot;
+      link to &quot;/docs/myhost.php&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CLASS:Classname"><a class="permalink" href="#CLASS:Classname"><b>CLASS:Classname</b></a></dt>
+  <dd>Force the host to belong to a specific class. Class-names are used when
+      configuring log-file monitoring (they can be used as references in
+      <i><a href="../man5/client-local.cfg.5.html">client-local.cfg</a>(5),</i> <i><a href="../man5/analysis.cfg.5.html">analysis.cfg</a>(5)</i> and
+      <i><a href="../man5/alerts.cfg.5.html">alerts.cfg</a>(5)</i> to group log file checks or alerts). Normally,
+      class-names are controlled on the client by starting the Xymon client with
+      the &quot;--class=Classname&quot; option. If you specify it in the
+      hosts.cfg file on the Xymon server, it overrides any class name that the
+      client reports. If not set, then the host belongs to a class named by the
+      operating system the Xymon client is running on.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="dialup"><a class="permalink" href="#dialup"><b>dialup</b></a></dt>
+  <dd>The keyword &quot;dialup&quot; for a host means that it is OK for it to be
+      off-line - this should not trigger an alert. All network tests will go
+      &quot;clear&quot; upon failure, and any missing reports from e.g. cpu- and
+      disk-status will not go purple when they are not updated.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="nonongreen"><a class="permalink" href="#nonongreen"><b>nonongreen</b></a></dt>
+  <dd>Ignore this host on the &quot;All non-green&quot; page. Even if it has an
+      active alert, it will not be included in the &quot;All non-green&quot;
+      page. This also removes the host from the event-log display.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="nodisp"><a class="permalink" href="#nodisp"><b>nodisp</b></a></dt>
+  <dd>Ignore this host completely when generating the Xymon webpages. Can be
+      useful for monitoring a host without having it show up on the webpages,
+      e.g. because it is not yet in production use. Or for hiding a host that is
+      shown only on a second pageset.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="TRENDS:[*,][![graph"><a class="permalink" href="#TRENDS:[*,][![graph"><b>TRENDS:[*,][![graph,...]]</b></a></dt>
+  <dd>Defines the RRD graphs to include in the &quot;trends&quot; column
+      generated by xymongen. This option syntax is complex.
+    <br/>
+    If this option is not present, xymongen provides graphs matching the
+      standard set of RRD files: la, disk, memory, users, vmstat, iostat,
+      netstat, tcp, bind, apache, sendmail
+    <br/>
+    * If this option is specified, the list of graphs to include start out as
+      being empty (no graphs).
+    <br/>
+    * To include all default graphs, use an asterisk. E.g. &quot;TRENDS:*&quot;
+    <br/>
+    * To exclude a certain graph, specify it prefixed with '!'. E.g. to see all
+      graphs except users: &quot;TRENDS:*,!users&quot;
+    <br/>
+    * The netstat, vmstat and tcp graphs have many &quot;subgraphs&quot;. Which
+      of these are shown can be specified like this:
+      &quot;TRENDS:*,netstat:netstat2|netstat3,tcp:http|smtp|conn&quot; This
+      will show all graphs, but instead of the normal netstat graph, there will
+      be two: The netstat2 and netstat3 graphs. Instead of the combined tcp
+      graphs showing all services, there will be three: One for each of the
+      http, conn and smtp services.
+    <br/>
+  </dd>
+  <dt id="COMPACT:COLUMN"><a class="permalink" href="#COMPACT:COLUMN"><b>COMPACT</b>:<i>COLUMN</i>=<i>COLUMN1</i>|<i>COLUMN2</i>|<i>COLUMN3</i>[,<i>ditto</i>]</a></dt>
+  <dd>Collapses a series of statuses into a single column on the overview web
+      page.
+    <br/>
+  </dd>
+  <dt id="INTERFACES:REGEXP"><a class="permalink" href="#INTERFACES:REGEXP"><b>INTERFACES:REGEXP</b></a></dt>
+  <dd>On systems with multiple network interfaces, the operating system may
+      report a number of network interface where the statistics are of no
+      interest. By default Xymon tracks and graphs the traffic on all network
+      interfaces. This option defines a regular expression, and only those
+      interfaces whose name matches the expression are tracked.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMON_TAGS_FOR_THE_CRITICAL_SYSTEMS_OVERVIEW_PAGE"><a class="permalink" href="#XYMON_TAGS_FOR_THE_CRITICAL_SYSTEMS_OVERVIEW_PAGE">XYMON
+  TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE</a></h1>
+<p class="Pp"><b>NOTE:</b> The &quot;NK&quot; set of tags is deprecated. They
+    will be supported for Xymon 4.x, but will be dropped in version 5. It is
+    recommended that you move your critical systems view to the
+    <i><a href="../man1/criticalview.cgi.1.html">criticalview.cgi</a>(1)</i> viewer, which has a separate configuration tool,
+    <i><a href="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</a>(1)</i> with more facilities than the NK tags in
+    hosts.cfg.</p>
+<p class="Pp">xymongen will create three sets of pages: The main page
+    xymon.html, the all-non-green-statuses page (nongreen.html), and a specially
+    reduced version of nongreen.html with only selected tests (critical.html).
+    This page includes selected tests that currently have a red or yellow
+    status.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="NK:testname[,testname"><a class="permalink" href="#NK:testname[,testname"><b>NK:testname[,testname]</b></a></dt>
+  <dd>NOTE: This has been deprecated, you should use <i><a href="../man1/criticalview.cgi.1.html">criticalview.cgi</a>(1)</i>
+      instead of the NK tag.
+    <p class="Pp">Define the tests that you want included on the critical page.
+        E.g. if you have a host where you only want to see the http tests on
+        critical.html, you specify it as</p>
+    <p class="Pp">
+      <br/>
+       12.34.56.78 www.acme.com # http://www.acme.com/ NK:http</p>
+    <p class="Pp">If you want multiple tests for a host to show up on the
+        critical.html page, specify all the tests separated by commas. The test
+        names correspond to the column names (e.g. https tests are covered by an
+        &quot;NK:http&quot; tag).</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NKTIME"><a class="permalink" href="#NKTIME"><b>NKTIME</b>=<i>day</i>:<i>starttime</i>:<i>endtime</i>[,<i>day</i>:<i>starttime</i>:<i>endtime</i>]</a></dt>
+  <dd>This tag limits the time when an active alert is presented on the NK web
+      page.
+    <p class="Pp">By default, tests with a red or yellow status that are listed
+        in the &quot;NK:testname&quot; tag will appear on the NK page. However,
+        you may not want the test to be shown outside of normal working hours -
+        if, for example, the host is not being serviced during week-ends.</p>
+    <p class="Pp">You can then use the NKTIME tag to define the time periods
+        where the alert will show up on the NK page.</p>
+    <p class="Pp">The time specification consists of</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="day-of-week"><a class="permalink" href="#day-of-week"><b>day-of-week:</b></a></dt>
+  <dd><b>W</b> means Mon-Fri (&quot;weekdays&quot;), <b>*</b> means all days,
+      <b>0</b> .. <b>6</b> = Sunday .. Saturday. Listing multiple days is
+      possible, e.g. &quot;60&quot; is valid meaning &quot;Saturday and
+      Sunday&quot;.</dd>
+  <dt id="starttime"><a class="permalink" href="#starttime"><b>starttime:</b></a></dt>
+  <dd>Time to start showing errors, must be in 24-hour clock format as HHMM
+      hours/minutes. E.g. for 8 am enter &quot;0800&quot;, for 9.30 pm enter
+      &quot;2130&quot;</dd>
+  <dt id="endtime"><a class="permalink" href="#endtime"><b>endtime:</b></a></dt>
+  <dd>Time to stop showing errors.</dd>
+</dl>
+<p class="Pp">If necessary, multiple periods can be specified. E.g. to monitor a
+    site 24x7, except between noon and 1 pm, use
+  NKTIME=*:0000:1159,*:1300:2359</p>
+<p class="Pp">The interval between start time and end time may cross midnight,
+    e.g. <b>*:2330:0200</b> would be valid and have the same effect as
+    <b>*:2330:2400,*:0000:0200</b>.</p>
+<p class="Pp"></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMON_TAGS_FOR_THE_WML_(WAP)_CARDS"><a class="permalink" href="#XYMON_TAGS_FOR_THE_WML_(WAP)_CARDS">XYMON
+  TAGS FOR THE WML (WAP) CARDS</a></h1>
+<p class="Pp">If xymongen is run with the &quot;--wml&quot; option, it will
+    generate a set of WAP-format output &quot;cards&quot; that can be viewed
+    with a WAP-capable device, e.g. a PDA or cell-phone.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="WML:[+|-]testname[,[+|-]testname"><a class="permalink" href="#WML:[+|-]testname[,[+|-]testname"><b>WML:[+|-]testname[,[+|-]testname]</b></a></dt>
+  <dd>This tag determines which tests for this hosts are included in the WML
+      (WAP) page. Syntax is identical to the NK: tag.
+    <p class="Pp">The default set of WML tests are taken from the --wml command
+        line option. If no &quot;WML:&quot; tag is specified, the
+        &quot;NK:&quot; tag is used if present.</p>
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMON_STATUS_PROPAGATION_OPTIONS"><a class="permalink" href="#XYMON_STATUS_PROPAGATION_OPTIONS">XYMON
+  STATUS PROPAGATION OPTIONS</a></h1>
+<p class="Pp">These tags affect how a status propagates upwards from a single
+    test to the page and higher. This can also be done with the command-line
+    options --nopropyellow and --nopropred, but the tags apply to individual
+    hosts, whereas the command line options are global.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="NOPROPRED:[+|-]testname[,[+|-]testname"><a class="permalink" href="#NOPROPRED:[+|-]testname[,[+|-]testname"><b>NOPROPRED:[+|-]testname[,[+|-]testname]</b></a></dt>
+  <dd>This tag is used to inhibit a yellow or red status from propagating
+      upwards - i.e. from a test status color to the (sub)page status color, and
+      further on to xymon.html or nongreen.html
+    <p class="Pp">If a host-specific tag begins with a '-' or a '+', the
+        host-specific tags are removed/added to the default setting from the
+        command-line option. If the host-specific tag does not begin with a '+'
+        or a '-', the default setting is ignored for this host and the NOPROPRED
+        applies to the tests given with this tag.</p>
+    <p class="Pp">E.g.: xymongen runs with &quot;--nopropred=ftp,smtp&quot;.
+        &quot;NOPROPRED:+dns,-smtp&quot; gives a NOPROPRED setting of
+        &quot;ftp,dns&quot; (dns is added to the default, smtp is removed).
+        &quot;NOPROPRED:dns&quot; gives a setting of &quot;dns&quot; only (the
+        default is ignored).</p>
+    <p class="Pp">Note: If you set use the &quot;--nopropred=*&quot; command
+        line option to disable propagation of all alerts, you cannot use the
+        &quot;+&quot; and &quot;-&quot; methods to add or remove from the
+        wildcard setting. In that case, do not use the &quot;+&quot; or
+        &quot;-&quot; setting, but simply list the required tests that you want
+        to keep from propagating.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NOPROPYELLOW:[+|-]testname[,[+|-]testname"><a class="permalink" href="#NOPROPYELLOW:[+|-]testname[,[+|-]testname"><b>NOPROPYELLOW:[+|-]testname[,[+|-]testname]</b></a></dt>
+  <dd>Similar to NOPROPRED: tag, but applies to propagating a yellow status
+      upwards.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NOPROPPURPLE:[+|-]testname[,[+|-]testname"><a class="permalink" href="#NOPROPPURPLE:[+|-]testname[,[+|-]testname"><b>NOPROPPURPLE:[+|-]testname[,[+|-]testname]</b></a></dt>
+  <dd>Similar to NOPROPRED: tag, but applies to propagating a purple status
+      upwards.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NOPROPACK:[+|-]testname[,[+|-]testname"><a class="permalink" href="#NOPROPACK:[+|-]testname[,[+|-]testname"><b>NOPROPACK:[+|-]testname[,[+|-]testname]</b></a></dt>
+  <dd>Similar to NOPROPRED: tag, but applies to propagating an acknowledged
+      status upwards.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="XYMON_AVAILABILITY_REPORT_OPTIONS"><a class="permalink" href="#XYMON_AVAILABILITY_REPORT_OPTIONS">XYMON
+  AVAILABILITY REPORT OPTIONS</a></h1>
+<p class="Pp">These options affect the way the Xymon availability reports are
+    processed (see <i><a href="../man1/report.cgi.1.html">report.cgi</a>(1)</i> for details about availability
+  reports).</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="REPORTTIME"><a class="permalink" href="#REPORTTIME"><b>REPORTTIME</b>=<i>day</i>:<i>starttime</i>:<i>endtime</i>[,<i>day</i>:<i>starttime</i>:<i>endtime</i>]</a></dt>
+  <dd>This tag defines the time interval where you measure uptime of a service
+      for reporting purposes.
+    <p class="Pp">When xymongen generates a report, it computes the availability
+        of each service - i.e. the percentage of time that the service is
+        reported as available (meaning: not red).</p>
+    <p class="Pp">By default, this calculation is done on a 24x7 basis, so no
+        matter when an outage occurs, it counts as downtime.</p>
+    <p class="Pp">The REPORTTIME tag allows you to specify a period of time
+        other than 24x7 for the service availability calculation. If you have
+        systems where you only guarantee availability from e.g. 7 AM to 8 PM on
+        weekdays, you can use
+      <br/>
+       REPORTTIME=W:0700:2000
+      <br/>
+      and the availability calculation will only be performed for the service
+        with measurements from this time interval.</p>
+    <p class="Pp">The syntax for REPORTTIME is the same as the one used by the
+        NKTIME parameter.</p>
+    <p class="Pp">When REPORTTIME is specified, the availability calculation
+        happens like this:</p>
+    <p class="Pp">* Only measurements done during the given time period is used
+        for the calculation.
+      <br/>
+      * &quot;blue&quot; time reduces the length of the report interval, so if
+        you are generating a report for a 10-hour period and there are 20
+        minutes of &quot;blue&quot; time, then the availability calculation will
+        consider the reporting period to be 580 minutes (10 hours minus 20
+        minutes). This allows you to have scheduled downtime during the
+        REPORTTIME interval without hurting your availability; this is (I
+        believe) the whole idea of the downtime being &quot;planned&quot;.
+      <br/>
+      * &quot;red&quot; and &quot;clear&quot; status counts as downtime;
+        &quot;yellow&quot; and &quot;green&quot; count as uptime.
+        &quot;purple&quot; time is ignored.</p>
+    <p class="Pp">The availability calculation correctly handles status changes
+        that cross into/out of a REPORTTIME interval.</p>
+    <p class="Pp">If no REPORTTIME is given, the standard 24x7 calculation is
+        used.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="WARNPCT:percentage"><a class="permalink" href="#WARNPCT:percentage"><b>WARNPCT:percentage</b></a></dt>
+  <dd>Xymon's reporting facility colors each service in the availability report
+      by comparing the computed availability percentage against two thresholds:
+      green when the availability is above the green level (default 99.995%, set
+      globally with the XYMONREPGREEN environment setting), yellow when it is at
+      or above the warning threshold but not above the green level, and red when
+      it is below the warning threshold.
+    <p class="Pp">This option sets the warning threshold on a host-by-host
+        basis, instead of the global setting (default 97%, XYMONREPWARN
+        environment setting). The threshold is the percentage of the time that
+        the host must be available, e.g. &quot;WARNPCT:98.5&quot; if you want
+        the threshold to be at 98.5%</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="WARNSTOPS:count"><a class="permalink" href="#WARNSTOPS:count"><b>WARNSTOPS:count</b></a></dt>
+  <dd>In availability reports, turn the report status red when the service had
+      more than &quot;count&quot; outages (status changes to red) during the
+      reporting period, regardless of the computed availability percentage. This
+      catches unstable services that fail often but briefly, which a percentage
+      threshold alone does not see. When REPORTTIME is set, only outages within
+      those service hours are counted. When WARNSTOPS is active, the report
+      shows the outage count in parentheses next to the availability percentage.
+    <p class="Pp">There is no global default: outage-count checking is disabled
+        unless the host carries this tag (possibly inherited from the
+        &quot;.default.&quot; host). E.g. &quot;WARNSTOPS:3&quot; turns the
+        report red on the fourth outage.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="noflap"><a class="permalink" href="#noflap"><b>noflap</b>[=<i>test1</i>,<i>test2</i>,...]</a></dt>
+  <dd>Disable flap detection for this host, or for specific tests on this host.
+      Flap detection is globally controlled by options given to xymond on the
+      command line, but, if enabled, it can be disabled using this option.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NETWORK_TEST_SETTINGS"><a class="permalink" href="#NETWORK_TEST_SETTINGS">NETWORK
+  TEST SETTINGS</a></h1>
+<dl class="Bl-tag">
+  <dt id="testip"><a class="permalink" href="#testip"><b>testip</b></a></dt>
+  <dd>By default, Xymon will perform a name lookup of the hostname to get the IP
+      address it will use for network tests. This tag causes Xymon to use the IP
+      listed in the hosts.cfg file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="NET:location"><a class="permalink" href="#NET:location"><b>NET:location</b></a></dt>
+  <dd>This tag defines the host as being tested from a specific location. If
+      xymonnet sees that the environment variable XYMONNETWORK is set, it will
+      only test the hosts that have a matching &quot;NET:location&quot; tag in
+      the hosts.cfg file. So this tag is useful if you have more than one system
+      running network tests, but you still want to keep a consolidated hosts.cfg
+      file for all your systems.
+    <p class="Pp">Note: The &quot;--test-untagged&quot; option modifies this
+        behaviour, see <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i></p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="noclear~2"><a class="permalink" href="#noclear~2"><b>noclear</b></a></dt>
+  <dd>Some network tests depend on others. E.g. if the host does not respond to
+      ping, then there's a good chance that the entire host is down and all
+      network tests will fail. Or if the http server is down, then any web
+      content checks are also likely to fail. To avoid floods of alerts, the
+      default behaviour is for xymonnet to change the status of these tests that
+      fail because of another problem to &quot;clear&quot; instead of
+      &quot;red&quot;. The &quot;noclear&quot; tag disables this behaviour and
+      causes all failing tests to be reported with their true color.
+    <p class="Pp">This behaviour can also be implemented on a per-test basis by
+        putting the &quot;~&quot; flag on any network test.</p>
+    <p class="Pp">Note that &quot;noclear&quot; also affects whether stale
+        status messages from e.g. a client on the host go purple or clear when
+        the host is down; see the &quot;noclear&quot; description in the
+        &quot;GENERAL PER-HOST OPTIONS&quot; section above.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="nosslcert"><a class="permalink" href="#nosslcert"><b>nosslcert</b></a></dt>
+  <dd>Disables the standard check of any SSL certificates for this host. By
+      default, if an SSL-enabled service is tested, a second test result is
+      generated with information about the SSL certificate - this tag disables
+      the SSL certificate checks for the host.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ssldays"><a class="permalink" href="#ssldays"><b>ssldays</b>=<i>WARNDAYS</i>:<i>ALARMDAYS</i></a></dt>
+  <dd>Define the number of days before an SSL certificate expires, in which the
+      sslcert status shows a warning (yellow) or alarm (red) status. These
+      default to the values from the &quot;--sslwarn&quot; and
+      &quot;--sslalarm&quot; options for the <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> tool; the values
+      specified in the &quot;ssldays&quot; tag overrides the default.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="sslbits"><a class="permalink" href="#sslbits"><b>sslbits</b>=<i>MINIMUMKEYBITS</i></a></dt>
+  <dd>Enable checking of the encryption strength of the SSL protocol offered by
+      the server. If the server offers encryption using a key with fewer than
+      MINIMUMKEYBITS bits, the &quot;sslcert&quot; test will go red. E.g. to
+      check that your server only uses strong encryption (128 bits or better),
+      use &quot;sslbits=128&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="sni"><a class="permalink" href="#sni"><b>sni</b></a></dt>
+  <dd></dd>
+  <dt id="nosni"><a class="permalink" href="#nosni"><b>nosni</b></a></dt>
+  <dd>Enables or disables use of SNI (Server Name Indication) for SSL tests.
+    <p class="Pp">Some SSL implementations cannot handle SSL handshakes with SNI
+        data, so Xymon by default does not use SNI. This default can be changed
+        with the &quot;--sni&quot; option for <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> but can also be
+        managed per host with these tags.</p>
+    <p class="Pp">SNI support was added in Xymon 4.3.13, where the default was
+        to use SNI. This was changed in 4.3.14 so SNI support is disabled by
+        default, and the &quot;sni&quot; and &quot;nosni&quot; tags were
+        introduced together with the &quot;--sni&quot; option for xymonnet.</p>
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="DOWNTIME"><a class="permalink" href="#DOWNTIME"><b>DOWNTIME</b>=<i>day</i>:<i>starttime</i>:<i>endtime</i>[,<i>day</i>:<i>starttime</i>:<i>endtime</i>]</a></dt>
+  <dd></dd>
+  <dt id="DOWNTIME~2"><a class="permalink" href="#DOWNTIME~2"><b>DOWNTIME</b>=<i>columns</i>:<i>day</i>:<i>starttime</i>:<i>endtime</i>:<i>cause</i>[,<i>columns</i>:<i>day</i>:<i>starttime</i>:<i>endtime</i>:<i>cause</i>]</a></dt>
+  <dd>This tag can be used to ignore failed checks during specific times of the
+      day - e.g. if you run services that are only monitored e.g. Mon-Fri
+      8am-5pm, or you always reboot a server every Monday between 5 and 6 pm.
+    <p class="Pp">What happens is that if a test fails during the specified
+        time, it is reported with status BLUE instead of red, yellow, or purple.
+        Thus you can still see when the service was unavailable, but alarms will
+        not be triggered and the downtime is not counted in the availability
+        calculations generated by the Xymon reports.</p>
+    <p class="Pp">The &quot;columns&quot; and &quot;cause&quot; settings are
+        optional, but both or neither must be specified. &quot;columns&quot; may
+        be a comma-separated list of status columns to which DOWNTIME will
+        apply. The &quot;cause&quot; string will be displayed on the status web
+        page to explain why the system is down.</p>
+    <p class="Pp">The syntax for DOWNTIME is the same as the one used by the
+        NKTIME parameter.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="SLA"><a class="permalink" href="#SLA"><b>SLA</b>=<i>day</i>:<i>starttime</i>:<i>endtime</i>[,<i>day</i>:<i>starttime</i>:<i>endtime</i>]</a></dt>
+  <dd>This tag is now deprecated. Use the DOWNTIME tag instead.
+    <p class="Pp">This tag works the opposite of the DOWNTIME tag - you use it
+        to specify the periods of the day that the service should be green.
+        Failures OUTSIDE the SLA interval are reported as blue.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="depends"><a class="permalink" href="#depends"><b>depends</b>=(<i>testA</i>:<i>host1</i>/<i>test1</i>,<i>host2</i>/<i>test2</i>),(<i>testB</i>:<i>host3</i>/<i>test3</i>),[...]</a></dt>
+  <dd>This tag allows you to define dependencies between tests. If
+      &quot;testA&quot; for the current host depends on &quot;test1&quot; for
+      host &quot;host1&quot; and test &quot;test2&quot; for &quot;host2&quot;,
+      this can be defined with
+    <p class="Pp">
+      <br/>
+       depends=(testA:host1/test1,host2/test2)</p>
+    <p class="Pp">When deciding the color to report for testA, if either
+        host1/test1 failed or host2/test2 failed, if testA has failed also then
+        the color of testA will be &quot;clear&quot; instead of red or
+      yellow.</p>
+    <p class="Pp">Since all tests are actually run before the dependencies are
+        evaluated, you can use any host/test in the dependency - regardless of
+        the actual sequence that the hosts are listed, or the tests run. It is
+        also valid to use tests from the same host that the dependency is for.
+        E.g.</p>
+    <p class="Pp">
+      <br/>
+       1.2.3.4 foo # http://foo/ webmin depends=(webmin:foo/http)</p>
+    <p class="Pp">is valid; if both the http and the webmin tests fail, then
+        webmin will be reported as clear.</p>
+    <p class="Pp">Note: The &quot;depends&quot; tag is evaluated by xymonnet
+        while running the network tests. It can therefore only refer to other
+        network tests that are handled by the same server - there is currently
+        no way to use the e.g. the status of locally run tests (disk, cpu, msgs)
+        or network tests from other servers in a dependency definition. Such
+        dependencies are silently ignored.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="badTEST[-weekdays-starttime-endtime]:x:y:z"><a class="permalink" href="#badTEST[-weekdays-starttime-endtime]:x:y:z"><b>badTEST[-weekdays-starttime-endtime]:x:y:z</b></a></dt>
+  <dd>NOTE: This has been deprecated, use the <b>delayred</b> and
+      <b>delayyellow</b> settings instead.
+    <p class="Pp">Normally when a network test fails, the status changes to red
+        immediately. With a &quot;badTEST:x:y:z&quot; tag this behaviour
+        changes:
+      <br/>
+      * While &quot;z&quot; or more successive tests fail, the column goes RED.
+      <br/>
+      * While &quot;y&quot; or more successive tests fail, but fewer than
+        &quot;z&quot;, the column goes YELLOW.
+      <br/>
+      * While &quot;x&quot; or more successive tests fail, but fewer than
+        &quot;y&quot;, the column goes CLEAR.
+      <br/>
+      * While fewer than &quot;x&quot; successive tests fail, the column stays
+        GREEN.</p>
+    <p class="Pp">The optional time specification can be used to limit this
+        &quot;badTEST&quot; setting to a particular time of day, e.g. to require
+        a longer period of downtime before raising an alarm during out-of-office
+        hours. The time-specification uses:
+      <br/>
+      * Weekdays: The weekdays this badTEST tag applies, from 0 (Sunday) through
+        6 (Saturday). Putting &quot;W&quot; here counts as &quot;12345&quot;,
+        i.e. all working days. Putting &quot;*&quot; here counts as all days of
+        the week, equivalent to &quot;0123456&quot;.
+      <br/>
+      * start time and end time are specified using 24-hour clocks, e.g.
+        &quot;badTEST-W-0900-2000&quot; is valid for working days between 9 AM
+        (09:00) and 8 PM (20:00).</p>
+    <p class="Pp">When using multiple badTEST tags, the LAST one specified with
+        a matching time-spec is used.</p>
+    <p class="Pp">Note: The &quot;TEST&quot; is replaced by the name of the
+        test, e.g.</p>
+    <p class="Pp">
+      <br/>
+       12.34.56.78 www.foo.com # http://www.foo.com/ badhttp:1:2:4</p>
+    <p class="Pp">defines a http test that goes &quot;clear&quot; after the
+        first failure, &quot;yellow&quot; after two successive failures, and
+        &quot;red&quot; after four successive failures.</p>
+    <p class="Pp">For LDAP tests using URL's, use the option
+        &quot;badldapurl&quot;. For the other network tests, use
+        &quot;badftp&quot;, &quot;badssh&quot; etc.</p>
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="CONNECTIVITY_(PING)_TEST"><a class="permalink" href="#CONNECTIVITY_(PING)_TEST">CONNECTIVITY
+  (PING) TEST</a></h1>
+<p class="Pp">These tags affect the behaviour of the xymonnet connectivity
+  test.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="noping"><a class="permalink" href="#noping"><b>noping</b></a></dt>
+  <dd>Disables the ping-test, but will keep the &quot;conn&quot; column on the
+      web display with a notice that it has been disabled.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="noconn"><a class="permalink" href="#noconn"><b>noconn</b></a></dt>
+  <dd>Disables the ping-test, and does not put a &quot;conn&quot; column on the
+      web display.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="conn"><a class="permalink" href="#conn"><b>conn</b></a></dt>
+  <dd>The &quot;conn&quot; test (which does a ping of the host) is enabled for
+      all hosts by default, and normally you just want to disable it using
+      &quot;noconn&quot; or &quot;noping&quot;. However, on the rare occasion
+      where you may want to check that a host is NOT up, you can specify it as
+      an explicit test, and use the normal test modifiers, e.g.
+      &quot;!conn&quot; will be green when the host is NOT up, and red if it
+      does appear on the network.
+    <p class="Pp">The actual name of the tag - &quot;conn&quot; by default -
+        depends on the &quot;--ping=TESTNAME&quot; option for xymonnet, as that
+        decides the testname for the connectivity test.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="conn~2"><a class="permalink" href="#conn~2"><b>conn</b>={<b>best</b>,|<b>worst</b>,}<i>IP1</i>[,<i>IP2</i>...]</a></dt>
+  <dd>This adds additional IP-addresses that are pinged during the normal
+      &quot;conn&quot; test. So the normal &quot;conn&quot; test must be enabled
+      (the default) before this tag has any effect. The IP-addresses listed here
+      are pinged in addition to the main IP-address.
+    <p class="Pp">When multiple IP's are pinged, you can choose if ALL IP's must
+        respond (the &quot;worst&quot; method), or AT LEAST one IP must respond
+        (the &quot;best&quot; setting). All of the IP's are reported in a single
+        &quot;conn&quot; status, whose color is determined from the result of
+        pinging the IP's and the best/worst setting. The default method is
+        &quot;best&quot; - so it will report green if just one of the IP's
+        respond to ping.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="badconn[-weekdays-starttime-endtime]:x:y:z"><a class="permalink" href="#badconn[-weekdays-starttime-endtime]:x:y:z"><b>badconn[-weekdays-starttime-endtime]:x:y:z</b></a></dt>
+  <dd>NOTE: This has been deprecated, use the <b>delayred</b> and
+      <b>delayyellow</b> settings instead.
+    <p class="Pp">This is taken directly from the &quot;fping.sh&quot;
+        connectivity- testing script, and is used by xymonnet when it runs with
+        ping testing enabled (the default). See the description of the
+        &quot;badTEST&quot; tag.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="route:router1,router2"><a class="permalink" href="#route:router1,router2"><b>route:router1,router2,....</b></a></dt>
+  <dd>This tag is taken from the &quot;fping.sh&quot; script, and is used by
+      xymonnet when run with the &quot;--ping&quot; option to enable ping
+      testing.
+    <p class="Pp">The router1,router2,... is a comma-separated list of hosts
+        elsewhere in the hosts.cfg file. You cannot have any spaces in the list
+        - separate hosts with commas.</p>
+    <p class="Pp">This tag changes the color reported for a ping check that
+        fails, when one or more of the hosts in the &quot;route&quot; list is
+        also down. A &quot;red&quot; status becomes &quot;yellow&quot; - other
+        colors are unchanged. The status message will include information about
+        the hosts in the router-list that are down, to aid tracking down which
+        router is the root cause of the problem.</p>
+    <p class="Pp">Note: Internally, the ping test will still be handled as
+        &quot;failed&quot;, and therefore any other tests run for this host will
+        report a status of &quot;clear&quot;.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="route_LOCATION:router1,router2"><a class="permalink" href="#route_LOCATION:router1,router2"><b>route_LOCATION:router1,router2,...</b></a></dt>
+  <dd>If the XYMONNETWORK environment variable is defined, a tag of
+      &quot;route_XYMONNETWORK:&quot; is recognized by xymonnet with the same
+      effect as the normal &quot;route:&quot; tag (see above). This allows you
+      to have different route: tags for each server running xymonnet. The actual
+      text for the tag then must match the value you have for the XYMONNETWORK
+      setting. E.g. with XYMONNETWORK=dmz, the tag becomes
+      &quot;route_dmz:&quot;
+    <p class="Pp"></p>
+  </dd>
+  <dt id="trace"><a class="permalink" href="#trace"><b>trace</b></a></dt>
+  <dd>If the connectivity test fails, run a &quot;traceroute&quot; and include
+      the output from this in the status message from the failed connectivity
+      test. Note: For this to work, you may have to define the TRACEROUTE
+      environment variable, see <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="notrace"><a class="permalink" href="#notrace"><b>notrace</b></a></dt>
+  <dd>Similar to the &quot;trace&quot; option, this disables the running of a
+      traceroute for the host after a failed connectivity test. It is only used
+      if running traceroute is made the default via the --trace option.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SIMPLE_NETWORK_TESTS"><a class="permalink" href="#SIMPLE_NETWORK_TESTS">SIMPLE
+  NETWORK TESTS</a></h1>
+<p class="Pp">These tests perform a simple network test of a service by
+    connecting to the port and possibly checking that a banner is shown by the
+    server.</p>
+<p class="Pp">How these tests operate are configured in the
+    <i><a href="../man5/protocols.cfg.5.html">protocols.cfg</a>(5)</i> configuration file, which controls which port to use
+    for the service, whether to send any data to the service, whether to check
+    for a response from the service etc.</p>
+<p class="Pp">You can modify the behaviour of these tests on a per-test basis by
+    adding one or more modifiers to the test: <b>:NUMBER</b> changes the port
+    number from the default to the one you specify for this test. E.g. to test
+    ssh running on port 8022, specify the test as <b>ssh:8022</b>.</p>
+<p class="Pp"><b>:s</b> makes the test silent, i.e. it does not send any data to
+    the service. E.g. to do a silent test of an smtp server, enter
+    <b>smtp:s</b>.</p>
+<p class="Pp">You can combine these two: <b>ftp:8021:s</b> is valid.</p>
+<p class="Pp">If you must test a service from a multi-homed host (i.e. using a
+    specific source IP-address instead of the one your operating system
+    provides), you can use the modifier &quot;@IPADDRESS&quot; at the end of the
+    test specification, <b>after</b> any other modifiers or port number.
+    &quot;IPADDRESS&quot; must be a valid dotted IP-address (not hostname) which
+    is assigned to the host running the network tests.</p>
+<p class="Pp">The name of the test also determines the column name that the test
+    result will appear with in the Xymon webpages.</p>
+<p class="Pp">By prefixing a test with &quot;!&quot; it becomes a reverse test:
+    Xymon will expect the service NOT to be available, and send a green status
+    if it does NOT respond. If a connection to the service succeeds, the status
+    will go red.</p>
+<p class="Pp">By prefixing a test with &quot;?&quot; errors will be reported
+    with a &quot;clear&quot; status instead of red. This is known as a test for
+    a &quot;dialup&quot; service, and allows you to run tests of hosts that are
+    not always online, without getting alarms while they are off-line.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="ftp"><a class="permalink" href="#ftp"><b>ftp ssh telnet smtp pop3 imap
+    nntp rsync clamd oratns qmtp qmqp</b></a></dt>
+  <dd>These tags are for testing services offering the FTP, Secure Shell (ssh),
+      SMTP, POP3, IMAP, NNTP, rsync, CLAM anti-virus daemon (clamd), Oracle TNS
+      listener (oratns), qmail QMTP and QMQP protocols.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ftps"><a class="permalink" href="#ftps"><b>ftps telnets smtps pop3s
+    imaps nntps</b></a></dt>
+  <dd>These tags are for testing of the SSL-tunneled versions of the standard
+      ftp, telnet, smtp, pop3, imap and nntp protocols. If Xymon was configured
+      with support for SSL, you can test these services like any other network
+      service - xymonnet will setup an SSL-encrypted session while testing the
+      service. The server certificate is validated and information about it sent
+      in the &quot;sslcert&quot; column. Note that smtps does not have a
+      standard port number assignment, so you will need to enter this into the
+      protocols.cfg file or your /etc/services file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="bbd"><a class="permalink" href="#bbd"><b>bbd</b></a></dt>
+  <dd>Test that a Big Brother compatible daemon is running. This check works
+      both for the Xymon <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> daemon, and the original Big Brother
+      bbd daemon.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DNS_SERVER_TESTS"><a class="permalink" href="#DNS_SERVER_TESTS">DNS
+  SERVER TESTS</a></h1>
+<p class="Pp">These tags are used to setup monitoring of DNS servers.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="dns"><a class="permalink" href="#dns"><b>dns</b></a></dt>
+  <dd>Simple DNS test. It will attempt to lookup the A record for the hostname
+      of the DNS server.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="dig"><a class="permalink" href="#dig"><b>dig</b></a></dt>
+  <dd>This is an alias for the &quot;dns&quot; test. In xymonnet, the
+      &quot;dns&quot; and &quot;dig&quot; tests are handled identically, so all
+      of the facilities for testing described for the &quot;dns&quot; test are
+      also available for the &quot;dig&quot; test.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="dns~2"><a class="permalink" href="#dns~2"><b>dns</b>=<i>hostname</i></a></dt>
+  <dd></dd>
+  <dt id="dns~3"><a class="permalink" href="#dns~3"><b>dns</b>=<i>TYPE</i>:<i>lookup</i>[,<i>TYPE</i>:<i>lookup</i>...]</a></dt>
+  <dd>The default DNS tests will attempt a DNS lookup of the DNS' servers own
+      hostname. You can specify the hostname to lookup on a DNS server by
+      listing it on each test.
+    <p class="Pp">The second form of the test allows you to perform multiple
+        queries of the DNS server, requesting different types of DNS records.
+        The TYPE defines the type of DNS data: A (IP-address), MX (Mail
+        eXchanger), PTR (reverse), CNAME (alias), SOA (Start-Of-Authority), NS
+        (Name Server) are among the more common ones used. The
+        &quot;lookup&quot; is the query. E.g. to lookup the MX records for the
+        &quot;foo.com&quot; domain, you would use &quot;dns=mx:foo.com&quot;. Or
+        to lookup the nameservers for the &quot;bar.org&quot; domain,
+        &quot;dns=ns:bar.org&quot;. You can list multiple lookups, separated by
+        commas. For the test to end up with a green status, all lookups must
+        succeed.</p>
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OTHER_NETWORK_TESTS"><a class="permalink" href="#OTHER_NETWORK_TESTS">OTHER
+  NETWORK TESTS</a></h1>
+<dl class="Bl-tag">
+  <dt id="ntp"><a class="permalink" href="#ntp"><b>ntp</b></a></dt>
+  <dd>Check for a running NTP (Network Time Protocol) server on this host. By
+      default this uses a built-in SNTP probe and needs no external program. Set
+      NTPDATE to the ntpdate program (on ntpsec, &quot;ntpdig&quot;) to use that
+      instead, and adapt NTPDATEOPTS to the chosen client (its default is
+      ntpdate syntax).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="rpc"><a class="permalink" href="#rpc"><b>rpc</b>[=<i>rpcservice1</i>,<i>rpcservice2</i>,...]</a></dt>
+  <dd>Check for one or more available RPC services. This check is indirect in
+      that it only queries the RPC Portmapper on the host, not the actual
+      service.
+    <p class="Pp">If only &quot;rpc&quot; is given, the test only verifies that
+        the port mapper is available on the remote host. If you want to check
+        that one or more RPC services are registered with the port mapper, list
+        the names of the desired RPC services after the equals-sign. E.g. for a
+        working NFS server the &quot;mount&quot;, &quot;nlockmgr&quot; and
+        &quot;nfs&quot; services must be available; this can be checked with
+        &quot;rpc=mount,nlockmgr,nfs&quot;.</p>
+    <p class="Pp">This test uses the rpcinfo tool for the actual test; if this
+        tool is not available in the PATH of xymonnet, you must define the
+        RPCINFO environment variable to point at this tool. See
+        <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i></p>
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="HTTP_TESTS"><a class="permalink" href="#HTTP_TESTS">HTTP
+  TESTS</a></h1>
+<p class="Pp">Simple testing of a http URL is done simply by putting the URL
+    into the hosts.cfg file. Note that this only applies to URL's that begin
+    with &quot;http:&quot; or &quot;https:&quot;.</p>
+<p class="Pp">The following items describe more advanced forms of http
+  URL's.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="Basic"><a class="permalink" href="#Basic">Basic Authentication with
+    username/password</a></dt>
+  <dd>If the URL requires authentication in the form of a username and password,
+      it is most likely using the HTTP &quot;Basic&quot; authentication.
+      xymonnet support this, and you can provide the username and password
+      either by embedding them in the URL e.g.
+    <br/>
+     http://USERNAME:PASSWORD@www.sample.com/
+    <br/>
+    or by putting the username and password into the ~/.netrc file (see
+      <i>ftp(1)</i> for details).
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Authentication"><a class="permalink" href="#Authentication">Authentication
+    with SSL client certificates</a></dt>
+  <dd>An SSL client certificate can be used for authentication. To use this, the
+      client certificate must be stored in a PEM-formatted file together with
+      the client certificate key, in the $XYMONHOME/certs/ directory. The URL is
+      then given as
+    <br/>
+     http://CERT:FILENAME@www.sample.com/
+    <br/>
+    The &quot;CERT:&quot; part is literal - i.e. you write C-E-R-T-colon and
+      then the filename of the PEM-formatted certificate.
+    <br/>
+    A PEM-formatted certificate file can be generated based on certificates
+      stored in Microsoft Internet Explorer and OpenSSL. Do as follows:
+    <br/>
+    From the MSIE Tools-Options menu, pick the Content tab, click on
+      Certificates, choose the Personal tab, select the certificate and click
+      Export. Make sure you export the private key also. In the Export File
+      Format, choose PKCS 12 (.PFX), check the &quot;Include all
+      certificates&quot; checkbox and uncheck the &quot;Enable strong
+      protection&quot;. Provide a temporary password for the exported file, and
+      select a filename for the PFX-file.
+    <br/>
+    Now run &quot;openssl pkcs12 -in file.pfx -out file.pem&quot;. When prompted
+      for the &quot;Import Password&quot;, provide the temporary password you
+      gave when exporting the certificate. Then provide a &quot;PEM pass
+      phrase&quot; (twice) when prompted for one.
+    <br/>
+    The file.pem file is the one you should use in the FILENAME field in the URL
+      - this file must be kept in $XYMONHOME/certs/. The PEM pass phrase must be
+      put into a file named the same as the certificate, but with extension
+      &quot;.pass&quot;. E.g. if you have the PEM certificate in
+      $XYMONHOME/certs/client.pem, you must put the pass phrase into the
+      $XYMONHOME/certs/client.pass file. Make sure to protect this file with
+      Unix permissions, so that only the user running Xymon can read it.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Forcing"><a class="permalink" href="#Forcing">Forcing an HTTP or SSL
+    version</a></dt>
+  <dd>Some SSL sites will only allow you to connect, if you use specific
+      &quot;dialects&quot; of HTTP or SSL. Normally this is auto-negotiated, but
+      experience shows that this fails on some systems.
+    <p class="Pp">xymonnet can be told to use specific dialects, by adding one
+        or more &quot;dialect names&quot; to the URL scheme, i.e. the
+        &quot;http&quot; or &quot;https&quot; in the URL:</p>
+    <p class="Pp">* &quot;2&quot;, e.g. https2://www.sample.com/ : use only
+        SSLv2
+      <br/>
+      * &quot;3&quot;, e.g. https3://www.sample.com/ : use only SSLv3
+      <br/>
+      * &quot;t&quot;, e.g. httpst://www.sample.com/ : use only TLSv1.0
+      <br/>
+      * &quot;a&quot;, e.g. httpsa://www.sample.com/ : use only TLSv1.0
+      <br/>
+      * &quot;b&quot;, e.g. httpsb://www.sample.com/ : use only TLSv1.1
+      <br/>
+      * &quot;c&quot;, e.g. httpsc://www.sample.com/ : use only TLSv1.2
+      <br/>
+      * &quot;d&quot;, e.g. httpsd://www.sample.com/ : use only TLSv1.3
+      <br/>
+      * &quot;m&quot;, e.g. httpsm://www.sample.com/ : use only 128-bit ciphers
+      <br/>
+      * &quot;h&quot;, e.g. httpsh://www.sample.com/ : use only &gt;128-bit
+        ciphers
+      <br/>
+      * &quot;10&quot;, e.g. http10://www.sample.com/ : use HTTP 1.0
+      <br/>
+      * &quot;11&quot;, e.g. http11://www.sample.com/ : use HTTP 1.1</p>
+    <p class="Pp">These can be combined where it makes sense, e.g to force
+        TLS1.2 and HTTP 1.0 you would use &quot;httpsc10&quot;.</p>
+    <p class="Pp">Note that SSLv2 support is disabled in all current OpenSSL
+        releases. TLS version-specific scheme testing requires OpenSSL 1.0.1 or
+        higher.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Testing"><a class="permalink" href="#Testing">Testing sites by
+    IP-address</a></dt>
+  <dd>xymonnet ignores the &quot;testip&quot; tag normally used to force a test
+      to use the IP-address from the hosts.cfg file instead of the hostname,
+      when it performs http and https tests.
+    <p class="Pp">The reason for this is that it interacts badly with virtual
+        hosts, especially if these are IP-based as is common with
+        https-websites.</p>
+    <p class="Pp">Instead the IP-address to connect to can be overridden by
+        specifying it as:</p>
+    <p class="Pp">	http://www.sample.com=1.2.3.4/index.html</p>
+    <p class="Pp">The &quot;=1.2.3.4&quot; will case xymonnet to run the test
+        against the IP-address &quot;1.2.3.4&quot;, but still trying to access a
+        virtual website with the name &quot;www.sample.com&quot;.</p>
+    <p class="Pp">The &quot;=ip.address.of.host&quot; must be the last part of
+        the hostname, so if you need to combine this with e.g. an explicit port
+        number, it should be done as</p>
+    <p class="Pp">	http://www.sample.com:3128=1.2.3.4/index.html</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="HTTP"><a class="permalink" href="#HTTP">HTTP Testing via
+    proxy</a></dt>
+  <dd><b>NOTE:</b> This is not enabled by default. You must add the
+      &quot;--bb-proxy-syntax&quot; option when running <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> if
+      you want to use this.
+    <p class="Pp">xymonnet supports the Big Brother syntax for specifying an
+        HTTP proxy to use when performing http tests. This syntax just joins the
+        proxy- and the target-URL into one, e.g.
+      <br/>
+       http://webproxy.sample.com:3128/http://www.foo.com/
+      <br/>
+      would be the syntax for testing the www.foo.com website via the proxy
+        running on &quot;webproxy.sample.com&quot; port 3128.</p>
+    <p class="Pp">If the proxy port number is not specified, the default HTTP
+        port number (80) is used.</p>
+    <p class="Pp">If your proxy requires authentication, you can specify the
+        username and password inside the proxy-part of the URL, e.g.
+      <br/>
+       http://fred:Wilma1@webproxy.sample.com:3128/http://www.foo.com/
+      <br/>
+      will authenticate to the proxy using a username of &quot;fred&quot; and a
+        password of &quot;Wilma1&quot;, before requesting the proxy to fetch the
+        www.foo.com homepage.</p>
+    <p class="Pp">Note that it is not possible to test https-sites via a proxy,
+        nor is it possible to use https for connecting to the proxy itself.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="cont"><a class="permalink" href="#cont"><b>cont</b>[=<i>COLUMN</i>];<i>URL</i>;[<i>expected_data_regexp</i>|#<i>digesttype</i>:<i>digest</i>]</a></dt>
+  <dd>This tag is used to specify a http/https check, where it is also checked
+      that specific content is present in the server response.
+    <p class="Pp">If the URL itself includes a semi-colon, this must be escaped
+        as '%3B' to avoid confusion over which semicolon is part of the URL, and
+        which semicolon acts as a delimiter.</p>
+    <p class="Pp">The data that must be returned can be specified either as a
+        regular expression (except that &lt;space&gt; is not allowed) or as a
+        message digest (typically using an MD5 sum or SHA-1 hash).</p>
+    <p class="Pp">The regex is pre-processed for the following specific
+        backslash &quot;\&quot; escape sequences. You can therefore include
+        arbitrary characters by using their hex values (e.g. \x2E for a literal
+        full stop):
+      <br/>
+    </p>
+    <pre>   \n     Newline (LF, ASCII 10 decimal)
+   \r     Carriage return (CR, ASCII 13 decimal)
+   \t     TAB (ASCII 8 decimal)
+   \\     Backslash (ASCII 92 decimal)
+   \xNN   The character with ASCII hex-value NN</pre>
+    <p class="Pp">If you must have whitespace in the regex, use the [[:space:]]
+        syntax, e.g. if you want to test for the string &quot;All is OK&quot;,
+        use &quot;All[[:space:]]is[[:space:]]OK&quot;. Note that this may depend
+        on your particular implementation of the regex functions found in your C
+        library. Thanks to Charles Goyard for this tip.</p>
+    <p class="Pp">For example, the complete content-check tag is:
+      <br/>
+       cont;https://example.com/;All[[:space:]]is[[:space:]]OK
+      <br/>
+      The regular expression follows the second semicolon directly and is
+        written without surrounding slash delimiters. To report the result in a
+        custom column and match &quot;OK&quot;, optionally followed by a line
+        ending:
+      <br/>
+       cont=health;https://example.com/health;^OK[[:cntrl:]]*$
+      <br/>
+      This reports in the &quot;health&quot; column and rejects additional
+        printable text. For a byte-exact response check, use the message-digest
+        form described above. For a more advanced match, grouping and
+        alternation can accept multiple values:
+      <br/>
+       cont=api;https://example.com/api;status=(ok|ready)
+      <br/>
+      This matches either &quot;status=ok&quot; or &quot;status=ready&quot; in
+        the response.</p>
+    <p class="Pp">Note: If you are migrating from the &quot;cont2.sh&quot;
+        script, you must change the '_' used as wildcards by cont2.sh into '.'
+        which is the regular-expression wildcard character.</p>
+    <p class="Pp">Message digests can use whatever digest algorithms your
+        libcrypto implementation (usually OpenSSL) supports. Common message
+        digests are &quot;md5&quot;, &quot;sha1&quot;, &quot;sha256&quot; or
+        &quot;sha512&quot;. The digest is calculated on the data portion of the
+        response from the server, i.e. HTTP headers are not included in the
+        digest (as they change from one request to the next).</p>
+    <p class="Pp">The expected digest value can be computed with the
+        <i><a href="../man1/xymondigest.1.html">xymondigest</a>(1)</i> utility.</p>
+    <p class="Pp">&quot;cont&quot; tags in hosts.cfg result in two status
+        reports: One status with the &quot;http&quot; check, and another with
+        the &quot;content&quot; check.</p>
+    <p class="Pp">As with normal URL's, the extended syntax described above can
+        be used e.g. when testing SSL sites that require the use of SSLv2 or
+        strong ciphers.</p>
+    <p class="Pp">The column name for the result of the content check is by
+        default called &quot;content&quot; - you can change the default with the
+        &quot;--content=NAME&quot; option to xymonnet. See <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i>
+        for a description of this option.</p>
+    <p class="Pp">If more than one content check is present for a host, the
+        first content check is reported in the column &quot;content&quot;, the
+        second is reported in the column &quot;content1&quot;, the third in
+        &quot;content2&quot; etc.</p>
+    <p class="Pp">You can also specify the column name directly in the test
+        specification, by writing it as &quot;cont=COLUMN;http://...&quot;.
+        Column-names cannot include whitespace or semi-colon.</p>
+    <p class="Pp">The content-check status by default includes the full URL that
+        was requested, and the HTML data returned by the server. You can hide
+        the HTML data on a per-host (not per-test) basis by adding the
+        <b>HIDEHTTP</b> tag to the host entry.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="content"><a class="permalink" href="#content"><b>content</b>=<i>URL</i></a></dt>
+  <dd>This syntax is deprecated. You should use the &quot;cont&quot; tag
+      instead, see above.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="post"><a class="permalink" href="#post"><b>post</b>[=<i>COLUMN</i>];<i>URL</i>;<i>form-data</i>;[<i>expected_data_regexp</i>|#<i>digesttype</i>:<i>digest</i>]</a></dt>
+  <dd>This tag can be used to test web pages, that use an input form. Data can
+      be posted to the form by specifying them in the form-data field, and the
+      result can be checked as if it was a normal content check (see above for a
+      description of the cont-tag and the restrictions on how the URL must be
+      written).
+    <p class="Pp">The form-data field must be entered in
+        &quot;application/x-www-form-urlencoded&quot; format, which is the most
+        commonly used format for web forms.</p>
+    <p class="Pp">E.g. if you have a web form defined like this:</p>
+    <p class="Pp"></p>
+    <pre>   &lt;form action=&quot;/cgi-bin/form.cgi&quot; method=&quot;post&quot;&gt;
+     &lt;p&gt;Given name&lt;input type=&quot;text&quot; name=&quot;givenname&quot;&gt;&lt;/p&gt;
+     &lt;p&gt;Surname&lt;input type=&quot;text&quot; name=&quot;surname&quot;&gt;&lt;/p&gt;
+     &lt;input type=&quot;submit&quot; value=&quot;Send&quot;&gt;
+   &lt;/form&gt;</pre>
+    <p class="Pp">and you want to post the value &quot;John&quot; to the first
+        field and &quot;Doe Jr.&quot; to the second field, then the form data
+        field would be</p>
+    <p class="Pp">
+      <br/>
+       givenname=John&amp;surname=Doe+Jr.</p>
+    <p class="Pp">Note that any spaces in the input value is replaced with
+      '+'.</p>
+    <p class="Pp">If your form-data requires a different content-type, you can
+        specify it by beginning the form-data with <b>(content-type=TYPE)</b>,
+        e.g. &quot;(content-type=text/xml)&quot; followed by the POST data. Note
+        that as with normal forms, the POST data should be specified using
+        escape-sequences for reserved characters: &quot;space&quot; should be
+        entered as &quot;\x20&quot;, double quote as &quot;\x22&quot;, newline
+        as &quot;\n&quot;, carriage-return as &quot;\r&quot;, TAB as
+        &quot;\t&quot;, backslash as &quot;\\&quot;. Any byte value can be
+        entered using &quot;\xNN&quot; with NN being the hexadecimal value, e.g.
+        &quot;\x20&quot; is the space character.</p>
+    <p class="Pp">The [expected_data_regexp|#digesttype:digest] is the expected
+        data returned from the server in response to the POST. See the
+        &quot;cont;&quot; tag above for details. If you are only interested in
+        knowing if it is possible to submit the form (but don't care about the
+        data), this can be an empty string - but the ';' at the end is
+      required.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="nocont"><a class="permalink" href="#nocont"><b>nocont</b>[=<i>COLUMN</i>];<i>URL</i>;<i>forbidden_data_regexp</i></a></dt>
+  <dd>This tag works just like &quot;cont&quot; tag, but reverses the test. It
+      is green when the &quot;forbidden_data_regexp&quot; is NOT found in the
+      response, and red when it IS found. So it can be used to watch for data
+      that should NOT be present in the response, e.g. a server error message.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="nopost"><a class="permalink" href="#nopost"><b>nopost</b>[=<i>COLUMN</i>];<i>URL</i>;<i>form-data</i>;<i>expected_data_regexp</i></a></dt>
+  <dd>This tag works just like &quot;post&quot; tag, but reverses the test. It
+      is green when the &quot;forbidden_data_regexp&quot; is NOT found in the
+      response, and red when it IS found. So it can be used to watch for data
+      that should NOT be present in the response, e.g. a server error message.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="type"><a class="permalink" href="#type"><b>type</b>[=<i>COLUMN</i>];<i>URL</i>;<i>expected_content_type</i></a></dt>
+  <dd>This is a variant of the content check - instead of checking the content
+      data, it checks the type of the data as given by the HTTP Content-Type:
+      header. This can used to check if a URL returns e.g. a PDF file,
+      regardless of what is inside the PDF file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="soap"><a class="permalink" href="#soap"><b>soap</b>[=<i>COLUMN</i>];<i>URL</i>;<i>SOAPMESSAGE</i>;[<i>expected_data_regexp</i>|#<i>digesttype</i>:<i>digest</i>]</a></dt>
+  <dd>Send SOAP message over HTTP. This is identical to the &quot;cont&quot;
+      test, except that the request sent to the server uses a Content-type of
+      &quot;application/soap+xml&quot;, and it also sends a
+      &quot;SOAPAction&quot; header with the URL. SOAPMESSAGE is the SOAP
+      message sent to the server. Since SOAP messages are usually XML documents,
+      you can store this in a separate file by specifying
+      &quot;file:FILENAME&quot; as the SOAPMESSAGE parameter. E.g. a test
+      specification of
+    <br/>
+     soap=echo;http://soap.foo.bar/baz?wsdl;file:/home/foo/msg.xml;. will read
+      the SOAP message from the file /home/foo/msg.xml and post it to the URL
+      http://soap.foo.bar/bas?wsdl
+    <p class="Pp">Note that SOAP XML documents usually must begin with the XML
+        version line, <b>&lt;?xml version=&quot;1.0&quot;&gt;</b></p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="nosoap"><a class="permalink" href="#nosoap"><b>nosoap</b>[=<i>COLUMN</i>];<i>URL</i>;<i>SOAPMESSAGE</i>;[<i>forbidden_data_regexp</i>|#<i>digesttype</i>:<i>digest</i>]</a></dt>
+  <dd>This tag works just like &quot;soap&quot; tag, but reverses the test. It
+      is green when the &quot;forbidden_data_regexp&quot; is NOT found in the
+      response, and red when it IS found. So it can be used to watch for data
+      that should NOT be present in the response, e.g. a server error message.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="httphead"><a class="permalink" href="#httphead"><b>httphead</b>[=<i>COLUMN</i>];<i>URL</i></a></dt>
+  <dd>This is used to perform an HTTP HEAD request instead of a GET.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="httpstatus"><a class="permalink" href="#httpstatus"><b>httpstatus</b>[=<i>COLUMN</i>];<i>URL</i>;<i>okstatusexpr</i>;<i>notokstatusexpr</i></a></dt>
+  <dd>This is used to explicitly test for certain HTTP statuscodes returned when
+      the URL is requested. The <b>okstatusexpr</b> and <b>nokokstatusexpr</b>
+      expressions are Perl-compatible regular expressions, e.g.
+      &quot;2..|302&quot; will match all OK codes and the redirect (302) status
+      code. If the URL cannot be retrieved, the status is &quot;999&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="HIDEHTTP"><a class="permalink" href="#HIDEHTTP"><b>HIDEHTTP</b></a></dt>
+  <dd>The status display for HTTP checks usually includes the URL, and for
+      content checks also the actual data from the web page. If you would like
+      to hide these from view, then the HIDEHTTP tag will keep this information
+      from showing up on the status webpages.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="headermatch"><a class="permalink" href="#headermatch"><b>headermatch</b></a></dt>
+  <dd>Content checks by default only search the HTML body returned by the
+      webserver. This option causes it to also search the HTTP headers for the
+      string that must / must not be present.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="browser"><a class="permalink" href="#browser"><b>browser</b>=<i>BROWSERNAME</i></a></dt>
+  <dd>By default, Xymon sends an HTTP &quot;User-Agent&quot; header identifying
+      it a &quot;Xymon&quot;. Some websites require that you use a specific
+      browser, typically Internet Explorer. To cater for testing of such sites,
+      this tag can be used to modify the data sent in the User-Agent header.
+    <br/>
+    E.g. to perform an HTTP test with Xymon masquerading as an Internet Explorer
+      6.0 browser, use <b>browser=&quot;Mozilla/4.0 (compatible; MSIE 6.0;
+      Windows NT 5.0)&quot;</b>. If you do not know what the User-Agent header
+      should be, open up the browser that works with this particular site, and
+      open the URL &quot;javascript:document.writeln(navigator.userAgent)&quot;
+      (just copy this into the &quot;Open URL&quot; dialog. The text that shows
+      up is what the browser sends as the User-Agent header.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="httphdr"><a class="permalink" href="#httphdr"><b>httphdr</b>=<i>STRING</i></a></dt>
+  <dd>Xymon can be send additional headers when performing HTTP checks, to allow
+      for validation of any custom configurations needed for your site. Note
+      that this is a host-wide configuration. The string will be added directly
+      to the headers for all URLs on that host. There is currently no way to
+      have this occur only for specific URLs checked.
+    <br/>
+    The string should be encased in quotes, like
+      <b>httphdr=&quot;X-Requested-With: XMLHttpRequest&quot;</b>. Newlines can
+      be included, however the string MUST NOT end with a newline as that may
+      cause premature ending of the headers sent.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="LDAP_(DIRECTORY_SERVER)_TESTS"><a class="permalink" href="#LDAP_(DIRECTORY_SERVER)_TESTS">LDAP
+  (DIRECTORY SERVER) TESTS</a></h1>
+<dl class="Bl-tag">
+  <dt id="ldap"><a class="permalink" href="#ldap"><b>ldap</b></a></dt>
+  <dd></dd>
+  <dt id="ldaps"><a class="permalink" href="#ldaps"><b>ldaps</b></a></dt>
+  <dd>Simple check for an LDAP service. This check merely looks for any service
+      running on the ldap/ldaps service port, but does not perform any actual
+      LDAP transaction.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ldap://hostport/dn[?attrs[?scope[?filter[?exts"><a class="permalink" href="#ldap://hostport/dn[?attrs[?scope[?filter[?exts"><b>ldap://hostport/dn[?attrs[?scope[?filter[?exts]]]]</b></a></dt>
+  <dd>Check for an LDAP service by performing an LDAP request. This tag is in
+      the form of an LDAP URI (cf. RFC 2255). This type of LDAP test requires
+      that <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> was built with support for LDAP, e.g. via the
+      OpenLDAP library. The components of the LDAP URI are:
+    <pre>  <i>hostport</i> is a host name with an optional &quot;:portnumber&quot;
+  <i>dn</i> is the search base
+  <i>attrs</i> is a comma separated list of attributes to request
+  <i>scope</i> is one of these three strings:
     base one sub (default=base)
-  <I>filter</I> is filter
-  <I>exts</I> are recognized set of LDAP and/or API extensions.
-</PRE>
+  <i>filter</i> is filter
+  <i>exts</i> are recognized set of LDAP and/or API extensions.</pre>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ldaps://hostport/dn[?attrs[?scope[?filter[?exts"><a class="permalink" href="#ldaps://hostport/dn[?attrs[?scope[?filter[?exts"><b>ldaps://hostport/dn[?attrs[?scope[?filter[?exts]]]]</b></a></dt>
+  <dd>LDAP service check using LDAPv3 and STARTTLS for talking to an LDAP server
+      that requires TLS encryption. See <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> for a discussion of
+      the different ways of running LDAP servers with SSL/TLS, and which of
+      these are supported by xymonnet.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ldaplogin"><a class="permalink" href="#ldaplogin"><b>ldaplogin</b>=<i>username</i>:<i>password</i></a></dt>
+  <dd>Define a username and password to use when binding to the LDAP server for
+      ldap URI tests. If not specified, xymonnet will attempt an anonymous bind.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="ldapyellowfail"><a class="permalink" href="#ldapyellowfail"><b>ldapyellowfail</b></a></dt>
+  <dd>Used with an LDAP URL test. If the LDAP query fails during the search of
+      the directory, the ldap status is normally reported as &quot;red&quot;
+      (alarm). This tag reduces a search failure to a &quot;yellow&quot;
+      (warning) status.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="PERFORMANCE_MONITORING_TESTS"><a class="permalink" href="#PERFORMANCE_MONITORING_TESTS">PERFORMANCE
+  MONITORING TESTS</a></h1>
+<dl class="Bl-tag">
+  <dt id="apache"><a class="permalink" href="#apache"><b>apache</b>[=<i>URL</i>]</a></dt>
+  <dd>If you are running an Apache web server, adding this tag makes
+      <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> collect performance statistics from the Apache web
+      server by querying the URL
+      <b>http://IP.ADDRESS.OF.HOST/server-status?auto</b>. The response is sent
+      as a data-report and processed by the Xymon xymond_rrd module into an RRD
+      file and an &quot;apache&quot; graph. If your web server requires e.g.
+      authentication, or runs on a different URL for the server-status, you can
+      provide the full URL needed to fetch the server-status page, e.g.
+      <b>apache=http://LOGIN:PASSWORD@10.0.0.1/server-status?auto</b> for a
+      password protected server-status page, or
+      <b>apache=http://10.0.0.1:8080/apache/server-status?auto</b> for a server
+      listening on port 8080 and with a different path to the server-status
+      page.
+    <p class="Pp">Note that you need to enable the server-status URL in your
+        Apache configuration. The following configuration is needed:</p>
+    <p class="Pp"></p>
+    <pre>    &lt;Location /server-status&gt;
+        SetHandler server-status
+        Require ip 127.0.0.1
+    &lt;/Location&gt;
+    ExtendedStatus On</pre>
+    <p class="Pp">Change &quot;127.0.0.1&quot; to the IP-address of the server
+        that runs your network tests.</p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DEFAULT_HOST"><a class="permalink" href="#DEFAULT_HOST">DEFAULT
+  HOST</a></h1>
+<p class="Pp">If you have certain tags that you want to apply to all hosts, you
+    can define a host name &quot;.default.&quot; and put the tags on that host.
+    Note that per-host definitions will override the default ones. To apply to
+    all hosts this should be listed FIRST in your file.</p>
+<p class="Pp"><b>NOTE:</b> The &quot;.default.&quot; host entry will only accept
+    the following tags - others are silently ignored: delayred, delayyellow,
+    NOCOLUMNS, COMMENT, DESCR, DOC, CLASS, dialup, nonongreen, nodisp, noinfo,
+    notrends, noclient, TRENDS, NOPROPRED, NOPROPYELLOW, NOPROPPURPLE,
+    NOPROPACK, REPORTTIME, WARNPCT, WARNSTOPS, testip, NET, noclear, nosslcert,
+    ssldays, DOWNTIME, depends, noping, noconn, trace, notrace, HIDEHTTP,
+    browser, pulldata. Specifically, note that network tests,
+    &quot;badTEST&quot; settings, and alternate pageset relations cannot be
+    listed on the &quot;.default.&quot; host.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SENDING_SUMMARIES_TO_REMOTE_XYMON_SERVERS"><a class="permalink" href="#SENDING_SUMMARIES_TO_REMOTE_XYMON_SERVERS">SENDING
+  SUMMARIES TO REMOTE XYMON SERVERS</a></h1>
+<dl class="Bl-tag">
+  <dt id="summary"><a class="permalink" href="#summary"><b>summary</b>
+    <i>ROW.COLUMN</i> <i>IP</i> <i>URL</i></a></dt>
+  <dd>If you have multiple Xymon servers, the &quot;summary&quot; directive lets
+      you form a hierarchy of servers by sending the overall status of this
+      server to a remote Xymon server, which then displays this in a special
+      summary section. E.g. if your offices are spread over three locations, you
+      can have a Xymon server at each office. These branch-office Xymon have a
+      &quot;summary&quot; definition in their hosts.cfg file that makes them
+      report the overall status of their branch Xymon to the central Xymon
+      server you maintain at the corporate headquarters.
+    <p class="Pp">Multiple &quot;summary&quot; definitions are allowed.</p>
+    <p class="Pp">The ROW.COLUMN setting defines how this summary is presented
+        on the server that receives the summary. The ROW text will be used as
+        the heading for a summary line, and the COLUMN defines the name of the
+        column where this summary is shown - like the hostname and testname used
+        in the normal displays. The IP is the IP-address of the <b>remote</b>
+        (upstream) Xymon server, where this summary is sent). The URL is the URL
+        of your <b>local</b> Xymon server.</p>
+    <p class="Pp">The URL need not be that of your Xymon server's main page - it
+        could be the URL of a sub-page on the local Xymon server. Xymon will
+        report the summary using the color of the page found at the URL you
+        specify. E.g. on your corporate Xymon server you want a summary from the
+        Las Vegas office - but you would like to know both what the overall
+        status is, and what is the status of the servers on the critical Sales
+        department back-office servers in Las Vegas. So you configure the Las
+        Vegas Xymon server to send <b>two</b> summaries:</p>
+    <p class="Pp"></p>
+    <pre>    summary Vegas.All 10.0.1.1 http://vegas.foo.com/xymon/
+    summary Vegas.Sales 10.0.1.1 http://vegas.foo.com/xymon/sales/</pre>
+    <p class="Pp"></p>
+    <p class="Pp">This gives you one summary line for Baltimore, with two
+        columns: An &quot;All&quot; column showing the overall status, and a
+        &quot;Sales&quot; column showing the status of the &quot;sales&quot;
+        page on the Baltimore Xymon server.</p>
+    <p class="Pp">Note: Pages defined using alternate pageset definitions cannot
+        be used, the URL must point to a web page from the default set of Xymon
+        webpages.</p>
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OTHER_TAGS"><a class="permalink" href="#OTHER_TAGS">OTHER
+  TAGS</a></h1>
+<dl class="Bl-tag">
+  <dt id="pulldata"><a class="permalink" href="#pulldata"><b>pulldata</b>[=[<i>IP</i>][:<i>port</i>]]</a></dt>
+  <dd>This option is recognized by the <i><a href="../man8/xymonfetch.8.html">xymonfetch</a>(8)</i> utility, and causes
+      it to poll the host for client data. The optional IP-address and
+      port-number can be used if the client-side <i><a href="../man8/msgcache.8.html">msgcache</a>(8)</i> daemon is
+      listening on a non-standard IP-address or port-number.
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><b>~xymon/server/etc/hosts.cfg</b></dt>
+  <dd></dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/xymongen.1.html">xymongen</a>(1), <a href="../man1/xymonnet.1.html">xymonnet</a>(1), <a href="../man1/xymondigest.1.html">xymondigest</a>(1), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5),
+    <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#FILE_FORMAT">FILE FORMAT</a></dt>
+<dt><a href="#TAGS_RECOGNIZED_BY_ALL_TOOLS">TAGS RECOGNIZED BY ALL TOOLS</a></dt>
+<dt><a href="#GENERAL_PER-HOST_OPTIONS">GENERAL PER-HOST OPTIONS</a></dt>
+<dt><a href="#XYMONGEN_DISPLAY_OPTIONS">XYMONGEN DISPLAY OPTIONS</a></dt>
+<dt><a href="#XYMON_TAGS_FOR_THE_CRITICAL_SYSTEMS_OVERVIEW_PAGE">XYMON TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE</a></dt>
+<dt><a href="#XYMON_TAGS_FOR_THE_WML_(WAP)_CARDS">XYMON TAGS FOR THE WML (WAP) CARDS</a></dt>
+<dt><a href="#XYMON_STATUS_PROPAGATION_OPTIONS">XYMON STATUS PROPAGATION OPTIONS</a></dt>
+<dt><a href="#XYMON_AVAILABILITY_REPORT_OPTIONS">XYMON AVAILABILITY REPORT OPTIONS</a></dt>
+<dt><a href="#NETWORK_TEST_SETTINGS">NETWORK TEST SETTINGS</a></dt>
+<dt><a href="#CONNECTIVITY_(PING)_TEST">CONNECTIVITY (PING) TEST</a></dt>
+<dt><a href="#SIMPLE_NETWORK_TESTS">SIMPLE NETWORK TESTS</a></dt>
+<dt><a href="#DNS_SERVER_TESTS">DNS SERVER TESTS</a></dt>
+<dt><a href="#OTHER_NETWORK_TESTS">OTHER NETWORK TESTS</a></dt>
+<dt><a href="#HTTP_TESTS">HTTP TESTS</a></dt>
+<dt><a href="#LDAP_(DIRECTORY_SERVER)_TESTS">LDAP (DIRECTORY SERVER) TESTS</a></dt>
+<dt><a href="#PERFORMANCE_MONITORING_TESTS">PERFORMANCE MONITORING TESTS</a></dt>
+<dt><a href="#DEFAULT_HOST">DEFAULT HOST</a></dt>
+<dt><a href="#SENDING_SUMMARIES_TO_REMOTE_XYMON_SERVERS">SENDING SUMMARIES TO REMOTE XYMON SERVERS</a></dt>
+<dt><a href="#OTHER_TAGS">OTHER TAGS</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<P>
-<DT><A HREF="ldaps://hostport/dn[?attrs[?scope[?filter[?exts]]]]">ldaps://hostport/dn[?attrs[?scope[?filter[?exts]]]]</A><DD>
-LDAP service check using LDAPv3 and STARTTLS for talking to
-an LDAP server that requires TLS encryption. See
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-for a discussion of the different ways of running LDAP servers
-with SSL/TLS, and which of these are supported by xymonnet.
-<P>
-<DT>ldaplogin=username:password<DD>
-Define a username and password to use when binding to the LDAP
-server for ldap URI tests. If not specified, xymonnet will
-attempt an anonymous bind.
-<P>
-<DT>ldapyellowfail<DD>
-Used with an LDAP URL test. If the LDAP query fails during the 
-search of the directory, the ldap status is normally reported
-as &quot;red&quot; (alarm). This tag reduces a search failure to a 
-&quot;yellow&quot; (warning) status.
-<P>
-</DL>
-<A NAME="lbAT">&nbsp;</A>
-<H2>PERFORMANCE MONITORING TESTS</H2>
-
-<DL COMPACT>
-<DT>apache[=URL]<DD>
-If you are running an Apache web server, adding this tag makes
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-collect performance statistics from the Apache web server by
-querying the URL <B><A HREF="http://IP.ADDRESS.OF.HOST/server-status?auto">http://IP.ADDRESS.OF.HOST/server-status?auto</A></B>.
-The response is sent as a data-report and processed by the Xymon
-xymond_rrd module into an RRD file and an &quot;apache&quot; graph. If
-your web server requires e.g. authentication, or runs on a different
-URL for the server-status, you can provide the full URL needed to 
-fetch the server-status page, e.g. 
-<B>apache=<A HREF="http://LOGIN:PASSWORD@10.0.0.1/server-status?auto">http://LOGIN:PASSWORD@10.0.0.1/server-status?auto</A></B> 
-for a password protected server-status page, or
-<B>apache=<A HREF="http://10.0.0.1:8080/apache/server-status?auto">http://10.0.0.1:8080/apache/server-status?auto</A></B> 
-for a server listening on port 8080 and with a different path
-to the server-status page.
-<P>
-Note that you need to enable the server-status URL in your
-Apache configuration. The following configuration is needed:
-<P>
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&lt;Location&nbsp;/server-status&gt;
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SetHandler&nbsp;server-status
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Order&nbsp;deny,allow
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Deny&nbsp;from&nbsp;all
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow&nbsp;from&nbsp;127.0.0.1
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&lt;/Location&gt;
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;ExtendedStatus&nbsp;On
-<P>
-Change &quot;127.0.0.1&quot; to the IP-address of the server that runs your
-network tests.
-<P>
-</DL>
-<A NAME="lbAU">&nbsp;</A>
-<H2>DEFAULT HOST</H2>
-
-If you have certain tags that you want to apply to all hosts, you can
-define a host name &quot;.default.&quot; and put the tags on that host. Note that
-per-host definitions will override the default ones. To apply to all hosts
-this should be listed FIRST in your file.
-<P>
-<B>NOTE:</B> The &quot;.default.&quot; host entry will only accept the following
-tags - others are silently ignored: delayyellow, delayred, NOCOLUMNS, 
-COMMENT, DESCR, CLASS, dialup, testip, nonongreen, nodisp, noinfo, 
-notrends, noclient, TRENDS, NOPROPRED, NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, 
-REPORTTIME, WARNPCT, NET, noclear, nosslcert, ssldays, DOWNTIME, depends, 
-noping, noconn, trace, notrace, HIDEHTTP, browser, pulldata. Specifically, 
-note that network tests, &quot;badTEST&quot; settings, and alternate pageset 
-relations cannot be listed on the &quot;.default.&quot; host.
-<P>
-<A NAME="lbAV">&nbsp;</A>
-<H2>SENDING SUMMARIES TO REMOTE XYMON SERVERS</H2>
-
-<DL COMPACT>
-<DT>summary ROW.COLUMN IP URL<DD>
-If you have multiple Xymon servers, the &quot;summary&quot; directive lets you 
-form a hierarchy of servers by sending the overall status of this server
-to a remote Xymon server, which then displays this in a special summary
-section. E.g. if your offices are spread over three locations, you can 
-have a Xymon server at each office. These branch-office Xymon have
-a &quot;summary&quot; definition in their hosts.cfg file that makes them report
-the overall status of their branch Xymon to the central Xymon server
-you maintain at the corporate headquarters.
-<P>
-Multiple &quot;summary&quot; definitions are allowed.
-<P>
-The ROW.COLUMN setting defines how this summary is presented on the
-server that receives the summary. The ROW text will be used as the
-heading for a summary line, and the COLUMN defines the name of the
-column where this summary is shown - like the hostname and testname
-used in the normal displays. The IP is the IP-address of the <B>remote</B> 
-(upstream) Xymon server, where this summary is sent). The URL is the
-URL of your <B>local</B> Xymon server.
-<P>
-The URL need not be that of your Xymon server's main page - it could
-be the URL of a sub-page on the local Xymon server. Xymon will report
-the summary using the color of the page found at the URL you specify.
-E.g. on your corporate Xymon server you want a summary from the
-Las Vegas office - but you would like to know both what the overall 
-status is, and what is the status of the servers on the critical
-Sales department back-office servers in Las Vegas. So you configure
-the Las Vegas Xymon server to send <B>two</B> summaries:
-<P>
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;summary&nbsp;Vegas.All&nbsp;10.0.1.1&nbsp;<A HREF="http://vegas.foo.com/xymon/">http://vegas.foo.com/xymon/</A>
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;summary&nbsp;Vegas.Sales&nbsp;10.0.1.1&nbsp;<A HREF="http://vegas.foo.com/xymon/sales/">http://vegas.foo.com/xymon/sales/</A>
-<P>
-<P>
-This gives you one summary line for Baltimore, with two columns: An
-&quot;All&quot; column showing the overall status, and a &quot;Sales&quot; column showing
-the status of the &quot;sales&quot; page on the Baltimore Xymon server.
-<P>
-Note: Pages defined using alternate pageset definitions cannot be used,
-the URL must point to a web page from the default set of Xymon webpages.
-<P>
-<P>
-</DL>
-<A NAME="lbAW">&nbsp;</A>
-<H2>OTHER TAGS</H2>
-
-<DL COMPACT>
-<DT>pulldata[=[IP][:port]]<DD>
-This option is recognized by the
-<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
-
-utility, and causes it to poll the host for client data. The optional
-IP-address and port-number can be used if the client-side
-<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
-
-daemon is listening on a non-standard IP-address or port-number.
-<P>
-<P>
-</DL>
-<A NAME="lbAX">&nbsp;</A>
-<H2>FILES</H2>
-
-<B>~xymon/server/etc/hosts.cfg</B>
-
-<P>
-<A NAME="lbAY">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man1/xymongen.1.html">xymongen</A>(1), <A HREF="../man1/xymonnet.1.html">xymonnet</A>(1), <A HREF="../man1/xymondigest.1.html">xymondigest</A>(1), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">FILE FORMAT</A><DD>
-<DT><A HREF="#lbAF">TAGS RECOGNIZED BY ALL TOOLS</A><DD>
-<DT><A HREF="#lbAG">GENERAL PER-HOST OPTIONS</A><DD>
-<DT><A HREF="#lbAH">XYMONGEN DISPLAY OPTIONS</A><DD>
-<DT><A HREF="#lbAI">XYMON TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE</A><DD>
-<DT><A HREF="#lbAJ">XYMON TAGS FOR THE WML (WAP) CARDS</A><DD>
-<DT><A HREF="#lbAK">XYMON STATUS PROPAGATION OPTIONS</A><DD>
-<DT><A HREF="#lbAL">XYMON AVAILABILITY REPORT OPTIONS</A><DD>
-<DT><A HREF="#lbAM">NETWORK TEST SETTINGS</A><DD>
-<DT><A HREF="#lbAN">CONNECTIVITY (PING) TEST</A><DD>
-<DT><A HREF="#lbAO">SIMPLE NETWORK TESTS</A><DD>
-<DT><A HREF="#lbAP">DNS SERVER TESTS</A><DD>
-<DT><A HREF="#lbAQ">OTHER NETWORK TESTS</A><DD>
-<DT><A HREF="#lbAR">HTTP TESTS</A><DD>
-<DT><A HREF="#lbAS">LDAP (DIRECTORY SERVER) TESTS</A><DD>
-<DT><A HREF="#lbAT">PERFORMANCE MONITORING TESTS</A><DD>
-<DT><A HREF="#lbAU">DEFAULT HOST</A><DD>
-<DT><A HREF="#lbAV">SENDING SUMMARIES TO REMOTE XYMON SERVERS</A><DD>
-<DT><A HREF="#lbAW">OTHER TAGS</A><DD>
-<DT><A HREF="#lbAX">FILES</A><DD>
-<DT><A HREF="#lbAY">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

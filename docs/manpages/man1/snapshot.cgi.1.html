@@ -1,106 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>SNAPSHOT.CGI(1)</title>
+</head>
+<body>
+<h1 class="head-name">SNAPSHOT.CGI</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of SNAPSHOT.CGI</TITLE>
-</HEAD><BODY>
-<H1>SNAPSHOT.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">snapshot.cgi - CGI program to rebuild the Xymon webpages for a
+    specific point in time.</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>snapshot.cgi</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>snapshot.cgi</b> is invoked as a CGI script via the snapshot.sh
+    CGI wrapper. It rebuilds the Xymon web pages to the look they had at a
+    particular point in time, based upon the historical information logged about
+    events.</p>
+<p class="Pp">snapshot.cgi is passed a QUERY_STRING environment variable with
+    the following parameters:</p>
+<p class="Pp">
+  <br/>
+   mon (Start month of the snapshot)
+  <br/>
+   day (Start day-of-month of the snapshot)
+  <br/>
+   yr (Start year of the snapshot)
+  <br/>
+   hour (Start hour of the snapshot)
+  <br/>
+   min (Start minute of the snapshot)
+  <br/>
+   sec (Start second of the snapshot)</p>
+<p class="Pp">The &quot;month&quot; parameters must be specified as the
+    three-letter english month name abbreviation: Jan, Feb, Mar ...</p>
+<p class="Pp">&quot;day&quot; must be in the range 1..31; &quot;yr&quot; must be
+    specified including century (e.g. &quot;2003&quot;). &quot;hour&quot; must
+    be specified using a 24-hour clock.</p>
+<p class="Pp">All of the processing involved in generating the report is done by
+    invoking <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i> with the proper &quot;--snapshot&quot;
+  option.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="env"><a class="permalink" href="#env"><b>--env</b>=<i>FILENAME</i></a></dt>
+  <dd>Load environment from FILENAME before executing the CGI.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="xymongen-options"><a class="permalink" href="#xymongen-options"><b>xymongen-options</b></a></dt>
+  <dd>All options except &quot;--env&quot; are passed on to the
+      <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i> program building the snapshot files.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT_VARIABLES"><a class="permalink" href="#ENVIRONMENT_VARIABLES">ENVIRONMENT
+  VARIABLES</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMONGENSNAPOPTS"><a class="permalink" href="#XYMONGENSNAPOPTS"><b>XYMONGENSNAPOPTS</b></a></dt>
+  <dd>xymongen options passed by default to the snapshot.cgi script. This
+      happens in the snapshot.sh CGI wrapper script.</dd>
+  <dt id="XYMONHOME"><a class="permalink" href="#XYMONHOME"><b>XYMONHOME</b></a></dt>
+  <dd>Home directory of the Xymon server files</dd>
+  <dt id="XYMONSNAPDIR"><a class="permalink" href="#XYMONSNAPDIR"><b>XYMONSNAPDIR</b></a></dt>
+  <dd>Directory where generated snapshots are stored. This directory must be
+      writable by the userid executing the CGI script, typically
+      &quot;www&quot;, &quot;apache&quot; or &quot;nobody&quot;. Default:
+      $XYMONHOME/www/snap/</dd>
+  <dt id="XYMONSNAPURL"><a class="permalink" href="#XYMONSNAPURL"><b>XYMONSNAPURL</b></a></dt>
+  <dd>The URL prefix to use when accessing the reports via a browser. Default:
+      $XYMONWEB/snap
+    <p class="Pp"></p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/xymongen.1.html">xymongen</a>(1), <a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#ENVIRONMENT_VARIABLES">ENVIRONMENT VARIABLES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-snapshot.cgi - CGI program to rebuild the Xymon webpages for a specific point in time.
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>snapshot.cgi</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>snapshot.cgi</B>
-is invoked as a CGI script via the snapshot.sh CGI wrapper.
-It rebuilds the Xymon web pages to the look they had 
-at a particular point in time, based upon the historical information
-logged about events.
-<P>
-snapshot.cgi is passed a QUERY_STRING environment variable with the
-following parameters:
-<P>
-<BR>&nbsp;&nbsp;&nbsp;mon&nbsp;(Start&nbsp;month&nbsp;of&nbsp;the&nbsp;snapshot)
-<BR>&nbsp;&nbsp;&nbsp;day&nbsp;(Start&nbsp;day-of-month&nbsp;of&nbsp;the&nbsp;snapshot)
-<BR>&nbsp;&nbsp;&nbsp;yr&nbsp;&nbsp;(Start&nbsp;year&nbsp;of&nbsp;the&nbsp;snapshot)
-<BR>&nbsp;&nbsp;&nbsp;hour&nbsp;(Start&nbsp;hour&nbsp;of&nbsp;the&nbsp;snapshot)
-<BR>&nbsp;&nbsp;&nbsp;min&nbsp;&nbsp;(Start&nbsp;minute&nbsp;of&nbsp;the&nbsp;snapshot)
-<BR>&nbsp;&nbsp;&nbsp;sec&nbsp;&nbsp;(Start&nbsp;second&nbsp;of&nbsp;the&nbsp;snapshot)
-<P>
-The &quot;month&quot; parameters must be specified as the three-letter
-english month name abbreviation: Jan, Feb, Mar ...
-<P>
-&quot;day&quot; must be in the range 1..31; &quot;yr&quot; must be specified 
-including century (e.g. &quot;2003&quot;). &quot;hour&quot; must be specified 
-using a 24-hour clock.
-<P>
-All of the processing involved in generating the report is done 
-by invoking 
-<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
-
-with the proper &quot;--snapshot&quot; option.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--env=FILENAME<DD>
-Load environment from FILENAME before executing the CGI.
-<P>
-<DT>xymongen-options<DD>
-All options except &quot;--env&quot; are passed on to the 
-<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
-
-program building the snapshot files.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>ENVIRONMENT VARIABLES</H2>
-
-<DL COMPACT>
-<DT>XYMONGENSNAPOPTS<DD>
-xymongen options passed by default to the snapshot.cgi script. 
-This happens in the snapshot.sh CGI wrapper script.
-<DT>XYMONHOME<DD>
-Home directory of the Xymon server files
-<DT>XYMONSNAPDIR<DD>
-Directory where generated snapshots are stored. This directory must
-be writable by the userid executing the CGI script, typically
-&quot;www&quot;, &quot;apache&quot; or &quot;nobody&quot;. Default: $XYMONHOME/www/snap/
-<DT>XYMONSNAPURL<DD>
-The URL prefix to use when accessing the reports via a browser.
-Default: $XYMONWEB/snap
-<P>
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man1/xymongen.1.html">xymongen</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">ENVIRONMENT VARIABLES</A><DD>
-<DT><A HREF="#lbAG">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

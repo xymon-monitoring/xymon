@@ -133,6 +133,187 @@ mktempdir() {
 	printf '%s' "$d"
 }
 
+# ---- C harness scaffolding ---------------------------------------------------
+
+# require_cc -- skip unless a C compiler is present. Sets/keeps CC (default
+# cc). For tests that compile a standalone harness with no in-tree libraries.
+require_cc() {
+	CC=${CC:-cc}
+	command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
+}
+
+# asan_usable -- true when $CC can build a sanitized binary AND the result
+# runs. Compiling is not the question: distros that ship the sanitizer
+# runtime in its own package (Amazon Linux 2023 and the other RPM families,
+# where it is libasan/libubsan) link -fsanitize=address happily, and only
+# the finished binary fails, at startup, with
+#
+#     error while loading shared libraries: libasan.so.6: ...
+#
+# and exit 127. A caller that gated on the compile alone then reads that as
+# a crash in the code under test -- the symptom this helper exists to stop.
+# So the probe is executed, not just built.
+#
+# Callers use it to pick between a sanitized build and a plain one, or to
+# skip outright when the sanitizer is the point of the test. The verdict
+# cannot change inside one test process, so it is computed once.
+#
+# The probe directory is removed here rather than left to the EXIT trap
+# registered at the top of this file: several callers install a trap of
+# their own for their work dir, which replaces that one, and the probe
+# would then survive the run. A helper cannot assume the shared cleanup is
+# still armed by the time it is called, so it cleans up after itself.
+asan_usable() {
+	if [ -z "${__xymon_tests_asan_usable:-}" ]; then
+		local probe
+		__xymon_tests_asan_usable=no
+		probe=$(mktempdir)
+		printf 'int main(void){return 0;}\n' >"$probe/probe.c"
+		if "${CC:-cc}" -fsanitize=address,undefined -o "$probe/probe" \
+					"$probe/probe.c" 2>/dev/null \
+				&& "$probe/probe" >/dev/null 2>&1; then
+			__xymon_tests_asan_usable=yes
+		fi
+		rm -rf "$probe"
+	fi
+	[ "$__xymon_tests_asan_usable" = yes ]
+}
+
+# require_gnu_make -- resolve GNU make into $XYMON_MAKE, or skip.
+#
+# Every Makefile in the tree is GNU make: lib/Makefile opens with an `ifeq`,
+# build/Makefile.rules uses pattern rules. On the BSDs /usr/bin/make is BSD
+# make, which stops at the first conditional --
+#
+#     make: lib/Makefile:10: Invalid line "ifeq ($(LOCALCLIENT),yes)"
+#
+# -- so a test that ran `make` there hard-failed on a tree that builds
+# perfectly well with gmake, which is what the build itself uses.
+#
+# Resolution order: $MAKE if the caller exported one (autopkgtest, a distro
+# build), then gmake, then make. Each candidate must identify itself as GNU
+# make; a candidate that exists but is not GNU make is passed over rather
+# than trusted, because "a program named make is on PATH" is the assumption
+# that produced the failure above.
+#
+# No GNU make at all is a missing host dependency, so it skips -- same
+# contract as a missing compiler (tests/README.md). Resolved once: PATH
+# cannot change inside one test process.
+require_gnu_make() {
+	[ -n "${XYMON_MAKE:-}" ] && return 0
+	local candidate
+	for candidate in ${MAKE:-} gmake make; do
+		command -v "$candidate" >/dev/null 2>&1 || continue
+		# Matched on the whole banner rather than `--version | head -1`:
+		# every test runs under `set -o pipefail`, and head exiting after
+		# the first line can SIGPIPE the writer, failing the pipeline for
+		# a candidate that answered correctly.
+		case $("$candidate" --version 2>/dev/null) in
+			"GNU Make"*) XYMON_MAKE=$candidate; return 0 ;;
+		esac
+	done
+	skip "GNU make not found (the tree's Makefiles are GNU make -- install gmake)"
+}
+
+# require_c_buildenv ROOT -- skip unless a C compiler, GNU make, and a
+# configured tree (include/config.h) are present. The shared baseline for every
+# test that compiles a harness against the in-tree libraries, so a new shared
+# skip condition lands in one place; a test may still add stricter
+# conditions of its own (e.g. "tree already built") next to its call.
+require_c_buildenv() {
+	require_cc
+	require_gnu_make
+	[ -f "$1/include/config.h" ] || skip "tree not configured (no include/config.h)"
+}
+
+# build_xymon_libs ROOT LOGFILE ARCHIVE... -- build the named archives in
+# ROOT/lib, dumping the build log on stderr and failing if the build breaks.
+build_xymon_libs() {
+	local root=$1 log=$2
+	shift 2
+	require_gnu_make
+	"$XYMON_MAKE" -C "$root/lib" "$@" >"$log" 2>&1 \
+		|| { cat "$log" >&2; fail "cannot build $*"; }
+}
+
+# pcre_cflags ROOT -- print the compile flags a harness needs to reach
+# <pcre2.h>, or nothing when the header is already on the default search
+# path.
+#
+# Every harness that includes libxymon.h needs this whether or not it uses
+# PCRE: libxymon.h pulls in lib/loadalerts.h, which includes <pcre2.h>. The
+# harnesses resolved the PCRE *libraries* and assumed the *header*, which
+# holds on Linux (/usr/include/pcre2.h) and fails wherever PCRE lives under
+# a prefix -- on FreeBSD, /usr/local/include:
+#
+#     lib/loadalerts.h:20:10: fatal error: 'pcre2.h' file not found
+#
+# Resolution mirrors the PCRELIBS order already used for the link, most
+# specific first: an explicit override, then the configured tree (whose
+# PCREINCDIR is by definition what the library being linked was built
+# against, and already carries its -I), then pkg-config, then nothing.
+pcre_cflags() {
+	local root=$1 flags=${PCRECFLAGS:-}
+	[ -n "$flags" ] || [ ! -f "$root/Makefile" ] \
+		|| flags=$(sed -n 's/^PCREINCDIR *= *//p' "$root/Makefile")
+	if [ -z "$flags" ] && command -v pkg-config >/dev/null 2>&1; then
+		flags=$(pkg-config --cflags libpcre2-8 2>/dev/null || true)
+	fi
+	printf '%s' "$flags"
+}
+
+# xymon_cflags ROOT -- the include flags a harness compiled against the
+# in-tree libraries needs: the tree's own headers, and wherever <pcre2.h>
+# lives. Callers add whatever else they need after it (the harness's own
+# -iquote ROOT/web or ROOT/xymond, -DSTANDALONE, the RRD defines).
+#
+# The tree's directories go on the *quoted* path and the PCRE directory on
+# the angle-bracket one, because that is how each is included: every in-tree
+# header is reached through #include "...", while loadalerts.h asks for
+# <pcre2.h>. Putting the tree on the angle-bracket path is what makes
+# lib/availability.h answer the macOS SDK's #include <Availability.h> on a
+# case-insensitive filesystem (#328).
+#
+# Bundled into one helper rather than offered as separate flags on purpose.
+# Neither mistake here was a wrong flag: each was a flag that every harness
+# had to remember for itself. The PCRE path had to be remembered fourteen
+# times and eleven compile lines did not remember it; -iquote has to be
+# remembered at forty-two flags across nineteen files, and the next harness
+# written will have to remember it again. A compile line can no longer say
+# where the tree's headers are without also saying how to reach them and
+# where pcre2.h is.
+xymon_cflags() {
+	local root=$1
+	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")"
+}
+
+# require_shm_segments N -- skip unless one process may attach N SysV
+# shared-memory segments. xymond attaches one per channel, and macOS ships
+# kern.sysv.shmseg=8 against the nine channels xymond sets up, so a stock Mac
+# cannot start xymond at all.
+#
+# Worth a named check rather than letting the run fail: shmat() reports the
+# limit as EMFILE, which strerror() renders "Too many open files", so the
+# error points at file descriptors and says nothing about the sysctl actually
+# responsible. The skip names the knob and the value so it is actionable.
+#
+# Linux has no comparable per-process cap (SHMSEG is effectively unlimited)
+# and exposes no such sysctl, so an absent knob means "no limit to check".
+require_shm_segments() {
+	local want=$1 have knob found=
+
+	for knob in kern.sysv.shmseg kern.ipc.shmseg; do
+		have=$(sysctl -n "$knob" 2>/dev/null) || continue
+		case $have in ''|*[!0-9]*) continue ;; esac
+		found=$knob
+		break
+	done
+	[ -n "$found" ] || return 0
+	[ "$have" -ge "$want" ] && return 0
+
+	skip "$found is $have, need >= $want (xymond attaches one shared-memory segment per channel) -- raise it with: sudo sysctl -w $found=$want"
+}
+
 # ---- repo location -----------------------------------------------------------
 
 # find_root -- print the absolute path of the repo root, derived from the

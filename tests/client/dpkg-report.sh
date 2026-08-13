@@ -11,7 +11,7 @@
 # We run the script's actual reformat pipeline with a `dpkg` stub on PATH that
 # emits a canned `dpkg -l` table, and assert the output keeps status/name/
 # version and drops the architecture/description columns and the header. Like
-# fs-filter.sh, this extracts the pipeline from the script, so a restructuring
+# fs-filter-linux.sh, this extracts the pipeline from the script, so a restructuring
 # that breaks that line stops catching the logic -- a conscious trade. Skips
 # only when the environment is absent (no client script, or no awk); if a
 # present client script has lost the dpkg reformat pipeline, that is a

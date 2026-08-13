@@ -1,93 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMONCFG(1)</title>
+</head>
+<body>
+<h1 class="head-name">XYMONCFG</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMONCFG</TITLE>
-</HEAD><BODY>
-<H1>XYMONCFG</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymoncfg - output the full hosts.cfg file</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymoncfg [--web] [--net] [filename]</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><i><a href="../man1/xymoncfg.1.html">xymoncfg</a>(1)</i> dumps the full hosts.cfg file to stdout. It
+    follows &quot;include&quot; tags in the hosts.cfg files, and prints the full
+    contents as seen by the <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i> and <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i>
+  utilities.</p>
+<p class="Pp">If no filename is given, xymoncfg displays the file pointed to by
+    the HOSTSCFG environment variable.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="web"><a class="permalink" href="#web"><b>--web</b></a></dt>
+  <dd>Show the hosts.cfg file following include statements as a Xymon web-server
+      would.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="net"><a class="permalink" href="#net"><b>--net</b></a></dt>
+  <dd>Show the hosts.cfg file following include statements as done when running
+      xymonnet.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="s"><a class="permalink" href="#s"><b>-s</b></a></dt>
+  <dd>Output only the lines that look like environment variable definitions, in
+      a format suitable for use with Bourne-style shells (e.g. bash, ksh). You
+      will probably not use this with the default hosts.cfg input file, but e.g.
+      xymonserver.cfg. To define all the variables in xymonserver.cfg inside
+      your shell script, you can use
+    <br/>
+    <br/>
+     eval `xymoncfg -s /etc/xymon/xymonserver.cfg`
+    <p class="Pp"></p>
+  </dd>
+  <dt id="c"><a class="permalink" href="#c"><b>-c</b></a></dt>
+  <dd>Similar to &quot;-s&quot;, but for C-shell.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT_VARIABLES"><a class="permalink" href="#ENVIRONMENT_VARIABLES">ENVIRONMENT
+  VARIABLES</a></h1>
+<dl class="Bl-tag">
+  <dt id="HOSTSCFG"><a class="permalink" href="#HOSTSCFG"><b>HOSTSCFG</b></a></dt>
+  <dd>Filename for the <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> file.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#ENVIRONMENT_VARIABLES">ENVIRONMENT VARIABLES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymoncfg - output the full hosts.cfg file
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>xymoncfg [--web] [--net] [filename]</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<I><A HREF="../man1/xymoncfg.1.html">xymoncfg</A>(1)</I>
-
-dumps the full hosts.cfg file to stdout. It follows &quot;include&quot;
-tags in the hosts.cfg files, and prints the full contents
-as seen by the
-<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
-
-and
-<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
-
-utilities.
-<P>
-If no filename is given, xymoncfg displays the file pointed
-to by the HOSTSCFG environment variable.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--web<DD>
-Show the hosts.cfg file following include statements as a
-Xymon web-server would.
-<P>
-<DT>--net<DD>
-Show the hosts.cfg file following include statements as done
-when running xymonnet.
-<P>
-<DT>-s<DD>
-Output only the lines that look like environment variable definitions, in a format suitable for use with Bourne-style shells (e.g. bash, ksh). You will probably not use this with the default hosts.cfg input file, but e.g. xymonserver.cfg. To define all the variables in xymonserver.cfg inside your shell script, you can use
-<BR>
-
-<BR>
-
-<BR>&nbsp;&nbsp;&nbsp;eval&nbsp;`xymoncfg&nbsp;-s&nbsp;/etc/xymon/xymonserver.cfg`
-<P>
-<DT>-c<DD>
-Similar to &quot;-s&quot;, but for C-shell.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>ENVIRONMENT VARIABLES</H2>
-
-<DL COMPACT>
-<DT>HOSTSCFG<DD>
-Filename for the
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-file.
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">ENVIRONMENT VARIABLES</A><DD>
-<DT><A HREF="#lbAG">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

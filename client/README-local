@@ -2,13 +2,29 @@ This directory - the client/local/ directory - can be used to
 install Xymon client add-on scripts. The Xymon client will run
 all files in this directory that are executable, and include the
 output from each script in a separate section in the Xymon client
-message which is sent to the Xymon server.
+message (the "clientlog") which is sent to the Xymon server.
+
+This is the supported, upgrade-safe way to add custom data to the
+clientlog: you never need to edit the shipped xymonclient-*.sh
+scripts, so your additions survive a client upgrade.
+
+Each script's standard output is added under a section named after
+the script's filename, like this:
+
+    [local:myscript]
+    ...output of client/local/myscript...
+
+Because the script's output is included verbatim, a script may also
+print its own "[section]" header lines; each becomes a separate
+section in the clientlog on the server. So a single drop-in can emit
+one or more sections of its choosing. Anything the script writes to
+stderr is NOT included in the message, and if one script fails the
+others still run.
 
 This output will have to be processed on the Xymon server; there
 is no default processing done by Xymon on the output from these
 scripts. They are merely added to the client data.
 
-If you want to install an add-on script that direcly generates a 
+If you want to install an add-on script that directly generates a
 status column in Xymon, this should go in the client/ext/ directory
 instead.
-

@@ -59,6 +59,8 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 #define DISABLED_UNTIL_OK -1
+#define HOSTDATASAVE_DEFAULT_TTL 30
+#define HOSTDATASAVE_MAX_TTL 1440
 
 /*
  * The absolute maximum size we'll grow our buffers to accommodate an incoming message.
@@ -162,6 +164,7 @@ typedef struct xymond_hostlist_t {
 	xymond_log_t *pinglog; /* Points to entry in logs list, but we need it often */
 	clientmsg_list_t *clientmsgs;
 	time_t clientmsgtstamp;
+	time_t hostdatasaveexpires;
 } xymond_hostlist_t;
 
 typedef struct filecache_t {
@@ -279,6 +282,7 @@ xymond_statistics_t xymond_stats[] = {
 	{ "summary", 0 },
 	{ "data", 0 },
 	{ "clientlog", 0 },
+	{ "hostdatasave", 0 },
 	{ "client", 0 },
 	{ "notes", 0 },
 	{ "enable", 0 },
@@ -970,6 +974,21 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 	return;
 }
 
+void post_clientdata_to_clichg(char *sender, xymond_hostlist_t *host)
+{
+	char *clientdata, *readymsg;
+	int readylen;
+	time_t timeroffset = (getcurrenttime(NULL) - gettimer());
+
+	clientdata = totalclientmsg(host->clientmsgs);
+	readylen = strlen(host->hostname) + strlen(clientdata) + 64;
+	readymsg = (char *)malloc(readylen);
+	snprintf(readymsg, readylen, "%s|%d|forced\n%s", host->hostname,
+		(int)(host->clientmsgtstamp + timeroffset), clientdata);
+	posttochannel(clichgchn, channelnames[C_CLICHG], NULL, sender, host->hostname, NULL, readymsg);
+	xfree(readymsg);
+}
+
 void posttoall(char *msg)
 {
 	posttochannel(statuschn, msg, NULL, "xymond", NULL, NULL, "");
@@ -983,6 +1002,41 @@ void posttoall(char *msg)
 	posttochannel(userchn, msg, NULL, "xymond", NULL, NULL, "");
 }
 
+
+/*
+ * True if a hostname uses only web-servable characters (XYMON_HOSTNAME_CHARS,
+ * shared with the CGIs). A configured host whose canonical name fails this
+ * still loads and is monitored, but its svcstatus/history/reportlog pages are
+ * unreachable; warn_unreachable_hostnames() reports that once per config load.
+ * Single scan, one definition for both the ghost-name guard and that warning.
+ * (issue #309)
+ */
+static int hostname_web_safe(const char *name)
+{
+	return name[strspn(name, XYMON_HOSTNAME_CHARS)] == '\0';
+}
+
+/*
+ * Warn about configured hosts whose canonical name the web interface cannot
+ * serve. Called once after each hosts.cfg (re)load in the daemon, NOT from the
+ * shared loader -- that runs in every short-lived CGI process and would repeat
+ * the warning on every page render.
+ */
+static void warn_unreachable_hostnames(void)
+{
+	void *hrec;
+
+	for (hrec = first_host(); hrec; hrec = next_host(hrec, 0)) {
+		char *name = xmh_item(hrec, XMH_HOSTNAME);
+
+		/* A literal comma is web-unreachable even though XYMON_HOSTNAME_CHARS
+		 * lists it (the CGIs need it for the 192,168,1,1 IP spelling): every
+		 * generated URL runs the name through uncommafy(), so a configured
+		 * "foo,bar" resolves to "foo.bar" -- a different host. */
+		if (name && (!hostname_web_safe(name) || strchr(name, ',')))
+			errprintf("Warning: hostname '%s' in hosts.cfg has characters the web interface cannot serve; it is monitored but its web pages are not reachable. Use an ASCII canonical name and a NAME: tag for the displayed spelling.\n", name);
+	}
+}
 
 char *log_ghost(char *hostname, char *sender, char *msg)
 {
@@ -1005,7 +1059,7 @@ char *log_ghost(char *hostname, char *sender, char *msg)
 	gwalk = (ghandle != xtreeEnd(rbghosts)) ? (ghostlist_t *)xtreeData(rbghosts, ghandle) : NULL;
 
 	/* Disallow weird test names - Note: a future version may restrict these to valid hostname + DNS labels and not preserve case */
-	if (!gwalk && (strlen(hostname) != strspn(hostname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:,._-")) ) {
+	if (!gwalk && !hostname_web_safe(hostname) ) {
 		errprintf("Bogus message from %s: Invalid new hostname '%s'\n", sender, hostname);
 		return NULL;
 	}
@@ -1389,8 +1443,8 @@ static int changedelay(void *hinfo, int newcolor, char *testname, int currcolor)
 
 static int isset_noflap(void *hinfo, char *testname, char *hostname)
 {
-	char *tok, *dstr;
-	int keylen;
+	char *tok, *dstr, *dbuf;
+	int listed;
 
 	dstr = xmh_item(hinfo, XMH_NOFLAP);
 	if (!dstr) return 0; /* no 'noflap' set */
@@ -1401,11 +1455,20 @@ static int isset_noflap(void *hinfo, char *testname, char *hostname)
 
 	/* if not 'NOFLAP', we should receive "=test1,test2". Skip the = */
 	if (*dstr == '=') dstr++;
-	
-	keylen = strlen(testname);
-	tok = strtok(dstr, ",");
-	while (tok && (strncmp(testname, tok, keylen) != 0)) tok = strtok(NULL, ",");
-	if (!tok) return 0; /* specifies noflap, but this test is not in the list */
+
+	/* Copy first: xmh_item() points into the host's own tag buffer, and strtok()
+	 * would truncate the stored list at its first comma. */
+	dbuf = strdup(dstr);
+	if (!dbuf) return 0;	/* OOM - don't let strtok(NULL, ...) resume stale state */
+
+	/* Compare whole names: strncmp() over strlen(testname) made a listed entry
+	 * cover its own prefixes, so "noflap=imaps" also silenced the imap test. */
+	tok = strtok(dbuf, ",");
+	while (tok && (strcmp(testname, tok) != 0)) tok = strtok(NULL, ",");
+	listed = (tok != NULL);
+	xfree(dbuf);
+
+	if (!listed) return 0; /* specifies noflap, but this test is not in the list */
 
 	/* do not use flapping for the test */
 	dbgprintf("Ignoring flapping for %s:%s due to noflap set.\n", hostname, testname);
@@ -1437,7 +1500,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			  textornull(hostname), textornull(testname), textornull(sender));
 		return;
 	}
-	if (msg_data(msg, 0) == (char *)msg, 0) {
+	if (msg_data(msg, 0) == (char *)msg) {
 		errprintf("Bogus status message: msg_data finds no host.test. Sent from: '%s', data:'%s'\n",
 			  sender, msg);
 		return;
@@ -2390,6 +2453,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 	char *chnbuf, *theclass;
 	int msglen, buflen = 0;
 	xtreePos_t hosthandle;
+	xymond_hostlist_t *hwalk = NULL;
 	clientmsg_list_t *cwalk, *chead, *ctail, *czombie;
 
 	dbgprintf("->handle_client\n");
@@ -2404,7 +2468,6 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 	if (clientsavemem) {
 		hosthandle = xtreeFind(rbhosts, hostname);
 		if (hosthandle != xtreeEnd(rbhosts)) {
-			xymond_hostlist_t *hwalk;
 			hwalk = xtreeData(rbhosts, hosthandle);
 
 			for (cwalk = hwalk->clientmsgs; (cwalk && strcmp(cwalk->collectorid, collectorid)); cwalk = cwalk->next) ;
@@ -2456,6 +2519,11 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 			}
 			hwalk->clientmsgs = chead;
 		}
+	}
+
+	if (hwalk && hwalk->hostdatasaveexpires) {
+		if (hwalk->hostdatasaveexpires > gettimer()) post_clientdata_to_clichg(sender, hwalk);
+		hwalk->hostdatasaveexpires = 0;
 	}
 
 	chnbuf = (char *)malloc(buflen);
@@ -2683,6 +2751,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		break;
 
 	  case CMD_RENAMEHOST:
+		hwalk->hostdatasaveexpires = 0;
 		xtreeDelete(rbhosts, hostname);
 		xfree(hwalk->hostname);
 		hwalk->hostname = strdup(n1);
@@ -2709,6 +2778,14 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		lwalk->test = newt;
 		break;
 	}
+
+	/*
+	 * Persist this mutation promptly: the main loop checkpoints only when
+	 * "now > nextcheckpoint", so forcing it to 0 triggers a checkpoint next
+	 * cycle instead of waiting up to checkpointinterval - closing the window
+	 * where a restart would reload a stale checkpoint and resurrect the drop.
+	 */
+	nextcheckpoint = 0;
 
 done:
 	MEMUNDEFINE(hostip);
@@ -4486,6 +4563,60 @@ void do_message(conn_t *msg, char *origin)
 			handle_dropnrename(CMD_RENAMETEST, sender, hostname, n1, n2);
 		}
 	}
+	else if ((strcmp(msg->buf, "hostdatasave") == 0) || (strncmp(msg->buf, "hostdatasave ", 13) == 0)) {
+		char *hostname, *canonhostname, *ttltext, *endp, *extra, *p;
+		char hostip[IP_ADDR_STRLEN];
+		char response[1024];
+		long ttlminutes = HOSTDATASAVE_DEFAULT_TTL;
+		xtreePos_t hosthandle;
+		xymond_hostlist_t *hwalk;
+		int validrequest = 1;
+
+		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+
+		p = msg->buf + strlen("hostdatasave"); p += strspn(p, " \t");
+		hostname = strtok(p, " \t");
+		ttltext = strtok(NULL, " \t");
+		extra = strtok(NULL, " \t");
+		if (ttltext) {
+			errno = 0;
+			ttlminutes = strtol(ttltext, &endp, 10);
+			if ((errno == ERANGE) || (*ttltext == '\0') || (*endp != '\0') ||
+			    (ttlminutes <= 0) || (ttlminutes > HOSTDATASAVE_MAX_TTL)) validrequest = 0;
+		}
+		if (!hostname || extra) validrequest = 0;
+
+		canonhostname = (validrequest ? knownhost(hostname, hostip, GH_IGNORE) : NULL);
+		if (!validrequest) {
+			snprintf(response, sizeof(response), "ERROR: hostdatasave requires HOSTNAME and an optional lifetime from 1 to %d minutes\n", HOSTDATASAVE_MAX_TTL);
+		}
+		else if (!canonhostname) {
+			snprintf(response, sizeof(response), "ERROR: unknown host %s\n", hostname);
+		}
+		else if (!clientsavemem) {
+			snprintf(response, sizeof(response), "ERROR: cached client messages are disabled\n");
+		}
+		else if (semctl(clichgchn->semid, CLIENTCOUNT, GETVAL) <= 0) {
+			snprintf(response, sizeof(response), "ERROR: no CLICHG channel reader is listening\n");
+		}
+		else {
+			hosthandle = xtreeFind(rbhosts, canonhostname);
+			if (hosthandle == xtreeEnd(rbhosts)) {
+				hwalk = create_hostlist_t(canonhostname, hostip);
+				hostcount++;
+			}
+			else {
+				hwalk = xtreeData(rbhosts, hosthandle);
+			}
+			hwalk->hostdatasaveexpires = gettimer() + (ttlminutes * 60);
+			snprintf(response, sizeof(response), "OK: next client report for %s armed for %ld minutes\n", canonhostname, ttlminutes);
+		}
+
+		msg->doingwhat = RESPONDING;
+		xfree(msg->buf);
+		msg->bufp = msg->buf = strdup(response);
+		msg->buflen = strlen(msg->buf);
+	}
 	else if (strncmp(msg->buf, "dummy", 5) == 0) {
 		/* Do nothing */
 	}
@@ -4594,7 +4725,8 @@ void do_message(conn_t *msg, char *origin)
 		line1 = strdup(msg->buf); if (p) *p = savech;
 
 		p = strtok(line1, " \t"); /* Skip the client keyword */
-		if (p) collectorid = strchr(p, '/'); if (collectorid) collectorid++;
+		if (p) collectorid = strchr(p, '/');
+		if (collectorid) collectorid++;
 		if (p) hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.CLIENTOS */
 		if (hostname) {
 			clientos = strrchr(hostname, '.'); 
@@ -5073,7 +5205,7 @@ void load_checkpoint(char *fn)
 		if (strcmp(testname, xgetenv("CLIENTCOLUMN")) == 0) continue;
 
 		/* Rename the now-forgotten internal statuses */
-		if (strcmp(hostname, getenv("MACHINEDOTS")) == 0) {
+		if (strcmp(hostname, xgetenv("MACHINEDOTS")) == 0) {
 			if (strcmp(testname, "bbgen") == 0) testname = "xymongen";
 			else if (strcmp(testname, "bbtest") == 0) testname = "xymonnet";
 			else if (strcmp(testname, "hobbitd") == 0) testname = "xymond";
@@ -5699,6 +5831,11 @@ int main(int argc, char *argv[])
 		reopen_file(logfn, "a", stderr);
 	}
 
+	/* Warn about web-unreachable canonical hostnames only now that stderr
+	 * points at the log, so startup warnings land there and not just on the
+	 * launching terminal -- matching the reload path. */
+	warn_unreachable_hostnames();
+
 	if (ackinfologfn) {
 		ackinfologfd = fopen(ackinfologfn, "a");
 		if (ackinfologfd == NULL) {
@@ -5757,6 +5894,8 @@ int main(int argc, char *argv[])
 			loadresult = load_hostnames(hostsfn, NULL, get_fqdn());
 
 			if (loadresult == 0) {
+				warn_unreachable_hostnames();
+
 				/* Scan our list of hosts and weed out those we do not know about any more */
 				hosthandle = xtreeFirst(rbhosts);
 				while (hosthandle != xtreeEnd(rbhosts)) {

@@ -1028,7 +1028,10 @@ char *generate_info(char *hostname, char *critconfigfn)
 
 	val = xmh_item(hostwalk, XMH_DESCRIPTION);
 	if (val) {
-		char *delim;
+		char *delim, *descrurl;
+		char linkurl[PATH_MAX];
+
+		descrurl = xgetenv("HOSTDESCURL"); if (descrurl && !*descrurl) descrurl = NULL;
 
 		delim = strchr(val, ':'); if (delim) *delim = '\0';
 		addtobuffer(infobuf, "<tr><th align=left>Host type:</th><td align=left>");
@@ -1038,7 +1041,16 @@ char *generate_info(char *hostname, char *critconfigfn)
 			*delim = ':'; 
 			delim++;
 			addtobuffer(infobuf, "<tr><th align=left>Description:</th><td align=left>");
-			addtobuffer(infobuf, delim);
+			/* Value may already contain raw HTML (e.g. a link) - don't urlencode/wrap it. */
+			if (descrurl && !strchr(delim, '<')) {
+				snprintf(linkurl, sizeof(linkurl), descrurl, urlencode(delim));
+				addtobuffer(infobuf, "<a href=\"");
+				addtobuffer(infobuf, linkurl);
+				addtobuffer(infobuf, "\">");
+				addtobuffer(infobuf, delim);
+				addtobuffer(infobuf, "</a>");
+			}
+			else addtobuffer(infobuf, delim);
 			addtobuffer(infobuf, "</td></tr>\n");
 		}
 		addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");

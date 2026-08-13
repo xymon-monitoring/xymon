@@ -405,16 +405,39 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	return head;
 }
 
+/* Line currently being parsed by load_client_config(), so pattern-compile
+ * errors can report where the bad pattern came from. */
+static int curparseline = 0;
+
 static exprlist_t *setup_expr(char *ptn, int multiline)
 {
 	exprlist_t *newitem = (exprlist_t *)calloc(1, sizeof(exprlist_t));
 
 	newitem->pattern = strdup(ptn);
 	if (*ptn == '%') {
-		if (multiline)
-			newitem->exp = multilineregex(ptn+1);
-		else
-			newitem->exp = compileregex(ptn+1);
+		/* Same flags as compileregex()/multilineregex(), but we ask for the
+		 * pcre2 error code so a truncated pattern can be told apart from one
+		 * that is simply wrong. */
+		int errcode = 0;
+		int truncated;
+
+		newitem->exp = compileregex_ext(ptn+1, PCRE2_CASELESS | (multiline ? PCRE2_MULTILINE : 0),
+						&errcode, NULL);
+		if (newitem->exp == NULL) {
+			/* compileregex_ext() logged the pcre error, but without saying
+			 * where the pattern came from. A common cause is a pattern
+			 * containing a space: the config is tokenized on whitespace, so
+			 * the pattern is silently truncated at the space - and when the
+			 * cut lands inside a group or a character class, pcre2 reports
+			 * exactly one of these two errors. Any other failure is the
+			 * pattern's own doing, so it gets the location only. */
+			truncated = ((errcode == PCRE2_ERROR_MISSING_CLOSING_PARENTHESIS) ||
+				     (errcode == PCRE2_ERROR_MISSING_SQUARE_BRACKET));
+
+			errprintf("Invalid pattern '%s' at line %d%s\n", ptn, curparseline,
+				  (truncated ?
+				   " (hint: if the pattern contains a space, the config splits tokens on whitespace - write [[:space:]] instead)" : ""));
+		}
 	}
 	newitem->next = exprhead;
 	exprhead = newitem;
@@ -627,6 +650,7 @@ int load_client_config(char *configfn)
 		int unknowntok = 0;
 
 		cfid++;
+		curparseline = cfid;
 		sanitize_input(inbuf, 1, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
 		newhost = newpage = newexhost = newexpage = newclass = newexclass = newdg = newexdg = NULL;
@@ -3085,9 +3109,11 @@ strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagep
 	rrdtplnames_t *tpl;
 	double val;
 	void *hinfo;
+	strbuffer_t *seen;
 
 	if (!resbuf) resbuf = newstrbuffer(0);
 	clearstrbuffer(resbuf);
+	seen = newstrbuffer(0);
 
 	hinfo = hostinfo(hostname);
 	rule = getrule(hostname, pagepaths, classname, hinfo, C_RRDDS);
@@ -3122,6 +3148,20 @@ strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagep
 
 		if (vallist[tpl->idx] == NULL) goto nextrule;
 		val = atof(vallist[tpl->idx]);
+
+		/*
+		 * First match wins per (column, dataset, severity). Once a rule of a
+		 * given colour applies to this target, later rules for the same target
+		 * and colour are shadowed - even if this rule's threshold does not
+		 * trigger - matching the top-to-bottom first-match semantics documented
+		 * for analysis.cfg (put the specific settings first, the generic ones
+		 * last). Different colours are kept, so a yellow and a red threshold on
+		 * one dataset both still apply. Issue #32.
+		 */
+		snprintf(msgline, sizeof(msgline), "\001%s\002%s\002%s\001",
+			 rule->rule.rrdds.column, rule->rule.rrdds.rrdds, colorname(rule->rule.rrdds.color));
+		if (strstr(STRBUF(seen), msgline)) goto nextrule;
+		addtobuffer(seen, msgline);
 
 		/* Do the checks */
 		if (rule->flags & RRDDSCHK_INTVL) {
@@ -3214,6 +3254,7 @@ nextrule:
 
 	if (valscopy) xfree(valscopy);
 	if (vallist) xfree(vallist);
+	freestrbuffer(seen);
 
 	return (STRBUFLEN(resbuf) > 0) ? resbuf : NULL;
 }

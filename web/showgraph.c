@@ -104,6 +104,29 @@ int firstidx = -1;
 int idxcount = -1;
 int lastidx = 0;
 
+/* Quote a value for safe inclusion as a single word in a /bin/sh command
+ * line: wrap it in single quotes and render each embedded single quote as
+ * '\'' (close, escaped quote, reopen). The result contains no shell-active
+ * character outside the admin's own command, so a CGI-supplied value
+ * cannot break out. Caller frees. */
+static char *shellquote(const char *s)
+{
+	strbuffer_t *b = newstrbuffer(0);
+	const char *p;
+	char *result;
+
+	addtobuffer(b, "'");
+	for (p = (s ? s : ""); (*p); p++) {
+		if (*p == '\'') addtobuffer(b, "'\\''");
+		else addtobufferraw(b, (char *)p, 1);
+	}
+	addtobuffer(b, "'");
+	result = strdup(STRBUF(b));
+	freestrbuffer(b);
+
+	return result;
+}
+
 void errormsg(char *msg)
 {
 	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
@@ -646,6 +669,14 @@ int rrd_name_compare(const void *v1, const void *v2)
 	return strcmp(r1->key, r2->key);
 }
 
+static int rrd_param_matches_service(const char *param, const char *svc)
+{
+	if ((param == NULL) || (svc == NULL) || (*svc == '\0')) return 0;
+
+	/* For bundle fall-backs, FNPATTERN group 1 is exactly the service component */
+	return (strcmp(param, svc) == 0);
+}
+
 void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 {
 	time_t gstart, gend;
@@ -767,6 +798,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 {
 	gdef_t *gdef = NULL, *gdefuser = NULL;
 	int wantsingle = 0;
+	int rrdparamisservice = 0;
+	int svcrejects = 0;
 	DIR *dir;
 	time_t now = getcurrenttime(NULL);
 
@@ -813,6 +846,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		char *realservice;
 
 		*delim = '\0';
+		if (*(delim+1) == '\0') errormsg("Missing graph service name");
 		realservice = strdup(delim+1);
 
 		/* The requested gdef only acts as a fall-back solution so don't set gdef here. */
@@ -832,12 +866,14 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	if (gdef == NULL) {
 		if (gdefuser) {
 			gdef = gdefuser;
+			rrdparamisservice = 1;
 		}
 		else {
 			xymonrrd_t *ldef = find_xymon_rrd(service, NULL);
 			if (ldef) {
 				for (gdef = gdefs; (gdef && strcmp(ldef->xymonrrdname, gdef->name)); gdef = gdef->next) ;
 				wantsingle = 1;
+				rrdparamisservice = 1;
 			}
 		}
 	}
@@ -966,6 +1002,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			char *ext;
 			char param[PATH_MAX];
 			PCRE2_SIZE l = sizeof(param);
+			int haveparam;
 
 			/* Ignore dot-files and files with names shorter than ".rrd" */
 			if (*(d->d_name) == '.') continue;
@@ -983,10 +1020,19 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			result = pcre2_match(pat, d->d_name, strlen(d->d_name), 0, 0,
 					     ovector, NULL);
 			if (result < 0) continue;
+			haveparam = (pcre2_substring_copy_bynumber(ovector, 1, param, &l) == 0);
 
-			if (wantsingle) {
-				/* "Single" graph, i.e. a graph for a service normally included in a bundle (tcp) */
-				if (strstr(d->d_name, service) == NULL) continue;
+			if (rrdparamisservice && haveparam) {
+				/* Single service out of a bundle (tcp): match against the FNPATTERN
+				 * capture, not an unanchored substring - "conn" must not pick up
+				 * tcp.proxyconn.rrd (issue #20). */
+				if (!rrd_param_matches_service(param, service)) { svcrejects++; continue; }
+			}
+			else if (wantsingle) {
+				/* Resolved to its own gdef (tcp.http -> [http], ncv:slab -> [slab]),
+				 * where the capture is a subitem rather than the service - or a
+				 * fall-back without a capture group: keep the substring match. */
+				if (strstr(d->d_name, service) == NULL) { svcrejects++; continue; }
 			}
 
 			/* 
@@ -999,7 +1045,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* We have a matching file! */
 			rrddbs[rrddbcount].rrdfn = strdup(d->d_name);
-			if (pcre2_substring_copy_bynumber(ovector, 1, param, &l) == 0) {
+			if (haveparam) {
 				/*
 				 * This is ugly, but I cannot find a pretty way of un-mangling
 				 * the disk- and http-data that has been molested by the back-end.
@@ -1044,33 +1090,48 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	}
 	rrddbs[rrddbcount].key = rrddbs[rrddbcount].rrdfn = rrddbs[rrddbcount].rrdparam = NULL;
 
+	if ((rrddbcount == 0) && svcrejects) {
+		if (rrdparamisservice)
+			errprintf("showgraph: no RRD file matched service '%s' - check that FNPATTERN group 1 captures the service component\n", service);
+		else
+			errprintf("showgraph: no RRD file matched service '%s'\n", service);
+	}
+
 	/* Sort them so the display looks prettier */
 	qsort(&rrddbs[0], rrddbcount, sizeof(rrddb_t), rrd_name_compare);
 
 	/* Setup the title */
 	if (!gdef->title) gdef->title = strdup("");
 	if (strncmp(gdef->title, "exec:", 5) == 0) {
-		char *pcmd;
-		int i, pcmdlen = 7;
+		strbuffer_t *cmd = newstrbuffer(0);
 		FILE *pfd;
 		char *p;
-		char *param_str = "%s \"%s\" %s \"%s\"";
+		int i;
 
-		pcmdlen += (strlen(gdef->title+5) + strlen(displayname) + strlen(service) + strlen(glegend));
-		for (i=0; (i<rrddbcount); i++) pcmdlen += (strlen(rrddbs[i].rrdfn) + 3);
-
-		p = pcmd = (char *)malloc(pcmdlen+1);
-		p += snprintf(p, pcmdlen+1, param_str, gdef->title+5, displayname, service, glegend);
+		/* The admin's command line (gdef->title+5, from graphs.cfg)
+		 * runs verbatim - it is trusted and may carry its own options
+		 * or pipes on purpose. Every value appended after it, however,
+		 * is CGI- or filename-derived (displayname from the "disp="
+		 * parameter, the matched RRD filenames), so each is shell-quoted
+		 * and reaches the command as one literal argument, whatever
+		 * characters it contains. */
+		addtobuffer(cmd, gdef->title+5);
+		p = shellquote(displayname); addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
+		p = shellquote(service);     addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
+		p = shellquote(glegend);     addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
 		for (i=0; (i<rrddbcount); i++) {
 			if ((firstidx == -1) || ((i >= firstidx) && (i <= lastidx))) {
-				p += snprintf(p, (pcmdlen - (p - pcmd) + 1), " \"%s\"", rrddbs[i].rrdfn);
+				p = shellquote(rrddbs[i].rrdfn);
+				addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
 			}
 		}
-		pfd = popen(pcmd, "r");
+
+		pfd = popen(STRBUF(cmd), "r");
 		if (pfd) {
 			if (fgets(graphtitle, sizeof(graphtitle), pfd) == NULL) *graphtitle = '\0';
 			pclose(pfd);
 		}
+		freestrbuffer(cmd);
 
 		/* Drop any newline at end of the title */
 		p = strchr(graphtitle, '\n'); if (p) *p = '\0';
@@ -1326,4 +1387,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-

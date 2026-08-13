@@ -641,7 +641,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 								pagepath, h->hostname, e->column->name, htmlextension);
 							sprintf(textrepfn, "%savail-%s-%s.txt",
 								pagepath, h->hostname, e->column->name);
-							sprintf(textrepurl, "%s/%s", 
+							snprintf(textrepurl, sizeof(textrepurl), "%s/%s",
 								xgetenv("XYMONWEB"), textrepfn);
 
 							htmlrep = fopen(htmlrepfn, "w");
@@ -922,9 +922,9 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 			char	indexfilename[PATH_MAX];
 
 			/* top level page */
-			sprintf(filename, "xymon%s", htmlextension);
-			sprintf(rssfilename, "xymon%s", rssextension);
-			sprintf(indexfilename, "index%s", htmlextension);
+			snprintf(filename, sizeof(filename), "xymon%s", htmlextension);
+			snprintf(rssfilename, sizeof(rssfilename), "xymon%s", rssextension);
+			snprintf(indexfilename, sizeof(indexfilename), "index%s", htmlextension);
 			unlink(indexfilename); 
 			if (symlink(filename, indexfilename)) {
 				dbgprintf("Symlinking %s -> %s\n", filename, indexfilename);
@@ -936,16 +936,16 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 	
 			for (pgwalk = page; (pgwalk); pgwalk = pgwalk->parent) {
 				if (strlen(pgwalk->name)) {
-					sprintf(tmppath, "%s/%s/", pgwalk->name, pagepath);
+					snprintf(tmppath, sizeof(tmppath), "%s/%s/", pgwalk->name, pagepath);
 					strcpy(pagepath, tmppath);
 				}
 			}
 	
-			sprintf(filename, "%s/%s%s", pagepath, page->name, htmlextension);
-			sprintf(rssfilename, "%s/%s%s", pagepath, page->name, rssextension);
+			snprintf(filename, sizeof(filename), "%s/%s%s", pagepath, page->name, htmlextension);
+			snprintf(rssfilename, sizeof(rssfilename), "%s/%s%s", pagepath, page->name, rssextension);
 		}
-		sprintf(tmpfilename, "%s.tmp", filename);
-		sprintf(tmprssfilename, "%s.tmp", rssfilename);
+		snprintf(tmpfilename, sizeof(tmpfilename), "%s.tmp", filename);
+		snprintf(tmprssfilename, sizeof(tmprssfilename), "%s.tmp", rssfilename);
 
 
 		/* Try creating the output file. If it fails, we may need to create the directories */
@@ -1239,16 +1239,16 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype, char *filenamebas
 
 	switch (summarytype) {
 	  case PAGE_NONGREEN:
-		sprintf(filename, "%s%s", filenamebase, htmlextension);
-		sprintf(rssfilename, "%s%s", filenamebase, rssextension);
+		snprintf(filename, sizeof(filename), "%s%s", filenamebase, htmlextension);
+		snprintf(rssfilename, sizeof(rssfilename), "%s%s", filenamebase, rssextension);
 		break;
 	  case PAGE_CRITICAL:
-		sprintf(filename, "%s%s", filenamebase, htmlextension);
-		sprintf(rssfilename, "%s%s", filenamebase, rssextension);
+		snprintf(filename, sizeof(filename), "%s%s", filenamebase, htmlextension);
+		snprintf(rssfilename, sizeof(rssfilename), "%s%s", filenamebase, rssextension);
 		break;
 	}
 
-	sprintf(tmpfilename, "%s.tmp", filename);
+	snprintf(tmpfilename, sizeof(tmpfilename), "%s.tmp", filename);
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
 		errprintf("Cannot create file %s: %s\n", tmpfilename, strerror(errno));
@@ -1256,7 +1256,7 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype, char *filenamebas
 	}
 
 	if (wantrss) {
-		sprintf(tmprssfilename, "%s.tmp", rssfilename);
+		snprintf(tmprssfilename, sizeof(tmprssfilename), "%s.tmp", rssfilename);
 		rssoutput = fopen(tmprssfilename, "w");
 		if (rssoutput == NULL) {
 			errprintf("Cannot create RSS file %s: %s\n", tmpfilename, strerror(errno));

@@ -1,263 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMONPROXY(8)</title>
+</head>
+<body>
+<h1 class="head-name">XYMONPROXY</h1>
+Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMONPROXY</TITLE>
-</HEAD><BODY>
-<H1>XYMONPROXY</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<p class="Pp"></p>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymonproxy - Xymon message proxy</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymonproxy [options] --server=$XYMSRV</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><i><a href="../man8/xymonproxy.8.html">xymonproxy</a>(8)</i> is a proxy for forwarding Xymon messages from
+    one server to another. It will typically be needed if you have clients
+    behind a firewall, so they cannot send status messages to the Xymon server
+    directly.</p>
+<p class="Pp">xymonproxy serves three purposes. First, it acts as a regular
+    proxy server, allowing clients that cannot connect directly to the Xymon
+    servers to send data. Although xymonproxy is optimized for handling status
+    messages, it will forward all types of messages, including notes- and
+    data-messages.</p>
+<p class="Pp">Second, it acts as a buffer, smoothing out peak loads if many
+    clients try to send status messages simultaneously. xymonproxy can absorb
+    messages very quickly, but will queue them up internally and forward them to
+    the Xymon server at a reasonable pace.</p>
+<p class="Pp">Third, xymonproxy merges small &quot;status&quot; messages into
+    larger &quot;combo&quot; messages. This can dramatically decrease the number
+    of connections that need to go from xymonproxy to the Xymon server. The
+    merging of messages causes &quot;status&quot; messages to be delayed for up
+    to 0.25 seconds before being sent off to the Xymon server.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="server"><a class="permalink" href="#server"><b>--server</b>=<i>SERVERIP</i>[:<i>PORT</i>][,<i>SERVER2IP</i>[:<i>PORT</i>]]</a></dt>
+  <dd>Specifies the IP-address and optional portnumber where incoming messages
+      are forwarded to. The default portnumber is 1984, the standard Xymon port
+      number. If you have setup the normal Xymon environment, you can use
+      &quot;--server=$XYMSRV&quot;. Up to 3 servers can be specified; incoming
+      messages are sent to all of them (except &quot;config&quot;,
+      &quot;query&quot; and &quot;download&quot; messages, which go to the LAST
+      server only). If you have Xymon clients sending their data via this proxy,
+      note that the clients will receive their configuration data from the LAST
+      of the servers listed here. This option is required.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="listen"><a class="permalink" href="#listen"><b>--listen</b>=<i>LOCALIP</i>[:<i>PORT</i>]</a></dt>
+  <dd>Specifies the IP-adress where xymonproxy listens for incoming connections.
+      By default, xymonproxy listens on all IP-addresses assigned to the host.
+      If no portnumber is given, port 1984 will be used.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="timeout"><a class="permalink" href="#timeout"><b>--timeout</b>=<i>N</i></a></dt>
+  <dd>Specifies the number of seconds after which a connection is aborted due to
+      a timeout. Default: 10 seconds.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="report"><a class="permalink" href="#report"><b>--report</b>=[<i>PROXYHOSTNAME</i>.]<i>SERVICE</i></a></dt>
+  <dd>If given, this option causes xymonproxy to send a status report every 5
+      minutes to the Xymon server about itself. If you have set the standard
+      Xymon environment, you can use &quot;--report=xymonproxy&quot; to have
+      xymonproxy report its status to a &quot;xymonproxy&quot; column in Xymon.
+      The default for PROXYHOSTNAME is the $MACHINE environment variable, i.e.
+      the hostname of the server running xymonproxy. See REPORT OUTPUT below for
+      an explanation of the report contents.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="lqueue"><a class="permalink" href="#lqueue"><b>--lqueue</b>=<i>N</i></a></dt>
+  <dd>Size of the listen-queue where incoming connections can queue up before
+      being processed. This should be large to accommodate bursts of activity
+      from clients. Default: 512.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="daemon"><a class="permalink" href="#daemon"><b>--daemon</b></a></dt>
+  <dd>Run in daemon mode, i.e. detach and run as a background process. This is
+      the default.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-daemon"><a class="permalink" href="#no-daemon"><b>--no-daemon</b></a></dt>
+  <dd>Runs xymonproxy as a foreground process.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="pidfile"><a class="permalink" href="#pidfile"><b>--pidfile</b>=<i>FILENAME</i></a></dt>
+  <dd>Specifies the location of a file containing the process-ID of the
+      xymonproxy daemon process. Default: /var/run/xymonproxy.pid.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="logfile"><a class="permalink" href="#logfile"><b>--logfile</b>=<i>FILENAME</i></a></dt>
+  <dd>Sends all logging output to the specified file instead of stderr.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="log-details"><a class="permalink" href="#log-details"><b>--log-details</b></a></dt>
+  <dd>Log details (IP-address, message type and hostname) to the logfile. This
+      can also be enabled and disabled at run-time by sending the xymonproxy
+      process a SIGUSR1 signal.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enable debugging output.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="REPORT_OUTPUT"><a class="permalink" href="#REPORT_OUTPUT">REPORT
+  OUTPUT</a></h1>
+<p class="Pp">If enabled via the &quot;--report&quot; option, xymonproxy will
+    send a status message about itself to the Xymon server once every 5
+  minutes.</p>
+<p class="Pp">The status message includes the following information:</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="Incoming"><a class="permalink" href="#Incoming">Incoming
+    messages</a></dt>
+  <dd>The total number of connections accepted from clients since the proxy
+      started. The &quot;(N msgs/second)&quot; is the average number of messages
+      per second over the past 5 minutes.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Outbound"><a class="permalink" href="#Outbound">Outbound
+    messages</a></dt>
+  <dd>The total number of messages sent to the Xymon server. Note that this is
+      probably smaller than the number of incoming messages, since xymonproxy
+      merges messages before sending them.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Incoming~2"><a class="permalink" href="#Incoming~2">Incoming - Combo
+    messages</a></dt>
+  <dd>The number of &quot;combo&quot; messages received from a client.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Incoming~3"><a class="permalink" href="#Incoming~3">Incoming - Status
+    messages</a></dt>
+  <dd>The number of &quot;status&quot; messages received from a client.
+      xymonproxy attempts to merge these into &quot;combo&quot; messages. The
+      &quot;Messages merged&quot; is the number of &quot;status&quot; messages
+      that were merged into a combo message, the &quot;Resulting combos&quot; is
+      the number of &quot;combo&quot; messages that resulted from the merging.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Incoming~4"><a class="permalink" href="#Incoming~4">Incoming - Other
+    messages</a></dt>
+  <dd>The number of other messages (data, notes, ack, query, ...) messages
+      received from a client.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Proxy"><a class="permalink" href="#Proxy">Proxy resources - Connection
+    table size</a></dt>
+  <dd>This is the number of connection table slots in the proxy. This measures
+      the number of simultaneously active requests that the proxy has handled,
+      and so gives an idea about the peak number of clients that the proxy has
+      handled simultaneously.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Proxy~2"><a class="permalink" href="#Proxy~2">Proxy resources - Buffer
+    space</a></dt>
+  <dd>This is the number of KB memory allocated for network buffers.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Timeout"><a class="permalink" href="#Timeout">Timeout details -
+    reading from client</a></dt>
+  <dd>The number of messages dropped because reading the message from the client
+      timed out.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Timeout~2"><a class="permalink" href="#Timeout~2">Timeout details -
+    connecting to server</a></dt>
+  <dd>The number of messages dropped, because a connection to the Xymon server
+      could not be established.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Timeout~3"><a class="permalink" href="#Timeout~3">Timeout details -
+    sending to server</a></dt>
+  <dd>The number of messages dropped because the communication to the Xymon
+      server timed out after a connection was established.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Timeout~4"><a class="permalink" href="#Timeout~4">Timeout details -
+    recovered</a></dt>
+  <dd>When a timeout happens while sending the status message to the server,
+      xymonproxy will attempt to recover the message and retry sending it to the
+      server after waiting a few seconds. This number is the number of messages
+      that were recovered, and so were not lost.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Timeout~5"><a class="permalink" href="#Timeout~5">Timeout details -
+    reading from server</a></dt>
+  <dd>The number of response messages that timed out while attempting to read
+      them from the server. Note that this applies to the &quot;config&quot; and
+      &quot;query&quot; messages only, since all other message types do not get
+      any response from the servers.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Timeout~6"><a class="permalink" href="#Timeout~6">Timeout details -
+    sending to client</a></dt>
+  <dd>The number of response messages that timed out while attempting to send
+      them to the client. Note that this applies to the &quot;config&quot; and
+      &quot;query&quot; messages only, since all other message types do not get
+      any response from the servers.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Average"><a class="permalink" href="#Average">Average queue
+    time</a></dt>
+  <dd>The average time it took the proxy to process a message, calculated from
+      the messages that have passed through the proxy during the past 5 minutes.
+      This number is computed from the messages that actually end up
+      establishing a connection to the Xymon server, i.e. status messages that
+      were combined into combo-messages do not go into the calculation - if they
+      did, it would reduce the average time, since it is faster to merge
+      messages than send them out over the network.</dd>
+</dl>
+<p class="Pp">If you think the numbers do not add up, here is how they
+  relate.</p>
+<p class="Pp">The &quot;Incoming messages&quot; should be equal to the sum of
+    the &quot;Incoming Combo/Status/Page/Other messages&quot;, or slightly more
+    because messages in transit are not included in the per-type message
+  counts.</p>
+<p class="Pp">The &quot;Outbound messages&quot; should be equal to sum of the
+    &quot;Incoming Combo/Page/Other messages&quot;, plus the &quot;Resulting
+    combos&quot; count, plus &quot;Incoming Status messages&quot; minus
+    &quot;Messages merged&quot; (this latter number is the number of status
+    messages that were NOT merged into combos, but sent directly). The
+    &quot;Outbound messages&quot; may be slightly lower than that, because
+    messages in transit are not included in the &quot;Outbound messages&quot;
+    count until they have been fully sent.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SIGNALS"><a class="permalink" href="#SIGNALS">SIGNALS</a></h1>
+<dl class="Bl-tag">
+  <dt id="SIGHUP"><a class="permalink" href="#SIGHUP"><b>SIGHUP</b></a></dt>
+  <dd>Re-opens the logfile, e.g. after it has been rotated.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="SIGTERM"><a class="permalink" href="#SIGTERM"><b>SIGTERM</b></a></dt>
+  <dd>Shut down the proxy.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="SIGUSR1"><a class="permalink" href="#SIGUSR1"><b>SIGUSR1</b></a></dt>
+  <dd>Toggles logging of individual messages.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/xymon.1.html">xymon</a>(1), xymond(1), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#REPORT_OUTPUT">REPORT OUTPUT</a></dt>
+<dt><a href="#SIGNALS">SIGNALS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<P>
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymonproxy - Xymon message proxy
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>xymonproxy [options] --server=$XYMSRV</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<I><A HREF="../man8/xymonproxy.8.html">xymonproxy</A>(8)</I>
-
-is a proxy for forwarding Xymon messages from one
-server to another. It will typically be needed if you have
-clients behind a firewall, so they cannot send status
-messages to the Xymon server directly.
-<P>
-xymonproxy serves three purposes. First, it acts as a regular
-proxy server, allowing clients that cannot connect directly to 
-the Xymon servers to send data. Although xymonproxy is optimized for handling
-status messages, it will forward all types of messages, including
-notes- and data-messages.
-<BR>
-
-<P>
-Second, it acts as a buffer, smoothing out peak loads if
-many clients try to send status messages simultaneously.
-xymonproxy can absorb messages very quickly, but will queue
-them up internally and forward them to the Xymon server
-at a reasonable pace.
-<BR>
-
-<P>
-Third, xymonproxy merges small &quot;status&quot; messages into larger
-&quot;combo&quot; messages. This can dramatically decrease the number
-of connections that need to go from xymonproxy to the Xymon
-server.  The merging of messages causes &quot;status&quot; messages 
-to be delayed for up to 0.25 seconds before being sent off 
-to the Xymon server.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--server=SERVERIP[:PORT][,SERVER2IP[:PORT]]<DD>
-Specifies the IP-address and optional portnumber where incoming
-messages are forwarded to. The default portnumber is 1984, the
-standard Xymon port number. If you have setup the normal
-Xymon environment, you can use &quot;--server=$XYMSRV&quot;. Up
-to 3 servers can be specified; incoming messages are sent to
-all of them (except &quot;config&quot;, &quot;query&quot; and &quot;download&quot; messages, 
-which go to the LAST server only). If you have Xymon clients
-sending their data via this proxy, note that the clients will
-receive their configuration data from the LAST of the servers
-listed here.  This option is required.
-<P>
-<DT>--listen=LOCALIP[:PORT]<DD>
-Specifies the IP-adress where xymonproxy listens for incoming 
-connections. By default, xymonproxy listens on all IP-addresses
-assigned to the host. If no portnumber is given, port 1984
-will be used.
-<P>
-<DT>--timeout=N<DD>
-Specifies the number of seconds after which a connection is
-aborted due to a timeout. Default: 10 seconds.
-<P>
-<DT>--report=[PROXYHOSTNAME.]SERVICE<DD>
-If given, this option causes xymonproxy to send a status report
-every 5 minutes to the Xymon server about itself. If you
-have set the standard Xymon environment, you can use
-&quot;--report=xymonproxy&quot; to have xymonproxy report its status to a
-&quot;xymonproxy&quot; column in Xymon. The default for PROXYHOSTNAME
-is the $MACHINE environment variable, i.e. the hostname of the
-server running xymonproxy. See REPORT OUTPUT below for an 
-explanation of the report contents.
-<P>
-<DT>--lqueue=N<DD>
-Size of the listen-queue where incoming connections can
-queue up before being processed. This should be large to
-accommodate bursts of activity from clients. Default: 512.
-<P>
-<DT>--daemon<DD>
-Run in daemon mode, i.e. detach and run as a background process.
-This is the default.
-<P>
-<DT>--no-daemon<DD>
-Runs xymonproxy as a foreground process.
-<P>
-<DT>--pidfile=FILENAME<DD>
-Specifies the location of a file containing the process-ID 
-of the xymonproxy daemon process. Default: /var/run/xymonproxy.pid.
-<P>
-<DT>--logfile=FILENAME<DD>
-Sends all logging output to the specified file instead of stderr.
-<P>
-<DT>--log-details<DD>
-Log details (IP-address, message type and hostname) to the logfile.
-This can also be enabled and disabled at run-time by sending the
-xymonproxy process a SIGUSR1 signal.
-<P>
-<DT>--debug<DD>
-Enable debugging output.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>REPORT OUTPUT</H2>
-
-If enabled via the &quot;--report&quot; option, xymonproxy will send a 
-status message about itself to the Xymon server once
-every 5 minutes.
-<P>
-The status message includes the following information:
-<P>
-<DL COMPACT>
-<DT>Incoming messages<DD>
-The total number of connections accepted from clients
-since the proxy started. The &quot;(N msgs/second)&quot; is the 
-average number of messages per second over the past 5 minutes.
-<P>
-<DT>Outbound messages<DD>
-The total number of messages sent to the Xymon server. 
-Note that this is probably smaller than
-the number of incoming messages, since xymonproxy merges
-messages before sending them.
-<P>
-<DT>Incoming - Combo messages<DD>
-The number of &quot;combo&quot; messages received from a client.
-<P>
-<DT>Incoming - Status messages<DD>
-The number of &quot;status&quot; messages received from a client.
-xymonproxy attempts to merge these into &quot;combo&quot; messages. 
-The &quot;Messages merged&quot; is the number of &quot;status&quot; messages
-that were merged into a combo message, the &quot;Resulting combos&quot;
-is the number of &quot;combo&quot; messages that resulted from the
-merging.
-<P>
-<DT>Incoming - Other messages<DD>
-The number of other messages (data, notes, ack, query, ...)
-messages received from a client.
-<P>
-<DT>Proxy resources - Connection table size<DD>
-This is the number of connection table slots in the proxy.
-This measures the number of simultaneously active requests
-that the proxy has handled, and so gives an idea about the
-peak number of clients that the proxy has handled simultaneously.
-<P>
-<DT>Proxy resources - Buffer space<DD>
-This is the number of KB memory allocated for network buffers.
-<P>
-<DT>Timeout details - reading from client<DD>
-The number of messages dropped because reading the message
-from the client timed out.
-<P>
-<DT>Timeout details - connecting to server<DD>
-The number of messages dropped, because a connection to the
-Xymon server could not be established.
-<P>
-<DT>Timeout details - sending to server<DD>
-The number of messages dropped because the communication
-to the Xymon server timed out after a connection
-was established.
-<P>
-<DT>Timeout details - recovered<DD>
-When a timeout happens while sending the status message to 
-the server, xymonproxy will attempt to recover the message and
-retry sending it to the server after waiting a few seconds.
-This number is the number of messages that were recovered,
-and so were not lost.
-<P>
-<DT>Timeout details - reading from server<DD>
-The number of response messages that timed out while attempting
-to read them from the server. Note that this applies to the
-&quot;config&quot; and &quot;query&quot; messages only, since all other message
-types do not get any response from the servers.
-<P>
-<DT>Timeout details - sending to client<DD>
-The number of response messages that timed out while attempting
-to send them to the client. Note that this applies to the
-&quot;config&quot; and &quot;query&quot; messages only, since all other message
-types do not get any response from the servers.
-<P>
-<DT>Average queue time<DD>
-The average time it took the proxy to process a message,
-calculated from the messages that have passed through the
-proxy during the past 5 minutes. This number is computed
-from the messages that actually end up establishing a
-connection to the Xymon server, i.e. status 
-messages that were combined into combo-messages do not
-go into the calculation - if they did, it would reduce the
-average time, since it is faster to merge messages than
-send them out over the network.
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2></H2>
-
-If you think the numbers do not add up, here is how they relate.
-<P>
-The &quot;Incoming messages&quot; should be equal to the sum of the 
-&quot;Incoming Combo/Status/Page/Other messages&quot;, or slightly
-more because messages in transit are not included
-in the per-type message counts.
-<P>
-The &quot;Outbound messages&quot; should be equal to sum of the
-&quot;Incoming Combo/Page/Other messages&quot;, plus the &quot;Resulting
-combos&quot; count, plus &quot;Incoming Status messages&quot; minus 
-&quot;Messages merged&quot; (this latter number is the number of status
-messages that were NOT merged into combos, but sent directly).
-The &quot;Outbound messages&quot; may be slightly lower than that,
-because messages in transit are not included in the
-&quot;Outbound messages&quot; count until they have been fully sent.
-<P>
-<A NAME="lbAH">&nbsp;</A>
-<H2>SIGNALS</H2>
-
-<DL COMPACT>
-<DT>SIGHUP<DD>
-Re-opens the logfile, e.g. after it has been rotated.
-<P>
-<DT>SIGTERM<DD>
-Shut down the proxy.
-<P>
-<DT>SIGUSR1<DD>
-Toggles logging of individual messages.
-<P>
-</DL>
-<A NAME="lbAI">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man1/xymon.1.html">xymon</A>(1), <A HREF="../man1/xymond.1.html">xymond</A>(1), <A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">REPORT OUTPUT</A><DD>
-<DT><A HREF="#lbAG"></A><DD>
-<DT><A HREF="#lbAH">SIGNALS</A><DD>
-<DT><A HREF="#lbAI">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:11 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

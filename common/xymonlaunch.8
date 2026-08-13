@@ -7,7 +7,7 @@ xymonlaunch \- Master program to launch other Xymon programs
 
 .SH DESCRIPTION
 .I xymonlaunch(8)
-is the main program that controls the execution and scheduling of 
+is the main program that controls the execution and scheduling of
 all of the components in the Xymon system.
 
 xymonlaunch allows the administrator to add, remove or change the set of
@@ -20,42 +20,42 @@ each component of the Xymon system, instead of getting output
 from all components logged to a single file.
 
 .SH OPTIONS
-.IP "--env=FILENAME"
+.IP "\fB--env\fR=\fIFILENAME\fR"
 Loads the environment from FILENAME before starting other tools.
 The environment defined by FILENAME is the default, it can be
-overridden by the ENVFILE option in 
+overridden by the ENVFILE option in
 .I tasks.cfg(5)
 
-.IP "--config=FILENAME"
+.IP "\fB--config\fR=\fIFILENAME\fR"
 This option defines the file that xymonlaunch scans for tasks it
-must launch. A description of this file is in 
+must launch. A description of this file is in
 .I tasks.cfg(5)
 If not specified, files at /etc/tasks.cfg, /etc/xymon/tasks.cfg,
 and /etc/xymon-client/clientlaunch.cfg are searched for, as
 well as ~/server/etc/tasks.cfg.
 
-.IP "--log=FILENAME"
+.IP "\fB--log\fR=\fIFILENAME\fR"
 Defines the logfile where xymonlaunch logs information about
 failures to launch tasks and other data about the operation of
 xymonlaunch. Logs from individual tasks are defined in the tasks.cfg
 file. By default this is logged to stdout.
 
-.IP "--pidfile=FILENAME"
+.IP "\fB--pidfile\fR=\fIFILENAME\fR"
 Filename which xymonlaunch saves its own process-ID to. Commonly used by
 automated start/stop scripts.
 
-.IP "--verbose"
+.IP "\fB--verbose\fR"
 Logs the launch of all tasks to the logfile. Note that the logfile
 may become quite large if you enable this.
 
-.IP "--dump"
+.IP "\fB--dump\fR"
 Just dump the contents of the tasks.cfg file after parsing it.
 Used for debugging.
 
-.IP "--debug"
+.IP "\fB--debug\fR"
 Enable debugging output while running.
 
-.IP "--no-daemon"
+.IP "\fB--no-daemon\fR"
 xymonlaunch normally detaches from the controlling tty and runs as a
 background task. This option keeps it running in the foreground.
 
@@ -68,7 +68,7 @@ a non-zero exit status), then xymonlaunch will attempt to restart it
 5 times. If it still will not run, then the task is disabled for 10
 minutes. This will be logged to the xymonlaunch logfile.
 
-If the configuration file changes, xymonlaunch will re-read it and 
+If the configuration file changes, xymonlaunch will re-read it and
 notice any changes. If a running task was removed from the configuration,
 then the task is stopped. If a new task was added, it will be started.
 If the command used for a task changed, or it was given a new environment

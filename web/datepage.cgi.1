@@ -14,65 +14,65 @@ day/week/month selection boxes, and based on the users' selection a
 resulting url is built from the URLPREFIX and the time selection.
 The browser is then redirected to this URL.
 
-The URL is constructed from the URLPREFIX, the type-parameter, the 
-value of the "pagepath" or "host" cookie, and the users' selection 
+The URL is constructed from the URLPREFIX, the type-parameter, the
+value of the "pagepath" or "host" cookie, and the users' selection
 as follows:
 
-.IP type=day
+.IP "\fBtype\fR=\fBday\fR"
 The final URL is \fBURLPREFIX/daily/YEAR/MONTH/DAY/PAGEPATH\fR.
 
-.IP type=week
+.IP "\fBtype\fR=\fBweek\fR"
 The final URL is \fBURLPREFIX/weekly/YEAR/WEEK/PAGEPATH\fR.
 
-.IP type=month
+.IP "\fBtype\fR=\fBmonth\fR"
 The final URL is \fBURLPREFIX/monthly/YEAR/MONTH/PAGEPATH\fR.
 
 YEAR is the full year (4 digits, including century). MONTH is the
-two-digit number of the month (01..12). DAY is the number of the 
-day in the month (01..31). WEEK is the ISO 8601:1988 week-number 
+two-digit number of the month (01..12). DAY is the number of the
+day in the month (01..31). WEEK is the ISO 8601:1988 week-number
 (01..53). PAGEPATH is the current value of the "pagepath" cookie
 if set; if it is not set but the "host" cookie is set, then this
 host is looked up in the hosts.cfg file and the page where this host
-is found is used for PAGEPATH. These two cookies are set by the 
+is found is used for PAGEPATH. These two cookies are set by the
 default web-header templates supplied with Xymon.
 
 .SH OPTIONS
-.IP "\-\-url=URLPREFIX"
+.IP "\fB\-\-url\fR=\fIURLPREFIX\fR"
 This specifies the initial part of the final URL. This option is required.
 
-.IP "\-\-hffile=FILENAME"
-Specifies the template files (from $XYMONHOME/web/) to use. The default is 
+.IP "\fB\-\-hffile\fR=\fIFILENAME\fR"
+Specifies the template files (from $XYMONHOME/web/) to use. The default is
 "\-\-hffile=report".
 
-.IP "\-\-color=COLOR"
+.IP "\fB\-\-color\fR=\fICOLOR\fR"
 Sets the background color of the generated webpage. The default is blue.
 
-.IP "\-\-env=FILENAME"
+.IP "\fB\-\-env\fR=\fIFILENAME\fR"
 Loads the environment defined in FILENAME before executing the CGI script.
 
-.IP "\-\-debug"
+.IP "\fB\-\-debug\fR"
 Enables debugging output.
 
-.IP "$XYMONHOME/web/report_form_daily"
+.IP "\fB$XYMONHOME/web/report_form_daily\fR"
 HTML form template for the date selection form when type=daily.
 
-.IP "$XYMONHOME/web/report_form_weekly"
+.IP "\fB$XYMONHOME/web/report_form_weekly\fR"
 HTML form template for the date selection form when type=weekly.
 
-.IP "$XYMONHOME/web/report_form_monthly"
+.IP "\fB$XYMONHOME/web/report_form_monthly\fR"
 HTML form template for the date selection form when type=monthly.
 
-.IP "$XYMONHOME/web/report_header"
+.IP "\fB$XYMONHOME/web/report_header\fR"
 HTML header file for the generated web page
 
-.IP "$XYMONHOME/web/report_footer"
+.IP "\fB$XYMONHOME/web/report_footer\fR"
 HTML footer file for the generated web page
 
 .SH "ENVIRONMENT VARIABLES"
-.IP XYMONHOME
+.IP "\fBXYMONHOME\fR"
 Used to locate the template files for the generated web pages.
 
-.IP QUERY_STRING
+.IP "\fBQUERY_STRING\fR"
 Contains the parameters for the CGI script.
 
 .SH "SEE ALSO"
