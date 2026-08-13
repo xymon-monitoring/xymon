@@ -24,6 +24,7 @@ extern int within_sla(char *holidaykey, char *timespec, int defresult);
 extern int periodcoversnow(char *tag);
 extern char *histlogtime(time_t histtime);
 extern int durationvalue(char *dur);
+extern int durationseconds(char *dur, int *secs);
 extern char *durationstring(time_t secs);
 extern char *agestring(time_t secs);
 extern time_t timestr2timet(char *s);

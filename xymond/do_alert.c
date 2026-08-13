@@ -799,6 +799,12 @@ void clear_interval(activealerts_t *alert)
 
 	alert->nextalerttime = 0;
 	stoprulefound = 0;
+	/*
+	 * Past FOR=: this walk clears state, it sends nothing. A recipient whose
+	 * hold time is not up yet still carries the previous colour's interval,
+	 * and that interval is what would delay the next alert.
+	 */
+	alert_ignore_holdtime(1);
 	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL, NULL)) != NULL)) {
 		rpt = find_repeatinfo(alert, recip, 0);
 		if (rpt) {
@@ -806,6 +812,7 @@ void clear_interval(activealerts_t *alert)
 			rpt->nextalert = 0;
 		}
 	}
+	alert_ignore_holdtime(0);
 }
 
 void save_state(char *filename)
