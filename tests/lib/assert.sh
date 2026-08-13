@@ -236,6 +236,84 @@ build_xymon_libs() {
 		|| { cat "$log" >&2; fail "cannot build $*"; }
 }
 
+# pcre_cflags ROOT -- print the compile flags a harness needs to reach
+# <pcre2.h>, or nothing when the header is already on the default search
+# path.
+#
+# Every harness that includes libxymon.h needs this whether or not it uses
+# PCRE: libxymon.h pulls in lib/loadalerts.h, which includes <pcre2.h>. The
+# harnesses resolved the PCRE *libraries* and assumed the *header*, which
+# holds on Linux (/usr/include/pcre2.h) and fails wherever PCRE lives under
+# a prefix -- on FreeBSD, /usr/local/include:
+#
+#     lib/loadalerts.h:20:10: fatal error: 'pcre2.h' file not found
+#
+# Resolution mirrors the PCRELIBS order already used for the link, most
+# specific first: an explicit override, then the configured tree (whose
+# PCREINCDIR is by definition what the library being linked was built
+# against, and already carries its -I), then pkg-config, then nothing.
+pcre_cflags() {
+	local root=$1 flags=${PCRECFLAGS:-}
+	[ -n "$flags" ] || [ ! -f "$root/Makefile" ] \
+		|| flags=$(sed -n 's/^PCREINCDIR *= *//p' "$root/Makefile")
+	if [ -z "$flags" ] && command -v pkg-config >/dev/null 2>&1; then
+		flags=$(pkg-config --cflags libpcre2-8 2>/dev/null || true)
+	fi
+	printf '%s' "$flags"
+}
+
+# xymon_cflags ROOT -- the include flags a harness compiled against the
+# in-tree libraries needs: the tree's own headers, and wherever <pcre2.h>
+# lives. Callers add whatever else they need after it (the harness's own
+# -iquote ROOT/web or ROOT/xymond, -DSTANDALONE, the RRD defines).
+#
+# The tree's directories go on the *quoted* path and the PCRE directory on
+# the angle-bracket one, because that is how each is included: every in-tree
+# header is reached through #include "...", while loadalerts.h asks for
+# <pcre2.h>. Putting the tree on the angle-bracket path is what makes
+# lib/availability.h answer the macOS SDK's #include <Availability.h> on a
+# case-insensitive filesystem (#328).
+#
+# Bundled into one helper rather than offered as separate flags on purpose.
+# Neither mistake here was a wrong flag: each was a flag that every harness
+# had to remember for itself. The PCRE path had to be remembered fourteen
+# times and eleven compile lines did not remember it; -iquote has to be
+# remembered at forty-two flags across nineteen files, and the next harness
+# written will have to remember it again. A compile line can no longer say
+# where the tree's headers are without also saying how to reach them and
+# where pcre2.h is.
+xymon_cflags() {
+	local root=$1
+	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")"
+}
+
+# require_shm_segments N -- skip unless one process may attach N SysV
+# shared-memory segments. xymond attaches one per channel, and macOS ships
+# kern.sysv.shmseg=8 against the nine channels xymond sets up, so a stock Mac
+# cannot start xymond at all.
+#
+# Worth a named check rather than letting the run fail: shmat() reports the
+# limit as EMFILE, which strerror() renders "Too many open files", so the
+# error points at file descriptors and says nothing about the sysctl actually
+# responsible. The skip names the knob and the value so it is actionable.
+#
+# Linux has no comparable per-process cap (SHMSEG is effectively unlimited)
+# and exposes no such sysctl, so an absent knob means "no limit to check".
+require_shm_segments() {
+	local want=$1 have knob found=
+
+	for knob in kern.sysv.shmseg kern.ipc.shmseg; do
+		have=$(sysctl -n "$knob" 2>/dev/null) || continue
+		case $have in ''|*[!0-9]*) continue ;; esac
+		found=$knob
+		break
+	done
+	[ -n "$found" ] || return 0
+	[ "$have" -ge "$want" ] && return 0
+
+	skip "$found is $have, need >= $want (xymond attaches one shared-memory segment per channel) -- raise it with: sudo sysctl -w $found=$want"
+}
+
 # ---- repo location -----------------------------------------------------------
 
 # find_root -- print the absolute path of the repo root, derived from the

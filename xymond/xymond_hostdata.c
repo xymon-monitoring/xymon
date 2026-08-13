@@ -70,10 +70,10 @@ static void drop_savetimes(char *hostname)
  * Find or create the per-host throttle entry, keyed on the sanitized host
  * name the files are stored under (so path-prefixed variants of one host
  * cannot each claim a separate budget). The tstamp ring is allocated only
- * when the throttle is enabled (recentperiod > 0); the small entry itself is
- * always kept, so the per-host write-error backoff has somewhere to record
- * its state even with the throttle off. Returns NULL (error logged) only on
- * allocation failure.
+ * when the throttle is enabled (recentperiod > 0 and maxrecentcount > 0); the
+ * small entry itself is always kept, so the per-host write-error backoff has
+ * somewhere to record its state even with the throttle off. Returns NULL
+ * (error logged) only on allocation failure.
  */
 static savetimes_t *get_savetimes(char *hostname, int recentperiod, int maxrecentcount)
 {
@@ -87,9 +87,9 @@ static savetimes_t *get_savetimes(char *hostname, int recentperiod, int maxrecen
 		itm->hostname = strdup(hostname);
 		/* Sized from --recent-count: deciding "N or more saves in the
 		 * window" only ever needs the N most recent save times. */
-		if (recentperiod > 0) itm->tstamp = (time_t *)calloc(maxrecentcount, sizeof(time_t));
+		if ((recentperiod > 0) && (maxrecentcount > 0)) itm->tstamp = (time_t *)calloc(maxrecentcount, sizeof(time_t));
 	}
-	if (!itm || !itm->hostname || ((recentperiod > 0) && !itm->tstamp)) {
+	if (!itm || !itm->hostname || ((recentperiod > 0) && (maxrecentcount > 0) && !itm->tstamp)) {
 		errprintf("Out of memory tracking saves for host %s, dropping message\n", hostname);
 		free_savetimes(itm);
 		return NULL;
@@ -288,6 +288,7 @@ int main(int argc, char *argv[])
 		/* @@clichg|timestamp|sender|hostname|testname|... */
 		if ((metacount > 4) && (strncmp(metadata[0], "@@clichg", 8) == 0)) {
 			savetimes_t *itm;
+			int forced;
 			time_t now = gettimer();
 			time_t cutoff;
 			char hostdir[PATH_MAX];
@@ -295,8 +296,10 @@ int main(int argc, char *argv[])
 			char *safehost, *safetest;
 			FILE *fd;
 
-			/* --recent-count=0: never save anything */
-			if (maxrecentcount == 0) continue;
+			forced = ((metacount > 5) && (strcmp(metadata[5], "forced") == 0));
+
+			/* --recent-count=0 disables ordinary saves; explicit requests bypass it. */
+			if (!forced && (maxrecentcount == 0)) continue;
 
 			safehost = confine_name(metadata[3], "hostname");
 			safetest = confine_name(metadata[4], "testname");
@@ -325,7 +328,7 @@ int main(int argc, char *argv[])
 			 * has been up that long.
 			 */
 			cutoff = (now > recentperiod) ? (now - recentperiod) : 0;
-			if (!logdirfull && (!itm->tstamp || (itm->tstamp[itm->oldest] <= cutoff))) {
+			if (!logdirfull && (forced || !itm->tstamp || (itm->tstamp[itm->oldest] <= cutoff))) {
 				int written, closestatus, ok = 1;
 
 				if (!join_path(hostdir, sizeof(hostdir), clientlogdir, safehost, "host directory")) continue;
@@ -361,7 +364,7 @@ int main(int argc, char *argv[])
 				 * attempt stored nothing, so counting it would let an I/O
 				 * problem eat the budget and then drop good data for up to
 				 * a full window after the problem clears. */
-				if (itm->tstamp) {
+				if (!forced && itm->tstamp) {
 					itm->tstamp[itm->oldest] = now;
 					itm->oldest = (itm->oldest + 1) % maxrecentcount;
 				}

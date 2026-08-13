@@ -38,13 +38,14 @@ svcstatus_setup
 # this test hunts for. Without it, build plain and keep the weaker check.
 cflags="-g -O1 -fsanitize=address,undefined"
 asan_usable || cflags=""
+harness_cflags=$(xymon_cflags "$ROOT")
 export ASAN_OPTIONS="exitcode=99${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
 for cgi in history reportlog; do
-	"$CC" $cflags -I"$ROOT/include" -I"$ROOT/lib" -I"$ROOT/web" -o "$work/$cgi" \
+	"$CC" $cflags $harness_cflags -iquote "$ROOT/web" -o "$work/$cgi" \
 		"$ROOT/web/$cgi.c" \
 		"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
 		$pcre_libs $ssllibs $netlibs $librtdef 2>"$work/cc-$cgi.log" \
-	|| { "$CC" -I"$ROOT/include" -I"$ROOT/lib" -I"$ROOT/web" -o "$work/$cgi" \
+	|| { "$CC" $harness_cflags -iquote "$ROOT/web" -o "$work/$cgi" \
 			"$ROOT/web/$cgi.c" \
 			"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
 			$pcre_libs $ssllibs $netlibs $librtdef 2>"$work/cc-$cgi.log" \

@@ -103,7 +103,7 @@ svcstatus_setup() {
 # libxymon.h, ...) changes, bumping its mtime. So any code change in the tree
 # is newer than the cache and forces a rebuild; the cache never hides one.
 svcstatus_build() {
-	local flagkey bin
+	local flagkey bin harness_cflags
 	flagkey=$(printf '%s' "$*" | tr -c 'A-Za-z0-9' '_')
 	bin="${TMPDIR:-/tmp}/xymon-svcstatus-cache.$(id -u)/$(printf '%s' "$ROOT" | tr -c 'A-Za-z0-9' '_').${flagkey:-plain}"
 	mkdir -p "$(dirname "$bin")"
@@ -116,7 +116,8 @@ svcstatus_build() {
 		return 0
 	fi
 
-	"$CC" "$@" -I"$ROOT/include" -I"$ROOT/lib" -I"$ROOT/web" -o "$work/svcstatus" \
+	harness_cflags=$(xymon_cflags "$ROOT")
+	"$CC" "$@" $harness_cflags -iquote "$ROOT/web" -o "$work/svcstatus" \
 		"$ROOT/web/svcstatus.c" "$ROOT/web/svcstatus-info.c" "$ROOT/web/svcstatus-trends.c" \
 		"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
 		$pcre_libs $ssllibs $netlibs $librtdef 2>"$work/cc.log" || return 1

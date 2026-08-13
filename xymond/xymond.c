@@ -59,6 +59,8 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 #define DISABLED_UNTIL_OK -1
+#define HOSTDATASAVE_DEFAULT_TTL 30
+#define HOSTDATASAVE_MAX_TTL 1440
 
 /*
  * The absolute maximum size we'll grow our buffers to accommodate an incoming message.
@@ -166,6 +168,7 @@ typedef struct xymond_hostlist_t {
 	xymond_log_t *pinglog; /* Points to entry in logs list, but we need it often */
 	clientmsg_list_t *clientmsgs;
 	time_t clientmsgtstamp;
+	time_t hostdatasaveexpires;
 } xymond_hostlist_t;
 
 typedef struct filecache_t {
@@ -283,6 +286,7 @@ xymond_statistics_t xymond_stats[] = {
 	{ "summary", 0 },
 	{ "data", 0 },
 	{ "clientlog", 0 },
+	{ "hostdatasave", 0 },
 	{ "client", 0 },
 	{ "notes", 0 },
 	{ "enable", 0 },
@@ -972,6 +976,21 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 	dbgprintf("<- posttochannel\n");
 
 	return;
+}
+
+void post_clientdata_to_clichg(char *sender, xymond_hostlist_t *host)
+{
+	char *clientdata, *readymsg;
+	int readylen;
+	time_t timeroffset = (getcurrenttime(NULL) - gettimer());
+
+	clientdata = totalclientmsg(host->clientmsgs);
+	readylen = strlen(host->hostname) + strlen(clientdata) + 64;
+	readymsg = (char *)malloc(readylen);
+	snprintf(readymsg, readylen, "%s|%d|forced\n%s", host->hostname,
+		(int)(host->clientmsgtstamp + timeroffset), clientdata);
+	posttochannel(clichgchn, channelnames[C_CLICHG], NULL, sender, host->hostname, NULL, readymsg);
+	xfree(readymsg);
 }
 
 void posttoall(char *msg)
@@ -2505,6 +2524,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 	char *chnbuf, *theclass;
 	int msglen, buflen = 0;
 	xtreePos_t hosthandle;
+	xymond_hostlist_t *hwalk = NULL;
 	clientmsg_list_t *cwalk, *chead, *ctail, *czombie;
 
 	dbgprintf("->handle_client\n");
@@ -2519,7 +2539,6 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 	if (clientsavemem) {
 		hosthandle = xtreeFind(rbhosts, hostname);
 		if (hosthandle != xtreeEnd(rbhosts)) {
-			xymond_hostlist_t *hwalk;
 			hwalk = xtreeData(rbhosts, hosthandle);
 
 			for (cwalk = hwalk->clientmsgs; (cwalk && strcmp(cwalk->collectorid, collectorid)); cwalk = cwalk->next) ;
@@ -2568,6 +2587,11 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 			}
 			hwalk->clientmsgs = chead;
 		}
+	}
+
+	if (hwalk && hwalk->hostdatasaveexpires) {
+		if (hwalk->hostdatasaveexpires > gettimer()) post_clientdata_to_clichg(sender, hwalk);
+		hwalk->hostdatasaveexpires = 0;
 	}
 
 	chnbuf = (char *)malloc(buflen);
@@ -2794,6 +2818,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		break;
 
 	  case CMD_RENAMEHOST:
+		hwalk->hostdatasaveexpires = 0;
 		xtreeDelete(rbhosts, hostname);
 		xfree(hwalk->hostname);
 		hwalk->hostname = strdup(n1);
@@ -4612,6 +4637,60 @@ void do_message(conn_t *msg, char *origin)
 			/* Test rename */
 			handle_dropnrename(CMD_RENAMETEST, sender, hostname, n1, n2);
 		}
+	}
+	else if ((strcmp(msg->buf, "hostdatasave") == 0) || (strncmp(msg->buf, "hostdatasave ", 13) == 0)) {
+		char *hostname, *canonhostname, *ttltext, *endp, *extra, *p;
+		char hostip[IP_ADDR_STRLEN];
+		char response[1024];
+		long ttlminutes = HOSTDATASAVE_DEFAULT_TTL;
+		xtreePos_t hosthandle;
+		xymond_hostlist_t *hwalk;
+		int validrequest = 1;
+
+		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+
+		p = msg->buf + strlen("hostdatasave"); p += strspn(p, " \t");
+		hostname = strtok(p, " \t");
+		ttltext = strtok(NULL, " \t");
+		extra = strtok(NULL, " \t");
+		if (ttltext) {
+			errno = 0;
+			ttlminutes = strtol(ttltext, &endp, 10);
+			if ((errno == ERANGE) || (*ttltext == '\0') || (*endp != '\0') ||
+			    (ttlminutes <= 0) || (ttlminutes > HOSTDATASAVE_MAX_TTL)) validrequest = 0;
+		}
+		if (!hostname || extra) validrequest = 0;
+
+		canonhostname = (validrequest ? knownhost(hostname, hostip, GH_IGNORE) : NULL);
+		if (!validrequest) {
+			snprintf(response, sizeof(response), "ERROR: hostdatasave requires HOSTNAME and an optional lifetime from 1 to %d minutes\n", HOSTDATASAVE_MAX_TTL);
+		}
+		else if (!canonhostname) {
+			snprintf(response, sizeof(response), "ERROR: unknown host %s\n", hostname);
+		}
+		else if (!clientsavemem) {
+			snprintf(response, sizeof(response), "ERROR: cached client messages are disabled\n");
+		}
+		else if (semctl(clichgchn->semid, CLIENTCOUNT, GETVAL) <= 0) {
+			snprintf(response, sizeof(response), "ERROR: no CLICHG channel reader is listening\n");
+		}
+		else {
+			hosthandle = xtreeFind(rbhosts, canonhostname);
+			if (hosthandle == xtreeEnd(rbhosts)) {
+				hwalk = create_hostlist_t(canonhostname, hostip);
+				hostcount++;
+			}
+			else {
+				hwalk = xtreeData(rbhosts, hosthandle);
+			}
+			hwalk->hostdatasaveexpires = gettimer() + (ttlminutes * 60);
+			snprintf(response, sizeof(response), "OK: next client report for %s armed for %ld minutes\n", canonhostname, ttlminutes);
+		}
+
+		msg->doingwhat = RESPONDING;
+		xfree(msg->buf);
+		msg->bufp = msg->buf = strdup(response);
+		msg->buflen = strlen(msg->buf);
 	}
 	else if (strncmp(msg->buf, "dummy", 5) == 0) {
 		/* Do nothing */

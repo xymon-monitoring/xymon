@@ -23,7 +23,10 @@ inode-test-flags:
 		'rrddef=$(RRDDEF)' 'rrdincdir=$(RRDINCDIR)' 'rrdlibs=$(RRDLIBS)'
 EOF
 ) || fail "cannot read configured RRD build flags"
-mapfile -t buildflags <<< "$buildflags_output"
+# Read the lines into an array without mapfile: that is a bash 4 builtin
+# and macOS ships bash 3.2, where the suite runs under /usr/bin/env bash.
+buildflags=()
+while IFS= read -r line; do buildflags+=("$line"); done <<< "$buildflags_output"
 [ "${#buildflags[@]}" -eq 5 ] || fail "configured RRD build flags are incomplete"
 ldflags=${buildflags[0]#ldflags=}
 rpathopt=${buildflags[1]#rpathopt=}
@@ -34,7 +37,7 @@ rrdlibs=${buildflags[4]#rrdlibs=}
 
 # Configured flags are deliberate word-split lists.
 # shellcheck disable=SC2086
-"$CC" $ldflags -I"$ROOT/include" $rrddef $rrdincdir \
+"$CC" $ldflags -iquote "$ROOT/include" $rrddef $rrdincdir \
 	-o "$work/rrd-lastupdate" $rpathopt \
 	"$ROOT/tests/rrd/inode-unix-columns-harness.c" $rrdlibs \
 	2>"$work/cc.log" || {

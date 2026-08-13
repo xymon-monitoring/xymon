@@ -74,7 +74,8 @@ cat > "$work/hosts.cfg" <<'EOF'
 127.0.0.1 recordhost.example.com # conn noflap=web,cpu
 EOF
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" -o "$work/harness" \
+harness_cflags=$(xymon_cflags "$ROOT")
+"$CC" $harness_cflags -o "$work/harness" \
 	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" \
 	$ssllibs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
