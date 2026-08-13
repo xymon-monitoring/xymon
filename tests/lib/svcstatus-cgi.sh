@@ -36,9 +36,6 @@ svcstatus_setup() {
 	# from configure's --pcrelib). Omitting them fails the link on a tree
 	# that builds fine. Keep the pkg-config/-lpcre2-8 fallback for a
 	# Makefile without PCRELIBS.
-	ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
-	netlibs=$(sed -n 's/^NETLIBS *= *//p' "$ROOT/Makefile")
-	librtdef=$(sed -n 's/^LIBRTDEF *= *//p' "$ROOT/Makefile")
 	pcre_libs=${PCRELIBS:-$(sed -n 's/^PCRELIBS *= *//p' "$ROOT/Makefile")}
 	if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 		pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
@@ -103,8 +100,16 @@ svcstatus_setup() {
 # libxymon.h, ...) changes, bumping its mtime. So any code change in the tree
 # is newer than the cache and forces a rebuild; the cache never hides one.
 svcstatus_build() {
-	local flagkey bin harness_cflags
-	flagkey=$(printf '%s' "$*" | tr -c 'A-Za-z0-9' '_')
+	local flagkey bin harness_cflags harness_ldflags
+	harness_cflags=$(xymon_cflags "$ROOT")
+	harness_ldflags=$(xymon_ldflags "$ROOT")
+	# The key has to cover everything that changes the binary, not just the
+	# arguments this was called with: the configured compile and link flags
+	# decide the result too. Keyed on the arguments alone, changing SSLLIBS,
+	# a library search path or the rpath reuses a stale cached binary, and
+	# the test passes without ever exercising the configuration it claims to.
+	# Hashed rather than spelled out because the flags carry absolute paths.
+	flagkey=$(printf '%s' "$* $harness_cflags $harness_ldflags $pcre_libs" | cksum | tr -cd '0-9')
 	bin="${TMPDIR:-/tmp}/xymon-svcstatus-cache.$(id -u)/$(printf '%s' "$ROOT" | tr -c 'A-Za-z0-9' '_').${flagkey:-plain}"
 	mkdir -p "$(dirname "$bin")"
 
@@ -116,11 +121,10 @@ svcstatus_build() {
 		return 0
 	fi
 
-	harness_cflags=$(xymon_cflags "$ROOT")
 	"$CC" "$@" $harness_cflags -iquote "$ROOT/web" -o "$work/svcstatus" \
 		"$ROOT/web/svcstatus.c" "$ROOT/web/svcstatus-info.c" "$ROOT/web/svcstatus-trends.c" \
 		"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
-		$pcre_libs $ssllibs $netlibs $librtdef 2>"$work/cc.log" || return 1
+		$pcre_libs $harness_ldflags 2>"$work/cc.log" || return 1
 	cp "$work/svcstatus" "$bin"
 }
 

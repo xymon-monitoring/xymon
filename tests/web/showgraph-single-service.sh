@@ -30,7 +30,6 @@ require_gnu_make
 rrddef=$(sed -n 's/^RRDDEF *= *//p' "$ROOT/Makefile")
 rrdlibs=$(sed -n 's/^RRDLIBS *= *//p' "$ROOT/Makefile")
 [ -n "$rrdlibs" ] || rrdlibs="-lrrd"
-ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 
 pcre_libs=${PCRELIBS:-}
 if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
@@ -45,9 +44,10 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
 harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags $rrddef -o "$work/showgraph" \
 	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
-	$pcre_libs $rrdlibs $ssllibs 2>"$work/cc.log" \
+	$pcre_libs $rrdlibs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }
 
 # Fake RRD directory; selection is by filename, empty stubs suffice

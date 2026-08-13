@@ -50,7 +50,6 @@ require_c_buildenv "$ROOT"
 [ -f "$ROOT/lib/libxymoncomm.a" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
-ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-xmh-item-names.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
@@ -63,9 +62,10 @@ cat > "$work/hosts.cfg" <<'EOF'
 EOF
 
 harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
 	"$here/xmh-item-names-harness.c" "$ROOT/lib/libxymoncomm.a" \
-	$ssllibs 2>"$work/cc.log" \
+	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 "$work/harness" "$work/hosts.cfg" 2>"$work/stderr.log" \
