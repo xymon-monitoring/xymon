@@ -55,6 +55,30 @@ rrd1="$work/rrd1"; mkdir -p "$rrd1"
 [ -e "$rrd1/testhost" ] \
 	&& fail "the host directory survived the drop: $(ls "$rrd1/testhost")"
 
+# ---- the deletion must be finished when the worker is ------------------------
+# The assertion above passes either way: with a directory this small the forked
+# child wins the race long before the check runs, so it does not notice a
+# reverted barrier. Give the child real work instead -- enough files that a
+# background delete is still running when the parent exits -- and the two
+# behaviours separate: synchronously the directory is gone the moment the
+# worker returns, forked it is still being emptied.
+#
+# Timing-based, so sized with margin rather than tuned: ~50k files take the
+# order of 100ms to remove, against the microseconds the parent needs to finish
+# the drop and exit. A slower machine widens the gap rather than narrowing it.
+rrd3="$work/rrd3"; mkdir -p "$rrd3/testhost"
+( cd "$rrd3/testhost" && seq 1 50000 | sed 's/$/.rrd/' | xargs -n 500 touch )
+{
+	status_msg "$ts"
+	printf '@@drophost|%s|127.0.0.1|testhost\n@@\n' $((ts+10))
+} | run_worker "$rrd3" --no-cache 2>/dev/null
+if [ -e "$rrd3/testhost" ]; then
+	# Still there: with the barrier the delete finishes before the worker
+	# returns, so anything left means it was handed to a forked child again.
+	left=$(find "$rrd3/testhost" -type f 2>/dev/null | sed -n 1p || true)
+	fail "the drop was still in progress when the worker exited (${left:-directory still present}) -- the deletion is forked again"
+fi
+
 # ---- a drop deletes nothing but the host it names ---------------------------
 # basename("..") is "..", so appending it to rrddir named the parent of the
 # whole RRD tree and handed it to a recursive delete. safe_basename() refuses

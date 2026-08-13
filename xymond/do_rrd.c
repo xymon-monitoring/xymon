@@ -538,7 +538,10 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
  * forked deletion is tearing down, and the values are the dropped
  * host's data anyway. (rrdcacheflushhost() is not usable here: it
  * expects "/host"-shaped keys and rate-limits to one flush per 60s.) */
-void rrdcache_drop_host(char *hostname, int flushfirst)
+/* flushas: when set, the host's directory has already been renamed by a peer
+ * worker, so the pending values are flushed into the new name instead of the
+ * old one. NULL keeps the item's own key, which is the ordinary case. */
+static void updcache_host_op(char *hostname, int flushfirst, char *flushas)
 {
 	xtreePos_t handle;
 	char prefix[PATH_MAX];
@@ -573,7 +576,14 @@ void rrdcache_drop_host(char *hostname, int flushfirst)
 			 * itself. Say so when it fails: the readings are gone either
 			 * way, and this is the one path that has no other chance to
 			 * write them - the files are about to move. */
-			snprintf(filedir, sizeof(filedir), "%s%s", rrddir, cacheitem->key);
+			if (flushas) {
+				/* key is "/<oldhost>/<file>"; keep the file, swap the host. */
+				snprintf(filedir, sizeof(filedir), "%s/%s/%s",
+					 rrddir, flushas, cacheitem->key + plen);
+			}
+			else {
+				snprintf(filedir, sizeof(filedir), "%s%s", rrddir, cacheitem->key);
+			}
 			if (flush_cached_updates(cacheitem, NULL) != 0) {
 				errprintf("Could not flush cached updates for %s before the rename: %s\n",
 					  cacheitem->key, rrd_get_error());
@@ -590,6 +600,25 @@ void rrdcache_drop_host(char *hostname, int flushfirst)
 
 	if (nhit) dbgprintf("updcache: %s %d entries for host %s\n",
 			    (flushfirst ? "flushed and dropped" : "discarded"), nhit, hostname);
+}
+
+void rrdcache_drop_host(char *hostname, int flushfirst)
+{
+	updcache_host_op(hostname, flushfirst, NULL);
+}
+
+/*
+ * Flush a host's pending updates into a directory that has already been
+ * renamed. The stock install runs one xymond_rrd per channel over a shared
+ * rrddir, so on a renamehost the second worker to see the marker finds the
+ * directory gone. Its cached readings are its own -- the two workers handle
+ * different channels -- so discarding them loses data that has nowhere else
+ * to come from. They are keyed on the old path, but the files they belong to
+ * are now under the new one, so write them there.
+ */
+void rrdcache_rename_host(char *oldhostname, char *newhostname)
+{
+	updcache_host_op(oldhostname, 1, newhostname);
 }
 
 void rrdcacheflushall(void)

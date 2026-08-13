@@ -495,6 +495,7 @@ int main(int argc, char *argv[])
 			}
 			else {
 				struct stat st;
+				int renamed;
 
 				/* Flush pending updates into the old-named files before
 				 * they move. Without this they are lost on every rename:
@@ -515,13 +516,36 @@ int main(int argc, char *argv[])
 					rrdcache_drop_host(safeold, 1);
 				}
 				else {
-					dbgprintf("renamehost: %s already moved, discarding its cached updates\n", oldhostdir);
-					rrdcache_drop_host(safeold, 0);
+					/* The peer worker has already moved the directory. These
+					 * updates are ours, not duplicates of its own -- the two
+					 * workers read different channels -- so write them under
+					 * the new name rather than dropping them. */
+					dbgprintf("renamehost: %s already moved, flushing its cached updates under %s\n",
+						  oldhostdir, safenew);
+					rrdcache_rename_host(safeold, safenew);
 				}
 
-				rename(oldhostdir, newhostdir);
+				/*
+				 * A rename that fails must not be reported to the locator as a
+				 * move. ENOENT with the destination present is the exception:
+				 * the peer worker got there first, so the end state is the one
+				 * we wanted and the locator should still be told. Anything else
+				 * -- ENOTEMPTY, EACCES -- leaves both directories in place, and
+				 * telling the locator the host moved would send lookups to a
+				 * host that is not there.
+				 */
+				renamed = (rename(oldhostdir, newhostdir) == 0);
+				if (!renamed) {
+					if ((errno == ENOENT) && (stat(newhostdir, &st) == 0)) {
+						renamed = 1;
+					}
+					else {
+						errprintf("Could not rename %s to %s: %s\n",
+							  oldhostdir, newhostdir, strerror(errno));
+					}
+				}
 
-				if (net_worker_locatorbased()) locator_rename_host(safeold, safenew, ST_RRD);
+				if (renamed && net_worker_locatorbased()) locator_rename_host(safeold, safenew, ST_RRD);
 			}
 
 			MEMUNDEFINE(newhostdir);
