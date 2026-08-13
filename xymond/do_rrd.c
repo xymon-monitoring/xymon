@@ -65,6 +65,7 @@ static void * updcache;
 typedef struct updcacheitem_t {
 	char *key;
 	rrdtpldata_t *tpl;
+	int fileok;
 	int valcount;
 	char *vals[CACHESZ];
 	int updseq[CACHESZ];
@@ -355,7 +356,8 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	}
 
 	/* If the RRD file doesn't exist, create it immediately */
-	if (stat(filedir, &st) == -1) {
+	/* otherwise, mark that it's present so we don't burn a syscall again */
+	if (!no_rrd && !cacheitem->fileok && !( (stat(filedir, &st) != -1) && ++cacheitem->fileok ) ) {
 		xymon_rrd_argv_item_t *rrdcreate_params;
 		char **rrddefinitions;
 		int rrddefcount, i;
@@ -410,6 +412,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			MEMUNDEFINE(rrdvalues);
 			return 1;
 		}
+		else cacheitem->fileok++;
 	}
 
 	updtime = atoi(rrdvalues);
@@ -483,7 +486,11 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	}
 
 	/* Are we actually handling the writing of RRD files? */
-	if (no_rrd) return 0;
+	if (no_rrd) {
+		MEMUNDEFINE(filedir);
+		MEMUNDEFINE(rrdvalues);
+		return 0;
+	}
 
 	/* 
 	 * We cannot just cache data every time because then after CACHESZ updates
@@ -521,6 +528,9 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			errprintf("RRD error updating %s from %s: %s\n", 
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}
+
+		/* check the file next time around */
+		cacheitem->fileok = 0;
 
 		MEMUNDEFINE(filedir);
 		MEMUNDEFINE(rrdvalues);
