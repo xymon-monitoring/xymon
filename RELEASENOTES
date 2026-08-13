@@ -141,6 +141,14 @@ PCRE1 is no longer supported; Xymon builds against PCRE2 only. Most patterns
 are unaffected, but configurations relying on PCRE1-specific syntax should be
 reviewed.
 
+The IRIX, OSF1/Tru64, SCO OpenServer/UnixWare and GNU/kFreeBSD ports are
+removed: their build targets, their client scripts, and the server's handling
+of their client reports. A client still reporting from one of these systems is
+no longer analysed or graphed -- xymond_client logs "No client backend for OS"
+-- so its cpu, disk, memory, procs and other client columns go purple. Retire
+such hosts before upgrading the server, or run xymond_client with
+--unknownclientosok to analyse their reports generically.
+
 Xymon no longer ships its own copy of c-ares. Install the system c-ares
 development package (libc-ares-dev, c-ares-devel or c-ares) before building
 the server; configure stops and says what is missing. The minimum version is

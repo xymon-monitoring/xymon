@@ -1,4 +1,11 @@
-include Makefile.$(OS)
+# Fall back to the generic settings when the platform has no Makefile of its
+# own, as configure.server/configure.client do when they write the toplevel
+# Makefile. Without this a probe dies with "Makefile.<OS>: No such file or
+# directory" and configure reports the dependency as missing, while the build
+# itself proceeds against Makefile.generic - a feature set detected as absent
+# on a platform that can build it.
+OSMAKEFILE := $(if $(wildcard Makefile.$(OS)),Makefile.$(OS),Makefile.generic)
+include $(OSMAKEFILE)
 
 test-compile:
 	@$(CC) $(CFLAGS) $(RRDDEF) $(RRDINC) -o test-rrd.o -c test-rrd.c
