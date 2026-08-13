@@ -87,6 +87,48 @@ volatile int forcereload=0;
 # define xfreeassign(k,p) { if (k) { xfree(k); } k=p; }
 # define xfreedup(k,p) { if (k) { xfree(k); } k=strdup(p); }
 
+/* Release what a re-read parsed into a task, leaving its key and its place in
+   the list alone. */
+static void free_task_config(tasklist_t *t)
+{
+	xfreenull(t->cmd);
+	xfreenull(t->logfile);
+	xfreenull(t->envfile);
+	xfreenull(t->envarea);
+	xfreenull(t->onhostptn);
+	xfreenull(t->cronstr);
+	if (t->crondate) { crondatefree(t->crondate); t->crondate = NULL; }
+}
+
+/*
+ * Put a task back the way it was before the re-read cleared it. Nothing was
+ * lost on the way: the clearing loop NULLs the fields before parsing, so
+ * xfreedup() only ever replaced a NULL. Field by field rather than a memcpy,
+ * whose blanked next/copy pointers would cut the task out of the list.
+ */
+static void restore_task(tasklist_t *twalk)
+{
+	tasklist_t *saved = twalk->copy;
+
+	free_task_config(twalk);
+
+	twalk->disabled   = saved->disabled;
+	twalk->cmd        = saved->cmd;
+	twalk->interval   = saved->interval;
+	twalk->maxruntime = saved->maxruntime;
+	twalk->group      = saved->group;
+	twalk->logfile    = saved->logfile;
+	twalk->envfile    = saved->envfile;
+	twalk->envarea    = saved->envarea;
+	twalk->onhostptn  = saved->onhostptn;
+	twalk->cronstr    = saved->cronstr;
+	twalk->crondate   = saved->crondate;
+	twalk->depends    = saved->depends;
+
+	twalk->cfload = 0;
+	xfreenull(twalk->copy);
+}
+
 void load_config(char *conffn)
 {
 	static void *configfiles = NULL;
@@ -95,6 +137,11 @@ void load_config(char *conffn)
 	strbuffer_t *inbuf;
 	char *p;
 	char myhostname[256];
+	/* Nothing is running yet on the first load, so there is nothing to protect
+	   and an incomplete read is handled differently - see below. */
+	int firstload = (taskhead == NULL);
+	int incomplete = 0;
+	grouplist_t *groupmark;
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -109,15 +156,39 @@ void load_config(char *conffn)
 	}
 
 	errprintf("Loading tasklist configuration from %s\n", conffn);
+
 	if (gethostname(myhostname, sizeof(myhostname)) != 0) {
 		errprintf("Cannot get the local hostname, using 'localhost' (error: %s)\n", strerror(errno));
 		strcpy(myhostname, "localhost");
 	}
 
+	/*
+	 * Open the file before touching the task list. The clearing below throws
+	 * away every task's settings so that the re-read can detect what changed;
+	 * doing that first and then bailing out here left every task with a NULL
+	 * cmd and no way back, so each task crashed as soon as it was restarted.
+	 */
+	fd = stackfopen(conffn, "r", &configfiles);
+	if (fd == NULL) {
+		errprintf("Cannot open configuration file %s: %s\n", conffn, strerror(errno));
+		return;
+	}
+
 	/* The cfload flag: -1=delete task, 0=old task unchanged, 1=new/changed task */
+	/*
+	 * The group list is global and outlives the read, so the rollback has to
+	 * put it back too: a refused config that declared a group left it behind
+	 * with its own limit, and a later valid declaration of the same name
+	 * finds the existing entry instead of creating one (@SoundGoof).
+	 */
+	groupmark = grouphead;
+
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
 		twalk->cfload = -1;
-		twalk->group = NULL;
+		/* The group is cleared below, with the other settings and *after* the
+		   copy: cleared first, the copy held a NULL and a refused read gave
+		   every task back without its group - no limit applied to it, and no
+		   decrement when it exits. */
 		/* Create a copy, but retain the settings and pointers are the same */
 		twalk->copy = xmalloc(sizeof(tasklist_t));
 		memcpy(twalk->copy,twalk,sizeof(tasklist_t));
@@ -137,12 +208,6 @@ void load_config(char *conffn)
 		twalk->cronstr = NULL;
 		twalk->crondate = NULL;
 		twalk->depends = NULL;
-	}
-
-	fd = stackfopen(conffn, "r", &configfiles);
-	if (fd == NULL) {
-		errprintf("Cannot open configuration file %s: %s\n", conffn, strerror(errno));
-		return;
 	}
 
 	inbuf = newstrbuffer(0);
@@ -335,8 +400,76 @@ void load_config(char *conffn)
 	stackfclose(fd);
 	freestrbuffer(inbuf);
 
+	/*
+	 * A task back without a command marks a read that did not see the whole
+	 * file: no valid config drops a CMD (DISABLED is how a task is switched
+	 * off), but one caught mid-rewrite has that shape. Such a task cannot run
+	 * - the forked child hands the NULL to expand_env() and dies before exec.
+	 */
+	for (twalk = taskhead; (twalk); twalk = twalk->next) {
+		if ((twalk->cfload != -1) && (twalk->cmd == NULL)) {
+			errprintf("Configuration error, no command for task %s\n", twalk->key);
+			incomplete = 1;
+		}
+	}
+
+	/*
+	 * Do not apply a short read: every section it did not reach looks deleted,
+	 * so the tasks below the cut - xymond among them - would be killed off
+	 * silently. The file list is dropped so the next pass re-reads
+	 * unconditionally rather than trusting a timestamp taken mid-write.
+	 *
+	 * The first load has nothing to protect and nothing running, so refusing
+	 * outright would start nothing at all: there, drop just the tasks with no
+	 * command.
+	 */
+	if (incomplete && !firstload) {
+		errprintf("Incomplete tasklist configuration - keeping the previous one\n");
+
+		/*
+		 * Unlink first, restore second: the copy is what tells a pre-existing
+		 * task from one this read created, and restore_task() releases it.
+		 * The other way round every task looked new, and the whole list was
+		 * freed while its children ran on unsupervised. Groups go the same
+		 * way, down to the mark; entries below it were there before the read.
+		 * Nothing unlinked here was ever started, so there is no pid to see to.
+		 */
+		while (grouphead && (grouphead != groupmark)) {
+			grouplist_t *gtmp = grouphead;
+			grouphead = grouphead->next;
+			if (gtmp->groupname) xfree(gtmp->groupname);
+			xfree(gtmp);
+		}
+
+		while (taskhead && (taskhead->copy == NULL)) {
+			tasklist_t *tmp = taskhead;
+			taskhead = taskhead->next;
+			free_task_config(tmp); xfreenull(tmp->key); xfree(tmp);
+		}
+		twalk = taskhead;
+		while (twalk && twalk->next) {
+			if (twalk->next->copy == NULL) {
+				tasklist_t *tmp = twalk->next;
+				twalk->next = tmp->next;
+				free_task_config(tmp); xfreenull(tmp->key); xfree(tmp);
+			}
+			else twalk = twalk->next;
+		}
+		for (tasktail = taskhead; (tasktail && tasktail->next); tasktail = tasktail->next);
+
+		for (twalk = taskhead; (twalk); twalk = twalk->next) {
+			if (twalk->copy) restore_task(twalk);
+		}
+
+		stackfclist(&configfiles);
+		configfiles = NULL;
+		return;
+	}
+
 	/* Running tasks that have been deleted or changed are killed off now. */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
+		if ((twalk->cfload != -1) && (twalk->cmd == NULL)) twalk->cfload = -1;
+
 		/* compare the current settings with the copy - if we have one */
 		if (twalk->cfload == 0) {
 			if (twalk->copy) {
