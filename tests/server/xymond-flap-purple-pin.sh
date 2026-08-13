@@ -38,7 +38,11 @@ require_cc
 
 work=$(mktempdir)
 
-ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
+# The configured link flags rather than a hand-picked SSLLIBS: they carry the
+# library search path and the runtime path as well. Without the rpath the
+# harness links on NetBSD and then cannot run -- "Shared object
+# libpcre2-8.so.0 not found", since pkgsrc puts it under /usr/pkg/lib.
+harness_ldflags=$(xymon_ldflags "$ROOT")
 
 {
 	printf '#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n'
@@ -56,7 +60,7 @@ harness_cflags=$(xymon_cflags "$ROOT")
 # shellcheck disable=SC2086
 "$CC" $harness_cflags -I"$ROOT/lib" -o "$work/harness" \
 	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" \
-	$ssllibs 2>"$work/cc.log" \
+	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 "$work/harness" 2>"$work/stderr.log" \
