@@ -532,6 +532,95 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	return 0;
 }
 
+/* Remove one host's cache entries. Flushed first on rename - the files
+ * are about to move, the pending data must land in them before they do.
+ * Discarded on drophost - a flush would write into the directory the
+ * forked deletion is tearing down, and the values are the dropped
+ * host's data anyway. (rrdcacheflushhost() is not usable here: it
+ * expects "/host"-shaped keys and rate-limits to one flush per 60s.) */
+/* flushas: when set, the host's directory has already been renamed by a peer
+ * worker, so the pending values are flushed into the new name instead of the
+ * old one. NULL keeps the item's own key, which is the ordinary case. */
+static void updcache_host_op(char *hostname, int flushfirst, char *flushas)
+{
+	xtreePos_t handle;
+	char prefix[PATH_MAX];
+	size_t plen;
+	int nhit = 0;
+
+	if ((updcache_keyofs == -1) || !hostname) return;
+	snprintf(prefix, sizeof(prefix), "/%s/", hostname);
+	plen = strlen(prefix);
+
+	/*
+	 * The cache records themselves stay. They are persistent by design (see
+	 * create_and_update_rrd above), and each owns its cacheitem->tpl - which,
+	 * for a caller that passed no template, is the only pointer to it. Deleting
+	 * the record would leak that template, its dsnames tree and every DS name
+	 * in it, once per drop, for every host handled by a NULL-template module.
+	 *
+	 * Only the pending values go, which is all this is for: nothing may be
+	 * written into a directory that is being torn down or moved. Keeping the
+	 * records also makes this a single pass, with nothing removed from the tree
+	 * while it is being walked.
+	 */
+	for (handle = xtreeFirst(updcache); (handle != xtreeEnd(updcache)); handle = xtreeNext(updcache, handle)) {
+		updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
+
+		if (strncasecmp(cacheitem->key, prefix, plen) != 0) continue;
+		if (cacheitem->valcount == 0) continue;
+		nhit++;
+
+		if (flushfirst) {
+			/* flush_cached_updates() frees the values and zeroes the count
+			 * itself. Say so when it fails: the readings are gone either
+			 * way, and this is the one path that has no other chance to
+			 * write them - the files are about to move. */
+			if (flushas) {
+				/* key is "/<oldhost>/<file>"; keep the file, swap the host. */
+				snprintf(filedir, sizeof(filedir), "%s/%s/%s",
+					 rrddir, flushas, cacheitem->key + plen);
+			}
+			else {
+				snprintf(filedir, sizeof(filedir), "%s%s", rrddir, cacheitem->key);
+			}
+			if (flush_cached_updates(cacheitem, NULL) != 0) {
+				errprintf("Could not flush cached updates for %s before the rename: %s\n",
+					  cacheitem->key, rrd_get_error());
+			}
+		}
+		else {
+			int v;
+
+			for (v = 0; (v < cacheitem->valcount); v++)
+				if (cacheitem->vals[v]) xfree(cacheitem->vals[v]);
+			cacheitem->valcount = 0;
+		}
+	}
+
+	if (nhit) dbgprintf("updcache: %s %d entries for host %s\n",
+			    (flushfirst ? "flushed and dropped" : "discarded"), nhit, hostname);
+}
+
+void rrdcache_drop_host(char *hostname, int flushfirst)
+{
+	updcache_host_op(hostname, flushfirst, NULL);
+}
+
+/*
+ * Flush a host's pending updates into a directory that has already been
+ * renamed. The stock install runs one xymond_rrd per channel over a shared
+ * rrddir, so on a renamehost the second worker to see the marker finds the
+ * directory gone. Its cached readings are its own -- the two workers handle
+ * different channels -- so discarding them loses data that has nowhere else
+ * to come from. They are keyed on the old path, but the files they belong to
+ * are now under the new one, so write them there.
+ */
+void rrdcache_rename_host(char *oldhostname, char *newhostname)
+{
+	updcache_host_op(oldhostname, 1, newhostname);
+}
+
 void rrdcacheflushall(void)
 {
 	xtreePos_t handle;
