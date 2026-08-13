@@ -111,6 +111,14 @@ report "include-shadow" '\-I *"?\$\{?ROOT' \
 # name the path anyway -- the native ones -- reads it, it does not sed it.
 report "path-rewrite" 'sed.*/proc/' \
 	"replace the helper by name (fsf_stub_helper), not the path it reads"
+# The rrdtool command-line tool is a separate package from the library the
+# tree links against, and is not installed on every lane. A test that gates on
+# it does not fail there - it quietly checks less, which is worse: the half it
+# skips is usually the value, and the half it keeps is usually the filename.
+# Read a RRD through librrd instead; tests/rrd/inode-unix-columns-harness.c is
+# the shape to copy.
+report "rrdtool-cli" '(command -v|which) +rrdtool|(^|[^-[:alnum:]_])rrdtool +(lastupdate|fetch|info|create|update|graph)' \
+	"the rrdtool CLI is not installed everywhere; read the RRD through librrd"
 
 # Interpreters the BSD runners do not have.
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
@@ -200,10 +208,11 @@ probe="$work/probe.sh"
 	printf 'chmod 555 d\n'
 	printf 'cc -I"$ROOT/lib" x.c\n'
 	printf 'sed s#/proc/mounts#f# x\n'
+	printf 'rrdtool lastupdate x.rrd\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "8" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "9" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # The link-flags rule the same way, including the bypass it used to allow: the
 # helpers named in a comment and nowhere else.

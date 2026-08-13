@@ -30,12 +30,6 @@ static char rcsid[] = "$Id$";
 #include <pwd.h>
 #include <grp.h>
 
-/* Some systems do not have the S_ISSOCK macro for stat() */
-#ifdef SCO_SV
-#include <cpio.h>
-#define S_ISSOCK(m)   (((m) & S_IFMT) == C_ISSOCK)
-#endif
-
 #include "libxymon.h"
 
 /* Set via xgetenv */
