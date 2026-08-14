@@ -55,6 +55,7 @@ static char rrdvalues[MAX_LINE_LEN];
 static char *senderip = NULL;
 static char rrdfn[PATH_MAX];   /* Base filename without directories, from setupfn() */
 static char filedir[PATH_MAX]; /* Full path filename */
+static char filejustdir[PATH_MAX]; /* Full path filename - just the directory */
 static char *fnparams[4] = { NULL, };  /* Saved parameters passed to setupfn() */
 
 /* How often do we feed data into the RRD file */
@@ -354,20 +355,6 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	MEMDEFINE(rrdvalues);
 	MEMDEFINE(filedir);
 
-	if (snprintf(filedir, sizeof(filedir), "%s/%s", rrddir, hostname) >= (int)sizeof(filedir)) {
-		errprintf("RRD directory path truncated, skipping: %s/%s\n", rrddir, hostname);
-		MEMUNDEFINE(filedir);
-		MEMUNDEFINE(rrdvalues);
-		return -1;
-	}
-	if (stat(filedir, &st) == -1) {
-		if (mkdir(filedir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
-			errprintf("Cannot create rrd directory %s : %s\n", filedir, strerror(errno));
-			MEMUNDEFINE(filedir);
-			MEMUNDEFINE(rrdvalues);
-			return -1;
-		}
-	}
 	/* Watch out here - "rrdfn" may be very large. */
 	if (build_rrd_filedir(filedir, sizeof(filedir), hostname, rrdfn)) {
 		MEMUNDEFINE(filedir);
@@ -421,6 +408,20 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		int havestepsetting = 0, fixcount = 2;
 
 		dbgprintf("Creating rrd %s\n", filedir);
+
+		MEMDEFINE(filejustdir);
+		sprintf(filejustdir, "%s/%s", rrddir, hostname);
+		if (stat(filejustdir, &st) == -1) {
+			dbgprintf("Creating rrd dir %s\n", filejustdir);
+			if (mkdir(filejustdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
+				errprintf("Cannot create rrd directory %s : %s\n", filejustdir, strerror(errno));
+				MEMUNDEFINE(filedir);
+				MEMUNDEFINE(filejustdir);
+				MEMUNDEFINE(rrdvalues);
+				return -1;
+			}
+		}
+		MEMUNDEFINE(filejustdir);
 
 		/* How many parameters did we get? */
 		for (pcount = 0; (creparams[pcount]); pcount++);
