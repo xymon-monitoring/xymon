@@ -79,9 +79,30 @@ assert_contains "at line 2" "$quant_line" \
 assert_contains "at line 3" "$class_line" \
 	"invalid pattern on line 3 is not reported with its config line"
 
+
+# Whether this build could name the two pcre2 error codes the hint is gated on.
+# Both are absent from the pcre2 headers on some older distributions, where the
+# hint is compiled out on purpose -- asserting it there would be failing over a
+# platform limit rather than a regression. Probed with the compiler when there
+# is one; where there is not (an installed-package run), the names are assumed
+# present, which is the case on every platform that ships a current pcre2.
+hint_available=yes
+if command -v "${CC:-cc}" >/dev/null 2>&1; then
+	ROOT=$(find_root)
+	printf '#define PCRE2_CODE_UNIT_WIDTH 8\n#include <pcre2.h>\nint v = PCRE2_ERROR_MISSING_SQUARE_BRACKET + PCRE2_ERROR_MISSING_CLOSING_PARENTHESIS;\n' \
+		>"$work/pcre2probe.c"
+	# shellcheck disable=SC2046,SC2086
+	"${CC:-cc}" $(pcre_cflags "$ROOT") -fsyntax-only "$work/pcre2probe.c" 2>/dev/null || hint_available=no
+fi
+
 # (2) The hint fires for a pattern actually truncated at a space.
-assert_contains "[[:space:]]" "$trunc_line" \
-	"a pattern truncated at a space no longer suggests [[:space:]]"
+if [ "$hint_available" = yes ]; then
+	assert_contains "[[:space:]]" "$trunc_line" \
+		"a pattern truncated at a space no longer suggests [[:space:]]"
+else
+	assert_not_contains "hint" "$trunc_line" \
+		"this pcre2 cannot name the gate's error codes, so no hint may be offered at all"
+fi
 
 # (3) ...and only then. A pattern that is invalid for an unrelated reason gets
 # the location and nothing else.
