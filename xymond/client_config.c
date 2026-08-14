@@ -431,8 +431,22 @@ static exprlist_t *setup_expr(char *ptn, int multiline)
 			 * cut lands inside a group or a character class, pcre2 reports
 			 * exactly one of these two errors. Any other failure is the
 			 * pattern's own doing, so it gets the location only. */
+			/*
+			 * Both names are absent from the pcre2 headers on some older
+			 * distributions -- CentOS 7 and Amazon Linux 2 among them --
+			 * where naming them stops the build outright. Their numeric
+			 * codes are deliberately not hard-coded in their place: nothing
+			 * here can confirm what those headers assign 106 and 114 to, and
+			 * a hint pointing at whitespace for an unrelated failure is worse
+			 * than no hint. Where the codes cannot be named, the pattern and
+			 * its config line are still reported, without the hint.
+			 */
+#if defined(PCRE2_ERROR_MISSING_CLOSING_PARENTHESIS) && defined(PCRE2_ERROR_MISSING_SQUARE_BRACKET)
 			truncated = ((errcode == PCRE2_ERROR_MISSING_CLOSING_PARENTHESIS) ||
 				     (errcode == PCRE2_ERROR_MISSING_SQUARE_BRACKET));
+#else
+			truncated = 0;
+#endif
 
 			errprintf("Invalid pattern '%s' at line %d%s\n", ptn, curparseline,
 				  (truncated ?
