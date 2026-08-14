@@ -172,16 +172,15 @@ ifndef PKGBUILD
 endif
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
+# "|| exit 1": make only sees the status of a loop's last iteration, so a link
+# that fails earlier leaves the package short of a CGI while the build reports
+# success - the missing name then 404s on a live server. The PKGBUILD branches
+# this rule used to carry were identical, so there is nothing to select.
 install-cgi:
 	mkdir -p $(INSTALLROOT)$(CGIDIR)
 	mkdir -p $(INSTALLROOT)$(SECURECGIDIR)
-ifndef PKGBUILD
-	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done
-	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done
-else
-	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done
-	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done
-endif
+	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F || exit 1; done
+	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F || exit 1; done
 
 install-man:
 ifndef PKGBUILD
