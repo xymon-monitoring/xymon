@@ -32,9 +32,15 @@ mkdir -p "$work/tmp" "$work/rrd" "$work/home/etc"
 : > "$work/home/etc/analysis.cfg"
 : > "$work/hosts.cfg"
 
+# The sequence number matters when several readings go to one worker: without
+# a distinct one each, everything after the first is dropped as a duplicate
+# update (do_rrd.c logs it under --debug and nowhere else), so a test that
+# feeds a live worker would silently exercise one message.
+msgseq=0
 status_msg() {  # status_msg <msg-timestamp>
-	printf '@@status|%s|127.0.0.1|origin|testhost|disk|%s|green||green|%s|0||0||%s|0|linux|/\n' \
-		"$1" "$(($1+1800))" "$ts" "$ts"
+	msgseq=$((msgseq + 1))
+	printf '@@status#%s|%s|127.0.0.1|origin|testhost|disk|%s|green||green|%s|0||0||%s|0|linux|/\n' \
+		"$msgseq" "$1" "$(($1+1800))" "$ts" "$ts"
 	printf 'disk report\n'
 	printf '/dev/sda1 1000000 400000 600000 40%% /\n'
 	printf '@@\n'
@@ -100,17 +106,26 @@ run_worker "$work/rrd" <"$fifo" >"$work/w3.log" 2>&1 &
 worker=$!
 exec 9>"$fifo"
 
-status_msg $((ts+20)) >&9
 wait_for() {  # wait_for SECONDS TEST...
 	local deadline=$((SECONDS + $1)); shift
 	while [ "$SECONDS" -lt "$deadline" ]; do eval "$@" && return 0; sleep 0.2; done
 	return 1
 }
-wait_for 20 '[ -f "$rrd" ]' || { cat "$work/w3.log" >&2; fail "the first reading did not reach the RRD"; }
 
+# Deleted first, so waiting for it to come back proves *this* worker created
+# it and holds the cached "it exists" answer. Waiting on the file the previous
+# case left behind returns instantly and proves nothing.
 rm -f "$rrd"
-status_msg $((ts+40)) >&9
-status_msg $((ts+60)) >&9
+status_msg $((ts+20)) >&9
+wait_for 20 '[ -f "$rrd" ]' \
+	|| { cat "$work/w3.log" >&2; fail "the first reading did not reach this worker"; }
+
+# Now the flag is stale. What follows has to reach a flush - which is where the
+# missing file is noticed - and then an update that recreates: CACHESZ is 12,
+# so a couple of readings would sit in the cache until shutdown and never be
+# written back.
+rm -f "$rrd"
+for i in $(seq 1 16); do status_msg $((ts + i*300)) >&9; done
 printf '@@shutdown|1|x\n@@\n' >&9
 exec 9>&-
 wait "$worker" || { cat "$work/w3.log" >&2; fail "the worker exited non-zero after an external deletion"; }
