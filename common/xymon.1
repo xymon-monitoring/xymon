@@ -206,7 +206,8 @@ Status color (green, yellow, red, blue, clear, purple)
 .IP "\fBtestflags\fR"
 For network tests, the flags indicating details about the test (used by xymongen).
 .IP "\fBlastchange\fR"
-Unix timestamp when the status color last changed.
+Unix timestamp when the current status color began, i.e. the hold-time of
+the color shown. See "Hold-time and no-data gaps" below.
 .IP "\fBlogtime\fR"
 Unix timestamp when the log message was received.
 .IP "\fBvalidtime\fR"
@@ -292,6 +293,21 @@ and with the following inequalities:  >= > <= < = !=
 
 These filters are: lastchange, logtime, validtime, acktime, disabletime
 
+Hold-time and no-data gaps
+
+\fBlastchange\fR is the hold-time of the color shown: when that color
+began, not when a message last moved it. If a test stops reporting and
+later resumes with the same color, the silence counts as hold-time and the
+value is unchanged across it - the status did not move while it was out of
+sight. A gap longer than four times the report validity is not bridged, and
+a resume with a different color starts a new hold-time. The gap is measured
+from when the status went stale, itself one report validity after the last
+report.
+
+This value can therefore move backwards, which matters for the
+\fBlastchange\fR filter above: a poller asking for changes since its last
+look will not see a bridged recovery.
+
 The response is one line for each status that matches the CRITERIA,
 or all statuses if no criteria is specified. The line is composed of
 a number of fields, separated by a pipe-sign. You can select which
@@ -307,7 +323,8 @@ Status color (green, yellow, red, blue, clear, purple)
 .IP "\fBflags\fR"
 For network tests, the flags indicating details about the test (used by xymongen).
 .IP "\fBlastchange\fR"
-Unix timestamp when the status color last changed.
+Unix timestamp when the current status color began, i.e. the hold-time of
+the color shown. See "Hold-time and no-data gaps" below.
 .IP "\fBlogtime\fR"
 Unix timestamp when the log message was received.
 .IP "\fBvalidtime\fR"

@@ -160,12 +160,12 @@ EOF
 
 # Link flags come from the build's own Makefile: SSLLIBS is absent on a
 # --no-ssl build, and carries the -L a non-standard OpenSSL prefix needs.
-ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 
 harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
 	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" \
-	$ssllibs 2>"$work/cc.log" \
+	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 "$work/harness" "$work/hosts.cfg" 2>"$work/stderr.log" \

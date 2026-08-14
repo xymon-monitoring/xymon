@@ -287,6 +287,50 @@ xymon_cflags() {
 	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")"
 }
 
+# xymon_ldflags ROOT -- the configured link flags for a harness built against
+# the in-tree libraries: the library search path, the runtime path, and the
+# libraries libxymoncomm.a itself needs (XYMONCOMMLIBS in xymond/Makefile).
+#
+# The counterpart to xymon_cflags(), and bundled for the same reason: the
+# product build gets all of this from $(CFLAGS) and $(RPATHOPT) on its link
+# line, while each harness spells its own and so far none carried any of it.
+# On the BSDs that costs a link (`ld: cannot find -lpcre2-8`, because
+# build/Makefile.FreeBSD keeps -L/usr/local/lib inside CFLAGS) or a run
+# (`Shared object "libpcre2-8.so.0" not found`, no rpath).
+#
+# Asked of make rather than sed'd out of the Makefile: NETLIBS, ZLIBLIBS and
+# LIBRTDEF live in the per-OS file the toplevel Makefile includes, and the
+# search path has no variable of its own at all - it is embedded in CFLAGS,
+# so the -L tokens are picked out of it.
+xymon_ldflags() {
+	local root=$1 probe out cflags rpath libs tok search=
+
+	[ -f "$root/Makefile" ] || return 0
+	require_gnu_make
+	# shellcheck disable=SC2016  # $(CFLAGS) etc. are make's to expand, not the shell's
+	probe='__xymon_ldflags:
+	@printf "%s\n" "$(CFLAGS)" "$(RPATHOPT)" "$(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)"
+'
+	out=$(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_ldflags 2>/dev/null) || return 0
+
+	cflags=$(printf '%s\n' "$out" | sed -n 1p)
+	rpath=$(printf '%s\n' "$out" | sed -n 2p)
+	libs=$(printf '%s\n' "$out" | sed -n 3p)
+
+	# Only the search path is wanted from CFLAGS; its -I/-D/-W belong to the
+	# compile side, which xymon_cflags() already covers.
+	for tok in $cflags; do
+		case $tok in -L*) search="$search $tok" ;; esac
+	done
+
+	# RPATHOPT is $(RPATH)$(RPATHVAL); with no RPATHVAL configured it is a bare
+	# "-Wl,--rpath," with nothing after the comma, so drop it rather than hand
+	# the linker a dangling flag.
+	case $rpath in *,) rpath= ;; esac
+
+	printf '%s' "$search $rpath $libs"
+}
+
 # require_shm_segments N -- skip unless one process may attach N SysV
 # shared-memory segments. xymond attaches one per channel, and macOS ships
 # kern.sysv.shmseg=8 against the nine channels xymond sets up, so a stock Mac
