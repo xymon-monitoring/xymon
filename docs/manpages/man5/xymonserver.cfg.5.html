@@ -30,6 +30,15 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <b>NAME+=VALUE</b>. VALUE is then appended to the existing value of the NAME
     variable. If NAME has not been defined, then this acts as if it were a
     normal definition.</p>
+<p class="Pp">Other files can be pulled in with <b>include FILENAME</b>. Because
+    this file uses shell syntax and may also be sourced directly by shell
+    scripts, the shell's own include directives <b>source</b> <b>FILENAME</b>
+    and <b>. FILENAME</b> are accepted as aliases for &quot;include&quot; - the
+    same reference is then followed both by a shell sourcing the file and by the
+    Xymon tools reading it. Any of them can be prefixed with <b>optional</b> to
+    silence the error when the file does not exist - but note a shell does not
+    understand that prefix, so use it only in files read exclusively by
+  Xymon.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">

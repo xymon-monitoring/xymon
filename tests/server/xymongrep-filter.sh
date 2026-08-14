@@ -85,4 +85,31 @@ assert_not_contains "db.example.com" "$out" \
 out=$("$XYMONGREP" --noextras --hosts="$work/hosts.cfg" 'http*')
 assert_not_contains "dialup" "$out" "--noextras must drop the dialup flag"
 
-pass "xymongrep tag selection contract holds (exact, prefix-*, echoed tags, dialup flag)"
+# "source FILE" and ". FILE" are include aliases (PR #223, TBT 59), so a
+# shell-syntax config sourced by both a shell and xymon follows the same
+# reference. "optional" composes with them; a word merely *starting* with
+# a directive ("sourcehost") is not an include. Exercised through the same
+# real load_hostnames()/stackfgets() path as the rest of this test.
+cat >"$work/fragment.cfg" <<'EOF'
+7.7.7.7		frag-src.example.com	# conn
+EOF
+cat >"$work/fragment2.cfg" <<'EOF'
+8.8.8.8		frag-dot.example.com	# conn
+EOF
+printf '2.3.4.5\t\tinctest.example.com\t# conn\nsource %s\n. %s\nsource\t%s\noptional source %s\noptional . %s\nsourcehost 9.9.9.9\n' \
+	"$work/fragment.cfg" "$work/fragment2.cfg" "$work/fragment.cfg" \
+	"$work/missing.cfg" "$work/missing2.cfg" >"$work/hosts-src.cfg"
+
+out=$("$XYMONGREP" --hosts="$work/hosts-src.cfg" conn 2>"$work/stderr.log")
+assert_contains "frag-src.example.com # conn" "$out" "'source FILE' must include the fragment"
+assert_contains "frag-dot.example.com # conn" "$out" "'. FILE' must include the fragment"
+assert_contains "inctest.example.com # conn" "$out" "host lines around the includes must survive"
+# The optional-source lines reference missing files, and the "sourcehost..."
+# line only *starts* with the directive word (the alias needs a separator).
+# Neither may be parsed as an include: the parse must stay silent - the
+# pre-#223 downstream patch would log "Cannot open include file" for the
+# sourcehost line, and a non-optional misparse would for the missing ones.
+assert_not_contains "Cannot open include file" "$(cat "$work/stderr.log")" \
+	"no line may be misparsed as a failed include"
+
+pass "xymongrep tag selection contract holds (exact, prefix-*, echoed tags, dialup flag, source/. includes)"

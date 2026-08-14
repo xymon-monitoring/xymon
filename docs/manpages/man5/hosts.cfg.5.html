@@ -91,6 +91,15 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         is located (usually $XYMONHOME/etc/).</p>
     <p class="Pp">You can nest include tags, i.e. a file that is included from
         the main hosts.cfg file can itself include other files.</p>
+    <p class="Pp">The directives &quot;source filename&quot; and &quot;.
+        filename&quot; (dot, space, filename) are accepted as aliases for
+        &quot;include&quot;. They exist so a configuration file written in shell
+        syntax - e.g. <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> - can use the shell's own
+        include directives and be followed both by a shell sourcing the file and
+        by the Xymon config parser. Note that the aliases are recognised in
+        every Xymon configuration file read through this parser, not only
+        shell-syntax ones: a line whose first word is &quot;source&quot; or
+        &quot;.&quot; is always treated as an include.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="dispinclude"><a class="permalink" href="#dispinclude"><b>dispinclude</b>
@@ -119,9 +128,10 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   </dd>
   <dt id="optional"><a class="permalink" href="#optional"><b>optional
     include/directory</b></a></dt>
-  <dd>Both &quot;include&quot; and &quot;directory&quot; can be prefixed with
-      the tag &quot;optional&quot;, which will prevent an error message being
-      logged if the file or directory is not present on a system.
+  <dd>Both &quot;include&quot; (and its &quot;source&quot; / &quot;.&quot;
+      aliases) and &quot;directory&quot; can be prefixed with the tag
+      &quot;optional&quot;, which will prevent an error message being logged if
+      the file or directory is not present on a system.
     <p class="Pp"></p>
     <p class="Pp"></p>
   </dd>
