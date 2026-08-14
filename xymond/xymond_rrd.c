@@ -578,6 +578,9 @@ int main(int argc, char *argv[])
 
 	sendmessage_finish_local();
 
+	/* Release the RRD-definition tables (clean valgrind exit) */
+	rrd_destroy();
+
 	return 0;
 }
 
