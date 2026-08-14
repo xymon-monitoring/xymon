@@ -13,6 +13,14 @@ Changes file.
 Changes for 4.3.31
 ==================
 
+"lastchange" is now the hold-time of the colour on record, not the time of the
+last status change. It used to be reset whenever a test stopped reporting, so a
+host down for two hours that came back green showed as green for 0 minutes.
+xymond_alert reads this field for DURATION, which means an outage that dropped
+out of sight also restarted its escalation clock. Alerts with a DURATION
+condition may therefore fire earlier than before on tests that stop reporting -
+which is the intended behaviour, but worth knowing before the first such alert.
+
 xymonnet tests with a configured cipher-list restriction now report an SSL error
 when OpenSSL rejects the restriction, instead of silently using the default
 cipher list. Such tests may therefore turn red after upgrading Xymon, or after
