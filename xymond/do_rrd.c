@@ -55,7 +55,6 @@ static char rrdvalues[MAX_LINE_LEN];
 static char *senderip = NULL;
 static char rrdfn[PATH_MAX];   /* Base filename without directories, from setupfn() */
 static char filedir[PATH_MAX]; /* Full path filename */
-static char filejustdir[PATH_MAX]; /* Full path filename - just the directory */
 static char *fnparams[4] = { NULL, };  /* Saved parameters passed to setupfn() */
 
 /* How often do we feed data into the RRD file */
@@ -394,8 +393,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 	/*
 	 * Once seen - here or just after creating it - an existing file costs no
-	 * stat() per update. flush_cached_updates() clears the flag, so the check
-	 * runs once per flush rather than once per value.
+	 * stat() per update. The flag is cleared wherever the file can go.
 	 */
 	if (!cacheitem->fileok && (stat(filedir, &st) != -1)) cacheitem->fileok = 1;
 
@@ -406,22 +404,29 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		char *rrakey = NULL;
 		char stepsetting[10];
 		int havestepsetting = 0, fixcount = 2;
+		char hostdir[PATH_MAX];
 
 		dbgprintf("Creating rrd %s\n", filedir);
 
-		MEMDEFINE(filejustdir);
-		sprintf(filejustdir, "%s/%s", rrddir, hostname);
-		if (stat(filejustdir, &st) == -1) {
-			dbgprintf("Creating rrd dir %s\n", filejustdir);
-			if (mkdir(filejustdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
-				errprintf("Cannot create rrd directory %s : %s\n", filejustdir, strerror(errno));
-				MEMUNDEFINE(filedir);
-				MEMUNDEFINE(filejustdir);
-				MEMUNDEFINE(rrdvalues);
-				return -1;
-			}
+		/*
+		 * The directory only has to exist where a file is about to be created:
+		 * if the RRD is there, so is its directory (#153). snprintf into a
+		 * local, not sprintf into a static - rrddir and hostname can overflow
+		 * between them, and the route this replaces refused a truncated path.
+		 */
+		if (snprintf(hostdir, sizeof(hostdir), "%s/%s", rrddir, hostname) >= (int)sizeof(hostdir)) {
+			errprintf("RRD directory path truncated, skipping: %s/%s\n", rrddir, hostname);
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return -1;
 		}
-		MEMUNDEFINE(filejustdir);
+		if ((stat(hostdir, &st) == -1) && (mkdir(hostdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1)) {
+			errprintf("Cannot create rrd directory %s : %s\n", hostdir, strerror(errno));
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return -1;
+		}
+
 
 		/* How many parameters did we get? */
 		for (pcount = 0; (creparams[pcount]); pcount++);
