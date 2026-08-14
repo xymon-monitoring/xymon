@@ -23,7 +23,13 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-pcre2_code *compileregex_opts(const char *pattern, uint32_t flags)
+/*
+ * As compileregex_opts(), but also hands back the pcre2 error code and offset
+ * so a caller can react to *why* a pattern failed - the message itself is
+ * still logged here, so callers only interested in that can keep using the
+ * simpler wrappers below. Both out-parameters are optional (pass NULL).
+ */
+pcre2_code *compileregex_ext(const char *pattern, uint32_t flags, int *errcode, PCRE2_SIZE *erroffset)
 {
 	pcre2_code *result;
 	char errmsg[120];
@@ -35,10 +41,20 @@ pcre2_code *compileregex_opts(const char *pattern, uint32_t flags)
 	if (result == NULL) {
 		pcre2_get_error_message(err, errmsg, sizeof(errmsg));
 		errprintf("pcre compile '%s' failed (offset %zu): %s\n", pattern, errofs, errmsg);
+		if (errcode) *errcode = err;
+		if (erroffset) *erroffset = errofs;
 		return NULL;
 	}
 
+	if (errcode) *errcode = 0;
+	if (erroffset) *erroffset = 0;
+
 	return result;
+}
+
+pcre2_code *compileregex_opts(const char *pattern, uint32_t flags)
+{
+	return compileregex_ext(pattern, flags, NULL, NULL);
 }
 
 pcre2_code *compileregex(const char *pattern)

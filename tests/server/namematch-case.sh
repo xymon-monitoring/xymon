@@ -32,7 +32,6 @@ require_gnu_make
 "$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
-ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 pcre_libs=${PCRELIBS:-}
 if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 	pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
@@ -82,8 +81,9 @@ int main(void)
 EOF
 
 harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" $ssllibs $pcre_libs 2>"$work/cc.log" \
+	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 "$work/harness" 2>"$work/run.log" \

@@ -21,7 +21,7 @@
 __XYMON_TESTS_BUILD_WORKER_SOURCED=1
 
 build_xymond_worker() {
-	local outdir=$1 prog=$2 root cc treelibs pcre_libs harness_cflags src srcs mkfiles inc
+	local outdir=$1 prog=$2 root cc pcre_libs harness_ldflags harness_cflags src srcs
 	shift 2
 	root=$(find_root)
 	cc=${CC:-cc}
@@ -30,21 +30,6 @@ build_xymond_worker() {
 	require_gnu_make
 	[ -f "$root/include/config.h" ] || skip "tree not configured (no include/config.h)"
 	[ -f "$root/Makefile" ] || skip "tree not configured (no Makefile)"
-
-	# The extra libraries the product link uses (XYMONCOMMLIBS in
-	# xymond/Makefile). Asked of make, not sed from the Makefile: NETLIBS,
-	# ZLIBLIBS and LIBRTDEF live in the per-OS file the Makefile includes.
-	# If make cannot run the stdin-makefile probe, harvest the same four
-	# variables from the Makefile plus the files it includes.
-	treelibs=$(printf '__testlibs:\n\t@echo $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)\n' \
-			| "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __testlibs 2>/dev/null) || {
-		mkfiles="$root/Makefile"
-		while read -r inc; do
-			[ -n "$inc" ] && mkfiles="$mkfiles $root/$inc"
-		done < <(sed -n 's/^include  *//p' "$root/Makefile")
-		# shellcheck disable=SC2086  # mkfiles is a deliberate word-split list
-		treelibs=$(sed -n -E 's/^(ZLIBLIBS|SSLLIBS|NETLIBS|LIBRTDEF) *= *//p' $mkfiles 2>/dev/null | tr '\n' ' ')
-	}
 
 	# PCRELIBS: explicit env override first, then the configured tree's own
 	# setting (which carries any -L for a nonstandard install), then
@@ -56,6 +41,7 @@ build_xymond_worker() {
 	fi
 	[ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 	harness_cflags=$(xymon_cflags "$root")
+	harness_ldflags=$(xymon_ldflags "$root")
 
 	"$XYMON_MAKE" -C "$root/lib" libxymon.a libxymoncomm.a libxymontime.a >"$outdir/libbuild.log" 2>&1 \
 		|| { cat "$outdir/libbuild.log" >&2; fail "the xymon libraries do not build in this configured tree"; }
@@ -68,6 +54,6 @@ build_xymond_worker() {
 		"${srcs[@]}" \
 		"$root/lib/libxymon.a" "$root/lib/libxymoncomm.a" "$root/lib/libxymontime.a" \
 		"$root/lib/libxymon.a" \
-		$pcre_libs $treelibs 2>"$outdir/cc.log" \
+		$pcre_libs $harness_ldflags 2>"$outdir/cc.log" \
 		|| { cat "$outdir/cc.log" >&2; fail "$prog does not build -- cannot run this test"; }
 }

@@ -56,7 +56,6 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 require_gnu_make
 "$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
-ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 
 {
 	printf '#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n'
@@ -75,9 +74,10 @@ cat > "$work/hosts.cfg" <<'EOF'
 EOF
 
 harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
 	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" \
-	$ssllibs 2>"$work/cc.log" \
+	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 "$work/harness" "$work/hosts.cfg" 2>"$work/stderr.log" \
