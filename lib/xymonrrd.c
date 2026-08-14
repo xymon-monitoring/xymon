@@ -35,6 +35,10 @@ static const char *xymonlinkfmt = "<table summary=\"%s Graph\"><tr><td><A HREF=\
 static const char *metafmt = "<RRDGraph>\n  <GraphType>%s</GraphType>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&amp;graph=hourly]]></GraphImage>\n</RRDGraph>\n";
 
 
+/* The TCP service list the tables were built from - lifecycle state shared
+ * by rrd_setup() (rebuild-if-changed) and rrd_destroy() (final release). */
+static char *builtfrom = NULL;
+
 /*
  * Free the RRD-definition tables built by rrd_setup().
  * Mainly so daemons can release them on shutdown (clean valgrind exit).
@@ -43,6 +47,8 @@ void rrd_destroy(void)
 {
 	xymonrrd_t *lrec;
 	xymongraph_t *grec;
+
+	if (builtfrom) { xfree(builtfrom); builtfrom = NULL; }
 
 	/*
 	 * NB: These lists are NOT null-terminated !
@@ -84,18 +90,28 @@ static void rrd_setup(void)
 	int count;
 	xymonrrd_t *lrec;
 	xymongraph_t *grec;
+	static time_t lastcheck = 0;
 
 
 	/*
-	 * The tables are derived entirely from environment variables (TEST2RRD,
-	 * GRAPHS) and the compiled-in TCP service list, all fixed at startup -
-	 * so they never change while we run. Build them once.
+	 * TEST2RRD and GRAPHS are fixed at process start, but init_tcp_services()
+	 * reloads protocols.cfg whenever it is modified - so the tables are NOT
+	 * fixed for the life of the process and cannot simply be built once, or a
+	 * TCP service added at runtime would never enter them. Throttle the check
+	 * to once every 5 minutes (as the original timer did), then rebuild only
+	 * when the service list actually changed, releasing the old tables first.
 	 */
-	if (xymonrrdtree != NULL) return;
-
+	if (xymonrrdtree != NULL && (lastcheck + 300 >= getcurrenttime(NULL))) return;
+	lastcheck = getcurrenttime(NULL);
 
 	/* Get the tcp services, and count how many there are */
 	services = strdup(init_tcp_services());
+	if (xymonrrdtree != NULL && builtfrom && (strcmp(builtfrom, services) == 0)) {
+		xfree(services);
+		return;
+	}
+	rrd_destroy();	/* also releases builtfrom */
+	builtfrom = strdup(services);
 	SBUF_MALLOC(tcptests, strlen(services)+1);
 	snprintf(tcptests, tcptests_buflen, "%s", services);
 	count = 0; p = strtok(tcptests, " "); while (p) { count++; p = strtok(NULL, " "); }
@@ -104,7 +120,7 @@ static void rrd_setup(void)
 	/* Setup the xymonrrds table, mapping test-names to RRD files */
 	SBUF_MALLOC(lenv, strlen(xgetenv("TEST2RRD")) + strlen(tcptests) + count*strlen(",=tcp") + 1);
 	strncpy(lenv, xgetenv("TEST2RRD"), lenv_buflen); 
-	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
+	if (*lenv) { p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0'; }	/* Drop a trailing comma */
 	p = strtok(tcptests, " "); 
 	while (p) {
 		unsigned int curlen = strlen(lenv);
@@ -114,7 +130,7 @@ static void rrd_setup(void)
 	xfree(tcptests);
 	xfree(services);
 
-	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
+	count = 0; if (*lenv) { p = lenv; do { count++; p = strchr(p+1, ','); } while (p); }
 	xymonrrds = (xymonrrd_t *)calloc((count+1), sizeof(xymonrrd_t));
 
 	xymonrrdtree = xtreeNew(strcasecmp);
@@ -138,8 +154,8 @@ static void rrd_setup(void)
 
 	/* Setup the xymongraphs table, describing how to make graphs from an RRD */
 	lenv = strdup(xgetenv("GRAPHS"));
-	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
-	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
+	if (*lenv) { p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0'; }	/* Drop a trailing comma */
+	count = 0; if (*lenv) { p = lenv; do { count++; p = strchr(p+1, ','); } while (p); }
 	xymongraphs = (xymongraph_t *)calloc((count+1), sizeof(xymongraph_t));
 
 	grec = xymongraphs; ldef = strtok(lenv, ",");
