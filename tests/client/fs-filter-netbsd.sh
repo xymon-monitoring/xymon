@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+#
+# tests/client/fs-filter-netbsd.sh
+#
+# xymonclient-netbsd.sh under the XYMONCLIENT_FS_* contract (#170), plus what is
+# NetBSD's alone: zfs is excluded from the inode report by type, tmpfs is kept
+# (its inode counts are real), and the raw df -i columns are normalised into the
+# shared parser's layout before they reach the server.
+#
+# The shared contract lives in fs-filter-common.sh and is asserted on the
+# emitted sections; this file supplies the dialect -- NetBSD excludes types with
+# a single "-t no<csv>" argument.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -10,93 +21,84 @@ set -euo pipefail
 fsf_setup netbsd XYMONCLIENT_NETBSD
 SERVER=$(find_root)/xymond/client/netbsd.c
 
-cat > "$STUB/df" <<EOF
-#!/usr/bin/env bash
-[ -n "\${DF_FAIL:-}" ] && exit 1
-if [[ " \$* " =~ " -i " ]]; then
-	echo "\$*" >> "$INODE_LOG"
-	printf 'Filesystem 512-blocks Used Available Capacity iUsed iAvail %%iCap Mounted on\n'
-	printf '/dev/ld0a 3837980 2953852 692232 81%% 41013 218057 15%% /\n'
-	printf 'tmpfs 1048576 8 1048568 0%% 1 999999 0%% /tmp\n'
-	printf 'zfs 1048576 8 1048568 0%% - - - /zfs\n'
-else
-	echo "\$*" >> "$DF_LOG"
-	printf 'Filesystem 512-blocks Used Available Capacity Mounted on\n'
-	printf '/dev/ld0a 3837980 2953852 692232 81%% /\n'
-fi
-EOF
-chmod +x "$STUB/df"
+# --- the dialect -------------------------------------------------------------
+
+FSF_LOCAL_TYPE=ffs;     FSF_LOCAL_MP=/
+FSF_PSEUDO_TYPE=procfs; FSF_PSEUDO_MP=/proc
+FSF_NOINODE_TYPE=msdos; FSF_NOINODE_MP=/data
+FSF_REMOTE_TYPE=nfs;    FSF_REMOTE_MP=/net
+FSF_EXTRA_TYPE=ext2fs;  FSF_EXTRA_MP=/extra
+FSF_DECOY='procf*'
+
+FSF_DISK_HEADER='Filesystem 512-blocks Used Available Capacity Mounted on'
+FSF_DISK_ROW='/dev/ld0a 3837980 2953852 692232 81%% %s'
+FSF_INODE_HEADER='Filesystem 512-blocks Used Available Capacity iUsed iAvail %%iCap Mounted on'
+FSF_INODE_ROW='/dev/ld0a 3837980 2953852 692232 81%% 41013 218057 15%% %s'
+# No inode accounting: iUsed and iAvail are both 0, which is what the client
+# guards on (it cannot use the "-" text NetBSD does not print).
+FSF_INODE_NOLIMIT_ROW='/dev/ld0a 1048576 8 1048568 0%% 0 0 0%% %s'
+
+FSF_STUB_PARSE='for a in "$@"; do
+	case "$a" in
+		-t*) _l=${a#-t}; _l=${_l#no}; _ex=" $(echo "$_l" | tr "," " ") " ;;
+		-l) _local=1 ;;
+		-i) _inode=1 ;;
+	esac
+done'
+
+FSF_ARGV_PLAIN='-P'
+FSF_ARGV_EXCLUDE_PSEUDO="-P -tno$FSF_PSEUDO_TYPE"
+
+# --- fixtures ----------------------------------------------------------------
 
 : > "$TMP/procfs"
 : > "$TMP/fuse.sshfs"
 
-SNIPPET="$TMP/df-section.sh"
-fsf_extract "$SNIPPET"
-run() { fsf_run "$SNIPPET" "$DF_LOG"; }
+# The rest of the built-in pseudo list. The five roles observe only procfs, so
+# without these a type dropped from the client's list would go unnoticed until
+# it turned up as a permanently-full row on a real host.
+FSF_FIXTURE_EXTRA='kernfs /pseudo/kernfs local inode
+cd9660 /pseudo/cd9660 local inode
+null /pseudo/null local inode
+ptyfs /pseudo/ptyfs local inode'
 
-args=$(run)
-assert_contains " -P " "$args" "disk df keeps -P"
-assert_contains " -l " "$args" "default is local-only"
-assert_contains " -tnokernfs,procfs,cd9660,null,ptyfs " "$args" \
-	"default excludes pseudo filesystems"
-assert_not_contains "nonfs" "$args" "nfs is controlled by df -l"
+FSF_COMBINED="$TMP/df-section.sh"
+fsf_extract "$FSF_COMBINED"
+fsf_write_fixture
+fsf_write_stub
 
+# --- the contract ------------------------------------------------------------
+
+fsf_selfcheck
+fsf_contract
+
+# The built-in list, pinned through the report rather than through df's argv:
+# every type it names has a filesystem in the fixture, and none may be reported.
+assert_not_contains "/pseudo/" "$(fsf_section "$(fsf_report)" df)" \
+	"the built-in pseudo list still excludes every type it names (kernfs procfs cd9660 null ptyfs)"
+
+# --- NetBSD's own rules ------------------------------------------------------
+
+out=$(fsf_report)
 inode_args=$(printf ' %s ' "$(tr '\n' ' ' < "$INODE_LOG")")
-assert_contains " -i " "$inode_args" "inode df uses -i"
-assert_contains " -l " "$inode_args" "inode df shares local-only behavior"
-assert_contains " -tnokernfs,procfs,cd9660,null,ptyfs,zfs " "$inode_args" \
-	"inode df adds the inode-only zfs exclusion"
+assert_contains " -i " "$inode_args" "the inode report is collected with df -i"
+assert_contains " -l " "$inode_args" "the inode report shares the local-only behaviour"
+assert_contains "zfs" "$inode_args" "the inode report adds the zfs exclusion"
 assert_not_contains "tmpfs" "$inode_args" \
-	"NetBSD tmpfs inode counts remain reportable"
+	"NetBSD tmpfs inode counts are real and stay reportable"
 
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES=ptyfs run)
-assert_not_contains "ptyfs" "$args" "INCLUDE_TYPES un-excludes a default type"
-inode_args=$(printf ' %s ' "$(tr '\n' ' ' < "$INODE_LOG")")
-assert_not_contains "ptyfs" "$inode_args" \
-	"INCLUDE_TYPES applies to inode collection"
-
-args=$(XYMONCLIENT_FS_EXCLUDE_TYPES=ext2fs run)
-assert_contains "ext2fs" "$args" "EXCLUDE_TYPES adds a filesystem type"
-
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES=ext2fs XYMONCLIENT_FS_EXCLUDE_TYPES=ext2fs run)
-assert_contains "ext2fs" "$args" "EXCLUDE_TYPES wins over INCLUDE_TYPES"
-
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES='procf*' run)
-assert_contains ",procfs," "$args" "include tokens do not undergo glob expansion"
-
-args=$(XYMONCLIENT_FS_EXCLUDE_TYPES='fuse.*' run)
-assert_contains "fuse.*" "$args" "exclude tokens do not undergo glob expansion"
-assert_not_contains "fuse.sshfs" "$args" "exclude globs remain literal"
-
-args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=no run)
-assert_not_contains " -l " "$args" "DF_LOCAL_ONLY=no reports remote filesystems"
-args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=invalid run)
-assert_contains " -l " "$args" "invalid DF_LOCAL_ONLY falls back to local-only"
-assert_contains "invalid XYMONCLIENT_FS_DF_LOCAL_ONLY" "$(cat "$STDERR_LOG")" \
-	"invalid DF_LOCAL_ONLY warns"
-
-output=$(cd "$TMP" && /bin/sh "$SNIPPET" 2>/dev/null)
-assert_contains "Filesystem itotal iused ifree %iused Mounted on" "$output" \
-	"inode output exposes the shared parser columns"
-assert_contains "/dev/ld0a 259070 41013 218057 15% /" "$output" \
-	"inode output normalizes NetBSD df values"
-assert_contains "tmpfs 1000000 1 999999 0% /tmp" "$output" \
-	"inode output retains meaningful NetBSD tmpfs values"
-assert_not_contains "/zfs" "$output" \
-	"inode output drops rows without usable inode accounting"
-
-output=$(cd "$TMP" && DF_FAIL=1 /bin/sh "$SNIPPET" 2>/dev/null)
-assert_contains "Disk report collection failed" "$output" \
-	"a failed disk probe emits a failure marker"
-assert_contains "Inode report collection failed" "$output" \
-	"a failed inode probe emits a failure marker"
-assert_not_contains "Filesystem" "$output" \
-	"failure markers have no healthy df header"
+# The raw df -i columns are rewritten into the layout the shared server parser
+# reads, with itotal computed as iUsed + iAvail.
+inode_section=$(fsf_section "$out" inode)
+assert_contains "Filesystem itotal iused ifree %iused Mounted on" "$inode_section" \
+	"the inode output exposes the shared parser's columns"
+assert_contains "/dev/ld0a 259070 41013 218057 15% /" "$inode_section" \
+	"the inode output normalises NetBSD's df values"
 
 server_source=$(<"$SERVER")
 assert_contains 'inodestr = getdata("inode");' "$server_source" \
-	"NetBSD handler reads the inode section"
+	"the NetBSD handler reads the inode section"
 assert_contains 'unix_inode_report(hostname' "$server_source" \
-	"NetBSD handler generates the inode status"
+	"the NetBSD handler generates the inode status"
 
-pass "NetBSD filesystem filtering, inode collection, and failure reporting"
+pass "xymonclient-netbsd.sh: the FS filter contract, the zfs inode exclusion, and column normalisation"
