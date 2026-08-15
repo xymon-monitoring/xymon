@@ -67,7 +67,16 @@ EOF
 # fixture in both. The [inode] block reuses the EXCLUDES/ROOTFS the [df] block
 # computed, so the combined block must run them together -- a lone [inode]
 # snippet would see an empty EXCLUDES.
-PROC_REWRITE="s!/proc/filesystems!$TMP/proc.filesystems!g"
+# /proc/mounts fixture. Since the remote-df sentinel (#316) the LOCAL_ONLY=no
+# case walks the mount list looking for hard-blocking types, so without this
+# rewrite the test reads the *tester's* mount table: on a machine with a
+# cifs/ceph/glusterfs/lustre/afs mount it would probe that real filesystem and
+# drop probe files in $XYMONTMP. A local-only fixture keeps the sentinel dormant
+# -- it is covered by fs-sentinel-linux.sh -- and XYMONTMP points inside $TMP so
+# nothing can land in /tmp either way.
+printf '/dev/sda1 / ext4 rw 0 0\n' > "$TMP/proc.mounts"
+export XYMONTMP="$TMP"
+PROC_REWRITE="s!/proc/filesystems!$TMP/proc.filesystems!g; s!/proc/mounts!$TMP/proc.mounts!g"
 SNIPPET="$TMP/df-section.sh"
 fsf_extract "$SNIPPET" "$PROC_REWRITE" '\[inode\]'
 COMBINED="$TMP/df-inode-section.sh"

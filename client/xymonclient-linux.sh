@@ -193,10 +193,16 @@ df_sentinel()
 				[ -n "$_c" ] && kill -0 "$_c" 2>/dev/null && return 124
 				;;
 			?*)
-				# A df we recorded. Still wedged? comm is checked so a recycled
-				# PID does not look like one.
-				if kill -0 "$_old" 2>/dev/null && \
-				   [ "$(cat "/proc/$_old/comm" 2>/dev/null)" = df ]; then
+				# A df we recorded. Still wedged? The command name is checked
+				# so a recycled PID does not look like one. Read it with ps,
+				# not /proc/PID/comm: ps is POSIX, gives the same answer, is
+				# already a dependency of this client (the [ps] section), and
+				# reads process state only -- it cannot touch the wedged mount.
+				# Take the basename: comm is the short name on Linux and the
+				# BSDs, but the full path on macOS.
+				_c=$(ps -o comm= -p "$_old" 2>/dev/null | tr -d '[:space:]')
+				_c=${_c##*/}
+				if kill -0 "$_old" 2>/dev/null && [ "$_c" = df ]; then
 					return 124
 				fi
 				;;

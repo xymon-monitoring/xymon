@@ -56,7 +56,7 @@ done
 # Remote probes are counted apart from the per-cycle local df, and each records
 # its own pid so the test can end the ones it starts.
 [ -n "$_named" ] && echo $$ >> "${DF_REMOTE:-/dev/null}"
-[ -n "$_named" ] && [ -n "${DF_HANG:-}" ] && sleep "${DF_HANGTIME:-120}"
+[ -n "$_named" ] && [ -n "${DF_HANG:-}" ] && exec "$DF_HANGBIN" "${DF_HANGTIME:-120}"
 [ -n "${DF_FAIL:-}" ] && exit 1
 if [ -n "$_named" ]; then
 	# An exclusion applies to an explicitly named operand too, and once every
@@ -85,11 +85,47 @@ fi
 EOF
 chmod +x "$STUB/df"
 
-# Extract the [df] block with /proc repointed at the fixtures. /proc/<pid>/comm
-# is deliberately NOT rewritten: the PID-reuse guard must be exercised for real.
+# The wedge is entered with exec, into a real executable that is itself named
+# df, because the guard under test reads the process's command name.
+#
+# A shell script does not carry its name into that field portably. Linux sets
+# comm from the script it was handed, so the stub reads back as "df" here; the
+# BSDs report the interpreter, so the same process reads as "sh", the guard
+# takes the live fixture for a recycled PID and starts a second probe. The test
+# then failed on NetBSD 9.4/11.0, OpenBSD 7.9 and FreeBSD 14.3 while passing on
+# Linux -- green against a fixture the guard could not recognise (@SoundGoof).
+#
+# exec, not a child: the pid the client recorded is the one that must carry the
+# name, and it is also what makes the wedge a single process to clean up.
+DF_HANGBIN="$STUB/hang/df"; export DF_HANGBIN
+mkdir -p "$STUB/hang"
+_sleepbin=$(command -v sleep) \
+	|| fail "no sleep binary to build the wedge fixture from"
+cp "$_sleepbin" "$DF_HANGBIN" && chmod +x "$DF_HANGBIN" \
+	|| fail "cannot create the wedge fixture"
+
+# Nothing here may outlive the test, including on a failed assertion: fail()
+# exits, and every wedge started by then would keep its delay running.
+kill_stubs() {
+	[ -s "$DF_REMOTE" ] || return 0
+	while read -r _p; do [ -n "$_p" ] && kill -9 "$_p" 2>/dev/null; done < "$DF_REMOTE"
+	return 0
+}
+register_cleanup kill_stubs
+
+# Extract the [df] block with /proc repointed at the fixtures. The PID-reuse
+# guard is exercised for real -- it reads process state through ps, which every
+# host this suite runs on has, so nothing here is rewritten for it.
 fsf_extract "$TMP/df-section.sh" "s#/proc/mounts#$MOUNTS#g; s#/proc/filesystems#$TMP/filesystems#g" '\[inode\]'
 
-# run_cycle [ENV=VAL ...] -- one client cycle; prints the [df] block.
+# end_stub PID : end a wedged df stub. The stub exec'd the wedge into its own
+# process, so there is no child to orphan -- the pid is the whole of it.
+end_stub() {
+	kill -9 "$1" 2>/dev/null || true
+}
+
+# run_cycle [ENV=VAL ...] -- one client cycle; prints the [df] block. PS_STUB,
+# when set, goes ahead of the fixtures on PATH (see the BSD ps pass at the end).
 run_cycle() {
 	env "$@" \
 		DF_CALLS="$DF_CALLS" \
@@ -97,10 +133,11 @@ run_cycle() {
 		XYMONTMP="$TMP/probe" \
 		XYMONCLIENT_FS_DF_LOCAL_ONLY=no \
 		XYMONCLIENT_FS_REMOTE_DF_BUDGET=2 \
-		PATH="$STUB:$PATH" \
+		PATH="${PS_STUB:+$PS_STUB:}$STUB:$PATH" \
 		/bin/sh "$TMP/df-section.sh" 2>/dev/null
 }
 
+PS_STUB=
 mkdir -p "$TMP/probe"
 local_mounts() { printf '/dev/sda1 / ext4 rw 0 0\nsrv:/exp /remote/nfs nfs4 rw 0 0\nusr@h:/d /remote/sshfs sshfs rw 0 0\n' > "$MOUNTS"; }
 local_mounts
@@ -129,11 +166,12 @@ assert_contains ' 100% /remote/nfs' "$out" "the unavailable row must read as ful
 
 # --- still wedged: exactly one outstanding df --------------------------------
 # Counted from the stub itself: a system-wide process count would be skewed by
-# anything else running on the machine.
+# anything else running on the machine. Every count goes through $((...)):
+# BSD/macOS wc pads its output with blanks and assert_equal compares strings.
 before=$(wc -l < "$DF_CALLS")
 out=$(DF_HANG=1 run_cycle DF_HANG=1)
 after=$(wc -l < "$DF_CALLS")
-assert_equal "$((before + 1))" "$after" \
+assert_equal "$((before + 1))" "$((after))" \
 	"while one df is wedged, a cycle must run only the local df -- not a second remote one"
 assert_contains 'unavailable:/remote/nfs' "$out" "the mount stays unavailable while wedged"
 
@@ -142,7 +180,7 @@ assert_contains 'unavailable:/remote/nfs' "$out" "the mount stays unavailable wh
 # still alive the sentinel is *supposed* to keep reporting unavailable, so
 # starting the next cycle too early would assert the wrong thing.
 wedged=$(cat "$TMP/probe/df-probe-disk.pid")
-kill -9 "$wedged" 2>/dev/null || true
+end_stub "$wedged"
 for _ in $(seq 1 100); do
 	kill -0 "$wedged" 2>/dev/null || break
 	sleep 0.1
@@ -177,9 +215,9 @@ for _ in $(seq 1 20); do
 	run_cycle DF_HANG=1 DF_HANGTIME=5 >/dev/null 2>&1 &
 done
 wait
-assert_equal '1' "$(wc -l < "$DF_REMOTE")" \
+assert_equal '1' "$(($(wc -l < "$DF_REMOTE")))" \
 	"concurrent cycles each started a remote df; exactly one may own the probe"
-while read -r _p; do kill -9 "$_p" 2>/dev/null || true; done < "$DF_REMOTE"
+while read -r _p; do end_stub "$_p"; done < "$DF_REMOTE"
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 
 # --- a claim held by another live cycle is respected -------------------------
@@ -193,7 +231,7 @@ rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 sleep 30 & holder=$!
 printf 'claim:%s\n' "$holder" > "$TMP/probe/df-probe-disk.pid"
 out=$(run_cycle)
-assert_equal '0' "$(wc -l < "$DF_REMOTE")" \
+assert_equal '0' "$(($(wc -l < "$DF_REMOTE")))" \
 	"a probe already claimed by a live cycle was started a second time"
 assert_contains 'unavailable:/remote/nfs' "$out" \
 	"a probe claimed by another cycle must report unavailable, not start a second df"
@@ -243,5 +281,48 @@ assert_equal 1 "$((_after - _before))" \
 	"an unrecordable pid must stop the remote df from starting (only the plain df may run)"
 assert_contains "unavailable:/remote/nfs" "$pidout" \
 	"an unrecordable pid must report the remote set unavailable, not drop it"
+
+# --- the same wedge, under the BSDs' rule for a process name -----------------
+#
+# Everything above ran against the host's own ps, so on Linux it says nothing
+# about the platforms where this first broke. The two differ in one rule: BSD
+# reports the basename of the process's executable, Linux the name it was
+# handed, which for a script is the script. Reading /proc/PID/exe applies the
+# BSD rule on a Linux host, so the case that failed on four BSDs is exercised
+# here rather than only in the VM lanes.
+#
+# Only needed where the host's ps does not already work that way: on the BSDs
+# the run above is this run, and /proc is absent there anyway.
+if [ -r /proc/self/exe ]; then
+	mkdir -p "$STUB/bsdps"
+	cat > "$STUB/bsdps/ps" <<'EOF'
+#!/bin/sh
+# ps -o comm= -p PID, with the BSDs' answer: the executable's basename.
+_pid=; _prev=
+for _a in "$@"; do
+	case "$_prev" in -p) _pid=$_a ;; esac
+	_prev=$_a
+done
+[ -n "$_pid" ] || exit 1
+_exe=$(readlink "/proc/$_pid/exe" 2>/dev/null) || exit 1
+[ -n "$_exe" ] || exit 1
+echo "${_exe##*/}"
+EOF
+	chmod +x "$STUB/bsdps/ps"
+
+	while read -r _p; do end_stub "$_p"; done < "$DF_REMOTE"
+	rm -f "$TMP"/probe/*; : > "$DF_REMOTE"; : > "$DF_CALLS"
+
+	PS_STUB="$STUB/bsdps"
+	out=$(DF_HANG=1 run_cycle DF_HANG=1)
+	assert_contains 'unavailable:/remote/nfs' "$out" \
+		"the wedge must be surfaced under BSD ps semantics too"
+	before=$(wc -l < "$DF_CALLS")
+	out=$(DF_HANG=1 run_cycle DF_HANG=1)
+	after=$(wc -l < "$DF_CALLS")
+	PS_STUB=
+	assert_equal "$((before + 1))" "$((after))" \
+		"under BSD ps semantics the wedged df went unrecognised and a second remote one started"
+fi
 
 pass "the remote-df sentinel bounds a wedged mount without blocking the client"
