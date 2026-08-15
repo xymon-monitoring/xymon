@@ -26,7 +26,7 @@ fsf_setup freebsd XYMONCLIENT_FREEBSD
 FSF_LOCAL_TYPE=ufs;      FSF_LOCAL_MP=/
 FSF_PSEUDO_TYPE=procfs;  FSF_PSEUDO_MP=/proc
 FSF_NOINODE_TYPE=msdosfs; FSF_NOINODE_MP=/data
-FSF_REMOTE_TYPE=nfs;     FSF_REMOTE_MP=/net
+FSF_REMOTE_TYPE=fusefs.sshfs; FSF_REMOTE_MP=/ssh
 FSF_EXTRA_TYPE=ext2fs;   FSF_EXTRA_MP=/extra
 FSF_DECOY='procf*'
 
@@ -70,6 +70,10 @@ FSF_COMBINED="$TMP/df-section.sh"
 fsf_extract "$FSF_COMBINED"
 fsf_write_fixture
 fsf_write_stub
+# The client reads the mount list on every DF_LOCAL_ONLY=no cycle now that
+# hard-blocking mounts are guarded (#316); answer it from the fixture rather
+# than from the tester's machine.
+fsf_write_mount_stub
 
 # --- the contract ------------------------------------------------------------
 

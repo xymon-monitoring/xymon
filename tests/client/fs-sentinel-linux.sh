@@ -101,9 +101,7 @@ chmod +x "$STUB/df"
 # (@SoundGoof). exec keeps the pid the client recorded, and leaves the wedge a
 # single process to clean up.
 DF_HANGBIN="$STUB/hang/df"; export DF_HANGBIN
-mkdir -p "$STUB/hang"
-_sleepbin=$(command -v sleep) || fail "no sleep binary to build the wedge fixture from"
-cp "$_sleepbin" "$DF_HANGBIN" && chmod +x "$DF_HANGBIN" || fail "cannot create the wedge fixture"
+fsf_wedge_binary "$DF_HANGBIN"
 
 # Nothing here may outlive the test, including on a failed assertion: fail()
 # exits, and every wedge started by then would keep its delay running.
@@ -148,7 +146,7 @@ run_block() {
 		XYMONCLIENT_FS_REMOTE_DF_BUDGET=2 \
 		PATH="${PS_STUB:+$PS_STUB:}$STUB:$PATH" \
 		"$@" \
-		/bin/sh "$_snip" 2>/dev/null
+		/bin/sh "$_snip" 2>"$TMP/cycle.err" || true
 }
 
 # run_cycle [ENV=VAL ...] -- one client cycle; prints the [df] block.
@@ -164,7 +162,7 @@ local_mounts
 # --- healthy -----------------------------------------------------------------
 out=$(run_cycle)
 assert_contains "/remote/sshfs" "$out" \
-	"a remote filesystem whose type is not hard-blocking must still be reported"
+	"a remote filesystem whose type is not hard-blocking must still be reported (block stderr: $(tr '\n' ' ' < "$TMP/cycle.err" 2>/dev/null | cut -c1-300))"
 assert_contains '/dev/sda1 1000 400 600 40% /' "$out" "the local set must be reported"
 assert_contains 'srv:/exp 100 50 50 50% /remote/nfs' "$out" "the remote set must be reported"
 # The remote df prints its own header; a second one inside the same [df] block
@@ -237,6 +235,45 @@ wait
 assert_equal '1' "$(($(wc -l < "$DF_REMOTE")))" \
 	"concurrent cycles each started a remote df; exactly one may own the probe"
 while read -r _p; do end_stub "$_p"; done < "$DF_REMOTE"
+
+# --- the same window, forced open ---------------------------------------------
+# The 20-cycle race above only lands in the window by luck. This one holds it
+# open: a mv stub sleeps before renaming the pid into place, and a second cycle
+# runs while the first is stuck there. Publishing the pid used to truncate the
+# file first, so the second cycle read an empty value, took it for a stale
+# entry, removed the files and started a probe of its own -- leaving the first
+# cycle's df running with nothing recording it (@SoundGoof). With the rename,
+# the second cycle reads the whole claim and stands down.
+rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
+cat > "$STUB/mv" <<'EOF'
+#!/bin/sh
+# Only the sentinel's publication is delayed; everything else moves at once.
+case "$*" in *df-probe-*.pid) sleep 2 ;; esac
+exec /bin/mv "$@"
+EOF
+chmod +x "$STUB/mv"
+run_cycle DF_HANG=1 DF_HANGTIME=6 >/dev/null 2>&1 &
+_first=$!
+# Wait for the window rather than a duration: the stub's sleep is running once
+# the remote df has been started and the pid file still holds the claim.
+_n=0
+while [ "$_n" -lt 100 ]; do
+	[ -s "$DF_REMOTE" ] && case "$(cat "$TMP/probe/df-probe-disk.pid" 2>/dev/null)" in
+		claim:*) break ;;
+	esac
+	_n=$((_n + 1)); sleep 0.1
+done
+out=$(run_cycle DF_HANG=1 DF_HANGTIME=6)
+wait "$_first" 2>/dev/null || true
+rm -f "$STUB/mv"
+assert_equal '1' "$(($(wc -l < "$DF_REMOTE")))" \
+	"a cycle reading the pid file mid-publication must not start a second probe"
+assert_contains 'unavailable:/remote/nfs' "$out" \
+	"and it must report the mount unavailable, not drop it"
+_recorded=$(cat "$TMP/probe/df-probe-disk.pid" 2>/dev/null)
+assert_equal "$(head -1 "$DF_REMOTE")" "$_recorded" \
+	"the pid file must end up naming the df that is actually running"
+while read -r _p; do end_stub "$_p"; done < "$DF_REMOTE"
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 
 # --- a claim held by another live cycle is respected -------------------------
@@ -276,7 +313,7 @@ local_mounts
 
 # --- the default is unchanged ------------------------------------------------
 rm -f "$TMP"/probe/*
-out=$(env XYMONTMP="$TMP/probe" DF_CALLS="$DF_CALLS" PATH="$STUB:$PATH" /bin/sh "$TMP/df-section.sh" 2>/dev/null)
+out=$(env XYMONTMP="$TMP/probe" DF_CALLS="$DF_CALLS" PATH="$STUB:$PATH" /bin/sh "$TMP/df-section.sh" 2>/dev/null || true)
 assert_contains '/dev/sda1 1000 400 600 40% /' "$out" "the default (local-only) report is unchanged"
 assert_not_contains '/remote/nfs' "$out" "df -l must still keep remote mounts out by default"
 assert_equal '0' "$(find "$TMP/probe" -type f | awk 'END { print NR }')" \
@@ -343,7 +380,7 @@ rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 # comes back empty-and-nonzero and reports the mount 100% full.
 out=$(env DF_CALLS="$DF_CALLS" DF_REMOTE="$DF_REMOTE" XYMONTMP="$TMP/probe" \
 	XYMONCLIENT_FS_DF_LOCAL_ONLY=no XYMONCLIENT_FS_REMOTE_DF_BUDGET=2 \
-	DF_HANG=1 PATH="$STUB:$PATH" /bin/sh "$TMP/df-section.sh" 2>/dev/null)
+	DF_HANG=1 PATH="$STUB:$PATH" /bin/sh "$TMP/df-section.sh" 2>/dev/null || true)
 assert_not_contains '/remote/nfs' "$out" \
 	"a nodev remote type is excluded before the sentinel sees it, so it is not reported"
 assert_equal '0' "$(($(wc -l < "$DF_REMOTE")))" \

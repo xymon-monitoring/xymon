@@ -166,43 +166,54 @@ df_sentinel()
 
 	probe_dir_is_local "$DFPROBEDIR" || return 124
 
-	# Claim the probe before starting it, atomically. Testing for the pidfile
-	# and creating it afterwards let two client cycles both find it absent and
-	# both start a df; only the last pid written was ever recorded, so the
-	# other probe was untracked from then on and more piled up every cycle -
-	# and these are the processes that cannot be killed. Under "set -C" the
-	# create is O_EXCL, so exactly one cycle wins, and winning doubles as the
-	# proof that the pidfile is writable before any df starts.
+	# Claim the probe before starting it, or two cycles both find no pidfile
+	# and both start a df -- and only the last pid written is recorded, so the
+	# others pile up untracked, and these cannot be killed.
 	#
-	# A subshell, not a bare ":": ":" is a POSIX special builtin, and a
-	# redirection error on one is fatal to the shell rather than a non-zero
-	# status. Under dash - /bin/sh on Debian and Ubuntu - "return 124" would
-	# never run, the sentinel would die with status 2, and run_df would emit
-	# nothing for the remote set instead of the unavailable rows. It also keeps
-	# noclobber out of the caller.
+	# The claim goes to a private file and is hard-linked into place: link
+	# fails if the target exists, so one cycle wins, and what it publishes is
+	# complete the moment it is visible. "set -C" gave exclusivity but not
+	# that -- O_EXCL makes the create atomic, not the create-and-write, and a
+	# reader in between saw an empty string, took it for a stale entry, and
+	# started a probe on top of the first (@SoundGoof). Winning also proves
+	# the directory is writable before any df runs.
+	#
+	# The redirect is wrapped in a subshell because a redirection error on a
+	# special builtin kills the shell under dash instead of returning non-zero,
+	# and then "return 124" never runs.
 	#
 	# The claim names the claiming shell and is replaced by df's pid below, so
-	# a cycle killed in the gap leaves a pid that is simply dead and is
-	# collected like any finished probe, rather than a marker nothing clears.
-	if ! ( set -C; echo "claim:$$" > "$_pidf" ) 2>/dev/null; then
+	# a cycle killed in the gap leaves a dead pid, collected like any finished
+	# probe, rather than a marker nothing clears.
+	_tmpf="$_pidf.$$"
+	if ! ( echo "claim:$$" > "$_tmpf" ) 2>/dev/null; then
+		rm -f "$_tmpf"
+		return 124
+	fi
+	# "-d" first: link into a directory puts the file *inside* it, so a
+	# directory where the pidfile belongs would look like a won claim while
+	# nothing recorded the pid. The old redirect simply failed there, and that
+	# is the behaviour to keep: unclaimable means unavailable, not a probe
+	# nobody tracks.
+	if [ -d "$_pidf" ] || ! ln "$_tmpf" "$_pidf" 2>/dev/null; then
 		_old=$(cat "$_pidf" 2>/dev/null)
 		case "$_old" in
 			claim:*)
 				# Another cycle holds the claim and has not started its df yet.
 				_c=${_old#claim:}
-				[ -n "$_c" ] && kill -0 "$_c" 2>/dev/null && return 124
+				[ -n "$_c" ] && kill -0 "$_c" 2>/dev/null && { rm -f "$_tmpf"; return 124; }
 				;;
 			?*)
-				# A df we recorded. Still wedged? The command name is checked
-				# so a recycled PID does not look like one. Read it with ps,
-				# not /proc/PID/comm: ps is POSIX, gives the same answer, is
-				# already a dependency of this client (the [ps] section), and
-				# reads process state only -- it cannot touch the wedged mount.
-				# Take the basename: comm is the short name on Linux and the
-				# BSDs, but the full path on macOS.
+				# A df we recorded. Still wedged? The command name is
+				# checked so a recycled PID does not look like one. ps, not
+				# /proc: POSIX, same answer, already a dependency of this
+				# client, and it reads process state only -- it cannot touch
+				# the wedged mount. Basename, because comm is the short name
+				# on Linux and the BSDs and the full path on macOS.
 				_c=$(ps -o comm= -p "$_old" 2>/dev/null | tr -d '[:space:]')
 				_c=${_c##*/}
 				if kill -0 "$_old" 2>/dev/null && [ "$_c" = df ]; then
+					rm -f "$_tmpf"
 					return 124
 				fi
 				;;
@@ -210,22 +221,43 @@ df_sentinel()
 		# It finished after we stopped waiting. Its output is not usable: we
 		# were not there to see the exit status, so a truncated file is
 		# indistinguishable from a complete one, and its age is unknown.
+		if [ ! -e "$_pidf" ]; then
+			# The link failed with nothing in its way, so this filesystem does
+			# not do hard links -- XYMONTMP pointed somewhere exotic. Every
+			# cycle then reports the guarded mounts unavailable and never
+			# probes: red rather than a false green, but saying nothing about
+			# why. Say it.
+			echo "xymonclient: cannot claim the remote df probe in $_pidf (does $DFPROBEDIR support hard links?)" >&2
+			rm -f "$_tmpf"
+			return 124
+		fi
 		# Discard and re-probe -- fresh data next cycle beats stale or partial
 		# data now. One retry only: if another cycle claims it first, that
 		# cycle owns the probe and this one waits its turn.
 		rm -f "$_pidf" "$_probe"
-		( set -C; echo "claim:$$" > "$_pidf" ) 2>/dev/null || return 124
+		[ -d "$_pidf" ] && { rm -f "$_tmpf"; return 124; }
+		ln "$_tmpf" "$_pidf" 2>/dev/null || { rm -f "$_tmpf"; return 124; }
 	fi
+	rm -f "$_tmpf"
 
 	# Never run a synchronous remote df here: a foreground df would reintroduce
 	# the hang this exists to prevent.
 	( : > "$_probe" ) 2>/dev/null || { rm -f "$_pidf"; return 124; }
 	df "$@" > "$_probe" 2>/dev/null &
 	_pid=$!
-	if ! echo "$_pid" > "$_pidf"; then
+	# Publish the pid the same way the claim was published: a plain
+	# "> $_pidf" truncates before it writes, and a cycle reading in that
+	# interval sees an empty file, removes it, and starts a second probe --
+	# leaving this one's df running with nothing recording it (@SoundGoof).
+	# A rename within one directory replaces the claim in a single step, so a
+	# reader gets either the whole claim or the whole pid.
+	if ! ( printf '%s\n' "$_pid" > "$_tmpf" ) 2>/dev/null || ! mv -f "$_tmpf" "$_pidf" 2>/dev/null; then
+		rm -f "$_tmpf"
 		# The pre-flight passed and this still failed, so a df is running that
-		# the next cycle cannot recognise. Say so: an operator seeing repeated
-		# unavailable rows needs to know a df may be outstanding.
+		# the next cycle cannot recognise. The claim is still in place and this
+		# shell outlives the budget, so no second probe starts meanwhile. Say
+		# so: an operator seeing repeated unavailable rows needs to know a df
+		# may be outstanding.
 		echo "xymonclient: cannot record remote df pid in $_pidf" >&2
 	fi
 	_n=0
@@ -283,14 +315,19 @@ run_df()
 	# collection must not cost that. Returning 0 unconditionally here left a
 	# failing df with no rows looking like a healthy empty report -- the same
 	# false green the marker exists to prevent, reached from the other side.
+	# The noglob switch is set here, not inside the substitution: bash 3.2 and
+	# OpenBSD's ksh both refuse a case statement inside a $( ) with
+	# "syntax error near unexpected token ;;". This client never runs on those
+	# shells, but this block is extracted and run by a test that does.
+	case $- in *f*) _pg=no ;; *) _pg=yes; set -f ;; esac
 	_plain=$(
-		case $- in *f*) ;; *) set -f ;; esac
 		for t in $XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES; do
 			set -- "$@" -x "$t"
 		done
 		df "$@"
 	)
 	_prc=$?
+	[ "$_pg" = yes ] && set +f
 	[ -n "$_plain" ] && printf '%s\n' "$_plain"
 
 	# Remote set: pick the hard-blocking mounts out of /proc/mounts (reading it

@@ -150,7 +150,7 @@ assert_not_contains " -l " "$args" \
 MISSING="$TMP/df-section-missing.sh"
 sed "s!$TMP/proc.filesystems!$TMP/does-not-exist!g" "$SNIPPET" > "$MISSING"
 : > "$DF_LOG"
-( cd "$TMP" && /bin/sh "$MISSING" >/dev/null 2>"$TMP/stderr" )
+( cd "$TMP" && /bin/sh "$MISSING" >/dev/null 2>"$TMP/stderr" ) || true
 args=$(printf ' %s ' "$(cat "$DF_LOG")")
 assert_contains "not readable, dynamic nodev exclusions disabled" "$(cat "$TMP/stderr")" \
 	"an unreadable filesystem list must warn"

@@ -84,6 +84,56 @@ fsf_extract() {
 	fi
 }
 
+# fsf_wedge_binary PATH -- build the fixture the sentinel tests wedge on: a
+# binary at PATH that sleeps for as many seconds as its first argument. The
+# caller names it "df", because ps -o comm= answers with the interpreter for a
+# script and the PID-reuse guard would then take the live fixture for a
+# recycled pid (@SoundGoof).
+#
+# Copying the system sleep is the obvious way to get a binary of that name, and
+# it works on Linux and the BSDs. It does not work everywhere: on an
+# Apple-silicon Mac the kernel SIGKILLs a copy of a platform binary (rc=137,
+# measured on macOS 26.5), so the wedge dies at once, the sentinel correctly
+# reports a finished probe, and every wedged case fails on a fixture that never
+# wedged. Compile one where there is a compiler, fall back to the copy, and --
+# as asan_usable() does for the sanitizer -- prove the result runs before
+# handing it back.
+fsf_wedge_binary() {
+	_wb=$1
+	mkdir -p "$(dirname "$_wb")"
+	_wbcc=${CC:-cc}
+	if command -v "$_wbcc" > /dev/null 2>&1; then
+		cat > "$_wb.c" <<'WEDGE'
+#include <stdlib.h>
+#include <unistd.h>
+
+int main(int argc, char **argv)
+{
+	sleep(argc > 1 ? (unsigned int)atoi(argv[1]) : 20);
+	return 0;
+}
+WEDGE
+		"$_wbcc" -o "$_wb" "$_wb.c" > /dev/null 2>&1 || rm -f "$_wb"
+		rm -f "$_wb.c"
+	fi
+	if [ ! -x "$_wb" ]; then
+		_wbsleep=$(command -v sleep) \
+			|| skip "no C compiler and no sleep binary to build the wedge fixture from"
+		cp "$_wbsleep" "$_wb" && chmod +x "$_wb" || fail "cannot create the wedge fixture"
+	fi
+	# A duration, not a condition: what is being waited for here is a failure
+	# that shows up as the process dying immediately, and there is nothing to
+	# poll for that but the passage of time.
+	"$_wb" 5 &
+	_wbpid=$!
+	sleep 1
+	if ! kill -0 "$_wbpid" 2>/dev/null; then
+		skip "the wedge fixture does not stay alive on this host, so a wedged df cannot be simulated (a copied system binary is killed here)"
+	fi
+	kill -9 "$_wbpid" 2>/dev/null || true
+	wait "$_wbpid" 2>/dev/null || true
+}
+
 # fsf_run SNIPPET LOGFILE [ENV...]
 #   Truncate the arg logs, run SNIPPET in a fresh subshell with $TMP as cwd
 #   (so decoy glob files are in scope), and echo the recorded argv from LOGFILE
@@ -99,10 +149,12 @@ fsf_run() {
 	: > "$DF_LOG"
 	: > "$INODE_LOG"
 	: > "$STDERR_LOG"
+	# "|| true": the block's own exit status is not part of the contract, and
+	# under set -e a non-zero one would kill the caller with no message.
 	(
 		cd "$TMP" || exit 1
 		$FSF_SHELL "$_snippet" >/dev/null 2>"$STDERR_LOG"
-	)
+	) || true
 	printf ' %s ' "$(tr '\n' ' ' < "$_logfile")"
 }
 
@@ -219,10 +271,37 @@ fsf_write_fixture() {
 	export FSF_FIXTURE
 }
 
+# fsf_write_mount_stub -- a mount(8) stub rendered from the fixture, in the BSD
+# spelling ("src on MP (TYPE, opts)"). A client that guards hard-blocking mounts
+# reads the mount list on every DF_LOCAL_ONLY=no cycle, so without this stub the
+# test would read the *tester's* mount table -- and probe whatever remote
+# filesystem happens to be mounted there.
+fsf_write_mount_stub() {
+	# FSF_MOUNT_FMT: how this OS's mount(8) spells one line, as a printf format
+	# taking MOUNTPOINT, TYPE, OPTIONS. FreeBSD and macOS put the type first
+	# inside the parentheses; NetBSD and OpenBSD write "... type <fstype> (...)".
+	# Getting this wrong is invisible in a stubbed test and fatal on the host.
+	_fmt=${FSF_MOUNT_FMT:-'src on %s (%s, %s)\n'}
+	{
+		printf '#!/bin/sh\n'
+		printf 'cat <<\'"'"'MOUNT'"'"'\n'
+		while read -r _t _mp _isremote _rest; do
+			[ -n "$_t" ] || continue
+			if [ "$_isremote" = remote ]; then
+				printf "$_fmt" "$_mp" "$_t" nodev
+			else
+				printf "$_fmt" "$_mp" "$_t" local
+			fi
+		done < "$FSF_FIXTURE"
+		printf 'MOUNT\n'
+	} > "$STUB/mount"
+	chmod +x "$STUB/mount"
+}
+
 # fsf_report [ENV=VAL ...] -- run the combined [df]+[inode] block and print it.
 fsf_report() {
 	: > "$STDERR_LOG"; : > "$DF_LOG"; : > "$INODE_LOG"
-	( cd "$TMP" && env "$@" $FSF_SHELL "$FSF_COMBINED" 2>"$STDERR_LOG" )
+	( cd "$TMP" && env "$@" $FSF_SHELL "$FSF_COMBINED" 2>"$STDERR_LOG" ) || true
 }
 
 # fsf_section OUTPUT NAME -- the [df] or [inode] part of a report.
@@ -259,6 +338,18 @@ fsf_selfcheck() {
 	esac
 }
 
+# fsf_assert_loud REPORT MSG -- the section must not read as green. Two
+# spellings are equally loud and a client may use either: the "collection
+# failed" marker (the column goes yellow) or one 100%-full "unavailable:" row
+# per mount (the column goes red). What is forbidden is the third case -- an
+# empty section, which the server reads as "no filesystems, all is well".
+fsf_assert_loud() {
+	case "$1" in
+		*"collection failed"*|*"unavailable:"*) return 0 ;;
+	esac
+	fail "${2:-}: the report is silent, which the server reads as green: '$1'"
+}
+
 # fsf_contract -- the rules every client obeys, asserted on the emitted report.
 fsf_contract() {
 	_out=$(fsf_report)
@@ -266,7 +357,7 @@ fsf_contract() {
 	_in=$(fsf_section "$_out" inode)
 
 	assert_contains "$FSF_LOCAL_MP" "$_df" \
-		"contract: an ordinary local filesystem must be reported"
+		"contract: an ordinary local filesystem must be reported (block stderr: $(tr '\n' ' ' < "$STDERR_LOG" | cut -c1-300))"
 	assert_not_contains "$FSF_PSEUDO_MP" "$_df" \
 		"contract: $FSF_PSEUDO_TYPE is excluded by default"
 	assert_not_contains "$FSF_REMOTE_MP" "$_df" \
@@ -353,8 +444,8 @@ fsf_contract() {
 	# A df that fails, and a filter that leaves nothing, must both be loud: the
 	# server reads an absent filesystem as green, so silence is a false OK.
 	_out=$(fsf_report DF_FAIL=1)
-	assert_contains "collection failed" "$_out" \
-		"contract: a df that exits nonzero with no output emits a failure marker"
+	fsf_assert_loud "$_out" \
+		"contract: a df that exits nonzero with no output must be loud"
 	assert_not_contains "Filesystem" "$_out" \
 		"contract: the failure marker carries no df header (a header reads as a healthy report)"
 	# ... including where the collection is split in two. A client that runs one
@@ -362,9 +453,9 @@ fsf_contract() {
 	# to lose the marker: swallow the plain df's status, and a failure with no
 	# rows becomes an empty section, which the server reads as green.
 	_out=$(fsf_report DF_FAIL=1 XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
-	assert_contains "collection failed" "$_out" \
-		"contract: the failure marker survives DF_LOCAL_ONLY=no"
+	fsf_assert_loud "$_out" \
+		"contract: a df failure stays loud with DF_LOCAL_ONLY=no"
 	_out=$(fsf_report "XYMONCLIENT_FS_EXCLUDE_TYPES=$FSF_ALL_TYPES")
-	assert_contains "collection failed" "$_out" \
+	fsf_assert_loud "$_out" \
 		"contract: excluding every filesystem must be loud, never a silent empty section"
 }
