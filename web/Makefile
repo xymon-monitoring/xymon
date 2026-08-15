@@ -164,6 +164,15 @@ clean:
 
 install: install-bin install-cgi install-man
 
+# install-cgi hardlinks $(INSTALLBINDIR)/cgiwrap, which install-bin is what
+# puts there. Listing both as prerequisites of "install" does not order them,
+# so a parallel make can start install-cgi first and the very first ln fails
+# on a missing source -- silently, because a shell "for" reports only its last
+# iteration's status. Observed with make -j: history.sh, the first entry of
+# CGISCRIPTS, absent from an otherwise complete install, giving a 404 on the
+# history CGI.
+install-cgi: install-bin
+
 install-bin:
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(PROGRAMS)
@@ -175,13 +184,8 @@ endif
 install-cgi:
 	mkdir -p $(INSTALLROOT)$(CGIDIR)
 	mkdir -p $(INSTALLROOT)$(SECURECGIDIR)
-ifndef PKGBUILD
-	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done
-	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done
-else
-	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done
-	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done
-endif
+	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F || exit 1; done
+	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F || exit 1; done
 
 install-man:
 ifndef PKGBUILD
