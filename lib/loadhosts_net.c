@@ -92,7 +92,7 @@ int load_hostinfo(char *targethost)
 
 	hival_hostinfo.hostname = hivals[XMH_HOSTNAME];
 	if (hivals[XMH_IP]) 
-		strncpy(hival_hostinfo.ip, hivals[XMH_IP], sizeof(hival_hostinfo.ip));
+		snprintf(hival_hostinfo.ip, sizeof(hival_hostinfo.ip), "%s", hivals[XMH_IP]);
 	else
 		*(hival_hostinfo.ip) = '\0';
 

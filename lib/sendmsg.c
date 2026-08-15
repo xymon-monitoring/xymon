@@ -274,7 +274,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 		hent = gethostbyname(rcptip);
 		if (hent) {
 			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
-			strncpy(hostip, inet_ntoa(addr), sizeof(hostip));
+			snprintf(hostip, sizeof(hostip), "%s", inet_ntoa(addr));
 
 			if (inet_aton(hostip, &addr) == 0) {
 				result = XYMONSEND_EBADIP;
