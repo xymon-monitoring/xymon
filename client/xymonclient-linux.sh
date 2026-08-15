@@ -278,13 +278,20 @@ run_df()
 	# df processed no filesystem at all, exited nonzero, and every one of those
 	# healthy mounts came out unavailable and 100% full. The subshell gets a
 	# copy of the positional parameters, so they stay here.
-	(
+	# Its status is kept: emit_df turns "no output and non-zero" into the
+	# failure marker that drives the server yellow, and splitting the
+	# collection must not cost that. Returning 0 unconditionally here left a
+	# failing df with no rows looking like a healthy empty report -- the same
+	# false green the marker exists to prevent, reached from the other side.
+	_plain=$(
 		case $- in *f*) ;; *) set -f ;; esac
 		for t in $XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES; do
 			set -- "$@" -x "$t"
 		done
 		df "$@"
 	)
+	_prc=$?
+	[ -n "$_plain" ] && printf '%s\n' "$_plain"
 
 	# Remote set: pick the hard-blocking mounts out of /proc/mounts (reading it
 	# never blocks), then probe them behind the sentinel. Types are matched by
@@ -295,14 +302,16 @@ run_df()
 	# "$@" and would exclude the very mount named beside it, which is the same
 	# empty-and-nonzero df as above, reported as unavailable rather than simply
 	# left out.
-	[ -r /proc/mounts ] || return 0
+	# From here on the plain df's status is what a caller sees when nothing at
+	# all was collected: no local rows, and no remote set to fall back on.
+	[ -r /proc/mounts ] || return $_prc
 	_rm=$(awk -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" -v excl="$EXCLUDES" '
 		BEGIN {
 			n = split(types, a, /[ \t]+/); for (i = 1; i <= n; i++) t[a[i]] = 1
 			m = split(excl,  b, /[ \t]+/); for (i = 1; i <= m; i++) x[b[i]] = 1
 		}
 		($3 in t) && !($3 in x) { mp = $2; gsub(/\\040/, " ", mp); print mp }' /proc/mounts)
-	[ -n "$_rm" ] || return 0
+	[ -n "$_rm" ] || return $_prc
 
 	case $- in *f*) _rg=no ;; *) _rg=yes; set -f ;; esac
 	_oifs=$IFS; IFS='

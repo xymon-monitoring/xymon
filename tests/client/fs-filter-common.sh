@@ -357,6 +357,13 @@ fsf_contract() {
 		"contract: a df that exits nonzero with no output emits a failure marker"
 	assert_not_contains "Filesystem" "$_out" \
 		"contract: the failure marker carries no df header (a header reads as a healthy report)"
+	# ... including where the collection is split in two. A client that runs one
+	# df for the local set and probes remote mounts separately has a second way
+	# to lose the marker: swallow the plain df's status, and a failure with no
+	# rows becomes an empty section, which the server reads as green.
+	_out=$(fsf_report DF_FAIL=1 XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
+	assert_contains "collection failed" "$_out" \
+		"contract: the failure marker survives DF_LOCAL_ONLY=no"
 	_out=$(fsf_report "XYMONCLIENT_FS_EXCLUDE_TYPES=$FSF_ALL_TYPES")
 	assert_contains "collection failed" "$_out" \
 		"contract: excluding every filesystem must be loud, never a silent empty section"
