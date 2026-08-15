@@ -23,7 +23,9 @@ LOGFETCHOPTS=""
 # mechanisms, matching rules, examples - lives in xymonclient.cfg(5); the
 # blocks below list only each OS's defaults. Unlisted OSes ignore the
 # variables. WARNING: XYMONCLIENT_FS_DF_LOCAL_ONLY=no can hang df on a stale
-# remote mount and turn the whole host purple - see the manual first.
+# remote mount and turn the whole host purple - see the manual first. On Linux
+# that hang is bounded by the remote-df sentinel (XYMONCLIENT_FS_REMOTE_DF_BUDGET,
+# XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES); other clients carry it in full.
 #
 # Linux (xymonclient-linux.sh) - excludes nodev pseudo-filesystems and the
 # always-full iso9660/squashfs images:
