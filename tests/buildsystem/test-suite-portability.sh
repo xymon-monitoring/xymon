@@ -88,6 +88,18 @@ report "gnu-regex" '(grep|sed|awk|expr)[^|]*\\(b|<|>|w|W|s|S|d|D)([^[:alnum:]]|$
 report "root-lane" 'chmod +[-+=rwx]*[0-7]?[0-5][0-7][0-7]([^0-9]|$)|chmod +[ugoa]*-w' \
 	"the lanes run as root; a permission bit will not force this failure"
 
+# An -I directory is searched for <angle> includes too, so a source directory
+# put there can capture a system header. macOS makes that concrete: the SDK's
+# stdio.h includes <Availability.h>, the filesystem is case-insensitive, and
+# lib/availability.h answers instead -- every system type after it is unknown,
+# and the three tests that reached lib/ this way did not build on the macOS
+# lanes. -iquote is searched for "quoted" includes only, which is all an
+# in-tree header needs. Generated directories are deliberately NOT flagged:
+# rrd-api-compat.sh puts its mock <rrd.h> on -I precisely so that an angle
+# include finds it.
+report "include-shadow" '\-I *"?\$\{?ROOT' \
+	"an -I source directory also answers <angle> includes; use -iquote (macOS: lib/availability.h captures the SDK's Availability.h)"
+
 # Interpreters the BSD runners do not have.
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
 	"not installed on the BSD lanes; awk and sh are"
@@ -129,10 +141,11 @@ probe="$work/probe.sh"
 	printf 'grep -E %s x\n' "'\\bword\\b'"
 	printf 'chmod 500 d\n'
 	printf 'chmod 555 d\n'
+	printf 'cc -I"$ROOT/lib" x.c\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "6" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "7" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # The link-flags rule the same way, including the bypass it used to allow: the
 # helpers named in a comment and nowhere else.

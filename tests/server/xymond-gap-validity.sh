@@ -72,7 +72,7 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 # pcre2.h, which lives under /usr/local/include or /usr/pkg/include on the BSDs.
 harness_cflags=$(xymon_cflags "$ROOT")
 # shellcheck disable=SC2086
-"$CC" $harness_cflags -I"$ROOT/lib" -o "$work/harness" \
+"$CC" $harness_cflags -iquote "$ROOT/lib" -o "$work/harness" \
 	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
