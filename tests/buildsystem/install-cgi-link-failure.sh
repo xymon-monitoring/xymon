@@ -38,11 +38,13 @@ mkdir -p "$work/bin" "$work/cgi" "$work/seccgi"
 : >"$work/bin/cgiwrap"
 first=$(sed -n 's/^CGISCRIPTS *= *//p' "$ROOT/web/Makefile" | awk '{print $1}')
 [ -n "$first" ] || fail "could not read the first CGISCRIPTS entry from web/Makefile"
-mkdir "$work/cgi/$first"
-chmod 500 "$work/cgi/$first"
+# The obstruction has to hold for root: the BSD lanes run as one, and a
+# permission bit means nothing there. "ln SRC DIR" resolves to DIR/cgiwrap, so
+# making that an existing directory forces the link to fail whatever the
+# privileges - ln would have to unlink a directory, which only rmdir can do.
+mkdir -p "$work/cgi/$first/cgiwrap"
 
 rc=0; run_install_cgi "$work" || rc=$?
-chmod 700 "$work/cgi/$first"
 [ "$rc" -ne 0 ] \
 	|| fail "install-cgi reported success although the link for '$first' could not be made: $(cat "$work/make.log")"
 
