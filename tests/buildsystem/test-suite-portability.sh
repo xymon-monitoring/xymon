@@ -37,8 +37,16 @@ files=$(
 [ -n "$files" ] || fail "found no test scripts to check"
 
 # report RULE PATTERN WHY -- flag every non-comment line matching PATTERN.
+#
+# Each pattern is kept, and the non-vacuity probe at the end matches with the
+# ones recorded here rather than a copy of them. The copy is how the root-lane
+# rule was widened while its probe still exercised the narrow form, so the
+# probe kept passing over a gap it was there to expose.
+__rule_patterns=()
 report() {
 	local rule=$1 pattern=$2 why=$3 f line
+
+	__rule_patterns[${#__rule_patterns[@]}]=$pattern
 	for f in $files; do
 		# Drop comment lines before matching, keeping real line numbers.
 		# "|| true" twice: a grep with no match exits 1, which set -e and
@@ -65,6 +73,20 @@ report "gnu-only" 'sed +-i|grep +[^|]*--include|grep +-[a-zA-Z]*P|stat +-c|readl
 # file shipped a mapfile rule that tested nothing on OpenBSD.
 report "gnu-regex" '(grep|sed|awk|expr)[^|]*\\(b|<|>|w|W|s|S|d|D)([^[:alnum:]]|$)' \
 	"GNU-only regex escape; POSIX has [[:alnum:]] and (^|[^...])"
+
+# The lanes run as root, where a permission bit stops nothing. A test that
+# takes write access away to force a failure therefore passes on a developer's
+# machine and fails in CI, having proved the opposite of what it claims. Force
+# the failure structurally instead - an existing directory where a file is
+# expected, a path that is not there at all.
+#
+# The owner digit carries it: 6 and 7 are the two that grant both read and
+# write, so [0-5] is exactly the modes that deny one of them, whatever the
+# group and other digits say. Matching only the modes ending in 00 missed
+# "chmod 555 dir", which is how a directory is usually made read-only
+# (@SoundGoof).
+report "root-lane" 'chmod +[-+=rwx]*[0-7]?[0-5][0-7][0-7]([^0-9]|$)|chmod +[ugoa]*-w' \
+	"the lanes run as root; a permission bit will not force this failure"
 
 # Interpreters the BSD runners do not have.
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
@@ -105,9 +127,12 @@ probe="$work/probe.sh"
 	printf 'sed -i s/a/b/ f\n'
 	printf 'python3 -c pass\n'
 	printf 'grep -E %s x\n' "'\\bword\\b'"
+	printf 'chmod 500 d\n'
+	printf 'chmod 555 d\n'
 } >"$probe"
-hits=$(grep -cE '(^|[^[:alnum:]_])(mapfile|readarray)([^[:alnum:]_]|$)|sed +-i|(^|[^-[:alnum:]_])python3?[[:space:]]|(grep|sed|awk|expr)[^|]*\\(b|<|>|w|W|s|S|d|D)([^[:alnum:]]|$)' "$probe")
-assert_equal "4" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
+hits=$(grep -cE "$probe_pattern" "$probe")
+assert_equal "6" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # The link-flags rule the same way, including the bypass it used to allow: the
 # helpers named in a comment and nowhere else.
