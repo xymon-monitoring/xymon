@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/network/smtp-no-pregreet.sh
+# tests/xymonnet/smtp-no-pregreet.sh
 #
 # Guard for xymon-monitoring/xymon#450: the SMTP probes must not speak before
 # the server greets them.

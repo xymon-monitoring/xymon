@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/notbefore-notafter.sh
+# tests/libxymon/notbefore-notafter.sh
 #
 # Regression guard for issue #298: the NOTBEFORE:/NOTAFTER: hosts.cfg tags did
 # not work. timestr2timet() converts their YYYYMMDDHHMM timestamps and had two

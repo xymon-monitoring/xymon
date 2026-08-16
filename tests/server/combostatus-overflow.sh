@@ -13,7 +13,7 @@
 # write with snprintf(errtext, sizeof(errtext), ...).
 #
 # evaluate() is static and pulls in compute() and the value machinery, so --
-# like tests/server/digest-md5hash.sh -- this (1) binds to the real source:
+# like tests/libxymon/digest-md5hash.sh -- this (1) binds to the real source:
 # the bounded snprintf must be present and the unbounded sprintf into errtext
 # gone, and (2) compiles a faithful copy of the format step and shows that a
 # 16 KB expression is written into the 1 KB buffer without touching a trailing
