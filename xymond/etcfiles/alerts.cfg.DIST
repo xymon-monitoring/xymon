@@ -91,7 +91,20 @@
 #                longer or shorter than the given duration. The operators
 #                are >, >=, < and <=. A duration is a number optionally
 #                followed by m (minutes, default), h (hours), d (days),
-#                or w (weeks).
+#                or w (weeks). This is the age of the alert EVENT, which
+#                survives a yellow->red change: a status yellow for two
+#                hours matches DURATION>10 the moment it turns red. For
+#                the age of the colour itself, use FOR.
+#    FOR       - Rule matching only once the rule's colour has held for
+#                at least the given time, written as for DURATION. Use it
+#                to damp short-lived transitions:
+#
+#                    HOST=db1 SERVICE=disk COLOR=red FOR=10
+#                        MAIL admin@example.com
+#
+#                alerts on a red that has lasted ten minutes, whether it
+#                arrived from green or from yellow. The rule must name
+#                exactly one COLOR.
 #    RECOVERED - send recovery and disabled-state messages to matching
 #                recipients. This can be set on a rule or recipient.
 #    NORECOVERED
