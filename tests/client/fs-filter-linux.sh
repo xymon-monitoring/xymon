@@ -3,26 +3,22 @@
 #
 # tests/client/fs-filter-linux.sh
 #
-# Regression guard for xymon-monitoring/xymon#96 (refs #49):
-# xymonclient-linux.sh respects four environment variables that tune
-# which filesystems appear in the df/inode blocks of the client report:
+# xymonclient-linux.sh under the XYMONCLIENT_FS_* contract (#49, #96), plus the
+# parts that are Linux's alone: exclusions derived from /proc/filesystems, the
+# rootfs exemption, and the hard-blocking types that must never reach the
+# unguarded df (#316).
 #
-#   XYMONCLIENT_FS_INCLUDE_TYPES   types to un-exclude (e.g. tmpfs)
-#   XYMONCLIENT_FS_EXCLUDE_TYPES   additional types to exclude
-#   XYMONCLIENT_FS_DF_LOCAL_ONLY   yes (default, df -l) vs no
+# The shared contract lives in fs-filter-common.sh and is asserted on the
+# emitted [df]/[inode] sections. What this file supplies is the dialect: the
+# five filesystems the fixture must contain, the row formats this client's
+# post-processing expects, and the few lines that turn Linux's "-x TYPE" argv
+# into the stub's answer.
 #
-# The script reads /proc/filesystems directly and shells out to df.
-# To test in isolation we extract the [df] section from the script,
-# rewrite the /proc/filesystems path to point at a fixture, and run it
-# with a df stub that records the command-line it was invoked with.
-#
-# The extraction (sed pattern below) is the brittle bit -- if anyone
-# restructures xymonclient-linux.sh in a way that breaks the
-# `echo "[df]"` ... `echo "[inode]"` block boundary, this test will
-# stop catching the actual filter logic. That trade is conscious:
-# wrapping every shell-out in the full script would need stubs for
-# uptime, who, vmstat, top, free, ifconfig, iostat, ps and several
-# others, which is more surface than the test buys back.
+# The [df] block is extracted from the script and run in isolation with
+# /proc/filesystems and /proc/mounts repointed at fixtures -- wrapping the whole
+# script would need stubs for uptime, who, vmstat, top, free, ifconfig, iostat,
+# ps and more, which is more surface than the test buys back. The extraction
+# pattern is the brittle part, and that trade is conscious.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -30,326 +26,139 @@ set -euo pipefail
 # shellcheck source=tests/client/fs-filter-common.sh
 . "$(dirname "$0")/fs-filter-common.sh"
 
-# Resolve SCRIPT (in-tree default; $XYMONCLIENT_LINUX, set by autopkgtest, points
-# at the INSTALLED script so we test what the package ships -- same-version
-# artifacts only, see "Path discovery" in tests/README.md), apply the
-# fail-on-dangling-override / skip-if-absent contract, assert the #49/#96 FS
-# filter is still present (its absence is a regression, not a skip, per
-# tests/README.md), and set up TMP/STUB/DF_LOG/INODE_LOG/STDERR_LOG/PATH.
 fsf_setup linux XYMONCLIENT_LINUX
+
+# --- the dialect -------------------------------------------------------------
+
+# Roles. sysfs is nodev, so it is excluded by the rule derived from
+# /proc/filesystems; fuse.sshfs is remote but not a hard-blocking type and not a
+# nodev token ("fuse" is, and matching is exact), so it is hidden by df -l alone
+# -- which is what the contract's remote checks are about.
+FSF_LOCAL_TYPE=ext4;        FSF_LOCAL_MP=/
+FSF_PSEUDO_TYPE=sysfs;      FSF_PSEUDO_MP=/sys
+FSF_NOINODE_TYPE=btrfs;     FSF_NOINODE_MP=/data
+FSF_REMOTE_TYPE=fuse.sshfs; FSF_REMOTE_MP=/remote/ssh
+FSF_EXTRA_TYPE=xfs;         FSF_EXTRA_MP=/extra
+FSF_DECOY='sysf*'
+
+FSF_DISK_HEADER='Filesystem 1024-blocks Used Available Capacity Mounted on'
+FSF_DISK_ROW='src 1000000 500000 500000 50%% %s'
+FSF_INODE_HEADER='Filesystem Inodes IUsed IFree IUse%% Mounted on'
+FSF_INODE_ROW='src 1000 100 900 10%% %s'
+# df prints "-" in the IUse% column for a filesystem with no inode limit;
+# emit_df drops those rows on field 5.
+FSF_INODE_NOLIMIT_ROW='src 0 0 0 - %s'
+
+# Linux excludes by repeating "-x TYPE" and asks for inodes with -i.
+FSF_STUB_PARSE='_prev=
+for a in "$@"; do
+	case "$_prev" in -x) _ex="$_ex$a " ;; esac
+	case "$a" in
+		-l) _local=1 ;;
+		-i) _inode=1 ;;
+	esac
+	_prev=$a
+done'
+
+FSF_ARGV_PLAIN='-P'
+FSF_ARGV_EXCLUDE_PSEUDO="-P -x $FSF_PSEUDO_TYPE"
 
 # --- fixtures ----------------------------------------------------------------
 
-# Representative /proc/filesystems. Genuine pseudo-FS that must default-exclude
-# (sysfs, proc, overlay, nfs, nfs4); real local FS that merely happen to be nodev
-# and so are default-INCLUDED (tmpfs, zfs); the never-excluded special case
-# (rootfs); and two device-backed FS that must not appear in the nodev list.
+# /proc/filesystems as a real host has it: the pseudo types that must default-
+# exclude (sysfs, proc, overlay), the remote ones (nfs, nfs4, cifs -- all nodev,
+# which is why surfacing them needs INCLUDE_TYPES as well as DF_LOCAL_ONLY=no),
+# the real local filesystems that merely happen to be nodev and are included by
+# default (tmpfs, zfs), the never-excluded rootfs, and device-backed types.
 cat > "$TMP/proc.filesystems" <<'EOF'
 nodev	sysfs
 nodev	tmpfs
 nodev	zfs
 nodev	proc
-	ext4
-	xfs
 nodev	overlay
+nodev	fuse
 nodev	nfs
 nodev	nfs4
+nodev	cifs
 nodev	rootfs
+	ext4
+	xfs
+	btrfs
 EOF
 
-# Matching filenames expose accidental pathname expansion of configured
-# filesystem type tokens when snippets run with $TMP as their working directory.
-: > "$TMP/tmpfs"
-: > "$TMP/fuse.sshfs"
-
-# Extract just the [df] block (stop at [inode]) and the combined [df]+[inode]
-# block (stop at [mount]), rewriting the /proc/filesystems reference at the
-# fixture in both. The [inode] block reuses the EXCLUDES/ROOTFS the [df] block
-# computed, so the combined block must run them together -- a lone [inode]
-# snippet would see an empty EXCLUDES.
-# /proc/mounts fixture. Since the remote-df sentinel (#316) the LOCAL_ONLY=no
-# case walks the mount list looking for hard-blocking types, so without this
-# rewrite the test reads the *tester's* mount table: on a machine with a
-# cifs/ceph/glusterfs/lustre/afs mount it would probe that real filesystem and
-# drop probe files in $XYMONTMP. A local-only fixture keeps the sentinel dormant
-# -- it is covered by fs-sentinel-linux.sh -- and XYMONTMP points inside $TMP so
-# nothing can land in /tmp either way.
+# /proc/mounts: local only, so the remote-df sentinel stays dormant here -- it
+# has its own test. Without this rewrite the LOCAL_ONLY=no case would walk the
+# *tester's* mount table and probe a real cifs/ceph/glusterfs mount.
 printf '/dev/sda1 / ext4 rw 0 0\n' > "$TMP/proc.mounts"
 export XYMONTMP="$TMP"
+
+# Files whose names match the type globs used below: if a configured token were
+# expanded as a pathname, "sysf*" would become "sysfs" and un-exclude it.
+: > "$TMP/sysfs"
+: > "$TMP/fuse.sshfs"
+
 PROC_REWRITE="s!/proc/filesystems!$TMP/proc.filesystems!g; s!/proc/mounts!$TMP/proc.mounts!g"
 SNIPPET="$TMP/df-section.sh"
 fsf_extract "$SNIPPET" "$PROC_REWRITE" '\[inode\]'
-COMBINED="$TMP/df-inode-section.sh"
-fsf_extract "$COMBINED" "$PROC_REWRITE"
+FSF_COMBINED="$TMP/df-inode-section.sh"
+fsf_extract "$FSF_COMBINED" "$PROC_REWRITE"
 
-# --- stubs -------------------------------------------------------------------
-
-# df stub: append its full argv to a log file, emit a minimal valid table
-# so the downstream `sed` in the script has something to chew on. The [df] and
-# [inode] blocks both shell out to df; route the inode invocation (`df -Pil` /
-# `df -i`) to its own log so each block's flags can be asserted independently.
-cat > "$STUB/df" <<EOF
-#!/usr/bin/env bash
-if [[ " \$* " =~ -P[a-zA-Z]*i ]] || [[ " \$* " =~ " -i " ]]; then
-	echo "\$*" >> "$INODE_LOG"
-else
-	echo "\$*" >> "$DF_LOG"
-fi
-printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\n'
-printf '/dev/sda1 1000000 500000 500000 50%% /\n'
-EOF
-chmod +x "$STUB/df"
-
-# readlink stub: the script does `readlink -m /dev/root` early in the
-# block. Print a sentinel so the sed substitution in the script succeeds.
+# readlink stub: the block resolves /dev/root early on.
 cat > "$STUB/readlink" <<'EOF'
 #!/usr/bin/env bash
 echo "/dev/sda1"
 EOF
 chmod +x "$STUB/readlink"
 
-# --- runner ------------------------------------------------------------------
+fsf_write_fixture
+fsf_write_stub
 
-# run_snippet runs the [df]-only block and returns the df argv; run_inode runs
-# the combined block and returns the *inode* invocation's argv (the df stub
-# routes it to INODE_LOG). Both are thin shims over fsf_run (fs-filter-common.sh)
-# so the call sites and the inline per-case env prefix stay unchanged; see the
-# leak warning below.
+# --- the contract ------------------------------------------------------------
+
+fsf_selfcheck
+fsf_contract
+
+# --- Linux's own rules -------------------------------------------------------
+
 run_snippet() { fsf_run "$SNIPPET" "$DF_LOG"; }
-run_inode()   { fsf_run "$COMBINED" "$INODE_LOG"; }
 
-# Callers pass per-case env vars via the inline prefix on the
-# `args=$(VAR=val run_snippet)` invocation. Do NOT also set them on
-# the outer `args=$(...)` -- e.g. `VAR=val args=$(VAR=val run_snippet)`
-# is a *single* simple command with no command word, which makes both
-# assignments target the calling shell. The outer one then leaks VAR
-# into every subsequent case. Use a single inline prefix on the
-# command-substitution side only.
-
-# --- default behaviour: -P -l, every nodev (except rootfs) excluded ---------
-
+# Exclusions are derived from /proc/filesystems: every nodev type goes, except
+# rootfs and the real local filesystems named by the INCLUDE_TYPES default.
 args=$(run_snippet)
+assert_contains " -x proc "     "$args" "a nodev pseudo type is excluded"
+assert_contains " -x overlay "  "$args" "so is overlay"
+assert_contains " -x iso9660 "  "$args" "the always-full images are excluded by default too"
+assert_contains " -x squashfs " "$args" "including squashfs"
+assert_contains " -x fuse.snapfuse " "$args" "and the FUSE spelling snapd falls back to"
+assert_not_contains " -x tmpfs "  "$args" "tmpfs is nodev but real, and stays"
+assert_not_contains " -x zfs "    "$args" "so does zfs"
+assert_not_contains " -x rootfs " "$args" "rootfs is never excluded"
+assert_not_contains " -x ext4 "   "$args" "a device-backed type is not touched"
 
-assert_contains " -P "        "$args" "default must pass -P to df"
-assert_contains " -l "        "$args" "default must pass -l to df (local only)"
-assert_contains " -x iso9660 " "$args" "default must exclude iso9660 (always-full image)"
-assert_contains " -x squashfs " "$args" "default must exclude squashfs (always-full image)"
-assert_contains " -x fuse.snapfuse " "$args" "default must exclude fuse.snapfuse (snap FUSE image, always 100%)"
-assert_contains " -x sysfs "  "$args" "default must exclude sysfs (pseudo nodev)"
-assert_contains " -x overlay " "$args" "default must exclude overlay (pseudo nodev)"
-assert_contains " -x nfs "    "$args" "default must exclude nfs (pseudo nodev)"
-assert_not_contains " -x tmpfs " "$args" "default must INCLUDE tmpfs (real local fs that is nodev)"
-assert_not_contains " -x zfs "   "$args" "default must INCLUDE zfs (real local fs that is nodev)"
-assert_not_contains " -x rootfs " "$args" "default must NOT exclude rootfs (special case)"
-assert_not_contains " -x ext4 " "$args" "default must NOT exclude ext4 (device-backed)"
-
-# --- XYMONCLIENT_FS_INCLUDE_TYPES un-excludes one type ----------------------
-
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs run_snippet)
-assert_not_contains " -x tmpfs " "$args" \
-	"XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs must drop tmpfs from -x list"
-assert_contains " -x sysfs " "$args" \
-	"XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs must not affect other excludes"
-
-# Multiple include types in one call.
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES="tmpfs overlay" run_snippet)
-assert_not_contains " -x tmpfs "   "$args" "multi-include must drop tmpfs"
-assert_not_contains " -x overlay " "$args" "multi-include must drop overlay"
-assert_contains     " -x sysfs "   "$args" "multi-include must leave sysfs"
-
-# Type tokens are literal, not shell globs. The matching $TMP/tmpfs file must
-# not turn "tmp*" into "tmpfs" and accidentally un-exclude tmpfs.
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES='tmp*' run_snippet)
-assert_contains " -x tmpfs " "$args" \
-	"include type tokens must not undergo pathname expansion"
-
-# --- XYMONCLIENT_FS_EXCLUDE_TYPES adds extra exclusions ---------------------
-
-args=$(XYMONCLIENT_FS_EXCLUDE_TYPES=ext4 run_snippet)
-assert_contains " -x ext4 "  "$args" "XYMONCLIENT_FS_EXCLUDE_TYPES=ext4 must add ext4"
-assert_contains " -x sysfs " "$args" "extra exclude must not displace defaults"
-
-# Extra exclude that's already in the default list must not be duplicated.
-# `grep -o | wc -l` counts occurrences across one line (grep -c would cap at
-# 1 per line, hiding a duplicate); BSD/macOS wc pads its output with leading
-# spaces, so normalize through arithmetic before comparing.
-args=$(XYMONCLIENT_FS_EXCLUDE_TYPES=tmpfs run_snippet)
-tmpfs_count=$(printf '%s' "$args" | grep -o -- '-x tmpfs' | wc -l)
-tmpfs_count=$((tmpfs_count))
-assert_equal 1 "$tmpfs_count" \
-	"XYMONCLIENT_FS_EXCLUDE_TYPES=tmpfs must not duplicate an existing exclude"
-
-# The matching $TMP/fuse.sshfs file must not rewrite the configured literal.
-args=$(XYMONCLIENT_FS_EXCLUDE_TYPES='fuse.*' run_snippet)
-assert_contains " -x fuse.* " "$args" \
-	"exclude type tokens must not undergo pathname expansion"
-assert_not_contains " -x fuse.sshfs " "$args" \
-	"exclude type glob must not expand to a working-directory filename"
-
-# --- include + exclude precedence: exclude wins -----------------------------
-#
-# INCLUDE is applied first (un-excludes the type), then EXCLUDE re-adds it,
-# so a type named in both lists stays excluded -- the documented contract
-# ("If a type appears in both lists, EXCLUDE wins").
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs XYMONCLIENT_FS_EXCLUDE_TYPES=tmpfs run_snippet)
-assert_contains " -x tmpfs " "$args" \
-	"a type in both include and exclude lists must stay excluded (exclude wins)"
-
-# --- XYMONCLIENT_FS_DF_LOCAL_ONLY=no excludes only what can hard-block -------
-# Before the remote-df sentinel (#316), "no" meant one df run over everything,
-# which is what could wedge on a dead server. Collection is now split: this
-# first call drops the hard-blocking types with -x (which filters the mount
-# list before df stat()s anything, exactly as -l does), and those mounts are
-# then probed separately behind the sentinel, covered by fs-sentinel-linux.sh.
-#
-# It deliberately does NOT use -l here: -l would drop every remote filesystem,
-# including healthy types that can be stat()ed safely, which is not what
-# LOCAL_ONLY=no asks for. What must hold is that no hard-blocking type reaches
-# this call.
-
+# No hard-blocking type may reach the unguarded df. This one stays at argv
+# level on purpose: it is a claim about the call, not about the report -- the
+# whole point is that df must never be asked to stat these (#316).
 args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=no run_snippet)
-assert_contains " -P " "$args" "DF_LOCAL_ONLY=no must still pass -P"
-assert_not_contains " -l " "$args" \
-	"DF_LOCAL_ONLY=no must not use -l: that would drop healthy remote filesystems"
 for t in nfs nfs4 cifs smb3 ceph glusterfs fuse.glusterfs lustre afs; do
 	assert_contains " -x $t " "$args" \
-		"DF_LOCAL_ONLY=no must exclude the hard-blocking type '$t' from the unguarded df (#316)"
+		"DF_LOCAL_ONLY=no must keep the hard-blocking type '$t' out of the unguarded df (#316)"
 done
+assert_not_contains " -l " "$args" \
+	"DF_LOCAL_ONLY=no must not fall back to -l: that would drop healthy remote filesystems"
 
-args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=yes run_snippet)
-assert_contains " -l " "$args" "DF_LOCAL_ONLY=yes must still pass -l"
-
-# An invalid value must fail safe rather than silently exposing remote mounts.
-args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=YES run_snippet)
-assert_contains " -l " "$args" \
-	"invalid DF_LOCAL_ONLY value must fall back to local-only mode"
-assert_contains "invalid XYMONCLIENT_FS_DF_LOCAL_ONLY" "$(cat "$STDERR_LOG")" \
-	"invalid DF_LOCAL_ONLY value must produce a warning"
-
-# --- [inode] report must be filtered the same way as [df] -------------------
-#
-# The [inode] block runs `df -Pil -x $EXCLUDES`, reusing the exact exclude set
-# the [df] block built (iso9660 is part of that set via the EXCLUDE_TYPES
-# default, no longer a separate hardcoded -x). Extracting [df] alone (the SNIPPET above)
-# never exercises this second df invocation, so a regression that leaves the
-# inode report unfiltered would go unnoticed. run_inode runs both blocks and
-# returns the *inode* invocation's argv; assert the same nodev/rootfs/real-FS
-# rules hold there.
-
-iargs=$(run_inode)
-assert_contains     " -x sysfs "  "$iargs" "inode report must exclude sysfs (pseudo nodev), same as df"
-assert_not_contains " -x tmpfs "  "$iargs" "inode report must INCLUDE tmpfs (real local fs), same as df"
-assert_contains     " -x overlay " "$iargs" "inode report must exclude overlay (pseudo nodev), same as df"
-assert_not_contains " -x ext4 "   "$iargs" "inode report must NOT exclude ext4 (non-nodev)"
-assert_not_contains " -x rootfs " "$iargs" "inode report must NOT exclude rootfs (special case)"
-
-# The include/exclude env vars must reach the inode block too, not just [df].
-iargs=$(XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs run_inode)
-assert_not_contains " -x tmpfs " "$iargs" \
-	"XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs must also drop tmpfs from the inode report"
-iargs=$(XYMONCLIENT_FS_EXCLUDE_TYPES=ext4 run_inode)
-assert_contains " -x ext4 " "$iargs" \
-	"XYMONCLIENT_FS_EXCLUDE_TYPES=ext4 must also add ext4 to the inode report"
-
-# --- /proc/filesystems missing: warn, no excludes (script must not crash) ---
-
-# Repoint the snippet at a non-existent path; the [-r ...] guard should
-# kick in, the warning go to stderr, and df be invoked without any nodev
-# -x flags (iso9660 is always passed).
-MISSING_SNIPPET="$TMP/df-section-missing.sh"
-sed "s!$TMP/proc.filesystems!$TMP/does-not-exist!g" "$SNIPPET" > "$MISSING_SNIPPET"
-
+# An unreadable /proc/filesystems disables only the derived exclusions.
+MISSING="$TMP/df-section-missing.sh"
+sed "s!$TMP/proc.filesystems!$TMP/does-not-exist!g" "$SNIPPET" > "$MISSING"
 : > "$DF_LOG"
-/bin/sh "$MISSING_SNIPPET" >/dev/null 2>"$TMP/stderr"
+( cd "$TMP" && /bin/sh "$MISSING" >/dev/null 2>"$TMP/stderr" )
 args=$(printf ' %s ' "$(cat "$DF_LOG")")
-
-# NB: our sed rewrite of /proc/filesystems also rewrites the warning text,
-# so we assert on the surviving "not readable, dynamic nodev exclusions
-# disabled" tail rather than the path.
 assert_contains "not readable, dynamic nodev exclusions disabled" "$(cat "$TMP/stderr")" \
-	"unreadable filesystem-list must produce a warning on stderr"
+	"an unreadable filesystem list must warn"
 assert_contains "xymonclient-linux:" "$(cat "$TMP/stderr")" \
-	"warning must be tagged so it's identifiable in client logs"
-assert_contains     " -x iso9660 " "$args" "iso9660 must still be excluded (EXCLUDE_TYPES default)"
-assert_contains     " -x squashfs " "$args" "squashfs must still be excluded (EXCLUDE_TYPES default)"
-assert_not_contains " -x sysfs "   "$args" "no nodev excludes when /proc/filesystems unreadable"
+	"and the warning must be tagged for the client log"
+assert_contains " -x iso9660 " "$args" \
+	"the EXCLUDE_TYPES defaults still apply without /proc/filesystems"
+assert_not_contains " -x proc " "$args" \
+	"only the derived nodev exclusions are lost"
 
-# --- a df failure with empty output must yellow, never false-green -----------
-#
-# Regression for the inode false-green (xymon-monitoring/xymon#96 review): a df
-# that exits nonzero while printing nothing leaves an empty section the server
-# reads as green ("No filesystems reporting inode data"). emit_df must surface
-# ANY nonzero exit with empty output as a failure marker, not pass it silently.
-# Drive this with a df stub that exits 127 while printing nothing.
-REALPATH=${PATH#"$STUB:"}
-FAILDIR="$TMP/bin-fail"
-mkdir -p "$FAILDIR"
-cat > "$FAILDIR/df" <<'EOF'
-#!/usr/bin/env bash
-exit 127
-EOF
-chmod +x "$FAILDIR/df"
-ln -s "$STUB/readlink" "$FAILDIR/readlink"
-for prog in sh bash awk sed; do
-	p=$(PATH="$REALPATH" command -v "$prog") \
-		|| fail "failing-df test needs a real '$prog' on PATH"
-	ln -s "$p" "$FAILDIR/$prog"
-done
-
-fail_out=$(
-	cd "$TMP"
-	PATH="$FAILDIR" /bin/sh "$COMBINED" 2>/dev/null
-)
-assert_contains "Disk collection failed: df exited 127" "$fail_out" \
-	"a nonzero df with empty output must emit a disk failure marker, not an empty section"
-assert_contains "Inode collection failed: df exited 127" "$fail_out" \
-	"a nonzero df with empty output must emit an inode failure marker (empty inode reads as green)"
-assert_not_contains "Capacity" "$fail_out" \
-	"failed-df output must not contain df headers that could parse as a healthy report"
-
-# --- inode report drops filesystems with no inode limit (df prints "-") -------
-#
-# btrfs/zfs/9p/many-fuse have no fixed inode table; df -i prints "-" in the
-# IUse% column (and sometimes bogus counts, e.g. a negative IUsed on 9p). Such a
-# filesystem can never run out of inodes, so emit_df must drop it from the
-# [inode] report -- while its disk row (a real %) stays in [df]. Drive the
-# combined block with a df stub that returns a "-" inode row for "dynfs".
-INODEDIR="$TMP/bin-inode"
-mkdir -p "$INODEDIR"
-cat > "$INODEDIR/df" <<'EOF'
-#!/bin/sh
-case " $* " in
-  *" -i "*)
-	printf 'Filesystem Inodes IUsed IFree IUse%% Mounted on\n'
-	printf '/dev/sda1 1000 100 900 10%% /\n'
-	printf 'dynfs 0 0 0 - /data\n'
-	;;
-  *)
-	printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\n'
-	printf '/dev/sda1 1000000 500000 500000 50%% /\n'
-	printf 'dynfs 2000 1000 1000 50%% /data\n'
-	;;
-esac
-EOF
-chmod +x "$INODEDIR/df"
-ln -s "$STUB/readlink" "$INODEDIR/readlink"
-for prog in sh bash awk sed; do
-	p=$(PATH="$REALPATH" command -v "$prog") \
-		|| fail "inode-drop test needs a real '$prog' on PATH"
-	ln -s "$p" "$INODEDIR/$prog"
-done
-printf_path=$(PATH="$REALPATH" type -P printf) \
-	|| fail "inode-drop test needs a real 'printf' on PATH"
-ln -s "$printf_path" "$INODEDIR/printf"
-
-inode_out=$(
-	cd "$TMP"
-	PATH="$INODEDIR" /bin/sh "$COMBINED" 2>/dev/null
-)
-inode_section=$(printf '%s\n' "$inode_out" | sed -n '/^\[inode\]/,$p')
-assert_contains     "/dev/sda1" "$inode_section" \
-	"inode report keeps a normal filesystem"
-assert_not_contains "dynfs" "$inode_section" \
-	"inode report drops a no-inode-limit filesystem (IUse% '-')"
-assert_contains "dynfs" "$inode_out" \
-	"the same filesystem still appears in [df] (it has a real disk %)"
+pass "xymonclient-linux.sh: the FS filter contract, nodev exclusions, and the hard-block guard"
