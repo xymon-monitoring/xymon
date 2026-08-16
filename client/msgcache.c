@@ -48,6 +48,7 @@ char *client_response = NULL;		/* The latest response to a "client" message */
 char *logfile = NULL;
 int maxage = 600;			/* Maximum time we will cache messages */
 sender_t *serverlist = NULL;		/* Who is allowed to grab our messages */
+time_t lastpull = 0;			/* When a server last collected from us */
 
 typedef struct conn_t {
 	time_t tstamp;
@@ -125,6 +126,32 @@ void grabdata(conn_t *conn)
 	 * that we'll return the next time a client sends us the "client" message.
 	 */
 
+	if (strncmp(STRBUF(conn->msgbuf), "ping", 4) == 0) {
+		/*
+		 * Answered here and now, before the queueing below: a ping is not
+		 * client data, so it must not go on the outbound queue, and it must
+		 * not travel through client_response - that global holds the config
+		 * the server pushed, and overwriting it would hand the next client a
+		 * version string where its configuration belongs.
+		 *
+		 * What we can honestly report is ourselves and the age of the last
+		 * pull. We never connect to the Xymon server; it connects to us. So
+		 * "the server is up" is not ours to say, and naming xymond here would
+		 * let a caller read "safe to upgrade" off a msgcache whose server has
+		 * been gone for a week - while maxage quietly discards its messages.
+		 * lastpull is -1 until a server has collected at least once.
+		 */
+		char id[128];
+
+		snprintf(id, sizeof(id), "msgcache %s\nlastpull %ld\n", VERSION,
+			 (long)(lastpull ? (getcurrenttime(NULL) - lastpull) : -1));
+		clearstrbuffer(conn->msgbuf);
+		addtobuffer(conn->msgbuf, id);
+		conn->ctype = C_CLIENT_OTHER;
+		conn->action = C_WRITING;
+		return;
+	}
+
 	if (strncmp(STRBUF(conn->msgbuf), "pullclient", 10) == 0) {
 		char *clientcfg;
 		int idnum;
@@ -153,6 +180,7 @@ void grabdata(conn_t *conn)
 
 		conn->ctype = C_SERVER;
 		conn->action = C_WRITING;
+		lastpull = getcurrenttime(NULL);
 
 		/* Save any client config sent to us */
 		clientcfg = strchr(STRBUF(conn->msgbuf), '\n');
