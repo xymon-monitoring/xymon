@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/network/netrc-password.sh
+# tests/libxymon/netrc-password.sh
 #
 # Regression guard for the off-by-one in load_netrc() that dropped the last
 # character of every .netrc password (commit b4c4775dc).
