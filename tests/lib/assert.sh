@@ -406,6 +406,22 @@ known_variants() {
 	done <<<"$(variant_products)"
 }
 
+# variant_known VARIANT -- true when the table has a row for it.
+#
+# A test run on its own gets the same answer as the runner gives: a name the
+# table does not know is a typo, and treating it as "this build makes nothing"
+# turns every require_bin into a skip -- a green run that verified nothing,
+# from one wrong character in an env var.
+variant_known() {
+	local want_v=$1 line
+	while read -r line; do
+		# shellcheck disable=SC2086
+		set -- $line
+		[ "${1:-}" = "$want_v" ] && return 0
+	done <<<"$(variant_products)"
+	return 1
+}
+
 # product_declared ROLE -- true when any row mentions ROLE.
 #
 # Absent from every row is not the same as absent from this variant's row. The
@@ -477,6 +493,9 @@ require_bin() {
 		# which build this is, and the table says where that build puts the
 		# product. Without one -- a developer run, a release tarball, the
 		# build-free tests.yml lane -- the default stands.
+		if [ -n "${XYMON_VARIANT:-}" ] && ! variant_known "$XYMON_VARIANT"; then
+			fail "XYMON_VARIANT=$XYMON_VARIANT is not a build this suite knows (server, client, localclient)"
+		fi
 		if [ -n "${XYMON_VARIANT:-}" ] && product_declared "$var"; then
 			rel=$(product_path "$XYMON_VARIANT" "$var")
 			[ -n "$rel" ] \
