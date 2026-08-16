@@ -7,7 +7,7 @@ XYMONCLIENTHOME="@XYMONTOPDIR@/client"		# XYMONHOME directory for the client
 
 XYMONSERVERHOSTNAME="@XYMONHOSTNAME@"		# The hostname of your server
 XYMONSERVERIP="@XYMONHOSTIP@"			# The IP-address of your server. Use the real one, not 127.0.0.1 .
-XYMONSERVEROS="@XYMONHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix,osf
+XYMONSERVEROS="@XYMONHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix
 
 XYMONSERVERWWWNAME="@XYMONHOSTNAME@"		# The name used for this hosts' webserver
 XYMONSERVERWWWURL="@XYMONHOSTURL@"		# The top URL for the Xymon webpages

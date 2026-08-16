@@ -88,6 +88,15 @@ report "gnu-regex" '(grep|sed|awk|expr)[^|]*\\(b|<|>|w|W|s|S|d|D)([^[:alnum:]]|$
 report "root-lane" 'chmod +[-+=rwx]*[0-7]?[0-5][0-7][0-7]([^0-9]|$)|chmod +[ugoa]*-w' \
 	"the lanes run as root; a permission bit will not force this failure"
 
+# The rrdtool command-line tool is a separate package from the library the
+# tree links against, and is not installed on every lane. A test that gates on
+# it does not fail there - it quietly checks less, which is worse: the half it
+# skips is usually the value, and the half it keeps is usually the filename.
+# Read a RRD through librrd instead; tests/rrd/inode-unix-columns-harness.c is
+# the shape to copy.
+report "rrdtool-cli" '(command -v|which) +rrdtool|(^|[^-[:alnum:]_])rrdtool +(lastupdate|fetch|info|create|update|graph)' \
+	"the rrdtool CLI is not installed everywhere; read the RRD through librrd"
+
 # Interpreters the BSD runners do not have.
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
 	"not installed on the BSD lanes; awk and sh are"
@@ -129,10 +138,11 @@ probe="$work/probe.sh"
 	printf 'grep -E %s x\n' "'\\bword\\b'"
 	printf 'chmod 500 d\n'
 	printf 'chmod 555 d\n'
+	printf 'rrdtool lastupdate x.rrd\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "6" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "7" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # The link-flags rule the same way, including the bypass it used to allow: the
 # helpers named in a comment and nowhere else.
