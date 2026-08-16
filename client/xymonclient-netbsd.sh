@@ -109,6 +109,15 @@ probe_dir_is_local()
 	'
 }
 
+# fs_procname PID : the command name of a running process. ps is POSIX and
+# reads process state only, so it cannot touch a wedged mount. Named so that
+# df_sentinel() stays identical across the five clients, and so a test
+# replaces the primitive rather than the code that uses it.
+fs_procname()
+{
+	ps -o comm= -p "$1" 2>/dev/null | tr -d '[:space:]'
+}
+
 df_sentinel()
 {
 	_tag="$1"; shift
@@ -155,16 +164,29 @@ df_sentinel()
 				;;
 			?*)
 				# A df we recorded. Still wedged? The command name is
-				# checked so a recycled PID does not look like one. ps, not
-				# /proc: POSIX, same answer, already a dependency of this
-				# client, and it reads process state only -- it cannot touch
-				# the wedged mount. Basename, because comm is the short name
-				# on Linux and the BSDs and the full path on macOS.
-				_c=$(ps -o comm= -p "$_old" 2>/dev/null | tr -d '[:space:]')
+				# checked so a recycled PID does not look like one.
+				# fs_procname() is where each OS reads it -- /proc on Linux,
+				# ps elsewhere -- and neither touches the filesystem, so a
+				# wedged mount cannot block the check. Basename, because the
+				# name is short on Linux and the BSDs, the full path on macOS.
+				_c=$(fs_procname "$_old")
 				_c=${_c##*/}
-				if kill -0 "$_old" 2>/dev/null && [ "$_c" = df ]; then
-					rm -f "$_tmpf"
-					return 124
+				if kill -0 "$_old" 2>/dev/null; then
+					case "$_c" in
+					  df) rm -f "$_tmpf"; return 124 ;;
+					  "")
+						# The two mistakes are not equally cheap. Restarting
+						# a probe that is in fact still running leaves another
+						# df on a dead server, and those cannot be killed;
+						# keeping a mount unavailable for a cycle is visible
+						# and bounded. So when the name cannot be read at all
+						# -- no ps in a minimal container, no /proc, a pid
+						# that just went away -- assume the probe is ours.
+						echo "xymonclient: cannot read the command name of pid $_old; assuming the remote df is still running" >&2
+						rm -f "$_tmpf"
+						return 124
+						;;
+					esac
 				fi
 				;;
 		esac
