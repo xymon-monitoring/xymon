@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/network/udp-query.sh
+# tests/xymonnet/udp-query.sh
 #
 # Compiles and runs udp-query-harness.c (the real xymonnet/udpquery.c) over the
 # loopback interface and fails if it does. See the harness for what it pins (the
