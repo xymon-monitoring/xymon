@@ -132,6 +132,7 @@ typedef struct xymond_log_t {
 	time_t *flapchange;	/* Table of the most recent status-change times, used for flap detection */
 	time_t pregaplastchange;	/* The "lastchange" saved when a no-data gap began */
 	time_t gapstart;	/* When that gap began; bounds how far a resume may bridge */
+	int previouscolor;	/* The color held before the most recent change, or NO_COLOR before the first one */
 	int pregapcolor;	/* The color recorded before the gap, or NO_COLOR when not in one */
 	int pregapvalidity;	/* The report validity in force when the gap began, in minutes */
 	int validity;		/* Minutes this test's reports stay valid; sizes the bridge bound */
@@ -309,7 +310,8 @@ xymond_statistics_t xymond_stats[] = {
 	{ NULL, 0 }
 };
 
-enum boardfield_t { F_NONE, F_IP, F_HOSTNAME, F_TESTNAME, F_MATCHEDTAG, F_COLOR, F_FLAGS, 
+enum boardfield_t { F_NONE, F_IP, F_HOSTNAME, F_TESTNAME, F_MATCHEDTAG, F_COLOR,
+		    F_OLDCOLOR, F_PREVIOUSCOLOR, F_FLAGS, 
 		    F_LASTCHANGE, F_LOGTIME, F_VALIDTIME, F_ACKTIME, F_DISABLETIME,
 		    F_SENDER, F_COOKIE, F_LINE1,
 		    F_ACKMSG, F_DISMSG, F_MSG, F_CLIENT, F_CLIENTTSTAMP,
@@ -332,6 +334,8 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "matchedtags", F_MATCHEDTAG },
 	{ "testname", F_TESTNAME },
 	{ "color", F_COLOR },
+	{ "oldcolor", F_OLDCOLOR },
+	{ "previouscolor", F_PREVIOUSCOLOR },
 	{ "flags", F_FLAGS },
 	{ "lastchange", F_LASTCHANGE },
 	{ "logtime", F_LOGTIME },
@@ -1349,7 +1353,7 @@ void get_hts(char *msg, char *sender, char *origin,
 			lwalk->pregapcolor = NO_COLOR;
 			lwalk->pregapvalidity = defaultvalidity;
 			lwalk->validity = defaultvalidity;
-			lwalk->color = lwalk->oldcolor = NO_COLOR;
+			lwalk->color = lwalk->oldcolor = lwalk->previouscolor = NO_COLOR;
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
 			lwalk->origin = owalk;
@@ -1913,6 +1917,11 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	 * are about to stop seeing began, not when we stopped seeing it. */
 	prevlastchange = log->lastchange;
 
+	/* oldcolor is the previous *report*; previouscolor is the color held
+	 * before the most recent change. They differ for as long as a test keeps
+	 * repeating a color: oldcolor follows it, previouscolor stays on what came
+	 * before the transition, which is what "how did we get here" asks for. */
+	if (newcolor != log->color) log->previouscolor = log->color;
 	log->oldcolor = log->color;
 	log->color = newcolor;
 	oldalertstatus = decide_alertstate(log->oldcolor);
@@ -3602,6 +3611,8 @@ strbuffer_t *generate_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, xy
 		  case F_HOSTNAME: addtobuffer(buf, hwalk->hostname); break;
 		  case F_TESTNAME: addtobuffer(buf, lwalk->test->name); break;
 		  case F_COLOR: addtobuffer(buf, colnames[lwalk->color]); break;
+		  case F_OLDCOLOR: addtobuffer(buf, colnames[lwalk->oldcolor]); break;
+		  case F_PREVIOUSCOLOR: addtobuffer(buf, colnames[lwalk->previouscolor]); break;
 		  case F_FLAGS: if (lwalk->testflags) addtobuffer(buf, lwalk->testflags); break;
 		  case F_LASTCHANGE: snprintf(l, sizeof(l), "%d", (int)lwalk->lastchange); addtobuffer(buf, l); break;
 		  case F_LOGTIME: snprintf(l, sizeof(l), "%d", (int)lwalk->logtime); addtobuffer(buf, l); break;
@@ -5140,6 +5151,7 @@ void save_checkpoint(void)
 				   gap_within_window(now - lwalk->gapstart, lwalk->pregapvalidity));
 
 			if ((iores >= 0) && (lwalk->flapping || gapopen ||
+					     (lwalk->previouscolor != NO_COLOR) ||
 					     ((flapcount > 1) && lwalk->flapchange[1]))) {
 				int fi;
 
@@ -5166,6 +5178,12 @@ void save_checkpoint(void)
 						(gapopen ? lwalk->pregapvalidity : 0));
 				for (fi = 0; ((fi < flapcount) && (iores >= 0)); fi++)
 					iores = fprintf(fd, "%s%ld", ((fi == 0) ? "" : ","), (long)lwalk->flapchange[fi]);
+				/* After the flap-change list, not before it: the record is
+				 * read by position, so anything inserted earlier would shift
+				 * the list and misread every checkpoint written until now. A
+				 * reader that predates this field stops at its own last case
+				 * and ignores the extra one. */
+				if (iores >= 0) iores = fprintf(fd, "|%s", colnames[lwalk->previouscolor]);
 				if (iores >= 0) iores = fprintf(fd, "\n");
 			}
 
@@ -5333,6 +5351,7 @@ void load_checkpoint(char *fn)
 			xymond_log_t *log = NULL;
 			int flapping = 0, oldflapcolor = NO_COLOR, currflapcolor = NO_COLOR;
 			int pregapcolor = NO_COLOR, pregapvalidity = defaultvalidity;
+			int previouscolor = NO_COLOR;
 			time_t pregaplastchange = 0, gapstart = 0;
 			char *flapchangestr = NULL;
 
@@ -5366,6 +5385,10 @@ void load_checkpoint(char *fn)
 					}
 					break;
 				  case 10: flapchangestr = item; break;
+				  /* Absent from checkpoints written before this field
+				   * existed; such a status comes back with no previous
+				   * color, which is what it had. */
+				  case 11: previouscolor = restore_color(item); break;
 				  default: break;
 				}
 				item = gettok(NULL, "|\n"); i++;
@@ -5383,6 +5406,7 @@ void load_checkpoint(char *fn)
 				 */
 				log->oldflapcolor = oldflapcolor;
 				log->currflapcolor = currflapcolor;
+				log->previouscolor = previouscolor;
 				log->pregapcolor = pregapcolor;
 				log->pregaplastchange = pregaplastchange;
 				log->pregapvalidity = pregapvalidity;

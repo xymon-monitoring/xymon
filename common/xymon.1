@@ -203,6 +203,19 @@ The name of the host
 The name of the test
 .IP "\fBcolor\fR"
 Status color (green, yellow, red, blue, clear, purple)
+.IP "\fBoldcolor\fR"
+The color xymond recorded for this test at the previous report. xymond assigns
+it on every message, not only on a change, so a test repeating its color
+reports that same color here. It is the color xymond \fIrecorded\fR, which is
+not always the one the test sent: a disabled or in-downtime test is recorded
+blue whatever it reports. Until a status has been reported twice this is
+\fBnone\fR, the "no previous color" marker.
+.IP "\fBpreviouscolor\fR"
+The color this test held before its most recent change. Unlike \fBoldcolor\fR
+it does not follow a repeated color, so a test that went green, red, red
+reports color=red, oldcolor=red, previouscolor=green \- it answers "what was
+this before it went bad". \fBnone\fR until the first change, and it survives a
+xymond restart.
 .IP "\fBtestflags\fR"
 For network tests, the flags indicating details about the test (used by xymongen).
 .IP "\fBlastchange\fR"
@@ -320,6 +333,19 @@ The name of the host
 The name of the test
 .IP "\fBcolor\fR"
 Status color (green, yellow, red, blue, clear, purple)
+.IP "\fBoldcolor\fR"
+The color xymond recorded for this test at the previous report. xymond assigns
+it on every message, not only on a change, so a test repeating its color
+reports that same color here. It is the color xymond \fIrecorded\fR, which is
+not always the one the test sent: a disabled or in-downtime test is recorded
+blue whatever it reports. Until a status has been reported twice this is
+\fBnone\fR, the "no previous color" marker.
+.IP "\fBpreviouscolor\fR"
+The color this test held before its most recent change. Unlike \fBoldcolor\fR
+it does not follow a repeated color, so a test that went green, red, red
+reports color=red, oldcolor=red, previouscolor=green \- it answers "what was
+this before it went bad". \fBnone\fR until the first change, and it survives a
+xymond restart.
 .IP "\fBflags\fR"
 For network tests, the flags indicating details about the test (used by xymongen).
 .IP "\fBlastchange\fR"

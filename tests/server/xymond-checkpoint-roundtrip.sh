@@ -184,9 +184,14 @@ stop_xymond
 # flag still says "flapping"; the ring says the test has been quiet for a day,
 # and the ring is what counts.
 
-awk -F'|' -v OFS='|' '$2 == ".flapstate." { $NF = "1000000,1000000" } { print }' \
-	"$work/chk" > "$work/chk.stale"
-grep -q '^@@XYMONDCHK-V1|\.flapstate\.|.*|1000000,1000000$' "$work/chk.stale" \
+# The ring is field 11, named rather than taken as the last one: fields have
+# been appended after it (previouscolor), and $NF then rewrites the wrong one
+# while still producing a line that ends in the value written -- the edit reads
+# as applied and changes nothing.
+awk -F'|' -v OFS='|' '$2 == ".flapstate." { if (NF < 11) exit 3; $11 = "1000000,1000000" } { print }' \
+	"$work/chk" > "$work/chk.stale" \
+	|| fail "the .flapstate. record has fewer fields than the flap ring's position; the format changed"
+grep -q '^@@XYMONDCHK-V1|\.flapstate\.|\([^|]*|\)\{8\}1000000,1000000\(|.*\)\?$' "$work/chk.stale" \
 	|| fail "could not backdate the flap ring; the .flapstate. record format changed"
 
 start_xymond --restart="$work/chk.stale"
