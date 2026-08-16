@@ -63,6 +63,20 @@ cd "$SRC"
 # the RRD probe regardless of host fping state.
 export USEXYMONPING=y
 
+# configure.server bails when its make-utility is not GNU make, which on the
+# BSDs it never is: make(1) is BSD make there and GNU make is gmake. The run
+# then aborts before the RRD probe and this test skips for a dependency the
+# host has. Hand it the MAKE= configure.server prints when it bails, detected
+# the way configure.server detects it so the two cannot drift.
+make_is_gnu() {
+	[ "$("$1" -version 2>&1 | head -n 1 | awk '{print $1 " " $2}')" = "GNU Make" ]
+}
+if [ -z "${MAKE:-}" ] && ! make_is_gnu make; then
+	if command -v gmake >/dev/null 2>&1 && make_is_gnu gmake; then
+		export MAKE=gmake
+	fi
+fi
+
 LOG="$TMP/configure.log"
 set +e
 ./configure --server </dev/null >"$LOG" 2>&1

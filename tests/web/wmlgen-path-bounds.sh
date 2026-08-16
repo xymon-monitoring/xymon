@@ -52,8 +52,25 @@ harness_cflags=$(xymon_cflags "$ROOT")
 # harness because it has to exist: a single 4000-character component would
 # make the harness's boundary case pass through ENAMETOOLONG at fopen(),
 # whatever the length guard under test does -- measured, it did.
+#
+# From the host's own PATH_MAX -- 4096 on Linux, 1024 on the BSDs and macOS --
+# not a literal cut for the widest, which cannot be created anywhere else. The
+# distance carries the boundary case: the harness fills what is left with the
+# host card's name, so 36 bytes short leaves that card exactly fitting and the
+# status card, one ".<column>" longer, exactly not.
+pathmax=$("$work/harness" --pathmax) || fail "the harness cannot report PATH_MAX"
+case $pathmax in ''|*[!0-9]*) fail "the harness reported PATH_MAX as '$pathmax'" ;; esac
+
 deep="$work/wml"
-while [ ${#deep} -lt 3900 ]; do deep="$deep/$(printf 'd%.0s' $(seq 1 200))"; done
+target=$((pathmax - 36))
+[ ${#deep} -lt "$target" ] || skip "the temporary directory is already within 36 bytes of PATH_MAX ($pathmax)"
+while [ ${#deep} -lt "$target" ]; do
+	# The last component is cut to land on the target exactly, so the margin
+	# above is the measured one and not whatever a fixed step overshoots to.
+	room=$((target - ${#deep} - 1))
+	if [ "$room" -gt 200 ]; then room=200; fi
+	deep="$deep/$(printf 'd%.0s' $(seq 1 $room))"
+done
 mkdir -p "$deep" 2>/dev/null || skip "cannot create a directory path near PATH_MAX here"
 
 out=$("$work/harness" "$work/wml" "$deep" 2>&1) \
