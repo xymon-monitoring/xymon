@@ -248,6 +248,20 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   <dd>The name of the test</dd>
   <dt id="color"><a class="permalink" href="#color"><b>color</b></a></dt>
   <dd>Status color (green, yellow, red, blue, clear, purple)</dd>
+  <dt id="prevreportcolor"><a class="permalink" href="#prevreportcolor"><b>prevreportcolor</b></a></dt>
+  <dd>The color xymond recorded at the previous report, whether or not it
+      differed: a test repeating its color reports that same color here. Also
+      accepted as <b>oldcolor</b>, the name it has inside xymond. It is the
+      color xymond <i>recorded</i>, which is not always the one the test sent -
+      a disabled or in-downtime test is recorded blue whatever it reports.
+      <b>none</b> until a status has been reported twice.</dd>
+  <dt id="prevchangecolor"><a class="permalink" href="#prevchangecolor"><b>prevchangecolor</b></a></dt>
+  <dd>The color this test held before its most recent change. Also accepted as
+      <b>previouscolor</b>. It moves only when the color changes, so a test that
+      went green, red, red reports color=red, prevreportcolor=red,
+      prevchangecolor=green - it answers &quot;what was this before it went
+      bad&quot;. <b>none</b> until the first change, and it survives a xymond
+      restart.</dd>
   <dt id="testflags"><a class="permalink" href="#testflags"><b>testflags</b></a></dt>
   <dd>For network tests, the flags indicating details about the test (used by
       xymongen).</dd>
@@ -370,6 +384,20 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   <dd>The name of the test</dd>
   <dt id="color~3"><a class="permalink" href="#color~3"><b>color</b></a></dt>
   <dd>Status color (green, yellow, red, blue, clear, purple)</dd>
+  <dt id="prevreportcolor~2"><a class="permalink" href="#prevreportcolor~2"><b>prevreportcolor</b></a></dt>
+  <dd>The color xymond recorded at the previous report, whether or not it
+      differed: a test repeating its color reports that same color here. Also
+      accepted as <b>oldcolor</b>, the name it has inside xymond. It is the
+      color xymond <i>recorded</i>, which is not always the one the test sent -
+      a disabled or in-downtime test is recorded blue whatever it reports.
+      <b>none</b> until a status has been reported twice.</dd>
+  <dt id="prevchangecolor~2"><a class="permalink" href="#prevchangecolor~2"><b>prevchangecolor</b></a></dt>
+  <dd>The color this test held before its most recent change. Also accepted as
+      <b>previouscolor</b>. It moves only when the color changes, so a test that
+      went green, red, red reports color=red, prevreportcolor=red,
+      prevchangecolor=green - it answers &quot;what was this before it went
+      bad&quot;. <b>none</b> until the first change, and it survives a xymond
+      restart.</dd>
   <dt id="flags"><a class="permalink" href="#flags"><b>flags</b></a></dt>
   <dd>For network tests, the flags indicating details about the test (used by
       xymongen).</dd>
