@@ -89,7 +89,7 @@ EOF
 # /proc/mounts: local only, so the remote-df sentinel stays dormant here -- it
 # has its own test. Without this rewrite the LOCAL_ONLY=no case would walk the
 # *tester's* mount table and probe a real cifs/ceph/glusterfs mount.
-printf '/dev/sda1 / ext4 rw 0 0\n' > "$TMP/proc.mounts"
+printf 'ext4\t/\n' > "$TMP/proc.mounts"
 export XYMONTMP="$TMP"
 
 # Files whose names match the type globs used below: if a configured token were
@@ -97,11 +97,18 @@ export XYMONTMP="$TMP"
 : > "$TMP/sysfs"
 : > "$TMP/fuse.sshfs"
 
-PROC_REWRITE="s!/proc/filesystems!$TMP/proc.filesystems!g; s!/proc/mounts!$TMP/proc.mounts!g"
+# The OS primitives are replaced by name: the client keeps each behind a
+# helper, and the fixtures below are written in the helper's contract --
+# "TYPE<tab>MOUNTPOINT" for fs_mounts -- rather than in the column order of a
+# file only Linux has.
 SNIPPET="$TMP/df-section.sh"
-fsf_extract "$SNIPPET" "$PROC_REWRITE" '\[inode\]'
+fsf_extract "$SNIPPET" "" '\[inode\]'
 FSF_COMBINED="$TMP/df-inode-section.sh"
-fsf_extract "$FSF_COMBINED" "$PROC_REWRITE"
+fsf_extract "$FSF_COMBINED"
+for _snip in "$SNIPPET" "$FSF_COMBINED"; do
+	fsf_stub_helper "$_snip" fs_mounts "\tcat \"$TMP/proc.mounts\""
+	fsf_stub_helper "$_snip" fs_filesystems "\tcat \"$TMP/proc.filesystems\""
+done
 
 # readlink stub: the block resolves /dev/root early on.
 cat > "$STUB/readlink" <<'EOF'
@@ -147,8 +154,12 @@ assert_not_contains " -l " "$args" \
 	"DF_LOCAL_ONLY=no must not fall back to -l: that would drop healthy remote filesystems"
 
 # An unreadable /proc/filesystems disables only the derived exclusions.
+# The helper is what fails when the list cannot be read, so that is what the
+# case replaces -- a stub that returns non-zero, like the real one does on an
+# unreadable /proc/filesystems.
 MISSING="$TMP/df-section-missing.sh"
-sed "s!$TMP/proc.filesystems!$TMP/does-not-exist!g" "$SNIPPET" > "$MISSING"
+cp "$SNIPPET" "$MISSING"
+fsf_stub_helper "$MISSING" fs_filesystems "\treturn 1"
 : > "$DF_LOG"
 ( cd "$TMP" && /bin/sh "$MISSING" >/dev/null 2>"$TMP/stderr" ) || true
 args=$(printf ' %s ' "$(cat "$DF_LOG")")
@@ -160,5 +171,18 @@ assert_contains " -x iso9660 " "$args" \
 	"the EXCLUDE_TYPES defaults still apply without /proc/filesystems"
 assert_not_contains " -x proc " "$args" \
 	"only the derived nodev exclusions are lost"
+
+# An unreadable mount list, with DF_LOCAL_ONLY=no and a df that fails. This is
+# the one path where the failure marker has two ways to be lost: the plain df's
+# status is kept for the remote fallback, and the fallback itself now depends on
+# a helper that can fail. A silent empty section here is a green disk column on
+# a host where df collected nothing at all.
+NOMOUNTS="$TMP/df-inode-section-nomounts.sh"
+cp "$FSF_COMBINED" "$NOMOUNTS"
+fsf_stub_helper "$NOMOUNTS" fs_mounts "\treturn 1"
+_out=$(cd "$TMP" && env DF_FAIL=1 XYMONCLIENT_FS_DF_LOCAL_ONLY=no \
+	/bin/sh "$NOMOUNTS" 2>/dev/null || true)
+fsf_assert_loud "$_out" \
+	"a df failure with no readable mount list must still be loud"
 
 pass "xymonclient-linux.sh: the FS filter contract, nodev exclusions, and the hard-block guard"

@@ -45,11 +45,34 @@ uptime
 echo "[who]"
 who
 echo "[df]"
+# fs_mounts : one "TYPE<tab>MOUNTPOINT" line per mount. Linux reads
+# /proc/mounts, which cannot block on a dead server and needs no fork; the BSD
+# and macOS clients read mount(8). Same output either way, so probe_dir_is_local()
+# and the remote-set awk below are the same code in all five clients, and a test
+# replaces this one function instead of rewriting a path only Linux has.
+fs_mounts()
+{
+	[ -r /proc/mounts ] || return 1
+	awk '{ mp = $2; gsub(/\\040/, " ", mp); printf "%s\t%s\n", $3, mp }' /proc/mounts
+}
+
+# fs_filesystems : the filesystem types the kernel knows, "nodev" first where
+# the type has no backing device. Linux only -- the other clients exclude by
+# name, not by this list.
+fs_filesystems()
+{
+	[ -r /proc/filesystems ] || return 1
+	while read -r _dev _type; do printf '%s %s\n' "$_dev" "$_type"; done < /proc/filesystems
+}
+
 # Default: exclude every nodev (pseudo) filesystem in df/inode output, except
 # rootfs. The always-100%-full read-only images (iso9660, squashfs) are not
 # nodev types and are excluded via XYMONCLIENT_FS_EXCLUDE_TYPES below.
-if [ -r /proc/filesystems ]; then
-	EXCLUDES=$(awk '$1 == "nodev" && $2 != "rootfs" { printf "%s%s", sep, $2; sep=" " }' /proc/filesystems)
+# The status is the helper's, not awk's: a pipeline reports its last command,
+# and awk succeeds happily on no input at all - which is what an unreadable
+# list looks like from there.
+if _fslist=$(fs_filesystems); then
+	EXCLUDES=$(printf '%s\n' "$_fslist" | awk '$1 == "nodev" && $2 != "rootfs" { printf "%s%s", sep, $2; sep=" " }')
 else
 	# Only the dynamic nodev exclusions are disabled here; the EXCLUDE_TYPES
 	# defaults (iso9660/squashfs) and the local-only df -l behavior still apply.
@@ -134,24 +157,40 @@ esac
 DFPROBEDIR="${XYMONTMP:-/tmp}"
 
 # probe_dir_is_local DIR : true when DIR is not itself on a hard-blocking
-# filesystem. Decided purely from /proc/mounts (reading it never blocks) by
-# longest mount-point prefix, and deliberately WITHOUT stat()ing DIR: if DIR
-# were on the wedged mount, even `test -w DIR` would block in D-state inside
-# the very fail-safe meant to prevent that. Symlinks are not resolved for the
-# same reason (readlink would stat), so keep XYMONTMP on a real local path.
+# filesystem. Decided purely from the mount list by longest mount-point prefix,
+# and deliberately WITHOUT stat()ing DIR: if DIR were on the wedged mount, even
+# `test -w DIR` would block in D-state inside the very fail-safe meant to
+# prevent that. Symlinks are not resolved for the same reason (readlink would
+# stat), so keep XYMONTMP on a real local path.
 probe_dir_is_local()
 {
-	[ -r /proc/mounts ] || return 1
-	awk -v dir="$1" -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" '
+	# The helper's status, not the pipeline's: a pipeline reports its last
+	# command, and awk succeeds on no input at all -- which is what an
+	# unreadable mount list looks like from there. Answering "local" then
+	# sends the probe at a directory that may sit on the wedged mount this
+	# exists to keep away from.
+	_pdlm=$(fs_mounts) || return 1
+	printf '%s\n' "$_pdlm" | awk -F'\t' -v dir="$1" -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" '
 		BEGIN { n = split(types, a, /[ \t]+/); for (i = 1; i <= n; i++) t[a[i]] = 1 }
 		{
-			mp = $2; gsub(/\\040/, " ", mp)
+			mp = $2
 			if (dir == mp || mp == "/" || substr(dir, 1, length(mp) + 1) == mp "/") {
-				if (length(mp) >= length(best)) { best = mp; besttype = $3 }
+				if (length(mp) >= length(best)) { best = mp; besttype = $1 }
 			}
 		}
 		END { exit (besttype in t) ? 1 : 0 }
-	' /proc/mounts
+	'
+}
+
+# fs_procname PID : the command name of a running process. Linux answers from
+# /proc, with no external command at all; the BSD and macOS clients answer with
+# ps. Named so that df_sentinel() stays identical across the five clients, and
+# so a test replaces the primitive rather than rewriting a path only Linux has.
+fs_procname()
+{
+	[ -r "/proc/$1/comm" ] || return 0
+	read -r _name < "/proc/$1/comm" || return 0
+	printf '%s\n' "$_name"
 }
 
 # df_sentinel TAG ARGS... : df for the remote set with at most ONE outstanding
@@ -205,16 +244,29 @@ df_sentinel()
 				;;
 			?*)
 				# A df we recorded. Still wedged? The command name is
-				# checked so a recycled PID does not look like one. ps, not
-				# /proc: POSIX, same answer, already a dependency of this
-				# client, and it reads process state only -- it cannot touch
-				# the wedged mount. Basename, because comm is the short name
-				# on Linux and the BSDs and the full path on macOS.
-				_c=$(ps -o comm= -p "$_old" 2>/dev/null | tr -d '[:space:]')
+				# checked so a recycled PID does not look like one.
+				# fs_procname() is where each OS reads it -- /proc on Linux,
+				# ps elsewhere -- and neither touches the filesystem, so a
+				# wedged mount cannot block the check. Basename, because the
+				# name is short on Linux and the BSDs, the full path on macOS.
+				_c=$(fs_procname "$_old")
 				_c=${_c##*/}
-				if kill -0 "$_old" 2>/dev/null && [ "$_c" = df ]; then
-					rm -f "$_tmpf"
-					return 124
+				if kill -0 "$_old" 2>/dev/null; then
+					case "$_c" in
+					  df) rm -f "$_tmpf"; return 124 ;;
+					  "")
+						# The two mistakes are not equally cheap. Restarting
+						# a probe that is in fact still running leaves another
+						# df on a dead server, and those cannot be killed;
+						# keeping a mount unavailable for a cycle is visible
+						# and bounded. So when the name cannot be read at all
+						# -- no ps in a minimal container, no /proc, a pid
+						# that just went away -- assume the probe is ours.
+						echo "xymonclient: cannot read the command name of pid $_old; assuming the remote df is still running" >&2
+						rm -f "$_tmpf"
+						return 124
+						;;
+					esac
 				fi
 				;;
 		esac
@@ -341,13 +393,12 @@ run_df()
 	# left out.
 	# From here on the plain df's status is what a caller sees when nothing at
 	# all was collected: no local rows, and no remote set to fall back on.
-	[ -r /proc/mounts ] || return $_prc
-	_rm=$(awk -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" -v excl="$EXCLUDES" '
+	_rm=$(fs_mounts | awk -F'\t' -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" -v excl="$EXCLUDES" '
 		BEGIN {
 			n = split(types, a, /[ \t]+/); for (i = 1; i <= n; i++) t[a[i]] = 1
 			m = split(excl,  b, /[ \t]+/); for (i = 1; i <= m; i++) x[b[i]] = 1
 		}
-		($3 in t) && !($3 in x) { mp = $2; gsub(/\\040/, " ", mp); print mp }' /proc/mounts)
+		($1 in t) && !($1 in x) { print $2 }')
 	[ -n "$_rm" ] || return $_prc
 
 	case $- in *f*) _rg=no ;; *) _rg=yes; set -f ;; esac

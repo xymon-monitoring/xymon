@@ -134,6 +134,22 @@ WEDGE
 	wait "$_wbpid" 2>/dev/null || true
 }
 
+# fsf_stub_helper FILE NAME BODY
+#   Replace a named helper in an extracted block. The clients keep every OS
+#   primitive behind such a helper -- fs_mounts, fs_filesystems, fs_procname --
+#   so a test replaces the primitive the same way it replaces a command, by
+#   name, instead of rewriting a path that only one OS has. The block runs as a
+#   script, so the definition is edited in place rather than overridden.
+fsf_stub_helper() {
+	awk -v n="$2" -v b="$3" '
+		$0 == n "()" || $0 == n "() {" { print n "() {"; print b; print "}"; skip = 1; next }
+		skip && $0 == "{" { next }
+		skip && $0 == "}" { skip = 0; next }
+		skip { next }
+		{ print }
+	' "$1" > "$1.stubbed" && mv "$1.stubbed" "$1"
+}
+
 # fsf_run SNIPPET LOGFILE [ENV...]
 #   Truncate the arg logs, run SNIPPET in a fresh subshell with $TMP as cwd
 #   (so decoy glob files are in scope), and echo the recorded argv from LOGFILE
