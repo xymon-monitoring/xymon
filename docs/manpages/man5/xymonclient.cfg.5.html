@@ -169,12 +169,55 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       elsewhere). With <b>no</b>, a stale or hard-blocked remote mount can wedge
       df indefinitely (an uninterruptible D-state wait): the client run never
       finishes, so the whole host goes purple &#x2014; no data for all metrics,
-      not just disk &#x2014; until the mount recovers or the host reboots.</dd>
+      not just disk &#x2014; until the mount recovers or the host reboots. On
+      Linux this is bounded by the remote-df sentinel described below; the other
+      clients still carry the risk in full.</dd>
   <dt></dt>
   <dd>A df that <i>exits</i> non-zero with no output (a real error, not a hang)
       is marked failed (yellow) rather than left empty, so a failed filesystem
       probe is not silently reported green. This does not cover the hang above:
       a wedged df never exits.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONCLIENT_FS_REMOTE_DF_BUDGET"><a class="permalink" href="#XYMONCLIENT_FS_REMOTE_DF_BUDGET"><b>XYMONCLIENT_FS_REMOTE_DF_BUDGET</b></a></dt>
+  <dd>Linux only. Seconds to wait for the remote df probe before giving up for
+      this cycle. Defaults to <b>30</b>, capped at 3600; empty, zero or
+      non-numeric values fall back to the default.</dd>
+  <dt></dt>
+  <dd>This is a poll <i>budget</i>, not a kill timeout. A df blocked on a dead
+      server sits in uninterruptible D-state, where even SIGKILL is ignored, so
+      it cannot be killed and is deliberately left running: the next cycle finds
+      it through a pidfile in $XYMONTMP and reports the mounts unavailable
+      instead of starting a second one. At most one df is ever outstanding per
+      report, so nothing accumulates, and collection resumes by itself once the
+      server answers.</dd>
+  <dt></dt>
+  <dd>Only the remote set runs behind the sentinel. The local set is collected
+      separately with <b>df -l</b>, which never stats a remote server, so local
+      filesystems stay fresh throughout an outage instead of being lost with the
+      host.</dd>
+  <dt></dt>
+  <dd>While a remote mount is unreachable its row is reported as 100% full,
+      which turns that one filesystem red rather than letting it vanish from the
+      report &#x2014; an absent filesystem reads as green. Note that this row
+      also reaches the RRD, so the disk graph shows 100% used (and a used-space
+      figure of one block) for the duration of the outage.</dd>
+  <dt></dt>
+  <dd>The sentinel needs a writable probe directory and uses $XYMONTMP. If
+      $XYMONTMP is itself on a hard-blocking filesystem the sentinel reports the
+      remote mounts unavailable rather than touching it, since even testing such
+      a path blocks. Keep $XYMONTMP on local storage. Symbolic links are not
+      resolved, for the same reason.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES"><a class="permalink" href="#XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES"><b>XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES</b></a></dt>
+  <dd>Linux only. The df filesystem types whose stat() hard-blocks when the
+      server is unreachable, and which are therefore collected behind the
+      sentinel. Defaults to <b>nfs nfs4 cifs smb3 ceph glusterfs fuse.glusterfs
+      lustre afs</b>. Types are matched as exact df type tokens, so
+      <b>fuse.glusterfs</b> is compared literally rather than as a pattern. Only
+      consulted with <b>XYMONCLIENT_FS_DF_LOCAL_ONLY=no</b>, since <b>df -l</b>
+      keeps these mounts out entirely otherwise.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMON"><a class="permalink" href="#XYMON"><b>XYMON</b></a></dt>

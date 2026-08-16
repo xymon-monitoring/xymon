@@ -67,7 +67,16 @@ EOF
 # fixture in both. The [inode] block reuses the EXCLUDES/ROOTFS the [df] block
 # computed, so the combined block must run them together -- a lone [inode]
 # snippet would see an empty EXCLUDES.
-PROC_REWRITE="s!/proc/filesystems!$TMP/proc.filesystems!g"
+# /proc/mounts fixture. Since the remote-df sentinel (#316) the LOCAL_ONLY=no
+# case walks the mount list looking for hard-blocking types, so without this
+# rewrite the test reads the *tester's* mount table: on a machine with a
+# cifs/ceph/glusterfs/lustre/afs mount it would probe that real filesystem and
+# drop probe files in $XYMONTMP. A local-only fixture keeps the sentinel dormant
+# -- it is covered by fs-sentinel-linux.sh -- and XYMONTMP points inside $TMP so
+# nothing can land in /tmp either way.
+printf '/dev/sda1 / ext4 rw 0 0\n' > "$TMP/proc.mounts"
+export XYMONTMP="$TMP"
+PROC_REWRITE="s!/proc/filesystems!$TMP/proc.filesystems!g; s!/proc/mounts!$TMP/proc.mounts!g"
 SNIPPET="$TMP/df-section.sh"
 fsf_extract "$SNIPPET" "$PROC_REWRITE" '\[inode\]'
 COMBINED="$TMP/df-inode-section.sh"
@@ -186,11 +195,26 @@ args=$(XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs XYMONCLIENT_FS_EXCLUDE_TYPES=tmpfs run
 assert_contains " -x tmpfs " "$args" \
 	"a type in both include and exclude lists must stay excluded (exclude wins)"
 
-# --- XYMONCLIENT_FS_DF_LOCAL_ONLY=no drops the -l flag ----------------------
+# --- XYMONCLIENT_FS_DF_LOCAL_ONLY=no excludes only what can hard-block -------
+# Before the remote-df sentinel (#316), "no" meant one df run over everything,
+# which is what could wedge on a dead server. Collection is now split: this
+# first call drops the hard-blocking types with -x (which filters the mount
+# list before df stat()s anything, exactly as -l does), and those mounts are
+# then probed separately behind the sentinel, covered by fs-sentinel-linux.sh.
+#
+# It deliberately does NOT use -l here: -l would drop every remote filesystem,
+# including healthy types that can be stat()ed safely, which is not what
+# LOCAL_ONLY=no asks for. What must hold is that no hard-blocking type reaches
+# this call.
 
 args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=no run_snippet)
-assert_contains     " -P " "$args" "DF_LOCAL_ONLY=no must still pass -P"
-assert_not_contains " -l " "$args" "DF_LOCAL_ONLY=no must drop -l"
+assert_contains " -P " "$args" "DF_LOCAL_ONLY=no must still pass -P"
+assert_not_contains " -l " "$args" \
+	"DF_LOCAL_ONLY=no must not use -l: that would drop healthy remote filesystems"
+for t in nfs nfs4 cifs smb3 ceph glusterfs fuse.glusterfs lustre afs; do
+	assert_contains " -x $t " "$args" \
+		"DF_LOCAL_ONLY=no must exclude the hard-blocking type '$t' from the unguarded df (#316)"
+done
 
 args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=yes run_snippet)
 assert_contains " -l " "$args" "DF_LOCAL_ONLY=yes must still pass -l"

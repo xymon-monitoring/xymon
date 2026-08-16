@@ -73,3 +73,26 @@ done
 assert_contains "common-client: lib-client common-build" \
                 "$rules" \
                 "common-client must depend on common-build in the non-CLIENTONLY arm (#91/#92)"
+
+# --- install-cgi vs install-bin ----------------------------------------------
+
+WEB="$ROOT/web/Makefile"
+[ -f "$WEB" ] || skip "web/Makefile absent"
+web=$(cat "$WEB")
+
+# install-cgi hardlinks $(INSTALLBINDIR)/cgiwrap into the CGI dirs, and
+# install-bin is what puts cgiwrap there. Listing both as prerequisites of
+# "install" does not order them, so -jN can start install-cgi first and its
+# very first ln fails on a missing source. Observed on a Homebrew build (which
+# exports -j by default): history.sh, the first entry of CGISCRIPTS, absent
+# from an otherwise complete install, giving a 404 on the history CGI.
+assert_contains "install-cgi: install-bin" "$web" \
+                "install-cgi must depend on install-bin so cgiwrap exists before it is linked"
+
+# The link loops must also stop on a failed ln. A shell "for" reports only its
+# last iteration's status, so without this a failure on any earlier name leaves
+# make exiting 0 with a CGI missing -- which is why the race went unnoticed.
+assert_not_contains 'cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done' "$web" \
+                    "the CGI link loop must not swallow a failed ln (needs '|| exit 1')"
+assert_not_contains 'cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done' "$web" \
+                    "the secure CGI link loop must not swallow a failed ln (needs '|| exit 1')"
