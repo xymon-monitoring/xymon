@@ -67,6 +67,24 @@ reads XYMONCLIENT_FS_INCLUDE_TYPES and XYMONCLIENT_FS_EXCLUDE_TYPES from
 xymonclient.cfg to override the defaults; see the comments there for the
 per-platform lists.
 
+On Linux, XYMONCLIENT_FS_DF_LOCAL_ONLY=no no longer risks the whole host. df
+stats every remote mount it lists, and a dead NFS or CIFS server leaves it in an
+uninterruptible wait that even SIGKILL does not end, so the client cycle never
+finished and every column went purple, not just disk. The mount types that can
+block this way - nfs, nfs4, cifs, smb3, ceph, glusterfs, fuse.glusterfs, lustre
+and afs - are now collected by a separate df running behind a sentinel, with at
+most one probe outstanding per report. A probe that has not answered within
+XYMONCLIENT_FS_REMOTE_DF_BUDGET seconds (default 30) leaves those mounts
+reported as "unavailable" and 100% full: one filesystem red instead of the host
+purple. The df itself is left running, since it cannot be killed, and is
+recognised on a later cycle through a pidfile in $XYMONTMP, so it clears by
+itself once the server answers - expect to see such a df, and an alert on the
+affected filesystem, for as long as the server is away. Keep XYMONTMP on a local
+filesystem: the client refuses to probe when its own probe directory sits on one
+of these mounts. Set XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES to change the list.
+Clients other than Linux are unaffected, as is the default
+XYMONCLIENT_FS_DF_LOCAL_ONLY=yes, where df never sees these mounts.
+
 The NetBSD client now provides an inode report, sharing the filesystem
 filtering described above. Set XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep
 reporting the ptyfs (/dev/pts) filesystem after an upgrade, and
