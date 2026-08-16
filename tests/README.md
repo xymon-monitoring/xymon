@@ -86,7 +86,8 @@ flight) and one test often spans several.
 | `tests/client/`   | xymon client tools and behaviours                      |
 | `tests/localclient/` | the local client-data analyser (`client/xymond_client`) |
 | `tests/server/`   | xymond-side tools (xymoncgimsg, alert routing, config parsing) |
-| `tests/network/`  | xymonnet probes (xymonping, network checks)            |
+| `tests/xymonnet/` | xymonnet probes (xymonping, network checks)            |
+| `tests/libxymon/` | harnesses compiling only `lib/` sources                |
 | `tests/web/`      | CGIs, HTML rendering paths                             |
 | `tests/packaging/`| cross-cutting: shipped files, paths, generated configs |
 | `tests/buildsystem/` | parallel make, configure probes, CMake feature detection |

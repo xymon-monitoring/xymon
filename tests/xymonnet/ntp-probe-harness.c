@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later                                  */
 /*
- * tests/network/ntp-probe-harness.c
+ * tests/xymonnet/ntp-probe-harness.c
  *
  * Regression test for the internal SNTP probe (xymonnet/ntpprobe.c). It drives
  * the REAL packet-build and validation/offset code - the file is #included the

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/network/tls13-support.sh
+# tests/xymonnet/tls13-support.sh
 #
 # Guard for the "TLSv1.3-only" xymonnet test option added by
 # xymon-monitoring/xymon#33 (the `httpsd://` scheme / SSLVERSION_TLS13).

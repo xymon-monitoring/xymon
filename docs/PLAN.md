@@ -50,12 +50,34 @@ idempotent.
        misc.o     libxymoncomm.a = libxymonclient.a = libxymon.a  (a597fe28)
        loadhosts.o  libxymoncomm.a = libxymonclientcomm.a         (d57ef805)
 
-   The archives differ in membership, not in the objects they share, and the
-   two do not cross-reference, so either link order works. A harness linking
-   `libxymonclient.a libxymonclientcomm.a` resolves everywhere:
+   The archives differ in membership, not in the objects they share. A harness
+   linking `libxymonclientcomm.a libxymonclient.a` resolves everywhere:
    byte-identical to today on a server build, and the client-compiled build of
    the same sources in the client legs -- which is what those builds ship, so
    testing it there is right rather than a compromise.
+
+   **Order matters**, contrary to what this item said before it was built:
+   `libxymonclientcomm.a` references `errprintf`, `debug`, `md5hash` and the
+   strbuffer helpers from `libxymonclient.a`, so comm comes first. The reverse
+   order fails to link with about twenty undefined symbols -- the same reason
+   `history-reportlog-reject.sh` already repeats `libxymon.a` on either side of
+   `libxymoncomm.a`.
+
+   Four harnesses link an archive, not the seven named below:
+   `xmh-item-names`, `notbefore-notafter`, `config-include-dir` and
+   `netrc-password`. `digest-md5hash`, `xtree-destroy`, `xtree-iterate-deleted`
+   and `sbuf-define-c90` compile the sources directly and need no change.
+
+   Measured on two fresh trees, `./configure --server` and `./configure
+   --client`, each built and then run:
+
+   | build | before | after |
+   | ----- | ------ | ----- |
+   | server | 73 pass / 0 skip / 0 fail | 73 / 0 / 0 |
+   | client | 47 pass / 26 skip / 0 fail | **49 / 24 / 0** |
+
+   The two gained are `xmh-item-names` and `notbefore-notafter`, which used to
+   skip on a missing `libxymoncomm.a`.
 
    That is a one-line change per harness, not a second table. Two earlier
    drafts of this item proposed one: first assuming `libxymoncomm.a` was
