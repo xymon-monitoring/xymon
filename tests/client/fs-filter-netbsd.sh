@@ -26,7 +26,7 @@ SERVER=$(find_root)/xymond/client/netbsd.c
 FSF_LOCAL_TYPE=ffs;     FSF_LOCAL_MP=/
 FSF_PSEUDO_TYPE=procfs; FSF_PSEUDO_MP=/proc
 FSF_NOINODE_TYPE=msdos; FSF_NOINODE_MP=/data
-FSF_REMOTE_TYPE=nfs;    FSF_REMOTE_MP=/net
+FSF_REMOTE_TYPE=psshfs; FSF_REMOTE_MP=/ssh
 FSF_EXTRA_TYPE=ext2fs;  FSF_EXTRA_MP=/extra
 FSF_DECOY='procf*'
 
@@ -66,6 +66,14 @@ FSF_COMBINED="$TMP/df-section.sh"
 fsf_extract "$FSF_COMBINED"
 fsf_write_fixture
 fsf_write_stub
+# The client reads the mount list on every DF_LOCAL_ONLY=no cycle now that
+# hard-blocking mounts are guarded (#316); answer it from the fixture rather
+# than from the tester's machine.
+# NetBSD and OpenBSD write the type after the mount point, not inside the
+# parentheses -- measured on the lane VMs, where the FreeBSD spelling made
+# fs_mounts() drop every row.
+FSF_MOUNT_FMT='src on %s type %s (%s)\n'
+fsf_write_mount_stub
 
 # --- the contract ------------------------------------------------------------
 
