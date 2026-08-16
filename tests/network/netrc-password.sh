@@ -50,7 +50,7 @@ assert_not_contains "snprintf(item->auth, login_len," "$src" \
 # the source guard above already stands, so pass with a note.
 command -v "$CC" >/dev/null 2>&1 \
 	|| pass "url.c keeps the #226 snprintf size (source check; no C compiler for the behavioural run)"
-[ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$ROOT/lib/libxymonclient.a" ] \
 	|| pass "url.c keeps the #226 snprintf size (source check; library not built for the behavioural run)"
 
 work=$(mktempdir)
@@ -87,7 +87,8 @@ EOF
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$SRC" "$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
+	"$work/harness.c" "$SRC" "$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
+	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "netrc harness does not compile"; }
 
 # A password whose last byte matters: the off-by-one drops the trailing 't'.
