@@ -158,4 +158,16 @@ assert_colors yellow red red "a restored status keeps the color it held before t
 [ "$(board previouscolor)" = "$(board prevchangecolor)" ] \
 	|| fail "the previouscolor alias must resolve to the same field as prevchangecolor"
 
-pass "xymondboard exposes prevreportcolor (alias oldcolor) and prevchangecolor, and prevchangecolor survives a restart"
+# The generated rows -- info, trends, clientlog -- are fake log records built
+# per request from a memset() struct, where zero is COL_GREEN. A color-history
+# field left at it reads as "was green before", which for these rows says a
+# change or a gap happened to something that has no history at all.
+for generated in info trends; do
+	row=$("$XYMONCLIENT" "127.0.0.1:$PORT" "xymondboard fields=testname,prevchangecolor,prevgapcolor" 2>/dev/null \
+		| awk -F'|' -v t="$generated" '$1 == t { print $2 "/" $3 }')
+	[ -n "$row" ] || fail "no $generated row on the board, so this case proves nothing"
+	[ "$row" = "none/none" ] \
+		|| fail "the generated $generated row reports prevchangecolor/prevgapcolor=$row; it has no history to report"
+done
+
+pass "xymondboard exposes prevreportcolor (alias oldcolor) and prevchangecolor, prevchangecolor survives a restart, and the generated rows claim no history"

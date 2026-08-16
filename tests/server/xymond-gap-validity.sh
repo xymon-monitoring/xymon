@@ -59,7 +59,7 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 	printf '#define GAPBRIDGE_VALIDITIES %s\n' "$limit"
 	printf 'typedef struct xymond_log_t {\n'
 	printf '\tint oldcolor;\n\tint validity;\n\ttime_t lastchange;\n'
-	printf '\tint pregapcolor;\n\tint pregapvalidity;\n'
+	printf '\tint pregapcolor;\n\tint gapreportedcolor;\n\tint lastreportedcolor;\n\tint pregapvalidity;\n'
 	printf '\ttime_t pregaplastchange;\n\ttime_t gapstart;\n'
 	printf '} xymond_log_t;\n'
 	printf '%s\n' "$window"
