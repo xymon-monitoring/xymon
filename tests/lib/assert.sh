@@ -37,6 +37,20 @@ pass() {
 	exit 0
 }
 
+# pass_partial CLAIM [REASON] -- what ran held, but only part of what the test
+# covers ran: no sanitizer for the half that needs one, nothing built to drive.
+# It exits 0 like any pass, so the runner cannot tell them apart -- hence the
+# self-report. Otherwise a half-checked run lands in "passed" and the number
+# says more than the suite verified.
+pass_partial() {
+	if [ -n "${XYMON_TESTS_PARTIAL_LOG:-}" ]; then
+		printf '%s\n' "$0" >>"$XYMON_TESTS_PARTIAL_LOG" 2>/dev/null || true
+	fi
+	if [ -n "${2:-}" ]; then printf 'PARTIAL: %s -- %s\n' "$1" "$2"
+	else printf 'PARTIAL: %s\n' "$1"; fi
+	exit 0
+}
+
 # ---- assertions --------------------------------------------------------------
 
 # assert_equal WANT GOT [MSG]

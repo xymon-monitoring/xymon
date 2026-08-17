@@ -100,8 +100,8 @@ if asan_usable; then
 		fail "the status-card path leaked memory"
 	fi
 else
-	printf 'note: %s cannot build and run ASan binaries, the overflow itself is unverified\n' \
-		"${CC:-cc}" >&2
+	pass_partial "a status card refuses a path that does not fit, and its request is sized to the names" \
+		"${CC:-cc} cannot build and run ASan binaries, so the overflow itself is unverified"
 fi
 
 pass "a status card refuses a path that does not fit, and its request is sized to the names"
