@@ -92,11 +92,14 @@ jobs:
       # common/xymongrep this leg just built. This step is the only place in
       # CI where it executes instead of skipping.
       #
-      # Gated to the server leg only: it produces the broadest binary set
-      # (including common/xymongrep). Widen the gate when a test needs a
-      # binary this leg doesn't build.
+      # Every leg runs it, not just the server one: XYMON_VARIANT tells the
+      # runner which build this is, and it filters out the areas this variant
+      # does not contain rather than letting them fail on missing binaries.
+      # A client leg therefore verifies the client for real, which no leg did
+      # while the step was gated to server.
       - name: Run regression tests against the build
-        if: matrix.variant == 'server'
+        env:
+          XYMON_VARIANT: ${{ matrix.variant }}
         run: |
           # Mirror tests.yml: this step checks out and builds full source, so
           # every test finds the code it guards. The runner's all-skip exit 77
