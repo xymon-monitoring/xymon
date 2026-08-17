@@ -153,6 +153,25 @@ maintenance.
   cannot tell it from a full pass by exit status; the summary counts
   the two apart, and a run that checked half of what it claims stops
   reading as a complete one.
+- **A skip inside an area the build provides is a regression.** With
+  `XYMON_TESTS_STRICT=1` and `XYMON_VARIANT` set — which is what CI
+  does after installing the dependencies and building — the runner
+  fails on any test that skipped in an area this variant produces:
+  the build has that subject, so the test had no business standing
+  down. Outside those areas the filter has already removed the test.
+  Strict also refuses what it cannot hold to that floor: a test in
+  an area `area_in_variant` has never heard of, a test sitting
+  directly under `tests/`, or an executable `.sh` under `tests/lib/`
+  or `tests/fixtures/` (invisible to discovery) each fail the run as
+  a filing error. A developer box declares nothing and is never held
+  to any of this.
+- **Rejected: classifying skips by cause.** A `skip_env` marker ("a
+  host condition, so the floor ignores it") classifies by cause, and
+  cause does not decide whether coverage was lost: a missing tool is
+  a host condition *and*, where CI installs that tool so the test can
+  run, a real regression. Likewise rejected: exempting `require_bin`
+  callers from the area filter — two answers to "should this run
+  here" is one too many.
 - **Exit codes:**
   - `0` — pass
   - `77` — skip (matches the autotools / autopkgtest convention; CI
