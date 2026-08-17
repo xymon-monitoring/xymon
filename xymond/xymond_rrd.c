@@ -197,6 +197,11 @@ int main(int argc, char *argv[])
 	int force_backfeedqueue = 0;
 	int comboflushtime;
 	int checkctltime;
+	/* Set before the loop and carried across iterations: the cachectl and
+	 * release-delay checks at the top of each pass read it before the pass
+	 * refreshes it, so a per-iteration declaration reads an indeterminate
+	 * value on the way in. */
+	time_t now;
 	struct timespec *timeout = NULL;
 
 	/* Handle program options. */
@@ -243,9 +248,10 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-rrd") == 0) {
 			no_rrd = 1;
 		}
-		else if (strcmp(argv[argi], "--cachemultiplier=") == 0) {
-			cacheflushsz = atoi(argv[argi]+18);
-			if (cacheflushsz == 0) cacheflushsz = 1;
+		else if (argnmatch(argv[argi], "--cachemultiplier=")) {
+			char *p = strchr(argv[argi], '=');
+			cacheflushsz = atoi(p+1);
+			if (cacheflushsz <= 0) cacheflushsz = 1;
 		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
@@ -263,8 +269,13 @@ int main(int argc, char *argv[])
 		rrddir = strdup(xgetenv("XYMONRRDS"));
 	}
 
-	/* Has external rrdcached running? Use env by default */
-	ext_rrd_cache = ((ext_rrd_cache >= 0) ? (getenv("RRDCACHED_ADDRESS") != NULL) : 0); 
+	/*
+	 * Has an external rrdcached running? The environment answers when nothing
+	 * on the command line did - but --extcache and --no-extcache are answers,
+	 * and a flag the environment can overrule is not a flag.
+	 */
+	if (ext_rrd_cache == 0) ext_rrd_cache = (getenv("RRDCACHED_ADDRESS") != NULL);
+	else ext_rrd_cache = (ext_rrd_cache > 0);
 	dbgprintf("xymond_rrd: External cache: %d\n", ext_rrd_cache);
 
 	if (exthandler && extids) setup_exthandler(exthandler, extids);
@@ -346,7 +357,6 @@ int main(int argc, char *argv[])
                 ssize_t n;
 		char ctlbuf[PATH_MAX];
 		int gotcachectlmessage;
-		time_t now;
 
 		/* If we need to re-open our external processor, do so */
 		if (reloadextprocessor) {

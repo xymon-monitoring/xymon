@@ -76,6 +76,12 @@ static inline time_t xymon_rrd_last(int argc, xymon_rrd_argv_item_t *argv)
 	return rrd_last(argc, xymon_rrd_api_argv(argv));
 }
 
+static inline int xymon_rrd_flushcached(int argc, xymon_rrd_argv_item_t *argv)
+{
+	xymon_rrd_call_setup();
+	return rrd_flushcached(argc, xymon_rrd_api_argv(argv));
+}
+
 static inline int xymon_rrd_graph(int argc, xymon_rrd_argv_item_t *argv,
 				  char ***calcpr, int *xsize, int *ysize,
 				  void *prdata, double *ymin, double *ymax)
