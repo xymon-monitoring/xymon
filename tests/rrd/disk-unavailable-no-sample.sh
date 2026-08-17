@@ -4,9 +4,9 @@
 # tests/rrd/disk-unavailable-no-sample.sh
 #
 # When a remote mount is unreachable the client reports it as a df-shaped row,
-# "unavailable:/mnt 1 1 0 100% /mnt", so the disk column goes red instead of the
-# whole host going purple. The row carries no reading: the numbers in it exist
-# to breach the panic threshold, nothing measured them.
+# "srv:/exp - - - 100% /mnt": it names the device, so the operator can see which
+# server went away, and reports 100% so the disk column goes red instead of the
+# whole host going purple. The sizes are "-" because nothing measured them.
 #
 # Trending it therefore writes 100% used and 1 KB for as long as the server is
 # unreachable -- a full filesystem that was never measured, with the pre-outage
@@ -100,7 +100,7 @@ assert_match "${first}:[[:space:]]+25([.]0+)?[[:space:]]+50000([.]0+)?" "$before
 # sample taken here would land in its own step rather than being folded into
 # the one above.
 second=$((first + 300))
-send_disk "$second" "unavailable:/remote/nfs 1 1 0 100% /remote/nfs"
+send_disk "$second" "srv:/exp - - - 100% /remote/nfs"
 
 after=$("$work/rrd-lastupdate" "$rrd")
 assert_equal "$before" "$after" \
@@ -141,23 +141,34 @@ ibefore=$("$work/rrd-lastupdate" "$irrd")
 assert_match "${first}:[[:space:]]+15([.]0+)?[[:space:]]+41020([.]0+)?" "$ibefore" \
 	"the measured inode reading reaches the RRD"
 
-# The row a BSD or darwin client sends: the df columns plus the inode ones.
-send_inode "$second" "unavailable:/remote/nfs 1 1 0 100% 1 0 100% /remote/nfs"
+# The BSD and darwin sentinels emit the marker with the inode columns too,
+# but every client's [inode] pipeline collapses it before it is sent: what
+# reaches the server is the same six-field shape as the disk report.
+send_inode "$second" "srv:/exp - - - 100% /remote/nfs"
 assert_equal "$ibefore" "$("$work/rrd-lastupdate" "$irrd")" \
 	"an unmeasured mount was trended for inodes: the RRD took the sentinel row's placeholder instead of keeping its last reading"
 
-# A host may be named "unavailable", and an NFS device is spelled
-# "<server>:<export>", so a real reading can begin with the same twelve
-# characters. The sentinel names the same mount on both ends of the row and a
-# real device cannot, which is what separates them -- dropping this reading
+# The skip is on the values, not on the device name, so a server that happens
+# to be called "unavailable" is trended like any other: dropping this reading
 # would lose the graph for a filesystem that is up and answering.
 third=$((second + 300))
 send_disk "$third" "unavailable:/export 200000 50000 150000 25% /real/nfs"
 realrrd="$work/rrd/unix.test/disk,real,nfs.rrd"
 assert_file_exists "$realrrd" \
-	"a genuine reading from a server named 'unavailable' was taken for the sentinel row and dropped"
+	"a genuine reading from a server named 'unavailable' was mistaken for an unmeasured row and dropped"
 assert_match "${third}:[[:space:]]+25([.]0+)?[[:space:]]+50000([.]0+)?" \
 	"$("$work/rrd-lastupdate" "$realrrd")" \
-	"the genuine reading must be trended, not skipped by the prefix alone"
+	"the genuine reading must be trended: only the values say a row was not measured"
+
+# A spaced device arrives \040-encoded (the client re-encodes it to keep the
+# column count). The marker must be recognised the same: the RRD stays, and
+# no filesystem is invented.
+fourth=$((third + 300))
+rrdcount=$(find "$work/rrd" -name '*.rrd' | wc -l)
+send_disk "$fourth" 'srv:/team\040share - - - 100% /remote/nfs'
+assert_equal "$before" "$("$work/rrd-lastupdate" "$rrd")" \
+	"an unmeasured row naming a spaced device moved the RRD"
+assert_equal "$((rrdcount))" "$(($(find "$work/rrd" -name '*.rrd' | wc -l)))" \
+	"an unmeasured row naming a spaced device created an RRD of its own"
 
 pass "an unreachable mount reports red without writing a fabricated sample to its disk or inode RRD"

@@ -356,13 +356,18 @@ fsf_selfcheck() {
 
 # fsf_assert_loud REPORT MSG -- the section must not read as green. Two
 # spellings are equally loud and a client may use either: the "collection
-# failed" marker (the column goes yellow) or one 100%-full "unavailable:" row
+# failed" marker (the column goes yellow) or one 100%-full unmeasured row
 # per mount (the column goes red). What is forbidden is the third case -- an
 # empty section, which the server reads as "no filesystems, all is well".
+#
+# The unmeasured row is matched on its columns, one line at a time: spacing
+# differs per client (column-aligned vs single-spaced), and a whole-report
+# glob took dashes in device names plus any 100% row for the marker.
 fsf_assert_loud() {
 	case "$1" in
-		*"collection failed"*|*"unavailable:"*) return 0 ;;
+		*"collection failed"*) return 0 ;;
 	esac
+	printf '%s\n' "$1" | grep -Eq '^[^ ]+ +- +- +- +100% ' && return 0
 	fail "${2:-}: the report is silent, which the server reads as green: '$1'"
 }
 

@@ -65,7 +65,7 @@ esac
 : "${XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES=nfs nfs4 smbfs cifs ceph glusterfs puffs|nfs lustre afs}"
 DFPROBEDIR="${XYMONTMP:-/tmp}"
 
-# fs_mounts : one "TYPE<tab>MOUNTPOINT" line per mount, from mount(8).
+# fs_mounts : one "TYPE<tab>MOUNTPOINT<tab>DEVICE" line per mount, from mount(8).
 # NetBSD mount(8) lists from getmntinfo(MNT_NOWAIT), so it never refreshes
 # statfs and cannot block on a dead server.
 # df -P would, which is the whole reason this list is read here instead.
@@ -79,7 +79,8 @@ fs_mounts() {
 			mp = substr(rest, 1, RSTART - 1)
 			type = substr(rest, RSTART + 6)
 			sub(/ \(.*/, "", type)
-			printf "%s\t%s\n", type, mp
+			dev = substr($0, 1, i - 1)
+			printf "%s\t%s\t%s\n", type, mp, dev
 		}'
 }
 
@@ -297,15 +298,28 @@ run_df() {
 		# Unavailable: surface each remote mount as a failed (100%) row rather
 		# than dropping it, since the server reads an absent filesystem as
 		# green. This turns one filesystem red instead of purpling the host.
+		# The row names the server. df could not answer, but the mount table
+		# still knows which device is behind the mount point, and that is the
+		# first thing an operator needs. The sizes are reported as "-": they
+		# were not measured, and a number here would be trended as a reading.
+		# The capacity stays 100% because that is what turns the column red.
 		# The inode report is read column-wise (iused, ifree and %iused are
-		# fields 6-8), so its marker row carries them too.
-		for _m in $_rm; do
-			if [ "$_flag" = -i ]; then
-				echo "unavailable:$_m 1 1 0 100% 1 0 100% $_m"
-			else
-				echo "unavailable:$_m 1 1 0 100% $_m"
-			fi
-		done
+		# fields 6-8), so its marker row carries those columns too.
+		# The mount list rides the mount-table stream behind an @@ separator:
+		# a -v assignment cannot carry newlines on BSD awk (fs_setop makes
+		# the same move). A spaced device is re-encoded (\040) to keep the
+		# column count.
+		{ fs_mounts; echo '@@'; printf '%s\n' "$_rm"; } | awk -F'\t' -v inode="$_flag" '
+			$0 == "@@" { rm = 1; next }
+			!rm { dev[$2] = ($3 == "" ? "-" : $3); next }
+			$0 == "" { next }
+			{
+				d = ($0 in dev) ? dev[$0] : "-"
+				n = split(d, dp, / /)
+				if (n > 1) { d = dp[1]; for (j = 2; j <= n; j++) d = d "\\040" dp[j] }
+				if (inode == "-i") printf "%s - - - 100%% - - 100%% %s\n", d, $0
+				else printf "%s - - - 100%% %s\n", d, $0
+			}'
 	else
 		printf '%s\n' "$_rout"
 	fi
@@ -336,6 +350,7 @@ N
 s/[ 	]*\n[ 	]*/ /
 }' | awk '
 NR == 1 { print "Filesystem itotal iused ifree %iused Mounted on"; next }
+$6 == "-" { printf "%s %s %s %s %s %s\n", $1, "-", "-", "-", $8, $9; next }
 ($6 + $7) <= 0 { next }
 { printf "%s %d %d %d %s %s\n", $1, $6+$7, $6, $7, $8, $9 }
 '

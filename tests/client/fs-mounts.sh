@@ -96,18 +96,20 @@ fi
 dump_rows() { printf 'fs_mounts() returned:\n' >&2; sed -e 's/^/  /' "$TMP/out" >&2; }
 
 # The rows are what the rest of the block indexes into, so check the shape
-# rather than the contents: type, tab, mountpoint, and nothing else.
+# rather than the contents: type, tab, mountpoint, tab, device. The device is
+# what the sentinel names when a server stops answering, so it is part of the
+# contract even though nothing else reads it.
 lineno=0
 present=0
 root_type=
 while IFS= read -r line; do
 	lineno=$((lineno + 1))
 	fields=$(printf '%s' "$line" | awk -F'\t' '{ print NF }')
-	[ "$fields" = 2 ] \
-		|| { dump_rows; fail "$os: fs_mounts() line $lineno is not 'type<TAB>mountpoint' ($fields tab-separated fields): $line"; }
+	[ "$fields" = 3 ] \
+		|| { dump_rows; fail "$os: fs_mounts() line $lineno is not 'type<TAB>mountpoint<TAB>device' ($fields tab-separated fields): $line"; }
 
 	type=${line%%	*}
-	mp=${line#*	}
+	mp=${line#*	}; mp=${mp%%	*}
 
 	# A parse that drifted by a field yields plausible-looking garbage, so
 	# check what a mountpoint always is: an absolute path. Not that it exists
@@ -161,13 +163,13 @@ if [ "$kernel" = Linux ]; then
 	[ -n "$awkprog" ] \
 		|| fail "$os: fs_mounts() no longer parses with a single awk program -- update this check with it"
 	decoded=$(printf 'server:/export /remote/team\\040share\\040x nfs4 rw 0 0\n' | awk "$awkprog")
-	assert_equal "nfs4	/remote/team share x" "$decoded" \
-		"$os: every escaped space in a mount point is decoded, not just the first"
+	assert_equal "nfs4	/remote/team share x	server:/export" "$decoded" \
+		"$os: every escaped space in a mount point is decoded, not just the first, and the device is named"
 	decoded=$(printf 'server:/export /remote/\\134\\134a\\134 nfs4 rw 0 0\n' | awk "$awkprog")
-	assert_equal 'nfs4	/remote/\\a\' "$decoded" \
-		"$os: escaped backslashes -- leading, doubled, trailing -- are all decoded"
+	assert_equal 'nfs4	/remote/\\a\	server:/export' "$decoded" \
+		"$os: escaped backslashes -- leading, doubled, trailing -- are all decoded, and the device is named"
 	decoded=$(printf 'server:/export /remote/a\\134040b nfs4 rw 0 0\n' | awk "$awkprog")
-	assert_equal 'nfs4	/remote/a\040b' "$decoded" \
+	assert_equal 'nfs4	/remote/a\040b	server:/export' "$decoded" \
 		"$os: a literal backslash-040 in a mount point survives; decoding \\134 first would turn it into a space"
 fi
 

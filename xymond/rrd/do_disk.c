@@ -97,35 +97,6 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		/* All clients except AS/400 report the mount-point with slashes - ALSO Win32 clients. */
 		if ((dsystype != DT_AS400) && (strchr(curline, '/') == NULL)) goto nextline;
 
-		/*
-		 * A mount the client could not measure. The remote-df sentinel
-		 * reports it as a df-shaped row so the column goes red instead of
-		 * the whole host going purple, but the row carries no reading: the
-		 * "1 1 0 100%" in it is a placeholder that exists to breach the
-		 * panic threshold. Trending it writes 100% used and 1 KB for as
-		 * long as the server is unreachable, so the graph shows a full
-		 * filesystem that was never measured, and the pre-outage values are
-		 * lost behind it. Skip the row here and the RRD keeps its last real
-		 * sample; the status page still shows the row, and the disk column
-		 * is red either way.
-		 */
-		if (strncmp(curline, "unavailable:", 12) == 0) {
-			/*
-			 * The prefix alone is not the marker: an NFS export from a
-			 * server named "unavailable" spells its device the same way.
-			 * The sentinel names the mount twice -- "unavailable:/mnt ...
-			 * /mnt" -- so require the two to agree, which a real device
-			 * cannot do unless it is already mounted on itself.
-			 */
-			char *sname = curline + 12;
-			size_t snamelen = strcspn(sname, " \t");
-			char *mount = strrchr(curline, ' ');
-
-			if (mount && (snamelen > 0) &&
-			    (strncmp(mount+1, sname, snamelen) == 0) && (*(mount+1+snamelen) == '\0'))
-				goto nextline;
-		}
-
 		/* red/yellow filesystems show up twice */
 		if ((dsystype != DT_NETAPP) && (dsystype != DT_NETWARE) && (dsystype != DT_AS400)) {
 			if (*curline == '&') goto nextline; 
@@ -135,6 +106,19 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		for (columncount=0; (columncount<20); columncount++) columns[columncount] = "";
 		fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
 		while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
+
+		/*
+		 * A row without a reading: an unreachable mount is reported with "-"
+		 * sizes (nothing measured them) and 100% so the column goes red.
+		 * Trending it would write a full filesystem over the pre-outage
+		 * readings, so it is skipped. The test is on the values, not the
+		 * device name; the one df writing this shape itself, AIX "df -Ik" on
+		 * /proc, carried no reading either and trended as zeros.
+		 */
+		if ((strcmp(columns[1], "-") == 0) && (strcmp(columns[2], "-") == 0)) {
+			xfree(fsline);
+			goto nextline;
+		}
 
 		/* 
 		 * Some Unix filesystem reports contain the word "Filesystem".

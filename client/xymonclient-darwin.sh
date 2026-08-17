@@ -91,7 +91,7 @@ esac
 : "${XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES=nfs nfs4 smbfs cifs afpfs webdav ceph glusterfs lustre afs}"
 DFPROBEDIR="${XYMONTMP:-/tmp}"
 
-# fs_mounts : one "TYPE<tab>MOUNTPOINT" line per mount, from mount(8). macOS
+# fs_mounts : one "TYPE<tab>MOUNTPOINT<tab>DEVICE" line per mount, from mount(8). macOS
 # mount(8) lists from getmntinfo(MNT_NOWAIT) -- verified in the shipped binary,
 # three call sites, all MNT_NOWAIT -- so it never refreshes statfs and cannot
 # block on a dead server, which df would.
@@ -104,7 +104,8 @@ fs_mounts() {
 			if (match(rest, / \(/) == 0) next
 			mp = substr(rest, 1, RSTART - 1)
 			split(substr(rest, RSTART + 2), a, /[,)]/)
-			printf "%s\t%s\n", a[1], mp
+			dev = substr($0, 1, i - 1)
+			printf "%s\t%s\t%s\n", a[1], mp, dev
 		}'
 }
 
@@ -321,13 +322,26 @@ fs_guarded() {
 	set -- "$@" $_mounts
 	_rout=`df_sentinel "$_tag" "$@"`
 	if [ $? -eq 124 ]; then
-		for _m in $_mounts; do
-			if [ "$_tag" = inode ]; then
-				echo "unavailable:$_m 1 1 0 100% 1 0 100% $_m"
-			else
-				echo "unavailable:$_m 1 1 0 100% $_m"
-			fi
-		done
+		# The row names the server. df could not answer, but the mount table
+		# still knows which device is behind the mount point, and that is the
+		# first thing an operator needs. The sizes are reported as "-": they
+		# were not measured, and a number here would be trended as a reading.
+		# The capacity stays 100% because that is what turns the column red.
+		# The mount list rides the mount-table stream behind an @@ separator:
+		# a -v assignment cannot carry newlines on BSD awk (fs_setop makes
+		# the same move). A spaced device is re-encoded (\040) to keep the
+		# column count.
+		{ fs_mounts; echo '@@'; printf '%s\n' "$_mounts"; } | awk -F'\t' -v inode="$_tag" '
+			$0 == "@@" { rm = 1; next }
+			!rm { dev[$2] = ($3 == "" ? "-" : $3); next }
+			$0 == "" { next }
+			{
+				d = ($0 in dev) ? dev[$0] : "-"
+				n = split(d, dp, / /)
+				if (n > 1) { d = dp[1]; for (j = 2; j <= n; j++) d = d "\\040" dp[j] }
+				if (inode == "inode") printf "%s - - - 100%% - - 100%% %s\n", d, $0
+				else printf "%s - - - 100%% %s\n", d, $0
+			}'
 	else
 		printf '%s\n' "$_rout"
 	fi
@@ -424,7 +438,8 @@ if [ -n "$FILESYSTEMS_INODE" ] || [ -n "$FILESYSTEMS_INODE_REMOTE" ]; then
 	 fi
 	 fs_guarded inode "-P -i" "$FILESYSTEMS_INODE_REMOTE") | awk '
 NR<2{printf "%-20s %10s %10s %10s %10s %s\n", $1, "itotal", $6, $7, $8, $9}
-(NR>=2 && $6>0) {printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}' )
+(NR>=2 && $6 == "-") {printf "%-20s %10s %10s %10s %10s %s\n", $1, "-", "-", "-", $8, $9}
+(NR>=2 && $6 != "-" && $6>0) {printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}' )
 	emit_df inode Inode
 fi
 
