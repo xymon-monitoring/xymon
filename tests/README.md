@@ -46,12 +46,22 @@ depending on the variant:
 The full table is `variant_products()` in `lib/assert.sh`; it also covers
 `xymond_rrd` and `svcstatus.cgi`, both server-only.
 
+A configured tree vouches for the caller's label: `configure.client` writes
+`CLIENTONLY` and `LOCALCLIENT` into the toplevel `Makefile`, and their
+reachable combinations are exactly the three variants. On a disagreement the
+runner refuses to run — the variable describes a build, it does not select
+one, and a label that contradicts the tree is a mistake rather than a request.
+This is not theoretical: `CONFTYPE=client` is the *localclient* build, and a
+caller declaring `client` for it would drop
+`tests/analysis/analysis-file-ifexist.sh` from the only build that produces
+what it drives. Without a label, the tree answers for itself.
+
+The variable still answers where the tree cannot: an unconfigured tree, and a
+CMake build, write no such `Makefile`.
+
 Leaving it unset is the default and stays supported: each test falls back to its
 own in-tree path, which is what a developer run, a release tarball and the
-build-free `tests.yml` lane all do. Setting it is what lets one test run against
-whichever variant a build produced — without it,
-`tests/analysis/analysis-file-ifexist.sh` skips in a localclient build while
-the program it wants sits in `client/`.
+build-free `tests.yml` lane all do.
 
 ## What lives here, what doesn't
 
