@@ -95,20 +95,20 @@ jobs:
       # disk, so those tests actually execute against the build.
       #
       # First such test: tests/common/xymongrep-filter.sh, which drives the
-      # xymongrep this leg just built -- common/xymongrep on the server leg,
-      # client/xymongrep on the client legs, resolved by the products table in
-      # tests/lib/assert.sh. This step is the only place in CI where it
-      # executes instead of skipping.
+      # xymongrep this leg just built, resolved per variant by the products
+      # table in tests/lib/assert.sh. This step is the only place in CI where
+      # it executes instead of skipping.
       #
       # Every leg, not just the server one: each leg names the build it made
-      # (testvariant), the runner checks that label against the Makefile the
-      # leg's configure wrote, and leaves out the areas that build has none of,
-      # instead of failing on binaries it never produced. A client leg
-      # therefore verifies the client against the client it just built --
-      # which no leg did while this was gated.
+      # (testvariant), the runner checks that label against the configured
+      # tree and leaves out the areas that build has none of. A client leg
+      # verifies the client it just built -- which no leg did while gated.
       - name: Run regression tests against the build
         env:
           XYMON_VARIANT: ${{ matrix.testvariant }}
+          # Dependencies installed and the full variant built: a skip in a
+          # provided area is a hole, so hold the run to the coverage floor.
+          XYMON_TESTS_STRICT: 1
         run: |
           # Mirror tests.yml: this step builds this leg's variant, so every
           # test the filter keeps finds the binaries it drives (unbuilt areas

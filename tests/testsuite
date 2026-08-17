@@ -62,6 +62,31 @@ if [ -z "$tests" ]; then
 	exit 1
 fi
 
+# A strict value the runner does not know is a config error, not a silent
+# off: XYMON_TESTS_STRICT=true would otherwise disable the floor while
+# reading as enabling it.
+case ${XYMON_TESTS_STRICT:-} in
+	''|0|1) ;;
+	*)	errline "XYMON_TESTS_STRICT='${XYMON_TESTS_STRICT}' is not a switch this suite knows -- 1 enables, empty or 0 disables"
+		exit 1 ;;
+esac
+
+# The lib/ and fixtures/ excludes above are also a hole: an executable test
+# misfiled there vanishes without a trace. In strict mode that is a filing
+# error; outside strict a fileMode=false checkout, where every file reads as
+# executable, would trip this on each helper.
+if [ "${XYMON_TESTS_STRICT:-}" = 1 ]; then
+	for helperdir in tests/lib tests/fixtures; do
+		[ -d "$helperdir" ] || continue
+		stray=$(find "$helperdir" -type f -name '*.sh' -perm -u+x | sort)
+		if [ -n "$stray" ]; then
+			errline "executable .sh under $helperdir/ is invisible to discovery -- helpers are sourced (mode 644), tests live under tests/<area>/:"
+			printf '%s\n' "$stray" >&2
+			exit 1
+		fi
+	done
+fi
+
 # XYMON_VARIANT names the build this tree is, so the runner can leave out the
 # tests whose subject that build does not contain. Unset -- a developer run, or
 # the build-free tests.yml lane -- filters nothing: every test decides for
@@ -120,6 +145,13 @@ elif [ -n "$configured" ]; then
 	export XYMON_VARIANT
 fi
 
+# The floor is per-variant; strict with no variant to hold it to would just
+# never fire. Refuse rather than run green with the floor silently off.
+if [ "${XYMON_TESTS_STRICT:-}" = 1 ] && [ -z "$variant" ]; then
+	errline "XYMON_TESTS_STRICT=1 needs XYMON_VARIANT (or a configured tree) -- the coverage floor is per-variant"
+	exit 1
+fi
+
 # area_in_variant AREA -- 0 when this build contains AREA's subject, 1 when it
 # does not, 2 when the area is not in the table. An area names what its tests
 # drive; this table says which builds contain it (tests/README.md).
@@ -145,7 +177,7 @@ trap 'rm -f "$partial_log"; exit 143' TERM
 XYMON_TESTS_PARTIAL_LOG=$partial_log
 export XYMON_TESTS_PARTIAL_LOG
 
-pass=0; skip=0; fail=0; filtered=0; failed=''; filtered_areas=''
+pass=0; skip=0; fail=0; filtered=0; failed=''; filtered_areas=''; skipped_in=''
 # Iterate line-by-line rather than `for t in $tests`: unquoted word-splitting
 # breaks on any path containing a space (find emits newline-separated paths, but
 # the default IFS splits on spaces and tabs too). The here-doc keeps the loop in
@@ -172,11 +204,22 @@ while IFS= read -r t; do
 			    esac
 			    filtered=$((filtered + 1))
 			    continue ;;
-			2)  # An area the table has never heard of cannot be judged. Run
-			    # it and say so, rather than guessing either way.
+			2)  # An area the table has never heard of cannot be judged. In
+			    # strict mode that is a filing error -- its skips could never
+			    # reach the floor. Outside strict, run it and say so.
+			    if [ "${XYMON_TESTS_STRICT:-}" = 1 ]; then
+				errline "unknown test area \"$area\" ($t) -- strict mode holds every area to the coverage floor; add it to area_in_variant"
+				exit 1
+			    fi
 			    if [ "$gh" = 1 ]; then printf '::notice::unknown test area "%s" -- running %s\n' "$area" "$t"
 			    else printf 'NOTE: unknown test area "%s" -- running %s\n' "$area" "$t"; fi ;;
 		esac
+	elif [ -n "$variant" ] && [ "${XYMON_TESTS_STRICT:-}" = 1 ]; then
+		# No area at all: a test directly under tests/. Outside strict it
+		# runs unfiled; in strict mode unfiled means unaccountable -- its
+		# skips would never reach the floor.
+		errline "top-level test $t has no area -- strict mode holds every area to the coverage floor; file it under tests/<area>/"
+		exit 1
 	fi
 
 	group "$t"
@@ -184,7 +227,9 @@ while IFS= read -r t; do
 	rc=$?
 	case $rc in
 		0)  printf '  ok\n';           pass=$((pass + 1)) ;;
-		77) printf '  skip (rc=77)\n'; skip=$((skip + 1)) ;;
+		77) printf '  skip (rc=77)\n'; skip=$((skip + 1))
+		    skipped_in="${skipped_in}${area:-.} ${t}
+" ;;
 		*)  errline "$t FAILED (rc=$rc)"
 		    fail=$((fail + 1))
 		    failed="${failed}  - ${t} (rc=${rc})
@@ -221,6 +266,30 @@ fi
 # individual tests use; see skip() in tests/lib/assert.sh) so the layer above
 # sees "skipped", not "passed". The empty-discovery case already exited above,
 # so reaching here with pass=0 and fail=0 means skip>0.
+# Coverage floor: inside an area this build provides, a skip means the test
+# stopped exercising something the build has. Outside those areas the filter
+# removed the test already, so it never reaches this list.
+#
+# Only where the environment declares itself complete -- CI exports
+# XYMON_TESTS_STRICT after installing the dependencies and building the
+# variant. A developer box declares nothing and is never held to it.
+if [ "${XYMON_TESTS_STRICT:-}" = 1 ] && [ -n "$variant" ] && [ -n "$skipped_in" ]; then
+	breached=''
+	while IFS= read -r line; do
+		[ -n "$line" ] || continue
+		area=${line%% *}
+		if area_in_variant "$area"; then breached="${breached}  - ${line#* }
+"; fi
+	done <<EOF
+$skipped_in
+EOF
+	if [ -n "$breached" ]; then
+		errline "coverage floor: a $variant build provides these areas, so every test in them must run -- these skipped"
+		printf '%s' "$breached" >&2
+		exit 1
+	fi
+fi
+
 if [ "$pass" -eq 0 ] && [ "$skip" -eq 0 ] && [ "$filtered" -gt 0 ]; then
 	# Nothing ran at all, and the filter is why: XYMON_VARIANT names a build
 	# that contains none of these areas. That is a broken declaration, not a
