@@ -49,4 +49,4 @@ one_msg | run_xymond_hostdata "$work" --minimum-free=200 \
 grep -q -- "--minimum-free=200 is too large, capping at 100" "$work/minfree.log" \
 	|| { cat "$work/minfree.log" >&2; fail "--minimum-free=200 was not capped at 100"; }
 
-echo "OK $(basename "$0")"
+pass "a garbage --minimum-free is refused rather than collapsing to 0 and disabling the free-space guard"

@@ -129,6 +129,13 @@ maintenance.
   progress on the happy path; CI logs are noisy enough. On failure
   the `fail` helper prints to stderr and exits, which is usually
   enough context.
+- **One success line, through `pass`.** End with `pass "<what held>"`
+  — a claim, not a label: `pass "namematch() compares the plain name
+  list case-insensitively"`, not `pass "namematch test"`. The runner
+  prints the path and counts the verdict; only the test can say what
+  it verified. A compiled harness reports through its exit status and
+  prints no success line of its own; keep its failure output, which is
+  what makes a red run readable.
 - **Exit codes:**
   - `0` — pass
   - `77` — skip (matches the autotools / autopkgtest convention; CI
