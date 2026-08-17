@@ -41,8 +41,8 @@ ROOT=$(find_root)
 
 # name -> shipped file. The directive is "optional directory
 # @XYMONHOME@/etc/<name>.d", except the two configs whose basename already
-# carries .cfg keep it in the directory name (xymonserver.cfg.d,
-# xymonclient.cfg.d) -- so assert per-file on its own expected suffix.
+# carries .cfg keep it in the directory name (xymonserver.d,
+# xymonclient.d) -- so assert per-file on its own expected suffix.
 check_declares() {  # check_declares <file> <expected-dir-suffix>
 	local f=$1 suffix=$2 re
 	# A sparse checkout (e.g. server-only, no client/) may lack a whole
@@ -67,9 +67,9 @@ check_declares "$ROOT/xymond/etcfiles/graphs.cfg.DIST"          "graphs.d"
 check_declares "$ROOT/xymond/etcfiles/hosts.cfg.DIST"           "hosts.d"
 check_declares "$ROOT/xymond/etcfiles/client-local.cfg.DIST"    "client-local.d"
 check_declares "$ROOT/xymond/etcfiles/rrddefinitions.cfg.DIST"  "rrddefinitions.d"
-check_declares "$ROOT/xymond/etcfiles/xymonserver.cfg.DIST"     "xymonserver.cfg.d"
+check_declares "$ROOT/xymond/etcfiles/xymonserver.cfg.DIST"     "xymonserver.d"
 check_declares "$ROOT/client/clientlaunch.cfg.DIST"             "clientlaunch.d"
-check_declares "$ROOT/client/xymonclient.cfg.DIST"              "xymonclient.cfg.d"
+check_declares "$ROOT/client/xymonclient.cfg.DIST"              "xymonclient.d"
 
 # ---- (B) the directive actually works, via the real stackio reader ---------
 

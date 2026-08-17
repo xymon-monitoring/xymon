@@ -95,4 +95,4 @@ BBTMP="$XYMONTMP"
 BBCLIENTLOGS="$XYMONCLIENTLOGS"
 
 # Local additions: any file dropped into the directory below is included
-optional directory @XYMONHOME@/etc/xymonclient.cfg.d
+optional directory @XYMONHOME@/etc/xymonclient.d

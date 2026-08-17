@@ -357,4 +357,4 @@ BBCLIENTLOGS="$XYMONSERVERLOGS"
 
 
 # Local additions: any file dropped into the directory below is included
-optional directory @XYMONHOME@/etc/xymonserver.cfg.d
+optional directory @XYMONHOME@/etc/xymonserver.d
