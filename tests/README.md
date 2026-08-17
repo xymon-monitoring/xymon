@@ -136,6 +136,13 @@ maintenance.
   it verified. A compiled harness reports through its exit status and
   prints no success line of its own; keep its failure output, which is
   what makes a red run readable.
+- **Say so when only half of it ran.** A test that could not verify
+  everything it covers — no sanitizer for the half that needs one,
+  nothing built to drive — ends with `pass_partial "<what held>"
+  "<what could not be checked>"`. It still exits 0, so the runner
+  cannot tell it from a full pass by exit status; the summary counts
+  the two apart, and a run that checked half of what it claims stops
+  reading as a complete one.
 - **Exit codes:**
   - `0` — pass
   - `77` — skip (matches the autotools / autopkgtest convention; CI

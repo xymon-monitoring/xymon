@@ -37,6 +37,22 @@ pass() {
 	exit 0
 }
 
+# pass_partial CLAIM [REASON] -- what ran did hold, but the test could only
+# verify part of what it covers: no sanitizer for the half that needs one,
+# nothing built to drive. It still exits 0, because nothing failed, so the
+# runner cannot tell it from a full pass by exit status -- it records itself
+# instead. Counting the two apart is the point: otherwise a run that checked
+# half of what it claims lands in "passed" and the number says more than the
+# suite verified.
+pass_partial() {
+	if [ -n "${XYMON_TESTS_PARTIAL_LOG:-}" ]; then
+		printf '%s\n' "$0" >>"$XYMON_TESTS_PARTIAL_LOG" 2>/dev/null || true
+	fi
+	if [ -n "${2:-}" ]; then printf 'PARTIAL: %s -- %s\n' "$1" "$2"
+	else printf 'PARTIAL: %s\n' "$1"; fi
+	exit 0
+}
+
 # ---- assertions --------------------------------------------------------------
 
 # assert_equal WANT GOT [MSG]
