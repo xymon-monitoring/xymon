@@ -122,4 +122,4 @@ render "$val4"
 [ -f "$work/args.out" ] || fail "value with a single quote broke the command line (script did not run)"
 grep -qxF -- "$val4" "$work/args.out" || fail "value with a single quote not literal: $(cat "$work/args.out")"
 
-echo "OK $(basename "$0")"
+pass "a graphs.cfg "TITLE exec:" runs its command with the displayname, service and matched RRDs, and takes its first line"

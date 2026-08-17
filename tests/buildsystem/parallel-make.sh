@@ -96,3 +96,5 @@ assert_not_contains 'cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done' "$web" \
                     "the CGI link loop must not swallow a failed ln (needs '|| exit 1')"
 assert_not_contains 'cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done' "$web" \
                     "the secure CGI link loop must not swallow a failed ln (needs '|| exit 1')"
+
+pass "the legacy Makefile install rules do not swallow a failed ln in the CGI link loops"

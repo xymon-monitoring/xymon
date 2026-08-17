@@ -49,4 +49,4 @@ setup_xymond_hostdata "$work"
 [ -f "$work/var/hostdata/hostA/F3" ] \
 	|| { cat "$work/worker.log" >&2; fail "throttle budget not reset by renamehost: F3 for the reused old name was dropped"; }
 
-echo "OK $(basename "$0")"
+pass "@@renamehost drops the old name's throttle bookkeeping, not just its directory"

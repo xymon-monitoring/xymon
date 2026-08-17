@@ -38,4 +38,4 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 "$work/harness" >"$work/run.log" 2>&1 \
 	|| { cat "$work/run.log" >&2; fail "cgi_split_hostsvc() parse/reject behavior is broken"; }
 
-echo "OK $(basename "$0")"
+pass "cgi_pathcomponent() confines what cgi_split_hostsvc() hands the CGIs to one path component"

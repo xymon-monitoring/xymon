@@ -41,4 +41,4 @@ save 10000000 \
 save 60 || fail "client data not saved with the default-sized window"
 save 0  || fail "client data not saved with --recent-period=0 (throttle disabled)"
 
-echo "OK $(basename "$0")"
+pass "xymond_hostdata saves client data even when uptime is below --recent-period"

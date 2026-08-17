@@ -124,4 +124,4 @@ echo '#undef HAVE_BINARY_TREE' >"$work/shim-fallback/config.h"
 "$work/t-fallback" >"$work/out2" 2>&1 \
 	|| fail "fallback variant visits deleted records (rc=$?): $(tail -15 "$work/out2")"
 
-echo "OK $(basename "$0")"
+pass "iterating after xtreeDelete never visits a deleted record, on either variant"

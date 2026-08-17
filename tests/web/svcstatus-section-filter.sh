@@ -107,4 +107,4 @@ assert_contains "Req=clientlog&nbsp;realhost," "$OUT" \
 assert_not_contains "section=" "$OUT" \
 	"SECTION=clientlog was forwarded as a filter instead of dropped (#147 review)"
 
-echo "OK $(basename "$0")"
+pass "SECTION filters a live client log to the section asked for (#147)"

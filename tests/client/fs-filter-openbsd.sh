@@ -95,4 +95,4 @@ assert_not_contains "tmpfs" "$disk_args" "the disk report keeps tmpfs"
 assert_not_contains "tmpfs" "$inode_args" \
 	"and so does the inode report: OpenBSD's tmpfs inode counts are memory-derived"
 
-pass "xymonclient-openbsd.sh: the FS filter contract, tmpfs in both reports, zero-inode-total drop"
+pass "xymonclient-openbsd.sh: the FS filter contract, tmpfs in both reports, zero-inode-total drop -- OpenBSD df/mount output replayed from fixtures"

@@ -133,4 +133,4 @@ saved=$(ls "$work/var/hostdata/realhost" 2>/dev/null | wc -l)
 [ "$saved" -eq 5 ] \
 	|| fail "failed saves burned throttle slots: $saved good files written, expected 5"
 
-echo "OK $(basename "$0")"
+pass "xymond_hostdata stops saving a host once it has been saved --recent-count times inside --recent-period"

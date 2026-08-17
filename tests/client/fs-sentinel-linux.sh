@@ -534,4 +534,4 @@ assert_equal "$((before + 2))" "$((after))" \
 while read -r _p; do end_stub "$_p"; done < "$DF_REMOTE"
 
 
-pass "the remote-df sentinel bounds a wedged mount, in both reports, without blocking the client"
+pass "the remote-df sentinel bounds a wedged mount, in both reports, without blocking the client -- Linux mount output replayed, df stubbed"

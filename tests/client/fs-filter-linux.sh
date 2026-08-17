@@ -185,4 +185,4 @@ _out=$(cd "$TMP" && env DF_FAIL=1 XYMONCLIENT_FS_DF_LOCAL_ONLY=no \
 fsf_assert_loud "$_out" \
 	"a df failure with no readable mount list must still be loud"
 
-pass "xymonclient-linux.sh: the FS filter contract, nodev exclusions, and the hard-block guard"
+pass "xymonclient-linux.sh: the FS filter contract, nodev exclusions, and the hard-block guard -- Linux df/mount output replayed from fixtures"
