@@ -77,6 +77,49 @@ case $variant in
 		exit 1 ;;
 esac
 
+# A configured tree can vouch for what it is: configure.client writes
+# CLIENTONLY and LOCALCLIENT into the toplevel Makefile, and their reachable
+# combinations are exactly the three variants -- the names are a projection of
+# those two axes, not a third fact. Read the Makefile when it is there and
+# check it against the caller's label rather than letting either side win in
+# silence.
+#
+# A CMake tree writes no such Makefile, and an unconfigured one writes none at
+# all, so XYMON_VARIANT still answers for both.
+variant_from_tree() {
+	[ -f Makefile ] || return 1
+	if grep -q '^CLIENTONLY[	 ]*=[	 ]*yes' Makefile; then
+		if grep -q '^LOCALCLIENT[	 ]*=[	 ]*yes' Makefile
+		then echo localclient
+		else echo client
+		fi
+	else
+		echo server
+	fi
+}
+
+configured=$(variant_from_tree) || configured=''
+if [ -n "$variant" ]; then
+	# The caller names the build; the configured tree is the witness. A
+	# "client" label on a localclient tree once filed the one localclient
+	# test out of the only build producing its binary -- refuse to run
+	# under a disagreement rather than let either side win in silence.
+	if [ -n "$configured" ] && [ "$variant" != "$configured" ]; then
+		errline "XYMON_VARIANT=$variant, but this tree is configured $configured"
+		exit 1
+	fi
+elif [ -n "$configured" ]; then
+	# No label from the caller -- a developer run on a configured tree. The
+	# tree answers for itself.
+	variant=$configured
+	# The tests resolve their own binaries from this (require_bin in
+	# lib/assert.sh), so hand them the same answer the filter uses -- otherwise
+	# the runner files a test under localclient while the test itself looks for
+	# the server's copy of the binary and skips.
+	XYMON_VARIANT=$variant
+	export XYMON_VARIANT
+fi
+
 # area_in_variant AREA -- 0 when this build contains AREA's subject, 1 when it
 # does not, 2 when the area is not in the table. An area names what its tests
 # drive; this table says which builds contain it (tests/README.md).
