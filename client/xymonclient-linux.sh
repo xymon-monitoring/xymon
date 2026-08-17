@@ -173,7 +173,9 @@ probe_dir_is_local()
 	# sends the probe at a directory that may sit on the wedged mount this
 	# exists to keep away from.
 	_pdlm=$(fs_mounts) || return 1
-	printf '%s\n' "$_pdlm" | awk -F'\t' -v dir="$1" -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" '
+	# dir via ENVIRON, not -v: -v escape-processes backslashes (gawk: \c -> c).
+	printf '%s\n' "$_pdlm" | _pdldir="$1" awk -F'\t' -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" '
+		BEGIN { dir = ENVIRON["_pdldir"] }
 		BEGIN { n = split(types, a, /[ \t]+/); for (i = 1; i <= n; i++) t[a[i]] = 1 }
 		{
 			mp = $2
