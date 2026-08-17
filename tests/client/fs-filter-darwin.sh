@@ -150,4 +150,4 @@ assert_not_contains "collection failed" "$(fsf_section "$out" inode)" \
 assert_equal "" "$(cat "$INODE_LOG")" "and no inode df runs at all"
 assert_contains "/System/Volumes/Data" "$out" "while the disk report still carries the data volume"
 
-pass "xymonclient-darwin.sh: the FS filter contract, the root-data exemption, the apfs-free inode report"
+pass "xymonclient-darwin.sh: the FS filter contract, the root-data exemption, the apfs-free inode report -- macOS df/mount output replayed from fixtures"

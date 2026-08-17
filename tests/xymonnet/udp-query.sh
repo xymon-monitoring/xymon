@@ -55,4 +55,4 @@ if [ "$rc" != 0 ]; then
 	fail "udp_query transport is broken (see output above)"
 fi
 
-exit 0
+pass "xymonnet/udpquery.c holds the regressions its harness pins, over the loopback interface"
