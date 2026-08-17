@@ -148,9 +148,10 @@ fi
 # producing well-formed nonsense; one that resolves is enough to rule that out.
 [ "$present" -gt 0 ] || { dump_rows; fail "$os: none of the $lineno mountpoints fs_mounts() reported exists"; }
 
-# No host can be relied on to have a mount point with a space in it (Linux
-# escapes it as \040), so the parser is fed such a line directly. The BSDs
-# print the space raw; the " on " / " (" split keeps it.
+# No host can be relied on to have a mount point with a space or backslash in
+# it (Linux: \040, \134), so the parser is fed such lines directly. \134 must
+# decode last, or a literal "\040" (kernel: \134040) becomes a space. The BSDs
+# print both raw; the " on " / " (" split keeps them.
 if [ "$kernel" = Linux ]; then
 	# The awk program out of the helper, run over one fixture line instead of
 	# the file. Extracted rather than copied, so it is this client's parser
@@ -162,6 +163,12 @@ if [ "$kernel" = Linux ]; then
 	decoded=$(printf 'server:/export /remote/team\\040share\\040x nfs4 rw 0 0\n' | awk "$awkprog")
 	assert_equal "nfs4	/remote/team share x" "$decoded" \
 		"$os: every escaped space in a mount point is decoded, not just the first"
+	decoded=$(printf 'server:/export /remote/\\134\\134a\\134 nfs4 rw 0 0\n' | awk "$awkprog")
+	assert_equal 'nfs4	/remote/\\a\' "$decoded" \
+		"$os: escaped backslashes -- leading, doubled, trailing -- are all decoded"
+	decoded=$(printf 'server:/export /remote/a\\134040b nfs4 rw 0 0\n' | awk "$awkprog")
+	assert_equal 'nfs4	/remote/a\040b' "$decoded" \
+		"$os: a literal backslash-040 in a mount point survives; decoding \\134 first would turn it into a space"
 fi
 
 pass "no client refreshes mount(8), and $os's fs_mounts() parses this host ($lineno mounts, / is ${root_type:-not visible from this chroot})"
