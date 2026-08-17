@@ -136,6 +136,15 @@ area_in_variant() {
 	esac
 }
 
+# pass_partial (lib/assert.sh) exits 0 like any pass, so a half-checked run is
+# invisible to the exit status. Each one records itself here instead.
+partial_log=$(mktemp "${TMPDIR:-/tmp}/xymon-testsuite.$$.XXXXXX") || exit 2
+trap 'rm -f "$partial_log"' EXIT
+trap 'rm -f "$partial_log"; exit 130' INT
+trap 'rm -f "$partial_log"; exit 143' TERM
+XYMON_TESTS_PARTIAL_LOG=$partial_log
+export XYMON_TESTS_PARTIAL_LOG
+
 pass=0; skip=0; fail=0; filtered=0; failed=''; filtered_areas=''
 # Iterate line-by-line rather than `for t in $tests`: unquoted word-splitting
 # breaks on any path containing a space (find emits newline-separated paths, but
@@ -186,8 +195,14 @@ done <<EOF
 $tests
 EOF
 
+# grep -c prints 0 and exits 1 on no match, so take the count and ignore the
+# status rather than appending a second 0 to it.
+partial=$(grep -c . "$partial_log" 2>/dev/null); [ -n "$partial" ] || partial=0
+
 printf '\n----- summary -----\n'
-printf 'passed:  %d\n' "$pass"
+printf 'passed:  %d' "$pass"
+if [ "$partial" -gt 0 ]; then printf ' (%d partial)' "$partial"; fi
+printf '\n'
 printf 'skipped: %d\n' "$skip"
 printf 'failed:  %d\n' "$fail"
 [ "$filtered" -eq 0 ] || printf 'filtered: %d (not in a %s build)\n' "$filtered" "$variant"
