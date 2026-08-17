@@ -191,7 +191,10 @@ stop_xymond
 awk -F'|' -v OFS='|' '$2 == ".flapstate." { if (NF < 11) exit 3; $11 = "1000000,1000000" } { print }' \
 	"$work/chk" > "$work/chk.stale" \
 	|| fail "the .flapstate. record has fewer fields than the flap ring's position; the format changed"
-grep -q '^@@XYMONDCHK-V1|\.flapstate\.|\([^|]*|\)\{8\}1000000,1000000\(|.*\)\?$' "$work/chk.stale" \
+# ERE, not BRE: "\?" is a GNU extension that OpenBSD's grep takes for a literal
+# "?", so the pattern could not match there and the failure read as a changed
+# record format. In an ERE the pipes are the ones that need escaping.
+grep -Eq '^@@XYMONDCHK-V1\|\.flapstate\.\|([^|]*\|){8}1000000,1000000(\|.*)?$' "$work/chk.stale" \
 	|| fail "could not backdate the flap ring; the .flapstate. record format changed"
 
 start_xymond --restart="$work/chk.stale"

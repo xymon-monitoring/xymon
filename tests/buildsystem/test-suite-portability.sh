@@ -157,6 +157,31 @@ check_uname_guard() {
 
 for f in $files; do check_uname_guard "$f" "$work/violations"; done
 
+# "\?", "\+" and "\|" are GNU (and Spencer) extensions to a *basic* regex, not
+# POSIX. OpenBSD's grep reads them as the literal characters, so a pattern
+# using one silently stops matching there -- and a test that greps for
+# something it produced itself then reports the thing it was checking as
+# changed, which is the wrong place to look. In an ERE all three are standard,
+# so the fix is -E (and escaping the pipes that were literal before).
+# check_posix_bre FILE OUT -- append this file's BRE violations to OUT.
+check_posix_bre() {
+	local f=$1 out=$2 line n
+	{ grep -nE '(^|[^[:alnum:]_])(grep|sed)([^[:alnum:]_]|$)' "$f" 2>/dev/null || true; } | \
+	{ grep -vE '^[0-9]+:[[:space:]]*#' || true; } | \
+	while IFS= read -r line; do
+		if printf '%s' "$line" | grep -qE '(grep|sed)[[:space:]]+-[[:alnum:]]*[EP]'; then
+			continue	# -E (or -P): the operators below are the standard ones
+		fi
+		if printf '%s' "$line" | grep -qE '\\[?+|]'; then
+			n=${line%%:*}
+			printf 'posix-bre\t%s\t%s\n' "${f#"$ROOT"/}:$n" \
+				'\? \+ and \| are not POSIX in a basic regex; OpenBSD reads them literally. Use -E' >>"$out"
+		fi
+	done
+}
+
+for f in $files; do check_posix_bre "$f" "$work/violations"; done
+
 if [ -s "$work/violations" ]; then
 	printf 'portability rules broken by the test suite:\n\n' >&2
 	sort "$work/violations" | awk -F'\t' '{ printf "  [%s] %s\n      %s\n", $1, $2, $3 }' >&2
@@ -192,6 +217,20 @@ bypass="$work/bypass.sh"
 check_link_flags "$bypass" "$work/probe-violations"
 assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
 	"the link-flags rule no longer reports both missing helpers for an archive built without them"
+
+# The BRE rule the same way, and with the ERE beside it: a rule that fired on
+# both would be met by turning every -E off again.
+brefile="$work/bre.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf "grep -q 'a\\\\|b' f\n"
+	printf "grep -Eq 'a\\|b' f\n"
+	printf "sed -n 's/x\\\\+/y/p' f\n"
+} >"$brefile"
+: >"$work/bre-violations"
+check_posix_bre "$brefile" "$work/bre-violations"
+assert_equal "2" "$(wc -l <"$work/bre-violations" | tr -d " ")" \
+	"the POSIX-BRE rule no longer separates a GNU-only basic regex from an extended one"
 
 # The uname rule the same way, on both sides: a guard without the declaration
 # is reported, the same guard with it is not.
