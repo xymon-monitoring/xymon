@@ -86,4 +86,4 @@ echo '#undef HAVE_BINARY_TREE' >"$work/shim-fallback/config.h"
 "$work/t-fallback" >"$work/out2" 2>&1 \
 	|| fail "fallback variant leaks or fails (rc=$?): $(tail -15 "$work/out2")"
 
-echo "OK $(basename "$0")"
+pass "xtreeDestroy releases everything the tree allocated, on both the tsearch and the array variant"
