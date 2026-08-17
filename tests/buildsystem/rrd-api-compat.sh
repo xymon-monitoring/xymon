@@ -42,6 +42,7 @@ int rrd_create(int, $argv);
 int rrd_fetch(int, $argv, time_t *, time_t *, unsigned long *,
               unsigned long *, char ***, rrd_value_t **);
 int rrd_graph(int, $argv, char ***, int *, int *, void *, double *, double *);
+int rrd_flushcached(int, $argv);
 #endif
 EOF
 }
@@ -65,6 +66,7 @@ int main(void)
 			      &dsnames, &data);
 	(void)xymon_rrd_graph(1, argv, &calcpr, &xsize, &ysize, 0,
 			      &ymin, &ymax);
+	(void)xymon_rrd_flushcached(1, argv);
 	return 0;
 }
 EOF

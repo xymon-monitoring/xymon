@@ -609,7 +609,10 @@ static void updcache_host_op(char *hostname, int flushfirst, char *flushas)
 			else {
 				snprintf(filedir, sizeof(filedir), "%s%s", rrddir, cacheitem->key);
 			}
-			if (flush_cached_updates(cacheitem, NULL) != 0) {
+			/* dosync=0: this is the drop/rename path, not a request for
+			 * a reader, and the file is about to move out from under
+			 * any timestamp we would set on it. */
+			if (flush_cached_updates(cacheitem, NULL, 0) != 0) {
 				errprintf("Could not flush cached updates for %s before the rename: %s\n",
 					  cacheitem->key, rrd_get_error());
 			}
