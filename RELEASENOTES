@@ -21,6 +21,14 @@ out of sight also restarted its escalation clock. Alerts with a DURATION
 condition may therefore fire earlier than before on tests that stop reporting -
 which is the intended behaviour, but worth knowing before the first such alert.
 
+alerts.cfg gains a FOR=N criterion: a rule matches only once its colour has
+held continuously for at least N minutes. Where DURATION measures the age of
+the event and deliberately survives a yellow-to-red change, FOR measures the
+age of the current colour and resets on any change - so FOR is the one to use
+for "page only if it stays red for N minutes", the alert-side counterpart of
+the delayred/delayyellow status damping. FOR is at-least-only and applies to
+single-colour rules; existing configurations are unaffected.
+
 xymonnet tests with a configured cipher-list restriction now report an SSL error
 when OpenSSL rejects the restriction, instead of silently using the default
 cipher list. Such tests may therefore turn red after upgrading Xymon, or after
@@ -67,7 +75,8 @@ reads XYMONCLIENT_FS_INCLUDE_TYPES and XYMONCLIENT_FS_EXCLUDE_TYPES from
 xymonclient.cfg to override the defaults; see the comments there for the
 per-platform lists.
 
-On Linux, XYMONCLIENT_FS_DF_LOCAL_ONLY=no no longer risks the whole host. df
+On the Linux, FreeBSD, NetBSD, OpenBSD and macOS clients,
+XYMONCLIENT_FS_DF_LOCAL_ONLY=no no longer risks the whole host. df
 stats every remote mount it lists, and a dead NFS or CIFS server leaves it in an
 uninterruptible wait that even SIGKILL does not end, so the client cycle never
 finished and every column went purple, not just disk. The mount types that can
@@ -82,8 +91,8 @@ itself once the server answers - expect to see such a df, and an alert on the
 affected filesystem, for as long as the server is away. Keep XYMONTMP on a local
 filesystem: the client refuses to probe when its own probe directory sits on one
 of these mounts. Set XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES to change the list.
-Clients other than Linux are unaffected, as is the default
-XYMONCLIENT_FS_DF_LOCAL_ONLY=yes, where df never sees these mounts.
+The default XYMONCLIENT_FS_DF_LOCAL_ONLY=yes is unaffected on every client,
+where df never sees these mounts.
 
 The NetBSD client now provides an inode report, sharing the filesystem
 filtering described above. Set XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep
