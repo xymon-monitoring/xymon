@@ -290,6 +290,53 @@ assert_equal "$(head -1 "$DF_REMOTE")" "$_recorded" \
 while read -r _p; do end_stub "$_p"; done < "$DF_REMOTE"
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 
+# --- the claim window, forced open --------------------------------------------
+# The publication above is one of two steps that must not be seen half-done.
+# The other is the claim: it is written to a private file and hard-linked into
+# place, so the pidfile carries its content from the instant the name exists.
+# Writing to the pidfile directly cannot do that -- the name appears first and
+# the claim lands after -- and an entry read in between is empty, which reads as
+# stale: the second cycle removes it and starts a df on top of the first.
+# An ln stub holds the first claim *after* linking, so a second cycle reads the
+# pidfile inside exactly that window. It must find a whole claim and stand down.
+rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
+LN_HELD="$TMP/ln-held"; rm -f "$LN_HELD"
+cat > "$STUB/ln" <<'EOF'
+#!/bin/sh
+# The link itself is real and immediate; only the return from the first claim
+# is held, which is the window a reader has to survive.
+case "$*" in
+	*df-probe-*.pid)
+		/bin/ln "$@" || exit $?
+		[ -e "$LN_HELD" ] || { : > "$LN_HELD"; sleep 3; }
+		exit 0
+		;;
+esac
+exec /bin/ln "$@"
+EOF
+chmod +x "$STUB/ln"
+( run_cycle DF_HANG=1 DF_HANGTIME=8 LN_HELD="$LN_HELD" > "$TMP/claim-first.out" 2>/dev/null ) &
+_first=$!
+# Wait for the window rather than a duration: it is open once the pidfile exists
+# and the cycle that linked it has not returned from ln yet.
+_n=0
+while [ "$_n" -lt 100 ]; do
+	[ -e "$TMP/probe/df-probe-disk.pid" ] && [ -e "$LN_HELD" ] && break
+	_n=$((_n + 1)); sleep 0.1
+done
+out=$(run_cycle DF_HANG=1 DF_HANGTIME=8 LN_HELD="$LN_HELD")
+wait "$_first" 2>/dev/null || true
+rm -f "$STUB/ln" "$LN_HELD"
+assert_equal '1' "$(($(wc -l < "$DF_REMOTE")))" \
+	"a cycle reading the pid file between the link and the claim started a second probe"
+assert_contains 'unavailable:/remote/nfs' "$out" \
+	"the cycle that read the fresh claim must report unavailable, not drop the mount"
+_recorded=$(cat "$TMP/probe/df-probe-disk.pid" 2>/dev/null)
+assert_equal "$(head -1 "$DF_REMOTE")" "$_recorded" \
+	"the pid file must name the df that is actually running"
+while read -r _p; do end_stub "$_p"; done < "$DF_REMOTE"
+rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
+
 # --- a claim held by another live cycle is respected -------------------------
 # Racing for the window above is probabilistic -- it takes many cycles to land
 # in it -- so the state it produces is set up directly instead: a pidfile
