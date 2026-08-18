@@ -97,6 +97,13 @@ int main(int argc, char **argv)
 	entry_t *e;
 	int rc, fail = 0;
 
+	/* The test builds the deep directory from this. Reporting it from here
+	   rather than from getconf(1) keeps it the same constant the function
+	   under test is compiled against -- the buffers it fills are char[PATH_MAX]
+	   -- and getconf reports a per-filesystem pathconf(), which need not
+	   agree with the header. */
+	if ((argc == 2) && (strcmp(argv[1], "--pathmax") == 0)) { printf("%d\n", PATH_MAX); return 0; }
+
 	if (argc < 3) { fprintf(stderr, "usage: %s <wmldir> <deep-wmldir>\n", argv[0]); return 2; }
 	wmldir = argv[1];
 
