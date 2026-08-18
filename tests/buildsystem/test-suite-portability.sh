@@ -88,6 +88,30 @@ report "gnu-regex" '(grep|sed|awk|expr)[^|]*\\(b|<|>|w|W|s|S|d|D)([^[:alnum:]]|$
 report "root-lane" 'chmod +[-+=rwx]*[0-7]?[0-5][0-7][0-7]([^0-9]|$)|chmod +[ugoa]*-w' \
 	"the lanes run as root; a permission bit will not force this failure"
 
+# An -I directory is searched for <angle> includes too, so a source directory
+# put there can capture a system header. macOS makes that concrete: the SDK's
+# stdio.h includes <Availability.h>, the filesystem is case-insensitive, and
+# lib/availability.h answers instead -- every system type after it is unknown,
+# and the three tests that reached lib/ this way did not build on the macOS
+# lanes. -iquote is searched for "quoted" includes only, which is all an
+# in-tree header needs. Generated directories are deliberately NOT flagged:
+# rrd-api-compat.sh puts its mock <rrd.h> on -I precisely so that an angle
+# include finds it.
+report "include-shadow" '\-I *"?\$\{?ROOT' \
+	"an -I source directory also answers <angle> includes; use -iquote (macOS: lib/availability.h captures the SDK's Availability.h)"
+
+# A test replaces an OS primitive by naming the helper that holds it, not by
+# rewriting the path it reads. A rewritten path only works for the one OS that
+# has that path, so the same test cannot cover the other four clients -- and
+# the client is then free to reach for the primitive anywhere, which is how
+# /proc ended up in three places in the Linux [df] block.
+# Any sed reaching for /proc, not one delimiter's worth: s;...;...; and s|...|
+# rewrite a path just as well as s#...#, and a rule that knows four spellings
+# is a rule the next test writer works around by accident. A test that has to
+# name the path anyway -- the native ones -- reads it, it does not sed it.
+report "path-rewrite" 'sed.*/proc/' \
+	"replace the helper by name (fsf_stub_helper), not the path it reads"
+
 # Interpreters the BSD runners do not have.
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
 	"not installed on the BSD lanes; awk and sh are"
@@ -113,6 +137,26 @@ check_link_flags() {
 
 for f in $files; do check_link_flags "$f" "$work/violations"; done
 
+# A uname guard is how a test stops covering four of the five clients. It is
+# allowed in exactly one place -- the test of an OS primitive itself, which
+# cannot run anywhere else -- and such a test says so in its header:
+#
+#     # native-primitive: fs_procname
+#
+# The declaration is the exemption, not the filename, so a test that grows a
+# uname guard has to state which primitive it is there to exercise.
+# check_uname_guard FILE OUT -- append this file's uname violations to OUT.
+check_uname_guard() {
+	local f=$1 out=$2 code
+	code=$(grep -vE '^[[:space:]]*#' "$f" || true)
+	printf '%s\n' "$code" | grep -q 'uname' || return 0
+	grep -qE '^#[[:space:]]*native-primitive:[[:space:]]*[A-Za-z_]' "$f" && return 0
+	printf 'uname-guard\t%s\t%s\n' "${f#"$ROOT"/}" \
+		"guards on uname without a '# native-primitive: NAME' header; stub the helper instead so the test covers every client" >>"$out"
+}
+
+for f in $files; do check_uname_guard "$f" "$work/violations"; done
+
 if [ -s "$work/violations" ]; then
 	printf 'portability rules broken by the test suite:\n\n' >&2
 	sort "$work/violations" | awk -F'\t' '{ printf "  [%s] %s\n      %s\n", $1, $2, $3 }' >&2
@@ -129,10 +173,12 @@ probe="$work/probe.sh"
 	printf 'grep -E %s x\n' "'\\bword\\b'"
 	printf 'chmod 500 d\n'
 	printf 'chmod 555 d\n'
+	printf 'cc -I"$ROOT/lib" x.c\n'
+	printf 'sed s#/proc/mounts#f# x\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "6" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "8" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # The link-flags rule the same way, including the bypass it used to allow: the
 # helpers named in a comment and nowhere else.
@@ -147,4 +193,27 @@ check_link_flags "$bypass" "$work/probe-violations"
 assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
 	"the link-flags rule no longer reports both missing helpers for an archive built without them"
 
-pass "the test suite keeps to bash 3.2, portable tool flags, and the configured build flags"
+# The uname rule the same way, on both sides: a guard without the declaration
+# is reported, the same guard with it is not.
+: >"$work/uname-violations"
+undeclared="$work/undeclared.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf '[ "$(uname -s)" = Linux ] || exit 77\n'
+} >"$undeclared"
+check_uname_guard "$undeclared" "$work/uname-violations"
+assert_equal "1" "$(wc -l <"$work/uname-violations" | tr -d " ")" \
+	"the uname rule no longer reports a test that guards on uname without declaring its primitive"
+
+declared="$work/declared.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf '# native-primitive: fs_procname\n'
+	printf '[ "$(uname -s)" = Linux ] || exit 77\n'
+} >"$declared"
+: >"$work/uname-violations"
+check_uname_guard "$declared" "$work/uname-violations"
+assert_equal "0" "$(wc -l <"$work/uname-violations" | tr -d " ")" \
+	"the uname rule now reports a declared native-primitive test, which is the one place a guard belongs"
+
+pass "the test suite keeps to bash 3.2, portable tool flags, the configured build flags, and one lane per client"

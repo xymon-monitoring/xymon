@@ -36,6 +36,9 @@ typedef struct activealerts_t {
 	unsigned char *pagemessage;
 	unsigned char *ackmessage;
 	time_t eventstart;
+	time_t colorstart;	/* When the current color was entered, from the
+				   page channel's lastchange. eventstart survives
+				   yellow->red; this does not. */
 	time_t nextalerttime;
 	astate_t state;
 	int cookie;
@@ -78,6 +81,9 @@ typedef struct criteria_t {
 	char *timespec;
 	char *extimespec;
 	int minduration, maxduration;	/* In seconds */
+	int minholdtime;		/* FOR=N, in seconds. Hold time of the rule's
+					   color, where minduration is the age of the
+					   alert event. Single-color rules only. */
 	enum recovermsg_t sendrecovered, sendnotice;
 } criteria_t;
 
@@ -103,6 +109,7 @@ extern recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch,
 extern int have_recipient(activealerts_t *alert, int *anymatch);
 
 extern void alert_printmode(int on);
+extern void alert_ignore_holdtime(int on);
 extern void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf);
 #endif
 

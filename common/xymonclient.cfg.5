@@ -153,8 +153,8 @@ probe is not silently reported green. This does not cover the hang
 above: a wedged df never exits.
 
 .IP "\fBXYMONCLIENT_FS_REMOTE_DF_BUDGET\fR"
-Linux only. Seconds to wait for the remote df probe before giving up for
-this cycle. Defaults to \fB30\fR, capped at 3600; empty, zero or
+Linux, FreeBSD, NetBSD, OpenBSD and macOS. Seconds to wait for the remote
+df probe before giving up for this cycle. Defaults to \fB30\fR, capped at 3600; empty, zero or
 non-numeric values fall back to the default.
 .IP
 This is a poll \fIbudget\fR, not a kill timeout. A df blocked on a dead
@@ -183,14 +183,18 @@ such a path blocks. Keep $XYMONTMP on local storage. Symbolic links are
 not resolved, for the same reason.
 
 .IP "\fBXYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES\fR"
-Linux only. The df filesystem types whose stat() hard-blocks when the
-server is unreachable, and which are therefore collected behind the
-sentinel. Defaults to
-\fBnfs nfs4 cifs smb3 ceph glusterfs fuse.glusterfs lustre afs\fR.
-Types are matched as exact df type tokens, so \fBfuse.glusterfs\fR is
+Linux, FreeBSD, NetBSD, OpenBSD and macOS. The filesystem types whose
+stat() hard-blocks when the server is unreachable, and which are
+therefore collected behind the sentinel. The default names each OS's own
+spellings, e.g.
+\fBnfs nfs4 cifs smb3 ceph glusterfs fuse.glusterfs lustre afs\fR on
+Linux and \fBnfs nfs4 smbfs cifs afpfs webdav ceph glusterfs lustre
+afs\fR on macOS.
+Types are matched as exact type tokens, so \fBfuse.glusterfs\fR is
 compared literally rather than as a pattern. Only consulted with
 \fBXYMONCLIENT_FS_DF_LOCAL_ONLY=no\fR, since \fBdf \-l\fR keeps these
-mounts out entirely otherwise.
+mounts out entirely otherwise -- except on macOS, whose df has no such
+flag and where the mount list is filtered instead.
 
 .IP "\fBXYMON\fR"
 Full path to the

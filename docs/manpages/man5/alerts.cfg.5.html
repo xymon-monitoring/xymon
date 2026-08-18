@@ -139,7 +139,34 @@ group Production databases
       given duration. E.g. DURATION&gt;1h (lasted longer than 1 hour) or
       DURATION&lt;30 (only sends alerts the first 30 minutes). The duration is
       specified as a number, optionally followed by 'm' (minutes, default), 'h'
-      (hours), 'd' (days) or 'w' (weeks).</dd>
+      (hours), 'd' (days) or 'w' (weeks). Note that this is the age of the alert
+      <i>event</i>, not of the current colour: the event begins when the status
+      first goes into an alerting colour and deliberately survives a later
+      yellow&#x2192;red change. A status that has been yellow for two hours
+      therefore matches DURATION&gt;10 the instant it turns red. Use <b>FOR</b>
+      when you mean the colour's own age.</dd>
+  <dt id="FOR"><a class="permalink" href="#FOR"><b>FOR=</b><i>time</i></a></dt>
+  <dd>Rule matching an alert only once the rule's colour has held continuously
+      for at least the given time - the counterpart of DURATION for damping
+      short-lived transitions. E.g. COLOR=red FOR=10 alerts on a red that has
+      lasted ten minutes, whether it arrived from green or from yellow. The time
+      is specified as for DURATION.
+    <p class="Pp">The effective colour - the rule's and the recipient's together
+        - must be a single one: with several, a later generalisation of FOR to
+        whole-condition hold time would not be compatible, so such a rule is
+        reported and the FOR ignored. A FOR on the rule line with COLOR= on the
+        recipient is therefore accepted: the recipient names the colour.</p>
+    <p class="Pp">Where both the rule and a recipient set FOR, the longer
+        applies, as for the other filters: a recipient narrows what the rule
+        lets through, it never widens it. There is no FOR&lt; - damping needs
+        only a lower bound, and DURATION&lt; already covers early-window
+        routing.</p>
+    <p class="Pp">A period where the test stopped reporting counts towards the
+        hold time only if the status comes back the same colour, and only up to
+        four times the report validity that applied when the silence began (two
+        hours by default). A test absent for a month therefore does not return
+        claiming a month-long hold time.</p>
+  </dd>
   <dt id="RECOVERED"><a class="permalink" href="#RECOVERED"><b>RECOVERED</b></a></dt>
   <dd>Send recovery and disabled-state messages to matching recipients. This can
       be set on a rule or on an individual recipient.</dd>

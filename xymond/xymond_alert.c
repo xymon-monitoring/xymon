@@ -256,7 +256,16 @@ void save_checkpoint(char *filename)
 		if (awalk->pagemessage) pgmsg = nlencode(awalk->pagemessage);
 		fprintf(fd, "%s|", pgmsg);
 		if (awalk->ackmessage) ackmsg = nlencode(awalk->ackmessage);
-		fprintf(fd, "%s\n", ackmsg);
+		fprintf(fd, "%s|", ackmsg);
+		/*
+		 * colorstart goes last because the record is read by position, not by
+		 * name: anywhere else shifts every following field, and a file written
+		 * by the previous version would be restored with nextalerttime read as
+		 * the state. Appended, an older file simply lacks it (see below), and
+		 * an older binary ignores it. nlencode() escapes '|' as "\p", so the
+		 * message fields above cannot fake a separator and move this one.
+		 */
+		fprintf(fd, "%d\n", (int) awalk->colorstart);
 	}
 	fclose(fd);
 
@@ -330,6 +339,22 @@ int load_checkpoint(char *filename)
 			newalert->color = newalert->maxcolor = parse_color(item[4]);
 			newalert->eventstart = (time_t) atoi(item[5]);
 			newalert->nextalerttime = (time_t) atoi(item[6]);
+			/*
+			 * Written by versions that know about FOR=. Without it the color
+			 * hold time is unknown, and eventstart is the closest honest
+			 * answer: equal for an alert that never changed color, and too
+			 * early - so FOR fires sooner, never later - for one that did.
+			 * The next report from the test replaces it with the real value.
+			 */
+			newalert->colorstart = (time_t) ((i > 10) ? atoi(item[10]) : 0);
+			/*
+			 * Zero is not a hold time. It is what an older file has (no such
+			 * field), what a record created for an @@notify alert carries,
+			 * and what a truncated line yields -- and taken literally it
+			 * makes every FOR= rule match at once, defeating the damping in
+			 * exactly the window after a restart.
+			 */
+			if (newalert->colorstart <= 0) newalert->colorstart = newalert->eventstart;
 			newalert->state = A_PAGING;
 
 			if (statusbuf) {
@@ -499,6 +524,12 @@ int main(int argc, char *argv[])
 			awalk->color = awalk->maxcolor = parse_color(testcolor);
 			awalk->pagemessage = "Test of the alert configuration";
 			awalk->eventstart = getcurrenttime(NULL) - testdur*60;
+			/*
+			 * --test models one colour held for --duration, with nothing to
+			 * have escalated from. Left at the calloc'd zero, FOR= would
+			 * measure now-1970 and always look satisfied.
+			 */
+			awalk->colorstart = awalk->eventstart;
 			awalk->groups = (testgroups ? strdup(testgroups) : NULL);
 			awalk->state = A_PAGING;
 			awalk->cookie = 12345;
@@ -686,6 +717,14 @@ int main(int argc, char *argv[])
 				add_active(awalk->hostname, awalk);
 				traceprintf("New record\n");
 			}
+
+			/*
+			 * lastchange, unlike eventstart above, is taken from every
+			 * message: it is the hold time of the color now being reported,
+			 * which is what FOR= measures. eventstart deliberately survives
+			 * yellow->red; this must not.
+			 */
+			awalk->colorstart = (time_t) atoi(metadata[9]);
 
 			newcolor = parse_color(metadata[7]);
 			oldalertstatus = ((alertcolors & (1 << awalk->color)) != 0);

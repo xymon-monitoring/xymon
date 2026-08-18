@@ -237,7 +237,7 @@ char *deptest_failed(testedhost_t *host, char *testname)
 		t = find_test(dephostname, deptestname);
 		if (t && !t->open) {
 			if (strlen(result) == 0) {
-				strncpy(result, "\nThis test depends on the following test(s) that failed:\n\n", sizeof(result));
+				snprintf(result, sizeof(result), "%s", "\nThis test depends on the following test(s) that failed:\n\n");
 			}
 
 			if ((strlen(result) + strlen(dephostname) + strlen(deptestname) + 2) < sizeof(result)) {
@@ -842,7 +842,7 @@ void load_tests(void)
 				errprintf("Host %s appears twice in hosts.cfg! This may cause strange results\n", h->hostname);
 			}
 	
-			strncpy(h->ip, xmh_item(hwalk, XMH_IP), sizeof(h->ip));
+			snprintf(h->ip, sizeof(h->ip), "%s", xmh_item(hwalk, XMH_IP));
 			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {
@@ -873,7 +873,7 @@ char *ip_to_test(testedhost_t *h)
 		dnsresult = dnsresolve(h->hostname);
 
 		if (dnsresult) {
-			strncpy(h->ip, dnsresult, sizeof(h->ip));
+			snprintf(h->ip, sizeof(h->ip), "%s", dnsresult);
 		}
 		else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
 			/* Already have the IP setup */
@@ -1149,7 +1149,7 @@ int start_ping_service(service_t *service)
 
 		if (t->host->dnserror || t->host->noping) continue;
 
-		strncpy(ip, ip_to_test(t->host), sizeof(ip));
+		snprintf(ip, sizeof(ip), "%s", ip_to_test(t->host));
 		handle = xtreeFind(iptree, ip);
 		if (handle == xtreeEnd(iptree)) {
 			rec = strdup(ip);

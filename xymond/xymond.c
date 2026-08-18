@@ -132,6 +132,7 @@ typedef struct xymond_log_t {
 	time_t *flapchange;	/* Table of the most recent status-change times, used for flap detection */
 	time_t pregaplastchange;	/* The "lastchange" saved when a no-data gap began */
 	time_t gapstart;	/* When that gap began; bounds how far a resume may bridge */
+	int prevchangecolor;	/* The color held before the most recent change, or NO_COLOR before the first one */
 	int pregapcolor;	/* The color recorded before the gap, or NO_COLOR when not in one */
 	int pregapvalidity;	/* The report validity in force when the gap began, in minutes */
 	int validity;		/* Minutes this test's reports stay valid; sizes the bridge bound */
@@ -309,7 +310,8 @@ xymond_statistics_t xymond_stats[] = {
 	{ NULL, 0 }
 };
 
-enum boardfield_t { F_NONE, F_IP, F_HOSTNAME, F_TESTNAME, F_MATCHEDTAG, F_COLOR, F_FLAGS, 
+enum boardfield_t { F_NONE, F_IP, F_HOSTNAME, F_TESTNAME, F_MATCHEDTAG, F_COLOR,
+		    F_PREVREPORTCOLOR, F_PREVCHANGECOLOR, F_FLAGS, 
 		    F_LASTCHANGE, F_LOGTIME, F_VALIDTIME, F_ACKTIME, F_DISABLETIME,
 		    F_SENDER, F_COOKIE, F_LINE1,
 		    F_ACKMSG, F_DISMSG, F_MSG, F_CLIENT, F_CLIENTTSTAMP,
@@ -332,6 +334,13 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "matchedtags", F_MATCHEDTAG },
 	{ "testname", F_TESTNAME },
 	{ "color", F_COLOR },
+	/* The canonical names say when each one moves; the aliases are the names
+	 * xymond uses internally and the ones the first consumer of these fields
+	 * already queries (axians/xymon#10). Same precedent as matchedtag(s). */
+	{ "prevreportcolor", F_PREVREPORTCOLOR },
+	{ "oldcolor", F_PREVREPORTCOLOR },
+	{ "prevchangecolor", F_PREVCHANGECOLOR },
+	{ "previouscolor", F_PREVCHANGECOLOR },
 	{ "flags", F_FLAGS },
 	{ "lastchange", F_LASTCHANGE },
 	{ "logtime", F_LOGTIME },
@@ -1349,7 +1358,7 @@ void get_hts(char *msg, char *sender, char *origin,
 			lwalk->pregapcolor = NO_COLOR;
 			lwalk->pregapvalidity = defaultvalidity;
 			lwalk->validity = defaultvalidity;
-			lwalk->color = lwalk->oldcolor = NO_COLOR;
+			lwalk->color = lwalk->oldcolor = lwalk->prevchangecolor = NO_COLOR;
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
 			lwalk->origin = owalk;
@@ -1913,6 +1922,10 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	 * are about to stop seeing began, not when we stopped seeing it. */
 	prevlastchange = log->lastchange;
 
+	/* oldcolor is the previous report; prevchangecolor is the color held before
+	 * the most recent change. A test repeating a color moves the first and not
+	 * the second, which is what "what was it before this" asks for. */
+	if (newcolor != log->color) log->prevchangecolor = log->color;
 	log->oldcolor = log->color;
 	log->color = newcolor;
 	oldalertstatus = decide_alertstate(log->oldcolor);
@@ -3602,6 +3615,8 @@ strbuffer_t *generate_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, xy
 		  case F_HOSTNAME: addtobuffer(buf, hwalk->hostname); break;
 		  case F_TESTNAME: addtobuffer(buf, lwalk->test->name); break;
 		  case F_COLOR: addtobuffer(buf, colnames[lwalk->color]); break;
+		  case F_PREVREPORTCOLOR: addtobuffer(buf, colnames[lwalk->oldcolor]); break;
+		  case F_PREVCHANGECOLOR: addtobuffer(buf, colnames[lwalk->prevchangecolor]); break;
 		  case F_FLAGS: if (lwalk->testflags) addtobuffer(buf, lwalk->testflags); break;
 		  case F_LASTCHANGE: snprintf(l, sizeof(l), "%d", (int)lwalk->lastchange); addtobuffer(buf, l); break;
 		  case F_LOGTIME: snprintf(l, sizeof(l), "%d", (int)lwalk->logtime); addtobuffer(buf, l); break;
@@ -3742,7 +3757,7 @@ void do_message(conn_t *msg, char *origin)
 
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
-	strncpy(sender, inet_ntoa(msg->addr.sin_addr), sizeof(sender));
+	snprintf(sender, sizeof(sender), "%s", inet_ntoa(msg->addr.sin_addr));
 	now = getcurrenttime(NULL);
 	timeroffset = (getcurrenttime(NULL) - gettimer());
 
@@ -5169,6 +5184,18 @@ void save_checkpoint(void)
 				if (iores >= 0) iores = fprintf(fd, "\n");
 			}
 
+			/* Own record rather than a field on one that exists: ".flapstate."
+			 * is read by position, so a field appended there rides on its
+			 * write condition and on every reader counting to the same place.
+			 * An unrecognised ".name." record is skipped, so this one costs an
+			 * older xymond nothing, and a file without it restores as "no
+			 * previous color" -- which is what those statuses had. */
+			if ((iores >= 0) && (lwalk->prevchangecolor != NO_COLOR)) {
+				iores = fprintf(fd, "@@XYMONDCHK-V1|.prevchangecolor.|%s|%s|%s\n",
+						hwalk->hostname, lwalk->test->name,
+						colnames[lwalk->prevchangecolor]);
+			}
+
 			for (awalk = lwalk->acklist; (awalk && (iores >= 0)); awalk = awalk->next) {
 				iores = fprintf(fd, "@@XYMONDCHK-V1|.acklist.|%s|%s|%d|%d|%d|%d|%s|%s\n",
 						hwalk->hostname, lwalk->test->name,
@@ -5413,6 +5440,39 @@ void load_checkpoint(char *fn)
 			continue;
 		}
 
+		if (strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.prevchangecolor.|", 33) == 0) {
+			xymond_log_t *log = NULL;
+			int prevchangecolor = NO_COLOR;
+
+			hitem = NULL; t = NULL;
+
+			item = gettok(STRBUF(inbuf), "|\n"); i = 0;
+			while (item) {
+				switch (i) {
+				  case 0: break;
+				  case 1: break;
+				  case 2:
+					hosthandle = xtreeFind(rbhosts, item);
+					hitem = (hosthandle == xtreeEnd(rbhosts)) ? NULL : xtreeData(rbhosts, hosthandle);
+					break;
+				  case 3:
+					testhandle = xtreeFind(rbtests, item);
+					t = (testhandle == xtreeEnd(rbtests)) ? NULL : xtreeData(rbtests, testhandle);
+					break;
+				  case 4: prevchangecolor = restore_color(item); break;
+				  default: break;
+				}
+				item = gettok(NULL, "|\n"); i++;
+			}
+
+			if (hitem && t) {
+				for (log = hitem->logs; (log && (log->test != t)); log = log->next) ;
+			}
+			if (log) log->prevchangecolor = prevchangecolor;
+
+			continue;
+		}
+
 		if ((strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.", 16) == 0) || (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.", 17) == 0)) continue;
 
 		item = gettok(STRBUF(inbuf), "|\n"); i = 0;
@@ -5525,8 +5585,12 @@ void load_checkpoint(char *fn)
 		 * A ".flapstate." record, when one follows, overwrites this.
 		 */
 		if (flapcount > 0) ltail->flapchange[0] = lastchange;
-		/* The rest of the flap and hold-time state arrives in that record. */
+		/* The rest of the flap and hold-time state arrives in that record.
+		 * prevchangecolor needs the default too: calloc leaves it 0, which is
+		 * COL_GREEN, so a file written before the field existed would restore
+		 * every test as "was green before". */
 		ltail->pregapcolor = NO_COLOR;
+		ltail->prevchangecolor = NO_COLOR;
 		/* Not checkpointed: the test's next report sets its real validity,
 		 * which arrives within one validity period by definition. */
 		ltail->validity = defaultvalidity;

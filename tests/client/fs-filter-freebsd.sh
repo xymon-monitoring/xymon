@@ -3,17 +3,15 @@
 #
 # tests/client/fs-filter-freebsd.sh
 #
-# Regression guard for the df/inode filesystem filter ported to
-# xymonclient-freebsd.sh (issue #170). FreeBSD df excludes by type with
-# "-t no<csv>"; the script builds that list from XYMONCLIENT_FS_{INCLUDE,
-# EXCLUDE}_TYPES, hides remote fs with df -l (XYMONCLIENT_FS_DF_LOCAL_ONLY),
-# drops no-inode-limit rows ("-") from [inode], and excludes zfs and tmpfs
-# from [inode] by type (zfs has no inode limit; FreeBSD tmpfs reports the
-# 2^31-1 sentinel as itotal, so the "-" row guard cannot catch it).
+# xymonclient-freebsd.sh under the XYMONCLIENT_FS_* contract (#170), plus what
+# is FreeBSD's alone: the inode report drops zfs and tmpfs by type, because zfs
+# has no inode limit at all and FreeBSD's tmpfs reports the 2^31-1 sentinel as
+# itotal, which the "-" row guard cannot catch.
 #
-# Mock-tested on any host: extract the [df]..[mount] block, run it with a df
-# stub that records argv, and assert the constructed options. (Real FreeBSD df
-# output semantics still need verifying on FreeBSD.)
+# The shared contract lives in fs-filter-common.sh and is asserted on the
+# emitted sections; this file supplies the dialect -- FreeBSD excludes types
+# with a single "-t no<csv>" argument. Mock-tested on any host; real FreeBSD df
+# output semantics still need verifying on FreeBSD.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -21,117 +19,92 @@ set -euo pipefail
 # shellcheck source=tests/client/fs-filter-common.sh
 . "$(dirname "$0")/fs-filter-common.sh"
 
-# Resolve SCRIPT (in-tree default; $XYMONCLIENT_FREEBSD points at the installed
-# copy), apply the dangling-override / skip-if-absent contract, assert the FS
-# filter is still present (its absence is a regression, not a skip), and set up
-# TMP/STUB/DF_LOG/INODE_LOG/STDERR_LOG/PATH.
 fsf_setup freebsd XYMONCLIENT_FREEBSD
 
-# df stub: record argv (inode -i calls routed separately) and emit a table. The
-# inode table includes a "tank" row with "-" %iused (a no-inode-limit fs).
-cat > "$STUB/df" <<EOF
-#!/usr/bin/env bash
-# DF_FAIL=1 simulates a df that exits non-zero with no output (e.g. killed).
-[ -n "\${DF_FAIL:-}" ] && exit 1
-if [[ " \$* " =~ " -i " ]]; then
-	echo "\$*" >> "$INODE_LOG"
-	printf 'Filesystem Size Used Avail Capacity iused ifree %%iused Mounted on\n'
-	printf '/dev/ada0p2 100 50 50 50%% 1000 9000 10%% /\n'
-	printf 'tank 200 1 199 1%% 0 0 - /tank\n'
-else
-	echo "\$*" >> "$DF_LOG"
-	printf 'Filesystem Size Used Avail Capacity Mounted on\n'
-	printf '/dev/ada0p2 100G 50G 50G 50%% /\n'
-fi
-EOF
-chmod +x "$STUB/df"
+# --- the dialect -------------------------------------------------------------
 
-# Decoy files in the snippet's working directory ($TMP): if the script let a
-# configured type token glob, "procf*"/"fuse.*" would expand to these filenames.
+FSF_LOCAL_TYPE=ufs;      FSF_LOCAL_MP=/
+FSF_PSEUDO_TYPE=procfs;  FSF_PSEUDO_MP=/proc
+FSF_NOINODE_TYPE=msdosfs; FSF_NOINODE_MP=/data
+FSF_REMOTE_TYPE=fusefs.sshfs; FSF_REMOTE_MP=/ssh
+FSF_EXTRA_TYPE=ext2fs;   FSF_EXTRA_MP=/extra
+FSF_DECOY='procf*'
+
+FSF_DISK_HEADER='Filesystem Size Used Avail Capacity Mounted on'
+FSF_DISK_ROW='/dev/ada0p2 100G 50G 50G 50%% %s'
+FSF_INODE_HEADER='Filesystem Size Used Avail Capacity iused ifree %%iused Mounted on'
+FSF_INODE_ROW='/dev/ada0p2 100 50 50 50%% 1000 9000 10%% %s'
+# No inode limit: FreeBSD df prints "-" in the %iused column (field 8).
+FSF_INODE_NOLIMIT_ROW='/dev/ada0p2 100 50 50 50%% 0 0 - %s'
+
+# One "-tno<csv>" argument carries every exclusion.
+FSF_STUB_PARSE='for a in "$@"; do
+	case "$a" in
+		-t*) _l=${a#-t}; _l=${_l#no}; _ex=" $(echo "$_l" | tr "," " ") " ;;
+		-l) _local=1 ;;
+		-i) _inode=1 ;;
+	esac
+done'
+
+FSF_ARGV_PLAIN='-H'
+FSF_ARGV_EXCLUDE_PSEUDO="-H -tno$FSF_PSEUDO_TYPE"
+
+# --- fixtures ----------------------------------------------------------------
+
+# A file whose name the "procf*" token would expand to, if the client let a
+# configured type undergo pathname expansion.
 : > "$TMP/procfs"
 : > "$TMP/fuse.sshfs"
 
-# Combined [df]+[inode] block (default stop at [mount]); the [inode] block reuses
-# the exclude list the [df] block built, so they run together. run() is a thin
-# shim over fsf_run (fs-filter-common.sh) returning the disk df argv, padded.
-SNIPPET="$TMP/df-section.sh"
-fsf_extract "$SNIPPET"
-run() { fsf_run "$SNIPPET" "$DF_LOG"; }
+# The rest of the built-in pseudo list. The five roles observe only procfs, so
+# without these a type dropped from the client's list would go unnoticed until
+# it turned up as a permanently-full row on a real host.
+FSF_FIXTURE_EXTRA='nullfs /pseudo/nullfs local inode
+cd9660 /pseudo/cd9660 local inode
+devfs /pseudo/devfs local inode
+linprocfs /pseudo/linprocfs local inode
+fdescfs /pseudo/fdescfs local inode
+autofs /pseudo/autofs local inode'
 
-# --- default behaviour ------------------------------------------------------
-args=$(run)
-assert_contains " -H " "$args" "disk df keeps -H"
-assert_contains " -l " "$args" "default is local-only (df -l)"
-assert_contains " -tnonullfs,cd9660,procfs,devfs,linprocfs,fdescfs,autofs " "$args" \
-	"default excludes pseudo types via -t no<csv>"
-assert_not_contains "nonfs" "$args" "nfs is hidden by df -l, not by the type list"
+FSF_COMBINED="$TMP/df-section.sh"
+fsf_extract "$FSF_COMBINED"
+fsf_write_fixture
+fsf_write_stub
+# The client reads the mount list on every DF_LOCAL_ONLY=no cycle now that
+# hard-blocking mounts are guarded (#316); answer it from the fixture rather
+# than from the tester's machine.
+fsf_write_mount_stub
 
+# --- the contract ------------------------------------------------------------
+
+fsf_selfcheck
+fsf_contract
+
+# The built-in list, pinned through the report rather than through df's argv:
+# every type it names has a filesystem in the fixture, and none may be reported.
+assert_not_contains "/pseudo/" "$(fsf_section "$(fsf_report)" df)" \
+	"the built-in pseudo list still excludes every type it names (nullfs cd9660 procfs devfs linprocfs fdescfs autofs)"
+
+# --- FreeBSD's own rules -----------------------------------------------------
+
+# The inode report drops zfs and tmpfs by type. That is an argument-level claim:
+# neither filesystem is in the fixture, and the point is that the client asks df
+# not to report them at all.
+fsf_report >/dev/null
 inode_args=$(printf ' %s ' "$(tr '\n' ' ' < "$INODE_LOG")")
-assert_contains " -i " "$inode_args" "inode df uses -i"
-assert_contains "zfs" "$inode_args" "inode report excludes zfs by default"
+disk_args=$(printf ' %s ' "$(tr '\n' ' ' < "$DF_LOG")")
+assert_contains " -i " "$inode_args" "the inode report is collected with df -i"
+assert_contains "zfs" "$inode_args" \
+	"the inode report excludes zfs (no inode limit at all)"
 assert_contains "tmpfs" "$inode_args" \
-	"inode report excludes tmpfs (itotal is the 2^31-1 sentinel, not a limit)"
-assert_not_contains "tmpfs" "$args" \
-	"the disk report keeps tmpfs (RAM-backed capacity is real)"
+	"the inode report excludes tmpfs (itotal is the 2^31-1 sentinel, not a limit)"
+assert_not_contains "tmpfs" "$disk_args" \
+	"the disk report keeps tmpfs: RAM-backed capacity is real"
 
-# The per-report excludes go through the INCLUDE filter, so an admin who wants
-# the tmpfs inode rows back has the documented escape hatch.
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs run)
+# ... and an admin who wants those inode rows back has the documented escape.
+fsf_report XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs >/dev/null
 inode_args=$(printf ' %s ' "$(tr '\n' ' ' < "$INODE_LOG")")
 assert_not_contains "tmpfs" "$inode_args" \
 	"INCLUDE_TYPES=tmpfs un-excludes tmpfs from the inode report"
 
-# --- INCLUDE / EXCLUDE_TYPES ------------------------------------------------
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES=nullfs run)
-assert_not_contains "nullfs" "$args" "INCLUDE_TYPES=nullfs un-excludes nullfs"
-assert_contains "cd9660" "$args" "INCLUDE_TYPES=nullfs leaves the other excludes"
-
-args=$(XYMONCLIENT_FS_EXCLUDE_TYPES=ext2fs run)
-assert_contains "ext2fs" "$args" "EXCLUDE_TYPES=ext2fs adds ext2fs to the list"
-assert_contains "cd9660" "$args" "EXCLUDE_TYPES leaves the defaults"
-
-# Type tokens are literal, not shell globs. With $TMP as the working directory,
-# "procf*" must not expand to the decoy file and accidentally un-exclude procfs.
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES='procf*' run)
-assert_contains ",procfs," "$args" \
-	"include type tokens must not undergo pathname expansion"
-
-# Likewise an exclude glob must stay literal, not become the decoy filename.
-args=$(XYMONCLIENT_FS_EXCLUDE_TYPES='fuse.*' run)
-assert_contains "fuse.*" "$args" \
-	"exclude type tokens must not undergo pathname expansion"
-assert_not_contains "fuse.sshfs" "$args" \
-	"exclude type glob must not expand to a working-directory filename"
-
-# --- include + exclude precedence: exclude wins -----------------------------
-# A type named in both lists stays excluded: EXCLUDE is applied last (documented
-# contract, "If a type appears in both lists, EXCLUDE wins"). ext2fs is not a
-# default, so its presence is unambiguous.
-args=$(XYMONCLIENT_FS_INCLUDE_TYPES=ext2fs XYMONCLIENT_FS_EXCLUDE_TYPES=ext2fs run)
-assert_contains "ext2fs" "$args" \
-	"a type in both include and exclude lists must stay excluded (exclude wins)"
-
-# --- DF_LOCAL_ONLY ----------------------------------------------------------
-args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=no run)
-assert_not_contains " -l " "$args" "DF_LOCAL_ONLY=no drops -l (surfaces remote)"
-args=$(XYMONCLIENT_FS_DF_LOCAL_ONLY=bogus run)
-assert_contains " -l " "$args" "invalid DF_LOCAL_ONLY falls back to local-only"
-assert_contains "invalid XYMONCLIENT_FS_DF_LOCAL_ONLY" "$(cat "$STDERR_LOG")" \
-	"invalid DF_LOCAL_ONLY warns"
-
-# --- inode "-" (no inode limit) rows are dropped ----------------------------
-out=$( cd "$TMP"; /bin/sh "$SNIPPET" 2>/dev/null )
-inode_section=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p')
-assert_not_contains "/tank" "$inode_section" \
-	"inode report drops the no-inode-limit filesystem (%iused '-')"
-
-# --- false-green guard: df fails with no output -> marker, not empty section --
-out=$( cd "$TMP"; DF_FAIL=1 /bin/sh "$SNIPPET" 2>/dev/null )
-assert_contains "Disk report collection failed" "$out" \
-	"a failed disk df emits a failure marker"
-assert_contains "Inode report collection failed" "$out" \
-	"a failed inode df emits a failure marker"
-assert_not_contains "Filesystem" "$out" \
-	"failure marker carries no df header (server reads a header-less section as yellow)"
-
-pass "xymonclient-freebsd.sh FS filter: types, local-only, inode zfs/tmpfs+'-' drop, df-failure marker"
+pass "xymonclient-freebsd.sh: the FS filter contract, and the zfs/tmpfs inode exclusions"

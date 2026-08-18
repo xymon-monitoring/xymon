@@ -17,6 +17,8 @@ static char rcsid[] = "$Id$";
 #include <sys/time.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -408,14 +410,21 @@ char *histlogtime(time_t histtime)
 }
 
 
-int durationvalue(char *dur)
+static long long durationminutes(char *dur)
 {
-	/* 
+	/*
 	 * Calculate a duration, taking special modifiers into consideration.
-	 * Return the duration as number of minutes.
+	 * Return the exact duration as number of minutes, or DUR_UNPARSED when a
+	 * single component does not fit an int - the width the callers below work
+	 * in, and where the original int arithmetic here was undefined anyway.
+	 *
+	 * The sum itself cannot overflow a long long: a component is at most
+	 * INT_MAX weeks, or 2.2e13 minutes, and a config line bounds how many of
+	 * them there can be.
 	 */
+#define DUR_UNPARSED LLONG_MIN
 
-	int result = 0;
+	long long result = 0;
 	char *startofval;
 	char *endpos;
 	char savedelim;
@@ -430,13 +439,16 @@ int durationvalue(char *dur)
 	while (startofval && (isdigit((int)*startofval))) {
 		char *p;
 		char modifier;
-		int oneval = 0;
+		long long oneval;
 
 		p = startofval + strspn(startofval, "0123456789");
 		modifier = *p;
 		*p = '\0';
-		oneval = atoi(startofval);
+		errno = 0;
+		oneval = strtoll(startofval, NULL, 10);
 		*p = modifier;
+
+		if ((errno == ERANGE) || (oneval > INT_MAX)) { result = DUR_UNPARSED; break; }
 
 		switch (modifier) {
 		  case '\0': break;			/* No delimiter = minutes */
@@ -454,6 +466,44 @@ int durationvalue(char *dur)
 	*endpos = savedelim;
 
 	return result;
+}
+
+
+int durationvalue(char *dur)
+{
+	/*
+	 * Minutes, narrowed to an int, with no way to tell a value that did not
+	 * fit from one that did. Kept deliberately: eight of the seventeen call
+	 * sites compute 60*durationvalue() in an int, where a saturated INT_MAX
+	 * comes back as -60. New code calls durationseconds(); converting the
+	 * rest is a separate sweep.
+	 */
+	long long result = durationminutes(dur);
+
+	return ((result == DUR_UNPARSED) ? 0 : (int)result);
+}
+
+
+int durationseconds(char *dur, int *secs)
+{
+	/*
+	 * Seconds, refusing what will not fit: 1 and stores, or 0 when absent,
+	 * unparseable or too large. A duration overflows twice - the minutes
+	 * accumulate, then the caller multiplies by 60 - so the bound is on the
+	 * minutes. An unknown unit is a typo, not a delimiter ("10x" would read as
+	 * ten minutes); durationvalue() keeps its lax parsing and installed base.
+	 */
+	long long result;
+
+	if (!dur || (*dur == '\0')) return 0;
+	if (dur[strspn(dur, "0123456789mhdw")] != '\0') return 0;
+
+	result = durationminutes(dur);
+
+	if ((result <= 0) || (result > (INT_MAX / 60))) return 0;
+
+	*secs = (int)(result * 60);
+	return 1;
 }
 
 char *durationstring(time_t secs)
