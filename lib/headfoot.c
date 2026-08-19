@@ -22,8 +22,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
+#include "pcre2_api_compat.h"
 
 #include "libxymon.h"
 #include "version.h"
@@ -174,19 +173,19 @@ void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn, char *classptn
 	/* Setup the pattern to match names against */
 	if (hostptn) {
 		hostpattern_text = strdup(hostptn);
-		hostpattern = pcre2_compile(hostptn, strlen(hostptn), PCRE2_CASELESS, &err, &errofs, NULL);
+		hostpattern = pcre2_compile(PCRE2STR(hostptn), strlen(hostptn), PCRE2_CASELESS, &err, &errofs, NULL);
 	}
 	if (pageptn) {
 		pagepattern_text = strdup(pageptn);
-		pagepattern = pcre2_compile(pageptn, strlen(pageptn), PCRE2_CASELESS, &err, &errofs, NULL);
+		pagepattern = pcre2_compile(PCRE2STR(pageptn), strlen(pageptn), PCRE2_CASELESS, &err, &errofs, NULL);
 	}
 	if (ipptn) {
 		ippattern_text = strdup(ipptn);
-		ippattern = pcre2_compile(ipptn, strlen(ipptn), PCRE2_CASELESS, &err, &errofs, NULL);
+		ippattern = pcre2_compile(PCRE2STR(ipptn), strlen(ipptn), PCRE2_CASELESS, &err, &errofs, NULL);
 	}
 	if (classptn) {
 		classpattern_text = strdup(classptn);
-		classpattern = pcre2_compile(classptn, strlen(classptn), PCRE2_CASELESS, &err, &errofs, NULL);
+		classpattern = pcre2_compile(PCRE2STR(classptn), strlen(classptn), PCRE2_CASELESS, &err, &errofs, NULL);
 	}
 }
 
@@ -390,7 +389,7 @@ static void *wanted_host(char *hostname)
 		goto cleanup;
 	}
 	if (hostpattern) {
-		result = pcre2_match(hostpattern, hostname, strlen(hostname), 0, 0,
+		result = pcre2_match(hostpattern, PCRE2STR(hostname), strlen(hostname), 0, 0,
 				ovector, NULL);
 		if (result < 0) {
 			wanted = NULL;
@@ -400,7 +399,7 @@ static void *wanted_host(char *hostname)
 
 	if (pagepattern && hinfo) {
 		char *pname = xmh_item(hinfo, XMH_PAGEPATH);
-		result = pcre2_match(pagepattern, pname, strlen(pname), 0, 0,
+		result = pcre2_match(pagepattern, PCRE2STR(pname), strlen(pname), 0, 0,
 				ovector, NULL);
 		if (result < 0) {
 			wanted = NULL;
@@ -410,7 +409,7 @@ static void *wanted_host(char *hostname)
 
 	if (ippattern && hinfo) {
 		char *hostip = xmh_item(hinfo, XMH_IP);
-		result = pcre2_match(ippattern, hostip, strlen(hostip), 0, 0,
+		result = pcre2_match(ippattern, PCRE2STR(hostip), strlen(hostip), 0, 0,
 				ovector, NULL);
 		if (result < 0) {
 			wanted = NULL;
@@ -425,7 +424,7 @@ static void *wanted_host(char *hostname)
 			goto cleanup;
 		}
 
-		result = pcre2_match(classpattern, hostclass, strlen(hostclass), 0, 0,
+		result = pcre2_match(classpattern, PCRE2STR(hostclass), strlen(hostclass), 0, 0,
 				ovector, NULL);
 		if (result < 0) {
 			wanted = NULL;
