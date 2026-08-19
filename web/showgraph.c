@@ -27,8 +27,7 @@ static char rcsid[] = "$Id$";
 #include <sys/un.h>
 #include <fcntl.h>
 
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
+#include "../lib/pcre2_api_compat.h"
 #include <rrd.h>
 
 #include "libxymon.h"
@@ -993,21 +992,21 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		dir = opendir("."); if (dir == NULL) errormsg("Unexpected error while accessing RRD directory");
 
 		/* Setup the pattern to match filenames against */
-		pat = pcre2_compile(gdef->fnpat, strlen(gdef->fnpat), PCRE2_CASELESS, &err, &errofs, NULL);
+		pat = pcre2_compile(PCRE2STR(gdef->fnpat), strlen(gdef->fnpat), PCRE2_CASELESS, &err, &errofs, NULL);
 		if (!pat) {
 			char msg[8192];
 
-			pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+			pcre2_get_error_message(err, PCRE2BUF(errmsg), sizeof(errmsg));
 			snprintf(msg, sizeof(msg), "graphs.cfg error, PCRE pattern %s invalid: %s, offset %zu\n",
 				 htmlquoted(gdef->fnpat), errmsg, errofs);
 			errormsg(msg);
 		}
 		if (gdef->exfnpat) {
-			expat = pcre2_compile(gdef->exfnpat, strlen(gdef->exfnpat), PCRE2_CASELESS, &err, &errofs, NULL);
+			expat = pcre2_compile(PCRE2STR(gdef->exfnpat), strlen(gdef->exfnpat), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (!expat) {
 				char msg[8192];
 
-				pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+				pcre2_get_error_message(err, PCRE2BUF(errmsg), sizeof(errmsg));
 				snprintf(msg, sizeof(msg), 
 					 "graphs.cfg error, PCRE pattern %s invalid: %s, offset %zu\n",
 					 htmlquoted(gdef->exfnpat), errmsg, errofs);
@@ -1034,16 +1033,16 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 			/* First check the exclude pattern. */
 			if (expat) {
-				result = pcre2_match(expat, d->d_name, strlen(d->d_name), 0, 0,
+				result = pcre2_match(expat, PCRE2STR(d->d_name), strlen(d->d_name), 0, 0,
 						     ovector, NULL);
 				if (result >= 0) continue;
 			}
 
 			/* Then see if the include pattern matches. */
-			result = pcre2_match(pat, d->d_name, strlen(d->d_name), 0, 0,
+			result = pcre2_match(pat, PCRE2STR(d->d_name), strlen(d->d_name), 0, 0,
 					     ovector, NULL);
 			if (result < 0) continue;
-			haveparam = (pcre2_substring_copy_bynumber(ovector, 1, param, &l) == 0);
+			haveparam = (pcre2_substring_copy_bynumber(ovector, 1, PCRE2BUF(param), &l) == 0);
 
 			if (rrdparamisservice && haveparam) {
 				/* Single service out of a bundle (tcp): match against the FNPATTERN

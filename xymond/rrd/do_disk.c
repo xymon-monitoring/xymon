@@ -37,18 +37,18 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		ptnsetup = 1;
 		ptn = getenv("RRDDISKS");
 		if (ptn && strlen(ptn)) {
-			inclpattern = pcre2_compile(ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
+			inclpattern = pcre2_compile(PCRE2STR(ptn), strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (!inclpattern) {
-				pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+				pcre2_get_error_message(err, PCRE2BUF(errmsg), sizeof(errmsg));
 				errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %zu\n",
 						    ptn, errmsg, errofs);
 			}
 		}
 		ptn = getenv("NORRDDISKS");
 		if (ptn && strlen(ptn)) {
-			exclpattern = pcre2_compile(ptn, strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
+			exclpattern = pcre2_compile(PCRE2STR(ptn), strlen(ptn), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (!exclpattern) {
-				pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+				pcre2_get_error_message(err, PCRE2BUF(errmsg), sizeof(errmsg));
 				errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %zu\n",
 						    ptn, errmsg, errofs);
 			}
@@ -182,7 +182,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		if (exclpattern) {
 			int result;
 
-			result = pcre2_match(exclpattern, diskname, strlen(diskname),
+			result = pcre2_match(exclpattern, PCRE2STR(diskname), strlen(diskname),
 					     0, 0, ovector, NULL);
 
 			wanteddisk = (result < 0);
@@ -190,7 +190,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		if (wanteddisk && inclpattern) {
 			int result;
 
-			result = pcre2_match(inclpattern, diskname, strlen(diskname),
+			result = pcre2_match(inclpattern, PCRE2STR(diskname), strlen(diskname),
 					     0, 0, ovector, NULL);
 
 			wanteddisk = (result >= 0);
