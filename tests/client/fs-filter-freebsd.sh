@@ -101,6 +101,15 @@ assert_contains "tmpfs" "$inode_args" \
 assert_not_contains "tmpfs" "$disk_args" \
 	"the disk report keeps tmpfs: RAM-backed capacity is real"
 
+# A ZFS-only host: df -i excludes every filesystem and FreeBSD df then exits 0
+# with no output. The client must emit an EMPTY [inode] section - not a stray
+# header-only row that the server rejects with "Expected strings (%iused and
+# Mounted) not found in df output" (issue #398). The server's own empty-report
+# path then keeps the column green.
+inode_sec=$(fsf_section "$(fsf_report DF_INODE_EMPTY_OK=1)" inode)
+assert_equal "" "$inode_sec" \
+	"an all-zfs host (empty df -i, exit 0) yields an empty [inode] section, no stray header"
+
 # ... and an admin who wants those inode rows back has the documented escape.
 fsf_report XYMONCLIENT_FS_INCLUDE_TYPES=tmpfs >/dev/null
 inode_args=$(printf ' %s ' "$(tr '\n' ' ' < "$INODE_LOG")")
