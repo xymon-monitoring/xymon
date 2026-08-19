@@ -986,7 +986,6 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		int err, result;
 		PCRE2_SIZE errofs;
 		pcre2_match_data *ovector;
-		struct stat st;
 		time_t now = getcurrenttime(NULL);
 
 		/* Scan the directory to see what RRD files are there that match */
@@ -1057,12 +1056,28 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 				if (strstr(d->d_name, service) == NULL) { svcrejects++; continue; }
 			}
 
-			/* 
-			 * Has it been updated recently (within the past 24 hours) ? 
-			 * We don't want old graphs to mess up multi-displays.
+			/*
+			 * Drop RRDs not updated for a day from multi-displays.
+			 * Ask the RRD, not the filesystem: mmap writes do not move
+			 * the mtime everywhere (tests/web/showgraph-stale-filter.sh).
+			 * The argv form: the wrappers own the "char **" versus
+			 * "const char **" divergence. "--" keeps a "-"-prefixed
+			 * filename out of option parsing.
 			 */
-			if (ignorestalerrds && (stat(d->d_name, &st) == 0) && ((now - st.st_mtime) > 86400)) {
-				continue;
+			if (ignorestalerrds) {
+				xymon_rrd_argv_item_t lastargv[] = { "last", "--", d->d_name, NULL };
+				time_t lastupd;
+
+				lastupd = xymon_rrd_last(3, lastargv);
+
+				if (lastupd == (time_t)-1) {
+					/* Unreadable: rrd_graph would fail the whole image
+					 * on it. Drop it and say so; without nostale the
+					 * error still reaches the page. */
+					errprintf("nostale filter drops %s: rrd_last: %s\n", d->d_name, rrd_get_error());
+					continue;
+				}
+				if ((now - lastupd) > 86400) continue;
 			}
 
 			/* We have a matching file! */
@@ -1269,8 +1284,6 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	}
 
 	/* All set - generate the graph */
-	rrd_clear_error();
-
 	result = xymon_rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
 
 	/*
