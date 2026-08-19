@@ -821,7 +821,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	gdef_t *gdef = NULL, *gdefuser = NULL;
 	int wantsingle = 0;
 	int rrdparamisservice = 0;
-	int svcrejects = 0;
+	int svcrejects = 0, staledrops = 0;
 	DIR *dir;
 	time_t now = getcurrenttime(NULL);
 
@@ -1075,9 +1075,10 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 					 * on it. Drop it and say so; without nostale the
 					 * error still reaches the page. */
 					errprintf("nostale filter drops %s: rrd_last: %s\n", d->d_name, rrd_get_error());
+					staledrops++;
 					continue;
 				}
-				if ((now - lastupd) > 86400) continue;
+				if ((now - lastupd) > 86400) { staledrops++; continue; }
 			}
 
 			/* We have a matching file! */
@@ -1127,11 +1128,17 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	}
 	rrddbs[rrddbcount].key = rrddbs[rrddbcount].rrdfn = rrddbs[rrddbcount].rrdparam = NULL;
 
-	if ((rrddbcount == 0) && svcrejects) {
-		if (rrdparamisservice)
-			errprintf("showgraph: no RRD file matched service '%s' - check that FNPATTERN group 1 captures the service component\n", service);
-		else
-			errprintf("showgraph: no RRD file matched service '%s'\n", service);
+	if (rrddbcount == 0) {
+		/* Name the real reason (#377): a stale drop is neither silence
+		 * nor an FNPATTERN problem. */
+		if (staledrops)
+			errprintf("showgraph: no RRD for service '%s' - %d matching file(s) dropped by the nostale filter\n", service, staledrops);
+		else if (svcrejects) {
+			if (rrdparamisservice)
+				errprintf("showgraph: no RRD file matched service '%s' - check that FNPATTERN group 1 captures the service component\n", service);
+			else
+				errprintf("showgraph: no RRD file matched service '%s'\n", service);
+		}
 	}
 
 	/* Sort them so the display looks prettier. */
