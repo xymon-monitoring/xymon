@@ -75,7 +75,7 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 			int err;
 			PCRE2_SIZE errofs;
 
-			zVM_exp = pcre2_compile(".* CPU Utilization *([0-9]+)%", PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
+			zVM_exp = pcre2_compile(PCRE2STR(".* CPU Utilization *([0-9]+)%"), PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
 		}
 		if (zVM_exp == NULL) goto done_parsing;
 
@@ -84,10 +84,10 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 			errprintf("Cannot allocate PCRE match data for z/VM load parsing\n");
 			goto done_parsing;
 		}
-		res = pcre2_match(zVM_exp, msg, strlen(msg), 0, 0, ovector, NULL);
+		res = pcre2_match(zVM_exp, PCRE2STR(msg), strlen(msg), 0, 0, ovector, NULL);
 		if (res >= 0) {
 			/* We have a match - pick up the data. */
-			*w = '\0'; if (res > 0) pcre2_substring_copy_bynumber(ovector, 1, w, &l);
+			*w = '\0'; if (res > 0) pcre2_substring_copy_bynumber(ovector, 1, PCRE2BUF(w), &l);
 			if (strlen(w)) {
 				load = atoi(w); gotload = 1;
 			}
@@ -156,7 +156,7 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 			int err;
 			PCRE2_SIZE errofs;
 
-			as400_exp = pcre2_compile(".* ([0-9]+) users ([0-9]+) jobs.* load=([0-9]+)\\%",
+			as400_exp = pcre2_compile(PCRE2STR(".* ([0-9]+) users ([0-9]+) jobs.* load=([0-9]+)\\%"),
 			                          PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
 		}
 		if (as400_exp == NULL) goto done_parsing;
@@ -166,15 +166,15 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 			errprintf("Cannot allocate PCRE match data for AS/400 load parsing\n");
 			goto done_parsing;
 		}
-		res = pcre2_match(as400_exp, msg, strlen(msg), 0, 0, ovector, NULL);
+		res = pcre2_match(as400_exp, PCRE2STR(msg), strlen(msg), 0, 0, ovector, NULL);
 		if (res >= 0) {
 			/* We have a match - pick up the AS/400 data. */
-			*w = '\0'; if (res > 0) pcre2_substring_copy_bynumber(ovector, 1, w, &l);
+			*w = '\0'; if (res > 0) pcre2_substring_copy_bynumber(ovector, 1, PCRE2BUF(w), &l);
 			if (strlen(w)) {
 				users = atoi(w); gotusers = 1;
 			}
 
-			*w = '\0'; l = sizeof(w); if (res > 0) pcre2_substring_copy_bynumber(ovector, 3, w, &l);
+			*w = '\0'; l = sizeof(w); if (res > 0) pcre2_substring_copy_bynumber(ovector, 3, PCRE2BUF(w), &l);
 			if (strlen(w)) {
 				load = atoi(w); gotload = 1;
 			}

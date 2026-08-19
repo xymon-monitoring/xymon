@@ -77,27 +77,27 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			hostexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
+			hostexp = pcre2_compile(PCRE2STR(exp), strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (hostexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--exhosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			exhostexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
+			exhostexp = pcre2_compile(PCRE2STR(exp), strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (exhostexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--tests=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			testexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
+			testexp = pcre2_compile(PCRE2STR(exp), strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (testexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--extests=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			extestexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
+			extestexp = pcre2_compile(PCRE2STR(exp), strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (extestexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--colors=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			colorexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
+			colorexp = pcre2_compile(PCRE2STR(exp), strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (colorexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--outfile=")) {
@@ -315,23 +315,23 @@ int main(int argc, char *argv[])
 
 
 			if (hostexp) {
-				match = (pcre2_match(hostexp, hostname, strlen(hostname), 0, 0, ovector, NULL) >= 0);
+				match = (pcre2_match(hostexp, PCRE2STR(hostname), strlen(hostname), 0, 0, ovector, NULL) >= 0);
 				if (!match) continue;
 			}
 			if (exhostexp) {
-				match = (pcre2_match(exhostexp, hostname, strlen(hostname), 0, 0, ovector, NULL) >= 0);
+				match = (pcre2_match(exhostexp, PCRE2STR(hostname), strlen(hostname), 0, 0, ovector, NULL) >= 0);
 				if (match) continue;
 			}
 			if (testexp) {
-				match = (pcre2_match(testexp, testname, strlen(testname), 0, 0, ovector, NULL) >= 0);
+				match = (pcre2_match(testexp, PCRE2STR(testname), strlen(testname), 0, 0, ovector, NULL) >= 0);
 				if (!match) continue;
 			}
 			if (extestexp) {
-				match = (pcre2_match(extestexp, testname, strlen(testname), 0, 0, ovector, NULL) >= 0);
+				match = (pcre2_match(extestexp, PCRE2STR(testname), strlen(testname), 0, 0, ovector, NULL) >= 0);
 				if (match) continue;
 			}
 			if (colorexp) {
-				match = (pcre2_match(colorexp, color, strlen(color), 0, 0, ovector, NULL) >= 0);
+				match = (pcre2_match(colorexp, PCRE2STR(color), strlen(color), 0, 0, ovector, NULL) >= 0);
 				if (!match) continue;
 			}
 
