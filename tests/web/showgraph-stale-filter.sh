@@ -98,7 +98,7 @@ render() {	# render <extra query args>
 	QUERY_STRING="host=testhost&service=disk&graph=hourly&action=view$1" \
 	XYMONHOME="$work" TEST2RRD="disk=disk" \
 		"$work/showgraph" --debug --config="$ROOT/xymond/etcfiles/graphs.cfg.DIST" \
-		--rrddir="$rrds" >"$work/answer" 2>/dev/null || true
+		--rrddir="$rrds" >"$work/answer" 2>"$work/errors" || true
 	# -a and LC_ALL=C: the answer carries the PNG's bytes, and a grep that
 	# goes binary-mode returns nothing instead of the DEF lines.
 	LC_ALL=C grep -a 'DEF:' "$work/answer" || true
@@ -123,5 +123,18 @@ assert_not_contains "disk,old.rrd" "$out" \
 LC_ALL=C grep -aq 'IHDR' "$work/answer" \
 	|| { sed -n '1,12p' "$work/answer" >&2
 	     fail "the request selected its RRD and then produced no image -- rrd_graph() failed after the staleness probe"; }
+
+# When every matching file is dropped as stale, the empty answer must say so
+# (#377) -- not silence, and not the FNPATTERN blame that misdirects to
+# graphs.cfg.
+mv "$fresh" "$work/fresh.aside"
+out=$(render "&nostale")
+assert_not_contains "disk," "$out" "with every matching RRD stale, nothing may be graphed"
+errs=$(cat "$work/errors")
+assert_contains "no RRD for service 'disk' - 1 matching file(s) dropped by the nostale filter" "$errs" \
+	"an all-stale result must name the service, the count and the staleness drops in the log"
+assert_not_contains "FNPATTERN" "$errs" \
+	"an all-stale result must not blame the FNPATTERN capture -- that red herring is issue #377"
+mv "$work/fresh.aside" "$fresh"
 
 pass "the nostale filter reads when the RRD was last written, not when its file was touched"
