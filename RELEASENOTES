@@ -86,6 +86,18 @@ expect.
 Web
 ---
 
+Graphs no longer depend on an RRD file's modification time. The nostale filter
+on graph links, which drops an RRD not updated for a day, now reads the last
+update recorded in the RRD itself: the file time does not always follow the
+writes (on macOS, network shares, old kernels), and multi-file graphs went
+blank a day after they were created. With rrdcached, showgraph.cgi now needs to
+reach the daemon (RRDCACHED_ADDRESS) to draw anything.
+
+On Linux, xymond no longer sets an RRD file's modification time after each
+update. On old kernels, where RRDtool's mmap writes do not update it, a tool
+outside Xymon that relied on that time -- an rsync quick-check, a purge by age
+-- now sees the file as unchanged.
+
 The default charset is now UTF-8: HTMLCONTENTTYPE defaults to "text/html;
 charset=UTF-8", so non-ASCII content renders without relying on the web
 server's default. Sites emitting another encoding (iso-8859-1, euc-jp) should
