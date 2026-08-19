@@ -17,8 +17,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
+#include "../lib/pcre2_api_compat.h"
 
 #include "libxymon.h"
 
@@ -98,7 +97,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Get the alert cookie */
-	subjexp = pcre2_compile(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
+	subjexp = pcre2_compile(PCRE2STR(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*"), PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 1\n");
 		return 2;
@@ -109,14 +108,14 @@ int main(int argc, char *argv[])
 		dbgprintf("pcre match-data allocation failed - 1\n");
 		return 2;
 	}
-	result = pcre2_match(subjexp, subjectline, strlen(subjectline), 0, 0, ovector, NULL);
+	result = pcre2_match(subjexp, PCRE2STR(subjectline), strlen(subjectline), 0, 0, ovector, NULL);
 	if (result < 0) {
 		pcre2_code_free(subjexp);
 		pcre2_match_data_free(ovector);
 		dbgprintf("Subject line did not match pattern\n");
 		return 3; /* Subject did not match what we expected */
 	}
-	if (pcre2_substring_copy_bynumber(ovector, 2, cookie, &l) != 0) {
+	if (pcre2_substring_copy_bynumber(ovector, 2, PCRE2BUF(cookie), &l) != 0) {
 		pcre2_code_free(subjexp);
 		pcre2_match_data_free(ovector);
 		dbgprintf("Could not find cookie value\n");
@@ -126,7 +125,7 @@ int main(int argc, char *argv[])
 	pcre2_code_free(subjexp);
 
 	/* See if there's a "DELAY=" delay-value also */
-	subjexp = pcre2_compile(".*DELAY[ =]+([0-9]+[mhdw]*)", PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
+	subjexp = pcre2_compile(PCRE2STR(".*DELAY[ =]+([0-9]+[mhdw]*)"), PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 2\n");
 		return 2;
@@ -137,11 +136,11 @@ int main(int argc, char *argv[])
 		dbgprintf("pcre match-data allocation failed - 2\n");
 		return 2;
 	}
-	result = pcre2_match(subjexp, subjectline, strlen(subjectline), 0, 0, ovector, NULL);
+	result = pcre2_match(subjexp, PCRE2STR(subjectline), strlen(subjectline), 0, 0, ovector, NULL);
 	if (result >= 0) {
 		char delaytxt[4096];
 		l = sizeof(delaytxt);
-		if (pcre2_substring_copy_bynumber(ovector, 1, delaytxt, &l) == 0) {
+		if (pcre2_substring_copy_bynumber(ovector, 1, PCRE2BUF(delaytxt), &l) == 0) {
 			duration = durationvalue(delaytxt);
 		}
 	}
@@ -149,7 +148,7 @@ int main(int argc, char *argv[])
 	pcre2_code_free(subjexp);
 
 	/* See if there's a "msg" text also */
-	subjexp = pcre2_compile(".*MSG[ =]+(.*)", PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
+	subjexp = pcre2_compile(PCRE2STR(".*MSG[ =]+(.*)"), PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 3\n");
 		return 2;
@@ -160,11 +159,11 @@ int main(int argc, char *argv[])
 		dbgprintf("pcre match-data allocation failed - 3\n");
 		return 2;
 	}
-	result = pcre2_match(subjexp, subjectline, strlen(subjectline), 0, 0, ovector, NULL);
+	result = pcre2_match(subjexp, PCRE2STR(subjectline), strlen(subjectline), 0, 0, ovector, NULL);
 	if (result >= 0) {
 		char msgtxt[4096];
 		l = sizeof(msgtxt);
-		if (pcre2_substring_copy_bynumber(ovector, 1, msgtxt, &l) == 0) {
+		if (pcre2_substring_copy_bynumber(ovector, 1, PCRE2BUF(msgtxt), &l) == 0) {
 			firsttxtline = strdup(msgtxt);
 		}
 	}

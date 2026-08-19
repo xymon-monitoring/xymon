@@ -28,8 +28,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <time.h>
 
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
+#include "pcre2_api_compat.h"
 
 #include "libxymon.h"
 
@@ -211,7 +210,7 @@ static int  eventfilter(void *hinfo, char *testname,
 		while (!pagematch && pagename) {
 			char *matchname = pagepath_matchname(pagename);
 
-			pagematch = (pcre2_match(pageregexp, matchname, strlen(matchname), 0, 0,
+			pagematch = (pcre2_match(pageregexp, PCRE2STR(matchname), strlen(matchname), 0, 0,
 					ovector, NULL) >= 0);
 			pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
 		}
@@ -231,7 +230,7 @@ static int  eventfilter(void *hinfo, char *testname,
 		while (!pagematch && pagename) {
 			char *matchname = pagepath_matchname(pagename);
 
-			pagematch = (pcre2_match(expageregexp, matchname, strlen(matchname), 0, 0,
+			pagematch = (pcre2_match(expageregexp, PCRE2STR(matchname), strlen(matchname), 0, 0,
 					ovector, NULL) >= 0);
 			pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
 		}
@@ -244,7 +243,7 @@ static int  eventfilter(void *hinfo, char *testname,
 	}
 
 	if (hostregexp)
-		hostmatch = (pcre2_match(hostregexp, hostname, strlen(hostname), 0, 0,
+		hostmatch = (pcre2_match(hostregexp, PCRE2STR(hostname), strlen(hostname), 0, 0,
 				ovector, NULL) >= 0);
 	else
 		hostmatch = 1;
@@ -254,7 +253,7 @@ static int  eventfilter(void *hinfo, char *testname,
 	}
 
 	if (exhostregexp)
-		hostmatch = (pcre2_match(exhostregexp, hostname, strlen(hostname), 0, 0,
+		hostmatch = (pcre2_match(exhostregexp, PCRE2STR(hostname), strlen(hostname), 0, 0,
 				ovector, NULL) >= 0);
 	else
 		hostmatch = 0;
@@ -264,7 +263,7 @@ static int  eventfilter(void *hinfo, char *testname,
 	}
 
 	if (testregexp)
-		testmatch = (pcre2_match(testregexp, testname, strlen(testname), 0, 0,
+		testmatch = (pcre2_match(testregexp, PCRE2STR(testname), strlen(testname), 0, 0,
 				ovector, NULL) >= 0);
 	else
 		testmatch = 1;
@@ -274,7 +273,7 @@ static int  eventfilter(void *hinfo, char *testname,
 	}
 
 	if (extestregexp)
-		testmatch = (pcre2_match(extestregexp, testname, strlen(testname), 0, 0,
+		testmatch = (pcre2_match(extestregexp, PCRE2STR(testname), strlen(testname), 0, 0,
 				ovector, NULL) >= 0);
 	else
 		testmatch = 0;
@@ -611,13 +610,13 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 
 	if (!maxcount) maxcount = 100;
 
-	if (pageregex && *pageregex) pageregexp = pcre2_compile(pageregex, strlen(pageregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (expageregex && *expageregex) expageregexp = pcre2_compile(expageregex, strlen(expageregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (hostregex && *hostregex) hostregexp = pcre2_compile(hostregex, strlen(hostregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (exhostregex && *exhostregex) exhostregexp = pcre2_compile(exhostregex, strlen(exhostregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (testregex && *testregex) testregexp = pcre2_compile(testregex, strlen(testregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (extestregex && *extestregex) extestregexp = pcre2_compile(extestregex, strlen(extestregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (colrregex && *colrregex) colrregexp = pcre2_compile(colrregex, strlen(colrregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (pageregex && *pageregex) pageregexp = pcre2_compile(PCRE2STR(pageregex), strlen(pageregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (expageregex && *expageregex) expageregexp = pcre2_compile(PCRE2STR(expageregex), strlen(expageregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (hostregex && *hostregex) hostregexp = pcre2_compile(PCRE2STR(hostregex), strlen(hostregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (exhostregex && *exhostregex) exhostregexp = pcre2_compile(PCRE2STR(exhostregex), strlen(exhostregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (testregex && *testregex) testregexp = pcre2_compile(PCRE2STR(testregex), strlen(testregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (extestregex && *extestregex) extestregexp = pcre2_compile(PCRE2STR(extestregex), strlen(extestregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (colrregex && *colrregex) colrregexp = pcre2_compile(PCRE2STR(colrregex), strlen(colrregex), PCRE2_CASELESS, &err, &errofs, NULL);
 	match_re = (pageregexp ? pageregexp :
 		    expageregexp ? expageregexp :
 		    hostregexp ? hostregexp :
@@ -711,9 +710,9 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 
 			/* For duration counts, record all events. We'll filter out the colors later. */
 			if (colrregexp && (counttype != XYMON_COUNT_DURATION)) {
-				colrmatch = ( (pcre2_match(colrregexp, newcolname, strlen(newcolname), 0, 0,
+				colrmatch = ( (pcre2_match(colrregexp, PCRE2STR(newcolname), strlen(newcolname), 0, 0,
 							ovector, NULL) >= 0) ||
-					      (pcre2_match(colrregexp, oldcolname, strlen(oldcolname), 0, 0,
+					      (pcre2_match(colrregexp, PCRE2STR(oldcolname), strlen(oldcolname), 0, 0,
 							ovector, NULL) >= 0) );
 			}
 			else
