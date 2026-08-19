@@ -222,6 +222,11 @@ _ex=" "; _local=; _named=; _inode=
 $FSF_STUB_PARSE
 if [ -n "\$_inode" ]; then echo "\$*" >> "$INODE_LOG"; else echo "\$*" >> "$DF_LOG"; fi
 [ -n "\${DF_FAIL:-}" ] && exit 1
+# A ZFS-only host: -t no<zfs> excludes every filesystem, and FreeBSD df then
+# exits 0 with no output at all (not the nonzero-empty above). Model that for
+# the inode call, so a test can prove the client emits an empty [inode] rather
+# than a header-only row the server rejects as "columns not found" (#398).
+[ -n "\${DF_INODE_EMPTY_OK:-}" ] && [ -n "\$_inode" ] && exit 0
 # Every fixture entry the argv did not filter out. An operand that is itself
 # excluded leaves df with nothing to process: it exits nonzero having printed
 # nothing, which is the shape that hid the guarded probe being handed the
