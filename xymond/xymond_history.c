@@ -27,8 +27,16 @@ static char rcsid[] = "$Id$";
 #include <sys/wait.h>
 #include <time.h>
 #include <limits.h>
+#include <fcntl.h>
 
 #include "libxymon.h"
+
+/* O_NOFOLLOW is POSIX.1-2008; the history writers use it to refuse a symlink
+ * planted at a file they write. Where <fcntl.h> predates it, fall back to 0 so
+ * the tree builds - the pre-hardening exposure, not a build break. */
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW 0
+#endif
 
 #include "xymond_worker.h"
 
@@ -36,6 +44,50 @@ static char rcsid[] = "$Id$";
 
 int rotatefiles = 0;
 time_t nextfscheck = 0;
+
+/*
+ * fopen() that refuses to follow a symlink at the final component: an attacker
+ * able to plant one where a history file is written would otherwise have the
+ * daemon append or truncate through it, outside the tree. Modes as used here:
+ * "a", "w", "r+".
+ */
+static FILE *fopen_nofollow(const char *fn, const char *mode)
+{
+	int flags = O_NOFOLLOW;
+	int fd;
+	FILE *fp;
+
+	if (strcmp(mode, "a") == 0)       flags |= O_WRONLY | O_CREAT | O_APPEND;
+	else if (strcmp(mode, "w") == 0)  flags |= O_WRONLY | O_CREAT | O_TRUNC;
+	else                              flags |= O_RDWR;  /* "r+": must exist, no O_CREAT */
+
+	fd = open(fn, flags, 0666);
+	if (fd == -1) return NULL;
+	fp = fdopen(fd, mode);
+	if (!fp) close(fd);  /* don't leak the fd if fdopen() fails */
+	return fp;
+}
+
+/*
+ * Refuse a symlinked "<histlogdir>/<host>": the writers and rename descend
+ * through it and would otherwise follow it into another tree. (dropdirectory()
+ * guards its own argument instead.)
+ */
+static int histlog_hostdir_ok(char *histlogdir, char *hostdash)
+{
+	char d[PATH_MAX];
+	struct stat st;
+
+	if ((size_t)snprintf(d, sizeof(d), "%s/%s", histlogdir, hostdash) >= sizeof(d)) {
+		errprintf("Histlog dir for host %.64s under %s does not fit, refusing it\n", hostdash, histlogdir);
+		return 0;
+	}
+	if ((lstat(d, &st) == 0) && S_ISLNK(st.st_mode)) {
+		errprintf("Histlog dir '%s' is a symlink, refusing it\n", d);
+		return 0;
+	}
+	return 1;
+}
 
 /*
  * The drop/rename and status handlers build paths under histdir/histlogdir
@@ -327,7 +379,7 @@ int main(int argc, char *argv[])
 					continue;
 				}
 				stat(statuslogfn, &st);
-				statuslogfd = fopen(statuslogfn, "r+");
+				statuslogfd = fopen_nofollow(statuslogfn, "r+");
 				logexists = (statuslogfd != NULL);
 				*oldcol = '\0';
 
@@ -421,7 +473,7 @@ int main(int argc, char *argv[])
 					 * Logfile does not exist.
 					 */
 					lastchg = tstamp;
-					statuslogfd = fopen(statuslogfn, "a");
+					statuslogfd = fopen_nofollow(statuslogfn, "a");
 					if (statuslogfd == NULL) {
 						errprintf("Cannot open status historyfile '%s' : %s\n", 
 							statuslogfn, strerror(errno));
@@ -493,20 +545,29 @@ int main(int argc, char *argv[])
 				/* Bounded like above: build in stages, checking each fit; on
 				   truncation nothing is written. */
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				if ((size_t)snprintf(fname, sizeof(fname), "%s/%s", histlogdir, hostdash) < sizeof(fname)) {
+				if (histlog_hostdir_ok(histlogdir, hostdash) &&
+				    ((size_t)snprintf(fname, sizeof(fname), "%s/%s", histlogdir, hostdash) < sizeof(fname))) {
 					mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
 					n = snprintf(fname, sizeof(fname), "%s/%s/%s", histlogdir, hostdash, testname);
-					if ((n > 0) && ((size_t)n < sizeof(fname))) {
-						mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-						if ((size_t)snprintf(fname + n, sizeof(fname) - (size_t)n, "/%s", histlogtime(tstamp)) < sizeof(fname) - (size_t)n) {
-							triedopen = 1;
-							histlogfd = fopen(fname, "w");
-						}
-						else
-							errprintf("Histlog name does not fit under %s (host %.64s), not writing it\n", histlogdir, hostdash);
-					}
-					else
+					if ((n <= 0) || ((size_t)n >= sizeof(fname)))
 						errprintf("Histlog name does not fit under %s (host %.64s), not writing it\n", histlogdir, hostdash);
+					else {
+						struct stat tst;
+						/* The host dir is checked above; the test dir needs it
+						   too - a symlinked "<host>/<test>" is followed by the
+						   final open, which O_NOFOLLOW guards only per component. */
+						if ((lstat(fname, &tst) == 0) && S_ISLNK(tst.st_mode))
+							errprintf("Histlog test dir '%s' is a symlink, refusing it\n", fname);
+						else {
+							mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+							if ((size_t)snprintf(fname + n, sizeof(fname) - (size_t)n, "/%s", histlogtime(tstamp)) < sizeof(fname) - (size_t)n) {
+								triedopen = 1;
+								histlogfd = fopen_nofollow(fname, "w");
+							}
+							else
+								errprintf("Histlog name does not fit under %s (host %.64s), not writing it\n", histlogdir, hostdash);
+						}
+					}
 				}
 
 				if (histlogfd) {
@@ -603,7 +664,7 @@ int main(int argc, char *argv[])
 				MEMDEFINE(hostlogfn);
 
 				hostlogfd = ((size_t)snprintf(hostlogfn, sizeof(hostlogfn), "%s/%s", histdir, hostname) < sizeof(hostlogfn))
-					? fopen(hostlogfn, "a") : NULL;
+					? fopen_nofollow(hostlogfn, "a") : NULL;
 				if (hostlogfd) {
 					fprintf(hostlogfd, "%s %d %d %d %s %s %d\n",
 						testname, (int)tstamp, (int)lastchg, (int)(tstamp - lastchg),
@@ -714,7 +775,9 @@ int main(int argc, char *argv[])
 				MEMDEFINE(testdir);
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				if ((size_t)snprintf(testdir, sizeof(testdir), "%s/%s/%s", histlogdir, hostdash, testname) < sizeof(testdir))
+				if (!histlog_hostdir_ok(histlogdir, hostdash))
+					; /* refused and logged inside */
+				else if ((size_t)snprintf(testdir, sizeof(testdir), "%s/%s/%s", histlogdir, hostdash, testname) < sizeof(testdir))
 					dropdirectory(testdir, 1);
 				else
 					errprintf("Histlog dir for %s/%s under %s does not fit, not removing it\n", hostname, testname, histlogdir);
@@ -837,7 +900,8 @@ int main(int argc, char *argv[])
 				MEMDEFINE(olddir); MEMDEFINE(newdir);
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				if (((size_t)snprintf(olddir, sizeof(olddir), "%s/%s/%s", histlogdir, hostdash, testname) < sizeof(olddir)) &&
+				if (histlog_hostdir_ok(histlogdir, hostdash) &&
+				    ((size_t)snprintf(olddir, sizeof(olddir), "%s/%s/%s", histlogdir, hostdash, testname) < sizeof(olddir)) &&
 				    ((size_t)snprintf(newdir, sizeof(newdir), "%s/%s/%s", histlogdir, hostdash, newtestname) < sizeof(newdir)))
 					rename(olddir, newdir);
 				xfree(hostdash);
