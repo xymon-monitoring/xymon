@@ -161,5 +161,10 @@ ifndef PKGBUILD
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
 endif
 
+install:
+	cp -fp *.so* *.a $(INSTALLROOT)$(INSTALLLIBDIR)/ || :
+	chmod 644 $(INSTALLROOT)$(INSTALLLIBDIR)/*.a || :
+	chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)/*.so* || :
+
 clean:
 	rm -f *.o *.a *~ $(LIBTOOLS) test-endianness md5 sha1 rmd160 tree
