@@ -26,7 +26,7 @@ endif
 else
 	BUILDTARGETS = lib-build common-build xymongen-build xymonnet-build xymonproxy-build docs-build build-build xymond-build web-build client
 	CLIENTTARGETS = lib-client common-client build-build
-	INSTALLTARGETS = install-xymongen install-xymonnet install-xymonproxy install-xymond install-web install-docs install-client install-servermsg
+	INSTALLTARGETS = install-libs install-xymongen install-xymonnet install-xymonproxy install-xymond install-web install-docs install-client install-servermsg
 	CFLAGS += $(PCREINCDIR)
 	XYMONCLIENTHOME = $(XYMONTOPDIR)/client
 	XYMONHOME = $(XYMONTOPDIR)/server
@@ -34,6 +34,9 @@ endif
 
 ifndef INSTALLBINDIR
 INSTALLBINDIR = $(XYMONHOME)/bin
+endif
+ifndef INSTALLLIBDIR
+INSTALLLIBDIR = $(XYMONHOME)/lib
 endif
 ifndef INSTALLETCDIR
 INSTALLETCDIR = $(XYMONHOME)/etc
@@ -211,6 +214,17 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)
 endif
 
+	mkdir -p $(INSTALLROOT)$(INSTALLLIBDIR)
+ifneq ($(INSTALLLIBDIR),$(XYMONHOME)/lib)
+	rm -f $(INSTALLROOT)$(XYMONHOME)/lib || true
+	ln -s $(INSTALLLIBDIR) $(INSTALLROOT)$(XYMONHOME)/lib || true
+endif
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLLIBDIR)
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLLIBDIR)
+	chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)
+endif
+
 	mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)
 ifneq ($(INSTALLETCDIR),$(XYMONHOME)/etc)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/etc || true
@@ -368,6 +382,9 @@ install-custom:
 
 
 client-install: install-client
+
+install-libs: install-dirs
+	XYMONHOME="$(XYMONHOME)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" INSTALLROOT="$(INSTALLROOT)" INSTALLLIBDIR="$(INSTALLLIBDIR)" $(MAKE) -C lib install
 
 install-client: client
 	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install
