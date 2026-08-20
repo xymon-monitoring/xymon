@@ -20,11 +20,49 @@ uptime
 echo "[who]"
 who
 echo "[df]"
+# --- filesystem filter (configurable; see xymonclient.cfg.DIST) --------------
+# AIX df cannot exclude by type, so excluded types are dropped from its output
+# by mount point, via the vfs column of mount(8). Default set, minus
+# INCLUDE_TYPES, plus EXCLUDE_TYPES, like the other clients.
+: "${XYMONCLIENT_FS_INCLUDE_TYPES=}"
+: "${XYMONCLIENT_FS_EXCLUDE_TYPES=}"
+# noglob: a configured type like "procf*" stays literal.
+case $- in *f*) _restoreglob=no ;; *) _restoreglob=yes; set -f ;; esac
+FSEXCL=""
+for _t in procfs ahafs namefs autofs cdrfs; do
+	for _i in $XYMONCLIENT_FS_INCLUDE_TYPES; do [ "$_t" = "$_i" ] && continue 2; done
+	FSEXCL="$FSEXCL $_t"
+done
+[ "$_restoreglob" = yes ] && set +f
+# EXCLUDE_TYPES last: a type in both lists stays excluded.
+FSEXCL="$FSEXCL $XYMONCLIENT_FS_EXCLUDE_TYPES"
+# The excluded mounts, as "device mountpoint" pairs: an excluded overlay type
+# (namefs) can share its mount point with a real filesystem, and only the
+# overlay row may go. mount prints two header lines; a local row carries the
+# vfs type in column 3, a remote row (leading node column, so column 3 is the
+# slash-starting mount point) in column 4, its device rendering as node:path
+# in df. The lists reach awk via ENVIRON: -v would apply awk escape processing.
+EXCLMP=$(mount | FSEXCL="$FSEXCL" awk '
+	BEGIN { n = split(ENVIRON["FSEXCL"], t, " "); for (i = 1; i <= n; i++) T[t[i]] = 1 }
+	NR <= 2 { next }
+	{ if ($3 ~ /^\//) { vfs = $4; dev = $1 ":" $2; mp = $3 } else { vfs = $3; dev = $1; mp = $2 } }
+	vfs in T { print dev " " mp }
+')
 # The sed stuff is to make sure lines are not split into two.
 df -Ik | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
-}'
+}' | EXCLMP="$EXCLMP" awk '
+	BEGIN { n = split(ENVIRON["EXCLMP"], m, "\n"); for (i = 1; i <= n; i++) M[m[i]] = 1 }
+	NR == 1 { hdr = $0; next }
+	!(($1 " " $NF) in M) {
+		# Header held back: with every row excluded the report must come out
+		# empty - the server flags an empty disk report, a header-only one
+		# reads as all-green.
+		if (hdr != "") { print hdr; hdr = "" }
+		print
+	}
+'
 
 echo "[inode]"
 /usr/sysv/bin/df -i | sed -e 's!Mount Dir!Mount_Dir!' | awk '

@@ -65,10 +65,11 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   <dd>Whitespace-separated filesystem types to include in the client's disk
       (and, where supported, inode) reports even when the client's defaults
       would exclude them. Types are matched as exact df type tokens (on macOS,
-      mount attributes are matched as well). The default exclusions and the
-      mechanism are per-OS, and clients not listed here do not use the variable.
-      Including remote filesystems also requires
-      XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
+      mount attributes are matched as well; on AIX, matching is against the vfs
+      column of mount(8)). The default exclusions and the mechanism are per-OS,
+      and clients not listed here do not use the variable. Including remote
+      filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no on the clients
+      implementing it (AIX always reports them).
     <br/>
     On Linux: types normally excluded as pseudo (<b>nodev</b>) filesystems.
       Defaults to <b>zfs virtiofs tmpfs</b> &#x2014; real local filesystems that
@@ -112,13 +113,21 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       switches that default drop off entirely &#x2014; devfs and the autofs map
       come back too &#x2014; so pair it with
       XYMONCLIENT_FS_EXCLUDE_TYPES=&quot;devfs autofs&quot;.
+    <br/>
+    On AIX: names types from the default exclude set (<b>procfs ahafs</b>
+      <b>namefs autofs cdrfs</b>) to surface again. Empty by default. AIX df
+      cannot exclude by type, so the disk report drops excluded types by mount
+      point, from the vfs column of mount(8); the inode report is not covered
+      (its own guard already skips rows without inode accounting), and neither
+      is XYMONCLIENT_FS_DF_LOCAL_ONLY.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENT_FS_EXCLUDE_TYPES"><a class="permalink" href="#XYMONCLIENT_FS_EXCLUDE_TYPES"><b>XYMONCLIENT_FS_EXCLUDE_TYPES</b></a></dt>
   <dd>Whitespace-separated filesystem types (attributes as well, on macOS) to
       exclude in addition to the client's default exclusions. Matching is on the
-      exact df type token. If a type appears in both include and exclude
-      settings, exclusion takes precedence on every OS.
+      exact df type token (on AIX, on the vfs column of mount(8)). If a type
+      appears in both include and exclude settings, exclusion takes precedence
+      on every OS.
     <br/>
     On Linux: nodev types (overlay, fuse, ...) are already excluded by default,
       so an effective entry names a type that is not a nodev default &#x2014; a
@@ -158,20 +167,26 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       LiveFiles on Ventura and later) and <b>fusefs</b> (macFUSE volumes mounted
       &quot;-o local&quot;). Beware attributes most mounts carry: excluding
       &quot;local&quot; drops everything.
+    <br/>
+    On AIX: adds types to the default exclude set (<b>procfs ahafs namefs</b>
+      <b>autofs cdrfs</b>). Empty by default. Tokens are matched against the vfs
+      column of mount(8) &#x2014; AIX df names no filesystem types &#x2014; and
+      applied to the disk report only.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENT_FS_DF_LOCAL_ONLY"><a class="permalink" href="#XYMONCLIENT_FS_DF_LOCAL_ONLY"><b>XYMONCLIENT_FS_DF_LOCAL_ONLY</b></a></dt>
-  <dd>Set to <b>yes</b> (the default) to pass <b>-l</b> to df and report local
-      filesystems only. Set to <b>no</b> to report remote filesystems as well.
-      Invalid values produce a warning and use the safe default. On macOS, where
-      df is invoked per path, the same effect is achieved by keeping only mounts
-      flagged &quot;local&quot; (MNT_LOCAL, what <b>df -l</b> selects
-      elsewhere). With <b>no</b>, a stale or hard-blocked remote mount can wedge
-      df indefinitely (an uninterruptible D-state wait): the client run never
-      finishes, so the whole host goes purple &#x2014; no data for all metrics,
-      not just disk &#x2014; until the mount recovers or the host reboots. On
-      Linux this is bounded by the remote-df sentinel described below; the other
-      clients still carry the risk in full.</dd>
+  <dd>Linux, FreeBSD, NetBSD, OpenBSD and macOS; other clients (AIX included)
+      ignore it. Set to <b>yes</b> (the default) to pass <b>-l</b> to df and
+      report local filesystems only. Set to <b>no</b> to report remote
+      filesystems as well. Invalid values produce a warning and use the safe
+      default. On macOS, where df is invoked per path, the same effect is
+      achieved by keeping only mounts flagged &quot;local&quot; (MNT_LOCAL, what
+      <b>df -l</b> selects elsewhere). With <b>no</b>, a stale or hard-blocked
+      remote mount can wedge df indefinitely (an uninterruptible D-state wait):
+      the client run never finishes, so the whole host goes purple &#x2014; no
+      data for all metrics, not just disk &#x2014; until the mount recovers or
+      the host reboots. On all five clients this is bounded by the remote-df
+      sentinel described below (XYMONCLIENT_FS_REMOTE_DF_BUDGET).</dd>
   <dt></dt>
   <dd>A df that <i>exits</i> non-zero with no output (a real error, not a hang)
       is marked failed (yellow) rather than left empty, so a failed filesystem
