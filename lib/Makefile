@@ -117,5 +117,10 @@ locator: locator.c $(XYMONCOMMLIB) $(XYMONLIB)
 tree: tree.c
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ tree.c
 
+install:
+	cp -fp *.so* *.a $(INSTALLROOT)$(INSTALLLIBDIR)/ || :
+	chmod 644 $(INSTALLROOT)$(INSTALLLIBDIR)/*.a || :
+	chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)/*.so* || :
+
 clean:
 	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator tree
