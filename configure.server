@@ -579,6 +579,9 @@ fi
 if test "$INSTALLWEBDIR" != ""; then
 	echo "INSTALLWEBDIR = $INSTALLWEBDIR"   >>Makefile
 fi
+if test "$INSTALLHTTPDCONFDIR" != ""; then
+	echo "INSTALLHTTPDCONFDIR = $INSTALLHTTPDCONFDIR"   >>Makefile
+fi
 if test "$INSTALLWWWDIR" != ""; then
 	echo "INSTALLWWWDIR = $INSTALLWWWDIR"   >>Makefile
 fi
