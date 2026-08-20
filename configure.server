@@ -576,6 +576,9 @@ fi
 if test "$INSTALLTMPDIR" != ""; then
 	echo "INSTALLTMPDIR = $INSTALLTMPDIR"   >>Makefile
 fi
+if test "$INSTALLSTATICWWWDIR" != ""; then
+	echo "INSTALLSTATICWWWDIR = $INSTALLSTATICWWWDIR"   >>Makefile
+fi
 if test "$INSTALLWEBDIR" != ""; then
 	echo "INSTALLWEBDIR = $INSTALLWEBDIR"   >>Makefile
 fi
