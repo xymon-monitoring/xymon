@@ -15,9 +15,11 @@
 #
 # $Id$
 
-# Default settings for this client
-MACHINEDOTS="`uname -n`"			# This systems hostname
-SERVEROSTYPE="`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"	# This systems operating system in lowercase
+# Default settings for this client. CLIENTHOSTNAME and CLIENTOS override
+# the detected values, so a service manager can set them from its own
+# environment file instead of editing this script.
+MACHINEDOTS="${CLIENTHOSTNAME:-`uname -n`}"			# This systems hostname
+SERVEROSTYPE="`echo ${CLIENTOS:-\`uname -s\`} | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"	# This systems operating system in lowercase
 XYMONOSSCRIPT="xymonclient-$SERVEROSTYPE.sh"
 
 # Command-line mods for the defaults
@@ -34,8 +36,11 @@ do
 	        CONFIGCLASS="`echo $1 | sed -e 's/--class=//' | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"
 		;;
 	  --help)
-	  	echo "Usage: $0 [--hostname=CLIENTNAME] [--os=rhel3|linux22] [--class=CLASSNAME] start|stop"
+	  	echo "Usage: $0 [--hostname=CLIENTNAME] [--os=rhel3|linux22] [--class=CLASSNAME] start|stop|restart|status|foreground"
 		exit 0
+		;;
+	  foreground)
+	  	CMD=$1
 		;;
 	  start)
 	  	CMD=$1
@@ -94,6 +99,40 @@ case "$CMD" in
 	fi
 	;;
 
+  "foreground")
+	# Same as "start", but xymonlaunch stays in the foreground and this
+	# script becomes it. A service manager that supervises processes
+	# directly (systemd Type=simple, runit, s6, daemontools) needs the
+	# process it started to be the one to watch; "start" gives it a
+	# xymonlaunch that forks and a script that exits.
+	#
+	# No pidfile: xymonlaunch only writes one in the daemonizing parent,
+	# and the supervisor is tracking the process itself.
+  	if test ! -w $XYMONCLIENTHOME/logs; then
+		echo "Cannot write to the $XYMONCLIENTHOME/logs directory"
+		exit 1
+	fi
+  	if test ! -w $XYMONCLIENTHOME/tmp; then
+		echo "Cannot write to the $XYMONCLIENTHOME/tmp directory"
+		exit 1
+	fi
+
+	# --env explicitly: a service manager starts this with an empty
+	# environment, and the launcher expands paths in clientlaunch.cfg
+	# (LOGFILE, PIDFILE, CMD) before a task's own ENVFILE is loaded.
+	#
+	# Except when --class was given: xymonclient.cfg sets CONFIGCLASS
+	# from SERVEROSTYPE, and loadenv() putenv()s unconditionally, so
+	# loading the file here would overwrite the class the caller asked
+	# for. In that case run as "start" does and let each task's own
+	# ENVFILE supply the rest.
+	if test "$CONFIGCLASS" != ""; then
+		exec $XYMONCLIENTHOME/bin/xymonlaunch --no-daemon --config=$XYMONCLIENTHOME/etc/clientlaunch.cfg --log=$XYMONCLIENTHOME/logs/clientlaunch.log
+	fi
+
+	exec $XYMONCLIENTHOME/bin/xymonlaunch --no-daemon --env=$XYMONCLIENTHOME/etc/xymonclient.cfg --config=$XYMONCLIENTHOME/etc/clientlaunch.cfg --log=$XYMONCLIENTHOME/logs/clientlaunch.log
+	;;
+
   "stop")
   	if test -s $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
 		kill `cat $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
@@ -133,8 +172,9 @@ case "$CMD" in
 	;;
 
   *)
-	echo "Usage: $0 start|stop|restart|status"
-	break;
+	echo "Usage: $0 start|stop|restart|status|foreground"
+	exit 1
+	;;
 
 esac
 
