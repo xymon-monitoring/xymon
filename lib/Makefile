@@ -31,6 +31,25 @@ all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCO
 
 client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
 
+install:
+	cp -fp *.a $(INSTALLROOT)$(INSTALLLIBDIR)/
+	chmod 644 $(INSTALLROOT)$(INSTALLLIBDIR)/*.a
+	# Shared objects only if this tree built any: devel does, main does
+	# not, and an unmatched glob must not look like a failure.
+	for f in *.so*; do \
+		test -e "$$f" || continue; \
+		cp -fp "$$f" $(INSTALLROOT)$(INSTALLLIBDIR)/ || exit 1; \
+		chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)/"$$f" || exit 1; \
+	done
+	# The headers, so the libraries above can actually be built against.
+	# include/ and lib/ have to stay siblings: libxymon.h reaches its
+	# remaining headers as "../lib/...", so a flat directory breaks on
+	# the first include. One -I$(INSTALLINCDIR)/include then works.
+	mkdir -p $(INSTALLROOT)$(INSTALLINCDIR)/include $(INSTALLROOT)$(INSTALLINCDIR)/lib
+	cp -fp ../include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/include/
+	cp -fp *.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/
+	chmod 644 $(INSTALLROOT)$(INSTALLINCDIR)/include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/*.h
+
 test-endianness: test-endianness.c
 	$(CC) $(CFLAGS) -o $@ $<
 
@@ -116,11 +135,6 @@ locator: locator.c $(XYMONCOMMLIB) $(XYMONLIB)
 
 tree: tree.c
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ tree.c
-
-install:
-	cp -fp *.so* *.a $(INSTALLROOT)$(INSTALLLIBDIR)/ || :
-	chmod 644 $(INSTALLROOT)$(INSTALLLIBDIR)/*.a || :
-	chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)/*.so* || :
 
 clean:
 	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator tree
