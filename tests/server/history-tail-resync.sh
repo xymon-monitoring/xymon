@@ -23,10 +23,7 @@ set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
 
-ROOT=$(find_root)
-BIN="$ROOT/xymond/xymond_history"
-
-[ -x "$BIN" ] || skip "xymond/xymond_history not built"
+require_bin XYMOND_HISTORY xymond/xymond_history
 
 WORK=$(mktempdir)
 mkdir -p "$WORK/hist" "$WORK/logs" "$WORK/histlogs"
@@ -41,7 +38,7 @@ printf '@@stachg#1|1586206051.00000|127.0.0.1|xymond|junk.host|disk|1586206351|r
 	> "$WORK/msg2x"
 
 env XYMONSERVERLOGS="$WORK/logs" XYMONHISTLOGS="$WORK/histlogs" \
-	"$BIN" --histdir="$WORK/hist" < "$WORK/msg2x" > /dev/null 2>&1
+	"$XYMOND_HISTORY" --histdir="$WORK/hist" < "$WORK/msg2x" > /dev/null 2>&1
 
 result=$(cat "$HISTFILE")
 
