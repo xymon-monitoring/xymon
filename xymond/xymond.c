@@ -134,6 +134,8 @@ typedef struct xymond_log_t {
 	time_t gapstart;	/* When that gap began; bounds how far a resume may bridge */
 	int prevchangecolor;	/* The color held before the most recent change, or NO_COLOR before the first one */
 	int pregapcolor;	/* The color recorded before the gap, or NO_COLOR when not in one */
+	int gapreportedcolor;	/* The reporter's own color while a gap is open, or NO_COLOR */
+	int lastreportedcolor;	/* The last real report's color, before any DOWNTIME rewrite */
 	int pregapvalidity;	/* The report validity in force when the gap began, in minutes */
 	int validity;		/* Minutes this test's reports stay valid; sizes the bridge bound */
 	time_t logtime;		/* time when last update was received */
@@ -311,7 +313,7 @@ xymond_statistics_t xymond_stats[] = {
 };
 
 enum boardfield_t { F_NONE, F_IP, F_HOSTNAME, F_TESTNAME, F_MATCHEDTAG, F_COLOR,
-		    F_PREVREPORTCOLOR, F_PREVCHANGECOLOR, F_FLAGS, 
+		    F_PREVREPORTCOLOR, F_PREVCHANGECOLOR, F_PREVGAPCOLOR, F_FLAGS,
 		    F_LASTCHANGE, F_LOGTIME, F_VALIDTIME, F_ACKTIME, F_DISABLETIME,
 		    F_SENDER, F_COOKIE, F_LINE1,
 		    F_ACKMSG, F_DISMSG, F_MSG, F_CLIENT, F_CLIENTTSTAMP,
@@ -341,6 +343,7 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "oldcolor", F_PREVREPORTCOLOR },
 	{ "prevchangecolor", F_PREVCHANGECOLOR },
 	{ "previouscolor", F_PREVCHANGECOLOR },
+	{ "prevgapcolor", F_PREVGAPCOLOR },
 	{ "flags", F_FLAGS },
 	{ "lastchange", F_LASTCHANGE },
 	{ "logtime", F_LOGTIME },
@@ -1356,6 +1359,8 @@ void get_hts(char *msg, char *sender, char *origin,
 			 */
 			if (flapcount > 0) lwalk->flapchange[0] = getcurrenttime(NULL);
 			lwalk->pregapcolor = NO_COLOR;
+			lwalk->gapreportedcolor = NO_COLOR;
+			lwalk->lastreportedcolor = NO_COLOR;
 			lwalk->pregapvalidity = defaultvalidity;
 			lwalk->validity = defaultvalidity;
 			lwalk->color = lwalk->oldcolor = lwalk->prevchangecolor = NO_COLOR;
@@ -1370,6 +1375,10 @@ void get_hts(char *msg, char *sender, char *origin,
 
 done:
 	if (colstr) {
+		/* The raw color, kept before the DOWNTIME rewrite below: what
+		 * handle_status() receives is already blue, and prevgapcolor
+		 * publishes the reporter's own word. */
+		if (lwalk) lwalk->lastreportedcolor = *color;
 		if ((*color == COL_RED) || (*color == COL_YELLOW) || (*color == COL_PURPLE)) {
 			char *cause;
 
@@ -1584,6 +1593,7 @@ static int holdtime_bridges(int newcolor, int pregapcolor, time_t gaplen, int va
  * cannot do.
  */
 static void update_gapstate(xymond_log_t *log, int newcolor, int xymondchose,
+			    int synthetic,
 			    time_t now, time_t prevlastchange, int prevvalidity)
 {
 	if (xymondchose) {
@@ -1596,10 +1606,23 @@ static void update_gapstate(xymond_log_t *log, int newcolor, int xymondchose,
 			/* The range test keeps COL_CLIENT (99), which parse_color()
 			 * accepts, out of colnames[] at checkpoint time. */
 			log->pregapcolor = log->oldcolor;
+			/* Before a gap, recorded == reported: until a real report
+			 * says otherwise, the reporter's last own color is this. */
+			log->gapreportedcolor = log->oldcolor;
 			log->pregaplastchange = prevlastchange;
 			log->pregapvalidity = prevvalidity;
 			log->gapstart = now;
 		}
+		/*
+		 * Every real report under the substitution refreshes the
+		 * reporter's own color: lastreportedcolor, kept by get_hts()
+		 * before the DOWNTIME rewrite (reportedcolor is already blue
+		 * here). A synthetic status is xymond's own voice and moves
+		 * nothing; a silent test keeps its last real word.
+		 */
+		if ((log->pregapcolor != NO_COLOR) && !synthetic &&
+		    (log->lastreportedcolor >= 0) && (log->lastreportedcolor < COL_COUNT))
+			log->gapreportedcolor = log->lastreportedcolor;
 	}
 	else if (log->pregapcolor != NO_COLOR) {
 		/*
@@ -1620,6 +1643,7 @@ static void update_gapstate(xymond_log_t *log, int newcolor, int xymondchose,
 		if (holdtime_bridges(newcolor, log->pregapcolor, (now - log->gapstart), log->pregapvalidity))
 			log->lastchange = log->pregaplastchange;
 		log->pregapcolor = NO_COLOR;
+		log->gapreportedcolor = NO_COLOR;
 	}
 }
 
@@ -2069,6 +2093,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	if (!issummary)
 		update_gapstate(log, newcolor,
 				(synthetic || log->downtimeactive || (newcolor != reportedcolor)),
+				synthetic,
 				now, prevlastchange, prevvalidity);
 
 	if (!issummary) {
@@ -3617,6 +3642,7 @@ strbuffer_t *generate_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, xy
 		  case F_COLOR: addtobuffer(buf, colnames[lwalk->color]); break;
 		  case F_PREVREPORTCOLOR: addtobuffer(buf, colnames[lwalk->oldcolor]); break;
 		  case F_PREVCHANGECOLOR: addtobuffer(buf, colnames[lwalk->prevchangecolor]); break;
+		  case F_PREVGAPCOLOR: addtobuffer(buf, colnames[lwalk->gapreportedcolor]); break;
 		  case F_FLAGS: if (lwalk->testflags) addtobuffer(buf, lwalk->testflags); break;
 		  case F_LASTCHANGE: snprintf(l, sizeof(l), "%d", (int)lwalk->lastchange); addtobuffer(buf, l); break;
 		  case F_LOGTIME: snprintf(l, sizeof(l), "%d", (int)lwalk->logtime); addtobuffer(buf, l); break;
@@ -4336,6 +4362,13 @@ void do_message(conn_t *msg, char *origin)
 			trendslogrec.test = &trendstest;
 
 			clientlogrec.color = infologrec.color = trendslogrec.color = COL_GREEN;
+			/* The rest of these records is zeroed, and zero is COL_GREEN, so a
+			 * color field left at it does not read as "no color" -- it reads as
+			 * green, which for a color-history field means something happened.
+			 * These rows have no history: they are generated per request. */
+			clientlogrec.prevchangecolor = infologrec.prevchangecolor = trendslogrec.prevchangecolor = NO_COLOR;
+			clientlogrec.pregapcolor = infologrec.pregapcolor = trendslogrec.pregapcolor = NO_COLOR;
+			clientlogrec.gapreportedcolor = infologrec.gapreportedcolor = trendslogrec.gapreportedcolor = NO_COLOR;
 			clientlogrec.message = infologrec.message = trendslogrec.message = "";
 			faketestinit = 1;
 		}
@@ -5143,16 +5176,16 @@ void save_checkpoint(void)
 			 * seeded with its creation time, on both paths -- and testing it
 			 * would put a record after every status. Real history means two.
 			 *
-			 * A gap past its bridge window is not state either: no color can
-			 * carry a hold-time across it any more, so it is over whatever
-			 * happens next. Saying so here is what keeps it from being saved
-			 * for as long as the override lasts -- xymond_client refreshes an
-			 * RRDDS modifier every client cycle, and while one is in force the
-			 * color being recorded is never the reporter's, so nothing ever
-			 * closes the gap.
+			 * A gap lasts as long as the substitution that opened it:
+			 * update_gapstate() opens it and closes it, with the bridge
+			 * window nowhere in that lifetime. Saved only while the window held, prevgapcolor answered
+			 * "none" after an unrelated restart on an override still in force,
+			 * and a disable or DOWNTIME outlives two hours routinely. The
+			 * window still decides the hold-time, where it always did: in
+			 * holdtime_bridges(), at the close. Costs a record per test under a
+			 * lasting override.
 			 */
-			gapopen = ((lwalk->pregapcolor != NO_COLOR) &&
-				   gap_within_window(now - lwalk->gapstart, lwalk->pregapvalidity));
+			gapopen = (lwalk->pregapcolor != NO_COLOR);
 
 			if ((iores >= 0) && (lwalk->flapping || gapopen ||
 					     ((flapcount > 1) && lwalk->flapchange[1]))) {
@@ -5170,15 +5203,19 @@ void save_checkpoint(void)
 				 * Without it a restored gap came back with defaultvalidity,
 				 * and the next checkpoint dropped a gap whose real window was
 				 * longer - the hold-time was lost on the second restart.
+				 * The reporter's own color rides the same suffix chain, for
+				 * the same reason; a file without it restores the pre-gap
+				 * color, the reporter's last word as of the open.
 				 */
-				iores = fprintf(fd, "@@XYMONDCHK-V1|.flapstate.|%s|%s|%d|%s|%s|%s|%ld|%ld:%d|",
+				iores = fprintf(fd, "@@XYMONDCHK-V1|.flapstate.|%s|%s|%d|%s|%s|%s|%ld|%ld:%d:%s|",
 						hwalk->hostname, lwalk->test->name,
 						lwalk->flapping,
 						colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor],
 						colnames[gapopen ? lwalk->pregapcolor : NO_COLOR],
 						(long)(gapopen ? lwalk->pregaplastchange : 0),
 						(long)(gapopen ? lwalk->gapstart : 0),
-						(gapopen ? lwalk->pregapvalidity : 0));
+						(gapopen ? lwalk->pregapvalidity : 0),
+						colnames[gapopen ? lwalk->gapreportedcolor : NO_COLOR]);
 				for (fi = 0; ((fi < flapcount) && (iores >= 0)); fi++)
 					iores = fprintf(fd, "%s%ld", ((fi == 0) ? "" : ","), (long)lwalk->flapchange[fi]);
 				if (iores >= 0) iores = fprintf(fd, "\n");
@@ -5360,6 +5397,7 @@ void load_checkpoint(char *fn)
 			xymond_log_t *log = NULL;
 			int flapping = 0, oldflapcolor = NO_COLOR, currflapcolor = NO_COLOR;
 			int pregapcolor = NO_COLOR, pregapvalidity = defaultvalidity;
+			int gapreportedcolor = NO_COLOR;
 			time_t pregaplastchange = 0, gapstart = 0;
 			char *flapchangestr = NULL;
 
@@ -5389,7 +5427,11 @@ void load_checkpoint(char *fn)
 					 * defaultvalidity, exactly as it did then. */
 					char *vp;
 					gapstart = (time_t)strtol(item, &vp, 10);
-					if (vp && (*vp == ':')) pregapvalidity = atoi(vp+1);
+					if (vp && (*vp == ':')) {
+						pregapvalidity = atoi(vp+1);
+						vp = strchr(vp+1, ':');
+						if (vp) gapreportedcolor = restore_color(vp+1);
+					}
 					}
 					break;
 				  case 10: flapchangestr = item; break;
@@ -5411,6 +5453,13 @@ void load_checkpoint(char *fn)
 				log->oldflapcolor = oldflapcolor;
 				log->currflapcolor = currflapcolor;
 				log->pregapcolor = pregapcolor;
+				/* Only with a gap to belong to -- a suffix on a record whose
+				 * gap field says none would otherwise publish, and stick,
+				 * with no close to clear it. Absent from files written
+				 * before the field existed: the reporter's last word as of
+				 * the open was the pre-gap color. */
+				log->gapreportedcolor = (pregapcolor == NO_COLOR) ? NO_COLOR :
+							(gapreportedcolor != NO_COLOR) ? gapreportedcolor : pregapcolor;
 				log->pregaplastchange = pregaplastchange;
 				log->pregapvalidity = pregapvalidity;
 				log->gapstart = gapstart;
@@ -5590,6 +5639,8 @@ void load_checkpoint(char *fn)
 		 * COL_GREEN, so a file written before the field existed would restore
 		 * every test as "was green before". */
 		ltail->pregapcolor = NO_COLOR;
+		ltail->gapreportedcolor = NO_COLOR;
+		ltail->lastreportedcolor = NO_COLOR;
 		ltail->prevchangecolor = NO_COLOR;
 		/* Not checkpointed: the test's next report sets its real validity,
 		 * which arrives within one validity period by definition. */

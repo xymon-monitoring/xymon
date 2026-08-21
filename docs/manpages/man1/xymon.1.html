@@ -256,12 +256,19 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
       a disabled or in-downtime test is recorded blue whatever it reports.
       <b>none</b> until a status has been reported twice.</dd>
   <dt id="prevchangecolor"><a class="permalink" href="#prevchangecolor"><b>prevchangecolor</b></a></dt>
-  <dd>The color this test held before its most recent change. Also accepted as
-      <b>previouscolor</b>. It moves only when the color changes, so a test that
-      went green, red, red reports color=red, prevreportcolor=red,
-      prevchangecolor=green - it answers &quot;what was this before it went
-      bad&quot;. <b>none</b> until the first change, and it survives a xymond
-      restart.</dd>
+  <dd>The color this test held before its most recent change. It moves only when
+      the color changes, so a test that went green, red, red reports color=red,
+      prevreportcolor=red, prevchangecolor=green - it answers &quot;what was
+      this before it went bad&quot;. <b>none</b> until the first change, and it
+      survives a xymond restart. Also accepted as <b>previouscolor</b>.</dd>
+  <dt id="prevgapcolor"><a class="permalink" href="#prevgapcolor"><b>prevgapcolor</b></a></dt>
+  <dd>The test's own color while xymond is recording something other than what
+      it reports; <b>none</b> at every other time. It follows the reports
+      arriving under the substitution, and a test gone silent keeps its last
+      word. That covers a silence, a disable, a modifier, a delayed color change
+      and a DOWNTIME window hiding an alert color -- a green report shows
+      through DOWNTIME, and the field answers <b>none</b>: wherever they differ,
+      <b>color</b> is xymond's and <b>prevgapcolor</b> is the test's own.</dd>
   <dt id="testflags"><a class="permalink" href="#testflags"><b>testflags</b></a></dt>
   <dd>For network tests, the flags indicating details about the test (used by
       xymongen).</dd>
@@ -392,12 +399,19 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
       a disabled or in-downtime test is recorded blue whatever it reports.
       <b>none</b> until a status has been reported twice.</dd>
   <dt id="prevchangecolor~2"><a class="permalink" href="#prevchangecolor~2"><b>prevchangecolor</b></a></dt>
-  <dd>The color this test held before its most recent change. Also accepted as
-      <b>previouscolor</b>. It moves only when the color changes, so a test that
-      went green, red, red reports color=red, prevreportcolor=red,
-      prevchangecolor=green - it answers &quot;what was this before it went
-      bad&quot;. <b>none</b> until the first change, and it survives a xymond
-      restart.</dd>
+  <dd>The color this test held before its most recent change. It moves only when
+      the color changes, so a test that went green, red, red reports color=red,
+      prevreportcolor=red, prevchangecolor=green - it answers &quot;what was
+      this before it went bad&quot;. <b>none</b> until the first change, and it
+      survives a xymond restart. Also accepted as <b>previouscolor</b>.</dd>
+  <dt id="prevgapcolor~2"><a class="permalink" href="#prevgapcolor~2"><b>prevgapcolor</b></a></dt>
+  <dd>The test's own color while xymond is recording something other than what
+      it reports; <b>none</b> at every other time. It follows the reports
+      arriving under the substitution, and a test gone silent keeps its last
+      word. That covers a silence, a disable, a modifier, a delayed color change
+      and a DOWNTIME window hiding an alert color -- a green report shows
+      through DOWNTIME, and the field answers <b>none</b>: wherever they differ,
+      <b>color</b> is xymond's and <b>prevgapcolor</b> is the test's own.</dd>
   <dt id="flags"><a class="permalink" href="#flags"><b>flags</b></a></dt>
   <dd>For network tests, the flags indicating details about the test (used by
       xymongen).</dd>

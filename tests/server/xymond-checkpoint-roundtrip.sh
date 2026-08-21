@@ -208,14 +208,12 @@ esac
 
 stop_xymond
 
-# ---- a gap is carried while it can still bridge, and not once it cannot -----
+# ---- a gap is carried for as long as the daemon holds one -------------------
 #
-# The gap fields exist to let a resumed test carry its hold-time across the
-# silence, which holdtime_bridges() refuses past GAPBRIDGE_VALIDITIES report
-# validities. Past that the gap decides nothing, so it must not be written --
-# otherwise a test whose color xymond permanently overrides (an RRDDS modifier,
-# refreshed by xymond_client every client cycle) carries a record in every
-# checkpoint from the first override until the modifier stops.
+# A gap past its bridge window used to be left out: it could no longer decide
+# anything. prevgapcolor publishes it now, so it decides something again, and a
+# consumer must get the same answer before and after an unrelated restart. The
+# window still governs the hold-time, at the close.
 #
 # Both halves restore and save without sending a status, so the gap is written
 # back exactly as the daemon holds it. The restored validity is defaultvalidity,
@@ -244,10 +242,14 @@ stop_xymond
 [ "$(saved_gapcolor)" = "red" ] \
 	|| fail "a gap 60s old was not carried through a restart (got $(saved_gapcolor)); the hold-time it would bridge is lost"
 
+# The output file goes first: the case above leaves the same color in it, so a
+# run that wrote nothing would be read as this one's answer.
 write_gap_checkpoint "$(( $(date +%s) - 86400 ))"
+rm -f "$work/chk"
 start_xymond --restart="$work/chk.gap"
 stop_xymond
-[ "$(saved_gapcolor)" = "none" ] \
-	|| fail "a day-old gap was written back as $(saved_gapcolor); nothing can bridge it any more, so it is state that never goes away"
+[ -s "$work/chk" ] || fail "xymond wrote no checkpoint on the way out, so the day-old gap is untested"
+[ "$(saved_gapcolor)" = "red" ] \
+	|| fail "a day-old gap was dropped from the checkpoint (got $(saved_gapcolor)); the override has not ended, so prevgapcolor must not answer differently after a restart than before it"
 
-pass "checkpoint round-trip keeps the released status record, carries the flap state, re-derives flapping, and drops a gap past its bridge window"
+pass "checkpoint round-trip keeps the released status record, carries the flap state, re-derives flapping, and carries a gap for as long as it holds one"

@@ -52,6 +52,12 @@ stop_xymond() {
 		sleep 0.1
 		i=$((i+1))
 	done
+	# Reap before returning: several cases read the checkpoint the exit
+	# wrote, and a poll that gives up can hand them a file mid-write. A
+	# shutdown still running after the window is ended hard -- its
+	# checkpoint is lost, and the read fails loudly rather than flaking.
+	kill -9 "$XYMOND_PID" 2>/dev/null || true
+	wait "$XYMOND_PID" 2>/dev/null || true
 	XYMOND_PID=""
 }
 register_cleanup stop_xymond
@@ -120,6 +126,13 @@ lastchange() {
 		| awk -F'|' '$1 == "conn" { print $2 }'
 }
 
+# board_field FIELD -- one field of the conn status, through the selector a
+# consumer uses.
+board_field() {
+	"$XYMONCLIENT" "127.0.0.1:$PORT" "xymondboard fields=testname,$1" 2>/dev/null \
+		| awk -F'|' '$1 == "conn" { print $2 }'
+}
+
 xymondboard_color() {
 	"$XYMONCLIENT" "127.0.0.1:$PORT" "xymondboard fields=testname,color" 2>/dev/null \
 		| awk -F'|' '$1 == "conn" { print $2 }'
@@ -154,8 +167,22 @@ assert_fresh() {
 HELDSINCE=$(( $(date +%s) - 86400 ))
 write_checkpoint clear "$(( $(date +%s) - 60 ))" red "$(( $(date +%s) - 60 ))"
 start_xymond --restart="$work/chk"
+
+# While the gap is open, the board says what the test was before it went
+# quiet. Without it, a consumer reading a snapshot sees the color xymond
+# invented and cannot tell a real transition from a blind period: this one
+# reads clear, and clear is not something the test ever reported.
+gapcolor=$(board_field prevgapcolor)
+[ "$gapcolor" = "red" ] \
+	|| fail "an open gap must publish the color held before it, got prevgapcolor=$gapcolor"
+
 status red
 assert_held "$HELDSINCE" "same-color resume"
+
+# The gap is closed by that report, so there is no pre-gap color to publish.
+gapcolor=$(board_field prevgapcolor)
+[ "$gapcolor" = "none" ] \
+	|| fail "a closed gap must publish no pre-gap color, got prevgapcolor=$gapcolor"
 stop_xymond
 
 # ---- 2. resume with a different color: a fresh hold-time -------------------
@@ -222,6 +249,13 @@ printf '@@XYMONDCHK-V1||testhost.example.com|conn|127.0.0.1|red||red|%s|%s|%s|0|
 start_xymond --restart="$work/chk"
 status red
 [ "$(xymondboard_color)" = "blue" ] || fail "DOWNTIME did not force the status blue; the tag was not applied"
+
+# The board says which of the two colors is the test's own. This is why
+# prevgapcolor is not documented as "went silent": here the test is reporting,
+# and xymond is recording something else anyway.
+gapcolor=$(board_field prevgapcolor)
+[ "$gapcolor" = "red" ] \
+	|| fail "under DOWNTIME the board must still publish the reporter's own color, got prevgapcolor=$gapcolor"
 stop_xymond
 
 flapstate=$(grep '^@@XYMONDCHK-V1|\.flapstate\.|' "$work/chk.out" || true)
@@ -233,6 +267,55 @@ gapheld=$(printf '%s' "$flapstate" | awk -F'|' '{ print $9 }')
 	|| fail "gap opened by DOWNTIME recorded the color as $gapcolor, expected the pre-window red"
 [ "$gapheld" = "$HELDSINCE" ] \
 	|| fail "gap opened by DOWNTIME recorded hold-time $gapheld, expected $HELDSINCE"
+
+# ---- 5b. prevgapcolor is the reporter's word, not the pre-override color ----
+#
+# The discriminating case (@SoundGoof): the recorded color and the reported one
+# differ. A green host enters DOWNTIME and the test starts reporting red --
+# xymond records blue, and prevgapcolor must answer red, the color the test
+# itself is saying right now, not the green that stood before the window.
+# Publishing the bridge state answered green here; the two are separate
+# questions and separate fields. A later report refreshes the answer, and the
+# checkpoint carries it across a restart.
+
+printf '@@XYMONDCHK-V1||testhost.example.com|conn|127.0.0.1|green||green|%s|%s|%s|0|0|0|0|status testhost,example,com.conn green fine|||0|0\n' \
+	"$(( $(date +%s) - 3600 ))" "$(( $(date +%s) - 3600 ))" "$(( $(date +%s) + 86400 ))" > "$work/chk"
+rm -f "$work/chk.out"
+start_xymond --restart="$work/chk"
+status red
+[ "$(xymondboard_color)" = "blue" ] || fail "DOWNTIME did not force the status blue; the tag was not applied"
+gapcolor=$(board_field prevgapcolor)
+[ "$gapcolor" = "red" ] \
+	|| fail "the test reports red under the window and xymond heard it: got prevgapcolor=$gapcolor"
+status yellow
+gapcolor=$(board_field prevgapcolor)
+[ "$gapcolor" = "yellow" ] \
+	|| fail "a later report must refresh the reporter's word, got prevgapcolor=$gapcolor"
+stop_xymond	# xymond writes $work/chk.out on the way out
+
+gapfield=$(grep '^@@XYMONDCHK-V1|\.flapstate\.|' "$work/chk.out" | awk -F'|' '{ print $10 }')
+case "$gapfield" in
+	*:yellow) ;;
+	*) fail "the checkpoint must carry the reporter's word on the gap record, got '$gapfield'" ;;
+esac
+
+start_xymond --restart="$work/chk.out"
+gapcolor=$(board_field prevgapcolor)
+[ "$gapcolor" = "yellow" ] \
+	|| fail "the reporter's word came back as '$gapcolor' after a restart, on a window that had not ended"
+stop_xymond
+
+# A hostile line: the word's suffix present on a record whose gap field says
+# none. Restored on its own it would publish, and stick -- no gap, no close to
+# clear it. It must restore to none, like the gap it does not have.
+printf '@@XYMONDCHK-V1||testhost.example.com|conn|127.0.0.1|green||green|%s|%s|%s|0|0|0|0|status testhost,example,com.conn green fine|||0|0\n' \
+	"$(( $(date +%s) - 3600 ))" "$(( $(date +%s) - 3600 ))" "$(( $(date +%s) + 86400 ))" > "$work/chk"
+printf '@@XYMONDCHK-V1|.flapstate.|testhost.example.com|conn|0|none|none|none|0|0:0:red|0,0,0,0,0\n' >> "$work/chk"
+start_xymond --restart="$work/chk"
+gapcolor=$(board_field prevgapcolor)
+[ "$gapcolor" = "none" ] \
+	|| fail "a checkpoint word without a gap must not publish, got prevgapcolor=$gapcolor"
+stop_xymond
 
 # ---- 6. the same, on a running daemon --------------------------------------
 #
@@ -280,4 +363,37 @@ status red
 assert_held "$HELDSINCE" "reports arriving during a disable must not end the gap"
 stop_xymond
 
-pass "hold-time survives a same-color resume, and only that: a different color, an ended gap on a restored and on a running daemon, a disable with and without reports inside it, and a DOWNTIME window are each handled"
+# ---- 7. a gap outlives its bridge window, and the restart ------------------
+#
+# A disable or a DOWNTIME routinely outlives the two hours a hold-time can be
+# carried across. The checkpoint used to drop the gap at that point, so
+# prevgapcolor answered "none" after an unrelated restart on an override still
+# in force. The window governs the hold-time, and the second half is that check.
+
+HELDSINCE=$(( $(date +%s) - 172800 ))
+write_checkpoint clear "$(( $(date +%s) - 86400 ))" red "$(( $(date +%s) - 86400 ))"
+rm -f "$work/chk.out"
+start_xymond --restart="$work/chk"
+
+gapcolor=$(board_field prevgapcolor)
+[ "$gapcolor" = "red" ] \
+	|| fail "a day-old gap must still publish the color held before it, got prevgapcolor=$gapcolor"
+
+stop_xymond	# xymond writes $work/chk.out on the way out
+
+grep -q '|\.flapstate\.|testhost\.example\.com|conn|0|none|none|red|' "$work/chk.out" \
+	|| { sed -n '1,4p' "$work/chk.out" >&2
+	     fail "the checkpoint dropped a gap past its bridge window, so prevgapcolor cannot survive a restart"; }
+
+start_xymond --restart="$work/chk.out"
+gapcolor=$(board_field prevgapcolor)
+[ "$gapcolor" = "red" ] \
+	|| fail "prevgapcolor came back as '$gapcolor' after a restart, on an override that had not ended"
+
+# The window still decides the hold-time, and decides it the same way: this gap
+# is a day old, so the red that closes it starts now.
+status red
+assert_fresh "a gap past its window must not carry the hold-time, restored or not"
+stop_xymond
+
+pass "hold-time survives a same-color resume, and only that: a different color, an ended gap on a restored and on a running daemon, a disable with and without reports inside it, a DOWNTIME window, a gap that outlives its bridge window, and prevgapcolor answering the reporter's own word under an override, across a restart, are each handled"
