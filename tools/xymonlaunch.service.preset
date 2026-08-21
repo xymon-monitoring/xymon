@@ -1,1 +1,4 @@
+# Packaging-only sample: an enablement preset for `systemctl preset`. Not
+# installed by the build; a package or admin places it under a system-preset
+# directory to enable xymonlaunch by default. See tools/README.systemd.
 enable xymonlaunch.service

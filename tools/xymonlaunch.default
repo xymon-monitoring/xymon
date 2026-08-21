@@ -3,8 +3,13 @@
 # Xymon servers), clientlaunch.cfg (on Xymon clients), or associated
 # environment files.
 # 
-# To edit the default destination for the Xymon client to report to, 
-# see the /etc/{default,sysconfig}/xymon-client file.
+# This file belongs wherever INSTALLENVDIR pointed when the tree was
+# built: /etc/sysconfig on Red Hat and SUSE, /etc/default on Debian, and
+# by default the tree's own etc/ -- which is where a source install reads
+# it from. The generated xymonlaunch.service names the same directory.
+# 
+# To edit the default destination for the Xymon client to report to, see
+# the xymon-client file in that same directory.
 # 
 # On systemd systems, --no-daemon is passed in the xymonlaunch unit 
 # file, but the log file (if any) for xymonlaunch should be set here.
