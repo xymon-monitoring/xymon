@@ -10,7 +10,7 @@ Build-Depends: debhelper-compat (= 13),
                librrd-dev,
                libssl-dev,
                libtirpc-dev,
-               man2html-base,
+               mandoc,
                pkgconf,
                po-debconf,
                procps
