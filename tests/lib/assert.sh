@@ -417,3 +417,27 @@ require_bin() {
 	# shellcheck disable=SC2163
 	export "$var"="$cur"
 }
+
+# require_cfg VAR DEFAULT -- ensure $VAR (or DEFAULT if unset) points to a
+# config file; export VAR with the resolved path. Same override contract as
+# require_bin: a missing in-tree default is a skip, but a missing explicit
+# override is a failure because the caller asserted that installed layout.
+require_cfg() {
+	local var=$1 default=$2
+	local cur=${!var:-}
+	local explicit=$cur
+	if [ -z "$cur" ]; then
+		case $default in
+			/*) cur=$default ;;
+			*)  cur=$(find_root)/$default ;;
+		esac
+	fi
+	if [ ! -f "$cur" ]; then
+		if [ -n "$explicit" ]; then
+			fail "$var explicitly set to '$cur' but no file is there -- broken build or package layout, not a skip"
+		fi
+		skip "$var ($cur) not found"
+	fi
+	# shellcheck disable=SC2163
+	export "$var"="$cur"
+}

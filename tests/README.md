@@ -135,10 +135,11 @@ maintenance.
   `git worktree`, `git stash`, or any other git invocation.
 - **Path discovery via env var with default.** When a test needs a
   built binary or an installed artefact, read it from an env var and
-  default to the in-tree path -- `require_bin` (lib/assert.sh) does this
-  for binaries:
+  default to the in-tree path -- `require_bin` and `require_cfg`
+  (lib/assert.sh) do this for binaries and config files:
   ```bash
   require_bin XYMONGREP common/xymongrep          # binaries
+  require_cfg XYMONSERVER_CFG xymond/etcfiles/xymonserver.cfg  # config files
   SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"  # scripts
   ```
   This keeps tests usable in CMake out-of-source builds (the build
@@ -155,8 +156,8 @@ maintenance.
   exported path that points at nothing must `fail` -- a broken build or
   package layout is precisely what the exporting caller (CMake,
   autopkgtest) runs the suite to catch, and skipping would green-light
-  it. `require_bin` implements both halves; installed-script tests
-  guard `$XYMONCLIENT_LINUX` the same way.
+  it. `require_bin` and `require_cfg` implement both halves;
+  installed-script tests guard `$XYMONCLIENT_LINUX` the same way.
 - **License.** GPL-2.0+, matching the rest of the repo. A short
   SPDX-style header at the top of each test is sufficient:
   ```bash
@@ -197,6 +198,7 @@ packages**. The suite maps onto that as a single test entry, roughly:
 ```
 Test-Command: XYMONGREP=/usr/lib/xymon/client/bin/xymongrep \
               XYMONCLIENT_LINUX=/usr/lib/xymon/client/bin/xymonclient-linux.sh \
+              XYMONSERVER_CFG=/etc/xymon/xymonserver.cfg \
               ./tests/testsuite
 Depends: xymon, xymon-client, gcc, make
 Restrictions: skippable

@@ -61,10 +61,10 @@ printf 'page test Test\n127.0.0.1 testhost.example.com # conn\n' > "$work/hosts.
 # xymond will not start unless XYMONHOME is a real directory, and the shipped
 # xymonserver.cfg names the install prefix, which need not exist here.
 mkdir -p "$work/home/etc" "$work/home/tmp" "$work/home/www"
+require_cfg XYMONSERVER_CFG xymond/etcfiles/xymonserver.cfg
 sed -e 's|^XYMONHOME=.*|XYMONHOME="'"$work"'/home"|' \
     -e 's|^XYMONTMP=.*|XYMONTMP="'"$work"'/home/tmp"|' \
-	"$ROOT/xymond/etcfiles/xymonserver.cfg" > "$work/xymonserver.cfg" \
-	|| skip "no xymonserver.cfg to run against"
+	"$XYMONSERVER_CFG" > "$work/xymonserver.cfg"
 
 free_port() {
 	local p tries=0
