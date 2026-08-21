@@ -46,7 +46,7 @@ override_dh_auto_build:
 	# preserve some files from upstream tarball:
 	tar cf debian/preserve.tar docs/manpages/*/*.html
 
-	env -u LANG LC_ALL=C.UTF-8 TZ=UTC ./build/makehtml.sh $(DEB_VERSION_UPSTREAM)
+	env -u LANG LC_ALL=C.UTF-8 TZ=UTC ./build/makehtml.sh --version $(DEB_VERSION_UPSTREAM)
 	CFLAGS="$(CFLAGS) $(CPPFLAGS) $(LDFLAGS)" PKGBUILD=1 $(MAKE)
 
 override_dh_clean:
