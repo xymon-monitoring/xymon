@@ -23,7 +23,6 @@ set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
 
-ROOT=$(find_root)
 require_bin XYMOND_HISTORY xymond/xymond_history
 
 WORK=$(mktempdir)
