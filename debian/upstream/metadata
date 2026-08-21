@@ -2,8 +2,8 @@
 ---
 # https://wiki.debian.org/UpstreamMetadata
 Bug-Database: https://github.com/xymon-monitoring/xymon/issues
+Bug-Submit: https://github.com/xymon-monitoring/xymon/issues/new
 Changelog: https://github.com/xymon-monitoring/xymon/blob/main/Changes
-Contact: xymon@xymon.com
-Name: Xymon
+Documentation: https://www.xymon.com/help/manpages/
 Repository: https://github.com/xymon-monitoring/xymon.git
 Repository-Browse: https://github.com/xymon-monitoring/xymon
