@@ -64,10 +64,10 @@ printf 'page test Test\n127.0.0.1 testhost.example.com # conn\n' > "$work/hosts.
 # a machine that already has Xymon installed. Point it at the test's own
 # directory instead, and create what xymond expects to find under it.
 mkdir -p "$work/home/etc" "$work/home/tmp" "$work/home/www"
+require_cfg XYMONSERVER_CFG xymond/etcfiles/xymonserver.cfg
 sed -e 's|^XYMONHOME=.*|XYMONHOME="'"$work"'/home"|' \
     -e 's|^XYMONTMP=.*|XYMONTMP="'"$work"'/home/tmp"|' \
-	"$ROOT/xymond/etcfiles/xymonserver.cfg" > "$work/xymonserver.cfg" \
-	|| skip "no xymonserver.cfg to run against"
+	"$XYMONSERVER_CFG" > "$work/xymonserver.cfg"
 
 # free_port -- a 127.0.0.1 port nothing is listening on. Racy in principle;
 # the window is a few milliseconds and only this test uses the port.
