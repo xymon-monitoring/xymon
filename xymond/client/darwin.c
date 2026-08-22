@@ -54,7 +54,11 @@ void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
 			whostr, 0, psstr, 0, topstr);
-	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Avail", "Capacity", "Mounted", dfstr);
+	/* Both spellings, deliberately: the client sends "Available" since it
+	   moved to df -P in 4.3.31, and "Avail" before that. Dropping "Avail"
+	   silently loses every older client, and no test can catch it -- the suite
+	   only runs the client it ships with. */
+	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Avail|Available", "Capacity", "Mounted", dfstr);
 	unix_inode_report(hostname, clienttype, os, hinfo, fromline, timestr, "ifree", "%iused", "Mounted", inodestr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
