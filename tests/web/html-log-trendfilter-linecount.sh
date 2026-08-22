@@ -24,19 +24,18 @@ if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 fi
 [ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
-ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile" 2>/dev/null || true)
-
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-trendfilter-lc.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 [ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" -o "$work/harness" \
+harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
+"$CC" $harness_cflags -o "$work/harness" \
 	"$here/html-log-trendfilter-linecount-harness.c" "$ROOT/lib/libxymoncomm.a" \
-	$pcre_libs $ssllibs 2>"$work/cc.log" \
+	$pcre_libs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 mkdir -p "$work/etc" "$work/rrd/testhost"
