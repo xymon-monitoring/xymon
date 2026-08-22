@@ -53,22 +53,26 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
   <dd>Sets the minimum percentage of free filesystem space on the $XYMONHISTLOGS
       directory. If there is less than N% free space, xymond_history will not
       save the detailed status-logs. N is a percentage between 0 and 100; 0
-      disables the free-space check. The value must be a plain integer; anything
-      else (including a &quot;%&quot; suffix) falls back to the default.
-      Out-of-range values are clamped. Default: 5
+      disables the free-space check. The value must be a plain integer. Invalid
+      values produce a warning and use the default of 5. Negative values produce
+      a warning and are clamped to 0, preserving their historical meaning of
+      disabling the check. Values above 100 produce a warning and are capped at
+      100.
     <p class="Pp"></p>
   </dd>
   <dt id="pidfile"><a class="permalink" href="#pidfile"><b>--pidfile</b>=<i>FILENAME</i></a></dt>
   <dd>xymond_history writes the process-ID it is running with to this file. This
       is for use in automated startup scripts. The default file is
-      $XYMONSERVERLOGS/xymond_history.pid.
+      $XYMONSERVERLOGS/xymond_history.pid. If the file cannot be opened or
+      written, a warning identifies the path and history processing continues.
     <p class="Pp"></p>
   </dd>
-  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
-  <dd>Enable debugging output.
-    <p class="Pp"></p>
-  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b>[=VALUE]</a></dt>
+  <dd>Enable debugging output. Suffixed forms such as <b>--debug=1</b> are
+      accepted for compatibility.</dd>
 </dl>
+<p class="Pp">Unknown options produce a warning and are ignored.</p>
+<p class="Pp"></p>
 </section>
 <section class="Sh">
 <p>&#160;</p>
