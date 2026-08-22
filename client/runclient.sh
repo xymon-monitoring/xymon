@@ -133,8 +133,8 @@ case "$CMD" in
 	;;
 
   *)
-	echo "Usage: $0 start|stop|restart|status"
-	break;
+	echo "Usage: $0 start|stop|restart|status" >&2
+	exit 2
 
 esac
 
