@@ -53,7 +53,10 @@ echo "[df]"
 fs_mounts()
 {
 	[ -r /proc/mounts ] || return 1
-	awk '{ mp = $2; gsub(/\\040/, " ", mp); printf "%s\t%s\n", $3, mp }' /proc/mounts
+	# Decode \040, then \134 by split/concat (a gsub replacement backslash
+	# differs between mawk and gawk). \011/\012 stay escaped: the rows are
+	# tab- and newline-delimited, so decoding them would truncate the path.
+	awk '{ mp = $2; gsub(/\\040/, " ", mp); n = split(mp, s, /\\134/); mp = s[1]; for (i = 2; i <= n; i++) mp = mp "\\" s[i]; printf "%s\t%s\n", $3, mp }' /proc/mounts
 }
 
 # fs_filesystems : the filesystem types the kernel knows, "nodev" first where
@@ -170,7 +173,9 @@ probe_dir_is_local()
 	# sends the probe at a directory that may sit on the wedged mount this
 	# exists to keep away from.
 	_pdlm=$(fs_mounts) || return 1
-	printf '%s\n' "$_pdlm" | awk -F'\t' -v dir="$1" -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" '
+	# dir via ENVIRON, not -v: -v escape-processes backslashes (gawk: \c -> c).
+	printf '%s\n' "$_pdlm" | _pdldir="$1" awk -F'\t' -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" '
+		BEGIN { dir = ENVIRON["_pdldir"] }
 		BEGIN { n = split(types, a, /[ \t]+/); for (i = 1; i <= n; i++) t[a[i]] = 1 }
 		{
 			mp = $2
@@ -415,7 +420,8 @@ run_df()
 		# than dropping it, since the server reads an absent filesystem as
 		# green. This turns one filesystem red instead of purpling the host.
 		for _m in $_rm; do
-			echo "unavailable:$_m 1 1 0 100% $_m"
+			# printf, not echo: sh's echo escape-processes a decoded backslash.
+			printf '%s\n' "unavailable:$_m 1 1 0 100% $_m"
 		done
 	else
 		printf '%s\n' "$_rout"
