@@ -222,6 +222,11 @@ _ex=" "; _local=; _named=; _inode=
 $FSF_STUB_PARSE
 if [ -n "\$_inode" ]; then echo "\$*" >> "$INODE_LOG"; else echo "\$*" >> "$DF_LOG"; fi
 [ -n "\${DF_FAIL:-}" ] && exit 1
+# A ZFS-only host: -t no<zfs> excludes every filesystem, and FreeBSD df then
+# exits 0 with no output at all (not the nonzero-empty above). Model that for
+# the inode call, so a test can prove the client emits an empty [inode] rather
+# than a header-only row the server rejects as "columns not found" (#398).
+[ -n "\${DF_INODE_EMPTY_OK:-}" ] && [ -n "\$_inode" ] && exit 0
 # Every fixture entry the argv did not filter out. An operand that is itself
 # excluded leaves df with nothing to process: it exits nonzero having printed
 # nothing, which is the shape that hid the guarded probe being handed the
@@ -356,13 +361,18 @@ fsf_selfcheck() {
 
 # fsf_assert_loud REPORT MSG -- the section must not read as green. Two
 # spellings are equally loud and a client may use either: the "collection
-# failed" marker (the column goes yellow) or one 100%-full "unavailable:" row
+# failed" marker (the column goes yellow) or one 100%-full unmeasured row
 # per mount (the column goes red). What is forbidden is the third case -- an
 # empty section, which the server reads as "no filesystems, all is well".
+#
+# The unmeasured row is matched on its columns, one line at a time: spacing
+# differs per client (column-aligned vs single-spaced), and a whole-report
+# glob took dashes in device names plus any 100% row for the marker.
 fsf_assert_loud() {
 	case "$1" in
-		*"collection failed"*|*"unavailable:"*) return 0 ;;
+		*"collection failed"*) return 0 ;;
 	esac
+	printf '%s\n' "$1" | grep -Eq '^[^ ]+ +- +- +- +100% ' && return 0
 	fail "${2:-}: the report is silent, which the server reads as green: '$1'"
 }
 

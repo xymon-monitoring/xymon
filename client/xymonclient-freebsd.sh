@@ -77,7 +77,7 @@ esac
 : "${XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES=nfs nfs4 smbfs cifs ceph glusterfs fusefs.glusterfs lustre afs}"
 DFPROBEDIR="${XYMONTMP:-/tmp}"
 
-# fs_mounts : one "TYPE<tab>MOUNTPOINT" line per mount, from mount(8).
+# fs_mounts : one "TYPE<tab>MOUNTPOINT<tab>DEVICE" line per mount, from mount(8).
 # FreeBSD mount(8) lists from getmntinfo(MNT_NOWAIT) unless -v is given,
 # so it never refreshes statfs and cannot block on a dead server. Never -v.
 # df -P would, which is the whole reason this list is read here instead.
@@ -90,7 +90,8 @@ fs_mounts() {
 			if (match(rest, / \(/) == 0) next
 			mp = substr(rest, 1, RSTART - 1)
 			split(substr(rest, RSTART + 2), a, /[,)]/)
-			printf "%s\t%s\n", a[1], mp
+			dev = substr($0, 1, i - 1)
+			printf "%s\t%s\t%s\n", a[1], mp, dev
 		}'
 }
 
@@ -308,15 +309,28 @@ run_df() {
 		# Unavailable: surface each remote mount as a failed (100%) row rather
 		# than dropping it, since the server reads an absent filesystem as
 		# green. This turns one filesystem red instead of purpling the host.
+		# The row names the server. df could not answer, but the mount table
+		# still knows which device is behind the mount point, and that is the
+		# first thing an operator needs. The sizes are reported as "-": they
+		# were not measured, and a number here would be trended as a reading.
+		# The capacity stays 100% because that is what turns the column red.
 		# The inode report is read column-wise (iused, ifree and %iused are
-		# fields 6-8), so its marker row carries them too.
-		for _m in $_rm; do
-			if [ "$_flag" = -i ]; then
-				echo "unavailable:$_m 1 1 0 100% 1 0 100% $_m"
-			else
-				echo "unavailable:$_m 1 1 0 100% $_m"
-			fi
-		done
+		# fields 6-8), so its marker row carries those columns too.
+		# The mount list rides the mount-table stream behind an @@ separator:
+		# a -v assignment cannot carry newlines on BSD awk (fs_setop makes
+		# the same move). A spaced device is re-encoded (\040) to keep the
+		# column count.
+		{ fs_mounts; echo '@@'; printf '%s\n' "$_rm"; } | awk -F'\t' -v inode="$_flag" '
+			$0 == "@@" { rm = 1; next }
+			!rm { dev[$2] = ($3 == "" ? "-" : $3); next }
+			$0 == "" { next }
+			{
+				d = ($0 in dev) ? dev[$0] : "-"
+				n = split(d, dp, / /)
+				if (n > 1) { d = dp[1]; for (j = 2; j <= n; j++) d = d "\\040" dp[j] }
+				if (inode == "-i") printf "%s - - - 100%% - - 100%% %s\n", d, $0
+				else printf "%s - - - 100%% %s\n", d, $0
+			}'
 	else
 		printf '%s\n' "$_rout"
 	fi
@@ -332,9 +346,16 @@ run_df() {
 emit_df() {
 	_kind="$1"; _label="$2"; shift 2
 	_out=`run_df "$@"`; _rc=$?
-	if [ -z "$_out" ] && [ "$_rc" -ne 0 ]; then
-		echo "xymonclient-freebsd: df $_kind collection failed (status $_rc) with no output; reporting data as unavailable" >&2
-		echo "$_label report collection failed: df exited $_rc with no output"
+	if [ -z "$_out" ]; then
+		# No rows at all. A non-zero exit is a collection failure - surface a
+		# marker so the server goes yellow. A clean exit means nothing matched
+		# (e.g. an inode report whose filesystems are all zfs, which are
+		# excluded): emit nothing, so the server's empty-report path stays green
+		# rather than rejecting a stray header-only row as "columns not found".
+		if [ "$_rc" -ne 0 ]; then
+			echo "xymonclient-freebsd: df $_kind collection failed (status $_rc) with no output; reporting data as unavailable" >&2
+			echo "$_label report collection failed: df exited $_rc with no output"
+		fi
 		return 1
 	fi
 	return 0
@@ -357,7 +378,8 @@ N
 s/[ 	]*\n[ 	]*/ /
 }' | awk '
 NR<2{printf "%-20s %10s %10s %10s %10s %s\n", $1, "itotal", $6, $7, $8, $9}
-(NR>=2 && $8 != "-"){printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}'
+(NR>=2 && $8 != "-" && $6 == "-"){printf "%-20s %10s %10s %10s %10s %s\n", $1, "-", "-", "-", $8, $9}
+(NR>=2 && $8 != "-" && $6 != "-"){printf "%-20s %10d %10d %10d %10s %s\n", $1, $6+$7, $6, $7, $8, $9}'
 fi
 echo "[mount]"
 mount

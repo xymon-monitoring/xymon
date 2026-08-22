@@ -72,6 +72,14 @@ assert_match() {
 	fi
 }
 
+# assert_not_match REGEX STRING [MSG] -- the negation of assert_match
+assert_not_match() {
+	local re=$1 s=$2 msg=${3:-}
+	if [[ $s =~ $re ]]; then
+		fail "${msg:+$msg: }'$s' matches /$re/"
+	fi
+}
+
 # assert_file_exists PATH [MSG]
 assert_file_exists() {
 	local p=$1 msg=${2:-}
