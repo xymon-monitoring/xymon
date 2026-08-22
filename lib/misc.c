@@ -700,13 +700,37 @@ char *nextcolumn(char *s)
 	return result;
 }
 
+/*
+ * Does "heading" name the column "wanted" asks for? "wanted" may list
+ * alternatives separated by "|", for a column two df versions spell
+ * differently ("Avail|Available"). Whole names only, so "Availability" is not
+ * "Avail". Never written to: it arrives as a string literal.
+ */
+static int columnmatch(char *heading, char *wanted)
+{
+	char *p = wanted, *sep;
+	size_t n, hlen = strlen(heading);
+
+	while (p) {
+		sep = strchr(p, '|');
+		n = (sep ? (size_t)(sep - p) : strlen(p));
+		/* n > 0: an empty alternative matches nothing. Without it, it would
+		   match an empty heading, which nextcolumn() returns as a zero-length
+		   token rather than NULL. */
+		if ((n > 0) && (n == hlen) && (strncasecmp(heading, p, n) == 0)) return 1;
+		p = (sep ? sep + 1 : NULL);
+	}
+
+	return 0;
+}
+
 int selectcolumn(char *heading, char *wanted)
 {
 	char *hdr;
 	int result = 0;
 
 	hdr = nextcolumn(heading);
-	while (hdr && strcasecmp(hdr, wanted)) {
+	while (hdr && !columnmatch(hdr, wanted)) {
 		result++;
 		hdr = nextcolumn(NULL);
 	}
