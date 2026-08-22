@@ -107,4 +107,4 @@ inode_args=$(printf ' %s ' "$(tr '\n' ' ' < "$INODE_LOG")")
 assert_not_contains "tmpfs" "$inode_args" \
 	"INCLUDE_TYPES=tmpfs un-excludes tmpfs from the inode report"
 
-pass "xymonclient-freebsd.sh: the FS filter contract, and the zfs/tmpfs inode exclusions"
+pass "xymonclient-freebsd.sh: the FS filter contract, and the zfs/tmpfs inode exclusions -- FreeBSD df/mount output replayed from fixtures"

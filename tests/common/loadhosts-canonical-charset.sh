@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/loadhosts-canonical-charset.sh
+# tests/common/loadhosts-canonical-charset.sh
 #
 # Behavioural test of the BUILT xymongrep binary, exercising the real
 # load_hostnames() path in libxymon. A canonical hostname (field 2 of

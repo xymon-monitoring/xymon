@@ -22,16 +22,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # testvariant: the suite's name for what the two configure axes
+          # produce -- --client + CONFTYPE=client writes LOCALCLIENT=yes, the
+          # localclient build. The runner checks the label against the tree.
           - name: server
             variant: server
+            testvariant: server
 
           - name: client, CT=client
             variant: client
             conftype: client
+            testvariant: localclient
 
           - name: client CT=server
             variant: client
             conftype: server
+            testvariant: client
 
     steps:
       - name: Checkout
@@ -88,18 +94,25 @@ jobs:
       # there. Run it here too, where the binaries this variant produced are on
       # disk, so those tests actually execute against the build.
       #
-      # First such test: tests/server/xymongrep-filter.sh, which drives the
-      # common/xymongrep this leg just built. This step is the only place in
-      # CI where it executes instead of skipping.
+      # First such test: tests/common/xymongrep-filter.sh, which drives the
+      # xymongrep this leg just built, resolved per variant by the products
+      # table in tests/lib/assert.sh. This step is the only place in CI where
+      # it executes instead of skipping.
       #
-      # Gated to the server leg only: it produces the broadest binary set
-      # (including common/xymongrep). Widen the gate when a test needs a
-      # binary this leg doesn't build.
+      # Every leg, not just the server one: each leg names the build it made
+      # (testvariant), the runner checks that label against the configured
+      # tree and leaves out the areas that build has none of. A client leg
+      # verifies the client it just built -- which no leg did while gated.
       - name: Run regression tests against the build
-        if: matrix.variant == 'server'
+        env:
+          XYMON_VARIANT: ${{ matrix.testvariant }}
+          # Dependencies installed and the full variant built: a skip in a
+          # provided area is a hole, so hold the run to the coverage floor.
+          XYMON_TESTS_STRICT: 1
         run: |
-          # Mirror tests.yml: this step checks out and builds full source, so
-          # every test finds the code it guards. The runner's all-skip exit 77
+          # Mirror tests.yml: this step builds this leg's variant, so every
+          # test the filter keeps finds the binaries it drives (unbuilt areas
+          # are filtered, not skipped). The runner's all-skip exit 77
           # ("nothing verified") can therefore only mean broken discovery, not a
           # legitimate skip -- map it to a hard failure. Actions has no neutral
           # state, so 77 would otherwise surface as a bare nonzero failure with

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/xtree-destroy.sh
+# tests/libxymon/xtree-destroy.sh
 #
 # xtreeDestroy must release everything the tree allocated. The tsearch
 # variant (HAVE_BINARY_TREE) used to free only the handle, leaking every
@@ -86,4 +86,4 @@ echo '#undef HAVE_BINARY_TREE' >"$work/shim-fallback/config.h"
 "$work/t-fallback" >"$work/out2" 2>&1 \
 	|| fail "fallback variant leaks or fails (rc=$?): $(tail -15 "$work/out2")"
 
-echo "OK $(basename "$0")"
+pass "xtreeDestroy releases everything the tree allocated, on both the tsearch and the array variant"

@@ -28,6 +28,41 @@ Conventions). The runner itself is POSIX sh, and on a host without bash it
 skips the whole suite with exit `77` rather than reporting interpreter
 failures as test failures.
 
+### `XYMON_VARIANT` — telling the suite which build this is
+
+Most tests only execute against a build, so run one first. The suite then needs
+to know *which* build, because the same program lives at different paths
+depending on the variant:
+
+    ./configure --server && make -j$(nproc)
+    XYMON_VARIANT=server ./tests/testsuite
+
+| variant | configured with | `xymongrep` | `xymond_client` |
+| ------- | --------------- | ----------- | --------------- |
+| `server` | `./configure --server` | `common/xymongrep` | `xymond/xymond_client` |
+| `localclient` | `CONFTYPE=client ./configure --client` | `client/xymongrep` | `client/xymond_client` |
+| `client` | `./configure --client` | `client/xymongrep` | not built |
+
+The full table is `variant_products()` in `lib/assert.sh`; it also covers
+`xymond_rrd` and `svcstatus.cgi`, both server-only.
+
+A configured tree vouches for the caller's label: `configure.client` writes
+`CLIENTONLY` and `LOCALCLIENT` into the toplevel `Makefile`, and their
+reachable combinations are exactly the three variants. On a disagreement the
+runner refuses to run — the variable describes a build, it does not select
+one, and a label that contradicts the tree is a mistake rather than a request.
+This is not theoretical: `CONFTYPE=client` is the *localclient* build, and a
+caller declaring `client` for it would drop
+`tests/analysis/analysis-file-ifexist.sh` from the only build that produces
+what it drives. Without a label, the tree answers for itself.
+
+The variable still answers where the tree cannot: an unconfigured tree, and a
+CMake build, write no such `Makefile`.
+
+Leaving it unset is the default and stays supported: each test falls back to its
+own in-tree path, which is what a developer run, a release tarball and the
+build-free `tests.yml` lane all do.
+
 ## What lives here, what doesn't
 
 - **Here:** shell-level integration scenarios that exercise binaries,
@@ -38,22 +73,44 @@ failures as test failures.
 
 ## Directory layout
 
-Tests are organised by **domain area**, not by source path. Source
-paths shift over time (CMake migration is in flight); domains don't.
-Cross-cutting scenarios that don't map to a single source dir (e.g.
-shipped-file invariants) get their own area.
+**A test's folder is decided by which builds contain the thing it drives.**
+The folder name labels a set of variants, not a subject.
+
+1. What does the test execute or compile — a binary, a source file, a shipped
+   config, or nothing (a pure scan)?
+2. Which variants produce that thing?
+3. File it in the area below whose row lists exactly those variants.
+
+A test needing several things takes the most restrictive — it needs all of
+them. Among areas covering the same variants the choice is readability, not
+correctness, so settle the variant set first and the name second.
+
+Not by topic: a test *about* server behaviour that only compiles `lib/` code
+runs in every build, and filing it under `server` would skip it in the client
+legs. Not by source path either — those shift (the CMake migration is in
+flight) and one test often spans several.
 
 | Area              | What lives here                                        |
 | ----------------- | ------------------------------------------------------ |
+| `tests/common/`   | tools every variant ships (xymon, xymoncmd, xymongrep, xymoncfg, xymondigest) |
 | `tests/client/`   | xymon client tools and behaviours                      |
-| `tests/server/`   | xymond-side tools (xymongrep, xymoncgimsg, alert routing) |
-| `tests/network/`  | xymonnet probes (xymonping, network checks)            |
+| `tests/analysis/`  | the local data analyser (`xymond_client`, wherever the variant builds it) |
+| `tests/server/`   | xymond-side tools (xymoncgimsg, alert routing, config parsing) |
+| `tests/xymonnet/` | xymonnet probes (xymonping, network checks)            |
+| `tests/libxymon/` | harnesses compiling only `lib/` sources                |
 | `tests/web/`      | CGIs, HTML rendering paths                             |
 | `tests/packaging/`| cross-cutting: shipped files, paths, generated configs |
 | `tests/buildsystem/` | parallel make, configure probes, CMake feature detection |
 | `tests/integration/` | end-to-end scenarios spanning multiple components   |
 | `tests/lib/`      | sourced helpers (`assert.sh`, future `net.sh` etc.)    |
 | `tests/fixtures/` | shared data files (config snippets, expected outputs)  |
+
+Worked through: `xymongrep-filter.sh` reads as server-side work, but the binary
+it drives is one every variant builds -- `common/xymongrep` in a server tree,
+`client/xymongrep` in a client one -- so it goes under `common/`, and a client
+build gets the coverage it exists for. `analysis-file-ifexist.sh` drives
+`xymond_client`, which only a localclient or server build produces, so it goes
+under `localclient/`.
 
 Add a new area by PR when an existing one doesn't fit. Don't bend a
 test to fit the wrong area just to avoid creating a new directory.
@@ -82,6 +139,39 @@ maintenance.
   progress on the happy path; CI logs are noisy enough. On failure
   the `fail` helper prints to stderr and exits, which is usually
   enough context.
+- **One success line, through `pass`.** End with `pass "<what held>"`
+  — a claim, not a label: `pass "namematch() compares the plain name
+  list case-insensitively"`, not `pass "namematch test"`. The runner
+  prints the path and counts the verdict; only the test can say what
+  it verified. A compiled harness reports through its exit status and
+  prints no success line of its own; keep its failure output, which is
+  what makes a red run readable.
+- **Say so when only half of it ran.** A test that could not verify
+  everything it covers — no sanitizer for the half that needs one,
+  nothing built to drive — ends with `pass_partial "<what held>"
+  "<what could not be checked>"`. It still exits 0, so the runner
+  cannot tell it from a full pass by exit status; the summary counts
+  the two apart, and a run that checked half of what it claims stops
+  reading as a complete one.
+- **A skip inside an area the build provides is a regression.** With
+  `XYMON_TESTS_STRICT=1` and `XYMON_VARIANT` set — which is what CI
+  does after installing the dependencies and building — the runner
+  fails on any test that skipped in an area this variant produces:
+  the build has that subject, so the test had no business standing
+  down. Outside those areas the filter has already removed the test.
+  Strict also refuses what it cannot hold to that floor: a test in
+  an area `area_in_variant` has never heard of, a test sitting
+  directly under `tests/`, or an executable `.sh` under `tests/lib/`
+  or `tests/fixtures/` (invisible to discovery) each fail the run as
+  a filing error. A developer box declares nothing and is never held
+  to any of this.
+- **Rejected: classifying skips by cause.** A `skip_env` marker ("a
+  host condition, so the floor ignores it") classifies by cause, and
+  cause does not decide whether coverage was lost: a missing tool is
+  a host condition *and*, where CI installs that tool so the test can
+  run, a real regression. Likewise rejected: exempting `require_bin`
+  callers from the area filter — two answers to "should this run
+  here" is one too many.
 - **Exit codes:**
   - `0` — pass
   - `77` — skip (matches the autotools / autopkgtest convention; CI
@@ -142,6 +232,13 @@ maintenance.
   require_cfg XYMONSERVER_CFG xymond/etcfiles/xymonserver.cfg  # config files
   SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"  # scripts
   ```
+  `require_bin` resolves in three steps, first match wins: an explicitly
+  exported `$VAR`; then, if `XYMON_VARIANT` is set and the table knows this
+  role, the path that variant builds it at; then the caller's default. A role
+  the table names but this variant's row omits is a `skip` -- that build
+  genuinely does not produce it. A role the table does not mention at all
+  falls through to the default, so an undeclared product degrades to a probe
+  rather than a false claim.
   This keeps tests usable in CMake out-of-source builds (the build
   system passes the real path), in the in-tree Makefile build (default
   matches), and in autopkgtest (the control file exports installed
