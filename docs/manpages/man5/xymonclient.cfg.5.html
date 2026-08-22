@@ -68,8 +68,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       mount attributes are matched as well; on AIX, matching is against the vfs
       column of mount(8)). The default exclusions and the mechanism are per-OS,
       and clients not listed here do not use the variable. Including remote
-      filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no on the clients
-      implementing it (AIX always reports them).
+      filesystems also requires XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
     <br/>
     On Linux: types normally excluded as pseudo (<b>nodev</b>) filesystems.
       Defaults to <b>zfs virtiofs tmpfs</b> &#x2014; real local filesystems that
@@ -117,9 +116,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     On AIX: names types from the default exclude set (<b>procfs ahafs</b>
       <b>namefs autofs cdrfs</b>) to surface again. Empty by default. AIX df
       cannot exclude by type, so the disk report drops excluded types by mount
-      point, from the vfs column of mount(8); the inode report is not covered
-      (its own guard already skips rows without inode accounting), and neither
-      is XYMONCLIENT_FS_DF_LOCAL_ONLY.
+      point, from the vfs column of mount(8); the inode report is not covered,
+      its own guard already skipping rows without inode accounting.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENT_FS_EXCLUDE_TYPES"><a class="permalink" href="#XYMONCLIENT_FS_EXCLUDE_TYPES"><b>XYMONCLIENT_FS_EXCLUDE_TYPES</b></a></dt>
@@ -175,18 +173,28 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENT_FS_DF_LOCAL_ONLY"><a class="permalink" href="#XYMONCLIENT_FS_DF_LOCAL_ONLY"><b>XYMONCLIENT_FS_DF_LOCAL_ONLY</b></a></dt>
-  <dd>Linux, FreeBSD, NetBSD, OpenBSD and macOS; other clients (AIX included)
-      ignore it. Set to <b>yes</b> (the default) to pass <b>-l</b> to df and
-      report local filesystems only. Set to <b>no</b> to report remote
-      filesystems as well. Invalid values produce a warning and use the safe
-      default. On macOS, where df is invoked per path, the same effect is
-      achieved by keeping only mounts flagged &quot;local&quot; (MNT_LOCAL, what
-      <b>df -l</b> selects elsewhere). With <b>no</b>, a stale or hard-blocked
-      remote mount can wedge df indefinitely (an uninterruptible D-state wait):
-      the client run never finishes, so the whole host goes purple &#x2014; no
-      data for all metrics, not just disk &#x2014; until the mount recovers or
-      the host reboots. On all five clients this is bounded by the remote-df
-      sentinel described below (XYMONCLIENT_FS_REMOTE_DF_BUDGET).</dd>
+  <dd>Linux, FreeBSD, NetBSD, OpenBSD, macOS and AIX; other clients ignore it.
+      Set to <b>yes</b> (the default) to pass <b>-l</b> to df and report local
+      filesystems only. AIX df has no <b>-l</b>; it is given <b>-T local</b>,
+      which selects the same set. That flag needs AIX 7.1, which is the client's
+      floor. Its inode df (<b>/usr/sysv/bin/df</b>) is given <b>-l</b>, that
+      command's spelling of the same thing, since guarding one report and not
+      the other would leave the same mount able to wedge the run.
+    <br/>
+    With <b>no</b> on AIX, a remote filesystem whose server does not supply all
+      the statistics is reported as df writes it &#x2014; blanks rather than
+      values &#x2014; and is dropped from the inode report, which needs a usable
+      count. Set to <b>no</b> to report remote filesystems as well. Invalid
+      values produce a warning and use the safe default. On macOS, where df is
+      invoked per path, the same effect is achieved by keeping only mounts
+      flagged &quot;local&quot; (MNT_LOCAL, what <b>df -l</b> selects
+      elsewhere). With <b>no</b>, a stale or hard-blocked remote mount can wedge
+      df indefinitely (an uninterruptible D-state wait): the client run never
+      finishes, so the whole host goes purple &#x2014; no data for all metrics,
+      not just disk &#x2014; until the mount recovers or the host reboots. On
+      Linux, FreeBSD, NetBSD, OpenBSD and macOS this is bounded by the remote-df
+      sentinel described below (XYMONCLIENT_FS_REMOTE_DF_BUDGET). AIX has no
+      sentinel, so <b>no</b> carries that risk in full there.</dd>
   <dt></dt>
   <dd>A df that <i>exits</i> non-zero with no output (a real error, not a hang)
       is marked failed (yellow) rather than left empty, so a failed filesystem

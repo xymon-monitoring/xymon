@@ -43,8 +43,7 @@ macOS, mount attributes are matched as well; on AIX, matching is
 against the vfs column of mount(8)). The default exclusions
 and the mechanism are per-OS, and clients not listed here do not use
 the variable. Including remote filesystems also requires
-XYMONCLIENT_FS_DF_LOCAL_ONLY=no on the clients implementing it
-(AIX always reports them).
+XYMONCLIENT_FS_DF_LOCAL_ONLY=no.
 .br
 On Linux: types normally excluded as pseudo (\fBnodev\fR) filesystems.
 Defaults to \fBzfs virtiofs tmpfs\fR \(em real local filesystems
@@ -93,8 +92,7 @@ On AIX: names types from the default exclude set (\fBprocfs ahafs
 namefs autofs cdrfs\fR) to surface again. Empty by default. AIX df
 cannot exclude by type, so the disk report drops excluded types by
 mount point, from the vfs column of mount(8); the inode report is not
-covered (its own guard already skips rows without inode accounting),
-and neither is XYMONCLIENT_FS_DF_LOCAL_ONLY.
+covered, its own guard already skipping rows without inode accounting.
 
 .IP "\fBXYMONCLIENT_FS_EXCLUDE_TYPES\fR"
 Whitespace-separated filesystem types (attributes as well, on macOS)
@@ -149,10 +147,19 @@ column of mount(8) \(em AIX df names no filesystem types \(em and
 applied to the disk report only.
 
 .IP "\fBXYMONCLIENT_FS_DF_LOCAL_ONLY\fR"
-Linux, FreeBSD, NetBSD, OpenBSD and macOS; other clients (AIX included)
-ignore it.
+Linux, FreeBSD, NetBSD, OpenBSD, macOS and AIX; other clients ignore it.
 Set to \fByes\fR (the default) to pass \fB\-l\fR to df and report
-local filesystems only. Set to \fBno\fR to report remote filesystems
+local filesystems only. AIX df has no \fB\-l\fR; it is given
+\fB\-T local\fR, which selects the same set. That flag needs AIX 7.1,
+which is the client's floor. Its
+inode df (\fB/usr/sysv/bin/df\fR) is given \fB\-l\fR, that command's
+spelling of the same thing, since guarding one report and not the other
+would leave the same mount able to wedge the run.
+.br
+With \fBno\fR on AIX, a remote filesystem whose server does not supply
+all the statistics is reported as df writes it \(em blanks rather than
+values \(em and is dropped from the inode report, which needs a usable
+count. Set to \fBno\fR to report remote filesystems
 as well. Invalid values produce a warning and use the safe default.
 On macOS, where df is invoked per path, the same effect is achieved by
 keeping only mounts flagged "local" (MNT_LOCAL, what \fBdf \-l\fR
@@ -161,8 +168,9 @@ With \fBno\fR, a stale or hard-blocked remote mount can wedge df
 indefinitely (an uninterruptible D-state wait): the client run never
 finishes, so the whole host goes purple \(em no data for all metrics,
 not just disk \(em until the mount recovers or the host reboots.
-On all five clients this is bounded by the remote-df sentinel described
-below (XYMONCLIENT_FS_REMOTE_DF_BUDGET).
+On Linux, FreeBSD, NetBSD, OpenBSD and macOS this is bounded by the
+remote-df sentinel described below (XYMONCLIENT_FS_REMOTE_DF_BUDGET).
+AIX has no sentinel, so \fBno\fR carries that risk in full there.
 .IP
 A df that \fIexits\fR non-zero with no output (a real error, not a hang)
 is marked failed (yellow) rather than left empty, so a failed filesystem

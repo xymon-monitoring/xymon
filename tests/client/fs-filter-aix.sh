@@ -21,10 +21,15 @@
 #   - a configured token like "procf*" is matched literally, never expanded
 #     against files in the working directory
 #
-# NOT claimed: the full #170 contract. DF_LOCAL_ONLY and the remote-df
-# sentinel are not implemented on AIX, and the [inode] section is untouched
-# (its own guard already skips rows without inode accounting, and its
-# /usr/sysv/bin/df is an absolute path a PATH stub cannot reach).
+# DF_LOCAL_ONLY is covered in both reports: the disk df takes "-T local", and
+# the inode df -- /usr/sysv/bin/df -- takes -l for the same thing. Its
+# absolute path cannot be reached by a
+# PATH stub, so the extracted block is repointed at one with sed, the way the
+# Linux test repoints /proc/filesystems.
+#
+# NOT claimed: the remote-df sentinel, which AIX does not have. With
+# DF_LOCAL_ONLY=no a wedged remote mount can still hang the client, and
+# nothing here bounds it.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -39,10 +44,24 @@ fsf_setup aix XYMONCLIENT_AIX
 # AIX df -Ik: pseudo mounts print dashes, real mounts print numbers. One row
 # per default-excluded type, so a type dropped from the client's list shows up
 # as a reappearing row.
+# Arguments are logged one per line: "$*" would flatten "-T local" and
+# "-T" "local" into the same text, and it is exactly that difference the
+# client has to get right -- AIX df rejects the single-argument form.
+#
+# The stub honours "-T local" by dropping the remote row, as AIX df does.
+# Without that the fixture would report a remote filesystem in a run where
+# the real client hides it, and every assertion about the default would be
+# measuring the stub rather than the client.
 cat > "$STUB/df" <<EOF
 #!/bin/sh
-printf '%s\n' "\$*" >> "$DF_LOG"
-cat <<'TABLE'
+printf '%s\n' "\$@" >> "$DF_LOG"
+_local=no
+_prev=
+for _a in "\$@"; do
+	[ "\$_prev" = "-T" ] && [ "\$_a" = "local" ] && _local=yes
+	_prev="\$_a"
+done
+cat <<'TABLE' | { [ "\$_local" = yes ] && grep -v '^srv:/export ' || cat; }
 Filesystem 1024-blocks Used Free %Used Mounted on
 /dev/hd4 1048576 319992 728584 31% /
 /proc - - - - /proc
@@ -85,6 +104,29 @@ chmod +x "$STUB/mount"
 FSF="$TMP/df-section.sh"
 fsf_extract "$FSF" "" '\[inode\]'
 
+# The [df]+[inode] block, with the absolute inode df repointed at a stub that
+# records its operands.
+SYSVDF="$STUB/sysv-df"
+cat > "$SYSVDF" <<EOF
+#!/bin/sh
+printf '%s\\n' "\$@" >> "$TMP/sysvdf.args"
+_l=no
+for _a in "\$@"; do [ "\$_a" = "-l" ] && _l=yes; done
+cat <<'TABLE' | { [ "\$_l" = yes ] && grep -v ' /mnt$' || cat; }
+Filesystem Inodes IUsed IFree IUse% Mount Dir
+/dev/hd4 65536 1024 64512 2% /
+srv:/export 65536 1024 64512 2% /mnt
+TABLE
+EOF
+chmod +x "$SYSVDF"
+FSFI="$TMP/df-inode-section.sh"
+fsf_extract "$FSFI" "s!/usr/sysv/bin/df!$SYSVDF!" '\[mount\]'
+
+run_full() {
+	( cd "$TMP" && env "$@" $FSF_SHELL "$FSFI" ) 2> "$STDERR_LOG" \
+		|| fail "extracted [df]+[inode] block exited non-zero: $(cat "$STDERR_LOG")"
+}
+
 run_df() {
 	( cd "$TMP" && env "$@" $FSF_SHELL "$FSF" ) 2> "$STDERR_LOG" \
 		|| fail "extracted [df] block exited non-zero: $(cat "$STDERR_LOG")"
@@ -94,8 +136,11 @@ run_df() {
 
 out=$(run_df)
 assert_contains "%Used Mounted on" "$out" "the df header row must survive the filter"
+assert_equal "1" "$(printf '%s\n' "$out" | grep -c 'Mounted on')" \
+	"the header must be emitted exactly once, not repeated per surviving row"
 assert_contains "31% /" "$out" "the real jfs2 filesystem must be reported"
-assert_contains "50% /mnt" "$out" "a remote nfs3 mount is not in the type exclude set and must be reported"
+assert_not_contains "50% /mnt" "$out" \
+	"the default must not report a remote mount: df never looked at it (-T local)"
 for mp in /proc /aha /cdrom /namefs /autodir; do
 	assert_not_contains " $mp" "$out" \
 		"the default exclude set no longer drops $mp (procfs ahafs namefs autofs cdrfs)"
@@ -116,7 +161,7 @@ assert_not_contains " /aha" "$out" "INCLUDE_TYPES=procfs must not surface other 
 
 # --- EXCLUDE_TYPES drops a real type, and wins over INCLUDE --------------------
 
-out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES=jfs2)
+out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES=jfs2 XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
 assert_not_contains "31% /" "$out" "EXCLUDE_TYPES=jfs2 must drop the jfs2 filesystem"
 assert_contains "50% /mnt" "$out" "EXCLUDE_TYPES=jfs2 must not drop unrelated mounts"
 
@@ -128,7 +173,7 @@ out=$(run_df XYMONCLIENT_FS_INCLUDE_TYPES='procfs ahafs')
 assert_contains " /proc" "$out" "the first of two INCLUDE_TYPES tokens must surface its type"
 assert_contains " /aha" "$out" "the second of two INCLUDE_TYPES tokens must surface its type"
 
-out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES='jfs2 nfs3')
+out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES='jfs2 nfs3' XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
 assert_not_contains "31% /" "$out" "the first of two EXCLUDE_TYPES tokens must drop its type"
 assert_not_contains " /mnt" "$out" "the second of two EXCLUDE_TYPES tokens must drop its type"
 # ... which excludes every filesystem in the fixture: the section must come
@@ -151,4 +196,78 @@ out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES='jfs*')
 assert_contains "31% /" "$out" \
 	"a configured exclude underwent pathname expansion (jfs* matched a file named jfs2)"
 
-pass "xymonclient-aix.sh: type filtering via mount(8), since AIX df cannot exclude by type"
+# --- DF_LOCAL_ONLY: "-T local", since AIX df has no -l -------------------------
+
+# A hard-mounted NFS server that stops answering wedges df for the life of the
+# mount, taking the client run with it. AIX has no remote-df sentinel, so the
+# only protection is not asking df about remote mounts at all.
+
+: > "$DF_LOG"
+run_df >/dev/null
+# One argument per line, so "-T local" as a single argument cannot match:
+# AIX df rejects that form, and "$*" logging could not tell the two apart.
+assert_match '(^|
+)-T
+local($|
+)' "$(cat "$DF_LOG")" \
+	"the default must keep df off remote mounts (-T and local, as two arguments)"
+out=$(run_df XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
+assert_contains "50% /mnt" "$out" \
+	"a remote mount must be reported when df is allowed to look at it"
+
+: > "$DF_LOG"
+run_df XYMONCLIENT_FS_DF_LOCAL_ONLY=no >/dev/null
+assert_not_match 'local' "$(cat "$DF_LOG")" \
+	"DF_LOCAL_ONLY=no must let remote filesystems be reported"
+
+: > "$DF_LOG"
+run_df XYMONCLIENT_FS_DF_LOCAL_ONLY=maybe >/dev/null
+assert_match '(^|
+)-T
+local($|
+)' "$(cat "$DF_LOG")" \
+	"an invalid DF_LOCAL_ONLY must fall back to the safe default, not drop the flag"
+assert_contains "invalid XYMONCLIENT_FS_DF_LOCAL_ONLY" "$(cat "$STDERR_LOG")" \
+	"an invalid DF_LOCAL_ONLY must say so on stderr"
+
+# --- the inode df is kept off remote mounts too ------------------------------
+
+# Guarding only the disk report would leave the inode df reaching the same
+# dead mount. /usr/sysv/bin/df spells local-only as "-l", not "-T local".
+
+: > "$TMP/sysvdf.args"
+run_full >/dev/null
+args=$(cat "$TMP/sysvdf.args")
+assert_contains "-i" "$args" "the inode df must still be asked for inode counts"
+assert_match '(^|
+)-l($|
+)' "$args" \
+	"the System V df must be given -l, so the inode report never reaches a remote server"
+out=$(run_full)
+assert_not_contains " /mnt" "$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p')" \
+	"a remote mount must not appear in the inode report when df was told local only"
+
+: > "$TMP/sysvdf.args"
+run_full XYMONCLIENT_FS_DF_LOCAL_ONLY=no >/dev/null
+args=$(cat "$TMP/sysvdf.args")
+assert_equal "-i" "$args" \
+	"DF_LOCAL_ONLY=no must ask the inode df about every filesystem"
+
+# With every inode row gone the section must be empty, not header-only. Unlike
+# the disk report the colour is the same either way - unix_inode_report()
+# exempts an empty inode section, for the Solaris host whose filesystems are
+# all ZFS - but an empty one has the server name the reason ("No filesystems
+# reporting inode data") instead of echoing a header for zero filesystems.
+cat > "$SYSVDF" <<EOF
+#!/bin/sh
+cat <<'TABLE'
+Filesystem Inodes IUsed IFree IUse% Mount Dir
+TABLE
+EOF
+chmod +x "$SYSVDF"
+out=$(run_full)
+inode_sec=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p' | sed 1d)
+assert_equal "" "$inode_sec" \
+	"an inode report with no rows must be empty, so the server names the reason instead of echoing a header for zero filesystems"
+
+pass "xymonclient-aix.sh: type filtering via mount(8), and DF_LOCAL_ONLY in both reports"
