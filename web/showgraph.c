@@ -1061,14 +1061,20 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			 * Ask the RRD, not the filesystem: mmap writes do not move
 			 * the mtime everywhere (tests/web/showgraph-stale-filter.sh).
 			 * The argv form: the wrappers own the "char **" versus
-			 * "const char **" divergence. "--" keeps a "-"-prefixed
-			 * filename out of option parsing.
+			 * "const char **" divergence. The "./" prefix keeps a
+			 * "-"-prefixed filename out of option parsing while staying
+			 * a plain operand for a legacy rrd_last() that opens argv[1]
+			 * directly rather than parsing options (RRDtool < 1.4). We
+			 * are chdir'd into the RRD directory, so "./name" resolves
+			 * identically to the bare name.
 			 */
 			if (ignorestalerrds) {
-				xymon_rrd_argv_item_t lastargv[] = { "last", "--", d->d_name, NULL };
+				char dotpath[PATH_MAX];
+				xymon_rrd_argv_item_t lastargv[] = { "last", dotpath, NULL };
 				time_t lastupd;
 
-				lastupd = xymon_rrd_last(3, lastargv);
+				snprintf(dotpath, sizeof(dotpath), "./%s", d->d_name);
+				lastupd = xymon_rrd_last(2, lastargv);
 
 				if (lastupd == (time_t)-1) {
 					/* Unreadable: rrd_graph would fail the whole image

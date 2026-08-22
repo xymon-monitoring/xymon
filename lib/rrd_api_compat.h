@@ -36,10 +36,13 @@ static inline char **xymon_rrd_api_argv(xymon_rrd_argv_item_t *argv)
 #endif
 
 /*
- * librrd parses these argv forms with getopt(): reset its globals and the
- * error state before every call; the state after a call is the caller's.
- * optind=0 is the GNU re-init - moot on RRDtool >= 1.7, whose private
- * optparse ignores the getopt globals. That version is the supported floor.
+ * The option-parsing entry points (create/update/fetch/graph) run getopt()
+ * over their argv: reset its globals and the error state before every call;
+ * the state after a call is the caller's. optind=0 is the GNU re-init that
+ * an option-parsing RRDtool before 1.7 relies on to re-scan; RRDtool >= 1.7
+ * uses a private optparse that ignores the getopt globals, so the reset is a
+ * harmless no-op there. This resets unconditionally rather than asserting a
+ * version floor, which the build does not probe for.
  */
 static inline void xymon_rrd_call_setup(void)
 {
