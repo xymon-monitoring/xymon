@@ -636,6 +636,13 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
+				else if (unmeasured && nocapacity) {
+					/* Nothing was measured, and it is not the marker (that is
+					 * handled above), so this is a row the client could not
+					 * fill in - AIX writes it for a pseudo filesystem. No
+					 * reading, no verdict: atol("-") is 0, and "0 units free"
+					 * would trip an absolute threshold that nothing measured. */
+				}
 				else if ( (abspanic && (levelabs <= paniclevel)) || 
 				     (!abspanic && (levelpct >= paniclevel)) ) {
 					if (diskcolor < COL_RED) diskcolor = COL_RED;
@@ -833,6 +840,13 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 					sprintf(msgline, "&red <!-- ID=%s --> %s is unreachable (not measured)\n", fsname, fsname);
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
+				}
+				else if (unmeasured && nocapacity) {
+					/* Nothing was measured, and it is not the marker (that is
+					 * handled above), so this is a row the client could not
+					 * fill in - AIX writes it for a pseudo filesystem. No
+					 * reading, no verdict: atol("-") is 0, and "0 units free"
+					 * would trip an absolute threshold that nothing measured. */
 				}
 				else if ( (abspanic && (levelabs <= paniclevel)) || 
 				     (!abspanic && (levelpct >= paniclevel)) ) {

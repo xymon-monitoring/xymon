@@ -37,7 +37,9 @@ require_bin XYMOND_CLIENT xymond/xymond_client
 
 work=$(mktempdir)
 mkdir -p "$work/home"
-: > "$work/analysis.cfg"
+# An absolute free-space rule on the AIX pseudo mount: "-" parses as 0, and
+# "0 units free" trips an absolute threshold that nothing measured.
+printf 'HOST=*\n\tDISK /proc 5000U 1000U\n' > "$work/analysis.cfg"
 
 # Two client reports through one worker run: a Linux host carrying the marker
 # next to a healthy and a genuinely full filesystem, then an AIX host whose
@@ -107,5 +109,7 @@ assert_match "aix,test\.disk green" "$out" \
 	"the AIX all-dash /proc row turned the disk column non-green"
 assert_not_contains "/proc is unreachable" "$out" \
 	"the AIX all-dash /proc row was mistaken for the unavailable-mount marker"
+assert_not_contains "/proc (0 units free)" "$out" \
+	"a row nothing measured was judged against an absolute threshold, where \"-\" reads as 0 free"
 
 pass "an unreachable mount is named in the alert instead of being reported as a full disk"
