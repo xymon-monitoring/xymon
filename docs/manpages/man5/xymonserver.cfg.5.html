@@ -233,6 +233,22 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       monitored hosts).
     <p class="Pp"></p>
   </dd>
+  <dt id="XYMONRUNDIR"><a class="permalink" href="#XYMONRUNDIR"><b>XYMONRUNDIR</b></a></dt>
+  <dd>The directory for the server's runtime files - pidfiles and control
+      sockets. The client running alongside has its own, XYMONCLIENTRUNDIR,
+      since the two sides keep their runtime files apart as they keep their logs
+      apart. Defaults to $XYMONSERVERLOGS. Point it at a tmpfs-backed directory
+      (e.g. /run/xymon) to comply with the FHS; it must be writable by the user
+      running Xymon.
+    <br/>
+    Note: <i><a href="../man8/xymond_rrd.8.html">xymond_rrd</a>(8)</i> creates its cache-control Unix socket
+      (&quot;rrdctl.&lt;pid&gt;&quot;) in this directory, and Unix socket paths
+      have a small, platform-dependent length limit (around 92 to 107 bytes for
+      the complete path, depending on the OS). xymond_rrd refuses to start when
+      XYMONRUNDIR is too deep for the socket path to fit, so keep this directory
+      path short.
+    <p class="Pp"></p>
+  </dd>
   <dt id="XYMONHOME"><a class="permalink" href="#XYMONHOME"><b>XYMONHOME</b></a></dt>
   <dd>The Xymon server directory, where programs and configurations are kept.
       Default: $XYMONSERVERROOT/server/ .
@@ -240,13 +256,6 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   </dd>
   <dt id="XYMONTMP"><a class="permalink" href="#XYMONTMP"><b>XYMONTMP</b></a></dt>
   <dd>Directory used for temporary files. Default: $XYMONHOME/tmp/
-    <br/>
-    Note: <i><a href="../man8/xymond_rrd.8.html">xymond_rrd</a>(8)</i> creates its cache-control Unix socket
-      (&quot;rrdctl.&lt;pid&gt;&quot;) in this directory, and Unix socket paths
-      have a small, platform-dependent length limit (around 92 to 107 bytes for
-      the complete path, depending on the OS). xymond_rrd refuses to start when
-      XYMONTMP is too deep for the socket path to fit, so keep this directory
-      path short.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONWWWDIR"><a class="permalink" href="#XYMONWWWDIR"><b>XYMONWWWDIR</b></a></dt>
