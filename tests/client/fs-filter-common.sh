@@ -385,7 +385,10 @@ fsf_assert_loud() {
 	case "$1" in
 		*"collection failed"*) return 0 ;;
 	esac
-	printf '%s\n' "$1" | grep -Eq '^[^ ]+ +- +- +- +100% ' && return 0
+	# The unavailable-mount marker: every column "-". The legacy shape carried
+	# 100% in the capacity column and is still accepted, since a client can be
+	# older than the server reading it.
+	printf '%s\n' "$1" | grep -Eq '^[^ ]+ +- +- +- +(-|100%) ' && return 0
 	fail "${2:-}: the report carries no marker, leaving the server an empty section it cannot explain: '$1'"
 }
 
