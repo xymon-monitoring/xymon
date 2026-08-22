@@ -403,6 +403,21 @@ variant_products() {
 	EOF
 }
 
+# An unknown XYMON_VARIANT is indistinguishable from a variant that declares no
+# products: product_path returns nothing, the caller skips, and
+# `XYMON_VARIANT=sever ./tests/testsuite` finishes green having quietly dropped
+# the binary coverage the variant exists to select. Checked where the variant is
+# read, so a typo fails the tests it would have silently removed.
+validate_variant() {
+	[ -n "${XYMON_VARIANT:-}" ] || return 0
+	# Checked once per test: require_bin is called for each product a test
+	# needs, and the answer cannot change within a run.
+	[ -n "${XYMON_VARIANT_CHECKED:-}" ] && return 0
+	known_variants | grep -qxF "$XYMON_VARIANT" \
+		|| fail "XYMON_VARIANT='$XYMON_VARIANT' is not a known variant -- expected one of: $(known_variants | tr '\n' ' ' | sed 's/ $//')"
+	XYMON_VARIANT_CHECKED=1
+}
+
 # known_variants -- the variant names the table above declares, one per line.
 # Read from the table rather than written again, so the two cannot disagree.
 known_variants() {
@@ -486,6 +501,7 @@ require_bin() {
 		# product. Without one -- a developer run, a release tarball, the
 		# build-free tests.yml lane -- the default stands.
 		if [ -n "${XYMON_VARIANT:-}" ] && product_declared "$var"; then
+			validate_variant
 			rel=$(product_path "$XYMON_VARIANT" "$var")
 			[ -n "$rel" ] \
 				|| skip "the ${XYMON_VARIANT} build does not produce $var"
