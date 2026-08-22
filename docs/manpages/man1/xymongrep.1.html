@@ -24,7 +24,7 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   <br/>
   <b>xymongrep --version</b>
   <br/>
-  <b>xymongrep [--noextras] [--test-untagged] [--web] [--net]
+  <b>xymongrep [--noextras] [--test-untagged] [--no-dialup] [--web] [--net]
     [--loadhostsfromxymond] TAG [TAG...]</b></p>
 <p class="Pp"></p>
 </section>
@@ -77,6 +77,14 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
       then this host is ignored and will not be included in the output. This can
       be used to ignore hosts that are down, or hosts where the custom test is
       disabled.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-dialup"><a class="permalink" href="#no-dialup"><b>--no-dialup</b></a></dt>
+  <dd>Skip hosts that have the &quot;dialup&quot; attribute set in the
+      <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> file. Unlike <b>--no-down</b>, this check does not
+      query the server; it filters strictly on the host attribute and is
+      independent of the host's current color. Useful for scripts that should
+      never probe hosts expected to be intermittently offline.
     <p class="Pp"></p>
   </dd>
   <dt id="web"><a class="permalink" href="#web"><b>--web</b></a></dt>
