@@ -98,6 +98,20 @@ ifndef PKGBUILD
 	chown -R $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME)
 	chgrp -R `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONHOME)
 	chmod 755 $(INSTALLROOT)$(XYMONHOME)
+	# The recursive chown above stops at XYMONHOME, so a relocated bin or etc
+	# is outside it: the tools keep whatever ownership cp preserved, and the
+	# config files are created here and stay root's. Named one by one rather
+	# than chowned recursively - a relocated etc may be shared with the rest
+	# of the system, where nothing else is ours to touch. A no-op in the
+	# default layout, where the recursion already covered them.
+	for f in $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS); do \
+		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/$$f ; \
+		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/$$f ; \
+	done
+	for f in localclient.cfg clientlaunch.cfg xymonclient.cfg; do \
+		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$f ; \
+		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$f ; \
+	done
 endif
 
 install-localclient:
