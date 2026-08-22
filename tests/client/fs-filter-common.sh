@@ -363,7 +363,12 @@ fsf_selfcheck() {
 # spellings are equally loud and a client may use either: the "collection
 # failed" marker (the column goes yellow) or one 100%-full unmeasured row
 # per mount (the column goes red). What is forbidden is the third case -- an
-# empty section, which the server reads as "no filesystems, all is well".
+# empty section. The server does not read that the same way in both reports:
+# for [inode] it is green outright ("No filesystems reporting inode data",
+# unix_inode_report()'s exemption for the all-ZFS Solaris host), and for [df] it
+# is yellow, but only because no column header was found -- so the operator is
+# told the report was incomprehensible rather than what actually happened.
+# Neither answers "which filesystems", which is what the section is for.
 #
 # The unmeasured row is matched on its columns, one line at a time: spacing
 # differs per client (column-aligned vs single-spaced), and a whole-report
@@ -373,7 +378,7 @@ fsf_assert_loud() {
 		*"collection failed"*) return 0 ;;
 	esac
 	printf '%s\n' "$1" | grep -Eq '^[^ ]+ +- +- +- +100% ' && return 0
-	fail "${2:-}: the report is silent, which the server reads as green: '$1'"
+	fail "${2:-}: the report carries no marker, leaving the server an empty section it cannot explain: '$1'"
 }
 
 # fsf_contract -- the rules every client obeys, asserted on the emitted report.

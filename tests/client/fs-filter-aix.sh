@@ -14,8 +14,8 @@
 #   - the drop is keyed on the device+mountpoint pair, so an excluded overlay
 #     (namefs) sharing its mount point with a real filesystem takes only the
 #     overlay row with it
-#   - excluding every filesystem yields an EMPTY [df] section, which the
-#     server flags - a header-only section would read as all-green
+#   - a report with no rows in it - every filesystem excluded, or a df that
+#     failed - carries a marker naming which, and no df header
 #   - INCLUDE_TYPES surfaces a default-excluded type again
 #   - EXCLUDE_TYPES drops a real type; a type in both lists stays excluded
 #   - a configured token like "procf*" is matched literally, never expanded
@@ -176,11 +176,14 @@ assert_contains " /aha" "$out" "the second of two INCLUDE_TYPES tokens must surf
 out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES='jfs2 nfs3' XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
 assert_not_contains "31% /" "$out" "the first of two EXCLUDE_TYPES tokens must drop its type"
 assert_not_contains " /mnt" "$out" "the second of two EXCLUDE_TYPES tokens must drop its type"
-# ... which excludes every filesystem in the fixture: the section must come
-# out empty, not header-only - the server flags an empty disk report, while a
-# header with no rows reads as all-green.
-assert_equal "[df]" "$out" \
-	"excluding every filesystem left a header-only [df] section, which the server reads as all-green"
+# ... which excludes every filesystem in the fixture. The report has to say so:
+# the server reads a filesystem that is not there as green, so a section with no
+# rows carries a marker - not a bare header, which reads as a healthy report,
+# and not an empty section, which the server can only call incomprehensible.
+assert_contains "collection failed" "$out" \
+	"excluding every filesystem must leave a marker, not a section the server has to guess at"
+assert_not_contains "Filesystem" "$out" \
+	"the marker must carry no df header - a header reads as a healthy report"
 
 # --- configured tokens are literal, never globs --------------------------------
 
@@ -269,5 +272,66 @@ out=$(run_full)
 inode_sec=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p' | sed 1d)
 assert_equal "" "$inode_sec" \
 	"an inode report with no rows must be empty, so the server names the reason instead of echoing a header for zero filesystems"
+
+# ... and a df that died is not that case. The server reads an empty inode
+# section as green on purpose - it is how a host with nothing inode-limited
+# reports - so it cannot tell a dead df from a legitimately empty report. Only
+# this side sees the exit status, so only this side can say which it was.
+cat > "$SYSVDF" <<'EOF'
+#!/bin/sh
+echo "df: illegal option -- l" >&2
+exit 2
+EOF
+chmod +x "$SYSVDF"
+out=$(run_full)
+inode_sec=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p' | sed 1d)
+assert_contains "Inode report collection failed: df exited 2 with no output" "$inode_sec" \
+	"a failed inode df must name its status, not leave a section the server reads as green"
+assert_not_contains "Mounted on" "$inode_sec" \
+	"the marker must carry no header - a header with no rows reads as a healthy report"
+assert_contains "reporting data as unavailable" "$(cat "$STDERR_LOG")" \
+	"a failed inode df must also say so on stderr, as the other clients do"
+
+# --- a df that fails says so, in the siblings' words ---------------------------
+
+# The likeliest way this client comes back with nothing is a df that rejects
+# "-T local" - the flag needs AIX 7.1. Empty output and a non-zero status must
+# name the status, so the operator is not left reading "incomprehensible disk
+# report" for a flag the host does not have. Kept last: it leaves the df stub
+# broken for anything after it.
+cat > "$STUB/df" <<'EOF'
+#!/bin/sh
+echo "df: illegal option -- T" >&2
+exit 2
+EOF
+chmod +x "$STUB/df"
+out=$(run_df)
+assert_contains "Disk report collection failed: df exited 2 with no output" "$out" \
+	"a df that exits non-zero with no output must be reported as a failure, not as an empty section"
+assert_not_contains "Filesystem" "$out" \
+	"the failure marker must carry no df header - a header reads as a healthy report"
+assert_contains "reporting data as unavailable" "$(cat "$STDERR_LOG")" \
+	"a failed df must also say so on stderr, as the other clients do"
+
+# ... and a df that printed rows and still exited non-zero is not that case.
+# One unreadable mount is enough to make AIX df complain while it reports the
+# rest; if the exclude list then empties the report, what emptied it was the
+# exclude list, and saying "no output" about a df that had some is a wrong
+# answer to the operator's question.
+cat > "$STUB/df" <<'EOF'
+#!/bin/sh
+cat <<'TABLE'
+Filesystem 1024-blocks Used Free %Used Mounted on
+/dev/hd4 1048576 319992 728584 31% /
+TABLE
+echo "df: /badmount: cannot stat" >&2
+exit 1
+EOF
+chmod +x "$STUB/df"
+out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES=jfs2)
+assert_contains "every filesystem excluded" "$out" \
+	"rows collected and all of them excluded must be reported as an exclusion, whatever df's status"
+assert_not_contains "with no output" "$out" \
+	"a df that printed rows must not be reported as having produced none"
 
 pass "xymonclient-aix.sh: type filtering via mount(8), and DF_LOCAL_ONLY in both reports"
