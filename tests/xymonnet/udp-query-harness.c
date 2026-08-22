@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later                                  */
 /*
- * tests/network/udp-query-harness.c
+ * tests/xymonnet/udp-query-harness.c
  *
  * Drives the reusable UDP transport (xymonnet/udpquery.c) over the loopback
  * interface and pins its contract and hardening:
