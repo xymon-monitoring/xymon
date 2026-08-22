@@ -26,8 +26,7 @@ static char rcsid[] = "$Id: acknowledgementslog.c 7085 2012-07-16 11:08:37Z stor
 #include <errno.h>
 #include <time.h>
 
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
+#include "pcre2_api_compat.h"
 
 #include "libxymon.h"
 
@@ -94,7 +93,7 @@ void do_acknowledgementslog(FILE *output,
 		  char *testregex, char *extestregex,
 		  char *rcptregex, char *exrcptregex)
 {
-	FILE *acknowledgementslog;
+	FILE *acknowledgementslog = NULL;
 	char acknowledgementslogfilename[PATH_MAX];
 	time_t firstevent = 0;
 	time_t lastevent = getcurrenttime(NULL);
@@ -114,7 +113,8 @@ void do_acknowledgementslog(FILE *output,
 	pcre2_code *extestregexp = NULL;
 	pcre2_code *rcptregexp = NULL;
 	pcre2_code *exrcptregexp = NULL;
-	pcre2_match_data *ovector;
+	pcre2_match_data *ovector = NULL;
+	pcre2_code *match_re;
 
 	if (maxminutes && (fromtime || totime)) {
 		fprintf(output, "<B>Only one time interval type is allowed!</B>");
@@ -149,14 +149,22 @@ void do_acknowledgementslog(FILE *output,
 
 	if (!maxcount) maxcount = 100;
 
-	if (pageregex && *pageregex) pageregexp = pcre2_compile(pageregex, strlen(pageregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (expageregex && *expageregex) expageregexp = pcre2_compile(expageregex, strlen(expageregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (hostregex && *hostregex) hostregexp = pcre2_compile(hostregex, strlen(hostregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (exhostregex && *exhostregex) exhostregexp = pcre2_compile(exhostregex, strlen(exhostregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (testregex && *testregex) testregexp = pcre2_compile(testregex, strlen(testregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (extestregex && *extestregex) extestregexp = pcre2_compile(extestregex, strlen(extestregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (rcptregex && *rcptregex) rcptregexp = pcre2_compile(rcptregex, strlen(rcptregex), PCRE2_CASELESS, &err, &errofs, NULL);
-	if (exrcptregex && *exrcptregex) exrcptregexp = pcre2_compile(exrcptregex, strlen(exrcptregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (pageregex && *pageregex) pageregexp = pcre2_compile(PCRE2STR(pageregex), strlen(pageregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (expageregex && *expageregex) expageregexp = pcre2_compile(PCRE2STR(expageregex), strlen(expageregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (hostregex && *hostregex) hostregexp = pcre2_compile(PCRE2STR(hostregex), strlen(hostregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (exhostregex && *exhostregex) exhostregexp = pcre2_compile(PCRE2STR(exhostregex), strlen(exhostregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (testregex && *testregex) testregexp = pcre2_compile(PCRE2STR(testregex), strlen(testregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (extestregex && *extestregex) extestregexp = pcre2_compile(PCRE2STR(extestregex), strlen(extestregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (rcptregex && *rcptregex) rcptregexp = pcre2_compile(PCRE2STR(rcptregex), strlen(rcptregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	if (exrcptregex && *exrcptregex) exrcptregexp = pcre2_compile(PCRE2STR(exrcptregex), strlen(exrcptregex), PCRE2_CASELESS, &err, &errofs, NULL);
+	match_re = (pageregexp ? pageregexp :
+		    expageregexp ? expageregexp :
+		    hostregexp ? hostregexp :
+		    exhostregexp ? exhostregexp :
+		    testregexp ? testregexp :
+		    extestregexp ? extestregexp :
+		    rcptregexp ? rcptregexp :
+		    exrcptregexp);
 
 	snprintf(acknowledgementslogfilename, sizeof(acknowledgementslogfilename), "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
 	acknowledgementslog = fopen(acknowledgementslogfilename, "r");
@@ -185,7 +193,7 @@ void do_acknowledgementslog(FILE *output,
 				}
 				else { 
 					fprintf(output, "Error reading logfile %s: %s\n", acknowledgementslogfilename, strerror(errno));
-					return;
+					goto cleanup;
 				}
 			}
 			else {
@@ -196,7 +204,13 @@ void do_acknowledgementslog(FILE *output,
 	}
 	
 	head = NULL;
-	ovector = pcre2_match_data_create(30, NULL);
+	/* ovector sized from match_re but reused across all page/host/test patterns below; safe because we only check match/no-match, not substrings */
+	ovector = (match_re ? pcre2_match_data_create_from_pattern(match_re, NULL) : NULL);
+	if (match_re && !ovector) {
+		errprintf("Cannot allocate PCRE match data for acknowledgements log\n");
+		fprintf(output, "<B>Internal error allocating regex match data</B>");
+		goto cleanup;
+	}
 
 	while (acknowledgementslog && (fgets(l, sizeof(l), acknowledgementslog))) {
 
@@ -256,7 +270,7 @@ void do_acknowledgementslog(FILE *output,
 			pagename = xmh_item_multi(eventhost, XMH_PAGEPATH);
 			pagematch = 0;
 			while (!pagematch && pagename) {
-			pagematch = (pcre2_match(pageregexp, pagename, strlen(pagename), 0, 0,
+			pagematch = (pcre2_match(pageregexp, PCRE2STR(pagename), strlen(pagename), 0, 0,
 					ovector, NULL) >= 0);
 				pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
 			}
@@ -271,7 +285,7 @@ void do_acknowledgementslog(FILE *output,
 			pagename = xmh_item_multi(eventhost, XMH_PAGEPATH);
 			pagematch = 0;
 			while (!pagematch && pagename) {
-			pagematch = (pcre2_match(expageregexp, pagename, strlen(pagename), 0, 0,
+			pagematch = (pcre2_match(expageregexp, PCRE2STR(pagename), strlen(pagename), 0, 0,
 					ovector, NULL) >= 0);
 				pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
 			}
@@ -281,42 +295,42 @@ void do_acknowledgementslog(FILE *output,
 		if (pagematch) continue;
 
 		if (hostregexp)
-			hostmatch = (pcre2_match(hostregexp, hostname, strlen(hostname), 0, 0,
+			hostmatch = (pcre2_match(hostregexp, PCRE2STR(hostname), strlen(hostname), 0, 0,
 					ovector, NULL) >= 0);
 		else
 			hostmatch = 1;
 		if (!hostmatch) continue;
 
 		if (exhostregexp)
-			hostmatch = (pcre2_match(exhostregexp, hostname, strlen(hostname), 0, 0,
+			hostmatch = (pcre2_match(exhostregexp, PCRE2STR(hostname), strlen(hostname), 0, 0,
 					ovector, NULL) >= 0);
 		else
 			hostmatch = 0;
 		if (hostmatch) continue;
 
 		if (testregexp)
-			testmatch = (pcre2_match(testregexp, svcname, strlen(svcname), 0, 0,
+			testmatch = (pcre2_match(testregexp, PCRE2STR(svcname), strlen(svcname), 0, 0,
 					ovector, NULL) >= 0);
 		else
 			testmatch = 1;
 		if (!testmatch) continue;
 
 		if (extestregexp)
-			testmatch = (pcre2_match(extestregexp, svcname, strlen(svcname), 0, 0,
+			testmatch = (pcre2_match(extestregexp, PCRE2STR(svcname), strlen(svcname), 0, 0,
 					ovector, NULL) >= 0);
 		else
 			testmatch = 0;
 		if (testmatch) continue;
 
 		if (rcptregexp)
-			rcptmatch = (pcre2_match(rcptregexp, recipient, strlen(recipient), 0, 0,
+			rcptmatch = (pcre2_match(rcptregexp, PCRE2STR(recipient), strlen(recipient), 0, 0,
 					ovector, NULL) >= 0);
 		else
 			rcptmatch = 1;
 		if (!rcptmatch) continue;
 
 		if (exrcptregexp)
-			rcptmatch = (pcre2_match(exrcptregexp, recipient, strlen(recipient), 0, 0,
+			rcptmatch = (pcre2_match(exrcptregexp, PCRE2STR(recipient), strlen(recipient), 0, 0,
 					ovector, NULL) >= 0);
 		else
 			rcptmatch = 0;
@@ -405,6 +419,7 @@ void do_acknowledgementslog(FILE *output,
 		fprintf(output, "</CENTER>\n");
 	}
 
+cleanup:
 	if (acknowledgementslog) fclose(acknowledgementslog);
 
 	if (pageregexp)   pcre2_code_free(pageregexp);
@@ -415,6 +430,5 @@ void do_acknowledgementslog(FILE *output,
 	if (extestregexp) pcre2_code_free(extestregexp);
 	if (rcptregexp)   pcre2_code_free(rcptregexp);
 	if (exrcptregexp) pcre2_code_free(exrcptregexp);
-	pcre2_match_data_free(ovector);
+	if (ovector) pcre2_match_data_free(ovector);
 }
-
