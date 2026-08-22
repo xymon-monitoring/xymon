@@ -99,7 +99,8 @@ it drives is one every variant builds -- `common/xymongrep` in a server tree,
 `client/xymongrep` in a client one -- so it goes under `common/`, and a client
 build gets the coverage it exists for. `analysis-file-ifexist.sh` drives
 `xymond_client`, which only a localclient or server build produces, so it goes
-under `localclient/`.
+under `analysis/`: the area names the subject, and the variant table above says
+which build supplies the binary.
 
 Add a new area by PR when an existing one doesn't fit. Don't bend a
 test to fit the wrong area just to avoid creating a new directory.
