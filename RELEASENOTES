@@ -13,6 +13,13 @@ Changes file.
 Changes for 4.3.31
 ==================
 
+The AIX client now requires AIX 7.1 or later. It keeps df off remote mounts by
+default (XYMONCLIENT_FS_DF_LOCAL_ONLY, as on the other clients), which AIX df
+spells "-T local" -- a flag 6.1 and earlier do not have. On those releases the
+client reported every filesystem and a hard-mounted NFS server that stopped
+answering could hang the whole client run, with no remote-df sentinel to bound
+it; that is the behaviour now left behind rather than worked around.
+
 xymonnet tests with a configured cipher-list restriction now report an SSL error
 when OpenSSL rejects the restriction, instead of silently using the default
 cipher list. Such tests may therefore turn red after upgrading Xymon, or after

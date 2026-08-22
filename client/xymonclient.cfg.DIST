@@ -58,6 +58,16 @@ LOGFETCHOPTS=""
 # XYMONCLIENT_FS_INCLUDE_TYPES=""
 # XYMONCLIENT_FS_EXCLUDE_TYPES=""
 # XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
+#
+# AIX (xymonclient-aix.sh) - excludes procfs/ahafs/namefs/autofs/cdrfs from
+# the disk report, by mount point via mount(8) since AIX df cannot exclude by
+# type; the inode report needs no type filter, its own guard already skipping
+# rows without inode accounting. DF_LOCAL_ONLY covers both reports and matters
+# more here than elsewhere: AIX has no remote-df sentinel, so "no" leaves a
+# wedged NFS mount able to hang the run:
+# XYMONCLIENT_FS_INCLUDE_TYPES=""
+# XYMONCLIENT_FS_EXCLUDE_TYPES=""
+# XYMONCLIENT_FS_DF_LOCAL_ONLY="yes"
 
 
 # Local Mode (Only) Options
