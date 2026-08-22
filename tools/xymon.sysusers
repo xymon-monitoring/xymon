@@ -1,0 +1,20 @@
+# systemd sysusers.d(5) definition of the account Xymon runs as.
+#
+# Packagers: install this as /usr/lib/sysusers.d/xymon.conf. The home
+# directory has to match the layout you install into -- it is XYMONTOPDIR
+# for a client-only install and the server tree otherwise -- so adjust
+# that field rather than assuming this default fits.
+#
+# Why it is worth having rather than a useradd in a post-install script:
+# systemd-sysusers is idempotent, runs in image builds and chroots where
+# useradd may not, and on rpm-based distributions it is what generates
+# the user(xymon)/group(xymon) Provides that satisfy the Requires rpm
+# derives from files owned by that user.
+#
+# The name, GECOS and home below match what rpm/xymon.spec already
+# creates, so the two definitions in this tree agree. Wiring that spec
+# to use this file instead of its own useradd is the obvious next step.
+#
+#Type Name  ID  GECOS        Home directory
+g     xymon -
+u     xymon -   "Xymon user" /usr/lib/xymon
