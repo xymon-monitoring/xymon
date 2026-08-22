@@ -7,12 +7,8 @@ XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
-# ARES settings. c-ares is included
-ifeq ($(SYSTEMCARES),no)
-	CARESINC = -I./c-ares
-	CARESLIBS = libcares.a
-	LOCALCARES = libcares.a
-endif
+# c-ares (async DNS) is a required system dependency; the formerly-bundled
+# copy has been removed. configure provides CARESINCDIR and CARESLIBS.
 
 PROGRAMS = xymonnet xymonping beastat
 EXTENSIONS = xymonnet-again.sh
@@ -52,27 +48,11 @@ httpresult.o: httpresult.c
 contest.o: contest.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ contest.c
 
-dns.o: $(LOCALCARES) dns.c
-	$(CC) $(CFLAGS) $(CARESINC) -c -o $@ dns.c
+dns.o: dns.c
+	$(CC) $(CFLAGS) $(CARESINCDIR) -c -o $@ dns.c
 
 dns2.o: dns2.c
-	$(CC) $(CFLAGS) $(CARESINC) -c -o $@ dns2.c
-
-libcares.a: c-ares/.libs/libcares.a
-	ranlib c-ares/.libs/libcares.a || echo "ranlib failure - ignored"
-	cp c-ares/.libs/libcares.a .
-
-c-ares/.libs/libcares.a: c-ares/Makefile
-	(cd c-ares && $(MAKE))
-
-c-ares/Makefile: c-ares/configure
-	(cd c-ares && ../c-ares-shim.sh ./configure --disable-shared)
-
-c-ares/configure: c-ares-$(ARESVER).tar.gz
-	gzip -dc $< | tar xf -
-	mv c-ares-$(ARESVER) c-ares
-	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
-	touch c-ares/configure
+	$(CC) $(CFLAGS) $(CARESINCDIR) -c -o $@ dns2.c
 
 beastat: $(BEASTATOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(PCRELIBS)
@@ -82,7 +62,7 @@ beastat.o: beastat.c
 
 
 contest: contest.c httptest.o dns.o dns2.o httpcookies.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
-	$(CC) $(CFLAGS) -o contest -I../include $(CARESINC) -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o $(CARESLIBS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
+	$(CC) $(CFLAGS) -o contest -I../include $(CARESINCDIR) -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o $(CARESLIBS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
 
 
 # net-snmp-config exports the distro's full build policy along with the
