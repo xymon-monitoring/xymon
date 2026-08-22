@@ -35,6 +35,16 @@ endif
 ifndef INSTALLBINDIR
 INSTALLBINDIR = $(XYMONHOME)/bin
 endif
+ifndef INSTALLLIBDIR
+INSTALLLIBDIR = $(XYMONHOME)/lib
+endif
+# Holds include/ and lib/ side by side: libxymon.h reaches its remaining
+# headers through 62 "../lib/..." includes, so the pair has to move
+# together. Named devel, not include, or the default path would double
+# to $(XYMONHOME)/include/include.
+ifndef INSTALLINCDIR
+INSTALLINCDIR = $(XYMONHOME)/devel
+endif
 ifndef INSTALLETCDIR
 INSTALLETCDIR = $(XYMONHOME)/etc
 endif
@@ -211,6 +221,7 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)
 endif
 
+
 	mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)
 ifneq ($(INSTALLETCDIR),$(XYMONHOME)/etc)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/etc || true
@@ -329,6 +340,35 @@ endif
 
 install-common: install-dirs
 	XYMONHOME="$(XYMONHOME)" MANROOT="$(MANROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" $(MAKE) -C common install
+
+# Opt-in, not in INSTALLTARGETS: on main these are static archives and
+# headers that nothing reads at runtime. (devel keeps it in the default
+# list, rightly -- there the binaries link the shared objects it
+# installs.) Out of the default it also cannot land inside $(XYMONHOME)
+# unasked, where a spec globbing the server tree would swallow it into
+# the main package and collide with its own -devel one.
+#
+# It makes its own directories rather than install-dirs doing it: a
+# target nobody invoked should leave nothing behind, not even empty ones.
+#
+# Named for what it installs, as the other targets are -- devel calls
+# this install-libs, which describes the archives but not the 58 headers.
+install-devel: install-dirs
+	mkdir -p $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
+ifneq ($(INSTALLLIBDIR),$(XYMONHOME)/lib)
+	rm -f $(INSTALLROOT)$(XYMONHOME)/lib || true
+	ln -s $(INSTALLLIBDIR) $(INSTALLROOT)$(XYMONHOME)/lib || true
+endif
+ifneq ($(INSTALLINCDIR),$(XYMONHOME)/devel)
+	rm -f $(INSTALLROOT)$(XYMONHOME)/devel || true
+	ln -s $(INSTALLINCDIR) $(INSTALLROOT)$(XYMONHOME)/devel || true
+endif
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
+	chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
+endif
+	XYMONHOME="$(XYMONHOME)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" INSTALLROOT="$(INSTALLROOT)" INSTALLLIBDIR="$(INSTALLLIBDIR)" INSTALLINCDIR="$(INSTALLINCDIR)" $(MAKE) -C lib install
 
 install-xymongen: install-common
 	XYMONHOME="$(XYMONHOME)" MANROOT="$(MANROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" $(MAKE) -C xymongen install
