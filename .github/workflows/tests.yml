@@ -26,10 +26,12 @@ jobs:
       # testsuite exits 77 ("everything skipped -- nothing verified"). Actions
       # has no neutral state: any nonzero exit is a failure, so we must map 77
       # explicitly rather than let it surface as a bare "exit code 77". This job
-      # checks out the full source, so every test finds the code it guards and
-      # runs -- an all-skip here is never the legitimate "tests shipped without
-      # source" case, it means discovery or the tree itself is broken. Treat it
-      # as a hard failure with a clear message.
+      # checks out the full source but builds nothing, so the source-level
+      # checks run and every test needing a built binary skips (build.yml runs
+      # those against the tree each leg compiles). An all-skip here is still
+      # never the legitimate "tests shipped without source" case: it means
+      # discovery or the tree itself is broken. Treat it as a hard failure
+      # with a clear message.
       - name: Run testsuite
         run: |
           # GitHub runs steps with `bash -e`, which would abort on testsuite's

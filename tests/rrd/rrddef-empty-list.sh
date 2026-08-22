@@ -37,12 +37,14 @@ WORK=$(mktempdir)
 
 # Probed on its own: folding it into the harness build reported any compile
 # error at all as "no ASan" and passed the test.
-asan_usable || pass "xymonrrd.c empty-list count loops are guarded (static check; $CC cannot build and run ASan binaries)"
+asan_usable || pass_partial "xymonrrd.c empty-list count loops are guarded" \
+	"static check only; $CC cannot build and run ASan binaries"
 
 # The second half needs a built tree. Without one the first has still run, so
 # that is what gets reported rather than a failure over a missing precondition.
 [ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
-	|| pass "xymonrrd.c empty-list count loops are guarded (static check; tree not configured or not built)"
+	|| pass_partial "xymonrrd.c empty-list count loops are guarded" \
+		"static check only; tree not configured or not built"
 
 build_xymon_libs "$ROOT" "$WORK/libbuild.log" libxymoncomm.a
 # Configured flags, not a hand-picked SSLLIBS: without the rpath the harness
