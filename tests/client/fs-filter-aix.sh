@@ -3,33 +3,31 @@
 #
 # tests/client/fs-filter-aix.sh
 #
-# xymonclient-aix.sh under the type-filter subset of the XYMONCLIENT_FS_*
-# contract. AIX df has no type exclusion, so the client's dialect is unique:
-# it reads the vfs column of mount(8) and drops excluded types from df's
-# output by mount point. Pinned here, against a stub df and an AIX-format
-# stub mount:
+# xymonclient-aix.sh under the XYMONCLIENT_FS_* contract (#170), plus what is
+# AIX's alone. AIX df has no type exclusion and names no filesystem types at
+# all, so the client reads the vfs column of mount(8) and drops excluded types
+# from df's *output*, keyed on the device+mountpoint pair.
 #
-#   - the default set (procfs ahafs namefs autofs cdrfs) is dropped from the
-#     [df] section; real local (jfs2) and remote (nfs3) rows stay
-#   - the drop is keyed on the device+mountpoint pair, so an excluded overlay
-#     (namefs) sharing its mount point with a real filesystem takes only the
-#     overlay row with it
-#   - excluding every filesystem yields an EMPTY [df] section, which the
-#     server flags - a header-only section would read as all-green
-#   - INCLUDE_TYPES surfaces a default-excluded type again
-#   - EXCLUDE_TYPES drops a real type; a type in both lists stays excluded
-#   - a configured token like "procf*" is matched literally, never expanded
-#     against files in the working directory
+# The shared contract lives in fs-filter-common.sh and is asserted on the
+# emitted sections. Two of its rules are opted out of with
+# FSF_INODE_FILTERED=no: the AIX inode report carries no type filter, only its
+# own "no usable count" guard, which xymonclient.cfg(5) documents.
 #
-# DF_LOCAL_ONLY is covered in both reports: the disk df takes "-T local", and
-# the inode df -- /usr/sysv/bin/df -- takes -l for the same thing. Its
-# absolute path cannot be reached by a
-# PATH stub, so the extracted block is repointed at one with sed, the way the
-# Linux test repoints /proc/filesystems.
+# What the shared fixture cannot express is asserted below it, against a
+# fixture built for it: the pair keying (two mounts at one mount point), the
+# remote row layout in mount(8) (a leading node column, the device rendering as
+# node:path in df), "-T local" as two arguments, and the -l on the System V df
+# behind [inode]. That df is an absolute path a PATH stub cannot reach, so the
+# extracted block is repointed at one with sed, the way the Linux test repoints
+# /proc/filesystems.
+#
+# Mock-tested on any host; real AIX df and mount output still need verifying on
+# AIX -- in particular that "df -T local" and "/usr/sysv/bin/df -l" are
+# accepted, which no stub can prove.
 #
 # NOT claimed: the remote-df sentinel, which AIX does not have. With
-# DF_LOCAL_ONLY=no a wedged remote mount can still hang the client, and
-# nothing here bounds it.
+# DF_LOCAL_ONLY=no a wedged remote mount can still hang the client, and nothing
+# here bounds it.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -39,19 +37,122 @@ set -euo pipefail
 
 fsf_setup aix XYMONCLIENT_AIX
 
-# --- stubs --------------------------------------------------------------------
+# --- the dialect -------------------------------------------------------------
 
-# AIX df -Ik: pseudo mounts print dashes, real mounts print numbers. One row
-# per default-excluded type, so a type dropped from the client's list shows up
-# as a reappearing row.
-# Arguments are logged one per line: "$*" would flatten "-T local" and
-# "-T" "local" into the same text, and it is exactly that difference the
-# client has to get right -- AIX df rejects the single-argument form.
-#
-# The stub honours "-T local" by dropping the remote row, as AIX df does.
-# Without that the fixture would report a remote filesystem in a run where
-# the real client hides it, and every assertion about the default would be
-# measuring the stub rather than the client.
+FSF_LOCAL_TYPE=jfs2;    FSF_LOCAL_MP=/
+FSF_PSEUDO_TYPE=procfs; FSF_PSEUDO_MP=/proc
+# udfs plays the no-inode-limit role: an optical filesystem the System V df
+# cannot give an inode count for, which is what the client's own guard drops.
+FSF_NOINODE_TYPE=udfs;  FSF_NOINODE_MP=/dvd
+FSF_REMOTE_TYPE=nfs3;   FSF_REMOTE_MP=/mnt
+FSF_EXTRA_TYPE=jfs;     FSF_EXTRA_MP=/extra
+FSF_DECOY='procf*'
+
+# The inode report has no type filter here; the two contract rules that ask for
+# one are skipped, and nothing else is.
+FSF_INODE_FILTERED=no
+
+# df -Ik, and the System V df -i behind [inode]. That one is not shaped like
+# the disk report at all: the mount point comes FIRST, under a two-word
+# "Mount Dir" heading the client seds to Mount_Dir so its awk sees one field.
+# Reshuffled by the client into "Filesystem itotal iused avail %iused Mounted
+# on", which is where aix.c's "avail", "%iused" and "Mounted" come from.
+# (AIX Commands Reference, df: "Mount Dir Filesystem iused avail itotal %iused".)
+FSF_DISK_HEADER='Filesystem 1024-blocks Used Free %%Used Mounted on'
+FSF_DISK_ROW='/dev/hd4 1048576 319992 728584 31%% %s'
+FSF_INODE_HEADER='Mount Dir  Filesystem   iused    avail   itotal  %%iused'
+FSF_INODE_ROW='%s /dev/hd4 1504 6688 8192 19%%'
+# No inode accounting: itotal 0, which is what the reference shows for /proc
+# and what the client's "$5>0" guard drops - field 5 of the seded row is
+# itotal, a bare integer, so the comparison is a numeric one.
+FSF_INODE_NOLIMIT_ROW='%s /dev/hd4 0 0 0 0'
+
+# There is no exclusion argument: df is asked for everything and the client
+# filters what comes back. "-T local" is two arguments, which AIX df requires
+# and the single-argument form it rejects; the inode df spells the same thing -l.
+FSF_STUB_PARSE='_prev=
+for a in "$@"; do
+	case "$a" in
+		-i) _inode=1 ;;
+		-l) _local=1 ;;
+		local) [ "$_prev" = "-T" ] && _local=1 ;;
+	esac
+	_prev=$a
+done'
+
+FSF_ARGV_PLAIN='-Ik'
+FSF_ARGV_EXCLUDE_PSEUDO=''	# no type filter in df: see fsf_selfcheck
+
+# --- fixtures ----------------------------------------------------------------
+
+# A file whose name the "procf*" token would expand to, if the client let a
+# configured type undergo pathname expansion.
+: > "$TMP/procfs"
+
+# The rest of the built-in exclude list. The five roles observe only procfs, so
+# without these a type dropped from the client's list would go unnoticed until
+# it turned up as a permanently-full row on a real host.
+FSF_FIXTURE_EXTRA='ahafs /pseudo/ahafs local inode
+namefs /pseudo/namefs local inode
+autofs /pseudo/autofs local inode
+cdrfs /pseudo/cdrfs local inode'
+
+FSF_COMBINED="$TMP/df-section.sh"
+fsf_extract "$FSF_COMBINED" "s!/usr/sysv/bin/df!$STUB/df!"
+fsf_write_fixture
+fsf_write_stub
+
+# mount(8) as AIX prints it, from the same fixture the df stub answers from:
+# two header lines, then one row per mount with the vfs type in column 3.
+# Every row is written in the local layout with a single device, because the
+# shared df stub prints one fixed Filesystem column and the client keys its drop
+# on the device+mountpoint pair. The remote layout and two mounts sharing a
+# mount point are what AIX alone has to parse, and are exercised further down
+# against a fixture built for them.
+{
+	printf '#!/bin/sh\n'
+	printf 'cat <<%sMOUNT%s\n' "'" "'"
+	printf '%s\n' '  node       mounted        mounted over    vfs       date        options'
+	printf '%s\n' '-------- ---------------  ---------------  ------ ------------ ---------------'
+	while read -r _t _mp _rest; do
+		[ -n "$_t" ] || continue
+		printf '         /dev/hd4         %-16s %-6s Jul 17 08:04 rw\n' "$_mp" "$_t"
+	done < "$FSF_FIXTURE"
+	printf 'MOUNT\n'
+} > "$STUB/mount"
+chmod +x "$STUB/mount"
+
+# --- the contract ------------------------------------------------------------
+
+fsf_selfcheck
+fsf_contract
+
+# The built-in list, pinned through the report rather than through df's argv:
+# every type it names has a filesystem in the fixture, and none may be reported.
+assert_not_contains "/pseudo/" "$(fsf_section "$(fsf_report)" df)" \
+	"the built-in exclude list still excludes every type it names (procfs ahafs namefs autofs cdrfs)"
+
+# INCLUDE_TYPES names one type, not "stop excluding". The contract asserts only
+# that the named type comes back; that a client reading any non-empty list as
+# "include everything" would also pass it is not a rule the contract can carry,
+# since macOS documents the opposite - there, including the nobrowse attribute
+# switches the whole default drop off. So it is asserted here.
+out=$(fsf_report "XYMONCLIENT_FS_INCLUDE_TYPES=$FSF_PSEUDO_TYPE")
+assert_not_contains "/pseudo/" "$(fsf_section "$out" df)" \
+	"INCLUDE_TYPES=$FSF_PSEUDO_TYPE must surface that type alone, not every default exclusion"
+
+# The header is emitted once, ahead of the rows it describes - not repeated per
+# surviving row, which is what a filter applied line by line would produce.
+assert_equal "1" "$(fsf_section "$(fsf_report)" df | grep -c 'Mounted on')" \
+	"the df header must be emitted exactly once, not repeated per surviving row"
+
+# --- AIX's own rules ---------------------------------------------------------
+
+# Everything below runs against a hand-built fixture: two mounts at one mount
+# point, a remote mount in mount(8)'s remote layout, and a df stub that logs its
+# arguments one per line - "$*" would flatten "-T local" and "-T" "local" into
+# the same text, and it is exactly that difference the client has to get right.
+
 cat > "$STUB/df" <<EOF
 #!/bin/sh
 printf '%s\n' "\$@" >> "$DF_LOG"
@@ -64,11 +165,6 @@ done
 cat <<'TABLE' | { [ "\$_local" = yes ] && grep -v '^srv:/export ' || cat; }
 Filesystem 1024-blocks Used Free %Used Mounted on
 /dev/hd4 1048576 319992 728584 31% /
-/proc - - - - /proc
-/aha - - - - /aha
-/dev/cd0 693248 693248 0 100% /cdrom
-/var/somefile 1048576 319992 862080 17% /namefs
-/dev/autofs - - - - /autodir
 /var/overlay 1048576 319992 728584 42% /data
 /dev/hd5 2097152 1048576 1048576 62% /data
 srv:/export 2097152 1048576 1048576 50% /mnt
@@ -76,19 +172,14 @@ TABLE
 EOF
 chmod +x "$STUB/df"
 
-# AIX mount: two header lines; local rows have the vfs type in column 3,
-# remote rows carry the node first and the type in column 4.
+# Local rows carry the vfs type in column 3; a remote row puts the node first,
+# so column 3 is the slash-starting mount point and the type is column 4.
 cat > "$STUB/mount" <<'EOF'
 #!/bin/sh
 cat <<'TABLE'
   node       mounted        mounted over    vfs       date        options
 -------- ---------------  ---------------  ------ ------------ ---------------
          /dev/hd4         /                jfs2   Jul 17 08:04 rw,log=/dev/hd8
-         /proc            /proc            procfs Jul 17 08:04 rw
-         /aha             /aha             ahafs  Jul 17 08:04 rw
-         /dev/cd0         /cdrom           cdrfs  Jul 17 08:04 ro
-         /var/somefile    /namefs          namefs Jul 17 08:04 rw
-         /dev/autofs      /autodir         autofs Jul 17 08:04 rw
          /var/overlay     /data            namefs Jul 17 08:04 rw
          /dev/hd5         /data            jfs2   Jul 17 08:04 rw
  srv      /export         /mnt             nfs3   Jul 17 09:00 rw,bg
@@ -96,105 +187,52 @@ TABLE
 EOF
 chmod +x "$STUB/mount"
 
-# Files the "procf*" / "jfs*" tokens would expand to, if the client let a
-# configured type undergo pathname expansion in the directory it runs from.
-: > "$TMP/procfs"
-: > "$TMP/jfs2"
-
-FSF="$TMP/df-section.sh"
-fsf_extract "$FSF" "" '\[inode\]'
-
-# The [df]+[inode] block, with the absolute inode df repointed at a stub that
-# records its operands.
+# The System V df behind [inode], recording its operands.
 SYSVDF="$STUB/sysv-df"
 cat > "$SYSVDF" <<EOF
 #!/bin/sh
 printf '%s\\n' "\$@" >> "$TMP/sysvdf.args"
 _l=no
 for _a in "\$@"; do [ "\$_a" = "-l" ] && _l=yes; done
-cat <<'TABLE' | { [ "\$_l" = yes ] && grep -v ' /mnt$' || cat; }
-Filesystem Inodes IUsed IFree IUse% Mount Dir
-/dev/hd4 65536 1024 64512 2% /
-srv:/export 65536 1024 64512 2% /mnt
+cat <<'TABLE' | { [ "\$_l" = yes ] && grep -v '^/mnt ' || cat; }
+Mount Dir  Filesystem   iused    avail   itotal  %iused
+/          /dev/hd4      1504     6688     8192     19%
+/mnt       srv:/export   1504     6688     8192     19%
 TABLE
 EOF
 chmod +x "$SYSVDF"
-FSFI="$TMP/df-inode-section.sh"
-fsf_extract "$FSFI" "s!/usr/sysv/bin/df!$SYSVDF!" '\[mount\]'
 
-run_full() {
-	( cd "$TMP" && env "$@" $FSF_SHELL "$FSFI" ) 2> "$STDERR_LOG" \
-		|| fail "extracted [df]+[inode] block exited non-zero: $(cat "$STDERR_LOG")"
-}
+FSF="$TMP/aix-df-section.sh"
+fsf_extract "$FSF" "" '\[inode\]'
+FSFI="$TMP/aix-df-inode-section.sh"
+fsf_extract "$FSFI" "s!/usr/sysv/bin/df!$SYSVDF!" '\[mount\]'
 
 run_df() {
 	( cd "$TMP" && env "$@" $FSF_SHELL "$FSF" ) 2> "$STDERR_LOG" \
 		|| fail "extracted [df] block exited non-zero: $(cat "$STDERR_LOG")"
 }
 
-# --- the default set ----------------------------------------------------------
-
-out=$(run_df)
-assert_contains "%Used Mounted on" "$out" "the df header row must survive the filter"
-assert_equal "1" "$(printf '%s\n' "$out" | grep -c 'Mounted on')" \
-	"the header must be emitted exactly once, not repeated per surviving row"
-assert_contains "31% /" "$out" "the real jfs2 filesystem must be reported"
-assert_not_contains "50% /mnt" "$out" \
-	"the default must not report a remote mount: df never looked at it (-T local)"
-for mp in /proc /aha /cdrom /namefs /autodir; do
-	assert_not_contains " $mp" "$out" \
-		"the default exclude set no longer drops $mp (procfs ahafs namefs autofs cdrfs)"
-done
+run_full() {
+	( cd "$TMP" && env "$@" $FSF_SHELL "$FSFI" ) 2> "$STDERR_LOG" \
+		|| fail "extracted [df]+[inode] block exited non-zero: $(cat "$STDERR_LOG")"
+}
 
 # The namefs overlay on /data goes, the jfs2 filesystem under the same mount
 # point stays: the drop is keyed on the device+mountpoint pair, not the path.
+out=$(run_df)
 assert_not_contains "/var/overlay" "$out" \
 	"the namefs overlay row must be dropped by type"
 assert_contains "62% /data" "$out" \
 	"a real filesystem sharing its mount point with an excluded overlay was dropped with it"
 
-# --- INCLUDE_TYPES surfaces a default exclusion --------------------------------
-
-out=$(run_df XYMONCLIENT_FS_INCLUDE_TYPES=procfs)
-assert_contains " /proc" "$out" "INCLUDE_TYPES=procfs must surface /proc again"
-assert_not_contains " /aha" "$out" "INCLUDE_TYPES=procfs must not surface other defaults"
-
-# --- EXCLUDE_TYPES drops a real type, and wins over INCLUDE --------------------
-
-out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES=jfs2 XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
-assert_not_contains "31% /" "$out" "EXCLUDE_TYPES=jfs2 must drop the jfs2 filesystem"
-assert_contains "50% /mnt" "$out" "EXCLUDE_TYPES=jfs2 must not drop unrelated mounts"
-
-out=$(run_df XYMONCLIENT_FS_INCLUDE_TYPES=procfs XYMONCLIENT_FS_EXCLUDE_TYPES=procfs)
-assert_not_contains " /proc" "$out" "a type in both lists must stay excluded (EXCLUDE wins)"
-
-# Multiple tokens in one variable are independent list entries.
-out=$(run_df XYMONCLIENT_FS_INCLUDE_TYPES='procfs ahafs')
-assert_contains " /proc" "$out" "the first of two INCLUDE_TYPES tokens must surface its type"
-assert_contains " /aha" "$out" "the second of two INCLUDE_TYPES tokens must surface its type"
-
-out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES='jfs2 nfs3' XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
-assert_not_contains "31% /" "$out" "the first of two EXCLUDE_TYPES tokens must drop its type"
-assert_not_contains " /mnt" "$out" "the second of two EXCLUDE_TYPES tokens must drop its type"
-# ... which excludes every filesystem in the fixture: the section must come
-# out empty, not header-only - the server flags an empty disk report, while a
-# header with no rows reads as all-green.
-assert_equal "[df]" "$out" \
-	"excluding every filesystem left a header-only [df] section, which the server reads as all-green"
-
-# --- configured tokens are literal, never globs --------------------------------
-
-# "procf*" must not expand to the "procfs" file in the working directory: as a
-# literal it matches no type, so /proc stays excluded.
-out=$(run_df XYMONCLIENT_FS_INCLUDE_TYPES='procf*')
-assert_not_contains " /proc" "$out" \
-	"a configured type underwent pathname expansion (procf* matched a file named procfs)"
-
-# Same on the exclude side, where the token travels through the computed list
-# itself: literal "jfs*" matches no type, so the jfs2 filesystem stays.
-out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES='jfs*')
+# The remote layout: mount(8) puts the node in its own column, and the device
+# renders as node:path in df. Reading that row as a local one would compare the
+# wrong pair and leave the mount reported.
+out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES=nfs3 XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
+assert_not_contains " /mnt" "$out" \
+	"a remote mount excluded by type must be dropped, so mount's remote row was parsed as node:path"
 assert_contains "31% /" "$out" \
-	"a configured exclude underwent pathname expansion (jfs* matched a file named jfs2)"
+	"... and the local filesystems must stay"
 
 # --- DF_LOCAL_ONLY: "-T local", since AIX df has no -l -------------------------
 
@@ -204,16 +242,13 @@ assert_contains "31% /" "$out" \
 
 : > "$DF_LOG"
 run_df >/dev/null
-# One argument per line, so "-T local" as a single argument cannot match:
-# AIX df rejects that form, and "$*" logging could not tell the two apart.
+# One argument per line, so "-T local" as a single argument cannot match: AIX df
+# rejects that form, and "$*" logging could not tell the two apart.
 assert_match '(^|
 )-T
 local($|
 )' "$(cat "$DF_LOG")" \
 	"the default must keep df off remote mounts (-T and local, as two arguments)"
-out=$(run_df XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
-assert_contains "50% /mnt" "$out" \
-	"a remote mount must be reported when df is allowed to look at it"
 
 : > "$DF_LOG"
 run_df XYMONCLIENT_FS_DF_LOCAL_ONLY=no >/dev/null
@@ -227,13 +262,11 @@ assert_match '(^|
 local($|
 )' "$(cat "$DF_LOG")" \
 	"an invalid DF_LOCAL_ONLY must fall back to the safe default, not drop the flag"
-assert_contains "invalid XYMONCLIENT_FS_DF_LOCAL_ONLY" "$(cat "$STDERR_LOG")" \
-	"an invalid DF_LOCAL_ONLY must say so on stderr"
 
 # --- the inode df is kept off remote mounts too ------------------------------
 
-# Guarding only the disk report would leave the inode df reaching the same
-# dead mount. /usr/sysv/bin/df spells local-only as "-l", not "-T local".
+# Guarding only the disk report would leave the inode df reaching the same dead
+# mount. /usr/sysv/bin/df spells local-only as "-l", not "-T local".
 
 : > "$TMP/sysvdf.args"
 run_full >/dev/null
@@ -261,7 +294,7 @@ assert_equal "-i" "$args" \
 cat > "$SYSVDF" <<EOF
 #!/bin/sh
 cat <<'TABLE'
-Filesystem Inodes IUsed IFree IUse% Mount Dir
+Mount Dir  Filesystem   iused    avail   itotal  %iused
 TABLE
 EOF
 chmod +x "$SYSVDF"
@@ -270,4 +303,65 @@ inode_sec=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p' | sed 1d)
 assert_equal "" "$inode_sec" \
 	"an inode report with no rows must be empty, so the server names the reason instead of echoing a header for zero filesystems"
 
-pass "xymonclient-aix.sh: type filtering via mount(8), and DF_LOCAL_ONLY in both reports"
+# ... and a df that died is not that case. The server reads an empty inode
+# section as green on purpose - it is how a host with nothing inode-limited
+# reports - so it cannot tell a dead df from a legitimately empty report. Only
+# this side sees the exit status, so only this side can say which it was.
+cat > "$SYSVDF" <<'EOF'
+#!/bin/sh
+echo "df: illegal option -- l" >&2
+exit 2
+EOF
+chmod +x "$SYSVDF"
+out=$(run_full)
+inode_sec=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p' | sed 1d)
+assert_contains "Inode report collection failed: df exited 2 with no output" "$inode_sec" \
+	"a failed inode df must name its status, not leave a section the server reads as green"
+assert_not_contains "Mounted on" "$inode_sec" \
+	"the marker must carry no header - a header with no rows reads as a healthy report"
+assert_contains "reporting data as unavailable" "$(cat "$STDERR_LOG")" \
+	"a failed inode df must also say so on stderr, as the other clients do"
+
+# --- a df that fails names its status ----------------------------------------
+
+# The contract asserts only that a failed df is loud. What matters here is the
+# likeliest cause: a df that rejects "-T local", a flag that needs AIX 7.1. The
+# status has to reach the report, so the operator is not left reading
+# "incomprehensible disk report" for a flag the host does not have. Kept last:
+# it leaves the df stub broken for anything after it.
+cat > "$STUB/df" <<'EOF'
+#!/bin/sh
+echo "df: illegal option -- T" >&2
+exit 2
+EOF
+chmod +x "$STUB/df"
+out=$(run_df)
+assert_contains "Disk report collection failed: df exited 2 with no output" "$out" \
+	"a failed df must name its status, not leave the section empty"
+assert_not_contains "Filesystem" "$out" \
+	"the failure marker must carry no df header - a header reads as a healthy report"
+assert_contains "reporting data as unavailable" "$(cat "$STDERR_LOG")" \
+	"a failed df must also say so on stderr, as the other clients do"
+
+# ... and a df that printed rows and still exited non-zero is not that case.
+# One unreadable mount is enough to make AIX df complain while it reports the
+# rest; if the exclude list then empties the report, what emptied it was the
+# exclude list, and saying "no output" about a df that had some is a wrong
+# answer to the operator's question.
+cat > "$STUB/df" <<'EOF'
+#!/bin/sh
+cat <<'TABLE'
+Filesystem 1024-blocks Used Free %Used Mounted on
+/dev/hd4 1048576 319992 728584 31% /
+TABLE
+echo "df: /badmount: cannot stat" >&2
+exit 1
+EOF
+chmod +x "$STUB/df"
+out=$(run_df XYMONCLIENT_FS_EXCLUDE_TYPES=jfs2)
+assert_contains "every filesystem excluded" "$out" \
+	"rows collected and all of them excluded must be reported as an exclusion, whatever df's status"
+assert_not_contains "with no output" "$out" \
+	"a df that printed rows must not be reported as having produced none"
+
+pass "xymonclient-aix.sh: the FS filter contract, the mount(8) pair keying, and DF_LOCAL_ONLY in both reports"

@@ -195,7 +195,9 @@ fsf_run() {
 #     empty when only local filesystems are wanted) and `_named` (mount points
 #     named as operands, macOS-style).
 # Everything else -- the stub, the fixture, the runner, the assertions -- is
-# here, so a rule added here is a rule every OS gets.
+# here, so a rule added here is a rule every OS gets. One opt-out exists,
+# FSF_INODE_FILTERED=no, for a client whose inode report carries no type filter
+# at all; it skips two named assertions and nothing else.
 #
 # Roles (set before fsf_write_stub):
 #   FSF_LOCAL_TYPE/_MP     an ordinary local filesystem: always reported
@@ -204,6 +206,12 @@ fsf_run() {
 #   FSF_REMOTE_TYPE/_MP    a remote filesystem: hidden unless LOCAL_ONLY=no
 #   FSF_EXTRA_TYPE/_MP     not a default anywhere, for EXCLUDE_TYPES tests
 #   FSF_DECOY              a type token whose glob would match a file in $TMP
+#
+# FSF_INODE_FILTERED=no  the client's inode report has no type filter, so the
+#                        two rules asking for one are skipped. AIX is the case:
+#                        its df names no filesystem types, and the inode report
+#                        is left to its own "no usable count" guard, which
+#                        xymonclient.cfg(5) documents. Defaults to yes.
 
 FSF_SHELL=${FSF_SHELL:-/bin/sh}
 
@@ -363,7 +371,12 @@ fsf_selfcheck() {
 # spellings are equally loud and a client may use either: the "collection
 # failed" marker (the column goes yellow) or one 100%-full unmeasured row
 # per mount (the column goes red). What is forbidden is the third case -- an
-# empty section, which the server reads as "no filesystems, all is well".
+# empty section. The server does not read that the same way in both reports:
+# for [inode] it is green outright ("No filesystems reporting inode data",
+# unix_inode_report()'s exemption for the all-ZFS Solaris host), and for [df] it
+# is yellow, but only because no column header was found -- so the operator is
+# told the report was incomprehensible rather than what actually happened.
+# Neither answers "which filesystems", which is what the section is for.
 #
 # The unmeasured row is matched on its columns, one line at a time: spacing
 # differs per client (column-aligned vs single-spaced), and a whole-report
@@ -373,7 +386,7 @@ fsf_assert_loud() {
 		*"collection failed"*) return 0 ;;
 	esac
 	printf '%s\n' "$1" | grep -Eq '^[^ ]+ +- +- +- +100% ' && return 0
-	fail "${2:-}: the report is silent, which the server reads as green: '$1'"
+	fail "${2:-}: the report carries no marker, leaving the server an empty section it cannot explain: '$1'"
 }
 
 # fsf_contract -- the rules every client obeys, asserted on the emitted report.
@@ -457,15 +470,19 @@ fsf_contract() {
 	_df=$(fsf_section "$_out" df); _in=$(fsf_section "$_out" inode)
 	assert_contains "$FSF_LOCAL_MP" "$_in" \
 		"contract: the inode report keeps a filesystem with real inode accounting"
-	assert_not_contains "$FSF_PSEUDO_MP" "$_in" \
-		"contract: the inode report applies the same exclusions as [df]"
+	if [ "${FSF_INODE_FILTERED:-yes}" = yes ]; then
+		assert_not_contains "$FSF_PSEUDO_MP" "$_in" \
+			"contract: the inode report applies the same exclusions as [df]"
+	fi
 	assert_not_contains "$FSF_NOINODE_MP" "$_in" \
 		"contract: a filesystem with no inode limit is dropped from [inode]"
 	assert_contains "$FSF_NOINODE_MP" "$_df" \
 		"contract: ... while its disk row, which is a real percentage, stays"
-	_out=$(fsf_report "XYMONCLIENT_FS_EXCLUDE_TYPES=$FSF_EXTRA_TYPE")
-	assert_not_contains "$FSF_EXTRA_MP" "$(fsf_section "$_out" inode)" \
-		"contract: EXCLUDE_TYPES reaches the inode report too"
+	if [ "${FSF_INODE_FILTERED:-yes}" = yes ]; then
+		_out=$(fsf_report "XYMONCLIENT_FS_EXCLUDE_TYPES=$FSF_EXTRA_TYPE")
+		assert_not_contains "$FSF_EXTRA_MP" "$(fsf_section "$_out" inode)" \
+			"contract: EXCLUDE_TYPES reaches the inode report too"
+	fi
 
 	# A df that fails, and a filter that leaves nothing, must both be loud: the
 	# server reads an absent filesystem as green, so silence is a false OK.
