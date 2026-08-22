@@ -35,6 +35,8 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+# shellcheck source=tests/lib/xymond-daemon.sh
+. "$(dirname "$0")/../lib/xymond-daemon.sh"
 
 ROOT=$(find_root)
 
@@ -72,16 +74,6 @@ sed -e 's|^XYMONHOME=.*|XYMONHOME="'"$work"'/home"|' \
     -e 's|^XYMONTMP=.*|XYMONTMP="'"$work"'/home/tmp"|' \
 	"$XYMONSERVER_CFG" > "$work/xymonserver.cfg"
 
-free_port() {
-	local p tries=0
-	while [ "$tries" -lt 50 ]; do
-		p=$(( 20000 + (RANDOM % 20000) ))
-		"$XYMONCLIENT" "127.0.0.1:$p" "ping" >/dev/null 2>&1 || { printf '%s' "$p"; return 0; }
-		tries=$((tries+1))
-	done
-	return 1
-}
-
 # write_checkpoint HELDCOLOR HELDSINCE GAPCOLOR GAPSTART -- a checkpoint where
 # conn currently shows HELDCOLOR (since HELDSINCE) with a gap open: xymond
 # invented HELDCOLOR, and the color before the gap was GAPCOLOR, held from
@@ -96,26 +88,17 @@ write_checkpoint() {
 		"$gapcolor" "$HELDSINCE" "$gapstart" >> "$work/chk"
 }
 
-# start_xymond [extra xymond arguments] -- the cases that need a gap already in
-# place pass --restart; the ones that build it from live messages do not.
-start_xymond() {
-	local i=0
-	PORT=$(free_port) || fail "no free port for xymond"
-	"$XYMOND" --no-daemon --listen="127.0.0.1:$PORT" \
+# This test's xymond argv, for start_xymond() to drive: the cases that need a
+# gap already in place pass --restart, the ones that build it from live
+# messages do not.
+xymond_launch() {
+	local port=$1; shift
+	"$XYMOND" --no-daemon --listen="127.0.0.1:$port" \
 		--hosts="$work/hosts.cfg" --env="$work/xymonserver.cfg" \
 		--pidfile="$work/xymond.pid" --checkpoint-file="$work/chk.out" \
 		"$@" \
 		> "$work/xymond.log" 2>&1 &
 	XYMOND_PID=$!
-
-	while [ "$i" -lt 100 ]; do
-		"$XYMONCLIENT" "127.0.0.1:$PORT" "ping" >/dev/null 2>&1 && return 0
-		kill -0 "$XYMOND_PID" 2>/dev/null || { cat "$work/xymond.log" >&2; fail "xymond exited during startup"; }
-		sleep 0.1
-		i=$((i+1))
-	done
-	cat "$work/xymond.log" >&2
-	fail "xymond did not answer on 127.0.0.1:$PORT"
 }
 
 send() { "$XYMONCLIENT" "127.0.0.1:$PORT" "$1" || fail "xymond rejected: $1"; }

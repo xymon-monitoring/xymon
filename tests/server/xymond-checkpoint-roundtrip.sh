@@ -33,6 +33,8 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+# shellcheck source=tests/lib/xymond-daemon.sh
+. "$(dirname "$0")/../lib/xymond-daemon.sh"
 
 ROOT=$(find_root)
 
@@ -69,38 +71,15 @@ sed -e 's|^XYMONHOME=.*|XYMONHOME="'"$work"'/home"|' \
     -e 's|^XYMONTMP=.*|XYMONTMP="'"$work"'/home/tmp"|' \
 	"$XYMONSERVER_CFG" > "$work/xymonserver.cfg"
 
-# free_port -- a 127.0.0.1 port nothing is listening on. Racy in principle;
-# the window is a few milliseconds and only this test uses the port.
-free_port() {
-	local p tries=0
-	while [ "$tries" -lt 50 ]; do
-		p=$(( 20000 + (RANDOM % 20000) ))
-		"$XYMONCLIENT" "127.0.0.1:$p" "ping" >/dev/null 2>&1 || { printf '%s' "$p"; return 0; }
-		tries=$((tries+1))
-	done
-	return 1
-}
-
-# start_xymond [extra args...] -- boot xymond on a fresh port and wait for it
-# to answer. Sets PORT.
-start_xymond() {
-	local i=0
-	PORT=$(free_port) || fail "no free port for xymond"
-	"$XYMOND" --no-daemon --listen="127.0.0.1:$PORT" \
+# This test's xymond argv, for start_xymond() to drive.
+xymond_launch() {
+	local port=$1; shift
+	"$XYMOND" --no-daemon --listen="127.0.0.1:$port" \
 		--hosts="$work/hosts.cfg" --env="$work/xymonserver.cfg" \
 		--pidfile="$work/xymond.pid" --checkpoint-file="$work/chk" \
 		--flap-count=2 --flap-seconds=3600 "$@" \
 		> "$work/xymond.log" 2>&1 &
 	XYMOND_PID=$!
-
-	while [ "$i" -lt 100 ]; do
-		"$XYMONCLIENT" "127.0.0.1:$PORT" "ping" >/dev/null 2>&1 && return 0
-		kill -0 "$XYMOND_PID" 2>/dev/null || { cat "$work/xymond.log" >&2; fail "xymond exited during startup"; }
-		sleep 0.1
-		i=$((i+1))
-	done
-	cat "$work/xymond.log" >&2
-	fail "xymond did not answer on 127.0.0.1:$PORT"
 }
 
 # The host part of a status message spells dots as commas.
