@@ -417,7 +417,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		 * we MUST reset this before every call.
 		 */
 		optind = opterr = 0; rrd_clear_error();
-		result = xymon_rrd_create(4+pcount, rrdcreate_params);
+		result = xymon_rrd_create(fixcount+pcount, rrdcreate_params);
 		xfree(rrdcreate_params);
 		if (rrakey) xfree(rrakey);
 
