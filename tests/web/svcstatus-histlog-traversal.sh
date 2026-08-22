@@ -77,4 +77,4 @@ case "$OUT" in
 esac
 [ "$RC" -eq 1 ] || fail "histlog SECTION '../CANARY_HISTUP' was served (exit $RC), not refused"
 
-echo "OK $(basename "$0")"
+pass "the historical-log path refuses traversal (#145, #146, #147)"

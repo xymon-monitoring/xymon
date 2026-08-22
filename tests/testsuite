@@ -62,13 +62,114 @@ if [ -z "$tests" ]; then
 	exit 1
 fi
 
-pass=0; skip=0; fail=0; failed=''
+# XYMON_VARIANT names the build this tree is, so the runner can leave out the
+# tests whose subject that build does not contain. Unset -- a developer run, or
+# the build-free tests.yml lane -- filters nothing: every test decides for
+# itself, as it always has.
+variant=${XYMON_VARIANT:-}
+case $variant in
+	''|server|client|localclient) ;;
+	*)
+		# Not a build this suite knows. Guessing would filter by the universal
+		# rows alone and report a tidy green over a run that skipped most of
+		# the suite for a typo.
+		errline "XYMON_VARIANT=$variant is not a build this suite knows (server, client, localclient)"
+		exit 1 ;;
+esac
+
+# A configured tree can vouch for what it is: configure.client writes
+# CLIENTONLY and LOCALCLIENT into the toplevel Makefile, and their reachable
+# combinations are exactly the three variants -- the names are a projection of
+# those two axes, not a third fact. Read the Makefile when it is there and
+# check it against the caller's label rather than letting either side win in
+# silence.
+#
+# A CMake tree writes no such Makefile, and an unconfigured one writes none at
+# all, so XYMON_VARIANT still answers for both.
+variant_from_tree() {
+	[ -f Makefile ] || return 1
+	if grep -q '^CLIENTONLY[	 ]*=[	 ]*yes' Makefile; then
+		if grep -q '^LOCALCLIENT[	 ]*=[	 ]*yes' Makefile
+		then echo localclient
+		else echo client
+		fi
+	else
+		echo server
+	fi
+}
+
+configured=$(variant_from_tree) || configured=''
+if [ -n "$variant" ]; then
+	# The caller names the build; the configured tree is the witness. A
+	# "client" label on a localclient tree once filed the one localclient
+	# test out of the only build producing its binary -- refuse to run
+	# under a disagreement rather than let either side win in silence.
+	if [ -n "$configured" ] && [ "$variant" != "$configured" ]; then
+		errline "XYMON_VARIANT=$variant, but this tree is configured $configured"
+		exit 1
+	fi
+elif [ -n "$configured" ]; then
+	# No label from the caller -- a developer run on a configured tree. The
+	# tree answers for itself.
+	variant=$configured
+	# The tests resolve their own binaries from this (require_bin in
+	# lib/assert.sh), so hand them the same answer the filter uses -- otherwise
+	# the runner files a test under localclient while the test itself looks for
+	# the server's copy of the binary and skips.
+	XYMON_VARIANT=$variant
+	export XYMON_VARIANT
+fi
+
+# area_in_variant AREA -- 0 when this build contains AREA's subject, 1 when it
+# does not, 2 when the area is not in the table. An area names what its tests
+# drive; this table says which builds contain it (tests/README.md).
+area_in_variant() {
+	case $1 in
+		buildsystem|packaging|libxymon|common|client)
+			return 0 ;;
+		analysis)
+			case $variant in server|localclient) return 0 ;; *) return 1 ;; esac ;;
+		server|web|xymond|rrd|xymonnet|integration)
+			case $variant in server) return 0 ;; *) return 1 ;; esac ;;
+		*)
+			return 2 ;;
+	esac
+}
+
+pass=0; skip=0; fail=0; filtered=0; failed=''; filtered_areas=''
 # Iterate line-by-line rather than `for t in $tests`: unquoted word-splitting
 # breaks on any path containing a space (find emits newline-separated paths, but
 # the default IFS splits on spaces and tabs too). The here-doc keeps the loop in
 # this shell -- not a `| while` subshell -- so the counters below survive it.
 while IFS= read -r t; do
 	[ -n "$t" ] || continue
+
+	# The area is the directory under tests/. A test sitting directly under
+	# tests/ has no area at all -- do not read its filename as one.
+	area=${t#tests/}
+	case $area in
+		*/*) area=${area%%/*} ;;
+		*)   area='' ;;
+	esac
+	if [ -n "$variant" ] && [ -n "$area" ]; then
+		area_in_variant "$area"
+		case $? in
+			1)  # Say it once per area: 48 near-identical lines bury the
+			    # tests that did run.
+			    case " $filtered_areas " in
+				*" $area "*) ;;
+				*) filtered_areas="$filtered_areas $area"
+				   printf 'filtered: no %s in a %s build\n' "$area" "$variant" ;;
+			    esac
+			    filtered=$((filtered + 1))
+			    continue ;;
+			2)  # An area the table has never heard of cannot be judged. Run
+			    # it and say so, rather than guessing either way.
+			    if [ "$gh" = 1 ]; then printf '::notice::unknown test area "%s" -- running %s\n' "$area" "$t"
+			    else printf 'NOTE: unknown test area "%s" -- running %s\n' "$area" "$t"; fi ;;
+		esac
+	fi
+
 	group "$t"
 	"./$t"
 	rc=$?
@@ -89,6 +190,7 @@ printf '\n----- summary -----\n'
 printf 'passed:  %d\n' "$pass"
 printf 'skipped: %d\n' "$skip"
 printf 'failed:  %d\n' "$fail"
+[ "$filtered" -eq 0 ] || printf 'filtered: %d (not in a %s build)\n' "$filtered" "$variant"
 
 if [ "$fail" -gt 0 ]; then
 	printf '\nfailing tests:\n%s' "$failed"
@@ -104,6 +206,15 @@ fi
 # individual tests use; see skip() in tests/lib/assert.sh) so the layer above
 # sees "skipped", not "passed". The empty-discovery case already exited above,
 # so reaching here with pass=0 and fail=0 means skip>0.
+if [ "$pass" -eq 0 ] && [ "$skip" -eq 0 ] && [ "$filtered" -gt 0 ]; then
+	# Nothing ran at all, and the filter is why: XYMON_VARIANT names a build
+	# that contains none of these areas. That is a broken declaration, not a
+	# tree without code -- report it rather than passing it off as a skip.
+	# A run where something did execute and skipped is the ordinary all-skip
+	# case below, whatever the filter left out.
+	errline "every test was filtered out for XYMON_VARIANT=$variant -- check the variant name"
+	exit 1
+fi
 if [ "$pass" -eq 0 ]; then
 	printf 'SKIP: every test skipped -- suite verified nothing (tests/ shipped without the code under test?)\n' >&2
 	exit 77

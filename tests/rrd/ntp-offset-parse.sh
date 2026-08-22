@@ -44,4 +44,4 @@ if ! ASAN_OPTIONS="detect_leaks=0${ASAN_OPTIONS:+:$ASAN_OPTIONS}" \
 	fail "ntp offset parsing/scaling is broken (see output above)"
 fi
 
-exit 0
+pass "do_ntpstat.c parses and scales the ntp offset the same way on both backends"
