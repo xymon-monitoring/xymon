@@ -383,7 +383,11 @@ install-man:
 	XYMONHOME="$(XYMONHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C web install-man
 	find $(INSTALLROOT)$(MANROOT) -type f -exec chmod 644 {} \;
 
-install-docs:
+# install-dirs makes the www tree and, when INSTALLSTATICWWWDIR is set, the
+# www/help -> static/help symlink the runtime help path resolves through. The
+# other runtime install targets reach it via install-common; install-docs was
+# the one that did not, so a standalone "make install-docs" left help unlinked.
+install-docs: install-dirs
 	XYMONHOME="$(XYMONHOME)" MANROOT="$(MANROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" $(MAKE) -C docs install
 
 install-custom:
