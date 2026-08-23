@@ -203,7 +203,12 @@ install-cfg:
 	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; $(APACHECONFINETC)) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
 ifneq ($(strip $(INSTALLHTTPDCONFDIR)),)
 	mkdir -p $(INSTALLROOT)$(INSTALLHTTPDCONFDIR)
-	cd etcfiles; echo xymon-apache.conf | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLHTTPDCONFDIR)/
+	# Under INSTALLHTTPDCONFNAME (default xymon-apache.conf). setup-newfiles
+	# keeps the source basename, so it cannot rename; this matches its
+	# no-md5 behaviour -- install only if absent, never clobber an admin's
+	# edited file -- while honouring the chosen name.
+	test -f $(INSTALLROOT)$(INSTALLHTTPDCONFDIR)/$(INSTALLHTTPDCONFNAME) || \
+		cp -p etcfiles/xymon-apache.conf $(INSTALLROOT)$(INSTALLHTTPDCONFDIR)/$(INSTALLHTTPDCONFNAME)
 endif
 	cd $(INSTALLROOT)$(XYMONHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWWWDIR)/ ../../build/md5.dat
