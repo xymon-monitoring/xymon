@@ -582,6 +582,9 @@ fi
 if test "$INSTALLHTTPDCONFDIR" != ""; then
 	echo "INSTALLHTTPDCONFDIR = $INSTALLHTTPDCONFDIR"   >>Makefile
 fi
+if test "$INSTALLHTTPDCONFNAME" != ""; then
+	echo "INSTALLHTTPDCONFNAME = $INSTALLHTTPDCONFNAME"   >>Makefile
+fi
 if test "$INSTALLWWWDIR" != ""; then
 	echo "INSTALLWWWDIR = $INSTALLWWWDIR"   >>Makefile
 fi
