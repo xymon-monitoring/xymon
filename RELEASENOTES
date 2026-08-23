@@ -89,6 +89,12 @@ network interface goes away. --no-loopback listens only on the addresses given.
 Keep the server's client (xymonclient.cfg) on the same port as XYMONDPORT in
 xymonserver.cfg.
 
+On a new server, the server's programs and its own client send to xymond over
+127.0.0.1, so it keeps reporting on itself when a network interface goes away.
+An upgrade keeps the existing configuration; to switch, set XYMSRV="127.0.0.1"
+in xymonserver.cfg and prefix the [xymonclient] command in tasks.cfg with "env
+XYMSRV=127.0.0.1". Remote clients are unchanged.
+
 Page filters
 ------------
 
