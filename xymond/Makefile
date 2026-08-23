@@ -146,9 +146,14 @@ endif
 
 cfgfiles:
 	cat $(APACHECONF) | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@INSTALLETCDIR@!$(INSTALLETCDIR)!g' | sed -e 's!@INSTALLWWWDIR@!$(INSTALLWWWDIR)!g' | sed -e 's!@CGIDIR@!$(CGIDIR)!g' | sed -e 's!@SECURECGIDIR@!$(SECURECGIDIR)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' >etcfiles/xymon-apache.conf
+# The lighttpd/nginx/caddy samples are opt-in: generated only when
+# INSTALLHTTPDCONFDIR is set (the web-server config opt-in flag). Unset,
+# only the apache sample is produced, exactly as before.
+ifneq ($(strip $(INSTALLHTTPDCONFDIR)),)
 	cat $(LIGHTTPDCONF) | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@INSTALLETCDIR@!$(INSTALLETCDIR)!g' | sed -e 's!@INSTALLWWWDIR@!$(INSTALLWWWDIR)!g' | sed -e 's!@CGIDIR@!$(CGIDIR)!g' | sed -e 's!@SECURECGIDIR@!$(SECURECGIDIR)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' >etcfiles/xymon-lighttpd.conf
 	cat $(NGINXCONF) | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@INSTALLETCDIR@!$(INSTALLETCDIR)!g' | sed -e 's!@INSTALLWWWDIR@!$(INSTALLWWWDIR)!g' | sed -e 's!@CGIDIR@!$(CGIDIR)!g' | sed -e 's!@SECURECGIDIR@!$(SECURECGIDIR)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' >etcfiles/xymon-nginx.conf
 	cat $(CADDYCONF) | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@INSTALLETCDIR@!$(INSTALLETCDIR)!g' | sed -e 's!@INSTALLWWWDIR@!$(INSTALLWWWDIR)!g' | sed -e 's!@CGIDIR@!$(CGIDIR)!g' | sed -e 's!@SECURECGIDIR@!$(SECURECGIDIR)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' >etcfiles/xymon-caddy.conf
+endif
 	cat etcfiles/xymonserver.cfg.DIST | sed -e 's!@XYMONTOPDIR@!$(XYMONTOPDIR)!g'| sed -e 's!@XYMONLOGDIR@!$(XYMONLOGDIR)!g'| sed -e 's!@XYMONHOSTNAME@!$(XYMONHOSTNAME)!g'| sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g'| sed -e 's!@XYMONHOSTOS@!$(XYMONHOSTOS)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONVAR@!$(XYMONVAR)!g' | sed -e 's!@FPING@!$(FPING)!g' | sed -e 's!@MAILPROGRAM@!$(MAILPROGRAM)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >etcfiles/xymonserver.cfg
 	../build/bb-commands.sh >>etcfiles/xymonserver.cfg
 	cat etcfiles/hosts.cfg.DIST | sed -e 's!@XYMONHOSTNAME@!$(XYMONHOSTNAME)!g' | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >etcfiles/hosts.cfg
@@ -198,7 +203,10 @@ install-cfg:
 	cd etcfiles; ../../build/merge-sects client-local.cfg $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg
 	cd etcfiles; ../../build/merge-sects graphs.cfg $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg
 	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
-	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; echo xymon-apache.conf; echo xymon-lighttpd.conf; echo xymon-nginx.conf; echo xymon-caddy.conf) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; echo xymon-apache.conf) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+ifneq ($(strip $(INSTALLHTTPDCONFDIR)),)
+	cd etcfiles; (echo xymon-lighttpd.conf; echo xymon-nginx.conf; echo xymon-caddy.conf) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+endif
 	cd $(INSTALLROOT)$(XYMONHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWWWDIR)/ ../../build/md5.dat
 	cd webfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWEBDIR)/ ../../build/md5.dat
