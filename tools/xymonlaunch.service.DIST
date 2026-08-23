@@ -51,5 +51,3 @@ SendSIGKILL=no
 # Give an extra 6s beyond xymonlaunch to let things disconnect
 RestartSec=6
 Restart=on-failure
-
-
