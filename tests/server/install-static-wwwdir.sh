@@ -11,9 +11,13 @@
 # symlinks point outside the stage, and the install's chown follows them):
 #
 #   - unset: gifs, help and menu are real directories in the www tree, as
-#     they always were;
+#     they always were, and the installed xymonserver.cfg carries the
+#     XYMONSTATICWWWDIR the tree was built with;
 #   - set: the content is in the static directory, the www tree holds
-#     symlinks to it, and the directories xymongen writes stay real;
+#     symlinks to it, and the directories xymongen writes stay real.
+#     xymonserver.cfg is generated when the tree is built, so a value given
+#     only at install time moves the files but not the setting; help still
+#     resolves through the www/help link, which is what is checked here;
 #   - a standalone "make install-docs" with it set still links www/help,
 #     which the help links on the web pages are read through;
 #   - "make -C xymond" and "make -C docs" alone, without the top-level
@@ -72,6 +76,16 @@ run_install() {
 		&& "$XYMON_MAKE" -C "$ROOT/xymond" install-cfg "${vars[@]}" "$@" >>"$log" 2>&1
 }
 
+# staticdir_in CFG -- the XYMONSTATICWWWDIR value xymonserver.cfg was given.
+staticdir_in() {
+	sed -n 's/^XYMONSTATICWWWDIR="\(.*\)".*/\1/p' "$1"
+}
+
+# The static directory this tree was built with, as make computes it.
+built_static=$("$XYMON_MAKE" -s --no-print-directory -C "$ROOT" -f Makefile -f - show-static <<<'show-static: ; @echo $(INSTALLSTATICWWWDIR)')
+# A tree whose build files do not know the variable installs as if it were unset.
+[ -n "$built_static" ] || built_static=$("$XYMON_MAKE" -s --no-print-directory -C "$ROOT" -f Makefile -f - show-www <<<'show-www: ; @echo $(INSTALLWWWDIR)')
+
 # ---- unset: the content stays in the www tree ---------------------------------
 d=$work/plain
 run_install "$d" "$work/plain.log" \
@@ -99,6 +113,11 @@ for sub in notes html wml; do
 	[ -d "$d/var/www/$sub" ] && [ ! -L "$d/var/www/$sub" ] \
 		|| fail "with INSTALLSTATICWWWDIR, www/$sub is written at run time and must stay a real directory"
 done
+
+# ---- the installed setting is the one the tree was built with ------------------
+cfgval=$(staticdir_in "$work/plain/etc/xymonserver.cfg")
+[ "$cfgval" = "$built_static" ] \
+	|| fail "the installed xymonserver.cfg must carry XYMONSTATICWWWDIR=\"$built_static\", the value the tree was built with, got '$cfgval'"
 
 # ---- a standalone install-docs still links help --------------------------------
 d=$work/docs
