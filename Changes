@@ -160,6 +160,7 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Draw the xymond test port from below the ephemeral range (#421) (Thanks, Markus HÃ¤ll)
 
 
+
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
 ===========================================
 
@@ -390,22 +391,22 @@ Changes from 4.3.21 -> 4.3.22 (6 Nov 2015)
 * Ensure that nostale is passed down during graph zooming (Thanks, Stef Coene)
 * Add missing XMH_DATA in loadhosts (Thanks, Jacek Tomasiak)
 * Search in more locations for default environment files when using xymoncmd
-* Add a "noflap" override to disable flap detection per host (Thanks, Martin Lenko)
+* Add a "noflap" override to disable flap detection for any/all tests on a given host (Thanks, Martin Lenko)
 * Simplify default HTTP error code settings for xymonnet (2xx = green; 3xx = yellow; 4xx/5xx = red)
-* Update the protocol.cfg RDP entry so RDP tests work again (Thanks, Rob Steuer)
+* The protocol.cfg entry for RDP network tests has been updated and should work again (Thanks, Rob Steuer)
 * Add UDP ports to netstat output returned from darwin clients (Mac OS X)
 * Fixes to df/inode parsing on darwin clients (Mac OS X) (Thanks, Jason White et al.)
 * Add httphdr= tag to hosts.cfg to inject arbitrary headers into xymonnet HTTP tests for that host.
 * Turn memory test yellow if nonsensical numbers are found (>100% used for 'Actual' or Swap)
 * "optional include" and "optional directory" support actually added
-* xymongrep: load hosts.cfg and error if unable, unless --loadhostsfromxymond is given
+* xymongrep: load from the hosts.cfg file and error if unable, unless --loadhostsfromxymond is specified
 * Collect number of total cores in client data
 * combostatus: Fix parenthesis processing (Thanks, Andy Smith)
 * Add per-group anchors to generated pages when a group title is present (Thanks, Thomas Giordmaina)
-* xymongen: show group tables with no test results unless --no-showemptygroups is given
-* Add chpasswd CGI for htpasswd updates; needs Apache 2.4.5+ (Thanks, Andy Smith)
+* xymongen: Display group tables even if group has no test results yet unless --no-showemptygroups given
+* Add chpasswd CGI for user-level htpasswd file updates. Requires Apache 2.4.5 or later (Thanks, Andy Smith)
 * Fix memory/display on multihost hostgraphs.cgi reports; remove multi-disk (which won't work as-is)
-* Add ACK_COOKIE_EXPIRATION to control cookie validity (Noted by Thomas Giordmaina)
+* Add ACK_COOKIE_EXPIRATION for environment control of cookie validity duration (Noted by Thomas Giordmaina)
 * combostatus: fix core dumps on Solaris when dealing with erroneous config
 
 
@@ -442,7 +443,7 @@ Changes from 4.3.19 -> 4.3.20 (15 May 2015)
   (Thanks, Torsten Richter)
 * Column documentation links should be working again (Reported by Andy Smith)
 * Fix missing null termination in certain logfetch situations (Reported by
-  Johan Sjï¿½berg)
+  Johan Sjšberg)
 * New httphead tag to force an http request using HEAD instead of GET
 * Fix a memory leak introduced in parsing Windows SVCS test data
 * A divide-by-zero condition when systems erroneously report 0MB of physical
@@ -711,13 +712,13 @@ Changes from 4.3.11 -> 4.3.12 (24 Jul 2013)
 * Security fix: Guard against directory traversal via hostname in "drophost" commands
 * Fix crash in xymongen introduced in 4.3.11
 * SCO client: Fix overflow in memory calculation when >2 GB memory
-* Fix "include" and "directory" config definitions to handle <tab> after the keyword
+* Fix so "include" and "directory" definitions in configuration files now handle <tab> after the keyword
 * Fix for the Xymon webpage menu on iPad's and Android (touch devices)
 * Fix "drophost" handling so the host data directory is also cleared
 * xymond_rrd now processes data from "clear" status messages
 * Xymon clients now report the version number in the client data
 * Linux clients now align "ps" output so it is more readable.
-* New "generic" client handler: log/file monitoring from hosts unknown to Xymon.
+* New "generic" client message handler allows log/file monitoring from systems that are not known to Xymon.
 * The Xymon client now works if invoked with a relative path to the runclient.sh script
 * Other minor / internal bugfixes
 
