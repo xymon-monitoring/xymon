@@ -254,6 +254,16 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       directory. Default: $XYMONHOME/www/
     <p class="Pp"></p>
   </dd>
+  <dt id="XYMONSTATICWWWDIR"><a class="permalink" href="#XYMONSTATICWWWDIR"><b>XYMONSTATICWWWDIR</b></a></dt>
+  <dd>Directory for the static web files that ship with Xymon: the gifs, help
+      and menu directories. The help links on the web pages are read from
+      $XYMONSTATICWWWDIR/help. The installation writes this setting: it is the
+      www directory, unless the build installed these files elsewhere with
+      INSTALLSTATICWWWDIR, and then the www directory holds symbolic links to
+      them. Changing the setting does not move the files. Default: none. When it
+      is unset, help is found beside $XYMONNOTESDIR.
+    <p class="Pp"></p>
+  </dd>
   <dt id="XYMONNOTESDIR"><a class="permalink" href="#XYMONNOTESDIR"><b>XYMONNOTESDIR</b></a></dt>
   <dd>Directory for Xymon notes-files. The $XYMONNOTESSKIN URL must map to this
       directory. Default: $XYMONHOME/www/notes/
