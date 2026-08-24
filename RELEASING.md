@@ -3,9 +3,6 @@
 Two workflows plus five manual actions. The manual actions are the review
 gates; everything mechanical is automated.
 
-This file lives under `.github/` on purpose: `.gitattributes` excludes `.git*`
-from `git archive`, so maintainer documentation stays out of release tarballs.
-
 ## Overview
 
 ```
@@ -22,12 +19,13 @@ from `git archive`, so maintainer documentation stays out of release tarballs.
 ## The changelog
 
 `Changes` and `RELEASENOTES` are prepared on the **`Changes`** branch, never in
-a pull request. The ritual: merge `main` in, add one catch-up commit with an
-entry per pull request merged since, then merge `Changes` back into `main`.
+a pull request. The ritual there: merge `main` in, then one catch-up commit
+with an entry per pull request merged since.
 
-**Merge back after every catch-up, not only at release.** Releases are years
-apart; main's changelog is what people actually read, and drift left to
-accumulate is where entries go missing or land in the wrong section.
+**`Changes` merges into `main` only at release** (step 1 below). Between
+releases main carries exactly what the last release shipped, so a section
+describing a released version cannot move or be reworded underneath it. Only
+the open section changes, and it changes on one branch.
 
 **`Changes`** — the full list, one line per merged pull request so `grep` finds
 it later. Start with a verb, say what the change does for someone running
