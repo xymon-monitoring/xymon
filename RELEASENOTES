@@ -146,6 +146,14 @@ development package (libc-ares-dev, c-ares-devel or c-ares) before building
 the server; configure stops and says what is missing. The minimum version is
 still 1.5.1.
 
+A client-only build now installs into the INSTALLETCDIR, INSTALLBINDIR and
+INSTALLTMPDIR it was configured with, which it used to ignore, and links each
+moved directory back under XYMONHOME; a real directory already in the old place
+is left alone, with a message. A packaging that moved the client's files by
+hand can drop that step. clientupdate refuses to update a client whose bin or
+etc is such a link, since tar would replace the link with a directory: update a
+relocated client through its package instead.
+
 The RRDtool argv ABI is detected from the header signature rather than the
 version, so RRDtool 1.9 and later, and backports to 1.8 such as Oracle
 Linux 10's, both work with no configuration.
