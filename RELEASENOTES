@@ -16,108 +16,100 @@ pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.31
 ==================
 
+Clients -- filesystem reporting
+-------------------------------
+
+The Linux, FreeBSD, NetBSD, OpenBSD and macOS clients now filter the
+filesystems they report instead of listing whatever df returns. Dropped by
+default: iso9660, squashfs and snap on Linux; nullfs, procfs, devfs and autofs
+on FreeBSD; kernfs, procfs, cd9660, null and ptyfs on NetBSD; kernfs, procfs
+and cd9660 on OpenBSD; hidden or read-only mounts on macOS. The BSD clients
+also pass -l to df, so remote filesystems other than nfs are no longer
+reported.
+
+A filesystem that stops being reported also stops alerting -- check that
+nothing you monitor has gone quiet. Override with XYMONCLIENT_FS_INCLUDE_TYPES
+and XYMONCLIENT_FS_EXCLUDE_TYPES, or set XYMONCLIENT_FS_DF_LOCAL_ONLY=no to
+restore remote filesystems; xymonclient.cfg has the per-platform lists.
+
+XYMONCLIENT_FS_DF_LOCAL_ONLY=no no longer risks the whole host. df stats every
+remote mount, and a dead NFS or CIFS server leaves it in a wait that SIGKILL
+does not end, so the client cycle never finished and every column went purple.
+Mount types that can block this way -- nfs, nfs4, cifs, smb3, ceph, glusterfs,
+fuse.glusterfs, lustre, afs -- now go through a separate df behind a sentinel,
+one probe at a time. A probe still unanswered after
+XYMONCLIENT_FS_REMOTE_DF_BUDGET seconds (default 30) reports those mounts
+"unavailable" and 100% full: one filesystem red instead of the host purple. The
+stuck df is left running and picked up on a later cycle through a pidfile in
+$XYMONTMP, so it clears once the server answers -- expect the alert until then.
+Keep XYMONTMP on a local filesystem. XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES
+changes the list.
+
+The AIX client now requires AIX 7.1 or later, and keeps df off remote mounts by
+default like the others -- AIX df spells that "-T local", which 6.1 and earlier
+lack.
+
+The NetBSD client now reports inodes, sharing the filtering above. Set
+XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep reporting /dev/pts.
+
+Alerting
+--------
+
 "lastchange" is now the hold-time of the colour on record, not the time of the
-last status change. It used to be reset whenever a test stopped reporting, so a
+last status change. It used to reset whenever a test stopped reporting, so a
 host down for two hours that came back green showed as green for 0 minutes.
-xymond_alert reads this field for DURATION, which means an outage that dropped
-out of sight also restarted its escalation clock. Alerts with a DURATION
-condition may therefore fire earlier than before on tests that stop reporting -
-which is the intended behaviour, but worth knowing before the first such alert.
+xymond_alert reads it for DURATION, so an outage that dropped out of sight also
+restarted its escalation clock. DURATION rules may therefore fire earlier on
+tests that stop reporting -- intended, but worth knowing beforehand.
 
-alerts.cfg gains a FOR=N criterion: a rule matches only once its colour has
-held continuously for at least N minutes. Where DURATION measures the age of
-the event and deliberately survives a yellow-to-red change, FOR measures the
-age of the current colour and resets on any change - so FOR is the one to use
-for "page only if it stays red for N minutes", the alert-side counterpart of
-the delayred/delayyellow status damping. FOR is at-least-only and applies to
-single-colour rules; existing configurations are unaffected.
+alerts.cfg gains FOR=N: a rule matches only once its colour has held
+continuously for N minutes. DURATION measures the age of the event and survives
+a yellow-to-red change; FOR measures the age of the current colour and resets
+on any change -- FOR is what "page only if it stays red for N minutes" wants.
+At-least-only, single-colour rules; existing configurations are unaffected.
 
-The AIX client now requires AIX 7.1 or later. It keeps df off remote mounts by
-default (XYMONCLIENT_FS_DF_LOCAL_ONLY, as on the other clients), which AIX df
-spells "-T local" -- a flag 6.1 and earlier do not have. On those releases the
-client reported every filesystem and a hard-mounted NFS server that stopped
-answering could hang the whole client run, with no remote-df sentinel to bound
-it; that is the behaviour now left behind rather than worked around.
+Web
+---
 
-xymonnet tests with a configured cipher-list restriction now report an SSL error
-when OpenSSL rejects the restriction, instead of silently using the default
-cipher list. Such tests may therefore turn red after upgrading Xymon, or after
-an OpenSSL upgrade invalidates a previously accepted restriction. xymonnet tests
-without a cipher-list restriction are unaffected.
-
-PCRE1 is no longer supported; Xymon now builds against PCRE2 only. Most
-patterns are unaffected, but configurations relying on syntax specific to
-PCRE1 should be reviewed.
-
-The RRDtool argv ABI is now detected from the header signature rather than
-from the RRDtool version, so upstream RRDtool 1.9 and later, and distribution
-backports to 1.8 such as the one in Oracle Linux 10, are both supported with
-no configuration.
-
-When Net-SNMP is built without MD5 (NETSNMP_DISABLE_MD5), an SNMPv3
-authentication configured for MD5 now falls back to SHA1 and logs a warning
-once at startup. Change the SNMPv3 authentication to SHA1 to silence it.
-
-The host attribute previously exposed as XMH_MULTIHOMED is now
-XMH_FLAG_MULTIHOMED, the name xymon-xmh(5) has always documented. Scripts,
-web templates and xymondboard or hostinfo field selectors using the old name
-must be updated.
-
-The default web charset is now UTF-8: HTMLCONTENTTYPE defaults to
-"text/html; charset=UTF-8" so non-ASCII status content renders correctly
-without relying on the web server to supply a default charset (which Debian's
-Apache does but FreeBSD's does not). Sites whose hosts emit a different encoding
-(e.g. iso-8859-1, euc-jp) and relied on browser auto-detection should set
-HTMLCONTENTTYPE explicitly in xymonserver.cfg.
-
-The Linux, FreeBSD, NetBSD, OpenBSD and macOS clients now filter the filesystems they
-report, where previously they reported whatever df listed. Pseudo and image
-filesystems are dropped by default - iso9660, squashfs and snap mounts on
-Linux, nullfs, procfs, devfs and autofs on FreeBSD, kernfs, procfs, cd9660,
-null and ptyfs on NetBSD, kernfs, procfs and cd9660 on OpenBSD, and mounts
-the system hides from the Finder or
-mounts read-only on macOS. The FreeBSD, NetBSD and OpenBSD clients also pass -l to df
-now, so remote filesystems other than nfs, which was already excluded, are no
-longer reported by default; set XYMONCLIENT_FS_DF_LOCAL_ONLY=no to restore
-them. A filesystem that stops being reported also stops raising alerts, so
-check that nothing you monitor has gone quiet after upgrading. Each client
-reads XYMONCLIENT_FS_INCLUDE_TYPES and XYMONCLIENT_FS_EXCLUDE_TYPES from
-xymonclient.cfg to override the defaults; see the comments there for the
-per-platform lists.
-
-On the Linux, FreeBSD, NetBSD, OpenBSD and macOS clients,
-XYMONCLIENT_FS_DF_LOCAL_ONLY=no no longer risks the whole host. df
-stats every remote mount it lists, and a dead NFS or CIFS server leaves it in an
-uninterruptible wait that even SIGKILL does not end, so the client cycle never
-finished and every column went purple, not just disk. The mount types that can
-block this way - nfs, nfs4, cifs, smb3, ceph, glusterfs, fuse.glusterfs, lustre
-and afs - are now collected by a separate df running behind a sentinel, with at
-most one probe outstanding per report. A probe that has not answered within
-XYMONCLIENT_FS_REMOTE_DF_BUDGET seconds (default 30) leaves those mounts
-reported as "unavailable" and 100% full: one filesystem red instead of the host
-purple. The df itself is left running, since it cannot be killed, and is
-recognised on a later cycle through a pidfile in $XYMONTMP, so it clears by
-itself once the server answers - expect to see such a df, and an alert on the
-affected filesystem, for as long as the server is away. Keep XYMONTMP on a local
-filesystem: the client refuses to probe when its own probe directory sits on one
-of these mounts. Set XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES to change the list.
-The default XYMONCLIENT_FS_DF_LOCAL_ONLY=yes is unaffected on every client,
-where df never sees these mounts.
-
-The NetBSD client now provides an inode report, sharing the filesystem
-filtering described above. Set XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep
-reporting the ptyfs (/dev/pts) filesystem after an upgrade, and
-XYMONCLIENT_FS_DF_LOCAL_ONLY=no to keep reporting remote filesystems.
+The default charset is now UTF-8: HTMLCONTENTTYPE defaults to "text/html;
+charset=UTF-8", so non-ASCII content renders without relying on the web
+server's default. Sites emitting another encoding (iso-8859-1, euc-jp) should
+set HTMLCONTENTTYPE explicitly in xymonserver.cfg.
 
 The svcstatus, history and reportlog CGIs now confine the host, service and
-section values taken from a request to a single safe path component, closing a
-path traversal and xymond-protocol injection reachable in a default install.
-As a side effect a host whose canonical name (field 2 of hosts.cfg) contains
-characters outside letters, digits and ":,._-" is no longer reachable through
-these pages; give it an ASCII canonical name and carry the original spelling in
-the NAME: display tag. The hosts.cfg loader now logs a warning at startup for
-canonical names outside this set, so affected hosts are visible before anyone
-hits the broken page.
+section values from a request to one safe path component, closing a path
+traversal and xymond-protocol injection reachable in a default install. A host
+whose canonical name (field 2 of hosts.cfg) uses characters outside letters,
+digits and ":,._-" is no longer reachable through these pages: give it an ASCII
+canonical name and carry the original in the NAME: tag. The hosts.cfg loader
+warns at startup about such names.
+
+Network tests
+-------------
+
+xymonnet tests with a cipher-list restriction now report an SSL error when
+OpenSSL rejects it, instead of silently falling back to the default cipher
+list. Such tests may turn red after upgrading Xymon, or after an OpenSSL
+upgrade invalidates a previously accepted restriction.
+
+Where Net-SNMP is built without MD5 (NETSNMP_DISABLE_MD5), SNMPv3
+authentication configured for MD5 falls back to SHA1 and warns once at startup.
+Change the authentication to SHA1 to silence it.
+
+Build and API
+-------------
+
+PCRE1 is no longer supported; Xymon builds against PCRE2 only. Most patterns
+are unaffected, but configurations relying on PCRE1-specific syntax should be
+reviewed.
+
+The RRDtool argv ABI is detected from the header signature rather than the
+version, so RRDtool 1.9 and later, and backports to 1.8 such as Oracle
+Linux 10's, both work with no configuration.
+
+XMH_MULTIHOMED is now XMH_FLAG_MULTIHOMED, the name xymon-xmh(5) has always
+documented. Scripts, web templates and xymondboard or hostinfo field selectors
+using the old name must be updated.
 
 
 Changes for 4.3.30
