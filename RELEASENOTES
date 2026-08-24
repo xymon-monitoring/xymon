@@ -31,6 +31,13 @@ is omitted from both the disk and inode reports by default. Set
 XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to restore the previous disk-report
 behavior and include that filesystem in both reports.
 
+The default web charset is now UTF-8: HTMLCONTENTTYPE defaults to
+"text/html; charset=UTF-8" so non-ASCII status content renders correctly
+without relying on the web server to supply a default charset (which Debian's
+Apache does but FreeBSD's does not). Sites whose hosts emit a different encoding
+(e.g. iso-8859-1, euc-jp) and relied on browser auto-detection should set
+HTMLCONTENTTYPE explicitly in xymonserver.cfg.
+
 
 Changes for 4.3.30
 ==================
@@ -40,13 +47,6 @@ including problems with hostnames with dashes in them.
 
 Combostatus tests propagated up from other combostatus tests should now
 display properly.
-
-The default web charset is now UTF-8: HTMLCONTENTTYPE defaults to
-"text/html; charset=UTF-8" so non-ASCII status content renders correctly
-without relying on the web server to supply a default charset (which Debian's
-Apache does but FreeBSD's does not). Sites whose hosts emit a different encoding
-(e.g. iso-8859-1, euc-jp) and relied on browser auto-detection should set
-HTMLCONTENTTYPE explicitly in xymonserver.cfg.
 
 
 Changes for 4.3.29
