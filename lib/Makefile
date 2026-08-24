@@ -32,6 +32,18 @@ ifeq ($(ENABLESHARED),yes)
 	# LIBVERSION = ".0.0.0"
 endif
 
+# NOTE - shared build is a prototype, not production-ready.
+# See xymon-monitoring/xymon#436 for the design decision. Gaps:
+#   - SONAME/LIBVERSION are stubbed out above, so this builds an
+#     unversioned libxymon.so with no soname: acceptable for a private
+#     library rebuilt as a unit, wrong for a public/SDK one.
+#   - the binaries get no rpath to the installed libxymon.so (RPATHVAL
+#     carries only the external deps), so a --shared install is not
+#     loadable until the runtime libdir is added to it.
+#   - -shared is hardcoded here (Linux/GNU only); other platforms need
+#     their own flags.
+# --shared therefore stays off by default until #436 settles direction.
+
 all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) loadhosts stackio availability md5 sha1 rmd160 locator tree
 
 client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
@@ -125,10 +137,10 @@ timefunc-client.o: timefunc.c
 loadhosts: loadhosts.c loadhosts_file.c loadhosts_net.c $(XYMONCOMMLIB)
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c $(XYMONCOMMLIBS)
 
-stackio: stackio.c libxymon.a
+stackio: stackio.c $(XYMONLIB)
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c $(XYMONLIBS)
 
-availability: availability.c libxymon.a
+availability: availability.c $(XYMONLIB)
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c $(XYMONLIBS)
 
 md5: md5.c test-endianness
