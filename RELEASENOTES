@@ -9,9 +9,6 @@ changes you should be aware of when upgrading.
 For a full list of changes and enhancements, please see the 
 Changes file.
 
-Maintained by the release manager on the Changes branch; do not edit this
-file in a pull request. Rules and release process: .github/RELEASING.md
-
 
 Changes for 4.3.31
 ==================
