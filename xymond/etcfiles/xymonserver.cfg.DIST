@@ -112,8 +112,9 @@ XYMONRAWSTATUSDIR="$XYMONVAR/logs"		# Status logs go here (xymond_filestore --st
 XYMONWWWDIR="$XYMONHOME/www"			# The directory for Xymon webpage files.
 XYMONHTMLSTATUSDIR="$XYMONWWWDIR/html"		# HTML status logs go here (xymond_filestore --status --html)
 XYMONNOTESDIR="$XYMONWWWDIR/notes"		# For notes-files (xymond_filestore --notes)
-XYMONREPDIR="$XYMONWWWDIR/rep"			# Top-level directory for Xymon reports.
-XYMONSNAPDIR="$XYMONWWWDIR/snap"		# Top-level directory for Xymon snapshots.
+XYMONCACHEWWWDIR="$XYMONWWWDIR"			# Parent for regenerable web output (rep, snap). Defaults to XYMONWWWDIR; point it elsewhere (e.g. /var/cache/xymon/www) to keep this throwaway, safe-to-delete data out of the persistent docroot.
+XYMONREPDIR="$XYMONCACHEWWWDIR/rep"		# Top-level directory for Xymon reports.
+XYMONSNAPDIR="$XYMONCACHEWWWDIR/snap"		# Top-level directory for Xymon snapshots.
 
 # For the xymond_history module
 XYMONALLHISTLOG="TRUE"				# Save a common log of all events (used for the all nongreen webpage)
