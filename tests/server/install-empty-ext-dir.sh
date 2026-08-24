@@ -51,6 +51,8 @@ vars=(
 	# The static directory too, as the www tree: a tree configured with
 	# INSTALLSTATICWWWDIR carries it in its Makefile, outside this scratch tree.
 	INSTALLSTATICWWWDIR="$dest/var/www"
+	INSTALLCLIENTETCDIR="$dest/top/client/etc" INSTALLCLIENTBINDIR="$dest/top/client/bin"
+	INSTALLCLIENTTMPDIR="$dest/top/client/tmp" INSTALLCLIENTLOGDIR="$dest/top/client/logs"
 )
 
 "$XYMON_MAKE" -C "$tree" install "${vars[@]}" PKGBUILD=1 >"$work/install.log" 2>&1 \
