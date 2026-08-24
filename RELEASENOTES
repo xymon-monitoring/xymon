@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.31   * * *
+           * * *   Release notes for Xymon 4.3.30   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -9,30 +9,8 @@ changes you should be aware of when upgrading.
 For a full list of changes and enhancements, please see the 
 Changes file.
 
-Maintained by the release manager on the Changes branch; do not edit this
-file in a pull request. Rules and release process: .github/RELEASING.md
-
-
-Changes for 4.3.31
-==================
-
-The AIX client now requires AIX 7.1 or later. It keeps df off remote mounts by
-default (XYMONCLIENT_FS_DF_LOCAL_ONLY, as on the other clients), which AIX df
-spells "-T local" -- a flag 6.1 and earlier do not have. On those releases the
-client reported every filesystem and a hard-mounted NFS server that stopped
-answering could hang the whole client run, with no remote-df sentinel to bound
-it; that is the behaviour now left behind rather than worked around.
-
-xymonnet tests with a configured cipher-list restriction now report an SSL error
-when OpenSSL rejects the restriction, instead of silently using the default
-cipher list. Such tests may therefore turn red after upgrading Xymon, or after
-an OpenSSL upgrade invalidates a previously accepted restriction. xymonnet tests
-without a cipher-list restriction are unaffected.
-
-The NetBSD client now provides an inode report. The ptyfs (/dev/pts) filesystem
-is omitted from both the disk and inode reports by default. Set
-XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to restore the previous disk-report
-behavior and include that filesystem in both reports.
+Maintained by the release manager on the Changes branch; do not edit it in a
+pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
 
 
 Changes for 4.3.30
@@ -43,13 +21,6 @@ including problems with hostnames with dashes in them.
 
 Combostatus tests propagated up from other combostatus tests should now
 display properly.
-
-The default web charset is now UTF-8: HTMLCONTENTTYPE defaults to
-"text/html; charset=UTF-8" so non-ASCII status content renders correctly
-without relying on the web server to supply a default charset (which Debian's
-Apache does but FreeBSD's does not). Sites whose hosts emit a different encoding
-(e.g. iso-8859-1, euc-jp) and relied on browser auto-detection should set
-HTMLCONTENTTYPE explicitly in xymonserver.cfg.
 
 
 Changes for 4.3.29

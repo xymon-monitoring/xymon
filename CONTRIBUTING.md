@@ -14,11 +14,8 @@ Entries added in a pull request land in the wrong release section and have to
 be moved, and two pull requests inserting at the top of the same section
 conflict for no reason.
 
-`Changes` is the full list, one line per merged pull request. `RELEASENOTES` is
-only what an administrator needs *before upgrading* — a changed default, a
-setting that stops working, a new dependency; most changes need no entry there.
-Construction rules for both are in
-[`.github/RELEASING.md`](.github/RELEASING.md).
+What belongs in each file, and how entries are written, is in
+[`RELEASING.md`](RELEASING.md).
 
 ## Manual pages
 
