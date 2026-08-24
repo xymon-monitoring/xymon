@@ -8,7 +8,13 @@
 # Build targets
 #####################
 
-CFLAGS += -I$(BUILDTOPDIR)/include
+# -L for libxymon: jccleaver's shared-lib commit switched the binaries from
+# linking ../lib/libxymon*.a by path to -lxymon*, which needs a library
+# search path. Absolute so it holds wherever a binary links from. In both
+# CFLAGS and LDFLAGS because client binaries link via CFLAGS and the server
+# binaries via LDFLAGS.
+CFLAGS += -I$(BUILDTOPDIR)/include -L$(BUILDTOPDIR)/lib
+LDFLAGS += -L$(BUILDTOPDIR)/lib
 
 ifeq ($(CLIENTONLY),yes)
 	BUILDTARGETS = client
