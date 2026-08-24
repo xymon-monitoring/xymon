@@ -109,7 +109,7 @@ assert_contains "/net" "$out" "a healthy hard-blocking mount is reported through
 # With real rows, not the marker: everything the sentinel hands df has to be
 # something df accepts, and a probe that fails on its own arguments looks
 # exactly like a server that stopped answering.
-assert_not_contains "unavailable:/net" "$out" \
+assert_not_match 'remote:/exp[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+100%[[:space:]]+/net' "$out" \
 	"a healthy server must produce real rows, never the unavailable marker"
 assert_contains "/Volumes/USBHFS" "$out" "a local filesystem is still reported by the per-path loop"
 assert_contains "/dev/disk" "$out" "and the table still carries real rows"
@@ -139,9 +139,9 @@ rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 out=$(run_cycle DF_HANG=1)
 df_section=$(printf '%s\n' "$out" | sed -n '/^\[df\]/,/^\[inode\]/p')
 inode_section=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p')
-assert_contains "unavailable:/net" "$df_section" \
+assert_match 'remote:/exp[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+100%[[:space:]]+/net' "$df_section" \
 	"a wedged server must surface the mount in the disk report, not drop it"
-assert_contains "unavailable:/net" "$inode_section" \
+assert_match 'remote:/exp[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+100%[[:space:]]+/net' "$inode_section" \
 	"and in the inode report, whose columns are read positionally"
 # Shape, not just presence: the inode awk reads iused/ifree/%iused from fields
 # 6-8, so a marker row in the disk layout would be reformatted into nonsense
@@ -159,7 +159,7 @@ out=$(run_cycle DF_HANG=1)
 after=$(wc -l < "$DF_CALLS")
 assert_equal "$((before + 2))" "$((after))" \
 	"while both probes are wedged, a cycle must run only the two plain dfs"
-assert_contains "unavailable:/net" "$out" "the mount stays unavailable while wedged"
+assert_match 'remote:/exp[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+100%[[:space:]]+/net' "$out" "the mount stays unavailable while wedged"
 for _tag in disk inode; do end_stub "$(cat "$TMP/probe/df-probe-$_tag.pid")"; done
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 
@@ -180,7 +180,7 @@ chmod +x "$STUB/mount"
 out=$(run_cycle DF_HANG=1 XYMONTMP="$TMP/remoteprobe")
 assert_equal '0' "$(find "$TMP/remoteprobe" -type f | awk 'END { print NR }')" \
 	"a probe dir on a hard-blocking filesystem must never be touched"
-assert_contains "unavailable:/net" "$out" "the remote set reports unavailable instead"
+assert_match 'remote:/exp[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+100%[[:space:]]+/net' "$out" "the remote set reports unavailable instead"
 
 
 # Same guard, mount list unavailable rather than hostile. Asked directly: with
@@ -194,6 +194,18 @@ assert_contains "unavailable:/net" "$out" "the remote set reports unavailable in
   printf 'probe_dir_is_local /remote/probe\n' ) > "$TMP/pdl.sh"
 if XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES="nfs nfs4 cifs" /bin/sh "$TMP/pdl.sh"; then
 	fail "an unreadable mount list must not read as a local probe directory"
+fi
+
+# The probe dir must reach awk intact: -v escape-processes it (every awk turns
+# \t into a tab), hence ENVIRON; the quoted heredoc keeps printf off the bytes.
+( sed -n '/^probe_dir_is_local()/,/^}/p' "$SCRIPT"
+  cat <<'PDL'
+fs_mounts() { printf 'nfs4\t%s\n' '/remote/a\tb'; }
+probe_dir_is_local '/remote/a\tb/x'
+PDL
+) > "$TMP/pdl.sh"
+if XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES="nfs nfs4 cifs" /bin/sh "$TMP/pdl.sh"; then
+	fail "a probe directory under a backslash-named mount must not read as local"
 fi
 
 pass "xymonclient-darwin.sh: the remote-df sentinel takes the hard-blocking mounts out of the per-path loop"

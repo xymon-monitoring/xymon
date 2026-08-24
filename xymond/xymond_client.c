@@ -585,7 +585,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 		else {
 			char *fsname = NULL, *levelstr = NULL;
-			int abswarn, abspanic;
+			int abswarn, abspanic, unmeasured = 0;
 			long levelpct = -1, levelabs = -1, warnlevel, paniclevel;
 
 			p = strdup(bol);
@@ -600,7 +600,11 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 						    &ignored, &group);
 
 				strcpy(p, bol);
-				levelstr = getcolumn(p, freecol); if (levelstr) levelabs = atol(levelstr);
+				levelstr = getcolumn(p, freecol);
+				if (levelstr) {
+					unmeasured = (strcmp(levelstr, "-") == 0);
+					levelabs = atol(levelstr);
+				}
 				strcpy(p, bol);
 				levelstr = getcolumn(p, capacol); if (levelstr) levelpct = atol(levelstr);
 
@@ -610,6 +614,17 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 
 				if (ignored) {
 					/* Forget about this one */
+				}
+				else if (unmeasured && (levelpct == 100)) {
+					/* The client's unavailable-mount marker: "-" sizes because
+					 * nothing measured them, 100% so the column still goes red
+					 * on a server without this check. An all-dash row (AIX
+					 * /proc) has no 100% and stays out. */
+					if (diskcolor < COL_RED) diskcolor = COL_RED;
+
+					sprintf(msgline, "&red %s is unreachable (not measured)\n", fsname);
+					addtobuffer(monmsg, msgline);
+					addalertgroup(group);
 				}
 				else if ( (abspanic && (levelabs <= paniclevel)) || 
 				     (!abspanic && (levelpct >= paniclevel)) ) {
@@ -765,7 +780,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 		else {
 			char *fsname = NULL, *levelstr = NULL;
-			int abswarn, abspanic;
+			int abswarn, abspanic, unmeasured = 0;
 			long levelpct = -1, levelabs = -1, warnlevel, paniclevel;
 
 			p = strdup(bol);
@@ -780,7 +795,11 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 						    &ignored, &group);
 
 				strcpy(p, bol);
-				levelstr = getcolumn(p, freecol); if (levelstr) levelabs = atol(levelstr);
+				levelstr = getcolumn(p, freecol);
+				if (levelstr) {
+					unmeasured = (strcmp(levelstr, "-") == 0);
+					levelabs = atol(levelstr);
+				}
 				strcpy(p, bol);
 				levelstr = getcolumn(p, capacol); if (levelstr) levelpct = atol(levelstr);
 
@@ -790,6 +809,16 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 
 				if (ignored) {
 					/* Forget about this one */
+				}
+				else if (unmeasured && (levelpct == 100)) {
+					/* The unavailable-mount marker, passed through by the
+					 * clients' inode reformatters -- same shape as in the
+					 * disk report. */
+					if (inodecolor < COL_RED) inodecolor = COL_RED;
+
+					sprintf(msgline, "&red <!-- ID=%s --> %s is unreachable (not measured)\n", fsname, fsname);
+					addtobuffer(monmsg, msgline);
+					addalertgroup(group);
 				}
 				else if ( (abspanic && (levelabs <= paniclevel)) || 
 				     (!abspanic && (levelpct >= paniclevel)) ) {

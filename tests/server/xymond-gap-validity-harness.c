@@ -41,13 +41,13 @@ static int silence_and_return(int opencolor, int openvalidity, time_t gaplen,
 
 	/* xymond invents a colour because nothing arrived: the gap opens, and it
 	 * is the validity in force at that moment that sizes the window. */
-	update_gapstate(&log, COL_PURPLE, 1, t0, heldsince, openvalidity);
+	update_gapstate(&log, COL_PURPLE, 1, 1, t0, heldsince, openvalidity);
 
 	/* The test comes back with its own colour, and its own promise. */
 	log.validity = backvalidity;
 	log.oldcolor = COL_PURPLE;
 	log.lastchange = t0 + gaplen;
-	update_gapstate(&log, backcolor, 0, t0 + gaplen, t0 + gaplen, backvalidity);
+	update_gapstate(&log, backcolor, 0, 0, t0 + gaplen, t0 + gaplen, backvalidity);
 
 	return (log.lastchange == heldsince);
 }

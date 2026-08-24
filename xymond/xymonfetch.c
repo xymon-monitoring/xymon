@@ -101,10 +101,15 @@ void sigmisc_handler(int signum)
 char *addrstring(struct sockaddr_in *addr, int includeport)
 {
 	int n;
-	static char res[100];
-
-	n = sprintf(res, "%s", inet_ntoa(addr->sin_addr));
-	if (includeport) sprintf(res+n, ":%d", ntohs(addr->sin_port));
+	/* Sized for what it actually holds: an IPv4 address and an optional
+	   ":port". It was char[100], which is not wrong but tells the compiler
+	   the return may be 99 characters -- so every caller that formats it into
+	   a fixed buffer warns about a truncation that cannot happen. The bound
+	   is now the truth, and the writes below respect it either way. */
+	static char res[INET_ADDRSTRLEN + sizeof(":65535")];
+	n = snprintf(res, sizeof(res), "%s", inet_ntoa(addr->sin_addr));
+	if ((n > 0) && (n < (int)sizeof(res)) && includeport)
+		snprintf(res+n, sizeof(res)-n, ":%d", ntohs(addr->sin_port));
 	return res;
 }
 
@@ -299,8 +304,8 @@ void process_clientdata(conn_t *conn)
 				char sourcemsg[100];
 
 				/* Add a line to the message showing where it came from */
-				sprintf(sourcemsg, "\nStatus message received from %s\n", 
-					addrstring(&conn->caddr, 0));
+				snprintf(sourcemsg, sizeof(sourcemsg), "\nStatus message received from %s\n",
+					 addrstring(&conn->caddr, 0));
 				addtobuffer(req, sourcemsg);
 			}
 

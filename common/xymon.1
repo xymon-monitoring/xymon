@@ -211,12 +211,19 @@ a test repeating its color reports that same color here. Also accepted as
 in-downtime test is recorded blue whatever it reports. \fBnone\fR until a
 status has been reported twice.
 .IP "\fBprevchangecolor\fR"
-The color this test held before its most recent change. Also accepted as
-\fBpreviouscolor\fR. It moves only when the
+The color this test held before its most recent change. It moves only when the
 color changes, so a test that went green, red, red reports color=red,
 prevreportcolor=red, prevchangecolor=green \- it answers "what was this before
 it went bad". \fBnone\fR until the first change, and it survives a xymond
-restart.
+restart. Also accepted as \fBpreviouscolor\fR.
+.IP "\fBprevgapcolor\fR"
+The test's own color while xymond is recording something other than what it
+reports; \fBnone\fR at every other time. It follows the reports arriving
+under the substitution, and a test gone silent keeps its last word. That
+covers a silence, a disable, a modifier, a delayed color change and a
+DOWNTIME window hiding an alert color -- a green report shows through
+DOWNTIME, and the field answers \fBnone\fR: wherever they differ,
+\fBcolor\fR is xymond's and \fBprevgapcolor\fR is the test's own.
 .IP "\fBtestflags\fR"
 For network tests, the flags indicating details about the test (used by xymongen).
 .IP "\fBlastchange\fR"
@@ -342,12 +349,19 @@ a test repeating its color reports that same color here. Also accepted as
 in-downtime test is recorded blue whatever it reports. \fBnone\fR until a
 status has been reported twice.
 .IP "\fBprevchangecolor\fR"
-The color this test held before its most recent change. Also accepted as
-\fBpreviouscolor\fR. It moves only when the
+The color this test held before its most recent change. It moves only when the
 color changes, so a test that went green, red, red reports color=red,
 prevreportcolor=red, prevchangecolor=green \- it answers "what was this before
 it went bad". \fBnone\fR until the first change, and it survives a xymond
-restart.
+restart. Also accepted as \fBpreviouscolor\fR.
+.IP "\fBprevgapcolor\fR"
+The test's own color while xymond is recording something other than what it
+reports; \fBnone\fR at every other time. It follows the reports arriving
+under the substitution, and a test gone silent keeps its last word. That
+covers a silence, a disable, a modifier, a delayed color change and a
+DOWNTIME window hiding an alert color -- a green report shows through
+DOWNTIME, and the field answers \fBnone\fR: wherever they differ,
+\fBcolor\fR is xymond's and \fBprevgapcolor\fR is the test's own.
 .IP "\fBflags\fR"
 For network tests, the flags indicating details about the test (used by xymongen).
 .IP "\fBlastchange\fR"

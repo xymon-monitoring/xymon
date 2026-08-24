@@ -28,6 +28,11 @@ require_gnu_make
 # RRD and SSL build flags as configure detected them (SSLLIBS is empty
 # on a tree built without SSL - don't force -lssl on such a link)
 rrddef=$(sed -n 's/^RRDDEF *= *//p' "$ROOT/Makefile")
+# Where <rrd.h> lives, as configure found it: nothing on Linux, but
+# -I/usr/local/include or -I/opt/homebrew/include on the BSDs and macOS. The
+# product Makefiles pass it for every RRD-using object; without it this test
+# fails to compile on a host that builds Xymon perfectly well.
+rrdinc=$(sed -n 's/^RRDINCDIR *= *//p' "$ROOT/Makefile")
 rrdlibs=$(sed -n 's/^RRDLIBS *= *//p' "$ROOT/Makefile")
 [ -n "$rrdlibs" ] || rrdlibs="-lrrd"
 
@@ -45,7 +50,7 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
-"$CC" $harness_cflags $rrddef -o "$work/showgraph" \
+"$CC" $harness_cflags $rrddef $rrdinc -o "$work/showgraph" \
 	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
 	$pcre_libs $rrdlibs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }

@@ -86,24 +86,30 @@ fi
 }
 [ -s "$TMP/out" ] || fail "$os: fs_mounts() listed no mounts on a running system"
 
+# One snapshot for the Linux checks below, taken now: the stat loop can grow
+# the live table (stat of an automount point mounts it).
+[ "$kernel" != Linux ] || cat /proc/mounts > "$TMP/mounts"
+
 # What the helper actually produced, on failure only: a count ("listed 2 mounts
 # but not /") says something is wrong without saying what, and re-running a BSD
 # lane to find out costs half an hour.
 dump_rows() { printf 'fs_mounts() returned:\n' >&2; sed -e 's/^/  /' "$TMP/out" >&2; }
 
 # The rows are what the rest of the block indexes into, so check the shape
-# rather than the contents: type, tab, mountpoint, and nothing else.
+# rather than the contents: type, tab, mountpoint, tab, device. The device is
+# what the sentinel names when a server stops answering, so it is part of the
+# contract even though nothing else reads it.
 lineno=0
 present=0
 root_type=
 while IFS= read -r line; do
 	lineno=$((lineno + 1))
 	fields=$(printf '%s' "$line" | awk -F'\t' '{ print NF }')
-	[ "$fields" = 2 ] \
-		|| { dump_rows; fail "$os: fs_mounts() line $lineno is not 'type<TAB>mountpoint' ($fields tab-separated fields): $line"; }
+	[ "$fields" = 3 ] \
+		|| { dump_rows; fail "$os: fs_mounts() line $lineno is not 'type<TAB>mountpoint<TAB>device' ($fields tab-separated fields): $line"; }
 
 	type=${line%%	*}
-	mp=${line#*	}
+	mp=${line#*	}; mp=${mp%%	*}
 
 	# A parse that drifted by a field yields plausible-looking garbage, so
 	# check what a mountpoint always is: an absolute path. Not that it exists
@@ -125,20 +131,29 @@ while IFS= read -r line; do
 	[ "$mp" != / ] || root_type=$type
 done < "$TMP/out"
 
-# / is mounted on every system that can run this, so its absence means the
-# enumerator dropped rows rather than merely mangling them.
-[ -n "$root_type" ] || { dump_rows; fail "$os: fs_mounts() listed $lineno mount(s) but not /, so it is dropping rows"; }
+# A chroot entered without pivot_root (cowbuilder, schroot: issue #395) has
+# no / row in /proc/mounts. So on Linux the no-drop check is exact -- row
+# counts must match -- and / is required only when the input shows it. The
+# BSDs and macOS stay unconditional: getmntinfo() sees / even in a chroot.
+if [ "$kernel" = Linux ]; then
+	want=$(awk 'END { print NR }' "$TMP/mounts")
+	[ "$lineno" -eq "$want" ] \
+		|| { dump_rows; fail "$os: fs_mounts() listed $lineno mount(s) but /proc/mounts has $want, so it is dropping rows"; }
+	if awk '$2 == "/" { found = 1 } END { exit !found }' "$TMP/mounts"; then
+		[ -n "$root_type" ] || { dump_rows; fail "$os: /proc/mounts lists / but fs_mounts() did not, so it is mangling rows"; }
+	fi
+else
+	[ -n "$root_type" ] || { dump_rows; fail "$os: fs_mounts() listed $lineno mount(s) but not /, so it is dropping rows"; }
+fi
 
 # Paths that all look absolute but none of which resolve would be a parse
 # producing well-formed nonsense; one that resolves is enough to rule that out.
 [ "$present" -gt 0 ] || { dump_rows; fail "$os: none of the $lineno mountpoints fs_mounts() reported exists"; }
 
-# One thing no host can be relied on to have: a mount point with a space in it.
-# Linux escapes it as \040 in /proc/mounts, and a client that stopped decoding
-# that would hand df a path that does not exist -- reporting the filesystem
-# unavailable while its disk is fine. So the parser is fed the line directly.
-# The BSDs need no equivalent: mount(8) prints the space, and the " on " / " ("
-# split keeps it.
+# No host can be relied on to have a mount point with a space or backslash in
+# it (Linux: \040, \134), so the parser is fed such lines directly. \134 must
+# decode last, or a literal "\040" (kernel: \134040) becomes a space. The BSDs
+# print both raw; the " on " / " (" split keeps them.
 if [ "$kernel" = Linux ]; then
 	# The awk program out of the helper, run over one fixture line instead of
 	# the file. Extracted rather than copied, so it is this client's parser
@@ -147,9 +162,15 @@ if [ "$kernel" = Linux ]; then
 	awkprog=$(sed -n '/^fs_mounts()/,/^}/p' "$script" | sed -n "s/^[[:space:]]*awk '\(.*\)' .*/\1/p")
 	[ -n "$awkprog" ] \
 		|| fail "$os: fs_mounts() no longer parses with a single awk program -- update this check with it"
-	decoded=$(printf 'server:/export /remote/team\\040share nfs4 rw 0 0\n' | awk "$awkprog")
-	assert_equal "nfs4	/remote/team share" "$decoded" \
-		"$os: an escaped space in a mount point is decoded, not passed through"
+	decoded=$(printf 'server:/export /remote/team\\040share\\040x nfs4 rw 0 0\n' | awk "$awkprog")
+	assert_equal "nfs4	/remote/team share x	server:/export" "$decoded" \
+		"$os: every escaped space in a mount point is decoded, not just the first, and the device is named"
+	decoded=$(printf 'server:/export /remote/\\134\\134a\\134 nfs4 rw 0 0\n' | awk "$awkprog")
+	assert_equal 'nfs4	/remote/\\a\	server:/export' "$decoded" \
+		"$os: escaped backslashes -- leading, doubled, trailing -- are all decoded, and the device is named"
+	decoded=$(printf 'server:/export /remote/a\\134040b nfs4 rw 0 0\n' | awk "$awkprog")
+	assert_equal 'nfs4	/remote/a\040b	server:/export' "$decoded" \
+		"$os: a literal backslash-040 in a mount point survives; decoding \\134 first would turn it into a space"
 fi
 
-pass "no client refreshes mount(8), and $os's fs_mounts() parses this host ($lineno mounts, / is $root_type)"
+pass "no client refreshes mount(8), and $os's fs_mounts() parses this host ($lineno mounts, / is ${root_type:-not visible from this chroot})"

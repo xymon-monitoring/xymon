@@ -33,6 +33,8 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+# shellcheck source=tests/lib/xymond-daemon.sh
+. "$(dirname "$0")/../lib/xymond-daemon.sh"
 
 ROOT=$(find_root)
 
@@ -64,43 +66,20 @@ printf 'page test Test\n127.0.0.1 testhost.example.com # conn\n' > "$work/hosts.
 # a machine that already has Xymon installed. Point it at the test's own
 # directory instead, and create what xymond expects to find under it.
 mkdir -p "$work/home/etc" "$work/home/tmp" "$work/home/www"
+require_cfg XYMONSERVER_CFG xymond/etcfiles/xymonserver.cfg
 sed -e 's|^XYMONHOME=.*|XYMONHOME="'"$work"'/home"|' \
     -e 's|^XYMONTMP=.*|XYMONTMP="'"$work"'/home/tmp"|' \
-	"$ROOT/xymond/etcfiles/xymonserver.cfg" > "$work/xymonserver.cfg" \
-	|| skip "no xymonserver.cfg to run against"
+	"$XYMONSERVER_CFG" > "$work/xymonserver.cfg"
 
-# free_port -- a 127.0.0.1 port nothing is listening on. Racy in principle;
-# the window is a few milliseconds and only this test uses the port.
-free_port() {
-	local p tries=0
-	while [ "$tries" -lt 50 ]; do
-		p=$(( 20000 + (RANDOM % 20000) ))
-		"$XYMONCLIENT" "127.0.0.1:$p" "ping" >/dev/null 2>&1 || { printf '%s' "$p"; return 0; }
-		tries=$((tries+1))
-	done
-	return 1
-}
-
-# start_xymond [extra args...] -- boot xymond on a fresh port and wait for it
-# to answer. Sets PORT.
-start_xymond() {
-	local i=0
-	PORT=$(free_port) || fail "no free port for xymond"
-	"$XYMOND" --no-daemon --listen="127.0.0.1:$PORT" \
+# This test's xymond argv, for start_xymond() to drive.
+xymond_launch() {
+	local port=$1; shift
+	"$XYMOND" --no-daemon --listen="127.0.0.1:$port" \
 		--hosts="$work/hosts.cfg" --env="$work/xymonserver.cfg" \
 		--pidfile="$work/xymond.pid" --checkpoint-file="$work/chk" \
 		--flap-count=2 --flap-seconds=3600 "$@" \
 		> "$work/xymond.log" 2>&1 &
 	XYMOND_PID=$!
-
-	while [ "$i" -lt 100 ]; do
-		"$XYMONCLIENT" "127.0.0.1:$PORT" "ping" >/dev/null 2>&1 && return 0
-		kill -0 "$XYMOND_PID" 2>/dev/null || { cat "$work/xymond.log" >&2; fail "xymond exited during startup"; }
-		sleep 0.1
-		i=$((i+1))
-	done
-	cat "$work/xymond.log" >&2
-	fail "xymond did not answer on 127.0.0.1:$PORT"
 }
 
 # The host part of a status message spells dots as commas.
@@ -191,7 +170,10 @@ stop_xymond
 awk -F'|' -v OFS='|' '$2 == ".flapstate." { if (NF < 11) exit 3; $11 = "1000000,1000000" } { print }' \
 	"$work/chk" > "$work/chk.stale" \
 	|| fail "the .flapstate. record has fewer fields than the flap ring's position; the format changed"
-grep -q '^@@XYMONDCHK-V1|\.flapstate\.|\([^|]*|\)\{8\}1000000,1000000\(|.*\)\?$' "$work/chk.stale" \
+# ERE, not BRE: "\?" is a GNU extension that OpenBSD's grep takes for a literal
+# "?", so the pattern could not match there and the failure read as a changed
+# record format. In an ERE the pipes are the ones that need escaping.
+grep -Eq '^@@XYMONDCHK-V1\|\.flapstate\.\|([^|]*\|){8}1000000,1000000(\|.*)?$' "$work/chk.stale" \
 	|| fail "could not backdate the flap ring; the .flapstate. record format changed"
 
 start_xymond --restart="$work/chk.stale"
@@ -205,14 +187,12 @@ esac
 
 stop_xymond
 
-# ---- a gap is carried while it can still bridge, and not once it cannot -----
+# ---- a gap is carried for as long as the daemon holds one -------------------
 #
-# The gap fields exist to let a resumed test carry its hold-time across the
-# silence, which holdtime_bridges() refuses past GAPBRIDGE_VALIDITIES report
-# validities. Past that the gap decides nothing, so it must not be written --
-# otherwise a test whose color xymond permanently overrides (an RRDDS modifier,
-# refreshed by xymond_client every client cycle) carries a record in every
-# checkpoint from the first override until the modifier stops.
+# A gap past its bridge window used to be left out: it could no longer decide
+# anything. prevgapcolor publishes it now, so it decides something again, and a
+# consumer must get the same answer before and after an unrelated restart. The
+# window still governs the hold-time, at the close.
 #
 # Both halves restore and save without sending a status, so the gap is written
 # back exactly as the daemon holds it. The restored validity is defaultvalidity,
@@ -241,10 +221,14 @@ stop_xymond
 [ "$(saved_gapcolor)" = "red" ] \
 	|| fail "a gap 60s old was not carried through a restart (got $(saved_gapcolor)); the hold-time it would bridge is lost"
 
+# The output file goes first: the case above leaves the same color in it, so a
+# run that wrote nothing would be read as this one's answer.
 write_gap_checkpoint "$(( $(date +%s) - 86400 ))"
+rm -f "$work/chk"
 start_xymond --restart="$work/chk.gap"
 stop_xymond
-[ "$(saved_gapcolor)" = "none" ] \
-	|| fail "a day-old gap was written back as $(saved_gapcolor); nothing can bridge it any more, so it is state that never goes away"
+[ -s "$work/chk" ] || fail "xymond wrote no checkpoint on the way out, so the day-old gap is untested"
+[ "$(saved_gapcolor)" = "red" ] \
+	|| fail "a day-old gap was dropped from the checkpoint (got $(saved_gapcolor)); the override has not ended, so prevgapcolor must not answer differently after a restart than before it"
 
-pass "checkpoint round-trip keeps the released status record, carries the flap state, re-derives flapping, and drops a gap past its bridge window"
+pass "checkpoint round-trip keeps the released status record, carries the flap state, re-derives flapping, and carries a gap for as long as it holds one"

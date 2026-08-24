@@ -22,6 +22,8 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+# shellcheck source=tests/lib/xymond-daemon.sh
+. "$(dirname "$0")/../lib/xymond-daemon.sh"
 
 ROOT=$(find_root)
 
@@ -46,39 +48,19 @@ register_cleanup stop_xymond
 printf 'page test Test\n127.0.0.1 testhost.example.com # conn\n' > "$work/hosts.cfg"
 
 mkdir -p "$work/home/etc" "$work/home/tmp" "$work/home/www"
+require_cfg XYMONSERVER_CFG xymond/etcfiles/xymonserver.cfg
 sed -e 's|^XYMONHOME=.*|XYMONHOME="'"$work"'/home"|' \
     -e 's|^XYMONTMP=.*|XYMONTMP="'"$work"'/home/tmp"|' \
-	"$ROOT/xymond/etcfiles/xymonserver.cfg" > "$work/xymonserver.cfg" \
-	|| skip "no xymonserver.cfg to run against"
+	"$XYMONSERVER_CFG" > "$work/xymonserver.cfg"
 
-free_port() {
-	local p tries=0
-	while [ "$tries" -lt 50 ]; do
-		p=$(( 20000 + (RANDOM % 20000) ))
-		"$XYMONCLIENT" "127.0.0.1:$p" "ping" >/dev/null 2>&1 || { printf '%s' "$p"; return 0; }
-		tries=$((tries+1))
-	done
-	return 1
-}
-
-start_xymond() {
-	local i=0
-	PORT=$(free_port) || fail "no free port for xymond"
-	"$XYMOND" --no-daemon --listen="127.0.0.1:$PORT" \
+xymond_launch() {
+	local port=$1; shift
+	"$XYMOND" --no-daemon --listen="127.0.0.1:$port" \
 		--hosts="$work/hosts.cfg" --env="$work/xymonserver.cfg" \
 		--pidfile="$work/xymond.pid" --checkpoint-file="$work/chk.out" \
 		"$@" \
 		> "$work/xymond.log" 2>&1 &
 	XYMOND_PID=$!
-
-	while [ "$i" -lt 100 ]; do
-		"$XYMONCLIENT" "127.0.0.1:$PORT" "ping" >/dev/null 2>&1 && return 0
-		kill -0 "$XYMOND_PID" 2>/dev/null || { cat "$work/xymond.log" >&2; fail "xymond exited during startup"; }
-		sleep 0.1
-		i=$((i+1))
-	done
-	cat "$work/xymond.log" >&2
-	fail "xymond did not answer on 127.0.0.1:$PORT"
 }
 
 send() { "$XYMONCLIENT" "127.0.0.1:$PORT" "$1" || fail "xymond rejected: $1"; }
@@ -158,4 +140,16 @@ assert_colors yellow red red "a restored status keeps the color it held before t
 [ "$(board previouscolor)" = "$(board prevchangecolor)" ] \
 	|| fail "the previouscolor alias must resolve to the same field as prevchangecolor"
 
-pass "xymondboard exposes prevreportcolor (alias oldcolor) and prevchangecolor, and prevchangecolor survives a restart"
+# The generated rows -- info, trends, clientlog -- are fake log records built
+# per request from a memset() struct, where zero is COL_GREEN. A color-history
+# field left at it reads as "was green before", which for these rows says a
+# change or a gap happened to something that has no history at all.
+for generated in info trends; do
+	row=$("$XYMONCLIENT" "127.0.0.1:$PORT" "xymondboard fields=testname,prevchangecolor,prevgapcolor" 2>/dev/null \
+		| awk -F'|' -v t="$generated" '$1 == t { print $2 "/" $3 }')
+	[ -n "$row" ] || fail "no $generated row on the board, so this case proves nothing"
+	[ "$row" = "none/none" ] \
+		|| fail "the generated $generated row reports prevchangecolor/prevgapcolor=$row; it has no history to report"
+done
+
+pass "xymondboard exposes prevreportcolor (alias oldcolor) and prevchangecolor, prevchangecolor survives a restart, and the generated rows claim no history"

@@ -45,7 +45,7 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-# fs_mounts : one "TYPE<tab>MOUNTPOINT" line per mount. Linux reads
+# fs_mounts : one "TYPE<tab>MOUNTPOINT<tab>DEVICE" line per mount. Linux reads
 # /proc/mounts, which cannot block on a dead server and needs no fork; the BSD
 # and macOS clients read mount(8). Same output either way, so probe_dir_is_local()
 # and the remote-set awk below are the same code in all five clients, and a test
@@ -53,7 +53,11 @@ echo "[df]"
 fs_mounts()
 {
 	[ -r /proc/mounts ] || return 1
-	awk '{ mp = $2; gsub(/\\040/, " ", mp); printf "%s\t%s\n", $3, mp }' /proc/mounts
+	# Decode \040, then \134 by split/concat (a gsub replacement backslash
+	# differs between mawk and gawk). \011/\012 stay escaped: the rows are
+	# tab- and newline-delimited, so decoding them would truncate the path.
+	# The device follows as a third column; it is decoded the same way.
+	awk '{ mp = $2; gsub(/\\040/, " ", mp); n = split(mp, s, /\\134/); mp = s[1]; for (i = 2; i <= n; i++) mp = mp "\\" s[i]; dev = $1; gsub(/\\040/, " ", dev); m = split(dev, d, /\\134/); dev = d[1]; for (i = 2; i <= m; i++) dev = dev "\\" d[i]; printf "%s\t%s\t%s\n", $3, mp, dev }' /proc/mounts
 }
 
 # fs_filesystems : the filesystem types the kernel knows, "nodev" first where
@@ -170,7 +174,9 @@ probe_dir_is_local()
 	# sends the probe at a directory that may sit on the wedged mount this
 	# exists to keep away from.
 	_pdlm=$(fs_mounts) || return 1
-	printf '%s\n' "$_pdlm" | awk -F'\t' -v dir="$1" -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" '
+	# dir via ENVIRON, not -v: -v escape-processes backslashes (gawk: \c -> c).
+	printf '%s\n' "$_pdlm" | _pdldir="$1" awk -F'\t' -v types="$XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES" '
+		BEGIN { dir = ENVIRON["_pdldir"] }
 		BEGIN { n = split(types, a, /[ \t]+/); for (i = 1; i <= n; i++) t[a[i]] = 1 }
 		{
 			mp = $2
@@ -414,9 +420,27 @@ run_df()
 		# Unavailable: surface each remote mount as a failed (100%) row rather
 		# than dropping it, since the server reads an absent filesystem as
 		# green. This turns one filesystem red instead of purpling the host.
-		for _m in $_rm; do
-			echo "unavailable:$_m 1 1 0 100% $_m"
-		done
+		#
+		# The row names the server. df could not answer, but the mount table
+		# still knows which device is behind the mount point, and that is the
+		# first thing an operator needs. The sizes are reported as "-": they
+		# were not measured, and a number here would be trended as a reading.
+		# The capacity stays 100% because that is what turns the column red.
+		# The mount list rides the mount-table stream behind an @@ separator:
+		# a -v assignment cannot carry newlines on BSD awk (fs_setop makes
+		# the same move). A spaced device is re-encoded (\040) to keep the
+		# column count. printf, not echo: sh's echo escape-processes a
+		# decoded backslash.
+		{ fs_mounts; echo '@@'; printf '%s\n' "$_rm"; } | awk -F'\t' '
+			$0 == "@@" { rm = 1; next }
+			!rm { dev[$2] = ($3 == "" ? "-" : $3); next }
+			$0 == "" { next }
+			{
+				d = ($0 in dev) ? dev[$0] : "-"
+				n = split(d, dp, / /)
+				if (n > 1) { d = dp[1]; for (j = 2; j <= n; j++) d = d "\\040" dp[j] }
+				printf "%s - - - 100%% %s\n", d, $0
+			}'
 	else
 		printf '%s\n' "$_rout"
 	fi
