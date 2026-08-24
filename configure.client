@@ -230,6 +230,18 @@ fi
 if test "$INSTALLWWWDIR" != ""; then
 	echo "INSTALLWWWDIR = $INSTALLWWWDIR"   >>Makefile
 fi
+if test "$INSTALLCLIENTBINDIR" != ""; then
+	echo "INSTALLCLIENTBINDIR = $INSTALLCLIENTBINDIR"   >>Makefile
+fi
+if test "$INSTALLCLIENTETCDIR" != ""; then
+	echo "INSTALLCLIENTETCDIR = $INSTALLCLIENTETCDIR"   >>Makefile
+fi
+if test "$INSTALLCLIENTTMPDIR" != ""; then
+	echo "INSTALLCLIENTTMPDIR = $INSTALLCLIENTTMPDIR"   >>Makefile
+fi
+if test "$INSTALLCLIENTLOGDIR" != ""; then
+	echo "INSTALLCLIENTLOGDIR = $INSTALLCLIENTLOGDIR"   >>Makefile
+fi
 echo "" >>Makefile
 if test "$CONFTYPE" = "client"
 then
