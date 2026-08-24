@@ -70,10 +70,25 @@ client, looking for a hostname, classname or OS match (in that order).
 This option causes xymond to merge all matching entries together into
 one and return all of it to the client.
 
-.IP "\fB\-\-listen\fR=\fIIP\fR[:\fIPORT\fR]"
+.IP "\fB\-\-listen\fR=\fIIP\fR[:\fIPORT\fR][,\fIIP\fR[:\fIPORT\fR]...]"
 Specifies the IP-address and port where xymond will listen for incoming
 connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
 addresses available on the host) and port 1984.
+.br
+More than one address may be given, separated by commas, and each is bound
+separately \(em so a server can answer on a chosen interface and on the
+loopback at the same time. An entry with no port uses the default port.
+.br
+Unless \fB\-\-no\-loopback\fR is given, xymond also listens on 127.0.0.1, on
+the port of the first address, whenever the addresses named do not already
+cover the loopback. This is so the client running on the Xymon server itself
+keeps reporting when a physical interface goes away. It is best effort: if that
+extra socket cannot be bound, xymond says so and carries on with the addresses
+it was asked for.
+
+.IP "\fB\-\-no\-loopback\fR"
+Do not add the automatic 127.0.0.1 listener described under \fB\-\-listen\fR.
+Use this when xymond must answer on the addresses named and nowhere else.
 
 .IP "\fB\-\-lqueue\fR=\fINUMBER\fR"
 Specifies the listen-queue for incoming connections. You don't need to tune
