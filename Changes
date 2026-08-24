@@ -1,3 +1,7 @@
+Maintained by the release manager on the Changes branch; do not edit this
+file in a pull request. Rules and release process: .github/RELEASING.md
+
+
 Changes from 4.3.29 -> 4.3.30 (05 Sep 2019)
 ===========================================
 
