@@ -22,44 +22,53 @@ fi
 
 case "$1" in
    "start")
-	if test -s @XYMONLOGDIR@/xymonlaunch.pid
+	# The runtime directory may be volatile - that is the point of pointing it
+	# at /run - so it can be gone after a reboot. Without it every pidfile
+	# write fails silently and start reports success while stop, status and
+	# reload have nothing to read.
+	if test ! -d @XYMONRUNDIR@
 	then
-		kill -0 `cat @XYMONLOGDIR@/xymonlaunch.pid`
+		mkdir -p @XYMONRUNDIR@ || { echo "Cannot create @XYMONRUNDIR@"; exit 1; }
+	fi
+
+	if test -s @XYMONRUNDIR@/xymonlaunch.pid
+	then
+		kill -0 `cat @XYMONRUNDIR@/xymonlaunch.pid`
 		if test $? -eq 0
 		then
 			echo "Xymon appears to be running, doing restart"
 			$0 stop
 		else
-			rm -f @XYMONLOGDIR@/xymonlaunch.pid
+			rm -f @XYMONRUNDIR@/xymonlaunch.pid
 		fi
 	fi
 
-	@RUNTIMEDEFS@ @XYMONHOME@/bin/xymonlaunch --config=@XYMONHOME@/etc/tasks.cfg --env=@XYMONHOME@/etc/xymonserver.cfg --log=@XYMONLOGDIR@/xymonlaunch.log --pidfile=@XYMONLOGDIR@/xymonlaunch.pid
+	@RUNTIMEDEFS@ @XYMONHOME@/bin/xymonlaunch --config=@XYMONHOME@/etc/tasks.cfg --env=@XYMONHOME@/etc/xymonserver.cfg --log=@XYMONLOGDIR@/xymonlaunch.log --pidfile=@XYMONRUNDIR@/xymonlaunch.pid
 	echo "Xymon started"
 	;;
 
    "stop")
-	if test -s @XYMONLOGDIR@/xymonlaunch.pid
+	if test -s @XYMONRUNDIR@/xymonlaunch.pid
 	then
-		kill -TERM `cat @XYMONLOGDIR@/xymonlaunch.pid`
+		kill -TERM `cat @XYMONRUNDIR@/xymonlaunch.pid`
 		echo "Xymon stopped"
 	else
 		echo "Xymon is not running"
 	fi
-	rm -f @XYMONLOGDIR@/xymonlaunch.pid
+	rm -f @XYMONRUNDIR@/xymonlaunch.pid
 	;;
 
    "status")
-	if test -s @XYMONLOGDIR@/xymonlaunch.pid
+	if test -s @XYMONRUNDIR@/xymonlaunch.pid
 	then
-		kill -0 `cat @XYMONLOGDIR@/xymonlaunch.pid`
+		kill -0 `cat @XYMONRUNDIR@/xymonlaunch.pid`
 		if test $? -eq 0
 		then
-			echo "Xymon (xymonlaunch) running with PID `cat @XYMONLOGDIR@/xymonlaunch.pid`"
+			echo "Xymon (xymonlaunch) running with PID `cat @XYMONRUNDIR@/xymonlaunch.pid`"
 			exit 0
 		else
 			echo "Xymon not running, removing stale PID file"
-			rm -f @XYMONLOGDIR@/xymonlaunch.pid
+			rm -f @XYMONRUNDIR@/xymonlaunch.pid
 			exit 1
 		fi
 	else
@@ -69,7 +78,7 @@ case "$1" in
 	;;
 
    "restart")
-	if test -s @XYMONLOGDIR@/xymonlaunch.pid
+	if test -s @XYMONRUNDIR@/xymonlaunch.pid
 	then
 		$0 stop
 		sleep 10
@@ -81,16 +90,16 @@ case "$1" in
 	;;
 
    "reload")
-	if test -s @XYMONLOGDIR@/xymond.pid
+	if test -s @XYMONRUNDIR@/xymond.pid
 	then
-		kill -HUP `cat @XYMONLOGDIR@/xymond.pid`
+		kill -HUP `cat @XYMONRUNDIR@/xymond.pid`
 	else
 		echo "xymond not running (no PID file)"
 	fi
 	;;
 
    "rotate")
-   	for PIDFILE in @XYMONLOGDIR@/*.pid
+   	for PIDFILE in @XYMONRUNDIR@/*.pid
 	do
 		kill -HUP `cat $PIDFILE`
 	done
