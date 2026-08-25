@@ -805,7 +805,9 @@ static void setup_ssl(tcptest_t *item)
 	if (sslincludecipherlist) {
 		int b1, b2;
 		b1 = SSL_get_cipher_bits(item->ssldata, &b2);
-		certsigalg = OBJ_nid2ln(X509_get_signature_type(peercert));
+		/* The signature algorithm is reported in the certificate block above.
+		   Recomputing it here read the certificate back after this function had
+		   released its reference to it, and the result was never used. */
 		snprintf(msglin, sizeof(msglin), "\nCipher used: %s (%d bits)\n", SSL_get_cipher_name(item->ssldata), b1);
 		addtobuffer(sslinfo, msglin);
 		item->mincipherbits = b1; 
