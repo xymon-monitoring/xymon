@@ -373,7 +373,12 @@ char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling
 			result = (strcasecmp(hivals[XMH_CLIENTALIAS], hostname) == 0) ? strdup(hivalhost) : NULL;
 		}
 
-		if (result && hivals[XMH_IP]) strcpy(hostip, hivals[XMH_IP]);
+		/* hivals[XMH_IP] is off the network (a "hostinfo clone=" reply);
+		   hostip is IP_ADDR_STRLEN at every caller, so bound the copy. */
+		if (result && hivals[XMH_IP]) {
+			strncpy(hostip, hivals[XMH_IP], IP_ADDR_STRLEN - 1);
+			hostip[IP_ADDR_STRLEN - 1] = '\0';
+		}
 
 		return result;
 	}
@@ -396,7 +401,8 @@ char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling
 		/*
 		 * Force our version of the hostname. Done here so CLIENT works always.
 		 */
-		strcpy(hostip, walk->ip);
+		strncpy(hostip, walk->ip, IP_ADDR_STRLEN - 1);
+		hostip[IP_ADDR_STRLEN - 1] = '\0';
 		result = strdup(walk->hostname);
 	}
 	else {
