@@ -28,40 +28,40 @@ all: $(PROGRAMS)
 client: $(CLIENTPROGRAMS)
 
 xymongrep: $(HOSTGREPOBJS) $(XYMONCOMMLIB) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS)
 
 ../client/xymongrep: $(HOSTGREPOBJS) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
 xymoncfg: $(HOSTSHOWOBJS) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(XYMONLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(XYMONLIBS)
 
 ../client/xymoncfg: $(HOSTSHOWOBJS) $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(XYMONCLIENTLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(XYMONCLIENTLIBS)
 
 xymon: $(XYMONOBJS) $(XYMONCOMMLIB) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(XYMONOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS)
 
 ../client/xymon: $(XYMONOBJS) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(XYMONOBJS) $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
 xymonlaunch: $(LAUNCHOBJS) $(XYMONTIMELIB) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) $(XYMONTIMELIBS) $(XYMONLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(LAUNCHOBJS) $(XYMONTIMELIBS) $(XYMONLIBS)
 
 ../client/xymonlaunch: $(LAUNCHOBJS) $(XYMONTIMELIB) $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) $(XYMONTIMELIBS) $(XYMONCLIENTLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(LAUNCHOBJS) $(XYMONTIMELIBS) $(XYMONCLIENTLIBS)
 
 xymoncmd: $(CMDOBJS) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) $(XYMONLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(CMDOBJS) $(XYMONLIBS)
 
 ../client/xymoncmd: $(CMDOBJS) $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) $(XYMONCLIENTLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(CMDOBJS) $(XYMONCLIENTLIBS)
 
 xymondigest: $(DIGESTOBJS) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(DIGESTOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS)
 
 ../client/xymondigest: $(DIGESTOBJS) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(DIGESTOBJS) $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
 
 xymon.exe: xymon.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.c ../lib/timefunc.c ../lib/memory.c ../lib/sendmsg.c ../lib/holidays.c ../lib/rbtr.c ../lib/msort.c
@@ -79,7 +79,7 @@ xymon.exe: xymon.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/st
 	$(CC) $(CFLAGS) -c ../lib/misc.c
 	ar cr xymonwin32.a environ.o strfunc.o errormsg.o stackio.o timefunc.o memory.o sendmsg.o holidays.o rbtr.o msort.o misc.o
 	ranlib xymonwin32.a || echo ""
-	$(CC) -o $@ xymon.o xymonwin32.a
+	$(CC) $(LDFLAGS) -o $@ xymon.o xymonwin32.a
 
 
 ################################################
