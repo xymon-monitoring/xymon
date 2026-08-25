@@ -46,10 +46,15 @@ ts=$(date +%s)
 
 # The buffer is forced far above one update, so nothing can reach the
 # processor by filling it: only a flush can, which is the point.
+# XYMONRUNDIR is where xymond_rrd binds its cache-control socket. Its
+# fallback is XYMONLOGDIR, which resolves to the build-time install path
+# and is not writable from a test tree, so the bind fails and nothing is
+# delivered.
 env \
 	XYMONHOME="$work/home" \
 	XYMONVAR="$work" \
 	XYMONTMP="$work/tmp" \
+	XYMONRUNDIR="$work/tmp" \
 	XYMONRRDS="$work/rrd" \
 	HOSTSCFG="$work/hosts.cfg" \
 	TEST2RRD="inode" \
