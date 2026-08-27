@@ -12,47 +12,88 @@ ifeq ($(LOCALCLIENT),yes)
 endif
 XYMONCLIENTCOMMLIBOBJS = locator.o loadhosts.o sendmsg.o xymond_ipc.o xymond_buffer.o
 
-XYMONCLIENTLIB = libxymonclient.a
-XYMONCLIENTLIBS = $(XYMONCLIENTLIB)
-XYMONCLIENTCOMMLIB = libxymonclientcomm.a
-XYMONCLIENTCOMMLIBS = $(XYMONCLIENTCOMMLIB) $(ZLIBLIBS) $(XYMONCLIENTLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCLIENTLIB = libxymonclient
+XYMONCLIENTLIBS = -lxymonclient
+XYMONCLIENTCOMMLIB = libxymonclientcomm
+XYMONCLIENTCOMMLIBS = -lxymonclientcomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
-XYMONLIB = libxymon.a
-XYMONLIBS = $(XYMONLIB)
-XYMONCOMMLIB = libxymoncomm.a
-XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
-XYMONTIMELIB = libxymontime.a
-XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+XYMONLIB = libxymon
+XYMONLIBS = -lxymon
+XYMONCOMMLIB = libxymoncomm
+XYMONCOMMLIBS = -lxymoncomm $(NETLIBS) $(LIBRTDEF) $(ZLIBLIBS) $(SSLLIBS) $(PCRELIBS)
+XYMONTIMELIB = libxymontime
+XYMONTIMELIBS = -lxymontime $(LIBRTDEF)
 
 
-CFLAGS += -I../include 
+CFLAGS += -I../include -L../lib
+ifeq ($(ENABLESHARED),yes)
+	CFLAGS += -fpic
+	# SONAME = ".0"
+	# LIBVERSION = ".0.0.0"
+endif
+
+# NOTE - shared build is a prototype, not production-ready.
+# See xymon-monitoring/xymon#436 for the design decision. Gaps:
+#   - SONAME/LIBVERSION are stubbed out above, so this builds an
+#     unversioned libxymon.so with no soname: acceptable for a private
+#     library rebuilt as a unit, wrong for a public/SDK one.
+#   - the binaries get no rpath to the installed libxymon.so (RPATHVAL
+#     carries only the external deps), so a --shared install is not
+#     loadable until the runtime libdir is added to it.
+#   - -shared is hardcoded here (Linux/GNU only); other platforms need
+#     their own flags.
+# --shared therefore stays off by default until #436 settles direction.
 
 all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) loadhosts stackio availability md5 sha1 rmd160 locator tree
 
 client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
 
+install:
+	cp -fp *.a $(INSTALLROOT)$(INSTALLLIBDIR)/
+	chmod 644 $(INSTALLROOT)$(INSTALLLIBDIR)/*.a
+	# Shared objects only if this tree built any: devel does, main does
+	# not, and an unmatched glob must not look like a failure.
+	for f in *.so*; do \
+		test -e "$$f" || continue; \
+		cp -fp "$$f" $(INSTALLROOT)$(INSTALLLIBDIR)/ || exit 1; \
+		chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)/"$$f" || exit 1; \
+	done
+	# The headers, so the libraries above can actually be built against.
+	# include/ and lib/ have to stay siblings: libxymon.h reaches its
+	# remaining headers as "../lib/...", so a flat directory breaks on
+	# the first include. One -I$(INSTALLINCDIR)/include then works.
+	mkdir -p $(INSTALLROOT)$(INSTALLINCDIR)/include $(INSTALLROOT)$(INSTALLINCDIR)/lib
+	cp -fp ../include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/include/
+	cp -fp *.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/
+	chmod 644 $(INSTALLROOT)$(INSTALLINCDIR)/include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/*.h
+
 test-endianness: test-endianness.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 $(XYMONLIB): $(XYMONLIBOBJS)
-	ar cr $(XYMONLIB) $(XYMONLIBOBJS)
-	ranlib $(XYMONLIB) || echo ""
+	ar cr $(XYMONLIB).a $(XYMONLIBOBJS)
+	ranlib $(XYMONLIB).a || echo ""
+	test x"$(ENABLESHARED)" = x"yes" && $(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname,$(XYMONLIB).so$(SONAME) -o $(XYMONLIB).so$(LIBVERSION) $(XYMONLIBOBJS) || :
 
 $(XYMONCOMMLIB): $(XYMONCOMMLIBOBJS)
-	ar cr $(XYMONCOMMLIB) $(XYMONCOMMLIBOBJS)
-	ranlib $(XYMONCOMMLIB) || echo ""
+	ar cr $(XYMONCOMMLIB).a $(XYMONCOMMLIBOBJS)
+	ranlib $(XYMONCOMMLIB).a || echo ""
+	test x"$(ENABLESHARED)" = x"yes" && $(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname,$(XYMONCOMMLIB).so$(SONAME) -o $(XYMONCOMMLIB).so$(LIBVERSION) $(XYMONCOMMLIBOBJS) || :
 
 $(XYMONTIMELIB): $(XYMONTIMELIBOBJS)
-	ar cr $(XYMONTIMELIB) $(XYMONTIMELIBOBJS)
-	ranlib $(XYMONTIMELIB) || echo ""
+	ar cr $(XYMONTIMELIB).a $(XYMONTIMELIBOBJS)
+	ranlib $(XYMONTIMELIB).a || echo ""
+	test x"$(ENABLESHARED)" = x"yes" && $(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname,$(XYMONTIMELIB).so$(SONAME) -o $(XYMONTIMELIB).so$(LIBVERSION) $(XYMONTIMELIBOBJS) || :
 
 $(XYMONCLIENTLIB): $(CLIENTLIBOBJS)
-	ar cr $(XYMONCLIENTLIB) $(CLIENTLIBOBJS)
-	ranlib $(XYMONCLIENTLIB) || echo ""
+	ar cr $(XYMONCLIENTLIB).a $(CLIENTLIBOBJS)
+	ranlib $(XYMONCLIENTLIB).a || echo ""
+	test x"$(ENABLESHARED)" = x"yes" && $(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname,$(XYMONCLIENTLIB).so$(SONAME) -o $(XYMONCLIENTLIB).so$(LIBVERSION) $(CLIENTLIBOBJS) || :
 
 $(XYMONCLIENTCOMMLIB): $(XYMONCLIENTCOMMLIBOBJS)
-	ar cr $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTCOMMLIBOBJS)
-	ranlib $(XYMONCLIENTCOMMLIB) || echo ""
+	ar cr $(XYMONCLIENTCOMMLIB).a $(XYMONCLIENTCOMMLIBOBJS)
+	ranlib $(XYMONCLIENTCOMMLIB).a || echo ""
+	test x"$(ENABLESHARED)" = x"yes" && $(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname,$(XYMONCLIENTCOMMLIB).so$(SONAME) -o $(XYMONCLIENTCOMMLIB).so$(LIBVERSION) $(XYMONCLIENTCOMMLIBOBJS) || :
 
 loadhosts.o: loadhosts.c loadhosts_file.c loadhosts_net.c
 	$(CC) $(CFLAGS) -c -o $@ loadhosts.c
@@ -96,10 +137,10 @@ timefunc-client.o: timefunc.c
 loadhosts: loadhosts.c loadhosts_file.c loadhosts_net.c $(XYMONCOMMLIB)
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c $(XYMONCOMMLIBS)
 
-stackio: stackio.c libxymon.a
+stackio: stackio.c $(XYMONLIB)
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c $(XYMONLIBS)
 
-availability: availability.c libxymon.a
+availability: availability.c $(XYMONLIB)
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c $(XYMONLIBS)
 
 md5: md5.c test-endianness
