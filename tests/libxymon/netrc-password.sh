@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/network/netrc-password.sh
+# tests/libxymon/netrc-password.sh
 #
 # Regression guard for the off-by-one in load_netrc() that dropped the last
 # character of every .netrc password (commit b4c4775dc).
@@ -47,11 +47,11 @@ assert_not_contains "snprintf(item->auth, login_len," "$src" \
 # It compiles the CURRENT lib/url.c fresh into the harness (so the result
 # reflects the source, not a possibly-stale url.o inside the archive) and links
 # the rest from the archive -- no make, no writable tree. If either is missing,
-# the source guard above already stands, so pass with a note.
+# the source guard above already stands, so record a partial.
 command -v "$CC" >/dev/null 2>&1 \
-	|| pass "url.c keeps the #226 snprintf size (source check; no C compiler for the behavioural run)"
-[ -f "$ROOT/lib/libxymoncomm.a" ] \
-	|| pass "url.c keeps the #226 snprintf size (source check; library not built for the behavioural run)"
+	|| pass_partial "url.c keeps the #226 snprintf size (source check)" "no C compiler for the behavioural run"
+[ -f "$ROOT/lib/libxymonclient.a" ] \
+	|| pass_partial "url.c keeps the #226 snprintf size (source check)" "library not built for the behavioural run"
 
 work=$(mktempdir)
 
@@ -87,7 +87,8 @@ EOF
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$SRC" "$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
+	"$work/harness.c" "$SRC" "$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
+	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "netrc harness does not compile"; }
 
 # A password whose last byte matters: the off-by-one drops the trailing 't'.

@@ -109,4 +109,4 @@ assert_contains 'inodestr = getdata("inode");' "$server_source" \
 assert_contains 'unix_inode_report(hostname' "$server_source" \
 	"the NetBSD handler generates the inode status"
 
-pass "xymonclient-netbsd.sh: the FS filter contract, the zfs inode exclusion, and column normalisation"
+pass "xymonclient-netbsd.sh: the FS filter contract, the zfs inode exclusion, and column normalisation -- NetBSD df/mount output replayed from fixtures"

@@ -79,4 +79,4 @@ for spelling in "192,168,1,1" "192.168.1.1"; do
 		"IP-named host ($spelling) no longer served"
 done
 
-echo "OK $(basename "$0")"
+pass "the CLIENT/TIMEBUF client-data path refuses traversal (#145, #146, #147)"
