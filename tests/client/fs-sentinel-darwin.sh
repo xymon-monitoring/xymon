@@ -27,7 +27,7 @@ grep -q '^df_sentinel()' "$SCRIPT" || fail "remote-df sentinel missing from $SCR
 DF_CALLS="$TMP/df.calls"; : > "$DF_CALLS"; export DF_CALLS
 DF_REMOTE="$TMP/df.remote"; : > "$DF_REMOTE"; export DF_REMOTE
 
-# mount(8) as FreeBSD prints it. /net is nfs -- hard-blocking, so it goes behind
+# mount(8) as macOS prints it. /net is nfs -- hard-blocking, so it goes behind
 # the sentinel; /ssh is a FUSE remote that stat()s safely and must keep being
 # reported by the plain df.
 cat > "$STUB/mount" <<'EOF'
@@ -208,4 +208,4 @@ if XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES="nfs nfs4 cifs" /bin/sh "$TMP/pdl.sh"; 
 	fail "a probe directory under a backslash-named mount must not read as local"
 fi
 
-pass "xymonclient-darwin.sh: the remote-df sentinel takes the hard-blocking mounts out of the per-path loop"
+pass "xymonclient-darwin.sh: the remote-df sentinel takes the hard-blocking mounts out of the per-path loop -- macOS mount output replayed, df stubbed"

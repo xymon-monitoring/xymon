@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/xtree-iterate-deleted.sh
+# tests/libxymon/xtree-iterate-deleted.sh
 #
 # Iterating a tree after xtreeDelete must never visit a deleted record.
 # The fallback (array) variant only tombstones on delete: xtreeFirst used
@@ -124,4 +124,4 @@ echo '#undef HAVE_BINARY_TREE' >"$work/shim-fallback/config.h"
 "$work/t-fallback" >"$work/out2" 2>&1 \
 	|| fail "fallback variant visits deleted records (rc=$?): $(tail -15 "$work/out2")"
 
-echo "OK $(basename "$0")"
+pass "iterating after xtreeDelete never visits a deleted record, on either variant"

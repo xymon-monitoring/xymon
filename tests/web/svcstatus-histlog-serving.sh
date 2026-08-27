@@ -103,4 +103,4 @@ printf 'green MARKER-NO-NEWLINE-nonewline-here' >"$work/var/histlogs/realhost/no
 assert_served "HOST=realhost&SERVICE=nonl&TIMEBUF=20260101" \
 	"MARKER-NO-NEWLINE" "newline-less histlog file"
 
-echo "OK $(basename "$0")"
+pass "the historical-log path serves a legitimate legal-charset name that the traversal guards must not refuse"
