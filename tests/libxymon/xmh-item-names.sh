@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/xmh-item-names.sh
+# tests/libxymon/xmh-item-names.sh
 #
 # Guards the XMH_ item-name table in lib/loadhosts.c. Those names are public:
 # clients select and filter xymondboard/hostinfo fields by them, xymond emits
@@ -47,14 +47,14 @@ templates) and also what xmh_item_isflag[] is derived from:
 $mismatched"
 
 require_c_buildenv "$ROOT"
-[ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$ROOT/lib/libxymonclient.a" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-xmh-item-names.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
-build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymonclientcomm.a libxymonclient.a
 
 cat > "$work/hosts.cfg" <<'EOF'
 127.0.0.1 taghost.example.com # conn dialup MULTIHOMED
@@ -64,7 +64,8 @@ EOF
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
-	"$here/xmh-item-names-harness.c" "$ROOT/lib/libxymoncomm.a" \
+	"$here/xmh-item-names-harness.c" \
+	"$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
 	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
