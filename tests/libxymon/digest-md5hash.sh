@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/digest-md5hash.sh
+# tests/libxymon/digest-md5hash.sh
 #
 # Guard for the md5hash() buffer-size fix in lib/digest.c
 # (xymon-monitoring/xymon#8).
@@ -39,7 +39,7 @@ assert_not_contains "sizeof(md_string) - (md_string - p)" "$src" \
 
 # (2) behavioural demo of the property, if we can compile.
 if ! command -v "$CC" >/dev/null 2>&1; then
-	pass "digest.c keeps the #8 fix (static check; no C compiler for the run)"
+	pass_partial "digest.c keeps the #8 fix (static check)" "no C compiler for the behavioural run"
 fi
 
 WORK=$(mktempdir)

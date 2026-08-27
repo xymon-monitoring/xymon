@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/network/ntp-probe.sh
+# tests/xymonnet/ntp-probe.sh
 #
 # Compiles and runs ntp-probe-harness.c (the real xymonnet/ntpprobe.c against a
 # stub strbuffer) and fails if it does. See the harness for the regressions it
@@ -45,4 +45,4 @@ if ! ASAN_OPTIONS="detect_leaks=0${ASAN_OPTIONS:+:$ASAN_OPTIONS}" \
 	fail "internal SNTP probe is broken (see output above)"
 fi
 
-exit 0
+pass "xymonnet/ntpprobe.c holds the regressions its harness pins"
