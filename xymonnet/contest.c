@@ -214,6 +214,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->sslrunning = (((newtest->svcinfo->flags & TCP_SSL) || (newtest->svcinfo->flags & TCP_ALPN)) ? SSLSETUP_PENDING : 0);
 	newtest->sslagain = 0;
 	newtest->sslwantwrite = 0;
+	newtest->sendagain = 0;
 
 	newtest->banner = NULL;
 	newtest->bannerbytes = 0;
@@ -846,12 +847,37 @@ static int socket_write(tcptest_t *item, char *outbuf, int outlen)
 {
 	int res = 0;
 
+	item->sendagain = 0;
 	if (item->sslrunning) {
 		res = SSL_write(item->ssldata, outbuf, outlen);
 		if (res < 0) {
 			switch (SSL_get_error (item->ssldata, res)) {
-			  case SSL_ERROR_WANT_READ:
 			  case SSL_ERROR_WANT_WRITE:
+				  /*
+				   * Nothing was sent. Returning 0 alone is
+				   * indistinguishable from "there was nothing to
+				   * send", so flag it: the caller must come back
+				   * and retry with the SAME buffer. socket_read()
+				   * uses sslagain for the same purpose.
+				   *
+				   * Only WANT_WRITE is retried. Clearing
+				   * readpending puts the socket back in writefds,
+				   * which is exactly what WANT_WRITE waits for.
+				   */
+				  item->sendagain = 1;
+				  res = 0;
+				  break;
+			  case SSL_ERROR_WANT_READ:
+				  /*
+				   * WANT_READ would need the fd in readfds, and the
+				   * read branch there would consume application data
+				   * rather than retry this write. Left as it behaves
+				   * today -- the payload is not sent and the test
+				   * waits out its timeout -- rather than retried on a
+				   * fd set that is always ready, which would busy-wait.
+				   * Reachable only via renegotiation; TLS 1.3 session
+				   * tickets and KeyUpdate do not produce it.
+				   */
 				  res = 0;
 				  break;
 			}
@@ -905,10 +931,26 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 
 static void socket_shutdown(tcptest_t *item)
 {
+	/*
+	 * Both guards are load-bearing. sslrunning must stay the outer test:
+	 * setup_ssl()'s failure paths free ssldata/sslctx without clearing them
+	 * and set sslrunning to 0, so a pointer-only guard would free dangling
+	 * pointers here. And the inner NULL checks are needed because
+	 * SSLSETUP_PENDING is -1, so sslrunning is already true from
+	 * add_tcp_test() while ssldata is still NULL -- a connection that times
+	 * out before setup_ssl() runs would otherwise reach SSL_shutdown(NULL).
+	 * Clearing them makes a second call harmless either way.
+	 */
 	if (item->sslrunning) {
-		SSL_shutdown(item->ssldata);
-		SSL_free(item->ssldata);
-		SSL_CTX_free(item->sslctx);
+		if (item->ssldata) {
+			SSL_shutdown(item->ssldata);
+			SSL_free(item->ssldata);
+			item->ssldata = NULL;
+		}
+		if (item->sslctx) {
+			SSL_CTX_free(item->sslctx);
+			item->sslctx = NULL;
+		}
 	}
 	shutdown(item->fd, SHUT_RDWR);
 
@@ -1241,16 +1283,22 @@ restartselect:
 					/* 
 					 * Request timed out.
 					 */
-					if (item->readpending) {
-						/* Final read timeout - just shut this socket */
-						socket_shutdown(item);
-						item->errcode = CONTEST_ETIMEOUT;
-					}
-					else {
+					if (!item->readpending && !item->sendagain) {
 						/* Connection timeout */
 						item->open = 0;
-						item->errcode = CONTEST_ETIMEOUT;
 					}
+					/*
+					 * Either way, hand the socket to socket_shutdown():
+					 * it is the only place SSL_free()/SSL_CTX_free()
+					 * happen, and it no-ops on a session that was never
+					 * running. The !readpending arm used to skip it, so
+					 * an SSL session that timed out with nothing pending
+					 * to read -- a handshake that never finished, and now
+					 * also a write still waiting to be retried -- had its
+					 * fd closed with the SSL objects still allocated.
+					 */
+					socket_shutdown(item);
+					item->errcode = CONTEST_ETIMEOUT;
 					get_totaltime(item, &timestamp);
 					close(item->fd);
 					item->fd = -1;
@@ -1343,6 +1391,19 @@ restartselect:
 									item->readpending = 0;
 									item->errcode = CONTEST_EIO;
 								}
+								else if (item->sendagain) {
+									/*
+									 * The SSL layer accepted nothing and wants
+									 * another pass. Leave sendtxt/sendlen alone
+									 * so the retry sends the same bytes, and do
+									 * not wait for a reply to a command that was
+									 * never transmitted -- clearing readpending
+									 * is also what puts this socket back in the
+									 * write set. The shutdown below is taught to
+									 * leave it open.
+									 */
+									item->readpending = 0;
+								}
 								else if (item->svcinfo->flags & TCP_HTTP) {
 									/*
 									 * HTTP tests require us to send the full buffer.
@@ -1358,7 +1419,7 @@ restartselect:
 
 						/* If closed and/or no bannergrabbing, shut down socket */
 						if (item->sslrunning != SSLSETUP_PENDING) {
-							if (!item->open || !item->readpending) {
+							if (!item->open || (!item->readpending && !item->sendagain)) {
 								if (item->open) {
 									socket_shutdown(item);
 								}
