@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	}
 	printf("C-ARES version: Found %d.%d.%d - %s, require %d.%d.%d\n", 
 		ver_maj, ver_min, ver_patch, 
-		(failed ? "too old, will use included version" : "OK"),
+		(failed ? "too old, required version not met" : "OK"),
 		ver_maj_required, ver_min_required, ver_patch_required );
 
 	/* ARES timeout backported from Xymon trunk 20120411 - this should give us a ~23 second timeout */
