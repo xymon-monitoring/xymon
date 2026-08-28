@@ -33,16 +33,29 @@ run_xymonnet() {
 }
 
 # --- a file with one of each mistake ----------------------------------------
+printf 'mypop\tuser\tsecret\n' > "$work/home/etc/credentials.cfg"
 cat > "$work/home/etc/protocols.cfg" <<'CFG'
 [bad]
    exepct "220"
    capture as tooearly
-   capture-regex "[0-9]+" as nogroup
    expect "220"
    send "x${sha1:foo}\r\n"
    options banner
    port 9
 
+[typo]
+   expect "+OK"
+   capture-regex "(<[^>]+>)" as challenge
+   capture-regex "[0-9]+" as nogroup
+   credentials mypop
+   challeng ~ "<"              -> apop
+   else                        -> plain
+   state apop
+   send "APOP ${username} ${md5:${challeng}${password}}\r\n"
+   state plain
+   send "USER ${usernam}\r\n"
+   expect "+OK"
+   port 9
 CFG
 out=$(run_xymonnet)
 
@@ -61,17 +74,28 @@ grep -qi 'unknown expansion' <<<"$out" || fail \
 variable of that name and expands to nothing:
 $out"
 
+
+grep -q 'never captured or bound' <<<"$out" || fail \
+	"a \${name} that nothing binds was accepted. It expands to nothing, the
+command goes out malformed, and the test then fails for a reason that has
+nothing to do with the typo:
+$out"
+
+grep -qi 'can only fail' <<<"$out" || fail \
+	"a '~' edge testing a value nothing captures was accepted; it can only
+ever fall through to the else-arm:
+$out"
+
 grep -q 'no capture group' <<<"$out" || fail \
 	"a capture-regex with no parenthesised group was accepted. The value bound
 is group 1, so that pattern can never bind anything and \${name} expands to
 nothing for every reply:
 $out"
 
-
 # --- and the shipped file must be quiet -------------------------------------
 cp "$root/xymonnet/protocols.cfg" "$work/home/etc/protocols.cfg"
 out=$(run_xymonnet)
-noise=$(grep -ciE 'unknown protocols.cfg directive|before any expect|unknown expansion|no capture group' <<<"$out" || true)
+noise=$(grep -ciE 'unknown protocols.cfg directive|before any expect|unknown expansion|never captured or bound|can only fail|no capture group' <<<"$out" || true)
 [ "$noise" -eq 0 ] || fail \
 	"the protocols.cfg this tree ships triggers $noise of its own warnings:
 $(grep -iE 'unknown|before any expect' <<<"$out")"

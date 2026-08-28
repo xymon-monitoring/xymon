@@ -1225,6 +1225,12 @@ static svcstep_t *dlg_run_instant(tcptest_t *item, svcstep_t *st)
 			st = st->next;
 			break;
 
+		  case STEP_CREDS:
+			dlg_set(item, "username", st->user);
+			dlg_set(item, "password", st->pass);
+			st = st->next;
+			break;
+
 		  case STEP_WHEN: {
 			char *v = dlg_get(item, st->varname);
 

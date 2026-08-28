@@ -34,13 +34,13 @@ h=$(strip "$root/lib/netservices.h")
 c=$(strip "$root/lib/netservices.c")
 n=$(strip "$root/xymonnet/contest.c")
 
-for sym in STEP_SEND STEP_EXPECT STEP_WHEN STEP_JUMP \
+for sym in STEP_SEND STEP_EXPECT STEP_WHEN STEP_JUMP STEP_CREDS \
 	   ACT_GOTO ACT_FAIL svcstep_t TCP_DIALOGUE; do
 	printf '%s\n' "$h" | grep -q "$sym" ||
 		fail "lib/netservices.h does not define $sym -- the step list has no type"
 done
 
-for sym in STEP_EXPECT STEP_SEND STEP_WHEN STEP_CAPTURE; do
+for sym in STEP_EXPECT STEP_SEND STEP_WHEN STEP_CAPTURE STEP_CREDS; do
 	printf '%s\n' "$c" | grep -q "$sym" ||
 		fail "the protocols.cfg parser never records a $sym step"
 done
