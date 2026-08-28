@@ -198,6 +198,8 @@ static void free_svcsteps(svcinfo_t *rec)
 		if (st->target)  xfree(st->target);
 		if (st->label)   xfree(st->label);
 		if (st->varname) xfree(st->varname);
+		if (st->user) { memset(st->user, 0, strlen(st->user)); xfree(st->user); }
+		if (st->pass) { memset(st->pass, 0, strlen(st->pass)); xfree(st->pass); }
 		if (st->re)      freeregex((pcre2_code *)st->re);
 		xfree(st);
 		st = next;
@@ -225,6 +227,14 @@ static void check_undefined_vars(svcinfo_t *rec)
 
 	for (st = rec->steps; (st); st = st->next) {
 		int i;
+
+		if (st->type == STEP_CREDS) {
+			if (nknown + 2 <= 64) {
+				known[nknown++] = "username";
+				known[nknown++] = "password";
+			}
+			continue;
+		}
 
 		if (st->type == STEP_CAPTURE) {
 			/* "as a;b;c" binds three names, not one called "a;b;c". */
@@ -398,6 +408,8 @@ static void emit_step(svclist_t *first, svcstep_t *tmpl)
 		if (tmpl->target)  st->target  = strdup(tmpl->target);
 		if (tmpl->label)   st->label   = strdup(tmpl->label);
 		if (tmpl->varname) st->varname = strdup(tmpl->varname);
+		if (tmpl->user)    st->user    = strdup(tmpl->user);
+		if (tmpl->pass)    st->pass    = strdup(tmpl->pass);
 		if (tmpl->until) {
 			st->until = (unsigned char *)malloc(tmpl->untillen + 1);
 			memcpy(st->until, tmpl->until, tmpl->untillen);
@@ -408,6 +420,46 @@ static void emit_step(svclist_t *first, svcstep_t *tmpl)
 		/* One compiled copy per record: records are freed independently. */
 		if (tmpl->re) st->re = (void *)compileregex_opts((char *)tmpl->text, 0);
 	}
+}
+
+
+/*
+ * Secrets do not belong in protocols.cfg -- it is world-readable and gets
+ * pasted into bug reports. "credentials NAME" names an entry in
+ * etc/credentials.cfg instead:
+ *
+ *     NAME	username	password
+ */
+static int lookup_credentials(char *name, char **user, char **pass)
+{
+	char fn[PATH_MAX];
+	FILE *fd;
+	char line[1024];
+	int found = 0;
+
+	*user = *pass = NULL;
+	snprintf(fn, sizeof(fn), "%s/etc/credentials.cfg",
+		 (xgetenv("XYMONHOME") ? xgetenv("XYMONHOME") : "."));
+	fd = fopen(fn, "r");
+	if (fd == NULL) {
+		errprintf("Cannot open %s for 'credentials %s'\n", fn, name);
+		return 0;
+	}
+
+	while (!found && fgets(line, sizeof(line), fd)) {
+		char *nam, *u, *p;
+
+		if ((line[0] == '#') || (line[0] == '\n')) continue;
+		nam = strtok(line, " \t\r\n");
+		if (!nam || strcmp(nam, name) != 0) continue;
+		u = strtok(NULL, " \t\r\n");
+		p = strtok(NULL, " \t\r\n");
+		if (u && p) { *user = strdup(u); *pass = strdup(p); found = 1; }
+	}
+	fclose(fd);
+
+	if (!found) errprintf("No credentials entry named '%s' in %s\n", name, fn);
+	return found;
 }
 
 
@@ -740,6 +792,21 @@ char *init_tcp_services(void)
 					emit_step(first, &tmpl);
 				}
 				else errprintf("Usage: capture as NAME\n");
+			}
+		}
+		else if (strncmp(l, "credentials ", 12) == 0) {
+			if (first) {
+				svcstep_t tmpl;
+				char *nam = strtok(skipwhitespace(l+11), " \t");
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_CREDS;
+				if (nam && lookup_credentials(nam, &tmpl.user, &tmpl.pass)) {
+					tmpl.varname = nam;
+					emit_step(first, &tmpl);
+					if (tmpl.user) xfree(tmpl.user);
+					if (tmpl.pass) xfree(tmpl.pass);
+				}
 			}
 		}
 		else if (strncmp(l, "else ", 5) == 0) {

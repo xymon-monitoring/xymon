@@ -34,13 +34,14 @@
 #define STEP_CAPTURE 4	/* pull a value out of the reply just matched */
 #define STEP_WHEN    5	/* branch on a captured value */
 #define STEP_JUMP    6	/* unconditional; emitted to skip an else-arm */
+#define STEP_CREDS   7	/* bind ${username}/${password} from the store */
 
-/* STEP_LABEL, STEP_CAPTURE, STEP_WHEN and STEP_JUMP touch no
+/* STEP_LABEL, STEP_CAPTURE, STEP_WHEN, STEP_JUMP and STEP_CREDS touch no
    socket. The driver runs them to completion between I/O steps, so a
    dialogue never sits in a state that has nothing to wait for. */
 #define STEP_IS_INSTANT(t) \
 	(((t) == STEP_LABEL) || ((t) == STEP_CAPTURE) || ((t) == STEP_WHEN) || \
-	 ((t) == STEP_JUMP))
+	 ((t) == STEP_JUMP) || ((t) == STEP_CREDS))
 
 /* What an expect does once its pattern matches. Anything other than
    ACT_NEXT is an edge that leaves the straight line, which is what makes
@@ -63,6 +64,7 @@ typedef struct svcstep_t {
 	char *label;			/* STEP_LABEL: the name it defines */
 	char *varname;			/* STEP_CAPTURE/WHEN: variable name */
 	void *re;			/* compiled pcre2_code, or NULL */
+	char *user, *pass;		/* STEP_CREDS: resolved at config load */
 	unsigned char *until;		/* expect ... until "X": end-of-reply marker */
 	int untillen;
 	int ambiguous;			/* this alternation group has overlapping patterns */
