@@ -8,7 +8,7 @@
 # or multi-tenant mail -- answers instead of failing the handshake. SNI used to
 # be wired for HTTP tests only; this guards that the plain TCP path wires it the
 # same way: on by default sending the host name, --sni to set the global
-# default, per-host nosni to disable.
+# default, per-host nosni to disable, and "sni=NAME" to send an explicit name.
 #
 # Static guard, like its siblings alpn-support.sh / tls13-support.sh: a
 # behavioural run needs a TLS peer that reports the servername it was handed,
@@ -25,7 +25,8 @@ n="$ROOT/xymonnet/xymonnet.c"
 h="$ROOT/xymonnet/xymonnet.h"
 c="$ROOT/xymonnet/contest.c"
 w="$ROOT/xymonnet/httptest.c"
-[ -f "$n" ] && [ -f "$h" ] && [ -f "$c" ] && [ -f "$w" ] || skip "xymonnet sources not in this checkout"
+l="$ROOT/lib/loadhosts.c"
+[ -f "$n" ] && [ -f "$h" ] && [ -f "$c" ] && [ -f "$w" ] && [ -f "$l" ] || skip "xymonnet sources not in this checkout"
 
 # Strip comment-only lines so the block's own comments don't satisfy the rules,
 # and capture into a variable: `... | grep -q` would let grep -q exit early and
@@ -34,6 +35,7 @@ ncode=$(grep -vE '^[[:space:]]*(\*|/\*|//)' "$n" || true)
 hcode=$(grep -vE '^[[:space:]]*(\*|/\*|//)' "$h" || true)
 ccode=$(grep -vE '^[[:space:]]*(\*|/\*|//)' "$c" || true)
 wcode=$(grep -vE '^[[:space:]]*(\*|/\*|//)' "$w" || true)
+lcode=$(grep -vE '^[[:space:]]*(\*|/\*|//)' "$l" || true)
 has() { grep -qE -- "$1" <<<"$2"; }   # here-string (no pipe -> no SIGPIPE); -- so a pattern starting with '-' is not read as options
 
 has 'int[[:space:]]+sni;' "$hcode" \
@@ -61,12 +63,14 @@ block=$(awk '
 
 has 'flags & TCP_SSL' "$block" \
 	|| fail "SNI for TCP tests is not gated on TCP_SSL"
-has '->sni = .*hostname' "$block" \
-	|| fail "the hostname is never handed to a TCP-TLS test as SNI (inside the TCP_SSL block)"
+has 'host->hostname' "$block" \
+	|| fail "the hostname is never used as the SNI servername (inside the TCP_SSL block)"
+has 'tt->sni = name' "$block" \
+	|| fail "the chosen name is never handed to the TCP-TLS test as SNI"
 has 'snienabled' "$block" \
 	|| fail "the global --sni default is not consulted inside the TCP_SSL block"
 has 'inet_pton' "$block" \
-	|| fail "an IP-literal hostname is not excluded from SNI (RFC 6066 forbids an address as servername)"
+	|| fail "an IP-literal name is not excluded from SNI (RFC 6066 forbids an address as servername)"
 has 'snienabled = 1' "$ccode" \
 	|| fail "SNI is not enabled by default (snienabled should default to 1)"
 
@@ -78,4 +82,17 @@ has 'inet_pton' "$wcode" \
 has 'tcptest->sni = host' "$wcode" \
 	|| fail "the HTTP SNI path no longer assigns the guarded URL host"
 
-pass "plain TCP-TLS tests wire SNI: host field, sni/nosni flags, in-block TCP_SSL gate + hostname + default, no IP-literal SNI (TCP and HTTP)"
+# Explicit "sni=NAME" override. The IP-literal guard above applies to it too:
+# the name feeds the same guarded assignment, so "sni=1.2.3.4" is not sent.
+has 'XMH_SNINAME\][[:space:]]*=[[:space:]]*"sni="' "$lcode" \
+	|| fail "the 'sni=' host tag (XMH_SNINAME) is not registered in loadhosts.c"
+has 'char[[:space:]]*\*sniname;' "$hcode" \
+	|| fail "testedhost_t has no sniname field for the explicit SNI name"
+has 'XMH_SNINAME' "$ncode" \
+	|| fail "the 'sni=NAME' override is not read onto the host"
+has 'host->sniname' "$block" \
+	|| fail "the explicit sniname is never used as the servername (inside the TCP_SSL block)"
+has 'sni=%s is an IP' "$ncode" \
+	|| fail "an explicit sni=<ip> is dropped silently instead of being logged"
+
+pass "plain TCP-TLS tests wire SNI: host field, sni/nosni flags, in-block TCP_SSL gate + hostname + default, no IP-literal SNI (TCP and HTTP), sni=NAME override"

@@ -83,6 +83,7 @@ enum xmh_item_t {
 	XMH_NOTAFTER,
 	XMH_COMPACT,
 	XMH_INTERFACES,
+	XMH_SNINAME,
 	XMH_LAST
 };
 
