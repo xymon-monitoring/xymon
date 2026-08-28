@@ -723,18 +723,13 @@ strong encryption (128 bits or better), use "sslbits=128".
 
 .IP "\fBsni\fR"
 .IP "\fBnosni\fR"
-Enables or disables use of SNI (Server Name Indication) for SSL tests.
-
-Some SSL implementations cannot handle SSL handshakes with SNI
-data, so Xymon by default does not use SNI. This default can be
-changed with the "--sni" option for
-.I xymonnet(1)
-but can also be managed per host with these tags.
-
-SNI support was added in Xymon 4.3.13, where the default was to
-use SNI. This was changed in 4.3.14 so SNI support is disabled by
-default, and the "sni" and "nosni" tags were introduced together
-with the "--sni" option for xymonnet.
+Enable or disable SNI (Server Name Indication) for SSL tests. SNI is
+on by default and sends the host name as the servername; most TLS
+servers now expect it, and many pick the certificate by it. Use
+"nosni" for a server that cannot handle SNI or rejects an unknown
+name, or set the default globally with the "--sni" option to
+.I xymonnet(1).
+A host tested by its IP address sends no SNI.
 
 
 .IP "\fBDOWNTIME\fR=\fIday\fR:\fIstarttime\fR:\fIendtime\fR[,\fIday\fR:\fIstarttime\fR:\fIendtime\fR]"

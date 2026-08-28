@@ -792,15 +792,12 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   <dt id="sni"><a class="permalink" href="#sni"><b>sni</b></a></dt>
   <dd></dd>
   <dt id="nosni"><a class="permalink" href="#nosni"><b>nosni</b></a></dt>
-  <dd>Enables or disables use of SNI (Server Name Indication) for SSL tests.
-    <p class="Pp">Some SSL implementations cannot handle SSL handshakes with SNI
-        data, so Xymon by default does not use SNI. This default can be changed
-        with the &quot;--sni&quot; option for <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> but can also be
-        managed per host with these tags.</p>
-    <p class="Pp">SNI support was added in Xymon 4.3.13, where the default was
-        to use SNI. This was changed in 4.3.14 so SNI support is disabled by
-        default, and the &quot;sni&quot; and &quot;nosni&quot; tags were
-        introduced together with the &quot;--sni&quot; option for xymonnet.</p>
+  <dd>Enable or disable SNI (Server Name Indication) for SSL tests. SNI is on by
+      default and sends the host name as the servername; most TLS servers now
+      expect it, and many pick the certificate by it. Use &quot;nosni&quot; for
+      a server that cannot handle SNI or rejects an unknown name, or set the
+      default globally with the &quot;--sni&quot; option to <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1).</i>
+      A host tested by its IP address sends no SNI.
     <p class="Pp"></p>
     <p class="Pp"></p>
   </dd>

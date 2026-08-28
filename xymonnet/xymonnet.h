@@ -88,6 +88,7 @@ typedef struct testedhost_t {
 	int dialup;		/* dialup flag (if set, failed tests report as clear) */
 	int testip;		/* testip flag (don't do dns lookups on hostname) */
 	int nosslcert;		/* nosslcert flag */
+	int sni;		/* TLS SNI: 0 = global default (--sni), 1 = force on (sni), -1 = force off (nosni) */
 	int hidehttp;		/* hidehttp flag */
 	int dodns;              /* set while loading tests if we need to do a DNS lookup */
 	int dnserror;		/* set internally if we cannot find the host's IP */

@@ -21,6 +21,8 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <netinet/in.h>	/* struct in6_addr, AF_INET/AF_INET6 for the SNI IP-literal check */
+#include <arpa/inet.h>	/* inet_pton() */
 
 #include "version.h"
 #include "libxymon.h"
@@ -699,11 +701,26 @@ void add_http_test(testitem_t *t)
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 
-	if (hinfo && xmh_item(hinfo, XMH_FLAG_SNI))
-		httptest->tcptest->sni = httptest->weburl.desturl->host;
-	else if (hinfo && xmh_item(hinfo, XMH_FLAG_NOSNI))
+	/*
+	 * SNI for the HTTPS test: per-host sni/nosni override the --sni default,
+	 * and the servername is the URL host -- but never an IP literal, since
+	 * RFC 6066 forbids an address in SNI (a proper server ignores it, a
+	 * strict one rejects the handshake). Same guard as the plain TCP path.
+	 */
+	{
+		char *host = httptest->weburl.desturl->host;
+		int want;
+		struct in6_addr addr;
+
+		if (hinfo && xmh_item(hinfo, XMH_FLAG_SNI)) want = 1;
+		else if (hinfo && xmh_item(hinfo, XMH_FLAG_NOSNI)) want = 0;
+		else want = snienabled;
+
 		httptest->tcptest->sni = NULL;
-	else
-		httptest->tcptest->sni = (snienabled ? httptest->weburl.desturl->host : NULL);
+		if (want && host &&
+		    (inet_pton(AF_INET, host, &addr) != 1) &&
+		    (inet_pton(AF_INET6, host, &addr) != 1))
+			httptest->tcptest->sni = host;
+	}
 }
 

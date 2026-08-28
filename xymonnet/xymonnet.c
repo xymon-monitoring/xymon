@@ -19,6 +19,8 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 #include <ctype.h>
 #include <netdb.h>
+#include <netinet/in.h>	/* struct in6_addr, AF_INET/AF_INET6 for the SNI IP-literal check */
+#include <arpa/inet.h>	/* inet_pton() */
 #include <sys/wait.h>
 #include <rpc/rpc.h>
 #include <fcntl.h>
@@ -453,6 +455,8 @@ void load_tests(void)
 		if (xmh_item(hwalk, XMH_FLAG_TESTIP)) h->testip = 1;
 		if (xmh_item(hwalk, XMH_FLAG_DIALUP)) h->dialup = 1;
 		if (xmh_item(hwalk, XMH_FLAG_NOSSLCERT)) h->nosslcert = 1;
+		if (xmh_item(hwalk, XMH_FLAG_SNI)) h->sni = 1;
+		else if (xmh_item(hwalk, XMH_FLAG_NOSNI)) h->sni = -1;
 		if (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW)) h->ldapsearchfailyellow = 1;
 		if (xmh_item(hwalk, XMH_FLAG_HIDEHTTP)) h->hidehttp = 1;
 
@@ -2413,6 +2417,27 @@ int main(int argc, char *argv[])
 									   t->srcip,
 									   NULL, t->silenttest, NULL, 
 									   NULL, NULL, NULL);
+					/*
+					 * SNI for plain TCP-TLS services (imaps, smtps, pop3s,
+					 * nntps, ...). These never set a servername before, so a
+					 * peer that routes TLS by SNI -- common with hosted/cloud
+					 * mail -- fails the handshake and the service reads as
+					 * down. Send the hostname the way the HTTP tests already
+					 * do. Per-host "sni"/"nosni" override the global default
+					 * (--sni). Skipped when the host is tested by IP, and when
+					 * the hostname is itself an IP literal: RFC 6066 forbids an
+					 * address in SNI, so a proper server ignores it anyway.
+					 */
+					{
+						tcptest_t *tt = (tcptest_t *)t->privdata;
+						if (tt && tt->svcinfo && (tt->svcinfo->flags & TCP_SSL) && !t->host->testip) {
+							int want = (t->host->sni != 0) ? (t->host->sni > 0) : snienabled;
+							struct in6_addr addr;
+							int isipliteral = (inet_pton(AF_INET,  t->host->hostname, &addr) == 1) ||
+									   (inet_pton(AF_INET6, t->host->hostname, &addr) == 1);
+							if (want && !isipliteral) tt->sni = t->host->hostname;
+						}
+					}
 				}
 			}
 		}
