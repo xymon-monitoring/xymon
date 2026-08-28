@@ -145,6 +145,7 @@ typedef struct testitem_t {
 	char		*certinfo;
 	char		*certissuer;
 	time_t		certexpires;
+	int		certnamematch;	/* Cert name check: 1 = matched, 0 = mismatch, -1 = not checked */
 	int		mincipherbits;
 	int		certkeysz;
 	struct timespec	duration;

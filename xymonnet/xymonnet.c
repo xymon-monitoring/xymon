@@ -2042,6 +2042,17 @@ void send_sslcert_status(testedhost_t *host)
 					snprintf(msgline, sizeof(msgline), "&%s Certificate public key size is less than %d bits\n", colorname(keycolor), sslminkeysize);
 					addtobuffer(sslmsg, msgline);
 				}
+				/* Cert name check (informational: reported, does not change the column colour) */
+				if (t->certnamematch == 0) {
+					snprintf(msgline, sizeof(msgline), "Certificate does NOT cover '%s' (the name sent as SNI)\n",
+						(host->sniname ? host->sniname : host->hostname));
+					addtobuffer(sslmsg, msgline);
+				}
+				else if (t->certnamematch == 1) {
+					snprintf(msgline, sizeof(msgline), "Certificate covers '%s'\n",
+						(host->sniname ? host->sniname : host->hostname));
+					addtobuffer(sslmsg, msgline);
+				}
 				addtobuffer(sslmsg, "\n");
 
 				addtobuffer(sslmsg, t->certinfo);
@@ -2457,6 +2468,8 @@ int main(int argc, char *argv[])
 										   (inet_pton(AF_INET6, name, &addr) == 1);
 								if (!isipliteral) tt->sni = name;
 							}
+							/* Always verify the peer cert covers the name we sent (informational) */
+							tt->checkname = tt->sni;
 						}
 					}
 				}
@@ -2511,6 +2524,7 @@ int main(int argc, char *argv[])
 					t->certexpires = testresult->certexpires;
 					t->certkeysz = testresult->certkeysz;
 					t->mincipherbits = testresult->mincipherbits;
+					t->certnamematch = testresult->certnamematch;
 					t->duration.tv_sec = testresult->duration.tv_sec;
 					t->duration.tv_nsec = testresult->duration.tv_nsec;
 
@@ -2531,6 +2545,7 @@ int main(int argc, char *argv[])
 			t->certexpires = testresult->tcptest->certexpires;
 			t->certkeysz = testresult->tcptest->certkeysz;
 			t->mincipherbits = testresult->tcptest->mincipherbits;
+			t->certnamematch = testresult->tcptest->certnamematch;
 		}
 	}
 

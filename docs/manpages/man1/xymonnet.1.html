@@ -365,6 +365,17 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
       status.
     <p class="Pp"></p>
   </dd>
+</dl>
+<p class="Pp">When SNI is in use (see the &quot;sni&quot; option and
+    <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i>), xymonnet also checks whether the presented certificate
+    covers the name it was sent - matching the certificate's subjectAltName
+    entries, falling back to the common name. The result is noted on the
+    &quot;sslcert&quot; status (&quot;Certificate covers ...&quot; or
+    &quot;Certificate does NOT cover ...&quot;), so a valid but wrong-name
+    certificate is visible. This is informational and does not by itself change
+    the &quot;sslcert&quot; colour.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
   <dt id="sni"><a class="permalink" href="#sni"><b>--sni</b>=[<b>on</b>|<b>off</b>]</a></dt>
   <dd>Sets the default for whether SSL connections use SNI (Server Name
       Indication). This can also be set with the &quot;sni&quot; or

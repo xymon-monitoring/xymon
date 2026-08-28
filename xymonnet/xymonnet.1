@@ -319,6 +319,16 @@ Do not show encryption cipher details on the "sslcert" status.
 .IP "\fB\-\-showallciphers\fR"
 List ALL locally available encryption ciphers on the "sslcert" status.
 
+.PP
+When SNI is in use (see the "sni" option and
+.I hosts.cfg(5)\c
+), xymonnet also checks whether the presented certificate covers the
+name it was sent - matching the certificate's subjectAltName entries,
+falling back to the common name. The result is noted on the "sslcert"
+status ("Certificate covers ..." or "Certificate does NOT cover ..."),
+so a valid but wrong-name certificate is visible. This is informational
+and does not by itself change the "sslcert" colour.
+
 .IP "\fB\-\-sni\fR=[\fBon\fR|\fBoff\fR]"
 Sets the default for whether SSL connections use SNI (Server Name
 Indication). This can also be set with the "sni" or "nosni"

@@ -210,6 +210,8 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->certinfo = NULL;
 	newtest->certissuer = NULL;
 	newtest->certexpires = 0;
+	newtest->checkname = NULL;
+	newtest->certnamematch = -1;	/* not checked */
 	/* If ALPN is configured, SSL is also necessarily enabled */
 	newtest->sslrunning = (((newtest->svcinfo->flags & TCP_SSL) || (newtest->svcinfo->flags & TCP_ALPN)) ? SSLSETUP_PENDING : 0);
 	newtest->sslagain = 0;
@@ -755,6 +757,22 @@ static void setup_ssl(tcptest_t *item)
 	}
 
 	sslinfo = newstrbuffer(0);
+
+	/*
+	 * Optional cert name check: does the presented certificate actually
+	 * cover the name we asked for (the SNI/host name)? X509_check_host
+	 * matches SAN dNSName entries, falling back to the subject CN. This is
+	 * separate from expiry: a valid but wrong-name cert -- e.g. an SNI that
+	 * fell through to a default vhost -- is otherwise reported green.
+	 */
+	if (item->checkname && *item->checkname) {
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+		int rc = X509_check_host(peercert, item->checkname, strlen(item->checkname), 0, NULL);
+		item->certnamematch = (rc == 1) ? 1 : ((rc == 0) ? 0 : -1);
+#else
+		item->certnamematch = -1;	/* X509_check_host needs OpenSSL 1.0.2+ */
+#endif
+	}
 
 	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
 	certissuer = X509_NAME_oneline(X509_get_issuer_name(peercert), NULL, 0);
