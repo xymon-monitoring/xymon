@@ -457,6 +457,18 @@ void load_tests(void)
 		if (xmh_item(hwalk, XMH_FLAG_NOSSLCERT)) h->nosslcert = 1;
 		if (xmh_item(hwalk, XMH_FLAG_SNI)) h->sni = 1;
 		else if (xmh_item(hwalk, XMH_FLAG_NOSNI)) h->sni = -1;
+		/* "sni=NAME" sets an explicit servername (and, via the "sni" prefix, also enables SNI above) */
+		p = xmh_item(hwalk, XMH_SNINAME);
+		if (p && *p) {
+			struct in6_addr addr;
+			h->sniname = strdup(p);
+			/* A bare host name that happens to be an IP silently sends no SNI;
+			 * an explicit sni=<ip> is a mistake worth naming, since the guard
+			 * then drops it (RFC 6066 forbids an address as the servername). */
+			if ((inet_pton(AF_INET, p, &addr) == 1) || (inet_pton(AF_INET6, p, &addr) == 1))
+				errprintf("Host %s: sni=%s is an IP address; SNI needs a host name, not sending it\n",
+					  h->hostname, p);
+		}
 		if (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW)) h->ldapsearchfailyellow = 1;
 		if (xmh_item(hwalk, XMH_FLAG_HIDEHTTP)) h->hidehttp = 1;
 
@@ -2424,18 +2436,27 @@ int main(int argc, char *argv[])
 					 * mail -- fails the handshake and the service reads as
 					 * down. Send the hostname the way the HTTP tests already
 					 * do. Per-host "sni"/"nosni" override the global default
-					 * (--sni). Skipped when the host is tested by IP, and when
-					 * the hostname is itself an IP literal: RFC 6066 forbids an
-					 * address in SNI, so a proper server ignores it anyway.
+					 * (--sni); "sni=NAME" sets an explicit servername.
+					 *
+					 * The name is the host's "sni=NAME" if given (used even for
+					 * a testip host, since the operator chose it), otherwise the
+					 * hostname (skipped for a testip host, whose name may be a
+					 * label rather than the certificate's FQDN). Either source
+					 * must be a host name: RFC 6066 forbids an address in SNI,
+					 * so a name that parses as an IP literal is not sent.
 					 */
 					{
 						tcptest_t *tt = (tcptest_t *)t->privdata;
-						if (tt && tt->svcinfo && (tt->svcinfo->flags & TCP_SSL) && !t->host->testip) {
+						if (tt && tt->svcinfo && (tt->svcinfo->flags & TCP_SSL)) {
 							int want = (t->host->sni != 0) ? (t->host->sni > 0) : snienabled;
-							struct in6_addr addr;
-							int isipliteral = (inet_pton(AF_INET,  t->host->hostname, &addr) == 1) ||
-									   (inet_pton(AF_INET6, t->host->hostname, &addr) == 1);
-							if (want && !isipliteral) tt->sni = t->host->hostname;
+							char *name = t->host->sniname ? t->host->sniname :
+								     (t->host->testip ? NULL : t->host->hostname);
+							if (want && name) {
+								struct in6_addr addr;
+								int isipliteral = (inet_pton(AF_INET,  name, &addr) == 1) ||
+										   (inet_pton(AF_INET6, name, &addr) == 1);
+								if (!isipliteral) tt->sni = name;
+							}
 						}
 					}
 				}

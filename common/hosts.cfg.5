@@ -722,6 +722,7 @@ test will go red. E.g. to check that your server only uses
 strong encryption (128 bits or better), use "sslbits=128".
 
 .IP "\fBsni\fR"
+.IP "\fBsni=\fRNAME"
 .IP "\fBnosni\fR"
 Enable or disable SNI (Server Name Indication) for SSL tests. SNI is
 on by default and sends the host name as the servername; most TLS
@@ -730,6 +731,13 @@ servers now expect it, and many pick the certificate by it. Use
 name, or set the default globally with the "--sni" option to
 .I xymonnet(1).
 A host tested by its IP address sends no SNI.
+
+Use "sni=NAME" to send a specific servername instead of the host name
+- for a host tested by IP, or whose host name is a display label
+rather than the certificate's FQDN. It also enables SNI. NAME must be
+a host name, not an IP address (RFC 6066 does not allow an address in
+SNI); an IP is logged and no SNI is sent. HTTP tests take the SNI name
+from the URL instead.
 
 
 .IP "\fBDOWNTIME\fR=\fIday\fR:\fIstarttime\fR:\fIendtime\fR[,\fIday\fR:\fIstarttime\fR:\fIendtime\fR]"

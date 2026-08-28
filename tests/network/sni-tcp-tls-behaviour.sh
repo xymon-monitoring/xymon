@@ -37,9 +37,9 @@ export XYMONNETSVCS="imaps smtps pop3s imap smtp pop3 http ssh"
 # run TAG HOSTLINE EXPECT -- start the peer, point one imaps test at it via
 # HOSTLINE (with @PORT@ replaced by the peer's port), and check the SNI it saw.
 run() {
-	local tag=$1 line=$2 expect=$3
-	local out="$work/out" port="" got pp
-	rm -f "$out"
+	local tag=$1 line=$2 expect=$3 warn=${4:-}
+	local out="$work/out" err="$work/err" port="" got pp
+	rm -f "$out" "$err"
 	"$peer" 10 > "$out" 2>/dev/null &
 	pp=$!
 	register_cleanup "kill $pp 2>/dev/null || :"
@@ -52,10 +52,13 @@ run() {
 	done
 	[ -n "$port" ] || fail "$tag: peer never named a port"
 	printf '%s\n' "${line//@PORT@/$port}" > "$work/home/etc/hosts.cfg"
-	"$XYMONNET" --noping --no-update --dns=ip --timeout=5 >/dev/null 2>&1 || :
+	"$XYMONNET" --noping --no-update --dns=ip --timeout=5 >/dev/null 2>"$err" || :
 	wait "$pp" 2>/dev/null || :
 	got=$(sed -n '2p' "$out" 2>/dev/null | sed 's/^SNI=//')
 	[ "$got" = "$expect" ] || fail "$tag: expected SNI '$expect', the peer saw '$got'"
+	if [ -n "$warn" ]; then
+		grep -qF -- "$warn" "$err" || fail "$tag: expected a log warning containing '$warn'"
+	fi
 }
 
 run "default sends the hostname"    '127.0.0.1 host.example.com # imaps:@PORT@'        'host.example.com'
@@ -63,4 +66,10 @@ run "nosni suppresses it"           '127.0.0.1 host.example.com # imaps:@PORT@ n
 run "a testip host sends no SNI"     '127.0.0.1 host.example.com # testip imaps:@PORT@' ''
 run "an IP-literal name sends none"  '127.0.0.1 127.0.0.1 # imaps:@PORT@'               ''
 
-pass "xymonnet puts the right SNI on the wire: hostname by default; none for nosni, a testip host, or an IP-literal name"
+# "sni=NAME" sends an explicit servername -- even for a testip host, since the
+# operator chose it -- but an IP literal is still refused (RFC 6066).
+run "sni=NAME sends that name"       '127.0.0.1 label # imaps:@PORT@ sni=mail.example.com'         'mail.example.com'
+run "sni=NAME works on a testip host" '127.0.0.1 label # testip imaps:@PORT@ sni=mx.example.org'   'mx.example.org'
+run "sni=<ip> sends no SNI and warns" '127.0.0.1 label # imaps:@PORT@ sni=203.0.113.9'             '' 'sni=203.0.113.9 is an IP address'
+
+pass "xymonnet puts the right SNI on the wire: hostname by default; explicit sni=NAME; none for nosni, a testip host, or any IP-literal name"

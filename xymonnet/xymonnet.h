@@ -89,6 +89,7 @@ typedef struct testedhost_t {
 	int testip;		/* testip flag (don't do dns lookups on hostname) */
 	int nosslcert;		/* nosslcert flag */
 	int sni;		/* TLS SNI: 0 = global default (--sni), 1 = force on (sni), -1 = force off (nosni) */
+	char *sniname;		/* explicit SNI server name from "sni=NAME"; NULL means use the hostname */
 	int hidehttp;		/* hidehttp flag */
 	int dodns;              /* set while loading tests if we need to do a DNS lookup */
 	int dnserror;		/* set internally if we cannot find the host's IP */
