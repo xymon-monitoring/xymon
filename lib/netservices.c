@@ -66,6 +66,68 @@ static svcinfo_t default_svcinfo[] = {
 
 static svcinfo_t *svcinfo = default_svcinfo;
 
+/*
+ * Append one step to a service's dialogue, preserving file order. Every alias
+ * in an [a|b|c] header gets its own copy: the records are freed independently,
+ * so they cannot share a list.
+ */
+static svcstep_t *add_svcstep(svcinfo_t *rec, int type, unsigned char *text, int len)
+{
+	svcstep_t *step, *walk;
+
+	step = (svcstep_t *)calloc(1, sizeof(svcstep_t));
+	step->type = type;
+	step->len  = len;
+	step->text = (unsigned char *)malloc(len + 1);
+	memcpy(step->text, text, len);
+	step->text[len] = '\0';
+
+	if (rec->steps == NULL) rec->steps = step;
+	else {
+		for (walk = rec->steps; (walk->next); walk = walk->next) ;
+		walk->next = step;
+	}
+
+	return step;
+}
+
+
+/*
+ * Where a quoted string ends. Deliberately the same rule getescapestring
+ * uses -- scan to the next '"' -- so the two agree on where the value stops
+ * and any trailing keywords begin.
+ */
+static char *after_quoted(char *p)
+{
+	if (*p != '"') {
+		while (*p && !isspace((int)*p)) p++;
+		return p;
+	}
+	p = strchr(p+1, '"');
+	return (p ? p+1 : "");
+}
+
+
+/*
+ * Release one entry's step list. The reload path already promises not to
+ * leak, and a step list is more than the record it hangs off.
+ */
+static void free_svcsteps(svcinfo_t *rec)
+{
+	svcstep_t *st = rec->steps;
+
+	while (st) {
+		svcstep_t *next = st->next;
+
+		if (st->text)  xfree(st->text);
+		if (st->until) xfree(st->until);
+		xfree(st);
+		st = next;
+	}
+	rec->steps = NULL;
+}
+
+
 typedef struct svclist_t {
 	struct svcinfo_t *rec;
 	struct svclist_t *next;
@@ -152,6 +214,7 @@ char *init_tcp_services(void)
 				if (svcinfo[i].sendtxt) xfree(svcinfo[i].sendtxt);
 				if (svcinfo[i].exptext) xfree(svcinfo[i].exptext);
 				if (svcinfo[i].alpns) xfree(svcinfo[i].alpns);
+				free_svcsteps(&svcinfo[i]);
 			}
 			xfree(svcinfo);
 			svcinfo = default_svcinfo;
@@ -216,21 +279,72 @@ char *init_tcp_services(void)
 		}
 		else if (strncmp(l, "send ", 5) == 0) {
 			if (first) {
-				getescapestring(skipwhitespace(l+4), &first->rec->sendtxt, &first->rec->sendlen);
+				unsigned char *txt = NULL;
+				int txtlen = 0;
+
+				getescapestring(skipwhitespace(l+4), &txt, &txtlen);
+				/*
+				 * sendtxt keeps the FIRST send only, which is what a
+				 * single-step probe has always meant. The step list is
+				 * what a dialogue is driven from.
+				 */
+				if (first->rec->sendtxt == NULL) {
+					first->rec->sendtxt = txt;
+					first->rec->sendlen = txtlen;
+				}
+				add_svcstep(first->rec, STEP_SEND, txt, txtlen);
 				for (walk = first->next; (walk); walk = walk->next) {
-					walk->rec->sendtxt = strdup(first->rec->sendtxt);
-					walk->rec->sendlen = first->rec->sendlen;
+					if (walk->rec->sendtxt == NULL) {
+						walk->rec->sendtxt = (unsigned char *)strdup((char *)txt);
+						walk->rec->sendlen = txtlen;
+					}
+					add_svcstep(walk->rec, STEP_SEND, txt, txtlen);
 				}
 			}
 		}
 		else if (strncmp(l, "expect ", 7) == 0) {
 			if (first) {
-				getescapestring(skipwhitespace(l+6), &first->rec->exptext, &first->rec->explen);
-				for (walk = first->next; (walk); walk = walk->next) {
-					walk->rec->exptext = strdup(first->rec->exptext);
-					walk->rec->explen = first->rec->explen;
-					walk->rec->expofs = 0; /* HACK - not used right now */
+				unsigned char *txt = NULL, *untiltxt = NULL;
+				int txtlen = 0, untillen = 0;
+				char *rest;
+				svcstep_t *st;
+
+				getescapestring(skipwhitespace(l+6), &txt, &txtlen);
+
+				/*
+				 * "until" says where the reply ENDS. Without it an expect
+				 * takes a single line, which is wrong for every protocol that
+				 * answers with several: SMTP and FTP continue with "250-" and
+				 * finish with "250 ", NNTP ends a block with ".", IMAP ends
+				 * with the command tag. Naming the terminator covers all three
+				 * without teaching the parser any of them.
+				 */
+				rest = skipwhitespace(after_quoted(skipwhitespace(l+6)));
+				if (strncmp(rest, "until ", 6) == 0)
+					getescapestring(skipwhitespace(rest + 5), &untiltxt, &untillen);
+
+				if (first->rec->exptext == NULL) {
+					first->rec->exptext = txt;
+					first->rec->explen  = txtlen;
 				}
+				st = add_svcstep(first->rec, STEP_EXPECT, txt, txtlen);
+				if (untiltxt) {
+					st->until = (unsigned char *)strdup((char *)untiltxt);
+					st->untillen = untillen;
+				}
+				for (walk = first->next; (walk); walk = walk->next) {
+					if (walk->rec->exptext == NULL) {
+						walk->rec->exptext = (unsigned char *)strdup((char *)txt);
+						walk->rec->explen  = txtlen;
+						walk->rec->expofs  = 0; /* HACK - not used right now */
+					}
+					st = add_svcstep(walk->rec, STEP_EXPECT, txt, txtlen);
+					if (untiltxt) {
+						st->until = (unsigned char *)strdup((char *)untiltxt);
+						st->untillen = untillen;
+					}
+				}
+				if (untiltxt) xfree(untiltxt);
 			}
 		}
 		else if (strncmp(l, "options ", 8) == 0) {
@@ -264,6 +378,17 @@ char *init_tcp_services(void)
 				}
 			}
 		}
+		else if (*l) {
+			/*
+			 * Say so. An unrecognised line used to be a silent no-op, so
+			 * a typo simply deleted a step and the probe ran anyway --
+			 * reporting green on a conversation it never had. This is the
+			 * same treatment "options" already gives an unknown option.
+			 */
+			errprintf("Unknown protocols.cfg directive%s%s: %s\n",
+				  (first ? " in service " : ""),
+				  (first ? first->rec->svcname : ""), l);
+		}
 	}
 
 	if (fd) stackfclose(fd);
@@ -281,6 +406,22 @@ char *init_tcp_services(void)
 		svcinfo[i].flags   = walk->rec->flags;
 		svcinfo[i].port    = walk->rec->port;
 		svcinfo[i].alpns   = walk->rec->alpns;
+		svcinfo[i].steps   = walk->rec->steps;
+		/*
+		 * A dialogue is anything that is not the classic one-shot shape.
+		 * Deciding it here, once, keeps do_tcp_tests() from re-deriving it
+		 * per pass -- and means every existing entry ("send" then "expect",
+		 * or either alone) keeps the exact code path it has always used.
+		 */
+		{
+			svcstep_t *st; int nsend = 0, nexp = 0, first_is_expect = 0;
+			for (st = walk->rec->steps; (st); st = st->next) {
+				if (st == walk->rec->steps) first_is_expect = (st->type == STEP_EXPECT);
+				if (st->type == STEP_SEND) nsend++; else nexp++;
+			}
+			if (first_is_expect || nsend > 1 || nexp > 1)
+				svcinfo[i].flags |= TCP_DIALOGUE;
+		}
 	}
 	memset(&svcinfo[svccount], 0, sizeof(svcinfo_t));
 

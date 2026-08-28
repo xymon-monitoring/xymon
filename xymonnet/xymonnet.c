@@ -1428,6 +1428,10 @@ int finish_ping_service(service_t *service)
 }
 
 
+/* The buffer every caller passes as `cause`; it is a pointer here, so its
+   size cannot be recovered with sizeof(). */
+#define MAX_CAUSE 1024
+
 int decide_color(service_t *service, char *svcname, testitem_t *test, int failgoesclear, char *cause)
 {
 	int color = COL_GREEN;
@@ -1595,7 +1599,18 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 
 					/* Check if we got the expected data */
 					if (checktcpresponse && (service->toolid == TOOL_CONTEST) && !tcp_got_expected((tcptest_t *)test->privdata)) {
-						strcpy(cause, "Unexpected service response");
+						char *whichstep = tcp_dialogue_failure((tcptest_t *)test->privdata);
+
+						/*
+						 * Name the step. A dialogue can fail at any of
+						 * them, and the bare phrase leaves the reader
+						 * guessing whether it was the greeting, a reply
+						 * mid-conversation, or a peer that went quiet.
+						 */
+						if (whichstep)
+							snprintf(cause, MAX_CAUSE, "Unexpected service response: %s", whichstep);
+						else
+							strcpy(cause, "Unexpected service response");
 						color = respcheck_color; countasdown = 1;
 					}
 
