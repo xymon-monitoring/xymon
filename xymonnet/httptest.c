@@ -21,6 +21,8 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <netinet/in.h>	/* struct in6_addr, AF_INET/AF_INET6 for the SNI IP-literal check */
+#include <arpa/inet.h>	/* inet_pton() */
 
 #include "version.h"
 #include "libxymon.h"
@@ -699,11 +701,34 @@ void add_http_test(testitem_t *t)
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 
-	if (hinfo && xmh_item(hinfo, XMH_FLAG_SNI))
-		httptest->tcptest->sni = httptest->weburl.desturl->host;
-	else if (hinfo && xmh_item(hinfo, XMH_FLAG_NOSNI))
+	/*
+	 * The servername for an HTTPS test is the host part of the URL -- the same
+	 * name that goes in the "Host:" header, and the name the server is being
+	 * asked about. It is always sent: a server holding a certificate per name
+	 * answers a nameless handshake with its default certificate, so omitting it
+	 * meant the "sslcert" status described a certificate that was not this
+	 * URL's, under this URL's name.
+	 *
+	 * Never an IP address. RFC 6066 forbids one as a servername: a proper server
+	 * ignores it, a strict one rejects the handshake. Writing an address in the
+	 * URL is therefore how a test asks for no servername, and it asks coherently
+	 * -- the "Host:" header carries the same address, so both halves of the test
+	 * describe whatever that endpoint serves by default.
+	 *
+	 * The per-host "sni"/"nosni" tags and --sni are deliberately not consulted
+	 * here. They are per host while this name is per URL, and one host may carry
+	 * several URLs with different names, so a host-level switch cannot express
+	 * the choice. The URL can.
+	 */
+	{
+		char *host = httptest->weburl.desturl->host;
+		struct in6_addr addr;
+
 		httptest->tcptest->sni = NULL;
-	else
-		httptest->tcptest->sni = (snienabled ? httptest->weburl.desturl->host : NULL);
+		if (host &&
+		    (inet_pton(AF_INET, host, &addr) != 1) &&
+		    (inet_pton(AF_INET6, host, &addr) != 1))
+			httptest->tcptest->sni = host;
+	}
 }
 
