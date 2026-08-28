@@ -83,5 +83,14 @@ reported OK -- which is exactly the 421 bug this feature exists to catch"
 printf '%s\n' "$n" | grep -q '!item->curstep' ||
 	fail "no close guard mentions curstep -- the connection is torn down mid-dialogue"
 
+# starttls upgrades a live connection, so reading must follow the SESSION
+# and not the service definition -- keying it off TCP_SSL hands back raw
+# TLS records once a plaintext connection has been upgraded.
+printf '%s\n' "$n" | grep -q 'STEP_STARTTLS' ||
+	fail "no starttls step in the driver"
+readfn=$(printf '%s\n' "$n" | awk '/^static int socket_read\(tcptest_t \*item, char \*inbuf/{c=1} c{print} c&&/^}/{exit}')
+printf '%s\n' "$readfn" | grep -qE 'if \(item->sslrunning\)' ||
+	fail "socket_read() does not dispatch on the live session: an upgraded
+connection would keep calling read() and return ciphertext as the reply"
 
 pass "an unfinished dialogue cannot report OK (both dialogfail and curstep are checked)"

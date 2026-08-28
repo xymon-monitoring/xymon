@@ -35,6 +35,7 @@
 #define STEP_WHEN    5	/* branch on a captured value */
 #define STEP_JUMP    6	/* unconditional; emitted to skip an else-arm */
 #define STEP_CREDS   7	/* bind ${username}/${password} from the store */
+#define STEP_STARTTLS 8	/* upgrade this connection to TLS, here */
 
 /* STEP_LABEL, STEP_CAPTURE, STEP_WHEN, STEP_JUMP and STEP_CREDS touch no
    socket. The driver runs them to completion between I/O steps, so a

@@ -878,6 +878,21 @@ char *init_tcp_services(void)
 				if (txt) xfree(txt);
 			}
 		}
+		else if (strcmp(l, "starttls") == 0) {
+			/*
+			 * Explicit TLS. Everything before this line is plaintext,
+			 * everything after it is encrypted on the same socket. The
+			 * service does NOT carry TCP_SSL -- that flag means TLS from
+			 * the first byte, which is the other thing entirely.
+			 */
+			if (first) {
+				svcstep_t tmpl;
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_STARTTLS;
+				emit_step(first, &tmpl);
+			}
+		}
 		else if (strncmp(l, "options ", 8) == 0) {
 			if (first) {
 				char *opt;
@@ -971,6 +986,20 @@ char *init_tcp_services(void)
 			check_undefined_vars(&svcinfo[i]);
 			mark_ambiguous_groups(&svcinfo[i]);
 
+			/*
+			 * "options ssl" is TLS from the first byte; "starttls" upgrades
+			 * a plaintext connection part-way. Asking for both would start a
+			 * second handshake inside the first, which fails in a way that
+			 * reads like a broken server rather than a broken config.
+			 */
+			if (svcinfo[i].flags & TCP_SSL) {
+				for (st = walk->rec->steps; (st); st = st->next) {
+					if (st->type != STEP_STARTTLS) continue;
+					errprintf("Service %s: 'starttls' with 'options ssl' - the connection "
+						  "is already TLS; drop one of them\n", svcinfo[i].svcname);
+					break;
+				}
+			}
 		}
 	}
 	memset(&svcinfo[svccount], 0, sizeof(svcinfo_t));
