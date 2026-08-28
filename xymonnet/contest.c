@@ -909,8 +909,15 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 	int res = 0;
 	char errtxt[1024];
 
-	if (item->svcinfo->flags & TCP_SSL) {
-		if (item->sslrunning) {
+	/*
+	 * Dispatch on the LIVE session, not on the service definition.
+	 * socket_write() already does. Keying the read off TCP_SSL means a
+	 * connection that became TLS part-way -- starttls -- keeps calling
+	 * read() and hands back raw TLS records as if they were the server's
+	 * reply.
+	 */
+	if (item->sslrunning) {
+		{
 			item->sslagain = 0;
 			res = SSL_read(item->ssldata, inbuf, inbufsize);
 			if (res < 0) {
@@ -926,10 +933,10 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 				}
 			}
 		}
-		else {
-			/* SSL setup failed - flag 0 bytes read. */
-			res = 0;
-		}
+	}
+	else if (item->svcinfo->flags & TCP_SSL) {
+		/* SSL was wanted but setup failed - flag 0 bytes read. */
+		res = 0;
 	}
 	else {
 		res = read(item->fd, inbuf, inbufsize);
@@ -1660,6 +1667,50 @@ restartselect:
 							st = dlg_run_instant(item, (svcstep_t *)item->curstep);
 							item->curstep = (void *)st;
 
+							if (st && (st->type == STEP_STARTTLS)) {
+								if (item->sslrunning == 0) {
+									/*
+									 * The handshake must start on the first byte
+									 * the server sends AFTER its go-ahead. Anything
+									 * still buffered was sent before TLS began and
+									 * would be read as ciphertext -- and a server
+									 * that pipelines into its own STARTTLS reply is
+									 * the plaintext-injection flaw (CVE-2011-0411
+									 * and relatives), so refuse rather than paper
+									 * over it.
+									 */
+									if (item->stepbuflen > 0) {
+										errprintf("%s: data buffered across a starttls - refusing the upgrade\n",
+											  item->svcinfo->svcname);
+										item->dialogfail = 1;
+										if (!item->failstep) item->failstep = (void *)st;
+										item->curstep = NULL;
+										st = NULL;
+									}
+									else {
+										item->sslrunning = SSLSETUP_PENDING;
+										setup_ssl(item);
+									}
+								}
+								/*
+								 * setup_ssl() wants another pass whenever it
+								 * leaves sslrunning at SSLSETUP_PENDING. It
+								 * records the direction OpenSSL asked for in
+								 * sslwantwrite, and the fd registration reads
+								 * that while a handshake is pending -- so this
+								 * sleeps on the right event instead of
+								 * re-asking a socket that is always writable.
+								 */
+								if (st && (item->sslrunning == SSLSETUP_PENDING)) setup_ssl(item);
+
+								if (st && (item->sslrunning == 1)) {
+									st = dlg_run_instant(item, st->next);
+									item->curstep = (void *)st;
+								}
+								else if (st) {
+									st = NULL;	/* mid-handshake; registration picks the fd set */
+								}
+							}
 
 							while (st && (st->type == STEP_SEND) && item->silenttest) {
 								/*
@@ -1810,6 +1861,23 @@ restartselect:
 							 * write arm picks it up on the next pass exactly as
 							 * it did when the handshake completed there.
 							 */
+							continue;
+						}
+
+						/*
+						 * A dialogue that asked for STARTTLS parks on the step
+						 * while the handshake runs. It is finished now, so step
+						 * past it and hand the socket back to the write arm --
+						 * there is no application data to read yet, and waiting
+						 * for some would stall until the timeout.
+						 */
+						if ((item->svcinfo->flags & TCP_DIALOGUE) && item->curstep &&
+						    (((svcstep_t *)item->curstep)->type == STEP_STARTTLS) &&
+						    (item->sslrunning == 1)) {
+							svcstep_t *nx = dlg_run_instant(item, ((svcstep_t *)item->curstep)->next);
+
+							item->curstep = (void *)nx;
+							item->readpending = (nx && (nx->type == STEP_EXPECT));
 							continue;
 						}
 

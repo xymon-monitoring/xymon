@@ -40,7 +40,8 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
    capture as tooearly
    expect "220"
    send "x${sha1:foo}\r\n"
-   options banner
+   starttls
+   options ssl,banner
    port 9
 
 [typo]
@@ -74,6 +75,10 @@ grep -qi 'unknown expansion' <<<"$out" || fail \
 variable of that name and expands to nothing:
 $out"
 
+grep -qi 'already TLS' <<<"$out" || fail \
+	"'starttls' together with 'options ssl' was accepted. That runs a second
+handshake inside the first:
+$out"
 
 grep -q 'never captured or bound' <<<"$out" || fail \
 	"a \${name} that nothing binds was accepted. It expands to nothing, the
@@ -95,9 +100,9 @@ $out"
 # --- and the shipped file must be quiet -------------------------------------
 cp "$root/xymonnet/protocols.cfg" "$work/home/etc/protocols.cfg"
 out=$(run_xymonnet)
-noise=$(grep -ciE 'unknown protocols.cfg directive|before any expect|unknown expansion|never captured or bound|can only fail|no capture group' <<<"$out" || true)
+noise=$(grep -ciE 'unknown protocols.cfg directive|before any expect|unknown expansion|already TLS|never captured or bound|can only fail|no capture group' <<<"$out" || true)
 [ "$noise" -eq 0 ] || fail \
 	"the protocols.cfg this tree ships triggers $noise of its own warnings:
-$(grep -iE 'unknown|before any expect' <<<"$out")"
+$(grep -iE 'unknown|before any expect|already TLS' <<<"$out")"
 
 pass "protocols.cfg mistakes are reported when the file is read, and the shipped file reports none"
