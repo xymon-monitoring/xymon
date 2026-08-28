@@ -66,7 +66,7 @@ static tcptest_t *thead = NULL;
 int shuffletests = 0;
 int sslincludecipherlist = 1;
 int sslshowallciphers = 0;
-int snienabled = 0;	/* SNI disabled by default */
+int snienabled = 1;	/* SNI enabled by default; --sni=off or per-host nosni disables it */
 
 static svcinfo_t svcinfo_http  = { "http", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP), 80 };
 static svcinfo_t svcinfo_https = { "https", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP|TCP_SSL), 443 };
