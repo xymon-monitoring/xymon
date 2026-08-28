@@ -82,6 +82,10 @@ typedef void (*f_callback_final)(void *privdata);
 #define CONTEST_EIO        4
 #define CONTEST_ESSL       5
 
+/* How much a single expect may accumulate before giving up. A server that
+   never sends the terminator must not be able to grow this without limit. */
+#define MAX_DIALOGUE_BYTES (32 * 1024)
+
 typedef struct tcptest_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
 	char *srcaddr;
@@ -127,6 +131,13 @@ typedef struct tcptest_t {
 	int sslagain;			/* SSL read/write needs more data */
 	int sslwantwrite;		/* Handshake blocked on writability, not readability */
 	int sendagain;			/* Last write sent nothing; retry the same buffer */
+
+	/* Dialogue state */
+	void *curstep;			/* svcstep_t *: position in the dialogue */
+	int dialogfail;			/* an expect step did not match */
+	void *failstep;			/* svcstep_t *: WHICH step, for the report */
+	unsigned char *stepbuf;		/* replies for the CURRENT expect step */
+	int stepbuflen;
 
 	/* For testing telnet services */
 	unsigned char *telnetbuf;	/* Buffer for telnet option negotiation */
@@ -202,6 +213,7 @@ extern unsigned int tcp_stats_connects;
 extern char *init_tcp_services(void);
 extern int default_tcp_port(char *svcname);
 extern void dump_tcp_services(void);
+extern char *tcp_dialogue_failure(tcptest_t *test);
 extern tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt, char *srcip,
 			    char *tspec, int silent, unsigned char *reqmsg, 
 			    void *priv, f_callback_data datacallback, f_callback_final finalcallback);

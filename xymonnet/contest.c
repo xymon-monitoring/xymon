@@ -215,6 +215,19 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->sslagain = 0;
 	newtest->sslwantwrite = 0;
 	newtest->sendagain = 0;
+	/*
+	 * ONLY for a dialogue. The parser builds a step list for every service,
+	 * including the plain send-and-match ones, so keying off steps alone
+	 * gave legacy services a non-NULL cursor -- and the close guards below
+	 * treat a live cursor as "the conversation is still going", so those
+	 * sockets were never closed and every legacy TLS test timed out.
+	 */
+	newtest->curstep = ((newtest->svcinfo && (newtest->svcinfo->flags & TCP_DIALOGUE))
+			    ? (void *)newtest->svcinfo->steps : NULL);
+	newtest->dialogfail = 0;
+	newtest->failstep = NULL;
+	newtest->stepbuf = NULL;
+	newtest->stepbuflen = 0;
 
 	newtest->banner = NULL;
 	newtest->bannerbytes = 0;
@@ -1365,7 +1378,43 @@ restartselect:
 
 						item->readpending = (do_talk && !item->silenttest && 
 							( (item->svcinfo->flags & TCP_GET_BANNER) || item->svcinfo->exptext ));
-						if (do_talk) {
+						if (do_talk && (item->svcinfo->flags & TCP_DIALOGUE)) {
+							/*
+							 * A dialogue drives itself from where it stands:
+							 * a SEND step is written here, an EXPECT step is
+							 * waited for by leaving readpending set. That one
+							 * rule is the whole state machine -- the current
+							 * step decides which fd set the socket joins.
+							 */
+							svcstep_t *st = (svcstep_t *)item->curstep;
+
+							while (st && (st->type == STEP_SEND) && item->silenttest) {
+								/*
+								 * A silent test says nothing on the wire. Step
+								 * over the sends rather than sitting on one:
+								 * leaving it current would strand the dialogue
+								 * with a step it will never perform.
+								 */
+								st = st->next;
+								item->curstep = (void *)st;
+							}
+							if (st && (st->type == STEP_SEND)) {
+								res = socket_write(item, (char *)st->text, st->len);
+								tcp_stats_written += res;
+								if (res == -1) {
+									dbgprintf("write failed\n");
+									item->errcode = CONTEST_EIO;
+									item->curstep = NULL;
+									st = NULL;
+								}
+								else {
+									st = st->next;
+									item->curstep = (void *)st;
+								}
+							}
+							item->readpending = (st && (st->type == STEP_EXPECT));
+						}
+						else if (do_talk) {
 							if (item->telnetnegotiate && item->telnetbuflen) {
 								/*
 								 * Return the telnet negotiate data response
@@ -1419,7 +1468,12 @@ restartselect:
 
 						/* If closed and/or no bannergrabbing, shut down socket */
 						if (item->sslrunning != SSLSETUP_PENDING) {
-							if (!item->open || (!item->readpending && !item->sendagain)) {
+							/*
+							 * Three independent reasons to keep it open: a
+							 * reply still expected, a write waiting to be
+							 * retried, or a dialogue step still to run.
+							 */
+							if (!item->open || (!item->readpending && !item->sendagain && !item->curstep)) {
 								if (item->open) {
 									socket_shutdown(item);
 								}
@@ -1489,6 +1543,155 @@ restartselect:
 						tcp_stats_read += res;
 						dbgprintf("read %d bytes from socket\n", res);
 
+						if (item->svcinfo->flags & TCP_DIALOGUE) {
+							/*
+							 * An EXPECT step is matched against what THIS read
+							 * returned, not against the accumulated banner: in
+							 * a conversation the same socket carries several
+							 * replies, and only the one for this step counts.
+							 * Compare the start, which is what a status line
+							 * is -- "250-" and "250 " both satisfy "250".
+							 */
+							svcstep_t *st = (svcstep_t *)item->curstep;
+
+							/*
+								 * res <= 0 is EOF on a plain socket, but over
+								 * TLS it is also how "no data yet" arrives:
+								 * socket_read() sets sslagain for WANT_READ.
+								 * Without that guard the first wait for a
+								 * greeting was read as the peer hanging up,
+								 * and every TLS dialogue failed instantly.
+								 */
+								if ((res <= 0) && !item->sslagain && st) {
+								/*
+								 * The peer went away with steps still to run.
+								 * Fail here rather than leaving the socket to
+								 * time out: "hung up mid-conversation" is a
+								 * different fault from "never answered", and
+								 * waiting out the timeout reports the wrong one.
+								 */
+								item->dialogfail = 1;
+								if (!item->failstep) item->failstep = (void *)st;
+								item->curstep = NULL;
+								st = NULL;
+							}
+							else if ((res > 0) && st && (st->type == STEP_EXPECT)) {
+								/*
+								 * Accumulate: one read is not one reply. TLS
+								 * hands back a record at a time and SMTP's
+								 * multi-line replies span several, so a step
+								 * has three outcomes -- matched, mismatched,
+								 * or not enough yet -- and only the third is
+								 * new here.
+								 */
+								/*
+								 * Bound it. An expect that waits for a
+								 * terminator will otherwise accumulate
+								 * whatever a server cares to send, for as
+								 * long as it cares to send it -- and the
+								 * poll loop runs hundreds of these at once.
+								 * Monit caps the same buffer at 255 bytes;
+								 * this is roomier because a real EHLO reply
+								 * is several hundred, but it is a cap.
+								 */
+								if ((item->stepbuflen + res) > MAX_DIALOGUE_BYTES) {
+									errprintf("%s: reply exceeded %d bytes with no match - giving up\n",
+										  item->svcinfo->svcname, MAX_DIALOGUE_BYTES);
+									item->dialogfail = 1;
+									if (!item->failstep) item->failstep = (void *)st;
+									item->curstep = NULL;
+									st = NULL;
+									break;
+								}
+
+								item->stepbuf = (unsigned char *)realloc(item->stepbuf, item->stepbuflen + res + 1);
+								memcpy(item->stepbuf + item->stepbuflen, msgbuf, res);
+								item->stepbuflen += res;
+								item->stepbuf[item->stepbuflen] = '\0';
+
+								if (item->stepbuflen >= st->len) {
+									if (memcmp(item->stepbuf, st->text, st->len) == 0) {
+										int cut = st->len, ready = 1;
+
+										if (st->until) {
+											/*
+											 * Multi-line: consume complete lines
+											 * until one starts with the terminator.
+											 * If it has not arrived, consume NOTHING
+											 * and wait -- taking the lines we have
+											 * would strand the rest of the reply for
+											 * the next expect to trip over.
+											 */
+											int pos = 0;
+
+											ready = 0;
+											while (pos < item->stepbuflen) {
+												int eol = pos;
+
+												while ((eol < item->stepbuflen) &&
+												       (item->stepbuf[eol] != '\n')) eol++;
+												if (eol >= item->stepbuflen) break;
+												if (((item->stepbuflen - pos) >= st->untillen) &&
+												    (memcmp(item->stepbuf + pos, st->until, st->untillen) == 0)) {
+													cut = eol + 1;
+													ready = 1;
+													break;
+												}
+												pos = eol + 1;
+											}
+										}
+										else {
+											/*
+											 * Single line. Consume through its end
+											 * and KEEP the rest: discarding it would
+											 * throw away a reply the peer had already
+											 * sent, and the next expect would wait for
+											 * data that already arrived.
+											 */
+											while ((cut < item->stepbuflen) &&
+											       (item->stepbuf[cut] != '\n')) cut++;
+											if (cut < item->stepbuflen) cut++;
+										}
+
+										if (ready) {
+											memmove(item->stepbuf, item->stepbuf + cut,
+												item->stepbuflen - cut);
+											item->stepbuflen -= cut;
+											st = st->next;
+											item->curstep = (void *)st;
+										}
+									}
+									else {
+										item->dialogfail = 1;
+										if (!item->failstep) item->failstep = (void *)st;
+										item->curstep = NULL;
+										st = NULL;
+									}
+								}
+								/* else: short of the pattern -- wait for more */
+
+								/*
+								 * The step we land on decides which fd set the socket
+								 * joins next. Without this the flag keeps whatever the
+								 * write arm last set, so a dialogue that advances to a
+								 * SEND while reading stays parked in readfds and the
+								 * send is never written -- which over TLS meant the peer
+								 * saw the greeting answered by nothing at all.
+								 */
+								item->readpending = (item->curstep &&
+										      (((svcstep_t *)item->curstep)->type == STEP_EXPECT));
+							}
+							/*
+							 * Hand the socket back to the write side when the
+							 * next step is a SEND: clearing readpending is what
+							 * puts it in writefds, and the close below is
+							 * already taught to spare a socket with steps left.
+							 */
+							st = (svcstep_t *)item->curstep;
+							item->readpending = (st && (st->type == STEP_EXPECT));
+							if (st) wantmoredata = 1;
+						}
+
 						if ((res > 0) && item->datacallback) {
 							datadone = item->datacallback(msgbuf, res, item->priv);
 						}
@@ -1536,7 +1739,7 @@ restartselect:
 							wantmoredata = !datadone;
 						}
 
-						if (!wantmoredata) {
+						if (!wantmoredata && !item->curstep) {
 							if (item->open) {
 								socket_shutdown(item);
 							}
@@ -1605,9 +1808,53 @@ void show_tcp_test_results(void)
 	}
 }
 
+/*
+ * Which step gave up. A dialogue can fail at any of them, and
+ * "Unexpected service response" on its own leaves the reader guessing
+ * whether it was the greeting, a reply mid-conversation, or a peer that
+ * went quiet -- so name it.
+ */
+char *tcp_dialogue_failure(tcptest_t *test)
+{
+	static char buf[160];
+	svcstep_t *st, *bad;
+	int idx = 0, n = 0;
+
+	if (!test || !test->svcinfo || !(test->svcinfo->flags & TCP_DIALOGUE)) return NULL;
+
+	bad = (svcstep_t *)test->failstep;
+	if (!bad) {
+		/* No step blamed itself: the conversation simply stopped short. */
+		st = (svcstep_t *)test->curstep;
+		if (!st) return NULL;
+		bad = st;
+		for (st = test->svcinfo->steps; (st); st = st->next) { n++; if (st == bad) idx = n; }
+		snprintf(buf, sizeof(buf), "no reply to step %d (expecting \"%.40s\")",
+			 idx, (bad->text ? (char *)bad->text : ""));
+		return buf;
+	}
+
+	for (st = test->svcinfo->steps; (st); st = st->next) { n++; if (st == bad) idx = n; }
+	if (bad->type == STEP_EXPECT)
+		snprintf(buf, sizeof(buf), "step %d expected \"%.40s\"", idx,
+			 (bad->text ? (char *)bad->text : ""));
+	else
+		snprintf(buf, sizeof(buf), "step %d failed", idx);
+
+	return buf;
+}
+
 int tcp_got_expected(tcptest_t *test)
 {
 	if (test == NULL) return 1;
+
+	/*
+	 * A dialogue has already judged itself, step by step, as the replies
+	 * arrived. Re-matching exptext against the banner here would compare the
+	 * first step's pattern against whatever the last read happened to leave.
+	 */
+	if (test->svcinfo && (test->svcinfo->flags & TCP_DIALOGUE))
+		return (test->dialogfail == 0) && (test->curstep == NULL);
 
 	if (test->svcinfo && test->svcinfo->exptext) {
 		int compbytes; /* Number of bytes to compare */

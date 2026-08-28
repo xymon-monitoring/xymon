@@ -60,9 +60,27 @@ for svc in smtp smtps submission msa; do
 	block=$(service_block "$svc")
 	[ -n "$block" ] || fail "protocols.cfg no longer defines [$svc] (#450)"
 
-	if grep -Eq '^[[:space:]]*send[[:space:]]' <<<"$block"; then
-		fail "[$svc] sends before the server's greeting -- xymonnet writes before it reads, so this is a pregreet, and Postfix >= 3.9 answers 554 (#450)"
+	# The invariant is ordering, not abstinence: a send is fine, a send BEFORE
+	# the first expect is the pregreet. Compare line positions rather than
+	# looking for the absence of a send, so a legal dialogue passes and the old
+	# shape still fails.
+	first_send=$(grep -nE '^[[:space:]]*send[[:space:]]' <<<"$block" | head -1 | cut -d: -f1)
+	first_expect=$(grep -nE '^[[:space:]]*expect[[:space:]]' <<<"$block" | head -1 | cut -d: -f1)
+	[ -n "$first_expect" ] || fail "[$svc] has no expect step at all (#450)"
+	if [ -n "$first_send" ] && [ "$first_send" -lt "$first_expect" ]; then
+		fail "[$svc] sends before its first expect -- that is a pregreet, and Postfix >= 3.9 answers 554 (#450)"
 	fi
+
+	# One command per send. "ehlo x\r\nquit\r\n" in a single write is
+	# unauthorized pipelining even after the greeting -- measured: Postfix
+	# rejects it 5/5 with "improper command pipelining after EHLO".
+	while IFS= read -r sline; do
+		[ -n "$sline" ] || continue
+		body=${sline#*send }
+		crlfs=$(grep -o '\\r\\n' <<<"$body" | wc -l | tr -d ' ')
+		[ "$crlfs" -le 1 ] || fail \
+			"[$svc] packs $crlfs commands into one send -- pipelining before PIPELINING is announced (#450): $sline"
+	done <<<"$(grep -E '^[[:space:]]*send[[:space:]]' <<<"$block")"
 
 	# The probe still has to check something. Without expect, a service that
 	# accepts the connection and says nothing useful would pass, which would
