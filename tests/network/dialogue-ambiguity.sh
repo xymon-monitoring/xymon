@@ -89,7 +89,7 @@ comment. Which of them matches depends on how the server split its reply,
 so the config's meaning is decided by the network:
 $out"
 
-grep -qi "capture as NAME" <<<"$out" || fail \
+grep -qi "expect ... as NAME" <<<"$out" || fail \
 	"the overlap was reported without saying what to do about it. What the
 author wanted is reasonable -- distinguishing two replies that share a
 prefix -- so the error has to name the fix, not just the fault:

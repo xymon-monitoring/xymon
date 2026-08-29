@@ -70,8 +70,8 @@ register_cleanup "kill $(tr '\n' ' ' < "$work/pids") 2>/dev/null || :"
 authblock() {
 cat <<CFG
 [$1]
-   expect "+OK"
-   capture-regex "\\+OK POP3 (\\S+) (<[^>]+>)" as server;challenge
+   expect "+OK" as greeting
+   greeting ~ "\\+OK POP3 (\\S+) (<[^>]+>)" as server;challenge
    credentials mypop
    challenge ~ "<"             -> apop
    else                        -> plain
