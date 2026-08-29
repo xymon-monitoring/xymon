@@ -2223,7 +2223,28 @@ restartselect:
 									 * message rather than of whatever has arrived,
 									 * and a match consumes the message entire.
 									 */
-									if (item->svcinfo->framing == FRAMING_LENGTH) {
+									if (item->svcinfo->framing == FRAMING_TERM) {
+										/*
+										 * A sequence ends the message wherever it
+										 * falls, so scan for it and take everything
+										 * through it. Nothing is consumed until it
+										 * arrives: half a message is unfinished, the
+										 * same as half a line or half a frame.
+										 */
+										int t = item->svcinfo->frametermlen, i2, found = -1;
+
+										for (i2 = 0; i2 + t <= item->stepbuflen; i2++) {
+											if (memcmp(item->stepbuf + i2,
+												   item->svcinfo->frameterm, t) == 0) {
+												found = i2 + t;
+												break;
+											}
+										}
+										if (found < 0) break;		/* still arriving */
+										mbase = 0;
+										mlen  = found;
+									}
+									else if (item->svcinfo->framing == FRAMING_LENGTH) {
 										int w = item->svcinfo->framewidth, k;
 										unsigned int n = 0;
 
@@ -2251,7 +2272,7 @@ restartselect:
 									/* Consecutive expects are alternatives of ONE state. */
 									for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next) {
 										if (alt->oneof) continue;	/* only fires on EOF */
-										if (item->svcinfo->framing == FRAMING_LENGTH) {
+										if (item->svcinfo->framing != FRAMING_LINE) {
 											/* the literal matches the start of the MESSAGE */
 											if (mlen < alt->len) { hit = NULL; continue; }
 											if (memcmp(item->stepbuf + mbase, alt->text, alt->len) == 0) {
@@ -2287,8 +2308,8 @@ restartselect:
 									if (hit) {
 										int cut = hit->len;
 
-										if (item->svcinfo->framing == FRAMING_LENGTH) {
-											/* the message and its count, and nothing else */
+										if (item->svcinfo->framing != FRAMING_LINE) {
+											/* the message and its framing, and nothing else */
 											cut = mbase + mlen;
 										}
 										else if (hit->wantbytes) {
@@ -2343,8 +2364,8 @@ restartselect:
 										 * an "as" binds.
 										 */
 										{
-											int rbase = (item->svcinfo->framing == FRAMING_LENGTH) ? mbase : 0;
-											int rlen  = (item->svcinfo->framing == FRAMING_LENGTH) ? mlen : cut;
+											int rbase = (item->svcinfo->framing != FRAMING_LINE) ? mbase : 0;
+											int rlen  = (item->svcinfo->framing != FRAMING_LINE) ? mlen : cut;
 
 											if (item->lastreply) xfree(item->lastreply);
 											item->lastreply = (char *)malloc(rlen + 1);

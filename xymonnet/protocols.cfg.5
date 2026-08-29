@@ -343,6 +343,7 @@ nothing.
 
 .IP "\fBframing\fR \fBline\fR"
 .IP "\fBframing\fR \fBlength(\fR\fIWIDTH\fR\fB,\fR \fBbig\fR|\fBlittle\fR\fB)\fR"
+.IP "\fBframing\fR \fBterminator\fR \fISEQUENCE\fR"
 How a message ends on this connection. TCP says nothing about it: a
 message boundary is always something the protocol states, and it states
 it in one of three ways -- a terminator, a count, or the close.
@@ -360,6 +361,20 @@ than of whatever has arrived so far, a match consumes the message and
 its count together, and a payload containing a newline is data like any
 other byte. A message longer than 32 KB fails by name rather than being
 buffered.
+.sp
+\fBterminator\fR is for everything else, and for protocols of your own:
+a message ends at \fISEQUENCE\fR wherever that falls -- a NUL, a blank
+line, a sentinel you chose. It is not \fBuntil\fR: \fBuntil\fR
+compares the start of a LINE, so a terminator that does not fall on a
+line boundary is invisible to it, and a payload with newlines inside is
+not line-shaped at all.
+.br
+.sp
+.nf
+\&   framing terminator "\ex00"        NUL\-terminated records
+\&   framing terminator "\er\en\er\en"    a blank line ends the message
+\&   framing terminator "<END>"       a sentinel of your own
+.fi
 .sp
 It describes the connection, not one reply, so it is written once as an
 entry attribute. \fBuntil\fR and \fBexpect bytes(\fR\fIN\fR\fB)\fR are
@@ -543,8 +558,9 @@ names the service. The ones worth knowing:
 \&   'expect bytes(N)' shares a state with another expect
 \&   'expect bytes(N) until ...' - a frame already ends the reply
 \&   'expect bytes(N)' is outside 1..32768
-\&   'until' under framing length         the count already says this
-\&   'expect bytes(N)' under framing length
+\&   'until' under framing length/terminator
+\&   'expect bytes(N)' under framing length/terminator
+\&   'framing terminator' needs a quoted sequence
 \&   framing length width is 1..4 bytes
 \&   framing length endianness is 'big' or 'little'
 \&   framed message of N bytes is over the 32768 a conversation may hold

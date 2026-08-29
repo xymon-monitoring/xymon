@@ -358,6 +358,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   <dd></dd>
   <dt id="framing~2"><a class="permalink" href="#framing~2"><b>framing</b>
     <b>length(</b><i>WIDTH</i><b>,</b> <b>big</b>|<b>little</b><b>)</b></a></dt>
+  <dd></dd>
+  <dt id="framing~3"><a class="permalink" href="#framing~3"><b>framing</b>
+    <b>terminator</b> <i>SEQUENCE</i></a></dt>
   <dd>How a message ends on this connection. TCP says nothing about it: a
       message boundary is always something the protocol states, and it states it
       in one of three ways -- a terminator, a count, or the close.
@@ -373,6 +376,16 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         message and its count together, and a payload containing a newline is
         data like any other byte. A message longer than 32 KB fails by name
         rather than being buffered.</p>
+    <p class="Pp"><b>terminator</b> is for everything else, and for protocols of
+        your own: a message ends at <i>SEQUENCE</i> wherever that falls -- a
+        NUL, a blank line, a sentinel you chose. It is not <b>until</b>:
+        <b>until</b> compares the start of a LINE, so a terminator that does not
+        fall on a line boundary is invisible to it, and a payload with newlines
+        inside is not line-shaped at all.</p>
+    <p class="Pp"></p>
+    <pre>   framing terminator &quot;\x00&quot;        NUL-terminated records
+   framing terminator &quot;\r\n\r\n&quot;    a blank line ends the message
+   framing terminator &quot;&lt;END&gt;&quot;       a sentinel of your own</pre>
     <p class="Pp">It describes the connection, not one reply, so it is written
         once as an entry attribute. <b>until</b> and <b>expect
         bytes(</b><i>N</i><b>)</b> are refused under it: the count has already
@@ -547,8 +560,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
    'expect bytes(N)' shares a state with another expect
    'expect bytes(N) until ...' - a frame already ends the reply
    'expect bytes(N)' is outside 1..32768
-   'until' under framing length         the count already says this
-   'expect bytes(N)' under framing length
+   'until' under framing length/terminator
+   'expect bytes(N)' under framing length/terminator
+   'framing terminator' needs a quoted sequence
    framing length width is 1..4 bytes
    framing length endianness is 'big' or 'little'
    framed message of N bytes is over the 32768 a conversation may hold

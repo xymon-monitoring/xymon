@@ -75,9 +75,13 @@
  *   FRAMING_LINE    a line ends at "\n" -- the greeting protocols
  *   FRAMING_LENGTH  the peer sends a count first -- DNS-over-TCP, MySQL,
  *                   LDAP, AMQP: binary, and no newline to look for
+ *   FRAMING_TERM    a byte sequence ends every message, wherever it falls --
+ *                   a NUL, a blank line, a sentinel a custom protocol picked.
+ *                   Unlike "until" it does not look at lines at all
  */
 #define FRAMING_LINE   0
 #define FRAMING_LENGTH 1
+#define FRAMING_TERM   2
 
 /* How much a single expect may accumulate before giving up. A server that
    never sends the terminator must not be able to grow this without limit.
@@ -120,6 +124,8 @@ typedef struct svcinfo_t {
 	int framing;		/* FRAMING_* -- how a message ends on this connection */
 	int framewidth;		/* FRAMING_LENGTH: bytes of length prefix */
 	int framebig;		/* FRAMING_LENGTH: 1 big-endian, 0 little-endian */
+	unsigned char *frameterm;	/* FRAMING_TERM: the sequence that ends a message */
+	int frametermlen;
 	svcstep_t *steps;	/* NULL unless TCP_DIALOGUE */
 	char *startlabel;	/* 'start NAME': where the dialogue begins */
 	svcstep_t *startstep;	/* ... resolved after parsing */
