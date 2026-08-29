@@ -73,9 +73,9 @@ typedef struct svcstep_t {
 	unsigned char *text;		/* send/expect literal, or capture regex */
 	int len;
 	int action;			/* ACT_* -- expect steps only */
-	char *target;			/* goto label, unresolved */
+	char *target;			/* '-> NAME', unresolved */
 	struct svcstep_t *targetstep;	/* ... and resolved, after parsing */
-	char *label;			/* STEP_LABEL: the name it defines */
+	char *label;			/* STEP_LABEL: the state name it defines */
 	char *varname;			/* STEP_CAPTURE/WHEN: variable name */
 	void *re;			/* compiled pcre2_code, or NULL */
 	char *user, *pass;		/* STEP_CREDS: resolved at config load */

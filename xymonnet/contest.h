@@ -147,7 +147,7 @@ typedef struct tcptest_t {
 	int stepbuflen;
 	char *lastreply;		/* the reply that satisfied the last expect */
 	void *dlgvars;			/* captured values, a dlgvar_t list */
-	int stepsecs;			/* 'timeout N': budget for the current wait, 0 = none */
+	int stepsecs;			/* 'timeout(N)': budget for this state, 0 = none */
 	time_t stepdeadline;		/* ... armed against the poll clock, 0 = unarmed */
 	void *stepdeadlinefor;		/* svcstep_t *: which step it was armed for */
 	int steptimedout;		/* that budget expired, rather than a mismatch */

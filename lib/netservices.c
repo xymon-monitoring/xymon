@@ -297,12 +297,12 @@ static void check_undefined_vars(svcinfo_t *rec)
  * Two alternatives can both match the same reply exactly when one is a
  * prefix of the other -- matching is prefix-anchored, so patterns that
  * diverge anywhere can never both match. That makes this check complete
- * rather than a heuristic.
+ * rather than a heuristic, which is what lets it refuse rather than warn.
  *
- * Such a group is ambiguous: which one wins depends on how much of the
- * reply has arrived, and therefore on how the server split it across
- * packets. Say so, and record the longest pattern so the driver can wait
- * for the group to be decidable instead of racing.
+ * Which one would win depends on how much of the reply has arrived, and
+ * so on how the server split it across packets. Refuse the definition and
+ * name the fix: match the shared prefix in one state, distinguish in the
+ * next.
  */
 static void refuse_overlapping_groups(svcinfo_t *rec)
 {
@@ -357,8 +357,8 @@ static int has_expect_step(svcinfo_t *rec)
 
 
 /*
- * Resolve "goto NAME" to the step that "label NAME" defines. Done once
- * after the whole entry is read, so a goto may point forwards -- a retry
+ * Resolve "-> NAME" to the step that "state NAME" defines. Done once
+ * after the whole entry is read, so an edge may point forwards -- a retry
  * loop points backwards, and both are ordinary edges here.
  */
 static void resolve_svcsteps(svcinfo_t *rec)
@@ -883,7 +883,7 @@ char *init_tcp_services(void)
 		else if (strncmp(l, "state ", 6) == 0) {
 			/*
 			 * Names the state that follows: the expects up to the next
-			 * step that is not one. It is also what "goto" aims at, so
+			 * step that is not one. It is also what an edge aims at, so
 			 * naming a state and marking a jump target are the same act
 			 * rather than two keywords for one idea.
 			 */
