@@ -393,6 +393,36 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 </section>
 <section class="Sh">
 <p>&#160;</p>
+<h1 class="Sh" id="CONVENTIONS"><a class="permalink" href="#CONVENTIONS">CONVENTIONS</a></h1>
+<p class="Pp">The parser accepts an attribute anywhere in a block, ignores
+    indentation, takes several actions and several waits in one state, and
+    accepts an <b>expect</b> that names no target. None of what follows is
+    enforced by it; it is how every entry in this page and in the shipped
+    protocols.cfg is written, and what a reader is entitled to assume:</p>
+<p class="Pp"></p>
+<pre>   1  entry attributes -- options, port, transport, start -- come
+      before the first state, in any order among themselves
+   2  a state's lines are indented under it
+   3  a state holds at most one action: send, starttls, credentials
+   4  every expect names where it goes: &quot;-&gt; TARGET&quot;
+   5  a clock -- timeout or idle -- is written above the expects it
+      bounds, because it arms the wait that FOLLOWS it</pre>
+<p class="Pp">Rule 5 is the one that bites: a clock written below a state's
+    <b>expect</b> lines bounds nothing, and nothing says so. The others are
+    legibility -- an entry written this way reads as the machine it describes,
+    and one that is not still runs.</p>
+<p class="Pp">A definition that means to break a rule says so, with a comment
+    the parser ignores and a reader does not:</p>
+<p class="Pp"></p>
+<pre>   [legacy]
+      # conventions: permissive -- one expect, no state to move to</pre>
+<p class="Pp">The regression suite checks every entry in this page, in the
+    shipped protocols.cfg and in the test fixtures against these five rules, so
+    the page and the files cannot drift apart unnoticed.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
 <h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
 <p class="Pp">An SMTP service that upgrades to TLS when the server offers it,
     reports a server that does not offer it as yellow rather than down, and
@@ -500,6 +530,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
 <dt><a href="#FILE_FORMAT">FILE FORMAT</a></dt>
 <dt><a href="#PER-HOST_DEPTH_AND_CREDENTIALS">PER-HOST DEPTH AND CREDENTIALS</a></dt>
+<dt><a href="#CONVENTIONS">CONVENTIONS</a></dt>
 <dt><a href="#EXAMPLES">EXAMPLES</a></dt>
 <dt><a href="#DIAGNOSTICS">DIAGNOSTICS</a></dt>
 <dt><a href="#FILES">FILES</a></dt>

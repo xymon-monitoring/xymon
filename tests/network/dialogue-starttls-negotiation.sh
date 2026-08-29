@@ -144,6 +144,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect "221"                       -> success
 
 [tlsnone]
+   # conventions: permissive -- the fall-through spelling, kept covered on purpose
    options banner
    port $pno
 
@@ -168,6 +169,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect "221"        -> success
 
 [tls454a]
+   # conventions: permissive -- alternatives in both orders, the point of this pair
    options banner
    port $pra
 
@@ -190,6 +192,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect "221"        -> success
 
 [tls454b]
+   # conventions: permissive -- alternatives in both orders, the point of this pair
    options banner
    port $prb
 

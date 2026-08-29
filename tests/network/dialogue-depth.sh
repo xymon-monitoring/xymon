@@ -80,13 +80,13 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    start greeting
 
    state greeting
-      expect "220"                -> ehlo
       timeout(5)                  -> fail
+      expect "220"                -> ehlo
 
    state ehlo
       send "ehlo xymonnet\r\n"
-      expect "250"                -> success
       timeout(5)                  -> fail
+      expect "250"                -> success
 
 [loginsvc]
    expect "220"

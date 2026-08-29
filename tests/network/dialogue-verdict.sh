@@ -76,6 +76,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    port $pok
 
 [dlgbad]
+   # conventions: permissive -- a dialogue that stops mid-way, written the old way
    options banner
    port $pbad
 

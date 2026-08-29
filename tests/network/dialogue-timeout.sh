@@ -65,6 +65,7 @@ register_cleanup "kill $(cat "$work/silent.port.pid") $(cat "$work/quick.port.pi
 printf '127.0.0.1\tsilent\t# budgeted healthy routed\n' > "$work/home/etc/hosts.cfg"
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [budgeted]
+   # conventions: permissive -- the clock, not the shape, is what this measures
    options banner
    port $psilent
    expect "220"
@@ -75,6 +76,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect "250"
 
 [healthy]
+   # conventions: permissive -- the clock, not the shape, is what this measures
    options banner
    port $pquick
    expect "220"
@@ -138,6 +140,7 @@ ceiling, so the budget is not what ended it -- the global cutoff is."
 printf '127.0.0.1\tsilent\t# ceiling\n' > "$work/home/etc/hosts.cfg"
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [ceiling]
+   # conventions: permissive -- the clock, not the shape, is what this measures
    options banner
    port $pceil
    expect "220"
