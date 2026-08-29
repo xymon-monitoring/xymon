@@ -68,6 +68,12 @@
    pattern matches wins and its action fires, so a state has as many
    outgoing edges as it has alternatives, plus the implicit failure edge
    taken when every alternative has been ruled out. */
+/* How much a single expect may accumulate before giving up. A server that
+   never sends the terminator must not be able to grow this without limit.
+   The parser needs it too: "expect bytes(N)" may not ask for more than a
+   conversation is allowed to hold. */
+#define MAX_DIALOGUE_BYTES (32 * 1024)
+
 typedef struct svcstep_t {
 	int type;
 	unsigned char *text;		/* send/expect literal, or extraction regex */
@@ -82,6 +88,7 @@ typedef struct svcstep_t {
 	char *user, *pass;		/* STEP_CREDS: resolved at config load */
 	unsigned char *until;		/* expect ... until "X": end-of-reply marker */
 	int untillen;
+	int wantbytes;			/* expect bytes(N): frame is N bytes, not a line */
 	int seconds;			/* STEP_TIMEOUT: budget for the following wait */
 	int oneof;			/* this alternative fires on EOF, not on bytes */
 	struct svcstep_t *next;

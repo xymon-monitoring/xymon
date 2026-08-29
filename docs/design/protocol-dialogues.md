@@ -231,6 +231,8 @@ The behaviour itself is documented in `protocols.cfg(5)`, which ships with the c
 
 **What is not built.** Graph export (`--graph`) is deferred. A named state improves a failure from "step 7" to `state send-pass expected "235"`, and that is not enough: the faults that cost time are *why* it did not match -- bytes retained from the previous state, a reply matched before it was complete, a name that bound empty. A transcript mode is part of the feature and is **not implemented**. Nor is the marking it would require: `${password}` is expanded into a `send`, so the sent bytes, the buffer and anything an `as` binds may contain it. A value from `credentials.cfg` would have to be marked at binding time, stay marked through `${base64:}` and `${md5:}` -- an encoded secret is still the secret, and an APOP digest only looks opaque -- and be replaced by a placeholder in every output. The code wipes secrets from memory after use and no more, which is why it has no transcript to leak them into.
 
+**A frame, not a line.** `expect bytes(N)` waits for N bytes and consumes exactly those. It is the one condition that is not decided by content, which is why it may not share a state with a literal: `expect bytes(3)` and `expect "220"` both accept the same three bytes and nothing in the file says which wins, so the group is refused. Two frames are worse -- the shorter always wins and the longer is dead. It exists because LDAP, MySQL, DNS-over-TCP and AMQP frame messages by length, and before it those services could be probed no further than their banner. It costs nothing the literal-only rule was buying: a length is decidable at every byte, exactly like a prefix.
+
 ## Prior art
 
 | | Monit | blackbox_exporter | Expect | pexpect | here |

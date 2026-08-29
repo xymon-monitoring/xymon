@@ -2216,6 +2216,17 @@ restartselect:
 									/* Consecutive expects are alternatives of ONE state. */
 									for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next) {
 										if (alt->oneof) continue;	/* only fires on EOF */
+										if (alt->wantbytes) {
+											/*
+											 * A frame, not a line: it is decided by
+											 * how much has arrived and by nothing
+											 * else, so it cannot be "ruled out" the
+											 * way a literal can -- it is either
+											 * complete or still short.
+											 */
+											if (item->stepbuflen < alt->wantbytes) { undecided++; continue; }
+											hit = alt; break;
+										}
 										if (item->stepbuflen < alt->len) { undecided++; continue; }
 										if (memcmp(item->stepbuf, alt->text, alt->len) == 0) { hit = alt; break; }
 									}
@@ -2233,7 +2244,11 @@ restartselect:
 									if (hit) {
 										int cut = hit->len;
 
-										if (hit->until) {
+										if (hit->wantbytes) {
+											/* Exactly the frame, and not a byte more. */
+											cut = hit->wantbytes;
+										}
+										else if (hit->until) {
 											/*
 											 * A multi-line reply: consume complete
 											 * lines until one starts with the

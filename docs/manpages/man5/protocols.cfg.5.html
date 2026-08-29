@@ -130,6 +130,23 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <p class="Pp"></p>
   </dd>
   <dt id="expect~3"><a class="permalink" href="#expect~3"><b>expect</b>
+    <b>bytes(</b><i>N</i><b>)</b></a></dt>
+  <dd>Wait for a frame of <i>N</i> bytes and consume exactly that many. LDAP,
+      MySQL, DNS over TCP and AMQP put a length in front of a message instead of
+      ending it with a line, so neither a literal nor <b>until</b> can say where
+      such a reply stops. Anything beyond the frame is kept for the next step,
+      as with any other <b>expect</b>.
+    <p class="Pp">A frame is decided by length and a literal by content, so the
+        two cannot share a state: which of them took the reply would be
+        unsayable. A state whose <b>expect</b> is a frame holds that one
+        alternative, and the clocks. <b>until</b> is refused on it, and <i>N</i>
+        must be between 1 and 32768 -- the same ceiling a conversation may
+        buffer.</p>
+    <p class="Pp"><b>as</b> works as it does elsewhere, binding the frame that
+        was consumed.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="expect~4"><a class="permalink" href="#expect~4"><b>expect</b>
     <i>STRING</i> <b>as</b> <i>NAME</i></a></dt>
   <dd>Bind the reply this <b>expect</b> accepted to <i>NAME</i>, for a later
       <b>~</b> line to read. It is written on the expect itself because that is
@@ -141,7 +158,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <pre>   expect &quot;250&quot; until &quot;250 &quot; as caps    -&gt; offers</pre>
     <p class="Pp"></p>
   </dd>
-  <dt id="expect~4"><a class="permalink" href="#expect~4"><b>expect</b>
+  <dt id="expect~5"><a class="permalink" href="#expect~5"><b>expect</b>
     <i>STRING</i> <b>-&gt;</b> <i>TARGET</i></a></dt>
   <dd></dd>
   <dt id="state"><a class="permalink" href="#state"><b>state</b>
@@ -497,6 +514,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
    state 'NAME' has no way to finish   no path from it to a terminal
    state 'NAME' waits for a reply with no timeout
    'expect &quot;A&quot;' and 'expect &quot;B&quot;' overlap - both match the same reply
+   'expect bytes(N)' shares a state with another expect
+   'expect bytes(N) until ...' - a frame already ends the reply
+   'expect bytes(N)' is outside 1..32768
    ${NAME} is never captured or bound before it is used
    'NAME ~ ...' tests a value that is never bound before it
    'NAME ~ &quot;...&quot; as X' has no capture group
