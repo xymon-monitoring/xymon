@@ -40,7 +40,7 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
    capture as tooearly
    expect "220"
    send "x${sha1:foo}\r\n"
-   timeout 0
+   timeout(0)                  -> fail
    starttls
    options ssl,banner
    port 9

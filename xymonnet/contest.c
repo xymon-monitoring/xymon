@@ -241,6 +241,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->stepdeadlinefor = NULL;
 	newtest->steptimedout = 0;
 	newtest->dialogverdict = 0;
+	newtest->timeoutstep = NULL;
 	newtest->stepbuf = NULL;
 	newtest->stepbuflen = 0;
 
@@ -1256,6 +1257,7 @@ static svcstep_t *dlg_run_instant(tcptest_t *item, svcstep_t *st)
 			 * inheriting whatever was left of the previous visit.
 			 */
 			item->stepsecs = st->seconds;
+			item->timeoutstep = (void *)st;
 			item->stepdeadline = 0;
 			item->stepdeadlinefor = NULL;
 			st = st->next;
@@ -1630,11 +1632,31 @@ restartselect:
 					 * name it. The connection was established, so this is a
 					 * dialogue failure and not a connect timeout.
 					 */
+					svcstep_t *edge = (svcstep_t *)item->timeoutstep;
+
 					item->steptimedout = 1;
-					item->dialogfail = 1;
-					if (!item->failstep) item->failstep = item->curstep;
-					item->curstep = NULL;
 					item->stepdeadline = 0;
+					if (!item->failstep) item->failstep = item->curstep;
+
+					/*
+					 * The budget is an edge like any other: it says where
+					 * to go, not just that the wait was too long. Only a
+					 * target of "fail" or none at all ends the test here.
+					 */
+					if (edge && (edge->action == ACT_GOTO) && edge->targetstep) {
+						item->curstep = (void *)dlg_run_instant(item, edge->targetstep);
+						item->stepdeadlinefor = NULL;
+						continue;
+					}
+					if (edge && (edge->action == ACT_SUCCESS)) {
+						item->dialogverdict = 1;
+						item->curstep = NULL;
+					}
+					else {
+						item->dialogfail = 1;
+						item->dialogverdict = (edge && (edge->action == ACT_WARNING)) ? 2 : 3;
+						item->curstep = NULL;
+					}
 
 					socket_shutdown(item);
 					get_totaltime(item, &timestamp);
