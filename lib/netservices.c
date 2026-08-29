@@ -899,29 +899,46 @@ char *init_tcp_services(void)
 				if (txt) xfree(txt);
 			}
 		}
-		else if (strncmp(l, "timeout ", 8) == 0) {
+		else if (strncmp(l, "timeout(", 8) == 0) {
 			/*
-			 * How long the wait that follows may take. Without one, a
-			 * step that never matches is bounded only by --timeout, which
-			 * ends the whole test and cannot say which step stalled.
+			 * "timeout(N) -> TARGET": how long this state may take, and
+			 * where to go when it does not. Without one, a state that never
+			 * matches is bounded only by --timeout, which ends the whole
+			 * test and cannot say which state stalled.
 			 *
-			 * The budget covers the write as well as the read: a peer that
-			 * will not accept the send is as stuck as one that will not
-			 * answer it, and the global ceiling still wins either way.
+			 * The budget covers writing the action as well as reading the
+			 * reply: a peer that will not accept the send is as stuck as one
+			 * that will not answer it. --timeout still wins, so per-state
+			 * budgets can never sum past it.
 			 */
-			char *arg = skipwhitespace(l + 8);
-			int secs = atoi(arg);
+			char *close = strchr(l, ')');
+			int secs = atoi(l + 8);
 
-			if (secs <= 0) {
-				errprintf("Service %s: 'timeout %s' - the budget must be a positive number of seconds\n",
-					  (first ? first->rec->svcname : "?"), arg);
+			if (!close) errprintf("Service %s: 'timeout(' with no ')'\n",
+					      (first ? first->rec->svcname : "?"));
+			else if (secs <= 0) {
+				errprintf("Service %s: 'timeout(%d)' - the budget must be a positive "
+					  "number of seconds\n",
+					  (first ? first->rec->svcname : "?"), secs);
 			}
 			else if (first) {
 				svcstep_t tmpl;
+				char *arrow = strstr(close, "->");
 
 				memset(&tmpl, 0, sizeof(tmpl));
 				tmpl.type = STEP_TIMEOUT;
 				tmpl.seconds = secs;
+				tmpl.action = ACT_FAIL;	/* a budget with no target ends the test */
+
+				if (arrow) {
+					char *tgt = strtok(skipwhitespace(arrow + 2), " \t");
+
+					if (!tgt) errprintf("'timeout(%d) ->' with no target\n", secs);
+					else if (strcmp(tgt, "fail") == 0)    tmpl.action = ACT_FAIL;
+					else if (strcmp(tgt, "warning") == 0) tmpl.action = ACT_WARNING;
+					else if (strcmp(tgt, "success") == 0) tmpl.action = ACT_SUCCESS;
+					else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
+				}
 				emit_step(first, &tmpl);
 			}
 		}

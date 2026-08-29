@@ -8,7 +8,7 @@
 # nine tenths finished is then indistinguishable from a host that never
 # answered, and the operator has nothing to act on.
 #
-# Three things are checked, and the second is the one that stops this test
+# Four things are checked, and the second is the one that stops this test
 # being satisfied by a timer that simply fires all the time:
 #
 #   [budgeted]  a peer that greets, takes the command, then holds the
@@ -17,6 +17,10 @@
 #               budget must NOT fire, so a working service is unaffected
 #   [ceiling]   a budget far larger than --timeout -- the global cutoff must
 #               still win, since per-step budgets may never sum past it
+#   [routed]    the same silent peer with "timeout(2) -> warning" -- the
+#               budget is an EDGE, so where it leads is the config's
+#               choice. Ignore the target and expiry is a plain failure,
+#               and this comes out red instead of yellow.
 #
 # The peers hold rather than hang up: EOF is a different code path and a
 # different verdict, and would pass this test for the wrong reason.
@@ -52,18 +56,19 @@ printf 'send 220 ready\r\n\nrecvany\nhold 30\n' > "$work/silent.script"
 printf 'send 220 ready\r\n\nrecvany\nsend 250 ok\r\n\nhold 30\n' > "$work/quick.script"
 
 psilent=$(start_peer "$work/silent.script" "$work/silent.obs" "$work/silent.port")
+prouted=$(start_peer "$work/silent.script" "$work/routed.obs" "$work/routed.port")
 pquick=$(start_peer  "$work/quick.script"  "$work/quick.obs"  "$work/quick.port")
 pceil=$(start_peer   "$work/silent.script" "$work/ceil.obs"   "$work/ceil.port")
-register_cleanup "kill $(cat "$work/silent.port.pid") $(cat "$work/quick.port.pid") $(cat "$work/ceil.port.pid") 2>/dev/null || :"
+register_cleanup "kill $(cat "$work/silent.port.pid") $(cat "$work/quick.port.pid") $(cat "$work/ceil.port.pid") $(cat "$work/routed.port.pid") 2>/dev/null || :"
 [ -n "$psilent" ] && [ -n "$pquick" ] && [ -n "$pceil" ] || fail "a peer never named its port"
 
-printf '127.0.0.1\tsilent\t# budgeted healthy\n' > "$work/home/etc/hosts.cfg"
+printf '127.0.0.1\tsilent\t# budgeted healthy routed\n' > "$work/home/etc/hosts.cfg"
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [budgeted]
    expect "220"
    send "ehlo xymonnet\r\n"
    state waiting
-   timeout 2
+   timeout(2)                  -> fail
    expect "250"
    options banner
    port $psilent
@@ -72,10 +77,19 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    expect "220"
    send "ehlo xymonnet\r\n"
    state waiting
-   timeout 2
+   timeout(2)                  -> fail
    expect "250"
    options banner
    port $pquick
+
+[routed]
+   expect "220"
+   send "ehlo xymonnet\r\n"
+   state waiting
+   timeout(2)                  -> warning
+   expect "250"                -> success
+   options banner
+   port $prouted
 CFG
 
 start=$(date +%s)
@@ -99,6 +113,14 @@ grep -q 'Service healthy on silent is OK' "$work/out.txt" || fail \
 budget is firing on healthy conversations:
 $(grep -i 'healthy' "$work/out.txt" | head -10)"
 
+# THE EDGE. Same silent peer and same budget, routed to warning rather
+# than failing. Ignore the target and expiry is a plain failure: red.
+routedcol=$(grep -oE 'silent\.routed (green|yellow|red|clear)' "$work/out.txt" | awk '{print $2}' | head -1)
+[ "$routedcol" = "yellow" ] || fail \
+	"'timeout(2) -> warning' produced ${routedcol:-nothing}, not yellow. A
+budget is an edge -- where it leads is the config's choice, not always a
+failure."
+
 # 2s budget under a 25s ceiling: near 25 means the budget was ignored.
 [ "$elapsed" -lt 15 ] || fail \
 	"the run took ${elapsed}s with a 2 second step budget and a 25 second
@@ -115,7 +137,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    expect "220"
    send "ehlo xymonnet\r\n"
    state waiting
-   timeout 60
+   timeout(60)                 -> fail
    expect "250"
    options banner
    port $pceil
@@ -134,4 +156,4 @@ grep -q 'Service ceiling on silent is not OK' "$work/ceil.txt" || fail \
 	"the service was not reported down when the global cutoff ended it:
 $(grep -i 'ceiling' "$work/ceil.txt" | head -10)"
 
-pass "a step budget ends its own state (${elapsed}s), leaves a healthy service alone, and never outlives --timeout (${ceilelapsed}s)"
+pass "a budget ends its own state (${elapsed}s), routes where the config says (${routedcol}), leaves a healthy service alone, and never outlives --timeout (${ceilelapsed}s)"
