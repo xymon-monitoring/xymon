@@ -997,6 +997,268 @@ static void tcptest_setnext(void *a, void *newval)
 }
 
 
+/*
+ * ---- dialogue support: variables, expansion, and the instant steps ----
+ */
+
+/*
+ * Overwrite before releasing. ${password} lives in this list, and a plain
+ * memset on memory that is about to be freed is exactly what a compiler is
+ * entitled to delete, so the write goes through a volatile pointer.
+ */
+static void dlg_wipe(char *s)
+{
+	volatile char *p = (volatile char *)s;
+
+	while (p && *p) *p++ = '\0';
+}
+
+
+static void dlg_free(tcptest_t *item)
+{
+	dlgvar_t *v = (dlgvar_t *)item->dlgvars;
+
+	while (v) {
+		dlgvar_t *next = v->next;
+
+		if (v->value) { dlg_wipe(v->value); xfree(v->value); }
+		if (v->name) xfree(v->name);
+		xfree(v);
+		v = next;
+	}
+	item->dlgvars = NULL;
+
+	if (item->stepbuf) { xfree(item->stepbuf); item->stepbuf = NULL; }
+	item->stepbuflen = 0;
+	if (item->lastreply) { xfree(item->lastreply); item->lastreply = NULL; }
+}
+
+
+static char *dlg_get(tcptest_t *item, const char *name)
+{
+	dlgvar_t *v;
+
+	for (v = (dlgvar_t *)item->dlgvars; (v); v = v->next)
+		if (strcmp(v->name, name) == 0) return v->value;
+
+	return NULL;
+}
+
+static void dlg_set(tcptest_t *item, const char *name, const char *value)
+{
+	dlgvar_t *v;
+
+	for (v = (dlgvar_t *)item->dlgvars; (v); v = v->next) {
+		if (strcmp(v->name, name) != 0) continue;
+		if (v->value) xfree(v->value);
+		v->value = strdup(value ? value : "");
+		return;
+	}
+
+	v = (dlgvar_t *)calloc(1, sizeof(dlgvar_t));
+	v->name  = strdup(name);
+	v->value = strdup(value ? value : "");
+	v->next  = (dlgvar_t *)item->dlgvars;
+	item->dlgvars = (void *)v;
+}
+
+/*
+ * Expand ${...} in a send string. Nesting is why this recurses rather than
+ * scanning once: APOP is ${md5:${challenge}${password}}, and the digest has
+ * to be taken of the *expanded* argument.
+ *
+ * The result is NUL-terminated but the length is returned separately --
+ * a send may legitimately carry NULs.
+ */
+static char *dlg_expand(tcptest_t *item, const char *text, int len, int *outlen)
+{
+	char *out;
+	int outsz, n = 0, i;
+
+	outsz = len + 128;
+	out = (char *)malloc(outsz + 1);
+
+	for (i = 0; (i < len); i++) {
+		int depth, j, blen;
+		char *body, *inner, *val = NULL, *freeval = NULL;
+		int innerlen;
+
+		if (!((text[i] == '$') && ((i+1) < len) && (text[i+1] == '{'))) {
+			if (n >= outsz) { outsz *= 2; out = (char *)realloc(out, outsz + 1); }
+			out[n++] = text[i];
+			continue;
+		}
+
+		/* find the matching brace, counting nested ${ } */
+		depth = 1;
+		for (j = i + 2; (j < len) && depth; j++) {
+			if ((text[j] == '$') && ((j+1) < len) && (text[j+1] == '{')) { depth++; j++; }
+			else if (text[j] == '}') depth--;
+		}
+		if (depth) {			/* unterminated -- emit literally */
+			if (n >= outsz) { outsz *= 2; out = (char *)realloc(out, outsz + 1); }
+			out[n++] = text[i];
+			continue;
+		}
+
+		blen = (j - 1) - (i + 2);
+		body = (char *)malloc(blen + 1);
+		memcpy(body, text + i + 2, blen);
+		body[blen] = '\0';
+
+		if (strncmp(body, "md5:", 4) == 0) {
+			inner = dlg_expand(item, body + 4, blen - 4, &innerlen);
+			/* md5hash() hands back a static buffer -- copy, never free. */
+			val = md5hash(inner);
+			xfree(inner);
+		}
+		else if (strncmp(body, "base64:", 7) == 0) {
+			inner = dlg_expand(item, body + 7, blen - 7, &innerlen);
+			val = freeval = base64encode((unsigned char *)inner);
+			xfree(inner);
+		}
+		else {
+			/* Mistyped functions are reported when the file is read. */
+			val = dlg_get(item, body);
+			if (val == NULL) {
+				dbgprintf("dialogue: ${%s} is not set, expanding empty\n", body);
+				val = "";
+			}
+		}
+
+		{
+			int vlen = strlen(val);
+
+			while ((n + vlen) >= outsz) { outsz *= 2; out = (char *)realloc(out, outsz + 1); }
+			memcpy(out + n, val, vlen);
+			n += vlen;
+		}
+
+		if (freeval) xfree(freeval);
+		xfree(body);
+		i = j - 1;
+	}
+
+	out[n] = '\0';
+	if (outlen) *outlen = n;
+	return out;
+}
+
+/* Group 1 of the pattern, against the reply the last expect accepted. */
+static void dlg_capture(tcptest_t *item, svcstep_t *st)
+{
+	char *subject = (item->lastreply ? item->lastreply : "");
+	pcre2_match_data *md;
+	int res, n;
+	char names[256], *name, *rest;
+
+	if (st->re == NULL) {			/* plain "capture as NAME" */
+		dlg_set(item, st->varname, subject);
+		return;
+	}
+
+	md = pcre2_match_data_create(32, NULL);
+	res = pcre2_match((pcre2_code *)st->re, (PCRE2_SPTR)subject,
+			  strlen(subject), 0, 0, md, NULL);
+
+	/*
+	 * One name per capture group, in order: "as server;challenge" binds
+	 * group 1 to server and group 2 to challenge. The parser has already
+	 * refused a list whose length does not match the pattern, so a group
+	 * with no name cannot reach here.
+	 */
+	strncpy(names, st->varname, sizeof(names) - 1);
+	names[sizeof(names) - 1] = '\0';
+	rest = names;
+	n = 1;
+
+	while ((name = strtok(rest, ";")) != NULL) {
+		rest = NULL;
+
+		if (res > n) {
+			PCRE2_SIZE *ov = pcre2_get_ovector_pointer(md);
+			int b = ov[2*n], e = ov[2*n + 1];
+			char *v = (char *)malloc(e - b + 1);
+
+			memcpy(v, subject + b, e - b);
+			v[e-b] = '\0';
+			dlg_set(item, name, v);
+			xfree(v);
+		}
+		else {
+			dbgprintf("dialogue: capture-regex did not match, ${%s} left empty\n", name);
+			dlg_set(item, name, "");
+		}
+		n++;
+	}
+
+	pcre2_match_data_free(md);
+}
+
+
+/*
+ * Run every step that needs no socket, and return the next one that does
+ * (or NULL at the end of the dialogue). Bounded: a "when" that jumps
+ * backwards is a legal retry loop, but a loop that performs no I/O would
+ * spin here forever, so cap the run.
+ */
+static svcstep_t *dlg_run_instant(tcptest_t *item, svcstep_t *st)
+{
+	int guard = 0;
+
+	while (st && STEP_IS_INSTANT(st->type)) {
+		if (++guard > 1000) {
+			errprintf("Service %s: dialogue loops without doing any I/O\n",
+				  (item->svcinfo ? item->svcinfo->svcname : "?"));
+			item->dialogfail = 1;
+			if (!item->failstep) item->failstep = (void *)st;
+			return NULL;
+		}
+
+		switch (st->type) {
+		  case STEP_LABEL:
+			st = st->next;
+			break;
+
+		  case STEP_CAPTURE:
+			dlg_capture(item, st);
+			st = st->next;
+			break;
+
+		  case STEP_WHEN: {
+			char *v = dlg_get(item, st->varname);
+
+			/*
+			 * An edge: taken when the test matches, fallen through when
+			 * it does not, so the next line -- another '~' or an 'else'
+			 * -- gets its turn. The regex tests a value already bound,
+			 * never the socket, so nothing here races a partial read.
+			 */
+			if (!(v && st->re && matchregex(v, (pcre2_code *)st->re))) {
+				st = st->next;
+				break;
+			}
+		  }
+		  /* FALLTHROUGH: a matched '~' takes its edge exactly as a jump does */
+		  case STEP_JUMP:
+			if (st->action == ACT_FAIL) {
+				item->dialogfail = 1;
+				if (!item->failstep) item->failstep = (void *)st;
+				return NULL;
+			}
+			st = st->targetstep;
+			break;
+
+		  default:
+			st = st->next;
+			break;
+		}
+	}
+
+	return st;
+}
+
+
 void do_tcp_tests(int timeout, int concurrency)
 {
 	int		selres;
@@ -1386,7 +1648,12 @@ restartselect:
 							 * rule is the whole state machine -- the current
 							 * step decides which fd set the socket joins.
 							 */
-							svcstep_t *st = (svcstep_t *)item->curstep;
+							svcstep_t *st;
+
+							/* Settle onto a step that actually needs the socket. */
+							st = dlg_run_instant(item, (svcstep_t *)item->curstep);
+							item->curstep = (void *)st;
+
 
 							while (st && (st->type == STEP_SEND) && item->silenttest) {
 								/*
@@ -1395,11 +1662,15 @@ restartselect:
 								 * leaving it current would strand the dialogue
 								 * with a step it will never perform.
 								 */
-								st = st->next;
+								st = dlg_run_instant(item, st->next);
 								item->curstep = (void *)st;
 							}
 							if (st && (st->type == STEP_SEND)) {
-								res = socket_write(item, (char *)st->text, st->len);
+								int slen = 0;
+								char *sbuf = dlg_expand(item, (char *)st->text, st->len, &slen);
+
+								res = socket_write(item, sbuf, slen);
+								xfree(sbuf);
 								tcp_stats_written += res;
 								if (res == -1) {
 									dbgprintf("write failed\n");
@@ -1408,7 +1679,7 @@ restartselect:
 									st = NULL;
 								}
 								else {
-									st = st->next;
+									st = dlg_run_instant(item, st->next);
 									item->curstep = (void *)st;
 								}
 							}
@@ -1584,6 +1855,8 @@ restartselect:
 								 * or not enough yet -- and only the third is
 								 * new here.
 								 */
+								int progress = 1;
+
 								/*
 								 * Bound it. An expect that waits for a
 								 * terminator will otherwise accumulate
@@ -1609,66 +1882,113 @@ restartselect:
 								item->stepbuflen += res;
 								item->stepbuf[item->stepbuflen] = '\0';
 
-								if (item->stepbuflen >= st->len) {
-									if (memcmp(item->stepbuf, st->text, st->len) == 0) {
-										int cut = st->len, ready = 1;
+								/*
+								 * Loop, because one read can satisfy more than one
+								 * expect when the peer coalesces its replies -- and
+								 * we are only woken again by readable data.
+								 */
+								while (progress) {
+									svcstep_t *alt, *hit = NULL;
+									int undecided = 0;
 
-										if (st->until) {
+									progress = 0;
+									st = (svcstep_t *)item->curstep;
+									if (!st || (st->type != STEP_EXPECT)) break;
+
+									/* Consecutive expects are alternatives of ONE state. */
+									for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next) {
+										if (item->stepbuflen < alt->len) { undecided++; continue; }
+										if (memcmp(item->stepbuf, alt->text, alt->len) == 0) { hit = alt; break; }
+									}
+
+									/*
+									 * An ambiguous group is one where a longer
+									 * alternative could still overtake the one
+									 * that just matched. Wait until every
+									 * pattern in the group is decidable, so the
+									 * winner is the config's order rather than
+									 * the server's packet boundaries. Bounded:
+									 * maxaltlen is known at load time, and the
+									 * buffer cap and test timeout end the wait.
+									 */
+									if (hit && hit->ambiguous &&
+									    (item->stepbuflen < hit->maxaltlen)) break;
+
+									if (hit) {
+										int cut = hit->len;
+
+										if (hit->until) {
 											/*
-											 * Multi-line: consume complete lines
-											 * until one starts with the terminator.
-											 * If it has not arrived, consume NOTHING
-											 * and wait -- taking the lines we have
-											 * would strand the rest of the reply for
-											 * the next expect to trip over.
+											 * A multi-line reply: consume complete
+											 * lines until one starts with the
+											 * terminator. If it has not arrived yet
+											 * consume NOTHING and wait -- taking the
+											 * lines we have would strand the rest of
+											 * the reply for the next expect to trip
+											 * over.
 											 */
-											int pos = 0;
+											int pos = 0, done = 0;
 
-											ready = 0;
 											while (pos < item->stepbuflen) {
 												int eol = pos;
 
 												while ((eol < item->stepbuflen) &&
 												       (item->stepbuf[eol] != '\n')) eol++;
-												if (eol >= item->stepbuflen) break;
-												if (((item->stepbuflen - pos) >= st->untillen) &&
-												    (memcmp(item->stepbuf + pos, st->until, st->untillen) == 0)) {
+												if (eol >= item->stepbuflen) break;   /* partial line */
+												if (((item->stepbuflen - pos) >= hit->untillen) &&
+												    (memcmp(item->stepbuf + pos, hit->until, hit->untillen) == 0)) {
 													cut = eol + 1;
-													ready = 1;
+													done = 1;
 													break;
 												}
 												pos = eol + 1;
 											}
+											if (!done) break;	/* wait for the rest */
 										}
 										else {
 											/*
-											 * Single line. Consume through its end
-											 * and KEEP the rest: discarding it would
-											 * throw away a reply the peer had already
-											 * sent, and the next expect would wait for
-											 * data that already arrived.
+											 * Single line. Consume through its end and
+											 * KEEP the rest: discarding it would throw
+											 * away a reply the peer had already sent,
+											 * and the next expect would wait for data
+											 * that already arrived.
 											 */
-											while ((cut < item->stepbuflen) &&
-											       (item->stepbuf[cut] != '\n')) cut++;
+											while ((cut < item->stepbuflen) && (item->stepbuf[cut] != '\n')) cut++;
 											if (cut < item->stepbuflen) cut++;
 										}
 
-										if (ready) {
-											memmove(item->stepbuf, item->stepbuf + cut,
-												item->stepbuflen - cut);
-											item->stepbuflen -= cut;
-											st = st->next;
+										if (item->lastreply) xfree(item->lastreply);
+										item->lastreply = (char *)malloc(cut + 1);
+										memcpy(item->lastreply, item->stepbuf, cut);
+										item->lastreply[cut] = '\0';
+
+										memmove(item->stepbuf, item->stepbuf + cut, item->stepbuflen - cut);
+										item->stepbuflen -= cut;
+
+										if (hit->action == ACT_FAIL) {
+											item->dialogfail = 1;
+											if (!item->failstep) item->failstep = (void *)st;
+											item->curstep = NULL;
+											st = NULL;
+										}
+										else {
+											if (hit->action == ACT_GOTO) alt = hit->targetstep;
+											else for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next) ;
+
+											st = dlg_run_instant(item, alt);
 											item->curstep = (void *)st;
+											progress = 1;
 										}
 									}
-									else {
+									else if (!undecided) {
+										/* every alternative has been ruled out */
 										item->dialogfail = 1;
 										if (!item->failstep) item->failstep = (void *)st;
 										item->curstep = NULL;
 										st = NULL;
 									}
+									/* else: short of every pattern -- wait for more */
 								}
-								/* else: short of the pattern -- wait for more */
 
 								/*
 								 * The step we land on decides which fd set the socket
@@ -1758,6 +2078,13 @@ restartselect:
 		}  /* end for loop */
 	} /* end while (pending) */
 
+	/*
+	 * Release the dialogue state. Not in socket_shutdown(): a connection
+	 * that is refused, or that times out before it opens, never reaches
+	 * that. Here every test in the list is covered however it ended.
+	 */
+	for (item = thead; (item); item = item->next) dlg_free(item);
+
 	dbgprintf("TCP tests completed normally\n");
 }
 
@@ -1818,6 +2145,7 @@ char *tcp_dialogue_failure(tcptest_t *test)
 {
 	static char buf[160];
 	svcstep_t *st, *bad;
+	char *name = NULL;
 	int idx = 0, n = 0;
 
 	if (!test || !test->svcinfo || !(test->svcinfo->flags & TCP_DIALOGUE)) return NULL;
@@ -1828,18 +2156,41 @@ char *tcp_dialogue_failure(tcptest_t *test)
 		st = (svcstep_t *)test->curstep;
 		if (!st) return NULL;
 		bad = st;
-		for (st = test->svcinfo->steps; (st); st = st->next) { n++; if (st == bad) idx = n; }
-		snprintf(buf, sizeof(buf), "no reply to step %d (expecting \"%.40s\")",
-			 idx, (bad->text ? (char *)bad->text : ""));
+		for (st = test->svcinfo->steps; (st); st = st->next) {
+			n++;
+			if (st->type == STEP_LABEL) name = st->label;
+			if (st == bad) { idx = n; break; }
+		}
+		if (name)
+			snprintf(buf, sizeof(buf), "no reply in state %s (expecting \"%.40s\")",
+				 name, (bad->text ? (char *)bad->text : ""));
+		else
+			snprintf(buf, sizeof(buf), "no reply to step %d (expecting \"%.40s\")",
+				 idx, (bad->text ? (char *)bad->text : ""));
 		return buf;
 	}
 
-	for (st = test->svcinfo->steps; (st); st = st->next) { n++; if (st == bad) idx = n; }
-	if (bad->type == STEP_EXPECT)
-		snprintf(buf, sizeof(buf), "step %d expected \"%.40s\"", idx,
-			 (bad->text ? (char *)bad->text : ""));
-	else
-		snprintf(buf, sizeof(buf), "step %d failed", idx);
+	/*
+	 * Prefer the state's name. "step 7" is accurate and tells an operator
+	 * nothing; "state want-password" is what they need to read. Entries
+	 * that name no states still get the number.
+	 */
+	for (st = test->svcinfo->steps; (st); st = st->next) {
+		n++;
+		if (st->type == STEP_LABEL) name = st->label;
+		if (st == bad) { idx = n; break; }
+	}
+
+	if (bad->type == STEP_EXPECT) {
+		if (name)
+			snprintf(buf, sizeof(buf), "state %s expected \"%.40s\"", name,
+				 (bad->text ? (char *)bad->text : ""));
+		else
+			snprintf(buf, sizeof(buf), "step %d expected \"%.40s\"", idx,
+				 (bad->text ? (char *)bad->text : ""));
+	}
+	else if (name) snprintf(buf, sizeof(buf), "state %s failed", name);
+	else           snprintf(buf, sizeof(buf), "step %d failed", idx);
 
 	return buf;
 }

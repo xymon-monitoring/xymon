@@ -82,6 +82,13 @@ typedef void (*f_callback_final)(void *privdata);
 #define CONTEST_EIO        4
 #define CONTEST_ESSL       5
 
+/* A value captured during the dialogue, referenced later as ${name}. */
+typedef struct dlgvar_t {
+	char *name;
+	char *value;
+	struct dlgvar_t *next;
+} dlgvar_t;
+
 /* How much a single expect may accumulate before giving up. A server that
    never sends the terminator must not be able to grow this without limit. */
 #define MAX_DIALOGUE_BYTES (32 * 1024)
@@ -138,6 +145,8 @@ typedef struct tcptest_t {
 	void *failstep;			/* svcstep_t *: WHICH step, for the report */
 	unsigned char *stepbuf;		/* replies for the CURRENT expect step */
 	int stepbuflen;
+	char *lastreply;		/* the reply that satisfied the last expect */
+	void *dlgvars;			/* captured values, a dlgvar_t list */
 
 	/* For testing telnet services */
 	unsigned char *telnetbuf;	/* Buffer for telnet option negotiation */

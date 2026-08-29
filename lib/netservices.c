@@ -79,7 +79,7 @@ static svcstep_t *add_svcstep(svcinfo_t *rec, int type, unsigned char *text, int
 	step->type = type;
 	step->len  = len;
 	step->text = (unsigned char *)malloc(len + 1);
-	memcpy(step->text, text, len);
+	if (text) memcpy(step->text, text, len);
 	step->text[len] = '\0';
 
 	if (rec->steps == NULL) rec->steps = step;
@@ -93,9 +93,32 @@ static svcstep_t *add_svcstep(svcinfo_t *rec, int type, unsigned char *text, int
 
 
 /*
+ * A quoted string, verbatim. Regex arguments must NOT go through
+ * getescapestring(): it consumes the backslash, so "\\d" reaches PCRE as
+ * "d" and "\\+" as "+", quietly turning the pattern into a different one
+ * (or an invalid one). PCRE handles its own escapes.
+ */
+static void getrawstring(char *msg, unsigned char **buf, int *buflen)
+{
+	char *inp = msg, *end;
+	int len;
+
+	if (*inp == '"') inp++;
+	end = strchr(inp, '"');
+	len = (end ? (int)(end - inp) : (int)strlen(inp));
+
+	*buf = (unsigned char *)malloc(len + 1);
+	memcpy(*buf, inp, len);
+	(*buf)[len] = '\0';
+	if (buflen) *buflen = len;
+}
+
+
+/*
  * Where a quoted string ends. Deliberately the same rule getescapestring
- * uses -- scan to the next '"' -- so the two agree on where the value stops
- * and any trailing keywords begin.
+ * uses -- scan to the next '"' -- so the two agree on where the value
+ * stops and the trailing keywords begin. (Neither supports \" ; that is a
+ * pre-existing limit of the string lexer, not one introduced here.)
  */
 static char *after_quoted(char *p)
 {
@@ -109,8 +132,59 @@ static char *after_quoted(char *p)
 
 
 /*
+ * Report a mistyped expansion when the file is read, not when the step
+ * runs. ${sha1:x} is otherwise read as a variable literally named
+ * "sha1:x", found to be unset, and expanded to nothing -- and a step that
+ * is never reached would never say so at all.
+ */
+static void check_expansions(char *svcname, unsigned char *txt, int len)
+{
+	int i;
+
+	for (i = 0; (i < len - 1); i++) {
+		int depth, j, blen;
+		char *colon, body[256];
+
+		if (!((txt[i] == '$') && (txt[i+1] == '{'))) continue;
+
+		depth = 1;
+		for (j = i + 2; ((j < len) && depth); j++) {
+			if ((txt[j] == '$') && ((j+1) < len) && (txt[j+1] == '{')) { depth++; j++; }
+			else if (txt[j] == '}') depth--;
+		}
+		if (depth) continue;			/* unterminated: left alone */
+
+		blen = (j - 1) - (i + 2);
+		if ((blen <= 0) || (blen >= (int)sizeof(body))) continue;
+		memcpy(body, txt + i + 2, blen);
+		body[blen] = '\0';
+
+		colon = strchr(body, ':');
+		if (colon) {
+			*colon = '\0';
+			if ((strcmp(body, "md5") != 0) && (strcmp(body, "base64") != 0))
+				errprintf("Service %s: unknown expansion ${%s:...} - "
+					  "known functions are md5 and base64\n", svcname, body);
+		}
+	}
+}
+
+
+/*
+ * Every ${name} a send refers to must be bound by something earlier in the
+ * same entry -- a capture, or the username/password that credentials binds.
+ * An unbound one is not an error at run time: it expands to nothing, the
+ * command goes out malformed, and the server rejects it, so the test fails
+ * for a reason that has nothing to do with the mistake.
+ *
+ * Only plain ${name} references are checked. A body carrying ':' is a
+ * function call, and check_expansions() has already vetted the name.
+ */
+/*
  * Release one entry's step list. The reload path already promises not to
- * leak, and a step list is more than the record it hangs off.
+ * leak, and a step list holds more than the strings: the compiled regexes
+ * are the largest allocations here, and the credentials a step carries
+ * should not outlive the configuration that named them.
  */
 static void free_svcsteps(svcinfo_t *rec)
 {
@@ -119,8 +193,12 @@ static void free_svcsteps(svcinfo_t *rec)
 	while (st) {
 		svcstep_t *next = st->next;
 
-		if (st->text)  xfree(st->text);
-		if (st->until) xfree(st->until);
+		if (st->text)    xfree(st->text);
+		if (st->until)   xfree(st->until);
+		if (st->target)  xfree(st->target);
+		if (st->label)   xfree(st->label);
+		if (st->varname) xfree(st->varname);
+		if (st->re)      freeregex((pcre2_code *)st->re);
 		xfree(st);
 		st = next;
 	}
@@ -128,10 +206,209 @@ static void free_svcsteps(svcinfo_t *rec)
 }
 
 
+static int name_is_known(char **known, int nknown, const char *name)
+{
+	int k;
+
+	for (k = 0; (k < nknown); k++)
+		if (strcmp(known[k], name) == 0) return 1;
+
+	return 0;
+}
+
+
+static void check_undefined_vars(svcinfo_t *rec)
+{
+	svcstep_t *st;
+	char *known[64];
+	int nknown = 0;
+
+	for (st = rec->steps; (st); st = st->next) {
+		int i;
+
+		if (st->type == STEP_CAPTURE) {
+			/* "as a;b;c" binds three names, not one called "a;b;c". */
+			if (st->varname) {
+				char *p = st->varname;
+
+				while (p && *p && (nknown < 64)) {
+					char *semi = strchr(p, ';');
+					int len = (semi ? (int)(semi - p) : (int)strlen(p));
+					char *one = (char *)malloc(len + 1);
+
+					memcpy(one, p, len); one[len] = '\0';
+					known[nknown++] = one;
+					p = (semi ? semi + 1 : NULL);
+				}
+			}
+			continue;
+		}
+
+		if (st->type == STEP_WHEN) {
+			/* Testing a name nothing binds silently takes the else-arm. */
+			if (st->varname && !name_is_known(known, nknown, st->varname))
+				errprintf("Service %s: 'when %s ~ ...' tests a value that is never "
+					  "captured before it - the test can only fail\n",
+					  rec->svcname, st->varname);
+			continue;
+		}
+
+		if ((st->type != STEP_SEND) || !st->text) continue;
+
+		for (i = 0; (i < st->len - 1); i++) {
+			int j, blen;
+			char name[128];
+
+			if (!((st->text[i] == '$') && (st->text[i+1] == '{'))) continue;
+
+			/* Plain ${name} only: a '{' or ':' inside means a nested
+			   reference or a function call, and check_expansions()
+			   has already vetted the function name. */
+			for (j = i + 2; ((j < st->len) && (st->text[j] != '}')); j++)
+				if ((st->text[j] == '{') || (st->text[j] == ':')) break;
+			if ((j >= st->len) || (st->text[j] != '}')) continue;
+
+			blen = j - (i + 2);
+			if ((blen <= 0) || (blen >= (int)sizeof(name))) continue;
+			memcpy(name, st->text + i + 2, blen);
+			name[blen] = '\0';
+
+			if (!name_is_known(known, nknown, name))
+				errprintf("Service %s: ${%s} is never captured or bound before it is "
+					  "used - it will expand to nothing\n", rec->svcname, name);
+
+			i = j;
+		}
+	}
+}
+
+
+/*
+ * Two alternatives can both match the same reply exactly when one is a
+ * prefix of the other -- matching is prefix-anchored, so patterns that
+ * diverge anywhere can never both match. That makes this check complete
+ * rather than a heuristic.
+ *
+ * Such a group is ambiguous: which one wins depends on how much of the
+ * reply has arrived, and therefore on how the server split it across
+ * packets. Say so, and record the longest pattern so the driver can wait
+ * for the group to be decidable instead of racing.
+ */
+static void mark_ambiguous_groups(svcinfo_t *rec)
+{
+	svcstep_t *st;
+
+	for (st = rec->steps; (st); st = st->next) {
+		svcstep_t *a, *b, *last;
+		int maxlen = 0, clash = 0;
+
+		if (st->type != STEP_EXPECT) continue;
+
+		/* the group is this step and the expects immediately after it */
+		for (last = st; (last->next && (last->next->type == STEP_EXPECT)); last = last->next) ;
+		for (a = st; ; a = a->next) {
+			if (a->len > maxlen) maxlen = a->len;
+			if (a == last) break;
+		}
+
+		for (a = st; (a != last); a = a->next) {
+			for (b = a->next; ; b = b->next) {
+				int n = (a->len < b->len) ? a->len : b->len;
+
+				if ((n > 0) && (memcmp(a->text, b->text, n) == 0)) {
+					clash = 1;
+					errprintf("Service %s: 'expect \"%.30s\"' and 'expect \"%.30s\"' overlap - "
+						  "both match the same reply, and which one wins depends on how "
+						  "the server split it\n", rec->svcname, a->text, b->text);
+				}
+				if (b == last) break;
+			}
+		}
+
+		if (clash)
+			for (a = st; ; a = a->next) {
+				a->ambiguous = 1;
+				a->maxaltlen = maxlen;
+				if (a == last) break;
+			}
+
+		st = last;	/* skip past the group we just examined */
+	}
+}
+
+/* Has this entry produced an expect yet? A capture binds the reply that the
+   preceding expect accepted, so one with nothing in front of it can only ever
+   bind an empty value. */
+static int has_expect_step(svcinfo_t *rec)
+{
+	svcstep_t *st;
+
+	for (st = rec->steps; (st); st = st->next)
+		if (st->type == STEP_EXPECT) return 1;
+
+	return 0;
+}
+
+
+/*
+ * Resolve "goto NAME" to the step that "label NAME" defines. Done once
+ * after the whole entry is read, so a goto may point forwards -- a retry
+ * loop points backwards, and both are ordinary edges here.
+ */
+static void resolve_svcsteps(svcinfo_t *rec)
+{
+	svcstep_t *st, *lbl;
+
+	for (st = rec->steps; (st); st = st->next) {
+		if (st->action != ACT_GOTO || st->target == NULL) continue;
+
+		for (lbl = rec->steps; (lbl); lbl = lbl->next)
+			if ((lbl->type == STEP_LABEL) && lbl->label &&
+			    (strcmp(lbl->label, st->target) == 0)) break;
+
+		if (lbl) st->targetstep = lbl;
+		else {
+			errprintf("Service %s: 'goto %s' has no matching state - "
+				  "the branch is dropped\n", rec->svcname, st->target);
+			st->action = ACT_NEXT;
+		}
+	}
+}
+
+
 typedef struct svclist_t {
 	struct svcinfo_t *rec;
 	struct svclist_t *next;
 } svclist_t;
+
+
+/*
+ * Emit one step to every record in the current [a|b|c] section. `first`
+ * heads that section and the aliases follow it, so walking to the end of
+ * the list is exactly this section -- later sections have not been read.
+ */
+static void emit_step(svclist_t *first, svcstep_t *tmpl)
+{
+	svclist_t *walk;
+
+	for (walk = first; (walk); walk = walk->next) {
+		svcstep_t *st = add_svcstep(walk->rec, tmpl->type, tmpl->text, tmpl->len);
+
+		st->action = tmpl->action;
+		if (tmpl->target)  st->target  = strdup(tmpl->target);
+		if (tmpl->label)   st->label   = strdup(tmpl->label);
+		if (tmpl->varname) st->varname = strdup(tmpl->varname);
+		if (tmpl->until) {
+			st->until = (unsigned char *)malloc(tmpl->untillen + 1);
+			memcpy(st->until, tmpl->until, tmpl->untillen);
+			st->until[tmpl->untillen] = '\0';
+			st->untillen = tmpl->untillen;
+		}
+
+		/* One compiled copy per record: records are freed independently. */
+		if (tmpl->re) st->re = (void *)compileregex_opts((char *)tmpl->text, 0);
+	}
+}
 
 
 static char *binview(unsigned char *buf, int buflen)
@@ -279,6 +556,7 @@ char *init_tcp_services(void)
 		}
 		else if (strncmp(l, "send ", 5) == 0) {
 			if (first) {
+				svcstep_t tmpl;
 				unsigned char *txt = NULL;
 				int txtlen = 0;
 
@@ -288,28 +566,33 @@ char *init_tcp_services(void)
 				 * single-step probe has always meant. The step list is
 				 * what a dialogue is driven from.
 				 */
-				if (first->rec->sendtxt == NULL) {
-					first->rec->sendtxt = txt;
-					first->rec->sendlen = txtlen;
-				}
-				add_svcstep(first->rec, STEP_SEND, txt, txtlen);
-				for (walk = first->next; (walk); walk = walk->next) {
+				for (walk = first; (walk); walk = walk->next) {
 					if (walk->rec->sendtxt == NULL) {
 						walk->rec->sendtxt = (unsigned char *)strdup((char *)txt);
 						walk->rec->sendlen = txtlen;
 					}
-					add_svcstep(walk->rec, STEP_SEND, txt, txtlen);
 				}
+				check_expansions(first->rec->svcname, txt, txtlen);
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_SEND; tmpl.text = txt; tmpl.len = txtlen;
+				emit_step(first, &tmpl);
+				xfree(txt);
 			}
 		}
 		else if (strncmp(l, "expect ", 7) == 0) {
 			if (first) {
+				svcstep_t tmpl;
 				unsigned char *txt = NULL, *untiltxt = NULL;
 				int txtlen = 0, untillen = 0;
-				char *rest;
-				svcstep_t *st;
+				char *rest, *act;
 
 				getescapestring(skipwhitespace(l+6), &txt, &txtlen);
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_EXPECT; tmpl.text = txt; tmpl.len = txtlen;
+
+				rest = skipwhitespace(after_quoted(skipwhitespace(l+6)));
 
 				/*
 				 * "until" says where the reply ENDS. Without it an expect
@@ -319,32 +602,213 @@ char *init_tcp_services(void)
 				 * with the command tag. Naming the terminator covers all three
 				 * without teaching the parser any of them.
 				 */
-				rest = skipwhitespace(after_quoted(skipwhitespace(l+6)));
-				if (strncmp(rest, "until ", 6) == 0)
-					getescapestring(skipwhitespace(rest + 5), &untiltxt, &untillen);
+				if (strncmp(rest, "until ", 6) == 0) {
+					char *tp = skipwhitespace(rest + 5);
 
-				if (first->rec->exptext == NULL) {
-					first->rec->exptext = txt;
-					first->rec->explen  = txtlen;
+					getescapestring(tp, &untiltxt, &untillen);
+					tmpl.until = untiltxt;
+					tmpl.untillen = untillen;
+					rest = skipwhitespace(after_quoted(tp));
 				}
-				st = add_svcstep(first->rec, STEP_EXPECT, txt, txtlen);
-				if (untiltxt) {
-					st->until = (unsigned char *)strdup((char *)untiltxt);
-					st->untillen = untillen;
+
+				/* Anything left after that is this edge's action. */
+				if (*rest) {
+					act = strtok(rest, " \t");
+					if (act && (strcmp(act, "->") == 0)) {
+						/*
+						 * Every edge is "<condition> -> TARGET". "fail" is
+						 * a reserved target: the dialogue ends there.
+						 */
+						char *tgt = strtok(NULL, " \t");
+
+						if (!tgt) errprintf("'expect ... ->' with no target\n");
+						else if (strcmp(tgt, "fail") == 0) tmpl.action = ACT_FAIL;
+						else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
+					}
+					else if (act) errprintf("Unknown expect action: %s - edges are "
+								"'<condition> -> TARGET'\n", act);
 				}
-				for (walk = first->next; (walk); walk = walk->next) {
+
+				for (walk = first; (walk); walk = walk->next) {
 					if (walk->rec->exptext == NULL) {
 						walk->rec->exptext = (unsigned char *)strdup((char *)txt);
 						walk->rec->explen  = txtlen;
 						walk->rec->expofs  = 0; /* HACK - not used right now */
 					}
-					st = add_svcstep(walk->rec, STEP_EXPECT, txt, txtlen);
-					if (untiltxt) {
-						st->until = (unsigned char *)strdup((char *)untiltxt);
-						st->untillen = untillen;
+				}
+				emit_step(first, &tmpl);
+				xfree(txt);
+				if (untiltxt) xfree(untiltxt);
+			}
+		}
+		else if (strncmp(l, "state ", 6) == 0) {
+			/*
+			 * Names the state that follows: the expects up to the next
+			 * step that is not one. It is also what "goto" aims at, so
+			 * naming a state and marking a jump target are the same act
+			 * rather than two keywords for one idea.
+			 */
+			if (first) {
+				svcstep_t tmpl;
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_LABEL;
+				tmpl.label = strtok(skipwhitespace(l+5), " \t");
+				if (tmpl.label) emit_step(first, &tmpl);
+				else errprintf("'state' with no name\n");
+			}
+		}
+		else if (strncmp(l, "capture-regex ", 14) == 0) {
+			if (first) {
+				svcstep_t tmpl;
+				unsigned char *txt = NULL;
+				int txtlen = 0;
+				char *rest, *kw;
+
+				getrawstring(skipwhitespace(l+13), &txt, &txtlen);
+				rest = skipwhitespace(after_quoted(skipwhitespace(l+13)));
+				kw = strtok(rest, " \t");
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_CAPTURE; tmpl.text = txt; tmpl.len = txtlen;
+				tmpl.re = (void *)1;	/* emit_step compiles one per record */
+				if (kw && (strcmp(kw, "as") == 0)) tmpl.varname = strtok(NULL, " \t");
+
+				if (tmpl.varname) {
+					pcre2_code *probe;
+					uint32_t ngroups = 0;
+
+					if (!has_expect_step(first->rec))
+						errprintf("Service %s: 'capture-regex ... as %s' before any expect - "
+							  "there is no reply to capture from, it will bind empty\n",
+							  first->rec->svcname, tmpl.varname);
+
+					/*
+					 * The value bound is group 1, so a pattern with no
+					 * parenthesised group can never bind anything: ${name}
+					 * would expand to nothing for every reply, forever.
+					 * Unconditional, so worth saying at load time.
+					 */
+					probe = compileregex_opts((char *)txt, 0);
+					if (probe) {
+						uint32_t nnames = 1;
+						char *p;
+
+						for (p = tmpl.varname; (*p); p++) if (*p == ';') nnames++;
+
+						pcre2_pattern_info(probe, PCRE2_INFO_CAPTURECOUNT, &ngroups);
+						freeregex(probe);
+
+						/*
+						 * One name per group, in order. A mismatch means
+						 * either a group whose value is thrown away or a
+						 * name that can never be bound, and both are
+						 * silent at run time -- so say it here.
+						 */
+						if (ngroups == 0)
+							errprintf("Service %s: 'capture-regex \"%s\" as %s' has no "
+								  "capture group - it can never bind a value\n",
+								  first->rec->svcname, txt, tmpl.varname);
+						else if (ngroups != nnames)
+							errprintf("Service %s: 'capture-regex \"%s\" as %s' has %u "
+								  "capture group(s) but %u name(s)\n",
+								  first->rec->svcname, txt, tmpl.varname,
+								  ngroups, nnames);
+					}
+
+					emit_step(first, &tmpl);
+				}
+				else errprintf("Usage: capture-regex \"regex\" as NAME\n");
+				xfree(txt);
+			}
+		}
+		else if (strncmp(l, "capture ", 8) == 0) {
+			/* No regex: bind the whole reply that just matched. */
+			if (first) {
+				svcstep_t tmpl;
+				char *kw = strtok(skipwhitespace(l+7), " \t");
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_CAPTURE;
+				if (kw && (strcmp(kw, "as") == 0)) tmpl.varname = strtok(NULL, " \t");
+
+				if (tmpl.varname) {
+					if (!has_expect_step(first->rec))
+						errprintf("Service %s: 'capture as %s' before any expect - "
+							  "there is no reply to capture from, it will bind empty\n",
+							  first->rec->svcname, tmpl.varname);
+					emit_step(first, &tmpl);
+				}
+				else errprintf("Usage: capture as NAME\n");
+			}
+		}
+		else if (strncmp(l, "else ", 5) == 0) {
+			/*
+			 * The arm taken when no '~' edge in this state matched. An
+			 * unconditional edge that only makes sense after one, so it is
+			 * emitted as a jump and never reached if a '~' above it already
+			 * left the state.
+			 */
+			char *rest = skipwhitespace(l + 5);
+
+			if (strncmp(rest, "->", 2) != 0) errprintf("'else' without '->'\n");
+			else if (first) {
+				svcstep_t tmpl;
+				char *tgt = strtok(skipwhitespace(rest + 2), " \t");
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_JUMP;
+				if (!tgt) errprintf("'else ->' with no target\n");
+				else if (strcmp(tgt, "fail") == 0) tmpl.action = ACT_FAIL;
+				else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
+				emit_step(first, &tmpl);
+			}
+		}
+		else if (strstr(l, "~") && strstr(l, "->")) {
+			/*
+			 * "NAME ~ \"regex\" -> TARGET": branch on a value already bound.
+			 * Recognised by shape rather than by a leading keyword, because
+			 * the line begins with the name being tested. The regex tests a
+			 * captured value, never the socket, so it decides nothing about
+			 * what arrives and cannot race a partial read -- which is why a
+			 * regex is allowed here and not in an expect.
+			 */
+			if (first) {
+				svcstep_t tmpl;
+				char *var, *op, *rest;
+				unsigned char *txt = NULL;
+				int txtlen = 0;
+
+				var = strtok(l, " \t");
+				op  = (var ? strtok(NULL, " \t") : NULL);
+				rest = (op ? skipwhitespace(op + strlen(op) + 1) : NULL);
+
+				if (!var || !op || (strcmp(op, "~") != 0) || !rest || !*rest) {
+					errprintf("Usage: NAME ~ \"regex\" -> TARGET\n");
+				}
+				else {
+					char *arrow;
+
+					getrawstring(rest, &txt, &txtlen);
+					arrow = strstr(skipwhitespace(after_quoted(rest)), "->");
+
+					memset(&tmpl, 0, sizeof(tmpl));
+					tmpl.type = STEP_WHEN;
+					tmpl.varname = var;
+					tmpl.text = txt; tmpl.len = txtlen;
+					tmpl.re = (void *)1;	/* emit_step compiles a copy per record */
+
+					if (!arrow) errprintf("'%s ~ ...' with no '->'\n", var);
+					else {
+						char *tgt = strtok(skipwhitespace(arrow + 2), " \t");
+
+						if (!tgt) errprintf("'%s ~ ... ->' with no target\n", var);
+						else if (strcmp(tgt, "fail") == 0) tmpl.action = ACT_FAIL;
+						else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
+						emit_step(first, &tmpl);
 					}
 				}
-				if (untiltxt) xfree(untiltxt);
+				if (txt) xfree(txt);
 			}
 		}
 		else if (strncmp(l, "options ", 8) == 0) {
@@ -407,6 +871,7 @@ char *init_tcp_services(void)
 		svcinfo[i].port    = walk->rec->port;
 		svcinfo[i].alpns   = walk->rec->alpns;
 		svcinfo[i].steps   = walk->rec->steps;
+		resolve_svcsteps(&svcinfo[i]);
 		/*
 		 * A dialogue is anything that is not the classic one-shot shape.
 		 * Deciding it here, once, keeps do_tcp_tests() from re-deriving it
@@ -414,13 +879,31 @@ char *init_tcp_services(void)
 		 * or either alone) keeps the exact code path it has always used.
 		 */
 		{
-			svcstep_t *st; int nsend = 0, nexp = 0, first_is_expect = 0;
+			svcstep_t *st;
+			int nsend = 0, nexp = 0, nother = 0, first_is_expect = 0;
+
 			for (st = walk->rec->steps; (st); st = st->next) {
 				if (st == walk->rec->steps) first_is_expect = (st->type == STEP_EXPECT);
-				if (st->type == STEP_SEND) nsend++; else nexp++;
+				if (st->type == STEP_SEND) nsend++;
+				else if (st->type == STEP_EXPECT) {
+					nexp++;
+					if (st->action != ACT_NEXT) nother++;	/* a branch edge */
+				}
+				else nother++;					/* when/capture/label/... */
 			}
-			if (first_is_expect || nsend > 1 || nexp > 1)
+			/*
+			 * A lone "expect" with nothing to send is the classic
+			 * shape -- rsync and svn are exactly that -- so it stays
+			 * on the old path. What needs the driver is an expect that
+			 * something is sent AFTER, which is the ordering the
+			 * single-shot probe cannot express.
+			 */
+			if ((first_is_expect && (nsend > 0)) || (nsend > 1) || (nexp > 1) || nother)
 				svcinfo[i].flags |= TCP_DIALOGUE;
+
+			check_undefined_vars(&svcinfo[i]);
+			mark_ambiguous_groups(&svcinfo[i]);
+
 		}
 	}
 	memset(&svcinfo[svccount], 0, sizeof(svcinfo_t));
