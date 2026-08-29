@@ -156,6 +156,11 @@ timing out:
 A \fB\->\fR may point backwards, which makes a retry loop. A dialogue
 that loops without performing any I/O is stopped rather than spinning.
 .sp
+Entering a state runs its action, on re-entry as much as the first time,
+so an edge back into a state that sends will send again. That is right
+for a retry and wrong for "ignore this and keep waiting", which needs
+the wait as a state of its own carrying no action.
+.sp
 A reply that matches no alternative at all does not wait for
 \fBtimeout(\fR\fIN\fR\fB)\fR to expire: the test fails at once, naming
 the state. That is what makes a server which greets correctly and then
@@ -253,6 +258,11 @@ is plaintext and everything after it is encrypted, on the same socket.
 This is what submission (587), IMAP (143) and POP3 (110) use, and it is
 not the same as the \fBssl\fR option, which means TLS from the first
 byte.
+.sp
+The certificate is read from the upgraded session, so a service that
+begins in plaintext -- submission on 587, IMAP on 143, SMTP on 25 --
+reaches the \fBsslcert\fR column with its expiry checked. It cannot,
+while \fBssl\fR is the only way to start TLS.
 .sp
 If the server has sent anything that is still unread when the upgrade
 begins, the test fails rather than proceeding: the handshake has to

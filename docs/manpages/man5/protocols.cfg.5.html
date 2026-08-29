@@ -164,6 +164,11 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <p class="Pp">A <b>-&gt;</b> may point backwards, which makes a retry loop.
         A dialogue that loops without performing any I/O is stopped rather than
         spinning.</p>
+    <p class="Pp">Entering a state runs its action, on re-entry as much as the
+        first time, so an edge back into a state that sends will send again.
+        That is right for a retry and wrong for &quot;ignore this and keep
+        waiting&quot;, which needs the wait as a state of its own carrying no
+        action.</p>
     <p class="Pp">A reply that matches no alternative at all does not wait for
         <b>timeout(</b><i>N</i><b>)</b> to expire: the test fails at once,
         naming the state. That is what makes a server which greets correctly and
@@ -270,6 +275,10 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       plaintext and everything after it is encrypted, on the same socket. This
       is what submission (587), IMAP (143) and POP3 (110) use, and it is not the
       same as the <b>ssl</b> option, which means TLS from the first byte.
+    <p class="Pp">The certificate is read from the upgraded session, so a
+        service that begins in plaintext -- submission on 587, IMAP on 143, SMTP
+        on 25 -- reaches the <b>sslcert</b> column with its expiry checked. It
+        cannot, while <b>ssl</b> is the only way to start TLS.</p>
     <p class="Pp">If the server has sent anything that is still unread when the
         upgrade begins, the test fails rather than proceeding: the handshake has
         to start on the first byte sent after the go-ahead, and data arriving
