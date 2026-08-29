@@ -95,6 +95,19 @@ covers them without special-casing any:
 \&   expect "*"   until "A01 "     (IMAP: the command tag ends it)
 .fi
 
+.IP "\fBexpect\fR \fISTRING\fR \fBas\fR \fINAME\fR"
+Bind the reply this \fBexpect\fR accepted to \fINAME\fR, for a later
+\fB~\fR line to read. It is written on the expect itself because that is
+the line that produces the value: a separate step would have to say
+which reply it meant by standing in the right place, and one standing in
+the wrong place bound the reply of an earlier state without complaining.
+May be combined with \fBuntil\fR and with an edge:
+.br
+.sp
+.nf
+\&   expect "250" until "250 " as caps    \-> offers
+.fi
+
 .IP "\fBexpect\fR \fISTRING\fR \fB\->\fR \fITARGET\fR"
 .IP "\fBstate\fR \fINAME\fR"
 Consecutive \fBexpect\fR lines are alternatives: the first whose pattern
@@ -169,27 +182,22 @@ distinct from "broken".
 
 .IP "\fINAME\fR \fB~\fR \fIREGEX\fR \fB\->\fR \fITARGET\fR"
 .IP "\fBelse\fR \fB\->\fR \fITARGET\fR"
-Branch on a value bound earlier by \fBcapture\fR. The line begins with
-the name being tested, so it is recognised by its shape rather than by a
-leading keyword.
+.IP "\fINAME\fR \fB~\fR \fIREGEX\fR \fBas\fR \fINAME2\fR[;\fINAME3\fR]"
+Read the value called \fINAME\fR: the first two forms branch on whether
+it matches, the third binds what the pattern's capture groups found in
+it. One name per group, in the order the groups appear. Each line begins
+with the name it reads, so both are recognised by their shape rather than
+by a leading keyword.
 .sp
-The regex is tested against a value already in hand, never against the
-socket. That is why a regex is allowed here and not in an \fBexpect\fR:
-it decides nothing about what arrives, so it cannot race a partial read.
-A name that nothing bound never matches, and so takes the \fBelse\fR arm.
-
-.IP "\fBcapture as\fR \fINAME\fR"
-.IP "\fBcapture-regex\fR \fIREGEX\fR \fBas\fR \fINAME\fR"
-Bind a value out of the reply that the preceding \fBexpect\fR accepted:
-the whole reply, or the first capture group of \fIREGEX\fR. The regex is
-case-sensitive. A pattern that does not match binds an empty value.
-Several names may be given as \fIN1\fR;\fIN2\fR, one per capture group,
-in the order the groups appear.
+The regex reads a value already in hand, never the socket. That is what
+allows a regex here and not in an \fBexpect\fR: it decides nothing about
+what arrives, so it cannot race a partial read and needs no maximum match
+length. The regex is case-sensitive, and a pattern that does not match
+binds empty.
 .sp
-The word "preceding" is load-bearing: \fBcapture\fR must come AFTER the
-\fBexpect\fR whose reply it binds. Written before it there is nothing
-bound yet, so the name takes an empty value, every branch that tests it
-falls to its \fBelse\fR arm, and nothing reports an error.
+A name that nothing binds never matches, so a branch on one can only ever
+take the \fBelse\fR arm and an extraction from one can only ever bind
+empty. Both are reported when the file is read.
 
 .IP "\fBcredentials\fR \fINAME\fR"
 Bind \fB${username}\fR and \fB${password}\fR from the entry called
@@ -271,8 +279,7 @@ certificate off the upgraded session:
 \&      timeout(10)         \-> fail
 \&      expect "220"
 \&      send "ehlo xymonnet\er\en"
-\&      expect "250" until "250 "
-\&      capture as caps
+\&      expect "250" until "250 " as caps
 \&      caps ~ "STARTTLS"   \-> upgrade
 \&      else                \-> warning
 \&
@@ -292,9 +299,6 @@ certificate off the upgraded session:
 \&      options banner
 \&      port 25
 .fi
-.sp
-Note where \fBcapture\fR sits: after the \fBexpect\fR whose reply it
-binds, not before it.
 .sp
 Note also that this is deliberately NOT what the shipped \fB[smtp]\fR
 entry does. protocols.cfg is one file for the whole installation, so an
