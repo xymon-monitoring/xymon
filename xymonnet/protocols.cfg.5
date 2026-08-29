@@ -177,10 +177,13 @@ match the same reply, so the winner would otherwise depend on how much
 had arrived when the group was examined -- that is, on how the server
 split its reply across packets rather than on anything in this file.
 .sp
-Such a group is reported when the file is read, and the driver waits for
-every pattern in it to be decidable before choosing, so the order written
-here decides the winner. The warning is still worth acting on: a reader
-of the file cannot see which alternative wins without knowing that rule.
+Such a group is refused when the file is read, and the service reports
+that protocols.cfg would not take the definition. Matching is anchored at
+the start of the reply, so two patterns can both match one reply exactly
+when one is a prefix of the other -- which makes the check complete rather
+than a guess, and means refusing rejects nothing that would have worked.
+The fix is to match the shared prefix in one state, bind it with
+\fBas\fR, and distinguish in the next.
 
 .IP "\fBstart\fR \fINAME\fR"
 Begin the dialogue in the state called \fINAME\fR rather than at the
@@ -305,6 +308,36 @@ Defines test options. The possible options are
 \&   alpn=protocol1,protocol2 - specify ALPN protocols to negotiate during SSL handshake
 .fi
 
+
+.SH PER-HOST DEPTH AND CREDENTIALS
+protocols.cfg is one file for the whole installation: a \fB[pop3]\fR
+definition applies to every host carrying the test. Deepening a shipped
+entry therefore changes what every site is alerted on. Two tags in
+hosts.cfg let a host differ from the definition without copying it:
+.br
+.sp
+.nf
+\&   smtp:ok=greeting        check only as far as that state
+\&   smtp:ok=greeting,ehlo   ... or any one of several
+\&   smtp:cred=acctb         bind this credentials.cfg entry
+.fi
+.sp
+\fBok=\fR names one or more states at which this host's test stops and
+reports success. The steps after it are not run and their absence is not
+a failure, so a definition can become the full conversation while a site
+keeps banner depth host by host.
+.sp
+\fBcred=\fR names the entry in credentials.cfg that this host's
+\fBcredentials\fR step binds, in place of the one the definition names --
+one definition, a different account per host. The value is a key, never a
+secret: hosts.cfg is world-readable for the same reasons protocols.cfg is.
+.sp
+Neither tag derives a column, unlike a port. A site running mixed depths
+would otherwise get one column per depth and no comparable history.
+.sp
+The checks in DIAGNOSTICS below are made against the entry as written,
+not against any host's depth. Under \fBok=greeting\fR everything
+downstream is legitimately unreachable, and the checks do not know that.
 
 .SH EXAMPLES
 An SMTP service that upgrades to TLS when the server offers it, reports
