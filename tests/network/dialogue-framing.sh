@@ -39,14 +39,19 @@ mkdir -p "$work/home/etc"
 "$CC" -o "$work/peer" "$root/tests/lib/dialogue-peer.c" -lssl -lcrypto 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; skip "dialogue-peer does not compile"; }
 
+# The peer decodes \xNN and \n itself, so the script must reach it with the
+# escapes intact. printf would expand them here -- and "\x00" would end the
+# line as a NUL, sending a frame one byte short of what it announced -- so
+# every script line is written with %s.
+#
 # 00 05 | "A\nB\nC" -- five payload bytes, two of them newlines.
-printf 'send \\x00\\x05A\\nB\\nC\nhold 20\n'          > "$work/be.script"
+printf '%s\n' 'send \x00\x05A\nB\nC' 'hold 20'        > "$work/be.script"
 # 05 00 | the same payload, little-endian width
-printf 'send \\x05\\x00A\\nB\\nC\nhold 20\n'          > "$work/le.script"
+printf '%s\n' 'send \x05\x00A\nB\nC' 'hold 20'        > "$work/le.script"
 # 00 09 promised, three delivered
-printf 'send \\x00\\x09ABC\nhold 20\n'                > "$work/trunc.script"
+printf '%s\n' 'send \x00\x09ABC' 'hold 20'             > "$work/trunc.script"
 # two complete messages in one write
-printf 'send \\x00\\x03ABC\\x00\\x03DEF\nhold 20\n'   > "$work/two.script"
+printf '%s\n' 'send \x00\x03ABC\x00\x03DEF' 'hold 20' > "$work/two.script"
 
 : > "$work/pids"
 start() {	# script portfile obsfile
