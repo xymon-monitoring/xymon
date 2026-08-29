@@ -38,13 +38,15 @@
 #define STEP_CREDS   7	/* bind ${username}/${password} from the store */
 #define STEP_STARTTLS 8	/* upgrade this connection to TLS, here */
 #define STEP_TIMEOUT 9	/* budget for the wait that follows */
+#define STEP_IDLE   10	/* ... the same, but restarted whenever data arrives */
 
 /* STEP_LABEL, STEP_CAPTURE, STEP_WHEN, STEP_JUMP and STEP_CREDS touch no
    socket. The driver runs them to completion between I/O steps, so a
    dialogue never sits in a state that has nothing to wait for. */
 #define STEP_IS_INSTANT(t) \
 	(((t) == STEP_LABEL) || ((t) == STEP_CAPTURE) || ((t) == STEP_WHEN) || \
-	 ((t) == STEP_JUMP) || ((t) == STEP_CREDS) || ((t) == STEP_TIMEOUT))
+	 ((t) == STEP_JUMP) || ((t) == STEP_CREDS) || ((t) == STEP_TIMEOUT) || \
+	 ((t) == STEP_IDLE))
 
 /* What an expect does once its pattern matches. Anything other than
    ACT_NEXT is an edge that leaves the straight line, which is what makes

@@ -19,6 +19,7 @@
  *                    does not begin with PREFIX
  *   recvany          read one line and record it
  *   hold N           stay connected and silent for N seconds
+ *   dribble TEXT     send TEXT one byte per second
  *   replyall TEXT    answer TEXT to every further line, until EOF. Models a
  *                    server that greets and then refuses everything.
  *   starttls         upgrade to TLS here (needs CERT and KEY)
@@ -254,6 +255,24 @@ int main(int argc, char *argv[])
 			fprintf(obs, "got %s\n", got);
 			if (strcmp(got, want) != 0) fprintf(obs, "MISMATCH want=%s got=%s\n", want, got);
 			else fprintf(obs, "b64-ok\n");
+		}
+		else if (strcmp(cmd, "dribble") == 0) {
+			/*
+			 * Send one byte per second. The connection is never idle and
+			 * the reply takes a long time -- which is what separates a slow
+			 * server from a stopped one, and what an idle timer must not
+			 * mistake for silence.
+			 */
+			char buf[512];
+			int i, len;
+
+			len = unescape(arg, buf, sizeof(buf));
+			fprintf(obs, "dribbling %d bytes\n", len);
+			fflush(obs);
+			for (i = 0; i < len; i++) {
+				io_write(buf + i, 1);
+				sleep(1);
+			}
 		}
 		else if (strcmp(cmd, "hold") == 0) {
 			/*

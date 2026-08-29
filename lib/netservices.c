@@ -522,7 +522,7 @@ static void check_graph(svcinfo_t *rec)
 				statename = st->label; timed = 0; waits = 0; reported = 0;
 				continue;
 			}
-			if (st->type == STEP_TIMEOUT) timed = 1;
+			if ((st->type == STEP_TIMEOUT) || (st->type == STEP_IDLE)) timed = 1;
 			if (st->type == STEP_EXPECT)  waits = 1;
 		}
 	}
@@ -1104,6 +1104,47 @@ char *init_tcp_services(void)
 					char *tgt = strtok(skipwhitespace(arrow + 2), " \t");
 
 					if (!tgt) errprintf("'timeout(%d) ->' with no target\n", secs);
+					else if (strcmp(tgt, "fail") == 0)    tmpl.action = ACT_FAIL;
+					else if (strcmp(tgt, "warning") == 0) tmpl.action = ACT_WARNING;
+					else if (strcmp(tgt, "success") == 0) tmpl.action = ACT_SUCCESS;
+					else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
+				}
+				emit_step(first, &tmpl);
+			}
+		}
+		else if (strncmp(l, "idle(", 5) == 0) {
+			/*
+			 * "idle(N) -> TARGET": how long this state may go with NOTHING
+			 * arriving. Unlike timeout(N) the clock restarts whenever a byte
+			 * does arrive, which is the difference between slow and stopped:
+			 * a large EHLO trickling in over thirty seconds is a working
+			 * server on a poor link, while five seconds of silence in the
+			 * middle of that reply is one that has died. One clock cannot
+			 * tell those apart, and reports the same colour for both.
+			 */
+			char *close = strchr(l, ')');
+			int secs = atoi(l + 5);
+
+			if (!close) errprintf("Service %s: 'idle(' with no ')'\n",
+					      (first ? first->rec->svcname : "?"));
+			else if (secs <= 0) {
+				errprintf("Service %s: 'idle(%d)' - the budget must be a positive "
+					  "number of seconds\n",
+					  (first ? first->rec->svcname : "?"), secs);
+			}
+			else if (first) {
+				svcstep_t tmpl;
+				char *arrow = strstr(close, "->");
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_IDLE;
+				tmpl.seconds = secs;
+				tmpl.action = ACT_FAIL;	/* a budget with no target ends the test */
+
+				if (arrow) {
+					char *tgt = strtok(skipwhitespace(arrow + 2), " \t");
+
+					if (!tgt) errprintf("'idle(%d) ->' with no target\n", secs);
 					else if (strcmp(tgt, "fail") == 0)    tmpl.action = ACT_FAIL;
 					else if (strcmp(tgt, "warning") == 0) tmpl.action = ACT_WARNING;
 					else if (strcmp(tgt, "success") == 0) tmpl.action = ACT_SUCCESS;
