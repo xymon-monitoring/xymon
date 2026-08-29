@@ -68,28 +68,26 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    # conventions: permissive -- the clock, not the shape, is what this measures
    options banner
    port $psilent
-   expect "220"
+   expect "220"   -> waiting
    send "ehlo xymonnet\r\n"
 
    state waiting
       timeout(2)                  -> fail
-      expect "250"
-
+      expect "250"        -> success
 [healthy]
    # conventions: permissive -- the clock, not the shape, is what this measures
    options banner
    port $pquick
-   expect "220"
+   expect "220"   -> waiting
    send "ehlo xymonnet\r\n"
 
    state waiting
       timeout(2)                  -> fail
-      expect "250"
-
+      expect "250"        -> success
 [routed]
    options banner
    port $prouted
-   expect "220"
+   expect "220"   -> waiting
    send "ehlo xymonnet\r\n"
 
    state waiting
@@ -143,13 +141,12 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    # conventions: permissive -- the clock, not the shape, is what this measures
    options banner
    port $pceil
-   expect "220"
+   expect "220"   -> waiting
    send "ehlo xymonnet\r\n"
 
    state waiting
       timeout(60)                 -> fail
-      expect "250"
-
+      expect "250"        -> success
 CFG
 
 start=$(date +%s)

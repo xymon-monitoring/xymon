@@ -64,7 +64,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 [stopped]
    options banner
    port $pstop
-   expect "220"
+   expect "220"   -> waiting
    send "ehlo xymonnet\r\n"
 
    state waiting
@@ -75,7 +75,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 [slow]
    options banner
    port $pslow
-   expect "220"
+   expect "220"   -> waiting
    send "ehlo xymonnet\r\n"
 
    state waiting

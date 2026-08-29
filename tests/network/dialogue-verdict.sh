@@ -81,11 +81,15 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    port $pbad
 
    state greeting
-      expect "220"
+      expect "220"   -> greeting-1
+
+   state greeting-1
       send "ehlo xymonnet\r\n"
 
    state capabilities
-      expect "250"
+      expect "250"   -> capabilities-1
+
+   state capabilities-1
       send "quit\r\n"
 
 [legacy]

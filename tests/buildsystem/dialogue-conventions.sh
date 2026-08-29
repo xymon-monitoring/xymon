@@ -61,7 +61,7 @@ extract_fenced() {	# markdown: inside ``` fences
 	' "$1" >> "$stream"
 }
 extract_heredoc() {	# tests: inside the protocols.cfg heredoc
-	awk -v F="$1" '/protocols\.cfg" <<CFG/ { inb=1; next } inb && /^CFG$/ { inb=0; next }
+	awk -v F="$1" '/protocols\.cfg" <<'"'"'?CFG/ { inb=1; next } inb && /^CFG$/ { inb=0; next }
 		       inb { print F "\t" NR "\t" $0 }' "$1" >> "$stream"
 }
 extract_plain() { awk -v F="$1" '{ print F "\t" NR "\t" $0 }' "$1" >> "$stream"; }
