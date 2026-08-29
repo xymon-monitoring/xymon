@@ -1201,7 +1201,7 @@ static char *dlg_expand(tcptest_t *item, const char *text, int len, int *outlen)
 /* Group 1 of the pattern, against the reply the last expect accepted. */
 static void dlg_capture(tcptest_t *item, svcstep_t *st)
 {
-	char *subject = dlg_get(item, st->srcname);
+	char *subject;
 	pcre2_match_data *md;
 	int res, n;
 	char names[256], *name, *rest;
@@ -1212,7 +1212,15 @@ static void dlg_capture(tcptest_t *item, svcstep_t *st)
 	 * An unbound name binds empty, which check_undefined_vars() has
 	 * already complained about when the file was read.
 	 */
-	if (subject == NULL) subject = "";
+	/*
+	 * Work on a COPY. dlg_set() frees the old value of a name before
+	 * storing the new one, so binding a name that is also the source --
+	 * "banner ~ ... as banner", or any list that reuses it -- would free
+	 * the very bytes this match is reading, and the ovector offsets would
+	 * then index freed memory.
+	 */
+	subject = dlg_get(item, st->srcname);
+	subject = strdup(subject ? subject : "");
 
 	md = pcre2_match_data_create(32, NULL);
 	res = pcre2_match((pcre2_code *)st->re, (PCRE2_SPTR)subject,
@@ -1250,6 +1258,7 @@ static void dlg_capture(tcptest_t *item, svcstep_t *st)
 	}
 
 	pcre2_match_data_free(md);
+	xfree(subject);
 }
 
 
@@ -2273,8 +2282,16 @@ restartselect:
 									for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next) {
 										if (alt->oneof) continue;	/* only fires on EOF */
 										if (item->svcinfo->framing != FRAMING_LINE) {
-											/* the literal matches the start of the MESSAGE */
-											if (mlen < alt->len) { hit = NULL; continue; }
+											/*
+											 * The literal matches the start of the
+											 * MESSAGE. By here the message is whole,
+											 * so one shorter than the pattern is
+											 * decidably ruled out rather than still
+											 * arriving -- no "undecided", or a peer
+											 * that framed a short message would hang
+											 * until the clock.
+											 */
+											if (mlen < alt->len) continue;
 											if (memcmp(item->stepbuf + mbase, alt->text, alt->len) == 0) {
 												hit = alt; break;
 											}

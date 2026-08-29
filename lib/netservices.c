@@ -346,7 +346,7 @@ static void refuse_misshapen_states(svcinfo_t *rec)
 {
 	svcstep_t *st;
 	char *statename = NULL;
-	int actions = 0, waits = 0, sawexpect = 0;
+	int actions = 0, sawexpect = 0;
 
 	/* Only entries that use states promise this shape. */
 	for (st = rec->steps; (st); st = st->next) if (st->type == STEP_LABEL) break;
@@ -357,7 +357,7 @@ static void refuse_misshapen_states(svcinfo_t *rec)
 		switch (st->type) {
 		  case STEP_LABEL:
 			statename = st->label;
-			actions = waits = sawexpect = 0;
+			actions = sawexpect = 0;
 			/*
 			 * success, warning and fail are answers, not places. An edge
 			 * naming one of them declares the verdict before any label is
@@ -405,7 +405,13 @@ static void refuse_misshapen_states(svcinfo_t *rec)
 
 		  case STEP_EXPECT:
 			if (!statename) break;
-			if (!sawexpect) { sawexpect = 1; waits++; }
+			/*
+			 * Consecutive expects are ONE wait. A second wait would need a
+			 * step between the groups, and every such step -- an action or
+			 * a clock -- is already refused above, so there is nothing left
+			 * to count here.
+			 */
+			sawexpect = 1;
 			if (st->action == ACT_NEXT) {
 				errprintf("Service %s: state '%s' has an expect with no '-> TARGET' - an "
 					  "expect ends its state, so the file has to say where the "

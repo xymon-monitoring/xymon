@@ -720,6 +720,19 @@ void load_tests(void)
 					if (option) *(option-1) = ':';
 				}
 
+				/*
+				 * ok= and cred= are strdup'd while the options are read,
+				 * and handed to the test below. A testspec naming a
+				 * service we do not have never reaches that, so free them
+				 * here rather than losing them once per unknown test per
+				 * host, on every reload.
+				 */
+				if (!s) {
+					if (okstates) xfree(okstates);
+					if (credname) xfree(credname);
+					okstates = credname = NULL;
+				}
+
 				if (s) {
 					testitem_t *newtest;
 

@@ -81,6 +81,7 @@ cat <<CFG
 
    state choose
       greeting ~ "\\+OK POP3 (\\S+) (<[^>]+>)" as server;challenge
+      greeting ~ "(\\+OK)" as greeting
       challenge ~ "<"             -> apop
       else                        -> plain
 
