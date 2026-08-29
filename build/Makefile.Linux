@@ -8,10 +8,17 @@ NETLIBS = -ltirpc
 # Compile flags for normal build
 CC = gcc
 GCCVER := $(shell test 0`gcc -dumpversion|cut -d. -f1` -ge 4 && echo yes)
+# Optimisation/debug defaults use ?= so an externally provided CFLAGS -- e.g. a
+# distribution's hardening flags exported into the environment (dpkg-buildflags:
+# FORTIFY, stack-protector, PIE, ...) -- takes precedence instead of being
+# overwritten. The mandatory project flags are then appended with += so they
+# survive that override rather than being discarded. With a plain `=` the
+# environment's flags were silently lost.
+CFLAGS ?= -g -O2
 ifeq ($(GCCVER),yes)
-   CFLAGS = -g -O2 -Wall -Wno-unused -I/usr/include/tirpc -Wno-pointer-sign -D_REENTRANT $(LFSDEF) $(OSDEF)
+   CFLAGS += -Wall -Wno-unused -I/usr/include/tirpc -Wno-pointer-sign -D_REENTRANT $(LFSDEF) $(OSDEF)
 else
-   CFLAGS = -g -O2 -Wall -Wno-unused -I/usr/include/tirpc -D_REENTRANT $(LFSDEF) $(OSDEF)
+   CFLAGS += -Wall -Wno-unused -I/usr/include/tirpc -D_REENTRANT $(LFSDEF) $(OSDEF)
 endif
 
 ifndef PKGBUILD
