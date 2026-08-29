@@ -116,6 +116,7 @@ typedef struct svcinfo_t {
 	unsigned int flags;
 	int port;
 	char *alpns;
+	int sawoptions;		/* an 'options' line was seen: a second one replaces it */
 	int framing;		/* FRAMING_* -- how a message ends on this connection */
 	int framewidth;		/* FRAMING_LENGTH: bytes of length prefix */
 	int framebig;		/* FRAMING_LENGTH: 1 big-endian, 0 little-endian */

@@ -322,6 +322,105 @@ static void check_undefined_vars(svcinfo_t *rec)
  * name the fix: match the shared prefix in one state, distinguish in the
  * next.
  */
+/* The three names an edge may use instead of a state. */
+#define IS_TERMINAL_NAME(s) \
+	(((s) != NULL) && ((strcmp((s), "success") == 0) || \
+	                   (strcmp((s), "warning") == 0) || \
+	                   (strcmp((s), "fail") == 0)))
+
+/*
+ * The shape of a state, checked when the file is read.
+ *
+ * protocols.cfg(5) says a state does one thing and waits for one answer: at
+ * most one action, the clock that bounds the wait, and the expects that end
+ * the state by naming where each answer leads. Those were conventions that
+ * the parser accepted any violation of, so a file could read as one machine
+ * and run as another -- a clock below the expects bounds nothing, a second
+ * wait in a state has no name to fail under, and an expect with no target
+ * leaves the file silent about where the dialogue went.
+ *
+ * Every one of them is decidable here, which is where this grammar has
+ * decided such things belong.
+ */
+static void refuse_misshapen_states(svcinfo_t *rec)
+{
+	svcstep_t *st;
+	char *statename = NULL;
+	int actions = 0, waits = 0, sawexpect = 0;
+
+	/* Only entries that use states promise this shape. */
+	for (st = rec->steps; (st); st = st->next) if (st->type == STEP_LABEL) break;
+	if (!st) return;
+
+	statename = NULL;
+	for (st = rec->steps; (st); st = st->next) {
+		switch (st->type) {
+		  case STEP_LABEL:
+			statename = st->label;
+			actions = waits = sawexpect = 0;
+			/*
+			 * success, warning and fail are answers, not places. An edge
+			 * naming one of them declares the verdict before any label is
+			 * looked up, so a state called success can be written, parsed,
+			 * and never reached -- and the reachability check cannot see
+			 * it, because the edge did resolve.
+			 */
+			if (statename && (IS_TERMINAL_NAME(statename))) {
+				errprintf("Service %s: state '%s' takes a name reserved for a verdict - "
+					  "'-> %s' ends the test rather than jumping, so this state can "
+					  "never be reached\n", rec->svcname, statename, statename);
+				rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			break;
+
+		  case STEP_SEND:
+		  case STEP_STARTTLS:
+		  case STEP_CREDS:
+			if (!statename) break;
+			if (++actions > 1) {
+				errprintf("Service %s: state '%s' has more than one action - a state "
+					  "does one thing and waits for one answer, so give the second "
+					  "action a state of its own and reach it with an edge\n",
+					  rec->svcname, statename);
+				rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			if (sawexpect) {
+				errprintf("Service %s: state '%s' acts again after it has waited - that "
+					  "is a second wait in one state, and nothing can name the "
+					  "state it failed in\n", rec->svcname, statename);
+				rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			break;
+
+		  case STEP_TIMEOUT:
+		  case STEP_IDLE:
+			if (!statename) break;
+			if (sawexpect) {
+				errprintf("Service %s: state '%s' sets a clock below its expects, where it "
+					  "bounds nothing - a clock arms the wait that FOLLOWS it\n",
+					  rec->svcname, statename);
+				rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			break;
+
+		  case STEP_EXPECT:
+			if (!statename) break;
+			if (!sawexpect) { sawexpect = 1; waits++; }
+			if (st->action == ACT_NEXT) {
+				errprintf("Service %s: state '%s' has an expect with no '-> TARGET' - an "
+					  "expect ends its state, so the file has to say where the "
+					  "dialogue goes next\n", rec->svcname, statename);
+				rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			break;
+
+		  default:
+			break;
+		}
+	}
+}
+
+
 static void refuse_overlapping_groups(svcinfo_t *rec)
 {
 	svcstep_t *st;
@@ -1367,6 +1466,17 @@ char *init_tcp_services(void)
 		}
 		else if (strncmp(l, "options ", 8) == 0) {
 			if (first) {
+				/*
+				 * options REPLACES rather than adds, so a second line
+				 * silently discards the first. Complete check, so refuse.
+				 */
+				if (first->rec->sawoptions) {
+					errprintf("Service %s: a second 'options' line - options replaces "
+						  "rather than adds, so the first would be discarded. Write "
+						  "one line with every option on it\n", first->rec->svcname);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+				first->rec->sawoptions = 1;
 				char *opt;
 
 				/*
@@ -1510,6 +1620,33 @@ char *init_tcp_services(void)
 
 			check_undefined_vars(&svcinfo[i]);
 			refuse_overlapping_groups(&svcinfo[i]);
+			refuse_misshapen_states(&svcinfo[i]);
+
+			/*
+			 * A clause that only the driver implements, on an entry that
+			 * stays on the classic single-shot probe, does nothing at all:
+			 * "until" is ignored and the first line decides the test. That
+			 * is decidable here -- the shape of the entry is known -- so it
+			 * is refused rather than left to surprise somebody.
+			 */
+			if ((svcinfo[i].flags & TCP_DIALOGUE) == 0) {
+				svcstep_t *cst;
+
+				for (cst = svcinfo[i].steps; (cst); cst = cst->next) {
+					if (cst->type != STEP_EXPECT) continue;
+					if (cst->until)
+						errprintf("Service %s: 'until' on an entry the dialogue driver does "
+							  "not run - a lone expect is the classic probe, which "
+							  "matches one line and knows no terminator. Add the step "
+							  "that follows it\n", svcinfo[i].svcname);
+					else if (cst->varname)
+						errprintf("Service %s: 'as %s' on an entry the dialogue driver does "
+							  "not run - nothing later can read the value\n",
+							  svcinfo[i].svcname, cst->varname);
+					else continue;
+					svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
+				}
+			}
 
 			/*
 			 * "options ssl" is TLS from the first byte; "starttls" upgrades

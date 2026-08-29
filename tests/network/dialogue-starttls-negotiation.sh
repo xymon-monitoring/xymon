@@ -150,9 +150,11 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
    state greeting
       timeout(10)         -> fail
-      expect "220"
+      expect "220"   -> greeting-1
+
+   state greeting-1
       send "ehlo xymonnet\r\n"
-      expect "250" until "250 " as caps
+      expect "250" until "250 " as caps   -> secure-1
       caps ~ "STARTTLS"   -> upgrade
       else                -> warning
 
@@ -165,6 +167,8 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    state secure
       timeout(10)         -> fail
       starttls
+
+   state secure-1
       send "quit\r\n"
       expect "221"        -> success
 
@@ -175,9 +179,11 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
    state greeting
       timeout(10)         -> fail
-      expect "220"
+      expect "220"   -> greeting-1
+
+   state greeting-1
       send "ehlo xymonnet\r\n"
-      expect "250" until "250 "
+      expect "250" until "250 "   -> secure-1
 
    state upgrade
       timeout(10)         -> fail
@@ -188,6 +194,8 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    state secure
       timeout(10)         -> fail
       starttls
+
+   state secure-1
       send "quit\r\n"
       expect "221"        -> success
 
@@ -198,9 +206,11 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
    state greeting
       timeout(10)         -> fail
-      expect "220"
+      expect "220"   -> greeting-1
+
+   state greeting-1
       send "ehlo xymonnet\r\n"
-      expect "250" until "250 "
+      expect "250" until "250 "   -> secure-1
 
    state upgrade
       timeout(10)         -> fail
@@ -211,6 +221,8 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    state secure
       timeout(10)         -> fail
       starttls
+
+   state secure-1
       send "quit\r\n"
       expect "221"        -> success
 

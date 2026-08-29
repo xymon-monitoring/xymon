@@ -80,7 +80,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 [termbad]
    options banner
    port $pbad
-   expect "220"
+   expect "220"   -> done
    send "ehlo xymonnet\r\n"
    expect "250"                -> done
    expect "5"                  -> fail

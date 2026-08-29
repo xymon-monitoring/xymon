@@ -36,6 +36,7 @@ run_xymonnet() {
 printf 'mypop\tuser\tsecret\n' > "$work/home/etc/credentials.cfg"
 cat > "$work/home/etc/protocols.cfg" <<'CFG'
 [bad]
+   # conventions: permissive -- malformed on purpose; this suite is the refusal
    exepct "220"
    expect "220"
    nosuch ~ "(x)"              as tooearly
@@ -46,6 +47,7 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
    port 9
 
 [typo]
+   # conventions: permissive -- malformed on purpose; this suite is the refusal
    port 9
    port 9
    expect "+OK" as greeting
@@ -63,6 +65,7 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
       expect "+OK"
 
 [graph]
+   # conventions: permissive -- malformed on purpose; this suite is the refusal
    port 9
    start entry
 

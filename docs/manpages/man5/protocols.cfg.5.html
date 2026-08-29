@@ -438,14 +438,11 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <section class="Sh">
 <p>&#160;</p>
 <h1 class="Sh" id="CONVENTIONS"><a class="permalink" href="#CONVENTIONS">CONVENTIONS</a></h1>
-<p class="Pp">The parser accepts an attribute anywhere in a block, ignores
-    indentation, takes several actions and several waits in one state, and
-    accepts an <b>expect</b> that names no target. None of what follows is
-    enforced by it; it is how every entry in this page and in the shipped
-    protocols.cfg is written, and what a reader is entitled to assume:</p>
+<p class="Pp">An entry that uses states is written one way, and most of it is
+    now refused when the file is read rather than left to surprise somebody:</p>
 <p class="Pp"></p>
-<pre>   1  entry attributes -- options, port, transport, start -- come
-      before the first state, in any order among themselves
+<pre>   1  entry attributes -- options, port, transport, framing, start --
+      come before the first state, in any order among themselves
    2  a state's lines are indented under it
    3  a state holds at most one action: send, starttls, credentials
    4  every expect names where it goes: &quot;-&gt; TARGET&quot;
@@ -453,18 +450,22 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       bounds, because it arms the wait that FOLLOWS it
    6  a message boundary is stated, never guessed: a terminator with
       &quot;until&quot;, a count with &quot;framing length&quot;, or the close with &quot;eof&quot;</pre>
-<p class="Pp">Rule 5 is the one that bites: a clock written below a state's
-    <b>expect</b> lines bounds nothing, and nothing says so. The others are
-    legibility -- an entry written this way reads as the machine it describes,
-    and one that is not still runs.</p>
-<p class="Pp">A definition that means to break a rule says so, with a comment
-    the parser ignores and a reader does not:</p>
-<p class="Pp"></p>
-<pre>   [legacy]
-      # conventions: permissive -- one expect, no state to move to</pre>
-<p class="Pp">The regression suite checks every entry in this page, in the
-    shipped protocols.cfg and in the test fixtures against these five rules, so
-    the page and the files cannot drift apart unnoticed.</p>
+<p class="Pp">Rules 3, 4 and 5 are refusals, and so is a state that acts again
+    after it has waited -- that is a second wait in one state, and nothing could
+    name the state it failed in. So is a state named <b>success</b>,
+    <b>warning</b> or <b>fail</b>: an edge naming one of those declares a
+    verdict rather than jumping, so such a state could never be reached. So is a
+    second <b>options</b> line, which replaces the first rather than adding to
+    it, and <b>until</b> or <b>as</b> on an entry the driver does not run, where
+    they would do nothing at all.</p>
+<p class="Pp">Rules 1 and 2 are not enforced: the parser takes an attribute
+    anywhere in the block and ignores indentation entirely. They are how every
+    entry in this page and in the shipped protocols.cfg is written, and the
+    regression suite checks them, so the page and the files cannot drift apart
+    unnoticed.</p>
+<p class="Pp">None of this applies to the classic shapes -- a lone <b>send</b>,
+    a lone <b>expect</b>, or a <b>send</b> followed by an <b>expect</b> -- which
+    have no states and keep the probe they have always used.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
@@ -551,6 +552,13 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
    framing length width is 1..4 bytes
    framing length endianness is 'big' or 'little'
    framed message of N bytes is over the 32768 a conversation may hold
+   state 'NAME' has more than one action
+   state 'NAME' acts again after it has waited
+   state 'NAME' sets a clock below its expects, where it bounds nothing
+   state 'NAME' has an expect with no '-&gt; TARGET'
+   state 'NAME' takes a name reserved for a verdict
+   a second 'options' line - options replaces rather than adds
+   'until'/'as' on an entry the dialogue driver does not run
    ${NAME} is never captured or bound before it is used
    'NAME ~ ...' tests a value that is never bound before it
    'NAME ~ &quot;...&quot; as X' has no capture group
