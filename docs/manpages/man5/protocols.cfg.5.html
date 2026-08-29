@@ -113,29 +113,47 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <p class="Pp"></p>
   </dd>
   <dt id="expect~3"><a class="permalink" href="#expect~3"><b>expect</b>
-    <i>STRING</i> <b>goto</b> <i>LABEL</i></a></dt>
-  <dd></dd>
+    <i>STRING</i> <b>as</b> <i>NAME</i></a></dt>
+  <dd>Bind the reply this <b>expect</b> accepted to <i>NAME</i>, for a later
+      <b>~</b> line to read. It is written on the expect itself because that is
+      the line that produces the value: a separate step would have to say which
+      reply it meant by standing in the right place, and one standing in the
+      wrong place bound the reply of an earlier state without complaining. May
+      be combined with <b>until</b> and with an edge:
+    <p class="Pp"></p>
+    <pre>   expect &quot;250&quot; until &quot;250 &quot; as caps    -&gt; offers</pre>
+    <p class="Pp"></p>
+  </dd>
   <dt id="expect~4"><a class="permalink" href="#expect~4"><b>expect</b>
-    <i>STRING</i> <b>fail</b></a></dt>
+    <i>STRING</i> <b>-&gt;</b> <i>TARGET</i></a></dt>
   <dd></dd>
   <dt id="state"><a class="permalink" href="#state"><b>state</b>
     <i>NAME</i></a></dt>
   <dd>Consecutive <b>expect</b> lines are alternatives: the first whose pattern
-      matches wins, and its action decides what happens next. Without an action
-      the dialogue continues after the whole group; <b>goto</b> jumps to the
-      matching <b>state</b>, and <b>fail</b> ends the test as a failure.
-    <p class="Pp"><b>state</b> names the state that follows it -- the expects up
-        to the next step that is not one -- and is what <b>goto</b> aims at, so
-        naming a state and marking a jump target are the same act. Naming them
-        is optional, but worth doing: a dialogue that fails reports the state it
-        failed in, and &quot;state want-password expected does not. This is how
-        a soft error is told apart from a hard one instead of both timing
-      out:</p>
+      matches wins, and its <b>-&gt;</b> decides what happens next. Without one
+      the dialogue simply continues after the whole group. A target is either
+      the name of a <b>state</b>, which is jumped to, or one of three outcomes
+      that end the test where it stands:
     <p class="Pp"></p>
-    <pre>   expect &quot;250&quot; goto ready
-   expect &quot;421&quot; fail</pre>
-    <p class="Pp">A <b>goto</b> may point backwards, which makes a retry loop. A
-        dialogue that loops without performing any I/O is stopped rather than
+    <pre>   -&gt; <i>LABEL</i>        continue in that state
+   -&gt; success      the service is up
+   -&gt; warning      answering, but not as it should (yellow)
+   -&gt; fail         the test failed (the <b>--checkresponse</b> colour)</pre>
+    <p class="Pp"><b>warning</b> is the one worth reaching for. A server that
+        answers correctly but refuses an optional capability is not down, and
+        reporting it as down teaches operators to ignore the column.</p>
+    <p class="Pp"><b>state</b> names the state that follows it -- the expects up
+        to the next step that is not one -- and is what a <b>-&gt;</b> aims at,
+        so naming a state and marking a jump target are the same act. Naming
+        them is optional, but worth doing: a dialogue that fails reports the
+        state it failed in, and &quot;state want-password expected 334&quot;
+        tells an operator what &quot;step 7&quot; does not. This is how a soft
+        error is told apart from a hard one instead of both timing out:</p>
+    <p class="Pp"></p>
+    <pre>   expect &quot;250&quot; -&gt; ready
+   expect &quot;421&quot; -&gt; fail</pre>
+    <p class="Pp">A <b>-&gt;</b> may point backwards, which makes a retry loop.
+        A dialogue that loops without performing any I/O is stopped rather than
         spinning.</p>
     <p class="Pp">Avoid writing one alternative that is a prefix of another.
         Both would match the same reply, so the winner would otherwise depend on
@@ -149,24 +167,60 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         knowing that rule.</p>
     <p class="Pp"></p>
   </dd>
-  <dt id="when"><a class="permalink" href="#when"><b>when</b> <i>NAME</i> ~
-    <i>REGEX</i></a></dt>
-  <dd></dd>
-  <dt id="else"><a class="permalink" href="#else"><b>else</b></a></dt>
-  <dd></dd>
-  <dt id="end"><a class="permalink" href="#end"><b>end</b></a></dt>
-  <dd>Run the enclosed steps only when the captured value <i>NAME</i> matches
-      <i>REGEX</i>. An unset value never matches. Blocks may be nested.
+  <dt id="start"><a class="permalink" href="#start"><b>start</b>
+    <i>NAME</i></a></dt>
+  <dd>Begin the dialogue in the state called <i>NAME</i> rather than at the
+      first step. Useful when the states read better in an order other than the
+      one they run in.
     <p class="Pp"></p>
   </dd>
-  <dt id="capture"><a class="permalink" href="#capture"><b>capture as</b>
-    <i>NAME</i></a></dt>
+  <dt id="always"><a class="permalink" href="#always"><b>always</b> <b>-&gt;</b>
+    <i>TARGET</i></a></dt>
+  <dd>An unconditional edge, for a state that has nothing to wait for -- after a
+      <b>starttls</b>, for instance.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="eof"><a class="permalink" href="#eof"><b>eof</b> <b>-&gt;</b>
+    <i>TARGET</i></a></dt>
+  <dd>The server closing the connection is an outcome, not automatically a
+      fault: after QUIT it is the correct one. This is an alternative like an
+      <b>expect</b>, competing in the same group, but it matches the close
+      rather than any bytes.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="timeout(SECONDS"><a class="permalink" href="#timeout(SECONDS"><b>timeout(</b><i>SECONDS</i><b>)</b>
+    <b>-&gt;</b> <i>TARGET</i></a></dt>
   <dd></dd>
-  <dt id="capture-regex"><a class="permalink" href="#capture-regex"><b>capture-regex</b>
-    <i>REGEX</i> <b>as</b> <i>NAME</i></a></dt>
-  <dd>Bind a value out of the reply that the preceding <b>expect</b> accepted:
-      the whole reply, or the first capture group of <i>REGEX</i>. The regex is
-      case-sensitive. A pattern that does not match binds an empty value.
+  <dt id="idle(SECONDS"><a class="permalink" href="#idle(SECONDS"><b>idle(</b><i>SECONDS</i><b>)</b>
+    <b>-&gt;</b> <i>TARGET</i></a></dt>
+  <dd>How long the state may take, and where to go when it does not finish in
+      time. <b>timeout</b> is the budget for the whole state; <b>idle</b> is how
+      long the server may say nothing at all. They differ for a long reply that
+      keeps arriving: that is not idle, but it may still be over budget. Either
+      may lead to <b>warning</b>, which is how &quot;slow&quot; is reported as
+      distinct from &quot;broken&quot;.
+    <p class="Pp"></p>
+  </dd>
+  <dt><i>NAME</i> <b>~</b> <i>REGEX</i> <b>-&gt;</b> <i>TARGET</i></dt>
+  <dd></dd>
+  <dt id="else"><a class="permalink" href="#else"><b>else</b> <b>-&gt;</b>
+    <i>TARGET</i></a></dt>
+  <dd></dd>
+  <dt><i>NAME</i> <b>~</b> <i>REGEX</i> <b>as</b>
+    <i>NAME2</i>[;<i>NAME3</i>]</dt>
+  <dd>Read the value called <i>NAME</i>: the first two forms branch on whether
+      it matches, the third binds what the pattern's capture groups found in it.
+      One name per group, in the order the groups appear. Each line begins with
+      the name it reads, so both are recognised by their shape rather than by a
+      leading keyword.
+    <p class="Pp">The regex reads a value already in hand, never the socket.
+        That is what allows a regex here and not in an <b>expect</b>: it decides
+        nothing about what arrives, so it cannot race a partial read and needs
+        no maximum match length. The regex is case-sensitive, and a pattern that
+        does not match binds empty.</p>
+    <p class="Pp">A name that nothing binds never matches, so a branch on one
+        can only ever take the <b>else</b> arm and an extraction from one can
+        only ever bind empty. Both are reported when the file is read.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="credentials"><a class="permalink" href="#credentials"><b>credentials</b>
@@ -211,6 +265,12 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         expands to nothing.</p>
     <p class="Pp"></p>
   </dd>
+  <dt id="transport"><a class="permalink" href="#transport"><b>transport</b>
+    <b>tcp</b></a></dt>
+  <dd>Which probe runs this entry. Only <b>tcp</b> is implemented; naming
+      anything else refuses the entry rather than silently running it as tcp.
+    <p class="Pp"></p>
+  </dd>
   <dt id="port"><a class="permalink" href="#port"><b>port</b>
     <i>NUMBER</i></a></dt>
   <dd>Define the default TCP port-number for this service. If no portnumber is
@@ -230,6 +290,44 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <p class="Pp"></p>
   </dd>
 </dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
+<p class="Pp">An SMTP service that upgrades to TLS when the server offers it,
+    reports a server that does not offer it as yellow rather than down, and
+    reads the certificate off the upgraded session:</p>
+<p class="Pp"></p>
+<pre>   [smtp-tls]
+      state greeting
+      timeout(10)         -&gt; fail
+      expect &quot;220&quot;
+      send &quot;ehlo xymonnet\r\n&quot;
+      expect &quot;250&quot; until &quot;250 &quot; as caps
+      caps ~ &quot;STARTTLS&quot;   -&gt; upgrade
+      else                -&gt; warning
+      state upgrade
+      timeout(10)         -&gt; fail
+      send &quot;starttls\r\n&quot;
+      expect &quot;220&quot;        -&gt; secure
+      expect &quot;454&quot;        -&gt; warning
+      state secure
+      timeout(10)         -&gt; fail
+      starttls
+      send &quot;ehlo xymonnet\r\n&quot;
+      expect &quot;250&quot; until &quot;250 &quot;
+      send &quot;quit\r\n&quot;
+      expect &quot;221&quot;        -&gt; success
+      options banner
+      port 25</pre>
+<p class="Pp">Note also that this is deliberately NOT what the shipped
+    <b>[smtp]</b> entry does. protocols.cfg is one file for the whole
+    installation, so an entry that expects STARTTLS would change what every
+    existing host reports the moment the file is installed -- a site whose mail
+    server offers no STARTTLS would turn yellow because it upgraded, not because
+    anything changed at the site. Copy this under a new name and point the hosts
+    that should use it at that name instead.</p>
+<p class="Pp"></p>
 </section>
 <section class="Sh">
 <p>&#160;</p>
@@ -253,6 +351,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
 <dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
 <dt><a href="#FILE_FORMAT">FILE FORMAT</a></dt>
+<dt><a href="#EXAMPLES">EXAMPLES</a></dt>
 <dt><a href="#FILES">FILES</a></dt>
 <dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
 </dl>
