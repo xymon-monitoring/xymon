@@ -345,6 +345,8 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 	newtest->reverse = reversetest;
 	newtest->alwaystrue = alwaystruetest;
 	newtest->silenttest = silenttest;
+	newtest->okstates = NULL;
+	newtest->credname = NULL;
 	newtest->senddata = sendasdata;
 	newtest->testspec = (testspec ? strdup(testspec) : NULL);
 	if (srcip)
@@ -486,6 +488,7 @@ void load_tests(void)
 		while (testspec) {
 			service_t *s = NULL;
 			int dialuptest = 0, reversetest = 0, silenttest = 0, sendasdata = 0;
+			char *okstates = NULL, *credname = NULL;
 			char *srcip = NULL;
 			int alwaystruetest = (xmh_item(hwalk, XMH_FLAG_NOCLEAR) != NULL);
 
@@ -675,25 +678,34 @@ void load_tests(void)
 						 */
 						int specialport = 0;
 						SBUF_DEFINE(specialname);
-						char *opt2 = strrchr(option, ':');
+						char *o = option, *nexto;
 
-						if (opt2) {
-							if (strcmp(opt2, ":s") == 0) {
-								/* option = "portnumber:s" */
-								silenttest = 1;
-								*opt2 = '\0';
-								specialport = atoi(option);
-								*opt2 = ':';
-							}
-						}
-						else if (strcmp(option, "s") == 0) {
-							/* option = "s" */
-							silenttest = 1;
-							specialport = 0;
-						}
-						else {
-							/* option = "portnumber" */
-							specialport = atoi(option);
+						/*
+						 * The options after a test name, in any order:
+						 *
+						 *   NNNN       a port -- a different port is a different
+						 *              service, so it derives its own column
+						 *   s          silent
+						 *   ok=a,b     check only as far as one of these states
+						 *   cred=NAME  which credentials.cfg entry to bind
+						 *
+						 * ok= and cred= describe how deeply to test THIS host and
+						 * with whose credentials. They are not a different service
+						 * and must not derive a column: a site running mixed depths
+						 * would get one per depth and no comparable history.
+						 */
+						while (o && *o) {
+							nexto = strchr(o, ':');
+							if (nexto) *nexto = '\0';
+
+							if (strcmp(o, "s") == 0)              silenttest = 1;
+							else if (strncmp(o, "ok=", 3) == 0)   okstates = strdup(o + 3);
+							else if (strncmp(o, "cred=", 5) == 0) credname = strdup(o + 5);
+							else if (atoi(o) > 0)                 specialport = atoi(o);
+							else if (*o)
+								errprintf("Unknown option '%s' on test '%s' for host %s\n",
+									  o, testspec, h->hostname);
+							if (nexto) { *nexto = ':'; o = nexto + 1; } else o = NULL;
 						}
 
 						if (specialport) {
@@ -713,6 +725,9 @@ void load_tests(void)
 
 					anytests = 1;
 					newtest = init_testitem(h, s, srcip, testspec, dialuptest, reversetest, alwaystruetest, silenttest, sendasdata);
+					newtest->okstates = okstates;
+					newtest->credname = credname;
+					okstates = credname = NULL;	/* owned by the test now */
 					newtest->next = s->items;
 					s->items = newtest;
 
@@ -2433,10 +2448,18 @@ int main(int argc, char *argv[])
 				if (!t->host->dnserror) {
 					snprintf(tname, sizeof(tname), "%s", s->testname);
 					if (s->namelen) tname[s->namelen] = '\0';
-					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL,
-									   t->srcip,
-									   NULL, t->silenttest, NULL, 
-									   NULL, NULL, NULL);
+					{
+						tcptest_t *tt = add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL,
+									     t->srcip,
+									     NULL, t->silenttest, NULL,
+									     NULL, NULL, NULL);
+
+						if (tt) {
+							tt->okstates = t->okstates;
+							tt->credname = t->credname;
+						}
+						t->privdata = (void *)tt;
+					}
 				}
 			}
 		}

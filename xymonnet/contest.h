@@ -153,6 +153,9 @@ typedef struct tcptest_t {
 	int steptimedout;		/* that budget expired, rather than a mismatch */
 	int dialogverdict;		/* 0 = infer, 1 = success, 2 = warning, 3 = fail */
 	void *timeoutstep;		/* svcstep_t *: the timeout edge that armed the clock */
+	char *okstates;			/* per-test depth: states that end the dialogue green */
+	char *curlabel;			/* ... and the state being run, to know when one ends */
+	char *credname;			/* per-test credentials entry, overriding the definition */
 	int idlesecs;			/* 'idle(N)': silence budget, 0 = none */
 	void *idlestep;			/* svcstep_t *: the idle edge that armed it */
 
