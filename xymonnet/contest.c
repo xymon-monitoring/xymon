@@ -223,7 +223,10 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	 * sockets were never closed and every legacy TLS test timed out.
 	 */
 	newtest->curstep = ((newtest->svcinfo && (newtest->svcinfo->flags & TCP_DIALOGUE))
-			    ? (void *)newtest->svcinfo->steps : NULL);
+			    ? (void *)(newtest->svcinfo->startstep
+				       ? newtest->svcinfo->startstep
+				       : newtest->svcinfo->steps)
+			    : NULL);
 	/*
 	 * A definition refused when the file was read must not be able to
 	 * report OK. Failing it here rather than dropping the service keeps
@@ -1983,7 +1986,45 @@ restartselect:
 								 * greeting was read as the peer hanging up,
 								 * and every TLS dialogue failed instantly.
 								 */
-								if ((res <= 0) && !item->sslagain && st) {
+								if ((res <= 0) && !item->sslagain && st &&
+								    (st->type == STEP_EXPECT)) {
+									svcstep_t *alt, *eofhit = NULL;
+
+									for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next)
+										if (alt->oneof) { eofhit = alt; break; }
+
+									if (eofhit) {
+										/*
+										 * The peer closing is what this state
+										 * was waiting for. After QUIT that is
+										 * the correct outcome, not a fault.
+										 */
+										if (eofhit->action == ACT_SUCCESS) {
+											item->dialogverdict = 1;
+											item->curstep = NULL;
+										}
+										else if ((eofhit->action == ACT_FAIL) ||
+											 (eofhit->action == ACT_WARNING)) {
+											item->dialogfail = 1;
+											item->dialogverdict = (eofhit->action == ACT_WARNING) ? 2 : 3;
+											if (!item->failstep) item->failstep = (void *)eofhit;
+											item->curstep = NULL;
+										}
+										else {
+											item->curstep = (void *)dlg_run_instant(item,
+													  (eofhit->action == ACT_GOTO)
+													  ? eofhit->targetstep : eofhit->next);
+										}
+										st = (svcstep_t *)item->curstep;
+									}
+									else {
+										item->dialogfail = 1;
+										if (!item->failstep) item->failstep = (void *)st;
+										item->curstep = NULL;
+										st = NULL;
+									}
+								}
+								else if ((res <= 0) && !item->sslagain && st) {
 								/*
 								 * The peer went away with steps still to run.
 								 * Fail here rather than leaving the socket to
@@ -2047,6 +2088,7 @@ restartselect:
 
 									/* Consecutive expects are alternatives of ONE state. */
 									for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next) {
+										if (alt->oneof) continue;	/* only fires on EOF */
 										if (item->stepbuflen < alt->len) { undecided++; continue; }
 										if (memcmp(item->stepbuf, alt->text, alt->len) == 0) { hit = alt; break; }
 									}
@@ -2309,10 +2351,12 @@ char *tcp_dialogue_failure(tcptest_t *test)
 	char *name = NULL;
 	int idx = 0, n = 0;
 
-	if (!test || !test->svcinfo || !(test->svcinfo->flags & TCP_DIALOGUE)) return NULL;
+	if (!test || !test->svcinfo) return NULL;
 
 	if (test->svcinfo->flags & TCP_DIALOGUE_BROKEN)
 		return "protocols.cfg refused this definition - see the xymonnet log";
+
+	if (!(test->svcinfo->flags & TCP_DIALOGUE)) return NULL;
 
 	bad = (svcstep_t *)test->failstep;
 
@@ -2385,6 +2429,14 @@ int tcp_got_expected(tcptest_t *test)
 	 * arrived. Re-matching exptext against the banner here would compare the
 	 * first step's pattern against whatever the last read happened to leave.
 	 */
+	/*
+	 * A refused definition can never be OK, and the refusal has to be
+	 * checked before the dialogue test: an entry that is one expect is
+	 * not a dialogue, so a bad 'transport' on it would otherwise fall
+	 * through to the legacy comparison and report green.
+	 */
+	if (test->svcinfo && (test->svcinfo->flags & TCP_DIALOGUE_BROKEN)) return 0;
+
 	if (test->svcinfo && (test->svcinfo->flags & TCP_DIALOGUE))
 		return (test->dialogfail == 0) && (test->curstep == NULL);
 		/* dialogverdict 1 ("-> success") also leaves curstep NULL and
