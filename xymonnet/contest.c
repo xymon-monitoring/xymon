@@ -224,7 +224,14 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	 */
 	newtest->curstep = ((newtest->svcinfo && (newtest->svcinfo->flags & TCP_DIALOGUE))
 			    ? (void *)newtest->svcinfo->steps : NULL);
-	newtest->dialogfail = 0;
+	/*
+	 * A definition refused when the file was read must not be able to
+	 * report OK. Failing it here rather than dropping the service keeps
+	 * the column present and says why, instead of the test quietly
+	 * disappearing from the display.
+	 */
+	newtest->dialogfail = (newtest->svcinfo &&
+			       (newtest->svcinfo->flags & TCP_DIALOGUE_BROKEN)) ? 1 : 0;
 	newtest->failstep = NULL;
 	newtest->stepsecs = 0;
 	newtest->stepdeadline = 0;
@@ -2047,17 +2054,14 @@ restartselect:
 									}
 
 									/*
-									 * An ambiguous group is one where a longer
-									 * alternative could still overtake the one
-									 * that just matched. Wait until every
-									 * pattern in the group is decidable, so the
-									 * winner is the config's order rather than
-									 * the server's packet boundaries. Bounded:
-									 * maxaltlen is known at load time, and the
-									 * buffer cap and test timeout end the wait.
+									 * No deferral is needed here. A longer
+									 * alternative could once overtake the one
+									 * that just matched, so the winner depended
+									 * on how the server split its reply -- but
+									 * overlapping patterns are now refused when
+									 * the file is read, so at most one
+									 * alternative in a group can match.
 									 */
-									if (hit && hit->ambiguous &&
-									    (item->stepbuflen < hit->maxaltlen)) break;
 
 									if (hit) {
 										int cut = hit->len;
@@ -2294,6 +2298,9 @@ char *tcp_dialogue_failure(tcptest_t *test)
 	int idx = 0, n = 0;
 
 	if (!test || !test->svcinfo || !(test->svcinfo->flags & TCP_DIALOGUE)) return NULL;
+
+	if (test->svcinfo->flags & TCP_DIALOGUE_BROKEN)
+		return "protocols.cfg refused this definition - see the xymonnet log";
 
 	bad = (svcstep_t *)test->failstep;
 

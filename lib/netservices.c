@@ -304,43 +304,38 @@ static void check_undefined_vars(svcinfo_t *rec)
  * packets. Say so, and record the longest pattern so the driver can wait
  * for the group to be decidable instead of racing.
  */
-static void mark_ambiguous_groups(svcinfo_t *rec)
+static void refuse_overlapping_groups(svcinfo_t *rec)
 {
 	svcstep_t *st;
 
 	for (st = rec->steps; (st); st = st->next) {
 		svcstep_t *a, *b, *last;
-		int maxlen = 0, clash = 0;
 
 		if (st->type != STEP_EXPECT) continue;
 
 		/* the group is this step and the expects immediately after it */
 		for (last = st; (last->next && (last->next->type == STEP_EXPECT)); last = last->next) ;
-		for (a = st; ; a = a->next) {
-			if (a->len > maxlen) maxlen = a->len;
-			if (a == last) break;
-		}
 
 		for (a = st; (a != last); a = a->next) {
 			for (b = a->next; ; b = b->next) {
 				int n = (a->len < b->len) ? a->len : b->len;
 
 				if ((n > 0) && (memcmp(a->text, b->text, n) == 0)) {
-					clash = 1;
+					/*
+					 * An error that only says "these overlap" leaves the
+					 * author stuck, because what they wanted is reasonable.
+					 * Name the fix.
+					 */
 					errprintf("Service %s: 'expect \"%.30s\"' and 'expect \"%.30s\"' overlap - "
-						  "both match the same reply, and which one wins depends on how "
-						  "the server split it\n", rec->svcname, a->text, b->text);
+						  "both match the same reply. Match the shared prefix in one "
+						  "state, then distinguish with 'capture as NAME' and a "
+						  "'NAME ~ ...' edge in the next state\n",
+						  rec->svcname, a->text, b->text);
+					rec->flags |= TCP_DIALOGUE_BROKEN;
 				}
 				if (b == last) break;
 			}
 		}
-
-		if (clash)
-			for (a = st; ; a = a->next) {
-				a->ambiguous = 1;
-				a->maxaltlen = maxlen;
-				if (a == last) break;
-			}
 
 		st = last;	/* skip past the group we just examined */
 	}
@@ -1011,7 +1006,7 @@ char *init_tcp_services(void)
 				svcinfo[i].flags |= TCP_DIALOGUE;
 
 			check_undefined_vars(&svcinfo[i]);
-			mark_ambiguous_groups(&svcinfo[i]);
+			refuse_overlapping_groups(&svcinfo[i]);
 
 			/*
 			 * "options ssl" is TLS from the first byte; "starttls" upgrades

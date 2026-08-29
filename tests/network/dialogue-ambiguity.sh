@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Two alternatives that overlap must not be decided by the network.
+# Two alternatives that overlap must be refused, not resolved.
 #
 # Consecutive expects are alternatives and the first match wins, but an
 # alternative cannot be decided until enough of the reply has arrived.
@@ -10,13 +10,20 @@
 # in one call or two. Measured, before this was fixed: red for one write,
 # green for two.
 #
-# Both halves are checked here. The overlap is reported when the file is
-# read, because a config whose meaning depends on packet boundaries is
-# worth knowing about; and the verdict is now the same either way, so a
-# config that ignores the warning is at least deterministic.
+# That was first fixed by deferring the decision until every pattern in
+# the group was decidable. This is the stronger fix: the definition is
+# refused when the file is read, so the situation cannot arise. Two
+# patterns can both match one reply exactly when one is a prefix of the
+# other, so the check is complete rather than a guess, and refusing costs
+# nothing a deferral was buying.
 #
-# Two alternatives can both match one reply exactly when one is a prefix
-# of the other, so the parse-time check is complete rather than a guess.
+# The refused service must still report -- and report RED. Dropping it
+# would remove the column from the display, which looks like a service
+# nobody configured rather than one whose definition is wrong.
+#
+# The message is asserted too, not just the refusal. What the author
+# wanted is reasonable, so an error that only says "these overlap" leaves
+# them stuck; it has to name the fix.
 
 set -eu
 . "$(dirname "$0")/../lib/assert.sh"
@@ -82,13 +89,28 @@ comment. Which of them matches depends on how the server split its reply,
 so the config's meaning is decided by the network:
 $out"
 
-v1=$(grep -c 'Service amb1 on onewrite is OK' <<<"$out" || true)
-v2=$(grep -c 'Service amb2 on split is OK' <<<"$out" || true)
-[ "$v1" = "$v2" ] || fail \
-	"the same config against the same bytes gave different verdicts: one write
-was $([ "$v1" = 1 ] && echo up || echo down), split across two writes was
-$([ "$v2" = 1 ] && echo up || echo down). The winner is being decided by
-packet boundaries rather than by the order in protocols.cfg:
+grep -qi "capture as NAME" <<<"$out" || fail \
+	"the overlap was reported without saying what to do about it. What the
+author wanted is reasonable -- distinguishing two replies that share a
+prefix -- so the error has to name the fix, not just the fault:
 $out"
 
-pass "overlapping alternatives are reported, and the verdict no longer depends on how the reply was split"
+# THE POINT. A refused definition must not be able to report OK, however
+# the server behaves, and must not vary with how the reply was split.
+grep -q 'Service amb1 on onewrite is OK' <<<"$out" && fail \
+	"a definition refused when the file was read still reported the service up:
+$out"
+
+grep -q 'Service amb2 on split is OK' <<<"$out" && fail \
+	"a definition refused when the file was read still reported the service up
+when the reply arrived in two writes:
+$out"
+
+# And it must still be reported at all -- refusing is not the same as
+# dropping the test, which would look like a service nobody configured.
+grep -q 'Service amb1 on onewrite is not OK' <<<"$out" || fail \
+	"the refused service produced no status at all. It should report red with
+the reason, not vanish from the display:
+$out"
+
+pass "overlapping alternatives are refused, the error names the fix, and the service reports red either way"
