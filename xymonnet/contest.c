@@ -242,6 +242,8 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->steptimedout = 0;
 	newtest->dialogverdict = 0;
 	newtest->timeoutstep = NULL;
+	newtest->okstates = NULL;
+	newtest->credname = NULL;
 	newtest->idlesecs = 0;
 	newtest->idlestep = NULL;
 	newtest->stepbuf = NULL;
@@ -1066,6 +1068,25 @@ static void dlg_free(tcptest_t *item)
 }
 
 
+/* Is NAME one of the comma-separated names in LIST? */
+static int dlg_name_listed(const char *list, const char *name)
+{
+	const char *p = list;
+	int n = strlen(name);
+
+	while (p && *p) {
+		const char *e = strchr(p, ',');
+		int len = (e ? (int)(e - p) : (int)strlen(p));
+
+		while ((len > 0) && ((*p == ' ') || (*p == '\t'))) { p++; len--; }
+		while ((len > 0) && ((p[len-1] == ' ') || (p[len-1] == '\t'))) len--;
+		if ((len == n) && (strncmp(p, name, n) == 0)) return 1;
+		p = (e ? e + 1 : NULL);
+	}
+	return 0;
+}
+
+
 static char *dlg_get(tcptest_t *item, const char *name)
 {
 	dlgvar_t *v;
@@ -1249,6 +1270,17 @@ static svcstep_t *dlg_run_instant(tcptest_t *item, svcstep_t *st)
 
 		switch (st->type) {
 		  case STEP_LABEL:
+			/*
+			 * Per-test depth. "smtp:ok=greeting" asks for this host to be
+			 * checked only as far as that state, so one definition serves
+			 * several depths and the shipped entries can be deepened
+			 * without moving anybody's alerting. The remaining steps are
+			 * not run and are not a failure.
+			 */
+			if (item->okstates && st->label && dlg_name_listed(item->okstates, st->label)) {
+				item->dialogverdict = 1;
+				return NULL;
+			}
 			st = st->next;
 			break;
 
@@ -1282,6 +1314,24 @@ static svcstep_t *dlg_run_instant(tcptest_t *item, svcstep_t *st)
 			break;
 
 		  case STEP_CREDS:
+			if (item->credname) {
+				/*
+				 * "smtp:cred=NAME" names the entry for THIS host. The
+				 * value is a key into credentials.cfg and never a secret:
+				 * hosts.cfg is world-readable for the same reasons
+				 * protocols.cfg is.
+				 */
+				char *u = NULL, *p = NULL;
+
+				if (lookup_credentials(item->credname, &u, &p)) {
+					dlg_set(item, "username", u);
+					dlg_set(item, "password", p);
+					if (u) { dlg_wipe(u); xfree(u); }
+					if (p) { dlg_wipe(p); xfree(p); }
+					st = st->next;
+					break;
+				}
+			}
 			dlg_set(item, "username", st->user);
 			dlg_set(item, "password", st->pass);
 			st = st->next;

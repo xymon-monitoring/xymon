@@ -86,6 +86,8 @@ typedef struct svcstep_t {
 	struct svcstep_t *next;
 } svcstep_t;
 
+extern int lookup_credentials(char *name, char **user, char **pass);
+
 typedef struct svcinfo_t {
 	char *svcname;
 	unsigned char *sendtxt;
