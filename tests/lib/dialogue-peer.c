@@ -18,6 +18,7 @@
  *   recv PREFIX      read one line; record it, and record MISMATCH if it
  *                    does not begin with PREFIX
  *   recvany          read one line and record it
+ *   hold N           stay connected and silent for N seconds
  *   replyall TEXT    answer TEXT to every further line, until EOF. Models a
  *                    server that greets and then refuses everything.
  *   starttls         upgrade to TLS here (needs CERT and KEY)
@@ -253,6 +254,19 @@ int main(int argc, char *argv[])
 			fprintf(obs, "got %s\n", got);
 			if (strcmp(got, want) != 0) fprintf(obs, "MISMATCH want=%s got=%s\n", want, got);
 			else fprintf(obs, "b64-ok\n");
+		}
+		else if (strcmp(cmd, "hold") == 0) {
+			/*
+			 * Stay connected and say nothing. A script that simply ends
+			 * closes the socket, which the probe sees as EOF -- so without
+			 * this there is no way to test a step that runs out of time
+			 * rather than one that is refused.
+			 */
+			int secs = atoi(arg);
+
+			fprintf(obs, "holding %d\n", (secs > 0) ? secs : 1);
+			fflush(obs);
+			sleep((secs > 0) ? secs : 1);
 		}
 		else if (strcmp(cmd, "hangup") == 0) break;
 	}

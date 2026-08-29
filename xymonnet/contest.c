@@ -226,6 +226,10 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 			    ? (void *)newtest->svcinfo->steps : NULL);
 	newtest->dialogfail = 0;
 	newtest->failstep = NULL;
+	newtest->stepsecs = 0;
+	newtest->stepdeadline = 0;
+	newtest->stepdeadlinefor = NULL;
+	newtest->steptimedout = 0;
 	newtest->stepbuf = NULL;
 	newtest->stepbuflen = 0;
 
@@ -1038,6 +1042,13 @@ static void dlg_free(tcptest_t *item)
 	if (item->stepbuf) { xfree(item->stepbuf); item->stepbuf = NULL; }
 	item->stepbuflen = 0;
 	if (item->lastreply) { xfree(item->lastreply); item->lastreply = NULL; }
+	/*
+	 * Only the arming is cleared here. stepsecs and steptimedout are part
+	 * of the verdict -- dlg_free() runs after the poll loop and before the
+	 * results are reported, so zeroing them here erased the reason a step
+	 * failed and the report fell back to a generic mismatch.
+	 */
+	item->stepdeadline = 0; item->stepdeadlinefor = NULL;
 }
 
 
@@ -1224,6 +1235,18 @@ static svcstep_t *dlg_run_instant(tcptest_t *item, svcstep_t *st)
 
 		switch (st->type) {
 		  case STEP_LABEL:
+			st = st->next;
+			break;
+
+		  case STEP_TIMEOUT:
+			/*
+			 * Sets the budget for the wait that follows and re-arms it,
+			 * so a jump back into a state gets a fresh clock rather than
+			 * inheriting whatever was left of the previous visit.
+			 */
+			item->stepsecs = st->seconds;
+			item->stepdeadline = 0;
+			item->stepdeadlinefor = NULL;
 			st = st->next;
 			break;
 
@@ -1567,6 +1590,46 @@ restartselect:
 		/* Now find out which connections had something happen to them */
 		for (item=firstactive; (item != nextinqueue); item=item->next) {
 			if (item->fd > -1) {		/* Only active sockets have this */
+				/*
+				 * A per-step budget from "timeout N". Armed here, against
+				 * the same clock the comparison below uses: arming it from
+				 * gettimer() while comparing against getntimer()'s reading
+				 * mixes a monotonic source with a wall-clock one, and the
+				 * deadline fires almost immediately.
+				 *
+				 * Keyed on the step it belongs to, so advancing to the next
+				 * step re-arms it without every advance having to remember.
+				 */
+				if ((item->stepsecs > 0) && item->curstep &&
+				    (item->stepdeadlinefor != item->curstep)) {
+					item->stepdeadline = timestamp.tv_sec + item->stepsecs;
+					item->stepdeadlinefor = item->curstep;
+				}
+
+				if (item->stepdeadline && (timestamp.tv_sec > item->stepdeadline)) {
+					/*
+					 * This step ran out of time. Distinct from the cutoff
+					 * below, which ends the whole test and cannot say where
+					 * it stopped: here the step is known, so the report can
+					 * name it. The connection was established, so this is a
+					 * dialogue failure and not a connect timeout.
+					 */
+					item->steptimedout = 1;
+					item->dialogfail = 1;
+					if (!item->failstep) item->failstep = item->curstep;
+					item->curstep = NULL;
+					item->stepdeadline = 0;
+
+					socket_shutdown(item);
+					get_totaltime(item, &timestamp);
+					close(item->fd);
+					item->fd = -1;
+					activesockets--;
+					pending--;
+					if (item == firstactive) firstactive = item->next;
+					continue;
+				}
+
 				if (timestamp.tv_sec > item->cutoff) {
 					/* 
 					 * Request timed out.
@@ -2225,6 +2288,23 @@ char *tcp_dialogue_failure(tcptest_t *test)
 	if (!test || !test->svcinfo || !(test->svcinfo->flags & TCP_DIALOGUE)) return NULL;
 
 	bad = (svcstep_t *)test->failstep;
+
+	if (bad && test->steptimedout) {
+		/* Name the state if there is one: "step 7" is not actionable. */
+		for (st = test->svcinfo->steps; (st); st = st->next) {
+			n++;
+			if (st->type == STEP_LABEL) name = st->label;
+			if (st == bad) { idx = n; break; }
+		}
+		if (name)
+			snprintf(buf, sizeof(buf), "state %s timed out after %ds (expecting \"%.30s\")",
+				 name, test->stepsecs, (bad->text ? (char *)bad->text : ""));
+		else
+			snprintf(buf, sizeof(buf), "step %d timed out after %ds (expecting \"%.30s\")",
+				 idx, test->stepsecs, (bad->text ? (char *)bad->text : ""));
+		return buf;
+	}
+
 	if (!bad) {
 		/* No step blamed itself: the conversation simply stopped short. */
 		st = (svcstep_t *)test->curstep;
