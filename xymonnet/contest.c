@@ -242,6 +242,8 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->steptimedout = 0;
 	newtest->dialogverdict = 0;
 	newtest->timeoutstep = NULL;
+	newtest->idlesecs = 0;
+	newtest->idlestep = NULL;
 	newtest->stepbuf = NULL;
 	newtest->stepbuflen = 0;
 
@@ -1250,6 +1252,17 @@ static svcstep_t *dlg_run_instant(tcptest_t *item, svcstep_t *st)
 			st = st->next;
 			break;
 
+		  case STEP_IDLE:
+			/*
+			 * Armed against lastactive, which the read and write arms
+			 * already stamp, so "restarts whenever data arrives" needs
+			 * no clock of its own.
+			 */
+			item->idlesecs = st->seconds;
+			item->idlestep = (void *)st;
+			st = st->next;
+			break;
+
 		  case STEP_TIMEOUT:
 			/*
 			 * Sets the budget for the wait that follows and re-arms it,
@@ -1622,6 +1635,44 @@ restartselect:
 				    (item->stepdeadlinefor != item->curstep)) {
 					item->stepdeadline = timestamp.tv_sec + item->stepsecs;
 					item->stepdeadlinefor = item->curstep;
+				}
+
+				if ((item->idlesecs > 0) && item->curstep && item->lastactive &&
+				    ((timestamp.tv_sec - item->lastactive) > item->idlesecs)) {
+					svcstep_t *edge = (svcstep_t *)item->idlestep;
+
+					/*
+					 * Nothing has arrived for long enough. Distinct from
+					 * the absolute budget below: this says the server has
+					 * stopped, not that the reply was long.
+					 */
+					item->steptimedout = 1;
+					if (!item->failstep) item->failstep = item->curstep;
+					item->idlesecs = 0;
+
+					if (edge && (edge->action == ACT_GOTO) && edge->targetstep) {
+						item->curstep = (void *)dlg_run_instant(item, edge->targetstep);
+						item->stepdeadlinefor = NULL;
+						continue;
+					}
+					if (edge && (edge->action == ACT_SUCCESS)) {
+						item->dialogverdict = 1;
+						item->curstep = NULL;
+					}
+					else {
+						item->dialogfail = 1;
+						item->dialogverdict = (edge && (edge->action == ACT_WARNING)) ? 2 : 3;
+						item->curstep = NULL;
+					}
+
+					socket_shutdown(item);
+					get_totaltime(item, &timestamp);
+					close(item->fd);
+					item->fd = -1;
+					activesockets--;
+					pending--;
+					if (item == firstactive) firstactive = item->next;
+					continue;
 				}
 
 				if (item->stepdeadline && (timestamp.tv_sec > item->stepdeadline)) {

@@ -153,6 +153,8 @@ typedef struct tcptest_t {
 	int steptimedout;		/* that budget expired, rather than a mismatch */
 	int dialogverdict;		/* 0 = infer, 1 = success, 2 = warning, 3 = fail */
 	void *timeoutstep;		/* svcstep_t *: the timeout edge that armed the clock */
+	int idlesecs;			/* 'idle(N)': silence budget, 0 = none */
+	void *idlestep;			/* svcstep_t *: the idle edge that armed it */
 
 	/* For testing telnet services */
 	unsigned char *telnetbuf;	/* Buffer for telnet option negotiation */
