@@ -70,9 +70,9 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
    state greeting
       timeout(30)                 -> fail
-      expect "220"                -> ehlo
+      expect "220"                -> waiting
 
-   state ehlo
+   state waiting
       send "ehlo xymonnet\r\n"
       timeout(2)                  -> fail
       expect "250"                -> success
@@ -83,9 +83,9 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
    state greeting
       timeout(30)                 -> fail
-      expect "220"                -> ehlo
+      expect "220"                -> waiting
 
-   state ehlo
+   state waiting
       send "ehlo xymonnet\r\n"
       timeout(2)                  -> fail
       expect "250"                -> success
@@ -96,9 +96,9 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
    state greeting
       timeout(30)                 -> fail
-      expect "220"                -> ehlo
+      expect "220"                -> waiting
 
-   state ehlo
+   state waiting
       send "ehlo xymonnet\r\n"
       timeout(2)                  -> warning
       expect "250"                -> success
@@ -152,9 +152,9 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
    state greeting
       timeout(30)                 -> fail
-      expect "220"                -> ehlo
+      expect "220"                -> waiting
 
-   state ehlo
+   state waiting
       send "ehlo xymonnet\r\n"
       timeout(60)                 -> fail
       expect "250"                -> success
