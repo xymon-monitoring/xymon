@@ -33,7 +33,7 @@
 #define STEP_EXPECT  2
 #define STEP_LABEL   3	/* a jump target; performs no I/O */
 #define STEP_CAPTURE 4	/* pull a value out of the reply just matched */
-#define STEP_WHEN    5	/* branch on a captured value */
+#define STEP_WHEN    5	/* branch on a bound value */
 #define STEP_JUMP    6	/* unconditional; emitted to skip an else-arm */
 #define STEP_CREDS   7	/* bind ${username}/${password} from the store */
 #define STEP_STARTTLS 8	/* upgrade this connection to TLS, here */
@@ -70,7 +70,8 @@
    taken when every alternative has been ruled out. */
 typedef struct svcstep_t {
 	int type;
-	unsigned char *text;		/* send/expect literal, or capture regex */
+	unsigned char *text;		/* send/expect literal, or extraction regex */
+	char *srcname;			/* STEP_CAPTURE: the named value it reads from */
 	int len;
 	int action;			/* ACT_* -- expect steps only */
 	char *target;			/* '-> NAME', unresolved */

@@ -102,8 +102,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    timeout(10)         -> fail
    expect "220"
    send "ehlo xymonnet\r\n"
-   expect "250" until "250 "
-   capture as caps
+   expect "250" until "250 " as caps
    caps ~ "STARTTLS"   -> upgrade
    else                -> warning
 
@@ -128,8 +127,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    timeout(10)         -> fail
    expect "220"
    send "ehlo xymonnet\r\n"
-   expect "250" until "250 "
-   capture as caps
+   expect "250" until "250 " as caps
    caps ~ "STARTTLS"   -> upgrade
    else                -> warning
 

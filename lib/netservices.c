@@ -198,6 +198,7 @@ static void free_svcsteps(svcinfo_t *rec)
 		if (st->target)  xfree(st->target);
 		if (st->label)   xfree(st->label);
 		if (st->varname) xfree(st->varname);
+		if (st->srcname) xfree(st->srcname);
 		if (st->user) { memset(st->user, 0, strlen(st->user)); xfree(st->user); }
 		if (st->pass) { memset(st->pass, 0, strlen(st->pass)); xfree(st->pass); }
 		if (st->re)      freeregex((pcre2_code *)st->re);
@@ -236,7 +237,24 @@ static void check_undefined_vars(svcinfo_t *rec)
 			continue;
 		}
 
+		/* "expect ... as NAME" binds the reply it accepted. */
+		if ((st->type == STEP_EXPECT) && st->varname) {
+			if (nknown < 64) known[nknown++] = st->varname;
+			continue;
+		}
+
 		if (st->type == STEP_CAPTURE) {
+			/*
+			 * An extraction reads a name and binds others. Reading one
+			 * that nothing binds yields an empty value for every reply,
+			 * which is silent at run time.
+			 */
+			if (st->srcname && !name_is_known(known, nknown, st->srcname))
+				errprintf("Service %s: '%s ~ ... as %s' reads a value that is "
+					  "never bound before it - it can only bind empty\n",
+					  rec->svcname, st->srcname,
+					  (st->varname ? st->varname : "?"));
+
 			/* "as a;b;c" binds three names, not one called "a;b;c". */
 			if (st->varname) {
 				char *p = st->varname;
@@ -257,8 +275,8 @@ static void check_undefined_vars(svcinfo_t *rec)
 		if (st->type == STEP_WHEN) {
 			/* Testing a name nothing binds silently takes the else-arm. */
 			if (st->varname && !name_is_known(known, nknown, st->varname))
-				errprintf("Service %s: 'when %s ~ ...' tests a value that is never "
-					  "captured before it - the test can only fail\n",
+				errprintf("Service %s: '%s ~ ...' tests a value that is never "
+					  "bound before it - the test can only fail\n",
 					  rec->svcname, st->varname);
 			continue;
 		}
@@ -329,7 +347,7 @@ static void refuse_overlapping_groups(svcinfo_t *rec)
 					 */
 					errprintf("Service %s: 'expect \"%.30s\"' and 'expect \"%.30s\"' overlap - "
 						  "both match the same reply. Match the shared prefix in one "
-						  "state, then distinguish with 'capture as NAME' and a "
+						  "state, then distinguish with 'expect ... as NAME' and a "
 						  "'NAME ~ ...' edge in the next state\n",
 						  rec->svcname, a->text, b->text);
 					rec->flags |= TCP_DIALOGUE_BROKEN;
@@ -341,20 +359,6 @@ static void refuse_overlapping_groups(svcinfo_t *rec)
 		st = last;	/* skip past the group we just examined */
 	}
 }
-
-/* Has this entry produced an expect yet? A capture binds the reply that the
-   preceding expect accepted, so one with nothing in front of it can only ever
-   bind an empty value. */
-static int has_expect_step(svcinfo_t *rec)
-{
-	svcstep_t *st;
-
-	for (st = rec->steps; (st); st = st->next)
-		if (st->type == STEP_EXPECT) return 1;
-
-	return 0;
-}
-
 
 /*
  * Resolve "-> NAME" to the step that "state NAME" defines. Done once
@@ -609,6 +613,7 @@ static void emit_step(svclist_t *first, svcstep_t *tmpl)
 		if (tmpl->target)  st->target  = strdup(tmpl->target);
 		if (tmpl->label)   st->label   = strdup(tmpl->label);
 		if (tmpl->varname) st->varname = strdup(tmpl->varname);
+		if (tmpl->srcname) st->srcname = strdup(tmpl->srcname);
 		if (tmpl->user)    st->user    = strdup(tmpl->user);
 		if (tmpl->pass)    st->pass    = strdup(tmpl->pass);
 		if (tmpl->until) {
@@ -864,6 +869,27 @@ char *init_tcp_services(void)
 					rest = skipwhitespace(after_quoted(tp));
 				}
 
+				/*
+				 * "as NAME" binds the reply this expect accepted, and is
+				 * written here rather than on a step of its own because a
+				 * separate step has to say WHICH reply it means by its
+				 * position. One written a state too late bound the reply
+				 * from an earlier state and said nothing: the value was
+				 * wrong rather than missing, so no check could see it.
+				 */
+				if (strncmp(rest, "as ", 3) == 0) {
+					char *nm = skipwhitespace(rest + 2);
+					char *end = nm;
+
+					while (*end && (*end != ' ') && (*end != '\t')) end++;
+					if (end == nm) errprintf("'expect ... as' with no name\n");
+					else {
+						if (*end) { *end = '\0'; rest = skipwhitespace(end + 1); }
+						else rest = end;
+						tmpl.varname = nm;
+					}
+				}
+
 				/* Anything left after that is this edge's target. */
 				if (*rest) {
 					act = strtok(rest, " \t");
@@ -917,90 +943,6 @@ char *init_tcp_services(void)
 				else errprintf("'state' with no name\n");
 			}
 		}
-		else if (strncmp(l, "capture-regex ", 14) == 0) {
-			if (first) {
-				svcstep_t tmpl;
-				unsigned char *txt = NULL;
-				int txtlen = 0;
-				char *rest, *kw;
-
-				getrawstring(skipwhitespace(l+13), &txt, &txtlen);
-				rest = skipwhitespace(after_quoted(skipwhitespace(l+13)));
-				kw = strtok(rest, " \t");
-
-				memset(&tmpl, 0, sizeof(tmpl));
-				tmpl.type = STEP_CAPTURE; tmpl.text = txt; tmpl.len = txtlen;
-				tmpl.re = (void *)1;	/* emit_step compiles one per record */
-				if (kw && (strcmp(kw, "as") == 0)) tmpl.varname = strtok(NULL, " \t");
-
-				if (tmpl.varname) {
-					pcre2_code *probe;
-					uint32_t ngroups = 0;
-
-					if (!has_expect_step(first->rec))
-						errprintf("Service %s: 'capture-regex ... as %s' before any expect - "
-							  "there is no reply to capture from, it will bind empty\n",
-							  first->rec->svcname, tmpl.varname);
-
-					/*
-					 * The value bound is group 1, so a pattern with no
-					 * parenthesised group can never bind anything: ${name}
-					 * would expand to nothing for every reply, forever.
-					 * Unconditional, so worth saying at load time.
-					 */
-					probe = compileregex_opts((char *)txt, 0);
-					if (probe) {
-						uint32_t nnames = 1;
-						char *p;
-
-						for (p = tmpl.varname; (*p); p++) if (*p == ';') nnames++;
-
-						pcre2_pattern_info(probe, PCRE2_INFO_CAPTURECOUNT, &ngroups);
-						freeregex(probe);
-
-						/*
-						 * One name per group, in order. A mismatch means
-						 * either a group whose value is thrown away or a
-						 * name that can never be bound, and both are
-						 * silent at run time -- so say it here.
-						 */
-						if (ngroups == 0)
-							errprintf("Service %s: 'capture-regex \"%s\" as %s' has no "
-								  "capture group - it can never bind a value\n",
-								  first->rec->svcname, txt, tmpl.varname);
-						else if (ngroups != nnames)
-							errprintf("Service %s: 'capture-regex \"%s\" as %s' has %u "
-								  "capture group(s) but %u name(s)\n",
-								  first->rec->svcname, txt, tmpl.varname,
-								  ngroups, nnames);
-					}
-
-					emit_step(first, &tmpl);
-				}
-				else errprintf("Usage: capture-regex \"regex\" as NAME\n");
-				xfree(txt);
-			}
-		}
-		else if (strncmp(l, "capture ", 8) == 0) {
-			/* No regex: bind the whole reply that just matched. */
-			if (first) {
-				svcstep_t tmpl;
-				char *kw = strtok(skipwhitespace(l+7), " \t");
-
-				memset(&tmpl, 0, sizeof(tmpl));
-				tmpl.type = STEP_CAPTURE;
-				if (kw && (strcmp(kw, "as") == 0)) tmpl.varname = strtok(NULL, " \t");
-
-				if (tmpl.varname) {
-					if (!has_expect_step(first->rec))
-						errprintf("Service %s: 'capture as %s' before any expect - "
-							  "there is no reply to capture from, it will bind empty\n",
-							  first->rec->svcname, tmpl.varname);
-					emit_step(first, &tmpl);
-				}
-				else errprintf("Usage: capture as NAME\n");
-			}
-		}
 		else if (strncmp(l, "credentials ", 12) == 0) {
 			if (first) {
 				svcstep_t tmpl;
@@ -1040,18 +982,21 @@ char *init_tcp_services(void)
 				emit_step(first, &tmpl);
 			}
 		}
-		else if (strstr(l, "~") && strstr(l, "->")) {
+		else if (strstr(l, "~")) {
 			/*
-			 * "NAME ~ \"regex\" -> TARGET": branch on a value already bound.
-			 * Recognised by shape rather than by a leading keyword, because
-			 * the line begins with the name being tested. The regex tests a
-			 * captured value, never the socket, so it decides nothing about
-			 * what arrives and cannot race a partial read -- which is why a
-			 * regex is allowed here and not in an expect.
+			 * "NAME ~ \"regex\" -> TARGET" branches on a value already
+			 * bound; "NAME ~ \"regex\" as N1;N2" binds new ones out of it.
+			 * Both are recognised by shape rather than by a leading
+			 * keyword, because the line begins with the name it reads.
+			 *
+			 * The regex reads a value already in hand, never the socket.
+			 * That is what allows a regex here and not in an expect: it
+			 * decides nothing about what arrives, so it cannot race a
+			 * partial read, and it needs no maximum match length.
 			 */
 			if (first) {
 				svcstep_t tmpl;
-				char *var, *op, *rest;
+				char *var, *op, *rest, *after;
 				unsigned char *txt = NULL;
 				int txtlen = 0;
 
@@ -1060,31 +1005,76 @@ char *init_tcp_services(void)
 				rest = (op ? skipwhitespace(op + strlen(op) + 1) : NULL);
 
 				if (!var || !op || (strcmp(op, "~") != 0) || !rest || !*rest) {
-					errprintf("Usage: NAME ~ \"regex\" -> TARGET\n");
+					errprintf("Usage: NAME ~ \"regex\" -> TARGET, or "
+						  "NAME ~ \"regex\" as NAME[;NAME]\n");
 				}
 				else {
-					char *arrow;
-
 					getrawstring(rest, &txt, &txtlen);
-					arrow = strstr(skipwhitespace(after_quoted(rest)), "->");
+					after = skipwhitespace(after_quoted(rest));
 
 					memset(&tmpl, 0, sizeof(tmpl));
-					tmpl.type = STEP_WHEN;
-					tmpl.varname = var;
 					tmpl.text = txt; tmpl.len = txtlen;
-					tmpl.re = (void *)1;	/* emit_step compiles a copy per record */
+					tmpl.re = (void *)1;	/* emit_step compiles one per record */
 
-					if (!arrow) errprintf("'%s ~ ...' with no '->'\n", var);
-					else {
-						char *tgt = strtok(skipwhitespace(arrow + 2), " \t");
+					if (strncmp(after, "as ", 3) == 0) {
+						tmpl.type = STEP_CAPTURE;
+						tmpl.srcname = var;
+						tmpl.varname = strtok(skipwhitespace(after + 2), " \t");
+
+						if (!tmpl.varname)
+							errprintf("'%s ~ ... as' with no name\n", var);
+						else {
+							pcre2_code *probe = compileregex_opts((char *)txt, 0);
+
+							if (probe) {
+								uint32_t ngroups = 0, nnames = 1;
+								char *q;
+
+								for (q = tmpl.varname; (*q); q++)
+									if (*q == ';') nnames++;
+
+								pcre2_pattern_info(probe, PCRE2_INFO_CAPTURECOUNT,
+										   &ngroups);
+								freeregex(probe);
+
+								/*
+								 * One name per group, in order. A group
+								 * with no name throws its value away and a
+								 * name with no group can never be bound;
+								 * both are silent at run time.
+								 */
+								if (ngroups == 0)
+									errprintf("Service %s: '%s ~ \"%s\" as %s' has "
+										  "no capture group - it can never "
+										  "bind a value\n",
+										  first->rec->svcname, var, txt,
+										  tmpl.varname);
+								else if (ngroups != nnames)
+									errprintf("Service %s: '%s ~ \"%s\" as %s' has "
+										  "%u capture group(s) but %u name(s)\n",
+										  first->rec->svcname, var, txt,
+										  tmpl.varname, ngroups, nnames);
+							}
+							emit_step(first, &tmpl);
+						}
+					}
+					else if (strncmp(after, "->", 2) == 0) {
+						char *tgt = strtok(skipwhitespace(after + 2), " \t");
+
+						tmpl.type = STEP_WHEN;
+						tmpl.varname = var;
 
 						if (!tgt) errprintf("'%s ~ ... ->' with no target\n", var);
-						else if (strcmp(tgt, "fail") == 0)    tmpl.action = ACT_FAIL;
-						else if (strcmp(tgt, "warning") == 0) tmpl.action = ACT_WARNING;
-						else if (strcmp(tgt, "success") == 0) tmpl.action = ACT_SUCCESS;
-						else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
-						emit_step(first, &tmpl);
+						else {
+							if (strcmp(tgt, "fail") == 0)         tmpl.action = ACT_FAIL;
+							else if (strcmp(tgt, "warning") == 0) tmpl.action = ACT_WARNING;
+							else if (strcmp(tgt, "success") == 0) tmpl.action = ACT_SUCCESS;
+							else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
+							emit_step(first, &tmpl);
+						}
 					}
+					else errprintf("'%s ~ \"...\"' is followed by neither "
+						       "'-> TARGET' nor 'as NAME'\n", var);
 				}
 				if (txt) xfree(txt);
 			}

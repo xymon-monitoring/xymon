@@ -5,8 +5,8 @@
 # Every one of these used to be silent. A mistyped directive was a no-op,
 # so the step simply vanished and the probe reported on a conversation it
 # never had; ${sha1:...} was read as a variable named "sha1:..." and
-# expanded to nothing; a capture with no expect in front of it bound an
-# empty string; starttls on a service that is already TLS started a second
+# expanded to nothing; an extraction naming a value that nothing
+# binds read an empty string; starttls on a service that is already TLS started a second
 # handshake inside the first and failed like a broken server.
 #
 # The checks run when the file is read, not when the step executes -- a
@@ -37,8 +37,8 @@ printf 'mypop\tuser\tsecret\n' > "$work/home/etc/credentials.cfg"
 cat > "$work/home/etc/protocols.cfg" <<'CFG'
 [bad]
    exepct "220"
-   capture as tooearly
    expect "220"
+   nosuch ~ "(x)"              as tooearly
    send "x${sha1:foo}\r\n"
    timeout(0)                  -> fail
    starttls
@@ -46,9 +46,9 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
    port 9
 
 [typo]
-   expect "+OK"
-   capture-regex "(<[^>]+>)" as challenge
-   capture-regex "[0-9]+" as nogroup
+   expect "+OK" as greeting
+   greeting ~ "(<[^>]+>)" as challenge
+   greeting ~ "[0-9]+" as nogroup
    credentials mypop
    challeng ~ "<"              -> apop
    else                        -> plain
@@ -81,9 +81,9 @@ grep -qi 'unknown protocols.cfg directive' <<<"$out" || fail \
 probe still runs, so the test reports on a conversation it never had:
 $out"
 
-grep -qi 'before any expect' <<<"$out" || fail \
-	"'capture as' with no preceding expect was accepted; it can only bind an
-empty value:
+grep -qi 'never bound before it' <<<"$out" || fail \
+	"an extraction reading a name that nothing binds was accepted; it can only
+ever bind an empty value:
 $out"
 
 grep -qi "state 'spin' waits for a reply with no timeout" <<<"$out" || fail \
@@ -130,7 +130,7 @@ ever fall through to the else-arm:
 $out"
 
 grep -q 'no capture group' <<<"$out" || fail \
-	"a capture-regex with no parenthesised group was accepted. The value bound
+	"an extraction with no parenthesised group was accepted. The value bound
 is group 1, so that pattern can never bind anything and \${name} expands to
 nothing for every reply:
 $out"
@@ -138,7 +138,7 @@ $out"
 # --- and the shipped file must be quiet -------------------------------------
 cp "$root/xymonnet/protocols.cfg" "$work/home/etc/protocols.cfg"
 out=$(run_xymonnet)
-noise=$(grep -ciE 'unknown protocols.cfg directive|before any expect|unknown expansion|already TLS|never captured or bound|can only fail|no capture group' <<<"$out" || true)
+noise=$(grep -ciE 'unknown protocols.cfg directive|never bound before it|unknown expansion|already TLS|never captured or bound|can only fail|no capture group' <<<"$out" || true)
 [ "$noise" -eq 0 ] || fail \
 	"the protocols.cfg this tree ships triggers $noise of its own warnings:
 $(grep -iE 'unknown|before any expect|already TLS' <<<"$out")"
