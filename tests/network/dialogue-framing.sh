@@ -61,12 +61,15 @@ start() {	# script portfile obsfile
 	while [ "$i" -lt 50 ]; do [ -s "$2" ] && break; sleep 0.1; i=$((i + 1)); done
 	cat "$2"
 }
+# Each peer serves ONE connection, so the control needs a peer of its own
+# running the same script rather than a second service on the same port.
 pbe=$(start    "$work/be.script"    "$work/p1" "$work/o1")
+pbeln=$(start  "$work/be.script"    "$work/p5" "$work/o5")
 ple=$(start    "$work/le.script"    "$work/p2" "$work/o2")
 ptrunc=$(start "$work/trunc.script" "$work/p3" "$work/o3")
 ptwo=$(start   "$work/two.script"   "$work/p4" "$work/o4")
 register_cleanup "kill $(tr '\n' ' ' < "$work/pids") 2>/dev/null || :"
-[ -n "$pbe" ] && [ -n "$ple" ] && [ -n "$ptrunc" ] && [ -n "$ptwo" ] \
+[ -n "$pbe" ] && [ -n "$pbeln" ] && [ -n "$ple" ] && [ -n "$ptrunc" ] && [ -n "$ptwo" ] \
 	|| fail "a peer never named its port"
 
 cat > "$work/home/etc/protocols.cfg" <<CFG
@@ -82,7 +85,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 [frameline]
    options banner
    framing line
-   port $pbe
+   port $pbeln
 
    state msg
       timeout(5)      -> fail
@@ -159,10 +162,13 @@ consumes more than its own message:
 $(grep -i frametwo "$work/out.txt" | head -4)"
 
 # --- what the file may not say -----------------------------------------------
+# These four are refused when the file is read, so they never open a socket:
+# port 1 is deliberate, and a connection attempt to it would mean the refusal
+# did not happen.
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [badclause]
    framing length(2, big)
-   port $pbe
+   port 1
 
    state msg
       timeout(5)                 -> fail
@@ -170,7 +176,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
 [badbytes]
    framing length(2, big)
-   port $pbe
+   port 1
 
    state msg
       timeout(5)      -> fail
@@ -178,7 +184,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
 [badwidth]
    framing length(9, big)
-   port $pbe
+   port 1
 
    state msg
       timeout(5)      -> fail
@@ -186,7 +192,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
 [badend]
    framing length(2, sideways)
-   port $pbe
+   port 1
 
    state msg
       timeout(5)      -> fail
