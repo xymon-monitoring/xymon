@@ -1601,7 +1601,15 @@ restartselect:
 									if (!item->failstep) item->failstep = (void *)st;
 									item->curstep = NULL;
 									st = NULL;
-									break;
+									/*
+									 * This test is finished; the others are not.
+									 * A break here leaves the for() over active
+									 * sockets, so one capped reply would abandon
+									 * every remaining test in the pass -- the
+									 * same fault the pending-handshake arm was
+									 * fixed for.
+									 */
+									continue;
 								}
 
 								item->stepbuf = (unsigned char *)realloc(item->stepbuf, item->stepbuflen + res + 1);

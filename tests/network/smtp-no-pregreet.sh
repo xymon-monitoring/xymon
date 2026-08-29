@@ -64,7 +64,10 @@ for svc in smtp smtps submission msa; do
 	# the first expect is the pregreet. Compare line positions rather than
 	# looking for the absence of a send, so a legal dialogue passes and the old
 	# shape still fails.
-	first_send=$(grep -nE '^[[:space:]]*send[[:space:]]' <<<"$block" | head -1 | cut -d: -f1)
+	# An entry with nothing to send cannot pregreet, and grep exiting 1 on it
+	# must not end the test: every test runs under `set -o pipefail`, so an
+	# unguarded no-match here would abort before a single assertion ran.
+	first_send=$({ grep -nE '^[[:space:]]*send[[:space:]]' <<<"$block" || :; } | head -1 | cut -d: -f1)
 	first_expect=$(grep -nE '^[[:space:]]*expect[[:space:]]' <<<"$block" | head -1 | cut -d: -f1)
 	[ -n "$first_expect" ] || fail "[$svc] has no expect step at all (#450)"
 	if [ -n "$first_send" ] && [ "$first_send" -lt "$first_expect" ]; then
