@@ -395,6 +395,176 @@ static void resolve_svcsteps(svcinfo_t *rec)
 }
 
 
+/*
+ * Three mistakes that are properties of the graph rather than of any one
+ * line, and so cannot be seen a line at a time:
+ *
+ *   - a state nothing can reach: dead config, usually an edge naming the
+ *     wrong existing state, which the "no matching state" check passes
+ *   - a state that waits with no timer: legal, but it can only ever fail
+ *     as an unattributed global timeout, which is the complaint this
+ *     whole feature exists to answer
+ *   - a state with no way to finish: a cycle whose every exit leads back
+ *     into itself, so the dialogue can never end except on the ceiling
+ *
+ * Run after resolve_svcsteps(), which is what turns targets into pointers.
+ */
+static void check_graph(svcinfo_t *rec)
+{
+	svcstep_t *st;
+	int nsteps = 0, nlabels = 0, i, changed;
+	svcstep_t **idx;
+	char *reach, *ends;
+
+	for (st = rec->steps; (st); st = st->next) {
+		nsteps++;
+		if (st->type == STEP_LABEL) nlabels++;
+	}
+	if (nsteps == 0) return;
+
+	/*
+	 * Only entries written as a state machine. A positional dialogue has
+	 * no states to be unreachable and no state boundary for a timer to
+	 * belong to, so every one of these would fire on it and say nothing
+	 * -- and a check that cries wolf on the shipped file gets ignored,
+	 * which costs the real warnings too.
+	 */
+	if (nlabels == 0) return;
+
+	idx   = (svcstep_t **)calloc(nsteps, sizeof(svcstep_t *));
+	reach = (char *)calloc(nsteps, 1);
+	ends  = (char *)calloc(nsteps, 1);
+	if (!idx || !reach || !ends) { if (idx) xfree(idx); if (reach) xfree(reach);
+				       if (ends) xfree(ends); return; }
+
+	for (st = rec->steps, i = 0; (st); st = st->next, i++) idx[i] = st;
+
+	/* Which steps can be entered at all, from wherever the dialogue starts. */
+	for (i = 0; i < nsteps; i++)
+		if (idx[i] == (rec->startstep ? rec->startstep : rec->steps)) reach[i] = 1;
+	do {
+		changed = 0;
+		for (i = 0; i < nsteps; i++) {
+			int j;
+
+			if (!reach[i]) continue;
+			st = idx[i];
+			/*
+			 * A step that always leaves does not fall through to the
+			 * one written after it: an unconditional jump goes to its
+			 * target, and a terminal ends the dialogue. Following
+			 * ->next regardless would make every state reachable and
+			 * the check useless.
+			 */
+			if ((st->type == STEP_JUMP) || (st->action == ACT_FAIL) ||
+			    (st->action == ACT_WARNING) || (st->action == ACT_SUCCESS)) {
+				int j;
+
+				if ((st->action == ACT_GOTO) && st->targetstep)
+					for (j = 0; j < nsteps; j++)
+						if ((idx[j] == st->targetstep) && !reach[j]) { reach[j] = 1; changed = 1; }
+				continue;
+			}
+			/*
+			 * An expect that takes an edge does not continue to whatever
+			 * follows its group -- that step is entered only when some
+			 * alternative matches and simply carries on. The next
+			 * alternative is still reachable, because it is what gets
+			 * tried when this one does not match.
+			 */
+			if ((st->type == STEP_EXPECT) && (st->action == ACT_GOTO)) {
+				int j;
+
+				if (st->targetstep)
+					for (j = 0; j < nsteps; j++)
+						if ((idx[j] == st->targetstep) && !reach[j]) { reach[j] = 1; changed = 1; }
+				if (st->next && (st->next->type == STEP_EXPECT))
+					for (j = 0; j < nsteps; j++)
+						if ((idx[j] == st->next) && !reach[j]) { reach[j] = 1; changed = 1; }
+				continue;
+			}
+			if (st->next)
+				for (j = 0; j < nsteps; j++)
+					if ((idx[j] == st->next) && !reach[j]) { reach[j] = 1; changed = 1; }
+			if ((st->action == ACT_GOTO) && st->targetstep)
+				for (j = 0; j < nsteps; j++)
+					if ((idx[j] == st->targetstep) && !reach[j]) { reach[j] = 1; changed = 1; }
+		}
+	} while (changed);
+
+	for (i = 0; i < nsteps; i++) {
+		if (reach[i] || (idx[i]->type != STEP_LABEL) || !idx[i]->label) continue;
+		errprintf("Service %s: state '%s' cannot be reached - no edge names it "
+			  "and nothing falls into it\n", rec->svcname, idx[i]->label);
+	}
+
+	/*
+	 * A state waits if it has an expect; it is timed if a timeout was set
+	 * anywhere in it. Both reset at the state boundary.
+	 */
+	{
+		char *statename = NULL;
+		int timed = 0, waits = 0, reported = 0;
+
+		for (st = rec->steps; ; st = st->next) {
+			if (!st || (st->type == STEP_LABEL)) {
+				if (waits && !timed && !reported) {
+					if (statename)
+						errprintf("Service %s: state '%s' waits for a reply with no "
+							  "timeout - it can only fail as an unattributed "
+							  "global timeout\n", rec->svcname, statename);
+					else
+						errprintf("Service %s: a state waits for a reply with no "
+							  "timeout - it can only fail as an unattributed "
+							  "global timeout\n", rec->svcname);
+				}
+				if (!st) break;
+				statename = st->label; timed = 0; waits = 0; reported = 0;
+				continue;
+			}
+			if (st->type == STEP_TIMEOUT) timed = 1;
+			if (st->type == STEP_EXPECT)  waits = 1;
+		}
+	}
+
+	/*
+	 * A state with no way out. Asked per state rather than as a global
+	 * reachability question: "can this step reach the end of the list"
+	 * is answered yes by falling through to a state nothing can enter,
+	 * which is exactly the config being complained about.
+	 *
+	 * So: if every edge in a state names that same state, and none of
+	 * them is a terminal, the dialogue can never leave it.
+	 */
+	for (i = 0; i < nsteps; i++) {
+		svcstep_t *own, *scan;
+		int edges = 0, escapes = 0;
+
+		if (!reach[i] || (idx[i]->type != STEP_LABEL) || !idx[i]->label) continue;
+		own = idx[i];
+
+		for (scan = own->next; (scan && (scan->type != STEP_LABEL)); scan = scan->next) {
+			if ((scan->action == ACT_FAIL) || (scan->action == ACT_WARNING) ||
+			    (scan->action == ACT_SUCCESS)) { edges++; escapes++; continue; }
+			if (scan->action == ACT_GOTO) {
+				edges++;
+				if (scan->targetstep != own) escapes++;
+				continue;
+			}
+			/* a step that simply continues is itself a way onward */
+			if ((scan->type == STEP_SEND) || (scan->type == STEP_STARTTLS)) continue;
+			if (scan->type == STEP_EXPECT) { edges++; escapes++; }
+		}
+
+		if (edges && !escapes)
+			errprintf("Service %s: state '%s' has no way to finish - every edge "
+				  "in it leads back to itself\n", rec->svcname, idx[i]->label);
+	}
+
+	xfree(idx); xfree(reach); xfree(ends);
+}
+
+
 typedef struct svclist_t {
 	struct svcinfo_t *rec;
 	struct svclist_t *next;
@@ -1101,7 +1271,8 @@ char *init_tcp_services(void)
 		 * the entry has a 'start' line, so it has to be cleared first.
 		 */
 		svcinfo[i].startstep = NULL;
-		resolve_svcsteps(&svcinfo[i]);	/* sets startstep from startlabel */
+		resolve_svcsteps(&svcinfo[i]);
+		check_graph(&svcinfo[i]);
 		/*
 		 * A dialogue is anything that is not the classic one-shot shape.
 		 * Deciding it here, once, keeps do_tcp_tests() from re-deriving it

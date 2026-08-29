@@ -58,6 +58,21 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
    send "USER ${usernam}\r\n"
    expect "+OK"
    port 9
+   port 9
+
+[graph]
+   start entry
+   state entry
+      expect "220"                -> spin
+      timeout(5)                  -> fail
+   state spin
+      send "x\r\n"
+      expect "250"                -> spin
+   state unreachable
+      send "y\r\n"
+      expect "250"                -> fail
+      timeout(5)                  -> fail
+   port 9
 CFG
 out=$(run_xymonnet)
 
@@ -69,6 +84,23 @@ $out"
 grep -qi 'before any expect' <<<"$out" || fail \
 	"'capture as' with no preceding expect was accepted; it can only bind an
 empty value:
+$out"
+
+grep -qi "state 'spin' waits for a reply with no timeout" <<<"$out" || fail \
+	"a state that waits with no timer was accepted. It can only ever fail as
+the global timeout, which cannot say which state stalled -- the complaint
+this feature exists to answer:
+$out"
+
+grep -qi "state 'spin' has no way to finish" <<<"$out" || fail \
+	"a state whose every path leads back into itself was accepted; the
+dialogue can never end except on the ceiling:
+$out"
+
+grep -qi "state 'unreachable' cannot be reached" <<<"$out" || fail \
+	"a state nothing can reach was accepted. That is dead config, and the
+'-> NAME has no matching state' check does not catch it because the name
+resolves fine -- nothing simply names it:
 $out"
 
 grep -qi 'the budget must be a positive number of seconds' <<<"$out" || fail \
