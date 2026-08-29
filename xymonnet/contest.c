@@ -2278,6 +2278,44 @@ restartselect:
 										mlen  = (int)n;
 									}
 
+									/*
+									 * A message the server sends unprompted is
+									 * consumed here and the wait continues. It is
+									 * not an answer, so it decides nothing and binds
+									 * nothing -- but it did arrive, so the idle clock
+									 * has already been restarted by the read that
+									 * brought it, exactly as a wanted reply would.
+									 */
+									if (item->svcinfo->ignorecount > 0) {
+										int g, skipped = 0;
+
+										for (g = 0; g < item->svcinfo->ignorecount; g++) {
+											int n = item->svcinfo->ignorelen[g];
+
+											if (mlen < n) continue;
+											if (memcmp(item->stepbuf + mbase,
+												   item->svcinfo->ignoretext[g], n) != 0) continue;
+
+											{
+												int cut = mbase + mlen;
+
+												if (item->svcinfo->framing == FRAMING_LINE) {
+													cut = mbase;
+													while ((cut < item->stepbuflen) &&
+													       (item->stepbuf[cut] != '\n')) cut++;
+													if (cut < item->stepbuflen) cut++;
+													else break;	/* a partial line is not a message yet */
+												}
+												memmove(item->stepbuf, item->stepbuf + cut,
+													item->stepbuflen - cut);
+												item->stepbuflen -= cut;
+												skipped = 1;
+											}
+											break;
+										}
+										if (skipped) { progress = 1; continue; }
+									}
+
 									/* Consecutive expects are alternatives of ONE state. */
 									for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next) {
 										if (alt->oneof) continue;	/* only fires on EOF */

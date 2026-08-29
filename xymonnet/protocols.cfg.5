@@ -341,6 +341,34 @@ Expansion is recursive, so a digest may be taken of other values -- APOP
 is \fB${md5:${challenge}${password}}\fR. An unset name expands to
 nothing.
 
+.IP "\fBignore\fR \fIPREFIX\fR"
+A message the server sends unprompted. IMAP emits untagged "*" lines
+whenever it likes -- an EXISTS, an EXPUNGE, a BYE warning -- and NNTP and
+XMPP have their own. A probe waiting for a tagged reply would read one of
+those, fail to match it, and report a server that is behaving exactly as
+its RFC says.
+.sp
+A message whose start matches \fIPREFIX\fR is consumed and the wait
+continues. It is not an answer: it decides nothing, ends no state and
+binds nothing. It did arrive, so \fBidle\fR is satisfied by it, while
+\fBtimeout\fR keeps running -- a server that says nothing but noise
+still runs out of time.
+.sp
+Up to eight may be given, one per line. Like \fBframing\fR it describes
+the connection rather than one reply, so it is written on the entry.
+.br
+.sp
+.nf
+\&   [imap]
+\&      ignore "* "
+\&      port 143
+.fi
+.sp
+A prefix that also starts an \fBexpect\fR is refused when the file is
+read: the reply would be swallowed as noise or taken as the answer, and
+nothing in the file would say which. That is the same ambiguity, and the
+same completeness argument, as two overlapping alternatives.
+
 .IP "\fBframing\fR \fBline\fR"
 .IP "\fBframing\fR \fBlength(\fR\fIWIDTH\fR\fB,\fR \fBbig\fR|\fBlittle\fR\fB)\fR"
 .IP "\fBframing\fR \fBterminator\fR \fISEQUENCE\fR"
@@ -561,6 +589,9 @@ names the service. The ones worth knowing:
 \&   'until' under framing length/terminator
 \&   'expect bytes(N)' under framing length/terminator
 \&   'framing terminator' needs a quoted sequence
+\&   'ignore' needs a quoted prefix
+\&   more than 8 'ignore' prefixes
+\&   'ignore \"X\"' and 'expect \"Y\"' share a start
 \&   framing length width is 1..4 bytes
 \&   framing length endianness is 'big' or 'little'
 \&   framed message of N bytes is over the 32768 a conversation may hold
