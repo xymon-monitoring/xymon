@@ -61,21 +61,24 @@ register_cleanup "kill $(tr '\n' ' ' < "$work/pids") 2>/dev/null || :"
 # test must fail by timing out rather than pass because a timer rescued it.
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [toobig]
-   state one
-   timeout(60)                       -> fail
-   expect "250" until "250 "         -> success
    port $pover
 
-[bigreply]
    state one
-   timeout(60)                       -> fail
-   expect "250" until "250 "         -> quit
+      timeout(60)                       -> fail
+      expect "250" until "250 "         -> success
+
+[bigreply]
+   port $punder
+
+   state one
+      timeout(60)                       -> fail
+      expect "250" until "250 "         -> quit
 
    state quit
-   timeout(10)                       -> fail
-   send "quit\r\n"
-   eof                               -> success
-   port $punder
+      timeout(10)                       -> fail
+      send "quit\r\n"
+      eof                               -> success
+
 CFG
 printf '127.0.0.1\tover\t# toobig\n127.0.0.1\tunder\t# bigreply\n' > "$work/home/etc/hosts.cfg"
 

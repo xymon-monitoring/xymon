@@ -40,6 +40,8 @@ condition ::= expect "…" [ until "…" ] [ as NAME ] | NAME ~ "…"
 
 **Targets** are a state, or one of `success`, `warning`, `fail` -- green, yellow, red. `warning` is the point: a server answering correctly but refusing an optional capability is not down, and calling it down teaches operators to ignore the column. An edge saying `fail` is red whatever `--checkresponse` is set to; a reply matching no alternative takes that option's colour, yellow by default.
 
+**Layout.** Entry attributes -- `transport`, `port`, `options`, `start` -- are written first, because they describe the definition rather than any step; then each `state` with its steps indented under it. A state holds as many steps as the exchange needs, and an `expect` with no `->` continues with the step below it, so one state can wait, send and read again before anything decides. The parser enforces none of this: an attribute is accepted anywhere in the block and indentation is ignored. It is how every example here and in `protocols.cfg(5)` is written.
+
 **Order is file order.** A state's lines run as written and the first edge that fires leaves, so a `~` above an `expect` decides before the socket is read at all. An earlier draft specified a fixed precedence regardless of where lines were written; the implementation does not do that and should not, because a precedence the reader cannot see is what turns a declaration back into a program.
 
 **Values are bound where they are produced.** `expect "…" as NAME` binds the reply that expect accepted; `NAME ~ "…" as X;Y` reads a bound value and binds more out of it. No line refers to its operand by position.

@@ -65,31 +65,35 @@ register_cleanup "kill $(cat "$work/silent.port.pid") $(cat "$work/quick.port.pi
 printf '127.0.0.1\tsilent\t# budgeted healthy routed\n' > "$work/home/etc/hosts.cfg"
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [budgeted]
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   state waiting
-   timeout(2)                  -> fail
-   expect "250"
    options banner
    port $psilent
+   expect "220"
+   send "ehlo xymonnet\r\n"
+
+   state waiting
+      timeout(2)                  -> fail
+      expect "250"
 
 [healthy]
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   state waiting
-   timeout(2)                  -> fail
-   expect "250"
    options banner
    port $pquick
-
-[routed]
    expect "220"
    send "ehlo xymonnet\r\n"
+
    state waiting
-   timeout(2)                  -> warning
-   expect "250"                -> success
+      timeout(2)                  -> fail
+      expect "250"
+
+[routed]
    options banner
    port $prouted
+   expect "220"
+   send "ehlo xymonnet\r\n"
+
+   state waiting
+      timeout(2)                  -> warning
+      expect "250"                -> success
+
 CFG
 
 start=$(date +%s)
@@ -134,13 +138,15 @@ ceiling, so the budget is not what ended it -- the global cutoff is."
 printf '127.0.0.1\tsilent\t# ceiling\n' > "$work/home/etc/hosts.cfg"
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [ceiling]
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   state waiting
-   timeout(60)                 -> fail
-   expect "250"
    options banner
    port $pceil
+   expect "220"
+   send "ehlo xymonnet\r\n"
+
+   state waiting
+      timeout(60)                 -> fail
+      expect "250"
+
 CFG
 
 start=$(date +%s)

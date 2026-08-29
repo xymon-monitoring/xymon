@@ -46,33 +46,39 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
    port 9
 
 [typo]
+   port 9
+   port 9
    expect "+OK" as greeting
    greeting ~ "(<[^>]+>)" as challenge
    greeting ~ "[0-9]+" as nogroup
    credentials mypop
    challeng ~ "<"              -> apop
    else                        -> plain
+
    state apop
-   send "APOP ${username} ${md5:${challeng}${password}}\r\n"
+      send "APOP ${username} ${md5:${challeng}${password}}\r\n"
+
    state plain
-   send "USER ${usernam}\r\n"
-   expect "+OK"
-   port 9
-   port 9
+      send "USER ${usernam}\r\n"
+      expect "+OK"
 
 [graph]
+   port 9
    start entry
+
    state entry
       expect "220"                -> spin
       timeout(5)                  -> fail
+
    state spin
       send "x\r\n"
       expect "250"                -> spin
+
    state unreachable
       send "y\r\n"
       expect "250"                -> fail
       timeout(5)                  -> fail
-   port 9
+
 CFG
 out=$(run_xymonnet)
 

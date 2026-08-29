@@ -105,95 +105,101 @@ done
 # documented and not implemented.
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [tlsup]
-   state greeting
-   timeout(10)         -> fail
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   expect "250" until "250 " as caps   -> offers
-   state offers
-   caps ~ "STARTTLS"   -> upgrade
-   else                -> warning
-
-   state upgrade
-   timeout(10)         -> fail
-   send "starttls\r\n"
-   expect "220"        -> secure
-   expect "454"        -> warning
-
-   state secure
-   timeout(10)         -> fail
-   starttls
-   send "ehlo xymonnet\r\n"
-   expect "250" until "250 "
-   send "quit\r\n"
-   expect "221"        -> success
    options banner
    port $pup
 
-[tlsnone]
    state greeting
-   timeout(10)         -> fail
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   expect "250" until "250 " as caps
-   caps ~ "STARTTLS"   -> upgrade
-   else                -> warning
+      timeout(10)         -> fail
+      expect "220"
+      send "ehlo xymonnet\r\n"
+      expect "250" until "250 " as caps   -> offers
+
+   state offers
+      caps ~ "STARTTLS"   -> upgrade
+      else                -> warning
 
    state upgrade
-   timeout(10)         -> fail
-   send "starttls\r\n"
-   expect "220"        -> secure
-   expect "454"        -> warning
+      timeout(10)         -> fail
+      send "starttls\r\n"
+      expect "220"        -> secure
+      expect "454"        -> warning
 
    state secure
-   timeout(10)         -> fail
-   starttls
-   send "quit\r\n"
-   expect "221"        -> success
+      timeout(10)         -> fail
+      starttls
+      send "ehlo xymonnet\r\n"
+      expect "250" until "250 "
+      send "quit\r\n"
+      expect "221"        -> success
+
+[tlsnone]
    options banner
    port $pno
 
-[tls454a]
    state greeting
-   timeout(10)         -> fail
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   expect "250" until "250 "
+      timeout(10)         -> fail
+      expect "220"
+      send "ehlo xymonnet\r\n"
+      expect "250" until "250 " as caps
+      caps ~ "STARTTLS"   -> upgrade
+      else                -> warning
 
    state upgrade
-   timeout(10)         -> fail
-   send "starttls\r\n"
-   expect "220"        -> secure
-   expect "454"        -> warning
+      timeout(10)         -> fail
+      send "starttls\r\n"
+      expect "220"        -> secure
+      expect "454"        -> warning
 
    state secure
-   timeout(10)         -> fail
-   starttls
-   send "quit\r\n"
-   expect "221"        -> success
+      timeout(10)         -> fail
+      starttls
+      send "quit\r\n"
+      expect "221"        -> success
+
+[tls454a]
    options banner
    port $pra
 
-[tls454b]
    state greeting
-   timeout(10)         -> fail
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   expect "250" until "250 "
+      timeout(10)         -> fail
+      expect "220"
+      send "ehlo xymonnet\r\n"
+      expect "250" until "250 "
 
    state upgrade
-   timeout(10)         -> fail
-   send "starttls\r\n"
-   expect "454"        -> warning
-   expect "220"        -> secure
+      timeout(10)         -> fail
+      send "starttls\r\n"
+      expect "220"        -> secure
+      expect "454"        -> warning
 
    state secure
-   timeout(10)         -> fail
-   starttls
-   send "quit\r\n"
-   expect "221"        -> success
+      timeout(10)         -> fail
+      starttls
+      send "quit\r\n"
+      expect "221"        -> success
+
+[tls454b]
    options banner
    port $prb
+
+   state greeting
+      timeout(10)         -> fail
+      expect "220"
+      send "ehlo xymonnet\r\n"
+      expect "250" until "250 "
+
+   state upgrade
+      timeout(10)         -> fail
+      send "starttls\r\n"
+      expect "454"        -> warning
+      expect "220"        -> secure
+
+   state secure
+      timeout(10)         -> fail
+      starttls
+      send "quit\r\n"
+      expect "221"        -> success
+
 CFG
 
 printf '127.0.0.1\tup\t# tlsup\n127.0.0.1\tnone\t# tlsnone\n' > "$work/home/etc/hosts.cfg"
