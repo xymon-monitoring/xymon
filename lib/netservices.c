@@ -456,6 +456,44 @@ static void check_graph(svcinfo_t *rec)
 			 * ->next regardless would make every state reachable and
 			 * the check useless.
 			 */
+			/*
+			 * A timeout or idle edge is a way OUT of the state, not a
+			 * step the dialogue stops at: the state carries on past it
+			 * when the budget does not fire. Letting the terminal test
+			 * below claim "timeout(10) -> fail" ends the walk there, so
+			 * every state after it was reported unreachable -- which is
+			 * every state in an entry that budgets its first one.
+			 */
+			if ((st->type == STEP_TIMEOUT) || (st->type == STEP_IDLE)) {
+				if ((st->action == ACT_GOTO) && st->targetstep)
+					for (j = 0; j < nsteps; j++)
+						if ((idx[j] == st->targetstep) && !reach[j]) { reach[j] = 1; changed = 1; }
+				if (st->next)
+					for (j = 0; j < nsteps; j++)
+						if ((idx[j] == st->next) && !reach[j]) { reach[j] = 1; changed = 1; }
+				continue;
+			}
+			/*
+			 * An expect that takes an edge does not continue to whatever
+			 * follows its group -- that step is entered only when some
+			 * alternative matches and simply carries on. The next
+			 * alternative is reachable whatever this one's edge does,
+			 * because it is what gets tried when this one does not match.
+			 * That includes an edge that ends the test: handled by the
+			 * terminal case below, "expect A -> warning" written before
+			 * "expect B -> state" made B's state unreachable, so the same
+			 * two alternatives warned or not depending on their order.
+			 */
+			if (st->type == STEP_EXPECT) {
+				if ((st->action == ACT_GOTO) && st->targetstep)
+					for (j = 0; j < nsteps; j++)
+						if ((idx[j] == st->targetstep) && !reach[j]) { reach[j] = 1; changed = 1; }
+				if (st->next &&
+				    ((st->next->type == STEP_EXPECT) || (st->action == ACT_NEXT)))
+					for (j = 0; j < nsteps; j++)
+						if ((idx[j] == st->next) && !reach[j]) { reach[j] = 1; changed = 1; }
+				continue;
+			}
 			if ((st->type == STEP_JUMP) || (st->action == ACT_FAIL) ||
 			    (st->action == ACT_WARNING) || (st->action == ACT_SUCCESS)) {
 				int j;
@@ -463,24 +501,6 @@ static void check_graph(svcinfo_t *rec)
 				if ((st->action == ACT_GOTO) && st->targetstep)
 					for (j = 0; j < nsteps; j++)
 						if ((idx[j] == st->targetstep) && !reach[j]) { reach[j] = 1; changed = 1; }
-				continue;
-			}
-			/*
-			 * An expect that takes an edge does not continue to whatever
-			 * follows its group -- that step is entered only when some
-			 * alternative matches and simply carries on. The next
-			 * alternative is still reachable, because it is what gets
-			 * tried when this one does not match.
-			 */
-			if ((st->type == STEP_EXPECT) && (st->action == ACT_GOTO)) {
-				int j;
-
-				if (st->targetstep)
-					for (j = 0; j < nsteps; j++)
-						if ((idx[j] == st->targetstep) && !reach[j]) { reach[j] = 1; changed = 1; }
-				if (st->next && (st->next->type == STEP_EXPECT))
-					for (j = 0; j < nsteps; j++)
-						if ((idx[j] == st->next) && !reach[j]) { reach[j] = 1; changed = 1; }
 				continue;
 			}
 			if (st->next)
