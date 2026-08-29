@@ -18,25 +18,25 @@ If no filename is given, xymoncfg displays the file pointed
 to by the HOSTSCFG environment variable.
 
 .SH OPTIONS
-.IP "--web"
+.IP "\fB--web\fR"
 Show the hosts.cfg file following include statements as a
 Xymon web-server would.
 
-.IP "--net"
+.IP "\fB--net\fR"
 Show the hosts.cfg file following include statements as done
 when running xymonnet.
 
-.IP "-s"
+.IP "\fB-s\fR"
 Output only the lines that look like environment variable definitions, in a format suitable for use with Bourne-style shells (e.g. bash, ksh). You will probably not use this with the default hosts.cfg input file, but e.g. xymonserver.cfg. To define all the variables in xymonserver.cfg inside your shell script, you can use
 .br
 .br
    eval `xymoncfg -s /etc/xymon/xymonserver.cfg`
 
-.IP "-c"
+.IP "\fB-c\fR"
 Similar to "-s", but for C-shell.
 
 .SH ENVIRONMENT VARIABLES
-.IP HOSTSCFG
+.IP "\fBHOSTSCFG\fR"
 Filename for the
 .I hosts.cfg(5)
 file.

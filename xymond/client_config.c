@@ -467,16 +467,53 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	return head;
 }
 
+/* Line currently being parsed by load_client_config(), so pattern-compile
+ * errors can report where the bad pattern came from. */
+static int curparseline = 0;
+
 static exprlist_t *setup_expr(char *ptn, int multiline)
 {
 	exprlist_t *newitem = (exprlist_t *)calloc(1, sizeof(exprlist_t));
 
 	newitem->pattern = strdup(ptn);
 	if (*ptn == '%') {
-		if (multiline)
-			newitem->exp = multilineregex(ptn+1);
-		else
-			newitem->exp = compileregex(ptn+1);
+		/* Same flags as compileregex()/multilineregex(), but we ask for the
+		 * pcre2 error code so a truncated pattern can be told apart from one
+		 * that is simply wrong. */
+		int errcode = 0;
+		int truncated;
+
+		newitem->exp = compileregex_ext(ptn+1, PCRE2_CASELESS | (multiline ? PCRE2_MULTILINE : 0),
+						&errcode, NULL);
+		if (newitem->exp == NULL) {
+			/* compileregex_ext() logged the pcre error, but without saying
+			 * where the pattern came from. A common cause is a pattern
+			 * containing a space: the config is tokenized on whitespace, so
+			 * the pattern is silently truncated at the space - and when the
+			 * cut lands inside a group or a character class, pcre2 reports
+			 * exactly one of these two errors. Any other failure is the
+			 * pattern's own doing, so it gets the location only. */
+			/*
+			 * Both names are absent from the pcre2 headers on some older
+			 * distributions -- CentOS 7 and Amazon Linux 2 among them --
+			 * where naming them stops the build outright. Their numeric
+			 * codes are deliberately not hard-coded in their place: nothing
+			 * here can confirm what those headers assign 106 and 114 to, and
+			 * a hint pointing at whitespace for an unrelated failure is worse
+			 * than no hint. Where the codes cannot be named, the pattern and
+			 * its config line are still reported, without the hint.
+			 */
+#if defined(PCRE2_ERROR_MISSING_CLOSING_PARENTHESIS) && defined(PCRE2_ERROR_MISSING_SQUARE_BRACKET)
+			truncated = ((errcode == PCRE2_ERROR_MISSING_CLOSING_PARENTHESIS) ||
+				     (errcode == PCRE2_ERROR_MISSING_SQUARE_BRACKET));
+#else
+			truncated = 0;
+#endif
+
+			errprintf("Invalid pattern '%s' at line %d%s\n", ptn, curparseline,
+				  (truncated ?
+				   " (hint: if the pattern contains a space, the config splits tokens on whitespace - write [[:space:]] instead)" : ""));
+		}
 	}
 	newitem->next = exprhead;
 	exprhead = newitem;
@@ -695,6 +732,7 @@ int load_client_config(char *configfn)
 		int unknowntok = 0;
 
 		cfid++;
+		curparseline = cfid;
 		sanitize_input(inbuf, 1, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
 		newhost = newpage = newexhost = newexpage = newclass = newexclass = newdg = newexdg = NULL;

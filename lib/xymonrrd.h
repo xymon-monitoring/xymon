@@ -23,7 +23,7 @@ typedef struct {
 typedef struct {
    char *xymonrrdname;
    char *xymonpartname;
-   int  maxgraphs;
+   int  maxinstancesperimage;
 } xymongraph_t;
 
 typedef enum {
@@ -66,6 +66,7 @@ extern int xymon_gdef_stale_exempt(char *name, char *fn);
 #define XYMON_CF_LAST    8
 extern int xymon_gdef_cfs_forfile(char *fn);
 extern void xymon_gdef_meta_source(char *fn);
+extern void rrd_destroy(void);
 extern char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 		xymongraph_t *graphdef, int itemcount, 
 		hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,

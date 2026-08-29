@@ -47,11 +47,15 @@ static void delete_old_cards(char *dirname)
         }
 
 	if (chdir(dirname) == -1) {
+		closedir(xymoncards);
 		return;
 	}
 	while ((d = readdir(xymoncards))) {
 		strcpy(fn, d->d_name);
-		stat(fn, &st);
+		/* An entry that vanished between readdir() and here leaves st
+		   untouched, and deciding to unlink from an uninitialised st_mode
+		   is deciding from whatever was on the stack. */
+		if (stat(fn, &st) != 0) continue;
 		if ((fn[0] != '.') && S_ISREG(st.st_mode) && (st.st_mtime < (now-3600))) {
 			unlink(fn);
 		}
@@ -85,25 +89,44 @@ static void wml_header(FILE *output, char *cardid, int idpart)
 }
 
 
-static void generate_wml_statuscard(host_t *host, entry_t *entry)
+/*
+ * Returns 1 when the card was written. The caller advertises it from the host
+ * card, so a skipped one has to be a refusal it can see: reporting and
+ * returning quietly left a link to a file that was never created.
+ */
+static int generate_wml_statuscard(host_t *host, entry_t *entry)
 {
 	char fn[PATH_MAX];
 	FILE *fd;
 	char *msg = NULL, *logbuf = NULL;
+	int writefailed;
 	char l[MAX_LINE_LEN], lineout[MAX_LINE_LEN];
 	char *p, *outp, *nextline;
-	char xymondreq[1024];
+	char *xymondreq;
 	int xymondresult;
 	sendreturn_t *sres;
 
+	/*
+	 * Sized to the names, not to a guess. This was a 1 KiB stack buffer filled
+	 * with sprintf() from a hostname that hosts.cfg lets run to MAX_LINE_LEN
+	 * (16 KiB, loadlayout.c) -- a stack-buffer overflow reached from the
+	 * config, before any of the path checks below and before the daemon is
+	 * even contacted (@SoundGoof, under ASan). A request has no natural
+	 * length limit, so there is nothing here to refuse: allocate what the
+	 * names need.
+	 */
 	sres = newsendreturnbuf(1, NULL);
+	xymondreq = (char *)xmalloc(strlen(host->hostname) + strlen(entry->column->name) +
+				    sizeof("xymondlog ."));
 	sprintf(xymondreq, "xymondlog %s.%s", host->hostname, entry->column->name);
 	xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
+	xfree(xymondreq);
 	logbuf = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
 	if ((xymondresult != XYMONSEND_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
 		errprintf("WML: Status not available\n");
-		return;
+		if (logbuf) xfree(logbuf);	/* an empty answer is still an allocation */
+		return 0;
 	}
 
 	msg = strchr(logbuf, '\n');
@@ -113,17 +136,22 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	else {
 		errprintf("WML: Unable to parse log data\n");
 		xfree(logbuf);
-		return;
+		return 0;
 	}
 
 	nextline = msg;
 	l[MAX_LINE_LEN - 1] = '\0';
 
-	sprintf(fn, "%s/%s.%s.wml", wmldir, host->hostname, entry->column->name);
+	if (snprintf(fn, sizeof(fn), "%s/%s.%s.wml", wmldir, host->hostname, entry->column->name) >= (int)sizeof(fn)) {
+		errprintf("WML: path too long for %s.%s, card skipped\n", host->hostname, entry->column->name);
+		xfree(logbuf);
+		return 0;
+	}
 	fd = fopen(fn, "w");
 	if (fd == NULL) {
 		errprintf("Cannot create file %s\n", fn);
-		return;
+		xfree(logbuf);
+		return 0;
 	}
 
 	wml_header(fd, "name", 1);
@@ -243,14 +271,29 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	}
 	fprintf(fd, "<br/> </p> </card> </wml>\n");
 
-	fclose(fd);
+	/*
+	 * A full filesystem surfaces at fclose(), not before, and the caller is
+	 * about to link to this file: reporting success for a card that was not
+	 * written whole would advertise a truncated one. The partial file is
+	 * removed rather than left, since nothing will link to it.
+	 */
+	writefailed = ferror(fd);
+	if (fclose(fd) != 0) writefailed = 1;	/* || would skip the close */
+	if (writefailed) {
+		errprintf("WML: cannot write %s: %s\n", fn, strerror(errno));
+		unlink(fn);
+		if (logbuf) xfree(logbuf);
+		return 0;
+	}
 	if (logbuf) xfree(logbuf);
+	return 1;
 }
 
 
 void do_wml_cards(char *webdir)
 {
 	FILE		*nongreenfd, *hostfd;
+	int		hostfailed, nongreenfailed;
 	char		nongreenfn[PATH_MAX], hostfn[PATH_MAX];
 	hostlist_t	*h;
 	entry_t		*t;
@@ -259,7 +302,10 @@ void do_wml_cards(char *webdir)
 	int		nongreenpart = 1;
 
 	/* Determine where the WML files go */
-	sprintf(wmldir, "%s/wml", webdir);
+	if (snprintf(wmldir, sizeof(wmldir), "%s/wml", webdir) >= (int)sizeof(wmldir)) {
+		errprintf("WML: output directory path too long: %s/wml\n", webdir);
+		return;
+	}
 
 	/* Make sure the WML directory exists */
 	if (chdir(wmldir) != 0) mkdir(wmldir, 0755);
@@ -294,8 +340,16 @@ void do_wml_cards(char *webdir)
 		h->hostentry->wapcolor = COL_GREEN;
 		for (t = h->hostentry->entries; (t); t = t->next) {
 			if (t->onwap && ((t->color == COL_RED) || (t->color == COL_YELLOW))) {
-				generate_wml_statuscard(h->hostentry, t);
-				h->hostentry->anywaps = 1;
+				/*
+				 * onwap is what the host card below links from, so a card
+				 * that was not written has to clear it. Otherwise a status
+				 * path that does not fit - reachable with names that are
+				 * not themselves oversized, since it is one component
+				 * longer than the host card's own path - leaves a link to
+				 * a file that does not exist.
+				 */
+				if (generate_wml_statuscard(h->hostentry, t)) h->hostentry->anywaps = 1;
+				else t->onwap = 0;
 			}
 			else {
 				/* Clear the onwap flag - makes testing later a bit simpler */
@@ -312,7 +366,10 @@ void do_wml_cards(char *webdir)
 	}
 
 	/* Start the non-green WML card */
-	sprintf(nongreenfn, "%s/nongreen.wml.tmp", wmldir);
+	if (snprintf(nongreenfn, sizeof(nongreenfn), "%s/nongreen.wml.tmp", wmldir) >= (int)sizeof(nongreenfn)) {
+		errprintf("WML: path too long for the non-green card in %s\n", wmldir);
+		return;
+	}
 	nongreenfd = fopen(nongreenfn, "w");
 	if (nongreenfd == NULL) {
 		errprintf("Cannot open non-green WML file %s\n", nongreenfn);
@@ -336,10 +393,14 @@ void do_wml_cards(char *webdir)
 		if (h->hostentry->anywaps) {
 
 			/* Create the host WAP card, with links to individual test results */
-			sprintf(hostfn, "%s/%s.wml", wmldir, h->hostentry->hostname);
+			if (snprintf(hostfn, sizeof(hostfn), "%s/%s.wml", wmldir, h->hostentry->hostname) >= (int)sizeof(hostfn)) {
+				errprintf("WML: path too long for host %s, card skipped\n", h->hostentry->hostname);
+				continue;
+			}
 			hostfd = fopen(hostfn, "w");
 			if (hostfd == NULL) {
 				errprintf("Cannot create file %s\n", hostfn);
+				fclose(nongreenfd);	/* the normal path below closes it */
 				return;
 			}
 
@@ -361,7 +422,17 @@ void do_wml_cards(char *webdir)
 				}
 			}
 			fprintf(hostfd, "\n</p> </card> </wml>\n");
-			fclose(hostfd);
+
+			/* Linked to from the non-green card below, so a page that was
+			   not written whole must not be advertised: a full filesystem
+			   surfaces here, not at the fopen() above. */
+			hostfailed = ferror(hostfd);
+			if (fclose(hostfd) != 0) hostfailed = 1;
+			if (hostfailed) {
+				errprintf("WML: cannot write %s: %s\n", hostfn, strerror(errno));
+				unlink(hostfn);
+				continue;
+			}
 
 			/* Create the link from the nongreen wap card to the host card */
 			fprintf(nongreenfd, "<b><anchor title=\"%s\">%s<go href=\"%s.wml\"/></anchor></b> %s<br/>\n", 
@@ -375,21 +446,35 @@ void do_wml_cards(char *webdir)
 			 */
 			if (ftello(nongreenfd) >= wmlmaxchars) {
 				char oldnongreenfn[PATH_MAX];
+				char nextnongreenfn[PATH_MAX];
 
 				/* WML link is from the nongreenfd except leading wmldir+'/' */
 				strcpy(oldnongreenfn, nongreenfn+strlen(wmldir)+1);
 
 				nongreenpart++;
 
+				/*
+				 * The name of the next card is settled before this one links
+				 * to it. Written the other way round, a path that does not
+				 * fit closed this card with a "Next" pointing at a file the
+				 * refusal below then never created.
+				 */
+				if (snprintf(nextnongreenfn, sizeof(nextnongreenfn), "%s/nongreen-%d.wml", wmldir, nongreenpart) >= (int)sizeof(nextnongreenfn)) {
+					errprintf("WML: path too long for non-green card %d in %s\n", nongreenpart, wmldir);
+					fprintf(nongreenfd, "</p> </card> </wml>\n");
+					fclose(nongreenfd);
+					return;
+				}
+
 				fprintf(nongreenfd, "<br /><b><anchor title=\"Next\">Next<go href=\"nongreen-%d.wml\"/></anchor></b>\n", nongreenpart);
 				fprintf(nongreenfd, "</p> </card> </wml>\n");
 				fclose(nongreenfd);
 
 				/* Start a new Nongreen WML card */
-				sprintf(nongreenfn, "%s/nongreen-%d.wml", wmldir, nongreenpart);
+				strcpy(nongreenfn, nextnongreenfn);
 				nongreenfd = fopen(nongreenfn, "w");
 				if (nongreenfd == NULL) {
-					errprintf("Cannot open Nongreen WML file %s\n", nongreenfd);
+					errprintf("Cannot open Nongreen WML file %s\n", nongreenfn);
 					return;
 				}
 				wml_header(nongreenfd, "card", nongreenpart);
@@ -403,15 +488,27 @@ void do_wml_cards(char *webdir)
 	}
 
 	fprintf(nongreenfd, "</p> </card> </wml>\n");
-	fclose(nongreenfd);
+
+	/* Renamed over the card the phone is reading, so the same rule as the
+	   host cards: publish it only if it was written whole. */
+	nongreenfailed = ferror(nongreenfd);
+	if (fclose(nongreenfd) != 0) nongreenfailed = 1;
+	if (nongreenfailed) {
+		errprintf("WML: cannot write %s: %s\n", nongreenfn, strerror(errno));
+		unlink(nongreenfn);
+		return;
+	}
 
 	if (chdir(wmldir) == 0) {
 		/* Rename the top-level file into place now */
 		rename("nongreen.wml.tmp", "nongreen.wml");
 
 		/* Make sure there is the index.wml file pointing to nongreen.wml */
-		if (!symlink("nongreen.wml", "index.wml")) {
-			errprintf("symlink nongreen.xml->index.wml failed: %s\n", strerror(errno));
+		/* symlink() returns 0 on success: the test was inverted, so this
+		   reported a failure every time it worked and said nothing when it
+		   did not. EEXIST is the normal case - the link outlives the run. */
+		if ((symlink("nongreen.wml", "index.wml") != 0) && (errno != EEXIST)) {
+			errprintf("symlink nongreen.wml->index.wml failed: %s\n", strerror(errno));
 		}
 	}
 

@@ -107,6 +107,19 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
 		while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
 
+		/*
+		 * A row without a reading: an unreachable mount is reported with "-"
+		 * sizes (nothing measured them) and 100% so the column goes red.
+		 * Trending it would write a full filesystem over the pre-outage
+		 * readings, so it is skipped. The test is on the values, not the
+		 * device name; the one df writing this shape itself, AIX "df -Ik" on
+		 * /proc, carried no reading either and trended as zeros.
+		 */
+		if ((strcmp(columns[1], "-") == 0) && (strcmp(columns[2], "-") == 0)) {
+			xfree(fsline);
+			goto nextline;
+		}
+
 		/* 
 		 * Some Unix filesystem reports contain the word "Filesystem".
 		 * So check if there's a slash in the NT filesystem letter - if yes,

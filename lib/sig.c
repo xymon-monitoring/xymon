@@ -98,9 +98,9 @@ void setup_signalhandler(char *programname)
 	 * Used inside signal-handler. Must be setup in
 	 * advance.
 	 */
-	strncpy(signal_xymoncmd, xgetenv("XYMON"), sizeof(signal_xymoncmd));
-	strncpy(signal_xymondserver, xgetenv("XYMSRV"), sizeof(signal_xymondserver));
-	strncpy(signal_tmpdir, xgetenv("XYMONTMP"), sizeof(signal_tmpdir));
+	snprintf(signal_xymoncmd, sizeof(signal_xymoncmd), "%s", xgetenv("XYMON"));
+	snprintf(signal_xymondserver, sizeof(signal_xymondserver), "%s", xgetenv("XYMSRV"));
+	snprintf(signal_tmpdir, sizeof(signal_tmpdir), "%s", xgetenv("XYMONTMP"));
 	snprintf(signal_msg, sizeof(signal_msg), "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
 		(xgetenv("MACHINE") ? xgetenv("MACHINE") : "XYMSERVERS"), programname);
 

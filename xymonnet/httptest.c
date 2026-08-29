@@ -675,7 +675,7 @@ void add_http_test(testitem_t *t)
 
 	/* Pickup any SSL options the user wants */
 	if (sslopt_ciphers || (sslopt_version != SSLVERSION_DEFAULT) || sslopt_clientcert){
-		sslopt = (ssloptions_t *) malloc(sizeof(ssloptions_t));
+		sslopt = (ssloptions_t *) calloc(1, sizeof(ssloptions_t));
 		sslopt->cipherlist = sslopt_ciphers;
 		sslopt->sslversion = sslopt_version;
 		sslopt->clientcert = sslopt_clientcert;

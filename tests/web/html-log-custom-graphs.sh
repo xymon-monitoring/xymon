@@ -15,9 +15,7 @@ set -euo pipefail
 ROOT=$(find_root)
 here=$(dirname "$0")
 
-CC=${CC:-cc}
-command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
-command -v make >/dev/null 2>&1 || skip "make not available"
+require_c_buildenv "$ROOT"
 
 pcre_libs=${PCRELIBS:-}
 if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
@@ -29,20 +27,19 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-htmllog-graphs.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 # The harness links libxymoncomm. Like the require_bin tests, a tree that
-# was never configured/built skips (tests.yml runs on a bare tree; the
-# post-build suite in build.yml then exercises it for real) - the test
-# must not write config.h or other build artifacts into a bare tree. On
-# a built tree, refresh the archive incrementally so the harness tests
-# this tree's code, not a stale archive.
-[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
+# was never built skips (tests.yml runs on a bare tree; the post-build
+# suite in build.yml then exercises it for real). On a built tree, refresh
+# the archive incrementally so the harness tests this tree's code, not a
+# stale archive.
+[ -f "$ROOT/lib/libxymoncomm.a" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
-[ -w "$ROOT/lib" ] || skip "source tree not writable (cannot refresh libxymoncomm.a)"
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" -o "$work/harness" \
+harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
+"$CC" $harness_cflags -o "$work/harness" \
 	"$here/html-log-custom-graphs-harness.c" "$ROOT/lib/libxymoncomm.a" \
-	$pcre_libs -lssl -lcrypto 2>"$work/cc.log" \
+	$pcre_libs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 XYMONHOME="$work" \

@@ -1,66 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>CRITICAL.CFG(5)</title>
+</head>
+<body>
+<h1 class="head-name">CRITICAL.CFG</h1>
+Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of CRITICAL.CFG</TITLE>
-</HEAD><BODY>
-<H1>CRITICAL.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">critical.cfg - Configuration of the showgraph CGI</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>$XYMONHOME/etc/critical.cfg</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><i>critical.cgi(1)</i> uses the configuration file
+    $XYMONHOME/etc/critical.cfg to determine which of the statuses currently in
+    a red or yellow state should appear on the Critical Systems view.</p>
+<p class="Pp">This file should not be edited manually. It is maintained by the
+    <i><a href="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</a>(1)</i> utility via a web-based frontend.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILE_PERMISSIONS"><a class="permalink" href="#FILE_PERMISSIONS">FILE
+  PERMISSIONS</a></h1>
+<p class="Pp">Since the file is maintained by a web front-end tool, the userid
+    running Web CGI scripts must have write-permission to the file. Typically,
+    this means it must have a group-ownership matching your webserver userid,
+    and group-write permissions (mode 664).</p>
+<p class="Pp">When editing the file with the web front-end, a backup file is
+    created. Therefore the critical.cfg.bak file should have identical
+    permissions.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/criticalview.cgi.1.html">criticalview.cgi</a>(1), <a href="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</a>(1)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#FILE_PERMISSIONS">FILE PERMISSIONS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-critical.cfg - Configuration of the showgraph CGI
-<P>
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>$XYMONHOME/etc/critical.cfg</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<I><A HREF="../man1/critical.cgi.1.html">critical.cgi</A>(1)</I>
-
-uses the configuration file $XYMONHOME/etc/critical.cfg to
-determine which of the statuses currently in a red or yellow state
-should appear on the Critical Systems view.
-<P>
-This file should not be edited manually. It is maintained by the
-<I><A HREF="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</A>(1)</I>
-
-utility via a web-based frontend.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>FILE PERMISSIONS</H2>
-
-Since the file is maintained by a web front-end tool, the userid
-running Web CGI scripts must have write-permission to the file.
-Typically, this means it must have a group-ownership matching your
-webserver userid, and group-write permissions (mode 664).
-<P>
-When editing the file with the web front-end, a backup file is created.
-Therefore the critical.cfg.bak file should have identical permissions.
-<P>
-<A NAME="lbAF">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1), <A HREF="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</A>(1)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">FILE PERMISSIONS</A><DD>
-<DT><A HREF="#lbAF">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

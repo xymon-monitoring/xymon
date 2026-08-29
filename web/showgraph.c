@@ -113,6 +113,29 @@ int firstidx = -1;
 int idxcount = -1;
 int lastidx = 0;
 
+/* Quote a value for safe inclusion as a single word in a /bin/sh command
+ * line: wrap it in single quotes and render each embedded single quote as
+ * '\'' (close, escaped quote, reopen). The result contains no shell-active
+ * character outside the admin's own command, so a CGI-supplied value
+ * cannot break out. Caller frees. */
+static char *shellquote(const char *s)
+{
+	strbuffer_t *b = newstrbuffer(0);
+	const char *p;
+	char *result;
+
+	addtobuffer(b, "'");
+	for (p = (s ? s : ""); (*p); p++) {
+		if (*p == '\'') addtobuffer(b, "'\\''");
+		else addtobufferraw(b, (char *)p, 1);
+	}
+	addtobuffer(b, "'");
+	result = strdup(STRBUF(b));
+	freestrbuffer(b);
+
+	return result;
+}
+
 void errormsg(char *msg)
 {
 	/* Command-line invocation (--emit-gdef): plain error on stderr,
@@ -811,6 +834,12 @@ char *expand_tokens(char *tpl)
 	return STRBUF(result);
 }
 
+/* Sort mode for the comparator, decided ONCE for the whole set before qsort
+ * (rrd_set_sort_mode below). Deciding per pair -- numeric only when BOTH keys
+ * of that pair were numeric -- made it intransitive on mixed sets, which is
+ * undefined behaviour for qsort(3). */
+static int rrd_keys_all_numeric = 0;
+
 /* Aggregate-token parser + RPN emitter. Lives in its own file so
  * web/test-aggregate-tokens.c can include the same source: any future
  * fix here is visible to both without manual mirroring. The file
@@ -979,6 +1008,24 @@ static void add_graphdef_args(char **rrdargs, int *argi, gdef_t *gdef)
 int rrd_name_compare(const void *v1, const void *v2)
 {
 	return instance_key_compare(((rrddb_t *)v1)->key, ((rrddb_t *)v2)->key);
+}
+
+/* Decide the sort mode ONCE for the whole set, before qsort. Numeric only when
+ * every key is numeric, which is what the comparator always intended. A named
+ * function rather than a block inside the caller so that the regression test
+ * drives this decision instead of a copy of it: a copy keeps passing after the
+ * real one goes back to pairwise or lexical-only. */
+static void rrd_set_sort_mode(rrddb_t *dbs, int count)
+{
+	int i;
+
+	rrd_keys_all_numeric = (count > 0);
+	for (i = 0; (i < count) && rrd_keys_all_numeric; i++) {
+		char *endptr;
+
+		strtol(dbs[i].key, &endptr, 10);
+		rrd_keys_all_numeric = ((endptr != dbs[i].key) && (*endptr == '\0'));
+	}
 }
 
 static int rrd_param_matches_service(const char *param, const char *svc)
@@ -1946,33 +1993,42 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			errprintf("showgraph: no RRD file matched service '%s'\n", service);
 	}
 
-	/* Sort them so the display looks prettier */
+	/* Sort them so the display looks prettier. */
+	rrd_set_sort_mode(rrddbs, rrddbcount);
 	qsort(&rrddbs[0], rrddbcount, sizeof(rrddb_t), rrd_name_compare);
 
 	/* Setup the title */
 	if (!gdef->title) gdef->title = strdup("");
 	if (strncmp(gdef->title, "exec:", 5) == 0) {
-		char *pcmd;
-		int i, pcmdlen = 7;
+		strbuffer_t *cmd = newstrbuffer(0);
 		FILE *pfd;
 		char *p;
-		char *param_str = "%s \"%s\" %s \"%s\"";
+		int i;
 
-		pcmdlen += (strlen(gdef->title+5) + strlen(displayname) + strlen(service) + strlen(glegend));
-		for (i=0; (i<rrddbcount); i++) if (rrddbs[i].rrdfn) pcmdlen += (strlen(rrddbs[i].rrdfn) + 3);
-
-		p = pcmd = (char *)malloc(pcmdlen+1);
-		p += snprintf(p, pcmdlen+1, param_str, gdef->title+5, displayname, service, glegend);
+		/* The admin's command line (gdef->title+5, from graphs.cfg)
+		 * runs verbatim - it is trusted and may carry its own options
+		 * or pipes on purpose. Every value appended after it, however,
+		 * is CGI- or filename-derived (displayname from the "disp="
+		 * parameter, the matched RRD filenames), so each is shell-quoted
+		 * and reaches the command as one literal argument, whatever
+		 * characters it contains. */
+		addtobuffer(cmd, gdef->title+5);
+		p = shellquote(displayname); addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
+		p = shellquote(service);     addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
+		p = shellquote(glegend);     addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
 		for (i=0; (i<rrddbcount); i++) {
 			if ((firstidx == -1) || ((i >= firstidx) && (i <= lastidx))) {
-				if (rrddbs[i].rrdfn) p += snprintf(p, (pcmdlen - (p - pcmd) + 1), " \"%s\"", rrddbs[i].rrdfn);
+				p = shellquote(rrddbs[i].rrdfn);
+				addtobuffer(cmd, " "); addtobuffer(cmd, p); xfree(p);
 			}
 		}
-		pfd = popen(pcmd, "r");
+
+		pfd = popen(STRBUF(cmd), "r");
 		if (pfd) {
 			if (fgets(graphtitle, sizeof(graphtitle), pfd) == NULL) *graphtitle = '\0';
 			pclose(pfd);
 		}
+		freestrbuffer(cmd);
 
 		/* Drop any newline at end of the title */
 		p = strchr(graphtitle, '\n'); if (p) *p = '\0';

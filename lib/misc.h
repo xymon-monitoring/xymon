@@ -45,6 +45,8 @@ extern int selectcolumn(char *heading, char *wanted);
 extern char *getcolumn(char *s, int wanted);
 
 extern int chkfreespace(char *path, int minblks, int mininodes);
+extern int parse_int_opt(char *arg, int minval, int maxval, int dflt);	/* 'arg' must contain '='; value must be a plain integer */
+#define DEFAULT_MINLOGSPACE 5	/* --minimum-free fallback, in percent (xymond_hostdata, xymond_history) */
 
 #endif
 

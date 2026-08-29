@@ -51,6 +51,7 @@ static rule_t *ruletail = NULL;
 static int cfid = 0;
 static char cfline[256];
 static int printmode = 0;
+static int ignoreholdtime = 0;
 static rule_t *printrule = NULL;
 
 static enum { P_NONE, P_RULE, P_RECIP } pstate = P_NONE;
@@ -146,9 +147,66 @@ static char *preprocess(char *buf)
 	return STRBUF(result);
 }
 
+/*
+ * FOR=N only has one meaning when the rule names exactly one color: red for 3
+ * then yellow for 8 satisfies neither for 10, yet the rule matched throughout.
+ *
+ * Bit 30 marks "an explicit COLOR= was given" and is not a color itself; with
+ * no COLOR= the effective set is the default one, never a single color.
+ */
+static void check_holdtime_colors(criteria_t *crit, int cfid, int rulecolors)
+{
+	int colors, explicitcolors, n, i;
+
+	if (!crit || !crit->minholdtime) return;
+
+	/*
+	 * Count what the runtime matches on: rule and recipient are matched in
+	 * turn, so the effective set is their intersection, with the default set
+	 * standing in for a side that names no COLOR=. print_alert_recipients()
+	 * builds it the same way.
+	 */
+	explicitcolors = ((crit->colors | rulecolors) & (1 << 30));
+	colors = ((crit->colors  ? crit->colors  : defaultcolors) &
+		  (rulecolors    ? rulecolors    : defaultcolors)) & ~(1 << 30);
+	for (i = n = 0; (i < COL_COUNT); i++) if (colors & (1 << i)) n++;
+	if (n == 1) return;
+
+	if (!explicitcolors)
+		errprintf("Ignoring FOR at line %d: it needs an explicit single COLOR=\n", cfid);
+	else if (colors == 0)
+		errprintf("Ignoring FOR at line %d: its COLOR= has nothing in common with the rule's\n", cfid);
+	else
+		errprintf("Ignoring FOR at line %d: it needs a single COLOR=, not %d\n", cfid, n);
+	crit->minholdtime = 0;
+}
+
 static void flush_rule(rule_t *currule)
 {
+	recip_t *rwalk;
+	int rulecolors;
+
 	if (currule == NULL) return;
+
+	rulecolors = (currule->criteria ? currule->criteria->colors : 0);
+
+	/*
+	 * The rule's own FOR is judged against each recipient, not against the
+	 * rule line alone: a recipient's COLOR= narrows the effective set, so
+	 * "FOR=10" on the rule with "MAIL x COLOR=red" under it names exactly one
+	 * colour at match time. Judged in isolation it named none, and the FOR was
+	 * dropped - the alert then went out immediately, which is the opposite of
+	 * what was asked for.
+	 */
+	for (rwalk = currule->recipients; (rwalk); rwalk = rwalk->next)
+		check_holdtime_colors(currule->criteria, currule->cfid,
+				      (rwalk->criteria && rwalk->criteria->colors) ?
+					rwalk->criteria->colors : defaultcolors);
+
+	if (currule->recipients == NULL) check_holdtime_colors(currule->criteria, currule->cfid, 0);
+
+	for (rwalk = currule->recipients; (rwalk); rwalk = rwalk->next)
+		check_holdtime_colors(rwalk->criteria, rwalk->cfid, rulecolors);
 
 	currule->next = NULL;
 
@@ -205,7 +263,10 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 	MEMDEFINE(fn);
 
-	if (configfn) strncpy(fn, configfn, sizeof(fn)); else snprintf(fn, sizeof(fn), "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
+	if (configfn) {
+		snprintf(fn, sizeof(fn), "%s", configfn);
+	}
+	else snprintf(fn, sizeof(fn), "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -514,6 +575,31 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				else errprintf("Ignoring invalid DURATION at line %d: %s\n",cfid, p);
 				firsttoken = 0;
 			}
+			else if (strncasecmp(p, "FOR=", 4) == 0) {
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				crit = setup_criteria(&currule, &currcp);
+				/*
+				 * durationseconds(), not 60*durationvalue(): the
+				 * multiplication is not the only place a duration overflows.
+				 * durationvalue() accumulates minutes in an int, so
+				 * "FOR=426089w" wrapped to 9824 minutes and would have loaded
+				 * clean as a hold time of under seven days - a config that
+				 * silently means something other than what it says. Bounding
+				 * the minutes closes both.
+				 */
+				{
+					int secs;
+
+					if (durationseconds(p+4, &secs)) crit->minholdtime = secs;
+					else {
+						errprintf("Ignoring invalid FOR at line %d: %s\n", cfid, p);
+						crit->minholdtime = 0;
+					}
+				}
+				firsttoken = 0;
+			}
 			else if (strncasecmp(p, "RECOVERED", 9) == 0) {
 				criteria_t *crit;
 
@@ -748,6 +834,7 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 
 	if (crit->timespec) printf("TIME=%s ", crit->timespec);
 	if (crit->extimespec) printf("EXTIME=%s ", crit->extimespec);
+	if (crit->minholdtime) printf("FOR=%d ", (crit->minholdtime / 60));
 	if (crit->minduration) printf("DURATION>%d ", (crit->minduration / 60));
 	if (crit->maxduration) printf("DURATION<%d ", (crit->maxduration / 60));
 	if (isrecip) {
@@ -813,7 +900,8 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	static char *pgnames = NULL;
 	const char *dgname = NULL;
 	int pgmatchres, pgexclres;
-	time_t duration = (getcurrenttime(NULL) - alert->eventstart);
+	time_t now = getcurrenttime(NULL);
+	time_t duration = (now - alert->eventstart);
 	int result, cfid = 0;
 	char *pgtok, *cfline = NULL;
 	void *hinfo = hostinfo(alert->hostname);
@@ -839,7 +927,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	if (alert->state == A_PAGING) {
 		/* Check max-duration now - it's fast and easy. */
 		if (crit && crit->maxduration && (duration > crit->maxduration)) { 
-			traceprintf("Failed '%s' (max. duration %d>%d)\n", cfline, duration, crit->maxduration);
+			traceprintf("Failed '%s' (max. duration %d>%d)\n", cfline, (int)duration, crit->maxduration);
 			if (!printmode) return 0; 
 		}
 	}
@@ -866,7 +954,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 		if ((alert->groups && (*(alert->groups)))) {
 			SBUF_MALLOC(grouplist, strlen(alert->groups));
-			strncpy(grouplist, alert->groups, grouplist_buflen);
+			snprintf(grouplist, grouplist_buflen+1, "%s", alert->groups);
 		}
 
 		if (crit->groupspec) {
@@ -899,7 +987,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 			/* Excluded groups are only handled when the alert does have a group list */
 
-			strncpy(grouplist, alert->groups, grouplist_buflen); /* Might have been used in the include list */
+			snprintf(grouplist, grouplist_buflen+1, "%s", alert->groups); /* Might have been used in the include list */
 			onegroup = strtok_r(grouplist, ",", &tokptr);
 			while (onegroup) {
 				if (namematch(onegroup, crit->exgroupspec, crit->exgroupspecre)) { 
@@ -997,7 +1085,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 				if ((*nexttime == -1) || (*nexttime > mynext)) *nexttime = mynext;
 			}
-			traceprintf("Failed '%s' (min. duration %d<%d)\n", cfline, duration, crit->minduration);
+			traceprintf("Failed '%s' (min. duration %d<%d)\n", cfline, (int)duration, crit->minduration);
 			if (!printmode) return 0; 
 		}
 	}
@@ -1030,6 +1118,39 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	if (!result) {
 		traceprintf("Failed '%s' (color)\n", cfline);
 		return result;
+	}
+
+	/*
+	 * FOR=N: the color's own age, where duration is the event's. Below the
+	 * color check so the color is the one the rule names, and in the recipient
+	 * pass only: failing in the rule pass takes the whole rule out, and with
+	 * nothing matching anywhere xymond_alert goes A_NORECIP and discards the
+	 * repeat state - losing the recovery for an alert already sent.
+	 */
+	if ((alert->state == A_PAGING) && rulecrit && !ignoreholdtime) {
+		/*
+		 * The larger of the two, not the recipient's instead of the rule's.
+		 * Every other criterion is checked in both passes, so a rule and a
+		 * recipient that both set one must both be satisfied; FOR is checked
+		 * in the recipient pass alone, and taking the recipient's value there
+		 * made it the one criterion a recipient could loosen.
+		 */
+		int minhold = (crit && (crit->minholdtime > rulecrit->minholdtime)) ?
+				crit->minholdtime : rulecrit->minholdtime;
+
+		if (minhold) {
+			time_t holdtime = (now - alert->colorstart);
+
+			if (holdtime < minhold) {
+				if (nexttime) {
+					time_t mynext = alert->colorstart + minhold;
+
+					if ((*nexttime == -1) || (*nexttime > mynext)) *nexttime = mynext;
+				}
+				traceprintf("Failed '%s' (min. hold time %d<%d)\n", cfline, (int)holdtime, minhold);
+				if (!printmode) return 0;
+			}
+		}
 	}
 
 	if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
@@ -1132,6 +1253,15 @@ void alert_printmode(int on)
 	printmode = on;
 }
 
+/*
+ * FOR= holds an alert back from being sent; it must not hold back a walk that
+ * only invalidates state. See clear_interval().
+ */
+void alert_ignore_holdtime(int on)
+{
+	ignoreholdtime = on;
+}
+
 void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 {
 	char *normalfont = "COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"";
@@ -1143,7 +1273,6 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	int count = 0;
 	char *p, *fontspec;
 	char codes[25];
-	unsigned int codes_bytesleft;
 
 	MEMDEFINE(l);
 	MEMDEFINE(codes);
@@ -1157,7 +1286,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	fontspec = normalfont;
 	stoprulefound = 0;
 	while ((recip = next_recipient(alert, &first, NULL, NULL)) != NULL) {
-		int mindur = 0, maxdur = INT_MAX;
+		int mindur = 0, maxdur = INT_MAX, minhold = 0;
 		char *timespec = NULL; char *extimespec = NULL;
 		int colors = defaultcolors;
 		int i, firstcolor = 1;
@@ -1185,6 +1314,14 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 		if (recip->criteria && recip->criteria->minduration && (recip->criteria->minduration > mindur)) mindur = recip->criteria->minduration;
 		if (printrule->criteria && printrule->criteria->maxduration) maxdur = printrule->criteria->maxduration;
 		if (recip->criteria && recip->criteria->maxduration && (recip->criteria->maxduration < maxdur)) maxdur = recip->criteria->maxduration;
+		/*
+		 * FOR= holds an alert back exactly as DURATION> does, so the delay
+		 * column must show it or the report says "no delay" about a rule
+		 * that has one -- and it must show the value criteriamatch() applies,
+		 * which is the larger of the two, as minduration just above.
+		 */
+		if (printrule->criteria && printrule->criteria->minholdtime) minhold = printrule->criteria->minholdtime;
+		if (recip->criteria && recip->criteria->minholdtime && (recip->criteria->minholdtime > minhold)) minhold = recip->criteria->minholdtime;
 		if (printrule->criteria && printrule->criteria->timespec) timespec = printrule->criteria->timespec;
 		if (printrule->criteria && printrule->criteria->extimespec) extimespec = printrule->criteria->extimespec;
 		if (recip->criteria && recip->criteria->timespec) {
@@ -1214,15 +1351,15 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 		     (recip->criteria && (recip->criteria->sendnotice == SR_WANTED)) ) notice = 1;
 
 		*codes = '\0';
-		codes_bytesleft = sizeof(codes);
 		if (recip->method == M_IGNORE) {
 			recip->recipient = "-- ignored --";
 		}
-		if (recip->noalerts) { if (*codes) strncat(codes, ",A", codes_bytesleft); else strncat(codes, "-A", codes_bytesleft); codes_bytesleft -= 2; }
-		if (recovered && !recip->noalerts) { if (*codes) strncat(codes, ",R", codes_bytesleft); else strncat(codes, "R", codes_bytesleft); codes_bytesleft -= 2; }
-		if (notice) { if (*codes) strncat(codes, ",N", codes_bytesleft); else strncat(codes, "N", codes_bytesleft); codes_bytesleft -= 2; }
-		if (recip->stoprule) { if (*codes) strncat(codes, ",S", codes_bytesleft); else strncat(codes, "S", codes_bytesleft); codes_bytesleft -= 2; }
-		if (recip->unmatchedonly) { if (*codes) strncat(codes, ",U", codes_bytesleft); else strncat(codes, "U", codes_bytesleft); codes_bytesleft -= 2; }
+		/* Append flag codes, always bounding strncat by the space actually left in codes[] */
+		if (recip->noalerts) strncat(codes, (*codes ? ",A" : "-A"), sizeof(codes)-strlen(codes)-1);
+		if (recovered && !recip->noalerts) strncat(codes, (*codes ? ",R" : "R"), sizeof(codes)-strlen(codes)-1);
+		if (notice) strncat(codes, (*codes ? ",N" : "N"), sizeof(codes)-strlen(codes)-1);
+		if (recip->stoprule) strncat(codes, (*codes ? ",S" : "S"), sizeof(codes)-strlen(codes)-1);
+		if (recip->unmatchedonly) strncat(codes, (*codes ? ",U" : "U"), sizeof(codes)-strlen(codes)-1);
 
 		if (strlen(codes) == 0)
 			snprintf(l, sizeof(l), "<td><font %s>%s</font></td>", fontspec, recip->recipient);
@@ -1230,7 +1367,8 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 			snprintf(l, sizeof(l), "<td><font %s>%s (%s)</font></td>", fontspec, recip->recipient, codes);
 		addtobuffer(buf, l);
 
-		snprintf(l, sizeof(l), "<td align=center>%s</td>", durationstring(mindur));
+		snprintf(l, sizeof(l), "<td align=center>%s</td>",
+			 durationstring((minhold > mindur) ? minhold : mindur));
 		addtobuffer(buf, l);
 
 		/* maxdur=INT_MAX means "no max duration". So set it to 0 for durationstring() to do the right thing */

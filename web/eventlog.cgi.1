@@ -11,14 +11,14 @@ Based on the parameters it receives, it generates the
 Xymon event log for a period. This log shows all status
 changes that have occurred for all hosts and services.
 
-eventlog.cgi is passed a QUERY_STRING environment variable 
+eventlog.cgi is passed a QUERY_STRING environment variable
 with the following parameters:
 
    MAXTIME (maximum minutes to go back in the log)
    MAXCOUNT (maximum number of events to report)
 
 .SH OPTIONS
-.IP "--env=FILENAME"
+.IP "\fB--env\fR=\fIFILENAME\fR"
 Loads the environment defined in FILENAME before executing the CGI script.
 
 .SH "SEE ALSO"

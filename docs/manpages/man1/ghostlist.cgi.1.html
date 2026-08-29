@@ -1,71 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>GHOSTLIST.CGI(1)</title>
+</head>
+<body>
+<h1 class="head-name">GHOSTLIST.CGI</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of GHOSTLIST.CGI</TITLE>
-</HEAD><BODY>
-<H1>GHOSTLIST.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">ghostlist.cgi - CGI program to view ghost clients</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>ghostlist.cgi</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>ghostlist.cgi</b> is invoked as a CGI script via the
+    ghostlist.sh CGI wrapper.</p>
+<p class="Pp">It generates a listing of the Xymon clients that have reported
+    data to the Xymon server, but are not listed in the <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i>
+    file. Data from these clients - called &quot;ghosts&quot; - are ignored,
+    since Xymon does not know which webpage to present the data on.</p>
+<p class="Pp">The listing includes the hostname that the client reports with,
+    the IP-address where the report came from, and how long ago the report
+    arrived.</p>
+<p class="Pp">By far the most common reason for hosts showing up here is that
+    the client uses a hostname without a DNS domain, but the hosts.cfg file uses
+    the hostname with the DNS domain. Or vice versa. You can then use a
+    <b>CLIENT</b> setting in the hosts.cfg file to match the two hostnames
+    together.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="env"><a class="permalink" href="#env"><b>--env</b>=<i>FILENAME</i></a></dt>
+  <dd>Loads the environment defined in FILENAME before executing the CGI script.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-ghostlist.cgi - CGI program to view ghost clients
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>ghostlist.cgi</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>ghostlist.cgi</B>
-is invoked as a CGI script via the ghostlist.sh CGI wrapper.
-<P>
-It generates a listing of the Xymon clients that have reported data
-to the Xymon server, but are not listed in the
-<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
-
-file. Data from these clients - called &quot;ghosts&quot; - are ignored, 
-since Xymon does not know which webpage to present the data on.
-<P>
-The listing includes the hostname that the client reports with, 
-the IP-address where the report came from, and how long ago the
-report arrived.
-<P>
-By far the most common reason for hosts showing up here is that
-the client uses a hostname without a DNS domain, but the hosts.cfg
-file uses the hostname with the DNS domain. Or vice versa. You can
-then use a <B>CLIENT</B> setting in the hosts.cfg file to match the
-two hostnames together.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--env=FILENAME<DD>
-Loads the environment defined in FILENAME before executing the CGI script.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

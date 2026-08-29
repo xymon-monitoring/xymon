@@ -113,12 +113,13 @@ int unwantedcolumn(char *hostname, char *testname)
 	nc = xmh_item(hinfo, XMH_NOCOLUMNS);
 	if (!nc) return 0;
 
-	nc = strdup(nc);
+	nc = xstrdup(nc);
 	tok = strtok(nc, ",");
 	while (tok && (result == 0)) {
 		if (strcmp(tok, testname) == 0) result = 1;
 		tok = strtok(NULL, ",");
 	}
+	xfree(nc);
 
 	return result;
 }
@@ -473,8 +474,6 @@ void generate_groupitems(state_t **topstate)
 void generate_compactitems(state_t **topstate)
 {
 	void *xmh;
-	compact_t **complist = NULL;
-	int complistsz = 0;
 	hostlist_t 	*h;
 	entry_t		*e;
 	char *compacted;
@@ -485,9 +484,17 @@ void generate_compactitems(state_t **topstate)
 	time_t now = getcurrenttime(NULL);
 
 	for (h = hostlistBegin(); (h); h = hostlistNext()) {
+		/* Per-host list: no host inherits its predecessors' COMPACT groups */
+		compact_t **complist = NULL;
+		int complistsz = 0;
+
 		xmh = hostinfo(h->hostentry->hostname);
 		compacted = xmh_item(xmh, XMH_COMPACT);
 		if (!compacted) continue;
+
+		/* Copy first: xmh_item() points into the host record, and
+		 * strtok_r() would truncate the stored tag in place. */
+		compacted = xstrdup(compacted);
 
 		tok1 = strtok_r(compacted, ",", &savep1);
 		while (tok1) {
@@ -543,6 +550,15 @@ void generate_compactitems(state_t **topstate)
 				*topstate = newstate;
 			}
 		}
+
+		for (i = 0; (i < complistsz); i++) {
+			xfree(complist[i]->compactname);
+			xfree(complist[i]->members);
+			xfree(complist[i]);
+		}
+		if (complist) xfree(complist);
+
+		xfree(compacted);
 	}
 }
 

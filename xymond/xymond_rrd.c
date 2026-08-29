@@ -308,13 +308,22 @@ int main(int argc, char *argv[])
 	 * long $XYMONTMP overflowed the sprintf and aborted the daemon at
 	 * startup - check it and run without the socket instead. */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
-	if ((size_t)snprintf(ctlsockaddr.sun_path, sizeof(ctlsockaddr.sun_path), "%s/rrdctl.%lu",
-			     xgetenv("XYMONTMP"), (unsigned long)getpid()) >= sizeof(ctlsockaddr.sun_path)) {
-		errprintf("XYMONTMP path too long for the cache-control socket (max %d) - cache flushing on demand disabled\n",
-			  (int)sizeof(ctlsockaddr.sun_path) - 20);
-		ctlsockaddr.sun_path[0] = '\0';
+	{
+		/* sun_path is tiny (~108 bytes); refuse an XYMONTMP that cannot
+		 * fit rather than overflow (showgraph guards the sender side). */
+		char *xymontmp = xgetenv("XYMONTMP");
+		int n = snprintf(ctlsockaddr.sun_path, sizeof(ctlsockaddr.sun_path),
+				 "%s/rrdctl.%lu", xymontmp, (unsigned long)getpid());
+		if ((n < 0) || (n >= (int)sizeof(ctlsockaddr.sun_path))) {
+			/* Report the limit on XYMONTMP itself: sun_path minus the suffix. */
+			int maxtmp = (int)sizeof(ctlsockaddr.sun_path) - 1
+				   - snprintf(NULL, 0, "/rrdctl.%lu", (unsigned long)getpid());
+			errprintf("Cannot set up cache-control socket: XYMONTMP is too long for a socket path (%d characters; max %d with this process ID)\n",
+				  (int)strlen(xymontmp), maxtmp);
+			return 1;
+		}
 	}
-	if (ctlsockaddr.sun_path[0]) unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
+	unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
 	ctlsockaddr.sun_family = AF_UNIX;
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (ctlsocket == -1) {
@@ -500,18 +509,47 @@ int main(int argc, char *argv[])
 		}
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
 			char hostdir[PATH_MAX];
-			hostname = metadata[3];
+			char *safehost;
 
 			MEMDEFINE(hostdir);
 
-			sprintf(hostdir, "%s/%s", rrddir, basename(hostname));
-			/* Barrier and discard cached updates BEFORE the forked
-			 * deletion starts - nothing may write into the dying dir. */
-			note_hostdrop(hostname);
-			rrdcache_drop_host(hostname, 0);
-			dropdirectory(hostdir, 1);
-			flush_aggds_store(hostname);
-			fsidx_drop(rrddir, hostname);
+			/* safe_basename() refuses a '/'-bearing name and the
+			 * degenerate ".", ".." and "" outright, rather than reducing
+			 * them the way basename() does. That matters here because the
+			 * deletion below is recursive and the name arrives as the
+			 * operator typed it: basename("..") is "..", which appended
+			 * to rrddir names its parent, so a bare "drop .." would walk
+			 * XYMONVAR. Refusing is also the safer reading of a
+			 * slash-bearing name - reducing it would delete a different
+			 * host than the one that was asked for. */
+			safehost = safe_basename(metadata[3]);
+			if (!*safehost) {
+				errprintf("Unsafe hostname '%s' in a drophost message, ignoring it\n", metadata[3]);
+			}
+			else if (snprintf(hostdir, sizeof(hostdir), "%s/%s", rrddir, safehost) >= (int)sizeof(hostdir)) {
+				errprintf("RRD directory path too long, not dropping: %s/%s\n", rrddir, safehost);
+			}
+			else {
+				/* Discard the host's pending updates before its files go:
+				 * a later flush would otherwise write them back into the
+				 * directory that was just deleted. */
+				rrdcache_drop_host(safehost, 0);
+
+				/* Synchronously, not forked. A forked deletion races the
+				 * messages that follow it: one posted after the drop is
+				 * read while the child is still emptying the directory,
+				 * recreates it, and leaves orphaned RRD files for a host
+				 * that no longer exists. Message processing is sequential,
+				 * so a synchronous delete cannot be raced at all - which
+				 * is a property of the ordering rather than of any timing
+				 * assumption. The tree is one host's RRDs, and the worker
+				 * already blocks on rrd_update for every sample it
+				 * writes. */
+				note_hostdrop(safehost);
+				dropdirectory(hostdir, 0);
+				flush_aggds_store(safehost);
+				fsidx_drop(rrddir, safehost);
+			}
 
 			MEMUNDEFINE(hostdir);
 		}
@@ -525,39 +563,85 @@ int main(int argc, char *argv[])
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@renamehost", 12) == 0)) {
 			char oldhostdir[PATH_MAX];
 			char newhostdir[PATH_MAX];
-			char *newhostname;
+			char *safeold, *safenew;
 
 			MEMDEFINE(oldhostdir);
 			MEMDEFINE(newhostdir);
 
-			hostname = metadata[3];
-			newhostname = metadata[4];
-			sprintf(oldhostdir, "%s/%s", rrddir, hostname);
-			sprintf(newhostdir, "%s/%s", rrddir, newhostname);
-			/* Flush pending updates into the old-named files BEFORE
-			 * they move, then barrier the old name against stragglers. */
-			rrdcache_drop_host(hostname, 1);
-			/* The flush's freshness must reach the index file before it
-			 * moves - _now bypasses the timestamp-only throttle that
-			 * would otherwise skip it (the in-memory tree holding the
-			 * newer timestamps is dropped below). */
-			fsidx_flush_now(rrddir, hostname);
-			note_hostdrop(hostname);
-			flush_aggds_store(hostname);	/* repopulates under the new name */
-			if ((rename(oldhostdir, newhostdir) == -1) && (errno != ENOENT)) {
-				/* ENOENT = the host never wrote RRD data: nothing to
-				 * move, nothing to keep. Anything else leaves the old
-				 * files in place - keep their live index too. */
-				errprintf("renamehost: cannot rename %s to %s: %s - keeping the old name's index\n",
-					  oldhostdir, newhostdir, strerror(errno));
+			/* Same confinement as the drop above, and for the same
+			 * reason: both names arrive as the operator typed them. */
+			safeold = safe_basename(metadata[3]);
+			safenew = safe_basename(metadata[4]);
+			if (!*safeold || !*safenew) {
+				errprintf("Unsafe hostname in a renamehost message ('%s' -> '%s'), ignoring it\n",
+					  metadata[3], metadata[4]);
+			}
+			else if ((snprintf(oldhostdir, sizeof(oldhostdir), "%s/%s", rrddir, safeold) >= (int)sizeof(oldhostdir)) ||
+				 (snprintf(newhostdir, sizeof(newhostdir), "%s/%s", rrddir, safenew) >= (int)sizeof(newhostdir))) {
+				errprintf("RRD directory path too long, not renaming: %s -> %s\n", safeold, safenew);
 			}
 			else {
-				/* The index file moved with the directory; only the old
-				 * name's in-memory tree must go (its file path is gone). */
-				fsidx_drop(rrddir, hostname);
-			}
+				struct stat st;
+				int renamed;
 
-			if (net_worker_locatorbased()) locator_rename_host(hostname, newhostname, ST_RRD);
+				/* Flush pending updates into the old-named files before
+				 * they move. Without this they are lost on every rename:
+				 * the cache is keyed on the old path and nothing rewrites
+				 * those keys, so the readings are eventually flushed at a
+				 * filename that no longer exists.
+				 *
+				 * Only when the directory is still here. The stock install
+				 * runs one xymond_rrd per channel over a shared rrddir
+				 * (tasks.cfg.DIST [rrdstatus] and [rrddata]) and xymond
+				 * posts the marker to both, so the second worker to see it
+				 * finds the directory already moved. Its own cached
+				 * readings are keyed on the old path and cannot be written
+				 * there any more; discarding them quietly is what happened
+				 * before this change, and is better than an rrdupdate
+				 * failure and an error line on every rename. */
+				if (stat(oldhostdir, &st) == 0) {
+					rrdcache_drop_host(safeold, 1);
+				}
+				else {
+					/* The peer worker has already moved the directory. These
+					 * updates are ours, not duplicates of its own -- the two
+					 * workers read different channels -- so write them under
+					 * the new name rather than dropping them. */
+					dbgprintf("renamehost: %s already moved, flushing its cached updates under %s\n",
+						  oldhostdir, safenew);
+					rrdcache_rename_host(safeold, safenew);
+				}
+
+				/* The flush's freshness must reach the index file before it
+				 * moves - _now bypasses the timestamp-only throttle that
+				 * would otherwise skip it (the in-memory tree holding the
+				 * newer timestamps is dropped below). */
+				fsidx_flush_now(rrddir, safeold);
+				note_hostdrop(safeold);
+				flush_aggds_store(safeold);	/* repopulates under the new name */
+
+				/*
+				 * A rename that fails must not be reported to the locator as a
+				 * move. ENOENT with the destination present is the exception:
+				 * the peer worker got there first, so the end state is the one
+				 * we wanted and the locator should still be told. Anything else
+				 * -- ENOTEMPTY, EACCES -- leaves both directories in place, and
+				 * telling the locator the host moved would send lookups to a
+				 * host that is not there.
+				 */
+				renamed = (rename(oldhostdir, newhostdir) == 0);
+				if (!renamed) {
+					if ((errno == ENOENT) && (stat(newhostdir, &st) == 0)) {
+						renamed = 1;
+					}
+					else {
+						errprintf("Could not rename %s to %s: %s\n",
+							  oldhostdir, newhostdir, strerror(errno));
+					}
+				}
+
+				if (renamed && net_worker_locatorbased()) locator_rename_host(safeold, safenew, ST_RRD);
+			}
 
 			MEMUNDEFINE(newhostdir);
 			MEMUNDEFINE(oldhostdir);
@@ -589,6 +673,9 @@ int main(int argc, char *argv[])
 	unlink(ctlsockaddr.sun_path);
 
 	sendmessage_finish_local();
+
+	/* Release the RRD-definition tables (clean valgrind exit) */
+	rrd_destroy();
 
 	return 0;
 }

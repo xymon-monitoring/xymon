@@ -15,12 +15,12 @@ procs-columns. It also feeds Xymon data messages with the netstat-
 and vmstat-data collected by the client.
 
 When generating these status messages from the client data, xymond_client
-will use the configuration rules defined in the 
+will use the configuration rules defined in the
 .I analysis.cfg(5)
 file to determine the color of each status message.
 
 .SH OPTIONS
-.IP "\-\-clear\-color=COLOR"
+.IP "\fB\-\-clear\-color\fR=\fICOLOR\fR"
 Define the color used when sending "msgs", "files" or "ports" reports
 and there are no rules to check for these statuses. The default is
 to show a "clear" status, but some people prefer to have it "green".
@@ -28,68 +28,68 @@ If you would rather prefer not to see these status columns at all, then
 you can use the "\-\-no\-clear\-msgs", "\-\-no\-clear\-files" and "\-\-no\-clear\-ports"
 options instead.
 
-.IP "\-\-no\-clear\-msgs"
+.IP "\fB\-\-no\-clear\-msgs\fR"
 If there are no logfile checks, the "msgs" column will show a "clear"
 status. If you would rather avoid having a "msgs" column, this option
 causes xymond_client to not send in a clear "msgs" status.
 
-.IP "\-\-no\-clear\-files"
+.IP "\fB\-\-no\-clear\-files\fR"
 If there are no file checks, the "files" column will show a "clear"
 status. If you would rather avoid having a "files" column, this option
 causes xymond_client to not send in a clear "files" status.
 
-.IP "\-\-no\-clear\-ports"
+.IP "\fB\-\-no\-clear\-ports\fR"
 If there are no port checks, the "ports" column will show a "clear"
 status. If you would rather avoid having a "ports" column, this option
 causes xymond_client to not send in a clear "ports" status.
 
-.IP "\-\-no\-ps\-listing"
+.IP "\fB\-\-no\-ps\-listing\fR"
 Normally the "procs" status message includes the full process-listing
 received from the client. If you prefer to just have the monitored
 processes shown, this option will turn off the full ps-listing.
 
-.IP "\-\-no\-port\-listing"
+.IP "\fB\-\-no\-port\-listing\fR"
 Normally the "ports" status message includes the full netstat-listing
 received from the client. If you prefer to just have the monitored
 ports shown, this option will turn off the full netstat-listing.
 
-.IP "\-\-no\-cpu\-listing"
+.IP "\fB\-\-no\-cpu\-listing\fR"
 Normally the "cpu" status message includes the full cpu-listing
 received from the client. If you prefer to just have the monitored
 cpu load shown, this option will turn off the full cpu-listing.
 
-.IP "\-\-uptime\-status"
-Generate a separate "uptime" status column. The uptime is normally 
+.IP "\fB\-\-uptime\-status\fR"
+Generate a separate "uptime" status column. The uptime is normally
 just reported in the "cpu" status column, but if you would like a
-separate status column for the uptime, you can use this option. It 
-is useful if you want to generate an alert in case of a reboot, 
+separate status column for the uptime, you can use this option. It
+is useful if you want to generate an alert in case of a reboot,
 without having this alert mixed in with the cpu load alerts.
 
-.IP "\-\-config=FILENAME"
-Sets the filename for the 
+.IP "\fB\-\-config\fR=\fIFILENAME\fR"
+Sets the filename for the
 .I analysis.cfg
 file. The default value is "etc/analysis.cfg" below the Xymon
 server directory.
 
-.IP "\-\-unknownclientosok"
+.IP "\fB\-\-unknownclientosok\fR"
 Expect and attempt to parse clients with unknown CLIENTOS types.
 Useful if you're submitting custom host responses with file or msgs
 data that you'd like to parse.
 
-.IP "\-\-dump\-config"
+.IP "\fB\-\-dump\-config\fR"
 Dumps the configuration after parsing it. May be useful to track
 down problems with configuration file errors.
 
-.IP "\-\-test"
+.IP "\fB\-\-test\fR"
 Starts an interactive session where you can test the analysis.cfg
 configuration.
 
-.IP "\-\-collectors=COLLECTOR1[,COLLECTOR2,...]
+.IP "\fB\-\-collectors\fR=\fICOLLECTOR1\fR[,\fICOLLECTOR2\fR,...]"
 Limit the set of collector modules that xymond_client will handle. This
 is not normally used except for running experimental versions of the
 program.
 
-.IP "\-\-debug"
+.IP "\fB\-\-debug\fR"
 Enable debugging output.
 
 .SH FILES

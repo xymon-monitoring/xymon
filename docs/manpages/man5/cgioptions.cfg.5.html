@@ -1,177 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>CGIOPTIONS.CFG(5)</title>
+</head>
+<body>
+<h1 class="head-name">CGIOPTIONS.CFG</h1>
+Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of CGIOPTIONS.CFG</TITLE>
-</HEAD><BODY>
-<H1>CGIOPTIONS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">cgioptions.cfg - Command-line parameters for the Xymon CGI
+  tools</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>$XYMONHOME/etc/cgioptions.cfg</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><i>cgioptions.cfg(1)</i> controls the command-line options passed
+    to all of the Xymon CGI tools through their respective shell-script
+    wrappers. Typically the options listed here are used for system-wide
+    configuration of the CGI utilities, e.g. to define where they read
+    configuration files.</p>
+<p class="Pp">The exact set of command-line options available are described in
+    the man-page for each of the CGI utilities.</p>
+<p class="Pp">The file is &quot;sourced&quot; into the shell script wrapper, so
+    assignments to the CGI-specific variables must follow standard shell-script
+    syntax.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SETTINGS"><a class="permalink" href="#SETTINGS">SETTINGS</a></h1>
+<dl class="Bl-tag">
+  <dt id="CGI_ACKINFO_OPTS"><a class="permalink" href="#CGI_ACKINFO_OPTS"><b>CGI_ACKINFO_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/ackinfo.cgi.1.html">ackinfo.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_ACK_OPTS"><a class="permalink" href="#CGI_ACK_OPTS"><b>CGI_ACK_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/acknowledge.cgi.1.html">acknowledge.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_CSVINFO_OPTS"><a class="permalink" href="#CGI_CSVINFO_OPTS"><b>CGI_CSVINFO_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/csvinfo.cgi.1.html">csvinfo.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_DATEPAGE_OPTS"><a class="permalink" href="#CGI_DATEPAGE_OPTS"><b>CGI_DATEPAGE_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/datepage.cgi.1.html">datepage.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_ENADIS_OPTS"><a class="permalink" href="#CGI_ENADIS_OPTS"><b>CGI_ENADIS_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man8/enadis.cgi.8.html">enadis.cgi</a>(8)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_EVENTLOG_OPTS"><a class="permalink" href="#CGI_EVENTLOG_OPTS"><b>CGI_EVENTLOG_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/eventlog.cgi.1.html">eventlog.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_FINDHOST_OPTS"><a class="permalink" href="#CGI_FINDHOST_OPTS"><b>CGI_FINDHOST_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/findhost.cgi.1.html">findhost.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_HIST_OPTS"><a class="permalink" href="#CGI_HIST_OPTS"><b>CGI_HIST_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/history.cgi.1.html">history.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_COLUMNDOC_OPTS"><a class="permalink" href="#CGI_COLUMNDOC_OPTS"><b>CGI_COLUMNDOC_OPTS</b></a></dt>
+  <dd>Xymon-specific options for column documentation. This uses the
+      <i><a href="../man1/csvinfo.cgi.1.html">csvinfo.cgi</a>(1)</i> utility with the <b>server/etc/columndoc.cfg</b>
+      configuration file.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_CONFREPORT_OPTS"><a class="permalink" href="#CGI_CONFREPORT_OPTS"><b>CGI_CONFREPORT_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/confreport.cgi.1.html">confreport.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_SHOWGRAPH_OPTS"><a class="permalink" href="#CGI_SHOWGRAPH_OPTS"><b>CGI_SHOWGRAPH_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/showgraph.cgi.1.html">showgraph.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_HOSTGRAPHS_OPTS"><a class="permalink" href="#CGI_HOSTGRAPHS_OPTS"><b>CGI_HOSTGRAPHS_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/hostgraphs.cgi.1.html">hostgraphs.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_CRITEDIT_OPTS"><a class="permalink" href="#CGI_CRITEDIT_OPTS"><b>CGI_CRITEDIT_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_CRITVIEW_OPTS"><a class="permalink" href="#CGI_CRITVIEW_OPTS"><b>CGI_CRITVIEW_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/criticalview.cgi.1.html">criticalview.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_REPLOG_OPTS"><a class="permalink" href="#CGI_REPLOG_OPTS"><b>CGI_REPLOG_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/reportlog.cgi.1.html">reportlog.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_REP_OPTS"><a class="permalink" href="#CGI_REP_OPTS"><b>CGI_REP_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/report.cgi.1.html">report.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_SNAPSHOT_OPTS"><a class="permalink" href="#CGI_SNAPSHOT_OPTS"><b>CGI_SNAPSHOT_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/snapshot.cgi.1.html">snapshot.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_SVCHIST_OPTS"><a class="permalink" href="#CGI_SVCHIST_OPTS"><b>CGI_SVCHIST_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1)</i> utility when used to view
+      historical logs. Note that the &quot;--historical&quot; option must be
+      included in this setting.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="CGI_SVC_OPTS"><a class="permalink" href="#CGI_SVC_OPTS"><b>CGI_SVC_OPTS</b></a></dt>
+  <dd>Options for the <i><a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1)</i> utility.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man7/xymon.7.html">xymon</a>(7), the individual CGI utility man-pages.</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#SETTINGS">SETTINGS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-cgioptions.cfg - Command-line parameters for the Xymon CGI tools
-<P>
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>$XYMONHOME/etc/cgioptions.cfg</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<I><A HREF="../man1/cgioptions.cfg.1.html">cgioptions.cfg</A>(1)</I>
-
-controls the command-line options passed to all of the Xymon CGI tools
-through their respective shell-script wrappers. Typically the options
-listed here are used for system-wide configuration of the CGI utilities,
-e.g. to define where they read configuration files.
-<P>
-The exact set of command-line options available are described in the
-man-page for each of the CGI utilities.
-<P>
-The file is &quot;sourced&quot; into the shell script wrapper, so assignments to
-the CGI-specific variables must follow standard shell-script syntax.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>SETTINGS</H2>
-
-<DL COMPACT>
-<DT>CGI_ACKINFO_OPTS<DD>
-Options for the
-<I><A HREF="../man1/ackinfo.cgi.1.html">ackinfo.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_ACK_OPTS<DD>
-Options for the
-<I><A HREF="../man1/acknowledge.cgi.1.html">acknowledge.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_CSVINFO_OPTS<DD>
-Options for the
-<I><A HREF="../man1/csvinfo.cgi.1.html">csvinfo.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_DATEPAGE_OPTS<DD>
-Options for the
-<I><A HREF="../man1/datepage.cgi.1.html">datepage.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_ENADIS_OPTS<DD>
-Options for the
-<I><A HREF="../man8/enadis.cgi.8.html">enadis.cgi</A>(8)</I>
-
-utility.
-<P>
-<DT>CGI_EVENTLOG_OPTS<DD>
-Options for the
-<I><A HREF="../man1/eventlog.cgi.1.html">eventlog.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_FINDHOST_OPTS<DD>
-Options for the
-<I><A HREF="../man1/findhost.cgi.1.html">findhost.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_HIST_OPTS<DD>
-Options for the
-<I><A HREF="../man1/history.cgi.1.html">history.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_COLUMNDOC_OPTS<DD>
-Xymon-specific options for column documentation. This uses the
-<I><A HREF="../man1/csvinfo.cgi.1.html">csvinfo.cgi</A>(1)</I>
-
-utility with the <B>server/etc/columndoc.cfg</B> configuration file.
-<P>
-<DT>CGI_CONFREPORT_OPTS<DD>
-Options for the
-<I><A HREF="../man1/confreport.cgi.1.html">confreport.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_SHOWGRAPH_OPTS<DD>
-Options for the
-<I><A HREF="../man1/showgraph.cgi.1.html">showgraph.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_HOSTGRAPHS_OPTS<DD>
-Options for the
-<I><A HREF="../man1/hostgraphs.cgi.1.html">hostgraphs.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_CRITEDIT_OPTS<DD>
-Options for the
-<I><A HREF="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_CRITVIEW_OPTS<DD>
-Options for the
-<I><A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_REPLOG_OPTS<DD>
-Options for the
-<I><A HREF="../man1/reportlog.cgi.1.html">reportlog.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_REP_OPTS<DD>
-Options for the
-<I><A HREF="../man1/report.cgi.1.html">report.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_SNAPSHOT_OPTS<DD>
-Options for the
-<I><A HREF="../man1/snapshot.cgi.1.html">snapshot.cgi</A>(1)</I>
-
-utility.
-<P>
-<DT>CGI_SVCHIST_OPTS<DD>
-Options for the
-<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
-
-utility when used to view historical logs. Note that the
-&quot;--historical&quot; option must be included in this setting.
-<P>
-<DT>CGI_SVC_OPTS<DD>
-Options for the
-<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
-
-utility.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man7/xymon.7.html">xymon</A>(7), the individual CGI utility man-pages.
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">SETTINGS</A><DD>
-<DT><A HREF="#lbAF">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

@@ -164,15 +164,15 @@ char *commafy(char *hostname)
 
 	if (s == NULL) {
 		SBUF_MALLOC(s, strlen(hostname)+1);
-		strncpy(s, hostname, s_buflen);
+		snprintf(s, s_buflen, "%s", hostname);
 	}
 	else if (strlen(hostname) > strlen(s)) {
 		xfree(s);
 		SBUF_MALLOC(s, strlen(hostname)+1);
-		strncpy(s, hostname, s_buflen);
+		snprintf(s, s_buflen, "%s", hostname);
 	}
 	else {
-		strncpy(s, hostname, s_buflen);
+		snprintf(s, s_buflen, "%s", hostname);
 	}
 
 	for (p = strchr(s, '.'); (p); p = strchr(s, '.')) *p = ',';
@@ -745,5 +745,48 @@ int chkfreespace(char *path, int minblks, int mininodes)
 	if ((avlblk >= minblks) && (avlnod >= mininodes)) return 0;
 
 	return 1;
+}
+
+/*
+ * Parse the value of a numeric "--option=N" argument. The value must be a
+ * plain integer: strtol (not atoi) so overflow is not undefined behaviour,
+ * and any trailing non-digit is rejected rather than silently ignored, so
+ * a wrong-unit typo like "--minimum-free=10%" or "--recent-period=90min"
+ * is caught instead of quietly parsed as 10 / 90. A rejected value falls
+ * back to 'dflt' with a message. Out-of-range integers are clamped to the
+ * nearest bound, not rejected: with atoi they passed through to checks
+ * that treated them like the bound (e.g. a negative threshold behaved as
+ * "disabled" = 0), so clamping keeps deployed setups working where a
+ * fallback to the default would change behavior.
+ *
+ * 'arg' must contain '=' (it is matched with a trailing '=' by every
+ * caller); the value is everything after the first '='.
+ */
+int parse_int_opt(char *arg, int minval, int maxval, int dflt)
+{
+	char *eq = strchr(arg, '=');
+	char *p, *ep;
+	long v;
+
+	if (eq == NULL) {
+		errprintf("%s has no '=' value, using default %d\n", arg, dflt);
+		return dflt;
+	}
+	p = eq + 1;
+	v = strtol(p, &ep, 10);
+
+	if ((ep == p) || (*ep)) {
+		errprintf("%s is not a plain integer, using default %d\n", arg, dflt);
+		return dflt;
+	}
+	if (v < minval) {
+		errprintf("%s is below %d, using %d\n", arg, minval, minval);
+		return minval;
+	}
+	if (v > maxval) {
+		errprintf("%s is too large, capping at %d\n", arg, maxval);
+		return maxval;
+	}
+	return (int)v;
 }
 

@@ -1,81 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMOND_HOSTDATA(8)</title>
+</head>
+<body>
+<h1 class="head-name">XYMOND_HOSTDATA</h1>
+Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of XYMOND_HOSTDATA</TITLE>
-</HEAD><BODY>
-<H1>XYMOND_HOSTDATA</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymond_hostdata - xymond worker module for storing historical
+    client data</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymond_channel --channel=clichg xymond_hostdata</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">xymond_hostdata is a worker module for xymond, and as such it is
+    normally run via the <i><a href="../man8/xymond_channel.8.html">xymond_channel</a>(8)</i> program. Whenever a status
+    column in Xymon changes to an alert state (usually red, yellow or purple),
+    this module receives a copy of the latest Xymon client data sent by the
+    host, and stores it on disk. This allows you to review all of the data
+    collected by the Xymon client on the server around the time that a problem
+    occurred. This can make troubleshooting incidents easier by providing a
+    snapshot of the host status shortly before a problem became apparent.</p>
+<p class="Pp">Note: This module requires that <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> is launched with
+    the &quot;--store-clientlogs&quot; option enabled.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="recent-period"><a class="permalink" href="#recent-period"><b>--recent-period</b>=<i>N</i></a></dt>
+  <dd>Sets the length of the save-throttling window, in <b>minutes</b>. Client
+      data for a host is saved at most --recent-count times within this window;
+      further messages are dropped. A value of 0 disables the throttle, so all
+      client data is saved. The value must be a plain integer number of minutes;
+      anything else falls back to the default. Negative values are clamped to 0.
+      Default: 60
+    <p class="Pp"></p>
+  </dd>
+  <dt id="recent-count"><a class="permalink" href="#recent-count"><b>--recent-count</b>=<i>N</i></a></dt>
+  <dd>Sets how many times a host's client data may be saved within the
+      --recent-period window. A value of 0 disables saving entirely. The value
+      must be a plain integer; anything else falls back to the default. Negative
+      values are clamped to 0 and values above 10000 to 10000. Default: 5
+    <p class="Pp"></p>
+  </dd>
+  <dt id="minimum-free"><a class="permalink" href="#minimum-free"><b>--minimum-free</b>=<i>N</i></a></dt>
+  <dd>Sets the minimum percentage of free filesystem space on the $CLIENTLOGS
+      directory. If there is less than N% free space, xymond_hostdata will not
+      save the data. N is a percentage between 0 and 100; 0 disables the
+      free-space check. The value must be a plain integer; anything else
+      (including a &quot;%&quot; suffix) falls back to the default. Out-of-range
+      values are clamped. Default: 5
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enable debugging output.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<p class="Pp">All of the host data are stored in the $CLIENTLOGS directory, by
+    default this is the $XYMONVAR/hostdata/ directory.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man8/xymond_channel.8.html">xymond_channel</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-xymond_hostdata - xymond worker module for storing historical client data
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>xymond_channel --channel=clichg xymond_hostdata</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-xymond_hostdata is a worker module for xymond, and as such it is normally
-run via the
-<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
-
-program. Whenever a status column in Xymon changes to an alert
-state (usually red, yellow or purple), this module receives a copy
-of the latest Xymon client data sent by the host, and stores it on
-disk. This allows you to review all of the data collected by the
-Xymon client on the server around the time that a problem occurred.
-This can make troubleshooting incidents easier by providing a snapshot
-of the host status shortly before a problem became apparent.
-<P>
-Note: This module requires that
-<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
-
-is launched with the &quot;--store-clientlogs&quot; option enabled.
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--minimum-free=N<DD>
-Sets the minimum percentage of free filesystem space on the $CLIENTLOGS
-directory. If there is less than N% free space, xymond_hostdata will
-not save the data.
-Default: 5
-<P>
-<DT>--debug<DD>
-Enable debugging output.
-<P>
-</DL>
-<A NAME="lbAF">&nbsp;</A>
-<H2>FILES</H2>
-
-All of the host data are stored in the $CLIENTLOGS directory,
-by default this is the $XYMONVAR/hostdata/ directory.
-<P>
-<A NAME="lbAG">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">FILES</A><DD>
-<DT><A HREF="#lbAG">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

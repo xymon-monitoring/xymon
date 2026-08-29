@@ -17,7 +17,7 @@ ROOT=$(find_root)
 
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
-command -v make >/dev/null 2>&1 || skip "make not available"
+require_gnu_make
 
 # Needs a configured/built tree (bare-tree CI skips; the post-build suite
 # runs it for real) and one built WITH RRD support.
@@ -28,9 +28,13 @@ command -v make >/dev/null 2>&1 || skip "make not available"
 # RRD and SSL build flags as configure detected them (SSLLIBS is empty
 # on a tree built without SSL - don't force -lssl on such a link)
 rrddef=$(sed -n 's/^RRDDEF *= *//p' "$ROOT/Makefile")
+# Where <rrd.h> lives, as configure found it: nothing on Linux, but
+# -I/usr/local/include or -I/opt/homebrew/include on the BSDs and macOS. The
+# product Makefiles pass it for every RRD-using object; without it this test
+# fails to compile on a host that builds Xymon perfectly well.
+rrdinc=$(sed -n 's/^RRDINCDIR *= *//p' "$ROOT/Makefile")
 rrdlibs=$(sed -n 's/^RRDLIBS *= *//p' "$ROOT/Makefile")
 [ -n "$rrdlibs" ] || rrdlibs="-lrrd"
-ssllibs=$(sed -n 's/^SSLLIBS *= *//p' "$ROOT/Makefile")
 
 pcre_libs=${PCRELIBS:-}
 if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
@@ -41,13 +45,14 @@ fi
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-showgraph.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
-[ -w "$ROOT/lib" ] || skip "source tree not writable (cannot refresh libxymoncomm.a)"
-make -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
+"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
 
-"$CC" -I"$ROOT/include" -I"$ROOT/lib" $rrddef -o "$work/showgraph" \
+harness_cflags=$(xymon_cflags "$ROOT")
+harness_ldflags=$(xymon_ldflags "$ROOT")
+"$CC" $harness_cflags $rrddef $rrdinc -o "$work/showgraph" \
 	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
-	$pcre_libs $rrdlibs $ssllibs 2>"$work/cc.log" \
+	$pcre_libs $rrdlibs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }
 
 # Fake RRD directory; selection is by filename, empty stubs suffice

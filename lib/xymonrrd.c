@@ -429,30 +429,23 @@ int xymon_gdef_fileset_count(char *hostname, char *name)
 	}
 }
 
+/* The TCP service list the tables were built from - lifecycle state shared
+ * by rrd_setup() (rebuild-if-changed) and rrd_destroy() (final release). */
+static char *builtfrom = NULL;
 
 /*
- * Define the mapping between Xymon columns and RRD graphs.
- * Normally they are identical, but some RRD's use different names.
+ * Free the RRD-definition tables built by rrd_setup().
+ * Mainly so daemons can release them on shutdown (clean valgrind exit).
  */
-static void rrd_setup(void)
+void rrd_destroy(void)
 {
-	static time_t setup_done = 0;
-	SBUF_DEFINE(lenv);
-	char *ldef, *p, *services;
-	SBUF_DEFINE(tcptests);
-	int count;
 	xymonrrd_t *lrec;
 	xymongraph_t *grec;
-	tc_test_t *tclist, *tc;
 
+	if (builtfrom) { xfree(builtfrom); builtfrom = NULL; }
 
-	/* Do nothing if we have been called within the past 5 minutes */
-	if ((setup_done + 300) >= getcurrenttime(NULL)) return;
-
-
-	/* 
-	 * Must free any old data first.
-	 * NB: These lists are NOT null-terminated ! 
+	/*
+	 * NB: These lists are NOT null-terminated !
 	 *     Stop when svcname becomes a NULL.
 	 */
 	lrec = xymonrrds;
@@ -465,6 +458,8 @@ static void rrd_setup(void)
 		xfree(xymonrrds);
 		xtreeDestroy(xymonrrdtree);
 	}
+	xymonrrds = NULL;
+	xymonrrdtree = NULL;
 
 	grec = xymongraphs;
 	while (grec && grec->xymonrrdname) {
@@ -473,14 +468,49 @@ static void rrd_setup(void)
 		grec++;
 	}
 	if (xymongraphs) xfree(xymongraphs);
+	xymongraphs = NULL;
+}
 
+
+/*
+ * Define the mapping between Xymon columns and RRD graphs.
+ * Normally they are identical, but some RRD's use different names.
+ */
+static void rrd_setup(void)
+{
+	SBUF_DEFINE(lenv);
+	char *ldef, *p, *services;
+	SBUF_DEFINE(tcptests);
+	int count;
+	xymonrrd_t *lrec;
+	xymongraph_t *grec;
+	tc_test_t *tclist, *tc;
+	static time_t lastcheck = 0;
+
+
+	/*
+	 * TEST2RRD and GRAPHS are fixed at process start, but init_tcp_services()
+	 * reloads protocols.cfg whenever it is modified - so the tables are NOT
+	 * fixed for the life of the process and cannot simply be built once, or a
+	 * TCP service added at runtime would never enter them. Throttle the check
+	 * to once every 5 minutes (as the original timer did), then rebuild only
+	 * when the service list actually changed, releasing the old tables first.
+	 */
+	if (xymonrrdtree != NULL && (lastcheck + 300 >= getcurrenttime(NULL))) return;
+	lastcheck = getcurrenttime(NULL);
 
 	/* Get the tcp services, and count how many there are */
 	services = strdup(init_tcp_services());
+	if (xymonrrdtree != NULL && builtfrom && (strcmp(builtfrom, services) == 0)) {
+		xfree(services);
+		return;
+	}
+	rrd_destroy();	/* also releases builtfrom */
+	builtfrom = strdup(services);
 	SBUF_MALLOC(tcptests, strlen(services)+1);
-	strncpy(tcptests, services, tcptests_buflen);
+	snprintf(tcptests, tcptests_buflen, "%s", services);
 	count = 0; p = strtok(tcptests, " "); while (p) { count++; p = strtok(NULL, " "); }
-	strncpy(tcptests, services, tcptests_buflen);
+	snprintf(tcptests, tcptests_buflen, "%s", services);
 
 	/* Setup the xymonrrds table, mapping test-names to RRD files */
 	SBUF_MALLOC(lenv, strlen(xgetenv("TEST2RRD")) + strlen(tcptests) + count*strlen(",=tcp") + 1);
@@ -499,9 +529,9 @@ static void rrd_setup(void)
 	 * present in TEST2RRD - they are overlaid after the env fill below. */
 	tclist = testcfg_load();
 	/* Count entries without ever reading past lenv: on an EMPTY list
-	 * (test.cfg-era configs may clear TEST2RRD/GRAPHS) the old
+	 * (test.cfg-era configs may clear TEST2RRD/GRAPHS) the unguarded
 	 * strchr(lenv+1, ...) idiom read beyond a one-byte allocation. */
-	count = (*lenv != '\0'); for (p = strchr(lenv, ','); (p); p = strchr(p+1, ',')) count++;
+	count = 0; if (*lenv) { p = lenv; do { count++; p = strchr(p+1, ','); } while (p); }
 	for (tc = tclist; (tc); tc = tc->next) count += (testcfg_rrdname(tc) != NULL);
 	xymonrrds = (xymonrrd_t *)calloc((count+1), sizeof(xymonrrd_t));
 
@@ -566,9 +596,9 @@ static void rrd_setup(void)
 	lenv = strdup(xgetenv("GRAPHS"));
 	if (*lenv) { p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0'; }	/* Drop a trailing comma */
 	/* Count entries without ever reading past lenv: on an EMPTY list
-	 * (test.cfg-era configs may clear TEST2RRD/GRAPHS) the old
+	 * (test.cfg-era configs may clear TEST2RRD/GRAPHS) the unguarded
 	 * strchr(lenv+1, ...) idiom read beyond a one-byte allocation. */
-	count = (*lenv != '\0'); for (p = strchr(lenv, ','); (p); p = strchr(p+1, ',')) count++;
+	count = 0; if (*lenv) { p = lenv; do { count++; p = strchr(p+1, ','); } while (p); }
 	{
 		gdefmeta_t *meta;
 		for (meta = gdefmetahead; (meta); meta = meta->next) count += (meta->trends != 0);
@@ -585,7 +615,7 @@ static void rrd_setup(void)
 			p = strchr(grec->xymonpartname, ':');
 			if (p) {
 				*p = '\0';
-				grec->maxgraphs = atoi(p+1);
+				grec->maxinstancesperimage = atoi(p+1);
 				if (strlen(grec->xymonpartname) == 0) {
 					xfree(grec->xymonpartname);
 					grec->xymonpartname = NULL;
@@ -619,10 +649,9 @@ static void rrd_setup(void)
 	 * the split size belongs with the graph, not in a second file. */
 	for (grec = xymongraphs; (grec->xymonrrdname); grec++) {
 		int maxinstancesperimage = xymon_gdef_maxinstancesperimage(grec->xymonrrdname);
-		if (maxinstancesperimage > 0) grec->maxgraphs = maxinstancesperimage;
+		if (maxinstancesperimage > 0) grec->maxinstancesperimage = maxinstancesperimage;
 	}
 
-	setup_done = getcurrenttime(NULL);
 }
 
 
@@ -696,9 +725,9 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 		gheight = atoi(xgetenv("RRDHEIGHT"));
 	}
 
-	dbgprintf("rrdlink_url: host %s, rrd %s (partname:%s, maxgraphs:%d, count=%d)\n", 
+	dbgprintf("rrdlink_url: host %s, rrd %s (partname:%s, maxinstancesperimage:%d, count=%d)\n", 
 		hostname, 
-		graphdef->xymonrrdname, textornull(graphdef->xymonpartname), graphdef->maxgraphs, itemcount);
+		graphdef->xymonrrdname, textornull(graphdef->xymonpartname), graphdef->maxinstancesperimage, itemcount);
 
 	if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "tcp") == 0)) {
 		snprintf(rrdservicename, sizeof(rrdservicename), "tcp:%s", service);
@@ -710,7 +739,7 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 		snprintf(rrdservicename, sizeof(rrdservicename), "devmon:%s", service);
 	}
 	else {
-		strncpy(rrdservicename, graphdef->xymonrrdname, sizeof(rrdservicename));
+		snprintf(rrdservicename, sizeof(rrdservicename), "%s", graphdef->xymonrrdname);
 	}
 
 	SBUF_MALLOC(svcurl, 
@@ -742,16 +771,16 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 		 * renders unsliced instead. */
 		if ((itemcount < 0) || (itemcount > 4096)) itemcount = 0;
 
-		step = (graphdef->maxgraphs > 0 ? graphdef->maxgraphs : 5);
+		step = (graphdef->maxinstancesperimage > 0 ? graphdef->maxinstancesperimage : 5);
 		if (itemcount) {
 			/* Spread itemcount instances evenly over the needed number of
 			 * graphs. gcount is the graph count (ceil); the per-graph step
 			 * must round UP too, otherwise a count that gcount does not
-			 * divide leaves every graph under-filled below maxgraphs and
-			 * spawns extra graphs - e.g. 25 items at maxgraphs=2 gives
+			 * divide leaves every graph under-filled below maxinstancesperimage and
+			 * spawns extra graphs - e.g. 25 items at maxinstancesperimage=2 gives
 			 * gcount=13 but a floored step=1, so 25 single-item graphs
 			 * instead of 13. Rounding up yields step=2 (last graph holds
-			 * the remainder), never exceeding maxgraphs. */
+			 * the remainder), never exceeding maxinstancesperimage. */
 			int gcount = (itemcount / step); if ((gcount*step) != itemcount) gcount++;
 			step = ((itemcount + gcount - 1) / gcount);
 		}

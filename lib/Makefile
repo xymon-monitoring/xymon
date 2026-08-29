@@ -35,7 +35,7 @@ all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCO
 client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
 
 test-endianness: test-endianness.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $<
 
 $(XYMONLIB): $(XYMONLIBOBJS)
 	ar cr $(XYMONLIB) $(XYMONLIBOBJS)
@@ -103,28 +103,28 @@ timefunc-client.o: timefunc.c
 	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
 
 loadhosts: loadhosts.c loadhosts_file.c loadhosts_net.c $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c $(XYMONCOMMLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c $(XYMONCOMMLIBS)
 
 stackio: stackio.c libxymon.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c $(XYMONLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ stackio.c $(XYMONLIBS)
 
 availability: availability.c libxymon.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c $(XYMONLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ availability.c $(XYMONLIBS)
 
 md5: md5.c test-endianness
-	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ md5.c
+	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ md5.c
 
 sha1: sha1.c test-endianness
-	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ sha1.c
+	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ sha1.c
 
 rmd160: rmd160c.c test-endianness
-	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ rmd160c.c
+	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ rmd160c.c
 
 locator: locator.c $(XYMONCOMMLIB) $(XYMONLIB)
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ locator.c $(XYMONCOMMLIBS) $(XYMONLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ locator.c $(XYMONCOMMLIBS) $(XYMONLIBS)
 
 tree: tree.c
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ tree.c
+	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ tree.c
 
 clean:
 	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator tree

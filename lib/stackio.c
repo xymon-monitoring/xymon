@@ -204,11 +204,11 @@ FILE *stackfopen(char *filename, char *mode, void **v_listhead)
 
 		stackfd_mode = strdup(mode);
 
-		strncpy(stackfd_filename, filename, sizeof(stackfd_filename));
+		snprintf(stackfd_filename, sizeof(stackfd_filename), "%s", filename);
 	}
 	else {
 		if (*filename == '/')
-			strncpy(stackfd_filename, filename, sizeof(stackfd_filename));
+			snprintf(stackfd_filename, sizeof(stackfd_filename), "%s", filename);
 		else
 			snprintf(stackfd_filename, sizeof(stackfd_filename), "%s/%s", stackfd_base, filename);
 	}
@@ -335,7 +335,10 @@ static void addtofnlist(char *dirname, int is_optional, void **v_listhead)
 	int fnsz = 0;
 	int i;
 
-	if (*dirname == '/') strncpy(dirfn, dirname, sizeof(dirfn)); else snprintf(dirfn, sizeof(dirfn), "%s/%s", stackfd_base, dirname);
+	if (*dirname == '/')
+		snprintf(dirfn, sizeof(dirfn), "%s", dirname);
+	else
+		snprintf(dirfn, sizeof(dirfn), "%s/%s", stackfd_base, dirname);
 
 	if ((dirfd = opendir(dirfn)) == NULL) {
 		if (!is_optional) errprintf("WARNING: Cannot open directory %s\n", dirfn);
@@ -433,7 +436,14 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 		if (strncmp(bufpastwhitespace, "optional", 8) == 0) { optional = 1; bufpastwhitespace += 8 + strspn(bufpastwhitespace+8, " \t"); }
 
 		if ( (strncmp(bufpastwhitespace, "include ", 8) == 0) || (strncmp(bufpastwhitespace, "include\t", 8) == 0) ||
-		     (extraincl && (strncmp(bufpastwhitespace, extraincl, strlen(extraincl)) == 0)) ) {
+		     /* "source FILE" and ". FILE" are accepted as aliases for "include",
+		        so a shell-syntax config file (e.g. xymonserver.cfg) can use the
+		        shell's own include directives and still be followed by xymon.
+		        Note: there is no shell equivalent for the "directory" directive. */
+		     (strncmp(bufpastwhitespace, "source ", 7) == 0) || (strncmp(bufpastwhitespace, "source\t", 7) == 0) ||
+		     (strncmp(bufpastwhitespace, ". ", 2) == 0) || (strncmp(bufpastwhitespace, ".\t", 2) == 0) ||
+		     (extraincl && (strncmp(bufpastwhitespace, extraincl, strlen(extraincl)) == 0) &&
+		      ((*(bufpastwhitespace+strlen(extraincl)) == ' ') || (*(bufpastwhitespace+strlen(extraincl)) == '\t'))) ) {
 			char *newfn, *eol, eolchar = '\0';
 
 			eol = bufpastwhitespace + strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }

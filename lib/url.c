@@ -571,6 +571,7 @@ char *decode_url(char *testspec, weburl_t *weburl)
 	  case WEBTEST_POST:
 	  case WEBTEST_NOPOST:
 	  case WEBTEST_SOAP:
+	  case WEBTEST_NOSOAP:
 		  poststart = strchr(urlstart, ';');
 		  if (poststart) {
 			  *poststart = '\0';

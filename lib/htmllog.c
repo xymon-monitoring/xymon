@@ -713,14 +713,14 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 					 * (a prefix-matched table entry would rewrite it to its
 					 * base name) and leaves the shared table unwritten - the
 					 * legacy strdup() into it leaked and corrupted later
-					 * lookups. maxgraphs: the entry's own GRAPHS record, else
+					 * lookups. maxinstancesperimage: the entry's own GRAPHS record, else
 					 * the service's default graph.
 					 */
 					owngdef = find_xymon_graph(graphsptr);
 					memset(&localgraph, 0, sizeof(localgraph));
 					localgraph.xymonrrdname = graphsptr;
-					if (!owngdef) localgraph.maxgraphs = xymon_gdef_maxinstancesperimage(graphsptr);
-					if (localgraph.maxgraphs == 0) localgraph.maxgraphs = (owngdef ? owngdef->maxgraphs : (graph ? graph->maxgraphs : 0));
+					if (!owngdef) localgraph.maxinstancesperimage = xymon_gdef_maxinstancesperimage(graphsptr);
+					if (localgraph.maxinstancesperimage == 0) localgraph.maxinstancesperimage = (owngdef ? owngdef->maxinstancesperimage : (graph ? graph->maxinstancesperimage : 0));
 					/* A store-filtered graph's file set is not
 					 * derivable from the message - the writer-kept
 					 * fileset index knows it exactly (FNPATTERN-
@@ -784,7 +784,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 					owngdef = find_xymon_graph(mwalk->name);
 					memset(&localgraph, 0, sizeof(localgraph));
 					localgraph.xymonrrdname = mwalk->name;
-					localgraph.maxgraphs = (owngdef ? owngdef->maxgraphs : xymon_gdef_maxinstancesperimage(mwalk->name));
+					localgraph.maxinstancesperimage = (owngdef ? owngdef->maxinstancesperimage : xymon_gdef_maxinstancesperimage(mwalk->name));
 					/* When the fileset is not derivable from the
 					 * message (store filters), the writer-kept
 					 * fileset index knows it exactly - only without

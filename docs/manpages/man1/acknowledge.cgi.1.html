@@ -1,127 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>ACKNOWLEDGE.CGI(1)</title>
+</head>
+<body>
+<h1 class="head-name">ACKNOWLEDGE.CGI</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
 
-<HTML><HEAD><TITLE>Manpage of ACKNOWLEDGE.CGI</TITLE>
-</HEAD><BODY>
-<H1>ACKNOWLEDGE.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.30:  4 Sep 2019<BR><A HREF="#index">Index</A>
-<A HREF="../index.html">Return to Main Contents</A><HR>
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">acknowledge.cgi - Xymon CGI script to acknowledge alerts</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>acknowledge.cgi?ACTION=action&amp;NUMBER=acknum&amp;DELAY=validity&amp;MESSAGE=text</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp"><b>acknowledge.cgi</b> is invoked as a CGI script via the
+    acknowledge.sh CGI wrapper.</p>
+<p class="Pp">acknowledge.cgi is passed a QUERY_STRING environment variable with
+    the ACTION, NUMBER, DELAY and MESSAGE parameters.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="PARAMETERS"><a class="permalink" href="#PARAMETERS">PARAMETERS</a></h1>
+<p class="Pp">ACTION is the action to perform. The only supported action is
+    &quot;Ack&quot; to acknowledge an alert.</p>
+<p class="Pp">NUMBER is the number identifying the host/service to be
+    acknowledged. It is included in all alert-messages sent out by Xymon.</p>
+<p class="Pp">DELAY is the time (in minutes) that the acknowledge is valid.</p>
+<p class="Pp">MESSAGE is an optional text which will be shown on the status page
+    while the acknowledgment is active. You can use it to e.g. tell users not to
+    contact you about the problem, or inform them when the problem is expected
+    to be resolved.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="no-pin"><a class="permalink" href="#no-pin"><b>--no-pin</b></a></dt>
+  <dd>acknowledge.cgi normally requires the user to enter the acknowledgment
+      code received in an alert message. If you run it with this option, the
+      user will instead get a list of the current non-green statuses, and he may
+      send an acknowledge without knowing the code.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-cookies"><a class="permalink" href="#no-cookies"><b>--no-cookies</b></a></dt>
+  <dd>Normally, acknowledge.cgi uses a cookie sent by the browser to initially
+      filter the list of hosts presented. If this is not desired, you can turn
+      off this behaviour by calling acknowledge.cgi with the --no-cookies
+      option. This would normally be placed in the CGI_ACK_OPTS setting in
+      <i><a href="../man5/cgioptions.cfg.5.html">cgioptions.cfg</a>(5)</i>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="env"><a class="permalink" href="#env"><b>--env</b>=<i>FILENAME</i></a></dt>
+  <dd>Loads the environment defined in FILENAME before executing the CGI script.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Enables debugging output.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><b>$XYMONHOME/web/acknowledge_header</b></dt>
+  <dd>HTML header file for the generated web page
+    <p class="Pp"></p>
+  </dd>
+  <dt><b>$XYMONHOME/web/acknowledge_footer</b></dt>
+  <dd>HTML footer file for the generated web page
+    <p class="Pp"></p>
+  </dd>
+  <dt><b>$XYMONHOME/web/acknowledge_form</b></dt>
+  <dd>Query form displayed when acknowledge.cgi is called with no parameters.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ENVIRONMENT_VARIABLES"><a class="permalink" href="#ENVIRONMENT_VARIABLES">ENVIRONMENT
+  VARIABLES</a></h1>
+<dl class="Bl-tag">
+  <dt id="XYMONHOME"><a class="permalink" href="#XYMONHOME"><b>XYMONHOME</b></a></dt>
+  <dd>Used to locate the template files for the generated web pages.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="QUERY_STRING"><a class="permalink" href="#QUERY_STRING"><b>QUERY_STRING</b></a></dt>
+  <dd>Contains the parameters for the CGI script.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="BUGS"><a class="permalink" href="#BUGS">BUGS</a></h1>
+<p class="Pp">When using alternate pagesets, hosts will only show up on the
+    acknowledgment page if this is accessed from the primary page in which they
+    are defined. So if you have hosts on multiple pages, they will only be
+    visible for acknowledging from their main page which is not what you would
+    expect.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/xymongen.1.html">xymongen</a>(1), <a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</p>
+<p class="Pp"></p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#PARAMETERS">PARAMETERS</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#ENVIRONMENT_VARIABLES">ENVIRONMENT VARIABLES</a></dt>
+<dt><a href="#BUGS">BUGS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
 
-<A NAME="lbAB">&nbsp;</A>
-<H2>NAME</H2>
-
-acknowledge.cgi - Xymon CGI script to acknowledge alerts
-<A NAME="lbAC">&nbsp;</A>
-<H2>SYNOPSIS</H2>
-
-<B>acknowledge.cgi?ACTION=action&amp;NUMBER=acknum&amp;DELAY=validity&amp;MESSAGE=text</B>
-
-<P>
-<A NAME="lbAD">&nbsp;</A>
-<H2>DESCRIPTION</H2>
-
-<B>acknowledge.cgi</B> is invoked as a CGI script via the acknowledge.sh CGI wrapper.
-<P>
-acknowledge.cgi is passed a QUERY_STRING environment variable with the
-ACTION, NUMBER, DELAY and MESSAGE parameters. 
-<P>
-<A NAME="lbAE">&nbsp;</A>
-<H2>PARAMETERS</H2>
-
-ACTION is the action to perform. The only supported action is &quot;Ack&quot; 
-to acknowledge an alert.
-<P>
-NUMBER is the number identifying the host/service to be acknowledged.
-It is included in all alert-messages sent out by Xymon.
-<P>
-DELAY is the time (in minutes) that the acknowledge is valid.
-<P>
-MESSAGE is an optional text which will be shown on the status page
-while the acknowledgment is active. You can use it to e.g. tell users
-not to contact you about the problem, or inform them when the problem
-is expected to be resolved.
-<P>
-<A NAME="lbAF">&nbsp;</A>
-<H2>OPTIONS</H2>
-
-<DL COMPACT>
-<DT>--no-pin<DD>
-acknowledge.cgi normally requires the user to enter the acknowledgment code
-received in an alert message. If you run it with this option, the user
-will instead get a list of the current non-green statuses, and he may
-send an acknowledge without knowing the code.
-<P>
-<DT>--no-cookies<DD>
-Normally, acknowledge.cgi uses a cookie sent by the browser to initially 
-filter the list of hosts presented. If this is not desired, you can
-turn off this behaviour by calling acknowledge.cgi with the --no-cookies
-option. This would normally be placed in the CGI_ACK_OPTS setting in
-<I><A HREF="../man5/cgioptions.cfg.5.html">cgioptions.cfg</A>(5)</I>
-
-<P>
-<DT>--env=FILENAME<DD>
-Loads the environment defined in FILENAME before executing the CGI script.
-<P>
-<DT>--debug<DD>
-Enables debugging output.
-<P>
-</DL>
-<A NAME="lbAG">&nbsp;</A>
-<H2>FILES</H2>
-
-<DL COMPACT>
-<DT>$XYMONHOME/web/acknowledge_header<DD>
-HTML header file for the generated web page
-<P>
-<DT>$XYMONHOME/web/acknowledge_footer<DD>
-HTML footer file for the generated web page
-<P>
-<DT>$XYMONHOME/web/acknowledge_form<DD>
-Query form displayed when acknowledge.cgi is called with no parameters.
-<P>
-</DL>
-<A NAME="lbAH">&nbsp;</A>
-<H2>ENVIRONMENT VARIABLES</H2>
-
-<DL COMPACT>
-<DT>XYMONHOME<DD>
-Used to locate the template files for the generated web pages.
-<P>
-<DT>QUERY_STRING<DD>
-Contains the parameters for the CGI script.
-<P>
-</DL>
-<A NAME="lbAI">&nbsp;</A>
-<H2>BUGS</H2>
-
-When using alternate pagesets, hosts will only show up on the
-acknowledgment page if this is accessed from the primary page
-in which they are defined. So if you have hosts on multiple
-pages, they will only be visible for acknowledging from their
-main page which is not what you would expect.
-<P>
-<A NAME="lbAJ">&nbsp;</A>
-<H2>SEE ALSO</H2>
-
-<A HREF="../man1/xymongen.1.html">xymongen</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
-<P>
-<P>
-
-<HR>
-<A NAME="index">&nbsp;</A><H2>Index</H2>
-<DL>
-<DT><A HREF="#lbAB">NAME</A><DD>
-<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
-<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">PARAMETERS</A><DD>
-<DT><A HREF="#lbAF">OPTIONS</A><DD>
-<DT><A HREF="#lbAG">FILES</A><DD>
-<DT><A HREF="#lbAH">ENVIRONMENT VARIABLES</A><DD>
-<DT><A HREF="#lbAI">BUGS</A><DD>
-<DT><A HREF="#lbAJ">SEE ALSO</A><DD>
-</DL>
-<HR>
-This document was created by
-<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
-using the manual pages.<BR>
-Time: 23:08:12 GMT, September 04, 2019
-</BODY>
-</HTML>
+</body>
+</html>

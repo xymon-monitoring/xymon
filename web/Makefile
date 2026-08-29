@@ -57,37 +57,37 @@ cgiwrap.o: cgiwrap.c
 	$(CC) $(CFLAGS) -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ $<
 
 cgiwrap: $(CGIWRAPOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(CGIWRAPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(CGIWRAPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 history.cgi: $(HISTOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(HISTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 eventlog.cgi: $(EVENTLOGOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(EVENTLOGOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 report.cgi: $(REPOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(REPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(REPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 reportlog.cgi: $(REPLOGOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(REPLOGOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 snapshot.cgi: $(SNAPOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(SNAPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 findhost.cgi: $(FINDHOSTOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(FINDHOSTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 csvinfo.cgi: $(CSVINFOOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(CSVINFOOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 acknowledge.cgi: $(ACKCGIOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(ACKCGIOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 xymonpage: $(WEBPAGEOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(WEBPAGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 datepage.cgi: $(DATEPAGEOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(DATEPAGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 showgraph.o: showgraph.c aggregate-tokens.inc.c dsidx.inc.c namecompare.inc.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
@@ -110,65 +110,65 @@ test-dsidx: test-dsidx.c dsidx.inc.c
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
 showgraph.cgi: $(SHOWGRAPHOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(SHOWGRAPHOBJS) $(XYMONCOMMLIBS) $(PCRELIBS) $(RRDLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(SHOWGRAPHOBJS) $(XYMONCOMMLIBS) $(PCRELIBS) $(RRDLIBS)
 
 svcstatus.cgi: $(SVCSTATUSOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(SVCSTATUSOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(SVCSTATUSOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 enadis.cgi: $(ENADISOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(ENADISOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(ENADISOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 statusreport.cgi: $(STATUSREPOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(STATUSREPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(STATUSREPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 confreport.cgi: $(CONFREPOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(CONFREPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(CONFREPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 criticalview.cgi: $(CRITVIEWOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CRITVIEWOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(CRITVIEWOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 criticalview.o: criticalview.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 criticaleditor.cgi: $(CRITEDITOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CRITEDITOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(CRITEDITOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 ackinfo.cgi: $(ACKINFOOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKINFOOBJS) $(XYMONCOMMLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKINFOOBJS) $(XYMONCOMMLIBS)
 
 boilerplate.cgi: $(BOILERPLATEOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BOILERPLATEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(BOILERPLATEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 hostgraphs.cgi: $(HOSTGRAPHSOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTGRAPHSOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTGRAPHSOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 ghostlist.cgi: $(GHOSTOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(GHOSTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(GHOSTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 notifications.cgi: $(NOTIFYOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NOTIFYOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(NOTIFYOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 acknowledgements.cgi: $(ACKNOWLEDGEOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKNOWLEDGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKNOWLEDGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 hostlist.cgi: $(HOSTLISTOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 perfdata.o: perfdata.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
 
 # Need -lm on perfdata because it refers to isnan()
 perfdata.cgi: $(PERFDATAOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(PERFDATAOBJS) $(XYMONCOMMLIBS) $(PCRELIBS) $(RRDLIBS) -lm
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(PERFDATAOBJS) $(XYMONCOMMLIBS) $(PCRELIBS) $(RRDLIBS) -lm
 
 useradm.cgi: $(USERADMOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(USERADMOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(USERADMOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 chpasswd.cgi: $(CHPASSWDOBJS) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CHPASSWDOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(CHPASSWDOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 appfeed.cgi: $(APPFEEDOBJS) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(APPFEEDOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(APPFEEDOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS) $(PCRELIBS)
 
 
 %.o: %.c
@@ -186,6 +186,15 @@ clean:
 
 install: install-bin install-cgi install-man
 
+# install-cgi hardlinks $(INSTALLBINDIR)/cgiwrap, which install-bin is what
+# puts there. Listing both as prerequisites of "install" does not order them,
+# so a parallel make can start install-cgi first and the very first ln fails
+# on a missing source -- silently, because a shell "for" reports only its last
+# iteration's status. Observed with make -j: history.sh, the first entry of
+# CGISCRIPTS, absent from an otherwise complete install, giving a 404 on the
+# history CGI.
+install-cgi: install-bin
+
 install-bin:
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(PROGRAMS)
@@ -197,13 +206,8 @@ endif
 install-cgi:
 	mkdir -p $(INSTALLROOT)$(CGIDIR)
 	mkdir -p $(INSTALLROOT)$(SECURECGIDIR)
-ifndef PKGBUILD
-	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done
-	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done
-else
-	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F; done
-	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F; done
-endif
+	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F || exit 1; done
+	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F || exit 1; done
 
 install-man:
 ifndef PKGBUILD

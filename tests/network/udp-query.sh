@@ -18,6 +18,8 @@ if [ -r "$here/../lib/assert.sh" ]; then
 else
 	fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 	skip() { printf 'SKIP: %s\n' "$*" >&2; exit 77; }
+	# Standalone copy, no assert.sh to probe with: take the plain build.
+	asan_usable() { return 1; }
 fi
 
 CC=${CC:-cc}
@@ -31,8 +33,11 @@ trap 'rm -rf "$work"' EXIT
 # path; the loopback hosts that run this test all have <sys/select.h>.
 printf '#define HAVE_SYS_SELECT_H 1\n' > "$work/config.h"
 
+# The sanitized build is a bonus, so fall back to a plain one whenever it is
+# not available -- including where -fsanitize links but will not run (see
+# asan_usable), which no compile check can see.
 harness="$work/udp-query"
-if ! "$CC" -g -O1 -fsanitize=address,undefined -I"$work" -o "$harness" \
+if ! asan_usable || ! "$CC" -g -O1 -fsanitize=address,undefined -I"$work" -o "$harness" \
 		"$here/udp-query-harness.c" 2>"$work/cc-asan.log"; then
 	"$CC" -g -O1 -I"$work" -o "$harness" "$here/udp-query-harness.c" 2>"$work/cc.log" \
 		|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }

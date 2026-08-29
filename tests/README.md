@@ -96,6 +96,31 @@ maintenance.
   "The wiring this test guards is gone" must `fail`. The one exception is
   a test deliberately staged ahead of an unmerged feature — call that out
   in the test and remove the staging skip the moment the feature lands.
+- **Test another OS's code here; keep its primitives behind a named
+  helper.** A test may extract a block from any client and run it under
+  stubs, whatever OS the lane happens to be -- that is how one lane
+  covers all five clients, and why `tests/client/fs-filter-*.sh` are not
+  `uname`-guarded. The price is paid on both sides. The extracted region
+  must be POSIX shell with portable tool flags (no bashism, no GNU-only
+  flag, no `/proc`), and whatever is genuinely per-OS lives in a named
+  helper -- `fs_mounts`, `fs_filesystems`, `fs_procname` -- which the
+  test replaces *by name* with `fsf_stub_helper`, never by rewriting the
+  path the helper reads. `tests/buildsystem/test-suite-portability.sh`
+  enforces both halves.
+  That leaves the helpers' own bodies covered by nothing, since every
+  stubbed test throws them away. Close that with a **native test**: one
+  that exercises the real primitive, guarded by `uname` and skipping
+  where it doesn't apply (`tests/client/fs-procname.sh`,
+  `tests/client/fs-mounts.sh`). These are the only tests allowed to
+  guard on `uname`, and they should stay few -- one per primitive, not
+  one per behaviour that happens to use it.
+- **A fixture that has to be a real binary is built, not copied.** Use
+  `fsf_wedge_binary` (tests/client/fs-filter-common.sh): it compiles one, falls
+  back to copying, and checks the result still runs before handing it back.
+  Copying a system binary looks portable and is not -- BusyBox picks its applet
+  from `argv[0]`, so `cp $(command -v sleep) df` gives you `df`; macOS kills a
+  copy of a signed system binary outright. Both were found the expensive way,
+  on lanes, and neither shows on a developer's Linux box.
 - **Deterministic.** Tests must produce the same result every run, on
   any contributor's box and in CI. Flaky tests are removed, not
   retried. If a test needs to wait for something, wait for the
@@ -110,10 +135,11 @@ maintenance.
   `git worktree`, `git stash`, or any other git invocation.
 - **Path discovery via env var with default.** When a test needs a
   built binary or an installed artefact, read it from an env var and
-  default to the in-tree path -- `require_bin` (lib/assert.sh) does this
-  for binaries:
+  default to the in-tree path -- `require_bin` and `require_cfg`
+  (lib/assert.sh) do this for binaries and config files:
   ```bash
   require_bin XYMONGREP common/xymongrep          # binaries
+  require_cfg XYMONSERVER_CFG xymond/etcfiles/xymonserver.cfg  # config files
   SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"  # scripts
   ```
   This keeps tests usable in CMake out-of-source builds (the build
@@ -130,8 +156,8 @@ maintenance.
   exported path that points at nothing must `fail` -- a broken build or
   package layout is precisely what the exporting caller (CMake,
   autopkgtest) runs the suite to catch, and skipping would green-light
-  it. `require_bin` implements both halves; installed-script tests
-  guard `$XYMONCLIENT_LINUX` the same way.
+  it. `require_bin` and `require_cfg` implement both halves;
+  installed-script tests guard `$XYMONCLIENT_LINUX` the same way.
 - **License.** GPL-2.0+, matching the rest of the repo. A short
   SPDX-style header at the top of each test is sufficient:
   ```bash
@@ -172,6 +198,7 @@ packages**. The suite maps onto that as a single test entry, roughly:
 ```
 Test-Command: XYMONGREP=/usr/lib/xymon/client/bin/xymongrep \
               XYMONCLIENT_LINUX=/usr/lib/xymon/client/bin/xymonclient-linux.sh \
+              XYMONSERVER_CFG=/etc/xymon/xymonserver.cfg \
               ./tests/testsuite
 Depends: xymon, xymon-client, gcc, make
 Restrictions: skippable

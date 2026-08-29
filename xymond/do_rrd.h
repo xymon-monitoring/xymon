@@ -24,6 +24,7 @@ extern void update_rrd(char *hostname, char *testname, char *restofmsg, time_t t
 extern void rrdcacheflushall(void);
 extern void rrdcache_evict_idle(time_t maxage);
 extern void rrdcache_drop_host(char *hostname, int flushfirst);
+extern void rrdcache_rename_host(char *oldhostname, char *newhostname);
 extern void rrdcacheflushhost(char *hostname);
 extern void setup_extprocessor(char *cmd);
 extern void shutdown_extprocessor(void);

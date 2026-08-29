@@ -17,6 +17,8 @@ static char rcsid[] = "$Id$";
 #include <sys/time.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -408,14 +410,21 @@ char *histlogtime(time_t histtime)
 }
 
 
-int durationvalue(char *dur)
+static long long durationminutes(char *dur)
 {
-	/* 
+	/*
 	 * Calculate a duration, taking special modifiers into consideration.
-	 * Return the duration as number of minutes.
+	 * Return the exact duration as number of minutes, or DUR_UNPARSED when a
+	 * single component does not fit an int - the width the callers below work
+	 * in, and where the original int arithmetic here was undefined anyway.
+	 *
+	 * The sum itself cannot overflow a long long: a component is at most
+	 * INT_MAX weeks, or 2.2e13 minutes, and a config line bounds how many of
+	 * them there can be.
 	 */
+#define DUR_UNPARSED LLONG_MIN
 
-	int result = 0;
+	long long result = 0;
 	char *startofval;
 	char *endpos;
 	char savedelim;
@@ -430,13 +439,16 @@ int durationvalue(char *dur)
 	while (startofval && (isdigit((int)*startofval))) {
 		char *p;
 		char modifier;
-		int oneval = 0;
+		long long oneval;
 
 		p = startofval + strspn(startofval, "0123456789");
 		modifier = *p;
 		*p = '\0';
-		oneval = atoi(startofval);
+		errno = 0;
+		oneval = strtoll(startofval, NULL, 10);
 		*p = modifier;
+
+		if ((errno == ERANGE) || (oneval > INT_MAX)) { result = DUR_UNPARSED; break; }
 
 		switch (modifier) {
 		  case '\0': break;			/* No delimiter = minutes */
@@ -454,6 +466,44 @@ int durationvalue(char *dur)
 	*endpos = savedelim;
 
 	return result;
+}
+
+
+int durationvalue(char *dur)
+{
+	/*
+	 * Minutes, narrowed to an int, with no way to tell a value that did not
+	 * fit from one that did. Kept deliberately: eight of the seventeen call
+	 * sites compute 60*durationvalue() in an int, where a saturated INT_MAX
+	 * comes back as -60. New code calls durationseconds(); converting the
+	 * rest is a separate sweep.
+	 */
+	long long result = durationminutes(dur);
+
+	return ((result == DUR_UNPARSED) ? 0 : (int)result);
+}
+
+
+int durationseconds(char *dur, int *secs)
+{
+	/*
+	 * Seconds, refusing what will not fit: 1 and stores, or 0 when absent,
+	 * unparseable or too large. A duration overflows twice - the minutes
+	 * accumulate, then the caller multiplies by 60 - so the bound is on the
+	 * minutes. An unknown unit is a typo, not a delimiter ("10x" would read as
+	 * ten minutes); durationvalue() keeps its lax parsing and installed base.
+	 */
+	long long result;
+
+	if (!dur || (*dur == '\0')) return 0;
+	if (dur[strspn(dur, "0123456789mhdw")] != '\0') return 0;
+
+	result = durationminutes(dur);
+
+	if ((result <= 0) || (result > (INT_MAX / 60))) return 0;
+
+	*secs = (int)(result * 60);
+	return 1;
 }
 
 char *durationstring(time_t secs)
@@ -537,19 +587,45 @@ time_t timestr2timet(char *s)
 {
 	/* Convert a string "YYYYMMDDHHMM" to time_t value */
 	struct tm tm;
+	int year, mon, day, hour, min;
+	time_t result;
 
-	if (strlen(s) != 12) {
+	/* sscanf() does not enforce the format: "%d" skips whitespace and takes a
+	 * sign. strlen() for the length, strspn() for the digits. */
+	if ((strlen(s) != 12) || (strspn(s, "0123456789") != 12)) {
 		errprintf("Invalid timestring: '%s'\n", s);
 		return -1;
 	}
 
-	tm.tm_min = atoi(s+10); *(s+10) = '\0';
-	tm.tm_hour = atoi(s+8); *(s+8) = '\0';
-	tm.tm_mday = atoi(s+6); *(s+6) = '\0';
-	tm.tm_mon = atoi(s+4) - 1; *(s+4) = '\0';
-	tm.tm_year = atoi(s) - 1900; *(s+4) = '\0';
+	/* sscanf(), not atoi() over truncated copies: the callers pass the pointer
+	 * xmh_item() returned, which aliases the host record's own tag buffer. */
+	if (sscanf(s, "%4d%2d%2d%2d%2d", &year, &mon, &day, &hour, &min) != 5) {
+		errprintf("Invalid timestring: '%s'\n", s);
+		return -1;
+	}
+
+	/* mktime() reads every field, and normalizes an uninitialized tm_sec into
+	 * the result. */
+	memset(&tm, 0, sizeof(tm));
+	tm.tm_year = year - 1900;
+	tm.tm_mon = mon - 1;
+	tm.tm_mday = day;
+	tm.tm_hour = hour;
+	tm.tm_min = min;
 	tm.tm_isdst = -1;
-	return mktime(&tm);
+
+	result = mktime(&tm);
+	if (result == -1) return -1;
+
+	/* mktime() turns 31 February into 2 March rather than failing, rewriting
+	 * the struct as it goes - compare the fields back to catch it. */
+	if ((tm.tm_year != year - 1900) || (tm.tm_mon != mon - 1) ||
+	    (tm.tm_mday != day) || (tm.tm_hour != hour) || (tm.tm_min != min)) {
+		errprintf("Invalid timestring: '%s'\n", s);
+		return -1;
+	}
+
+	return result;
 }
 
 
