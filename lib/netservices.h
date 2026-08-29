@@ -52,6 +52,15 @@
 #define ACT_NEXT 0
 #define ACT_GOTO 1
 #define ACT_FAIL 2
+#define ACT_SUCCESS 3	/* -> success: end the dialogue green */
+#define ACT_WARNING 4	/* -> warning: end it yellow, not red */
+
+/* Reserved edge targets. A dialogue declares its verdict by arriving at
+   one of these rather than by running out of steps. */
+#define TARGET_IS_TERMINAL(s) \
+	(((s) != NULL) && ((strcmp((s), "success") == 0) || \
+	                   (strcmp((s), "warning") == 0) || \
+	                   (strcmp((s), "fail") == 0)))
 
 /* Consecutive STEP_EXPECTs are alternatives of ONE state: the first whose
    pattern matches wins and its action fires, so a state has as many

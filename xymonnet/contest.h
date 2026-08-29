@@ -151,6 +151,7 @@ typedef struct tcptest_t {
 	time_t stepdeadline;		/* ... armed against the poll clock, 0 = unarmed */
 	void *stepdeadlinefor;		/* svcstep_t *: which step it was armed for */
 	int steptimedout;		/* that budget expired, rather than a mismatch */
+	int dialogverdict;		/* 0 = infer, 1 = success, 2 = warning, 3 = fail */
 
 	/* For testing telnet services */
 	unsigned char *telnetbuf;	/* Buffer for telnet option negotiation */

@@ -1611,7 +1611,16 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 							snprintf(cause, MAX_CAUSE, "Unexpected service response: %s", whichstep);
 						else
 							strcpy(cause, "Unexpected service response");
-						color = respcheck_color; countasdown = 1;
+						/*
+						 * A dialogue that declared its own verdict says which
+						 * colour it meant: "-> warning" is a busy server, "->
+						 * fail" a broken one, where respcheck_color has to be
+						 * one answer for both.
+						 */
+						if (tcptest && (tcptest->dialogverdict == 2))      color = COL_YELLOW;
+						else if (tcptest && (tcptest->dialogverdict == 3)) color = COL_RED;
+						else color = respcheck_color;
+						countasdown = 1;
 					}
 
 					/* Check that other transport issues didn't occur (like SSL) */

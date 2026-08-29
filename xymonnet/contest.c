@@ -237,6 +237,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->stepdeadline = 0;
 	newtest->stepdeadlinefor = NULL;
 	newtest->steptimedout = 0;
+	newtest->dialogverdict = 0;
 	newtest->stepbuf = NULL;
 	newtest->stepbuflen = 0;
 
@@ -1284,8 +1285,13 @@ static svcstep_t *dlg_run_instant(tcptest_t *item, svcstep_t *st)
 		  }
 		  /* FALLTHROUGH: a matched '~' takes its edge exactly as a jump does */
 		  case STEP_JUMP:
-			if (st->action == ACT_FAIL) {
+			if (st->action == ACT_SUCCESS) {
+				item->dialogverdict = 1;
+				return NULL;
+			}
+			if ((st->action == ACT_FAIL) || (st->action == ACT_WARNING)) {
 				item->dialogfail = 1;
+				item->dialogverdict = (st->action == ACT_WARNING) ? 2 : 3;
 				if (!item->failstep) item->failstep = (void *)st;
 				return NULL;
 			}
@@ -2114,9 +2120,23 @@ restartselect:
 										memmove(item->stepbuf, item->stepbuf + cut, item->stepbuflen - cut);
 										item->stepbuflen -= cut;
 
-										if (hit->action == ACT_FAIL) {
+										if ((hit->action == ACT_FAIL) ||
+										    (hit->action == ACT_WARNING)) {
 											item->dialogfail = 1;
+											item->dialogverdict = (hit->action == ACT_WARNING) ? 2 : 3;
 											if (!item->failstep) item->failstep = (void *)st;
+											item->curstep = NULL;
+											st = NULL;
+										}
+										else if (hit->action == ACT_SUCCESS) {
+											/*
+											 * Arriving at "success" ends the
+											 * dialogue here. The remaining steps
+											 * are not run and are not a failure:
+											 * the config said this is where a
+											 * healthy conversation stops.
+											 */
+											item->dialogverdict = 1;
 											item->curstep = NULL;
 											st = NULL;
 										}
@@ -2375,6 +2395,8 @@ int tcp_got_expected(tcptest_t *test)
 	 */
 	if (test->svcinfo && (test->svcinfo->flags & TCP_DIALOGUE))
 		return (test->dialogfail == 0) && (test->curstep == NULL);
+		/* dialogverdict 1 ("-> success") also leaves curstep NULL and
+		   dialogfail clear, so it is covered by the same test. */
 
 	if (test->svcinfo && test->svcinfo->exptext) {
 		int compbytes; /* Number of bytes to compare */

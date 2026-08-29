@@ -659,18 +659,24 @@ char *init_tcp_services(void)
 					rest = skipwhitespace(after_quoted(tp));
 				}
 
-				/* Anything left after that is this edge's action. */
+				/* Anything left after that is this edge's target. */
 				if (*rest) {
 					act = strtok(rest, " \t");
 					if (act && (strcmp(act, "->") == 0)) {
 						/*
-						 * Every edge is "<condition> -> TARGET". "fail" is
-						 * a reserved target: the dialogue ends there.
+						 * Every edge is "<condition> -> TARGET". Three
+						 * target names are reserved and declare the
+						 * verdict rather than naming a state, so a
+						 * dialogue says how it ended instead of leaving
+						 * the driver to infer it from running out of
+						 * steps.
 						 */
 						char *tgt = strtok(NULL, " \t");
 
 						if (!tgt) errprintf("'expect ... ->' with no target\n");
-						else if (strcmp(tgt, "fail") == 0) tmpl.action = ACT_FAIL;
+						else if (strcmp(tgt, "fail") == 0)    tmpl.action = ACT_FAIL;
+						else if (strcmp(tgt, "warning") == 0) tmpl.action = ACT_WARNING;
+						else if (strcmp(tgt, "success") == 0) tmpl.action = ACT_SUCCESS;
 						else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
 					}
 					else if (act) errprintf("Unknown expect action: %s - edges are "
@@ -822,7 +828,9 @@ char *init_tcp_services(void)
 				memset(&tmpl, 0, sizeof(tmpl));
 				tmpl.type = STEP_JUMP;
 				if (!tgt) errprintf("'else ->' with no target\n");
-				else if (strcmp(tgt, "fail") == 0) tmpl.action = ACT_FAIL;
+				else if (strcmp(tgt, "fail") == 0)    tmpl.action = ACT_FAIL;
+				else if (strcmp(tgt, "warning") == 0) tmpl.action = ACT_WARNING;
+				else if (strcmp(tgt, "success") == 0) tmpl.action = ACT_SUCCESS;
 				else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
 				emit_step(first, &tmpl);
 			}
@@ -866,7 +874,9 @@ char *init_tcp_services(void)
 						char *tgt = strtok(skipwhitespace(arrow + 2), " \t");
 
 						if (!tgt) errprintf("'%s ~ ... ->' with no target\n", var);
-						else if (strcmp(tgt, "fail") == 0) tmpl.action = ACT_FAIL;
+						else if (strcmp(tgt, "fail") == 0)    tmpl.action = ACT_FAIL;
+						else if (strcmp(tgt, "warning") == 0) tmpl.action = ACT_WARNING;
+						else if (strcmp(tgt, "success") == 0) tmpl.action = ACT_SUCCESS;
 						else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
 						emit_step(first, &tmpl);
 					}
