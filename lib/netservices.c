@@ -886,14 +886,14 @@ char *init_tcp_services(void)
 					char *close = strchr(rest, ')');
 
 					if (!close) {
-						errprintf("Service %s: 'expect bytes(' without ')'\n", walk->rec->svcname);
-						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+						errprintf("Service %s: 'expect bytes(' without ')'\n", first->rec->svcname);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
 						continue;
 					}
 					if ((n <= 0) || (n > MAX_DIALOGUE_BYTES)) {
 						errprintf("Service %s: 'expect bytes(%d)' is outside 1..%d\n",
-							  walk->rec->svcname, n, MAX_DIALOGUE_BYTES);
-						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+							  first->rec->svcname, n, MAX_DIALOGUE_BYTES);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
 						continue;
 					}
 					tmpl.wantbytes = n;
@@ -919,8 +919,8 @@ char *init_tcp_services(void)
 					if (tmpl.wantbytes) {
 						errprintf("Service %s: 'expect bytes(%d) until ...' - a frame of "
 							  "N bytes already says where the reply ends\n",
-							  walk->rec->svcname, tmpl.wantbytes);
-						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+							  first->rec->svcname, tmpl.wantbytes);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
 					}
 
 					getescapestring(tp, &untiltxt, &untillen);
@@ -974,15 +974,23 @@ char *init_tcp_services(void)
 								"'<condition> -> TARGET'\n", act);
 				}
 
-				for (walk = first; (walk); walk = walk->next) {
-					if (walk->rec->exptext == NULL) {
-						walk->rec->exptext = (unsigned char *)strdup((char *)txt);
-						walk->rec->explen  = txtlen;
-						walk->rec->expofs  = 0; /* HACK - not used right now */
+				/*
+				 * exptext is what the single-shot probe matches. A frame
+				 * has no literal to put there, and it never runs on that
+				 * path anyway -- and xfree() aborts on NULL, so both of
+				 * these have to know that txt may be absent.
+				 */
+				if (txt) {
+					for (walk = first; (walk); walk = walk->next) {
+						if (walk->rec->exptext == NULL) {
+							walk->rec->exptext = (unsigned char *)strdup((char *)txt);
+							walk->rec->explen  = txtlen;
+							walk->rec->expofs  = 0; /* HACK - not used right now */
+						}
 					}
 				}
 				emit_step(first, &tmpl);
-				xfree(txt);
+				if (txt) xfree(txt);
 				if (untiltxt) xfree(untiltxt);
 			}
 		}
