@@ -404,7 +404,8 @@ static void emit_step(svclist_t *first, svcstep_t *tmpl)
 	for (walk = first; (walk); walk = walk->next) {
 		svcstep_t *st = add_svcstep(walk->rec, tmpl->type, tmpl->text, tmpl->len);
 
-		st->action = tmpl->action;
+		st->action  = tmpl->action;
+		st->seconds = tmpl->seconds;
 		if (tmpl->target)  st->target  = strdup(tmpl->target);
 		if (tmpl->label)   st->label   = strdup(tmpl->label);
 		if (tmpl->varname) st->varname = strdup(tmpl->varname);
@@ -876,6 +877,32 @@ char *init_tcp_services(void)
 					}
 				}
 				if (txt) xfree(txt);
+			}
+		}
+		else if (strncmp(l, "timeout ", 8) == 0) {
+			/*
+			 * How long the wait that follows may take. Without one, a
+			 * step that never matches is bounded only by --timeout, which
+			 * ends the whole test and cannot say which step stalled.
+			 *
+			 * The budget covers the write as well as the read: a peer that
+			 * will not accept the send is as stuck as one that will not
+			 * answer it, and the global ceiling still wins either way.
+			 */
+			char *arg = skipwhitespace(l + 8);
+			int secs = atoi(arg);
+
+			if (secs <= 0) {
+				errprintf("Service %s: 'timeout %s' - the budget must be a positive number of seconds\n",
+					  (first ? first->rec->svcname : "?"), arg);
+			}
+			else if (first) {
+				svcstep_t tmpl;
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_TIMEOUT;
+				tmpl.seconds = secs;
+				emit_step(first, &tmpl);
 			}
 		}
 		else if (strcmp(l, "starttls") == 0) {

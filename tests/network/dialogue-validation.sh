@@ -40,6 +40,7 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
    capture as tooearly
    expect "220"
    send "x${sha1:foo}\r\n"
+   timeout 0
    starttls
    options ssl,banner
    port 9
@@ -68,6 +69,11 @@ $out"
 grep -qi 'before any expect' <<<"$out" || fail \
 	"'capture as' with no preceding expect was accepted; it can only bind an
 empty value:
+$out"
+
+grep -qi 'the budget must be a positive number of seconds' <<<"$out" || fail \
+	"'timeout 0' was accepted. A zero or negative budget can only expire
+immediately or never, and both are silent at run time:
 $out"
 
 grep -qi 'unknown expansion' <<<"$out" || fail \
