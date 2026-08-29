@@ -40,7 +40,9 @@ condition ::= expect "…" [ until "…" ] [ as NAME ] | NAME ~ "…"
 
 **Targets** are a state, or one of `success`, `warning`, `fail` -- green, yellow, red. `warning` is the point: a server answering correctly but refusing an optional capability is not down, and calling it down teaches operators to ignore the column. An edge saying `fail` is red whatever `--checkresponse` is set to; a reply matching no alternative takes that option's colour, yellow by default.
 
-**Layout.** Entry attributes -- `transport`, `port`, `options`, `start` -- are written first, because they describe the definition rather than any step; then each `state` with its steps indented under it. A state holds as many steps as the exchange needs, and an `expect` with no `->` continues with the step below it, so one state can wait, send and read again before anything decides. The parser enforces none of this: an attribute is accepted anywhere in the block and indentation is ignored. It is how every example here and in `protocols.cfg(5)` is written.
+**Layout.** Entry attributes -- `transport`, `port`, `options`, `start` -- are written first, because they describe the definition rather than any step; then each `state` with its steps indented under it. Within a state the actions come first -- `send`, `starttls`, `credentials`, the clocks, as many as the exchange needs -- and the `expect` lines end it, each naming the state to move to. So a state says what it does, what it waits for, and where each answer leads, and the entry reads as the machine it is.
+
+The parser enforces none of it: an attribute is accepted anywhere, indentation is ignored, and an `expect` with no `->` falls through to the step below. The convention is what makes an entry legible, not what makes it work.
 
 **Order is file order.** A state's lines run as written and the first edge that fires leaves, so a `~` above an `expect` decides before the socket is read at all. An earlier draft specified a fixed precedence regardless of where lines were written; the implementation does not do that and should not, because a precedence the reader cannot see is what turns a declaration back into a program.
 

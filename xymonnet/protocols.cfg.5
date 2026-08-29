@@ -160,15 +160,23 @@ Naming them is optional, but worth doing: a dialogue that fails reports the stat
 does not.
 .sp
 \fBLayout.\fR An entry that uses states is written the same way
-throughout this page, and reads best that way: the entry attributes --
-\fBoptions\fR, \fBport\fR, \fBtransport\fR, \fBstart\fR -- first,
-because they describe the definition rather than any step; then the
-states, each on its own line with its steps indented under it. A state
-holds as many steps as the exchange needs, and an \fBexpect\fR with no
-\fB\->\fR continues with the step below it, so a single state can wait,
-send and read again before anything decides. None of this is enforced:
-the parser accepts an attribute anywhere in the block and ignores
-indentation entirely.
+throughout this page: the entry attributes -- \fBoptions\fR,
+\fBport\fR, \fBtransport\fR, \fBstart\fR -- first, because they
+describe the definition rather than any step; then the states, each with
+its steps indented under it. Within a state the actions come first --
+\fBsend\fR, \fBstarttls\fR, \fBcredentials\fR and the clocks, as
+many as the exchange needs -- and the \fBexpect\fR lines end it, each
+naming the state to move to. A dialogue written that way reads as the
+machine it is: every state says what it does, what it waits for, and
+where each answer leads.
+.sp
+None of this is enforced. The parser takes an attribute anywhere in the
+block, ignores indentation, and accepts an \fBexpect\fR with no
+\fB\->\fR -- which continues with the step below it, so a state can
+also wait, send and read again before anything decides. That is how the
+classic entries at the top of this page are written, and it is why the
+convention is worth keeping in the ones that branch: the file stops
+saying where the dialogue goes.
 .sp
 This is how a soft error is told apart from a hard one instead of both
 timing out:
@@ -379,35 +387,46 @@ certificate off the upgraded session:
 \&
 \&      state greeting
 \&         timeout(10)                        \-> fail
-\&         expect "220"
+\&         expect "220"                       \-> ehlo
+\&
+\&      state ehlo
 \&         send "ehlo xymonnet\er\en"
-\&         expect "250" until "250 " as caps
+\&         timeout(30)                        \-> fail
+\&         expect "250" until "250 " as caps  \-> offers
+\&
+\&      state offers
 \&         caps ~ "STARTTLS"                  \-> upgrade
 \&         else                               \-> warning
 \&
 \&      state upgrade
-\&         timeout(10)                        \-> fail
 \&         send "starttls\er\en"
+\&         timeout(10)                        \-> fail
 \&         expect "220"                       \-> secure
 \&         expect "454"                       \-> warning
 \&
 \&      state secure
-\&         timeout(10)                        \-> fail
 \&         starttls
 \&         send "ehlo xymonnet\er\en"
-\&         expect "250" until "250 "
+\&         timeout(10)                        \-> fail
+\&         expect "250" until "250 "          \-> farewell
+\&
+\&      state farewell
 \&         send "quit\er\en"
+\&         timeout(10)                        \-> fail
 \&         expect "221"                       \-> success
 .fi
 .sp
-A state holds as many steps as the exchange needs: \fBgreeting\fR
-waits for the banner, sends EHLO and reads the capability list before it
-decides anything. An \fBexpect\fR with no \fB\->\fR continues with
-the step below it; the ones that carry an edge are where the dialogue
-branches or ends. The entry attributes -- \fBoptions\fR, \fBport\fR,
-\fBstart\fR -- are properties of the definition rather than steps, so
-they are written together at the top, and each state's steps are
-indented under it.
+A state is what the dialogue DOES and then what it WAITS for: its
+actions -- \fBsend\fR, \fBstarttls\fR, \fBcredentials\fR, and the
+clocks -- come first, as many as the exchange needs, and its
+\fBexpect\fR lines end it by naming the state to move to. Writing an
+\fBexpect\fR that names no target is accepted and simply continues with
+the step below it, but then the file no longer says where the dialogue
+went and the reader has to work it out from what follows.
+.sp
+The entry attributes -- \fBoptions\fR, \fBport\fR, \fBtransport\fR,
+\fBstart\fR -- describe the definition rather than any step, so they
+are written together at the top.
 .sp
 This is deliberately a service of its own rather than a deeper
 \fB[smtp]\fR. protocols.cfg is one file for the whole installation, so

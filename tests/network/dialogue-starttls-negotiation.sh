@@ -100,37 +100,45 @@ done
 # The two entries spell the same step differently on purpose. [tlsup] writes
 # all four clauses on one line -- expect, until, as, and the edge -- which is
 # the form the manual prints under "expect ... as NAME" and which nothing else
-# in the suite covers. [tlsnone] leaves the edge off and falls through to the
-# '~' below it. Both must reach the same state, or one of the two spellings is
-# documented and not implemented.
+# in the suite covers, and every expect in it ends its state by naming the
+# next. [tlsnone] uses the permissive spelling the parser also accepts, where
+# an expect names no target and falls through to the step below it. Both must
+# reach the same verdicts, or one of the two is documented and not
+# implemented.
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [tlsup]
    options banner
    port $pup
 
    state greeting
-      timeout(10)         -> fail
-      expect "220"
+      timeout(10)                        -> fail
+      expect "220"                       -> ehlo
+
+   state ehlo
       send "ehlo xymonnet\r\n"
-      expect "250" until "250 " as caps   -> offers
+      timeout(10)                        -> fail
+      expect "250" until "250 " as caps  -> offers
 
    state offers
-      caps ~ "STARTTLS"   -> upgrade
-      else                -> warning
+      caps ~ "STARTTLS"                  -> upgrade
+      else                               -> warning
 
    state upgrade
-      timeout(10)         -> fail
       send "starttls\r\n"
-      expect "220"        -> secure
-      expect "454"        -> warning
+      timeout(10)                        -> fail
+      expect "220"                       -> secure
+      expect "454"                       -> warning
 
    state secure
-      timeout(10)         -> fail
       starttls
       send "ehlo xymonnet\r\n"
-      expect "250" until "250 "
+      timeout(10)                        -> fail
+      expect "250" until "250 "          -> farewell
+
+   state farewell
       send "quit\r\n"
-      expect "221"        -> success
+      timeout(10)                        -> fail
+      expect "221"                       -> success
 
 [tlsnone]
    options banner

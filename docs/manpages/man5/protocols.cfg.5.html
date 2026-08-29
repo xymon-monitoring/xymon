@@ -172,15 +172,22 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         expected 334&quot; tells an operator what &quot;step 7&quot; does
       not.</p>
     <p class="Pp"><b>Layout.</b> An entry that uses states is written the same
-        way throughout this page, and reads best that way: the entry attributes
-        -- <b>options</b>, <b>port</b>, <b>transport</b>, <b>start</b> -- first,
-        because they describe the definition rather than any step; then the
-        states, each on its own line with its steps indented under it. A state
-        holds as many steps as the exchange needs, and an <b>expect</b> with no
-        <b>-&gt;</b> continues with the step below it, so a single state can
-        wait, send and read again before anything decides. None of this is
-        enforced: the parser accepts an attribute anywhere in the block and
-        ignores indentation entirely.</p>
+        way throughout this page: the entry attributes -- <b>options</b>,
+        <b>port</b>, <b>transport</b>, <b>start</b> -- first, because they
+        describe the definition rather than any step; then the states, each with
+        its steps indented under it. Within a state the actions come first --
+        <b>send</b>, <b>starttls</b>, <b>credentials</b> and the clocks, as many
+        as the exchange needs -- and the <b>expect</b> lines end it, each naming
+        the state to move to. A dialogue written that way reads as the machine
+        it is: every state says what it does, what it waits for, and where each
+        answer leads.</p>
+    <p class="Pp">None of this is enforced. The parser takes an attribute
+        anywhere in the block, ignores indentation, and accepts an <b>expect</b>
+        with no <b>-&gt;</b> -- which continues with the step below it, so a
+        state can also wait, send and read again before anything decides. That
+        is how the classic entries at the top of this page are written, and it
+        is why the convention is worth keeping in the ones that branch: the file
+        stops saying where the dialogue goes.</p>
     <p class="Pp">This is how a soft error is told apart from a hard one instead
         of both timing out:</p>
     <p class="Pp"></p>
@@ -393,30 +400,38 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       start greeting
       state greeting
          timeout(10)                        -&gt; fail
-         expect &quot;220&quot;
+         expect &quot;220&quot;                       -&gt; ehlo
+      state ehlo
          send &quot;ehlo xymonnet\r\n&quot;
-         expect &quot;250&quot; until &quot;250 &quot; as caps
+         timeout(30)                        -&gt; fail
+         expect &quot;250&quot; until &quot;250 &quot; as caps  -&gt; offers
+      state offers
          caps ~ &quot;STARTTLS&quot;                  -&gt; upgrade
          else                               -&gt; warning
       state upgrade
-         timeout(10)                        -&gt; fail
          send &quot;starttls\r\n&quot;
+         timeout(10)                        -&gt; fail
          expect &quot;220&quot;                       -&gt; secure
          expect &quot;454&quot;                       -&gt; warning
       state secure
-         timeout(10)                        -&gt; fail
          starttls
          send &quot;ehlo xymonnet\r\n&quot;
-         expect &quot;250&quot; until &quot;250 &quot;
+         timeout(10)                        -&gt; fail
+         expect &quot;250&quot; until &quot;250 &quot;          -&gt; farewell
+      state farewell
          send &quot;quit\r\n&quot;
+         timeout(10)                        -&gt; fail
          expect &quot;221&quot;                       -&gt; success</pre>
-<p class="Pp">A state holds as many steps as the exchange needs: <b>greeting</b>
-    waits for the banner, sends EHLO and reads the capability list before it
-    decides anything. An <b>expect</b> with no <b>-&gt;</b> continues with the
-    step below it; the ones that carry an edge are where the dialogue branches
-    or ends. The entry attributes -- <b>options</b>, <b>port</b>, <b>start</b>
-    -- are properties of the definition rather than steps, so they are written
-    together at the top, and each state's steps are indented under it.</p>
+<p class="Pp">A state is what the dialogue DOES and then what it WAITS for: its
+    actions -- <b>send</b>, <b>starttls</b>, <b>credentials</b>, and the clocks
+    -- come first, as many as the exchange needs, and its <b>expect</b> lines
+    end it by naming the state to move to. Writing an <b>expect</b> that names
+    no target is accepted and simply continues with the step below it, but then
+    the file no longer says where the dialogue went and the reader has to work
+    it out from what follows.</p>
+<p class="Pp">The entry attributes -- <b>options</b>, <b>port</b>,
+    <b>transport</b>, <b>start</b> -- describe the definition rather than any
+    step, so they are written together at the top.</p>
 <p class="Pp">This is deliberately a service of its own rather than a deeper
     <b>[smtp]</b>. protocols.cfg is one file for the whole installation, so
     teaching <b>[smtp]</b> to expect STARTTLS would change what every existing
