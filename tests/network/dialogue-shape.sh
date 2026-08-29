@@ -118,7 +118,7 @@ $(head -25 "$work/out.txt")"
 want "more than one action"                "a state with two actions"
 want "acts again after it has waited"      "a state that sends after it has waited"
 want "clock below its expects"             "a clock written below the expects it should bound"
-want "expect with no '\-> TARGET'"         "an expect that names no state"
+want "expect with no "                     "an expect that names no state"
 want "reserved for a verdict"              "a state named 'success'"
 want "second 'options' line"               "a second options line replacing the first"
 want "does not run"                        "'until' on an entry the driver never runs"
@@ -126,7 +126,7 @@ want "does not run"                        "'until' on an entry the driver never
 # THE CONTROL: the documented shape must not be caught by any of this.
 grep -qi "Service good" "$work/out.txt" || fail \
 	"the control entry produced no result at all, so this run proves nothing"
-grep -i "state 'greeting'\|state 'ehlo'" "$work/out.txt" | grep -qi "more than one action\|no '\-> TARGET'\|clock below" && fail \
+grep -Ei "state '(greeting|ehlo)'" "$work/out.txt" | grep -Eqi "more than one action|no '\-> TARGET'|clock below" && fail \
 	"the entry written exactly as protocols.cfg(5) documents was refused:
 $(grep -i good "$work/out.txt" | head -5)"
 

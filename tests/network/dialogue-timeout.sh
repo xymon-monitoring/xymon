@@ -65,32 +65,41 @@ register_cleanup "kill $(cat "$work/silent.port.pid") $(cat "$work/quick.port.pi
 printf '127.0.0.1\tsilent\t# budgeted healthy routed\n' > "$work/home/etc/hosts.cfg"
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [budgeted]
-   # conventions: permissive -- the clock, not the shape, is what this measures
    options banner
    port $psilent
-   expect "220"   -> waiting
-   send "ehlo xymonnet\r\n"
 
-   state waiting
+   state greeting
+      timeout(30)                 -> fail
+      expect "220"                -> ehlo
+
+   state ehlo
+      send "ehlo xymonnet\r\n"
       timeout(2)                  -> fail
-      expect "250"        -> success
+      expect "250"                -> success
+
 [healthy]
-   # conventions: permissive -- the clock, not the shape, is what this measures
    options banner
    port $pquick
-   expect "220"   -> waiting
-   send "ehlo xymonnet\r\n"
 
-   state waiting
+   state greeting
+      timeout(30)                 -> fail
+      expect "220"                -> ehlo
+
+   state ehlo
+      send "ehlo xymonnet\r\n"
       timeout(2)                  -> fail
-      expect "250"        -> success
+      expect "250"                -> success
+
 [routed]
    options banner
    port $prouted
-   expect "220"   -> waiting
-   send "ehlo xymonnet\r\n"
 
-   state waiting
+   state greeting
+      timeout(30)                 -> fail
+      expect "220"                -> ehlo
+
+   state ehlo
+      send "ehlo xymonnet\r\n"
       timeout(2)                  -> warning
       expect "250"                -> success
 
@@ -138,15 +147,17 @@ ceiling, so the budget is not what ended it -- the global cutoff is."
 printf '127.0.0.1\tsilent\t# ceiling\n' > "$work/home/etc/hosts.cfg"
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [ceiling]
-   # conventions: permissive -- the clock, not the shape, is what this measures
    options banner
    port $pceil
-   expect "220"   -> waiting
-   send "ehlo xymonnet\r\n"
 
-   state waiting
+   state greeting
+      timeout(30)                 -> fail
+      expect "220"                -> ehlo
+
+   state ehlo
+      send "ehlo xymonnet\r\n"
       timeout(60)                 -> fail
-      expect "250"        -> success
+      expect "250"                -> success
 CFG
 
 start=$(date +%s)
