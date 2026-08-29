@@ -1202,15 +1202,18 @@ static char *dlg_expand(tcptest_t *item, const char *text, int len, int *outlen)
 /* Group 1 of the pattern, against the reply the last expect accepted. */
 static void dlg_capture(tcptest_t *item, svcstep_t *st)
 {
-	char *subject = (item->lastreply ? item->lastreply : "");
+	char *subject = dlg_get(item, st->srcname);
 	pcre2_match_data *md;
 	int res, n;
 	char names[256], *name, *rest;
 
-	if (st->re == NULL) {			/* plain "capture as NAME" */
-		dlg_set(item, st->varname, subject);
-		return;
-	}
+	/*
+	 * The input is named, so this reads the value the config asked for
+	 * rather than whichever reply happened to be the most recent one.
+	 * An unbound name binds empty, which check_undefined_vars() has
+	 * already complained about when the file was read.
+	 */
+	if (subject == NULL) subject = "";
 
 	md = pcre2_match_data_create(32, NULL);
 	res = pcre2_match((pcre2_code *)st->re, (PCRE2_SPTR)subject,
@@ -1241,7 +1244,7 @@ static void dlg_capture(tcptest_t *item, svcstep_t *st)
 			xfree(v);
 		}
 		else {
-			dbgprintf("dialogue: capture-regex did not match, ${%s} left empty\n", name);
+			dbgprintf("dialogue: an extraction did not match, ${%s} left empty\n", name);
 			dlg_set(item, name, "");
 		}
 		n++;
@@ -2299,6 +2302,15 @@ restartselect:
 										item->lastreply = (char *)malloc(cut + 1);
 										memcpy(item->lastreply, item->stepbuf, cut);
 										item->lastreply[cut] = '\0';
+
+										/*
+										 * "expect ... as NAME" binds the reply THIS
+										 * alternative accepted, on the line that
+										 * produced it -- so it cannot name the reply
+										 * of some earlier state.
+										 */
+										if (hit->varname)
+											dlg_set(item, hit->varname, item->lastreply);
 
 										memmove(item->stepbuf, item->stepbuf + cut, item->stepbuflen - cut);
 										item->stepbuflen -= cut;
