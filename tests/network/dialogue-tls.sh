@@ -17,6 +17,13 @@
 # The peer records the handshake and each line it receives, so the test can
 # check that the second EHLO arrived AFTER the upgrade rather than merely
 # that the probe reported success.
+#
+# And the certificate is read off the UPGRADED session. That is the half
+# people actually ask for: you can monitor SMTP on port 25 today, but you
+# cannot check that its TLS works or when its certificate expires, because
+# the certificate only exists after a STARTTLS. Asserted for [msatls] --
+# not [dlgtls], where it would pass on the implicit handshake and prove
+# nothing about the upgrade.
 
 set -eu
 . "$(dirname "$0")/../lib/assert.sh"
@@ -32,6 +39,14 @@ mkdir -p "$work/home/etc"
 openssl req -x509 -newkey rsa:2048 -keyout "$work/k.pem" -out "$work/c.pem" \
 	-days 2 -nodes -subj "/CN=127.0.0.1" >"$work/ssl.log" 2>&1 \
 	|| skip "openssl could not generate a test certificate"
+
+# A SECOND certificate, for the peer that upgrades part-way, with a name
+# nothing else uses. Both peers presenting the same certificate would let
+# the assertion below pass on the implicit handshake and say nothing
+# about the upgraded one.
+openssl req -x509 -newkey rsa:2048 -keyout "$work/k2.pem" -out "$work/c2.pem" \
+	-days 2 -nodes -subj "/CN=upgraded.example" >>"$work/ssl.log" 2>&1 \
+	|| skip "openssl could not generate the second test certificate"
 
 "$CC" -o "$work/peer" "$root/tests/lib/dialogue-peer.c" -lssl -lcrypto 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; skip "dialogue-peer does not compile against libssl"; }
@@ -61,15 +76,15 @@ send "221 bye\r\n"
 EOS
 
 : > "$work/pids"
-start() {
-	"$work/peer" "$1" "$3" "$work/c.pem" "$work/k.pem" > "$2" &
+start() {	# script portfile obsfile [cert key]
+	"$work/peer" "$1" "$3" "${4:-$work/c.pem}" "${5:-$work/k.pem}" > "$2" &
 	echo $! >> "$work/pids"
 	local i=0
 	while [ "$i" -lt 50 ]; do [ -s "$2" ] && break; sleep 0.1; i=$((i + 1)); done
 	cat "$2"
 }
 pi=$(start "$work/imp.script" "$work/pi" "$work/oi")
-pe=$(start "$work/exp.script" "$work/pe" "$work/oe")
+pe=$(start "$work/exp.script" "$work/pe" "$work/oe" "$work/c2.pem" "$work/k2.pem")
 register_cleanup "kill $(tr '\n' ' ' < "$work/pids") 2>/dev/null || :"
 [ -n "$pi" ] && [ -n "$pe" ] || fail "a peer never named its port"
 
@@ -97,7 +112,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 CFG
 printf '127.0.0.1\timplicit\t# dlgtls\n127.0.0.1\texplicit\t# msatls\n' > "$work/home/etc/hosts.cfg"
 
-XYMONHOME="$work/home" "$XYMONNET" --no-update --noping --checkresponse \
+XYMONHOME="$work/home" "$XYMONNET" --no-update --noping --checkresponse --sslcert-valid-by=1 \
 	--dns=ip --timeout=20 >"$work/out.txt" 2>&1 || :
 sleep 1
 
@@ -127,5 +142,22 @@ grep -q '^got quit' "$work/oe" || fail "the upgraded session never reached QUIT"
 grep -q 'Service msatls on explicit is OK' "$work/out.txt" || fail \
 	"the starttls dialogue did not report the service up:
 $(cat "$work/out.txt")"
+
+# THE CERTIFICATE, on the connection that was upgraded part-way. Without
+# this the probe can report an upgraded session healthy while knowing
+# nothing about the certificate it is protected by -- which is the state
+# xymon is in today for every service that starts in plaintext.
+# The name belongs to the upgrading peer and to nothing else in this run,
+# so finding it proves the certificate came from the session that started
+# in plaintext -- not from the implicit handshake next door.
+grep -q 'CN=upgraded.example' "$work/out.txt" || fail \
+	"no certificate was read from the STARTTLS session. The upgrade happened
+and the conversation completed, so the probe reported an upgraded service
+while knowing nothing about the certificate protecting it:
+$(grep -iE 'certinfo|certificate|CN=' "$work/out.txt" | head -6)"
+
+grep -q 'Service msatls on explicit is OK' "$work/out.txt" || fail \
+	"the explicit-TLS service did not pass:
+$(grep -i msatls "$work/out.txt" | head -6)"
 
 pass "a dialogue runs over TLS from the first byte, and over a connection upgraded part-way"

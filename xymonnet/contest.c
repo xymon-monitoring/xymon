@@ -1672,7 +1672,7 @@ restartselect:
 		for (item=firstactive; (item != nextinqueue); item=item->next) {
 			if (item->fd > -1) {		/* Only active sockets have this */
 				/*
-				 * A per-step budget from "timeout N". Armed here, against
+				 * A per-state budget from "timeout(N)". Armed here, against
 				 * the same clock the comparison below uses: arming it from
 				 * gettimer() while comparing against getntimer()'s reading
 				 * mixes a monotonic source with a wall-clock one, and the
