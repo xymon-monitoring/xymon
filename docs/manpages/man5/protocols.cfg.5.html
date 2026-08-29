@@ -45,15 +45,22 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     SMTP service would be this:</p>
 <p class="Pp"></p>
 <pre>   [smtp]
-      send &quot;mail\r\nquit\r\n&quot;
       expect &quot;220&quot;
+      send &quot;ehlo xymonnet\r\n&quot;
+      expect &quot;250&quot; until &quot;250 &quot;
+      send &quot;quit\r\n&quot;
       options banner</pre>
-<p class="Pp">This defines a service called &quot;smtp&quot;. When the
-    connection is first established, xymonnet will send the string
-    &quot;mail\r\nquit\r\n&quot; to the service. It will then expect a response
-    beginning with &quot;220&quot;. Any data returned by the service (a
-    so-called &quot;banner&quot;) will be recorded and included in the status
-    message.</p>
+<p class="Pp">This defines a service called &quot;smtp&quot;. The steps run in
+    the order they are written: xymonnet waits for the server's &quot;220&quot;
+    greeting, sends an EHLO, waits for the multi-line &quot;250&quot; reply, and
+    closes the session with QUIT. Any data returned by the service (a so-called
+    &quot;banner&quot;) will be recorded and included in the status message.</p>
+<p class="Pp">Order matters, and for a server-greeting protocol it is the whole
+    point. SMTP, IMAP, POP3, FTP and NNTP all transmit before the client may say
+    anything; sending first is a protocol violation, and Postfix 3.9 and later
+    answer it with &quot;554 5.5.0 Error: SMTP protocol synchronization&quot;. A
+    definition that is a single <b>send</b> followed by a single <b>expect</b>
+    keeps the older behaviour of writing immediately on connect.</p>
 <p class="Pp">For services that require ALPN protocol negotiation (such as IMAPS
     multiplexed by Nginx on the same port as HTTPS), you can define:</p>
 <p class="Pp"></p>
@@ -86,6 +93,122 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         (ASCII 13), &quot;\n&quot; represents a line-feed (ASCII 10),
         &quot;\t&quot; represents a TAB (ASCII 8). Binary data is input as
         &quot;\xNN&quot; with NN being the hexadecimal value of the byte.</p>
+    <p class="Pp">An <b>expect</b> matches the beginning of the reply, and
+        consumes one line of it. Anything the server sent beyond that line is
+        kept for the next step.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="expect~2"><a class="permalink" href="#expect~2"><b>expect</b>
+    <i>STRING</i> <b>until</b> <i>TERMINATOR</i></a></dt>
+  <dd>Consume a multi-line reply. Lines are consumed until one begins with
+      <i>TERMINATOR</i>, which is consumed as well. Nothing is consumed until
+      that line arrives, so a reply that is still in flight is waited for rather
+      than half-read.
+    <p class="Pp">Protocols end a multi-line reply differently, and naming the
+        terminator covers them without special-casing any:</p>
+    <p class="Pp"></p>
+    <pre>   expect &quot;250&quot; until &quot;250 &quot;     (SMTP, FTP: &quot;250-&quot; continues)
+   expect &quot;215&quot; until &quot;.&quot;        (NNTP: a lone dot ends the block)
+   expect &quot;*&quot;   until &quot;A01 &quot;     (IMAP: the command tag ends it)</pre>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="expect~3"><a class="permalink" href="#expect~3"><b>expect</b>
+    <i>STRING</i> <b>goto</b> <i>LABEL</i></a></dt>
+  <dd></dd>
+  <dt id="expect~4"><a class="permalink" href="#expect~4"><b>expect</b>
+    <i>STRING</i> <b>fail</b></a></dt>
+  <dd></dd>
+  <dt id="state"><a class="permalink" href="#state"><b>state</b>
+    <i>NAME</i></a></dt>
+  <dd>Consecutive <b>expect</b> lines are alternatives: the first whose pattern
+      matches wins, and its action decides what happens next. Without an action
+      the dialogue continues after the whole group; <b>goto</b> jumps to the
+      matching <b>state</b>, and <b>fail</b> ends the test as a failure.
+    <p class="Pp"><b>state</b> names the state that follows it -- the expects up
+        to the next step that is not one -- and is what <b>goto</b> aims at, so
+        naming a state and marking a jump target are the same act. Naming them
+        is optional, but worth doing: a dialogue that fails reports the state it
+        failed in, and &quot;state want-password expected does not. This is how
+        a soft error is told apart from a hard one instead of both timing
+      out:</p>
+    <p class="Pp"></p>
+    <pre>   expect &quot;250&quot; goto ready
+   expect &quot;421&quot; fail</pre>
+    <p class="Pp">A <b>goto</b> may point backwards, which makes a retry loop. A
+        dialogue that loops without performing any I/O is stopped rather than
+        spinning.</p>
+    <p class="Pp">Avoid writing one alternative that is a prefix of another.
+        Both would match the same reply, so the winner would otherwise depend on
+        how much had arrived when the group was examined -- that is, on how the
+        server split its reply across packets rather than on anything in this
+        file.</p>
+    <p class="Pp">Such a group is reported when the file is read, and the driver
+        waits for every pattern in it to be decidable before choosing, so the
+        order written here decides the winner. The warning is still worth acting
+        on: a reader of the file cannot see which alternative wins without
+        knowing that rule.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="when"><a class="permalink" href="#when"><b>when</b> <i>NAME</i> ~
+    <i>REGEX</i></a></dt>
+  <dd></dd>
+  <dt id="else"><a class="permalink" href="#else"><b>else</b></a></dt>
+  <dd></dd>
+  <dt id="end"><a class="permalink" href="#end"><b>end</b></a></dt>
+  <dd>Run the enclosed steps only when the captured value <i>NAME</i> matches
+      <i>REGEX</i>. An unset value never matches. Blocks may be nested.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="capture"><a class="permalink" href="#capture"><b>capture as</b>
+    <i>NAME</i></a></dt>
+  <dd></dd>
+  <dt id="capture-regex"><a class="permalink" href="#capture-regex"><b>capture-regex</b>
+    <i>REGEX</i> <b>as</b> <i>NAME</i></a></dt>
+  <dd>Bind a value out of the reply that the preceding <b>expect</b> accepted:
+      the whole reply, or the first capture group of <i>REGEX</i>. The regex is
+      case-sensitive. A pattern that does not match binds an empty value.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="credentials"><a class="permalink" href="#credentials"><b>credentials</b>
+    <i>NAME</i></a></dt>
+  <dd>Bind <b>${username}</b> and <b>${password}</b> from the entry called
+      <i>NAME</i> in <b>$XYMONHOME/etc/credentials.cfg</b>, one entry per line:
+    <p class="Pp"></p>
+    <pre>   NAME	username	password</pre>
+    <p class="Pp">Credentials are named rather than written here because
+        protocols.cfg is world-readable and is the file people attach to bug
+        reports.</p>
+    <p class="Pp">Take care combining this with the <b>banner</b> option. The
+        banner records what the SERVER sends, so the credentials themselves are
+        never written to it -- but a server that quotes a failed login back at
+        you, as some do, puts that reply into the status message, where it is
+        stored and displayed like any other. Either leave <b>banner</b> off an
+        entry that authenticates, or use an account whose exposure you are
+        willing to accept.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="starttls"><a class="permalink" href="#starttls"><b>starttls</b></a></dt>
+  <dd>Upgrade the connection to TLS at this point. Everything before the step is
+      plaintext and everything after it is encrypted, on the same socket. This
+      is what submission (587), IMAP (143) and POP3 (110) use, and it is not the
+      same as the <b>ssl</b> option, which means TLS from the first byte.
+    <p class="Pp">If the server has sent anything that is still unread when the
+        upgrade begins, the test fails rather than proceeding: the handshake has
+        to start on the first byte sent after the go-ahead, and data arriving
+        before it is the STARTTLS plaintext-injection flaw.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="Variable"><a class="permalink" href="#Variable"><b>Variable
+    expansion</b></a></dt>
+  <dd>A <b>send</b> string may refer to captured values, and to two transforms
+      of them:
+    <p class="Pp"></p>
+    <pre>   ${name}       a captured value
+   ${md5:TEXT}   MD5 of TEXT, in lowercase hex
+   ${base64:TEXT}   TEXT in base64</pre>
+    <p class="Pp">Expansion is recursive, so a digest may be taken of other
+        values -- APOP is <b>${md5:${challenge}${password}}</b>. An unset name
+        expands to nothing.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="port"><a class="permalink" href="#port"><b>port</b>

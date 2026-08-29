@@ -21,16 +21,26 @@ the SMTP service would be this:
 .sp
 .nf
 \&   [smtp]
-\&      send "mail\er\enquit\er\en"
 \&      expect "220"
+\&      send "ehlo xymonnet\er\en"
+\&      expect "250" until "250 "
+\&      send "quit\er\en"
 \&      options banner
 .fi
 .sp
-This defines a service called "smtp". When the connection is
-first established, xymonnet will send the string "mail\er\enquit\er\en"
-to the service. It will then expect a response beginning with "220".
-Any data returned by the service (a so-called "banner") will be recorded
-and included in the status message.
+This defines a service called "smtp". The steps run in the order they
+are written: xymonnet waits for the server's "220" greeting, sends an
+EHLO, waits for the multi-line "250" reply, and closes the session with
+QUIT. Any data returned by the service (a so-called "banner") will be
+recorded and included in the status message.
+.sp
+Order matters, and for a server-greeting protocol it is the whole point.
+SMTP, IMAP, POP3, FTP and NNTP all transmit before the client may say
+anything; sending first is a protocol violation, and Postfix 3.9 and
+later answer it with "554 5.5.0 Error: SMTP protocol synchronization".
+A definition that is a single \fBsend\fR followed by a single
+\fBexpect\fR keeps the older behaviour of writing immediately on
+connect.
 .sp
 For services that require ALPN protocol negotiation (such as IMAPS multiplexed
 by Nginx on the same port as HTTPS), you can define:
@@ -64,6 +74,120 @@ characters. "\er" represents a carriage-return (ASCII 13), "\en"
 represents a line-feed (ASCII 10), "\et" represents a TAB (ASCII 8).
 Binary data is input as "\exNN" with NN being the hexadecimal value
 of the byte.
+.sp
+An \fBexpect\fR matches the beginning of the reply, and consumes one
+line of it. Anything the server sent beyond that line is kept for the
+next step.
+
+.IP "\fBexpect\fR \fISTRING\fR \fBuntil\fR \fITERMINATOR\fR"
+Consume a multi-line reply. Lines are consumed until one begins with
+\fITERMINATOR\fR, which is consumed as well. Nothing is consumed until
+that line arrives, so a reply that is still in flight is waited for
+rather than half-read.
+.sp
+Protocols end a multi-line reply differently, and naming the terminator
+covers them without special-casing any:
+.br
+.sp
+.nf
+\&   expect "250" until "250 "     (SMTP, FTP: "250-" continues)
+\&   expect "215" until "."        (NNTP: a lone dot ends the block)
+\&   expect "*"   until "A01 "     (IMAP: the command tag ends it)
+.fi
+
+.IP "\fBexpect\fR \fISTRING\fR \fBgoto\fR \fILABEL\fR"
+.IP "\fBexpect\fR \fISTRING\fR \fBfail\fR"
+.IP "\fBstate\fR \fINAME\fR"
+Consecutive \fBexpect\fR lines are alternatives: the first whose pattern
+matches wins, and its action decides what happens next. Without an
+action the dialogue continues after the whole group; \fBgoto\fR jumps to
+the matching \fBstate\fR, and \fBfail\fR ends the test as a failure.
+.sp
+\fBstate\fR names the state that follows it -- the expects up to the next
+step that is not one -- and is what \fBgoto\fR aims at, so naming a state
+and marking a jump target are the same act. Naming them is optional, but
+worth doing: a dialogue that fails reports the state it failed in, and
+"state want-password expected \"334\"" tells an operator what "step 7"
+does not.
+This is how a soft error is told apart from a hard one instead of both
+timing out:
+.br
+.sp
+.nf
+\&   expect "250" goto ready
+\&   expect "421" fail
+.fi
+.sp
+A \fBgoto\fR may point backwards, which makes a retry loop. A dialogue
+that loops without performing any I/O is stopped rather than spinning.
+.sp
+Avoid writing one alternative that is a prefix of another. Both would
+match the same reply, so the winner would otherwise depend on how much
+had arrived when the group was examined -- that is, on how the server
+split its reply across packets rather than on anything in this file.
+.sp
+Such a group is reported when the file is read, and the driver waits for
+every pattern in it to be decidable before choosing, so the order written
+here decides the winner. The warning is still worth acting on: a reader
+of the file cannot see which alternative wins without knowing that rule.
+
+.IP "\fBwhen\fR \fINAME\fR ~ \fIREGEX\fR"
+.IP "\fBelse\fR"
+.IP "\fBend\fR"
+Run the enclosed steps only when the captured value \fINAME\fR matches
+\fIREGEX\fR. An unset value never matches. Blocks may be nested.
+
+.IP "\fBcapture as\fR \fINAME\fR"
+.IP "\fBcapture-regex\fR \fIREGEX\fR \fBas\fR \fINAME\fR"
+Bind a value out of the reply that the preceding \fBexpect\fR accepted:
+the whole reply, or the first capture group of \fIREGEX\fR. The regex is
+case-sensitive. A pattern that does not match binds an empty value.
+
+.IP "\fBcredentials\fR \fINAME\fR"
+Bind \fB${username}\fR and \fB${password}\fR from the entry called
+\fINAME\fR in \fB$XYMONHOME/etc/credentials.cfg\fR, one entry per line:
+.br
+.sp
+.nf
+\&   NAME	username	password
+.fi
+.sp
+Credentials are named rather than written here because protocols.cfg is
+world-readable and is the file people attach to bug reports.
+.sp
+Take care combining this with the \fBbanner\fR option. The banner records
+what the SERVER sends, so the credentials themselves are never written to
+it \-\- but a server that quotes a failed login back at you, as some do,
+puts that reply into the status message, where it is stored and displayed
+like any other. Either leave \fBbanner\fR off an entry that authenticates,
+or use an account whose exposure you are willing to accept.
+
+.IP "\fBstarttls\fR"
+Upgrade the connection to TLS at this point. Everything before the step
+is plaintext and everything after it is encrypted, on the same socket.
+This is what submission (587), IMAP (143) and POP3 (110) use, and it is
+not the same as the \fBssl\fR option, which means TLS from the first
+byte.
+.sp
+If the server has sent anything that is still unread when the upgrade
+begins, the test fails rather than proceeding: the handshake has to
+start on the first byte sent after the go-ahead, and data arriving
+before it is the STARTTLS plaintext-injection flaw.
+
+.IP "\fBVariable expansion\fR"
+A \fBsend\fR string may refer to captured values, and to two transforms
+of them:
+.br
+.sp
+.nf
+\&   ${name}       a captured value
+\&   ${md5:TEXT}   MD5 of TEXT, in lowercase hex
+\&   ${base64:TEXT}   TEXT in base64
+.fi
+.sp
+Expansion is recursive, so a digest may be taken of other values -- APOP
+is \fB${md5:${challenge}${password}}\fR. An unset name expands to
+nothing.
 
 .IP "\fBport\fR \fINUMBER\fR"
 Define the default TCP port-number for this service. If no portnumber
