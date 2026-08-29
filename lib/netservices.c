@@ -1346,6 +1346,49 @@ char *init_tcp_services(void)
 				walk->rec->startlabel = strdup(nm);
 			}
 		}
+		else if (strncmp(l, "ignore ", 7) == 0) {
+			/*
+			 * Some protocols speak unprompted. IMAP sends untagged "* ..."
+			 * lines whenever it likes, NNTP and XMPP have their own. A
+			 * probe waiting for a tagged reply would read one of those as
+			 * the answer, not match it, and fail fast on a server that is
+			 * behaving correctly.
+			 *
+			 * It is a property of the protocol rather than of one state,
+			 * so it is written once on the entry, like framing.
+			 */
+			if (first) {
+				unsigned char *t = NULL;
+				int tlen = 0;
+				svclist_t *w;
+
+				getescapestring(skipwhitespace(l + 6), &t, &tlen);
+				if (!t || (tlen < 1)) {
+					errprintf("Service %s: 'ignore' needs a quoted prefix\n",
+						  first->rec->svcname);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					if (t) xfree(t);
+				}
+				else if (first->rec->ignorecount >= 8) {
+					errprintf("Service %s: more than 8 'ignore' prefixes\n",
+						  first->rec->svcname);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					xfree(t);
+				}
+				else {
+					for (w = first; (w); w = w->next) {
+						int k = w->rec->ignorecount;
+
+						w->rec->ignoretext[k] = (unsigned char *)malloc(tlen + 1);
+						memcpy(w->rec->ignoretext[k], t, tlen);
+						w->rec->ignoretext[k][tlen] = '\0';
+						w->rec->ignorelen[k] = tlen;
+						w->rec->ignorecount = k + 1;
+					}
+					xfree(t);
+				}
+			}
+		}
 		else if (strncmp(l, "framing ", 8) == 0) {
 			/*
 			 * How a message ends on this connection, which the socket
@@ -1585,6 +1628,8 @@ char *init_tcp_services(void)
 	/* Copy from the svclist to svcinfo table */
 	svcinfo = (svcinfo_t *) malloc((svccount+1) * sizeof(svcinfo_t));
 	for (walk=head, i=0; (walk && (i < svccount)); walk = walk->next, i++) {
+		int j;
+
 		svcinfo[i].svcname = walk->rec->svcname;
 		svcinfo[i].sendtxt = walk->rec->sendtxt;
 		svcinfo[i].sendlen = walk->rec->sendlen;
@@ -1599,6 +1644,11 @@ char *init_tcp_services(void)
 		svcinfo[i].framebig   = walk->rec->framebig;
 		svcinfo[i].frameterm    = walk->rec->frameterm;
 		svcinfo[i].frametermlen = walk->rec->frametermlen;
+		for (j = 0; j < 8; j++) {
+			svcinfo[i].ignoretext[j] = walk->rec->ignoretext[j];
+			svcinfo[i].ignorelen[j]  = walk->rec->ignorelen[j];
+		}
+		svcinfo[i].ignorecount = walk->rec->ignorecount;
 		svcinfo[i].steps   = walk->rec->steps;
 		svcinfo[i].startlabel = walk->rec->startlabel;
 		/*
@@ -1645,7 +1695,7 @@ char *init_tcp_services(void)
 			 * single-shot probe cannot express.
 			 */
 			if ((first_is_expect && (nsend > 0)) || (nsend > 1) || (nexp > 1) || nother ||
-			    (svcinfo[i].framing != FRAMING_LINE))
+			    (svcinfo[i].framing != FRAMING_LINE) || (svcinfo[i].ignorecount > 0))
 				svcinfo[i].flags |= TCP_DIALOGUE;
 
 			/*
@@ -1677,6 +1727,35 @@ char *init_tcp_services(void)
 			check_undefined_vars(&svcinfo[i]);
 			refuse_overlapping_groups(&svcinfo[i]);
 			refuse_misshapen_states(&svcinfo[i]);
+
+			/*
+			 * An ignored prefix and an expect that share a start are the
+			 * same ambiguity the overlap check refuses between two
+			 * expects: the reply would be swallowed as noise or taken as
+			 * the answer, and nothing in the file says which. Prefix
+			 * matching makes that decidable here.
+			 */
+			if (svcinfo[i].ignorecount > 0) {
+				svcstep_t *est;
+				int g;
+
+				for (est = svcinfo[i].steps; (est); est = est->next) {
+					if ((est->type != STEP_EXPECT) || est->oneof || est->wantbytes) continue;
+					for (g = 0; g < svcinfo[i].ignorecount; g++) {
+						int n = (est->len < svcinfo[i].ignorelen[g]) ?
+							est->len : svcinfo[i].ignorelen[g];
+
+						if ((n > 0) && (memcmp(est->text, svcinfo[i].ignoretext[g], n) == 0)) {
+							errprintf("Service %s: 'ignore \"%.20s\"' and 'expect \"%.20s\"' "
+								  "share a start - a reply would be swallowed as noise "
+								  "or taken as the answer, and the file does not say "
+								  "which\n", svcinfo[i].svcname,
+								  svcinfo[i].ignoretext[g], est->text);
+							svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
+						}
+					}
+				}
+			}
 
 			/*
 			 * A clause that only the driver implements, on an entry that

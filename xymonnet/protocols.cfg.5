@@ -176,8 +176,7 @@ the state it failed in, and
 does not.
 .sp
 \fBLayout.\fR An entry that uses states is written the same way
-throughout this page: the entry attributes -- \fBoptions\fR,
-\fBport\fR, \fBtransport\fR, \fBframing\fR, \fBstart\fR -- first, in any order
+throughout this page: the entry attributes -- BoptionsR, BportR, BtransportR, BframingR, BignoreR, BstartR -- first, in any order
 among themselves, because they describe the definition rather than any
 step; then the states, each with its lines indented under it.
 .sp
@@ -341,6 +340,34 @@ Expansion is recursive, so a digest may be taken of other values -- APOP
 is \fB${md5:${challenge}${password}}\fR. An unset name expands to
 nothing.
 
+.IP "\fBignore\fR \fIPREFIX\fR"
+A message the server sends unprompted. IMAP emits untagged "*" lines
+whenever it likes -- an EXISTS, an EXPUNGE, a BYE warning -- and NNTP and
+XMPP have their own. A probe waiting for a tagged reply would read one of
+those, fail to match it, and report a server that is behaving exactly as
+its RFC says.
+.sp
+A message whose start matches \fIPREFIX\fR is consumed and the wait
+continues. It is not an answer: it decides nothing, ends no state and
+binds nothing. It did arrive, so \fBidle\fR is satisfied by it, while
+\fBtimeout\fR keeps running -- a server that says nothing but noise
+still runs out of time.
+.sp
+Up to eight may be given, one per line. Like \fBframing\fR it describes
+the connection rather than one reply, so it is written on the entry.
+.br
+.sp
+.nf
+\&   [imap]
+\&      ignore "* "
+\&      port 143
+.fi
+.sp
+A prefix that also starts an \fBexpect\fR is refused when the file is
+read: the reply would be swallowed as noise or taken as the answer, and
+nothing in the file would say which. That is the same ambiguity, and the
+same completeness argument, as two overlapping alternatives.
+
 .IP "\fBframing\fR \fBline\fR"
 .IP "\fBframing\fR \fBlength(\fR\fIWIDTH\fR\fB,\fR \fBbig\fR|\fBlittle\fR\fB)\fR"
 .IP "\fBframing\fR \fBterminator\fR \fISEQUENCE\fR"
@@ -439,7 +466,7 @@ refused when the file is read rather than left to surprise somebody:
 .br
 .sp
 .nf
-\&   1  entry attributes -- options, port, transport, framing, start --
+\&   1  entry attributes -- options, port, transport, framing, ignore, start --
 \&      come before the first state, in any order among themselves
 \&   2  a state's lines are indented under it
 \&   3  a state holds at most one action: send, starttls, credentials
@@ -528,8 +555,7 @@ been taught: a \fBtimeout\fR or \fBidle\fR arms the wait that follows
 it, so a clock written below the \fBexpect\fR lines bounds nothing.
 Keep it above them, as every example here does.
 .sp
-The entry attributes -- \fBoptions\fR, \fBport\fR, \fBtransport\fR,
-\fBframing\fR, \fBstart\fR -- describe the definition rather than any step, so they
+The entry attributes -- BoptionsR, BportR, BtransportR, BframingR, BignoreR, BstartR -- describe the definition rather than any step, so they
 are written together at the top, in any order among themselves.
 .sp
 This is deliberately a service of its own rather than a deeper
@@ -561,6 +587,9 @@ names the service. The ones worth knowing:
 \&   'until' under framing length/terminator
 \&   'expect bytes(N)' under framing length/terminator
 \&   'framing terminator' needs a quoted sequence
+\&   'ignore' needs a quoted prefix
+\&   more than 8 'ignore' prefixes
+\&   'ignore \"X\"' and 'expect \"Y\"' share a start
 \&   framing length width is 1..4 bytes
 \&   framing length endianness is 'big' or 'little'
 \&   framed message of N bytes is over the 32768 a conversation may hold

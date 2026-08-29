@@ -17,10 +17,11 @@ entry rather than deleting it.
 
 ```
 [service|alias]
-   transport tcp          entry attributes: transport, port, options, framing and start
+   transport tcp          entry attributes: transport, port, options, framing, ignore and start
    port N                 set properties of the definition, in any order
    options ssl,banner     among themselves
    framing line           how a message ends on this connection
+   ignore "* "            a message the server sends unprompted
    start NAME
 
    state NAME             names the state that follows, and is what an
@@ -40,7 +41,7 @@ condition ::= expect "…" [ until "…" ] [ as NAME ] | expect bytes(N) | NAME 
 
 **Targets** are a state, or one of `success`, `warning`, `fail` -- green, yellow, red. `warning` is the point: a server answering correctly but refusing an optional capability is not down, and calling it down teaches operators to ignore the column. An edge saying `fail` is red whatever `--checkresponse` is set to; a reply matching no alternative takes that option's colour, yellow by default.
 
-**Layout.** Entry attributes -- `transport`, `port`, `options`, `framing`, `start` -- are written first, in any order among themselves, because they describe the definition rather than any step; then each `state` with its lines indented under it.
+**Layout.** Entry attributes -- `transport`, `port`, `options`, `framing`, `ignore`, `start` -- are written first, in any order among themselves, because they describe the definition rather than any step; then each `state` with its lines indented under it.
 
 **One action, one wait.** A state does one thing -- a `send`, a `starttls`, a `credentials` -- and waits for one answer: the clock that bounds the wait, and the `expect` lines that end the state, each naming where its answer leads. A state that acts without waiting leaves on `always`; a state that decides on a value already bound needs no action at all. Because a state holds one action and one wait, the order of its lines carries no meaning of its own: the entry is declarative down to the state, and sequence lives in the edges between states rather than in the lines within one.
 
@@ -230,6 +231,8 @@ The behaviour itself is documented in `protocols.cfg(5)`, which ships with the c
 **Why the graph checks are worth having, and how they mislead.** Three mistakes are properties of the graph rather than of any line: a state with no path to a terminal, an unreachable state, and a waiting state with no timer. All three are easy to implement too permissively, so they report nothing and look like they work -- reachability cannot simply follow the step list, and on the branch a `timeout(N) -> fail` edge briefly counted as ending the flow, which called every state after it unreachable. They are topology checks and should not be oversold: the bugs that cost time here are framing, partial reads and TLS transitions, and no topology check sees those.
 
 **What is not built.** Graph export (`--graph`) is deferred. A named state improves a failure from "step 7" to `state send-pass expected "235"`, and that is not enough: the faults that cost time are *why* it did not match -- bytes retained from the previous state, a reply matched before it was complete, a name that bound empty. A transcript mode is part of the feature and is **not implemented**. Nor is the marking it would require: `${password}` is expanded into a `send`, so the sent bytes, the buffer and anything an `as` binds may contain it. A value from `credentials.cfg` would have to be marked at binding time, stay marked through `${base64:}` and `${md5:}` -- an encoded secret is still the secret, and an APOP digest only looks opaque -- and be replaced by a placeholder in every output. The code wipes secrets from memory after use and no more, which is why it has no transcript to leak them into.
+
+**Not every message is an answer.** A protocol may speak unprompted -- IMAP's untagged lines, NNTP notices -- and a state waiting for a tagged reply would read one, fail to match it, and report a healthy server as broken. Fail-fast makes this worse rather than better: the faster the probe rules an answer out, the sooner it is wrong. `ignore PREFIX` says such a message is not an answer, so it is consumed and the wait continues. It could already be written as a self-loop on an action-less state, at the cost of an extra state per wait and a copy of every alternative in it; noise is a property of the protocol, so it belongs on the entry beside `framing`. An ignored prefix that also starts an `expect` is refused -- the same ambiguity as two overlapping alternatives, decidable by the same argument. What it deliberately does not do is stop the clock: `idle` counts bytes and is satisfied by noise, `timeout` counts the wait and is not, so a server that says nothing but noise still fails.
 
 **Three framings, because there are three ways a message ends.** `line` is the greeting protocols and `until` says where a multi-line *reply* stops within them. `length(W, endian)` is the protocols that count. `terminator "SEQ"` is everything else, and the one that makes a protocol of your own expressible: a message ends at a byte sequence wherever it falls, which `until` cannot say because it compares the start of a line. A custom protocol that ends records with a NUL, or with a blank line, or with a sentinel, needs no code -- it needs one attribute. What is deliberately absent is a read-granularity switch: how much the driver reads in one go changes no verdict, because matching is prefix-anchored and re-evaluated at every arrival, and consuming only the matched bytes is in the rejected list for breaking the ambiguity check.
 

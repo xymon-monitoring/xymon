@@ -189,11 +189,10 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         expected 334&quot; tells an operator what &quot;step 7&quot; does
       not.</p>
     <p class="Pp"><b>Layout.</b> An entry that uses states is written the same
-        way throughout this page: the entry attributes -- <b>options</b>,
-        <b>port</b>, <b>transport</b>, <b>framing</b>, <b>start</b> -- first, in
-        any order among themselves, because they describe the definition rather
-        than any step; then the states, each with its lines indented under
-      it.</p>
+        way throughout this page: the entry attributes -- ?Boptions?R, ?Bport?R,
+        ?Btransport?R, ?Bframing?R, ?Bignore?R, ?Bstart?R -- first, in any order
+        among themselves, because they describe the definition rather than any
+        step; then the states, each with its lines indented under it.</p>
     <p class="Pp">A state does one thing and waits for one answer: at most one
         action -- a <b>send</b>, a <b>starttls</b>, a <b>credentials</b> -- the
         clock that bounds the wait, and the <b>expect</b> lines that end the
@@ -354,6 +353,32 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         expands to nothing.</p>
     <p class="Pp"></p>
   </dd>
+  <dt id="ignore"><a class="permalink" href="#ignore"><b>ignore</b>
+    <i>PREFIX</i></a></dt>
+  <dd>A message the server sends unprompted. IMAP emits untagged &quot;*&quot;
+      lines whenever it likes -- an EXISTS, an EXPUNGE, a BYE warning -- and
+      NNTP and XMPP have their own. A probe waiting for a tagged reply would
+      read one of those, fail to match it, and report a server that is behaving
+      exactly as its RFC says.
+    <p class="Pp">A message whose start matches <i>PREFIX</i> is consumed and
+        the wait continues. It is not an answer: it decides nothing, ends no
+        state and binds nothing. It did arrive, so <b>idle</b> is satisfied by
+        it, while <b>timeout</b> keeps running -- a server that says nothing but
+        noise still runs out of time.</p>
+    <p class="Pp">Up to eight may be given, one per line. Like <b>framing</b> it
+        describes the connection rather than one reply, so it is written on the
+        entry.</p>
+    <p class="Pp"></p>
+    <pre>   [imap]
+      ignore &quot;* &quot;
+      port 143</pre>
+    <p class="Pp">A prefix that also starts an <b>expect</b> is refused when the
+        file is read: the reply would be swallowed as noise or taken as the
+        answer, and nothing in the file would say which. That is the same
+        ambiguity, and the same completeness argument, as two overlapping
+        alternatives.</p>
+    <p class="Pp"></p>
+  </dd>
   <dt id="framing"><a class="permalink" href="#framing"><b>framing</b>
     <b>line</b></a></dt>
   <dd></dd>
@@ -455,7 +480,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <p class="Pp">An entry that uses states is written one way, and most of it is
     now refused when the file is read rather than left to surprise somebody:</p>
 <p class="Pp"></p>
-<pre>   1  entry attributes -- options, port, transport, framing, start --
+<pre>   1  entry attributes -- options, port, transport, framing, ignore, start --
       come before the first state, in any order among themselves
    2  a state's lines are indented under it
    3  a state holds at most one action: send, starttls, credentials
@@ -530,10 +555,10 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     been taught: a <b>timeout</b> or <b>idle</b> arms the wait that follows it,
     so a clock written below the <b>expect</b> lines bounds nothing. Keep it
     above them, as every example here does.</p>
-<p class="Pp">The entry attributes -- <b>options</b>, <b>port</b>,
-    <b>transport</b>, <b>framing</b>, <b>start</b> -- describe the definition
-    rather than any step, so they are written together at the top, in any order
-    among themselves.</p>
+<p class="Pp">The entry attributes -- ?Boptions?R, ?Bport?R, ?Btransport?R,
+    ?Bframing?R, ?Bignore?R, ?Bstart?R -- describe the definition rather than
+    any step, so they are written together at the top, in any order among
+    themselves.</p>
 <p class="Pp">This is deliberately a service of its own rather than a deeper
     <b>[smtp]</b>. protocols.cfg is one file for the whole installation, so
     teaching <b>[smtp]</b> to expect STARTTLS would change what every existing
@@ -564,6 +589,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
    'until' under framing length/terminator
    'expect bytes(N)' under framing length/terminator
    'framing terminator' needs a quoted sequence
+   'ignore' needs a quoted prefix
+   more than 8 'ignore' prefixes
+   'ignore
    framing length width is 1..4 bytes
    framing length endianness is 'big' or 'little'
    framed message of N bytes is over the 32768 a conversation may hold
