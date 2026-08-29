@@ -156,6 +156,11 @@ timing out:
 A \fB\->\fR may point backwards, which makes a retry loop. A dialogue
 that loops without performing any I/O is stopped rather than spinning.
 .sp
+A reply that matches no alternative at all does not wait for
+\fBtimeout(\fR\fIN\fR\fB)\fR to expire: the test fails at once, naming
+the state. That is what makes a server which greets correctly and then
+rejects every command report promptly rather than as a timeout.
+.sp
 The lines of a state run in the order they are written, and the first
 edge that fires leaves it. A \fB~\fR line written above an \fBexpect\fR
 therefore decides before anything is read from the socket at all, which
@@ -331,6 +336,30 @@ reports the moment the file is installed -- a site whose mail server
 offers no STARTTLS would turn yellow because it upgraded, not because
 anything changed at the site. Copy this under a new name and point the
 hosts that should use it at that name instead.
+
+.SH DIAGNOSTICS
+This file is checked when it is read rather than when a step runs, so a
+step that is never reached still reports its own mistake. Every message
+names the service. The ones worth knowing:
+.br
+.sp
+.nf
+\&   Unknown protocols.cfg directive     a mistyped keyword; step dropped
+\&   '\-> NAME' has no matching state     the edge is dropped
+\&   'start NAME' has no matching state  the entry is refused
+\&   state 'NAME' cannot be reached      no edge names it
+\&   state 'NAME' has no way to finish   no path from it to a terminal
+\&   state 'NAME' waits for a reply with no timeout
+\&   'expect "A"' and 'expect "B"' overlap - both match the same reply
+\&   ${NAME} is never captured or bound before it is used
+\&   'NAME ~ ...' tests a value that is never bound before it
+\&   'NAME ~ "..." as X' has no capture group
+\&   transport 'X' is not implemented    only tcp is supported
+.fi
+.sp
+An overlap and an unimplemented transport refuse the definition outright:
+the service reports that protocols.cfg would not take it, rather than
+running a test whose result would depend on which pattern arrived first.
 
 .SH FILES
 .IP "\fB$XYMONHOME/etc/protocols.cfg\fR"

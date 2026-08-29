@@ -164,6 +164,10 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <p class="Pp">A <b>-&gt;</b> may point backwards, which makes a retry loop.
         A dialogue that loops without performing any I/O is stopped rather than
         spinning.</p>
+    <p class="Pp">A reply that matches no alternative at all does not wait for
+        <b>timeout(</b><i>N</i><b>)</b> to expire: the test fails at once,
+        naming the state. That is what makes a server which greets correctly and
+        then rejects every command report promptly rather than as a timeout.</p>
     <p class="Pp">The lines of a state run in the order they are written, and
         the first edge that fires leaves it. A <b>~</b> line written above an
         <b>expect</b> therefore decides before anything is read from the socket
@@ -351,6 +355,30 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 </section>
 <section class="Sh">
 <p>&#160;</p>
+<h1 class="Sh" id="DIAGNOSTICS"><a class="permalink" href="#DIAGNOSTICS">DIAGNOSTICS</a></h1>
+<p class="Pp">This file is checked when it is read rather than when a step runs,
+    so a step that is never reached still reports its own mistake. Every message
+    names the service. The ones worth knowing:</p>
+<p class="Pp"></p>
+<pre>   Unknown protocols.cfg directive     a mistyped keyword; step dropped
+   '-&gt; NAME' has no matching state     the edge is dropped
+   'start NAME' has no matching state  the entry is refused
+   state 'NAME' cannot be reached      no edge names it
+   state 'NAME' has no way to finish   no path from it to a terminal
+   state 'NAME' waits for a reply with no timeout
+   'expect &quot;A&quot;' and 'expect &quot;B&quot;' overlap - both match the same reply
+   ${NAME} is never captured or bound before it is used
+   'NAME ~ ...' tests a value that is never bound before it
+   'NAME ~ &quot;...&quot; as X' has no capture group
+   transport 'X' is not implemented    only tcp is supported</pre>
+<p class="Pp">An overlap and an unimplemented transport refuse the definition
+    outright: the service reports that protocols.cfg would not take it, rather
+    than running a test whose result would depend on which pattern arrived
+    first.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
 <h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
 <dl class="Bl-tag">
   <dt><b>$XYMONHOME/etc/protocols.cfg</b></dt>
@@ -372,6 +400,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
 <dt><a href="#FILE_FORMAT">FILE FORMAT</a></dt>
 <dt><a href="#EXAMPLES">EXAMPLES</a></dt>
+<dt><a href="#DIAGNOSTICS">DIAGNOSTICS</a></dt>
 <dt><a href="#FILES">FILES</a></dt>
 <dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
 </dl>
