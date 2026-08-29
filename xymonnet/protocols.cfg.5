@@ -78,6 +78,11 @@ of the byte.
 An \fBexpect\fR matches the beginning of the reply, and consumes one
 line of it. Anything the server sent beyond that line is kept for the
 next step.
+.sp
+A reply that never matches is not accumulated without limit. Once a
+conversation has buffered 32 KB with nothing matching, the test fails
+naming the service rather than growing for as long as the server cares
+to talk.
 
 .IP "\fBexpect\fR \fISTRING\fR \fBuntil\fR \fITERMINATOR\fR"
 Consume a multi-line reply. Lines are consumed until one begins with
@@ -151,6 +156,12 @@ timing out:
 A \fB\->\fR may point backwards, which makes a retry loop. A dialogue
 that loops without performing any I/O is stopped rather than spinning.
 .sp
+The lines of a state run in the order they are written, and the first
+edge that fires leaves it. A \fB~\fR line written above an \fBexpect\fR
+therefore decides before anything is read from the socket at all, which
+is how a state branches on a value bound earlier without waiting for
+input.
+.sp
 Avoid writing one alternative that is a prefix of another. Both would
 match the same reply, so the winner would otherwise depend on how much
 had arrived when the group was examined -- that is, on how the server
@@ -178,10 +189,14 @@ rather than any bytes.
 
 .IP "\fBtimeout(\fR\fISECONDS\fR\fB)\fR \fB\->\fR \fITARGET\fR"
 .IP "\fBidle(\fR\fISECONDS\fR\fB)\fR \fB\->\fR \fITARGET\fR"
-How long the state may take, and where to go when it does not finish in
-time. \fBtimeout\fR is the budget for the whole state; \fBidle\fR is how
-long the server may say nothing at all. They differ for a long reply
-that keeps arriving: that is not idle, but it may still be over budget.
+How long to wait, and where to go when the wait runs out. \fBtimeout\fR
+is armed against the step the dialogue is on and re-armed when it
+advances, so it bounds each wait rather than the state as a whole -- the
+same thing in a state that waits once, and not in one whose \fBsend\fR
+blocks before its \fBexpect\fR begins. \fBidle\fR is how long the server
+may say nothing at all, and restarts on any byte. They differ for a long
+reply that keeps arriving: that is not idle, but it may still be over
+budget.
 Either may lead to \fBwarning\fR, which is how "slow" is reported as
 distinct from "broken".
 
@@ -212,6 +227,10 @@ Bind \fB${username}\fR and \fB${password}\fR from the entry called
 .nf
 \&   NAME	username	password
 .fi
+.sp
+It is a step, not a property of the entry: it takes effect where it is
+written, like \fBsend\fR, and the names it binds are available to the
+steps after it.
 .sp
 Credentials are named rather than written here because protocols.cfg is
 world-readable and is the file people attach to bug reports.
