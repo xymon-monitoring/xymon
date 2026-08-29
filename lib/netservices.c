@@ -611,7 +611,7 @@ static void emit_step(svclist_t *first, svcstep_t *tmpl)
  *
  *     NAME	username	password
  */
-static int lookup_credentials(char *name, char **user, char **pass)
+int lookup_credentials(char *name, char **user, char **pass)
 {
 	char fn[PATH_MAX];
 	FILE *fd;

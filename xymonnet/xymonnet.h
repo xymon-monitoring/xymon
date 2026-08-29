@@ -134,6 +134,8 @@ typedef struct testitem_t {
 	int		dialup;		/* "?testname" flag */
 	int		alwaystrue;	/* "~testname" flag */
 	int		silenttest;	/* "testname:s" flag */
+	char		*okstates;	/* "testname:ok=a,b": states that end it green */
+	char		*credname;	/* "testname:cred=NAME": credentials for this host */
 	int             senddata;       /* For tests that merely generate a "data" report */
 	char		*srcip;
 
