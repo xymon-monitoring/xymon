@@ -9,18 +9,10 @@
 # once, so it is a memory fault on the monitor caused by a remote host.
 # MAX_DIALOGUE_BYTES bounds it; this is the test that the bound is real.
 #
-# The entry sends after its expect, which is what puts it on the dialogue
-# driver: a lone expect is the classic single-shot shape and is bounded by
-# nothing, because it accumulates nothing. The send is never reached -- the
-# reply it waits for never terminates -- it is there to choose the probe.
-#
 # It also has to fail by NAME rather than by running out of time. Both end
 # the test, so a cap that merely stopped reading would look identical from
 # the outside while telling an operator nothing about why -- and would
-# still hold the slot for the whole global timeout. The only clock here is
-# the global --timeout, deliberately set far above the bound: if the cap
-# does not fire, this test fails by taking 90 seconds rather than passing
-# because a timer rescued it.
+# still hold the slot for the whole global timeout.
 #
 # THE CONTROL is [bigreply]: a multi-line reply of about 20 KB that does
 # finish. It is the same shape of traffic, under the cap instead of over
@@ -65,15 +57,24 @@ punder=$(start "$work/under.script" "$work/pu" "$work/ou")
 register_cleanup "kill $(tr '\n' ' ' < "$work/pids") 2>/dev/null || :"
 [ -n "$pover" ] && [ -n "$punder" ] || fail "a peer never named its port"
 
+# The per-state budget is deliberately long: if the cap does not fire, this
+# test must fail by timing out rather than pass because a timer rescued it.
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [toobig]
-   expect "250" until "250 "
-   send "quit\r\n"
+   state one
+   timeout(60)                       -> fail
+   expect "250" until "250 "         -> success
    port $pover
 
 [bigreply]
-   expect "250" until "250 "
+   state one
+   timeout(60)                       -> fail
+   expect "250" until "250 "         -> quit
+
+   state quit
+   timeout(10)                       -> fail
    send "quit\r\n"
+   eof                               -> success
    port $punder
 CFG
 printf '127.0.0.1\tover\t# toobig\n127.0.0.1\tunder\t# bigreply\n' > "$work/home/etc/hosts.cfg"
@@ -93,7 +94,7 @@ grep -q 'Service toobig on over is not OK' "$work/out.txt" || fail \
 	"the cap fired but the service did not report a failure:
 $(grep -i toobig "$work/out.txt" | head -5)"
 
-# The cap must end it, not the clock. The global budget is far longer than
+# The cap must end it, not the clock. Both budgets here are far longer than
 # this bound, so finishing quickly can only mean the cap decided.
 [ "$elapsed" -lt 45 ] || fail \
 	"the run took ${elapsed}s, so the test was ended by a timer rather than
