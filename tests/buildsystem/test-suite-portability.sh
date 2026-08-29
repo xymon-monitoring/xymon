@@ -180,7 +180,23 @@ check_posix_bre() {
 	done
 }
 
+# A test that sources assert.sh must declare bash. assert.sh uses bash
+# arrays and 'local', so a "#!/bin/sh" test works on any box where /bin/sh
+# is bash and dies on any box where it is dash -- which is CI. Three tests
+# shipped that way and passed every local run before failing there.
+check_shebang() {
+	f=$1; out=$2
+
+	# an actual source line, not a mention: the runner and assert.sh
+	# itself both name the path without sourcing it
+	grep -qE '^[[:space:]]*(\.|source)[[:space:]].*lib/assert\.sh' "$f" || return 0
+	head -1 "$f" | grep -q 'env bash' && return 0
+	printf 'shebang\t%s\t%s\n' "${f#"$ROOT"/}:1" \
+		'sources assert.sh, which needs bash; declare #!/usr/bin/env bash, not #!/bin/sh' >>"$out"
+}
+
 for f in $files; do check_posix_bre "$f" "$work/violations"; done
+for f in $files; do check_shebang "$f" "$work/violations"; done
 
 if [ -s "$work/violations" ]; then
 	printf 'portability rules broken by the test suite:\n\n' >&2
@@ -243,6 +259,21 @@ undeclared="$work/undeclared.sh"
 check_uname_guard "$undeclared" "$work/uname-violations"
 assert_equal "1" "$(wc -l <"$work/uname-violations" | tr -d " ")" \
 	"the uname rule no longer reports a test that guards on uname without declaring its primitive"
+
+# the shebang rule reports a sh-declared test that sources assert.sh, and
+# stays quiet on a bash-declared one
+shb="$work/shb.sh"
+{ printf '#!/bin/sh\n'; printf '. "$(dirname "$0")/../lib/assert.sh"\n'; } >"$shb"
+: >"$work/shb-violations"
+check_shebang "$shb" "$work/shb-violations"
+assert_equal "1" "$(wc -l <"$work/shb-violations" | tr -d " ")" \
+	"the shebang rule no longer reports a #!/bin/sh test that sources assert.sh"
+
+{ printf '#!/usr/bin/env bash\n'; printf '. "$(dirname "$0")/../lib/assert.sh"\n'; } >"$shb"
+: >"$work/shb-violations"
+check_shebang "$shb" "$work/shb-violations"
+assert_equal "0" "$(wc -l <"$work/shb-violations" | tr -d " ")" \
+	"the shebang rule reports a correctly declared test"
 
 declared="$work/declared.sh"
 {
