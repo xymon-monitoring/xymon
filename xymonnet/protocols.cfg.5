@@ -119,14 +119,19 @@ end the test where it stands:
 .sp
 .nf
 \&   \-> \fILABEL\fR        continue in that state
-\&   \-> success      the service is up
+\&   \-> success      the service is up (green)
 \&   \-> warning      answering, but not as it should (yellow)
-\&   \-> fail         the test failed (the \fB\-\-checkresponse\fR colour)
+\&   \-> fail         the test failed (red)
 .fi
 .sp
 \fBwarning\fR is the one worth reaching for. A server that answers
 correctly but refuses an optional capability is not down, and reporting
 it as down teaches operators to ignore the column.
+.sp
+A reply that matches no alternative at all is a failure too, but it takes
+the colour of \fB\-\-checkresponse\fR, which is yellow unless set
+otherwise. \fB\-> fail\fR is red whatever that option says, so choosing
+it is a stronger statement than merely failing to match.
 .sp
 \fBstate\fR names the state that follows it -- the expects up to the next
 step that is not one -- and is what a \fB\->\fR aims at, so naming a state

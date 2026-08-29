@@ -136,12 +136,17 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       that end the test where it stands:
     <p class="Pp"></p>
     <pre>   -&gt; <i>LABEL</i>        continue in that state
-   -&gt; success      the service is up
+   -&gt; success      the service is up (green)
    -&gt; warning      answering, but not as it should (yellow)
-   -&gt; fail         the test failed (the <b>--checkresponse</b> colour)</pre>
+   -&gt; fail         the test failed (red)</pre>
     <p class="Pp"><b>warning</b> is the one worth reaching for. A server that
         answers correctly but refuses an optional capability is not down, and
         reporting it as down teaches operators to ignore the column.</p>
+    <p class="Pp">A reply that matches no alternative at all is a failure too,
+        but it takes the colour of <b>--checkresponse</b>, which is yellow
+        unless set otherwise. <b>-&gt; fail</b> is red whatever that option
+        says, so choosing it is a stronger statement than merely failing to
+        match.</p>
     <p class="Pp"><b>state</b> names the state that follows it -- the expects up
         to the next step that is not one -- and is what a <b>-&gt;</b> aims at,
         so naming a state and marking a jump target are the same act. Naming
