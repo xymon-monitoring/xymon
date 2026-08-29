@@ -2,10 +2,16 @@
 #
 # A protocols.cfg mistake should say so.
 #
-# An unrecognised directive was a silent no-op: the step simply vanished
-# and the probe reported on a conversation it never had. That is checked
-# when the file is read, not when the step executes, which is why this
-# test never connects to anything.
+# Every one of these used to be silent. A mistyped directive was a no-op,
+# so the step simply vanished and the probe reported on a conversation it
+# never had; ${sha1:...} was read as a variable named "sha1:..." and
+# expanded to nothing; a capture with no expect in front of it bound an
+# empty string; starttls on a service that is already TLS started a second
+# handshake inside the first and failed like a broken server.
+#
+# The checks run when the file is read, not when the step executes -- a
+# step that is never reached would otherwise never report its own mistake.
+# That is why this test never connects to anything.
 #
 # The second half matters as much as the first: the config the tree SHIPS
 # must produce none of these. A validator that cries wolf gets ignored,
@@ -26,13 +32,17 @@ run_xymonnet() {
 		--timeout=2 2>&1 || :
 }
 
-# --- a file with a mistyped directive --------------------------------------
+# --- a file with one of each mistake ----------------------------------------
 cat > "$work/home/etc/protocols.cfg" <<'CFG'
 [bad]
    exepct "220"
+   capture as tooearly
+   capture-regex "[0-9]+" as nogroup
    expect "220"
+   send "x${sha1:foo}\r\n"
    options banner
    port 9
+
 CFG
 out=$(run_xymonnet)
 
@@ -41,12 +51,29 @@ grep -qi 'unknown protocols.cfg directive' <<<"$out" || fail \
 probe still runs, so the test reports on a conversation it never had:
 $out"
 
+grep -qi 'before any expect' <<<"$out" || fail \
+	"'capture as' with no preceding expect was accepted; it can only bind an
+empty value:
+$out"
+
+grep -qi 'unknown expansion' <<<"$out" || fail \
+	"\${sha1:...} was accepted. It is not a function, so it is read as a
+variable of that name and expands to nothing:
+$out"
+
+grep -q 'no capture group' <<<"$out" || fail \
+	"a capture-regex with no parenthesised group was accepted. The value bound
+is group 1, so that pattern can never bind anything and \${name} expands to
+nothing for every reply:
+$out"
+
+
 # --- and the shipped file must be quiet -------------------------------------
 cp "$root/xymonnet/protocols.cfg" "$work/home/etc/protocols.cfg"
 out=$(run_xymonnet)
-noise=$(grep -ciE 'unknown protocols.cfg directive' <<<"$out" || true)
+noise=$(grep -ciE 'unknown protocols.cfg directive|before any expect|unknown expansion|no capture group' <<<"$out" || true)
 [ "$noise" -eq 0 ] || fail \
 	"the protocols.cfg this tree ships triggers $noise of its own warnings:
 $(grep -iE 'unknown|before any expect' <<<"$out")"
 
-pass "a mistyped directive is reported when the file is read, and the shipped file reports none"
+pass "protocols.cfg mistakes are reported when the file is read, and the shipped file reports none"
