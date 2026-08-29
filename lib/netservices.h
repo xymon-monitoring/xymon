@@ -126,6 +126,15 @@ typedef struct svcinfo_t {
 	int framebig;		/* FRAMING_LENGTH: 1 big-endian, 0 little-endian */
 	unsigned char *frameterm;	/* FRAMING_TERM: the sequence that ends a message */
 	int frametermlen;
+	/*
+	 * "ignore TEXT": a message the server sends unprompted. IMAP's untagged
+	 * lines, NNTP notices, anything a protocol may say while the client is
+	 * waiting for something else. Such a message is consumed and the wait
+	 * continues, rather than being read as the answer that never came.
+	 */
+	unsigned char *ignoretext[8];
+	int ignorelen[8];
+	int ignorecount;
 	svcstep_t *steps;	/* NULL unless TCP_DIALOGUE */
 	char *startlabel;	/* 'start NAME': where the dialogue begins */
 	svcstep_t *startstep;	/* ... resolved after parsing */
