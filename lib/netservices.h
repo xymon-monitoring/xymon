@@ -24,6 +24,7 @@
    sendtxt plus one exptext: an expect comes first, or there is more than one
    of either. Single-step services keep the old path untouched. */
 #define TCP_DIALOGUE   0x0020
+#define TCP_DIALOGUE_BROKEN 0x0040	/* refused at load: do not report OK */
 
 /* One step of a protocol dialogue, in the order protocols.cfg lists them.
    Kept as a list rather than an array because the parser appends while it
@@ -70,8 +71,6 @@ typedef struct svcstep_t {
 	unsigned char *until;		/* expect ... until "X": end-of-reply marker */
 	int untillen;
 	int seconds;			/* STEP_TIMEOUT: budget for the following wait */
-	int ambiguous;			/* this alternation group has overlapping patterns */
-	int maxaltlen;			/* ... and the longest pattern in it */
 	struct svcstep_t *next;
 } svcstep_t;
 
