@@ -317,8 +317,9 @@ static void refuse_overlapping_groups(svcinfo_t *rec)
 		for (last = st; (last->next && (last->next->type == STEP_EXPECT)); last = last->next) ;
 
 		for (a = st; (a != last); a = a->next) {
+			if (a->oneof) continue;		/* EOF competes with no byte pattern */
 			for (b = a->next; ; b = b->next) {
-				int n = (a->len < b->len) ? a->len : b->len;
+				int n = (b->oneof) ? 0 : ((a->len < b->len) ? a->len : b->len);
 
 				if ((n > 0) && (memcmp(a->text, b->text, n) == 0)) {
 					/*
@@ -373,9 +374,22 @@ static void resolve_svcsteps(svcinfo_t *rec)
 
 		if (lbl) st->targetstep = lbl;
 		else {
-			errprintf("Service %s: 'goto %s' has no matching state - "
+			errprintf("Service %s: '-> %s' has no matching state - "
 				  "the branch is dropped\n", rec->svcname, st->target);
 			st->action = ACT_NEXT;
+		}
+	}
+
+	if (rec->startlabel) {
+		for (lbl = rec->steps; (lbl); lbl = lbl->next)
+			if ((lbl->type == STEP_LABEL) && lbl->label &&
+			    (strcmp(lbl->label, rec->startlabel) == 0)) break;
+
+		if (lbl) rec->startstep = lbl;
+		else {
+			errprintf("Service %s: 'start %s' has no matching state\n",
+				  rec->svcname, rec->startlabel);
+			rec->flags |= TCP_DIALOGUE_BROKEN;
 		}
 	}
 }
@@ -401,6 +415,7 @@ static void emit_step(svclist_t *first, svcstep_t *tmpl)
 
 		st->action  = tmpl->action;
 		st->seconds = tmpl->seconds;
+		st->oneof   = tmpl->oneof;
 		if (tmpl->target)  st->target  = strdup(tmpl->target);
 		if (tmpl->label)   st->label   = strdup(tmpl->label);
 		if (tmpl->varname) st->varname = strdup(tmpl->varname);
@@ -910,6 +925,74 @@ char *init_tcp_services(void)
 				emit_step(first, &tmpl);
 			}
 		}
+		else if (strncmp(l, "start ", 6) == 0) {
+			/* Where the dialogue begins. Without it, the first step. */
+			char *nm = skipwhitespace(l + 6);
+
+			if (!*nm) errprintf("'start' with no state name\n");
+			else for (walk = first; (walk); walk = walk->next) {
+				if (walk->rec->startlabel) xfree(walk->rec->startlabel);
+				walk->rec->startlabel = strdup(nm);
+			}
+		}
+		else if (strncmp(l, "transport ", 10) == 0) {
+			/*
+			 * Which probe runs this entry. Only tcp is implemented; anything
+			 * else must refuse rather than be silently treated as tcp, or a
+			 * datagram entry would quietly become a stream one.
+			 */
+			char *nm = skipwhitespace(l + 10);
+
+			if (strcmp(nm, "tcp") != 0) {
+				errprintf("Service %s: transport '%s' is not implemented - "
+					  "only 'tcp' is supported\n",
+					  (first ? first->rec->svcname : "?"), nm);
+				for (walk = first; (walk); walk = walk->next)
+					walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+		}
+		else if (strncmp(l, "always ", 7) == 0) {
+			/* An unconditional edge, for a state with nothing to wait for. */
+			char *rest = skipwhitespace(l + 7);
+
+			if (strncmp(rest, "->", 2) != 0) errprintf("'always' without '->'\n");
+			else if (first) {
+				svcstep_t tmpl;
+				char *tgt = strtok(skipwhitespace(rest + 2), " \t");
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_JUMP;
+				if (!tgt) errprintf("'always ->' with no target\n");
+				else { tmpl.target = tgt; tmpl.action = ACT_GOTO; emit_step(first, &tmpl); }
+			}
+		}
+		else if (strncmp(l, "eof ", 4) == 0) {
+			/*
+			 * The peer closing is an outcome, not automatically a fault:
+			 * after QUIT it is the correct one. Carried as an alternative
+			 * that matches EOF instead of bytes, so it sits in the same
+			 * group as the expects it competes with.
+			 */
+			char *rest = skipwhitespace(l + 4);
+
+			if (strncmp(rest, "->", 2) != 0) errprintf("'eof' without '->'\n");
+			else if (first) {
+				svcstep_t tmpl;
+				char *tgt = strtok(skipwhitespace(rest + 2), " \t");
+
+				memset(&tmpl, 0, sizeof(tmpl));
+				tmpl.type = STEP_EXPECT;
+				tmpl.oneof = 1;
+				tmpl.text = (unsigned char *)strdup("");
+				tmpl.len = 0;
+				if (!tgt) errprintf("'eof ->' with no target\n");
+				else if (strcmp(tgt, "fail") == 0)    tmpl.action = ACT_FAIL;
+				else if (strcmp(tgt, "warning") == 0) tmpl.action = ACT_WARNING;
+				else if (strcmp(tgt, "success") == 0) tmpl.action = ACT_SUCCESS;
+				else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
+				emit_step(first, &tmpl);
+			}
+		}
 		else if (strcmp(l, "starttls") == 0) {
 			/*
 			 * Explicit TLS. Everything before this line is plaintext,
@@ -929,7 +1012,15 @@ char *init_tcp_services(void)
 			if (first) {
 				char *opt;
 
-				first->rec->flags = 0;
+				/*
+				 * options REPLACES the option bits rather than adding to
+				 * them, so a later 'options' line does not inherit an
+				 * earlier one. A refusal is not an option bit and must
+				 * survive: it says the definition is unusable, and an
+				 * 'options' line below it would otherwise clear it and let
+				 * the service report green.
+				 */
+				first->rec->flags &= TCP_DIALOGUE_BROKEN;
 				l = skipwhitespace(l+7);
 				opt = strtok(l, ",");
 				while (opt) {
@@ -985,7 +1076,15 @@ char *init_tcp_services(void)
 		svcinfo[i].port    = walk->rec->port;
 		svcinfo[i].alpns   = walk->rec->alpns;
 		svcinfo[i].steps   = walk->rec->steps;
-		resolve_svcsteps(&svcinfo[i]);
+		svcinfo[i].startlabel = walk->rec->startlabel;
+		/*
+		 * The array is malloc'd, not calloc'd, and every field here is
+		 * assigned by hand -- so a field left out is not NULL, it is
+		 * whatever the heap held. startstep is only set by resolve when
+		 * the entry has a 'start' line, so it has to be cleared first.
+		 */
+		svcinfo[i].startstep = NULL;
+		resolve_svcsteps(&svcinfo[i]);	/* sets startstep from startlabel */
 		/*
 		 * A dialogue is anything that is not the classic one-shot shape.
 		 * Deciding it here, once, keeps do_tcp_tests() from re-deriving it

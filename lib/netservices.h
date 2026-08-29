@@ -80,6 +80,7 @@ typedef struct svcstep_t {
 	unsigned char *until;		/* expect ... until "X": end-of-reply marker */
 	int untillen;
 	int seconds;			/* STEP_TIMEOUT: budget for the following wait */
+	int oneof;			/* this alternative fires on EOF, not on bytes */
 	struct svcstep_t *next;
 } svcstep_t;
 
@@ -93,6 +94,8 @@ typedef struct svcinfo_t {
 	int port;
 	char *alpns;
 	svcstep_t *steps;	/* NULL unless TCP_DIALOGUE */
+	char *startlabel;	/* 'start NAME': where the dialogue begins */
+	svcstep_t *startstep;	/* ... resolved after parsing */
 } svcinfo_t;
 
 extern char *init_tcp_services(void);
