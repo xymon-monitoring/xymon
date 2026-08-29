@@ -173,21 +173,25 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       not.</p>
     <p class="Pp"><b>Layout.</b> An entry that uses states is written the same
         way throughout this page: the entry attributes -- <b>options</b>,
-        <b>port</b>, <b>transport</b>, <b>start</b> -- first, because they
-        describe the definition rather than any step; then the states, each with
-        its steps indented under it. Within a state the actions come first --
-        <b>send</b>, <b>starttls</b>, <b>credentials</b> and the clocks, as many
-        as the exchange needs -- and the <b>expect</b> lines end it, each naming
-        the state to move to. A dialogue written that way reads as the machine
-        it is: every state says what it does, what it waits for, and where each
-        answer leads.</p>
-    <p class="Pp">None of this is enforced. The parser takes an attribute
-        anywhere in the block, ignores indentation, and accepts an <b>expect</b>
-        with no <b>-&gt;</b> -- which continues with the step below it, so a
-        state can also wait, send and read again before anything decides. That
-        is how the classic entries at the top of this page are written, and it
-        is why the convention is worth keeping in the ones that branch: the file
-        stops saying where the dialogue goes.</p>
+        <b>port</b>, <b>transport</b>, <b>start</b> -- first, in any order among
+        themselves, because they describe the definition rather than any step;
+        then the states, each with its lines indented under it.</p>
+    <p class="Pp">A state does one thing and waits for one answer: at most one
+        action -- a <b>send</b>, a <b>starttls</b>, a <b>credentials</b> -- the
+        clock that bounds the wait, and the <b>expect</b> lines that end the
+        state, each naming where its answer leads. A state that acts without
+        waiting leaves on <b>always</b>; a state that only decides on a value
+        already bound needs no action at all. Written that way an entry is the
+        machine it describes, and the order of the lines within a state carries
+        no meaning of its own.</p>
+    <p class="Pp">The parser enforces none of this. It takes an attribute
+        anywhere in the block, ignores indentation, accepts several actions and
+        several waits in one state, and accepts an <b>expect</b> with no
+        <b>-&gt;</b>, which continues with the step below it -- the shape the
+        classic entries at the top of this page use. One ordering rule survives
+        and is real: a <b>timeout</b> or <b>idle</b> arms the wait that follows
+        it, so a clock written below a state's <b>expect</b> lines bounds
+        nothing.</p>
     <p class="Pp">This is how a soft error is told apart from a hard one instead
         of both timing out:</p>
     <p class="Pp"></p>
@@ -415,6 +419,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
          expect &quot;454&quot;                       -&gt; warning
       state secure
          starttls
+         always                             -&gt; ehlo-tls
+      state ehlo-tls
          send &quot;ehlo xymonnet\r\n&quot;
          timeout(10)                        -&gt; fail
          expect &quot;250&quot; until &quot;250 &quot;          -&gt; farewell
@@ -422,16 +428,21 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
          send &quot;quit\r\n&quot;
          timeout(10)                        -&gt; fail
          expect &quot;221&quot;                       -&gt; success</pre>
-<p class="Pp">A state is what the dialogue DOES and then what it WAITS for: its
-    actions -- <b>send</b>, <b>starttls</b>, <b>credentials</b>, and the clocks
-    -- come first, as many as the exchange needs, and its <b>expect</b> lines
-    end it by naming the state to move to. Writing an <b>expect</b> that names
-    no target is accepted and simply continues with the step below it, but then
-    the file no longer says where the dialogue went and the reader has to work
-    it out from what follows.</p>
+<p class="Pp">A state does one thing and then waits for one answer: at most one
+    action -- a <b>send</b>, a <b>starttls</b>, a <b>credentials</b> -- the
+    clock that bounds the wait, and the <b>expect</b> lines that end the state
+    by naming where each answer leads. <b>secure</b> upgrades and does nothing
+    else, so it leaves on <b>always</b>; <b>offers</b> waits for nothing at all
+    and decides on a value it already holds.</p>
+<p class="Pp">Because a state holds one action and one wait, the order of its
+    lines carries no meaning of its own -- with one exception the parser has not
+    been taught: a <b>timeout</b> or <b>idle</b> arms the wait that follows it,
+    so a clock written below the <b>expect</b> lines bounds nothing. Keep it
+    above them, as every example here does.</p>
 <p class="Pp">The entry attributes -- <b>options</b>, <b>port</b>,
     <b>transport</b>, <b>start</b> -- describe the definition rather than any
-    step, so they are written together at the top.</p>
+    step, so they are written together at the top, in any order among
+    themselves.</p>
 <p class="Pp">This is deliberately a service of its own rather than a deeper
     <b>[smtp]</b>. protocols.cfg is one file for the whole installation, so
     teaching <b>[smtp]</b> to expect STARTTLS would change what every existing

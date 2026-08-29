@@ -131,6 +131,9 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 
    state secure
       starttls
+      always                             -> ehlo-tls
+
+   state ehlo-tls
       send "ehlo xymonnet\r\n"
       timeout(10)                        -> fail
       expect "250" until "250 "          -> farewell
