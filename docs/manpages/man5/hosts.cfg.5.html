@@ -791,6 +791,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   </dd>
   <dt id="sni"><a class="permalink" href="#sni"><b>sni</b></a></dt>
   <dd></dd>
+  <dt id="sni~2"><a class="permalink" href="#sni~2"><b>sni=</b>NAME</a></dt>
+  <dd></dd>
   <dt id="nosni"><a class="permalink" href="#nosni"><b>nosni</b></a></dt>
   <dd>Enable or disable SNI (Server Name Indication) for SSL tests. SNI is on by
       default and sends the host name as the servername; most TLS servers now
@@ -798,6 +800,12 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       a server that cannot handle SNI or rejects an unknown name, or set the
       default globally with the &quot;--sni&quot; option to <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1).</i>
       A host tested by its IP address sends no SNI.
+    <p class="Pp">Use &quot;sni=NAME&quot; to send a specific servername instead
+        of the host name - for a host tested by IP, or whose host name is a
+        display label rather than the certificate's FQDN. It also enables SNI.
+        NAME must be a host name, not an IP address (RFC 6066 does not allow an
+        address in SNI); an IP is logged and no SNI is sent. HTTP tests take the
+        SNI name from the URL instead.</p>
     <p class="Pp"></p>
     <p class="Pp"></p>
   </dd>
