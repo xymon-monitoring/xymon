@@ -56,6 +56,7 @@ register_cleanup "kill $(tr '\n' ' ' < "$work/pids") 2>/dev/null || :"
 
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [framed]
+   options banner
    port $pframe
 
    state read
@@ -63,6 +64,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect bytes(12)   -> success
 
 [short]
+   options banner
    port $pshort
 
    state read
@@ -70,6 +72,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect bytes(12)   -> success
 
 [framedtail]
+   options banner
    port $ptail
 
    state read
@@ -91,7 +94,7 @@ colour_of() { grep -oE "status\+[0-9]+ $1 (green|yellow|red|clear)" "$work/out.t
 [ "$(colour_of fr.framed)" = green ] || fail \
 	"a 12-byte frame with no newline in it was not accepted by 'expect bytes(12)',
 so a length-framed reply still cannot be read:
-$(grep -i framed "$work/out.txt" | head -4)"
+$(head -30 "$work/out.txt")"
 
 # THE CONTROL
 [ "$(colour_of sh.short)" = green ] && fail \
