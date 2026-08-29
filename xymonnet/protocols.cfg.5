@@ -341,6 +341,31 @@ Expansion is recursive, so a digest may be taken of other values -- APOP
 is \fB${md5:${challenge}${password}}\fR. An unset name expands to
 nothing.
 
+.IP "\fBframing\fR \fBline\fR"
+.IP "\fBframing\fR \fBlength(\fR\fIWIDTH\fR\fB,\fR \fBbig\fR|\fBlittle\fR\fB)\fR"
+How a message ends on this connection. TCP says nothing about it: a
+message boundary is always something the protocol states, and it states
+it in one of three ways -- a terminator, a count, or the close.
+.sp
+\fBline\fR is the default and is what the greeting protocols do: an
+\fBexpect\fR consumes one line, and \fBuntil\fR says where a reply of
+several lines ends. \fBlength\fR is what the binary protocols do --
+DNS over TCP, MySQL, LDAP, AMQP -- where each message is preceded by a
+count of \fIWIDTH\fR bytes, 1 to 4, most significant first with
+\fBbig\fR and last with \fBlittle\fR.
+.sp
+Under \fBlength\fR the driver assembles a whole message before anything
+looks at it: an \fBexpect\fR matches the start of the MESSAGE rather
+than of whatever has arrived so far, a match consumes the message and
+its count together, and a payload containing a newline is data like any
+other byte. A message longer than 32 KB fails by name rather than being
+buffered.
+.sp
+It describes the connection, not one reply, so it is written once as an
+entry attribute. \fBuntil\fR and \fBexpect bytes(\fR\fIN\fR\fB)\fR are
+refused under it: the count has already said where the message ends, and
+a second answer could only agree or contradict.
+
 .IP "\fBtransport\fR \fBtcp\fR"
 Which probe runs this entry. Only \fBtcp\fR is implemented; naming
 anything else refuses the entry rather than silently running it as tcp.
@@ -409,6 +434,8 @@ is written, and what a reader is entitled to assume:
 \&   4  every expect names where it goes: "\-> TARGET"
 \&   5  a clock -- timeout or idle -- is written above the expects it
 \&      bounds, because it arms the wait that FOLLOWS it
+\&   6  a message boundary is stated, never guessed: a terminator with
+\&      "until", a count with "framing length", or the close with "eof"
 .fi
 .sp
 Rule 5 is the one that bites: a clock written below a state's
@@ -518,6 +545,11 @@ names the service. The ones worth knowing:
 \&   'expect bytes(N)' shares a state with another expect
 \&   'expect bytes(N) until ...' - a frame already ends the reply
 \&   'expect bytes(N)' is outside 1..32768
+\&   'until' under framing length         the count already says this
+\&   'expect bytes(N)' under framing length
+\&   framing length width is 1..4 bytes
+\&   framing length endianness is 'big' or 'little'
+\&   framed message of N bytes is over the 32768 a conversation may hold
 \&   ${NAME} is never captured or bound before it is used
 \&   'NAME ~ ...' tests a value that is never bound before it
 \&   'NAME ~ "..." as X' has no capture group

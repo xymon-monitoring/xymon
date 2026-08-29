@@ -1241,6 +1241,57 @@ char *init_tcp_services(void)
 				walk->rec->startlabel = strdup(nm);
 			}
 		}
+		else if (strncmp(l, "framing ", 8) == 0) {
+			/*
+			 * How a message ends on this connection, which the socket
+			 * never says: "line" is the greeting protocols, and
+			 * "length(W, big|little)" is the binary ones that send a
+			 * count first -- DNS over TCP, MySQL, LDAP, AMQP. It is a
+			 * property of the protocol rather than of one reply, so it
+			 * belongs on the entry and not on every expect.
+			 */
+			if (first) {
+				char *nm = skipwhitespace(l + 8);
+				svclist_t *w;
+
+				if (strncmp(nm, "line", 4) == 0) {
+					for (w = first; (w); w = w->next) w->rec->framing = FRAMING_LINE;
+				}
+				else if (strncmp(nm, "length(", 7) == 0) {
+					int width = atoi(nm + 7);
+					char *comma = strchr(nm, ',');
+					int big = 1;
+
+					if (comma) {
+						char *e = skipwhitespace(comma + 1);
+
+						if (strncmp(e, "little", 6) == 0) big = 0;
+						else if (strncmp(e, "big", 3) != 0) {
+							errprintf("Service %s: framing length endianness is 'big' or "
+								  "'little', not '%s'\n", first->rec->svcname, e);
+							first->rec->flags |= TCP_DIALOGUE_BROKEN;
+						}
+					}
+					if ((width < 1) || (width > 4)) {
+						errprintf("Service %s: framing length width is 1..4 bytes, not %d\n",
+							  first->rec->svcname, width);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+					else {
+						for (w = first; (w); w = w->next) {
+							w->rec->framing    = FRAMING_LENGTH;
+							w->rec->framewidth = width;
+							w->rec->framebig   = big;
+						}
+					}
+				}
+				else {
+					errprintf("Service %s: unknown framing '%s' - it is 'line' or "
+						  "'length(WIDTH, big|little)'\n", first->rec->svcname, nm);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+			}
+		}
 		else if (strncmp(l, "transport ", 10) == 0) {
 			/*
 			 * Which probe runs this entry. Only tcp is implemented; anything
@@ -1381,6 +1432,9 @@ char *init_tcp_services(void)
 		svcinfo[i].flags   = walk->rec->flags;
 		svcinfo[i].port    = walk->rec->port;
 		svcinfo[i].alpns   = walk->rec->alpns;
+		svcinfo[i].framing    = walk->rec->framing;
+		svcinfo[i].framewidth = walk->rec->framewidth;
+		svcinfo[i].framebig   = walk->rec->framebig;
 		svcinfo[i].steps   = walk->rec->steps;
 		svcinfo[i].startlabel = walk->rec->startlabel;
 		/*
@@ -1426,8 +1480,33 @@ char *init_tcp_services(void)
 			 * something is sent AFTER, which is the ordering the
 			 * single-shot probe cannot express.
 			 */
-			if ((first_is_expect && (nsend > 0)) || (nsend > 1) || (nexp > 1) || nother)
+			if ((first_is_expect && (nsend > 0)) || (nsend > 1) || (nexp > 1) || nother ||
+			    (svcinfo[i].framing == FRAMING_LENGTH))
 				svcinfo[i].flags |= TCP_DIALOGUE;
+
+			/*
+			 * Under length framing the peer says where every message ends,
+			 * so a clause that says it again is either redundant or a
+			 * contradiction -- and there is no way to tell which from the
+			 * file. Refuse both rather than pick one.
+			 */
+			if (svcinfo[i].framing == FRAMING_LENGTH) {
+				svcstep_t *fst;
+
+				for (fst = svcinfo[i].steps; (fst); fst = fst->next) {
+					if (fst->type != STEP_EXPECT) continue;
+					if (fst->until)
+						errprintf("Service %s: 'until' under framing length - the "
+							  "length already says where the message ends\n",
+							  svcinfo[i].svcname);
+					else if (fst->wantbytes)
+						errprintf("Service %s: 'expect bytes(%d)' under framing length - "
+							  "the peer's own count says how long the message is\n",
+							  svcinfo[i].svcname, fst->wantbytes);
+					else continue;
+					svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
+				}
+			}
 
 			check_undefined_vars(&svcinfo[i]);
 			refuse_overlapping_groups(&svcinfo[i]);

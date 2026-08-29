@@ -68,6 +68,17 @@
    pattern matches wins and its action fires, so a state has as many
    outgoing edges as it has alternatives, plus the implicit failure edge
    taken when every alternative has been ruled out. */
+/*
+ * How a message ends on this connection. TCP is a byte stream: the boundary
+ * is always something the protocol says, never something the socket knows.
+ *
+ *   FRAMING_LINE    a line ends at "\n" -- the greeting protocols
+ *   FRAMING_LENGTH  the peer sends a count first -- DNS-over-TCP, MySQL,
+ *                   LDAP, AMQP: binary, and no newline to look for
+ */
+#define FRAMING_LINE   0
+#define FRAMING_LENGTH 1
+
 /* How much a single expect may accumulate before giving up. A server that
    never sends the terminator must not be able to grow this without limit.
    The parser needs it too: "expect bytes(N)" may not ask for more than a
@@ -105,6 +116,9 @@ typedef struct svcinfo_t {
 	unsigned int flags;
 	int port;
 	char *alpns;
+	int framing;		/* FRAMING_* -- how a message ends on this connection */
+	int framewidth;		/* FRAMING_LENGTH: bytes of length prefix */
+	int framebig;		/* FRAMING_LENGTH: 1 big-endian, 0 little-endian */
 	svcstep_t *steps;	/* NULL unless TCP_DIALOGUE */
 	char *startlabel;	/* 'start NAME': where the dialogue begins */
 	svcstep_t *startstep;	/* ... resolved after parsing */
