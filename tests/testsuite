@@ -73,14 +73,17 @@ if [ -z "$tests" ]; then
 	exit 1
 fi
 
-# A timestamp for the final checks, so they judge what THIS run left and not
-# what an earlier one did. Unset for a test invoked on its own, which is how
-# such a check knows to skip.
-__XYMON_TESTS_RUN_MARKER=$(mktemp "${TMPDIR:-/tmp}/xymon-runmarker.XXXXXX") || exit 1
-export __XYMON_TESTS_RUN_MARKER
-trap 'rm -f "$__XYMON_TESTS_RUN_MARKER"' EXIT
-trap 'rm -f "$__XYMON_TESTS_RUN_MARKER"; exit 130' INT
-trap 'rm -f "$__XYMON_TESTS_RUN_MARKER"; exit 143' TERM
+# Unset for a test invoked on its own, which is how a final check knows to skip.
+# One temp directory per run, with TMPDIR pointed at it so every test works
+# inside it. Two runs sharing $TMPDIR would otherwise see each other's live
+# files, and a leftovers check could not tell them from its own.
+__XYMON_TESTS_RUNROOT=$(mktemp -d "${TMPDIR:-/tmp}/xymon-run.XXXXXX") || exit 1
+export __XYMON_TESTS_RUNROOT
+TMPDIR=$__XYMON_TESTS_RUNROOT
+export TMPDIR
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT"' EXIT
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT"; exit 130' INT
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT"; exit 143' TERM
 
 pass=0; skip=0; fail=0; failed=''
 run_one() {

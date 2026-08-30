@@ -3,9 +3,9 @@
 #
 # A run leaves nothing behind, however it ends.
 #
-# tests/final/no-leftovers.sh covers the runs that finish. It cannot cover the
-# ones that are stopped -- on a signal it never runs -- nor the runner's own
-# marker, which it excludes because the marker is still in use while it runs.
+# no-leftovers.sh covers the runs that finish, and only what is inside the run
+# directory. The endings it cannot see are here: a failing run, SIGINT, SIGTERM
+# -- and the run directory itself, which is still in use while it runs.
 # So those are here: a failing run, SIGINT, SIGTERM. SIGKILL is out of scope,
 # since no trap runs.
 #
@@ -18,7 +18,7 @@ set -eu
 . "$(dirname "$0")/../lib/assert.sh"
 ROOT=$(find_root)
 
-command -v mktemp >/dev/null 2>&1 || skip "mktemp is needed to watch the marker appear"
+command -v mktemp >/dev/null 2>&1 || skip "mktemp is needed to watch the run directory appear"
 
 work=$(mktempdir); register_cleanup "rm -rf '$work'"
 
@@ -35,7 +35,8 @@ maketree() {
 	esac
 	chmod +x "$dir/tests/dummy/t.sh"
 }
-markers() { find "$1" -maxdepth 1 -name 'xymon-runmarker.*' 2>/dev/null; }
+# One directory per run, removed however the run ends.
+runroots() { find "$1" -maxdepth 1 -name 'xymon-run.*' 2>/dev/null; }
 
 # --- a run that finishes with a failing test ---------------------------------
 d="$work/fail"; tmp="$d/tmp"; maketree "$d" failing; mkdir -p "$tmp"
@@ -46,9 +47,9 @@ set -e
 [ "$rc" -ne 0 ] || fail \
 	"the fake suite reported success with a failing test in it, so this case is
 not the one it claims to be testing"
-left=$(markers "$tmp")
+left=$(runroots "$tmp")
 [ -z "$left" ] || fail \
-	"a run that ended in failure left its marker behind:
+	"a run that ended in failure left its run directory behind:
 $left
 A failing run is the one somebody re-runs, so its leftovers are the ones that
 accumulate fastest."
@@ -64,10 +65,10 @@ for sig in INT TERM; do
 	register_cleanup "kill -9 $runner 2>/dev/null || :"
 
 	i=0
-	while [ "$i" -lt 100 ] && [ -z "$(markers "$tmp")" ]; do sleep 0.1; i=$((i + 1)); done
-	[ -n "$(markers "$tmp")" ] || fail \
-		"the runner never created a marker, so signalling it proves nothing about
-whether it disposes of one"
+	while [ "$i" -lt 100 ] && [ -z "$(runroots "$tmp")" ]; do sleep 0.1; i=$((i + 1)); done
+	[ -n "$(runroots "$tmp")" ] || fail \
+		"the runner never created its run directory, so signalling it proves nothing
+about whether it disposes of one"
 
 	kill -"$sig" "$runner" 2>/dev/null || fail "could not send SIG$sig to the runner"
 	expect=130; [ "$sig" = TERM ] && expect=143
@@ -80,16 +81,48 @@ whether it disposes of one"
 cannot be stopped is its own problem, and the cleanup of a run that has not
 ended cannot be checked"
 	set +e; wait "$runner"; rc=$?; set -e
-	[ "$rc" -eq "$expect" ] || errline \
-		"SIG$sig left exit status $rc, not $expect; the run ended, but perhaps not
-through the trap that is meant to end it"
+	# Reported, not asserted: the status a trap leaves is not portable -- bash
+	# 3.2 reports 0 for both signals where bash 5 reports 130 and 143. The
+	# cleanup below is the invariant, and it does not vary by shell.
+	[ "$rc" -eq "$expect" ] || printf '  note: SIG%s left exit status %s, not %s (shell-dependent)\n' \
+		"$sig" "$rc" "$expect" >&2
 
-	left=$(markers "$tmp")
+	left=$(runroots "$tmp")
 	[ -z "$left" ] || fail \
-		"a run stopped with SIG$sig left its marker behind:
+		"a run stopped with SIG$sig left its run directory behind:
 $left
 Nothing later removes it -- the next run makes its own -- and no-leftovers.sh
 cannot catch this, because on this path it never runs."
 done
 
-pass "a run disposes of what it made whether it fails, is interrupted, or is terminated"
+# --- two runs at once ---------------------------------------------------------
+# Measured before the per-run directory: run A failed, naming run B's live
+# files as leftovers.
+d1="$work/par1"; d2="$work/par2"; tmp="$work/partmp"; mkdir -p "$tmp"
+maketree "$d1" slow; maketree "$d2" slow
+( cd "$d1" && TMPDIR="$tmp" exec ./tests/testsuite >"$work/par1.log" 2>&1 ) &
+p1=$!
+( cd "$d2" && TMPDIR="$tmp" exec ./tests/testsuite >"$work/par2.log" 2>&1 ) &
+p2=$!
+register_cleanup "kill -9 $p1 $p2 2>/dev/null || :"
+
+i=0
+while [ "$i" -lt 100 ] && [ "$(runroots "$tmp" | wc -l | tr -d ' ')" -lt 2 ]; do
+	sleep 0.1; i=$((i + 1))
+done
+[ "$(runroots "$tmp" | wc -l | tr -d ' ')" -ge 2 ] || fail \
+	"two runs sharing one TMPDIR did not end up with a directory each, so they
+are still sharing state and each can see the other's files:
+$(runroots "$tmp")"
+
+kill -TERM $p1 $p2 2>/dev/null || :
+i=0
+while [ "$i" -lt 300 ] && { kill -0 $p1 2>/dev/null || kill -0 $p2 2>/dev/null; }; do
+	sleep 0.1; i=$((i + 1))
+done
+left=$(runroots "$tmp")
+[ -z "$left" ] || fail \
+	"two runs stopped together left a directory behind:
+$left"
+
+pass "a run disposes of what it made when it fails, is interrupted or is terminated -- and two runs sharing a TMPDIR keep out of each other's way"

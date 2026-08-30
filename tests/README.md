@@ -54,9 +54,25 @@ shipped-file invariants) get their own area.
 | `tests/integration/` | end-to-end scenarios spanning multiple components   |
 | `tests/lib/`      | sourced helpers (`assert.sh`, future `net.sh` etc.)    |
 | `tests/fixtures/` | shared data files (config snippets, expected outputs)  |
+| `tests/final/`    | checks about what a whole run LEAVES; held back and run last |
 
 Add a new area by PR when an existing one doesn't fit. Don't bend a
 test to fit the wrong area just to avoid creating a new directory.
+
+`tests/final/` is the one area with an order attached to it. Everything
+else runs in `LC_ALL=C` filename order and must not care; the runner
+holds `tests/final/` back and runs it after all of them, because those
+checks are about what the run as a whole left behind, which is only a
+fact once nothing else is running. Ordering it by filename would work
+until a directory sorting after "final" appeared, and would then go on
+passing while checking nothing.
+
+Each run also gets a temp directory of its own: the runner creates one
+and points `TMPDIR` at it, so `mktempdir` and anything else honouring
+TMPDIR writes inside it, and the whole directory goes when the run ends
+-- on exit, on SIGINT and on SIGTERM. That is what lets a final check
+ask "what did THIS run leave", and what keeps two suites running at the
+same time from seeing each other's files.
 
 ### Runnable vs sourced/data files
 
