@@ -391,15 +391,24 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <p class="Pp">Up to eight may be given, one per line. Like <b>framing</b> it
         describes the connection rather than one reply, so it is written on the
         entry.</p>
+    <p class="Pp">Whether a message is noise depends on WHERE it arrives, not on
+        how it begins. The alternatives of the current state are tried first,
+        and a message is skipped only when none of them could be it -- so a
+        prefix that also starts an <b>expect</b> is no ambiguity, and IMAP,
+        whose greeting is itself an untagged <b>&quot;* OK&quot;</b> line, is
+        written the obvious way:</p>
     <p class="Pp"></p>
     <pre>   [imap]
       ignore &quot;* &quot;
-      port 143</pre>
-    <p class="Pp">A prefix that also starts an <b>expect</b> is refused when the
-        file is read: the reply would be swallowed as noise or taken as the
-        answer, and nothing in the file would say which. That is the same
-        ambiguity, and the same completeness argument, as two overlapping
-        alternatives.</p>
+      port 143
+      state greeting
+         expect &quot;* OK&quot;       -&gt; ask
+      state ask
+         send &quot;A01 CAPABILITY\r\n&quot;
+         expect &quot;A01 OK&quot;     -&gt; success</pre>
+    <p class="Pp">The greeting is the answer its state waits for; the untagged
+        lines the server sends afterwards, while <b>A01 OK</b> is awaited, are
+        not.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="framing"><a class="permalink" href="#framing"><b>framing</b>
@@ -435,6 +444,19 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <pre>   framing terminator &quot;\x00&quot;        NUL-terminated records
    framing terminator &quot;\r\n\r\n&quot;    a blank line ends the message
    framing terminator &quot;&lt;END&gt;&quot;       a sentinel of your own</pre>
+    <p class="Pp">Framing describes the connection and not one direction of it,
+        so a <b>send</b> is framed the same way a reply is read: under
+        <b>length</b> the count is written in front of the message, in the
+        declared width and byte order, and under <b>terminator</b> the sequence
+        is appended. Neither can be written in the file, because the length of
+        an expanded <b>${...}</b> is not known until the step runs -- which is
+        why a length-framed request carrying a value was not expressible
+      before.</p>
+    <p class="Pp"><b>line</b> is left alone: its entries write their own
+        <b>&quot;\r\n&quot;</b>, and adding one would change every send that
+        exists. A message too long for its own count -- 300 bytes under
+        <b>length(1)</b> -- fails by name rather than being written with a count
+        that wrapped.</p>
     <p class="Pp">It describes the connection, not one reply, so it is written
         once as an entry attribute. <b>until</b> and <b>expect
         bytes(</b><i>N</i><b>)</b> are refused under it: the count has already
@@ -614,7 +636,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
    'framing terminator' needs a quoted sequence
    'ignore' needs a quoted prefix
    more than 8 'ignore' prefixes
-   'ignore
+   a N-byte 'send' does not fit the W-byte length prefix
+   a N-byte message does not fit the W-byte length prefix
    ${f:...} takes KEY,MESSAGE - there is no comma in it
    framing length width is 1..4 bytes
    framing length endianness is 'big' or 'little'
