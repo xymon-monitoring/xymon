@@ -33,6 +33,14 @@
  *                    it independently, so a wrong digest fails.
  *   b64check PREFIX TEXT
  *                    read a line and verify it is PREFIX + base64(TEXT).
+ *   cramchallenge TEXT
+ *                    send "+ " + base64(TEXT), and remember TEXT as the
+ *                    CRAM-MD5 challenge.
+ *   cramcheck USER SECRET
+ *                    read a line and verify it is base64(USER + " " +
+ *                    hex(HMAC-MD5(SECRET, challenge))) for the challenge
+ *                    cramchallenge last sent. Computed here with OpenSSL,
+ *                    so a wrong answer fails rather than being recorded.
  *   hangup           close the connection
  */
 
@@ -48,12 +56,14 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/hmac.h>
 
 static SSL_CTX *ctx = NULL;
 static SSL *ssl = NULL;
 static int sock = -1, conn = -1;
 static FILE *obs = NULL;
 static char challenge[256] = "";
+static char cramchal[256] = "";
 
 static int io_write(const char *b, int n)
 {
@@ -149,6 +159,29 @@ static void b64(const char *in, char *out)
 		out[o++] = (pad > 0) ? '=' : b64set[v & 63];
 	}
 	out[o] = '\0';
+}
+
+/* base64 -> bytes. Skips anything that is not base64, and honours '='. */
+static int unb64(const char *in, char *out, int max)
+{
+	int v[4], nv = 0, n = 0, pad = 0, i;
+
+	for (i = 0; in[i]; i++) {
+		const char *p;
+
+		if (in[i] == '=') { pad++; v[nv++] = 0; }
+		else if ((p = strchr(b64set, in[i])) != NULL) v[nv++] = (int)(p - b64set);
+		else continue;
+
+		if (nv < 4) continue;
+		if (n + 3 > max) break;
+		out[n++] = (char)((v[0] << 2) + (v[1] >> 4));
+		out[n++] = (char)(((v[1] & 0x0F) << 4) + (v[2] >> 2));
+		out[n++] = (char)(((v[2] & 0x03) << 6) + v[3]);
+		nv = 0;
+	}
+	n -= ((pad > 2) ? 2 : pad);
+	return (n < 0) ? 0 : n;
 }
 
 int main(int argc, char *argv[])
@@ -290,6 +323,37 @@ int main(int argc, char *argv[])
 			fprintf(obs, "got %s\n", got);
 			if (strcmp(got, want) != 0) fprintf(obs, "MISMATCH want=%s got=%s\n", want, got);
 			else fprintf(obs, "b64-ok\n");
+		}
+		else if (strcmp(cmd, "cramchallenge") == 0) {
+			char enc[512], line[600];
+
+			snprintf(cramchal, sizeof(cramchal), "%s", arg);
+			b64(cramchal, enc);
+			n = snprintf(line, sizeof(line), "+ %s\r\n", enc);
+			io_write(line, n);
+			fprintf(obs, "challenged %s\n", cramchal);
+		}
+		else if (strcmp(cmd, "cramcheck") == 0) {
+			char user[128] = "", secret[128] = "", want[1024], hex[33], dec[512];
+			unsigned char mac[EVP_MAX_MD_SIZE];
+			unsigned int maclen = 0;
+			int declen;
+
+			sscanf(arg, "%127s %127s", user, secret);
+			if (!readline(got, sizeof(got))) { fprintf(obs, "eof\n"); break; }
+
+			declen = unb64(got, dec, sizeof(dec) - 1);
+			dec[declen] = '\0';
+
+			/* Computed here, independently: a peer that echoed would prove nothing. */
+			HMAC(EVP_md5(), secret, (int)strlen(secret),
+			     (unsigned char *)cramchal, strlen(cramchal), mac, &maclen);
+			tohex(mac, (int)maclen, hex);
+			snprintf(want, sizeof(want), "%s %s", user, hex);
+
+			fprintf(obs, "got %s\n", dec);
+			if (strcmp(dec, want) != 0) fprintf(obs, "MISMATCH want=%s got=%s\n", want, dec);
+			else fprintf(obs, "cram-ok\n");
 		}
 		else if (strcmp(cmd, "dribble") == 0) {
 			/*

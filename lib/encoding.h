@@ -14,6 +14,7 @@
 extern char *base64encode(unsigned char *buf);
 extern char *base64encode_len(unsigned char *buf, int buflen);
 extern char *base64decode(unsigned char *buf);
+extern char *base64decode_len(unsigned char *buf, int buflen, int *outlen);
 extern void getescapestring(char *msg, unsigned char **buf, int *buflen);
 extern unsigned char *nlencode(unsigned char *msg);
 extern void nldecode(unsigned char *msg);

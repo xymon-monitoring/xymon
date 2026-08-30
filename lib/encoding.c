@@ -89,43 +89,69 @@ char *base64encode(unsigned char *buf)
 	return base64encode_len(buf, (buf ? strlen(buf) : 0));
 }
 
+/*
+ * Decode a counted buffer, and say how many bytes came out.
+ *
+ * Two things the strlen()-measured decoder below cannot do. What base64
+ * carries is usually binary -- a SASL challenge, a salt, a nonce -- and that
+ * has a NUL in it more often than not, so the length has to be returned
+ * rather than implied. And '=' has to be honoured: the padding says the last
+ * group is worth one or two bytes instead of three, and a decoder that
+ * decodes every quad blindly hands back one or two bytes of rubbish on the
+ * end -- invisible while the result is read as a string, wrong the moment it
+ * is hashed.
+ *
+ * Characters that are not base64 are skipped, so a challenge wrapped across
+ * lines decodes the same as one that is not.
+ */
+char *base64decode_len(unsigned char *buf, int buflen, int *outlen)
+{
+	static short b64val[256];
+	static int b64valinit = 0;
+	unsigned char *result, *outp;
+	int i, n = 0, quad[4], nq = 0, pad = 0;
+
+	if (!buf || (buflen < 0)) buflen = 0;
+
+	if (!b64valinit) {
+		int c;
+
+		b64valinit = 1;
+		for (c = 0; (c < 256); c++) b64val[c] = -1;
+		for (c = 0; (c < 64); c++) b64val[(int)(unsigned char)b64chars[c]] = c;
+	}
+
+	result = malloc(3*(buflen/4 + 1) + 1);
+	outp = result;
+
+	for (i = 0; (i < buflen); i++) {
+		int c = buf[i];
+
+		if (c == '=') { pad++; quad[nq++] = 0; }
+		else if (b64val[c] >= 0) quad[nq++] = b64val[c];
+		else continue;			/* newlines and other padding-out */
+
+		if (nq < 4) continue;
+
+		*outp++ = (quad[0] << 2) + (quad[1] >> 4);
+		*outp++ = ((quad[1] & 0x0F) << 4) + (quad[2] >> 2);
+		*outp++ = ((quad[2] & 0x03) << 6) + quad[3];
+		n += 3;
+		nq = 0;
+	}
+
+	/* One '=' means the last quad carried two bytes, two means one. */
+	n -= ((pad > 2) ? 2 : pad);
+	if (n < 0) n = 0;
+	result[n] = '\0';
+	if (outlen) *outlen = n;
+
+	return (char *)result;
+}
+
 char *base64decode(unsigned char *buf)
 {
-	static short bval[128] = { 0, };
-	static short bvalinit = 0;
-	int n0, n1, n2, n3;
-
-	unsigned char *inp, *outp;
-	unsigned char *result;
-	int bytesleft = strlen(buf);
-
-	if (!bvalinit) {
-		int i;
-
-		bvalinit = 1;
-		for (i=0; (i < strlen(b64chars)); i++) bval[(int)b64chars[i]] = i;
-	}
-
-	result = malloc(3*(bytesleft/4 + 1) + 1);
-	inp = buf; outp=result;
-
-	while (bytesleft >= 4) {
-		n0 = bval[*(inp+0)];
-		n1 = bval[*(inp+1)];
-		n2 = bval[*(inp+2)];
-		n3 = bval[*(inp+3)];
-
-		*(outp+0) = (n0 << 2) + (n1 >> 4);		/* 6 bits from n0, 2 from n1 */
-		*(outp+1) = ((n1 & 0x0F) << 4) + (n2 >> 2);	/* 4 bits from n1, 4 from n2 */
-		*(outp+2) = ((n2 & 0x03) << 6) + (n3);		/* 2 bits from n2, 6 from n3 */
-
-		inp += 4;
-		bytesleft -= 4;
-		outp += 3;
-	}
-	*outp = '\0';
-
-	return result;
+	return base64decode_len(buf, (buf ? strlen(buf) : 0), NULL);
 }
 
 void getescapestring(char *msg, unsigned char **buf, int *buflen)

@@ -57,19 +57,21 @@ printf '%s\n' "$n" | grep -qE '\+\+guard *>' ||
 	fail "dlg_run_instant has no runaway guard -- a backward jump that does no
 I/O would hang xymonnet rather than failing the test"
 
-# md5hash_len() returns a static buffer; freeing it corrupts the allocator.
-# Asserted positively -- the negative form passed for free when the grep
-# matched nothing at all. Either spelling counts: the length-taking one is
-# what a dialogue calls, and md5hash() is the wrapper over it.
-md5line=$(printf '%s\n' "$n" | grep -E 'md5hash(_len)?\(' | head -1)
-[ -n "$md5line" ] ||
-	fail "no md5hash() call found -- either the md5 expansion is gone, or the
-comment stripper ate it and this assertion is passing for free"
-case "$md5line" in
-	*freeval*)
-		fail "md5hash()'s result is routed through the free-list, but it is a
-static buffer -- freeing it corrupts the allocator: $md5line" ;;
-esac
+# Every ${...} function now hands back a malloc'd value -- the digests through
+# digest_done_raw(), the rest through their own buffer -- so the hazard is the
+# opposite of the one this used to guard: not a static buffer wrongly freed,
+# but a heap buffer never freed, once per send, for the life of the process.
+# Asserted positively, because the negative form passed for free when the grep
+# matched nothing at all.
+fnline=$(printf '%s\n' "$n" | grep 'dlg_function(item' | head -1)
+[ -n "$fnline" ] ||
+	fail "no dlg_function() call found -- either the expansion functions are
+gone, or the comment stripper ate the call and this assertion is passing for
+free"
+printf '%s\n' "$fnline" | grep -q 'freeval' ||
+	fail "dlg_function()'s result is not routed through the free-list. Every
+one of its returns is malloc'd, so a send leaks its digest or its encoding
+every time the step runs: $fnline"
 # THE ASSERTION. Both halves, on the same return.
 verdict=$(printf '%s\n' "$n" | grep -n 'dialogfail' | grep 'return' || true)
 [ -n "$verdict" ] ||
