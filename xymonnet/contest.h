@@ -143,6 +143,7 @@ typedef struct tcptest_t {
 	void *curstep;			/* svcstep_t *: position in the dialogue */
 	int dialogfail;			/* an expect step did not match */
 	void *failstep;			/* svcstep_t *: WHICH step, for the report */
+	int failmatched;		/* that step MATCHED and ended it, not missed */
 	unsigned char *stepbuf;		/* replies for the CURRENT expect step */
 	int stepbuflen;
 	char *lastreply;		/* the reply that satisfied the last expect */

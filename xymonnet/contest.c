@@ -236,6 +236,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->dialogfail = (newtest->svcinfo &&
 			       (newtest->svcinfo->flags & TCP_DIALOGUE_BROKEN)) ? 1 : 0;
 	newtest->failstep = NULL;
+	newtest->failmatched = 0;
 	newtest->stepsecs = 0;
 	newtest->stepdeadline = 0;
 	newtest->stepdeadlinefor = NULL;
@@ -2306,7 +2307,19 @@ restartselect:
 										    (hit->action == ACT_WARNING)) {
 											item->dialogfail = 1;
 											item->dialogverdict = (hit->action == ACT_WARNING) ? 2 : 3;
-											if (!item->failstep) item->failstep = (void *)st;
+											/*
+											 * Blame the alternative that matched, not
+											 * the head of its group. Naming st reports
+											 * whichever expect is written first: a
+											 * server answering "454" to a STARTTLS was
+											 * reported as 'expected "220"', and the
+											 * text changed when the two edges were
+											 * swapped though nothing else did.
+											 */
+											if (!item->failstep) {
+												item->failstep = (void *)hit;
+												item->failmatched = 1;
+											}
 											item->curstep = NULL;
 											st = NULL;
 										}
@@ -2555,11 +2568,20 @@ char *tcp_dialogue_failure(tcptest_t *test)
 	}
 
 	if (bad->type == STEP_EXPECT) {
+		/*
+		 * "expected" is for an alternative that never matched. When the
+		 * step being reported is the one that DID match -- an edge whose
+		 * target is "warning" or "fail" -- saying the probe expected the
+		 * thing it just received reads as a fault in the config. Name it
+		 * as what arrived instead.
+		 */
+		char *verb = (test->failmatched ? "got" : "expected");
+
 		if (name)
-			snprintf(buf, sizeof(buf), "state %s expected \"%.40s\"", name,
+			snprintf(buf, sizeof(buf), "state %s %s \"%.40s\"", name, verb,
 				 (bad->text ? (char *)bad->text : ""));
 		else
-			snprintf(buf, sizeof(buf), "step %d expected \"%.40s\"", idx,
+			snprintf(buf, sizeof(buf), "step %d %s \"%.40s\"", idx, verb,
 				 (bad->text ? (char *)bad->text : ""));
 	}
 	else if (name) snprintf(buf, sizeof(buf), "state %s failed", name);
