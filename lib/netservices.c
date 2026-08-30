@@ -132,9 +132,65 @@ static char *after_quoted(char *p)
 
 
 /*
+ * The one list of ${NAME:...} functions. Both the check below and the driver
+ * in contest.c read it, so a function cannot be accepted by one and unknown
+ * to the other.
+ */
+int dlg_expansion(const char *name, const char **digest)
+{
+	static const struct { const char *name; int kind; const char *digest; } fn[] = {
+		{ "md5",         DLGFN_DIGEST, "md5"    },
+		{ "sha1",        DLGFN_DIGEST, "sha1"   },
+		{ "sha224",      DLGFN_DIGEST, "sha224" },
+		{ "sha256",      DLGFN_DIGEST, "sha256" },
+		{ "sha384",      DLGFN_DIGEST, "sha384" },
+		{ "sha512",      DLGFN_DIGEST, "sha512" },
+		{ "rmd160",      DLGFN_DIGEST, "rmd160" },
+		{ "hmac-md5",    DLGFN_HMAC,   "md5"    },
+		{ "hmac-sha1",   DLGFN_HMAC,   "sha1"   },
+		{ "hmac-sha224", DLGFN_HMAC,   "sha224" },
+		{ "hmac-sha256", DLGFN_HMAC,   "sha256" },
+		{ "hmac-sha384", DLGFN_HMAC,   "sha384" },
+		{ "hmac-sha512", DLGFN_HMAC,   "sha512" },
+		{ "base64",      DLGFN_BASE64, NULL     },
+		{ "unbase64",    DLGFN_UNBASE64, NULL   },
+		{ "hex",         DLGFN_HEX,    NULL     },
+		{ "len",         DLGFN_LEN,    NULL     },
+		{ NULL, 0, NULL }
+	};
+	int i;
+
+	for (i = 0; (fn[i].name); i++) {
+		if (strcmp(name, fn[i].name) != 0) continue;
+		if (digest) *digest = fn[i].digest;
+		return fn[i].kind;
+	}
+	if (digest) *digest = NULL;
+	return 0;
+}
+
+/* Every name the table holds, for the error that reports a mistyped one. */
+static char *dlg_expansion_names(void)
+{
+	static char names[256];
+	static const char *all[] = { "md5", "sha1", "sha224", "sha256", "sha384",
+				     "sha512", "rmd160", "hmac-md5", "hmac-sha1",
+				     "hmac-sha224", "hmac-sha256", "hmac-sha384",
+				     "hmac-sha512", "base64", "unbase64", "hex",
+				     "len", NULL };
+	int i;
+
+	if (*names) return names;
+	for (i = 0; (all[i]); i++)
+		snprintf(names + strlen(names), sizeof(names) - strlen(names),
+			 "%s%s", (i ? ", " : ""), all[i]);
+	return names;
+}
+
+/*
  * Report a mistyped expansion when the file is read, not when the step
- * runs. ${sha1:x} is otherwise read as a variable literally named
- * "sha1:x", found to be unset, and expanded to nothing -- and a step that
+ * runs. ${sha11:x} is otherwise read as a variable literally named
+ * "sha11:x", found to be unset, and expanded to nothing -- and a step that
  * is never reached would never say so at all.
  */
 static void check_expansions(char *svcname, unsigned char *txt, int len)
@@ -162,9 +218,10 @@ static void check_expansions(char *svcname, unsigned char *txt, int len)
 		colon = strchr(body, ':');
 		if (colon) {
 			*colon = '\0';
-			if ((strcmp(body, "md5") != 0) && (strcmp(body, "base64") != 0))
+			if (dlg_expansion(body, NULL) == 0)
 				errprintf("Service %s: unknown expansion ${%s:...} - "
-					  "known functions are md5 and base64\n", svcname, body);
+					  "known functions are %s\n",
+					  svcname, body, dlg_expansion_names());
 		}
 	}
 }

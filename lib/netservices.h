@@ -79,6 +79,21 @@
  *                   a NUL, a blank line, a sentinel a custom protocol picked.
  *                   Unlike "until" it does not look at lines at all
  */
+/*
+ * The ${NAME:...} functions a send may call. One table (dlg_expansion(), in
+ * netservices.c) answers both the check that refuses a mistyped name when the
+ * file is read and the driver that runs it, so the two cannot drift apart --
+ * they did not, once, and ${sha1:...} parsed cleanly and expanded to nothing.
+ */
+#define DLGFN_DIGEST 1		/* a hash of the argument, in lowercase hex */
+#define DLGFN_HMAC   2		/* HMAC of KEY,MESSAGE, in lowercase hex */
+#define DLGFN_BASE64 3
+#define DLGFN_UNBASE64 6
+#define DLGFN_HEX    4
+#define DLGFN_LEN    5
+
+extern int dlg_expansion(const char *name, const char **digest);
+
 #define FRAMING_LINE   0
 #define FRAMING_LENGTH 1
 #define FRAMING_TERM   2

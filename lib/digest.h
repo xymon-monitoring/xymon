@@ -21,11 +21,16 @@ typedef struct digestctx_t {
 	void *mdctx;
 } digestctx_t;
 
+/* The widest digest here is SHA-512. */
+#define DIGEST_MAXLEN 64
+
 extern char *md5hash(char *input);
-extern char *md5hash_len(char *input, int inputlen);
 extern digestctx_t *digest_init(char *digest);
 extern int digest_data(digestctx_t *ctx, unsigned char *buf, int buflen);
 extern char *digest_done(digestctx_t *ctx);
+extern int digest_done_raw(digestctx_t *ctx, unsigned char *out, int outsz);
+extern int hmac_raw(char *digest, unsigned char *key, int keylen,
+		    unsigned char *msg, int msglen, unsigned char *out, int outsz);
 
 #define dohash(P) md5hash(P)
 

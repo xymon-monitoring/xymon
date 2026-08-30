@@ -4,8 +4,9 @@
 #
 # Every one of these used to be silent. A mistyped directive was a no-op,
 # so the step simply vanished and the probe reported on a conversation it
-# never had; ${sha1:...} was read as a variable named "sha1:..." and
-# expanded to nothing; an extraction naming a value that nothing
+# never had; a mistyped function was read as a variable of that name and
+# expanded to nothing -- ${sha1:...} was the example until sha1 became a
+# function, which is the drift this check exists to catch; an extraction naming a value that nothing
 # binds read an empty string; starttls on a service that is already TLS started a second
 # handshake inside the first and failed like a broken server.
 #
@@ -40,7 +41,7 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
    exepct "220"
    expect "220"
    nosuch ~ "(x)"              as tooearly
-   send "x${sha1:foo}\r\n"
+   send "x${sha11:foo}\r\n"
    timeout(0)                  -> fail
    starttls
    options ssl,banner
@@ -118,7 +119,7 @@ immediately or never, and both are silent at run time:
 $out"
 
 grep -qi 'unknown expansion' <<<"$out" || fail \
-	"\${sha1:...} was accepted. It is not a function, so it is read as a
+	"\${sha11:...} was accepted. It is not a function, so it is read as a
 variable of that name and expands to nothing:
 $out"
 

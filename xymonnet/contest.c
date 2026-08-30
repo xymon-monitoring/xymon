@@ -1163,6 +1163,132 @@ static int dlg_match(const char *subject, int len, pcre2_code *re)
 	return (res >= 0);
 }
 
+static char *dlg_expand(tcptest_t *item, const char *text, int len, int *outlen);
+
+/* Lowercase hex of a counted buffer. */
+static char *dlg_hex(const unsigned char *b, int n)
+{
+	char *out = (char *)malloc(2*n + 1);
+	int i;
+
+	for (i = 0; (i < n); i++) sprintf(out + 2*i, "%02x", b[i]);
+	out[2*n] = '\0';
+	return out;
+}
+
+/*
+ * "${NAME:ARG}" -- the functions a send may call. Returns a malloc'd value
+ * and its length, or NULL when NAME is a plain variable and not a function.
+ *
+ * A bare hash covers APOP and little else: CRAM-MD5, MySQL's login and the
+ * SCRAM family that PostgreSQL, MongoDB and AMQP use are all an HMAC over a
+ * secret, and no nesting of ${md5:} produces one. Which functions exist is
+ * dlg_expansion()'s answer, in netservices.c, so the check that refuses a
+ * mistyped name and this driver read the same list.
+ */
+static char *dlg_function(tcptest_t *item, const char *body, int blen, int *outlen)
+{
+	const char *digest = NULL, *colon;
+	char name[32], *arg, *val = NULL;
+	unsigned char raw[DIGEST_MAXLEN];
+	int arglen = 0, rawlen = 0, declen = 0, nlen, kind;
+
+	/* "${NAME:ARG}" -- no colon, and BODY is a plain variable. */
+	colon = memchr(body, ':', blen);
+	if (!colon) return NULL;
+	nlen = (int)(colon - body);
+	if ((nlen <= 0) || (nlen >= (int)sizeof(name))) return NULL;
+	memcpy(name, body, nlen); name[nlen] = '\0';
+
+	kind = dlg_expansion(name, &digest);
+	if (kind == 0) return NULL;	/* refused when the file was read */
+
+	body += nlen + 1; blen -= nlen + 1;
+
+	if (kind == DLGFN_HMAC) {
+		/*
+		 * Two arguments. The split is made on the comma the CONFIG wrote,
+		 * found at brace depth zero and before either half is expanded, so
+		 * a password or a challenge that expands to a comma is never
+		 * mistaken for the separator.
+		 */
+		const char *p, *end = body + blen, *comma = NULL;
+		char *key, *msg;
+		int keylen = 0, msglen = 0, depth = 0;
+
+		for (p = body; (p < end); p++) {
+			if ((*p == '$') && ((p+1) < end) && (p[1] == '{')) { depth++; p++; }
+			else if ((*p == '}') && (depth > 0)) depth--;
+			else if ((*p == ',') && (depth == 0)) { comma = p; break; }
+		}
+		if (!comma) {
+			errprintf("%s: ${%s:...} takes KEY,MESSAGE - there is no comma in it\n",
+				  item->svcinfo->svcname, name);
+			*outlen = 0;
+			return strdup("");
+		}
+
+		key = dlg_expand(item, body, (int)(comma - body), &keylen);
+		msg = dlg_expand(item, comma + 1, (int)(end - (comma + 1)), &msglen);
+		rawlen = hmac_raw((char *)digest, (unsigned char *)key, keylen,
+				  (unsigned char *)msg, msglen, raw, sizeof(raw));
+		dlg_wipe(key, keylen);		/* it is ${password} more often than not */
+		xfree(key); xfree(msg);
+		val = dlg_hex(raw, rawlen);
+		*outlen = strlen(val);
+		return val;
+	}
+
+	arg = dlg_expand(item, body, blen, &arglen);
+
+	switch (kind) {
+	  case DLGFN_DIGEST: {
+		digestctx_t *ctx = digest_init((char *)digest);
+
+		if (ctx) {
+			digest_data(ctx, (unsigned char *)arg, arglen);
+			rawlen = digest_done_raw(ctx, raw, sizeof(raw));
+		}
+		val = dlg_hex(raw, rawlen);
+		break;
+	  }
+	  case DLGFN_BASE64:
+		val = base64encode_len((unsigned char *)arg, arglen);
+		break;
+	  case DLGFN_UNBASE64:
+		/*
+		 * The only function whose result is bytes rather than text: a
+		 * decoded challenge is binary, so it returns here with its own
+		 * length and must not be measured with strlen() on the way out.
+		 */
+		val = base64decode_len((unsigned char *)arg, arglen, &declen);
+		xfree(arg);
+		*outlen = declen;
+		return val;
+	  case DLGFN_HEX:
+		val = dlg_hex((unsigned char *)arg, arglen);
+		break;
+	  case DLGFN_LEN: {
+		/*
+		 * The count of a value the file cannot count for itself: what an
+		 * expansion is worth is known here and nowhere earlier.
+		 */
+		char n[16];
+
+		snprintf(n, sizeof(n), "%d", arglen);
+		val = strdup(n);
+		break;
+	  }
+	  default:
+		val = strdup("");
+		break;
+	}
+
+	xfree(arg);
+	*outlen = strlen(val);
+	return val;
+}
+
 /*
  * Expand ${...} in a send string. Nesting is why this recurses rather than
  * scanning once: APOP is ${md5:${challenge}${password}}, and the digest has
@@ -1181,8 +1307,8 @@ static char *dlg_expand(tcptest_t *item, const char *text, int len, int *outlen)
 
 	for (i = 0; (i < len); i++) {
 		int depth, j, blen;
-		char *body, *inner, *val = NULL, *freeval = NULL;
-		int innerlen, vallen = 0;
+		char *body, *val = NULL, *freeval = NULL;
+		int vallen = 0;
 
 		if (!((text[i] == '$') && ((i+1) < len) && (text[i+1] == '{'))) {
 			if (n >= outsz) { outsz *= 2; out = (char *)realloc(out, outsz + 1); }
@@ -1208,25 +1334,15 @@ static char *dlg_expand(tcptest_t *item, const char *text, int len, int *outlen)
 		body[blen] = '\0';
 
 		/*
-		 * The argument is passed by length: ${md5:${salt}} over a binary
-		 * salt is the whole point of these on a framed protocol, and
-		 * measuring the expansion with strlen() would hash or encode the
-		 * bytes up to the first NUL instead of the value.
+		 * Every function's argument is passed by length: ${md5:${salt}}
+		 * over a binary salt is the whole point of these on a framed
+		 * protocol, and measuring the expansion with strlen() would hash
+		 * or encode the bytes up to the first NUL instead of the value.
+		 *
+		 * Every result is malloc'd, so all of them leave through freeval.
 		 */
-		if (strncmp(body, "md5:", 4) == 0) {
-			inner = dlg_expand(item, body + 4, blen - 4, &innerlen);
-			/* md5hash_len() hands back a static buffer -- copy, never free. */
-			val = md5hash_len(inner, innerlen);
-			vallen = strlen(val);
-			xfree(inner);
-		}
-		else if (strncmp(body, "base64:", 7) == 0) {
-			inner = dlg_expand(item, body + 7, blen - 7, &innerlen);
-			val = freeval = base64encode_len((unsigned char *)inner, innerlen);
-			vallen = strlen(val);
-			xfree(inner);
-		}
-		else {
+		val = freeval = dlg_function(item, body, blen, &vallen);
+		if (val == NULL) {
 			/* Mistyped functions are reported when the file is read. */
 			val = dlg_get(item, body, &vallen);
 			if (val == NULL) {

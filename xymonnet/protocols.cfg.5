@@ -327,19 +327,47 @@ start on the first byte sent after the go-ahead, and data arriving
 before it is the STARTTLS plaintext-injection flaw.
 
 .IP "\fBVariable expansion\fR"
-A \fBsend\fR string may refer to captured values, and to two transforms
-of them:
+A \fBsend\fR string may refer to captured values, and to transforms of
+them:
 .br
 .sp
 .nf
-\&   ${name}       a captured value
-\&   ${md5:TEXT}   MD5 of TEXT, in lowercase hex
-\&   ${base64:TEXT}   TEXT in base64
+\&   ${name}                 a captured value
+\&   ${md5:TEXT}             MD5 of TEXT, in lowercase hex
+\&   ${sha1:TEXT}            likewise sha224, sha256, sha384,
+\&                           sha512 and rmd160
+\&   ${hmac\-md5:KEY,TEXT}    HMAC (RFC 2104), in lowercase hex;
+\&                           likewise hmac\-sha1, hmac\-sha224,
+\&                           hmac\-sha256, hmac\-sha384, hmac\-sha512
+\&   ${base64:TEXT}          TEXT in base64
+\&   ${unbase64:TEXT}        TEXT decoded from base64
+\&   ${hex:TEXT}             TEXT in lowercase hex
+\&   ${len:TEXT}             the number of bytes in TEXT, in decimal
 .fi
 .sp
 Expansion is recursive, so a digest may be taken of other values -- APOP
-is \fB${md5:${challenge}${password}}\fR. An unset name expands to
-nothing.
+is \fB${md5:${challenge}${password}}\fR and CRAM\-MD5, whose challenge
+arrives base64 and is hashed decoded, is
+.br
+.sp
+.nf
+\&   ${base64:${username} ${hmac\-md5:${password},${unbase64:${chal}}}}
+.fi
+.sp
+An unset name expands to nothing, and a mistyped function is refused when
+the file is read rather than expanding to nothing at run time.
+.sp
+A hash is not an HMAC: CRAM\-MD5, the MySQL login and the SCRAM family
+that PostgreSQL, MongoDB and AMQP use are keyed, and no nesting of
+\fB${md5:}\fR produces one. \fB${hmac\-*}\fR takes two arguments split at
+the first comma the FILE writes -- the split is made before either half
+is expanded, so a password or a challenge containing a comma is not
+mistaken for the separator.
+.sp
+Every argument is passed by length, so a value read from a framed reply
+keeps its NUL bytes through a digest or an encoding, and
+\fB${unbase64:}\fR -- whose result is bytes rather than text, and is
+usually a salt or a nonce -- carries its own.
 
 .IP "\fBignore\fR \fIPREFIX\fR"
 A message the server sends unprompted. IMAP emits untagged "*" lines
@@ -592,6 +620,7 @@ names the service. The ones worth knowing:
 \&   'ignore' needs a quoted prefix
 \&   more than 8 'ignore' prefixes
 \&   'ignore \"X\"' and 'expect \"Y\"' share a start
+\&   ${f:...} takes KEY,MESSAGE \- there is no comma in it
 \&   framing length width is 1..4 bytes
 \&   framing length endianness is 'big' or 'little'
 \&   framed message of N bytes is over the 32768 a conversation may hold
