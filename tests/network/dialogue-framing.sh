@@ -52,6 +52,8 @@ printf '%s\n' 'send \x05\x00A\nB\nC' 'hold 20'        > "$work/le.script"
 printf '%s\n' 'send \x00\x09ABC' 'hold 20'             > "$work/trunc.script"
 # two complete messages in one write
 printf '%s\n' 'send \x00\x03ABC\x00\x03DEF' 'hold 20' > "$work/two.script"
+# NUL-terminated, with a newline inside the message and no line structure
+printf '%s\n' 'send hello\nworld\x00rest' 'hold 20'    > "$work/term.script"
 
 : > "$work/pids"
 start() {	# script portfile obsfile
@@ -68,8 +70,9 @@ pbeln=$(start  "$work/be.script"    "$work/p5" "$work/o5")
 ple=$(start    "$work/le.script"    "$work/p2" "$work/o2")
 ptrunc=$(start "$work/trunc.script" "$work/p3" "$work/o3")
 ptwo=$(start   "$work/two.script"   "$work/p4" "$work/o4")
+pterm=$(start  "$work/term.script"  "$work/p6" "$work/o6")
 register_cleanup "kill $(tr '\n' ' ' < "$work/pids") 2>/dev/null || :"
-[ -n "$pbe" ] && [ -n "$pbeln" ] && [ -n "$ple" ] && [ -n "$ptrunc" ] && [ -n "$ptwo" ] \
+[ -n "$pbe" ] && [ -n "$pbeln" ] && [ -n "$ple" ] && [ -n "$ptrunc" ] && [ -n "$ptwo" ] && [ -n "$pterm" ] \
 	|| fail "a peer never named its port"
 
 cat > "$work/home/etc/protocols.cfg" <<CFG
@@ -121,10 +124,18 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    state second
       timeout(10)     -> fail
       expect "D"      -> success
+[frameterm]
+   options banner
+   framing terminator "\x00"
+   port $pterm
+
+   state msg
+      timeout(10)     -> fail
+      expect "hello"  -> success
 CFG
 { printf '127.0.0.1\tbe\t# framebe\n127.0.0.1\tln\t# frameline\n'
   printf '127.0.0.1\tle\t# framele\n127.0.0.1\ttr\t# frametrunc\n'
-  printf '127.0.0.1\ttw\t# frametwo\n'; } > "$work/home/etc/hosts.cfg"
+  printf '127.0.0.1\ttw\t# frametwo\n127.0.0.1\ttm\t# frameterm\n'; } > "$work/home/etc/hosts.cfg"
 
 XYMONHOME="$work/home" "$XYMONNET" --no-update --noping --checkresponse=red \
 	--dns=ip --timeout=30 >"$work/out.txt" 2>&1 || :
@@ -219,4 +230,12 @@ grep -qi "endianness is 'big' or 'little'" "$work/bad.txt" || fail \
 	"an unknown endianness was accepted rather than refused:
 $(head -10 "$work/bad.txt")"
 
-pass "length framing reads whole binary messages, refuses what it cannot mean, and leaves the next message alone"
+# 5 -- a sequence, not a line, ends the message. The payload has a newline in
+# it and the terminator is a NUL, so nothing about this is line-shaped.
+[ "$(colour_of tm.frameterm)" = green ] || fail \
+	"a NUL-terminated message containing a newline was not read. 'until'
+compares the start of a LINE, so a terminator that does not fall on a line
+boundary needs framing of its own:
+$(grep -i frameterm "$work/out.txt" | head -4)"
+
+pass "length and terminator framing read whole messages, refuses what it cannot mean, and leaves the next message alone"

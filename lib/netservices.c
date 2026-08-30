@@ -1356,6 +1356,35 @@ char *init_tcp_services(void)
 				if (strncmp(nm, "line", 4) == 0) {
 					for (w = first; (w); w = w->next) w->rec->framing = FRAMING_LINE;
 				}
+				else if (strncmp(nm, "terminator ", 11) == 0) {
+					/*
+					 * A sequence that ends a message wherever it falls --
+					 * a NUL, a blank line, a sentinel a custom protocol
+					 * chose. "until" cannot say this: it compares the
+					 * start of a LINE, so a terminator that is not at a
+					 * line boundary is invisible to it.
+					 */
+					unsigned char *t = NULL;
+					int tlen = 0;
+
+					getescapestring(skipwhitespace(nm + 10), &t, &tlen);
+					if (!t || (tlen < 1)) {
+						errprintf("Service %s: 'framing terminator' needs a quoted "
+							  "sequence\n", first->rec->svcname);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+						if (t) xfree(t);
+					}
+					else {
+						for (w = first; (w); w = w->next) {
+							w->rec->framing      = FRAMING_TERM;
+							w->rec->frameterm    = (unsigned char *)malloc(tlen + 1);
+							memcpy(w->rec->frameterm, t, tlen);
+							w->rec->frameterm[tlen] = '\0';
+							w->rec->frametermlen = tlen;
+						}
+						xfree(t);
+					}
+				}
 				else if (strncmp(nm, "length(", 7) == 0) {
 					int width = atoi(nm + 7);
 					char *comma = strchr(nm, ',');
@@ -1385,8 +1414,9 @@ char *init_tcp_services(void)
 					}
 				}
 				else {
-					errprintf("Service %s: unknown framing '%s' - it is 'line' or "
-						  "'length(WIDTH, big|little)'\n", first->rec->svcname, nm);
+					errprintf("Service %s: unknown framing '%s' - it is 'line', "
+						  "'length(WIDTH, big|little)' or 'terminator \"SEQ\"'\n",
+						  first->rec->svcname, nm);
 					first->rec->flags |= TCP_DIALOGUE_BROKEN;
 				}
 			}
@@ -1545,6 +1575,8 @@ char *init_tcp_services(void)
 		svcinfo[i].framing    = walk->rec->framing;
 		svcinfo[i].framewidth = walk->rec->framewidth;
 		svcinfo[i].framebig   = walk->rec->framebig;
+		svcinfo[i].frameterm    = walk->rec->frameterm;
+		svcinfo[i].frametermlen = walk->rec->frametermlen;
 		svcinfo[i].steps   = walk->rec->steps;
 		svcinfo[i].startlabel = walk->rec->startlabel;
 		/*
@@ -1591,7 +1623,7 @@ char *init_tcp_services(void)
 			 * single-shot probe cannot express.
 			 */
 			if ((first_is_expect && (nsend > 0)) || (nsend > 1) || (nexp > 1) || nother ||
-			    (svcinfo[i].framing == FRAMING_LENGTH))
+			    (svcinfo[i].framing != FRAMING_LINE))
 				svcinfo[i].flags |= TCP_DIALOGUE;
 
 			/*
@@ -1600,19 +1632,21 @@ char *init_tcp_services(void)
 			 * contradiction -- and there is no way to tell which from the
 			 * file. Refuse both rather than pick one.
 			 */
-			if (svcinfo[i].framing == FRAMING_LENGTH) {
+			if (svcinfo[i].framing != FRAMING_LINE) {
 				svcstep_t *fst;
 
 				for (fst = svcinfo[i].steps; (fst); fst = fst->next) {
 					if (fst->type != STEP_EXPECT) continue;
 					if (fst->until)
-						errprintf("Service %s: 'until' under framing length - the "
-							  "length already says where the message ends\n",
-							  svcinfo[i].svcname);
+						errprintf("Service %s: 'until' under framing %s - the framing "
+							  "already says where the message ends\n",
+							  svcinfo[i].svcname,
+							  (svcinfo[i].framing == FRAMING_LENGTH) ? "length" : "terminator");
 					else if (fst->wantbytes)
-						errprintf("Service %s: 'expect bytes(%d)' under framing length - "
-							  "the peer's own count says how long the message is\n",
-							  svcinfo[i].svcname, fst->wantbytes);
+						errprintf("Service %s: 'expect bytes(%d)' under framing %s - the "
+							  "framing already says how long the message is\n",
+							  svcinfo[i].svcname, fst->wantbytes,
+							  (svcinfo[i].framing == FRAMING_LENGTH) ? "length" : "terminator");
 					else continue;
 					svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
 				}

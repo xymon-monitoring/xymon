@@ -144,87 +144,100 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect "221"                       -> success
 
 [tlsnone]
-   # conventions: permissive -- the fall-through spelling, kept covered on purpose
    options banner
    port $pno
 
    state greeting
-      timeout(10)         -> fail
-      expect "220"   -> greeting-1
+      timeout(10)                        -> fail
+      expect "220"                       -> ehlo
 
-   state greeting-1
+   state ehlo
       send "ehlo xymonnet\r\n"
-      expect "250" until "250 " as caps   -> secure-1
-      caps ~ "STARTTLS"   -> upgrade
-      else                -> warning
+      timeout(10)                        -> fail
+      expect "250" until "250 " as caps  -> offers
+
+   state offers
+      caps ~ "STARTTLS"                  -> upgrade
+      else                               -> warning
 
    state upgrade
-      timeout(10)         -> fail
       send "starttls\r\n"
-      expect "220"        -> secure
-      expect "454"        -> warning
+      timeout(10)                        -> fail
+      expect "220"                       -> secure
+      expect "454"                       -> warning
 
    state secure
-      timeout(10)         -> fail
       starttls
+      always                             -> farewell
 
-   state secure-1
+   state farewell
       send "quit\r\n"
-      expect "221"        -> success
+      timeout(10)                        -> fail
+      expect "221"                       -> success
 
 [tls454a]
-   # conventions: permissive -- alternatives in both orders, the point of this pair
    options banner
    port $pra
 
    state greeting
-      timeout(10)         -> fail
-      expect "220"   -> greeting-1
+      timeout(10)                        -> fail
+      expect "220"                       -> ehlo
 
-   state greeting-1
+   state ehlo
       send "ehlo xymonnet\r\n"
-      expect "250" until "250 "   -> secure-1
+      timeout(10)                        -> fail
+      expect "250" until "250 " as caps  -> offers
+
+   state offers
+      caps ~ "STARTTLS"                  -> upgrade
+      else                               -> warning
 
    state upgrade
-      timeout(10)         -> fail
       send "starttls\r\n"
-      expect "220"        -> secure
-      expect "454"        -> warning
+      timeout(10)                        -> fail
+      expect "220"                       -> secure
+      expect "454"                       -> warning
 
    state secure
-      timeout(10)         -> fail
       starttls
+      always                             -> farewell
 
-   state secure-1
+   state farewell
       send "quit\r\n"
-      expect "221"        -> success
+      timeout(10)                        -> fail
+      expect "221"                       -> success
 
 [tls454b]
-   # conventions: permissive -- alternatives in both orders, the point of this pair
    options banner
    port $prb
 
    state greeting
-      timeout(10)         -> fail
-      expect "220"   -> greeting-1
+      timeout(10)                        -> fail
+      expect "220"                       -> ehlo
 
-   state greeting-1
+   state ehlo
       send "ehlo xymonnet\r\n"
-      expect "250" until "250 "   -> secure-1
+      timeout(10)                        -> fail
+      expect "250" until "250 " as caps  -> offers
+
+   state offers
+      caps ~ "STARTTLS"                  -> upgrade
+      else                               -> warning
 
    state upgrade
-      timeout(10)         -> fail
       send "starttls\r\n"
-      expect "454"        -> warning
-      expect "220"        -> secure
+      timeout(10)                        -> fail
+      expect "454"                       -> warning
+      expect "220"                       -> secure
 
    state secure
-      timeout(10)         -> fail
       starttls
+      always                             -> farewell
 
-   state secure-1
+   state farewell
       send "quit\r\n"
-      expect "221"        -> success
+      timeout(10)                        -> fail
+      expect "221"                       -> success
 
 CFG
 

@@ -64,10 +64,13 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 [stopped]
    options banner
    port $pstop
-   expect "220"   -> waiting
-   send "ehlo xymonnet\r\n"
 
-   state waiting
+   state greeting
+      timeout(30)                 -> fail
+      expect "220"                -> ehlo
+
+   state ehlo
+      send "ehlo xymonnet\r\n"
       idle(3)                     -> warning
       timeout(30)                 -> fail
       expect "250"                -> success
@@ -75,10 +78,13 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 [slow]
    options banner
    port $pslow
-   expect "220"   -> waiting
-   send "ehlo xymonnet\r\n"
 
-   state waiting
+   state greeting
+      timeout(30)                 -> fail
+      expect "220"                -> ehlo
+
+   state ehlo
+      send "ehlo xymonnet\r\n"
       idle(3)                     -> warning
       timeout(30)                 -> fail
       expect "250" until "250 "   -> success
