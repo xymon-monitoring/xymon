@@ -392,10 +392,29 @@ the connection rather than one reply, so it is written on the entry.
 \&      port 143
 .fi
 .sp
-A prefix that also starts an \fBexpect\fR is refused when the file is
-read: the reply would be swallowed as noise or taken as the answer, and
-nothing in the file would say which. That is the same ambiguity, and the
-same completeness argument, as two overlapping alternatives.
+Whether a message is noise depends on WHERE it arrives, not on how it
+begins. The alternatives of the current state are tried first, and a
+message is skipped only when none of them could be it -- so a prefix
+that also starts an \fBexpect\fR is no ambiguity, and IMAP, whose
+greeting is itself an untagged \fB"* OK"\fR line, is written the obvious
+way:
+.br
+.sp
+.nf
+\&   [imap]
+\&      ignore "* "
+\&      port 143
+\&
+\&      state greeting
+\&         expect "* OK"       \-> ask
+\&
+\&      state ask
+\&         send "A01 CAPABILITY\er\en"
+\&         expect "A01 OK"     \-> success
+.fi
+.sp
+The greeting is the answer its state waits for; the untagged lines the
+server sends afterwards, while \fBA01 OK\fR is awaited, are not.
 
 .IP "\fBframing\fR \fBline\fR"
 .IP "\fBframing\fR \fBlength(\fR\fIWIDTH\fR\fB,\fR \fBbig\fR|\fBlittle\fR\fB)\fR"
@@ -632,7 +651,6 @@ names the service. The ones worth knowing:
 \&   'framing terminator' needs a quoted sequence
 \&   'ignore' needs a quoted prefix
 \&   more than 8 'ignore' prefixes
-\&   'ignore \"X\"' and 'expect \"Y\"' share a start
 \&   a N\-byte 'send' does not fit the W\-byte length prefix
 \&   a N\-byte message does not fit the W\-byte length prefix
 \&   ${f:...} takes KEY,MESSAGE \- there is no comma in it

@@ -1815,33 +1815,22 @@ char *init_tcp_services(void)
 			refuse_misshapen_states(&svcinfo[i]);
 
 			/*
-			 * An ignored prefix and an expect that share a start are the
-			 * same ambiguity the overlap check refuses between two
-			 * expects: the reply would be swallowed as noise or taken as
-			 * the answer, and nothing in the file says which. Prefix
-			 * matching makes that decidable here.
+			 * An ignored prefix that also starts an expect used to be
+			 * refused here, on the same argument that refuses two
+			 * overlapping expects. It was the wrong argument. Two expects
+			 * in one state are alternatives and genuinely undecidable; an
+			 * ignore and an expect are not alternatives at all, because
+			 * whether a message is noise depends on WHERE it arrives and
+			 * not on how it begins. IMAP settles it: "* OK ... ready" is
+			 * the greeting a state waits for, "* EXISTS 3" arriving while
+			 * a tagged reply is awaited is noise, and the two share their
+			 * first seven characters. The refusal made the one protocol
+			 * 'ignore' exists for the one protocol it could not express.
+			 *
+			 * The driver decides it by position instead: the alternatives
+			 * are tried first, and a message is noise only when none of
+			 * them could be it. See dlg_skip_ignored() in contest.c.
 			 */
-			if (svcinfo[i].ignorecount > 0) {
-				svcstep_t *est;
-				int g;
-
-				for (est = svcinfo[i].steps; (est); est = est->next) {
-					if ((est->type != STEP_EXPECT) || est->oneof || est->wantbytes) continue;
-					for (g = 0; g < svcinfo[i].ignorecount; g++) {
-						int n = (est->len < svcinfo[i].ignorelen[g]) ?
-							est->len : svcinfo[i].ignorelen[g];
-
-						if ((n > 0) && (memcmp(est->text, svcinfo[i].ignoretext[g], n) == 0)) {
-							errprintf("Service %s: 'ignore \"%.20s\"' and 'expect \"%.20s\"' "
-								  "share a start - a reply would be swallowed as noise "
-								  "or taken as the answer, and the file does not say "
-								  "which\n", svcinfo[i].svcname,
-								  svcinfo[i].ignoretext[g], est->text);
-							svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
-						}
-					}
-				}
-			}
 
 			/*
 			 * A clause that only the driver implements, on an entry that

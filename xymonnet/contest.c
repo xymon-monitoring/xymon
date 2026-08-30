@@ -1366,6 +1366,48 @@ static char *dlg_expand(tcptest_t *item, const char *text, int len, int *outlen)
 }
 
 /*
+ * A message the server sent unprompted, rather than an answer.
+ *
+ * Whether a message is noise is POSITIONAL, not lexical: it depends on what
+ * the current state is waiting for, and never on how the text happens to
+ * begin. IMAP is the case that settles it -- "* OK [CAPABILITY ...] ready" IS
+ * the greeting a state waits for, and "* EXISTS 3" arriving later while a
+ * tagged reply is awaited is not, and the two are the same seven characters.
+ * So the alternatives are tried first and this runs only when none of them
+ * could be it; a prefix shared with an expect is then no ambiguity at all.
+ *
+ * Returns 1 when a message was consumed and the wait should carry on, 0 when
+ * this is not noise, and -1 when it is noise whose record has not fully
+ * arrived -- the caller must wait rather than judge a fragment.
+ */
+static int dlg_skip_ignored(tcptest_t *item, int mbase, int mlen)
+{
+	int g;
+
+	for (g = 0; (g < item->svcinfo->ignorecount); g++) {
+		int n = item->svcinfo->ignorelen[g];
+		int cut = mbase + mlen;
+
+		if (mlen < n) continue;
+		if (memcmp(item->stepbuf + mbase, item->svcinfo->ignoretext[g], n) != 0) continue;
+
+		if (item->svcinfo->framing == FRAMING_LINE) {
+			cut = mbase;
+			while ((cut < item->stepbuflen) && (item->stepbuf[cut] != '\n')) cut++;
+			if (cut < item->stepbuflen) cut++;
+			else return -1;		/* half an ignored line is not a message yet */
+		}
+
+		memmove(item->stepbuf, item->stepbuf + cut, item->stepbuflen - cut);
+		item->stepbuflen -= cut;
+		return 1;
+	}
+
+	return 0;
+}
+
+
+/*
  * Framing is a property of the connection, not of one direction. A peer that
  * counts its messages expects to be counted back, and one that ends them with
  * a sequence expects the sequence -- so a send is framed the way a reply is
@@ -2522,44 +2564,6 @@ restartselect:
 										mlen  = (int)n;
 									}
 
-									/*
-									 * A message the server sends unprompted is
-									 * consumed here and the wait continues. It is
-									 * not an answer, so it decides nothing and binds
-									 * nothing -- but it did arrive, so the idle clock
-									 * has already been restarted by the read that
-									 * brought it, exactly as a wanted reply would.
-									 */
-									if (item->svcinfo->ignorecount > 0) {
-										int g, skipped = 0;
-
-										for (g = 0; g < item->svcinfo->ignorecount; g++) {
-											int n = item->svcinfo->ignorelen[g];
-
-											if (mlen < n) continue;
-											if (memcmp(item->stepbuf + mbase,
-												   item->svcinfo->ignoretext[g], n) != 0) continue;
-
-											{
-												int cut = mbase + mlen;
-
-												if (item->svcinfo->framing == FRAMING_LINE) {
-													cut = mbase;
-													while ((cut < item->stepbuflen) &&
-													       (item->stepbuf[cut] != '\n')) cut++;
-													if (cut < item->stepbuflen) cut++;
-													else break;	/* a partial line is not a message yet */
-												}
-												memmove(item->stepbuf, item->stepbuf + cut,
-													item->stepbuflen - cut);
-												item->stepbuflen -= cut;
-												skipped = 1;
-											}
-											break;
-										}
-										if (skipped) { progress = 1; continue; }
-									}
-
 									/* Consecutive expects are alternatives of ONE state. */
 									for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next) {
 										if (alt->oneof) continue;	/* only fires on EOF */
@@ -2603,6 +2607,20 @@ restartselect:
 									 * the file is read, so at most one
 									 * alternative in a group can match.
 									 */
+
+									/*
+									 * Nothing this state waits for can be this
+									 * message, so now ask whether it is noise. The
+									 * idle clock has already been restarted by the
+									 * read that brought it, exactly as a wanted
+									 * reply would.
+									 */
+									if (!hit && !undecided && (item->svcinfo->ignorecount > 0)) {
+										int skipped = dlg_skip_ignored(item, mbase, mlen);
+
+										if (skipped < 0) break;		/* wait for the rest of it */
+										if (skipped > 0) { progress = 1; continue; }
+									}
 
 									if (hit) {
 										int cut = hit->len;

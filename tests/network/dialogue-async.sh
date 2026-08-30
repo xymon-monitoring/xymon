@@ -19,6 +19,12 @@
 # The second control is [quiet]: a peer that sends no untagged lines at all,
 # against an entry that ignores them. Ignoring must not swallow the answer
 # when there is no noise to skip.
+#
+# [imapreal] is the shape a real IMAP server has, and the one this feature
+# could not express until 'ignore' became positional: the greeting IS an
+# untagged line, so the SAME "* " prefix must be taken as the answer there
+# and skipped as noise three lines later. It is its own control -- green
+# requires both, and either half alone turns it red.
 
 set -eu
 . "$(dirname "$0")/../lib/assert.sh"
@@ -45,6 +51,12 @@ printf '%s\n' 'send A01 OK ready\r\n' \
 	      'recvany' \
 	      'send A02 OK CAPABILITY completed\r\n' \
 	      'hold 20'                                    > "$work/quiet.script"
+# A real IMAP server: the greeting is itself an untagged line.
+printf '%s\n' 'send * OK [CAPABILITY IMAP4rev1] ready\r\n' \
+	      'recvany' \
+	      'send * CAPABILITY IMAP4rev1 IDLE NAMESPACE\r\n' \
+	      'send A02 OK CAPABILITY completed\r\n' \
+	      'hold 20'                                    > "$work/imap.script"
 
 : > "$work/pids"
 start() {	# script portfile obsfile
@@ -57,8 +69,10 @@ start() {	# script portfile obsfile
 pnoisy=$(start "$work/noisy.script" "$work/p1" "$work/o1")
 pplain=$(start "$work/noisy.script" "$work/p2" "$work/o2")
 pquiet=$(start "$work/quiet.script" "$work/p3" "$work/o3")
+pimap=$(start  "$work/imap.script"  "$work/p4" "$work/o4")
 register_cleanup "kill $(tr '\n' ' ' < "$work/pids") 2>/dev/null || :"
-[ -n "$pnoisy" ] && [ -n "$pplain" ] && [ -n "$pquiet" ] || fail "a peer never named its port"
+[ -n "$pnoisy" ] && [ -n "$pplain" ] && [ -n "$pquiet" ] && [ -n "$pimap" ] \
+	|| fail "a peer never named its port"
 
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [noisyok]
@@ -101,8 +115,22 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       send "A02 CAPABILITY\r\n"
       timeout(10)                 -> fail
       expect "A02 OK"             -> success
+
+[imapreal]
+   options banner
+   ignore "* "
+   port $pimap
+
+   state greeting
+      timeout(10)                 -> fail
+      expect "* OK"               -> ask
+
+   state ask
+      send "A02 CAPABILITY\r\n"
+      timeout(10)                 -> fail
+      expect "A02 OK"             -> success
 CFG
-{ printf '127.0.0.1\tn\t# noisyok\n127.0.0.1\tp\t# noisyplain\n127.0.0.1\tq\t# quiet\n'; } \
+{ printf '127.0.0.1\tn\t# noisyok\n127.0.0.1\tp\t# noisyplain\n127.0.0.1\tq\t# quiet\n127.0.0.1\ti\t# imapreal\n'; } \
 	> "$work/home/etc/hosts.cfg"
 
 XYMONHOME="$work/home" "$XYMONNET" --no-update --noping --checkresponse=red \
@@ -128,24 +156,16 @@ $(grep -i noisyplain "$work/out.txt" | head -4)"
 them, so 'ignore' is consuming replies it was never meant to touch:
 $(grep -i quiet "$work/out.txt" | head -4)"
 
-# --- what the file may not say -----------------------------------------------
-cat > "$work/home/etc/protocols.cfg" <<CFG
-[collide]
-   ignore "A0"
-   port 1
+# THE SHAPE THAT SETTLES IT: one prefix, both roles, decided by position.
+# Green needs "* OK ..." taken as the greeting AND "* CAPABILITY ..." skipped
+# three lines later. Taking both, or skipping both, is red.
+[ "$(colour_of i.imapreal)" = green ] || fail \
+	"a real IMAP exchange failed. Its greeting is an untagged '* OK' line and
+its later '* CAPABILITY' line is noise, so the same prefix has to be the
+answer in one state and skipped in another. Deciding that by the text
+instead of by position is what made IMAP inexpressible:
+$(grep -i imapreal "$work/out.txt" | head -6)
+peer saw:
+$(cat "$work/o4")"
 
-   state greeting
-      timeout(5)                  -> fail
-      expect "A01 OK"             -> success
-CFG
-printf '127.0.0.1\tc\t# collide\n' > "$work/home/etc/hosts.cfg"
-XYMONHOME="$work/home" "$XYMONNET" --no-update --noping --checkresponse=red \
-	--dns=ip --timeout=5 >"$work/bad.txt" 2>&1 || :
-
-grep -qi "share a start" "$work/bad.txt" || fail \
-	"an ignored prefix that also starts an expect was accepted. The reply
-would be swallowed as noise or taken as the answer, and nothing in the file
-says which:
-$(head -10 "$work/bad.txt")"
-
-pass "an unprompted message is skipped and the wait continues, and an ambiguous ignore is refused"
+pass "an unprompted message is skipped and the wait continues, and the prefix that also greets is still an answer"
