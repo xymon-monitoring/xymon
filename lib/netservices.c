@@ -1201,7 +1201,23 @@ char *init_tcp_services(void)
 				memset(&tmpl, 0, sizeof(tmpl));
 				tmpl.type = STEP_JUMP;
 				if (!tgt) errprintf("'always ->' with no target\n");
-				else { tmpl.target = tgt; tmpl.action = ACT_GOTO; emit_step(first, &tmpl); }
+				else {
+					/*
+					 * A target is a state or one of the three verdicts,
+					 * everywhere the manual writes TARGET. This arm resolved
+					 * only states, so "always -> success" was read as a jump
+					 * to a state nobody declared and the edge was dropped
+					 * when the file was linked -- leaving the state it was
+					 * written in with no way out at all. The runtime has
+					 * always honoured a verdict on a jump (contest.c, case
+					 * STEP_JUMP); the parser simply never emitted one.
+					 */
+					if (strcmp(tgt, "fail") == 0)         tmpl.action = ACT_FAIL;
+					else if (strcmp(tgt, "warning") == 0) tmpl.action = ACT_WARNING;
+					else if (strcmp(tgt, "success") == 0) tmpl.action = ACT_SUCCESS;
+					else { tmpl.target = tgt; tmpl.action = ACT_GOTO; }
+					emit_step(first, &tmpl);
+				}
 			}
 		}
 		else if (strncmp(l, "eof ", 4) == 0) {

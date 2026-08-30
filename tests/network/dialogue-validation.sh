@@ -144,9 +144,12 @@ $out"
 # --- and the shipped file must be quiet -------------------------------------
 cp "$root/xymonnet/protocols.cfg" "$work/home/etc/protocols.cfg"
 out=$(run_xymonnet)
-noise=$(grep -ciE 'unknown protocols.cfg directive|never bound before it|unknown expansion|already TLS|never captured or bound|can only fail|no capture group' <<<"$out" || true)
+# Every complaint the parser makes about a service, not the ones we happened
+# to think of: a phrase list let "'-> success' has no matching state" through
+# while still reporting the shipped file as quiet.
+noise=$(grep -cE 'Service [A-Za-z0-9_|,.-]+: ' <<<"$out" || true)
 [ "$noise" -eq 0 ] || fail \
 	"the protocols.cfg this tree ships triggers $noise of its own warnings:
-$(grep -iE 'unknown|before any expect|already TLS' <<<"$out")"
+$(grep -E 'Service [A-Za-z0-9_|,.-]+: ' <<<"$out")"
 
 pass "protocols.cfg mistakes are reported when the file is read, and the shipped file reports none"
