@@ -68,24 +68,27 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    port $pok
 
 [termbusy]
-   expect "220"                -> proceed
-   expect "421"                -> warning
-   state proceed
-   send "quit\r\n"
-   expect "221"                -> success
    options banner
    port $pbusy
+   expect "220"                -> proceed
+   expect "421"                -> warning
+
+   state proceed
+      send "quit\r\n"
+      expect "221"                -> success
 
 [termbad]
+   options banner
+   port $pbad
    expect "220"
    send "ehlo xymonnet\r\n"
    expect "250"                -> done
    expect "5"                  -> fail
+
    state done
-   send "quit\r\n"
-   expect "221"                -> success
-   options banner
-   port $pbad
+      send "quit\r\n"
+      expect "221"                -> success
+
 CFG
 
 out=$(XYMONHOME="$work/home" "$XYMONNET" --no-update --noping --checkresponse \

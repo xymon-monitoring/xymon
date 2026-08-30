@@ -40,7 +40,13 @@ condition ::= expect "…" [ until "…" ] [ as NAME ] | NAME ~ "…"
 
 **Targets** are a state, or one of `success`, `warning`, `fail` -- green, yellow, red. `warning` is the point: a server answering correctly but refusing an optional capability is not down, and calling it down teaches operators to ignore the column. An edge saying `fail` is red whatever `--checkresponse` is set to; a reply matching no alternative takes that option's colour, yellow by default.
 
-**Order is file order.** A state's lines run as written and the first edge that fires leaves, so a `~` above an `expect` decides before the socket is read at all. An earlier draft specified a fixed precedence regardless of where lines were written; the implementation does not do that and should not, because a precedence the reader cannot see is what turns a declaration back into a program.
+**Layout.** Entry attributes -- `transport`, `port`, `options`, `start` -- are written first, in any order among themselves, because they describe the definition rather than any step; then each `state` with its lines indented under it.
+
+**One action, one wait.** A state does one thing -- a `send`, a `starttls`, a `credentials` -- and waits for one answer: the clock that bounds the wait, and the `expect` lines that end the state, each naming where its answer leads. A state that acts without waiting leaves on `always`; a state that decides on a value already bound needs no action at all. Because a state holds one action and one wait, the order of its lines carries no meaning of its own: the entry is declarative down to the state, and sequence lives in the edges between states rather than in the lines within one.
+
+The parser enforces none of it: attributes are accepted anywhere, indentation is ignored, several actions and several waits in one state are accepted, and an `expect` with no `->` falls through to the line below. One ordering rule is real and unenforced: a `timeout` or `idle` arms the wait that follows it, so a clock below a state's `expect` lines bounds nothing. `protocols.cfg(5)` lists the five rules under CONVENTIONS, and `tests/buildsystem/dialogue-conventions.sh` checks every entry in the manual, in the shipped `protocols.cfg` and in the fixtures against them -- an entry that breaks one on purpose says `# conventions: permissive` and says why. Prose nothing checks is how the manual came to document a `when ... end` grammar no shipped code ever had.
+
+**Order is file order, and with one action per state that stops mattering.** The driver runs a state's lines as written and the first edge that fires leaves it, so today a `~` above an `expect` decides before the socket is read. An earlier draft specified a fixed precedence regardless of where lines were written and was rejected, because a precedence the reader cannot see is what turns a declaration back into a program. Under one action and one wait the question mostly dissolves: a state either decides on values it already holds or waits for bytes, and the two do not compete within one state. Where they still could, the honest fix is a load-time refusal rather than an invisible rule.
 
 **Values are bound where they are produced.** `expect "…" as NAME` binds the reply that expect accepted; `NAME ~ "…" as X;Y` reads a bound value and binds more out of it. No line refers to its operand by position.
 
@@ -58,15 +64,15 @@ Submission on 587, upgrading to TLS and authenticating:
    start greeting
 
    state greeting
+      timeout(5)                  -> fail
       expect "220"                -> ehlo
       expect "421"                -> warning
-      timeout(5)                  -> fail
 
    state ehlo
       send   "ehlo xymonnet\r\n"
-      expect "250" until "250 " as caps   -> offers-tls
       idle(5)                     -> warning
       timeout(30)                 -> fail
+      expect "250" until "250 " as caps   -> offers-tls
 
    state offers-tls
       caps ~ "STARTTLS"           -> upgrade
@@ -74,41 +80,42 @@ Submission on 587, upgrading to TLS and authenticating:
 
    state upgrade
       send   "starttls\r\n"
+      timeout(10)                 -> fail
       expect "220"                -> handshake
       expect "454"                -> warning
-      timeout(10)                 -> fail
 
    state handshake
       starttls
-      always                      -> ehlo-encrypted
       timeout(10)                 -> fail
+      always                      -> ehlo-encrypted
 
    state ehlo-encrypted
       send   "ehlo xymonnet\r\n"
-      expect "250" until "250 "   -> authenticate
       timeout(10)                 -> fail
+      expect "250" until "250 "   -> authenticate
 
    state authenticate
       send   "auth login\r\n"
+      timeout(10)                 -> fail
       expect "334"                -> send-user
       expect "503"                -> farewell
-      timeout(10)                 -> fail
 
    state send-user
       send   "${base64:${username}}\r\n"
-      expect "334"                -> send-pass
       timeout(10)                 -> fail
+      expect "334"                -> send-pass
 
    state send-pass
       send   "${base64:${password}}\r\n"
+      timeout(20)                 -> warning
       expect "235"                -> farewell
       expect "535"                -> fail
-      timeout(20)                 -> warning
 
    state farewell
       send   "quit\r\n"
+      timeout(10)                 -> fail
       expect "221"                -> success
-      timeout(10)                 -> fail```
+```
 
 The same entry as a diagram -- generated from it rather than drawn beside it: **25 edges in the config, 25 in the diagram.**
 
@@ -172,15 +179,16 @@ stateDiagram-v2
     classDef bad  fill:#cf222e,color:#fff,stroke:#a40e26
     class success ok
     class warning warn
-    class fail bad```
+    class fail bad
+```
 
 ## Branching on a value
 
 ```
    state greeting
+      timeout(5)                  -> fail
       expect "+OK" as banner      -> choose-auth
       expect "-ERR"               -> fail
-      timeout(5)                  -> fail
 
    state choose-auth
       banner ~ "\+OK (\S+) (<[^>]+>)" as server;challenge
@@ -189,26 +197,27 @@ stateDiagram-v2
 
    state apop
       send   "APOP ${username} ${md5:${challenge}${password}}\r\n"
+      timeout(5)                  -> fail
       expect "+OK"                -> farewell
       expect "-ERR"               -> fail
-      timeout(5)                  -> fail
 
    state plain
       send   "USER ${username}\r\n"
+      timeout(5)                  -> fail
       expect "+OK"                -> send-pass
       expect "-ERR"               -> fail
-      timeout(5)                  -> fail
 
    state send-pass
       send   "PASS ${password}\r\n"
+      timeout(5)                  -> fail
       expect "+OK"                -> farewell
       expect "-ERR"               -> fail
-      timeout(5)                  -> fail
 
    state farewell
       send   "quit\r\n"
+      timeout(5)                  -> fail
       expect "+OK"                -> success
-      timeout(5)                  -> fail```
+```
 
 One entry, both server styles, no nesting. The greeting is bound where it is accepted and taken apart in the state that branches on it.
 
@@ -273,7 +282,7 @@ Each entry says what was tried, why it lost, and where one exists, what would ch
 
 **Mealy: the action on the transition.** Rejected: a state reachable from several places would duplicate its action on every incoming edge -- `farewell` already has two routes in.
 
-**One thing per state.** More uniform, and makes timers structural. Rejected: with one action and one wait the sequence is forced rather than authored; the action state carries no information, its only edge being `always ->`; and it costs 17 states against 10 on the submission entry, with failures reading `state send-pass-wait expected "235"` where `-wait` is scaffolding. The split form is still correct wherever a state is the target of a cycle, since re-entry re-runs the action.
+**One thing per state.** More uniform, and makes timers structural. *Rejected, then adopted.* The objection was that with one action and one wait the sequence is forced rather than authored, that an action-only state carries no information when its single edge is `always ->`, and that it cost 17 states against 10 on the submission entry, with failures reading `state send-pass-wait expected "235"` where `-wait` is scaffolding. What overturned it: a state holding several actions and several waits makes line order significant *inside* a state, and that is what stops the file being declarative -- a clock written below an expect bounds nothing, a `~` above one decides before the socket is read. One action and one wait moves all sequence into the edges, where it is visible and checkable, and makes "this state waits twice" and "this clock bounds nothing" load-time questions. The cost is the extra states, which is a cost in reading, not in meaning.
 
 **Mermaid as the config format itself.** Tested rather than assumed -- labels do preserve trailing spaces, `\r\n` and colons. Rejected: it needs a mermaid-subset parser in C, and a subset is the trap; it pins the config to someone else's release cycle; its edge list names both endpoints per line, so a state's action sits away from its edges; and `[name]`, `options`, `port` have no home in it. Generating mermaid gets the benefit with none of that.
 
