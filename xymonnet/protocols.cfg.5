@@ -75,20 +75,33 @@ represents a line-feed (ASCII 10), "\et" represents a TAB (ASCII 8).
 Binary data is input as "\exNN" with NN being the hexadecimal value
 of the byte.
 .sp
-An \fBexpect\fR matches the beginning of the reply, and consumes one
-line of it. Anything the server sent beyond that line is kept for the
-next step.
+Three shapes are the classic single-shot probe, and keep the code path
+they have always used: a lone \fBsend\fR, a lone \fBexpect\fR, and a
+\fBsend\fR followed by an \fBexpect\fR. That probe writes immediately
+on connect, reads once, and compares the start of what came back.
+Everything else -- an \fBexpect\fR with something sent after it, more
+than one of either, or any of the steps below -- runs the dialogue
+driver, and only there do the rest of these pages apply.
 .sp
-A reply that never matches is not accumulated without limit. Once a
-conversation has buffered 32 KB with nothing matching, the test fails
-naming the service rather than growing for as long as the server cares
-to talk.
+Under the driver, an \fBexpect\fR matches the beginning of the reply and
+consumes one line of it; anything the server sent beyond that line is
+kept for the next step. A reply that never matches is not accumulated
+without limit: once a conversation has buffered 32 KB with nothing
+matching, the test fails naming the service rather than growing for as
+long as the server cares to talk. The single-shot probe accumulates
+nothing and so has no such bound.
 
 .IP "\fBexpect\fR \fISTRING\fR \fBuntil\fR \fITERMINATOR\fR"
 Consume a multi-line reply. Lines are consumed until one begins with
 \fITERMINATOR\fR, which is consumed as well. Nothing is consumed until
 that line arrives, so a reply that is still in flight is waited for
 rather than half-read.
+.sp
+This needs the driver, and a definition that is one \fBexpect\fR and
+nothing else is a classic shape that does not use it: there,
+\fBuntil\fR has no effect and the first line decides the test. Adding
+the step that follows -- the \fBsend\fR that ends the session, say --
+is what makes it a dialogue.
 .sp
 Protocols end a multi-line reply differently, and naming the terminator
 covers them without special-casing any:

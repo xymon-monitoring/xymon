@@ -108,7 +108,8 @@ Submission on 587, upgrading to TLS and authenticating:
    state farewell
       send   "quit\r\n"
       expect "221"                -> success
-      timeout(10)                 -> fail```
+      timeout(10)                 -> fail
+```
 
 The same entry as a diagram -- generated from it rather than drawn beside it: **25 edges in the config, 25 in the diagram.**
 
@@ -172,7 +173,8 @@ stateDiagram-v2
     classDef bad  fill:#cf222e,color:#fff,stroke:#a40e26
     class success ok
     class warning warn
-    class fail bad```
+    class fail bad
+```
 
 ## Branching on a value
 
@@ -208,7 +210,8 @@ stateDiagram-v2
    state farewell
       send   "quit\r\n"
       expect "+OK"                -> success
-      timeout(5)                  -> fail```
+      timeout(5)                  -> fail
+```
 
 One entry, both server styles, no nesting. The greeting is bound where it is accepted and taken apart in the state that branches on it.
 

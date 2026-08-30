@@ -96,13 +96,21 @@ done
 
 # tlsup is the worked example from protocols.cfg(5), verbatim. If this
 # entry stops working the manual is wrong, which is worse than a bug.
+#
+# The two entries spell the same step differently on purpose. [tlsup] writes
+# all four clauses on one line -- expect, until, as, and the edge -- which is
+# the form the manual prints under "expect ... as NAME" and which nothing else
+# in the suite covers. [tlsnone] leaves the edge off and falls through to the
+# '~' below it. Both must reach the same state, or one of the two spellings is
+# documented and not implemented.
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [tlsup]
    state greeting
    timeout(10)         -> fail
    expect "220"
    send "ehlo xymonnet\r\n"
-   expect "250" until "250 " as caps
+   expect "250" until "250 " as caps   -> offers
+   state offers
    caps ~ "STARTTLS"   -> upgrade
    else                -> warning
 

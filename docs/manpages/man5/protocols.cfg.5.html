@@ -93,13 +93,21 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         (ASCII 13), &quot;\n&quot; represents a line-feed (ASCII 10),
         &quot;\t&quot; represents a TAB (ASCII 8). Binary data is input as
         &quot;\xNN&quot; with NN being the hexadecimal value of the byte.</p>
-    <p class="Pp">An <b>expect</b> matches the beginning of the reply, and
-        consumes one line of it. Anything the server sent beyond that line is
-        kept for the next step.</p>
-    <p class="Pp">A reply that never matches is not accumulated without limit.
-        Once a conversation has buffered 32 KB with nothing matching, the test
-        fails naming the service rather than growing for as long as the server
-        cares to talk.</p>
+    <p class="Pp">Three shapes are the classic single-shot probe, and keep the
+        code path they have always used: a lone <b>send</b>, a lone
+        <b>expect</b>, and a <b>send</b> followed by an <b>expect</b>. That
+        probe writes immediately on connect, reads once, and compares the start
+        of what came back. Everything else -- an <b>expect</b> with something
+        sent after it, more than one of either, or any of the steps below --
+        runs the dialogue driver, and only there do the rest of these pages
+        apply.</p>
+    <p class="Pp">Under the driver, an <b>expect</b> matches the beginning of
+        the reply and consumes one line of it; anything the server sent beyond
+        that line is kept for the next step. A reply that never matches is not
+        accumulated without limit: once a conversation has buffered 32 KB with
+        nothing matching, the test fails naming the service rather than growing
+        for as long as the server cares to talk. The single-shot probe
+        accumulates nothing and so has no such bound.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="expect~2"><a class="permalink" href="#expect~2"><b>expect</b>
@@ -108,6 +116,11 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       <i>TERMINATOR</i>, which is consumed as well. Nothing is consumed until
       that line arrives, so a reply that is still in flight is waited for rather
       than half-read.
+    <p class="Pp">This needs the driver, and a definition that is one
+        <b>expect</b> and nothing else is a classic shape that does not use it:
+        there, <b>until</b> has no effect and the first line decides the test.
+        Adding the step that follows -- the <b>send</b> that ends the session,
+        say -- is what makes it a dialogue.</p>
     <p class="Pp">Protocols end a multi-line reply differently, and naming the
         terminator covers them without special-casing any:</p>
     <p class="Pp"></p>
