@@ -99,11 +99,18 @@ static int unescape(const char *in, char *out, int max)
 		  case 'n': out[n++] = '\n'; in++; break;
 		  case 't': out[n++] = '\t'; in++; break;
 		  case 'x': {
-			int v = 0;
+			/*
+			 * Exactly two digits. Consuming every hex digit that follows
+			 * makes "\x05A" one byte rather than two, so a binary payload
+			 * beginning with A-F silently loses its first character -- and
+			 * a length prefix written that way announces the wrong size.
+			 */
+			int v = 0, d = 0;
+
 			in++;
-			while (isxdigit((int)*in)) {
+			while ((d < 2) && isxdigit((int)*in)) {
 				v = v * 16 + (isdigit((int)*in) ? *in - '0' : (tolower(*in) - 'a' + 10));
-				in++;
+				in++; d++;
 			}
 			out[n++] = (char)v;
 			break;

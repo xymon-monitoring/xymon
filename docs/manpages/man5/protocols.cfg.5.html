@@ -353,6 +353,33 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         expands to nothing.</p>
     <p class="Pp"></p>
   </dd>
+  <dt id="framing"><a class="permalink" href="#framing"><b>framing</b>
+    <b>line</b></a></dt>
+  <dd></dd>
+  <dt id="framing~2"><a class="permalink" href="#framing~2"><b>framing</b>
+    <b>length(</b><i>WIDTH</i><b>,</b> <b>big</b>|<b>little</b><b>)</b></a></dt>
+  <dd>How a message ends on this connection. TCP says nothing about it: a
+      message boundary is always something the protocol states, and it states it
+      in one of three ways -- a terminator, a count, or the close.
+    <p class="Pp"><b>line</b> is the default and is what the greeting protocols
+        do: an <b>expect</b> consumes one line, and <b>until</b> says where a
+        reply of several lines ends. <b>length</b> is what the binary protocols
+        do -- DNS over TCP, MySQL, LDAP, AMQP -- where each message is preceded
+        by a count of <i>WIDTH</i> bytes, 1 to 4, most significant first with
+        <b>big</b> and last with <b>little</b>.</p>
+    <p class="Pp">Under <b>length</b> the driver assembles a whole message
+        before anything looks at it: an <b>expect</b> matches the start of the
+        MESSAGE rather than of whatever has arrived so far, a match consumes the
+        message and its count together, and a payload containing a newline is
+        data like any other byte. A message longer than 32 KB fails by name
+        rather than being buffered.</p>
+    <p class="Pp">It describes the connection, not one reply, so it is written
+        once as an entry attribute. <b>until</b> and <b>expect
+        bytes(</b><i>N</i><b>)</b> are refused under it: the count has already
+        said where the message ends, and a second answer could only agree or
+        contradict.</p>
+    <p class="Pp"></p>
+  </dd>
   <dt id="transport"><a class="permalink" href="#transport"><b>transport</b>
     <b>tcp</b></a></dt>
   <dd>Which probe runs this entry. Only <b>tcp</b> is implemented; naming
@@ -423,7 +450,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
    3  a state holds at most one action: send, starttls, credentials
    4  every expect names where it goes: &quot;-&gt; TARGET&quot;
    5  a clock -- timeout or idle -- is written above the expects it
-      bounds, because it arms the wait that FOLLOWS it</pre>
+      bounds, because it arms the wait that FOLLOWS it
+   6  a message boundary is stated, never guessed: a terminator with
+      &quot;until&quot;, a count with &quot;framing length&quot;, or the close with &quot;eof&quot;</pre>
 <p class="Pp">Rule 5 is the one that bites: a clock written below a state's
     <b>expect</b> lines bounds nothing, and nothing says so. The others are
     legibility -- an entry written this way reads as the machine it describes,
@@ -517,6 +546,11 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
    'expect bytes(N)' shares a state with another expect
    'expect bytes(N) until ...' - a frame already ends the reply
    'expect bytes(N)' is outside 1..32768
+   'until' under framing length         the count already says this
+   'expect bytes(N)' under framing length
+   framing length width is 1..4 bytes
+   framing length endianness is 'big' or 'little'
+   framed message of N bytes is over the 32768 a conversation may hold
    ${NAME} is never captured or bound before it is used
    'NAME ~ ...' tests a value that is never bound before it
    'NAME ~ &quot;...&quot; as X' has no capture group

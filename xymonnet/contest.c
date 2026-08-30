@@ -2208,14 +2208,57 @@ restartselect:
 								while (progress) {
 									svcstep_t *alt, *hit = NULL;
 									int undecided = 0;
+									int mbase = 0, mlen = item->stepbuflen;
 
 									progress = 0;
 									st = (svcstep_t *)item->curstep;
 									if (!st || (st->type != STEP_EXPECT)) break;
 
+									/*
+									 * Length framing: the peer sends a count and
+									 * then that many bytes, so a message boundary
+									 * exists where no newline does. Assemble the
+									 * whole message before anything looks at it --
+									 * an expect then matches the START of a
+									 * message rather than of whatever has arrived,
+									 * and a match consumes the message entire.
+									 */
+									if (item->svcinfo->framing == FRAMING_LENGTH) {
+										int w = item->svcinfo->framewidth, k;
+										unsigned int n = 0;
+
+										if (item->stepbuflen < w) break;   /* not even the count yet */
+										for (k = 0; k < w; k++) {
+											int b = item->stepbuf[item->svcinfo->framebig ? k : (w - 1 - k)];
+
+											n = (n << 8) | (unsigned int)b;
+										}
+										if (n > (unsigned int)MAX_DIALOGUE_BYTES) {
+											errprintf("%s: framed message of %u bytes is over the %d "
+												  "a conversation may hold\n",
+												  item->svcinfo->svcname, n, MAX_DIALOGUE_BYTES);
+											item->dialogfail = 1;
+											if (!item->failstep) item->failstep = (void *)st;
+											item->curstep = NULL;
+											st = NULL;
+											break;
+										}
+										if ((unsigned int)(item->stepbuflen - w) < n) break;  /* still arriving */
+										mbase = w;
+										mlen  = (int)n;
+									}
+
 									/* Consecutive expects are alternatives of ONE state. */
 									for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next) {
 										if (alt->oneof) continue;	/* only fires on EOF */
+										if (item->svcinfo->framing == FRAMING_LENGTH) {
+											/* the literal matches the start of the MESSAGE */
+											if (mlen < alt->len) { hit = NULL; continue; }
+											if (memcmp(item->stepbuf + mbase, alt->text, alt->len) == 0) {
+												hit = alt; break;
+											}
+											continue;
+										}
 										if (alt->wantbytes) {
 											/*
 											 * A frame, not a line: it is decided by
@@ -2244,7 +2287,11 @@ restartselect:
 									if (hit) {
 										int cut = hit->len;
 
-										if (hit->wantbytes) {
+										if (item->svcinfo->framing == FRAMING_LENGTH) {
+											/* the message and its count, and nothing else */
+											cut = mbase + mlen;
+										}
+										else if (hit->wantbytes) {
 											/* Exactly the frame, and not a byte more. */
 											cut = hit->wantbytes;
 										}
@@ -2288,10 +2335,22 @@ restartselect:
 											if (cut < item->stepbuflen) cut++;
 										}
 
-										if (item->lastreply) xfree(item->lastreply);
-										item->lastreply = (char *)malloc(cut + 1);
-										memcpy(item->lastreply, item->stepbuf, cut);
-										item->lastreply[cut] = '\0';
+										/*
+										 * The reply is the message, not the framing
+										 * around it: under length framing the count
+										 * belongs to the transport and would only
+										 * ever be noise in a report or in a value
+										 * an "as" binds.
+										 */
+										{
+											int rbase = (item->svcinfo->framing == FRAMING_LENGTH) ? mbase : 0;
+											int rlen  = (item->svcinfo->framing == FRAMING_LENGTH) ? mlen : cut;
+
+											if (item->lastreply) xfree(item->lastreply);
+											item->lastreply = (char *)malloc(rlen + 1);
+											memcpy(item->lastreply, item->stepbuf + rbase, rlen);
+											item->lastreply[rlen] = '\0';
+										}
 
 										/*
 										 * "expect ... as NAME" binds the reply THIS
