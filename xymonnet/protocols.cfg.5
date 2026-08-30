@@ -78,6 +78,11 @@ of the byte.
 An \fBexpect\fR matches the beginning of the reply, and consumes one
 line of it. Anything the server sent beyond that line is kept for the
 next step.
+.sp
+A reply that never matches is not accumulated without limit. Once a
+conversation has buffered 32 KB with nothing matching, the test fails
+naming the service rather than growing for as long as the server cares
+to talk.
 
 .IP "\fBexpect\fR \fISTRING\fR \fBuntil\fR \fITERMINATOR\fR"
 Consume a multi-line reply. Lines are consumed until one begins with
@@ -95,6 +100,19 @@ covers them without special-casing any:
 \&   expect "*"   until "A01 "     (IMAP: the command tag ends it)
 .fi
 
+.IP "\fBexpect\fR \fISTRING\fR \fBas\fR \fINAME\fR"
+Bind the reply this \fBexpect\fR accepted to \fINAME\fR, for a later
+\fB~\fR line to read. It is written on the expect itself because that is
+the line that produces the value: a separate step would have to say
+which reply it meant by standing in the right place, and one standing in
+the wrong place bound the reply of an earlier state without complaining.
+May be combined with \fBuntil\fR and with an edge:
+.br
+.sp
+.nf
+\&   expect "250" until "250 " as caps    \-> offers
+.fi
+
 .IP "\fBexpect\fR \fISTRING\fR \fB\->\fR \fITARGET\fR"
 .IP "\fBstate\fR \fINAME\fR"
 Consecutive \fBexpect\fR lines are alternatives: the first whose pattern
@@ -106,14 +124,19 @@ end the test where it stands:
 .sp
 .nf
 \&   \-> \fILABEL\fR        continue in that state
-\&   \-> success      the service is up
+\&   \-> success      the service is up (green)
 \&   \-> warning      answering, but not as it should (yellow)
-\&   \-> fail         the test failed (the \fB\-\-checkresponse\fR colour)
+\&   \-> fail         the test failed (red)
 .fi
 .sp
 \fBwarning\fR is the one worth reaching for. A server that answers
 correctly but refuses an optional capability is not down, and reporting
 it as down teaches operators to ignore the column.
+.sp
+A reply that matches no alternative at all is a failure too, but it takes
+the colour of \fB\-\-checkresponse\fR, which is yellow unless set
+otherwise. \fB\-> fail\fR is red whatever that option says, so choosing
+it is a stronger statement than merely failing to match.
 .sp
 \fBstate\fR names the state that follows it -- the expects up to the next
 step that is not one -- and is what a \fB\->\fR aims at, so naming a state
@@ -133,15 +156,34 @@ timing out:
 A \fB\->\fR may point backwards, which makes a retry loop. A dialogue
 that loops without performing any I/O is stopped rather than spinning.
 .sp
+Entering a state runs its action, on re-entry as much as the first time,
+so an edge back into a state that sends will send again. That is right
+for a retry and wrong for "ignore this and keep waiting", which needs
+the wait as a state of its own carrying no action.
+.sp
+A reply that matches no alternative at all does not wait for
+\fBtimeout(\fR\fIN\fR\fB)\fR to expire: the test fails at once, naming
+the state. That is what makes a server which greets correctly and then
+rejects every command report promptly rather than as a timeout.
+.sp
+The lines of a state run in the order they are written, and the first
+edge that fires leaves it. A \fB~\fR line written above an \fBexpect\fR
+therefore decides before anything is read from the socket at all, which
+is how a state branches on a value bound earlier without waiting for
+input.
+.sp
 Avoid writing one alternative that is a prefix of another. Both would
 match the same reply, so the winner would otherwise depend on how much
 had arrived when the group was examined -- that is, on how the server
 split its reply across packets rather than on anything in this file.
 .sp
-Such a group is reported when the file is read, and the driver waits for
-every pattern in it to be decidable before choosing, so the order written
-here decides the winner. The warning is still worth acting on: a reader
-of the file cannot see which alternative wins without knowing that rule.
+Such a group is refused when the file is read, and the service reports
+that protocols.cfg would not take the definition. Matching is anchored at
+the start of the reply, so two patterns can both match one reply exactly
+when one is a prefix of the other -- which makes the check complete rather
+than a guess, and means refusing rejects nothing that would have worked.
+The fix is to match the shared prefix in one state, bind it with
+\fBas\fR, and distinguish in the next.
 
 .IP "\fBstart\fR \fINAME\fR"
 Begin the dialogue in the state called \fINAME\fR rather than at the
@@ -160,43 +202,35 @@ rather than any bytes.
 
 .IP "\fBtimeout(\fR\fISECONDS\fR\fB)\fR \fB\->\fR \fITARGET\fR"
 .IP "\fBidle(\fR\fISECONDS\fR\fB)\fR \fB\->\fR \fITARGET\fR"
-How long the state may take, and where to go when it does not finish in
-time. \fBtimeout\fR is the budget for the whole state; \fBidle\fR is how
-long the server may say nothing at all. They differ for a long reply
-that keeps arriving: that is not idle, but it may still be over budget.
+How long to wait, and where to go when the wait runs out. \fBtimeout\fR
+is armed against the step the dialogue is on and re-armed when it
+advances, so it bounds each wait rather than the state as a whole -- the
+same thing in a state that waits once, and not in one whose \fBsend\fR
+blocks before its \fBexpect\fR begins. \fBidle\fR is how long the server
+may say nothing at all, and restarts on any byte. They differ for a long
+reply that keeps arriving: that is not idle, but it may still be over
+budget.
 Either may lead to \fBwarning\fR, which is how "slow" is reported as
 distinct from "broken".
 
 .IP "\fINAME\fR \fB~\fR \fIREGEX\fR \fB\->\fR \fITARGET\fR"
 .IP "\fBelse\fR \fB\->\fR \fITARGET\fR"
-Branch on a value bound earlier by \fBas\fR. The line begins with
-the name being tested, so it is recognised by its shape rather than by a
-leading keyword.
-.sp
-The regex is tested against a value already in hand, never against the
-socket. That is why a regex is allowed here and not in an \fBexpect\fR:
-it decides nothing about what arrives, so it cannot race a partial read.
-A name that nothing bound never matches, and so takes the \fBelse\fR arm.
-
-.IP "\fBexpect\fR \fISTRING\fR \fBas\fR \fINAME\fR"
-Bind the reply this \fBexpect\fR accepted to \fINAME\fR, for a later
-\fB~\fR line to read. It is written on the expect itself because that is
-the line that produces the value: a separate step would have to say which
-reply it meant by standing in the right place, and one standing in the
-wrong place bound the reply of an earlier state without complaining.
-May be combined with \fBuntil\fR and with an edge:
-.br
-.sp
-.nf
-\&   expect "250" until "250 " as caps    \-> offers
-.fi
-
 .IP "\fINAME\fR \fB~\fR \fIREGEX\fR \fBas\fR \fINAME2\fR[;\fINAME3\fR]"
-Read the value called \fINAME\fR and bind what the pattern's capture
-groups found in it, one name per group, in the order the groups appear.
-The regex is case-sensitive, and a pattern that does not match binds
-empty. It reads a value already in hand and never the socket, which is
-what allows a regex here and not on an \fBexpect\fR.
+Read the value called \fINAME\fR: the first two forms branch on whether
+it matches, the third binds what the pattern's capture groups found in
+it. One name per group, in the order the groups appear. Each line begins
+with the name it reads, so both are recognised by their shape rather than
+by a leading keyword.
+.sp
+The regex reads a value already in hand, never the socket. That is what
+allows a regex here and not in an \fBexpect\fR: it decides nothing about
+what arrives, so it cannot race a partial read and needs no maximum match
+length. The regex is case-sensitive, and a pattern that does not match
+binds empty.
+.sp
+A name that nothing binds never matches, so a branch on one can only ever
+take the \fBelse\fR arm and an extraction from one can only ever bind
+empty. Both are reported when the file is read.
 
 .IP "\fBcredentials\fR \fINAME\fR"
 Bind \fB${username}\fR and \fB${password}\fR from the entry called
@@ -206,6 +240,10 @@ Bind \fB${username}\fR and \fB${password}\fR from the entry called
 .nf
 \&   NAME	username	password
 .fi
+.sp
+It is a step, not a property of the entry: it takes effect where it is
+written, like \fBsend\fR, and the names it binds are available to the
+steps after it.
 .sp
 Credentials are named rather than written here because protocols.cfg is
 world-readable and is the file people attach to bug reports.
@@ -223,6 +261,11 @@ is plaintext and everything after it is encrypted, on the same socket.
 This is what submission (587), IMAP (143) and POP3 (110) use, and it is
 not the same as the \fBssl\fR option, which means TLS from the first
 byte.
+.sp
+The certificate is read from the upgraded session, so a service that
+begins in plaintext -- submission on 587, IMAP on 143, SMTP on 25 --
+reaches the \fBsslcert\fR column with its expiry checked. It cannot,
+while \fBssl\fR is the only way to start TLS.
 .sp
 If the server has sent anything that is still unread when the upgrade
 begins, the test fails rather than proceeding: the handshake has to
@@ -266,6 +309,36 @@ Defines test options. The possible options are
 .fi
 
 
+.SH PER-HOST DEPTH AND CREDENTIALS
+protocols.cfg is one file for the whole installation: a \fB[pop3]\fR
+definition applies to every host carrying the test. Deepening a shipped
+entry therefore changes what every site is alerted on. Two tags in
+hosts.cfg let a host differ from the definition without copying it:
+.br
+.sp
+.nf
+\&   smtp:ok=greeting        check only as far as that state
+\&   smtp:ok=greeting,ehlo   ... or any one of several
+\&   smtp:cred=acctb         bind this credentials.cfg entry
+.fi
+.sp
+\fBok=\fR names one or more states at which this host's test stops and
+reports success. The steps after it are not run and their absence is not
+a failure, so a definition can become the full conversation while a site
+keeps banner depth host by host.
+.sp
+\fBcred=\fR names the entry in credentials.cfg that this host's
+\fBcredentials\fR step binds, in place of the one the definition names --
+one definition, a different account per host. The value is a key, never a
+secret: hosts.cfg is world-readable for the same reasons protocols.cfg is.
+.sp
+Neither tag derives a column, unlike a port. A site running mixed depths
+would otherwise get one column per depth and no comparable history.
+.sp
+The checks in DIAGNOSTICS below are made against the entry as written,
+not against any host's depth. Under \fBok=greeting\fR everything
+downstream is legitimately unreachable, and the checks do not know that.
+
 .SH EXAMPLES
 An SMTP service that upgrades to TLS when the server offers it, reports
 a server that does not offer it as yellow rather than down, and reads the
@@ -306,6 +379,30 @@ reports the moment the file is installed -- a site whose mail server
 offers no STARTTLS would turn yellow because it upgraded, not because
 anything changed at the site. Copy this under a new name and point the
 hosts that should use it at that name instead.
+
+.SH DIAGNOSTICS
+This file is checked when it is read rather than when a step runs, so a
+step that is never reached still reports its own mistake. Every message
+names the service. The ones worth knowing:
+.br
+.sp
+.nf
+\&   Unknown protocols.cfg directive     a mistyped keyword; step dropped
+\&   '\-> NAME' has no matching state     the edge is dropped
+\&   'start NAME' has no matching state  the entry is refused
+\&   state 'NAME' cannot be reached      no edge names it
+\&   state 'NAME' has no way to finish   no path from it to a terminal
+\&   state 'NAME' waits for a reply with no timeout
+\&   'expect "A"' and 'expect "B"' overlap - both match the same reply
+\&   ${NAME} is never captured or bound before it is used
+\&   'NAME ~ ...' tests a value that is never bound before it
+\&   'NAME ~ "..." as X' has no capture group
+\&   transport 'X' is not implemented    only tcp is supported
+.fi
+.sp
+An overlap and an unimplemented transport refuse the definition outright:
+the service reports that protocols.cfg would not take it, rather than
+running a test whose result would depend on which pattern arrived first.
 
 .SH FILES
 .IP "\fB$XYMONHOME/etc/protocols.cfg\fR"
