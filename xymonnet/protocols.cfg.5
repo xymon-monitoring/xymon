@@ -95,30 +95,42 @@ covers them without special-casing any:
 \&   expect "*"   until "A01 "     (IMAP: the command tag ends it)
 .fi
 
-.IP "\fBexpect\fR \fISTRING\fR \fBgoto\fR \fILABEL\fR"
-.IP "\fBexpect\fR \fISTRING\fR \fBfail\fR"
+.IP "\fBexpect\fR \fISTRING\fR \fB\->\fR \fITARGET\fR"
 .IP "\fBstate\fR \fINAME\fR"
 Consecutive \fBexpect\fR lines are alternatives: the first whose pattern
-matches wins, and its action decides what happens next. Without an
-action the dialogue continues after the whole group; \fBgoto\fR jumps to
-the matching \fBstate\fR, and \fBfail\fR ends the test as a failure.
+matches wins, and its \fB\->\fR decides what happens next. Without one the
+dialogue simply continues after the whole group. A target is either the
+name of a \fBstate\fR, which is jumped to, or one of three outcomes that
+end the test where it stands:
+.br
+.sp
+.nf
+\&   \-> \fILABEL\fR        continue in that state
+\&   \-> success      the service is up
+\&   \-> warning      answering, but not as it should (yellow)
+\&   \-> fail         the test failed (the \fB\-\-checkresponse\fR colour)
+.fi
+.sp
+\fBwarning\fR is the one worth reaching for. A server that answers
+correctly but refuses an optional capability is not down, and reporting
+it as down teaches operators to ignore the column.
 .sp
 \fBstate\fR names the state that follows it -- the expects up to the next
-step that is not one -- and is what \fBgoto\fR aims at, so naming a state
+step that is not one -- and is what a \fB\->\fR aims at, so naming a state
 and marking a jump target are the same act. Naming them is optional, but
 worth doing: a dialogue that fails reports the state it failed in, and
-"state want-password expected \"334\"" tells an operator what "step 7"
+"state want-password expected 334" tells an operator what "step 7"
 does not.
 This is how a soft error is told apart from a hard one instead of both
 timing out:
 .br
 .sp
 .nf
-\&   expect "250" goto ready
-\&   expect "421" fail
+\&   expect "250" \-> ready
+\&   expect "421" \-> fail
 .fi
 .sp
-A \fBgoto\fR may point backwards, which makes a retry loop. A dialogue
+A \fB\->\fR may point backwards, which makes a retry loop. A dialogue
 that loops without performing any I/O is stopped rather than spinning.
 .sp
 Avoid writing one alternative that is a prefix of another. Both would
@@ -131,17 +143,53 @@ every pattern in it to be decidable before choosing, so the order written
 here decides the winner. The warning is still worth acting on: a reader
 of the file cannot see which alternative wins without knowing that rule.
 
-.IP "\fBwhen\fR \fINAME\fR ~ \fIREGEX\fR"
-.IP "\fBelse\fR"
-.IP "\fBend\fR"
-Run the enclosed steps only when the captured value \fINAME\fR matches
-\fIREGEX\fR. An unset value never matches. Blocks may be nested.
+.IP "\fBstart\fR \fINAME\fR"
+Begin the dialogue in the state called \fINAME\fR rather than at the
+first step. Useful when the states read better in an order other than
+the one they run in.
+
+.IP "\fBalways\fR \fB\->\fR \fITARGET\fR"
+An unconditional edge, for a state that has nothing to wait for -- after
+a \fBstarttls\fR, for instance.
+
+.IP "\fBeof\fR \fB\->\fR \fITARGET\fR"
+The server closing the connection is an outcome, not automatically a
+fault: after QUIT it is the correct one. This is an alternative like an
+\fBexpect\fR, competing in the same group, but it matches the close
+rather than any bytes.
+
+.IP "\fBtimeout(\fR\fISECONDS\fR\fB)\fR \fB\->\fR \fITARGET\fR"
+.IP "\fBidle(\fR\fISECONDS\fR\fB)\fR \fB\->\fR \fITARGET\fR"
+How long the state may take, and where to go when it does not finish in
+time. \fBtimeout\fR is the budget for the whole state; \fBidle\fR is how
+long the server may say nothing at all. They differ for a long reply
+that keeps arriving: that is not idle, but it may still be over budget.
+Either may lead to \fBwarning\fR, which is how "slow" is reported as
+distinct from "broken".
+
+.IP "\fINAME\fR \fB~\fR \fIREGEX\fR \fB\->\fR \fITARGET\fR"
+.IP "\fBelse\fR \fB\->\fR \fITARGET\fR"
+Branch on a value bound earlier by \fBcapture\fR. The line begins with
+the name being tested, so it is recognised by its shape rather than by a
+leading keyword.
+.sp
+The regex is tested against a value already in hand, never against the
+socket. That is why a regex is allowed here and not in an \fBexpect\fR:
+it decides nothing about what arrives, so it cannot race a partial read.
+A name that nothing bound never matches, and so takes the \fBelse\fR arm.
 
 .IP "\fBcapture as\fR \fINAME\fR"
 .IP "\fBcapture-regex\fR \fIREGEX\fR \fBas\fR \fINAME\fR"
 Bind a value out of the reply that the preceding \fBexpect\fR accepted:
 the whole reply, or the first capture group of \fIREGEX\fR. The regex is
 case-sensitive. A pattern that does not match binds an empty value.
+Several names may be given as \fIN1\fR;\fIN2\fR, one per capture group,
+in the order the groups appear.
+.sp
+The word "preceding" is load-bearing: \fBcapture\fR must come AFTER the
+\fBexpect\fR whose reply it binds. Written before it there is nothing
+bound yet, so the name takes an empty value, every branch that tests it
+falls to its \fBelse\fR arm, and nothing reports an error.
 
 .IP "\fBcredentials\fR \fINAME\fR"
 Bind \fB${username}\fR and \fB${password}\fR from the entry called
@@ -189,6 +237,10 @@ Expansion is recursive, so a digest may be taken of other values -- APOP
 is \fB${md5:${challenge}${password}}\fR. An unset name expands to
 nothing.
 
+.IP "\fBtransport\fR \fBtcp\fR"
+Which probe runs this entry. Only \fBtcp\fR is implemented; naming
+anything else refuses the entry rather than silently running it as tcp.
+
 .IP "\fBport\fR \fINUMBER\fR"
 Define the default TCP port-number for this service. If no portnumber
 is defined,
@@ -206,6 +258,51 @@ Defines test options. The possible options are
 \&   alpn=protocol1,protocol2 - specify ALPN protocols to negotiate during SSL handshake
 .fi
 
+
+.SH EXAMPLES
+An SMTP service that upgrades to TLS when the server offers it, reports
+a server that does not offer it as yellow rather than down, and reads the
+certificate off the upgraded session:
+.br
+.sp
+.nf
+\&   [smtp\-tls]
+\&      state greeting
+\&      timeout(10)         \-> fail
+\&      expect "220"
+\&      send "ehlo xymonnet\er\en"
+\&      expect "250" until "250 "
+\&      capture as caps
+\&      caps ~ "STARTTLS"   \-> upgrade
+\&      else                \-> warning
+\&
+\&      state upgrade
+\&      timeout(10)         \-> fail
+\&      send "starttls\er\en"
+\&      expect "220"        \-> secure
+\&      expect "454"        \-> warning
+\&
+\&      state secure
+\&      timeout(10)         \-> fail
+\&      starttls
+\&      send "ehlo xymonnet\er\en"
+\&      expect "250" until "250 "
+\&      send "quit\er\en"
+\&      expect "221"        \-> success
+\&      options banner
+\&      port 25
+.fi
+.sp
+Note where \fBcapture\fR sits: after the \fBexpect\fR whose reply it
+binds, not before it.
+.sp
+Note also that this is deliberately NOT what the shipped \fB[smtp]\fR
+entry does. protocols.cfg is one file for the whole installation, so an
+entry that expects STARTTLS would change what every existing host
+reports the moment the file is installed -- a site whose mail server
+offers no STARTTLS would turn yellow because it upgraded, not because
+anything changed at the site. Copy this under a new name and point the
+hosts that should use it at that name instead.
 
 .SH FILES
 .IP "\fB$XYMONHOME/etc/protocols.cfg\fR"
