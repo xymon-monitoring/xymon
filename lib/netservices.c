@@ -322,6 +322,111 @@ static void check_undefined_vars(svcinfo_t *rec)
  * name the fix: match the shared prefix in one state, distinguish in the
  * next.
  */
+/* The three names an edge may use instead of a state. */
+#define IS_TERMINAL_NAME(s) \
+	(((s) != NULL) && ((strcmp((s), "success") == 0) || \
+	                   (strcmp((s), "warning") == 0) || \
+	                   (strcmp((s), "fail") == 0)))
+
+/*
+ * The shape of a state, checked when the file is read.
+ *
+ * protocols.cfg(5) says a state does one thing and waits for one answer: at
+ * most one action, the clock that bounds the wait, and the expects that end
+ * the state by naming where each answer leads. Those were conventions that
+ * the parser accepted any violation of, so a file could read as one machine
+ * and run as another -- a clock below the expects bounds nothing, a second
+ * wait in a state has no name to fail under, and an expect with no target
+ * leaves the file silent about where the dialogue went.
+ *
+ * Every one of them is decidable here, which is where this grammar has
+ * decided such things belong.
+ */
+static void refuse_misshapen_states(svcinfo_t *rec)
+{
+	svcstep_t *st;
+	char *statename = NULL;
+	int actions = 0, sawexpect = 0;
+
+	/* Only entries that use states promise this shape. */
+	for (st = rec->steps; (st); st = st->next) if (st->type == STEP_LABEL) break;
+	if (!st) return;
+
+	statename = NULL;
+	for (st = rec->steps; (st); st = st->next) {
+		switch (st->type) {
+		  case STEP_LABEL:
+			statename = st->label;
+			actions = sawexpect = 0;
+			/*
+			 * success, warning and fail are answers, not places. An edge
+			 * naming one of them declares the verdict before any label is
+			 * looked up, so a state called success can be written, parsed,
+			 * and never reached -- and the reachability check cannot see
+			 * it, because the edge did resolve.
+			 */
+			if (statename && (IS_TERMINAL_NAME(statename))) {
+				errprintf("Service %s: state '%s' takes a name reserved for a verdict - "
+					  "'-> %s' ends the test rather than jumping, so this state can "
+					  "never be reached\n", rec->svcname, statename, statename);
+				rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			break;
+
+		  case STEP_SEND:
+		  case STEP_STARTTLS:
+		  case STEP_CREDS:
+			if (!statename) break;
+			if (++actions > 1) {
+				errprintf("Service %s: state '%s' has more than one action - a state "
+					  "does one thing and waits for one answer, so give the second "
+					  "action a state of its own and reach it with an edge\n",
+					  rec->svcname, statename);
+				rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			if (sawexpect) {
+				errprintf("Service %s: state '%s' acts again after it has waited - that "
+					  "is a second wait in one state, and nothing can name the "
+					  "state it failed in\n", rec->svcname, statename);
+				rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			break;
+
+		  case STEP_TIMEOUT:
+		  case STEP_IDLE:
+			if (!statename) break;
+			if (sawexpect) {
+				errprintf("Service %s: state '%s' sets a clock below its expects, where it "
+					  "bounds nothing - a clock arms the wait that FOLLOWS it\n",
+					  rec->svcname, statename);
+				rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			break;
+
+		  case STEP_EXPECT:
+			if (!statename) break;
+			/*
+			 * Consecutive expects are ONE wait. A second wait would need a
+			 * step between the groups, and every such step -- an action or
+			 * a clock -- is already refused above, so there is nothing left
+			 * to count here.
+			 */
+			sawexpect = 1;
+			if (st->action == ACT_NEXT) {
+				errprintf("Service %s: state '%s' has an expect with no '-> TARGET' - an "
+					  "expect ends its state, so the file has to say where the "
+					  "dialogue goes next\n", rec->svcname, statename);
+				rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			break;
+
+		  default:
+			break;
+		}
+	}
+}
+
+
 static void refuse_overlapping_groups(svcinfo_t *rec)
 {
 	svcstep_t *st;
@@ -337,7 +442,30 @@ static void refuse_overlapping_groups(svcinfo_t *rec)
 		for (a = st; (a != last); a = a->next) {
 			if (a->oneof) continue;		/* EOF competes with no byte pattern */
 			for (b = a->next; ; b = b->next) {
-				int n = (b->oneof) ? 0 : ((a->len < b->len) ? a->len : b->len);
+				int n;
+
+				/*
+				 * A frame competes with everything: "expect bytes(3)" and
+				 * "expect \"220\"" both accept the same three bytes, and
+				 * which one won would depend on nothing the file says. Two
+				 * frames are worse -- the shorter always wins, so the longer
+				 * is dead. Neither is decidable by looking at the bytes, so
+				 * refuse the group rather than pick.
+				 */
+				if (a->wantbytes || b->wantbytes) {
+					if (!b->oneof) {
+						errprintf("Service %s: 'expect bytes(%d)' shares a state with another "
+							  "expect - a frame is decided by length and a literal by "
+							  "content, so which one takes the reply is unsayable. Give "
+							  "the frame a state of its own\n",
+							  rec->svcname, a->wantbytes ? a->wantbytes : b->wantbytes);
+						rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+					if (b == last) break;
+					continue;
+				}
+
+				n = (b->oneof) ? 0 : ((a->len < b->len) ? a->len : b->len);
 
 				if ((n > 0) && (memcmp(a->text, b->text, n) == 0)) {
 					/*
@@ -607,9 +735,10 @@ static void emit_step(svclist_t *first, svcstep_t *tmpl)
 	for (walk = first; (walk); walk = walk->next) {
 		svcstep_t *st = add_svcstep(walk->rec, tmpl->type, tmpl->text, tmpl->len);
 
-		st->action  = tmpl->action;
-		st->seconds = tmpl->seconds;
-		st->oneof   = tmpl->oneof;
+		st->action    = tmpl->action;
+		st->seconds   = tmpl->seconds;
+		st->oneof     = tmpl->oneof;
+		st->wantbytes = tmpl->wantbytes;
 		if (tmpl->target)  st->target  = strdup(tmpl->target);
 		if (tmpl->label)   st->label   = strdup(tmpl->label);
 		if (tmpl->varname) st->varname = strdup(tmpl->varname);
@@ -845,12 +974,41 @@ char *init_tcp_services(void)
 				int txtlen = 0, untillen = 0;
 				char *rest, *act;
 
-				getescapestring(skipwhitespace(l+6), &txt, &txtlen);
-
 				memset(&tmpl, 0, sizeof(tmpl));
-				tmpl.type = STEP_EXPECT; tmpl.text = txt; tmpl.len = txtlen;
+				tmpl.type = STEP_EXPECT;
 
-				rest = skipwhitespace(after_quoted(skipwhitespace(l+6)));
+				/*
+				 * "expect bytes(N)" waits for a frame of N bytes rather
+				 * than for text. LDAP, MySQL, DNS-over-TCP and AMQP put a
+				 * length in front of a message instead of ending it with a
+				 * line, so neither a literal nor "until" can say where the
+				 * reply stops. It consumes exactly N and keeps the rest,
+				 * like every other expect.
+				 */
+				rest = skipwhitespace(l+6);
+				if (strncmp(rest, "bytes(", 6) == 0) {
+					int n = atoi(rest + 6);
+					char *close = strchr(rest, ')');
+
+					if (!close) {
+						errprintf("Service %s: 'expect bytes(' without ')'\n", first->rec->svcname);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+						continue;
+					}
+					if ((n <= 0) || (n > MAX_DIALOGUE_BYTES)) {
+						errprintf("Service %s: 'expect bytes(%d)' is outside 1..%d\n",
+							  first->rec->svcname, n, MAX_DIALOGUE_BYTES);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+						continue;
+					}
+					tmpl.wantbytes = n;
+					rest = skipwhitespace(close + 1);
+				}
+				else {
+					getescapestring(rest, &txt, &txtlen);
+					tmpl.text = txt; tmpl.len = txtlen;
+					rest = skipwhitespace(after_quoted(rest));
+				}
 
 				/*
 				 * "until" says where the reply ENDS. Without it an expect
@@ -862,6 +1020,13 @@ char *init_tcp_services(void)
 				 */
 				if (strncmp(rest, "until ", 6) == 0) {
 					char *tp = skipwhitespace(rest + 5);
+
+					if (tmpl.wantbytes) {
+						errprintf("Service %s: 'expect bytes(%d) until ...' - a frame of "
+							  "N bytes already says where the reply ends\n",
+							  first->rec->svcname, tmpl.wantbytes);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
 
 					getescapestring(tp, &untiltxt, &untillen);
 					tmpl.until = untiltxt;
@@ -914,15 +1079,23 @@ char *init_tcp_services(void)
 								"'<condition> -> TARGET'\n", act);
 				}
 
-				for (walk = first; (walk); walk = walk->next) {
-					if (walk->rec->exptext == NULL) {
-						walk->rec->exptext = (unsigned char *)strdup((char *)txt);
-						walk->rec->explen  = txtlen;
-						walk->rec->expofs  = 0; /* HACK - not used right now */
+				/*
+				 * exptext is what the single-shot probe matches. A frame
+				 * has no literal to put there, and it never runs on that
+				 * path anyway -- and xfree() aborts on NULL, so both of
+				 * these have to know that txt may be absent.
+				 */
+				if (txt) {
+					for (walk = first; (walk); walk = walk->next) {
+						if (walk->rec->exptext == NULL) {
+							walk->rec->exptext = (unsigned char *)strdup((char *)txt);
+							walk->rec->explen  = txtlen;
+							walk->rec->expofs  = 0; /* HACK - not used right now */
+						}
 					}
 				}
 				emit_step(first, &tmpl);
-				xfree(txt);
+				if (txt) xfree(txt);
 				if (untiltxt) xfree(untiltxt);
 			}
 		}
@@ -1173,6 +1346,87 @@ char *init_tcp_services(void)
 				walk->rec->startlabel = strdup(nm);
 			}
 		}
+		else if (strncmp(l, "framing ", 8) == 0) {
+			/*
+			 * How a message ends on this connection, which the socket
+			 * never says: "line" is the greeting protocols, and
+			 * "length(W, big|little)" is the binary ones that send a
+			 * count first -- DNS over TCP, MySQL, LDAP, AMQP. It is a
+			 * property of the protocol rather than of one reply, so it
+			 * belongs on the entry and not on every expect.
+			 */
+			if (first) {
+				char *nm = skipwhitespace(l + 8);
+				svclist_t *w;
+
+				if (strncmp(nm, "line", 4) == 0) {
+					for (w = first; (w); w = w->next) w->rec->framing = FRAMING_LINE;
+				}
+				else if (strncmp(nm, "terminator ", 11) == 0) {
+					/*
+					 * A sequence that ends a message wherever it falls --
+					 * a NUL, a blank line, a sentinel a custom protocol
+					 * chose. "until" cannot say this: it compares the
+					 * start of a LINE, so a terminator that is not at a
+					 * line boundary is invisible to it.
+					 */
+					unsigned char *t = NULL;
+					int tlen = 0;
+
+					getescapestring(skipwhitespace(nm + 10), &t, &tlen);
+					if (!t || (tlen < 1)) {
+						errprintf("Service %s: 'framing terminator' needs a quoted "
+							  "sequence\n", first->rec->svcname);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+						if (t) xfree(t);
+					}
+					else {
+						for (w = first; (w); w = w->next) {
+							w->rec->framing      = FRAMING_TERM;
+							w->rec->frameterm    = (unsigned char *)malloc(tlen + 1);
+							memcpy(w->rec->frameterm, t, tlen);
+							w->rec->frameterm[tlen] = '\0';
+							w->rec->frametermlen = tlen;
+						}
+						xfree(t);
+					}
+				}
+				else if (strncmp(nm, "length(", 7) == 0) {
+					int width = atoi(nm + 7);
+					char *comma = strchr(nm, ',');
+					int big = 1;
+
+					if (comma) {
+						char *e = skipwhitespace(comma + 1);
+
+						if (strncmp(e, "little", 6) == 0) big = 0;
+						else if (strncmp(e, "big", 3) != 0) {
+							errprintf("Service %s: framing length endianness is 'big' or "
+								  "'little', not '%s'\n", first->rec->svcname, e);
+							first->rec->flags |= TCP_DIALOGUE_BROKEN;
+						}
+					}
+					if ((width < 1) || (width > 4)) {
+						errprintf("Service %s: framing length width is 1..4 bytes, not %d\n",
+							  first->rec->svcname, width);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+					else {
+						for (w = first; (w); w = w->next) {
+							w->rec->framing    = FRAMING_LENGTH;
+							w->rec->framewidth = width;
+							w->rec->framebig   = big;
+						}
+					}
+				}
+				else {
+					errprintf("Service %s: unknown framing '%s' - it is 'line', "
+						  "'length(WIDTH, big|little)' or 'terminator \"SEQ\"'\n",
+						  first->rec->svcname, nm);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+			}
+		}
 		else if (strncmp(l, "transport ", 10) == 0) {
 			/*
 			 * Which probe runs this entry. Only tcp is implemented; anything
@@ -1264,6 +1518,17 @@ char *init_tcp_services(void)
 		}
 		else if (strncmp(l, "options ", 8) == 0) {
 			if (first) {
+				/*
+				 * options REPLACES rather than adds, so a second line
+				 * silently discards the first. Complete check, so refuse.
+				 */
+				if (first->rec->sawoptions) {
+					errprintf("Service %s: a second 'options' line - options replaces "
+						  "rather than adds, so the first would be discarded. Write "
+						  "one line with every option on it\n", first->rec->svcname);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+				first->rec->sawoptions = 1;
 				char *opt;
 
 				/*
@@ -1329,6 +1594,11 @@ char *init_tcp_services(void)
 		svcinfo[i].flags   = walk->rec->flags;
 		svcinfo[i].port    = walk->rec->port;
 		svcinfo[i].alpns   = walk->rec->alpns;
+		svcinfo[i].framing    = walk->rec->framing;
+		svcinfo[i].framewidth = walk->rec->framewidth;
+		svcinfo[i].framebig   = walk->rec->framebig;
+		svcinfo[i].frameterm    = walk->rec->frameterm;
+		svcinfo[i].frametermlen = walk->rec->frametermlen;
 		svcinfo[i].steps   = walk->rec->steps;
 		svcinfo[i].startlabel = walk->rec->startlabel;
 		/*
@@ -1356,6 +1626,14 @@ char *init_tcp_services(void)
 				else if (st->type == STEP_EXPECT) {
 					nexp++;
 					if (st->action != ACT_NEXT) nother++;	/* a branch edge */
+					/*
+					 * A frame is the driver's business whatever else the
+					 * entry looks like: the single-shot probe compares the
+					 * start of one read and knows nothing about waiting for
+					 * N bytes, so a lone "expect bytes(N)" left on that path
+					 * would silently be a banner match.
+					 */
+					if (st->wantbytes) nother++;
 				}
 				else nother++;					/* when/capture/label/... */
 			}
@@ -1366,11 +1644,65 @@ char *init_tcp_services(void)
 			 * something is sent AFTER, which is the ordering the
 			 * single-shot probe cannot express.
 			 */
-			if ((first_is_expect && (nsend > 0)) || (nsend > 1) || (nexp > 1) || nother)
+			if ((first_is_expect && (nsend > 0)) || (nsend > 1) || (nexp > 1) || nother ||
+			    (svcinfo[i].framing != FRAMING_LINE))
 				svcinfo[i].flags |= TCP_DIALOGUE;
+
+			/*
+			 * Under length framing the peer says where every message ends,
+			 * so a clause that says it again is either redundant or a
+			 * contradiction -- and there is no way to tell which from the
+			 * file. Refuse both rather than pick one.
+			 */
+			if (svcinfo[i].framing != FRAMING_LINE) {
+				svcstep_t *fst;
+
+				for (fst = svcinfo[i].steps; (fst); fst = fst->next) {
+					if (fst->type != STEP_EXPECT) continue;
+					if (fst->until)
+						errprintf("Service %s: 'until' under framing %s - the framing "
+							  "already says where the message ends\n",
+							  svcinfo[i].svcname,
+							  (svcinfo[i].framing == FRAMING_LENGTH) ? "length" : "terminator");
+					else if (fst->wantbytes)
+						errprintf("Service %s: 'expect bytes(%d)' under framing %s - the "
+							  "framing already says how long the message is\n",
+							  svcinfo[i].svcname, fst->wantbytes,
+							  (svcinfo[i].framing == FRAMING_LENGTH) ? "length" : "terminator");
+					else continue;
+					svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
+				}
+			}
 
 			check_undefined_vars(&svcinfo[i]);
 			refuse_overlapping_groups(&svcinfo[i]);
+			refuse_misshapen_states(&svcinfo[i]);
+
+			/*
+			 * A clause that only the driver implements, on an entry that
+			 * stays on the classic single-shot probe, does nothing at all:
+			 * "until" is ignored and the first line decides the test. That
+			 * is decidable here -- the shape of the entry is known -- so it
+			 * is refused rather than left to surprise somebody.
+			 */
+			if ((svcinfo[i].flags & TCP_DIALOGUE) == 0) {
+				svcstep_t *cst;
+
+				for (cst = svcinfo[i].steps; (cst); cst = cst->next) {
+					if (cst->type != STEP_EXPECT) continue;
+					if (cst->until)
+						errprintf("Service %s: 'until' on an entry the dialogue driver does "
+							  "not run - a lone expect is the classic probe, which "
+							  "matches one line and knows no terminator. Add the step "
+							  "that follows it\n", svcinfo[i].svcname);
+					else if (cst->varname)
+						errprintf("Service %s: 'as %s' on an entry the dialogue driver does "
+							  "not run - nothing later can read the value\n",
+							  svcinfo[i].svcname, cst->varname);
+					else continue;
+					svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
+				}
+			}
 
 			/*
 			 * "options ssl" is TLS from the first byte; "starttls" upgrades

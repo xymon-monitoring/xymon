@@ -70,8 +70,10 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 [termbusy]
    options banner
    port $pbusy
-   expect "220"                -> proceed
-   expect "421"                -> warning
+
+   state greeting
+      expect "220"                -> proceed
+      expect "421"                -> warning
 
    state proceed
       send "quit\r\n"
@@ -80,10 +82,14 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
 [termbad]
    options banner
    port $pbad
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   expect "250"                -> done
-   expect "5"                  -> fail
+
+   state greeting
+      expect "220"                -> ehlo
+
+   state ehlo
+      send "ehlo xymonnet\r\n"
+      expect "250"                -> done
+      expect "5"                  -> fail
 
    state done
       send "quit\r\n"

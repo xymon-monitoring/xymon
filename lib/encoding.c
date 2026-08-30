@@ -21,17 +21,26 @@ static char rcsid[] = "$Id$";
 
 static char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-char *base64encode(unsigned char *buf)
+/*
+ * Encode a counted buffer. The caller may hold bytes rather than a string --
+ * a reply framed by a length carries NULs -- and measuring the input with
+ * strlen() would encode only what precedes the first one.
+ */
+char *base64encode_len(unsigned char *buf, int buflen)
 {
 	unsigned char c0, c1, c2;
 	unsigned int n0, n1, n2, n3;
 	unsigned char *inp, *outp;
 	unsigned char *result;
+	int left;
 
-	result = malloc(4*(strlen(buf)/3 + 1) + 1);
+	if (!buf || (buflen < 0)) buflen = 0;
+	left = buflen;
+
+	result = malloc(4*(buflen/3 + 1) + 1);
 	inp = buf; outp=result;
 
-	while (strlen(inp) >= 3) {
+	while (left >= 3) {
 		c0 = *inp; c1 = *(inp+1); c2 = *(inp+2);
 
 		n0 = (c0 >> 2);				/* 6 bits from c0 */
@@ -44,10 +53,10 @@ char *base64encode(unsigned char *buf)
 		*outp = b64chars[n2]; outp++;
 		*outp = b64chars[n3]; outp++;
 
-		inp += 3;
+		inp += 3; left -= 3;
 	}
 
-	if (strlen(inp) == 1) {
+	if (left == 1) {
 		c0 = *inp; c1 = 0;
 		n0 = (c0 >> 2);				/* 6 bits from c0 */
 		n1 = ((c0 & 3) << 4) + (c1 >> 4);	/* 2 bits from c0, 4 bits from c1 */
@@ -57,7 +66,7 @@ char *base64encode(unsigned char *buf)
 		*outp = '='; outp++;
 		*outp = '='; outp++;
 	}
-	else if (strlen(inp) == 2) {
+	else if (left == 2) {
 		c0 = *inp; c1 = *(inp+1); c2 = 0;
 
 		n0 = (c0 >> 2);				/* 6 bits from c0 */
@@ -73,6 +82,11 @@ char *base64encode(unsigned char *buf)
 	*outp = '\0';
 
 	return result;
+}
+
+char *base64encode(unsigned char *buf)
+{
+	return base64encode_len(buf, (buf ? strlen(buf) : 0));
 }
 
 char *base64decode(unsigned char *buf)

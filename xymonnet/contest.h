@@ -86,12 +86,9 @@ typedef void (*f_callback_final)(void *privdata);
 typedef struct dlgvar_t {
 	char *name;
 	char *value;
+	int vallen;			/* value bytes: a reply is not always a string */
 	struct dlgvar_t *next;
 } dlgvar_t;
-
-/* How much a single expect may accumulate before giving up. A server that
-   never sends the terminator must not be able to grow this without limit. */
-#define MAX_DIALOGUE_BYTES (32 * 1024)
 
 typedef struct tcptest_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
@@ -147,6 +144,7 @@ typedef struct tcptest_t {
 	unsigned char *stepbuf;		/* replies for the CURRENT expect step */
 	int stepbuflen;
 	char *lastreply;		/* the reply that satisfied the last expect */
+	int lastreplylen;		/* ... and its length: it may hold NULs */
 	void *dlgvars;			/* captured values, a dlgvar_t list */
 	int stepsecs;			/* 'timeout(N)': budget for this state, 0 = none */
 	time_t stepdeadline;		/* ... armed against the poll clock, 0 = unarmed */

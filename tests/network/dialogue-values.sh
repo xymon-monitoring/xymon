@@ -70,26 +70,41 @@ register_cleanup "kill $(tr '\n' ' ' < "$work/pids") 2>/dev/null || :"
 authblock() {
 cat <<CFG
 [$1]
-   expect "+OK" as greeting
-   greeting ~ "\\+OK POP3 (\\S+) (<[^>]+>)" as server;challenge
-   credentials mypop
-   challenge ~ "<"             -> apop
-   else                        -> plain
-
-   state apop
-   send "APOP \${username} \${md5:\${challenge}\${password}}\r\n"
-   expect "+OK"                -> farewell
-
-   state plain
-   send "USER \${username}\r\n"
-   expect "+OK"
-   send "PASS \${password}\r\n"
-   expect "+OK"                -> farewell
-
-   state farewell
-   send "quit \${server}\r\n"
    options banner
    port $2
+   start greeting
+
+   state greeting
+      credentials mypop
+      timeout(10)                 -> fail
+      expect "+OK" as greeting    -> choose
+
+   state choose
+      greeting ~ "\\+OK POP3 (\\S+) (<[^>]+>)" as server;challenge
+      greeting ~ "(\\+OK)" as greeting
+      challenge ~ "<"             -> apop
+      else                        -> plain
+
+   state apop
+      send "APOP \${username} \${md5:\${challenge}\${password}}\r\n"
+      timeout(10)                 -> fail
+      expect "+OK"                -> farewell
+
+   state plain
+      send "USER \${username}\r\n"
+      timeout(10)                 -> fail
+      expect "+OK"                -> sendpass
+
+   state sendpass
+      send "PASS \${password}\r\n"
+      timeout(10)                 -> fail
+      expect "+OK"                -> farewell
+
+   state farewell
+      send "quit \${server}\r\n"
+      timeout(10)                 -> fail
+      eof                         -> success
+      expect "+OK"                -> success
 CFG
 }
 {
@@ -98,13 +113,24 @@ CFG
 	cat <<CFG
 
 [popb64]
-   expect "+OK"
-   credentials mypop
-   send "AUTH_\${base64:\${username}}\r\n"
-   expect "+OK"
-   send "quit\r\n"
    options banner
    port $pb
+
+   state greeting
+      credentials mypop
+      timeout(10)                 -> fail
+      expect "+OK"                -> auth
+
+   state auth
+      send "AUTH_\${base64:\${username}}\r\n"
+      timeout(10)                 -> fail
+      expect "+OK"                -> farewell
+
+   state farewell
+      send "quit\r\n"
+      timeout(10)                 -> fail
+      eof                         -> success
+      expect "+OK"                -> success
 CFG
 } > "$work/home/etc/protocols.cfg"
 printf '127.0.0.1\tapop\t# popapop\n127.0.0.1\tplain\t# popplain\n127.0.0.1\tb64\t# popb64\n' \

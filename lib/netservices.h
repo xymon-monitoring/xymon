@@ -68,6 +68,27 @@
    pattern matches wins and its action fires, so a state has as many
    outgoing edges as it has alternatives, plus the implicit failure edge
    taken when every alternative has been ruled out. */
+/*
+ * How a message ends on this connection. TCP is a byte stream: the boundary
+ * is always something the protocol says, never something the socket knows.
+ *
+ *   FRAMING_LINE    a line ends at "\n" -- the greeting protocols
+ *   FRAMING_LENGTH  the peer sends a count first -- DNS-over-TCP, MySQL,
+ *                   LDAP, AMQP: binary, and no newline to look for
+ *   FRAMING_TERM    a byte sequence ends every message, wherever it falls --
+ *                   a NUL, a blank line, a sentinel a custom protocol picked.
+ *                   Unlike "until" it does not look at lines at all
+ */
+#define FRAMING_LINE   0
+#define FRAMING_LENGTH 1
+#define FRAMING_TERM   2
+
+/* How much a single expect may accumulate before giving up. A server that
+   never sends the terminator must not be able to grow this without limit.
+   The parser needs it too: "expect bytes(N)" may not ask for more than a
+   conversation is allowed to hold. */
+#define MAX_DIALOGUE_BYTES (32 * 1024)
+
 typedef struct svcstep_t {
 	int type;
 	unsigned char *text;		/* send/expect literal, or extraction regex */
@@ -82,6 +103,7 @@ typedef struct svcstep_t {
 	char *user, *pass;		/* STEP_CREDS: resolved at config load */
 	unsigned char *until;		/* expect ... until "X": end-of-reply marker */
 	int untillen;
+	int wantbytes;			/* expect bytes(N): frame is N bytes, not a line */
 	int seconds;			/* STEP_TIMEOUT: budget for the following wait */
 	int oneof;			/* this alternative fires on EOF, not on bytes */
 	struct svcstep_t *next;
@@ -98,6 +120,12 @@ typedef struct svcinfo_t {
 	unsigned int flags;
 	int port;
 	char *alpns;
+	int sawoptions;		/* an 'options' line was seen: a second one replaces it */
+	int framing;		/* FRAMING_* -- how a message ends on this connection */
+	int framewidth;		/* FRAMING_LENGTH: bytes of length prefix */
+	int framebig;		/* FRAMING_LENGTH: 1 big-endian, 0 little-endian */
+	unsigned char *frameterm;	/* FRAMING_TERM: the sequence that ends a message */
+	int frametermlen;
 	svcstep_t *steps;	/* NULL unless TCP_DIALOGUE */
 	char *startlabel;	/* 'start NAME': where the dialogue begins */
 	svcstep_t *startstep;	/* ... resolved after parsing */

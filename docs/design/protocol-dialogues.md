@@ -17,34 +17,34 @@ entry rather than deleting it.
 
 ```
 [service|alias]
-   transport tcp          entry attributes. transport, port, options and
-   port N                 start set properties of the definition; the
-   options ssl,banner     order among them does not matter.
+   transport tcp          entry attributes: transport, port, options, framing and start
+   port N                 set properties of the definition, in any order
+   options ssl,banner     among themselves
+   framing line           how a message ends on this connection
    start NAME
 
-   state NAME             names the steps that follow, and is what an
+   state NAME             names the state that follows, and is what an
                           edge aims at
 
-      credentials NAME    everything from here is a STEP, and steps run
-      send "…"            in the order they are written
-      starttls
-      expect "…" [ until "…" ] [ as NAME ]
-      NAME ~ "…" as X;Y   read a bound value, bind more out of it
-      <condition> -> TARGET               an edge; the first that fires leaves
+      send "…"            ONE action -- send, starttls or credentials
+      timeout(N) -> fail  the clock that bounds the wait
+      expect "…" [ until "…" ] [ as NAME ]  -> TARGET
+                          the alternatives that end the state, each
+                          naming where its answer leads
 ```
 
 ```
-condition ::= expect "…" [ until "…" ] [ as NAME ] | NAME ~ "…"
+condition ::= expect "…" [ until "…" ] [ as NAME ] | expect bytes(N) | NAME ~ "…"
             | else | always | eof | timeout(N) | idle(N)
 ```
 
 **Targets** are a state, or one of `success`, `warning`, `fail` -- green, yellow, red. `warning` is the point: a server answering correctly but refusing an optional capability is not down, and calling it down teaches operators to ignore the column. An edge saying `fail` is red whatever `--checkresponse` is set to; a reply matching no alternative takes that option's colour, yellow by default.
 
-**Layout.** Entry attributes -- `transport`, `port`, `options`, `start` -- are written first, in any order among themselves, because they describe the definition rather than any step; then each `state` with its lines indented under it.
+**Layout.** Entry attributes -- `transport`, `port`, `options`, `framing`, `start` -- are written first, in any order among themselves, because they describe the definition rather than any step; then each `state` with its lines indented under it.
 
 **One action, one wait.** A state does one thing -- a `send`, a `starttls`, a `credentials` -- and waits for one answer: the clock that bounds the wait, and the `expect` lines that end the state, each naming where its answer leads. A state that acts without waiting leaves on `always`; a state that decides on a value already bound needs no action at all. Because a state holds one action and one wait, the order of its lines carries no meaning of its own: the entry is declarative down to the state, and sequence lives in the edges between states rather than in the lines within one.
 
-The parser enforces none of it: attributes are accepted anywhere, indentation is ignored, several actions and several waits in one state are accepted, and an `expect` with no `->` falls through to the line below. One ordering rule is real and unenforced: a `timeout` or `idle` arms the wait that follows it, so a clock below a state's `expect` lines bounds nothing. `protocols.cfg(5)` lists the five rules under CONVENTIONS, and `tests/buildsystem/dialogue-conventions.sh` checks every entry in the manual, in the shipped `protocols.cfg` and in the fixtures against them -- an entry that breaks one on purpose says `# conventions: permissive` and says why. Prose nothing checks is how the manual came to document a `when ... end` grammar no shipped code ever had.
+Most of this is now refused when the file is read: a state with two actions, a state that acts again after it has waited, a clock below the expects it should bound, an expect with no `-> TARGET`, a state named `success`/`warning`/`fail`, a second `options` line, and `until`/`as` on an entry the driver does not run. Each was decidable there all along, which is the standard this grammar set for itself when it gave up regex on `expect`. What is left unenforced is attribute placement and indentation -- both cosmetic, both checked by `tests/buildsystem/dialogue-conventions.sh` against every entry we ship or test. The classic shapes keep the old probe and none of this applies to them.
 
 **Order is file order, and with one action per state that stops mattering.** The driver runs a state's lines as written and the first edge that fires leaves it, so today a `~` above an `expect` decides before the socket is read. An earlier draft specified a fixed precedence regardless of where lines were written and was rejected, because a precedence the reader cannot see is what turns a declaration back into a program. Under one action and one wait the question mostly dissolves: a state either decides on values it already holds or waits for bytes, and the two do not compete within one state. Where they still could, the honest fix is a load-time refusal rather than an invisible rule.
 
@@ -230,6 +230,12 @@ The behaviour itself is documented in `protocols.cfg(5)`, which ships with the c
 **Why the graph checks are worth having, and how they mislead.** Three mistakes are properties of the graph rather than of any line: a state with no path to a terminal, an unreachable state, and a waiting state with no timer. All three are easy to implement too permissively, so they report nothing and look like they work -- reachability cannot simply follow the step list, and on the branch a `timeout(N) -> fail` edge briefly counted as ending the flow, which called every state after it unreachable. They are topology checks and should not be oversold: the bugs that cost time here are framing, partial reads and TLS transitions, and no topology check sees those.
 
 **What is not built.** Graph export (`--graph`) is deferred. A named state improves a failure from "step 7" to `state send-pass expected "235"`, and that is not enough: the faults that cost time are *why* it did not match -- bytes retained from the previous state, a reply matched before it was complete, a name that bound empty. A transcript mode is part of the feature and is **not implemented**. Nor is the marking it would require: `${password}` is expanded into a `send`, so the sent bytes, the buffer and anything an `as` binds may contain it. A value from `credentials.cfg` would have to be marked at binding time, stay marked through `${base64:}` and `${md5:}` -- an encoded secret is still the secret, and an APOP digest only looks opaque -- and be replaced by a placeholder in every output. The code wipes secrets from memory after use and no more, which is why it has no transcript to leak them into.
+
+**Three framings, because there are three ways a message ends.** `line` is the greeting protocols and `until` says where a multi-line *reply* stops within them. `length(W, endian)` is the protocols that count. `terminator "SEQ"` is everything else, and the one that makes a protocol of your own expressible: a message ends at a byte sequence wherever it falls, which `until` cannot say because it compares the start of a line. A custom protocol that ends records with a NUL, or with a blank line, or with a sentinel, needs no code -- it needs one attribute. What is deliberately absent is a read-granularity switch: how much the driver reads in one go changes no verdict, because matching is prefix-anchored and re-evaluated at every arrival, and consuming only the matched bytes is in the rejected list for breaking the ambiguity check.
+
+**Framing is a property of the connection, not of a reply.** TCP has no message boundary; the protocol supplies one, and there are only three ways it ever does: a terminator (`until`), a count, or the close (`eof`). Where the count is how the protocol always works -- DNS-over-TCP, MySQL, LDAP, AMQP -- saying so on every `expect` would repeat one fact and would need arithmetic on a captured value, since the count is data the peer sends. `framing length(W, big|little)` states it once on the entry; the driver assembles each message and every rule already in the grammar keeps working on the message instead of on the byte stream. That also fixes the thing that makes binary protocols unreadable line-by-line: a `0x0A` inside a payload is data, and nothing scans for it. `until` and `bytes(N)` are refused under any framing but `line` -- length or terminator, the framing has spoken, and a second answer could only agree or contradict.
+
+**A frame, not a line.** `expect bytes(N)` waits for N bytes and consumes exactly those. It is the one condition that is not decided by content, which is why it may not share a state with a literal: `expect bytes(3)` and `expect "220"` both accept the same three bytes and nothing in the file says which wins, so the group is refused. Two frames are worse -- the shorter always wins and the longer is dead. It exists because LDAP, MySQL, DNS-over-TCP and AMQP frame messages by length, and before it those services could be probed no further than their banner. It costs nothing the literal-only rule was buying: a length is decidable at every byte, exactly like a prefix.
 
 ## Prior art
 

@@ -113,6 +113,21 @@ covers them without special-casing any:
 \&   expect "*"   until "A01 "     (IMAP: the command tag ends it)
 .fi
 
+.IP "\fBexpect\fR \fBbytes(\fR\fIN\fR\fB)\fR"
+Wait for a frame of \fIN\fR bytes and consume exactly that many. LDAP,
+MySQL, DNS over TCP and AMQP put a length in front of a message instead
+of ending it with a line, so neither a literal nor \fBuntil\fR can say
+where such a reply stops. Anything beyond the frame is kept for the next
+step, as with any other \fBexpect\fR.
+.sp
+A frame is decided by length and a literal by content, so the two cannot
+share a state: which of them took the reply would be unsayable. A state
+whose \fBexpect\fR is a frame holds that one alternative, and the
+clocks. \fBuntil\fR is refused on it, and \fIN\fR must be between 1 and
+32768 -- the same ceiling a conversation may buffer.
+.sp
+\fBas\fR works as it does elsewhere, binding the frame that was consumed.
+
 .IP "\fBexpect\fR \fISTRING\fR \fBas\fR \fINAME\fR"
 Bind the reply this \fBexpect\fR accepted to \fINAME\fR, for a later
 \fB~\fR line to read. It is written on the expect itself because that is
@@ -162,7 +177,7 @@ does not.
 .sp
 \fBLayout.\fR An entry that uses states is written the same way
 throughout this page: the entry attributes -- \fBoptions\fR,
-\fBport\fR, \fBtransport\fR, \fBstart\fR -- first, in any order
+\fBport\fR, \fBtransport\fR, \fBframing\fR, \fBstart\fR -- first, in any order
 among themselves, because they describe the definition rather than any
 step; then the states, each with its lines indented under it.
 .sp
@@ -326,6 +341,46 @@ Expansion is recursive, so a digest may be taken of other values -- APOP
 is \fB${md5:${challenge}${password}}\fR. An unset name expands to
 nothing.
 
+.IP "\fBframing\fR \fBline\fR"
+.IP "\fBframing\fR \fBlength(\fR\fIWIDTH\fR\fB,\fR \fBbig\fR|\fBlittle\fR\fB)\fR"
+.IP "\fBframing\fR \fBterminator\fR \fISEQUENCE\fR"
+How a message ends on this connection. TCP says nothing about it: a
+message boundary is always something the protocol states, and it states
+it in one of three ways -- a terminator, a count, or the close.
+.sp
+\fBline\fR is the default and is what the greeting protocols do: an
+\fBexpect\fR consumes one line, and \fBuntil\fR says where a reply of
+several lines ends. \fBlength\fR is what the binary protocols do --
+DNS over TCP, MySQL, LDAP, AMQP -- where each message is preceded by a
+count of \fIWIDTH\fR bytes, 1 to 4, most significant first with
+\fBbig\fR and last with \fBlittle\fR.
+.sp
+Under \fBlength\fR the driver assembles a whole message before anything
+looks at it: an \fBexpect\fR matches the start of the MESSAGE rather
+than of whatever has arrived so far, a match consumes the message and
+its count together, and a payload containing a newline is data like any
+other byte. A message longer than 32 KB fails by name rather than being
+buffered.
+.sp
+\fBterminator\fR is for everything else, and for protocols of your own:
+a message ends at \fISEQUENCE\fR wherever that falls -- a NUL, a blank
+line, a sentinel you chose. It is not \fBuntil\fR: \fBuntil\fR
+compares the start of a LINE, so a terminator that does not fall on a
+line boundary is invisible to it, and a payload with newlines inside is
+not line-shaped at all.
+.br
+.sp
+.nf
+\&   framing terminator "\ex00"        NUL\-terminated records
+\&   framing terminator "\er\en\er\en"    a blank line ends the message
+\&   framing terminator "<END>"       a sentinel of your own
+.fi
+.sp
+It describes the connection, not one reply, so it is written once as an
+entry attribute. \fBuntil\fR and \fBexpect bytes(\fR\fIN\fR\fB)\fR are
+refused under it: the count has already said where the message ends, and
+a second answer could only agree or contradict.
+
 .IP "\fBtransport\fR \fBtcp\fR"
 Which probe runs this entry. Only \fBtcp\fR is implemented; naming
 anything else refuses the entry rather than silently running it as tcp.
@@ -379,40 +434,40 @@ not against any host's depth. Under \fBok=greeting\fR everything
 downstream is legitimately unreachable, and the checks do not know that.
 
 .SH CONVENTIONS
-The parser accepts an attribute anywhere in a block, ignores indentation,
-takes several actions and several waits in one state, and accepts an
-\fBexpect\fR that names no target. None of what follows is enforced by
-it; it is how every entry in this page and in the shipped protocols.cfg
-is written, and what a reader is entitled to assume:
+An entry that uses states is written one way, and most of it is now
+refused when the file is read rather than left to surprise somebody:
 .br
 .sp
 .nf
-\&   1  entry attributes -- options, port, transport, start -- come
-\&      before the first state, in any order among themselves
+\&   1  entry attributes -- options, port, transport, framing, start --
+\&      come before the first state, in any order among themselves
 \&   2  a state's lines are indented under it
 \&   3  a state holds at most one action: send, starttls, credentials
 \&   4  every expect names where it goes: "\-> TARGET"
 \&   5  a clock -- timeout or idle -- is written above the expects it
 \&      bounds, because it arms the wait that FOLLOWS it
+\&   6  a message boundary is stated, never guessed: a terminator with
+\&      "until", a count with "framing length", or the close with "eof"
 .fi
 .sp
-Rule 5 is the one that bites: a clock written below a state's
-\fBexpect\fR lines bounds nothing, and nothing says so. The others are
-legibility -- an entry written this way reads as the machine it
-describes, and one that is not still runs.
+Rules 3, 4 and 5 are refusals, and so is a state that acts again after it
+has waited -- that is a second wait in one state, and nothing could name
+the state it failed in. So is a state named \fBsuccess\fR, \fBwarning\fR
+or \fBfail\fR: an edge naming one of those declares a verdict rather than
+jumping, so such a state could never be reached. So is a second
+\fBoptions\fR line, which replaces the first rather than adding to it,
+and \fBuntil\fR or \fBas\fR on an entry the driver does not run, where
+they would do nothing at all.
 .sp
-A definition that means to break a rule says so, with a comment the
-parser ignores and a reader does not:
-.br
+Rules 1 and 2 are not enforced: the parser takes an attribute anywhere in
+the block and ignores indentation entirely. They are how every entry in
+this page and in the shipped protocols.cfg is written, and the regression
+suite checks them, so the page and the files cannot drift apart
+unnoticed.
 .sp
-.nf
-\&   [legacy]
-\&      # conventions: permissive -- one expect, no state to move to
-.fi
-.sp
-The regression suite checks every entry in this page, in the shipped
-protocols.cfg and in the test fixtures against these five rules, so the
-page and the files cannot drift apart unnoticed.
+None of this applies to the classic shapes -- a lone \fBsend\fR, a lone
+\fBexpect\fR, or a \fBsend\fR followed by an \fBexpect\fR -- which have
+no states and keep the probe they have always used.
 
 .SH EXAMPLES
 An SMTP service that upgrades to TLS when the server offers it, reports
@@ -474,7 +529,7 @@ it, so a clock written below the \fBexpect\fR lines bounds nothing.
 Keep it above them, as every example here does.
 .sp
 The entry attributes -- \fBoptions\fR, \fBport\fR, \fBtransport\fR,
-\fBstart\fR -- describe the definition rather than any step, so they
+\fBframing\fR, \fBstart\fR -- describe the definition rather than any step, so they
 are written together at the top, in any order among themselves.
 .sp
 This is deliberately a service of its own rather than a deeper
@@ -500,6 +555,22 @@ names the service. The ones worth knowing:
 \&   state 'NAME' has no way to finish   no path from it to a terminal
 \&   state 'NAME' waits for a reply with no timeout
 \&   'expect "A"' and 'expect "B"' overlap - both match the same reply
+\&   'expect bytes(N)' shares a state with another expect
+\&   'expect bytes(N) until ...' - a frame already ends the reply
+\&   'expect bytes(N)' is outside 1..32768
+\&   'until' under framing length/terminator
+\&   'expect bytes(N)' under framing length/terminator
+\&   'framing terminator' needs a quoted sequence
+\&   framing length width is 1..4 bytes
+\&   framing length endianness is 'big' or 'little'
+\&   framed message of N bytes is over the 32768 a conversation may hold
+\&   state 'NAME' has more than one action
+\&   state 'NAME' acts again after it has waited
+\&   state 'NAME' sets a clock below its expects, where it bounds nothing
+\&   state 'NAME' has an expect with no '-> TARGET'
+\&   state 'NAME' takes a name reserved for a verdict
+\&   a second 'options' line - options replaces rather than adds
+\&   'until'/'as' on an entry the dialogue driver does not run
 \&   ${NAME} is never captured or bound before it is used
 \&   'NAME ~ ...' tests a value that is never bound before it
 \&   'NAME ~ "..." as X' has no capture group

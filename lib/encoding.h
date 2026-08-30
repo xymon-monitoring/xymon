@@ -12,6 +12,7 @@
 #define __ENCODING_H__
 
 extern char *base64encode(unsigned char *buf);
+extern char *base64encode_len(unsigned char *buf, int buflen);
 extern char *base64decode(unsigned char *buf);
 extern void getescapestring(char *msg, unsigned char **buf, int *buflen);
 extern unsigned char *nlencode(unsigned char *msg);

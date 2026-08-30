@@ -14,7 +14,7 @@
 # This checks every entry we publish or test against the rules the manual
 # lists under CONVENTIONS:
 #
-#   R1  entry attributes (options, port, transport, start) come before the
+#   R1  entry attributes (options, port, transport, start, framing) come before the
 #       first state, since they describe the definition and not a step
 #   R2  a state's lines are indented under it
 #   R3  a state holds at most one action (send, starttls, credentials)
@@ -61,7 +61,7 @@ extract_fenced() {	# markdown: inside ``` fences
 	' "$1" >> "$stream"
 }
 extract_heredoc() {	# tests: inside the protocols.cfg heredoc
-	awk -v F="$1" '/protocols\.cfg" <<CFG/ { inb=1; next } inb && /^CFG$/ { inb=0; next }
+	awk -v F="$1" '/protocols\.cfg" <<'"'"'?CFG/ { inb=1; next } inb && /^CFG$/ { inb=0; next }
 		       inb { print F "\t" NR "\t" $0 }' "$1" >> "$stream"
 }
 extract_plain() { awk -v F="$1" '{ print F "\t" NR "\t" $0 }' "$1" >> "$stream"; }
@@ -125,7 +125,7 @@ function flush_state(   i) {
 		next
 	}
 
-	if (text ~ /^(options|port|transport|start)[[:space:]]/) {
+	if (text ~ /^(options|port|transport|start|framing)[[:space:]]/) {
 		if (seen_state && !permissive)
 			bad[++n] = sprintf("%s:%d  R1  %s writes \"%s\" after a state; attributes describe the definition and come first",
 					   file, lineno, entry, text)

@@ -22,6 +22,7 @@ typedef struct digestctx_t {
 } digestctx_t;
 
 extern char *md5hash(char *input);
+extern char *md5hash_len(char *input, int inputlen);
 extern digestctx_t *digest_init(char *digest);
 extern int digest_data(digestctx_t *ctx, unsigned char *buf, int buflen);
 extern char *digest_done(digestctx_t *ctx);

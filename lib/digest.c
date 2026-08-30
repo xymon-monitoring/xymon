@@ -19,7 +19,12 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-char *md5hash(char *input)
+/*
+ * Hash a counted buffer. A dialogue may hash a value it read from the wire,
+ * and a framed reply is bytes rather than a string -- strlen() would digest
+ * only the part of it that precedes the first NUL.
+ */
+char *md5hash_len(char *input, int inputlen)
 {
 	/* We have a fast MD5 hash function, since that may be used a lot */
 
@@ -37,7 +42,7 @@ char *md5hash(char *input)
 	}
 
 	myMD5_Init(ctx->mdctx);
-	myMD5_Update(ctx->mdctx, input, strlen(input));
+	myMD5_Update(ctx->mdctx, input, ((inputlen > 0) ? inputlen : 0));
 	myMD5_Final(md_value, ctx->mdctx);
 
 	for(i = 0, p = md_string; (i < sizeof(md_value)); i++) 
@@ -45,6 +50,11 @@ char *md5hash(char *input)
 	*p = '\0';
 
 	return md_string;
+}
+
+char *md5hash(char *input)
+{
+	return md5hash_len(input, (input ? strlen(input) : 0));
 }
 
 

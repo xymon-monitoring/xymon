@@ -1035,11 +1035,11 @@ static void tcptest_setnext(void *a, void *newval)
  * memset on memory that is about to be freed is exactly what a compiler is
  * entitled to delete, so the write goes through a volatile pointer.
  */
-static void dlg_wipe(char *s)
+static void dlg_wipe(char *s, int len)
 {
 	volatile char *p = (volatile char *)s;
 
-	while (p && *p) *p++ = '\0';
+	while (p && (len-- > 0)) *p++ = '\0';
 }
 
 
@@ -1050,7 +1050,7 @@ static void dlg_free(tcptest_t *item)
 	while (v) {
 		dlgvar_t *next = v->next;
 
-		if (v->value) { dlg_wipe(v->value); xfree(v->value); }
+		if (v->value) { dlg_wipe(v->value, v->vallen); xfree(v->value); }
 		if (v->name) xfree(v->name);
 		xfree(v);
 		v = next;
@@ -1060,6 +1060,7 @@ static void dlg_free(tcptest_t *item)
 	if (item->stepbuf) { xfree(item->stepbuf); item->stepbuf = NULL; }
 	item->stepbuflen = 0;
 	if (item->lastreply) { xfree(item->lastreply); item->lastreply = NULL; }
+	item->lastreplylen = 0;
 	/*
 	 * Only the arming is cleared here. stepsecs and steptimedout are part
 	 * of the verdict -- dlg_free() runs after the poll loop and before the
@@ -1089,32 +1090,78 @@ static int dlg_name_listed(const char *list, const char *name)
 }
 
 
-static char *dlg_get(tcptest_t *item, const char *name)
+static char *dlg_get(tcptest_t *item, const char *name, int *lenp)
 {
 	dlgvar_t *v;
 
 	for (v = (dlgvar_t *)item->dlgvars; (v); v = v->next)
-		if (strcmp(v->name, name) == 0) return v->value;
+		if (strcmp(v->name, name) == 0) {
+			if (lenp) *lenp = v->vallen;
+			return v->value;
+		}
 
+	if (lenp) *lenp = 0;
 	return NULL;
 }
 
-static void dlg_set(tcptest_t *item, const char *name, const char *value)
+/*
+ * A value is BYTES, not a string. "expect bytes(N)" and length framing exist
+ * for the services whose messages are binary -- DNS-over-TCP, LDAP, MySQL,
+ * AMQP -- and those carry NULs in the first few bytes, so storing a bound
+ * value with strdup() would cut it to nothing and every use of it would
+ * silently compare or send the stump. The copy is still NUL-terminated, so a
+ * value that IS text can be read as a C string; everything else uses vallen.
+ */
+static void dlg_set(tcptest_t *item, const char *name, const char *value, int vallen)
 {
 	dlgvar_t *v;
+	char *copy;
+
+	if (!value || (vallen < 0)) { value = ""; vallen = 0; }
+	copy = (char *)malloc(vallen + 1);
+	memcpy(copy, value, vallen);
+	copy[vallen] = '\0';
 
 	for (v = (dlgvar_t *)item->dlgvars; (v); v = v->next) {
 		if (strcmp(v->name, name) != 0) continue;
-		if (v->value) xfree(v->value);
-		v->value = strdup(value ? value : "");
+		if (v->value) { dlg_wipe(v->value, v->vallen); xfree(v->value); }
+		v->value  = copy;
+		v->vallen = vallen;
 		return;
 	}
 
 	v = (dlgvar_t *)calloc(1, sizeof(dlgvar_t));
-	v->name  = strdup(name);
-	v->value = strdup(value ? value : "");
-	v->next  = (dlgvar_t *)item->dlgvars;
+	v->name   = strdup(name);
+	v->value  = copy;
+	v->vallen = vallen;
+	v->next   = (dlgvar_t *)item->dlgvars;
 	item->dlgvars = (void *)v;
+}
+
+/* For the values that are known to be text: credentials, and an empty bind. */
+static void dlg_setstr(tcptest_t *item, const char *name, const char *value)
+{
+	dlg_set(item, name, value, (value ? strlen(value) : 0));
+}
+
+/*
+ * matchregex() measures its subject with strlen(). A value bound from a
+ * framed reply may hold a NUL, and the pattern is then tested against the
+ * bytes before it rather than against the value -- so match over the length
+ * that was stored.
+ */
+static int dlg_match(const char *subject, int len, pcre2_code *re)
+{
+	pcre2_match_data *md;
+	int res;
+
+	if (!subject || !re) return 0;
+
+	md = pcre2_match_data_create(4, NULL);
+	res = pcre2_match(re, (PCRE2_SPTR)subject, len, 0, 0, md, NULL);
+	pcre2_match_data_free(md);
+
+	return (res >= 0);
 }
 
 /*
@@ -1136,7 +1183,7 @@ static char *dlg_expand(tcptest_t *item, const char *text, int len, int *outlen)
 	for (i = 0; (i < len); i++) {
 		int depth, j, blen;
 		char *body, *inner, *val = NULL, *freeval = NULL;
-		int innerlen;
+		int innerlen, vallen = 0;
 
 		if (!((text[i] == '$') && ((i+1) < len) && (text[i+1] == '{'))) {
 			if (n >= outsz) { outsz *= 2; out = (char *)realloc(out, outsz + 1); }
@@ -1161,33 +1208,37 @@ static char *dlg_expand(tcptest_t *item, const char *text, int len, int *outlen)
 		memcpy(body, text + i + 2, blen);
 		body[blen] = '\0';
 
+		/*
+		 * The argument is passed by length: ${md5:${salt}} over a binary
+		 * salt is the whole point of these on a framed protocol, and
+		 * measuring the expansion with strlen() would hash or encode the
+		 * bytes up to the first NUL instead of the value.
+		 */
 		if (strncmp(body, "md5:", 4) == 0) {
 			inner = dlg_expand(item, body + 4, blen - 4, &innerlen);
-			/* md5hash() hands back a static buffer -- copy, never free. */
-			val = md5hash(inner);
+			/* md5hash_len() hands back a static buffer -- copy, never free. */
+			val = md5hash_len(inner, innerlen);
+			vallen = strlen(val);
 			xfree(inner);
 		}
 		else if (strncmp(body, "base64:", 7) == 0) {
 			inner = dlg_expand(item, body + 7, blen - 7, &innerlen);
-			val = freeval = base64encode((unsigned char *)inner);
+			val = freeval = base64encode_len((unsigned char *)inner, innerlen);
+			vallen = strlen(val);
 			xfree(inner);
 		}
 		else {
 			/* Mistyped functions are reported when the file is read. */
-			val = dlg_get(item, body);
+			val = dlg_get(item, body, &vallen);
 			if (val == NULL) {
 				dbgprintf("dialogue: ${%s} is not set, expanding empty\n", body);
-				val = "";
+				val = ""; vallen = 0;
 			}
 		}
 
-		{
-			int vlen = strlen(val);
-
-			while ((n + vlen) >= outsz) { outsz *= 2; out = (char *)realloc(out, outsz + 1); }
-			memcpy(out + n, val, vlen);
-			n += vlen;
-		}
+		while ((n + vallen) >= outsz) { outsz *= 2; out = (char *)realloc(out, outsz + 1); }
+		memcpy(out + n, val, vallen);
+		n += vallen;
 
 		if (freeval) xfree(freeval);
 		xfree(body);
@@ -1202,9 +1253,9 @@ static char *dlg_expand(tcptest_t *item, const char *text, int len, int *outlen)
 /* Group 1 of the pattern, against the reply the last expect accepted. */
 static void dlg_capture(tcptest_t *item, svcstep_t *st)
 {
-	char *subject = dlg_get(item, st->srcname);
+	char *subject, *src;
 	pcre2_match_data *md;
-	int res, n;
+	int res, n, subjectlen = 0;
 	char names[256], *name, *rest;
 
 	/*
@@ -1213,11 +1264,21 @@ static void dlg_capture(tcptest_t *item, svcstep_t *st)
 	 * An unbound name binds empty, which check_undefined_vars() has
 	 * already complained about when the file was read.
 	 */
-	if (subject == NULL) subject = "";
+	/*
+	 * Work on a COPY. dlg_set() releases the old value of a name once it
+	 * has stored the new one, so binding a name that is also the source --
+	 * "banner ~ ... as banner", or any list that reuses it -- would free
+	 * the very bytes this match is reading, and the ovector offsets of
+	 * every name after it would then index freed memory.
+	 */
+	src = dlg_get(item, st->srcname, &subjectlen);
+	subject = (char *)malloc(subjectlen + 1);
+	if (src) memcpy(subject, src, subjectlen);
+	subject[subjectlen] = '\0';
 
 	md = pcre2_match_data_create(32, NULL);
 	res = pcre2_match((pcre2_code *)st->re, (PCRE2_SPTR)subject,
-			  strlen(subject), 0, 0, md, NULL);
+			  subjectlen, 0, 0, md, NULL);
 
 	/*
 	 * One name per capture group, in order: "as server;challenge" binds
@@ -1240,17 +1301,18 @@ static void dlg_capture(tcptest_t *item, svcstep_t *st)
 
 			memcpy(v, subject + b, e - b);
 			v[e-b] = '\0';
-			dlg_set(item, name, v);
+			dlg_set(item, name, v, e - b);
 			xfree(v);
 		}
 		else {
 			dbgprintf("dialogue: an extraction did not match, ${%s} left empty\n", name);
-			dlg_set(item, name, "");
+			dlg_setstr(item, name, "");
 		}
 		n++;
 	}
 
 	pcre2_match_data_free(md);
+	xfree(subject);
 }
 
 
@@ -1345,21 +1407,22 @@ static svcstep_t *dlg_run_instant(tcptest_t *item, svcstep_t *st)
 				char *u = NULL, *p = NULL;
 
 				if (lookup_credentials(item->credname, &u, &p)) {
-					dlg_set(item, "username", u);
-					dlg_set(item, "password", p);
-					if (u) { dlg_wipe(u); xfree(u); }
-					if (p) { dlg_wipe(p); xfree(p); }
+					dlg_setstr(item, "username", u);
+					dlg_setstr(item, "password", p);
+					if (u) { dlg_wipe(u, strlen(u)); xfree(u); }
+					if (p) { dlg_wipe(p, strlen(p)); xfree(p); }
 					st = st->next;
 					break;
 				}
 			}
-			dlg_set(item, "username", st->user);
-			dlg_set(item, "password", st->pass);
+			dlg_setstr(item, "username", st->user);
+			dlg_setstr(item, "password", st->pass);
 			st = st->next;
 			break;
 
 		  case STEP_WHEN: {
-			char *v = dlg_get(item, st->varname);
+			int vlen = 0;
+			char *v = dlg_get(item, st->varname, &vlen);
 
 			/*
 			 * An edge: taken when the test matches, fallen through when
@@ -1367,7 +1430,7 @@ static svcstep_t *dlg_run_instant(tcptest_t *item, svcstep_t *st)
 			 * -- gets its turn. The regex tests a value already bound,
 			 * never the socket, so nothing here races a partial read.
 			 */
-			if (!(v && st->re && matchregex(v, (pcre2_code *)st->re))) {
+			if (!(v && st->re && dlg_match(v, vlen, (pcre2_code *)st->re))) {
 				st = st->next;
 				break;
 			}
@@ -2233,14 +2296,97 @@ restartselect:
 								while (progress) {
 									svcstep_t *alt, *hit = NULL;
 									int undecided = 0;
+									int mbase = 0, mlen = item->stepbuflen;
 
 									progress = 0;
 									st = (svcstep_t *)item->curstep;
 									if (!st || (st->type != STEP_EXPECT)) break;
 
+									/*
+									 * Length framing: the peer sends a count and
+									 * then that many bytes, so a message boundary
+									 * exists where no newline does. Assemble the
+									 * whole message before anything looks at it --
+									 * an expect then matches the START of a
+									 * message rather than of whatever has arrived,
+									 * and a match consumes the message entire.
+									 */
+									if (item->svcinfo->framing == FRAMING_TERM) {
+										/*
+										 * A sequence ends the message wherever it
+										 * falls, so scan for it and take everything
+										 * through it. Nothing is consumed until it
+										 * arrives: half a message is unfinished, the
+										 * same as half a line or half a frame.
+										 */
+										int t = item->svcinfo->frametermlen, i2, found = -1;
+
+										for (i2 = 0; i2 + t <= item->stepbuflen; i2++) {
+											if (memcmp(item->stepbuf + i2,
+												   item->svcinfo->frameterm, t) == 0) {
+												found = i2 + t;
+												break;
+											}
+										}
+										if (found < 0) break;		/* still arriving */
+										mbase = 0;
+										mlen  = found;
+									}
+									else if (item->svcinfo->framing == FRAMING_LENGTH) {
+										int w = item->svcinfo->framewidth, k;
+										unsigned int n = 0;
+
+										if (item->stepbuflen < w) break;   /* not even the count yet */
+										for (k = 0; k < w; k++) {
+											int b = item->stepbuf[item->svcinfo->framebig ? k : (w - 1 - k)];
+
+											n = (n << 8) | (unsigned int)b;
+										}
+										if (n > (unsigned int)MAX_DIALOGUE_BYTES) {
+											errprintf("%s: framed message of %u bytes is over the %d "
+												  "a conversation may hold\n",
+												  item->svcinfo->svcname, n, MAX_DIALOGUE_BYTES);
+											item->dialogfail = 1;
+											if (!item->failstep) item->failstep = (void *)st;
+											item->curstep = NULL;
+											st = NULL;
+											break;
+										}
+										if ((unsigned int)(item->stepbuflen - w) < n) break;  /* still arriving */
+										mbase = w;
+										mlen  = (int)n;
+									}
+
 									/* Consecutive expects are alternatives of ONE state. */
 									for (alt = st; (alt && (alt->type == STEP_EXPECT)); alt = alt->next) {
 										if (alt->oneof) continue;	/* only fires on EOF */
+										if (item->svcinfo->framing != FRAMING_LINE) {
+											/*
+											 * The literal matches the start of the
+											 * MESSAGE. By here the message is whole,
+											 * so one shorter than the pattern is
+											 * decidably ruled out rather than still
+											 * arriving -- no "undecided", or a peer
+											 * that framed a short message would hang
+											 * until the clock.
+											 */
+											if (mlen < alt->len) continue;
+											if (memcmp(item->stepbuf + mbase, alt->text, alt->len) == 0) {
+												hit = alt; break;
+											}
+											continue;
+										}
+										if (alt->wantbytes) {
+											/*
+											 * A frame, not a line: it is decided by
+											 * how much has arrived and by nothing
+											 * else, so it cannot be "ruled out" the
+											 * way a literal can -- it is either
+											 * complete or still short.
+											 */
+											if (item->stepbuflen < alt->wantbytes) { undecided++; continue; }
+											hit = alt; break;
+										}
 										if (item->stepbuflen < alt->len) { undecided++; continue; }
 										if (memcmp(item->stepbuf, alt->text, alt->len) == 0) { hit = alt; break; }
 									}
@@ -2258,7 +2404,15 @@ restartselect:
 									if (hit) {
 										int cut = hit->len;
 
-										if (hit->until) {
+										if (item->svcinfo->framing != FRAMING_LINE) {
+											/* the message and its framing, and nothing else */
+											cut = mbase + mlen;
+										}
+										else if (hit->wantbytes) {
+											/* Exactly the frame, and not a byte more. */
+											cut = hit->wantbytes;
+										}
+										else if (hit->until) {
 											/*
 											 * A multi-line reply: consume complete
 											 * lines until one starts with the
@@ -2298,10 +2452,23 @@ restartselect:
 											if (cut < item->stepbuflen) cut++;
 										}
 
-										if (item->lastreply) xfree(item->lastreply);
-										item->lastreply = (char *)malloc(cut + 1);
-										memcpy(item->lastreply, item->stepbuf, cut);
-										item->lastreply[cut] = '\0';
+										/*
+										 * The reply is the message, not the framing
+										 * around it: under length framing the count
+										 * belongs to the transport and would only
+										 * ever be noise in a report or in a value
+										 * an "as" binds.
+										 */
+										{
+											int rbase = (item->svcinfo->framing != FRAMING_LINE) ? mbase : 0;
+											int rlen  = (item->svcinfo->framing != FRAMING_LINE) ? mlen : cut;
+
+											if (item->lastreply) xfree(item->lastreply);
+											item->lastreply = (char *)malloc(rlen + 1);
+											memcpy(item->lastreply, item->stepbuf + rbase, rlen);
+											item->lastreply[rlen] = '\0';
+											item->lastreplylen = rlen;
+										}
 
 										/*
 										 * "expect ... as NAME" binds the reply THIS
@@ -2310,7 +2477,8 @@ restartselect:
 										 * of some earlier state.
 										 */
 										if (hit->varname)
-											dlg_set(item, hit->varname, item->lastreply);
+											dlg_set(item, hit->varname, item->lastreply,
+												item->lastreplylen);
 
 										memmove(item->stepbuf, item->stepbuf + cut, item->stepbuflen - cut);
 										item->stepbuflen -= cut;

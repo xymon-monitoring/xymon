@@ -16,6 +16,6 @@
 .DS_store
 # Simulated Subversion default ignores end here
 
-# Written by build/genconfig.sh from this machine probes; committing it
-# pins one host answers on everybody else build.
+# Written by build/genconfig.sh from this machine's probes; committing it
+# pins one host's answers on everybody else's build.
 include/config.h

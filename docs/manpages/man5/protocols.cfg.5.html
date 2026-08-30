@@ -130,6 +130,23 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <p class="Pp"></p>
   </dd>
   <dt id="expect~3"><a class="permalink" href="#expect~3"><b>expect</b>
+    <b>bytes(</b><i>N</i><b>)</b></a></dt>
+  <dd>Wait for a frame of <i>N</i> bytes and consume exactly that many. LDAP,
+      MySQL, DNS over TCP and AMQP put a length in front of a message instead of
+      ending it with a line, so neither a literal nor <b>until</b> can say where
+      such a reply stops. Anything beyond the frame is kept for the next step,
+      as with any other <b>expect</b>.
+    <p class="Pp">A frame is decided by length and a literal by content, so the
+        two cannot share a state: which of them took the reply would be
+        unsayable. A state whose <b>expect</b> is a frame holds that one
+        alternative, and the clocks. <b>until</b> is refused on it, and <i>N</i>
+        must be between 1 and 32768 -- the same ceiling a conversation may
+        buffer.</p>
+    <p class="Pp"><b>as</b> works as it does elsewhere, binding the frame that
+        was consumed.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="expect~4"><a class="permalink" href="#expect~4"><b>expect</b>
     <i>STRING</i> <b>as</b> <i>NAME</i></a></dt>
   <dd>Bind the reply this <b>expect</b> accepted to <i>NAME</i>, for a later
       <b>~</b> line to read. It is written on the expect itself because that is
@@ -141,7 +158,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <pre>   expect &quot;250&quot; until &quot;250 &quot; as caps    -&gt; offers</pre>
     <p class="Pp"></p>
   </dd>
-  <dt id="expect~4"><a class="permalink" href="#expect~4"><b>expect</b>
+  <dt id="expect~5"><a class="permalink" href="#expect~5"><b>expect</b>
     <i>STRING</i> <b>-&gt;</b> <i>TARGET</i></a></dt>
   <dd></dd>
   <dt id="state"><a class="permalink" href="#state"><b>state</b>
@@ -173,9 +190,10 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       not.</p>
     <p class="Pp"><b>Layout.</b> An entry that uses states is written the same
         way throughout this page: the entry attributes -- <b>options</b>,
-        <b>port</b>, <b>transport</b>, <b>start</b> -- first, in any order among
-        themselves, because they describe the definition rather than any step;
-        then the states, each with its lines indented under it.</p>
+        <b>port</b>, <b>transport</b>, <b>framing</b>, <b>start</b> -- first, in
+        any order among themselves, because they describe the definition rather
+        than any step; then the states, each with its lines indented under
+      it.</p>
     <p class="Pp">A state does one thing and waits for one answer: at most one
         action -- a <b>send</b>, a <b>starttls</b>, a <b>credentials</b> -- the
         clock that bounds the wait, and the <b>expect</b> lines that end the
@@ -336,6 +354,46 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         expands to nothing.</p>
     <p class="Pp"></p>
   </dd>
+  <dt id="framing"><a class="permalink" href="#framing"><b>framing</b>
+    <b>line</b></a></dt>
+  <dd></dd>
+  <dt id="framing~2"><a class="permalink" href="#framing~2"><b>framing</b>
+    <b>length(</b><i>WIDTH</i><b>,</b> <b>big</b>|<b>little</b><b>)</b></a></dt>
+  <dd></dd>
+  <dt id="framing~3"><a class="permalink" href="#framing~3"><b>framing</b>
+    <b>terminator</b> <i>SEQUENCE</i></a></dt>
+  <dd>How a message ends on this connection. TCP says nothing about it: a
+      message boundary is always something the protocol states, and it states it
+      in one of three ways -- a terminator, a count, or the close.
+    <p class="Pp"><b>line</b> is the default and is what the greeting protocols
+        do: an <b>expect</b> consumes one line, and <b>until</b> says where a
+        reply of several lines ends. <b>length</b> is what the binary protocols
+        do -- DNS over TCP, MySQL, LDAP, AMQP -- where each message is preceded
+        by a count of <i>WIDTH</i> bytes, 1 to 4, most significant first with
+        <b>big</b> and last with <b>little</b>.</p>
+    <p class="Pp">Under <b>length</b> the driver assembles a whole message
+        before anything looks at it: an <b>expect</b> matches the start of the
+        MESSAGE rather than of whatever has arrived so far, a match consumes the
+        message and its count together, and a payload containing a newline is
+        data like any other byte. A message longer than 32 KB fails by name
+        rather than being buffered.</p>
+    <p class="Pp"><b>terminator</b> is for everything else, and for protocols of
+        your own: a message ends at <i>SEQUENCE</i> wherever that falls -- a
+        NUL, a blank line, a sentinel you chose. It is not <b>until</b>:
+        <b>until</b> compares the start of a LINE, so a terminator that does not
+        fall on a line boundary is invisible to it, and a payload with newlines
+        inside is not line-shaped at all.</p>
+    <p class="Pp"></p>
+    <pre>   framing terminator &quot;\x00&quot;        NUL-terminated records
+   framing terminator &quot;\r\n\r\n&quot;    a blank line ends the message
+   framing terminator &quot;&lt;END&gt;&quot;       a sentinel of your own</pre>
+    <p class="Pp">It describes the connection, not one reply, so it is written
+        once as an entry attribute. <b>until</b> and <b>expect
+        bytes(</b><i>N</i><b>)</b> are refused under it: the count has already
+        said where the message ends, and a second answer could only agree or
+        contradict.</p>
+    <p class="Pp"></p>
+  </dd>
   <dt id="transport"><a class="permalink" href="#transport"><b>transport</b>
     <b>tcp</b></a></dt>
   <dd>Which probe runs this entry. Only <b>tcp</b> is implemented; naming
@@ -394,31 +452,34 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <section class="Sh">
 <p>&#160;</p>
 <h1 class="Sh" id="CONVENTIONS"><a class="permalink" href="#CONVENTIONS">CONVENTIONS</a></h1>
-<p class="Pp">The parser accepts an attribute anywhere in a block, ignores
-    indentation, takes several actions and several waits in one state, and
-    accepts an <b>expect</b> that names no target. None of what follows is
-    enforced by it; it is how every entry in this page and in the shipped
-    protocols.cfg is written, and what a reader is entitled to assume:</p>
+<p class="Pp">An entry that uses states is written one way, and most of it is
+    now refused when the file is read rather than left to surprise somebody:</p>
 <p class="Pp"></p>
-<pre>   1  entry attributes -- options, port, transport, start -- come
-      before the first state, in any order among themselves
+<pre>   1  entry attributes -- options, port, transport, framing, start --
+      come before the first state, in any order among themselves
    2  a state's lines are indented under it
    3  a state holds at most one action: send, starttls, credentials
    4  every expect names where it goes: &quot;-&gt; TARGET&quot;
    5  a clock -- timeout or idle -- is written above the expects it
-      bounds, because it arms the wait that FOLLOWS it</pre>
-<p class="Pp">Rule 5 is the one that bites: a clock written below a state's
-    <b>expect</b> lines bounds nothing, and nothing says so. The others are
-    legibility -- an entry written this way reads as the machine it describes,
-    and one that is not still runs.</p>
-<p class="Pp">A definition that means to break a rule says so, with a comment
-    the parser ignores and a reader does not:</p>
-<p class="Pp"></p>
-<pre>   [legacy]
-      # conventions: permissive -- one expect, no state to move to</pre>
-<p class="Pp">The regression suite checks every entry in this page, in the
-    shipped protocols.cfg and in the test fixtures against these five rules, so
-    the page and the files cannot drift apart unnoticed.</p>
+      bounds, because it arms the wait that FOLLOWS it
+   6  a message boundary is stated, never guessed: a terminator with
+      &quot;until&quot;, a count with &quot;framing length&quot;, or the close with &quot;eof&quot;</pre>
+<p class="Pp">Rules 3, 4 and 5 are refusals, and so is a state that acts again
+    after it has waited -- that is a second wait in one state, and nothing could
+    name the state it failed in. So is a state named <b>success</b>,
+    <b>warning</b> or <b>fail</b>: an edge naming one of those declares a
+    verdict rather than jumping, so such a state could never be reached. So is a
+    second <b>options</b> line, which replaces the first rather than adding to
+    it, and <b>until</b> or <b>as</b> on an entry the driver does not run, where
+    they would do nothing at all.</p>
+<p class="Pp">Rules 1 and 2 are not enforced: the parser takes an attribute
+    anywhere in the block and ignores indentation entirely. They are how every
+    entry in this page and in the shipped protocols.cfg is written, and the
+    regression suite checks them, so the page and the files cannot drift apart
+    unnoticed.</p>
+<p class="Pp">None of this applies to the classic shapes -- a lone <b>send</b>,
+    a lone <b>expect</b>, or a <b>send</b> followed by an <b>expect</b> -- which
+    have no states and keep the probe they have always used.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
@@ -470,9 +531,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     so a clock written below the <b>expect</b> lines bounds nothing. Keep it
     above them, as every example here does.</p>
 <p class="Pp">The entry attributes -- <b>options</b>, <b>port</b>,
-    <b>transport</b>, <b>start</b> -- describe the definition rather than any
-    step, so they are written together at the top, in any order among
-    themselves.</p>
+    <b>transport</b>, <b>framing</b>, <b>start</b> -- describe the definition
+    rather than any step, so they are written together at the top, in any order
+    among themselves.</p>
 <p class="Pp">This is deliberately a service of its own rather than a deeper
     <b>[smtp]</b>. protocols.cfg is one file for the whole installation, so
     teaching <b>[smtp]</b> to expect STARTTLS would change what every existing
@@ -497,6 +558,22 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
    state 'NAME' has no way to finish   no path from it to a terminal
    state 'NAME' waits for a reply with no timeout
    'expect &quot;A&quot;' and 'expect &quot;B&quot;' overlap - both match the same reply
+   'expect bytes(N)' shares a state with another expect
+   'expect bytes(N) until ...' - a frame already ends the reply
+   'expect bytes(N)' is outside 1..32768
+   'until' under framing length/terminator
+   'expect bytes(N)' under framing length/terminator
+   'framing terminator' needs a quoted sequence
+   framing length width is 1..4 bytes
+   framing length endianness is 'big' or 'little'
+   framed message of N bytes is over the 32768 a conversation may hold
+   state 'NAME' has more than one action
+   state 'NAME' acts again after it has waited
+   state 'NAME' sets a clock below its expects, where it bounds nothing
+   state 'NAME' has an expect with no '-&gt; TARGET'
+   state 'NAME' takes a name reserved for a verdict
+   a second 'options' line - options replaces rather than adds
+   'until'/'as' on an entry the dialogue driver does not run
    ${NAME} is never captured or bound before it is used
    'NAME ~ ...' tests a value that is never bound before it
    'NAME ~ &quot;...&quot; as X' has no capture group
