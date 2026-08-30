@@ -106,7 +106,7 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
 <h1 class="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
 <dl class="Bl-tag">
   <dt id="TEST2RRD"><a class="permalink" href="#TEST2RRD"><b>TEST2RRD</b></a></dt>
-  <dd>Defines the mapping between a status-log columnname and the corresponding
+  <dd>Defines the mapping between a status-log testname and the corresponding
       RRD database format. This is normally defined in the
       <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> file.
     <p class="Pp"></p>
@@ -136,7 +136,7 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
     <p class="Pp"></p>
   </dd>
   <dt id="TRACKMAX"><a class="permalink" href="#TRACKMAX"><b>TRACKMAX</b></a></dt>
-  <dd>Comma-separated list of columnname for which you want to keep the maximum
+  <dd>Comma-separated list of testname for which you want to keep the maximum
       values along with the default average values. This only works
     <br/>
      for the NCV backend.
@@ -175,16 +175,16 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
   <dd>Records TCP and UDP statistics. Data is collected from the
       &quot;netstat&quot; status report; however, this data is often sent via
       the Xymon &quot;data&quot; protocol, so there need not be a
-      &quot;netstat&quot; column visible on the Xymon display. To get these
-      data, the LARRD netstat bottom-feeder script must be running on the
-      monitored server.
+      &quot;netstat&quot; test visible on the Xymon display. To get these data,
+      the LARRD netstat bottom-feeder script must be running on the monitored
+      server.
     <p class="Pp"></p>
   </dd>
   <dt id="vmstat"><a class="permalink" href="#vmstat"><b>vmstat</b></a></dt>
   <dd>Records system performance metrics from the &quot;vmstat&quot; command.
       Data is collected from the &quot;vmstat&quot; status report; however, this
       data is often sent via the Xymon &quot;data&quot; protocol, so there need
-      not be a &quot;vmstat&quot; column visible on the Xymon display. To get
+      not be a &quot;vmstat&quot; test visible on the Xymon display. To get
       these data, the LARRD vmstat bottom-feeder script must be running on the
       monitored server.
     <p class="Pp"></p>
@@ -301,17 +301,16 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
     your data is complete.</p>
 <p class="Pp"></p>
 <p class="Pp">To enable the ncv module for a status, add a
-    &quot;COLUMNNAME=ncv&quot; to the TEST2RRD setting and the COLUMNNAME to the
+    &quot;TESTNAME=ncv&quot; to the TEST2RRD setting and the TESTNAME to the
     GRAPHS setting in <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> , then restart Xymon. Xymon will
-    now send all status-messages for the column COLUMNNAME through the
-    xymond_rrd ncv-handler.</p>
-<p class="Pp">The name of the RRD file will be COLUMNNAME.rrd. When using
-    SPLITNCV, the name of the RRD file will be COLUMNAME,DATASETNAME.rrd.</p>
+    now send all status-messages for the test TESTNAME through the xymond_rrd
+    ncv-handler.</p>
+<p class="Pp">The name of the RRD file will be TESTNAME.rrd. When using
+    SPLITNCV, the name of the RRD file will be TESTNAME,DATASETNAME.rrd.</p>
 <p class="Pp">By default, all of the datasets are generated as the RRD type
     &quot;DERIVE&quot; which works for all types of monotonically increasing
     counters. If you have data that are of the type GAUGE, you can override the
-    default via an environment variable NCV_COLUMNNAME (or
-  SPLITNCV_COLUMNAME).</p>
+    default via an environment variable NCV_TESTNAME (or SPLITNCV_TESTNAME).</p>
 <p class="Pp">E.g. if you are using the bb-mysqlstatus script from
     www.deadcat.net to collect data about your MySQL server, it generates a
     report in the column called &quot;mysql&quot;. One data item is the average
@@ -338,6 +337,113 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
 <p class="Pp">For a more detailed &quot;how to&quot; description, see the
     on-line HTML documentation of &quot;How to create graph custom data&quot;
     available in the Help menu section on your Xymon server.</p>
+<p class="Pp"></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SELF-DESCRIBING_STATUS_MESSAGES_(XYMON_METRICS_MARKERS)"><a class="permalink" href="#SELF-DESCRIBING_STATUS_MESSAGES_(XYMON_METRICS_MARKERS)">SELF-DESCRIBING
+  STATUS MESSAGES (XYMON METRICS MARKERS)</a></h1>
+<p class="Pp">A status message may carry its own RRD storage schema in a hidden
+    block, with no TEST2RRD setting needed - the message is routed to the RRD
+    writer by content:</p>
+<p class="Pp"></p>
+<pre>
+<br/>
+   &lt;!--XYMON METRICS: diskio_ops
+<br/>
+   DS:reads:GAUGE:600:0:U DS:writes:GAUGE:600:0:U
+<br/>
+   ada0 10:20
+<br/>
+   ada1 5:6
+<br/>
+   --&gt;</pre>
+<p class="Pp">This creates or updates one multi-dataset RRD file per instance
+    line, named &quot;diskio_ops.ada0.rrd&quot; etc. The block name is
+    restricted to letters, digits, &quot;_&quot; and &quot;-&quot; (max 64
+    characters); an invalid name skips the whole block. A message may carry
+    several blocks. The block is invisible on the rendered status page.</p>
+<p class="Pp">The routing is by content: a status whose text merely QUOTES a
+    marker line at the start of a line (a log checker echoing one, for instance)
+    is taken for a self-describing status, and the test's built-in RRD handler
+    is bypassed for that message. Scripts that may reproduce foreign log content
+    verbatim should indent it.</p>
+<p class="Pp">A DS spec may carry an optional seventh colon-separated field
+    declaring the metric's unit, e.g. &quot;DS:temp:GAUGE:600:-30:50:degC&quot;.
+    The writer strips the suffix before the spec reaches rrdtool, so a declared
+    unit never affects storage; a spec without it is unchanged.</p>
+<p class="Pp">Inside a block, any line whose first token is an ALL-CAPS keyword
+    ending in &quot;:&quot; is a declaration line. Unknown declarations are
+    ignored, and declaration lines are never instances, so the block dialect can
+    grow new keyword lines without breaking deployed servers. Consequently, an
+    instance name must not have the form of a declaration keyword. This version
+    knows two: &quot;DS:&quot; (above) and</p>
+<p class="Pp"></p>
+<pre>
+<br/>
+   THRESHOLD:&lt;base-ds&gt;:&lt;relop&gt;&lt;operand&gt;[:&lt;severity&gt;]</pre>
+<p class="Pp">which declares that crossing &lt;operand&gt; (another DS of the
+    same block, or a literal number) in the &lt;relop&gt; direction (one of &gt;
+    &lt; &gt;= &lt;=, glued to the operand) means &lt;severity&gt;
+    (&quot;warn&quot; or &quot;crit&quot;, default crit) for &lt;base-ds&gt;.
+    The relation is a declared fact, never a display command: the graph renderer
+    derives from it - the threshold DS plots as a threshold-styled curve instead
+    of a peer metric (single-instance images only), a literal becomes a flat
+    HRULE, and &quot;THRESHOLDS OFF&quot; in the <a href="../man5/graphs.cfg.5.html">graphs.cfg</a>(5) definition
+    suppresses the co-plot entirely. Both DS names must be declared in the same
+    block; invalid relations are ignored.</p>
+<p class="Pp">The server itself uses this mechanism: the disk and inode statuses
+    generated from client data carry METRICS blocks with the same datasets the
+    built-in disk handler stores, so disk is an ordinary declared metric written
+    by the block writer - same files, continuous history. The built-in handler
+    remains as the fallback for statuses without a block.</p>
+<p class="Pp">File creation is eager: every instance's RRD file is created on
+    the first sample. Unknown banner attributes are ignored, so the dialect
+    stays forward-compatible.</p>
+<p class="Pp">Write-thinning: a block whose DS specs declare a heartbeat larger
+    than twice the polling step consents to sparse updates - a sample whose
+    values equal the last written ones is then skipped until a keepalive (half
+    the smallest declared heartbeat) falls due; RRD interpolates the constant
+    across the declared heartbeat, so the graph is identical. On a value change
+    the old values are pre-written one step earlier, pinning the step edge (and
+    a counter's delta) in the right bucket. The stock heartbeat (600) declares
+    no tolerance and thins nothing; ABSOLUTE datasets and unknown ('U') values
+    always write. Analysis rules, aggregates and the external processor see
+    every sample - only the file write thins.</p>
+<p class="Pp">To display graphs of these files on the status page, add one</p>
+<p class="Pp"></p>
+<pre>
+<br/>
+   &lt;!--XYMON GRAPH: diskio_ops --&gt;</pre>
+<p class="Pp">marker per graph. The graph paging count is exact by construction:
+    it is taken from the instance-line count of the same-named METRICS block in
+    the same message. A marker may instead specify &quot;instances=N&quot;
+    explicitly (for graphs whose files are written elsewhere) or
+    &quot;instances=all&quot; to render one unsliced image regardless of any ::N
+    split size (useful for stacked-total graphs, which must never be split).
+    Graph appearance comes from the <a href="../man5/graphs.cfg.5.html">graphs.cfg</a>(5) entry of the same name; if
+    none exists, <i><a href="../man1/showgraph.cgi.1.html">showgraph.cgi</a>(1)</i> synthesizes a generic definition (one
+    line per dataset) from the files themselves, so no server-side configuration
+    is required.</p>
+<p class="Pp">To alert on an aggregate over the stored values (e.g. the total of
+    a dataset across all instances) without storing the total anywhere, see the
+    AGGDS rules in <i><a href="../man5/analysis.cfg.5.html">analysis.cfg</a>(5),</i> and to graph such a total see the
+    aggregate tokens (&quot;@SUMNAN:&quot; and friends) in
+  <i><a href="../man5/graphs.cfg.5.html">graphs.cfg</a>(5).</i></p>
+<p class="Pp">The legacy &quot;&lt;!--DEVMON RRD:&quot; banner emitted by the
+    devmon SNMP collector is the ancestor of this mechanism and is accepted
+    forever; it implies both store and show, and is now also routed by content
+    (previously it required TEST2RRD=&quot;&lt;test&gt;=devmon&quot;, which
+    still works). Content routing takes precedence over explicit TEST2RRD
+    mappings and over built-in test handlers (disk, memory, ncv, ...) -
+    deliberately so: the disk METRICS block must beat the built-in disk handler,
+    or the declared-metrics cutover could never happen. The flip side: a message
+    carrying a line-anchored marker banner is stored by the block writer INSTEAD
+    of its test's normal handler, so a test that echoes third-party text
+    verbatim at line starts (log excerpts, service banners) should not be given
+    a TEST2RRD/built-in handler it relies on - hostile or accidental
+    marker-shaped content would divert it.</p>
 <p class="Pp"></p>
 <p class="Pp"></p>
 </section>
@@ -472,7 +578,7 @@ Rainfall: 5 mm since 6:00 AM</pre>
   <dt></dt>
   <dd>
     <pre>#!/bin/sh
-# Input parameters: Hostname, testname (column), and messagefile
+# Input parameters: Hostname, testname, and messagefile
 HOSTNAME=&quot;$1&quot;
 TESTNAME=&quot;$2&quot;
 FNAME=&quot;$3&quot;
@@ -542,6 +648,7 @@ exit 0</pre>
 <dt><a href="#ENVIRONMENT">ENVIRONMENT</a></dt>
 <dt><a href="#COLLECTED_DATA">COLLECTED DATA</a></dt>
 <dt><a href="#CUSTOM_RRD_DATA_IN_NAME-COLON-VALUE_(NCV)_FORMAT">CUSTOM RRD DATA IN NAME-COLON-VALUE (NCV) FORMAT</a></dt>
+<dt><a href="#SELF-DESCRIBING_STATUS_MESSAGES_(XYMON_METRICS_MARKERS)">SELF-DESCRIBING STATUS MESSAGES (XYMON METRICS MARKERS)</a></dt>
 <dt><a href="#SENDING_METRIC_DATA_TO_AN_ADDITIONAL_PROCESS">SENDING METRIC DATA TO AN ADDITIONAL PROCESS</a></dt>
 <dt><a href="#CUSTOM_RRD_DATA_VIA_SCRIPTS">CUSTOM RRD DATA VIA SCRIPTS</a></dt>
 <dt><a href="#COMPATIBILITY">COMPATIBILITY</a></dt>

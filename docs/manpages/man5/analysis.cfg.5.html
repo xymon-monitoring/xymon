@@ -29,9 +29,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
 <p class="Pp">The analysis.cfg file controls what color is assigned to the
     status-messages that are generated from the Xymon client data - typically
-    the cpu, disk, memory, procs- and msgs-columns. Color is decided on the
-    basis of some <b>settings</b> defined in this file; settings apply to
-    specific hosts through a set of <b>rules</b>.</p>
+    the cpu, disk, memory, procs- and msgs-tests. Color is decided on the basis
+    of some <b>settings</b> defined in this file; settings apply to specific
+    hosts through a set of <b>rules</b>.</p>
 <p class="Pp">Note: This file is only used on the Xymon server - it is not used
     by the Xymon client, so there is no need to distribute it to your client
     systems.</p>
@@ -48,8 +48,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 </section>
 <section class="Sh">
 <p>&#160;</p>
-<h1 class="Sh" id="CPU_STATUS_COLUMN_SETTINGS"><a class="permalink" href="#CPU_STATUS_COLUMN_SETTINGS">CPU
-  STATUS COLUMN SETTINGS</a></h1>
+<h1 class="Sh" id="CPU_STATUS_TEST_SETTINGS"><a class="permalink" href="#CPU_STATUS_TEST_SETTINGS">CPU
+  STATUS TEST SETTINGS</a></h1>
 <p class="Pp"><b>LOAD warnlevel paniclevel</b></p>
 <p class="Pp">If the system load exceeds &quot;warnlevel&quot; or
     &quot;paniclevel&quot;, the &quot;cpu&quot; status will go yellow or red,
@@ -91,8 +91,8 @@ CLOCK 15 red</pre>
 </section>
 <section class="Sh">
 <p>&#160;</p>
-<h1 class="Sh" id="DISK_STATUS_COLUMN_SETTINGS"><a class="permalink" href="#DISK_STATUS_COLUMN_SETTINGS">DISK
-  STATUS COLUMN SETTINGS</a></h1>
+<h1 class="Sh" id="DISK_STATUS_TEST_SETTINGS"><a class="permalink" href="#DISK_STATUS_TEST_SETTINGS">DISK
+  STATUS TEST SETTINGS</a></h1>
 <p class="Pp"><b>DISK filesystem warnlevel paniclevel</b>
   <br/>
   <b>DISK filesystem IGNORE</b>
@@ -109,7 +109,7 @@ CLOCK 15 red</pre>
     letter &quot;U&quot;, e.g. &quot;1024U&quot;.</p>
 <p class="Pp">The special keyword &quot;IGNORE&quot; causes this filesystem to
     be ignored completely, i.e. it will not appear in the &quot;disk&quot;
-    status column and it will not be tracked in a graph. This is useful for e.g.
+    status test and it will not be tracked in a graph. This is useful for e.g.
     removable devices, backup-disks and similar hardware.</p>
 <p class="Pp">&quot;filesystem&quot; is the mount-point where the filesystem is
     mounted, e.g. &quot;/usr&quot; or &quot;/home&quot;. A filesystem-name that
@@ -127,8 +127,8 @@ CLOCK 15 red</pre>
 </section>
 <section class="Sh">
 <p>&#160;</p>
-<h1 class="Sh" id="MEMORY_STATUS_COLUMN_SETTINGS"><a class="permalink" href="#MEMORY_STATUS_COLUMN_SETTINGS">MEMORY
-  STATUS COLUMN SETTINGS</a></h1>
+<h1 class="Sh" id="MEMORY_STATUS_TEST_SETTINGS"><a class="permalink" href="#MEMORY_STATUS_TEST_SETTINGS">MEMORY
+  STATUS TEST SETTINGS</a></h1>
 <p class="Pp"><b>MEMPHYS warnlevel paniclevel</b>
   <br/>
   <b>MEMACT warnlevel paniclevel</b>
@@ -161,8 +161,8 @@ MEMACT  warnlevel=90 paniclevel=97</pre>
 </section>
 <section class="Sh">
 <p>&#160;</p>
-<h1 class="Sh" id="PROCS_STATUS_COLUMN_SETTINGS"><a class="permalink" href="#PROCS_STATUS_COLUMN_SETTINGS">PROCS
-  STATUS COLUMN SETTINGS</a></h1>
+<h1 class="Sh" id="PROCS_STATUS_TEST_SETTINGS"><a class="permalink" href="#PROCS_STATUS_TEST_SETTINGS">PROCS
+  STATUS TEST SETTINGS</a></h1>
 <p class="Pp"><b>PROC processname minimumcount maximumcount color [TRACK=id]
     [TEXT=text]</b></p>
 <p class="Pp">The &quot;ps&quot; listing sent by the client will be scanned for
@@ -236,8 +236,8 @@ MEMACT  warnlevel=90 paniclevel=97</pre>
 </section>
 <section class="Sh">
 <p>&#160;</p>
-<h1 class="Sh" id="MSGS_STATUS_COLUMN_SETTINGS"><a class="permalink" href="#MSGS_STATUS_COLUMN_SETTINGS">MSGS
-  STATUS COLUMN SETTINGS</a></h1>
+<h1 class="Sh" id="MSGS_STATUS_TEST_SETTINGS"><a class="permalink" href="#MSGS_STATUS_TEST_SETTINGS">MSGS
+  STATUS TEST SETTINGS</a></h1>
 <p class="Pp"><b>LOG logfilename pattern [COLOR=color] [IGNORE=excludepattern]
     [OPTIONAL]</b></p>
 <p class="Pp">The Xymon client extracts interesting lines from one or more
@@ -251,15 +251,15 @@ MEMACT  warnlevel=90 paniclevel=97</pre>
     character).</p>
 <p class="Pp">&quot;pattern&quot; is a string or regular expression. If the
     logfile data matches &quot;pattern&quot;, it will trigger the
-    &quot;msgs&quot; column to change color. If no &quot;color&quot; parameter
-    is present, the default is to go &quot;red&quot; when the pattern is
-    matched. To match against a regular expression, &quot;pattern&quot; must
-    begin with a '%' sign - e.g &quot;%WARNING|NOTICE&quot; will match any lines
-    containing either of these two words. Note that Xymon defaults to
-    case-insensitive pattern matching; if that is not what you want, put
-    &quot;(?-i)&quot; between the &quot;%&quot; and the regular expression to
-    turn this off. E.g. &quot;%(?-i)WARNING&quot; will match the word WARNING
-    only when it is upper-case.</p>
+    &quot;msgs&quot; test to change color. If no &quot;color&quot; parameter is
+    present, the default is to go &quot;red&quot; when the pattern is matched.
+    To match against a regular expression, &quot;pattern&quot; must begin with a
+    '%' sign - e.g &quot;%WARNING|NOTICE&quot; will match any lines containing
+    either of these two words. Note that Xymon defaults to case-insensitive
+    pattern matching; if that is not what you want, put &quot;(?-i)&quot;
+    between the &quot;%&quot; and the regular expression to turn this off. E.g.
+    &quot;%(?-i)WARNING&quot; will match the word WARNING only when it is
+    upper-case.</p>
 <p class="Pp">&quot;excludepattern&quot; is a string or regular expression that
     can be used to filter out any unwanted strings that happen to match
     &quot;pattern&quot;.</p>
@@ -278,20 +278,20 @@ MEMACT  warnlevel=90 paniclevel=97</pre>
   <br/>
   	color=&quot;red&quot;, no &quot;excludepattern&quot;.</p>
 <p class="Pp">Note that no logfiles are checked by default. Any log data
-    reported by a client will just show up on the &quot;msgs&quot; column with
+    reported by a client will just show up on the &quot;msgs&quot; test with
     status OK (green).</p>
 <p class="Pp"></p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
 <p>&#160;</p>
-<h1 class="Sh" id="FILES_STATUS_COLUMN_SETTINGS"><a class="permalink" href="#FILES_STATUS_COLUMN_SETTINGS">FILES
-  STATUS COLUMN SETTINGS</a></h1>
+<h1 class="Sh" id="FILES_STATUS_TEST_SETTINGS"><a class="permalink" href="#FILES_STATUS_TEST_SETTINGS">FILES
+  STATUS TEST SETTINGS</a></h1>
 <p class="Pp"><b>FILE filename [color] [things to check] [OPTIONAL|IFEXIST]
     [TRACK]</b></p>
 <p class="Pp"><b>DIR directoryname [color] [size&lt;MAXSIZE] [size&gt;MINSIZE]
     [TRACK]</b></p>
-<p class="Pp">These entries control the status of the &quot;files&quot; column.
+<p class="Pp">These entries control the status of the &quot;files&quot; test.
     They allow you to check on various data for files and directories.</p>
 <p class="Pp"><b>filename</b> and <b>directoryname</b> are names of files or
     directories, with a full path. You can use a regular expression to match the
@@ -383,8 +383,8 @@ MEMACT  warnlevel=90 paniclevel=97</pre>
 </section>
 <section class="Sh">
 <p>&#160;</p>
-<h1 class="Sh" id="PORTS_STATUS_COLUMN_SETTINGS"><a class="permalink" href="#PORTS_STATUS_COLUMN_SETTINGS">PORTS
-  STATUS COLUMN SETTINGS</a></h1>
+<h1 class="Sh" id="PORTS_STATUS_TEST_SETTINGS"><a class="permalink" href="#PORTS_STATUS_TEST_SETTINGS">PORTS
+  STATUS TEST SETTINGS</a></h1>
 <p class="Pp"><b>PORT criteria [MIN=mincount] [MAX=maxcount] [COLOR=color]
     [TRACK=id] [TEXT=displaytext]</b></p>
 <p class="Pp">The &quot;netstat&quot; listing sent by the client will be scanned
@@ -465,9 +465,9 @@ MEMACT  warnlevel=90 paniclevel=97</pre>
 <p>&#160;</p>
 <h1 class="Sh" id="DS_-_RRD_based_status_override"><a class="permalink" href="#DS_-_RRD_based_status_override">DS
   - RRD based status override</a></h1>
-<p class="Pp"><b>DS column filename:dataset rules COLOR=colorname
+<p class="Pp"><b>DS test filename:dataset rules COLOR=colorname
     TEXT=explanation</b></p>
-<p class="Pp">&quot;column&quot; is the statuscolumn that will be modified.
+<p class="Pp">&quot;test&quot; is the status test that will be modified.
     &quot;filename&quot; is the name of the RRD file holding the data you use
     for comparison. &quot;dataset&quot; is the name of the dataset in the RRD
     file - the &quot;rrdtool info&quot; command is useful when determining
@@ -492,6 +492,56 @@ MEMACT  warnlevel=90 paniclevel=97</pre>
   <br/>
   	DS conn tcp.conn.rrd:sec &gt;0.1 COLOR=yellow TEXT=&quot;Response time &amp;V
     exceeds &amp;U seconds&quot;</p>
+<p class="Pp">NOTE: The disk and inode RRD filenames changed from the legacy
+    comma-separated form (e.g. &quot;disk,var.rrd&quot;) to a form with the
+    mountpoint URL-encoded (&quot;disk.%2Fvar.rrd&quot;). DS and AGGDS rules
+    whose filename or filepattern was written for the legacy names (e.g.
+    &quot;DS disk disk,var.rrd:pct ...&quot; or a &quot;%^disk,.*&quot; pattern)
+    silently stop matching after an upgrade and must be updated to the encoded
+    names.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="AGGDS_-_RRD_based_status_override_on_an_aggregate"><a class="permalink" href="#AGGDS_-_RRD_based_status_override_on_an_aggregate">AGGDS
+  - RRD based status override on an aggregate</a></h1>
+<p class="Pp"><b>AGGDS test fn(filepattern:dataset) rules maxage=N
+    COLOR=colorname TEXT=explanation</b></p>
+<p class="Pp">Like DS, but the compared value is an aggregate over a whole set
+    of RRD files instead of one value from one file: &quot;fn&quot; is one of
+    &quot;sum&quot;, &quot;avg&quot;, &quot;max&quot;, &quot;min&quot; or
+    &quot;count&quot;, and &quot;filepattern&quot; is a pattern (use a
+    &quot;%&quot; prefix for a regular expression) matched against the RRD
+    filenames of the host. No whitespace is allowed inside the parentheses. E.g.
+    the total read rate across all disks:
+  <br/>
+  	AGGDS diskio sum(%diskio_ops\..+\.rrd:reads) &gt;5000 COLOR=yellow
+    TEXT=&quot;Total reads &amp;V ops/s (&gt; &amp;L)&quot;</p>
+<p class="Pp">The aggregate is computed from the most recent value of each
+    matching file, and is evaluated once per incoming message after all of its
+    RRD updates completed - never per file, so it cannot see a half-updated set.
+    Values from files not updated within &quot;maxage&quot; seconds (default
+    600, must be a number of seconds &gt; 0) are excluded, so retired instances
+    do not haunt the aggregates. With no fresh matching values at all, a
+    sum/avg/max/min rule is skipped - but &quot;count&quot; evaluates the empty
+    set as 0 and can fire: alerting on &quot;the instances disappeared&quot; is
+    what count is for. The value store is rebuilt from live updates after a
+    restart or configuration reload; while the rules are younger than a rule's
+    own maxage window, that rule is skipped whenever the writer-kept fileset
+    index still knows more fresh matching instances than values have been
+    re-seen - so a restart never fires a false &quot;instances disappeared&quot;
+    alert while the store warms up. In the TEXT placeholders, &quot;&amp;N&quot;
+    is the aggregate name, e.g. &quot;sum(%diskio_ops\..+\.rrd:reads)&quot;. The
+    same first-match rule as DS applies, per test, aggregate and color; the file
+    pattern is part of the aggregate's identity, so two rules aggregating the
+    same dataset over different filesets never shadow each other. The GAUGE-only
+    note above applies here too, and - as with DS rules - the operator and
+    threshold form one token (&quot;&gt;90&quot;, not &quot;&gt; 90&quot;).</p>
+<p class="Pp">Each (aggregate, severity) pair recolors the test through its own
+    modifier slot (&quot;aggds:sum(%diskio_ops\..+\.rrd:reads):yellow&quot;), so
+    several AGGDS rules - including a warning and a critical rule on the same
+    aggregate - may drive one status test without overwriting each other's
+    verdicts.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
@@ -721,15 +771,16 @@ group Production databases
 <dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
 <dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
 <dt><a href="#FILE_FORMAT">FILE FORMAT</a></dt>
-<dt><a href="#CPU_STATUS_COLUMN_SETTINGS">CPU STATUS COLUMN SETTINGS</a></dt>
-<dt><a href="#DISK_STATUS_COLUMN_SETTINGS">DISK STATUS COLUMN SETTINGS</a></dt>
-<dt><a href="#MEMORY_STATUS_COLUMN_SETTINGS">MEMORY STATUS COLUMN SETTINGS</a></dt>
-<dt><a href="#PROCS_STATUS_COLUMN_SETTINGS">PROCS STATUS COLUMN SETTINGS</a></dt>
-<dt><a href="#MSGS_STATUS_COLUMN_SETTINGS">MSGS STATUS COLUMN SETTINGS</a></dt>
-<dt><a href="#FILES_STATUS_COLUMN_SETTINGS">FILES STATUS COLUMN SETTINGS</a></dt>
-<dt><a href="#PORTS_STATUS_COLUMN_SETTINGS">PORTS STATUS COLUMN SETTINGS</a></dt>
+<dt><a href="#CPU_STATUS_TEST_SETTINGS">CPU STATUS TEST SETTINGS</a></dt>
+<dt><a href="#DISK_STATUS_TEST_SETTINGS">DISK STATUS TEST SETTINGS</a></dt>
+<dt><a href="#MEMORY_STATUS_TEST_SETTINGS">MEMORY STATUS TEST SETTINGS</a></dt>
+<dt><a href="#PROCS_STATUS_TEST_SETTINGS">PROCS STATUS TEST SETTINGS</a></dt>
+<dt><a href="#MSGS_STATUS_TEST_SETTINGS">MSGS STATUS TEST SETTINGS</a></dt>
+<dt><a href="#FILES_STATUS_TEST_SETTINGS">FILES STATUS TEST SETTINGS</a></dt>
+<dt><a href="#PORTS_STATUS_TEST_SETTINGS">PORTS STATUS TEST SETTINGS</a></dt>
 <dt><a href="#SVCS_status_(Microsoft_Windows_clients)">SVCS status (Microsoft Windows clients)</a></dt>
 <dt><a href="#DS_-_RRD_based_status_override">DS - RRD based status override</a></dt>
+<dt><a href="#AGGDS_-_RRD_based_status_override_on_an_aggregate">AGGDS - RRD based status override on an aggregate</a></dt>
 <dt><a href="#MQ_Series_SETTINGS">MQ Series SETTINGS</a></dt>
 <dt><a href="#CHANGING_THE_DEFAULT_SETTINGS">CHANGING THE DEFAULT SETTINGS</a></dt>
 <dt><a href="#RULES_TO_SELECT_HOSTS">RULES TO SELECT HOSTS</a></dt>
