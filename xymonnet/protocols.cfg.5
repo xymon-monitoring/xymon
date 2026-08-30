@@ -153,10 +153,36 @@ it is a stronger statement than merely failing to match.
 .sp
 \fBstate\fR names the state that follows it -- the expects up to the next
 step that is not one -- and is what a \fB\->\fR aims at, so naming a state
-and marking a jump target are the same act. Naming them is optional, but
-worth doing: a dialogue that fails reports the state it failed in, and
+and marking a jump target are the same act.
+.sp
+Naming them is optional, but worth doing: a dialogue that fails reports
+the state it failed in, and
 "state want-password expected 334" tells an operator what "step 7"
 does not.
+.sp
+\fBLayout.\fR An entry that uses states is written the same way
+throughout this page: the entry attributes -- \fBoptions\fR,
+\fBport\fR, \fBtransport\fR, \fBstart\fR -- first, in any order
+among themselves, because they describe the definition rather than any
+step; then the states, each with its lines indented under it.
+.sp
+A state does one thing and waits for one answer: at most one action --
+a \fBsend\fR, a \fBstarttls\fR, a \fBcredentials\fR -- the clock
+that bounds the wait, and the \fBexpect\fR lines that end the state,
+each naming where its answer leads. A state that acts without waiting
+leaves on \fBalways\fR; a state that only decides on a value already
+bound needs no action at all. Written that way an entry is the machine
+it describes, and the order of the lines within a state carries no
+meaning of its own.
+.sp
+The parser enforces none of this. It takes an attribute anywhere in the
+block, ignores indentation, accepts several actions and several waits in
+one state, and accepts an \fBexpect\fR with no \fB\->\fR, which
+continues with the step below it -- the shape the classic entries at the
+top of this page use. One ordering rule survives and is real: a
+\fBtimeout\fR or \fBidle\fR arms the wait that follows it, so a clock
+written below a state's \fBexpect\fR lines bounds nothing.
+.sp
 This is how a soft error is told apart from a hard one instead of both
 timing out:
 .br
@@ -352,6 +378,42 @@ The checks in DIAGNOSTICS below are made against the entry as written,
 not against any host's depth. Under \fBok=greeting\fR everything
 downstream is legitimately unreachable, and the checks do not know that.
 
+.SH CONVENTIONS
+The parser accepts an attribute anywhere in a block, ignores indentation,
+takes several actions and several waits in one state, and accepts an
+\fBexpect\fR that names no target. None of what follows is enforced by
+it; it is how every entry in this page and in the shipped protocols.cfg
+is written, and what a reader is entitled to assume:
+.br
+.sp
+.nf
+\&   1  entry attributes -- options, port, transport, start -- come
+\&      before the first state, in any order among themselves
+\&   2  a state's lines are indented under it
+\&   3  a state holds at most one action: send, starttls, credentials
+\&   4  every expect names where it goes: "\-> TARGET"
+\&   5  a clock -- timeout or idle -- is written above the expects it
+\&      bounds, because it arms the wait that FOLLOWS it
+.fi
+.sp
+Rule 5 is the one that bites: a clock written below a state's
+\fBexpect\fR lines bounds nothing, and nothing says so. The others are
+legibility -- an entry written this way reads as the machine it
+describes, and one that is not still runs.
+.sp
+A definition that means to break a rule says so, with a comment the
+parser ignores and a reader does not:
+.br
+.sp
+.nf
+\&   [legacy]
+\&      # conventions: permissive -- one expect, no state to move to
+.fi
+.sp
+The regression suite checks every entry in this page, in the shipped
+protocols.cfg and in the test fixtures against these five rules, so the
+page and the files cannot drift apart unnoticed.
+
 .SH EXAMPLES
 An SMTP service that upgrades to TLS when the server offers it, reports
 a server that does not offer it as yellow rather than down, and reads the
@@ -360,38 +422,69 @@ certificate off the upgraded session:
 .sp
 .nf
 \&   [smtp\-tls]
-\&      state greeting
-\&      timeout(10)         \-> fail
-\&      expect "220"
-\&      send "ehlo xymonnet\er\en"
-\&      expect "250" until "250 " as caps
-\&      caps ~ "STARTTLS"   \-> upgrade
-\&      else                \-> warning
-\&
-\&      state upgrade
-\&      timeout(10)         \-> fail
-\&      send "starttls\er\en"
-\&      expect "220"        \-> secure
-\&      expect "454"        \-> warning
-\&
-\&      state secure
-\&      timeout(10)         \-> fail
-\&      starttls
-\&      send "ehlo xymonnet\er\en"
-\&      expect "250" until "250 "
-\&      send "quit\er\en"
-\&      expect "221"        \-> success
 \&      options banner
 \&      port 25
+\&      start greeting
+\&
+\&      state greeting
+\&         timeout(10)                        \-> fail
+\&         expect "220"                       \-> ehlo
+\&
+\&      state ehlo
+\&         send "ehlo xymonnet\er\en"
+\&         timeout(30)                        \-> fail
+\&         expect "250" until "250 " as caps  \-> offers
+\&
+\&      state offers
+\&         caps ~ "STARTTLS"                  \-> upgrade
+\&         else                               \-> warning
+\&
+\&      state upgrade
+\&         send "starttls\er\en"
+\&         timeout(10)                        \-> fail
+\&         expect "220"                       \-> secure
+\&         expect "454"                       \-> warning
+\&
+\&      state secure
+\&         starttls
+\&         always                             \-> ehlo\-tls
+\&
+\&      state ehlo\-tls
+\&         send "ehlo xymonnet\er\en"
+\&         timeout(10)                        \-> fail
+\&         expect "250" until "250 "          \-> farewell
+\&
+\&      state farewell
+\&         send "quit\er\en"
+\&         timeout(10)                        \-> fail
+\&         expect "221"                       \-> success
 .fi
 .sp
-Note also that this is deliberately NOT what the shipped \fB[smtp]\fR
-entry does. protocols.cfg is one file for the whole installation, so an
-entry that expects STARTTLS would change what every existing host
-reports the moment the file is installed -- a site whose mail server
-offers no STARTTLS would turn yellow because it upgraded, not because
-anything changed at the site. Copy this under a new name and point the
-hosts that should use it at that name instead.
+A state does one thing and then waits for one answer: at most one
+action -- a \fBsend\fR, a \fBstarttls\fR, a \fBcredentials\fR -- the
+clock that bounds the wait, and the \fBexpect\fR lines that end the
+state by naming where each answer leads. \fBsecure\fR upgrades and does
+nothing else, so it leaves on \fBalways\fR; \fBoffers\fR waits for
+nothing at all and decides on a value it already holds.
+.sp
+Because a state holds one action and one wait, the order of its lines
+carries no meaning of its own -- with one exception the parser has not
+been taught: a \fBtimeout\fR or \fBidle\fR arms the wait that follows
+it, so a clock written below the \fBexpect\fR lines bounds nothing.
+Keep it above them, as every example here does.
+.sp
+The entry attributes -- \fBoptions\fR, \fBport\fR, \fBtransport\fR,
+\fBstart\fR -- describe the definition rather than any step, so they
+are written together at the top, in any order among themselves.
+.sp
+This is deliberately a service of its own rather than a deeper
+\fB[smtp]\fR. protocols.cfg is one file for the whole installation, so
+teaching \fB[smtp]\fR to expect STARTTLS would change what every
+existing host reports the moment the file is installed -- a site whose
+mail server offers none would turn yellow because it upgraded, not
+because anything changed at the site. Point the hosts that should have
+the deeper check at \fBsmtp\-tls\fR, or keep \fB[smtp]\fR and give
+those hosts \fBsmtp:ok=\fR\fISTATE\fR instead.
 
 .SH DIAGNOSTICS
 This file is checked when it is read rather than when a step runs, so a

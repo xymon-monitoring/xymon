@@ -62,24 +62,27 @@ register_cleanup "kill $(cat "$work/p1.pid") $(cat "$work/p2.pid") 2>/dev/null |
 printf '127.0.0.1\thost\t# stopped slow\n' > "$work/home/etc/hosts.cfg"
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [stopped]
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   state waiting
-   idle(3)                     -> warning
-   timeout(30)                 -> fail
-   expect "250"                -> success
    options banner
    port $pstop
-
-[slow]
    expect "220"
    send "ehlo xymonnet\r\n"
+
    state waiting
-   idle(3)                     -> warning
-   timeout(30)                 -> fail
-   expect "250" until "250 "   -> success
+      idle(3)                     -> warning
+      timeout(30)                 -> fail
+      expect "250"                -> success
+
+[slow]
    options banner
    port $pslow
+   expect "220"
+   send "ehlo xymonnet\r\n"
+
+   state waiting
+      idle(3)                     -> warning
+      timeout(30)                 -> fail
+      expect "250" until "250 "   -> success
+
 CFG
 
 start=$(date +%s)

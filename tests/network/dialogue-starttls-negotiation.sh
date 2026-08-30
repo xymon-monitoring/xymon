@@ -100,100 +100,120 @@ done
 # The two entries spell the same step differently on purpose. [tlsup] writes
 # all four clauses on one line -- expect, until, as, and the edge -- which is
 # the form the manual prints under "expect ... as NAME" and which nothing else
-# in the suite covers. [tlsnone] leaves the edge off and falls through to the
-# '~' below it. Both must reach the same state, or one of the two spellings is
-# documented and not implemented.
+# in the suite covers, and every expect in it ends its state by naming the
+# next. [tlsnone] uses the permissive spelling the parser also accepts, where
+# an expect names no target and falls through to the step below it. Both must
+# reach the same verdicts, or one of the two is documented and not
+# implemented.
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [tlsup]
-   state greeting
-   timeout(10)         -> fail
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   expect "250" until "250 " as caps   -> offers
-   state offers
-   caps ~ "STARTTLS"   -> upgrade
-   else                -> warning
-
-   state upgrade
-   timeout(10)         -> fail
-   send "starttls\r\n"
-   expect "220"        -> secure
-   expect "454"        -> warning
-
-   state secure
-   timeout(10)         -> fail
-   starttls
-   send "ehlo xymonnet\r\n"
-   expect "250" until "250 "
-   send "quit\r\n"
-   expect "221"        -> success
    options banner
    port $pup
 
-[tlsnone]
    state greeting
-   timeout(10)         -> fail
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   expect "250" until "250 " as caps
-   caps ~ "STARTTLS"   -> upgrade
-   else                -> warning
+      timeout(10)                        -> fail
+      expect "220"                       -> ehlo
+
+   state ehlo
+      send "ehlo xymonnet\r\n"
+      timeout(10)                        -> fail
+      expect "250" until "250 " as caps  -> offers
+
+   state offers
+      caps ~ "STARTTLS"                  -> upgrade
+      else                               -> warning
 
    state upgrade
-   timeout(10)         -> fail
-   send "starttls\r\n"
-   expect "220"        -> secure
-   expect "454"        -> warning
+      send "starttls\r\n"
+      timeout(10)                        -> fail
+      expect "220"                       -> secure
+      expect "454"                       -> warning
 
    state secure
-   timeout(10)         -> fail
-   starttls
-   send "quit\r\n"
-   expect "221"        -> success
+      starttls
+      always                             -> ehlo-tls
+
+   state ehlo-tls
+      send "ehlo xymonnet\r\n"
+      timeout(10)                        -> fail
+      expect "250" until "250 "          -> farewell
+
+   state farewell
+      send "quit\r\n"
+      timeout(10)                        -> fail
+      expect "221"                       -> success
+
+[tlsnone]
+   # conventions: permissive -- the fall-through spelling, kept covered on purpose
    options banner
    port $pno
 
-[tls454a]
    state greeting
-   timeout(10)         -> fail
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   expect "250" until "250 "
+      timeout(10)         -> fail
+      expect "220"
+      send "ehlo xymonnet\r\n"
+      expect "250" until "250 " as caps
+      caps ~ "STARTTLS"   -> upgrade
+      else                -> warning
 
    state upgrade
-   timeout(10)         -> fail
-   send "starttls\r\n"
-   expect "220"        -> secure
-   expect "454"        -> warning
+      timeout(10)         -> fail
+      send "starttls\r\n"
+      expect "220"        -> secure
+      expect "454"        -> warning
 
    state secure
-   timeout(10)         -> fail
-   starttls
-   send "quit\r\n"
-   expect "221"        -> success
+      timeout(10)         -> fail
+      starttls
+      send "quit\r\n"
+      expect "221"        -> success
+
+[tls454a]
+   # conventions: permissive -- alternatives in both orders, the point of this pair
    options banner
    port $pra
 
-[tls454b]
    state greeting
-   timeout(10)         -> fail
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   expect "250" until "250 "
+      timeout(10)         -> fail
+      expect "220"
+      send "ehlo xymonnet\r\n"
+      expect "250" until "250 "
 
    state upgrade
-   timeout(10)         -> fail
-   send "starttls\r\n"
-   expect "454"        -> warning
-   expect "220"        -> secure
+      timeout(10)         -> fail
+      send "starttls\r\n"
+      expect "220"        -> secure
+      expect "454"        -> warning
 
    state secure
-   timeout(10)         -> fail
-   starttls
-   send "quit\r\n"
-   expect "221"        -> success
+      timeout(10)         -> fail
+      starttls
+      send "quit\r\n"
+      expect "221"        -> success
+
+[tls454b]
+   # conventions: permissive -- alternatives in both orders, the point of this pair
    options banner
    port $prb
+
+   state greeting
+      timeout(10)         -> fail
+      expect "220"
+      send "ehlo xymonnet\r\n"
+      expect "250" until "250 "
+
+   state upgrade
+      timeout(10)         -> fail
+      send "starttls\r\n"
+      expect "454"        -> warning
+      expect "220"        -> secure
+
+   state secure
+      timeout(10)         -> fail
+      starttls
+      send "quit\r\n"
+      expect "221"        -> success
+
 CFG
 
 printf '127.0.0.1\tup\t# tlsup\n127.0.0.1\tnone\t# tlsnone\n' > "$work/home/etc/hosts.cfg"

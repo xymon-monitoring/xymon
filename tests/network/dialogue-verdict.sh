@@ -76,14 +76,17 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    port $pok
 
 [dlgbad]
-   state greeting
-   expect "220"
-   send "ehlo xymonnet\r\n"
-   state capabilities
-   expect "250"
-   send "quit\r\n"
+   # conventions: permissive -- a dialogue that stops mid-way, written the old way
    options banner
    port $pbad
+
+   state greeting
+      expect "220"
+      send "ehlo xymonnet\r\n"
+
+   state capabilities
+      expect "250"
+      send "quit\r\n"
 
 [legacy]
    send "probe\r\n"

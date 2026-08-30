@@ -54,15 +54,17 @@ printf '127.0.0.1\thost\t# eofok eofbad udpsvc\n' > "$work/home/etc/hosts.cfg"
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [eofok]
    transport tcp
-   start greeting
-   state farewell
-   send "quit\r\n"
-   eof                         -> success
-   expect "221"                -> success
-   state greeting
-   expect "220"                -> farewell
    options banner
    port $p1
+   start greeting
+
+   state farewell
+      send "quit\r\n"
+      eof                         -> success
+      expect "221"                -> success
+
+   state greeting
+      expect "220"                -> farewell
 
 [eofbad]
    expect "220"

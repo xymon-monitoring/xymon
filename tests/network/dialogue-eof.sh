@@ -48,14 +48,16 @@ register_cleanup "kill $(cat "$work/p1.pid") $(cat "$work/p2.pid") $(cat "$work/
 printf '127.0.0.1\thost\t# eofok eofbad\n' > "$work/home/etc/hosts.cfg"
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [eofok]
-   state greeting
-   expect "220"                -> farewell
-   state farewell
-   send "quit\r\n"
-   eof                         -> success
-   expect "221"                -> success
    options banner
    port $p1
+
+   state greeting
+      expect "220"                -> farewell
+
+   state farewell
+      send "quit\r\n"
+      eof                         -> success
+      expect "221"                -> success
 
 [eofbad]
    expect "220"

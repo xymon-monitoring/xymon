@@ -166,11 +166,34 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         match.</p>
     <p class="Pp"><b>state</b> names the state that follows it -- the expects up
         to the next step that is not one -- and is what a <b>-&gt;</b> aims at,
-        so naming a state and marking a jump target are the same act. Naming
-        them is optional, but worth doing: a dialogue that fails reports the
-        state it failed in, and &quot;state want-password expected 334&quot;
-        tells an operator what &quot;step 7&quot; does not. This is how a soft
-        error is told apart from a hard one instead of both timing out:</p>
+        so naming a state and marking a jump target are the same act.</p>
+    <p class="Pp">Naming them is optional, but worth doing: a dialogue that
+        fails reports the state it failed in, and &quot;state want-password
+        expected 334&quot; tells an operator what &quot;step 7&quot; does
+      not.</p>
+    <p class="Pp"><b>Layout.</b> An entry that uses states is written the same
+        way throughout this page: the entry attributes -- <b>options</b>,
+        <b>port</b>, <b>transport</b>, <b>start</b> -- first, in any order among
+        themselves, because they describe the definition rather than any step;
+        then the states, each with its lines indented under it.</p>
+    <p class="Pp">A state does one thing and waits for one answer: at most one
+        action -- a <b>send</b>, a <b>starttls</b>, a <b>credentials</b> -- the
+        clock that bounds the wait, and the <b>expect</b> lines that end the
+        state, each naming where its answer leads. A state that acts without
+        waiting leaves on <b>always</b>; a state that only decides on a value
+        already bound needs no action at all. Written that way an entry is the
+        machine it describes, and the order of the lines within a state carries
+        no meaning of its own.</p>
+    <p class="Pp">The parser enforces none of this. It takes an attribute
+        anywhere in the block, ignores indentation, accepts several actions and
+        several waits in one state, and accepts an <b>expect</b> with no
+        <b>-&gt;</b>, which continues with the step below it -- the shape the
+        classic entries at the top of this page use. One ordering rule survives
+        and is real: a <b>timeout</b> or <b>idle</b> arms the wait that follows
+        it, so a clock written below a state's <b>expect</b> lines bounds
+        nothing.</p>
+    <p class="Pp">This is how a soft error is told apart from a hard one instead
+        of both timing out:</p>
     <p class="Pp"></p>
     <pre>   expect &quot;250&quot; -&gt; ready
    expect &quot;421&quot; -&gt; fail</pre>
@@ -370,40 +393,94 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 </section>
 <section class="Sh">
 <p>&#160;</p>
+<h1 class="Sh" id="CONVENTIONS"><a class="permalink" href="#CONVENTIONS">CONVENTIONS</a></h1>
+<p class="Pp">The parser accepts an attribute anywhere in a block, ignores
+    indentation, takes several actions and several waits in one state, and
+    accepts an <b>expect</b> that names no target. None of what follows is
+    enforced by it; it is how every entry in this page and in the shipped
+    protocols.cfg is written, and what a reader is entitled to assume:</p>
+<p class="Pp"></p>
+<pre>   1  entry attributes -- options, port, transport, start -- come
+      before the first state, in any order among themselves
+   2  a state's lines are indented under it
+   3  a state holds at most one action: send, starttls, credentials
+   4  every expect names where it goes: &quot;-&gt; TARGET&quot;
+   5  a clock -- timeout or idle -- is written above the expects it
+      bounds, because it arms the wait that FOLLOWS it</pre>
+<p class="Pp">Rule 5 is the one that bites: a clock written below a state's
+    <b>expect</b> lines bounds nothing, and nothing says so. The others are
+    legibility -- an entry written this way reads as the machine it describes,
+    and one that is not still runs.</p>
+<p class="Pp">A definition that means to break a rule says so, with a comment
+    the parser ignores and a reader does not:</p>
+<p class="Pp"></p>
+<pre>   [legacy]
+      # conventions: permissive -- one expect, no state to move to</pre>
+<p class="Pp">The regression suite checks every entry in this page, in the
+    shipped protocols.cfg and in the test fixtures against these five rules, so
+    the page and the files cannot drift apart unnoticed.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
 <h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
 <p class="Pp">An SMTP service that upgrades to TLS when the server offers it,
     reports a server that does not offer it as yellow rather than down, and
     reads the certificate off the upgraded session:</p>
 <p class="Pp"></p>
 <pre>   [smtp-tls]
-      state greeting
-      timeout(10)         -&gt; fail
-      expect &quot;220&quot;
-      send &quot;ehlo xymonnet\r\n&quot;
-      expect &quot;250&quot; until &quot;250 &quot; as caps
-      caps ~ &quot;STARTTLS&quot;   -&gt; upgrade
-      else                -&gt; warning
-      state upgrade
-      timeout(10)         -&gt; fail
-      send &quot;starttls\r\n&quot;
-      expect &quot;220&quot;        -&gt; secure
-      expect &quot;454&quot;        -&gt; warning
-      state secure
-      timeout(10)         -&gt; fail
-      starttls
-      send &quot;ehlo xymonnet\r\n&quot;
-      expect &quot;250&quot; until &quot;250 &quot;
-      send &quot;quit\r\n&quot;
-      expect &quot;221&quot;        -&gt; success
       options banner
-      port 25</pre>
-<p class="Pp">Note also that this is deliberately NOT what the shipped
-    <b>[smtp]</b> entry does. protocols.cfg is one file for the whole
-    installation, so an entry that expects STARTTLS would change what every
-    existing host reports the moment the file is installed -- a site whose mail
-    server offers no STARTTLS would turn yellow because it upgraded, not because
-    anything changed at the site. Copy this under a new name and point the hosts
-    that should use it at that name instead.</p>
+      port 25
+      start greeting
+      state greeting
+         timeout(10)                        -&gt; fail
+         expect &quot;220&quot;                       -&gt; ehlo
+      state ehlo
+         send &quot;ehlo xymonnet\r\n&quot;
+         timeout(30)                        -&gt; fail
+         expect &quot;250&quot; until &quot;250 &quot; as caps  -&gt; offers
+      state offers
+         caps ~ &quot;STARTTLS&quot;                  -&gt; upgrade
+         else                               -&gt; warning
+      state upgrade
+         send &quot;starttls\r\n&quot;
+         timeout(10)                        -&gt; fail
+         expect &quot;220&quot;                       -&gt; secure
+         expect &quot;454&quot;                       -&gt; warning
+      state secure
+         starttls
+         always                             -&gt; ehlo-tls
+      state ehlo-tls
+         send &quot;ehlo xymonnet\r\n&quot;
+         timeout(10)                        -&gt; fail
+         expect &quot;250&quot; until &quot;250 &quot;          -&gt; farewell
+      state farewell
+         send &quot;quit\r\n&quot;
+         timeout(10)                        -&gt; fail
+         expect &quot;221&quot;                       -&gt; success</pre>
+<p class="Pp">A state does one thing and then waits for one answer: at most one
+    action -- a <b>send</b>, a <b>starttls</b>, a <b>credentials</b> -- the
+    clock that bounds the wait, and the <b>expect</b> lines that end the state
+    by naming where each answer leads. <b>secure</b> upgrades and does nothing
+    else, so it leaves on <b>always</b>; <b>offers</b> waits for nothing at all
+    and decides on a value it already holds.</p>
+<p class="Pp">Because a state holds one action and one wait, the order of its
+    lines carries no meaning of its own -- with one exception the parser has not
+    been taught: a <b>timeout</b> or <b>idle</b> arms the wait that follows it,
+    so a clock written below the <b>expect</b> lines bounds nothing. Keep it
+    above them, as every example here does.</p>
+<p class="Pp">The entry attributes -- <b>options</b>, <b>port</b>,
+    <b>transport</b>, <b>start</b> -- describe the definition rather than any
+    step, so they are written together at the top, in any order among
+    themselves.</p>
+<p class="Pp">This is deliberately a service of its own rather than a deeper
+    <b>[smtp]</b>. protocols.cfg is one file for the whole installation, so
+    teaching <b>[smtp]</b> to expect STARTTLS would change what every existing
+    host reports the moment the file is installed -- a site whose mail server
+    offers none would turn yellow because it upgraded, not because anything
+    changed at the site. Point the hosts that should have the deeper check at
+    <b>smtp-tls</b>, or keep <b>[smtp]</b> and give those hosts
+    <b>smtp:ok=</b><i>STATE</i> instead.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
@@ -453,6 +530,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
 <dt><a href="#FILE_FORMAT">FILE FORMAT</a></dt>
 <dt><a href="#PER-HOST_DEPTH_AND_CREDENTIALS">PER-HOST DEPTH AND CREDENTIALS</a></dt>
+<dt><a href="#CONVENTIONS">CONVENTIONS</a></dt>
 <dt><a href="#EXAMPLES">EXAMPLES</a></dt>
 <dt><a href="#DIAGNOSTICS">DIAGNOSTICS</a></dt>
 <dt><a href="#FILES">FILES</a></dt>
