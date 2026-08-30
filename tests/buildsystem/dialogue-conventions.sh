@@ -14,8 +14,8 @@
 # This checks every entry we publish or test against the rules the manual
 # lists under CONVENTIONS:
 #
-#   R1  entry attributes (options, port, transport, start, framing) come before the
-#       first state, since they describe the definition and not a step
+#   R1  entry attributes (options, port, transport, start, framing, ignore) come
+#       before the first state, since they describe the definition and not a step
 #   R2  a state's lines are indented under it
 #   R3  a state holds at most one action (send, starttls, credentials)
 #   R4  every expect in a state names where it goes: "-> TARGET"
@@ -46,12 +46,18 @@ stream="$work/entries.txt"        # FILE<TAB>LINENO<TAB>TEXT
 
 # --- extract config text from each kind of source ----------------------------
 extract_roff() {	# man page: literal lines start with "\&"
-	awk -v F="$1" 'substr($0,1,2)=="\\&" {
-		t=substr($0,3)
-		gsub(/\\-/,"-",t); gsub(/\\er/,"\\r",t); gsub(/\\en/,"\\n",t)
-		gsub(/\\e/,"\\",t); gsub(/\\f[BIRP]/,"",t)
-		print F "\t" NR "\t" t
-	}' "$1" >> "$stream"
+	# ".fi" ends a literal block, and an entry never spans two of them. Without
+	# that marker the blocks run together: an example that illustrates one
+	# directive is read as more of the entry above it, and is judged as part of
+	# an entry it was never in.
+	awk -v F="$1" '
+		/^\.fi/ { print F "\t" NR "\t" "."; next }
+		substr($0,1,2)=="\\&" {
+			t=substr($0,3)
+			gsub(/\\-/,"-",t); gsub(/\\er/,"\\r",t); gsub(/\\en/,"\\n",t)
+			gsub(/\\e/,"\\",t); gsub(/\\f[BIRP]/,"",t)
+			print F "\t" NR "\t" t
+		}' "$1" >> "$stream"
 }
 extract_fenced() {	# markdown: inside ``` fences
 	awk -v F="$1" '
@@ -107,7 +113,7 @@ function flush_state(   i) {
 	# A block of literal text in a manual is not always an entry: the
 	# DIAGNOSTICS table is set the same way. Anything that is not a
 	# directive ends the entry rather than being judged as part of it.
-	if (text !~ /^(state|send|expect|starttls|credentials|options|port|transport|start|always|eof|else)([[:space:]]|$)/ &&
+	if (text !~ /^(state|send|expect|starttls|credentials|options|port|transport|start|framing|ignore|always|eof|else)([[:space:]]|$)/ &&
 	    text !~ /^(timeout|idle)\(/ &&
 	    text !~ /^[A-Za-z_][A-Za-z0-9_-]*[[:space:]]+~[[:space:]]/) {
 		flush_state(); entry=""; next
@@ -125,7 +131,7 @@ function flush_state(   i) {
 		next
 	}
 
-	if (text ~ /^(options|port|transport|start|framing)[[:space:]]/) {
+	if (text ~ /^(options|port|transport|start|framing|ignore)[[:space:]]/) {
 		if (seen_state && !permissive)
 			bad[++n] = sprintf("%s:%d  R1  %s writes \"%s\" after a state; attributes describe the definition and come first",
 					   file, lineno, entry, text)

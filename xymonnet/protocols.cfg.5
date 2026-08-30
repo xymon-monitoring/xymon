@@ -327,19 +327,47 @@ start on the first byte sent after the go-ahead, and data arriving
 before it is the STARTTLS plaintext-injection flaw.
 
 .IP "\fBVariable expansion\fR"
-A \fBsend\fR string may refer to captured values, and to two transforms
-of them:
+A \fBsend\fR string may refer to captured values, and to transforms of
+them:
 .br
 .sp
 .nf
-\&   ${name}       a captured value
-\&   ${md5:TEXT}   MD5 of TEXT, in lowercase hex
-\&   ${base64:TEXT}   TEXT in base64
+\&   ${name}                 a captured value
+\&   ${md5:TEXT}             MD5 of TEXT, in lowercase hex
+\&   ${sha1:TEXT}            likewise sha224, sha256, sha384,
+\&                           sha512 and rmd160
+\&   ${hmac\-md5:KEY,TEXT}    HMAC (RFC 2104), in lowercase hex;
+\&                           likewise hmac\-sha1, hmac\-sha224,
+\&                           hmac\-sha256, hmac\-sha384, hmac\-sha512
+\&   ${base64:TEXT}          TEXT in base64
+\&   ${unbase64:TEXT}        TEXT decoded from base64
+\&   ${hex:TEXT}             TEXT in lowercase hex
+\&   ${len:TEXT}             the number of bytes in TEXT, in decimal
 .fi
 .sp
 Expansion is recursive, so a digest may be taken of other values -- APOP
-is \fB${md5:${challenge}${password}}\fR. An unset name expands to
-nothing.
+is \fB${md5:${challenge}${password}}\fR and CRAM\-MD5, whose challenge
+arrives base64 and is hashed decoded, is
+.br
+.sp
+.nf
+\&   ${base64:${username} ${hmac\-md5:${password},${unbase64:${chal}}}}
+.fi
+.sp
+An unset name expands to nothing, and a mistyped function is refused when
+the file is read rather than expanding to nothing at run time.
+.sp
+A hash is not an HMAC: CRAM\-MD5, the MySQL login and the SCRAM family
+that PostgreSQL, MongoDB and AMQP use are keyed, and no nesting of
+\fB${md5:}\fR produces one. \fB${hmac\-*}\fR takes two arguments split at
+the first comma the FILE writes -- the split is made before either half
+is expanded, so a password or a challenge containing a comma is not
+mistaken for the separator.
+.sp
+Every argument is passed by length, so a value read from a framed reply
+keeps its NUL bytes through a digest or an encoding, and
+\fB${unbase64:}\fR -- whose result is bytes rather than text, and is
+usually a salt or a nonce -- carries its own.
 
 .IP "\fBignore\fR \fIPREFIX\fR"
 A message the server sends unprompted. IMAP emits untagged "*" lines
@@ -364,10 +392,29 @@ the connection rather than one reply, so it is written on the entry.
 \&      port 143
 .fi
 .sp
-A prefix that also starts an \fBexpect\fR is refused when the file is
-read: the reply would be swallowed as noise or taken as the answer, and
-nothing in the file would say which. That is the same ambiguity, and the
-same completeness argument, as two overlapping alternatives.
+Whether a message is noise depends on WHERE it arrives, not on how it
+begins. The alternatives of the current state are tried first, and a
+message is skipped only when none of them could be it -- so a prefix
+that also starts an \fBexpect\fR is no ambiguity, and IMAP, whose
+greeting is itself an untagged \fB"* OK"\fR line, is written the obvious
+way:
+.br
+.sp
+.nf
+\&   [imap]
+\&      ignore "* "
+\&      port 143
+\&
+\&      state greeting
+\&         expect "* OK"       \-> ask
+\&
+\&      state ask
+\&         send "A01 CAPABILITY\er\en"
+\&         expect "A01 OK"     \-> success
+.fi
+.sp
+The greeting is the answer its state waits for; the untagged lines the
+server sends afterwards, while \fBA01 OK\fR is awaited, are not.
 
 .IP "\fBframing\fR \fBline\fR"
 .IP "\fBframing\fR \fBlength(\fR\fIWIDTH\fR\fB,\fR \fBbig\fR|\fBlittle\fR\fB)\fR"
@@ -403,6 +450,19 @@ not line-shaped at all.
 \&   framing terminator "\er\en\er\en"    a blank line ends the message
 \&   framing terminator "<END>"       a sentinel of your own
 .fi
+.sp
+Framing describes the connection and not one direction of it, so a
+\fBsend\fR is framed the same way a reply is read: under \fBlength\fR the
+count is written in front of the message, in the declared width and byte
+order, and under \fBterminator\fR the sequence is appended. Neither can
+be written in the file, because the length of an expanded \fB${...}\fR is
+not known until the step runs -- which is why a length\-framed request
+carrying a value was not expressible before.
+.sp
+\fBline\fR is left alone: its entries write their own \fB"\er\en"\fR, and
+adding one would change every send that exists. A message too long for
+its own count -- 300 bytes under \fBlength(1)\fR -- fails by name rather
+than being written with a count that wrapped.
 .sp
 It describes the connection, not one reply, so it is written once as an
 entry attribute. \fBuntil\fR and \fBexpect bytes(\fR\fIN\fR\fB)\fR are
@@ -591,7 +651,9 @@ names the service. The ones worth knowing:
 \&   'framing terminator' needs a quoted sequence
 \&   'ignore' needs a quoted prefix
 \&   more than 8 'ignore' prefixes
-\&   'ignore \"X\"' and 'expect \"Y\"' share a start
+\&   a N\-byte 'send' does not fit the W\-byte length prefix
+\&   a N\-byte message does not fit the W\-byte length prefix
+\&   ${f:...} takes KEY,MESSAGE \- there is no comma in it
 \&   framing length width is 1..4 bytes
 \&   framing length endianness is 'big' or 'little'
 \&   framed message of N bytes is over the 32768 a conversation may hold
