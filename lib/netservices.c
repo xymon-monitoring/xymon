@@ -598,6 +598,50 @@ static void resolve_svcsteps(svcinfo_t *rec)
  *
  * Run after resolve_svcsteps(), which is what turns targets into pointers.
  */
+/*
+ * A send longer than its own length prefix can announce.
+ *
+ * Under "framing length(W)" the driver writes the count, so a message of
+ * more than 2^(8W)-1 bytes cannot be framed at all: the count would wrap,
+ * the peer would read a short message and resynchronise on the rest of it
+ * as though it were the next one. When the send carries no ${...} its
+ * length is known HERE, and the same argument every other check in this
+ * file makes applies -- what is decidable when the file is read is refused
+ * then, not left to surprise somebody at the step.
+ *
+ * A send that does expand is left to the driver. What an expansion is worth
+ * is not knowable until it runs, and that is the one thing about a dialogue
+ * that reading the file cannot settle.
+ */
+static void refuse_unframeable_sends(svcinfo_t *rec)
+{
+	svcstep_t *st;
+	unsigned int cap;
+
+	if (rec->framing != FRAMING_LENGTH) return;
+	if ((rec->framewidth < 1) || (rec->framewidth > 3)) return;   /* 4 holds anything */
+
+	cap = 1u << (8 * rec->framewidth);
+
+	for (st = rec->steps; (st); st = st->next) {
+		int i, expands = 0;
+
+		if ((st->type != STEP_SEND) || !st->text) continue;
+
+		for (i = 0; (i < st->len - 1); i++)
+			if ((st->text[i] == '$') && (st->text[i+1] == '{')) { expands = 1; break; }
+		if (expands) continue;
+
+		if ((unsigned int)st->len < cap) continue;
+
+		errprintf("Service %s: a %d-byte 'send' does not fit the %d-byte length "
+			  "prefix this entry frames with - it can announce %u\n",
+			  rec->svcname, st->len, rec->framewidth, cap - 1);
+		rec->flags |= TCP_DIALOGUE_BROKEN;
+	}
+}
+
+
 static void check_graph(svcinfo_t *rec)
 {
 	svcstep_t *st;
@@ -1766,6 +1810,7 @@ char *init_tcp_services(void)
 			}
 
 			check_undefined_vars(&svcinfo[i]);
+			refuse_unframeable_sends(&svcinfo[i]);
 			refuse_overlapping_groups(&svcinfo[i]);
 			refuse_misshapen_states(&svcinfo[i]);
 
