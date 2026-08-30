@@ -51,7 +51,18 @@ errline() {
 # otherwise be discovered, run as sh, define its functions, exit 0 -- and count
 # as a pass that verified nothing.
 tests=$(find tests -type f -name '*.sh' -perm -u+x \
-	! -path 'tests/lib/*' ! -path 'tests/fixtures/*' | sort)
+	! -path 'tests/lib/*' ! -path 'tests/fixtures/*' ! -path 'tests/final/*' | LC_ALL=C sort)
+
+# LC_ALL=C, so the order is the same everywhere: other collations ignore
+# punctuation and case, and "a-b.sh", "a_b.sh" and "ab.sh" then sort
+# differently from one machine to the next. Nothing should depend on order --
+# this is what makes that checkable rather than assumed.
+#
+# tests/final/ runs after everything else, whatever anything is named: it
+# checks what the suite LEAVES, which is only a fact once nothing else is
+# running. By filename it would break the day a later-sorting directory
+# appeared, and go on passing while checking nothing.
+finaltests=$(find tests/final -type f -name '*.sh' -perm -u+x 2>/dev/null | LC_ALL=C sort)
 
 # Zero discovered tests is a failure, not a quiet success: the runner ships
 # alongside the tests, so an empty result means something is wrong -- lost
@@ -62,13 +73,21 @@ if [ -z "$tests" ]; then
 	exit 1
 fi
 
+# Unset for a test invoked on its own, which is how a final check knows to skip.
+# One temp directory per run, with TMPDIR pointed at it so every test works
+# inside it. Two runs sharing $TMPDIR would otherwise see each other's live
+# files, and a leftovers check could not tell them from its own.
+__XYMON_TESTS_RUNROOT=$(mktemp -d "${TMPDIR:-/tmp}/xymon-run.XXXXXX") || exit 1
+export __XYMON_TESTS_RUNROOT
+TMPDIR=$__XYMON_TESTS_RUNROOT
+export TMPDIR
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT"' EXIT
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT"; exit 130' INT
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT"; exit 143' TERM
+
 pass=0; skip=0; fail=0; failed=''
-# Iterate line-by-line rather than `for t in $tests`: unquoted word-splitting
-# breaks on any path containing a space (find emits newline-separated paths, but
-# the default IFS splits on spaces and tabs too). The here-doc keeps the loop in
-# this shell -- not a `| while` subshell -- so the counters below survive it.
-while IFS= read -r t; do
-	[ -n "$t" ] || continue
+run_one() {
+	t=$1
 	group "$t"
 	"./$t"
 	rc=$?
@@ -81,8 +100,25 @@ while IFS= read -r t; do
 " ;;
 	esac
 	endgroup
+}
+
+# Iterate line-by-line rather than `for t in $tests`: unquoted word-splitting
+# breaks on any path containing a space (find emits newline-separated paths, but
+# the default IFS splits on spaces and tabs too). The here-doc keeps the loop in
+# this shell -- not a `| while` subshell -- so run_one's counters survive it.
+while IFS= read -r t; do
+	[ -n "$t" ] || continue
+	run_one "$t"
 done <<EOF
 $tests
+EOF
+
+# Everything else has finished; now the checks that are about what is left.
+while IFS= read -r t; do
+	[ -n "$t" ] || continue
+	run_one "$t"
+done <<EOF
+$finaltests
 EOF
 
 printf '\n----- summary -----\n'
