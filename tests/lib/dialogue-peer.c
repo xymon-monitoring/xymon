@@ -18,6 +18,9 @@
  *   recv PREFIX      read one line; record it, and record MISMATCH if it
  *                    does not begin with PREFIX
  *   recvany          read one line and record it
+ *   recvbytes N      read exactly N bytes and record them as hex, "gotbytes HEX".
+ *                    A payload that carries a NUL is neither a line nor a C
+ *                    string, so this is the only way to assert on one.
  *   hold N           stay connected and silent for N seconds
  *   dribble TEXT     send TEXT one byte per second
  *   replyall TEXT    answer TEXT to every further line, until EOF. Models a
@@ -212,6 +215,31 @@ int main(int argc, char *argv[])
 			fprintf(obs, "got %s\n", got);
 			if (*arg && strncmp(got, arg, strlen(arg)) != 0)
 				fprintf(obs, "MISMATCH want=%s got=%s\n", arg, got);
+		}
+		else if (strcmp(cmd, "recvbytes") == 0) {
+			int want = atoi(arg), have = 0;
+			char hex[2*512 + 1];
+
+			if (want < 1) want = 1;
+			if (want > 512) want = 512;
+			while (have < want) {
+				int r = io_read(buf + have, want - have);
+
+				if (r <= 0) break;
+				have += r;
+			}
+			if (have < want) {
+				/*
+				 * Record what DID arrive. A probe that truncated its
+				 * payload at a NUL sends fewer bytes than it was told
+				 * to, and the short count is the evidence.
+				 */
+				tohex((unsigned char *)buf, have, hex);
+				fprintf(obs, "shortbytes %d %s\n", have, hex);
+				break;
+			}
+			tohex((unsigned char *)buf, have, hex);
+			fprintf(obs, "gotbytes %s\n", hex);
 		}
 		else if (strcmp(cmd, "replyall") == 0) {
 			n = unescape(arg, buf, sizeof(buf));

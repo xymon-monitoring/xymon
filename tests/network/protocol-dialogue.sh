@@ -57,10 +57,11 @@ printf '%s\n' "$n" | grep -qE '\+\+guard *>' ||
 	fail "dlg_run_instant has no runaway guard -- a backward jump that does no
 I/O would hang xymonnet rather than failing the test"
 
-# md5hash() returns a static buffer; freeing it corrupts the allocator.
+# md5hash_len() returns a static buffer; freeing it corrupts the allocator.
 # Asserted positively -- the negative form passed for free when the grep
-# matched nothing at all.
-md5line=$(printf '%s\n' "$n" | grep 'md5hash(' | head -1)
+# matched nothing at all. Either spelling counts: the length-taking one is
+# what a dialogue calls, and md5hash() is the wrapper over it.
+md5line=$(printf '%s\n' "$n" | grep -E 'md5hash(_len)?\(' | head -1)
 [ -n "$md5line" ] ||
 	fail "no md5hash() call found -- either the md5 expansion is gone, or the
 comment stripper ate it and this assertion is passing for free"
