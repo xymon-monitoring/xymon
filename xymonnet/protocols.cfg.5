@@ -113,6 +113,21 @@ covers them without special-casing any:
 \&   expect "*"   until "A01 "     (IMAP: the command tag ends it)
 .fi
 
+.IP "\fBexpect\fR \fBbytes(\fR\fIN\fR\fB)\fR"
+Wait for a frame of \fIN\fR bytes and consume exactly that many. LDAP,
+MySQL, DNS over TCP and AMQP put a length in front of a message instead
+of ending it with a line, so neither a literal nor \fBuntil\fR can say
+where such a reply stops. Anything beyond the frame is kept for the next
+step, as with any other \fBexpect\fR.
+.sp
+A frame is decided by length and a literal by content, so the two cannot
+share a state: which of them took the reply would be unsayable. A state
+whose \fBexpect\fR is a frame holds that one alternative, and the
+clocks. \fBuntil\fR is refused on it, and \fIN\fR must be between 1 and
+32768 -- the same ceiling a conversation may buffer.
+.sp
+\fBas\fR works as it does elsewhere, binding the frame that was consumed.
+
 .IP "\fBexpect\fR \fISTRING\fR \fBas\fR \fINAME\fR"
 Bind the reply this \fBexpect\fR accepted to \fINAME\fR, for a later
 \fB~\fR line to read. It is written on the expect itself because that is
@@ -500,6 +515,9 @@ names the service. The ones worth knowing:
 \&   state 'NAME' has no way to finish   no path from it to a terminal
 \&   state 'NAME' waits for a reply with no timeout
 \&   'expect "A"' and 'expect "B"' overlap - both match the same reply
+\&   'expect bytes(N)' shares a state with another expect
+\&   'expect bytes(N) until ...' - a frame already ends the reply
+\&   'expect bytes(N)' is outside 1..32768
 \&   ${NAME} is never captured or bound before it is used
 \&   'NAME ~ ...' tests a value that is never bound before it
 \&   'NAME ~ "..." as X' has no capture group

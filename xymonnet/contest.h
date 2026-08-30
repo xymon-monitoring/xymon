@@ -89,10 +89,6 @@ typedef struct dlgvar_t {
 	struct dlgvar_t *next;
 } dlgvar_t;
 
-/* How much a single expect may accumulate before giving up. A server that
-   never sends the terminator must not be able to grow this without limit. */
-#define MAX_DIALOGUE_BYTES (32 * 1024)
-
 typedef struct tcptest_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
 	char *srcaddr;
