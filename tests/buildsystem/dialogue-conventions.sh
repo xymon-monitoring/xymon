@@ -14,10 +14,10 @@
 # This checks every entry we publish or test against the rules the manual
 # lists under CONVENTIONS:
 #
-#   R1  entry attributes (options, port, transport, start, framing, ignore) come
+#   R1  entry attributes (options, port, transport, begin, framing, ignore) come
 #       before the first state, since they describe the definition and not a step
 #   R2  a state's lines are indented under it
-#   R3  a state holds at most one action (send, starttls, credentials)
+#   R3  a state holds at most one action (send, start tls, credentials)
 #   R4  every expect in a state names where it goes: "-> TARGET"
 #   R5  a clock (timeout, idle) is written above the expects it bounds,
 #       because it arms the wait that FOLLOWS it and bounds nothing below them
@@ -113,7 +113,7 @@ function flush_state(   i) {
 	# A block of literal text in a manual is not always an entry: the
 	# DIAGNOSTICS table is set the same way. Anything that is not a
 	# directive ends the entry rather than being judged as part of it.
-	if (text !~ /^(state|send|expect|starttls|credentials|options|port|transport|start|framing|ignore|always|eof|else)([[:space:]]|$)/ &&
+	if (text !~ /^(state|send|expect|credentials|options|port|transport|begin|framing|ignore|always|eof|else)([[:space:]]|$)|^start tls$/ &&
 	    text !~ /^(timeout|idle)\(/ &&
 	    text !~ /^[A-Za-z_][A-Za-z0-9_-]*[[:space:]]+~[[:space:]]/) {
 		flush_state(); entry=""; next
@@ -131,7 +131,7 @@ function flush_state(   i) {
 		next
 	}
 
-	if (text ~ /^(options|port|transport|start|framing|ignore)[[:space:]]/) {
+	if (text ~ /^(options|port|transport|begin|framing|ignore)[[:space:]]/) {
 		if (seen_state && !permissive)
 			bad[++n] = sprintf("%s:%d  R1  %s writes \"%s\" after a state; attributes describe the definition and come first",
 					   file, lineno, entry, text)
@@ -144,7 +144,7 @@ function flush_state(   i) {
 		bad[++n] = sprintf("%s:%d  R2  %s: \"%s\" is not indented under state \"%s\"",
 				   file, lineno, entry, text, statename)
 
-	if (text ~ /^(send|starttls|credentials)([[:space:]]|$)/) actions++
+	if (text ~ /^(send|credentials)([[:space:]]|$)|^start tls$/) actions++
 	else if (text ~ /^(timeout|idle)\(/) { if (expects > 0) clock_after_expect=1 }
 	else if (text ~ /^expect[[:space:]]/) {
 		expects++

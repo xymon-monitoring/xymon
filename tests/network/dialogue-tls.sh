@@ -103,7 +103,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    expect "250" until "250 "
    send "starttls\r\n"
    expect "220"
-   starttls
+   start tls
    send "ehlo xymonnet\r\n"
    expect "250"
    send "quit\r\n"

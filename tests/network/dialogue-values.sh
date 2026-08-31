@@ -72,7 +72,7 @@ cat <<CFG
 [$1]
    options banner
    port $2
-   start greeting
+   begin greeting
 
    state greeting
       credentials mypop

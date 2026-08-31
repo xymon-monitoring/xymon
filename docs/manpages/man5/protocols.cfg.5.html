@@ -189,12 +189,13 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         expected 334&quot; tells an operator what &quot;step 7&quot; does
       not.</p>
     <p class="Pp"><b>Layout.</b> An entry that uses states is written the same
-        way throughout this page: the entry attributes -- ?Boptions?R, ?Bport?R,
-        ?Btransport?R, ?Bframing?R, ?Bignore?R, ?Bstart?R -- first, in any order
-        among themselves, because they describe the definition rather than any
-        step; then the states, each with its lines indented under it.</p>
+        way throughout this page: the entry attributes -- <b>options</b>,
+        <b>port</b>, <b>transport</b>, <b>framing</b>, <b>ignore</b>,
+        <b>begin</b> -- first, in any order among themselves, because they
+        describe the definition rather than any step; then the states, each with
+        its lines indented under it.</p>
     <p class="Pp">A state does one thing and waits for one answer: at most one
-        action -- a <b>send</b>, a <b>starttls</b>, a <b>credentials</b> -- the
+        action -- a <b>send</b>, a <b>start tls</b>, a <b>credentials</b> -- the
         clock that bounds the wait, and the <b>expect</b> lines that end the
         state, each naming where its answer leads. A state that acts without
         waiting leaves on <b>always</b>; a state that only decides on a value
@@ -245,7 +246,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         bind it with <b>as</b>, and distinguish in the next.</p>
     <p class="Pp"></p>
   </dd>
-  <dt id="start"><a class="permalink" href="#start"><b>start</b>
+  <dt id="begin"><a class="permalink" href="#begin"><b>begin</b>
     <i>NAME</i></a></dt>
   <dd>Begin the dialogue in the state called <i>NAME</i> rather than at the
       first step. Useful when the states read better in an order other than the
@@ -255,7 +256,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   <dt id="always"><a class="permalink" href="#always"><b>always</b> <b>-&gt;</b>
     <i>TARGET</i></a></dt>
   <dd>An unconditional edge, for a state that has nothing to wait for -- after a
-      <b>starttls</b>, for instance.
+      <b>start tls</b>, for instance.
     <p class="Pp"></p>
   </dd>
   <dt id="eof"><a class="permalink" href="#eof"><b>eof</b> <b>-&gt;</b>
@@ -325,15 +326,40 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
         willing to accept.</p>
     <p class="Pp"></p>
   </dd>
-  <dt id="starttls"><a class="permalink" href="#starttls"><b>starttls</b></a></dt>
-  <dd>Upgrade the connection to TLS at this point. Everything before the step is
-      plaintext and everything after it is encrypted, on the same socket. This
-      is what submission (587), IMAP (143) and POP3 (110) use, and it is not the
-      same as the <b>ssl</b> option, which means TLS from the first byte.
-    <p class="Pp">The certificate is read from the upgraded session, so a
-        service that begins in plaintext -- submission on 587, IMAP on 143, SMTP
-        on 25 -- reaches the <b>sslcert</b> column with its expiry checked. It
-        cannot, while <b>ssl</b> is the only way to start TLS.</p>
+  <dt id="start"><a class="permalink" href="#start"><b>start</b>
+    <i>FEATURE</i></a></dt>
+  <dd>Switch on something the CLIENT does. The word after <b>start</b> names
+      code here rather than a state, and is reserved; <b>tls</b> is the only
+      feature so far, and naming another is refused when the file is read.
+    <p class="Pp"><b>start tls</b> upgrades the connection in place: everything
+        before the line is plaintext, everything after it is encrypted, on the
+        same socket. This is what submission (587), IMAP (143) and POP3 (110)
+        use, and it is not the same as the <b>ssl</b> option, which means TLS
+        from the first byte. The certificate is read from the upgraded session,
+        so a service that begins in plaintext reaches the <b>sslcert</b> column
+        with its expiry checked.</p>
+    <p class="Pp">The outcome is bound as two values, named after the feature:
+        <b>${tls_code}</b> is <b>ok</b> or <b>failed</b>, and <b>${tls_msg}</b>
+        is the reason the handshake gave up -- &quot;certificate verify
+        failed&quot;, &quot;no shared cipher&quot;, &quot;wrong version
+        number&quot; -- empty when it succeeded. So the state that starts it can
+        say what a failure means, rather than having the test end where it
+        stands:</p>
+    <p class="Pp"></p>
+    <pre>   state secure
+      start tls
+      tls_code ~ &quot;^ok&quot;     -&gt; ehlo-tls
+      tls_msg ~ &quot;no shared&quot; -&gt; warning
+      else                 -&gt; fail</pre>
+    <p class="Pp">Route on the code and read the message. <b>${tls_msg}</b>
+        carries OpenSSL's own wording, which differs between versions and
+        builds, so an entry that decides on it alone is deciding on text that
+        can change under it; <b>${tls_code}</b> is a closed vocabulary that will
+        not.</p>
+    <p class="Pp">An entry that tests nothing still fails: no alternative
+        matches what was bound, and the state fails at once, naming itself. A
+        capture may not take either name -- it would shadow the outcome, so it
+        is refused.</p>
     <p class="Pp">If the server has sent anything that is still unread when the
         upgrade begins, the test fails rather than proceeding: the handshake has
         to start on the first byte sent after the go-ahead, and data arriving
@@ -525,7 +551,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <p class="Pp">An entry that uses states is written one way, and most of it is
     now refused when the file is read rather than left to surprise somebody:</p>
 <p class="Pp"></p>
-<pre>   1  entry attributes -- options, port, transport, framing, ignore, start --
+<pre>   1  entry attributes -- options, port, transport, framing, ignore, begin --
       come before the first state, in any order among themselves
    2  a state's lines are indented under it
    3  a state holds at most one action: send, starttls, credentials
@@ -562,7 +588,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <pre>   [smtp-tls]
       options banner
       port 25
-      start greeting
+      begin greeting
       state greeting
          timeout(10)                        -&gt; fail
          expect &quot;220&quot;                       -&gt; ehlo
@@ -579,7 +605,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
          expect &quot;220&quot;                       -&gt; secure
          expect &quot;454&quot;                       -&gt; warning
       state secure
-         starttls
+         start tls
          always                             -&gt; ehlo-tls
       state ehlo-tls
          send &quot;ehlo xymonnet\r\n&quot;
@@ -590,7 +616,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
          timeout(10)                        -&gt; fail
          expect &quot;221&quot;                       -&gt; success</pre>
 <p class="Pp">A state does one thing and then waits for one answer: at most one
-    action -- a <b>send</b>, a <b>starttls</b>, a <b>credentials</b> -- the
+    action -- a <b>send</b>, a <b>start tls</b>, a <b>credentials</b> -- the
     clock that bounds the wait, and the <b>expect</b> lines that end the state
     by naming where each answer leads. <b>secure</b> upgrades and does nothing
     else, so it leaves on <b>always</b>; <b>offers</b> waits for nothing at all
@@ -600,10 +626,10 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     been taught: a <b>timeout</b> or <b>idle</b> arms the wait that follows it,
     so a clock written below the <b>expect</b> lines bounds nothing. Keep it
     above them, as every example here does.</p>
-<p class="Pp">The entry attributes -- ?Boptions?R, ?Bport?R, ?Btransport?R,
-    ?Bframing?R, ?Bignore?R, ?Bstart?R -- describe the definition rather than
-    any step, so they are written together at the top, in any order among
-    themselves.</p>
+<p class="Pp">The entry attributes -- <b>options</b>, <b>port</b>,
+    <b>transport</b>, <b>framing</b>, <b>ignore</b>, <b>begin</b> -- describe
+    the definition rather than any step, so they are written together at the
+    top, in any order among themselves.</p>
 <p class="Pp">This is deliberately a service of its own rather than a deeper
     <b>[smtp]</b>. protocols.cfg is one file for the whole installation, so
     teaching <b>[smtp]</b> to expect STARTTLS would change what every existing
@@ -623,7 +649,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <p class="Pp"></p>
 <pre>   Unknown protocols.cfg directive     a mistyped keyword; step dropped
    '-&gt; NAME' has no matching state     the edge is dropped
-   'start NAME' has no matching state  the entry is refused
+   'begin NAME' has no matching state  the entry is refused
    state 'NAME' cannot be reached      no edge names it
    state 'NAME' has no way to finish   no path from it to a terminal
    state 'NAME' waits for a reply with no timeout

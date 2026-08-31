@@ -151,7 +151,7 @@ typedef struct svcinfo_t {
 	int ignorelen[8];
 	int ignorecount;
 	svcstep_t *steps;	/* NULL unless TCP_DIALOGUE */
-	char *startlabel;	/* 'start NAME': where the dialogue begins */
+	char *startlabel;	/* 'begin NAME': where the dialogue begins */
 	svcstep_t *startstep;	/* ... resolved after parsing */
 } svcinfo_t;
 

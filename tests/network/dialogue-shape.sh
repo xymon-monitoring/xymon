@@ -49,7 +49,7 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
 
    state one
       send "a\r\n"
-      starttls
+      start tls
       timeout(5)        -> fail
       expect "220"      -> success
 

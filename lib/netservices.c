@@ -286,6 +286,20 @@ static void check_undefined_vars(svcinfo_t *rec)
 	for (st = rec->steps; (st); st = st->next) {
 		int i;
 
+		/*
+		 * "start tls" binds its own outcome twice over: a code to route on,
+		 * which is "ok" or "failed", and the reason to show. Routing on the
+		 * reason would mean writing regexes against OpenSSL's wording, which
+		 * differs between versions.
+		 */
+		if (st->type == STEP_STARTTLS) {
+			if (nknown + 2 <= 64) {
+				known[nknown++] = "tls_code";
+				known[nknown++] = "tls_msg";
+			}
+			continue;
+		}
+
 		if (st->type == STEP_CREDS) {
 			if (nknown + 2 <= 64) {
 				known[nknown++] = "username";
@@ -379,6 +393,15 @@ static void check_undefined_vars(svcinfo_t *rec)
  * name the fix: match the shared prefix in one state, distinguish in the
  * next.
  */
+/*
+ * Names a feature binds. "start tls" writes ${tls_code} and ${tls_msg}, so a
+ * capture that took either name would shadow the outcome with a reply -- and
+ * the file would read as if it were branching on the handshake when it was not.
+ */
+/* "start F" binds F_code and F_msg, so neither name is a capture's to take. */
+#define IS_RESERVED_VALUE(s) (((s) != NULL) && ((strcmp((s), "tls_code") == 0) || \
+                                                (strcmp((s), "tls_msg") == 0)))
+
 /* The three names an edge may use instead of a state. */
 #define IS_TERMINAL_NAME(s) \
 	(((s) != NULL) && ((strcmp((s), "success") == 0) || \
@@ -576,7 +599,7 @@ static void resolve_svcsteps(svcinfo_t *rec)
 
 		if (lbl) rec->startstep = lbl;
 		else {
-			errprintf("Service %s: 'start %s' has no matching state\n",
+			errprintf("Service %s: 'begin %s' has no matching state\n",
 				  rec->svcname, rec->startlabel);
 			rec->flags |= TCP_DIALOGUE_BROKEN;
 		}
@@ -1152,7 +1175,14 @@ char *init_tcp_services(void)
 					else {
 						if (*end) { *end = '\0'; rest = skipwhitespace(end + 1); }
 						else rest = end;
-						tmpl.varname = nm;
+
+						if (IS_RESERVED_VALUE(nm)) {
+							errprintf("Service %s: 'as %s' - that name is bound by "
+								  "'start tls', whose outcome it would shadow\n",
+								  first->rec->svcname, nm);
+							first->rec->flags |= TCP_DIALOGUE_BROKEN;
+						}
+						else tmpl.varname = nm;
 					}
 				}
 
@@ -1437,11 +1467,11 @@ char *init_tcp_services(void)
 				emit_step(first, &tmpl);
 			}
 		}
-		else if (strncmp(l, "start ", 6) == 0) {
+		else if (strncmp(l, "begin ", 6) == 0) {
 			/* Where the dialogue begins. Without it, the first step. */
 			char *nm = skipwhitespace(l + 6);
 
-			if (!*nm) errprintf("'start' with no state name\n");
+			if (!*nm) errprintf("'begin' with no state name\n");
 			else for (walk = first; (walk); walk = walk->next) {
 				if (walk->rec->startlabel) xfree(walk->rec->startlabel);
 				walk->rec->startlabel = strdup(nm);
@@ -1645,14 +1675,36 @@ char *init_tcp_services(void)
 				emit_step(first, &tmpl);
 			}
 		}
-		else if (strcmp(l, "starttls") == 0) {
+		else if (strncmp(l, "start ", 6) == 0) {
 			/*
-			 * Explicit TLS. Everything before this line is plaintext,
-			 * everything after it is encrypted on the same socket. The
-			 * service does NOT carry TCP_SSL -- that flag means TLS from
-			 * the first byte, which is the other thing entirely.
+			 * "start FEATURE" switches on something the CLIENT does,
+			 * not something the server is asked for: the name after it
+			 * selects code here, and is reserved. Only "tls" exists so
+			 * far; naming anything else is refused when the file is
+			 * read rather than ignored, so a typo cannot leave a probe
+			 * quietly doing less than it says.
 			 */
-			if (first) {
+			char *feat = skipwhitespace(l + 6);
+
+			if (strcmp(feat, "tls") != 0) {
+				errprintf("Service %s: 'start %s' - the only feature a client can "
+					  "start is 'tls'\n", first->rec->svcname, feat);
+				if (first) first->rec->flags |= TCP_DIALOGUE_BROKEN;
+			}
+			else if (first) {
+				/*
+				 * Everything before this line is plaintext, everything
+				 * after it is encrypted on the same socket. The service
+				 * does NOT carry TCP_SSL -- that flag means TLS from the
+				 * first byte, which is the other thing entirely.
+				 *
+				 * The outcome is bound as ${tls_code}, "ok" or "failed",
+				 * with the reason in ${tls_msg}, so an entry can route a
+				 * refused upgrade to warning instead of taking the whole
+				 * test down with it. Routing on the code rather than the
+				 * message keeps entries off OpenSSL's wording, which
+				 * differs between versions.
+				 */
 				svcstep_t tmpl;
 
 				memset(&tmpl, 0, sizeof(tmpl));
@@ -1875,7 +1927,7 @@ char *init_tcp_services(void)
 			}
 
 			/*
-			 * "options ssl" is TLS from the first byte; "starttls" upgrades
+			 * "options ssl" is TLS from the first byte; "start tls" upgrades
 			 * a plaintext connection part-way. Asking for both would start a
 			 * second handshake inside the first, which fails in a way that
 			 * reads like a broken server rather than a broken config.
@@ -1883,7 +1935,7 @@ char *init_tcp_services(void)
 			if (svcinfo[i].flags & TCP_SSL) {
 				for (st = walk->rec->steps; (st); st = st->next) {
 					if (st->type != STEP_STARTTLS) continue;
-					errprintf("Service %s: 'starttls' with 'options ssl' - the connection "
+					errprintf("Service %s: 'begin tls' with 'options ssl' - the connection "
 						  "is already TLS; drop one of them\n", svcinfo[i].svcname);
 					break;
 				}

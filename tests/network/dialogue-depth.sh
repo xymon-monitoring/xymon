@@ -95,7 +95,8 @@ printf 'accta\tuser-a\tsecret-a\nacctb\tuser-b\tsecret-b\n' > "$work/home/etc/cr
 cat > "$work/home/etc/protocols.cfg" <<CFG
 [depthsvc]
    options banner
-   start greeting
+   begin greeting
+
 
    state greeting
       timeout(5)                  -> fail

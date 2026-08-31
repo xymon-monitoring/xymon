@@ -354,6 +354,10 @@ static int do_telnet_options(tcptest_t *item)
 	return result;
 }
 
+/* Defined with the dialogue helpers below; the handshake binds ${tls_code} and
+   ${tls_msg} through it. */
+static void dlg_setstr(tcptest_t *item, const char *name, const char *value);
+
 #if TCP_SSL <= 0
 
 char *ssl_library_version = NULL;
@@ -770,6 +774,8 @@ static void setup_ssl(tcptest_t *item)
 					  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			}
 			item->errcode = CONTEST_ESSL;
+			dlg_setstr(item, "tls_code", "failed");
+			dlg_setstr(item, "tls_msg", sslerrmsg);
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		  case SSL_ERROR_SSL:
@@ -777,6 +783,8 @@ static void setup_ssl(tcptest_t *item)
 			errprintf("Unspecified SSL error in SSL_connect to %s on host %s: %s\n",
 				  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
+			dlg_setstr(item, "tls_code", "failed");
+			dlg_setstr(item, "tls_msg", sslerrmsg);
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		  default:
@@ -784,6 +792,8 @@ static void setup_ssl(tcptest_t *item)
 			errprintf("Unknown error %d in SSL_connect to %s on host %s: %s\n",
 				  err, portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
+			dlg_setstr(item, "tls_code", "failed");
+			dlg_setstr(item, "tls_msg", sslerrmsg);
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		}
@@ -2210,6 +2220,34 @@ restartselect:
 								if (st && (item->sslrunning == SSLSETUP_PENDING)) setup_ssl(item);
 
 								if (st && (item->sslrunning == 1)) {
+									/*
+									 * "start tls" binds its outcome like any other
+									 * value: the entry routes on ${tls_code} and
+									 * shows ${tls_msg}.
+									 */
+									dlg_setstr(item, "tls_code", "ok");
+									dlg_setstr(item, "tls_msg", "");
+									st = dlg_run_instant(item, st->next);
+									item->curstep = (void *)st;
+								}
+								else if (st && (item->sslrunning == 0)) {
+									/*
+									 * The handshake gave up. setup_ssl() has bound
+									 * ${tls_code} and ${tls_msg}, so the state's edges
+									 * decide what that means -- a server offering a
+									 * cipher we do not have is not the same fault as
+									 * one that is down, and an entry saying so is
+									 * the point of binding the outcome. An entry
+									 * that tests nothing still fails: no alternative
+									 * matches, and fail-fast ends it here.
+									 *
+									 * Clearing the transport error is what hands
+									 * the verdict over: the reporting code treats
+									 * a lingering CONTEST_ESSL as red regardless
+									 * of what the dialogue decided, which would
+									 * make routing the outcome pointless.
+									 */
+									item->errcode = CONTEST_ENOERROR;
 									st = dlg_run_instant(item, st->next);
 									item->curstep = (void *)st;
 								}
@@ -2392,7 +2430,14 @@ restartselect:
 						if ((item->svcinfo->flags & TCP_DIALOGUE) && item->curstep &&
 						    (((svcstep_t *)item->curstep)->type == STEP_STARTTLS) &&
 						    (item->sslrunning == 1)) {
-							svcstep_t *nx = dlg_run_instant(item, ((svcstep_t *)item->curstep)->next);
+							svcstep_t *nx;
+
+							/* Bound here as well as in the write arm: a handshake
+							 * can finish on either, and an outcome that depends on
+							 * which one would be no outcome at all. */
+							dlg_setstr(item, "tls_code", "ok");
+							dlg_setstr(item, "tls_msg", "");
+							nx = dlg_run_instant(item, ((svcstep_t *)item->curstep)->next);
 
 							item->curstep = (void *)nx;
 							item->readpending = (nx && (nx->type == STEP_EXPECT));

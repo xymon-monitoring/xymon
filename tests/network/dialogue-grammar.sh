@@ -56,7 +56,8 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
    transport tcp
    options banner
    port $p1
-   start greeting
+   begin greeting
+
 
    state farewell
       send "quit\r\n"

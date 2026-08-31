@@ -130,7 +130,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect "454"                       -> warning
 
    state secure
-      starttls
+      start tls
       always                             -> ehlo-tls
 
    state ehlo-tls
@@ -167,7 +167,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect "454"                       -> warning
 
    state secure
-      starttls
+      start tls
       always                             -> farewell
 
    state farewell
@@ -199,7 +199,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect "454"                       -> warning
 
    state secure
-      starttls
+      start tls
       always                             -> farewell
 
    state farewell
@@ -231,7 +231,7 @@ cat > "$work/home/etc/protocols.cfg" <<CFG
       expect "220"                       -> secure
 
    state secure
-      starttls
+      start tls
       always                             -> farewell
 
    state farewell

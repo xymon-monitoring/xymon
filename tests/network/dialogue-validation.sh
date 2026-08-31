@@ -43,7 +43,7 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
    nosuch ~ "(x)"              as tooearly
    send "x${sha11:foo}\r\n"
    timeout(0)                  -> fail
-   starttls
+   start tls
    options ssl,banner
    port 9
 
@@ -68,7 +68,8 @@ cat > "$work/home/etc/protocols.cfg" <<'CFG'
 [graph]
    # conventions: permissive -- malformed on purpose; this suite is the refusal
    port 9
-   start entry
+   begin entry
+
 
    state entry
       expect "220"                -> spin
