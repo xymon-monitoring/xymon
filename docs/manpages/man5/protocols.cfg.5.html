@@ -102,7 +102,16 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     <pre>   banner - include received data in the status message
    ssl - service uses SSL so perform an SSL handshake
    telnet - service is telnet, so exchange telnet options
-   alpn=protocol1,protocol2 - specify ALPN protocols to negotiate during SSL handshake</pre>
+   alpn=protocol1,protocol2 - specify ALPN protocols to negotiate during SSL handshake
+   sni - send the tested hostname as the TLS server name</pre>
+    <p class="Pp"><b>sni</b> matters wherever one address serves several names.
+        A TLS server that is asked for no server name answers with its DEFAULT
+        certificate, so the expiry Xymon reports in the <b>sslcert</b> column is
+        that of whichever certificate the address happens to answer with, and
+        not the one the test is named for -- wrong, and indistinguishable from
+        right. The name tested is sent, never the address: RFC 6066 does not
+        allow an address literal in the server_name extension, so a host entered
+        in hosts.cfg by IP sends nothing even with the option set.</p>
     <p class="Pp"></p>
     <p class="Pp"></p>
   </dd>
