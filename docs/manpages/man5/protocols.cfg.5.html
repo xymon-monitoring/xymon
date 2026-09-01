@@ -45,15 +45,19 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     SMTP service would be this:</p>
 <p class="Pp"></p>
 <pre>   [smtp]
-      send &quot;mail\r\nquit\r\n&quot;
-      expect &quot;220&quot;
+      expect &quot;220&quot; until &quot;220 &quot;
+      send &quot;ehlo xymonnet\r\n&quot;
+      expect &quot;250&quot; until &quot;250 &quot;
       options banner</pre>
-<p class="Pp">This defines a service called &quot;smtp&quot;. When the
-    connection is first established, xymonnet will send the string
-    &quot;mail\r\nquit\r\n&quot; to the service. It will then expect a response
-    beginning with &quot;220&quot;. Any data returned by the service (a
-    so-called &quot;banner&quot;) will be recorded and included in the status
-    message.</p>
+<p class="Pp">The lines run in the order they are written, which is the order of
+    the conversation: wait for a greeting beginning with &quot;220&quot;, send
+    EHLO, check the answer begins with &quot;250&quot;. What the service said is
+    included in the status message.</p>
+<p class="Pp">Order is what a definition expresses. A server that speaks first
+    is written with <b>expect</b> first; one that says nothing until asked --
+    clamd and spamd -- with <b>send</b> first. Sending before the greeting
+    violates SMTP, and Postfix 3.9 and later reject the session for it.</p>
+<p class="Pp">A definition may hold as many steps as the conversation needs.</p>
 <p class="Pp">For services that require ALPN protocol negotiation (such as IMAPS
     multiplexed by Nginx on the same port as HTTPS), you can define:</p>
 <p class="Pp"></p>
@@ -81,32 +85,172 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       established, and the response that is expected. Either of these may be
       omitted, in which case <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> will simply not send any data,
       or match a response against anything.
+    <p class="Pp">An <b>expect</b> takes one line. Where a reply runs to
+        several, say where it ends:</p>
+    <p class="Pp"></p>
+    <pre>      expect &quot;250&quot; until &quot;250 &quot;</pre>
+    <p class="Pp">SMTP and FTP continue with &quot;250-&quot; and finish with
+        &quot;250 &quot;, NNTP ends a block with &quot;.&quot;, IMAP with the
+        command tag. Naming the terminator reads to the end of the reply however
+        it is split across packets; without it the tail would be matched as the
+        answer to the next command.</p>
+    <p class="Pp">A terminator ending in a space also matches that text at the
+        end of a line, so &quot;250 &quot; accepts a last line of
+        &quot;250&quot; with no text after it. &quot;250-&quot; does not match
+        either way.</p>
     <p class="Pp">The send- and expect-strings use standard escaping for
         non-printable characters. &quot;\r&quot; represents a carriage-return
         (ASCII 13), &quot;\n&quot; represents a line-feed (ASCII 10),
-        &quot;\t&quot; represents a TAB (ASCII 8). Binary data is input as
+        &quot;\t&quot; represents a TAB (ASCII 9). Binary data is input as
         &quot;\xNN&quot; with NN being the hexadecimal value of the byte.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="start"><a class="permalink" href="#start"><b>start</b>
+    <i>FEATURE</i></a></dt>
+  <dd>Switch on something the CLIENT does. The word names code in xymonnet, not
+      anything sent to the server, and there are two: <b>tls</b> and <b>iac</b>.
+      Anything else is refused when the file is read.
+    <p class="Pp"><b>start tls</b> upgrades the connection where the line sits,
+        after the server has agreed to it:</p>
+    <p class="Pp"></p>
+    <pre>   [submissiontls]
+      expect &quot;220&quot; until &quot;220 &quot;
+      send &quot;ehlo xymonnet\r\n&quot;
+      expect &quot;250&quot; until &quot;250 &quot;
+      send &quot;starttls\r\n&quot;
+      expect &quot;220&quot;
+      start tls
+      send &quot;ehlo xymonnet\r\n&quot;
+      expect &quot;250&quot; until &quot;250 &quot;
+      port 587</pre>
+    <p class="Pp">Plaintext before the line, encrypted after it, on one socket
+        -- what SMTP on 25, submission on 587 and IMAP on 143 do, and the only
+        way those ports reach a certificate. The certificate is read from the
+        upgraded session, so the service reaches the <b>sslcert</b> column with
+        its expiry checked.</p>
+    <p class="Pp">As the FIRST step it is TLS from the first byte, which is what
+        implicit-TLS ports need: <b>[smtps]</b>, <b>[imaps]</b> and the rest are
+        written that way.</p>
+    <p class="Pp">Two words because the request is protocol-specific and the
+        step is not: FTP asks &quot;AUTH TLS&quot;, POP3 &quot;STLS&quot;, SMTP
+        and IMAP &quot;STARTTLS&quot;, and the asking is left to a
+      <b>send</b>.</p>
+    <p class="Pp"><b>start iac</b> negotiates telnet options where the line
+        sits:</p>
+    <p class="Pp"></p>
+    <pre>   [mud]
+      start iac
+      expect &quot;Welcome&quot;
+      port 1701</pre>
+    <p class="Pp">IAC belongs to the telnet protocol, not to port 23 -- MUDs and
+        BBSes negotiate on their own ports. The commands are stripped off the
+        front of the reply, so the next step sees the text behind them, and they
+        are refused: <b>WILL</b> is answered <b>DONT</b> and <b>DO</b> is
+        answered <b>WONT</b>, which is what gets a server talking that holds its
+        greeting until the client replies. <b>WONT</b> and <b>DONT</b> are
+        answered with nothing -- RFC 854 makes them the end of that option's
+        negotiation, and replying starts an exchange that never stops.</p>
+    <p class="Pp">A 5250 or 3270 host sends no text at any point: once the
+        options settle it waits for a terminal to negotiate itself, which a
+        probe is not. Such a service can only be checked as a connect, and no
+        version of Xymon has done more.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="port"><a class="permalink" href="#port"><b>port</b>
     <i>NUMBER</i></a></dt>
-  <dd>Define the default TCP port-number for this service. If no portnumber is
-      defined, <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> will attempt to lookup the portnumber in the
-      standard /etc/services file.
+  <dd>The TCP port for this service, and the only place it comes from. Every
+      entry in the shipped file names one; an entry without it can only be
+      tested where hosts.cfg names a port for that host, and says so in the log
+      rather than being given one from elsewhere.
+    <p class="Pp">The host's /etc/services is not consulted. It was, for entries
+        with no <b>port</b> line, which meant a probe could be checking a port
+        that differs from machine to machine and that nothing in this file
+        names.</p>
+    <p class="Pp">A port may be given per host in hosts.cfg as
+        <b>SERVICE:PORT</b>, which overrides the entry.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="options"><a class="permalink" href="#options"><b>options</b>
     <i>option1</i>[,<i>option2</i>][,<i>option3</i>]</a></dt>
   <dd>Defines test options. The possible options are
     <br/>
-    <pre>   banner - include received data in the status message
-   ssl - service uses SSL so perform an SSL handshake
-   telnet - service is telnet, so exchange telnet options
+    <pre>   banner - read the socket once when no step asks to
+   ssl - TLS from the first byte (the older spelling of a leading &quot;start tls&quot;)
+   telnet - negotiate telnet options (the older spelling of &quot;start iac&quot;)
    alpn=protocol1,protocol2 - specify ALPN protocols to negotiate during SSL handshake</pre>
-    <p class="Pp"></p>
+    <p class="Pp"><b>ssl</b>, <b>banner</b> and <b>telnet</b> are kept for files
+        that already use them; no shipped entry does. A step says the same thing
+        and says where: <b>ssl</b> is a leading <b>start tls</b>, <b>telnet</b>
+        is <b>start iac</b> (an entry carrying the option is given that step),
+        and <b>banner</b> is an <b>expect</b> -- which also asks for an answer,
+        where <b>banner</b> takes the first read and judges nothing, so a
+        service that accepts the connection and never speaks reports up with an
+        empty banner.</p>
+    <p class="Pp">An entry with no <b>send</b> and no <b>expect</b> is a connect
+        check: nothing is asked and nothing is matched, so the port opening is
+        the whole of it. <b>ldap</b>, <b>ldaps</b>, <b>qmtp</b>, <b>qmqp</b>,
+        <b>netbios-ssn</b> and <b>lpd</b> ship that way -- each waits for a
+        length-prefixed binary request whose reply a prefix match cannot judge
+        -- and so does <b>bbd</b>, where xymond answers only after the client
+        half-closes the write side.</p>
+    <p class="Pp">Such an entry reports up wherever the port is open, which is
+        also what a half-written one does. The file cannot tell them apart, so
+        the shipped set is pinned in the test suite rather than marked here.</p>
     <p class="Pp"></p>
   </dd>
 </dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="WHAT_CANNOT_BE_EXPRESSED"><a class="permalink" href="#WHAT_CANNOT_BE_EXPRESSED">WHAT
+  CANNOT BE EXPRESSED</a></h1>
+<p class="Pp">An <b>expect</b> matches the start of a reply and consumes to the
+    end of the LINE. Binary protocols work as a single exchange -- <b>[rdp]</b>
+    ships one, matching raw bytes written as <b>\exNN</b> -- but not as a
+    conversation: when a step follows, the reply must end in a newline first,
+    and binary framing has none. Leave such a service its <b>port</b> and no
+    steps rather than write ones that will wait for a terminator that never
+    comes.</p>
+<p class="Pp">Matching is anchored: <b>expect</b> compares the start of the
+    reply, and <b>until</b> the start of a line. A token appearing anywhere else
+    cannot be reached. <b>[oratns]</b>, whose useful payload follows a
+    length-prefixed packet header, and <b>[ircd]</b>, where the 001 welcome is
+    the second token on a line beginning with the server's name, are both out of
+    reach this way.</p>
+<p class="Pp">An empty <b>expect &quot;&quot;</b> is the fallback: it matches
+    any reply and rejects none, so it cannot say whether the answer was the
+    right one -- only that the server sent one. Both entries above use it. It is
+    worth having because a step that only sends reports up against a port that
+    accepts the request and never answers, which is what a wedged server looks
+    like from outside.</p>
+<p class="Pp">There is no branching either. A reply that may legitimately take
+    one of two forms -- <b>EHLO</b> answered with <b>250</b>, or with <b>500</b>
+    by a server that speaks only <b>HELO</b> -- cannot be written here.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="WHEN_SOMETHING_CANNOT_BE_READ"><a class="permalink" href="#WHEN_SOMETHING_CANNOT_BE_READ">WHEN
+  SOMETHING CANNOT BE READ</a></h1>
+<p class="Pp">A line xymonnet cannot resolve refuses the whole entry: an
+    unrecognised directive or option, <b>start</b> with a feature other than
+    <b>tls</b>, a second <b>start tls</b>, <b>options ssl</b> together with
+    <b>start tls</b>, or a mistyped <b>until</b>. It is reported when the file
+    is read, and the entry then sends nothing at all -- not even a TLS
+    handshake.</p>
+<p class="Pp">Obeying the rest would report green: a dropped step leaves a
+    shorter conversation that still succeeds, and <b>options sssl</b> would ask
+    for TLS and get a plaintext probe. A refused entry is yellow with the reason
+    in its status, because the check is broken rather than the service.
+    <b>--checkresponse=red</b> escalates it; unlike an <b>expect</b> mismatch it
+    is reported whether <b>--checkresponse</b> was given or not.</p>
+<p class="Pp">If the FILE cannot be opened, the same applies to every service:
+    none is checked, and each says so. xymonnet once fell back to a set of
+    probes compiled into the binary, so the columns kept reporting while the
+    checks behind them had quietly become older and weaker ones. What is still
+    compiled in is the name-to-port list described under <b>port</b>, and
+    nothing else.</p>
+<p class="Pp"></p>
 </section>
 <section class="Sh">
 <p>&#160;</p>
@@ -130,6 +274,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
 <dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
 <dt><a href="#FILE_FORMAT">FILE FORMAT</a></dt>
+<dt><a href="#WHAT_CANNOT_BE_EXPRESSED">WHAT CANNOT BE EXPRESSED</a></dt>
+<dt><a href="#WHEN_SOMETHING_CANNOT_BE_READ">WHEN SOMETHING CANNOT BE READ</a></dt>
 <dt><a href="#FILES">FILES</a></dt>
 <dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
 </dl>
