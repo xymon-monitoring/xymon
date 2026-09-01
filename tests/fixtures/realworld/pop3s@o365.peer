@@ -1,0 +1,6 @@
+# outlook.office365.com:995 -- drives [pop3s]. TLS from the first byte.
+starttls
+send "+OK Microsoft Exchange POP3 server ready 42ee7b3c-a34f-4466-b383-939a45b03999 (tcpproxy/15.21.0360.006 BACKENDAUTHENTICATE).\r\n"
+recv quit
+send "+OK POP3 server signing off.\r\n"
+hangup

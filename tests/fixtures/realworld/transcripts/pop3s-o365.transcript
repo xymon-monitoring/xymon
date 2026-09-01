@@ -1,0 +1,7 @@
+# pop3s-o365  outlook.office365.com (40.99.217.50) port 995  mode=implicit
+# recorded 2026-08-31T13:30:41.207342Z
+# [TLS handshake at connect]
+S: +OK Microsoft Exchange POP3 server ready 42ee7b3c-a34f-4466-b383-939a45b03999 (tcpproxy/15.21.0360.006 BACKENDAUTHENTICATE). [WgBSADIAUAAyADcAOABDAEEAMAAwADUAMwAuAEMASABFAFAAMgA3ADgALgBQAFIATwBEAC4ATwBVAFQATABPAE8ASwAuAEMATwBNAA==]
+C: quit
+S: +OK POP3 server signing off.
+# certificate: subject=C = US, ST = Washington, L = Redmond, O = Microsoft Corporation, CN = outlook.com  notAfter=Jan 10 23:59:59 2027 GMT
