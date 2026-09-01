@@ -206,6 +206,7 @@ char *init_tcp_services(void)
 	int svcnamebytes = 0;
 	int svccount = 0;
 	int i;
+	int pass, nparsed = 0;
 
 	MEMDEFINE(filename);
 
@@ -241,32 +242,30 @@ char *init_tcp_services(void)
 		putenv("XYMONNETSVCS=smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp");
 	}
 
-	fd = stackfopen(filename, "r", &svcflist);
-	if (fd == NULL) {
-		int i;
-
-		/*
-		 * The file IS the configuration: with no file, nothing was asked for,
-		 * so nothing is checked. Same rule as for a single entry that cannot
-		 * be read -- say so, and check nothing.
-		 *
-		 * There is no second set of probes to fall back to. The table above
-		 * holds names and ports, which is what the tests below still need to
-		 * report against.
-		 */
-		errprintf("Cannot open TCP service-definitions file %s - no service will be checked\n",
-			  filename);
-		svccfg_unreadable = 1;
-		xymonnetsvcs = strdup(xgetenv("XYMONNETSVCS"));
-		xymonnetsvcs_buflen = strlen(xymonnetsvcs)+1;
-
-		MEMUNDEFINE(filename);
-		return xymonnetsvcs;
-	}
-
 	head = tail = first = NULL;
-
 	inbuf = newstrbuffer(0);
+
+	/*
+	 * Both files are read, and the order they are read in does not decide
+	 * anything: a service defined twice is resolved by KIND when the table is
+	 * built below -- the state machine wins. Order would be the wrong rule,
+	 * because it would make the answer depend on which file a definition
+	 * happens to sit in rather than on what it can express.
+	 */
+	for (pass = 0; pass < 2; pass++) {
+		filename[0] = '\0';
+		if (xgetenv("XYMONHOME")) {
+			snprintf(filename, sizeof(filename), "%s/etc/", xgetenv("XYMONHOME"));
+		}
+		strncat(filename, ((pass == 0) ? "protocols.cfg" : "protocols2.cfg"),
+			(sizeof(filename) - strlen(filename)));
+
+		if (stat(filename, &st) != 0) continue;
+		fd = stackfopen(filename, "r", &svcflist);
+		if (fd == NULL) continue;
+		nparsed++;
+		first = NULL;		/* no entry is open when a file begins */
+
 	while (stackfgets(inbuf, NULL)) {
 		char *l, *eol;
 
@@ -375,11 +374,19 @@ char *init_tcp_services(void)
 					 * stays green while nothing has upgraded. A definition
 					 * that could not be read is not a service that is up.
 					 */
-					errprintf("Service %s: 'start %s' - a client can start 'tls' or 'iac'\n",
-						  first->rec->svcname, feat);
-					first->rec->flags |= TCP_DIALOGUE_BROKEN;
-					for (walk = first->next; (walk); walk = walk->next)
-						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+					/*
+					 * Not a feature: the name of the state the dialogue
+					 * begins in. Which reading applies is settled after the
+					 * whole entry is read -- an entry that declares no state
+					 * has no state to begin in, so there "start tsl" is the
+					 * unknown feature it always was.
+					 */
+					for (walk = first; (walk); walk = walk->next) {
+						if (walk->rec->startlabel) xfree(walk->rec->startlabel);
+						walk->rec->startlabel = strdup(feat);
+						if (!walk->rec->startlabel)
+							walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
 				}
 				else if (strcmp(feat, "iac") == 0) {
 					/*
@@ -440,11 +447,53 @@ char *init_tcp_services(void)
 				}
 			}
 		}
+		else if (strncmp(l, "state ", 6) == 0) {
+			/*
+			 * Names the state that follows: every step up to the next "state"
+			 * belongs to it, and it is what an edge aims at. Naming a state
+			 * and marking a jump target are the same act, so there is one
+			 * keyword rather than two.
+			 *
+			 * Declaring one is what makes an entry a state machine. An entry
+			 * that never says "state" is untouched by any of this and keeps
+			 * the path it has always taken.
+			 */
+			if (first) {
+				char *nm = strtok(skipwhitespace(l + 5), " \t");
+
+				if (!nm) {
+					errprintf("Service %s: 'state' with no name\n", first->rec->svcname);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+				else if (strcmp(nm, "tls") == 0) {
+					errprintf("Service %s: a state cannot be called 'tls' - "
+						  "\"start tls\" is the upgrade, so the name would be read as one\n",
+						  first->rec->svcname);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+				else {
+					for (walk = first; (walk); walk = walk->next) {
+						svcstep_t *lb = add_svcstep(walk->rec, STEP_LABEL, (unsigned char *)"", 0);
+
+						if (!lb) {
+							errprintf("Service %s: out of memory reading the state list\n",
+								  walk->rec->svcname);
+							walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+							continue;
+						}
+						lb->label = strdup(nm);
+						if (!lb->label) walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+						walk->rec->flags |= TCP_STATEMACHINE;
+					}
+				}
+			}
+		}
 		else if (strncmp(l, "expect ", 7) == 0) {
 			if (first) {
 				unsigned char *txt = NULL, *untiltxt = NULL;
 				int txtlen = 0, untillen = 0;
-				char *rest;
+				char *rest, *edgetgt = NULL;
+				int edgeact = ACT_NEXT;
 				svcstep_t *st;
 
 				getescapestring(skipwhitespace(l+6), &txt, &txtlen);
@@ -458,9 +507,34 @@ char *init_tcp_services(void)
 				 * without teaching the parser any of them.
 				 */
 				rest = skipwhitespace(after_quoted(skipwhitespace(l+6)));
-				if (strncmp(rest, "until ", 6) == 0)
+				if (strncmp(rest, "until ", 6) == 0) {
 					getescapestring(skipwhitespace(rest + 5), &untiltxt, &untillen);
-				else if (*rest) {
+					rest = skipwhitespace(after_quoted(skipwhitespace(rest + 5)));
+				}
+				/*
+				 * "-> TARGET" turns the expect into an EDGE: what matches
+				 * decides where the dialogue goes, instead of it always
+				 * falling through to the next line. A target is the name of a
+				 * state, or one of the three outcomes that end the test.
+				 */
+				if (strncmp(rest, "->", 2) == 0) {
+					char *tgt = strtok(skipwhitespace(rest + 2), " \t");
+
+					if (!tgt) {
+						errprintf("Service %s: '->' with no target\n", first->rec->svcname);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+					else {
+						if      (strcmp(tgt, "success") == 0) edgeact = ACT_SUCCESS;
+						else if (strcmp(tgt, "warning") == 0) edgeact = ACT_WARNING;
+						else if (strcmp(tgt, "fail")    == 0) edgeact = ACT_FAIL;
+						else { edgeact = ACT_GOTO; edgetgt = tgt; }
+						for (walk = first; (walk); walk = walk->next)
+							walk->rec->flags |= TCP_STATEMACHINE;
+					}
+					rest = "";
+				}
+				if (*rest) {
 					/*
 					 * "untill" would drop the terminator in silence, leaving
 					 * the expect to take one line out of a multi-line reply.
@@ -477,6 +551,10 @@ char *init_tcp_services(void)
 					first->rec->explen  = txtlen;
 				}
 				st = add_svcstep(first->rec, STEP_EXPECT, txt, txtlen);
+				if (st && (edgeact != ACT_NEXT)) {
+					st->action = edgeact;
+					if (edgetgt) st->target = strdup(edgetgt);
+				}
 				if (!st) {
 					errprintf("Service %s: out of memory reading protocols.cfg\n",
 						  first->rec->svcname);
@@ -504,6 +582,20 @@ char *init_tcp_services(void)
 						walk->rec->expofs  = 0; /* HACK - not used right now */
 					}
 					st = add_svcstep(walk->rec, STEP_EXPECT, txt, txtlen);
+					/*
+					 * The edge belongs to every alias, not just the first
+					 * name in the header. Without this [pop|pop3|pop-3] gives
+					 * pop the state machine and the other two a list of steps
+					 * with no edges -- they fall through their alternatives
+					 * and wait for a reply nobody will send.
+					 */
+					if (st && (edgeact != ACT_NEXT)) {
+						st->action = edgeact;
+						if (edgetgt) {
+							st->target = strdup(edgetgt);
+							if (!st->target) walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+						}
+					}
 					if (!st) {
 						errprintf("Service %s: out of memory reading protocols.cfg\n",
 							  walk->rec->svcname);
@@ -601,12 +693,47 @@ char *init_tcp_services(void)
 		}
 	}
 
-	if (fd) stackfclose(fd);
+		if (fd) stackfclose(fd);
+		fd = NULL;
+	}
 	freestrbuffer(inbuf);
+
+	if (nparsed == 0) {
+		/*
+		 * Neither file is there. The file IS the configuration: nothing was
+		 * asked for, so nothing is checked. The table below still holds the
+		 * names and ports the tests report against, marked refused so that
+		 * none of them speaks.
+		 */
+		errprintf("Cannot open any TCP service-definitions file - no service will be checked\n");
+		svccfg_unreadable = 1;
+		xymonnetsvcs = strdup(xgetenv("XYMONNETSVCS"));
+		xymonnetsvcs_buflen = strlen(xymonnetsvcs)+1;
+		MEMUNDEFINE(filename);
+		return xymonnetsvcs;
+	}
 
 	/* Copy from the svclist to svcinfo table */
 	svcinfo = (svcinfo_t *) malloc((svccount+1) * sizeof(svcinfo_t));
-	for (walk=head, i=0; (walk && (i < svccount)); walk = walk->next, i++) {
+	for (walk=head, i=0; (walk && (i < svccount)); walk = walk->next) {
+		/*
+		 * The same service can be defined in both files. Which definition is
+		 * used is decided by KIND, not by which file it sat in or which was
+		 * read first: a state machine says everything a straight line can and
+		 * more, so it wins. Skipping the loser here keeps the decision in one
+		 * place, and lookup stays a plain first-match scan.
+		 */
+		if (!(walk->rec->flags & TCP_STATEMACHINE)) {
+			svclist_t *other;
+			int shadowed = 0;
+
+			for (other = head; (other && !shadowed); other = other->next)
+				shadowed = ((other != walk) &&
+					    (other->rec->flags & TCP_STATEMACHINE) &&
+					    (strcmp(other->rec->svcname, walk->rec->svcname) == 0));
+			if (shadowed) continue;
+		}
+
 		svcinfo[i].svcname = walk->rec->svcname;
 		svcinfo[i].sendtxt = walk->rec->sendtxt;
 		svcinfo[i].sendlen = walk->rec->sendlen;
@@ -616,6 +743,57 @@ char *init_tcp_services(void)
 		svcinfo[i].flags   = walk->rec->flags;
 		svcinfo[i].port    = walk->rec->port;
 		svcinfo[i].alpns   = walk->rec->alpns;
+		svcinfo[i].startlabel = walk->rec->startlabel;
+		svcinfo[i].steps   = walk->rec->steps;
+
+		/*
+		 * A state machine has to hold together before it runs. Resolved here,
+		 * once, because it needs the whole entry: an edge can name a state
+		 * declared further down, and "start NAME" can name any of them.
+		 */
+		{
+			svcstep_t *st, *lb;
+			int nlabels = 0;
+
+			for (st = walk->rec->steps; (st); st = st->next)
+				if (st->type == STEP_LABEL) nlabels++;
+
+			/*
+			 * "start" means the upgrade when the entry has no states, and the
+			 * first state when it has. So a typo like "start tsl" in a plain
+			 * entry is still what it always was -- an unknown feature, and a
+			 * definition that could not be read.
+			 */
+			if (walk->rec->startlabel && (nlabels == 0)) {
+				errprintf("Service %s: 'start %s' - a client can start 'tls' or 'iac'\n",
+					  walk->rec->svcname, walk->rec->startlabel);
+				svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
+			}
+
+			for (st = walk->rec->steps; (st); st = st->next) {
+				if ((st->action != ACT_GOTO) || !st->target) continue;
+				for (lb = walk->rec->steps; (lb); lb = lb->next)
+					if ((lb->type == STEP_LABEL) && lb->label &&
+					    (strcmp(lb->label, st->target) == 0)) break;
+				if (!lb) {
+					errprintf("Service %s: '-> %s' names no state\n",
+						  walk->rec->svcname, st->target);
+					svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
+				}
+				st->targetstep = lb;
+			}
+
+			if (walk->rec->startlabel && (nlabels > 0)) {
+				for (lb = walk->rec->steps; (lb); lb = lb->next)
+					if ((lb->type == STEP_LABEL) && lb->label &&
+					    (strcmp(lb->label, walk->rec->startlabel) == 0)) break;
+				if (!lb) {
+					errprintf("Service %s: 'start %s' names no state\n",
+						  walk->rec->svcname, walk->rec->startlabel);
+					svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
+				}
+			}
+		}
 		/*
 		 * "options telnet" IS "start iac", spelled the way it was before
 		 * there were steps. Give it the step, at the front, so one
@@ -688,8 +866,10 @@ char *init_tcp_services(void)
 			if (svcinfo[i].flags & TCP_DIALOGUE_BROKEN)
 				svcinfo[i].flags |= TCP_DIALOGUE;
 		}
+		i++;
 	}
-	memset(&svcinfo[svccount], 0, sizeof(svcinfo_t));
+	/* i, not svccount: a shadowed definition was skipped and left no slot. */
+	memset(&svcinfo[i], 0, sizeof(svcinfo_t));
 
 	/* This should not happen */
 	if (walk) {

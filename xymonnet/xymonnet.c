@@ -1636,6 +1636,19 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 						else
 							strcpy(cause, "Unexpected service response");
 						color = respcheck_color; countasdown = 1;
+
+						/*
+						 * An entry that named its own outcome overrides the
+						 * one colour every failure otherwise gets. A server
+						 * that is briefly busy and one that is broken are
+						 * different events, and only the file knows which
+						 * reply means which.
+						 */
+						switch (tcp_dialogue_verdict((tcptest_t *)test->privdata)) {
+						  case 2: color = COL_YELLOW; countasdown = 0; break;
+						  case 3: color = COL_RED;    countasdown = 1; break;
+						  default: break;
+						}
 					}
 
 					/* Check that other transport issues didn't occur (like SSL) */
