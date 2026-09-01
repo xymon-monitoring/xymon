@@ -1,0 +1,7 @@
+# pop3s-995  pop.gmail.com (142.251.127.108) port 995  mode=implicit
+# recorded 2026-08-31T12:47:07.030755Z
+# [TLS handshake at connect]
+S: +OK Gpop ready for requests from 203.0.113.1 5c2dc8763939e-4bc760799bbmb337612370122
+C: quit
+S: +OK Bye 5c2dc8763939e-4bc760799bbmb337612370122
+# peer certificate present: b"0\x82\x03o0\x82\x03\x16\xa0\x03\x02\x01\x02\x02\x10q\xd3\xed#\x1b\x9c]\xbf\x12\xf6\xdf\x9d\xbb!xL0\n\x06\x08*\x86H\xce=\x04\x03\x020;1\x0b0\t\x06\x03U\x04\x06\x13\x02US1\x1e0\x1c\x06\x03U\x04\n\x13\
