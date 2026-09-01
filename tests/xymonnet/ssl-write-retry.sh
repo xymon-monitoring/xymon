@@ -75,18 +75,20 @@ grep -q 'sendagain = 1' <<<"$want_write_arm" || fail \
 # I/O error and the sendagain branch is never reached.
 grep -qE '\bres = 0;' <<<"$want_write_arm" || fail \
 	"socket_write() no longer normalises a deferred write to 0 -- res == -1 is handled first, so the retry branch is unreachable (#451)"
-# WANT_READ is deliberately not retried here: the retry would be registered on
-# the write set, which is always ready, so it would busy-wait. That is what
-# this forbids.
-#
-# It forbids the CURRENT way of getting it wrong, not the idea of retrying. A
-# WANT_READ retry is correct if the socket then waits for READABILITY -- which
-# needs a direction flag and a dispatch that honours it, neither of which
-# exists yet. If that arrives, this assertion is what should change, not the
-# thing to work around.
+# WANT_READ may be retried too, but only if the socket then waits for
+# READABILITY. Retrying it on the write set is what busy-waits, so the flag
+# that redirects it has to be set with the retry, and select() has to honour
+# it. Checking both is what keeps the two apart -- forbidding the retry
+# outright was the old rule, and it left the payload unsent until the timeout.
 want_read_arm=$(awk '/case SSL_ERROR_WANT_READ:/{c=1} c{print} c&&/break;/{exit}' <<<"$ssl_write_fn")
-grep -q 'sendagain = 1' <<<"$want_read_arm" && fail \
-	"socket_write() retries a WANT_READ on the write set -- that fd is always ready, so it busy-waits (#451)"
+if grep -q 'sendagain = 1' <<<"$want_read_arm"; then
+	grep -q 'sslwantread = 1' <<<"$want_read_arm" || fail \
+		"socket_write() retries a WANT_READ without asking for readability -- the
+write set is always ready, so that busy-waits (#451)"
+	grep -q 'sendagain && item->sslwantread' "$SRC" || fail \
+		"nothing registers a WANT_READ retry for readability, so the flag set in
+socket_write() has no effect and the retry busy-waits on writefds (#451)"
+fi
 
 # Reset per call. A flag that is only ever set latches on: the first deferred
 # write would leave every later socket looking like it still owed bytes.
@@ -134,4 +136,24 @@ grep -q 'if (item->ssldata)' <<<"$sd" || fail \
 grep -q 'if (item->sslrunning) {' <<<"$sd" || fail \
 	"socket_shutdown() dropped the sslrunning guard -- setup_ssl()'s failure paths free without clearing, so a pointer-only test double-frees (#451)"
 
-pass "xymonnet retries a write that SSL_write() did not accept (#451)"
+# Setting the flag is not the same as acting on it. A write blocked on
+# WANT_READ is registered for READABILITY, so the arm that performs writes has
+# to accept a readable socket for that case -- exactly as the read arm accepts
+# a writable one for its mirror. Only the read arm had its clause, so a
+# pending write was registered, never dispatched, and waited out the timeout:
+# five review rounds, because this file asserted the flag and not the dispatch.
+grep -q 'sslagain && item->sslwantwrite' "$SRC" || fail \
+	"nothing dispatches a READ that returned WANT_WRITE, so it waits for a
+readable socket that will never come (#451)"
+grep -q 'sendagain && item->sslwantread' "$SRC" || fail \
+	"nothing dispatches a WRITE that returned WANT_READ, so it waits for a
+writable socket that will never come (#451)"
+
+write_arm=$(awk '/if \(\(FD_ISSET\(item->fd, &writefds\)/{c=1} c{print; n++} n>4{exit}' "$SRC")
+grep -q 'readfds' <<<"$write_arm" || fail \
+	"the write arm only runs on a writable socket, so a write that returned
+WANT_READ -- registered for readability -- reaches no arm at all and stalls
+until the test times out (#451):
+$write_arm"
+
+pass "xymonnet retries a write that SSL_write() did not accept, and dispatches both blocked directions (#451)"
