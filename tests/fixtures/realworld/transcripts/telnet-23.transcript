@@ -1,0 +1,28 @@
+# telnet-23  telehack.com (64.13.139.230) port 23  mode=plain
+# recorded 2026-08-31T12:54:41.720337Z
+# raw bytes; telnet IAC negotiation decoded, other non-printables as \xNN
+  IAC WILL 3
+  IAC WILL 1
+  IAC DO 24
+  IAC DO 31
+  IAC DO 36
+  IAC DO 39
+  IAC DO 0
+S: Connected to TELEHACK port 179
+S: It is 5:54 am on Monday, August 31, 2026 in Mountain View, California, USA.
+S: There are 142 local users. There are 26649 hosts on the network.
+S: May the command line live forever.
+S: Command, one of the following:
+S:   2048         ?            a2           ac           advent       basic
+S:   bf           callsign     cat          ching        clear        cowsay
+S:   date         ddate        delta        dir          eliza        exit
+S:   factor       file         fnord        geoip        gif          grep
+S:   head         help         joke         liff         login        mac
+S:   marquee      minesweeper  more         morse        newuser      notes
+S:   ping         primes       qr           rain         recover      rfc
+S:   rig          rockets      roll         rot13        salvo        sudoku
+S:   tail         today        traceroute   typespeed    uptime       usenet
+S:   users        uuplot       weather      when         zc           zork
+S: More commands available after login. Type HELP for a detailed command list.
+S: Type NEWUSER to create an account. Press control-C to interrupt any command.
+S: .
