@@ -281,15 +281,33 @@ service_t *add_service(char *name, int port, int namelen, int toolid)
 	return svc;
 }
 
+/*
+ * The port for a service comes from protocols.cfg. Every shipped entry names
+ * its port.
+ *
+ * A section without one falls back to the host's /etc/services, and says so
+ * each run. An upgrade keeps the sections already in protocols.cfg, and the
+ * [smtps], [amqp] and [amqps] shipped before 4.3.31 had no port line: they
+ * worked where /etc/services knew the name (Debian's does), and would stop
+ * being tested if the fallback went. The warning names the section to fix.
+ *
+ * Only a section that exists: XYMONNETSVCS also lists names protocols.cfg has
+ * no section for, and those get no port. A name with no port from either
+ * source is reported by add_tcp_test().
+ */
 int getportnumber(char *svcname)
 {
 	struct servent *svcinfo;
-	int result = 0;
+	svcinfo_t *section = find_tcp_service(svcname);
+	int result = default_tcp_port(svcname);
 
-	result = default_tcp_port(svcname);
-	if (result == 0) {
-		svcinfo = getservbyname(svcname, NULL);
-		if (svcinfo) result = ntohs(svcinfo->s_port);
+	if ((result == 0) && section && (strcmp(section->svcname, svcname) == 0)) {
+		svcinfo = getservbyname(svcname, "tcp");
+		if (svcinfo) {
+			result = ntohs(svcinfo->s_port);
+			errprintf("Service %s has no 'port' line in protocols.cfg; using %d from /etc/services. Add a port line\n",
+				  svcname, result);
+		}
 	}
 
 	return result;
@@ -1443,6 +1461,10 @@ int finish_ping_service(service_t *service)
 }
 
 
+/* The buffer every caller passes as `cause`; it is a pointer here, so its
+   size cannot be recovered with sizeof(). */
+#define MAX_CAUSE 1024
+
 int decide_color(service_t *service, char *svcname, testitem_t *test, int failgoesclear, char *cause)
 {
 	int color = COL_GREEN;
@@ -1572,7 +1594,19 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 				}
 			}
 			else {
-				if (!test->open) {
+				if (!test->open && (service->toolid == TOOL_CONTEST) &&
+				    tcp_dialogue_refused((tcptest_t *)test->privdata)) {
+					/*
+					 * The definition was refused, so nothing was checked and
+					 * nothing was sent. That the port is also shut is true but
+					 * not the fault to report: it sends the operator to look
+					 * at a service when the file is what is broken.
+					 */
+					snprintf(cause, MAX_CAUSE, "Unexpected service response: %s",
+						 tcp_dialogue_failure((tcptest_t *)test->privdata));
+					color = respcheck_color; countasdown = 0;
+				}
+				else if (!test->open) {
 					if (failgoesclear && (test->host->downcount != 0) && !test->alwaystrue) {
 						strcpy(cause, "Host appears to be down");
 						color = COL_CLEAR; countasdown = 0;
@@ -1608,9 +1642,31 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 				else {
 					tcptest_t *tcptest = (tcptest_t *)test->privdata;
 
-					/* Check if we got the expected data */
-					if (checktcpresponse && (service->toolid == TOOL_CONTEST) && !tcp_got_expected((tcptest_t *)test->privdata)) {
-						strcpy(cause, "Unexpected service response");
+					/*
+					 * Check if we got the expected data.
+					 *
+					 * --checkresponse governs whether an "expect" is an
+					 * opinion worth acting on. It does not govern whether a
+					 * definition protocols.cfg refused should be believed:
+					 * there is no check running to be lenient about, and
+					 * green would claim one happened. So a refusal comes
+					 * through this door whether the switch was given or not.
+					 */
+					if ((service->toolid == TOOL_CONTEST) &&
+					    (checktcpresponse || tcp_dialogue_refused((tcptest_t *)test->privdata)) &&
+					    !tcp_got_expected((tcptest_t *)test->privdata)) {
+						char *whichstep = tcp_dialogue_failure((tcptest_t *)test->privdata);
+
+						/*
+						 * Name the step. A dialogue can fail at any of
+						 * them, and the bare phrase leaves the reader
+						 * guessing whether it was the greeting, a reply
+						 * mid-conversation, or a peer that went quiet.
+						 */
+						if (whichstep)
+							snprintf(cause, MAX_CAUSE, "Unexpected service response: %s", whichstep);
+						else
+							strcpy(cause, "Unexpected service response");
 						color = respcheck_color; countasdown = 1;
 					}
 
@@ -2385,12 +2441,14 @@ int main(int argc, char *argv[])
 	 * The built-in tests go in first: add_service() returns an existing entry
 	 * by name, so a built-in name in XYMONNETSVCS or protocols.cfg would
 	 * otherwise make it a TCP test, whose results are read from the built-in
-	 * test's private data.
+	 * test's private data. Their ports are stated rather than looked up;
+	 * "domain" and "sunrpc" are only the names the ports were looked up
+	 * under, the tests are "dns" and "rpc".
 	 */
-	dnstest = add_service("dns", getportnumber("domain"), 0, TOOL_DNS);
-	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
-	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
-	httptest = add_service("http", getportnumber("http"),  0, TOOL_HTTP);
+	dnstest = add_service("dns", 53, 0, TOOL_DNS);
+	add_service("ntp", 123,   0, TOOL_NTP);
+	rpctest  = add_service("rpc", 111, 0, TOOL_RPCINFO);
+	httptest = add_service("http", 80,  0, TOOL_HTTP);
 	ldaptest = add_service("ldapurl", getportnumber("ldap"), strlen("ldap"), TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 
