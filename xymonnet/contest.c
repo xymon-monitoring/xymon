@@ -2038,9 +2038,12 @@ restartselect:
 								 * for another read would time out. IMAP's "* BYE" and its
 								 * tagged result are exactly this.
 								 */
-								while (st && (st->type == STEP_EXPECT) && (item->stepbuflen >= st->len)) {
-									if (memcmp(item->stepbuf, st->text, st->len) == 0) {
-										int cut = st->len, ready = 1;
+								while (st && (st->type == STEP_EXPECT) &&
+								       (item->stepbuflen >= (((st->ofs > 0) ? st->ofs : 0) + st->len))) {
+									int ofs = (st->ofs > 0) ? st->ofs : 0;
+
+									if (memcmp(item->stepbuf + ofs, st->text, st->len) == 0) {
+										int cut = ofs + st->len, ready = 1;
 
 										if (st->until) {
 											/*
@@ -2069,6 +2072,21 @@ restartselect:
 												}
 												pos = eol + 1;
 											}
+										}
+										else if (st->ofs >= 0) {
+											/*
+											 * Positional: "at N" says this reply is bytes,
+											 * not a line, so there is no newline to consume
+											 * through and none to wait for. Exactly the
+											 * matched region goes, and whatever the peer
+											 * sent after it stays for the next step.
+											 *
+											 * Without this a binary reply would be held
+											 * until the clock ran out whenever another
+											 * alternative followed -- the line rule below
+											 * refuses to finish a step that has a next.
+											 */
+											cut = ofs + st->len;
 										}
 										else {
 											/*
