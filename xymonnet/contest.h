@@ -134,7 +134,8 @@ typedef struct tcptest_t {
 
 	/* Dialogue state */
 	void *curstep;			/* svcstep_t *: position in the dialogue */
-	int dialogfail;			/* an expect step did not match */
+	int dialogfail;
+	int dialogverdict;	/* 0 none, 1 success, 2 warning, 3 fail */			/* an expect step did not match */
 	void *failstep;			/* svcstep_t *: WHICH step, for the report */
 	unsigned char *stepbuf;		/* replies for the CURRENT expect step */
 	int stepbuflen;
@@ -231,6 +232,7 @@ extern tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *
 extern void do_tcp_tests(int timeout, int concurrency);
 extern void show_tcp_test_results(void);
 extern int tcp_got_expected(tcptest_t *test);
+extern int tcp_dialogue_verdict(tcptest_t *test);
 extern int tcp_dialogue_refused(tcptest_t *test);
 
 #endif

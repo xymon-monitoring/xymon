@@ -162,6 +162,17 @@ static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 }
 
 
+/*
+ * A state name performs no I/O: it says where the steps after it belong, and
+ * gives an edge something to aim at. The driver never stops on one, so every
+ * place that moves the cursor steps over any it lands on.
+ */
+static svcstep_t *dlg_skip_labels(svcstep_t *st)
+{
+	while (st && (st->type == STEP_LABEL)) st = st->next;
+	return st;
+}
+
 tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 			char *srcip,
 			char *tspec, int silent, unsigned char *reqmsg, 
@@ -260,8 +271,21 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	 */
 	newtest->curstep = ((newtest->svcinfo && (newtest->svcinfo->flags & TCP_DIALOGUE) &&
 			     !(newtest->svcinfo->flags & TCP_DIALOGUE_BROKEN) && !silent)
-			    ? (void *)newtest->svcinfo->steps : NULL);
+			    ? (void *)dlg_skip_labels(newtest->svcinfo->steps) : NULL);
+	/*
+	 * A state machine begins where "start" says, not at the first line of the
+	 * file: the states may be written in whatever order reads best.
+	 */
+	if (newtest->curstep && newtest->svcinfo->startlabel) {
+		svcstep_t *lb;
+
+		for (lb = newtest->svcinfo->steps; (lb); lb = lb->next)
+			if ((lb->type == STEP_LABEL) && lb->label &&
+			    (strcmp(lb->label, newtest->svcinfo->startlabel) == 0)) break;
+		if (lb) newtest->curstep = (void *)dlg_skip_labels(lb);
+	}
 	newtest->dialogfail = 0;
+	newtest->dialogverdict = 0;
 	newtest->failstep = NULL;
 	newtest->stepbuf = NULL;
 	newtest->stepbuflen = 0;
@@ -1579,7 +1603,7 @@ restartselect:
 								 * leaving it current would strand the dialogue
 								 * with a step it will never perform.
 								 */
-								st = st->next;
+								st = dlg_skip_labels(st->next);
 								item->curstep = (void *)st;
 							}
 							if (st && (st->type == STEP_STARTTLS)) {
@@ -1616,7 +1640,7 @@ restartselect:
 									setup_ssl(item);
 								}
 								if (item->sslrunning == 1) {
-									st = st->next;
+									st = dlg_skip_labels(st->next);
 									item->curstep = (void *)st;
 								}
 								else if (item->sslrunning != SSLSETUP_PENDING) {
@@ -1674,7 +1698,7 @@ restartselect:
 									item->stepsent += res;
 									if (item->stepsent >= st->len) {
 										item->stepsent = 0;
-										st = st->next;
+										st = dlg_skip_labels(st->next);
 										item->curstep = (void *)st;
 									}
 									/* else: stay here; readpending is false for a
@@ -2072,10 +2096,52 @@ restartselect:
 											memmove(item->stepbuf, item->stepbuf + cut,
 												item->stepbuflen - cut);
 											item->stepbuflen -= cut;
-											st = st->next;
-											item->curstep = (void *)st;
+											/*
+											 * What matched decides where the dialogue goes.
+											 * Without an edge that is the next line, which is
+											 * every entry written the old way; with one it is
+											 * the state named, or an answer that ends the test.
+											 */
+											switch (st->action) {
+											  case ACT_SUCCESS:
+												item->dialogverdict = 1;
+												st = NULL; item->curstep = NULL;
+												break;
+											  case ACT_WARNING:
+											  case ACT_FAIL:
+												item->dialogfail = 1;
+												item->dialogverdict = (st->action == ACT_WARNING) ? 2 : 3;
+												if (!item->failstep) item->failstep = (void *)st;
+												st = NULL; item->curstep = NULL;
+												break;
+											  case ACT_GOTO:
+												st = dlg_skip_labels(st->targetstep);
+												item->curstep = (void *)st;
+												break;
+											  default:
+												st = dlg_skip_labels(st->next);
+												item->curstep = (void *)st;
+												break;
+											}
 										}
 										else break;	/* waiting on "until" -- nothing was consumed */
+									}
+									else if ((item->svcinfo->flags & TCP_STATEMACHINE) &&
+										 st->next && (st->next->type == STEP_EXPECT)) {
+										/*
+										 * In a state machine the expects of one state are
+										 * ALTERNATIVES: the reply is whichever of them it
+										 * matches, and only if none does has the state
+										 * failed. That is what lets one state say "250 is
+										 * success, 4xx is a warning, 5xx is a failure".
+										 *
+										 * Sequence is spelled with another state instead,
+										 * so this cannot change an entry written the old
+										 * way -- there, two expects in a row still mean one
+										 * reply after the other.
+										 */
+										st = st->next;
+										item->curstep = (void *)st;
 									}
 									else {
 										item->dialogfail = 1;
@@ -2350,6 +2416,16 @@ int tcp_got_expected(tcptest_t *test)
 	else
 		return 1;
 }
+/*
+ * What the entry said to report, rather than one colour for every way of
+ * failing. 0 when it said nothing, and then the caller keeps its own default:
+ * a positional entry cannot express this, so nothing about it changes.
+ */
+int tcp_dialogue_verdict(tcptest_t *test)
+{
+	return (test ? test->dialogverdict : 0);
+}
+
 
 #ifdef STANDALONE
 
