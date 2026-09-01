@@ -75,11 +75,14 @@ XYMONHOME="$work/shipped" "$work/dump" $names > "$work/shipped.steps" 2>"$work/s
 	|| { cat "$work/shipped.err" >&2; fail "the two files together did not parse:
 $(cat "$work/shipped.err")"; }
 
-# [ircd] is the one entry that does not merely add. protocols.cfg waits for any
-# reply; protocols2.cfg waits for ":", which every server line begins with. That
-# is narrower, not different, and it is deliberate -- so it is named here rather
-# than hidden by a loose rule.
-narrowed="ircd"
+# Two entries do not merely add; both replace an expect that took ANY reply with
+# one that reads it, which is narrower rather than different. They are named
+# here so the rule stays strict for the other thirty-five.
+#
+#   ircd    ":" -- every server line begins with the prefix colon
+#   oratns  the TNS packet type at byte 4, which says whether this is a
+#           listener at all
+narrowed="ircd oratns"
 
 missing=""
 for svc in $names; do
