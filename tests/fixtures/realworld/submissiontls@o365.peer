@@ -1,0 +1,11 @@
+# smtp.office365.com:587 -- drives [submissiontls]. Exchange, not Postfix: a
+# different greeting, a different STARTTLS acknowledgement, same grammar.
+send "220 ZR2P278CA0057.outlook.office365.com Microsoft ESMTP MAIL Service ready at Mon, 31 Aug 2026 13:30:41 +0000 [08DF0616B55A7D8D]\r\n"
+recv ehlo
+send "250-ZR2P278CA0057.outlook.office365.com Hello [203.0.113.1]\r\n250-SIZE 157286400\r\n250-PIPELINING\r\n250-DSN\r\n250-ENHANCEDSTATUSCODES\r\n250-STARTTLS\r\n250-8BITMIME\r\n250-BINARYMIME\r\n250-CHUNKING\r\n250 SMTPUTF8\r\n"
+recv starttls
+send "220 2.0.0 SMTP server ready\r\n"
+starttls
+recv ehlo
+send "250-ZR2P278CA0057.outlook.office365.com Hello [203.0.113.1]\r\n250-SIZE 157286400\r\n250-PIPELINING\r\n250-DSN\r\n250-ENHANCEDSTATUSCODES\r\n250-AUTH LOGIN XOAUTH2\r\n250-8BITMIME\r\n250-BINARYMIME\r\n250-CHUNKING\r\n250 SMTPUTF8\r\n"
+hangup

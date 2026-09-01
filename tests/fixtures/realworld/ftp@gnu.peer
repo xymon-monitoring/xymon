@@ -1,0 +1,5 @@
+# ftp.gnu.org:21 -- drives [ftp]
+send "220 GNU FTP server ready.\r\n"
+recv quit
+send "221 Goodbye.\r\n"
+hangup
