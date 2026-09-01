@@ -335,10 +335,16 @@ static int do_telnet_options(tcptest_t *item)
 		}
 	        *outp = 255; outp++;
 		inp++; remain--;
-		if ((*inp == 251) || (*inp == 252))     /* WILL or WON'T */
-			y = 254;                          /* -> DON'T */
-		if ((*inp == 253) || (*inp == 254))     /* DO or DON'T */
-			y = 252;                          /* -> WON'T */
+		/*
+		 * RFC 854: WILL is answered DONT and DO is answered WONT. A WONT or
+		 * DONT is the end of that option's negotiation and gets no answer --
+		 * replying to one starts an exchange that never stops. This came
+		 * from netcat, which answered all four.
+		 */
+		if (*inp == 251)			/* WILL */
+			y = 254;			/* -> DON'T */
+		if (*inp == 253)			/* DO */
+			y = 252;			/* -> WON'T */
 		if (y) {
 			*outp = y; outp++;
 			inp++; remain--;
