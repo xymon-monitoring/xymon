@@ -218,7 +218,16 @@ char *init_tcp_services(void)
 			if (first) {
 				getescapestring(skipwhitespace(l+4), &first->rec->sendtxt, &first->rec->sendlen);
 				for (walk = first->next; (walk); walk = walk->next) {
-					walk->rec->sendtxt = strdup(first->rec->sendtxt);
+					/*
+					 * By length, not strdup(): getescapestring()
+					 * resolves \xNN, so the text may contain a NUL.
+					 * strdup() stops there while sendlen still says how
+					 * long it was, and contest.c writes sendlen bytes
+					 * out of the shorter copy.
+					 */
+					walk->rec->sendtxt = (unsigned char *)malloc(first->rec->sendlen + 1);
+					memcpy(walk->rec->sendtxt, first->rec->sendtxt, first->rec->sendlen);
+					walk->rec->sendtxt[first->rec->sendlen] = '\0';
 					walk->rec->sendlen = first->rec->sendlen;
 				}
 			}
@@ -227,7 +236,10 @@ char *init_tcp_services(void)
 			if (first) {
 				getescapestring(skipwhitespace(l+6), &first->rec->exptext, &first->rec->explen);
 				for (walk = first->next; (walk); walk = walk->next) {
-					walk->rec->exptext = strdup(first->rec->exptext);
+					/* As above: binary-safe, by length. */
+					walk->rec->exptext = (unsigned char *)malloc(first->rec->explen + 1);
+					memcpy(walk->rec->exptext, first->rec->exptext, first->rec->explen);
+					walk->rec->exptext[first->rec->explen] = '\0';
 					walk->rec->explen = first->rec->explen;
 					walk->rec->expofs = 0; /* HACK - not used right now */
 				}
