@@ -19,6 +19,29 @@
 #define TCP_SSL        0x0004
 #define TCP_HTTP       0x0008
 #define TCP_ALPN       0x0010
+/* The service is a multi-step dialogue, not a single send-then-match probe.
+   Set by the protocols.cfg parser when the steps cannot be expressed as one
+   sendtxt plus one exptext: an expect comes first, or there is more than one
+   of either. Single-step services keep the old path untouched. */
+#define TCP_DIALOGUE   0x0020
+#define TCP_DIALOGUE_BROKEN 0x0040	/* refused when the file was read: do not report OK */
+
+/* One step of a protocol dialogue, in the order protocols.cfg lists them.
+   Kept as a list rather than an array because the parser appends while it
+   reads and every alias of a service shares the same shape. */
+#define STEP_SEND   1
+#define STEP_EXPECT 2
+#define STEP_STARTTLS 3	/* upgrade this connection to TLS, here */
+#define STEP_STARTIAC 4	/* negotiate telnet options, here */
+
+typedef struct svcstep_t {
+	int type;
+	unsigned char *text;
+	int len;
+	unsigned char *until;		/* expect ... until "X": end-of-reply marker */
+	int untillen;
+	struct svcstep_t *next;
+} svcstep_t;
 
 typedef struct svcinfo_t {
 	char *svcname;
@@ -29,10 +52,12 @@ typedef struct svcinfo_t {
 	unsigned int flags;
 	int port;
 	char *alpns;
+	svcstep_t *steps;	/* NULL unless TCP_DIALOGUE */
 } svcinfo_t;
 
 extern char *init_tcp_services(void);
 extern void dump_tcp_services(void);
+extern int tcp_services_unreadable(void);
 extern int default_tcp_port(char *svcname);
 extern svcinfo_t *find_tcp_service(char *svcname);
 
