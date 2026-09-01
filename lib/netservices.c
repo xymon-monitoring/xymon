@@ -85,6 +85,16 @@ static unsigned char *dup_bytes(unsigned char *src, int len)
  * in an [a|b|c] header gets its own copy: the records are freed independently,
  * so they cannot share a list.
  */
+/*
+ * The furthest into a reply an "at N" may point. It mirrors MAX_DIALOGUE_BYTES
+ * in xymonnet/contest.h, which is the driver's buffer cap and therefore the
+ * real limit: an offset past it could never match. The parser cannot see that
+ * header -- lib/ does not depend on xymonnet/ -- so the bound is restated here
+ * rather than the dependency being added for one number.
+ */
+#define MAX_EXPECT_OFFSET (32 * 1024)
+
+
 static svcstep_t *add_svcstep(svcinfo_t *rec, int type, unsigned char *text, int len)
 {
 	svcstep_t *step, *walk;
@@ -93,6 +103,7 @@ static svcstep_t *add_svcstep(svcinfo_t *rec, int type, unsigned char *text, int
 	if (!step) return NULL;
 	step->type = type;
 	step->len  = len;
+	step->ofs  = -1;	/* "at 0" is a legal offset, so absence needs its own value */
 	step->text = dup_bytes(text, len);
 	if (!step->text) { xfree(step); return NULL; }
 
@@ -493,7 +504,7 @@ char *init_tcp_services(void)
 				unsigned char *txt = NULL, *untiltxt = NULL;
 				int txtlen = 0, untillen = 0;
 				char *rest, *edgetgt = NULL;
-				int edgeact = ACT_NEXT;
+				int edgeact = ACT_NEXT, atofs = -1;
 				svcstep_t *st;
 
 				getescapestring(skipwhitespace(l+6), &txt, &txtlen);
@@ -507,6 +518,34 @@ char *init_tcp_services(void)
 				 * without teaching the parser any of them.
 				 */
 				rest = skipwhitespace(after_quoted(skipwhitespace(l+6)));
+				/*
+				 * "at N" says the literal sits at byte N of the reply rather
+				 * than at its start. A protocol that answers in binary puts
+				 * the byte worth checking behind a length that varies with
+				 * the message, so an anchored expect can never reach it --
+				 * Oracle's listener is the shipped example, where the byte
+				 * saying Accept or Refuse follows a count and a checksum.
+				 *
+				 * It also says the reply is NOT a line, which is why the
+				 * line-consuming rule does not apply to it below.
+				 */
+				if (strncmp(rest, "at ", 3) == 0) {
+					char *endp = NULL;
+					long v = strtol(rest + 3, &endp, 10);
+
+					if (!endp || (endp == rest + 3)) {
+						errprintf("Service %s: 'at' without a byte offset\n",
+							  first->rec->svcname);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+					else if ((v < 0) || (v > MAX_EXPECT_OFFSET)) {
+						errprintf("Service %s: 'at %ld' is outside 0..%d\n",
+							  first->rec->svcname, v, MAX_EXPECT_OFFSET);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+					else atofs = (int)v;
+					rest = skipwhitespace(endp ? endp : rest + 3);
+				}
 				if (strncmp(rest, "until ", 6) == 0) {
 					getescapestring(skipwhitespace(rest + 5), &untiltxt, &untillen);
 					rest = skipwhitespace(after_quoted(skipwhitespace(rest + 5)));
@@ -546,11 +585,25 @@ char *init_tcp_services(void)
 						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
 				}
 
+				if ((atofs >= 0) && untiltxt) {
+					/*
+					 * "until" ends a reply made of lines; "at" indexes into
+					 * one that is not lines at all. Taking both would have to
+					 * pick which, so it is refused where it is written.
+					 */
+					errprintf("Service %s: expect takes 'at' or 'until', not both\n",
+						  first->rec->svcname);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					for (walk = first->next; (walk); walk = walk->next)
+						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+
 				if (first->rec->exptext == NULL) {
 					first->rec->exptext = txt;
 					first->rec->explen  = txtlen;
 				}
 				st = add_svcstep(first->rec, STEP_EXPECT, txt, txtlen);
+				if (st) st->ofs = atofs;
 				if (st && (edgeact != ACT_NEXT)) {
 					st->action = edgeact;
 					if (edgetgt) st->target = strdup(edgetgt);
@@ -582,6 +635,7 @@ char *init_tcp_services(void)
 						walk->rec->expofs  = 0; /* HACK - not used right now */
 					}
 					st = add_svcstep(walk->rec, STEP_EXPECT, txt, txtlen);
+					if (st) st->ofs = atofs;
 					/*
 					 * The edge belongs to every alias, not just the first
 					 * name in the header. Without this [pop|pop3|pop-3] gives
