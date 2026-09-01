@@ -254,7 +254,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	 * whatever that half happened to hit rather than the refusal itself.
 	 */
 	/*
-	 * A silent test drives no steps: ":s" has always been connect-only.
+	 * A silent test drives no steps: ":s" has always been a connect check.
 	 * Skipping just the sends would leave the expects, and a quiet peer
 	 * would go from green to a timeout.
 	 */

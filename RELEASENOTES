@@ -116,6 +116,21 @@ closes without a command -- "lost connection after CONNECT" on Postfix,
 NOQUEUE on sendmail -- so allow the Xymon host wherever those lines feed
 fail2ban or a similar counter.
 
+A protocols.cfg entry is now an ordered conversation: an expect waits for the
+server, a send answers it, and "start tls" upgrades a plaintext connection in
+place, so sslcert can check a STARTTLS certificate. The shipped entries wait
+for the greeting and check the reply to their own command. [smtp] and
+[submission] require ESMTP (250 to EHLO): a HELO-only server now reports down,
+and the entry's comment says how to switch it to HELO. A port that accepts and
+never answers now reports down for oratns, ircd, telnet and telnets.
+
+protocols.cfg is now required. An upgrade keeps the sections already in it, as
+above, so it does not get the new conversations: replace your sections with the
+new ones to have them. A section without a port line -- [smtps], [amqp] and
+[amqps] were shipped without one -- still takes its port from /etc/services,
+but xymonnet now logs a warning for it on every run: add "port 465",
+"port 5672" and "port 5671" to them.
+
 xymonnet tests with a cipher-list restriction now report an SSL error when
 OpenSSL rejects it, instead of silently falling back to the default cipher
 list. Such tests may turn red after upgrading Xymon, or after an OpenSSL
