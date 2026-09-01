@@ -3,11 +3,16 @@
 #
 # tests/server/xymond-noflap-prefix.sh
 #
-# Regression guard for issue #293: the hosts.cfg "noflap=test1,test2,..." list
-# matched test names by prefix rather than by name, so a listed entry silently
-# covered every test whose name is a prefix of it. Among the 44 services in
-# xymonnet/protocols.cfg, 18 pairs collide this way -- "noflap=imaps" also
-# silenced imap, "noflap=ssh2" also silenced ssh, and so on.
+# Regression guard for issue #293, fixed in a18a3f5f5: the hosts.cfg
+# "noflap=test1,test2,..." list matches whole test names. Before that it used
+# strncmp() over the listed name's length, so an entry silently covered every
+# test whose name it is a prefix of -- "noflap=imaps" also silenced imap,
+# "noflap=ssh2" also silenced ssh.
+#
+# The prefix pairs themselves are permanent and commonplace -- imap/imaps,
+# ssh/ssh2, pop/pop3, ftp/ftps -- and harmless while this test passes. That is
+# what it licenses: a new service or alias may be a prefix of another name, and
+# does not need renaming to avoid one.
 #
 # isset_noflap() is static in xymond/xymond.c and xymond has no library form,
 # so the function is extracted from the real source at run time and compiled
