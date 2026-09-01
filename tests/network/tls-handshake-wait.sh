@@ -95,7 +95,10 @@ grep -Eq 'if \(item->open &&.*SSLSETUP_PENDING' <<<"$reg" || fail \
 # handshake, and that branch used to `break` out of the loop over items -- which
 # would skip every socket after this one in the same pass. Harmless while the
 # branch was unreachable mid-handshake; not harmless now.
-read_arm=$(awk '/if \(item->sslrunning == SSLSETUP_PENDING\) setup_ssl\(item\)/{c=1} c{print} c&&/res = socket_read\(/{exit}' "$SRC")
+# Anchored on the construct, not on one spelling of it: this arm is a single
+# line today and may become a block, and a guard that only recognises the
+# current layout stops guarding without saying so.
+read_arm=$(awk '/if \(item->sslrunning == SSLSETUP_PENDING\)/{c=1} c{print} c&&/res = socket_read\(/{exit}' "$SRC")
 [ -n "$read_arm" ] || fail \
 	"contest.c no longer has the pending-handshake arm of the read branch (#452)"
 grep -qE '\bbreak;' <<<"$read_arm" && fail \
