@@ -1,0 +1,8 @@
+# smtp.gmail.com:465 -- drives [smtps]. TLS from the first byte: the peer
+# hands over the certificate before either side has said anything, which is
+# what "options ssl" means and what distinguishes this from [submissiontls].
+starttls
+send "220 smtp.gmail.com ESMTP ffacd0b85a97d-4843ce8b015sm5574779f8f.13 - gsmtp\r\n"
+recv ehlo
+send "250-smtp.gmail.com at your service, [203.0.113.1]\r\n250-SIZE 35882577\r\n250-8BITMIME\r\n250-AUTH LOGIN PLAIN XOAUTH2\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-CHUNKING\r\n250 SMTPUTF8\r\n"
+hangup
