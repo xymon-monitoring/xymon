@@ -1,0 +1,5 @@
+# gmail-smtp-in.l.google.com:25 -- drives [smtp]
+send "220 mx.google.com ESMTP ffacd0b85a97d-48435b10c51si10480583f8f.428 - gsmtp\r\n"
+recv ehlo
+send "250-mx.google.com at your service, [203.0.113.1]\r\n250-SIZE 157286400\r\n250-8BITMIME\r\n250-STARTTLS\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-CHUNKING\r\n250 SMTPUTF8\r\n"
+hangup

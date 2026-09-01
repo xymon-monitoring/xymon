@@ -1,0 +1,7 @@
+# test.rebex.net:990 -- drives [ftps]. Implicit TLS, and the same multi-line
+# 220 as the plaintext port: both halves of the entry at once.
+starttls
+send "220-Welcome to test.rebex.net!\r\n    See https://test.rebex.net/ for more information and terms of use.\r\n220 If you don't have an account, log in as 'anonymous' or 'ftp'.\r\n"
+recv quit
+send "221 Closing session.\r\n"
+hangup
