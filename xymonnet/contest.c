@@ -129,11 +129,23 @@ static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 
 	tcptest_t *item = (tcptest_t *) priv;
 
-	if (item->banner == NULL) {
-		item->banner = (unsigned char *)malloc(len+1);
-	}
-	else {
-		item->banner = (unsigned char *)realloc(item->banner, item->bannerbytes+len+1);
+	{
+		/*
+		 * Through a temporary, and checked: len comes from a remote peer,
+		 * and assigning realloc() straight back loses the old pointer when
+		 * it returns NULL -- which the memcpy() below then writes through.
+		 * Dropping the addition keeps whatever was collected so far.
+		 */
+		unsigned char *grown = (item->banner == NULL)
+			? (unsigned char *)malloc(len+1)
+			: (unsigned char *)realloc(item->banner, item->bannerbytes+len+1);
+
+		if (!grown) {
+			errprintf("Out of memory collecting the banner for %s\n",
+				  (item->svcinfo ? item->svcinfo->svcname : "?"));
+			return 1;
+		}
+		item->banner = grown;
 	}
 
 	memcpy(item->banner+item->bannerbytes, buf, len);
