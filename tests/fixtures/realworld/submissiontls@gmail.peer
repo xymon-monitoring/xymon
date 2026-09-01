@@ -1,0 +1,10 @@
+# smtp.gmail.com:587 -- drives [submissiontls], including the upgrade
+send "220 smtp.gmail.com ESMTP ffacd0b85a97d-484322ce2a6sm16636658f8f.19 - gsmtp\r\n"
+recv ehlo
+send "250-smtp.gmail.com at your service, [203.0.113.1]\r\n250-SIZE 35882577\r\n250-8BITMIME\r\n250-STARTTLS\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-CHUNKING\r\n250 SMTPUTF8\r\n"
+recv starttls
+send "220 2.0.0 Ready to start TLS\r\n"
+starttls
+recv ehlo
+send "250-smtp.gmail.com at your service, [203.0.113.1]\r\n250-SIZE 35882577\r\n250-8BITMIME\r\n250-AUTH LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-CHUNKING\r\n250 SMTPUTF8\r\n"
+hangup
