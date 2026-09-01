@@ -131,10 +131,10 @@ static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 
 	{
 		/*
-		 * Through a temporary, and checked: len comes from a remote peer,
-		 * and assigning realloc() straight back loses the old pointer when
-		 * it returns NULL -- which the memcpy() below then writes through.
-		 * Dropping the addition keeps whatever was collected so far.
+		 * Through a temporary, and checked: the length comes from a remote
+		 * peer and a dialogue calls this for every reply, so a NULL return
+		 * would both lose the buffer and be written through below. Dropping
+		 * the addition keeps whatever was collected so far.
 		 */
 		unsigned char *grown = (item->banner == NULL)
 			? (unsigned char *)malloc(len+1)
@@ -152,7 +152,13 @@ static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 	item->bannerbytes += len;
 	*(item->banner + item->bannerbytes) = '\0';
 
-	return 1;	/* We always just grab the first bit of data for TCP tests */
+	/*
+	 * Every read of every dialogue is appended here, so this collects the
+	 * whole of what the server said, not the greeting alone -- and it does so
+	 * whether or not "options banner" is set. The return value only says the
+	 * caller need not wait for more on this callback's account.
+	 */
+	return 1;
 }
 
 
@@ -167,7 +173,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 
 	if (port == 0) {
 		errprintf("Trying to scan port 0 for service %s\n", service);
-		errprintf("You probably need to define the %s service in /etc/services\n", service);
+		errprintf("Give the %s service a 'port' line in protocols.cfg\n", service);
 		return NULL;
 	}
 
@@ -223,10 +229,42 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->certissuer = NULL;
 	newtest->certexpires = 0;
 	/* If ALPN is configured, SSL is also necessarily enabled */
-	newtest->sslrunning = (((newtest->svcinfo->flags & TCP_SSL) || (newtest->svcinfo->flags & TCP_ALPN)) ? SSLSETUP_PENDING : 0);
+	/*
+	 * A refused definition speaks to nobody, TLS included: "options
+	 * ssl,bogus" would otherwise send a ClientHello and report the SSL
+	 * failure instead of the refusal.
+	 */
+	newtest->sslrunning = ((((newtest->svcinfo->flags & TCP_SSL) || (newtest->svcinfo->flags & TCP_ALPN)) &&
+				!(newtest->svcinfo->flags & TCP_DIALOGUE_BROKEN)) ? SSLSETUP_PENDING : 0);
 	newtest->sslagain = 0;
 	newtest->sslwantwrite = 0;
 	newtest->sendagain = 0;
+	/*
+	 * ONLY for a dialogue. The parser builds a step list for every service,
+	 * including the plain send-and-match ones, so keying off steps alone
+	 * gave legacy services a non-NULL cursor -- and the close guards below
+	 * treat a live cursor as "the conversation is still going", so those
+	 * sockets were never closed and every legacy TLS test timed out.
+	 */
+	/*
+	 * A definition that was refused when the file was read runs nothing. It
+	 * still connects -- "is the port open" is answerable and worth knowing --
+	 * but performing half of a conversation nobody could parse would report
+	 * on something the file never described, and the reason shown would be
+	 * whatever that half happened to hit rather than the refusal itself.
+	 */
+	/*
+	 * A silent test drives no steps: ":s" has always been connect-only.
+	 * Skipping just the sends would leave the expects, and a quiet peer
+	 * would go from green to a timeout.
+	 */
+	newtest->curstep = ((newtest->svcinfo && (newtest->svcinfo->flags & TCP_DIALOGUE) &&
+			     !(newtest->svcinfo->flags & TCP_DIALOGUE_BROKEN) && !silent)
+			    ? (void *)newtest->svcinfo->steps : NULL);
+	newtest->dialogfail = 0;
+	newtest->failstep = NULL;
+	newtest->stepbuf = NULL;
+	newtest->stepbuflen = 0;
 
 	newtest->banner = NULL;
 	newtest->bannerbytes = 0;
@@ -308,13 +346,10 @@ static int do_telnet_options(tcptest_t *item)
 			 * buffer, so copy it over, and return it.
 			 */
 			/*
-			 * Copy BEFORE freeing the old banner: item->telnetbuf IS
-			 * item->banner (the read arm aliases them), so inp points
-			 * into the buffer being replaced. Freeing first would leave
-			 * inp dangling and this copy would read freed memory.
-			 *
-			 * Replacing without freeing leaked the old buffer, which is
-			 * what stood here.
+			 * Copy BEFORE freeing: telnetbuf aliases banner, so inp points
+			 * into the very buffer being replaced -- freeing first leaves
+			 * inp dangling and the copy reads freed memory. On failure the
+			 * old banner is kept rather than left NULL with a length.
 			 */
 			{
 				unsigned char *newbanner = (unsigned char *)strdup((char *)inp);
@@ -492,10 +527,29 @@ static char *xymon_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 }
 
 
+/*
+ * Drop the SSL state of a handshake that never completed, clearing the
+ * pointers with it: setup_ssl() reads a non-NULL ssldata as a live session
+ * and reuses it, so freed-but-set is a use-after-free on the next call.
+ *
+ * No SSL_shutdown() -- nothing was established. socket_shutdown() handles
+ * the completed case.
+ */
+static void discard_ssl_state(tcptest_t *item)
+{
+	if (item->ssldata) {
+		SSL_free(item->ssldata);
+		item->ssldata = NULL;
+	}
+	if (item->sslctx) {
+		SSL_CTX_free(item->sslctx);
+		item->sslctx = NULL;
+	}
+}
+
 static void setup_ssl(tcptest_t *item)
 {
 	static int ssl_init_complete = 0;
-	struct servent *sp;
 	char portinfo[100];
 	X509 *peercert;
 	char *certcn, *certstart, *certend, *certissuer; const char *certsigalg;
@@ -518,6 +572,12 @@ static void setup_ssl(tcptest_t *item)
 			if (RAND_status() != 1) {
 				errprintf("Failed to find enough entropy on your system");
 				item->errcode = CONTEST_ESSL;
+				/*
+				 * sslrunning was set on the way in, and every caller reads
+				 * it as "the session is up": start tls would advance past
+				 * the upgrade and the I/O helpers would use a NULL ssldata.
+				 */
+				item->sslrunning = 0;
 				return;
 			}
 		}
@@ -616,7 +676,7 @@ static void setup_ssl(tcptest_t *item)
 			errprintf("Cannot set cipher list '%s' - IP %s, service %s: %s\n",
 				   item->ssloptions->cipherlist, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
-			SSL_CTX_free(item->sslctx);
+			discard_ssl_state(item);
 			item->errcode = CONTEST_ESSL;
 			return;
 		}
@@ -683,7 +743,7 @@ static void setup_ssl(tcptest_t *item)
 				errprintf("Cannot load SSL client certificate/key %s: %s\n", 
 					  item->ssloptions->clientcert, sslerrmsg);
 				item->sslrunning = 0;
-				SSL_CTX_free(item->sslctx);
+				discard_ssl_state(item);
 				item->errcode = CONTEST_ESSL;
 				return;
 			}
@@ -699,7 +759,7 @@ static void setup_ssl(tcptest_t *item)
 			errprintf("SSL_new failed - IP %s, service %s: %s\n", 
 				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
-			SSL_CTX_free(item->sslctx);
+			discard_ssl_state(item);
 			item->errcode = CONTEST_ESSL;
 			return;
 		}
@@ -718,8 +778,7 @@ static void setup_ssl(tcptest_t *item)
 			if (!SSL_CTX_check_private_key(item->sslctx)) {
 				errprintf("Private/public key mismatch for certificate %s\n", item->ssloptions->clientcert);
 				item->sslrunning = 0;
-				SSL_free(item->ssldata);
-				SSL_CTX_free(item->sslctx);
+				discard_ssl_state(item);
 				item->errcode = CONTEST_ESSL;
 				return;
 			}
@@ -738,20 +797,20 @@ static void setup_ssl(tcptest_t *item)
 			errprintf("Could not initiate SSL on connection - IP %s, service %s: %s\n", 
 				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
-			SSL_free(item->ssldata); 
-			SSL_CTX_free(item->sslctx);
+			discard_ssl_state(item);
 			item->errcode = CONTEST_ESSL;
 			return;
 		}
 	}
 
-	sp = getservbyport(item->addr.sin_port, "tcp");
-	if (sp) {
-		sprintf(portinfo, "%s (%d/tcp)", sp->s_name, item->addr.sin_port);
-	}
-	else {
-		sprintf(portinfo, "%d/tcp", item->addr.sin_port);
-	}
+	/*
+	 * Named from what we are testing, not from the host's /etc/services: the
+	 * service name is what the operator wrote in protocols.cfg, and looking
+	 * up the port there could disagree with it.
+	 */
+	snprintf(portinfo, sizeof(portinfo), "%s (%d/tcp)",
+		 (item->svcinfo && item->svcinfo->svcname ? item->svcinfo->svcname : "?"),
+		 item->addr.sin_port);
 	if ((err = SSL_connect(item->ssldata)) != 1) {
 		char sslerrmsg[256];
 		int sslerr = SSL_get_error(item->ssldata, err);
@@ -778,21 +837,21 @@ static void setup_ssl(tcptest_t *item)
 					  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			}
 			item->errcode = CONTEST_ESSL;
-			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			item->sslrunning = 0; discard_ssl_state(item);
 			break;
 		  case SSL_ERROR_SSL:
 			ERR_error_string(ERR_get_error(), sslerrmsg);
 			errprintf("Unspecified SSL error in SSL_connect to %s on host %s: %s\n",
 				  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
-			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			item->sslrunning = 0; discard_ssl_state(item);
 			break;
 		  default:
 			ERR_error_string(ERR_get_error(), sslerrmsg);
 			errprintf("Unknown error %d in SSL_connect to %s on host %s: %s\n",
 				  err, portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
-			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			item->sslrunning = 0; discard_ssl_state(item);
 			break;
 		}
 
@@ -805,7 +864,7 @@ static void setup_ssl(tcptest_t *item)
 		errprintf("Cannot get peer certificate for %s on host %s\n",
 			  portinfo, inet_ntoa(item->addr.sin_addr));
 		item->errcode = CONTEST_ESSL;
-		item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+		item->sslrunning = 0; discard_ssl_state(item);
 		return;
 	}
 
@@ -891,17 +950,20 @@ static int socket_write(tcptest_t *item, char *outbuf, int outlen)
 	int res = 0;
 
 	item->sendagain = 0;
+	item->sslwantread = 0;
 	if (item->sslrunning) {
 		res = SSL_write(item->ssldata, outbuf, outlen);
 		if (res < 0) {
 			switch (SSL_get_error (item->ssldata, res)) {
 			  case SSL_ERROR_WANT_WRITE:
 				  /*
-				   * Nothing was sent. Returning 0 alone is
-				   * indistinguishable from "there was nothing to
-				   * send", so flag it: the caller must come back
-				   * and retry with the SAME buffer. socket_read()
-				   * uses sslagain for the same purpose.
+				   * Nothing was sent -- and nothing reached the
+				   * kernel, so this is not something TCP will
+				   * retransmit: the bytes were never handed to it.
+				   * Only calling SSL_write() again with the SAME
+				   * buffer sends them. Returning 0 alone looks like
+				   * "there was nothing to send", so flag it.
+				   * socket_read() uses sslagain the same way.
 				   *
 				   * Only WANT_WRITE is retried. Clearing
 				   * readpending puts the socket back in writefds,
@@ -912,15 +974,12 @@ static int socket_write(tcptest_t *item, char *outbuf, int outlen)
 				  break;
 			  case SSL_ERROR_WANT_READ:
 				  /*
-				   * WANT_READ would need the fd in readfds, and the
-				   * read branch there would consume application data
-				   * rather than retry this write. Left as it behaves
-				   * today -- the payload is not sent and the test
-				   * waits out its timeout -- rather than retried on a
-				   * fd set that is always ready, which would busy-wait.
-				   * Reachable only via renegotiation; TLS 1.3 session
-				   * tickets and KeyUpdate do not produce it.
+				   * The mirror of WANT_WRITE: nothing was sent, and the
+				   * retry needs the socket READABLE. Flagged so select()
+				   * waits for that and the dispatch still runs the write.
 				   */
+				  item->sendagain = 1;
+				  item->sslwantread = 1;
 				  res = 0;
 				  break;
 			}
@@ -939,15 +998,24 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 	int res = 0;
 	char errtxt[1024];
 
-	if (item->svcinfo->flags & TCP_SSL) {
+	if ((item->svcinfo->flags & TCP_SSL) || item->sslrunning) {
 		if (item->sslrunning) {
 			item->sslagain = 0;
 			res = SSL_read(item->ssldata, inbuf, inbufsize);
 			if (res < 0) {
 				switch (SSL_get_error (item->ssldata, res)) {
 				  case SSL_ERROR_WANT_READ:
-				  case SSL_ERROR_WANT_WRITE:
 					  item->sslagain = 1;
+					  item->sslwantwrite = 0;
+					  break;
+				  case SSL_ERROR_WANT_WRITE:
+					  /*
+					   * A read can need the socket WRITABLE -- renegotiation
+					   * does. Waiting for readability instead stalls until
+					   * the timeout, the same fault the handshake had.
+					   */
+					  item->sslagain = 1;
+					  item->sslwantwrite = 1;
 					  break;
 				  default:
 					  ERR_error_string(ERR_get_error(), errtxt);
@@ -975,14 +1043,15 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 static void socket_shutdown(tcptest_t *item)
 {
 	/*
-	 * Both guards are load-bearing. sslrunning must stay the outer test:
-	 * setup_ssl()'s failure paths free ssldata/sslctx without clearing them
-	 * and set sslrunning to 0, so a pointer-only guard would free dangling
-	 * pointers here. And the inner NULL checks are needed because
-	 * SSLSETUP_PENDING is -1, so sslrunning is already true from
-	 * add_tcp_test() while ssldata is still NULL -- a connection that times
-	 * out before setup_ssl() runs would otherwise reach SSL_shutdown(NULL).
-	 * Clearing them makes a second call harmless either way.
+	 * The inner NULL checks are needed because SSLSETUP_PENDING is -1, so
+	 * sslrunning is already true from add_tcp_test() while ssldata is still
+	 * NULL -- a connection that times out before setup_ssl() runs would
+	 * otherwise reach SSL_shutdown(NULL). Clearing them makes a second call
+	 * harmless either way.
+	 *
+	 * sslrunning stays the outer test because a handshake that never
+	 * completed has nothing to shut down -- not to avoid a double free:
+	 * setup_ssl()'s failure paths clear what they free.
 	 */
 	if (item->sslrunning) {
 		if (item->ssldata) {
@@ -1026,6 +1095,29 @@ static void tcptest_setnext(void *a, void *newval)
 	((tcptest_t *)a)->next = (tcptest_t *)newval;
 }
 
+
+/*
+ * Does this line end the reply?
+ *
+ * "until" is a literal, written "250 " for SMTP: the space separates the last
+ * line from a "250-" continuation. But RFC 5321 4.2 puts that space before
+ * the TEXT, and a server with nothing to add sends "250" alone -- so a
+ * terminator ending in a space also matches at end of line. "250-" still
+ * does not, which is the distinction the space was carrying.
+ */
+static int until_matches(unsigned char *line, int linelen, unsigned char *until, int untillen)
+{
+	if ((linelen >= untillen) && (memcmp(line, until, untillen) == 0)) return 1;
+
+	if ((untillen > 1) && (until[untillen-1] == ' ') && (linelen >= (untillen-1)) &&
+	    (memcmp(line, until, untillen-1) == 0)) {
+		unsigned char next = (linelen > (untillen-1)) ? line[untillen-1] : '\n';
+
+		return ((next == '\r') || (next == '\n'));
+	}
+
+	return 0;
+}
 
 void do_tcp_tests(int timeout, int concurrency)
 {
@@ -1247,7 +1339,15 @@ restartselect:
 				 * So: On any given socket, we want either a 
 				 * write-event or a read-event - never both.
 				 */
-				if (item->open && (item->sslrunning == SSLSETUP_PENDING)) {
+				if (item->open && (item->sslrunning == 1) && item->sslagain && item->sslwantwrite) {
+					/* A read that returned WANT_WRITE waits for writability. */
+					FD_SET(item->fd, &writefds);
+				}
+				else if (item->open && (item->sslrunning == 1) && item->sendagain && item->sslwantread) {
+					/* And a write that returned WANT_READ waits for readability. */
+					FD_SET(item->fd, &readfds);
+				}
+				else if (item->open && (item->sslrunning == SSLSETUP_PENDING)) {
 					/*
 					 * Mid-handshake: readpending is still 0 (do_talk
 					 * is false until the handshake completes), so the
@@ -1331,14 +1431,10 @@ restartselect:
 						item->open = 0;
 					}
 					/*
-					 * Either way, hand the socket to socket_shutdown():
-					 * it is the only place SSL_free()/SSL_CTX_free()
-					 * happen, and it no-ops on a session that was never
-					 * running. The !readpending arm used to skip it, so
-					 * an SSL session that timed out with nothing pending
-					 * to read -- a handshake that never finished, and now
-					 * also a write still waiting to be retried -- had its
-					 * fd closed with the SSL objects still allocated.
+					 * Either way, hand the socket to socket_shutdown(): it frees a session
+					 * that handshaked (setup_ssl() disposes of the ones that failed) and
+					 * no-ops on one that never ran. The !readpending arm used to skip it,
+					 * leaving the SSL objects allocated on a timed-out handshake.
 					 */
 					socket_shutdown(item);
 					item->errcode = CONTEST_ETIMEOUT;
@@ -1350,7 +1446,17 @@ restartselect:
 					if (item == firstactive) firstactive = item->next;
 				}
 				else {
-					if (FD_ISSET(item->fd, &writefds)) {
+					/*
+					 * An SSL read that returned WANT_WRITE is registered for
+					 * writability, but it is still a READ that has to be
+					 * retried -- sending it to the write arm leaves the
+					 * expect current and the socket spinning until timeout.
+					 * The same the other way for a write that wants a read.
+					 */
+					if ((FD_ISSET(item->fd, &writefds) &&
+					     !(item->sslagain && item->sslwantwrite)) ||
+					    (FD_ISSET(item->fd, &readfds) &&
+					     item->sendagain && item->sslwantread)) {
 						int do_talk = 1;
 						unsigned char *outbuf = NULL;
 						unsigned int outlen = 0;
@@ -1391,6 +1497,18 @@ restartselect:
 									 */
 									get_connectiontime(item, &timestamp);
 								}
+								else if (item->sslrunning == 0) {
+									/*
+									 * Handshake failed. curstep left set holds
+									 * the close guard below open, so the dead
+									 * connection would be reported as a timeout
+									 * instead of as the failure setup_ssl() saw.
+									 */
+									item->dialogfail = 1;
+									if (!item->failstep) item->failstep = item->curstep;
+									item->curstep = NULL;
+									item->readpending = 0;
+								}
 							}
 							do_talk = (item->sslrunning == 1);
 						}
@@ -1408,7 +1526,178 @@ restartselect:
 
 						item->readpending = (do_talk && !item->silenttest && 
 							( (item->svcinfo->flags & TCP_GET_BANNER) || item->svcinfo->exptext ));
-						if (do_talk) {
+						/* Refusals owed go out before any step: the peer is
+						 * waiting for them, and the next step for the peer. */
+						if (do_talk && (item->svcinfo->flags & TCP_DIALOGUE) &&
+						    (item->iacreplylen > 0)) {
+							res = socket_write(item, (char *)item->iacreply,
+									   item->iacreplylen);
+							if (res > 0) {
+								tcp_stats_written += res;
+								if (res >= item->iacreplylen) item->iacreplylen = 0;
+								else {
+									memmove(item->iacreply, item->iacreply + res,
+										item->iacreplylen - res);
+									item->iacreplylen -= res;
+								}
+							}
+							else if (res == -1) {
+								dbgprintf("telnet refusal write failed\n");
+								item->errcode = CONTEST_EIO;
+								item->curstep = NULL;
+								item->iacreplylen = 0;
+							}
+
+							/*
+							 * Back to whatever the steps want next. Forcing a
+							 * read here deadlocks an entry whose expect has
+							 * already matched: its next send would wait for a
+							 * reply the peer only makes after receiving it.
+							 */
+							if (item->iacreplylen == 0) {
+								svcstep_t *nst = (svcstep_t *)item->curstep;
+
+								item->readpending = (nst &&
+										     ((nst->type == STEP_EXPECT) ||
+										      (nst->type == STEP_STARTIAC)));
+							}
+						}
+						else if (do_talk && (item->svcinfo->flags & TCP_DIALOGUE)) {
+							/*
+							 * A dialogue drives itself from where it stands:
+							 * a SEND step is written here, an EXPECT step is
+							 * waited for by leaving readpending set. That one
+							 * rule is the whole state machine -- the current
+							 * step decides which fd set the socket joins.
+							 */
+							svcstep_t *st = (svcstep_t *)item->curstep;
+
+							while (st && (st->type == STEP_SEND) && item->silenttest) {
+								/*
+								 * A silent test says nothing on the wire. Step
+								 * over the sends rather than sitting on one:
+								 * leaving it current would strand the dialogue
+								 * with a step it will never perform.
+								 */
+								st = st->next;
+								item->curstep = (void *)st;
+							}
+							if (st && (st->type == STEP_STARTTLS)) {
+								/*
+								 * Upgrade in place, through the same setup_ssl() that "options ssl"
+								 * uses at connect, so the certificate reaches the sslcert column. For
+								 * SMTP on 25 and submission on 587 this is the only way to reach one.
+								 *
+								 * The handshake takes several passes: the step stays current until it
+								 * settles, and select() waits for whichever direction it asked for.
+								 */
+								if (item->sslrunning == 0) {
+									/*
+									 * Discard what was read in the clear, or a
+									 * line injected before the handshake is
+									 * matched by a step that runs after it --
+									 * the STARTTLS injection of CVE-2011-0411.
+									 * RFC 3207 4.2 requires it here, and a real
+									 * server has nothing pending anyway.
+									 */
+									item->stepbuflen = 0;
+									if (item->stepbuf) item->stepbuf[0] = '\0';
+
+									item->sslrunning = SSLSETUP_PENDING;
+									setup_ssl(item);
+								}
+								else if (item->sslrunning == SSLSETUP_PENDING) {
+									/*
+									 * Resume it: a WANT_WRITE handshake comes
+									 * back to this arm, and the other caller of
+									 * setup_ssl() here is gated on TCP_SSL,
+									 * which an upgraded service is not.
+									 */
+									setup_ssl(item);
+								}
+								if (item->sslrunning == 1) {
+									st = st->next;
+									item->curstep = (void *)st;
+								}
+								else if (item->sslrunning != SSLSETUP_PENDING) {
+									/* setup_ssl() has set errcode */
+									item->curstep = NULL;
+									st = NULL;
+								}
+							}
+
+							if (st && (st->type == STEP_SEND) && (item->stepbuflen > 0)) {
+								/*
+								 * Unread bytes are here BEFORE this command goes out, so they
+								 * cannot be its reply -- a peer can preload what our next step
+								 * is looking for. Checked before the write, not after: the next
+								 * step of a custom entry may be an AUTH or anything else that
+								 * changes state, and it must not reach a peer already shown to
+								 * be misbehaving.
+								 *
+								 * Failing rather than discarding: unread bytes also mean the
+								 * previous reply was not fully consumed, which is what a missing
+								 * "until" looks like. Dropping them quietly would hide the config
+								 * error the terminator exists for.
+								 */
+								item->dialogfail = 1;
+								item->stalereply = 1;
+								if (!item->failstep) item->failstep = (void *)st;
+								item->curstep = NULL;
+								item->readpending = 0;
+								st = NULL;
+							}
+							else if (st && (st->type == STEP_SEND)) {
+								/*
+								 * Write what is LEFT of this step. A short
+								 * write is ordinary -- SSL_write() returns 0
+								 * with sendagain on WANT_WRITE, and write()
+								 * can be cut short when the socket buffer
+								 * fills. The unsent tail never reached the
+								 * kernel, so TCP will not carry it: only
+								 * offering it again does. Advancing on any
+								 * non-error sent a truncated command. The
+								 * offset lives here because the buffer
+								 * belongs to the config.
+								 */
+								res = socket_write(item, (char *)st->text + item->stepsent,
+										   st->len - item->stepsent);
+								if (res > 0) tcp_stats_written += res;
+								if (res == -1) {
+									dbgprintf("write failed\n");
+									item->errcode = CONTEST_EIO;
+									item->curstep = NULL;
+									item->stepsent = 0;
+									st = NULL;
+								}
+								else {
+									item->stepsent += res;
+									if (item->stepsent >= st->len) {
+										item->stepsent = 0;
+										st = st->next;
+										item->curstep = (void *)st;
+									}
+									/* else: stay here; readpending is false for a
+									 * SEND, so writefds brings the rest. */
+								}
+							}
+							item->readpending = (st && ((st->type == STEP_EXPECT) ||
+										    (st->type == STEP_STARTIAC) ||
+										    ((st->type == STEP_STARTTLS) &&
+										     (item->sslrunning == SSLSETUP_PENDING))));
+
+							/*
+							 * No step to wait on, but "options banner" asked
+							 * for a read. Taking the flag from the step alone
+							 * leaves that socket out of readfds and closes it
+							 * unread -- the service still reports up, so only
+							 * the empty banner shows it.
+							 */
+							if (!st && !item->silenttest && !item->banner &&
+							    (item->svcinfo->flags & TCP_GET_BANNER))
+								item->readpending = 1;
+						}
+						else if (do_talk) {
 							if (item->telnetnegotiate && item->telnetbuflen) {
 								/*
 								 * Return the telnet negotiate data response
@@ -1462,7 +1751,12 @@ restartselect:
 
 						/* If closed and/or no bannergrabbing, shut down socket */
 						if (item->sslrunning != SSLSETUP_PENDING) {
-							if (!item->open || (!item->readpending && !item->sendagain)) {
+							/*
+							 * Three independent reasons to keep it open: a
+							 * reply still expected, a write waiting to be
+							 * retried, or a dialogue step still to run.
+							 */
+							if (!item->open || (!item->readpending && !item->sendagain && !item->curstep)) {
 								if (item->open) {
 									socket_shutdown(item);
 								}
@@ -1476,7 +1770,10 @@ restartselect:
 							}
 						}
 					}
-					else if (FD_ISSET(item->fd, &readfds)) {
+					else if ((FD_ISSET(item->fd, &readfds) &&
+						  !(item->sendagain && item->sslwantread)) ||
+						 (FD_ISSET(item->fd, &writefds) &&
+						  item->sslagain && item->sslwantwrite)) {
 						/*
 						 * Data ready to read on this socket. Grab the
 						 * banner - we only do one read (need the socket
@@ -1485,42 +1782,59 @@ restartselect:
 						 */
 						int wantmoredata = 0;
 						int datadone = 0;
+						/*
+						 * This read was telnet options and nothing else. Not
+						 * the same as a closed socket, though both leave res
+						 * at 0 once the options are taken off the front.
+						 */
+						int iaconly = 0;
 
 						item->lastactive = timestamp.tv_sec;
 
 						/*
 						 * We may be in the process of setting up an SSL connection
 						 */
-						if (item->sslrunning == SSLSETUP_PENDING) setup_ssl(item);
+						if (item->sslrunning == SSLSETUP_PENDING) {
+							setup_ssl(item);
+							if (item->sslrunning == 0) {
+								/*
+								 * Handshake failed; setup_ssl() has set errcode. Falling through left
+								 * curstep on the STARTTLS step, so the write arm tried again on every
+								 * pass until the test timed out -- and curstep also holds the close
+								 * guard below open.
+								 */
+								item->dialogfail = 1;
+								if (!item->failstep) item->failstep = item->curstep;
+								item->curstep = NULL;
+								item->readpending = 0;
+							}
+						}
 						if (item->sslrunning == SSLSETUP_PENDING) {
 							/*
-							 * Still handshaking: nothing to read yet.
-							 * continue, not break -- break leaves the whole
-							 * loop over items, abandoning the scan at the
-							 * first socket that is readable but not yet
-							 * handshaken. Measured, that costs iterations
-							 * rather than results: select() returns again
-							 * immediately and the remaining sockets are
-							 * serviced on the next pass. It was unreachable
-							 * during a handshake before (the fd was always in
-							 * writefds); registering by direction above makes
-							 * it the normal path, so leave the scan intact.
+							 * Still handshaking: nothing to read yet. continue, not break --
+							 * break abandons every remaining socket in the pass. Measured, the
+							 * cost is iterations, not results: select() returns again at once.
 							 */
 							continue;
 						}
+						if (item->curstep &&
+						    (((svcstep_t *)item->curstep)->type == STEP_STARTTLS)) {
+							/*
+							 * A "starttls" step whose handshake has settled.
+							 * The write arm owns the step list, so hand the
+							 * socket back to it rather than advancing here.
+							 */
+							item->readpending = 0;
+							continue;
+						}
+
 						if (!item->readpending) {
 							/*
-							 * The handshake just finished, here, in the read
-							 * arm -- which only became possible once pending
-							 * handshakes were registered for readability. The
-							 * write arm has not run for this socket yet, so
-							 * nothing has sent sendtxt or decided whether a
-							 * banner is even wanted. Reading now would skip the
-							 * send outright, and would collect a banner for a
-							 * silenttest. Clearing readpending is 0 here means
-							 * select() puts the socket back in writefds, so the
-							 * write arm picks it up on the next pass exactly as
-							 * it did when the handshake completed there.
+							 * The handshake finished here in the read arm, so the write arm has
+							 * not run for this socket: nothing has sent sendtxt or decided whether
+							 * a banner is wanted. Reading now would skip the send and collect a
+							 * banner for a silenttest. readpending is 0, so select() puts the
+							 * socket back in writefds and the write arm takes it next pass.
 							 */
 							continue;
 						}
@@ -1532,11 +1846,277 @@ restartselect:
 						tcp_stats_read += res;
 						dbgprintf("read %d bytes from socket\n", res);
 
+						/*
+						 * "start iac": strip the option commands off the front
+						 * of this read before the matcher or the banner sees
+						 * it. Options share a read with the text behind them,
+						 * so stripping later leaves the matcher looking at
+						 * 0xff and the greeting arriving too late to match.
+						 *
+						 * Three-byte commands only, as do_telnet_options().
+						 */
+						if ((res > 0) && item->curstep &&
+						    (((svcstep_t *)item->curstep)->type == STEP_STARTIAC)) {
+							int skip = 0;
+
+							while (((skip + 2) < res) &&
+							       (((unsigned char *)msgbuf)[skip] == 255)) {
+								unsigned char cmd = ((unsigned char *)msgbuf)[skip+1];
+								unsigned char opt = ((unsigned char *)msgbuf)[skip+2];
+								unsigned char answer = 0;
+
+								/*
+								 * Refuse what is offered: an IBM i host sends
+								 * DO TERMINAL-TYPE and says nothing until it
+								 * is answered. WONT and DONT get no answer --
+								 * RFC 854 makes them the end of that option,
+								 * and replying loops until the timeout.
+								 */
+								if (cmd == 251) answer = 254;		/* WILL -> DONT */
+								else if (cmd == 253) answer = 252;	/* DO   -> WONT */
+
+								if (answer &&
+								    ((item->iacreplylen + 3) <= (int)sizeof(item->iacreply))) {
+									item->iacreply[item->iacreplylen++] = 255;
+									item->iacreply[item->iacreplylen++] = answer;
+									item->iacreply[item->iacreplylen++] = opt;
+								}
+								skip += 3;
+							}
+
+							if (skip > 0) {
+								res -= skip;
+								if (res > 0) memmove(msgbuf, msgbuf + skip, res);
+								msgbuf[res] = '\0';
+							}
+
+							if (res > 0) {
+								/*
+								 * Text behind the options: the negotiation is
+								 * over, and what is left belongs to the next
+								 * step. Clearing telnetnegotiate keeps the
+								 * older handler below from taking it apart a
+								 * second time.
+								 */
+								svcstep_t *iacst = (svcstep_t *)item->curstep;
+
+								item->telnetnegotiate = 0;
+								item->curstep = (void *)iacst->next;
+							}
+							else if (skip > 0) {
+								/*
+								 * Options and nothing else: not EOF. Hand the
+								 * socket to the write side if refusals are
+								 * owed.
+								 */
+								iaconly = 1;
+								if (item->iacreplylen > 0) item->readpending = 0;
+							}
+						}
+
+						if (item->svcinfo->flags & TCP_DIALOGUE) {
+							/*
+							 * An EXPECT step is matched against what THIS read
+							 * returned, not against the accumulated banner: in
+							 * a conversation the same socket carries several
+							 * replies, and only the one for this step counts.
+							 * Compare the start, which is what a status line
+							 * is -- "250-" and "250 " both satisfy "250".
+							 */
+							svcstep_t *st = (svcstep_t *)item->curstep;
+
+							/*
+								 * res <= 0 is EOF on a plain socket, but over
+								 * TLS it is also how "no data yet" arrives:
+								 * socket_read() sets sslagain for WANT_READ.
+								 * Without that guard the first wait for a
+								 * greeting was read as the peer hanging up,
+								 * and every TLS dialogue failed instantly.
+								 */
+								if ((res <= 0) && !item->sslagain && !iaconly && st) {
+								/*
+								 * The peer went away with steps still to run.
+								 * Fail here rather than leaving the socket to
+								 * time out: "hung up mid-conversation" is a
+								 * different fault from "never answered", and
+								 * waiting out the timeout reports the wrong one.
+								 */
+								item->dialogfail = 1;
+								if (!item->failstep) item->failstep = (void *)st;
+								item->curstep = NULL;
+								st = NULL;
+							}
+							else if ((res > 0) && st && (st->type == STEP_EXPECT)) {
+								/*
+								 * Accumulate: one read is not one reply. TLS
+								 * hands back a record at a time and SMTP's
+								 * multi-line replies span several, so a step
+								 * has three outcomes -- matched, mismatched,
+								 * or not enough yet -- and only the third is
+								 * new here.
+								 */
+								/*
+								 * Bound it. An expect that waits for a
+								 * terminator will otherwise accumulate
+								 * whatever a server cares to send, for as
+								 * long as it cares to send it -- and the
+								 * poll loop runs hundreds of these at once.
+								 * Monit caps the same buffer at 255 bytes;
+								 * this is roomier because a real EHLO reply
+								 * is several hundred, but it is a cap.
+								 */
+								if ((item->stepbuflen + res) > MAX_DIALOGUE_BYTES) {
+									errprintf("%s: reply exceeded %d bytes with no match - giving up\n",
+										  item->svcinfo->svcname, MAX_DIALOGUE_BYTES);
+									item->dialogfail = 1;
+									if (!item->failstep) item->failstep = (void *)st;
+									item->curstep = NULL;
+									item->readpending = 0;
+									st = NULL;
+									/*
+									 * Fall through, not continue: "continue" skipped the close
+									 * below, so the cap stopped the reading and the timeout ended
+									 * the test. Not "break" either -- that abandons every
+									 * remaining socket in the pass.
+									 */
+								}
+
+								{
+									/*
+									 * Through a temporary: assigning realloc()
+									 * straight back loses the old pointer when
+									 * it returns NULL, so the buffer leaks and
+									 * the memcpy() below dereferences NULL.
+									 */
+									unsigned char *grown = (unsigned char *)realloc(item->stepbuf,
+													item->stepbuflen + res + 1);
+
+									if (!grown) {
+										errprintf("%s: out of memory growing the reply buffer\n",
+											  item->svcinfo->svcname);
+										item->errcode = CONTEST_EIO;
+										item->dialogfail = 1;
+										if (!item->failstep) item->failstep = (void *)st;
+										item->curstep = NULL;
+										item->readpending = 0;
+										st = NULL;
+										break;
+									}
+									item->stepbuf = grown;
+								}
+								memcpy(item->stepbuf + item->stepbuflen, msgbuf, res);
+								item->stepbuflen += res;
+								item->stepbuf[item->stepbuflen] = '\0';
+
+								/*
+								 * Loop: two replies can arrive in one read, so the tail kept
+								 * for the next step may already be its whole answer. Waiting
+								 * for another read would time out. IMAP's "* BYE" and its
+								 * tagged result are exactly this.
+								 */
+								while (st && (st->type == STEP_EXPECT) && (item->stepbuflen >= st->len)) {
+									if (memcmp(item->stepbuf, st->text, st->len) == 0) {
+										int cut = st->len, ready = 1;
+
+										if (st->until) {
+											/*
+											 * Multi-line: consume complete lines
+											 * until one starts with the terminator.
+											 * If it has not arrived, consume NOTHING
+											 * and wait -- taking the lines we have
+											 * would strand the rest of the reply for
+											 * the next expect to trip over.
+											 */
+											int pos = 0;
+
+											ready = 0;
+											while (pos < item->stepbuflen) {
+												int eol = pos;
+
+												while ((eol < item->stepbuflen) &&
+												       (item->stepbuf[eol] != '\n')) eol++;
+												if (eol >= item->stepbuflen) break;
+												if (until_matches(item->stepbuf + pos,
+														  item->stepbuflen - pos,
+														  st->until, st->untillen)) {
+													cut = eol + 1;
+													ready = 1;
+													break;
+												}
+												pos = eol + 1;
+											}
+										}
+										else {
+											/*
+											 * Single line. Consume through its end and KEEP the rest:
+											 * discarding it would throw away a reply the peer had already
+											 * sent.
+											 *
+											 * A pattern matching is not the reply having arrived -- "220"
+											 * matches after three bytes -- so consume nothing until the
+											 * line ends, or the next expect starts mid-line.
+											 */
+											while ((cut < item->stepbuflen) &&
+											       (item->stepbuf[cut] != '\n')) cut++;
+											if (cut < item->stepbuflen) cut++;
+											else if (st->next) ready = 0;
+											/*
+											 * Last step: nothing to protect, and the reply may
+											 * legitimately end without a newline. A lone expect is driven
+											 * here too, so this would otherwise reach entries that never
+											 * asked for it.
+											 */
+										}
+
+										if (ready) {
+											memmove(item->stepbuf, item->stepbuf + cut,
+												item->stepbuflen - cut);
+											item->stepbuflen -= cut;
+											st = st->next;
+											item->curstep = (void *)st;
+										}
+										else break;	/* waiting on "until" -- nothing was consumed */
+									}
+									else {
+										item->dialogfail = 1;
+										if (!item->failstep) item->failstep = (void *)st;
+										item->curstep = NULL;
+										st = NULL;
+									}
+								}
+								/* else: short of the pattern -- wait for more */
+
+								/*
+								 * The step we land on decides which fd set the socket
+								 * joins next. Without this the flag keeps whatever the
+								 * write arm last set, so a dialogue that advances to a
+								 * SEND while reading stays parked in readfds and the
+								 * send is never written -- which over TLS meant the peer
+								 * saw the greeting answered by nothing at all.
+								 */
+								item->readpending = (item->curstep &&
+										      (((svcstep_t *)item->curstep)->type == STEP_EXPECT));
+							}
+							/*
+							 * Hand the socket back to the write side when the
+							 * next step is a SEND: clearing readpending is what
+							 * puts it in writefds, and the close below is
+							 * already taught to spare a socket with steps left.
+							 */
+							st = (svcstep_t *)item->curstep;
+							/* Owed refusals outrank waiting: the peer may be
+							 * holding its greeting until they arrive. */
+							item->readpending = (st && (item->iacreplylen == 0) &&
+									     ((st->type == STEP_EXPECT) ||
+									      (st->type == STEP_STARTIAC)));
+							if (st) wantmoredata = 1;
+						}
+
 						if ((res > 0) && item->datacallback) {
 							datadone = item->datacallback(msgbuf, res, item->priv);
 						}
 
-						if ((res > 0) && item->telnetnegotiate) {
+						if ((res > 0) && item->telnetnegotiate && item->banner) {
 							/*
 							 * telnet data has telnet options first.
 							 * We must negotiate the session before we
@@ -1579,7 +2159,7 @@ restartselect:
 							wantmoredata = !datadone;
 						}
 
-						if (!wantmoredata) {
+						if (!wantmoredata && !item->curstep) {
 							if (item->open) {
 								socket_shutdown(item);
 							}
@@ -1648,9 +2228,106 @@ void show_tcp_test_results(void)
 	}
 }
 
+/*
+ * Which step gave up. A dialogue can fail at any of them, and
+ * "Unexpected service response" on its own leaves the reader guessing
+ * whether it was the greeting, a reply mid-conversation, or a peer that
+ * went quiet -- so name it.
+ */
+char *tcp_dialogue_failure(tcptest_t *test)
+{
+	static char buf[160];
+	svcstep_t *st, *bad;
+	int idx = 0, n = 0;
+
+	if (!test || !test->svcinfo) return NULL;
+
+	/*
+	 * Before the TCP_DIALOGUE gate: a refused entry keeps whatever shape it
+	 * was written in, and when the file could not be read at all the entries
+	 * are the compiled-in ones, which are not dialogues. Gating first left
+	 * those reporting "Unexpected service response" with no reason at all.
+	 */
+	if (test->svcinfo->flags & TCP_DIALOGUE_BROKEN)
+		return "protocols.cfg refused this definition (or could not be read) - see the xymonnet log";
+
+	/*
+	 * No test at all: the service never got a port, because the file that
+	 * would have given it one could not be read.
+	 */
+	if (!test || !test->svcinfo)
+		return "protocols.cfg could not be read - no service can be checked";
+
+	if (!(test->svcinfo->flags & TCP_DIALOGUE)) return NULL;
+
+	if (test->stalereply) {
+		svcstep_t *w; int n2 = 0, idx2 = 0;
+
+		for (w = test->svcinfo->steps; (w); w = w->next) {
+			n2++;
+			if (w == (svcstep_t *)test->failstep) idx2 = n2;
+		}
+		snprintf(buf, sizeof(buf),
+			 "unread reply still buffered at step %d - the step before it did "
+			 "not consume its answer (missing \"until\"?)", idx2);
+		return buf;
+	}
+
+	bad = (svcstep_t *)test->failstep;
+	if (!bad) {
+		/* No step blamed itself: the conversation simply stopped short. */
+		st = (svcstep_t *)test->curstep;
+		if (!st) return NULL;
+		bad = st;
+		for (st = test->svcinfo->steps; (st); st = st->next) { n++; if (st == bad) idx = n; }
+		snprintf(buf, sizeof(buf), "no reply to step %d (expecting \"%.40s\")",
+			 idx, (bad->text ? (char *)bad->text : ""));
+		return buf;
+	}
+
+	for (st = test->svcinfo->steps; (st); st = st->next) { n++; if (st == bad) idx = n; }
+	if (bad->type == STEP_EXPECT)
+		snprintf(buf, sizeof(buf), "step %d expected \"%.40s\"", idx,
+			 (bad->text ? (char *)bad->text : ""));
+	else
+		snprintf(buf, sizeof(buf), "step %d failed", idx);
+
+	return buf;
+}
+
+/*
+ * Was this entry refused when protocols.cfg was read?
+ *
+ * Separate from tcp_got_expected() because it is not gated on
+ * --checkresponse: an expect mismatch is a judgement the operator opts
+ * into, a rejected definition means no check ran at all.
+ */
+int tcp_dialogue_refused(tcptest_t *test)
+{
+	/*
+	 * With no protocols.cfg there is no test to carry the flag: a service
+	 * with no port never reached add_tcp_test(), so privdata is NULL.
+	 * Checked first, or the report falls through to "Service unavailable".
+	 */
+	if (tcp_services_unreadable()) return 1;
+
+	return (test && test->svcinfo && (test->svcinfo->flags & TCP_DIALOGUE_BROKEN));
+}
+
 int tcp_got_expected(tcptest_t *test)
 {
 	if (test == NULL) return 1;
+
+	/* A definition that could not be read is not a service that is up. */
+	if (test->svcinfo && (test->svcinfo->flags & TCP_DIALOGUE_BROKEN)) return 0;
+
+	/*
+	 * A dialogue has already judged itself, step by step, as the replies
+	 * arrived. Re-matching exptext against the banner here would compare the
+	 * first step's pattern against whatever the last read happened to leave.
+	 */
+	if (test->svcinfo && (test->svcinfo->flags & TCP_DIALOGUE))
+		return (test->dialogfail == 0) && (test->curstep == NULL);
 
 	if (test->svcinfo && test->svcinfo->exptext) {
 		int compbytes; /* Number of bytes to compare */
