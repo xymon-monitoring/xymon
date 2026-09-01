@@ -288,6 +288,11 @@ static int do_telnet_options(tcptest_t *item)
 	}
 
 	obuf = (unsigned char *)malloc(item->telnetbuflen);
+	if (!obuf) {
+		errprintf("Out of memory negotiating telnet options\n");
+		item->telnetbuflen = 0;
+		return 0;
+	}
 	y = 0;
 	inp = item->telnetbuf;
 	remain = item->telnetbuflen;
@@ -300,8 +305,28 @@ static int do_telnet_options(tcptest_t *item)
 			 * We probably have the banner in the remainder of the
 			 * buffer, so copy it over, and return it.
 			 */
-			item->banner = strdup(inp);
-			item->bannerbytes = strlen(inp);
+			/*
+			 * Copy BEFORE freeing the old banner: item->telnetbuf IS
+			 * item->banner (the read arm aliases them), so inp points
+			 * into the buffer being replaced. Freeing first would leave
+			 * inp dangling and this copy would read freed memory.
+			 *
+			 * Replacing without freeing leaked the old buffer, which is
+			 * what stood here.
+			 */
+			{
+				unsigned char *newbanner = (unsigned char *)strdup((char *)inp);
+
+				if (!newbanner) {
+					errprintf("Out of memory keeping the telnet banner\n");
+				}
+				else {
+					if (item->banner) xfree(item->banner);
+					item->banner = newbanner;
+					item->bannerbytes = strlen((char *)newbanner);
+				}
+			}
+			item->telnetbuf = NULL;
 			item->telnetbuflen = 0;
 			xfree(obuf);
 			return 0;
