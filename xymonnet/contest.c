@@ -1698,6 +1698,22 @@ restartselect:
 									item->stepsent += res;
 									if (item->stepsent >= st->len) {
 										item->stepsent = 0;
+										/*
+										 * "fin": the whole send is out, so
+										 * retire the write direction. The peer's
+										 * read returns end of file, which is the
+										 * only way some protocols learn that a
+										 * request is finished -- xymond answers a
+										 * query on nothing else. Reading continues,
+										 * so the expect after this still runs.
+										 *
+										 * Only HERE, never on a partial write: a
+										 * FIN sent mid-message would truncate the
+										 * request and the peer would act on half
+										 * of it.
+										 */
+										if (st->fin)
+											shutdown(item->fd, SHUT_WR);
 										st = dlg_skip_labels(st->next);
 										item->curstep = (void *)st;
 									}

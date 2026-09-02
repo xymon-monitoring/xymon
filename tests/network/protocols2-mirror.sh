@@ -75,29 +75,41 @@ XYMONHOME="$work/shipped" "$work/dump" $names > "$work/shipped.steps" 2>"$work/s
 	|| { cat "$work/shipped.err" >&2; fail "the two files together did not parse:
 $(cat "$work/shipped.err")"; }
 
-# Two entries do not merely add; both replace an expect that took ANY reply with
-# one that reads it, which is narrower rather than different. They are named
-# here so the rule stays strict for the other thirty-five.
+# An entry may make a step STRICTER, and two do: protocols.cfg ends [ircd] and
+# [oratns] with an empty expect, which accepts whatever arrives, and
+# protocols2.cfg replaces those with ones that read the reply -- ":" for an IRC
+# line, the TNS packet type for a listener.
 #
-#   ircd    ":" -- every server line begins with the prefix colon
-#   oratns  the TNS packet type at byte 4, which says whether this is a
-#           listener at all
-narrowed="ircd oratns"
+# That is expressed as a rule rather than a list of entry names. Naming an entry
+# would exempt ALL of its steps from checking, which is how a dropped [oratns]
+# verdict slipped through here once: an empty expect may be answered by any
+# expect, and everything else must still match exactly. An entry that drops the
+# expect altogether still fails, because then there is nothing to answer it.
 
 missing=""
 for svc in $names; do
-	case " $narrowed " in *" $svc "*) continue ;; esac
-
 	grep "^$svc	" "$work/classic.steps" > "$work/a" 2>/dev/null || : > "$work/a"
 	grep "^$svc	" "$work/shipped.steps" > "$work/b" 2>/dev/null || : > "$work/b"
 
 	# Is a a subsequence of b?
-	if ! awk '
-		NR==FNR { a[++n]=$0; next }
+	#
+	# Keyed on FILENAME rather than the usual NR==FNR: that idiom silently
+	# inverts when the FIRST file is empty, because NR==FNR stays true while
+	# reading the second one. [bbd] is exactly that case -- no steps in
+	# protocols.cfg, steps in protocols2.cfg -- and it read as "protocols2
+	# dropped everything".
+	if ! awk -v first="$work/a" '
+		function answers(want, got) {
+			if (got == want) return 1
+			# An empty expect takes any reply, so any expect answers it.
+			if (want ~ /\texpect\t?$/ && got ~ /\texpect\t/) return 1
+			return 0
+		}
+		FILENAME==first { a[++n]=$0; next }
 		        { b[++m]=$0 }
 		END {
 			i=1
-			for (j=1; (j<=m) && (i<=n); j++) if (b[j] == a[i]) i++
+			for (j=1; (j<=m) && (i<=n); j++) if (answers(a[i], b[j])) i++
 			if (i<=n) { print a[i]; exit 1 }
 			exit 0
 		}' "$work/a" "$work/b" > "$work/lost"
