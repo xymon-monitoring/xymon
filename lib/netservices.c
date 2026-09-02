@@ -317,9 +317,40 @@ char *init_tcp_services(void)
 		else if (strncmp(l, "send ", 5) == 0) {
 			if (first) {
 				unsigned char *txt = NULL;
-				int txtlen = 0;
+				int txtlen = 0, sendfin = 0;
+				char *rest;
+				svcstep_t *st;
 
 				getescapestring(skipwhitespace(l+4), &txt, &txtlen);
+
+				/*
+				 * "fin" ends the write direction after this send,
+				 * so the peer reads EOF while this side keeps receiving.
+				 *
+				 * A protocol whose request has no terminator needs it:
+				 * xymond reads a request until the read returns end of
+				 * file and only then answers, so a probe that never stops
+				 * writing is never replied to. The read side stays open,
+				 * which is why an expect can follow.
+				 *
+				 * Anything ELSE trailing the string is refused. This arm
+				 * used to ignore it, so "finn" would be dropped in
+				 * silence and the entry would wait out its clock against
+				 * a healthy server -- the failure "untill" used to have.
+				 */
+				rest = skipwhitespace(after_quoted(skipwhitespace(l+4)));
+				if (strncmp(rest, "fin", 3) == 0) {
+					sendfin = 1;
+					rest = skipwhitespace(rest + 3);
+				}
+				if (*rest) {
+					errprintf("Service %s: send takes only 'fin', not: %s\n",
+						  first->rec->svcname, rest);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					for (walk = first->next; (walk); walk = walk->next)
+						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+
 				/*
 				 * sendtxt keeps the FIRST send only, which is what a
 				 * single-step probe has always meant. The step list is
@@ -329,11 +360,13 @@ char *init_tcp_services(void)
 					first->rec->sendtxt = txt;
 					first->rec->sendlen = txtlen;
 				}
-				if (!add_svcstep(first->rec, STEP_SEND, txt, txtlen)) {
+				st = add_svcstep(first->rec, STEP_SEND, txt, txtlen);
+				if (!st) {
 					errprintf("Service %s: out of memory reading protocols.cfg\n",
 						  first->rec->svcname);
 					first->rec->flags |= TCP_DIALOGUE_BROKEN;
 				}
+				else st->fin = sendfin;
 				for (walk = first->next; (walk); walk = walk->next) {
 					if (walk->rec->sendtxt == NULL) {
 						walk->rec->sendtxt = dup_bytes(txt, txtlen);
@@ -344,11 +377,14 @@ char *init_tcp_services(void)
 							walk->rec->flags |= TCP_DIALOGUE_BROKEN;
 						}
 					}
-					if (!add_svcstep(walk->rec, STEP_SEND, txt, txtlen)) {
+					/* Every alias half-closes, or only the first name would. */
+					st = add_svcstep(walk->rec, STEP_SEND, txt, txtlen);
+					if (!st) {
 						errprintf("Service %s: out of memory reading protocols.cfg\n",
 							  walk->rec->svcname);
 						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
 					}
+					else st->fin = sendfin;
 				}
 				/* add_svcstep() copied it; only the first send keeps the buffer. */
 				if (first->rec->sendtxt != txt) xfree(txt);
@@ -881,12 +917,24 @@ char *init_tcp_services(void)
 
 		svcinfo[i].steps   = walk->rec->steps;
 		{
-			svcstep_t *st; int nsend = 0, nexp = 0, nstarttls = 0;
+			svcstep_t *st; int nsend = 0, nexp = 0, nstarttls = 0, nfin = 0;
 
 			for (st = walk->rec->steps; (st); st = st->next) {
-				if (st->type == STEP_SEND) nsend++;
+				if (st->type == STEP_SEND) { nsend++; if (st->fin) nfin++; }
 				else if (st->type == STEP_STARTTLS) nstarttls++;
 				else nexp++;
+			}
+
+			/*
+			 * A half-close under TLS tears the session rather than ending a
+			 * message: the peer wants close_notify, and a bare FIN reads to
+			 * it as a truncation attack. Refused here rather than left to
+			 * fail on the wire as a handshake error nobody can place.
+			 */
+			if (nfin && (nstarttls || (svcinfo[i].flags & TCP_SSL))) {
+				errprintf("Service %s: 'fin' cannot be used on an "
+					  "encrypted connection\n", svcinfo[i].svcname);
+				svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
 			}
 
 			/*
