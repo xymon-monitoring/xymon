@@ -61,6 +61,12 @@ typedef struct svcstep_t {
 	 * at its start. -1 means no offset was given, which 0 cannot say.
 	 */
 	int ofs;
+	/*
+	 * send "X" fin: retire the write direction once this send has gone out,
+	 * so the peer reads EOF while we keep receiving. Named for the TCP FIN
+	 * it sends; the direction is the one "send" implies.
+	 */
+	int fin;
 	int action;			/* ACT_*: what taking this edge does */
 	char *target;			/* ACT_GOTO: the state named, before it is resolved */
 	struct svcstep_t *targetstep;	/* ... and the STEP_LABEL it resolves to */
