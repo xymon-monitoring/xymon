@@ -3,6 +3,12 @@
 Patches are welcome. This file covers what is easy to get wrong because it is
 not visible from the source tree.
 
+Fork, remotes and the pull-request flow are the same for every repository in
+the organisation and are documented once, in the wiki: start with
+[first-contribution.md](https://github.com/xymon-monitoring/xymon-wiki/blob/main/docs/contributing/git/first-contribution.md);
+[git-setup.md](https://github.com/xymon-monitoring/xymon-wiki/blob/main/docs/contributing/git/git-setup.md)
+has the remote configuration.
+
 ## Where a change gets written down
 
 **Do not edit `Changes` or `RELEASENOTES` in a pull request.** Both are written
@@ -35,6 +41,17 @@ Either way, do not bump the version or date in the `.TH` line — that happens a
 release — and keep `git diff --check` quiet.
 
 ## Pull requests
+
+Every change to this repository goes through a pull request approved by
+someone other than its author, maintainers included. This is `xymon`'s rule,
+not the organisation's — the wiki and the other repositories are pushed to
+directly.
+
+A ruleset on `main`, `devel` and `release/*` enforces it: one approving review
+after the last push, all review threads resolved, no force-push, no deletion,
+squash or merge commit only. A rejected push to `main` is the rule working.
+The `maintainers` team can bypass the ruleset; for them the rule holds by
+agreement, and a bypass is for an emergency, said so in the pull request.
 
 - One change per pull request. A fix and the cleanup you noticed next to it are
   two pull requests.
