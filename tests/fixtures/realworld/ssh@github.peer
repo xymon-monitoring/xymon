@@ -1,0 +1,4 @@
+# github.com:22 -- drives [ssh]. The server greets first and the probe
+# sends nothing, which is what makes the removed client version string safe.
+send "SSH-2.0-2ff2ba9\r\n"
+hangup
