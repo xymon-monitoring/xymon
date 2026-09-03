@@ -46,20 +46,6 @@ release — and keep `git diff --check` quiet.
 - Keep the description accurate as it evolves. A reviewer reading it after
   three force-pushes should not be reading the original plan.
 
-## Attribution
-
-Do not credit an AI tool in anything that lands here. No `Co-Authored-By`
-naming a model or an assistant, no "Generated with ..." line, no "reviewed by"
-or "suggested by" credit — in commit messages, pull request titles and bodies,
-issue text, review comments, or files added to the tree.
-
-Use whatever tools you like. The commit message is for what changed and why,
-and a tool's name is not part of that. If something a tool produced found a
-real problem, report the problem in your own words: the finding is what a
-reviewer needs.
-
-Agents working in a checkout are told the same in `AGENTS.md`.
-
 ## Style
 
 Match the file you are editing. The tree spans two decades and several hands;
