@@ -75,7 +75,7 @@ check_declares "$ROOT/client/xymonclient.cfg.DIST"              "xymonclient.d"
 
 CC=${CC:-cc}
 if ! command -v "$CC" >/dev/null 2>&1 \
-	|| [ ! -f "$ROOT/include/config.h" ] || [ ! -f "$ROOT/lib/libxymoncomm.a" ]; then
+	|| [ ! -f "$ROOT/include/config.h" ] || [ ! -f "$ROOT/lib/libxymonclient.a" ] || [ ! -f "$ROOT/lib/libxymonclientcomm.a" ]; then
 	pass "shipped configs declare their drop-in directories (#222); stackio mechanism check skipped (tree not built)"
 fi
 
@@ -90,7 +90,8 @@ fi
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" -DSTANDALONE $harness_cflags -o "$work/stackio" \
-	"$ROOT/lib/stackio.c" "$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
+	"$ROOT/lib/stackio.c" "$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
+	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "standalone stackio does not compile"; }
 
 # The STANDALONE reader reads argv[1] via stackfgets() (which expands include
