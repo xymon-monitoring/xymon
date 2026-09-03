@@ -1,0 +1,5 @@
+# ftp-21  ftp.gnu.org (209.51.188.20) port 21  mode=plain
+# recorded 2026-08-31T12:47:07.160157Z
+S: 220 GNU FTP server ready.
+C: quit
+S: 221 Goodbye.
