@@ -1,0 +1,71 @@
+name: attribution
+
+# AGENTS.md forbids crediting an AI tool in anything that lands here. Stating a
+# rule is not enforcing one: several tools append these trailers by default, so
+# the failure is silent and the person pushing usually has not seen them.
+#
+# This checks the commits a pull request adds, and the pull request's own title
+# and body. It does not look at history: the trailers that predate the rule stay
+# where they are, and rewriting merged history to remove metadata would cost far
+# more than it buys.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  trailers:
+    name: no AI attribution
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # The merge base is needed to enumerate exactly the commits this pull
+          # request adds; a shallow clone cannot find it.
+          fetch-depth: 0
+
+      - name: Commit messages
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # The patterns are the three forms these tools emit. Anchored at the
+          # start of a line so prose that merely names them -- as AGENTS.md and
+          # CONTRIBUTING.md must -- does not trip it.
+          pattern='^[[:space:]]*(Claude-Session:|Co-Authored-By:.*(Claude|Copilot|Codex|GPT|Gemini)|🤖 Generated with|Generated with \[)'
+
+          bad=0
+          for c in $(git rev-list "$BASE".."$HEAD"); do
+            if git log -1 --format='%B' "$c" | grep -qiE "$pattern"; then
+              echo "::error::$(git log -1 --format='%h %s' "$c") carries an AI attribution trailer"
+              git log -1 --format='%B' "$c" | grep -inE "$pattern" | sed 's/^/    /'
+              bad=1
+            fi
+          done
+
+          if [ "$bad" = 1 ]; then
+            echo "::error::AGENTS.md: do not add attribution for an AI tool. Strip the trailer and force-push."
+            exit 1
+          fi
+          echo "commits clean"
+
+      - name: Pull request title and body
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          # Deliberately narrower than the commit check: a pull request that
+          # DISCUSSES the rule needs to quote the strings. Only the trailer as
+          # emitted -- the robot line, or a session URL -- is refused.
+          pattern='(🤖 Generated with \[Claude|^[[:space:]]*Claude-Session:|https://claude\.ai/code/session)'
+
+          if printf '%s\n%s\n' "$TITLE" "$BODY" | grep -qiE "$pattern"; then
+            echo "::error::the pull request title or body carries an AI attribution line"
+            printf '%s\n%s\n' "$TITLE" "$BODY" | grep -inE "$pattern" | sed 's/^/    /'
+            exit 1
+          fi
+          echo "title and body clean"
