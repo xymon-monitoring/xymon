@@ -156,6 +156,17 @@ clean:
 	rm -f etcfiles/xymon-apache.conf etcfiles/xymonserver.cfg etcfiles/hosts.cfg etcfiles/alerts.cfg etcfiles/tasks.cfg etcfiles/cgioptions.cfg etcfiles/analysis.cfg etcfiles/combo.cfg etcfiles/graphs.cfg etcfiles/client-local.cfg etcfiles/rrddefinitions.cfg
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
+# xymon-apache.conf is generated here and has always been installed into
+# Xymon's own etc directory -- which is not a directory any web server
+# reads, so every packaging moves it afterwards. Setting
+# INSTALLHTTPDCONFDIR installs it where httpd actually looks instead.
+# Unset, nothing changes.
+ifeq ($(strip $(INSTALLHTTPDCONFDIR)),)
+APACHECONFINETC = echo xymon-apache.conf
+else
+APACHECONFINETC = true
+endif
+
 install: install-bin install-man install-cfg
 
 install-bin:
@@ -189,7 +200,16 @@ install-cfg:
 	cd etcfiles; ../../build/merge-sects client-local.cfg $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg
 	cd etcfiles; ../../build/merge-sects graphs.cfg $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg
 	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
-	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; echo xymon-apache.conf) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; $(APACHECONFINETC)) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+ifneq ($(strip $(INSTALLHTTPDCONFDIR)),)
+	mkdir -p $(INSTALLROOT)$(INSTALLHTTPDCONFDIR)
+	# Under INSTALLHTTPDCONFNAME (default xymon-apache.conf). setup-newfiles
+	# keeps the source basename, so it cannot rename; this matches its
+	# no-md5 behaviour -- install only if absent, never clobber an admin's
+	# edited file -- while honouring the chosen name.
+	test -f $(INSTALLROOT)$(INSTALLHTTPDCONFDIR)/$(INSTALLHTTPDCONFNAME) || \
+		cp -p etcfiles/xymon-apache.conf $(INSTALLROOT)$(INSTALLHTTPDCONFDIR)/$(INSTALLHTTPDCONFNAME)
+endif
 	cd $(INSTALLROOT)$(XYMONHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWWWDIR)/ ../../build/md5.dat
 	cd webfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWEBDIR)/ ../../build/md5.dat
