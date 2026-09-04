@@ -1,0 +1,55 @@
+name: pr conflicts
+
+# A review looks at one pull request against main. Two that each apply cleanly
+# there can still be incompatible with each other, and nothing in the normal
+# flow asks: GitHub reports both mergeable, both go green, and the collision
+# surfaces when the second one is merged.
+#
+# Weekly rather than per-pull-request: the answer is about the set, it changes
+# only when the set does, and every run test-merges a few dozen pairs.
+#
+# Reports rather than fails. Two conflicting pull requests are not a defect in
+# either -- they are a decision about which design to keep, and that belongs to
+# a person.
+
+on:
+  schedule:
+    - cron: '43 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pairs:
+    name: pull requests that cannot both merge
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Test-merge overlapping pairs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          ./.github/scripts/pr-conflicts.py | tee "$RUNNER_TEMP/report.txt"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo '## Pull requests that cannot both be merged'
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/report.txt" 2>/dev/null || echo "(no report produced)"
+            echo '```'
+            echo
+            echo 'A pair here is not a defect in either pull request: it is a'
+            echo 'decision about which design to keep. Stacks are excluded --'
+            echo 'a pull request built on another merges by construction.'
+          } >> "$GITHUB_STEP_SUMMARY"
