@@ -110,6 +110,7 @@ XYMONHISTDIR="$XYMONVAR/hist"			# History logs are stored here (xymond_history)
 XYMONHISTLOGS="$XYMONVAR/histlogs"		# Historical detail status-loge are stored here (xymond_history)
 XYMONRAWSTATUSDIR="$XYMONVAR/logs"		# Status logs go here (xymond_filestore --status). Not needed by Xymon.
 XYMONWWWDIR="$XYMONHOME/www"			# The directory for Xymon webpage files.
+XYMONSTATICWWWDIR="@XYMONSTATICWWWDIR@"		# The directory for static web files (help, gifs, menu). Defaults to XYMONWWWDIR; a packaging that ships these read-only points it elsewhere (e.g. /usr/share).
 XYMONHTMLSTATUSDIR="$XYMONWWWDIR/html"		# HTML status logs go here (xymond_filestore --status --html)
 XYMONNOTESDIR="$XYMONWWWDIR/notes"		# For notes-files (xymond_filestore --notes)
 XYMONREPDIR="$XYMONWWWDIR/rep"			# Top-level directory for Xymon reports.
