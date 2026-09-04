@@ -1,0 +1,39 @@
+name: pr dependencies
+
+# The blocked / unblocks / deps-none-found labels say whether a pull request can be
+# reviewed on its own, and a pull request carrying none of them has not been
+# triaged. That last part is only information while the other three are true,
+# and they stop being true on their own: a base merges, a stack is rebased, a
+# body is edited. This recomputes them and reconciles the difference.
+#
+# On a schedule rather than on pull_request, because it needs write access to
+# labels and a pull request from a fork does not get it.
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  labels:
+    name: reconcile dependency labels
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Reconcile
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          # The dry run first, so the log shows the graph and the decision even
+          # when nothing changes -- a silent green job teaches nobody what it
+          # checked.
+          ./.github/scripts/pr-dependency-labels.py
+          ./.github/scripts/pr-dependency-labels.py --apply
