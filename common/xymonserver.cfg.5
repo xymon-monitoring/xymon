@@ -208,19 +208,26 @@ Default: $XYMONHOME/www/
 Directory for Xymon notes-files. The $XYMONNOTESSKIN URL must map to this directory.
 Default: $XYMONHOME/www/notes/
 
+.IP "\fBXYMONCACHEWWWDIR\fR"
+Parent directory for regenerable web output, namely the on-demand availability
+reports and snapshots (XYMONREPDIR and XYMONSNAPDIR default to subdirectories of
+it). It is kept separate from the persistent web files so that a packaging can
+place this throwaway, safe-to-delete data on a volatile filesystem such as
+/var/cache. Default: $XYMONWWWDIR
+
 .IP "\fBXYMONREPDIR\fR"
 Directory for Xymon availability reports. The $XYMONREPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the
 .I report.cgi(1)
-CGI script to generate reports on-demand. Default: $XYMONHOME/www/rep/
+CGI script to generate reports on-demand. Default: $XYMONCACHEWWWDIR/rep/ (i.e. $XYMONHOME/www/rep/)
 
 .IP "\fBXYMONSNAPDIR\fR"
 Directory for Xymon snapshots. The $XYMONSNAPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the
 .I snapshot.cgi(1)
-CGI script to generate snapshots on-demand. Default: $XYMONHOME/www/snap/
+CGI script to generate snapshots on-demand. Default: $XYMONCACHEWWWDIR/snap/ (i.e. $XYMONHOME/www/snap/)
 
 .IP "\fBXYMONVAR\fR"
 Directory for all data stored about the monitored items.
