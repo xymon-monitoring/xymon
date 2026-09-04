@@ -18,7 +18,7 @@
 # you want to run).
 [xymond]
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
-	CMD xymond --pidfile=$XYMONSERVERLOGS/xymond.pid \
+	CMD xymond --pidfile=$XYMONRUNDIR/xymond.pid \
 		--restart=$XYMONTMP/xymond.chk --checkpoint-file=$XYMONTMP/xymond.chk --checkpoint-interval=600 \
 		--log=$XYMONSERVERLOGS/xymond.log \
 		--admin-senders=127.0.0.1,$XYMONSERVERIP \
@@ -28,7 +28,7 @@
 [history]
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
 	NEEDS xymond
-	CMD xymond_channel --channel=stachg --log=$XYMONSERVERLOGS/history.log xymond_history --pidfile=$XYMONSERVERLOGS/xymond_history.pid
+	CMD xymond_channel --channel=stachg --log=$XYMONSERVERLOGS/history.log xymond_history --pidfile=$XYMONRUNDIR/xymond_history.pid
 
 # "alert" sends out alerts.
 [alert]
@@ -100,7 +100,7 @@
 [xymonproxy]
 	DISABLED
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
-	CMD $XYMONHOME/bin/xymonproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.xymonproxy --no-daemon --pidfile=$XYMONSERVERLOGS/xymonproxy.pid
+	CMD $XYMONHOME/bin/xymonproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.xymonproxy --no-daemon --pidfile=$XYMONRUNDIR/xymonproxy.pid
 	LOGFILE $XYMONSERVERLOGS/xymonproxy.log
 
 
@@ -115,7 +115,7 @@
 [xymonfetch]
 	DISABLED
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
-	CMD $XYMONHOME/bin/xymonfetch --server=YOUR.XYMON.SERVER.IP --no-daemon --pidfile=$XYMONSERVERLOGS/xymonfetch.pid
+	CMD $XYMONHOME/bin/xymonfetch --server=YOUR.XYMON.SERVER.IP --no-daemon --pidfile=$XYMONRUNDIR/xymonfetch.pid
 	LOGFILE $XYMONSERVERLOGS/xymonfetch.log
 
 

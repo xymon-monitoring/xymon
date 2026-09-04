@@ -89,7 +89,12 @@ pass=0; skip=0; fail=0; failed=''
 run_one() {
 	t=$1
 	group "$t"
-	"./$t"
+	# stdin from /dev/null: the list of tests being iterated is this shell's
+	# own stdin, so a test that reads stdin -- a daemon control tool waiting
+	# for input, say -- consumes the rest of it. The loop then ends early and
+	# reports success for the tests it never ran, which is the one failure
+	# mode a test runner must not have.
+	"./$t" </dev/null
 	rc=$?
 	case $rc in
 		0)  printf '  ok\n';           pass=$((pass + 1)) ;;
