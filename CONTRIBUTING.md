@@ -63,6 +63,30 @@ agreement, and a bypass is for an emergency, said so in the pull request.
 - Keep the description accurate as it evolves. A reviewer reading it after
   three force-pushes should not be reading the original plan.
 
+### Titles
+
+The title is the one line a reader gets in the pull request list and, after a
+squash merge, in `git log --oneline`. Write it so that line is enough.
+
+- Start with the component that changes, then a colon: a program or directory
+  name as it appears in the tree (`xymond:`, `xymonnet:`, `xymond_rrd:`,
+  `loadhosts:`) or one of a few fixed areas (`build:`, `ci:`, `docs:`,
+  `tests:`, `client:`, `tools:`). Not a topic, and not a status such as
+  `DRAFT:` or `follow-up:` — GitHub has a draft flag for that.
+- After the colon, a complete sentence with a verb, in lower case. `send the
+  tested hostname as the TLS server name` says what happens;
+  `TLS servername support` does not.
+- Say what the change makes true, not only what it removes. When one
+  behaviour replaces another, name both: `bind the address --listen names, not
+  every interface`.
+- Keep the reason in the title when it fits in a clause: `size the grown
+  testflags buffer for its terminating NUL` explains itself.
+- Anything that belongs in the description stays out of the title: commit
+  hashes, tracker numbers, "backport of", "informational". One issue reference
+  in parentheses at the end is fine.
+- Stay under about 70 characters so nothing is truncated in the list or the
+  log.
+
 ## Style
 
 Match the file you are editing. The tree spans two decades and several hands;
