@@ -46,6 +46,8 @@ static char rcsid[] = "$Id$";
  */
 
 #define MAX_FAILS 5
+#define FAIL_DELAY 600
+#define DELAY 5
 
 typedef struct grouplist_t {
 	char *groupname;
@@ -60,10 +62,14 @@ typedef struct tasklist_t {
 	char *cmd;
 	int interval, maxruntime;
 	char *logfile;
+	char *pidfile;
 	char *envfile, *envarea, *onhostptn;
 	pid_t pid;
 	time_t laststart;
+	int sendhup;
 	int exitcode;
+	int delay;
+	int faildelay;
 	int failcount;
 	int cfload;	/* Used while reloading a configuration */
 	int beingkilled;
@@ -93,6 +99,7 @@ static void free_task_config(tasklist_t *t)
 {
 	xfreenull(t->cmd);
 	xfreenull(t->logfile);
+	xfreenull(t->pidfile);
 	xfreenull(t->envfile);
 	xfreenull(t->envarea);
 	xfreenull(t->onhostptn);
@@ -118,6 +125,8 @@ static void restore_task(tasklist_t *twalk)
 	twalk->maxruntime = saved->maxruntime;
 	twalk->group      = saved->group;
 	twalk->logfile    = saved->logfile;
+	twalk->pidfile    = saved->pidfile;
+	twalk->sendhup    = saved->sendhup;
 	twalk->envfile    = saved->envfile;
 	twalk->envarea    = saved->envarea;
 	twalk->onhostptn  = saved->onhostptn;
@@ -200,8 +209,14 @@ void load_config(char *conffn)
 		twalk->cmd = NULL;
 		twalk->interval = 0;
 		twalk->maxruntime = 0;
+		/* To their defaults, not to zero: for these two the absence of the
+		   keyword means "the default", where for the others it means "off". */
+		twalk->delay = DELAY;
+		twalk->faildelay = FAIL_DELAY;
 		twalk->group = NULL;
 		twalk->logfile = NULL;
+		twalk->pidfile = NULL;
+		twalk->sendhup = 0;
 		twalk->envfile = NULL;
 		twalk->envarea = NULL;
 		twalk->onhostptn = NULL;
@@ -236,6 +251,11 @@ void load_config(char *conffn)
 				if (taskhead == NULL) taskhead = curtask;
 				else tasktail->next = curtask;
 				tasktail = curtask;
+
+				/* Default variable initialization */
+				curtask->delay = DELAY;
+				curtask->faildelay = FAIL_DELAY;
+
 			}
 			/* mark task as configured */
 			curtask->cfload = 0;
@@ -345,10 +365,29 @@ void load_config(char *conffn)
 			  case 'd': curtask->maxruntime *= 86400; break;	/* Days */
 			}
 		}
+		else if (curtask && (strncasecmp(p, "FAILDELAY ", 10) == 0)) {
+			char *tspec;
+			p += 10;
+			curtask->faildelay = atoi(p);
+			tspec = p + strspn(p, "0123456789");
+			switch (*tspec) {
+			  case 'm': curtask->faildelay *= 60; break;	/* Minutes */
+			  case 'h': curtask->faildelay *= 3600; break;	/* Hours */
+			  case 'd': curtask->faildelay *= 86400; break;	/* Days */
+			}
+		}
 		else if (curtask && (strncasecmp(p, "LOGFILE ", 8) == 0)) {
 			p += 7;
 			p += strspn(p, " \t");
 			xfreedup(curtask->logfile,p);
+		}
+		else if (curtask && (strncasecmp(p, "PIDFILE ", 8) == 0)) {
+			p += 7;
+			p += strspn(p, " \t");
+			xfreedup(curtask->pidfile,p);
+		}
+		else if (curtask && (strcasecmp(p, "SENDHUP") == 0)) {
+			curtask->sendhup = 1;
 		}
 		else if (curtask && (strncasecmp(p, "NEEDS ", 6) == 0)) {
 			p += 6;
@@ -359,6 +398,17 @@ void load_config(char *conffn)
 			}
 			else {
 				errprintf("Configuration error, unknown dependency %s->%s\n", curtask->key, p);
+			}
+		}
+		else if (curtask && (strncasecmp(p, "DELAY ", 6) == 0)) {
+			char *tspec;
+			p += 6;
+			curtask->delay = atoi(p);
+			tspec = p + strspn(p, "0123456789");
+			switch (*tspec) {
+			  case 'm': curtask->delay *= 60; break;	/* Minutes */
+			  case 'h': curtask->delay *= 3600; break;	/* Hours */
+			  case 'd': curtask->delay *= 86400; break;	/* Days */
 			}
 		}
 		else if (curtask && (strncasecmp(p, "ENVFILE ", 8) == 0)) {
@@ -470,6 +520,12 @@ void load_config(char *conffn)
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
 		if ((twalk->cfload != -1) && (twalk->cmd == NULL)) twalk->cfload = -1;
 
+		/* The path the child wrote to: the re-read cleared twalk->pidfile,
+		   and the comparison below frees the copy's. So it is read here. */
+		char *oldpidfile = (twalk->copy ? twalk->copy->pidfile : twalk->pidfile);
+		char *pidfn = NULL;
+		if (oldpidfile) pidfn = expand_env(oldpidfile);
+
 		/* compare the current settings with the copy - if we have one */
 		if (twalk->cfload == 0) {
 			if (twalk->copy) {
@@ -480,6 +536,9 @@ void load_config(char *conffn)
 				if (twalk->disabled!=twalk->copy->disabled) { changed++; }
 				if (twalk->interval!=twalk->copy->interval) { changed++; }
 				if (twalk->maxruntime!=twalk->copy->maxruntime) { changed++; }
+				if (twalk->faildelay!=twalk->copy->faildelay) { changed++; }
+				if (twalk->delay!=twalk->copy->delay) { changed++; }
+				if (twalk->sendhup!=twalk->copy->sendhup) { changed++; }
 				if (twalk->group!=twalk->copy->group) { changed++; reload++;}
 				/* then the string versions */
 #define twalkstrcmp(k,doreload) {					\
@@ -502,6 +561,7 @@ void load_config(char *conffn)
 				}
 				twalkstrcmp(cmd,1);
 				twalkstrcmp(logfile,1);
+				twalkstrcmp(pidfile,1);
 				twalkstrcmp(envfile,1);
 				twalkstrcmp(envarea,1);
 				twalkstrcmp(onhostptn,0);
@@ -533,10 +593,14 @@ void load_config(char *conffn)
 				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
+			/* Always remove pidfn, even if it wasn't running */
+			if (pidfn) unlink(pidfn);
+
 			/* And prepare to free this tasklist entry */
 			xfreenull(twalk->key); 
 			xfreenull(twalk->cmd); 
 			xfreenull(twalk->logfile);
+			xfreenull(twalk->pidfile);
 			xfreenull(twalk->envfile);
 			xfreenull(twalk->envarea);
 			xfreenull(twalk->onhostptn);
@@ -555,6 +619,9 @@ void load_config(char *conffn)
 				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
+			/* Always remove pidfn, even if it wasn't running */
+			if (pidfn) unlink(pidfn);
+
 			break;
 		}
 	}
@@ -628,6 +695,7 @@ int main(int argc, char *argv[])
 	char *pidfn = NULL;
 	pid_t cpid;
 	int status;
+	int switching = 0;	/* This pass's copy of the log-switch flag */
 	struct sigaction sa;
 	char *envarea = NULL;
 
@@ -703,10 +771,14 @@ int main(int argc, char *argv[])
 			if (twalk->disabled)     printf("\tDISABLED\n");
 			if (twalk->group)        printf("\tGROUP %s\n", twalk->group->groupname);
 			if (twalk->depends)      printf("\tNEEDS %s\n", twalk->depends->key);
+			if (twalk->delay != DELAY) printf("\tDELAY %d\n", twalk->delay);
 			if (twalk->interval > 0) printf("\tINTERVAL %d\n", twalk->interval);
 			if (twalk->cronstr)      printf("\tCRONDATE %s\n", twalk->cronstr);
 			if (twalk->maxruntime)   printf("\tMAXTIME %d\n", twalk->maxruntime);
+			if (twalk->faildelay != FAIL_DELAY) printf("\tFAILDELAY %d\n", twalk->faildelay);
 			if (twalk->logfile)      printf("\tLOGFILE %s\n", twalk->logfile);
+			if (twalk->pidfile)      printf("\tPIDFILE %s\n", twalk->pidfile);
+			if (twalk->sendhup)      printf("\tSENDHUP\n");
 			if (twalk->envfile)      printf("\tENVFILE %s\n", twalk->envfile);
 			if (twalk->envarea)      printf("\tENVAREA %s\n", twalk->envarea);
 			if (twalk->onhostptn)    printf("\tONHOST %s\n", twalk->onhostptn);
@@ -776,10 +848,15 @@ int main(int argc, char *argv[])
 			nextcfgload = (now + 30);
 		}
 
-		if (logfn && dologswitch) {
+		/* Captured once per pass, and cleared here: a HUP arriving after the
+		   checks below belongs to the next pass, where clearing it at the
+		   bottom dropped it as though it had been acted on. */
+		switching = dologswitch;
+		if (switching) dologswitch = 0;
+
+		if (logfn && switching) {
 			reopen_file(logfn, "a", stdout);
 			reopen_file(logfn, "a", stderr);
-			dologswitch = 0;
 		}
 
 		/* Pick up children that have terminated */
@@ -788,6 +865,10 @@ int main(int argc, char *argv[])
 			if (twalk) {
 				twalk->pid = 0;
 				twalk->beingkilled = 0;
+				/* The pid in there is gone, and the system may hand that
+				   number to someone else. A task that runs on an interval
+				   writes a new one when it next starts. */
+				if (twalk->pidfile) unlink(expand_env(twalk->pidfile));
 				if (WIFEXITED(status)) {
 					twalk->exitcode = WEXITSTATUS(status);
 					if (twalk->exitcode) {
@@ -804,6 +885,7 @@ int main(int argc, char *argv[])
 					errprintf("Task %s terminated by signal %d\n", twalk->key, abs(twalk->exitcode));
 				}
 
+				if (twalk->faildelay && (twalk->failcount > MAX_FAILS)) errprintf("Postponing restart of [%s] for %d seconds from last start due to multiple failures\n", twalk->key, twalk->faildelay);
 				if (twalk->group) twalk->group->currentuse--;
 
 				/* Tasks that depend on this task should be killed ... */
@@ -826,10 +908,17 @@ int main(int argc, char *argv[])
 			         (twalk->crondate && (twalk->cronmin != thisminute) && cronmatch(twalk->crondate) ) /* cron date, has not had run attempt this minute */
 			       ) 
 			   ) {
-				if (twalk->depends && ((twalk->depends->pid == 0) || (twalk->depends->laststart > (now - 5)))) {
-					dbgprintf("Postponing start of %s due to %s not yet running\n",
-						twalk->key, twalk->depends->key);
-					continue;
+				if (twalk->depends) {
+					if (twalk->depends->pid == 0) {
+						dbgprintf("Postponing start of %s due to %s not yet running\n",
+							twalk->key, twalk->depends->key);
+						continue;
+					}
+					else if (twalk->depends->laststart > (now - twalk->delay)) {
+						dbgprintf("Postponing start of %s until %s running for %d seconds\n",
+							twalk->key, twalk->depends->key, twalk->delay);
+						continue;
+					}
 				}
 
 				if (twalk->group && (twalk->group->currentuse >= twalk->group->maxuse)) {
@@ -838,13 +927,13 @@ int main(int argc, char *argv[])
 					continue;
 				}
 
-				if ((twalk->failcount > MAX_FAILS) && ((twalk->laststart + 600) < now)) {
-					dbgprintf("Releasing %s from failure hold\n", twalk->key);
+				if ((twalk->failcount > 0) && twalk->faildelay && ((twalk->laststart + twalk->faildelay) < now)) {
+					errprintf("Releasing [%s] from failure hold\n", twalk->key);
 					twalk->failcount = 0;
 				}
 
-				if (twalk->failcount > MAX_FAILS) {
-					dbgprintf("Postponing start of %s due to multiple failures\n", twalk->key);
+				if (twalk->faildelay && (twalk->failcount > MAX_FAILS)) {
+					dbgprintf("Postponing start of [%s] for %d seconds due to multiple failures\n", twalk->key, twalk->faildelay);
 					continue;
 				}
 
@@ -883,11 +972,31 @@ int main(int argc, char *argv[])
 					/* Point stdout/stderr to a logfile, if requested */
 					if (twalk->logfile) {
 						char *logfn = expand_env(twalk->logfile);
+						char *logfnenv = (char *)malloc(strlen(logfn) + 30);
+						sprintf(logfnenv, "XYMONLAUNCH_LOGFILENAME=%s", logfn);
+						putenv(logfnenv);	/* So daemon knows what to reopen on -HUP */
 
 						dbgprintf("%s -> Assigning stdout/stderr to log '%s'\n", twalk->key, logfn);
 
 						reopen_file(logfn, "a", stdout);
 						reopen_file(logfn, "a", stderr);
+					}
+
+					/* Print our pid to a pidfile, if requested */
+					if (twalk->pidfile) {
+						char *pidfn = expand_env(twalk->pidfile);
+						FILE *pidfd = fopen(pidfn, "w");
+
+						dbgprintf("%s -> Writing PID to '%s'\n", twalk->key, pidfn);
+
+						if (pidfd) {
+							fprintf(pidfd, "%lu\n", (unsigned long)getpid());
+							fclose(pidfd);
+						}
+						else {
+							errprintf("Could not write PID to %s for command '%s': %s\n", 
+						   		pidfn, twalk->key, strerror(errno));
+						}
 					}
 
 					/* Go! */
@@ -918,6 +1027,10 @@ int main(int argc, char *argv[])
 					kill(twalk->pid, (twalk->beingkilled ? SIGKILL : SIGTERM));
 					twalk->beingkilled = 1; /* Next time it's a real kill */
 				}
+				else if (switching && twalk->sendhup) {
+					dbgprintf("Sending HUP to %s with PID %d for log switch\n", twalk->key, (int)twalk->pid);
+					kill(twalk->pid, SIGHUP);
+				}
 			}
 			/* Crondate + our flag isn't set and we don't need to run... reset the minute value to the flag. */
 			/* This clears whenever the minute has changed */
@@ -930,6 +1043,9 @@ int main(int argc, char *argv[])
 	/* Shutdown running tasks */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
 		if (twalk->pid) kill(twalk->pid, SIGTERM);
+		/* Nothing reaps them from here, so the unlink done at reap time
+		   never runs: their pidfiles would outlive the whole launcher. */
+		if (twalk->pidfile) unlink(expand_env(twalk->pidfile));
 	}
 
 	if (pidfn) unlink(pidfn);

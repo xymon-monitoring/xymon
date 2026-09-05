@@ -48,10 +48,15 @@ Filesystem itotal iused ifree %iused Mounted on
 "
 
 # --no-rrd: this test is about the processor stream, not the RRD files.
-printf '%s' "$message" | env \
+printf '%s' "$message" | # XYMONRUNDIR is where xymond_rrd binds its cache-control socket. Its
+# fallback is XYMONLOGDIR, which resolves to the build-time install path
+# and is not writable from a test tree, so the bind fails and nothing is
+# delivered.
+env \
 	XYMONHOME="$work/home" \
 	XYMONVAR="$work" \
 	XYMONTMP="$work/tmp" \
+	XYMONRUNDIR="$work/tmp" \
 	XYMONRRDS="$work/rrd" \
 	HOSTSCFG="$work/hosts.cfg" \
 	TEST2RRD="inode" \
