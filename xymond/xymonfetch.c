@@ -40,6 +40,8 @@ static char rcsid[] = "$Id$";
 volatile int running = 1;
 volatile time_t reloadtime = 0;
 volatile int dumpsessions = 0;
+volatile int dologswitch = 0;
+char *logfn = NULL;
 char *serverip = "127.0.0.1";
 int pollinterval = 60; /* Seconds between polls, +/- 15 seconds */
 time_t whentoqueue = 0;
@@ -89,7 +91,9 @@ void sigmisc_handler(int signum)
 		break;
 
 	  case SIGHUP:
+		/* Both: SENDHUP means a rotation, a HUP has always meant "re-read". */
 		reloadtime = 0;
+		dologswitch = 1;
 		break;
 
 	  case SIGUSR1:
@@ -462,6 +466,13 @@ int main(int argc, char *argv[])
 	clients = xtreeNew(strcasecmp);
 	nexttimeout = gettimer() + 60;
 
+	if (getenv("XYMONLAUNCH_LOGFILENAME")) {
+		/* xymonfetch has no --logfile of its own: when the launcher gives it
+		   one, this is how it learns which file to reopen on rotation. */
+		logfn = xgetenv("XYMONLAUNCH_LOGFILENAME");
+		dbgprintf("xymonfetch: Already logging out to %s, per xymonlaunch\n", logfn);
+	}
+
 	{
 		/* Seed the random number generator */
 		struct timeval tv;
@@ -474,11 +485,23 @@ int main(int argc, char *argv[])
 	do {
 		xtreePos_t handle;
 		conn_t *connwalk, *cprev;
+		/* Out here, not in the handler: reopen_file() opens a file, which is
+		   not something to do from a signal handler. */
 		fd_set fdread, fdwrite;
 		int n, maxfd;
 		struct timeval tmo;
 		time_t now;
-		
+
+		/* Out here: reopen_file() opens a file, which a signal handler
+		   must not do. */
+		if (dologswitch) {
+			if (logfn) {
+				reopen_file(logfn, "a", stdout);
+				reopen_file(logfn, "a", stderr);
+			}
+			dologswitch = 0;
+		}
+
 		now = gettimer();
 		if (now > reloadtime) {
 			/* Time to reload the hosts.cfg file */
