@@ -25,14 +25,22 @@ work=$(mktempdir)
 # non-vacuity probe below is what keeps the rules honest instead.
 # Every shell script under tests/, not just the *.sh ones: the runner itself
 # carries no extension, and it is the file that has to run on every platform.
-files=$(
-	find "$ROOT/tests" -type f \( -name '*.sh' -o -perm -100 \) ! -name "$(basename "$0")" |
+# A `case` inside $(...) trips the bash 3.2 command-substitution parser -- the
+# very shell this suite pins as the floor (macOS ships 3.2), where the `)` of a
+# case pattern is mistaken for the end of the substitution. Keep the filter in a
+# function the substitution only calls, so no case is parsed inside $(...).
+_emit_shell_scripts() {
+	local f
 	while IFS= read -r f; do
 		case $f in
 			*.sh) printf '%s\n' "$f" ;;
 			*) head -n 1 "$f" 2>/dev/null | grep -q '^#!.*sh' && printf '%s\n' "$f" ;;
 		esac
-	done | sort -u
+	done
+}
+files=$(
+	find "$ROOT/tests" -type f \( -name '*.sh' -o -perm -100 \) ! -name "$(basename "$0")" |
+	_emit_shell_scripts | sort -u
 )
 [ -n "$files" ] || fail "found no test scripts to check"
 
@@ -48,6 +56,13 @@ report() {
 
 	__rule_patterns[${#__rule_patterns[@]}]=$pattern
 	for f in $files; do
+		# The runner is scanned like everything else -- it has to run on every
+		# platform too -- except by the rules that are about what a TEST may
+		# use: it is the file that defines those, and reporting it would mean
+		# the rule could only be satisfied by deleting the definition.
+		case $rule in
+		  runner-only-helper) [ "$f" = "$ROOT/tests/testsuite" ] && continue ;;
+		esac
 		# Drop comment lines before matching, keeping real line numbers.
 		# "|| true" twice: a grep with no match exits 1, which set -e and
 		# pipefail would take for an error.
@@ -113,6 +128,18 @@ report "path-rewrite" 'sed.*/proc/' \
 	"replace the helper by name (fsf_stub_helper), not the path it reads"
 
 # Interpreters the BSD runners do not have.
+# The runner defines errline() and run_one() for itself. A test does not have
+# them: it is sourced with tests/lib/assert.sh and nothing else, so a call to
+# one is a command-not-found. Such a call lands on the arm that REPORTS a
+# failure, which is the arm that does not run while everything passes -- so it
+# hides in a green suite and the assertion it belongs to can never fire.
+# Measured: tests/buildsystem/testsuite-run-disposal.sh asserted a signal exit
+# status through errline() and could not have reported a wrong one.
+report "runner-only-helper" '(^|[^-[:alnum:]_.])(errline|run_one)[[:space:]]' \
+	"errline and run_one belong to tests/testsuite, not to a test: calling one is
+	a command-not-found on the branch that calls it, and that branch is the one
+	that reports failures. Use fail, skip or pass from tests/lib/assert.sh"
+
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
 	"not installed on the BSD lanes; awk and sh are"
 
@@ -200,10 +227,11 @@ probe="$work/probe.sh"
 	printf 'chmod 555 d\n'
 	printf 'cc -I"$ROOT/lib" x.c\n'
 	printf 'sed s#/proc/mounts#f# x\n'
+	printf 'errline "boom"\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "8" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "9" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # The link-flags rule the same way, including the bypass it used to allow: the
 # helpers named in a comment and nowhere else.
