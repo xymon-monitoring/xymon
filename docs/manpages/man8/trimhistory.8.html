@@ -67,11 +67,13 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
       <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> file. A host that is listed but currently outside a
       <b>NOTBEFORE:</b> or <b>NOTAFTER:</b> window counts as listed, and keeps
       its history.
-    <p class="Pp">If the host list cannot be loaded, or loads with no hosts in
-        it, trimhistory drops nothing and exits with an error: every file would
-        otherwise look like it belonged to a host that no longer exists. Runs
-        without <b>--drop</b> or <b>--droplogs</b> are unaffected, since they
-        delete nothing either way.</p>
+    <p class="Pp">If the host list cannot be loaded, loads with no hosts in it,
+        or misses a file named by a plain <b>include</b> or <b>directory</b>
+        line, trimhistory drops nothing and exits with an error: every file of a
+        missing host would otherwise look like it belonged to a host that no
+        longer exists. An absent <b>optional</b> include or directory does not
+        count. Runs without <b>--drop</b> or <b>--droplogs</b> are unaffected,
+        since they delete nothing either way.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="dropsvcs"><a class="permalink" href="#dropsvcs"><b>--dropsvcs</b></a></dt>
