@@ -19,6 +19,11 @@
 #
 # A space cannot reach field 2 (the parser's "%s" stops at whitespace), so it
 # is not a case here; the reachable violations are punctuation and non-ASCII.
+#
+# control: passes with and without the #309 fix, and that is what it is for.
+# Every assertion here is behaviour the warning must leave alone -- the hosts
+# stay loaded, the loader stays quiet -- so this file is green with that change
+# reverted, which for any other test would mean it proves nothing.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh

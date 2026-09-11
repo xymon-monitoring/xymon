@@ -1,0 +1,100 @@
+name: pin check
+
+# A test earns its place by failing when its fix is absent. That is checked
+# once, by its author, against the main of the day -- and main moves. A change
+# merged later can leave an older test passing whatever happens to the code it
+# was guarding, and nothing says so.
+#
+# So the question is asked again, against the main we are going to have: on a
+# tree carrying every open pull request, does each one's test still fail when
+# that one's fix is removed? The script's docstring has the method and the
+# reasoning.
+#
+# Weekly, because it builds the tree and runs tests with a rebuild per pull
+# request -- minutes, not the second a conflict check costs. It reports into the
+# job summary and never fails the job on what it finds: the finding is for a
+# person to act on, and a red tick on an unrelated pull request is not how to
+# deliver it.
+#
+# The script is shell so that "build/pin-check.sh --local" runs on a
+# contributor's own machine, BSD and macOS included, which is the same reason
+# the test suite keeps to shell.
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'One pull request to check, by number. Empty checks every open one.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pin-check:
+    runs-on: ubuntu-latest
+    # The build is a minute and each pull request costs a rebuild plus its own
+    # tests. 90 minutes is room for the whole open set; the runner's own ceiling
+    # is six hours, which is not a limit anybody wants to discover here.
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # The script merges pull-request heads onto the base, so it needs
+          # real history rather than a single commit.
+          fetch-depth: 0
+
+      # Same list as build.yml: the integration branch is built with the same
+      # recipe, or a test that needs a binary skips and proves nothing.
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            libc-ares-dev \
+            libldap-dev \
+            libpcre2-dev \
+            librrd-dev \
+            libssl-dev \
+            libtirpc-dev
+
+      - name: Configure
+        run: |
+          USEXYMONPING=y \
+          ENABLESSL=y \
+          ENABLELDAP=y \
+          ENABLELDAPSSL=y \
+          XYMONUSER=xymon \
+          XYMONTOPDIR=/usr/lib/xymon \
+          XYMONVAR=/var/lib/xymon \
+          XYMONHOSTURL=/xymon \
+          CGIDIR=/usr/lib/xymon/cgi-bin \
+          XYMONCGIURL=/xymon-cgi \
+          SECURECGIDIR=/usr/lib/xymon/cgi-secure \
+          SECUREXYMONCGIURL=/xymon-seccgi \
+          HTTPDGID=www-data \
+          XYMONLOGDIR=/var/log/xymon \
+          XYMONHOSTNAME=localhost \
+          XYMONHOSTIP=127.0.0.1 \
+          MANROOT=/usr/share/man \
+          INSTALLBINDIR=/usr/lib/xymon/server/bin \
+          INSTALLETCDIR=/etc/xymon \
+          INSTALLWEBDIR=/etc/xymon/web \
+          INSTALLEXTDIR=/usr/lib/xymon/server/ext \
+          INSTALLTMPDIR=/var/lib/xymon/tmp \
+          INSTALLWWWDIR=/var/lib/xymon/www \
+          ./configure --server
+
+      - name: Check that every fix is still pinned by its test
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          ./build/pin-check.sh \
+            ${{ inputs.pr && format('--pr {0}', inputs.pr) || '' }}

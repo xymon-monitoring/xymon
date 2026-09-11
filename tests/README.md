@@ -174,6 +174,26 @@ maintenance.
   autopkgtest) runs the suite to catch, and skipping would green-light
   it. `require_bin` and `require_cfg` implement both halves;
   installed-script tests guard `$XYMONCLIENT_LINUX` the same way.
+- **A test fails when its fix is absent -- or says why it doesn't.** That
+  is what makes it a regression test rather than a green tick, and it is
+  worth asserting deliberately: prefer an assertion about what only the
+  fix produces over one about the damage its absence causes. The two look
+  equivalent and are not, because a guard added elsewhere can stop the
+  damage, and from then on the damage is no longer evidence about the
+  cause. "The files are still there" survives any refusal to delete;
+  "the file was trimmed" happens only if the code under test really ran.
+  A test at the layer the fix lives at is the other half of the answer --
+  nothing outside that file can blind it -- and the two together are why
+  a fix sometimes deserves a test on each side of the chain.
+
+  Some tests are meant to pass either way: they pin the behaviour a fix
+  must **not** change. That is a legitimate test and it declares itself,
+  in its own header, so a reader and `build/pin-check.sh` both know:
+  ```bash
+  # control: passes with and without the fix
+  ```
+  Same bargain as `# native-primitive: NAME` above -- state the intent,
+  or a checker is entitled to assume the worst of a test that cannot fail.
 - **License.** GPL-2.0+, matching the rest of the repo. A short
   SPDX-style header at the top of each test is sufficient:
   ```bash
