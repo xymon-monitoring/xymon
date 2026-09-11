@@ -79,6 +79,21 @@ report() {
 report "bash4" '(^|[^[:alnum:]_])(mapfile|readarray)([^[:alnum:]_]|$)|declare +-A|\$\{[A-Za-z_]+\^\^|\$\{[A-Za-z_]+,,' \
 	"bash 4 only; macOS ships bash 3.2"
 
+# Automatic file-descriptor allocation -- "exec {fd}>file", then ">&$fd" -- is
+# bash 4.1, so on bash 3.2 it is a syntax error rather than a graceful failure:
+# the whole file dies at parse time and the suite reports a failure with no
+# obvious cause. Kept apart from the bash4 rule above rather than folded into
+# it, because the probe proves a pattern non-vacuous and not each alternative
+# inside one -- widening a rule while its probe exercised only the old form is
+# how the root-lane gap survived. Use an explicit descriptor ("exec 9>file").
+#
+# The leading [^$] keeps ordinary expansion out of it: "${x}>out" is a variable
+# followed by a redirection, not an allocation. A comment naming the construct
+# is skipped like every other comment, so a test may still explain why it
+# avoids it.
+report "bash41-fd" '(^|[^$])\{[A-Za-z_][A-Za-z0-9_]*\}[<>]' \
+	"automatic fd allocation is bash 4.1; use an explicit descriptor (exec 9>...)"
+
 # Tool flags that exist on GNU and not on the BSDs, or mean different things.
 # head -c is not POSIX either: OpenBSD's head has none.
 report "gnu-only" 'sed +-i|grep +[^|]*--include|grep +-[a-zA-Z]*P|stat +-c|readlink +-f|date +-d |head +-c' \
@@ -306,10 +321,11 @@ probe="$work/probe.sh"
 	printf 'sed s#/proc/mounts#f# x\n'
 	printf 'errline "boom"\n'
 	printf 'register_cleanup "kill $pid 2>/dev/null || true"\n'
+	printf 'exec {fd}>/dev/null\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "11" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "12" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # The cleanup-function rule the same way: a function that kills and does not
 # wait is reported, one that waits or uses stop_process is not.
