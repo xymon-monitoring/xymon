@@ -232,6 +232,14 @@ For more detailed information about Xymon system requirements and
 how to install Xymon, refer to the on-line documentation "Installing
 Xymon" available from the Xymon web server (via the "Help" menu),
 or from the "docs/install.html" file in the Xymon source archive.
+.PP
+On a host running systemd, "make install" can also generate and install a
+service unit for
+.I xymonlaunch(8)
+built from this installation's own paths. It is installed only when
+INSTALLSYSTEMDDIR names a directory; unset, nothing is installed and the
+install is unchanged. See "tools/README.systemd" in the source archive for
+that and the related settings.
 
 
 .SH "SUPPORT and MAILING LISTS"
