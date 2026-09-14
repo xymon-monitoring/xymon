@@ -74,6 +74,7 @@ rm -rf $RPM_BUILD_ROOT
 	cp %{SOURCE2} $RPM_BUILD_ROOT/etc/logrotate.d/xymon
 	mkdir -p $RPM_BUILD_ROOT/etc/default
 	cp %{SOURCE4} $RPM_BUILD_ROOT/etc/default/xymon-client
+	mkdir -p $RPM_BUILD_ROOT/etc/xymon-client/clientlaunch.d
 	mkdir -p $RPM_BUILD_ROOT/usr/bin
 	cd $RPM_BUILD_ROOT/usr/bin && ln -sf ../lib/xymon/server/bin/{xymon,xymoncmd} .
 	mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
@@ -146,6 +147,8 @@ chkconfig --del xymon-client
 %attr(755, root, root) %dir /etc/xymon/tasks.d
 %attr(755, root, root) %dir /usr/lib/xymon/server/download
 %attr(755, root, root) %dir /etc/xymon/web
+%attr(755, root, root) %dir /etc/xymon-client
+%attr(755, root, root) %dir /etc/xymon-client/clientlaunch.d
 %attr(755, xymon, xymon) %dir /var/log/xymon
 %attr(755, root, root) /etc/init.d/xymon
 %attr(644, root, root) /etc/logrotate.d/xymon
@@ -168,6 +171,8 @@ chkconfig --del xymon-client
 %attr(-, root, root) /usr/lib/xymon/client
 %attr(755, root, root) /etc/init.d/xymon-client
 %attr(644, root, root) %config /etc/default/xymon-client
+%attr(755, root, root) %dir /etc/xymon-client
+%attr(755, root, root) %dir /etc/xymon-client/clientlaunch.d
 %attr(755, xymon, xymon) %dir /var/log/xymon
 %attr(755, xymon, xymon) %dir /usr/lib/xymon/client/ext
 %attr(750, root, xymon) /usr/lib/xymon/client/bin/logfetch
