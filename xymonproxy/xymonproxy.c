@@ -100,6 +100,7 @@ typedef struct conn_t {
 #define COMBO_DELAY 250000000	/* Delay before sending a combo message (in nanoseconds) */
 
 int keeprunning = 1;
+int dologswitch = 0;
 time_t laststatus = 0;
 char *logfile = NULL;
 int logdetails = 0;
@@ -115,11 +116,7 @@ void sigmisc_handler(int signum)
 		break;
 
 	  case SIGHUP:
-		if (logfile) {
-			reopen_file(logfile, "a", stdout);
-			reopen_file(logfile, "a", stderr);
-			errprintf("Caught SIGHUP, reopening logfile\n");
-		}
+		dologswitch = 1;
 		break;
 
 	  case SIGUSR1:
@@ -389,6 +386,12 @@ int main(int argc, char *argv[])
 	}
 
 	/* Redirect logging to the logfile, if requested */
+	if (!logfile && getenv("XYMONLAUNCH_LOGFILENAME")) {
+		/* No log file on the command line, but our STDOUT is already */
+		/* being piped somewhere. Record this for when it's time to re-open on rotation */
+		logfile = xgetenv("XYMONLAUNCH_LOGFILENAME");
+		dbgprintf("Already logging out to %s, per xymonlaunch\n", logfile);
+	}
 	if (logfile) {
 		reopen_file(logfile, "a", stdout);
 		reopen_file(logfile, "a", stderr);
@@ -449,6 +452,15 @@ int main(int argc, char *argv[])
 		time_t ctime;
 		time_t now;
 		int combining = 0;
+
+		if (dologswitch) {
+			logprintf("Reopening logfile\n");
+			if (logfile) {
+				reopen_file(logfile, "a", stdout);
+				reopen_file(logfile, "a", stderr);
+			}
+			dologswitch = 0;
+		}
 
 		/* See if it is time for a status report */
 		if (proxyname && ((now = gettimer()) >= (laststatus+300))) {
@@ -986,6 +998,10 @@ int main(int argc, char *argv[])
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &selecttmo);
 
 		if (n < 0) {
+			/* A signal, not a failure: the rotation HUP lands here, and
+			   counting it aborted the proxy after the sixth one. The top
+			   of the loop does the reopen. */
+			if (errno == EINTR) continue;
 			errprintf("select() failed: %s\n", strerror(errno));
 			if (++selectfailures > 5) {
 				errprintf("Too many select failures, aborting\n");

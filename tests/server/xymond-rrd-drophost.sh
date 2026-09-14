@@ -38,7 +38,11 @@ status_msg() {  # status_msg <msg-timestamp> [hostname]
 
 run_worker() {  # run_worker <rrddir> [extra args...]
 	local dir=$1; shift
-	env XYMONHOME="$work" XYMONTMP="$work/tmp" \
+	# XYMONRUNDIR is where xymond_rrd binds its cache-control socket. Its
+	# fallback is XYMONLOGDIR, which resolves to the build-time install path
+	# and is not writable from a test tree - the bind then fails and the
+	# worker exits non-zero before it reads a single message.
+	env XYMONHOME="$work" XYMONTMP="$work/tmp" XYMONRUNDIR="$work/tmp" \
 		"$XYMOND_RRD" --rrddir="$dir" "$@"
 }
 

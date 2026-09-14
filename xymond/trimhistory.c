@@ -210,7 +210,12 @@ void trim_files(time_t cutoff)
 			FILE *fd;
 			long pid = -1;
 
-			sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
+			if (snprintf(pidfn, sizeof(pidfn), "%s/xymond_history.pid", xgetenv("XYMONRUNDIR")) >= (int)sizeof(pidfn)) {
+		/* Bounded like the socket path above: XYMONRUNDIR is configured,
+		   and nothing else checks its length. */
+		errprintf("XYMONRUNDIR is too long for a pidfile path\n");
+		pidfn[0] = '\0';
+	}
 			fd = fopen(pidfn, "r");
 			if (fd) {
 				char l[100];
