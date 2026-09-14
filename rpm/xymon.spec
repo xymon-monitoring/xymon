@@ -117,6 +117,15 @@ fi
 
 %post
 chkconfig --add xymon
+# conf.d/xymon-apache.conf is already on disk; reload a running httpd so it
+# takes effect. Do not start httpd if it is down, and never fail the RPM.
+if [ -x /usr/bin/systemctl ] && /usr/bin/systemctl is-active --quiet httpd.service 2>/dev/null
+then
+	/usr/bin/systemctl reload httpd.service >/dev/null 2>&1 || :
+elif [ -x /etc/init.d/httpd ]
+then
+	/etc/init.d/httpd reload >/dev/null 2>&1 || :
+fi
 
 %post client
 chkconfig --add xymon-client
@@ -128,6 +137,19 @@ then
 	/etc/init.d/xymon stop || true
 fi
 chkconfig --del xymon
+
+%postun
+# After a full uninstall the conf.d snippet is gone; reload so httpd drops it.
+if [ $1 -eq 0 ]
+then
+	if [ -x /usr/bin/systemctl ] && /usr/bin/systemctl is-active --quiet httpd.service 2>/dev/null
+	then
+		/usr/bin/systemctl reload httpd.service >/dev/null 2>&1 || :
+	elif [ -x /etc/init.d/httpd ]
+	then
+		/etc/init.d/httpd reload >/dev/null 2>&1 || :
+	fi
+fi
 
 %preun client
 if [ -e /var/log/xymon/clientlaunch.pid -a -x /etc/init.d/xymon-client ]
