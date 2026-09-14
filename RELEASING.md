@@ -22,6 +22,10 @@ gates; everything mechanical is automated.
 a pull request. The ritual there: merge `main` in, then one catch-up commit
 with an entry per pull request merged since.
 
+[`CONTRIBUTING.md`](CONTRIBUTING.md) holds the other half of that rule, the part a
+contributor needs: put the wording for an entry in the pull request description and
+it is placed here afterwards. How an entry is written is this file's.
+
 **`Changes` merges into `main` only at release** (step 1 below). Between
 releases main carries exactly what the last release shipped, so a section
 describing a released version cannot move or be reworded underneath it. Only
