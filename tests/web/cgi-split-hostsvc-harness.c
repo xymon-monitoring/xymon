@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later                                  */
+/* Copyright (C) 2026 Bruno Manzoni                                           */
 /*
  * tests/web/cgi-split-hostsvc-harness.c
  *
