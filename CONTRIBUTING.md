@@ -67,3 +67,47 @@ agreement, and a bypass is for an emergency, said so in the pull request.
 
 Match the file you are editing. The tree spans two decades and several hands;
 consistency within a file beats consistency across the project.
+
+## C code
+
+The tree sets no `-std=` — not in `configure`, not in any `build/Makefile.*`. The
+language level is whatever each platform's compiler defaults to, across AIX,
+HP-UX, Solaris, the BSDs, macOS and Linux. That is what makes the conventions
+below load-bearing rather than decorative: each of them is the tree's answer to
+something the language does not settle for us.
+
+**Free with `xfree()`, allocate with plain `malloc()`.** The asymmetry is
+deliberate and it reads like an inconsistency: roughly 1,700 calls to `xfree`
+against 160 to `free`, but 760 to `malloc` against 14 to `xmalloc`. `xfree`
+(`lib/memory.h:101`) aborts on a NULL free and sets the pointer to NULL
+afterwards, so a double free aborts at the second call instead of corrupting the
+heap for someone else to find. The `xmalloc` family is a different mechanism: it
+is switched in wholesale by defining `XYMON_MEMORY_WRAPPERS`, which is `#undef`'d
+at `lib/memory.h:14` and set by no build. Calling it directly opts one site into
+something meant to be all or nothing.
+
+**Read the environment with `xgetenv()`.** It is not a wrapper around `getenv()`:
+when a variable is unset it falls back to the built-in default table in
+`lib/environ.c` and caches the answer back into the environment. `getenv()`
+returns NULL where `xgetenv()` returns the compiled-in default, so plain `getenv`
+is right only for a variable this project defines no default for.
+
+**Report errors with `errprintf()`.** It timestamps the line to the microsecond,
+prefixes the application name, flushes stderr, and — when the caller has asked
+for it — accumulates the text into a buffer that can be sent back inside a status
+message. `fprintf(stderr, ...)` loses all four.
+
+**A buffer carries its own length.** `SBUF_DEFINE(name)` declares `name` and
+`name_buflen` together; `SBUF_MALLOC(name, len)` allocates `len+1` bytes and
+records `len`; the buffer is then written with `snprintf(name, name_buflen, ...)`.
+The recorded length excludes the terminating NUL and the allocation includes it.
+Growing a buffer without updating `name_buflen`, or sizing one without room for
+the NUL, is a bug this tree has shipped more than once — keep the two in the same
+statement.
+
+**Resolve a platform difference once, not at the call sites.** It belongs behind a
+macro the build detects, in `lib/` or `common/`. The tree already reads this way:
+93 preprocessor guards across `lib/`'s 54 sources and 39 across `xymonnet/`'s 13,
+against none at all in `web/`'s 31 and `xymongen/`'s 10. A change that needs a new
+detected macro says in its pull request what is detected, in what order, which
+macro that sets, and where the macro is read.
