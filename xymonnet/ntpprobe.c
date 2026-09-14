@@ -1,6 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon network test tool - internal SNTP probe.                             */
 /* SPDX-License-Identifier: GPL-2.0-or-later                                  */
+/* Copyright (C) 2026 Bruno Manzoni                                           */
 /*                                                                            */
 /* In-process SNTP (RFC 4330/5905) client for the "ntp" test: one 48-byte UDP */
 /* exchange on port 123, no fork and no external tool. ntp_build_request and  */

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- Copyright (C) 2026 Bruno Manzoni -->
 # tests/ — regression scenarios
 
 A place to put runnable, reproducible regression scenarios for behaviour
