@@ -6425,15 +6425,58 @@ int main(int argc, char *argv[])
 			switch (cwalk->doingwhat) {
 			  case RECEIVING:
 				if (FD_ISSET(cwalk->sock, &fdread)) {
-					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
-
 					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
-					if (n <= 0) {
-						/* End of input data on this connection */
+
+					/*
+					 * Tested AFTER the read, as the RESPONDING arm below
+					 * tests its write. "n" is reused by every connection
+					 * in this loop, so checking it beforehand asked
+					 * whether the PREVIOUS one would have blocked, and
+					 * skipped a readable connection when it had.
+					 */
+					if ((n == -1) && ((errno == EAGAIN) || (errno == EWOULDBLOCK) ||
+							  (errno == EINTR))) break; /* Do nothing */
+
+					if (n < 0) {
+						/*
+						 * The connection broke while the message was
+						 * still arriving. A request is delimited by the
+						 * sender stopping, so what is in the buffer
+						 * cannot be told apart from a whole message by
+						 * looking at it -- and acting on it means acting
+						 * on half a status: a colour taken from a line
+						 * that was cut in the middle. Drop it, and say
+						 * so, which is the part that was missing before.
+						 */
+						errprintf("Truncated message from %s - %d bytes before the connection broke: %s\n",
+							  inet_ntoa(cwalk->addr.sin_addr), cwalk->buflen,
+							  strerror(errno));
+						shutdown(cwalk->sock, SHUT_RDWR);
+						close(cwalk->sock);
+						cwalk->sock = -1;
+						cwalk->doingwhat = NOTALK;
+					}
+					else if (n == 0) {
+						/* The sender finished: the message is what arrived. */
 						*(cwalk->bufp) = '\0';
 
-						/* FIXME - need to set origin here */
-						do_message(cwalk, "");
+						if (cwalk->buflen == 0) {
+							/*
+							 * Connected and said nothing. Every port
+							 * scan does this, and so does a
+							 * connect-only check on this port, so it
+							 * is not worth a log line -- but it is not
+							 * a message either.
+							 */
+							shutdown(cwalk->sock, SHUT_RDWR);
+							close(cwalk->sock);
+							cwalk->sock = -1;
+							cwalk->doingwhat = NOTALK;
+						}
+						else {
+							/* FIXME - need to set origin here */
+							do_message(cwalk, "");
+						}
 					}
 					else {
 						/* Add data to the input buffer - within reason ... */
