@@ -40,15 +40,15 @@ ROOT=$(find_root)
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 
-[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymonclient.a" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-notbefore.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 require_gnu_make
-"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
+"$XYMON_MAKE" -C "$ROOT/lib" libxymonclientcomm.a libxymonclient.a >"$work/libbuild.log" 2>&1 \
+	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh the xymon client libraries"; }
 
 cat > "$work/hosts.cfg" <<'EOF'
 127.0.0.1 inwindow.example.com # conn NOTBEFORE:199001010000 NOTAFTER:209001010000
@@ -164,7 +164,7 @@ EOF
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" \
+	"$work/harness.c" "$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
 	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
