@@ -792,15 +792,58 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   <dt id="sni"><a class="permalink" href="#sni"><b>sni</b></a></dt>
   <dd></dd>
   <dt id="nosni"><a class="permalink" href="#nosni"><b>nosni</b></a></dt>
-  <dd>Enables or disables use of SNI (Server Name Indication) for SSL tests.
-    <p class="Pp">Some SSL implementations cannot handle SSL handshakes with SNI
-        data, so Xymon by default does not use SNI. This default can be changed
-        with the &quot;--sni&quot; option for <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> but can also be
-        managed per host with these tags.</p>
-    <p class="Pp">SNI support was added in Xymon 4.3.13, where the default was
-        to use SNI. This was changed in 4.3.14 so SNI support is disabled by
-        default, and the &quot;sni&quot; and &quot;nosni&quot; tags were
-        introduced together with the &quot;--sni&quot; option for xymonnet.</p>
+  <dd>Enable or disable SNI (Server Name Indication) for TLS tests that take
+      their servername from this host's entry. The default is on;
+      &quot;nosni&quot; turns it off for one host and &quot;--sni=off&quot; for
+      all of them, see <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1).</i> No test takes its servername from the
+      host entry at present, so these settings are currently without effect.
+    <p class="Pp">They do not apply to <b>https</b> tests. Those send the host
+        part of their URL, which is the name the server is being asked about and
+        the right place for the choice: one host may carry several URLs with
+        different names, which a per-host tag cannot express. An address written
+        in the URL sends no servername, since RFC 6066 forbids one there.</p>
+    <p class="Pp">Before Xymon 4.3.31, &quot;nosni&quot; suppressed the
+        servername on <b>https</b> tests as well, and with it the default was
+        off. A server that holds a certificate per name answers a nameless
+        handshake with its <i>default</i> certificate, so such a test reported
+        <b>sslcert</b> for a certificate that was not the URL's - labelled with
+        the URL's name. The certificate actually serving the URL could expire
+        with nothing said.</p>
+    <p class="Pp">A host written as</p>
+    <p class="Pp"></p>
+    <pre>
+<br/>
+    10.0.0.5   www.example.com   # https://www.example.com/ nosni</pre>
+    <p class="Pp">did two things, and only one of them was asked for: it checked
+        <i>www.example.com</i>'s content, and it reported the default virtual
+        host's certificate under <i>www.example.com</i>'s name. Its equivalent
+        is therefore two lines:</p>
+    <p class="Pp"></p>
+    <pre>
+<br/>
+    10.0.0.5   www.example.com       # https://www.example.com/ nosslcert
+<br/>
+    10.0.0.5   default.example.com   # https://default.example.com/</pre>
+    <p class="Pp">The first keeps the <b>http</b> status exactly as it was - the
+        URL is requested, its response code and content are checked - and
+        <b>nosslcert</b> drops the <b>sslcert</b> status instead of letting it
+        describe a certificate that is not this URL's.</p>
+    <p class="Pp">The second monitors the certificate the old line was in fact
+        reporting on, under the name it belongs to: the test sends
+        <i>default.example.com</i>, receives that host's certificate, and
+        reports <b>sslcert</b> for <i>default.example.com</i>. A shorter form is
+        to write the address, <b>https://10.0.0.5/</b>, which sends no
+        servername and carries the same address in the &quot;Host:&quot; header,
+        so both halves of the test describe whatever that endpoint serves by
+        default.</p>
+    <p class="Pp">Leave the second line out if that certificate is not something
+        you want watched - but that is a decision to stop monitoring it, not a
+        simplification. With &quot;nosni&quot; it was monitored whether or not
+        you meant it.</p>
+    <p class="Pp">If the endpoint cannot accept a servername at all, it can no
+        longer be tested as <b>https</b>: an address in the URL suppresses SNI
+        but also sends &quot;Host: <i>address</i>&quot;, which a name-based
+        virtual host will not serve.</p>
     <p class="Pp"></p>
     <p class="Pp"></p>
   </dd>
