@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 name: Pre-tag release prep
 concurrency:
   group: workflow-prep-release-${{ github.event.inputs.version }}
