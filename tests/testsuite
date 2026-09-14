@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # Run every executable regression test under tests/. Exit 0 if at least one
 # test passed and none failed; 1 if any failed; 77 if every test skipped

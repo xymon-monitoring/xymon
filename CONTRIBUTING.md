@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- Copyright (C) 2026 Bruno Manzoni -->
 # Contributing to Xymon
 
 Patches are welcome. This file covers what is easy to get wrong because it is
