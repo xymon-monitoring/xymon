@@ -84,6 +84,9 @@ install:
 	if test ! -d $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)  ; then mkdir -p $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)  ; chmod 755 $(INSTALLROOT)$(INSTALLCLIENTLOGDIR) ; fi
 	if test ! -d $(INSTALLROOT)$(XYMONHOME)/ext   ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/ext   ; chmod 755 $(INSTALLROOT)$(XYMONHOME)/ext  ; fi
 	if test ! -d $(INSTALLROOT)$(XYMONHOME)/local ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/local ; chmod 755 $(INSTALLROOT)$(XYMONHOME)/local; fi
+	# The drop-in directories clientlaunch.cfg and xymonclient.cfg include,
+	# made here as xymond/Makefile makes the server's own.
+	for d in clientlaunch.d xymonclient.d; do mkdir -p $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d; chmod 755 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d; done
 	if test ! -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/ ; chmod 644 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg; fi
 	if test ! -f $(INSTALLROOT)$(XYMONHOME)/local/README; then cp README-local $(INSTALLROOT)$(XYMONHOME)/local/README ; chmod 644 $(INSTALLROOT)$(XYMONHOME)/local/README; fi
 	chmod 755 runclient.sh $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS)
@@ -100,15 +103,15 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(XYMONHOME)
 	# The recursive chown above stops at XYMONHOME, so a relocated bin or etc
 	# is outside it: the tools keep whatever ownership cp preserved, and the
-	# config files are created here and stay root's. Named one by one rather
-	# than chowned recursively - a relocated etc may be shared with the rest
-	# of the system, where nothing else is ours to touch. A no-op in the
-	# default layout, where the recursion already covered them.
+	# config files and drop-in directories are created here and stay root's.
+	# Named one by one rather than chowned recursively - a relocated etc may
+	# be shared with the rest of the system, where nothing else is ours to
+	# touch. A no-op in the default layout, where the recursion covered them.
 	for f in $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS); do \
 		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/$$f ; \
 		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/$$f ; \
 	done
-	for f in localclient.cfg clientlaunch.cfg xymonclient.cfg; do \
+	for f in localclient.cfg clientlaunch.cfg xymonclient.cfg clientlaunch.d xymonclient.d; do \
 		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$f ; \
 		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$f ; \
 	done
