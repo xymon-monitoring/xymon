@@ -64,6 +64,12 @@ run_install "$work/moved" $reloc || fail "install-client failed with the directo
 	|| fail "INSTALLCLIENTETCDIR was not used: no xymonclient.cfg in /etc/xymon-client"
 [ -f "$work/moved/usr/libexec/xymon-client/xymonclient.sh" ] \
 	|| fail "INSTALLCLIENTBINDIR was not used: no xymonclient.sh in /usr/libexec/xymon-client"
+# The drop-in directories clientlaunch.cfg and xymonclient.cfg include are
+# made with them, in the default layout and the relocated etc alike.
+for dd in clientlaunch.d xymonclient.d; do
+	[ -d "$work/plain$home/etc/$dd" ] || fail "the default layout made no $home/etc/$dd, which the shipped config includes"
+	[ -d "$work/moved/etc/xymon-client/$dd" ] || fail "the relocated install made no /etc/xymon-client/$dd, which the shipped config includes"
+done
 for pair in etc:/etc/xymon-client bin:/usr/libexec/xymon-client tmp:/var/tmp/xymon-client logs:/var/log/xymon-client; do
 	d=${pair%%:*} to=${pair#*:}
 	[ -d "$work/moved$to" ] || fail "the relocated $d directory $to was not created"
@@ -153,4 +159,4 @@ run_install "$work/shared" $reloc PKGBUILD= \
 mode=$(ls -ld "$work/shared/etc/xymon-client" | cut -c1-10)
 [ "$mode" = drwx------ ] || fail "install-client changed an existing relocated etc's mode to $mode"
 
-pass "install-client puts the client's etc, bin, tmp and logs where INSTALLCLIENT*DIR say, or a client-only build's INSTALLETCDIR/BINDIR/TMPDIR, links the old paths to them, changes nothing when they are unset or empty, keeps the client's home 755, stops on a real directory in the way, and leaves an existing relocated directory's mode alone"
+pass "install-client puts the client's etc, bin, tmp and logs where INSTALLCLIENT*DIR say, or a client-only build's INSTALLETCDIR/BINDIR/TMPDIR, links the old paths to them, changes nothing when they are unset or empty, keeps the client's home 755, makes the drop-in directories, stops on a real directory in the way, and leaves an existing relocated directory's mode alone"
