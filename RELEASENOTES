@@ -87,6 +87,20 @@ warns at startup about such names.
 Network tests
 -------------
 
+The smtp, smtps and submission probes no longer send anything before the
+server's 220 greeting. Speaking first violates RFC 5321, and Postfix 3.9
+enables smtpd_forbid_unauth_pipelining by default, answering "554 5.5.0 Error:
+SMTP protocol synchronization" -- such a poll was refused, and reported green
+or yellow depending on which side of the exchange won the race.
+
+An upgrade does not carry this into an existing installation: install merges
+protocols.cfg section by section and leaves the sections already there
+untouched. Remove the "send" line from [smtp], [smtps] and [submission|msa] in
+your protocols.cfg. The mail server then sees a connection that opens and
+closes without a command -- "lost connection after CONNECT" on Postfix,
+NOQUEUE on sendmail -- so allow the Xymon host wherever those lines feed
+fail2ban or a similar counter.
+
 xymonnet tests with a cipher-list restriction now report an SSL error when
 OpenSSL rejects it, instead of silently falling back to the default cipher
 list. Such tests may turn red after upgrading Xymon, or after an OpenSSL
