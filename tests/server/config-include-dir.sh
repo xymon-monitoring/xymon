@@ -12,11 +12,17 @@
 # graphs.d, ... without editing the shipped file. 'optional' means a missing
 # directory is silently ignored; 'directory' reads every file in it.
 #
-# Two things could regress independently, so the test pins both:
+# Three things could regress independently, so the test pins all three:
 #
 #   (A) Shipped artefact: every .DIST that PR #222 gave a drop-in directory
 #       still declares it. A dropped or mistyped line silently disables the
 #       drop-in for that config, which no build would catch.
+#
+#   (C) Install: the component shipping the config also creates the directory
+#       it declares. A drop-in the admin has to mkdir first is one in name
+#       only: the server made all of its own and the client made neither, so
+#       clientlaunch.d existed only where Debian's packaging invented it
+#       (debian/xymon-client.dirs) -- reported on the RHEL9 packages.
 #
 #   (B) Mechanism: the 'optional directory' directive actually merges the
 #       fragments AND tolerates the directory being absent. This is what the
@@ -44,7 +50,7 @@ ROOT=$(find_root)
 # carries .cfg keep it in the directory name (xymonserver.d,
 # xymonclient.d) -- so assert per-file on its own expected suffix.
 check_declares() {  # check_declares <file> <expected-dir-suffix>
-	local f=$1 suffix=$2 re
+	local f=$1 suffix=$2 re mk
 	# A sparse checkout (e.g. server-only, no client/) may lack a whole
 	# subtree; only require files whose directory is actually present, so such
 	# a tree skips them rather than failing. Within a present directory the
@@ -58,6 +64,17 @@ check_declares() {  # check_declares <file> <expected-dir-suffix>
 	re=$(printf '%s' "$suffix" | sed 's/[.]/\\./g')
 	grep -qE "^[[:space:]]*optional directory @XYMONHOME@/etc/${re}[[:space:]]*\$" "$f" \
 		|| fail "shipped $(basename "$f") has no active 'optional directory @XYMONHOME@/etc/$suffix' line (#222)"
+
+	# (C) whoever ships the config creates the directory. Either it is made by
+	# name, or it is one entry in the "for d in ..." list both makefiles use --
+	# where the name comes before the mkdir, hence the two orders.
+	case "$f" in
+	"$ROOT"/client/*) mk="$ROOT/client/Makefile" ;;
+	*)                mk="$ROOT/xymond/Makefile" ;;
+	esac
+	[ -f "$mk" ] || return 0
+	grep -qE "mkdir.*${re}|${re}.*mkdir" "$mk" \
+		|| fail "$(basename "$f") declares etc/$suffix, but ${mk#"$ROOT"/} never creates it"
 }
 
 check_declares "$ROOT/xymond/etcfiles/alerts.cfg.DIST"          "alerts.d"
@@ -76,7 +93,7 @@ check_declares "$ROOT/client/xymonclient.cfg.DIST"              "xymonclient.d"
 CC=${CC:-cc}
 if ! command -v "$CC" >/dev/null 2>&1 \
 	|| [ ! -f "$ROOT/include/config.h" ] || [ ! -f "$ROOT/lib/libxymoncomm.a" ]; then
-	pass "shipped configs declare their drop-in directories (#222); stackio mechanism check skipped (tree not built)"
+	pass "shipped configs declare their drop-in directories and the install creates them (#222); stackio mechanism check skipped (tree not built)"
 fi
 
 work=$(mktempdir)
@@ -121,4 +138,4 @@ render "$work/missing-required.cfg" >/dev/null
 assert_contains "WARNING" "$(cat "$work/err.log")" \
 	"a missing non-optional 'directory' unexpectedly stayed silent -- the optional contrast is meaningless"
 
-pass "shipped configs declare drop-in dirs and 'optional directory' merges fragments / tolerates absence (#222)"
+pass "shipped configs declare drop-in dirs, the install creates them, and 'optional directory' merges fragments / tolerates absence (#222)"
