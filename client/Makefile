@@ -38,28 +38,28 @@ else
 endif
 
 logfetch: logfetch.c $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ logfetch.c $(XYMONCLIENTLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ logfetch.c $(XYMONCLIENTLIBS)
 
 clientupdate: clientupdate.c $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ clientupdate.c $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ clientupdate.c $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
 orcaxymon: orcaxymon.c $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ orcaxymon.c $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ orcaxymon.c $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
 msgcache: msgcache.c $(XYMONCLIENTLIB)
-	$(CC) $(CFLAGS) -o $@ msgcache.c $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ msgcache.c $(XYMONCLIENTCOMMLIBS) $(XYMONCLIENTLIBS)
 
 hpux-meminfo: hpux-meminfo.c
-	$(CC) -o $@ hpux-meminfo.c
+	$(CC) $(LDFLAGS) -o $@ hpux-meminfo.c
 
 freebsd-meminfo: freebsd-meminfo.c
-	$(CC) -o $@ freebsd-meminfo.c
+	$(CC) $(LDFLAGS) -o $@ freebsd-meminfo.c
 
 openbsd-meminfo: openbsd-meminfo.c
-	$(CC) -o $@ openbsd-meminfo.c
+	$(CC) $(LDFLAGS) -o $@ openbsd-meminfo.c
 
 netbsd-meminfo: netbsd-meminfo.c
-	$(CC) -o $@ netbsd-meminfo.c
+	$(CC) $(LDFLAGS) -o $@ netbsd-meminfo.c
 
 install:
 	if test ! -d $(INSTALLROOT)$(XYMONHOME)       ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)       ; chmod 755 $(INSTALLROOT)$(XYMONHOME)      ; fi

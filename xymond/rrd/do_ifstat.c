@@ -19,7 +19,7 @@ static void *ifstat_tpl       = NULL;
 /* eth0   Link encap:                                                 */
 /*        RX bytes: 1829192 (265.8 MiB)  TX bytes: 1827320 (187.7 MiB */
 static const char *ifstat_linux_exprs[] = {
-	"^([a-z0-9]+(_[0-9]+)?:*|lo:?)\\s",
+	"^([a-z0-9]+(?:_[0-9]+)?:*|lo:?)\\s", /* (?:...) non-capturing: 1 group = 1 arg */
 	"^\\s+RX bytes:([0-9]+) .*TX bytes.([0-9]+) ",
 	"^\\s+RX packets\\s+[0-9]+\\s+bytes\\s+([0-9]+) ",
 	"^\\s+TX packets\\s+[0-9]+\\s+bytes\\s+([0-9]+) "
@@ -206,7 +206,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		  case OS_ZVM:
 		  case OS_ZVSE:
 		  case OS_ZOS:
-			if (pickdata(bol, ifstat_linux_pcres[0], 1, &ifname)) {
+			if (pickdata(bol, ifstat_linux_pcres[0], 1, /*nargs*/1, &ifname)) {
 				/*
 				 * Linux' netif aliases mess up things. 
 				 * Clear everything when we see an interface name.
@@ -225,9 +225,9 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 					if (txstr) { xfree(txstr); txstr = NULL; }
 				}
 			}
-			else if (pickdata(bol, ifstat_linux_pcres[1], 1, &rxstr, &txstr)) dmatch |= 6;
-			else if (pickdata(bol, ifstat_linux_pcres[2], 1, &rxstr)) dmatch |= 2;
-			else if (pickdata(bol, ifstat_linux_pcres[3], 1, &txstr)) dmatch |= 4;
+			else if (pickdata(bol, ifstat_linux_pcres[1], 1, /*nargs*/2, &rxstr, &txstr)) dmatch |= 6;
+			else if (pickdata(bol, ifstat_linux_pcres[2], 1, /*nargs*/1, &rxstr)) dmatch |= 2;
+			else if (pickdata(bol, ifstat_linux_pcres[3], 1, /*nargs*/1, &txstr)) dmatch |= 4;
 			break;
 
 		  case OS_FREEBSD:
@@ -236,21 +236,21 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			 * See if we match this expression, and if not then fall back to
 			 * the old regex without that field.
 			 */
-			if (pickdata(bol, ifstat_freebsdV8_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
-			else if (pickdata(bol, ifstat_freebsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			if (pickdata(bol, ifstat_freebsdV8_pcres[0], 0, /*nargs*/3, &ifname, &rxstr, &txstr)) dmatch = 7;
+			else if (pickdata(bol, ifstat_freebsd_pcres[0], 0, /*nargs*/3, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_OPENBSD:
-			if (pickdata(bol, ifstat_openbsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			if (pickdata(bol, ifstat_openbsd_pcres[0], 0, /*nargs*/3, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_NETBSD:
-			if (pickdata(bol, ifstat_netbsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			if (pickdata(bol, ifstat_netbsd_pcres[0], 0, /*nargs*/3, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_SOLARIS: 
-			if (pickdata(bol, ifstat_solaris_pcres[0], 0, &ifname, &txstr)) dmatch |= 1;
-			else if (pickdata(bol, ifstat_solaris_pcres[1], 0, &dummy, &rxstr)) dmatch |= 6;
+			if (pickdata(bol, ifstat_solaris_pcres[0], 0, /*nargs*/2, &ifname, &txstr)) dmatch |= 1;
+			else if (pickdata(bol, ifstat_solaris_pcres[1], 0, /*nargs*/2, &dummy, &rxstr)) dmatch |= 6;
 
 			if (ifname && dummy && (strcmp(ifname, dummy) != 0)) {
 				/* They must match, drop the data */
@@ -272,37 +272,37 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			break;
 
 		  case OS_AIX: 
-			if (pickdata(bol, ifstat_aix_pcres[0], 1, &ifname)) {
+			if (pickdata(bol, ifstat_aix_pcres[0], 1, /*nargs*/1, &ifname)) {
 				/* Interface names comes first, so any rx/tx data is discarded */
 				dmatch |= 1;
 				if (rxstr) { xfree(rxstr); rxstr = NULL; }
 				if (txstr) { xfree(txstr); txstr = NULL; }
 			}
-			else if (pickdata(bol, ifstat_aix_pcres[1], 1, &txstr, &rxstr)) dmatch |= 6;
+			else if (pickdata(bol, ifstat_aix_pcres[1], 1, /*nargs*/2, &txstr, &rxstr)) dmatch |= 6;
 			break;
 
 		  case OS_HPUX: 
-			if (pickdata(bol, ifstat_hpux_pcres[0], 1, &ifname)) {
+			if (pickdata(bol, ifstat_hpux_pcres[0], 1, /*nargs*/1, &ifname)) {
 				/* Interface names comes first, so any rx/tx data is discarded */
 				dmatch |= 1;
 				if (rxstr) { xfree(rxstr); rxstr = NULL; }
 				if (txstr) { xfree(txstr); txstr = NULL; }
 			}
-			else if (pickdata(bol, ifstat_hpux_pcres[1], 1, &rxstr)) dmatch |= 2;
-			else if (pickdata(bol, ifstat_hpux_pcres[2], 1, &txstr)) dmatch |= 4;
+			else if (pickdata(bol, ifstat_hpux_pcres[1], 1, /*nargs*/1, &rxstr)) dmatch |= 2;
+			else if (pickdata(bol, ifstat_hpux_pcres[2], 1, /*nargs*/1, &txstr)) dmatch |= 4;
 			break;
 
 		  case OS_DARWIN:
-			if (pickdata(bol, ifstat_darwin_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			if (pickdata(bol, ifstat_darwin_pcres[0], 0, /*nargs*/3, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 			
  		  case OS_SCO_SV:
-		        if (pickdata(bol, ifstat_sco_sv_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+		        if (pickdata(bol, ifstat_sco_sv_pcres[0], 0, /*nargs*/3, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 			
 		  case OS_WIN32_BBWIN:
 		  case OS_WIN_POWERSHELL:
-			if (pickdata(bol, ifstat_bbwin_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			if (pickdata(bol, ifstat_bbwin_pcres[0], 0, /*nargs*/3, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  default:

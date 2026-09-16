@@ -85,20 +85,20 @@ static int handle_pcre_netstat(char *msg, pcre2_code **pcreset, char *outp)
 		else {
 			switch (sect) {
 			  case AT_TCP:
-				if (pickdata(datapart, pcreset[0],  0, &tcpretranspackets, &tcpretransbytes)   ||
-				    pickdata(datapart, pcreset[1],  0, &tcpoutdatapackets, &tcpoutdatabytes)   ||
-				    pickdata(datapart, pcreset[2],  0, &tcpinorderpackets, &tcpinorderbytes)   ||
-				    pickdata(datapart, pcreset[3],  0, &tcpoutorderpackets, &tcpoutorderbytes) ||
-				    pickdata(datapart, pcreset[4],  0, &tcpconnrequests)                       ||
-				    pickdata(datapart, pcreset[5],  0, &tcpconnaccepts)) havedata++;
+				if (pickdata(datapart, pcreset[0],  0, /*nargs*/2, &tcpretranspackets, &tcpretransbytes)   ||
+				    pickdata(datapart, pcreset[1],  0, /*nargs*/2, &tcpoutdatapackets, &tcpoutdatabytes)   ||
+				    pickdata(datapart, pcreset[2],  0, /*nargs*/2, &tcpinorderpackets, &tcpinorderbytes)   ||
+				    pickdata(datapart, pcreset[3],  0, /*nargs*/2, &tcpoutorderpackets, &tcpoutorderbytes) ||
+				    pickdata(datapart, pcreset[4],  0, /*nargs*/1, &tcpconnrequests)                       ||
+				    pickdata(datapart, pcreset[5],  0, /*nargs*/1, &tcpconnaccepts)) havedata++;
 				break;
 
 			  case AT_UDP:
-				if (pickdata(datapart, pcreset[6],  0, &udpreceived)   ||
-				    pickdata(datapart, pcreset[7],  0, &udpsent)       ||
-				    pickdata(datapart, pcreset[8],  0, &udperr1)       ||
-				    pickdata(datapart, pcreset[9],  0, &udperr2)       ||
-				    pickdata(datapart, pcreset[10], 0, &udperr3)) havedata++;
+				if (pickdata(datapart, pcreset[6],  0, /*nargs*/1, &udpreceived)   ||
+				    pickdata(datapart, pcreset[7],  0, /*nargs*/1, &udpsent)       ||
+				    pickdata(datapart, pcreset[8],  0, /*nargs*/1, &udperr1)       ||
+				    pickdata(datapart, pcreset[9],  0, /*nargs*/1, &udperr2)       ||
+				    pickdata(datapart, pcreset[10], 0, /*nargs*/1, &udperr3)) havedata++;
 				break;
 
 			  default:

@@ -6,7 +6,7 @@ xymongrep \- pick out lines in hosts.cfg
 .br
 .B "xymongrep \-\-version"
 .br
-.B "xymongrep [\-\-noextras] [\-\-test\-untagged] [\-\-web] [\-\-net] [\-\-loadhostsfromxymond] TAG [TAG...]"
+.B "xymongrep [\-\-noextras] [\-\-test\-untagged] [\-\-no\-dialup] [\-\-web] [\-\-net] [\-\-loadhostsfromxymond] TAG [TAG...]"
 
 .SH DESCRIPTION
 .I xymongrep(1)
@@ -55,6 +55,15 @@ or the status of the TESTNAME test is disabled, then this
 host is ignored and will not be included in the output.
 This can be used to ignore hosts that are down, or hosts
 where the custom test is disabled.
+
+.IP "\fB\-\-no\-dialup\fR"
+Skip hosts that have the "dialup" attribute set in the
+.I hosts.cfg(5)
+file. Unlike \fB\-\-no\-down\fR, this check does not query
+the server; it filters strictly on the host attribute and is
+independent of the host's current color. Useful for scripts
+that should never probe hosts expected to be intermittently
+offline.
 
 .IP "\fB\-\-web\fR"
 Search the hosts.cfg file following include statements as a

@@ -3167,7 +3167,9 @@ hostfilter_rec_t *setup_filter(char *buf, char **fields, int *acklevel, int *hav
 		char *xmhfld = NULL, *xmhval = NULL;
 
 		/* Get filter */
-		if ((strncmp(tok, "XMH_", 4) == 0) && pickdata(tok, xmhptn, 1, &xmhfld, &xmhval)) {
+		if ((strncmp(tok, "XMH_", 4) == 0)
+			&& pickdata(tok, xmhptn, 1, /*nargs*/2, &xmhfld, &xmhval))
+		{
 			enum xmh_item_t fld = xmh_key_idx(xmhfld);
 
 			if ((fld != XMH_LAST) && (*xmhfld) && (*xmhval)) {

@@ -173,7 +173,15 @@ pcre2_code **compile_exprs(char *id, const char **patterns, int count)
 	return result;
 }
 
-int pickdata(char *buf, pcre2_code *expr, int dupok, ...)
+/* nargs: how many char** destinations the caller passed -- NOT optional.
+ * pcre2_match() returns 1 + (highest capture group that matched), a count that
+ * depends on the DATA: an optional group fires only for some inputs. If it ever
+ * exceeds the fixed argument list, the loop pulls a va_arg that was never passed
+ * and dereferences a garbage pointer -- likely resulting in memory-unsafe read,
+ * xfree() or write operation (issue #433: a Linux iface name with an underscore,
+ * e.g. "veth_0", makes an ifstat pattern capture one group more than its call
+ * site supplied). Clamp res to what the caller vouched for. */
+int pickdata(char *buf, pcre2_code *expr, int dupok, int nargs, ...)
 {
 	int res, i;
 	pcre2_match_data *ovector;
@@ -192,8 +200,9 @@ int pickdata(char *buf, pcre2_code *expr, int dupok, ...)
 		pcre2_match_data_free(ovector);
 		return 0;
 	}
+	if (res > nargs + 1) res = nargs + 1; /* loop runs i = 1 .. res-1 */
 
-	va_start(ap, dupok);
+	va_start(ap, nargs);
 
 	for (i=1; (i < res); i++) {
 		*w = '\0';
