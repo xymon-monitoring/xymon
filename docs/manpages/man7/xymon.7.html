@@ -270,6 +270,12 @@ Section: Environments, Tables, and Troff Macros (7)<br/>Updated: Version 4.3.30:
     Xymon&quot; available from the Xymon web server (via the &quot;Help&quot;
     menu), or from the &quot;docs/install.html&quot; file in the Xymon source
     archive.</p>
+<p class="Pp">On a host running systemd, &quot;make install&quot; can also
+    generate and install a service unit for <i><a href="../man8/xymonlaunch.8.html">xymonlaunch</a>(8)</i> built from
+    this installation's own paths. It is installed only when INSTALLSYSTEMDDIR
+    names a directory; unset, nothing is installed and the install is unchanged.
+    See &quot;tools/README.systemd&quot; in the source archive for that and the
+    related settings.</p>
 <p class="Pp"></p>
 <p class="Pp"></p>
 </section>

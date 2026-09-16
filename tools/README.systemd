@@ -1,0 +1,42 @@
+Installing Xymon under systemd
+==============================
+
+The build can install a systemd service unit for xymonlaunch, generated from
+tools/xymonlaunch.service.DIST with the paths the tree was configured with. It
+is off unless you ask for it.
+
+Install variables
+-----------------
+
+INSTALLSYSTEMDDIR
+    Where the unit file is installed, e.g. /usr/lib/systemd/system (packages)
+    or /etc/systemd/system (a local install). Set it before or at configure
+    time, or pass it on the "make install" command line.
+
+    Unset -- the default -- install-systemd does nothing and no unit is
+    installed. That is what a source install on a host without systemd wants;
+    tools/xymonlaunch.service.DIST is then only a sample.
+
+INSTALLENVDIR
+    Where the generated unit reads its EnvironmentFile, and where the
+    xymonlaunch options file (tools/xymonlaunch.default) belongs:
+    /etc/sysconfig on Red Hat and SUSE, /etc/default on Debian, and by default
+    the tree's own etc/, which is where a source install reads it from.
+
+What is and is not installed
+----------------------------
+
+install-systemd installs one file: the generated xymonlaunch.service. The
+other files here are samples and are NOT installed -- copy the ones your
+layout needs into place yourself, or let your packaging do it:
+
+    xymonlaunch.default          xymonlaunch options (goes to INSTALLENVDIR)
+    xymonlaunch.service.preset   an enablement preset for systemctl preset
+    xymon-tmpfiles.conf          a tmpfiles.d fragment for the runtime dir
+
+Enabling the unit
+-----------------
+
+The build installs the unit file only; it does not enable or start it.
+Whether xymonlaunch runs at boot is a local or distribution policy decision --
+`systemctl enable xymonlaunch`, a shipped preset, or a packaging scriptlet.
