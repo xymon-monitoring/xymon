@@ -1,0 +1,73 @@
+name: pr conflicts
+
+# A review looks at one pull request against main. Two that each apply cleanly
+# there can still be incompatible with each other, and nothing in the normal
+# flow asks: GitHub reports both mergeable, both go green, and the collision
+# surfaces when the second one is merged.
+#
+# Weekly rather than per-pull-request: the answer is about the set, it changes
+# only when the set does, and every run test-merges a couple of hundred pairs.
+#
+# Reports rather than fails. Two conflicting pull requests are not a defect in
+# either -- they are a decision about which design to keep, and that belongs to
+# a person.
+
+on:
+  schedule:
+    - cron: '43 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pairs:
+    name: pull requests that cannot both merge
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Test-merge overlapping pairs
+        # shell: bash for pipefail. Under the default shell the pipe into tee
+        # reports tee's exit status, so a script that dies of a failed gh call
+        # leaves a green job and an empty report.
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          # so the counts and the left-out lines interleave with the report
+          # rather than arriving in a block after it
+          PYTHONUNBUFFERED: '1'
+        run: |
+          # stderr as well: a pull request left out of the pairing is said
+          # there, and without it the summary reads as a complete answer.
+          ./.github/scripts/pr-conflicts.py 2>&1 | tee "$RUNNER_TEMP/report.txt"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo '## Pull requests that cannot both be merged'
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/report.txt" 2>/dev/null || echo "(no report produced)"
+            echo '```'
+            echo
+            echo 'A pair here is not a defect in either pull request: it is a'
+            echo 'decision about which design to keep. Stacks are excluded --'
+            echo 'a pull request built on another merges by construction -- and'
+            echo 'one that no longer merges onto the base branch on its own is'
+            echo 'listed apart rather than paired against everything it touches.'
+            echo
+            echo 'Merging one of a pair does not break the other, but it does'
+            echo 'put it out of date: the second needs a rebase before it can'
+            echo 'go in, and a rebase can cost it a fresh review. Its checks'
+            echo 'stay green meanwhile, because they ran against the old head,'
+            echo 'so the signal is the merge box and not the ticks. A pair is'
+            echo 'cheapest merged back to back.'
+          } >> "$GITHUB_STEP_SUMMARY"
