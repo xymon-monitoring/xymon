@@ -162,6 +162,11 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Report an unknown command-line verb as a failure, not a success (#416) (Thanks, Markus Häll)
 * Add require_cfg and use require_bin in the test suite (#418, #419) (Thanks, Roland Rosenfeld)
 * Draw the xymond test port from below the ephemeral range (#421) (Thanks, Markus Häll)
+* Stop ifstat overrunning its arguments on an underscored interface name (#434) (Thanks, NiteHawk)
+* Stop the SMTP probes speaking before the server greets them (#455) (Thanks, Mark Felder)
+* Keep environment CFLAGS and thread LDFLAGS through every link (#163) (Thanks, Roland Rosenfeld)
+* Make the test suite clean up after itself, and check that it did (#445) (Thanks, Roland Rosenfeld)
+* Add xymongrep --no-dialup, which excludes hosts declared dialup (#94) (Thanks, Frank Lee)
 
 
 
