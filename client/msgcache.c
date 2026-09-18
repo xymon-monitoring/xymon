@@ -48,6 +48,7 @@ char *client_response = NULL;		/* The latest response to a "client" message */
 char *logfile = NULL;
 int maxage = 600;			/* Maximum time we will cache messages */
 sender_t *serverlist = NULL;		/* Who is allowed to grab our messages */
+time_t lastpull = 0;			/* When a server last collected from us */
 
 typedef struct conn_t {
 	time_t tstamp;
@@ -57,6 +58,9 @@ typedef struct conn_t {
 	int sockfd;
 	strbuffer_t *msgbuf;
 	int sentbytes;
+	unsigned long pollid;		/* Server bit this pull serves (0 = client/none) */
+	unsigned long *batch;		/* seqs carried by the in-flight pull, committed on success */
+	int nbatch;
 	struct conn_t *next;
 } conn_t;
 conn_t *chead = NULL;
@@ -64,12 +68,14 @@ conn_t *ctail = NULL;
 
 typedef struct msgqueue_t {
 	time_t tstamp;
+	unsigned long seq;		/* Monotonic id, lets a delivered batch be matched back */
 	strbuffer_t *msgbuf;
 	unsigned long sentto;
 	struct msgqueue_t *next;
 } msgqueue_t;
 msgqueue_t *qhead = NULL;
 msgqueue_t *qtail = NULL;
+unsigned long msgseq = 0;		/* Assigns msgqueue_t.seq */
 
 
 void sigmisc_handler(int signum)
@@ -124,6 +130,31 @@ void grabdata(conn_t *conn)
 	 * save the contents of the message - this is the client configuration
 	 * that we'll return the next time a client sends us the "client" message.
 	 */
+
+	if ((strncmp(STRBUF(conn->msgbuf), "ping", 4) == 0) &&
+	    ((STRBUFLEN(conn->msgbuf) == 4) || isspace((unsigned char)STRBUF(conn->msgbuf)[4]))) {
+		/*
+		 * Not client data: answered before the queueing below, and in
+		 * its own buffer - client_response holds the pushed config.
+		 * "pingpong" is client data and must still be forwarded.
+		 * The server pulls from us and we never call it, so the last
+		 * pull's age is all we can honestly report; the clamp keeps a
+		 * backwards clock off the -1 sentinel.
+		 */
+		char id[128];
+		long age = -1;
+
+		if (lastpull) {
+			age = (long)(getcurrenttime(NULL) - lastpull);
+			if (age < 0) age = 0;
+		}
+		snprintf(id, sizeof(id), "msgcache %s\nlastpull %ld\n", VERSION, age);
+		clearstrbuffer(conn->msgbuf);
+		addtobuffer(conn->msgbuf, id);
+		conn->ctype = C_CLIENT_OTHER;
+		conn->action = C_WRITING;
+		return;
+	}
 
 	if (strncmp(STRBUF(conn->msgbuf), "pullclient", 10) == 0) {
 		char *clientcfg;
@@ -189,6 +220,7 @@ void grabdata(conn_t *conn)
 		msgqueue_t *newq = calloc(1, sizeof(msgqueue_t));
 		dbgprintf("Queuing outbound message\n");
 		newq->tstamp = conn->tstamp;
+		newq->seq = ++msgseq;
 		newq->msgbuf = conn->msgbuf;
 		conn->msgbuf = NULL;
 		if (qtail) {
@@ -212,42 +244,67 @@ void grabdata(conn_t *conn)
 		}
 	}
 	else {
-		/* A server has asked us for our list of messages */
+		/*
+		 * A server has asked us for our list of messages. We record the
+		 * batch's message ids here but do NOT mark them sent yet: the
+		 * sentto bits are committed in senddata() only once the whole
+		 * batch is written, so a pull whose write fails is re-delivered
+		 * rather than silently dropped, and lastpull tracks real delivery.
+		 */
 		time_t now = getcurrenttime(NULL);
 		msgqueue_t *mwalk;
+		int nunsent = 0;
 
-		if (!qhead) {
-			/* No queued messages */
-			conn->action = C_DONE;
+		conn->pollid = pollid;
+
+		/* Build a message of all the queued data */
+		clearstrbuffer(conn->msgbuf);
+
+		/* Index line first, and count what this pull will carry */
+		for (mwalk = qhead; (mwalk); mwalk = mwalk->next) {
+			if ((mwalk->sentto & pollid) == 0) {
+				/* 34 bytes at its widest, INT_MIN:LONG_MIN */
+				char idx[64];
+				snprintf(idx, sizeof(idx), "%d:%ld ",
+					STRBUFLEN(mwalk->msgbuf), (long)(now - mwalk->tstamp));
+				addtobuffer(conn->msgbuf, idx);
+				nunsent++;
+			}
 		}
-		else {
-			/* Build a message of all the queued data */
-			clearstrbuffer(conn->msgbuf);
 
-			/* Index line first */
-			for (mwalk = qhead; (mwalk); mwalk = mwalk->next) {
-				if ((mwalk->sentto & pollid) == 0) {
-					char idx[20];
-					sprintf(idx, "%d:%ld ", 
-						STRBUFLEN(mwalk->msgbuf), (long)(now - mwalk->tstamp));
-					addtobuffer(conn->msgbuf, idx);
-				}
-			}
+		if (STRBUFLEN(conn->msgbuf) > 0) addtobuffer(conn->msgbuf, "\n");
 
-			if (STRBUFLEN(conn->msgbuf) > 0) addtobuffer(conn->msgbuf, "\n");
-
-			/* Then the stream of messages */
-			for (mwalk = qhead; (mwalk); mwalk = mwalk->next) {
-				if ((mwalk->sentto & pollid) == 0) {
-					if (pollid) mwalk->sentto |= pollid;
-					addtostrbuffer(conn->msgbuf, mwalk->msgbuf);
-				}
-			}
-
-			if (STRBUFLEN(conn->msgbuf) == 0) {
-				/* No data for this server */
+		/* Remember the batch (walked in queue order = ascending seq) so
+		   senddata() can commit exactly these on a successful write. */
+		conn->nbatch = 0;
+		if (pollid && nunsent) {
+			conn->batch = calloc(nunsent, sizeof(unsigned long));
+			if (!conn->batch) {
+				/* Without the batch we cannot say what was delivered, and
+				   handing the messages over anyway would re-send all of
+				   them on the next pull. Drop this pull instead: nothing
+				   is claimed and nothing is stamped, so the server just
+				   collects on its next poll. */
+				errprintf("Out of memory for a %d-message pull batch - dropping this pull\n", nunsent);
+				clearstrbuffer(conn->msgbuf);
 				conn->action = C_DONE;
+				return;
 			}
+		}
+
+		/* Then the stream of messages */
+		for (mwalk = qhead; (mwalk); mwalk = mwalk->next) {
+			if ((mwalk->sentto & pollid) == 0) {
+				if (conn->batch) conn->batch[conn->nbatch++] = mwalk->seq;
+				addtostrbuffer(conn->msgbuf, mwalk->msgbuf);
+			}
+		}
+
+		if (STRBUFLEN(conn->msgbuf) == 0) {
+			/* Nothing to hand over: an empty poll is still a successful
+			   collection (everything already delivered), so stamp here. */
+			conn->action = C_DONE;
+			lastpull = now;
 		}
 	}
 }
@@ -263,13 +320,34 @@ void senddata(conn_t *conn)
 	n = write(conn->sockfd, startp, togo);
 
 	if (n <= -1) {
-		/* Write failure */
+		/* Write failure: drop the batch without committing its sentto
+		   bits, so the server re-pulls exactly these messages next time. */
 		errprintf("Connection lost during write to %s\n", inet_ntoa(conn->caddr.sin_addr));
 		conn->action = C_DONE;
+		if (conn->batch) { xfree(conn->batch); conn->batch = NULL; conn->nbatch = 0; }
 	}
 	else {
 		conn->sentbytes += n;
-		if (conn->sentbytes == STRBUFLEN(conn->msgbuf)) conn->action = C_DONE;
+		if (conn->sentbytes == STRBUFLEN(conn->msgbuf)) {
+			conn->action = C_DONE;
+			/* Complete only now: the whole batch is out. Commit the
+			   sentto bits for exactly the delivered messages. The queue
+			   and the batch are both ordered by ascending seq, so a single
+			   merge pass suffices; messages pruned in flight simply do not
+			   match and are skipped. */
+			if (conn->ctype == C_SERVER && conn->batch) {
+				msgqueue_t *m = qhead;
+				int i = 0;
+				while (m && (i < conn->nbatch)) {
+					if (m->seq == conn->batch[i]) { m->sentto |= conn->pollid; m = m->next; i++; }
+					else if (m->seq < conn->batch[i]) m = m->next;
+					else i++;
+				}
+				xfree(conn->batch); conn->batch = NULL; conn->nbatch = 0;
+			}
+			/* Complete only now: the whole batch is out */
+			if (conn->ctype == C_SERVER) lastpull = getcurrenttime(NULL);
+		}
 	}
 }
 
@@ -438,6 +516,7 @@ int main(int argc, char *argv[])
 			}
 
 			freestrbuffer(zombie->msgbuf);
+			if (zombie->batch) xfree(zombie->batch);
 			xfree(zombie);
 		}
 		ctail = chead;
