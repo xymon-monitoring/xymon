@@ -120,7 +120,7 @@ register_cleanup() {
 # path. Callers almost always use TMP=$(mktempdir), and command substitution
 # runs in a subshell: anything mktempdir appended to the cleanup array there
 # would die with the subshell, leaking the dir (this is exactly what used to
-# happen -- /tmp filled with xymon-test.* dirs). So rather than register a
+# happen -- /tmp filled with xt.* dirs). So rather than register a
 # per-dir cleanup from inside the subshell, every dir is stamped with this
 # process's PID and a single glob removal is registered once, below, in the
 # parent shell at source time. `$$` is the script's PID even inside $(...),
@@ -133,11 +133,19 @@ __XYMON_TESTS_TMPROOT=${__XYMON_TESTS_TMPROOT%/}
 # real dir (or worse). Shell-escape the fixed prefix with printf %q and
 # append the literal glob unquoted, so the path survives eval intact while
 # the trailing * still expands.
-__xymon_tests_tmpglob=$(printf '%q' "${__XYMON_TESTS_TMPROOT}/xymon-test.$$.")
+__xymon_tests_tmpglob=$(printf '%q' "${__XYMON_TESTS_TMPROOT}/xt.$$.")
 register_cleanup "rm -rf -- ${__xymon_tests_tmpglob}*"
 mktempdir() {
 	local d
-	d=$(mktemp -d "${__XYMON_TESTS_TMPROOT}/xymon-test.$$.XXXXXX") || fail "mktemp -d failed"
+	# "xt", not "xymon-test". This path becomes $XYMONTMP, and a test that
+	# starts xymond_rrd puts its cache-control socket under it -- which has to
+	# fit in sizeof(sun_path), 104 bytes on macOS. The runner nests this
+	# directory inside a per-run root, so on macOS, where TMPDIR is already a
+	# 49-character /var/folders path, the longer name put XYMONTMP at 93 bytes
+	# against a limit of 90 and the socket could not be bound. Six tests failed
+	# on it, and only in a full run: run one alone and the per-run level is not
+	# there. CI never saw it -- Linux allows 108 bytes and TMPDIR is /tmp.
+	d=$(mktemp -d "${__XYMON_TESTS_TMPROOT}/xt.$$.XXXXXX") || fail "mktemp -d failed"
 	printf '%s' "$d"
 }
 
