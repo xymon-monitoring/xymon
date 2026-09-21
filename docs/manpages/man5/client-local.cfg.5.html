@@ -80,12 +80,14 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <p class="Pp">The file is divided into sections, delimited by &quot;[name]&quot;
     lines. A section name can be either an operating system identifier - linux,
     solaris, hp-ux, aix, freebsd, openbsd, netbsd, darwin - a class, or a
-    hostname. When deciding which section to send to a client, Xymon will first
-    look for a section named after the hostname of the client; if such a section
-    does not exist, it will look for a section named by the operating system of
-    the client. So you can configure special configurations for individual
-    hosts, and have a default configuration for all other hosts of a certain
-    type.</p>
+    hostname. When deciding which section to send to a client, Xymon looks for a
+    hostname match first, then a class match, then an operating system match,
+    and uses the first of those that exists. So you can configure special
+    configurations for individual hosts, a configuration for a group of hosts
+    sharing a class, and a default configuration for all other hosts of a
+    certain type.</p>
+<p class="Pp">The order is by kind, not by position: a class section outranks an
+    operating system section wherever either appears in the file.</p>
 <p class="Pp">It will often be practical to use regular expressions for
     hostnames. To do this you must use</p>
 <p class="Pp">
@@ -200,6 +202,25 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 </section>
 <section class="Sh">
 <p>&#160;</p>
+<h1 class="Sh" id="LOCAL_ADDITIONS"><a class="permalink" href="#LOCAL_ADDITIONS">LOCAL
+  ADDITIONS</a></h1>
+<p class="Pp">Any file dropped into the <i>client-local.d</i> directory beside
+    this file is included, so local configuration can live in a file of its own
+    and the shipped <i>client-local.cfg</i> keeps being upgraded.</p>
+<p class="Pp">Because sections are chosen by kind before position, a
+    <b>[host=...]</b> or <b>[class=...]</b> section in such a file takes
+    precedence over the operating system sections shipped here, wherever the
+    include sits.</p>
+<p class="Pp">One case does not work: an <b>[os=...]</b> section in an added
+    file cannot override a shipped section for the same operating system, since
+    both are operating system matches and the first one found wins. Give the
+    hosts a class in <i>hosts.cfg</i> and use <b>[class=...]</b> instead - that
+    outranks the operating system section, and is the supported way to change
+    what a group of hosts collects.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
 <h1 class="Sh" id="NOTES"><a class="permalink" href="#NOTES">NOTES</a></h1>
 <p class="Pp">The ability of the Xymon client to calculate file hashes and
     monitor those can be used for file integrity validation on a small scale.
@@ -231,6 +252,7 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <dt><a href="#COUNTING_LOGENTRIES">COUNTING LOGENTRIES</a></dt>
 <dt><a href="#FILE_CONFIGURATION_ENTRIES">FILE CONFIGURATION ENTRIES</a></dt>
 <dt><a href="#DIRECTORY_CONFIGURATION_ENTRIES">DIRECTORY CONFIGURATION ENTRIES</a></dt>
+<dt><a href="#LOCAL_ADDITIONS">LOCAL ADDITIONS</a></dt>
 <dt><a href="#NOTES">NOTES</a></dt>
 <dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
 </dl>
