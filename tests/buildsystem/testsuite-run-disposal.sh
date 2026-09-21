@@ -22,15 +22,45 @@ command -v mktemp >/dev/null 2>&1 || skip "mktemp is needed to watch the run dir
 
 work=$(mktempdir); register_cleanup "rm -rf '$work'"
 
-# tree KIND -> a fake suite root. "slow" sleeps so a signal can arrive mid-run;
-# "failing" returns non-zero so the run ends badly rather than early.
+# tree KIND [STOPFILE] -> a fake suite root. "slow" blocks until STOPFILE
+# appears, so a signal can arrive while it is running and the run ends as soon
+# as it has; "failing" returns non-zero so the run ends badly rather than early.
+#
+# The slow test used to sleep 20. That was not padding: it had to outlast the
+# 10s the caller spends waiting for the run directory, and fit inside the 30s
+# it then waits for the runner to go, so 20 was the midpoint of the only window
+# available. Measured, it bought about 20s of tolerance -- a fake test that
+# sleeps 5 already fails once the caller is held off for 8s.
+#
+# But it was a guess at how slow the machine would be, and the runner finishes
+# the running test before its trap fires, so the whole sleep is paid after the
+# signal. Waiting on a file instead removes the guess: the caller creates
+# STOPFILE immediately after kill(1) returns, so the test ends when the signal
+# has been queued rather than when a timer says it probably has. Under the same
+# 25s of simulated load where sleep 20 fails, this waits and still passes. The
+# 30s cap is a deadlock guard, not the expected duration.
 maketree() {
-	local dir=$1 kind=$2
+	local dir=$1 kind=$2 stop=${3:-}
 	mkdir -p "$dir/tests/dummy"
 	cp "$ROOT/tests/testsuite" "$dir/tests/testsuite"
 	chmod +x "$dir/tests/testsuite"
 	case $kind in
-	  slow)    printf '#!/bin/sh\nsleep 20\n'        > "$dir/tests/dummy/t.sh" ;;
+	  slow)
+		# The path is quoted in the generated script: this suite is run from
+		# directories with spaces in them, and the runner says so itself at
+		# the loop that reads the test list.
+		#
+		# Single quotes here are deliberate -- $i belongs to the generated
+		# script, not to this one. An empty path would collapse
+		# "[ ! -f x ]" to a one-argument test, which is false, so the slow
+		# test would return at once and the signal would land after it: the
+		# run would leave through the EXIT trap while the case claimed to
+		# have exercised the signal one.
+		[ -n "$stop" ] || fail \
+			"maketree was asked for a slow tree with no stop file, so the test
+would not have been slow and the signal case would have proved nothing"
+		printf '#!/bin/sh\ni=0\nwhile [ $i -lt 300 ] && [ ! -f "%s" ]; do sleep 0.1; i=$((i+1)); done\n' \
+			"$stop" > "$dir/tests/dummy/t.sh" ;;
 	  failing) printf '#!/bin/sh\nexit 1\n'          > "$dir/tests/dummy/t.sh" ;;
 	esac
 	chmod +x "$dir/tests/dummy/t.sh"
@@ -56,7 +86,8 @@ accumulate fastest."
 
 # --- a run stopped by a signal, one case per signal ---------------------------
 for sig in INT TERM; do
-	d="$work/sig$sig"; tmp="$d/tmp"; maketree "$d" slow; mkdir -p "$tmp"
+	d="$work/sig$sig"; tmp="$d/tmp"; stop="$work/stop.$sig"
+	maketree "$d" slow "$stop"; mkdir -p "$tmp"
 	# exec, so $! is the runner and not a wrapper subshell. Without it the
 	# signal never reaches the runner, and the exit status is the same 143 the
 	# TERM trap sets -- indistinguishable from a missing trap.
@@ -71,9 +102,12 @@ for sig in INT TERM; do
 about whether it disposes of one"
 
 	kill -"$sig" "$runner" 2>/dev/null || fail "could not send SIG$sig to the runner"
+	# The signal is queued behind the running test, so release the test now
+	# that it has been queued.
+	: > "$stop"
 	expect=130; [ "$sig" = TERM ] && expect=143
 
-	# It finishes the sleeping test first, then runs the trap.
+	# It finishes the running test first, then runs the trap.
 	i=0
 	while [ "$i" -lt 300 ] && kill -0 "$runner" 2>/dev/null; do sleep 0.1; i=$((i + 1)); done
 	kill -0 "$runner" 2>/dev/null && fail \
@@ -99,7 +133,7 @@ done
 # Measured before the per-run directory: run A failed, naming run B's live
 # files as leftovers.
 d1="$work/par1"; d2="$work/par2"; tmp="$work/partmp"; mkdir -p "$tmp"
-maketree "$d1" slow; maketree "$d2" slow
+stop="$work/stop.par"; maketree "$d1" slow "$stop"; maketree "$d2" slow "$stop"
 ( cd "$d1" && TMPDIR="$tmp" exec ./tests/testsuite >"$work/par1.log" 2>&1 ) &
 p1=$!
 ( cd "$d2" && TMPDIR="$tmp" exec ./tests/testsuite >"$work/par2.log" 2>&1 ) &
@@ -116,6 +150,7 @@ are still sharing state and each can see the other's files:
 $(runroots "$tmp")"
 
 kill -TERM $p1 $p2 2>/dev/null || :
+: > "$stop"
 i=0
 while [ "$i" -lt 300 ] && { kill -0 $p1 2>/dev/null || kill -0 $p2 2>/dev/null; }; do
 	sleep 0.1; i=$((i + 1))
