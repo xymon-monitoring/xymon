@@ -22,9 +22,10 @@ command -v mktemp >/dev/null 2>&1 || skip "mktemp is needed to watch the run dir
 
 work=$(mktempdir); register_cleanup "rm -rf '$work'"
 
-# tree KIND [STOPFILE] -> a fake suite root. "slow" blocks until STOPFILE
-# appears, so a signal can arrive while it is running and the run ends as soon
-# as it has; "failing" returns non-zero so the run ends badly rather than early.
+# tree KIND [STARTED STOPFILE] -> a fake suite root. "slow" announces itself in
+# STARTED and then blocks until STOPFILE appears, so a signal can arrive while
+# it is running and the run ends as soon as it has; "failing" returns non-zero
+# so the run ends badly rather than early.
 #
 # The slow test used to sleep 20. That was not padding: it had to outlast the
 # 10s the caller spends waiting for the run directory, and fit inside the 30s
@@ -39,32 +40,45 @@ work=$(mktempdir); register_cleanup "rm -rf '$work'"
 # has been queued rather than when a timer says it probably has. Under the same
 # 25s of simulated load where sleep 20 fails, this waits and still passes. The
 # 30s cap is a deadlock guard, not the expected duration.
+#
+# STARTED is what makes the signal cases mean what they say. Waiting for the
+# run directory is not enough: the runner creates it before it runs anything,
+# so a signal sent on that cue can be handled before the fake test has begun,
+# and the case then proves only that a run with nothing in it cleans up.
 maketree() {
-	local dir=$1 kind=$2 stop=${3:-}
+	local dir=$1 kind=$2 started=${3:-} stop=${4:-}
 	mkdir -p "$dir/tests/dummy"
 	cp "$ROOT/tests/testsuite" "$dir/tests/testsuite"
 	chmod +x "$dir/tests/testsuite"
 	case $kind in
 	  slow)
-		# The path is quoted in the generated script: this suite is run from
-		# directories with spaces in them, and the runner says so itself at
-		# the loop that reads the test list.
+		# Both paths are quoted in the generated script: this suite is run
+		# from directories with spaces in them, and the runner itself says so
+		# at the loop that reads the test list.
 		#
 		# Single quotes here are deliberate -- $i belongs to the generated
-		# script, not to this one. An empty path would collapse
-		# "[ ! -f x ]" to a one-argument test, which is false, so the slow
-		# test would return at once and the signal would land after it: the
-		# run would leave through the EXIT trap while the case claimed to
-		# have exercised the signal one.
-		[ -n "$stop" ] || fail \
-			"maketree was asked for a slow tree with no stop file, so the test
-would not have been slow and the signal case would have proved nothing"
-		printf '#!/bin/sh\ni=0\nwhile [ $i -lt 300 ] && [ ! -f "%s" ]; do sleep 0.1; i=$((i+1)); done\n' \
-			"$stop" > "$dir/tests/dummy/t.sh" ;;
+		# script, not to this one. An empty path would collapse "[ ! -f x ]"
+		# to a one-argument test, which is false, so the slow test would
+		# return at once and the signal would land after it: the run would
+		# leave through the EXIT trap while the case claimed to have
+		# exercised the signal one.
+		[ -n "$started" ] && [ -n "$stop" ] || fail \
+			"maketree was asked for a slow tree without both marker paths, so the
+test would not have been slow and the signal case would have proved nothing"
+		printf '#!/bin/sh\n: > "%s"\ni=0\nwhile [ $i -lt 300 ] && [ ! -f "%s" ]; do sleep 0.1; i=$((i+1)); done\n' \
+			"$started" "$stop" > "$dir/tests/dummy/t.sh" ;;
 	  failing) printf '#!/bin/sh\nexit 1\n'          > "$dir/tests/dummy/t.sh" ;;
 	esac
 	chmod +x "$dir/tests/dummy/t.sh"
 }
+
+# waitfile PATH SECONDS -- true once PATH exists.
+waitfile() {
+	local i=0 n=$(( ${2} * 10 ))
+	while [ "$i" -lt "$n" ] && [ ! -f "$1" ]; do sleep 0.1; i=$((i + 1)); done
+	[ -f "$1" ]
+}
+
 # One directory per run, removed however the run ends.
 runroots() { find "$1" -maxdepth 1 -name 'xymon-run.*' 2>/dev/null; }
 
@@ -86,8 +100,9 @@ accumulate fastest."
 
 # --- a run stopped by a signal, one case per signal ---------------------------
 for sig in INT TERM; do
-	d="$work/sig$sig"; tmp="$d/tmp"; stop="$work/stop.$sig"
-	maketree "$d" slow "$stop"; mkdir -p "$tmp"
+	d="$work/sig$sig"; tmp="$d/tmp"
+	started="$work/started.$sig"; stop="$work/stop.$sig"
+	maketree "$d" slow "$started" "$stop"; mkdir -p "$tmp"
 	# exec, so $! is the runner and not a wrapper subshell. Without it the
 	# signal never reaches the runner, and the exit status is the same 143 the
 	# TERM trap sets -- indistinguishable from a missing trap.
@@ -100,6 +115,10 @@ for sig in INT TERM; do
 	[ -n "$(runroots "$tmp")" ] || fail \
 		"the runner never created its run directory, so signalling it proves nothing
 about whether it disposes of one"
+
+	waitfile "$started" 30 || fail \
+		"the fake test never started, so SIG$sig would have reached a run that had
+nothing running in it -- which is not the case this is here to cover"
 
 	kill -"$sig" "$runner" 2>/dev/null || fail "could not send SIG$sig to the runner"
 	# The signal is queued behind the running test, so release the test now
@@ -133,7 +152,9 @@ done
 # Measured before the per-run directory: run A failed, naming run B's live
 # files as leftovers.
 d1="$work/par1"; d2="$work/par2"; tmp="$work/partmp"; mkdir -p "$tmp"
-stop="$work/stop.par"; maketree "$d1" slow "$stop"; maketree "$d2" slow "$stop"
+stop="$work/stop.par"
+maketree "$d1" slow "$work/started.par1" "$stop"
+maketree "$d2" slow "$work/started.par2" "$stop"
 ( cd "$d1" && TMPDIR="$tmp" exec ./tests/testsuite >"$work/par1.log" 2>&1 ) &
 p1=$!
 ( cd "$d2" && TMPDIR="$tmp" exec ./tests/testsuite >"$work/par2.log" 2>&1 ) &
@@ -148,6 +169,10 @@ done
 	"two runs sharing one TMPDIR did not end up with a directory each, so they
 are still sharing state and each can see the other's files:
 $(runroots "$tmp")"
+
+waitfile "$work/started.par1" 30 && waitfile "$work/started.par2" 30 || fail \
+	"one of the two runs never started its test, so terminating them proves nothing
+about two live runs keeping out of each other's way"
 
 kill -TERM $p1 $p2 2>/dev/null || :
 : > "$stop"
