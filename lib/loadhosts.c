@@ -553,11 +553,28 @@ char *xmh_item(void *hostin, enum xmh_item_t item)
 		  return intbuf;
 
 	  case XMH_ALLPAGEPATHS:
+		  /*
+		   * The top-level page's pagepath is the empty string, and an empty
+		   * element in a comma-separated list cannot be told from no element:
+		   * appended raw it either vanishes ("" then "home" gives "home",
+		   * because the separator is only written for a non-empty buffer) or
+		   * leaves a trailing comma that a tokeniser drops. Either way a host
+		   * listed on the front page *and* a named page lost its front-page
+		   * membership here, before any consumer could match on it.
+		   *
+		   * "/" is the name analysis.cfg(5) and alerts.cfg(5) give that page,
+		   * so emit it. Consumers that already mapped "" to "/" themselves
+		   * (criteriamatch in lib/loadalerts.c) see the string they were
+		   * constructing, and webaccess.c truncates it at the first "/" to the
+		   * same empty top-level element it had before.
+		   */
 		  if (rawtxt) clearstrbuffer(rawtxt);
 		  hwalk = host;
 		  while (hwalk && (strcmp(hwalk->hostname, host->hostname) == 0)) {
+			char *pgpath = hwalk->page->pagepath;
+
 			if (STRBUFLEN(rawtxt) > 0) addtobuffer(rawtxt, ",");
-			addtobuffer(rawtxt, hwalk->page->pagepath);
+			addtobuffer(rawtxt, ((pgpath && *pgpath) ? pgpath : "/"));
 			hwalk = hwalk->next;
 		  }
 		  return STRBUF(rawtxt);
