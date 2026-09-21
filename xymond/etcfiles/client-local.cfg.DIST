@@ -139,4 +139,9 @@ log:/var/adm/syslog:10240
 # wherever this line sits. An [os=...] section cannot override one of them:
 # both are operating system matches and the first found wins. Give the hosts
 # a class in hosts.cfg and use [class=...] instead.
+#
+# That is the default behaviour, where one section is chosen. Under
+# xymond --merge-clientlocal every matching section is concatenated instead,
+# so an [os=...] fragment does contribute -- it supplements rather than
+# replaces, and an entry defined in both is sent twice.
 optional directory @XYMONHOME@/etc/client-local.d

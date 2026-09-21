@@ -199,6 +199,15 @@ and use
 .B [class=...]
 instead \- that outranks the operating system section, and is the supported
 way to change what a group of hosts collects.
+.PP
+All of the above describes the default behaviour, where one section is chosen.
+Under
+.B \-\-merge\-clientlocal
+every matching section is concatenated instead, so an
+.B [os=...]
+section in an added file does contribute \- it supplements the shipped section
+rather than replacing it. Note that merging never removes entries, so an entry
+defined in both is sent twice.
 
 .SH NOTES
 The ability of the Xymon client to calculate file hashes and monitor those

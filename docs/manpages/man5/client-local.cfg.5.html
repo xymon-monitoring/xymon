@@ -217,6 +217,12 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     hosts a class in <i>hosts.cfg</i> and use <b>[class=...]</b> instead - that
     outranks the operating system section, and is the supported way to change
     what a group of hosts collects.</p>
+<p class="Pp">All of the above describes the default behaviour, where one
+    section is chosen. Under <b>--merge-clientlocal</b> every matching section
+    is concatenated instead, so an <b>[os=...]</b> section in an added file does
+    contribute - it supplements the shipped section rather than replacing it.
+    Note that merging never removes entries, so an entry defined in both is sent
+    twice.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
