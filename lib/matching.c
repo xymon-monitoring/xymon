@@ -87,6 +87,51 @@ void freeregex(pcre2_code *pcrecode)
 	pcre2_code_free(pcrecode);
 }
 
+/*
+ * pagepath_matchname() -- the name a pagepath is matched against.
+ *
+ * The top-level page has no pagepath of its own: it is the empty string, set on
+ * the pagelist head in lib/loadhosts.c. What that costs depends on how the
+ * filter compares:
+ *
+ *   namematch() refuses an empty needle outright, so alerts.cfg's PAGE= could
+ *   not select the top-level page at all - which is why criteriamatch() has
+ *   mapped "" to "/" by hand since 4abd6f3e0.
+ *
+ *   matchregex() and the raw pcre2_match() calls in the log filters refuse only
+ *   NULL, so an empty subject is matchable: "^$" and ".*" both reached those
+ *   hosts. What could not reach them was a pattern naming the page. So
+ *   `xymondboard page=/` selected nothing while `page=^$` worked - the opposite
+ *   of what analysis.cfg(5) tells an admin to write, and undocumented besides.
+ *
+ * Giving the page one name settles both. It is "/", which is what analysis.cfg(5)
+ * documents and what criteriamatch() already used, so alerts.cfg does not change
+ * meaning. The regex surfaces do: "^$" stops selecting the top page and "^/$"
+ * starts. That is a break for a filter written against the old behaviour, and it
+ * is deliberate - one name, the documented one, on every surface.
+ *
+ * Anchor a regex at both ends. These filters are unanchored, so "/" alone also
+ * matches every pagepath containing a separator, exactly as "sub" matches
+ * "subpage" - a property of the filter, not of this name.
+ *
+ * It lives here, beside namematch() and matchregex(), because how they treat an
+ * empty needle is the whole of the problem - and because matching.o is in both
+ * lib archives, while loadhosts.o is only in libxymoncomm.a.
+ *
+ * Apply it to the value being compared, not to the result of xmh_item_multi(),
+ * which returns NULL to end its iteration and must keep doing so. Applied to a
+ * comma-separated list it can only name a wholly empty one; an empty element
+ * inside a list is unrepresentable once strtok() has dropped it, which is why
+ * XMH_ALLPAGEPATHS has to emit the name itself (issue #526).
+ *
+ * The "/" returned for the top page is a string literal, as XMH_PAGEPATHTITLE's
+ * "Top Page" is in xmh_item(): callers compare it, they do not write to it.
+ */
+char *pagepath_matchname(char *pagepath)
+{
+	return ((pagepath && *pagepath) ? pagepath : "/");
+}
+
 int namematch(const char *needle, char *haystack, pcre2_code *pcrecode)
 {
 	char *xhay;
