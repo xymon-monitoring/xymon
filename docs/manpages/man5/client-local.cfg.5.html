@@ -70,6 +70,21 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     entries. Note that the merging does not remove entries, so if you have e.g.
     a &quot;log&quot; entry defined in both a hostname- and an osname-matching
     section, then both entries will be sent back to the client.</p>
+<p class="Pp">The difference matters more than it first appears. Suppose the
+    shipped <i>[linux]</i> section collects <i>/var/log/messages</i> and you
+    want one extra logfile on the host &quot;luv&quot;:</p>
+<p class="Pp"></p>
+<pre>&#x00A0;   [luv]
+&#x00A0;   log:/var/log/myapp.log:10240</pre>
+<p class="Pp">By default &quot;luv&quot; now collects <b>only</b>
+    <i>/var/log/myapp.log</i>: its own section is chosen and the <i>[linux]</i>
+    one is not. To keep both you must copy the contents of <i>[linux]</i> into
+    <i>[luv]</i>, and that copy goes stale the day the shipped section changes.
+    With merging, &quot;luv&quot; collects both and nothing is duplicated.</p>
+<p class="Pp">The cost is the other direction: merging cannot take anything
+    away. If <i>[linux]</i> collects something you do <b>not</b> want on one
+    host, only the default mode can exclude it - by writing a section for that
+    host which omits it.</p>
 <p class="Pp"></p>
 <p class="Pp"></p>
 </section>
