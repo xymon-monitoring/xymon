@@ -404,7 +404,7 @@ int main(int argc, char **argv)
 
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
 		hostname = xmh_item(hwalk, XMH_HOSTNAME);
-		pagename = xmh_item(hwalk, XMH_PAGEPATH);
+		pagename = pagepath_matchname(xmh_item(hwalk, XMH_PAGEPATH));
 
 		dbgprintf("Processing host %s\n", hostname);
 

@@ -275,7 +275,15 @@ You can filter on, for example, both a hostname and a testname.
 .sp
 .IP "\fBpage\fR=\fIPAGEPATH\fR"
 Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
-file.
+file. PAGEPATH is a regular expression, and it is not anchored: \fBpage=sub\fR
+also selects \fBsubpage\fR and \fBother/sub\fR. Anchor it to select one page,
+\fBpage=^sub$\fR.
+.sp
+The top-level page has the fixed name \fB/\fR, so \fBpage=^/$\fR selects the
+hosts on the Xymon frontpage. Unanchored, \fBpage=/\fR selects them together
+with every page below another one, since \fB/\fR separates the elements of a
+pagepath. Before Xymon named that page, an empty pagepath reached the filter as
+an empty string and \fBpage=^$\fR selected those hosts; it no longer does.
 .IP "\fBnet\fR=\fINETWORK\fR"
 Include only tests from hosts with this NET: tag
 .BR ip=IP Address

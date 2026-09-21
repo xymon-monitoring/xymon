@@ -913,7 +913,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 
 	/* The top-level page needs a name - cannot match against an empty string */
 	if (pgnames) xfree(pgnames);
-	pgnames = strdup((*alert->location == '\0') ? "/" : alert->location);
+	pgnames = strdup(pagepath_matchname(alert->location));
 	dgname = hinfo ? textornull(xmh_item(hinfo, XMH_DGNAME)) : strdup("");
 
 	if (crit) { cfid = crit->cfid; cfline = crit->cfline; }
