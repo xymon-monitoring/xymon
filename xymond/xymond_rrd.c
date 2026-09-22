@@ -253,18 +253,19 @@ int main(int argc, char *argv[])
 
 	/* Setup the control socket that receives cache-flush commands */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
+	if (mkdir(xgetenv("XYMONRUNDIR"), 0755) == 0) dbgprintf("Created %s\n", xgetenv("XYMONRUNDIR"));	/* just in case */
 	{
-		/* sun_path is tiny (~108 bytes); refuse an XYMONTMP that cannot
+		/* sun_path is tiny (~108 bytes); refuse an XYMONRUNDIR that cannot
 		 * fit rather than overflow (showgraph guards the sender side). */
-		char *xymontmp = xgetenv("XYMONTMP");
+		char *rundir = xgetenv("XYMONRUNDIR");
 		int n = snprintf(ctlsockaddr.sun_path, sizeof(ctlsockaddr.sun_path),
-				 "%s/rrdctl.%lu", xymontmp, (unsigned long)getpid());
+				 "%s/rrdctl.%lu", rundir, (unsigned long)getpid());
 		if ((n < 0) || (n >= (int)sizeof(ctlsockaddr.sun_path))) {
-			/* Report the limit on XYMONTMP itself: sun_path minus the suffix. */
+			/* Report the limit on XYMONRUNDIR itself: sun_path minus the suffix. */
 			int maxtmp = (int)sizeof(ctlsockaddr.sun_path) - 1
 				   - snprintf(NULL, 0, "/rrdctl.%lu", (unsigned long)getpid());
-			errprintf("Cannot set up cache-control socket: XYMONTMP is too long for a socket path (%d characters; max %d with this process ID)\n",
-				  (int)strlen(xymontmp), maxtmp);
+			errprintf("Cannot set up cache-control socket: XYMONRUNDIR is too long for a socket path (%d characters; max %d with this process ID)\n",
+				  (int)strlen(rundir), maxtmp);
 			return 1;
 		}
 	}

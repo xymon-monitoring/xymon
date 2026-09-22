@@ -41,6 +41,8 @@ static int ctlsocket = -1;
 
 int init_svc(char *sockfn)
 {
+	char *rundir;
+
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (ctlsocket == -1) {
 		errprintf("Cannot get socket: %s\n", strerror(errno));
@@ -49,7 +51,27 @@ int init_svc(char *sockfn)
 
 	memset(&myaddr, 0, sizeof(myaddr));
 	myaddr.sun_family = AF_UNIX;
-	sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONTMP"), sockfn);
+	/* XYMONRUNDIR, as xymond_rrd binds it and showgraph reads it: the
+	   sockets moved out of XYMONTMP, and looking in the old place found
+	   nothing. Bounded, sun_path being ~108 bytes.
+	   xgetenv() is plain getenv() here, so it does not see the
+	   XYMONRUNDIR->XYMONLOGDIR default that lib/environ.c gives the writer;
+	   mirror that fallback or a NULL yields a "(null)/..." path. */
+	rundir = xgetenv("XYMONRUNDIR");
+	if (!rundir || !*rundir) rundir = xgetenv("XYMONLOGDIR");
+	if (!rundir || !*rundir) {
+		errprintf("Cannot locate control socket: neither XYMONRUNDIR nor XYMONLOGDIR is set\n");
+		close(ctlsocket);
+		ctlsocket = -1;
+		return -1;
+	}
+	if (snprintf(myaddr.sun_path, sizeof(myaddr.sun_path), "%s/%s",
+		     rundir, sockfn) >= (int)sizeof(myaddr.sun_path)) {
+		errprintf("Socket path does not fit: %s/%s\n", rundir, sockfn);
+		close(ctlsocket);
+		ctlsocket = -1;
+		return -1;
+	}
 	myaddrsz = sizeof(myaddr);
 
 	if (connect(ctlsocket, (struct sockaddr *)&myaddr, myaddrsz) == -1) {

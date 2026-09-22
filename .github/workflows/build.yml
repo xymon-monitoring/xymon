@@ -67,6 +67,8 @@ jobs:
           SECUREXYMONCGIURL=/xymon-seccgi \
           HTTPDGID=www-data \
           XYMONLOGDIR=/var/log/xymon \
+          XYMONRUNDIR=/run/xymon \
+          XYMONCLIENTRUNDIR=/run/xymon-client \
           XYMONHOSTNAME=localhost \
           XYMONHOSTIP=127.0.0.1 \
           MANROOT=/usr/share/man \
