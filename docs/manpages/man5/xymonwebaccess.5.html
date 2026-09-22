@@ -54,7 +54,20 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     Xymon <b>page</b>, and then - based on the logged-in userid - determine
     which pages and hosts the user is allowed access to. Only information about
     those hosts will be made available by the CGI tool.</p>
+<p class="Pp">A group named for a page also covers the pages below it: a member
+    of <b>servers</b> reaches the hosts on <b>servers</b> and on
+    <b>servers/web</b>.</p>
+<p class="Pp">The top-level page is named <b>/</b>, so a group named <b>/</b>
+    covers the hosts on the Xymon frontpage. It covers those hosts only. A
+    <b>subpage</b> declared before any <b>page</b> line is built below the
+    frontpage and is named <b>/</b><i>subpagename</i>: a group of that name
+    covers it and the pages below it, in the same way as any other page, and a
+    group named <b>/</b> does not.</p>
 <p class="Pp">Members of the group <b>root</b> has access to all hosts.</p>
+<p class="Pp">The group file grants access, it does not distinguish between
+    kinds of access: a user who can view a host through <i><a href="../man1/svcstatus.cgi.1.html">svcstatus.cgi</a>(1)</i>
+    can also acknowledge it through <i><a href="../man1/acknowledge.cgi.1.html">acknowledge.cgi</a>(1)</i>, and enable or
+    disable it through the enadis CGI.</p>
 <p class="Pp">Access will also be granted, if the user is a member of a group
     with the same name as the <b>host</b> being requested, or as the
     <b>statuscolumn</b> being requested.</p>
