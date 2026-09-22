@@ -6651,7 +6651,9 @@ int main(int argc, char *argv[])
 	if (bf_buf) xfree(bf_buf);
 
 	save_checkpoint();
-	unlink(pidfile);
+	/* Not if the default path did not fit: nothing was written, and
+	   pidfile is NULL. The write above is guarded the same way. */
+	if (pidfile) unlink(pidfile);
 
 	if (dbgfd) fclose(dbgfd);
 
