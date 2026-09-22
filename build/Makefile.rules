@@ -32,6 +32,26 @@ else
 	XYMONHOME = $(XYMONTOPDIR)/server
 endif
 
+# A Makefile written before the runtime directories existed defines neither,
+# and the placeholders in xymonserver.cfg and xymon.sh would then be
+# substituted with nothing: every pidfile path collapses to the filesystem
+# root, "/xymond.pid", which as root is created rather than refused. The
+# compiled default in lib/environ.c cannot rescue that, because xgetenv()
+# falls back on a missing value and not on an empty one.
+#
+# ?= is not enough: it assigns only when a variable is undefined, so it
+# rescues a Makefile with no line at all but not one that defines it empty.
+#
+# After the CLIENTONLY split above, not before it: XYMONCLIENTHOME is
+# $(XYMONTOPDIR) for a client-only build and $(XYMONTOPDIR)/client for a
+# server one, and the client's runtime directory has to follow whichever it is.
+ifeq ($(strip $(XYMONRUNDIR)),)
+XYMONRUNDIR := $(XYMONLOGDIR)
+endif
+ifeq ($(strip $(XYMONCLIENTRUNDIR)),)
+XYMONCLIENTRUNDIR := $(XYMONCLIENTHOME)/logs
+endif
+
 ifndef INSTALLBINDIR
 INSTALLBINDIR = $(XYMONHOME)/bin
 endif

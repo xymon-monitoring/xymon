@@ -115,4 +115,65 @@ for var in $(grep -oE '@[A-Z_]+@' "$servercfg" | sort -u); do
 	esac
 done
 
+# ---- a Makefile that predates the runtime directories ------------------------
+# The placeholders are substituted with whatever the make variable holds. A
+# top-level Makefile written before these variables existed defines neither,
+# so the substitution yields nothing and every pidfile path collapses to the
+# filesystem root -- "/xymond.pid", which as root is created rather than
+# refused. lib/environ.c's compiled default cannot rescue it: xgetenv() falls
+# back on a missing value, not on an empty one. Distribution builds always
+# reconfigure; a developer rebuilding in place does not.
+command -v make >/dev/null 2>&1 || skip "make is needed to evaluate the build rules"
+
+work=$(mktempdir); register_cleanup "rm -rf '$work'"
+# Both build variants, because XYMONCLIENTHOME is not the same in them:
+# $(XYMONTOPDIR) for a client-only build, $(XYMONTOPDIR)/client for a server
+# one. A default written in terms of XYMONTOPDIR looks right in the variant it
+# was written for and names a directory nothing uses in the other.
+probe_rules() { # probe_rules [extra make assignment]
+	local extra=${1:-}
+	local probe="$work/probe.mk"
+	{
+		echo "BUILDTOPDIR = $ROOT"
+		echo "XYMONLOGDIR = /var/log/xymon"
+		echo "XYMONTOPDIR = /usr/lib/xymon"
+		[ -n "$extra" ] && echo "$extra"
+		echo "include $ROOT/build/Makefile.rules"
+		printf 'probe:\n\t@echo "[$(XYMONRUNDIR)] [$(XYMONCLIENTRUNDIR)]"\n'
+	} >"$probe"
+	make -s -f "$probe" probe 2>/dev/null
+}
+
+for variant in "server:" "client-only:CLIENTONLY = yes"; do
+	name=${variant%%:*}
+	extra=${variant#*:}
+	got=$(probe_rules "$extra") || fail \
+		"could not evaluate build/Makefile.rules for the $name build, so this
+check cannot judge it"
+
+	case $got in
+		*"[]"*) fail \
+			"for the $name build, a Makefile that defines neither runtime directory
+leaves one empty: $got
+Every placeholder built from it is substituted with nothing, so the pidfile
+paths become /xymond.pid and the sockets /rrdctl.<pid>. Note that ?= does not
+fix this -- it assigns only when a variable is undefined, not when it is
+defined empty." ;;
+	esac
+
+	# and the client's must sit under the client home of *this* variant
+	case $name in
+	  server)      want="/usr/lib/xymon/client/logs" ;;
+	  client-only) want="/usr/lib/xymon/logs" ;;
+	esac
+	case $got in
+		*"[$want]"*) ;;
+		*) fail \
+			"for the $name build the client's runtime directory defaulted to
+$got
+rather than $want: it has to follow XYMONCLIENTHOME, which differs between the
+two variants, not XYMONTOPDIR, which does not" ;;
+	esac
+done
+
 pass "xymon.sh looks for pidfiles where tasks.cfg writes them, each side names its own runtime directory, both are settable from the environment, and every placeholder is substituted"
