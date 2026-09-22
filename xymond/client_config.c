@@ -352,6 +352,19 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	char *pagenames;
 	int pgmatchres, pgexclres;
 
+	/*
+	 * The key is the hostname alone, so the answer cached by whichever getter
+	 * runs first is the answer every later one gets: a caller that asks a
+	 * different question does not get its own ruleset, it decides everyone
+	 * else's. Every caller that derives the page list from a hostinfo record
+	 * therefore reads XMH_ALLPAGEPATHS, never XMH_PAGEPATH; the primary
+	 * pagepath used to be read by six of them and the answer followed the
+	 * sections a client message happened to carry (issue #534).
+	 *
+	 * check_rrdds_thresholds() is the exception the key cannot cover: its page
+	 * list arrives as a parameter, over the channel. classname is a second
+	 * input the key ignores, and it does vary per host.
+	 */
 	handle = xtreeFind(ruletree, hostname);
 	if (handle != xtreeEnd(ruletree)) {
 		/* We have the tree for this host */
@@ -366,9 +379,11 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	 * loop, not a verdict after it.
 	 *
 	 * "/" is the name analysis.cfg(5) gives it and the one criteriamatch()
-	 * matches it under in lib/loadalerts.c. XMH_ALLPAGEPATHS now emits it too,
-	 * so this covers what is left: the callers that pass XMH_PAGEPATH, and
-	 * localhostinfo(), which pins every host to the top page in local mode.
+	 * matches it under in lib/loadalerts.c. XMH_ALLPAGEPATHS emits it itself,
+	 * so the callers that read it never arrive here; what does is
+	 * check_rrdds_thresholds(), whose pagepaths come over the channel and are
+	 * empty for a host xymond could not resolve (xymond.c sends "" for a NULL
+	 * hostinfo).
 	 */
 	pagenames = strdup((pagename && *pagename) ? pagename : "/");
 
@@ -2120,7 +2135,7 @@ int get_inode_thresholds(void *hinfo, char *classname,
 	c_rule_t *rule;
 
 	hostname = xmh_item(hinfo, XMH_HOSTNAME);
-	pagename = xmh_item(hinfo, XMH_PAGEPATH);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	*warnlevel = 70;
 	*paniclevel = 90;
@@ -2154,7 +2169,7 @@ void get_cics_thresholds(void *hinfo, char *classname, char *appid,
         c_rule_t *rule;
 
         hostname = xmh_item(hinfo, XMH_HOSTNAME);
-        pagename = xmh_item(hinfo, XMH_PAGEPATH);
+        pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
         *dsayel = 90;
         *dsared = 95;
@@ -2190,7 +2205,7 @@ void get_zvsevsize_thresholds(void *hinfo, char *classname,
         c_rule_t *rule;
 
         hostname = xmh_item(hinfo, XMH_HOSTNAME);
-        pagename = xmh_item(hinfo, XMH_PAGEPATH);
+        pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
         *usedyel = 90;
         *usedred = 95;
@@ -2211,7 +2226,7 @@ void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
         c_rule_t *rule;
 
         hostname = xmh_item(hinfo, XMH_HOSTNAME);
-        pagename = xmh_item(hinfo, XMH_PAGEPATH);
+        pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
         *gv24yel = 90;
         *gv24red = 95;
@@ -2386,7 +2401,7 @@ int get_paging_thresholds(void *hinfo, char *classname, int *pagingyellow, int *
 	c_rule_t *rule;
 
 	hostname = xmh_item(hinfo, XMH_HOSTNAME);
-	pagename = xmh_item(hinfo, XMH_PAGEPATH);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	*pagingyellow = 5;
 	*pagingred = 10;
@@ -2418,7 +2433,7 @@ int get_mibval_thresholds(void *hinfo, char *classname,
 	}
 
 	hostname = xmh_item(hinfo, XMH_HOSTNAME);
-	pagename = xmh_item(hinfo, XMH_PAGEPATH);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	/* Any potential rules at all ? */
 	rule = getrule(hostname, pagename, classname, hinfo, C_MIBVAL);

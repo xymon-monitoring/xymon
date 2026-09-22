@@ -572,6 +572,11 @@ subpage db Database servers
     with a forward slash too: a <b>subpage</b> declared before any <b>page</b>
     line is built below the top-level page and is named
     <b>/</b><i>subpagename</i>.</p>
+<p class="Pp">A host can be listed on more than one page in hosts.cfg, and for
+    these rules it is on all of them: <b>PAGE=</b> matches the host when any one
+    of its pages matches, and <b>EXPAGE=</b> excludes it when any one of them
+    matches. That is the same set of pages the web display shows the host
+  on.</p>
 <p class="Pp"></p>
 <dl class="Bl-tag">
   <dt id="EXPAGE"><a class="permalink" href="#EXPAGE"><b>EXPAGE</b>=<i>targetstring</i></a></dt>
