@@ -88,7 +88,12 @@ int main(int argc, char *argv[])
 	/* Don't save the error buffer */
 	save_errbuf = 0;
 
-	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
+	if (snprintf(pidfn, sizeof(pidfn), "%s/xymond_history.pid", xgetenv("XYMONRUNDIR")) >= (int)sizeof(pidfn)) {
+		/* Bounded like the socket path above: XYMONRUNDIR is configured,
+		   and nothing else checks its length. */
+		errprintf("XYMONRUNDIR is too long for a pidfile path\n");
+		pidfn[0] = '\0';
+	}
 	if (xgetenv("XYMONALLHISTLOG")) save_allevents = (strcmp(xgetenv("XYMONALLHISTLOG"), "TRUE") == 0);
 	if (xgetenv("XYMONHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("XYMONHOSTHISTLOG"), "TRUE") == 0);
 	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strncmp(xgetenv("SAVESTATUSLOG"), "FALSE", 5) != 0);
@@ -101,7 +106,13 @@ int main(int argc, char *argv[])
 			histlogdir = strchr(argv[argi], '=')+1;
 		}
 		else if (argnmatch(argv[argi], "--pidfile=")) {
-			strcpy(pidfn, strchr(argv[argi], '=')+1);
+			/* Bounded like the default above, and for the same reason: the
+			   shipped tasks.cfg passes $XYMONRUNDIR through this option, so
+			   this is the path a configured value actually takes. */
+			if (snprintf(pidfn, sizeof(pidfn), "%s", strchr(argv[argi], '=')+1) >= (int)sizeof(pidfn)) {
+				errprintf("--pidfile= path does not fit, no pidfile written\n");
+				pidfn[0] = '\0';
+			}
 		}
 		else if (argnmatch(argv[argi], "--minimum-free=")) {
 			/* Percent of filesystem space; 0 disables the check, and

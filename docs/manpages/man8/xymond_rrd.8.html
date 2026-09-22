@@ -115,13 +115,13 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
   <dd>Default directory where RRD files are stored.
     <p class="Pp"></p>
   </dd>
-  <dt id="XYMONTMP"><a class="permalink" href="#XYMONTMP"><b>XYMONTMP</b></a></dt>
+  <dt id="XYMONRUNDIR"><a class="permalink" href="#XYMONRUNDIR"><b>XYMONRUNDIR</b></a></dt>
   <dd>Directory where xymond_rrd creates the cache-control Unix socket
       (&quot;rrdctl.&lt;pid&gt;&quot;) used to flush cached updates when a graph
       is shown. Unix socket paths have a small, platform-dependent length limit
       (around 92 to 107 bytes for the complete path), so xymond_rrd refuses to
-      start - with an error stating the actual limit - when XYMONTMP is too deep
-      for the socket path to fit.
+      start - with an error stating the actual limit - when XYMONRUNDIR is too
+      deep for the socket path to fit.
     <p class="Pp"></p>
   </dd>
   <dt id="NCV_testname"><a class="permalink" href="#NCV_testname"><b>NCV_testname</b></a></dt>
