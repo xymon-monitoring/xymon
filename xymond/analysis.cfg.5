@@ -531,6 +531,11 @@ on the Xymon frontpage. A regular expression must be anchored at both ends,
 \fBPAGE=%^/$\fR, because other pagepaths can begin with a forward slash too: a
 \fBsubpage\fR declared before any \fBpage\fR line is built below the top-level
 page and is named \fB/\fIsubpagename\fR.
+.PP
+A host can be listed on more than one page in hosts.cfg, and for these rules it
+is on all of them: \fBPAGE=\fR matches the host when any one of its pages
+matches, and \fBEXPAGE=\fR excludes it when any one of them matches. That is
+the same set of pages the web display shows the host on.
 
 .IP "\fBEXPAGE\fR=\fItargetstring\fR"
 Rule excluding a host if the pagename matches.
