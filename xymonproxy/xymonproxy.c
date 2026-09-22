@@ -1191,7 +1191,12 @@ int main(int argc, char *argv[])
 		}
 	} while (keeprunning);
 
-	if (pidfile) unlink(pidfile);
+	/* Only the daemon owns a pidfile: its parent wrote this path with the
+	   child's pid before exiting, so the child removes it on the way out.
+	   Run with --no-daemon nothing was ever written here -- the launcher
+	   writes and removes the task's pidfile now -- and removing it anyway
+	   deleted a file this process had no part in. */
+	if (daemonize && pidfile) unlink(pidfile);
 	return 0;
 }
 
