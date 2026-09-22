@@ -39,9 +39,15 @@ echo "not-mine" >"$pid"
 proxy=$!
 register_cleanup "kill -9 $proxy 2>/dev/null || :"
 
-# Wait for it to be listening, not merely to exist. Signalled before it has
-# installed its handler, TERM kills it outright, nothing runs on the way out,
-# and the assertion below passes without having tested anything.
+# Wait for it to be listening, not merely to exist. Signalled before it is
+# running, TERM kills it outright, nothing runs on the way out, and the
+# assertion below passes without having tested anything.
+#
+# "Listening" is not proof of readiness either: the proxy prints it before
+# setup_signalhandler() arms the TERM handler, so a signal in that window
+# still kills it outright. Nothing is logged after the handlers go in, so
+# there is no cue to wait for -- the handler having run is asserted below
+# instead, which turns that race from a silent pass into a visible failure.
 i=0
 while [ "$i" -lt 100 ] && ! grep -q Listening "$work/fg.log" 2>/dev/null; do sleep 0.1; i=$((i + 1)); done
 grep -q Listening "$work/fg.log" 2>/dev/null || fail \
@@ -52,6 +58,12 @@ kill -TERM "$proxy" 2>/dev/null || fail "could not signal the foreground proxy"
 i=0
 while [ "$i" -lt 100 ] && kill -0 "$proxy" 2>/dev/null; do sleep 0.1; i=$((i + 1)); done
 wait "$proxy" 2>/dev/null || :
+
+grep -q "Caught TERM signal" "$work/fg.log" 2>/dev/null || fail \
+	"the foreground proxy left no record of handling TERM, so it was killed
+before its handler was armed and never reached its cleanup at all -- whatever
+the pidfile looks like now was not decided by the code under test:
+$(cat "$work/fg.log")"
 
 [ -f "$pid" ] || fail \
 	"a proxy run with --no-daemon removed $pid, which it never wrote: with
@@ -82,6 +94,10 @@ kill -TERM "$child" 2>/dev/null || fail "could not signal the daemonised proxy a
 
 i=0
 while [ "$i" -lt 100 ] && [ -f "$dpid" ]; do sleep 0.1; i=$((i + 1)); done
+grep -q "Caught TERM signal" "$work/d.log" 2>/dev/null || fail \
+	"the daemonised proxy left no record of handling TERM, so it was killed
+before its handler was armed; the check below would then be measuring nothing:
+$(cat "$work/d.log")"
 [ ! -f "$dpid" ] || fail \
 	"a daemonised proxy left $dpid behind: its parent wrote that path with this
 pid, so nothing else will remove it and the next start reads a pid the system

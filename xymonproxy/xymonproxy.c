@@ -429,6 +429,12 @@ int main(int argc, char *argv[])
 				fprintf(fd, "%d\n", (int)childpid);
 				fclose(fd);
 			}
+			else {
+				/* Said, not swallowed: xymond reports this, and without
+				   it the proxy starts, reports nothing, and leaves
+				   whoever looks for the pidfile to work out why. */
+				errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
+			}
 			exit(0);
 		}
 		/* Child (daemon) continues here */
@@ -1191,12 +1197,24 @@ int main(int argc, char *argv[])
 		}
 	} while (keeprunning);
 
-	/* Only the daemon owns a pidfile: its parent wrote this path with the
-	   child's pid before exiting, so the child removes it on the way out.
-	   Run with --no-daemon nothing was ever written here -- the launcher
-	   writes and removes the task's pidfile now -- and removing it anyway
-	   deleted a file this process had no part in. */
-	if (daemonize && pidfile) unlink(pidfile);
+	/* Remove the pidfile only if it holds our pid. The daemon's parent wrote
+	   this path with the child's pid before exiting, so the child removes it
+	   on the way out. Nothing else here is ours: run with --no-daemon the
+	   file was never written -- the launcher writes and removes the task's
+	   pidfile now -- and even under --daemon the parent's write can have
+	   failed. Testing the mode would cover the first of those and not the
+	   second; reading the pid back covers both, and needs no flag. */
+	if (pidfile) {
+		FILE *fd = fopen(pidfile, "r");
+
+		if (fd) {
+			char l[100];
+			long owner = (fgets(l, sizeof(l), fd) ? atol(l) : 0);
+
+			fclose(fd);
+			if (owner == (long)getpid()) unlink(pidfile);
+		}
+	}
 	return 0;
 }
 
