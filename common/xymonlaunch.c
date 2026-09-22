@@ -123,6 +123,11 @@ static void restore_task(tasklist_t *twalk)
 	twalk->cmd        = saved->cmd;
 	twalk->interval   = saved->interval;
 	twalk->maxruntime = saved->maxruntime;
+	/* These two are reset to their defaults rather than to zero when the
+	   config is re-read, so a rollback that skips them does not put back
+	   what was there -- it leaves the defaults the refused read installed. */
+	twalk->delay      = saved->delay;
+	twalk->faildelay  = saved->faildelay;
 	twalk->group      = saved->group;
 	twalk->logfile    = saved->logfile;
 	twalk->pidfile    = saved->pidfile;

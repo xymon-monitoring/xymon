@@ -95,6 +95,50 @@ if pgrep -f "$work/follower.sh" >/dev/null 2>&1; then
 	fail "DELAY 3600 did not hold the follower back, so the reload proves nothing"
 fi
 
+# ---- a refused read must not change what is running -------------------------
+# A file caught mid-write -- a section whose CMD has not been written yet --
+# is refused, "keeping the previous one". Keeping it means restoring what the
+# re-read cleared first, and the clear resets DELAY and FAILDELAY to their
+# defaults rather than to zero. A rollback that restores the other fields and
+# skips these two therefore leaves the defaults the refused read installed:
+# the hour the operator asked for is gone, with nothing in any config saying
+# so and the launcher having just reported that it kept the old settings.
+# The DELAY line is absent here on purpose: a file caught mid-write is cut
+# somewhere, and the only cut that can show this is one past the line whose
+# value has to survive. A refused config that still carries DELAY 3600 sets
+# it again while parsing, so the rollback has nothing left to get wrong and
+# the case passes whatever restore_task() does.
+cat >"$cfg" <<EOF
+[anchor]
+	CMD $work/anchor.sh
+
+[follower]
+	NEEDS anchor
+	CMD $work/follower.sh
+
+[control]
+	NEEDS anchor
+	CMD $work/control.sh
+
+[truncated]
+	NEEDS anchor
+EOF
+reload
+
+grep -q 'Incomplete tasklist configuration' "$log" \
+	|| fail "xymonlaunch accepted a config with a task that has no command, so
+this case is not the one it claims to be testing: $(cat "$log")"
+
+# The default DELAY is 5s and the dependency started long ago, so a follower
+# whose hold was lost is eligible on the very next scan. Waiting for it to
+# appear is the failure, not the pass -- hence a short window rather than a
+# long one.
+if wait_for 15 'pgrep -f "$work/follower.sh" >/dev/null 2>&1'; then
+	fail "a refused reload started the follower: DELAY 3600 was replaced by the
+default the refused read installed, and the rollback put back every other
+field but not this one"
+fi
+
 # Now remove the line. Every other keyword reverts to its default on a
 # re-read; DELAY must too, or the hour it asked for outlives the asking.
 write_config ''
@@ -117,4 +161,4 @@ dump=$("$XYMONLAUNCH" --dump --config="$work/dump.cfg" 2>&1) \
 assert_contains "DELAY 0" "$dump" \
 	"an explicit DELAY 0 is dropped by --dump, so reusing the dump changes what the config means"
 
-pass "a removed DELAY line goes back to the default, and an explicit DELAY 0 survives a dump"
+pass "a removed DELAY line goes back to the default, a refused read keeps the old one, and an explicit DELAY 0 survives a dump"
