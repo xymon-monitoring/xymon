@@ -189,9 +189,23 @@ from the monitored hosts).
 The directory for the server's runtime files - pidfiles and control
 sockets. The client running alongside has its own, XYMONCLIENTRUNDIR,
 since the two sides keep their runtime files apart as they keep their
-logs apart. Defaults to $XYMONSERVERLOGS. Point it at a tmpfs-backed
-directory (e.g. /run/xymon) to comply with the FHS; it must be
-writable by the user running Xymon.
+logs apart. Both are set when the server is configured, interactively
+or from the environment:
+.br
+.br
+	XYMONRUNDIR=/run/xymon ./configure --server
+.br
+.br
+Defaults to $XYMONSERVERLOGS. That default is not an endorsement of
+putting runtime files with the logs - it is the only directory that is
+certain to exist and to be writable by the Xymon user at the moment
+the server first starts. /run is a root-owned tmpfs; a source
+installation running as an unprivileged user cannot create a directory
+there, and xymon.sh stops with an error if it cannot create this one.
+Packages run as root and can, so point this at a tmpfs-backed
+directory (e.g. /run/xymon) to comply with the FHS, and have the
+package create it - a systemd RuntimeDirectory= or a tmpfiles.d
+fragment - since /run does not survive a reboot.
 .br
 Note:
 .I xymond_rrd(8)
@@ -200,6 +214,27 @@ directory, and Unix socket paths have a small, platform-dependent
 length limit (around 92 to 107 bytes for the complete path, depending
 on the OS). xymond_rrd refuses to start when XYMONRUNDIR is too deep
 for the socket path to fit, so keep this directory path short.
+
+.IP "\fBXYMONCLIENTRUNDIR\fR"
+The same thing for the client that runs on the server itself: pidfiles
+of the tasks the server's launcher starts on the client's behalf. It
+is separate from XYMONRUNDIR because xymonlaunch expands a task's
+pidfile path in the parent process, which holds one value per variable
+name, and the server's launcher starts both sides - so one name could
+not carry both paths. Defaults to the client's own log directory,
+$XYMONTOPDIR/client/logs, and is set the same way as XYMONRUNDIR:
+.br
+.br
+	XYMONCLIENTRUNDIR=/run/xymon-client ./configure --server
+.br
+.br
+Like every other path in this file it is resolved when the server is
+configured, not when the file is read: the build passes these values
+through double-quoted shell words, so a reference written here would
+be expanded by that shell rather than by the configuration loader.
+A client configuration that still sets only the generic XYMONRUNDIR
+keeps working: this variable defaults to it when no configuration file
+defines it.
 
 .IP "\fBXYMONHOME\fR"
 The Xymon server directory, where programs and configurations are kept.
