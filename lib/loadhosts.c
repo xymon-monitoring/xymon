@@ -565,8 +565,10 @@ char *xmh_item(void *hostin, enum xmh_item_t item)
 		   * "/" is the name analysis.cfg(5) and alerts.cfg(5) give that page,
 		   * so emit it. Consumers that already mapped "" to "/" themselves
 		   * (criteriamatch in lib/loadalerts.c) see the string they were
-		   * constructing, and webaccess.c truncates it at the first "/" to the
-		   * same empty top-level element it had before.
+		   * constructing. webaccess.c reduced it to the same empty top-level
+		   * element it had before, which is why naming the page here changed
+		   * nothing there; that is no longer true, see the exemption in
+		   * web_access_allowed().
 		   */
 		  if (rawtxt) clearstrbuffer(rawtxt);
 		  hwalk = host;
