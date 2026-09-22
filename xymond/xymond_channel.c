@@ -84,6 +84,7 @@ enum locator_servicetype_t locatorservice = ST_MAX;
 
 static int running = 1;
 static int gotalarm = 0;
+static int dologswitch = 0;
 static int pendingcount = 0;
 static int messagetimeout = 30;
 
@@ -399,6 +400,25 @@ void shutdownconnection(xymon_peer_t *peer)
 }
 
 
+/*
+ * Called twice around the loop, and both matter: the SIGHUP interrupts the
+ * blocking wait, whose EINTR path continues straight back to it, so a check
+ * placed only after the wait never runs on an idle channel. A @@logrotate
+ * message arrives inside the loop instead, and is handled where it lands.
+ */
+static void do_logswitch(void)
+{
+	if (!dologswitch) return;
+
+	logprintf("xymond_channel: reopening logfiles\n");
+	if (logfn) {
+		reopen_file(logfn, "a", stdout);
+		reopen_file(logfn, "a", stderr);
+		logprintf("xymond_channel: reopened logfiles\n");
+	}
+	dologswitch = 0;
+}
+
 void sig_handler(int signum)
 {
 	switch (signum) {
@@ -406,6 +426,15 @@ void sig_handler(int signum)
 	  case SIGINT:
 		/* Shutting down. */
 		running = 0;
+		break;
+
+	  case SIGHUP:
+		/* Reopen our own log file. The worker's log is rotated through the
+		   @@logrotate message that xymond posts to every channel on rotation
+		   (posttoall("logrotate")), which we forward down the pipe; sending
+		   the worker a raw SIGHUP would kill the shipped workers that install
+		   no HUP handler (xymond_filestore, xymond_distribute). */
+		dologswitch = 1;
 		break;
 
 	  case SIGCHLD:
@@ -526,6 +555,13 @@ int main(int argc, char *argv[])
 		errprintf("Must specify command for local worker\n");
 		return 1;
 	}
+	if (!logfn && getenv("XYMONLAUNCH_LOGFILENAME")) {
+		/* No log file on the command line, but our STDOUT is already */
+		/* being piped somewhere. Record this for when it's time to re-open on rotation */
+		logfn = xgetenv("XYMONLAUNCH_LOGFILENAME");
+		dbgprintf("xymond_channel: Already logging out to %s, per xymonlaunch\n", logfn);
+	}
+
 
 	/* Do cache responses to avoid doing too many lookups */
 	if (locatorbased) locator_prepcache(locatorservice, 0);
@@ -558,6 +594,7 @@ int main(int argc, char *argv[])
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 	signal(SIGALRM, SIG_IGN);
@@ -597,6 +634,8 @@ int main(int argc, char *argv[])
 			errprintf("Child process %d died: %s %d\n", deadpid, cause, ecode);
 			deadpid = 0;
 		}
+
+		do_logswitch();
 
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = ((pendingcount > 0) ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
@@ -669,8 +708,7 @@ int main(int argc, char *argv[])
 				 * the worker module as well, but must handle our own logfile.
 				 */
 				if (strncmp(inbuf+checksumsize, "@@logrotate", 11) == 0) {
-					reopen_file(logfn, "a", stdout);
-					reopen_file(logfn, "a", stderr);
+					dologswitch = 1;
 				}
 
 				if (checksumsize > 0) {
@@ -812,6 +850,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
+		do_logswitch();
 	}
 
 	/* Detach from channels */

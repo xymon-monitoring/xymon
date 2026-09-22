@@ -100,6 +100,7 @@ typedef struct conn_t {
 #define COMBO_DELAY 250000000	/* Delay before sending a combo message (in nanoseconds) */
 
 int keeprunning = 1;
+int dologswitch = 0;
 time_t laststatus = 0;
 char *logfile = NULL;
 int logdetails = 0;
@@ -115,11 +116,7 @@ void sigmisc_handler(int signum)
 		break;
 
 	  case SIGHUP:
-		if (logfile) {
-			reopen_file(logfile, "a", stdout);
-			reopen_file(logfile, "a", stderr);
-			errprintf("Caught SIGHUP, reopening logfile\n");
-		}
+		dologswitch = 1;
 		break;
 
 	  case SIGUSR1:
@@ -389,6 +386,12 @@ int main(int argc, char *argv[])
 	}
 
 	/* Redirect logging to the logfile, if requested */
+	if (!logfile && getenv("XYMONLAUNCH_LOGFILENAME")) {
+		/* No log file on the command line, but our STDOUT is already */
+		/* being piped somewhere. Record this for when it's time to re-open on rotation */
+		logfile = xgetenv("XYMONLAUNCH_LOGFILENAME");
+		dbgprintf("Already logging out to %s, per xymonlaunch\n", logfile);
+	}
 	if (logfile) {
 		reopen_file(logfile, "a", stdout);
 		reopen_file(logfile, "a", stderr);
@@ -426,6 +429,12 @@ int main(int argc, char *argv[])
 				fprintf(fd, "%d\n", (int)childpid);
 				fclose(fd);
 			}
+			else {
+				/* Said, not swallowed: xymond reports this, and without
+				   it the proxy starts, reports nothing, and leaves
+				   whoever looks for the pidfile to work out why. */
+				errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
+			}
 			exit(0);
 		}
 		/* Child (daemon) continues here */
@@ -449,6 +458,15 @@ int main(int argc, char *argv[])
 		time_t ctime;
 		time_t now;
 		int combining = 0;
+
+		if (dologswitch) {
+			logprintf("Reopening logfile\n");
+			if (logfile) {
+				reopen_file(logfile, "a", stdout);
+				reopen_file(logfile, "a", stderr);
+			}
+			dologswitch = 0;
+		}
 
 		/* See if it is time for a status report */
 		if (proxyname && ((now = gettimer()) >= (laststatus+300))) {
@@ -986,6 +1004,10 @@ int main(int argc, char *argv[])
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &selecttmo);
 
 		if (n < 0) {
+			/* A signal, not a failure: the rotation HUP lands here, and
+			   counting it aborted the proxy after the sixth one. The top
+			   of the loop does the reopen. */
+			if (errno == EINTR) continue;
 			errprintf("select() failed: %s\n", strerror(errno));
 			if (++selectfailures > 5) {
 				errprintf("Too many select failures, aborting\n");
@@ -1175,7 +1197,24 @@ int main(int argc, char *argv[])
 		}
 	} while (keeprunning);
 
-	if (pidfile) unlink(pidfile);
+	/* Remove the pidfile only if it holds our pid. The daemon's parent wrote
+	   this path with the child's pid before exiting, so the child removes it
+	   on the way out. Nothing else here is ours: run with --no-daemon the
+	   file was never written -- the launcher writes and removes the task's
+	   pidfile now -- and even under --daemon the parent's write can have
+	   failed. Testing the mode would cover the first of those and not the
+	   second; reading the pid back covers both, and needs no flag. */
+	if (pidfile) {
+		FILE *fd = fopen(pidfile, "r");
+
+		if (fd) {
+			char l[100];
+			long owner = (fgets(l, sizeof(l), fd) ? atol(l) : 0);
+
+			fclose(fd);
+			if (owner == (long)getpid()) unlink(pidfile);
+		}
+	}
 	return 0;
 }
 
