@@ -28,14 +28,22 @@
 # a PAGE= rule matched a multi-page host depended on how many page-filtered
 # rules preceded it in the file.
 #
+# A fourth sat in the caching. ruleset() keys its answer on the hostname alone,
+# while a minority of its callers asked for XMH_PAGEPATH and the rest for
+# XMH_ALLPAGEPATHS. Those differ on a host that is on several pages, so the
+# getter that ran first decided the ruleset every later one received, and which
+# runs first depends on the sections a client message happens to carry. They all
+# read XMH_ALLPAGEPATHS now, which the source guard at the end of this file pins.
+#
 # ruleset() is static and no binary exposes it, so this compiles a harness
 # against the real xymond/client_config.c and probes through two of its public
 # callers, whose defaults both read 5.0 for "no rule reached this host":
-# get_cpu_thresholds() (a LOAD rule, passing XMH_ALLPAGEPATHS) and
-# get_paging_thresholds() (a PAGING rule, passing XMH_PAGEPATH). Both are needed
-# -- XMH_ALLPAGEPATHS now names the front page itself, so through the LOAD probe
-# alone ruleset()'s own naming of it is unreachable and could be deleted unseen.
-# Eight scenarios, each with its own analysis.cfg:
+# get_cpu_thresholds() (a LOAD rule) and get_paging_thresholds() (a PAGING
+# rule). Both are needed, and so is running them in each order: cpu has always
+# read the full list and runs first in the handlers that report a cpu section,
+# so its answer is the one the rest of that report inherits, and paging is one
+# of the getters that used to disagree with it. Each scenario has its own
+# analysis.cfg:
 #
 #   page-scoped : PAGE=deltachat -> the deltachat host only. The front-page host
 #                 must NOT collect it; before the fix it did.
@@ -58,11 +66,21 @@
 #   order-free  : the same two rules with the decoy removed, to show the
 #                 multi-page result does not depend on what precedes it.
 #   primary-page: the same page scoping seen through get_paging_thresholds(),
-#                 which passes XMH_PAGEPATH -- still the bare "" on the front
-#                 page, and so the one path that exercises ruleset()'s "/".
-#   primary-front: PAGE=/ through that same caller. Rejecting a foreign page on
-#                 the front page is already covered by requiring a positive
-#                 match, so *selecting* it is the one thing only the naming does.
+#                 one of the six getters that used to read the primary pagepath
+#                 alone. It has to reach the same verdict as the LOAD probe.
+#   primary-front: PAGE=/ through that same caller, so the front page is named
+#                 for it too and not just for the eleven.
+#   cache-order : both getters on one multi-page host, each order, one PAGE=
+#                 rule setting both thresholds. The ruleset is cached per
+#                 hostname, so a getter reading a different page item does not
+#                 get its own answer -- it decides everyone else's. Priming
+#                 through either getter must leave the other's verdict
+#                 unchanged.
+#   cache-order-ex: the same shape with EXPAGE=, the half that *removes* rules
+#                 from a host and so can stop it alerting. It is the sharper of
+#                 the two: a getter back on the primary pagepath both keeps a
+#                 PAGING rule the exclusion should have taken away and hands
+#                 that excluded rule to LOAD through the cache.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -124,7 +142,7 @@ hosts="fronthost bothhost homehost dchost multihost"
 probe() {
 	# shellcheck disable=SC2086  # $hosts is a deliberate word list
 	"$work/harness" "$work/hosts.cfg" "$1" "${2:-load}" $hosts \
-		2>"$work/run.log" || { cat "$work/run.log" >&2; fail "harness run failed ($1)"; }
+		2>"$work/run.log" || { cat "$work/run.log" >&2; fail "harness run failed ($1, probe ${2:-load})"; }
 }
 get() { printf '%s\n' "$2" | sed -n "s/^$1=[^=]*=//p"; }
 paths() { printf '%s\n' "$2" | sed -n "s/^$1=\\([^=]*\\)=.*/\\1/p"; }
@@ -221,10 +239,9 @@ out=$(probe "$work/order-free.cfg")
 assert_equal "99.0" "$(get multihost "$out")" \
 	"PAGE=deltachat did not reach a host on home,deltachat even with nothing before it"
 
-# PAGING passes XMH_PAGEPATH, which is still the bare "" on the front page, so
-# this is the probe that reaches ruleset()'s own naming of the top page. Through
-# the LOAD probe that code is unreachable, because XMH_ALLPAGEPATHS hands it a
-# list that already says "/".
+# PAGING is one of the six getters that used to read XMH_PAGEPATH, the primary
+# pagepath alone. The expected values below are the LOAD probe's: that the two
+# agree is the point.
 cat >"$work/primary-page.cfg" <<'EOF'
 PAGE=deltachat
 	PAGING 33 44
@@ -238,9 +255,9 @@ assert_equal "5.0" "$(get homehost "$out")" \
 assert_equal "33.0" "$(get dchost "$out")" \
 	"PAGE=deltachat did not reach the host it names through a XMH_PAGEPATH caller"
 
-# The one behaviour only ruleset()'s naming provides. Rejecting a foreign page
-# on the front page is already handled by requiring a positive match, so this
-# is what tells the two apart: naming the page is what lets PAGE=/ *select* it.
+# Rejecting a foreign page is already covered by requiring a positive match, so
+# *selecting* the front page is the separate thing: PAGE=/ has to name it for
+# this caller as well.
 cat >"$work/primary-front.cfg" <<'EOF'
 PAGE=/
 	PAGING 33 44
@@ -252,4 +269,75 @@ assert_equal "33.0" "$(get fronthost "$out")" \
 assert_equal "5.0" "$(get homehost "$out")" \
 	"PAGE=/ reached the home page through a XMH_PAGEPATH caller"
 
-pass "PAGE= and EXPAGE= filter analysis.cfg rules by pagepath, front page included and named"
+# multihost is on home,deltachat, so its primary pagepath ("home") and its full
+# list disagree -- the only shape in which the cache can hand one getter an
+# answer built for another's question. One rule sets both thresholds, so each
+# probe has something to find, and the ordered probes prime the cache through
+# the other getter first. All four must agree with the unprimed pair.
+cat >"$work/cache-order.cfg" <<'EOF'
+PAGE=deltachat
+	LOAD 99.0 99.9
+	PAGING 33 44
+EOF
+
+out=$(probe "$work/cache-order.cfg" load)
+assert_equal "99.0" "$(get multihost "$out")" \
+	"PAGE=deltachat did not reach a host on home,deltachat through the LOAD probe"
+
+out=$(probe "$work/cache-order.cfg" paging)
+assert_equal "33.0" "$(get multihost "$out")" \
+	"PAGE=deltachat did not reach a host on home,deltachat through the PAGING probe: that caller is reading the primary pagepath instead of the full list"
+
+out=$(probe "$work/cache-order.cfg" load-after-paging)
+assert_equal "99.0" "$(get multihost "$out")" \
+	"PAGING ran first and left get_cpu_thresholds() a ruleset built for the primary pagepath: the two callers are asking ruleset() different questions under one cache key"
+
+# This one does not fail if get_paging_thresholds() alone regresses -- LOAD runs
+# first and caches the full-list ruleset that PAGING then inherits, which is
+# exactly why the defect survived so long. It pins the other direction: that the
+# inherited answer is the right one, so a regression in get_cpu_thresholds()
+# cannot quietly narrow every getter that follows it.
+out=$(probe "$work/cache-order.cfg" paging-after-load)
+assert_equal "33.0" "$(get multihost "$out")" \
+	"LOAD ran first and the ruleset it cached did not carry the PAGE=deltachat rule to get_paging_thresholds()"
+
+# EXPAGE= is the half that removes rules. On the primary pagepath ("home") the
+# exclusion misses, so a getter reading it keeps a rule it should have lost --
+# and, through the cache, hands that rule to every getter that follows.
+cat >"$work/cache-order-ex.cfg" <<'EOF'
+EXPAGE=deltachat
+	LOAD 99.0 99.9
+	PAGING 33 44
+EOF
+
+out=$(probe "$work/cache-order-ex.cfg" load)
+assert_equal "5.0" "$(get multihost "$out")" \
+	"EXPAGE=deltachat did not exclude a host on home,deltachat through the LOAD probe"
+
+out=$(probe "$work/cache-order-ex.cfg" paging)
+assert_equal "5.0" "$(get multihost "$out")" \
+	"EXPAGE=deltachat did not exclude a host on home,deltachat through the PAGING probe: that caller is matching the primary pagepath, which the exclusion does not name"
+
+out=$(probe "$work/cache-order-ex.cfg" load-after-paging)
+assert_equal "5.0" "$(get multihost "$out")" \
+	"PAGING ran first, kept a rule EXPAGE=deltachat excludes, and get_cpu_thresholds() then applied it: an excluded rule reached a host through the cache"
+
+out=$(probe "$work/cache-order-ex.cfg" paging-after-load)
+assert_equal "5.0" "$(get multihost "$out")" \
+	"LOAD ran first and the exclusion it cached did not reach get_paging_thresholds()"
+
+# The probes above reach two getters; the rest hand ruleset() their page list
+# the same way and would fail the same way unseen, so the shape is pinned at the
+# source instead. A probe per getter would exercise the same ruleset() once more
+# and say nothing new about it. check_rrdds_thresholds() is deliberately not
+# covered: its page list is a parameter that arrives over the channel.
+page_items=$(grep -cE '(pagename|pagepaths) = xmh_item\(hinfo,' "$CLIENT_CONFIG_C")
+[ "$page_items" -gt 10 ] \
+	|| fail "the page-item assignments in client_config.c no longer look like this, so the check below would pass without testing anything"
+
+stray=$(grep -nE '(pagename|pagepaths) = xmh_item\(hinfo,' "$CLIENT_CONFIG_C" \
+	| grep -v XMH_ALLPAGEPATHS || true)
+assert_equal "" "$stray" \
+	"a ruleset() caller reads a page item other than XMH_ALLPAGEPATHS; the ruleset is cached per hostname, so this one does not get its own answer, it decides the answer for every getter that runs after it"
+
+pass "PAGE= and EXPAGE= filter analysis.cfg rules by pagepath, front page included and named, whichever getter asks first"
