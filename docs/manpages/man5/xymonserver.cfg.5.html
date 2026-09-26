@@ -750,6 +750,33 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       deprecated NORRDDISKS/RRDDISKS settings below.
     <p class="Pp"></p>
   </dd>
+  <dt id="RRDEXCLUDE"><a class="permalink" href="#RRDEXCLUDE"><b>RRDEXCLUDE</b></a></dt>
+  <dd>Generic per-RRD-file trending filter: whitespace-separated
+      &quot;scope:regex&quot; entries. The regex is matched case-insensitively
+      against the RRD filename without &quot;.rrd&quot;, i.e. the name as it
+      appears in the host's RRD directory. The scope matches the status/data
+      test name, the RRD filename prefix before &quot;.&quot; or &quot;,&quot;,
+      or &quot;*&quot; for all RRD files. For example,
+      RRDEXCLUDE=&quot;iostat:^iostat.da1[5-9]$ ifstat:^ifstat.docker
+      *:,tmp,&quot; prevents matching files from being created, updated, or
+      selected for graph display. Status-page graph paging counts the filtered
+      RRD file set, so graph splits stay aligned with what will actually be
+      rendered. This filters whole RRD files only; it does not filter individual
+      datasources inside one RRD file, status text, or alerts. It does not
+      remove existing RRD files from disk; matching existing files are hidden
+      from graph selection while the filter applies. For filesystem graphs,
+      RRDEXCLUDE/RRDINCLUDE are the preferred replacement for the older
+      NORRDDISKS/RRDDISKS settings when filtering by generated RRD filename.
+      NORRDDISKS/RRDDISKS remain supported for legacy configurations that use
+      their filesystem mountpoint syntax.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="RRDINCLUDE"><a class="permalink" href="#RRDINCLUDE"><b>RRDINCLUDE</b></a></dt>
+  <dd>The include direction of RRDEXCLUDE: when entries exist for a file's
+      scope, only matching RRD files are created, updated, or selected for graph
+      display. A RRDEXCLUDE match still wins.
+    <p class="Pp"></p>
+  </dd>
   <dt id="NORRDDISKS"><a class="permalink" href="#NORRDDISKS"><b>NORRDDISKS</b></a></dt>
   <dd>Deprecated legacy setting. It is retained for compatibility with old
       configurations, but should be considered unsupported for new use. Use

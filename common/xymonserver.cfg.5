@@ -641,6 +641,30 @@ removes a filesystem from the status, the alerts and the graphs.
 This is usually the preferred replacement for the deprecated
 NORRDDISKS/RRDDISKS settings below.
 
+.IP "\fBRRDEXCLUDE\fR"
+Generic per-RRD-file trending filter: whitespace-separated "scope:regex"
+entries. The regex is matched case-insensitively against the RRD filename
+without ".rrd", i.e. the name as it appears in the host's RRD directory.
+The scope matches the status/data test name, the RRD filename prefix before
+"." or ",", or "*" for all RRD files. For example,
+RRDEXCLUDE="iostat:^iostat.da1[5-9]$ ifstat:^ifstat.docker *:,tmp,"
+prevents matching files from being created, updated, or selected for graph
+display. Status-page graph paging counts the filtered RRD file set, so graph
+splits stay aligned with what will actually be rendered.
+This filters whole RRD files only; it does not filter individual datasources
+inside one RRD file, status text, or alerts. It does not remove existing RRD
+files from disk; matching existing files are hidden from graph selection while
+the filter applies.
+For filesystem graphs, RRDEXCLUDE/RRDINCLUDE are the preferred replacement for
+the older NORRDDISKS/RRDDISKS settings when filtering by generated RRD filename.
+NORRDDISKS/RRDDISKS remain supported for legacy configurations that use their
+filesystem mountpoint syntax.
+
+.IP "\fBRRDINCLUDE\fR"
+The include direction of RRDEXCLUDE: when entries exist for a file's scope,
+only matching RRD files are created, updated, or selected for graph display.
+A RRDEXCLUDE match still wins.
+
 .IP "\fBNORRDDISKS\fR"
 Deprecated legacy setting. It is retained for compatibility with old
 configurations, but should be considered unsupported for new use.
