@@ -70,9 +70,69 @@ void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	if (meminfostr) {
 		unsigned long pagesfree, pagesactive, pagesinactive, pageswireddown, pgsize;
+		long memswaptotal, memswapused;
 		char *p;
 
 		pagesfree = pagesactive = pagesinactive = pageswireddown = pgsize = -1;
+		memswaptotal = memswapused = -1;
+
+		/*
+		 * "vm.swapusage: total = 2048.00M  used = 1189.19M  free = 858.81M"
+		 * Converted to MB. Trend data for the "swap" status below only - it is
+		 * deliberately NOT fed to the memory report: macOS swap is dynamic, so
+		 * a used/total percentage would false-alarm on healthy machines.
+		 */
+		p = strstr(meminfostr, "vm.swapusage:");
+		if (p) {
+			double swt, swu;
+			char unt, unu;
+
+			if (sscanf(p, "vm.swapusage: total = %lf%c used = %lf%c", &swt, &unt, &swu, &unu) == 4) {
+				if (unt == 'K') swt /= 1024; else if (unt == 'G') swt *= 1024;
+				if (unu == 'K') swu /= 1024; else if (unu == 'G') swu *= 1024;
+				memswaptotal = (long)swt;
+				memswapused  = (long)swu;
+			}
+		}
+
+		/*
+		 * Darwin-only "swap" status, driven by the kernel's memory-pressure
+		 * verdict (kern.memorystatus_vm_pressure_level: 1=normal, 2=warn,
+		 * 4=critical) - the signal Apple provides precisely because swap
+		 * capacity numbers stopped meaning anything. The swap growth ceiling
+		 * (container free space) is already covered by the disk report.
+		 * Body lines are NCV-formatted, so graphing needs no new code. Use the
+		 * split variant - one RRD per metric, so mixed units graph separately
+		 * and future metrics need no DS surgery:
+		 * TEST2RRD+=",swap=ncv" SPLITNCV_swap="Pressure:GAUGE,SwapUsedMB:GAUGE"
+		 */
+		p = strstr(meminfostr, "kern.memorystatus_vm_pressure_level:");
+		if (p) {
+			long presslevel = -1;
+			int presscolor;
+			char *pressname;
+			char msgline[1024];
+
+			sscanf(p, "kern.memorystatus_vm_pressure_level: %ld", &presslevel);
+			if (presslevel == 1)      { presscolor = COL_GREEN;  pressname = "normal"; }
+			else if (presslevel == 2) { presscolor = COL_YELLOW; pressname = "warn"; }
+			else if (presslevel >= 4) { presscolor = COL_RED;    pressname = "critical"; }
+			else                      { presscolor = COL_YELLOW; pressname = "unknown"; }
+
+			init_status(presscolor);
+			sprintf(msgline, "status %s.swap %s %s - Memory pressure %s\n",
+				commafy(hostname), colorname(presscolor),
+				(timestr ? timestr : "<no timestamp data>"), pressname);
+			addtostatus(msgline);
+			sprintf(msgline, "\nPressure : %ld\n", presslevel);
+			addtostatus(msgline);
+			if (memswapused != -1) {
+				sprintf(msgline, "SwapUsedMB : %ld\nSwapTotalMB : %ld\n", memswapused, memswaptotal);
+				addtostatus(msgline);
+			}
+			if (fromline && !localmode) addtostatus(fromline);
+			finish_status();
+		}
 
 		p = strstr(meminfostr, "page size of");
 		if (p && (sscanf(p, "page size of %lu bytes", &pgsize) == 1)) pgsize /= 1024;
