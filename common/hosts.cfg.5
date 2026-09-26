@@ -723,18 +723,66 @@ strong encryption (128 bits or better), use "sslbits=128".
 
 .IP "\fBsni\fR"
 .IP "\fBnosni\fR"
-Enables or disables use of SNI (Server Name Indication) for SSL tests.
+Enable or disable SNI (Server Name Indication) for TLS tests that take
+their servername from this host's entry. The default is on; "nosni"
+turns it off for one host and "\-\-sni=off" for all of them, see
+.I xymonnet(1).
+No test takes its servername from the host entry at present, so these
+settings are currently without effect.
 
-Some SSL implementations cannot handle SSL handshakes with SNI
-data, so Xymon by default does not use SNI. This default can be
-changed with the "--sni" option for
-.I xymonnet(1)
-but can also be managed per host with these tags.
+They do not apply to \fBhttps\fR tests. Those send the host part of
+their URL, which is the name the server is being asked about and the
+right place for the choice: one host may carry several URLs with
+different names, which a per-host tag cannot express. An address
+written in the URL sends no servername, since RFC 6066 forbids one
+there.
 
-SNI support was added in Xymon 4.3.13, where the default was to
-use SNI. This was changed in 4.3.14 so SNI support is disabled by
-default, and the "sni" and "nosni" tags were introduced together
-with the "--sni" option for xymonnet.
+Before Xymon 4.3.31, "nosni" suppressed the servername on \fBhttps\fR
+tests as well, and with it the default was off. A server that holds a
+certificate per name answers a nameless handshake with its
+\fIdefault\fR certificate, so such a test reported \fBsslcert\fR for a
+certificate that was not the URL's \- labelled with the URL's name.
+The certificate actually serving the URL could expire with nothing
+said.
+
+A host written as
+
+.nf
+    10.0.0.5   www.example.com   # https://www.example.com/ nosni
+.fi
+
+did two things, and only one of them was asked for: it checked
+\fIwww.example.com\fR's content, and it reported the default virtual
+host's certificate under \fIwww.example.com\fR's name. Its equivalent
+is therefore two lines:
+
+.nf
+    10.0.0.5   www.example.com       # https://www.example.com/ nosslcert
+    10.0.0.5   default.example.com   # https://default.example.com/
+.fi
+
+The first keeps the \fBhttp\fR status exactly as it was \- the URL is
+requested, its response code and content are checked \- and
+\fBnosslcert\fR drops the \fBsslcert\fR status instead of letting it
+describe a certificate that is not this URL's.
+
+The second monitors the certificate the old line was in fact reporting
+on, under the name it belongs to: the test sends
+\fIdefault.example.com\fR, receives that host's certificate, and
+reports \fBsslcert\fR for \fIdefault.example.com\fR. A shorter form is
+to write the address, \fBhttps://10.0.0.5/\fR, which sends no
+servername and carries the same address in the "Host:" header, so both
+halves of the test describe whatever that endpoint serves by default.
+
+Leave the second line out if that certificate is not something you
+want watched \- but that is a decision to stop monitoring it, not a
+simplification. With "nosni" it was monitored whether or not you meant
+it.
+
+If the endpoint cannot accept a servername at all, it can no longer be
+tested as \fBhttps\fR: an address in the URL suppresses SNI but also
+sends "Host: \fIaddress\fR", which a name-based virtual host will not
+serve.
 
 
 .IP "\fBDOWNTIME\fR=\fIday\fR:\fIstarttime\fR:\fIendtime\fR[,\fIday\fR:\fIstarttime\fR:\fIendtime\fR]"
