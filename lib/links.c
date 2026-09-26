@@ -144,9 +144,21 @@ void load_all_links(void)
 		load_links(dirname, notesskin);
 	}
 
-	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
-	snprintf(dirname, sizeof(dirname), "%s", xgetenv("XYMONNOTESDIR"));
-	p = strrchr(dirname, '/'); *p = '\0'; strncat(dirname, "/help", (sizeof(dirname) - strlen(dirname) - 1));
+	/* The help links live in $XYMONSTATICWWWDIR/help when that variable is
+	   set: help ships with the static web content, so its location follows
+	   the static tree wherever a packaging puts it. Plain getenv() on
+	   purpose -- xgetenv() would errprintf when the variable is unset, and
+	   unset is the normal case: a build that does not set XYMONSTATICWWWDIR
+	   falls back to deriving help from XYMONNOTESDIR (.../notes -> .../help),
+	   exactly as before, so nothing changes for it. */
+	p = getenv("XYMONSTATICWWWDIR");
+	if (p && *p) {
+		snprintf(dirname, sizeof(dirname), "%s/help", p);
+	}
+	else {
+		snprintf(dirname, sizeof(dirname), "%s", xgetenv("XYMONNOTESDIR"));
+		p = strrchr(dirname, '/'); *p = '\0'; strncat(dirname, "/help", (sizeof(dirname) - strlen(dirname) - 1));
+	}
 	load_links(dirname, helpskin);
 
 	linksloaded = 1;
