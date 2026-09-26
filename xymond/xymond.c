@@ -5877,9 +5877,11 @@ int main(int argc, char *argv[])
 			listenip = strdup(p);
 			p = strchr(listenip, ':');
 			if (p) {
+				/* Split for good: putting the colon back left the port
+				   in listenip, so inet_aton() failed and the zeroed
+				   sin_addr bound every interface. */
 				*p = '\0';
 				listenport = atoi(p+1);
-				*p = ':';
 			}
 		}
 		else if (argnmatch(argv[argi], "--timeout=")) {
@@ -6111,7 +6113,12 @@ int main(int argc, char *argv[])
 	/* Set up a socket to listen for new connections */
 	errprintf("Setting up network listener on %s:%d\n", listenip, listenport);
 	memset(&laddr, 0, sizeof(laddr));
-	inet_aton(listenip, (struct in_addr *) &laddr.sin_addr.s_addr);
+	if (inet_aton(listenip, (struct in_addr *) &laddr.sin_addr.s_addr) == 0) {
+		/* Checked: an unnoticed failure left sin_addr zero, and the daemon
+		   listened on everything. */
+		errprintf("Cannot parse listen address '%s'\n", listenip);
+		return 1;
+	}
 	laddr.sin_port = htons(listenport);
 	laddr.sin_family = AF_INET;
 	lsocket = socket(AF_INET, SOCK_STREAM, 0);
