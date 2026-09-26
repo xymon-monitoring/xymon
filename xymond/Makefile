@@ -1,9 +1,13 @@
 XYMONLIB = ../lib/libxymon.a
-XYMONLIBS = $(XYMONLIB)
+XYMONLIBS = -lxymon $(PCRELIBS)
 XYMONCOMMLIB = ../lib/libxymoncomm.a
-XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCOMMLIBS = -lxymoncomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF) $(PCRELIBS)
 XYMONTIMELIB = ../lib/libxymontime.a
-XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+XYMONTIMELIBS = -lxymontime $(LIBRTDEF)
+XYMONCLIENTLIB = ../lib/libxymonclient.a
+XYMONCLIENTLIBS = -lxymonclient
+XYMONCLIENTCOMMLIB = ../lib/libxymonclientcomm.a
+XYMONCLIENTCOMMLIBS = -lxymonclientcomm $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
 PROGRAMS = xymon.sh xymond xymond_channel xymond_locator xymond_filestore xymond_history xymond_alert xymond_sample xymond_client xymond_hostdata xymond_capture xymond_distribute xymonfetch xymon-mailack trimhistory combostatus xymonreports.sh moverrd.sh convertnk rrdcachectl
 CLIENTPROGRAMS = ../client/xymond_client

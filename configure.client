@@ -91,6 +91,13 @@ else
 fi
 echo ""; echo ""
 
+if test "$SHARED" = "1"
+then
+        ENABLESHARED=yes
+else
+        ENABLESHARED=no
+fi
+
 MAKE="$MAKE -s" . ./build/clock-gettime-librt.sh
 echo ""; echo ""
 
@@ -192,6 +199,11 @@ echo "XYMONHOSTIP = $XYMONHOSTIP"        >>Makefile
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
 echo "LIBRTDEF = $LIBRTDEF"              >>Makefile
+echo ""					 >>Makefile
+echo "# Shared Library settings"         >>Makefile
+echo "ENABLESHARED = $ENABLESHARED"      >>Makefile
+echo ""                                  >>Makefile
+
 
 echo "" >>Makefile
 if test -r build/Makefile.`uname -s | tr '/' '_'`
@@ -214,6 +226,12 @@ fi
 echo "" >>Makefile
 if test "$INSTALLBINDIR" != ""; then
 	echo "INSTALLBINDIR = $INSTALLBINDIR"   >>Makefile
+fi
+if test "$INSTALLLIBDIR" != ""; then
+	echo "INSTALLLIBDIR = $INSTALLLIBDIR"   >>Makefile
+fi
+if test "$INSTALLINCDIR" != ""; then
+	echo "INSTALLINCDIR = $INSTALLINCDIR"   >>Makefile
 fi
 if test "$INSTALLETCDIR" != ""; then
 	echo "INSTALLETCDIR = $INSTALLETCDIR"   >>Makefile
