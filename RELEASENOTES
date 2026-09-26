@@ -68,6 +68,21 @@ a yellow-to-red change; FOR measures the age of the current colour and resets
 on any change -- FOR is what "page only if it stays red for N minutes" wants.
 At-least-only, single-colour rules; existing configurations are unaffected.
 
+Page filters
+------------
+
+The top-level page is now called "/" by every page filter: xymondboard page=,
+and the page filters of eventlog.cgi, notifications.cgi, acknowledgements.cgi
+and perfdata.cgi. Write page=^/$ to select it -- these filters are unanchored,
+so "/" alone also matches every nested page. page=^$, which used to select the
+top-level page, now matches nothing; update any filter or bookmark using it.
+
+PAGE= rules in analysis.cfg now apply only to hosts on the page they name. They
+used to apply to every host on the top-level page as well, so such a host could
+pick up another page's rules -- a PROC check for a process it does not run, for
+instance. Check that hosts on the top-level page still carry the rules you
+expect.
+
 Web
 ---
 
