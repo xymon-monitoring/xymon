@@ -526,10 +526,11 @@ page is \fBPAGE=servers/db\fR. Note that you can also use regular expressions
 to specify the page name, e.g. \fBPAGE=%.*/db\fR would find the "Database
 servers" page regardless of where this page was placed in the hierarchy.
 .PP
-The top-level page has a the fixed name \fB/\fR, e.g. \fBPAGE=/\fR would
-match all hosts on the Xymon frontpage. If you need it in a regular
-expression, use \fBPAGE=%^/\fR to avoid matching the forward-slash
-present in subpage-names.
+The top-level page has the fixed name \fB/\fR, so \fBPAGE=/\fR matches all hosts
+on the Xymon frontpage. A regular expression must be anchored at both ends,
+\fBPAGE=%^/$\fR, because other pagepaths can begin with a forward slash too: a
+\fBsubpage\fR declared before any \fBpage\fR line is built below the top-level
+page and is named \fB/\fIsubpagename\fR.
 
 .IP "\fBEXPAGE\fR=\fItargetstring\fR"
 Rule excluding a host if the pagename matches.

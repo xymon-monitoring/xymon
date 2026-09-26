@@ -327,7 +327,16 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   </dd>
   <dt id="page"><a class="permalink" href="#page"><b>page</b>=<i>PAGEPATH</i></a></dt>
   <dd>Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
-      file.</dd>
+      file. PAGEPATH is a regular expression, and it is not anchored:
+      <b>page=sub</b> also selects <b>subpage</b> and <b>other/sub</b>. Anchor
+      it to select one page, <b>page=^sub$</b>.
+    <p class="Pp">The top-level page has the fixed name <b>/</b>, so
+        <b>page=^/$</b> selects the hosts on the Xymon frontpage. Unanchored,
+        <b>page=/</b> selects them together with every page below another one,
+        since <b>/</b> separates the elements of a pagepath. Before Xymon named
+        that page, an empty pagepath reached the filter as an empty string and
+        <b>page=^$</b> selected those hosts; it no longer does.</p>
+  </dd>
   <dt id="net"><a class="permalink" href="#net"><b>net</b>=<i>NETWORK</i></a></dt>
   <dd>Include only tests from hosts with this NET: tag <b>ip=IP</b>Address
       Include only tests from hosts with this IP address. This is a regex, not

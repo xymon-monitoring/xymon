@@ -30,6 +30,7 @@ extern pcre2_code *compileregex_ext(const char *pattern, uint32_t flags, int *er
 extern pcre2_code *multilineregex(const char *pattern);
 extern int matchregex(const char *needle, pcre2_code *pcrecode);
 extern void freeregex(pcre2_code *pcrecode);
+extern char *pagepath_matchname(char *pagepath);
 extern int namematch(const char *needle, char *haystack, pcre2_code *pcrecode);
 extern int patternmatch(char *datatosearch, char *pattern, pcre2_code *pcrecode);
 extern pcre2_code **compile_exprs(char *id, const char **patterns, int count);

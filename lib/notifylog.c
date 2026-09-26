@@ -223,7 +223,9 @@ void do_notifylog(FILE *output,
 			pagename = xmh_item_multi(eventhost, XMH_PAGEPATH);
 			pagematch = 0;
 			while (!pagematch && pagename) {
-			pagematch = (pcre2_match(pageregexp, pagename, strlen(pagename), 0, 0,
+				char *matchname = pagepath_matchname(pagename);
+
+				pagematch = (pcre2_match(pageregexp, matchname, strlen(matchname), 0, 0,
 					ovector, NULL) >= 0);
 				pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
 			}
@@ -238,7 +240,9 @@ void do_notifylog(FILE *output,
 			pagename = xmh_item_multi(eventhost, XMH_PAGEPATH);
 			pagematch = 0;
 			while (!pagematch && pagename) {
-			pagematch = (pcre2_match(expageregexp, pagename, strlen(pagename), 0, 0,
+			char *matchname = pagepath_matchname(pagename);
+
+			pagematch = (pcre2_match(expageregexp, matchname, strlen(matchname), 0, 0,
 					ovector, NULL) >= 0);
 				pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
 			}

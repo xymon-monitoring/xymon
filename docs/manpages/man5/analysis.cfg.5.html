@@ -566,10 +566,12 @@ subpage db Database servers
     specify the page name, e.g. <b>PAGE=%.*/db</b> would find the &quot;Database
     servers&quot; page regardless of where this page was placed in the
     hierarchy.</p>
-<p class="Pp">The top-level page has a the fixed name <b>/</b>, e.g.
-    <b>PAGE=/</b> would match all hosts on the Xymon frontpage. If you need it
-    in a regular expression, use <b>PAGE=%^/</b> to avoid matching the
-    forward-slash present in subpage-names.</p>
+<p class="Pp">The top-level page has the fixed name <b>/</b>, so <b>PAGE=/</b>
+    matches all hosts on the Xymon frontpage. A regular expression must be
+    anchored at both ends, <b>PAGE=%^/$</b>, because other pagepaths can begin
+    with a forward slash too: a <b>subpage</b> declared before any <b>page</b>
+    line is built below the top-level page and is named
+    <b>/</b><i>subpagename</i>.</p>
 <p class="Pp"></p>
 <dl class="Bl-tag">
   <dt id="EXPAGE"><a class="permalink" href="#EXPAGE"><b>EXPAGE</b>=<i>targetstring</i></a></dt>

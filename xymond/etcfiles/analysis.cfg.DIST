@@ -370,6 +370,9 @@ CLASS=linux
 	INODE	%^/run/user/\d+$ IGNORE
 
 
+# Local additions: any file dropped into the directory below is included
+optional directory @XYMONHOME@/etc/analysis.d
+
 
 # The special DEFAULT section can modify the built-in defaults - this must
 # be placed at the end of the file. It should ONLY be used to modify the 
@@ -388,7 +391,3 @@ DEFAULT
 	MEMPHYS 100 101
 	MEMSWAP 50 80
 	MEMACT  90 97
-
-
-# Local additions: any file dropped into the directory below is included
-optional directory @XYMONHOME@/etc/analysis.d

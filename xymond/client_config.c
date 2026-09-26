@@ -349,7 +349,7 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	xtreePos_t handle;
 	c_rule_t *rwalk;
 	ruleset_t *head, *tail, *itm;
-	char *pagenamecopy, *pgtok;
+	char *pagenames;
 	int pgmatchres, pgexclres;
 
 	handle = xtreeFind(ruletree, hostname);
@@ -358,7 +358,19 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 		return (ruleset_t *)xtreeData(ruletree, handle);
 	}
 
-	pagenamecopy = strdup(pagename);
+	/*
+	 * The top-level page has no pagepath of its own - it is the empty string -
+	 * so the tokeniser below yields no token at all and the comparison never
+	 * happens: not a failed match, no match. That is what used to let every
+	 * PAGE= rule onto a front-page host, so the page needs a name before the
+	 * loop, not a verdict after it.
+	 *
+	 * "/" is the name analysis.cfg(5) gives it and the one criteriamatch()
+	 * matches it under in lib/loadalerts.c. XMH_ALLPAGEPATHS now emits it too,
+	 * so this covers what is left: the callers that pass XMH_PAGEPATH, and
+	 * localhostinfo(), which pins every host to the top page in local mode.
+	 */
+	pagenames = strdup((pagename && *pagename) ? pagename : "/");
 
 	/* We must build the list of rules for this host */
 	head = tail = NULL;
@@ -371,18 +383,41 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 		if (rwalk->dgexp && !namematch(hostname, rwalk->dgexp->pattern, rwalk->dgexp->exp)) continue;
 
 		pgmatchres = pgexclres = -1;
-		pgtok = strtok(pagenamecopy, ",");
-		while (pgtok) {
-			if (rwalk->pageexp && (pgmatchres != 1))
-				pgmatchres = (namematch(pgtok, rwalk->pageexp->pattern, rwalk->pageexp->exp) ? 1 : 0);
+		if (rwalk->pageexp || rwalk->expageexp) {
+			/*
+			 * Tokenise a copy that lives no longer than this rule: strtok()
+			 * writes NULs over the separators, so walking the shared list
+			 * would leave every rule after the first one seeing only the
+			 * first pagepath of a host that is on several pages.
+			 */
+			char *pgcopy = strdup(pagenames);
+			char *pgtok, *pgsave;
 
-			if (rwalk->expageexp && (pgexclres != 1))
-				pgexclres = (namematch(pgtok, rwalk->expageexp->pattern, rwalk->expageexp->exp) ? 1 : 0);
+			pgtok = strtok_r(pgcopy, ",", &pgsave);
+			while (pgtok) {
+				if (rwalk->pageexp && (pgmatchres != 1))
+					pgmatchres = (namematch(pgtok, rwalk->pageexp->pattern, rwalk->pageexp->exp) ? 1 : 0);
 
-			pgtok = strtok(NULL, ",");
+				if (rwalk->expageexp && (pgexclres != 1))
+					pgexclres = (namematch(pgtok, rwalk->expageexp->pattern, rwalk->expageexp->exp) ? 1 : 0);
+
+				pgtok = strtok_r(NULL, ",", &pgsave);
+			}
+			xfree(pgcopy);
 		}
 		if (pgexclres == 1) continue;
-		if (pgmatchres == 0) continue;
+		/*
+		 * A PAGE= rule has to find its page. Testing for a failed match instead
+		 * let every state that is not a failure through, including "not compared
+		 * at all" - which is how a front-page host used to collect every
+		 * PAGE=-qualified rule in the file.
+		 *
+		 * Now that the page always has a name the list is never empty, so
+		 * pgmatchres is always 0 or 1 here and this is the same test as before.
+		 * Keep it in this form anyway: it is the half that does not depend on
+		 * every caller remembering to name the page, and no test can reach it.
+		 */
+		if (rwalk->pageexp && (pgmatchres != 1)) continue;
 
 		/* All criteria match - add this rule to the list of rules for this host */
 		itm = (ruleset_t *)calloc(1, sizeof(ruleset_t));
@@ -400,7 +435,7 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	/* Add the list to the tree */
 	xtreeAdd(ruletree, strdup(hostname), head);
 
-	xfree(pagenamecopy);
+	xfree(pagenames);
 
 	return head;
 }

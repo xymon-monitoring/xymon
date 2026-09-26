@@ -3469,7 +3469,7 @@ int match_host_filter(void *hinfo, hostfilter_rec_t *filter, int matchontests, c
 			matched = 0;
 			val = xmh_item_multi(hinfo, XMH_PAGEPATH);
 			while (val && !matched) {
-				matched = matchregex(val, fwalk->wantedptn);
+				matched = matchregex(pagepath_matchname(val), fwalk->wantedptn);
 				val = xmh_item_multi(NULL, XMH_PAGEPATH);
 			}
 			break;
