@@ -53,8 +53,6 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(nam, "hpux") == 0)        result = OS_HPUX;
 	else if (strcasecmp(nam, "hp-ux") == 0)       result = OS_HPUX;
 	else if (strcasecmp(nam, "aix") == 0)         result = OS_AIX;
-	else if (strcasecmp(nam, "osf") == 0)         result = OS_OSF;
-	else if (strcasecmp(nam, "osf1") == 0)        result = OS_OSF;
 	else if (strcasecmp(nam, "win32") == 0)       result = OS_WIN32;
 	else if (strcasecmp(nam, "hmdc") == 0)        result = OS_WIN32_HMDC;
 	else if (strcasecmp(nam, "bbwin") == 0)       result = OS_WIN32_BBWIN;
@@ -74,18 +72,14 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(nam, "rhel3") == 0)       result = OS_RHEL3;
 	else if (strcasecmp(nam, "snmp") == 0)        result = OS_SNMP;
 	else if (strcasecmp(nam, "snmpnetstat") == 0) result = OS_SNMP;
-	else if (strncasecmp(nam, "irix", 4) == 0)    result = OS_IRIX;
 	else if (strcasecmp(nam, "macosx") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(nam, "darwin") == 0)      result = OS_DARWIN;
-	else if (strcasecmp(nam, "sco_sv") == 0)      result = OS_SCO_SV;
-	else if (strcasecmp(nam, "unixware") == 0)    result = OS_SCO_SV;
 	else if (strcasecmp(nam, "netware_snmp") == 0) result = OS_NETWARE_SNMP;
 	else if (strcasecmp(nam, "zvm") == 0)         result = OS_ZVM;
 	else if (strcasecmp(nam, "zvse") == 0)        result = OS_ZVSE;
 	else if (strcasecmp(nam, "zos") == 0)         result = OS_ZOS;
 	else if (strcasecmp(nam, "snmpcollect") == 0) result = OS_SNMPCOLLECT;
 	else if (strcasecmp(nam, "mqcollect") == 0)    result = OS_MQCOLLECT;
-	else if (strcasecmp(nam, "gnu/kfreebsd") == 0) result = OS_GNUKFREEBSD;
 
 	if (result == OS_UNKNOWN) dbgprintf("Unknown OS: '%s'\n", osname);
 
@@ -99,7 +93,6 @@ char *osname(enum ostype_t os)
 		case OS_SOLARIS: return "solaris";
 		case OS_HPUX: return "hpux";
 		case OS_AIX: return "aix";
-		case OS_OSF: return "osf";
 		case OS_WIN32: return "win32";
 		case OS_WIN32_HMDC: return "hmdc";
 		case OS_WIN32_BBWIN: return "bbwin";
@@ -111,16 +104,13 @@ char *osname(enum ostype_t os)
 		case OS_LINUX: return "linux";
 		case OS_RHEL3: return "rhel3";
 		case OS_SNMP: return "snmp";
-		case OS_IRIX: return "irix";
 		case OS_DARWIN: return "darwin";
-	        case OS_SCO_SV: return "sco_sv";
 	        case OS_NETWARE_SNMP: return "netware_snmp";
 		case OS_ZVM: return "zvm";
 		case OS_ZVSE: return "zvse";
 		case OS_ZOS: return "zos";
 		case OS_SNMPCOLLECT: return "snmpcollect";
 		case OS_MQCOLLECT: return "mqcollect";
-		case OS_GNUKFREEBSD: return "gnu/kfreebsd";
 		case OS_UNKNOWN: return "unknown";
 	}
 
