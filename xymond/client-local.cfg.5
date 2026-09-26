@@ -52,6 +52,36 @@ then supplement them with class- or os-generic entries. Note that the
 merging does not remove entries, so if you have e.g. a "log" entry defined
 in both a hostname- and an osname-matching section, then both entries
 will be sent back to the client.
+.PP
+The difference matters more than it first appears. Suppose the shipped
+.I [linux]
+section collects
+.I /var/log/messages
+and you want one extra logfile on the host "luv":
+.sp
+.nf
+\    [luv]
+\    log:/var/log/myapp.log:10240
+.fi
+.sp
+By default "luv" now collects
+.B only
+.IR /var/log/myapp.log :
+its own section is chosen and the
+.I [linux]
+one is not. To keep both you must copy the contents of
+.I [linux]
+into
+.IR [luv] ,
+and that copy goes stale the day the shipped section changes. With merging,
+"luv" collects both and nothing is duplicated.
+.PP
+The cost is the other direction: merging cannot take anything away. If
+.I [linux]
+collects something you do
+.B not
+want on one host, only the default mode can exclude it \- by writing a
+section for that host which omits it.
 
 
 .SH FILE FORMAT
@@ -59,11 +89,14 @@ The file is divided into sections, delimited by "[name]" lines.
 A section name can be either an operating system identifier -
 linux, solaris, hp-ux, aix, freebsd, openbsd, netbsd, darwin -
 a class, or a hostname. When deciding which section to send to a client,
-Xymon will first look for a section named after the hostname of
-the client; if such a section does not exist, it will look for
-a section named by the operating system of the client. So you
-can configure special configurations for individual hosts, and have
-a default configuration for all other hosts of a certain type.
+Xymon looks for a hostname match first, then a class match, then an
+operating system match, and uses the first of those that exists. So you
+can configure special configurations for individual hosts, a configuration
+for a group of hosts sharing a class, and a default configuration for all
+other hosts of a certain type.
+.PP
+The order is by kind, not by position: a class section outranks an operating
+system section wherever either appears in the file.
 
 It will often be practical to use regular expressions for hostnames.
 To do this you must use
@@ -170,6 +203,41 @@ The "du" command used can be configured through the \fBDU\fR environment
 variable in the xymonclient.cfg file if needed. If not specified, \fBdu \-k\fR
 is used, as on some systems by default \fBdu\fR reports data in disk blocks
 instead of KB (e.g. Solaris).
+
+.SH "LOCAL ADDITIONS"
+Any file dropped into the
+.I client\-local.d
+directory beside this file is included, so local configuration can live in a
+file of its own and the shipped
+.I client\-local.cfg
+keeps being upgraded.
+
+Because sections are chosen by kind before position, a
+.B [host=...]
+or
+.B [class=...]
+section in such a file takes precedence over the operating system sections
+shipped here, wherever the include sits.
+
+One case does not work: an
+.B [os=...]
+section in an added file cannot override a shipped section for the same
+operating system, since both are operating system matches and the first one
+found wins. Give the hosts a class in
+.I hosts.cfg
+and use
+.B [class=...]
+instead \- that outranks the operating system section, and is the supported
+way to change what a group of hosts collects.
+.PP
+All of the above describes the default behaviour, where one section is chosen.
+Under
+.B \-\-merge\-clientlocal
+every matching section is concatenated instead, so an
+.B [os=...]
+section in an added file does contribute \- it supplements the shipped section
+rather than replacing it. Note that merging never removes entries, so an entry
+defined in both is sent twice.
 
 .SH NOTES
 The ability of the Xymon client to calculate file hashes and monitor those
