@@ -25,14 +25,22 @@ work=$(mktempdir)
 # non-vacuity probe below is what keeps the rules honest instead.
 # Every shell script under tests/, not just the *.sh ones: the runner itself
 # carries no extension, and it is the file that has to run on every platform.
-files=$(
-	find "$ROOT/tests" -type f \( -name '*.sh' -o -perm -100 \) ! -name "$(basename "$0")" |
+# A `case` inside $(...) trips the bash 3.2 command-substitution parser -- the
+# very shell this suite pins as the floor (macOS ships 3.2), where the `)` of a
+# case pattern is mistaken for the end of the substitution. Keep the filter in a
+# function the substitution only calls, so no case is parsed inside $(...).
+_emit_shell_scripts() {
+	local f
 	while IFS= read -r f; do
 		case $f in
 			*.sh) printf '%s\n' "$f" ;;
 			*) head -n 1 "$f" 2>/dev/null | grep -q '^#!.*sh' && printf '%s\n' "$f" ;;
 		esac
-	done | sort -u
+	done
+}
+files=$(
+	find "$ROOT/tests" -type f \( -name '*.sh' -o -perm -100 \) ! -name "$(basename "$0")" |
+	_emit_shell_scripts | sort -u
 )
 [ -n "$files" ] || fail "found no test scripts to check"
 
