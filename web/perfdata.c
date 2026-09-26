@@ -112,7 +112,6 @@ int oneset(char *hostname, char *rrdname, char *starttime, char *endtime, char *
 	rrdargs[6] = "-e"; rrdargs[7] = endtimedate; rrdargs[8] = endtimehm;
 	rrdargs[9] = NULL;
 
-	optind = opterr = 0; rrd_clear_error();
 	result = xymon_rrd_fetch(9, rrdargs, &start, &end, &step, &dscount, &dsnames, &data);
 
 	if (result != 0) {
