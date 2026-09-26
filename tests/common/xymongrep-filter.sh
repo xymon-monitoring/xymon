@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/xymongrep-filter.sh
+# tests/common/xymongrep-filter.sh
 #
 # Behavioural test of the BUILT xymongrep binary: hosts.cfg tag selection.
 #
