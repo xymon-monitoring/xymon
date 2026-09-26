@@ -5808,19 +5808,99 @@ void sig_handler(int signum)
 }
 
 
+/*
+ * One listener per configured address: a server wants a chosen interface AND a
+ * loopback, so its own client keeps reporting when the interface goes away.
+ * Accepted connections live in connhead with their own fds, independent of
+ * these.
+ */
+typedef struct xymond_listener_t {
+	int fd;
+	struct in_addr addr;
+	int port;
+} xymond_listener_t;
+
+static xymond_listener_t *listeners = NULL;
+static int listener_count = 0;
+
+/* True when a listener already accepts on 127.0.0.0/8 -- the wildcard, or a
+   loopback address named outright. A second socket over either is redundant,
+   and refused outright on Linux. */
+static int listeners_cover_loopback(void)
+{
+	int i;
+	unsigned long a;
+
+	for (i = 0; i < listener_count; i++) {
+		a = ntohl(listeners[i].addr.s_addr);
+		if ((a == INADDR_ANY) || ((a >> 24) == 127)) return 1;
+	}
+
+	return 0;
+}
+
+/* Bind and listen on one address. Returns 0, or -1 with the reason logged. */
+static int add_listener(struct in_addr addr, int port, int listenq)
+{
+	struct sockaddr_in laddr;
+	xymond_listener_t *grown;
+	int fd, opt = 1;
+
+	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd == -1) {
+		errprintf("Cannot create listen socket (%s)\n", strerror(errno));
+		return -1;
+	}
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	fcntl(fd, F_SETFL, O_NONBLOCK);
+
+	memset(&laddr, 0, sizeof(laddr));
+	laddr.sin_family = AF_INET;
+	laddr.sin_addr = addr;
+	laddr.sin_port = htons(port);
+
+	if (bind(fd, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
+		/* "listen socket" kept: callers and people grep for it. */
+		errprintf("Cannot bind to listen socket %s:%d (%s)\n", inet_ntoa(addr), port, strerror(errno));
+		close(fd);
+		return -1;
+	}
+	if (listen(fd, listenq) == -1) {
+		errprintf("Cannot listen on %s:%d (%s)\n", inet_ntoa(addr), port, strerror(errno));
+		close(fd);
+		return -1;
+	}
+
+	grown = (xymond_listener_t *)realloc(listeners, (listener_count + 1) * sizeof(xymond_listener_t));
+	if (grown == NULL) {
+		errprintf("Out of memory adding a listener\n");
+		close(fd);
+		return -1;
+	}
+	listeners = grown;
+	listeners[listener_count].fd = fd;
+	listeners[listener_count].addr = addr;
+	listeners[listener_count].port = port;
+	listener_count++;
+
+	errprintf("Listening on %s:%d\n", inet_ntoa(addr), port);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	conn_t *connhead = NULL, *conntail=NULL;
-	char *listenip = "0.0.0.0";
-	int listenport = 0;
+	char *listenspec = "0.0.0.0";	/* comma-separated IP[:PORT] list */
+	int listenport = 0;		/* the default port for entries without one */
+	int want_loopback = 1;		/* keep a loopback listener unless told not to */
 	char *hostsfn = NULL;
 	char *restartfn = NULL;
 	char *logfn = NULL;
 	int checkpointinterval = 900;
 	int do_purples = 1;
 	time_t nextpurpleupdate;
-	struct sockaddr_in laddr;
-	int lsocket, opt;
+	int lidx, accept_next = 0;
 	int listenq = 512;
 	int argi;
 	struct timeval tv;
@@ -5872,15 +5952,13 @@ int main(int argc, char *argv[])
 			debug = 1;
 		}
 		else if (argnmatch(argv[argi], "--listen=")) {
-			char *p = strchr(argv[argi], '=') + 1;
-
-			listenip = strdup(p);
-			p = strchr(listenip, ':');
-			if (p) {
-				*p = '\0';
-				listenport = atoi(p+1);
-				*p = ':';
-			}
+			/* Kept whole: one or more IP[:PORT], comma separated. Split
+			   below, once the default port is known, so that an entry
+			   without a port can inherit it. */
+			listenspec = strdup(strchr(argv[argi], '=') + 1);
+		}
+		else if (strcmp(argv[argi], "--no-loopback") == 0) {
+			want_loopback = 0;
 		}
 		else if (argnmatch(argv[argi], "--timeout=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -6108,26 +6186,48 @@ int main(int argc, char *argv[])
 	last_stats_time = getcurrenttime(NULL);	/* delay sending of the first status report until we're fully running */
 
 
-	/* Set up a socket to listen for new connections */
-	errprintf("Setting up network listener on %s:%d\n", listenip, listenport);
-	memset(&laddr, 0, sizeof(laddr));
-	inet_aton(listenip, (struct in_addr *) &laddr.sin_addr.s_addr);
-	laddr.sin_port = htons(listenport);
-	laddr.sin_family = AF_INET;
-	lsocket = socket(AF_INET, SOCK_STREAM, 0);
-	if (lsocket == -1) {
-		errprintf("Cannot create listen socket (%s)\n", strerror(errno));
-		return 1;
+	/* Set up the listening sockets, one per address in --listen. */
+	{
+		char *spec = strdup(listenspec);
+		char *entry, *saveptr = NULL;
+
+		for (entry = strtok_r(spec, ",", &saveptr); entry; entry = strtok_r(NULL, ",", &saveptr)) {
+			struct in_addr addr;
+			int port = listenport;
+			char *colon;
+
+			while ((*entry == ' ') || (*entry == '\t')) entry++;
+			colon = strchr(entry, ':');
+			if (colon) { *colon = '\0'; port = atoi(colon+1); }
+
+			/* Checked: an unnoticed failure left sin_addr zero, and the
+			   daemon listened on everything. */
+			if (inet_aton(entry, &addr) == 0) {
+				errprintf("Cannot parse listen address '%s' (expected IP[:PORT])\n", entry);
+				xfree(spec);
+				return 1;
+			}
+			if (add_listener(addr, port, listenq) != 0) { xfree(spec); return 1; }
+		}
+		xfree(spec);
 	}
-	opt = 1;
-	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-	fcntl(lsocket, F_SETFL, O_NONBLOCK);
-	if (bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
-		errprintf("Cannot bind to listen socket (%s)\n", strerror(errno));
-		return 1;
+
+	/* Keep a loopback listener so the server's own client still reaches us.
+	   On the first address's port, not the compiled default -- a client on
+	   loopback wants the same service. Best-effort, unlike an address that was
+	   actually asked for: failing to start over an extra we added ourselves
+	   would be the worse failure. Logged either way. */
+	if (want_loopback && !listeners_cover_loopback()) {
+		struct in_addr lo;
+		int loport = (listener_count > 0) ? listeners[0].port : listenport;
+
+		lo.s_addr = htonl(INADDR_LOOPBACK);
+		if (add_listener(lo, loport, listenq) != 0)
+			errprintf("Continuing without a loopback listener; the client on this host must use a configured address\n");
 	}
-	if (listen(lsocket, listenq) == -1) {
-		errprintf("Cannot listen (%s)\n", strerror(errno));
+
+	if (listener_count == 0) {
+		errprintf("No listening address configured\n");
 		return 1;
 	}
 
@@ -6384,7 +6484,11 @@ int main(int argc, char *argv[])
 		 * and setup the select() FD sets.
 		 */
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
-		FD_SET(lsocket, &fdread); maxfd = lsocket;
+		maxfd = -1;
+		for (lidx = 0; lidx < listener_count; lidx++) {
+			FD_SET(listeners[lidx].fd, &fdread);
+			if (listeners[lidx].fd > maxfd) maxfd = listeners[lidx].fd;
+		}
 
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
@@ -6591,15 +6695,21 @@ int main(int argc, char *argv[])
 			dbgprintf("conn_t cleanup complete\n");
 		}
 
-		/* Pick up new connections */
-		if (FD_ISSET(lsocket, &fdread)) {
+		/* Take new connections from whichever listener is ready, resuming
+		   where the last scan stopped so a busy address cannot starve the
+		   others. */
+		for (lidx = 0; lidx < listener_count; lidx++) {
 			struct sockaddr_in addr;
 			int addrsz = sizeof(addr);
 			int sock;
+			int li = (accept_next + lidx) % listener_count;
+
+			if (!FD_ISSET(listeners[li].fd, &fdread)) continue;
 
 			dbgprintf("Picking up new connections\n");
 
-			sock = accept(lsocket, (struct sockaddr *)&addr, &addrsz);
+			accept_next = (li + 1) % listener_count;
+			sock = accept(listeners[li].fd, (struct sockaddr *)&addr, &addrsz);
 
 			if (sock >= 0) {
 				/* Make sure our sockets are non-blocking */

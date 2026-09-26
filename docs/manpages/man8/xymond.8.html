@@ -97,10 +97,28 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
       entries together into one and return all of it to the client.
     <p class="Pp"></p>
   </dd>
-  <dt id="listen"><a class="permalink" href="#listen"><b>--listen</b>=<i>IP</i>[:<i>PORT</i>]</a></dt>
+  <dt id="listen"><a class="permalink" href="#listen"><b>--listen</b>=<i>IP</i>[:<i>PORT</i>][,<i>IP</i>[:<i>PORT</i>]...]</a></dt>
   <dd>Specifies the IP-address and port where xymond will listen for incoming
       connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
       addresses available on the host) and port 1984.
+    <br/>
+    More than one address may be given, separated by commas, and each is bound
+      separately &#x2014; so a server can answer on a chosen interface and on
+      the loopback at the same time. An entry with no port uses the default
+      port.
+    <br/>
+    Unless <b>--no-loopback</b> is given, xymond also listens on 127.0.0.1, on
+      the port of the first address, whenever the addresses named do not already
+      cover the loopback. This is so the client running on the Xymon server
+      itself keeps reporting when a physical interface goes away. It is best
+      effort: if that extra socket cannot be bound, xymond says so and carries
+      on with the addresses it was asked for.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-loopback"><a class="permalink" href="#no-loopback"><b>--no-loopback</b></a></dt>
+  <dd>Do not add the automatic 127.0.0.1 listener described under
+      <b>--listen</b>. Use this when xymond must answer on the addresses named
+      and nowhere else.
     <p class="Pp"></p>
   </dd>
   <dt id="lqueue"><a class="permalink" href="#lqueue"><b>--lqueue</b>=<i>NUMBER</i></a></dt>
