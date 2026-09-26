@@ -167,6 +167,11 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Keep environment CFLAGS and thread LDFLAGS through every link (#163) (Thanks, Roland Rosenfeld)
 * Make the test suite clean up after itself, and check that it did (#445) (Thanks, Roland Rosenfeld)
 * Add xymongrep --no-dialup, which excludes hosts declared dialup (#94) (Thanks, Frank Lee)
+* Stop xymond_rrd overflowing its socket path on a long XYMONTMP (#237) (Thanks, Markus Häll)
+* Put DEFAULT back at the end of analysis.cfg, after analysis.d (#538) (Thanks, Roland Rosenfeld)
+* Let an rrddefinitions.d fragment override a shipped definition (#542) (Thanks, Roland Rosenfeld)
+* Stop analysis.cfg PAGE= rules matching every host on the top page (#527) (Thanks, Mark Felder)
+* Name the top-level page / in every page= filter, not the empty string (#533) (Thanks, Mark Felder)
 
 
 
