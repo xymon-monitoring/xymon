@@ -454,21 +454,16 @@ echo "HTTPDGID=$HTTPDGID"                >>Makefile
 echo ""                                  >>Makefile
 
 echo "# C-ARES settings"                 >>Makefile
-if test "$CARESOK" = "YES"
-then
-    echo "SYSTEMCARES = yes"             >>Makefile
-
-    if test "$CARESINC" != ""; then
-	echo "CARESINCDIR = -I$CARESINC" >>Makefile
-    fi
-    if test "$CARESLIB" != ""; then
-	echo "CARESLIBS = -L$CARESLIB -lcares" >>Makefile
-	echo "RPATHVAL += ${CARESLIB}"        >>Makefile
-    else
-	echo "CARESLIBS = -lcares"       >>Makefile
-    fi
+# build/c-ares.sh aborts configure unless system c-ares is usable, so we
+# always emit the system library flags here.
+if test "$CARESINC" != ""; then
+    echo "CARESINCDIR = -I$CARESINC"     >>Makefile
+fi
+if test "$CARESLIB" != ""; then
+    echo "CARESLIBS = -L$CARESLIB -lcares" >>Makefile
+    echo "RPATHVAL += ${CARESLIB}"       >>Makefile
 else
-    echo "SYSTEMCARES = no"              >>Makefile
+    echo "CARESLIBS = -lcares"           >>Makefile
 fi
 echo ""                                  >>Makefile
 
