@@ -428,6 +428,22 @@ int main(int argc, char *argv[])
 
 	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
+	/*
+	 * A host list that is short is worse here than one that is missing: it
+	 * looks entirely normal. "include" says the file is expected to be there
+	 * and "optional include" says it need not be, so a non-optional include
+	 * that would not open leaves us holding a configuration the admin did not
+	 * write - and every host it carried now looks like a host that was
+	 * removed. Deleting on that answer is the loss #512 is about; rendering
+	 * on it is merely incomplete, which is why only this caller asks.
+	 */
+	if ((dropfiles || droplogs) && stackfmissing()) {
+		errprintf("%s is incomplete - %d include(s) could not be read, "
+			  "so hosts are missing from the list. Not dropping anything.\n",
+			  xgetenv("HOSTSCFG"), stackfmissing());
+		return 1;
+	}
+
 	/* First scan the directory for all files, and pick up the ones we want to process */
 	while ((hent = readdir(histdir)) != NULL) {
 		char *hostname = NULL;
