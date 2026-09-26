@@ -25,6 +25,8 @@ do
      --ldaplib DIRECTORY      : Specify location of OpenLDAP libraries
      --caresinclude DIRECTORY : Specify location of C-ARES include files
      --careslib DIRECTORY     : Specify location of C-ARES libraries
+     --snmpinclude DIRECTORY  : Specify location of Net-SNMP include files
+     --snmplib DIRECTORY      : Specify location of Net-SNMP libraries
      --fping FILENAME         : Specify location of the Fping program
 
   The script will search a number of standard directories for
@@ -65,6 +67,12 @@ EOF
 		;;
 	  "--careslib")
 	  	USERCARESLIB="$1"; shift
+		;;
+	  "--snmpinclude")
+	  	USERSNMPINC="$1"; shift
+		;;
+	  "--snmplib")
+	  	USERSNMPLIB="$1"; shift
 		;;
 	  "--fping")
 	  	USERFPING="$1"; shift
@@ -181,13 +189,31 @@ echo ""; echo "";
 . build/clock-gettime-librt.sh
 echo ""; echo ""
 
-if test "$SNMP" = "1"
+# Backward compatibility: the old opt-in mechanism was SNMP=1.
+if test "$SNMP" = "1"; then ENABLESNMP="y"; fi
+. build/snmp.sh
+if test "$SNMPOK" = "NO"
 then
-	. build/snmp.sh
-	echo ""; echo ""
-else
+	ENABLESNMP="n"
 	DOSNMP=no
+else
+	echo "Xymon can use the Net-SNMP library for the xymon-snmpcollect tool."
+	echo "This SNMP support is EXPERIMENTAL and is disabled by default."
+	echo "Do you want to enable SNMP support (n) ?"
+	if test "$ENABLESNMP" = ""
+	then
+		read ENABLESNMP
+	fi
+	if test "$ENABLESNMP" = "y"
+	then
+		ENABLESNMP="y"
+		DOSNMP=yes
+	else
+		ENABLESNMP="n"
+		DOSNMP=no
+	fi
 fi
+echo ""; echo ""
 
 MAKE="$MAKE -s" ./build/lfs.sh
 if test $? -eq 0; then
@@ -539,6 +565,11 @@ echo "# clock_gettime() settings"        >>Makefile
 echo "LIBRTDEF = $LIBRTDEF"              >>Makefile
 echo ""                                  >>Makefile
 echo "# Net-SNMP settings"               >>Makefile
+if test "$ENABLESNMP" = "y"
+then
+    echo "SNMPINCDIR = $SNMPINCDIR"      >>Makefile
+    echo "SNMPLIBS = $SNMPLIBS"          >>Makefile
+fi
 echo "DOSNMP = $DOSNMP"                  >>Makefile
 echo ""                                  >>Makefile
 
