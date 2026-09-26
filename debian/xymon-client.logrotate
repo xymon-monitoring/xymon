@@ -10,7 +10,7 @@
         nocreate
         sharedscripts
         postrotate
-                /etc/init.d/xymon rotate
+                /etc/init.d/xymon-client rotate
         endscript
 }
 

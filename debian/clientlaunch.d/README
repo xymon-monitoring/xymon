@@ -1,0 +1,9 @@
+In this directory, xymon client extensions can/will place their
+configuration files.
+
+Manually added configuration files may not be handled automatically on
+package upgrades.
+
+Files in this directory must have .cfg extension and will be
+merged into /run/xymon/clientlaunch-include.cfg upon xymon-client
+start.

@@ -1,0 +1,79 @@
+# Italian (it) translation of debconf templates for xymon
+# Copyright (C) 2007 Software in the Public Interest
+# This file is distributed under the same license as the xymon package.
+# Luca Monducci <luca.mo@tiscali.it>, 2007-2025
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: xymon debconf templates\n"
+"Report-Msgid-Bugs-To: xymon@packages.debian.org\n"
+"POT-Creation-Date: 2026-06-06 15:13+0200\n"
+"PO-Revision-Date: 2025-08-23 16:43+0200\n"
+"Last-Translator: Luca Monducci <luca.mo@tiscali.it>\n"
+"Language-Team: Italian <debian-l10n-italian@lists.debian.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid "Xymon server:"
+msgstr "Server Xymon:"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid ""
+"Please enter the network address used to access the Xymon server(s). If you "
+"use multiple servers, use a space-separated list of addresses."
+msgstr ""
+"Inserire l'indirizzo di rete da usare per accedere al server Xymon. Se si "
+"utilizzano più server, inserire l'elenco degli indirizzi usando uno spazio "
+"come separatore."
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid ""
+"Using host names instead of IP addresses is discouraged in case the network "
+"experiences DNS failures."
+msgstr ""
+"L'uso dei nomi host al posto degli indirizzi IP è sconsigliato nel caso si "
+"verifichino dei problemi con il DNS."
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:2001
+msgid "Client hostname:"
+msgstr "Nome host del client:"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:2001
+msgid ""
+"Please enter the host name used by the Xymon client when sending reports to "
+"the Xymon server. This name must match the name used in the hosts.cfg file "
+"on the Xymon server."
+msgstr ""
+"Inserire il nome host che il client Xymon deve usare per l'invio dei report "
+"al server Xymon. Questo nome deve coincidere con il nome utilizzato nel file "
+"hosts.cfg sul server Xymon."
+
+#~ msgid "Automatically migrate old hobbit files to xymon?"
+#~ msgstr "Migrare automaticamente i vecchi file hobbit su xymon?"
+
+#~ msgid ""
+#~ "The operating system user was renamed from \"hobbit\" to \"xymon\", and "
+#~ "all configuration, state, log directories and files have been renamed as "
+#~ "well. The package postinst scripts can do the migration automatically. "
+#~ "This is usually a good idea, but might not work so well if your config "
+#~ "differs substantially from the default."
+#~ msgstr ""
+#~ "L'utente del sistema operativo è stato rinominato da \"hobbit\" a "
+#~ "\"xymon\" e anche tutte le directory e i file di configurazione, stato e "
+#~ "log sono stati rinominati. Gli script postinst del pacchetto possono "
+#~ "eseguire la migrazione automaticamente. Di solito è una buona idea, ma "
+#~ "potrebbe non funzionare bene se la configurazione differisce in modo "
+#~ "sostanziale da quella predefinita."
