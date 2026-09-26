@@ -141,6 +141,22 @@ ifndef PKGBUILD
 endif
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
 
+# The debug tools "all" builds (contest) are otherwise discarded: nothing
+# installs them, exactly like lib/'s diagnostics. Reached from the top-level
+# "make install-tools"; deliberately not part of "install".
+install-tools: $(DBGTOOLS)
+	@mkdir -p $(INSTALLROOT)$(INSTALLBINDIR)
+	for f in $(DBGTOOLS); do \
+		cp -fp $$f $(INSTALLROOT)$(INSTALLBINDIR)/ || exit 1; \
+		chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+	done
+ifndef PKGBUILD
+	for f in $(DBGTOOLS); do \
+		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+	done
+endif
+
 install-config:
 	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 	../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg

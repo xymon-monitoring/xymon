@@ -117,5 +117,33 @@ locator: locator.c $(XYMONCOMMLIB) $(XYMONLIB)
 tree: tree.c
 	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ tree.c
 
+# The diagnostic programs built by "all" are otherwise discarded with the
+# build tree: nothing installs them, so anyone who wants stackio to check
+# how a config file parses, or loadhosts to see what hosts.cfg resolves
+# to, has to keep a build tree around or copy them out by hand. Every
+# packaging does the latter.
+#
+# Deliberately not part of "install": these are diagnostics, and adding
+# five binaries to what every installation gets is a decision for whoever
+# runs the install, not a side effect of this change. Packagers and
+# anyone who wants them can ask:
+#
+#	make install-tools
+#
+LIBTOOLS = loadhosts stackio availability locator tree
+
+install-tools: $(LIBTOOLS)
+	@mkdir -p $(INSTALLROOT)$(INSTALLBINDIR)
+	for f in $(LIBTOOLS); do \
+		cp -fp $$f $(INSTALLROOT)$(INSTALLBINDIR)/ || exit 1; \
+		chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+	done
+ifndef PKGBUILD
+	for f in $(LIBTOOLS); do \
+		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+	done
+endif
+
 clean:
 	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator tree
