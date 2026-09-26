@@ -1,0 +1,5 @@
+# nntp-gmane  news.gmane.io (116.202.254.214) port 119  mode=plain
+# recorded 2026-08-31T13:30:39.548485Z
+S: 200 news.gmane.io InterNetNews NNRP server INN 2.6.3 ready (posting ok)
+C: quit
+S: 205 Bye!

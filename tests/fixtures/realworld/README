@@ -1,0 +1,20 @@
+Peer scripts transcribed from real servers on the public internet.
+
+Each file is a dialogue-peer(1) script replaying, verbatim, what a public
+server actually answered when the shipped protocols.cfg entry of the same
+name spoke to it. Recorded 2026-08-31; the host and port are in each
+header. They exist so the shipped entries are checked against the wording
+real servers use -- multi-line 250s, tagged IMAP replies, the exact
+closing codes -- and not only against what a test author imagined.
+
+The client's own IP, which several servers echo back, is replaced by
+203.0.113.1 (RFC 5737 TEST-NET-3). Session identifiers are left as
+recorded; they are random per connection and mean nothing here.
+
+Re-record with record.py in this directory; it speaks each entry and writes
+the transcript beside it.
+
+record.py speaks the line-oriented protocols and decodes what comes back as
+text, which is right for all of these but telnet: that one negotiates in
+IAC byte sequences, so its transcript was captured raw and is rendered with
+the negotiation decoded and every other non-printable byte as \xNN.

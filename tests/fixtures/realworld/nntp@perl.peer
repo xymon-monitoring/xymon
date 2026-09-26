@@ -1,0 +1,6 @@
+# nntp.perl.org:119 (colobus 3.0) -- drives [nntp]. A different server and a
+# different 205 wording; the entry matches the code, not the text.
+send "200 nntp.perl.org - colobus 3.0 (3.1-5-g8583df1) ready - (posting ok).\r\n"
+recv quit
+send "205 closing connection - goodbye!\r\n"
+hangup

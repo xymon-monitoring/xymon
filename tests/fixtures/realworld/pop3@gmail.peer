@@ -1,0 +1,5 @@
+# pop.gmail.com:995 (conversation is identical on 110) -- drives [pop3]
+send "+OK Gpop ready for requests from 203.0.113.1 5c2dc8763939e-4bc760799bbmb337612370122\r\n"
+recv quit
+send "+OK Bye 5c2dc8763939e-4bc760799bbmb337612370122\r\n"
+hangup

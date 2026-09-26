@@ -281,18 +281,19 @@ service_t *add_service(char *name, int port, int namelen, int toolid)
 	return svc;
 }
 
+/*
+ * The port for a service comes from protocols.cfg, and from nothing else.
+ *
+ * This used to fall through to getservbyname(), so a service without a port
+ * line was checked on whatever the HOST's /etc/services happened to say --
+ * which differs between systems, and is invisible to whoever is reading
+ * protocols.cfg to find out what is being tested. Every shipped entry names
+ * its port; an entry that does not is reported by add_tcp_test() rather than
+ * quietly given one from somewhere else.
+ */
 int getportnumber(char *svcname)
 {
-	struct servent *svcinfo;
-	int result = 0;
-
-	result = default_tcp_port(svcname);
-	if (result == 0) {
-		svcinfo = getservbyname(svcname, NULL);
-		if (svcinfo) result = ntohs(svcinfo->s_port);
-	}
-
-	return result;
+	return default_tcp_port(svcname);
 }
 
 void load_services(void)
@@ -1428,6 +1429,10 @@ int finish_ping_service(service_t *service)
 }
 
 
+/* The buffer every caller passes as `cause`; it is a pointer here, so its
+   size cannot be recovered with sizeof(). */
+#define MAX_CAUSE 1024
+
 int decide_color(service_t *service, char *svcname, testitem_t *test, int failgoesclear, char *cause)
 {
 	int color = COL_GREEN;
@@ -1557,7 +1562,19 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 				}
 			}
 			else {
-				if (!test->open) {
+				if (!test->open && (service->toolid == TOOL_CONTEST) &&
+				    tcp_dialogue_refused((tcptest_t *)test->privdata)) {
+					/*
+					 * The definition was refused, so nothing was checked and
+					 * nothing was sent. That the port is also shut is true but
+					 * not the fault to report: it sends the operator to look
+					 * at a service when the file is what is broken.
+					 */
+					snprintf(cause, MAX_CAUSE, "Unexpected service response: %s",
+						 tcp_dialogue_failure((tcptest_t *)test->privdata));
+					color = respcheck_color; countasdown = 0;
+				}
+				else if (!test->open) {
 					if (failgoesclear && (test->host->downcount != 0) && !test->alwaystrue) {
 						strcpy(cause, "Host appears to be down");
 						color = COL_CLEAR; countasdown = 0;
@@ -1593,10 +1610,45 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 				else {
 					tcptest_t *tcptest = (tcptest_t *)test->privdata;
 
-					/* Check if we got the expected data */
-					if (checktcpresponse && (service->toolid == TOOL_CONTEST) && !tcp_got_expected((tcptest_t *)test->privdata)) {
-						strcpy(cause, "Unexpected service response");
+					/*
+					 * Check if we got the expected data.
+					 *
+					 * --checkresponse governs whether an "expect" is an
+					 * opinion worth acting on. It does not govern whether a
+					 * definition protocols.cfg refused should be believed:
+					 * there is no check running to be lenient about, and
+					 * green would claim one happened. So a refusal comes
+					 * through this door whether the switch was given or not.
+					 */
+					if ((service->toolid == TOOL_CONTEST) &&
+					    (checktcpresponse || tcp_dialogue_refused((tcptest_t *)test->privdata)) &&
+					    !tcp_got_expected((tcptest_t *)test->privdata)) {
+						char *whichstep = tcp_dialogue_failure((tcptest_t *)test->privdata);
+
+						/*
+						 * Name the step. A dialogue can fail at any of
+						 * them, and the bare phrase leaves the reader
+						 * guessing whether it was the greeting, a reply
+						 * mid-conversation, or a peer that went quiet.
+						 */
+						if (whichstep)
+							snprintf(cause, MAX_CAUSE, "Unexpected service response: %s", whichstep);
+						else
+							strcpy(cause, "Unexpected service response");
 						color = respcheck_color; countasdown = 1;
+
+						/*
+						 * An entry that named its own outcome overrides the
+						 * one colour every failure otherwise gets. A server
+						 * that is briefly busy and one that is broken are
+						 * different events, and only the file knows which
+						 * reply means which.
+						 */
+						switch (tcp_dialogue_verdict((tcptest_t *)test->privdata)) {
+						  case 2: color = COL_YELLOW; countasdown = 0; break;
+						  case 3: color = COL_RED;    countasdown = 1; break;
+						  default: break;
+						}
 					}
 
 					/* Check that other transport issues didn't occur (like SSL) */
@@ -2372,10 +2424,19 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	dnstest = add_service("dns", getportnumber("domain"), 0, TOOL_DNS);
-	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
-	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
-	httptest = add_service("http", getportnumber("http"),  0, TOOL_HTTP);
+	/*
+	 * These four are not protocols.cfg services -- they have their own tools
+	 * -- and their ports are stated here rather than looked up. They cannot
+	 * be moved into protocols.cfg: load_services() above registers every
+	 * entry in that file as TOOL_CONTEST, and add_service() keeps the FIRST
+	 * registration of a name, so an [ntp] or [http] entry would silently turn
+	 * these into plain connect checks. "domain" and "sunrpc" are only the
+	 * names the ports were looked up under; the tests are "dns" and "rpc".
+	 */
+	dnstest = add_service("dns", 53, 0, TOOL_DNS);
+	add_service("ntp", 123,   0, TOOL_NTP);
+	rpctest  = add_service("rpc", 111, 0, TOOL_RPCINFO);
+	httptest = add_service("http", 80,  0, TOOL_HTTP);
 	ldaptest = add_service("ldapurl", getportnumber("ldap"), strlen("ldap"), TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 	add_timestamp("Service definitions loaded");

@@ -1,0 +1,6 @@
+# imap.gmx.net:143 -- drives [imap]. The greeting is an untagged "* OK" with a
+# long CAPABILITY list, and LOGOUT is answered untagged then tagged.
+send "* OK [CAPABILITY IMAP4rev1 CHILDREN ENABLE ID IDLE LIST-EXTENDED LIST-STATUS LITERAL- MOVE NAMESPACE SASL-IR SORT SPECIAL-USE THREAD=ORDEREDSUBJECT UIDPLUS UNSELECT WITHIN STARTTLS LOGINDISABLED] IMAP server ready H migmx012 32.3.1\r\n"
+recv ABC123
+send "* BYE Server logging out\r\nABC123 OK LOGOUT completed\r\n"
+hangup

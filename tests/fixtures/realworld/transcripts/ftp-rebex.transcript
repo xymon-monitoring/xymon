@@ -1,0 +1,7 @@
+# ftp-rebex  test.rebex.net (194.108.117.16) port 21  mode=plain
+# recorded 2026-08-31T13:30:40.796286Z
+S: 220-Welcome to test.rebex.net!
+S:     See https://test.rebex.net/ for more information and terms of use.
+S: 220 If you don't have an account, log in as 'anonymous' or 'ftp'.
+C: quit
+S: 221 Closing session.
