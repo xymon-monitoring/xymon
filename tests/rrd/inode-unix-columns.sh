@@ -57,6 +57,7 @@ printf '%s' "$message" | env \
 	XYMONHOME="$work/home" \
 	XYMONVAR="$work" \
 	XYMONTMP="$work/tmp" \
+	XYMONRUNDIR="$work/tmp" \
 	XYMONRRDS="$work/rrd" \
 	HOSTSCFG="$work/hosts.cfg" \
 	TEST2RRD="inode" \
