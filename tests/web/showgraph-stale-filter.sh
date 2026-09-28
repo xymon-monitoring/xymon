@@ -72,7 +72,7 @@ rrds="$work/rrd/testhost"
 	printf 'disk report\n'
 	printf '/dev/sda1 1000000 400000 600000 40%% /fresh\n'
 	printf '@@\n'
-} | env XYMONHOME="$work" XYMONTMP="$work/tmp" \
+} | env XYMONHOME="$work" XYMONTMP="$work/tmp" XYMONRUNDIR="$work/tmp" \
 	"$XYMOND_RRD" --rrddir="$work/rrd" --no-cache 2>/dev/null
 
 fresh="$rrds/disk,fresh.rrd"
