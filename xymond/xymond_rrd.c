@@ -253,8 +253,23 @@ int main(int argc, char *argv[])
 
 	/* Setup the control socket that receives cache-flush commands */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
-	if (xgetenv("XYMONRUNDIR") && mkdir(xgetenv("XYMONRUNDIR"), 0755) != -1) dbgprintf("Created %s\n", xgetenv("XYMONRUNDIR")); // just in case
-	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%lu", xgetenv("XYMONRUNDIR"), (unsigned long)getpid());
+	if (mkdir(xymon_rundir(), 0755) == 0) dbgprintf("Created %s\n", xymon_rundir());	/* just in case */
+	{
+		/* sun_path is platform-dependent, as small as 92 bytes; refuse an
+		 * XYMONRUNDIR that cannot fit rather than overflow (showgraph and
+		 * rrdcachectl guard the sender side). */
+		char *rundir = xymon_rundir();
+		int n = snprintf(ctlsockaddr.sun_path, sizeof(ctlsockaddr.sun_path),
+				 "%s/rrdctl.%lu", rundir, (unsigned long)getpid());
+		if ((n < 0) || (n >= (int)sizeof(ctlsockaddr.sun_path))) {
+			/* Report the limit on XYMONRUNDIR itself: sun_path minus the suffix. */
+			int maxtmp = (int)sizeof(ctlsockaddr.sun_path) - 1
+				   - snprintf(NULL, 0, "/rrdctl.%lu", (unsigned long)getpid());
+			errprintf("Cannot set up cache-control socket: XYMONRUNDIR is too long for a socket path (%d characters; max %d with this process ID)\n",
+				  (int)strlen(rundir), maxtmp);
+			return 1;
+		}
+	}
 	unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
 	ctlsockaddr.sun_family = AF_UNIX;
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
@@ -264,7 +279,10 @@ int main(int argc, char *argv[])
 	}
 	fcntl(ctlsocket, F_SETFL, O_NONBLOCK);
 	if (bind(ctlsocket, (struct sockaddr *)&ctlsockaddr, sizeof(ctlsockaddr)) == -1) {
-		errprintf("Cannot bind to cache-control socket (%s)\n", strerror(errno));
+		/* Name the directory: a missing or unwritable XYMONRUNDIR is the usual
+		   cause, and the socket path alone does not say which setting to fix. */
+		errprintf("Cannot bind the cache-control socket in XYMONRUNDIR (%s): %s. Create the directory, owned by the xymon user\n",
+			  xymon_rundir(), strerror(errno));
 		return 1;
 	}
 	/* Linux obeys filesystem permissions on the socket file, so make it world-accessible */
