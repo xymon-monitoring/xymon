@@ -1,9 +1,10 @@
 # tests/ — regression scenarios
 
 A place to put runnable, reproducible regression scenarios for behaviour
-the project has consciously changed. The bar is intentionally low: when
-a PR changes user-visible behaviour, drop a test here so the next person
-can re-run the check without re-reading the PR.
+the project has consciously changed or documents as an invariant, so the
+next person can re-run the check without re-reading the PR. Which tests a
+change owes is in `CONTRIBUTING.md`, under "Pull requests"; this file says
+how to write and run them.
 
 Designed as the implementation of RFC [#97](https://github.com/xymon-monitoring/xymon/issues/97).
 
@@ -190,8 +191,9 @@ maintenance.
 4. Drive the scenario: set up fixtures in a temp dir, invoke the
    binary or script under test, assert on its output / exit code /
    side effects.
-5. Run it standalone. If it passes locally and is deterministic, open
-   the PR. CI will run it on every push.
+5. Run it standalone, and check it the way the `tests/` bullet in
+   `CONTRIBUTING.md` ("Pull requests") asks. Then open the PR. CI will
+   run it on every push.
 
 ## Why no framework
 
