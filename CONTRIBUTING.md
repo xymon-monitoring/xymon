@@ -63,8 +63,8 @@ only page today — how the parts fit, what talks to what, which component owns 
 state. A decision is not structure, even in a design section. *"xymond consolidates
 member results as they arrive"* is architecture and belongs there; *"xymond rather
 than xymonnet, because `NET:` splits testing across hosts"* exists only relative to a
-rejected alternative, and belongs in the issue that rejected it. The test: would the
-sentence still be true if the alternative had never been considered?
+rejected alternative, and belongs in the issue or pull request that rejected it. The
+test: would the sentence still be true if the alternative had never been considered?
 
 A decision splits across the surfaces, and asking which one it belongs to is the
 wrong question:
@@ -76,9 +76,9 @@ wrong question:
   `git blame` offline;
 - **why not the obvious alternative** — the code comment at the line someone would
   otherwise change back;
-- **what was weighed and rejected** — the issue that decided it, which is the only
-  place that record belongs and the only one nobody needs in order to use the
-  software.
+- **what was weighed and rejected** — the issue or pull request that decided it, which
+  is the only place that record belongs and the only one nobody needs in order to use
+  the software.
 
 A pointer says which side is authoritative, in its wording rather than by
 implication: *for X, see Y* where Y holds the fact, *this is the only copy* where
@@ -288,6 +288,56 @@ when the diff does not explain itself. Write it for both.
   re-reads.
 - Shortening a description follows the same rule as shortening anything else, and it
   comes last: see [Shortening](#shortening).
+
+### The last pass
+
+When a change has stopped moving, before a review is asked for or it merges without one,
+read the prose it adds or changes once more, and again whenever that prose changes,
+through a review's findings or the pass's own edits. Only its own lines, and any existing
+line the change makes false: an older problem found on the way is a note, or another
+pull request — except the missing other half of a pointer, when it belongs in a document
+this change already edits, which
+[Where a change gets written down](#where-a-change-gets-written-down) lets you add in
+this change.
+
+1. **True.** Each sentence against what it describes: each comment against the code
+   under it, each test header and assertion message against what the test checks, each
+   manual-page sentence against the code, the commit message and description against the
+   final diff, and any other sentence against the tree.
+2. **Current.** Commit ids, suite counts and `file:line` citations against the pull
+   request's final head; a citation of the old code names its revision. The pull
+   request's own commit ids stay valid in its description after a squash merge,
+   because the pull request keeps them; a commit message, read later in a plain clone,
+   cites only commits already on `main`.
+3. **In its place.** Each fact once, on the surface whose reader needs it, copied only
+   where its second reader cannot reach the first copy — see
+   [Where a change gets written down](#where-a-change-gets-written-down).
+4. **Said.** What stays untested is in the description — see
+   [Pull requests](#pull-requests).
+5. **Readable.** One idea per sentence, no aside inside an aside, and table cells short
+   enough to scan. A sentence the reader has to take apart is split, not trimmed.
+6. **Short.** Last, once a re-read turns up nothing new, and losslessly — see
+   [Shortening](#shortening).
+
+If the pass edits the diff, it ends like any edit: run the suite again, check any test
+assertion it touched as the `tests/` bullet in [Pull requests](#pull-requests) asks, and
+say in one comment what it changed. If it edits only the description or the commit
+message, the comment is enough.
+
+A review of that prose reports facts: a sentence that is false, misleading — a reader
+would act or decide differently on it — or in conflict with another rule. This
+paragraph is about the prose: a defect found in the code is reported, and what a review
+says about the code itself, as distinct from its comments, is not bound by it. A
+sentence that says only what usually or rarely fits is advice, and departing from it is
+not a finding; a "rarely" that follows from a stated rule does not turn the rule into
+advice. A preference is not a finding, and neither is step 5, which is the author's own
+check — unless the sentence also misleads, which is a finding whatever the cause.
+When rounds keep reopening one choice, it is a principle, not wording: the author
+decides it — a person, the one who opened the pull request, even when a tool wrote
+the text — records it with the rejected alternative in the pull request or issue that
+decided it, and later rounds of that pull request take it as given; a later pull
+request may cite it but is not bound by it. A round that finds no facts ends the
+reviewing of that prose; an approval the table above asks for is still needed.
 
 ## Style
 
