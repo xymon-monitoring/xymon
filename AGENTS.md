@@ -58,6 +58,16 @@ them away from it, and nothing on the page tells them which one they are reading
   refuses to run again while a `Makefile` exists. For a non-interactive build,
   copy the recipe in `.github/workflows/build.yml`, which sets the answers as
   environment variables. `./tests/testsuite` runs the suite.
+- A tool's private memory holds only what does not belong to the project:
+  private data such as non-secret access details, one person's working
+  preferences, and facts about that person's own machine that would change
+  nothing another contributor does or decides. A secret — a password, a token, a
+  private key — is not written there unless the person asks for it: tool memory
+  is plain text, not a secret store. Project facts — decisions, conventions,
+  platform behaviour — live in this tree, the wiki, or the issue or pull request
+  that decided them; a decision taken elsewhere, on the mailing list for
+  instance, gets an issue that records it. A private copy of one is a second
+  place that goes stale.
 
 ## Do not
 
