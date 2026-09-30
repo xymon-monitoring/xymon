@@ -223,8 +223,20 @@ situation, and this file gets revisited if it arrives.
 - Say what you verified, and how. "Built and ran the test suite" is useful;
   "should work" is not. If you could not test something, say that too — it is
   not held against you, and it tells a reviewer where to look.
-- `tests/` holds the regression suite. If your change fixes something a test
-  could have caught, adding one is worth more than the fix.
+- `tests/` holds the regression suite. Each observable behaviour a change makes
+  true in the code, the build or the suite gets a deterministic test that fails
+  without it where it can run, locally or on a CI lane — fails because the
+  behaviour is gone, not because something the test needs to reach it is. Check
+  it by reverting what makes the behaviour true — for a new option, its handler
+  rather than its parsing; for a new alias, the alias itself — or by a safe
+  equivalent, and say what was reverted or used. A change that only adds a test
+  is checked by breaking the behaviour the test guards. Test the behaviour, not
+  its spelling, unless the source or config is itself the surface, as in the
+  portability check's own tests — reading source is what that check does — or
+  a shipped default. For a behaviour that stays untested, say why and what was
+  checked instead. How to write and run a test is in `tests/README.md`;
+  `tests/buildsystem/test-suite-portability.sh` refuses the constructs a
+  portable test avoids.
 - Keep the description accurate as it evolves. A reviewer reading it after
   three force-pushes should not be reading the original plan.
 
