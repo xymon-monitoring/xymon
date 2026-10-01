@@ -187,16 +187,18 @@ release — and keep `git diff --check` quiet.
 
 ## Pull requests
 
-Every change goes through a pull request. Whether it also needs a review by
-someone other than its author depends on what the change is. This is `xymon`'s
-rule, not the organisation's — the wiki and the other repositories are pushed
-to directly.
+Every change reaches `main` or `devel` through a pull request. Whether it also
+needs a review by someone other than its author depends on what the change is.
+This is `xymon`'s rule, not the organisation's — the wiki and the other
+repositories are pushed to directly.
 
-**What GitHub enforces.** A ruleset on `main`, `devel` and `release/*` requires
-a pull request, one approving review after the last push, every thread
-resolved, squash or merge commits only, and no force-push or deletion. The
-`maintainers` team is on its bypass list unconditionally, so for them it
-enforces nothing.
+**What GitHub enforces.** A ruleset on `main` and `devel` requires a pull
+request, one approving review after the last push, every thread resolved,
+squash or merge commits only, and no force-push or deletion. The `maintainers`
+team may bypass it only within a pull request: a maintainer can merge a pull
+request without its review, but nobody can push to those branches directly.
+Every other branch, `Changes` and `release/*` included, is outside the ruleset
+and takes direct pushes.
 
 **What we ask of each other.** The bypass is a mechanism, not a permission. A
 second reader is always the better outcome, and the rows below say when a change
