@@ -1,0 +1,5 @@
+# news.gmane.io:119 (INN 2.6.3) -- drives [nntp]
+send "200 news.gmane.io InterNetNews NNRP server INN 2.6.3 ready (posting ok)\r\n"
+recv quit
+send "205 Bye!\r\n"
+hangup

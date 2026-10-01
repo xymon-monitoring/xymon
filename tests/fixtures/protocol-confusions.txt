@@ -1,0 +1,183 @@
+# tests/fixtures/protocol-confusions.txt
+#
+# Every case where a shipped entry reports the service UP against a server
+# speaking a DIFFERENT protocol. One "entry peer" pair per line.
+#
+# tests/network/protocol-confusion.sh compares this against what actually
+# happens, in both directions: a pair that appears and is not here fails, and a
+# pair here that no longer happens fails too. So the list can only shrink, and
+# shrinking it means editing this file on purpose.
+#
+# --- connect-only entries: the port opening is the whole check, so anything
+#     listening satisfies them. Each accepts all 27 other protocols.
+ldap ajp13
+ldap amqp
+ldap bbd
+ldap clamd
+ldap cupsd
+ldap ftp
+ldap imap
+ldap imap3
+ldap ircd
+ldap lpd
+ldap netbios-ssn
+ldap nntp
+ldap oratns
+ldap pop
+ldap pop2
+ldap qmqp
+ldap qmtp
+ldap rdp
+ldap rsync
+ldap smtp
+ldap snpp
+ldap spamd
+ldap ssh
+ldap submission
+ldap svn
+ldap telnet
+ldap vnc
+lpd ajp13
+lpd amqp
+lpd bbd
+lpd clamd
+lpd cupsd
+lpd ftp
+lpd imap
+lpd imap3
+lpd ircd
+lpd ldap
+lpd netbios-ssn
+lpd nntp
+lpd oratns
+lpd pop
+lpd pop2
+lpd qmqp
+lpd qmtp
+lpd rdp
+lpd rsync
+lpd smtp
+lpd snpp
+lpd spamd
+lpd ssh
+lpd submission
+lpd svn
+lpd telnet
+lpd vnc
+netbios-ssn ajp13
+netbios-ssn amqp
+netbios-ssn bbd
+netbios-ssn clamd
+netbios-ssn cupsd
+netbios-ssn ftp
+netbios-ssn imap
+netbios-ssn imap3
+netbios-ssn ircd
+netbios-ssn ldap
+netbios-ssn lpd
+netbios-ssn nntp
+netbios-ssn oratns
+netbios-ssn pop
+netbios-ssn pop2
+netbios-ssn qmqp
+netbios-ssn qmtp
+netbios-ssn rdp
+netbios-ssn rsync
+netbios-ssn smtp
+netbios-ssn snpp
+netbios-ssn spamd
+netbios-ssn ssh
+netbios-ssn submission
+netbios-ssn svn
+netbios-ssn telnet
+netbios-ssn vnc
+qmqp ajp13
+qmqp amqp
+qmqp bbd
+qmqp clamd
+qmqp cupsd
+qmqp ftp
+qmqp imap
+qmqp imap3
+qmqp ircd
+qmqp ldap
+qmqp lpd
+qmqp netbios-ssn
+qmqp nntp
+qmqp oratns
+qmqp pop
+qmqp pop2
+qmqp qmtp
+qmqp rdp
+qmqp rsync
+qmqp smtp
+qmqp snpp
+qmqp spamd
+qmqp ssh
+qmqp submission
+qmqp svn
+qmqp telnet
+qmqp vnc
+qmtp ajp13
+qmtp amqp
+qmtp bbd
+qmtp clamd
+qmtp cupsd
+qmtp ftp
+qmtp imap
+qmtp imap3
+qmtp ircd
+qmtp ldap
+qmtp lpd
+qmtp netbios-ssn
+qmtp nntp
+qmtp oratns
+qmtp pop
+qmtp pop2
+qmtp qmqp
+qmtp rdp
+qmtp rsync
+qmtp smtp
+qmtp snpp
+qmtp spamd
+qmtp ssh
+qmtp submission
+qmtp svn
+qmtp telnet
+qmtp vnc
+#
+# --- telnet asks only that the server spoke: the banner is the payload, and no
+#     fixed text identifies a telnet server. Every peer that speaks first
+#     satisfies it.
+telnet ftp
+telnet imap
+telnet imap3
+telnet ldap
+telnet lpd
+telnet netbios-ssn
+telnet nntp
+telnet pop
+telnet pop2
+telnet qmqp
+telnet qmtp
+telnet rsync
+telnet smtp
+telnet snpp
+telnet ssh
+telnet submission
+telnet svn
+telnet vnc
+#
+# --- the same protocol reached on a different port. Not a defect: an entry
+#     cannot distinguish servers that are genuinely identical.
+imap imap3
+imap3 imap
+pop pop2
+pop2 pop
+smtp submission
+submission smtp
+#
+# --- a real confusion between different protocols. SNPP greets with 220 and
+#     answers 221 to a quit, exactly as FTP does, and [ftp] sends nothing
+#     FTP-specific in between. Fixable: ask for something only FTP answers.
+ftp snpp
