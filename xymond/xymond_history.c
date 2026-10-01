@@ -27,8 +27,16 @@ static char rcsid[] = "$Id$";
 #include <sys/wait.h>
 #include <time.h>
 #include <limits.h>
+#include <fcntl.h>
 
 #include "libxymon.h"
+
+/* O_NOFOLLOW is POSIX.1-2008; the history writers use it to refuse a symlink
+ * planted at a file they write. Where <fcntl.h> predates it, fall back to 0 so
+ * the tree builds - the pre-hardening exposure, not a build break. */
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW 0
+#endif
 
 #include "xymond_worker.h"
 
@@ -36,6 +44,73 @@ static char rcsid[] = "$Id$";
 
 int rotatefiles = 0;
 time_t nextfscheck = 0;
+
+/*
+ * fopen() that refuses to follow a symlink at the final component: an attacker
+ * able to plant one where a history file is written would otherwise have the
+ * daemon append or truncate through it, outside the tree. Modes as used here:
+ * "a", "w", "r+".
+ */
+static FILE *fopen_nofollow(const char *fn, const char *mode)
+{
+	int flags = O_NOFOLLOW;
+	int fd;
+	FILE *fp;
+
+	if (strcmp(mode, "a") == 0)       flags |= O_WRONLY | O_CREAT | O_APPEND;
+	else if (strcmp(mode, "w") == 0)  flags |= O_WRONLY | O_CREAT | O_TRUNC;
+	else                              flags |= O_RDWR;  /* "r+": must exist, no O_CREAT */
+
+	fd = open(fn, flags, 0666);
+	if (fd == -1) return NULL;
+	fp = fdopen(fd, mode);
+	if (!fp) close(fd);  /* don't leak the fd if fdopen() fails */
+	return fp;
+}
+
+/*
+ * Refuse a symlinked "<histlogdir>/<host>": the writers and rename descend
+ * through it and would otherwise follow it into another tree. (dropdirectory()
+ * guards its own argument instead.)
+ */
+static int histlog_hostdir_ok(char *histlogdir, char *hostdash)
+{
+	char d[PATH_MAX];
+	struct stat st;
+
+	if ((size_t)snprintf(d, sizeof(d), "%s/%s", histlogdir, hostdash) >= sizeof(d)) {
+		errprintf("Histlog dir for host %.64s under %s does not fit, refusing it\n", hostdash, histlogdir);
+		return 0;
+	}
+	if ((lstat(d, &st) == 0) && S_ISLNK(st.st_mode)) {
+		errprintf("Histlog dir '%s' is a symlink, refusing it\n", d);
+		return 0;
+	}
+	return 1;
+}
+
+/*
+ * The drop/rename and status handlers build paths under histdir/histlogdir
+ * from the channel's hostname and testname, which xymond does not validate as
+ * path components - a raw testname "../.." reached the recursive
+ * dropdirectory() and climbed out of histlogdir (#287). Refuse "", a leading
+ * '.', and a '/' or '\\' separator on each component before it becomes a path,
+ * as xymond_filestore does; real host and test names pass unchanged.
+ */
+static int name_confined(char *dir, char *component)
+{
+	if (component[0] == '\0') {
+		errprintf("Empty name under %s, refusing it\n", dir);
+		return 0;
+	}
+	if (component[0] == '.') {
+		errprintf("Name '%s' under %s begins with a dot, refusing it\n", component, dir);
+		return 0;
+	}
+	if ((strchr(component, '/') == NULL) && (strchr(component, '\\') == NULL)) return 1;
+	errprintf("Name '%s' under %s holds a path separator, refusing it\n", component, dir);
+	return 0;
+}
 
 void sig_handler(int signum)
 {
@@ -88,7 +163,7 @@ int main(int argc, char *argv[])
 	/* Don't save the error buffer */
 	save_errbuf = 0;
 
-	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
+	snprintf(pidfn, sizeof(pidfn), "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
 	if (xgetenv("XYMONALLHISTLOG")) save_allevents = (strcmp(xgetenv("XYMONALLHISTLOG"), "TRUE") == 0);
 	if (xgetenv("XYMONHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("XYMONHOSTHISTLOG"), "TRUE") == 0);
 	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strncmp(xgetenv("SAVESTATUSLOG"), "FALSE", 5) != 0);
@@ -101,7 +176,7 @@ int main(int argc, char *argv[])
 			histlogdir = strchr(argv[argi], '=')+1;
 		}
 		else if (argnmatch(argv[argi], "--pidfile=")) {
-			strcpy(pidfn, strchr(argv[argi], '=')+1);
+			snprintf(pidfn, sizeof(pidfn), "%s", strchr(argv[argi], '=')+1);
 		}
 		else if (argnmatch(argv[argi], "--minimum-free=")) {
 			/* Percent of filesystem space; 0 disables the check, and
@@ -169,7 +244,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	sprintf(alleventsfn, "%s/allevents", histdir);
+	snprintf(alleventsfn, sizeof(alleventsfn), "%s/allevents", histdir);
 	if (save_allevents) {
 		alleventsfd = fopen(alleventsfn, "a");
 		if (alleventsfd == NULL) {
@@ -261,6 +336,11 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
+			/* Confine before any path is built: the host-events file is
+			   histdir/<hostname> with the name raw, so a configured "../evil"
+			   escaped histdir. Real names (dots inside a hostname included) pass. */
+			if (!name_confined(histdir, hostname) || !name_confined(histdir, testname)) continue;
+
 			p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 
 			handle = xtreeFind(columndefs, testname);
@@ -286,9 +366,20 @@ int main(int argc, char *argv[])
 				MEMDEFINE(oldcol);
 				MEMDEFINE(timestamp);
 
-				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
+				/* Bounded: an unbounded sprintf() of the length-uncapped
+				   testname overflowed this PATH_MAX buffer; a name that does
+				   not fit is skipped, not written past. */
+				if ((size_t)snprintf(statuslogfn, sizeof(statuslogfn), "%s/%s.%s", histdir, hostnamecommas, testname) >= sizeof(statuslogfn)) {
+					errprintf("Status history name does not fit under %s (host %.64s), not writing it\n",
+						  histdir, hostnamecommas);
+					if (hostnamecommas) xfree(hostnamecommas);
+					MEMUNDEFINE(statuslogfn);
+					MEMUNDEFINE(oldcol);
+					MEMUNDEFINE(timestamp);
+					continue;
+				}
 				stat(statuslogfn, &st);
-				statuslogfd = fopen(statuslogfn, "r+");
+				statuslogfd = fopen_nofollow(statuslogfn, "r+");
 				logexists = (statuslogfd != NULL);
 				*oldcol = '\0';
 
@@ -382,7 +473,7 @@ int main(int argc, char *argv[])
 					 * Logfile does not exist.
 					 */
 					lastchg = tstamp;
-					statuslogfd = fopen(statuslogfn, "a");
+					statuslogfd = fopen_nofollow(statuslogfn, "a");
 					if (statuslogfd == NULL) {
 						errprintf("Cannot open status historyfile '%s' : %s\n", 
 							statuslogfn, strerror(errno));
@@ -446,18 +537,39 @@ int main(int argc, char *argv[])
 			if (save_histlogs && saveit->saveit && !logdirfull) {
 				char *hostdash;
 				char fname[PATH_MAX];
-				FILE *histlogfd;
+				FILE *histlogfd = NULL;
+				int n, triedopen = 0;
 
 				MEMDEFINE(fname);
 
+				/* Bounded like above: build in stages, checking each fit; on
+				   truncation nothing is written. */
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				sprintf(fname, "%s/%s", histlogdir, hostdash);
-				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-				p = fname + sprintf(fname, "%s/%s/%s", histlogdir, hostdash, testname);
-				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-				p += sprintf(p, "/%s", histlogtime(tstamp));
+				if (histlog_hostdir_ok(histlogdir, hostdash) &&
+				    ((size_t)snprintf(fname, sizeof(fname), "%s/%s", histlogdir, hostdash) < sizeof(fname))) {
+					mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+					n = snprintf(fname, sizeof(fname), "%s/%s/%s", histlogdir, hostdash, testname);
+					if ((n <= 0) || ((size_t)n >= sizeof(fname)))
+						errprintf("Histlog name does not fit under %s (host %.64s), not writing it\n", histlogdir, hostdash);
+					else {
+						struct stat tst;
+						/* The host dir is checked above; the test dir needs it
+						   too - a symlinked "<host>/<test>" is followed by the
+						   final open, which O_NOFOLLOW guards only per component. */
+						if ((lstat(fname, &tst) == 0) && S_ISLNK(tst.st_mode))
+							errprintf("Histlog test dir '%s' is a symlink, refusing it\n", fname);
+						else {
+							mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+							if ((size_t)snprintf(fname + n, sizeof(fname) - (size_t)n, "/%s", histlogtime(tstamp)) < sizeof(fname) - (size_t)n) {
+								triedopen = 1;
+								histlogfd = fopen_nofollow(fname, "w");
+							}
+							else
+								errprintf("Histlog name does not fit under %s (host %.64s), not writing it\n", histlogdir, hostdash);
+						}
+					}
+				}
 
-				histlogfd = fopen(fname, "w");
 				if (histlogfd) {
 					/*
 					 * When a host gets disabled or goes purple, the status
@@ -528,7 +640,7 @@ int main(int argc, char *argv[])
 
 					if (!ok) remove(fname);
 				}
-				else {
+				else if (triedopen) {
 					errprintf("Cannot create histlog file '%s' : %s\n", fname, strerror(errno));
 				}
 				xfree(hostdash);
@@ -551,8 +663,8 @@ int main(int argc, char *argv[])
 
 				MEMDEFINE(hostlogfn);
 
-				sprintf(hostlogfn, "%s/%s", histdir, hostname);
-				hostlogfd = fopen(hostlogfn, "a");
+				hostlogfd = ((size_t)snprintf(hostlogfn, sizeof(hostlogfn), "%s/%s", histdir, hostname) < sizeof(hostlogfn))
+					? fopen_nofollow(hostlogfn, "a") : NULL;
 				if (hostlogfd) {
 					fprintf(hostlogfd, "%s %d %d %d %s %s %d\n",
 						testname, (int)tstamp, (int)lastchg, (int)(tstamp - lastchg),
@@ -580,6 +692,8 @@ int main(int argc, char *argv[])
 
 			hostname = metadata[3];
 
+			if (!name_confined(histdir, hostname)) continue;
+
 			if (save_histlogs) {
 				char *hostdash;
 				char testdir[PATH_MAX];
@@ -588,8 +702,10 @@ int main(int argc, char *argv[])
 
 				/* Remove all directories below the host-specific histlog dir */
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				sprintf(testdir, "%s/%s", histlogdir, hostdash);
-				dropdirectory(testdir, 1);
+				if ((size_t)snprintf(testdir, sizeof(testdir), "%s/%s", histlogdir, hostdash) < sizeof(testdir))
+					dropdirectory(testdir, 1);
+				else
+					errprintf("Histlog dir for %s under %s does not fit, not removing it\n", hostname, histlogdir);
 				xfree(hostdash);
 
 				MEMUNDEFINE(testdir);
@@ -601,9 +717,10 @@ int main(int argc, char *argv[])
 
 				MEMDEFINE(hostlogfn);
 
-				sprintf(hostlogfn, "%s/%s", histdir, hostname);
-				if ((stat(hostlogfn, &st) == 0) && S_ISREG(st.st_mode)) {
-					unlink(hostlogfn);
+				if ((size_t)snprintf(hostlogfn, sizeof(hostlogfn), "%s/%s", histdir, hostname) < sizeof(hostlogfn)) {
+					if ((stat(hostlogfn, &st) == 0) && S_ISREG(st.st_mode)) {
+						unlink(hostlogfn);
+					}
 				}
 
 				MEMUNDEFINE(hostlogfn);
@@ -627,7 +744,8 @@ int main(int argc, char *argv[])
 				if (dirfd) {
 					while ((de = readdir(dirfd)) != NULL) {
 						if (strncmp(de->d_name, hostlead, strlen(hostlead)) == 0) {
-							sprintf(statuslogfn, "%s/%s", histdir, de->d_name);
+							if ((size_t)snprintf(statuslogfn, sizeof(statuslogfn), "%s/%s", histdir, de->d_name) >= sizeof(statuslogfn))
+								continue;
 							if ((stat(statuslogfn, &st) == 0) && S_ISREG(st.st_mode)) {
 								unlink(statuslogfn);
 							}
@@ -648,6 +766,8 @@ int main(int argc, char *argv[])
 			hostname = metadata[3];
 			testname = metadata[4];
 
+			if (!name_confined(histdir, hostname) || !name_confined(histdir, testname)) continue;
+
 			if (save_histlogs) {
 				char *hostdash;
 				char testdir[PATH_MAX];
@@ -655,8 +775,12 @@ int main(int argc, char *argv[])
 				MEMDEFINE(testdir);
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				sprintf(testdir, "%s/%s/%s", histlogdir, hostdash, testname);
-				dropdirectory(testdir, 1);
+				if (!histlog_hostdir_ok(histlogdir, hostdash))
+					; /* refused and logged inside */
+				else if ((size_t)snprintf(testdir, sizeof(testdir), "%s/%s/%s", histlogdir, hostdash, testname) < sizeof(testdir))
+					dropdirectory(testdir, 1);
+				else
+					errprintf("Histlog dir for %s/%s under %s does not fit, not removing it\n", hostname, testname, histlogdir);
 				xfree(hostdash);
 
 				MEMUNDEFINE(testdir);
@@ -670,8 +794,9 @@ int main(int argc, char *argv[])
 				MEMDEFINE(statuslogfn);
 
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
-				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
-				if ((stat(statuslogfn, &st) == 0) && S_ISREG(st.st_mode)) unlink(statuslogfn);
+				if ((size_t)snprintf(statuslogfn, sizeof(statuslogfn), "%s/%s.%s", histdir, hostnamecommas, testname) < sizeof(statuslogfn)) {
+					if ((stat(statuslogfn, &st) == 0) && S_ISREG(st.st_mode)) unlink(statuslogfn);
+				}
 				xfree(hostnamecommas);
 
 				MEMUNDEFINE(statuslogfn);
@@ -684,6 +809,8 @@ int main(int argc, char *argv[])
 			hostname = metadata[3];
 			newhostname = metadata[4];
 
+			if (!name_confined(histdir, hostname) || !name_confined(histdir, newhostname)) continue;
+
 			if (save_histlogs) {
 				char *hostdash;
 				char *newhostdash;
@@ -694,9 +821,9 @@ int main(int argc, char *argv[])
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
 				p = newhostdash = strdup(newhostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				sprintf(olddir, "%s/%s", histlogdir, hostdash);
-				sprintf(newdir, "%s/%s", histlogdir, newhostdash);
-				rename(olddir, newdir);
+				if (((size_t)snprintf(olddir, sizeof(olddir), "%s/%s", histlogdir, hostdash) < sizeof(olddir)) &&
+				    ((size_t)snprintf(newdir, sizeof(newdir), "%s/%s", histlogdir, newhostdash) < sizeof(newdir)))
+					rename(olddir, newdir);
 				xfree(newhostdash);
 				xfree(hostdash);
 
@@ -709,9 +836,9 @@ int main(int argc, char *argv[])
 
 				MEMDEFINE(hostlogfn); MEMDEFINE(newhostlogfn);
 
-				sprintf(hostlogfn, "%s/%s", histdir, hostname);
-				sprintf(newhostlogfn, "%s/%s", histdir, newhostname);
-				rename(hostlogfn, newhostlogfn);
+				if (((size_t)snprintf(hostlogfn, sizeof(hostlogfn), "%s/%s", histdir, hostname) < sizeof(hostlogfn)) &&
+				    ((size_t)snprintf(newhostlogfn, sizeof(newhostlogfn), "%s/%s", histdir, newhostname) < sizeof(newhostlogfn)))
+					rename(hostlogfn, newhostlogfn);
 
 				MEMUNDEFINE(hostlogfn); MEMUNDEFINE(newhostlogfn);
 			}
@@ -738,8 +865,9 @@ int main(int argc, char *argv[])
 					while ((de = readdir(dirfd)) != NULL) {
 						if (strncmp(de->d_name, hostlead, strlen(hostlead)) == 0) {
 							char *testname = strchr(de->d_name, '.');
-							sprintf(statuslogfn, "%s/%s", histdir, de->d_name);
-							sprintf(newlogfn, "%s/%s%s", histdir, newhostnamecommas, testname);
+							if (((size_t)snprintf(statuslogfn, sizeof(statuslogfn), "%s/%s", histdir, de->d_name) >= sizeof(statuslogfn)) ||
+							    ((size_t)snprintf(newlogfn, sizeof(newlogfn), "%s/%s%s", histdir, newhostnamecommas, testname) >= sizeof(newlogfn)))
+								continue;
 							rename(statuslogfn, newlogfn);
 						}
 					}
@@ -761,6 +889,9 @@ int main(int argc, char *argv[])
 			testname = metadata[4];
 			newtestname = metadata[5];
 
+			if (!name_confined(histdir, hostname) || !name_confined(histdir, testname) ||
+			    !name_confined(histdir, newtestname)) continue;
+
 			if (save_histlogs) {
 				char *hostdash;
 				char olddir[PATH_MAX];
@@ -769,9 +900,10 @@ int main(int argc, char *argv[])
 				MEMDEFINE(olddir); MEMDEFINE(newdir);
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				sprintf(olddir, "%s/%s/%s", histlogdir, hostdash, testname);
-				sprintf(newdir, "%s/%s/%s", histlogdir, hostdash, newtestname);
-				rename(olddir, newdir);
+				if (histlog_hostdir_ok(histlogdir, hostdash) &&
+				    ((size_t)snprintf(olddir, sizeof(olddir), "%s/%s/%s", histlogdir, hostdash, testname) < sizeof(olddir)) &&
+				    ((size_t)snprintf(newdir, sizeof(newdir), "%s/%s/%s", histlogdir, hostdash, newtestname) < sizeof(newdir)))
+					rename(olddir, newdir);
 				xfree(hostdash);
 
 				MEMUNDEFINE(newdir); MEMUNDEFINE(olddir);
@@ -785,9 +917,9 @@ int main(int argc, char *argv[])
 				MEMDEFINE(statuslogfn); MEMDEFINE(newstatuslogfn);
 
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
-				sprintf(statuslogfn, "%s/%s.%s", histdir, hostnamecommas, testname);
-				sprintf(newstatuslogfn, "%s/%s.%s", histdir, hostnamecommas, newtestname);
-				rename(statuslogfn, newstatuslogfn);
+				if (((size_t)snprintf(statuslogfn, sizeof(statuslogfn), "%s/%s.%s", histdir, hostnamecommas, testname) < sizeof(statuslogfn)) &&
+				    ((size_t)snprintf(newstatuslogfn, sizeof(newstatuslogfn), "%s/%s.%s", histdir, hostnamecommas, newtestname) < sizeof(newstatuslogfn)))
+					rename(statuslogfn, newstatuslogfn);
 				xfree(hostnamecommas);
 
 				MEMUNDEFINE(newstatuslogfn); MEMUNDEFINE(statuslogfn);
