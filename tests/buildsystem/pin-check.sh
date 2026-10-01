@@ -168,4 +168,30 @@ assert_equal "$fork" "$got" \
 assert_equal "elsewhere" "$(cat "$work/missed")" \
 	"the dependency that could not narrow the range is named"
 
-pass "pinned, unguarded, adapted and control told apart; dependencies read and applied"
+# The integration merges carry their own identity: a CI runner has none, and
+# a merge git refuses for that reads exactly like a conflict. Here no identity
+# reaches git at all -- an empty HOME, no system or XDG configuration.
+g checkout -q -b m1 main
+printf 'm1\n' >"$repo/src/m1"; g add -A; g commit -q -m m1
+g checkout -q -b m2 main
+printf 'm2\n' >"$repo/src/m2"; g add -A; g commit -q -m m2
+g checkout -q -b clash main
+printf 'clash\n' >"$repo/src/value"; g add -A; g commit -q -m clash
+g checkout -q -b moved main
+printf 'moved\n' >"$repo/src/value"; g add -A; g commit -q -m moved
+g checkout -q main
+mkdir -p "$work/nohome"
+noid() { ( cd "$repo" && HOME=$work/nohome XDG_CONFIG_HOME=$work/nohome \
+	GIT_CONFIG_NOSYSTEM=1 sh build/pin-check.sh "$@" 2>&1 ); }
+
+got=$(noid --integrate main m1 m2 | tr '\n' ' ')
+assert_equal "m1 m2 " "$got" \
+	"the integration merges succeed with no git identity configured"
+
+out=$(noid --integrate moved clash) && fail "a set of which nothing merges did not stop the run"
+assert_contains "none of the 1 pull requests merges onto moved" "$out" \
+	"a set of which nothing merges stops the run"
+assert_contains "CONFLICT" "$out" \
+	"the stop quotes what git said about the first refusal"
+
+pass "pinned, unguarded, adapted and control told apart; dependencies read and applied; integration merges need no identity"

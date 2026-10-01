@@ -153,9 +153,10 @@ while [ $# -gt 0 ]; do
 			[ -n "${1:-}" ] || { echo "--against wants a commit or ref" >&2; exit 2; }
 			against=$1 ;;
 		# For tests/buildsystem/pin-check.sh only: the two rules that read a
-		# dependency, without GitHub.
+		# dependency and the merge step, without GitHub.
 		--declared-deps) mode=declared ;;
 		--range-base) shift; mode=rangebase; break ;;
+		--integrate) shift; mode=integrate; break ;;
 		-h | --help)
 			# the whole header block, however it is ordered: from line 3
 			# until the first line that is not a comment
@@ -606,23 +607,41 @@ list_prs() {
 	awk -F'\t' '{ print $1 "\t" $3 }' "$work/prs.raw" >"$work/titles"
 }
 
+# build_integration BASEREF PREFIX -- check out BASEREF as _pincheck and merge
+# PREFIX$n onto it for every n in $work/prs, in that order.
+#
+# Each merge writes a commit, and git refuses one without an identity. A CI
+# runner has none, and a refusal reads exactly like a conflict: every pull
+# request "could not be merged", the tree is main alone, and the report says
+# nothing is unguarded. So the merges carry their own, as pr-conflicts.py's
+# probe merges do, and a set of which none merges stops the run with what git
+# said instead of reporting an empty tree as a clean one.
 build_integration() {
-	git checkout -q -f -B _pincheck "up/$BASE" || die "cannot check out up/$BASE"
+	bi_base=$1 bi_prefix=$2
+	git checkout -q -f -B _pincheck "$bi_base" || die "cannot check out $bi_base"
 	: >"$work/merged"
 	: >"$work/notmerged"
+	: >"$work/merge.err"
 	while IFS= read -r n; do
-		if ! git rev-parse -q --verify "pr/$n" >/dev/null 2>&1; then
+		if ! git rev-parse -q --verify "$bi_prefix$n" >/dev/null 2>&1; then
 			printf '%s\n' "$n" >>"$work/notmerged"; continue
 		fi
-		if git merge -q --no-edit "pr/$n" >/dev/null 2>&1; then
+		if GIT_AUTHOR_NAME=pin-check GIT_AUTHOR_EMAIL=pin-check@localhost \
+			GIT_COMMITTER_NAME=pin-check GIT_COMMITTER_EMAIL=pin-check@localhost \
+			git merge -q --no-edit "$bi_prefix$n" >"$work/merge.last" 2>&1; then
 			printf '%s\n' "$n" >>"$work/merged"
 		else
+			[ -s "$work/merge.err" ] || { printf '%s: ' "$n"; cat "$work/merge.last"; } >"$work/merge.err"
 			git merge --abort >/dev/null 2>&1
 			git reset -q --hard
 			git clean -qfd tests 2>/dev/null
 			printf '%s\n' "$n" >>"$work/notmerged"
 		fi
 	done <"$work/prs"
+	if [ -s "$work/prs" ] && [ ! -s "$work/merged" ]; then
+		die "none of the $(wc -l <"$work/prs" | tr -d ' ') pull requests merges onto $bi_base, so there is nothing to check. The first refusal:
+$(head -n 5 "$work/merge.err")"
+	fi
 }
 
 run_integration() {
@@ -633,7 +652,7 @@ run_integration() {
 	i_here=$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)
 	fetch_heads
 	list_prs
-	build_integration
+	build_integration "up/$BASE" pr/
 	integ=$(git rev-parse HEAD)
 	base_sha=$(git rev-parse "up/$BASE")
 
@@ -714,6 +733,13 @@ fi
 case $mode in
 	declared)  declared_deps; exit 0 ;;
 	rangebase) range_base "$@"; exit 0 ;;
+	integrate)
+		# --integrate BASE REF... : the merge step alone, for its test.
+		i_base=$1; shift
+		printf '%s\n' "$@" >"$work/prs"
+		build_integration "$i_base" ""
+		cat "$work/merged"
+		exit 0 ;;
 	local)  run_local ;;
 	commit) run_commit ;;
 	*)      run_integration ;;
