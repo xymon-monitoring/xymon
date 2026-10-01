@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later
+ * Copyright (C) 2026 Bruno Manzoni
  *
  * Driver for the real generate_wml_statuscard(), extracted from
  * xymongen/wmlgen.c by the test beside this file.

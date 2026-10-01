@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later                                 */
+/* Copyright (C) 2026 Bruno Manzoni                                          */
 /* Regression test for issue #31: GRAPHS_<service> custom graphs must render
  * on a status page even when the service has no default graph definition. */
 #include <stdio.h>
