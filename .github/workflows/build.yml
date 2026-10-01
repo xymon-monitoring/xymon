@@ -186,3 +186,39 @@ jobs:
         with:
           name: manpages-regenerated
           path: docs/manpages/
+
+  # The remote-df sentinel is copied into five client scripts rather than
+  # sourced: xymonclient.sh executes one by uname, and a sourced fragment is
+  # missing for a moment during clientupdate, which would abort the client on
+  # the very hosts the sentinel protects. The copies are therefore stamped out
+  # from client/shared/ by build/mkclientshared.sh, and this job is what keeps
+  # them stamped -- editing a copy by hand, or the fragment without
+  # regenerating, fails here.
+  clientshared:
+    name: client scripts match their shared fragments
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Regenerate and compare
+        run: |
+          set -euo pipefail
+          ./build/mkclientshared.sh
+          if git diff --quiet -- client/; then
+            echo "the client scripts match client/shared/"
+            exit 0
+          fi
+          {
+            echo "A shared client region does not match its fragment. Either a"
+            echo "copy was edited by hand, or client/shared/ changed without"
+            echo "regenerating. Fix it with:"
+            echo
+            echo "    ./build/mkclientshared.sh && git add client && git commit"
+            echo
+            echo "Diff:"
+            git diff -- client/
+          } >&2
+          echo "::error::client scripts are out of date with client/shared/"
+          exit 1
