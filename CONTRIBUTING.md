@@ -292,6 +292,11 @@ when the diff does not explain itself. Write it for both.
   against another pull request, a behaviour deliberately left alone, something you
   could not test. Everything else in the description is convenience; this part is the
   reason it exists.
+- Declare a dependency on another open pull request on a line of its own,
+  `Depends-on: #N`, one line per pull request; a pull request based on another's
+  branch needs none. The `blocked`, `unblocks` and `deps-none-found` labels are
+  recomputed from these lines and the base branches every day and set to what
+  they say, so a dependency written any other way is not seen.
 - Show the evidence, compactly. Suite counts, a measurement, a before-and-after table.
   A table of three rows says what three paragraphs say, and survives being skimmed.
 - Cite what can be checked. A claim about the tree carries `file:line`; a claim about
