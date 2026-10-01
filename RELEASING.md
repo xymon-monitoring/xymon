@@ -88,6 +88,11 @@ Reruns are safe — the branch is always recreated from `main`, and an existing
 
 Diff is only version stamps and `md5.dat`, checks green, merge.
 
+If anything has merged into `main` since the prep run started, whatever it
+touches, rerun the prep before merging. Its stamps and `md5.dat` were generated
+from the older `main`: a web file changed since would ship without its hash in
+`md5.dat`, and a manual page added since would ship unstamped.
+
 The checks come from an explicitly dispatched run, not a `pull_request` event
 (pushes made with the workflow's `GITHUB_TOKEN` never trigger workflows). A
 push made by hand does start CI, as on any branch, but the branch is
