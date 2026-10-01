@@ -74,8 +74,8 @@ GitHub → Actions → **Pre-tag release prep** → *Run workflow* → version a
 It recreates `release/X.Y.Z` from `main`, runs `build/dorelease.sh X.Y.Z`
 (regenerating `build/md5.dat` and stamping "Version X.Y.Z + date" into every
 manpage and its HTML), commits, force-pushes, and opens a pull request against
-`main`. It also dispatches the build workflow so the PR gets CI, and writes the
-follow-up commands into the run summary.
+`main`. It also dispatches the build and test workflows so the PR gets CI, and
+writes the follow-up commands into the run summary.
 
 A PR rather than a direct commit so a human sees the generated diff first: it
 should contain only version stamps and `md5.dat` lines. Anything else means the
