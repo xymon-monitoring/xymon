@@ -34,6 +34,7 @@ because it fails when the string changes.
 | pull request title | everyone scanning the list, and `git log --oneline` after a squash | the component, then what the change makes true |
 | pull request description | the reviewer deciding | the defect, the mechanism, what a reviewer cannot infer, the evidence |
 | pull request comments | the reviewer, in sequence | answers to findings, and what a revision changed |
+| review, approving or not | the author, and whoever approves and merges | the head reviewed, what was checked and how, and what was found |
 | commit message | whoever runs `git blame` years later, offline | what changed and why, in terms that stand alone |
 | code comment | whoever edits that line, without the pull request | why this and not the obvious alternative |
 | test header and assertion text | whoever the test fails on | what it pins, and what was expected against what happened |
@@ -298,8 +299,80 @@ when the diff does not explain itself. Write it for both.
   a revision changed, or states a decision taken since. When the same fact sits in both,
   one of them goes stale — and it is the description, because that is the copy nobody
   re-reads.
+- An author is encouraged to add a pre-review: see [Pre-review](#pre-review).
 - Shortening a description follows the same rule as shortening anything else, and it
   comes last: see [Shortening](#shortening).
+
+### Pre-review
+
+A pre-review is a part of the description that shows the approver what was already
+checked and what was not. It is encouraged, not required. The evidence in it is owed
+anyway, under the bullets on verifying and testing in [Pull requests](#pull-requests);
+the pre-review lays it out so the approver can see what is left. Whatever its form, it
+says what was not checked, and why, and it counts an AI tool's result only once rerun
+(see **Tools** below).
+
+The form below is proposed, not required. A table with three columns works well: what
+was checked, how, and the result.
+
+- **Rows.** Every block of changed lines has a row, a line added inside a "moved
+  unchanged" block included. One row may cover several blocks that make the same
+  change, citing each.
+- **What was checked** names the claim the row settles, with its `file:line`; for
+  deleted or replaced lines, at the base as well, naming it. "Read" says how, not what
+  was found.
+- **How** is a test, as the `tests/` bullet in [Pull requests](#pull-requests) asks —
+  which test, on which platforms. Where no test can reach the block, it is another
+  check, with why no test: read, and against what; run by hand, and where; or an
+  analysis tool, and what it reported.
+- **Result** says whose run it is, and why the check is or is not evidence for the
+  claim: a run on a platform that never had the defect shows no breakage, not the fix.
+
+Beyond the lines, the pre-review says what was checked of the features the change
+touches, and whether Xymon still works as a whole where the change could show — the web
+pages, client and server talking to each other, alerts, graphs — and what the change
+could affect but was not checked.
+
+What is not settled is one of two kinds:
+
+- **Not checked** — nobody checked it; the row says why.
+- **Left open for the approver** — it needs a judgement the author cannot make: a design
+  choice, a compatibility risk, a platform nobody could run. It stays open even when the
+  author measured or assessed it; what was measured is reported as checked.
+
+A check already reported is not handed back to the approver to redo.
+
+**The last line** helps the approver most when it says whether anything is left open or
+not checked and, if something is, names each item, and what most needs the approver,
+and why.
+
+**Tools.** An analysis tool — a compiler, a linter, a test runner — may be quoted as it
+is. A finding from an AI tool is given in the words of whoever reports it, author or
+reviewer, and the tool is not named (see [AGENTS.md](AGENTS.md)). A result an AI tool
+reports counts only once that person has rerun it; until then it is not checked.
+
+### Reviews
+
+An approving review says that the change makes Xymon better as it stands, not that it is
+perfect. The approver reviews the whole change at the head it approves, as its diff
+against the base shows, not only what the pre-review left.
+
+The review names that head and says, as prose or a table:
+
+- which claims of the pre-review, where there is one, it verified — by running a check,
+  or running it where the author could not — and which it only read;
+- what it found, or that it found nothing, and what it could not check.
+
+Proposed, not required: start beyond the pre-review's claims with what it says most
+needs the approver, where it names something, then what it says was only read or not
+checked; and record checks in the terms of a [pre-review](#pre-review) — what was
+checked, how, and the result.
+
+A pre-review found wrong is a finding, and not by itself a reason to withhold approval:
+the author corrects the description, and the approval rests on what the review itself
+checked. The rules on tools in [Pre-review](#pre-review) apply to the review too. A
+re-approval after a push that changed nothing the review checked says so, names the new
+head, and may stop there.
 
 ### The last pass
 
