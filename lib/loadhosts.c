@@ -574,6 +574,14 @@ char *xmh_item(void *hostin, enum xmh_item_t item)
 			char *pgpath = hwalk->page->pagepath;
 
 			if (STRBUFLEN(rawtxt) > 0) addtobuffer(rawtxt, ",");
+			/*
+			 * Spelled out rather than calling pagepath_matchname():
+			 * that lives in matching.c, and a call from here pulls
+			 * matching.o - and so PCRE2 - into every link that uses
+			 * loadhosts.o. The client is such a link and does not carry
+			 * PCRELIBS, so folding this breaks the client build on
+			 * client/xymongrep, under both LOCALCLIENT settings.
+			 */
 			addtobuffer(rawtxt, ((pgpath && *pgpath) ? pgpath : "/"));
 			hwalk = hwalk->next;
 		  }
