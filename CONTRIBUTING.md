@@ -34,6 +34,7 @@ because it fails when the string changes.
 | pull request title | everyone scanning the list, and `git log --oneline` after a squash | the component, then what the change makes true |
 | pull request description | the reviewer deciding | the defect, the mechanism, what a reviewer cannot infer, the evidence |
 | pull request comments | the reviewer, in sequence | answers to findings, and what a revision changed |
+| review, approving or not | the author, and whoever approves and merges | the head reviewed, what was checked and how, and what was found |
 | commit message | whoever runs `git blame` years later, offline | what changed and why, in terms that stand alone |
 | code comment | whoever edits that line, without the pull request | why this and not the obvious alternative |
 | test header and assertion text | whoever the test fails on | what it pins, and what was expected against what happened |
@@ -298,8 +299,42 @@ when the diff does not explain itself. Write it for both.
   a revision changed, or states a decision taken since. When the same fact sits in both,
   one of them goes stale — and it is the description, because that is the copy nobody
   re-reads.
+- An author is encouraged to put a pre-review in the description: a short account, in
+  plain words for the person who will approve, of what was already checked and what was
+  not. It accounts for every block of changed lines. Each is either covered by a test
+  as the `tests/` bullet in [Pull requests](#pull-requests) asks — which test, on
+  which platforms — or, where no test can reach it, checked another way, with why no
+  test: read, and what was read; run by hand, and where; or an analysis tool, and what
+  it reported. Otherwise it is listed as not checked, and why. None is left out. Beyond
+  the lines, the pre-review says what was checked of the features the change touches,
+  and whether Xymon still works as a whole where the change could show — the web
+  pages, client and server talking to each other, alerts, graphs — and what the
+  change could affect but was not checked. For each block, it also says what the
+  approver should do with it: verify a claim — which one, and how to rerun it; review
+  closely — what no check can settle, such as a design choice, a compatibility risk,
+  or a platform nobody could run; or nothing beyond reading it. It ends with what most
+  needs the approver, and why. An analysis tool — a compiler, a linter, a test runner
+  — may be quoted as it is. A finding from an AI tool is given in the author's words,
+  and the tool is not named (see [AGENTS.md](AGENTS.md)); a result it reports counts
+  only once the author has rerun it, and until then is listed as not checked. The
+  evidence itself is owed anyway, under the bullets on verifying and testing in
+  [Pull requests](#pull-requests); the pre-review lays it out so the approver can see
+  what is left.
 - Shortening a description follows the same rule as shortening anything else, and it
   comes last: see [Shortening](#shortening).
+
+### Reviews
+
+An approving review says that the change makes Xymon better as it stands, not that it
+is perfect. The approver reviews the whole change at the head it approves, as its diff
+against the base shows, not only what the pre-review left. The review names that head
+and says what it checked: which claims of the pre-review, where there is one, it
+verified, by the reviewer running a check or running it where the author could not, and
+which it only read; what it reviewed beyond them, starting with what the pre-review
+says most needs the approver, then what it says was only read or not checked; what it
+found, or that it found nothing; and what it could not check. A finding from an AI tool
+is given in the reviewer's words, and the tool is not named. A re-approval after a push
+that changed nothing the review checked says so, names the new head, and may stop there.
 
 ### The last pass
 
