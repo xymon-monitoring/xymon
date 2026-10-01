@@ -3,6 +3,7 @@ name: tests
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -10,6 +11,15 @@ permissions:
 jobs:
   shell:
     name: shell regression tests
+    # The same push filter as the jobs in build.yml: in this repository a pull
+    # request already tests its branch, so a push tests only main, release
+    # branches and tags; a fork tests every branch it pushes.
+    if: >-
+      github.event_name != 'push' ||
+      github.repository != 'xymon-monitoring/xymon' ||
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/heads/release/') ||
+      startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     # A regression test that blocks (e.g. a configure probe growing an
     # interactive prompt) would otherwise hang the job for the runner's
