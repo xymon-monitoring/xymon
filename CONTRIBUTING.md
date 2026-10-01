@@ -207,7 +207,8 @@ may go in without one — not when to stop asking:
 | change | may merge without a review |
 |---|---|
 | bug fix, new feature, architectural change | no |
-| build, CI, test framework, minor manual refactoring | yes, when tests cover it or the pull request carries the evidence |
+| code refactoring, formatting included | not yet: a very localised one with no observable impact, quick to review, could merge without one on complete evidence that nothing observable changed; until the project can say what that evidence is, ask for a review |
+| build, CI, test framework | yes, when tests cover it or the pull request carries the evidence |
 | typo, comment, documentation | yes |
 
 GitHub cannot express that, so off the bypass list it asks for a review
