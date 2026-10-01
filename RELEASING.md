@@ -74,8 +74,8 @@ GitHub → Actions → **Pre-tag release prep** → *Run workflow* → version a
 It recreates `release/X.Y.Z` from `main`, runs `build/dorelease.sh X.Y.Z`
 (regenerating `build/md5.dat` and stamping "Version X.Y.Z + date" into every
 manpage and its HTML), commits, force-pushes, and opens a pull request against
-`main`. It also dispatches the build workflow so the PR gets CI, and writes the
-follow-up commands into the run summary.
+`main`. It also dispatches the build and test workflows so the PR gets CI, and
+writes the follow-up commands into the run summary.
 
 A PR rather than a direct commit so a human sees the generated diff first: it
 should contain only version stamps and `md5.dat` lines. Anything else means the
@@ -89,9 +89,14 @@ Reruns are safe — the branch is always recreated from `main`, and an existing
 Diff is only version stamps and `md5.dat`, checks green, merge.
 
 The checks come from an explicitly dispatched run, not a `pull_request` event
-(pushes made with the workflow's `GITHUB_TOKEN` never trigger workflows). They
-will not re-run if someone pushes by hand; the branch is workflow-owned, so
-rerun the prep workflow instead.
+(pushes made with the workflow's `GITHUB_TOKEN` never trigger workflows). A
+push made by hand does start CI, as on any branch, but the branch is
+workflow-owned and the next prep run recreates it from `main`, discarding that
+push — so rerun the prep workflow instead.
+
+A check that failed for a reason outside the branch, such as a flaky lane, needs
+no new prep run: re-run it from its run page. It runs again on the same commit,
+and its result replaces the earlier one on the PR.
 
 ### 4. Tag the merge commit
 
