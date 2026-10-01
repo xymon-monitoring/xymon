@@ -347,18 +347,32 @@ static void build_hosttree(void)
 #include "loadhosts_file.c"
 #include "loadhosts_net.c"
 
-char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling)
+char *knownhost_ex(char *hostname, char *hostip, enum ghosthandling_t ghosthandling, int *inperiod)
 {
 	/*
 	 * ghosthandling = GH_ALLOW  : Default BB method (case-sensitive, no logging, keep ghosts)
 	 * ghosthandling = GH_IGNORE : Case-insensitive, no logging, drop ghosts
 	 * ghosthandling = GH_LOG    : Case-insensitive, log ghosts, drop ghosts
 	 * ghosthandling = GH_MATCH  : Like GH_LOG, but try to match unknown names against known hosts
+	 *
+	 * Answers whether hosts.cfg holds a record for this name, and reports
+	 * through *inperiod whether that record's NOTBEFORE:/NOTAFTER: window
+	 * covers now. The two questions are separate: a host that is listed but
+	 * outside its window still exists, and a caller that deletes data has to
+	 * be able to tell that from a host that was removed from the
+	 * configuration (#281). knownhost() below keeps the original contract,
+	 * where an out-of-period host answers "not known". A NULL inperiod
+	 * means the caller does not care about the window at all.
 	 */
 	xtreePos_t hosthandle;
 	namelist_t *walk = NULL;
 	static char *result = NULL;
 	time_t now = getcurrenttime(NULL);
+
+	/* Every early return below is a path with no window to check: the
+	 * hival single-host mode, GH_ALLOW, and "summary". They leave this as
+	 * it stands, so those callers keep answering exactly as before. */
+	if (inperiod) *inperiod = 1;
 
 	if (result) xfree(result);
 	result = NULL;
@@ -410,8 +424,19 @@ char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling
 	/* Allow all summaries */
 	if (strcmp(hostname, "summary") == 0) return result;
 
-	if (walk && ( ((walk->notbefore > now) || (walk->notafter < now)) )) walk = NULL;
-	return (walk ? result : NULL);
+	if (!walk) return NULL;
+
+	if (inperiod && ((walk->notbefore > now) || (walk->notafter < now))) *inperiod = 0;
+	return result;
+}
+
+char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling)
+{
+	int inperiod = 1;
+	char *result;
+
+	result = knownhost_ex(hostname, hostip, ghosthandling, &inperiod);
+	return (inperiod ? result : NULL);
 }
 
 int knownloghost(char *logdir)
