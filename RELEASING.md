@@ -89,9 +89,14 @@ Reruns are safe — the branch is always recreated from `main`, and an existing
 Diff is only version stamps and `md5.dat`, checks green, merge.
 
 The checks come from an explicitly dispatched run, not a `pull_request` event
-(pushes made with the workflow's `GITHUB_TOKEN` never trigger workflows). They
-will not re-run if someone pushes by hand; the branch is workflow-owned, so
-rerun the prep workflow instead.
+(pushes made with the workflow's `GITHUB_TOKEN` never trigger workflows). A
+push made by hand does start CI, as on any branch, but the branch is
+workflow-owned and the next prep run recreates it from `main`, discarding that
+push — so rerun the prep workflow instead.
+
+A check that failed for a reason outside the branch, such as a flaky lane, needs
+no new prep run: re-run it from its run page. It runs again on the same commit,
+and its result replaces the earlier one on the PR.
 
 ### 4. Tag the merge commit
 
