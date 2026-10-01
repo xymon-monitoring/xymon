@@ -2564,22 +2564,58 @@ void handle_ackinfo(char *msg, char *sender, xymond_log_t *log)
 
 void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 {
-	char *msgtext, *channelmsg;
+	char *msgtext, *pagepath;
+	strbuffer_t *channelmsg;
 	void *hi;
 
 	dbgprintf("-> handle_notify\n");
 
 	hi = hostinfo(hostname);
-
 	msgtext = msg_data(msg, 0);
-	channelmsg = (char *)malloc(1024 + strlen(msgtext));
+
+	/*
+	 * The buffer was a fixed 1024 bytes of slack over the message text, with
+	 * the hostname, the testname and the pagepath list written into it as
+	 * well. None of those is bounded, and the list least of all - it carries
+	 * a path for every page the host is on - so a host on enough pages wrote
+	 * past the allocation.
+	 *
+	 * Build it in a strbuffer instead. Adding up the fields and counting the
+	 * separators in a format string by hand is the step that was wrong, and a
+	 * corrected hand-count is still a hand-count; this has no count to get
+	 * wrong.
+	 *
+	 * The empty-string fallbacks are not defensive padding: addtobuffer_many()
+	 * stops at its first NULL argument, so one NULL field does not leave a
+	 * gap, it truncates the message there. The pagepath is the one to watch -
+	 * guarding only the hostinfo lookup would let a NULL from xmh_item() take
+	 * the newline and the whole alert text with it - and posttochannel() and
+	 * handle_data() guard that same return the same way.
+	 */
+	channelmsg = newstrbuffer(0);
+	if (channelmsg == NULL) {
+		/* newstrbuffer() has logged the failure. */
+		dbgprintf("<- handle_notify (allocation failed)\n");
+		return;
+	}
+
+	/*
+	 * Read the pagepath here rather than earlier: it points into a static
+	 * strbuffer inside xmh_item(), so the less far that pointer is carried,
+	 * the less there is to go wrong if a call is ever inserted above it.
+	 */
+	pagepath = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : NULL);
+
+	addtobuffer_many(channelmsg,
+		(hostname ? hostname : ""), "|",
+		(testname ? testname : ""), "|",
+		(pagepath ? pagepath : ""), "\n",
+		(msgtext ? msgtext : ""), NULL);
 
 	/* Tell the pagers */
-	sprintf(channelmsg, "%s|%s|%s\n%s", 
-		hostname, (testname ? testname : ""), (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : ""), msgtext);
-	posttochannel(pagechn, "notify", msg, sender, hostname, NULL, channelmsg);
+	posttochannel(pagechn, "notify", msg, sender, hostname, NULL, STRBUF(channelmsg));
 
-	xfree(channelmsg);
+	freestrbuffer(channelmsg);
 
 	dbgprintf("<- handle_notify\n");
 	return;
