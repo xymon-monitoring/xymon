@@ -36,6 +36,7 @@
 fsf_setup() {
 	_os=$1
 	_envvar=$2
+	FSF_OS=$_os
 
 	# Indirect-expand ${ENV_VAR:-default}. eval keeps this POSIX (no namerefs).
 	eval "SCRIPT=\"\${$_envvar:-\$(find_root)/client/xymonclient-$_os.sh}\""
@@ -389,11 +390,71 @@ fsf_assert_loud() {
 	fail "${2:-}: the report carries no marker, leaving the server an empty section it cannot explain: '$1'"
 }
 
+# fsf_header_has HEADER WANTED -- is WANTED one of HEADER's column names?
+# WANTED may list alternatives separated by "|". Whole tokens, case-insensitive:
+# the comparison the server makes. Split on "[|]", not "|", which some awks read
+# as an alternation with two empty branches.
+fsf_header_has() {
+	printf '%s\n' "$1" | awk -v want="$2" '
+		BEGIN { n = split(tolower(want), a, "[|]"); for (i = 1; i <= n; i++) if (a[i] != "") W[a[i]] = 1 }
+		{ for (i = 1; i <= NF; i++) if (tolower($i) in W) found = 1 }
+		END { exit found ? 0 : 1 }
+	'
+}
+
+# fsf_header_side SRC FUNC HEADER SECTION -- every column name FUNC is called
+# with in SRC must be present in HEADER.
+fsf_header_side() {
+	_hs_src=$1; _hs_fn=$2; _hs_hdr=$3; _hs_sect=$4
+
+	# "|| true": no match is what the guard below reports, and under
+	# "set -e -o pipefail" a grep that finds nothing kills the caller first.
+	_hs_names=$(grep -h "$_hs_fn(" "$_hs_src" | grep -o '"[^"]*"' | tr -d '"' || true)
+	# Deliberate split on whitespace: a column name is one token, and the count
+	# below says so. noglob is saved and restored, not just switched off --
+	# turning a caller's option back on is the bug this idiom avoids.
+	case $- in *f*) _hs_glob=no ;; *) _hs_glob=yes; set -f ;; esac
+	# shellcheck disable=SC2086
+	set -- $_hs_names
+	[ "$_hs_glob" = yes ] && set +f
+	# Not three names means the extraction no longer describes the call: moved,
+	# reformatted, or a second call added. Which cannot be told from here, so
+	# the message reports the count, not a cause -- and it must break loudly,
+	# since a contract check that stops checking is worse than none.
+	[ $# -eq 3 ] || fail "cannot read the column names $_hs_fn() is called with in $_hs_src: found $# quoted strings on the lines that call it, expected 3 -- the call moved, was reformatted, or there is now more than one, and this check needs teaching about it"
+
+	for _hs_w in "$@"; do
+		fsf_header_has "$_hs_hdr" "$_hs_w" || fail \
+			"contract: $_hs_fn() looks for a column called '$_hs_w', which is not in the [$_hs_sect] header this client sends: '$_hs_hdr'"
+	done
+}
+
+# fsf_header_contract DFHDR INODEHDR -- clients keep their own df's words on
+# purpose, so an operator sees what df prints on the box. The cost is that the
+# server must know each spelling, and nothing checked that it did: netbsd.c
+# asked for "Avail" while every NetBSD client ever sent "Available". This pins
+# the two sides together rather than making the labels uniform.
+fsf_header_contract() {
+	_hc_src="$(find_root)/xymond/client/$FSF_OS.c"
+	# Not a skip: the suite runs from the checkout even when XYMONCLIENT_<OS>
+	# names an installed client, so the handler is always there. Its absence
+	# means it was renamed or removed, and passing would check nothing.
+	[ -f "$_hc_src" ] || fail "$_hc_src is missing, so nothing says which column names the server will look for -- was the handler renamed?"
+
+	fsf_header_side "$_hc_src" unix_disk_report  "$1" df
+	fsf_header_side "$_hc_src" unix_inode_report "$2" inode
+}
+
 # fsf_contract -- the rules every client obeys, asserted on the emitted report.
 fsf_contract() {
 	_out=$(fsf_report)
 	_df=$(fsf_section "$_out" df)
 	_in=$(fsf_section "$_out" inode)
+
+	# The names the server looks for must be in the header the client just
+	# sent. First, because every assertion below reads a report the server
+	# could not parse otherwise.
+	fsf_header_contract "$(printf '%s\n' "$_df" | head -1)" "$(printf '%s\n' "$_in" | head -1)"
 
 	assert_contains "$FSF_LOCAL_MP" "$_df" \
 		"contract: an ordinary local filesystem must be reported (block stderr: $(tr '\n' ' ' < "$STDERR_LOG" | cut -c1-300))"
