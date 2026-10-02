@@ -233,7 +233,6 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)
 endif
 
-
 	mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)
 ifneq ($(INSTALLETCDIR),$(XYMONHOME)/etc)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/etc || true
@@ -365,16 +364,28 @@ install-common: install-dirs
 #
 # Named for what it installs, as the other targets are -- devel calls
 # this install-libs, which describes the archives but not the 58 headers.
+#
+# Server builds only: a client build makes neither libxymon nor
+# libxymoncomm, so the kit would install three client archives under a
+# xymon.pc naming libraries that are not there.
+ifeq ($(CLIENTONLY),yes)
 install-devel:
-	mkdir -p $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
+	@echo "install-devel: a client-only build does not build libxymon; build the server to get the development kit" >&2
+	@exit 1
+else
+install-devel:
+	mkdir -p $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
 # A back-compat symlink so $(XYMONHOME)/sdk keeps resolving when the kit is
-# relocated as a tree. A package build owns its layout through its own file
-# list and does not want it -- an unpackaged symlink is a hard error to
-# rpmbuild and dpkg -- so skip it under PKGBUILD, as the chown below is.
+# relocated as a tree, by INSTALLSDKDIR. A split across FHS trees has no
+# single directory to point at -- the headers and archives are apart -- so
+# it gets none. A package build owns its layout through its own file list
+# and does not want it -- an unpackaged symlink is a hard error to rpmbuild
+# and dpkg -- so skip it under PKGBUILD, as the chown below is.
 ifndef PKGBUILD
-ifneq ($(INSTALLINCDIR),$(XYMONHOME)/sdk)
+ifneq ($(INSTALLSDKDIR),$(XYMONHOME)/sdk)
+	mkdir -p $(INSTALLROOT)$(XYMONHOME)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/sdk || true
-	ln -s $(INSTALLINCDIR) $(INSTALLROOT)$(XYMONHOME)/sdk || true
+	ln -s $(INSTALLSDKDIR) $(INSTALLROOT)$(XYMONHOME)/sdk || true
 endif
 endif
 ifndef PKGBUILD
@@ -402,6 +413,7 @@ endif
 	    -e 's!@LIBRTDEF@!$(LIBRTDEF)!g' \
 	    $(BUILDTOPDIR)/build/xymon.pc.in > $(INSTALLROOT)$(INSTALLLIBDIR)/pkgconfig/xymon.pc
 	chmod 644 $(INSTALLROOT)$(INSTALLLIBDIR)/pkgconfig/xymon.pc
+endif
 
 install-xymongen: install-common
 	XYMONHOME="$(XYMONHOME)" MANROOT="$(MANROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" $(MAKE) -C xymongen install
