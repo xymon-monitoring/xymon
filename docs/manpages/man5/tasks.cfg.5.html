@@ -83,16 +83,17 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     &quot;regular expression&quot;; if the hostname where xymonlaunch runs
     matches this expression, then the task will run. If it doesn't match, then
     the task is treated as if it were DISABLED.</p>
-<p class="Pp">The <b>DELAY</b> keyword sets an intial holding period after
-    launch before this task is started. By default all tasks are launched
-    immediately, or no later than 5s after any NEEDS have been fulfulled. DELAY
-    0 starts the task as soon as its NEEDS task is running.</p>
+<p class="Pp">The <b>DELAY</b> keyword applies to a task with NEEDS: it sets how
+    long the task waits after the task it NEEDS has started. The time takes the
+    same &quot;m&quot;, &quot;h&quot; or &quot;d&quot; suffix as MAXTIME below,
+    and defaults to 5 seconds. DELAY 0 starts the task as soon as its NEEDS task
+    is running. A task without NEEDS starts immediately, whatever its DELAY.</p>
 <p class="Pp">The <b>MAXTIME</b> keyword sets a maximum time that the task may
     run; if exceeded, xymonlaunch will kill the task. The time is in seconds by
     default, you can specify minutes, hours or days by adding an &quot;m&quot;,
     &quot;h&quot; or &quot;d&quot; after the number. By default there is no
     upper limit on how long a taskmay run.</p>
-<p class="Pp">The <b>FAILDELAY</b> keyword sets a how long to hold off on re-
+<p class="Pp">The <b>FAILDELAY</b> keyword sets how long to hold off on re-
     launching a task that has exited with a non-zero error value <b>5</b> times
     in that length of time. For example, if a process had to be re-launched (due
     to error) more than 5 times in a 15 minute period, 15 minutes would have to

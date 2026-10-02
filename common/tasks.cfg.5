@@ -72,10 +72,11 @@ provide a "regular expression"; if the hostname where xymonlaunch
 runs matches this expression, then the task will run. If it doesn't
 match, then the task is treated as if it were DISABLED.
 
-The \fBDELAY\fR keyword sets an intial holding period after launch
-before this task is started. By default all tasks are launched
-immediately, or no later than 5s after any NEEDS have been
-fulfulled. DELAY 0 starts the task as soon as its NEEDS task is running.
+The \fBDELAY\fR keyword applies to a task with NEEDS: it sets how
+long the task waits after the task it NEEDS has started. The time
+takes the same "m", "h" or "d" suffix as MAXTIME below, and defaults
+to 5 seconds. DELAY 0 starts the task as soon as its NEEDS task is
+running. A task without NEEDS starts immediately, whatever its DELAY.
 
 The \fBMAXTIME\fR keyword sets a maximum time that the task may
 run; if exceeded, xymonlaunch will kill the task. The time
@@ -83,7 +84,7 @@ is in seconds by default, you can specify minutes, hours or
 days by adding an "m", "h" or "d" after the number. By default
 there is no upper limit on how long a taskmay run.
 
-The \fBFAILDELAY\fR keyword sets a how long to hold off on re-
+The \fBFAILDELAY\fR keyword sets how long to hold off on re-
 launching a task that has exited with a non-zero error value \fB5\fR
 times in that length of time. For example, if a process had to
 be re-launched (due to error) more than 5 times in a 15 minute
