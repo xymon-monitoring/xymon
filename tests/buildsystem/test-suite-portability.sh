@@ -56,6 +56,13 @@ report() {
 
 	__rule_patterns[${#__rule_patterns[@]}]=$pattern
 	for f in $files; do
+		# The runner is scanned like everything else -- it has to run on every
+		# platform too -- except by the rules that are about what a TEST may
+		# use: it is the file that defines those, and reporting it would mean
+		# the rule could only be satisfied by deleting the definition.
+		case $rule in
+		  runner-only-helper) [ "$f" = "$ROOT/tests/testsuite" ] && continue ;;
+		esac
 		# Drop comment lines before matching, keeping real line numbers.
 		# "|| true" twice: a grep with no match exits 1, which set -e and
 		# pipefail would take for an error.
@@ -119,6 +126,17 @@ report "include-shadow" '\-I *"?\$\{?ROOT' \
 # name the path anyway -- the native ones -- reads it, it does not sed it.
 report "path-rewrite" 'sed.*/proc/' \
 	"replace the helper by name (fsf_stub_helper), not the path it reads"
+
+# The runner defines errline() and run_one() for itself. A test does not have
+# them: it is sourced with tests/lib/assert.sh and nothing else, so a call to
+# one is a command-not-found. Such a call lands on the arm that REPORTS a
+# failure, which is the arm that does not run while everything passes -- so it
+# hides in a green suite and the assertion it belongs to can never fire.
+# Measured: tests/buildsystem/testsuite-run-disposal.sh asserted a signal exit
+# status through errline() and could not have reported a wrong one.
+# The message stays on one line: violations are stored one per line.
+report "runner-only-helper" '(^|[^-[:alnum:]_.])(errline|run_one)[[:space:]]' \
+	"errline and run_one belong to tests/testsuite, not to a test: a call is a command-not-found on the branch that reports failures; use fail, skip or pass from tests/lib/assert.sh"
 
 # Interpreters the BSD runners do not have.
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
@@ -208,10 +226,11 @@ probe="$work/probe.sh"
 	printf 'chmod 555 d\n'
 	printf 'cc -I"$ROOT/lib" x.c\n'
 	printf 'sed s#/proc/mounts#f# x\n'
+	printf 'errline "boom"\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "8" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "9" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # The link-flags rule the same way, including the bypass it used to allow: the
 # helpers named in a comment and nowhere else.
