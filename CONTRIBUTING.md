@@ -222,7 +222,21 @@ does not move to a tool. Work that no person supervised is a different
 situation, and this file gets revisited if it arrives.
 
 - One change per pull request. A fix and the cleanup you noticed next to it are
-  two pull requests.
+  two pull requests. A fix and a new check that keeps its construct out may go
+  together, in two commits, or apart: both are accepted.
+- One feature per commit, or one step of it when the feature is too large to
+  review in one sitting — parsing a keyword, acting on it, documenting it. A
+  pull request whose change has more than one part — a ported original and the
+  correction made to it, a refactoring the fix cannot be made without and the
+  fix — keeps each in a commit of its own, and no commit holds two. Each commit
+  builds, and its message says what it does and why, in terms that stand alone,
+  whatever the merge method. The commit that makes a behaviour observable
+  carries the test that pins it, so that commit fails without it. A ported
+  original may stay as its author wrote it even where it does not build alone;
+  the correction after it makes it build, and its message says so. A correction
+  found in review is folded into the commit it corrects, not added as a commit
+  of its own: a pull request may land with a merge commit, and then every commit
+  reaches `main` as it stands.
 - Say what you verified, and how. "Built and ran the test suite" is useful;
   "should work" is not. If you could not test something, say that too — it is
   not held against you, and it tells a reviewer where to look.
@@ -246,7 +260,9 @@ situation, and this file gets revisited if it arrives.
 ### Titles
 
 The title is the one line a reader gets in the pull request list and, after a
-squash merge, in `git log --oneline`. Write it so that line is enough.
+squash merge, in `git log --oneline`; after a merge commit that line is each
+commit's own subject instead, which is why a commit message stands alone too.
+Write the title so its line is enough.
 
 - Start with the component that changes, then a colon: a name the tree already
   uses for it — a program, a directory, a module, a function or a config file
