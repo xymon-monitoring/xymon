@@ -36,7 +36,7 @@ SRC="$ROOT/xymonnet/contest.c"
 
 # The specific dead read that caused it must be gone.
 grep -q 'X509_get_signature_type(peercert)' "$SRC" \
-	&& fail "contest.c reads peercert with X509_get_signature_type after it is freed (use-after-free)"
+	&& fail "contest.c reads peercert with X509_get_signature_type after setup_ssl() released it -- harmless today only because SSL_get_peer_certificate() holds a reference"
 
 # There must be exactly one free of peercert...
 frees=$(grep -c 'X509_free(peercert)' "$SRC")
@@ -49,6 +49,6 @@ free_line=$(grep -n 'X509_free(peercert)' "$SRC" | cut -d: -f1)
 # free is harmless and must not read as a use-after-free.
 last_line=$(grep -n 'peercert' "$SRC" | grep -vE ':[[:space:]]*(\*|/\*|//)' | tail -1 | cut -d: -f1)
 [ "$free_line" = "$last_line" ] \
-	|| fail "contest.c references peercert at line $last_line, after it is freed at line $free_line (use-after-free)"
+	|| fail "contest.c references peercert at line $last_line, after it is released at line $free_line"
 
 pass "contest.c frees the peer certificate last -- nothing reads it after X509_free(peercert)"
