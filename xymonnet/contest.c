@@ -1389,7 +1389,18 @@ restartselect:
 						/*
 						 * We may be in the process of setting up an SSL connection
 						 */
-						if (item->sslrunning == SSLSETUP_PENDING) setup_ssl(item);
+						if (item->sslrunning == SSLSETUP_PENDING) {
+							setup_ssl(item);
+							if (item->sslrunning == 1) {
+								/*
+								 * As in the write arm: the connection time
+								 * includes the SSL handshake. It now usually
+								 * completes here, so without this the
+								 * reported time is the TCP connect alone.
+								 */
+								get_connectiontime(item, &timestamp);
+							}
+						}
 						if (item->sslrunning == SSLSETUP_PENDING) {
 							/*
 							 * Still handshaking: nothing to read yet.
@@ -1415,8 +1426,8 @@ restartselect:
 							 * nothing has sent sendtxt or decided whether a
 							 * banner is even wanted. Reading now would skip the
 							 * send outright, and would collect a banner for a
-							 * silenttest. Clearing readpending is 0 here means
-							 * select() puts the socket back in writefds, so the
+							 * silenttest. readpending is still 0 here, which
+							 * puts the socket back in writefds for select(): the
 							 * write arm picks it up on the next pass exactly as
 							 * it did when the handshake completed there.
 							 */
