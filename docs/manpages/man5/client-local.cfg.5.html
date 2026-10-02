@@ -102,7 +102,11 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     sharing a class, and a default configuration for all other hosts of a
     certain type.</p>
 <p class="Pp">The order is by kind, not by position: a class section outranks an
-    operating system section wherever either appears in the file.</p>
+    operating system section wherever either appears in the file. A section
+    written without a prefix - the shipped ones, such as <i>[linux]</i> - is
+    matched as a hostname, a class and an operating system alike; since a
+    client's class defaults to its operating system name, the shipped
+    <i>[linux]</i> usually matches a Linux host as its class.</p>
 <p class="Pp">It will often be practical to use regular expressions for
     hostnames. To do this you must use</p>
 <p class="Pp">
@@ -224,14 +228,17 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     and the shipped <i>client-local.cfg</i> keeps being upgraded.</p>
 <p class="Pp">Because sections are chosen by kind before position, a
     <b>[host=...]</b> or <b>[class=...]</b> section in such a file takes
-    precedence over the operating system sections shipped here, wherever the
-    include sits.</p>
+    precedence over the sections shipped here, wherever the include sits,
+    provided a <b>[class=...]</b> names a class none of them is called: a
+    client's class defaults to its operating system name, so
+    <b>[class=linux]</b> does not.</p>
 <p class="Pp">One case does not work: an <b>[os=...]</b> section in an added
     file cannot override a shipped section for the same operating system, since
-    both are operating system matches and the first one found wins. Give the
-    hosts a class in <i>hosts.cfg</i> and use <b>[class=...]</b> instead - that
-    outranks the operating system section, and is the supported way to change
-    what a group of hosts collects.</p>
+    the shipped section matches first - usually as the host's class, which an
+    <b>[os=...]</b> section can never outrank. Give the hosts a class in
+    <i>hosts.cfg</i>, one no shipped section is called, and use
+    <b>[class=...]</b> instead - that outranks the operating system section, and
+    is the supported way to change what a group of hosts collects.</p>
 <p class="Pp">All of the above describes the default behaviour, where one
     section is chosen. Under <b>--merge-clientlocal</b> every matching section
     is concatenated instead, so an <b>[os=...]</b> section in an added file does

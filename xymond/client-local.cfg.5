@@ -96,7 +96,13 @@ for a group of hosts sharing a class, and a default configuration for all
 other hosts of a certain type.
 .PP
 The order is by kind, not by position: a class section outranks an operating
-system section wherever either appears in the file.
+system section wherever either appears in the file. A section written without
+a prefix \- the shipped ones, such as
+.I [linux]
+\- is matched as a hostname, a class and an operating system alike; since a
+client's class defaults to its operating system name, the shipped
+.I [linux]
+usually matches a Linux host as its class.
 
 It will often be practical to use regular expressions for hostnames.
 To do this you must use
@@ -216,16 +222,23 @@ Because sections are chosen by kind before position, a
 .B [host=...]
 or
 .B [class=...]
-section in such a file takes precedence over the operating system sections
-shipped here, wherever the include sits.
+section in such a file takes precedence over the sections shipped here,
+wherever the include sits, provided a
+.B [class=...]
+names a class none of them is called: a client's class defaults to its
+operating system name, so
+.B [class=linux]
+does not.
 
 One case does not work: an
 .B [os=...]
 section in an added file cannot override a shipped section for the same
-operating system, since both are operating system matches and the first one
-found wins. Give the hosts a class in
-.I hosts.cfg
-and use
+operating system, since the shipped section matches first \- usually as the
+host's class, which an
+.B [os=...]
+section can never outrank. Give the hosts a class in
+.IR hosts.cfg ,
+one no shipped section is called, and use
 .B [class=...]
 instead \- that outranks the operating system section, and is the supported
 way to change what a group of hosts collects.
