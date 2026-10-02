@@ -546,7 +546,8 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   </dd>
   <dt id="ping"><a class="permalink" href="#ping"><b>ping</b></a></dt>
   <dd>Attempts to contact the Xymon server. If successful, the Xymon server
-      version ID is reported.
+      version ID is reported. Sent to <i><a href="../man8/msgcache.8.html">msgcache</a>(8)</i> instead, it is answered
+      by msgcache with its own version and the age of the last pull.
     <p class="Pp"></p>
   </dd>
   <dt id="pullclient"><a class="permalink" href="#pullclient"><b>pullclient</b></a></dt>
