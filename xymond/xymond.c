@@ -2015,7 +2015,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 				else if (strlen(log->testflags) >= strlen(flagstart))
 					strcpy(log->testflags, flagstart);
 				else {
-					log->testflags = realloc(log->testflags, strlen(flagstart));
+					/* strcpy writes strlen()+1 bytes; size the buffer for the NUL too. */
+					log->testflags = realloc(log->testflags, strlen(flagstart) + 1);
 					strcpy(log->testflags, flagstart);
 				}
 				*flagend = ']';
