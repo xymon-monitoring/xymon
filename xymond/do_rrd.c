@@ -67,6 +67,7 @@ static void * updcache;
 typedef struct updcacheitem_t {
 	char *key;
 	rrdtpldata_t *tpl;
+	int fileok;
 	int valcount;
 	char *vals[CACHESZ];
 	int updseq[CACHESZ];
@@ -238,6 +239,7 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	/* Flush any updates we've cached */
 	xymon_rrd_argv_item_t updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
 	int i, pcount, result;
+	struct stat st;
 
 	dbgprintf("Flushing '%s' with %d updates pending, template '%s'\n", 
 		  cacheitem->key, (newdata ? 1 : 0) + cacheitem->valcount, cacheitem->tpl->template);
@@ -270,13 +272,50 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	utimes(filedir, NULL);
 #endif
 
-	/* Clear the cached data */
-	for (i=0; (i < cacheitem->valcount); i++) {
-		cacheitem->updseq[i] = 0;
-		cacheitem->updtime[i] = 0;
-		if (cacheitem->vals[i]) xfree(cacheitem->vals[i]);
+	/*
+	 * A failed write keeps its readings only when the file is gone - deleted
+	 * by hand, moverrd.sh, a restore. The next update re-stats, recreates and
+	 * writes them. Kept for any other error, a reading RRDtool will never
+	 * accept sits at the front and fails every flush behind it. The new one
+	 * joins them: the caller frees it on return.
+	 */
+	if ((result != 0) && (stat(filedir, &st) != 0)) {
+		if (newdata && (cacheitem->valcount < CACHESZ)) {
+			cacheitem->updseq[cacheitem->valcount] = seq;
+			cacheitem->updtime[cacheitem->valcount] = getcurrenttime(NULL);
+			cacheitem->vals[cacheitem->valcount] = strdup(newdata);
+			cacheitem->valcount += 1;
+		}
 	}
-	cacheitem->valcount = 0;
+	else if (result != 0) {
+		/* Nothing here will ever be accepted: drop it rather than wedge. */
+		for (i=0; (i < cacheitem->valcount); i++) {
+			cacheitem->updseq[i] = 0;
+			cacheitem->updtime[i] = 0;
+			if (cacheitem->vals[i]) xfree(cacheitem->vals[i]);
+		}
+		cacheitem->valcount = 0;
+	}
+
+	if (result == 0) {
+		for (i=0; (i < cacheitem->valcount); i++) {
+			cacheitem->updseq[i] = 0;
+			cacheitem->updtime[i] = 0;
+			if (cacheitem->vals[i]) xfree(cacheitem->vals[i]);
+		}
+		cacheitem->valcount = 0;
+	}
+
+	/*
+	 * Re-check the file on the next update, whatever the result. This lives
+	 * here rather than at the call site because the callers that commit are
+	 * not the only ones that matter: a renamehost flushes through
+	 * updcache_host_op() just before rename() moves the files, and the two
+	 * rrdcacheflush* entry points commit an item at an arbitrary later time.
+	 * A drophost does not reach here at all - it discards - which is why
+	 * updcache_host_op() clears the flag for every item it touches.
+	 */
+	cacheitem->fileok = 0;
 
 	return result;
 }
@@ -366,8 +405,14 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		if (!template) template = cacheitem->tpl;
 	}
 
-	/* If the RRD file doesn't exist, create it immediately */
-	if (stat(filedir, &st) == -1) {
+	/*
+	 * Once seen - here or just after creating it - an existing file costs no
+	 * stat() per update. flush_cached_updates() clears the flag, so the check
+	 * runs once per flush rather than once per value.
+	 */
+	if (!cacheitem->fileok && (stat(filedir, &st) != -1)) cacheitem->fileok = 1;
+
+	if (!cacheitem->fileok) {
 		xymon_rrd_argv_item_t *rrdcreate_params;
 		char **rrddefinitions;
 		int rrddefcount, i;
@@ -427,6 +472,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			MEMUNDEFINE(rrdvalues);
 			return 1;
 		}
+		else cacheitem->fileok = 1;	/* Just created it - it's there now */
 	}
 
 	updtime = atoi(rrdvalues);
@@ -500,7 +546,11 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	}
 
 	/* Are we actually handling the writing of RRD files? */
-	if (no_rrd) return 0;
+	if (no_rrd) {
+		MEMUNDEFINE(filedir);
+		MEMUNDEFINE(rrdvalues);
+		return 0;
+	}
 
 	/* 
 	 * We cannot just cache data every time because then after CACHESZ updates
@@ -586,6 +636,15 @@ static void updcache_host_op(char *hostname, int flushfirst, char *flushas)
 		updcacheitem_t *cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
 
 		if (strncasecmp(cacheitem->key, prefix, plen) != 0) continue;
+
+		/*
+		 * Cleared here, before the valcount test below skips the idle items
+		 * and before the discard branch, which never reaches
+		 * flush_cached_updates(). Left set, a re-added host skips the create
+		 * and loses a cache cycle against a file that is not there.
+		 */
+		cacheitem->fileok = 0;
+
 		if (cacheitem->valcount == 0) continue;
 		nhit++;
 
