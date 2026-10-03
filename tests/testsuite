@@ -102,24 +102,30 @@ run_one() {
 	endgroup
 }
 
-# Iterate line-by-line rather than `for t in $tests`: unquoted word-splitting
-# breaks on any path containing a space (find emits newline-separated paths, but
-# the default IFS splits on spaces and tabs too). The here-doc keeps the loop in
-# this shell -- not a `| while` subshell -- so run_one's counters survive it.
-while IFS= read -r t; do
-	[ -n "$t" ] || continue
-	run_one "$t"
-done <<EOF
-$tests
-EOF
+# Split the list on newlines alone: find emits one path per line, and the
+# default IFS would also break a path at a space. Globbing is off so a path
+# holding * or ? stays as written. A `| while` loop would run in a subshell and
+# lose run_one's counters. A here-doc would keep them, but OpenBSD's sh writes
+# one to a named file in $TMPDIR -- the run directory -- and keeps it there
+# until the loop ends, where tests/final/no-leftovers.sh, run inside the loop,
+# finds it.
+run_all() {
+	set -f
+	oifs=$IFS
+	IFS='
+'
+	for t in $1; do
+		IFS=$oifs
+		run_one "$t"
+	done
+	IFS=$oifs
+	set +f
+}
+
+run_all "$tests"
 
 # Everything else has finished; now the checks that are about what is left.
-while IFS= read -r t; do
-	[ -n "$t" ] || continue
-	run_one "$t"
-done <<EOF
-$finaltests
-EOF
+run_all "$finaltests"
 
 printf '\n----- summary -----\n'
 printf 'passed:  %d\n' "$pass"
