@@ -6152,15 +6152,19 @@ int main(int argc, char *argv[])
 	}
 
 	if (pidfile == NULL) {
-		/* Setup a default pid-file */
+		/* Setup a default pid-file: in the runtime directory, where the
+		   shipped tasks.cfg puts it and where xymon.sh looks for it.
+		   Bounded, XYMONRUNDIR being configured. */
 		char fn[PATH_MAX];
 
-		sprintf(fn, "%s/xymond.pid", xgetenv("XYMONSERVERLOGS"));
-		pidfile = strdup(fn);
+		if (snprintf(fn, sizeof(fn), "%s/xymond.pid", xymon_rundir()) >= (int)sizeof(fn)) {
+			errprintf("Default pidfile path does not fit under XYMONRUNDIR, no pidfile written\n");
+		}
+		else pidfile = strdup(fn);
 	}
 
-	/* Save PID */
-	{
+	/* Save PID, unless the default path did not fit (pidfile is NULL). */
+	if (pidfile) {
 		FILE *fd = fopen(pidfile, "w");
 		if (fd) {
 			if (fprintf(fd, "%lu\n", (unsigned long)getpid()) <= 0) {
@@ -6646,7 +6650,8 @@ int main(int argc, char *argv[])
 	if (bf_buf) xfree(bf_buf);
 
 	save_checkpoint();
-	unlink(pidfile);
+	/* pidfile is NULL when the default path did not fit. */
+	if (pidfile) unlink(pidfile);
 
 	if (dbgfd) fclose(dbgfd);
 
