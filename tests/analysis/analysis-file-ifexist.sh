@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/analysis-file-ifexist.sh
+# tests/analysis/analysis-file-ifexist.sh
 #
 # Regression guard for IFEXIST being accepted as an alias for OPTIONAL in a
 # FILE rule (analysis.cfg / client-local.cfg), added for compatibility with
