@@ -259,18 +259,28 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       directory. Default: $XYMONHOME/www/notes/
     <p class="Pp"></p>
   </dd>
+  <dt id="XYMONCACHEWWWDIR"><a class="permalink" href="#XYMONCACHEWWWDIR"><b>XYMONCACHEWWWDIR</b></a></dt>
+  <dd>Parent directory for regenerable web output, namely the on-demand
+      availability reports and snapshots (XYMONREPDIR and XYMONSNAPDIR default
+      to subdirectories of it). It is kept separate from the persistent web
+      files so that a packaging can place this throwaway, safe-to-delete data on
+      a volatile filesystem such as /var/cache. Default: $XYMONWWWDIR
+    <p class="Pp"></p>
+  </dd>
   <dt id="XYMONREPDIR"><a class="permalink" href="#XYMONREPDIR"><b>XYMONREPDIR</b></a></dt>
   <dd>Directory for Xymon availability reports. The $XYMONREPURL URL must map to
       this directory. Note also that your webserver must have write-access to
       this directory, if you want to use the <i><a href="../man1/report.cgi.1.html">report.cgi</a>(1)</i> CGI script to
-      generate reports on-demand. Default: $XYMONHOME/www/rep/
+      generate reports on-demand. Default: $XYMONCACHEWWWDIR/rep/ (i.e.
+      $XYMONHOME/www/rep/)
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONSNAPDIR"><a class="permalink" href="#XYMONSNAPDIR"><b>XYMONSNAPDIR</b></a></dt>
   <dd>Directory for Xymon snapshots. The $XYMONSNAPURL URL must map to this
       directory. Note also that your webserver must have write-access to this
       directory, if you want to use the <i><a href="../man1/snapshot.cgi.1.html">snapshot.cgi</a>(1)</i> CGI script to
-      generate snapshots on-demand. Default: $XYMONHOME/www/snap/
+      generate snapshots on-demand. Default: $XYMONCACHEWWWDIR/snap/ (i.e.
+      $XYMONHOME/www/snap/)
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONVAR"><a class="permalink" href="#XYMONVAR"><b>XYMONVAR</b></a></dt>
