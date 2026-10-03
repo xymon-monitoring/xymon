@@ -168,6 +168,8 @@ jobs:
           # tip before and after, so one expression serves both.
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD: ${{ github.event.pull_request.head.sha || github.event.after }}
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
         run: |
           # A range this cannot resolve -- a stale head after a force-push, an
           # object the checkout does not have -- must stop the job. Left in the
@@ -241,15 +243,33 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           [ "$bad" = 0 ] || exit 1
 
+          # The run page says what this run read, so a reader need not open
+          # the log: which event started it, how many commits, which range.
+          # Every run checks everything, and the newest replaces the last.
+          case "$EVENT/$ACTION" in
+            pull_request/opened)      why="the pull request was opened" ;;
+            pull_request/reopened)    why="the pull request was reopened" ;;
+            pull_request/synchronize) why="a push to the pull request" ;;
+            pull_request/edited)      why="an edit of its title, description or base" ;;
+            push/*)                   why="a push to main" ;;
+            *)                        why="$EVENT $ACTION" ;;
+          esac
+          printf '**Triggered by** %s.\n\n' "$why" >>"$GITHUB_STEP_SUMMARY"
+
           if ! hits=$(scan_commits "$BASE" "$HEAD"); then
             exit 1
           fi
+          # Counted after the scan, which is what reports a range it cannot read.
+          n=$(git rev-list --count "$BASE".."$HEAD")
+          range="\`$(git rev-parse --short "$BASE")..$(git rev-parse --short "$HEAD")\`"
           if [ -n "$hits" ]; then
+            printf -- '- **Commits:** %s in %s; attribution found:\n\n```\n%s\n```\n' "$n" "$range" "$hits" >>"$GITHUB_STEP_SUMMARY"
             echo "::error::a commit this pull request adds carries an AI attribution trailer"
             printf '%s\n' "$hits"
             echo "::error::AGENTS.md: do not add attribution for an AI tool. Strip the trailer; on a pull request, amend and force-push."
             exit 1
           fi
+          printf -- '- **Commits:** %s in %s, no attribution found.\n' "$n" "$range" >>"$GITHUB_STEP_SUMMARY"
           echo "commits clean"
 
       - name: Pull request title and body
@@ -259,8 +279,11 @@ jobs:
           BODY: ${{ github.event.pull_request.body }}
         run: |
           if printf '%s\n%s\n' "$TITLE" "$BODY" | grep -qiE "$PATTERN"; then
+            printf -- '- **Title and description:** attribution found:\n\n```\n%s\n```\n' \
+              "$(printf '%s\n%s\n' "$TITLE" "$BODY" | grep -inE "$PATTERN")" >>"$GITHUB_STEP_SUMMARY"
             echo "::error::the pull request title or body carries an AI attribution line"
             printf '%s\n%s\n' "$TITLE" "$BODY" | grep -inE "$PATTERN" | sed 's/^/    /'
             exit 1
           fi
+          printf -- '- **Title and description:** no attribution found.\n' >>"$GITHUB_STEP_SUMMARY"
           echo "title and body clean"
