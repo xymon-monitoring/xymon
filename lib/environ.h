@@ -12,6 +12,7 @@
 #define __ENVIRON_H__
 
 extern char *xgetenv(const char *name);
+extern char *xymon_rundir(void);
 extern void envcheck(char *envvars[]);
 extern void loadenv(char *envfile, char *area);
 extern char *getenv_default(char *envname, char *envdefault, char **buf);
