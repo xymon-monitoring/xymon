@@ -23,6 +23,10 @@ require_gnu_make
 [ -f "$ROOT/web/showgraph.cgi" ] || skip "tree built without RRD support (no showgraph.cgi)"
 
 rrddef=$(sed -n 's/^RRDDEF *= *//p' "$ROOT/Makefile")
+# Where <rrd.h> lives, as configure found it: /usr/include on Linux, but
+# /usr/local/include or /opt/homebrew/include on the BSDs and macOS. Without
+# it, showgraph.c's #include <rrd.h> is not found off the default path.
+rrdinc=$(sed -n 's/^RRDINCDIR *= *//p' "$ROOT/Makefile")
 rrdlibs=$(sed -n 's/^RRDLIBS *= *//p' "$ROOT/Makefile")
 [ -n "$rrdlibs" ] || rrdlibs="-lrrd"
 
@@ -40,7 +44,7 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
-"$CC" $harness_cflags $rrddef -o "$work/showgraph" \
+"$CC" $harness_cflags $rrddef $rrdinc -o "$work/showgraph" \
 	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
 	$pcre_libs $rrdlibs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }
