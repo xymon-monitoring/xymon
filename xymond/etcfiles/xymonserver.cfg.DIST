@@ -6,7 +6,8 @@ XYMONCLIENTHOME="@XYMONTOPDIR@/client"		# XYMONHOME directory for the client
 
 
 XYMONSERVERHOSTNAME="@XYMONHOSTNAME@"		# The hostname of your server
-XYMONSERVERIP="@XYMONHOSTIP@"			# The IP-address of your server. Use the real one, not 127.0.0.1 .
+XYMONSERVERIP="@XYMONHOSTIP@"			# The IP-address of your server. The real one: it is how this host
+						# identifies itself (MACHINEADDR), and no address in 127.0.0.0/8 names a machine.
 XYMONSERVEROS="@XYMONHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix,osf
 
 XYMONSERVERWWWNAME="@XYMONHOSTNAME@"		# The name used for this hosts' webserver
@@ -36,7 +37,10 @@ DELAYYELLOW=""			# Format: status:delay[,status:delay - e.g. "cpu:15,disk:30"
 
 # General settings
 XYMONDPORT="1984"		# Portnumber where xymond listens
-XYMSRV="$XYMONSERVERIP"		# IP of a single Xymon server
+XYMSRV="127.0.0.1"		# Where the client on THIS host sends. Loopback, so it keeps reporting
+				# when a physical interface goes away -- xymond listens there unless
+				# started with --no-loopback. Not $XYMONSERVERIP: that answers a
+				# different question, see MACHINEADDR below.
 #XYMON_TIMEOUT="15"			# Default request timeout (seconds) for the xymon CLI tool; --timeout= wins
 XYMSERVERS=""			# IP of multiple Xymon servers. If used, XYMSRV must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
@@ -77,7 +81,7 @@ SLEEPBETWEENMSGS="0"            # Delay between sending each combo message, in m
 # Specific to this host
 SERVEROSTYPE="$XYMONSERVEROS"		# Hosttype (operating system). Not used by server-side, but clients use this.
 MACHINEDOTS="$XYMONSERVERHOSTNAME"	# This systems hostname
-MACHINEADDR="$XYMONSERVERIP"		# This systems IP-address
+MACHINEADDR="$XYMONSERVERIP"		# This systems IP-address, as others see it. Never loopback.
 
 # URL's generated/used by xymongen
 XYMONWEBHOST="http://$XYMONSERVERWWWNAME"	# Just the host part of the URL - http://www.foo.com
