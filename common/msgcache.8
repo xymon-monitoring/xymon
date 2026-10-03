@@ -74,6 +74,21 @@ Log msgcache output to FILENAME.
 .IP "\fB--debug\fR"
 Enable debugging output.
 
+.SH PING
+A \fBping\fR message is answered by msgcache itself and is not
+forwarded to the Xymon server. The reply is two lines:
+.sp
+.nf
+    msgcache \fIVERSION\fR
+    lastpull \fISECONDS\fR
+.fi
+.sp
+where \fISECONDS\fR is the age of the last completed pull \- one that
+found nothing waiting, or whose messages msgcache finished writing to
+xymonfetch \- or \-1 if there has been none. A
+message whose first word only begins with those letters, such as
+"pingpong", is client data and is forwarded as before.
+
 .SH "SEE ALSO"
 xymonfetch(8), xymon(7)
 
