@@ -90,7 +90,7 @@ free_port() {
 # of silence before anything was reported. Wall-clock is what the reader cares
 # about, and checking it needs no timeout(1), which the BSDs do not all ship.
 start_xymond() {
-	local attempt=0 deadline now
+	local attempt=0 deadline now alive= state stop
 	deadline=$(( $(date +%s) + ${XYMOND_START_TIMEOUT:-120} ))
 
 	while :; do
@@ -126,11 +126,36 @@ start_xymond() {
 		attempt=$((attempt+1))
 	done
 
+	# Stop the daemon this call started before failing. The test exits on
+	# fail, and a xymond left running keeps its semaphore sets, one per
+	# channel: NetBSD allows ten sets in all, so the next xymond the suite
+	# starts cannot set up its channels. TERM is what xymond answers by
+	# closing them; KILL, after five seconds, only so that a daemon ignoring
+	# TERM cannot hang the test.
+	if kill -0 "$XYMOND_PID" 2>/dev/null; then
+		alive=1
+		kill "$XYMOND_PID" 2>/dev/null
+		stop=$(( $(date +%s) + 5 ))
+		while kill -0 "$XYMOND_PID" 2>/dev/null && [ "$(date +%s)" -lt "$stop" ]; do
+			sleep 0.1
+		done
+		if kill -0 "$XYMOND_PID" 2>/dev/null; then
+			printf 'xymond pid %s ignored TERM for 5s; killing it, which leaves its IPC behind\n' "$XYMOND_PID" >&2
+			kill -9 "$XYMOND_PID" 2>/dev/null
+		fi
+		wait "$XYMOND_PID" 2>/dev/null
+	fi
+
 	cat "$work/xymond.log" >&2
+	if [ -n "$alive" ]; then
+		state="it was running but never answered a ping, and has been stopped"
+	else
+		state="it exited"
+	fi
 	now=$(date +%s)
 	[ "$now" -lt "$deadline" ] ||
-		fail "xymond did not start within ${XYMOND_START_TIMEOUT:-120}s (last port 127.0.0.1:$PORT, $((attempt + 1)) launch(es); daemon still running, so it never answered a ping) -- see the xymond log above"
-	kill -0 "$XYMOND_PID" 2>/dev/null &&
-		fail "xymond did not answer on 127.0.0.1:$PORT" ||
+		fail "xymond did not start within ${XYMOND_START_TIMEOUT:-120}s (last port 127.0.0.1:$PORT, $((attempt + 1)) launch(es); $state) -- see the xymond log above"
+	[ -n "$alive" ] &&
+		fail "xymond did not answer on 127.0.0.1:$PORT, and has been stopped" ||
 		fail "xymond exited during startup"
 }
