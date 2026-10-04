@@ -97,6 +97,17 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
   <dd>Enable debugging output.
     <p class="Pp"></p>
   </dd>
+  <dt id="listen"><a class="permalink" href="#listen"><b>--listen</b>=<i>IP:PORT</i>,
+    <b>--locator</b>=<i>IP:PORT</i></a></dt>
+  <dd>Run as a network worker: accept messages on the TCP address given by
+      <b>--listen</b> instead of from <i><a href="../man8/xymond_channel.8.html">xymond_channel</a>(8),</i> and register
+      with the service locator at <b>--locator</b>; both are needed for this
+      mode. <b>--locatorid</b> and <b>--locatorextra</b> tune the registration;
+      <b>--locatorweight</b> is ignored, since xymond_alert always registers
+      with weight -1. All five, and how the locator chooses a server, are
+      described in <i>xymond_locator(8).</i>
+    <p class="Pp"></p>
+  </dd>
 </dl>
 </section>
 <section class="Sh">
@@ -173,7 +184,8 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
 <p>&#160;</p>
 <h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
   ALSO</a></h1>
-<p class="Pp"><a href="../man5/alerts.cfg.5.html">alerts.cfg</a>(5), <a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man8/xymond_channel.8.html">xymond_channel</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"><a href="../man5/alerts.cfg.5.html">alerts.cfg</a>(5), <a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man8/xymond_channel.8.html">xymond_channel</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7),
+    xymond_locator(8)</p>
 <p class="Pp"></p>
 </section>
 <p>&#160;</p>
