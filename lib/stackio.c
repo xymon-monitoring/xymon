@@ -444,12 +444,19 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 		     (strncmp(bufpastwhitespace, ". ", 2) == 0) || (strncmp(bufpastwhitespace, ".\t", 2) == 0) ||
 		     (extraincl && (strncmp(bufpastwhitespace, extraincl, strlen(extraincl)) == 0) &&
 		      ((*(bufpastwhitespace+strlen(extraincl)) == ' ') || (*(bufpastwhitespace+strlen(extraincl)) == '\t'))) ) {
-			char *newfn, *eol, eolchar = '\0';
+			char *newfn, *nameend, *eol, eolchar = '\0', endchar;
 
 			eol = bufpastwhitespace + strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
 			newfn = bufpastwhitespace + strcspn(bufpastwhitespace, " \t");
 			newfn += strspn(newfn, " \t");
-			while (*newfn && isspace(*(newfn + strlen(newfn) - 1))) *(newfn + strlen(newfn) -1) = '\0';
+			/*
+			 * End the name rather than blank the whitespace after it: a failed
+			 * include returns this line, and a caller that copies the buffer by
+			 * length would carry every blanked byte as a NUL.
+			 */
+			nameend = newfn + strlen(newfn);
+			while ((nameend > newfn) && isspace(*(nameend - 1))) nameend--;
+			endchar = *nameend; *nameend = '\0';
 
 			if (*newfn && (stackfopen(newfn, "r", (void **)fdhead->listhead) != NULL))
 				return stackfgets(buffer, extraincl);
@@ -457,17 +464,21 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 				if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", newfn, STRBUF(buffer));
 				else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", newfn, STRBUF(buffer));
 
+				*nameend = endchar;
 				if (eol) *eol = eolchar;
 				return result;
 			}
 		}
 		else if ((strncmp(bufpastwhitespace, "directory ", 10) == 0) || (strncmp(bufpastwhitespace, "directory\t", 10) == 0)) {
-			char *dirfn, *eol, eolchar = '\0';
+			char *dirfn, *nameend, *eol, eolchar = '\0', endchar;
 
 			eol = bufpastwhitespace + strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
 			dirfn = bufpastwhitespace + 9;
 			dirfn += strspn(dirfn, " \t");
-			while (*dirfn && isspace(*(dirfn + strlen(dirfn) - 1))) *(dirfn + strlen(dirfn) -1) = '\0';
+			/* Ended, not blanked, for the same reason as an include's name. */
+			nameend = dirfn + strlen(dirfn);
+			while ((nameend > dirfn) && isspace(*(nameend - 1))) nameend--;
+			endchar = *nameend; *nameend = '\0';
 
 			if (*dirfn) addtofnlist(dirfn, optional, (void **)fdhead->listhead);
 			if (fnlist && (stackfopen(fnlist->name, "r", (void **)fdhead->listhead) != NULL)) {
@@ -485,13 +496,21 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 
 				fnlist = fnlist->next;
 				xfree(tmp->name); xfree(tmp);
+				*nameend = endchar;
 				if (eol) *eol = eolchar;
 				return result;
 			}
 			else {
-				/* Empty directory include - return a blank line */
+				/*
+				 * Empty directory include - return a blank line. Empty the
+				 * buffer, not only the string: a caller that copies by
+				 * length, as xymond's "config" reply does, would otherwise
+				 * copy the whole directive line with a NUL in its first byte
+				 * and another where the newline was, and a reader of that
+				 * reply stops at the first NUL.
+				 */
 				dbgprintf("stackfgets(): Directory %s was empty\n", dirfn);
-				*result = '\0'; 
+				clearstrbuffer(buffer);
 				return result;
 			}
 		}
