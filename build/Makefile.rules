@@ -8,7 +8,13 @@
 # Build targets
 #####################
 
-CFLAGS += -I$(BUILDTOPDIR)/include
+# -L for libxymon: jccleaver's shared-lib commit switched the binaries from
+# linking ../lib/libxymon*.a by path to -lxymon*, which needs a library
+# search path. Absolute so it holds wherever a binary links from. In both
+# CFLAGS and LDFLAGS because client binaries link via CFLAGS and the server
+# binaries via LDFLAGS.
+CFLAGS += -I$(BUILDTOPDIR)/include -L$(BUILDTOPDIR)/lib
+LDFLAGS += -L$(BUILDTOPDIR)/lib
 
 ifeq ($(CLIENTONLY),yes)
 	BUILDTARGETS = client
@@ -35,6 +41,28 @@ endif
 ifndef INSTALLBINDIR
 INSTALLBINDIR = $(XYMONHOME)/bin
 endif
+# The development kit -- headers, static libraries and xymon.pc -- installs as
+# one relocatable subtree. A source install puts the whole kit under
+# $(XYMONHOME)/sdk; a packager overrides INSTALLINCDIR and INSTALLLIBDIR to
+# split them across FHS trees (/usr/include vs /usr/lib), leaving INSTALLSDKDIR
+# unused.
+ifndef INSTALLSDKDIR
+INSTALLSDKDIR = $(XYMONHOME)/sdk
+endif
+# The include root holds include/ and lib/ side by side: libxymon.h reaches its
+# remaining headers through "../lib/..." includes, so the pair has to move
+# together. It is the sdk dir itself, not an include/ beneath it, or the
+# default -I$(INSTALLINCDIR)/include would double to .../include/include.
+ifndef INSTALLINCDIR
+INSTALLINCDIR = $(INSTALLSDKDIR)
+endif
+# The archives sit beside the lib/ headers they belong to -- the source lib/
+# carries both *.h and *.a -- so the whole kit is a single tree.
+ifndef INSTALLLIBDIR
+INSTALLLIBDIR = $(INSTALLSDKDIR)/lib
+endif
+# The version string, read once from the header for xymon.pc.
+XYMONVERSION := $(shell sed -n 's/.*VERSION "\([^"]*\)".*/\1/p' include/version.h)
 ifndef INSTALLETCDIR
 INSTALLETCDIR = $(XYMONHOME)/etc
 endif
@@ -211,6 +239,7 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)
 endif
 
+
 	mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)
 ifneq ($(INSTALLETCDIR),$(XYMONHOME)/etc)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/etc || true
@@ -329,6 +358,56 @@ endif
 
 install-common: install-dirs
 	XYMONHOME="$(XYMONHOME)" MANROOT="$(MANROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" $(MAKE) -C common install
+
+# Opt-in, not in INSTALLTARGETS: on main these are static archives and
+# headers that nothing reads at runtime. (devel keeps it in the default
+# list, rightly -- there the binaries link the shared objects it
+# installs.) Out of the default it also cannot land inside $(XYMONHOME)
+# unasked, where a spec globbing the server tree would swallow it into
+# the main package and collide with its own -devel one.
+#
+# It makes its own directories rather than install-dirs doing it: a
+# target nobody invoked should leave nothing behind, not even empty ones.
+#
+# Named for what it installs, as the other targets are -- devel calls
+# this install-libs, which describes the archives but not the 58 headers.
+install-devel:
+	mkdir -p $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
+# A back-compat symlink so $(XYMONHOME)/sdk keeps resolving when the kit is
+# relocated as a tree. A package build owns its layout through its own file
+# list and does not want it -- an unpackaged symlink is a hard error to
+# rpmbuild and dpkg -- so skip it under PKGBUILD, as the chown below is.
+ifndef PKGBUILD
+ifneq ($(INSTALLINCDIR),$(XYMONHOME)/sdk)
+	rm -f $(INSTALLROOT)$(XYMONHOME)/sdk || true
+	ln -s $(INSTALLINCDIR) $(INSTALLROOT)$(XYMONHOME)/sdk || true
+endif
+endif
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
+	chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
+endif
+	XYMONHOME="$(XYMONHOME)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" INSTALLROOT="$(INSTALLROOT)" INSTALLLIBDIR="$(INSTALLLIBDIR)" INSTALLINCDIR="$(INSTALLINCDIR)" $(MAKE) -C lib install
+	# A pkg-config file so a consumer builds against the installed tree with
+	# "pkg-config --cflags --libs xymon" and needs to know neither the sibling
+	# header layout nor the static-link chain. Generated with the configured
+	# paths and library flags, so it tracks a relocated install.
+	mkdir -p $(INSTALLROOT)$(INSTALLLIBDIR)/pkgconfig
+	sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' \
+	    -e 's!@INSTALLINCDIR@!$(INSTALLINCDIR)!g' \
+	    -e 's!@INSTALLLIBDIR@!$(INSTALLLIBDIR)!g' \
+	    -e 's!@XYMONVERSION@!$(XYMONVERSION)!g' \
+	    -e 's!@PCREINCDIR@!$(PCREINCDIR)!g' \
+	    -e 's!@RRDINCDIR@!$(RRDINCDIR)!g' \
+	    -e 's!@PCRELIBS@!$(PCRELIBS)!g' \
+	    -e 's!@SSLLIBS@!$(SSLLIBS)!g' \
+	    -e 's!@ZLIBLIBS@!$(ZLIBLIBS)!g' \
+	    -e 's!@NETLIBS@!$(NETLIBS)!g' \
+	    -e 's!@RRDLIBS@!$(RRDLIBS)!g' \
+	    -e 's!@LIBRTDEF@!$(LIBRTDEF)!g' \
+	    $(BUILDTOPDIR)/build/xymon.pc.in > $(INSTALLROOT)$(INSTALLLIBDIR)/pkgconfig/xymon.pc
+	chmod 644 $(INSTALLROOT)$(INSTALLLIBDIR)/pkgconfig/xymon.pc
 
 install-xymongen: install-common
 	XYMONHOME="$(XYMONHOME)" MANROOT="$(MANROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" $(MAKE) -C xymongen install
