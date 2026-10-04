@@ -66,9 +66,11 @@ command -v mandoc >/dev/null 2>&1 || {
 
 # The post-processor only links references to pages this tree actually ships,
 # so it needs the list. Built once, from the same directories the walk uses.
-KNOWN=`for d in xymongen xymonnet xymonproxy common xymond web; do \
+# "if", not "&&": a directory without a page in the last section would end
+# the loop with a failed test, and pipefail would stop the script silently.
+KNOWN=`for d in xymongen xymonnet xymonproxy common xymond web lib; do \
 	for s in 1 5 7 8; do \
-		for f in $d/*.$s; do [ -r "$f" ] && basename "$f"; done; \
+		for f in $d/*.$s; do if [ -r "$f" ]; then basename "$f"; fi; done; \
 	done; \
 done 2>/dev/null | sed -e 's/$/.html/' | sort -u | tr '\n' ' '`
 
@@ -129,7 +131,7 @@ else
 	      docs/manpages/man1/* docs/manpages/man5/* \
 	      docs/manpages/man7/* docs/manpages/man8/*
 
-	for DIR in xymongen xymonnet xymonproxy common xymond web
+	for DIR in xymongen xymonnet xymonproxy common xymond web lib
 	do
 		for SECT in 1 5 7 8
 		do
