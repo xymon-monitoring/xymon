@@ -87,6 +87,16 @@ module. This may be useful if you suspect that data may be corrupted, e.g. when
 sent to a remote worker module. Note that enabling this may break communication
 with old versions of Xymon worker modules. Default: Disabled.
 
+.IP "\fB--locator\fR=\fIIP:PORT\fR"
+Send each message to the server that handles its host, found by asking the
+service locator at IP:PORT, instead of to a local worker program; no worker
+program is needed. Requires \fB--service\fR. See
+.I xymond_locator(8).
+
+.IP "\fB--service\fR=\fITYPE\fR"
+The service type to look up with \fB--locator\fR: rrd, hostdata, client,
+alert or history.
+
 .IP "\fB--debug\fR"
 Enable debugging output.
 
@@ -94,5 +104,5 @@ Enable debugging output.
 This program does not use any configuration files.
 
 .SH "SEE ALSO"
-xymond(8), xymon(7)
+xymond(8), xymon(7), xymond_locator(8)
 

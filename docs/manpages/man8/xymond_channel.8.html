@@ -117,6 +117,18 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
       Default: Disabled.
     <p class="Pp"></p>
   </dd>
+  <dt id="locator"><a class="permalink" href="#locator"><b>--locator</b>=<i>IP:PORT</i></a></dt>
+  <dd>Send each message to the server that handles its host, found by asking the
+      service locator at IP:PORT, instead of to a local worker program; no
+      worker program is needed. Requires <b>--service</b>. See
+      <i>xymond_locator(8).</i>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="service"><a class="permalink" href="#service"><b>--service</b>=<i>TYPE</i></a></dt>
+  <dd>The service type to look up with <b>--locator</b>: rrd, hostdata, client,
+      alert or history.
+    <p class="Pp"></p>
+  </dd>
   <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
   <dd>Enable debugging output.
     <p class="Pp"></p>
@@ -133,7 +145,7 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
 <p>&#160;</p>
 <h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
   ALSO</a></h1>
-<p class="Pp"><a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+<p class="Pp"><a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7), xymond_locator(8)</p>
 <p class="Pp"></p>
 </section>
 <p>&#160;</p>
