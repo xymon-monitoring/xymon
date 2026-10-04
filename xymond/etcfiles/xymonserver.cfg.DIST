@@ -201,10 +201,21 @@ GRAPHS_ntp="ntp.offset"
 # automatically for columns listed in its --multigraphs option.
 GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,clock,lines,deltalines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,devmon::1,if_load::1,temp,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts,xymongen,xymonnet,xymonproxy,xymond"
 
+# These two settings can be used to restrict which RRD files xymond_rrd
+# creates, updates, and selects for graph display. Entries are
+# whitespace-separated "scope:regex" pairs.
+# The scope is the status/data test name, the RRD filename prefix before "."
+# or ",", or "*" for all RRD files. The regex matches the RRD filename without
+# ".rrd", e.g. "iostat.,scratch,a" or "ifstat.docker0".
+# RRDEXCLUDE=""		# RRD files that will NOT be tracked or graphed
+# RRDINCLUDE=""		# Only track/graph matching RRD files for each matching scope
+
 # Deprecated legacy filesystem graph filters. Prefer DISK/INODE filesystem
 # IGNORE rules in analysis.cfg when a filesystem should be removed from status,
-# alerts and graphs. These settings are retained only for old configurations and
-# affect RRD graph tracking only.
+# alerts and graphs, or RRDEXCLUDE/RRDINCLUDE above when only the trending
+# should be filtered (they filter by generated RRD filename and keep graph
+# paging aligned with the filtered files). These settings are retained only
+# for old configurations and affect RRD graph tracking only.
 # NORRDDISKS=""		# Filesystems that will NOT be tracked for graphs
 # RRDDISKS=""		# Only graph these filesystems
 

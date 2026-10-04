@@ -28,6 +28,7 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 #include "../lib/rrd_api_compat.h"
+#include "../lib/rrdfilter.h"
 
 #include "xymond_rrd.h"
 #include "do_rrd.h"
@@ -311,6 +312,9 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		errprintf("RRD update for no file\n");
 		return -1;
 	}
+
+	/* RRDEXCLUDE/RRDINCLUDE: generic per-RRD-file trending filter (issue #244) */
+	if (rrd_is_filtered(testname, rrdfn)) return 0;
 
 	MEMDEFINE(rrdvalues);
 	MEMDEFINE(filedir);
@@ -902,4 +906,3 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 
 	MEMUNDEFINE(rrdvalues);
 }
-
