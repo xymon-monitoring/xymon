@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 set -euo pipefail
 
 # Local dry-run of the whole release pipeline: prep + tarball + checksum.

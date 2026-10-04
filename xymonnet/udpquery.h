@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2026 Bruno Manzoni          */
 /* Xymon network test tool - reusable single-shot UDP query transport: one
  * datagram out, one reply in, with a timeout. Concurrency belongs in the conn_*
  * engine (lib/tcplib.c), not here - keep this a primitive. */
