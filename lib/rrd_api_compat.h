@@ -47,6 +47,11 @@ static int xymon_rrd_fetch(int argc, xymon_rrd_argv_item_t *argv,
 	return rrd_fetch(argc, xymon_rrd_api_argv(argv), start, end, step, dscount, dsnames, data);
 }
 
+static int xymon_rrd_flushcached(int argc, xymon_rrd_argv_item_t *argv)
+{
+	return rrd_flushcached(argc, xymon_rrd_api_argv(argv));
+}
+
 static int xymon_rrd_graph(int argc, xymon_rrd_argv_item_t *argv,
 				  char ***calcpr, int *xsize, int *ysize,
 				  void *prdata, double *ymin, double *ymax)

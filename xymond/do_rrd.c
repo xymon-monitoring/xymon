@@ -40,8 +40,11 @@ static char rcsid[] = "$Id$";
 extern int seq;	/* from xymond_rrd.c */
 
 char *rrddir = NULL;
+int ext_rrd_cache = 0;		/* Has external rrdcached running */
 int use_rrd_cache = 1;         /* Use the cache by default */
 int no_rrd = 0;                /* Write to rrd by default */
+int cacheflushsz = 1;		/* Cache multipler set to 1x by default */
+int releasecachedelay = -1;	/* Don't start auto-flushing the cache right away */
 
 static int  processorfd = 0;
 static FILE *processorstream = NULL;
@@ -61,7 +64,6 @@ static char *fnparams[4] = { NULL, };  /* Saved parameters passed to setupfn() *
 #define DEFAULT_RRD_INTERVAL 300
 static int  rrdinterval = DEFAULT_RRD_INTERVAL;
 
-#define CACHESZ 12             /* # of updates that can be cached - updates are usually 5 minutes apart */
 static int updcache_keyofs = -1;
 static void * updcache;
 typedef struct updcacheitem_t {
@@ -233,7 +235,7 @@ static void setupinterval(int intvl)
 	rrdinterval = (intvl ? intvl : DEFAULT_RRD_INTERVAL);
 }
 
-static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
+static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata, int dosync)
 {
 	/* Flush any updates we've cached */
 	xymon_rrd_argv_item_t updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
@@ -265,9 +267,11 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	/*
 	 * RRDtool 1.2+ uses mmap'ed I/O, but the Linux kernel does not update timestamps when
 	 * doing file I/O on mmap'ed files. This breaks our check for stale/nostale RRD's.
-	 * So do an explicit timestamp update on the file here.
+	 * So do an explicit timestamp update on the file here if we're doing this on request
+	 * for a user and ultimately responsible for the file, instead of just basic periodic 
+	 * flushing or sending it over to a later cache like rrdcached.
 	 */
-	utimes(filedir, NULL);
+	if (dosync && !ext_rrd_cache) utimes(filedir, NULL);
 #endif
 
 	/* Clear the cached data */
@@ -508,11 +512,14 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 * fill at the same speed); this would result in huge load-spikes every 
 	 * rrdinterval*CACHESZ seconds.
 	 *
-	 * So to smooth the load, we force the update through for every CACHESZ 
+	 * So to smooth the load, we force the update through for every CACHESZ*multiplier 
 	 * updates, regardless of how much is in the cache. This gives us a steady 
 	 * (although slightly higher) load.
+	 * This can be modified with the cachemultiplier option to xymond_rrd.
+	 * We wait 10m (roughly 2 PDPs) after startup to give any previous xymond_rrd's
+	 * a chance to flush their caches first (since rrdtool can't handle out-of-order data well).
 	 */
-	if (use_rrd_cache && (++callcounter < CACHESZ)) {
+	if (use_rrd_cache && ((++callcounter < cacheflushsz) || releasecachedelay) ) {
 		if (cacheitem && (cacheitem->valcount < CACHESZ)) {
 			cacheitem->updseq[cacheitem->valcount] = seq;
 			cacheitem->updtime[cacheitem->valcount] = updtime;
@@ -526,7 +533,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	else callcounter = 0;
 
 	/* At this point, we will commit the update to disk */
-	result = flush_cached_updates(cacheitem, rrdvalues);
+	result = flush_cached_updates(cacheitem, rrdvalues, 0);
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
@@ -602,7 +609,10 @@ static void updcache_host_op(char *hostname, int flushfirst, char *flushas)
 			else {
 				snprintf(filedir, sizeof(filedir), "%s%s", rrddir, cacheitem->key);
 			}
-			if (flush_cached_updates(cacheitem, NULL) != 0) {
+			/* dosync=0: this is the drop/rename path, not a request for
+			 * a reader, and the file is about to move out from under
+			 * any timestamp we would set on it. */
+			if (flush_cached_updates(cacheitem, NULL, 0) != 0) {
 				errprintf("Could not flush cached updates for %s before the rename: %s\n",
 					  cacheitem->key, rrd_get_error());
 			}
@@ -650,7 +660,7 @@ void rrdcacheflushall(void)
 		cacheitem = (updcacheitem_t *) xtreeData(updcache, handle);
 		if (cacheitem->valcount > 0) {
 			sprintf(filedir, "%s%s", rrddir, cacheitem->key);
-			flush_cached_updates(cacheitem, NULL);
+			flush_cached_updates(cacheitem, NULL, 0);
 		}
 	}
 }
@@ -664,6 +674,11 @@ void rrdcacheflushhost(char *hostname)
 	time_t now = gettimer();
 
 	if (updcache_keyofs == -1) return;
+
+	if (releasecachedelay) {
+		dbgprintf("Flush of '%s' skipped, too soon after restart of xymond_rrd\n", hostname);
+		return;
+	}
 
 	/* If we get a full path for the key, skip the leading rrddir */
 	if (strncmp(hostname, rrddir, updcache_keyofs) == 0) hostname += updcache_keyofs;
@@ -702,7 +717,7 @@ void rrdcacheflushhost(char *hostname)
 			if (cacheitem->valcount > 0) {
 				dbgprintf("Flushing cache '%s'\n", cacheitem->key);
 				sprintf(filedir, "%s%s", rrddir, cacheitem->key);
-				flush_cached_updates(cacheitem, NULL);
+				flush_cached_updates(cacheitem, NULL, 1);
 			}
 			/* Fall through */
 
