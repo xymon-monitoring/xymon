@@ -21,6 +21,12 @@ set -eu
 ROOT=$(find_root)
 
 command -v git >/dev/null 2>&1 || skip "git is needed to build the throwaway repository"
+# g() below reaches the repository with -C, which git has had since 1.8.5;
+# CentOS 7 ships 1.8.3, where every call fails with "Unknown option: -C".
+# The check itself only runs in CI, on a current git, so an older one is as
+# good as none here.
+git -C / --version >/dev/null 2>&1 \
+	|| skip "$(git --version) has no -C, which this test reaches its throwaway repository with (needs git 1.8.5 or later)"
 command -v make >/dev/null 2>&1 || skip "make is needed: the check rebuilds after each revert"
 
 work=$(mktempdir); register_cleanup "rm -rf '$work'"
