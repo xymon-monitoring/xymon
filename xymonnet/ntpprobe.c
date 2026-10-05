@@ -4,7 +4,7 @@
 /*                                                                            */
 /* In-process SNTP (RFC 4330/5905) client for the "ntp" test: one 48-byte UDP */
 /* exchange on port 123, no fork and no external tool. ntp_build_request and  */
-/* ntp_eval are pure (no socket) so tests/network can drive them; the socket  */
+/* ntp_eval are pure (no socket) so tests/xymonnet can drive them; the socket  */
 /* itself is the reusable udp_query_opt() transport. The banner places the offset */
 /* just before " +/- " so the offset parser added with the threshold/RRD support */
 /* can read it back out of the status text.                                   */

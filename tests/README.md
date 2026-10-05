@@ -97,6 +97,8 @@ flight) and one test often spans several.
 | `tests/client/`   | xymon client tools and behaviours                      |
 | `tests/analysis/`  | the local data analyser (`xymond_client`, wherever the variant builds it) |
 | `tests/server/`   | xymond-side tools (xymoncgimsg, alert routing, config parsing) |
+| `tests/xymond/`   | xymond's channel workers (hostdata, filestore) and channel IPC |
+| `tests/rrd/`      | xymond_rrd: RRD updates, external processors, RRD definitions |
 | `tests/xymonnet/` | xymonnet probes (xymonping, network checks)            |
 | `tests/libxymon/` | harnesses compiling only `lib/` sources                |
 | `tests/web/`      | CGIs, HTML rendering paths                             |
