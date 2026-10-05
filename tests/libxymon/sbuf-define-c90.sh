@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/sbuf-define-c90.sh
+# tests/libxymon/sbuf-define-c90.sh
 #
 # The SBUF_DEFINE/STATIC_SBUF_DEFINE macros must not end in a semicolon:
 # every call site writes its own, and a doubled ';' is an empty STATEMENT,

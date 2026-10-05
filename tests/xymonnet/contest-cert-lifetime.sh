@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/network/contest-cert-lifetime.sh
+# tests/xymonnet/contest-cert-lifetime.sh
 #
 # Nothing in setup_ssl() may read the peer certificate after releasing it.
 #

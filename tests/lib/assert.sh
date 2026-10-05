@@ -510,8 +510,10 @@ require_bin() {
 		# which build this is, and the table says where that build puts the
 		# product. Without one -- a developer run, a release tarball, the
 		# build-free tests.yml lane -- the default stands.
+		# Checked for every product, not only those the table declares: a test
+		# run on its own then refuses a misspelt variant as the runner does.
+		validate_variant
 		if [ -n "${XYMON_VARIANT:-}" ] && product_declared "$var"; then
-			validate_variant
 			rel=$(product_path "$XYMON_VARIANT" "$var")
 			[ -n "$rel" ] \
 				|| skip "the ${XYMON_VARIANT} build does not produce $var"

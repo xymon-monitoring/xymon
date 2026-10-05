@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/config-include-dir.sh
+# tests/libxymon/config-include-dir.sh
 #
 # Regression guard for the ".d drop-in directory" mechanism shipped for every
 # server and client config (#222): each shipped config ends with

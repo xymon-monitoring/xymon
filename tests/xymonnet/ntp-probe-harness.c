@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later                                  */
 /*
- * tests/network/ntp-probe-harness.c
+ * tests/xymonnet/ntp-probe-harness.c
  *
  * Regression test for the internal SNTP probe (xymonnet/ntpprobe.c). It drives
  * the REAL packet-build and validation/offset code - the file is #included the
@@ -53,7 +53,7 @@ static uint64_t U(double ntpsec)
 }
 
 /* Programmable udp_query_opt() mock (the real transport is covered separately by
- * tests/network/udp-query.sh). It counts calls and returns -1 ("no response")
+ * tests/xymonnet/udp-query.sh). It counts calls and returns -1 ("no response")
  * until udpq_succeed_on (1-based) is reached, then synthesizes a valid mode-4
  * stratum-3 reply that echoes this request's nonce. This lets the retransmit /
  * give-up loop in ntp_internal_probe() be driven deterministically with no

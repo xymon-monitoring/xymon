@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/xmh-item-names.sh
+# tests/libxymon/xmh-item-names.sh
 #
 # Guards the XMH_ item-name table in lib/loadhosts.c. Those names are public:
 # clients select and filter xymondboard/hostinfo fields by them, xymond emits
