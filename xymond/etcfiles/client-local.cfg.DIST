@@ -130,5 +130,9 @@ log:/var/log/system.log:10240
 log:/var/adm/syslog:10240
 
 
-# Local additions: any file dropped into the directory below is included
+# Local additions: any file dropped into the directory below is included, so
+# local configuration can live in a file of its own and this one keeps being
+# upgraded. Which section a host gets when one here and one above both match
+# -- [host=...] and [class=...] can take precedence, [os=...] and
+# [class=linux] cannot -- is in client-local.cfg(5), LOCAL ADDITIONS.
 optional directory @XYMONHOME@/etc/client-local.d
