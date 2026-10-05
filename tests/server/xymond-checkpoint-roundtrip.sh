@@ -124,10 +124,10 @@ stop_xymond
 statusfields=$(awk -F'|' '$2 !~ /^\./ { print NF; exit }' "$work/chk")
 [ "$statusfields" = "20" ] \
 	|| fail "status record has $statusfields fields, expected the released 20 -- an older xymond would reject it and drop the whole board:
-$(grep -v '|\.' "$work/chk" | head -1)"
+$(first_line "$(grep -v '|\.' "$work/chk")")"
 
 # 2. The flap state went somewhere an older reader skips.
-flapline=$(grep '^@@XYMONDCHK-V1|\.flapstate\.|' "$work/chk" | head -1)
+flapline=$(first_line "$(grep '^@@XYMONDCHK-V1|\.flapstate\.|' "$work/chk" || true)")
 [ -n "$flapline" ] \
 	|| fail "no .flapstate. record written for a flapping test:
 $(cat "$work/chk")"

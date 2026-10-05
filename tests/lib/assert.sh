@@ -61,6 +61,14 @@ assert_equal() {
 	fi
 }
 
+# first_line TEXT -- print TEXT's first line. For "the first match" without
+# a pipe into head: head exits after one line, and whatever is still writing
+# into the pipe then dies of SIGPIPE, which pipefail turns into a failure of
+# the whole command (the race #594 removed for grep -q).
+first_line() {
+	printf '%s' "${1%%$'\n'*}"
+}
+
 # assert_contains NEEDLE HAYSTACK [MSG]
 assert_contains() {
 	local needle=$1 haystack=$2 msg=${3:-}

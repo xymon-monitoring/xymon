@@ -73,7 +73,7 @@ assert_contains "NOTE PAYLOAD" "$(cat "$work/var/notes/realhost")" "notes payloa
 for id in ".." "." "../evil" "/etc/passwd" "a/b" "//"; do
 	setup
 	notes "$id"
-	escaped=$(find "$work/var" -maxdepth 1 -type f ! -name 'CANARY.txt' | head -1)
+	escaped=$(first_line "$(find "$work/var" -maxdepth 1 -type f ! -name 'CANARY.txt')")
 	[ -z "$escaped" ] || fail "notes ID '$id' wrote outside the notes directory: $escaped"
 	[ -f "$work/var/CANARY.txt" ] || fail "notes ID '$id' clobbered a file outside the notes directory"
 	[ -f "$work/var/sibling/keepme" ] || fail "notes ID '$id' touched a sibling directory"
@@ -223,7 +223,7 @@ assert_not_contains "Status unchanged" "$(cat "$work/var/html/realhost.negdelta.
 for host in ".." "../evil" "a/b" "/etc/passwd"; do
 	setup
 	status_html "$host"
-	stray=$(find "$work/var" -maxdepth 1 -name '*.html' | head -1)
+	stray=$(first_line "$(find "$work/var" -maxdepth 1 -name '*.html')")
 	[ -z "$stray" ] || fail "status hostname '$host' wrote an HTML log outside htmldir: $stray"
 	[ -f "$work/var/CANARY.txt" ] || fail "status hostname '$host' clobbered a file outside htmldir"
 	[ -f "$work/var/sibling/keepme" ] || fail "status hostname '$host' touched a sibling directory"
@@ -235,7 +235,7 @@ done
 for test in ".." "../evil" "a/b" "/etc/passwd" "../../../escaped"; do
 	setup
 	status_html "realhost" "$test"
-	stray=$(find "$work/var" -maxdepth 1 \( -name '*.html' -o -name 'escaped*' -o -name 'evil*' \) | head -1)
+	stray=$(first_line "$(find "$work/var" -maxdepth 1 \( -name '*.html' -o -name 'escaped*' -o -name 'evil*' \))")
 	[ -z "$stray" ] || fail "status testname '$test' wrote outside the configured directories: $stray"
 	[ -f "$work/var/CANARY.txt" ] || fail "status testname '$test' clobbered a file outside htmldir"
 	[ -f "$work/var/sibling/keepme" ] || fail "status testname '$test' touched a sibling directory"
