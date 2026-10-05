@@ -36,7 +36,10 @@ jobs:
 
   labels:
     name: reconcile dependency labels
-    if: github.event_name != 'pull_request'
+    # Scheduled only upstream: in a fork, REPO is the fork, so the job would act
+    # on the fork's own pull requests, and fail there for want of the labels.
+    # A manual run still works anywhere, for trying a change on a fork.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.repository == 'xymon-monitoring/xymon')
     needs: self-test
     runs-on: ubuntu-latest
     timeout-minutes: 10
