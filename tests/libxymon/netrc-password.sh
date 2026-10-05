@@ -86,6 +86,13 @@ EOF
 # symbols and the archive's (possibly stale) url.o is never pulled in.
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
+# The client archives use PCRE only in a localclient tree, by the same
+# CLIENTONLY/LOCALCLIENT test lib/loadalerts.h makes, so a plain client tree
+# links none -- and may have none installed.
+case $harness_cflags in
+	*-DLOCALCLIENT*) ;;
+	*-DCLIENTONLY*) pcre_libs= ;;
+esac
 "$CC" $harness_cflags -o "$work/harness" \
 	"$work/harness.c" "$SRC" "$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
 	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
