@@ -8,8 +8,7 @@
 #         xymond/xymond_hostdata.c xymond/xymond_worker.c
 #
 # Source paths are relative to the repo root; the binary lands in
-# <outdir>/<name>. BUILD_WORKER_CFLAGS, when set, is added to the compile
-# and link line -- for a test that needs e.g. -fsanitize=address.
+# <outdir>/<name>.
 #
 # Skips (not fails) when the toolchain or a configured tree is absent -
 # those are missing preconditions of the environment. Once both are
@@ -51,7 +50,7 @@ build_xymond_worker() {
 	for src in "$@"; do srcs+=("$root/$src"); done
 
 	# Archives listed twice rather than --start-group, which is GNU ld only.
-	"$cc" $harness_cflags ${BUILD_WORKER_CFLAGS:-} -iquote "$root/xymond" -o "$outdir/$prog" \
+	"$cc" $harness_cflags -iquote "$root/xymond" -o "$outdir/$prog" \
 		"${srcs[@]}" \
 		"$root/lib/libxymon.a" "$root/lib/libxymoncomm.a" "$root/lib/libxymontime.a" \
 		"$root/lib/libxymon.a" \
