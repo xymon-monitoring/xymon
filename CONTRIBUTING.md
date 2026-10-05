@@ -296,9 +296,13 @@ when the diff does not explain itself. Write it for both.
   another change carries its number. A citation is what lets a reviewer confirm a
   sentence in one command instead of taking it on trust.
 - A comment is not a second copy of the description. It answers a finding, records what
-  a revision changed, or states a decision taken since. When the same fact sits in both,
-  one of them goes stale — and it is the description, because that is the copy nobody
-  re-reads.
+  a revision changed for a reviewer who read the version before it — the timeline shows
+  that it changed, not why — or states a decision taken since. When the same fact sits
+  in both, one of them goes stale — and it is the description, because that is the copy
+  nobody re-reads. Comments keep the logical history of the change — what was found,
+  what was decided, and why — not a log of every step: a comment made obsolete by a
+  later one, or folded into the description, may be hidden as outdated, and several may
+  be merged into one, except a comment someone replied to, which stays where it is.
 - An author is encouraged to add a pre-review: see [Pre-review](#pre-review).
 - Shortening a description follows the same rule as shortening anything else, and it
   comes last: see [Shortening](#shortening).
@@ -405,9 +409,9 @@ this change.
    [Shortening](#shortening).
 
 If the pass edits the diff, it ends like any edit: run the suite again, check any test
-assertion it touched as the `tests/` bullet in [Pull requests](#pull-requests) asks, and
-say in one comment what it changed. If it edits only the description or the commit
-message, the comment is enough.
+assertion it touched as the `tests/` bullet in [Pull requests](#pull-requests) asks, and,
+if someone has read the version before it, say in one comment what it changed. If it
+edits only the description or the commit message, that comment is all it needs.
 
 A review of that prose reports facts: a sentence that is false, misleading — a reader
 would act or decide differently on it — or in conflict with another rule. This
