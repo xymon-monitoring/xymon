@@ -1,9 +1,10 @@
 # tests/ — regression scenarios
 
 A place to put runnable, reproducible regression scenarios for behaviour
-the project has consciously changed. The bar is intentionally low: when
-a PR changes user-visible behaviour, drop a test here so the next person
-can re-run the check without re-reading the PR.
+the project has consciously changed or documents as an invariant, so the
+next person can re-run the check without re-reading the PR. Which tests a
+change owes is in `CONTRIBUTING.md`, under "Pull requests"; this file says
+how to write and run them.
 
 Designed as the implementation of RFC [#97](https://github.com/xymon-monitoring/xymon/issues/97).
 
@@ -28,6 +29,41 @@ Conventions). The runner itself is POSIX sh, and on a host without bash it
 skips the whole suite with exit `77` rather than reporting interpreter
 failures as test failures.
 
+### `XYMON_VARIANT` — telling the suite which build this is
+
+Most tests only execute against a build, so run one first. The suite then needs
+to know *which* build, because the same program lives at different paths
+depending on the variant:
+
+    ./configure --server && make -j$(nproc)
+    XYMON_VARIANT=server ./tests/testsuite
+
+| variant | configured with | `xymongrep` | `xymond_client` |
+| ------- | --------------- | ----------- | --------------- |
+| `server` | `./configure --server` | `common/xymongrep` | `xymond/xymond_client` |
+| `localclient` | `CONFTYPE=client ./configure --client` | `client/xymongrep` | `client/xymond_client` |
+| `client` | `./configure --client` | `client/xymongrep` | not built |
+
+The full table is `variant_products()` in `lib/assert.sh`; it also covers
+`xymond_rrd` and `svcstatus.cgi`, both server-only.
+
+A configured tree vouches for the caller's label: `configure.client` writes
+`CLIENTONLY` and `LOCALCLIENT` into the toplevel `Makefile`, and their
+reachable combinations are exactly the three variants. On a disagreement the
+runner refuses to run — the variable describes a build, it does not select
+one, and a label that contradicts the tree is a mistake rather than a request.
+This is not theoretical: `CONFTYPE=client` is the *localclient* build, and a
+caller declaring `client` for it would drop
+`tests/analysis/analysis-file-ifexist.sh` from the only build that produces
+what it drives. Without a label, the tree answers for itself.
+
+The variable still answers where the tree cannot: an unconfigured tree, and a
+CMake build, write no such `Makefile`.
+
+Leaving it unset is the default and stays supported: each test falls back to its
+own in-tree path, which is what a developer run, a release tarball and the
+build-free `tests.yml` lane all do.
+
 ## What lives here, what doesn't
 
 - **Here:** shell-level integration scenarios that exercise binaries,
@@ -38,16 +74,31 @@ failures as test failures.
 
 ## Directory layout
 
-Tests are organised by **domain area**, not by source path. Source
-paths shift over time (CMake migration is in flight); domains don't.
-Cross-cutting scenarios that don't map to a single source dir (e.g.
-shipped-file invariants) get their own area.
+**A test's folder is decided by which builds contain the thing it drives.**
+The folder name labels a set of variants, not a subject.
+
+1. What does the test execute or compile — a binary, a source file, a shipped
+   config, or nothing (a pure scan)?
+2. Which variants produce that thing?
+3. File it in an area whose tests all need that same set of variants.
+
+A test needing several things takes the most restrictive — it needs all of
+them. Among areas covering the same variants the choice is readability, not
+correctness, so settle the variant set first and the name second.
+
+Not by topic: a test *about* server behaviour that only compiles `lib/` code
+runs in every build, and filing it under `server` would skip it in the client
+legs. Not by source path either — those shift (the CMake migration is in
+flight) and one test often spans several.
 
 | Area              | What lives here                                        |
 | ----------------- | ------------------------------------------------------ |
+| `tests/common/`   | tools every variant ships (xymon, xymoncmd, xymongrep, xymoncfg, xymondigest) |
 | `tests/client/`   | xymon client tools and behaviours                      |
-| `tests/server/`   | xymond-side tools (xymongrep, xymoncgimsg, alert routing) |
-| `tests/network/`  | xymonnet probes (xymonping, network checks)            |
+| `tests/analysis/`  | the local data analyser (`xymond_client`, wherever the variant builds it) |
+| `tests/server/`   | xymond-side tools (xymoncgimsg, alert routing, config parsing) |
+| `tests/xymonnet/` | xymonnet probes (xymonping, network checks)            |
+| `tests/libxymon/` | harnesses compiling only `lib/` sources                |
 | `tests/web/`      | CGIs, HTML rendering paths                             |
 | `tests/packaging/`| cross-cutting: shipped files, paths, generated configs |
 | `tests/buildsystem/` | parallel make, configure probes, CMake feature detection |
@@ -55,6 +106,14 @@ shipped-file invariants) get their own area.
 | `tests/lib/`      | sourced helpers (`assert.sh`, future `net.sh` etc.)    |
 | `tests/fixtures/` | shared data files (config snippets, expected outputs)  |
 | `tests/final/`    | checks about what a whole run LEAVES; held back and run last |
+
+Worked through: `xymongrep-filter.sh` reads as server-side work, but the binary
+it drives is one every variant builds -- `common/xymongrep` in a server tree,
+`client/xymongrep` in a client one -- so it goes under `common/`, and a client
+build gets the coverage it exists for. `analysis-file-ifexist.sh` drives
+`xymond_client`, which only a localclient or server build produces, so it goes
+under `analysis/`, whose tests all need one of those two builds; the variant
+table above says where each puts the binary.
 
 Add a new area by PR when an existing one doesn't fit. Don't bend a
 test to fit the wrong area just to avoid creating a new directory.
@@ -158,6 +217,13 @@ maintenance.
   require_cfg XYMONSERVER_CFG xymond/etcfiles/xymonserver.cfg  # config files
   SCRIPT="${XYMONCLIENT_LINUX:-$ROOT/client/xymonclient-linux.sh}"  # scripts
   ```
+  `require_bin` resolves in three steps, first match wins: an explicitly
+  exported `$VAR`; then, if `XYMON_VARIANT` is set and the table knows this
+  role, the path that variant builds it at; then the caller's default. A role
+  the table names but this variant's row omits is a `skip` -- that build
+  genuinely does not produce it. A role the table does not mention at all
+  falls through to the default, so an undeclared product degrades to a probe
+  rather than a false claim.
   This keeps tests usable in CMake out-of-source builds (the build
   system passes the real path), in the in-tree Makefile build (default
   matches), and in autopkgtest (the control file exports installed
@@ -174,6 +240,26 @@ maintenance.
   autopkgtest) runs the suite to catch, and skipping would green-light
   it. `require_bin` and `require_cfg` implement both halves;
   installed-script tests guard `$XYMONCLIENT_LINUX` the same way.
+- **A test fails when its fix is absent -- or says why it doesn't.** That
+  is what makes it a regression test rather than a green tick, and it is
+  worth asserting deliberately: prefer an assertion about what only the
+  fix produces over one about the damage its absence causes. The two look
+  equivalent and are not, because a guard added elsewhere can stop the
+  damage, and from then on the damage is no longer evidence about the
+  cause. "The files are still there" survives any refusal to delete;
+  "the file was trimmed" happens only if the code under test really ran.
+  A test at the layer the fix lives at is the other half of the answer --
+  nothing outside that file can blind it -- and the two together are why
+  a fix sometimes deserves a test on each side of the chain.
+
+  Some tests are meant to pass either way: they pin the behaviour a fix
+  must **not** change. That is a legitimate test and it declares itself,
+  in its own header, so a reader and `build/pin-check.sh` both know:
+  ```bash
+  # control: passes with and without the fix
+  ```
+  Same bargain as `# native-primitive: NAME` above -- state the intent,
+  or a checker is entitled to assume the worst of a test that cannot fail.
 - **License.** GPL-2.0+, matching the rest of the repo. A short
   SPDX-style header at the top of each test is sufficient:
   ```bash
@@ -190,8 +276,9 @@ maintenance.
 4. Drive the scenario: set up fixtures in a temp dir, invoke the
    binary or script under test, assert on its output / exit code /
    side effects.
-5. Run it standalone. If it passes locally and is deterministic, open
-   the PR. CI will run it on every push.
+5. Run it standalone, and check it the way the `tests/` bullet in
+   `CONTRIBUTING.md` ("Pull requests") asks. Then open the PR. CI will
+   run it on every push.
 
 ## Why no framework
 

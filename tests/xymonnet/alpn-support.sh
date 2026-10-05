@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/network/alpn-support.sh
+# tests/xymonnet/alpn-support.sh
 #
 # Guard for the xymonnet ALPN support added by xymon-monitoring/xymon#37.
 #

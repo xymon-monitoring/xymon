@@ -1,0 +1,59 @@
+name: pr dependencies
+
+# The blocked / unblocks / deps-none-found labels say whether a pull request can be
+# reviewed on its own, and a pull request carrying none of them has not been
+# triaged. They stop being true on their own: a base merges, a stack is rebased,
+# a body is edited. This recomputes them from the base refs and the
+# "Depends-on: #N" lines, and sets them to what those say.
+#
+# The reconciling job runs on a schedule rather than on pull_request, because it
+# needs write access to labels and a pull request from a fork does not get it.
+# A pull request that changes the script runs its self-test instead.
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/scripts/pr-dependency-labels.py'
+      - '.github/workflows/pr-dependencies.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  self-test:
+    name: dependency labels self-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Self-test
+        run: ./.github/scripts/pr-dependency-labels.py --self-test
+
+  labels:
+    name: reconcile dependency labels
+    if: github.event_name != 'pull_request'
+    needs: self-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Reconcile
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          # The dry run first, so the log shows the graph and the decision even
+          # when nothing changes -- a silent green job teaches nobody what it
+          # checked.
+          ./.github/scripts/pr-dependency-labels.py
+          ./.github/scripts/pr-dependency-labels.py --apply

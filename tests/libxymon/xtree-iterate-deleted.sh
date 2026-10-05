@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/xtree-iterate-deleted.sh
+# tests/libxymon/xtree-iterate-deleted.sh
 #
 # Iterating a tree after xtreeDelete must never visit a deleted record.
 # The fallback (array) variant only tombstones on delete: xtreeFirst used

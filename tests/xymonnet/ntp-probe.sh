@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/network/ntp-probe.sh
+# tests/xymonnet/ntp-probe.sh
 #
 # Compiles and runs ntp-probe-harness.c (the real xymonnet/ntpprobe.c against a
 # stub strbuffer) and fails if it does. See the harness for the regressions it

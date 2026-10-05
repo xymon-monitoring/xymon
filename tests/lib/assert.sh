@@ -133,11 +133,19 @@ __XYMON_TESTS_TMPROOT=${__XYMON_TESTS_TMPROOT%/}
 # real dir (or worse). Shell-escape the fixed prefix with printf %q and
 # append the literal glob unquoted, so the path survives eval intact while
 # the trailing * still expands.
-__xymon_tests_tmpglob=$(printf '%q' "${__XYMON_TESTS_TMPROOT}/xymon-test.$$.")
+__xymon_tests_tmpglob=$(printf '%q' "${__XYMON_TESTS_TMPROOT}/xt.$$.")
 register_cleanup "rm -rf -- ${__xymon_tests_tmpglob}*"
 mktempdir() {
 	local d
-	d=$(mktemp -d "${__XYMON_TESTS_TMPROOT}/xymon-test.$$.XXXXXX") || fail "mktemp -d failed"
+	# "xt", not "xymon-test". This path becomes $XYMONTMP, and a test that
+	# starts xymond_rrd puts its cache-control socket under it -- which has to
+	# fit in sizeof(sun_path), 104 bytes on macOS. The runner nests this
+	# directory inside a per-run root, so on macOS, where TMPDIR is already a
+	# 49-character /var/folders path, the longer name put XYMONTMP at 93 bytes
+	# against a limit of 90 and the socket could not be bound. Six tests failed
+	# on it, and only in a full run: run one alone and the per-run level is not
+	# there. CI never saw it -- Linux allows 108 bytes and TMPDIR is /tmp.
+	d=$(mktemp -d "${__XYMON_TESTS_TMPROOT}/xt.$$.XXXXXX") || fail "mktemp -d failed"
 	printf '%s' "$d"
 }
 
@@ -290,9 +298,30 @@ pcre_cflags() {
 # written will have to remember it again. A compile line can no longer say
 # where the tree's headers are without also saying how to reach them and
 # where pcre2.h is.
+#
+# It also carries the tree's own CLIENTONLY and LOCALCLIENT defines, asked of
+# make the way xymon_ldflags() asks for the link flags: build/Makefile.rules
+# adds -DCLIENTONLY=1 to a client tree's CFLAGS, and -DLOCALCLIENT=1 to a
+# localclient one. Headers branch on them -- lib/loadalerts.h includes
+# <pcre2.h> only for a server or localclient build -- so a harness compiled
+# without them on a client tree asks for a header the client build never
+# needs, and fails where PCRE is not installed. Only those two: they are what
+# a variant changes, and taking every -D would alter a server tree's compile
+# lines, which need nothing.
 xymon_cflags() {
-	local root=$1
-	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")"
+	local root=$1 probe tok defines=
+
+	if [ -f "$root/Makefile" ]; then
+		require_gnu_make
+		# shellcheck disable=SC2016  # $(CFLAGS) is make's to expand, not the shell's
+		probe='__xymon_cflags:
+	@printf "%s\n" "$(CFLAGS)"
+'
+		for tok in $(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_cflags 2>/dev/null); do
+			case $tok in -DCLIENTONLY|-DCLIENTONLY=*|-DLOCALCLIENT|-DLOCALCLIENT=*) defines="$defines $tok" ;; esac
+		done
+	fi
+	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")$defines"
 }
 
 # xymon_ldflags ROOT -- the configured link flags for a harness built against
@@ -381,6 +410,92 @@ find_root() {
 
 # ---- binary discovery --------------------------------------------------------
 
+# ---- build products, by variant ---------------------------------------------
+
+# variant_products -- one row per build variant: the products a test may ask
+# for, keyed by role, and the path this variant puts each at.
+#
+# The same program lives at different paths depending on what was built:
+# a server build puts the local data analyser at xymond/xymond_client, a
+# localclient build at client/xymond_client. A test that hardcodes one path
+# skips in the other build even though the program is right there. Stating the
+# paths once, here, is what lets one test run against whichever variant a leg
+# happens to have built.
+#
+# A server build carries both common/xymongrep and client/xymongrep; the server
+# row names common/, which is what the server package ships.
+variant_products() {
+	cat <<-'EOF'
+		server       XYMONGREP=common/xymongrep XYMOND_CLIENT=xymond/xymond_client XYMOND_RRD=xymond/xymond_rrd SVCSTATUS_CGI=web/svcstatus.cgi
+		localclient  XYMONGREP=client/xymongrep XYMOND_CLIENT=client/xymond_client
+		client       XYMONGREP=client/xymongrep
+	EOF
+}
+
+# An unknown XYMON_VARIANT is indistinguishable from a variant that declares no
+# products: product_path returns nothing, the caller skips, and
+# `XYMON_VARIANT=sever ./tests/testsuite` finishes green having quietly dropped
+# the binary coverage the variant exists to select. Checked where the variant is
+# read, so a typo fails the tests it would have silently removed.
+validate_variant() {
+	[ -n "${XYMON_VARIANT:-}" ] || return 0
+	# Checked once per test: require_bin is called for each product a test
+	# needs, and the answer cannot change within a run.
+	[ -n "${XYMON_VARIANT_CHECKED:-}" ] && return 0
+	# Not grep -q: it exits at the first match, the writer can then die of
+	# SIGPIPE, and under pipefail a known variant reads as unknown.
+	known_variants | grep -xF "$XYMON_VARIANT" >/dev/null \
+		|| fail "XYMON_VARIANT='$XYMON_VARIANT' is not a known variant -- expected one of: $(known_variants | tr '\n' ' ' | sed 's/ $//')"
+	XYMON_VARIANT_CHECKED=1
+}
+
+# known_variants -- the variant names the table above declares, one per line.
+# Read from the table rather than written again, so the two cannot disagree.
+known_variants() {
+	local line
+	while read -r line; do
+		# shellcheck disable=SC2086  # deliberate: split the row into fields
+		set -- $line
+		[ -n "${1:-}" ] && printf '%s\n' "$1"
+	done <<<"$(variant_products)"
+}
+
+# product_declared ROLE -- true when any row mentions ROLE.
+#
+# Absent from every row is not the same as absent from this variant's row. The
+# first means the table says nothing about this product -- so the caller's
+# DEFAULT still decides, exactly as it does with no variant declared. The
+# second means this variant genuinely does not build it. Collapsing the two
+# makes every role the table has not learned yet report as "this build does not
+# produce it", which is a confident answer to a question nothing asked.
+product_declared() {
+	local want_r=$1 line kv
+	while read -r line; do
+		# shellcheck disable=SC2086
+		set -- $line
+		shift
+		for kv; do [ "${kv%%=*}" = "$want_r" ] && return 0; done
+	done <<<"$(variant_products)"
+	return 1
+}
+
+# product_path VARIANT ROLE -- where VARIANT builds ROLE. Empty when that
+# variant does not build it at all, which is a different thing from "the build
+# should have produced it and did not" and is reported differently.
+product_path() {
+	local want_v=$1 want_r=$2 line kv
+	while read -r line; do
+		# shellcheck disable=SC2086
+		set -- $line
+		[ "${1:-}" = "$want_v" ] || continue
+		shift
+		for kv; do
+			[ "${kv%%=*}" = "$want_r" ] && { printf '%s\n' "${kv#*=}"; return 0; }
+		done
+		return 0
+	done <<<"$(variant_products)"
+}
+
 # require_bin VAR DEFAULT -- ensure $VAR (or DEFAULT if unset) points to an
 # executable; export VAR with the resolved path. Skip if the in-tree DEFAULT
 # is absent (the binary just wasn't built in this configuration), but FAIL if
@@ -394,7 +509,7 @@ find_root() {
 #     require_bin XYMONGREP common/xymongrep
 #     "$XYMONGREP" --hosts=...
 #
-# First consumer: tests/server/xymongrep-filter.sh. This helper is what lets
+# First consumer: tests/common/xymongrep-filter.sh. This helper is what lets
 # the same test run against an in-tree build (the DEFAULT path, resolved from
 # the repo root), a CMake out-of-source build, or an installed package under
 # Debian autopkgtest (both export an absolute $VAR). It is also what makes the
@@ -411,9 +526,22 @@ require_bin() {
 	# wrong path and skip with 77 even when the binary exists. An explicit env
 	# override (absolute path from CMake/autopkgtest) is used verbatim.
 	if [ -z "$cur" ]; then
-		case $default in
-			/*) cur=$default ;;
-			*)  cur=$(find_root)/$default ;;
+		local rel=$default
+		# A declared variant knows better than the caller's default: it says
+		# which build this is, and the table says where that build puts the
+		# product. Without one -- a developer run, a release tarball, the
+		# build-free tests.yml lane -- the default stands.
+		# Checked for every product, not only those the table declares: a test
+		# run on its own then refuses a misspelt variant as the runner does.
+		validate_variant
+		if [ -n "${XYMON_VARIANT:-}" ] && product_declared "$var"; then
+			rel=$(product_path "$XYMON_VARIANT" "$var")
+			[ -n "$rel" ] \
+				|| skip "the ${XYMON_VARIANT} build does not produce $var"
+		fi
+		case $rel in
+			/*) cur=$rel ;;
+			*)  cur=$(find_root)/$rel ;;
 		esac
 	fi
 	if [ ! -x "$cur" ]; then

@@ -63,8 +63,8 @@ only page today — how the parts fit, what talks to what, which component owns 
 state. A decision is not structure, even in a design section. *"xymond consolidates
 member results as they arrive"* is architecture and belongs there; *"xymond rather
 than xymonnet, because `NET:` splits testing across hosts"* exists only relative to a
-rejected alternative, and belongs in the issue that rejected it. The test: would the
-sentence still be true if the alternative had never been considered?
+rejected alternative, and belongs in the issue or pull request that rejected it. The
+test: would the sentence still be true if the alternative had never been considered?
 
 A decision splits across the surfaces, and asking which one it belongs to is the
 wrong question:
@@ -76,9 +76,9 @@ wrong question:
   `git blame` offline;
 - **why not the obvious alternative** — the code comment at the line someone would
   otherwise change back;
-- **what was weighed and rejected** — the issue that decided it, which is the only
-  place that record belongs and the only one nobody needs in order to use the
-  software.
+- **what was weighed and rejected** — the issue or pull request that decided it, which
+  is the only place that record belongs and the only one nobody needs in order to use
+  the software.
 
 A pointer says which side is authoritative, in its wording rather than by
 implication: *for X, see Y* where Y holds the fact, *this is the only copy* where
@@ -187,16 +187,18 @@ release — and keep `git diff --check` quiet.
 
 ## Pull requests
 
-Every change goes through a pull request. Whether it also needs a review by
-someone other than its author depends on what the change is. This is `xymon`'s
-rule, not the organisation's — the wiki and the other repositories are pushed
-to directly.
+Every change reaches `main` or `devel` through a pull request. Whether it also
+needs a review by someone other than its author depends on what the change is.
+This is `xymon`'s rule, not the organisation's — the wiki and the other
+repositories are pushed to directly.
 
-**What GitHub enforces.** A ruleset on `main`, `devel` and `release/*` requires
-a pull request, one approving review after the last push, every thread
-resolved, squash or merge commits only, and no force-push or deletion. The
-`maintainers` team is on its bypass list unconditionally, so for them it
-enforces nothing.
+**What GitHub enforces.** A ruleset on `main` and `devel` requires a pull
+request, one approving review after the last push, every thread resolved,
+squash or merge commits only, and no force-push or deletion. The `maintainers`
+team may bypass it only within a pull request: a maintainer can merge a pull
+request without its review, but nobody can push to those branches directly.
+Every other branch, `Changes` and `release/*` included, is outside the ruleset
+and takes direct pushes.
 
 **What we ask of each other.** The bypass is a mechanism, not a permission. A
 second reader is always the better outcome, and the rows below say when a change
@@ -205,7 +207,8 @@ may go in without one — not when to stop asking:
 | change | may merge without a review |
 |---|---|
 | bug fix, new feature, architectural change | no |
-| build, CI, test framework, minor manual refactoring | yes, when tests cover it or the pull request carries the evidence |
+| code refactoring, formatting included | not yet: a very localised one with no observable impact, quick to review, could merge without one on complete evidence that nothing observable changed; until the project can say what that evidence is, ask for a review |
+| build, CI, test framework | yes, when tests cover it or the pull request carries the evidence |
 | typo, comment, documentation | yes |
 
 GitHub cannot express that, so off the bypass list it asks for a review
@@ -219,19 +222,47 @@ does not move to a tool. Work that no person supervised is a different
 situation, and this file gets revisited if it arrives.
 
 - One change per pull request. A fix and the cleanup you noticed next to it are
-  two pull requests.
+  two pull requests. A fix and a new check that keeps its construct out may go
+  together, in two commits, or apart: both are accepted.
+- One feature per commit, or one step of it when the feature is too large to
+  review in one sitting — parsing a keyword, acting on it, documenting it. A
+  pull request whose change has more than one part — a ported original and the
+  correction made to it, a refactoring the fix cannot be made without and the
+  fix — keeps each in a commit of its own, and no commit holds two. Each commit
+  builds, and its message says what it does and why, in terms that stand alone,
+  whatever the merge method. The commit that makes a behaviour observable
+  carries the test that pins it, so that commit fails without it. A ported
+  original may stay as its author wrote it even where it does not build alone;
+  the correction after it makes it build, and its message says so. A correction
+  found in review is folded into the commit it corrects, not added as a commit
+  of its own: a pull request may land with a merge commit, and then every commit
+  reaches `main` as it stands.
 - Say what you verified, and how. "Built and ran the test suite" is useful;
   "should work" is not. If you could not test something, say that too — it is
   not held against you, and it tells a reviewer where to look.
-- `tests/` holds the regression suite. If your change fixes something a test
-  could have caught, adding one is worth more than the fix.
+- `tests/` holds the regression suite. Each observable behaviour a change makes
+  true in the code, the build or the suite gets a deterministic test that fails
+  without it where it can run, locally or on a CI lane — fails because the
+  behaviour is gone, not because something the test needs to reach it is. Check
+  it by reverting what makes the behaviour true — for a new option, its handler
+  rather than its parsing; for a new alias, the alias itself — or by a safe
+  equivalent, and say what was reverted or used. A change that only adds a test
+  is checked by breaking the behaviour the test guards. Test the behaviour, not
+  its spelling, unless the source or config is itself the surface, as in the
+  portability check's own tests — reading source is what that check does — or
+  a shipped default. For a behaviour that stays untested, say why and what was
+  checked instead. How to write and run a test is in `tests/README.md`;
+  `tests/buildsystem/test-suite-portability.sh` refuses the constructs a
+  portable test avoids.
 - Keep the description accurate as it evolves. A reviewer reading it after
   three force-pushes should not be reading the original plan.
 
 ### Titles
 
 The title is the one line a reader gets in the pull request list and, after a
-squash merge, in `git log --oneline`. Write it so that line is enough.
+squash merge, in `git log --oneline`; after a merge commit that line is each
+commit's own subject instead, which is why a commit message stands alone too.
+Write the title so its line is enough.
 
 - Start with the component that changes, then a colon: a name the tree already
   uses for it — a program, a directory, a module, a function or a config file
@@ -277,6 +308,11 @@ when the diff does not explain itself. Write it for both.
   against another pull request, a behaviour deliberately left alone, something you
   could not test. Everything else in the description is convenience; this part is the
   reason it exists.
+- Declare a dependency on another open pull request on a line of its own,
+  `Depends-on: #N`, one line per pull request; a pull request based on another's
+  branch needs none. The `blocked`, `unblocks` and `deps-none-found` labels are
+  recomputed from these lines and the base branches every day and set to what
+  they say, so a dependency written any other way is not seen.
 - Show the evidence, compactly. Suite counts, a measurement, a before-and-after table.
   A table of three rows says what three paragraphs say, and survives being skimmed.
 - Cite what can be checked. A claim about the tree carries `file:line`; a claim about
@@ -288,6 +324,56 @@ when the diff does not explain itself. Write it for both.
   re-reads.
 - Shortening a description follows the same rule as shortening anything else, and it
   comes last: see [Shortening](#shortening).
+
+### The last pass
+
+When a change has stopped moving, before a review is asked for or it merges without one,
+read the prose it adds or changes once more, and again whenever that prose changes,
+through a review's findings or the pass's own edits. Only its own lines, and any existing
+line the change makes false: an older problem found on the way is a note, or another
+pull request — except the missing other half of a pointer, when it belongs in a document
+this change already edits, which
+[Where a change gets written down](#where-a-change-gets-written-down) lets you add in
+this change.
+
+1. **True.** Each sentence against what it describes: each comment against the code
+   under it, each test header and assertion message against what the test checks, each
+   manual-page sentence against the code, the commit message and description against the
+   final diff, and any other sentence against the tree.
+2. **Current.** Commit ids, suite counts and `file:line` citations against the pull
+   request's final head; a citation of the old code names its revision. The pull
+   request's own commit ids stay valid in its description after a squash merge,
+   because the pull request keeps them; a commit message, read later in a plain clone,
+   cites only commits already on `main`.
+3. **In its place.** Each fact once, on the surface whose reader needs it, copied only
+   where its second reader cannot reach the first copy — see
+   [Where a change gets written down](#where-a-change-gets-written-down).
+4. **Said.** What stays untested is in the description — see
+   [Pull requests](#pull-requests).
+5. **Readable.** One idea per sentence, no aside inside an aside, and table cells short
+   enough to scan. A sentence the reader has to take apart is split, not trimmed.
+6. **Short.** Last, once a re-read turns up nothing new, and losslessly — see
+   [Shortening](#shortening).
+
+If the pass edits the diff, it ends like any edit: run the suite again, check any test
+assertion it touched as the `tests/` bullet in [Pull requests](#pull-requests) asks, and
+say in one comment what it changed. If it edits only the description or the commit
+message, the comment is enough.
+
+A review of that prose reports facts: a sentence that is false, misleading — a reader
+would act or decide differently on it — or in conflict with another rule. This
+paragraph is about the prose: a defect found in the code is reported, and what a review
+says about the code itself, as distinct from its comments, is not bound by it. A
+sentence that says only what usually or rarely fits is advice, and departing from it is
+not a finding; a "rarely" that follows from a stated rule does not turn the rule into
+advice. A preference is not a finding, and neither is step 5, which is the author's own
+check — unless the sentence also misleads, which is a finding whatever the cause.
+When rounds keep reopening one choice, it is a principle, not wording: the author
+decides it — a person, the one who opened the pull request, even when a tool wrote
+the text — records it with the rejected alternative in the pull request or issue that
+decided it, and later rounds of that pull request take it as given; a later pull
+request may cite it but is not bound by it. A round that finds no facts ends the
+reviewing of that prose; an approval the table above asks for is still needed.
 
 ## Style
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/digest-md5hash.sh
+# tests/libxymon/digest-md5hash.sh
 #
 # Guard for the md5hash() buffer-size fix in lib/digest.c
 # (xymon-monitoring/xymon#8).
