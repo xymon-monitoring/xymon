@@ -298,9 +298,30 @@ pcre_cflags() {
 # written will have to remember it again. A compile line can no longer say
 # where the tree's headers are without also saying how to reach them and
 # where pcre2.h is.
+#
+# It also carries the tree's own CLIENTONLY and LOCALCLIENT defines, asked of
+# make the way xymon_ldflags() asks for the link flags: build/Makefile.rules
+# adds -DCLIENTONLY=1 to a client tree's CFLAGS, and -DLOCALCLIENT=1 to a
+# localclient one. Headers branch on them -- lib/loadalerts.h includes
+# <pcre2.h> only for a server or localclient build -- so a harness compiled
+# without them on a client tree asks for a header the client build never
+# needs, and fails where PCRE is not installed. Only those two: they are what
+# a variant changes, and taking every -D would alter a server tree's compile
+# lines, which need nothing.
 xymon_cflags() {
-	local root=$1
-	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")"
+	local root=$1 probe tok defines=
+
+	if [ -f "$root/Makefile" ]; then
+		require_gnu_make
+		# shellcheck disable=SC2016  # $(CFLAGS) is make's to expand, not the shell's
+		probe='__xymon_cflags:
+	@printf "%s\n" "$(CFLAGS)"
+'
+		for tok in $(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_cflags 2>/dev/null); do
+			case $tok in -DCLIENTONLY|-DCLIENTONLY=*|-DLOCALCLIENT|-DLOCALCLIENT=*) defines="$defines $tok" ;; esac
+		done
+	fi
+	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")$defines"
 }
 
 # xymon_ldflags ROOT -- the configured link flags for a harness built against
