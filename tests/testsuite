@@ -81,9 +81,9 @@ __XYMON_TESTS_RUNROOT=$(mktemp -d "${TMPDIR:-/tmp}/xymon-run.XXXXXX") || exit 1
 export __XYMON_TESTS_RUNROOT
 TMPDIR=$__XYMON_TESTS_RUNROOT
 export TMPDIR
-trap 'rm -rf "$__XYMON_TESTS_RUNROOT"' EXIT
-trap 'rm -rf "$__XYMON_TESTS_RUNROOT"; exit 130' INT
-trap 'rm -rf "$__XYMON_TESTS_RUNROOT"; exit 143' TERM
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial"' EXIT
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial"; exit 130' INT
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial"; exit 143' TERM
 
 # XYMON_VARIANT names the build this tree is, so the runner can leave out the
 # tests whose subject that build does not contain. Unset -- a developer run, or
@@ -159,6 +159,15 @@ area_in_variant() {
 	esac
 }
 
+# pass_partial (lib/assert.sh) exits 0 like any pass, so a half-checked run is
+# invisible to the exit status. Each one records itself here instead -- beside
+# the run directory, not in it, where tests/final/no-leftovers.sh would count
+# it, and removed by the run directory's own traps.
+partial_log=$__XYMON_TESTS_RUNROOT.partial
+: >"$partial_log" || exit 2
+XYMON_TESTS_PARTIAL_LOG=$partial_log
+export XYMON_TESTS_PARTIAL_LOG
+
 pass=0; skip=0; fail=0; filtered=0; failed=''; filtered_areas=''
 run_one() {
 	t=$1
@@ -228,8 +237,14 @@ run_all "$tests"
 # Everything else has finished; now the checks that are about what is left.
 run_all "$finaltests"
 
+# grep -c prints 0 and exits 1 on no match, so take the count and ignore the
+# status rather than appending a second 0 to it.
+partial=$(grep -c . "$partial_log" 2>/dev/null); [ -n "$partial" ] || partial=0
+
 printf '\n----- summary -----\n'
-printf 'passed:  %d\n' "$pass"
+printf 'passed:  %d' "$pass"
+if [ "$partial" -gt 0 ]; then printf ' (%d partial)' "$partial"; fi
+printf '\n'
 printf 'skipped: %d\n' "$skip"
 printf 'failed:  %d\n' "$fail"
 [ "$filtered" -eq 0 ] || printf 'filtered: %d (not in a %s build)\n' "$filtered" "$variant"
