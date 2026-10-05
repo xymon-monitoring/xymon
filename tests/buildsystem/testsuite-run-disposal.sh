@@ -45,6 +45,12 @@ work=$(mktempdir); register_cleanup "rm -rf '$work'"
 # run directory is not enough: the runner creates it before it runs anything,
 # so a signal sent on that cue can be handled before the fake test has begun,
 # and the case then proves only that a run with nothing in it cleans up.
+# The runs below are throwaway trees with a dummy area. The calling run's
+# XYMON_VARIANT and coverage floor are not theirs to meet: under
+# XYMON_TESTS_STRICT=1 an unknown area stops a run before its test starts,
+# and every case here would then test nothing.
+unset XYMON_TESTS_STRICT XYMON_VARIANT
+
 maketree() {
 	local dir=$1 kind=$2 started=${3:-} stop=${4:-}
 	mkdir -p "$dir/tests/dummy"
