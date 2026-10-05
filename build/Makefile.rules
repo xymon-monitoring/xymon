@@ -41,6 +41,15 @@ endif
 ifndef INSTALLEXTDIR
 INSTALLEXTDIR = $(XYMONHOME)/ext
 endif
+# Where systemd unit files go, e.g. /usr/lib/systemd/system. Unset,
+# nothing is installed and the .DIST is only a sample -- which is what a
+# source install on a host without systemd wants.
+#
+# Appended rather than written into the three INSTALLTARGETS assignments:
+# those are the lines every change to the install touches, so each new
+# variable would collide with every other one. The target is a no-op
+# unless the variable is set, so carrying it everywhere costs nothing.
+INSTALLTARGETS += install-systemd
 ifndef INSTALLTMPDIR
 INSTALLTMPDIR = $(XYMONHOME)/tmp
 endif
@@ -179,6 +188,27 @@ clean:
 ####################
 
 install: $(INSTALLTARGETS)
+
+# Where this system keeps service environment files. The unit reads
+# $(INSTALLENVDIR)/xymonlaunch for XYMONLAUNCHOPTS; a distribution sets
+# this to its own convention, and the default keeps a source install
+# reading a path that actually exists.
+ifndef INSTALLENVDIR
+INSTALLENVDIR = $(XYMONHOME)/etc
+endif
+export INSTALLENVDIR
+
+# Generated from the .DIST with this build's paths, so the unit works
+# wherever the tree was installed.
+install-systemd:
+ifneq ($(strip $(INSTALLSYSTEMDDIR)),)
+	mkdir -p $(INSTALLROOT)$(INSTALLSYSTEMDDIR)
+	sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' \
+	    -e 's!@XYMONUSER@!$(XYMONUSER)!g' \
+	    -e 's!@INSTALLENVDIR@!$(INSTALLENVDIR)!g' \
+	    tools/xymonlaunch.service.DIST > $(INSTALLROOT)$(INSTALLSYSTEMDDIR)/xymonlaunch.service
+	chmod 644 $(INSTALLROOT)$(INSTALLSYSTEMDDIR)/xymonlaunch.service
+endif
 
 install-servermsg:
 	@echo ""

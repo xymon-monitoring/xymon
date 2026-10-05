@@ -1,0 +1,53 @@
+# Unit file for any systemd distribution.
+#
+# XYMONHOME, XYMONUSER and INSTALLENVDIR are substituted at install time,
+# so the unit suits a source install under /usr/local as well as a package
+# that puts the tree elsewhere. Set INSTALLSYSTEMDDIR to have `make
+# install` place the generated file where systemd reads it; unset, this is
+# a sample.
+#
+# INSTALLENVDIR is where this system keeps service environment files, and
+# defaults to the install tree's own etc/. Distributions point it at their
+# own convention -- /etc/sysconfig on Red Hat and SUSE, /etc/default on
+# Debian -- rather than the unit naming either of them: hardcoding both
+# would work on those two and silently match nothing anywhere else,
+# including a source install.
+
+[Unit]
+Description=Xymon systems and network monitor
+Documentation=man:xymon(7) man:xymonlaunch(8) man:xymon(1)
+After=network.target
+
+[Install]
+# No Alias here. An alias is a symlink systemd creates at enable time in
+# /etc/systemd/system, so claiming "xymon.service" or "xymon-client.service"
+# collides with any packaging that ships a real unit of that name -- Debian
+# ships both, and an admin may have their own. Those names are also a
+# packaging choice rather than this build's: a distribution that wants one
+# adds it in a drop-in or its own [Install] section.
+WantedBy=multi-user.target
+
+
+[Service]
+EnvironmentFile=-@INSTALLENVDIR@/xymonlaunch
+User=@XYMONUSER@
+# We wrap in xymoncmd to eliminate the need for the bulk of the old init
+# script. No --no-env: devel implements that in lib/stdopt.c, which main
+# does not have, and main's xymoncmd treats an unknown argument as the
+# command to run -- so the flag would make it exec a program named
+# "--no-env" and the service would never start. Letting xymoncmd load the
+# environment is what is wanted here anyway: it probes xymonserver.cfg
+# before xymonclient.cfg, so the role resolves at runtime.
+ExecStart=@XYMONHOME@/bin/xymoncmd @XYMONHOME@/bin/xymonlaunch --no-daemon $XYMONLAUNCHOPTS
+# xymoncmd exec's xymonlaunch, and xymonlaunch will propagate -HUP as needed
+ExecReload=/bin/kill -HUP $MAINPID
+Type=simple
+
+# Kill xymonlaunch, but don't send kills to the underlying procs, since they
+# might be doing important things (like writing checkpoints and flushing caches)
+KillMode=process
+# SendSIGHUP=yes
+SendSIGKILL=no
+# Give an extra 6s beyond xymonlaunch to let things disconnect
+RestartSec=6
+Restart=on-failure
