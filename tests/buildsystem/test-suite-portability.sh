@@ -211,6 +211,29 @@ check_posix_bre() {
 
 for f in $files; do check_posix_bre "$f" "$work/violations"; done
 
+# A pipe into a reader that stops early -- grep -q or -m, head -- races
+# under pipefail: once the reader exits, a producer still writing dies of
+# SIGPIPE (141) and the command fails although the reader got its answer. It
+# failed 901 times in 20000 on OpenBSD 7.9 (#594); a slow scheduler is what
+# loses the race, so a fast one never shows it. Feed grep a here-string and
+# take a first line with first_line() instead. One line at a time, like the
+# rules above, so a pipe continued onto the next line is not seen; sed ...q,
+# awk ... exit and cmp stop early too but have no single-line form this can
+# tell apart, and the tree uses none of them after a pipe.
+# check_early_exit_pipe FILE OUT -- append this file's violations to OUT.
+check_early_exit_pipe() {
+	local f=$1 out=$2 line n
+	{ grep -nE '(^|[^|])[|][[:space:]]*(grep[[:space:]]+(-[[:alnum:]]+[[:space:]]+)*-[[:alnum:]]*[qm]|head([[:space:]]|$|[)]))' "$f" 2>/dev/null || true; } | \
+	{ grep -vE '^[0-9]+:[[:space:]]*#' || true; } | \
+	while IFS= read -r line; do
+		n=${line%%:*}
+		printf 'early-exit-pipe\t%s\t%s\n' "${f#"$ROOT"/}:$n" \
+			'pipes into a reader that stops early (grep -q/-m, head); under pipefail the producer can die of SIGPIPE. Use grep ... <<<"$text" or first_line' >>"$out"
+	done
+}
+
+for f in $files; do check_early_exit_pipe "$f" "$work/violations"; done
+
 if [ -s "$work/violations" ]; then
 	printf 'portability rules broken by the test suite:\n\n' >&2
 	sort "$work/violations" | awk -F'\t' '{ printf "  [%s] %s\n      %s\n", $1, $2, $3 }' >&2
@@ -284,5 +307,23 @@ declared="$work/declared.sh"
 check_uname_guard "$declared" "$work/uname-violations"
 assert_equal "0" "$(wc -l <"$work/uname-violations" | tr -d " ")" \
 	"the uname rule now reports a declared native-primitive test, which is the one place a guard belongs"
+
+# The early-exit rule the same way: each reader is reported after a pipe,
+# and neither "||" nor the here-string form that replaces it is.
+earlyfile="$work/early.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf 'printf x | grep -q x\n'
+	printf 'printf x | grep -Eqx x\n'
+	printf 'printf x | grep -m1 x\n'
+	printf 'v=$(printf x | head -1)\n'
+	printf 'printf x | head -n 1\n'
+	printf 'true || head -1 f\n'
+	printf 'grep -q x <<<"$v"\n'
+} >"$earlyfile"
+: >"$work/early-violations"
+check_early_exit_pipe "$earlyfile" "$work/early-violations"
+assert_equal "5" "$(wc -l <"$work/early-violations" | tr -d " ")" \
+	"the early-exit rule no longer reports exactly the five pipes into grep -q/-m and head (and not || or a here-string)"
 
 pass "the test suite keeps to bash 3.2, portable tool flags, the configured build flags, and one lane per client"
