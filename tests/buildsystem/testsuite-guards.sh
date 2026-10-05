@@ -49,7 +49,7 @@ run_inner() { # run_inner [VAR=VAL ...] -- run the planted suite
 expect() { # expect RC PATTERN LABEL -- PATTERN is a grep BRE, ^-anchorable
 	[ "$inner_rc" = "$1" ] \
 		|| fail "$3: expected rc=$1, got rc=$inner_rc -- output: $inner_out"
-	printf '%s\n' "$inner_out" | grep -q "$2" \
+	grep -q "$2" <<<"$inner_out" \
 		|| fail "$3: output lacks '$2' -- output: $inner_out"
 }
 

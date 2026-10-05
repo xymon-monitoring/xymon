@@ -72,7 +72,7 @@ for svc in smtp smtps submission msa; do
 	# Compare option TOKENS, not substrings: "options nobanner" or
 	# "bannerless" would satisfy a substring match while meaning the opposite.
 	opts=$(sed -n 's/^[[:space:]]*options[[:space:]]*//p' <<<"$block" | tr ',' ' ')
-	has_opt() { printf '%s\n' $opts | grep -qx "$1"; }
+	has_opt() { grep -qx "$1" <<<"$(printf '%s\n' $opts)"; }
 
 	has_opt banner || fail \
 		"[$svc] no longer asks for the banner -- with no send, the greeting is the only thing this probe can check (#450)"
