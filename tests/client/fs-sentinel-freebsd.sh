@@ -209,4 +209,4 @@ if XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES="nfs nfs4 cifs" /bin/sh "$TMP/pdl.sh"; 
 	fail "a probe directory under a backslash-named mount must not read as local"
 fi
 
-pass "xymonclient-freebsd.sh: the remote-df sentinel is wired to mount(8) and both reports"
+pass "xymonclient-freebsd.sh: the remote-df sentinel is wired to mount(8) and both reports -- FreeBSD mount output replayed, df stubbed"
