@@ -172,6 +172,12 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Let an rrddefinitions.d fragment override a shipped definition (#542) (Thanks, Roland Rosenfeld)
 * Stop analysis.cfg PAGE= rules matching every host on the top page (#527) (Thanks, Mark Felder)
 * Name the top-level page / in every page= filter, not the empty string (#533) (Thanks, Mark Felder)
+* Say plainly in hosts.cfg(5) that a host with a comma in its name is not monitored (#510)
+* Fix a one-byte xymond heap overflow on longer status test flags (#447) (Thanks, Roland Rosenfeld)
+* Stop loadhosts overrunning a 16-byte buffer with a longer IP (#448) (Thanks, Roland Rosenfeld)
+* Stop xymonnet reading a TLS certificate after releasing it (#449) (Thanks, Roland Rosenfeld)
+* Stop msgcache overrunning an index entry after a clock step back (#575) (Thanks, Roland Rosenfeld)
+* Document how client-local.cfg picks a section, and when a .d fragment wins (#544, #541)
 
 
 
