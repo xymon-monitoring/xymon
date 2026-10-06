@@ -278,11 +278,13 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid, struct sn
 			break;
 
 		  case SNMP_ERR_NOSUCHNAME:
+			/*
+			 * NOSUCHNAME means the agent answered but does not implement this
+			 * OID - a host-wide fact, not IP-specific. Failing over to another
+			 * IP of the same host cannot change the result; it only wastes a
+			 * poll cycle and muddles multi-homed handling. Just log it.
+			 */
 			dbgprintf("Host %s item %s: No such name\n", req->hostname, req->curr_oid->devname);
-			if (req->hostip[req->hostipidx+1]) {
-				req->hostipidx++;
-				startonehost(req, 1);
-			}
 			break;
 
 		  case SNMP_ERR_TOOBIG:
