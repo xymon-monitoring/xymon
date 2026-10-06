@@ -76,6 +76,10 @@ definition file, or the logfile was changed, then the task is stopped
 and restarted with the new definition.
 
 .SH SIGNALS
+.IP "\fBSIGHUP\fR"
+Re-reads the configuration file, re-opens the --log file, and forwards
+the signal to every running task marked SENDHUP in tasks.cfg.
+
 .IP "\fBSIGTERM\fR"
 Stops the tasks, removes their PIDFILEs, and exits.
 
