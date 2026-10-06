@@ -3,9 +3,9 @@
 #
 # tests/xymonnet/contest-tls.sh
 #
-# The standalone contest, which "make install-tools" installs to run one
-# network test by hand, must speak TLS for a TLS service the way xymonnet
-# does. Its build rule compiled contest.c without $(SSLFLAGS), so
+# xymonnetprobe -- contest.c built standalone, which "make install-tools"
+# installs to run one network test by hand -- must speak TLS for a TLS
+# service the way xymonnet does. Its build rule compiled contest.c without $(SSLFLAGS), so
 # HAVE_OPENSSL was unset, contest.h defined TCP_SSL as 0 and every SSL call
 # was a stub: an imaps test sent its "ABC123 LOGOUT" in clear text.
 #
@@ -18,7 +18,7 @@ set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 root=$(find_root)
 
-require_bin CONTEST xymonnet/contest
+require_bin CONTEST xymonnet/xymonnetprobe
 require_cc
 
 work=$(mktempdir); register_cleanup "rm -rf '$work'"
@@ -46,12 +46,12 @@ XYMONHOME="$work/home" "$CONTEST" --timeout=8 "127.0.0.1/$port/imaps" \
 	>"$work/out.txt" 2>&1 || :
 wait "$peer" 2>/dev/null || :
 
-[ -s "$work/verdict.txt" ] || fail "the peer recorded nothing -- contest never connected:
+[ -s "$work/verdict.txt" ] || fail "the peer recorded nothing -- xymonnetprobe never connected:
 $(cat "$work/out.txt")"
 verdict=$(cat "$work/verdict.txt")
 
 [ "$verdict" = "16" ] || fail \
-	"contest opened an imaps test without a TLS handshake: the peer's first byte was [$verdict], expected [16]
--- contest built without \$(SSLFLAGS) has every SSL call stubbed out (xymonnet/Makefile, the contest rule)"
+	"xymonnetprobe opened an imaps test without a TLS handshake: the peer's first byte was [$verdict], expected [16]
+-- built without \$(SSLFLAGS), every SSL call is stubbed out (xymonnet/Makefile, the xymonnetprobe rule)"
 
-pass "the standalone contest opens a TLS service test with a TLS handshake"
+pass "xymonnetprobe opens a TLS service test with a TLS handshake"

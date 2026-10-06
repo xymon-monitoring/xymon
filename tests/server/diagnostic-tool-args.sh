@@ -3,28 +3,29 @@
 #
 # tests/server/diagnostic-tool-args.sh
 #
-# The standalone diagnostics a server build compiles -- lib/'s loadhosts,
-# stackio, availability and locator, and xymonnet's contest -- must
+# The diagnostics "make install-tools" installs -- lib/'s xymonloadhosts,
+# xymonstackio, xymonavailability and xymonlocator, and xymonnet's
+# xymonnetprobe -- must
 # answer --help with their usage and exit 0, and must refuse arguments
 # they cannot use with the usage and exit 1, not crash. They used to:
 #
-#   - loadhosts and stackio with no arguments read argv[1] and segfaulted;
-#   - availability on a file name with no dot passed strrchr's NULL on;
-#   - stackio on a file it could not open retried it forever, without
+#   - xymonloadhosts and xymonstackio with no arguments read argv[1] and segfaulted;
+#   - xymonavailability on a file name with no dot passed strrchr's NULL on;
+#   - xymonstackio on a file it could not open retried it forever, without
 #     reading its next command;
-#   - --help was taken by stackio for a file name and by locator for an
-#     address, and contest with no test ran nothing and exited 0.
+#   - --help was taken by xymonstackio for a file name and by xymonlocator
+#     for an address, and xymonnetprobe with no test ran nothing and exited 0.
 #
 # Needs a server build: the tools are built by lib/ and xymonnet's "all".
 
 set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
-require_bin LOADHOSTS lib/loadhosts
-require_bin STACKIO lib/stackio
-require_bin AVAILABILITY lib/availability
-require_bin LOCATOR lib/locator
-require_bin CONTEST xymonnet/contest
+require_bin LOADHOSTS lib/xymonloadhosts
+require_bin STACKIO lib/xymonstackio
+require_bin AVAILABILITY lib/xymonavailability
+require_bin LOCATOR lib/xymonlocator
+require_bin CONTEST xymonnet/xymonnetprobe
 
 work=$(mktempdir); register_cleanup "rm -rf '$work'"
 
@@ -55,24 +56,24 @@ expect_refusal() {
 	grep -q '^Usage: ' "$work/err" || fail "$what: refused without the usage on stderr: $(cat "$work/err")"
 }
 
-expect_refusal "loadhosts with no arguments" "$LOADHOSTS"
-expect_refusal "loadhosts with a hosts file and no host" "$LOADHOSTS" "$work/hosts.cfg"
-expect_refusal "stackio with no arguments" "$STACKIO"
-expect_refusal "locator with no arguments" "$LOCATOR"
-expect_refusal "contest with no test" "$CONTEST" --timeout=1
+expect_refusal "xymonloadhosts with no arguments" "$LOADHOSTS"
+expect_refusal "xymonloadhosts with a hosts file and no host" "$LOADHOSTS" "$work/hosts.cfg"
+expect_refusal "xymonstackio with no arguments" "$STACKIO"
+expect_refusal "xymonlocator with no arguments" "$LOCATOR"
+expect_refusal "xymonnetprobe with no test" "$CONTEST" --timeout=1
 
 # A history file is HOST.SERVICE; the dot that matters is in the file name,
 # not in a directory above it.
 mkdir -p "$work/hist.d"
 : >"$work/hist.d/nodot"
-expect_refusal "availability on a history file name without a service" \
+expect_refusal "xymonavailability on a history file name without a service" \
 	"$AVAILABILITY" "$work/hist.d/nodot" 0 1
 
-# ---- stackio on a missing file reports it once and reads its next command ---
+# ---- xymonstackio on a missing file reports it once and reads its next command ---
 # A loop that never reads stdin floods its output: a small file-size cap
 # stops it there, where the fixed tool writes two short lines.
 ( ulimit -f 128; printf '.\n' | "$STACKIO" "$work/missing.cfg" >"$work/missing.out" 2>&1 ) || :
 lines=$(grep -c 'Cannot open file' "$work/missing.out" || :)
-[ "$lines" -eq 1 ] || fail "stackio reported the missing file $lines times, expected once -- it retries the file instead of reading its next command"
+[ "$lines" -eq 1 ] || fail "xymonstackio reported the missing file $lines times, expected once -- it retries the file instead of reading its next command"
 
-pass "the standalone diagnostics answer --help, and refuse unusable arguments with their usage instead of crashing"
+pass "the install-tools diagnostics answer --help, and refuse unusable arguments with their usage instead of crashing"
