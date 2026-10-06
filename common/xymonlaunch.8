@@ -75,6 +75,10 @@ If the command used for a task changed, or it was given a new environment
 definition file, or the logfile was changed, then the task is stopped
 and restarted with the new definition.
 
+.SH SIGNALS
+.IP "\fBSIGTERM\fR"
+Stops the tasks, removes their PIDFILEs, and exits.
+
 .SH "SEE ALSO"
 tasks.cfg(5), xymon(7)
 
