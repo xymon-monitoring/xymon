@@ -144,7 +144,8 @@ daemons running directly from tasks.cfg that are listening to
 channels on other systems, this should be enabled if you want
 them to rotate logs by local command.
 A task started with LOGFILE finds that file's name in
-$XYMONLAUNCH_LOGFILENAME.
+$XYMONLAUNCH_LOGFILENAME. SENDHUP is of use only for a program that
+reopens that file on SIGHUP; xymond, xymonproxy and xymonfetch do.
 
 .SH "SEE ALSO"
 xymonlaunch(8), xymond(8), crontab(5), xymon(7)
