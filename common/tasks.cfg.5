@@ -143,6 +143,8 @@ reason). If you're using the --locator functionality and have
 daemons running directly from tasks.cfg that are listening to 
 channels on other systems, this should be enabled if you want
 them to rotate logs by local command.
+A task started with LOGFILE finds that file's name in
+$XYMONLAUNCH_LOGFILENAME.
 
 .SH "SEE ALSO"
 xymonlaunch(8), xymond(8), crontab(5), xymon(7)

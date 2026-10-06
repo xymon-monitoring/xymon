@@ -656,6 +656,7 @@ int main(int argc, char *argv[])
 	char *pidfn = NULL;
 	pid_t cpid;
 	int status;
+	int switching = 0;	/* This pass's copy of the log-switch flag */
 	struct sigaction sa;
 	char *envarea = NULL;
 
@@ -806,7 +807,13 @@ int main(int argc, char *argv[])
 			nextcfgload = (now + 30);
 		}
 
-		if (logfn && dologswitch) {
+		/* Captured once per pass, and cleared here: a HUP arriving after the
+		   checks below belongs to the next pass, where clearing it at the
+		   bottom dropped it as though it had been acted on. */
+		switching = dologswitch;
+		if (switching) dologswitch = 0;
+
+		if (logfn && switching) {
 			reopen_file(logfn, "a", stdout);
 			reopen_file(logfn, "a", stderr);
 		}
@@ -971,7 +978,7 @@ int main(int argc, char *argv[])
 					kill(twalk->pid, (twalk->beingkilled ? SIGKILL : SIGTERM));
 					twalk->beingkilled = 1; /* Next time it's a real kill */
 				}
-				else if (dologswitch && twalk->sendhup) {
+				else if (switching && twalk->sendhup) {
 					dbgprintf("Sending HUP to %s with PID %d for log switch\n", twalk->key, (int)twalk->pid);
 					kill(twalk->pid, SIGHUP);
 				}
@@ -981,7 +988,6 @@ int main(int argc, char *argv[])
 			if (twalk->crondate && (twalk->cronmin != -1) && !cronmatch(twalk->crondate)) twalk->cronmin = -1;
 		}
 
-		if (dologswitch) dologswitch = 0;
 		sleep(5);
 	}
 
