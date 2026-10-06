@@ -122,6 +122,7 @@ static void restore_task(tasklist_t *twalk)
 	twalk->group      = saved->group;
 	twalk->logfile    = saved->logfile;
 	twalk->pidfile    = saved->pidfile;
+	twalk->sendhup    = saved->sendhup;
 	twalk->envfile    = saved->envfile;
 	twalk->envarea    = saved->envarea;
 	twalk->onhostptn  = saved->onhostptn;

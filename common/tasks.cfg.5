@@ -136,11 +136,11 @@ xymonlaunch expands the path itself as well as the task does, so it
 must read the same settings: start it with --env naming the file the
 tasks load with ENVFILE.
 
-The \fBSENDHUP\fR option tells xymonlaunch to forward a HUP 
+The \fBSENDHUP\fR option tells xymonlaunch to forward a HUP
 to the task when it receives one (typically due to being asked
 to rotate log files by the system, but potentially for any
 reason). If you're using the --locator functionality and have
-daemons running directly from tasks.cfg that are listening to 
+daemons running directly from tasks.cfg that are listening to
 channels on other systems, this should be enabled if you want
 them to rotate logs by local command.
 A task started with LOGFILE finds that file's name in
