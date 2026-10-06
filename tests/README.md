@@ -153,8 +153,11 @@ maintenance.
   PR: `tests/client/fs-filter-linux.sh`, `tests/packaging/fhs-paths.sh`.
   Split when a file passes ~200 lines.
 - **Executable. Bash. Strict mode.** First line:
-  `#!/usr/bin/env bash`. Second line: `set -euo pipefail`.
-  POSIX-sh compatibility is a non-goal.
+  `#!/usr/bin/env bash`, then the SPDX line and the header comment.
+  The first command is `set -euo pipefail`. POSIX `sh` is not a goal
+  for tests: the floor is bash 3.2. The tools they call must still
+  behave the same on every platform;
+  `tests/buildsystem/test-suite-portability.sh` enforces that.
 - **Quiet on success, verbose on failure.** Don't print per-step
   progress on the happy path; CI logs are noisy enough. On failure
   the `fail` helper prints to stderr and exits, which is usually
