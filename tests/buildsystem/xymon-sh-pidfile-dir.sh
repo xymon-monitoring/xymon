@@ -3,7 +3,7 @@
 #
 # tests/buildsystem/xymon-sh-pidfile-dir.sh
 #
-# The shipped tasks.cfg starts the daemons with --pidfile=$XYMONRUNDIR/..., and
+# The shipped tasks.cfg puts the daemons' pidfiles under $XYMONRUNDIR, and
 # xymon.sh -- the script an operator actually runs -- looks those pidfiles up
 # again for "reload" and "rotate". They have to name the same directory. When
 # XYMONRUNDIR was introduced only the first half moved: with the default the two
@@ -30,10 +30,11 @@ for f in "$script" "$tasks" "$mk"; do
 	[ -f "$f" ] || fail "missing shipped file: $f"
 done
 
-# The premise: the tasks really are told to write there. Without this the rest
-# would pass on a tree where nothing uses the variable at all.
-grep -q -- '--pidfile=\$XYMONRUNDIR/' "$tasks" \
-	|| fail "no task writes its pidfile under \$XYMONRUNDIR, so this contract has nothing to hold"
+# The premise: xymond's pidfile really is put there, through PIDFILE or its
+# own --pidfile=, since that is the file "reload" signals. Without this the
+# rest would pass on a tree where nothing uses the variable at all.
+grep -qE -- '(--pidfile=|^[[:space:]]*PIDFILE[[:space:]]+)\$XYMONRUNDIR/xymond\.pid' "$tasks" \
+	|| fail "tasks.cfg does not put xymond's pidfile at \$XYMONRUNDIR/xymond.pid, the file xymon.sh reload signals"
 
 # ... and the script must look there, not in the log directory.
 if grep -nE '@XYMONLOGDIR@/[^ ]*\.pid|@XYMONLOGDIR@/\*\.pid' "$script"; then
@@ -44,8 +45,8 @@ grep -q '@XYMONRUNDIR@' "$script" \
 
 # And it must create that directory before writing into it. Pointed at /run,
 # which is the reason the setting exists, it is gone after a reboot: every
-# pidfile write then fails silently -- xymonlaunch does not report a pidfile it
-# could not open -- while "start" still says Xymon started and stop, status and
+# pidfile write then fails -- xymonlaunch does not report failing to write its
+# own -- while "start" still says Xymon started and stop, status and
 # reload have nothing left to read.
 grep -qE 'mkdir( -p)? @XYMONRUNDIR@' "$script" \
 	|| fail "xymon.sh writes pidfiles into @XYMONRUNDIR@ without creating it: a volatile /run leaves start reporting success with no pidfile"
@@ -61,6 +62,35 @@ for var in $(grep -oE '@[A-Z_]+@' "$script" | sort -u); do
 		*) fail "xymon.sh uses $var but the Makefile rule does not substitute it: the installed script would keep it literal" ;;
 	esac
 done
+
+# ---- every task pidfile is there ---------------------------------------------
+# Every task pidfile sits with the others in @XYMONRUNDIR@, the one directory
+# xymon.sh reads. A SENDHUP task gets its rotation through the launcher either
+# way; with its pidfile here, "rotate" also signals it directly, so it gets two.
+for d in xymond xymonproxy xymonfetch; do
+	grep -qE "^[[:space:]]*PIDFILE[[:space:]]+\\\$XYMONRUNDIR/$d\\.pid" "$tasks" \
+		|| fail "tasks.cfg does not give $d the PIDFILE \$XYMONRUNDIR/$d.pid that xymon.sh rotate signals"
+done
+if grep -nE '(^[[:space:]]*PIDFILE[[:space:]]|--pidfile=)' "$tasks" | grep -v '\$XYMONRUNDIR/'; then
+	fail "a task in tasks.cfg writes its pidfile outside \$XYMONRUNDIR, where xymon.sh rotate does not look"
+fi
+
+# ---- the client names its own runtime directory ------------------------------
+# XYMONRUNDIR is the server's and XYMONCLIENTRUNDIR the client's: a client task
+# built from the server's name would put its pidfile wherever the server's
+# directory is, on a machine that may have no server at all.
+clientcfg="$ROOT/client/clientlaunch.cfg.DIST"
+[ -f "$clientcfg" ] || fail "missing shipped file: $clientcfg"
+
+if grep -nE 'XYMONRUNDIR' "$clientcfg"; then
+	fail "a client task builds its pidfile from the server's XYMONRUNDIR; use XYMONCLIENTRUNDIR"
+fi
+grep -q 'XYMONCLIENTRUNDIR' "$clientcfg" \
+	|| fail "no client task names XYMONCLIENTRUNDIR, so this contract has nothing to hold"
+# and the shipped client configuration defines it, as the client's log
+# directory; the built-in default only covers a configuration kept from before.
+grep -q '^XYMONCLIENTRUNDIR="\$XYMONCLIENTLOGS"' "$ROOT/client/xymonclient.cfg.DIST" \
+	|| fail "client/xymonclient.cfg.DIST does not define XYMONCLIENTRUNDIR as \$XYMONCLIENTLOGS"
 
 # ---- it is settable without patching a file ---------------------------------
 # The audience for these settings is the packager, who runs configure
@@ -128,4 +158,4 @@ would be /xymonlaunch.pid at the filesystem root. Note that ?= does not fix this
 variable is undefined, not when it is defined empty."
 done
 
-pass "xymon.sh, tasks.cfg, configure.server and the Makefiles agree on XYMONRUNDIR"
+pass "xymon.sh, tasks.cfg, configure.server and the Makefiles agree on XYMONRUNDIR, and the client uses its own"

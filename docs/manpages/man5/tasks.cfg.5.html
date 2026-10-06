@@ -136,7 +136,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     --locator functionality and have daemons running directly from tasks.cfg
     that are listening to channels on other systems, this should be enabled if
     you want them to rotate logs by local command. A task started with LOGFILE
-    finds that file's name in $XYMONLAUNCH_LOGFILENAME.</p>
+    finds that file's name in $XYMONLAUNCH_LOGFILENAME. SENDHUP is of use only
+    for a program that reopens that file on SIGHUP; xymond, xymonproxy and
+    xymonfetch do.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
