@@ -85,7 +85,6 @@ enum locator_servicetype_t locatorservice = ST_MAX;
 static int running = 1;
 static int gotalarm = 0;
 static int dologswitch = 0;
-static int hupchildren = 0;
 static int pendingcount = 0;
 static int messagetimeout = 30;
 
@@ -401,6 +400,25 @@ void shutdownconnection(xymon_peer_t *peer)
 }
 
 
+/*
+ * Called twice around the loop, and both matter: the SIGHUP interrupts the
+ * blocking wait, whose EINTR path continues straight back to it, so a check
+ * placed only after the wait never runs on an idle channel. A @@logrotate
+ * message arrives inside the loop instead, and is handled where it lands.
+ */
+static void do_logswitch(void)
+{
+	if (!dologswitch) return;
+
+	logprintf("xymond_channel: reopening logfiles\n");
+	if (logfn) {
+		reopen_file(logfn, "a", stdout);
+		reopen_file(logfn, "a", stderr);
+		logprintf("xymond_channel: reopened logfiles\n");
+	}
+	dologswitch = 0;
+}
+
 void sig_handler(int signum)
 {
 	switch (signum) {
@@ -411,9 +429,12 @@ void sig_handler(int signum)
 		break;
 
 	  case SIGHUP:
-		/* Rotate our log file */
+		/* Reopen our own log file. The worker's log is rotated through the
+		   @@logrotate message that xymond posts to every channel on rotation
+		   (posttoall("logrotate")), which we forward down the pipe; sending
+		   the worker a raw SIGHUP would kill the shipped workers that install
+		   no HUP handler (xymond_filestore, xymond_distribute). */
 		dologswitch = 1;
-		hupchildren = 1;
 		break;
 
 	  case SIGCHLD:
@@ -614,15 +635,7 @@ int main(int argc, char *argv[])
 			deadpid = 0;
 		}
 
-		if (hupchildren) {
-			/* Propagate HUP to children, but only if they're already up */
-			for (handle = xtreeFirst(peers); (handle != xtreeEnd(peers)); handle = xtreeNext(peers, handle)) {
-				xymon_peer_t *pwalk;
-				pwalk = (xymon_peer_t *) xtreeData(peers, handle);
-				if (pwalk->peerstatus == P_UP && pwalk->peertype == P_LOCAL && pwalk->childpid > 0) kill(pwalk->childpid, SIGHUP);
-			}
-			hupchildren = 0;
-		}
+		do_logswitch();
 
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = ((pendingcount > 0) ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
@@ -837,15 +850,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-		if (dologswitch) {
-			logprintf("xymond_channel: reopening logfiles\n");
-			if (logfn) {
-				reopen_file(logfn, "a", stdout);
-				reopen_file(logfn, "a", stderr);
-				logprintf("xymond_channel: reopened logfiles\n");
-			}
-			dologswitch = 0;
-		}
+		do_logswitch();
 	}
 
 	/* Detach from channels */

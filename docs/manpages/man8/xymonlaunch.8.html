@@ -111,6 +111,11 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
 <p>&#160;</p>
 <h1 class="Sh" id="SIGNALS"><a class="permalink" href="#SIGNALS">SIGNALS</a></h1>
 <dl class="Bl-tag">
+  <dt id="SIGHUP"><a class="permalink" href="#SIGHUP"><b>SIGHUP</b></a></dt>
+  <dd>Re-reads the configuration file, re-opens the --log file, and forwards the
+      signal to every running task marked SENDHUP in tasks.cfg.
+    <p class="Pp"></p>
+  </dd>
   <dt id="SIGTERM"><a class="permalink" href="#SIGTERM"><b>SIGTERM</b></a></dt>
   <dd>Stops the tasks, removes their PIDFILEs, and exits.
     <p class="Pp"></p>

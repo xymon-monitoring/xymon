@@ -56,7 +56,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
           ONHOST localhost
           MAXTIME 10m
           LOGFILE /var/log/xymon/updateweb.log
-          PIDFILE /var/log/xymon/updateweb.pid</pre>
+          PIDFILE /var/log/xymon/updateweb.pid
+          SENDHUP</pre>
 <p class="Pp"></p>
 <pre>    [monthlyreport]
           ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
@@ -129,6 +130,13 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     PIDFILE changes, and when xymonlaunch stops. xymonlaunch expands the path
     itself as well as the task does, so it must read the same settings: start it
     with --env naming the file the tasks load with ENVFILE.</p>
+<p class="Pp">The <b>SENDHUP</b> option tells xymonlaunch to forward a HUP to
+    the task when it receives one (typically due to being asked to rotate log
+    files by the system, but potentially for any reason). If you're using the
+    --locator functionality and have daemons running directly from tasks.cfg
+    that are listening to channels on other systems, this should be enabled if
+    you want them to rotate logs by local command. A task started with LOGFILE
+    finds that file's name in $XYMONLAUNCH_LOGFILENAME.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
