@@ -19,6 +19,7 @@
 #define TCP_SSL        0x0004
 #define TCP_HTTP       0x0008
 #define TCP_ALPN       0x0010
+#define TCP_SNI        0x0020	/* send the tested hostname as the SNI server name */
 
 typedef struct svcinfo_t {
 	char *svcname;

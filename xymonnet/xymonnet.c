@@ -2046,6 +2046,25 @@ void send_sslcert_status(testedhost_t *host)
 
 	freestrbuffer(sslmsg);
 }
+/*
+ * A server_name extension must carry a name, never an address: RFC 6066 says
+ * so, and a server that enforces it aborts the handshake rather than ignoring
+ * the field. Tested by shape rather than with inet_pton(), so that no new
+ * header is needed on the platforms this builds for -- a legal hostname
+ * cannot be all digits and dots, because the last label cannot be numeric,
+ * and a colon appears only in an IPv6 literal.
+ */
+static int sni_name_is_address(const char *name)
+{
+	const char *p;
+
+	if (strchr(name, ':')) return 1;
+	for (p = name; (*p); p++) {
+		if (!isdigit((int)*p) && (*p != '.')) return 0;
+	}
+	return 1;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -2413,6 +2432,24 @@ int main(int argc, char *argv[])
 									   t->srcip,
 									   NULL, t->silenttest, NULL, 
 									   NULL, NULL, NULL);
+
+					/*
+					 * "options sni" sends the name being tested in the
+					 * handshake. Without it, a host serving several names
+					 * on one address answers with its DEFAULT certificate,
+					 * so the expiry reported in the sslcert column is that
+					 * of whichever certificate the address answers with --
+					 * not the one this test is named for. Wrong quietly,
+					 * and it reads as authoritative.
+					 */
+					{
+						tcptest_t *tt = (tcptest_t *)t->privdata;
+
+						if (tt && tt->svcinfo && (tt->svcinfo->flags & TCP_SNI) &&
+						    t->host->hostname && !sni_name_is_address(t->host->hostname)) {
+							tt->sni = t->host->hostname;
+						}
+					}
 				}
 			}
 		}
