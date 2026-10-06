@@ -128,7 +128,12 @@ to this file. If this option is not present, then the output
 goes to the same location as the xymonlaunch output.
 
 The \fBPIDFILE\fR setting defines a pidfile for the task.
-xymonlaunch will start the task and write the pid to this file. 
+xymonlaunch will start the task and write the pid to this file.
+It removes the file when the task exits, when the task leaves the
+configuration or its PIDFILE changes, and when xymonlaunch stops.
+xymonlaunch expands the path itself as well as the task does, so it
+must read the same settings: start it with --env naming the file the
+tasks load with ENVFILE.
 
 .SH "SEE ALSO"
 xymonlaunch(8), xymond(8), crontab(5), xymon(7)
