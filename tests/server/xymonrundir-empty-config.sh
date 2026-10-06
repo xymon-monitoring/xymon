@@ -45,4 +45,22 @@ got=$(env -i PATH="$PATH" "$XYMONCMD" --env="$cfg" printenv LATER 2>&1) \
 [ "$got" = "$work/logs/after" ] \
 	|| fail "with XYMONRUNDIR unset, \$XYMONRUNDIR expanded to [$got], not the configured log directory $work/logs"
 
-pass "an empty or unset XYMONRUNDIR in the configuration resolves to the configured log directory, for the lines after it too"
+
+# The client's own: a client configuration that does not define
+# XYMONCLIENTRUNDIR -- one kept from before it existed -- must put msgcache.pid
+# in the client's log directory, as clientlaunch.cfg always did, and not in a
+# default built from XYMONRUNDIR, which resolves to "" in a client-only build.
+printf 'XYMONCLIENTLOGS="%s/clientlogs"\nLATER="$XYMONCLIENTRUNDIR/msgcache.pid"\n' "$work" >"$cfg"
+got=$(env -i PATH="$PATH" "$XYMONCMD" --env="$cfg" printenv LATER 2>&1) \
+	|| fail "xymoncmd could not load $cfg: $got"
+[ "$got" = "$work/clientlogs/msgcache.pid" ] \
+	|| fail "with XYMONCLIENTRUNDIR undefined, the client pidfile path became [$got], not $work/clientlogs/msgcache.pid"
+
+# and one that sets it empty: "" would put msgcache.pid at the filesystem root.
+printf 'XYMONCLIENTLOGS="%s/clientlogs"\nXYMONCLIENTRUNDIR=""\nLATER="$XYMONCLIENTRUNDIR/msgcache.pid"\n' "$work" >"$cfg"
+got=$(env -i PATH="$PATH" "$XYMONCMD" --env="$cfg" printenv LATER 2>&1) \
+	|| fail "xymoncmd could not load $cfg: $got"
+[ "$got" = "$work/clientlogs/msgcache.pid" ] \
+	|| fail "with XYMONCLIENTRUNDIR=\"\", the client pidfile path became [$got], not $work/clientlogs/msgcache.pid"
+
+pass "an empty or unset XYMONRUNDIR in the configuration resolves to the configured log directory, for the lines after it too, and an undefined or empty XYMONCLIENTRUNDIR to the client's log directory"
