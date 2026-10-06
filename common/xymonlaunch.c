@@ -94,6 +94,7 @@ static void free_task_config(tasklist_t *t)
 {
 	xfreenull(t->cmd);
 	xfreenull(t->logfile);
+	xfreenull(t->pidfile);
 	xfreenull(t->envfile);
 	xfreenull(t->envarea);
 	xfreenull(t->onhostptn);
@@ -119,6 +120,7 @@ static void restore_task(tasklist_t *twalk)
 	twalk->maxruntime = saved->maxruntime;
 	twalk->group      = saved->group;
 	twalk->logfile    = saved->logfile;
+	twalk->pidfile    = saved->pidfile;
 	twalk->envfile    = saved->envfile;
 	twalk->envarea    = saved->envarea;
 	twalk->onhostptn  = saved->onhostptn;
@@ -477,9 +479,11 @@ void load_config(char *conffn)
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
 		if ((twalk->cfload != -1) && (twalk->cmd == NULL)) twalk->cfload = -1;
 
-		/* old pidfn (if any) */
+		/* The path the child wrote to: the re-read cleared twalk->pidfile,
+		   and the comparison below frees the copy's. So it is read here. */
+		char *oldpidfile = (twalk->copy ? twalk->copy->pidfile : twalk->pidfile);
 		char *pidfn = NULL;
-		if (twalk->pidfile) pidfn = expand_env(twalk->pidfile);
+		if (oldpidfile) pidfn = expand_env(oldpidfile);
 
 		/* compare the current settings with the copy - if we have one */
 		if (twalk->cfload == 0) {
@@ -808,6 +812,10 @@ int main(int argc, char *argv[])
 			if (twalk) {
 				twalk->pid = 0;
 				twalk->beingkilled = 0;
+				/* The pid in there is gone, and the system may hand that
+				   number to someone else. A task that runs on an interval
+				   writes a new one when it next starts. */
+				if (twalk->pidfile) unlink(expand_env(twalk->pidfile));
 				if (WIFEXITED(status)) {
 					twalk->exitcode = WEXITSTATUS(status);
 					if (twalk->exitcode) {
@@ -922,8 +930,8 @@ int main(int argc, char *argv[])
 							fclose(pidfd);
 						}
 						else {
-							errprintf("Could not write PID to %s for command '%s': %s\n", 
-						   		pidfn, twalk->key, strerror(errno));
+							errprintf("Could not write PID to %s for command '%s': %s\n",
+								pidfn, twalk->key, strerror(errno));
 						}
 					}
 
@@ -967,6 +975,9 @@ int main(int argc, char *argv[])
 	/* Shutdown running tasks */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
 		if (twalk->pid) kill(twalk->pid, SIGTERM);
+		/* Nothing reaps them from here, so the unlink done at reap time
+		   never runs: their pidfiles would outlive the whole launcher. */
+		if (twalk->pidfile) unlink(expand_env(twalk->pidfile));
 	}
 
 	if (pidfn) unlink(pidfn);
