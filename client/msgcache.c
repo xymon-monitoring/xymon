@@ -557,7 +557,20 @@ int main(int argc, char *argv[])
 
 	} while (keeprunning);
 
-	if (pidfile) unlink(pidfile);
+	/* Remove the pidfile only if it holds our pid, as xymonproxy does: only
+	   the daemonising parent writes it, and the shipped task runs with
+	   --no-daemon, where the launcher writes and removes the task's pidfile. */
+	if (pidfile) {
+		FILE *fd = fopen(pidfile, "r");
+
+		if (fd) {
+			char l[100];
+			long owner = (fgets(l, sizeof(l), fd) ? atol(l) : 0);
+
+			fclose(fd);
+			if (owner == (long)getpid()) unlink(pidfile);
+		}
+	}
 	return 0;
 }
 
