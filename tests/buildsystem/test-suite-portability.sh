@@ -85,8 +85,10 @@ report "gnu-only" 'sed +-i|grep +[^|]*--include|grep +-[a-zA-Z]*P|stat +-c|readl
 
 # GNU-only regex escapes. The BSD greps take \b as a literal b, so a rule
 # written with it silently matches nothing there -- which is how this very
-# file shipped a mapfile rule that tested nothing on OpenBSD.
-report "gnu-regex" '(grep|sed|awk|expr)[^|]*\\(b|<|>|w|W|s|S|d|D)([^[:alnum:]]|$)' \
+# file shipped a mapfile rule that tested nothing on OpenBSD. Reported whatever
+# follows the escape: \b is usually written right before a word.
+gnu_regex_pattern='(grep|sed|awk|expr)[^|]*\\(b|<|>|w|W|s|S|d|D)'
+report "gnu-regex" "$gnu_regex_pattern" \
 	"GNU-only regex escape; POSIX has [[:alnum:]] and (^|[^...])"
 
 # The lanes run as root, where a permission bit stops nothing. A test that
@@ -270,6 +272,19 @@ bypass="$work/bypass.sh"
 check_link_flags "$bypass" "$work/probe-violations"
 assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
 	"the link-flags rule no longer reports both missing helpers for an archive built without them"
+
+# The GNU-escape rule the same way: an escape is reported whatever follows it,
+# a word included, and the portable spellings are not.
+gnufile="$work/gnu-regex.sh"
+cat >"$gnufile" <<'EOF'
+grep -qE '\bbreak;' <<<"$x"
+grep -E '\bword' x
+grep -E 'a\sb' f
+grep -E '(^|[^[:alnum:]_])word' f
+grep -E 'a[[:space:]]b' f
+EOF
+assert_equal "3" "$(grep -cE "$gnu_regex_pattern" "$gnufile")" \
+	"the GNU-escape rule no longer reports an escape followed by a word, or reports a portable spelling"
 
 # The BRE rule the same way, and with the ERE beside it: a rule that fired on
 # both would be met by turning every -E off again.
