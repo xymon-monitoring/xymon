@@ -14,7 +14,7 @@
 #
 # The outcome is asserted, not which trap delivers it -- under dash, EXIT alone
 # already covers the signal paths here.
-set -eu
+set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 ROOT=$(find_root)
 
