@@ -71,6 +71,7 @@ typedef struct tasklist_t {
 	int delay;
 	int faildelay;
 	int failcount;
+	int onhold;	/* held back by FAILDELAY, and said so */
 	int cfload;	/* Used while reloading a configuration */
 	int beingkilled;
 	char *cronstr; /* pointer to cron string */
@@ -123,6 +124,8 @@ static void restore_task(tasklist_t *twalk)
 	twalk->cmd        = saved->cmd;
 	twalk->interval   = saved->interval;
 	twalk->maxruntime = saved->maxruntime;
+	twalk->delay      = saved->delay;
+	twalk->faildelay  = saved->faildelay;
 	twalk->group      = saved->group;
 	twalk->logfile    = saved->logfile;
 	twalk->pidfile    = saved->pidfile;
@@ -209,6 +212,10 @@ void load_config(char *conffn)
 		twalk->cmd = NULL;
 		twalk->interval = 0;
 		twalk->maxruntime = 0;
+		/* To their defaults, not to zero: for these two the absence of the
+		   keyword means "the default", where for the others it means "off". */
+		twalk->delay = DELAY;
+		twalk->faildelay = FAIL_DELAY;
 		twalk->group = NULL;
 		twalk->logfile = NULL;
 		twalk->pidfile = NULL;
@@ -767,7 +774,7 @@ int main(int argc, char *argv[])
 			if (twalk->disabled)     printf("\tDISABLED\n");
 			if (twalk->group)        printf("\tGROUP %s\n", twalk->group->groupname);
 			if (twalk->depends)      printf("\tNEEDS %s\n", twalk->depends->key);
-			if (twalk->delay)        printf("\tDELAY %d\n", twalk->delay);
+			if (twalk->delay != DELAY) printf("\tDELAY %d\n", twalk->delay);
 			if (twalk->interval > 0) printf("\tINTERVAL %d\n", twalk->interval);
 			if (twalk->cronstr)      printf("\tCRONDATE %s\n", twalk->cronstr);
 			if (twalk->maxruntime)   printf("\tMAXTIME %d\n", twalk->maxruntime);
@@ -881,7 +888,6 @@ int main(int argc, char *argv[])
 					errprintf("Task %s terminated by signal %d\n", twalk->key, abs(twalk->exitcode));
 				}
 
-				if (twalk->failcount > MAX_FAILS) errprintf("Postponing restart of [%s] for %d seconds from last start due to multiple failures\n", twalk->key, twalk->faildelay);
 				if (twalk->group) twalk->group->currentuse--;
 
 				/* Tasks that depend on this task should be killed ... */
@@ -924,11 +930,20 @@ int main(int argc, char *argv[])
 				}
 
 				if ((twalk->failcount > 0) && twalk->faildelay && ((twalk->laststart + twalk->faildelay) < now)) {
-					errprintf("Releasing [%s] from failure hold\n", twalk->key);
+					if (twalk->onhold) errprintf("Releasing [%s] from failure hold\n", twalk->key);
+					twalk->onhold = 0;
 					twalk->failcount = 0;
 				}
 
+				/* The hold and its release are each said once, and only for
+				   a task that was held: the release above also runs for a
+				   task whose failures are further apart than FAILDELAY, and
+				   reported releasing it from a hold it never had. */
 				if (twalk->faildelay && (twalk->failcount > MAX_FAILS)) {
+					if (!twalk->onhold) {
+						errprintf("Postponing restart of [%s] for %d seconds from last start due to multiple failures\n", twalk->key, twalk->faildelay);
+						twalk->onhold = 1;
+					}
 					dbgprintf("Postponing start of [%s] for %d seconds due to multiple failures\n", twalk->key, twalk->faildelay);
 					continue;
 				}
