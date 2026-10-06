@@ -7,7 +7,7 @@
 # it is. It runs last because the runner holds tests/final/ back, and it looks
 # only at this run's own directory -- so nothing another run is doing can be
 # mistaken for a leftover.
-set -eu
+set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
 [ -n "${__XYMON_TESTS_RUNROOT:-}" ] && [ -d "${__XYMON_TESTS_RUNROOT:-}" ] || skip \

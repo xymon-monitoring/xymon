@@ -15,7 +15,7 @@
 # and only the [smtp] port is redirected, so this covers the real entry
 # rather than a convenient local one.
 
-set -eu
+set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 root=$(find_root)
 

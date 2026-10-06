@@ -16,7 +16,7 @@
 # Then the two rules that read a dependency, which the integration run needs
 # and which can be asked without GitHub: which "Depends-on: #N" lines count,
 # and where the range removed for a stacked branch starts.
-set -eu
+set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 ROOT=$(find_root)
 
