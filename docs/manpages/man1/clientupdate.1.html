@@ -37,6 +37,14 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
     the client, as determined by the contents of the
     $XYMONHOME/etc/clientversion.cfg file. If the two versions are not
     identical, clientupdate is launched to update the client installation.</p>
+<p class="Pp">A client whose bin or etc directory was relocated at install time
+    (INSTALLCLIENTBINDIR, INSTALLCLIENTETCDIR), so that $XYMONHOME/bin or
+    $XYMONHOME/etc is a link, is not updated this way: clientupdate refuses,
+    logs why, and the client keeps its current version. The refusal is logged
+    again at every client report, until the host's clientversion line is removed
+    from client-local.cfg. Extracting the archive would replace the link with a
+    directory. Update such a client through its package or a new install
+    instead.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
