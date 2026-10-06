@@ -112,5 +112,15 @@ n=$(hups "$work/a")
 hup_pass
 [ "$(hups "$work/a")" -eq "$n" ] || fail "task [a] still got a HUP after SENDHUP was removed from it"
 
+# ---- a refused short read keeps SENDHUP ---------------------------------------
+# A file caught mid-rewrite -- here [c] with no CMD -- is refused and every task
+# put back from the copy taken before the read, field by field; a field the
+# restore does not name is lost. hup_pass then needs [c]'s relay to come back.
+rev=$((rev + 1))
+printf '#%*s\n[c]\n' "$rev" "" >"$cfg"
+hup_pass
+grep -q "Incomplete tasklist configuration" "$log" \
+	|| fail "the short file was not refused, so this checks nothing: $(cat "$log")"
+hup_pass
 
-pass "xymonlaunch relays a HUP to its SENDHUP tasks only, reopens its log, names each task's LOGFILE to it, and reports a PIDFILE it cannot write"
+pass "xymonlaunch relays a HUP to its SENDHUP tasks only, keeps SENDHUP through a refused read, reopens its log, names each task's LOGFILE to it, and reports a PIDFILE it cannot write"
