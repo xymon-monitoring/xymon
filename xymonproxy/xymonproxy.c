@@ -397,6 +397,18 @@ int main(int argc, char *argv[])
 		reopen_file(logfile, "a", stderr);
 	}
 
+	/*
+	 * Armed before "Listening" is logged and before the fork: the daemon
+	 * inherits them, so by the time the parent writes the pidfile a TERM
+	 * read from it reaches the handler and its cleanup, not the default
+	 * action that kills the process and leaves the pidfile behind.
+	 */
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sigmisc_handler;
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
+
 	errprintf("xymonproxy version %s starting\n", VERSION);
 	errprintf("Listening on %s:%d\n", inet_ntoa(laddr.sin_addr), ntohs(laddr.sin_port));
 	{
@@ -429,6 +441,12 @@ int main(int argc, char *argv[])
 				fprintf(fd, "%d\n", (int)childpid);
 				fclose(fd);
 			}
+			else {
+				/* Said, not swallowed: xymond reports this, and without
+				   it the proxy starts, reports nothing, and leaves
+				   whoever looks for the pidfile to work out why. */
+				errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
+			}
 			exit(0);
 		}
 		/* Child (daemon) continues here */
@@ -436,11 +454,6 @@ int main(int argc, char *argv[])
 	}
 
 	setup_signalhandler(proxynamesvc);
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = sigmisc_handler;
-	sigaction(SIGHUP, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
-	sigaction(SIGUSR1, &sa, NULL);
 
 	do {
 		fd_set fdread, fdwrite;
@@ -998,6 +1011,10 @@ int main(int argc, char *argv[])
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &selecttmo);
 
 		if (n < 0) {
+			/* A signal, not a failure: the rotation HUP lands here, and
+			   counting it aborted the proxy after the sixth one. The top
+			   of the loop does the reopen. */
+			if (errno == EINTR) continue;
 			errprintf("select() failed: %s\n", strerror(errno));
 			if (++selectfailures > 5) {
 				errprintf("Too many select failures, aborting\n");
@@ -1187,7 +1204,24 @@ int main(int argc, char *argv[])
 		}
 	} while (keeprunning);
 
-	if (pidfile) unlink(pidfile);
+	/* Remove the pidfile only if it holds our pid. The daemon's parent wrote
+	   this path with the child's pid before exiting, so the child removes it
+	   on the way out. Nothing else here is ours: run with --no-daemon the
+	   file was never written -- the launcher writes and removes the task's
+	   pidfile now -- and even under --daemon the parent's write can have
+	   failed. Testing the mode would cover the first of those and not the
+	   second; reading the pid back covers both, and needs no flag. */
+	if (pidfile) {
+		FILE *fd = fopen(pidfile, "r");
+
+		if (fd) {
+			char l[100];
+			long owner = (fgets(l, sizeof(l), fd) ? atol(l) : 0);
+
+			fclose(fd);
+			if (owner == (long)getpid()) unlink(pidfile);
+		}
+	}
 	return 0;
 }
 
