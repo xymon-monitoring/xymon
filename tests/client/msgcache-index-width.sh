@@ -12,7 +12,8 @@
 # buffer was 20, written with an unbounded sprintf().
 #
 # The harness runs the real grabdata() on a pull request with such a message
-# queued, under AddressSanitizer, and requires the exact index line back.
+# queued, under AddressSanitizer, and requires the index line back whole,
+# with the age grabdata() read from the clock.
 # With the old buffer ASan stops the overrun in grabdata(). Without ASan an
 # overrun this small is not reliably visible, so the test skips there.
 
