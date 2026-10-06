@@ -197,6 +197,28 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	/*
+	 * A bin or etc that is a link was relocated at install time
+	 * (INSTALLCLIENTBINDIR, INSTALLCLIENTETCDIR). The archive is extracted
+	 * here, relative to XYMONHOME, and most tar implementations replace a
+	 * link with the directory the archive names: the update would land
+	 * beside the installed files and leave them stale. Refuse instead.
+	 */
+	{
+		char *reloc[] = { "bin", "etc", NULL };
+		struct stat st;
+		int i;
+
+		for (i = 0; reloc[i]; i++) {
+			if ((lstat(reloc[i], &st) == 0) && S_ISLNK(st.st_mode)) {
+				errprintf("%s/%s is a link to a relocated directory: a self-update would replace it with a real directory. Update this client through its package or install instead.\n",
+					  xgetenv("XYMONHOME"), reloc[i]);
+				cleanup(inprogressfn, (removeself ? argv[0] : NULL));
+				return 1;
+			}
+		}
+	}
+
 	/* Update to version "newversion" */
 	dbgprintf("Opening pipe to 'tar'\n");
 	tarpipefd = popen("tar xf -", "w");
