@@ -53,6 +53,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
           NEEDS xymond
           GROUP webupdates
           INTERVAL 5m
+          DELAY 30
+          FAILDELAY 600
           ONHOST localhost
           MAXTIME 10m
           LOGFILE /var/log/xymon/updateweb.log
@@ -81,11 +83,25 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     &quot;regular expression&quot;; if the hostname where xymonlaunch runs
     matches this expression, then the task will run. If it doesn't match, then
     the task is treated as if it were DISABLED.</p>
+<p class="Pp">The <b>DELAY</b> keyword applies to a task with NEEDS: it sets how
+    long the task waits after the task it NEEDS has started. The time takes the
+    same &quot;m&quot;, &quot;h&quot; or &quot;d&quot; suffix as MAXTIME below,
+    and defaults to 5 seconds. DELAY 0 starts the task as soon as its NEEDS task
+    is running. A task without NEEDS starts immediately, whatever its DELAY.</p>
 <p class="Pp">The <b>MAXTIME</b> keyword sets a maximum time that the task may
     run; if exceeded, xymonlaunch will kill the task. The time is in seconds by
     default, you can specify minutes, hours or days by adding an &quot;m&quot;,
     &quot;h&quot; or &quot;d&quot; after the number. By default there is no
     upper limit on how long a taskmay run.</p>
+<p class="Pp">The <b>FAILDELAY</b> keyword holds back a task that keeps failing.
+    A task that has exited with a non-zero status, or been killed by a signal,
+    more than <b>5</b> times in a row, each time within FAILDELAY of its
+    previous start, is not started again until FAILDELAY has passed since its
+    last start. A clean exit clears the count. For example, with FAILDELAY 15m,
+    a task that failed six times in a row is tried again 15 minutes after its
+    last start. A value under five seconds never holds a task back: xymonlaunch
+    starts a task at most once in five seconds, and by then the hold has already
+    expired. FAILDELAY 0 disables the hold. Default: 10m</p>
 <p class="Pp">The <b>NEEDS</b> instructs xymonlaunch not to run this task unless
     the task defined by the NEEDS keyword is already running. This is used e.g.
     to delay the start of some application until the needed daemons have been
