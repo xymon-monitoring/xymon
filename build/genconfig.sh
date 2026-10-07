@@ -97,7 +97,11 @@ else
 fi
 
 
-# This is experimental for 4.3.x
+# Use the POSIX/SVr4 binary-tree routines (tsearch/tfind/tdelete/twalk) where the
+# platform provides them: xtree then runs O(log n) instead of the O(n^2) sorted-
+# array fallback. This probe was parked in 2014 as experimental for 4.3.x and
+# never revisited; both xtree variants are now covered by the ASan tests, and the
+# probe still falls back to the array where <search.h> is absent.
 echo "Checking for POSIX binary tree functions"
 $CC -c -o build/testfile.o $CFLAGS build/test-bintree.c 1>/dev/null 2>&1
 if test $? -eq 0; then
