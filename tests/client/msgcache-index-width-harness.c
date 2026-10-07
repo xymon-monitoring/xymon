@@ -15,9 +15,13 @@
  * would. With a 1,000,000-byte message the entry is
  * "1000000:-1790000000 " -- 21 bytes with its NUL.
  *
+ * grabdata() reads the clock itself, so the second can tick between the
+ * harness's reading and its own: the line is accepted with any age from the
+ * clock read before the call to the one read after.
+ *
  * Prints the index line grabdata() built, and exits 0 when it is exactly
- * the expected one. Under -fsanitize=address, an overrun of the entry's
- * buffer aborts in grabdata() before that.
+ * one of the expected ones. Under -fsanitize=address, an overrun of the
+ * entry's buffer aborts in grabdata() before that.
  */
 
 #define main msgcache_main
@@ -31,8 +35,9 @@ int main(void)
 	int sv[2];
 	conn_t conn;
 	msgqueue_t msg;
-	time_t now;
+	time_t now, after, t;
 	char *big, expected[64], *eol;
+	int linelen;
 	size_t biglen = 1000000;
 
 	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == -1) {
@@ -60,19 +65,23 @@ int main(void)
 	addtobuffer(conn.msgbuf, "pullclient\n");
 
 	grabdata(&conn);
+	after = getcurrenttime(NULL);
 
-	snprintf(expected, sizeof(expected), "%d:%ld \n",
-		 (int)biglen, (long)(now - msg.tstamp));
 	eol = strchr(STRBUF(conn.msgbuf), '\n');
 	if (eol == NULL) {
 		fprintf(stderr, "grabdata() built no index line\n");
 		return 1;
 	}
-	printf("%.*s\n", (int)(eol - STRBUF(conn.msgbuf)), STRBUF(conn.msgbuf));
-	if (strncmp(STRBUF(conn.msgbuf), expected, strlen(expected)) != 0) {
-		fprintf(stderr, "index line is not the expected \"%.*s\"\n",
-			(int)strlen(expected) - 1, expected);
-		return 1;
+	linelen = (int)(eol - STRBUF(conn.msgbuf));
+	printf("%.*s\n", linelen, STRBUF(conn.msgbuf));
+	for (t = now; t <= after; t++) {
+		snprintf(expected, sizeof(expected), "%d:%ld \n",
+			 (int)biglen, (long)(t - msg.tstamp));
+		if (strncmp(STRBUF(conn.msgbuf), expected, strlen(expected)) == 0)
+			return 0;
 	}
-	return 0;
+	fprintf(stderr, "index line \"%.*s\" is not \"%d:<age> \" with an age from %ld to %ld\n",
+		linelen, STRBUF(conn.msgbuf), (int)biglen,
+		(long)(now - msg.tstamp), (long)(after - msg.tstamp));
+	return 1;
 }
