@@ -55,7 +55,6 @@ static char rrdvalues[MAX_LINE_LEN];
 static char *senderip = NULL;
 static char rrdfn[PATH_MAX];   /* Base filename without directories, from setupfn() */
 static char filedir[PATH_MAX]; /* Full path filename */
-static char filejustdir[PATH_MAX]; /* Full path filename - just the directory */
 static char *fnparams[4] = { NULL, };  /* Saved parameters passed to setupfn() */
 
 /* How often do we feed data into the RRD file */
@@ -382,22 +381,30 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		char *rrakey = NULL;
 		char stepsetting[10];
 		int havestepsetting = 0, fixcount = 2;
+		char hostdir[PATH_MAX];
 
 		dbgprintf("Creating rrd %s\n", filedir);
 
-		MEMDEFINE(filejustdir);
-		sprintf(filejustdir, "%s/%s", rrddir, hostname);
-		if (stat(filejustdir, &st) == -1) {
-			dbgprintf("Creating rrd dir %s\n", filejustdir);
-			if (mkdir(filejustdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
-				errprintf("Cannot create rrd directory %s : %s\n", filejustdir, strerror(errno));
-				MEMUNDEFINE(filedir);
-				MEMUNDEFINE(filejustdir);
-				MEMUNDEFINE(rrdvalues);
-				return -1;
-			}
+		/*
+		 * The directory only has to exist where a file is about to be created:
+		 * if the RRD is there, so is its directory (#153). hostdir is a
+		 * prefix of filedir, which already fit in a buffer of this size, so
+		 * today it cannot truncate; the check keeps that true should the
+		 * two buffers ever differ.
+		 */
+		if (snprintf(hostdir, sizeof(hostdir), "%s/%s", rrddir, hostname) >= (int)sizeof(hostdir)) {
+			errprintf("RRD directory path truncated, skipping: %s/%s\n", rrddir, hostname);
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return -1;
 		}
-		MEMUNDEFINE(filejustdir);
+		if ((stat(hostdir, &st) == -1) && (mkdir(hostdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1)) {
+			errprintf("Cannot create rrd directory %s : %s\n", hostdir, strerror(errno));
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return -1;
+		}
+
 
 		/* How many parameters did we get? */
 		for (pcount = 0; (creparams[pcount]); pcount++);
