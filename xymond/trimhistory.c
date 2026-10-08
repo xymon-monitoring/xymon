@@ -101,6 +101,38 @@ void add_to_filelist(char *fn, enum ftype_t ftype)
 }
 
 
+/*
+ * "gone.example.com" can be read two ways: a host-history file for a host of
+ * that name, or service "example.com" of a listed host "gone". The name alone
+ * cannot say which, so the record does: a host-history line is
+ * "<testname> <epoch> ...", a service-history line
+ * "<color> <Www Mmm dd hh:mm:ss yyyy> <epoch> ...", and the second field is a
+ * number in the first and a weekday name in the second.
+ *
+ * Only consulted for names that are genuinely ambiguous, which is rare: the
+ * host half of a service file normally carries the commas its dots were
+ * encoded as, and a column name normally holds no dot.
+ */
+static int looks_like_hosthistory(char *fn)
+{
+	FILE *fd;
+	char l[1024];
+	char *second;
+	int result = 0;
+
+	fd = fopen(fn, "r");
+	if (!fd) return 0;
+
+	if (fgets(l, sizeof(l), fd)) {
+		second = strchr(l, ' ');
+		while (second && (*second == ' ')) second++;
+		if (second && (*second >= '0') && (*second <= '9')) result = 1;
+	}
+
+	fclose(fd);
+	return result;
+}
+
 void trim_history(FILE *infd, FILE *outfd, enum ftype_t ftype, time_t cutoff)
 {
 	/* Does the grunt work of going through a file and copying the wanted records */
@@ -462,8 +494,19 @@ int main(int argc, char *argv[])
 		}
 		else {
 			char *delim, *p, *hname, *tname;
+			int ambiguous;
 
-			delim = strrchr(hent->d_name, '.');
+			/*
+			 * xymond_history writes a service-history file as
+			 * "<hostname with dots as commas>.<column>", so the host
+			 * half never holds a dot and the FIRST one is the
+			 * boundary. Splitting at the last dot instead put the
+			 * boundary inside a column name that carries one - the
+			 * web side treats "web.grp" as ordinary - so the host
+			 * came out as "host.web", resolved to nothing, and the
+			 * file was deleted as an orphan.
+			 */
+			delim = strchr(hent->d_name, '.');
 			if (!delim) {
 				/* It's a host history file (no dot in filename), but the host does not exist */
 				errprintf("Orphaned host-history file %s - no host\n", hent->d_name);
@@ -472,8 +515,18 @@ int main(int argc, char *argv[])
 			}
 
 			*delim = '\0'; hname = strdup(hent->d_name); tname = delim+1; *delim = '.';
+
+			/* Ambiguous only when the host half carries no encoded dot
+			 * and the column half does: then the same name could be a
+			 * host-history file for a host that has since been removed. */
+			ambiguous = ((strchr(hname, ',') == NULL) && (strchr(tname, '.') != NULL));
+
 			p = strchr(hname, ','); while (p) { *p = '.'; p = strchr(p, ','); }
 			hostname = knownhost_ex(hname, hostip, ghosthandling, &inperiod);
+			if (hostname && ambiguous && looks_like_hosthistory(hent->d_name)) {
+				/* It is a host-history file, and its own host is gone. */
+				hostname = NULL;
+			}
 			if (!hostname) {
 				errprintf("Orphaned service-history file %s - no host\n", hent->d_name);
 				if (dropfiles) add_to_filelist(hent->d_name, F_DROPIT);
