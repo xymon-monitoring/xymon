@@ -45,7 +45,11 @@ must exist.
 .IP "\fB\-\-drop\fR"
 Causes trimhistory to delete files from hosts that are not listed in the
 .I hosts.cfg(5)
-file.
+file. A host that is listed but currently outside a
+.B NOTBEFORE:
+or
+.B NOTAFTER:
+window counts as listed, and keeps its history.
 
 .IP "\fB\-\-dropsvcs\fR"
 Causes trimhistory to delete files from services that are not currently
