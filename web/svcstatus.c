@@ -734,8 +734,21 @@ int do_request(void)
 				}
 				else {
 					SBUF_REALLOC(clienturi, 1024 + strlen(cgiurl) + MAX_HTMLQUOTE_FACTOR*strlen(htmlquoted(hostname)) + strlen(clientid));
-					snprintf(clienturi, clienturi_buflen, "%s/svcstatus.sh?CLIENT=%s&amp;TIMEBUF=%s", 
+					/*
+					 * historylog.sh, not svcstatus.sh: the saved client data is
+					 * read only by the historical view, which the CGI wrapper
+					 * selects by that name. svcstatus.sh shows the host's
+					 * current client data instead.
+					 */
+					snprintf(clienturi, clienturi_buflen, "%s/historylog.sh?CLIENT=%s&amp;TIMEBUF=%s",
 						cgiurl, htmlquoted(hostname), clientid);
+					/*
+					 * The page shows the link only when clientavail is set.
+					 * The file is on the server the locator named, so it
+					 * cannot be checked here the way the local branch below
+					 * does; the locator's answer is the evidence.
+					 */
+					clientavail = 1;
 				}
 			}
 			else {
