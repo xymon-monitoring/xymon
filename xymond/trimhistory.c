@@ -433,6 +433,7 @@ int main(int argc, char *argv[])
 		char *hostname = NULL;
 		char hostip[IP_ADDR_STRLEN];
 		enum ghosthandling_t ghosthandling = GH_IGNORE;
+		int inperiod = 1;
 
 		if (stat(hent->d_name, &st) == -1) {
 			errprintf("Odd entry %s - cannot stat: %s\n", hent->d_name, strerror(errno));
@@ -447,7 +448,14 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		hostname = knownhost(hent->d_name, hostip, ghosthandling);
+		/*
+		 * knownhost_ex() rather than knownhost(): a host carrying
+		 * NOTBEFORE:/NOTAFTER: is listed in hosts.cfg, and only its
+		 * window is closed. knownhost() answers NULL for it, which made
+		 * --drop delete the history of exactly the hosts that are
+		 * coming back (#281).
+		 */
+		hostname = knownhost_ex(hent->d_name, hostip, ghosthandling, &inperiod);
 		if (hostname) {
 			/* Host history file. */
 			add_to_filelist(hent->d_name, F_HOSTHISTORY);
@@ -465,12 +473,19 @@ int main(int argc, char *argv[])
 
 			*delim = '\0'; hname = strdup(hent->d_name); tname = delim+1; *delim = '.';
 			p = strchr(hname, ','); while (p) { *p = '.'; p = strchr(p, ','); }
-			hostname = knownhost(hname, hostip, ghosthandling);
+			hostname = knownhost_ex(hname, hostip, ghosthandling, &inperiod);
 			if (!hostname) {
 				errprintf("Orphaned service-history file %s - no host\n", hent->d_name);
 				if (dropfiles) add_to_filelist(hent->d_name, F_DROPIT);
 			}
-			else if (dropsvcs && !validstatus(hostname, tname)) {
+			/*
+			 * validstatus() asks the running xymond what it is
+			 * tracking now. A host outside its window is not on that
+			 * board precisely because it is scheduled out, so its
+			 * services would all look retired - the deletion #281 is
+			 * about, reached one gate later.
+			 */
+			else if (dropsvcs && inperiod && !validstatus(hostname, tname)) {
 				errprintf("Orphaned service-history file %s - no service\n", hent->d_name);
 				if (dropfiles) add_to_filelist(hent->d_name, F_DROPIT);
 			}
