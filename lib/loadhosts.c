@@ -70,7 +70,6 @@ static void * rbclients;
 static void xmh_item_list_setup(void)
 {
 	static int setupdone = 0;
-	int i;
 	enum xmh_item_t bi;
 
 	if (setupdone) return;
@@ -211,11 +210,6 @@ static void xmh_item_list_setup(void)
 	xmh_item_name[XMH_PAGEINDEX]           = "XMH_PAGEINDEX";
 	xmh_item_name[XMH_RAW]                 = "XMH_RAW";
 	xmh_item_name[XMH_DATA]                = "XMH_DATA";
-
-	i = 0; while (xmh_item_key[i]) i++;
-	if (i != XMH_IP) {
-		errprintf("ERROR: Setup failure in xmh_item_key position %d\n", i);
-	}
 
 	for (bi = 0; (bi < XMH_LAST); bi++) 
 		if (xmh_item_name[bi]) xmh_item_isflag[bi] = (strncmp(xmh_item_name[bi], "XMH_FLAG_", 9) == 0);
@@ -704,9 +698,16 @@ int xmh_item_idx(char *value)
 	int i;
 
 	xmh_item_list_setup();
-	i = 0;
-	while (xmh_item_key[i] && strncmp(xmh_item_key[i], value, strlen(xmh_item_key[i]))) i++;
-	return (xmh_item_key[i] ? i : -1);
+	/*
+	 * Scan every slot, not up to the first empty one: the computed items
+	 * (XMH_IP, XMH_HOSTNAME, ...) have no key, and tag keys sit on both
+	 * sides of them, so stopping at the first gap misses every tag added
+	 * after it.
+	 */
+	for (i = 0; i < XMH_LAST; i++) {
+		if (xmh_item_key[i] && (strncmp(xmh_item_key[i], value, strlen(xmh_item_key[i])) == 0)) return i;
+	}
+	return -1;
 }
 
 char *xmh_item_id(enum xmh_item_t idx)
