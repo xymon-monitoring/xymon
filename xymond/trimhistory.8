@@ -50,6 +50,14 @@ file. A host that is listed but currently outside a
 or
 .B NOTAFTER:
 window counts as listed, and keeps its history.
+.sp
+If the host list cannot be loaded, or loads with no hosts in it, trimhistory
+drops nothing and exits with an error: every file would otherwise look like it
+belonged to a host that no longer exists. Runs without
+.B \-\-drop
+or
+.B \-\-droplogs
+are unaffected, since they delete nothing either way.
 
 .IP "\fB\-\-dropsvcs\fR"
 Causes trimhistory to delete files from services that are not currently
