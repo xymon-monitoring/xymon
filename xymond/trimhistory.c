@@ -398,6 +398,7 @@ int main(int argc, char *argv[])
 	int dropsvcs = 0;
 	int dropfiles = 0;
 	int droplogs = 0;
+	int loadres;
 	char *envarea = NULL;
 
 	for (argi = 1; (argi < argc); argi++) {
@@ -458,7 +459,35 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	/*
+	 * --drop and --droplogs delete every file whose host is not in this
+	 * list, so a list that did not load is not "no hosts configured", it is
+	 * "nothing to compare against" - and acting on it empties XYMONHISTDIR.
+	 * xymongen, xymonnet and svcstatus.cgi all check this return and bail;
+	 * trimhistory was the only caller that ignored it, and the only one that
+	 * deletes on the answer.
+	 *
+	 * The return value alone is not enough. A HOSTSCFG naming a directory
+	 * (or an empty file) loads successfully with no hosts in it and says
+	 * nothing, so an empty list is refused too. A site that really has no
+	 * hosts loses nothing: there is no history to keep or trim either.
+	 *
+	 * Only the deleting modes are refused. Without them nothing is at risk,
+	 * and there is still work that needs no host list: "allevents" is
+	 * recognised by name before any lookup, so it goes on being trimmed.
+	 */
+	loadres = load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	if (dropfiles || droplogs) {
+		if (loadres == -1) {
+			errprintf("Cannot load %s - not dropping anything\n", xgetenv("HOSTSCFG"));
+			return 1;
+		}
+		if (first_host() == NULL) {
+			errprintf("No hosts loaded from %s - refusing to drop, every file would look orphaned\n",
+				  xgetenv("HOSTSCFG"));
+			return 1;
+		}
+	}
 
 	/* First scan the directory for all files, and pick up the ones we want to process */
 	while ((hent = readdir(histdir)) != NULL) {
