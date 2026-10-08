@@ -32,6 +32,27 @@ else
 	XYMONHOME = $(XYMONTOPDIR)/server
 endif
 
+# Where the client's own files go. A client-only build honours the
+# INSTALL*DIR values configure.client already collects and nothing read;
+# a server build keeps its embedded client under XYMONCLIENTHOME.
+ifeq ($(CLIENTONLY),yes)
+INSTALLCLIENTETCDIR ?= $(INSTALLETCDIR)
+INSTALLCLIENTBINDIR ?= $(INSTALLBINDIR)
+INSTALLCLIENTTMPDIR ?= $(INSTALLTMPDIR)
+endif
+ifeq ($(strip $(INSTALLCLIENTETCDIR)),)
+INSTALLCLIENTETCDIR = $(XYMONCLIENTHOME)/etc
+endif
+ifeq ($(strip $(INSTALLCLIENTBINDIR)),)
+INSTALLCLIENTBINDIR = $(XYMONCLIENTHOME)/bin
+endif
+ifeq ($(strip $(INSTALLCLIENTTMPDIR)),)
+INSTALLCLIENTTMPDIR = $(XYMONCLIENTHOME)/tmp
+endif
+ifndef INSTALLCLIENTLOGDIR
+INSTALLCLIENTLOGDIR = $(XYMONCLIENTHOME)/logs
+endif
+
 ifndef INSTALLBINDIR
 INSTALLBINDIR = $(XYMONHOME)/bin
 endif
@@ -369,8 +390,58 @@ install-custom:
 
 client-install: install-client
 
-install-client: client
-	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install
+# Same shape as install-dirs does for the server: make the directory,
+# and when it is not the default leave a symlink where the default was,
+# so $XYMONCLIENTHOME/etc keeps resolving -- clientlaunch.cfg and the
+# server's tasks.cfg both spell it that way.
+install-clientdirs:
+	mkdir -p $(INSTALLROOT)$(XYMONCLIENTHOME)
+	mkdir -p $(INSTALLROOT)$(INSTALLCLIENTETCDIR) $(INSTALLROOT)$(INSTALLCLIENTBINDIR) $(INSTALLROOT)$(INSTALLCLIENTTMPDIR) $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)
+ifneq ($(INSTALLCLIENTETCDIR),$(XYMONCLIENTHOME)/etc)
+	@if test -d $(INSTALLROOT)$(XYMONCLIENTHOME)/etc && test ! -L $(INSTALLROOT)$(XYMONCLIENTHOME)/etc; then \
+		echo "*** $(XYMONCLIENTHOME)/etc is a real directory; leaving it alone."; \
+		echo "*** Move its contents to $(INSTALLCLIENTETCDIR) and remove it to use the new location."; \
+	else \
+		rm -f $(INSTALLROOT)$(XYMONCLIENTHOME)/etc; \
+		ln -s $(INSTALLCLIENTETCDIR) $(INSTALLROOT)$(XYMONCLIENTHOME)/etc; \
+	fi
+endif
+ifneq ($(INSTALLCLIENTBINDIR),$(XYMONCLIENTHOME)/bin)
+	@if test -d $(INSTALLROOT)$(XYMONCLIENTHOME)/bin && test ! -L $(INSTALLROOT)$(XYMONCLIENTHOME)/bin; then \
+		echo "*** $(XYMONCLIENTHOME)/bin is a real directory; leaving it alone."; \
+		echo "*** Move its contents to $(INSTALLCLIENTBINDIR) and remove it to use the new location."; \
+	else \
+		rm -f $(INSTALLROOT)$(XYMONCLIENTHOME)/bin; \
+		ln -s $(INSTALLCLIENTBINDIR) $(INSTALLROOT)$(XYMONCLIENTHOME)/bin; \
+	fi
+endif
+ifneq ($(INSTALLCLIENTTMPDIR),$(XYMONCLIENTHOME)/tmp)
+	@if test -d $(INSTALLROOT)$(XYMONCLIENTHOME)/tmp && test ! -L $(INSTALLROOT)$(XYMONCLIENTHOME)/tmp; then \
+		echo "*** $(XYMONCLIENTHOME)/tmp is a real directory; leaving it alone."; \
+		echo "*** Move its contents to $(INSTALLCLIENTTMPDIR) and remove it to use the new location."; \
+	else \
+		rm -f $(INSTALLROOT)$(XYMONCLIENTHOME)/tmp; \
+		ln -s $(INSTALLCLIENTTMPDIR) $(INSTALLROOT)$(XYMONCLIENTHOME)/tmp; \
+	fi
+endif
+ifneq ($(INSTALLCLIENTLOGDIR),$(XYMONCLIENTHOME)/logs)
+	@if test -d $(INSTALLROOT)$(XYMONCLIENTHOME)/logs && test ! -L $(INSTALLROOT)$(XYMONCLIENTHOME)/logs; then \
+		echo "*** $(XYMONCLIENTHOME)/logs is a real directory; leaving it alone."; \
+		echo "*** Move its contents to $(INSTALLCLIENTLOGDIR) and remove it to use the new location."; \
+	else \
+		rm -f $(INSTALLROOT)$(XYMONCLIENTHOME)/logs; \
+		ln -s $(INSTALLCLIENTLOGDIR) $(INSTALLROOT)$(XYMONCLIENTHOME)/logs; \
+	fi
+endif
+
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTETCDIR) $(INSTALLROOT)$(INSTALLCLIENTBINDIR) $(INSTALLROOT)$(INSTALLCLIENTTMPDIR) $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTETCDIR) $(INSTALLROOT)$(INSTALLCLIENTBINDIR) $(INSTALLROOT)$(INSTALLCLIENTTMPDIR) $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)
+	chmod 755 $(INSTALLROOT)$(INSTALLCLIENTETCDIR) $(INSTALLROOT)$(INSTALLCLIENTBINDIR) $(INSTALLROOT)$(INSTALLCLIENTTMPDIR) $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)
+endif
+
+install-client: client install-clientdirs
+	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" LOCALCLIENT="$(LOCALCLIENT)" INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)" $(MAKE) -C client install
 
 install-clientmsg:
 	@echo ""
@@ -378,5 +449,5 @@ install-clientmsg:
 	@echo ""
 	@echo "To start the Xymon client, as the $(XYMONUSER) user run '${XYMONHOME}/runclient.sh start'"
 
-install-localclient:
-	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient
+install-localclient: install-clientdirs
+	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" LOCALCLIENT="$(LOCALCLIENT)" INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)" $(MAKE) -C client install-localclient
