@@ -703,9 +703,12 @@ int xmh_item_idx(char *value)
 	 * (XMH_IP, XMH_HOSTNAME, ...) have no key, and tag keys sit on both
 	 * sides of them, so stopping at the first gap misses every tag added
 	 * after it.
+	 *
+	 * Case-insensitive, as xmh_find_item() is: a tag that sets its
+	 * attribute is a reserved tag whatever its case.
 	 */
 	for (i = 0; i < XMH_LAST; i++) {
-		if (xmh_item_key[i] && (strncmp(xmh_item_key[i], value, strlen(xmh_item_key[i])) == 0)) return i;
+		if (xmh_item_key[i] && (strncasecmp(xmh_item_key[i], value, strlen(xmh_item_key[i])) == 0)) return i;
 	}
 	return -1;
 }

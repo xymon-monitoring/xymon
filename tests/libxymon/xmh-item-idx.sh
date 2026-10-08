@@ -12,6 +12,13 @@
 # XMH_HOSTNAME, ...) have none, and ten tag keys were added after them --
 # CLASS:, OS:, DOC:, NOPROP:, COMPACT: and five more -- so it never saw those.
 #
+# It also compared case-sensitively, while xmh_find_item() -- which every
+# tag lookup goes through -- does not. NOCLEAR, PULLDATA, NOFLAP and
+# MULTIHOMED are stored in upper case and documented in lower case in
+# hosts.cfg(5), so writing them as the manual says set the attribute and
+# still left the tag unrecognized. Every key is checked as stored, in lower
+# case and in upper case.
+#
 # The keys are read from lib/loadhosts.c rather than listed here, so a key
 # added to the table later is covered without touching this test. The answer
 # comes from the real library, through xmh-item-idx-harness.c.
@@ -40,10 +47,14 @@ keys=$(grep -o 'xmh_item_key\[XMH_[A-Z0-9_]*\][[:space:]]*=[[:space:]]*"[^"]*"' 
 # A key ending in ':' or '=' takes a value; a flag is the whole tag.
 {
 	while IFS= read -r key; do
-		case $key in
-			*:|*=) printf '+ %sx\n' "$key" ;;
-			*) printf '+ %s\n' "$key" ;;
-		esac
+		lower=$(printf '%s' "$key" | tr '[:upper:]' '[:lower:]')
+		upper=$(printf '%s' "$key" | tr '[:lower:]' '[:upper:]')
+		for spelling in "$key" "$lower" "$upper"; do
+			case $spelling in
+				*:|*=) printf '+ %sx\n' "$spelling" ;;
+				*) printf '+ %s\n' "$spelling" ;;
+			esac
+		done
 	done <<<"$keys"
 	# Controls: test specs xymonnet must keep treating as tests.
 	printf -- '- %s\n' conn ssh 'ssh:22' '!ssh' '?conn' '~ftp' \
@@ -64,4 +75,4 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 	|| fail "xmh_item_idx() misreads hosts.cfg tags:
 $(cat "$work/stderr.log")"
 
-pass "xmh_item_idx() recognizes every reserved hosts.cfg tag and no test spec"
+pass "xmh_item_idx() recognizes every reserved hosts.cfg tag in any case, and no test spec"
