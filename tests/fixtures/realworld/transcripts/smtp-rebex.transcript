@@ -1,0 +1,10 @@
+# smtp-rebex  test.rebex.net (194.108.117.16) port 25  mode=plain
+# recorded 2026-08-31T13:30:40.889248Z
+S: 220 smtp.rebex.cz
+C: ehlo xymonnet
+S: 250-xena.rebex.cz
+S: 250-SIZE 20480000
+S: 250-AUTH LOGIN
+S: 250 HELP
+C: quit
+S: 221 goodbye

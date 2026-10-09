@@ -30,41 +30,117 @@ static char rcsid[] = "$Id$";
  * session nicely, and whether we want to grab the
  * banner or not.
  */
+/*
+ * The registry of service names and their default ports.
+ *
+ * Names and ports only. This used to carry a send and an expect for each
+ * service as well, used whenever protocols.cfg could not be read -- but
+ * protocols.cfg is the configuration, and when it cannot be read nothing is
+ * checked at all now, so those rows could only sit here going out of date
+ * against the entries that ship. Every service named here is defined there.
+ *
+ * Still read: default_tcp_port() when hosts.cfg names no port, and
+ * find_tcp_service() when confreport asks whether a test is a network test.
+ */
+/*
+ * Only the terminator. The names here existed so a missing protocols.cfg
+ * reported yellow rather than red, but covered 28 of the 49 services the
+ * file defines -- the same fault, two colours. svccfg_unreadable says it
+ * once, for every service.
+ */
 static svcinfo_t default_svcinfo[] = {
-	/*           ------------- data to send ------   ---- green data ------ flags */
-	/* name      databytes            length          databytes offset len        */
-	{ "ftp",     "quit\r\n",          0,                  "220",	0, 0,	(TCP_GET_BANNER), 21 },
-	{ "ssh",     NULL,                0,                  "SSH",	0, 0,	(TCP_GET_BANNER), 22 },
-	{ "ssh1",    NULL,                0,                  "SSH",	0, 0,	(TCP_GET_BANNER), 22 },
-	{ "ssh2",    NULL,                0,                  "SSH",	0, 0,	(TCP_GET_BANNER), 22 },
-	{ "telnet",  NULL,                0,                  NULL,	0, 0,	(TCP_GET_BANNER|TCP_TELNET), 23 },
-	{ "smtp",    NULL,                0,                  "220",	0, 0,	(TCP_GET_BANNER), 25 }, /* No send: speaking before the 220 is an RFC 5321/2920 violation */
-	{ "pop",     "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER), 110 },
-	{ "pop2",    "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER), 109 },
-	{ "pop-2",   "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER), 109 },
-	{ "pop3",    "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER), 110 },
-	{ "pop-3",   "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER), 110 },
-	{ "imap",    "ABC123 LOGOUT\r\n", 0,                  "* OK",	0, 0,	(TCP_GET_BANNER), 143 },
-	{ "imap2",   "ABC123 LOGOUT\r\n", 0,                  "* OK",	0, 0,	(TCP_GET_BANNER), 143 },
-	{ "imap3",   "ABC123 LOGOUT\r\n", 0,                  "* OK",	0, 0,	(TCP_GET_BANNER), 220 },
-	{ "imap4",   "ABC123 LOGOUT\r\n", 0,                  "* OK",	0, 0,	(TCP_GET_BANNER), 143 },
-	{ "nntp",    "quit\r\n",          0,                  "200",	0, 0,	(TCP_GET_BANNER), 119 },
-	{ "ldap",    NULL,                0,                  NULL,     0, 0,	(0), 389 },
-	{ "rsync",   NULL,                0,                  "@RSYNCD",0, 0,	(TCP_GET_BANNER), 873 },
-	{ "bbd",     "dummy",             0,                  NULL,	0, 0,	(0), 1984 },
-	{ "ftps",    "quit\r\n",          0,                  "220",	0, 0,	(TCP_GET_BANNER|TCP_SSL), 990 },
-	{ "telnets", NULL,                0,                  NULL, 	0, 0,	(TCP_GET_BANNER|TCP_TELNET|TCP_SSL), 992 },
-	{ "smtps",   NULL,                0,                  "220",	0, 0,	(TCP_GET_BANNER|TCP_SSL), 0 }, /* Non-standard port - IANA. No send, as for smtp */
-	{ "pop3s",   "quit\r\n",          0,                  "+OK",	0, 0,	(TCP_GET_BANNER|TCP_SSL), 995 },
-	{ "imaps",   "ABC123 LOGOUT\r\n", 0,                  "* OK",	0, 0,	(TCP_GET_BANNER|TCP_SSL), 993 },
-	{ "nntps",   "quit\r\n",          0,                  "200",	0, 0,	(TCP_GET_BANNER|TCP_SSL), 563 },
-	{ "ldaps",   NULL,                0,                  NULL,     0, 0,	(TCP_SSL), 636 },
-	{ "clamd",   "PING\r\n",          0,                  "PONG",   0, 0,	(0), 3310 },
-	{ "vnc",     "RFB 000.000\r\n",   0,                  "RFB ",   0, 0,   (TCP_GET_BANNER), 5900 },
-	{ NULL,      NULL,                0,                  NULL,	0, 0,	(0), 0 }	/* Default behaviour: Just try a connect */
+	{ NULL, NULL, 0, NULL, 0, 0, (0), 0 }
 };
 
+/* No protocols.cfg could be read, so nothing can be checked. */
+static int svccfg_unreadable = 0;
+
+int tcp_services_unreadable(void)
+{
+	return svccfg_unreadable;
+}
+
 static svcinfo_t *svcinfo = default_svcinfo;
+
+/*
+ * Copy LEN bytes and terminate. By length, never strdup(): getescapestring()
+ * resolves \xNN, so the text may contain a NUL and a copy that stopped there
+ * would be read past its end by the length recorded with it.
+ *
+ * NULL on failure; callers refuse the entry. malloc() is the plain one here
+ * (the xmalloc wrappers need XYMON_MEMORY_WRAPPERS, undefined in this build).
+ */
+static unsigned char *dup_bytes(unsigned char *src, int len)
+{
+	unsigned char *p = (unsigned char *)malloc(len + 1);
+
+	if (!p) return NULL;
+	memcpy(p, src, len);
+	p[len] = '\0';
+	return p;
+}
+
+/*
+ * Append one step to a service's dialogue, preserving file order. Every alias
+ * in an [a|b|c] header gets its own copy: the records are freed independently,
+ * so they cannot share a list.
+ */
+static svcstep_t *add_svcstep(svcinfo_t *rec, int type, unsigned char *text, int len)
+{
+	svcstep_t *step, *walk;
+
+	step = (svcstep_t *)calloc(1, sizeof(svcstep_t));
+	if (!step) return NULL;
+	step->type = type;
+	step->len  = len;
+	step->text = dup_bytes(text, len);
+	if (!step->text) { xfree(step); return NULL; }
+
+	if (rec->steps == NULL) rec->steps = step;
+	else {
+		for (walk = rec->steps; (walk->next); walk = walk->next) ;
+		walk->next = step;
+	}
+
+	return step;
+}
+
+
+/*
+ * Where a quoted string ends. Deliberately the same rule getescapestring
+ * uses -- scan to the next '"' -- so the two agree on where the value stops
+ * and any trailing keywords begin.
+ */
+static char *after_quoted(char *p)
+{
+	if (*p != '"') {
+		while (*p && !isspace((int)*p)) p++;
+		return p;
+	}
+	p = strchr(p+1, '"');
+	return (p ? p+1 : "");
+}
+
+
+/*
+ * Release one entry's step list. The reload path already promises not to
+ * leak, and a step list is more than the record it hangs off.
+ */
+static void free_svcsteps(svcinfo_t *rec)
+{
+	svcstep_t *st = rec->steps;
+
+	while (st) {
+		svcstep_t *next = st->next;
+
+		if (st->text)  xfree(st->text);
+		if (st->until) xfree(st->until);
+		xfree(st);
+		st = next;
+	}
+	rec->steps = NULL;
+}
+
 
 typedef struct svclist_t {
 	struct svcinfo_t *rec;
@@ -152,6 +228,7 @@ char *init_tcp_services(void)
 				if (svcinfo[i].sendtxt) xfree(svcinfo[i].sendtxt);
 				if (svcinfo[i].exptext) xfree(svcinfo[i].exptext);
 				if (svcinfo[i].alpns) xfree(svcinfo[i].alpns);
+				free_svcsteps(&svcinfo[i]);
 			}
 			xfree(svcinfo);
 			svcinfo = default_svcinfo;
@@ -166,7 +243,20 @@ char *init_tcp_services(void)
 
 	fd = stackfopen(filename, "r", &svcflist);
 	if (fd == NULL) {
-		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
+		int i;
+
+		/*
+		 * The file IS the configuration: with no file, nothing was asked for,
+		 * so nothing is checked. Same rule as for a single entry that cannot
+		 * be read -- say so, and check nothing.
+		 *
+		 * There is no second set of probes to fall back to. The table above
+		 * holds names and ports, which is what the tests below still need to
+		 * report against.
+		 */
+		errprintf("Cannot open TCP service-definitions file %s - no service will be checked\n",
+			  filename);
+		svccfg_unreadable = 1;
 		xymonnetsvcs = strdup(xgetenv("XYMONNETSVCS"));
 		xymonnetsvcs_buflen = strlen(xymonnetsvcs)+1;
 
@@ -216,28 +306,236 @@ char *init_tcp_services(void)
 		}
 		else if (strncmp(l, "send ", 5) == 0) {
 			if (first) {
-				getescapestring(skipwhitespace(l+4), &first->rec->sendtxt, &first->rec->sendlen);
+				unsigned char *txt = NULL;
+				int txtlen = 0;
+
+				getescapestring(skipwhitespace(l+4), &txt, &txtlen);
+				/*
+				 * sendtxt keeps the FIRST send only, which is what a
+				 * single-step probe has always meant. The step list is
+				 * what a dialogue is driven from.
+				 */
+				if (first->rec->sendtxt == NULL) {
+					first->rec->sendtxt = txt;
+					first->rec->sendlen = txtlen;
+				}
+				if (!add_svcstep(first->rec, STEP_SEND, txt, txtlen)) {
+					errprintf("Service %s: out of memory reading protocols.cfg\n",
+						  first->rec->svcname);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
 				for (walk = first->next; (walk); walk = walk->next) {
-					walk->rec->sendtxt = strdup(first->rec->sendtxt);
-					walk->rec->sendlen = first->rec->sendlen;
+					if (walk->rec->sendtxt == NULL) {
+						walk->rec->sendtxt = dup_bytes(txt, txtlen);
+						walk->rec->sendlen = txtlen;
+						if (!walk->rec->sendtxt) {
+							errprintf("Service %s: out of memory reading protocols.cfg\n",
+								  walk->rec->svcname);
+							walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+						}
+					}
+					if (!add_svcstep(walk->rec, STEP_SEND, txt, txtlen)) {
+						errprintf("Service %s: out of memory reading protocols.cfg\n",
+							  walk->rec->svcname);
+						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+				}
+				/* add_svcstep() copied it; only the first send keeps the buffer. */
+				if (first->rec->sendtxt != txt) xfree(txt);
+			}
+		}
+		else if (strncmp(l, "start ", 6) == 0) {
+			/*
+			 * Upgrade here: plaintext before this line, encrypted after it, on the
+			 * same socket. That is SMTP on 25, submission on 587 and IMAP on 143,
+			 * and the only way any of them reaches a certificate -- "options ssl"
+			 * is TLS from the first byte, a different port and service.
+			 *
+			 * A step, not an option, because WHERE it happens is the point: after
+			 * the server has agreed to it, never before.
+			 */
+			if (first) {
+				char *feat = skipwhitespace(l+5);
+
+				/*
+				 * The word after "start" names code here, not a protocol verb, and is
+				 * reserved: "tls" is the only one, and anything else is refused when
+				 * the file is read.
+				 *
+				 * Two words because the action is not protocol-specific -- FTP spells
+				 * the request AUTH TLS, POP3 STLS, SMTP and IMAP STARTTLS -- and the
+				 * asking is left to a send, which is what knows the protocol.
+				 */
+				if ((strcmp(feat, "tls") != 0) && (strcmp(feat, "iac") != 0)) {
+					/*
+					 * Refused, and the entry is marked so it cannot report
+					 * OK. Logging alone would leave a probe that quietly
+					 * checks less than the file says it does: the step is
+					 * dropped, the conversation still runs, and the column
+					 * stays green while nothing has upgraded. A definition
+					 * that could not be read is not a service that is up.
+					 */
+					errprintf("Service %s: 'start %s' - a client can start 'tls' or 'iac'\n",
+						  first->rec->svcname, feat);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					for (walk = first->next; (walk); walk = walk->next)
+						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+				else if (strcmp(feat, "iac") == 0) {
+					/*
+					 * Telnet option negotiation as a step. IAC belongs to the
+					 * protocol, not to port 23 -- MUDs and BBSes negotiate on
+					 * their own ports -- so any entry can say where it
+					 * happens. TCP_TELNET arms it in contest.c, which is what
+					 * "options telnet" sets too.
+					 */
+					first->rec->flags |= TCP_TELNET;
+					if (!add_svcstep(first->rec, STEP_STARTIAC, (unsigned char *)"", 0)) {
+						errprintf("Service %s: out of memory reading protocols.cfg\n",
+							  first->rec->svcname);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+					for (walk = first->next; (walk); walk = walk->next) {
+						walk->rec->flags |= TCP_TELNET;
+						if (!add_svcstep(walk->rec, STEP_STARTIAC, (unsigned char *)"", 0)) {
+							errprintf("Service %s: out of memory reading protocols.cfg\n",
+								  walk->rec->svcname);
+							walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+						}
+					}
+				}
+				else {
+					svcstep_t *already;
+
+					/*
+					 * There is one connection and it is upgraded once. A
+					 * file asking twice asks for something that cannot
+					 * happen, and the second was skipped in silence --
+					 * quietly doing less than the file says, which is the
+					 * failure this grammar is meant to make impossible.
+					 */
+					for (already = first->rec->steps; (already); already = already->next)
+						if (already->type == STEP_STARTTLS) break;
+
+					if (already) {
+						errprintf("Service %s: a second 'start tls' - the connection is upgraded once, so the extra line asks for something that cannot happen\n",
+							  first->rec->svcname);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+						for (walk = first->next; (walk); walk = walk->next)
+							walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+					else {
+						if (!add_svcstep(first->rec, STEP_STARTTLS, (unsigned char *)"", 0)) {
+							errprintf("Service %s: out of memory reading protocols.cfg\n",
+								  first->rec->svcname);
+							first->rec->flags |= TCP_DIALOGUE_BROKEN;
+						}
+						for (walk = first->next; (walk); walk = walk->next)
+							if (!add_svcstep(walk->rec, STEP_STARTTLS, (unsigned char *)"", 0)) {
+								errprintf("Service %s: out of memory reading protocols.cfg\n",
+									  walk->rec->svcname);
+								walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+							}
+					}
 				}
 			}
 		}
 		else if (strncmp(l, "expect ", 7) == 0) {
 			if (first) {
-				getescapestring(skipwhitespace(l+6), &first->rec->exptext, &first->rec->explen);
-				for (walk = first->next; (walk); walk = walk->next) {
-					walk->rec->exptext = strdup(first->rec->exptext);
-					walk->rec->explen = first->rec->explen;
-					walk->rec->expofs = 0; /* HACK - not used right now */
+				unsigned char *txt = NULL, *untiltxt = NULL;
+				int txtlen = 0, untillen = 0;
+				char *rest;
+				svcstep_t *st;
+
+				getescapestring(skipwhitespace(l+6), &txt, &txtlen);
+
+				/*
+				 * "until" says where the reply ENDS. Without it an expect
+				 * takes a single line, which is wrong for every protocol that
+				 * answers with several: SMTP and FTP continue with "250-" and
+				 * finish with "250 ", NNTP ends a block with ".", IMAP ends
+				 * with the command tag. Naming the terminator covers all three
+				 * without teaching the parser any of them.
+				 */
+				rest = skipwhitespace(after_quoted(skipwhitespace(l+6)));
+				if (strncmp(rest, "until ", 6) == 0)
+					getescapestring(skipwhitespace(rest + 5), &untiltxt, &untillen);
+				else if (*rest) {
+					/*
+					 * "untill" would drop the terminator in silence, leaving
+					 * the expect to take one line out of a multi-line reply.
+					 */
+					errprintf("Service %s: expect takes only 'until', not: %s\n",
+						  first->rec->svcname, rest);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					for (walk = first->next; (walk); walk = walk->next)
+						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
 				}
+
+				if (first->rec->exptext == NULL) {
+					first->rec->exptext = txt;
+					first->rec->explen  = txtlen;
+				}
+				st = add_svcstep(first->rec, STEP_EXPECT, txt, txtlen);
+				if (!st) {
+					errprintf("Service %s: out of memory reading protocols.cfg\n",
+						  first->rec->svcname);
+					first->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+				else if (untiltxt) {
+					st->until = dup_bytes(untiltxt, untillen);
+					st->untillen = untillen;
+					if (!st->until) {
+						errprintf("Service %s: out of memory reading protocols.cfg\n",
+							  first->rec->svcname);
+						st->untillen = 0;
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+				}
+				for (walk = first->next; (walk); walk = walk->next) {
+					if (walk->rec->exptext == NULL) {
+						walk->rec->exptext = dup_bytes(txt, txtlen);
+						walk->rec->explen  = txtlen;
+						if (!walk->rec->exptext) {
+							errprintf("Service %s: out of memory reading protocols.cfg\n",
+								  walk->rec->svcname);
+							walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+						}
+						walk->rec->expofs  = 0; /* HACK - not used right now */
+					}
+					st = add_svcstep(walk->rec, STEP_EXPECT, txt, txtlen);
+					if (!st) {
+						errprintf("Service %s: out of memory reading protocols.cfg\n",
+							  walk->rec->svcname);
+						walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
+					else if (untiltxt) {
+						st->until = dup_bytes(untiltxt, untillen);
+						st->untillen = untillen;
+						if (!st->until) {
+							errprintf("Service %s: out of memory reading protocols.cfg\n",
+								  walk->rec->svcname);
+							st->untillen = 0;
+							walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+						}
+					}
+				}
+				if (untiltxt) xfree(untiltxt);
+				/* As above: only the first expect keeps its buffer. */
+				if (first->rec->exptext != txt) xfree(txt);
 			}
 		}
 		else if (strncmp(l, "options ", 8) == 0) {
 			if (first) {
 				char *opt;
 
-				first->rec->flags = 0;
+				/*
+				 * Reset what THIS line owns. A second "options" replaces the
+				 * first, but a refusal recorded by another line must survive,
+				 * or the entry silently becomes runnable again depending on
+				 * which line came last.
+				 */
+				first->rec->flags &= TCP_DIALOGUE_BROKEN;
 				l = skipwhitespace(l+7);
 				opt = strtok(l, ",");
 				while (opt) {
@@ -247,12 +545,29 @@ char *init_tcp_services(void)
 					else if (strncmp(opt, "alpn=", 5) == 0) {
 						first->rec->alpns = strdup(opt+5);
 					}
-					else errprintf("Unknown option: %s\n", opt);
+					else {
+						/*
+						 * Refused like an unknown directive: "options
+						 * sssl" would ask for TLS, get a plaintext probe,
+						 * and report green.
+						 */
+						errprintf("Unknown option in service %s: %s\n",
+							  first->rec->svcname, opt);
+						first->rec->flags |= TCP_DIALOGUE_BROKEN;
+					}
 
 					opt = strtok(NULL, ",");
 				}
 				for (walk = first->next; (walk); walk = walk->next) {
-					walk->rec->flags = first->rec->flags;
+					/*
+					 * Keep the alias's own refusal. A failure while copying
+					 * to one record is recorded on that record, and a plain
+					 * assignment here would put it back to whatever the
+					 * first one had -- leaving that alias running with a
+					 * step it never got.
+					 */
+					walk->rec->flags = first->rec->flags |
+							   (walk->rec->flags & TCP_DIALOGUE_BROKEN);
 				}
 			}
 		}
@@ -262,6 +577,26 @@ char *init_tcp_services(void)
 				for (walk = first->next; (walk); walk = walk->next) {
 					walk->rec->port = first->rec->port;
 				}
+			}
+		}
+		else if (*l) {
+			/*
+			 * Refuse the entry. Reporting an unrecognised line and running anyway
+			 * is barely better than ignoring it: the step never exists, the probe
+			 * runs the rest, and "sedn"/"exepct" leaves a bare greeting check that
+			 * says the service is fine.
+			 *
+			 * This does turn that column yellow on every host carrying the entry,
+			 * which is the point -- only the operator can reconcile a file that
+			 * says one thing with a probe that would do another.
+			 */
+			errprintf("Unknown protocols.cfg directive%s%s: %s\n",
+				  (first ? " in service " : ""),
+				  (first ? first->rec->svcname : ""), l);
+			if (first) {
+				first->rec->flags |= TCP_DIALOGUE_BROKEN;
+				for (walk = first->next; (walk); walk = walk->next)
+					walk->rec->flags |= TCP_DIALOGUE_BROKEN;
 			}
 		}
 	}
@@ -281,6 +616,78 @@ char *init_tcp_services(void)
 		svcinfo[i].flags   = walk->rec->flags;
 		svcinfo[i].port    = walk->rec->port;
 		svcinfo[i].alpns   = walk->rec->alpns;
+		/*
+		 * "options telnet" IS "start iac", spelled the way it was before
+		 * there were steps. Give it the step, at the front, so one
+		 * implementation serves both -- they used to diverge, and the option
+		 * stripped the peer's requests without ever answering them.
+		 */
+		if (walk->rec->flags & TCP_TELNET) {
+			svcstep_t *st;
+			int have = 0;
+
+			for (st = walk->rec->steps; (st); st = st->next)
+				if (st->type == STEP_STARTIAC) { have = 1; break; }
+
+			if (!have) {
+				svcstep_t *first_step = (svcstep_t *)calloc(1, sizeof(svcstep_t));
+
+				if (!first_step) {
+					errprintf("Service %s: out of memory adding telnet negotiation\n",
+						  walk->rec->svcname);
+					walk->rec->flags |= TCP_DIALOGUE_BROKEN;
+				}
+				else {
+					first_step->type = STEP_STARTIAC;
+					first_step->text = dup_bytes((unsigned char *)"", 0);
+					first_step->len  = 0;
+					first_step->next = walk->rec->steps;
+					walk->rec->steps = first_step;
+				}
+			}
+		}
+
+		svcinfo[i].steps   = walk->rec->steps;
+		{
+			svcstep_t *st; int nsend = 0, nexp = 0, nstarttls = 0;
+
+			for (st = walk->rec->steps; (st); st = st->next) {
+				if (st->type == STEP_SEND) nsend++;
+				else if (st->type == STEP_STARTTLS) nstarttls++;
+				else nexp++;
+			}
+
+			/*
+			 * Everything here is run by the dialogue driver, whatever its
+			 * shape. Two matchers for one file is what that avoids: they
+			 * agree on every ordinary reply and differ on one split across
+			 * segments, where the older arm judges the first read alone and
+			 * calls a healthy server down. That arm stays for the
+			 * compiled-in http/https tests, which never come from here.
+			 */
+			svcinfo[i].flags |= TCP_DIALOGUE;
+
+			/*
+			 * One connection is encrypted once. With "options ssl" the
+			 * handshake has already happened at connect, so the upgrade
+			 * step does nothing -- a file that says it upgrades never
+			 * does, and the plaintext half it describes is never spoken.
+			 */
+			if (nstarttls && (svcinfo[i].flags & TCP_SSL)) {
+				errprintf("Service %s: both 'options ssl' and 'start tls' - "
+					  "ssl negotiates at connect, so the upgrade would do nothing\n",
+					  svcinfo[i].svcname);
+				svcinfo[i].flags |= TCP_DIALOGUE_BROKEN;
+			}
+
+			/*
+			 * Refused entries are driven here too, whatever their shape:
+			 * the driver is what honours the refusal (curstep stays NULL).
+			 * The legacy path would send the command regardless.
+			 */
+			if (svcinfo[i].flags & TCP_DIALOGUE_BROKEN)
+				svcinfo[i].flags |= TCP_DIALOGUE;
+		}
 	}
 	memset(&svcinfo[svccount], 0, sizeof(svcinfo_t));
 
@@ -365,7 +772,21 @@ svcinfo_t *find_tcp_service(char *svcname)
 	for (svcidx=0; (svcinfo[svcidx].svcname && (strcmp(svcname, svcinfo[svcidx].svcname) != 0)); svcidx++) ;
 	if (svcinfo[svcidx].svcname) 
 		return &svcinfo[svcidx];
-	else
-		return NULL;
+
+	if (svccfg_unreadable) {
+		/*
+		 * The caller reads the returned flags straight away, so NULL is a
+		 * crash -- one the compiled-in names used to hide. Hand back a
+		 * refused definition instead: refused is what every service is
+		 * without the file. One shared entry, named for the reason, since
+		 * that name only ever appears in messages.
+		 */
+		static svcinfo_t refused = { "(no protocols.cfg)", NULL, 0, NULL, 0, 0,
+					     (TCP_DIALOGUE_BROKEN | TCP_DIALOGUE), 0 };
+
+		return &refused;
+	}
+
+	return NULL;
 }
 

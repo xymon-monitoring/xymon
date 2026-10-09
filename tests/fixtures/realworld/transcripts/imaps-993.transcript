@@ -1,0 +1,8 @@
+# imaps-993  imap.gmail.com (108.177.96.109) port 993  mode=implicit
+# recorded 2026-08-31T12:47:06.899735Z
+# [TLS handshake at connect]
+S: * OK Gimap ready for requests from 203.0.113.1 e78a5f81f42f2-2f2a2407019mb80133912606
+C: ABC123 LOGOUT
+S: * BYE Logout Requested e78a5f81f42f2-2f2a2407019mb80133912606
+S: ABC123 OK Quoth the raven, nevermore... e78a5f81f42f2-2f2a2407019mb80133912606
+# peer certificate present: yes (DER omitted)
