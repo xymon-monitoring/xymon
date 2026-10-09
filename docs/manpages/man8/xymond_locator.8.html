@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMOND_LOCATOR(8)</title>
+</head>
+<body>
+<h1 class="head-name">XYMOND_LOCATOR</h1>
+Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
+
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymond_locator - Xymon service locator for distributed worker
+    modules</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymond_locator [options]</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">xymond_locator lets the work of one Xymon installation be spread
+    over several servers: for instance, two servers each holding the RRD files
+    for half of the monitored hosts. Worker modules running on those servers
+    register with the locator, and the programs that need a worker for some host
+    ask the locator which server handles that host.</p>
+<p class="Pp">The locator is a small directory service. It keeps a list of
+    servers per service type, and a list of which host is assigned to which
+    server. It does not handle any monitoring data itself.</p>
+<p class="Pp">It answers requests on a UDP socket, by default port 1984 on all
+    interfaces. Note that this is UDP, while <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> listens on TCP
+    port 1984; both can run on the same host.</p>
+<p class="Pp">The locator is not needed, and not started by the default
+    <i><a href="../man5/tasks.cfg.5.html">tasks.cfg</a>(5),</i> on a Xymon installation where one server does
+    everything.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="listen"><a class="permalink" href="#listen"><b>--listen</b>=<i>IP</i>[:<i>PORT</i>]</a></dt>
+  <dd>The address and UDP port to listen on. Default: 0.0.0.0:1984. If the port
+      is omitted, 1984 is used.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="daemon"><a class="permalink" href="#daemon"><b>--daemon</b></a></dt>
+  <dd>Run as a stand-alone background process. The default is to stay in the
+      foreground, as a task started by <i><a href="../man8/xymonlaunch.8.html">xymonlaunch</a>(8)</i> expects.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="no-daemon"><a class="permalink" href="#no-daemon"><b>--no-daemon</b></a></dt>
+  <dd>Stay in the foreground. This is the default.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="logfile"><a class="permalink" href="#logfile"><b>--logfile</b>=<i>FILENAME</i></a></dt>
+  <dd>Redirect output to this log file. See <b>BUGS</b> for what a HUP signal
+      does.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="debug"><a class="permalink" href="#debug"><b>--debug</b></a></dt>
+  <dd>Log every request received and the decisions taken.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SERVICE_TYPES"><a class="permalink" href="#SERVICE_TYPES">SERVICE
+  TYPES</a></h1>
+<p class="Pp">Each server registers for one service type, and each lookup names
+    one:
+  <br/>
+  &quot;rrd&quot; - RRD files, handled by <i><a href="../man8/xymond_rrd.8.html">xymond_rrd</a>(8)</i>
+  <br/>
+  &quot;hostdata&quot; - host data snapshots, handled by
+    <i><a href="../man8/xymond_hostdata.8.html">xymond_hostdata</a>(8)</i>
+  <br/>
+  &quot;client&quot; - client data analysis, handled by <i><a href="../man8/xymond_client.8.html">xymond_client</a>(8)</i>
+  <br/>
+  &quot;alert&quot; - alerting, handled by <i><a href="../man8/xymond_alert.8.html">xymond_alert</a>(8)</i>
+  <br/>
+  &quot;history&quot; - known to the locator, but no worker module registers for
+    it.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="HOW_A_SERVER_IS_CHOSEN"><a class="permalink" href="#HOW_A_SERVER_IS_CHOSEN">HOW
+  A SERVER IS CHOSEN</a></h1>
+<p class="Pp">Every server registers with a weight, and the weight decides what
+    it receives:</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="weight"><a class="permalink" href="#weight">weight 2 or more</a></dt>
+  <dd>The server is up and accepts any host. New hosts are shared round-robin
+      between such servers, each server taking (weight - 1) hosts per round: two
+      servers with weights 3 and 2 receive new hosts in the ratio 2:1.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="weight~2"><a class="permalink" href="#weight~2">weight 1</a></dt>
+  <dd>The server is up, but accepts only hosts already assigned to it. It
+      receives no new hosts. This is the default weight of a worker module, so a
+      worker meant to take new hosts must be given <b>--locatorweight</b>=2 or
+      more.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="weight~3"><a class="permalink" href="#weight~3">weight 0</a></dt>
+  <dd>The server is down.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="negative"><a class="permalink" href="#negative">negative
+    weight</a></dt>
+  <dd>Only one server receives requests: the one with the lowest weight. If it
+      goes down, the next lowest takes over. Two servers with weights -2 and -1
+      form an active/standby pair.
+    <p class="Pp"><i><a href="../man8/xymond_alert.8.html">xymond_alert</a>(8)</i> uses this mode, but always registers
+        with weight -1, whatever <b>--locatorweight</b> says. Among several
+        alert servers the weights are then equal, and the active one is the
+        first by name in text order, ignoring case: 10.0.0.10:1986 comes before
+        10.0.0.9:1986.</p>
+    <p class="Pp"></p>
+  </dd>
+</dl>
+<p class="Pp">A service is either sticky or roaming. For a <b>sticky</b> service
+    (&quot;rrd&quot; and &quot;hostdata&quot;), a host is assigned to the first
+    server chosen for it and stays there, so that its files are kept in one
+    place. For a <b>roaming</b> service (&quot;client&quot;), each request may
+    go to a different server.</p>
+<p class="Pp">When a server goes down, the hosts assigned to it are not moved:
+    requests for them are refused until the server comes back, so that a host's
+    files are not split between two servers. Data for those hosts is dropped
+    meanwhile. A host is released, and assigned anew, only when its server is
+    removed from the locator with a &quot;forget&quot; request.</p>
+<p class="Pp">A sticky worker module tells the locator which hosts it already
+    holds data for when it starts, so a restarted server gets its hosts
+  back.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="WHAT_IS_SPREAD,_AND_WHAT_IS_REDUNDANT"><a class="permalink" href="#WHAT_IS_SPREAD,_AND_WHAT_IS_REDUNDANT">WHAT
+  IS SPREAD, AND WHAT IS REDUNDANT</a></h1>
+<p class="Pp">The locator spreads the work of the worker modules. It does not
+    spread or duplicate <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> itself: one xymond still receives every
+    status and builds the web pages, and when it stops, so does everything else.
+    The locator is itself one process.</p>
+<p class="Pp">What losing a worker server costs depends on the service type:</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="rrd"><a class="permalink" href="#rrd">rrd, hostdata</a></dt>
+  <dd>The data is spread, not copied. Each host's files are on one server, and
+      while that server is down the data for its hosts is dropped; no other
+      server takes over. Graphs and snapshots for a host are served by the
+      server holding them, which is what <b>--locatorextra</b> is for. This
+      spreads disk load on a large installation, and protects against nothing.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="client"><a class="permalink" href="#client">client</a></dt>
+  <dd>The load is spread, and the service survives the loss of a server: hosts
+      roam, so the remaining servers take the reports of the one that is down.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="alert"><a class="permalink" href="#alert">alert</a></dt>
+  <dd>Nothing is spread: one server sends all the alerts. The others are
+      standby, and one of them takes over when the active server goes down.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+<p class="Pp">To keep monitoring through the loss of the xymond server, the
+    locator is not the tool. Run two complete Xymon servers, and have every
+    client report to both by setting XYMSRV to 0.0.0.0 and listing both servers
+    in XYMSERVERS; see <i><a href="../man1/xymon.1.html">xymon</a>(1).</i></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SETTING_UP_DISTRIBUTED_WORKERS"><a class="permalink" href="#SETTING_UP_DISTRIBUTED_WORKERS">SETTING
+  UP DISTRIBUTED WORKERS</a></h1>
+<p class="Pp">On each server that is to handle part of the work, run the worker
+    module on its own, listening on the network instead of reading from
+    <i><a href="../man8/xymond_channel.8.html">xymond_channel</a>(8):</i></p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>xymond_rrd --rrddir=$XYMONVAR/rrd --listen=10.0.0.2:1985
+      --locator=10.0.0.1:1984 --locatorweight=2</dd>
+</dl>
+<p class="Pp">The worker registers with the locator under its <b>--listen</b>
+    address, and accepts messages on that TCP port. The worker options are:</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="listen~2"><a class="permalink" href="#listen~2"><b>--listen</b>=<i>IP:PORT</i></a></dt>
+  <dd>Where the worker accepts messages. Required for network mode.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="locator"><a class="permalink" href="#locator"><b>--locator</b>=<i>IP:PORT</i></a></dt>
+  <dd>Where xymond_locator listens. Required for network mode.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="locatorid"><a class="permalink" href="#locatorid"><b>--locatorid</b>=<i>IP:PORT</i></a></dt>
+  <dd>The name the worker registers under. Default: the <b>--listen</b> address.
+      It must be the address other servers can reach the worker on.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="locatorweight"><a class="permalink" href="#locatorweight"><b>--locatorweight</b>=<i>N</i></a></dt>
+  <dd>The weight to register with, see <b>HOW A SERVER IS CHOSEN.</b> Default:
+      1. Ignored by <i><a href="../man8/xymond_alert.8.html">xymond_alert</a>(8),</i> which always registers with -1.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="locatorextra"><a class="permalink" href="#locatorextra"><b>--locatorextra</b>=<i>TEXT</i></a></dt>
+  <dd>Extra information returned with lookups. The web CGIs use it as the URL of
+      the CGI directory on that server, to send a browser to the server holding
+      a host's data.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+<p class="Pp">On the server running <i><a href="../man8/xymond.8.html">xymond</a>(8),</i> the channel is fed to the
+    locator instead of a local worker:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>xymond_channel --channel=status --locator=10.0.0.1:1984 --service=rrd</dd>
+</dl>
+<p class="Pp">For each message, xymond_channel asks the locator which server
+    handles the host, and forwards the message to that server over TCP. If the
+    connection to a server fails, xymond_channel reports the server as down to
+    the locator. While a server is unreachable, only the newest message for it
+    is kept; earlier ones are discarded.</p>
+<p class="Pp">A worker module that is stopped normally reports itself as
+  down.</p>
+<p class="Pp">A worker on a server of its own still needs what it would find on
+    the server running <i><a href="../man8/xymond.8.html">xymond</a>(8).</i> <i><a href="../man8/xymond_alert.8.html">xymond_alert</a>(8)</i> loads the
+    current state of all statuses from xymond when it starts handling messages,
+    and gives up without it: set XYMSRV in that server's
+    <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> to the xymond server. It also alerts only for
+    hosts in its own <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5),</i> so give it the same hosts.cfg as the
+    xymond server.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
+<p class="Pp">The locator runs on 10.0.0.1, xymond on 10.0.0.2. Each program
+    below runs as a task in the <i><a href="../man5/tasks.cfg.5.html">tasks.cfg</a>(5)</i> of its own server.</p>
+<p class="Pp"><b>RRD files on two servers.</b> On the locator host:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>
+    <pre>[locator]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	CMD xymond_locator --listen=10.0.0.1:1984</pre>
+  </dd>
+</dl>
+<p class="Pp">On each RRD server, 10.0.0.3 and 10.0.0.4, without
+  xymond_channel:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>
+    <pre>[rrdworker]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	CMD xymond_rrd --rrddir=$XYMONVAR/rrd --listen=10.0.0.3:1985
+	    --locator=10.0.0.1:1984 --locatorweight=2</pre>
+  </dd>
+</dl>
+<p class="Pp">On the xymond server, the [rrdstatus] task feeds the locator
+    instead of a local xymond_rrd:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>
+    <pre>[rrdstatus]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymond_channel --channel=status
+	    --log=$XYMONSERVERLOGS/rrd-status.log
+	    --locator=10.0.0.1:1984 --service=rrd</pre>
+  </dd>
+</dl>
+<p class="Pp">Each host's RRD files are then kept on one of the two servers.
+    Open UDP port 1984 on the locator host, and TCP port 1985 on the RRD
+    servers.</p>
+<p class="Pp"><b>Alerts from an active and a standby server.</b> On each alert
+    server, 10.0.0.5 and 10.0.0.6, set XYMSRV in <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> to
+    10.0.0.2, install the same <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> and <i><a href="../man5/alerts.cfg.5.html">alerts.cfg</a>(5)</i> as
+    on the xymond server, and run:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>
+    <pre>[alertworker]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	CMD xymond_alert --listen=10.0.0.5:1986 --locator=10.0.0.1:1984
+	    --checkpoint-file=$XYMONTMP/alert.chk</pre>
+  </dd>
+</dl>
+<p class="Pp">On the xymond server:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>
+    <pre>[alert]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymond_channel --channel=page
+	    --log=$XYMONSERVERLOGS/alert.log
+	    --locator=10.0.0.1:1984 --service=alert</pre>
+  </dd>
+</dl>
+<p class="Pp">10.0.0.5:1986 comes first by name, so 10.0.0.5 sends the alerts.
+    When it stops, 10.0.0.6 takes over; alerts already sent by 10.0.0.5 may then
+    be sent again, since the standby does not know about them.</p>
+<p class="Pp"><b>Client data analysed on two servers.</b> On each analysis
+    server, 10.0.0.7 and 10.0.0.8, set XYMSRV in <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> to
+    10.0.0.2: the worker loads hosts.cfg from that xymond, and sends the
+    statuses it computes (cpu, disk, memory and the rest) back to it. Then
+  run:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>
+    <pre>[clientworker]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	CMD xymond_client --listen=10.0.0.7:1987 --locator=10.0.0.1:1984
+	    --locatorweight=2</pre>
+  </dd>
+</dl>
+<p class="Pp">On the xymond server, the [clientdata] task feeds the locator
+    instead of a local xymond_client:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>
+    <pre>[clientdata]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymond_channel --channel=client
+	    --log=$XYMONSERVERLOGS/clientdata.log
+	    --locator=10.0.0.1:1984 --service=client</pre>
+  </dd>
+</dl>
+<p class="Pp">The &quot;client&quot; service roams, so each client report goes
+    to whichever server is next; neither keeps any data.</p>
+<p class="Pp">A CMD line is written on one line in tasks.cfg; it is wrapped here
+    for reading.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
+<dl class="Bl-tag">
+  <dt>$XYMONTMP/locator.servers.chk</dt>
+  <dd></dd>
+  <dt>$XYMONTMP/locator.hosts.chk</dt>
+  <dd>The registered servers, and the hosts assigned to them. Read at start-up,
+      and written when the locator terminates or receives a &quot;save
+      state&quot; request. If XYMONTMP is not set, /tmp is used.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SIGNALS"><a class="permalink" href="#SIGNALS">SIGNALS</a></h1>
+<dl class="Bl-tag">
+  <dt id="HUP"><a class="permalink" href="#HUP">HUP</a></dt>
+  <dd>Re-open the log file, then terminate; see <b>BUGS.</b></dd>
+  <dt id="TERM"><a class="permalink" href="#TERM">TERM</a></dt>
+  <dd>Save the state files and terminate.
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="BUGS"><a class="permalink" href="#BUGS">BUGS</a></h1>
+<p class="Pp">A HUP signal is meant only to re-open the log file, but it also
+    interrupts the wait for the next request, which the locator treats as a
+    fatal error: it logs &quot;select error, aborting: Interrupted system
+    call&quot;, saves its state files and exits. Started by
+    <i><a href="../man8/xymonlaunch.8.html">xymonlaunch</a>(8),</i> it is then restarted, and requests sent meanwhile go
+    unanswered.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NOTES"><a class="permalink" href="#NOTES">NOTES</a></h1>
+<p class="Pp">The interactive <b>locator</b> program built in the lib/ directory
+    of the source tree can send any request to the locator, including
+    registering, downing and forgetting servers, and querying a host. It is not
+    installed by &quot;make install&quot;.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man8/xymond_channel.8.html">xymond_channel</a>(8), <a href="../man8/xymond_rrd.8.html">xymond_rrd</a>(8), <a href="../man8/xymond_hostdata.8.html">xymond_hostdata</a>(8),
+    <a href="../man8/xymond_client.8.html">xymond_client</a>(8), <a href="../man8/xymond_alert.8.html">xymond_alert</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#SERVICE_TYPES">SERVICE TYPES</a></dt>
+<dt><a href="#HOW_A_SERVER_IS_CHOSEN">HOW A SERVER IS CHOSEN</a></dt>
+<dt><a href="#WHAT_IS_SPREAD,_AND_WHAT_IS_REDUNDANT">WHAT IS SPREAD, AND WHAT IS REDUNDANT</a></dt>
+<dt><a href="#SETTING_UP_DISTRIBUTED_WORKERS">SETTING UP DISTRIBUTED WORKERS</a></dt>
+<dt><a href="#EXAMPLES">EXAMPLES</a></dt>
+<dt><a href="#FILES">FILES</a></dt>
+<dt><a href="#SIGNALS">SIGNALS</a></dt>
+<dt><a href="#BUGS">BUGS</a></dt>
+<dt><a href="#NOTES">NOTES</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
+
+</body>
+</html>
