@@ -101,6 +101,38 @@ void add_to_filelist(char *fn, enum ftype_t ftype)
 }
 
 
+/*
+ * "gone.example.com" can be read two ways: a host-history file for a host of
+ * that name, or service "example.com" of a listed host "gone". The name alone
+ * cannot say which, so the record does: a host-history line is
+ * "<testname> <epoch> ...", a service-history line
+ * "<color> <Www Mmm dd hh:mm:ss yyyy> <epoch> ...", and the second field is a
+ * number in the first and a weekday name in the second.
+ *
+ * Only consulted for names that are genuinely ambiguous, which is rare: the
+ * host half of a service file normally carries the commas its dots were
+ * encoded as, and a column name normally holds no dot.
+ */
+static int looks_like_hosthistory(char *fn)
+{
+	FILE *fd;
+	char l[1024];
+	char *second;
+	int result = 0;
+
+	fd = fopen(fn, "r");
+	if (!fd) return 0;
+
+	if (fgets(l, sizeof(l), fd)) {
+		second = strchr(l, ' ');
+		while (second && (*second == ' ')) second++;
+		if (second && (*second >= '0') && (*second <= '9')) result = 1;
+	}
+
+	fclose(fd);
+	return result;
+}
+
 void trim_history(FILE *infd, FILE *outfd, enum ftype_t ftype, time_t cutoff)
 {
 	/* Does the grunt work of going through a file and copying the wanted records */
@@ -366,6 +398,7 @@ int main(int argc, char *argv[])
 	int dropsvcs = 0;
 	int dropfiles = 0;
 	int droplogs = 0;
+	int loadres;
 	char *envarea = NULL;
 
 	for (argi = 1; (argi < argc); argi++) {
@@ -426,13 +459,42 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	/*
+	 * --drop and --droplogs delete every file whose host is not in this
+	 * list, so a list that did not load is not "no hosts configured", it is
+	 * "nothing to compare against" - and acting on it empties XYMONHISTDIR.
+	 * xymongen, xymonnet and svcstatus.cgi all check this return and bail;
+	 * trimhistory was the only caller that ignored it, and the only one that
+	 * deletes on the answer.
+	 *
+	 * The return value alone is not enough. A HOSTSCFG naming a directory
+	 * (or an empty file) loads successfully with no hosts in it and says
+	 * nothing, so an empty list is refused too. A site that really has no
+	 * hosts loses nothing: there is no history to keep or trim either.
+	 *
+	 * Only the deleting modes are refused. Without them nothing is at risk,
+	 * and there is still work that needs no host list: "allevents" is
+	 * recognised by name before any lookup, so it goes on being trimmed.
+	 */
+	loadres = load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	if (dropfiles || droplogs) {
+		if (loadres == -1) {
+			errprintf("Cannot load %s - not dropping anything\n", xgetenv("HOSTSCFG"));
+			return 1;
+		}
+		if (first_host() == NULL) {
+			errprintf("No hosts loaded from %s - refusing to drop, every file would look orphaned\n",
+				  xgetenv("HOSTSCFG"));
+			return 1;
+		}
+	}
 
 	/* First scan the directory for all files, and pick up the ones we want to process */
 	while ((hent = readdir(histdir)) != NULL) {
 		char *hostname = NULL;
 		char hostip[IP_ADDR_STRLEN];
 		enum ghosthandling_t ghosthandling = GH_IGNORE;
+		int inperiod = 1;
 
 		if (stat(hent->d_name, &st) == -1) {
 			errprintf("Odd entry %s - cannot stat: %s\n", hent->d_name, strerror(errno));
@@ -447,15 +509,33 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		hostname = knownhost(hent->d_name, hostip, ghosthandling);
+		/*
+		 * knownhost_ex() rather than knownhost(): a host carrying
+		 * NOTBEFORE:/NOTAFTER: is listed in hosts.cfg, and only its
+		 * window is closed. knownhost() answers NULL for it, which made
+		 * --drop delete the history of exactly the hosts that are
+		 * coming back (#281).
+		 */
+		hostname = knownhost_ex(hent->d_name, hostip, ghosthandling, &inperiod);
 		if (hostname) {
 			/* Host history file. */
 			add_to_filelist(hent->d_name, F_HOSTHISTORY);
 		}
 		else {
 			char *delim, *p, *hname, *tname;
+			int ambiguous;
 
-			delim = strrchr(hent->d_name, '.');
+			/*
+			 * xymond_history writes a service-history file as
+			 * "<hostname with dots as commas>.<column>", so the host
+			 * half never holds a dot and the FIRST one is the
+			 * boundary. Splitting at the last dot instead put the
+			 * boundary inside a column name that carries one - the
+			 * web side treats "web.grp" as ordinary - so the host
+			 * came out as "host.web", resolved to nothing, and the
+			 * file was deleted as an orphan.
+			 */
+			delim = strchr(hent->d_name, '.');
 			if (!delim) {
 				/* It's a host history file (no dot in filename), but the host does not exist */
 				errprintf("Orphaned host-history file %s - no host\n", hent->d_name);
@@ -464,13 +544,30 @@ int main(int argc, char *argv[])
 			}
 
 			*delim = '\0'; hname = strdup(hent->d_name); tname = delim+1; *delim = '.';
+
+			/* Ambiguous only when the host half carries no encoded dot
+			 * and the column half does: then the same name could be a
+			 * host-history file for a host that has since been removed. */
+			ambiguous = ((strchr(hname, ',') == NULL) && (strchr(tname, '.') != NULL));
+
 			p = strchr(hname, ','); while (p) { *p = '.'; p = strchr(p, ','); }
-			hostname = knownhost(hname, hostip, ghosthandling);
+			hostname = knownhost_ex(hname, hostip, ghosthandling, &inperiod);
+			if (hostname && ambiguous && looks_like_hosthistory(hent->d_name)) {
+				/* It is a host-history file, and its own host is gone. */
+				hostname = NULL;
+			}
 			if (!hostname) {
 				errprintf("Orphaned service-history file %s - no host\n", hent->d_name);
 				if (dropfiles) add_to_filelist(hent->d_name, F_DROPIT);
 			}
-			else if (dropsvcs && !validstatus(hostname, tname)) {
+			/*
+			 * validstatus() asks the running xymond what it is
+			 * tracking now. A host outside its window is not on that
+			 * board precisely because it is scheduled out, so its
+			 * services would all look retired - the deletion #281 is
+			 * about, reached one gate later.
+			 */
+			else if (dropsvcs && inperiod && !validstatus(hostname, tname)) {
 				errprintf("Orphaned service-history file %s - no service\n", hent->d_name);
 				if (dropfiles) add_to_filelist(hent->d_name, F_DROPIT);
 			}
