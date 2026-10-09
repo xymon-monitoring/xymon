@@ -411,6 +411,25 @@ xymon_sslcflags() {
 	printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_sslcflags 2>/dev/null || true
 }
 
+# make_test_cert KEY CERT -- copy the suite's self-signed certificate to CERT
+# and its unencrypted key to KEY, for a test's TLS peer.
+#
+# The pair is checked in, not made by the test: the openssl command is missing
+# from many lanes' images, and NetBSD 10 and 11 have no openssl.cnf, without
+# which openssl req stops (NetBSD PR 60365). The key is for tests only and
+# protects nothing. It is EC P-256, which every crypto policy accepts, valid
+# until 9966, and names every host the TLS tests connect to. Made once with:
+#
+#   openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+#     -keyout test-key.pem -out test-cert.pem -days 2900000 -subj /CN=xymon-test \
+#     -addext subjectAltName=DNS:mail.test.local,DNS:localhost,IP:127.0.0.1
+make_test_cert() {
+	local lib
+
+	lib=$(dirname "${BASH_SOURCE[0]}")
+	cp "$lib/test-key.pem" "$1" && cp "$lib/test-cert.pem" "$2"
+}
+
 # require_shm_segments N -- skip unless one process may attach N SysV
 # shared-memory segments. xymond attaches one per channel, and macOS ships
 # kern.sysv.shmseg=8 against the nine channels xymond sets up, so a stock Mac
