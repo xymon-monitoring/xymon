@@ -106,9 +106,9 @@ __XYMON_TESTS_RUNROOT=$(mktemp -d "${TMPDIR:-/tmp}/xymon-run.XXXXXX") || exit 1
 export __XYMON_TESTS_RUNROOT
 TMPDIR=$__XYMON_TESTS_RUNROOT
 export TMPDIR
-trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial"' EXIT
-trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial"; exit 130' INT
-trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial"; exit 143' TERM
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial" "$__XYMON_TESTS_RUNROOT.leftovers"' EXIT
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial" "$__XYMON_TESTS_RUNROOT.leftovers"; exit 130' INT
+trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial" "$__XYMON_TESTS_RUNROOT.leftovers"; exit 143' TERM
 
 # XYMON_VARIANT names the build this tree is, so the runner can leave out the
 # tests whose subject that build does not contain. Unset -- a developer run, or
@@ -200,6 +200,16 @@ partial_log=$__XYMON_TESTS_RUNROOT.partial
 XYMON_TESTS_PARTIAL_LOG=$partial_log
 export XYMON_TESTS_PARTIAL_LOG
 
+# What each test leaves in the run directory, as "NAME TEST" lines, so that
+# tests/final/no-leftovers.sh can say which test left it. Beside the run
+# directory for the same reason as the partial log. A leftover is recorded
+# when it is first seen after a test ends; one left by a process that outlives
+# its test is put on the test that was running when it appeared.
+leftover_log=$__XYMON_TESTS_RUNROOT.leftovers
+: >"$leftover_log" || exit 2
+XYMON_TESTS_LEFTOVER_LOG=$leftover_log
+export XYMON_TESTS_LEFTOVER_LOG
+
 pass=0; skip=0; fail=0; filtered=0; failed=''; filtered_areas=''; skipped_in=''
 run_one() {
 	t=$1
@@ -242,8 +252,19 @@ run_one() {
 	fi
 
 	group "$t"
+	runroot_before=$(ls -A "$__XYMON_TESTS_RUNROOT" 2>/dev/null)
 	"./$t"
 	rc=$?
+	for entry in $(ls -A "$__XYMON_TESTS_RUNROOT" 2>/dev/null); do
+		case "
+$runroot_before
+" in
+			*"
+$entry
+"*) ;;
+			*) printf '%s %s\n' "$entry" "$t" >>"$leftover_log" ;;
+		esac
+	done
 	case $rc in
 		0)  printf '  ok\n';           pass=$((pass + 1)) ;;
 		77) printf '  skip (rc=77)\n'; skip=$((skip + 1))
