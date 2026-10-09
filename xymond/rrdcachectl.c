@@ -31,8 +31,9 @@ static char rcsid[] = "$Id$";
 #include <signal.h>
 #include <fcntl.h>
 
+#include "../lib/environ.h"
+
 #define errprintf printf
-#define xgetenv getenv
 
 static struct sockaddr_un myaddr;
 static socklen_t myaddrsz = 0;
@@ -41,6 +42,8 @@ static int ctlsocket = -1;
 
 int init_svc(char *sockfn)
 {
+	char *rundir;
+
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (ctlsocket == -1) {
 		errprintf("Cannot get socket: %s\n", strerror(errno));
@@ -49,7 +52,16 @@ int init_svc(char *sockfn)
 
 	memset(&myaddr, 0, sizeof(myaddr));
 	myaddr.sun_family = AF_UNIX;
-	sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONTMP"), sockfn);
+	/* The directory xymond_rrd binds in. Bounded: sun_path is
+	   platform-dependent, and as small as 92 bytes. */
+	rundir = xymon_rundir();
+	if (snprintf(myaddr.sun_path, sizeof(myaddr.sun_path), "%s/%s",
+		     rundir, sockfn) >= (int)sizeof(myaddr.sun_path)) {
+		errprintf("Socket path does not fit: %s/%s\n", rundir, sockfn);
+		close(ctlsocket);
+		ctlsocket = -1;
+		return -1;
+	}
 	myaddrsz = sizeof(myaddr);
 
 	if (connect(ctlsocket, (struct sockaddr *)&myaddr, myaddrsz) == -1) {
