@@ -30,11 +30,21 @@ rmdir "$sentinel" 2>/dev/null || rm -rf "$sentinel"
 	"the sweep did not see a directory that was plainly there, so the assertion
 below would pass whatever the suite had left"
 
+# Each one with the test the runner saw it appear after (tests/testsuite
+# records them): without it the path is all there is to go on, and a leftover
+# that turns up once in a while cannot be traced back by running it again.
+owned=
+for path in $leftovers; do
+	owner=$(awk -v e="${path##*/}" '$1 == e { print $2; exit }' \
+		"${XYMON_TESTS_LEFTOVER_LOG:-/dev/null}" 2>/dev/null)
+	owned="$owned$path  (left by ${owner:-no test the runner saw})
+"
+done
+
 [ -z "$leftovers" ] || fail \
 	"the suite finished and left these in $__XYMON_TESTS_RUNROOT:
 
-$leftovers
-
+$owned
 A test that makes a temp directory removes it, whether it passed or failed --
 register_cleanup in tests/lib/assert.sh does this and is what every other test
 uses. Something here did not. The run directory is removed when the run ends,
