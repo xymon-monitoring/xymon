@@ -390,6 +390,27 @@ xymon_ldflags() {
 	printf '%s' "$search $rpath $libs"
 }
 
+# xymon_sslcflags ROOT -- the compile flags the build gives its OpenSSL users,
+# for a harness that includes an OpenSSL header.
+#
+# The build adds $(SSLFLAGS) $(SSLINCDIR) only to the compile lines of the
+# files that use OpenSSL (xymonnet/Makefile, for one), never to CFLAGS, so
+# xymon_cflags() does not carry them either. Where OpenSSL is outside the
+# compiler's default path - Homebrew's keg-only openssl@3 on macOS - a harness
+# compiled without them fails on <openssl/ssl.h>. Asked of make, like
+# xymon_ldflags(); empty on an unconfigured tree.
+xymon_sslcflags() {
+	local root=$1 probe
+
+	[ -f "$root/Makefile" ] || return 0
+	require_gnu_make
+	# shellcheck disable=SC2016  # $(SSLFLAGS) etc. are make's to expand, not the shell's
+	probe='__xymon_sslcflags:
+	@printf "%s\n" "$(SSLFLAGS) $(SSLINCDIR)"
+'
+	printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_sslcflags 2>/dev/null || true
+}
+
 # require_shm_segments N -- skip unless one process may attach N SysV
 # shared-memory segments. xymond attaches one per channel, and macOS ships
 # kern.sysv.shmseg=8 against the nine channels xymond sets up, so a stock Mac
