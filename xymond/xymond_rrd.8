@@ -72,6 +72,16 @@ Disable the actual writing of RRD files. This is only really useful if
 you send all of the data destined for the RRD files to an external
 processor (the \-\-extra\-script or \-\-processor options).
 
+.IP "\fB--listen\fR=\fIIP:PORT\fR, \fB--locator\fR=\fIIP:PORT\fR"
+Run as a network worker: accept messages on the TCP address given by
+\fB--listen\fR instead of from
+.I xymond_channel(8),
+and register with the service locator at \fB--locator\fR; both are needed for
+this mode. \fB--locatorid\fR, \fB--locatorweight\fR and \fB--locatorextra\fR
+tune the registration. All five, and how the locator chooses a server, are
+described in
+.I xymond_locator(8).
+
 .SH ENVIRONMENT
 .IP "\fBTEST2RRD\fR"
 Defines the mapping between a status-log columnname and the corresponding
@@ -477,5 +487,5 @@ reporting.
 
 
 .SH "SEE ALSO"
-xymond_channel(8), xymond(8), xymonserver.cfg(5), xymon(7)
+xymond_channel(8), xymond(8), xymonserver.cfg(5), xymon(7), xymond_locator(8)
 
