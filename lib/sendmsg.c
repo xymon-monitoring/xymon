@@ -42,6 +42,7 @@ static char rcsid[] = "$Id$";
 #include <sys/msg.h>
 
 #include "libxymon.h"
+#include "xymontls.h"
 
 #define SENDRETRIES 2
 
@@ -164,6 +165,126 @@ static void setup_transport(char *recipient)
 	dbgprintf("xymonproxyport = %d\n", xymonproxyport);
 }
 
+/*
+ * Keep n bytes of the reply: write them to respfd, or append them to
+ * *respstr. Returns 1 when that was the last of it -- a caller that did not
+ * ask for the full response stops at the first piece holding no newline.
+ */
+static int keep_response(char *outp, int n, FILE *respfd, char **respstr, int *respstrsz, int *respstrlen, int fullresponse)
+{
+	if (respfd) {
+		fwrite(outp, n, 1, respfd);
+	}
+	else if (respstr) {
+		char *respend;
+
+		if (*respstrsz == 0) {
+			*respstrsz = (n+32768);
+			*respstr = (char *)malloc(*respstrsz);
+		}
+		else if ((n + *respstrlen) >= *respstrsz) {
+			*respstrsz += (n+32768);
+			*respstr = (char *)realloc(*respstr, *respstrsz);
+		}
+		respend = (*respstr) + *respstrlen;
+		memcpy(respend, outp, n);
+		*(respend + n) = '\0';
+		*respstrlen += n;
+	}
+	return (!fullresponse && (memchr(outp, '\n', n) == NULL));
+}
+
+#ifdef HAVE_OPENSSL
+#include <openssl/err.h>
+
+/*
+ * The conversation over TLS, on a connected socket: the handshake, the
+ * message, close_notify -- TLS's half-close, as shutdown(SHUT_WR) is the
+ * plaintext one -- and the reply until the server's close_notify. The
+ * settings are XYMON_TLS_CA, _CERT, _KEY, _SNI and _VERIFY. A failure is
+ * the send's failure: there is no retry in plaintext.
+ *
+ * The server's close_notify is read even when no reply is wanted: it says
+ * the message was taken. Under TLS 1.3 our side of the handshake is done
+ * before the server has checked our certificate, so a refusal arrives only
+ * here, as an alert, and would otherwise look like a message sent.
+ */
+static int tls_conversation(int sockfd, char *host, char *label, char *message, int timeout,
+			    FILE *respfd, char **respstr, int *respstrsz, int *respstrlen, int fullresponse)
+{
+	static SSL_CTX *ctx = NULL;
+	char err[512], buf[32768], reason[256];
+	unsigned long e;
+	char *v = xgetenv("XYMON_TLS_VERIFY"), *sni = xgetenv("XYMON_TLS_SNI");
+	xymontls_verify_t verify = XYMONTLS_VERIFY_FULL;
+	SSL *ssl;
+	struct timeval tv;
+	int n, done = 0, result = XYMONSEND_OK;
+	size_t sent = 0, len = strlen(message);
+
+	if (v && (strcmp(v, "peer") == 0)) verify = XYMONTLS_VERIFY_PEER;
+	else if (v && (strcmp(v, "none") == 0)) verify = XYMONTLS_VERIFY_NONE;
+
+	if (!ctx) {
+		char *ca = xgetenv("XYMON_TLS_CA"), *cert = xgetenv("XYMON_TLS_CERT"), *key = xgetenv("XYMON_TLS_KEY");
+
+		ctx = xymontls_client_ctx((ca && *ca) ? ca : NULL, (cert && *cert) ? cert : NULL,
+					  (key && *key) ? key : NULL, verify, err, sizeof(err));
+		if (!ctx) {
+			snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "TLS to Xymon daemon@%s: %s", label, err);
+			return XYMONSEND_ECONNFAILED;
+		}
+	}
+
+	/* The exchange runs blocking, bounded by the timeout like the plaintext one */
+	fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFL) & ~O_NONBLOCK);
+	tv.tv_sec = timeout; tv.tv_usec = 0;
+	if (timeout) {
+		setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+		setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+	}
+
+	ssl = SSL_new(ctx);
+	SSL_set_fd(ssl, sockfd);
+	if (!xymontls_client_expect(ssl, ((sni && *sni) ? sni : host), verify) || (SSL_connect(ssl) != 1)) {
+		long vr = SSL_get_verify_result(ssl);
+		snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "TLS handshake with Xymon daemon@%s failed%s%s",
+			 label, (vr != X509_V_OK) ? ": " : "", (vr != X509_V_OK) ? X509_verify_cert_error_string(vr) : "");
+		SSL_free(ssl);
+		return XYMONSEND_ECONNFAILED;
+	}
+
+	while (sent < len) {
+		n = SSL_write(ssl, message + sent, (int)(len - sent));
+		if (n <= 0) {
+			snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Write error while sending message to Xymon daemon@%s over TLS", label);
+			SSL_free(ssl);
+			return XYMONSEND_EWRITEERROR;
+		}
+		sent += n;
+	}
+	SSL_shutdown(ssl);	/* close_notify: the message is complete */
+
+	while ((n = SSL_read(ssl, buf, sizeof(buf)-1)) > 0) {
+		if (done || (!respfd && !respstr)) continue;	/* not wanted, read on to close_notify */
+		buf[n] = '\0';
+		done = keep_response(buf, n, respfd, respstr, respstrsz, respstrlen, fullresponse);
+	}
+	if (SSL_get_error(ssl, n) != SSL_ERROR_ZERO_RETURN) {
+		e = ERR_get_error();
+		if (e) ERR_error_string_n(e, reason, sizeof(reason));
+		else snprintf(reason, sizeof(reason), "the connection ended without close_notify");
+		snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)),
+			 "Xymon daemon@%s did not take the message over TLS: %s", label, reason);
+		result = XYMONSEND_EREADERROR;
+	}
+	ERR_clear_error();
+
+	SSL_free(ssl);
+	return result;
+}
+#endif
+
 static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **respstr, int fullresponse, int timeout)
 {
 	struct addrinfo hints, *addrs = NULL, *ai = NULL;
@@ -182,6 +303,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 	SBUF_DEFINE(httpmessage);
 	char recvbuf[32768];
 	int haveseenhttphdrs = 1;
+	int usetls = 0;
 	int respstrsz = 0;
 	int respstrlen = 0;
 	int result = XYMONSEND_OK;
@@ -197,11 +319,27 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 	dbgprintf("Recipient listed as '%s'\n", recipient);
 
 	if (strncmp(recipient, "http://", strlen("http://")) != 0) {
-		/* Standard communications, directly to Xymon daemon */
-		rcptbuf = strdup(recipient);
-		rcptport = xymondportnumber;
+		/*
+		 * Standard communications, directly to Xymon daemon: "host[:port]",
+		 * or "xymon://" before it, or "xymons://" for TLS -- on XYMONDTLSPORT
+		 * unless a port is given.
+		 */
+		char *r = recipient, *slash;
+
+		if (strncmp(r, "xymons://", 9) == 0) { usetls = 1; r += 9; }
+		else if (strncmp(r, "xymon://", 8) == 0) r += 8;
+		rcptbuf = strdup(r);
+		if ((slash = strchr(rcptbuf, '/')) != NULL) *slash = '\0';
+		rcptport = (usetls ? atoi(xgetenv("XYMONDTLSPORT")) : xymondportnumber);
 		rcptip = split_hostport(rcptbuf, &rcptport);
-		dbgprintf("Standard protocol on port %d\n", rcptport);
+		dbgprintf("Standard protocol%s on port %d\n", (usetls ? " over TLS" : ""), rcptport);
+#ifndef HAVE_OPENSSL
+		if (usetls) {
+			snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Cannot send to %s: this build has no TLS support", recipient);
+			xfree(rcptbuf);
+			return XYMONSEND_ECONNFAILED;
+		}
+#endif
 	}
 	else {
 		char *posturl = NULL;
@@ -384,6 +522,13 @@ retry_connect:
 					result = XYMONSEND_ECONNFAILED;
 					goto done;
 				}
+#ifdef HAVE_OPENSSL
+				if (usetls) {
+					result = tls_conversation(sockfd, rcptip, rcptlabel, msgptr, timeout,
+								  respfd, respstr, &respstrsz, &respstrlen, fullresponse);
+					goto done;
+				}
+#endif
 			}
 
 			if (!rdone && FD_ISSET(sockfd, &readfds)) {
@@ -414,28 +559,7 @@ retry_connect:
 					else outp = recvbuf;
 
 					if (n > 0) {
-						if (respfd) {
-							fwrite(outp, n, 1, respfd);
-						}
-						else if (respstr) {
-							char *respend;
-
-							if (respstrsz == 0) {
-								respstrsz = (n+sizeof(recvbuf));
-								*respstr = (char *)malloc(respstrsz);
-							}
-							else if ((n+respstrlen) >= respstrsz) {
-								respstrsz += (n+sizeof(recvbuf));
-								*respstr = (char *)realloc(*respstr, respstrsz);
-							}
-							respend = (*respstr) + respstrlen;
-							memcpy(respend, outp, n);
-							*(respend + n) = '\0';
-							respstrlen += n;
-						}
-						if (!fullresponse) {
-							rdone = (strchr(outp, '\n') == NULL);
-						}
+						rdone = keep_response(outp, n, respfd, respstr, &respstrsz, &respstrlen, fullresponse);
 					}
 				}
 				else rdone = 1;

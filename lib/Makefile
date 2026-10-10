@@ -54,6 +54,9 @@ $(XYMONCLIENTCOMMLIB): $(XYMONCLIENTCOMMLIBOBJS)
 	ar cr $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTCOMMLIBOBJS)
 	ranlib $(XYMONCLIENTCOMMLIB) || echo ""
 
+sendmsg.o: sendmsg.c xymontls.h
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ sendmsg.c
+
 xymontls.o: xymontls.c xymontls.h
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ xymontls.c
 
