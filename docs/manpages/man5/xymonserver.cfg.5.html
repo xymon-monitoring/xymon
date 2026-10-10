@@ -526,6 +526,15 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       $XYMONHOME/etc/tls/xymond.key.
     <p class="Pp"></p>
   </dd>
+  <dt id="XYMOND_TLS_CA"><a class="permalink" href="#XYMOND_TLS_CA"><b>XYMOND_TLS_CA</b></a></dt>
+  <dd>The file of CA certificates that a client certificate on xymond's
+      --tls-listen ports must chain to. When set, xymond asks TLS clients for a
+      certificate; a client that presents none is still served. What a verified
+      certificate allows is in <a href="../man8/xymond.8.html">xymond</a>(8), under --status-senders. Read at
+      startup and on SIGHUP. Default: unset, and no client certificate is asked
+      for.
+    <p class="Pp"></p>
+  </dd>
   <dt id="XYMON_TLS_CA"><a class="permalink" href="#XYMON_TLS_CA"><b>XYMON_TLS_CA</b></a></dt>
   <dd>The file of CA certificates that a &quot;xymons://&quot; recipient's
       certificate must chain to. Default: unset, which uses the system's trusted
