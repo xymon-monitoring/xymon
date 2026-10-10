@@ -484,14 +484,17 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   FOR SENDING MESSAGES TO XYMON</a></h1>
 <dl class="Bl-tag">
   <dt id="XYMSRV"><a class="permalink" href="#XYMSRV"><b>XYMSRV</b></a></dt>
-  <dd>The IP-address used to contact the <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> service. Used by
-      clients and the tools that perform network tests. Default: $XYMONSERVERIP
+  <dd>The address used to contact the <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> service: an IPv4 or IPv6
+      address or a hostname, written as the RECIPIENT of <i><a href="../man1/xymon.1.html">xymon</a>(1)</i> is.
+      Used by clients and the tools that perform network tests. Default:
+      $XYMONSERVERIP
     <p class="Pp"></p>
   </dd>
   <dt id="XYMSERVERS"><a class="permalink" href="#XYMSERVERS"><b>XYMSERVERS</b></a></dt>
-  <dd>List of IP-addresses. Clients and network test tools will try to send
-      status reports to a Xymon server running on each of these addresses. This
-      setting is only used if XYMSRV=0.0.0.0.
+  <dd>List of addresses, IPv4 or IPv6, separated by spaces or tabs. Clients and
+      network test tools will try to send status reports to a Xymon server
+      running on each of these addresses. This setting is only used if
+      XYMSRV=0.0.0.0.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMON_TIMEOUT"><a class="permalink" href="#XYMON_TIMEOUT"><b>XYMON_TIMEOUT</b></a></dt>
