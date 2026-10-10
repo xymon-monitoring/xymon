@@ -585,8 +585,13 @@ void load_tests(void)
 							  xmh_item(hwalk, XMH_HOSTNAME), testspec);
 					}
 					else {
+						char *lineip = xmh_item(hwalk, XMH_IP);
+
 						s = httptest;
-						if (!url.desturl->ip)
+						/* A line with an address serves its URL tests (#516): only a
+						   URL with no address of its own, on a 0.0.0.0 line or behind a
+						   proxy, has a name to resolve. */
+						if (!url.desturl->ip && (url.proxyurl || !lineip || (strcmp(lineip, "0.0.0.0") == 0)))
 							add_url_to_dns_queue(testspec);
 					}
 				}
@@ -843,7 +848,8 @@ void load_tests(void)
 			}
 	
 			snprintf(h->ip, sizeof(h->ip), "%s", xmh_item(hwalk, XMH_IP));
-			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
+			/* Only 0.0.0.0 asks for the name to be resolved; any other address is used as given (#516) */
+			if ((strcmp(h->ip, "0.0.0.0") == 0) && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {
 			/* No network tests for this host, so ignore it */
@@ -861,12 +867,30 @@ void load_tests(void)
 	return;
 }
 
+/* Add a line to the "Warning output" of xymonnet's own status (--report) */
+static void add_warning(char *msg)
+{
+	if (warnbuf == NULL) {
+		SBUF_MALLOC(warnbuf, 8192);
+		*warnbuf = '\0';
+	}
+	else if ((strlen(warnbuf) + strlen(msg)) > warnbuf_buflen) {
+		SBUF_REALLOC(warnbuf, warnbuf_buflen + 8192);
+	}
+	strncat(warnbuf, msg, (warnbuf_buflen - strlen(warnbuf)));
+}
+
 char *ip_to_test(testedhost_t *h)
 {
 	char *dnsresult;
 	int nullip = (strcmp(h->ip, "0.0.0.0") == 0);
 
-	if (!nullip && (h->testip || (dnsmethod == IP_ONLY))) {
+	/*
+	 * The hosts.cfg address is the one tested, used as given; only 0.0.0.0
+	 * asks for the hostname to be resolved (#516). A wrong address is not
+	 * replaced by whatever DNS says, so it shows as a failing test.
+	 */
+	if (!nullip) {
 		/* Already have the IP setup */
 	}
 	else if (h->dodns) {
@@ -874,9 +898,6 @@ char *ip_to_test(testedhost_t *h)
 
 		if (dnsresult) {
 			snprintf(h->ip, sizeof(h->ip), "%s", dnsresult);
-		}
-		else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
-			/* Already have the IP setup */
 		}
 		else {
 			char msg[512];
@@ -886,14 +907,7 @@ char *ip_to_test(testedhost_t *h)
 			errprintf("xymonnet: Cannot resolve IP for host %s\n", h->hostname);
  */
 			snprintf(msg, sizeof(msg), "xymonnet: Cannot resolve IP for host %s\n", h->hostname);
-			if (warnbuf == NULL) {
-				SBUF_MALLOC(warnbuf, 8192);
-				*warnbuf = '\0';
-			}
-			else if ((strlen(warnbuf) + strlen(msg)) > warnbuf_buflen) {
-				SBUF_REALLOC(warnbuf, warnbuf_buflen + 8192);
-			}
-			strncat(warnbuf, msg, (warnbuf_buflen - strlen(warnbuf)));
+			add_warning(msg);
 		}
 	}
 
@@ -1285,7 +1299,8 @@ int finish_ping_service(service_t *service)
 	char 		*p;
 	char		l[MAX_LINE_LEN];
 	char		pingip[MAX_LINE_LEN];
-	int		ip1, ip2, ip3, ip4;
+	struct in_addr	probe4;
+	struct in6_addr	probe6;
 	int		pingstatus, failed = 0, i;
 	char		fn[PATH_MAX];
 
@@ -1367,9 +1382,13 @@ int finish_ping_service(service_t *service)
 			/* The test did run, and we have a result-file. Look at it. */
 			while (fgets(l, sizeof(l), logfd)) {
 				p = strchr(l, '\n'); if (p) *p = '\0';
-				if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
-
-					snprintf(pingip, sizeof(pingip), "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+				/* "ADDRESS is alive": the address is the first word, IPv4 or IPv6 */
+				p = strchr(l, ' ');
+				if (p && ((p - l) < IP_ADDR_STRLEN)) {
+					memcpy(pingip, l, (p - l)); pingip[p - l] = '\0';
+				}
+				else *pingip = '\0';
+				if ((inet_pton(AF_INET, pingip, &probe4) == 1) || (inet_pton(AF_INET6, pingip, &probe6) == 1)) {
 
 					/*
 					 * Need to loop through all testitems - there may be multiple entries for

@@ -374,6 +374,15 @@ void add_http_test(testitem_t *t)
 			dbgprintf("Could not resolve URL hostname '%s'\n", httptest->weburl.proxyurl->host);
 		}
 	}
+	else if ((httptest->weburl.desturl->ip == NULL) && hinfo && xmh_item(hinfo, XMH_IP) &&
+		 (strcmp(xmh_item(hinfo, XMH_IP), "0.0.0.0") != 0)) {
+		/*
+		 * A line with an address serves its URL tests (#516): connect there,
+		 * as "=IP" would, while Host: and SNI keep the URL's name. The
+		 * address as written in hosts.cfg, not h->ip, which DNS may have set.
+		 */
+		httptest->weburl.desturl->ip = strdup(xmh_item(hinfo, XMH_IP));
+	}
 	else if (httptest->weburl.desturl->ip == NULL) {
 		dnsip = dnsresolve(httptest->weburl.desturl->host);
 		if (dnsip) {

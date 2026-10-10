@@ -28,6 +28,19 @@ Listing a host with only IP-address and hostname will cause a network
 test to be executed for the host - the connectivity test is enabled
 by default, but no other tests.
 .sp
+The IP-address is an IPv4 address, such as 192.0.2.10, or an IPv6 address,
+such as 2001:db8::10. 0.0.0.0 asks for the hostname to be resolved instead;
+its IPv6 form "::" is not accepted, and a line using it is skipped with an
+error. xymonnet tests the IP-address as it is written, with no name lookup,
+and so do the http and https tests on the same line (see "Testing sites by
+IP-address" below). Only 0.0.0.0 has the hostname looked up, and to an IPv4
+address.
+The connectivity test of an IPv6 host needs a ping program that handles
+IPv6, such as fping 4 or later (FPING in
+.I xymonserver.cfg(5)\fR):
+.I xymonping(1)
+handles IPv4 only.
+.sp
 The hostname is the host's canonical name: it keys the status database and
 appears in web-page URLs and RRD file paths. It is reachable through the web
 interface only when built from the characters
@@ -674,9 +687,9 @@ using this option.
 .SH NETWORK TEST SETTINGS
 
 .IP "\fBtestip\fR"
-By default, Xymon will perform a name lookup of the hostname
-to get the IP address it will use for network tests. This tag
-causes Xymon to use the IP listed in the hosts.cfg file.
+Use the IP listed in the hosts.cfg file for network tests. This is
+what xymonnet does for every host whose IP-address is not 0.0.0.0, so
+the tag changes nothing; it is still accepted.
 
 .IP "\fBNET:location\fR"
 This tag defines the host as being tested from a specific location.
@@ -1164,15 +1177,14 @@ Note that SSLv2 support is disabled in all current OpenSSL releases.
 TLS version-specific scheme testing requires OpenSSL 1.0.1 or higher.
 
 .IP "Testing sites by IP-address"
-xymonnet ignores the "testip" tag normally used to force a
-test to use the IP-address from the hosts.cfg file instead of
-the hostname, when it performs http and https tests.
+On a line with an IP-address, xymonnet runs the line's http and https
+tests against that address, and still asks for the website named in the
+URL: the hostname goes in the request's "Host:" header, so virtual hosts
+are tested as they are served. On a 0.0.0.0 line
+the hostname in the URL is looked up instead. A URL sent through a proxy
+connects to the proxy.
 
-The reason for this is that it interacts badly with virtual
-hosts, especially if these are IP-based as is common with
-https-websites.
-
-Instead the IP-address to connect to can be overridden by
+The IP-address to connect to can also be given for one URL, by
 specifying it as:
 
 	http://www.sample.com=1.2.3.4/index.html
