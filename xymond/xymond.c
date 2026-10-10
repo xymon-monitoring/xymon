@@ -3847,8 +3847,25 @@ static int inbuf_room(conn_t *c)
  */
 #ifdef HAVE_OPENSSL
 #include <openssl/err.h>
+#include <openssl/x509.h>
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#define X509_get0_notBefore X509_get_notBefore
+#define X509_get0_notAfter X509_get_notAfter
+#endif
 
 static SSL_CTX *tlsctx = NULL;
+
+/* Whole days the certificate in ctx has left; -1 when it has expired, -2 when it is not valid yet */
+static int tls_days_left(SSL_CTX *ctx)
+{
+	X509 *x = SSL_CTX_get0_certificate(ctx);
+	int days, secs;
+
+	if (X509_cmp_current_time(X509_get0_notBefore(x)) > 0) return -2;
+	if (!ASN1_TIME_diff(&days, &secs, NULL, X509_get0_notAfter(x)) || (days < 0) || ((days == 0) && (secs <= 0))) return -1;
+	return days;
+}
 
 /* The server context, from XYMOND_TLS_CERT, XYMOND_TLS_KEY, XYMOND_TLS_CA and XYMOND_TLS_REQUIRE_CERT */
 static SSL_CTX *tls_load(void)
@@ -3868,7 +3885,17 @@ static SSL_CTX *tls_load(void)
 	   is still served, unless XYMOND_TLS_REQUIRE_CERT -- which needs the CA */
 	ctx = xymontls_server_ctx(cert, ((key && *key) ? key : NULL), ((ca && *ca) ? ca : NULL),
 				  (strcmp(require, "TRUE") == 0), err, sizeof(err));
-	if (!ctx) errprintf("TLS: %s\n", err);
+	if (!ctx) {
+		errprintf("TLS: %s\n", err);
+		return NULL;
+	}
+
+	/* Served all the same: refusing to start would stop the plaintext port
+	   too, for a certificate only the TLS clients need */
+	switch (tls_days_left(ctx)) {
+	  case -1: errprintf("TLS: WARNING: %s has expired; clients that verify it will refuse it\n", cert); break;
+	  case -2: errprintf("TLS: WARNING: %s is not valid yet; clients that verify it will refuse it\n", cert); break;
+	}
 	return ctx;
 }
 
@@ -3886,6 +3913,29 @@ static void tls_reload(void)
 	SSL_CTX_free(tlsctx);	/* sessions in progress hold their own reference */
 	tlsctx = ctx;
 	errprintf("TLS: reloaded %s\n", xgetenv("XYMOND_TLS_CERT"));
+}
+
+/*
+ * --check-tls: load what --tls-listen would, as startup and SIGHUP do, and
+ * say whether it would be served. A certificate outside its validity
+ * period, which startup serves with a warning, fails here: no client that
+ * verifies it would accept it.
+ */
+static int check_tls(void)
+{
+	SSL_CTX *ctx = tls_load();
+	int days;
+
+	if (!ctx) return 1;
+	days = tls_days_left(ctx);
+	if (days < 0) return 1;		/* tls_load() said why */
+
+	errprintf("TLS: %s loads with its key and expires in %d days; client certificates %s\n",
+		  xgetenv("XYMOND_TLS_CERT"), days,
+		  (*xgetenv("XYMOND_TLS_CA") == '\0') ? "are not asked for" :
+		  ((strcmp(xgetenv("XYMOND_TLS_REQUIRE_CERT"), "TRUE") == 0) ? "are required" : "are asked for"));
+	SSL_CTX_free(ctx);
+	return 0;
 }
 
 static int tls_start(conn_t *c)
@@ -3991,6 +4041,11 @@ static void tls_free(conn_t *c)
 	c->ssl = NULL;
 }
 #else
+static int check_tls(void)
+{
+	errprintf("--check-tls: this xymond was built without OpenSSL\n");
+	return 1;
+}
 static void tls_reload(void) { }
 static int tls_wants(conn_t *c, int want) { return 0; }
 static void tls_close(conn_t *c) { }
@@ -6192,6 +6247,7 @@ int main(int argc, char *argv[])
 	int listenport = 0;		/* the default port for entries without one */
 	int want_loopback = 1;		/* keep a loopback listener unless told not to */
 	char *tlslistenspec = NULL;	/* --tls-listen, as --listen */
+	int checktls = 0;		/* --check-tls: load the TLS settings, report, exit */
 	int tlslistenport = 0;
 	char *hostsfn = NULL;
 	char *restartfn = NULL;
@@ -6258,6 +6314,9 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--tls-listen=")) {
 			tlslistenspec = strdup(strchr(argv[argi], '=') + 1);
+		}
+		else if (strcmp(argv[argi], "--check-tls") == 0) {
+			checktls = 1;
 		}
 		else if (strcmp(argv[argi], "--no-loopback") == 0) {
 			want_loopback = 0;
@@ -6439,6 +6498,7 @@ int main(int argc, char *argv[])
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
 			printf("\t--tls-listen=IP:PORT          : An address the daemon takes TLS connections on\n");
+			printf("\t--check-tls                   : Check the TLS settings as --tls-listen would load them, and exit\n");
 			printf("\t--hosts=FILENAME              : The hosts.cfg file\n");
 			printf("\t--ghosts=allow|drop|log       : How to handle unknown hosts\n");
 			return 1;
@@ -6469,6 +6529,8 @@ int main(int argc, char *argv[])
 			listenport = 1984;
 	}
 	tlslistenport = atoi(xgetenv("XYMONDTLSPORT"));
+
+	if (checktls) return check_tls();
 
 	/* No TLS port without its certificate: a client asking for TLS must not
 	   find a port that cannot give it. */

@@ -143,8 +143,21 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
       TRUE. What a client certificate allows is under <b>--status-senders</b>.
       xymond does not start when they cannot be loaded, or when others than the
       key's owner and group may read or write it; SIGHUP loads them again (see
-      SIGNALS). Without this option xymond takes no TLS connections, and a
-      xymond built without OpenSSL refuses it.
+      SIGNALS). A certificate that has expired or is not valid yet is served all
+      the same, with a warning in the log, so that the plaintext port is not
+      stopped over it; <b>--check-tls</b> fails it. Without this option xymond
+      takes no TLS connections, and a xymond built without OpenSSL refuses it.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="check-tls"><a class="permalink" href="#check-tls"><b>--check-tls</b></a></dt>
+  <dd>Load the TLS certificate, key and CA as <b>--tls-listen</b> would, say
+      whether they would be served, and exit: 0 when they would, 1 when not,
+      with the reason. It also fails a certificate that has expired or is not
+      valid yet, which xymond serves with a warning but no client that verifies
+      it accepts. On success it says how many days the certificate has left, and
+      whether client certificates are asked for or required. It binds and starts
+      nothing, so it can be run beside a running xymond, as the user xymond runs
+      as, before a restart or after renewing a certificate.
     <p class="Pp"></p>
   </dd>
   <dt id="no-loopback"><a class="permalink" href="#no-loopback"><b>--no-loopback</b></a></dt>
