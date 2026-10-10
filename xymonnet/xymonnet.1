@@ -97,6 +97,16 @@ Determines how xymonnet finds the IP addresses of the hosts to test.
 By default (the "standard"), xymonnet does a DNS lookup of the hostname
 to determine the IP address, unless the host has the "testip"
 tag, or the DNS lookup fails.
+When the lookup gives another address than the one in hosts.cfg,
+and that one is not 0.0.0.0, xymonnet tests the address DNS gave and
+names the host under "Warning output" in its own status (see
+"\-\-report"). A future release will test the hosts.cfg address
+instead: correct it, or write 0.0.0.0 to keep resolving the name.
+An http or https test on a line with an address, for a URL whose host
+is not the line's name, is named there too: a future release will
+fetch that URL from the line's address. Move it to a 0.0.0.0 line to
+keep fetching it where its name resolves, or give it an address of its
+own with "=IP".
 .br
 With "\-\-dns=only" xymonnet will ONLY do the DNS lookup;
 if it fails, then all services on that host will be
