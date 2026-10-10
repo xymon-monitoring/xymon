@@ -387,13 +387,17 @@ the link template, so no link is added for that host.
 
 .SH SETTINGS FOR SENDING MESSAGES TO XYMON
 .IP "\fBXYMSRV\fR"
-The IP-address used to contact the
+The address used to contact the
 .I xymond(8)
-service. Used by clients and the tools that perform network tests.
+service: an IPv4 or IPv6 address or a hostname, written as the
+RECIPIENT of
+.I xymon(1)
+is. Used by clients and the tools that perform network tests.
 Default: $XYMONSERVERIP
 
 .IP "\fBXYMSERVERS\fR"
-List of IP-addresses. Clients and network test tools will try to
+List of addresses, IPv4 or IPv6, separated by spaces or tabs.
+Clients and network test tools will try to
 send status reports to a Xymon server running on each of these
 addresses. This setting is only used if XYMSRV=0.0.0.0.
 
