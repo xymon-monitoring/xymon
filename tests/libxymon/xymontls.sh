@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/xymontls.sh
+# tests/libxymon/xymontls.sh
 #
 # lib/xymontls.c: the TLS contexts xymond and its clients will use, and the
-# identity a verified certificate carries. Filed under server: only a server
-# build compiles the library with OpenSSL (configure.client does not ask for it).
+# identity a verified certificate carries.
 #
-# Each case is a real handshake (tests/server/xymontls-harness.c) with the
+# Each case is a real handshake (tests/libxymon/xymontls-harness.c) with the
 # test PKI in tests/fixtures/tls: a CA, a server certificate for localhost,
 # 127.0.0.1 and ::1, a client certificate whose only name is
 # web01.example.com in its subjectAltName, and a self-signed "rogue" naming
@@ -29,7 +28,9 @@ set -euo pipefail
 
 ROOT=$(find_root)
 require_cc
-[ -f "$ROOT/lib/libxymoncomm.a" ] || skip "lib/libxymoncomm.a is not built"
+commlib=$ROOT/lib/libxymoncomm.a
+[ -f "$commlib" ] || commlib=$ROOT/lib/libxymonclientcomm.a
+[ -f "$commlib" ] || skip "neither lib/libxymoncomm.a nor lib/libxymonclientcomm.a is built"
 sslcflags=$(xymon_sslcflags "$ROOT")
 case $sslcflags in *HAVE_OPENSSL*) ;; *) skip "this build has no OpenSSL" ;; esac
 
@@ -39,7 +40,7 @@ chmod 600 "$work"/*.key
 
 # shellcheck disable=SC2046
 "$CC" $(xymon_cflags "$ROOT") $sslcflags -iquote "$ROOT/lib" -o "$work/harness" \
-	"$(dirname "$0")/xymontls-harness.c" "$ROOT/lib/libxymoncomm.a" \
+	"$(dirname "$0")/xymontls-harness.c" "$commlib" \
 	$(xymon_ldflags "$ROOT") -lssl -lcrypto 2>"$work/cc.log" \
 	|| fail "the harness does not build: $(cat "$work/cc.log")"
 
