@@ -109,6 +109,7 @@ char		*defaultsourceip = NULL;
 int		loadhostsfromxymond = 0;
 int		sslminkeysize = 0;
 STATIC_SBUF_DEFINE(warnbuf);
+static void add_warning(char *msg);
 
 void dump_hostlist(void)
 {
@@ -585,9 +586,29 @@ void load_tests(void)
 							  xmh_item(hwalk, XMH_HOSTNAME), testspec);
 					}
 					else {
+						char *lineip = xmh_item(hwalk, XMH_IP);
+						char *linename = xmh_item(hwalk, XMH_HOSTNAME);
+
 						s = httptest;
 						if (!url.desturl->ip)
 							add_url_to_dns_queue(testspec);
+
+						/*
+						 * A URL for another name, on a line with an address: today
+						 * its name is resolved; a future release fetches it from the
+						 * line's address (#516). Pinned (=IP) and proxied URLs keep
+						 * their own target, so they are not named.
+						 */
+						if (!url.desturl->ip && !url.proxyurl &&
+						    lineip && (strcmp(lineip, "0.0.0.0") != 0) &&
+						    url.desturl->host && (strcasecmp(url.desturl->host, linename) != 0)) {
+							char msg[1024];
+
+							snprintf(msg, sizeof(msg), "xymonnet: host %s: the URL %s is fetched from the address %s resolves to. A future release will fetch it from %s, this line's hosts.cfg address: move it to a 0.0.0.0 line to keep resolving\n",
+								 linename, url.desturl->origform ? url.desturl->origform : url.desturl->host,
+								 url.desturl->host, lineip);
+							add_warning(msg);
+						}
 					}
 				}
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
