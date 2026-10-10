@@ -95,6 +95,23 @@ keeps reporting when a physical interface goes away. It is best effort: if that
 extra socket cannot be bound, xymond says so and carries on with the addresses
 it was asked for.
 
+.IP "\fB\-\-tls\-listen\fR=\fIIP\fR[:\fIPORT\fR][,\fIIP\fR[:\fIPORT\fR]...]"
+Also take connections over TLS, on the addresses given, written as for
+\fB\-\-listen\fR; an entry with no port uses XYMONDTLSPORT (1985 by
+default). These are what a client sends to with a "xymons://" recipient
+(see xymon(1)). The conversation is the one of the plaintext port, with
+TLS from the first byte: a message ends with the client's TLS close_notify,
+and one that ends otherwise is dropped, with the reason logged. A TLS
+connection is subject to the same sender lists as any other, and to
+\fB\-\-timeout\fR, the handshake included.
+.br
+The certificate and its private key are the files XYMOND_TLS_CERT and
+XYMOND_TLS_KEY name (see xymonserver.cfg(5)). xymond does not start when
+they cannot be loaded, or when others than the key's owner and group may
+read or write it; SIGHUP loads
+them again (see SIGNALS). Without this option xymond takes no TLS
+connections, and a xymond built without OpenSSL refuses it.
+
 .IP "\fB\-\-no\-loopback\fR"
 Do not add the automatic 127.0.0.1 listener described under \fB\-\-listen\fR.
 Use this when xymond must answer on the addresses named and nowhere else.
@@ -356,7 +373,10 @@ in the Xymon source-tree, see the "xymond/new\-daemon.txt" file.
 
 .SH SIGNALS
 .IP "\fBSIGHUP\fR"
-Re-read the hosts.cfg configuration file.
+Re-read the hosts.cfg configuration file. With \fB\-\-tls\-listen\fR,
+also load the TLS certificate and key again, so a renewed certificate is
+served from the next connection on; if they do not load, xymond logs why
+and keeps the ones it had.
 
 .IP "\fBSIGUSR1\fR"
 Force an immediate dump of the checkpoint file.
