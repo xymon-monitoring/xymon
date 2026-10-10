@@ -121,6 +121,14 @@ OpenSSL rejects it, instead of silently falling back to the default cipher
 list. Such tests may turn red after upgrading Xymon, or after an OpenSSL
 upgrade invalidates a previously accepted restriction.
 
+xymonnet now tests the address written in hosts.cfg, without looking the host's
+name up; only hosts listed as 0.0.0.0 still have their name resolved. The http
+and https tests on such a line connect to that address too, sending the URL's
+name as the Host, unless the URL gives its own address or goes through a proxy.
+A host whose hosts.cfg address is out of date now fails its tests: correct the
+address, or write 0.0.0.0 to keep resolving the name. The testip tag and
+--dns=only are still accepted, but change nothing.
+
 Where Net-SNMP is built without MD5 (NETSNMP_DISABLE_MD5), SNMPv3
 authentication configured for MD5 falls back to SHA1 and warns once at startup.
 Change the authentication to SHA1 to silence it.

@@ -50,10 +50,9 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
     lost), no external program. Set NTPDATE to the ntpdate program (on ntpsec,
     &quot;ntpdig&quot;) to use that instead; empty NTPDATE selects the built-in
     probe.</p>
-<p class="Pp">Note: xymonnet performs the connectivity test (ping) based on the
-    hostname, unless the host is tagged with &quot;testip&quot; or the
-    &quot;--dns=ip&quot; option is used. So the target of the connectivity test
-    can be determined by your /etc/hosts file or DNS.</p>
+<p class="Pp">Note: xymonnet performs the connectivity test (ping) against the
+    IP-address in hosts.cfg; only for 0.0.0.0 is the target the address the
+    hostname resolves to, through your /etc/hosts file or DNS.</p>
 <p class="Pp">By default, all servers are tested - if XYMONNETWORK is set via
     <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> then only the hosts marked as belonging to this
     network are tested. If the command-line includes one or more hostnames, then
@@ -111,29 +110,18 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
     <p class="Pp"></p>
   </dd>
   <dt id="dns"><a class="permalink" href="#dns-timeout"><b>--dns</b>=[<b>ip</b>|<b>only</b>|<b>standard</b>]</a></dt>
-  <dd>Determines how xymonnet finds the IP addresses of the hosts to test. By
-      default (the &quot;standard&quot;), xymonnet does a DNS lookup of the
-      hostname to determine the IP address, unless the host has the
-      &quot;testip&quot; tag, or the DNS lookup fails. When the lookup gives
-      another address than the one in hosts.cfg, and that one is not 0.0.0.0,
-      xymonnet tests the address DNS gave and names the host under &quot;Warning
-      output&quot; in its own status (see &quot;--report&quot;). A future
-      release will test the hosts.cfg address instead: correct it, or write
-      0.0.0.0 to keep resolving the name. An http or https test on a line with
-      an address, for a URL whose host is not the line's name, is named there
-      too: a future release will fetch that URL from the line's address. Move it
-      to a 0.0.0.0 line to keep fetching it where its name resolves, or give it
-      an address of its own with &quot;=IP&quot;.
+  <dd>Determines how xymonnet finds the IP addresses of hosts whose hosts.cfg
+      IP-address is 0.0.0.0. Any other host is tested at the address hosts.cfg
+      gives, with no DNS lookup, whatever this option says; so are the http and
+      https tests on its line (see &quot;Testing sites by IP-address&quot; in
+      <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)).</i>
     <br/>
-    With &quot;--dns=only&quot; xymonnet will ONLY do the DNS lookup; if it
-      fails, then all services on that host will be reported as being down.
+    By default (the &quot;standard&quot;), and with &quot;--dns=only&quot;,
+      xymonnet looks up the hostname of a 0.0.0.0 host; if that fails, all
+      services on that host are reported as being down.
     <br/>
-    With &quot;--dns=ip&quot; xymonnet will never do a DNS lookup; it will use
-      the IP adresse specified in hosts.cfg for the tests. Thus, this setting is
-      equivalent to having the &quot;testip&quot; tag on all hosts. Note that
-      http tests will ignore this setting and still perform a DNS lookup for the
-      hostname given in the URL; see the &quot;xymonnet tags for HTTP
-      tests&quot; section in <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i>
+    With &quot;--dns=ip&quot; xymonnet does no lookup at all, so a 0.0.0.0 host
+      cannot be tested.
     <p class="Pp"></p>
   </dd>
   <dt id="no-ares"><a class="permalink" href="#no-ares"><b>--no-ares</b></a></dt>
