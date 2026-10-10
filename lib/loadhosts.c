@@ -22,6 +22,11 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <limits.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "libxymon.h"
 
 typedef struct pagelist_t {
@@ -346,6 +351,52 @@ static void build_hosttree(void)
 
 #include "loadhosts_file.c"
 #include "loadhosts_net.c"
+
+/*
+ * The start of a hosts.cfg host line, "ADDRESS NAME": the address is an IPv4
+ * address or an IPv6 address. On a host line, copies the address into ip
+ * (IPv4 written out as four decimal numbers) and the name into hostname,
+ * sets *preference to 0 for 0.0.0.0 -- "resolve the name" -- and 1 for any
+ * other address, and returns 1. Returns 0 for any other line, after saying
+ * why when the address is malformed. "::" is refused: it is reserved as the
+ * IPv6 twin of 0.0.0.0, which nothing reads yet (#516).
+ */
+int hostscfg_hostline(char *line, char *ip, size_t iplen, char *hostname, size_t hostnamelen, int *preference)
+{
+	char fmt[64], word[IP_ADDR_STRLEN];
+	int ip1, ip2, ip3, ip4;
+	struct in6_addr addr6;
+
+	snprintf(fmt, sizeof(fmt), "%%d.%%d.%%d.%%d %%%ds", (int)hostnamelen - 1);
+	if (sscanf(line, fmt, &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		if ( (ip1 < 0) || (ip1 > 255) ||
+		     (ip2 < 0) || (ip2 > 255) ||
+		     (ip3 < 0) || (ip3 > 255) ||
+		     (ip4 < 0) || (ip4 > 255)) {
+			errprintf("Invalid IPv4-address for host %s (nibble outside 0-255 range): %d.%d.%d.%d\n",
+				  hostname, ip1, ip2, ip3, ip4);
+			return 0;
+		}
+		snprintf(ip, iplen, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+		*preference = (ip1 || ip2 || ip3 || ip4);
+		return 1;
+	}
+
+	snprintf(fmt, sizeof(fmt), "%%%ds %%%ds", (int)sizeof(word) - 1, (int)hostnamelen - 1);
+	if ((sscanf(line, fmt, word, hostname) == 2) && strchr(word, ':') &&
+	    (inet_pton(AF_INET6, word, &addr6) == 1)) {
+		if (IN6_IS_ADDR_UNSPECIFIED(&addr6)) {
+			errprintf("Host %s: \"%s\" is not supported as an address; write 0.0.0.0 to have the name resolved\n",
+				  hostname, word);
+			return 0;
+		}
+		snprintf(ip, iplen, "%s", word);
+		*preference = 1;
+		return 1;
+	}
+
+	return 0;
+}
 
 char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling)
 {

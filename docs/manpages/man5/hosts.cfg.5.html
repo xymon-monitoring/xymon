@@ -52,6 +52,15 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     optional. Listing a host with only IP-address and hostname will cause a
     network test to be executed for the host - the connectivity test is enabled
     by default, but no other tests.</p>
+<p class="Pp">The IP-address is an IPv4 address, such as 192.0.2.10, or an IPv6
+    address, such as 2001:db8::10. 0.0.0.0 asks for the hostname to be resolved
+    instead; its IPv6 form &quot;::&quot; is not accepted, and a line using it
+    is skipped with an error. xymonnet resolves hostnames to IPv4 addresses
+    only, and tests the address the hostname resolves to when it does: an IPv6
+    address is tested when the hostname does not resolve, or when the host has
+    the &quot;testip&quot; tag. The connectivity test of an IPv6 host needs a
+    ping program that handles IPv6, such as fping 4 or later (FPING in
+    <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)):</i> <i><a href="../man1/xymonping.1.html">xymonping</a>(1)</i> handles IPv4 only.</p>
 <p class="Pp">The hostname is the host's canonical name: it keys the status
     database and appears in web-page URLs and RRD file paths. It is reachable
     through the web interface only when built from the characters <b>A-Z a-z

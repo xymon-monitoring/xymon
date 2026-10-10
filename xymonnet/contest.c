@@ -24,6 +24,7 @@ static char rcsid[] = "$Id$";
 #include <sys/select.h>		/* Someday I'll move to GNU Autoconf for this ... */
 #endif
 #include <errno.h>
+#include <netdb.h>
 #include <sys/resource.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -121,6 +122,23 @@ static time_t sslcert_expiretime(char *timestr)
 }
 
 
+/* The address a test connects to, as text -- for messages, like inet_ntoa() */
+static char *test_ip(tcptest_t *item)
+{
+	static char result[IP_ADDR_STRLEN];
+
+	if (getnameinfo((struct sockaddr *)&item->addr, item->addrlen, result, sizeof(result), NULL, 0, NI_NUMERICHOST) != 0)
+		strcpy(result, "?");
+	return result;
+}
+
+/* The port a test connects to, in network order, whatever the family */
+static unsigned short test_port(tcptest_t *item)
+{
+	if (item->addr.ss_family == AF_INET6) return ((struct sockaddr_in6 *)&item->addr)->sin6_port;
+	return ((struct sockaddr_in *)&item->addr)->sin_port;
+}
+
 static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 {
 	/*
@@ -173,12 +191,31 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	newtest->duration.tv_sec = newtest->duration.tv_nsec = 0;
 	newtest->totaltime.tv_sec = newtest->totaltime.tv_nsec = 0;
 
+	/* An address of either family; a name is not resolved here */
 	memset(&newtest->addr, 0, sizeof(newtest->addr));
-	newtest->addr.sin_family = PF_INET;
-	newtest->addr.sin_port = htons(port);
-	if ((ip == NULL) || (strlen(ip) == 0) || (inet_aton(ip, (struct in_addr *) &newtest->addr.sin_addr.s_addr) == 0)) {
+	newtest->addr.ss_family = AF_INET;
+	newtest->addrlen = sizeof(struct sockaddr_in);
+	if ((ip == NULL) || (strlen(ip) == 0)) {
 		newtest->errcode = CONTEST_EDNS;
 	}
+	else {
+		struct addrinfo hints, *ai;
+
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_family = AF_UNSPEC;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_NUMERICHOST;
+		if (getaddrinfo(ip, NULL, &hints, &ai) == 0) {
+			memcpy(&newtest->addr, ai->ai_addr, ai->ai_addrlen);
+			newtest->addrlen = ai->ai_addrlen;
+			freeaddrinfo(ai);
+		}
+		else newtest->errcode = CONTEST_EDNS;
+	}
+	if (newtest->addr.ss_family == AF_INET6)
+		((struct sockaddr_in6 *)&newtest->addr)->sin6_port = htons(port);
+	else
+		((struct sockaddr_in *)&newtest->addr)->sin_port = htons(port);
 
 	newtest->srcaddr = (srcip ? strdup(srcip) : NULL);
 
@@ -213,6 +250,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	/* If ALPN is configured, SSL is also necessarily enabled */
 	newtest->sslrunning = (((newtest->svcinfo->flags & TCP_SSL) || (newtest->svcinfo->flags & TCP_ALPN)) ? SSLSETUP_PENDING : 0);
 	newtest->sslagain = 0;
+	newtest->sslwantwrite = 0;
 
 	newtest->banner = NULL;
 	newtest->bannerbytes = 0;
@@ -355,7 +393,7 @@ static void socket_shutdown(tcptest_t *item)
 			errprintf("Huge response %u bytes from %s\n", item->bytesread, item->tspec);
 		else
 			errprintf("Huge response %u bytes for %s:%s\n",
-				  item->bytesread, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname);
+				  item->bytesread, test_ip(item), item->svcinfo->svcname);
 	}
 }
 
@@ -553,7 +591,7 @@ static void setup_ssl(tcptest_t *item)
 
 			ERR_error_string(ERR_get_error(), sslerrmsg);
 			errprintf("Cannot create SSL context - IP %s, service %s: %s\n", 
-				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
+				   test_ip(item), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
 			item->errcode = CONTEST_ESSL;
 			return;
@@ -569,7 +607,7 @@ static void setup_ssl(tcptest_t *item)
 
 			ERR_error_string(ERR_get_error(), sslerrmsg);
 			errprintf("Cannot set cipher list '%s' - IP %s, service %s: %s\n",
-				   item->ssloptions->cipherlist, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
+				   item->ssloptions->cipherlist, test_ip(item), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
 			SSL_CTX_free(item->sslctx);
 			item->errcode = CONTEST_ESSL;
@@ -652,7 +690,7 @@ static void setup_ssl(tcptest_t *item)
 
 			ERR_error_string(ERR_get_error(), sslerrmsg);
 			errprintf("SSL_new failed - IP %s, service %s: %s\n", 
-				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
+				   test_ip(item), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
 			SSL_CTX_free(item->sslctx);
 			item->errcode = CONTEST_ESSL;
@@ -691,7 +729,7 @@ static void setup_ssl(tcptest_t *item)
 
 			ERR_error_string(ERR_get_error(), sslerrmsg);
 			errprintf("Could not initiate SSL on connection - IP %s, service %s: %s\n", 
-				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
+				   test_ip(item), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
 			SSL_free(item->ssldata); 
 			SSL_CTX_free(item->sslctx);
@@ -700,19 +738,29 @@ static void setup_ssl(tcptest_t *item)
 		}
 	}
 
-	sp = getservbyport(item->addr.sin_port, "tcp");
+	sp = getservbyport(test_port(item), "tcp");
 	if (sp) {
-		sprintf(portinfo, "%s (%d/tcp)", sp->s_name, item->addr.sin_port);
+		sprintf(portinfo, "%s (%d/tcp)", sp->s_name, test_port(item));
 	}
 	else {
-		sprintf(portinfo, "%d/tcp", item->addr.sin_port);
+		sprintf(portinfo, "%d/tcp", test_port(item));
 	}
 	if ((err = SSL_connect(item->ssldata)) != 1) {
 		char sslerrmsg[256];
+		int sslerr = SSL_get_error(item->ssldata, err);
 
-		switch (SSL_get_error (item->ssldata, err)) {
+		switch (sslerr) {
 		  case SSL_ERROR_WANT_READ:
 		  case SSL_ERROR_WANT_WRITE:
+			/*
+			 * Remember which way the handshake is blocked, so the
+			 * select() below can wait for that instead of spinning:
+			 * a connected socket is almost always writable, so a
+			 * WANT_READ registered for writability returns from
+			 * select() immediately, every time, until the peer
+			 * finally answers.
+			 */
+			item->sslwantwrite = (sslerr == SSL_ERROR_WANT_WRITE);
 			item->sslrunning = SSLSETUP_PENDING;
 			break;
 		  case SSL_ERROR_SYSCALL:
@@ -720,7 +768,7 @@ static void setup_ssl(tcptest_t *item)
 			/* Filter out the bogus SSL error */
 			if (strstr(sslerrmsg, "error:00000000:") == NULL) {
 				errprintf("IO error in SSL_connect to %s on host %s: %s\n",
-					  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
+					  portinfo, test_ip(item), sslerrmsg);
 			}
 			item->errcode = CONTEST_ESSL;
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
@@ -728,14 +776,14 @@ static void setup_ssl(tcptest_t *item)
 		  case SSL_ERROR_SSL:
 			ERR_error_string(ERR_get_error(), sslerrmsg);
 			errprintf("Unspecified SSL error in SSL_connect to %s on host %s: %s\n",
-				  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
+				  portinfo, test_ip(item), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
 		  default:
 			ERR_error_string(ERR_get_error(), sslerrmsg);
 			errprintf("Unknown error %d in SSL_connect to %s on host %s: %s\n",
-				  err, portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
+				  err, portinfo, test_ip(item), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
 			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 			break;
@@ -748,7 +796,7 @@ static void setup_ssl(tcptest_t *item)
 	peercert = SSL_get_peer_certificate(item->ssldata);
 	if (!peercert) {
 		errprintf("Cannot get peer certificate for %s on host %s\n",
-			  portinfo, inet_ntoa(item->addr.sin_addr));
+			  portinfo, test_ip(item));
 		item->errcode = CONTEST_ESSL;
 		item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
 		return;
@@ -908,7 +956,7 @@ static void socket_shutdown(tcptest_t *item)
 			errprintf("Huge response %u bytes from %s\n", item->bytesread, item->tspec);
 		else
 			errprintf("Huge response %u bytes for %s:%s\n",
-				  item->bytesread, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname);
+				  item->bytesread, test_ip(item), item->svcinfo->svcname);
 	}
 }
 #endif
@@ -1016,11 +1064,12 @@ void do_tcp_tests(int timeout, int concurrency)
 			/*
 			 * We need to allocate a new socket that has O_NONBLOCK set.
 			 */
-			nextinqueue->fd = socket(PF_INET, SOCK_STREAM, 0);
+			nextinqueue->fd = socket(nextinqueue->addr.ss_family, SOCK_STREAM, 0);
 			sockok = (nextinqueue->fd != -1);
 			if (sockok) {
 				/* Set the source address */
-				if (nextinqueue->srcaddr) {
+				/* The source address is IPv4, so it applies to IPv4 tests only */
+				if (nextinqueue->srcaddr && (nextinqueue->addr.ss_family == AF_INET)) {
 					struct sockaddr_in src;
 					int isip;
 
@@ -1054,7 +1103,7 @@ void do_tcp_tests(int timeout, int concurrency)
 					getntimer(&nextinqueue->timestart);
 					nextinqueue->lastactive = nextinqueue->timestart.tv_sec;
 					nextinqueue->cutoff = nextinqueue->timestart.tv_sec + timeout + 1;
-					res = connect(nextinqueue->fd, (struct sockaddr *)&nextinqueue->addr, sizeof(nextinqueue->addr));
+					res = connect(nextinqueue->fd, (struct sockaddr *)&nextinqueue->addr, nextinqueue->addrlen);
 
 					/*
 					 * Did it work ?
@@ -1153,7 +1202,19 @@ restartselect:
 				 * So: On any given socket, we want either a 
 				 * write-event or a read-event - never both.
 				 */
-				if (item->readpending)
+				if (item->open && (item->sslrunning == SSLSETUP_PENDING)) {
+					/*
+					 * Mid-handshake: readpending is still 0 (do_talk
+					 * is false until the handshake completes), so the
+					 * plain rule below would ask for writability while
+					 * SSL_connect() is waiting to read. Wait for what
+					 * it asked for instead. Gated on item->open: before
+					 * the connection completes, writability is still
+					 * how completion is detected.
+					 */
+					FD_SET(item->fd, (item->sslwantwrite ? &writefds : &readfds));
+				}
+				else if (item->readpending)
 					FD_SET(item->fd, &readfds);
 				else 
 					FD_SET(item->fd, &writefds);
@@ -1366,8 +1427,50 @@ restartselect:
 						/*
 						 * We may be in the process of setting up an SSL connection
 						 */
-						if (item->sslrunning == SSLSETUP_PENDING) setup_ssl(item);
-						if (item->sslrunning == SSLSETUP_PENDING) break;  /* Loop again waiting for more data */
+						if (item->sslrunning == SSLSETUP_PENDING) {
+							setup_ssl(item);
+							if (item->sslrunning == 1) {
+								/*
+								 * As in the write arm: the connection time
+								 * includes the SSL handshake. It now usually
+								 * completes here, so without this the
+								 * reported time is the TCP connect alone.
+								 */
+								get_connectiontime(item, &timestamp);
+							}
+						}
+						if (item->sslrunning == SSLSETUP_PENDING) {
+							/*
+							 * Still handshaking: nothing to read yet.
+							 * continue, not break -- break leaves the whole
+							 * loop over items, abandoning the scan at the
+							 * first socket that is readable but not yet
+							 * handshaken. Measured, that costs iterations
+							 * rather than results: select() returns again
+							 * immediately and the remaining sockets are
+							 * serviced on the next pass. It was unreachable
+							 * during a handshake before (the fd was always in
+							 * writefds); registering by direction above makes
+							 * it the normal path, so leave the scan intact.
+							 */
+							continue;
+						}
+						if (!item->readpending) {
+							/*
+							 * The handshake just finished, here, in the read
+							 * arm -- which only became possible once pending
+							 * handshakes were registered for readability. The
+							 * write arm has not run for this socket yet, so
+							 * nothing has sent sendtxt or decided whether a
+							 * banner is even wanted. Reading now would skip the
+							 * send outright, and would collect a banner for a
+							 * silenttest. readpending is still 0 here, which
+							 * puts the socket back in writefds for select(): the
+							 * write arm picks it up on the next pass exactly as
+							 * it did when the handshake completed there.
+							 */
+							continue;
+						}
 
 						/*
 						 * Connection is ready - plain or SSL. Read data.
@@ -1399,7 +1502,7 @@ restartselect:
 							if (!item->telnetnegotiate) {
 								dbgprintf("Max. telnet negotiation (%d) reached for host %s\n", 
 									MAX_TELNET_CYCLES,
-									inet_ntoa(item->addr.sin_addr));
+									test_ip(item));
 							}
 
 							if (do_telnet_options(item)) {
@@ -1452,8 +1555,8 @@ void show_tcp_test_results(void)
 
 	for (item = thead; (item); item = item->next) {
 		printf("Address=%s:%d, open=%d, res=%d, err=%d, connecttime=%u.%06u, totaltime=%u.%06u, ",
-				inet_ntoa(item->addr.sin_addr), 
-				ntohs(item->addr.sin_port),
+				test_ip(item),
+				ntohs(test_port(item)),
 				item->open, item->connres, item->errcode,
 				(unsigned int)item->duration.tv_sec, (unsigned int)(item->duration.tv_nsec/1000),
 				(unsigned int)item->totaltime.tv_sec, (unsigned int)(item->totaltime.tv_nsec/1000));
@@ -1607,8 +1710,8 @@ int main(int argc, char *argv[])
 					httptest = (http_data_t *)testitem->privdata;
 					if (httptest && httptest->tcptest) {
 						printf("TCP connection goes to %s:%d\n",
-							inet_ntoa(httptest->tcptest->addr.sin_addr),
-							ntohs(httptest->tcptest->addr.sin_port));
+							test_ip(httptest->tcptest),
+							ntohs(test_port(httptest->tcptest)));
 						printf("Request:\n%s\n", httptest->tcptest->sendtxt);
 					}
 				}

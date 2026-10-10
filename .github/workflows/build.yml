@@ -135,7 +135,7 @@ jobs:
           fi
           exit "$rc"
 
-  # The 69 HTML manual pages under docs/manpages/ are generated from the roff
+  # The HTML manual pages under docs/manpages/ are generated from the roff
   # sources and committed alongside them, and nothing ever checked that the two
   # agree. They drifted for seven years: the last full regeneration is the
   # 4.3.30 release of September 2019 - all 69 pages still carry its two
