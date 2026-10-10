@@ -3760,6 +3760,37 @@ strbuffer_t *generate_hostinfo_outbuf(strbuffer_t **prebuf, boardfield_t *boardf
 }
 
 
+/*
+ * Make room in a connection's input buffer for the next read. Returns 0 when
+ * the sender went past MAX_XYMON_INBUFSZ: the connection is then closed.
+ */
+static int inbuf_room(conn_t *c)
+{
+	char *eoln;
+	char cwtext[IP_ADDR_STRLEN];
+
+	if ((c->bufsz - c->buflen) >= 2048) return 1;
+
+	if (c->bufsz < MAX_XYMON_INBUFSZ) {
+		c->bufsz += XYMON_INBUF_INCREMENT;
+		c->buf = (unsigned char *) realloc(c->buf, c->bufsz);
+		c->bufp = c->buf + c->buflen;
+		return 1;
+	}
+
+	/* Someone is flooding us */
+	*(c->buf + 200) = '\0';
+	eoln = strchr(c->buf, '\n');
+	if (eoln) *eoln = '\0';
+	errprintf("Data flooding from %s - 1st line %s\n",
+		  sockaddr_text((struct sockaddr *)&c->addr, cwtext, sizeof(cwtext)), c->buf);
+	shutdown(c->sock, SHUT_RDWR);
+	close(c->sock);
+	c->sock = -1;
+	c->doingwhat = NOTALK;
+	return 0;
+}
+
 void do_message(conn_t *msg, char *origin)
 {
 	static int nesting = 0;
@@ -5895,6 +5926,50 @@ static int add_listener(struct sockaddr_storage *addr, int listenq)
 	return 0;
 }
 
+/* One listener per entry of spec -- IP[:PORT] or [IPv6][:PORT], comma
+   separated -- on listenport where an entry names no port. Returns 0, or -1
+   with the reason logged. */
+static int add_listeners(char *listenspec, int listenport, int listenq)
+{
+	char *spec = strdup(listenspec);
+	char *entry, *saveptr = NULL;
+
+	for (entry = strtok_r(spec, ",", &saveptr); entry; entry = strtok_r(NULL, ",", &saveptr)) {
+		struct sockaddr_storage addr;
+		int port = listenport;
+		char *colon, *rbracket;
+
+		while ((*entry == ' ') || (*entry == '\t')) entry++;
+		if ((*entry == '[') && ((rbracket = strchr(entry, ']')) != NULL)) {
+			/* [IPv6] or [IPv6]:PORT */
+			*rbracket = '\0';
+			if (*(rbracket+1) == ':') port = atoi(rbracket+2);
+			entry++;
+		}
+		else {
+			/* IPv4[:PORT]; a bare IPv6 address has more than one ':' and no port */
+			colon = strchr(entry, ':');
+			if (colon && (strchr(colon+1, ':') == NULL)) { *colon = '\0'; port = atoi(colon+1); }
+		}
+
+		/* Checked: an unnoticed failure left the address zero, and the
+		   daemon listened on everything. */
+		if (!text_sockaddr(entry, &addr)) {
+			errprintf("Cannot parse listen address '%s' (expected IP[:PORT] or [IPv6][:PORT])\n", entry);
+			xfree(spec);
+			return -1;
+		}
+		if (addr.ss_family == AF_INET6)
+			((struct sockaddr_in6 *)&addr)->sin6_port = htons(port);
+		else
+			((struct sockaddr_in *)&addr)->sin_port = htons(port);
+		if (add_listener(&addr, listenq) != 0) { xfree(spec); return -1; }
+	}
+	xfree(spec);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	conn_t *connhead = NULL, *conntail=NULL;
@@ -6194,43 +6269,7 @@ int main(int argc, char *argv[])
 
 
 	/* Set up the listening sockets, one per address in --listen. */
-	{
-		char *spec = strdup(listenspec);
-		char *entry, *saveptr = NULL;
-
-		for (entry = strtok_r(spec, ",", &saveptr); entry; entry = strtok_r(NULL, ",", &saveptr)) {
-			struct sockaddr_storage addr;
-			int port = listenport;
-			char *colon, *rbracket;
-
-			while ((*entry == ' ') || (*entry == '\t')) entry++;
-			if ((*entry == '[') && ((rbracket = strchr(entry, ']')) != NULL)) {
-				/* [IPv6] or [IPv6]:PORT */
-				*rbracket = '\0';
-				if (*(rbracket+1) == ':') port = atoi(rbracket+2);
-				entry++;
-			}
-			else {
-				/* IPv4[:PORT]; a bare IPv6 address has more than one ':' and no port */
-				colon = strchr(entry, ':');
-				if (colon && (strchr(colon+1, ':') == NULL)) { *colon = '\0'; port = atoi(colon+1); }
-			}
-
-			/* Checked: an unnoticed failure left the address zero, and the
-			   daemon listened on everything. */
-			if (!text_sockaddr(entry, &addr)) {
-				errprintf("Cannot parse listen address '%s' (expected IP[:PORT] or [IPv6][:PORT])\n", entry);
-				xfree(spec);
-				return 1;
-			}
-			if (addr.ss_family == AF_INET6)
-				((struct sockaddr_in6 *)&addr)->sin6_port = htons(port);
-			else
-				((struct sockaddr_in *)&addr)->sin_port = htons(port);
-			if (add_listener(&addr, listenq) != 0) { xfree(spec); return 1; }
-		}
-		xfree(spec);
-	}
+	if (add_listeners(listenspec, listenport, listenq) != 0) return 1;
 
 	/* Keep a loopback listener so the server's own client still reaches us.
 	   On XYMONDPORT, not the port of a --listen entry: that is the port local
@@ -6565,28 +6604,7 @@ int main(int argc, char *argv[])
 						cwalk->bufp += n;
 						cwalk->buflen += n;
 						*(cwalk->bufp) = '\0';
-						if ((cwalk->bufsz - cwalk->buflen) < 2048) {
-							if (cwalk->bufsz < MAX_XYMON_INBUFSZ) {
-								cwalk->bufsz += XYMON_INBUF_INCREMENT;
-								cwalk->buf = (unsigned char *) realloc(cwalk->buf, cwalk->bufsz);
-								cwalk->bufp = cwalk->buf + cwalk->buflen;
-							}
-							else {
-								/* Someone is flooding us */
-								char *eoln;
-								char cwtext[IP_ADDR_STRLEN];
-
-								*(cwalk->buf + 200) = '\0';
-								eoln = strchr(cwalk->buf, '\n');
-								if (eoln) *eoln = '\0';
-								errprintf("Data flooding from %s - 1st line %s\n",
-									  sockaddr_text((struct sockaddr *)&cwalk->addr, cwtext, sizeof(cwtext)), cwalk->buf);
-								shutdown(cwalk->sock, SHUT_RDWR);
-								close(cwalk->sock); 
-								cwalk->sock = -1; 
-								cwalk->doingwhat = NOTALK;
-							}
-						}
+						inbuf_room(cwalk);
 					}
 				}
 				break;
