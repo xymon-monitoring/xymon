@@ -125,8 +125,8 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 {
 	/* Return value: 0 for load OK, 1 for "No files changed since last load", -1 for error (file not found) */
 	int prepresult;
-	int ip1, ip2, ip3, ip4, groupid, pageidx;
-	char hostname[4096];
+	int groupid, pageidx, preference;
+	char hostname[4096], hostip[IP_ADDR_STRLEN];
 	SBUF_DEFINE(dgname);
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	void * htree;
@@ -302,21 +302,12 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				}
 			}
 		}
-		else if (sscanf(inbol, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		else if (hostscfg_hostline(inbol, hostip, sizeof(hostip), hostname, sizeof(hostname), &preference)) {
 			char *startoftags, *tag, *delim;
 			int elemidx, elemsize;
 			char groupidstr[15];
 			xtreePos_t handle;
 			namelist_t *newitem;
-
-			if ( (ip1 < 0) || (ip1 > 255) ||
-			     (ip2 < 0) || (ip2 > 255) ||
-			     (ip3 < 0) || (ip3 > 255) ||
-			     (ip4 < 0) || (ip4 > 255)) {
-				errprintf("Invalid IPv4-address for host %s (nibble outside 0-255 range): %d.%d.%d.%d\n",
-					  hostname, ip1, ip2, ip3, ip4);
-				goto nextline;
-			}
 
 			newitem = calloc(1, sizeof(namelist_t));
 
@@ -329,14 +320,14 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				if (p) *p = '\0';
 			}
 
-			snprintf(newitem->ip, sizeof(newitem->ip), "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+			snprintf(newitem->ip, sizeof(newitem->ip), "%s", hostip);
 			snprintf(groupidstr, sizeof(groupidstr), "%d", groupid);
 			newitem->groupid = strdup(groupidstr);
 			newitem->dgname = (dgname ? strdup(dgname) : strdup("NONE"));
 			newitem->pageindex = pageidx++;
 
 			newitem->hostname = strdup(hostname);
-			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
+			newitem->preference = preference;
 			newitem->logname = strdup(newitem->hostname);
 			{ char *p = newitem->logname; while ((p = strchr(p, '.')) != NULL) { *p = '_'; } }
 			newitem->page = curpage;
@@ -471,7 +462,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 		}
 
 
-nextline:
 		if (ineol) {
 			*ineol = insavchar;
 			if (*ineol != '\n') ineol = strchr(ineol, '\n');
