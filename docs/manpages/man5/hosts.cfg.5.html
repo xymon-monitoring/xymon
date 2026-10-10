@@ -55,12 +55,12 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
 <p class="Pp">The IP-address is an IPv4 address, such as 192.0.2.10, or an IPv6
     address, such as 2001:db8::10. 0.0.0.0 asks for the hostname to be resolved
     instead; its IPv6 form &quot;::&quot; is not accepted, and a line using it
-    is skipped with an error. xymonnet resolves hostnames to IPv4 addresses
-    only, and tests the address the hostname resolves to when it does: an IPv6
-    address is tested when the hostname does not resolve, or when the host has
-    the &quot;testip&quot; tag. The connectivity test of an IPv6 host needs a
-    ping program that handles IPv6, such as fping 4 or later (FPING in
-    <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)):</i> <i><a href="../man1/xymonping.1.html">xymonping</a>(1)</i> handles IPv4 only.</p>
+    is skipped with an error. xymonnet tests the IP-address as it is written,
+    with no name lookup, and so do the http and https tests on the same line
+    (see &quot;Testing sites by IP-address&quot; below). Only 0.0.0.0 has the
+    hostname looked up, and to an IPv4 address. The connectivity test of an IPv6
+    host needs a ping program that handles IPv6, such as fping 4 or later (FPING
+    in <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)):</i> <i><a href="../man1/xymonping.1.html">xymonping</a>(1)</i> handles IPv4 only.</p>
 <p class="Pp">The hostname is the host's canonical name: it keys the status
     database and appears in web-page URLs and RRD file paths. It is reachable
     through the web interface only when built from the characters <b>A-Z a-z
@@ -749,9 +749,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   TEST SETTINGS</a></h1>
 <dl class="Bl-tag">
   <dt id="testip"><a class="permalink" href="#testip"><b>testip</b></a></dt>
-  <dd>By default, Xymon will perform a name lookup of the hostname to get the IP
-      address it will use for network tests. This tag causes Xymon to use the IP
-      listed in the hosts.cfg file.
+  <dd>Use the IP listed in the hosts.cfg file for network tests. This is what
+      xymonnet does for every host whose IP-address is not 0.0.0.0, so the tag
+      changes nothing; it is still accepted.
     <p class="Pp"></p>
   </dd>
   <dt id="NET:location"><a class="permalink" href="#NET:location"><b>NET:location</b></a></dt>
@@ -1262,13 +1262,13 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   </dd>
   <dt id="Testing"><a class="permalink" href="#Testing">Testing sites by
     IP-address</a></dt>
-  <dd>xymonnet ignores the &quot;testip&quot; tag normally used to force a test
-      to use the IP-address from the hosts.cfg file instead of the hostname,
-      when it performs http and https tests.
-    <p class="Pp">The reason for this is that it interacts badly with virtual
-        hosts, especially if these are IP-based as is common with
-        https-websites.</p>
-    <p class="Pp">Instead the IP-address to connect to can be overridden by
+  <dd>On a line with an IP-address, xymonnet runs the line's http and https
+      tests against that address, and still asks for the website named in the
+      URL: the hostname goes in the request's &quot;Host:&quot; header, so
+      virtual hosts are tested as they are served. On a 0.0.0.0 line the
+      hostname in the URL is looked up instead. A URL sent through a proxy
+      connects to the proxy.
+    <p class="Pp">The IP-address to connect to can also be given for one URL, by
         specifying it as:</p>
     <p class="Pp">	http://www.sample.com=1.2.3.4/index.html</p>
     <p class="Pp">The &quot;=1.2.3.4&quot; will case xymonnet to run the test

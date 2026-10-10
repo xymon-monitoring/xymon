@@ -109,7 +109,6 @@ char		*defaultsourceip = NULL;
 int		loadhostsfromxymond = 0;
 int		sslminkeysize = 0;
 STATIC_SBUF_DEFINE(warnbuf);
-static void add_warning(char *msg);
 
 void dump_hostlist(void)
 {
@@ -587,28 +586,13 @@ void load_tests(void)
 					}
 					else {
 						char *lineip = xmh_item(hwalk, XMH_IP);
-						char *linename = xmh_item(hwalk, XMH_HOSTNAME);
 
 						s = httptest;
-						if (!url.desturl->ip)
+						/* A line with an address serves its URL tests (#516): only a
+						   URL with no address of its own, on a 0.0.0.0 line or behind a
+						   proxy, has a name to resolve. */
+						if (!url.desturl->ip && (url.proxyurl || !lineip || (strcmp(lineip, "0.0.0.0") == 0)))
 							add_url_to_dns_queue(testspec);
-
-						/*
-						 * A URL for another name, on a line with an address: today
-						 * its name is resolved; a future release fetches it from the
-						 * line's address (#516). Pinned (=IP) and proxied URLs keep
-						 * their own target, so they are not named.
-						 */
-						if (!url.desturl->ip && !url.proxyurl &&
-						    lineip && (strcmp(lineip, "0.0.0.0") != 0) &&
-						    url.desturl->host && (strcasecmp(url.desturl->host, linename) != 0)) {
-							char msg[1024];
-
-							snprintf(msg, sizeof(msg), "xymonnet: host %s: the URL %s is fetched from the address %s resolves to. A future release will fetch it from %s, this line's hosts.cfg address: move it to a 0.0.0.0 line to keep resolving\n",
-								 linename, url.desturl->origform ? url.desturl->origform : url.desturl->host,
-								 url.desturl->host, lineip);
-							add_warning(msg);
-						}
 					}
 				}
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
@@ -864,7 +848,8 @@ void load_tests(void)
 			}
 	
 			snprintf(h->ip, sizeof(h->ip), "%s", xmh_item(hwalk, XMH_IP));
-			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
+			/* Only 0.0.0.0 asks for the name to be resolved; any other address is used as given (#516) */
+			if ((strcmp(h->ip, "0.0.0.0") == 0) && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {
 			/* No network tests for this host, so ignore it */
@@ -900,29 +885,19 @@ char *ip_to_test(testedhost_t *h)
 	char *dnsresult;
 	int nullip = (strcmp(h->ip, "0.0.0.0") == 0);
 
-	if (!nullip && (h->testip || (dnsmethod == IP_ONLY))) {
+	/*
+	 * The hosts.cfg address is the one tested, used as given; only 0.0.0.0
+	 * asks for the hostname to be resolved (#516). A wrong address is not
+	 * replaced by whatever DNS says, so it shows as a failing test.
+	 */
+	if (!nullip) {
 		/* Already have the IP setup */
 	}
 	else if (h->dodns) {
 		dnsresult = dnsresolve(h->hostname);
 
 		if (dnsresult) {
-			/*
-			 * A real address in hosts.cfg that DNS contradicts: say so, because
-			 * a future release tests the hosts.cfg address instead (#516). Once
-			 * h->ip holds the answer the two agree, so this is said once a run.
-			 */
-			if (!nullip && (strcmp(h->ip, dnsresult) != 0)) {
-				char msg[512];
-
-				snprintf(msg, sizeof(msg), "xymonnet: host %s: hosts.cfg says %s, DNS says %s; tested %s. A future release will test the hosts.cfg address: correct it, or write 0.0.0.0 to keep resolving\n",
-					 h->hostname, h->ip, dnsresult, dnsresult);
-				add_warning(msg);
-			}
 			snprintf(h->ip, sizeof(h->ip), "%s", dnsresult);
-		}
-		else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
-			/* Already have the IP setup */
 		}
 		else {
 			char msg[512];
