@@ -136,11 +136,14 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
       and to <b>--timeout</b>, the handshake included.
     <br/>
     The certificate and its private key are the files XYMOND_TLS_CERT and
-      XYMOND_TLS_KEY name (see <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)). xymond does not start when
-      they cannot be loaded, or when others than the key's owner and group may
-      read or write it; SIGHUP loads them again (see SIGNALS). Without this
-      option xymond takes no TLS connections, and a xymond built without OpenSSL
-      refuses it.
+      XYMOND_TLS_KEY name (see <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)). When XYMOND_TLS_CA is set,
+      xymond also asks each TLS client for a certificate, which must then chain
+      to that CA, or the connection is refused; a client that has none is still
+      served, and checked by its address. What a client certificate allows is
+      under <b>--status-senders</b>. xymond does not start when they cannot be
+      loaded, or when others than the key's owner and group may read or write
+      it; SIGHUP loads them again (see SIGNALS). Without this option xymond
+      takes no TLS connections, and a xymond built without OpenSSL refuses it.
     <p class="Pp"></p>
   </dd>
   <dt id="no-loopback"><a class="permalink" href="#no-loopback"><b>--no-loopback</b></a></dt>
@@ -248,6 +251,15 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
         to send in their own status updates, without having to list all clients
         here). So typically you will need to list your servers running network
         tests here.</p>
+    <p class="Pp">Over TLS, with XYMOND_TLS_CA set (see <b>--tls-listen</b>), a
+        client whose certificate verifies and names a host in its subjectAltName
+        counts as sending from that host's address, wherever xymond accepts a
+        host's own address: for its status, and for the other messages a host
+        may send about itself, an &quot;enable&quot; or &quot;disable&quot; of
+        its own tests under <b>--maint-senders</b> included. The name is the
+        host's name in hosts.cfg, compared without regard to case and without
+        wildcards. Such a certificate does not let its holder send for any other
+        host.</p>
     <p class="Pp">The format of this option is a list of IP-addresses,
         optionally with a network mask in the form of the number of bits. E.g.
         if you want to accept status-updates from the host 172.16.10.2, you
@@ -432,9 +444,9 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
 <dl class="Bl-tag">
   <dt id="SIGHUP"><a class="permalink" href="#SIGHUP"><b>SIGHUP</b></a></dt>
   <dd>Re-read the hosts.cfg configuration file. With <b>--tls-listen</b>, also
-      load the TLS certificate and key again, so a renewed certificate is served
-      from the next connection on; if they do not load, xymond logs why and
-      keeps the ones it had.
+      load the TLS certificate, key and CA again, so a renewed certificate is
+      served from the next connection on; if they do not load, xymond logs why
+      and keeps the ones it had.
     <p class="Pp"></p>
   </dd>
   <dt id="SIGUSR1"><a class="permalink" href="#SIGUSR1"><b>SIGUSR1</b></a></dt>

@@ -429,6 +429,14 @@ is refused. Read at startup and on SIGHUP (see xymond(8)).
 Default: $XYMONHOME/etc/tls/xymond.pem and
 $XYMONHOME/etc/tls/xymond.key.
 
+.IP "\fBXYMOND_TLS_CA\fR"
+The file of CA certificates that a client certificate on xymond's
+\-\-tls\-listen ports must chain to. When set, xymond asks TLS
+clients for a certificate; a client that presents none is still
+served. What a verified certificate allows is in xymond(8), under
+\-\-status\-senders. Read at startup and on SIGHUP.
+Default: unset, and no client certificate is asked for.
+
 .IP "\fBXYMON_TLS_CA\fR"
 The file of CA certificates that a "xymons://" recipient's
 certificate must chain to. Default: unset, which uses the system's

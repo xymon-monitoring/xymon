@@ -1235,25 +1235,25 @@ int accept_test(void *hrec, char *testname)
 
 /*
  * get_hts(), also giving the host's hosts.cfg address in knownip (size
- * IP_ADDR_STRLEN; empty when the host is not known). It is there even when
- * no host record exists yet and none is created, which is what a sender
- * check needs: a host may report on itself before its first status has
- * made it a record.
+ * IP_ADDR_STRLEN; empty when the host is not known), and its hosts.cfg name
+ * in knownname. They are there even when no host record exists yet and none
+ * is created, which is what a sender check needs: a host may report on
+ * itself before its first status has made it a record.
  */
 static void get_hts_ip(char *msg, char *sender, char *origin,
 	     xymond_hostlist_t **host, testinfo_t **test, char **grouplist, xymond_log_t **log,
-	     int *color, char **downcause, int *alltests, int createhost, int createlog, char *knownip);
+	     int *color, char **downcause, int *alltests, int createhost, int createlog, char *knownip, char **knownname);
 
 void get_hts(char *msg, char *sender, char *origin,
 	     xymond_hostlist_t **host, testinfo_t **test, char **grouplist, xymond_log_t **log, 
 	     int *color, char **downcause, int *alltests, int createhost, int createlog)
 {
-	get_hts_ip(msg, sender, origin, host, test, grouplist, log, color, downcause, alltests, createhost, createlog, NULL);
+	get_hts_ip(msg, sender, origin, host, test, grouplist, log, color, downcause, alltests, createhost, createlog, NULL, NULL);
 }
 
 static void get_hts_ip(char *msg, char *sender, char *origin,
 	     xymond_hostlist_t **host, testinfo_t **test, char **grouplist, xymond_log_t **log,
-	     int *color, char **downcause, int *alltests, int createhost, int createlog, char *knownip)
+	     int *color, char **downcause, int *alltests, int createhost, int createlog, char *knownip, char **knownname)
 {
 	/*
 	 * This routine takes care of finding existing status log records, or
@@ -1265,6 +1265,8 @@ static void get_hts_ip(char *msg, char *sender, char *origin,
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr, *grp;
 	char hostip[IP_ADDR_STRLEN];
+
+	if (knownname) *knownname = NULL;
 	xtreePos_t hosthandle, testhandle, originhandle;
 	xymond_hostlist_t *hwalk = NULL;
 	testinfo_t *twalk = NULL;
@@ -1320,20 +1322,23 @@ static void get_hts_ip(char *msg, char *sender, char *origin,
 		is_summary = 1;
 	}
 	else {
-		char *knownname;
+		char *knownhostname;
 
 		hostname = hosttest;
 		testname = strrchr(hosttest, '.');
 		if (testname) { *testname = '\0'; testname++; }
 		uncommafy(hostname);	/* For BB agent compatibility */
 
-		knownname = knownhost(hostname, hostip, ghosthandling);
-		if (knownname == NULL) {
-			knownname = log_ghost(hostname, sender, msg);
-			if (knownname == NULL) goto done;
+		knownhostname = knownhost(hostname, hostip, ghosthandling);
+		if (knownhostname == NULL) {
+			knownhostname = log_ghost(hostname, sender, msg);
+			if (knownhostname == NULL) goto done;
 		}
-		else if (knownip) snprintf(knownip, IP_ADDR_STRLEN, "%s", hostip);
-		hostname = knownname;
+		else {
+			if (knownip) snprintf(knownip, IP_ADDR_STRLEN, "%s", hostip);
+			if (knownname) *knownname = knownhostname;
+		}
+		hostname = knownhostname;
 	}
 
 	hosthandle = xtreeFind(rbhosts, hostname);
@@ -2328,6 +2333,20 @@ void handle_usermsg(char *msg, char *sender, char *hostname)
 	dbgprintf("<-handle_usermsg\n");
 }
 
+/*
+ * oksender_addr() for a message about the host hostname (its hosts.cfg name)
+ * from the connection msg. Where a host may send from its own hosts.cfg
+ * address, it may also send over TLS with a verified client certificate
+ * that names it in its subjectAltName.
+ */
+static int oksender_host(sender_t *oklist, char *targetip, char *hostname, conn_t *msg, char *msgbuf)
+{
+#ifdef HAVE_OPENSSL
+	if (oklist && hostname && msg->ssl && xymontls_peer_has_name(msg->ssl, hostname)) return 1;
+#endif
+	return oksender_addr(oklist, targetip, (struct sockaddr *)&msg->addr, msgbuf);
+}
+
 void handle_enadis(int enabled, conn_t *msg, char *sender)
 {
 	char *firstline = NULL, *hosttest = NULL, *durstr = NULL, *txtstart = NULL;
@@ -2408,9 +2427,9 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	}
 	else hwalk = xtreeData(rbhosts, hosthandle);
 
-	if (!oksender_addr(maintsenders,
+	if (!oksender_host(maintsenders,
 		      (hwalk->ip && (strcmp(hwalk->ip, "0.0.0.0") != 0)) ? hwalk->ip : NULL,
-		      (struct sockaddr *)&msg->addr, msg->buf)) goto done;
+		      hwalk->hostname, msg, msg->buf)) goto done;
 
 	if (tname) {
 		testhandle = xtreeFind(rbtests, tname);
@@ -3831,14 +3850,15 @@ static int inbuf_room(conn_t *c)
 
 static SSL_CTX *tlsctx = NULL;
 
-/* The server context, from XYMOND_TLS_CERT and XYMOND_TLS_KEY */
+/* The server context, from XYMOND_TLS_CERT, XYMOND_TLS_KEY and XYMOND_TLS_CA */
 static SSL_CTX *tls_load(void)
 {
 	char err[512];
-	char *cert = xgetenv("XYMOND_TLS_CERT"), *key = xgetenv("XYMOND_TLS_KEY");
+	char *cert = xgetenv("XYMOND_TLS_CERT"), *key = xgetenv("XYMOND_TLS_KEY"), *ca = xgetenv("XYMOND_TLS_CA");
 	SSL_CTX *ctx;
 
-	ctx = xymontls_server_ctx(cert, ((key && *key) ? key : NULL), NULL, 0, err, sizeof(err));
+	/* With a CA, clients are asked for a certificate, which then must verify; one without is still served */
+	ctx = xymontls_server_ctx(cert, ((key && *key) ? key : NULL), ((ca && *ca) ? ca : NULL), 0, err, sizeof(err));
 	if (!ctx) errprintf("TLS: %s\n", err);
 	return ctx;
 }
@@ -3978,6 +3998,7 @@ void do_message(conn_t *msg, char *origin)
 	char *downcause;
 	char sender[IP_ADDR_STRLEN];
 	char knownip[IP_ADDR_STRLEN];	/* the reported host's hosts.cfg address */
+	char *knownname;		/* ... and its hosts.cfg name */
 	char *grouplist;
 	time_t now, timeroffset;
 	char *msgfrom;
@@ -4117,8 +4138,8 @@ void do_message(conn_t *msg, char *origin)
 
 			if (statussenders) {
 				*knownip = '\0';
-				get_hts_ip(currmsg, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0, knownip);
-				if (!oksender_addr(statussenders, (*knownip ? knownip : NULL), (struct sockaddr *)&msg->addr, currmsg)) validsender = 0;
+				get_hts_ip(currmsg, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0, knownip, &knownname);
+				if (!oksender_host(statussenders, (*knownip ? knownip : NULL), knownname, msg, currmsg)) validsender = 0;
 			}
 
 			if (validsender) {
@@ -4163,7 +4184,7 @@ void do_message(conn_t *msg, char *origin)
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
 			get_hts(currmsg, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-			if (h && t && log && oksender_addr(statussenders, (h ? h->ip : NULL), (struct sockaddr *)&msg->addr, currmsg)) {
+			if (h && t && log && oksender_host(statussenders, (h ? h->ip : NULL), (h ? h->hostname : NULL), msg, currmsg)) {
 				handle_meta(currmsg, log);
 			}
 
@@ -4179,7 +4200,7 @@ void do_message(conn_t *msg, char *origin)
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
 			get_hts(currmsg, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-			if (h && t && log && oksender_addr(statussenders, (h ? h->ip : NULL), (struct sockaddr *)&msg->addr, currmsg)) {
+			if (h && t && log && oksender_host(statussenders, (h ? h->ip : NULL), (h ? h->hostname : NULL), msg, currmsg)) {
 				handle_modify(currmsg, log, color);
 			}
 
@@ -4195,8 +4216,8 @@ void do_message(conn_t *msg, char *origin)
 
 		if (statussenders) {
 			*knownip = '\0';
-			get_hts_ip(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0, knownip);
-			if (!oksender_addr(statussenders, (*knownip ? knownip : NULL), (struct sockaddr *)&msg->addr, msg->buf)) goto done;
+			get_hts_ip(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0, knownip, &knownname);
+			if (!oksender_host(statussenders, (*knownip ? knownip : NULL), knownname, msg, msg->buf)) goto done;
 		}
 
 		get_hts(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 1, 1);
@@ -4270,7 +4291,7 @@ void do_message(conn_t *msg, char *origin)
 			if (hname == NULL) {
 				/* Ignore it */
 			}
-			else if (!oksender_addr(statussenders, hostip, (struct sockaddr *)&msg->addr, msg->buf)) {
+			else if (!oksender_host(statussenders, hostip, hname, msg, msg->buf)) {
 				/* Invalid sender */
 				errprintf("Invalid data message - sender %s not allowed for host %s\n", sender, hostname);
 			}
@@ -4386,8 +4407,8 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
 		*knownip = '\0';
-		get_hts_ip(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0, knownip);
-		if (!oksender_addr(statussenders, (*knownip ? knownip : NULL), (struct sockaddr *)&msg->addr, msg->buf)) goto done;
+		get_hts_ip(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0, knownip, &knownname);
+		if (!oksender_host(statussenders, (*knownip ? knownip : NULL), knownname, msg, msg->buf)) goto done;
 
 		if (log) {
 			xfree(msg->buf);
@@ -5112,7 +5133,7 @@ void do_message(conn_t *msg, char *origin)
 			if (hname == NULL) {
 				/* Ignore it */
 			}
-			else if (!oksender_addr(statussenders, hostip, (struct sockaddr *)&msg->addr, msg->buf)) {
+			else if (!oksender_host(statussenders, hostip, hname, msg, msg->buf)) {
 				/* Invalid sender */
 				errprintf("Invalid client message - sender %s not allowed for host %s\n", sender, hostname);
 				hname = NULL;
