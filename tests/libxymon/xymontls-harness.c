@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later                                  */
 /*
- * tests/server/xymontls-harness.c
+ * tests/libxymon/xymontls-harness.c
  *
  * Driver for lib/xymontls.c, used by xymontls.sh. Runs one TLS handshake over
  * a socket pair -- the client in a child process, the server in this one --
