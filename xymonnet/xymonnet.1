@@ -545,7 +545,9 @@ Command used to run the
 utility. Used by xymonnet for connectivity (ping) testing.  See
 .I xymonserver.cfg(5)
 for more information about how to customize the program that is
-executed to do ping tests.
+executed to do ping tests. A host listed by an IPv6 address needs a
+program that pings IPv6, such as fping 4 or later; xymonping is IPv4
+only.
 
 .IP "\fBTRACEROUTE\fR"
 Location of the
