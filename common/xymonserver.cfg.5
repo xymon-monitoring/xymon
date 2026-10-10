@@ -417,7 +417,17 @@ Default: 1984.
 
 .IP "\fBXYMONDTLSPORT\fR"
 The port a "xymons://" recipient is sent to over TLS when it
-names none (see xymon(1)). Default: 1985.
+names none (see xymon(1)), and the one an entry of xymond's
+\-\-tls\-listen option without a port listens on. Default: 1985.
+
+.IP "\fBXYMOND_TLS_CERT\fR, \fBXYMOND_TLS_KEY\fR"
+The certificate xymond presents on its \-\-tls\-listen ports,
+with the chain to its CA after it if any, and its private key; the
+key may be in the certificate file, with XYMOND_TLS_KEY set empty.
+A key file that others than its owner and group may read or write
+is refused. Read at startup and on SIGHUP (see xymond(8)).
+Default: $XYMONHOME/etc/tls/xymond.pem and
+$XYMONHOME/etc/tls/xymond.key.
 
 .IP "\fBXYMON_TLS_CA\fR"
 The file of CA certificates that a "xymons://" recipient's
