@@ -214,7 +214,7 @@ int	 defaultcookietime = 86400;	/* 1 day */
 /* This struct describes an active connection with a Xymon client */
 typedef struct conn_t {
 	int sock;			/* Communications socket */
-	struct sockaddr_in addr;	/* Client source address */
+	struct sockaddr_storage addr;	/* Client source address, IPv4 or IPv6 */
 	unsigned char *buf, *bufp;	/* Message buffer and pointer */
 	size_t buflen, bufsz;		/* Active and maximum length of buffer */
 	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
@@ -2401,9 +2401,9 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	}
 	else hwalk = xtreeData(rbhosts, hosthandle);
 
-	if (!oksender(maintsenders, 
+	if (!oksender_addr(maintsenders,
 		      (hwalk->ip && (strcmp(hwalk->ip, "0.0.0.0") != 0)) ? hwalk->ip : NULL,
-		      msg->addr.sin_addr, msg->buf)) goto done;
+		      (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 	if (tname) {
 		testhandle = xtreeFind(rbtests, tname);
@@ -3809,7 +3809,7 @@ void do_message(conn_t *msg, char *origin)
 
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
-	snprintf(sender, sizeof(sender), "%s", inet_ntoa(msg->addr.sin_addr));
+	sockaddr_text((struct sockaddr *)&msg->addr, sender, sizeof(sender));
 	now = getcurrenttime(NULL);
 	timeroffset = (getcurrenttime(NULL) - gettimer());
 
@@ -3839,13 +3839,7 @@ void do_message(conn_t *msg, char *origin)
 			found = 1;
 		}
 		else {
-			int i = 0;
-			do {
-				if ((tracelist[i].ipval & tracelist[i].ipmask) == (ntohl(msg->addr.sin_addr.s_addr) & tracelist[i].ipmask)) {
-					found = 1;
-				}
-				i++;
-			} while (!found && (tracelist[i].ipval != 0));
+			found = sender_in_list(tracelist, (struct sockaddr *)&msg->addr);
 		}
 
 		if (found) {
@@ -3931,14 +3925,14 @@ void do_message(conn_t *msg, char *origin)
 			/* Pick out the real sender of this message */
 			msgfrom = strstr(currmsg, "\nStatus message received from ");
 			if (msgfrom) {
-				sscanf(msgfrom, "\nStatus message received from %15s\n", sender);
+				sscanf(msgfrom, "\nStatus message received from %45s\n", sender);
 				*msgfrom = '\0';
 			}
 
 			if (statussenders) {
 				*knownip = '\0';
 				get_hts_ip(currmsg, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0, knownip);
-				if (!oksender(statussenders, (*knownip ? knownip : NULL), msg->addr.sin_addr, currmsg)) validsender = 0;
+				if (!oksender_addr(statussenders, (*knownip ? knownip : NULL), (struct sockaddr *)&msg->addr, currmsg)) validsender = 0;
 			}
 
 			if (validsender) {
@@ -3983,7 +3977,7 @@ void do_message(conn_t *msg, char *origin)
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
 			get_hts(currmsg, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
+			if (h && t && log && oksender_addr(statussenders, (h ? h->ip : NULL), (struct sockaddr *)&msg->addr, currmsg)) {
 				handle_meta(currmsg, log);
 			}
 
@@ -3999,7 +3993,7 @@ void do_message(conn_t *msg, char *origin)
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
 			get_hts(currmsg, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
+			if (h && t && log && oksender_addr(statussenders, (h ? h->ip : NULL), (struct sockaddr *)&msg->addr, currmsg)) {
 				handle_modify(currmsg, log, color);
 			}
 
@@ -4009,14 +4003,14 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "status", 6) == 0) {
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %15s\n", sender);
+			sscanf(msgfrom, "\nStatus message received from %45s\n", sender);
 			*msgfrom = '\0';
 		}
 
 		if (statussenders) {
 			*knownip = '\0';
 			get_hts_ip(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0, knownip);
-			if (!oksender(statussenders, (*knownip ? knownip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
+			if (!oksender_addr(statussenders, (*knownip ? knownip : NULL), (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 		}
 
 		get_hts(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 1, 1);
@@ -4051,7 +4045,7 @@ void do_message(conn_t *msg, char *origin)
 
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %15s\n", sender);
+			sscanf(msgfrom, "\nStatus message received from %45s\n", sender);
 			*msgfrom = '\0';
 		}
 
@@ -4090,7 +4084,7 @@ void do_message(conn_t *msg, char *origin)
 			if (hname == NULL) {
 				/* Ignore it */
 			}
-			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
+			else if (!oksender_addr(statussenders, hostip, (struct sockaddr *)&msg->addr, msg->buf)) {
 				/* Invalid sender */
 				errprintf("Invalid data message - sender %s not allowed for host %s\n", sender, hostname);
 			}
@@ -4135,7 +4129,7 @@ void do_message(conn_t *msg, char *origin)
 		if (*id) {
 			if (*msg->buf == 'n') {
 				/* "notes" message */
-				if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+				if (!oksender_addr(maintsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) {
 					/* Invalid sender */
 					errprintf("Invalid notes message - sender %s not allowed for host %s\n", 
 						  sender, id);
@@ -4146,7 +4140,7 @@ void do_message(conn_t *msg, char *origin)
 			}
 			else if (*msg->buf == 'u') {
 				/* "usermsg" message */
-				if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) {
+				if (!oksender_addr(statussenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) {
 					/* Invalid sender */
 					errprintf("Invalid user message - sender %s not allowed for host %s\n", 
 						  sender, id);
@@ -4171,7 +4165,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "config", 6) == 0) {
 		char *conffn, *p;
 
-		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(statussenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		p = msg->buf + 6; p += strspn(p, " \t");
 		p = strtok(p, " \t\r\n");
@@ -4186,7 +4180,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (allow_downloads && (strncmp(msg->buf, "download", 8) == 0)) {
 		char *fn, *p;
 
-		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(statussenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		p = msg->buf + 8; p += strspn(p, " \t");
 		p = strtok(p, " \t\r\n");
@@ -4207,7 +4201,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
 		*knownip = '\0';
 		get_hts_ip(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0, knownip);
-		if (!oksender(statussenders, (*knownip ? knownip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(statussenders, (*knownip ? knownip : NULL), (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		if (log) {
 			xfree(msg->buf);
@@ -4250,7 +4244,7 @@ void do_message(conn_t *msg, char *origin)
 		char *fields;
 		int acklevel = -1;
 
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(wwwsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		logfilter = setup_filter(msg->buf, &fields, &acklevel, NULL);
 		if (!fields) fields = "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,modifiers";
@@ -4286,7 +4280,7 @@ void do_message(conn_t *msg, char *origin)
 		 * xymondxlog HOST.TEST
 		 *
 		 */
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(wwwsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (log) {
@@ -4363,7 +4357,7 @@ void do_message(conn_t *msg, char *origin)
 		strbuffer_t *response;
 		static unsigned int lastboardsize = 0;
 
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(wwwsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		logfilter = setup_filter(msg->buf, &fields, &acklevel, &havehostfilter);
 		if (!fields) fields = "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1";
@@ -4484,7 +4478,7 @@ void do_message(conn_t *msg, char *origin)
 		strbuffer_t *response;
 
 
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(wwwsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		logfilter = setup_filter(msg->buf, &fields, &acklevel, &havehostfilter);
 
@@ -4578,7 +4572,7 @@ void do_message(conn_t *msg, char *origin)
 		static unsigned int lastboardsize = 0;
 		char *clonehost;
 
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(wwwsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		response = newstrbuffer(lastboardsize);
 
@@ -4639,7 +4633,7 @@ void do_message(conn_t *msg, char *origin)
 		int duration;
 		xymond_log_t *lwalk;
 
-		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(maintsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		MEMDEFINE(durstr);
 
@@ -4691,7 +4685,7 @@ void do_message(conn_t *msg, char *origin)
 		/* ackinfo HOST.TEST\nlevel\nvaliduntil\nackedby\nmsg */
 		int ackall = 0;
 
-		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(maintsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, &ackall, 0, 0);
 		if (log) {
@@ -4711,7 +4705,7 @@ void do_message(conn_t *msg, char *origin)
 		char *hostname = NULL, *testname = NULL;
 		char *p;
 
-		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(adminsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		p = msg->buf + 4; p += strspn(p, " \t");
 		hostname = strtok(p, " \t");
@@ -4728,7 +4722,7 @@ void do_message(conn_t *msg, char *origin)
 		char *hostname = NULL, *n1 = NULL, *n2 = NULL;
 		char *p;
 
-		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(adminsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		p = msg->buf + 6; p += strspn(p, " \t");
 		hostname = strtok(p, " \t");
@@ -4753,7 +4747,7 @@ void do_message(conn_t *msg, char *origin)
 		xymond_hostlist_t *hwalk;
 		int validrequest = 1;
 
-		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(adminsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		p = msg->buf + strlen("hostdatasave"); p += strspn(p, " \t");
 		hostname = strtok(p, " \t");
@@ -4812,7 +4806,7 @@ void do_message(conn_t *msg, char *origin)
 		msg->buflen = strlen(msg->buf);
 	}
 	else if (strncmp(msg->buf, "notify", 6) == 0) {
-		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(maintsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (h && t) handle_notify(msg->buf, sender, h->hostname, t->name);
 	}
@@ -4891,7 +4885,7 @@ void do_message(conn_t *msg, char *origin)
 		if (msgfrom) {
 			char *ipline = strstr(msgfrom, "\nClientIP:");
 			if (ipline) { 
-				sscanf(ipline, "\nClientIP:%15s\n", sender);
+				sscanf(ipline, "\nClientIP:%45s\n", sender);
 			}
 		}
 
@@ -4932,7 +4926,7 @@ void do_message(conn_t *msg, char *origin)
 			if (hname == NULL) {
 				/* Ignore it */
 			}
-			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
+			else if (!oksender_addr(statussenders, hostip, (struct sockaddr *)&msg->addr, msg->buf)) {
 				/* Invalid sender */
 				errprintf("Invalid client message - sender %s not allowed for host %s\n", sender, hostname);
 				hname = NULL;
@@ -4986,7 +4980,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "clientlog ", 10) == 0) {
 		char *hostname, *p;
 		xtreePos_t hosthandle;
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender_addr(wwwsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		p = msg->buf + strlen("clientlog"); p += strspn(p, "\t ");
 		hostname = p; p += strcspn(p, "\t "); if (*p) { *p = '\0'; p++; }
@@ -5045,7 +5039,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 	else if (strncmp(msg->buf, "ghostlist", 9) == 0) {
-		if (oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+		if (oksender_addr(wwwsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) {
 			xtreePos_t ghandle;
 			ghostlist_t *gwalk;
 			strbuffer_t *resp;
@@ -5070,7 +5064,7 @@ void do_message(conn_t *msg, char *origin)
 	}
 
 	else if (strncmp(msg->buf, "multisrclist", 12) == 0) {
-		if (oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+		if (oksender_addr(wwwsenders, NULL, (struct sockaddr *)&msg->addr, msg->buf)) {
 			xtreePos_t mhandle;
 			multisrclist_t *mwalk;
 			strbuffer_t *resp;
@@ -5843,8 +5837,7 @@ void sig_handler(int signum)
  */
 typedef struct xymond_listener_t {
 	int fd;
-	struct in_addr addr;
-	int port;
+	struct sockaddr_storage addr;	/* IPv4 or IPv6, with the port */
 } xymond_listener_t;
 
 static xymond_listener_t *listeners = NULL;
@@ -5861,41 +5854,53 @@ static int listeners_cover_loopback(void)
 	unsigned long a;
 
 	for (i = 0; i < listener_count; i++) {
-		a = ntohl(listeners[i].addr.s_addr);
+		if (listeners[i].addr.ss_family != AF_INET) continue;	/* an IPv6 socket takes no IPv4 */
+		a = ntohl(((struct sockaddr_in *)&listeners[i].addr)->sin_addr.s_addr);
 		if ((a == INADDR_ANY) || (a == INADDR_LOOPBACK)) return 1;
 	}
 
 	return 0;
 }
 
-/* Bind and listen on one address. Returns 0, or -1 with the reason logged. */
-static int add_listener(struct in_addr addr, int port, int listenq)
+/* Bind and listen on one address, IPv4 or IPv6, port included. Returns 0,
+   or -1 with the reason logged. */
+static int add_listener(struct sockaddr_storage *addr, int listenq)
 {
-	struct sockaddr_in laddr;
 	xymond_listener_t *grown;
-	int fd, opt = 1;
+	int fd, opt = 1, port;
+	socklen_t len;
+	char text[IP_ADDR_STRLEN];
 
-	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (addr->ss_family == AF_INET6) {
+		len = sizeof(struct sockaddr_in6);
+		port = ntohs(((struct sockaddr_in6 *)addr)->sin6_port);
+	}
+	else {
+		len = sizeof(struct sockaddr_in);
+		port = ntohs(((struct sockaddr_in *)addr)->sin_port);
+	}
+	sockaddr_text((struct sockaddr *)addr, text, sizeof(text));
+
+	fd = socket(addr->ss_family, SOCK_STREAM, 0);
 	if (fd == -1) {
 		errprintf("Cannot create listen socket (%s)\n", strerror(errno));
 		return -1;
 	}
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	/* An IPv6 listener takes IPv6 only, whatever the system default: IPv4
+	   is what the IPv4 listeners are for, and a [::] socket that took it
+	   too would collide with 0.0.0.0 on the same port. */
+	if (addr->ss_family == AF_INET6) setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
 	fcntl(fd, F_SETFL, O_NONBLOCK);
 
-	memset(&laddr, 0, sizeof(laddr));
-	laddr.sin_family = AF_INET;
-	laddr.sin_addr = addr;
-	laddr.sin_port = htons(port);
-
-	if (bind(fd, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
+	if (bind(fd, (struct sockaddr *)addr, len) == -1) {
 		/* "listen socket" kept: callers and people grep for it. */
-		errprintf("Cannot bind to listen socket %s:%d (%s)\n", inet_ntoa(addr), port, strerror(errno));
+		errprintf("Cannot bind to listen socket %s:%d (%s)\n", text, port, strerror(errno));
 		close(fd);
 		return -1;
 	}
 	if (listen(fd, listenq) == -1) {
-		errprintf("Cannot listen on %s:%d (%s)\n", inet_ntoa(addr), port, strerror(errno));
+		errprintf("Cannot listen on %s:%d (%s)\n", text, port, strerror(errno));
 		close(fd);
 		return -1;
 	}
@@ -5908,11 +5913,10 @@ static int add_listener(struct in_addr addr, int port, int listenq)
 	}
 	listeners = grown;
 	listeners[listener_count].fd = fd;
-	listeners[listener_count].addr = addr;
-	listeners[listener_count].port = port;
+	memcpy(&listeners[listener_count].addr, addr, sizeof(*addr));
 	listener_count++;
 
-	errprintf("Listening on %s:%d\n", inet_ntoa(addr), port);
+	errprintf("Listening on %s:%d\n", text, port);
 
 	return 0;
 }
@@ -6221,22 +6225,35 @@ int main(int argc, char *argv[])
 		char *entry, *saveptr = NULL;
 
 		for (entry = strtok_r(spec, ",", &saveptr); entry; entry = strtok_r(NULL, ",", &saveptr)) {
-			struct in_addr addr;
+			struct sockaddr_storage addr;
 			int port = listenport;
-			char *colon;
+			char *colon, *rbracket;
 
 			while ((*entry == ' ') || (*entry == '\t')) entry++;
-			colon = strchr(entry, ':');
-			if (colon) { *colon = '\0'; port = atoi(colon+1); }
+			if ((*entry == '[') && ((rbracket = strchr(entry, ']')) != NULL)) {
+				/* [IPv6] or [IPv6]:PORT */
+				*rbracket = '\0';
+				if (*(rbracket+1) == ':') port = atoi(rbracket+2);
+				entry++;
+			}
+			else {
+				/* IPv4[:PORT]; a bare IPv6 address has more than one ':' and no port */
+				colon = strchr(entry, ':');
+				if (colon && (strchr(colon+1, ':') == NULL)) { *colon = '\0'; port = atoi(colon+1); }
+			}
 
-			/* Checked: an unnoticed failure left sin_addr zero, and the
+			/* Checked: an unnoticed failure left the address zero, and the
 			   daemon listened on everything. */
-			if (inet_aton(entry, &addr) == 0) {
-				errprintf("Cannot parse listen address '%s' (expected IP[:PORT])\n", entry);
+			if (!text_sockaddr(entry, &addr)) {
+				errprintf("Cannot parse listen address '%s' (expected IP[:PORT] or [IPv6][:PORT])\n", entry);
 				xfree(spec);
 				return 1;
 			}
-			if (add_listener(addr, port, listenq) != 0) { xfree(spec); return 1; }
+			if (addr.ss_family == AF_INET6)
+				((struct sockaddr_in6 *)&addr)->sin6_port = htons(port);
+			else
+				((struct sockaddr_in *)&addr)->sin_port = htons(port);
+			if (add_listener(&addr, listenq) != 0) { xfree(spec); return 1; }
 		}
 		xfree(spec);
 	}
@@ -6248,11 +6265,11 @@ int main(int argc, char *argv[])
 	   asked for: failing to start over an extra we added ourselves would be
 	   the worse failure. Logged either way. */
 	if (want_loopback && !listeners_cover_loopback()) {
-		struct in_addr lo;
-		int loport = listenport;
+		struct sockaddr_storage lo;
 
-		lo.s_addr = htonl(INADDR_LOOPBACK);
-		if (add_listener(lo, loport, listenq) != 0)
+		text_sockaddr("127.0.0.1", &lo);
+		((struct sockaddr_in *)&lo)->sin_port = htons(listenport);
+		if (add_listener(&lo, listenq) != 0)
 			errprintf("Continuing without a loopback listener; the client on this host must use a configured address\n");
 	}
 
@@ -6501,7 +6518,7 @@ int main(int argc, char *argv[])
 				msg.timeout = now + 10;
 				msg.next = NULL;
 				msg.sock = -1;
-				inet_aton("0.0.0.0", (struct in_addr *) &msg.addr.sin_addr.s_addr);
+				text_sockaddr("0.0.0.0", &msg.addr);	/* the backfeed mark, see oksender_addr() */
 
 				do_message(&msg, "");
 				*bf_buf = '\0';
@@ -6583,12 +6600,13 @@ int main(int argc, char *argv[])
 							else {
 								/* Someone is flooding us */
 								char *eoln;
+								char cwtext[IP_ADDR_STRLEN];
 
 								*(cwalk->buf + 200) = '\0';
 								eoln = strchr(cwalk->buf, '\n');
 								if (eoln) *eoln = '\0';
 								errprintf("Data flooding from %s - 1st line %s\n",
-									  inet_ntoa(cwalk->addr.sin_addr), cwalk->buf);
+									  sockaddr_text((struct sockaddr *)&cwalk->addr, cwtext, sizeof(cwtext)), cwalk->buf);
 								shutdown(cwalk->sock, SHUT_RDWR);
 								close(cwalk->sock); 
 								cwalk->sock = -1; 
@@ -6644,7 +6662,9 @@ int main(int argc, char *argv[])
 					memset(&task, 0, sizeof(task));
 					task.sock = -1;
 					task.doingwhat = NOTALK;
-					inet_aton(runtask->sender, (struct in_addr *) &task.addr.sin_addr.s_addr);
+					/* An unreadable sender would be left 0.0.0.0, the backfeed's
+					   trusted mark: give it an address no list can contain. */
+					if (!text_sockaddr(runtask->sender, &task.addr)) task.addr.ss_family = AF_UNSPEC;
 					task.buf = task.bufp = runtask->command;
 					task.buflen = strlen(runtask->command); task.bufsz = task.buflen+1;
 					do_message(&task, "");
@@ -6729,8 +6749,8 @@ int main(int argc, char *argv[])
 		   where the last scan stopped so a busy address cannot starve the
 		   others. */
 		for (lidx = 0; lidx < listener_count; lidx++) {
-			struct sockaddr_in addr;
-			int addrsz = sizeof(addr);
+			struct sockaddr_storage addr;
+			socklen_t addrsz = sizeof(addr);
 			int sock;
 			int li = (accept_next + lidx) % listener_count;
 
