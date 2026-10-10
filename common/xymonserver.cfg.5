@@ -437,6 +437,14 @@ served. What a verified certificate allows is in xymond(8), under
 \-\-status\-senders. Read at startup and on SIGHUP.
 Default: unset, and no client certificate is asked for.
 
+.IP "\fBXYMOND_TLS_REQUIRE_CERT\fR"
+TRUE: a TLS client that presents no certificate is refused at the
+handshake, so only clients holding a certificate from XYMOND_TLS_CA
+reach xymond over TLS. It needs XYMOND_TLS_CA. xymond logs each
+refusal, and the client reports it. xymond does not start when it is TRUE without XYMOND_TLS_CA, or when
+it is neither TRUE nor FALSE. The plaintext port is not affected.
+Default: FALSE.
+
 .IP "\fBXYMON_TLS_CA\fR"
 The file of CA certificates that a "xymons://" recipient's
 certificate must chain to. Default: unset, which uses the system's

@@ -18,7 +18,10 @@
 #   - the same messages over TLS without a certificate, or in plaintext, are
 #     refused, as is a certificate the CA did not issue;
 #   - without XYMOND_TLS_CA no certificate is asked for, so web01's is not
-#     seen and its status is refused.
+#     seen and its status is refused;
+#   - with XYMOND_TLS_REQUIRE_CERT=TRUE a client without a certificate is
+#     refused at the handshake, and one with web01's is served; xymond does
+#     not start with it but no CA, or with a value other than TRUE or FALSE.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -41,13 +44,15 @@ chmod 600 "$work"/*.key
 P=$(free_port)
 T=$(free_port)
 require_cfg XYMONSERVER_CFG xymond/etcfiles/xymonserver.cfg
-# cfg [CA] -- xymonserver.cfg, with XYMOND_TLS_CA set to CA when given
+# cfg [CA [REQUIRE]] -- xymonserver.cfg, with XYMOND_TLS_CA set to CA and
+# XYMOND_TLS_REQUIRE_CERT to REQUIRE when given
 cfg() {
 	sed -e 's|^XYMONHOME=.*|XYMONHOME="'"$work"'/home"|' \
 	    -e 's|^XYMONTMP=.*|XYMONTMP="'"$work"'/home/tmp"|' \
 		"$XYMONSERVER_CFG" > "$work/xymonserver.cfg"
 	printf 'XYMOND_TLS_CERT="%s"\nXYMOND_TLS_KEY="%s"\nXYMOND_TLS_CA="%s"\n' \
 		"$work/server.pem" "$work/server.key" "${1:-}" >> "$work/xymonserver.cfg"
+	if [ -n "${2:-}" ]; then printf 'XYMOND_TLS_REQUIRE_CERT="%s"\n' "$2" >> "$work/xymonserver.cfg"; fi
 }
 
 MLPID=
@@ -105,6 +110,7 @@ for who in none plain rogue; do
 	assert_not_contains "web01 as $who" "$(kept web01.example.com.mem)" "a status for web01 was kept without its certificate ($who)"
 done
 assert_not_contains "from web01's certificate" "$(as none "query web01.example.com.cpu")" "a query about web01 without a certificate was answered"
+assert_contains "xymond" "$(as none ping)" "with XYMOND_TLS_CA but no XYMOND_TLS_REQUIRE_CERT, a client without a certificate was not served"
 
 # A client message: refused from the address, accepted with the certificate
 as none "client web01.example.com.linux linux
@@ -157,4 +163,23 @@ as web01 "status web01.example.com.cpu green no CA configured" >/dev/null
 assert_not_contains "no CA configured" "$(kept web01.example.com.cpu)" "a client certificate counted although XYMOND_TLS_CA is not set"
 stop
 
-pass "a verified client certificate naming a host lets it send for that host wherever its own address would, and for no other"
+# XYMOND_TLS_REQUIRE_CERT: no certificate, no TLS connection -- and the
+# client says so, for a status too, though it wants no reply
+cfg "$work/ca.pem" TRUE
+launch || fail "xymond did not start with XYMOND_TLS_REQUIRE_CERT=TRUE: $(cat "$work/xymond.log")"
+assert_not_contains "xymond" "$(as none ping)" "with XYMOND_TLS_REQUIRE_CERT=TRUE, a client without a certificate was answered"
+assert_contains "Failed to send message" "$(as none "status web01.example.com.mem green refused")" \
+	"with XYMOND_TLS_REQUIRE_CERT=TRUE, a client without a certificate did not report its status as refused"
+grep -q 'TLS handshake from 127.0.0.1 failed' "$work/xymond.log" || fail "xymond did not log the refused handshake: $(tail -3 "$work/xymond.log")"
+as web01 "status web01.example.com.mem green required and presented" >/dev/null
+assert_contains "required and presented" "$(kept web01.example.com.mem)" "with XYMOND_TLS_REQUIRE_CERT=TRUE, web01's certificate was refused"
+stop
+
+cfg "" TRUE
+if launch; then fail "xymond started with XYMOND_TLS_REQUIRE_CERT=TRUE and no XYMOND_TLS_CA"; fi
+assert_contains "needs a CA" "$(cat "$work/xymond.log")" "xymond did not say a required certificate needs XYMOND_TLS_CA"
+cfg "$work/ca.pem" yes
+if launch; then fail "xymond started with XYMOND_TLS_REQUIRE_CERT=yes"; fi
+assert_contains 'XYMOND_TLS_REQUIRE_CERT is "yes"' "$(cat "$work/xymond.log")" "xymond did not name the value it could not read"
+
+pass "a verified client certificate naming a host lets it send for that host wherever its own address would, and for no other; XYMOND_TLS_REQUIRE_CERT refuses a client without one"
