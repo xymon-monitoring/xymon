@@ -125,6 +125,24 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
       asked for.
     <p class="Pp"></p>
   </dd>
+  <dt id="tls-listen"><a class="permalink" href="#tls-listen"><b>--tls-listen</b>=<i>IP</i>[:<i>PORT</i>][,<i>IP</i>[:<i>PORT</i>]...]</a></dt>
+  <dd>Also take connections over TLS, on the addresses given, written as for
+      <b>--listen</b>; an entry with no port uses XYMONDTLSPORT (1985 by
+      default). These are what a client sends to with a &quot;xymons://&quot;
+      recipient (see <a href="../man1/xymon.1.html">xymon</a>(1)). The conversation is the one of the plaintext
+      port, with TLS from the first byte: a message ends with the client's TLS
+      close_notify, and one that ends otherwise is dropped, with the reason
+      logged. A TLS connection is subject to the same sender lists as any other,
+      and to <b>--timeout</b>, the handshake included.
+    <br/>
+    The certificate and its private key are the files XYMOND_TLS_CERT and
+      XYMOND_TLS_KEY name (see <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)). xymond does not start when
+      they cannot be loaded, or when others than the key's owner and group may
+      read or write it; SIGHUP loads them again (see SIGNALS). Without this
+      option xymond takes no TLS connections, and a xymond built without OpenSSL
+      refuses it.
+    <p class="Pp"></p>
+  </dd>
   <dt id="no-loopback"><a class="permalink" href="#no-loopback"><b>--no-loopback</b></a></dt>
   <dd>Do not add the automatic 127.0.0.1 listener described under
       <b>--listen</b>. Use this when xymond must answer on the addresses named
@@ -413,7 +431,10 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
 <h1 class="Sh" id="SIGNALS"><a class="permalink" href="#SIGNALS">SIGNALS</a></h1>
 <dl class="Bl-tag">
   <dt id="SIGHUP"><a class="permalink" href="#SIGHUP"><b>SIGHUP</b></a></dt>
-  <dd>Re-read the hosts.cfg configuration file.
+  <dd>Re-read the hosts.cfg configuration file. With <b>--tls-listen</b>, also
+      load the TLS certificate and key again, so a renewed certificate is served
+      from the next connection on; if they do not load, xymond logs why and
+      keeps the ones it had.
     <p class="Pp"></p>
   </dd>
   <dt id="SIGUSR1"><a class="permalink" href="#SIGUSR1"><b>SIGUSR1</b></a></dt>
