@@ -63,8 +63,8 @@ xymond_alert: $(ALERTOBJS) $(XYMONCOMMLIB)
 xymond_rrd: $(RRDOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(RRDLIBS) $(PCRELIBS) -lm
 
-xymond.o: xymond.c
-	$(CC) $(CFLAGS) $(SSLFLAGS) -c -o $@ xymond.c
+xymond.o: xymond.c ../lib/xymontls.h
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ xymond.c
 
 do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
@@ -91,7 +91,7 @@ xymond_client: $(CLIENTOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 ../client/xymond_client: $(CLIENTOBJS) ../lib/libxymonclientcomm.a  ../lib/libxymontime.a ../lib/libxymonclient.a
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/libxymonclientcomm.a  ../lib/libxymontime.a ../lib/libxymonclient.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/libxymonclientcomm.a  ../lib/libxymontime.a ../lib/libxymonclient.a $(PCRELIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
 xymond_client.o: xymond_client.c client/*.c
 	$(CC) $(CFLAGS) -c -o $@ xymond_client.c
