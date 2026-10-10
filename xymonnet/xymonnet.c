@@ -109,6 +109,8 @@ char		*defaultsourceip = NULL;
 int		loadhostsfromxymond = 0;
 int		sslminkeysize = 0;
 STATIC_SBUF_DEFINE(warnbuf);
+static void add_warning(char *msg);
+static void warn_url_target_change(testitem_t *t);
 
 void dump_hostlist(void)
 {
@@ -392,6 +394,69 @@ int wanted_host(void *host, char *netstring)
 	return 0;
 }
 
+
+/* Two address strings for the same address? Parsed numerically, so legacy
+ * IPv4 forms ("127.1") and canonical ones ("127.0.0.1") compare equal, as do
+ * two spellings of an IPv6 address; otherwise a plain string compare. */
+static int same_ipaddr(const char *a, const char *b)
+{
+	struct in_addr a4, b4;
+	struct in6_addr a6, b6;
+
+	if (!a || !b) return 0;
+	if ((inet_aton(a, &a4) != 0) && (inet_aton(b, &b4) != 0))
+		return (a4.s_addr == b4.s_addr);
+	if ((inet_pton(AF_INET6, a, &a6) == 1) && (inet_pton(AF_INET6, b, &b6) == 1))
+		return (memcmp(&a6, &b6, sizeof(a6)) == 0);
+	return (strcmp(a, b) == 0);
+}
+
+/*
+ * #516 warning: a URL test on a line with an address (not 0.0.0.0) is fetched
+ * today from where the URL's own host resolves; a future release will fetch it
+ * from the line's address instead. Name only the lines that would then change
+ * target -- the URL's host, as an address or as the address its name resolved
+ * to (which xymonnet already looked up to fetch it, so no extra lookup),
+ * differs from the line's. A "=IP"-pinned or proxied URL keeps its own target,
+ * and a URL for the line's own name does not change, so none of those are named.
+ */
+static void warn_url_target_change(testitem_t *t)
+{
+	http_data_t *req = (http_data_t *)t->privdata;
+	char *lineip = t->host->cfgip;	/* as written in hosts.cfg: ip may be DNS-overwritten by ip_to_test() */
+	char *linename = t->host->hostname;
+	weburl_t url;
+	char *host, *usedip;
+	struct in6_addr addr;
+	char msg[1024];
+
+	if (!req) return;
+	if ((lineip[0] == '\0') || (strcmp(lineip, "0.0.0.0") == 0)) return;
+
+	/* Re-read the testspec for the pin/proxy/host it was written with; no lookup. */
+	decode_url(t->testspec, &url);
+	if (url.desturl->parseerror || url.proxyurl || url.desturl->ip) return;
+	host = url.desturl->host;
+	if (!host) return;
+
+	if ((inet_pton(AF_INET, host, &addr) == 1) || (inet_pton(AF_INET6, host, &addr) == 1)) {
+		/* The URL's host is itself an address: it names where it is already fetched. */
+		if (same_ipaddr(host, lineip)) return;	/* the line's own address: no change */
+		snprintf(msg, sizeof(msg), "xymonnet: host %s: the URL %.900s is fetched from %s. A future release will fetch it from %s, this line's hosts.cfg address: move it to a 0.0.0.0 line, or give the URL the address with \"=IP\"\n",
+			 linename, url.desturl->origform ? url.desturl->origform : host, host, lineip);
+		add_warning(msg);
+		return;
+	}
+
+	if (strcasecmp(host, linename) == 0) return;	/* the line's own name */
+
+	/* A name: decide from the address it actually resolved to for the fetch. */
+	usedip = (req->weburl.desturl ? req->weburl.desturl->ip : NULL);
+	if (!usedip || same_ipaddr(usedip, lineip)) return;	/* resolves to the line's address, or not at all */
+	snprintf(msg, sizeof(msg), "xymonnet: host %s: the URL %.900s is fetched from %s, the address %s resolves to. A future release will fetch it from %s, this line's hosts.cfg address: move it to a 0.0.0.0 line to keep resolving\n",
+		 linename, url.desturl->origform ? url.desturl->origform : host, usedip, host, lineip);
+	add_warning(msg);
+}
 
 void load_tests(void)
 {
@@ -844,6 +909,7 @@ void load_tests(void)
 			}
 	
 			snprintf(h->ip, sizeof(h->ip), "%s", xmh_item(hwalk, XMH_IP));
+			snprintf(h->cfgip, sizeof(h->cfgip), "%s", xmh_item(hwalk, XMH_IP));
 			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {
@@ -2478,7 +2544,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	for (t = httptest->items; (t); t = t->next) add_http_test(t);
+	for (t = httptest->items; (t); t = t->next) { add_http_test(t); warn_url_target_change(t); }
 	add_timestamp("Test engine setup completed");
 
 	do_tcp_tests(timeout, concurrency);
