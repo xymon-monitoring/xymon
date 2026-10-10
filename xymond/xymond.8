@@ -79,6 +79,12 @@ More than one address may be given, separated by commas, and each is bound
 separately \(em so a server can answer on a chosen interface and on the
 loopback at the same time. An entry with no port uses the default port.
 .br
+An IPv6 address is written in brackets, "[2001:db8::10]:1984" or
+"[::]:1984" for every IPv6 address of the host; without a port, the
+brackets may be left out. An IPv6 listener takes IPv6 connections only,
+so "0.0.0.0:1984,[::]:1984" listens on both families on one port. xymond
+listens on IPv6 only when an IPv6 address is named here.
+.br
 Unless \fB\-\-no\-loopback\fR is given, xymond also listens on 127.0.0.1, on
 the port given by XYMONDPORT (1984 by default), unless the addresses named
 already include 127.0.0.1 or 0.0.0.0. Another 127.x address, such as the
@@ -196,6 +202,13 @@ from all of the hosts on the 10.0.2.* network (a 24-bit IP network), you
 would use
 .br
     \-\-status\-senders=172.16.10.2,10.0.2.0/24
+.br
+Entries may be IPv4 or IPv6 addresses, an IPv6 network with its prefix
+length as well: "127.0.0.1,::1,2001:db8::/32". A sender is matched
+against the entries of its own family, so one connecting over IPv6 is not
+allowed by IPv4 entries. The same holds for \fB\-\-maint\-senders\fR,
+\fB\-\-www\-senders\fR and \fB\-\-admin\-senders\fR. An entry that
+is not an address is ignored, with an error.
 
 .IP "\fB\-\-maint\-senders\fR=\fIIP\fR[/\fIMASK\fR][,\fIIP\fR/\fIMASK\fR]"
 Controls which hosts may send maintenance commands to xymond. Maintenance
