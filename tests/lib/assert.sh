@@ -448,9 +448,9 @@ find_root() {
 # row names common/, which is what the server package ships.
 variant_products() {
 	cat <<-'EOF'
-		server       XYMONGREP=common/xymongrep XYMOND_CLIENT=xymond/xymond_client XYMOND_RRD=xymond/xymond_rrd SVCSTATUS_CGI=web/svcstatus.cgi
-		localclient  XYMONGREP=client/xymongrep XYMOND_CLIENT=client/xymond_client
-		client       XYMONGREP=client/xymongrep
+		server       XYMON=common/xymon XYMONGREP=common/xymongrep XYMOND_CLIENT=xymond/xymond_client XYMOND_RRD=xymond/xymond_rrd SVCSTATUS_CGI=web/svcstatus.cgi
+		localclient  XYMON=client/xymon XYMONGREP=client/xymongrep XYMOND_CLIENT=client/xymond_client
+		client       XYMON=client/xymon XYMONGREP=client/xymongrep
 	EOF
 }
 

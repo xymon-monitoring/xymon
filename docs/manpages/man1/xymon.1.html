@@ -68,9 +68,15 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
     <p class="Pp"></p>
   </dd>
   <dt id="RECIPIENT"><a class="permalink" href="#RECIPIENT"><b>RECIPIENT</b></a></dt>
-  <dd>The <b>RECIPIENT</b> parameter defines which server receives the message.
-      If RECIPIENT is given as &quot;0.0.0.0&quot;, then the message is sent to
-      all of the servers listed in the XYMSERVERS environment variable.
+  <dd>The <b>RECIPIENT</b> parameter defines which server receives the message:
+      an IPv4 or IPv6 address or a hostname, optionally followed by
+      &quot;:port&quot;. An IPv6 address with a port is written in brackets,
+      &quot;[2001:db8::1]:1984&quot;; without a port, the default one is used
+      (see XYMONDPORT in <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)). A hostname with several addresses
+      is tried address by address, in the order the resolver gives them, until
+      one connects. If RECIPIENT is given as &quot;0.0.0.0&quot;, then the
+      message is sent to all of the servers listed in the XYMSERVERS environment
+      variable.
     <p class="Pp">Usually, a client will use &quot;$XYMSRV&quot; for the
         <b>RECIPIENT</b> parameter, as this is defined for the client scripts to
         automatically contain the correct value.</p>
