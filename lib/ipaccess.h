@@ -19,14 +19,20 @@
 #include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ... */
 #endif
 
+/* One entry of a sender list: an IPv4 or IPv6 network. family 0 ends a list. */
 typedef struct sender_t {
-	unsigned long int ipval;
-	int ipmask;
+	int family;			/* AF_INET or AF_INET6 */
+	unsigned char addr[16];		/* network order; IPv4 uses the first 4 bytes */
+	int bits;			/* prefix length */
 } sender_t;
 
 
 extern sender_t *getsenderlist(char *iplist);
+extern int sender_in_list(sender_t *list, struct sockaddr *sa);
+extern int oksender_addr(sender_t *oklist, char *targetip, struct sockaddr *sa, char *msgbuf);
 extern int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgbuf);
+extern char *sockaddr_text(struct sockaddr *sa, char *buf, size_t buflen);
+extern int text_sockaddr(char *text, struct sockaddr_storage *ss);
 
 #endif
 
