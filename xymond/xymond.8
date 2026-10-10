@@ -115,8 +115,10 @@ they cannot be loaded, or when others than the key's owner and group may
 read or write it; SIGHUP loads
 them again (see SIGNALS). A certificate that has expired or is not valid
 yet is served all the same, with a warning in the log, so that the
-plaintext port is not stopped over it; \fB\-\-check\-tls\fR fails it. Without this option xymond takes no TLS
-connections, and a xymond built without OpenSSL refuses it.
+plaintext port is not stopped over it; \fB\-\-check\-tls\fR fails it.
+Without this option xymond takes no TLS connections, and a xymond built
+without OpenSSL refuses it. How to set up TLS and move clients to it is in
+xymon\-tls(7).
 
 .IP "\fB\-\-check\-tls\fR"
 Load the TLS certificate, key and CA as \fB\-\-tls\-listen\fR would, say
