@@ -37,10 +37,9 @@ a built-in SNTP (RFC 4330/5905) probe - a single in-process UDP query on port 12
 NTPDATE to the ntpdate program (on ntpsec, "ntpdig") to use that instead; empty
 NTPDATE selects the built-in probe.
 
-Note: xymonnet performs the connectivity test (ping) based on the
-hostname, unless the host is tagged with "testip" or the
-"\-\-dns=ip" option is used. So the target of the connectivity
-test can be determined by your /etc/hosts file or DNS.
+Note: xymonnet performs the connectivity test (ping) against the
+IP-address in hosts.cfg; only for 0.0.0.0 is the target the address the
+hostname resolves to, through your /etc/hosts file or DNS.
 
 By default, all servers are tested - if XYMONNETWORK is set via
 .I xymonserver.cfg(5)
@@ -93,33 +92,18 @@ Same as "\-\-dns\-timeout=N". The "\-\-dns\-max\-all" option is
 deprecated and should not be used.
 
 .IP "\fB\-\-dns\fR=[\fBip\fR|\fBonly\fR|\fBstandard\fR]"
-Determines how xymonnet finds the IP addresses of the hosts to test.
-By default (the "standard"), xymonnet does a DNS lookup of the hostname
-to determine the IP address, unless the host has the "testip"
-tag, or the DNS lookup fails.
-When the lookup gives another address than the one in hosts.cfg,
-and that one is not 0.0.0.0, xymonnet tests the address DNS gave and
-names the host under "Warning output" in its own status (see
-"\-\-report"). A future release will test the hosts.cfg address
-instead: correct it, or write 0.0.0.0 to keep resolving the name.
-An http or https test on a line with an address, for a URL whose host
-is not the line's name, is named there too: a future release will
-fetch that URL from the line's address. Move it to a 0.0.0.0 line to
-keep fetching it where its name resolves, or give it an address of its
-own with "=IP".
+Determines how xymonnet finds the IP addresses of hosts whose hosts.cfg
+IP-address is 0.0.0.0. Any other host is tested at the address hosts.cfg
+gives, with no DNS lookup, whatever this option says; so are the http and
+https tests on its line (see "Testing sites by IP-address" in
+.I hosts.cfg(5)\fR).
 .br
-With "\-\-dns=only" xymonnet will ONLY do the DNS lookup;
-if it fails, then all services on that host will be
-reported as being down.
+By default (the "standard"), and with "\-\-dns=only", xymonnet looks up
+the hostname of a 0.0.0.0 host; if that fails, all services on that host
+are reported as being down.
 .br
-With "\-\-dns=ip" xymonnet will never do a DNS lookup;
-it will use the IP adresse specified in hosts.cfg for
-the tests. Thus, this setting is equivalent to having
-the "testip" tag on all hosts. Note that http tests
-will ignore this setting and still perform a DNS
-lookup for the hostname given in the URL; see the
-"xymonnet tags for HTTP tests" section in
-.I hosts.cfg(5)
+With "\-\-dns=ip" xymonnet does no lookup at all, so a 0.0.0.0 host
+cannot be tested.
 
 .IP "\fB\-\-no\-ares\fR"
 Disable the ARES resolver built into xymonnet. This makes
