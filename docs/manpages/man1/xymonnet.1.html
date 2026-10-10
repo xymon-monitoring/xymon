@@ -618,7 +618,8 @@ Example:
   <dd>Command used to run the <i><a href="../man1/xymonping.1.html">xymonping</a>(1)</i> utility. Used by xymonnet for
       connectivity (ping) testing. See <i><a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</i> for more
       information about how to customize the program that is executed to do ping
-      tests.
+      tests. A host listed by an IPv6 address needs a program that pings IPv6,
+      such as fping 4 or later; xymonping is IPv4 only.
     <p class="Pp"></p>
   </dd>
   <dt id="TRACEROUTE"><a class="permalink" href="#TRACEROUTE"><b>TRACEROUTE</b></a></dt>
