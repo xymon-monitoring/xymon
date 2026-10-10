@@ -1233,9 +1233,27 @@ int accept_test(void *hrec, char *testname)
 }
 
 
+/*
+ * get_hts(), also giving the host's hosts.cfg address in knownip (size
+ * IP_ADDR_STRLEN; empty when the host is not known). It is there even when
+ * no host record exists yet and none is created, which is what a sender
+ * check needs: a host may report on itself before its first status has
+ * made it a record.
+ */
+static void get_hts_ip(char *msg, char *sender, char *origin,
+	     xymond_hostlist_t **host, testinfo_t **test, char **grouplist, xymond_log_t **log,
+	     int *color, char **downcause, int *alltests, int createhost, int createlog, char *knownip);
+
 void get_hts(char *msg, char *sender, char *origin,
 	     xymond_hostlist_t **host, testinfo_t **test, char **grouplist, xymond_log_t **log, 
 	     int *color, char **downcause, int *alltests, int createhost, int createlog)
+{
+	get_hts_ip(msg, sender, origin, host, test, grouplist, log, color, downcause, alltests, createhost, createlog, NULL);
+}
+
+static void get_hts_ip(char *msg, char *sender, char *origin,
+	     xymond_hostlist_t **host, testinfo_t **test, char **grouplist, xymond_log_t **log,
+	     int *color, char **downcause, int *alltests, int createhost, int createlog, char *knownip)
 {
 	/*
 	 * This routine takes care of finding existing status log records, or
@@ -1314,6 +1332,7 @@ void get_hts(char *msg, char *sender, char *origin,
 			knownname = log_ghost(hostname, sender, msg);
 			if (knownname == NULL) goto done;
 		}
+		else if (knownip) snprintf(knownip, IP_ADDR_STRLEN, "%s", hostip);
 		hostname = knownname;
 	}
 
@@ -3958,6 +3977,7 @@ void do_message(conn_t *msg, char *origin)
 	int color;
 	char *downcause;
 	char sender[IP_ADDR_STRLEN];
+	char knownip[IP_ADDR_STRLEN];	/* the reported host's hosts.cfg address */
 	char *grouplist;
 	time_t now, timeroffset;
 	char *msgfrom;
@@ -4096,8 +4116,9 @@ void do_message(conn_t *msg, char *origin)
 			}
 
 			if (statussenders) {
-				get_hts(currmsg, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
-				if (!oksender_addr(statussenders, (h ? h->ip : NULL), (struct sockaddr *)&msg->addr, currmsg)) validsender = 0;
+				*knownip = '\0';
+				get_hts_ip(currmsg, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0, knownip);
+				if (!oksender_addr(statussenders, (*knownip ? knownip : NULL), (struct sockaddr *)&msg->addr, currmsg)) validsender = 0;
 			}
 
 			if (validsender) {
@@ -4173,8 +4194,9 @@ void do_message(conn_t *msg, char *origin)
 		}
 
 		if (statussenders) {
-			get_hts(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
-			if (!oksender_addr(statussenders, (h ? h->ip : NULL), (struct sockaddr *)&msg->addr, msg->buf)) goto done;
+			*knownip = '\0';
+			get_hts_ip(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0, knownip);
+			if (!oksender_addr(statussenders, (*knownip ? knownip : NULL), (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 		}
 
 		get_hts(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 1, 1);
@@ -4363,8 +4385,9 @@ void do_message(conn_t *msg, char *origin)
 		posttoall(msg->buf);
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
-		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-		if (!oksender_addr(statussenders, (h ? h->ip : NULL), (struct sockaddr *)&msg->addr, msg->buf)) goto done;
+		*knownip = '\0';
+		get_hts_ip(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0, knownip);
+		if (!oksender_addr(statussenders, (*knownip ? knownip : NULL), (struct sockaddr *)&msg->addr, msg->buf)) goto done;
 
 		if (log) {
 			xfree(msg->buf);
