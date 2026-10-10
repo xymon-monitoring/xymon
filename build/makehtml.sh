@@ -7,7 +7,7 @@
 #   build/makehtml.sh common/hosts.cfg.5            regenerate one page
 #
 # The last form exists so that editing one manual page does not mean
-# rewriting all 69 HTML files, which buries the real change in the diff.
+# rewriting every HTML file, which buries the real change in the diff.
 set -euo pipefail
 
 # LC_ALL, not LANG: LANG=C is overridden by any LC_* the caller has set.
