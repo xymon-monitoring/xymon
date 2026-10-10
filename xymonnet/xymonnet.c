@@ -1285,7 +1285,8 @@ int finish_ping_service(service_t *service)
 	char 		*p;
 	char		l[MAX_LINE_LEN];
 	char		pingip[MAX_LINE_LEN];
-	int		ip1, ip2, ip3, ip4;
+	struct in_addr	probe4;
+	struct in6_addr	probe6;
 	int		pingstatus, failed = 0, i;
 	char		fn[PATH_MAX];
 
@@ -1367,9 +1368,13 @@ int finish_ping_service(service_t *service)
 			/* The test did run, and we have a result-file. Look at it. */
 			while (fgets(l, sizeof(l), logfd)) {
 				p = strchr(l, '\n'); if (p) *p = '\0';
-				if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
-
-					snprintf(pingip, sizeof(pingip), "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+				/* "ADDRESS is alive": the address is the first word, IPv4 or IPv6 */
+				p = strchr(l, ' ');
+				if (p && ((p - l) < IP_ADDR_STRLEN)) {
+					memcpy(pingip, l, (p - l)); pingip[p - l] = '\0';
+				}
+				else *pingip = '\0';
+				if ((inet_pton(AF_INET, pingip, &probe4) == 1) || (inet_pton(AF_INET6, pingip, &probe6) == 1)) {
 
 					/*
 					 * Need to loop through all testitems - there may be multiple entries for
