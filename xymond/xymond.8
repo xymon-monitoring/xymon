@@ -109,7 +109,7 @@ The certificate and its private key are the files XYMOND_TLS_CERT and
 XYMOND_TLS_KEY name (see xymonserver.cfg(5)). When XYMOND_TLS_CA is set,
 xymond also asks each TLS client for a certificate, which must then chain
 to that CA, or the connection is refused; a client that has none is still
-served, and checked by its address. What a client certificate allows is
+served, and checked by its address, unless XYMOND_TLS_REQUIRE_CERT is TRUE. What a client certificate allows is
 under \fB\-\-status\-senders\fR. xymond does not start when
 they cannot be loaded, or when others than the key's owner and group may
 read or write it; SIGHUP loads
