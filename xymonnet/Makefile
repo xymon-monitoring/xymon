@@ -17,7 +17,7 @@ endif
 PROGRAMS = xymonnet xymonping beastat
 EXTENSIONS = xymonnet-again.sh
 SNMPPROGRAMS = xymon-snmpcollect
-DBGTOOLS = contest
+DBGTOOLS = xymonnetprobe
 
 
 ifeq ($(DOSNMP),yes)
@@ -81,8 +81,8 @@ beastat.o: beastat.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
-contest: contest.c httptest.o dns.o dns2.o httpcookies.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
-	$(CC) $(LDFLAGS) $(CFLAGS) -o contest -I../include $(CARESINC) -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o $(CARESLIBS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
+xymonnetprobe: contest.c httptest.o dns.o dns2.o httpcookies.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
+	$(CC) $(LDFLAGS) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -o $@ -I../include $(CARESINC) -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o $(CARESLIBS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
 
 
 # net-snmp-config exports the distro's full build policy along with the
@@ -140,6 +140,19 @@ ifndef PKGBUILD
 	chmod 755 $(EXTENSIONS)
 endif
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
+
+# The debug tool "all" builds, xymonnetprobe -- contest.c built standalone,
+# to run one of xymonnet's network tests by hand -- is otherwise discarded:
+# nothing installs it, exactly like lib/'s diagnostics. Reached from the
+# top-level "make install-tools"; deliberately not part of "install".
+install-tools: $(DBGTOOLS)
+	@mkdir -p $(INSTALLROOT)$(INSTALLBINDIR)
+	cp -fp xymonnetprobe $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
+	chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
+ifndef PKGBUILD
+	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
+endif
 
 install-config:
 	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg

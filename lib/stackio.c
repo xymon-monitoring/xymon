@@ -529,6 +529,14 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 
 
 #ifdef STANDALONE
+static void usage(FILE *f, char *pgm)
+{
+	fprintf(f, "Usage: %s FILENAME\n", pgm);
+	fprintf(f, "Prints FILENAME with its include and directory lines expanded, then\n");
+	fprintf(f, "prompts: '!' reads it again, '?' lists the files read and whether any\n");
+	fprintf(f, "changed since, '.' quits, and anything else is read as a new FILENAME.\n");
+}
+
 int main(int argc, char *argv[])
 {
 	char *fn, *p;
@@ -538,6 +546,9 @@ int main(int argc, char *argv[])
 	void *listhead = NULL;
 	int done, linenum;
 
+	if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) { usage(stdout, argv[0]); return 0; }
+	if (argc < 2) { usage(stderr, argv[0]); return 1; }
+
 	fn = strdup(argv[1]);
 	strncpy(cmd, "!", sizeof(cmd));
 	done = 0;
@@ -545,13 +556,15 @@ int main(int argc, char *argv[])
 		if (*cmd == '!') {
 			fd = stackfopen(fn, "r", &listhead);
 			linenum = 1;
-			if (!fd) { errprintf("Cannot open file %s\n", fn); continue; }
-
-			while (stackfgets(inbuf, NULL)) {
-				linenum++;
-				printf("%s", STRBUF(inbuf));
+			/* Fall through to the prompt: a "continue" here retries the same file forever. */
+			if (!fd) errprintf("Cannot open file %s\n", fn);
+			else {
+				while (stackfgets(inbuf, NULL)) {
+					linenum++;
+					printf("%s", STRBUF(inbuf));
+				}
+				stackfclose(fd);
 			}
-			stackfclose(fd);
 		}
 		else if (*cmd == '?') {
 			filelist_t *walk = (filelist_t *)listhead;
