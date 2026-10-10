@@ -861,6 +861,19 @@ void load_tests(void)
 	return;
 }
 
+/* Add a line to the "Warning output" of xymonnet's own status (--report) */
+static void add_warning(char *msg)
+{
+	if (warnbuf == NULL) {
+		SBUF_MALLOC(warnbuf, 8192);
+		*warnbuf = '\0';
+	}
+	else if ((strlen(warnbuf) + strlen(msg)) > warnbuf_buflen) {
+		SBUF_REALLOC(warnbuf, warnbuf_buflen + 8192);
+	}
+	strncat(warnbuf, msg, (warnbuf_buflen - strlen(warnbuf)));
+}
+
 char *ip_to_test(testedhost_t *h)
 {
 	char *dnsresult;
@@ -873,6 +886,18 @@ char *ip_to_test(testedhost_t *h)
 		dnsresult = dnsresolve(h->hostname);
 
 		if (dnsresult) {
+			/*
+			 * A real address in hosts.cfg that DNS contradicts: say so, because
+			 * a future release tests the hosts.cfg address instead (#516). Once
+			 * h->ip holds the answer the two agree, so this is said once a run.
+			 */
+			if (!nullip && (strcmp(h->ip, dnsresult) != 0)) {
+				char msg[512];
+
+				snprintf(msg, sizeof(msg), "xymonnet: host %s: hosts.cfg says %s, DNS says %s; tested %s. A future release will test the hosts.cfg address: correct it, or write 0.0.0.0 to keep resolving\n",
+					 h->hostname, h->ip, dnsresult, dnsresult);
+				add_warning(msg);
+			}
 			snprintf(h->ip, sizeof(h->ip), "%s", dnsresult);
 		}
 		else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
@@ -886,14 +911,7 @@ char *ip_to_test(testedhost_t *h)
 			errprintf("xymonnet: Cannot resolve IP for host %s\n", h->hostname);
  */
 			snprintf(msg, sizeof(msg), "xymonnet: Cannot resolve IP for host %s\n", h->hostname);
-			if (warnbuf == NULL) {
-				SBUF_MALLOC(warnbuf, 8192);
-				*warnbuf = '\0';
-			}
-			else if ((strlen(warnbuf) + strlen(msg)) > warnbuf_buflen) {
-				SBUF_REALLOC(warnbuf, warnbuf_buflen + 8192);
-			}
-			strncat(warnbuf, msg, (warnbuf_buflen - strlen(warnbuf)));
+			add_warning(msg);
 		}
 	}
 
