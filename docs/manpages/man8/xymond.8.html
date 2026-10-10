@@ -139,11 +139,12 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
       XYMOND_TLS_KEY name (see <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)). When XYMOND_TLS_CA is set,
       xymond also asks each TLS client for a certificate, which must then chain
       to that CA, or the connection is refused; a client that has none is still
-      served, and checked by its address. What a client certificate allows is
-      under <b>--status-senders</b>. xymond does not start when they cannot be
-      loaded, or when others than the key's owner and group may read or write
-      it; SIGHUP loads them again (see SIGNALS). Without this option xymond
-      takes no TLS connections, and a xymond built without OpenSSL refuses it.
+      served, and checked by its address, unless XYMOND_TLS_REQUIRE_CERT is
+      TRUE. What a client certificate allows is under <b>--status-senders</b>.
+      xymond does not start when they cannot be loaded, or when others than the
+      key's owner and group may read or write it; SIGHUP loads them again (see
+      SIGNALS). Without this option xymond takes no TLS connections, and a
+      xymond built without OpenSSL refuses it.
     <p class="Pp"></p>
   </dd>
   <dt id="no-loopback"><a class="permalink" href="#no-loopback"><b>--no-loopback</b></a></dt>

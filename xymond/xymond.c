@@ -3850,15 +3850,24 @@ static int inbuf_room(conn_t *c)
 
 static SSL_CTX *tlsctx = NULL;
 
-/* The server context, from XYMOND_TLS_CERT, XYMOND_TLS_KEY and XYMOND_TLS_CA */
+/* The server context, from XYMOND_TLS_CERT, XYMOND_TLS_KEY, XYMOND_TLS_CA and XYMOND_TLS_REQUIRE_CERT */
 static SSL_CTX *tls_load(void)
 {
 	char err[512];
 	char *cert = xgetenv("XYMOND_TLS_CERT"), *key = xgetenv("XYMOND_TLS_KEY"), *ca = xgetenv("XYMOND_TLS_CA");
+	char *require = xgetenv("XYMOND_TLS_REQUIRE_CERT");
 	SSL_CTX *ctx;
 
-	/* With a CA, clients are asked for a certificate, which then must verify; one without is still served */
-	ctx = xymontls_server_ctx(cert, ((key && *key) ? key : NULL), ((ca && *ca) ? ca : NULL), 0, err, sizeof(err));
+	/* Not read as FALSE when misspelt: that would quietly serve clients it was set to refuse */
+	if ((strcmp(require, "TRUE") != 0) && (strcmp(require, "FALSE") != 0)) {
+		errprintf("TLS: XYMOND_TLS_REQUIRE_CERT is \"%s\", not TRUE or FALSE\n", require);
+		return NULL;
+	}
+
+	/* With a CA, clients are asked for a certificate, which then must verify; one without
+	   is still served, unless XYMOND_TLS_REQUIRE_CERT -- which needs the CA */
+	ctx = xymontls_server_ctx(cert, ((key && *key) ? key : NULL), ((ca && *ca) ? ca : NULL),
+				  (strcmp(require, "TRUE") == 0), err, sizeof(err));
 	if (!ctx) errprintf("TLS: %s\n", err);
 	return ctx;
 }

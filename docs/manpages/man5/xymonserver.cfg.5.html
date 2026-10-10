@@ -535,6 +535,15 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       for.
     <p class="Pp"></p>
   </dd>
+  <dt id="XYMOND_TLS_REQUIRE_CERT"><a class="permalink" href="#XYMOND_TLS_REQUIRE_CERT"><b>XYMOND_TLS_REQUIRE_CERT</b></a></dt>
+  <dd>TRUE: a TLS client that presents no certificate is refused at the
+      handshake, so only clients holding a certificate from XYMOND_TLS_CA reach
+      xymond over TLS. It needs XYMOND_TLS_CA. xymond logs each refusal, and the
+      client reports it. xymond does not start when it is TRUE without
+      XYMOND_TLS_CA, or when it is neither TRUE nor FALSE. The plaintext port is
+      not affected. Default: FALSE.
+    <p class="Pp"></p>
+  </dd>
   <dt id="XYMON_TLS_CA"><a class="permalink" href="#XYMON_TLS_CA"><b>XYMON_TLS_CA</b></a></dt>
   <dd>The file of CA certificates that a &quot;xymons://&quot; recipient's
       certificate must chain to. Default: unset, which uses the system's trusted
