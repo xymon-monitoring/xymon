@@ -31,7 +31,8 @@ typedef struct strbuffer_t {
 #define STRBUFEND(buf) (buf->s + buf->used)
 #define STRBUFSZ(buf) (buf->sz)
 
-#define IP_ADDR_STRLEN 16
+/* An address in text, with its NUL: 46 fits IPv6 (INET6_ADDRSTRLEN), and so IPv4 */
+#define IP_ADDR_STRLEN 46
 
 #include "version.h"
 #include "config.h"
