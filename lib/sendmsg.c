@@ -83,6 +83,32 @@ void setproxy(char *proxy)
 	proxysetting = strdup(proxy);
 }
 
+/*
+ * Split a recipient's address in place: "host:port", "[IPv6]:port",
+ * "[IPv6]", or a bare IPv6 address, which has more than one ':' and so
+ * cannot carry a port. Returns the host, without brackets; *port is set
+ * only when a port is given.
+ */
+static char *split_hostport(char *s, int *port)
+{
+	char *p;
+
+	if (*s == '[') {
+		p = strchr(s, ']');
+		if (!p) return s;	/* unbalanced: left for the lookup to refuse */
+		*p = '\0';
+		if (*(p+1) == ':') *port = atoi(p+2);
+		return s+1;
+	}
+
+	p = strchr(s, ':');
+	if (p && (strchr(p+1, ':') == NULL)) {
+		*p = '\0';
+		*port = atoi(p+1);
+	}
+	return s;
+}
+
 static void setup_transport(char *recipient)
 {
 	static int transport_is_setup = 0;
@@ -100,20 +126,11 @@ static void setup_transport(char *recipient)
 
 		if (proxysetting == NULL) proxysetting = getenv("http_proxy");
 		if (proxysetting) {
-			char *p;
+			char *h = strdup(proxysetting);
 
-			xymonproxyhost = strdup(proxysetting);
-			if (strncmp(xymonproxyhost, "http://", 7) == 0) xymonproxyhost += strlen("http://");
- 
-			p = strchr(xymonproxyhost, ':');
-			if (p) {
-				*p = '\0';
-				p++;
-				xymonproxyport = atoi(p);
-			}
-			else {
-				xymonproxyport = 8080;
-			}
+			if (strncmp(h, "http://", 7) == 0) h += strlen("http://");
+			xymonproxyport = 8080;
+			xymonproxyhost = split_hostport(h, &xymonproxyport);
 		}
 	}
 	else {
@@ -149,8 +166,9 @@ static void setup_transport(char *recipient)
 
 static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **respstr, int fullresponse, int timeout)
 {
-	struct in_addr addr;
-	struct sockaddr_in saddr;
+	struct addrinfo hints, *addrs = NULL, *ai = NULL;
+	char portstr[16];
+	char rcptlabel[300];
 	int	sockfd = -1;
 	fd_set	readfds;
 	fd_set	writefds;
@@ -158,7 +176,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 	struct timeval tmo;
 	char *msgptr = message;
 	char *p;
-	char *rcptip = NULL;
+	char *rcptbuf = NULL, *rcptip = NULL;
 	int rcptport = 0;
 	int connretries = SENDRETRIES;
 	SBUF_DEFINE(httpmessage);
@@ -180,12 +198,9 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 
 	if (strncmp(recipient, "http://", strlen("http://")) != 0) {
 		/* Standard communications, directly to Xymon daemon */
-		rcptip = strdup(recipient);
+		rcptbuf = strdup(recipient);
 		rcptport = xymondportnumber;
-		p = strchr(rcptip, ':');
-		if (p) {
-			*p = '\0'; p++; rcptport = atoi(p);
-		}
+		rcptip = split_hostport(rcptbuf, &rcptport);
 		dbgprintf("Standard protocol on port %d\n", rcptport);
 	}
 	else {
@@ -200,23 +215,20 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 			 * Strip off "http://", and point "posturl" to the part after the hostname.
 			 * If a portnumber is present, strip it off and update rcptport.
 			 */
-			rcptip = strdup(recipient+strlen("http://"));
+			rcptbuf = strdup(recipient+strlen("http://"));
 			rcptport = xymondportnumber;
 
-			p = strchr(rcptip, '/');
+			p = strchr(rcptbuf, '/');
 			if (p) {
 				posturl = strdup(p);
 				*p = '\0';
 			}
 
-			p = strchr(rcptip, ':');
-			if (p) {
-				*p = '\0';
-				p++;
-				rcptport = atoi(p);
-			}
+			rcptip = split_hostport(rcptbuf, &rcptport);
 
-			posthost = strdup(rcptip);
+			/* The Host: header brackets an IPv6 address, as a URL does */
+			posthost = (char *)malloc(strlen(rcptip) + 3);
+			snprintf(posthost, strlen(rcptip) + 3, (strchr(rcptip, ':') ? "[%s]" : "%s"), rcptip);
 
 			dbgprintf("HTTP protocol directly to host %s\n", posthost);
 		}
@@ -226,7 +238,8 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 			/*
 			 * With proxy. The full "recipient" must be in the POST request.
 			 */
-			rcptip = strdup(xymonproxyhost);
+			rcptbuf = strdup(xymonproxyhost);
+			rcptip = rcptbuf;
 			rcptport = xymonproxyport;
 
 			posturl = strdup(recipient);
@@ -237,8 +250,15 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 				posthost = strdup(recipient + strlen("http://"));
 				*p = '/';
 
-				p = strchr(posthost, ':');
-				if (p) *p = '\0';
+				/* Drop the port; keep an IPv6 address's brackets */
+				if (*posthost == '[') {
+					p = strchr(posthost, ']');
+					if (p) *(p+1) = '\0';
+				}
+				else {
+					p = strchr(posthost, ':');
+					if (p) *p = '\0';
+				}
 			}
 
 			dbgprintf("HTTP protocol via proxy to host %s\n", posthost);
@@ -248,7 +268,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 			snprintf(errordetails + strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Unable to parse HTTP recipient");
 			if (posturl) xfree(posturl);
 			if (posthost) xfree(posthost);
-			if (rcptip) xfree(rcptip);
+			if (rcptbuf) xfree(rcptbuf);
 			return XYMONSEND_EBADURL;
 		}
 
@@ -265,46 +285,45 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 		dbgprintf("HTTP message is:\n%s\n", httpmessage);
 	}
 
-	if (inet_aton(rcptip, &addr) == 0) {
-		/* recipient is not an IP - do DNS lookup */
+	snprintf(rcptlabel, sizeof(rcptlabel), (strchr(rcptip, ':') ? "[%s]:%d" : "%s:%d"), rcptip, rcptport);
 
-		struct hostent *hent;
-		char hostip[IP_ADDR_STRLEN];
-
-		hent = gethostbyname(rcptip);
-		if (hent) {
-			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
-			snprintf(hostip, sizeof(hostip), "%s", inet_ntoa(addr));
-
-			if (inet_aton(hostip, &addr) == 0) {
-				result = XYMONSEND_EBADIP;
-				goto done;
-			}
-		}
-		else {
-			snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Cannot determine IP address of message recipient %s", rcptip);
-			result = XYMONSEND_EIPUNKNOWN;
-			goto done;
-		}
+	/*
+	 * A name or an address of either family. A name may resolve to several
+	 * addresses, IPv6 and IPv4 among them: each is tried in the resolver's
+	 * order until one connects.
+	 */
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	snprintf(portstr, sizeof(portstr), "%d", rcptport);
+	if (getaddrinfo(rcptip, portstr, &hints, &addrs) != 0) {
+		snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Cannot determine IP address of message recipient %s", rcptip);
+		result = XYMONSEND_EIPUNKNOWN;
+		goto done;
 	}
+	ai = addrs;
 
 retry_connect:
-	dbgprintf("Will connect to address %s port %d\n", rcptip, rcptport);
-
-	memset(&saddr, 0, sizeof(saddr));
-	saddr.sin_family = AF_INET;
-	saddr.sin_addr.s_addr = addr.s_addr;
-	saddr.sin_port = htons(rcptport);
+	dbgprintf("Will connect to address %s port %d (family %d)\n", rcptip, rcptport, ai->ai_family);
 
 	/* Get a non-blocking socket */
-	sockfd = socket(PF_INET, SOCK_STREAM, 0);
-	if (sockfd == -1) { result = XYMONSEND_ENOSOCKET; goto done; }
+	sockfd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+	if (sockfd == -1) {
+		if (ai->ai_next) { ai = ai->ai_next; goto retry_connect; }
+		result = XYMONSEND_ENOSOCKET; goto done;
+	}
 	res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
 	if (res != 0) { result = XYMONSEND_ECANNOTDONONBLOCK; goto done; }
 
-	res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
+	res = connect(sockfd, ai->ai_addr, ai->ai_addrlen);
 	if ((res == -1) && (errno != EINPROGRESS)) {
-		snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "connect to Xymon daemon@%s:%d failed (%s)", rcptip, rcptport, strerror(errno));
+		if (ai->ai_next) {
+			dbgprintf("connect to Xymon daemon@%s failed (%s) - trying its next address\n", rcptlabel, strerror(errno));
+			close(sockfd);
+			ai = ai->ai_next;
+			goto retry_connect;
+		}
+		snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "connect to Xymon daemon@%s failed (%s)", rcptlabel, strerror(errno));
 		result = XYMONSEND_ECONNFAILED;
 		goto done;
 	}
@@ -319,7 +338,7 @@ retry_connect:
 		tmo.tv_sec = timeout;  tmo.tv_usec = 0;
 		res = select(sockfd+1, &readfds, &writefds, NULL, (timeout ? &tmo : NULL));
 		if (res == -1) {
-			snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Select failure while sending to Xymon daemon@%s:%d", rcptip, rcptport);
+			snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Select failure while sending to Xymon daemon@%s", rcptlabel);
 			result = XYMONSEND_ESELFAILED;
 			goto done;
 		}
@@ -328,9 +347,15 @@ retry_connect:
 			shutdown(sockfd, SHUT_RDWR);
 			close(sockfd);
 
+			if (!isconnected && ai->ai_next) {
+				dbgprintf("Timeout while connecting to Xymon daemon@%s - trying its next address\n", rcptlabel);
+				ai = ai->ai_next;
+				goto retry_connect;
+			}
 			if (!isconnected && (connretries > 0)) {
-				dbgprintf("Timeout while talking to Xymon daemon@%s:%d - retrying\n", rcptip, rcptport);
+				dbgprintf("Timeout while talking to Xymon daemon@%s - retrying\n", rcptlabel);
 				connretries--;
+				ai = addrs;
 				sleep(1);
 				goto retry_connect;	/* Yuck! */
 			}
@@ -347,9 +372,15 @@ retry_connect:
 				res = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &connres, &connressize);
 				dbgprintf("Connect status is %d\n", connres);
 				isconnected = (connres == 0);
+				if (!isconnected && ai->ai_next) {
+					dbgprintf("Could not connect to Xymon daemon@%s (%s) - trying its next address\n", rcptlabel, strerror(connres));
+					close(sockfd);
+					ai = ai->ai_next;
+					goto retry_connect;
+				}
 				if (!isconnected) {
-					snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Could not connect to Xymon daemon@%s:%d (%s)", 
-						  rcptip, rcptport, strerror(connres));
+					snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Could not connect to Xymon daemon@%s (%s)",
+						  rcptlabel, strerror(connres));
 					result = XYMONSEND_ECONNFAILED;
 					goto done;
 				}
@@ -415,7 +446,7 @@ retry_connect:
 				/* Send some data */
 				res = write(sockfd, msgptr, strlen(msgptr));
 				if (res == -1) {
-					snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Write error while sending message to Xymon daemon@%s:%d", rcptip, rcptport);
+					snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Write error while sending message to Xymon daemon@%s", rcptlabel);
 					result = XYMONSEND_EWRITEERROR;
 					goto done;
 				}
@@ -433,7 +464,8 @@ done:
 	dbgprintf("Closing connection\n");
 	shutdown(sockfd, SHUT_RDWR);
 	if (sockfd > 0) close(sockfd);
-	xfree(rcptip);
+	if (addrs) freeaddrinfo(addrs);
+	xfree(rcptbuf);
 	if (httpmessage) xfree(httpmessage);
 	return result;
 }
