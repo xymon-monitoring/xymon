@@ -23,6 +23,10 @@ XYMSRV=0.0.0.0.
 The port number for used to contact the Xymon server.
 Default: 1984.
 
+.IP "\fBXYMONDTLSPORT\fR, \fBXYMON_TLS_CA\fR, \fBXYMON_TLS_VERIFY\fR, \fBXYMON_TLS_SNI\fR, \fBXYMON_TLS_CERT\fR, \fBXYMON_TLS_KEY\fR"
+How the client sends to a "xymons://" XYMSRV or XYMSERVERS entry,
+over TLS. For each, see xymonserver.cfg(5).
+
 .IP "\fBXYMONHOME\fR"
 The Xymon client top-level directory. Default: The
 $XYMONCLIENTHOME setting inherited from the "runclient.sh"
