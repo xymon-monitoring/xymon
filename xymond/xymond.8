@@ -113,8 +113,21 @@ served, and checked by its address, unless XYMOND_TLS_REQUIRE_CERT is TRUE. What
 under \fB\-\-status\-senders\fR. xymond does not start when
 they cannot be loaded, or when others than the key's owner and group may
 read or write it; SIGHUP loads
-them again (see SIGNALS). Without this option xymond takes no TLS
+them again (see SIGNALS). A certificate that has expired or is not valid
+yet is served all the same, with a warning in the log, so that the
+plaintext port is not stopped over it; \fB\-\-check\-tls\fR fails it. Without this option xymond takes no TLS
 connections, and a xymond built without OpenSSL refuses it.
+
+.IP "\fB\-\-check\-tls\fR"
+Load the TLS certificate, key and CA as \fB\-\-tls\-listen\fR would, say
+whether they would be served, and exit: 0 when they would, 1 when not,
+with the reason. It also fails a certificate that has expired or is not
+valid yet, which xymond serves with a warning but no client that
+verifies it accepts. On success it
+says how many days the certificate has left, and whether client
+certificates are asked for or required. It binds and starts nothing, so it
+can be run beside a running xymond, as the user xymond runs as, before a
+restart or after renewing a certificate.
 
 .IP "\fB\-\-no\-loopback\fR"
 Do not add the automatic 127.0.0.1 listener described under \fB\-\-listen\fR.
