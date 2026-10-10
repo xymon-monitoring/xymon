@@ -512,7 +512,18 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   </dd>
   <dt id="XYMONDTLSPORT"><a class="permalink" href="#XYMONDTLSPORT"><b>XYMONDTLSPORT</b></a></dt>
   <dd>The port a &quot;xymons://&quot; recipient is sent to over TLS when it
-      names none (see <a href="../man1/xymon.1.html">xymon</a>(1)). Default: 1985.
+      names none (see <a href="../man1/xymon.1.html">xymon</a>(1)), and the one an entry of xymond's --tls-listen
+      option without a port listens on. Default: 1985.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="XYMOND_TLS_CERT"><a class="permalink" href="#XYMOND_TLS_CERT"><b>XYMOND_TLS_CERT</b>,
+    <b>XYMOND_TLS_KEY</b></a></dt>
+  <dd>The certificate xymond presents on its --tls-listen ports, with the chain
+      to its CA after it if any, and its private key; the key may be in the
+      certificate file, with XYMOND_TLS_KEY set empty. A key file that others
+      than its owner and group may read or write is refused. Read at startup and
+      on SIGHUP (see <a href="../man8/xymond.8.html">xymond</a>(8)). Default: $XYMONHOME/etc/tls/xymond.pem and
+      $XYMONHOME/etc/tls/xymond.key.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMON_TLS_CA"><a class="permalink" href="#XYMON_TLS_CA"><b>XYMON_TLS_CA</b></a></dt>

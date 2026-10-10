@@ -57,6 +57,7 @@ static char rcsid[] = "$Id$";
 #include <sys/msg.h>
 
 #include "libxymon.h"
+#include "../lib/xymontls.h"
 
 #define DISABLED_UNTIL_OK -1
 #define HOSTDATASAVE_DEFAULT_TTL 30
@@ -211,6 +212,10 @@ int	 defaultcookietime = 86400;	/* 1 day */
 #define RECEIVING 1
 #define RESPONDING 2
 
+/* What a TLS connection waits for before it can go on (conn_t.sslwant) */
+#define TLSWANT_READ 1
+#define TLSWANT_WRITE 2
+
 /* This struct describes an active connection with a Xymon client */
 typedef struct conn_t {
 	int sock;			/* Communications socket */
@@ -219,6 +224,10 @@ typedef struct conn_t {
 	size_t buflen, bufsz;		/* Active and maximum length of buffer */
 	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
 	time_t timeout;			/* When the timeout for this connection happens */
+#ifdef HAVE_OPENSSL
+	SSL *ssl;			/* The TLS session of a --tls-listen connection, else NULL */
+	int sslwant;			/* TLSWANT_READ or _WRITE: what TLS waits for, else 0 */
+#endif
 	struct conn_t *next;
 } conn_t;
 
@@ -228,6 +237,7 @@ static volatile int running = 1;
 static volatile int reloadconfig = 0;
 static volatile time_t nextcheckpoint = 0;
 static volatile int dologswitch = 0;
+static volatile int reloadtls = 0;
 static volatile int gotalarm = 0;
 
 /* Our channels to worker modules */
@@ -3791,6 +3801,154 @@ static int inbuf_room(conn_t *c)
 	return 0;
 }
 
+/*
+ * TLS on the --tls-listen ports: the same conversation as in plaintext, with
+ * close_notify where plaintext has the half-close -- the client's ends its
+ * message, ours ends the response. A connection that ends without one did
+ * not deliver a whole message and is dropped.
+ */
+#ifdef HAVE_OPENSSL
+#include <openssl/err.h>
+
+static SSL_CTX *tlsctx = NULL;
+
+/* The server context, from XYMOND_TLS_CERT and XYMOND_TLS_KEY */
+static SSL_CTX *tls_load(void)
+{
+	char err[512];
+	char *cert = xgetenv("XYMOND_TLS_CERT"), *key = xgetenv("XYMOND_TLS_KEY");
+	SSL_CTX *ctx;
+
+	ctx = xymontls_server_ctx(cert, ((key && *key) ? key : NULL), NULL, 0, err, sizeof(err));
+	if (!ctx) errprintf("TLS: %s\n", err);
+	return ctx;
+}
+
+/* On SIGHUP: a renewed certificate replaces the old one; a broken one does not */
+static void tls_reload(void)
+{
+	SSL_CTX *ctx;
+
+	if (!tlsctx) return;
+	ctx = tls_load();
+	if (!ctx) {
+		errprintf("TLS: keeping the certificate loaded before\n");
+		return;
+	}
+	SSL_CTX_free(tlsctx);	/* sessions in progress hold their own reference */
+	tlsctx = ctx;
+	errprintf("TLS: reloaded %s\n", xgetenv("XYMOND_TLS_CERT"));
+}
+
+static int tls_start(conn_t *c)
+{
+	c->sslwant = 0;
+	c->ssl = SSL_new(tlsctx);
+	if (!c->ssl) return 0;
+	SSL_set_fd(c->ssl, c->sock);
+	SSL_set_accept_state(c->ssl);	/* the handshake runs within the first reads */
+	return 1;
+}
+
+static int tls_wants(conn_t *c, int want)
+{
+	return (c->ssl && (c->sslwant == want));
+}
+
+/* The reason a TLS read or write failed, logged with the peer's address */
+static void tls_failed(conn_t *c, char *what, int err)
+{
+	char cwtext[IP_ADDR_STRLEN];
+	char reason[256];
+	unsigned long e = ERR_get_error();
+
+	if (e) ERR_error_string_n(e, reason, sizeof(reason));
+	else if (err == SSL_ERROR_SYSCALL) snprintf(reason, sizeof(reason), "the connection ended without close_notify");
+	else snprintf(reason, sizeof(reason), "TLS error %d", err);
+	ERR_clear_error();
+	errprintf("TLS %s from %s failed: %s\n", what,
+		  sockaddr_text((struct sockaddr *)&c->addr, cwtext, sizeof(cwtext)), reason);
+}
+
+/*
+ * One read, as in plaintext: TLS takes one record at a time off the socket,
+ * so what is left of the message, and its close_notify, still wakes select().
+ * Returns 1 when the client's close_notify ended the message, 0 to wait for
+ * more, -1 when the connection was dropped.
+ */
+static int tls_receive(conn_t *c)
+{
+	int n, err, up;
+
+	/* Taken before the read: a failure resets it */
+	up = SSL_is_init_finished(c->ssl);
+	n = SSL_read(c->ssl, c->bufp, (c->bufsz - c->buflen - 1));
+	c->sslwant = 0;
+	if (n > 0) {
+		c->bufp += n;
+		c->buflen += n;
+		*(c->bufp) = '\0';
+		return (inbuf_room(c) ? 0 : -1);
+	}
+
+	err = SSL_get_error(c->ssl, n);
+	if ((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)) {
+		c->sslwant = ((err == SSL_ERROR_WANT_WRITE) ? TLSWANT_WRITE : TLSWANT_READ);
+		return 0;
+	}
+	if (err == SSL_ERROR_ZERO_RETURN) return 1;
+
+	tls_failed(c, (up ? "message" : "handshake"), err);
+	shutdown(c->sock, SHUT_RDWR);
+	close(c->sock);
+	c->sock = -1;
+	c->doingwhat = NOTALK;
+	return -1;
+}
+
+/* Send what is left of the response; 1 when it is all sent, or cannot be */
+static int tls_respond(conn_t *c)
+{
+	int n, err;
+
+	c->sslwant = 0;
+	while (c->buflen > 0) {
+		n = SSL_write(c->ssl, c->bufp, c->buflen);
+		if (n > 0) {
+			c->bufp += n;
+			c->buflen -= n;
+			continue;
+		}
+		err = SSL_get_error(c->ssl, n);
+		if ((err == SSL_ERROR_WANT_READ) || (err == SSL_ERROR_WANT_WRITE)) {
+			c->sslwant = ((err == SSL_ERROR_WANT_WRITE) ? TLSWANT_WRITE : TLSWANT_READ);
+			return 0;
+		}
+		tls_failed(c, "response", err);
+		return 1;
+	}
+	return 1;
+}
+
+/* close_notify, best effort: the socket is closed right after */
+static void tls_close(conn_t *c)
+{
+	if (c->ssl && SSL_is_init_finished(c->ssl)) SSL_shutdown(c->ssl);
+	ERR_clear_error();
+}
+
+static void tls_free(conn_t *c)
+{
+	if (c->ssl) SSL_free(c->ssl);
+	c->ssl = NULL;
+}
+#else
+static void tls_reload(void) { }
+static int tls_wants(conn_t *c, int want) { return 0; }
+static void tls_close(conn_t *c) { }
+static void tls_free(conn_t *c) { }
+#endif
+
 void do_message(conn_t *msg, char *origin)
 {
 	static int nesting = 0;
@@ -5120,6 +5278,7 @@ done:
 			shutdown(msg->sock, SHUT_RD);
 		}
 		else if (msg->sock >= 0) {
+			tls_close(msg);
 			shutdown(msg->sock, SHUT_RDWR);
 			close(msg->sock);
 			msg->sock = -1;
@@ -5825,6 +5984,7 @@ void sig_handler(int signum)
 	  case SIGHUP:
 		reloadconfig = 1;
 		dologswitch = 1;
+		reloadtls = 1;
 		break;
 
 	  case SIGUSR1:
@@ -5843,6 +6003,7 @@ void sig_handler(int signum)
 typedef struct xymond_listener_t {
 	int fd;
 	struct sockaddr_storage addr;	/* IPv4 or IPv6, with the port */
+	int tls;			/* a --tls-listen address */
 } xymond_listener_t;
 
 static xymond_listener_t *listeners = NULL;
@@ -5869,7 +6030,7 @@ static int listeners_cover_loopback(void)
 
 /* Bind and listen on one address, IPv4 or IPv6, port included. Returns 0,
    or -1 with the reason logged. */
-static int add_listener(struct sockaddr_storage *addr, int listenq)
+static int add_listener(struct sockaddr_storage *addr, int listenq, int tls)
 {
 	xymond_listener_t *grown;
 	int fd, opt = 1, port;
@@ -5919,9 +6080,10 @@ static int add_listener(struct sockaddr_storage *addr, int listenq)
 	listeners = grown;
 	listeners[listener_count].fd = fd;
 	memcpy(&listeners[listener_count].addr, addr, sizeof(*addr));
+	listeners[listener_count].tls = tls;
 	listener_count++;
 
-	errprintf("Listening on %s:%d\n", text, port);
+	errprintf("Listening on %s:%d%s\n", text, port, (tls ? " for TLS" : ""));
 
 	return 0;
 }
@@ -5929,7 +6091,7 @@ static int add_listener(struct sockaddr_storage *addr, int listenq)
 /* One listener per entry of spec -- IP[:PORT] or [IPv6][:PORT], comma
    separated -- on listenport where an entry names no port. Returns 0, or -1
    with the reason logged. */
-static int add_listeners(char *listenspec, int listenport, int listenq)
+static int add_listeners(char *listenspec, int listenport, int listenq, int tls)
 {
 	char *spec = strdup(listenspec);
 	char *entry, *saveptr = NULL;
@@ -5963,7 +6125,7 @@ static int add_listeners(char *listenspec, int listenport, int listenq)
 			((struct sockaddr_in6 *)&addr)->sin6_port = htons(port);
 		else
 			((struct sockaddr_in *)&addr)->sin_port = htons(port);
-		if (add_listener(&addr, listenq) != 0) { xfree(spec); return -1; }
+		if (add_listener(&addr, listenq, tls) != 0) { xfree(spec); return -1; }
 	}
 	xfree(spec);
 
@@ -5976,6 +6138,8 @@ int main(int argc, char *argv[])
 	char *listenspec = "0.0.0.0";	/* comma-separated IP[:PORT] list */
 	int listenport = 0;		/* the default port for entries without one */
 	int want_loopback = 1;		/* keep a loopback listener unless told not to */
+	char *tlslistenspec = NULL;	/* --tls-listen, as --listen */
+	int tlslistenport = 0;
 	char *hostsfn = NULL;
 	char *restartfn = NULL;
 	char *logfn = NULL;
@@ -6038,6 +6202,9 @@ int main(int argc, char *argv[])
 			   below, once the default port is known, so that an entry
 			   without a port can inherit it. */
 			listenspec = strdup(strchr(argv[argi], '=') + 1);
+		}
+		else if (argnmatch(argv[argi], "--tls-listen=")) {
+			tlslistenspec = strdup(strchr(argv[argi], '=') + 1);
 		}
 		else if (strcmp(argv[argi], "--no-loopback") == 0) {
 			want_loopback = 0;
@@ -6218,6 +6385,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
+			printf("\t--tls-listen=IP:PORT          : An address the daemon takes TLS connections on\n");
 			printf("\t--hosts=FILENAME              : The hosts.cfg file\n");
 			printf("\t--ghosts=allow|drop|log       : How to handle unknown hosts\n");
 			return 1;
@@ -6247,6 +6415,19 @@ int main(int argc, char *argv[])
 		else
 			listenport = 1984;
 	}
+	tlslistenport = atoi(xgetenv("XYMONDTLSPORT"));
+
+	/* No TLS port without its certificate: a client asking for TLS must not
+	   find a port that cannot give it. */
+	if (tlslistenspec) {
+#ifdef HAVE_OPENSSL
+		tlsctx = tls_load();
+		if (!tlsctx) return 1;
+#else
+		errprintf("--tls-listen: this xymond was built without OpenSSL\n");
+		return 1;
+#endif
+	}
 
 	if ((ghosthandling != GH_ALLOW) && (hostsfn == NULL)) {
 		errprintf("No hosts.cfg file specified, required when using ghosthandling\n");
@@ -6268,8 +6449,9 @@ int main(int argc, char *argv[])
 	last_stats_time = getcurrenttime(NULL);	/* delay sending of the first status report until we're fully running */
 
 
-	/* Set up the listening sockets, one per address in --listen. */
-	if (add_listeners(listenspec, listenport, listenq) != 0) return 1;
+	/* Set up the listening sockets, one per address in --listen and --tls-listen. */
+	if (add_listeners(listenspec, listenport, listenq, 0) != 0) return 1;
+	if (tlslistenspec && (add_listeners(tlslistenspec, tlslistenport, listenq, 1) != 0)) return 1;
 
 	/* Keep a loopback listener so the server's own client still reaches us.
 	   On XYMONDPORT, not the port of a --listen entry: that is the port local
@@ -6282,7 +6464,7 @@ int main(int argc, char *argv[])
 
 		text_sockaddr("127.0.0.1", &lo);
 		((struct sockaddr_in *)&lo)->sin_port = htons(listenport);
-		if (add_listener(&lo, listenq) != 0)
+		if (add_listener(&lo, listenq, 0) != 0)
 			errprintf("Continuing without a loopback listener; the client on this host must use a configured address\n");
 	}
 
@@ -6434,6 +6616,11 @@ int main(int argc, char *argv[])
 			posttoall("logrotate");
 		}
 
+		if (reloadtls) {
+			reloadtls = 0;
+			tls_reload();
+		}
+
 		if (reloadconfig && hostsfn) {
 			xtreePos_t hosthandle;
 			int loadresult;
@@ -6524,6 +6711,7 @@ int main(int argc, char *argv[])
 			if (backfeeddata) {
 				backfeedcount++;
 
+				memset(&msg, 0, sizeof(msg));
 				msg.buf = bf_buf;
 				msg.bufsz = msg.buflen = sz;
 				msg.bufp = msg.buf + msg.buflen;
@@ -6553,11 +6741,14 @@ int main(int argc, char *argv[])
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
 				case RECEIVING:
-					FD_SET(cwalk->sock, &fdread);
+					/* TLS may have to write to go on reading, and read to go on writing */
+					if (tls_wants(cwalk, TLSWANT_WRITE)) FD_SET(cwalk->sock, &fdwrite);
+					else FD_SET(cwalk->sock, &fdread);
 					if (cwalk->sock > maxfd) maxfd = cwalk->sock;
 					break;
 				case RESPONDING:
-					FD_SET(cwalk->sock, &fdwrite);
+					if (tls_wants(cwalk, TLSWANT_READ)) FD_SET(cwalk->sock, &fdread);
+					else FD_SET(cwalk->sock, &fdwrite);
 					if (cwalk->sock > maxfd) maxfd = cwalk->sock;
 					break;
 			}
@@ -6588,6 +6779,13 @@ int main(int argc, char *argv[])
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
 			  case RECEIVING:
+#ifdef HAVE_OPENSSL
+				if (cwalk->ssl) {
+					if (!FD_ISSET(cwalk->sock, &fdread) && !FD_ISSET(cwalk->sock, &fdwrite)) break;
+					if (tls_receive(cwalk) == 1) do_message(cwalk, "");
+					break;
+				}
+#endif
 				if (FD_ISSET(cwalk->sock, &fdread)) {
 					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
 
@@ -6610,6 +6808,19 @@ int main(int argc, char *argv[])
 				break;
 
 			  case RESPONDING:
+#ifdef HAVE_OPENSSL
+				if (cwalk->ssl) {
+					if (!FD_ISSET(cwalk->sock, &fdread) && !FD_ISSET(cwalk->sock, &fdwrite)) break;
+					if (tls_respond(cwalk)) {
+						tls_close(cwalk);
+						shutdown(cwalk->sock, SHUT_WR);
+						close(cwalk->sock);
+						cwalk->sock = -1;
+						cwalk->doingwhat = NOTALK;
+					}
+					break;
+				}
+#endif
 				if (FD_ISSET(cwalk->sock, &fdwrite)) {
 					n = write(cwalk->sock, cwalk->bufp, cwalk->buflen);
 
@@ -6731,6 +6942,7 @@ int main(int argc, char *argv[])
 				khead = khead->next;
 
 				if (tmp->buf) xfree(tmp->buf);
+				tls_free(tmp);
 				xfree(tmp);
 			}
 
@@ -6774,6 +6986,14 @@ int main(int argc, char *argv[])
 				conntail->buflen = 0;
 				conntail->timeout = now + conn_timeout;
 				conntail->next = NULL;
+#ifdef HAVE_OPENSSL
+				conntail->ssl = NULL;
+				if (listeners[li].tls && !tls_start(conntail)) {
+					close(sock);
+					conntail->sock = -1;
+					conntail->doingwhat = NOTALK;
+				}
+#endif
 			}
 		}
 	} while (running);
