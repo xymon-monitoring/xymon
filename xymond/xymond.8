@@ -106,7 +106,11 @@ connection is subject to the same sender lists as any other, and to
 \fB\-\-timeout\fR, the handshake included.
 .br
 The certificate and its private key are the files XYMOND_TLS_CERT and
-XYMOND_TLS_KEY name (see xymonserver.cfg(5)). xymond does not start when
+XYMOND_TLS_KEY name (see xymonserver.cfg(5)). When XYMOND_TLS_CA is set,
+xymond also asks each TLS client for a certificate, which must then chain
+to that CA, or the connection is refused; a client that has none is still
+served, and checked by its address. What a client certificate allows is
+under \fB\-\-status\-senders\fR. xymond does not start when
 they cannot be loaded, or when others than the key's owner and group may
 read or write it; SIGHUP loads
 them again (see SIGNALS). Without this option xymond takes no TLS
@@ -207,6 +211,15 @@ IP-addresses listed here, or if they are sent from the IP-address of the
 host that the updates pertains to (this is to allow Xymon clients to send in their
 own status updates, without having to list all clients here). So typically
 you will need to list your servers running network tests here.
+
+Over TLS, with XYMOND_TLS_CA set (see \fB\-\-tls\-listen\fR), a client
+whose certificate verifies and names a host in its subjectAltName counts
+as sending from that host's address, wherever xymond accepts a host's own
+address: for its status, and for the other messages a host may send about
+itself, an "enable" or "disable" of its own tests under \fB\-\-maint\-senders\fR
+included. The name is the host's name in hosts.cfg, compared without
+regard to case and without wildcards. Such a certificate does not let
+its holder send for any other host.
 
 The format of this option is a list of IP-addresses, optionally with a
 network mask in the form of the number of bits. E.g. if you want to
@@ -374,7 +387,7 @@ in the Xymon source-tree, see the "xymond/new\-daemon.txt" file.
 .SH SIGNALS
 .IP "\fBSIGHUP\fR"
 Re-read the hosts.cfg configuration file. With \fB\-\-tls\-listen\fR,
-also load the TLS certificate and key again, so a renewed certificate is
+also load the TLS certificate, key and CA again, so a renewed certificate is
 served from the next connection on; if they do not load, xymond logs why
 and keeps the ones it had.
 
