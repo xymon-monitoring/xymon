@@ -26,6 +26,9 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "libxymon.h"
 
@@ -518,6 +521,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					void *hinfo;
 					char *p;
 					int ip1=0, ip2=0, ip3=0, ip4=0;
+					struct in_addr ipv4;
 					char *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
 					char *alertid, *alertidenv;
 					int msglen;
@@ -560,7 +564,16 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					p = bbnumeric;
 					p += sprintf(p, "BBNUMERIC=");
 					p += sprintf(p, "%03d", servicecode(alert->testname));
-					sscanf(alert->ip, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
+					/*
+					 * The numeric pager codes carry an IPv4 address as four
+					 * three-digit fields, and their buffers are sized for that.
+					 * Any other address -- IPv6 -- leaves them 0: a partial
+					 * parse ("2001:db8::1" gives 2001) would print four digits.
+					 */
+					if (inet_pton(AF_INET, alert->ip, &ipv4) == 1) {
+						unsigned char *b = (unsigned char *)&ipv4.s_addr;
+						ip1 = b[0]; ip2 = b[1]; ip3 = b[2]; ip4 = b[3];
+					}
 					p += sprintf(p, "%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
 					p += sprintf(p, "%d", alert->cookie);
 					putenv(bbnumeric);
