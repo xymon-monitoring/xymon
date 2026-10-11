@@ -320,11 +320,13 @@ Do not show encryption cipher details on the "sslcert" status.
 List ALL locally available encryption ciphers on the "sslcert" status.
 
 .IP "\fB\-\-sni\fR=[\fBon\fR|\fBoff\fR]"
-Sets the default for whether SSL connections use SNI (Server Name
-Indication). This can also be set with the "sni" or "nosni"
-options in hosts.cfg for each host - the hosts.cfg entries
-override this  option.
-Default: off
+Sets whether TLS tests that take their servername from the host entry
+use SNI (Server Name Indication). Per-host "sni" and "nosni" tags in
+hosts.cfg override it. No test takes its servername from the host
+entry at present, so this option is currently without effect.
+.sp
+https tests are not affected: they send the host part of their URL.
+Default: on
 
 .SH DEBUGGING OPTIONS
 .IP "\fB\-\-no\-update\fR"
