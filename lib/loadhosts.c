@@ -812,11 +812,24 @@ char *xmh_item_multi(void *hostin, enum xmh_item_t item)
 
 #ifdef STANDALONE
 
+static void usage(FILE *f, char *pgm)
+{
+	fprintf(f, "Usage: %s HOSTSFILE HOSTNAME [HOSTNAME...]\n", pgm);
+	fprintf(f, "       %s @ HOSTNAME\n", pgm);
+	fprintf(f, "Prints each host's entry as loaded from HOSTSFILE, or as xymond holds it\n");
+	fprintf(f, "with @, then prompts: an item name prints its value, '>' the page paths,\n");
+	fprintf(f, "'set TEXT' sets the host's data item, '!' reloads HOSTSFILE, and an empty\n");
+	fprintf(f, "line moves on to the next host.\n");
+}
+
 int main(int argc, char *argv[])
 {
 	int argi;
 	namelist_t *h;
 	char *val;
+
+	if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) { usage(stdout, argv[0]); return 0; }
+	if (argc < 3) { usage(stderr, argv[0]); return 1; }
 
 	if (strcmp(argv[1], "@") == 0) {
 		load_hostinfo(argv[2]);

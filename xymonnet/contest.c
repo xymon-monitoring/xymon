@@ -1520,12 +1520,25 @@ int tcp_got_expected(tcptest_t *test)
 
 #ifdef STANDALONE
 
+static void usage(FILE *f, char *pgm)
+{
+	fprintf(f, "Usage: %s [--debug] [--timeout=N] [--concurrency=N] IP/PORT/TESTSPEC[@SOURCEIP]...\n", pgm);
+	fprintf(f, "Runs each network test once, the way xymonnet does, and prints the result.\n");
+	fprintf(f, "TESTSPEC is a service from protocols.cfg, e.g. %s --debug 172.16.10.2/25/smtp\n", pgm);
+	fprintf(f, "Run it under xymoncmd, so that it finds protocols.cfg.\n");
+}
+
 int main(int argc, char *argv[])
 {
 	int argi;
 	char *argp, *p;
 	int timeout = 0;
 	int concurrency = 0;
+	int ntests = 0;
+
+	for (argi=1; (argi<argc); argi++) {
+		if (strcmp(argv[argi], "--help") == 0) { usage(stdout, argv[0]); return 0; }
+	}
 
 	if (xgetenv("XYMONNETSVCS") == NULL) putenv("XYMONNETSVCS=");
 	init_tcp_services();
@@ -1544,17 +1557,13 @@ int main(int argc, char *argv[])
 			concurrency = atoi(p+1);
 			if (concurrency < 0) concurrency = 0;
 		}
-		else if (strcmp(argv[argi], "--help") == 0) {
-			printf("Run with\n~xymon/server/bin/xymoncmd ./contest --debug 172.16.10.2/25/smtp\n");
-			printf("I.e. IP/PORTNUMBER/TESTSPEC\n");
-			return 0;
-		}
 		else {
 			char *ip;
 			char *port;
 			char *srcip;
 			char *testspec;
 
+			ntests++;
 			argp = argv[argi]; ip = port = srcip = testspec = NULL;
 
 			ip = argp;
@@ -1628,6 +1637,8 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+
+	if (ntests == 0) { usage(stderr, argv[0]); return 1; }
 
 	do_tcp_tests(timeout, concurrency);
 	show_tcp_test_results();

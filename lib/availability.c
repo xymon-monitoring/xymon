@@ -583,6 +583,14 @@ double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
 int    warnstops = -1;
 
+static void usage(FILE *f, char *pgm)
+{
+	fprintf(f, "Usage: %s HISTFILE STARTTIME ENDTIME\n", pgm);
+	fprintf(f, "Computes the availability of one status over a period, as the report pages\n");
+	fprintf(f, "do. HISTFILE is a history file, named HOST.SERVICE with the dots in HOST\n");
+	fprintf(f, "written as commas. Start- and end-times are in Unix epoch format - date +%%s\n");
+}
+
 int main(int argc, char *argv[])
 {
 	FILE *fd;
@@ -593,11 +601,15 @@ int main(int argc, char *argv[])
 
 	debug=1;
 
-	if (argc != 4) {
-		fprintf(stderr, "Usage: %s HISTFILE STARTTIME ENDTIME\n", argv[0]);
-		fprintf(stderr, "Start- and end-times are in Unix epoch format - date +%%s\n");
-		return 1;
-	}
+	if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) { usage(stdout, argv[0]); return 0; }
+	if (argc != 4) { usage(stderr, argv[0]); return 1; }
+
+	/* The service is what follows the last dot of the file name. */
+	hostsvc = strdup(argv[1]);
+	p = strrchr(hostsvc, '/'); host = (p ? p+1 : hostsvc);
+	p = strrchr(host, '.');
+	if (!p) { usage(stderr, argv[0]); return 1; }
+	*p = '\0'; svc = p+1;
 
 	fd = fopen(argv[1], "r");
 	if (fd == NULL) { printf("Cannot open %s\n", argv[1]); exit(1); }
@@ -605,10 +617,6 @@ int main(int argc, char *argv[])
 	reportstart = atol(argv[2]);
 	reportend = atol(argv[3]);
 
-	hostsvc = strdup(argv[1]);
-	p = strrchr(hostsvc, '.');
-	*p = '\0'; svc = p+1;
-	p = strrchr(hostsvc, '/'); host = p+1;
 	while ((p = strchr(host, ','))) *p = '.';
 
 	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, 0, reportwarnlevel, reportgreenlevel, warnstops, NULL);

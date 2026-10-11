@@ -423,8 +423,13 @@ int main(int argc, char *argv[])
 	int done = 0;
 	char *res;
 
-	if (argc < 2) {
+	if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
 		printf("Usage: %s IP:PORT\n", argv[0]);
+		printf("Talks to the xymond_locator at IP:PORT, then prompts for its commands.\n");
+		return 0;
+	}
+	if (argc < 2) {
+		fprintf(stderr, "Usage: %s IP:PORT\n", argv[0]);
 		return 1;
 	}
 
