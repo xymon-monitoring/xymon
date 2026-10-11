@@ -236,6 +236,27 @@ check_early_exit_pipe() {
 
 for f in $files; do check_early_exit_pipe "$f" "$work/violations"; done
 
+# git, the compiler and make speak the user's language: a German git writes
+# "KONFLIKT" where an English one writes "CONFLICT", and pin-check.sh failed
+# on every German system for asserting the English word (#628). Xymon's own
+# messages are not translated, so only these programs' words are refused, and
+# only where a test asserts on them -- unless the same line runs with LC_ALL=C.
+# check_translated FILE OUT -- append this file's violations to OUT.
+translated_pattern='(assert_(not_)?contains|grep)[^#]*(CONFLICT|Automatic merge|fatal: |error: |Already up to date|nothing to commit|warning: |undefined reference|No rule to make)'
+check_translated() {
+	local f=$1 out=$2 line n
+	{ grep -nE "$translated_pattern" "$f" 2>/dev/null || true; } | \
+	{ grep -vE '^[0-9]+:[[:space:]]*#' || true; } | \
+	while IFS= read -r line; do
+		case $line in *LC_ALL=C*) continue ;; esac
+		n=${line%%:*}
+		printf 'translated\t%s\t%s\n' "${f#"$ROOT"/}:$n" \
+			"asserts on a word git, the compiler or make translate; assert on what no translation changes, or run that command with LC_ALL=C (#628)" >>"$out"
+	done
+}
+
+for f in $files; do check_translated "$f" "$work/violations"; done
+
 if [ -s "$work/violations" ]; then
 	printf 'portability rules broken by the test suite:\n\n' >&2
 	sort "$work/violations" | awk -F'\t' '{ printf "  [%s] %s\n      %s\n", $1, $2, $3 }' >&2
@@ -340,5 +361,22 @@ earlyfile="$work/early.sh"
 check_early_exit_pipe "$earlyfile" "$work/early-violations"
 assert_equal "5" "$(wc -l <"$work/early-violations" | tr -d " ")" \
 	"the early-exit rule no longer reports exactly the five pipes into grep -q/-m and head (and not || or a here-string)"
+
+
+# The translation rule the same way: an assertion on git's or the compiler's
+# word is reported, the same word under LC_ALL=C is not, and neither is a
+# word Xymon writes itself.
+langfile="$work/lang.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf 'assert_contains "CONFLICT" "$out" "git refused"\n'
+	printf 'grep -q "warning: " cc.log\n'
+	printf 'out=$(LC_ALL=C git merge x); assert_contains "CONFLICT" "$out" "git refused"\n'
+	printf 'assert_contains "Address already in use" "$log" "xymond said"\n'
+} >"$langfile"
+: >"$work/lang-violations"
+check_translated "$langfile" "$work/lang-violations"
+assert_equal "2" "$(wc -l <"$work/lang-violations" | tr -d " ")" \
+	"the translation rule no longer reports exactly the two assertions on translated words (and not one under LC_ALL=C, or one on Xymon's own)"
 
 pass "the test suite keeps to bash 3.2, portable tool flags, the configured build flags, and one lane per client"

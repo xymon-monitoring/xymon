@@ -238,6 +238,14 @@ maintenance.
   any contributor's box and in CI. Flaky tests are removed, not
   retried. If a test needs to wait for something, wait for the
   condition, not for a wall-clock duration.
+- **In any language.** git, the compiler and `make` speak the user's
+  language, so a test does not assert on their words: it checks what no
+  translation changes -- an exit status, a file or host name, a number -- or
+  runs that command with `LC_ALL=C`. `tests/buildsystem/pin-check.sh` once
+  looked for git's "CONFLICT", which a German git writes "KONFLIKT" (#628);
+  `test-suite-portability.sh` now refuses such an assertion. Xymon's own
+  messages are not translated, `strerror` text included, since Xymon never
+  calls `setlocale`, so a test may assert on them.
 - **No persistent side effects.** Use `mktemp -d` for scratch space and
   register cleanup via `register_cleanup` (see `lib/assert.sh`).
 - **No git assumption.** Tests must run against an extracted release
