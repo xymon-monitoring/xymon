@@ -9,6 +9,7 @@ certificate is EC P-256 and valid until 9966.
 | `server.pem`, `server.key` | signed by the CA; names `localhost`, `127.0.0.1` and `::1` |
 | `web01.pem`, `web01.key` | a client certificate signed by the CA; its only name is `web01.example.com` in the subjectAltName, the CN says something else so that a check of the CN shows |
 | `rogue.pem`, `rogue.key` | self-signed, naming `web01.example.com`: a certificate the CA did not issue |
+| `renewed.pem`, `renewed.key` | self-signed, naming what `server.pem` names: a server certificate a client can pin, and, trusting only it, tell apart from `server.pem` |
 
 git keeps no permission bits but the executable one, so a checked-out key is
 usually readable by everyone, and the TLS library refuses such a key. A test
@@ -36,4 +37,12 @@ ec rogue.key
 openssl req -x509 -new -key rogue.key -days $D -subj "/CN=web01.example.com" -out rogue.pem \
 	-addext subjectAltName=DNS:web01.example.com -addext extendedKeyUsage=clientAuth
 rm -f ca.key ca.srl
+```
+
+`renewed` was added later. Being self-signed, it needs no CA key:
+
+```sh
+ec renewed.key
+openssl req -x509 -new -key renewed.key -days $D -subj "/CN=localhost" -out renewed.pem \
+	-addext subjectAltName=DNS:localhost,IP:127.0.0.1,IP:::1 -addext extendedKeyUsage=serverAuth
 ```
