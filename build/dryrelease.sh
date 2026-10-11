@@ -54,7 +54,7 @@ GIT_COMMITTER_DATE="@$SOURCE_DATE_EPOCH" git \
 	commit -q -m "Prep release $VERSION (dry run)" --date="@$SOURCE_DATE_EPOCH"
 
 ASSET="xymon-$VERSION.tar.gz"
-git archive --format=tar --prefix="xymon-$VERSION/" HEAD | gzip -n -9 >"$OUTDIR/$ASSET"
+git -c tar.umask=0022 archive --format=tar --prefix="xymon-$VERSION/" HEAD | gzip -n -9 >"$OUTDIR/$ASSET"
 (cd "$OUTDIR" && sha256sum "$ASSET" | tee "$ASSET.sha256")
 
 echo "OK: $OUTDIR/$ASSET — run again, the checksum must not change."

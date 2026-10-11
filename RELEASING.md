@@ -115,8 +115,8 @@ The tag is the "I approve this release" gate — nothing ships without it. Tag
 the PR's merge commit, not `origin/main`, whose tip may have moved on.
 
 Pushing it triggers the release workflow: `xymon-X.Y.Z.tar.gz` (`git archive`
-of the tag, `gzip -n -9`), its `.sha256`, and a **draft** release with both
-attached.
+of the tag with `tar.umask=0022`, `gzip -n -9`), its `.sha256`, and a **draft**
+release with both attached.
 
 ### 5. Publish the draft release
 
@@ -130,10 +130,19 @@ published `.sha256` meaningful:
 - `git archive` takes every mtime from the tagged commit's date. Lightweight
   and annotated tags give identical bytes.
 - `gzip -n` strips the header's embedded filename and timestamp.
+- `tar.umask=0022` fixes the modes at 644 and 755, rather than git's default
+  664 and 775 or whatever the `git` configuration of whoever runs it says.
 - Manpage and HTML dates come from `SOURCE_DATE_EPOCH` (the prep commit's
   author date), not the clock of whoever runs it.
 - The generators pin `LC_ALL=C`, so sort order and date formats do not depend
   on the caller's locale.
+
+To check a published tarball, rebuild it from the tag and compare:
+
+```sh
+git -c tar.umask=0022 archive --format=tar --prefix=xymon-X.Y.Z/ rel-X.Y.Z \
+	| gzip -n -9 | sha256sum
+```
 
 ## Testing locally
 
