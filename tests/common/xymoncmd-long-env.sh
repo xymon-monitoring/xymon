@@ -11,13 +11,16 @@
 # same way into a 1024-byte one. A long value overflowed them, and glibc
 # aborted the program: "*** buffer overflow detected ***", exit 134 (#627,
 # Debian #609179). A candidate too long for the buffer now counts as missing,
-# and HOSTNAME is cut to the buffer.
+# and HOSTNAME is cut to the buffer. XYMONCLIENTHOME has no built-in default,
+# so its candidate is tried only when it is set (#29, item 883).
 #
 # Each candidate file here sets MARK, and `xymoncmd env` shows which one was
 # read:
 #   - XYMONHOME/etc/xymonserver.cfg is found and read;
 #   - with a 5000-character XYMONHOME the search moves on to ./xymonserver.cfg;
 #   - XYMONCLIENTHOME/etc/xymonclient.cfg is read when that variable is set;
+#   - when it is unset, an etc/xymonclient.cfg in the current directory is not
+#     taken for it: the search reaches ./xymonclient.cfg;
 #   - `xymoncmd true` exits 0 with a 5000-character HOSTNAME.
 # The fixed places come before ./xymonserver.cfg in the search, so a host
 # that has /etc/xymon/xymonserver.cfg or /etc/xymon-client/xymonclient.cfg
@@ -71,4 +74,10 @@ fi
 assert_equal "clienthome" "$(mark "$work/none" XYMONHOME="$work/none" XYMONCLIENTHOME="$work/client")" \
 	"the configuration file under XYMONCLIENTHOME was not the one read"
 
-pass "xymoncmd reads the file under XYMONHOME or XYMONCLIENTHOME, moves on past a name too long for its buffer, and runs with a 5000-character HOSTNAME"
+mkdir -p "$work/guard/etc"
+printf 'MARK=cwd-etc\n' >"$work/guard/etc/xymonclient.cfg"
+printf 'MARK=cwd-client\n' >"$work/guard/xymonclient.cfg"
+assert_equal "cwd-client" "$(mark "$work/guard" XYMONHOME="$work/none")" \
+	"with XYMONCLIENTHOME unset, its candidate was still tried and found etc/xymonclient.cfg in the current directory"
+
+pass "xymoncmd reads the file under XYMONHOME or XYMONCLIENTHOME, skips XYMONCLIENTHOME when unset, moves on past a name too long for its buffer, and runs with a 5000-character HOSTNAME"

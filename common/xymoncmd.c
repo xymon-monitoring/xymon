@@ -156,10 +156,17 @@ int main(int argc, char *argv[])
 	}
 
 	if (!envfile) {
+		/*
+		 * XYMONCLIENTHOME has no built-in default, so getenv() rather than
+		 * xgetenv(): when it is unset that candidate is skipped, instead of
+		 * formatting a NULL into the name.
+		 */
+		char *clienthome = getenv("XYMONCLIENTHOME");
+
 		if (!env_candidate(envfn, sizeof(envfn), xgetenv("XYMONHOME"), "etc/xymonserver.cfg") &&
 		    !env_candidate(envfn, sizeof(envfn), NULL, "/etc/xymon/xymonserver.cfg") &&
 		    !env_candidate(envfn, sizeof(envfn), xgetenv("XYMONHOME"), "etc/xymonclient.cfg") &&
-		    !env_candidate(envfn, sizeof(envfn), xgetenv("XYMONCLIENTHOME"), "etc/xymonclient.cfg") &&
+		    !(clienthome && env_candidate(envfn, sizeof(envfn), clienthome, "etc/xymonclient.cfg")) &&
 		    !env_candidate(envfn, sizeof(envfn), NULL, "/etc/xymon-client/xymonclient.cfg") &&
 		    !env_candidate(envfn, sizeof(envfn), NULL, "xymonserver.cfg"))
 			snprintf(envfn, sizeof(envfn), "xymonclient.cfg");
