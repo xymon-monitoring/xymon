@@ -42,7 +42,7 @@ register_cleanup "'$work/channel-harness' rmall '$SHMID' '$SEMID' >/dev/null 2>&
 XYMONHOME="$work/home" "$XYMOND_CHANNEL" --channel=status /bin/cat \
 	>"$work/channel.log" 2>&1 &
 worker=$!
-register_cleanup "kill -9 $worker 2>/dev/null || true"
+register_cleanup "stop_process -KILL $worker"
 
 # Breaking the channel before xymond_channel has attached would make it fail
 # during startup instead, and the test would pass without ever reaching the

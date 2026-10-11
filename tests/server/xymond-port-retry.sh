@@ -61,7 +61,7 @@ xymond_launch() {
 	|| { cat "$work/cc.log" >&2; skip "port-blocker does not compile"; }
 "$work/port-blocker" > "$work/blocked.port" &
 BLOCKER_PID=$!
-register_cleanup "kill $BLOCKER_PID 2>/dev/null || true"
+register_cleanup "stop_process $BLOCKER_PID"
 
 i=0
 while [ "$i" -lt 50 ]; do

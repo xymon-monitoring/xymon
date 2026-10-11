@@ -68,7 +68,7 @@ pid=$!
 # Off the shell's job table, or reaping it prints "Killed" into the suite's
 # output, which reads like a failure and is not one.
 disown "$pid" 2>/dev/null || true
-register_cleanup "kill -9 $pid 2>/dev/null || true"
+register_cleanup "stop_process -KILL $pid"
 
 # Wait for the exec, not for a duration: until then the pid is still the forking
 # shell and would answer with the shell's name.

@@ -59,8 +59,8 @@ guard=20
 start=$(date +%s)
 ( XYMOND_START_TIMEOUT=$deadline start_xymond ) > "$work/start.out" 2>&1 &
 starter=$!
-register_cleanup "kill $starter 2>/dev/null || true"
-register_cleanup "[ -s '$work/xymond.pid' ] && kill \$(cat '$work/xymond.pid') 2>/dev/null || true"
+register_cleanup "stop_process $starter"
+register_cleanup "[ -s '$work/xymond.pid' ] && stop_process \$(cat '$work/xymond.pid')"
 
 while kill -0 "$starter" 2>/dev/null; do
 	if [ $(( $(date +%s) - start )) -ge "$guard" ]; then
