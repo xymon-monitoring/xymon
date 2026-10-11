@@ -85,6 +85,14 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
         the Xymon messages to the Xymon server using standard HTTP protocol. The
         <i><a href="../man8/xymoncgimsg.cgi.8.html">xymoncgimsg.cgi</a>(8)</i> CGI tool (included in Xymon) must be installed
         on the webserver for the HTTP transport to work.</p>
+    <p class="Pp">A <b>RECIPIENT</b> written &quot;xymons://host[:port]&quot; is
+        reached over TLS, on the XYMONDTLSPORT port unless one is given;
+        &quot;xymon://host&quot; is the same as &quot;host&quot;. The server's
+        certificate is checked as XYMON_TLS_VERIFY says, and a client
+        certificate is presented when XYMON_TLS_CERT is set (see
+        <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)). When the TLS handshake fails, the message is not
+        sent: there is no retry without TLS. A xymon built without OpenSSL
+        refuses such a recipient.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="MESSAGE"><a class="permalink" href="#MESSAGE"><b>MESSAGE</b></a></dt>
