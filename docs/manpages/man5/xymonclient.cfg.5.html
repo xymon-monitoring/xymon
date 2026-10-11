@@ -46,6 +46,13 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   <dd>The port number for used to contact the Xymon server. Default: 1984.
     <p class="Pp"></p>
   </dd>
+  <dt id="XYMONDTLSPORT"><a class="permalink" href="#XYMONDTLSPORT"><b>XYMONDTLSPORT</b>,
+    <b>XYMON_TLS_CA</b>, <b>XYMON_TLS_VERIFY</b>, <b>XYMON_TLS_SNI</b>,
+    <b>XYMON_TLS_CERT</b>, <b>XYMON_TLS_KEY</b></a></dt>
+  <dd>How the client sends to a &quot;xymons://&quot; XYMSRV or XYMSERVERS
+      entry, over TLS. For each, see <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5).
+    <p class="Pp"></p>
+  </dd>
   <dt id="XYMONHOME"><a class="permalink" href="#XYMONHOME"><b>XYMONHOME</b></a></dt>
   <dd>The Xymon client top-level directory. Default: The $XYMONCLIENTHOME
       setting inherited from the &quot;runclient.sh&quot; script which starts
