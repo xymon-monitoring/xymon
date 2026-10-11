@@ -32,6 +32,7 @@ extern int sender_in_list(sender_t *list, struct sockaddr *sa);
 extern int oksender_addr(sender_t *oklist, char *targetip, struct sockaddr *sa, char *msgbuf);
 extern int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgbuf);
 extern char *sockaddr_text(struct sockaddr *sa, char *buf, size_t buflen);
+extern int sockaddr_same_sender(struct sockaddr *a, struct sockaddr *b);
 extern int text_sockaddr(char *text, struct sockaddr_storage *ss);
 
 #endif
