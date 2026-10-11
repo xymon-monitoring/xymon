@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           PREFIX="${{ steps.vars.outputs.name }}/"
-          git archive \
+          git -c tar.umask=0022 archive \
             --format=tar \
             --prefix="${PREFIX}" \
             "${{ steps.vars.outputs.tag }}" \
