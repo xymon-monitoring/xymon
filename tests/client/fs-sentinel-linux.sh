@@ -107,7 +107,7 @@ fsf_wedge_binary "$DF_HANGBIN"
 # exits, and every wedge started by then would keep its delay running.
 kill_stubs() {
 	[ -s "$DF_REMOTE" ] || return 0
-	while read -r _p; do [ -n "$_p" ] && kill -9 "$_p" 2>/dev/null; done < "$DF_REMOTE"
+	while read -r _p; do stop_process -KILL "$_p"; done < "$DF_REMOTE"
 	return 0
 }
 register_cleanup kill_stubs

@@ -49,7 +49,7 @@ run() {
 	rm -f "$out"
 	"$peer" 10 > "$out" 2>/dev/null &
 	pp=$!
-	register_cleanup "kill $pp 2>/dev/null || :"
+	register_cleanup "stop_process $pp"
 	local i
 	for i in $(seq 1 50); do
 		port=$(sed -n '1p' "$out" 2>/dev/null || true)

@@ -114,7 +114,7 @@ for sig in INT TERM; do
 	# TERM trap sets -- indistinguishable from a missing trap.
 	( cd "$d" && TMPDIR="$tmp" exec ./tests/testsuite >"$work/$sig.log" 2>&1 ) &
 	runner=$!
-	register_cleanup "kill -9 $runner 2>/dev/null || :"
+	register_cleanup "stop_process -KILL $runner"
 
 	i=0
 	while [ "$i" -lt 100 ] && [ -z "$(runroots "$tmp")" ]; do sleep 0.1; i=$((i + 1)); done
@@ -165,7 +165,7 @@ maketree "$d2" slow "$work/started.par2" "$stop"
 p1=$!
 ( cd "$d2" && TMPDIR="$tmp" exec ./tests/testsuite >"$work/par2.log" 2>&1 ) &
 p2=$!
-register_cleanup "kill -9 $p1 $p2 2>/dev/null || :"
+register_cleanup "stop_process -KILL $p1 $p2"
 
 i=0
 while [ "$i" -lt 100 ] && [ "$(runroots "$tmp" | wc -l | tr -d ' ')" -lt 2 ]; do

@@ -138,6 +138,32 @@ register_cleanup() {
 	__XYMON_TESTS_CLEANUP_CMDS+=("$*")
 }
 
+# stop_process [-SIGNAL] PID... -- signal each process (TERM by default) and
+# return only once it has exited, sending KILL after 10 seconds. A cleanup
+# that only signals returns while the process still runs -- xymond writes its
+# checkpoint as it exits -- and the temp dir removed next is written into
+# meanwhile: rm -rf fails on it and the dir is left behind. It polls rather
+# than waits, so a process that is not this shell's child, as one read from a
+# pidfile, is followed too; bash reaps its own children as they exit, so
+# they stop answering kill -0 then. Empty and dead PIDs are ignored, so a
+# cleanup can name a process that never started.
+stop_process() {
+	local sig=-TERM p n
+	case ${1:-} in -*) sig=$1; shift ;; esac
+	for p in "$@"; do
+		[ -n "$p" ] || continue
+		kill "$sig" "$p" 2>/dev/null || continue
+		n=0
+		while kill -0 "$p" 2>/dev/null && [ "$n" -le 110 ]; do
+			n=$((n + 1))
+			[ "$n" -eq 100 ] && kill -KILL "$p" 2>/dev/null
+			sleep 0.1
+		done
+		wait "$p" 2>/dev/null || true
+	done
+	return 0
+}
+
 # mktempdir -- create a temp dir and arrange its removal on EXIT. Prints the
 # path. Callers almost always use TMP=$(mktempdir), and command substitution
 # runs in a subshell: anything mktempdir appended to the cleanup array there

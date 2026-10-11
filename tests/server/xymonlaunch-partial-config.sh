@@ -101,7 +101,7 @@ reload() {
 good_config
 "$XYMONLAUNCH" --config="$cfg" --no-daemon >"$log" 2>&1 &
 launcher=$!
-register_cleanup "kill $launcher 2>/dev/null || true; pkill -f ${work}/beat.sh 2>/dev/null || true; pkill -f ${work}/beat2.sh 2>/dev/null || true"
+register_cleanup "stop_process $launcher; pkill -f ${work}/beat.sh 2>/dev/null || true; pkill -f ${work}/beat2.sh 2>/dev/null || true"
 
 wait_for 20 '[ -s "$work/beat" ] && [ -s "$work/beat2" ]' \
 	|| fail "the supervised tasks never started: $(cat "$log")"
