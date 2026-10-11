@@ -139,7 +139,12 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     line of output from this command is then used as a filename. This allows
     scripting which files to monitor, e.g. if you have logfiles that are named
     with some sort of timestamp. If FILENAME is enclosed in angle brackets it is
-    treated as a glob and passed through the local glob(3) function first.</p>
+    treated as a glob and passed through the local glob(3) function first.
+  <br/>
+  The shipped client runs logfetch with <b>--noexec</b>, which ignores the
+    commands in backticks, here and in the &quot;file:&quot; and
+    &quot;dir:&quot; entries below: remove it from LOGFETCHOPTS in that client's
+    xymonclient.cfg to allow them. A glob in angle brackets is not affected.</p>
 <p class="Pp">The <b>ignore PATTERN</b> line (optional) defines lines in the
     logfile which are ignored entirely, i.e. they are stripped from the logfile
     data before sending it to the Xymon server. It is used to remove completely

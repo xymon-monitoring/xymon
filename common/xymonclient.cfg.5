@@ -226,6 +226,17 @@ Full path to the
 .I xymon(1)
 client program. Default: $XYMONHOME/bin/xymon.
 
+.IP "\fBLOGFETCHOPTS\fR"
+Options passed to
+.I logfetch(1)
+by the client. Default: "\-\-noexec", so logfetch does not run the commands
+in backticks that a "log:", "file:" or "dir:" entry of the server's
+.I client\-local.cfg(5)
+may give to list the files to watch: such commands would run on this
+client, as the client's user, on the word of whoever can change that file.
+Set it to "" on a client that needs them; a glob in angle brackets works
+either way. An installation that existed before keeps its own setting.
+
 .IP "\fBCommands\fR"
 Many extension scripts expect a series of environment variables to
 point at various system utilities. These are included in the file
