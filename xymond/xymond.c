@@ -70,6 +70,7 @@ static char rcsid[] = "$Id$";
 
 /* The initial size of an input buffer. Make this large enough for most traffic. */
 #define XYMON_INBUF_INITIAL   (128*1024)
+#define ACCEPT_PER_PASS 128		/* New connections taken from one listener per pass */
 
 /* How much the input buffer grows per re-allocation */
 #define XYMON_INBUF_INCREMENT (32*1024)
@@ -6728,7 +6729,7 @@ int main(int argc, char *argv[])
 		for (lidx = 0; lidx < listener_count; lidx++) {
 			struct sockaddr_storage addr;
 			socklen_t addrsz = sizeof(addr);
-			int sock;
+			int sock, taken;
 			int li = (accept_next + lidx) % listener_count;
 
 			if (!FD_ISSET(listeners[li].fd, &fdread)) continue;
@@ -6736,9 +6737,19 @@ int main(int argc, char *argv[])
 			dbgprintf("Picking up new connections\n");
 
 			accept_next = (li + 1) % listener_count;
-			sock = accept(listeners[li].fd, (struct sockaddr *)&addr, &addrsz);
 
-			if (sock >= 0) {
+			/*
+			 * Take every connection that is waiting, not one per pass: a
+			 * burst larger than the listen queue (128 on OpenBSD) has the
+			 * kernel drop the next SYN, which the client resends only after
+			 * 1 s (Linux) to 6 s (OpenBSD). ACCEPT_PER_PASS bounds it, so a
+			 * flood cannot keep the loop away from the clients it has.
+			 */
+			for (taken = 0; taken < ACCEPT_PER_PASS; taken++) {
+				addrsz = sizeof(addr);
+				sock = accept(listeners[li].fd, (struct sockaddr *)&addr, &addrsz);
+				if (sock < 0) break;	/* EAGAIN: nothing more waiting, or an error */
+
 				/* Make sure our sockets are non-blocking */
 				fcntl(sock, F_SETFL, O_NONBLOCK);
 
