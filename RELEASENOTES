@@ -71,6 +71,14 @@ At-least-only, single-colour rules; existing configurations are unaffected.
 Server
 ------
 
+xymond now drops a connection that has sent nothing 5 seconds after it was
+accepted, instead of keeping it for the whole --timeout; a message that is
+arriving, however slowly, still gets the full timeout. Once 256 such silent
+connections are open, it takes at most 16 more from one sender -- one IPv4
+address, or one IPv6 /64 -- and logs the refusal. Neither limit can be changed.
+Clients behind one NAT address or proxy are affected only if that many of them
+connect and stay silent at once.
+
 xymond --listen=IP:PORT now listens only on the address it names. Since 2014 it
 has bound every interface whatever address was given, so a server told to
 listen on 127.0.0.1, or on one interface of several, was reachable on all of
