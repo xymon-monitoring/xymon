@@ -32,7 +32,11 @@ for name in $(find "$ROOT" -name 'Makefile*' -type f ! -path "$ROOT/tests/*" -ex
 		| grep -oE '(^|[^[:alnum:]_.-])build/[[:alnum:]_.-]+' \
 		| sed 's|.*build/||' | sort -u); do
 	[ -f "$ROOT/build/$name" ] || continue
-	[ "$(head -c 2 "$ROOT/build/$name")" = '#!' ] || continue
+	# The first line through the shell's read: head -c is not POSIX, and
+	# OpenBSD's head has no -c, which made every file look like no script.
+	first=
+	IFS= read -r first <"$ROOT/build/$name" || true
+	case $first in '#!'*) ;; *) continue ;; esac
 	scripts="$scripts $name"
 	cp "$ROOT/build/$name" "$t/build/"
 done
