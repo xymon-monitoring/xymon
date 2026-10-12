@@ -377,11 +377,14 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 	 * Private key passphrases are stored in the file named same as the
 	 * certificate itself, but with extension ".pass"
 	 */
-	sprintf(passfn, "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert);
-	p = strrchr(passfn, '.'); if (p == NULL) p = passfn+strlen(passfn);
-	strcpy(p, ".pass");
-
-	passfd = fopen(passfn, "r");
+	passfd = NULL;
+	if (snprintf(passfn, sizeof(passfn), "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert) < (int)sizeof(passfn)) {
+		p = strrchr(passfn, '.'); if (p == NULL) p = passfn+strlen(passfn);
+		if ((size_t)(p - passfn) + sizeof(".pass") <= sizeof(passfn)) {
+			strcpy(p, ".pass");
+			passfd = fopen(passfn, "r");
+		}
+	}
 	if (passfd && fgets(passphrase, sizeof(passphrase)-1, passfd)) {
 		p = strchr(passphrase, '\n'); if (p) *p = '\0';
 	}
@@ -625,7 +628,14 @@ static void setup_ssl(tcptest_t *item)
 			SSL_CTX_set_default_passwd_cb(item->sslctx, cert_password_cb);
 			SSL_CTX_set_default_passwd_cb_userdata(item->sslctx, item);
 
-			sprintf(certfn, "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert);
+			if (snprintf(certfn, sizeof(certfn), "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert) >= (int)sizeof(certfn)) {
+				errprintf("Cannot load SSL client certificate/key: the name under XYMONHOME/certs is too long (%d characters)\n",
+					  (int)strlen(item->ssloptions->clientcert));
+				item->sslrunning = 0;
+				SSL_CTX_free(item->sslctx); item->sslctx = NULL;
+				item->errcode = CONTEST_ESSL;
+				return;
+			}
 			status = SSL_CTX_use_certificate_chain_file(item->sslctx, certfn);
 			if (status == 1) {
 				status = SSL_CTX_use_PrivateKey_file(item->sslctx, certfn, SSL_FILETYPE_PEM);
