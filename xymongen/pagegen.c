@@ -1111,8 +1111,11 @@ static void do_nongreenext(FILE *output, char *extenv, char *family)
 			do_summaries(dispsums, output);
 		}
 		else {
-			sprintf(extfn, "%s/ext/%s/%s", xgetenv("XYMONHOME"), family, p);
-			inpipe = popen(extfn, "r");
+			if (snprintf(extfn, sizeof(extfn), "%s/ext/%s/%s", xgetenv("XYMONHOME"), family, p) >= (int)sizeof(extfn)) {
+				errprintf("Cannot run an extension: its name under XYMONHOME is too long (%d characters)\n", (int)strlen(p));
+				inpipe = NULL;
+			}
+			else inpipe = popen(extfn, "r");
 			if (inpipe) {
 				while (fgets(buf, sizeof(buf), inpipe)) 
 					fputs(buf, output);
