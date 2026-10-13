@@ -141,6 +141,15 @@ report "path-rewrite" 'sed.*/proc/' \
 report "runner-only-helper" '(^|[^-[:alnum:]_.])(errline|run_one)[[:space:]]' \
 	"errline and run_one belong to tests/testsuite, not to a test: a call is a command-not-found on the branch that reports failures; use fail, skip or pass from tests/lib/assert.sh"
 
+# A cleanup that kills returns while the process is still exiting, and the
+# temp directory removed next is written into meanwhile: xymond writes its
+# checkpoint as it exits. rm -rf then fails on the new file, the directory is
+# left behind and tests/final/no-leftovers.sh fails, on slow lanes only (macOS
+# 26 and OpenBSD 7.9, #586 and #622). stop_process waits for the exit. pkill
+# is not refused: it is how a cleanup reaches a stopped process's children.
+report "cleanup-kill" 'register_cleanup .*(^|[^[:alnum:]_-])kill([[:space:]]|$)' \
+	"a cleanup that kills returns before the process has exited, and the temp dir can be written into as it is removed; use stop_process from tests/lib/assert.sh"
+
 # Interpreters the BSD runners do not have.
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
 	"not installed on the BSD lanes; awk and sh are"
@@ -258,6 +267,24 @@ check_translated() {
 
 for f in $files; do check_translated "$f" "$work/violations"; done
 
+# The same race in a cleanup function, registered by name: one that kills and
+# neither waits (wait, a kill -0 loop) nor calls stop_process. The functions
+# that wait for themselves are left alone; stop_process is what they do.
+# check_cleanup_fn FILE OUT -- append this file's violations to OUT.
+check_cleanup_fn() {
+	local f=$1 out=$2 fn body
+	for fn in $(sed -nE 's/^[[:space:]]*register_cleanup "?([A-Za-z_][A-Za-z0-9_]*)"?[[:space:]]*$/\1/p' "$f"); do
+		body=$(awk -v fn="$fn" '$0 ~ "^[[:space:]]*" fn "\\(\\)" { p = 1 } p { print } p && /^[[:space:]]*}/ { exit }' "$f" |
+			grep -vE '^[[:space:]]*#' || true)
+		grep -qE '(^|[^[:alnum:]_-])kill([[:space:]]|$)' <<<"$body" || continue
+		grep -qE 'stop_process|(^|[^[:alnum:]_])wait([[:space:]]|$)|kill +-0' <<<"$body" && continue
+		printf 'cleanup-kill\t%s\t%s\n' "${f#"$ROOT"/}" \
+			"cleanup $fn() kills without waiting; the temp dir can be written into as it is removed. Use stop_process from tests/lib/assert.sh" >>"$out"
+	done
+}
+
+for f in $files; do check_cleanup_fn "$f" "$work/violations"; done
+
 if [ -s "$work/violations" ]; then
 	printf 'portability rules broken by the test suite:\n\n' >&2
 	sort "$work/violations" | awk -F'\t' '{ printf "  [%s] %s\n      %s\n", $1, $2, $3 }' >&2
@@ -278,10 +305,27 @@ probe="$work/probe.sh"
 	printf 'cc -I"$ROOT/lib" x.c\n'
 	printf 'sed s#/proc/mounts#f# x\n'
 	printf 'errline "boom"\n'
+	printf 'register_cleanup "kill $pid 2>/dev/null || true"\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "10" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "11" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+
+# The cleanup-function rule the same way: a function that kills and does not
+# wait is reported, one that waits or uses stop_process is not.
+cleanfile="$work/cleanup.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf 'stop_bare() {\n\tkill "$pid" 2>/dev/null || true\n}\nregister_cleanup stop_bare\n'
+	printf 'stop_waits() {\n\tkill "$pid" 2>/dev/null || true\n\twait "$pid" 2>/dev/null || true\n}\nregister_cleanup stop_waits\n'
+	printf 'stop_new() {\n\tstop_process "$pid"\n}\nregister_cleanup "stop_new"\n'
+} >"$cleanfile"
+: >"$work/cleanup-violations"
+check_cleanup_fn "$cleanfile" "$work/cleanup-violations"
+assert_equal "1" "$(wc -l <"$work/cleanup-violations" | tr -d " ")" \
+	"the cleanup-function rule should report the one function that kills without waiting, and only it"
+assert_contains "stop_bare()" "$(cat "$work/cleanup-violations")" \
+	"the cleanup-function rule reported the wrong function"
 
 # The link-flags rule the same way, including the bypass it used to allow: the
 # helpers named in a comment and nowhere else.
