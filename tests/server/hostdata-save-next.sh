@@ -49,7 +49,7 @@ stop_daemons() {
 	"$XYMON" "127.0.0.1:${PORT:-}" shutdown >/dev/null 2>&1 || true
 	for pidfile in "$work/channel.pid" "$work/xymond.pid"; do
 		if [ -f "$pidfile" ]; then
-			kill "$(cat "$pidfile")" 2>/dev/null || true
+			stop_process "$(cat "$pidfile")"
 		fi
 	done
 }
