@@ -460,6 +460,11 @@ cases, but some extension scripts can generate very large
 status messages - close to 1024 kB. You should only change
 this if you see messages in the xymond log file about status
 messages being truncated.
+Each MAXMSG setting sizes a shared memory segment, and this one sizes
+three: status, status-change and page. If the operating system's
+shared memory limits do not allow the larger segments, xymond does not
+start, and logs "Could not get shm of size ..."; the installation guide,
+under "Sufficient SYSV IPC resources", names the limits to raise.
 
 .IP "\fBMAXMSG_CLIENT\fR"
 The maximum size of a "client" message in kB, default: 512.
