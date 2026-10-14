@@ -178,6 +178,13 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Stop xymonnet reading a TLS certificate after releasing it (#449) (Thanks, Roland Rosenfeld)
 * Stop msgcache overrunning an index entry after a clock step back (#575) (Thanks, Roland Rosenfeld)
 * Document how client-local.cfg picks a section, and when a .d fragment wins (#544, #541)
+* Run make install in a source tree that lost its execute bits (#626) (Thanks, Mario De Chenno)
+* Ship the release tarball without group-writable files (#633) (Thanks, Roland Rosenfeld)
+* Add make install-tools for five diagnostic programs (#409) (Thanks, Roland Rosenfeld)
+* Send the URL host as SNI on every https test, ignoring nosni (#458) (Thanks, Roland Rosenfeld)
+* Keep ypmatch errors out of configure's Xymon user check (#645) (Thanks, Roland Rosenfeld)
+* Document the shared memory xymond needs, and the OS limits per MAXMSG_* setting (#648)
+* Report the release's own version, not the previous one (#651) (Thanks, Jeremy Laidman)
 
 
 

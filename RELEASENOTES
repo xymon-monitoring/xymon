@@ -125,6 +125,15 @@ Where Net-SNMP is built without MD5 (NETSNMP_DISABLE_MD5), SNMPv3
 authentication configured for MD5 falls back to SHA1 and warns once at startup.
 Change the authentication to SHA1 to silence it.
 
+An https test now always sends the URL's host name as the TLS servername (SNI);
+a URL written with an IP address sends none. A server holding a certificate per
+name used to answer with its default certificate, so the sslcert status may
+change to describe a different certificate -- the one the URL actually uses.
+The sni and nosni host tags and the --sni option no longer affect https tests.
+A host that relied on nosni wants nosslcert on that line instead, plus a
+separate entry for the default virtual host if its certificate should still be
+watched; hosts.cfg(5) has the details.
+
 Build and API
 -------------
 
