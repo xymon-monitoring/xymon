@@ -60,7 +60,7 @@ env \
 	--processor="$work/processor" \
 	<"$work/feed" >"$work/xymond_rrd.log" 2>&1 &
 worker=$!
-register_cleanup "kill $worker 2>/dev/null || true"
+register_cleanup "stop_process $worker"
 
 # Hold the write end open so the worker keeps reading after the message.
 exec {feed}>"$work/feed"

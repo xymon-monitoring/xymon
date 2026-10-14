@@ -53,7 +53,7 @@ printf 'XMH_IP:127.0.0.1\n' >"$work/hostinfo.reply"
 	|| { cat "$work/cc-fake.log" >&2; fail "fake-xymond responder does not compile"; }
 "$work/fake-xymond" "$work/hostinfo.reply" >"$work/fake-xymond.port" &
 fakepid=$!
-register_cleanup "kill $fakepid 2>/dev/null || true"
+register_cleanup "stop_process $fakepid"
 for _ in 1 2 3 4 5 6 7 8 9 10; do
 	[ -s "$work/fake-xymond.port" ] && break
 	sleep 0.2
@@ -103,4 +103,4 @@ printf 'green MARKER-NO-NEWLINE-nonewline-here' >"$work/var/histlogs/realhost/no
 assert_served "HOST=realhost&SERVICE=nonl&TIMEBUF=20260101" \
 	"MARKER-NO-NEWLINE" "newline-less histlog file"
 
-echo "OK $(basename "$0")"
+pass "the historical-log path serves a legitimate legal-charset name that the traversal guards must not refuse"

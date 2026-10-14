@@ -12,7 +12,8 @@
 # buffer was 20, written with an unbounded sprintf().
 #
 # The harness runs the real grabdata() on a pull request with such a message
-# queued, under AddressSanitizer, and requires the exact index line back.
+# queued, under AddressSanitizer, and requires the index line back whole,
+# with the age grabdata() read from the clock.
 # With the old buffer ASan stops the overrun in grabdata(). Without ASan an
 # overrun this small is not reliably visible, so the test skips there.
 
@@ -28,6 +29,11 @@ work=$(mktempdir)
 printf 'int main(void) { return 0; }\n' > "$work/probe.c"
 "$CC" -fsanitize=address -o "$work/probe" "$work/probe.c" 2>/dev/null \
 	|| skip "cc does not support -fsanitize=address, without which the overrun is not visible"
+# Linking is not enough: Amazon Linux 2023's gcc links against a copy of the
+# ASan library kept in its own directory, and the runtime the loader needs is
+# the separate libasan package, so the probe links and then cannot start.
+"$work/probe" >/dev/null 2>&1 \
+	|| skip "an -fsanitize=address program does not start here (no ASan runtime library), without which the overrun is not visible"
 
 # Built the way client/Makefile builds msgcache: against the client archives
 # every variant produces, not the server's libxymon.a, which a client tree

@@ -27,7 +27,7 @@ XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
 CFLAGS += -I../include 
 
-all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) loadhosts stackio availability md5 sha1 rmd160 locator tree
+all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) xymonloadhosts xymonstackio xymonavailability md5 sha1 rmd160 xymonlocator tree
 
 client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
 
@@ -93,13 +93,13 @@ color-client.o: color.c
 timefunc-client.o: timefunc.c
 	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
 
-loadhosts: loadhosts.c loadhosts_file.c loadhosts_net.c $(XYMONCOMMLIB)
+xymonloadhosts: loadhosts.c loadhosts_file.c loadhosts_net.c $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c $(XYMONCOMMLIBS)
 
-stackio: stackio.c libxymon.a
+xymonstackio: stackio.c libxymon.a
 	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ stackio.c $(XYMONLIBS)
 
-availability: availability.c libxymon.a
+xymonavailability: availability.c libxymon.a
 	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ availability.c $(XYMONLIBS)
 
 md5: md5.c test-endianness
@@ -111,11 +111,55 @@ sha1: sha1.c test-endianness
 rmd160: rmd160c.c test-endianness
 	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ rmd160c.c
 
-locator: locator.c $(XYMONCOMMLIB) $(XYMONLIB)
+xymonlocator: locator.c $(XYMONCOMMLIB) $(XYMONLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ locator.c $(XYMONCOMMLIBS) $(XYMONLIBS)
 
 tree: tree.c
 	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ tree.c
 
+# The diagnostic programs built by "all" are otherwise discarded with the
+# build tree: nothing installs them, so anyone who wants xymonstackio to
+# check how a config file parses, or xymonloadhosts to see what hosts.cfg
+# resolves to, has to keep a build tree around or copy them out by hand. Every
+# packaging that ships them does the latter.
+#
+# Deliberately not part of "install": these are diagnostics, and whether an
+# installation gets them is for whoever runs the install to decide.
+# Packagers and anyone who wants them can ask:
+#
+#	make install-tools
+#
+# tree is built but not installed: it is an interactive test of the xtree
+# code that reads only its own stdin, so it shows nothing about an
+# installation, and tests/libxymon/xtree-*.sh already cover that code.
+#
+# They are built under the names they are installed by -- xymon<name>,
+# not the source file's bare name: names like locator are too generic for
+# a directory a packager may put on PATH.
+#
+# Their one manual page, xymontools.1, is installed here too and not by an
+# install-man, so a plain "make install" puts no page in man1 for programs
+# it did not install. Its HTML copy does ship in the web help, like every
+# page, and says that install-tools installs them.
+LIBTOOLS = xymonloadhosts xymonstackio xymonavailability xymonlocator
+
+install-tools: $(LIBTOOLS)
+	@mkdir -p $(INSTALLROOT)$(INSTALLBINDIR)
+	for f in $(LIBTOOLS); do \
+		cp -fp $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+		chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+	done
+	@mkdir -p $(INSTALLROOT)$(MANROOT)/man1
+	cp -fp xymontools.1 $(INSTALLROOT)$(MANROOT)/man1/
+	chmod 644 $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
+ifndef PKGBUILD
+	for f in $(LIBTOOLS); do \
+		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+	done
+	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
+	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
+endif
+
 clean:
-	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator tree
+	rm -f *.o *.a *~ $(LIBTOOLS) test-endianness md5 sha1 rmd160 tree

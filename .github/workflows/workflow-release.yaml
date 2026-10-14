@@ -32,12 +32,27 @@ jobs:
           echo "name=${NAME}" >> "${GITHUB_OUTPUT}"
           echo "asset=${ASSET}" >> "${GITHUB_OUTPUT}"
 #---------------------------------------------------
+      - name: Check the tagged commit was prepared for this version
+        shell: bash
+        env:
+          TAG: ${{ steps.vars.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # dorelease.sh sets this line in the prep PR, so a tag on a commit
+          # without that PR merged would ship the previous version's number.
+          WANT="#define VERSION \"${TAG#rel-}\""
+          if ! grep -qxF "$WANT" include/version.h; then
+            echo "include/version.h at $TAG does not say: $WANT" >&2
+            echo "Tag the merge commit of the prep PR for this version." >&2
+            exit 1
+          fi
+#---------------------------------------------------
       - name: Create tar.gz named after tag (folder == tag)
         shell: bash
         run: |
           set -euo pipefail
           PREFIX="${{ steps.vars.outputs.name }}/"
-          git archive \
+          git -c tar.umask=0022 archive \
             --format=tar \
             --prefix="${PREFIX}" \
             "${{ steps.vars.outputs.tag }}" \

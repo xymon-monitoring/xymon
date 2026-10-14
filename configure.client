@@ -121,7 +121,7 @@ then
 		echo ""; echo ""
 		HOMEDIR="`dscl . -read /Users/$XYMONUSER | grep HomeDirectory | awk '{print $2}'`"
 	else
-		USERDATA=`getent passwd $XYMONUSER 2>/dev/null || ypmatch "${XYMONUSER}" passwd || grep "^${XYMONUSER}:" /etc/passwd`
+		USERDATA=`getent passwd "${XYMONUSER}" 2>/dev/null || ypmatch "${XYMONUSER}" passwd 2>/dev/null || grep "^${XYMONUSER}:" /etc/passwd`
 		if test $? -eq 0
 		then
 			echo "Found passwd entry for user $USERDATA"

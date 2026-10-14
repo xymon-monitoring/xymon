@@ -14,7 +14,7 @@
 #
 # The outcome is asserted, not which trap delivers it -- under dash, EXIT alone
 # already covers the signal paths here.
-set -eu
+set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 ROOT=$(find_root)
 
@@ -45,6 +45,12 @@ work=$(mktempdir); register_cleanup "rm -rf '$work'"
 # run directory is not enough: the runner creates it before it runs anything,
 # so a signal sent on that cue can be handled before the fake test has begun,
 # and the case then proves only that a run with nothing in it cleans up.
+# The runs below are throwaway trees with a dummy area. The calling run's
+# XYMON_VARIANT and coverage floor are not theirs to meet: under
+# XYMON_TESTS_STRICT=1 an unknown area stops a run before its test starts,
+# and every case here would then test nothing.
+unset XYMON_TESTS_STRICT XYMON_VARIANT
+
 maketree() {
 	local dir=$1 kind=$2 started=${3:-} stop=${4:-}
 	mkdir -p "$dir/tests/dummy"
@@ -108,7 +114,7 @@ for sig in INT TERM; do
 	# TERM trap sets -- indistinguishable from a missing trap.
 	( cd "$d" && TMPDIR="$tmp" exec ./tests/testsuite >"$work/$sig.log" 2>&1 ) &
 	runner=$!
-	register_cleanup "kill -9 $runner 2>/dev/null || :"
+	register_cleanup "stop_process -KILL $runner"
 
 	i=0
 	while [ "$i" -lt 100 ] && [ -z "$(runroots "$tmp")" ]; do sleep 0.1; i=$((i + 1)); done
@@ -159,7 +165,7 @@ maketree "$d2" slow "$work/started.par2" "$stop"
 p1=$!
 ( cd "$d2" && TMPDIR="$tmp" exec ./tests/testsuite >"$work/par2.log" 2>&1 ) &
 p2=$!
-register_cleanup "kill -9 $p1 $p2 2>/dev/null || :"
+register_cleanup "stop_process -KILL $p1 $p2"
 
 i=0
 while [ "$i" -lt 100 ] && [ "$(runroots "$tmp" | wc -l | tr -d ' ')" -lt 2 ]; do

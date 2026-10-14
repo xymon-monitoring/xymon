@@ -26,7 +26,7 @@ grep -q '^df_sentinel()' "$SCRIPT" || fail "remote-df sentinel missing from $SCR
 DF_CALLS="$TMP/df.calls"; : > "$DF_CALLS"; export DF_CALLS
 DF_REMOTE="$TMP/df.remote"; : > "$DF_REMOTE"; export DF_REMOTE
 
-# mount(8) as FreeBSD prints it. /net is nfs -- hard-blocking, so it goes behind
+# mount(8) as OpenBSD prints it. /net is nfs -- hard-blocking, so it goes behind
 # the sentinel; /ssh is a remote that stat()s safely and must keep being
 # reported by the plain df.
 cat > "$STUB/mount" <<'EOF'
@@ -209,4 +209,4 @@ if XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES="nfs nfs4 cifs" /bin/sh "$TMP/pdl.sh"; 
 	fail "a probe directory under a backslash-named mount must not read as local"
 fi
 
-pass "xymonclient-openbsd.sh: the remote-df sentinel is wired to mount(8) and both reports"
+pass "xymonclient-openbsd.sh: the remote-df sentinel is wired to mount(8) and both reports -- OpenBSD mount output replayed, df stubbed"

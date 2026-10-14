@@ -69,7 +69,9 @@ export USEXYMONPING=y
 # host has. Hand it the MAKE= configure.server prints when it bails, detected
 # the way configure.server detects it so the two cannot drift.
 make_is_gnu() {
-	[ "$("$1" -version 2>&1 | head -n 1 | awk '{print $1 " " $2}')" = "GNU Make" ]
+	local version
+	version=$(first_line "$("$1" -version 2>&1 || true)")
+	[ "$(awk '{print $1 " " $2}' <<<"$version")" = "GNU Make" ]
 }
 if [ -z "${MAKE:-}" ] && ! make_is_gnu make; then
 	if command -v gmake >/dev/null 2>&1 && make_is_gnu gmake; then
@@ -117,3 +119,5 @@ if ! grep -q "RRDtool probe failed" "$LOG"; then
 	dump_log
 	fail "configure --server exited $rc but not via the RRD abort path (regression of #84)"
 fi
+
+pass "configure --server aborts through the RRD probe when RRDtool is missing (#84)"

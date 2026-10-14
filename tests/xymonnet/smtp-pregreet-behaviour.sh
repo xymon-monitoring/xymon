@@ -15,7 +15,7 @@
 # and only the [smtp] port is redirected, so this covers the real entry
 # rather than a convenient local one.
 
-set -eu
+set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 root=$(find_root)
 
@@ -30,7 +30,7 @@ mkdir -p "$work/home/etc"
 
 "$work/peer" "$work/verdict.txt" > "$work/port" &
 peer=$!
-register_cleanup "kill $peer 2>/dev/null || :"
+register_cleanup "stop_process $peer"
 
 i=0
 while [ "$i" -lt 50 ]; do

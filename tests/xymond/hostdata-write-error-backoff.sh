@@ -55,4 +55,4 @@ errs=$(grep -c "Cannot create file" "$work/wl" || true)
 [ -f "$work/var/hostdata/goodhost/G1" ] \
 	|| { cat "$work/wl" >&2; fail "goodhost was suppressed by badhost's write error (backoff not per-host)"; }
 
-echo "OK $(basename "$0")"
+pass "a hostdata write that fails where chkfreespace() sees nothing wrong backs off instead of retrying every cycle"

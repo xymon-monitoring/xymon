@@ -36,6 +36,10 @@ permissions:
 
 jobs:
   pin-check:
+    # Scheduled only upstream: in a fork, REPO is the fork, so the job would act
+    # on the fork's own pull requests, rebuilding the tree for each of them.
+    # A manual run still works anywhere, for trying a change on a fork.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.repository == 'xymon-monitoring/xymon')
     runs-on: ubuntu-latest
     # The build is a minute and each pull request costs a rebuild plus its own
     # tests. 90 minutes is room for the whole open set; the runner's own ceiling

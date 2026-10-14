@@ -56,7 +56,7 @@ XYMONCLIENT="$work/slow-client"
 
 # The safety net, so that a failure here does not leave a daemon behind
 # either. It runs only when the test exits, after the check below.
-register_cleanup "[ -s '$work/launched.pid' ] && kill \$(cat '$work/launched.pid') 2>/dev/null || true"
+register_cleanup "[ -s '$work/launched.pid' ] && stop_process \$(cat '$work/launched.pid')"
 
 rc=0
 ( XYMOND_START_TIMEOUT=3 start_xymond ) > "$work/start.out" 2>&1 || rc=$?

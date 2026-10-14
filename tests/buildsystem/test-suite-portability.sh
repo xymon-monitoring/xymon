@@ -34,7 +34,7 @@ _emit_shell_scripts() {
 	while IFS= read -r f; do
 		case $f in
 			*.sh) printf '%s\n' "$f" ;;
-			*) head -n 1 "$f" 2>/dev/null | grep -q '^#!.*sh' && printf '%s\n' "$f" ;;
+			*) grep -q '^#!.*sh' <<<"$(head -n 1 "$f" 2>/dev/null)" && printf '%s\n' "$f" ;;
 		esac
 	done
 }
@@ -80,13 +80,16 @@ report "bash4" '(^|[^[:alnum:]_])(mapfile|readarray)([^[:alnum:]_]|$)|declare +-
 	"bash 4 only; macOS ships bash 3.2"
 
 # Tool flags that exist on GNU and not on the BSDs, or mean different things.
-report "gnu-only" 'sed +-i|grep +[^|]*--include|grep +-[a-zA-Z]*P|stat +-c|readlink +-f|date +-d ' \
+# head -c is not POSIX either: OpenBSD's head has none.
+report "gnu-only" 'sed +-i|grep +[^|]*--include|grep +-[a-zA-Z]*P|stat +-c|readlink +-f|date +-d |head +-c' \
 	"GNU-only or differently-spelled on BSD/macOS; use a portable form"
 
 # GNU-only regex escapes. The BSD greps take \b as a literal b, so a rule
 # written with it silently matches nothing there -- which is how this very
-# file shipped a mapfile rule that tested nothing on OpenBSD.
-report "gnu-regex" '(grep|sed|awk|expr)[^|]*\\(b|<|>|w|W|s|S|d|D)([^[:alnum:]]|$)' \
+# file shipped a mapfile rule that tested nothing on OpenBSD. Reported whatever
+# follows the escape: \b is usually written right before a word.
+gnu_regex_pattern='(grep|sed|awk|expr)[^|]*\\(b|<|>|w|W|s|S|d|D)'
+report "gnu-regex" "$gnu_regex_pattern" \
 	"GNU-only regex escape; POSIX has [[:alnum:]] and (^|[^...])"
 
 # The lanes run as root, where a permission bit stops nothing. A test that
@@ -138,6 +141,15 @@ report "path-rewrite" 'sed.*/proc/' \
 report "runner-only-helper" '(^|[^-[:alnum:]_.])(errline|run_one)[[:space:]]' \
 	"errline and run_one belong to tests/testsuite, not to a test: a call is a command-not-found on the branch that reports failures; use fail, skip or pass from tests/lib/assert.sh"
 
+# A cleanup that kills returns while the process is still exiting, and the
+# temp directory removed next is written into meanwhile: xymond writes its
+# checkpoint as it exits. rm -rf then fails on the new file, the directory is
+# left behind and tests/final/no-leftovers.sh fails, on slow lanes only (macOS
+# 26 and OpenBSD 7.9, #586 and #622). stop_process waits for the exit. pkill
+# is not refused: it is how a cleanup reaches a stopped process's children.
+report "cleanup-kill" 'register_cleanup .*(^|[^[:alnum:]_-])kill([[:space:]]|$)' \
+	"a cleanup that kills returns before the process has exited, and the temp dir can be written into as it is removed; use stop_process from tests/lib/assert.sh"
+
 # Interpreters the BSD runners do not have.
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
 	"not installed on the BSD lanes; awk and sh are"
@@ -153,11 +165,14 @@ report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
 check_link_flags() {
 	local f=$1 out=$2 code
 	code=$(grep -vE '^[[:space:]]*#' "$f" || true)
+	# A here-string, not printf | grep -q: grep -q exits at its first match,
+	# and a printf still writing then dies of SIGPIPE, which pipefail turns
+	# into a reported violation -- 901 times in 20000 on OpenBSD 7.9.
 	# [{]? rather than \{? : a brace after a backslash is not portable ERE.
-	printf '%s\n' "$code" | grep -qE '[$][{]?ROOT[}]?[^[:space:]]*[.]a' || return 0
-	printf '%s\n' "$code" | grep -q 'xymon_cflags' \
+	grep -qE '[$][{]?ROOT[}]?[^[:space:]]*[.]a' <<<"$code" || return 0
+	grep -q 'xymon_cflags' <<<"$code" \
 		|| printf 'link-flags\t%s\t%s\n' "${f#"$ROOT"/}" "links an in-tree archive without xymon_cflags" >>"$out"
-	printf '%s\n' "$code" | grep -q 'xymon_ldflags' \
+	grep -q 'xymon_ldflags' <<<"$code" \
 		|| printf 'link-flags\t%s\t%s\n' "${f#"$ROOT"/}" "links an in-tree archive without xymon_ldflags" >>"$out"
 }
 
@@ -175,7 +190,7 @@ for f in $files; do check_link_flags "$f" "$work/violations"; done
 check_uname_guard() {
 	local f=$1 out=$2 code
 	code=$(grep -vE '^[[:space:]]*#' "$f" || true)
-	printf '%s\n' "$code" | grep -q 'uname' || return 0
+	grep -q 'uname' <<<"$code" || return 0
 	grep -qE '^#[[:space:]]*native-primitive:[[:space:]]*[A-Za-z_]' "$f" && return 0
 	printf 'uname-guard\t%s\t%s\n' "${f#"$ROOT"/}" \
 		"guards on uname without a '# native-primitive: NAME' header; stub the helper instead so the test covers every client" >>"$out"
@@ -195,10 +210,10 @@ check_posix_bre() {
 	{ grep -nE '(^|[^[:alnum:]_])(grep|sed)([^[:alnum:]_]|$)' "$f" 2>/dev/null || true; } | \
 	{ grep -vE '^[0-9]+:[[:space:]]*#' || true; } | \
 	while IFS= read -r line; do
-		if printf '%s' "$line" | grep -qE '(grep|sed)[[:space:]]+-[[:alnum:]]*[EP]'; then
+		if grep -qE '(grep|sed)[[:space:]]+-[[:alnum:]]*[EP]' <<<"$line"; then
 			continue	# -E (or -P): the operators below are the standard ones
 		fi
-		if printf '%s' "$line" | grep -qE '\\[?+|]'; then
+		if grep -qE '\\[?+|]' <<<"$line"; then
 			n=${line%%:*}
 			printf 'posix-bre\t%s\t%s\n' "${f#"$ROOT"/}:$n" \
 				'\? \+ and \| are not POSIX in a basic regex; OpenBSD reads them literally. Use -E' >>"$out"
@@ -207,6 +222,68 @@ check_posix_bre() {
 }
 
 for f in $files; do check_posix_bre "$f" "$work/violations"; done
+
+# A pipe into a reader that stops early -- grep -q or -m, head -- races
+# under pipefail: once the reader exits, a producer still writing dies of
+# SIGPIPE (141) and the command fails although the reader got its answer. It
+# failed 901 times in 20000 on OpenBSD 7.9 (#594); a slow scheduler is what
+# loses the race, so a fast one never shows it. Feed grep a here-string and
+# take a first line with first_line() instead. One line at a time, like the
+# rules above, so a pipe continued onto the next line is not seen; sed ...q,
+# awk ... exit and cmp stop early too but have no single-line form this can
+# tell apart, and the tree uses none of them after a pipe.
+# check_early_exit_pipe FILE OUT -- append this file's violations to OUT.
+check_early_exit_pipe() {
+	local f=$1 out=$2 line n
+	{ grep -nE '(^|[^|])[|][[:space:]]*(grep[[:space:]]+(-[[:alnum:]]+[[:space:]]+)*-[[:alnum:]]*[qm]|head([[:space:]]|$|[)]))' "$f" 2>/dev/null || true; } | \
+	{ grep -vE '^[0-9]+:[[:space:]]*#' || true; } | \
+	while IFS= read -r line; do
+		n=${line%%:*}
+		printf 'early-exit-pipe\t%s\t%s\n' "${f#"$ROOT"/}:$n" \
+			'pipes into a reader that stops early (grep -q/-m, head); under pipefail the producer can die of SIGPIPE. Use grep ... <<<"$text" or first_line' >>"$out"
+	done
+}
+
+for f in $files; do check_early_exit_pipe "$f" "$work/violations"; done
+
+# git, the compiler and make speak the user's language: a German git writes
+# "KONFLIKT" where an English one writes "CONFLICT", and pin-check.sh failed
+# on every German system for asserting the English word (#628). Xymon's own
+# messages are not translated, so only these programs' words are refused, and
+# only where a test asserts on them -- unless the same line runs with LC_ALL=C.
+# check_translated FILE OUT -- append this file's violations to OUT.
+translated_pattern='(assert_(not_)?contains|grep)[^#]*(CONFLICT|Automatic merge|fatal: |error: |Already up to date|nothing to commit|warning: |undefined reference|No rule to make)'
+check_translated() {
+	local f=$1 out=$2 line n
+	{ grep -nE "$translated_pattern" "$f" 2>/dev/null || true; } | \
+	{ grep -vE '^[0-9]+:[[:space:]]*#' || true; } | \
+	while IFS= read -r line; do
+		case $line in *LC_ALL=C*) continue ;; esac
+		n=${line%%:*}
+		printf 'translated\t%s\t%s\n' "${f#"$ROOT"/}:$n" \
+			"asserts on a word git, the compiler or make translate; assert on what no translation changes, or run that command with LC_ALL=C (#628)" >>"$out"
+	done
+}
+
+for f in $files; do check_translated "$f" "$work/violations"; done
+
+# The same race in a cleanup function, registered by name: one that kills and
+# neither waits (wait, a kill -0 loop) nor calls stop_process. The functions
+# that wait for themselves are left alone; stop_process is what they do.
+# check_cleanup_fn FILE OUT -- append this file's violations to OUT.
+check_cleanup_fn() {
+	local f=$1 out=$2 fn body
+	for fn in $(sed -nE 's/^[[:space:]]*register_cleanup "?([A-Za-z_][A-Za-z0-9_]*)"?[[:space:]]*$/\1/p' "$f"); do
+		body=$(awk -v fn="$fn" '$0 ~ "^[[:space:]]*" fn "\\(\\)" { p = 1 } p { print } p && /^[[:space:]]*}/ { exit }' "$f" |
+			grep -vE '^[[:space:]]*#' || true)
+		grep -qE '(^|[^[:alnum:]_-])kill([[:space:]]|$)' <<<"$body" || continue
+		grep -qE 'stop_process|(^|[^[:alnum:]_])wait([[:space:]]|$)|kill +-0' <<<"$body" && continue
+		printf 'cleanup-kill\t%s\t%s\n' "${f#"$ROOT"/}" \
+			"cleanup $fn() kills without waiting; the temp dir can be written into as it is removed. Use stop_process from tests/lib/assert.sh" >>"$out"
+	done
+}
+
+for f in $files; do check_cleanup_fn "$f" "$work/violations"; done
 
 if [ -s "$work/violations" ]; then
 	printf 'portability rules broken by the test suite:\n\n' >&2
@@ -220,6 +297,7 @@ probe="$work/probe.sh"
 	printf '#!/usr/bin/env bash\n'
 	printf 'mapfile -t x < /dev/null\n'
 	printf 'sed -i s/a/b/ f\n'
+	printf 'head -c 2 f\n'
 	printf 'python3 -c pass\n'
 	printf 'grep -E %s x\n' "'\\bword\\b'"
 	printf 'chmod 500 d\n'
@@ -227,10 +305,27 @@ probe="$work/probe.sh"
 	printf 'cc -I"$ROOT/lib" x.c\n'
 	printf 'sed s#/proc/mounts#f# x\n'
 	printf 'errline "boom"\n'
+	printf 'register_cleanup "kill $pid 2>/dev/null || true"\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "9" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "11" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+
+# The cleanup-function rule the same way: a function that kills and does not
+# wait is reported, one that waits or uses stop_process is not.
+cleanfile="$work/cleanup.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf 'stop_bare() {\n\tkill "$pid" 2>/dev/null || true\n}\nregister_cleanup stop_bare\n'
+	printf 'stop_waits() {\n\tkill "$pid" 2>/dev/null || true\n\twait "$pid" 2>/dev/null || true\n}\nregister_cleanup stop_waits\n'
+	printf 'stop_new() {\n\tstop_process "$pid"\n}\nregister_cleanup "stop_new"\n'
+} >"$cleanfile"
+: >"$work/cleanup-violations"
+check_cleanup_fn "$cleanfile" "$work/cleanup-violations"
+assert_equal "1" "$(wc -l <"$work/cleanup-violations" | tr -d " ")" \
+	"the cleanup-function rule should report the one function that kills without waiting, and only it"
+assert_contains "stop_bare()" "$(cat "$work/cleanup-violations")" \
+	"the cleanup-function rule reported the wrong function"
 
 # The link-flags rule the same way, including the bypass it used to allow: the
 # helpers named in a comment and nowhere else.
@@ -244,6 +339,19 @@ bypass="$work/bypass.sh"
 check_link_flags "$bypass" "$work/probe-violations"
 assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
 	"the link-flags rule no longer reports both missing helpers for an archive built without them"
+
+# The GNU-escape rule the same way: an escape is reported whatever follows it,
+# a word included, and the portable spellings are not.
+gnufile="$work/gnu-regex.sh"
+cat >"$gnufile" <<'EOF'
+grep -qE '\bbreak;' <<<"$x"
+grep -E '\bword' x
+grep -E 'a\sb' f
+grep -E '(^|[^[:alnum:]_])word' f
+grep -E 'a[[:space:]]b' f
+EOF
+assert_equal "3" "$(grep -cE "$gnu_regex_pattern" "$gnufile")" \
+	"the GNU-escape rule no longer reports an escape followed by a word, or reports a portable spelling"
 
 # The BRE rule the same way, and with the ERE beside it: a rule that fired on
 # both would be met by turning every -E off again.
@@ -281,5 +389,40 @@ declared="$work/declared.sh"
 check_uname_guard "$declared" "$work/uname-violations"
 assert_equal "0" "$(wc -l <"$work/uname-violations" | tr -d " ")" \
 	"the uname rule now reports a declared native-primitive test, which is the one place a guard belongs"
+
+# The early-exit rule the same way: each reader is reported after a pipe,
+# and neither "||" nor the here-string form that replaces it is.
+earlyfile="$work/early.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf 'printf x | grep -q x\n'
+	printf 'printf x | grep -Eqx x\n'
+	printf 'printf x | grep -m1 x\n'
+	printf 'v=$(printf x | head -1)\n'
+	printf 'printf x | head -n 1\n'
+	printf 'true || head -1 f\n'
+	printf 'grep -q x <<<"$v"\n'
+} >"$earlyfile"
+: >"$work/early-violations"
+check_early_exit_pipe "$earlyfile" "$work/early-violations"
+assert_equal "5" "$(wc -l <"$work/early-violations" | tr -d " ")" \
+	"the early-exit rule no longer reports exactly the five pipes into grep -q/-m and head (and not || or a here-string)"
+
+
+# The translation rule the same way: an assertion on git's or the compiler's
+# word is reported, the same word under LC_ALL=C is not, and neither is a
+# word Xymon writes itself.
+langfile="$work/lang.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf 'assert_contains "CONFLICT" "$out" "git refused"\n'
+	printf 'grep -q "warning: " cc.log\n'
+	printf 'out=$(LC_ALL=C git merge x); assert_contains "CONFLICT" "$out" "git refused"\n'
+	printf 'assert_contains "Address already in use" "$log" "xymond said"\n'
+} >"$langfile"
+: >"$work/lang-violations"
+check_translated "$langfile" "$work/lang-violations"
+assert_equal "2" "$(wc -l <"$work/lang-violations" | tr -d " ")" \
+	"the translation rule no longer reports exactly the two assertions on translated words (and not one under LC_ALL=C, or one on Xymon's own)"
 
 pass "the test suite keeps to bash 3.2, portable tool flags, the configured build flags, and one lane per client"

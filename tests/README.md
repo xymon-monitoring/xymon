@@ -97,6 +97,8 @@ flight) and one test often spans several.
 | `tests/client/`   | xymon client tools and behaviours                      |
 | `tests/analysis/`  | the local data analyser (`xymond_client`, wherever the variant builds it) |
 | `tests/server/`   | xymond-side tools (xymoncgimsg, alert routing, config parsing) |
+| `tests/xymond/`   | xymond's channel workers (hostdata, filestore) and channel IPC |
+| `tests/rrd/`      | xymond_rrd: RRD updates, external processors, RRD definitions |
 | `tests/xymonnet/` | xymonnet probes (xymonping, network checks)            |
 | `tests/libxymon/` | harnesses compiling only `lib/` sources                |
 | `tests/web/`      | CGIs, HTML rendering paths                             |
@@ -151,12 +153,48 @@ maintenance.
   PR: `tests/client/fs-filter-linux.sh`, `tests/packaging/fhs-paths.sh`.
   Split when a file passes ~200 lines.
 - **Executable. Bash. Strict mode.** First line:
-  `#!/usr/bin/env bash`. Second line: `set -euo pipefail`.
-  POSIX-sh compatibility is a non-goal.
+  `#!/usr/bin/env bash`, then the SPDX line and the header comment.
+  The first command is `set -euo pipefail`. POSIX `sh` is not a goal
+  for tests: the floor is bash 3.2. The tools they call must still
+  behave the same on every platform;
+  `tests/buildsystem/test-suite-portability.sh` enforces that.
 - **Quiet on success, verbose on failure.** Don't print per-step
   progress on the happy path; CI logs are noisy enough. On failure
   the `fail` helper prints to stderr and exits, which is usually
   enough context.
+- **One success line, through `pass`.** End with `pass "<what held>"`
+  — a claim, not a label: `pass "namematch() compares the plain name
+  list case-insensitively"`, not `pass "namematch test"`. The runner
+  prints the path and counts the verdict; only the test can say what
+  it verified. A compiled harness reports through its exit status and
+  prints no success line of its own; keep its failure output, which is
+  what makes a red run readable.
+- **Say so when only half of it ran.** A test that could not verify
+  everything it covers — no sanitizer for the half that needs one,
+  nothing built to drive — ends with `pass_partial "<what held>"
+  "<what could not be checked>"`. It still exits 0, so the runner
+  cannot tell it from a full pass by exit status; the summary counts
+  the two apart, and a run that checked half of what it claims stops
+  reading as a complete one.
+- **A skip inside an area the build provides is a regression.** With
+  `XYMON_TESTS_STRICT=1` and `XYMON_VARIANT` set — which is what CI
+  does after installing the dependencies and building — the runner
+  fails on any test that skipped in an area this variant produces:
+  the build has that subject, so the test had no business standing
+  down. Outside those areas the filter has already removed the test.
+  Strict also refuses what it cannot hold to that floor: a test in
+  an area `area_in_variant` has never heard of, a test sitting
+  directly under `tests/`, or an executable `.sh` under `tests/lib/`
+  or `tests/fixtures/` (invisible to discovery) each fail the run as
+  a filing error. A developer box declares nothing and is never held
+  to any of this.
+- **Rejected: classifying skips by cause.** A `skip_env` marker ("a
+  host condition, so the floor ignores it") classifies by cause, and
+  cause does not decide whether coverage was lost: a missing tool is
+  a host condition *and*, where CI installs that tool so the test can
+  run, a real regression. Likewise rejected: exempting `require_bin`
+  callers from the area filter — two answers to "should this run
+  here" is one too many.
 - **Exit codes:**
   - `0` — pass
   - `77` — skip (matches the autotools / autopkgtest convention; CI
@@ -200,6 +238,14 @@ maintenance.
   any contributor's box and in CI. Flaky tests are removed, not
   retried. If a test needs to wait for something, wait for the
   condition, not for a wall-clock duration.
+- **In any language.** git, the compiler and `make` speak the user's
+  language, so a test does not assert on their words: it checks what no
+  translation changes -- an exit status, a file or host name, a number -- or
+  runs that command with `LC_ALL=C`. `tests/buildsystem/pin-check.sh` once
+  looked for git's "CONFLICT", which a German git writes "KONFLIKT" (#628);
+  `test-suite-portability.sh` now refuses such an assertion. Xymon's own
+  messages are not translated, `strerror` text included, since Xymon never
+  calls `setlocale`, so a test may assert on them.
 - **No persistent side effects.** Use `mktemp -d` for scratch space and
   register cleanup via `register_cleanup` (see `lib/assert.sh`).
 - **No git assumption.** Tests must run against an extracted release

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMONTOOLS(1)</title>
+</head>
+<body>
+<h1 class="head-name">XYMONTOOLS</h1>
+Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
+
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymontools, xymonloadhosts, xymonstackio, xymonavailability,
+    xymonlocator, xymonnetprobe - Xymon diagnostic tools</p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<p class="Pp"><b>xymonloadhosts HOSTSFILE HOSTNAME [HOSTNAME...]</b>
+  <br/>
+  <b>xymonloadhosts @ HOSTNAME</b>
+  <br/>
+  <b>xymonstackio FILENAME</b>
+  <br/>
+  <b>xymonavailability HISTFILE STARTTIME ENDTIME</b>
+  <br/>
+  <b>xymonlocator IP:PORT</b>
+  <br/>
+  <b>xymonnetprobe [--debug] [--timeout=N] [--concurrency=N]
+    IP/PORT/TESTSPEC[@SOURCEIP]...</b></p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">These programs run one piece of the Xymon server by hand, using
+    the same code as the daemons, to show what that piece makes of a
+    configuration file, a history file or a network service. They are installed
+    only by &quot;make install-tools&quot;, not by &quot;make install&quot;.</p>
+<p class="Pp">Each one prints its usage with <b>--help</b>. Run them under
+    <i><a href="../man1/xymoncmd.1.html">xymoncmd</a>(1)</i> so that they find the server's configuration.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
+  <dt id="xymonloadhosts"><a class="permalink" href="#xymonloadhosts"><b>xymonloadhosts</b></a></dt>
+  <dd>Loads HOSTSFILE the way the server does, including its &quot;include&quot;
+      and &quot;directory&quot; lines, and prints every item of each HOSTNAME's
+      entry, after resolving the name to its canonical host. With &quot;@&quot;
+      it shows the entry xymond holds for HOSTNAME instead. It then prompts: an
+      item name prints that item, an empty line moves on to the next host.
+    <br/>
+     xymonloadhosts /etc/xymon/hosts.cfg www.example.com
+    <p class="Pp"></p>
+  </dd>
+  <dt id="xymonstackio"><a class="permalink" href="#xymonstackio"><b>xymonstackio</b></a></dt>
+  <dd>Prints FILENAME with its &quot;include&quot; and &quot;directory&quot;
+      lines expanded, then prompts: &quot;?&quot; lists every file that was read
+      and whether any of them changed since - the check the server makes before
+      it reloads a configuration - &quot;!&quot; reads it again and
+      &quot;.&quot; quits. To print the expanded file only, use
+      <i><a href="../man1/xymoncfg.1.html">xymoncfg</a>(1).</i>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="xymonavailability"><a class="permalink" href="#xymonavailability"><b>xymonavailability</b></a></dt>
+  <dd>Computes the availability of one status over a period, as the report pages
+      do, and lists the color changes in that period. HISTFILE is a file in the
+      history directory ($XYMONHISTDIR), named HOST.SERVICE with the dots in
+      HOST written as commas. STARTTIME and ENDTIME are in Unix epoch format, as
+      printed by &quot;date +%s&quot;.
+    <br/>
+     xymonavailability $XYMONHISTDIR/www,example,com.http 1700000000 1700086400
+    <p class="Pp"></p>
+  </dd>
+  <dt id="xymonlocator"><a class="permalink" href="#xymonlocator"><b>xymonlocator</b></a></dt>
+  <dd>Connects to the <i>xymond_locator</i> at IP:PORT and prompts for its
+      commands. Its register, down, up and forget commands change the state of
+      that running locator.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="xymonnetprobe"><a class="permalink" href="#xymonnetprobe"><b>xymonnetprobe</b></a></dt>
+  <dd>Runs each network test once, the way <i><a href="../man1/xymonnet.1.html">xymonnet</a>(1)</i> does, and prints
+      the result, including the banner the service sent. TESTSPEC is a service
+      from protocols.cfg. --debug adds a trace of each step.
+    <br/>
+     xymonnetprobe --debug 172.16.10.2/25/smtp
+    <p class="Pp"></p>
+  </dd>
+</dl>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man1/xymoncmd.1.html">xymoncmd</a>(1), <a href="../man1/xymoncfg.1.html">xymoncfg</a>(1), <a href="../man1/xymongrep.1.html">xymongrep</a>(1), <a href="../man1/xymonnet.1.html">xymonnet</a>(1), <a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5),
+    <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
+
+</body>
+</html>

@@ -37,6 +37,20 @@ pass() {
 	exit 0
 }
 
+# pass_partial CLAIM [REASON] -- what ran held, but only part of what the test
+# covers ran: no sanitizer for the half that needs one, nothing built to drive.
+# It exits 0 like any pass, so the runner cannot tell them apart -- hence the
+# self-report. Otherwise a half-checked run lands in "passed" and the number
+# says more than the suite verified.
+pass_partial() {
+	if [ -n "${XYMON_TESTS_PARTIAL_LOG:-}" ]; then
+		printf '%s\n' "$0" >>"$XYMON_TESTS_PARTIAL_LOG" 2>/dev/null || true
+	fi
+	if [ -n "${2:-}" ]; then printf 'PARTIAL: %s -- %s\n' "$1" "$2"
+	else printf 'PARTIAL: %s\n' "$1"; fi
+	exit 0
+}
+
 # ---- assertions --------------------------------------------------------------
 
 # assert_equal WANT GOT [MSG]
@@ -45,6 +59,14 @@ assert_equal() {
 	if [ "$want" != "$got" ]; then
 		fail "${msg:+$msg: }expected '$want', got '$got'"
 	fi
+}
+
+# first_line TEXT -- print TEXT's first line. For "the first match" without
+# a pipe into head: head exits after one line, and whatever is still writing
+# into the pipe then dies of SIGPIPE, which pipefail turns into a failure of
+# the whole command (the race #594 removed for grep -q).
+first_line() {
+	printf '%s' "${1%%$'\n'*}"
 }
 
 # assert_contains NEEDLE HAYSTACK [MSG]
@@ -114,6 +136,32 @@ __xymon_tests_run_cleanups() {
 trap __xymon_tests_run_cleanups EXIT
 register_cleanup() {
 	__XYMON_TESTS_CLEANUP_CMDS+=("$*")
+}
+
+# stop_process [-SIGNAL] PID... -- signal each process (TERM by default) and
+# return only once it has exited, sending KILL after 10 seconds. A cleanup
+# that only signals returns while the process still runs -- xymond writes its
+# checkpoint as it exits -- and the temp dir removed next is written into
+# meanwhile: rm -rf fails on it and the dir is left behind. It polls rather
+# than waits, so a process that is not this shell's child, as one read from a
+# pidfile, is followed too; bash reaps its own children as they exit, so
+# they stop answering kill -0 then. Empty and dead PIDs are ignored, so a
+# cleanup can name a process that never started.
+stop_process() {
+	local sig=-TERM p n
+	case ${1:-} in -*) sig=$1; shift ;; esac
+	for p in "$@"; do
+		[ -n "$p" ] || continue
+		kill "$sig" "$p" 2>/dev/null || continue
+		n=0
+		while kill -0 "$p" 2>/dev/null && [ "$n" -le 110 ]; do
+			n=$((n + 1))
+			[ "$n" -eq 100 ] && kill -KILL "$p" 2>/dev/null
+			sleep 0.1
+		done
+		wait "$p" 2>/dev/null || true
+	done
+	return 0
 }
 
 # mktempdir -- create a temp dir and arrange its removal on EXIT. Prints the

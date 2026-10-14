@@ -23,6 +23,10 @@ require_gnu_make
 [ -f "$ROOT/web/showgraph.cgi" ] || skip "tree built without RRD support (no showgraph.cgi)"
 
 rrddef=$(sed -n 's/^RRDDEF *= *//p' "$ROOT/Makefile")
+# Where <rrd.h> lives, as configure found it (--rrdinclude). It is often the
+# directory PCRE's flags already name, which hides its absence; an RRDtool
+# installed in a prefix of its own is not found without it.
+rrdinc=$(sed -n 's/^RRDINCDIR *= *//p' "$ROOT/Makefile")
 rrdlibs=$(sed -n 's/^RRDLIBS *= *//p' "$ROOT/Makefile")
 [ -n "$rrdlibs" ] || rrdlibs="-lrrd"
 
@@ -40,7 +44,7 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
-"$CC" $harness_cflags $rrddef -o "$work/showgraph" \
+"$CC" $harness_cflags $rrddef $rrdinc -o "$work/showgraph" \
 	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
 	$pcre_libs $rrdlibs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }
@@ -122,4 +126,4 @@ render "$val4"
 [ -f "$work/args.out" ] || fail "value with a single quote broke the command line (script did not run)"
 grep -qxF -- "$val4" "$work/args.out" || fail "value with a single quote not literal: $(cat "$work/args.out")"
 
-echo "OK $(basename "$0")"
+pass "a graphs.cfg "TITLE exec:" runs its command with the displayname, service and matched RRDs, and takes its first line"

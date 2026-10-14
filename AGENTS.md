@@ -42,6 +42,14 @@ A fabricated result is worse than a missing one. "I could not build this on AIX"
 sends a reviewer to the place that needs checking; an invented suite count sends
 them away from it, and nothing on the page tells them which one they are reading.
 
+A pull request you prepare — one whose description you write — carries a
+pre-review in its description: `CONTRIBUTING.md` *Pre-review* says what it holds
+and proposes a form for it. For a human author it is encouraged; for you it is
+required, and accounts for every block of changed lines whatever its form, because
+a reviewer cannot tell from the diff which of your results you ran and which you
+inferred, and the pre-review is where that line is drawn. When you add a commit to
+someone else's pull request, you report what you ran to its author instead.
+
 ## Where things are
 
 - `xymond/` the server daemons, `xymonnet/` the network probes, `client/` the
@@ -93,9 +101,9 @@ are the ones that cost a round trip to discover:
 - **`python`, `python3` or `perl`** in a test. A helper that needs more than
   shell is written in C and compiled by the test.
 - **GNU-only tool flags** (`sed -i`, `grep --include`, `grep -P`, `stat -c`,
-  `readlink -f`, `date -d`) and **GNU-only regex**: `\b` `\w` `\s` `\d` `\<`
-  `\>` and their uppercase forms in any of them, and `\?` `\+` `\|` in a
-  *basic* regular expression — use `grep -E` or `[[:alnum:]]`.
+  `readlink -f`, `date -d`, `head -c`) and **GNU-only regex**: `\b` `\w` `\s`
+  `\d` `\<` `\>` and their uppercase forms in any of them, and `\?` `\+` `\|`
+  in a *basic* regular expression — use `grep -E` or `[[:alnum:]]`.
 - **`chmod` that drops write or read permission** to force a failure. The lanes
   run as root, where it does not.
 - **`-I "$ROOT/..."`** when compiling a harness — it shadows system headers on

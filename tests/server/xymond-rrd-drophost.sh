@@ -135,8 +135,10 @@ rrd4="$work/rrd4"; mkdir -p "$rrd4"
 # against the shutdown line is what separates the two: the "flushed and dropped
 # N entries" summary is printed from the match count whether or not anything
 # was written, and flush_cached_updates() logs the same line in both cases.
-fl=$(grep -n "Flushing '/testhost/" "$work/rename.log" | head -1 | cut -d: -f1)
-sd=$(grep -n "Shutting down, flushing cached updates" "$work/rename.log" | head -1 | cut -d: -f1)
+fl=$(first_line "$(grep -n "Flushing '/testhost/" "$work/rename.log" || true)")
+fl=${fl%%:*}
+sd=$(first_line "$(grep -n "Shutting down, flushing cached updates" "$work/rename.log" || true)")
+sd=${sd%%:*}
 [ -n "$fl" ] || fail "the pending update was never flushed: $(grep -iE 'updcache|Flushing' "$work/rename.log")"
 [ -n "$sd" ] || fail "no shutdown-flush line to order against: $(cat "$work/rename.log")"
 [ "$fl" -lt "$sd" ] \

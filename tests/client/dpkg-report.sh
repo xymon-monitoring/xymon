@@ -42,7 +42,7 @@ command -v awk >/dev/null 2>&1 || skip "no awk"
 # reformat pipeline means the #48 behaviour was removed -- a regression, not a
 # pre-feature tree -- and must fail. (A genuinely absent environment -- no awk,
 # or no client script at all -- already skipped above.)
-pipeline=$(grep -E 'dpkg -l[[:space:]]*\|[[:space:]]*awk' "$SCRIPT" | head -1 || true)
+pipeline=$(first_line "$(grep -E 'dpkg -l[[:space:]]*\|[[:space:]]*awk' "$SCRIPT" || true)")
 [ -n "$pipeline" ] || fail "xymonclient-linux.sh lost the dpkg reformat pipeline (#48)"
 
 # The reformatted listing is only useful under the [dpkg] section tag the
@@ -51,8 +51,10 @@ pipeline=$(grep -E 'dpkg -l[[:space:]]*\|[[:space:]]*awk' "$SCRIPT" | head -1 ||
 # [dpkg] tag is emitted and that it precedes the pipeline that fills it.
 # `|| true`: a no-match grep exits 1, which under `set -e -o pipefail` would
 # abort the script before the explicit fail() below could report the reason.
-tag_line=$( (grep -n '^[[:space:]]*echo "\[dpkg\]"' "$SCRIPT" || true) | head -1 | cut -d: -f1)
-pipe_line=$( (grep -nE 'dpkg -l[[:space:]]*\|[[:space:]]*awk' "$SCRIPT" || true) | head -1 | cut -d: -f1)
+tag_line=$(first_line "$(grep -n '^[[:space:]]*echo "\[dpkg\]"' "$SCRIPT" || true)")
+tag_line=${tag_line%%:*}
+pipe_line=$(first_line "$(grep -nE 'dpkg -l[[:space:]]*\|[[:space:]]*awk' "$SCRIPT" || true)")
+pipe_line=${pipe_line%%:*}
 [ -n "$tag_line" ] || fail "xymonclient-linux.sh no longer emits the [dpkg] section tag (#48)"
 [ "$tag_line" -lt "$pipe_line" ] \
 	|| fail "the [dpkg] section tag must precede the dpkg reformat pipeline (#48)"
@@ -96,4 +98,4 @@ assert_contains "rc oldpkg 1.0" "$out" "dpkg report dropped the non-installed (r
 assert_not_contains "GNU Bourne Again SHell" "$out" "dpkg report still carries the description column (#48)"
 assert_not_contains "Architecture" "$out" "dpkg report still carries the table header (#48)"
 
-pass "xymonclient-linux.sh emits the compact #48 dpkg report (status/name/version only)"
+pass "xymonclient-linux.sh emits the compact #48 dpkg report (status/name/version only) -- dpkg output replayed from a fixture"

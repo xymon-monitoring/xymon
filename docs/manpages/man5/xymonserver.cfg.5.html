@@ -563,7 +563,12 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       The default size should be adequate in most cases, but some extension
       scripts can generate very large status messages - close to 1024 kB. You
       should only change this if you see messages in the xymond log file about
-      status messages being truncated.
+      status messages being truncated. Each MAXMSG setting sizes a shared memory
+      segment, and this one sizes three: status, status-change and page. If the
+      operating system's shared memory limits do not allow the larger segments,
+      xymond does not start, and logs &quot;Could not get shm of size ...&quot;;
+      the installation guide, under &quot;Sufficient SYSV IPC resources&quot;,
+      names the limits to raise.
     <p class="Pp"></p>
   </dd>
   <dt id="MAXMSG_CLIENT"><a class="permalink" href="#MAXMSG_CLIENT"><b>MAXMSG_CLIENT</b></a></dt>

@@ -1,0 +1,68 @@
+.TH XYMONTOOLS 1 "Version 4.3.30:  4 Sep 2019" "Xymon"
+.SH NAME
+xymontools, xymonloadhosts, xymonstackio, xymonavailability, xymonlocator, xymonnetprobe \- Xymon diagnostic tools
+.SH SYNOPSIS
+.B "xymonloadhosts HOSTSFILE HOSTNAME [HOSTNAME...]"
+.br
+.B "xymonloadhosts @ HOSTNAME"
+.br
+.B "xymonstackio FILENAME"
+.br
+.B "xymonavailability HISTFILE STARTTIME ENDTIME"
+.br
+.B "xymonlocator IP:PORT"
+.br
+.B "xymonnetprobe [--debug] [--timeout=N] [--concurrency=N] IP/PORT/TESTSPEC[@SOURCEIP]..."
+
+.SH DESCRIPTION
+These programs run one piece of the Xymon server by hand, using the
+same code as the daemons, to show what that piece makes of a
+configuration file, a history file or a network service. They are
+installed only by "make install-tools", not by "make install".
+
+Each one prints its usage with \fB--help\fR. Run them under
+.I xymoncmd(1)
+so that they find the server's configuration.
+
+.IP "\fBxymonloadhosts\fR"
+Loads HOSTSFILE the way the server does, including its "include"
+and "directory" lines, and prints every item of each HOSTNAME's
+entry, after resolving the name to its canonical host. With "@"
+it shows the entry xymond holds for HOSTNAME instead. It then
+prompts: an item name prints that item, an empty line moves on to
+the next host.
+   xymonloadhosts /etc/xymon/hosts.cfg www.example.com
+
+.IP "\fBxymonstackio\fR"
+Prints FILENAME with its "include" and "directory" lines expanded,
+then prompts: "?" lists every file that was read and whether any
+of them changed since \- the check the server makes before it
+reloads a configuration \- "!" reads it again and "." quits.
+To print the expanded file only, use
+.I xymoncfg(1).
+
+.IP "\fBxymonavailability\fR"
+Computes the availability of one status over a period, as the
+report pages do, and lists the color changes in that period.
+HISTFILE is a file in the history directory ($XYMONHISTDIR),
+named HOST.SERVICE with the dots in HOST written as commas.
+STARTTIME and ENDTIME are in Unix epoch format, as printed by
+"date +%s".
+   xymonavailability $XYMONHISTDIR/www,example,com.http 1700000000 1700086400
+
+.IP "\fBxymonlocator\fR"
+Connects to the
+.I xymond_locator
+at IP:PORT and prompts for its commands. Its register, down, up
+and forget commands change the state of that running locator.
+
+.IP "\fBxymonnetprobe\fR"
+Runs each network test once, the way
+.I xymonnet(1)
+does, and prints the result, including the banner the service
+sent. TESTSPEC is a service from protocols.cfg. --debug adds a
+trace of each step.
+   xymonnetprobe --debug 172.16.10.2/25/smtp
+
+.SH "SEE ALSO"
+xymoncmd(1), xymoncfg(1), xymongrep(1), xymonnet(1), hosts.cfg(5), xymon(7)

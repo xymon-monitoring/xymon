@@ -55,4 +55,4 @@ printf '@@clichg#3|1|10.0.0.99|..|F3|linux\npayload\n@@\n' | assert_rejected "ba
 [ ! -e "$work/var/F3" ] \
 	|| fail "bare '..' hostname wrote a file into the parent of the hostdata tree"
 
-echo "OK $(basename "$0")"
+pass "the clichg save path keeps a channel-supplied host or test name to one path component"

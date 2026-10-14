@@ -16,7 +16,7 @@
 # Then the two rules that read a dependency, which the integration run needs
 # and which can be asked without GitHub: which "Depends-on: #N" lines count,
 # and where the range removed for a stacked branch starts.
-set -eu
+set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 ROOT=$(find_root)
 
@@ -197,7 +197,12 @@ assert_equal "m1 m2 " "$got" \
 out=$(noid --integrate moved clash) && fail "a set of which nothing merges did not stop the run"
 assert_contains "none of the 1 pull requests merges onto moved" "$out" \
 	"a set of which nothing merges stops the run"
-assert_contains "CONFLICT" "$out" \
+# What git said, in whatever language it speaks here (#628): the pull
+# request pin-check names, and the file git names, which no translation
+# changes -- not the word "CONFLICT", which a German git writes "KONFLIKT".
+assert_contains "clash: " "$out" \
+	"the stop names the pull request whose merge was refused"
+assert_contains "src/value" "$out" \
 	"the stop quotes what git said about the first refusal"
 
 pass "pinned, unguarded, adapted and control told apart; dependencies read and applied; integration merges need no identity"
