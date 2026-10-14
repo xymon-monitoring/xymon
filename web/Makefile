@@ -89,7 +89,7 @@ xymonpage: $(WEBPAGEOBJS) $(XYMONCOMMLIB)
 datepage.cgi: $(DATEPAGEOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(DATEPAGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-showgraph.o: showgraph.c
+showgraph.o: showgraph.c aggregate-tokens.inc.c dsidx.inc.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()

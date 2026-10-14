@@ -18,6 +18,11 @@
 # file in the set. "@RRDPARAM@" contains the first word extracted from the
 # pattern of files (see e.g. "[memory]" how this is used). "@COLOR@" picks
 # a new color for each graph automatically.
+# Aggregates across all matched files can be built with "@AVG:name@",
+# "@SUM:name@", "@MIN:name@", "@MAX:name@", "@AVGNAN:name@",
+# "@SUMNAN:name@", "@MINNAN:name@", "@MAXNAN:name@", "@COUNT:name@",
+# "@MEDIAN:name@", "@STDEV:name@", "@PERCENT:name:pct@" and "@Ppct:name@".
+# For example "CDEF:avg=@AVG:p@" becomes an RRDtool CDEF over p0, p1, ...
 #
 # For a bundle viewed one service at a time (e.g. "tcp:conn"), FNPATTERN
 # capture group 1 must be exactly the service component: showgraph uses it

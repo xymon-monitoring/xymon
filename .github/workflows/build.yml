@@ -62,7 +62,8 @@ jobs:
             libpcre2-dev \
             librrd-dev \
             libssl-dev \
-            libtirpc-dev
+            libtirpc-dev \
+            rrdtool
 
       - name: Configure (${{ matrix.name }})
         env:
