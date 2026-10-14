@@ -11,9 +11,9 @@ gates; everything mechanical is automated.
         │                                  │                            │
         ▼                                  ▼                            ▼
  release/X.Y.Z branch  ──PR──►  main with prep commit  ──tag──►  draft GitHub release
- (md5.dat + manpage                                              (tarball + .sha256)
-  version stamps
-  regenerated)
+ (md5.dat, version.h                                             (tarball + .sha256)
+  + manpage version
+  stamps regenerated)
 ```
 
 ## The changelog
@@ -63,7 +63,7 @@ request.
 On `Changes`: check every merged pull request has its entry, fill the release
 date into the top `Changes from X -> Y (XX Xxx XXXX)` heading and the
 `RELEASENOTES` version, then merge into `main`. Nothing later touches these
-files — `dorelease.sh` regenerates `md5.dat` and manpage stamps only — so a
+files — `dorelease.sh` regenerates `md5.dat` and the version stamps only — so a
 release cut without this ships a placeholder where the date should be.
 
 ### 2. Run the prep workflow
@@ -72,21 +72,22 @@ GitHub → Actions → **Pre-tag release prep** → *Run workflow* → version a
 `X.Y.Z`.
 
 It recreates `release/X.Y.Z` from `main`, runs `build/dorelease.sh X.Y.Z`
-(regenerating `build/md5.dat` and stamping "Version X.Y.Z + date" into every
-manpage and its HTML), commits, force-pushes, and opens a pull request against
+(regenerating `build/md5.dat`, setting `VERSION` in `include/version.h` — what
+the binaries report — and stamping "Version X.Y.Z + date" into every manpage
+and its HTML), commits, force-pushes, and opens a pull request against
 `main`. It also dispatches the build and test workflows so the PR gets CI, and
 writes the follow-up commands into the run summary.
 
 A PR rather than a direct commit so a human sees the generated diff first: it
-should contain only version stamps and `md5.dat` lines. Anything else means the
-generation went wrong.
+should contain only version stamps, the `include/version.h` line and `md5.dat`
+lines. Anything else means the generation went wrong.
 
 Reruns are safe — the branch is always recreated from `main`, and an existing
 `rel-X.Y.Z` tag makes the workflow refuse outright.
 
 ### 3. Review and merge the prep PR
 
-Diff is only version stamps and `md5.dat`, checks green, merge.
+Diff is only version stamps, `include/version.h` and `md5.dat`, checks green, merge.
 
 If anything has merged into `main` since the prep run started, whatever it
 touches, rerun the prep before merging. Its stamps and `md5.dat` were generated
@@ -181,3 +182,7 @@ or pushed. Run it twice; the checksum must match. Needs `mandoc`.
   that already produced a draft creates a second one; GitHub's "release by tag"
   lookup ignores drafts, so `action-gh-release` cannot reuse the first. Delete
   the stale draft. Cannot happen once a release is published.
+- **"include/version.h at rel-X.Y.Z does not say ..."** — the tag is on a
+  commit without the prep PR merged, so the release workflow stopped before
+  building anything. Delete the tag (`git push origin :refs/tags/rel-X.Y.Z`,
+  then `git tag -d rel-X.Y.Z`) and tag the prep PR's merge commit (step 4).
