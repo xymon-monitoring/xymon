@@ -1160,6 +1160,21 @@ int start_ping_service(service_t *service)
 			ipping_t *walk;
 
 			for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
+				/*
+				 * The feed below writes each address and its newline into
+				 * IP_ADDR_STRLEN+1 bytes. A longer target would lose the
+				 * newline and swallow the next host's address, so skip it
+				 * rather than truncate it into a different address. It is
+				 * then never answered, so it counts as not responding for
+				 * this host alone, and its banner names it in the status.
+				 */
+				if (strlen(walk->ip) >= IP_ADDR_STRLEN) {
+					errprintf("Host %s: ping target '%s' is too long for an IP address, not pinged\n",
+						  t->host->hostname, walk->ip);
+					addtobuffer_many(walk->banner, walk->ip, " is too long for an IP address, not pinged", NULL);
+					continue;
+				}
+
 				handle = xtreeFind(iptree, walk->ip);
 				if (handle == xtreeEnd(iptree)) {
 					rec = strdup(walk->ip);

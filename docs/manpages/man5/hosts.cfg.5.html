@@ -994,7 +994,10 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
   <dd>This adds additional IP-addresses that are pinged during the normal
       &quot;conn&quot; test. So the normal &quot;conn&quot; test must be enabled
       (the default) before this tag has any effect. The IP-addresses listed here
-      are pinged in addition to the main IP-address.
+      are pinged in addition to the main IP-address. A value longer than 15
+      characters, the longest IPv4 address, is not pinged: xymonnet logs it and
+      names it in the &quot;conn&quot; status, and it counts as an IP that does
+      not respond.
     <p class="Pp">When multiple IP's are pinged, you can choose if ALL IP's must
         respond (the &quot;worst&quot; method), or AT LEAST one IP must respond
         (the &quot;best&quot; setting). All of the IP's are reported in a single
