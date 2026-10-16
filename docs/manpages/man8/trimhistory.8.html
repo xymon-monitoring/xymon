@@ -64,7 +64,14 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
   </dd>
   <dt id="drop"><a class="permalink" href="#drop"><b>--drop</b></a></dt>
   <dd>Causes trimhistory to delete files from hosts that are not listed in the
-      <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> file.
+      <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> file. A host that is listed but currently outside a
+      <b>NOTBEFORE:</b> or <b>NOTAFTER:</b> window counts as listed, and keeps
+      its history.
+    <p class="Pp">If the host list cannot be loaded, or loads with no hosts in
+        it, trimhistory drops nothing and exits with an error: every file would
+        otherwise look like it belonged to a host that no longer exists. Runs
+        without <b>--drop</b> or <b>--droplogs</b> are unaffected, since they
+        delete nothing either way.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="dropsvcs"><a class="permalink" href="#dropsvcs"><b>--dropsvcs</b></a></dt>
