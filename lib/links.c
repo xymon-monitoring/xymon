@@ -144,9 +144,21 @@ void load_all_links(void)
 		load_links(dirname, notesskin);
 	}
 
-	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
-	snprintf(dirname, sizeof(dirname), "%s", xgetenv("XYMONNOTESDIR"));
-	p = strrchr(dirname, '/'); *p = '\0'; strncat(dirname, "/help", (sizeof(dirname) - strlen(dirname) - 1));
+	/* The help links live in $XYMONSTATICWWWDIR/help: help ships with the
+	   static web content, so its location follows the static tree wherever
+	   a packaging puts it. Every install writes the variable, normally the
+	   www directory, so help stays at www/help. Plain getenv() on purpose:
+	   a xymonserver.cfg written before this variable existed lacks it, and
+	   xgetenv() would errprintf there instead of falling back to deriving
+	   help from XYMONNOTESDIR (.../notes -> .../help), as before. */
+	p = getenv("XYMONSTATICWWWDIR");
+	if (p && *p) {
+		snprintf(dirname, sizeof(dirname), "%s/help", p);
+	}
+	else {
+		snprintf(dirname, sizeof(dirname), "%s", xgetenv("XYMONNOTESDIR"));
+		p = strrchr(dirname, '/'); *p = '\0'; strncat(dirname, "/help", (sizeof(dirname) - strlen(dirname) - 1));
+	}
 	load_links(dirname, helpskin);
 
 	linksloaded = 1;
