@@ -185,6 +185,8 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Keep ypmatch errors out of configure's Xymon user check (#645) (Thanks, Roland Rosenfeld)
 * Document the shared memory xymond needs, and the OS limits per MAXMSG_* setting (#648)
 * Report the release's own version, not the previous one (#651) (Thanks, Jeremy Laidman)
+* Install a server built without xymonnet, whose ext/ is empty (#598) (Thanks, Markus Häll)
+* Skip an overlong conn= ping target, not another host's ping (#656) (Thanks, Roland Rosenfeld)
 
 
 
