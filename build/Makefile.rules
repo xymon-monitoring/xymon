@@ -180,12 +180,31 @@ clean:
 
 install: $(INSTALLTARGETS)
 
+# Where the generated web-server drop-in goes, and under what name;
+# xymond/Makefile installs it there. Unset, it stays in Xymon's own etc
+# directory as it always has. The name defaults to the upstream filename,
+# so INSTALLHTTPDCONFDIR alone is unchanged; a packaging that renames it
+# (Debian installs it as "xymon", Terabithia as "<server>.conf") sets
+# INSTALLHTTPDCONFNAME and drops its own rename. Exported rather than added
+# to the install-xymond recursion line: that line is long and shared, so
+# every feature needing one more variable would otherwise collide textually
+# with every other one.
+ifndef INSTALLHTTPDCONFNAME
+INSTALLHTTPDCONFNAME = xymon-apache.conf
+endif
+export INSTALLHTTPDCONFDIR
+export INSTALLHTTPDCONFNAME
+
 install-servermsg:
 	@echo ""
 	@echo "Installation complete."
 	@echo ""
 	@echo "You must configure your webserver for the Xymon webpages and CGI-scripts."
+ifeq ($(strip $(INSTALLHTTPDCONFDIR)),)
 	@echo "A sample Apache configuration is in ${XYMONHOME}/etc/xymon-apache.conf"
+else
+	@echo "The Apache configuration was installed as $(INSTALLHTTPDCONFDIR)/$(INSTALLHTTPDCONFNAME)"
+endif
 	@echo "If you have your Administration CGI scripts in a separate directory,"
 	@echo "then you must also setup the password-file with the htpasswd command."
 	@echo ""
