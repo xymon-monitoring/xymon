@@ -44,7 +44,13 @@ first line of the merged message.
 
 .IP "\fBRECIPIENT\fR"
 The \fBRECIPIENT\fR parameter defines which server receives
-the message. If RECIPIENT is given as "0.0.0.0", then the
+the message: an IPv4 or IPv6 address or a hostname, optionally
+followed by ":port". An IPv6 address with a port is written in
+brackets, "[2001:db8::1]:1984"; without a port, the default one
+is used (see XYMONDPORT in xymonserver.cfg(5)). A hostname with
+several addresses is tried address by address, in the order the
+resolver gives them, until one connects.
+If RECIPIENT is given as "0.0.0.0", then the
 message is sent to all of the servers listed in the XYMSERVERS
 environment variable.
 
@@ -59,6 +65,15 @@ HTTP protocol. The
 .I xymoncgimsg.cgi(8)
 CGI tool (included in Xymon) must be installed on the webserver
 for the HTTP transport to work.
+
+A \fBRECIPIENT\fR written "xymons://host[:port]" is reached over
+TLS, on the XYMONDTLSPORT port unless one is given; "xymon://host"
+is the same as "host". The server's certificate is checked as
+XYMON_TLS_VERIFY says, and a client certificate is presented when
+XYMON_TLS_CERT is set (see xymonserver.cfg(5)). When the TLS
+handshake fails, the message is not sent: there is no retry
+without TLS. A xymon built without OpenSSL refuses such a
+recipient.
 .br
 
 .IP "\fBMESSAGE\fR"
