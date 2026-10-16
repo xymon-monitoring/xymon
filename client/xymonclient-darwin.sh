@@ -326,7 +326,9 @@ fs_guarded() {
 		# still knows which device is behind the mount point, and that is the
 		# first thing an operator needs. The sizes are reported as "-": they
 		# were not measured, and a number here would be trended as a reading.
-		# The capacity stays 100% because that is what turns the column red.
+		# The capacity is "-" like the sizes: nothing measured it either. A
+		# server too old to know the marker reads 0% and stays green - the
+		# cost of not reporting a number nobody measured.
 		# The mount list rides the mount-table stream behind an @@ separator:
 		# a -v assignment cannot carry newlines on BSD awk (fs_setop makes
 		# the same move). A spaced device is re-encoded (\040) to keep the
@@ -339,8 +341,8 @@ fs_guarded() {
 				d = ($0 in dev) ? dev[$0] : "-"
 				n = split(d, dp, / /)
 				if (n > 1) { d = dp[1]; for (j = 2; j <= n; j++) d = d "\\040" dp[j] }
-				if (inode == "inode") printf "%s - - - 100%% - - 100%% %s\n", d, $0
-				else printf "%s - - - 100%% %s\n", d, $0
+				if (inode == "inode") printf "%s - - - - - - - %s\n", d, $0
+				else printf "%s - - - - %s\n", d, $0
 			}'
 	else
 		printf '%s\n' "$_rout"
