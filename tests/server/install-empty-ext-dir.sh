@@ -40,7 +40,7 @@ vars=(
 	XYMONUSER="$(id -un)" HTTPDGID="$(id -gn)"
 	XYMONTOPDIR="$dest/top" XYMONHOME="$dest/top/server" XYMONVAR="$dest/var"
 	CGIDIR="$dest/top/cgi-bin" SECURECGIDIR="$dest/top/cgi-secure"
-	XYMONLOGDIR="$dest/log" MANROOT="$dest/man"
+	XYMONLOGDIR="$dest/log" XYMONRUNDIR="$dest/run" MANROOT="$dest/man"
 	INSTALLBINDIR="$dest/top/server/bin" INSTALLETCDIR="$dest/etc"
 	INSTALLEXTDIR="$dest/top/server/ext" INSTALLTMPDIR="$dest/var/tmp"
 	INSTALLWEBDIR="$dest/etc/web" INSTALLWWWDIR="$dest/var/www"
