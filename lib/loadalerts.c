@@ -1017,7 +1017,14 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		traceprintf("Failed '%s' (pagename excluded)\n", cfline);
 		return 0; 
 	}
-	if (pgmatchres == 0) {
+	/*
+	 * A PAGE= rule has to find its page. Testing for a failed match instead
+	 * let every state that is not a failure through, including "not compared
+	 * at all": a location that yields no token - "," or ",," say -
+	 * leaves pgmatchres at its -1 sentinel, and the rule fired for an alert
+	 * whose page was never looked at.
+	 */
+	if (crit && crit->pagespec && (pgmatchres != 1)) {
 		traceprintf("Failed '%s' (pagename not in include list)\n", cfline);
 		return 0;
 	}
