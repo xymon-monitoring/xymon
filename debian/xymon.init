@@ -27,7 +27,7 @@ test -x $DAEMON || exit 0
 . /lib/lsb/init-functions
 . /usr/share/xymon/init-common.sh
 
-# Include xymonclient defaults if available
+# Include xymon-client defaults if available
 if [ -f /etc/default/xymon-client ] ; then
 	. /etc/default/xymon-client
 fi
@@ -88,7 +88,7 @@ case "$1" in
 	then
 		create_includefiles
 		log_action_msg "Reloading xymond config"
-		kill -HUP `cat /var/run/xymon/xymond.pid`
+		kill -HUP `cat $PIDFILE`
 	else
 		log_action_msg "xymond not running (no PID file)"
 	fi

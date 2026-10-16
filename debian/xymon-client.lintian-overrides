@@ -1,1 +1,10 @@
-xymon-client: package-contains-empty-directory usr/lib/xymon/client/ext/
+xymon-client: package-contains-empty-directory [usr/lib/xymon/client/ext/]
+# Monitoring clieb should start as late as possible and it's only "Should", not "Required"
+xymon-client: init.d-script-depends-on-all-virtual-facility should-start [etc/init.d/xymon-client]
+# No version specified by upstream
+xymon-client: copyright-refers-to-symlink-license usr/share/common-licenses/GPL
+# ridiculous, see #904852
+xymon-client: package-contains-documentation-outside-usr-share-doc [usr/lib/xymon/client/local/README]
+# A rather overzealous lintian tag when applied to packages with many
+# components with man pages.
+xymon-client: spare-manual-page [usr/share/man/man*/*.gz]
