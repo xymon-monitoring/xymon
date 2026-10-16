@@ -613,7 +613,13 @@ int load_client_config(char *configfn)
 
 	MEMDEFINE(fn);
 
-	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/analysis.cfg", xgetenv("XYMONHOME"));
+	if ((configfn ? snprintf(fn, sizeof(fn), "%s", configfn)
+		      : snprintf(fn, sizeof(fn), "%s/etc/analysis.cfg", xgetenv("XYMONHOME"))) >= (int)sizeof(fn)) {
+		errprintf("Cannot load config file %s: the name is too long (%d characters)\n",
+			  (configfn ? "given with --config" : "XYMONHOME/etc/analysis.cfg"),
+			  (int)(configfn ? strlen(configfn) : strlen(xgetenv("XYMONHOME")) + strlen("/etc/analysis.cfg")));
+		return 0;
+	}
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
