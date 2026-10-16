@@ -69,8 +69,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
     hostname of every status message it receives. A host configured as
     <b>foo,bar</b> is therefore tested like any other, but its results arrive
     under the name <b>foo.bar</b> and never match the entry in this file: the
-    configured host gets no status, no history and no web page. It draws the
-    same warning, for that reason. Do not use a comma in a canonical name.</p>
+    configured host gets no status, no history and no web page. <i><a href="../man8/xymond.8.html">xymond</a>(8)</i>
+    warns about it with its own message, which names the host its results arrive
+    as. Do not use a comma in a canonical name.</p>
 <p class="Pp">The optional tags are then used to define which tests are relevant
     for the host, and also to set e.g. the time-interval used for availability
     reporting by <i><a href="../man1/xymongen.1.html">xymongen</a>(1)</i></p>
