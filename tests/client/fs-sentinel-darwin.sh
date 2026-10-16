@@ -4,8 +4,9 @@
 # tests/client/fs-sentinel-darwin.sh
 #
 # The remote-df sentinel wired into xymonclient-darwin.sh (#316). df_sentinel()
-# itself is byte-identical to the Linux copy -- fs-sentinel-copies.sh enforces
-# that, and fs-sentinel-linux.sh tests its internals (the claim race, PID reuse,
+# itself is byte-identical to the Linux copy -- both are stamped from
+# client/shared/df_sentinel.sh -- and fs-sentinel-linux.sh tests its
+# internals (the claim race, PID reuse,
 # a probe that finishes late). What is macOS's own, and what this file tests,
 # is the wiring: splitting the per-path df loop in two, so a hard-blocking
 # mount is probed behind the sentinel instead of by the loop, and emitting
