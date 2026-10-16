@@ -480,7 +480,10 @@ as the clientlog service in the web interface.
 
 .IP "\fBping\fR"
 Attempts to contact the Xymon server. If successful, the Xymon server version ID
-is reported.
+is reported. Sent to
+.I msgcache(8)
+instead, it is answered by msgcache with its own version and the age
+of the last pull.
 
 .IP "\fBpullclient\fR"
 This message is used when fetching client data via the "pull" mechanism implemented by
