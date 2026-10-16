@@ -86,6 +86,8 @@ static int running = 1;
 static int gotalarm = 0;
 static int pendingcount = 0;
 static int messagetimeout = 30;
+#define RECONNECT_INTERVAL 10		/* seconds between connect attempts to a network peer */
+#define RESPAWN_INTERVAL 60		/* seconds between starts of a local worker */
 
 /*
  * chksumsize is the space left in front of the message buffer, to
@@ -182,8 +184,17 @@ void openconnection(xymon_peer_t *peer)
 
 	peer->peerstatus = P_DOWN;
 
+	/*
+	 * Throttle reconnects to a network peer that is not answering, but well
+	 * inside --msgtimeout (30 seconds by default): messages queued while the
+	 * peer is away are dropped once they are older than that, so a slower
+	 * retry would lose every message sent while a restarted worker was coming
+	 * back. A local worker is still started at most once a minute, so one
+	 * that fails on every message is not respawned in a tight loop.
+	 */
 	now = gettimer();
-	if (now < (peer->lastopentime + 60)) return;	/* Will only attempt one open per minute */
+	if (now < (peer->lastopentime +
+		   ((peer->peertype == P_NET) ? RECONNECT_INTERVAL : RESPAWN_INTERVAL))) return;
 
 	dbgprintf("Connecting to peer %s:%d\n", inet_ntoa(peer->peeraddr.sin_addr), ntohs(peer->peeraddr.sin_port));
 
@@ -199,9 +210,18 @@ void openconnection(xymon_peer_t *peer)
 
 		n = connect(peer->peersocket, (struct sockaddr *)&peer->peeraddr, sizeof(peer->peeraddr));
 		if (n == -1) {
-			errprintf("Cannot connect to peer %s:%d : %s\n", 
-				inet_ntoa(peer->peeraddr.sin_addr), ntohs(peer->peeraddr.sin_port), 
+			errprintf("Cannot connect to peer %s:%d : %s\n",
+				inet_ntoa(peer->peeraddr.sin_addr), ntohs(peer->peeraddr.sin_port),
 				strerror(errno));
+			close(peer->peersocket);
+			peer->peersocket = -1;
+			/*
+			 * Tell the locator, not only when a write fails: a locator
+			 * that restarted reloads this server as up from its state
+			 * file, and would go on sending its hosts here -- where
+			 * nobody answers -- instead of to a standby.
+			 */
+			if (locatorbased) locator_serverdown(peer->peername, locatorservice);
 			return;
 		}
 		break;
@@ -249,6 +269,13 @@ void openconnection(xymon_peer_t *peer)
 	fcntl(peer->peersocket, F_SETFL, O_NONBLOCK);
 	peer->peerstatus = P_UP;
 	dbgprintf("Peer is UP\n");
+
+	/*
+	 * A failed write reports the server down to the locator. Once it answers
+	 * again, say so: otherwise the locator sends its hosts elsewhere -- or,
+	 * with no other server, nowhere -- until the worker's own next heartbeat.
+	 */
+	if ((peer->peertype == P_NET) && locatorbased) locator_serverup(peer->peername, locatorservice);
 }
 
 
@@ -283,11 +310,13 @@ static void addmessage_onepeer(xymon_peer_t *peer, char *inbuf, int inlen)
 	 */
 	if (peer->peerstatus == P_FAILED) peer->peerstatus = P_DOWN;
 
-	/* If the peer is down, we will only permit ONE message in the queue. */
-	if (peer->peerstatus != P_UP) {
-		errprintf("Peer not up, flushing message queue\n");
-		while (peer->msghead) flushmessage(peer);
-	}
+	/*
+	 * A peer that is not up keeps its queue: the messages are delivered when
+	 * the connection comes back, and the stale-message check in the main loop
+	 * drops any that wait longer than --msgtimeout, which bounds the queue.
+	 * Keeping only the newest message lost every earlier one -- including the
+	 * one whose write had just failed -- each time a worker restarted.
+	 */
 
 	if (peer->msghead == NULL) {
 		peer->msghead = peer->msgtail = newmsg;
@@ -372,7 +401,7 @@ int addmessage(char *inbuf)
 	return 0;
 }
 
-void shutdownconnection(xymon_peer_t *peer)
+void shutdownconnection(xymon_peer_t *peer, int discardqueue)
 {
 	if (peer->peerstatus != P_UP) return;
 
@@ -393,9 +422,14 @@ void shutdownconnection(xymon_peer_t *peer)
 		break;
 	}
 
-	/* Any messages queued are discarded */
-	while (peer->msghead) flushmessage(peer);
-	peer->msghead = peer->msgtail = NULL;
+	/*
+	 * On the way out any messages queued are discarded. When a connection
+	 * fails they are kept, for the reconnect to deliver.
+	 */
+	if (discardqueue) {
+		while (peer->msghead) flushmessage(peer);
+		peer->msghead = peer->msgtail = NULL;
+	}
 }
 
 
@@ -743,12 +777,15 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_DOWN:
+			  case P_FAILED:
+				/*
+				 * A failed peer is retried too: it still holds the
+				 * messages queued when its connection broke, and waiting
+				 * for a new message to arrive for it would leave them to
+				 * go stale, since the locator now sends new ones elsewhere.
+				 */
 				openconnection(pwalk);
 				canwrite = (pwalk->peerstatus == P_UP);
-				break;
-
-			  case P_FAILED:
-				canwrite = 0;
 				break;
 			}
 
@@ -769,35 +806,57 @@ int main(int argc, char *argv[])
 				fd_set fdwrite;
 				struct timeval tmo;
 
-				/* Check that this peer is ready for writing. */
-				FD_ZERO(&fdwrite); FD_SET(pwalk->peersocket, &fdwrite);
-				tmo.tv_sec = 0; tmo.tv_usec = 2000;
-				n = select(pwalk->peersocket+1, NULL, &fdwrite, NULL, &tmo);
-				if (n == -1) {
-					errprintf("select() failed: %s\n", strerror(errno));
-					canwrite = 0; 
-					hasfailed = 1;
-					continue;
-				}
-				else if ((n == 0) || (!FD_ISSET(pwalk->peersocket, &fdwrite))) {
-					canwrite = 0;
-					continue;
+				/*
+				 * A worker never writes back on the connection, so a
+				 * readable socket means it has been closed. Writing to it
+				 * would succeed once and lose that message without an
+				 * error; treat it as failed instead, so the message stays
+				 * queued for the reconnect.
+				 */
+				if (pwalk->peertype == P_NET) {
+					char peekc;
+					ssize_t pn = recv(pwalk->peersocket, &peekc, 1, MSG_PEEK | MSG_DONTWAIT);
+
+					if (pn == 0) {
+						errno = ECONNRESET;
+						hasfailed = 1;
+					}
+					else if ((pn == -1) && (errno != EAGAIN) && (errno != EWOULDBLOCK) && (errno != EINTR)) {
+						hasfailed = 1;
+					}
 				}
 
-				n = write(pwalk->peersocket, pwalk->msghead->bufp, pwalk->msghead->buflen);
-				if (n >= 0) {
-					pwalk->msghead->bufp += n;
-					pwalk->msghead->buflen -= n;
-					if (pwalk->msghead->buflen == 0) flushmessage(pwalk);
-				}
-				else if (errno == EAGAIN) {
-					/*
-					 * Write would block ... stop for now. 
-					 */
-					canwrite = 0;
-				}
-				else {
-					hasfailed = 1;
+				if (!hasfailed) {
+					/* Check that this peer is ready for writing. */
+					FD_ZERO(&fdwrite); FD_SET(pwalk->peersocket, &fdwrite);
+					tmo.tv_sec = 0; tmo.tv_usec = 2000;
+					n = select(pwalk->peersocket+1, NULL, &fdwrite, NULL, &tmo);
+					if (n == -1) {
+						errprintf("select() failed: %s\n", strerror(errno));
+						canwrite = 0;
+						hasfailed = 1;
+						continue;
+					}
+					else if ((n == 0) || (!FD_ISSET(pwalk->peersocket, &fdwrite))) {
+						canwrite = 0;
+						continue;
+					}
+
+					n = write(pwalk->peersocket, pwalk->msghead->bufp, pwalk->msghead->buflen);
+					if (n >= 0) {
+						pwalk->msghead->bufp += n;
+						pwalk->msghead->buflen -= n;
+						if (pwalk->msghead->buflen == 0) flushmessage(pwalk);
+					}
+					else if (errno == EAGAIN) {
+						/*
+						 * Write would block ... stop for now.
+						 */
+						canwrite = 0;
+					}
+					else {
+						hasfailed = 1;
+					}
 				}
 
 				if (hasfailed) {
@@ -806,9 +865,32 @@ int main(int argc, char *argv[])
 						  inet_ntoa(pwalk->peeraddr.sin_addr), ntohs(pwalk->peeraddr.sin_port),
 						  strerror(errno));
 					canwrite = 0;
-					shutdownconnection(pwalk);
-					if (pwalk->peertype == P_NET) locator_serverdown(pwalk->peername, locatorservice);
-					pwalk->peerstatus = P_FAILED;
+					/*
+					 * The queue is kept for the reconnect, so a message the
+					 * failed connection took only part of goes out again
+					 * whole: the new connection must not start mid-message.
+					 */
+					if (pwalk->msghead && (pwalk->msghead->bufp != pwalk->msghead->buf)) {
+						pwalk->msghead->buflen += (pwalk->msghead->bufp - pwalk->msghead->buf);
+						pwalk->msghead->bufp = pwalk->msghead->buf;
+					}
+					shutdownconnection(pwalk, 0);
+
+					/*
+					 * Try a network peer again at once: a worker that was
+					 * restarted is already listening, and reporting it down
+					 * would have the locator send the next messages
+					 * elsewhere -- or, with no other server, nowhere. Only a
+					 * peer that still does not answer is reported down, by
+					 * openconnection(). A local worker keeps its once-a-minute
+					 * respawn, so one that fails on every message is not
+					 * restarted in a tight loop.
+					 */
+					if (pwalk->peertype == P_NET) {
+						pwalk->lastopentime = 0;
+						openconnection(pwalk);
+					}
+					if (pwalk->peerstatus != P_UP) pwalk->peerstatus = P_FAILED;
 				}
 			}
 		}
@@ -820,7 +902,7 @@ int main(int argc, char *argv[])
 	/* Close peer connections */
 	for (handle = xtreeFirst(peers); (handle != xtreeEnd(peers)); handle = xtreeNext(peers, handle)) {
 		xymon_peer_t *pwalk = (xymon_peer_t *) xtreeData(peers, handle);
-		shutdownconnection(pwalk);
+		shutdownconnection(pwalk, 1);
 	}
 
 	/* Remove the PID file */
