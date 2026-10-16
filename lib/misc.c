@@ -364,10 +364,21 @@ char *wstok(char *s)
 	/* Strip leading/trailing quote */
 	{
 		char *p;
+		int leading = (*result == '"'), trailing = 0;
 
-		if (*result == '"') result++;
+		if (leading) result++;
 		p = result + strlen(result) - 1;
-		if (*p == '"') *p = '\0';
+		if (*p == '"') { *p = '\0'; trailing = 1; }
+
+		/*
+		 * KEYWORD="some value" loses its quotes as "KEYWORD=some value"
+		 * does: the quote after the '=' goes too. Only after a keyword of
+		 * letters, so a pattern such as %key="value" is left as it was.
+		 */
+		if (!leading && trailing) {
+			for (p = result; isalpha((unsigned char)*p); p++) ;
+			if ((p > result) && (*p == '=') && (*(p+1) == '"')) memmove(p+1, p+2, strlen(p+2)+1);
+		}
 	}
 
 	return result;
