@@ -186,6 +186,21 @@ disagrees, its artifact wins.
 Either way, do not bump the version or date in the `.TH` line — that happens at
 release — and keep `git diff --check` quiet.
 
+## Copyright and licensing
+
+Xymon's licence, and the files distributed under other terms, are in the
+License section of [README](README). Each file's own notice is authoritative.
+Do not copy third-party code into the tree without checking that its licence is
+compatible and keeping its notices.
+
+Copyright in a contribution remains with its author; contributing does not
+transfer it to the project or a maintainer. Before contributing, make sure you
+have the right to submit the change under the terms that apply to its file.
+When you add new, separately copyrightable material, you may add a copyright
+notice naming yourself as its copyright holder. Preserve existing copyright,
+attribution and licence notices, and do not replace another author's notice
+with your own.
+
 ## Pull requests
 
 Every change reaches `main` or `devel` through a pull request. Whether it also
