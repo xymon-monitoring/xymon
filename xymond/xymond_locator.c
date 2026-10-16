@@ -758,6 +758,13 @@ int main(int argc, char *argv[])
 		n = select(lsocket+1, &fdread, NULL, NULL, NULL);
 
 		if (n == -1) {
+			/*
+			 * A signal interrupts the wait: HUP has re-opened the log, and
+			 * TERM has cleared keeprunning, which ends the loop below.
+			 * Neither is an error.
+			 */
+			if (errno == EINTR) continue;
+
 			/* Select error */
 			errprintf("select error, aborting: %s\n", strerror(errno));
 			keeprunning = 0;
