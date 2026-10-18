@@ -1,0 +1,121 @@
+Native TLS for the Xymon protocol: status and roadmap
+=====================================================
+
+This records what the TLS series builds, what it deliberately leaves out, and
+what remains. For how to set TLS up and move clients to it, see xymon-tls(7);
+this file is the design rationale behind it.
+
+
+The series
+==========
+The work is seven pull requests, in this order:
+
+  #617  lib: TLS contexts for the Xymon protocol, and a certificate's identity
+  #618  sendmsg: send to a xymons:// recipient over TLS
+  #619  xymond: take TLS connections on the addresses --tls-listen names
+  #620  xymond: let a client certificate naming a host send for it
+  #621  xymond: with XYMOND_TLS_REQUIRE_CERT, refuse a client without a certificate
+  #622  xymond: check the TLS settings with --check-tls, and exit
+  #623  docs: add xymon-tls(7), how to set up TLS and move clients to it
+
+Each targets main directly, so each diff also shows the ones before it.
+
+
+Threat model
+============
+The 1984/tcp protocol is plaintext and unauthenticated. An attacker who can
+reach the port can:
+
+  (a) Read every status update flowing in - host names, IP addresses, service
+      state, and sometimes credentials embedded in test output.
+  (b) Inject forged status updates ("everything is green") to suppress alerts.
+  (c) Disable monitoring by spamming drop and rename commands.
+
+TLS addresses (a), (b) and (c) on the encrypted listener only. A plaintext
+listener stays exactly as exposed as it was, and there is no in-place upgrade
+for 1984 yet - see "STARTTLS" below. Client certificates close (b) for hosts
+that use them; (c) is only partly closed, because the administration commands
+are still authorized by address.
+
+Out of scope: compromise of the server host, a key read off its disk, and
+side-channel attacks on OpenSSL.
+
+
+What a deployment configures
+============================
+Settings come from the environment, not from a configuration file.
+
+  Client                     Server
+  XYMON_TLS_VERIFY           XYMOND_TLS_CA
+  XYMON_TLS_CA               XYMOND_TLS_CERT
+  XYMON_TLS_SNI              XYMOND_TLS_KEY
+  XYMON_TLS_CERT             XYMOND_TLS_REQUIRE_CERT
+  XYMON_TLS_KEY
+
+xymon-tls(7) presents these as three cumulative levels: encryption only, the
+server verified (the default), and each client verified.
+
+Reading the same settings from xymonclient.cfg, for parity with how a client
+already sources its other settings, is still an open question.
+
+
+Why a separate address, not an upgrade on 1984
+==============================================
+TLS from the first byte on an address that --tls-listen names, with plaintext
+1984 untouched, was chosen so that:
+
+  - there is no protocol state machine to debug at the same time as the TLS
+    context setup;
+  - "openssl s_client -connect host:port" is the whole test harness;
+  - an operator can run both for as long as the migration takes.
+
+The cost is that every client has to be pointed at a new address.
+
+
+The OpenSSL floor
+=================
+SSL_CTX_set_min_proto_version() sets the floor at TLS 1.2. Builds against
+OpenSSL older than 1.1.0 still compile, through guarded fallbacks, and
+OpenSSL 3.x has a path of its own; LibreSSL is excluded from it explicitly.
+
+A build gets TLS when it has OpenSSL: build/ssl.sh sets SSLFLAGS and
+configure.server sets SSLDEF, both to -DHAVE_OPENSSL, and the code compiles
+out without it. The flag reaches the compiler as a compile flag and never
+enters config.h - anything that generates config.h, or any other build system
+carrying this code, has to pass the flag itself rather than expect to find it
+there.
+
+
+What is left
+============
+
+STARTTLS on 1984
+----------------
+Not implemented. Without it, a deployment cannot be upgraded in place: every
+client must be moved to a TLS address instead. The pieces are already here -
+the SSL_CTX and the certificate plumbing are reusable, and only the handshake
+trigger changes - so the work is a negotiation step plus a server-side setting
+that lets an operator move clients one at a time before requiring TLS.
+
+Proxies and store-and-forward
+-----------------------------
+xymonproxy(8), and msgcache(8) with xymonfetch(8), open connections of their
+own, in plaintext only.
+
+Rights for a certificate
+------------------------
+A certificate lets a host report for itself (#620). It cannot be granted
+anything further: reporting for other hosts, and the maintenance and
+administration commands, are allowed by address, through xymond's
+--*-senders options. Per-certificate authorization for the sensitive commands
+is what would finish closing (c) in the threat model.
+
+Revocation
+----------
+Not checked: no CRL, no OCSP, no stapling. A certificate is good until it
+expires, or until its CA is replaced.
+
+The certificate lifecycle
+-------------------------
+No rotation hook, and no ACME. The renewed.pem fixture tests that a renewed
+certificate is accepted; obtaining it stays the operator's job.
