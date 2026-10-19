@@ -50,9 +50,29 @@ require_gnu_make
 "$XYMON_MAKE" -C "$ROOT/lib" libxymonclientcomm.a libxymonclient.a >"$work/libbuild.log" 2>&1 \
 	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh the xymon client libraries"; }
 
-cat > "$work/hosts.cfg" <<'EOF'
-127.0.0.1 inwindow.example.com # conn NOTBEFORE:199001010000 NOTAFTER:209001010000
-127.0.0.1 notyet.example.com # conn NOTBEFORE:209001010000
+# The far side of the window has to be a time this platform can represent: a
+# signed 32-bit time_t stops in January 2038, and timestr2timet() returns -1
+# for anything past it, so a fixture dated 2090 made every NOTAFTER assertion
+# fail on Debian i386 (#662). Ask the compiler how wide time_t is and date the
+# fixture accordingly -- 2090 where it fits, 2037 where it does not. Both are
+# far enough for "not yet" and "still valid" to mean what the test needs.
+cat > "$work/timet.c" <<'EOF'
+#include <stdio.h>
+#include <time.h>
+int main(void) { printf("%d\n", (int)sizeof(time_t)); return 0; }
+EOF
+"$CC" -o "$work/timet" "$work/timet.c" 2>"$work/timet.log" \
+	|| { cat "$work/timet.log" >&2; fail "cannot build the time_t width probe"; }
+timet_width=$("$work/timet")
+if [ "$timet_width" -ge 8 ]; then
+	future=209001010000
+else
+	future=203701010000
+fi
+
+cat > "$work/hosts.cfg" <<EOF
+127.0.0.1 inwindow.example.com # conn NOTBEFORE:199001010000 NOTAFTER:$future
+127.0.0.1 notyet.example.com # conn NOTBEFORE:$future
 127.0.0.1 expired.example.com # conn NOTAFTER:199001010000
 127.0.0.1 plain.example.com # conn
 EOF
@@ -150,7 +170,7 @@ int main(int argc, char *argv[])
 	h = hostinfo("inwindow.example.com");
 	raw = (h ? xmh_item(h, XMH_RAW) : NULL);
 	expect("loading a host leaves its NOTBEFORE/NOTAFTER tags intact",
-	       raw && strstr(raw, "NOTBEFORE:199001010000") && strstr(raw, "NOTAFTER:209001010000"),
+	       raw && strstr(raw, "NOTBEFORE:199001010000") && strstr(raw, "NOTAFTER:" FUTURE_STAMP),
 	       raw ? raw : "(no record)");
 
 	printf(failures ? "FAILED\n" : "ALL OK\n");
@@ -163,7 +183,7 @@ EOF
 
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
-"$CC" $harness_cflags -o "$work/harness" \
+"$CC" $harness_cflags -DFUTURE_STAMP="\"$future\"" -o "$work/harness" \
 	"$work/harness.c" "$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
 	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
