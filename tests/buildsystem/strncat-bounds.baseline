@@ -15,4 +15,4 @@
 1 web/history.c
 2 web/svcstatus-info.c
 1 web/svcstatus-trends.c
-35 xymonnet/xymonnet.c
+36 xymonnet/xymonnet.c
