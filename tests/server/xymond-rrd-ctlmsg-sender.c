@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2026 Bruno Manzoni */
 /* For tests/server/xymond-rrd-ctlmsg.sh: sends each argument after the socket
  * path argv[1] as one datagram to that socket. An argument "-NUMBER" sends a
  * message of NUMBER bytes instead: "/", then 'a's, then "/". Exits 1 when a

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # An unreadable protocols.cfg is a config fault, not an outage.
 #
 # Nothing can be checked without the file, and the honest report is yellow

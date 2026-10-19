@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # A TLS service's response time includes its handshake. The probe stops the
 # clock once at the TCP connect and again when SSL_connect() completes, and

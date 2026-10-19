@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # Every entry in protocols.cfg is run by the dialogue driver.
 #
 # Two matchers behaving almost alike is the problem: they agree on every

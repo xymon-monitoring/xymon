@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # The dialogue engine must not report a service OK unless every step ran.
 #
 # Before it, a server that greeted "220" and then 421d every command was

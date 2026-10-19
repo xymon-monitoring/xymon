@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # Write build/build-id: the commit a build that is not a release comes from,
 # as git describe names it after the last release tag ("4.3.31-159-g2dcad5db7",

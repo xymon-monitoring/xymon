@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # Two replies in one packet, and the reply that carries the verdict.
 #
 # A reply is not a read. A server answering twice in quick succession lands

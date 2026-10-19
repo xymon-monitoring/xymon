@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # What the server said is reported whether or not "options banner" is set.
 #
 # The option reads as "collect the banner", and that is not what it does: the

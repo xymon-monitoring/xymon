@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # A protocols.cfg section without a port line is still tested, on the port the
 # host's /etc/services gives its name, and the log says to add one.
 #

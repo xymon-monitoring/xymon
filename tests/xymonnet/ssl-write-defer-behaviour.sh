@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # The companion to ssl-write-retry.sh, which reads the source. This one
 # makes SSL_write() actually defer and checks whether the bytes arrive.

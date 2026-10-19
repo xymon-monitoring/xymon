@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # build/mkclientshared.sh -- copy each client/shared/<name>.sh into the
 # "BEGIN SHARED <name>" region of every client script that has one.
