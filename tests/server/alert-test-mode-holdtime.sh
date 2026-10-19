@@ -38,7 +38,7 @@ EOF
 # --test talks to xymond first and falls back to the file; the connection
 # refusal is noise here, so only stdout is read.
 run() {
-	env XYMONHOME="$work" XYMONTMP="$work" HOSTSCFG="$work/hosts.cfg" \
+	env XYMONHOME="$work" XYMONTMP="$work" HOSTSCFG="!$work/hosts.cfg" \
 	    MACHINE=testhost MACHINEDOTS=testhost \
 	    XYMONSERVERS=127.0.0.1 XYMSRV=127.0.0.1 XYMON=/bin/true \
 	    "$ALERT" --config="$work/alerts.cfg" --test testhost conn \

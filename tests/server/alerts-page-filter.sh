@@ -59,7 +59,7 @@ EOF
 # subshell -- the script would carry on and report a crashed binary as an
 # assertion mismatch, or as a pass.
 recipients() {
-	got=$(env XYMONHOME="$work" XYMONTMP="$work" HOSTSCFG="$work/hosts.cfg" \
+	got=$(env XYMONHOME="$work" XYMONTMP="$work" HOSTSCFG="!$work/hosts.cfg" \
 	    MACHINE="$1" MACHINEDOTS="$1" \
 	    XYMONSERVERS=127.0.0.1 XYMSRV=127.0.0.1 XYMON=/bin/true \
 	    "$ALERT" --config="$2" --test "$1" conn --color=red 2>"$work/alert.log") \

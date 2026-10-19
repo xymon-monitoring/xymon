@@ -286,6 +286,19 @@ maintenance.
   autopkgtest) runs the suite to catch, and skipping would green-light
   it. `require_bin` and `require_cfg` implement both halves;
   installed-script tests guard `$XYMONCLIENT_LINUX` the same way.
+- **`HOSTSCFG` points at the fixture with a `!`.** `load_hostnames()`
+  (lib/loadhosts_file.c) asks a running `xymond` for `hosts.cfg` when the name
+  it is given is the one `HOSTSCFG` holds, and reads the file only if that
+  fails. A test that exports its own fixture as `HOSTSCFG` therefore gets the
+  file on a machine with no daemon and the daemon's own configuration on a
+  machine that has one -- the suite passes here and fails in autopkgtest
+  against an installed, running Xymon (#663). The `!` prefix is
+  `load_hostnames()`'s own escape for "read this file, do not ask anyone":
+  ```bash
+  HOSTSCFG="!$work/hosts.cfg"      # the fixture, whatever else is running
+  ```
+  Every test that sets `HOSTSCFG` wants its fixture, so every one carries the
+  prefix.
 - **A test fails when its fix is absent -- or says why it doesn't.** That
   is what makes it a regression test rather than a green tick, and it is
   worth asserting deliberately: prefer an assertion about what only the
