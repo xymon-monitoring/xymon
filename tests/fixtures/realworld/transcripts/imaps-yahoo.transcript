@@ -1,0 +1,7 @@
+# imaps-yahoo  imap.mail.yahoo.com (87.248.103.8) port 993  mode=implicit
+# recorded 2026-08-31T13:30:41.323207Z
+# [TLS handshake at connect]
+S: * OK Welcome! IMAP Server up and ready to accept your request
+C: ABC123 LOGOUT
+S: * BYE IMAP4rev1 Server logging out
+# certificate: subject=C = US, ST = New York, L = New York, O = Yahoo Holdings Inc., CN = *.imap.mail.yahoo.com  notAfter=Dec 30 23:59:59 2026 GMT
