@@ -1560,9 +1560,12 @@ static int isset_noflap(void *hinfo, char *testname, char *hostname)
  */
 static int gap_within_window(time_t gaplen, int validity)
 {
-	/* time_t, not int: validity comes from the reporter ("status+NNN"), and a
-	 * large one overflows an int product and wraps. */
-	return (gaplen <= (time_t)GAPBRIDGE_VALIDITIES * validity * 60);
+	/* int64_t, not time_t: validity comes from the reporter ("status+NNN"),
+	 * and a large one overflows the product. Widening to time_t was enough
+	 * where time_t is 64 bits and no help where it is 32 -- there
+	 * 4 * 10000000 * 60 is 2400000000, past INT32_MAX, so the window came out
+	 * negative and bridged nothing, not even a one-minute gap (#662). */
+	return ((int64_t)gaplen <= (int64_t)GAPBRIDGE_VALIDITIES * validity * 60);
 }
 
 /*
