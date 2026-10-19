@@ -241,10 +241,10 @@ char *deptest_failed(testedhost_t *host, char *testname)
 			}
 
 			if ((strlen(result) + strlen(dephostname) + strlen(deptestname) + 2) < sizeof(result)) {
-				strncat(result, dephostname, (sizeof(result) - strlen(result)));
-				strncat(result, "/", (sizeof(result) - strlen(result)));
-				strncat(result, deptestname, (sizeof(result) - strlen(result)));
-				strncat(result, "\n", (sizeof(result) - strlen(result)));
+				strncat(result, dephostname, (sizeof(result) - strlen(result)) - 1);
+				strncat(result, "/", (sizeof(result) - strlen(result)) - 1);
+				strncat(result, deptestname, (sizeof(result) - strlen(result)) - 1);
+				strncat(result, "\n", (sizeof(result) - strlen(result)) - 1);
 			}
 		}
 
@@ -252,7 +252,7 @@ char *deptest_failed(testedhost_t *host, char *testname)
 	}
 
 	xfree(depcopy);
-	if (*result) strncat(result, "\n\n", (sizeof(result) - strlen(result)));
+	if (*result) strncat(result, "\n\n", (sizeof(result) - strlen(result)) - 1);
 
 	return (*result ? result : NULL);
 }
@@ -1748,16 +1748,16 @@ void send_results(service_t *service, int failgoesclear)
 				svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
 
 		if (t->host->dnserror) {
-			strncat(msgline, ": DNS lookup failed", (sizeof(msgline) - strlen(msgline)));
+			strncat(msgline, ": DNS lookup failed", (sizeof(msgline) - strlen(msgline)) - 1);
 			snprintf(msgtext, sizeof(msgtext), "\nUnable to resolve hostname %s\n\n", t->host->hostname);
 		}
 		else {
 			snprintf(msgtext, sizeof(msgtext), "\nService %s on %s is ", svcname, t->host->hostname);
 			switch (color) {
 			  case COL_GREEN: 
-				  strncat(msgtext, "OK ", (sizeof(msgtext) - strlen(msgtext)));
-				  strncat(msgtext, (t->reverse ? "(down)" : "(up)"), (sizeof(msgtext) - strlen(msgtext)));
-				  strncat(msgtext, "\n", (sizeof(msgtext) - strlen(msgtext)));
+				  strncat(msgtext, "OK ", (sizeof(msgtext) - strlen(msgtext)) - 1);
+				  strncat(msgtext, (t->reverse ? "(down)" : "(up)"), (sizeof(msgtext) - strlen(msgtext)) - 1);
+				  strncat(msgtext, "\n", (sizeof(msgtext) - strlen(msgtext)) - 1);
 				  break;
 
 			  case COL_RED:
@@ -1769,9 +1769,9 @@ void send_results(service_t *service, int failgoesclear)
 					if (routertext == NULL) routertext = xgetenv("XYMONROUTERTEXT");
 					if (routertext == NULL) routertext = "router";
 
-					strncat(msgline, ": Intermediate ", (sizeof(msgline) - strlen(msgline)));
-					strncat(msgline, routertext, (sizeof(msgline) - strlen(msgline)));
-					strncat(msgline, " down", (sizeof(msgline) - strlen(msgline)));
+					strncat(msgline, ": Intermediate ", (sizeof(msgline) - strlen(msgline)) - 1);
+					strncat(msgline, routertext, (sizeof(msgline) - strlen(msgline)) - 1);
+					strncat(msgline, " down", (sizeof(msgline) - strlen(msgline)) - 1);
 
 					snprintf(msgtext+strlen(msgtext), (sizeof(msgtext) - strlen(msgtext)),
 						"%s.\nThe %s %s (IP:%s) is not reachable, causing this host to be unreachable.\n",
@@ -1785,7 +1785,7 @@ void send_results(service_t *service, int failgoesclear)
 				  break;
 
 			  case COL_CLEAR:
-				  strncat(msgtext, "OK\n", (sizeof(msgtext) - strlen(msgtext)));
+				  strncat(msgtext, "OK\n", (sizeof(msgtext) - strlen(msgtext)) - 1);
 				  if (service == pingtest) {
 					  if (t->host->deprouterdown) {
 						char *routertext;
@@ -1794,42 +1794,42 @@ void send_results(service_t *service, int failgoesclear)
 						if (routertext == NULL) routertext = xgetenv("XYMONROUTERTEXT");
 						if (routertext == NULL) routertext = "router";
 
-						strncat(msgline, ": Intermediate ", (sizeof(msgline) - strlen(msgline)));
-						strncat(msgline, routertext, (sizeof(msgline) - strlen(msgline)));
-						strncat(msgline, " down", (sizeof(msgline) - strlen(msgline)));
+						strncat(msgline, ": Intermediate ", (sizeof(msgline) - strlen(msgline)) - 1);
+						strncat(msgline, routertext, (sizeof(msgline) - strlen(msgline)) - 1);
+						strncat(msgline, " down", (sizeof(msgline) - strlen(msgline)) - 1);
 
-						strncat(msgtext, "\nThe ", (sizeof(msgtext) - strlen(msgtext)));
-						strncat(msgtext, routertext, (sizeof(msgtext) - strlen(msgtext))); strncat(msgtext, " ", (sizeof(msgtext) - strlen(msgtext)));
-						strncat(msgtext, ((testedhost_t *)t->host->deprouterdown)->hostname, (sizeof(msgtext) - strlen(msgtext)));
-						strncat(msgtext, " (IP:", (sizeof(msgtext) - strlen(msgtext)));
-						strncat(msgtext, ((testedhost_t *)t->host->deprouterdown)->ip, (sizeof(msgtext) - strlen(msgtext)));
-						strncat(msgtext, ") is not reachable, causing this host to be unreachable.\n", (sizeof(msgtext) - strlen(msgtext)));
+						strncat(msgtext, "\nThe ", (sizeof(msgtext) - strlen(msgtext)) - 1);
+						strncat(msgtext, routertext, (sizeof(msgtext) - strlen(msgtext)) - 1); strncat(msgtext, " ", (sizeof(msgtext) - strlen(msgtext)) - 1);
+						strncat(msgtext, ((testedhost_t *)t->host->deprouterdown)->hostname, (sizeof(msgtext) - strlen(msgtext)) - 1);
+						strncat(msgtext, " (IP:", (sizeof(msgtext) - strlen(msgtext)) - 1);
+						strncat(msgtext, ((testedhost_t *)t->host->deprouterdown)->ip, (sizeof(msgtext) - strlen(msgtext)) - 1);
+						strncat(msgtext, ") is not reachable, causing this host to be unreachable.\n", (sizeof(msgtext) - strlen(msgtext)) - 1);
 					  }
 					  else if (t->host->noping) {
-						  strncat(msgline, ": Disabled", (sizeof(msgline) - strlen(msgline)));
-						  strncat(msgtext, "Ping check disabled (noping)\n", (sizeof(msgtext) - strlen(msgtext)));
+						  strncat(msgline, ": Disabled", (sizeof(msgline) - strlen(msgline)) - 1);
+						  strncat(msgtext, "Ping check disabled (noping)\n", (sizeof(msgtext) - strlen(msgtext)) - 1);
 					  }
 					  else if (t->host->dialup) {
-						  strncat(msgline, ": Disabled (dialup host)", (sizeof(msgline) - strlen(msgline)));
-						  strncat(msgtext, "Dialup host\n", (sizeof(msgtext) - strlen(msgtext)));
+						  strncat(msgline, ": Disabled (dialup host)", (sizeof(msgline) - strlen(msgline)) - 1);
+						  strncat(msgtext, "Dialup host\n", (sizeof(msgtext) - strlen(msgtext)) - 1);
 					  }
 					  else if (t->open == -1) {
-						  strncat(msgline, ": System failure of the ping test", (sizeof(msgline) - strlen(msgline)));
-						  strncat(msgtext, "Xymon system error\n", (sizeof(msgtext) - strlen(msgtext)));
+						  strncat(msgline, ": System failure of the ping test", (sizeof(msgline) - strlen(msgline)) - 1);
+						  strncat(msgtext, "Xymon system error\n", (sizeof(msgtext) - strlen(msgtext)) - 1);
 					  }
 					  /* "clear" due to badconn: no extra text */
 				  }
 				  else {
 					  /* Non-ping test clear: Dialup test or failed ping */
-					  strncat(msgline, ": Ping failed, or dialup host/service", (sizeof(msgline) - strlen(msgline)));
-					  strncat(msgtext, "Dialup host/service, or test depends on another failed test\n", (sizeof(msgtext) - strlen(msgtext)));
-					  strncat(msgtext, causetext, (sizeof(msgtext) - strlen(msgtext)));
+					  strncat(msgline, ": Ping failed, or dialup host/service", (sizeof(msgline) - strlen(msgline)) - 1);
+					  strncat(msgtext, "Dialup host/service, or test depends on another failed test\n", (sizeof(msgtext) - strlen(msgtext)) - 1);
+					  strncat(msgtext, causetext, (sizeof(msgtext) - strlen(msgtext)) - 1);
 				  }
 				  break;
 			}
-			strncat(msgtext, "\n", (sizeof(msgtext) - strlen(msgtext)));
+			strncat(msgtext, "\n", (sizeof(msgtext) - strlen(msgtext)) - 1);
 		}
-		strncat(msgline, "\n", (sizeof(msgline) - strlen(msgline)));
+		strncat(msgline, "\n", (sizeof(msgline) - strlen(msgline)) - 1);
 		addtostatus(msgline);
 		addtostatus(msgtext);
 

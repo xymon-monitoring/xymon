@@ -32,10 +32,27 @@ END {
 		while (i <= n && substr(txt, i, 1) == " ") i++
 		if (substr(txt, i, 1) != "(") continue
 
-		# walk the arguments, splitting on top-level commas
+		# walk the arguments, splitting on top-level commas. A string or
+		# character literal is stepped over whole: strncat(msg, " (IP:", ...)
+		# carries an unbalanced parenthesis inside its literal, and counting
+		# that one lost the two calls after it.
 		depth = 1; i++; argno = 1; third = ""
 		while (i <= n && depth > 0) {
 			c = substr(txt, i, 1)
+			if (c == "\"" || c == "'") {
+				q = c
+				if (argno == 3) third = third c
+				i++
+				while (i <= n) {
+					c = substr(txt, i, 1)
+					if (argno == 3) third = third c
+					if (c == "\\") { i += 2; continue }
+					if (c == q) break
+					i++
+				}
+				i++
+				continue
+			}
 			if (c == "(") depth++
 			else if (c == ")") { depth--; if (depth == 0) break }
 			else if (c == "," && depth == 1) { argno++; i++; continue }
