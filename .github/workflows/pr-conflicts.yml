@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 name: pr conflicts
 
 # A review looks at one pull request against main. Two that each apply cleanly
