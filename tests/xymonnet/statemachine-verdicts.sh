@@ -35,7 +35,8 @@ command -v "$CC" >/dev/null 2>&1 || skip "no C compiler: every row below needs a
 work=$(mktempdir); register_cleanup "rm -rf '$work'"
 mkdir -p "$work/home/etc"
 
-"$CC" -o "$work/peer" "$root/tests/lib/dialogue-peer.c" -lssl -lcrypto 2>"$work/cc.log" \
+# shellcheck disable=SC2046  # flag lists, split on purpose
+"$CC" $(xymon_cflags "$root") $(xymon_sslcflags "$root") -o "$work/peer" "$root/tests/lib/dialogue-peer.c" $(xymon_ldflags "$root") -lssl -lcrypto 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; skip "dialogue-peer does not compile against libssl"; }
 
 : > "$work/pids"

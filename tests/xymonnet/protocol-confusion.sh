@@ -53,7 +53,8 @@ expected="$root/tests/fixtures/protocol-confusions.txt"
 work=$(mktempdir); register_cleanup "rm -rf '$work'"
 mkdir -p "$work/home/etc" "$work/peers"
 
-"$CC" -o "$work/peer" "$root/tests/lib/dialogue-peer.c" -lssl -lcrypto 2>"$work/cc.log" \
+# shellcheck disable=SC2046  # flag lists, split on purpose
+"$CC" $(xymon_cflags "$root") $(xymon_sslcflags "$root") -o "$work/peer" "$root/tests/lib/dialogue-peer.c" $(xymon_ldflags "$root") -lssl -lcrypto 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; skip "dialogue-peer does not compile against libssl"; }
 
 # One peer script per protocol, built from the entry that describes it.
