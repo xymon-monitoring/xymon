@@ -58,7 +58,7 @@ printf '%s' "$message" | env \
 	XYMONVAR="$work" \
 	XYMONTMP="$work/tmp" \
 	XYMONRRDS="$work/rrd" \
-	HOSTSCFG="$work/hosts.cfg" \
+	HOSTSCFG="!$work/hosts.cfg" \
 	TEST2RRD="inode" \
 	GRAPHS="inode" \
 	"$XYMOND_RRD" --no-cache --rrddir="$work/rrd" \

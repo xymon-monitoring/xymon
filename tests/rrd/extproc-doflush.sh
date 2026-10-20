@@ -51,7 +51,7 @@ env \
 	XYMONVAR="$work" \
 	XYMONTMP="$work/tmp" \
 	XYMONRRDS="$work/rrd" \
-	HOSTSCFG="$work/hosts.cfg" \
+	HOSTSCFG="!$work/hosts.cfg" \
 	TEST2RRD="inode" \
 	GRAPHS="inode" \
 	RRD_EXTPROC_BUFSIZ=65536 \

@@ -45,7 +45,7 @@ static void xymon_default_envs(char *envfn)
 #endif
 
 	if (getenv("MACHINEDOTS") == NULL) {
-	    if (getenv("HOSTNAME") != NULL) sprintf(buf, "%s", xgetenv("HOSTNAME"));
+	    if (getenv("HOSTNAME") != NULL) snprintf(buf, sizeof(buf), "%s", xgetenv("HOSTNAME"));
 #ifdef	HAVE_UNAME
 	    else if (hasuname) sprintf(buf, "%s", u_name.nodename);
 #endif
@@ -103,6 +103,22 @@ static void xymon_default_envs(char *envfn)
 	}
 }
 
+/*
+ * Put DIR/FILE (or FILE alone, when DIR is NULL) into buf, and say whether
+ * that file exists. A name too long for buf counts as missing, so a huge
+ * XYMONHOME moves on to the next candidate instead of overflowing it.
+ */
+static int env_candidate(char *buf, size_t buflen, char *dir, char *file)
+{
+	struct stat st;
+	int n;
+
+	if (dir) n = snprintf(buf, buflen, "%s/%s", dir, file);
+	else n = snprintf(buf, buflen, "%s", file);
+
+	return ((n >= 0) && ((size_t)n < buflen) && (stat(buf, &st) == 0));
+}
+
 int main(int argc, char *argv[])
 {
 	int argi;
@@ -140,15 +156,20 @@ int main(int argc, char *argv[])
 	}
 
 	if (!envfile) {
-		struct stat st;
+		/*
+		 * XYMONCLIENTHOME has no built-in default, so getenv() rather than
+		 * xgetenv(): when it is unset that candidate is skipped, instead of
+		 * formatting a NULL into the name.
+		 */
+		char *clienthome = getenv("XYMONCLIENTHOME");
 
-		sprintf(envfn, "%s/etc/xymonserver.cfg", xgetenv("XYMONHOME"));
-		if (stat(envfn, &st) == -1) sprintf(envfn, "/etc/xymon/xymonserver.cfg");
-		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/xymonclient.cfg", xgetenv("XYMONHOME"));
-		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/xymonclient.cfg", xgetenv("XYMONCLIENTHOME"));
-		if (stat(envfn, &st) == -1) sprintf(envfn, "/etc/xymon-client/xymonclient.cfg");
-		if (stat(envfn, &st) == -1) sprintf(envfn, "xymonserver.cfg");
-		if (stat(envfn, &st) == -1) sprintf(envfn, "xymonclient.cfg");
+		if (!env_candidate(envfn, sizeof(envfn), xgetenv("XYMONHOME"), "etc/xymonserver.cfg") &&
+		    !env_candidate(envfn, sizeof(envfn), NULL, "/etc/xymon/xymonserver.cfg") &&
+		    !env_candidate(envfn, sizeof(envfn), xgetenv("XYMONHOME"), "etc/xymonclient.cfg") &&
+		    !(clienthome && env_candidate(envfn, sizeof(envfn), clienthome, "etc/xymonclient.cfg")) &&
+		    !env_candidate(envfn, sizeof(envfn), NULL, "/etc/xymon-client/xymonclient.cfg") &&
+		    !env_candidate(envfn, sizeof(envfn), NULL, "xymonserver.cfg"))
+			snprintf(envfn, sizeof(envfn), "xymonclient.cfg");
 
 		envfile = (char *)envfn;
 		dbgprintf("Using default environment file %s\n", envfile);

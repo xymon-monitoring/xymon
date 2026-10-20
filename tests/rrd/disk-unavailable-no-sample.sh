@@ -77,7 +77,7 @@ $2
 		XYMONVAR="$work" \
 		XYMONTMP="$work/tmp" \
 		XYMONRRDS="$work/rrd" \
-		HOSTSCFG="$work/hosts.cfg" \
+		HOSTSCFG="!$work/hosts.cfg" \
 		TEST2RRD="disk" \
 		GRAPHS="disk" \
 		"$XYMOND_RRD" --no-cache --rrddir="$work/rrd" \
@@ -127,7 +127,7 @@ $2
 		XYMONVAR="$work" \
 		XYMONTMP="$work/tmp" \
 		XYMONRRDS="$work/rrd" \
-		HOSTSCFG="$work/hosts.cfg" \
+		HOSTSCFG="!$work/hosts.cfg" \
 		TEST2RRD="inode" \
 		GRAPHS="inode" \
 		"$XYMOND_RRD" --no-cache --rrddir="$work/rrd" \

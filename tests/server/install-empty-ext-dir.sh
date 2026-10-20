@@ -31,6 +31,7 @@ ROOT=$(find_root)
 # a user's PATH may not hold either.
 PATH=$PATH:/usr/sbin:/sbin
 require_gnu_make
+[ -f "$ROOT/Makefile" ] || skip "requires a configured source tree with a top-level Makefile"
 require_bin XYMOND xymond/xymond
 
 work=$(mktempdir)

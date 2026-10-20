@@ -54,7 +54,7 @@ svcstatus_setup() {
 	# so the values render()/render_live() pass as env vars would lose to
 	# the DIST placeholders ("@XYMONVAR@/histlogs").
 	{
-		echo "HOSTSCFG=\"$work/etc/hosts.cfg\""
+		echo "HOSTSCFG=\"!$work/etc/hosts.cfg\""
 		echo 'XYMSERVERS=""'
 		echo 'XYMSRV="127.0.0.1"'
 		echo "XYMONVAR=\"$work/var\""
