@@ -62,7 +62,7 @@
 		if test $? -eq 0; then
 			echo "Linking with c-ares library works OK"
 		else
-			echo "ERROR: Cannot link with c-ares library."
+			echo "ERROR: Cannot link with c-ares library, or it is too old."
 			CARESOK="NO"
 		fi
 		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-cares ares-clean
