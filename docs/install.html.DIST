@@ -102,7 +102,8 @@ files installed as well. Often these are in packages called "something<em>-dev</
 	<li>PCRE2 - Perl Compatible Regular Expression library, version 2 - is a
 	library for matching text-strings. It is available from
 	<a href="https://www.pcre.org/">https://www.pcre.org/</a>. Xymon needs
-	PCRE2; the older PCRE library (version 8.x) is no longer used.</li>
+	PCRE2; the older PCRE library (version 8.x) is no longer used. Xymon
+	4.3.30 is the last release that builds with it.</li>
 
 	<li>RRDtool is a library for handling the Round-Robin Databases used
 	to hold the historical data Xymon gathers. It is available from 
