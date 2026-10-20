@@ -269,7 +269,7 @@ char *init_tcp_services(void)
 			snprintf(filename, sizeof(filename), "%s/etc/", xgetenv("XYMONHOME"));
 		}
 		strncat(filename, ((pass == 0) ? "protocols.cfg" : "protocols2.cfg"),
-			(sizeof(filename) - strlen(filename)));
+			(sizeof(filename) - strlen(filename) - 1));
 
 		if (stat(filename, &st) != 0) continue;
 		fd = stackfopen(filename, "r", &svcflist);
