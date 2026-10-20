@@ -11,14 +11,16 @@ has the remote configuration.
 
 ## Where a change gets written down
 
-**Do not edit `Changes` or `RELEASENOTES` in a pull request.** Both are written
-by the release manager, on the `Changes` branch, after your pull request
-merges. If your change needs an entry, put the wording in the pull request
-description and it will be placed for you.
+**Do not edit `Changes` in a pull request.** The release manager writes it, on
+the `Changes` branch, after your pull request merges. If your change needs an
+entry, put the wording in the pull request description and it will be placed
+for you. Almost every pull request gets one, so two inserting at the top of the
+same section would conflict for no reason.
 
-Entries added in a pull request land in the wrong release section and have to
-be moved, and two pull requests inserting at the top of the same section
-conflict for no reason.
+**`RELEASENOTES` is the exception: write its entry in the pull request that
+needs one**, in the open `(not yet released)` section at the top of the file.
+The reviewer then reads what an administrator will be told alongside the change
+that makes it true. Most pull requests need none.
 
 What belongs in each file, and how entries are written, is in
 [`RELEASING.md`](RELEASING.md).

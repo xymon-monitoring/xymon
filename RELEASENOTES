@@ -1,5 +1,5 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.30   * * *
+           * * *   Release notes for Xymon 4.3.31   * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -9,8 +9,145 @@ changes you should be aware of when upgrading.
 For a full list of changes and enhancements, please see the 
 Changes file.
 
-Maintained by the release manager on the Changes branch; do not edit it in a
-pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
+A pull request that needs an entry writes it in the open "(not yet
+released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
+
+
+Changes for 4.3.31 (not yet released)
+=====================================
+
+Clients -- filesystem reporting
+-------------------------------
+
+The Linux, FreeBSD, NetBSD, OpenBSD and macOS clients now filter the
+filesystems they report instead of listing whatever df returns. Dropped by
+default: iso9660, squashfs and snap on Linux; nullfs, procfs, devfs and autofs
+on FreeBSD; kernfs, procfs, cd9660, null and ptyfs on NetBSD; kernfs, procfs
+and cd9660 on OpenBSD; hidden or read-only mounts on macOS. The BSD clients
+also pass -l to df, so remote filesystems other than nfs are no longer
+reported.
+
+A filesystem that stops being reported also stops alerting -- check that
+nothing you monitor has gone quiet. Override with XYMONCLIENT_FS_INCLUDE_TYPES
+and XYMONCLIENT_FS_EXCLUDE_TYPES, or set XYMONCLIENT_FS_DF_LOCAL_ONLY=no to
+restore remote filesystems; xymonclient.cfg has the per-platform lists.
+
+XYMONCLIENT_FS_DF_LOCAL_ONLY=no no longer risks the whole host. df stats every
+remote mount, and a dead NFS or CIFS server leaves it in a wait that SIGKILL
+does not end, so the client cycle never finished and every column went purple.
+Mount types that can block this way -- nfs, nfs4, cifs, smb3, ceph, glusterfs,
+fuse.glusterfs, lustre, afs -- now go through a separate df behind a sentinel,
+one probe at a time. A probe still unanswered after
+XYMONCLIENT_FS_REMOTE_DF_BUDGET seconds (default 30) reports those mounts
+"unavailable" and 100% full: one filesystem red instead of the host purple. The
+stuck df is left running and picked up on a later cycle through a pidfile in
+$XYMONTMP, so it clears once the server answers -- expect the alert until then.
+Keep XYMONTMP on a local filesystem. XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES
+changes the list.
+
+The AIX client now requires AIX 7.1 or later, and keeps df off remote mounts by
+default like the others -- AIX df spells that "-T local", which 6.1 and earlier
+lack.
+
+The NetBSD client now reports inodes, sharing the filtering above. Set
+XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep reporting /dev/pts.
+
+Alerting
+--------
+
+"lastchange" is now the hold-time of the colour on record, not the time of the
+last status change. It used to reset whenever a test stopped reporting, so a
+host down for two hours that came back green showed as green for 0 minutes.
+xymond_alert reads it for DURATION, so an outage that dropped out of sight also
+restarted its escalation clock. DURATION rules may therefore fire earlier on
+tests that stop reporting -- intended, but worth knowing beforehand.
+
+alerts.cfg gains FOR=N: a rule matches only once its colour has held
+continuously for N minutes. DURATION measures the age of the event and survives
+a yellow-to-red change; FOR measures the age of the current colour and resets
+on any change -- FOR is what "page only if it stays red for N minutes" wants.
+At-least-only, single-colour rules; existing configurations are unaffected.
+
+Page filters
+------------
+
+The top-level page is now called "/" by every page filter: xymondboard page=,
+and the page filters of eventlog.cgi, notifications.cgi, acknowledgements.cgi
+and perfdata.cgi. Write page=^/$ to select it -- these filters are unanchored,
+so "/" alone also matches every nested page. page=^$, which used to select the
+top-level page, now matches nothing; update any filter or bookmark using it.
+
+PAGE= rules in analysis.cfg now apply only to hosts on the page they name. They
+used to apply to every host on the top-level page as well, so such a host could
+pick up another page's rules -- a PROC check for a process it does not run, for
+instance. Check that hosts on the top-level page still carry the rules you
+expect.
+
+Web
+---
+
+The default charset is now UTF-8: HTMLCONTENTTYPE defaults to "text/html;
+charset=UTF-8", so non-ASCII content renders without relying on the web
+server's default. Sites emitting another encoding (iso-8859-1, euc-jp) should
+set HTMLCONTENTTYPE explicitly in xymonserver.cfg.
+
+The svcstatus, history and reportlog CGIs now confine the host, service and
+section values from a request to one safe path component, closing a path
+traversal and xymond-protocol injection reachable in a default install. A host
+whose canonical name (field 2 of hosts.cfg) uses characters outside letters,
+digits and ":,._-" is no longer reachable through these pages: give it an ASCII
+canonical name and carry the original in the NAME: tag. The hosts.cfg loader
+warns at startup about such names.
+
+Network tests
+-------------
+
+The smtp, smtps and submission probes no longer send anything before the
+server's 220 greeting. Speaking first violates RFC 5321, and Postfix 3.9
+enables smtpd_forbid_unauth_pipelining by default, answering "554 5.5.0 Error:
+SMTP protocol synchronization" -- such a poll was refused, and reported green
+or yellow depending on which side of the exchange won the race.
+
+An upgrade does not carry this into an existing installation: install merges
+protocols.cfg section by section and leaves the sections already there
+untouched. Remove the "send" line from [smtp], [smtps] and [submission|msa] in
+your protocols.cfg. The mail server then sees a connection that opens and
+closes without a command -- "lost connection after CONNECT" on Postfix,
+NOQUEUE on sendmail -- so allow the Xymon host wherever those lines feed
+fail2ban or a similar counter.
+
+xymonnet tests with a cipher-list restriction now report an SSL error when
+OpenSSL rejects it, instead of silently falling back to the default cipher
+list. Such tests may turn red after upgrading Xymon, or after an OpenSSL
+upgrade invalidates a previously accepted restriction.
+
+Where Net-SNMP is built without MD5 (NETSNMP_DISABLE_MD5), SNMPv3
+authentication configured for MD5 falls back to SHA1 and warns once at startup.
+Change the authentication to SHA1 to silence it.
+
+An https test now always sends the URL's host name as the TLS servername (SNI);
+a URL written with an IP address sends none. A server holding a certificate per
+name used to answer with its default certificate, so the sslcert status may
+change to describe a different certificate -- the one the URL actually uses.
+The sni and nosni host tags and the --sni option no longer affect https tests.
+A host that relied on nosni wants nosslcert on that line instead, plus a
+separate entry for the default virtual host if its certificate should still be
+watched; hosts.cfg(5) has the details.
+
+Build and API
+-------------
+
+PCRE1 is no longer supported; Xymon builds against PCRE2 only. Most patterns
+are unaffected, but configurations relying on PCRE1-specific syntax should be
+reviewed.
+
+The RRDtool argv ABI is detected from the header signature rather than the
+version, so RRDtool 1.9 and later, and backports to 1.8 such as Oracle
+Linux 10's, both work with no configuration.
+
+XMH_MULTIHOMED is now XMH_FLAG_MULTIHOMED, the name xymon-xmh(5) has always
+documented. Scripts, web templates and xymondboard or hostinfo field selectors
+using the old name must be updated.
 
 
 Changes for 4.3.30

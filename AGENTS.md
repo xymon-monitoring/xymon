@@ -79,9 +79,10 @@ someone else's pull request, you report what you ran to its author instead.
 
 ## Do not
 
-- **Do not edit `Changes` or `RELEASENOTES`.** `CONTRIBUTING.md` opens with this
-  and it is the rule most often tripped: the release manager writes them, on
-  their own branch, after a pull request merges.
+- **Do not edit `Changes`.** `CONTRIBUTING.md` opens with this and it is the
+  rule most often tripped: the release manager writes it, on its own branch,
+  after a pull request merges. `RELEASENOTES` is the exception: an entry goes
+  in its open `(not yet released)` section, in the pull request that needs it.
 - **Do not edit the generated manual pages** under `docs/manpages/`. They come
   from the `.1`, `.5`, `.7` and `.8` sources beside the code, via
   `build/makehtml.sh`. `CONTRIBUTING.md` has the procedure.
