@@ -187,6 +187,12 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Report the release's own version, not the previous one (#651) (Thanks, Jeremy Laidman)
 * Install a server built without xymonnet, whose ext/ is empty (#598) (Thanks, Markus Häll)
 * Skip an overlong conn= ping target, not another host's ping (#656) (Thanks, Roland Rosenfeld)
+* Stop xymoncmd aborting on a long XYMONHOME (#636) (from J. Cleaver) (Thanks, Roland Rosenfeld)
+* Fail the test suite when a strncat() bound leaves no room for the NUL (#664, #666)
+* Skip the empty ext/ install test in an unconfigured tree (#661) (Thanks, Roland Rosenfeld)
+* Date a test fixture within a 32-bit time_t, for i386 (#669) (Thanks, Roland Rosenfeld)
+* Read the fixture's hosts.cfg, not a running xymond's, in tests (#668) (Thanks, Roland Rosenfeld)
+* Bridge a long hold-time gap in xymond on a 32-bit time_t too (#670) (Thanks, Roland Rosenfeld)
 
 
 
