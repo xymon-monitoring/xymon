@@ -228,19 +228,68 @@ for f in $files; do check_posix_bre "$f" "$work/violations"; done
 # SIGPIPE (141) and the command fails although the reader got its answer. It
 # failed 901 times in 20000 on OpenBSD 7.9 (#594); a slow scheduler is what
 # loses the race, so a fast one never shows it. Feed grep a here-string and
-# take a first line with first_line() instead. One line at a time, like the
-# rules above, so a pipe continued onto the next line is not seen; sed ...q,
-# awk ... exit and cmp stop early too but have no single-line form this can
-# tell apart, and the tree uses none of them after a pipe.
+# take a first line with first_line() instead. awk ... exit, sed ...q and cmp
+# stop early too: channel-hup-keeps-worker.sh piped ps into an awk that exits
+# at its first match, and failed on the macOS lanes with "ps: stdout: Broken
+# pipe" whenever enough of ps's output followed the match. An exit in an END
+# block is not early -- awk has read everything by then. A pipe continued
+# onto the next line, after a backslash or a trailing |, is joined first, and
+# reported at the line it starts on.
 # check_early_exit_pipe FILE OUT -- append this file's violations to OUT.
 check_early_exit_pipe() {
-	local f=$1 out=$2 line n
-	{ grep -nE '(^|[^|])[|][[:space:]]*(grep[[:space:]]+(-[[:alnum:]]+[[:space:]]+)*-[[:alnum:]]*[qm]|head([[:space:]]|$|[)]))' "$f" 2>/dev/null || true; } | \
-	{ grep -vE '^[0-9]+:[[:space:]]*#' || true; } | \
-	while IFS= read -r line; do
-		n=${line%%:*}
+	local f=$1 out=$2 n
+	# The whole file is read first, so a line can be joined to the next.
+	# [ \t], not [[:space:]]: older mawks have no character classes.
+	awk '
+	function early(s,    rest, prog, i, q) {
+		q = "\047"
+		while (match(s, /(^|[^|])[|][ \t]*/)) {
+			rest = substr(s, RSTART + RLENGTH)
+			s = rest
+			# The second | of a ||: what follows does not read a pipe.
+			if (rest ~ /^[|]/) { s = substr(rest, 2); continue }
+			if (rest ~ /^(grep|egrep|fgrep)[ \t]+(-[A-Za-z0-9]+[ \t]+)*-[A-Za-z0-9]*[qm]/) return 1
+			if (rest ~ /^head([ \t]|$|[)])/) return 1
+			if (rest ~ /^cmp([ \t]|$)/) return 1
+			if (rest ~ /^sed[ \t]/) {
+				sub(/[|].*/, "", rest)
+				if (rest ~ ("[;{ \t0-9/$" q "]q[ \t]*($|[;}" q "])")) return 1
+			}
+			if (rest ~ /^awk[ \t]/) {
+				# The program is the first quoted word standing on its own; a
+				# quote right after -F belongs to the separator.
+				prog = ""
+				for (i = 4; i <= length(rest); i++)
+					if (substr(rest, i, 1) == q && substr(rest, i - 1, 1) ~ /[ \t]/) {
+						prog = substr(rest, i + 1)
+						sub(q ".*", "", prog)
+						break
+					}
+				gsub(/END[ \t]*[{][^}]*[}]/, "", prog)
+				if (prog ~ /(^|[^A-Za-z0-9_])exit([^A-Za-z0-9_]|$)/) return 1
+			}
+		}
+		return 0
+	}
+	{ line[NR] = $0 }
+	END {
+		for (i = 1; i <= NR; i++) {
+			if (line[i] ~ /^[ \t]*#/) continue
+			start = i
+			buf = line[i]
+			while (i < NR) {
+				if (buf ~ /\\$/) sub(/\\$/, "", buf)
+				else if (buf !~ /(^|[^|])[|][ \t]*$/ && line[i + 1] !~ /^[ \t]*[|]([^|]|$)/) break
+				i++
+				buf = buf " " line[i]
+			}
+			if (early(buf)) print start
+		}
+	}
+	' "$f" |
+	while IFS= read -r n; do
 		printf 'early-exit-pipe\t%s\t%s\n' "${f#"$ROOT"/}:$n" \
-			'pipes into a reader that stops early (grep -q/-m, head); under pipefail the producer can die of SIGPIPE. Use grep ... <<<"$text" or first_line' >>"$out"
+			'pipes into a reader that stops early (grep -q/-m, head, awk ... exit, sed ...q, cmp); under pipefail the producer can die of SIGPIPE. Capture the output first and read it from a here-string, or use first_line' >>"$out"
 	done
 }
 
@@ -391,7 +440,8 @@ assert_equal "0" "$(wc -l <"$work/uname-violations" | tr -d " ")" \
 	"the uname rule now reports a declared native-primitive test, which is the one place a guard belongs"
 
 # The early-exit rule the same way: each reader is reported after a pipe,
-# and neither "||" nor the here-string form that replaces it is.
+# continued lines included, and neither "||", an awk that exits only in END,
+# a sed with no q command, nor the here-string form that replaces them is.
 earlyfile="$work/early.sh"
 {
 	printf '#!/usr/bin/env bash\n'
@@ -400,13 +450,26 @@ earlyfile="$work/early.sh"
 	printf 'printf x | grep -m1 x\n'
 	printf 'v=$(printf x | head -1)\n'
 	printf 'printf x | head -n 1\n'
+	printf "ps | awk -v p=1 '\$2 == p { print \$1; exit }'\n"
+	printf "ps | awk -F'|' '{ print; exit }'\n"
+	printf "v=\$(ps 2>/dev/null \\\\\n\t| awk '/x/ { print \$2; exit }')\n"
+	printf "ps |\n\tawk '{ exit }'\n"
+	printf "ps | sed 5q\n"
+	printf "ps | sed -n '/x/{p;q;}'\n"
+	printf 'printf x | cmp -s - f\n'
 	printf 'true || head -1 f\n'
+	printf 'true || awk "{ exit }" f\n'
+	printf "ps | awk '{ n++ } END { exit !n }'\n"
+	printf "ps | awk -F'|' '{ print \$2 }'\n"
+	printf "ps | sed -n 's/q/x/p'\n"
 	printf 'grep -q x <<<"$v"\n'
+	printf "awk '{ exit }' <<<\"\$v\"\n"
 } >"$earlyfile"
 : >"$work/early-violations"
 check_early_exit_pipe "$earlyfile" "$work/early-violations"
-assert_equal "5" "$(wc -l <"$work/early-violations" | tr -d " ")" \
-	"the early-exit rule no longer reports exactly the five pipes into grep -q/-m and head (and not || or a here-string)"
+assert_equal "2 3 4 5 6 7 8 9 11 13 14 15" \
+	"$(cut -f2 "$work/early-violations" | sed 's/.*://' | tr '\n' ' ' | sed 's/ $//')" \
+	"the early-exit rule no longer reports exactly the pipes into grep -q/-m, head, awk ... exit, sed ...q and cmp, at the line each starts on (and not ||, an exit in END, a sed with no q, or a here-string)"
 
 
 # The translation rule the same way: an assertion on git's or the compiler's
