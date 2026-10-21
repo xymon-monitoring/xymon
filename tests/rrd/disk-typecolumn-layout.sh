@@ -94,9 +94,11 @@ rrdlibs=${buildflags[4]#rrdlibs=}
 	2>"$work/cc.log" || { cat "$work/cc.log" >&2; fail "librrd last-update harness does not compile"; }
 
 # lastupdate, not fetch: a single update does not fill a consolidation
-# interval, so fetch reports NaN even when the value landed.
-pct=$("$work/rrd-lastupdate" "$work/rrd/testhost/disk,root.rrd" 2>/dev/null \
-	| awk '/^[0-9]+:/ { print $2; exit }')
+# interval, so fetch reports NaN even when the value landed. Captured first,
+# not piped into the awk: it exits at its first match, and under pipefail a
+# harness still writing would end the test with no message.
+lastupdate=$("$work/rrd-lastupdate" "$work/rrd/testhost/disk,root.rrd" 2>/dev/null || true)
+pct=$(awk '/^[0-9]+:/ { print $2; exit }' <<<"$lastupdate")
 [ -n "$pct" ] || fail "the RRD holds no reading at all"
 assert_equal "5" "$pct" \
 	"the stored percentage did not come from the capacity column"
