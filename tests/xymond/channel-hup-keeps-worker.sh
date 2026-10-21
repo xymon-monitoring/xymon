@@ -56,8 +56,14 @@ done
 	|| fail "the harness could not post a message to the channel"
 
 # The worker is the channel's child; ps -o with these three fields is POSIX.
+# Captured first, not piped: awk exits at its first match, and a ps with
+# lines still to write after it -- macOS prints each command's full path --
+# then fails on the closed pipe, which pipefail and set -e turn into this
+# test ending with no message.
 worker_of() {
-	ps -A -o pid= -o ppid= -o comm= | awk -v p="$1" '$2 == p && $3 ~ /cat$/ { print $1; exit }'
+	local procs
+	procs=$(ps -A -o pid= -o ppid= -o comm=)
+	awk -v p="$1" '$2 == p && $3 ~ /cat$/ { print $1; exit }' <<<"$procs"
 }
 worker=""
 for _ in $(seq 1 100); do
