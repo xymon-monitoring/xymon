@@ -114,7 +114,12 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   <dd>Determines how xymonnet finds the IP addresses of the hosts to test. By
       default (the &quot;standard&quot;), xymonnet does a DNS lookup of the
       hostname to determine the IP address, unless the host has the
-      &quot;testip&quot; tag, or the DNS lookup fails.
+      &quot;testip&quot; tag, or the DNS lookup fails. When the lookup gives
+      another address than the one in hosts.cfg, and that one is not 0.0.0.0,
+      xymonnet tests the address DNS gave and names the host under &quot;Warning
+      output&quot; in its own status (see &quot;--report&quot;). A future
+      release will test the hosts.cfg address instead: correct it, or write
+      0.0.0.0 to keep resolving the name.
     <br/>
     With &quot;--dns=only&quot; xymonnet will ONLY do the DNS lookup; if it
       fails, then all services on that host will be reported as being down.
