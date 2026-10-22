@@ -221,6 +221,12 @@ fi
 if test "$INSTALLEXTDIR" != ""; then
 	echo "INSTALLEXTDIR = $INSTALLEXTDIR"   >>Makefile
 fi
+if test "$INSTALLSYSTEMDDIR" != ""; then
+	echo "INSTALLSYSTEMDDIR = $INSTALLSYSTEMDDIR"   >>Makefile
+fi
+if test "$INSTALLENVDIR" != ""; then
+	echo "INSTALLENVDIR = $INSTALLENVDIR"   >>Makefile
+fi
 if test "$INSTALLTMPDIR" != ""; then
 	echo "INSTALLTMPDIR = $INSTALLTMPDIR"   >>Makefile
 fi
