@@ -175,7 +175,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 				acks[num].hostname = strdup(hosttest);
 				acks[num].testname = strdup(testname);
-				strncat(color, " ", (sizeof(color) - strlen(color))); acks[num].color = parse_color(color);
+				strncat(color, " ", (sizeof(color) - strlen(color)) - 1); acks[num].color = parse_color(color);
 				acks[num].ackmsg = strdup(ackmsg);
 				ackintime_count++;
 
