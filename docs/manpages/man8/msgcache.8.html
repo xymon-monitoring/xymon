@@ -107,6 +107,24 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
 </section>
 <section class="Sh">
 <p>&#160;</p>
+<h1 class="Sh" id="PING"><a class="permalink" href="#PING">PING</a></h1>
+<p class="Pp">A <b>ping</b> message is answered by msgcache itself and is not
+    forwarded to the Xymon server. The reply is two lines:</p>
+<p class="Pp"></p>
+<pre>
+<br/>
+    msgcache <i>VERSION</i>
+<br/>
+    lastpull <i>SECONDS</i></pre>
+<p class="Pp">where <i>SECONDS</i> is the age of the last completed pull - one
+    that found nothing waiting, or whose messages msgcache finished writing to
+    xymonfetch - or -1 if there has been none. A message whose first word only
+    begins with those letters, such as &quot;pingpong&quot;, is client data and
+    is forwarded as before.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
 <h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
   ALSO</a></h1>
 <p class="Pp"><a href="../man8/xymonfetch.8.html">xymonfetch</a>(8), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
@@ -120,6 +138,7 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
 <dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
 <dt><a href="#RESTRICTIONS">RESTRICTIONS</a></dt>
 <dt><a href="#OPTIONS">OPTIONS</a></dt>
+<dt><a href="#PING">PING</a></dt>
 <dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
 </dl>
 </div>
