@@ -141,6 +141,11 @@ PCRE1 is no longer supported; Xymon builds against PCRE2 only. Most patterns
 are unaffected, but configurations relying on PCRE1-specific syntax should be
 reviewed.
 
+Xymon no longer ships its own copy of c-ares. Install the system c-ares
+development package (libc-ares-dev, c-ares-devel or c-ares) before building
+the server; configure stops and says what is missing. The minimum version is
+still 1.5.1.
+
 The RRDtool argv ABI is detected from the header signature rather than the
 version, so RRDtool 1.9 and later, and backports to 1.8 such as Oracle
 Linux 10's, both work with no configuration.
