@@ -295,6 +295,8 @@ Disables reporting of the SSL certificate check.
 Determines the number of days before an SSL certificate
 expires, where xymonnet will generate a warning or
 alarm status for the SSL certificate column.
+Defaults: 14 days for the warning, 7 for the alarm. A certificate renewed
+by hand may need more notice, e.g. \-\-sslwarn=30 \-\-sslalarm=10.
 
 .IP "\fB\-\-sslbits\fR=\fIN\fR"
 Enables checking that the encryption supported by the
