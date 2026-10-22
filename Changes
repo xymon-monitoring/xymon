@@ -195,7 +195,7 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Bridge a long hold-time gap in xymond on a 32-bit time_t too (#670) (Thanks, Roland Rosenfeld)
 * Keep NULs out of the include lines stackfgets() returns (#585) (Thanks, Nicola Canepa)
 * Refuse a pipe into awk ... exit, sed ...q or cmp in the test suite (#675)
-* Build against the system c-ares; the bundled 1.15.0 copy is gone (#138) (Thanks, Nicola Canepa)
+* Build against the system c-ares; the bundled 1.15.0 copy is gone (#138) (Thanks, Mark Felder and Nicola Canepa)
 
 
 
