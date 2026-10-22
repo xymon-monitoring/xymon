@@ -1,0 +1,328 @@
+.TH XYMOND_LOCATOR 8 "Version 4.3.30:  4 Sep 2019" "Xymon"
+.SH NAME
+xymond_locator \- Xymon service locator for distributed worker modules
+.SH SYNOPSIS
+.B "xymond_locator [options]"
+
+.SH DESCRIPTION
+xymond_locator lets the work of one Xymon installation be spread over several
+servers: for instance, two servers each holding the RRD files for half of the
+monitored hosts. Worker modules running on those servers register with the
+locator, and the programs that need a worker for some host ask the locator
+which server handles that host.
+
+The locator is a small directory service. It keeps a list of servers per
+service type, and a list of which host is assigned to which server. It does
+not handle any monitoring data itself.
+
+It answers requests on a UDP socket, by default port 1984 on all interfaces.
+Note that this is UDP, while
+.I xymond(8)
+listens on TCP port 1984; both can run on the same host.
+
+The locator is not needed, and not started by the default
+.I tasks.cfg(5),
+on a Xymon installation where one server does everything.
+
+.SH OPTIONS
+.IP "\fB--listen\fR=\fIIP\fR[:\fIPORT\fR]"
+The address and UDP port to listen on. Default: 0.0.0.0:1984. If the port is
+omitted, 1984 is used.
+
+.IP "\fB--daemon\fR"
+Run as a stand-alone background process. The default is to stay in the
+foreground, as a task started by
+.I xymonlaunch(8)
+expects.
+
+.IP "\fB--no-daemon\fR"
+Stay in the foreground. This is the default.
+
+.IP "\fB--logfile\fR=\fIFILENAME\fR"
+Redirect output to this log file. See
+.B BUGS
+for what a HUP signal does.
+
+.IP "\fB--debug\fR"
+Log every request received and the decisions taken.
+
+.SH SERVICE TYPES
+Each server registers for one service type, and each lookup names one:
+.br
+"rrd" \- RRD files, handled by
+.I xymond_rrd(8)
+.br
+"hostdata" \- host data snapshots, handled by
+.I xymond_hostdata(8)
+.br
+"client" \- client data analysis, handled by
+.I xymond_client(8)
+.br
+"alert" \- alerting, handled by
+.I xymond_alert(8)
+.br
+"history" \- known to the locator, but no worker module registers for it.
+
+.SH HOW A SERVER IS CHOSEN
+Every server registers with a weight, and the weight decides what it receives:
+
+.IP "weight 2 or more"
+The server is up and accepts any host. New hosts are shared round-robin
+between such servers, each server taking (weight \- 1) hosts per round: two
+servers with weights 3 and 2 receive new hosts in the ratio 2:1.
+
+.IP "weight 1"
+The server is up, but accepts only hosts already assigned to it. It receives no
+new hosts. This is the default weight of a worker module, so a worker meant to
+take new hosts must be given \fB--locatorweight\fR=2 or more.
+
+.IP "weight 0"
+The server is down.
+
+.IP "negative weight"
+Only one server receives requests: the one with the lowest weight. If it goes
+down, the next lowest takes over. Two servers with weights \-2 and \-1 form an
+active/standby pair.
+
+.I xymond_alert(8)
+uses this mode, but always registers with weight \-1, whatever
+\fB--locatorweight\fR says. Among several alert servers the weights are then
+equal, and the active one is the first by name in text order, ignoring case:
+10.0.0.10:1986 comes before 10.0.0.9:1986.
+
+.PP
+A service is either sticky or roaming. For a \fBsticky\fR service ("rrd" and
+"hostdata"), a host is assigned to the first server chosen for it and stays
+there, so that its files are kept in one place. For a \fBroaming\fR service
+("client"), each request may go to a different server.
+
+When a server goes down, the hosts assigned to it are not moved: requests for
+them are refused until the server comes back, so that a host's files are not
+split between two servers. Data for those hosts is dropped meanwhile. A host is
+released, and assigned anew, only when its server is removed from the locator
+with a "forget" request.
+
+A sticky worker module tells the locator which hosts it already holds data for
+when it starts, so a restarted server gets its hosts back.
+
+.SH WHAT IS SPREAD, AND WHAT IS REDUNDANT
+The locator spreads the work of the worker modules. It does not spread or
+duplicate
+.I xymond(8)
+itself: one xymond still receives every status and builds the web pages, and
+when it stops, so does everything else. The locator is itself one process.
+
+What losing a worker server costs depends on the service type:
+
+.IP "rrd, hostdata"
+The data is spread, not copied. Each host's files are on one server, and while
+that server is down the data for its hosts is dropped; no other server takes
+over. Graphs and snapshots for a host are served by the server holding them,
+which is what \fB--locatorextra\fR is for. This spreads disk load on a large
+installation, and protects against nothing.
+
+.IP "client"
+The load is spread, and the service survives the loss of a server: hosts roam,
+so the remaining servers take the reports of the one that is down.
+
+.IP "alert"
+Nothing is spread: one server sends all the alerts. The others are standby, and
+one of them takes over when the active server goes down.
+
+.PP
+To keep monitoring through the loss of the xymond server, the locator is not
+the tool. Run two complete Xymon servers, and have every client report to both
+by setting XYMSRV to 0.0.0.0 and listing both servers in XYMSERVERS; see
+.I xymon(1).
+
+.SH SETTING UP DISTRIBUTED WORKERS
+On each server that is to handle part of the work, run the worker module on
+its own, listening on the network instead of reading from
+.I xymond_channel(8):
+.IP
+xymond_rrd \-\-rrddir=$XYMONVAR/rrd \-\-listen=10.0.0.2:1985
+\-\-locator=10.0.0.1:1984 \-\-locatorweight=2
+.PP
+The worker registers with the locator under its \fB--listen\fR address, and
+accepts messages on that TCP port. The worker options are:
+
+.IP "\fB--listen\fR=\fIIP:PORT\fR"
+Where the worker accepts messages. Required for network mode.
+
+.IP "\fB--locator\fR=\fIIP:PORT\fR"
+Where xymond_locator listens. Required for network mode.
+
+.IP "\fB--locatorid\fR=\fIIP:PORT\fR"
+The name the worker registers under. Default: the \fB--listen\fR address. It
+must be the address other servers can reach the worker on.
+
+.IP "\fB--locatorweight\fR=\fIN\fR"
+The weight to register with, see
+.B HOW A SERVER IS CHOSEN.
+Default: 1. Ignored by
+.I xymond_alert(8),
+which always registers with \-1.
+
+.IP "\fB--locatorextra\fR=\fITEXT\fR"
+Extra information returned with lookups. The web CGIs use it as the URL of the
+CGI directory on that server, to send a browser to the server holding a host's
+data.
+
+.PP
+On the server running
+.I xymond(8),
+the channel is fed to the locator instead of a local worker:
+.IP
+xymond_channel \-\-channel=status \-\-locator=10.0.0.1:1984 \-\-service=rrd
+.PP
+For each message, xymond_channel asks the locator which server handles the
+host, and forwards the message to that server over TCP. If the connection to a
+server fails, xymond_channel reports the server as down to the locator. While a
+server is unreachable, only the newest message for it is kept; earlier ones are
+discarded.
+
+A worker module that is stopped normally reports itself as down.
+
+A worker on a server of its own still needs what it would find on the server
+running
+.I xymond(8).
+.I xymond_alert(8)
+loads the current state of all statuses from xymond when it starts handling
+messages, and gives up without it: set XYMSRV in that server's
+.I xymonserver.cfg(5)
+to the xymond server. It also alerts only for hosts in its own
+.I hosts.cfg(5),
+so give it the same hosts.cfg as the xymond server.
+
+.SH EXAMPLES
+The locator runs on 10.0.0.1, xymond on 10.0.0.2. Each program below runs as a
+task in the
+.I tasks.cfg(5)
+of its own server.
+
+.B "RRD files on two servers."
+On the locator host:
+.IP
+.nf
+[locator]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	CMD xymond_locator \-\-listen=10.0.0.1:1984
+.fi
+.PP
+On each RRD server, 10.0.0.3 and 10.0.0.4, without xymond_channel:
+.IP
+.nf
+[rrdworker]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	CMD xymond_rrd \-\-rrddir=$XYMONVAR/rrd \-\-listen=10.0.0.3:1985
+	    \-\-locator=10.0.0.1:1984 \-\-locatorweight=2
+.fi
+.PP
+On the xymond server, the [rrdstatus] task feeds the locator instead of a
+local xymond_rrd:
+.IP
+.nf
+[rrdstatus]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymond_channel \-\-channel=status
+	    \-\-log=$XYMONSERVERLOGS/rrd\-status.log
+	    \-\-locator=10.0.0.1:1984 \-\-service=rrd
+.fi
+.PP
+Each host's RRD files are then kept on one of the two servers. Open UDP port
+1984 on the locator host, and TCP port 1985 on the RRD servers.
+
+.B "Alerts from an active and a standby server."
+On each alert server, 10.0.0.5 and 10.0.0.6, set XYMSRV in
+.I xymonserver.cfg(5)
+to 10.0.0.2, install the same
+.I hosts.cfg(5)
+and
+.I alerts.cfg(5)
+as on the xymond server, and run:
+.IP
+.nf
+[alertworker]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	CMD xymond_alert \-\-listen=10.0.0.5:1986 \-\-locator=10.0.0.1:1984
+	    \-\-checkpoint\-file=$XYMONTMP/alert.chk
+.fi
+.PP
+On the xymond server:
+.IP
+.nf
+[alert]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymond_channel \-\-channel=page
+	    \-\-log=$XYMONSERVERLOGS/alert.log
+	    \-\-locator=10.0.0.1:1984 \-\-service=alert
+.fi
+.PP
+10.0.0.5:1986 comes first by name, so 10.0.0.5 sends the alerts. When it
+stops, 10.0.0.6 takes over; alerts already sent by 10.0.0.5 may then be sent
+again, since the standby does not know about them.
+
+.B "Client data analysed on two servers."
+On each analysis server, 10.0.0.7 and 10.0.0.8, set XYMSRV in
+.I xymonserver.cfg(5)
+to 10.0.0.2: the worker loads hosts.cfg from that xymond, and sends the
+statuses it computes (cpu, disk, memory and the rest) back to it. Then run:
+.IP
+.nf
+[clientworker]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	CMD xymond_client \-\-listen=10.0.0.7:1987 \-\-locator=10.0.0.1:1984
+	    \-\-locatorweight=2
+.fi
+.PP
+On the xymond server, the [clientdata] task feeds the locator instead of a
+local xymond_client:
+.IP
+.nf
+[clientdata]
+	ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymond_channel \-\-channel=client
+	    \-\-log=$XYMONSERVERLOGS/clientdata.log
+	    \-\-locator=10.0.0.1:1984 \-\-service=client
+.fi
+.PP
+The "client" service roams, so each client report goes to whichever server is
+next; neither keeps any data.
+
+A CMD line is written on one line in tasks.cfg; it is wrapped here for
+reading.
+
+.SH FILES
+.IP "$XYMONTMP/locator.servers.chk"
+.IP "$XYMONTMP/locator.hosts.chk"
+The registered servers, and the hosts assigned to them. Read at start-up, and
+written when the locator terminates or receives a "save state" request. If
+XYMONTMP is not set, /tmp is used.
+
+.SH SIGNALS
+.IP "HUP"
+Re-open the log file, then terminate; see
+.B BUGS.
+.IP "TERM"
+Save the state files and terminate.
+
+.SH BUGS
+A HUP signal is meant only to re-open the log file, but it also interrupts the
+wait for the next request, which the locator treats as a fatal error: it logs
+"select error, aborting: Interrupted system call", saves its state files and
+exits. Started by
+.I xymonlaunch(8),
+it is then restarted, and requests sent meanwhile go unanswered.
+
+.SH NOTES
+The interactive \fBlocator\fR program built in the lib/ directory of the
+source tree can send any request to the locator, including registering,
+downing and forgetting servers, and querying a host. It is not installed by
+"make install".
+
+.SH "SEE ALSO"
+xymond(8), xymond_channel(8), xymond_rrd(8), xymond_hostdata(8),
+xymond_client(8), xymond_alert(8), xymon(7)
