@@ -9,12 +9,12 @@ changes you should be aware of when upgrading.
 For a full list of changes and enhancements, please see the 
 Changes file.
 
-Maintained by the release manager on the Changes branch; do not edit it in a
-pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
+A pull request that needs an entry writes it in the open "(not yet
+released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 
 
-Changes for 4.3.31
-==================
+Changes for 4.3.31 (not yet released)
+=====================================
 
 Clients -- filesystem reporting
 -------------------------------
