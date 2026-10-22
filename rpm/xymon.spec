@@ -14,6 +14,7 @@ BuildRoot: /tmp/xymon-root
 #BuildRequires: openssl-devel
 #BuildRequires: pcre-devel
 #BuildRequires: rrdtool-devel
+#BuildRequires: c-ares-devel
 #BuildRequires: openldap-devel
 Conflicts: xymon-client
 

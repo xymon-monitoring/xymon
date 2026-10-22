@@ -62,7 +62,7 @@
 		if test $? -eq 0; then
 			echo "Linking with c-ares library works OK"
 		else
-			echo "ERROR: Cannot link with c-ares library."
+			echo "ERROR: Cannot link with c-ares library, or it is too old."
 			CARESOK="NO"
 		fi
 		OS=`uname -s | sed -e's@/@_@g'` $MAKE -f Makefile.test-cares ares-clean
@@ -70,7 +70,13 @@
 	cd ..
 
 	if test "$CARESOK" = "NO"; then
-		echo "The system C-ARES library is missing or not usable. I will use the version shipped with Xymon"
+		echo "The c-ares library (async DNS resolver) is missing or not usable."
+		echo "It is REQUIRED to build xymonnet. Install the development package"
+		echo "(e.g. libc-ares-dev / c-ares-devel / c-ares), or, if it is in a"
+		echo "non-standard location, use the \"--caresinclude DIR\" and \"--careslib DIR\""
+		echo "options to configure to specify where it is."
+		echo "c-ares can be found at https://c-ares.org/"
+		exit 1
 	fi
 
 
