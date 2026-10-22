@@ -18,13 +18,16 @@ gates; everything mechanical is automated.
 
 ## The changelog
 
-`Changes` and `RELEASENOTES` are prepared on the **`Changes`** branch, never in
-a pull request. The ritual there: merge `main` in, then one catch-up commit
-with an entry per pull request merged since.
+`Changes` is prepared on the **`Changes`** branch, never in a pull request. The
+ritual there: merge `main` in, then one catch-up commit with an entry per pull
+request merged since. `RELEASENOTES` is written on `main`, in the pull request
+that needs an entry; the `Changes` branch only receives it when `main` is
+merged in.
 
 [`CONTRIBUTING.md`](CONTRIBUTING.md) holds the other half of that rule, the part a
-contributor needs: put the wording for an entry in the pull request description and
-it is placed here afterwards. How an entry is written is this file's.
+contributor needs: put the wording for a `Changes` entry in the pull request
+description and it is placed here afterwards; write a `RELEASENOTES` entry in the
+pull request itself. How an entry is written is this file's.
 
 **`Changes` merges into `main` only at release** (step 1 below). Between
 releases main carries exactly what the last release shipped, so a section
@@ -50,21 +53,27 @@ entry.
 **`RELEASENOTES`** — what an administrator needs to know *before upgrading*: a
 default that changed, a setting that stops working, a dependency now required.
 Prose, no pull-request numbers. Most changes do not belong here; if it cannot
-break a working installation, it needs no entry.
+break a working installation, it needs no entry. An entry goes in the open
+`Changes for X.Y.Z (not yet released)` section at the top, written in the pull
+request that makes the change, so its reviewer reads the two together. The
+first pull request after a release that needs an entry opens that section, and
+sets the version in the title box above it.
 
 The next `Changes from X -> Y` heading sits open with a placeholder date. That
-date and the `RELEASENOTES` version bump happen at release, never in a pull
-request.
+date, and dropping `(not yet released)` from `RELEASENOTES`, happen at release,
+never in a pull request.
 
 ## Step by step
 
 ### 1. Close out the changelog
 
-On `Changes`: check every merged pull request has its entry, fill the release
-date into the top `Changes from X -> Y (XX Xxx XXXX)` heading and the
-`RELEASENOTES` version, then merge into `main`. Nothing later touches these
-files — `dorelease.sh` regenerates `md5.dat` and the version stamps only — so a
-release cut without this ships a placeholder where the date should be.
+On `Changes`: merge `main` in, check every merged pull request has its
+`Changes` entry and every one that needed a `RELEASENOTES` entry wrote it, fill
+the release date into the top `Changes from X -> Y (XX Xxx XXXX)` heading, drop
+`(not yet released)` from the top `RELEASENOTES` heading, then merge into
+`main`. Nothing later touches these files — `dorelease.sh` regenerates
+`md5.dat` and the version stamps only — so a release cut without this ships a
+placeholder where the date should be.
 
 ### 2. Run the prep workflow
 
