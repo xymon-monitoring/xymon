@@ -82,6 +82,10 @@ typedef void (*f_callback_final)(void *privdata);
 #define CONTEST_EIO        4
 #define CONTEST_ESSL       5
 
+/* How much a single expect may accumulate before giving up. A server that
+   never sends the terminator must not be able to grow this without limit. */
+#define MAX_DIALOGUE_BYTES (32 * 1024)
+
 typedef struct tcptest_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
 	char *srcaddr;
@@ -125,11 +129,32 @@ typedef struct tcptest_t {
 	int mincipherbits;              /* Bits in the weakest encryption supported */
 	int sslrunning;			/* Track state of an SSL session */
 	int sslagain;			/* SSL read/write needs more data */
+	int sslwantwrite;		/* Handshake blocked on writability, not readability */
+	int sendagain;			/* Last write sent nothing; retry the same buffer */
+
+	/* Dialogue state */
+	void *curstep;			/* svcstep_t *: position in the dialogue */
+	int dialogfail;
+	int dialogverdict;	/* 0 none, 1 success, 2 warning, 3 fail */			/* an expect step did not match */
+	void *failstep;			/* svcstep_t *: WHICH step, for the report */
+	unsigned char *stepbuf;		/* replies for the CURRENT expect step */
+	int stepbuflen;
+	int stepsent;			/* bytes of the CURRENT send step already written */
+	int stalereply;			/* unread bytes were in the buffer when a send ran */
+	int sslwantread;		/* a WRITE returned WANT_READ; wait for readability */
 
 	/* For testing telnet services */
 	unsigned char *telnetbuf;	/* Buffer for telnet option negotiation */
 	int telnetbuflen;		/* Length of telnetbuf - it's binary, so no strlen */
 	int telnetnegotiate;		/* Flag telling if telnet option negotiation is being done */
+
+	/*
+	 * Refusals owed for the options just received. Fixed size: three bytes
+	 * answer one option, and a server offering more in one read is not one a
+	 * probe needs to keep up with.
+	 */
+	unsigned char iacreply[96];
+	int iacreplylen;
 
 	/* For testing http services */
 	void *priv;
@@ -200,12 +225,15 @@ extern unsigned int tcp_stats_connects;
 extern char *init_tcp_services(void);
 extern int default_tcp_port(char *svcname);
 extern void dump_tcp_services(void);
+extern char *tcp_dialogue_failure(tcptest_t *test);
 extern tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt, char *srcip,
 			    char *tspec, int silent, unsigned char *reqmsg, 
 			    void *priv, f_callback_data datacallback, f_callback_final finalcallback);
 extern void do_tcp_tests(int timeout, int concurrency);
 extern void show_tcp_test_results(void);
 extern int tcp_got_expected(tcptest_t *test);
+extern int tcp_dialogue_verdict(tcptest_t *test);
+extern int tcp_dialogue_refused(tcptest_t *test);
 
 #endif
 
