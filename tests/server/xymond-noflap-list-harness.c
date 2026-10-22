@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later                                 */
+/* Copyright (C) 2026 Markus Häll                                            */
 /* Behavioural half of tests/server/xymond-noflap-list.sh.
  *
  * Guards the fix for hosts.cfg "noflap=test1,test2,..." silently losing

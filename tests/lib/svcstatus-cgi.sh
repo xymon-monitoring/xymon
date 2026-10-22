@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # tests/lib/svcstatus-cgi.sh -- shared scaffolding for the svcstatus.cgi
 # tests (tests/web/svcstatus-*.sh): build the real CGI from this tree and

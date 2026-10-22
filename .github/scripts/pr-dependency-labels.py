@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 """Keep the dependency labels on open pull requests true.
 
 Three labels describe one axis, and between them they say whether a pull
