@@ -192,10 +192,13 @@
 # when you install a Xymon server (presumably, you do want to monitor the 
 # Xymon server ?), but there's no need to have two xymonlaunch instances
 # running at the same time. So we'll just run it from here.
+# It sends to xymond over loopback (XYMSRV=127.0.0.1), so the server keeps
+# reporting on itself when a network interface goes down. Set here, not in
+# xymonclient.cfg: that file is also what remote clients get.
 [xymonclient]
 	ENVFILE @XYMONTOPDIR@/client/etc/xymonclient.cfg
 	NEEDS xymond
-	CMD @XYMONTOPDIR@/client/bin/xymonclient.sh
+	CMD env XYMSRV=127.0.0.1 @XYMONTOPDIR@/client/bin/xymonclient.sh
 	LOGFILE $XYMONSERVERLOGS/xymonclient.log
 	INTERVAL 5m
 
