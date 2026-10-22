@@ -190,9 +190,10 @@ rm -f "$TMP"/probe/*
 out=$(DF_HANG=1 run_cycle DF_HANG=1)
 assert_contains '/dev/sda1 1000 400 600 40% /' "$out" \
 	"a wedged remote server must not stale or block the local set"
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
+assert_contains 'srv:/exp - - - - /remote/nfs' "$out" \
 	"an unreachable mount must be surfaced, not dropped (the server reads absent as green)"
-assert_contains ' 100% /remote/nfs' "$out" "the unavailable row must read as full so the column goes red"
+assert_not_contains '100% /remote/nfs' "$out" \
+	"the unavailable row must not claim a capacity it never measured"
 [ -f "$TMP/probe/df-probe-disk.pid" ] || fail "the wedged df must be left recorded as the sentinel"
 
 # --- still wedged: exactly one outstanding df --------------------------------
@@ -204,7 +205,7 @@ out=$(DF_HANG=1 run_cycle DF_HANG=1)
 after=$(wc -l < "$DF_CALLS")
 assert_equal "$((before + 1))" "$((after))" \
 	"while one df is wedged, a cycle must run only the local df -- not a second remote one"
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" "the mount stays unavailable while wedged"
+assert_contains 'srv:/exp - - - - /remote/nfs' "$out" "the mount stays unavailable while wedged"
 
 # --- recovery ----------------------------------------------------------------
 # End the wedge and wait for it to actually be gone: while the recorded df is
@@ -229,7 +230,7 @@ assert_equal '0' "$(find "$TMP/probe" -type f | awk 'END { print NR }')" \
 # and then reported unavailable.
 rm -f "$TMP"/probe/*
 out=$(run_cycle XYMONCLIENT_FS_EXCLUDE_TYPES=nfs4)
-assert_not_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
+assert_not_contains 'srv:/exp - - - - /remote/nfs' "$out" \
 	"an excluded type was probed anyway and its healthy mount reported unavailable"
 assert_not_contains '/remote/nfs' "$out" "an excluded type must not be reported at all"
 assert_contains '/dev/sda1 1000 400 600 40% /' "$out" "the local set must still be reported"
@@ -282,7 +283,7 @@ wait "$_first" 2>/dev/null || true
 rm -f "$STUB/mv"
 assert_equal '1' "$(($(wc -l < "$DF_REMOTE")))" \
 	"a cycle reading the pid file mid-publication must not start a second probe"
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
+assert_contains 'srv:/exp - - - - /remote/nfs' "$out" \
 	"and it must report the mount unavailable, not drop it"
 _recorded=$(cat "$TMP/probe/df-probe-disk.pid" 2>/dev/null)
 assert_equal "$(head -1 "$DF_REMOTE")" "$_recorded" \
@@ -329,7 +330,7 @@ wait "$_first" 2>/dev/null || true
 rm -f "$STUB/ln" "$LN_HELD"
 assert_equal '1' "$(($(wc -l < "$DF_REMOTE")))" \
 	"a cycle reading the pid file between the link and the claim started a second probe"
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
+assert_contains 'srv:/exp - - - - /remote/nfs' "$out" \
 	"the cycle that read the fresh claim must report unavailable, not drop the mount"
 _recorded=$(cat "$TMP/probe/df-probe-disk.pid" 2>/dev/null)
 assert_equal "$(head -1 "$DF_REMOTE")" "$_recorded" \
@@ -350,14 +351,14 @@ printf 'claim:%s\n' "$holder" > "$TMP/probe/df-probe-disk.pid"
 out=$(run_cycle)
 assert_equal '0' "$(($(wc -l < "$DF_REMOTE")))" \
 	"a probe already claimed by a live cycle was started a second time"
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
+assert_contains 'srv:/exp - - - - /remote/nfs' "$out" \
 	"a probe claimed by another cycle must report unavailable, not start a second df"
 kill "$holder" 2>/dev/null || true; wait "$holder" 2>/dev/null || true
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 
 # --- df fails ----------------------------------------------------------------
 out=$(DF_FAIL=1 run_cycle DF_FAIL=1)
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
+assert_contains 'srv:/exp - - - - /remote/nfs' "$out" \
 	"a remote df that exits nonzero must report unavailable, not a partial set"
 
 # --- every hard-blocked mount is surfaced, not just one -----------------------
@@ -367,9 +368,9 @@ assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 printf 'ext4\t/\t/dev/sda1\nnfs4\t/remote/nfs\tsrv:/exp\nnfs4\t/remote/nfs2\tsrv2:/exp\n' > "$MOUNTS"
 out=$(DF_HANG=1 run_cycle DF_HANG=1)
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
+assert_contains 'srv:/exp - - - - /remote/nfs' "$out" \
 	"the first hard-blocked mount must be surfaced"
-assert_contains 'srv2:/exp - - - 100% /remote/nfs2' "$out" \
+assert_contains 'srv2:/exp - - - - /remote/nfs2' "$out" \
 	"and the second: a multi-mount list must survive the handover to awk"
 while read -r _p; do end_stub "$_p"; done < "$DF_REMOTE"
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
@@ -382,7 +383,7 @@ rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 printf 'ext4\t/\t/dev/sda1\nnfs4\t/remote/nfs\tsrv:/team share\n' > "$MOUNTS"
 out=$(DF_HANG=1 run_cycle DF_HANG=1)
-assert_contains 'srv:/team\040share - - - 100% /remote/nfs' "$out" \
+assert_contains 'srv:/team\040share - - - - /remote/nfs' "$out" \
 	"a spaced device must be \\040-encoded so the columns hold"
 assert_not_contains 'srv:/team share' "$out" \
 	"the decoded device must not reach the report: it splits the row"
@@ -398,7 +399,7 @@ printf 'ext4\t/\t/dev/sda1\nnfs4\t/remote/nfs\tsrv:/exp\nnfs4\t%s\tsrv:/probe\n'
 out=$(run_cycle XYMONTMP="$TMP/remoteprobe" DF_HANG=1)
 assert_equal '0' "$(find "$TMP/remoteprobe" -type f | awk 'END { print NR }')" \
 	"a probe dir on a hard-blocking filesystem must never be touched"
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" "the remote set must report unavailable instead"
+assert_contains 'srv:/exp - - - - /remote/nfs' "$out" "the remote set must report unavailable instead"
 
 # Same guard, asked directly. Driving it through the block cannot reach it: with
 # no mount list there is no remote set either, so df_sentinel is never called.
@@ -448,7 +449,7 @@ _after=$(wc -l < "$DF_CALLS")
 rmdir "$TMP/probe/df-probe-disk.pid"
 assert_equal 1 "$((_after - _before))" \
 	"an unrecordable pid must stop the remote df from starting (only the plain df may run)"
-assert_contains "srv:/exp - - - 100% /remote/nfs" "$pidout" \
+assert_contains "srv:/exp - - - - /remote/nfs" "$pidout" \
 	"an unrecordable pid must report the remote set unavailable, not drop it"
 
 # --- the inode report is guarded too, under its own tag ----------------------
@@ -457,14 +458,14 @@ assert_contains "srv:/exp - - - 100% /remote/nfs" "$pidout" \
 # no-inode-limit drop, which throws away rows whose IUse% column is "-".
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 out=$(DF_HANG=1 run_full DF_HANG=1)
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$(printf '%s\n' "$out" | sed -n '/^\[df\]/,/^\[inode\]/p')" \
+assert_contains 'srv:/exp - - - - /remote/nfs' "$(printf '%s\n' "$out" | sed -n '/^\[df\]/,/^\[inode\]/p')" \
 	"a wedged server must surface the mount in the disk report"
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p')" \
+assert_contains 'srv:/exp - - - - /remote/nfs' "$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p')" \
 	"and in the inode report: an absent filesystem reads as green there too"
 # The columns, not just the mount name: this row is read positionally, and a
 # marker that says 0% used is a green row however it names the device. The
 # sizes are "-" because nothing measured them; only the capacity is asserted.
-assert_contains 'srv:/exp - - - 100% /remote/nfs' \
+assert_contains 'srv:/exp - - - - /remote/nfs' \
 	"$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p')" \
 	"the inode marker must read as full, or the column stays green"
 [ -f "$TMP/probe/df-probe-disk.pid" ] || fail "the disk probe must be recorded"
@@ -493,7 +494,7 @@ rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 # INCLUDE_TYPES naming the type as well -- what every case above passes, and
 # what xymonclient-linux.sh documents. Getting this wrong in the other
 # direction would be worse than useless: a probe of a type the admin excluded
-# comes back empty-and-nonzero and reports the mount 100% full.
+# comes back empty-and-nonzero and reports the mount as unmeasured.
 out=$(env DF_CALLS="$DF_CALLS" DF_REMOTE="$DF_REMOTE" XYMONTMP="$TMP/probe" \
 	XYMONCLIENT_FS_DF_LOCAL_ONLY=no XYMONCLIENT_FS_REMOTE_DF_BUDGET=2 \
 	DF_HANG=1 PATH="$STUB:$PATH" /bin/sh "$TMP/df-section.sh" 2>/dev/null || true)
@@ -516,13 +517,13 @@ assert_contains '/remote/sshfs' "$out" \
 # a cycle is visible and bounded. So an unreadable name must NOT restart.
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"; : > "$DF_CALLS"
 out=$(DF_HANG=1 run_cycle DF_HANG=1)
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" "the wedge is recorded to begin with"
+assert_contains 'srv:/exp - - - - /remote/nfs' "$out" "the wedge is recorded to begin with"
 before=$(wc -l < "$DF_CALLS")
 out=$(DF_HANG=1 run_cycle DF_HANG=1 FS_PROCNAME=)
 after=$(wc -l < "$DF_CALLS")
 assert_equal "$((before + 1))" "$((after))" \
 	"with the name unreadable the wedged df must be assumed ours -- not restarted"
-assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" "and the mount stays unavailable while it is"
+assert_contains 'srv:/exp - - - - /remote/nfs' "$out" "and the mount stays unavailable while it is"
 
 # A name that is neither ours nor empty is a recycled pid, and must restart.
 : > "$DF_CALLS"
