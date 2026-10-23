@@ -7,345 +7,80 @@
 <body>
 <h1>Installing Xymon</h1>
 
-<p>This describes how to setup a Xymon server for monitoring your systems.
-It assumes that you are setting up a full Xymon server - i.e. either you
-do not have a Big Brother server, or you will replace it completely with
-Xymon.</p>
+<p><b>From a package or from source?</b> If your operating system or its ports
+collection packages Xymon, or you use Homebrew on a Mac, install that: see
+<a href="#packages">Installing from a package</a>. Otherwise, follow the six steps
+below. Problems and explanations are at the end.</p>
 
-<p>Note to Big Brother users: Although some of the Xymon tools have evolved 
-from the bbgen toolkit that was used on top of a Big Brother server installation, 
-the Xymon versions of these tools now require that you run Xymon - not 
-Big Brother. If you are migrating from Big Brother to Xymon, then you should 
-follow the <a href="bb-to-xymon.html">migration guide</a>.</p>
+<h2>1. Install the prerequisites</h2>
+<p>As root, run the command for your system. A C compiler and OpenSSL come with the
+base system on the BSDs.</p>
+<table border="1" cellpadding="4" cellspacing="0">
+<tr><th>System</th><th>Command</th><th>Note</th></tr>
+<tr><td>Debian, Ubuntu</td><td><tt>apt-get install build-essential fping libc-ares-dev libldap-dev libpcre2-dev librrd-dev libssl-dev libtirpc-dev</tt></td><td></td></tr>
+<tr><td>Red Hat Enterprise Linux 8 to 10</td><td><tt>subscription-manager repos --enable codeready-builder-for-rhel-<i>N</i>-$(arch)-rpms<br>dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-<i>N</i>.noarch.rpm<br>dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel</tt></td><td><i>N</i> is the version: 8, 9 or 10.</td></tr>
+<tr><td>AlmaLinux, Rocky Linux, Oracle Linux 8 to 10</td><td><tt>dnf install dnf-plugins-core<br>dnf config-manager --set-enabled crb<br>dnf install epel-release<br>dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel</tt></td><td>On version 8 the repository is "powertools", not "crb". On Oracle Linux it is "ol<i>N</i>_codeready_builder", and EPEL is "oracle-epel-release-el<i>N</i>".</td></tr>
+<tr><td>Fedora</td><td><tt>dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel</tt></td><td></td></tr>
+<tr><td>openSUSE</td><td><tt>zypper install gcc make gawk fping c-ares-devel openldap2-devel pcre2-devel rrdtool-devel libopenssl-devel libtirpc-devel</tt></td><td></td></tr>
+<tr><td>Alpine Linux</td><td><tt>apk add build-base fping c-ares-dev openldap-dev pcre2-dev rrdtool-dev openssl-dev libtirpc-dev</tt></td><td></td></tr>
+<tr><td>Arch Linux</td><td><tt>pacman -S base-devel fping c-ares openldap pcre2 rrdtool openssl libtirpc</tt></td><td></td></tr>
+<tr><td>FreeBSD</td><td><tt>pkg install gmake fping c-ares openldap26-client pcre2 rrdtool</tt></td><td></td></tr>
+<tr><td>OpenBSD</td><td><tt>pkg_add gmake fping libcares openldap-client--gssapi pcre2 rrdtool</tt></td><td>openldap-client also comes in a plain flavor; the tests build with <i>gssapi</i>.</td></tr>
+<tr><td>NetBSD</td><td><tt>pkgin install gmake fping libcares openldap-client pcre2 rrdtool</tt></td><td>Without X11 installed, see <a href="#nographs">no graphs</a>.</td></tr>
+<tr><td>macOS, MacPorts</td><td><tt>port install gmake fping pcre2 rrdtool c-ares openssl openldap</tt></td><td></td></tr>
+<tr><td>macOS, Homebrew</td><td><tt>brew install pcre2 rrdtool fping openssl@3 openldap</tt></td><td>Or install Xymon itself from the tap: see <a href="#packages">packages</a>.</td></tr>
+</table>
 
-<h2>Prerequisites - before you install Xymon</h2>
-<p><b>You may want to check the <a href="#commonsystems">list of common systems</a>
-		which has brief instructions for installing Xymon for these types of systems.</b></p>
+<h2>2. Create the "xymon" user</h2>
+<p>Xymon runs as a dedicated user with a home directory, e.g. <tt>useradd -m xymon</tt>.
+configure offers that home directory as the place to install Xymon.</p>
 
-<p>There are a few things you should check before you begin to install Xymon.
-Don't be scared of the number of items here - it is likely that you already have
-most or all of it in place.</p>
-
-<h4>A webbrowser capable of handling HTML 4, JavaScript and CSS</h4>
-<p>This includes most browsers available today - Internet Explorer 5 or
-later, all Mozilla/Firefox versions, Konqueror, Netscape 6 and several others. 
-The old Netscape 4.x browsers are known NOT to work.</p>
-
-<h4>A Unix-like operating system</h4>
-<p>Xymon is written for Unix-based systems, e.g. Linux, FreeBSD, or Solaris.
-It will probably work on any Unix-like system that supports the Unix System V
-IPC mechanisms (shared memory, semaphores) - that should be just about anything
-Unix-like you are likely to have.</p>
-
-<h4>Sufficient SYSV IPC resources on your system</h4>
-<p>Xymon uses 9 shared memory segments, ranging in size from 32 KB to 512 KB (2464 KB
-total) in the default configuration; and 9 sets of 3 semaphores. Experience shows that
-some systems need tuning to provide the necessary IPC resources that Xymon uses.
-Specifically, when installing on Solaris you must increase the "shmseg" kernel parameter
-from the default 6 to at least 9. Since other programs on your system may also use shared
-memory, a higher value may be required.</p>
-<p>The total grows with the MAXMSG_* settings in xymonserver.cfg, which size the
-segments: MAXMSG_STATUS sizes three of them. When the system refuses one, xymond
-does not start, and logs "Could not get shm of size ..." followed by "Cannot setup
-... channel". The limits on their size are "kernel.shmmax" (one segment) and
-"kernel.shmall" (all of them) on Linux, the same names under "kern.sysv." on macOS,
-and "project.max-shm-memory" on Solaris 10 and later. A stock macOS allows 8
-segments per process, too few even for the default configuration, and 4 MB in all
-(see <a href="#commonmacoshomebrew">macOS using Homebrew</a> below).  See <a href="http://www.xymon.com/archive/2005/08/msg00183.html">http://www.xymon.com/archive/2005/08/msg00183.html</a> for more information about these issues.</p>
-<p>What xymond needs, in KB: the largest segment is the largest MAXMSG_* setting,
-and the total is</p>
-<pre><tt>
-3 x MAXMSG_STATUS + 2 x MAXMSG_CLIENT + MAXMSG_DATA + MAXMSG_NOTES + MAXMSG_USER + MAXMSG_ENADIS
+<h2>3. Build and install</h2>
+<p>In the unpacked Xymon source, as root, accepting configure's default answers:</p>
+<pre><tt>./configure --server
+make
+make install
 </tt></pre>
-<p>as long as MAXMSG_STACHG and MAXMSG_PAGE are left to follow MAXMSG_STATUS, and
-MAXMSG_CLICHG to follow MAXMSG_CLIENT, which is their default. For example,
-MAXMSG_STATUS="1024" with the other settings at their defaults needs a 1024 KB
-segment and 3 x 1024 + 2 x 512 + 256 + 256 + 128 + 32 = 4768 KB in all: shmmax
-of at least 1048576 bytes, and shmall of at least 1192 pages of 4 KB. That is more
-than the 4 MB a stock macOS allows.</p>
-<p>The defaults of a recent Linux (kernel 3.16 and later) and of Solaris 10 and later
-are usually far above this, so the limits mostly need raising on macOS and on older
-systems.</p>
+<p>On the BSDs and macOS, use GNU make: <tt>MAKE=gmake ./configure --server</tt>,
+<tt>gmake</tt>, <tt>gmake install</tt>.</p>
 
-<h4>A webserver</h4>
-<p>Xymon is designed with a web-based front-end. So you should have a webserver
-such as <a href="http://httpd.apache.org/">Apache</a> running on the server where
-you install Xymon.</p>
-
-<h4>A working C compiler, GNU make.</h4>
-<p>Xymon is written in C, so you need a working C compiler, e.g. <a href="http://gcc.gnu.org/">gcc</a>. 
-You will also need a "make" utility - many systems have one by default, but you need to use the
-<a href="http://directory.fsf.org/make.html">GNU make</a> utility. On some systems,
-this is pre-installed as "gmake" or "gnumake". The configure-script checks this for you.</p>
-
-<p><b>HP-UX users</b> should note that the HP-supplied C compiler is known to mis-compile the
-lib/environ.c file, and produces an output file lib/environ.o of length 0 bytes.
-HP-UX users on the Xymon mailing list agree that the default C compiler shipped with
-HP-UX should not be used to compile Xymon - it is only for re-building the HP-UX kernel.
-The GNU C compiler works fine on HP-UX. More details in 
-<a href="http://www.xymon.com/archive/2005/06/msg00079.html">this e-mail</a> from
-the Xymon mailing list.</p>
-
-<h4>PCRE2, RRDtool, c-ares, OpenSSL, OpenLDAP libraries.</h4>
-<p>Xymon relies on a number of Open-Source libraries - these must be installed
-before you start building Xymon. On many systems you already have these 
-pre-installed - they are commonly installed by default on Linux systems, and
-FreeBSD has all of them in the "ports" collection.</p>
-
-<p>Note: Although many systems have these libraries pre-installed, they often
-include only the run-time libraries and not the files that are needed to compile
-and build programs such as Xymon. So if you think you have all of these libraries
-installed but Xymon will not build, do check that you have the development
-files installed as well. Often these are in packages called "something<em>-dev</em>".</p>
-
-<ul>
-	<li>PCRE2 - Perl Compatible Regular Expression library, version 2 - is a
-	library for matching text-strings. It is available from
-	<a href="https://www.pcre.org/">https://www.pcre.org/</a>. Xymon needs
-	PCRE2; the older PCRE library (version 8.x) is no longer used. Xymon
-	4.3.30 is the last release that builds with it.</li>
-
-	<li>RRDtool is a library for handling the Round-Robin Databases used
-	to hold the historical data Xymon gathers. It is available from 
-	<a href="http://www.mrtg.org/rrdtool/">http://www.mrtg.org/rrdtool/</a>.
-	No minimum version is set; the versions current Linux and *BSD systems
-	ship, which have it pre-packaged, are the ones tested.<br>
-	Note that RRDtool requires various graphics-libraries. RRDtool 1.2.x uses
-	libpng, newer versions rely on the Cairo graphics library.<br>
-	<em>NetBSD:</em> the pre-built rrdtool package links against the base X11
-	sets in <tt>/usr/X11R7</tt> (e.g. <tt>libfontconfig.so.2</tt>). These are
-	not present on systems installed without X11, and cannot be added with
-	pkg_add. Install the xbase set - no reinstall needed (adjust release and
-	architecture):<br>
-	<tt>ftp https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/amd64/binary/sets/xbase.tar.xz</tt><br>
-	<tt>tar -xJpf xbase.tar.xz -C /</tt><br>
-	Without it, the RRDtool link test fails and Xymon builds with trend-graph
-	support disabled.</li>
-
-	<li>c-ares is an asynchronous DNS resolver library, required to build the
-	"xymonnet" network test tool. Xymon no longer ships a bundled copy, so the
-	c-ares development files must be installed (packages are commonly named
-	libc-ares-dev, c-ares-devel or c-ares). It is available from
-	<a href="https://c-ares.org/">https://c-ares.org/</a></li>
-
-	<li>fping is used for the network ping tests. Xymon's own xymonping does
-	not work at the moment, so fping is required. Every system below has it as
-	a package named "fping".</li>
-
-	<li>OpenSSL is a library for communicating with network services, that
-	use SSL encryption - e.g. secure websites. Although this library is
-	not absolutely required for Xymon, I strongly recommend that you install
-	it because sooner or later you will probably need it anyway. It is 
-	available from <a href="http://www.openssl.org/">http://www.openssl.org/</a>.
-	Note: If you are building on Solaris, you should check that you have a
-	random-data generator, either the prngd daemon (available on 
-	<a href="http://www.sunfreeware.com/">Sun Freeware</a>) or the Solaris 
-	/dev/random driver from Solaris patch 112438.</li>
-
-	<li>OpenLDAP is used to query LDAP directory servers. If you would like
-	to test that your directory server is up and running, you will need this
-	library. It is available from <a href="http://www.openldap.org/">http://www.openldap.org/</a></li>
-</ul>
-
-<p>The configure-script will attempt to locate all of these libraries on 
-your system, and complain if the required ones are missing.</p>
-
-
-<h4>A "xymon" userid on your system</h4>
-<p>A core element of Xymon is a network daemon. To keep your system secure and
-limit the amount of damage that can be done if someone finds a security problem
-in Xymon, I strongly recommend that you create a dedicated userid for the Xymon
-programs. This user should <em>not</em> be a member of any other groups on your
-system.</p>
-
-<p>Xymon will install the <u>xymonping</u> tool as <b>setuid-root</b>(only on
-the Xymon server). This program requires root privileges to be able to perform
-network &quot;ping&quot; tests. It will drop root privileges immediately after 
-obtaining the network socket needed for this, and will not run with root
-privileges at all while handling network traffic or doing file I/O. </p>
-
-
-<h2>Building Xymon</h2>
-<p>After unpacking Xymon from the tar-file, run the <tt>configure</tt> script.
-This script asks a series of questions, but all of the questions have a reasonable
-default response. So if you are in doubt about what to answer, use the default 
-setting. You can <a href="configure.txt">see what it looks like</a>.</p>
-
-<p>When the configure script finishes, it tells you to run <tt>make</tt> to 
-build the Xymon programs. If your default "make" tool is not GNU make, you 
-should use the command for running GNU make instead, e.g. <tt>gmake</tt>.
-You will now see a lot of commands being run to build the programs, it usually
-takes a minute or two.</p>
-<p>When it is finished, you finish the installation by running <tt>make install</tt>.</p>
-
-<p>The first time you run <tt>make install</tt>, besides installing the Xymon programs 
-it also creates the default directory structure used by Xymon, and installs an 
-initial set of configuration files that you can use as the basis for setting up 
-monitoring of your entire network.</p>
-
-<p>It is safe to run <tt>make install</tt> when upgrading a Xymon server. It installs the 
-programs, adds new template-files that were not present in your previous version,
-and updates your configuration files with any new sections that have been added.
-Any changes you have made yourself are preserved.</p>
-
-<h2>Configuring your webserver</h2>
-<p>Xymon uses a web-based front-end. So you need to configure your webserver so
-that it knows where the Xymon webpages can be found, and what CGI scripts can
-run as part of Xymon. This usually means adding a few lines to your webserver
-configuration that sets up a URL which points at the <em>~/server/www/</em> directory,
-and which tells your webserver that the <em>~/cgi-bin/</em> directory holds CGI
-scripts that the webserver should run when they are requested.</p>
-
-<p>If you are using the Apache webserver, you will find the necessary additions
-to the Apache configuration in <em>~/server/etc/xymon-apache.conf</em> - 
-it looks like <a href="xymon-apacheconf.txt">this</a>. After changing the webserver 
-configuration, you probably need to restart the webserver.</p>
-
-<a name="htpasswd">
-<p>If you configured Xymon to put the Administration CGI scripts into a separate
-directory (recommended for better security), you will also need to setup the
-password-file that controls access to this directory. Use the <tt>htpasswd</tt>
-command both to create the password file and to add or delete users:<br>
-<pre><tt>
-	# /usr/sbin/htpasswd -c @INSTALLETCDIR@/xymonpasswd admin
-	New password:
-	Re-type new password:
-	Adding password for user admin
-	#
+<h2>4. Configure the web server</h2>
+<p>Add <em>~xymon/server/etc/xymon-apache.conf</em> to your Apache configuration
+and restart Apache. <a name="htpasswd"></a>If configure put the administration pages in a directory of their
+own (it asks), protect them with a password:</p>
+<pre><tt>htpasswd -c @INSTALLETCDIR@/xymonpasswd admin
 </tt></pre>
-<p>The <b>-c</b> option should only be used the first time, to create the password
-file. See the Apache documentation for details about how to use htpasswd.</p>
 
-<h2>Starting Xymon</h2>
-<p>You can now login as the "xymon" user, and run the command <tt>./server/xymon.sh start</tt>
-to start Xymon. After a few seconds, it should have started and you now have the following
-processes running: <br><img src="xymonprocs.png" alt="Xymon processes"></p>
-<p>Quite a few, but all of them controlled by the master <tt>xymonlaunch</tt> process.
-A quick run-down of what each of them does:</p>
-<ul>
-	<li><tt>xymond</tt> is the network daemon that receives status updates from
-	the clients and the network test tool. It also provides the current status of
-	all your systems to the tool that generates the webpages.</li>
-	<li><tt>xymond_channel</tt> provides the communication between xymond and 
-	all of the helper modules that implement other server-based functions.</li>
-	<li><tt>xymond_history</tt> takes care of recording the history of status
-	changes for each item you monitor. This is used to track what has happened
-	with a single status over time - when it was red, when it was green, what the
-	error reported at 2:51 AM last Friday looked like. The history file format is
-	compatible with the format used by the Big Brother package.</li>
-	<li><tt>xymond_filestore</tt> stores files with information about the current
-	status of the systems monitored by Xymon. There may be several of these
-	running, but normally you will only need the one that stores information about
-	hosts that have been disabled, which is the one you see here.</li>
-	<li><tt>xymond_alert</tt> takes care of sending out alerts when your servers
-	begin to report a critical status.</li>
-	<li><tt>xymond_rrd</tt> updates the RRD database files with the numeric data
-	collected from the status reports, to track e.g. how the disk utilization of
-	a server changes over time. There are two of these processes, because the
-	data can arrive in two different ways.</li>
-</ul>
-<p>After a couple of minutes, you should have data available for the Xymon server itself.
-If you open a webbrowser with the Xymon URL - usually http://your.server/xymon/ - you
-should see something like this:<br><img src="xymonmain.png" alt="Xymon main window"></p>
-<p>Each of the little faces indicate an item that is being monitored for this host. Here
-you see the default set of items that the Xymon installation sets up for a Xymon server:</p>
-<ul>
-	<li><em>bbd</em> is the availability of the Xymon network daemon.</li>
-	<li><em>conn</em> is a simple &quot;ping&quot; test of the host.</li>
-	<li><em>http</em> is the status of the HTTP-server running on the Xymon server.</li>
-	<li><em>info</em> contains information about how the host is configured in Xymon,
-	such as what IP-address it has, what network tests are being run against this
-	host etc.</li>
-	<li><em>trends</em> is a collection of the various RRD graphs available for this host.</li>
-	<li><em>xymond</em> is the status of the Xymon daemon, with statistics about
-	how many monitored items are being tracked.</li>
-	<li><em>xymongen</em> is the status of the xymongen tool, which updates the webpages.</li>
-	<li><em>xymonnet</em> is the status of the xymonnet network tester that performs
-	all of the network tests you configure in Xymon.</li>
-</ul>
-<p>You can click on each of the green icons to see a more detailed status.</p>
+<h2>5. Start Xymon</h2>
+<pre><tt>su - xymon -c "~xymon/server/xymon.sh start"
+</tt></pre>
+<p>(<tt>~xymon/server</tt> with configure's default answers.)</p>
+
+<h2>6. Check</h2>
+<p>After a couple of minutes, open <tt>http://your.server/xymon/</tt>: the Xymon server
+shows its own statuses. To start Xymon at boot, see
+<a href="#boot">Starting Xymon at boot</a>.</p>
 
 <h2>Next steps</h2>
+
 <p>Congratulations, you now have a running Xymon server!</p>
 <p>The next step is to configure it to monitor your servers and applications, and to set up
 the alerts to send you e-mail, call a pager, or send an SMS in case of trouble. For that, see
 the <a href="xymon-config.html">Xymon configuration guide</a>.</p>
 
-<h2><a name="commonsystems">Appendix: Installing on common systems</a></h2>
-<p>These commands are for building Xymon from source. A Xymon package from your
-operating system or its ports collection installs what it needs by itself.</p>
-<p>The commands below install, as root, the compiler and the development
-packages a server build needs on some common systems. After that, create the
-"xymon" user and build Xymon as described in
-"Building Xymon" above.</p>
-<ul>
-	<li><a href="#commondebian">Debian and Ubuntu</a></li>
-	<li><a href="#commonrhel">Red Hat Enterprise Linux, AlmaLinux, Rocky Linux and Oracle Linux 8 to 10</a></li>
-	<li><a href="#commonfedora">Fedora</a></li>
-	<li><a href="#commonsuse">openSUSE</a></li>
-	<li><a href="#commonalpine">Alpine Linux</a></li>
-	<li><a href="#commonarch">Arch Linux</a></li>
-	<li><a href="#commonfreebsd">FreeBSD</a></li>
-	<li><a href="#commonopenbsd">OpenBSD</a></li>
-	<li><a href="#commonnetbsd">NetBSD</a></li>
-	<li><a href="#commonmacoshomebrew">macOS using Homebrew</a></li>
-	<li><a href="#commonmacosmacports">macOS using MacPorts</a></li>
-</ul>
 
-<h4><a name="commondebian">Debian and Ubuntu</a></h4>
-<pre><tt>apt-get install build-essential fping libc-ares-dev libldap-dev libpcre2-dev librrd-dev libssl-dev libtirpc-dev
-</tt></pre>
-
-<h4><a name="commonrhel">Red Hat Enterprise Linux, AlmaLinux, Rocky Linux and Oracle Linux 8 to 10</a></h4>
-<p>Some of the packages are in the CodeReady Builder repository ("crb" from
-version 9, "powertools" on version 8, "ol<i>N</i>_codeready_builder" on Oracle
-Linux) and in EPEL, so enable those first:</p>
-<pre><tt>dnf install dnf-plugins-core
-dnf config-manager --set-enabled crb
-dnf install epel-release
-dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel
-</tt></pre>
-<p>On Oracle Linux, the EPEL package is "oracle-epel-release-el<i>N</i>".</p>
-<p>On Red Hat Enterprise Linux itself, neither of the two middle commands works.
-Enable CodeReady Builder and install EPEL this way instead, with <i>N</i> the
-version (8, 9 or 10):</p>
-<pre><tt>subscription-manager repos --enable codeready-builder-for-rhel-<i>N</i>-$(arch)-rpms
-dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-<i>N</i>.noarch.rpm
-</tt></pre>
-
-<h4><a name="commonfedora">Fedora</a></h4>
-<pre><tt>dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel
-</tt></pre>
-
-<h4><a name="commonsuse">openSUSE</a></h4>
-<pre><tt>zypper install gcc make gawk fping c-ares-devel openldap2-devel pcre2-devel rrdtool-devel libopenssl-devel libtirpc-devel
-</tt></pre>
-
-<h4><a name="commonalpine">Alpine Linux</a></h4>
-<pre><tt>apk add build-base fping c-ares-dev openldap-dev pcre2-dev rrdtool-dev openssl-dev libtirpc-dev
-</tt></pre>
-
-<h4><a name="commonarch">Arch Linux</a></h4>
-<pre><tt>pacman -S base-devel fping c-ares openldap pcre2 rrdtool openssl libtirpc
-</tt></pre>
-
-<p>On the BSDs, Xymon builds with GNU make: run <tt>MAKE=gmake ./configure --server</tt>,
-then <tt>gmake</tt> and <tt>gmake install</tt>. A C compiler and OpenSSL come with the base system.</p>
-
-<h4><a name="commonfreebsd">FreeBSD</a></h4>
-<pre><tt>pkg install gmake fping c-ares openldap26-client pcre2 rrdtool
-</tt></pre>
-
-<h4><a name="commonopenbsd">OpenBSD</a></h4>
-<pre><tt>pkg_add gmake fping libcares openldap-client--gssapi pcre2 rrdtool
-</tt></pre>
-<p>openldap-client comes in a plain and a <i>gssapi</i> flavor, so <tt>pkg_add</tt> asks which one
-when given the bare name. Xymon's tests build with the <i>gssapi</i> one.</p>
-
-<h4><a name="commonnetbsd">NetBSD</a></h4>
-<pre><tt>pkgin install gmake fping libcares openldap-client pcre2 rrdtool
-</tt></pre>
-
+<h2><a name="packages">Installing from a package</a></h2>
+<p>A package installs the prerequisites itself, and usually starts Xymon at boot.
+Distribution packages follow Xymon's releases; building from source, as above,
+gives the current code.</p>
+<table border="1" cellpadding="4" cellspacing="0">
+<tr><th>System</th><th>Package</th></tr>
+<tr><td>Debian, Ubuntu</td><td><tt>apt-get install xymon</tt> (server) or <tt>xymon-client</tt></td></tr>
+<tr><td>FreeBSD</td><td>ports <tt>net-mgmt/xymon-server</tt> and <tt>net-mgmt/xymon-client</tt></td></tr>
+<tr><td>NetBSD</td><td>pkgsrc <tt>net/xymon</tt></td></tr>
+<tr><td>Red Hat Enterprise Linux and its rebuilds 8 to 10, x86_64</td><td><a href="https://github.com/xymon-monitoring/xymon-rpm">xymon-rpm</a>: highly experimental, not for production yet; see its README</td></tr>
+<tr><td>macOS</td><td>the Homebrew tap, below</td></tr>
+</table>
 <h4><a name="commonmacoshomebrew">macOS (Apple Silicon and Intel) using Homebrew</a></h4>
 <p>The easiest way to install Xymon on a modern Mac is through the official
 <a href="https://github.com/xymon-monitoring/homebrew-xymon">Homebrew tap</a>,
@@ -406,14 +141,196 @@ HEAD reinstall replaces the entire keg <i>including its etc/ directory</i>,
 so back up your edited configuration files (hosts.cfg, xymonserver.cfg,
 xymonclient.cfg) before rebuilding.</p>
 
-<h4><a name="commonmacosmacports">macOS using MacPorts</a></h4>
-<pre><tt>port install gmake fping pcre2 rrdtool c-ares openssl openldap
-</tt></pre>
-<p>then build with GNU make, as on the BSDs: <tt>MAKE=gmake ./configure --server</tt>,
-<tt>gmake</tt> and <tt>gmake install</tt>. The configure script finds the MacPorts
-prefix (/opt/local) by itself. The SYSV IPC limits described in the prerequisites
-must be raised on macOS whichever way Xymon is built.</p>
 
+<h2>If something goes wrong</h2>
+
+<h4>xymond does not start</h4>
+
+<p>Xymon uses 9 shared memory segments, ranging in size from 32 KB to 512 KB (2464 KB
+total) in the default configuration; and 9 sets of 3 semaphores. Experience shows that
+some systems need tuning to provide the necessary IPC resources that Xymon uses.
+Specifically, when installing on Solaris you must increase the "shmseg" kernel parameter
+from the default 6 to at least 9. Since other programs on your system may also use shared
+memory, a higher value may be required.</p>
+<p>The total grows with the MAXMSG_* settings in xymonserver.cfg, which size the
+segments: MAXMSG_STATUS sizes three of them. When the system refuses one, xymond
+does not start, and logs "Could not get shm of size ..." followed by "Cannot setup
+... channel". The limits on their size are "kernel.shmmax" (one segment) and
+"kernel.shmall" (all of them) on Linux, the same names under "kern.sysv." on macOS,
+and "project.max-shm-memory" on Solaris 10 and later. A stock macOS allows 8
+segments per process, too few even for the default configuration, and 4 MB in all
+(see <a href="#commonmacoshomebrew">macOS using Homebrew</a> below).  See <a href="http://www.xymon.com/archive/2005/08/msg00183.html">http://www.xymon.com/archive/2005/08/msg00183.html</a> for more information about these issues.</p>
+<p>What xymond needs, in KB: the largest segment is the largest MAXMSG_* setting,
+and the total is</p>
+<pre><tt>
+3 x MAXMSG_STATUS + 2 x MAXMSG_CLIENT + MAXMSG_DATA + MAXMSG_NOTES + MAXMSG_USER + MAXMSG_ENADIS
+</tt></pre>
+<p>as long as MAXMSG_STACHG and MAXMSG_PAGE are left to follow MAXMSG_STATUS, and
+MAXMSG_CLICHG to follow MAXMSG_CLIENT, which is their default. For example,
+MAXMSG_STATUS="1024" with the other settings at their defaults needs a 1024 KB
+segment and 3 x 1024 + 2 x 512 + 256 + 256 + 128 + 32 = 4768 KB in all: shmmax
+of at least 1048576 bytes, and shmall of at least 1192 pages of 4 KB. That is more
+than the 4 MB a stock macOS allows.</p>
+<p>The defaults of a recent Linux (kernel 3.16 and later) and of Solaris 10 and later
+are usually far above this, so the limits mostly need raising on macOS and on older
+systems.</p>
+
+
+<h4>The build fails</h4>
+<p>Note: Although many systems have these libraries pre-installed, they often
+include only the run-time libraries and not the files that are needed to compile
+and build programs such as Xymon. So if you think you have all of these libraries
+installed but Xymon will not build, do check that you have the development
+files installed as well. Often these are in packages called "something<em>-dev</em>".</p>
+
+<p><b>HP-UX users</b> should note that the HP-supplied C compiler is known to mis-compile the
+lib/environ.c file, and produces an output file lib/environ.o of length 0 bytes.
+HP-UX users on the Xymon mailing list agree that the default C compiler shipped with
+HP-UX should not be used to compile Xymon - it is only for re-building the HP-UX kernel.
+The GNU C compiler works fine on HP-UX. More details in 
+<a href="http://www.xymon.com/archive/2005/06/msg00079.html">this e-mail</a> from
+the Xymon mailing list.</p>
+
+
+<h4><a name="nographs">No graphs</a></h4>
+<p><em>NetBSD:</em> the pre-built rrdtool package links against the base X11
+	sets in <tt>/usr/X11R7</tt> (e.g. <tt>libfontconfig.so.2</tt>). These are
+	not present on systems installed without X11, and cannot be added with
+	pkg_add. Install the xbase set - no reinstall needed (adjust release and
+	architecture):<br>
+	<tt>ftp https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/amd64/binary/sets/xbase.tar.xz</tt><br>
+	<tt>tar -xJpf xbase.tar.xz -C /</tt><br>
+	Without it, the RRDtool link test fails and Xymon builds with trend-graph
+	support disabled.</p>
+
+<h2>Reference</h2>
+
+<h3>What the prerequisites are for</h3>
+<ul>
+	<li>PCRE2 - Perl Compatible Regular Expression library, version 2 - is a
+	library for matching text-strings. It is available from
+	<a href="https://www.pcre.org/">https://www.pcre.org/</a>. Xymon needs
+	PCRE2; the older PCRE library (version 8.x) is no longer used. Xymon
+	4.3.30 is the last release that builds with it.</li>
+
+	<li>RRDtool is a library for handling the Round-Robin Databases used
+	to hold the historical data Xymon gathers. It is available from 
+	<a href="http://www.mrtg.org/rrdtool/">http://www.mrtg.org/rrdtool/</a>.
+	No minimum version is set; the versions current Linux and *BSD systems
+	ship, which have it pre-packaged, are the ones tested.<br>
+	Note that RRDtool requires various graphics-libraries. RRDtool 1.2.x uses
+	libpng, newer versions rely on the Cairo graphics library.</li>
+
+	<li>c-ares is an asynchronous DNS resolver library, required to build the
+	"xymonnet" network test tool. Xymon no longer ships a bundled copy, so the
+	c-ares development files must be installed (packages are commonly named
+	libc-ares-dev, c-ares-devel or c-ares). It is available from
+	<a href="https://c-ares.org/">https://c-ares.org/</a></li>
+
+	<li>fping is used for the network ping tests. Xymon's own xymonping does
+	not work at the moment, so fping is required. Every system below has it as
+	a package named "fping".</li>
+
+	<li>OpenSSL is a library for communicating with network services, that
+	use SSL encryption - e.g. secure websites. Although this library is
+	not absolutely required for Xymon, I strongly recommend that you install
+	it because sooner or later you will probably need it anyway. It is 
+	available from <a href="http://www.openssl.org/">http://www.openssl.org/</a>.</li>
+
+	<li>OpenLDAP is used to query LDAP directory servers. If you would like
+	to test that your directory server is up and running, you will need this
+	library. It is available from <a href="http://www.openldap.org/">http://www.openldap.org/</a></li>
+</ul>
+
+
+<h3>xymon.sh</h3>
+<p>Xymon runs as the "xymon" user, and <tt>xymon.sh</tt> refuses to start it as
+any other. Log in as that user and run<br>
+<tt><i>XYMONHOME</i>/xymon.sh start</tt><br>
+where <i>XYMONHOME</i> is the "server" directory of the installation - with the
+default answers to configure, <tt>~xymon/server</tt>. The same script also takes
+<tt>stop</tt>, <tt>restart</tt> and <tt>status</tt>; <tt>reload</tt> sends xymond a
+HUP signal so it re-reads hosts.cfg, and <tt>rotate</tt> sends a HUP to
+every Xymon program that keeps a pid file, so they reopen their logfiles after
+a log rotation.</p>
+
+
+<h3><a name="boot">Starting Xymon at boot</a></h3>
+
+<p>Building from source installs nothing that starts Xymon when the system boots;
+a Xymon package from your operating system does that for you. Otherwise, have
+your system's startup run, as root, something like<br>
+<tt>su - xymon -c "<i>XYMONHOME</i>/xymon.sh start"</tt><br>
+and the matching <tt>stop</tt> at shutdown - through an init script, an rc.d
+script, a launchd job or <tt>/etc/rc.local</tt>, whichever your system uses.
+Since xymon.sh only accepts the xymon user, a script running as root must switch
+to it, as above.</p>
+
+
+<h3>What runs</h3>
+
+<p>xymon.sh starts <tt>xymonlaunch</tt>, which starts and watches every other Xymon
+server program. Which programs those are is set in <tt>etc/tasks.cfg</tt>; with the
+default file, these run all the time:</p>
+<ul>
+	<li><tt>xymond</tt> is the network daemon that receives status updates from
+	the clients and the network test tool. It also provides the current status of
+	all your systems to the tool that generates the webpages.</li>
+	<li><tt>xymond_channel</tt> passes messages from xymond to each of the helper
+	programs below; there is one per helper.</li>
+	<li><tt>xymond_history</tt> records the history of status changes for each
+	item you monitor: when it was red, when it was green, and what the error
+	reported at 2:51 AM last Friday looked like.</li>
+	<li><tt>xymond_alert</tt> sends out alerts when your servers begin to report
+	a critical status.</li>
+	<li><tt>xymond_client</tt> analyses the data the Xymon clients send, and turns
+	it into statuses such as cpu, disk and memory.</li>
+	<li><tt>xymond_rrd</tt> updates the RRD files with the numeric data from the
+	status reports, to track e.g. how the disk utilization of a server changes
+	over time. There are two of these, because the data can arrive in two
+	different ways.</li>
+	<li><tt>xymond_hostdata</tt> saves the latest data a client sent whenever one of
+	that host's statuses goes red, yellow or purple, so you can see what it
+	reported around the time a problem occurred.</li>
+</ul>
+<p>Others run at intervals: <tt>xymongen</tt> updates the webpages, <tt>xymonnet</tt>
+runs the network tests (and <tt>xymonnet-again.sh</tt> repeats the failing ones on a
+faster cycle),
+<tt>combostatus</tt> computes combined statuses, and the Xymon server's own client
+reports on the server itself. More programs are listed in tasks.cfg but disabled,
+for setups that need them - storing status files, proxying, fetching from clients
+that cannot connect, distributing to other servers.</p>
+
+<h3>The server's statuses</h3>
+<p>Each of the little faces indicate an item that is being monitored for this host. Here
+you see the default set of items that the Xymon installation sets up for a Xymon server:</p>
+<ul>
+	<li><em>bbd</em> is the availability of the Xymon network daemon.</li>
+	<li><em>conn</em> is a simple &quot;ping&quot; test of the host.</li>
+	<li><em>http</em> is the status of the HTTP-server running on the Xymon server.</li>
+	<li><em>info</em> contains information about how the host is configured in Xymon,
+	such as what IP-address it has, what network tests are being run against this
+	host etc.</li>
+	<li><em>trends</em> is a collection of the various RRD graphs available for this host.</li>
+	<li><em>xymond</em> is the status of the Xymon daemon, with statistics about
+	how many monitored items are being tracked.</li>
+	<li><em>xymongen</em> is the status of the xymongen tool, which updates the webpages.</li>
+	<li><em>xymonnet</em> is the status of the xymonnet network tester that performs
+	all of the network tests you configure in Xymon.</li>
+</ul>
+<p>The server's own client adds its columns too: cpu, disk, memory and others.</p>
+<p>You can click on each of the green icons to see a more detailed status.</p>
+
+
+<h3>Upgrading</h3>
+<p>It is safe to run <tt>make install</tt> when upgrading a Xymon server. It installs the 
+programs, adds new template-files that were not present in your previous version,
+and updates your configuration files with any new sections that have been added.
+Any changes you have made yourself are preserved.</p>
+
+
+<h3>configure</h3>
+<p>You can <a href="configure.txt">see what configure looks like</a>, and how the
+Apache configuration it installs looks <a href="xymon-apacheconf.txt">here</a>.</p>
 </body>
 </html>
-
