@@ -268,6 +268,8 @@ the alerts to send you e-mail, call a pager, or send an SMS in case of trouble. 
 the <a href="xymon-config.html">Xymon configuration guide</a>.</p>
 
 <h2><a name="commonsystems">Appendix: Installing on common systems</a></h2>
+<p>These commands are for building Xymon from source. A Xymon package from your
+operating system or its ports collection installs what it needs by itself.</p>
 <p>The commands below install, as root, the compiler and the development
 packages a server build needs on some common systems. After that, create the
 "xymon" user and build Xymon as described in
@@ -318,8 +320,7 @@ dnf install gcc make c-ares-devel openldap-devel pcre2-devel rrdtool-devel opens
 </tt></pre>
 
 <p>On the BSDs, Xymon builds with GNU make: run <tt>MAKE=gmake ./configure --server</tt>,
-then <tt>gmake</tt> and <tt>gmake install</tt>. OpenSSL comes with the base system, and so does
-a C compiler; on NetBSD, Xymon's tests build with clang from pkgsrc rather than the base compiler.</p>
+then <tt>gmake</tt> and <tt>gmake install</tt>. A C compiler and OpenSSL come with the base system.</p>
 
 <h4><a name="commonfreebsd">FreeBSD</a></h4>
 <pre><tt>pkg install gmake c-ares openldap26-client pcre2 rrdtool
