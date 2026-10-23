@@ -108,9 +108,8 @@ files installed as well. Often these are in packages called "something<em>-dev</
 	<li>RRDtool is a library for handling the Round-Robin Databases used
 	to hold the historical data Xymon gathers. It is available from 
 	<a href="http://www.mrtg.org/rrdtool/">http://www.mrtg.org/rrdtool/</a>.
-	No minimum version is set: Xymon supports RRDtool from 1.2 on, and is
-	tested with the versions current Linux and *BSD systems ship, which
-	have it pre-packaged.<br>
+	No minimum version is set; the versions current Linux and *BSD systems
+	ship, which have it pre-packaged, are the ones tested.<br>
 	Note that RRDtool requires various graphics-libraries. RRDtool 1.2.x uses
 	libpng, newer versions rely on the Cairo graphics library.<br>
 	<em>NetBSD:</em> the pre-built rrdtool package links against the base X11
@@ -319,7 +318,8 @@ dnf install gcc make c-ares-devel openldap-devel pcre2-devel rrdtool-devel opens
 </tt></pre>
 
 <p>On the BSDs, Xymon builds with GNU make: run <tt>MAKE=gmake ./configure --server</tt>,
-then <tt>gmake</tt> and <tt>gmake install</tt>. The C compiler and OpenSSL come with the base system.</p>
+then <tt>gmake</tt> and <tt>gmake install</tt>. OpenSSL comes with the base system, and so does
+a C compiler; on NetBSD, Xymon's tests build with clang from pkgsrc rather than the base compiler.</p>
 
 <h4><a name="commonfreebsd">FreeBSD</a></h4>
 <pre><tt>pkg install gmake c-ares openldap26-client pcre2 rrdtool
