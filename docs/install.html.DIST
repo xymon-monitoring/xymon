@@ -128,6 +128,10 @@ files installed as well. Often these are in packages called "something<em>-dev</
 	libc-ares-dev, c-ares-devel or c-ares). It is available from
 	<a href="https://c-ares.org/">https://c-ares.org/</a></li>
 
+	<li>fping is used for the network ping tests. Xymon's own xymonping does
+	not work at the moment, so fping is required. Every system below has it as
+	a package named "fping".</li>
+
 	<li>OpenSSL is a library for communicating with network services, that
 	use SSL encryption - e.g. secure websites. Although this library is
 	not absolutely required for Xymon, I strongly recommend that you install
@@ -289,7 +293,7 @@ packages a server build needs on some common systems. After that, create the
 </ul>
 
 <h4><a name="commondebian">Debian and Ubuntu</a></h4>
-<pre><tt>apt-get install build-essential libc-ares-dev libldap-dev libpcre2-dev librrd-dev libssl-dev libtirpc-dev
+<pre><tt>apt-get install build-essential fping libc-ares-dev libldap-dev libpcre2-dev librrd-dev libssl-dev libtirpc-dev
 </tt></pre>
 
 <h4><a name="commonrhel">Red Hat Enterprise Linux, AlmaLinux, Rocky Linux and Oracle Linux 8 to 10</a></h4>
@@ -299,41 +303,41 @@ Linux) and in EPEL, so enable those first:</p>
 <pre><tt>dnf install dnf-plugins-core
 dnf config-manager --set-enabled crb
 dnf install epel-release
-dnf install gcc make c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel
+dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel
 </tt></pre>
 <p>On Oracle Linux, the EPEL package is "oracle-epel-release-el<i>N</i>".</p>
 
 <h4><a name="commonfedora">Fedora</a></h4>
-<pre><tt>dnf install gcc make c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel
+<pre><tt>dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel
 </tt></pre>
 
 <h4><a name="commonsuse">openSUSE</a></h4>
-<pre><tt>zypper install gcc make gawk c-ares-devel openldap2-devel pcre2-devel rrdtool-devel libopenssl-devel libtirpc-devel
+<pre><tt>zypper install gcc make gawk fping c-ares-devel openldap2-devel pcre2-devel rrdtool-devel libopenssl-devel libtirpc-devel
 </tt></pre>
 
 <h4><a name="commonalpine">Alpine Linux</a></h4>
-<pre><tt>apk add build-base c-ares-dev openldap-dev pcre2-dev rrdtool-dev openssl-dev libtirpc-dev
+<pre><tt>apk add build-base fping c-ares-dev openldap-dev pcre2-dev rrdtool-dev openssl-dev libtirpc-dev
 </tt></pre>
 
 <h4><a name="commonarch">Arch Linux</a></h4>
-<pre><tt>pacman -S base-devel c-ares openldap pcre2 rrdtool openssl libtirpc
+<pre><tt>pacman -S base-devel fping c-ares openldap pcre2 rrdtool openssl libtirpc
 </tt></pre>
 
 <p>On the BSDs, Xymon builds with GNU make: run <tt>MAKE=gmake ./configure --server</tt>,
 then <tt>gmake</tt> and <tt>gmake install</tt>. A C compiler and OpenSSL come with the base system.</p>
 
 <h4><a name="commonfreebsd">FreeBSD</a></h4>
-<pre><tt>pkg install gmake c-ares openldap26-client pcre2 rrdtool
+<pre><tt>pkg install gmake fping c-ares openldap26-client pcre2 rrdtool
 </tt></pre>
 
 <h4><a name="commonopenbsd">OpenBSD</a></h4>
-<pre><tt>pkg_add gmake libcares openldap-client--gssapi pcre2 rrdtool
+<pre><tt>pkg_add gmake fping libcares openldap-client--gssapi pcre2 rrdtool
 </tt></pre>
 <p>openldap-client comes in a plain and a <i>gssapi</i> flavor, so <tt>pkg_add</tt> asks which one
 when given the bare name. Xymon's tests build with the <i>gssapi</i> one.</p>
 
 <h4><a name="commonnetbsd">NetBSD</a></h4>
-<pre><tt>pkgin install gmake libcares openldap-client pcre2 rrdtool
+<pre><tt>pkgin install gmake fping libcares openldap-client pcre2 rrdtool
 </tt></pre>
 
 <h4><a name="commonmacoshomebrew">macOS (Apple Silicon and Intel) using Homebrew</a></h4>
@@ -397,7 +401,7 @@ so back up your edited configuration files (hosts.cfg, xymonserver.cfg,
 xymonclient.cfg) before rebuilding.</p>
 
 <h4><a name="commonmacosmacports">macOS using MacPorts</a></h4>
-<pre><tt>port install gmake pcre2 rrdtool c-ares openssl openldap
+<pre><tt>port install gmake fping pcre2 rrdtool c-ares openssl openldap
 </tt></pre>
 <p>then build with GNU make, as on the BSDs: <tt>MAKE=gmake ./configure --server</tt>,
 <tt>gmake</tt> and <tt>gmake install</tt>. The configure script finds the MacPorts
