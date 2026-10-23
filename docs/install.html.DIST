@@ -284,6 +284,7 @@ packages a server build needs on some common systems. After that, create the
 	<li><a href="#commonopenbsd">OpenBSD</a></li>
 	<li><a href="#commonnetbsd">NetBSD</a></li>
 	<li><a href="#commonmacoshomebrew">macOS using Homebrew</a></li>
+	<li><a href="#commonmacosmacports">macOS using MacPorts</a></li>
 </ul>
 
 <h4><a name="commondebian">Debian and Ubuntu</a></h4>
@@ -393,6 +394,14 @@ brew reinstall --HEAD xymon-monitoring/xymon/xymon-server
 HEAD reinstall replaces the entire keg <i>including its etc/ directory</i>,
 so back up your edited configuration files (hosts.cfg, xymonserver.cfg,
 xymonclient.cfg) before rebuilding.</p>
+
+<h4><a name="commonmacosmacports">macOS using MacPorts</a></h4>
+<pre><tt>port install gmake pcre2 rrdtool c-ares openssl openldap
+</tt></pre>
+<p>then build with GNU make, as on the BSDs: <tt>MAKE=gmake ./configure --server</tt>,
+<tt>gmake</tt> and <tt>gmake install</tt>. The configure script finds the MacPorts
+prefix (/opt/local) by itself. The SYSV IPC limits described in the prerequisites
+must be raised on macOS whichever way Xymon is built.</p>
 
 </body>
 </html>
