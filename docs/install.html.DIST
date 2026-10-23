@@ -306,6 +306,12 @@ dnf install epel-release
 dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel
 </tt></pre>
 <p>On Oracle Linux, the EPEL package is "oracle-epel-release-el<i>N</i>".</p>
+<p>On Red Hat Enterprise Linux itself, neither of the two middle commands works.
+Enable CodeReady Builder and install EPEL this way instead, with <i>N</i> the
+version (8, 9 or 10):</p>
+<pre><tt>subscription-manager repos --enable codeready-builder-for-rhel-<i>N</i>-$(arch)-rpms
+dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-<i>N</i>.noarch.rpm
+</tt></pre>
 
 <h4><a name="commonfedora">Fedora</a></h4>
 <pre><tt>dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel
