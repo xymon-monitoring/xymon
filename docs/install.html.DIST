@@ -280,6 +280,9 @@ packages a server build needs on some common systems. After that, create the
 	<li><a href="#commonsuse">openSUSE</a></li>
 	<li><a href="#commonalpine">Alpine Linux</a></li>
 	<li><a href="#commonarch">Arch Linux</a></li>
+	<li><a href="#commonfreebsd">FreeBSD</a></li>
+	<li><a href="#commonopenbsd">OpenBSD</a></li>
+	<li><a href="#commonnetbsd">NetBSD</a></li>
 	<li><a href="#commonmacoshomebrew">macOS using Homebrew</a></li>
 </ul>
 
@@ -312,6 +315,23 @@ dnf install gcc make c-ares-devel openldap-devel pcre2-devel rrdtool-devel opens
 
 <h4><a name="commonarch">Arch Linux</a></h4>
 <pre><tt>pacman -S base-devel c-ares openldap pcre2 rrdtool openssl libtirpc
+</tt></pre>
+
+<p>On the BSDs, Xymon builds with GNU make: run <tt>MAKE=gmake ./configure --server</tt>,
+then <tt>gmake</tt> and <tt>gmake install</tt>. The C compiler and OpenSSL come with the base system.</p>
+
+<h4><a name="commonfreebsd">FreeBSD</a></h4>
+<pre><tt>pkg install gmake c-ares openldap26-client pcre2 rrdtool
+</tt></pre>
+
+<h4><a name="commonopenbsd">OpenBSD</a></h4>
+<pre><tt>pkg_add gmake libcares openldap-client--gssapi pcre2 rrdtool
+</tt></pre>
+<p>openldap-client comes in a plain and a <i>gssapi</i> flavor, so <tt>pkg_add</tt> asks which one
+when given the bare name. Xymon's tests build with the <i>gssapi</i> one.</p>
+
+<h4><a name="commonnetbsd">NetBSD</a></h4>
+<pre><tt>pkgin install gmake libcares openldap-client pcre2 rrdtool
 </tt></pre>
 
 <h4><a name="commonmacoshomebrew">macOS (Apple Silicon and Intel) using Homebrew</a></h4>
