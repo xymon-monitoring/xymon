@@ -212,33 +212,58 @@ command both to create the password file and to add or delete users:<br>
 file. See the Apache documentation for details about how to use htpasswd.</p>
 
 <h2>Starting Xymon</h2>
-<p>You can now login as the "xymon" user, and run the command <tt>./server/xymon.sh start</tt>
-to start Xymon. After a few seconds, it should have started and you now have the following
-processes running: <br><img src="xymonprocs.png" alt="Xymon processes"></p>
-<p>Quite a few, but all of them controlled by the master <tt>xymonlaunch</tt> process.
-A quick run-down of what each of them does:</p>
+<p>Xymon runs as the "xymon" user, and <tt>xymon.sh</tt> refuses to start it as
+any other. Log in as that user and run<br>
+<tt><i>XYMONHOME</i>/xymon.sh start</tt><br>
+where <i>XYMONHOME</i> is the "server" directory of the installation - with the
+default answers to configure, <tt>~xymon/server</tt>. The same script also takes
+<tt>stop</tt>, <tt>restart</tt> and <tt>status</tt>; <tt>reload</tt> sends xymond a
+HUP signal so it re-reads hosts.cfg, and <tt>rotate</tt> sends a HUP to
+every Xymon program that keeps a pid file, so they reopen their logfiles after
+a log rotation.</p>
+
+<h3>Starting Xymon at boot</h3>
+<p>Building from source installs nothing that starts Xymon when the system boots;
+a Xymon package from your operating system does that for you. Otherwise, have
+your system's startup run, as root, something like<br>
+<tt>su - xymon -c "<i>XYMONHOME</i>/xymon.sh start"</tt><br>
+and the matching <tt>stop</tt> at shutdown - through an init script, an rc.d
+script, a launchd job or <tt>/etc/rc.local</tt>, whichever your system uses.
+Since xymon.sh only accepts the xymon user, a script running as root must switch
+to it, as above.</p>
+
+<h3>What runs</h3>
+<p>xymon.sh starts <tt>xymonlaunch</tt>, which starts and watches every other Xymon
+server program. Which programs those are is set in <tt>etc/tasks.cfg</tt>; with the
+default file, these run all the time:</p>
 <ul>
 	<li><tt>xymond</tt> is the network daemon that receives status updates from
 	the clients and the network test tool. It also provides the current status of
 	all your systems to the tool that generates the webpages.</li>
-	<li><tt>xymond_channel</tt> provides the communication between xymond and 
-	all of the helper modules that implement other server-based functions.</li>
-	<li><tt>xymond_history</tt> takes care of recording the history of status
-	changes for each item you monitor. This is used to track what has happened
-	with a single status over time - when it was red, when it was green, what the
-	error reported at 2:51 AM last Friday looked like. The history file format is
-	compatible with the format used by the Big Brother package.</li>
-	<li><tt>xymond_filestore</tt> stores files with information about the current
-	status of the systems monitored by Xymon. There may be several of these
-	running, but normally you will only need the one that stores information about
-	hosts that have been disabled, which is the one you see here.</li>
-	<li><tt>xymond_alert</tt> takes care of sending out alerts when your servers
-	begin to report a critical status.</li>
-	<li><tt>xymond_rrd</tt> updates the RRD database files with the numeric data
-	collected from the status reports, to track e.g. how the disk utilization of
-	a server changes over time. There are two of these processes, because the
-	data can arrive in two different ways.</li>
+	<li><tt>xymond_channel</tt> passes messages from xymond to each of the helper
+	programs below; there is one per helper.</li>
+	<li><tt>xymond_history</tt> records the history of status changes for each
+	item you monitor: when it was red, when it was green, and what the error
+	reported at 2:51 AM last Friday looked like.</li>
+	<li><tt>xymond_alert</tt> sends out alerts when your servers begin to report
+	a critical status.</li>
+	<li><tt>xymond_client</tt> analyses the data the Xymon clients send, and turns
+	it into statuses such as cpu, disk and memory.</li>
+	<li><tt>xymond_rrd</tt> updates the RRD files with the numeric data from the
+	status reports, to track e.g. how the disk utilization of a server changes
+	over time. There are two of these, because the data can arrive in two
+	different ways.</li>
+	<li><tt>xymond_hostdata</tt> saves the latest data a client sent whenever one of
+	that host's statuses goes red, yellow or purple, so you can see what it
+	reported around the time a problem occurred.</li>
 </ul>
+<p>Others run at intervals: <tt>xymongen</tt> updates the webpages, <tt>xymonnet</tt>
+runs the network tests (and <tt>xymonnet-again.sh</tt> repeats the failing ones on a
+faster cycle),
+<tt>combostatus</tt> computes combined statuses, and the Xymon server's own client
+reports on the server itself. More programs are listed in tasks.cfg but disabled,
+for setups that need them - storing status files, proxying, fetching from clients
+that cannot connect, distributing to other servers.</p>
 <p>After a couple of minutes, you should have data available for the Xymon server itself.
 If you open a webbrowser with the Xymon URL - usually http://your.server/xymon/ - you
 should see something like this:<br><img src="xymonmain.png" alt="Xymon main window"></p>
@@ -258,6 +283,7 @@ you see the default set of items that the Xymon installation sets up for a Xymon
 	<li><em>xymonnet</em> is the status of the xymonnet network tester that performs
 	all of the network tests you configure in Xymon.</li>
 </ul>
+<p>The server's own client adds its columns too: cpu, disk, memory and others.</p>
 <p>You can click on each of the green icons to see a more detailed status.</p>
 
 <h2>Next steps</h2>
