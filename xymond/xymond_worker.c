@@ -46,6 +46,7 @@ static char rcsid[] = "$Id$";
 
 static int running = 1;
 static int inputfd = STDIN_FILENO;
+static size_t growlimit = 0;	/* 0: truncate at the channel size */
 
 #define EXTRABUFSPACE 4095
 
@@ -324,6 +325,18 @@ void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t sticky
 }
 
 
+/*
+ * Input that does not come from a channel, like xymond_client --local
+ * reading the client data on stdin, has no shared-memory segment to fit
+ * in. Let the buffer grow up to maxbytes for it, instead of truncating
+ * a message at the channel size.
+ */
+void set_xymond_message_growlimit(size_t maxbytes)
+{
+	growlimit = maxbytes;
+}
+
+
 unsigned char *get_xymond_message(enum msgchannels_t chnid, char *id, int *seq, struct timespec *timeout)
 {
 	static unsigned int seqnum = 0;
@@ -414,6 +427,9 @@ unsigned char *get_xymond_message(enum msgchannels_t chnid, char *id, int *seq, 
 	}
 
 startagain:
+	/* A message dropped below may have been truncated; the next one is not, so it must keep its place in the buffer. */
+	truncated = 0;
+
 	if (ioerror) {
 		errprintf("get_xymond_message: Returning NULL due to previous i/o error\n");
 		return NULL;
@@ -456,6 +472,27 @@ startagain:
 
 		dbgprintf("Want msg %d, startpos %ld, fillpos %ld, endpos %ld, usedbytes=%ld, bufleft=%ld\n",
 			  (seqnum+1), (startpos-buf), (fillpos-buf), (endpos ? (endpos-buf) : -1), usedbytes, bufleft);
+
+		if ((usedbytes >= maxmsgsize) && (maxmsgsize < growlimit)) {
+			/* Grow the buffer: move the message to its start, then double it. */
+			size_t newmax = ((2*maxmsgsize) < growlimit) ? (2*maxmsgsize) : growlimit;
+			size_t srchofs = (endsrch - startpos);
+			char *newbuf;
+
+			if (startpos != buf) memmove(buf, startpos, usedbytes+1);
+			startpos = buf;
+			newbuf = (char *)realloc(buf, newmax + EXTRABUFSPACE + 1);
+			if (newbuf) {
+				dbgprintf("Growing buffer to %zu bytes\n", newmax);
+				buf = startpos = newbuf;
+				maxmsgsize = newmax;
+				bufsz = maxmsgsize + EXTRABUFSPACE;
+			}
+			fillpos = startpos + usedbytes;
+			endsrch = startpos + srchofs;
+			maymove = 0;
+			bufleft = bufsz - usedbytes;
+		}
 
 		if (usedbytes >= maxmsgsize) {
 			/* Over-size message. Truncate it. */
