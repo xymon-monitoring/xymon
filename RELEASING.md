@@ -75,6 +75,11 @@ the release date into the top `Changes from X -> Y (XX Xxx XXXX)` heading, drop
 `md5.dat` and the version stamps only — so a release cut without this ships a
 placeholder where the date should be.
 
+The open sections name the version chosen when they were opened. If the
+release gets another number — a 4.4.0 where 4.3.31 was planned — rename it in
+the same pass, in three places: the top `Changes from X -> Y` heading, and in
+`RELEASENOTES` the title box and the `Changes for X.Y.Z` heading.
+
 ### 2. Run the prep workflow
 
 GitHub → Actions → **Pre-tag release prep** → *Run workflow* → version as
