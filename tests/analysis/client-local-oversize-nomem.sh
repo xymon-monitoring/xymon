@@ -14,15 +14,18 @@
 #   - the refusal happened, so the test exercised the fallback at all
 #   - the report is truncated, as before the fix: the over-size error is
 #     logged and the [df] section after the cut is lost
-#   - the message after it is still read
+#   - the message after it is still read. The leftover of the truncated
+#     report and that message can arrive in one read; get_xymond_message()
+#     used to keep its "truncated" flag while dropping the leftover, and
+#     then threw the buffered message away with it.
 #
-# LD_PRELOAD as used here is a Linux interface; elsewhere this skips.
+# Where LD_PRELOAD does not take effect (macOS, a static build), a probe
+# says so and the test skips.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
 
-[ "$(uname -s)" = Linux ] || skip "preloading a failing realloc() is only set up for Linux"
 require_cc
 require_bin XYMOND_CLIENT xymond/xymond_client
 
@@ -50,8 +53,20 @@ void *realloc(void *p, size_t n)
 	return real(p, n);
 }
 EOF
-"$CC" -shared -fPIC -o "$work/failrealloc.so" "$work/failrealloc.c" -ldl \
+"$CC" -shared -fPIC -o "$work/failrealloc.so" "$work/failrealloc.c" -ldl 2>/dev/null \
+	|| "$CC" -shared -fPIC -o "$work/failrealloc.so" "$work/failrealloc.c" \
 	|| skip "cannot build a preload library with $CC"
+
+# 64 KB doubled, + EXTRABUFSPACE (4095) + 1 for the NUL byte.
+failsize=$((2 * 64 * 1024 + 4095 + 1))
+
+# Does preloading take effect here at all?
+printf '%s\n' '#include <stdlib.h>' \
+	'int main(int c, char **v) { return realloc(malloc(1), (size_t)atol(v[1])) == NULL ? 0 : 1; }' \
+	> "$work/probe.c"
+"$CC" -o "$work/probe" "$work/probe.c" || skip "cannot build the preload probe with $CC"
+FAIL_REALLOC_SIZE=$failsize LD_PRELOAD="$work/failrealloc.so" "$work/probe" "$failsize" 2>/dev/null \
+	|| skip "LD_PRELOAD does not replace realloc() here"
 
 {
 	printf '%s\n' '@@client|1755640000|127.0.0.1|big.test|linux|linux|' '[ps]' \
@@ -68,12 +83,11 @@ EOF
 		'/dev/sda1 1000000 400000 600000 40% /' '@@'
 } > "$work/msgs"
 
-# 64 KB doubled, + EXTRABUFSPACE (4095) + 1 for the NUL byte.
 out=$(env \
 	XYMONHOME="$work/home" \
 	XYMONTMP="$work" \
 	MAXMSG_CLIENT=64 \
-	FAIL_REALLOC_SIZE=$((2 * 64 * 1024 + 4095 + 1)) \
+	FAIL_REALLOC_SIZE=$failsize \
 	LD_PRELOAD="$work/failrealloc.so" \
 	"$XYMOND_CLIENT" --local --no-update --config="$work/analysis.cfg" \
 	<"$work/msgs" 2>"$work/stderr.log") || fail "xymond_client exited non-zero: $(cat "$work/stderr.log")"
@@ -86,6 +100,6 @@ assert_contains "over-size" "$errs" \
 assert_not_contains "/full (100% used)" "$out" \
 	"the [df] section after the cut was reported although the buffer could not grow"
 assert_match "small,test\.disk green" "$out" \
-	"after the fallback, the next message on the stream was not read"
+	"after the fallback, the next message on the stream was not read; xymond_client logged: $errs"
 
 pass "xymond_client --local truncates as before, and keeps reading, when its buffer cannot grow"
