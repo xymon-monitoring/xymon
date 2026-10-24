@@ -16,19 +16,37 @@ below. Problems and explanations are at the end.</p>
 <p>As root, run the command for your system. A C compiler and OpenSSL come with the
 base system on the BSDs.</p>
 <table border="1" cellpadding="4" cellspacing="0">
-<tr><th>System</th><th>Command</th><th>Note</th></tr>
-<tr><td>Debian, Ubuntu</td><td><tt>apt-get install build-essential fping libc-ares-dev libldap-dev libpcre2-dev librrd-dev libssl-dev libtirpc-dev</tt></td><td></td></tr>
-<tr><td>Red Hat Enterprise Linux 8 to 10</td><td><tt>subscription-manager repos --enable codeready-builder-for-rhel-<i>N</i>-$(arch)-rpms<br>dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-<i>N</i>.noarch.rpm<br>dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel</tt></td><td><i>N</i> is the version: 8, 9 or 10.</td></tr>
-<tr><td>AlmaLinux, Rocky Linux, Oracle Linux 8 to 10</td><td><tt>dnf install dnf-plugins-core<br>dnf config-manager --set-enabled crb<br>dnf install epel-release<br>dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel</tt></td><td>On version 8 the repository is "powertools", not "crb". On Oracle Linux it is "ol<i>N</i>_codeready_builder", and EPEL is "oracle-epel-release-el<i>N</i>".</td></tr>
-<tr><td>Fedora</td><td><tt>dnf install gcc make fping c-ares-devel openldap-devel pcre2-devel rrdtool-devel openssl-devel libtirpc-devel</tt></td><td></td></tr>
-<tr><td>openSUSE</td><td><tt>zypper install gcc make gawk fping c-ares-devel openldap2-devel pcre2-devel rrdtool-devel libopenssl-devel libtirpc-devel</tt></td><td></td></tr>
-<tr><td>Alpine Linux</td><td><tt>apk add build-base fping c-ares-dev openldap-dev pcre2-dev rrdtool-dev openssl-dev libtirpc-dev</tt></td><td></td></tr>
-<tr><td>Arch Linux</td><td><tt>pacman -S base-devel fping c-ares openldap pcre2 rrdtool openssl libtirpc</tt></td><td></td></tr>
-<tr><td>FreeBSD</td><td><tt>pkg install gmake fping c-ares openldap26-client pcre2 rrdtool</tt></td><td></td></tr>
-<tr><td>OpenBSD</td><td><tt>pkg_add gmake fping libcares openldap-client--gssapi pcre2 rrdtool</tt></td><td>openldap-client also comes in a plain flavor; the tests build with <i>gssapi</i>.</td></tr>
-<tr><td>NetBSD</td><td><tt>pkgin install gmake fping libcares openldap-client pcre2 rrdtool</tt></td><td>Without X11 installed, see <a href="#nographs">no graphs</a>.</td></tr>
-<tr><td>macOS, MacPorts</td><td><tt>port install gmake fping pcre2 rrdtool c-ares openssl openldap</tt></td><td></td></tr>
-<tr><td>macOS, Homebrew</td><td><tt>brew install pcre2 rrdtool fping openssl@3 openldap</tt></td><td>Or install Xymon itself from the tap: see <a href="#packages">packages</a>.</td></tr>
+<tr><th>System</th><th>Commands</th></tr>
+<tr><td>Debian, Ubuntu</td><td><pre>apt-get install build-essential fping libc-ares-dev \
+    libldap-dev libpcre2-dev librrd-dev libssl-dev \
+    libtirpc-dev</pre></td></tr>
+<tr><td>Red Hat Enterprise Linux 8 to 10</td><td><pre>subscription-manager repos --enable \
+    codeready-builder-for-rhel-<i>N</i>-$(arch)-rpms
+dnf install \
+    https://dl.fedoraproject.org/pub/epel/epel-release-latest-<i>N</i>.noarch.rpm
+dnf install gcc make fping c-ares-devel openldap-devel \
+    pcre2-devel rrdtool-devel openssl-devel libtirpc-devel</pre><i>N</i> is the version: 8, 9 or 10.</td></tr>
+<tr><td>AlmaLinux, Rocky Linux, Oracle Linux 8 to 10</td><td><pre>dnf install dnf-plugins-core
+dnf config-manager --set-enabled crb
+dnf install epel-release
+dnf install gcc make fping c-ares-devel openldap-devel \
+    pcre2-devel rrdtool-devel openssl-devel libtirpc-devel</pre>On version 8 the repository is "powertools", not "crb". On Oracle Linux it is "ol<i>N</i>_codeready_builder", and EPEL is "oracle-epel-release-el<i>N</i>".</td></tr>
+<tr><td>Fedora</td><td><pre>dnf install gcc make fping c-ares-devel openldap-devel \
+    pcre2-devel rrdtool-devel openssl-devel libtirpc-devel</pre></td></tr>
+<tr><td>openSUSE</td><td><pre>zypper install gcc make gawk fping c-ares-devel \
+    openldap2-devel pcre2-devel rrdtool-devel libopenssl-devel \
+    libtirpc-devel</pre></td></tr>
+<tr><td>Alpine Linux</td><td><pre>apk add build-base fping c-ares-dev openldap-dev pcre2-dev \
+    rrdtool-dev openssl-dev libtirpc-dev</pre></td></tr>
+<tr><td>Arch Linux</td><td><pre>pacman -S base-devel fping c-ares openldap pcre2 rrdtool \
+    openssl libtirpc</pre></td></tr>
+<tr><td>FreeBSD</td><td><pre>pkg install gmake fping c-ares openldap26-client pcre2 rrdtool</pre></td></tr>
+<tr><td>OpenBSD</td><td><pre>pkg_add gmake fping libcares openldap-client--gssapi pcre2 \
+    rrdtool</pre>openldap-client also comes in a plain flavor; the tests build with <i>gssapi</i>.</td></tr>
+<tr><td>NetBSD</td><td><pre>pkgin install gmake fping libcares openldap-client pcre2 \
+    rrdtool</pre>Without X11 installed, see <a href="#nographs">no graphs</a>.</td></tr>
+<tr><td>macOS, MacPorts</td><td><pre>port install gmake fping pcre2 rrdtool c-ares openssl openldap</pre></td></tr>
+<tr><td>macOS, Homebrew</td><td><pre>brew install pcre2 rrdtool fping openssl@3 openldap</pre>Or install Xymon itself from the tap: see <a href="#packages">packages</a>.</td></tr>
 </table>
 
 <h2>2. Create the "xymon" user</h2>
