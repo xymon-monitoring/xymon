@@ -127,6 +127,11 @@ assert_file_exists() {
 __XYMON_TESTS_CLEANUP_CMDS=()
 __xymon_tests_run_cleanups() {
 	local rc=$? i
+	# Out of whatever directory the test moved into: a test that cd's into
+	# its temp dir would otherwise remove its own working directory, which
+	# Solaris refuses (rmdir: EINVAL), leaving the dir behind. Cleanups use
+	# absolute paths.
+	cd / 2>/dev/null || true
 	# Run in reverse registration order so teardown mirrors setup.
 	for (( i=${#__XYMON_TESTS_CLEANUP_CMDS[@]}-1; i>=0; i-- )); do
 		eval "${__XYMON_TESTS_CLEANUP_CMDS[i]}" || true
@@ -198,6 +203,19 @@ mktempdir() {
 }
 
 # ---- C harness scaffolding ---------------------------------------------------
+
+# Without CC, tests compile with cc -- but a system may have gcc or clang and
+# no cc (Solaris 11.4 has only gcc), and then every harness test skipped as
+# if there were no compiler at all. Name the one that is there.
+if [ -z "${CC:-}" ] && ! command -v cc >/dev/null 2>&1; then
+	for __xymon_tests_cc in gcc clang; do
+		if command -v "$__xymon_tests_cc" >/dev/null 2>&1; then
+			CC=$__xymon_tests_cc
+			export CC
+			break
+		fi
+	done
+fi
 
 # require_cc -- skip unless a C compiler is present. Sets/keeps CC (default
 # cc). For tests that compile a standalone harness with no in-tree libraries.
