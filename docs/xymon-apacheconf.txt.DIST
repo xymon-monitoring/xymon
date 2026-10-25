@@ -37,9 +37,10 @@ ScriptAlias @SECUREXYMONCGIURL@/ "@SECURECGIDIR@/"
 
 # The web pages come after the CGI directories: Apache uses the first alias
 # that matches, and with the web pages at the root URL ("/" to configure)
-# this one matches every URL. It also takes the URL without its trailing
-# slash.
-AliasMatch "^@XYMONHOSTURL@(/.*)?$" "@INSTALLWWWDIR@$1"
+# this one matches every URL. The build writes a plain Alias for the
+# configured URL, which Apache takes literally, with the trailing slashes
+# Apache needs at the root.
+@XYMONWEBALIAS@
 <Directory "@INSTALLWWWDIR@/">
     Options Indexes FollowSymLinks Includes MultiViews
     Require all granted
