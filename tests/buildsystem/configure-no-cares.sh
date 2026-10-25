@@ -24,9 +24,9 @@ ROOT=$(find_root)
 TMP=$(mktempdir)
 SRC="$TMP/src"
 mkdir -p "$SRC"
-cp -p "$ROOT/configure" "$ROOT/configure.server" "$SRC/"
-cp -rp "$ROOT/build" "$SRC/build"
-[ -f "$ROOT/configure.client" ] && cp -p "$ROOT/configure.client" "$SRC/"
+cp "$ROOT/configure" "$ROOT/configure.server" "$SRC/"
+cp -R "$ROOT/build" "$SRC/build"
+[ -f "$ROOT/configure.client" ] && cp "$ROOT/configure.client" "$SRC/"
 
 # The probes before c-ares, made to succeed.
 printf 'FPING="/bin/true"\n' >"$SRC/build/fping.sh"

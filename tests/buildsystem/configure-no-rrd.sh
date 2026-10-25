@@ -39,12 +39,12 @@ mkdir -p "$SRC"
 # probe scripts and the small Makefile.test-* helpers they invoke).
 # Skip everything else -- we don't want to drag in the whole source
 # tree or any build artefacts.
-cp -p "$ROOT/configure" "$ROOT/configure.server" "$SRC/"
-cp -rp "$ROOT/build" "$SRC/build"
+cp "$ROOT/configure" "$ROOT/configure.server" "$SRC/"
+cp -R "$ROOT/build" "$SRC/build"
 
 # configure.client is referenced by configure (dispatcher) for the
 # --help path; copy it if present, but don't require it.
-[ -f "$ROOT/configure.client" ] && cp -p "$ROOT/configure.client" "$SRC/"
+[ -f "$ROOT/configure.client" ] && cp "$ROOT/configure.client" "$SRC/"
 
 cat > "$SRC/build/rrd.sh" <<'EOF'
 # Stub for tests/buildsystem/configure-no-rrd.sh -- force RRDOK=NO so

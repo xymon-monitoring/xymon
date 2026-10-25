@@ -84,6 +84,13 @@ report "bash4" '(^|[^[:alnum:]_])(mapfile|readarray)([^[:alnum:]_]|$)|declare +-
 report "gnu-only" 'sed +-i|grep +[^|]*--include|grep +-[a-zA-Z]*P|stat +-c|readlink +-f|date +-d |head +-c' \
 	"GNU-only or differently-spelled on BSD/macOS; use a portable form"
 
+# cp -p and cp -a fail on Solaris when the tree is on ZFS and the copy goes to
+# /tmp: tmpfs cannot hold ZFS's ACLs, and cp gives up on "preserving
+# permissions ... Operation not applicable". A plain copy keeps the mode bits
+# a test needs.
+report "cp-preserve" '(^|[^[:alnum:]_])cp +-[[:alnum:]]*[pa]' \
+	"cp -p/-a fails copying from ZFS to tmpfs (Solaris); a plain cp keeps the mode bits"
+
 # GNU-only regex escapes. The BSD greps take \b as a literal b, so a rule
 # written with it silently matches nothing there -- which is how this very
 # file shipped a mapfile rule that tested nothing on OpenBSD. Reported whatever
