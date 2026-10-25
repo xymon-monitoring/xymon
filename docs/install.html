@@ -168,10 +168,7 @@ xymonclient.cfg) before rebuilding.</p>
 
 <p>Xymon uses 9 shared memory segments, ranging in size from 32 KB to 512 KB (2464 KB
 total) in the default configuration; and 9 sets of 3 semaphores. Experience shows that
-some systems need tuning to provide the necessary IPC resources that Xymon uses.
-Specifically, when installing on Solaris you must increase the "shmseg" kernel parameter
-from the default 6 to at least 9. Since other programs on your system may also use shared
-memory, a higher value may be required.</p>
+some systems need tuning to provide the necessary IPC resources that Xymon uses.</p>
 <p>The total grows with the MAXMSG_* settings in xymonserver.cfg, which size the
 segments: MAXMSG_STATUS sizes three of them. When the system refuses one, xymond
 does not start, and logs "Could not get shm of size ..." followed by "Cannot setup
@@ -179,7 +176,7 @@ does not start, and logs "Could not get shm of size ..." followed by "Cannot set
 "kernel.shmall" (all of them) on Linux, the same names under "kern.sysv." on macOS,
 and "project.max-shm-memory" on Solaris 10 and later. A stock macOS allows 8
 segments per process, too few even for the default configuration, and 4 MB in all
-(see <a href="#commonmacoshomebrew">macOS using Homebrew</a> below).  See <a href="http://www.xymon.com/archive/2005/08/msg00183.html">http://www.xymon.com/archive/2005/08/msg00183.html</a> for more information about these issues.</p>
+(see <a href="#commonmacoshomebrew">macOS using Homebrew</a> above).  See <a href="http://www.xymon.com/archive/2005/08/msg00183.html">http://www.xymon.com/archive/2005/08/msg00183.html</a> for more information about these issues.</p>
 <p>What xymond needs, in KB: the largest segment is the largest MAXMSG_* setting,
 and the total is</p>
 <pre><tt>
