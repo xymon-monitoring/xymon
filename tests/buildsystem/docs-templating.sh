@@ -54,6 +54,24 @@ assert_contains 'ScriptAlias /mon-cgi/ "/cgi/"' "$(cat "$conf")" \
 assert_contains 'ScriptAlias /mon-seccgi/ "/secure-cgi/"' "$(cat "$conf")" \
 	"xymon-apacheconf.txt does not serve the administration CGIs at the configured URL"
 
+# Web pages at the root URL: configure turns the answer "/" into an empty
+# XYMONHOSTURL. The example must then say "Alias /", and after both
+# ScriptAlias lines -- Apache takes the first Alias that matches, so an
+# "Alias /" before them would swallow the CGI URLs.
+rm -f "$conf"
+"$XYMON_MAKE" -C "$work" xymon-apacheconf.txt \
+	INSTALLETCDIR=/etc/xymon INSTALLWWWDIR=/var/www/xymon \
+	CGIDIR=/cgi SECURECGIDIR=/secure-cgi \
+	XYMONHOSTURL= XYMONCGIURL=/mon-cgi SECUREXYMONCGIURL=/mon-seccgi \
+	>"$work/make.log" 2>&1 \
+	|| fail "docs templating recipe failed for the root URL:
+$(cat "$work/make.log")"
+web=$(grep -n '^Alias / "/var/www/xymon/"' "$conf" | cut -d: -f1)
+[ -n "$web" ] || fail "with the web pages at the root URL, xymon-apacheconf.txt has no 'Alias /'"
+for cgi in $(grep -n '^ScriptAlias ' "$conf" | cut -d: -f1); do
+	[ "$cgi" -lt "$web" ] || fail "xymon-apacheconf.txt puts 'Alias /' (line $web) before a ScriptAlias (line $cgi), which it would swallow"
+done
+
 # The top-level build runs these recipes through build/Makefile.rules'
 # docs-build, which passes the configured values on one by one. A value the
 # recipes use but docs-build does not pass is substituted as empty in a real

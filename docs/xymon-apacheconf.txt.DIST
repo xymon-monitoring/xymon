@@ -5,18 +5,6 @@
 # Apache configuration is also produced as xymon-apache.conf during
 # installation; either file can be used.
 
-# NB: The "Alias" line below must NOT be used if you have
-#     the Xymon webfiles as the root URL. In that case,
-#     you should instead set this:
-#
-#          DocumentRoot @INSTALLWWWDIR@
-
-Alias @XYMONHOSTURL@/ "@INSTALLWWWDIR@/"
-<Directory "@INSTALLWWWDIR@/">
-    Options Indexes FollowSymLinks Includes MultiViews
-    Require all granted
-</Directory>
-
 ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
 <Directory "@CGIDIR@">
     AllowOverride None
@@ -45,4 +33,13 @@ ScriptAlias @SECUREXYMONCGIURL@/ "@SECURECGIDIR@/"
     AuthType Basic
     AuthName "Xymon Administration"
     Require valid-user
+</Directory>
+
+# The web pages come after the CGI directories: Apache uses the first Alias
+# that matches, so with the web pages at the root URL ("/" to configure) an
+# Alias before them would take the CGI URLs too.
+Alias @XYMONHOSTURL@/ "@INSTALLWWWDIR@/"
+<Directory "@INSTALLWWWDIR@/">
+    Options Indexes FollowSymLinks Includes MultiViews
+    Require all granted
 </Directory>
