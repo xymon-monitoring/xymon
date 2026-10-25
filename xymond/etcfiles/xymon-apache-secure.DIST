@@ -2,20 +2,7 @@
 #
 # Add this to your Apache configuration, it makes
 # the Xymon webpages and cgi-scripts available in the
-# "@XYMONHOSTURL@" and "@XYMONCGIURL@" URLs.
-
-
-# NB: The "Alias" line below must NOT be used if you have
-#     the Xymon webfiles as the root URL. In that case,
-#     you should instead set this:
-#
-#          DocumentRoot @INSTALLWWWDIR@
-
-Alias @XYMONHOSTURL@  "@INSTALLWWWDIR@"
-<Directory "@INSTALLWWWDIR@">
-    Options Indexes FollowSymLinks Includes MultiViews
-    Require all granted
-</Directory>
+# "@XYMONHOSTURL@/" and "@XYMONCGIURL@/" URLs.
 
 ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
 <Directory "@CGIDIR@">
@@ -68,6 +55,16 @@ ScriptAlias @SECUREXYMONCGIURL@/ "@SECURECGIDIR@/"
       # are members of the "admins" group in xymongroups.
       # Require group admins
     </RequireAll>
+</Directory>
+
+# The web pages come after the CGI directories: Apache uses the first alias
+# that matches, and with the web pages at the root URL ("/" to configure)
+# this one matches every URL. It also takes the URL without its trailing
+# slash, as the plain Alias it replaces did.
+AliasMatch "^@XYMONHOSTURL@(/.*)?$" "@INSTALLWWWDIR@$1"
+<Directory "@INSTALLWWWDIR@">
+    Options Indexes FollowSymLinks Includes MultiViews
+    Require all granted
 </Directory>
 
 # Rewrite-rules for migrating from the URL's used in Hobbit
