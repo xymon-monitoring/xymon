@@ -45,6 +45,18 @@ dnf install gcc make fping c-ares-devel openldap-devel \
     rrdtool</pre>openldap-client also comes in a plain flavor; the tests build with <i>gssapi</i>.</td></tr>
 <tr><td>NetBSD</td><td><pre>pkgin install gmake fping libcares openldap-client pcre2 \
     rrdtool</pre>Without X11 installed, see <a href="#nographs">no graphs</a>.</td></tr>
+<tr><td>Oracle Solaris 11.4</td><td><pre>pkg install developer/gcc/gcc-c-15 developer/build/gnu-make \
+    library/pcre2 library/libcares system/network/ldap/openldap \
+    diagnostic/fping
+pkgutil -y -i rrdtool_dev
+crle -64 -u -l /opt/csw/lib/amd64</pre>RRDtool comes from <a href="https://www.opencsw.org/">OpenCSW</a>
+(<tt>pkgutil</tt>): Oracle dropped it in 11.4.30. Xymon's programs carry no library
+path on Solaris, so <tt>crle</tt> adds OpenCSW's 64-bit libraries to the runtime
+linker's. configure does not find PCRE2's header or the 64-bit libraries itself; in
+step 3 run<pre>CC=gcc MAKE=gmake ./configure --server --pcreinclude /usr/include/pcre \
+    --pcrelib /usr/lib/amd64 --careslib /usr/lib/amd64 \
+    --ldaplib /usr/lib/amd64 --rrdinclude /opt/csw/include \
+    --rrdlib /opt/csw/lib/amd64</pre>Tested on x86, not on SPARC.</td></tr>
 <tr><td>macOS, MacPorts</td><td><pre>port install gmake fping pcre2 rrdtool c-ares openssl openldap</pre></td></tr>
 <tr><td>macOS, Homebrew</td><td><pre>brew install pcre2 rrdtool fping openssl@3 openldap</pre>Or install Xymon itself from the tap: see <a href="#packages">packages</a>.</td></tr>
 </table>
@@ -59,7 +71,7 @@ configure offers that home directory as the place to install Xymon.</p>
 make
 make install
 </tt></pre>
-<p>On the BSDs and macOS, use GNU make: <tt>MAKE=gmake ./configure --server</tt>,
+<p>On the BSDs, macOS and Solaris, use GNU make: <tt>MAKE=gmake ./configure --server</tt>,
 <tt>gmake</tt>, <tt>gmake install</tt>.</p>
 <p>The steps below use configure's default answers: the "xymon" user,
 <tt>~xymon/server</tt> for the installation and <tt>/xymon/</tt> for the web pages.
