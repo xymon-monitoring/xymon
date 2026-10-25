@@ -61,18 +61,20 @@ make install
 </tt></pre>
 <p>On the BSDs and macOS, use GNU make: <tt>MAKE=gmake ./configure --server</tt>,
 <tt>gmake</tt>, <tt>gmake install</tt>.</p>
+<p>The steps below use configure's default answers: the "xymon" user,
+<tt>~xymon/server</tt> for the installation and <tt>/xymon/</tt> for the web pages.
+If you gave other answers, use yours.</p>
 
 <h2>4. Configure the web server</h2>
 <p>Add <em>~xymon/server/etc/xymon-apache.conf</em> to your Apache configuration
 and restart Apache. <a name="htpasswd"></a>If configure put the administration pages in a directory of their
 own (it asks), protect them with a password:</p>
-<pre><tt>htpasswd -c @INSTALLETCDIR@/xymonpasswd admin
+<pre><tt>htpasswd -c ~xymon/server/etc/xymonpasswd admin
 </tt></pre>
 
 <h2>5. Start Xymon</h2>
 <pre><tt>su - xymon -c "~xymon/server/xymon.sh start"
 </tt></pre>
-<p>(<tt>~xymon/server</tt> with configure's default answers.)</p>
 
 <h2>6. Check</h2>
 <p>After a couple of minutes, open <tt>http://your.server/xymon/</tt>: the Xymon server
@@ -262,8 +264,8 @@ the Xymon mailing list.</p>
 
 
 <h3>xymon.sh</h3>
-<p>Xymon runs as the "xymon" user, and <tt>xymon.sh</tt> refuses to start it as
-any other. Log in as that user and run<br>
+<p>Xymon runs as the user configure was given ("xymon" by default), and
+<tt>xymon.sh</tt> refuses to start it as any other. Log in as that user and run<br>
 <tt><i>XYMONHOME</i>/xymon.sh start</tt><br>
 where <i>XYMONHOME</i> is the "server" directory of the installation - with the
 default answers to configure, <tt>~xymon/server</tt>. The same script also takes

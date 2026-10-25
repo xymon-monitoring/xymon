@@ -1,4 +1,4 @@
-all: xymon-tips.html xymon-apacheconf.txt install.html
+all: xymon-tips.html xymon-apacheconf.txt
 
 xymon-tips.html: xymon-tips.html.DIST
 	cat $< | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' >$@
@@ -8,16 +8,13 @@ xymon-apacheconf.txt: xymon-apacheconf.txt.DIST
 	  | sed -e 's!@INSTALLWWWDIR@!$(INSTALLWWWDIR)!g' \
 	  | sed -e 's!@CGIDIR@!$(CGIDIR)!g' \
 	  | sed -e 's!@SECURECGIDIR@!$(SECURECGIDIR)!g' \
-	  | sed -e 's!@INSTALLETCDIR@!$(INSTALLETCDIR)!g' >$@
-
-install.html: install.html.DIST
-	cat $< \
 	  | sed -e 's!@INSTALLETCDIR@!$(INSTALLETCDIR)!g' \
-	  | sed -e 's!@XYMONTOPDIR@!$(XYMONTOPDIR)!g' \
-	  | sed -e 's!@XYMONUSER@!$(XYMONUSER)!g' >$@
+	  | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' \
+	  | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' \
+	  | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' >$@
 
 clean:
-	rm -f xymon-tips.html xymon-apacheconf.txt install.html *~
+	rm -f xymon-tips.html xymon-apacheconf.txt *~
 
 install:
 	mkdir -p $(INSTALLROOT)$(INSTALLWWWDIR)/help/manpages

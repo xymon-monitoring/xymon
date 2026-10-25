@@ -4,14 +4,21 @@
 # tests/buildsystem/docs-templating.sh
 #
 # Behavioural guard for the doc templating added by
-# xymon-monitoring/xymon#90: install.html and xymon-apacheconf.txt are now
-# generated from *.DIST templates by docs/Makefile, substituting @VAR@
-# placeholders (install dirs, CGI dirs, ...) via sed.
+# xymon-monitoring/xymon#90, as it stands now:
 #
-# We copy the Makefile and the two .DIST templates into a temp dir and run the
-# real recipes with known values, then assert the outputs carry the substituted
-# values and -- the point of the fix -- carry no leftover @PLACEHOLDER@. Working
-# in a copy keeps the repo tree clean. Skips if make or the templates are absent.
+#   - xymon-apacheconf.txt is generated from its .DIST template by
+#     docs/Makefile, with the install paths and the three URLs configure asks
+#     for (web pages, CGI, administration CGI) substituted, and no
+#     @PLACEHOLDER@ left over. The URLs used to be written out as /xymon/,
+#     /xymon-cgi/ and /xymon-seccgi/, so the example did not match an
+#     installation with other answers.
+#   - install.html is a plain file, not a template: it is read before
+#     configure runs, on GitHub or in the tarball, where a placeholder would
+#     show as @XYMONUSER@. So it carries no placeholder, and "make clean" must
+#     not delete it.
+#
+# We copy the Makefile, the template and the guide into a temp dir and run the
+# real recipes with known values. Working in a copy keeps the repo tree clean.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -21,32 +28,49 @@ ROOT=$(find_root)
 DOCS="$ROOT/docs"
 
 require_gnu_make
-for f in Makefile install.html.DIST xymon-apacheconf.txt.DIST; do
-	[ -f "$DOCS/$f" ] || skip "docs/$f absent -- predates #90"
+for f in Makefile install.html xymon-apacheconf.txt.DIST; do
+	[ -f "$DOCS/$f" ] || skip "docs/$f absent"
 done
 
 work=$(mktempdir)
-cp "$DOCS/Makefile" "$DOCS/install.html.DIST" \
-   "$DOCS/xymon-apacheconf.txt.DIST" "$work/"
+cp "$DOCS/Makefile" "$DOCS/install.html" "$DOCS/xymon-apacheconf.txt.DIST" "$work/"
 
-"$XYMON_MAKE" -C "$work" install.html xymon-apacheconf.txt \
-	INSTALLETCDIR=/etc/xymon XYMONTOPDIR=/opt/xymon XYMONUSER=xymonuser \
-	INSTALLWWWDIR=/var/www/xymon CGIDIR=/cgi SECURECGIDIR=/secure-cgi \
+"$XYMON_MAKE" -C "$work" xymon-apacheconf.txt \
+	INSTALLETCDIR=/etc/xymon INSTALLWWWDIR=/var/www/xymon \
+	CGIDIR=/cgi SECURECGIDIR=/secure-cgi \
+	XYMONHOSTURL=/mon XYMONCGIURL=/mon-cgi SECUREXYMONCGIURL=/mon-seccgi \
 	>"$work/make.log" 2>&1 \
 	|| fail "docs templating recipe failed:
 $(cat "$work/make.log")"
 
-for out in install.html xymon-apacheconf.txt; do
-	assert_file_exists "$work/$out" "docs templating did not generate $out (#90)"
-	# the substituted values landed
-	# (no leftover @PLACEHOLDER@ tokens -- that was the symptom #90 fixed)
-	leftover=$(grep -oE '@[A-Z_]+@' "$work/$out" || true)
-	[ -z "$leftover" ] || fail "$out still has unsubstituted placeholders (#90): $leftover"
+conf="$work/xymon-apacheconf.txt"
+assert_file_exists "$conf" "docs templating did not generate xymon-apacheconf.txt (#90)"
+leftover=$(grep -oE '@[A-Z_]+@' "$conf" || true)
+[ -z "$leftover" ] || fail "xymon-apacheconf.txt still has unsubstituted placeholders (#90): $leftover"
+assert_contains 'Alias /mon/ "/var/www/xymon/"' "$(cat "$conf")" \
+	"xymon-apacheconf.txt does not serve the web pages at the configured URL"
+assert_contains 'ScriptAlias /mon-cgi/ "/cgi/"' "$(cat "$conf")" \
+	"xymon-apacheconf.txt does not serve the CGIs at the configured URL"
+assert_contains 'ScriptAlias /mon-seccgi/ "/secure-cgi/"' "$(cat "$conf")" \
+	"xymon-apacheconf.txt does not serve the administration CGIs at the configured URL"
+
+# The top-level build runs these recipes through build/Makefile.rules'
+# docs-build, which passes the configured values on one by one. A value the
+# recipes use but docs-build does not pass is substituted as empty in a real
+# build -- the copy above, which sets every value itself, would not notice.
+rule=$(grep -A1 '^docs-build:' "$ROOT/build/Makefile.rules" | tail -n 1)
+for var in $(grep -oE '!\$\([A-Z_]+\)!' "$DOCS/Makefile" | tr -d '!$()' | sort -u); do
+	case "$rule" in
+		*" $var=\"\$($var)\""*|*"	$var=\"\$($var)\""*) ;;
+		*) fail "docs/Makefile substitutes \$($var), but build/Makefile.rules' docs-build does not pass it" ;;
+	esac
 done
 
-assert_contains "/opt/xymon" "$(cat "$work/install.html")" \
-	"install.html did not substitute XYMONTOPDIR (#90)"
-assert_contains "/var/www/xymon" "$(cat "$work/xymon-apacheconf.txt")" \
-	"xymon-apacheconf.txt did not substitute INSTALLWWWDIR (#90)"
+leftover=$(grep -oE '@[A-Z_]+@' "$DOCS/install.html" || true)
+[ -z "$leftover" ] || fail "install.html is read before configure runs, but carries placeholders: $leftover"
 
-pass "docs templating substitutes @VARs@ with no leftover placeholders"
+"$XYMON_MAKE" -C "$work" clean >"$work/clean.log" 2>&1 \
+	|| fail "make clean failed: $(cat "$work/clean.log")"
+assert_file_exists "$work/install.html" "make clean deleted install.html, which is not generated"
+
+pass "xymon-apacheconf.txt carries the configured paths and URLs, and install.html is a plain file make clean keeps"

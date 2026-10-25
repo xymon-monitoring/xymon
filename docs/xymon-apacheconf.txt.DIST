@@ -1,7 +1,7 @@
 # This file is for Apache 2.4 and later.
 #
 # It is generated at configure/build time from xymon-apacheconf.txt.DIST
-# with the install paths substituted in. The authoritative copy of this
+# with the install paths and URLs substituted in. The authoritative copy of this
 # Apache configuration is also produced as xymon-apache.conf during
 # installation; either file can be used.
 
@@ -11,20 +11,20 @@
 #
 #          DocumentRoot @INSTALLWWWDIR@
 
-Alias /xymon/ "@INSTALLWWWDIR@/"
+Alias @XYMONHOSTURL@/ "@INSTALLWWWDIR@/"
 <Directory "@INSTALLWWWDIR@/">
     Options Indexes FollowSymLinks Includes MultiViews
     Require all granted
 </Directory>
 
-ScriptAlias /xymon-cgi/ "@CGIDIR@/"
+ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
 <Directory "@CGIDIR@">
     AllowOverride None
     Options ExecCGI Includes
     Require all granted
 </Directory>
 
-ScriptAlias /xymon-seccgi/ "@SECURECGIDIR@/"
+ScriptAlias @SECUREXYMONCGIURL@/ "@SECURECGIDIR@/"
 <Directory "@SECURECGIDIR@">
     AllowOverride None
     Options ExecCGI Includes
