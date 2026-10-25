@@ -47,7 +47,7 @@ conf="$work/xymon-apacheconf.txt"
 assert_file_exists "$conf" "docs templating did not generate xymon-apacheconf.txt (#90)"
 leftover=$(grep -oE '@[A-Z_]+@' "$conf" || true)
 [ -z "$leftover" ] || fail "xymon-apacheconf.txt still has unsubstituted placeholders (#90): $leftover"
-assert_contains 'Alias /mon/ "/var/www/xymon/"' "$(cat "$conf")" \
+assert_contains 'AliasMatch "^/mon(/.*)?$" "/var/www/xymon$1"' "$(cat "$conf")" \
 	"xymon-apacheconf.txt does not serve the web pages at the configured URL"
 assert_contains 'ScriptAlias /mon-cgi/ "/cgi/"' "$(cat "$conf")" \
 	"xymon-apacheconf.txt does not serve the CGIs at the configured URL"
@@ -55,9 +55,9 @@ assert_contains 'ScriptAlias /mon-seccgi/ "/secure-cgi/"' "$(cat "$conf")" \
 	"xymon-apacheconf.txt does not serve the administration CGIs at the configured URL"
 
 # Web pages at the root URL: configure turns the answer "/" into an empty
-# XYMONHOSTURL. The example must then say "Alias /", and after both
-# ScriptAlias lines -- Apache takes the first Alias that matches, so an
-# "Alias /" before them would swallow the CGI URLs.
+# XYMONHOSTURL. The example's AliasMatch then matches every URL, so it must
+# come after both ScriptAlias lines -- Apache takes the first alias that
+# matches, and placed before them it would swallow the CGI URLs.
 rm -f "$conf"
 "$XYMON_MAKE" -C "$work" xymon-apacheconf.txt \
 	INSTALLETCDIR=/etc/xymon INSTALLWWWDIR=/var/www/xymon \
@@ -66,10 +66,11 @@ rm -f "$conf"
 	>"$work/make.log" 2>&1 \
 	|| fail "docs templating recipe failed for the root URL:
 $(cat "$work/make.log")"
-web=$(grep -n '^Alias / "/var/www/xymon/"' "$conf" | cut -d: -f1)
-[ -n "$web" ] || fail "with the web pages at the root URL, xymon-apacheconf.txt has no 'Alias /'"
+web=$(grep -n '^AliasMatch "^(/\.\*)?\$" "/var/www/xymon\$1"$' "$conf" || true)
+web=${web%%:*}
+[ -n "$web" ] || fail "with the web pages at the root URL, xymon-apacheconf.txt does not map them by AliasMatch \"^(/.*)?\$\""
 for cgi in $(grep -n '^ScriptAlias ' "$conf" | cut -d: -f1); do
-	[ "$cgi" -lt "$web" ] || fail "xymon-apacheconf.txt puts 'Alias /' (line $web) before a ScriptAlias (line $cgi), which it would swallow"
+	[ "$cgi" -lt "$web" ] || fail "xymon-apacheconf.txt puts the web pages' AliasMatch (line $web) before a ScriptAlias (line $cgi), which at the root it would swallow"
 done
 
 # The top-level build runs these recipes through build/Makefile.rules'
