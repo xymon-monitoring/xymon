@@ -427,6 +427,9 @@ unsigned char *get_xymond_message(enum msgchannels_t chnid, char *id, int *seq, 
 	}
 
 startagain:
+	/* A message dropped below may have been truncated; the next one is not, so it must keep its place in the buffer. */
+	truncated = 0;
+
 	if (ioerror) {
 		errprintf("get_xymond_message: Returning NULL due to previous i/o error\n");
 		return NULL;
