@@ -139,7 +139,10 @@ for how to upgrade a HEAD install. The SYSV IPC requirements described in the
 prerequisites apply on macOS too, where the stock limits are too low for xymond;
 the xymon-server formula's caveats, shown by <tt>brew info xymon-server</tt>, give
 the settings to raise. They allow 64 segments, 64 MB per segment and 128 MB in all,
-enough for a MAXMSG_STATUS up to about 40 MB.</p>
+enough for a MAXMSG_STATUS up to about 40 MB. A second macOS kernel setting hides
+the TCP counters the client reports, which leaves the TCP half of the netstat graph
+empty: see <a href="#macostcpstats">the netstat graph has no TCP data on macOS</a>
+below.</p>
 
 <p>To build from source instead, install the dependencies with Homebrew:</p>
 <pre><tt>
@@ -204,6 +207,24 @@ than the 4 MB a stock macOS allows.</p>
 are usually far above this, so the limits mostly need raising on macOS and on older
 systems.</p>
 
+
+<h4><a name="macostcpstats">The netstat graph has no TCP data on macOS</a></h4>
+<p>The netstat graph is drawn from the client's "netstat -s" output. macOS ships the
+kernel setting "net.inet.tcp.disable_access_to_stats" at 1, which the kernel describes
+as "Disable access to tcpstat": netstat then reports every TCP counter as 0, to every
+user and every process, while the UDP counters are real. The client sends those zeros,
+and xymond_rrd stores the graph's TCP data sources (tcpActiveOpens, tcpCurrEstab,
+tcpOutDataBytes and the rest) as unknown, so only the UDP lines of the graph are
+drawn. Seen on macOS 26 and 27; Apple documents nothing beyond that description.</p>
+<p>The setting can be changed by root, and takes effect at once:</p>
+<pre><tt>
+sudo sysctl net.inet.tcp.disable_access_to_stats=0
+</tt></pre>
+<p>It returns to 1 at reboot, so to keep it add the line
+<tt>net.inet.tcp.disable_access_to_stats=0</tt> to <tt>/etc/sysctl.conf</tt>, the same file
+that holds the shared-memory limits above. The setting is unrelated to the shared-memory
+limits, and to the socket list the ports test reads, which the client collects by other
+means when netstat does not provide it.</p>
 
 <h4>The build fails</h4>
 <p>Note: Although many systems have these libraries pre-installed, they often
