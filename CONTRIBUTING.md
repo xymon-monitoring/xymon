@@ -360,6 +360,16 @@ says what was not checked, and why, and it counts an AI tool's result only once 
 The form below is proposed, not required. A table with three columns works well: what
 was checked, how, and the result.
 
+- **Before and after.** Where the change can be seen on a running Xymon, the table
+  starts with two rows a reviewer can repeat on their own build: **before** (`main`),
+  what to set or run and what it shows, in the browser where it shows there; and
+  **after** (with this pull request), "the same" and what it shows now. They come in
+  addition to the rows below; a new way of doing it that the pull request adds beside
+  the old one, such as a renamed option, is checked in its own block's row, and a step
+  the old way now needs goes in the after row. Where nothing can be seen there, one
+  line says so instead. An operating system is named only for the machine where the
+  effect is specific to it, and a browser only when the effect shows in that browser
+  alone.
 - **Rows.** Every block of changed lines has a row, a line added inside a "moved
   unchanged" block included. One row may cover several blocks that make the same
   change, citing each.
