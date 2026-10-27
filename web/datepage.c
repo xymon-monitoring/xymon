@@ -136,7 +136,8 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		endurl = (char *)malloc(strlen(urlprefix) + strlen(pagepath) + 1024);
+		SBUF_MALLOC(endurl, strlen(urlprefix) + strlen(pagepath) + 1024);
+		*endurl = '\0';
 
 		switch (frmtype) {
 		  case FRM_DAY:

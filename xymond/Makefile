@@ -146,7 +146,7 @@ cfgfiles:
 	cat etcfiles/alerts.cfg.DIST | sed -e 's!@XYMONHOSTNAME@!$(XYMONHOSTNAME)!g' | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >etcfiles/alerts.cfg
 	for f in analysis combo graphs client-local rrddefinitions; do sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' etcfiles/$$f.cfg.DIST >etcfiles/$$f.cfg; done
 	cat etcfiles/tasks.cfg.DIST | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONTOPDIR@!$(XYMONTOPDIR)!g' >etcfiles/tasks.cfg
-	cat etcfiles/cgioptions.cfg.DIST | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >etcfiles/cgioptions.cfg
+	cat etcfiles/cgioptions.cfg.DIST | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' >etcfiles/cgioptions.cfg
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

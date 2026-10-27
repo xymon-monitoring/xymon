@@ -34,7 +34,7 @@ CGI_HOSTGRAPHS_OPTS="--env=$XYMONENV"
 CGI_CONFREPORT_OPTS="--env=$XYMONENV"
 
 # datepage.cgi options
-CGI_DATEPAGE_OPTS="--env=$XYMONENV --url=/xymon/periodic"
+CGI_DATEPAGE_OPTS="--env=$XYMONENV --url=@XYMONHOSTURL@/periodic"
 # report.cgi options
 CGI_REP_OPTS="--env=$XYMONENV"
 # reportlog.cgi options
