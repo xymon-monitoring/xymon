@@ -336,7 +336,8 @@ Section: User Commands (1)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="
   <dt id="sslalarm"><a class="permalink" href="#sslalarm"><b>--sslalarm</b>=<i>N</i></a></dt>
   <dd>Determines the number of days before an SSL certificate expires, where
       xymonnet will generate a warning or alarm status for the SSL certificate
-      column.
+      column. Defaults: 14 days for the warning, 7 for the alarm. A certificate
+      renewed by hand may need more notice, e.g. --sslwarn=30 --sslalarm=10.
     <p class="Pp"></p>
   </dd>
   <dt id="sslbits"><a class="permalink" href="#sslbits"><b>--sslbits</b>=<i>N</i></a></dt>

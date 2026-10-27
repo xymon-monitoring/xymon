@@ -148,6 +148,12 @@ A host that relied on nosni wants nosslcert on that line instead, plus a
 separate entry for the default virtual host if its certificate should still be
 watched; hosts.cfg(5) has the details.
 
+xymonnet now warns 14 days before a certificate expires and alarms 7 days
+before, instead of 30 and 10, so certificates renewed automatically close to
+expiry no longer show yellow. For more notice, e.g. for certificates renewed by
+hand, keep the old values with --sslwarn=30 --sslalarm=10 on the xymonnet
+command in tasks.cfg, or ssldays=30:10 on a host in hosts.cfg.
+
 Build and API
 -------------
 
