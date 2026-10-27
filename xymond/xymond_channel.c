@@ -353,11 +353,24 @@ int addmessage(char *inbuf)
 	}
 
 	if (bcastmsg) {
+		/*
+		 * Every peer frees the message it holds once it is sent or
+		 * dropped, so each one gets a copy of its own. Sharing one buffer
+		 * freed it twice as soon as two network peers held it.
+		 */
 		for (phandle = xtreeFirst(peers); (phandle != xtreeEnd(peers)); phandle = xtreeNext(peers, phandle)) {
-			peer = (xymon_peer_t *)xtreeData(peers, phandle);
+			char *copy = (char *)malloc(inlen + 1);
 
-			addmessage_onepeer(peer, inbuf, inlen);
+			peer = (xymon_peer_t *)xtreeData(peers, phandle);
+			if (!copy) {
+				errprintf("Out of memory copying a broadcast message for peer %s, not sent to it\n",
+					  peer->peername);
+				continue;
+			}
+			memcpy(copy, inbuf, inlen + 1);
+			addmessage_onepeer(peer, copy, inlen);
 		}
+		xfree(inbuf);
 	}
 	else {
 		if (phandle == xtreeEnd(peers)) {
