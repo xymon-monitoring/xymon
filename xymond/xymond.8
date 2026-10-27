@@ -70,10 +70,68 @@ client, looking for a hostname, classname or OS match (in that order).
 This option causes xymond to merge all matching entries together into
 one and return all of it to the client.
 
-.IP "\fB\-\-listen\fR=\fIIP\fR[:\fIPORT\fR]"
+.IP "\fB\-\-listen\fR=\fIIP\fR[:\fIPORT\fR][,\fIIP\fR[:\fIPORT\fR]...]"
 Specifies the IP-address and port where xymond will listen for incoming
 connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
 addresses available on the host) and port 1984.
+.br
+More than one address may be given, separated by commas, and each is bound
+separately \(em so a server can answer on a chosen interface and on the
+loopback at the same time. An entry with no port uses the default port.
+.br
+An IPv6 address is written in brackets, "[2001:db8::10]:1984" or
+"[::]:1984" for every IPv6 address of the host; without a port, the
+brackets may be left out. An IPv6 listener takes IPv6 connections only,
+so "0.0.0.0:1984,[::]:1984" listens on both families on one port. xymond
+listens on IPv6 only when an IPv6 address is named here.
+.br
+Unless \fB\-\-no\-loopback\fR is given, xymond also listens on 127.0.0.1, on
+the port given by XYMONDPORT (1984 by default), unless the addresses named
+already include 127.0.0.1 or 0.0.0.0. Another 127.x address, such as the
+127.0.1.1 Debian gives the host name, does not count: local clients connect to
+127.0.0.1. XYMONDPORT is read from xymonserver.cfg; keep the Xymon client on
+the server (xymonclient.cfg) on the same port. This is so the client running on the Xymon server itself
+keeps reporting when a physical interface goes away. It is best effort: if that
+extra socket cannot be bound, xymond says so and carries on with the addresses
+it was asked for.
+
+.IP "\fB\-\-tls\-listen\fR=\fIIP\fR[:\fIPORT\fR][,\fIIP\fR[:\fIPORT\fR]...]"
+Also take connections over TLS, on the addresses given, written as for
+\fB\-\-listen\fR; an entry with no port uses XYMONDTLSPORT (1985 by
+default). These are what a client sends to with a "xymons://" recipient
+(see xymon(1)). The conversation is the one of the plaintext port, with
+TLS from the first byte: a message ends with the client's TLS close_notify,
+and one that ends otherwise is dropped, with the reason logged. A TLS
+connection is subject to the same sender lists as any other, and to
+\fB\-\-timeout\fR, the handshake included.
+.br
+The certificate and its private key are the files XYMOND_TLS_CERT and
+XYMOND_TLS_KEY name (see xymonserver.cfg(5)). When XYMOND_TLS_CA is set,
+xymond also asks each TLS client for a certificate, which must then chain
+to that CA, or the connection is refused; a client that has none is still
+served, and checked by its address, unless XYMOND_TLS_REQUIRE_CERT is TRUE. What a client certificate allows is
+under \fB\-\-status\-senders\fR. xymond does not start when
+they cannot be loaded, or when others than the key's owner and group may
+read or write it; SIGHUP loads
+them again (see SIGNALS). A certificate that has expired or is not valid
+yet is served all the same, with a warning in the log, so that the
+plaintext port is not stopped over it; \fB\-\-check\-tls\fR fails it. Without this option xymond takes no TLS
+connections, and a xymond built without OpenSSL refuses it.
+
+.IP "\fB\-\-check\-tls\fR"
+Load the TLS certificate, key and CA as \fB\-\-tls\-listen\fR would, say
+whether they would be served, and exit: 0 when they would, 1 when not,
+with the reason. It also fails a certificate that has expired or is not
+valid yet, which xymond serves with a warning but no client that
+verifies it accepts. On success it
+says how many days the certificate has left, and whether client
+certificates are asked for or required. It binds and starts nothing, so it
+can be run beside a running xymond, as the user xymond runs as, before a
+restart or after renewing a certificate.
+
+.IP "\fB\-\-no\-loopback\fR"
+Do not add the automatic 127.0.0.1 listener described under \fB\-\-listen\fR.
+Use this when xymond must answer on the addresses named and nowhere else.
 
 .IP "\fB\-\-lqueue\fR=\fINUMBER\fR"
 Specifies the listen-queue for incoming connections. You don't need to tune
@@ -167,6 +225,15 @@ host that the updates pertains to (this is to allow Xymon clients to send in the
 own status updates, without having to list all clients here). So typically
 you will need to list your servers running network tests here.
 
+Over TLS, with XYMOND_TLS_CA set (see \fB\-\-tls\-listen\fR), a client
+whose certificate verifies and names a host in its subjectAltName counts
+as sending from that host's address, wherever xymond accepts a host's own
+address: for its status, and for the other messages a host may send about
+itself, an "enable" or "disable" of its own tests under \fB\-\-maint\-senders\fR
+included. The name is the host's name in hosts.cfg, compared without
+regard to case and without wildcards. Such a certificate does not let
+its holder send for any other host.
+
 The format of this option is a list of IP-addresses, optionally with a
 network mask in the form of the number of bits. E.g. if you want to
 accept status-updates from the host 172.16.10.2, you would use
@@ -178,6 +245,13 @@ from all of the hosts on the 10.0.2.* network (a 24-bit IP network), you
 would use
 .br
     \-\-status\-senders=172.16.10.2,10.0.2.0/24
+.br
+Entries may be IPv4 or IPv6 addresses, an IPv6 network with its prefix
+length as well: "127.0.0.1,::1,2001:db8::/32". A sender is matched
+against the entries of its own family, so one connecting over IPv6 is not
+allowed by IPv4 entries. The same holds for \fB\-\-maint\-senders\fR,
+\fB\-\-www\-senders\fR and \fB\-\-admin\-senders\fR. An entry that
+is not an address is ignored, with an error.
 
 .IP "\fB\-\-maint\-senders\fR=\fIIP\fR[/\fIMASK\fR][,\fIIP\fR/\fIMASK\fR]"
 Controls which hosts may send maintenance commands to xymond. Maintenance
@@ -325,7 +399,10 @@ in the Xymon source-tree, see the "xymond/new\-daemon.txt" file.
 
 .SH SIGNALS
 .IP "\fBSIGHUP\fR"
-Re-read the hosts.cfg configuration file.
+Re-read the hosts.cfg configuration file. With \fB\-\-tls\-listen\fR,
+also load the TLS certificate, key and CA again, so a renewed certificate is
+served from the next connection on; if they do not load, xymond logs why
+and keeps the ones it had.
 
 .IP "\fBSIGUSR1\fR"
 Force an immediate dump of the checkpoint file.
