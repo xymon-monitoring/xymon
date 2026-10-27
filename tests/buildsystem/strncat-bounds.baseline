@@ -1,13 +1,10 @@
-1 lib/acklog.c
 7 lib/availability.c
-3 lib/color.c
+2 lib/color.c
 3 lib/environ.c
 1 lib/errormsg.c
-5 lib/headfoot.c
 3 lib/htmllog.c
 3 lib/loadhosts_file.c
 1 lib/memory.c
-1 lib/netservices.c
 2 lib/timefunc.c
 12 lib/timing.c
 5 lib/xymonrrd.c
@@ -15,4 +12,4 @@
 1 web/history.c
 2 web/svcstatus-info.c
 1 web/svcstatus-trends.c
-36 xymonnet/xymonnet.c
+2 xymonnet/xymonnet.c
