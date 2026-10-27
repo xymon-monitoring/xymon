@@ -164,6 +164,14 @@ The RRDtool argv ABI is detected from the header signature rather than the
 version, so RRDtool 1.9 and later, and backports to 1.8 such as Oracle
 Linux 10's, both work with no configuration.
 
+Pidfiles and xymond_rrd's cache-control sockets now go in XYMONRUNDIR, set at
+configure time; by default it is the log directory, where the pidfiles already
+were. The rrdctl.* sockets therefore move from XYMONTMP to the log directory:
+the web server's user must be able to open that directory, or showgraph.cgi
+cannot ask xymond_rrd to flush its cache, and graphs lag behind the data.
+xymond_rrd refuses to start when XYMONRUNDIR is too long for a socket path, so
+keep it short.
+
 XMH_MULTIHOMED is now XMH_FLAG_MULTIHOMED, the name xymon-xmh(5) has always
 documented. Scripts, web templates and xymondboard or hostinfo field selectors
 using the old name must be updated.
