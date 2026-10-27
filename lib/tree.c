@@ -58,6 +58,14 @@ void *xtreeNew(int(*xtreeCompare)(const char *a, const char *b))
 	return newtree;
 }
 
+static int xtree_i_matchroot(const void *pa, const void *pb)
+{
+	/* Always "found": makes tdelete remove whatever node it looks at
+	 * first (the root) without ever dereferencing the record keys -
+	 * callers may already have freed them before destroying the tree. */
+	return 0;
+}
+
 void xtreeDestroy(void *treehandle)
 {
 	xtree_t *tree = treehandle;
@@ -69,7 +77,7 @@ void xtreeDestroy(void *treehandle)
 	 * Keys and userdata belong to the caller, as always. */
 	while (tree->root) {
 		treerec_t *rec = *(treerec_t **)tree->root;
-		tdelete(rec, &tree->root, xtree_i_compare);
+		tdelete(rec, &tree->root, xtree_i_matchroot);
 		free(rec);
 	}
 	free(tree);
