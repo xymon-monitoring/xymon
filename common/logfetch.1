@@ -34,7 +34,10 @@ automatically retrieved from the server during client submission.
 Logfetch can be requested to execute arbitrary commands to generate
 a list of log files to examine dynamically, but this can present a
 security risk in some environments. Set this option to prevent
-logfetch from executing requested commands
+logfetch from executing requested commands. The shipped
+.I xymonclient.cfg(5)
+sets it, in LOGFETCHOPTS; an installation that existed before keeps its
+own setting.
 
 
 .SH SECURITY

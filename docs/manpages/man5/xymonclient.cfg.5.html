@@ -251,6 +251,17 @@ Section: File Formats (5)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#
       $XYMONHOME/bin/xymon.
     <p class="Pp"></p>
   </dd>
+  <dt id="LOGFETCHOPTS"><a class="permalink" href="#LOGFETCHOPTS"><b>LOGFETCHOPTS</b></a></dt>
+  <dd>Options passed to <i><a href="../man1/logfetch.1.html">logfetch</a>(1)</i> by the client. Default:
+      &quot;--noexec&quot;, so logfetch does not run the commands in backticks
+      that a &quot;log:&quot;, &quot;file:&quot; or &quot;dir:&quot; entry of
+      the server's <i><a href="../man5/client-local.cfg.5.html">client-local.cfg</a>(5)</i> may give to list the files to
+      watch: such commands would run on this client, as the client's user, on
+      the word of whoever can change that file. Set it to &quot;&quot; on a
+      client that needs them; a glob in angle brackets works either way. An
+      installation that existed before keeps its own setting.
+    <p class="Pp"></p>
+  </dd>
   <dt id="Commands"><a class="permalink" href="#Commands"><b>Commands</b></a></dt>
   <dd>Many extension scripts expect a series of environment variables to point
       at various system utilities. These are included in the file when the
