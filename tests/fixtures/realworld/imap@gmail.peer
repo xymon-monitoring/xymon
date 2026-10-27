@@ -1,0 +1,5 @@
+# imap.gmail.com:993 (conversation is identical on 143) -- drives [imap]
+send "* OK Gimap ready for requests from 203.0.113.1 e78a5f81f42f2-2f2a2407019mb80133912606\r\n"
+recv ABC123
+send "* BYE Logout Requested e78a5f81f42f2-2f2a2407019mb80133912606\r\nABC123 OK Quoth the raven, nevermore... e78a5f81f42f2-2f2a2407019mb80133912606\r\n"
+hangup
