@@ -82,6 +82,35 @@ a yellow-to-red change; FOR measures the age of the current colour and resets
 on any change -- FOR is what "page only if it stays red for N minutes" wants.
 At-least-only, single-colour rules; existing configurations are unaffected.
 
+Server
+------
+
+xymond now drops a connection that has sent nothing 5 seconds after it was
+accepted, instead of keeping it for the whole --timeout; a message that is
+arriving, however slowly, still gets the full timeout. Once 256 such silent
+connections are open, it takes at most 16 more from one sender -- one IPv4
+address, or one IPv6 /64 -- and logs the refusal. Neither limit can be changed.
+Clients behind one NAT address or proxy are affected only if that many of them
+connect and stay silent at once.
+
+xymond --listen=IP:PORT now listens only on the address it names. Since 2014 it
+has bound every interface whatever address was given, so a server told to
+listen on 127.0.0.1, or on one interface of several, was reachable on all of
+them; after upgrading it is not -- check that nothing relied on the wider
+reach. The --listen=IP form, without a port, is unaffected.
+
+Two configurations that used to start now stop, because the address is finally
+honoured. A hostname in --listen is refused: it never bound that host's
+address, and xymond(8) has always asked for a dotted-quad IP. An address not
+yet assigned when xymond starts is refused too, where the fallback to every
+interface used to hide it -- start xymond after its interface comes up.
+
+xymond --listen now takes a comma-separated list of addresses, and also listens
+on 127.0.0.1 at XYMONDPORT, so the server's own client keeps reporting when a
+network interface goes away. --no-loopback listens only on the addresses given.
+Keep the server's client (xymonclient.cfg) on the same port as XYMONDPORT in
+xymonserver.cfg.
+
 Page filters
 ------------
 
