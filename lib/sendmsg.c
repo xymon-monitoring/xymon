@@ -491,6 +491,28 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 		xymondlist = strdup(morercpts);
 
 	rcpt = strtok(xymondlist, " \t");
+	if (!rcpt) {
+		/*
+		 * Nobody to send to: an empty or whitespace-only recipient.
+		 * The loop below never runs, and this function would return
+		 * the XYMONSEND_OK it was initialised with -- a successful
+		 * send to no one, with an empty response.
+		 *
+		 * Callers cannot tell that from a real answer. prepare_fromnet()
+		 * takes the OK, caches the empty response as the configuration
+		 * and reports success, so load_hostnames() never falls back to
+		 * the file and its caller ends up with a valid-looking, empty
+		 * host list (#507). XYMSRV defaults to $XYMONSERVERIP, which
+		 * defaults to the XYMONHOSTIP the tree was built with, so an
+		 * empty value is not exotic.
+		 */
+		snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)),
+			 "No recipient to send to! XYMSRV was '%s', XYMSERVERS '%s'",
+			 onercpt, textornull(morercpts));
+		xfree(xymondlist);
+		return XYMONSEND_EBADIP;
+	}
+
 	while (rcpt) {
 		int oneres;
 
