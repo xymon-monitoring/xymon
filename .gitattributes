@@ -1,2 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Roland Rosenfeld
 # exclude .gitignore and .github from archive
 .git* export-ignore

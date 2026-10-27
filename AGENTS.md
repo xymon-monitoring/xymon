@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- Copyright (C) 2026 Bruno Manzoni -->
 # Instructions for coding agents
 
 For agents working in a checkout of this repository. `CLAUDE.md` imports this

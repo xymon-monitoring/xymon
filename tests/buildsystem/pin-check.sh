@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # build/pin-check.sh tells a test that pins its fix from one that does not.
 #
