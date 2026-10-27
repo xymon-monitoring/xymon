@@ -105,6 +105,12 @@ charset=UTF-8", so non-ASCII content renders without relying on the web
 server's default. Sites emitting another encoding (iso-8859-1, euc-jp) should
 set HTMLCONTENTTYPE explicitly in xymonserver.cfg.
 
+A group named "/" in the web access file now grants access to the hosts on the
+front page, and "/pagename" to a page below it. Such lines used to have no
+effect, so a file that already has them grants that access after upgrading. As
+with any group there, the grant covers more than viewing; see
+xymonwebaccess(5).
+
 The svcstatus, history and reportlog CGIs now confine the host, service and
 section values from a request to one safe path component, closing a path
 traversal and xymond-protocol injection reachable in a default install. A host
