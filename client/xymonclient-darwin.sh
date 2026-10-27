@@ -447,6 +447,8 @@ echo "[mount]"
 mount
 echo "[meminfo]"
 vm_stat
+echo "[swapusage]"
+sysctl vm.swapusage
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"

@@ -52,6 +52,20 @@ lack.
 The NetBSD client now reports inodes, sharing the filtering above. Set
 XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep reporting /dev/pts.
 
+Clients -- macOS memory reporting
+---------------------------------
+
+The memory status of a macOS host now has the Actual/Virtual and Swap/Page
+rows the other clients report, so MEMACT and MEMSWAP rules in analysis.cfg
+apply to it; until now only Real/Physical was reported and those two rules
+had no effect. Actual/Virtual counts the active, wired and compressor pages;
+the inactive and speculative pages are the file cache the kernel reclaims on
+demand. Swap/Page comes from a new [swapusage] section of the client, sysctl
+vm.swapusage, which an older client does not send: the row is then absent.
+Real/Physical now counts the speculative and compressor pages as well, so
+its total matches the installed memory more closely and the figure may move
+by a percent or two.
+
 Alerting
 --------
 
