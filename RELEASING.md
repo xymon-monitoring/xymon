@@ -48,7 +48,11 @@ whoever wrote the change; whoever reported the problem, if a maintainer wrote
 the fix; whoever reviewed it, when there is nobody else to name. A change
 ported from an external patch set keeps its origin, `(from J. Cleaver)` for the
 Terabithia patches. A cosmetic change with no user-visible behaviour gets no
-entry.
+entry. A test gets one when it pins Xymon's behaviour, as the fix it guards
+does; a change to the test framework itself — the runner, the helpers, the
+lanes, the portability checks — gets none, like a CI or contributor-document
+change: it promises nothing about Xymon, and the people it concerns read the
+git log.
 
 **`RELEASENOTES`** — what an administrator needs to know *before upgrading*: a
 default that changed, a setting that stops working, a dependency now required.
