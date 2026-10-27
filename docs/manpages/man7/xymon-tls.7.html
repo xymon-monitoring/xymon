@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../mandoc.css" type="text/css" media="all"/>
+  <title>XYMON-TLS(7)</title>
+</head>
+<body>
+<h1 class="head-name">XYMON-TLS</h1>
+Section: Environments, Tables, and Troff Macros (7)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a href="#INDEX">Index</a>
+<a href="../index.html">Return to Main Contents</a><hr/>
+
+<div class="manual-text">
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp">xymon-tls - Sending Xymon messages over TLS</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">Xymon messages travel in plaintext on port 1984. xymond can also
+    take them over TLS, on a port of its own (1985 by default), and the xymon
+    client sends there when a recipient is written &quot;xymons://&quot;. This
+    page is how to set that up and roll it out. Each setting it names is
+    specified in the page given with it.</p>
+<p class="Pp">TLS adds, in this order:</p>
+<dl class="Bl-tag">
+  <dt id="encryption"><a class="permalink" href="#encryption">encryption</a></dt>
+  <dd>Nobody on the network can read the messages.</dd>
+  <dt id="the"><a class="permalink" href="#the">the server's identity</a></dt>
+  <dd>A client sends only to a server whose certificate it trusts and that names
+      the host or address it connects to.</dd>
+  <dt id="each"><a class="permalink" href="#each">each client's
+    identity</a></dt>
+  <dd>A client presents a certificate naming its host, and may then report for
+      that host from any address, without being listed in
+      <b>--status-senders</b>.</dd>
+</dl>
+<p class="Pp">The plaintext port keeps working beside the TLS port, so clients
+    move over one at a time.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="THE_SERVER"><a class="permalink" href="#THE_SERVER">THE
+  SERVER</a></h1>
+<p class="Pp">xymond takes TLS on the addresses given with <b>--tls-listen</b>
+    in the xymond command of <a href="../man5/tasks.cfg.5.html">tasks.cfg</a>(5), written as for <b>--listen</b> (see
+    <a href="../man8/xymond.8.html">xymond</a>(8)):</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>--listen=0.0.0.0:1984 --tls-listen=0.0.0.0:1985</dd>
+</dl>
+<p class="Pp">Its certificate and key are $XYMONHOME/etc/tls/xymond.pem and
+    $XYMONHOME/etc/tls/xymond.key, unless XYMOND_TLS_CERT and XYMOND_TLS_KEY in
+    <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5) say otherwise. The key must not be readable by others
+    than its owner and its group.</p>
+<p class="Pp">The certificate must name, in its subjectAltName, what the clients
+    connect to: the host name in their XYMSRV, or the IP address if that is what
+    XYMSRV holds. A certificate from a public or company CA that the clients'
+    systems already trust needs nothing more on the clients.</p>
+<p class="Pp">Before restarting xymond, and after each renewal, check the files
+    as the user xymond runs as:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>xymond --check-tls --env=$XYMONHOME/etc/xymonserver.cfg</dd>
+</dl>
+<p class="Pp">xymond does not start when the files do not load. A renewed
+    certificate is loaded on SIGHUP, without a restart; if it does not load,
+    xymond logs why and keeps the one it had.</p>
+<p class="Pp">An expired certificate is still served, with a warning in xymond's
+    log, and every client that verifies it refuses it. Running
+    <b>--check-tls</b> daily, from cron or a task in <a href="../man5/tasks.cfg.5.html">tasks.cfg</a>(5), shows the
+    days left before that happens.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="THE_CLIENTS"><a class="permalink" href="#THE_CLIENTS">THE
+  CLIENTS</a></h1>
+<p class="Pp">A client sends over TLS when its recipient is written
+    &quot;xymons://&quot;:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>XYMSRV=&quot;xymons://xymon.example.com&quot;</dd>
+</dl>
+<p class="Pp">in <a href="../man5/xymonclient.cfg.5.html">xymonclient.cfg</a>(5), or <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5) for the tools on the
+    server. The port is XYMONDTLSPORT, 1985 by default, unless the recipient
+    gives one. Recipients in XYMSERVERS are taken one by one, so a client can
+    send to a server over TLS and to another in plaintext.</p>
+<p class="Pp">A recipient &quot;xymons://&quot; either gets TLS or gets nothing:
+    when the handshake fails, the message is not sent, and <a href="../man1/xymon.1.html">xymon</a>(1) says why.
+    There is no retry in plaintext.</p>
+<p class="Pp">The client is built with TLS when OpenSSL is found at build time;
+    a client built without it refuses a &quot;xymons://&quot; recipient.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="THREE_LEVELS"><a class="permalink" href="#THREE_LEVELS">THREE
+  LEVELS</a></h1>
+<p class="Pp">Choose by what must be protected; each level adds to the one
+    before.</p>
+<dl class="Bl-tag">
+  <dt>1. Encryption only</dt>
+  <dd>XYMON_TLS_VERIFY=none on the clients. The messages are encrypted, but a
+      client sends to whoever answers on the server's address. Useful only while
+      the server's certificate is not yet trusted by the clients.</dd>
+  <dt>2. The server verified</dt>
+  <dd>The default. Clients trust the server's CA &#x2014; the system's, or the
+      file XYMON_TLS_CA names &#x2014; and check that the certificate names the
+      server. XYMON_TLS_SNI gives the name to check when XYMSRV holds an address
+      and the certificate names the host.</dd>
+  <dt>3. Each client verified</dt>
+  <dd>On the server, XYMOND_TLS_CA names the CA that issues the clients'
+      certificates. Each client sets XYMON_TLS_CERT and XYMON_TLS_KEY to a
+      certificate whose subjectAltName is its host's name exactly as hosts.cfg
+      has it. That host may then report for itself from any address; the
+      certificate allows nothing for any other host. With
+      XYMOND_TLS_REQUIRE_CERT=TRUE, a TLS client without a certificate is
+      refused.</dd>
+</dl>
+<p class="Pp">The client settings are in <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5); the server settings
+    are there too and in <a href="../man8/xymond.8.html">xymond</a>(8).</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="ROLLING_IT_OUT"><a class="permalink" href="#ROLLING_IT_OUT">ROLLING
+  IT OUT</a></h1>
+<dl class="Bl-tag">
+  <dt>1.</dt>
+  <dd>Give xymond a certificate and a <b>--tls-listen</b> address. Check with
+      <b>--check-tls</b>, then restart xymond. Nothing changes for the
+    clients.</dd>
+  <dt>2.</dt>
+  <dd>Move clients to &quot;xymons://&quot;, a few at a time. A client that
+      cannot reach the TLS port reports nothing, and its columns go purple: that
+      is how a missed one shows.</dd>
+  <dt>3.</dt>
+  <dd>For level 3, set XYMOND_TLS_CA, restart xymond, and give each client its
+      certificate. Clients without one are still served and checked by address
+      until XYMOND_TLS_REQUIRE_CERT is set.</dd>
+  <dt>4.</dt>
+  <dd>To stop plaintext from the network, let the plaintext port answer only
+      locally, <b>--listen=127.0.0.1:1984</b>, or close port 1984 to the
+      networks that must use TLS in the firewall. The tools on the server itself
+      keep using the plaintext port.</dd>
+</dl>
+<p class="Pp">Senders that report for other hosts &#x2014; the network tests of
+    <a href="../man1/xymonnet.1.html">xymonnet</a>(1) on another server, a collector &#x2014; are allowed by address
+    in <b>--status-senders</b>, as before. With XYMOND_TLS_REQUIRE_CERT they
+    also need a certificate to connect over TLS.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="CERTIFICATES"><a class="permalink" href="#CERTIFICATES">CERTIFICATES</a></h1>
+<p class="Pp">Xymon distributes no certificates: it reads the files it is
+  given.</p>
+<dl class="Bl-tag">
+  <dt id="The"><a class="permalink" href="#The">The CA certificate</a></dt>
+  <dd>is public. Copy it to every host that needs it with whatever manages the
+      hosts' configuration.</dd>
+  <dt id="A"><a class="permalink" href="#A">A private key</a></dt>
+  <dd>is made on the host that uses it and never leaves it. The host makes a
+      request, the CA signs it, and only the certificate travels back.</dd>
+  <dt id="Renewal"><a class="permalink" href="#Renewal">Renewal</a></dt>
+  <dd>On a client, replace the files: the xymon program reads them each time it
+      runs. On the server, replace them, check with <b>--check-tls</b>, and send
+      SIGHUP to xymond. Replace a file by renaming a complete new one over it,
+      so that nothing reads it half-written.</dd>
+</dl>
+<p class="Pp">For example, with OpenSSL, a key and a request for
+    web01.example.com, made on that host:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes
+      -keyout web01.key -out web01.csr -subj &quot;/CN=web01.example.com&quot;
+      -addext subjectAltName=DNS:web01.example.com</dd>
+</dl>
+<p class="Pp">then signed by the CA, keeping the request's subjectAltName:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>openssl x509 -req -in web01.csr -CA ca.pem -CAkey ca.key -CAcreateserial
+      -days 365 -copy_extensions copy -out web01.pem</dd>
+</dl>
+<p class="Pp">-copy_extensions needs OpenSSL 3.0 or later; with an older one,
+    give the subjectAltName with -extfile instead.</p>
+<p class="Pp"></p>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="LIMITS"><a class="permalink" href="#LIMITS">LIMITS</a></h1>
+<ul class="Bl-bullet">
+  <li>Revocation is not checked: no CRL, no OCSP. A certificate stays good until
+      it expires, or until its CA is replaced.</li>
+  <li><a href="../man8/xymonproxy.8.html">xymonproxy</a>(8), and <a href="../man8/msgcache.8.html">msgcache</a>(8) with <a href="../man8/xymonfetch.8.html">xymonfetch</a>(8), use connections of
+      their own, in plaintext only.</li>
+  <li>A certificate cannot be given rights beyond its own host: reporting for
+      other hosts, and the maintenance and administration commands, are allowed
+      by address, with the <b>--*-senders</b> options of <a href="../man8/xymond.8.html">xymond</a>(8).
+    <p class="Pp"></p>
+  </li>
+</ul>
+</section>
+<section class="Sh">
+<p>&#160;</p>
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp"><a href="../man8/xymond.8.html">xymond</a>(8), <a href="../man1/xymon.1.html">xymon</a>(1), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5), <a href="../man5/xymonclient.cfg.5.html">xymonclient.cfg</a>(5),
+    <a href="../man5/tasks.cfg.5.html">tasks.cfg</a>(5), <a href="../man7/xymon.7.html">xymon</a>(7)</p>
+</section>
+<p>&#160;</p>
+<h1 class="Sh" id="INDEX"><a class="permalink" href="#INDEX">Index</a></h1>
+<dl class="Bl-tag">
+<dt><a href="#NAME">NAME</a></dt>
+<dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
+<dt><a href="#THE_SERVER">THE SERVER</a></dt>
+<dt><a href="#THE_CLIENTS">THE CLIENTS</a></dt>
+<dt><a href="#THREE_LEVELS">THREE LEVELS</a></dt>
+<dt><a href="#ROLLING_IT_OUT">ROLLING IT OUT</a></dt>
+<dt><a href="#CERTIFICATES">CERTIFICATES</a></dt>
+<dt><a href="#LIMITS">LIMITS</a></dt>
+<dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
+</dl>
+</div>
+<hr/>
+This document was created by mandoc, using the manual pages.
+
+</body>
+</html>
