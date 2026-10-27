@@ -248,26 +248,10 @@ Section: Environments, Tables, and Troff Macros (7)<br/>Updated: Version 4.3.30:
 <p class="Pp">You will need a Unix-like system (Linux, Solaris, HP-UX, AIX,
     FreeBSD, Mac OS X or similar) with a web server installed. You will also
     need a C compiler and some additional libraries, but many systems come with
-    the required development tools and libraries pre-installed. The required
-    libraries are:</p>
-<p class="Pp"></p>
-<dl class="Bl-tag">
-  <dt id="RRDtool"><a class="permalink" href="#RRDtool"><b>RRDtool</b></a></dt>
-  <dd>This library is used to store and present trend-data. It is required.</dd>
-  <dt id="libpcre"><a class="permalink" href="#libpcre"><b>libpcre</b></a></dt>
-  <dd>This library is used for advanced pattern-matching of text strings in
-      configuration files. This library is required.</dd>
-  <dt id="c-ares"><a class="permalink" href="#c-ares"><b>c-ares</b></a></dt>
-  <dd>This library is used for asynchronous DNS lookups by xymonnet. It is
-      required for server builds.</dd>
-  <dt id="OpenSSL"><a class="permalink" href="#OpenSSL"><b>OpenSSL</b></a></dt>
-  <dd>This library is used for communication with SSL-enabled network services.
-      Although optional, it is recommended that you install this for Xymon since
-      many network tests do use SSL.</dd>
-  <dt id="OpenLDAP"><a class="permalink" href="#OpenLDAP"><b>OpenLDAP</b></a></dt>
-  <dd>This library is used for testing LDAP servers. Use of this is
-    optional.</dd>
-</dl>
+    the required development tools and libraries pre-installed. Xymon requires
+    <b>PCRE2</b> and <b>RRDtool</b>, and <b>c-ares</b> for a server build;
+    <b>OpenSSL</b> (recommended, for SSL network tests) and <b>OpenLDAP</b> (for
+    LDAP tests) are optional.</p>
 <p class="Pp">For more detailed information about Xymon system requirements and
     how to install Xymon, refer to the on-line documentation &quot;Installing
     Xymon&quot; available from the Xymon web server (via the &quot;Help&quot;

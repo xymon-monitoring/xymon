@@ -28,9 +28,9 @@ ROOT=$(find_root)
 work=$(mktempdir)
 src="$work/src"
 mkdir -p "$src" "$work/bin"
-cp -p "$ROOT"/configure* "$src/"
-cp -rp "$ROOT/build" "$src/build"
-cp -rp "$ROOT/lib" "$src/lib"	# the RRDtool probe includes lib/rrd_api_compat.h
+cp "$ROOT"/configure* "$src/"
+cp -R "$ROOT/build" "$src/build"
+cp -R "$ROOT/lib" "$src/lib"	# the RRDtool probe includes lib/rrd_api_compat.h
 
 printf '#!/bin/sh\necho "ypmatch: fake NIS failure" >&2\nexit 1\n' > "$work/bin/ypmatch"
 chmod +x "$work/bin/ypmatch"

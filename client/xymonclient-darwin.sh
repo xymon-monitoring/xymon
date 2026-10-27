@@ -447,6 +447,8 @@ echo "[mount]"
 mount
 echo "[meminfo]"
 vm_stat
+echo "[swapusage]"
+sysctl vm.swapusage
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
@@ -456,7 +458,51 @@ netstat -s
 echo "[ifstat]"
 netstat -ibn | egrep -v "^lo|<Link"
 echo "[ports]"
-netstat -an | grep -e "^tcp" -e "^udp"
+# macOS 27 hands the socket table (the pcblist sysctls behind netstat -an) only
+# to processes whose ancestry is Apple-signed: forked from an ad-hoc signed
+# binary -- xymonlaunch in a Homebrew or source build -- netstat prints the
+# UNIX and Multipath tables but not one Internet socket, exits 0 and says
+# nothing on stderr. nettop reads the same sockets through the network
+# statistics framework under its own entitlement, so it still lists every
+# socket of every user from there. When netstat comes back empty the list is
+# rebuilt from one nettop sample in netstat's column layout, which is what the
+# server's ports test parses (local, remote and state in columns 3, 4 and 5):
+# nettop writes "tcp4 addr:port<->addr:port" and "tcp6 addr.port<->addr.port",
+# so the IPv4 pair gets netstat's last-dot spelling; its CamelCase states
+# (CloseWait, FinWait1) become netstat's (CLOSE_WAIT, FIN_WAIT_1); UDP has no
+# state column either way. nettop reports a dual-stack socket as tcp6 where
+# netstat says tcp46, a column the ports test does not read. nettop lists
+# sockets by owning process, so TIME_WAIT sockets, which have none, are absent
+# from the rebuilt list. lsof was not used: it lists only the invoking user's
+# sockets, and one row per descriptor.
+_ports=$(netstat -an | grep -e "^tcp" -e "^udp")
+if [ -z "$_ports" ]; then
+	_ports=$(nettop -L 1 -n -J state 2>/dev/null | awk -F, '
+		$1 !~ /^(tcp|udp)[46] / { next }
+		{
+			split($1, f, " "); proto = f[1]
+			i = index(f[2], "<->")
+			local = addr(substr(f[2], 1, i - 1)); remote = addr(substr(f[2], i + 3))
+			line = proto " 0 0 " local " " remote
+			if ($2 != "") line = line " " state($2)
+			print line
+		}
+		# IPv4 "addr:port" and "*:*" -> netstat "addr.port" and "*.*"; IPv6 is
+		# dotted already and its colons must stay.
+		function addr(s,    p) {
+			if (proto !~ /4$/) return s
+			p = match(s, /:[^:]*$/)
+			return p ? substr(s, 1, p - 1) "." substr(s, p + 1) : s
+		}
+		# "CloseWait" -> CLOSE_WAIT, "FinWait1" -> FIN_WAIT_1, "Listen" -> LISTEN;
+		# netstat abbreviates one of them.
+		function state(s) {
+			if (s == "SynReceived") return "SYN_RCVD"
+			gsub(/[A-Z0-9]/, "_&", s); sub(/^_/, "", s)
+			return toupper(s)
+		}')
+fi
+[ -z "$_ports" ] || printf '%s\n' "$_ports"
 echo "[ps]"
 ps -ax -ww -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rss,vsz,command
 
@@ -468,7 +514,7 @@ then
         echo "[nproc]"
         sysctl -n hw.ncpu
         echo "[top]"
-	$TOP -l 2 -n 20 -o cpu | $AWK '/^Processes:/ {toprun++} toprun == 2'
+	$TOP -l 2 -n 20 -o cpu -stats pid,user,mem,state,cpu,time,command | $AWK '/^Processes:/ {toprun++} toprun == 2'
     fi
 fi
 
