@@ -168,6 +168,15 @@ XMH_MULTIHOMED is now XMH_FLAG_MULTIHOMED, the name xymon-xmh(5) has always
 documented. Scripts, web templates and xymondboard or hostinfo field selectors
 using the old name must be updated.
 
+History
+-------
+
+xymond_history no longer writes through symbolic links. A host's directory
+under histlogs, or a test directory below it, that is a symlink is refused with
+a log line, and so is a history file that is one; that host's history stops
+being recorded. A site that moved some hosts' history to another disk through
+symlinks should move the whole hist or histlogs directory instead.
+
 
 Changes for 4.3.30
 ==================
