@@ -4,8 +4,9 @@
 # tests/client/fs-sentinel-netbsd.sh
 #
 # The remote-df sentinel wired into xymonclient-netbsd.sh (#316). df_sentinel()
-# itself is byte-identical to the Linux copy -- fs-sentinel-copies.sh enforces
-# that, and fs-sentinel-linux.sh tests its internals (the claim race, PID reuse,
+# itself is byte-identical to the Linux copy -- both are stamped from
+# client/shared/df_sentinel.sh -- and fs-sentinel-linux.sh tests its
+# internals (the claim race, PID reuse,
 # a probe that finishes late). What is NetBSD's own, and what this file tests,
 # is the wiring: finding the hard-blocking mounts through mount(8) instead of
 # /proc/mounts, keeping them out of the unguarded df, and emitting marker rows
