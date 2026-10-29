@@ -377,11 +377,14 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 	 * Private key passphrases are stored in the file named same as the
 	 * certificate itself, but with extension ".pass"
 	 */
-	sprintf(passfn, "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert);
-	p = strrchr(passfn, '.'); if (p == NULL) p = passfn+strlen(passfn);
-	strcpy(p, ".pass");
-
-	passfd = fopen(passfn, "r");
+	passfd = NULL;
+	if (snprintf(passfn, sizeof(passfn), "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert) < (int)sizeof(passfn)) {
+		p = strrchr(passfn, '.'); if (p == NULL) p = passfn+strlen(passfn);
+		if ((size_t)(p - passfn) + sizeof(".pass") <= sizeof(passfn)) {
+			strcpy(p, ".pass");
+			passfd = fopen(passfn, "r");
+		}
+	}
 	if (passfd && fgets(passphrase, sizeof(passphrase)-1, passfd)) {
 		p = strchr(passphrase, '\n'); if (p) *p = '\0';
 	}
@@ -571,7 +574,7 @@ static void setup_ssl(tcptest_t *item)
 			errprintf("Cannot set cipher list '%s' - IP %s, service %s: %s\n",
 				   item->ssloptions->cipherlist, inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
-			SSL_CTX_free(item->sslctx);
+			SSL_CTX_free(item->sslctx); item->sslctx = NULL;
 			item->errcode = CONTEST_ESSL;
 			return;
 		}
@@ -625,7 +628,14 @@ static void setup_ssl(tcptest_t *item)
 			SSL_CTX_set_default_passwd_cb(item->sslctx, cert_password_cb);
 			SSL_CTX_set_default_passwd_cb_userdata(item->sslctx, item);
 
-			sprintf(certfn, "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert);
+			if (snprintf(certfn, sizeof(certfn), "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert) >= (int)sizeof(certfn)) {
+				errprintf("Cannot load SSL client certificate/key: the name under XYMONHOME/certs is too long (%d characters)\n",
+					  (int)strlen(item->ssloptions->clientcert));
+				item->sslrunning = 0;
+				SSL_CTX_free(item->sslctx); item->sslctx = NULL;
+				item->errcode = CONTEST_ESSL;
+				return;
+			}
 			status = SSL_CTX_use_certificate_chain_file(item->sslctx, certfn);
 			if (status == 1) {
 				status = SSL_CTX_use_PrivateKey_file(item->sslctx, certfn, SSL_FILETYPE_PEM);
@@ -638,7 +648,7 @@ static void setup_ssl(tcptest_t *item)
 				errprintf("Cannot load SSL client certificate/key %s: %s\n", 
 					  item->ssloptions->clientcert, sslerrmsg);
 				item->sslrunning = 0;
-				SSL_CTX_free(item->sslctx);
+				SSL_CTX_free(item->sslctx); item->sslctx = NULL;
 				item->errcode = CONTEST_ESSL;
 				return;
 			}
@@ -654,7 +664,7 @@ static void setup_ssl(tcptest_t *item)
 			errprintf("SSL_new failed - IP %s, service %s: %s\n", 
 				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
-			SSL_CTX_free(item->sslctx);
+			SSL_CTX_free(item->sslctx); item->sslctx = NULL;
 			item->errcode = CONTEST_ESSL;
 			return;
 		}
@@ -673,8 +683,8 @@ static void setup_ssl(tcptest_t *item)
 			if (!SSL_CTX_check_private_key(item->sslctx)) {
 				errprintf("Private/public key mismatch for certificate %s\n", item->ssloptions->clientcert);
 				item->sslrunning = 0;
-				SSL_free(item->ssldata);
-				SSL_CTX_free(item->sslctx);
+				SSL_free(item->ssldata); item->ssldata = NULL;
+				SSL_CTX_free(item->sslctx); item->sslctx = NULL;
 				item->errcode = CONTEST_ESSL;
 				return;
 			}
@@ -693,8 +703,8 @@ static void setup_ssl(tcptest_t *item)
 			errprintf("Could not initiate SSL on connection - IP %s, service %s: %s\n", 
 				   inet_ntoa(item->addr.sin_addr), item->svcinfo->svcname, sslerrmsg);
 			item->sslrunning = 0;
-			SSL_free(item->ssldata); 
-			SSL_CTX_free(item->sslctx);
+			SSL_free(item->ssldata); item->ssldata = NULL; 
+			SSL_CTX_free(item->sslctx); item->sslctx = NULL;
 			item->errcode = CONTEST_ESSL;
 			return;
 		}
@@ -723,21 +733,21 @@ static void setup_ssl(tcptest_t *item)
 					  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			}
 			item->errcode = CONTEST_ESSL;
-			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			item->sslrunning = 0; SSL_free(item->ssldata); item->ssldata = NULL; SSL_CTX_free(item->sslctx); item->sslctx = NULL;
 			break;
 		  case SSL_ERROR_SSL:
 			ERR_error_string(ERR_get_error(), sslerrmsg);
 			errprintf("Unspecified SSL error in SSL_connect to %s on host %s: %s\n",
 				  portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
-			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			item->sslrunning = 0; SSL_free(item->ssldata); item->ssldata = NULL; SSL_CTX_free(item->sslctx); item->sslctx = NULL;
 			break;
 		  default:
 			ERR_error_string(ERR_get_error(), sslerrmsg);
 			errprintf("Unknown error %d in SSL_connect to %s on host %s: %s\n",
 				  err, portinfo, inet_ntoa(item->addr.sin_addr), sslerrmsg);
 			item->errcode = CONTEST_ESSL;
-			item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+			item->sslrunning = 0; SSL_free(item->ssldata); item->ssldata = NULL; SSL_CTX_free(item->sslctx); item->sslctx = NULL;
 			break;
 		}
 
@@ -750,7 +760,7 @@ static void setup_ssl(tcptest_t *item)
 		errprintf("Cannot get peer certificate for %s on host %s\n",
 			  portinfo, inet_ntoa(item->addr.sin_addr));
 		item->errcode = CONTEST_ESSL;
-		item->sslrunning = 0; SSL_free(item->ssldata); SSL_CTX_free(item->sslctx);
+		item->sslrunning = 0; SSL_free(item->ssldata); item->ssldata = NULL; SSL_CTX_free(item->sslctx); item->sslctx = NULL;
 		return;
 	}
 
@@ -898,8 +908,8 @@ static void socket_shutdown(tcptest_t *item)
 {
 	if (item->sslrunning) {
 		SSL_shutdown(item->ssldata);
-		SSL_free(item->ssldata);
-		SSL_CTX_free(item->sslctx);
+		SSL_free(item->ssldata); item->ssldata = NULL;
+		SSL_CTX_free(item->sslctx); item->sslctx = NULL;
 	}
 	shutdown(item->fd, SHUT_RDWR);
 
