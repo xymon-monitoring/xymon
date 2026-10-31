@@ -219,7 +219,8 @@ MEMACT  warnlevel=90 paniclevel=97</pre>
     recognizable, so if defined, the <b>text</b> setting string will be used
     instead. This only affects the &quot;procs&quot; status display - it has no
     effect on how the rule counts or recognizes processes in the &quot;ps&quot;
-    output.</p>
+    output. A text with blanks is quoted, either &quot;TEXT=some text&quot; or
+    TEXT=&quot;some text&quot;; without quotes it ends at the first blank.</p>
 <p class="Pp">Example: Check that &quot;cron&quot; is running:
   <br/>
   	PROC cron</p>
