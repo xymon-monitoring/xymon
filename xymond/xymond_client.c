@@ -2165,6 +2165,8 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--local") == 0) {
 			localmode = 1;
+			/* The client data comes from a file, not a channel: read it whole, up to what xymond accepts. */
+			set_xymond_message_growlimit(64*1024*1024);
 		}
 		else if (strcmp(argv[argi], "--test") == 0) {
 			testmode(configfn);
