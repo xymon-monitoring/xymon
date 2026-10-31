@@ -97,6 +97,11 @@ pick up another page's rules -- a PROC check for a process it does not run, for
 instance. Check that hosts on the top-level page still carry the rules you
 expect.
 
+EXPAGE= in analysis.cfg now excludes a host when any page it is listed on
+matches, not only its first page, for INODE, PAGING, MIBVAL, CICS, VSIZE and
+GETVIS, as the other checks already did. On a host listed on more than one
+page, those six may lose rules they used to keep.
+
 Web
 ---
 
