@@ -31,7 +31,9 @@ for f in $(cd "$ROOT" && find . -name '*.[1-8]' -type f ! -path './tests/*' | se
 done
 [ -n "$pages" ] || fail "no manual page source found under $ROOT"
 
-out=$(cd "$work" && SOURCE_DATE_EPOCH=0 "$ROOT/build/updmanver" 9.9.9 2>&1) \
+# Through bash, not its #!/bin/bash: the suite needs bash anyway, and on the
+# BSDs it is /usr/local/bin/bash. A release runs updmanver on Linux only.
+out=$(cd "$work" && SOURCE_DATE_EPOCH=0 bash "$ROOT/build/updmanver" 9.9.9 2>&1) \
 	|| fail "updmanver failed: $out"
 
 for f in $pages; do
