@@ -341,6 +341,33 @@ check_cleanup_fn() {
 
 for f in $files; do check_cleanup_fn "$f" "$work/violations"; done
 
+# A script of the tree run as a command needs its #! to resolve, and bash is
+# /usr/local/bin/bash on the BSDs: updmanver-every-page.sh ran build/updmanver
+# for its #!/bin/bash and failed on every FreeBSD lane with "bad interpreter".
+# The suite has bash anyway, so such a script is run as `bash "$ROOT/..."`.
+# Only a command position counts -- line start, $( && || ; | or a run of
+# VAR=value assignments before it -- not an argument such as cp "$ROOT/...";
+# a path that still holds a variable cannot be resolved and is left alone.
+# check_bash_shebang FILE OUT ROOTDIR -- append FILE's violations to OUT.
+check_bash_shebang() {
+	local f=$1 out=$2 root=$3 path first
+	# "|| true" on both greps: no match exits 1, which pipefail would report.
+	{ grep -vE '^[[:space:]]*#' "$f" || true; } \
+	| { grep -oE '(^|[$][(]|&&|[|][|]|;|[|])[[:space:]]*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*"?[$][{]?ROOT[}]?/[^"[:space:])]+' || true; } \
+	| sed -E 's|.*[$][{]?ROOT[}]?/||' | sort -u \
+	| while IFS= read -r path; do
+		case $path in *'$'*) continue ;; esac
+		[ -f "$root/$path" ] || continue
+		first=
+		IFS= read -r first <"$root/$path" || true
+		grep -qE '^#![[:space:]]*/[^[:space:]]*/bash([[:space:]]|$)' <<<"$first" || continue
+		printf 'bash-shebang\t%s\t%s\n' "${f#"$ROOT"/}" \
+			"runs $path for its $first, which is not where the BSDs keep bash; run it as bash \"\$ROOT/$path\"" >>"$out"
+	done
+}
+
+for f in $files; do check_bash_shebang "$f" "$work/violations" "$ROOT"; done
+
 if [ -s "$work/violations" ]; then
 	printf 'portability rules broken by the test suite:\n\n' >&2
 	sort "$work/violations" | awk -F'\t' '{ printf "  [%s] %s\n      %s\n", $1, $2, $3 }' >&2
@@ -494,5 +521,25 @@ langfile="$work/lang.sh"
 check_translated "$langfile" "$work/lang-violations"
 assert_equal "2" "$(wc -l <"$work/lang-violations" | tr -d " ")" \
 	"the translation rule no longer reports exactly the two assertions on translated words (and not one under LC_ALL=C, or one on Xymon's own)"
+
+# The bash-shebang rule the same way: a #!/bin/bash script of the tree run as a
+# command is reported, after assignments too; the same script through bash, as
+# an argument, or a #!/usr/bin/env bash script run directly are not.
+shroot="$work/shroot"
+mkdir -p "$shroot/build"
+printf '#!/bin/bash\n' >"$shroot/build/abs"
+printf '#!/usr/bin/env bash\n' >"$shroot/build/env"
+shfile="$work/shebang.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf 'out=$(cd "$w" && SOURCE_DATE_EPOCH=0 "$ROOT/build/abs" 9.9.9 2>&1)\n'
+	printf 'out=$(cd "$w" && SOURCE_DATE_EPOCH=0 bash "$ROOT/build/abs" 9.9.9 2>&1)\n'
+	printf 'cp "$ROOT/build/abs" "$w/"\n'
+	printf '"$ROOT/build/env" --help\n'
+} >"$shfile"
+: >"$work/shebang-violations"
+check_bash_shebang "$shfile" "$work/shebang-violations" "$shroot"
+assert_equal "1" "$(wc -l <"$work/shebang-violations" | tr -d " ")" \
+	"the bash-shebang rule should report the one #!/bin/bash script run directly, and only it"
 
 pass "the test suite keeps to bash 3.2, portable tool flags, the configured build flags, and one lane per client"
