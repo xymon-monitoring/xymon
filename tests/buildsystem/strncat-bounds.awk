@@ -65,10 +65,7 @@ END {
 		gsub(/[ \t\n]/, "", third)
 		if (index(third, "-1") > 0) continue
 
-		line = 1
-		head = substr(txt, 1, start)
-		for (k = 1; k <= length(head); k++)
-			if (substr(head, k, 1) == "\n") line++
+		line = split(substr(txt, 1, start), lines, "\n")
 
 		printf "%s:%d\t%s\n", FILE, line, third
 	}
