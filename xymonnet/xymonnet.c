@@ -80,8 +80,8 @@ int 		timeout=10;			/* The timeout (seconds) for all TCP-tests */
 char		*contenttestname = "content";   /* Name of the content checks column */
 char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks column */
 char		*failtext = "not OK";
-int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert column = yellow */
-int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
+int             sslwarndays = 14;		/* If cert expires in fewer days, SSL cert column = yellow */
+int             sslalarmdays = 7;		/* If cert expires in fewer days, SSL cert column = red */
 int             mincipherbits = 0;		/* If weakest cipher is weaker than this # of buts, SSL cert column = red */
 int		validity = 30;
 int		pingchildcount = DEFAULT_PING_CHILD_COUNT;	/* How many ping processes to start */
