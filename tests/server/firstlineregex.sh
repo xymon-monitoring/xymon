@@ -9,6 +9,9 @@
 # was dropped without a word and firstlineregexnocase() named PCRE_CASELESS,
 # which does not compile at all.
 #
+# Both macros are expressions, with no trailing ';' of their own, so each
+# can be the body of an if that has an else; the harness uses them so.
+#
 # Checked through a harness that links the real library: "abc" compiled by
 # each macro matches "abc\nx" and not "x\nabc", where it starts on line two.
 
@@ -43,8 +46,8 @@ int main(void)
 	int fails = 0;
 	pcre2_code *cs, *nc;
 
-	cs = firstlineregex("abc");
-	nc = firstlineregexnocase("ABC");
+	if (fails == 0) cs = firstlineregex("abc"); else cs = NULL;
+	if (fails == 0) nc = firstlineregexnocase("ABC"); else nc = NULL;
 	if (!cs || !nc) { fprintf(stderr, "a firstline regex did not compile\n"); return 1; }
 
 #define CHECK(name, code, subject, want) do { \
