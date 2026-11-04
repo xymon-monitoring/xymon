@@ -113,6 +113,11 @@ digits and ":,._-" is no longer reachable through these pages: give it an ASCII
 canonical name and carry the original in the NAME: tag. The hosts.cfg loader
 warns at startup about such names.
 
+The periodic reports page (datepage.cgi) now sends the browser to the web URL
+configure was given, instead of always to /xymon/periodic. An upgrade keeps the
+CGI_DATEPAGE_OPTS already in cgioptions.cfg: if your web pages are not at
+/xymon, change --url=/xymon/periodic there to your URL followed by /periodic.
+
 Network tests
 -------------
 
