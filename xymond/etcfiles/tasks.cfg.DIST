@@ -135,6 +135,36 @@
 	LOGFILE $XYMONSERVERLOGS/xymongen.log
 	INTERVAL 1m
 
+# "periodic-daily", "periodic-weekly" and "periodic-monthly" pre-generate the
+# availability reports that datepage.cgi sends the browser to, under
+# $XYMONWWWDIR/periodic. Without them, picking a date finds no report.
+# They are disabled by default; remove DISABLED to enable them.
+# xymonreports.sh needs GNU date. On the BSDs and macOS, install it, and see
+# xymonreports.sh for how it is found.
+[periodic-daily]
+	DISABLED
+	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymonreports.sh daily
+	LOGFILE $XYMONSERVERLOGS/periodic.log
+	CRONDATE 10 0 * * *
+
+[periodic-weekly]
+	DISABLED
+	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymonreports.sh weekly
+	LOGFILE $XYMONSERVERLOGS/periodic.log
+	CRONDATE 10 1 * * 1
+
+[periodic-monthly]
+	DISABLED
+	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymonreports.sh monthly
+	LOGFILE $XYMONSERVERLOGS/periodic.log
+	CRONDATE 10 2 1 * *
+
 
 ######################################################################################
 ### 
