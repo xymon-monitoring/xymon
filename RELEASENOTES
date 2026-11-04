@@ -166,8 +166,14 @@ tasks.cfg now has three tasks, periodic-daily, periodic-weekly and
 periodic-monthly, that run xymonreports.sh to pre-generate the reports
 datepage.cgi sends the browser to. They ship DISABLED, and an upgrade adds
 them to an existing tasks.cfg disabled as well. To get the reports, remove
-DISABLED from the ones you want. xymonreports.sh needs GNU date: on the BSDs
-and macOS, install it, and see xymonreports.sh for how it is found.
+DISABLED from the ones you want.
+
+xymonreports.sh needs GNU date, and no longer needs editing to find it. It
+takes GNUDATE from its environment, so the setting goes in xymonserver.cfg,
+and when none is set it uses the first of gdate and date on PATH that is GNU
+date. On the BSDs and macOS, install GNU coreutils; if gdate is not on the
+PATH set in xymonserver.cfg, set GNUDATE there. Without GNU date it stops
+with one line saying so, instead of running on with BSD date's errors.
 
 Build and API
 -------------
