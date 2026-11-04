@@ -159,6 +159,16 @@ expiry no longer show yellow. For more notice, e.g. for certificates renewed by
 hand, keep the old values with --sslwarn=30 --sslalarm=10 on the xymonnet
 command in tasks.cfg, or ssldays=30:10 on a host in hosts.cfg.
 
+Server -- periodic reports
+--------------------------
+
+tasks.cfg now has three tasks, periodic-daily, periodic-weekly and
+periodic-monthly, that run xymonreports.sh to pre-generate the reports
+datepage.cgi sends the browser to. They ship DISABLED, and an upgrade adds
+them to an existing tasks.cfg disabled as well. To get the reports, remove
+DISABLED from the ones you want. xymonreports.sh needs GNU date: on the BSDs
+and macOS, install it, and see xymonreports.sh for how it is found.
+
 Build and API
 -------------
 
