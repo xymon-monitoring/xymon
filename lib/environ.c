@@ -27,6 +27,14 @@ const static struct {
 	{ "XYMONDREL", VERSION },
 	{ "XYMONSERVERROOT", XYMONTOPDIR },
 	{ "XYMONSERVERLOGS", XYMONLOGDIR },
+	/* The log directory as configured, not as compiled: xymon_rundir() falls
+	   back to XYMONSERVERLOGS, and so must a task line expanding $XYMONRUNDIR
+	   when the configuration does not set it. */
+	{ "XYMONRUNDIR", "$XYMONSERVERLOGS" },
+	/* The client's own runtime directory, when its configuration does not
+	   name one: its log directory, where msgcache.pid has always been. Not
+	   $XYMONRUNDIR, which resolves to "" in a client-only build. */
+	{ "XYMONCLIENTRUNDIR", "$XYMONCLIENTLOGS" },
 	{ "XYMONSERVERHOSTNAME", XYMONHOSTNAME },
 	{ "XYMONSERVERIP", XYMONHOSTIP },
 	{ "XYMONSERVEROS", XYMONHOSTOS },
@@ -218,6 +226,22 @@ char *xgetenv(const char *name)
 	return result;
 }
 
+/*
+ * The runtime directory, as the programs building a pidfile or control
+ * socket path resolve it: XYMONRUNDIR, else the configured log directory,
+ * else the compiled one. An empty XYMONRUNDIR counts as unset -- "" would
+ * put those files at the filesystem root.
+ */
+char *xymon_rundir(void)
+{
+	char *p = xgetenv("XYMONRUNDIR");
+
+	if (p && *p) return p;
+	p = xgetenv("XYMONSERVERLOGS");
+	if (p && *p) return p;
+	return XYMONLOGDIR;
+}
+
 void envcheck(char *envvars[])
 {
 	int i;
@@ -317,6 +341,30 @@ void loadenv(char *envfile, char *area)
 				}
 
 				putenv(oneenv);
+
+				/* An empty XYMONRUNDIR is replaced on the line that sets it, so
+				   the lines after it in this file, and what xymonlaunch expands
+				   for tasks.cfg -- "--pidfile=$XYMONRUNDIR/xymond.pid" -- see
+				   the same directory as the programs, not "/xymond.pid". */
+				if (strcmp(oneenv, "XYMONRUNDIR=") == 0) {
+					SBUF_DEFINE(fixed);
+					char *val = xymon_rundir();
+
+					SBUF_MALLOC(fixed, strlen("XYMONRUNDIR=") + strlen(val) + 1);
+					snprintf(fixed, fixed_buflen, "XYMONRUNDIR=%s", val);
+					putenv(fixed);
+				}
+				/* The client's the same way, to its log directory: clientlaunch.cfg
+				   expands "PIDFILE $XYMONCLIENTRUNDIR/msgcache.pid". */
+				else if ((strcmp(oneenv, "XYMONCLIENTRUNDIR=") == 0) &&
+					 getenv("XYMONCLIENTLOGS") && *getenv("XYMONCLIENTLOGS")) {
+					SBUF_DEFINE(fixed);
+					char *val = getenv("XYMONCLIENTLOGS");
+
+					SBUF_MALLOC(fixed, strlen("XYMONCLIENTRUNDIR=") + strlen(val) + 1);
+					snprintf(fixed, fixed_buflen, "XYMONCLIENTRUNDIR=%s", val);
+					putenv(fixed);
+				}
 			}
 		}
 		stackfclose(fd);

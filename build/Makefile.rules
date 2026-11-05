@@ -32,6 +32,22 @@ else
 	XYMONHOME = $(XYMONTOPDIR)/server
 endif
 
+# A Makefile written before the runtime directory existed does not define it,
+# and the placeholders in xymonserver.cfg and xymon.sh would then be
+# substituted with nothing. loadenv() repairs an empty XYMONRUNDIR in
+# xymonserver.cfg, but xymon.sh has the value built in: its pidfile would be
+# "/xymonlaunch.pid", which as root is created rather than refused.
+#
+# ?= is not enough: it assigns only when a variable is undefined, so it
+# rescues a Makefile with no line at all but not one that defines it empty.
+ifeq ($(strip $(XYMONRUNDIR)),)
+XYMONRUNDIR := $(XYMONLOGDIR)
+endif
+# Exported rather than appended to each sub-make's argument list: those
+# lines are long and shared, so every change needing a new variable
+# would collide with every other one.
+export XYMONRUNDIR
+
 ifndef INSTALLBINDIR
 INSTALLBINDIR = $(XYMONHOME)/bin
 endif

@@ -32,6 +32,13 @@ script which starts the Xymon client.
 The directory for the Xymon clients' own log files. Default:
 $XYMONHOME/logs
 
+.IP "\fBXYMONCLIENTRUNDIR\fR"
+The directory for the client's runtime files: msgcache's pidfile. Default:
+$XYMONCLIENTLOGS, also when XYMONCLIENTRUNDIR is not defined, or is set
+empty after the XYMONCLIENTLOGS line. It may point at a tmpfs such as /run/xymon-client to follow the FHS; the client
+does not create it, so it must exist and be writable by the user running the
+client.
+
 .IP "\fBXYMONTMP\fR"
 Directory used for temporary files. Default: $XYMONHOME/tmp/
 
