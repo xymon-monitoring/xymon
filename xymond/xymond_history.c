@@ -65,6 +65,7 @@ int main(int argc, char *argv[])
 	char *histdir = NULL;
 	char *histlogdir = NULL;
 	char *msg;
+	struct timespec *timeout = NULL;
 	int argi, seq;
 	int save_allevents = 1;
 	int save_hostevents = 1;
@@ -112,6 +113,10 @@ int main(int argc, char *argv[])
 			debug = 1;
 		}
 	}
+
+	/* default idle timeout of 10s */
+	timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
+	timeout->tv_sec = 10; timeout->tv_nsec = 0;
 
 	if (xgetenv("XYMONHISTDIR") && (histdir == NULL)) {
 		histdir = strdup(xgetenv("XYMONHISTDIR"));
@@ -177,7 +182,7 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 		else {
-			setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
+			setvbuf(alleventsfd, (char *)NULL, _IOFBF, 0);
 		}
 	}
 
@@ -210,11 +215,11 @@ int main(int argc, char *argv[])
 				errprintf("Cannot re-open the all-events file '%s'\n", alleventsfn);
 			}
 			else {
-				setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
+				setvbuf(alleventsfd, (char *)NULL, _IOFBF, 0);
 			}
 		}
 
-		msg = get_xymond_message(C_STACHG, "xymond_history", &seq, NULL);
+		msg = get_xymond_message(C_STACHG, "xymond_history", &seq, timeout);
 		if (msg == NULL) {
 			running = 0;
 			continue;
@@ -451,14 +456,21 @@ int main(int argc, char *argv[])
 				MEMDEFINE(fname);
 
 				p = hostdash = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = '_';
-				sprintf(fname, "%s/%s", histlogdir, hostdash);
-				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-				p = fname + sprintf(fname, "%s/%s/%s", histlogdir, hostdash, testname);
-				mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-				p += sprintf(p, "/%s", histlogtime(tstamp));
-
+				sprintf(fname, "%s/%s/%s/%s", histlogdir, hostdash, testname, histlogtime(tstamp));
 				histlogfd = fopen(fname, "w");
-				if (histlogfd) {
+				if (!histlogfd) {
+					/* Might be the first time seeing it the host+test combo; make necessary directories */
+					sprintf(fname, "%s/%s", histlogdir, hostdash);
+					mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);	/* no error check; will fail if we've seen the host */
+					sprintf(fname, "%s/%s/%s", histlogdir, hostdash, testname);
+					if ((mkdir(fname, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) && (errno != EEXIST)) errprintf("Cannot create %s: %s\n", fname, strerror(errno));
+					sprintf(fname, "%s/%s/%s/%s", histlogdir, hostdash, testname, histlogtime(tstamp));
+					histlogfd = fopen(fname, "w");
+				}
+
+				if (!histlogfd) errprintf("Cannot create histlog file '%s' : %s\n", fname, strerror(errno));
+				else {
+
 					/*
 					 * When a host gets disabled or goes purple, the status
 					 * message data is not changed - so it will include a
@@ -528,9 +540,6 @@ int main(int argc, char *argv[])
 
 					if (!ok) remove(fname);
 				}
-				else {
-					errprintf("Cannot create histlog file '%s' : %s\n", fname, strerror(errno));
-				}
 				xfree(hostdash);
 
 				MEMUNDEFINE(fname);
@@ -570,7 +579,6 @@ int main(int argc, char *argv[])
 				fprintf(alleventsfd, "%s %s %d %d %d %s %s %d\n",
 					hostname, testname, (int)tstamp, (int)lastchg, (int)(tstamp - lastchg),
 					newcol2, oldcol2, trend);
-				fflush(alleventsfd);
 			}
 
 			xfree(hostnamecommas);
@@ -794,7 +802,9 @@ int main(int argc, char *argv[])
 			}
 		}
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
-			/* Nothing */
+			dbgprintf("Got an 'idle' message\n");
+			if (alleventsfd) fflush(alleventsfd);
+			continue;
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
@@ -805,6 +815,7 @@ int main(int argc, char *argv[])
 				reopen_file(fn, "a", stdout);
 				reopen_file(fn, "a", stderr);
 			}
+			if (alleventsfd) fflush(alleventsfd);
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
