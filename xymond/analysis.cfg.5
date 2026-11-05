@@ -197,7 +197,8 @@ process and the related count and limits. But this may be a regular
 expression which is not easily recognizable, so if defined, the \fBtext\fR
 setting string will be used instead. This only affects the "procs" status
 display - it has no effect on how the rule counts or recognizes processes
-in the "ps" output.
+in the "ps" output. A text with blanks is quoted, either "TEXT=some text"
+or TEXT="some text"; without quotes it ends at the first blank.
 .sp
 Example: Check that "cron" is running:
 .br

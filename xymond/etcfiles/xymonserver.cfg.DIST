@@ -263,6 +263,7 @@ XYMONREPWARN="97"				# Default availability causing yellow status on availabilit
 XYMONREPGREEN="99.995"				# Default availability causing green status on availability report.
 XYMONGENREPOPTS="$XYMONGENOPTS"			# xymongen(1) options used when generating availability reports.
 XYMONREPEXT=""					# What extensions to run on report pages.
+# GNUDATE="gdate"				# GNU date for xymonreports.sh, when it is not gdate or date on the PATH above.
 
 # For Xymon snapshots
 XYMONGENSNAPOPTS="$XYMONGENOPTS"		# xymongen(1) options used when generating snapshots.

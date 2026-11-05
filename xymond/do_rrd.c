@@ -11,7 +11,6 @@
 static char rcsid[] = "$Id$";
 
 #include <sys/types.h>
-#include <sys/time.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,7 +19,6 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>
-#include <utime.h>
 
 #include <rrd.h>
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -258,17 +256,7 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	}
 
 	for (pcount = 0; (updparams[pcount]); pcount++);
-	optind = opterr = 0; rrd_clear_error();
 	result = xymon_rrd_update(pcount, updparams);
-
-#if defined(LINUX)
-	/*
-	 * RRDtool 1.2+ uses mmap'ed I/O, but the Linux kernel does not update timestamps when
-	 * doing file I/O on mmap'ed files. This breaks our check for stale/nostale RRD's.
-	 * So do an explicit timestamp update on the file here.
-	 */
-	utimes(filedir, NULL);
-#endif
 
 	/* Clear the cached data */
 	for (i=0; (i < cacheitem->valcount); i++) {
@@ -412,11 +400,6 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			}
 		}
 
-		/*
-		 * Ugly! RRDtool uses getopt() for parameter parsing, so
-		 * we MUST reset this before every call.
-		 */
-		optind = opterr = 0; rrd_clear_error();
 		result = xymon_rrd_create(4+pcount, rrdcreate_params);
 		xfree(rrdcreate_params);
 		if (rrakey) xfree(rrakey);
@@ -726,7 +709,6 @@ static int rrddatasets(char *hostname, char ***dsnames)
 	if (build_rrd_filedir(filedir, sizeof(filedir), hostname, rrdfn)) return 0;
 	if (stat(filedir, &st) == -1) return 0;
 
-	optind = opterr = 0; rrd_clear_error();
 	result = xymon_rrd_fetch(5, fetch_params, &starttime, &endtime, &steptime, &dscount, dsnames, &rrddata);
 	if (result == -1) {
 		errprintf("Error while retrieving RRD dataset names from %s: %s\n",

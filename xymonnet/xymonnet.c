@@ -80,8 +80,8 @@ int 		timeout=10;			/* The timeout (seconds) for all TCP-tests */
 char		*contenttestname = "content";   /* Name of the content checks column */
 char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks column */
 char		*failtext = "not OK";
-int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert column = yellow */
-int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
+int             sslwarndays = 14;		/* If cert expires in fewer days, SSL cert column = yellow */
+int             sslalarmdays = 7;		/* If cert expires in fewer days, SSL cert column = red */
 int             mincipherbits = 0;		/* If weakest cipher is weaker than this # of buts, SSL cert column = red */
 int		validity = 30;
 int		pingchildcount = DEFAULT_PING_CHILD_COUNT;	/* How many ping processes to start */
@@ -2381,18 +2381,24 @@ int main(int argc, char *argv[])
 
 	add_timestamp("xymonnet startup");
 
-	load_services();
-	if (servicedumponly) {
-		dump_tcp_services();
-		return 0;
-	}
-
+	/*
+	 * The built-in tests go in first: add_service() returns an existing entry
+	 * by name, so a built-in name in XYMONNETSVCS or protocols.cfg would
+	 * otherwise make it a TCP test, whose results are read from the built-in
+	 * test's private data.
+	 */
 	dnstest = add_service("dns", getportnumber("domain"), 0, TOOL_DNS);
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
 	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
 	httptest = add_service("http", getportnumber("http"),  0, TOOL_HTTP);
 	ldaptest = add_service("ldapurl", getportnumber("ldap"), strlen("ldap"), TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
+
+	load_services();
+	if (servicedumponly) {
+		dump_tcp_services();
+		return 0;
+	}
 	add_timestamp("Service definitions loaded");
 
 	usebackfeedqueue = (sendmessage_init_local() > 0);

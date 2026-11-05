@@ -5812,6 +5812,26 @@ void sig_handler(int signum)
 }
 
 
+/*
+ * Release every channel this process has set up as master. A channel not set
+ * up yet is still NULL, and close_channel() returns on NULL, so this is also
+ * what a startup that failed partway uses: without it, the channels set up
+ * before the failure keep their shared memory and semaphore sets until ipcrm
+ * or a reboot, and on a host with few semaphore sets the next start fails too.
+ */
+static void close_channels(void)
+{
+	close_channel(statuschn, CHAN_MASTER);
+	close_channel(stachgchn, CHAN_MASTER);
+	close_channel(pagechn, CHAN_MASTER);
+	close_channel(datachn, CHAN_MASTER);
+	close_channel(noteschn, CHAN_MASTER);
+	close_channel(enadischn, CHAN_MASTER);
+	close_channel(clientchn, CHAN_MASTER);
+	close_channel(clichgchn, CHAN_MASTER);
+	close_channel(userchn, CHAN_MASTER);
+}
+
 int main(int argc, char *argv[])
 {
 	conn_t *connhead = NULL, *conntail=NULL;
@@ -5881,9 +5901,11 @@ int main(int argc, char *argv[])
 			listenip = strdup(p);
 			p = strchr(listenip, ':');
 			if (p) {
+				/* Split for good: putting the colon back left the port
+				   in listenip, so inet_aton() failed and the zeroed
+				   sin_addr bound every interface. */
 				*p = '\0';
 				listenport = atoi(p+1);
-				*p = ':';
 			}
 		}
 		else if (argnmatch(argv[argi], "--timeout=")) {
@@ -6115,7 +6137,12 @@ int main(int argc, char *argv[])
 	/* Set up a socket to listen for new connections */
 	errprintf("Setting up network listener on %s:%d\n", listenip, listenport);
 	memset(&laddr, 0, sizeof(laddr));
-	inet_aton(listenip, (struct in_addr *) &laddr.sin_addr.s_addr);
+	if (inet_aton(listenip, (struct in_addr *) &laddr.sin_addr.s_addr) == 0) {
+		/* Checked: an unnoticed failure left sin_addr zero, and the daemon
+		   listened on everything. */
+		errprintf("Cannot parse listen address '%s'\n", listenip);
+		return 1;
+	}
 	laddr.sin_port = htons(listenport);
 	laddr.sin_family = AF_INET;
 	lsocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -6190,26 +6217,26 @@ int main(int argc, char *argv[])
 
 	errprintf("Setting up xymond channels\n");
 	statuschn = setup_channel(C_STATUS, CHAN_MASTER);
-	if (statuschn == NULL) { errprintf("Cannot setup status channel\n"); return 1; }
+	if (statuschn == NULL) { errprintf("Cannot setup status channel\n"); close_channels(); return 1; }
 	stachgchn = setup_channel(C_STACHG, CHAN_MASTER);
-	if (stachgchn == NULL) { errprintf("Cannot setup stachg channel\n"); return 1; }
+	if (stachgchn == NULL) { errprintf("Cannot setup stachg channel\n"); close_channels(); return 1; }
 	pagechn   = setup_channel(C_PAGE, CHAN_MASTER);
-	if (pagechn == NULL) { errprintf("Cannot setup page channel\n"); return 1; }
+	if (pagechn == NULL) { errprintf("Cannot setup page channel\n"); close_channels(); return 1; }
 	datachn   = setup_channel(C_DATA, CHAN_MASTER);
-	if (datachn == NULL) { errprintf("Cannot setup data channel\n"); return 1; }
+	if (datachn == NULL) { errprintf("Cannot setup data channel\n"); close_channels(); return 1; }
 	noteschn  = setup_channel(C_NOTES, CHAN_MASTER);
-	if (noteschn == NULL) { errprintf("Cannot setup notes channel\n"); return 1; }
+	if (noteschn == NULL) { errprintf("Cannot setup notes channel\n"); close_channels(); return 1; }
 	enadischn  = setup_channel(C_ENADIS, CHAN_MASTER);
-	if (enadischn == NULL) { errprintf("Cannot setup enadis channel\n"); return 1; }
+	if (enadischn == NULL) { errprintf("Cannot setup enadis channel\n"); close_channels(); return 1; }
 	clientchn  = setup_channel(C_CLIENT, CHAN_MASTER);
-	if (clientchn == NULL) { errprintf("Cannot setup client channel\n"); return 1; }
+	if (clientchn == NULL) { errprintf("Cannot setup client channel\n"); close_channels(); return 1; }
 	clichgchn  = setup_channel(C_CLICHG, CHAN_MASTER);
-	if (clichgchn == NULL) { errprintf("Cannot setup clichg channel\n"); return 1; }
+	if (clichgchn == NULL) { errprintf("Cannot setup clichg channel\n"); close_channels(); return 1; }
 	userchn  = setup_channel(C_USER, CHAN_MASTER);
-	if (userchn == NULL) { errprintf("Cannot setup user channel\n"); return 1; }
+	if (userchn == NULL) { errprintf("Cannot setup user channel\n"); close_channels(); return 1; }
 	if (create_backfeedqueue) {
 		backfeedqueue  = setup_feedback_queue(CHAN_MASTER);
-		if (backfeedqueue == -1) { errprintf("Cannot setup backfeed-client channel\n"); return 1; }
+		if (backfeedqueue == -1) { errprintf("Cannot setup backfeed-client channel\n"); close_channels(); return 1; }
 		bf_bufsz = 1024*shbufsz(C_FEEDBACK_QUEUE);
 		bf_buf = (char *)malloc(bf_bufsz);
 	}
@@ -6636,15 +6663,7 @@ int main(int argc, char *argv[])
 	running = 0;
 
 	/* Close the channels */
-	close_channel(statuschn, CHAN_MASTER);
-	close_channel(stachgchn, CHAN_MASTER);
-	close_channel(pagechn, CHAN_MASTER);
-	close_channel(datachn, CHAN_MASTER);
-	close_channel(noteschn, CHAN_MASTER);
-	close_channel(enadischn, CHAN_MASTER);
-	close_channel(clientchn, CHAN_MASTER);
-	close_channel(clichgchn, CHAN_MASTER);
-	close_channel(userchn, CHAN_MASTER);
+	close_channels();
 
 	if (backfeedqueue >= 0) close_feedback_queue(backfeedqueue, CHAN_MASTER);
 	if (bf_buf) xfree(bf_buf);
