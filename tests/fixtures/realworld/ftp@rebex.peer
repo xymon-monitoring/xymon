@@ -1,0 +1,6 @@
+# test.rebex.net:21 -- drives [ftp]. A genuine multi-line 220 whose middle
+# line carries no code at all, which is what "until" is for.
+send "220-Welcome to test.rebex.net!\r\n    See https://test.rebex.net/ for more information and terms of use.\r\n220 If you don't have an account, log in as 'anonymous' or 'ftp'.\r\n"
+recv quit
+send "221 Closing session.\r\n"
+hangup
