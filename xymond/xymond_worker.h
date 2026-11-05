@@ -18,6 +18,7 @@ typedef void (update_fn_t)(char *);
 extern int net_worker_option(char *arg);
 extern int net_worker_locatorbased(void);
 extern void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t sticky, update_fn_t *updfunc);
+extern void set_xymond_message_growlimit(size_t maxbytes);
 extern unsigned char *get_xymond_message(enum msgchannels_t chnid, char *id, int *seq, struct timespec *timeout);
 
 #endif
