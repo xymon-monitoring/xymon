@@ -19,9 +19,21 @@
 # six in total, past a budget of five, so a shared counter fails the second.
 #
 # free_port() is replaced with a scripted sequence, and the port it hands out
-# first is held by a socket that refuses connections (tests/lib/port-blocker.c):
-# a listener would read as a successful startup, since the readiness probe
-# cannot tell one Xymon-speaking listener from another.
+# first is held by tests/lib/port-blocker.c: a socket bound to 127.0.0.1 but
+# never listened on. A second bind of the same address and port is refused,
+# even with SO_REUSEADDR. A connect() to it gets no daemon either: Linux
+# refuses it at once, the BSDs and macOS drop the SYN. So the readiness probe,
+# which cannot tell one Xymon-speaking listener from another, cannot mistake
+# it for a started daemon.
+#
+# That the port is reserved is checked rather than assumed, because it is the
+# premise the whole test rests on and whether a bind collides depends on the
+# platform: Linux refuses a wildcard bind that overlaps the blocker, the BSDs
+# and macOS let it through. That is how this test passed on Linux and never
+# collided elsewhere while xymond bound the wildcard. Without the check, a
+# blocker that fails to block does not say so -- xymond takes the port it was
+# supposed to collide with, starts, and the failure arrives ten seconds later
+# as "xymond did not answer", pointing at the daemon instead of the fixture.
 #
 # Needs a built tree: xymond itself and the xymon client.
 
@@ -72,6 +84,12 @@ while [ "$i" -lt 50 ]; do
 done
 [ -s "$work/blocked.port" ] || fail "port-blocker never named its port"
 BLOCKER_PORT=$(cat "$work/blocked.port")
+
+# The premise: nothing else may bind that port. Asked the way xymond asks,
+# SO_REUSEADDR and all.
+if "$work/port-blocker" "$BLOCKER_PORT"; then
+	fail "port $BLOCKER_PORT is still bindable while port-blocker holds it, so the collision this test drives would never happen"
+fi
 
 # --- free_port hands out the blocked port three times, then a real one --------
 
