@@ -17,6 +17,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -200,7 +201,18 @@ int main(int argc, char *argv[])
 
 	snprintf(dirid, sizeof(dirid), "%lu-%u", (unsigned long)getpid(), (unsigned int)getcurrenttime(NULL));
 	snprintf(outdir, sizeof(outdir), "%s/%s", xgetenv("XYMONSNAPDIR"), dirid);
-	if (mkdir(outdir, 0755) == -1) errormsg("Cannot create output directory");
+	if (mkdir(outdir, 0755) == -1) {
+		int err = errno;
+		char msg[512];
+
+		errprintf("Cannot create snapshot directory %s: %s\n", outdir, strerror(err));
+		snprintf(msg, sizeof(msg),
+			"Cannot create the snapshot directory: %s. "
+			"Check that XYMONSNAPDIR exists and the web server can write to it; "
+			"the CGI's error log has the full path (the web server's error log, "
+			"or cgierror.log when XYMONCGILOGDIR is set).", strerror(err));
+		errormsg(msg);
+	}
 
 	snprintf(xymonwebenv, xymonwebenv_buflen, "XYMONWEB=%s/%s", xgetenv("XYMONSNAPURL"), dirid);
 	putenv(xymonwebenv);
