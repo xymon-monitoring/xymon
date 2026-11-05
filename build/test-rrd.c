@@ -24,7 +24,6 @@ int main(void)
 	double ymin, ymax;
 
 	for (pcount = 0; (rrdargs[pcount]); pcount++);
-	rrd_clear_error();
 	result = xymon_rrd_graph(pcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
 	(void)result;
 
