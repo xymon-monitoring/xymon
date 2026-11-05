@@ -16,7 +16,11 @@
 # The script is built from its .DIST here as xymond/Makefile builds it, and
 # run against stand-ins: a GNU date that answers --version and the formats
 # the script asks for with fixed values, a BSD date that rejects every long
-# option, and an xymongen that only records its arguments.
+# option, and an xymongen that only records its arguments. The PATH it runs
+# on holds the stand-ins and the two tools the script itself needs, and no
+# system directory: Solaris 11.4 has a real GNU date at /usr/bin/gdate, which
+# the script rightly prefers to a date on PATH, so a PATH that kept /usr/bin
+# made the cases without gdate find one anyway.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -26,7 +30,13 @@ require_cfg REPORTS_DIST "xymond/xymonreports.sh.DIST"
 
 work=$(mktempdir)
 home=$work/home
-mkdir -p "$home/bin" "$home/www" "$work/gnu" "$work/bsd" "$work/both"
+mkdir -p "$home/bin" "$home/www" "$work/gnu" "$work/bsd" "$work/both" "$work/tools"
+
+# What the script runs besides date and xymongen, found now and linked into
+# the only other directory on its PATH.
+for tool in grep mkdir; do
+	ln -s "$(command -v "$tool")" "$work/tools/$tool"
+done
 
 sed -e "s!@XYMONHOME@!$home!g" "$REPORTS_DIST" >"$work/xymonreports.sh"
 chmod 755 "$work/xymonreports.sh"
@@ -53,7 +63,7 @@ cat >"$work/bsddate" <<'BSD'
 case "$1" in
 	--*|+%s) echo "date: illegal option -- -" >&2; exit 1 ;;
 esac
-date "$@"
+exec /bin/date "$@"
 BSD
 cat >"$home/bin/xymongen" <<'GEN'
 #!/bin/sh
@@ -69,14 +79,15 @@ cp "$work/gnudate" "$work/both/gdate"
 export GNUDATE_LOG=$work/gnudate.log XYMONGEN_LOG=$work/xymongen.log
 export XYMONHOME=$home XYMONWWWDIR=$home/www XYMONWEB=/xymon XYMONGENREPOPTS=""
 
-# run_reports DIR [GNUDATE=value] -- run the daily report with DIR first on
-# PATH; sets status, err, and clears both logs first.
+# run_reports DIR [GNUDATE=value] -- run the daily report with DIR and the
+# tools directory as the whole PATH; sets status, err, and clears both logs
+# first.
 run_reports() {
 	local dir=$1; shift
 	: >"$GNUDATE_LOG"; : >"$XYMONGEN_LOG"
 	set +e
 	# Through $BASH, not the script's own #!/bin/bash: FreeBSD has no /bin/bash.
-	env -u GNUDATE "$@" PATH="$dir:/bin:/usr/bin" "$BASH" "$work/xymonreports.sh" daily \
+	env -u GNUDATE "$@" PATH="$dir:$work/tools" "$BASH" "$work/xymonreports.sh" daily \
 		>"$work/out" 2>"$work/err"
 	status=$?
 	set -e
