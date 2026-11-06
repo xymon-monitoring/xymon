@@ -147,7 +147,7 @@ static void setup_transport(char *recipient)
 	dbgprintf("xymonproxyport = %d\n", xymonproxyport);
 }
 
-static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **respstr, int fullresponse, int timeout)
+static int sendtoxymond(char *recipient, char *message, FILE *respfd, strbuffer_t *respstr, int fullresponse, int timeout)
 {
 	struct in_addr addr;
 	struct sockaddr_in saddr;
@@ -164,8 +164,6 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 	SBUF_DEFINE(httpmessage);
 	char recvbuf[32768];
 	int haveseenhttphdrs = 1;
-	int respstrsz = 0;
-	int respstrlen = 0;
 	int result = XYMONSEND_OK;
 
 	if (dontsendmessages && !respfd && !respstr) {
@@ -387,20 +385,12 @@ retry_connect:
 							fwrite(outp, n, 1, respfd);
 						}
 						else if (respstr) {
-							char *respend;
-
-							if (respstrsz == 0) {
-								respstrsz = (n+sizeof(recvbuf));
-								*respstr = (char *)malloc(respstrsz);
-							}
-							else if ((n+respstrlen) >= respstrsz) {
-								respstrsz += (n+sizeof(recvbuf));
-								*respstr = (char *)realloc(*respstr, respstrsz);
-							}
-							respend = (*respstr) + respstrlen;
-							memcpy(respend, outp, n);
-							*(respend + n) = '\0';
-							respstrlen += n;
+							/*
+							 * By its length, not as a string: a reply
+							 * holding a NUL must reach the caller whole,
+							 * so that it can tell (see prepare_fromnet()).
+							 */
+							addtobufferraw(respstr, outp, n);
 						}
 						if (!fullresponse) {
 							rdone = (strchr(outp, '\n') == NULL);
@@ -495,13 +485,18 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 		int oneres;
 
 		if (first) {
-			/* We grab the result from the first server */
-			char *respstr = NULL;
+			/*
+			 * We grab the result from the first server. Into a buffer
+			 * of its own, so that a server that fails part-way leaves
+			 * nothing in the caller's.
+			 */
+			strbuffer_t *respstr = NULL;
 
 			if (response) {
+				if (response->respstr) respstr = newstrbuffer(0);
 				oneres =  sendtoxymond(rcpt, msg,
 						    response->respfd,
-						    (response->respstr ? &respstr : NULL),
+						    respstr,
 						    (response->respfd || response->respstr),
 						    timeout);
 			}
@@ -511,11 +506,11 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 
 			if (oneres == XYMONSEND_OK) {
 				if (respstr && response && response->respstr) {
-					addtobuffer(response->respstr, respstr);
-					xfree(respstr);
+					addtostrbuffer(response->respstr, respstr);
 				}
 				first = 0;
 			}
+			if (respstr) freestrbuffer(respstr);
 		}
 		else {
 			/* Secondary servers do not yield a response */

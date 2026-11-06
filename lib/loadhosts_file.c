@@ -89,13 +89,28 @@ static int prepare_fromnet(void)
 	static char contentmd5[33] = { '\0', };
 	sendreturn_t *sres;
 	sendresult_t sendstat;
-	char *fdata, *fhash;
+	char *fdata, *fhash, *nul;
 
 	sres = newsendreturnbuf(1, NULL);
 	sendstat = sendmessage("config hosts.cfg", NULL, XYMON_TIMEOUT, sres);
 	if (sendstat != XYMONSEND_OK) {
 		freesendreturnbuf(sres);
 		errprintf("Cannot load hosts.cfg from xymond, code %d\n", sendstat);
+		return -1;
+	}
+
+	/*
+	 * Refuse a reply holding a NUL rather than load what comes before it:
+	 * every host after the NUL would go missing without a word, and the
+	 * file holds them all. Forget the last hash too, so that the next good
+	 * reply is loaded even when it matches the one loaded before this.
+	 */
+	nul = memchr(STRBUF(sres->respstr), '\0', STRBUFLEN(sres->respstr));
+	if (nul) {
+		errprintf("xymond returned hosts.cfg with a NUL byte at offset %ld; ignoring reply\n",
+			  (long)(nul - STRBUF(sres->respstr)));
+		freesendreturnbuf(sres);
+		*contentmd5 = '\0';
 		return -1;
 	}
 
