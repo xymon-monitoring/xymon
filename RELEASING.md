@@ -84,6 +84,18 @@ release gets another number — a 4.4.0 where 4.3.31 was planned — rename it i
 the same pass, in three places: the top `Changes from X -> Y` heading, and in
 `RELEASENOTES` the title box and the `Changes for X.Y.Z` heading.
 
+```sh
+git fetch origin
+git switch Changes && git merge --no-edit origin/main
+# Fill the date into the top "Changes from X -> Y (XX Xxx XXXX)" heading, and
+# drop "(not yet released)" from the top RELEASENOTES heading, then:
+git commit -am "Changes: close out X.Y.Z"
+git push origin Changes
+gh pr create --base main --head Changes --title "Changes: X.Y.Z"
+# Review the two-file diff, then merge it to main:
+gh pr merge Changes --merge
+```
+
 ### 2. Run the prep workflow
 
 GitHub → Actions → **Pre-tag release prep** → *Run workflow* → version as
@@ -102,6 +114,14 @@ lines. Anything else means the generation went wrong.
 
 Reruns are safe — the branch is always recreated from `main`, and an existing
 `rel-X.Y.Z` tag makes the workflow refuse outright.
+
+From a terminal instead of the Actions UI:
+
+```sh
+gh workflow run "Pre-tag release prep" -f version=X.Y.Z
+# follow it, and the prep PR it opens:
+gh run watch "$(gh run list --workflow='Pre-tag release prep' -L1 --json databaseId -q '.[0].databaseId')"
+```
 
 ### 3. Review and merge the prep PR
 
@@ -122,6 +142,12 @@ A check that failed for a reason outside the branch, such as a flaky lane, needs
 no new prep run: re-run it from its run page. It runs again on the same commit,
 and its result replaces the earlier one on the PR.
 
+```sh
+gh pr diff release/X.Y.Z     # only version stamps, include/version.h, md5.dat
+gh pr checks release/X.Y.Z   # all green
+gh pr merge release/X.Y.Z --merge
+```
+
 ### 4. Tag the merge commit
 
 ```sh
@@ -140,6 +166,31 @@ release with both attached.
 ### 5. Publish the draft release
 
 Check the generated notes and attached files, publish.
+
+```sh
+gh release view rel-X.Y.Z              # read the draft's notes and assets
+gh release edit rel-X.Y.Z --draft=false
+```
+
+## After the release
+
+The tag sits on `main`'s tip, and `include/version.h` still holds the number
+just released, so a build from `main` reports the release and
+`git describe --exact-match` on the tip returns the tag until the next commit
+lands -- which misleads anything keying off either (it left the RPM build
+treating a `main` build as the release). Bump `include/version.h` to the next
+`X.Y.Z+1-dev` so `main` names what it is becoming. See #676 for the fuller
+build-identity work this anticipates.
+
+```sh
+git fetch origin
+git switch -c post-release/X.Y.Z+1-dev origin/main
+# set VERSION in include/version.h to "X.Y.Z+1-dev", then:
+git commit -am "version.h: X.Y.Z+1-dev after the X.Y.Z release"
+git push origin post-release/X.Y.Z+1-dev
+gh pr create --base main --head post-release/X.Y.Z+1-dev \
+	--title "version.h: X.Y.Z+1-dev after the X.Y.Z release"
+```
 
 ## Reproducibility
 
