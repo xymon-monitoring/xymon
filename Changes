@@ -2,7 +2,7 @@ Maintained by the release manager on the Changes branch; do not edit it in a
 pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
 
 
-Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
+Changes from 4.3.30 -> 4.3.31 (06 Nov 2026)
 ===========================================
 
 * Fix typo \fb (instead of \fB) in some man pages (#10) (Thanks, Roland Rosenfeld)
