@@ -13,8 +13,8 @@ A pull request that needs an entry writes it in the open "(not yet
 released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 
 
-Changes for 4.3.31 (not yet released)
-=====================================
+Changes for 4.3.31
+==================
 
 Clients -- filesystem reporting
 -------------------------------
