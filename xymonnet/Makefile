@@ -135,7 +135,6 @@ ifndef PKGBUILD
 endif
 
 install-config:
-	../build/convert-bbservices.sh $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 	../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
