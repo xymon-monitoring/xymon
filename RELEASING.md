@@ -141,6 +141,16 @@ release with both attached.
 
 Check the generated notes and attached files, publish.
 
+## After the release
+
+The tag sits on `main`'s tip, and `include/version.h` still holds the number
+just released, so a build from `main` reports the release and
+`git describe --exact-match` on the tip returns the tag until the next commit
+lands -- which misleads anything keying off either (it left the RPM build
+treating a `main` build as the release). Bump `include/version.h` to the next
+`X.Y.Z+1-dev` so `main` names what it is becoming. See #676 for the fuller
+build-identity work this anticipates.
+
 ## Reproducibility
 
 The same tag always produces a byte-identical tarball, which is what makes the
