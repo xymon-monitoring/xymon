@@ -16,6 +16,20 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+build -- the Big Brother and Hobbit upgrade path is gone
+--------------------------------------------------------
+
+The helpers for upgrading from Big Brother, Hobbit or Xymon 4.2.x are
+removed: build/upgrade430.sh, renamevars, renametasks and
+convert-bbservices.sh, with docs/upgrade-to-430.txt, docs/Renaming-430.txt
+and docs/bb-to-xymon.html. "make" no longer prints the upgrade notice, and
+"make install" no longer runs the protocols.cfg converter.
+
+An installation still on Big Brother, Hobbit or 4.2.x upgrades to 4.3.31
+first, which still carries them, and then to this release. Packages that
+install or reference these files need to drop them; the FreeBSD port's
+post-install does.
+
 xymonnet -- https certificate name check
 ----------------------------------------
 
