@@ -6,6 +6,13 @@ test-compile:
 test-link:
 	@$(CC) $(CFLAGS) $(RRDDEF) $(RRDLIB) -o test-rrd test-rrd.o -lrrd $(PNGLIB)
 
+# The two prototypes of rrd_update(): exactly one compiles against rrd.h.
+test-argv-const:
+	@$(CC) $(CFLAGS) $(RRDINC) -o test-rrd-argv.o -c test-rrd-argv-const.c
+
+test-argv-mutable:
+	@$(CC) $(CFLAGS) $(RRDINC) -o test-rrd-argv.o -c test-rrd-argv-mutable.c
+
 clean:
-	@rm -f test-rrd.o test-rrd xymongen.png
+	@rm -f test-rrd.o test-rrd xymongen.png test-rrd-argv.o
 

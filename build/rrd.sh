@@ -92,19 +92,15 @@
 	# inferring it from the RRDtool version (which is unreliable: e.g. some
 	# 1.8 backports already use the "const char **" prototype). We try to
 	# redeclare rrd_update() both ways and keep the one that matches.
+	# Compiled through build/Makefile.test-rrd, as every other configure
+	# check is, so with the compiler build/Makefile.$(OS) chooses -- the one
+	# the build uses. They used to call ${CC:-cc} themselves, and on a system
+	# whose compiler is gcc and that has no cc (Solaris 11.4) both failed.
 	probe_rrd_const_args() {
-		${CC:-cc} ${INCOPT} -x c -c -o /dev/null - >/dev/null 2>&1 <<'PROBE'
-#include <rrd.h>
-int rrd_update(int, const char **);
-int main(void) { return 0; }
-PROBE
+		(cd build && OS=`uname -s | sed -e's@/@_@g'` RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-argv-const) >/dev/null 2>&1
 	}
 	probe_rrd_mutable_args() {
-		${CC:-cc} ${INCOPT} -x c -c -o /dev/null - >/dev/null 2>&1 <<'PROBE'
-#include <rrd.h>
-int rrd_update(int, char **);
-int main(void) { return 0; }
-PROBE
+		(cd build && OS=`uname -s | sed -e's@/@_@g'` RRDINC="$INCOPT" $MAKE -f Makefile.test-rrd test-argv-mutable) >/dev/null 2>&1
 	}
 
 	if test "$RRD_CONST_ARGS" != ""; then
