@@ -135,6 +135,57 @@ void errormsg(char *msg)
 	exit(1);
 }
 
+/*
+ * Ask rrdcached to write this host's RRDs out before we read them.
+ *
+ * Every RRD is named, not just the first two dozen: a host past the cap
+ * would be graphed from whatever the daemon had last written, which is the
+ * stale-graph problem this function exists to prevent - and it would appear
+ * only on the hosts with the most tests.
+ *
+ * rrd_flushcached() parses an argv of its own, so reset getopt around it the
+ * way generate_graph() does before rrd_graph(); and clear the error it leaves
+ * when there is no daemon to talk to, which is not this CGI's to report.
+ */
+void rrd_cached_flush(char *hostname)
+{
+	DIR *dirHandle;
+	struct dirent * dirEntry;
+	char dirName[PATH_MAX];
+	char fileName[PATH_MAX];
+	xymon_rrd_argv_item_t flush_args[3];
+	int len;
+
+	flush_args[0] = "rrdflushcached";
+	flush_args[1] = fileName;
+	flush_args[2] = NULL;
+
+	/* get this host's RRD directory */
+	snprintf(dirName, sizeof(dirName), "%s/%s", xgetenv("XYMONRRDS"), hostname);
+
+	/* now iterate all the rrd files in this directory */
+	dirHandle = opendir(dirName);
+	if (!dirHandle) {
+		if (errno != ENOENT) errprintf("showgraph: could not open %s: %s\n", dirName, strerror(errno));
+		return;
+	}
+
+	while ((dirEntry = readdir(dirHandle)) != NULL) {
+		len = strlen(dirEntry->d_name);
+		if ((len < 4) || strcmp(dirEntry->d_name + len - 4, ".rrd") != 0) continue;
+
+		/* create final filename */
+		snprintf(fileName, sizeof(fileName), "%s/%s", hostname, dirEntry->d_name);
+		dbgprintf(" - found an RRD file to ask to be flushed: %s\n", fileName);
+
+		/* and flush */
+		optind = opterr = 0; rrd_clear_error();
+		xymon_rrd_flushcached(2, flush_args);
+		rrd_clear_error();
+	}
+	closedir(dirHandle);
+}
+
 void request_cacheflush(char *hostname)
 {
 	/* Build a cache-flush request, and send it to all of the $XYMONTMP/rrdctl.* sockets */
@@ -206,6 +257,15 @@ void request_cacheflush(char *hostname)
 	}
 	closedir(dir);
 	xfree(req);
+
+	/* If using rrdcached, send that a flush request as well 
+	 * Note: It's possible you might be using two layers of caching here (xymond_rrd's
+	 * as well as the rrdtool caching daemon. Send ours first to give it a chance to
+	 * perhaps send it off to the daemon first.
+	 *
+	 * This variable can be controlled independently in ~/etc/cgioptions.cfg.
+	 */
+	if ((getenv("RRDCACHED_ADDRESS") != NULL) && (strlen(getenv("RRDCACHED_ADDRESS")) > 0)) rrd_cached_flush(hostname);
 
 	/*
 	 * Sleep 0.3 secs to allow the cache flush to happen.
