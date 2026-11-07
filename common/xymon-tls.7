@@ -1,0 +1,165 @@
+.TH XYMON-TLS 7 "Version 4.3.30:  4 Sep 2019" "Xymon"
+.SH NAME
+xymon\-tls \- Sending Xymon messages over TLS
+
+.SH DESCRIPTION
+Xymon messages travel in plaintext on port 1984. xymond can also take them
+over TLS, on a port of its own (1985 by default), and the xymon client sends
+there when a recipient is written "xymons://". This page is how to set that
+up and roll it out. Each setting it names is specified in the page given
+with it.
+
+TLS adds, in this order:
+.IP "encryption" 4
+Nobody on the network can read the messages.
+.IP "the server's identity" 4
+A client sends only to a server whose certificate it trusts and that
+names the host or address it connects to.
+.IP "each client's identity" 4
+A client presents a certificate naming its host, and may then report for
+that host from any address, without being listed in
+\fB\-\-status\-senders\fR.
+.LP
+The plaintext port keeps working beside the TLS port, so clients move
+over one at a time.
+
+.SH THE SERVER
+xymond takes TLS on the addresses given with \fB\-\-tls\-listen\fR in the
+xymond command of tasks.cfg(5), written as for \fB\-\-listen\fR (see
+xymond(8)):
+.IP
+\-\-listen=0.0.0.0:1984 \-\-tls\-listen=0.0.0.0:1985
+.LP
+Its certificate and key are $XYMONHOME/etc/tls/xymond.pem and
+$XYMONHOME/etc/tls/xymond.key, unless XYMOND_TLS_CERT and XYMOND_TLS_KEY
+in xymonserver.cfg(5) say otherwise. The key must not be readable by
+others than its owner and its group.
+
+The certificate must name, in its subjectAltName, what the clients connect
+to: the host name in their XYMSRV, or the IP address if that is what XYMSRV
+holds. A certificate from a public or company CA that the clients' systems
+already trust needs nothing more on the clients.
+
+Before restarting xymond, and after each renewal, check the files as the
+user xymond runs as:
+.IP
+xymond \-\-check\-tls \-\-env=$XYMONHOME/etc/xymonserver.cfg
+.LP
+xymond does not start when the files do not load. A renewed certificate is
+loaded on SIGHUP, without a restart; if it does not load, xymond logs why
+and keeps the one it had.
+
+An expired certificate is still served, with a warning in xymond's log,
+and every client that verifies it refuses it. Running
+\fB\-\-check\-tls\fR daily, from cron or a task in tasks.cfg(5), shows the
+days left before that happens.
+
+.SH THE CLIENTS
+A client sends over TLS when its recipient is written "xymons://":
+.IP
+XYMSRV="xymons://xymon.example.com"
+.LP
+in xymonclient.cfg(5), or xymonserver.cfg(5) for the tools on the server.
+The port is XYMONDTLSPORT, 1985 by default, unless the recipient gives one.
+Recipients in XYMSERVERS are taken one by one, so a client can send to a
+server over TLS and to another in plaintext.
+
+A recipient "xymons://" either gets TLS or gets nothing: when the handshake
+fails, the message is not sent, and xymon(1) says why. There is no retry in
+plaintext.
+
+The client is built with TLS when OpenSSL is found at build time; a client
+built without it refuses a "xymons://" recipient.
+
+.SH THREE LEVELS
+Choose by what must be protected; each level adds to the one before.
+.IP "1. Encryption only" 4
+XYMON_TLS_VERIFY=none on the clients. The messages are encrypted, but a
+client sends to whoever answers on the server's address. Useful only while
+the server's certificate is not yet trusted by the clients.
+.IP "2. The server verified" 4
+The default. Clients trust the server's CA \(em the system's, or the file
+XYMON_TLS_CA names \(em and check that the certificate names the server.
+XYMON_TLS_SNI gives the name to check when XYMSRV holds an address and the
+certificate names the host.
+.IP "3. Each client verified" 4
+On the server, XYMOND_TLS_CA names the CA that issues the clients'
+certificates. Each client sets XYMON_TLS_CERT and XYMON_TLS_KEY to a
+certificate whose subjectAltName is its host's name exactly as hosts.cfg
+has it. That host may then report for itself from any address; the
+certificate allows nothing for any other host. With
+XYMOND_TLS_REQUIRE_CERT=TRUE, a TLS client without a certificate is
+refused.
+.LP
+The client settings are in xymonserver.cfg(5); the server settings are
+there too and in xymond(8).
+
+.SH ROLLING IT OUT
+.IP 1. 4
+Give xymond a certificate and a \fB\-\-tls\-listen\fR address. Check with
+\fB\-\-check\-tls\fR, then restart xymond. Nothing changes for the
+clients.
+.IP 2. 4
+Move clients to "xymons://", a few at a time. A client that cannot reach
+the TLS port reports nothing, and its columns go purple: that is how a
+missed one shows.
+.IP 3. 4
+For level 3, set XYMOND_TLS_CA, restart xymond, and give each client its
+certificate. Clients without one are still served and checked by address
+until XYMOND_TLS_REQUIRE_CERT is set.
+.IP 4. 4
+To stop plaintext from the network, let the plaintext port answer only
+locally, \fB\-\-listen=127.0.0.1:1984\fR, or close port 1984 to the
+networks that must use TLS in the firewall. The tools on the server
+itself keep using the plaintext port.
+.LP
+Senders that report for other hosts \(em the network tests of xymonnet(1)
+on another server, a collector \(em are allowed by address in
+\fB\-\-status\-senders\fR, as before. With XYMOND_TLS_REQUIRE_CERT they
+also need a certificate to connect over TLS.
+
+.SH CERTIFICATES
+Xymon distributes no certificates: it reads the files it is given.
+.IP "The CA certificate" 4
+is public. Copy it to every host that needs it with whatever manages the
+hosts' configuration.
+.IP "A private key" 4
+is made on the host that uses it and never leaves it. The host makes a
+request, the CA signs it, and only the certificate travels back.
+.IP "Renewal" 4
+On a client, replace the files: the xymon program reads them each time
+it runs. On the
+server, replace them, check with \fB\-\-check\-tls\fR, and send SIGHUP to
+xymond. Replace a file by renaming a complete new one over it, so that
+nothing reads it half-written.
+.LP
+For example, with OpenSSL, a key and a request for web01.example.com,
+made on that host:
+.IP
+openssl req \-new \-newkey ec \-pkeyopt ec_paramgen_curve:prime256v1
+\-nodes \-keyout web01.key \-out web01.csr \-subj "/CN=web01.example.com"
+\-addext subjectAltName=DNS:web01.example.com
+.LP
+then signed by the CA, keeping the request's subjectAltName:
+.IP
+openssl x509 \-req \-in web01.csr \-CA ca.pem \-CAkey ca.key
+\-CAcreateserial \-days 365 \-copy_extensions copy \-out web01.pem
+.LP
+\-copy_extensions needs OpenSSL 3.0 or later; with an older one, give the
+subjectAltName with \-extfile instead.
+
+.SH LIMITS
+.IP \(bu 4
+Revocation is not checked: no CRL, no OCSP. A certificate stays good until
+it expires, or until its CA is replaced.
+.IP \(bu 4
+xymonproxy(8), and msgcache(8) with xymonfetch(8), use connections of
+their own, in plaintext only.
+.IP \(bu 4
+A certificate cannot be given rights beyond its own host: reporting for
+other hosts, and the maintenance and administration commands, are allowed
+by address, with the \fB\-\-*\-senders\fR options of xymond(8).
+
+.SH "SEE ALSO"
+xymond(8), xymon(1), xymonserver.cfg(5), xymonclient.cfg(5), tasks.cfg(5),
+xymon(7)
