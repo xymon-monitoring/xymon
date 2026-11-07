@@ -11,3 +11,4 @@ usr/share/man/man8/xymonlaunch.8
 usr/share/man/man1/logfetch.1
 usr/share/man/man8/msgcache.8
 usr/share/man/man1/orcaxymon.1
+usr/share/man/man7/xymon-tls.7

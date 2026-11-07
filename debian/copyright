@@ -4,8 +4,10 @@ Upstream-Contact: xymon@xymon.com
 Source: https://sourceforge.net/projects/xymon/
 
 Files: *
-Copyright: 2002-2016 Henrik Størner <henrik@hswn.dk>
+Copyright: 2002-2019 Henrik Størner <henrik@hswn.dk>
 License: GPL-2 with OpenSSL exception
+Comment:
+ The OpenSSL exemption is only mentioned in README and common/xymon.7.
 
 Files: debian/*
 Copyright: 2005-2007 Henrik Størner <henrik@hswn.dk>
@@ -13,6 +15,17 @@ Copyright: 2005-2007 Henrik Størner <henrik@hswn.dk>
            2011-2023 Axel Beckert <abe@debian.org>
            2024-2026 Roland Rosenfeld <roland@debian.org>
 License: GPL-2 with OpenSSL exception
+
+Files: tests/*
+Copyright: 2026 Bruno Manzoni
+           2026 Roland Rosenfeld
+           2026 Markus Häll
+License: GPL-2+
+Comment:
+ The test suite currently only states "SPDX-License-Identifier:
+ GPL-2.0-or-later" without a copyright holder.
+ https://github.com/xymon-monitoring/xymon/issues/525 shows the
+ copyright holders based on the git authors.
 
 Files: client/xymonclient-sco_sv.sh
 Copyright: 2005-2011 Henrik Størner
@@ -28,17 +41,55 @@ Files: xymond/webfiles/zoom.js
 Copyright: 2004 Eric Steffen <eric.steffen@gmx.net>
 License: GPL-2+
 
+Files: xymond/webfiles/maint_header
+Copyright: Tom Schmidt
+License: GPL-2 with OpenSSL exception and Artistic
+Comment:
+ The file contains Xymon material under GPL-2 with the OpenSSL exemption,
+ and JavaScript copied from "maint.pl" by Tom Schmidt under the Artistic
+ License.
+
+Files: xymonnet/dns2.c
+Copyright: 2004-2011 Henrik Storner <henrik@hswn.dk>
+           1998 by the Massachusetts Institute of Technology.
+License: GPL-2 and NTP
+Comment:
+ This program is released under the GNU General Public License (GPL),
+ version 2. See the file "COPYING" for details.
+ .
+ All of the code for parsing DNS responses and formatting these into
+ text were taken from the "adig.c" source-file included with the
+ C-ARES 1.2.0 library. This file carries the following copyright
+ notice, reproduced in full:
+
+License: NTP
+ Permission to use, copy, modify, and distribute this
+ software and its documentation for any purpose and without
+ fee is hereby granted, provided that the above copyright
+ notice appear in all copies and that both that copyright
+ notice and this permission notice appear in supporting
+ documentation, and that the name of M.I.T. not be used in
+ advertising or publicity pertaining to distribution of the
+ software without specific, written prior permission.
+ M.I.T. makes no representations about the suitability of
+ this software for any purpose.  It is provided "as is"
+ without express or implied warranty.
+
 Files: lib/md5.c
 Copyright: 1999, 2000, 2002 Aladdin Enterprises
-License: Zlib and GPL
+License: Zlib
 Comment:
- The header of the file states: "This file is part of the Hobbit
+ The header of the file states: "This file is part of the Xymon
  monitor library, but was written by Peter Deutsch and released under
  the GNU GPL." and then shows the zlib license text.
 
-Files: lib/ripemd.h
+Files: lib/ripemd.h lib/rmd160c.c lib/rmdconst.h lib/rmd_locl.h
 Copyright: 1995-1998 Eric Young (eay@cryptsoft.com)
-License: BSD-3-Clause-Eric-Young
+License: SSLeay
+ This file is part of the Xymon monitor library, but was taken from the
+ FreeBSD sources. It was originally written by Eric Young, and is NOT
+ licensed under the GPL. Please adhere the original copyright notice below.
+ .
  All rights reserved.
  .
  This package is an SSL implementation written
@@ -101,7 +152,7 @@ License: BSD-3-Clause-Eric-Young
  [including the GNU General Public Licence.]
 
 Files: lib/sha1.c
-Copyright: Under public domain.
+Copyright: NONE
 License: public-domain
  The file is 100% Public Domain, by Steve Reid <steve@edmweb.com>,
  with small changes by Thomas Roessler <roessler@does-not-exist.org>.
@@ -109,22 +160,6 @@ License: public-domain
 Files: lib/sha2.*
 Copyright: 2005, 2007 Olivier Gay <olivier.gay@a3.epfl.ch>
 License: BSD-3-Clause
-
-Files: xymonnet/c-ares-*.tar.gz
-Copyright: 1998, 2000 by the Massachusetts Institute of Technology.
-           2004 by Daniel Stenberg et al
-License: BSD-ish
- Permission to use, copy, modify, and distribute this
- software and its documentation for any purpose and without
- fee is hereby granted, provided that the above copyright
- notice appear in all copies and that both that copyright
- notice and this permission notice appear in supporting
- documentation, and that the name of M.I.T. not be used in
- advertising or publicity pertaining to distribution of the
- software without specific, written prior permission.
- M.I.T. makes no representations about the suitability of
- this software for any purpose.  It is provided "as is"
- without express or implied warranty.
 
 License: GPL-2 with OpenSSL exception
  This program is released under the GNU General Public License (GPL),
@@ -134,6 +169,10 @@ License: GPL-2 with OpenSSL exception
  On Debian GNU/Linux systems, the complete text of the GNU General
  Public License version 2 can be found in
  `/usr/share/common-licenses/GPL-2'.
+
+License: Artistic
+ On Debian systems, the complete text of the Artistic License can be found
+ in `/usr/share/common-licenses/Artistic'.
 
 License: GPL-2
  This program is released under the GNU General Public License (GPL),
@@ -151,14 +190,6 @@ License: GPL-2+
  On Debian GNU/Linux systems, the complete text of the GNU General
  Public License version 2 can be found in
  `/usr/share/common-licenses/GPL-2'.
-
-License: GPL
- This program is released under the GNU General Public License (GPL).
- .
- On Debian GNU/Linux systems, the complete text of the latest version
- of the GNU General Public License version can be found in
- `/usr/share/common-licenses/GPL'.
-Comment: No explicit version of the GPL has been specified.
 
 License: Zlib
  This software is provided 'as-is', without any express or implied
