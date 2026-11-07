@@ -1,0 +1,1 @@
+dir_to_symlink /var/lib/xymon/www/menu /usr/share/xymon/menu 4.3.30-7~~
