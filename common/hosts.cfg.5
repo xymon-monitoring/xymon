@@ -55,8 +55,10 @@ configured as
 is therefore tested like any other, but its results arrive under the name
 .B foo.bar
 and never match the entry in this file: the configured host gets no status, no
-history and no web page. It draws the same warning, for that reason. Do not
-use a comma in a canonical name.
+history and no web page.
+.I xymond(8)
+warns about it with its own message, which names the host its results arrive
+as. Do not use a comma in a canonical name.
 
 The optional tags are then used to define which tests are
 relevant for the host, and also to set e.g. the time-interval used

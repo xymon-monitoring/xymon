@@ -1046,11 +1046,22 @@ static void warn_unreachable_hostnames(void)
 	for (hrec = first_host(); hrec; hrec = next_host(hrec, 0)) {
 		char *name = xmh_item(hrec, XMH_HOSTNAME);
 
-		/* A literal comma is web-unreachable even though XYMON_HOSTNAME_CHARS
-		 * lists it (the CGIs need it for the 192,168,1,1 IP spelling): every
-		 * generated URL runs the name through uncommafy(), so a configured
-		 * "foo,bar" resolves to "foo.bar" -- a different host. */
-		if (name && (!hostname_web_safe(name) || strchr(name, ',')))
+		if (!name) continue;
+
+		/* A literal comma is not monitored at all, although
+		 * XYMON_HOSTNAME_CHARS lists it (the CGIs need it for the 192,168,1,1
+		 * IP spelling): get_hts() runs the hostname of every status message
+		 * through uncommafy(), so the results for a configured "foo,bar" arrive
+		 * as "foo.bar" and never match this entry. Say so, rather than the
+		 * "it is monitored" of the message below. */
+		if (strchr(name, ',')) {
+			char *arrives = strdup(name);
+
+			uncommafy(arrives);
+			errprintf("Warning: hostname '%s' in hosts.cfg contains a comma; xymond turns it into a period on every status message, so its results arrive as '%s' and the host is not monitored. Remove the comma from the canonical name.\n", name, arrives);
+			xfree(arrives);
+		}
+		else if (!hostname_web_safe(name))
 			errprintf("Warning: hostname '%s' in hosts.cfg has characters the web interface cannot serve; it is monitored but its web pages are not reachable. Use an ASCII canonical name and a NAME: tag for the displayed spelling.\n", name);
 	}
 }
