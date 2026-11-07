@@ -231,8 +231,8 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 						}
 						else p++;
 					}
-					fprintf(textrep, "\n");
 				}
+				fprintf(textrep, "\n");
 			}
 		}
 	}
@@ -291,7 +291,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 			if (style != STYLE_CRIT) {
 				fprintf(textrep, "			%s %s	(%lu secs)\n",
 					"Time Non-Critical (SLA) :", 
-					durationstr(repinfo->reportduration[COL_YELLOW]), repinfo->fullduration[COL_YELLOW]);
+					durationstr(repinfo->reportduration[COL_YELLOW]), repinfo->reportduration[COL_YELLOW]);
 			}
 		}
 	}
