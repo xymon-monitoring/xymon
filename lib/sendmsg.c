@@ -110,21 +110,40 @@ static char *split_hostport(char *s, int *port)
 	return s;
 }
 
-static void setup_transport(char *recipient)
+static void setup_transport(void)
 {
-	static int transport_is_setup = 0;
-	int default_port;
+	static int proxy_is_setup = 0;
 
-	if (transport_is_setup) return;
-	transport_is_setup = 1;
+	/*
+	 * The plain-protocol port to a xymond: XYMONDPORT, then the "bbd"/"bb"
+	 * entry in /etc/services, then 1984. This is the default for every
+	 * recipient that gives no port of its own, independent of which recipient
+	 * is listed first; an http:// recipient brings its own default of 80
+	 * (in sendtoxymond). Computed once, unconditionally, rather than from the
+	 * transport of whichever recipient happened to come first.
+	 */
+	if (xgetenv("XYMONDPORT")) xymondportnumber = atoi(xgetenv("XYMONDPORT"));
 
-	if (strncmp(recipient, "http://", 7) == 0) {
-		/*
-		 * Send messages via http. This requires e.g. a CGI on the webserver to
-		 * receive the POST we do here.
-		 */
-		default_port = 80;
+	/* Next is /etc/services "bbd" entry */
+	if ((xymondportnumber <= 0) || (xymondportnumber > 65535)) {
+		struct servent *svcinfo;
 
+		svcinfo = getservbyname("bbd", NULL);
+		if (!svcinfo) svcinfo = getservbyname("bb", NULL);
+		if (svcinfo) xymondportnumber = ntohs(svcinfo->s_port);
+	}
+
+	/* Last resort: the compiled-in default */
+	if ((xymondportnumber <= 0) || (xymondportnumber > 65535)) xymondportnumber = 1984;
+
+	/*
+	 * An http proxy applies to any http:// recipient whatever its position in
+	 * the list, so read it here rather than only when the first recipient is an
+	 * http:// one -- but once: setup_transport() runs on every send, and the
+	 * strdup() below would leak on each one.
+	 */
+	if (!proxy_is_setup) {
+		proxy_is_setup = 1;
 		if (proxysetting == NULL) proxysetting = getenv("http_proxy");
 		if (proxysetting) {
 			char *h = strdup(proxysetting);
@@ -133,30 +152,6 @@ static void setup_transport(char *recipient)
 			xymonproxyport = 8080;
 			xymonproxyhost = split_hostport(h, &xymonproxyport);
 		}
-	}
-	else {
-		/* 
-		 * Non-HTTP transport - lookup portnumber in both XYMONDPORT env.
-		 * and the "xymond" entry from /etc/services.
-		 */
-		default_port = 1984;
-
-		if (xgetenv("XYMONDPORT")) xymondportnumber = atoi(xgetenv("XYMONDPORT"));
-	
-	
-		/* Next is /etc/services "bbd" entry */
-		if ((xymondportnumber <= 0) || (xymondportnumber > 65535)) {
-			struct servent *svcinfo;
-
-			svcinfo = getservbyname("bbd", NULL);
-			if (!svcinfo) svcinfo = getservbyname("bb", NULL);
-			if (svcinfo) xymondportnumber = ntohs(svcinfo->s_port);
-		}
-	}
-
-	/* Last resort: The default value */
-	if ((xymondportnumber <= 0) || (xymondportnumber > 65535)) {
-		xymondportnumber = default_port;
 	}
 
 	dbgprintf("Transport setup is:\n");
@@ -325,7 +320,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, strbuffer_
 		return XYMONSEND_OK;
 	}
 
-	setup_transport(recipient);
+	setup_transport();
 
 	dbgprintf("Recipient listed as '%s'\n", recipient);
 
@@ -365,7 +360,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, strbuffer_
 			 * If a portnumber is present, strip it off and update rcptport.
 			 */
 			rcptbuf = strdup(recipient+strlen("http://"));
-			rcptport = xymondportnumber;
+			rcptport = 80;		/* http default; setup_transport() no longer feeds this from the first recipient */
 
 			p = strchr(rcptbuf, '/');
 			if (p) {
