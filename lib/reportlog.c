@@ -231,8 +231,8 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 						}
 						else p++;
 					}
-					fprintf(textrep, "\n");
 				}
+				fprintf(textrep, "\n");
 			}
 		}
 	}
