@@ -357,6 +357,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 	newtest->open = 0;
 	newtest->banner = newstrbuffer(0);
 	newtest->certinfo = NULL;
+	newtest->certnamematch = -1;	/* not checked */
 	newtest->certissuer = NULL;
 	newtest->certexpires = 0;
 	newtest->certkeysz = 0;
@@ -2042,6 +2043,11 @@ void send_sslcert_status(testedhost_t *host)
 					if (keycolor > color) color = keycolor;
 				}
 
+				/* A certificate that does not cover the name we asked for is invalid, not merely noted. */
+				if (t->certnamematch == 0) {
+					if (COL_RED > color) color = COL_RED;
+				}
+
 				if (t->certexpires > now) {
 					snprintf(msgline, sizeof(msgline), "\n&%s SSL certificate for %s expires in %u days\n\n", 
 						colorname(sslcolor), certowner,
@@ -2062,6 +2068,17 @@ void send_sslcert_status(testedhost_t *host)
 
 				if (keycolor != COL_GREEN) {
 					snprintf(msgline, sizeof(msgline), "&%s Certificate public key size is less than %d bits\n", colorname(keycolor), sslminkeysize);
+					addtobuffer(sslmsg, msgline);
+				}
+
+				if (t->certnamematch == 0) {
+					snprintf(msgline, sizeof(msgline), "&%s Certificate does NOT cover '%s' (the name sent as SNI)\n",
+						colorname(COL_RED), (t->certcheckname ? t->certcheckname : certowner));
+					addtobuffer(sslmsg, msgline);
+				}
+				else if (t->certnamematch == 1) {
+					snprintf(msgline, sizeof(msgline), "&%s Certificate covers '%s'\n",
+						colorname(COL_GREEN), (t->certcheckname ? t->certcheckname : certowner));
 					addtobuffer(sslmsg, msgline);
 				}
 				addtobuffer(sslmsg, "\n");
@@ -2529,6 +2546,8 @@ int main(int argc, char *argv[])
 			t->certexpires = testresult->tcptest->certexpires;
 			t->certkeysz = testresult->tcptest->certkeysz;
 			t->mincipherbits = testresult->tcptest->mincipherbits;
+			t->certnamematch = testresult->tcptest->certnamematch;
+			t->certcheckname = testresult->tcptest->checkname;
 		}
 	}
 

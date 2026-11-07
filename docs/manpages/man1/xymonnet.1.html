@@ -371,6 +371,20 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
       status.
     <p class="Pp"></p>
   </dd>
+</dl>
+<p class="Pp">When a TLS test sends a servername (for an https test this is the
+    host part of the URL, always sent as SNI), xymonnet also checks that the
+    presented certificate covers that name - matching the certificate's
+    subjectAltName entries, and falling back to the common name. A certificate
+    that does not cover the name is reported on the &quot;sslcert&quot; status
+    (&quot;Certificate does NOT cover ...&quot;) and turns it <b>red</b>,
+    because the test was answered by a certificate issued for some other name -
+    typically an address that served a default certificate for a name it does
+    not hold. A matching certificate is noted (&quot;Certificate covers
+    ...&quot;) and leaves the colour alone. The check needs OpenSSL 1.0.2 or
+    later; on an older build it is skipped and the colour is unchanged.</p>
+<p class="Pp"></p>
+<dl class="Bl-tag">
   <dt id="sni"><a class="permalink" href="#sni"><b>--sni</b>=[<b>on</b>|<b>off</b>]</a></dt>
   <dd>Sets whether TLS tests that take their servername from the host entry use
       SNI (Server Name Indication). Per-host &quot;sni&quot; and
