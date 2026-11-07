@@ -387,13 +387,17 @@ the link template, so no link is added for that host.
 
 .SH SETTINGS FOR SENDING MESSAGES TO XYMON
 .IP "\fBXYMSRV\fR"
-The IP-address used to contact the
+The address used to contact the
 .I xymond(8)
-service. Used by clients and the tools that perform network tests.
+service: an IPv4 or IPv6 address or a hostname, written as the
+RECIPIENT of
+.I xymon(1)
+is. Used by clients and the tools that perform network tests.
 Default: $XYMONSERVERIP
 
 .IP "\fBXYMSERVERS\fR"
-List of IP-addresses. Clients and network test tools will try to
+List of addresses, IPv4 or IPv6, separated by spaces or tabs.
+Clients and network test tools will try to
 send status reports to a Xymon server running on each of these
 addresses. This setting is only used if XYMSRV=0.0.0.0.
 
@@ -410,6 +414,34 @@ The portnumber for used to contact the
 .I xymond(8)
 service. Used by clients and the tools that perform network tests.
 Default: 1984.
+
+.IP "\fBXYMONDTLSPORT\fR"
+The port a "xymons://" recipient is sent to over TLS when it
+names none (see xymon(1)). Default: 1985.
+
+.IP "\fBXYMON_TLS_CA\fR"
+The file of CA certificates that a "xymons://" recipient's
+certificate must chain to. Default: unset, which uses the system's
+trusted certificates.
+
+.IP "\fBXYMON_TLS_VERIFY\fR"
+How a "xymons://" recipient's certificate is checked: "full" (it
+must chain to a trusted CA and name the host or address the
+recipient gives, or XYMON_TLS_SNI), "peer" (it must chain to a
+trusted CA), or "none" (not checked: the message is encrypted but
+may go to anyone). Default: full.
+
+.IP "\fBXYMON_TLS_SNI\fR"
+The name sent as TLS server name, and checked against the
+certificate with XYMON_TLS_VERIFY=full, instead of the recipient's
+host: for a recipient given as an IP address, the name its
+certificate carries. Default: unset.
+
+.IP "\fBXYMON_TLS_CERT\fR, \fBXYMON_TLS_KEY\fR"
+A certificate, and its private key, presented to a "xymons://"
+recipient that asks for one. Both or neither. A key file that
+others than its owner and group may read or write is refused, and nothing
+is sent. Default: unset.
 
 .IP "\fBMAXMSGSPERCOMBO\fR"
 The maximum number of status messages to combine into one
