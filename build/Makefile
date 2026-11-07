@@ -1,4 +1,4 @@
-TOOLS = merge-lines merge-sects setup-newfiles renamevars renametasks
+TOOLS = merge-lines merge-sects setup-newfiles
 
 all: $(TOOLS)
 
@@ -10,12 +10,6 @@ merge-sects: merge-sects.c
 
 setup-newfiles: setup-newfiles.c
 	$(CC) $(LDFLAGS) -o $@ $(CFLAGS) $< ../lib/libxymonclient.a
-
-renamevars: renamevars.c
-	$(CC) $(LDFLAGS) -o $@ $(CFLAGS) $<
-
-renametasks: renametasks.c
-	$(CC) $(LDFLAGS) -o $@ $(CFLAGS) $<
 
 clean:
 	rm -f $(TOOLS) testfile *.o *~
