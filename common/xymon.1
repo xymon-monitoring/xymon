@@ -44,7 +44,13 @@ first line of the merged message.
 
 .IP "\fBRECIPIENT\fR"
 The \fBRECIPIENT\fR parameter defines which server receives
-the message. If RECIPIENT is given as "0.0.0.0", then the
+the message: an IPv4 or IPv6 address or a hostname, optionally
+followed by ":port". An IPv6 address with a port is written in
+brackets, "[2001:db8::1]:1984"; without a port, the default one
+is used (see XYMONDPORT in xymonserver.cfg(5)). A hostname with
+several addresses is tried address by address, in the order the
+resolver gives them, until one connects.
+If RECIPIENT is given as "0.0.0.0", then the
 message is sent to all of the servers listed in the XYMSERVERS
 environment variable.
 
