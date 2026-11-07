@@ -474,7 +474,7 @@ void sigmisc_handler(int signum)
 }
 
 
-void handle_request(char *buf)
+void handle_request(char *buf, size_t bufsz)
 {
 	const char *delims = "|\r\n\t ";
 
@@ -616,7 +616,14 @@ void handle_request(char *buf)
 				if (res && extquery) {
 					int blen = strlen(buf);
 
-					snprintf(buf+blen, sizeof(buf)-blen-1, "|%s", res->serverextras);
+					/*
+					 * bufsz, not sizeof(buf): buf is a pointer here, so
+					 * sizeof(buf)-blen-1 wrapped around to a huge size_t,
+					 * and what snprintf() then did with it depended on the
+					 * C library -- on glibc 2.39 the extras lost their last
+					 * character, and every URL built from them was wrong.
+					 */
+					snprintf(buf+blen, bufsz-blen, "|%s", res->serverextras);
 				}
 			}
 			else strcpy(buf, "BADSYNTAX");
@@ -782,7 +789,7 @@ int main(int argc, char *argv[])
 		dbgprintf("Got message from %s:%d : '%s'\n", 
 				inet_ntoa(remaddr.sin_addr), ntohs(remaddr.sin_port), buf);
 
-		handle_request(buf);
+		handle_request(buf, sizeof(buf));
 
 		n = sendto(lsocket, buf, strlen(buf)+1, 0, (struct sockaddr *)&remaddr, remaddrsz);
 		if (n == -1) {
