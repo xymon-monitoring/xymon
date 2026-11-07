@@ -94,7 +94,8 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 		fprintf(htmlrep, "</TR>\n");
 	}
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER COLSPAN=2><B>Event count</B></TD>\n");
+	fprintf(htmlrep, "<TD ALIGN=LEFT><B>Event count</B></TD>\n");
+	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%d</B></TD>\n", repinfo->count[COL_GREEN]);
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%d</B></TD>\n", repinfo->count[COL_YELLOW]);
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%d</B></TD>\n", repinfo->count[COL_RED]);
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%d</B></TD>\n", repinfo->count[COL_PURPLE]);
