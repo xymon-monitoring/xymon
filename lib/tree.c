@@ -381,6 +381,7 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 	if (mytree->treesz == 0) {
 		/* Empty tree, just add record */
 		mytree->entries = (treerec_t *)calloc(1, sizeof(treerec_t));
+		if (!mytree->entries) return XTREE_STATUS_MEM_EXHAUSTED;
 		mytree->entries[0].key = key;
 		mytree->entries[0].userdata = userdata;
 		mytree->entries[0].deleted = 0;
@@ -408,8 +409,12 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 
 		/* Must create new record */
 		if (mytree->compare(key, mytree->entries[mytree->treesz - 1].key) > 0) {
-			/* Add after all the others */
-			mytree->entries = (treerec_t *)realloc(mytree->entries, (1 + mytree->treesz)*sizeof(treerec_t));
+			/* Add after all the others. realloc() into a temp: on failure
+			   the old array is still valid, so the tree is left unchanged
+			   rather than leaked and NULL-dereferenced. */
+			treerec_t *grown = (treerec_t *)realloc(mytree->entries, (1 + mytree->treesz)*sizeof(treerec_t));
+			if (!grown) return XTREE_STATUS_MEM_EXHAUSTED;
+			mytree->entries = grown;
 			mytree->entries[mytree->treesz].key = key;
 			mytree->entries[mytree->treesz].userdata = userdata;
 			mytree->entries[mytree->treesz].deleted = 0;
@@ -417,6 +422,7 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 		else if (mytree->compare(key, mytree->entries[0].key) < 0) {
 			/* Add before all the others */
 			treerec_t *newents = (treerec_t *)malloc((1 + mytree->treesz)*sizeof(treerec_t));
+			if (!newents) return XTREE_STATUS_MEM_EXHAUSTED;
 			newents[0].key = key;
 			newents[0].userdata = userdata;
 			newents[0].deleted = 0;
@@ -446,6 +452,7 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 
 			/* Ok, must create a new list and copy entries there */
 			newents = (treerec_t *)malloc((1 + mytree->treesz)*sizeof(treerec_t));
+			if (!newents) return XTREE_STATUS_MEM_EXHAUSTED;
 
 			/* Copy record 0..(n-1), i.e. n records */
 			memcpy(&(newents[0]), &(mytree->entries[0]), n*sizeof(treerec_t));
