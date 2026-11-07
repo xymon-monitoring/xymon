@@ -72,6 +72,16 @@ enabled.
 .IP "\fB\-\-debug\fR"
 Enable debugging output.
 
+.IP "\fB--listen\fR=\fIIP:PORT\fR, \fB--locator\fR=\fIIP:PORT\fR"
+Run as a network worker: accept messages on the TCP address given by
+\fB--listen\fR instead of from
+.I xymond_channel(8),
+and register with the service locator at \fB--locator\fR; both are needed for
+this mode. \fB--locatorid\fR and \fB--locatorextra\fR tune the registration;
+\fB--locatorweight\fR is ignored, since xymond_alert always registers with
+weight \-1. All five, and how the locator chooses a server, are described in
+.I xymond_locator(8).
+
 .SH HOW XYMON DECIDES WHEN TO SEND ALERTS
 The xymond_alert module is responsible for sending out all alerts.
 When a status first goes to one of the ALERTCOLORS, xymond_alert
@@ -131,5 +141,5 @@ out email alerts.
 .IP "~xymon/server/etc/alerts.cfg"
 
 .SH "SEE ALSO"
-alerts.cfg(5), xymond(8), xymond_channel(8), xymon(7)
+alerts.cfg(5), xymond(8), xymond_channel(8), xymon(7), xymond_locator(8)
 
