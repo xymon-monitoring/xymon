@@ -94,6 +94,15 @@ echo ""; echo ""
 MAKE="$MAKE -s" . ./build/clock-gettime-librt.sh
 echo ""; echo ""
 
+# OpenSSL lets the client send to xymons:// recipients. It is used when
+# found, unless ENABLESSL=n.
+if test "$ENABLESSL" != "n"
+then
+	. build/ssl.sh
+	if test "$SSLOK" = "YES"; then ENABLESSL="y"; else ENABLESSL="n"; fi
+fi
+echo ""; echo ""
+
 echo "What userid will be running Xymon [xymon] ?"
 if test -z "$XYMONUSER"
 then
@@ -242,6 +251,21 @@ then
 	else
 		echo "PCRELIBS = -lpcre2-8"         >>Makefile
     	fi
+fi
+echo "#"                                 >>Makefile
+echo "# OpenSSL settings"                >>Makefile
+if test "$ENABLESSL" = "y"
+then
+	echo "SSLFLAGS = $SSLFLAGS"          >>Makefile
+	if test "$OSSLINC" != ""; then
+		echo "SSLINCDIR = -I$OSSLINC"    >>Makefile
+	fi
+	if test "$OSSLLIB" != ""; then
+		echo "SSLLIBS = -L$OSSLLIB -lssl -lcrypto" >>Makefile
+		echo "RPATHVAL += ${OSSLLIB}"    >>Makefile
+	else
+		echo "SSLLIBS = -lssl -lcrypto"  >>Makefile
+	fi
 fi
 echo "#"                                 >>Makefile
 echo "# Add local CFLAGS etc. settings here" >>Makefile

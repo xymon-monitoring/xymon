@@ -83,7 +83,8 @@ typedef void (*f_callback_final)(void *privdata);
 #define CONTEST_ESSL       5
 
 typedef struct tcptest_t {
-	struct sockaddr_in addr;        /* Address (IP+port) to test */
+	struct sockaddr_storage addr;   /* Address (IP+port) to test, IPv4 or IPv6 */
+	socklen_t addrlen;
 	char *srcaddr;
 	struct svcinfo_t *svcinfo;      /* svcinfo_t for service */
 	long int randomizer;
@@ -125,6 +126,7 @@ typedef struct tcptest_t {
 	int mincipherbits;              /* Bits in the weakest encryption supported */
 	int sslrunning;			/* Track state of an SSL session */
 	int sslagain;			/* SSL read/write needs more data */
+	int sslwantwrite;		/* Handshake blocked on writability, not readability */
 
 	/* For testing telnet services */
 	unsigned char *telnetbuf;	/* Buffer for telnet option negotiation */
