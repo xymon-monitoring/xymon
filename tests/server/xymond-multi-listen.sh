@@ -55,6 +55,15 @@ LO2=127.0.0.2
 EXTIP=$(first_line "$(ip -4 -o addr show scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 || true)")
 [ -n "$EXTIP" ] || EXTIP=$(first_line "$(ifconfig -a 2>/dev/null | awk '/[ \t]inet /{print $2}' | sed 's/^addr://' | grep -v '^127\.' || true)")
 
+# Reaching EXTIP from here needs it routable on this host; a packet filter that
+# allows only loopback (127.0.0.0/8, ::1) drops the knock even though the bind
+# succeeded. That the daemon bound EXTIP is already proven by it starting -- a
+# --listen address that cannot bind is fatal (xymond.c, add_listener() != 0 ->
+# return 1, before "Setup complete"). So an unanswered EXTIP is local
+# reachability, not a fault: recorded here and reported as a partial, while the
+# loopback checks that are the real subject still run. See #734.
+ext_unreachable=""
+
 # answers ADDR PORT : does a xymond answer a ping there?
 answers() {
 	case "$(XYMON_TIMEOUT=2 "$XYMONCLIENT" "$1:$2" "ping" 2>&1)" in
@@ -120,7 +129,7 @@ stop
 
 if [ -n "$EXTIP" ]; then
 	launch --listen="$EXTIP:$P1" || { cat "$work/xymond.log" >&2; fail "xymond did not start on $EXTIP"; }
-	answers "$EXTIP" "$P1" || fail "the named address must answer ($EXTIP:$P1)"
+	answers "$EXTIP" "$P1" || ext_unreachable="the non-loopback address $EXTIP did not answer from here; it bound (xymond started), so this is local reachability -- a packet filter (#734), not a fault -- while the loopback checks still ran"
 	answers 127.0.0.1 "$P3" || fail "a loopback listener must be kept on XYMONDPORT ($P3) even when only a non-loopback address is named"
 	# The external port is the operator's choice for the outside; local clients
 	# still connect to XYMONDPORT, so the loopback must not follow it.
@@ -150,7 +159,7 @@ stop
 
 if [ -n "$EXTIP" ]; then
 	launch --no-loopback --listen="$EXTIP:$P1" || { cat "$work/xymond.log" >&2; fail "xymond did not start with --no-loopback"; }
-	answers "$EXTIP" "$P1" || fail "the named address must still answer under --no-loopback"
+	answers "$EXTIP" "$P1" || ext_unreachable="the non-loopback address $EXTIP did not answer from here; it bound (xymond started), so this is local reachability -- a packet filter (#734), not a fault -- while the loopback checks still ran"
 	answers 127.0.0.1 "$P3" && fail "--no-loopback must leave no loopback listener"
 	answers 127.0.0.1 "$P1" && fail "--no-loopback must leave no loopback listener"
 	stop
@@ -160,6 +169,7 @@ fi
 # without one. Say so, rather than pass on what did not run.
 missing=""
 [ -n "$EXTIP" ] || missing="no non-loopback address here, so the loopback on XYMONDPORT and --no-loopback were not checked"
+[ -z "$ext_unreachable" ] || missing="${missing:+$missing; }$ext_unreachable"
 [ "$HAVE_LO2" = yes ] || missing="${missing:+$missing; }no 127.0.0.2 here, so naming another 127.x address was not checked"
 claim="xymond binds every address it is given and keeps a loopback listener"
 if [ -z "$missing" ]; then
