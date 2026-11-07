@@ -383,7 +383,10 @@ xymon_cflags() {
 		probe='__xymon_cflags:
 	@printf "%s\n" "$(CFLAGS)"
 '
-		for tok in $(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_cflags 2>/dev/null); do
+		# MAKEFLAGS= : the probe is read from stdin (-f -); an inherited
+		# jobserver (suite under a parent "make -j") corrupts that read and
+		# the probe returns nothing. #733.
+		for tok in $(printf '%s' "$probe" | MAKEFLAGS= "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_cflags 2>/dev/null); do
 			case $tok in -DCLIENTONLY|-DCLIENTONLY=*|-DLOCALCLIENT|-DLOCALCLIENT=*) defines="$defines $tok" ;; esac
 		done
 	fi
@@ -414,7 +417,8 @@ xymon_ldflags() {
 	probe='__xymon_ldflags:
 	@printf "%s\n" "$(CFLAGS)" "$(RPATHOPT)" "$(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)"
 '
-	out=$(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_ldflags 2>/dev/null) || return 0
+	# MAKEFLAGS= : see __xymon_cflags above -- stdin probe, inherited jobserver. #733.
+	out=$(printf '%s' "$probe" | MAKEFLAGS= "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_ldflags 2>/dev/null) || return 0
 
 	cflags=$(printf '%s\n' "$out" | sed -n 1p)
 	rpath=$(printf '%s\n' "$out" | sed -n 2p)
