@@ -52,6 +52,12 @@ lack.
 The NetBSD client now reports inodes, sharing the filtering above. Set
 XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep reporting /dev/pts.
 
+The client now runs logfetch with --noexec by default (LOGFETCHOPTS in
+xymonclient.cfg), so a command in backticks in client-local.cfg is no longer
+run on a new installation. An upgrade keeps its own LOGFETCHOPTS: set it to
+"--noexec" for the safer default, or leave it "" on a client that needs such
+commands.
+
 Clients -- macOS memory reporting
 ---------------------------------
 
