@@ -173,7 +173,7 @@ group_t *init_group(char *title, char *onlycols, char *exceptcols, int sorthosts
 host_t *init_host(char *hostname, int issummary,
 		  char *displayname, char *clientalias,
 		  char *comment, char *description,
-		  int ip1, int ip2, int ip3, int ip4, 
+		  char *ip,
 		  int dialup, double warnpct, int warnstops, char *reporttime,
 		  char *alerts, int crittime, char *waps,
 		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests)
@@ -189,7 +189,7 @@ host_t *init_host(char *hostname, int issummary,
 	newhost->clientalias = (clientalias ? strdup(clientalias) : NULL);
 	newhost->comment = (comment ? strdup(comment) : NULL);
 	newhost->description = (description ? strdup(description) : NULL);
-	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+	snprintf(newhost->ip, sizeof(newhost->ip), "%s", (ip ? ip : "0.0.0.0"));
 	newhost->pretitle = NULL;
 	newhost->entries = NULL;
 	newhost->color = -1;
@@ -425,7 +425,8 @@ xymongen_page_t *load_layout(char *pgset)
 	group_t *curgroup;
 	host_t	*curhost;
 	char	*curtitle;
-	int	ip1, ip2, ip3, ip4;
+	char	hostip[IP_ADDR_STRLEN];
+	int	preference;
 	char	*p;
 	int	fqdn = get_fqdn();
 	char	*cfgdata, *inbol, *ineol, insavchar = '\0';
@@ -589,7 +590,7 @@ xymongen_page_t *load_layout(char *pgset)
 			if (curtitle) { curgroup->pretitle = curtitle; curtitle = NULL; }
 			curhost = NULL;
 		}
-		else if (sscanf(inbol, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		else if (hostscfg_hostline(inbol, hostip, sizeof(hostip), hostname, sizeof(hostname), &preference)) {
 			void *xymonhost = NULL;
 			int dialup, nonongreen, crittime = 1;
 			double warnpct = reportwarnlevel;
@@ -690,7 +691,7 @@ xymongen_page_t *load_layout(char *pgset)
 				if (curhost == NULL) {
 					curhost = init_host(hostname, 0, displayname, clientalias,
 							    comment, description,
-							    ip1, ip2, ip3, ip4, dialup, 
+							    hostip, dialup,
 							    warnpct, warnstops, reporttime,
 							    alertlist, crittime, onwaplist,
 							    nopropyellowlist, nopropredlist, noproppurplelist, nopropacklist);
@@ -713,7 +714,7 @@ xymongen_page_t *load_layout(char *pgset)
 				else {
 					curhost = curhost->next = init_host(hostname, 0, displayname, clientalias,
 									    comment, description,
-									    ip1, ip2, ip3, ip4, dialup,
+									    hostip, dialup,
 									    warnpct, warnstops, reporttime,
 									    alertlist, crittime, onwaplist,
 									    nopropyellowlist,nopropredlist, 
@@ -760,7 +761,7 @@ xymongen_page_t *load_layout(char *pgset)
 					else {
 						host_t *newhost = init_host(hostname, 0, displayname, clientalias,
 									    comment, description,
-									    ip1, ip2, ip3, ip4, dialup,
+									    hostip, dialup,
 									    warnpct, warnstops, reporttime,
 									    alertlist, crittime, onwaplist,
 									    nopropyellowlist,nopropredlist, 
