@@ -17,6 +17,11 @@ Changes from 4.3.31 -> 4.3.32 (XX Xxx XXXX)
 * Let xymond --listen take a list of addresses, and keep a loopback (#432) (Thanks, David Dee)
 * Turn sslcert red when the certificate does not cover the tested name (#729) (Thanks, David Dee)
 * Warn about a URL test for another name on an addressed line (#611) (Thanks, David Dee)
+* Use the O(log n) tsearch xtree where available (#404) (from J. Cleaver) (Thanks, David Dee)
+* Remove the Big Brother, Hobbit and 4.2.x upgrade helpers and their docs (#730) (Thanks, David Dee)
+* Fix the SLA total and event lines in the text availability report (#725) (Thanks, David Dee)
+* Show the green event count in the HTML availability report (#724) (Thanks, David Dee)
+* Report out of memory from xtreeAdd instead of crashing (#403) (Thanks, David Dee)
 
 
 Changes from 4.3.30 -> 4.3.31 (06 Nov 2026)
