@@ -43,6 +43,15 @@ run on a new installation. An upgrade keeps its own LOGFETCHOPTS: set it to
 "--noexec" for the safer default, or leave it "" on a client that needs such
 commands.
 
+xymond -- listening addresses
+-----------------------------
+
+xymond --listen now takes a comma-separated list of addresses, and also listens
+on 127.0.0.1 at XYMONDPORT, so the server's own client keeps reporting when a
+network interface goes away. --no-loopback listens only on the addresses given.
+Keep the server's client (xymonclient.cfg) on the same port as XYMONDPORT in
+xymonserver.cfg.
+
 
 Changes for 4.3.31
 ==================
@@ -127,12 +136,6 @@ honoured. A hostname in --listen is refused: it never bound that host's
 address, and xymond(8) has always asked for a dotted-quad IP. An address not
 yet assigned when xymond starts is refused too, where the fallback to every
 interface used to hide it -- start xymond after its interface comes up.
-
-xymond --listen now takes a comma-separated list of addresses, and also listens
-on 127.0.0.1 at XYMONDPORT, so the server's own client keeps reporting when a
-network interface goes away. --no-loopback listens only on the addresses given.
-Keep the server's client (xymonclient.cfg) on the same port as XYMONDPORT in
-xymonserver.cfg.
 
 Page filters
 ------------
