@@ -729,6 +729,8 @@ void add_http_test(testitem_t *t)
 		    (inet_pton(AF_INET, host, &addr) != 1) &&
 		    (inet_pton(AF_INET6, host, &addr) != 1))
 			httptest->tcptest->sni = host;
+		/* Verify the peer cert covers the name we send as SNI */
+		httptest->tcptest->checkname = httptest->tcptest->sni;
 	}
 }
 

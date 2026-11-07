@@ -85,6 +85,7 @@ typedef struct extraping_t {
 typedef struct testedhost_t {
 	char *hostname;
 	char ip[IP_ADDR_STRLEN];
+	char cfgip[IP_ADDR_STRLEN];	/* Column 1 as written in hosts.cfg, before any DNS overwrite of ip */
 	int dialup;		/* dialup flag (if set, failed tests report as clear) */
 	int testip;		/* testip flag (don't do dns lookups on hostname) */
 	int nosslcert;		/* nosslcert flag */
@@ -143,6 +144,8 @@ typedef struct testitem_t {
 	char		*certinfo;
 	char		*certissuer;
 	time_t		certexpires;
+	int		certnamematch;	/* Cert name check: 1 = matched, 0 = mismatch, -1 = not checked */
+	char		*certcheckname;	/* The name the cert was checked against (the SNI name) */
 	int		mincipherbits;
 	int		certkeysz;
 	struct timespec	duration;

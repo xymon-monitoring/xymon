@@ -31,6 +31,7 @@
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
+#include <openssl/x509v3.h>	/* X509_check_host() for the cert name check */
 
 #if !defined(OPENSSL_VERSION_NUMBER) || (OPENSSL_VERSION_NUMBER < 0x00905000L)
 #error SSL-protocol testing requires OpenSSL version 0.9.5 or later
@@ -83,7 +84,8 @@ typedef void (*f_callback_final)(void *privdata);
 #define CONTEST_ESSL       5
 
 typedef struct tcptest_t {
-	struct sockaddr_in addr;        /* Address (IP+port) to test */
+	struct sockaddr_storage addr;   /* Address (IP+port) to test, IPv4 or IPv6 */
+	socklen_t addrlen;
 	char *srcaddr;
 	struct svcinfo_t *svcinfo;      /* svcinfo_t for service */
 	long int randomizer;
@@ -115,6 +117,8 @@ typedef struct tcptest_t {
 	/* For testing SSL-wrapped services */
 	ssloptions_t *ssloptions;	/* Specific SSL options requested by user */
 	char *sni;
+	char *checkname;		/* If set, verify the peer cert covers this name (X509_check_host) */
+	int certnamematch;		/* Cert name check: 1 = matched, 0 = mismatch, -1 = not checked */
 	SSL_CTX *sslctx;		/* SSL context pointer */
 	SSL  *ssldata;			/* SSL data (socket) pointer */
 	char *certinfo;			/* Certificate info (subject+expiretime) */

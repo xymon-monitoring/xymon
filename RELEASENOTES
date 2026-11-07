@@ -13,6 +13,46 @@ A pull request that needs an entry writes it in the open "(not yet
 released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 
 
+Changes for 4.3.32 (not yet released)
+=====================================
+
+xymonnet -- https certificate name check
+----------------------------------------
+
+An https test now checks that the certificate the server returns actually
+covers the name in the URL -- the name xymonnet already sends as SNI -- not
+only its expiry and cipher strength. A certificate that does not cover the
+name turns the "sslcert" status red, with "Certificate does NOT cover
+'<name>'"; a matching one is noted "Certificate covers '<name>'" and the
+colour is unchanged.
+
+On upgrade this can turn an "sslcert" red that was green before, where the
+tested endpoint answers with a certificate for some other name. That happens
+when a host is tested at an address -- its hosts.cfg column 1, or a "=IP" in
+the URL -- that serves a default certificate for a name it does not hold. The
+red is correct: the expiry being tracked was some other certificate's. The
+check needs OpenSSL 1.0.2 or later; on an older build it is skipped and
+nothing changes.
+
+Clients -- logfetch
+-------------------
+
+The client now runs logfetch with --noexec by default (LOGFETCHOPTS in
+xymonclient.cfg), so a command in backticks in client-local.cfg is no longer
+run on a new installation. An upgrade keeps its own LOGFETCHOPTS: set it to
+"--noexec" for the safer default, or leave it "" on a client that needs such
+commands.
+
+xymond -- listening addresses
+-----------------------------
+
+xymond --listen now takes a comma-separated list of addresses, and also listens
+on 127.0.0.1 at XYMONDPORT, so the server's own client keeps reporting when a
+network interface goes away. --no-loopback listens only on the addresses given.
+Keep the server's client (xymonclient.cfg) on the same port as XYMONDPORT in
+xymonserver.cfg.
+
+
 Changes for 4.3.31
 ==================
 
@@ -51,12 +91,6 @@ lack.
 
 The NetBSD client now reports inodes, sharing the filtering above. Set
 XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep reporting /dev/pts.
-
-The client now runs logfetch with --noexec by default (LOGFETCHOPTS in
-xymonclient.cfg), so a command in backticks in client-local.cfg is no longer
-run on a new installation. An upgrade keeps its own LOGFETCHOPTS: set it to
-"--noexec" for the safer default, or leave it "" on a client that needs such
-commands.
 
 Clients -- macOS memory reporting
 ---------------------------------

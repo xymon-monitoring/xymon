@@ -102,6 +102,13 @@ and that one is not 0.0.0.0, xymonnet tests the address DNS gave and
 names the host under "Warning output" in its own status (see
 "\-\-report"). A future release will test the hosts.cfg address
 instead: correct it, or write 0.0.0.0 to keep resolving the name.
+An http or https test on a line with an address is named there too when
+the URL is fetched from a different address than the line's: the URL's
+own address, or the address its name resolves to. A future release will
+fetch it from the line's address instead. Move it to a 0.0.0.0 line to
+keep fetching it where its name resolves, or give it an address of its
+own with "=IP". A URL for the line's own name, or whose host is the
+line's address, is not named: it already fetches from there.
 .br
 With "\-\-dns=only" xymonnet will ONLY do the DNS lookup;
 if it fails, then all services on that host will be
@@ -325,6 +332,21 @@ Do not show encryption cipher details on the "sslcert" status.
 
 .IP "\fB\-\-showallciphers\fR"
 List ALL locally available encryption ciphers on the "sslcert" status.
+
+.PP
+When a TLS test sends a servername (for an https test this is the host
+part of the URL, always sent as SNI), xymonnet also checks that the
+presented certificate covers that name - matching the certificate's
+subjectAltName entries, and falling back to the common name. A
+certificate that does not cover the name is reported on the "sslcert"
+status ("Certificate does NOT cover ...") and turns it
+.BR red ,
+because the test was answered by a certificate issued for some other
+name - typically an address that served a default certificate for a
+name it does not hold. A matching certificate is noted ("Certificate
+covers ...") and leaves the colour alone. The check needs OpenSSL
+1.0.2 or later; on an older build it is skipped and the colour is
+unchanged.
 
 .IP "\fB\-\-sni\fR=[\fBon\fR|\fBoff\fR]"
 Sets whether TLS tests that take their servername from the host entry
@@ -554,7 +576,9 @@ Command used to run the
 utility. Used by xymonnet for connectivity (ping) testing.  See
 .I xymonserver.cfg(5)
 for more information about how to customize the program that is
-executed to do ping tests.
+executed to do ping tests. A host listed by an IPv6 address needs a
+program that pings IPv6, such as fping 4 or later; xymonping is IPv4
+only.
 
 .IP "\fBTRACEROUTE\fR"
 Location of the
