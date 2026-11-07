@@ -52,6 +52,7 @@ void *xtreeNew(int(*xtreeCompare)(const char *a, const char *b))
 	xtree_t *newtree;
 
 	newtree = (xtree_t *)calloc(1, sizeof(xtree_t));
+	if (!newtree) return NULL;
 	newtree->compare = xtreeCompare;
 	newtree->root = NULL;
 
@@ -83,6 +84,7 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 	if (!tree) return XTREE_STATUS_NOTREE;
 
 	rec = (treerec_t *)calloc(1, sizeof(treerec_t));
+	if (!rec) return XTREE_STATUS_MEM_EXHAUSTED;
 	rec->key = key;
 	rec->userdata = userdata;
 	rec->compare = tree->compare;
