@@ -2,7 +2,20 @@ Maintained by the release manager on the Changes branch; do not edit it in a
 pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
 
 
-Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
+Changes from 4.3.31 -> 4.3.32 (XX Xxx XXXX)
+===========================================
+
+* Warn when hosts.cfg and DNS disagree on a host's address (#610) (Thanks, David Dee)
+* Keep reserved hosts.cfg tags off the info page's "Other tags" row (#606) (Thanks, Markus Häll)
+* Avoid a use-after-free when destroying a tree with caller-freed keys (#608) (Thanks, David Dee)
+* Run logfetch with --noexec by default (#641) (Thanks, Roland Rosenfeld)
+* Report an over-long XYMONHOME path instead of overflowing its buffer (#644) (Thanks, David Dee)
+* Serve the web pages at the root URL with the shipped xymon-apache.conf (#685) (Thanks, David Dee)
+* Name msgcache, not xymonproxy, in "msgcache --version" (#692) (Thanks, David Dee)
+* Refuse a hosts.cfg reply that holds a NUL instead of dropping hosts (#717) (Thanks, David Dee)
+
+
+Changes from 4.3.30 -> 4.3.31 (06 Nov 2026)
 ===========================================
 
 * Fix typo \fb (instead of \fB) in some man pages (#10) (Thanks, Roland Rosenfeld)
