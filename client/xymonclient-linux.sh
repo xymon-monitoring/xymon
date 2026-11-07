@@ -417,7 +417,7 @@ run_df()
 	_tag=disk; [ "$DFINODES" = yes ] && _tag=inode
 	_rout=$(df_sentinel "$_tag" "$@")
 	if [ $? -eq 124 ]; then
-		# Unavailable: surface each remote mount as a failed (100%) row rather
+		# Unavailable: surface each remote mount as an unmeasured row rather
 		# than dropping it, since the server reads an absent filesystem as
 		# green. This turns one filesystem red instead of purpling the host.
 		#
@@ -425,7 +425,9 @@ run_df()
 		# still knows which device is behind the mount point, and that is the
 		# first thing an operator needs. The sizes are reported as "-": they
 		# were not measured, and a number here would be trended as a reading.
-		# The capacity stays 100% because that is what turns the column red.
+		# The capacity is "-" like the sizes: nothing measured it either. A
+		# server too old to know the marker reads 0% and stays green - the
+		# cost of not reporting a number nobody measured.
 		# The mount list rides the mount-table stream behind an @@ separator:
 		# a -v assignment cannot carry newlines on BSD awk (fs_setop makes
 		# the same move). A spaced device is re-encoded (\040) to keep the
@@ -439,7 +441,7 @@ run_df()
 				d = ($0 in dev) ? dev[$0] : "-"
 				n = split(d, dp, / /)
 				if (n > 1) { d = dp[1]; for (j = 2; j <= n; j++) d = d "\\040" dp[j] }
-				printf "%s - - - 100%% %s\n", d, $0
+				printf "%s - - - - %s\n", d, $0
 			}'
 	else
 		printf '%s\n' "$_rout"
@@ -471,11 +473,14 @@ emit_df()
 	# bogus counts (e.g. a negative IUsed on 9p). The header (NR==1) is kept; for
 	# the disk report the awk is a pass-through. (awk is already required above,
 	# so this adds no new dependency.)
+	# The unavailable-mount marker is dashed there too and must survive: a
+	# no-limit filesystem still counts inodes ("0 0 0 -"), the marker counts
+	# nothing.
 	printf '%s\n' "$DFOUT" | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }' -e "s&^rootfs&${ROOTFS}&" \
-	| awk -v ino="$1" 'NR == 1 || ino != "yes" || $5 != "-"'
+	| awk -v ino="$1" 'NR == 1 || ino != "yes" || $5 != "-" || $2 == "-"'
 }
 ROOTFS=`readlink -m /dev/root`
 emit_df no Disk
