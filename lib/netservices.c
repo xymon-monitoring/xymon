@@ -137,7 +137,7 @@ char *init_tcp_services(void)
 	if (xgetenv("XYMONHOME")) {
 		snprintf(filename, sizeof(filename), "%s/etc/", xgetenv("XYMONHOME"));
 	}
-	strncat(filename, "protocols.cfg", (sizeof(filename) - strlen(filename)));
+	strncat(filename, "protocols.cfg", (sizeof(filename) - strlen(filename)) - 1);
 
 	if ((stat(filename, &st) == 0) && xymonnetsvcs) {
 		/* See if we have already run and the file is unchanged - if so just pickup the result */

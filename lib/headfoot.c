@@ -1568,15 +1568,15 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 		p = strchr(hfpath, '/'); elemstart = hfpath;
 		while (p) {
 			*p = '\0';
-			strncat(filename, elemstart, (sizeof(filename) - strlen(filename)));
-			strncat(filename, "_", (sizeof(filename) - strlen(filename)));
+			strncat(filename, elemstart, (sizeof(filename) - strlen(filename)) - 1);
+			strncat(filename, "_", (sizeof(filename) - strlen(filename)) - 1);
 			*p = '/';
 			p++;
 			elemstart = p; p = strchr(elemstart, '/');
 		}
-		strncat(filename, elemstart, (sizeof(filename) - strlen(filename)));
-		strncat(filename, "_", (sizeof(filename) - strlen(filename)));
-		strncat(filename, head_or_foot, (sizeof(filename) - strlen(filename)));
+		strncat(filename, elemstart, (sizeof(filename) - strlen(filename)) - 1);
+		strncat(filename, "_", (sizeof(filename) - strlen(filename)) - 1);
+		strncat(filename, head_or_foot, (sizeof(filename) - strlen(filename)) - 1);
 
 		dbgprintf("Trying header/footer file '%s'\n", filename);
 		fd = open(filename, O_RDONLY);
