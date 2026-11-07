@@ -13,6 +13,10 @@ Changes from 4.3.31 -> 4.3.32 (XX Xxx XXXX)
 * Serve the web pages at the root URL with the shipped xymon-apache.conf (#685) (Thanks, David Dee)
 * Name msgcache, not xymonproxy, in "msgcache --version" (#692) (Thanks, David Dee)
 * Refuse a hosts.cfg reply that holds a NUL instead of dropping hosts (#717) (Thanks, David Dee)
+* Accept an IPv6 address in column 1 of a hosts.cfg line (#612) (Thanks, David Dee)
+* Let xymond --listen take a list of addresses, and keep a loopback (#432) (Thanks, David Dee)
+* Turn sslcert red when the certificate does not cover the tested name (#729) (Thanks, David Dee)
+* Warn about a URL test for another name on an addressed line (#611) (Thanks, David Dee)
 
 
 Changes from 4.3.30 -> 4.3.31 (06 Nov 2026)
