@@ -41,25 +41,38 @@ void dropdirectory(char *dirfn, int background)
 
 	if (childpid == 0) {
 		dbgprintf("Starting to remove directory %s\n", dirfn);
-		dirfd = opendir(dirfn);
-		if (dirfd) {
+		/*
+		 * A symlink is never descended: opendir() would follow it and we would
+		 * delete whatever it points at, outside the tree we were asked to
+		 * remove (a planted "histlogs/host -> ../../elsewhere" turned a
+		 * drophost into a recursive delete of elsewhere). Remove the link
+		 * itself and stop.
+		 */
+		if ((lstat(dirfn, &st) == 0) && S_ISLNK(st.st_mode)) {
+			unlink(dirfn);
+		}
+		else if ((dirfd = opendir(dirfn)) != NULL) {
 			while ( (de = readdir(dirfd)) != NULL ) {
-				snprintf(fn, sizeof(fn), "%s/%s", dirfn, de->d_name);
-				if (strcmp(de->d_name, ".") && strcmp(de->d_name, "..") && (stat(fn, &st) == 0)) {
-					if (S_ISREG(st.st_mode)) {
-						dbgprintf("Removing file %s\n", fn);
-						unlink(fn);
-					}
-					else if (S_ISDIR(st.st_mode)) {
+				/* A child name that does not fit is skipped, not acted on
+				   truncated - a truncated path names a different entry. */
+				if ((size_t)snprintf(fn, sizeof(fn), "%s/%s", dirfn, de->d_name) >= sizeof(fn)) continue;
+				/* lstat(), not stat(): a symlinked child is unlinked as a link,
+				   never followed; only a real subdirectory is recursed into. */
+				if (strcmp(de->d_name, ".") && strcmp(de->d_name, "..") && (lstat(fn, &st) == 0)) {
+					if (S_ISDIR(st.st_mode)) {
 						dbgprintf("Recurse into %s\n", fn);
 						dropdirectory(fn, 0); /* Don't background the recursive calls! */
+					}
+					else {
+						dbgprintf("Removing %s\n", fn);
+						unlink(fn);
 					}
 				}
 			}
 			closedir(dirfd);
+			dbgprintf("Removing directory %s\n", dirfn);
+			rmdir(dirfn);
 		}
-		dbgprintf("Removing directory %s\n", dirfn);
-		rmdir(dirfn);
 		if (background) {
 			/* Background task just exits */
 			exit(0);

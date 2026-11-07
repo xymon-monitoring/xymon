@@ -103,7 +103,10 @@ static void load_rrddefs(void)
 
 	rrddeftree = xtreeNew(strcasecmp);
 
-	sprintf(fn, "%s/etc/rrddefinitions.cfg", xgetenv("XYMONHOME"));
+	if (snprintf(fn, sizeof(fn), "%s/etc/rrddefinitions.cfg", xgetenv("XYMONHOME")) >= (int)sizeof(fn)) {
+		errprintf("Cannot load XYMONHOME/etc/rrddefinitions.cfg: the name is too long\n");
+		goto loaddone;
+	}
 	fd = stackfopen(fn, "r", NULL);
 	if (fd == NULL) goto loaddone;
 

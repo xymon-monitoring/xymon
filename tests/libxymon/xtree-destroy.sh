@@ -6,10 +6,14 @@
 # xtreeDestroy must release everything the tree allocated. The tsearch
 # variant (HAVE_BINARY_TREE) used to free only the handle, leaking every
 # internal node and record wrapper of the destroyed tree - the fileset
-# index hits this on every drophost. Compile lib/tree.c BOTH ways - a
+# index hits this on every drophost. Nor may it read a key: callers free
+# their keys and then destroy the tree (holidays.c, clientlocal.c,
+# xymonrrd.c), and the tsearch teardown used to compare each record it
+# deleted, reading every freed key. Compile lib/tree.c BOTH ways - a
 # config.h shim per variant, so the test needs no built tree and is
 # independent of this platform's configure result - and run an
-# insert/find/delete/destroy workload under ASan's leak checker.
+# insert/find/delete/destroy workload under ASan, which reports both a
+# leak and a read of freed memory.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -60,6 +64,17 @@ int main(void)
 	/* Keys and userdata stay caller-owned through delete AND destroy */
 	for (i = 0; i < 1000; i++) { free(keys[i]); free(vals[i]); }
 
+	/* Keys freed first, then the tree destroyed: destroying reads no key */
+	tree = xtreeNew(strcmp);
+	for (i = 0; i < 1000; i++) {
+		char buf[32];
+		sprintf(buf, "key%04d", i);
+		keys[i] = strdup(buf);
+		if (xtreeAdd(tree, keys[i], NULL) != XTREE_STATUS_OK) return 14;
+	}
+	for (i = 0; i < 1000; i++) free(keys[i]);
+	xtreeDestroy(tree);
+
 	/* Empty and NULL trees must be safe too */
 	xtreeDestroy(xtreeNew(strcmp));
 	xtreeDestroy(NULL);
@@ -78,12 +93,12 @@ echo '#undef HAVE_BINARY_TREE' >"$work/shim-fallback/config.h"
 	-o "$work/t-tsearch" "$work/harness.c" "$ROOT/lib/tree.c" 2>"$work/cc1.log" \
 	|| { cat "$work/cc1.log" >&2; fail "tsearch-variant harness does not compile"; }
 "$work/t-tsearch" >"$work/out1" 2>&1 \
-	|| fail "tsearch variant leaks or fails (rc=$?): $(tail -15 "$work/out1")"
+	|| fail "tsearch variant leaks, reads a freed key, or fails (rc=$?): $(grep -m1 -A3 "ERROR: AddressSanitizer" "$work/out1" || tail -15 "$work/out1")"
 
 "$CC" -g -fsanitize=address -I"$work/shim-fallback" -iquote "$ROOT/lib" \
 	-o "$work/t-fallback" "$work/harness.c" "$ROOT/lib/tree.c" 2>"$work/cc2.log" \
 	|| { cat "$work/cc2.log" >&2; fail "fallback-variant harness does not compile"; }
 "$work/t-fallback" >"$work/out2" 2>&1 \
-	|| fail "fallback variant leaks or fails (rc=$?): $(tail -15 "$work/out2")"
+	|| fail "fallback variant leaks, reads a freed key, or fails (rc=$?): $(grep -m1 -A3 "ERROR: AddressSanitizer" "$work/out2" || tail -15 "$work/out2")"
 
-pass "xtreeDestroy releases everything the tree allocated, on both the tsearch and the array variant"
+pass "xtreeDestroy releases everything the tree allocated and reads no key its caller already freed, on both the tsearch and the array variant"

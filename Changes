@@ -203,6 +203,7 @@ Changes from 4.3.30 -> 4.3.31 (XX Xxx XXXX)
 * Let xymonreports.sh take GNUDATE, or find GNU date as gdate or date (#709) (Thanks, David Dee)
 * Run xymonreports.sh through the bash on PATH, not /bin/bash (#710) (Thanks, David Dee)
 * Say why snapshot.cgi cannot create its directory, and log which one (#712) (Thanks, David Dee)
+* xymond_history: confine record names so a status cannot write outside the history tree (#402)
 
 
 

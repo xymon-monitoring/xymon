@@ -52,6 +52,12 @@ lack.
 The NetBSD client now reports inodes, sharing the filtering above. Set
 XYMONCLIENT_FS_INCLUDE_TYPES="ptyfs" to keep reporting /dev/pts.
 
+The client now runs logfetch with --noexec by default (LOGFETCHOPTS in
+xymonclient.cfg), so a command in backticks in client-local.cfg is no longer
+run on a new installation. An upgrade keeps its own LOGFETCHOPTS: set it to
+"--noexec" for the safer default, or leave it "" on a client that needs such
+commands.
+
 Clients -- macOS memory reporting
 ---------------------------------
 
@@ -221,6 +227,15 @@ Linux 10's, both work with no configuration.
 XMH_MULTIHOMED is now XMH_FLAG_MULTIHOMED, the name xymon-xmh(5) has always
 documented. Scripts, web templates and xymondboard or hostinfo field selectors
 using the old name must be updated.
+
+History
+-------
+
+xymond_history no longer writes through symbolic links. A host's directory
+under histlogs, or a test directory below it, that is a symlink is refused with
+a log line, and so is a history file that is one; that host's history stops
+being recorded. A site that moved some hosts' history to another disk through
+symlinks should move the whole hist or histlogs directory instead.
 
 
 Changes for 4.3.30

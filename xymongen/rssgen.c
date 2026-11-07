@@ -221,12 +221,17 @@ void do_netscape_sidebar(char *nssidebarfilename, host_t *hosts)
 	ttlvalue = (xgetenv("TASKSLEEP") ? atoi(xgetenv("TASKSLEEP")) : 300);
 
 	if (*nssidebarfilename == '/') {
-		sprintf(tmpfn, "%s.tmp", nssidebarfilename);
-		sprintf(destfn, "%s", nssidebarfilename);
+		snprintf(destfn, sizeof(destfn), "%s", nssidebarfilename);
+		if (snprintf(tmpfn, sizeof(tmpfn), "%s.tmp", nssidebarfilename) >= (int)sizeof(tmpfn)) *tmpfn = '\0';
 	}
 	else {
-		sprintf(tmpfn, "%s/www/%s.tmp", xgetenv("XYMONHOME"), nssidebarfilename);
-		sprintf(destfn, "%s/www/%s", xgetenv("XYMONHOME"), nssidebarfilename);
+		snprintf(destfn, sizeof(destfn), "%s/www/%s", xgetenv("XYMONHOME"), nssidebarfilename);
+		if (snprintf(tmpfn, sizeof(tmpfn), "%s/www/%s.tmp", xgetenv("XYMONHOME"), nssidebarfilename) >= (int)sizeof(tmpfn)) *tmpfn = '\0';
+	}
+	/* tmpfn is the longer of the two: if it fits, destfn does */
+	if (*tmpfn == '\0') {
+		errprintf("Cannot create Netscape sidebar outputfile: the name is too long (%d characters)\n", (int)strlen(nssidebarfilename));
+		return;
 	}
 	fd = fopen(tmpfn, "w");
 	if (fd == NULL) {

@@ -15,7 +15,12 @@ XYMONTMP="$XYMONHOME/tmp"             # Where we may store temporary files.
 XYMONCLIENTLOGS="$XYMONHOME/logs"     # Where we store the client logfiles
 
 # Options to logfetch, the xymon binary which examines log files for recent changes.
-LOGFETCHOPTS=""
+# --noexec: do not run the commands a client-local.cfg entry may give in
+# backticks to list the files to watch. They come from the Xymon server, so
+# without it whoever can change that file runs commands on this client.
+# Remove it on a client that needs such a command; a glob in angle brackets
+# works either way.
+LOGFETCHOPTS="--noexec"
 
 
 # Filesystem reporting -- the XYMONCLIENT_FS_* variables tune which mounts the
