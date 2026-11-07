@@ -204,6 +204,15 @@ the socket path to fit, so keep this directory path short.
 Directory for Xymon webfiles. The $XYMONWEB URL must map to this directory.
 Default: $XYMONHOME/www/
 
+.IP "\fBXYMONSTATICWWWDIR\fR"
+Directory for the static web files that ship with Xymon: the gifs, help
+and menu directories. The help links on the web pages are read from
+$XYMONSTATICWWWDIR/help. The installation writes this setting: it is the
+www directory, unless the build installed these files elsewhere with
+INSTALLSTATICWWWDIR, and then the www directory holds symbolic links to
+them. Changing the setting does not move the files.
+Default: none. When it is unset, help is found beside $XYMONNOTESDIR.
+
 .IP "\fBXYMONNOTESDIR\fR"
 Directory for Xymon notes-files. The $XYMONNOTESSKIN URL must map to this directory.
 Default: $XYMONHOME/www/notes/
