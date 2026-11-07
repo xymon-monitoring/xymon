@@ -370,7 +370,7 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	 * so this covers what is left: the callers that pass XMH_PAGEPATH, and
 	 * localhostinfo(), which pins every host to the top page in local mode.
 	 */
-	pagenames = strdup((pagename && *pagename) ? pagename : "/");
+	pagenames = strdup(pagepath_matchname(pagename));
 
 	/* We must build the list of rules for this host */
 	head = tail = NULL;
