@@ -161,6 +161,13 @@ report "cleanup-kill" 'register_cleanup .*(^|[^[:alnum:]_-])kill([[:space:]]|$)'
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
 	"not installed on the BSD lanes; awk and sh are"
 
+# A test must not acquire privilege itself. A no-password sudo attempt is logged
+# and can be mailed as a security alert on a developer's machine (#759), and the
+# escalation is non-portable besides. Gate on "id -u"/setuid and skip; let the
+# runner provide root (CI installs the binary setuid or runs the suite as root).
+report "sudo" '(^|[^-[:alnum:]_.])sudo[[:space:]]' \
+	"a test must not call sudo: it surprises a developer's machine and privilege is the runner's job -- gate on id -u or the setuid bit and skip"
+
 # A harness that links the tree needs the configured flags: the BSDs keep
 # pcre2.h under /usr/local or /usr/pkg, and without the rpath the binary links
 # and then cannot find libpcre2 at run time.
