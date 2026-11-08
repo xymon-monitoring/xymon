@@ -200,10 +200,36 @@ static int keep_response(char *outp, int n, FILE *respfd, strbuffer_t *respstr, 
  * before the server has checked our certificate, so a refusal arrives only
  * here, as an alert, and would otherwise look like a message sent.
  */
+/*
+ * Build the client's TLS context once and cache it. Called before connect()
+ * as well as from tls_exchange(), so loading the CA bundle -- which can be slow
+ * on a loaded client -- happens before the connection, not in the gap between
+ * connect() and the first byte, where the server's idle-connection limit would
+ * drop a connection that has still sent nothing. Returns the cached context, or
+ * NULL with err set.
+ */
+static SSL_CTX *tls_client_ctx(char *err, size_t errsz)
+{
+	static SSL_CTX *ctx = NULL;
+
+	if (!ctx) {
+		char *v = xgetenv("XYMON_TLS_VERIFY");
+		char *ca = xgetenv("XYMON_TLS_CA"), *cert = xgetenv("XYMON_TLS_CERT"), *key = xgetenv("XYMON_TLS_KEY");
+		xymontls_verify_t verify = XYMONTLS_VERIFY_FULL;
+
+		if (v && (strcmp(v, "peer") == 0)) verify = XYMONTLS_VERIFY_PEER;
+		else if (v && (strcmp(v, "none") == 0)) verify = XYMONTLS_VERIFY_NONE;
+
+		ctx = xymontls_client_ctx((ca && *ca) ? ca : NULL, (cert && *cert) ? cert : NULL,
+					  (key && *key) ? key : NULL, verify, err, errsz);
+	}
+	return ctx;
+}
+
 static int tls_exchange(int sockfd, char *host, char *label, char *message, int timeout,
 			FILE *respfd, strbuffer_t *respstr, int fullresponse)
 {
-	static SSL_CTX *ctx = NULL;
+	SSL_CTX *ctx;
 	char err[512], buf[32768], reason[256];
 	unsigned long e;
 	char *v = xgetenv("XYMON_TLS_VERIFY"), *sni = xgetenv("XYMON_TLS_SNI");
@@ -216,15 +242,10 @@ static int tls_exchange(int sockfd, char *host, char *label, char *message, int 
 	if (v && (strcmp(v, "peer") == 0)) verify = XYMONTLS_VERIFY_PEER;
 	else if (v && (strcmp(v, "none") == 0)) verify = XYMONTLS_VERIFY_NONE;
 
+	ctx = tls_client_ctx(err, sizeof(err));
 	if (!ctx) {
-		char *ca = xgetenv("XYMON_TLS_CA"), *cert = xgetenv("XYMON_TLS_CERT"), *key = xgetenv("XYMON_TLS_KEY");
-
-		ctx = xymontls_client_ctx((ca && *ca) ? ca : NULL, (cert && *cert) ? cert : NULL,
-					  (key && *key) ? key : NULL, verify, err, sizeof(err));
-		if (!ctx) {
-			snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "TLS to Xymon daemon@%s: %s", label, err);
-			return XYMONSEND_ECONNFAILED;
-		}
+		snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "TLS to Xymon daemon@%s: %s", label, err);
+		return XYMONSEND_ECONNFAILED;
 	}
 
 	/* The exchange runs blocking, bounded by the timeout like the plaintext one */
@@ -344,7 +365,19 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, strbuffer_
 		rcptport = (usetls ? atoi(xgetenv("XYMONDTLSPORT")) : xymondportnumber);
 		rcptip = split_hostport(rcptbuf, &rcptport);
 		dbgprintf("Standard protocol%s on port %d\n", (usetls ? " over TLS" : ""), rcptport);
-#ifndef HAVE_OPENSSL
+#ifdef HAVE_OPENSSL
+		/* Build the TLS context before connect(), so loading the CA bundle
+		   does not delay the first byte past the server's idle limit. */
+		if (usetls) {
+			char err[512];
+
+			if (!tls_client_ctx(err, sizeof(err))) {
+				snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "TLS to Xymon daemon@%s: %s", rcptip, err);
+				xfree(rcptbuf);
+				return XYMONSEND_ECONNFAILED;
+			}
+		}
+#else
 		if (usetls) {
 			snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Cannot send to %s: this build has no TLS support", recipient);
 			xfree(rcptbuf);
