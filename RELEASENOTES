@@ -16,6 +16,14 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+xymond -- TLS between clients and the daemon
+--------------------------------------------
+
+Client-to-xymond messages can now travel over TLS: give xymond a certificate
+and a --tls-listen address, and point clients at "xymons://". The plaintext
+port keeps working alongside it, so clients move over one at a time. Nothing
+changes until you set it up; xymon-tls(7) is the walkthrough.
+
 xymonping -- IPv6 addresses are pinged
 -------------------------------------
 
