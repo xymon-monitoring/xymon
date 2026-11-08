@@ -64,6 +64,20 @@ char *sockaddr_text(struct sockaddr *sa, char *buf, size_t buflen)
 	return buf;
 }
 
+/*
+ * Whether a and b come from the same sender: the same IPv4 address, or the
+ * same IPv6 /64. One machine is usually given a whole /64, so counting single
+ * IPv6 addresses would let it pass for millions of senders.
+ */
+int sockaddr_same_sender(struct sockaddr *a, struct sockaddr *b)
+{
+	unsigned char aa[16], ba[16];
+	int family = sockaddr_bytes(a, aa);
+
+	if ((family == 0) || (sockaddr_bytes(b, ba) != family)) return 0;
+	return prefix_match(aa, ba, ((family == AF_INET) ? 32 : 64));
+}
+
 /* An address written as text, IPv4 or IPv6, into ss. Returns 1, or 0 if it is neither. */
 int text_sockaddr(char *text, struct sockaddr_storage *ss)
 {

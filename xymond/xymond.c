@@ -230,8 +230,53 @@ typedef struct conn_t {
 	SSL *ssl;			/* The TLS session of a --tls-listen connection, else NULL */
 	int sslwant;			/* TLSWANT_READ or _WRITE: what TLS waits for, else 0 */
 #endif
+	time_t firstbyte;		/* When it is dropped if it has sent nothing by then */
+	int heard;			/* Whether it has sent anything yet */
+	int readpass;			/* Whether it has been through a read pass: only then does it count as silent */
 	struct conn_t *next;
 } conn_t;
+
+/*
+ * A connection that has sent nothing is dropped after IDLE_FIRSTBYTE
+ * seconds rather than --timeout; a message that is arriving keeps the whole
+ * --timeout. And once IDLE_PRESSURE such connections are open, at most
+ * IDLE_PER_SENDER more are taken from one sender -- an IPv4 address or an
+ * IPv6 /64, as sockaddr_same_sender() compares them -- so that a single host
+ * holding connections open cannot use up xymond's file descriptors and
+ * leave every other client unanswered.
+ *
+ * The cap waits for that pressure because a working client can be silent
+ * for a while too: a TLS client connects, then sets up its context, then
+ * sends. Many such clients behind one address, reporting in the same
+ * second, are a burst, not an attack, and below IDLE_PRESSURE nothing is
+ * refused. IDLE_PRESSURE is a quarter of the 1024 descriptors select()
+ * handles; IDLE_PER_SENDER keeps the senders needed to fill the rest at
+ * (1024 - IDLE_PRESSURE) / IDLE_PER_SENDER, about 48.
+ */
+#define IDLE_FIRSTBYTE 5
+#define IDLE_PRESSURE 256
+#define IDLE_PER_SENDER 16
+
+/*
+ * How many open connections have sent nothing yet, counting only those that
+ * have been through a read pass -- so ones accepted in the current pass, not
+ * yet read, do not count, and a batch of valid clients accepted together is
+ * never mistaken for silence: in all, into *all, and from the sender of sa
+ * (sockaddr_same_sender), returned.
+ */
+static int idle_from(conn_t *head, struct sockaddr *sa, int *all)
+{
+	conn_t *cw;
+	int idle = 0;
+
+	*all = 0;
+	for (cw = head; (cw); cw = cw->next) {
+		if ((cw->doingwhat != RECEIVING) || cw->heard || !cw->readpass) continue;
+		(*all)++;
+		if (sockaddr_same_sender((struct sockaddr *)&cw->addr, sa)) idle++;
+	}
+	return idle;
+}
 
 enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST, CMD_DROPSTATE };
 
@@ -6996,6 +7041,19 @@ int main(int argc, char *argv[])
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
 			  case RECEIVING:
+				/* It has now been through a read pass: from here it can count as silent */
+				cwalk->readpass = 1;
+				/*
+				 * Note that it has sent something, before any reading:
+				 * a message arriving, or a TLS handshake that never
+				 * reaches the buffer -- buflen alone would count a TLS
+				 * client as silent until its handshake ends.
+				 */
+				if (!cwalk->heard && FD_ISSET(cwalk->sock, &fdread)) {
+					char peek;
+
+					if (recv(cwalk->sock, &peek, 1, MSG_PEEK) > 0) cwalk->heard = 1;
+				}
 #ifdef HAVE_OPENSSL
 				if (cwalk->ssl) {
 					if (!FD_ISSET(cwalk->sock, &fdread) && !FD_ISSET(cwalk->sock, &fdwrite)) break;
@@ -7108,8 +7166,9 @@ int main(int argc, char *argv[])
 			now = getcurrenttime(NULL);
 			khead = NULL; cwalk = connhead;
 			while (cwalk) {
-				/* Check for connections that timeout */
-				if (now > cwalk->timeout) {
+				/* Check for connections that timeout, or that sent nothing in time */
+				if ((now > cwalk->timeout) ||
+				    ((cwalk->doingwhat == RECEIVING) && !cwalk->heard && (now > cwalk->firstbyte))) {
 					update_statistics("");
 					cwalk->doingwhat = NOTALK;
 					if (cwalk->sock >= 0) {
@@ -7172,7 +7231,7 @@ int main(int argc, char *argv[])
 		for (lidx = 0; lidx < listener_count; lidx++) {
 			struct sockaddr_storage addr;
 			socklen_t addrsz = sizeof(addr);
-			int sock;
+			int sock, idleall, idlemine;
 			int li = (accept_next + lidx) % listener_count;
 
 			if (!FD_ISSET(listeners[li].fd, &fdread)) continue;
@@ -7181,6 +7240,24 @@ int main(int argc, char *argv[])
 
 			accept_next = (li + 1) % listener_count;
 			sock = accept(listeners[li].fd, (struct sockaddr *)&addr, &addrsz);
+
+			if (sock >= 0) idlemine = idle_from(connhead, (struct sockaddr *)&addr, &idleall);
+			if ((sock >= 0) && (idleall >= IDLE_PRESSURE) && (idlemine >= IDLE_PER_SENDER)) {
+				static time_t lastlog = 0;
+				static int refused = 0;
+				char text[IP_ADDR_STRLEN];
+
+				/* Logged at most once a minute: the log must not become the next thing to flood */
+				refused++;
+				if (now >= lastlog + 60) {
+					errprintf("Refused %d connection(s) from %s: %d open connections have sent nothing yet, %d of them from it\n",
+						  refused, sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), idleall, idlemine);
+					lastlog = now;
+					refused = 0;
+				}
+				close(sock);
+				sock = -1;
+			}
 
 			if (sock >= 0) {
 				/* Make sure our sockets are non-blocking */
@@ -7202,6 +7279,9 @@ int main(int argc, char *argv[])
 				conntail->bufp = conntail->buf;
 				conntail->buflen = 0;
 				conntail->timeout = now + conn_timeout;
+				conntail->firstbyte = now + IDLE_FIRSTBYTE;
+				conntail->heard = 0;
+				conntail->readpass = 0;
 				conntail->next = NULL;
 #ifdef HAVE_OPENSSL
 				conntail->ssl = NULL;
