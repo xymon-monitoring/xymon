@@ -1265,8 +1265,6 @@ static void get_hts_ip(char *msg, char *sender, char *origin,
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr, *grp;
 	char hostip[IP_ADDR_STRLEN];
-
-	if (knownname) *knownname = NULL;
 	xtreePos_t hosthandle, testhandle, originhandle;
 	xymond_hostlist_t *hwalk = NULL;
 	testinfo_t *twalk = NULL;
@@ -1284,6 +1282,7 @@ static void get_hts_ip(char *msg, char *sender, char *origin,
 	*log = NULL;
 	*color = -1;
 	if (grouplist) *grouplist = NULL;
+	if (knownname) *knownname = NULL;
 	if (downcause) *downcause = NULL;
 	if (alltests) *alltests = 0;
 
@@ -1334,7 +1333,11 @@ static void get_hts_ip(char *msg, char *sender, char *origin,
 			knownhostname = log_ghost(hostname, sender, msg);
 			if (knownhostname == NULL) goto done;
 		}
-		else {
+		else if (*hostip) {
+			/* A configured host: knownhost() found a real hosts.cfg entry, so
+			   hostip is set, and its own address and name may authorise a
+			   sender. Under --ghosts=allow knownhost() returns an unconfigured
+			   name with no address; that must authorise nothing. */
 			if (knownip) snprintf(knownip, IP_ADDR_STRLEN, "%s", hostip);
 			if (knownname) *knownname = knownhostname;
 		}

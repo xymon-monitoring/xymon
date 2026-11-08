@@ -59,7 +59,7 @@ MLPID=
 launch() {
 	"$XYMOND" --no-daemon --listen="127.0.0.1:$P" --tls-listen="127.0.0.1:$T" \
 		--status-senders=192.0.2.1 --maint-senders=192.0.2.1 \
-		--hosts="$work/hosts.cfg" --env="$work/xymonserver.cfg" \
+		--hosts="$work/hosts.cfg" --env="$work/xymonserver.cfg" "$@" \
 		--pidfile="$work/xymond.pid" --checkpoint-file="$work/chk.out" \
 		> "$work/xymond.log" 2>&1 &
 	MLPID=$!
@@ -182,4 +182,19 @@ cfg "$work/ca.pem" yes
 if launch; then fail "xymond started with XYMOND_TLS_REQUIRE_CERT=yes"; fi
 assert_contains 'XYMOND_TLS_REQUIRE_CERT is "yes"' "$(cat "$work/xymond.log")" "xymond did not name the value it could not read"
 
-pass "a verified client certificate naming a host lets it send for that host wherever its own address would, and for no other; XYMOND_TLS_REQUIRE_CERT refuses a client without one"
+# Under --ghosts=allow, knownhost() returns an unconfigured name with no
+# address. A certificate naming such a host must not authorise it: cert
+# authorisation stands in for a host's own hosts.cfg address, and an
+# unconfigured host has none. web01 is dropped from hosts.cfg; its certificate,
+# accepted above, must now be refused.
+stop
+rm -f "$work/chk.out"
+cfg "$work/ca.pem"
+printf 'page test Test\n192.0.2.11 db01.example.com # conn\n' > "$work/hosts.cfg"
+launch --ghosts=allow || fail "xymond did not start with --ghosts=allow: $(cat "$work/xymond.log")"
+as web01 "status web01.example.com.cpu green web01 is a ghost now" >/dev/null
+assert_not_contains "web01 is a ghost now" "$(kept web01.example.com.cpu)" \
+	"under --ghosts=allow, a certificate naming an unconfigured host authorised it"
+stop
+
+pass "a verified client certificate naming a host lets it send for that host wherever its own address would, and for no other, not even for an unconfigured host under --ghosts=allow; XYMOND_TLS_REQUIRE_CERT refuses a client without one"
