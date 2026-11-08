@@ -166,6 +166,19 @@ EXPAGE= in analysis.cfg now excludes a host when any page it is listed on
 matches, not only its first page, for INODE, PAGING, MIBVAL, CICS, VSIZE and
 GETVIS, as the other checks already did. On a host listed on more than one
 page, those six may lose rules they used to keep.
+xymond -- a connection limit, and no FD_SETSIZE
+-----------------------------------------------
+
+xymond now drives its connections with poll() instead of select(), so
+the number it can hold open at once is no longer fixed when it is built
+(1024 on most platforms, 256 on NetBSD, past which xymond stopped with
+"Fatal error in select"). The limit is XYMOND_MAXCONNECTIONS in
+xymonserver.cfg; unset, it is the process's open-file limit less 64. A
+connection beyond it is refused as it is accepted and logged at most
+once a minute. A value that is not a number is logged and the default
+used. A large open-file limit means a large default; set
+XYMOND_MAXCONNECTIONS to bound it. Nothing changes for an installation
+that stays below its old ceiling.
 
 xymonping -- IPv6 addresses are pinged
 -------------------------------------
