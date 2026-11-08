@@ -129,6 +129,7 @@ typedef struct xymond_log_t {
 	char *testflags;
 	char *grouplist;        /* For extended status reports (e.g. from xymond_client) */
 	char sender[IP_ADDR_STRLEN];
+	char transport[24];	/* How the last report arrived: see set_transport() */
 	time_t lastchange;	/* When the currently recorded color began: its hold-time */
 	time_t *flapchange;	/* Table of the most recent status-change times, used for flap detection */
 	time_t pregaplastchange;	/* The "lastchange" saved when a no-data gap began */
@@ -173,6 +174,7 @@ typedef struct xymond_hostlist_t {
 	xymond_log_t *pinglog; /* Points to entry in logs list, but we need it often */
 	clientmsg_list_t *clientmsgs;
 	time_t clientmsgtstamp;
+	char clienttransport[24];	/* How the last client message arrived: see transport_text() */
 	time_t hostdatasaveexpires;
 } xymond_hostlist_t;
 
@@ -325,7 +327,7 @@ xymond_statistics_t xymond_stats[] = {
 enum boardfield_t { F_NONE, F_IP, F_HOSTNAME, F_TESTNAME, F_MATCHEDTAG, F_COLOR,
 		    F_PREVREPORTCOLOR, F_PREVCHANGECOLOR, F_PREVGAPCOLOR, F_FLAGS,
 		    F_LASTCHANGE, F_LOGTIME, F_VALIDTIME, F_ACKTIME, F_DISABLETIME,
-		    F_SENDER, F_COOKIE, F_LINE1,
+		    F_SENDER, F_TRANSPORT, F_COOKIE, F_LINE1,
 		    F_ACKMSG, F_DISMSG, F_MSG, F_CLIENT, F_CLIENTTSTAMP,
 		    F_ACKLIST,
 		    F_HOSTINFO,
@@ -361,6 +363,7 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "acktime", F_ACKTIME },
 	{ "disabletime", F_DISABLETIME },
 	{ "sender", F_SENDER },
+	{ "transport", F_TRANSPORT },
 	{ "cookie", F_COOKIE },
 	{ "line1", F_LINE1 },
 	{ "ackmsg", F_ACKMSG },
@@ -1933,6 +1936,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		}
 		strncpy(log->sender, sender, sizeof(log->sender)-1);
 		*(log->sender + sizeof(log->sender) - 1) = '\0';
+		/* A new sender has no transport until its caller sets one: see set_transport() */
+		*(log->transport) = '\0';
 	}
 
 
@@ -2351,6 +2356,44 @@ static int oksender_host(sender_t *oklist, char *targetip, char *hostname, conn_
 	if (oklist && hostname && msg->ssl && xymontls_peer_has_name(msg->ssl, hostname)) return 1;
 #endif
 	return oksender_addr(oklist, targetip, (struct sockaddr *)&msg->addr, msgbuf);
+}
+
+/*
+ * How a message reached us: the TLS version ("TLSv1.3"), with " cert" when a
+ * verified client certificate names the host; "plaintext"; or "local" for one
+ * that did not come over a connection (the backfeed queue, a scheduled task).
+ * Shown by the xymondboard "transport" field and on the status page. It is
+ * information only: nothing alerts or changes color on it.
+ */
+static void transport_text(char *buf, size_t bufsz, conn_t *msg, char *hostname)
+{
+	if (msg->sock < 0) {
+		snprintf(buf, bufsz, "%s", "local");
+		return;
+	}
+#ifdef HAVE_OPENSSL
+	if (msg->ssl) {
+		snprintf(buf, bufsz, "%s%s", SSL_get_version(msg->ssl),
+			 ((hostname && xymontls_peer_has_name(msg->ssl, hostname)) ? " cert" : ""));
+		return;
+	}
+#endif
+	snprintf(buf, bufsz, "%s", "plaintext");
+}
+
+/*
+ * Set a status's transport after handle_status(). A status relayed with a
+ * "Status message received from" line -- the ones xymond_client derives from
+ * a host's client message (cpu, disk, memory, procs ...), or one passed on by
+ * a proxy -- did not come from the host over this connection, so it takes the
+ * transport of the host's last client message instead, or none.
+ */
+static void set_transport(xymond_log_t *log, conn_t *msg, xymond_hostlist_t *h, int relayed)
+{
+	if (relayed)
+		snprintf(log->transport, sizeof(log->transport), "%s", h->clienttransport);
+	else
+		transport_text(log->transport, sizeof(log->transport), msg, h->hostname);
 }
 
 void handle_enadis(int enabled, conn_t *msg, char *sender)
@@ -3707,6 +3750,7 @@ strbuffer_t *generate_outbuf(strbuffer_t **prebuf, boardfield_t *boardfields, xy
 		  case F_ACKTIME: snprintf(l, sizeof(l), "%d", (int)lwalk->acktime); addtobuffer(buf, l); break;
 		  case F_DISABLETIME: snprintf(l, sizeof(l), "%d", (int)lwalk->enabletime); addtobuffer(buf, l); break;
 		  case F_SENDER: addtobuffer(buf, lwalk->sender); break;
+		  case F_TRANSPORT: addtobuffer(buf, lwalk->transport); break;
 		  case F_COOKIE: if (lwalk->cookie) addtobuffer(buf, lwalk->cookie); break;
 
 		  case F_LINE1:
@@ -4254,6 +4298,7 @@ void do_message(conn_t *msg, char *origin)
 
 					if (h && t && log && (color != -1)) {
 						handle_status(currmsg, sender, h->hostname, t->name, grouplist, log, color, downcause, 0, 0);
+						set_transport(log, msg, h, (msgfrom != NULL));
 					}
 					break;
 				}
@@ -4328,6 +4373,7 @@ void do_message(conn_t *msg, char *origin)
 		  default:
 			if (h && t && log && (color != -1)) {
 				handle_status(msg->buf, sender, h->hostname, t->name, grouplist, log, color, downcause, 0, 0);
+				set_transport(log, msg, h, (msgfrom != NULL));
 			}
 			break;
 		}
@@ -4396,6 +4442,7 @@ void do_message(conn_t *msg, char *origin)
 		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 		if (h && t && log && (color != -1)) {
 			handle_status(msg->buf, sender, h->hostname, t->name, NULL, log, color, NULL, 0, 0);
+			set_transport(log, msg, h, 0);
 		}
 	}
 	else if ((strncmp(msg->buf, "notes", 5) == 0) || (strncmp(msg->buf, "usermsg", 7) == 0)) {
@@ -5252,6 +5299,16 @@ void do_message(conn_t *msg, char *origin)
 				}
 
 				handle_client(msg->buf, sender, hname, collectorid, clientos, clientclass);
+
+				/* Remember how it came, for the statuses derived from it: see set_transport() */
+				{
+					xtreePos_t hh = xtreeFind(rbhosts, hname);
+
+					if (hh != xtreeEnd(rbhosts)) {
+						xymond_hostlist_t *hrec = (xymond_hostlist_t *)xtreeData(rbhosts, hh);
+						transport_text(hrec->clienttransport, sizeof(hrec->clienttransport), msg, hname);
+					}
+				}
 			}
 
 			MEMUNDEFINE(hostip);

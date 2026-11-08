@@ -77,6 +77,18 @@ network interface goes away. --no-loopback listens only on the addresses given.
 Keep the server's client (xymonclient.cfg) on the same port as XYMONDPORT in
 xymonserver.cfg.
 
+xymond -- how a status arrived
+------------------------------
+
+xymond now records how each status reached it: "plaintext", the TLS version
+("TLSv1.3"), with " cert" when a verified client certificate names the host,
+or "local". The status page shows it after the sender ("Status message
+received from 192.0.2.1 over TLSv1.3, client certificate", or "... (plaintext)";
+the client-derived columns show how the client message arrived),
+and the xymondboard/xymondlog "transport" field gives it for scripts, e.g.
+to list the hosts still sending in plaintext while moving clients to TLS.
+It is information only: no status, color or alert depends on it.
+
 
 Changes for 4.3.31
 ==================
