@@ -417,7 +417,10 @@ scheduled task, or the backfeed queue). A status derived from a client
 message (cpu, disk, memory and the others xymond_client reports) shows how
 that client message arrived. Empty after xymond restarts until the next
 report, and for a status xymond set itself. Information only:
-nothing alerts or changes color on it.
+nothing alerts or changes color on it. The client column (CLIENTCOLUMN)
+shows how the host\(aqs last client message arrived, and its sender is
+where that message came from; the info and trends columns, which xymond
+makes up itself, show neither.
 .IP "\fBcookie\fR"
 Either \-1 or the cookie value used to acknowledge an alert.
 .IP "\fBline1\fR"
