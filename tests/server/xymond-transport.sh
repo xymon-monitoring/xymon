@@ -14,7 +14,12 @@
 #   - the same certificate sending for db01, which it does not name, reads
 #     the TLS version alone;
 #   - a later plaintext report replaces a TLS one, so the field follows the
-#     most recent report.
+#     most recent report;
+#   - a status relayed with a "Status message received from" line -- as
+#     xymond_client relays the cpu, disk, ... statuses it derives from a
+#     client message -- takes the transport of the host's last client
+#     message (web01's, sent with its certificate), not the relay's own
+#     connection; a host with no client message gets none.
 #
 # No --*-senders list is set, so every message is accepted by address and
 # only the transport differs.
@@ -95,4 +100,21 @@ as plain "status web01.example.com.memory green back in plaintext" >/dev/null
 got=$(transport web01.example.com memory)
 [ "$got" = "plaintext" ] || fail "a plaintext report after a TLS one reads '$got', not 'plaintext'"
 
-pass "xymond records each status's transport: plaintext, the TLS version, and ' cert' when a verified client certificate names the host"
+as web01 "client web01.example.com.linux linux
+[date]
+with web01's certificate" >/dev/null
+as plain "combo
+status web01.example.com.procs green derived from the client message
+Status message received from 127.0.0.1
+" >/dev/null
+got=$(transport web01.example.com procs)
+case $got in "TLSv1."[23]" cert") ;; *) fail "a status relayed from web01's client message reads '$got', not that message's '<version> cert'" ;; esac
+
+as plain "combo
+status db01.example.com.procs green relayed, no client message
+Status message received from 127.0.0.1
+" >/dev/null
+got=$(transport db01.example.com procs)
+[ -z "$got" ] || fail "a relayed status for db01, which sent no client message, reads '$got', not nothing"
+
+pass "xymond records each status's transport: plaintext, the TLS version, and ' cert' when a verified client certificate names the host; a relayed status takes the host's client message transport"

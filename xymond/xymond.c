@@ -174,6 +174,7 @@ typedef struct xymond_hostlist_t {
 	xymond_log_t *pinglog; /* Points to entry in logs list, but we need it often */
 	clientmsg_list_t *clientmsgs;
 	time_t clientmsgtstamp;
+	char clienttransport[24];	/* How the last client message arrived: see transport_text() */
 	time_t hostdatasaveexpires;
 } xymond_hostlist_t;
 
@@ -2355,27 +2356,41 @@ static int oksender_host(sender_t *oklist, char *targetip, char *hostname, conn_
 }
 
 /*
- * Record how a report reached us, next to the sender handle_status() records:
- * the TLS version ("TLSv1.3"), with " cert" when a verified client certificate
- * names the host; "plaintext"; or "local" for one that did not come over a
- * connection (the backfeed queue, a scheduled task). Shown by the xymondboard
- * "transport" field and on the status page. It is information only: nothing
- * alerts or changes color on it.
+ * How a message reached us: the TLS version ("TLSv1.3"), with " cert" when a
+ * verified client certificate names the host; "plaintext"; or "local" for one
+ * that did not come over a connection (the backfeed queue, a scheduled task).
+ * Shown by the xymondboard "transport" field and on the status page. It is
+ * information only: nothing alerts or changes color on it.
  */
-static void set_transport(xymond_log_t *log, conn_t *msg, char *hostname)
+static void transport_text(char *buf, size_t bufsz, conn_t *msg, char *hostname)
 {
 	if (msg->sock < 0) {
-		snprintf(log->transport, sizeof(log->transport), "%s", "local");
+		snprintf(buf, bufsz, "%s", "local");
 		return;
 	}
 #ifdef HAVE_OPENSSL
 	if (msg->ssl) {
-		snprintf(log->transport, sizeof(log->transport), "%s%s", SSL_get_version(msg->ssl),
+		snprintf(buf, bufsz, "%s%s", SSL_get_version(msg->ssl),
 			 ((hostname && xymontls_peer_has_name(msg->ssl, hostname)) ? " cert" : ""));
 		return;
 	}
 #endif
-	snprintf(log->transport, sizeof(log->transport), "%s", "plaintext");
+	snprintf(buf, bufsz, "%s", "plaintext");
+}
+
+/*
+ * Set a status's transport after handle_status(). A status relayed with a
+ * "Status message received from" line -- the ones xymond_client derives from
+ * a host's client message (cpu, disk, memory, procs ...), or one passed on by
+ * a proxy -- did not come from the host over this connection, so it takes the
+ * transport of the host's last client message instead, or none.
+ */
+static void set_transport(xymond_log_t *log, conn_t *msg, xymond_hostlist_t *h, int relayed)
+{
+	if (relayed)
+		snprintf(log->transport, sizeof(log->transport), "%s", h->clienttransport);
+	else
+		transport_text(log->transport, sizeof(log->transport), msg, h->hostname);
 }
 
 void handle_enadis(int enabled, conn_t *msg, char *sender)
@@ -4263,7 +4278,7 @@ void do_message(conn_t *msg, char *origin)
 
 					if (h && t && log && (color != -1)) {
 						handle_status(currmsg, sender, h->hostname, t->name, grouplist, log, color, downcause, 0, 0);
-						set_transport(log, msg, h->hostname);
+						set_transport(log, msg, h, (msgfrom != NULL));
 					}
 					break;
 				}
@@ -4338,7 +4353,7 @@ void do_message(conn_t *msg, char *origin)
 		  default:
 			if (h && t && log && (color != -1)) {
 				handle_status(msg->buf, sender, h->hostname, t->name, grouplist, log, color, downcause, 0, 0);
-				set_transport(log, msg, h->hostname);
+				set_transport(log, msg, h, (msgfrom != NULL));
 			}
 			break;
 		}
@@ -4407,7 +4422,7 @@ void do_message(conn_t *msg, char *origin)
 		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 		if (h && t && log && (color != -1)) {
 			handle_status(msg->buf, sender, h->hostname, t->name, NULL, log, color, NULL, 0, 0);
-			set_transport(log, msg, h->hostname);
+			set_transport(log, msg, h, 0);
 		}
 	}
 	else if ((strncmp(msg->buf, "notes", 5) == 0) || (strncmp(msg->buf, "usermsg", 7) == 0)) {
@@ -5264,6 +5279,16 @@ void do_message(conn_t *msg, char *origin)
 				}
 
 				handle_client(msg->buf, sender, hname, collectorid, clientos, clientclass);
+
+				/* Remember how it came, for the statuses derived from it: see set_transport() */
+				{
+					xtreePos_t hh = xtreeFind(rbhosts, hname);
+
+					if (hh != xtreeEnd(rbhosts)) {
+						xymond_hostlist_t *hrec = (xymond_hostlist_t *)xtreeData(rbhosts, hh);
+						transport_text(hrec->clienttransport, sizeof(hrec->clienttransport), msg, hname);
+					}
+				}
 			}
 
 			MEMUNDEFINE(hostip);
