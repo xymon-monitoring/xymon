@@ -44,6 +44,7 @@ const static struct {
 	{ "XYMOND_TLS_CERT", "$XYMONHOME/etc/tls/xymond.pem" },
 	{ "XYMOND_TLS_KEY", "$XYMONHOME/etc/tls/xymond.key" },
 	{ "XYMOND_TLS_CA", "" },
+	{ "XYMOND_TLS_REQUIRE_CERT", "FALSE" },
 	{ "XYMON_TLS_CA", "" },
 	{ "XYMON_TLS_CERT", "" },
 	{ "XYMON_TLS_KEY", "" },
