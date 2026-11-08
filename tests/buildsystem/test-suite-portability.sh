@@ -302,6 +302,34 @@ check_early_exit_pipe() {
 
 for f in $files; do check_early_exit_pipe "$f" "$work/violations"; done
 
+# awk, unlike grep/sed/expr, has no POSIX character classes in old mawk -- the
+# floor on Debian (mawk is its default) and the BSDs. A [[:...:]] inside an awk
+# program matches nothing there, so the test silently misbehaves (#732). Use
+# [ \t] or an explicit range in an awk program; grep/sed/expr keep [[:...:]].
+# Multi-line programs are caught: a line is joined to the next while its single
+# quotes are unbalanced, so the whole program is seen at the line it opens on.
+# check_awk_charclass FILE OUT -- append this file's violations to OUT.
+check_awk_charclass() {
+	local f=$1 out=$2 n
+	awk '
+	{ line[NR] = $0 }
+	END {
+		q = "\047"
+		for (i = 1; i <= NR; i++) {
+			if (line[i] ~ /^[ \t]*#/) continue
+			buf = line[i]; start = i
+			while (i < NR && (gsub(q, q, buf) % 2) == 1) { i++; buf = buf " " line[i] }
+			if (buf ~ ("(^|[^A-Za-z0-9_])awk[^|]*[[][[]:")) print start
+		}
+	}
+	' "$f" |
+	while IFS= read -r n; do
+		printf 'awk-charclass\t%s\t%s\n' "${f#"$ROOT"/}:$n" \
+			'POSIX character class in an awk program; old mawk has none -- use [ \t] or an explicit range (grep/sed/expr keep [[:...:]])' >>"$out"
+	done
+}
+for f in $files; do check_awk_charclass "$f" "$work/violations"; done
+
 # git, the compiler and make speak the user's language: a German git writes
 # "KONFLIKT" where an English one writes "CONFLICT", and pin-check.sh failed
 # on every German system for asserting the English word (#628). Xymon's own
@@ -330,7 +358,7 @@ for f in $files; do check_translated "$f" "$work/violations"; done
 check_cleanup_fn() {
 	local f=$1 out=$2 fn body
 	for fn in $(sed -nE 's/^[[:space:]]*register_cleanup "?([A-Za-z_][A-Za-z0-9_]*)"?[[:space:]]*$/\1/p' "$f"); do
-		body=$(awk -v fn="$fn" '$0 ~ "^[[:space:]]*" fn "\\(\\)" { p = 1 } p { print } p && /^[[:space:]]*}/ { exit }' "$f" |
+		body=$(awk -v fn="$fn" '$0 ~ "^[ \t]*" fn "\\(\\)" { p = 1 } p { print } p && /^[ \t]*}/ { exit }' "$f" |
 			grep -vE '^[[:space:]]*#' || true)
 		grep -qE '(^|[^[:alnum:]_-])kill([[:space:]]|$)' <<<"$body" || continue
 		grep -qE 'stop_process|(^|[^[:alnum:]_])wait([[:space:]]|$)|kill +-0' <<<"$body" && continue
