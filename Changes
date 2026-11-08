@@ -5,6 +5,8 @@ pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes from 4.3.31 -> 4.3.32 (XX Xxx XXXX)
 ===========================================
 
+* Show how the client message arrived on the client column (#757) (Thanks, David Dee)
+* Let a protocols.cfg service hold a conversation, and upgrade to TLS (#488) (Thanks, David Dee)
 * Install the shipped web content apart from what xymongen writes (#414) (Thanks, David Dee)
 * Let rep and snap move together under XYMONCACHEWWWDIR (#443) (Thanks, David Dee)
 * Read every page a host is on when deciding its client ruleset (#549) (Thanks, David Dee)
