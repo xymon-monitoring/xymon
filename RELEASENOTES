@@ -284,6 +284,16 @@ The plain version, which the client update and other programs compare, does
 not change. An existing installation keeps its footer files; copy the new
 stdnormal_footer and critical_footer to show the build.
 
+xymonserver.cfg -- the server sends to itself over loopback
+-----------------------------------------------------------
+
+On a new server, the server's programs and its own client send to xymond over
+127.0.0.1, so it keeps reporting on itself when a network interface goes away.
+An upgrade keeps the existing configuration; to switch, set XYMSRV="127.0.0.1"
+in xymonserver.cfg and prefix the [xymonclient] command in tasks.cfg with "env
+XYMSRV=127.0.0.1". Remote clients are unchanged.
+
+
 Changes for 4.3.31
 ==================
 
