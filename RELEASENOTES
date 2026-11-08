@@ -16,6 +16,14 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+xymond -- TLS between clients and the daemon
+--------------------------------------------
+
+Client-to-xymond messages can now travel over TLS: give xymond a certificate
+and a --tls-listen address, and point clients at "xymons://". The plaintext
+port keeps working alongside it, so clients move over one at a time. Nothing
+changes until you set it up; xymon-tls(7) is the walkthrough.
+
 xymonping -- IPv6 addresses are pinged
 -------------------------------------
 
@@ -88,6 +96,11 @@ the client-derived columns show how the client message arrived),
 and the xymondboard/xymondlog "transport" field gives it for scripts, e.g.
 to list the hosts still sending in plaintext while moving clients to TLS.
 It is information only: no status, color or alert depends on it.
+
+The client column shows it too, with the client message's sender, and the
+client data page starts with a "[transport]" section saying how the
+message came ("TLSv1.3 from 192.0.2.1"). That section is added to the page
+only; the client message xymond stores and returns is unchanged.
 
 
 Changes for 4.3.31
@@ -251,6 +264,21 @@ your protocols.cfg. The mail server then sees a connection that opens and
 closes without a command -- "lost connection after CONNECT" on Postfix,
 NOQUEUE on sendmail -- so allow the Xymon host wherever those lines feed
 fail2ban or a similar counter.
+
+A protocols.cfg entry is now an ordered conversation: an expect waits for the
+server, a send answers it, and "start tls" upgrades a plaintext connection in
+place, so sslcert can check a STARTTLS certificate. The shipped entries wait
+for the greeting and check the reply to their own command. [smtp] and
+[submission] require ESMTP (250 to EHLO): a HELO-only server now reports down,
+and the entry's comment says how to switch it to HELO. A port that accepts and
+never answers now reports down for oratns, ircd, telnet and telnets.
+
+protocols.cfg is now required. An upgrade keeps the sections already in it, as
+above, so it does not get the new conversations: replace your sections with the
+new ones to have them. A section without a port line -- [smtps], [amqp] and
+[amqps] were shipped without one -- still takes its port from /etc/services,
+but xymonnet now logs a warning for it on every run: add "port 465",
+"port 5672" and "port 5671" to them.
 
 xymonnet tests with a cipher-list restriction now report an SSL error when
 OpenSSL rejects it, instead of silently falling back to the default cipher

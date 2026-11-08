@@ -1,0 +1,6 @@
+# test.rebex.net:25 -- drives [smtp]. A terse greeting and a short EHLO list,
+# nothing like gmail's; the entry must not depend on either shape.
+send "220 smtp.rebex.cz\r\n"
+recv ehlo
+send "250-xena.rebex.cz\r\n250-SIZE 20480000\r\n250-AUTH LOGIN\r\n250 HELP\r\n"
+hangup

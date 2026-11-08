@@ -127,6 +127,14 @@ jobs:
           # state, so 77 would otherwise surface as a bare nonzero failure with
           # no explanation. `|| rc=$?` exempts the runner from bash -e so the
           # mapping is reachable.
+          #
+          # xymonping needs raw sockets. This lane is not root, so make the
+          # built binary setuid-root, as a real install does, so its ipv6 test
+          # can run it -- the test itself never calls sudo (#759). A no-op when
+          # the binary was not built or the lane is already root.
+          if [ "$(id -u)" != 0 ] && [ -x xymonnet/xymonping ]; then
+            sudo chown 0 xymonnet/xymonping && sudo chmod u+s xymonnet/xymonping
+          fi
           rc=0
           ./tests/testsuite || rc=$?
           if [ "$rc" = 77 ]; then

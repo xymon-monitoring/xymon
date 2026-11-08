@@ -9,28 +9,30 @@
 # finds "0:0:0:0:0:0:0:1" under the spelling its hosts.cfg line used.
 #
 # xymonping takes a raw socket as root, and aborts in get_root() when it has
-# neither root nor the suid bit, so the binary runs as root: directly, or
-# through sudo where that needs no password, as on the CI runners. Without
-# either the test skips. It also skips where the host has no route to ::1,
-# the only other environment it cannot check; a socket that will not open
-# is a failure.
+# neither root nor the suid bit. The test runs it when it is root, or when the
+# binary is setuid-root -- which xymonping(1) tells the admin to arrange when
+# xymonping is the pinger (fping gets the same from its own package), and which
+# the CI build does before the suite. Otherwise it skips, rather than acquiring
+# the privilege itself: a test must not call sudo, which surprises a developer's
+# machine (sudo can mail a security alert for a no-password attempt, #759) and
+# which the portability check forbids. It also skips where the host has no route
+# to ::1, the only other environment it cannot check; a socket that will not
+# open is a failure.
 
 set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
 require_bin XYMONPING xymonnet/xymonping
 
-asroot=()
-if [ "$(id -u)" != 0 ]; then
-	sudo -n true >/dev/null 2>&1 || skip "xymonping needs root for its raw sockets, and sudo wants a password"
-	asroot=(sudo -n)
+if [ "$(id -u)" != 0 ] && [ ! -u "$XYMONPING" ]; then
+	skip "xymonping needs root for its raw sockets: run the suite as root, or install xymonping setuid-root"
 fi
 
 work=$(mktempdir); register_cleanup "rm -rf '$work'"
 
 ping6() {
 	local rc=0
-	${asroot[@]+"${asroot[@]}"} "$XYMONPING" --retries=0 --timeout=2 "$@" >"$work/out" 2>"$work/err" || rc=$?
+	"$XYMONPING" --retries=0 --timeout=2 "$@" >"$work/out" 2>"$work/err" || rc=$?
 	if grep -q -E 'Network is unreachable|Cannot assign requested address|No route to host' "$work/err"; then
 		skip "no IPv6 loopback on this host"
 	fi
