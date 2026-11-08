@@ -502,7 +502,7 @@ require_shm_segments() {
 	[ -n "$found" ] || return 0
 	[ "$have" -ge "$want" ] && return 0
 
-	skip "$found is $have, need >= $want (xymond attaches one shared-memory segment per channel) -- raise it with: sudo sysctl -w $found=$want"
+	skip "$found is $have, need >= $want (xymond attaches one shared-memory segment per channel) -- raise it as root with: sysctl -w $found=$want"
 }
 
 # ---- repo location -----------------------------------------------------------
