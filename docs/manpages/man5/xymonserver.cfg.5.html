@@ -558,6 +558,21 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
       option without a port listens on. Default: 1985.
     <p class="Pp"></p>
   </dd>
+  <dt id="XYMOND_MAXCONNECTIONS"><a class="permalink" href="#XYMOND_MAXCONNECTIONS"><b>XYMOND_MAXCONNECTIONS</b></a></dt>
+  <dd>How many connections xymond holds open at once, on all of its listening
+      ports together. One more is refused as it is accepted, and xymond logs the
+      refusals at most once a minute. The default is what the process's
+      open-file limit leaves after a reserve of 64 descriptors for its files,
+      channels and listeners, so the limit is the administrator's through
+      xymonlaunch or the service manager; a value above that is brought down to
+      it, and one that is not a number above 0 gives the default; both are said
+      in the log. Separate from this, a connection that sends nothing is dropped
+      after 5 seconds, and once 256 such connections are open at most 16 are
+      kept from one sender: see <a href="../man8/xymond.8.html">xymond</a>(8). A large open-file limit means a large
+      default: set this to bound it. Default: unset, the open-file limit less
+      64.
+    <p class="Pp"></p>
+  </dd>
   <dt id="XYMOND_TLS_CERT"><a class="permalink" href="#XYMOND_TLS_CERT"><b>XYMOND_TLS_CERT</b>,
     <b>XYMOND_TLS_KEY</b></a></dt>
   <dd>The certificate xymond presents on its --tls-listen ports, with the chain
