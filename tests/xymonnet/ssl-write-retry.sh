@@ -102,7 +102,7 @@ grep -q 'sendagain' <<<"$call_site" || fail \
 	"the socket_write() call site ignores sendagain -- a deferred write is still indistinguishable from nothing to send (#451)"
 # The branch has to clear readpending, which is what returns the socket to
 # writefds. An empty sendagain branch keeps the token and retries nothing.
-sendagain_branch=$(awk '/else if \(item->sendagain\)/{c=1} c{print} c&&/^[[:space:]]*}/{exit}' <<<"$call_site")
+sendagain_branch=$(awk '/else if \(item->sendagain\)/{c=1} c{print} c&&/^[ \t]*}/{exit}' <<<"$call_site")
 grep -qE 'readpending[[:space:]]*=[[:space:]]*0' <<<"$sendagain_branch" || fail \
 	"the sendagain branch no longer clears readpending -- the socket never goes back into writefds, so the retry never happens (#451)"
 
