@@ -385,7 +385,7 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	 * empty for a host xymond could not resolve (xymond.c sends "" for a NULL
 	 * hostinfo).
 	 */
-	pagenames = strdup((pagename && *pagename) ? pagename : "/");
+	pagenames = strdup(pagepath_matchname(pagename));
 
 	/* We must build the list of rules for this host */
 	head = tail = NULL;
