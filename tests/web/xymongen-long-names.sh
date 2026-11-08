@@ -57,10 +57,14 @@ register_cleanup "stop_process $XYMOND_PID"
 
 long=$(printf '%5000s' '' | tr ' ' A)
 
-# gen LABEL [ENV=VALUE...] -- [XYMONGEN ARGS...]: run xymongen, set rc and err
+# gen LABEL [ENV=VALUE...] -- [XYMONGEN ARGS...]: run xymongen, set rc and err.
+# The server address is set on the env line, after xymoncmd has loaded the
+# file: a xymonserver.cfg that includes other files -- Debian's adds
+# /var/run/xymon/bbdisp-runtime.cfg -- sets XYMSRV again after the line
+# rewritten above, and xymongen would ask the site's real server (#749).
 gen() {
 	local label=$1; shift
-	local envs=()
+	local envs=(XYMSRV=127.0.0.1 XYMSERVERS= XYMONSERVERIP=127.0.0.1)
 	while [ "$1" != "--" ]; do envs+=("$1"); shift; done
 	shift
 	rc=0
