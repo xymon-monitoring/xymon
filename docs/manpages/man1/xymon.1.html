@@ -469,7 +469,10 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
       A status derived from a client message (cpu, disk, memory and the others
       xymond_client reports) shows how that client message arrived. Empty after
       xymond restarts until the next report, and for a status xymond set itself.
-      Information only: nothing alerts or changes color on it.</dd>
+      Information only: nothing alerts or changes color on it. The client column
+      (CLIENTCOLUMN) shows how the host's last client message arrived, and its
+      sender is where that message came from; the info and trends columns, which
+      xymond makes up itself, show neither.</dd>
   <dt id="cookie~2"><a class="permalink" href="#cookie~2"><b>cookie</b></a></dt>
   <dd>Either -1 or the cookie value used to acknowledge an alert.</dd>
   <dt id="line1"><a class="permalink" href="#line1"><b>line1</b></a></dt>
