@@ -36,6 +36,8 @@ mkdir -p "$work/home/etc" "$work/home/tmp" "$work/home/bin"
 cat >"$work/fping.c" <<'EOF2'
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 int main(void)
