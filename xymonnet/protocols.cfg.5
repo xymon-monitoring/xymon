@@ -168,6 +168,7 @@ Defines test options. The possible options are
 \&   ssl - TLS from the first byte (the older spelling of a leading "start tls")
 \&   telnet - negotiate telnet options (the older spelling of "start iac")
 \&   alpn=protocol1,protocol2 - specify ALPN protocols to negotiate during SSL handshake
+\&   sni - send the tested hostname as the TLS server name
 .fi
 .sp
 \fBssl\fR, \fBbanner\fR and \fBtelnet\fR are kept for files that already use
@@ -188,6 +189,15 @@ xymond answers only after the client half-closes the write side.
 Such an entry reports up wherever the port is open, which is also what a
 half-written one does. The file cannot tell them apart, so the shipped set is
 pinned in the test suite rather than marked here.
+.sp
+\fBsni\fR matters wherever one address serves several names. A TLS server
+that is asked for no server name answers with its DEFAULT certificate, so
+the expiry Xymon reports in the \fBsslcert\fR column is that of whichever
+certificate the address happens to answer with, and not the one the test is
+named for -- wrong, and indistinguishable from right. The name tested is
+sent, never the address: RFC 6066 does not allow an address literal in the
+server_name extension, so a host entered in hosts.cfg by IP sends nothing
+even with the option set.
 
 .SH "WHAT CANNOT BE EXPRESSED"
 An \fBexpect\fR matches the start of a reply and consumes to the end of the

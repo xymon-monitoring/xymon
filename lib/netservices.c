@@ -545,6 +545,7 @@ char *init_tcp_services(void)
 					else if (strncmp(opt, "alpn=", 5) == 0) {
 						first->rec->alpns = strdup(opt+5);
 					}
+					else if (strcmp(opt, "sni") == 0)    first->rec->flags |= TCP_SNI;
 					else {
 						/*
 						 * Refused like an unknown directive: "options
