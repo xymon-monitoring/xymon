@@ -89,6 +89,11 @@ and the xymondboard/xymondlog "transport" field gives it for scripts, e.g.
 to list the hosts still sending in plaintext while moving clients to TLS.
 It is information only: no status, color or alert depends on it.
 
+The client column shows it too, with the client message's sender, and the
+client data page starts with a "[transport]" section saying how the
+message came ("TLSv1.3 from 192.0.2.1"). That section is added to the page
+only; the client message xymond stores and returns is unchanged.
+
 
 Changes for 4.3.31
 ==================

@@ -176,6 +176,7 @@ typedef struct xymond_hostlist_t {
 	clientmsg_list_t *clientmsgs;
 	time_t clientmsgtstamp;
 	char clienttransport[24];	/* How the last client message arrived: see transport_text() */
+	char clientsender[IP_ADDR_STRLEN];	/* And where from: both shown on the client column */
 	time_t hostdatasaveexpires;
 } xymond_hostlist_t;
 
@@ -4832,6 +4833,15 @@ void do_message(conn_t *msg, char *origin)
 
 			clientlogrec.host = trendslogrec.host = infologrec.host = hwalk;
 
+			/*
+			 * The client column is the host's last client message: show where
+			 * it came from and how, as the statuses derived from it do
+			 * (set_transport()). The info and trends rows are made up here,
+			 * from nothing that arrived, so they keep neither.
+			 */
+			snprintf(clientlogrec.sender, sizeof(clientlogrec.sender), "%s", hwalk->clientsender);
+			snprintf(clientlogrec.transport, sizeof(clientlogrec.transport), "%s", hwalk->clienttransport);
+
 			for (lwalk = firstlog; (lwalk); lwalk = lwalk->next) {
 				if (!match_test_filter(lwalk, logfilter)) continue;
 
@@ -5359,6 +5369,7 @@ void do_message(conn_t *msg, char *origin)
 					if (hh != xtreeEnd(rbhosts)) {
 						xymond_hostlist_t *hrec = (xymond_hostlist_t *)xtreeData(rbhosts, hh);
 						transport_text(hrec->clienttransport, sizeof(hrec->clienttransport), msg, hname);
+						snprintf(hrec->clientsender, sizeof(hrec->clientsender), "%s", sender);
 					}
 				}
 			}

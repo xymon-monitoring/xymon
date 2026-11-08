@@ -255,6 +255,49 @@ int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts,
 	return 0;
 }
 
+/*
+ * The first lines of the client data page: how the host's last client
+ * message arrived, and from where, as xymond shows them on the client column
+ * ("TLSv1.3 from 192.0.2.10", "plaintext from ..."). Added to the page only,
+ * never to the stored message, which other tools read. NULL when xymond does
+ * not say: an older xymond, or a host with no client message.
+ */
+static char *client_transport_header(char *host)
+{
+	SBUF_DEFINE(req);
+	sendreturn_t *sres;
+	char *resp, *bar, *eol, *hdr = NULL;
+
+	SBUF_MALLOC(req, 1024 + strlen(host) + strlen(xgetenv("CLIENTCOLUMN")));
+	/* sender first: an older xymond drops the field it does not know, and
+	   then there is no '|' to find */
+	snprintf(req, req_buflen, "xymondboard host=^%s$ test=^%s$ fields=sender,transport",
+		 host, xgetenv("CLIENTCOLUMN"));
+	sres = newsendreturnbuf(1, NULL);
+	if (sendmessage(req, NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) {
+		resp = getsendreturnstr(sres, 1);
+		if (resp) {
+			eol = strchr(resp, '\n'); if (eol) *eol = '\0';
+			bar = strchr(resp, '|');
+			if (bar && *(bar+1)) {
+				size_t hdrsz;
+
+				*bar = '\0';
+				hdrsz = strlen(bar+1) + strlen(resp) + 32;
+				hdr = (char *)malloc(hdrsz);
+				if (*resp)
+					snprintf(hdr, hdrsz, "[transport]\n%s from %s\n", bar+1, resp);
+				else
+					snprintf(hdr, hdrsz, "[transport]\n%s\n", bar+1);
+			}
+			xfree(resp);
+		}
+	}
+	freesendreturnbuf(sres);
+	xfree(req);
+	return hdr;
+}
+
 int do_request(void)
 {
 	int color = 0, flapping = 0;
@@ -331,6 +374,21 @@ int do_request(void)
 				log = getsendreturnstr(sres, 1);
 			}
 			freesendreturnbuf(sres);
+
+			/* The whole message, not one section of it: say how it came */
+			if (log && !(sectionfilter && *sectionfilter)) {
+				char *hdr = client_transport_header(hostname);
+
+				if (hdr) {
+					size_t sz = strlen(hdr) + strlen(log) + 1;
+					char *both = (char *)malloc(sz);
+
+					snprintf(both, sz, "%s%s", hdr, log);
+					xfree(hdr);
+					xfree(log);
+					log = both;
+				}
+			}
 		}
 		else if (source == SRC_HISTLOGS) {
 			char logfn[PATH_MAX];

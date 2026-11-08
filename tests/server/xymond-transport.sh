@@ -19,7 +19,10 @@
 #     xymond_client relays the cpu, disk, ... statuses it derives from a
 #     client message -- takes the transport of the host's last client
 #     message (web01's, sent with its certificate), not the relay's own
-#     connection; a host with no client message gets none.
+#     connection; a host with no client message gets none;
+#   - the client column ("clientlog") shows that client message's own
+#     transport and sender, where it used to show neither; the info and
+#     trends columns, which xymond makes up itself, still show none.
 #
 # No --*-senders list is set, so every message is accepted by address and
 # only the transport differs.
@@ -110,6 +113,13 @@ Status message received from 127.0.0.1
 got=$(transport web01.example.com procs)
 case $got in "TLSv1."[23]" cert") ;; *) fail "a status relayed from web01's client message reads '$got', not that message's '<version> cert'" ;; esac
 
+got=$(transport web01.example.com clientlog)
+case $got in "TLSv1."[23]" cert") ;; *) fail "web01's client column reads '$got', not its client message's '<version> cert'" ;; esac
+got=$(as plain "xymondboard host=web01.example.com test=clientlog fields=sender" | tr -d '\n')
+[ "$got" = "127.0.0.1" ] || fail "web01's client column shows sender '$got', not 127.0.0.1"
+got=$(as plain "xymondboard host=web01.example.com test=^(info|trends)$ fields=sender,transport" | tr -d '\n')
+[ "$got" = "||" ] || [ "$got" = "|" ] || fail "the info and trends columns show '$got': they arrived from nowhere and should show nothing"
+
 as plain "combo
 status db01.example.com.procs green relayed, no client message
 Status message received from 127.0.0.1
@@ -117,4 +127,4 @@ Status message received from 127.0.0.1
 got=$(transport db01.example.com procs)
 [ -z "$got" ] || fail "a relayed status for db01, which sent no client message, reads '$got', not nothing"
 
-pass "xymond records each status's transport: plaintext, the TLS version, and ' cert' when a verified client certificate names the host; a relayed status takes the host's client message transport"
+pass "xymond records each status's transport: plaintext, the TLS version, and ' cert' when a verified client certificate names the host; a relayed status, and the client column, take the host's client message transport"
