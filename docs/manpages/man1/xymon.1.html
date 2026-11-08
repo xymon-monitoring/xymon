@@ -300,6 +300,13 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
   <dd>Either -1 or Unix timestamp when the status is no longer disabled.</dd>
   <dt id="sender"><a class="permalink" href="#sender"><b>sender</b></a></dt>
   <dd>IP address where the status was received from.</dd>
+  <dt id="transport"><a class="permalink" href="#transport"><b>transport</b></a></dt>
+  <dd>How the last report arrived: the TLS version (e.g. &quot;TLSv1.3&quot;),
+      followed by &quot; cert&quot; when a verified client certificate names the
+      host; &quot;plaintext&quot;; or &quot;local&quot; for a report that did
+      not come over a connection (from a scheduled task, or the backfeed queue).
+      Empty after xymond restarts until the next report, and for a status xymond
+      set itself. Information only: nothing alerts or changes color on it.</dd>
   <dt id="cookie"><a class="permalink" href="#cookie"><b>cookie</b></a></dt>
   <dd>Either -1 or the cookie value used to acknowledge an alert.</dd>
   <dt id="ackmsg"><a class="permalink" href="#ackmsg"><b>ackmsg</b></a></dt>
@@ -452,6 +459,13 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
   <dd>Either -1 or Unix timestamp when the status is no longer disabled.</dd>
   <dt id="sender~2"><a class="permalink" href="#sender~2"><b>sender</b></a></dt>
   <dd>IP address where the status was received from.</dd>
+  <dt id="transport~2"><a class="permalink" href="#transport~2"><b>transport</b></a></dt>
+  <dd>How the last report arrived: the TLS version (e.g. &quot;TLSv1.3&quot;),
+      followed by &quot; cert&quot; when a verified client certificate names the
+      host; &quot;plaintext&quot;; or &quot;local&quot; for a report that did
+      not come over a connection (from a scheduled task, or the backfeed queue).
+      Empty after xymond restarts until the next report, and for a status xymond
+      set itself. Information only: nothing alerts or changes color on it.</dd>
   <dt id="cookie~2"><a class="permalink" href="#cookie~2"><b>cookie</b></a></dt>
   <dd>Either -1 or the cookie value used to acknowledge an alert.</dd>
   <dt id="line1"><a class="permalink" href="#line1"><b>line1</b></a></dt>
