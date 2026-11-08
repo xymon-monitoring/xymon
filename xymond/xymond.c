@@ -71,6 +71,7 @@ static char rcsid[] = "$Id$";
 
 /* The initial size of an input buffer. Make this large enough for most traffic. */
 #define XYMON_INBUF_INITIAL   (128*1024)
+#define ACCEPT_PER_PASS 128		/* New connections taken from one listener per pass */
 
 /* How much the input buffer grows per re-allocation */
 #define XYMON_INBUF_INCREMENT (32*1024)
@@ -232,7 +233,7 @@ typedef struct conn_t {
 #endif
 	time_t firstbyte;		/* When it is dropped if it has sent nothing by then */
 	int heard;			/* Whether it has sent anything yet */
-	int readpass;			/* Whether it has been through a read pass: only then does it count as silent */
+	int readpass;			/* Been through a read pass: only then does it count toward the pressure total (idle_from) */
 	struct conn_t *next;
 } conn_t;
 
@@ -258,11 +259,17 @@ typedef struct conn_t {
 #define IDLE_PER_SENDER 16
 
 /*
- * How many open connections have sent nothing yet, counting only those that
- * have been through a read pass -- so ones accepted in the current pass, not
- * yet read, do not count, and a batch of valid clients accepted together is
- * never mistaken for silence: in all, into *all, and from the sender of sa
- * (sockaddr_same_sender), returned.
+ * Count the open connections that have sent nothing yet, two ways:
+ *  - *all, the pressure total, counts only connections proven silent by a read
+ *    pass (readpass): a batch of distinct new clients accepted together does
+ *    not by itself look like pressure, so below the threshold a burst is taken
+ *    whole.
+ *  - the return value, the count from the sender of sa (sockaddr_same_sender),
+ *    also counts this sender's connections accepted in the current pass and not
+ *    yet read. Once pressure is reached, that stops one sender slipping a whole
+ *    accept batch past its per-sender cap by arriving faster than a read pass
+ *    can classify it -- which it otherwise could, now that a pass takes many
+ *    connections at once rather than one.
  */
 static int idle_from(conn_t *head, struct sockaddr *sa, int *all)
 {
@@ -271,8 +278,8 @@ static int idle_from(conn_t *head, struct sockaddr *sa, int *all)
 
 	*all = 0;
 	for (cw = head; (cw); cw = cw->next) {
-		if ((cw->doingwhat != RECEIVING) || cw->heard || !cw->readpass) continue;
-		(*all)++;
+		if ((cw->doingwhat != RECEIVING) || cw->heard) continue;
+		if (cw->readpass) (*all)++;
 		if (sockaddr_same_sender((struct sockaddr *)&cw->addr, sa)) idle++;
 	}
 	return idle;
@@ -7231,7 +7238,7 @@ int main(int argc, char *argv[])
 		for (lidx = 0; lidx < listener_count; lidx++) {
 			struct sockaddr_storage addr;
 			socklen_t addrsz = sizeof(addr);
-			int sock, idleall, idlemine;
+			int sock, taken, idleall, idlemine;
 			int li = (accept_next + lidx) % listener_count;
 
 			if (!FD_ISSET(listeners[li].fd, &fdread)) continue;
@@ -7239,27 +7246,38 @@ int main(int argc, char *argv[])
 			dbgprintf("Picking up new connections\n");
 
 			accept_next = (li + 1) % listener_count;
-			sock = accept(listeners[li].fd, (struct sockaddr *)&addr, &addrsz);
 
-			if (sock >= 0) idlemine = idle_from(connhead, (struct sockaddr *)&addr, &idleall);
-			if ((sock >= 0) && (idleall >= IDLE_PRESSURE) && (idlemine >= IDLE_PER_SENDER)) {
-				static time_t lastlog = 0;
-				static int refused = 0;
-				char text[IP_ADDR_STRLEN];
+			/*
+			 * Take every connection that is waiting, not one per pass: a
+			 * burst larger than the listen queue (128 on OpenBSD) has the
+			 * kernel drop the next SYN, which the client resends only after
+			 * 1 s (Linux) to 6 s (OpenBSD). ACCEPT_PER_PASS bounds it, so a
+			 * flood cannot keep the loop away from the clients it has.
+			 */
+			for (taken = 0; taken < ACCEPT_PER_PASS; taken++) {
+				addrsz = sizeof(addr);
+				sock = accept(listeners[li].fd, (struct sockaddr *)&addr, &addrsz);
+				if (sock < 0) break;	/* EAGAIN: nothing more waiting, or an error */
 
-				/* Logged at most once a minute: the log must not become the next thing to flood */
-				refused++;
-				if (now >= lastlog + 60) {
-					errprintf("Refused %d connection(s) from %s: %d open connections have sent nothing yet, %d of them from it\n",
-						  refused, sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), idleall, idlemine);
-					lastlog = now;
-					refused = 0;
+				/* The cap on silent connections, for each connection taken */
+				idlemine = idle_from(connhead, (struct sockaddr *)&addr, &idleall);
+				if ((idleall >= IDLE_PRESSURE) && (idlemine >= IDLE_PER_SENDER)) {
+					static time_t lastlog = 0;
+					static int refused = 0;
+					char text[IP_ADDR_STRLEN];
+
+					/* Logged at most once a minute: the log must not become the next thing to flood */
+					refused++;
+					if (now >= lastlog + 60) {
+						errprintf("Refused %d connection(s) from %s: %d open connections have sent nothing yet, %d of them from it\n",
+							  refused, sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), idleall, idlemine);
+						lastlog = now;
+						refused = 0;
+					}
+					close(sock);
+					continue;
 				}
-				close(sock);
-				sock = -1;
-			}
 
-			if (sock >= 0) {
 				/* Make sure our sockets are non-blocking */
 				fcntl(sock, F_SETFL, O_NONBLOCK);
 
