@@ -438,7 +438,7 @@ int do_request(void)
 
 			freeregex(dummy);
 			SBUF_MALLOC(xymondreq, 1024 + strlen(hostname) + strlen(service));
-			snprintf(xymondreq, xymondreq_buflen, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
+			snprintf(xymondreq, xymondreq_buflen, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers,transport", hostname, service);
 		}
 		else {
 			pcre2_code *dummy = NULL;
@@ -484,7 +484,7 @@ int do_request(void)
 
 			memset(items, 0, sizeof(items));
 			p = gettok(sumline, "|"); icount = 0;
-			while (p && (icount < 20)) {
+			while (p && (icount < 21)) {
 				items[icount++] = p;
 				p = gettok(NULL, "|");
 			}
@@ -510,6 +510,7 @@ int do_request(void)
 			 * clienttstamp         [17]
 			 * flapping		[18]
 			 * modifiers		[19]
+			 * transport		[20]	(absent from an older xymond)
 			 */
 			color = parse_color(items[2]);
 			flags = strdup(items[3]);
@@ -533,7 +534,26 @@ int do_request(void)
 			logtime = atoi(items[5]);
 			if (items[7] && strlen(items[7])) acktime = atoi(items[7]);
 			if (items[8] && strlen(items[8])) disabletime = atoi(items[8]);
-			sender = strdup(items[9]);
+			if (items[20] && (strcmp(items[20], "plaintext") == 0)) {
+				/* "Status message received from 192.0.2.1 (plaintext)" */
+				size_t sz = strlen(items[9]) + 20;
+
+				sender = (char *)malloc(sz);
+				snprintf(sender, sz, "%s (plaintext)", items[9]);
+			}
+			else if (items[20] && (strncmp(items[20], "TLS", 3) == 0)) {
+				/* "... from 192.0.2.1 over TLSv1.3, client certificate" */
+				int vlen = strcspn(items[20], " ");
+				int cert = (strstr(items[20], " cert") != NULL);
+				size_t sz = strlen(items[9]) + vlen + 40;
+
+				sender = (char *)malloc(sz);
+				snprintf(sender, sz, "%s over %.*s%s", items[9], vlen, items[20],
+					 (cert ? ", client certificate" : ""));
+			}
+			else {
+				sender = strdup(items[9]);
+			}
 
 			if (items[11] && strlen(items[11])) ackmsg = items[11];
 			if (ackmsg) nldecode(ackmsg);
