@@ -459,9 +459,13 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
 <dl class="Bl-tag">
   <dt id="SIGHUP"><a class="permalink" href="#SIGHUP"><b>SIGHUP</b></a></dt>
   <dd>Re-read the hosts.cfg configuration file. With <b>--tls-listen</b>, also
-      load the TLS certificate, key and CA again, so a renewed certificate is
-      served from the next connection on; if they do not load, xymond logs why
-      and keeps the ones it had.
+      load the certificate and key files again, so a renewed certificate is
+      served from the next connection on; if the new one does not load, xymond
+      logs why and keeps the one it had. A changed setting &#x2014;
+      XYMOND_TLS_CA, XYMOND_TLS_REQUIRE_CERT, or the certificate and key paths
+      themselves &#x2014; needs a restart: SIGHUP re-reads the files at the
+      paths given at startup, not the settings. xymond logs the TLS settings in
+      effect on each load and reload.
     <p class="Pp"></p>
   </dd>
   <dt id="SIGUSR1"><a class="permalink" href="#SIGUSR1"><b>SIGUSR1</b></a></dt>

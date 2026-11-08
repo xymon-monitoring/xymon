@@ -17,6 +17,7 @@
 #   - an entry without a port listens on XYMONDTLSPORT;
 #   - SIGHUP loads a renewed certificate, and keeps the old one when the new
 #     one does not load;
+#   - the TLS settings in effect are logged at startup and on each reload;
 #   - xymond does not start when the certificate does not load, or when its
 #     private key may be read by anyone;
 #   - an IPv6 address listens for TLS too.
@@ -100,6 +101,8 @@ plain() { XYMON_TIMEOUT=5 "$XYMONCLIENT" "127.0.0.1:$P" "$1" 2>&1 || true; }
 
 launch --tls-listen="127.0.0.1:$T" || fail "xymond did not start with --tls-listen: $(cat "$work/xymond.log")"
 grep -q "Listening on 127.0.0.1:$T for TLS" "$work/xymond.log" || fail "xymond did not report its TLS listener: $(cat "$work/xymond.log")"
+grep -q 'TLS: loaded .*client certificates not asked for' "$work/xymond.log" \
+	|| fail "xymond did not log the TLS settings at startup: $(cat "$work/xymond.log")"
 
 tls "xymons://127.0.0.1:$T" "status testhost.cpu green sent over TLS" >/dev/null
 sleep 0.5
@@ -153,11 +156,13 @@ cp "$work/renewed.key" "$work/xymond.key"
 kill -HUP "$MLPID"
 sleep 0.5
 assert_contains "xymond" "$(renewed)" "after SIGHUP, xymond did not serve the renewed certificate: $(tail -3 "$work/xymond.log")"
+grep -q 'TLS: reloaded ' "$work/xymond.log" \
+	|| fail "xymond did not log the TLS settings after reload: $(tail -5 "$work/xymond.log")"
 echo "not a certificate" > "$work/xymond.pem"
 kill -HUP "$MLPID"
 sleep 0.5
-grep -q 'TLS: keeping the certificate loaded before' "$work/xymond.log" \
-	|| fail "xymond did not say it kept the certificate when the new one failed: $(tail -5 "$work/xymond.log")"
+grep -q 'TLS: keeping the TLS settings loaded before' "$work/xymond.log" \
+	|| fail "xymond did not say it kept the settings when the new certificate failed: $(tail -5 "$work/xymond.log")"
 assert_contains "xymond" "$(renewed)" "a certificate that does not load replaced the one in use"
 stop
 
