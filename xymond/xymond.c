@@ -3905,6 +3905,23 @@ static SSL_CTX *tls_load(void)
 	return ctx;
 }
 
+/*
+ * Log the TLS settings in effect. SIGHUP reloads the certificate and key files
+ * but not the XYMOND_TLS_ settings -- tls_load() reads them with xgetenv(),
+ * which keeps the startup environment -- so logging them on each load and
+ * reload shows an operator what is actually in force, and makes a reload that
+ * did not change a setting visible rather than silent.
+ */
+static void tls_log_settings(const char *action)
+{
+	char *ca = xgetenv("XYMOND_TLS_CA");
+
+	errprintf("TLS: %s %s; CA %s; client certificates %s\n",
+		  action, xgetenv("XYMOND_TLS_CERT"), (*ca ? ca : "none"),
+		  (*ca == '\0') ? "not asked for" :
+		  ((strcmp(xgetenv("XYMOND_TLS_REQUIRE_CERT"), "TRUE") == 0) ? "required" : "accepted"));
+}
+
 /* On SIGHUP: a renewed certificate replaces the old one; a broken one does not */
 static void tls_reload(void)
 {
@@ -3913,12 +3930,12 @@ static void tls_reload(void)
 	if (!tlsctx) return;
 	ctx = tls_load();
 	if (!ctx) {
-		errprintf("TLS: keeping the certificate loaded before\n");
+		errprintf("TLS: keeping the TLS settings loaded before\n");
 		return;
 	}
 	SSL_CTX_free(tlsctx);	/* sessions in progress hold their own reference */
 	tlsctx = ctx;
-	errprintf("TLS: reloaded %s\n", xgetenv("XYMOND_TLS_CERT"));
+	tls_log_settings("reloaded");
 }
 
 /*
@@ -6565,6 +6582,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_OPENSSL
 		tlsctx = tls_load();
 		if (!tlsctx) return 1;
+		tls_log_settings("loaded");
 #else
 		errprintf("--tls-listen: this xymond was built without OpenSSL\n");
 		return 1;

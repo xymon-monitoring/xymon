@@ -425,7 +425,8 @@ The certificate xymond presents on its \-\-tls\-listen ports,
 with the chain to its CA after it if any, and its private key; the
 key may be in the certificate file, with XYMOND_TLS_KEY set empty.
 A key file that others than its owner and group may read or write
-is refused. Read at startup and on SIGHUP (see xymond(8)).
+is refused. Read at startup; SIGHUP reloads the files at these paths, but
+changing a path needs a restart (see xymond(8)).
 Default: $XYMONHOME/etc/tls/xymond.pem and
 $XYMONHOME/etc/tls/xymond.key.
 
@@ -434,7 +435,8 @@ The file of CA certificates that a client certificate on xymond's
 \-\-tls\-listen ports must chain to. When set, xymond asks TLS
 clients for a certificate; a client that presents none is still
 served. What a verified certificate allows is in xymond(8), under
-\-\-status\-senders. Read at startup and on SIGHUP.
+\-\-status\-senders. Read at startup; changing it needs a restart
+(see xymond(8)).
 Default: unset, and no client certificate is asked for.
 
 .IP "\fBXYMOND_TLS_REQUIRE_CERT\fR"

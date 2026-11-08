@@ -521,8 +521,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
   <dd>The certificate xymond presents on its --tls-listen ports, with the chain
       to its CA after it if any, and its private key; the key may be in the
       certificate file, with XYMOND_TLS_KEY set empty. A key file that others
-      than its owner and group may read or write is refused. Read at startup and
-      on SIGHUP (see <a href="../man8/xymond.8.html">xymond</a>(8)). Default: $XYMONHOME/etc/tls/xymond.pem and
+      than its owner and group may read or write is refused. Read at startup;
+      SIGHUP reloads the files at these paths, but changing a path needs a
+      restart (see <a href="../man8/xymond.8.html">xymond</a>(8)). Default: $XYMONHOME/etc/tls/xymond.pem and
       $XYMONHOME/etc/tls/xymond.key.
     <p class="Pp"></p>
   </dd>
@@ -531,8 +532,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
       --tls-listen ports must chain to. When set, xymond asks TLS clients for a
       certificate; a client that presents none is still served. What a verified
       certificate allows is in <a href="../man8/xymond.8.html">xymond</a>(8), under --status-senders. Read at
-      startup and on SIGHUP. Default: unset, and no client certificate is asked
-      for.
+      startup; changing it needs a restart (see <a href="../man8/xymond.8.html">xymond</a>(8)). Default: unset, and
+      no client certificate is asked for.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMOND_TLS_REQUIRE_CERT"><a class="permalink" href="#XYMOND_TLS_REQUIRE_CERT"><b>XYMOND_TLS_REQUIRE_CERT</b></a></dt>
