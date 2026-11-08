@@ -16,6 +16,17 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+xymonping -- IPv6 addresses are pinged
+-------------------------------------
+
+Where xymonping is the pinger (USEXYMONPING at build time, or FPING set
+to it), a host listed in hosts.cfg by an IPv6 address now gets a conn
+result: xymonping opens an ICMPv6 raw socket beside the ICMP one when
+the list holds such an address. Until now it dropped the address with
+"not an IP" and the host's conn stayed red. An IPv6 address is reported
+as it was spelled in hosts.cfg. Nothing changes for IPv4 addresses or
+for installations using fping.
+
 build -- the Big Brother and Hobbit upgrade path is gone
 --------------------------------------------------------
 
