@@ -431,7 +431,11 @@ service: an IPv4 or IPv6 address or a hostname, written as the
 RECIPIENT of
 .I xymon(1)
 is. Used by clients and the tools that perform network tests.
-Default: $XYMONSERVERIP
+Default: $XYMONSERVERIP. A new server's xymonserver.cfg sets 127.0.0.1
+instead, and the [xymonclient] task in tasks.cfg passes the same to the
+client on the server, so the server keeps reporting on itself when a network
+interface goes away; xymond listens on 127.0.0.1 unless started with
+\fB\-\-no\-loopback\fR. A remote client's xymonclient.cfg names the server.
 
 .IP "\fBXYMSERVERS\fR"
 List of addresses, IPv4 or IPv6, separated by spaces or tabs.
