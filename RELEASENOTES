@@ -35,6 +35,17 @@ the list holds such an address. Until now it dropped the address with
 as it was spelled in hosts.cfg. Nothing changes for IPv4 addresses or
 for installations using fping.
 
+xymonnet -- a ping result is matched by address, not by spelling
+-----------------------------------------------------------------
+
+An IPv6 host written in hosts.cfg other than in its shortest form -- for
+example "0:0:0:0:0:0:0:1" or "2001:0db8::1" -- now gets its ping result when
+fping is the pinger with the shipped FPINGOPTS="-Ae": fping reports the
+target as "::1" or "2001:db8::1", and xymonnet matched that to the host by
+comparing the text. Such a host read as down although it answered. The
+result is now matched by address. Nothing changes for IPv4 addresses, or
+where the address was already written as fping spells it.
+
 build -- the Big Brother and Hobbit upgrade path is gone
 --------------------------------------------------------
 

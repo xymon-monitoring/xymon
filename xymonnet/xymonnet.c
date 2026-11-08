@@ -1326,6 +1326,29 @@ int start_ping_service(service_t *service)
 }
 
 
+/*
+ * same_address: the two texts name one address.
+ *
+ * The pinger reports a target by address, and fping with -A spells an IPv6
+ * address its own way ("::1" for "0:0:0:0:0:0:0:1"), so the result's text
+ * need not be the text of hosts.cfg. Compare the addresses, not their
+ * spellings. A text that is not an address is compared as text, so a
+ * pinger that echoes a name still matches it.
+ */
+static int same_address(const char *a, const char *b)
+{
+	struct in_addr a4, b4;
+	struct in6_addr a6, b6;
+
+	if ((inet_pton(AF_INET, a, &a4) == 1) && (inet_pton(AF_INET, b, &b4) == 1))
+		return (memcmp(&a4, &b4, sizeof(a4)) == 0);
+	if ((inet_pton(AF_INET6, a, &a6) == 1) && (inet_pton(AF_INET6, b, &b6) == 1))
+		return (memcmp(&a6, &b6, sizeof(a6)) == 0);
+
+	return (strcmp(a, b) == 0);
+}
+
+
 int finish_ping_service(service_t *service)
 {
 	testitem_t	*t;
@@ -1429,7 +1452,7 @@ int finish_ping_service(service_t *service)
 					 * the same IP-address.
 					 */
 					for (t=service->items; (t); t = t->next) {
-						if (strcmp(t->host->ip, pingip) == 0) {
+						if (same_address(t->host->ip, pingip)) {
 							if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
 							t->open = (strstr(l, "is alive") != NULL);
 							t->banner = dupstrbuffer(l);
@@ -1438,7 +1461,7 @@ int finish_ping_service(service_t *service)
 						if (t->host->extrapings) {
 							ipping_t *walk;
 							for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
-								if (strcmp(walk->ip, pingip) == 0) {
+								if (same_address(walk->ip, pingip)) {
 									if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
 									walk->open = (strstr(l, "is alive") != NULL);
 									walk->banner = dupstrbuffer(l);
