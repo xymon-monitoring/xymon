@@ -65,7 +65,7 @@ Sun Nov  8 10:00:00 UTC 2026
 sleep 0.5
 
 render_live "CLIENT=realhost"
-first=$(printf '%s\n' "$OUT" | sed -n '/^Content-type/,$p' | sed '1,2d' | head -2 | tr '\n' '/')
+first=$(printf '%s\n' "$OUT" | sed -n '/^Content-type/,$p' | sed '1,2d' | sed -n 1,2p | tr '\n' '/')
 [ "$first" = "[transport]/plaintext from 127.0.0.1/" ] \
 	|| fail "the client page starts '$first', not '[transport]/plaintext from 127.0.0.1/'"
 assert_contains "[uptime]" "$OUT" "the client message itself is missing below the transport line"
