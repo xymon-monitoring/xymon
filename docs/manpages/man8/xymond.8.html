@@ -432,9 +432,12 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
 <dl class="Bl-tag">
   <dt id="SIGHUP"><a class="permalink" href="#SIGHUP"><b>SIGHUP</b></a></dt>
   <dd>Re-read the hosts.cfg configuration file. With <b>--tls-listen</b>, also
-      load the TLS certificate and key again, so a renewed certificate is served
-      from the next connection on; if they do not load, xymond logs why and
-      keeps the ones it had.
+      re-read the TLS settings from the <b>--env</b> file and load the
+      certificate and key again &#x2014; from the paths the <b>--env</b> file
+      now gives, so changing a path takes effect and not only a renewed file's
+      contents at the old path &#x2014; so a renewed certificate is served from
+      the next connection on; if they do not load, xymond logs why and keeps the
+      ones it had.
     <p class="Pp"></p>
   </dd>
   <dt id="SIGUSR1"><a class="permalink" href="#SIGUSR1"><b>SIGUSR1</b></a></dt>

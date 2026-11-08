@@ -6156,6 +6156,66 @@ static int add_listeners(char *listenspec, int listenport, int listenq, int tls)
 	return 0;
 }
 
+/*
+ * On SIGHUP, re-read just the TLS settings from the --env file and overwrite
+ * them with setenv(). loadenv() is for startup: it appends a "+=" value to the
+ * one already in the environment and putenv()s a fresh string each call, so
+ * re-running it on every SIGHUP would grow a "+=" setting and leak a string per
+ * setting. Here each TLS variable is set to its current value in the file --
+ * area, quotes and $-expansion as loadenv() does them, a "+=" line left for a
+ * restart -- nothing else is touched, and setenv() copies, so it is safe to
+ * repeat.
+ */
+static void reload_tls_env(char *envfn, char *area)
+{
+	static const char *tlsvars[] = {
+		"XYMOND_TLS_CERT", "XYMOND_TLS_KEY", "XYMOND_TLS_CA", "XYMOND_TLS_REQUIRE_CERT", NULL
+	};
+	strbuffer_t *inbuf;
+	FILE *fd;
+
+	fd = stackfopen(envfn, "r", NULL);
+	if (!fd) return;
+	inbuf = newstrbuffer(0);
+	while (stackfgets(inbuf, NULL)) {
+		char *p, *marker, *eq, *val;
+		int i;
+
+		sanitize_input(inbuf, 1, 1);
+		if (STRBUFLEN(inbuf) == 0) continue;
+
+		p = STRBUF(inbuf);
+		if ((strncmp(p, "export ", 7) == 0) || (strncmp(p, "export\t", 7) == 0)) { p += 6; p += strspn(p, " \t"); }
+
+		/* AREA/NAME=... applies only in our area, as loadenv() */
+		marker = p + strcspn(p, "=/");
+		if (*marker == '/') {
+			if (!area) continue;
+			*marker = '\0';
+			if (strcasecmp(p, area) != 0) continue;
+			p = marker + 1;
+		}
+
+		eq = strchr(p, '=');
+		if (!eq || (eq == p)) continue;
+		if (*(eq-1) == '+') continue;		/* "+=" is left for a restart */
+		*eq = '\0';
+
+		for (i = 0; tlsvars[i]; i++) if (strcmp(p, tlsvars[i]) == 0) break;
+		if (!tlsvars[i]) continue;
+
+		val = eq + 1;
+		if (*val == '"') {
+			char *q = val + strlen(val);
+			val++;
+			if ((q > val) && (*(q-1) == '"')) *(q-1) = '\0';
+		}
+		setenv(p, expand_env(val), 1);
+	}
+	stackfclose(fd);
+	freestrbuffer(inbuf);
+}
+
 int main(int argc, char *argv[])
 {
 	conn_t *connhead = NULL, *conntail=NULL;
@@ -6180,6 +6240,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	time_t conn_timeout = 30;
 	char *envarea = NULL;
+	char *envfn = NULL;		/* the --env file, re-read on SIGHUP */
 	int create_backfeedqueue = 0;
 
 	MEMDEFINE(colnames);
@@ -6332,6 +6393,8 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1, envarea);
+			if (envfn) xfree(envfn);
+			envfn = strdup(p+1);	/* remembered to re-read on SIGHUP */
 		}
 		else if (argnmatch(argv[argi], "--area=")) {
 			char *p = strchr(argv[argi], '=');
@@ -6642,6 +6705,14 @@ int main(int argc, char *argv[])
 
 		if (reloadtls) {
 			reloadtls = 0;
+			/*
+			 * Re-read the TLS settings from the --env file first, so a changed
+			 * certificate or key path -- and whatever later releases add --
+			 * takes effect on the reload, not only a renewed file's contents at
+			 * the path given at startup. tls_reload() then keeps the old context
+			 * if the new one does not load.
+			 */
+			if (envfn) reload_tls_env(envfn, envarea);
 			tls_reload();
 		}
 

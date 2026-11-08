@@ -373,10 +373,12 @@ in the Xymon source-tree, see the "xymond/new\-daemon.txt" file.
 
 .SH SIGNALS
 .IP "\fBSIGHUP\fR"
-Re-read the hosts.cfg configuration file. With \fB\-\-tls\-listen\fR,
-also load the TLS certificate and key again, so a renewed certificate is
-served from the next connection on; if they do not load, xymond logs why
-and keeps the ones it had.
+Re-read the hosts.cfg configuration file. With \fB\-\-tls\-listen\fR, also
+re-read the TLS settings from the \fB\-\-env\fR file and load the certificate
+and key again \(em from the paths the \fB\-\-env\fR file now gives, so changing
+a path takes effect and not only a renewed file's contents at the old path \(em
+so a renewed certificate is served from the next connection on; if they do not
+load, xymond logs why and keeps the ones it had.
 
 .IP "\fBSIGUSR1\fR"
 Force an immediate dump of the checkpoint file.
