@@ -383,7 +383,10 @@ xymon_cflags() {
 		probe='__xymon_cflags:
 	@printf "%s\n" "$(CFLAGS)"
 '
-		for tok in $(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_cflags 2>/dev/null); do
+		# MAKEFLAGS= : the probe is read from stdin (-f -); an inherited
+		# jobserver (suite under a parent "make -j") corrupts that read and
+		# the probe returns nothing. #733.
+		for tok in $(printf '%s' "$probe" | MAKEFLAGS= "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_cflags 2>/dev/null); do
 			case $tok in -DCLIENTONLY|-DCLIENTONLY=*|-DLOCALCLIENT|-DLOCALCLIENT=*) defines="$defines $tok" ;; esac
 		done
 	fi
@@ -414,7 +417,8 @@ xymon_ldflags() {
 	probe='__xymon_ldflags:
 	@printf "%s\n" "$(CFLAGS)" "$(RPATHOPT)" "$(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)"
 '
-	out=$(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_ldflags 2>/dev/null) || return 0
+	# MAKEFLAGS= : see __xymon_cflags above -- stdin probe, inherited jobserver. #733.
+	out=$(printf '%s' "$probe" | MAKEFLAGS= "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_ldflags 2>/dev/null) || return 0
 
 	cflags=$(printf '%s\n' "$out" | sed -n 1p)
 	rpath=$(printf '%s\n' "$out" | sed -n 2p)
@@ -432,6 +436,46 @@ xymon_ldflags() {
 	case $rpath in *,) rpath= ;; esac
 
 	printf '%s' "$search $rpath $libs"
+}
+
+# xymon_sslcflags ROOT -- the compile flags the build gives its OpenSSL users,
+# for a harness that includes an OpenSSL header.
+#
+# The build adds $(SSLFLAGS) $(SSLINCDIR) only to the compile lines of the
+# files that use OpenSSL (xymonnet/Makefile, for one), never to CFLAGS, so
+# xymon_cflags() does not carry them either. Where OpenSSL is outside the
+# compiler's default path - Homebrew's keg-only openssl@3 on macOS - a harness
+# compiled without them fails on <openssl/ssl.h>. Asked of make, like
+# xymon_ldflags(); empty on an unconfigured tree.
+xymon_sslcflags() {
+	local root=$1 probe
+
+	[ -f "$root/Makefile" ] || return 0
+	require_gnu_make
+	# shellcheck disable=SC2016  # $(SSLFLAGS) etc. are make's to expand, not the shell's
+	probe='__xymon_sslcflags:
+	@printf "%s\n" "$(SSLFLAGS) $(SSLINCDIR)"
+'
+	printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_sslcflags 2>/dev/null || true
+}
+
+# make_test_cert KEY CERT -- copy the suite's self-signed certificate to CERT
+# and its unencrypted key to KEY, for a test's TLS peer.
+#
+# The pair is checked in, not made by the test: the openssl command is missing
+# from many lanes' images, and NetBSD 10 and 11 have no openssl.cnf, without
+# which openssl req stops (NetBSD PR 60365). The key is for tests only and
+# protects nothing. It is EC P-256, which every crypto policy accepts, valid
+# until 9966, and names every host the TLS tests connect to. Made once with:
+#
+#   openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+#     -keyout test-key.pem -out test-cert.pem -days 2900000 -subj /CN=xymon-test \
+#     -addext subjectAltName=DNS:mail.test.local,DNS:localhost,IP:127.0.0.1
+make_test_cert() {
+	local lib
+
+	lib=$(dirname "${BASH_SOURCE[0]}")
+	cp "$lib/test-key.pem" "$1" && cp "$lib/test-cert.pem" "$2"
 }
 
 # require_shm_segments N -- skip unless one process may attach N SysV
@@ -492,9 +536,9 @@ find_root() {
 # row names common/, which is what the server package ships.
 variant_products() {
 	cat <<-'EOF'
-		server       XYMONGREP=common/xymongrep XYMOND_CLIENT=xymond/xymond_client XYMOND_RRD=xymond/xymond_rrd SVCSTATUS_CGI=web/svcstatus.cgi
-		localclient  XYMONGREP=client/xymongrep XYMOND_CLIENT=client/xymond_client
-		client       XYMONGREP=client/xymongrep
+		server       XYMON=common/xymon XYMONGREP=common/xymongrep XYMOND_CLIENT=xymond/xymond_client XYMOND_RRD=xymond/xymond_rrd SVCSTATUS_CGI=web/svcstatus.cgi
+		localclient  XYMON=client/xymon XYMONGREP=client/xymongrep XYMOND_CLIENT=client/xymond_client
+		client       XYMON=client/xymon XYMONGREP=client/xymongrep
 	EOF
 }
 

@@ -16,6 +16,17 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+xymonping -- IPv6 addresses are pinged
+-------------------------------------
+
+Where xymonping is the pinger (USEXYMONPING at build time, or FPING set
+to it), a host listed in hosts.cfg by an IPv6 address now gets a conn
+result: xymonping opens an ICMPv6 raw socket beside the ICMP one when
+the list holds such an address. Until now it dropped the address with
+"not an IP" and the host's conn stayed red. An IPv6 address is reported
+as it was spelled in hosts.cfg. Nothing changes for IPv4 addresses or
+for installations using fping.
+
 build -- the Big Brother and Hobbit upgrade path is gone
 --------------------------------------------------------
 
@@ -65,6 +76,18 @@ on 127.0.0.1 at XYMONDPORT, so the server's own client keeps reporting when a
 network interface goes away. --no-loopback listens only on the addresses given.
 Keep the server's client (xymonclient.cfg) on the same port as XYMONDPORT in
 xymonserver.cfg.
+
+xymond -- how a status arrived
+------------------------------
+
+xymond now records how each status reached it: "plaintext", the TLS version
+("TLSv1.3"), with " cert" when a verified client certificate names the host,
+or "local". The status page shows it after the sender ("Status message
+received from 192.0.2.1 over TLSv1.3, client certificate", or "... (plaintext)";
+the client-derived columns show how the client message arrived),
+and the xymondboard/xymondlog "transport" field gives it for scripts, e.g.
+to list the hosts still sending in plaintext while moving clients to TLS.
+It is information only: no status, color or alert depends on it.
 
 
 Changes for 4.3.31
@@ -139,6 +162,14 @@ At-least-only, single-colour rules; existing configurations are unaffected.
 Server
 ------
 
+xymond now drops a connection that has sent nothing 5 seconds after it was
+accepted, instead of keeping it for the whole --timeout; a message that is
+arriving, however slowly, still gets the full timeout. Once 256 such silent
+connections are open, it takes at most 16 more from one sender -- one IPv4
+address, or one IPv6 /64 -- and logs the refusal. Neither limit can be changed.
+Clients behind one NAT address or proxy are affected only if that many of them
+connect and stay silent at once.
+
 xymond --listen=IP:PORT now listens only on the address it names. Since 2014 it
 has bound every interface whatever address was given, so a server told to
 listen on 127.0.0.1, or on one interface of several, was reachable on all of
@@ -165,6 +196,11 @@ used to apply to every host on the top-level page as well, so such a host could
 pick up another page's rules -- a PROC check for a process it does not run, for
 instance. Check that hosts on the top-level page still carry the rules you
 expect.
+
+EXPAGE= in analysis.cfg now excludes a host when any page it is listed on
+matches, not only its first page, for INODE, PAGING, MIBVAL, CICS, VSIZE and
+GETVIS, as the other checks already did. On a host listed on more than one
+page, those six may lose rules they used to keep.
 
 Web
 ---
@@ -220,6 +256,14 @@ xymonnet tests with a cipher-list restriction now report an SSL error when
 OpenSSL rejects it, instead of silently falling back to the default cipher
 list. Such tests may turn red after upgrading Xymon, or after an OpenSSL
 upgrade invalidates a previously accepted restriction.
+
+xymonnet now tests the address written in hosts.cfg, without looking the host's
+name up; only hosts listed as 0.0.0.0 still have their name resolved. The http
+and https tests on such a line connect to that address too, sending the URL's
+name as the Host, unless the URL gives its own address or goes through a proxy.
+A host whose hosts.cfg address is out of date now fails its tests: correct the
+address, or write 0.0.0.0 to keep resolving the name. The testip tag and
+--dns=only are still accepted, but change nothing.
 
 Where Net-SNMP is built without MD5 (NETSNMP_DISABLE_MD5), SNMPv3
 authentication configured for MD5 falls back to SHA1 and warns once at startup.

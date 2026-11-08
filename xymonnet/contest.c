@@ -252,6 +252,8 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	/* If ALPN is configured, SSL is also necessarily enabled */
 	newtest->sslrunning = (((newtest->svcinfo->flags & TCP_SSL) || (newtest->svcinfo->flags & TCP_ALPN)) ? SSLSETUP_PENDING : 0);
 	newtest->sslagain = 0;
+	newtest->sslwantwrite = 0;
+	newtest->sendagain = 0;
 
 	newtest->banner = NULL;
 	newtest->bannerbytes = 0;
@@ -758,10 +760,20 @@ static void setup_ssl(tcptest_t *item)
 	}
 	if ((err = SSL_connect(item->ssldata)) != 1) {
 		char sslerrmsg[256];
+		int sslerr = SSL_get_error(item->ssldata, err);
 
-		switch (SSL_get_error (item->ssldata, err)) {
+		switch (sslerr) {
 		  case SSL_ERROR_WANT_READ:
 		  case SSL_ERROR_WANT_WRITE:
+			/*
+			 * Remember which way the handshake is blocked, so the
+			 * select() below can wait for that instead of spinning:
+			 * a connected socket is almost always writable, so a
+			 * WANT_READ registered for writability returns from
+			 * select() immediately, every time, until the peer
+			 * finally answers.
+			 */
+			item->sslwantwrite = (sslerr == SSL_ERROR_WANT_WRITE);
 			item->sslrunning = SSLSETUP_PENDING;
 			break;
 		  case SSL_ERROR_SYSCALL:
@@ -902,12 +914,37 @@ static int socket_write(tcptest_t *item, char *outbuf, int outlen)
 {
 	int res = 0;
 
+	item->sendagain = 0;
 	if (item->sslrunning) {
 		res = SSL_write(item->ssldata, outbuf, outlen);
 		if (res < 0) {
 			switch (SSL_get_error (item->ssldata, res)) {
-			  case SSL_ERROR_WANT_READ:
 			  case SSL_ERROR_WANT_WRITE:
+				  /*
+				   * Nothing was sent. Returning 0 alone is
+				   * indistinguishable from "there was nothing to
+				   * send", so flag it: the caller must come back
+				   * and retry with the SAME buffer. socket_read()
+				   * uses sslagain for the same purpose.
+				   *
+				   * Only WANT_WRITE is retried. Clearing
+				   * readpending puts the socket back in writefds,
+				   * which is exactly what WANT_WRITE waits for.
+				   */
+				  item->sendagain = 1;
+				  res = 0;
+				  break;
+			  case SSL_ERROR_WANT_READ:
+				  /*
+				   * WANT_READ would need the fd in readfds, and the
+				   * read branch there would consume application data
+				   * rather than retry this write. Left as it behaves
+				   * today -- the payload is not sent and the test
+				   * waits out its timeout -- rather than retried on a
+				   * fd set that is always ready, which would busy-wait.
+				   * Reachable only via renegotiation; TLS 1.3 session
+				   * tickets and KeyUpdate do not produce it.
+				   */
 				  res = 0;
 				  break;
 			}
@@ -961,10 +998,26 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 
 static void socket_shutdown(tcptest_t *item)
 {
+	/*
+	 * Both guards are load-bearing. sslrunning must stay the outer test:
+	 * setup_ssl()'s failure paths free ssldata/sslctx without clearing them
+	 * and set sslrunning to 0, so a pointer-only guard would free dangling
+	 * pointers here. And the inner NULL checks are needed because
+	 * SSLSETUP_PENDING is -1, so sslrunning is already true from
+	 * add_tcp_test() while ssldata is still NULL -- a connection that times
+	 * out before setup_ssl() runs would otherwise reach SSL_shutdown(NULL).
+	 * Clearing them makes a second call harmless either way.
+	 */
 	if (item->sslrunning) {
-		SSL_shutdown(item->ssldata);
-		SSL_free(item->ssldata); item->ssldata = NULL;
-		SSL_CTX_free(item->sslctx); item->sslctx = NULL;
+		if (item->ssldata) {
+			SSL_shutdown(item->ssldata);
+			SSL_free(item->ssldata);
+			item->ssldata = NULL;
+		}
+		if (item->sslctx) {
+			SSL_CTX_free(item->sslctx);
+			item->sslctx = NULL;
+		}
 	}
 	shutdown(item->fd, SHUT_RDWR);
 
@@ -1219,7 +1272,19 @@ restartselect:
 				 * So: On any given socket, we want either a 
 				 * write-event or a read-event - never both.
 				 */
-				if (item->readpending)
+				if (item->open && (item->sslrunning == SSLSETUP_PENDING)) {
+					/*
+					 * Mid-handshake: readpending is still 0 (do_talk
+					 * is false until the handshake completes), so the
+					 * plain rule below would ask for writability while
+					 * SSL_connect() is waiting to read. Wait for what
+					 * it asked for instead. Gated on item->open: before
+					 * the connection completes, writability is still
+					 * how completion is detected.
+					 */
+					FD_SET(item->fd, (item->sslwantwrite ? &writefds : &readfds));
+				}
+				else if (item->readpending)
 					FD_SET(item->fd, &readfds);
 				else 
 					FD_SET(item->fd, &writefds);
@@ -1286,16 +1351,22 @@ restartselect:
 					/* 
 					 * Request timed out.
 					 */
-					if (item->readpending) {
-						/* Final read timeout - just shut this socket */
-						socket_shutdown(item);
-						item->errcode = CONTEST_ETIMEOUT;
-					}
-					else {
+					if (!item->readpending && !item->sendagain) {
 						/* Connection timeout */
 						item->open = 0;
-						item->errcode = CONTEST_ETIMEOUT;
 					}
+					/*
+					 * Either way, hand the socket to socket_shutdown():
+					 * it is the only place SSL_free()/SSL_CTX_free()
+					 * happen, and it no-ops on a session that was never
+					 * running. The !readpending arm used to skip it, so
+					 * an SSL session that timed out with nothing pending
+					 * to read -- a handshake that never finished, and now
+					 * also a write still waiting to be retried -- had its
+					 * fd closed with the SSL objects still allocated.
+					 */
+					socket_shutdown(item);
+					item->errcode = CONTEST_ETIMEOUT;
 					get_totaltime(item, &timestamp);
 					close(item->fd);
 					item->fd = -1;
@@ -1388,6 +1459,19 @@ restartselect:
 									item->readpending = 0;
 									item->errcode = CONTEST_EIO;
 								}
+								else if (item->sendagain) {
+									/*
+									 * The SSL layer accepted nothing and wants
+									 * another pass. Leave sendtxt/sendlen alone
+									 * so the retry sends the same bytes, and do
+									 * not wait for a reply to a command that was
+									 * never transmitted -- clearing readpending
+									 * is also what puts this socket back in the
+									 * write set. The shutdown below is taught to
+									 * leave it open.
+									 */
+									item->readpending = 0;
+								}
 								else if (item->svcinfo->flags & TCP_HTTP) {
 									/*
 									 * HTTP tests require us to send the full buffer.
@@ -1403,7 +1487,7 @@ restartselect:
 
 						/* If closed and/or no bannergrabbing, shut down socket */
 						if (item->sslrunning != SSLSETUP_PENDING) {
-							if (!item->open || !item->readpending) {
+							if (!item->open || (!item->readpending && !item->sendagain)) {
 								if (item->open) {
 									socket_shutdown(item);
 								}
@@ -1432,8 +1516,50 @@ restartselect:
 						/*
 						 * We may be in the process of setting up an SSL connection
 						 */
-						if (item->sslrunning == SSLSETUP_PENDING) setup_ssl(item);
-						if (item->sslrunning == SSLSETUP_PENDING) break;  /* Loop again waiting for more data */
+						if (item->sslrunning == SSLSETUP_PENDING) {
+							setup_ssl(item);
+							if (item->sslrunning == 1) {
+								/*
+								 * As in the write arm: the connection time
+								 * includes the SSL handshake. It now usually
+								 * completes here, so without this the
+								 * reported time is the TCP connect alone.
+								 */
+								get_connectiontime(item, &timestamp);
+							}
+						}
+						if (item->sslrunning == SSLSETUP_PENDING) {
+							/*
+							 * Still handshaking: nothing to read yet.
+							 * continue, not break -- break leaves the whole
+							 * loop over items, abandoning the scan at the
+							 * first socket that is readable but not yet
+							 * handshaken. Measured, that costs iterations
+							 * rather than results: select() returns again
+							 * immediately and the remaining sockets are
+							 * serviced on the next pass. It was unreachable
+							 * during a handshake before (the fd was always in
+							 * writefds); registering by direction above makes
+							 * it the normal path, so leave the scan intact.
+							 */
+							continue;
+						}
+						if (!item->readpending) {
+							/*
+							 * The handshake just finished, here, in the read
+							 * arm -- which only became possible once pending
+							 * handshakes were registered for readability. The
+							 * write arm has not run for this socket yet, so
+							 * nothing has sent sendtxt or decided whether a
+							 * banner is even wanted. Reading now would skip the
+							 * send outright, and would collect a banner for a
+							 * silenttest. readpending is still 0 here, which
+							 * puts the socket back in writefds for select(): the
+							 * write arm picks it up on the next pass exactly as
+							 * it did when the handshake completed there.
+							 */
+							continue;
+						}
 
 						/*
 						 * Connection is ready - plain or SSL. Read data.

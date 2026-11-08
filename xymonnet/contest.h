@@ -129,6 +129,8 @@ typedef struct tcptest_t {
 	int mincipherbits;              /* Bits in the weakest encryption supported */
 	int sslrunning;			/* Track state of an SSL session */
 	int sslagain;			/* SSL read/write needs more data */
+	int sslwantwrite;		/* Handshake blocked on writability, not readability */
+	int sendagain;			/* Last write sent nothing; retry the same buffer */
 
 	/* For testing telnet services */
 	unsigned char *telnetbuf;	/* Buffer for telnet option negotiation */
