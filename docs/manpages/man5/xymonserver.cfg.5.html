@@ -523,7 +523,11 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
   <dd>The address used to contact the <i><a href="../man8/xymond.8.html">xymond</a>(8)</i> service: an IPv4 or IPv6
       address or a hostname, written as the RECIPIENT of <i><a href="../man1/xymon.1.html">xymon</a>(1)</i> is.
       Used by clients and the tools that perform network tests. Default:
-      $XYMONSERVERIP
+      $XYMONSERVERIP. A new server's xymonserver.cfg sets 127.0.0.1 instead, and
+      the [xymonclient] task in tasks.cfg passes the same to the client on the
+      server, so the server keeps reporting on itself when a network interface
+      goes away; xymond listens on 127.0.0.1 unless started with
+      <b>--no-loopback</b>. A remote client's xymonclient.cfg names the server.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMSERVERS"><a class="permalink" href="#XYMSERVERS"><b>XYMSERVERS</b></a></dt>
