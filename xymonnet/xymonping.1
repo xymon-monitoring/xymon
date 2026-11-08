@@ -18,7 +18,10 @@ Optionally, if a list of IP-addresses is passed as command-line
 arguments, it will ping those IP's instead of reading them
 from stdin.
 
-xymonping only handles IP-addresses, not hostnames.
+xymonping only handles IP-addresses, not hostnames: IPv4, or IPv6
+with a link-local address given as address%interface. An IPv6 host
+is reported with its address as it was given, so that the caller
+finds it under the spelling it used.
 
 xymonping was inspired by the
 .I fping(1)
@@ -36,7 +39,10 @@ input set of 1500 IP addresses).
 .SH SUID-ROOT INSTALLATION REQUIRED
 xymonping needs to be installed with suid-root privileges,
 since it requires a "raw socket" to send and receive ICMP
-Echo (ping) packets.
+Echo (ping) packets. IPv6 addresses are pinged on a second
+raw socket, for ICMPv6, opened only when the list holds one.
+When one of the two sockets cannot be opened, its hosts are
+reported as unreachable and the others are still pinged.
 
 xymonping is implemented such that it immediately drops
 the root privileges, and only regains them to perform two
