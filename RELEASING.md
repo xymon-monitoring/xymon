@@ -192,6 +192,19 @@ gh pr create --base main --head post-release/X.Y.Z+1-dev \
 	--title "version.h: X.Y.Z+1-dev after the X.Y.Z release"
 ```
 
+Then close the `X.Y.Z` milestone, after moving any pull request still in it
+to the next one. xymon-experimental retires a milestone's `candidate/` and
+`experimental/` branches only once it is closed here and no open pull request
+carries it; left open, its branch stays at the last pre-release build and is
+taken for the release being driven, holding the daily lanes the next
+milestone should have.
+
+```sh
+gh pr list --search "milestone:X.Y.Z" --state open    # move these first
+m=$(gh api repos/xymon-monitoring/xymon/milestones -q '.[] | select(.title == "X.Y.Z") | .number')
+gh api -X PATCH "repos/xymon-monitoring/xymon/milestones/$m" -f state=closed
+```
+
 ## Reproducibility
 
 The same tag always produces a byte-identical tarball, which is what makes the
