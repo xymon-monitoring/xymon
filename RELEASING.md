@@ -69,6 +69,21 @@ never in a pull request.
 
 ## Step by step
 
+### Before step 1: freeze `main` and test it
+
+A preview is `main` plus open pull requests, so it is not what the release
+ships. `main` is. A few days before step 1:
+
+- merge only fixes for this release into `main`, and move the other pull
+  requests to the next milestone;
+- ask testers to run a build of `main`: the `xymon-snapshot` channel of
+  xymon-rpm, rebuilt each night `main` moves, or Homebrew's `--HEAD`;
+- start step 1 once a few days pass with no new problem.
+
+That frozen `main` is the release candidate: the code that will be tagged,
+tested where people run it. There is no separate rc tag; the prep workflow
+takes `X.Y.Z` only.
+
 ### 1. Close out the changelog
 
 On `Changes`: merge `main` in, check every merged pull request has its
