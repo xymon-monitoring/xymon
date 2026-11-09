@@ -7107,8 +7107,10 @@ int main(int argc, char *argv[])
 						 * that was cut in the middle. Drop it, and say
 						 * so, which is the part that was missing before.
 						 */
+						char cwtext[IP_ADDR_STRLEN];
+
 						errprintf("Truncated message from %s - %d bytes before the connection broke: %s\n",
-							  inet_ntoa(cwalk->addr.sin_addr), cwalk->buflen,
+							  sockaddr_text((struct sockaddr *)&cwalk->addr, cwtext, sizeof(cwtext)), cwalk->buflen,
 							  strerror(errno));
 						shutdown(cwalk->sock, SHUT_RDWR);
 						close(cwalk->sock);
