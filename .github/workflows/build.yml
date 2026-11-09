@@ -71,7 +71,6 @@ jobs:
           USEXYMONPING=y \
           ENABLESSL=y \
           ENABLELDAP=y \
-          ENABLELDAPSSL=y \
           XYMONUSER=xymon \
           XYMONTOPDIR=/usr/lib/xymon \
           XYMONVAR=/var/lib/xymon \
