@@ -24,6 +24,65 @@ and a --tls-listen address, and point clients at "xymons://". The plaintext
 port keeps working alongside it, so clients move over one at a time. Nothing
 changes until you set it up; xymon-tls(7) is the walkthrough.
 
+xymonnet -- the hosts.cfg address is tested as given
+----------------------------------------------------
+
+xymonnet now tests the address written in hosts.cfg, without looking the host's
+name up; only hosts listed as 0.0.0.0 still have their name resolved. The http
+and https tests on such a line connect to that address too, sending the URL's
+name as the Host, unless the URL gives its own address or goes through a proxy.
+A host whose hosts.cfg address is out of date now fails its tests: correct the
+address, or write 0.0.0.0 to keep resolving the name. The testip tag and
+--dns=only are still accepted, but change nothing.
+
+xymond -- silent connections are dropped, and capped per sender
+---------------------------------------------------------------
+
+xymond now drops a connection that has sent nothing 5 seconds after it was
+accepted, instead of keeping it for the whole --timeout; a message that is
+arriving, however slowly, still gets the full timeout. Once 256 such silent
+connections are open, it takes at most 16 more from one sender -- one IPv4
+address, or one IPv6 /64 -- and logs the refusal. Neither limit can be changed.
+Clients behind one NAT address or proxy are affected only if that many of them
+connect and stay silent at once.
+
+xymond -- pidfiles and rrd control sockets go in XYMONRUNDIR
+------------------------------------------------------------
+
+Pidfiles and xymond_rrd's cache-control sockets now go in XYMONRUNDIR, set at
+configure time; by default it is the log directory, where the pidfiles already
+were. The rrdctl.* sockets therefore move from XYMONTMP to the log directory:
+the web server's user must be able to open that directory, or showgraph.cgi
+cannot ask xymond_rrd to flush its cache, and graphs lag behind the data.
+xymond_rrd refuses to start when XYMONRUNDIR is too long for a socket path, so
+keep it short.
+
+xymonnet -- a protocols.cfg entry is a conversation
+---------------------------------------------------
+
+A protocols.cfg entry is now an ordered conversation: an expect waits for the
+server, a send answers it, and "start tls" upgrades a plaintext connection in
+place, so sslcert can check a STARTTLS certificate. The shipped entries wait
+for the greeting and check the reply to their own command. [smtp] and
+[submission] require ESMTP (250 to EHLO): a HELO-only server now reports down,
+and the entry's comment says how to switch it to HELO. A port that accepts and
+never answers now reports down for oratns, ircd, telnet and telnets.
+
+protocols.cfg is now required. An upgrade keeps the sections already in it --
+install merges protocols.cfg section by section -- so it does not get the new
+conversations: replace your sections with the new ones to have them. A section without a port line -- [smtps], [amqp] and
+[amqps] were shipped without one -- still takes its port from /etc/services,
+but xymonnet now logs a warning for it on every run: add "port 465",
+"port 5672" and "port 5671" to them.
+
+analysis.cfg -- EXPAGE= applies to every page a host is on
+----------------------------------------------------------
+
+EXPAGE= in analysis.cfg now excludes a host when any page it is listed on
+matches, not only its first page, for INODE, PAGING, MIBVAL, CICS, VSIZE and
+GETVIS, as the other checks already did. On a host listed on more than one
+page, those six may lose rules they used to keep.
+
 xymonping -- IPv6 addresses are pinged
 -------------------------------------
 
@@ -113,7 +172,6 @@ client data page starts with a "[transport]" section saying how the
 message came ("TLSv1.3 from 192.0.2.1"). That section is added to the page
 only; the client message xymond stores and returns is unchanged.
 
-
 Changes for 4.3.31
 ==================
 
@@ -186,14 +244,6 @@ At-least-only, single-colour rules; existing configurations are unaffected.
 Server
 ------
 
-xymond now drops a connection that has sent nothing 5 seconds after it was
-accepted, instead of keeping it for the whole --timeout; a message that is
-arriving, however slowly, still gets the full timeout. Once 256 such silent
-connections are open, it takes at most 16 more from one sender -- one IPv4
-address, or one IPv6 /64 -- and logs the refusal. Neither limit can be changed.
-Clients behind one NAT address or proxy are affected only if that many of them
-connect and stay silent at once.
-
 xymond --listen=IP:PORT now listens only on the address it names. Since 2014 it
 has bound every interface whatever address was given, so a server told to
 listen on 127.0.0.1, or on one interface of several, was reachable on all of
@@ -220,11 +270,6 @@ used to apply to every host on the top-level page as well, so such a host could
 pick up another page's rules -- a PROC check for a process it does not run, for
 instance. Check that hosts on the top-level page still carry the rules you
 expect.
-
-EXPAGE= in analysis.cfg now excludes a host when any page it is listed on
-matches, not only its first page, for INODE, PAGING, MIBVAL, CICS, VSIZE and
-GETVIS, as the other checks already did. On a host listed on more than one
-page, those six may lose rules they used to keep.
 
 Web
 ---
@@ -276,33 +321,10 @@ closes without a command -- "lost connection after CONNECT" on Postfix,
 NOQUEUE on sendmail -- so allow the Xymon host wherever those lines feed
 fail2ban or a similar counter.
 
-A protocols.cfg entry is now an ordered conversation: an expect waits for the
-server, a send answers it, and "start tls" upgrades a plaintext connection in
-place, so sslcert can check a STARTTLS certificate. The shipped entries wait
-for the greeting and check the reply to their own command. [smtp] and
-[submission] require ESMTP (250 to EHLO): a HELO-only server now reports down,
-and the entry's comment says how to switch it to HELO. A port that accepts and
-never answers now reports down for oratns, ircd, telnet and telnets.
-
-protocols.cfg is now required. An upgrade keeps the sections already in it, as
-above, so it does not get the new conversations: replace your sections with the
-new ones to have them. A section without a port line -- [smtps], [amqp] and
-[amqps] were shipped without one -- still takes its port from /etc/services,
-but xymonnet now logs a warning for it on every run: add "port 465",
-"port 5672" and "port 5671" to them.
-
 xymonnet tests with a cipher-list restriction now report an SSL error when
 OpenSSL rejects it, instead of silently falling back to the default cipher
 list. Such tests may turn red after upgrading Xymon, or after an OpenSSL
 upgrade invalidates a previously accepted restriction.
-
-xymonnet now tests the address written in hosts.cfg, without looking the host's
-name up; only hosts listed as 0.0.0.0 still have their name resolved. The http
-and https tests on such a line connect to that address too, sending the URL's
-name as the Host, unless the URL gives its own address or goes through a proxy.
-A host whose hosts.cfg address is out of date now fails its tests: correct the
-address, or write 0.0.0.0 to keep resolving the name. The testip tag and
---dns=only are still accepted, but change nothing.
 
 Where Net-SNMP is built without MD5 (NETSNMP_DISABLE_MD5), SNMPv3
 authentication configured for MD5 falls back to SHA1 and warns once at startup.
@@ -354,14 +376,6 @@ still 1.5.1.
 The RRDtool argv ABI is detected from the header signature rather than the
 version, so RRDtool 1.9 and later, and backports to 1.8 such as Oracle
 Linux 10's, both work with no configuration.
-
-Pidfiles and xymond_rrd's cache-control sockets now go in XYMONRUNDIR, set at
-configure time; by default it is the log directory, where the pidfiles already
-were. The rrdctl.* sockets therefore move from XYMONTMP to the log directory:
-the web server's user must be able to open that directory, or showgraph.cgi
-cannot ask xymond_rrd to flush its cache, and graphs lag behind the data.
-xymond_rrd refuses to start when XYMONRUNDIR is too long for a socket path, so
-keep it short.
 
 XMH_MULTIHOMED is now XMH_FLAG_MULTIHOMED, the name xymon-xmh(5) has always
 documented. Scripts, web templates and xymondboard or hostinfo field selectors
