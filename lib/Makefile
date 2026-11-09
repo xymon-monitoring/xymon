@@ -25,6 +25,9 @@ XYMONTIMELIB = libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
 
+# The commit this build comes from, empty for a release (build/build-id.sh)
+XYMONBUILD := $(shell cat ../build/build-id 2>/dev/null)
+
 CFLAGS += -I../include 
 
 all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCOMMLIB) $(XYMONCLIENTLIB) xymonloadhosts xymonstackio xymonavailability md5 sha1 rmd160 xymonlocator tree
@@ -87,11 +90,11 @@ sha1.o: sha1.c test-endianness
 rmd160c.o: rmd160c.c test-endianness
 	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
-environ.o: environ.c
-	$(CC) $(CFLAGS) -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ environ.c
+environ.o: environ.c $(wildcard ../build/build-id)
+	$(CC) $(CFLAGS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ environ.c
 
-environ-client.o: environ.c
-	$(CC) $(CFLAGS) -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONCLIENTHOME)\" -c -o $@ environ.c
+environ-client.o: environ.c $(wildcard ../build/build-id)
+	$(CC) $(CFLAGS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONCLIENTHOME)\" -c -o $@ environ.c
 
 color-client.o: color.c
 	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<

@@ -77,6 +77,10 @@ int main(int argc, char *argv[])
 			fprintf(stdout, "Xymon version %s\n", VERSION);
 			return 0;
 		}
+		else if (strcmp(argv[argi], "--build-info") == 0) {
+			fprintf(stdout, "version=%s\nbuild=%s\n", VERSION, xgetenv("XYMONBUILD"));
+			return 0;
+		}
 		else if (strcmp(argv[argi], "--str") == 0) {
 			respfd = NULL;
 		}
