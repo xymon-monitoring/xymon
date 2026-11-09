@@ -178,14 +178,22 @@ The tag sits on `main`'s tip, and `include/version.h` still holds the number
 just released, so a build from `main` reports the release and
 `git describe --exact-match` on the tip returns the tag until the next commit
 lands -- which misleads anything keying off either (it left the RPM build
-treating a `main` build as the release). Bump `include/version.h` to the next
-`X.Y.Z+1-dev` so `main` names what it is becoming. See #676 for the fuller
-build-identity work this anticipates.
+treating a `main` build as the release). So `include/version.h` moves to the
+next `X.Y.Z+1-dev`, and `main` names what it is becoming (#676).
+
+The release workflow does it: once the tarball is up, its `post-release-dev`
+job opens the pull request `version.h: X.Y.Z+1-dev after the X.Y.Z release`
+from the branch `post-release/X.Y.Z+1-dev`, and starts its checks. Review and
+merge it. If the next release will not be `X.Y.Z+1` (a `4.4.0`, say), edit the
+line in that pull request first. The job changes nothing when `main` has
+already moved on, and nothing after a tag that is not a final `X.Y.Z`.
+
+If the job failed, its run summary prints the same steps by hand:
 
 ```sh
 git fetch origin
 git switch -c post-release/X.Y.Z+1-dev origin/main
-# set VERSION in include/version.h to "X.Y.Z+1-dev", then:
+./build/bump-dev.sh X.Y.Z          # the version just released
 git commit -am "version.h: X.Y.Z+1-dev after the X.Y.Z release"
 git push origin post-release/X.Y.Z+1-dev
 gh pr create --base main --head post-release/X.Y.Z+1-dev \
