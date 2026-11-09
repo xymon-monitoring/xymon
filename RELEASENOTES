@@ -319,6 +319,15 @@ no longer analysed or graphed -- xymond_client logs "No client backend for OS"
 such hosts before upgrading the server, or run xymond_client with
 --unknownclientosok to analyse their reports generically.
 
+build -- example configurations for lighttpd, nginx and caddy
+--------------------------------------------------------------
+
+Next to the Apache configuration in etc/, a server install now writes
+examples for lighttpd, nginx and caddy into the examples/ directory of the
+server tree, with this install's paths filled in. Nothing reads them: copy
+the one for your web server into its configuration. nginx and caddy run
+the CGIs through fcgiwrap; each file says how.
+
 Changes for 4.3.31
 ==================
 
