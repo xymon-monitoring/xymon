@@ -194,8 +194,9 @@ gh pr create --base main --head post-release/X.Y.Z+1-dev \
 
 Then close the `X.Y.Z` milestone, after moving any pull request still in it
 to the next one. xymon-experimental retires a milestone's `candidate/` and
-`experimental/` branches only once it is closed here and no open pull request
-carries it; left open, its branch stays at the last pre-release build and is
+`experimental/` branches only once it is closed here and its build integrated
+no pull request for it; left open, its branch stays at the last pre-release
+build and is
 taken for the release being driven, holding the daily lanes the next
 milestone should have.
 
