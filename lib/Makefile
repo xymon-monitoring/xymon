@@ -31,6 +31,30 @@ all: test-endianness $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTCO
 
 client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
 
+# The archives by name, so a missing one fails rather than installing short.
+# cp without -p: run as root, -p would keep the build user as the owner.
+# The kit is plain files for compilers, owned by whoever installs it.
+INSTALLARCHIVES = $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB)
+
+install:
+	cp -f $(INSTALLARCHIVES) $(INSTALLROOT)$(INSTALLLIBDIR)/
+	cd $(INSTALLROOT)$(INSTALLLIBDIR) && chmod 644 $(INSTALLARCHIVES)
+	# Shared objects only if this tree built any: devel does, main does
+	# not, and an unmatched glob must not look like a failure.
+	for f in *.so*; do \
+		test -e "$$f" || continue; \
+		cp -f "$$f" $(INSTALLROOT)$(INSTALLLIBDIR)/ || exit 1; \
+		chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)/"$$f" || exit 1; \
+	done
+	# The headers, so the libraries above can actually be built against.
+	# include/ and lib/ have to stay siblings: libxymon.h reaches its
+	# remaining headers as "../lib/...", so a flat directory breaks on
+	# the first include. One -I$(INSTALLINCDIR)/include then works.
+	mkdir -p $(INSTALLROOT)$(INSTALLINCDIR)/include $(INSTALLROOT)$(INSTALLINCDIR)/lib
+	cp -f ../include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/include/
+	cp -f *.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/
+	chmod 644 $(INSTALLROOT)$(INSTALLINCDIR)/include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/*.h
+
 test-endianness: test-endianness.c
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $<
 
@@ -166,11 +190,6 @@ ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
 endif
-
-install:
-	cp -fp *.so* *.a $(INSTALLROOT)$(INSTALLLIBDIR)/ || :
-	chmod 644 $(INSTALLROOT)$(INSTALLLIBDIR)/*.a || :
-	chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)/*.so* || :
 
 clean:
 	rm -f *.o *.a *~ $(LIBTOOLS) test-endianness md5 sha1 rmd160 tree

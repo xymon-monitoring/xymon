@@ -1,0 +1,16 @@
+prefix=@XYMONHOME@
+includedir=@INSTALLINCDIR@
+libdir=@INSTALLLIBDIR@
+
+Name: xymon
+Description: Xymon monitoring system libraries and headers
+Version: @XYMONVERSION@
+# include/ only: libxymon.h reaches its siblings as "../lib/...", so lib/'s
+# generically-named headers (md5.h, sha1.h, Availability.h, ...) stay off the
+# consumer -I path where they would shadow system headers.
+Cflags: -I${includedir}/include @PCREINCDIR@
+Libs: -L${libdir} -lxymon -lxymoncomm -lxymontime
+# What the three archives themselves reference: libxymon PCRE2, libxymoncomm
+# also OpenSSL, libxymontime clock_gettime (-lrt where libc lacks it). zlib,
+# RRD and tirpc are needed by programs, not by these archives.
+Libs.private: @PCRELIBS@ @SSLLIBS@ @LIBRTDEF@
