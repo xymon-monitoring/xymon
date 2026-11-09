@@ -31,6 +31,11 @@ printf 'int main(void) { return 0; }\n' > "$work/probe.c"
 # shellcheck disable=SC2086  # the flag list is a word list
 "$CC" $san -o "$work/probe" "$work/probe.c" 2>/dev/null \
 	|| skip "the compiler has no UBSan alignment check ($CC $san)"
+# The probe must also run: a compiler can link the check against a
+# libubsan the system never installed (Amazon Linux 2023, Solaris 11.4),
+# and the harness would then die at load time, not at the check.
+"$work/probe" 2>/dev/null \
+	|| skip "the UBSan runtime is not installed: a program built with $san does not start"
 # shellcheck disable=SC2086  # the flag lists are word lists
 "$CC" -g -O1 $san $harness_cflags -iquote "$ROOT/xymonnet" -o "$work/harness" \
 	"$here/xymonping-align-harness.c" "$ROOT/lib/libxymontime.a" "$ROOT/lib/libxymoncomm.a" \
