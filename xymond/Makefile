@@ -207,7 +207,15 @@ install-cfg:
 	cd etcfiles; ../../build/merge-sects client-local.cfg $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg
 	cd etcfiles; ../../build/merge-sects graphs.cfg $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg
 	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
-	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; echo xymon-apache.conf; echo xymon-lighttpd.conf; echo xymon-nginx.conf; echo xymon-caddy.conf) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; echo xymon-apache.conf) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+	# The lighttpd, nginx and caddy configurations are examples to copy into
+	# a web server's own configuration, not files Xymon reads, so they go
+	# to examples/ rather than etc/, and are replaced on every install:
+	# nothing edits them in place. xymon-apache.conf stays in etc/, where
+	# every packaging and the install guide have always found it.
+	mkdir -p $(INSTALLROOT)$(XYMONHOME)/examples
+	cd etcfiles; cp -f xymon-lighttpd.conf xymon-nginx.conf xymon-caddy.conf $(INSTALLROOT)$(XYMONHOME)/examples/
+	cd $(INSTALLROOT)$(XYMONHOME)/examples; chmod 644 xymon-lighttpd.conf xymon-nginx.conf xymon-caddy.conf
 	cd $(INSTALLROOT)$(XYMONHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/ ../../build/md5.dat
 	cd webfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWEBDIR)/ ../../build/md5.dat

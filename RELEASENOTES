@@ -172,6 +172,15 @@ client data page starts with a "[transport]" section saying how the
 message came ("TLSv1.3 from 192.0.2.1"). That section is added to the page
 only; the client message xymond stores and returns is unchanged.
 
+build -- example configurations for lighttpd, nginx and caddy
+--------------------------------------------------------------
+
+Next to the Apache configuration in etc/, a server install now writes
+examples for lighttpd, nginx and caddy into the examples/ directory of the
+server tree, with this install's paths filled in. Nothing reads them: copy
+the one for your web server into its configuration. nginx and caddy run
+the CGIs through fcgiwrap; each file says how.
+
 Changes for 4.3.31
 ==================
 

@@ -79,7 +79,8 @@ If you gave other answers, use yours.</p>
 
 <h2>4. Configure the web server</h2>
 <p>Add <em>~xymon/server/etc/xymon-apache.conf</em> to your Apache configuration
-and restart Apache. <a name="htpasswd"></a>If configure put the administration pages in a directory of their
+and restart Apache. For lighttpd, nginx or caddy, start from the matching file
+in <em>~xymon/server/examples/</em> instead. <a name="htpasswd"></a>If configure put the administration pages in a directory of their
 own (it asks), protect them with a password:</p>
 <pre><tt>htpasswd -c ~xymon/server/etc/xymonpasswd admin
 </tt></pre>
