@@ -313,6 +313,20 @@ require_c_buildenv() {
 		|| skip "tree not configured (no include/config.h)"
 }
 
+# xymon_makevar ROOT NAME -- the value configure wrote for NAME into the
+# top-level Makefile (PCRELIBS, RRDLIBS, XYMONLOGDIR, ...). A variable of the
+# same name in the environment answers first, as a build with no Makefile
+# gives it, the way PCRELIBS always could; with neither, nothing.
+xymon_makevar() {
+	local root=$1 name=$2
+	if [ -n "${!name+set}" ]; then
+		printf '%s' "${!name}"
+		return 0
+	fi
+	[ -f "$root/Makefile" ] || return 0
+	sed -n "s/^$name *= *//p" "$root/Makefile"
+}
+
 # xymon_lib ROOT ARCHIVE -- the path of a library archive (libxymoncomm.a,
 # ...) a harness links: ROOT/lib, where make writes it, or XYMON_LIBDIR for a
 # build that writes its archives elsewhere -- CMake, in its build directory.

@@ -30,19 +30,19 @@ require_c_buildenv "$ROOT"
 [ -f "$ROOT/web/showgraph.cgi" ] || skip "tree built without RRD support (no showgraph.cgi)"
 require_bin XYMOND_RRD xymond/xymond_rrd
 
-rrddef=$(sed -n 's/^RRDDEF *= *//p' "$ROOT/Makefile")
+rrddef=$(xymon_makevar "$ROOT" RRDDEF)
 # Where <rrd.h> lives, as configure found it: /usr/include on Linux, but
 # /usr/local/include or /opt/homebrew/include on the BSDs and macOS, and the
 # product Makefiles pass it for every RRD-using object.
-rrdinc=$(sed -n 's/^RRDINCDIR *= *//p' "$ROOT/Makefile")
-rrdlibs=$(sed -n 's/^RRDLIBS *= *//p' "$ROOT/Makefile")
+rrdinc=$(xymon_makevar "$ROOT" RRDINCDIR)
+rrdlibs=$(xymon_makevar "$ROOT" RRDLIBS)
 [ -n "$rrdlibs" ] || rrdlibs="-lrrd"
 
 # PCRELIBS: explicit env override first, else the configured tree's own
 # setting (which carries any -L for a nonstandard install). The tree is
 # required to be built by now, so the Makefile always carries one.
 pcre_libs=${PCRELIBS:-}
-[ -n "$pcre_libs" ] || pcre_libs=$(sed -n 's/^PCRELIBS *= *//p' "$ROOT/Makefile")
+[ -n "$pcre_libs" ] || pcre_libs=$(xymon_makevar "$ROOT" PCRELIBS)
 
 work=$(mktempdir)
 

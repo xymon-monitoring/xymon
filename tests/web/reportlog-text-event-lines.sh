@@ -19,7 +19,7 @@ require_c_buildenv "$ROOT"
 work=$(mktempdir)
 
 pcre_libs=${PCRELIBS:-}
-[ -n "$pcre_libs" ] || pcre_libs=$(sed -n 's/^PCRELIBS *= *//p' "$ROOT/Makefile")
+[ -n "$pcre_libs" ] || pcre_libs=$(xymon_makevar "$ROOT" PCRELIBS)
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 

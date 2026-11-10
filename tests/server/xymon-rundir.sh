@@ -22,7 +22,7 @@ here=$(dirname "$0")
 require_c_buildenv "$ROOT"
 [ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
-logdir=$(sed -n 's/^XYMONLOGDIR *= *//p' "$ROOT/Makefile" 2>/dev/null)
+logdir=$(xymon_makevar "$ROOT" XYMONLOGDIR)
 [ -n "$logdir" ] || skip "no XYMONLOGDIR in the top-level Makefile"
 
 work=$(mktempdir); register_cleanup "rm -rf '$work'"

@@ -35,7 +35,7 @@ build_xymond_worker() {
 	# setting (which carries any -L for a nonstandard install), then
 	# pkg-config, then the bare library as a last resort.
 	pcre_libs=${PCRELIBS:-}
-	[ -n "$pcre_libs" ] || pcre_libs=$(sed -n 's/^PCRELIBS *= *//p' "$root/Makefile")
+	[ -n "$pcre_libs" ] || pcre_libs=$(xymon_makevar "$root" PCRELIBS)
 	if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 		pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
 	fi
@@ -43,8 +43,7 @@ build_xymond_worker() {
 	harness_cflags=$(xymon_cflags "$root")
 	harness_ldflags=$(xymon_ldflags "$root")
 
-	"$XYMON_MAKE" -C "$root/lib" libxymon.a libxymoncomm.a libxymontime.a >"$outdir/libbuild.log" 2>&1 \
-		|| { cat "$outdir/libbuild.log" >&2; fail "the xymon libraries do not build in this configured tree"; }
+	build_xymon_libs "$root" "$outdir/libbuild.log" libxymon.a libxymoncomm.a libxymontime.a
 
 	srcs=()
 	for src in "$@"; do srcs+=("$root/$src"); done

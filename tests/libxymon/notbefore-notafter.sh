@@ -47,8 +47,7 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-notbefore.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 require_gnu_make
-"$XYMON_MAKE" -C "$ROOT/lib" libxymonclientcomm.a libxymonclient.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh the xymon client libraries"; }
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymonclientcomm.a libxymonclient.a
 
 # The far side of the window has to be a time this platform can represent: a
 # signed 32-bit time_t stops in January 2038, and timestr2timet() returns -1
