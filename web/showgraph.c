@@ -143,15 +143,19 @@ void errormsg(char *msg)
 	exit(1);
 }
 
-void request_cacheflush(char *hostname)
+/*
+ * Ask xymond_rrd to flush the cached updates of these hosts before their RRD
+ * files are read: a "/host/" message per host to every $XYMONRUNDIR/rrdctl.*
+ * socket. One socket and one wait for the whole request, however many hosts:
+ * a socket per host was never closed, and a wait per host made a long list
+ * hold the CGI for minutes.
+ */
+void request_cacheflush(char **hosts, int hostcount)
 {
-	/* Build a cache-flush request, and send it to all of the $XYMONRUNDIR/rrdctl.* sockets */
-	SBUF_DEFINE(req);
-	char *bufp;
-	int bytesleft;
 	DIR *dir;
 	struct dirent *d;
 	int ctlsocket = -1;
+	int sent = 0;
 
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (ctlsocket == -1) {
@@ -163,72 +167,73 @@ void request_cacheflush(char *hostname)
 	dir = opendir(xymon_rundir());
 	if (!dir) {
 		errprintf("Cannot access XYMONRUNDIR (%s): %s\n", xymon_rundir(), strerror(errno));
+		close(ctlsocket);
 		return;
 	}
 
-	SBUF_MALLOC(req, strlen(hostname)+3);
-	snprintf(req, req_buflen, "/%s/", hostname);
-
 	while ((d = readdir(dir)) != NULL) {
-		if (strncmp(d->d_name, "rrdctl.", 7) == 0) {
-			struct sockaddr_un myaddr;
-			socklen_t myaddrsz = 0;
-			int n, sendfailed = 0;
-			SBUF_DEFINE(fnam);
+		struct sockaddr_un myaddr;
+		socklen_t myaddrsz;
+		SBUF_DEFINE(fnam);
+		int h;
 
-			memset(&myaddr, 0, sizeof(myaddr));
-			myaddr.sun_family = AF_UNIX;
+		if (strncmp(d->d_name, "rrdctl.", 7) != 0) continue;
 
-			SBUF_MALLOC(fnam, strlen(xymon_rundir())+ strlen(d->d_name) + 2);
-			snprintf(fnam, fnam_buflen, "%s/%s", xymon_rundir(), d->d_name);
-			/*
-			 * ">=", not ">": at exactly sizeof(sun_path) the strncpy()
-			 * below leaves no terminator, and xymond_rrd refuses that
-			 * length. Skipped, not returned: the other sockets still get
-			 * their flush, and closedir() below still runs.
-			 */
-			if (strlen(fnam) >= sizeof(myaddr.sun_path)) {
-				errprintf("rrdctl socket path too long, skipping %s (max %d characters)\n",
-					  fnam, (int)sizeof(myaddr.sun_path) - 1);
-				xfree(fnam);
-				continue;
-			}
-			strncpy(myaddr.sun_path, fnam, sizeof(myaddr.sun_path));
+		memset(&myaddr, 0, sizeof(myaddr));
+		myaddr.sun_family = AF_UNIX;
+
+		SBUF_MALLOC(fnam, strlen(xymon_rundir())+ strlen(d->d_name) + 2);
+		snprintf(fnam, fnam_buflen, "%s/%s", xymon_rundir(), d->d_name);
+		/*
+		 * ">=", not ">": at exactly sizeof(sun_path) the strncpy()
+		 * below leaves no terminator, and xymond_rrd refuses that
+		 * length. Skipped, not returned: the other sockets still get
+		 * their flush, and closedir() below still runs.
+		 */
+		if (strlen(fnam) >= sizeof(myaddr.sun_path)) {
+			errprintf("rrdctl socket path too long, skipping %s (max %d characters)\n",
+				  fnam, (int)sizeof(myaddr.sun_path) - 1);
 			xfree(fnam);
+			continue;
+		}
+		strncpy(myaddr.sun_path, fnam, sizeof(myaddr.sun_path));
+		xfree(fnam);
+		myaddrsz = sizeof(myaddr);
 
-			myaddrsz = sizeof(myaddr);
-			bufp = req; bytesleft = strlen(req);
-			do {
-				n = sendto(ctlsocket, bufp, bytesleft, 0, (struct sockaddr *)&myaddr, myaddrsz);
-				if (n == -1) {
-					if (errno == EDESTADDRREQ) {
-						/* Probably a left-over rrdctl file, ignore it */
-					}
-					else if (errno == EAGAIN) {
-						/* Harmless */
-					}
-					else {
-						errprintf("Sendto failed: %s\n", strerror(errno));
-					}
+		for (h = 0; (h < hostcount); h++) {
+			SBUF_DEFINE(req);
 
-					sendfailed = 1;
-				}
-				else {
-					bytesleft -= n;
-					bufp += n;
-				}
-			} while ((!sendfailed) && (bytesleft > 0));
+			SBUF_MALLOC(req, strlen(hosts[h])+3);
+			snprintf(req, req_buflen, "/%s/", hosts[h]);
+
+			/* A datagram goes whole or not at all */
+			if (sendto(ctlsocket, req, strlen(req), 0, (struct sockaddr *)&myaddr, myaddrsz) == -1) {
+				int e = errno;
+				xfree(req);
+				/*
+				 * The socket is non-blocking: EAGAIN (and EINTR) mean this
+				 * datagram did not go, but the socket is fine - skip this
+				 * host and keep flushing the rest, or one full send buffer
+				 * would drop every host after it. EDESTADDRREQ is a left-over
+				 * rrdctl file, and anything else a broken socket: stop on it.
+				 */
+				if ((e == EAGAIN) || (e == EINTR)) continue;
+				if (e != EDESTADDRREQ) errprintf("Sendto failed: %s\n", strerror(e));
+				break;
+			}
+			sent = 1;
+			xfree(req);
 		}
 	}
 	closedir(dir);
-	xfree(req);
+	close(ctlsocket);
 
 	/*
 	 * Sleep 0.3 secs to allow the cache flush to happen.
 	 * Note: It isn't guaranteed to happen in this time, but
 	 * there's a good chance that it will.
 	 */
-	usleep(300000);
+	if (sent) usleep(300000);
 }
 
 
@@ -958,11 +963,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
 	/* Request an RRD cache flush from the xymond_rrd update daemon */
-	if (hostlist) {
-		int i;
-		for (i=0; (i < hostlistsize); i++) request_cacheflush(hostlist[i]);
-	}
-	else if (hostname) request_cacheflush(hostname);
+	if (hostlist) request_cacheflush(hostlist, hostlistsize);
+	else if (hostname) request_cacheflush(&hostname, 1);
 
 	/* What RRD files do we have matching this request? */
 	if (hostlist || (gdef->fnpat == NULL)) {
