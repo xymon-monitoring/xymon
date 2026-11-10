@@ -16,6 +16,15 @@ A detailed description of how to use the editor is provided in the
 Xymon Web documentation, available from the "Help" \-> "Critical Systems"
 link on the Xymon website.
 
+Changes are written to critical.cfg, after copying the old file to
+critical.cfg.bak. The web server runs this CGI, so its user must be able to
+write both files. After each change the editor reports above the form whether
+it was saved; a change it could not write is reported with the reason,
+for example "Permission denied", and the web server user's name.
+
+A host must be listed in hosts.cfg before a record or a clone can be added
+for it.
+
 .SH SECURITY
 Access to this CGI script should be restricted through access controls
 in your webserver. Editing the Critical Systems View configuration will

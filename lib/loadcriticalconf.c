@@ -16,6 +16,7 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
@@ -368,7 +369,10 @@ int update_critconfig(critconf_t *rec)
 
 	fd = fopen(configfn, "w");
 	if (fd == NULL) {
-		errprintf("Cannot open output file %s\n", configfn);
+		int e = errno;
+
+		errprintf("Cannot open output file %s: %s\n", configfn, strerror(e));
+		errno = e;	/* the caller reports it too */
 		return 1;
 	}
 

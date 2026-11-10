@@ -47,9 +47,13 @@
 		<ul>
 			<li>The <b>Host</b> and <b>Test</b> fields are text entry fields.
 			This is where you enter the name of the host and test you want to
-			configure. If you would rather not type too much, you can enter
-			just the beginning of the hostname and use the <b>Search</b> and
-			<b>Next</b> buttons to walk through the currently configured tests.</li>
+			configure. The host must be one in hosts.cfg. To add a new one,
+			type the host and test, fill in the form and hit <b>Update</b>.
+			<b>Search</b> and <b>Next</b> only walk through the tests
+			that are already on the Critical Systems view, not every host:
+			enter just the beginning of a hostname and hit <b>Next</b> to go to
+			its first configured test. After each change the editor says
+			whether it was saved, and if not, why.</li>
 
 			<li>The <b>Priority</b> field defines how important this test is.
 			By default you have three priorities: 1, 2 and 3. Priority 3 is

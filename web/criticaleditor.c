@@ -18,6 +18,8 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <pwd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -37,6 +39,43 @@ static time_t rq_end = 0;
 static char *rq_clonestoadd = NULL;
 static char *rq_clonestodrop = NULL;
 static int  rq_dropevenifcloned = 0;
+
+/*
+ * What the last action did, shown above the form: "Saved", or why it was
+ * not. It takes the place of findrecord()'s own warnings, so a failed save
+ * can never look like a successful one.
+ */
+static char statusmsg[4096] = "";
+
+static void setstatus(const char *fmt, const char *arg)
+{
+	/* arg is what the user typed, or a system message: escaped for HTML */
+	snprintf(statusmsg, sizeof(statusmsg), fmt, (arg ? htmlquoted((char *)arg) : ""));
+}
+
+/* After update_critconfig() has failed: say which file, why, and as whom */
+static void setsavefailed(void)
+{
+	char why[1024];
+	int e = errno;		/* before getpwuid(), which may change it */
+	struct passwd *pw = getpwuid(geteuid());
+
+	snprintf(why, sizeof(why), "%s. The web server runs as %s, which must be able to write critical.cfg and critical.cfg.bak",
+		 strerror(e), (pw ? pw->pw_name : "an unknown user"));
+	setstatus("NOT SAVED: cannot write critical.cfg: %s", why);
+}
+
+/*
+ * A host must be in hosts.cfg: a record for a name that isn't there never
+ * matches anything. If hosts.cfg could not be loaded at all, nothing is
+ * refused on that account.
+ */
+static int hosts_loaded = 0;
+
+static int known_host(const char *hostname)
+{
+	return (!hosts_loaded || (hostinfo((char *)hostname) != NULL));
+}
 
 static void parse_query(void)
 {
@@ -163,6 +202,14 @@ static void parse_query(void)
 			rq_end = mktime(&tm);
 		}
 
+		/*
+		 * The form always sends all three; a request without one of them
+		 * gets the form's defaults (every day, all day) instead of a crash.
+		 */
+		if (!rq_critwkdays) rq_critwkdays = strdup("*");
+		if (!rq_critslastart) rq_critslastart = strdup("0000");
+		if (!rq_critslaend) rq_critslaend = strdup("2400");
+
 		SBUF_MALLOC(rq_crittime,strlen(rq_critwkdays) + strlen(rq_critslastart) + strlen(rq_critslaend) + 3);
 		snprintf(rq_crittime, rq_crittime_buflen, "%s:%s:%s", rq_critwkdays, rq_critslastart, rq_critslaend);
 	}
@@ -238,6 +285,7 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	if (!rec && nodatawarning) snprintf(warnmsg, sizeof(warnmsg), "%s", nodatawarning);
 	if (isaclone && isclonewarning) snprintf(warnmsg, sizeof(warnmsg), "%s", isclonewarning);
 	if (hasclones && hascloneswarning) snprintf(warnmsg, sizeof(warnmsg), "%s", hascloneswarning);
+	if (*statusmsg) snprintf(warnmsg, sizeof(warnmsg), "%s", statusmsg);
 
 	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	showform(stdout, "critedit", "critedit_form", COL_BLUE, getcurrenttime(NULL), warnmsg, NULL);
@@ -246,31 +294,51 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 
 void nextrecord(char *hostname, char *service, char *isclonewarning, char *hascloneswarning)
 {
-	critconf_t *rec;
+	critconf_t *rec = NULL;
 	char *nexthost, *nextservice;
 
-	/* First check if the host+service is really a clone of something else */
-	if (hostname && service) {
+	if (hostname) {
+		/*
+		 * The configured record after the one typed in. That record need
+		 * not exist: for a host and test with no record yet, it is the
+		 * first one that sorts after them, as the records are sorted by
+		 * key ("host|test"). A host alone, or the start of one, finds its
+		 * first record: "mail" finds "mail.example.com|conn".
+		 */
 		SBUF_DEFINE(key);
 
-		SBUF_MALLOC(key, strlen(hostname) + strlen(service) + 2);
-		snprintf(key, key_buflen, "%s|%s", hostname, service);
-		rec = get_critconfig(key, CRITCONF_FIRSTMATCH, NULL);
-		if (rec) rec = get_critconfig(NULL, CRITCONF_NEXT, NULL);
+		SBUF_MALLOC(key, strlen(hostname) + (service ? strlen(service) : 0) + 2);
+		if (service) snprintf(key, key_buflen, "%s|%s", hostname, service);
+		else snprintf(key, key_buflen, "%s", hostname);
+
+		if (service && get_critconfig(key, CRITCONF_FIRSTMATCH, NULL)) {
+			rec = get_critconfig(NULL, CRITCONF_NEXT, NULL);
+		}
+		else {
+			for (rec = get_critconfig(NULL, CRITCONF_FIRST, NULL);
+			     (rec && ((service ? (strcmp(rec->key, key) <= 0) : (strcmp(rec->key, key) < 0))));
+			     rec = get_critconfig(NULL, CRITCONF_NEXT, NULL)) ;
+		}
 		xfree(key);
+
+		if (!rec) {
+			/* Nothing after it: stay on what was typed, and say so */
+			setstatus("No configured critical system after this one%s", "");
+			findrecord(hostname, service, NULL, isclonewarning, hascloneswarning);
+			return;
+		}
 	}
 	else {
 		rec = get_critconfig(NULL, CRITCONF_FIRST, NULL);
+		if (!rec) {
+			setstatus("No critical systems are configured yet%s", "");
+			findrecord(NULL, NULL, NULL, NULL, NULL);
+			return;
+		}
 	}
 
-	if (rec) {
-		nexthost = strdup(rec->key);
-		nextservice = strchr(nexthost, '|'); if (nextservice) { *nextservice = '\0'; nextservice++; }
-	}
-	else {
-		nexthost = strdup("");
-		nextservice = "";
-	}
+	nexthost = strdup(rec->key);
+	nextservice = strchr(nexthost, '|'); if (nextservice) { *nextservice = '\0'; nextservice++; }
 
 	findrecord(nexthost, nextservice, NULL, isclonewarning, hascloneswarning);
 	xfree(nexthost);
@@ -280,7 +348,13 @@ void updaterecord(char *hostname, char *service)
 {
 	critconf_t *rec = NULL;
 
-	if (hostname && service) {
+	if (!hostname || !service) {
+		setstatus("NOT SAVED: enter both a host and a test%s", "");
+	}
+	else if (!known_host(hostname)) {
+		setstatus("NOT SAVED: there is no host %s in hosts.cfg", hostname);
+	}
+	else {
 		SBUF_DEFINE(key);
 		char *realkey;
 		char datestr[20];
@@ -316,7 +390,8 @@ void updaterecord(char *hostname, char *service)
 		rec->updinfo = (char *)malloc(upd_buflen);
 		snprintf(rec->updinfo, upd_buflen, "%s %s", operator, datestr);
 
-		update_critconfig(rec);
+		if (update_critconfig(rec) == 0) setstatus("Saved%s", "");
+		else setsavefailed();
 		xfree(key);
 	}
 
@@ -327,13 +402,18 @@ void addclone(char *origin, char *newhosts, char *service)
 {
 	char *newclone;
 
+	char *unknown = NULL;
+
 	newclone = strtok(newhosts, " ");
 	while (newclone) {
-		addclone_critconfig(origin, newclone);
+		if (known_host(newclone)) addclone_critconfig(origin, newclone);
+		else if (!unknown) unknown = newclone;
 		newclone = strtok(NULL, " ");
 	}
 
-	update_critconfig(NULL);
+	if (update_critconfig(NULL) != 0) setsavefailed();
+	else if (unknown) setstatus("Saved, except: there is no host %s in hosts.cfg", unknown);
+	else setstatus("Saved%s", "");
 	findrecord(origin, service, NULL, NULL, NULL);
 }
 
@@ -347,7 +427,8 @@ void dropclone(char *origin, char *drops, char *service)
 		drop = strtok(NULL, " ");
 	}
 
-	update_critconfig(NULL);
+	if (update_critconfig(NULL) == 0) setstatus("Saved%s", "");
+	else setsavefailed();
 	findrecord(origin, service, NULL, NULL, NULL);
 }
 
@@ -355,11 +436,23 @@ void deleterecord(char *hostname, char *service, int evenifcloned)
 {
 	SBUF_DEFINE(key);
 
+	if (!hostname || !service) {
+		/* Both are needed to name a record; without them the key can't be built */
+		setstatus("Nothing deleted: enter both a host and a test%s", "");
+		findrecord(hostname, service, NULL, NULL, NULL);
+		return;
+	}
+
 	SBUF_MALLOC(key, strlen(hostname) + strlen(service) + 2);
 	snprintf(key, key_buflen, "%s|%s", hostname, service);
-	if (delete_critconfig(key, evenifcloned) == 0) {
-		update_critconfig(NULL);
+	if (!get_critconfig(key, CRITCONF_FIRSTMATCH, NULL)) {
+		setstatus("Nothing deleted: there is no record for this host and test%s", "");
 	}
+	else if (delete_critconfig(key, evenifcloned) == 0) {
+		if (update_critconfig(NULL) == 0) setstatus("Deleted%s", "");
+		else setsavefailed();
+	}
+	xfree(key);
 
 	findrecord(hostname, service, NULL, NULL, 
 		   (evenifcloned ? "Warning: Orphans will be ignored" : "Will not delete record that is cloned"));
@@ -407,6 +500,7 @@ int main(int argc, char *argv[])
 
 	parse_query();
 	load_critconfig(configfn);
+	hosts_loaded = (load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn()) == 0) && (first_host() != NULL);
 
 	switch (editaction) {
 	  case CRITEDIT_FIND:
