@@ -87,6 +87,8 @@ case $sslcflags in
 	pass "a xymond built without OpenSSL refuses --tls-listen" ;;
 esac
 
+# The harness links the tree's own archive, which only a make build writes.
+[ -f "$ROOT/lib/libxymoncomm.a" ] || skip "lib/libxymoncomm.a is not built"
 # shellcheck disable=SC2046,SC2086  # flag lists, split on purpose
 "$CC" $(xymon_cflags "$ROOT") $sslcflags -iquote "$ROOT/lib" -o "$work/harness" \
 	"$(dirname "$0")/xymond-tls-listen-harness.c" "$ROOT/lib/libxymoncomm.a" \
