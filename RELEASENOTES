@@ -29,6 +29,18 @@ cache-flush to xymond_rrd goes through one socket with one wait for all the
 hosts of a request, and xymond_rrd keeps no record for a name with nothing
 cached. Nothing to change on upgrade.
 
+web -- a host's pages show that host only
+-----------------------------------------
+
+The info and client pages, a COMPACT column, the configuration report and
+the acknowledgement page asked xymond for a host's statuses with its name as a
+pattern, in which each dot matched any character: with web01.example.com and
+web01-example.com both configured, web01.example.com's info page also listed
+the other host's tests, and its client page could show the other host's
+sender. Each name is now matched as written. The "host" cookie the
+configuration report and the acknowledgement page read is a host name too:
+one with other characters is refused as an invalid filter.
+
 xymond -- TLS between clients and the daemon
 --------------------------------------------
 

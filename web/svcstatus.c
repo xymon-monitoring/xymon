@@ -267,12 +267,15 @@ static char *client_transport_header(char *host)
 	SBUF_DEFINE(req);
 	sendreturn_t *sres;
 	char *resp, *bar, *eol, *hdr = NULL;
+	char *hostre = cgi_hostregex(host);	/* "." matches only a dot */
 
-	SBUF_MALLOC(req, 1024 + strlen(host) + strlen(xgetenv("CLIENTCOLUMN")));
+	if (!hostre) return NULL;
+	SBUF_MALLOC(req, 1024 + strlen(hostre) + strlen(xgetenv("CLIENTCOLUMN")));
 	/* sender first: an older xymond drops the field it does not know, and
 	   then there is no '|' to find */
 	snprintf(req, req_buflen, "xymondboard host=^%s$ test=^%s$ fields=sender,transport",
-		 host, xgetenv("CLIENTCOLUMN"));
+		 hostre, xgetenv("CLIENTCOLUMN"));
+	xfree(hostre);
 	sres = newsendreturnbuf(1, NULL);
 	if (sendmessage(req, NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) {
 		resp = getsendreturnstr(sres, 1);
@@ -501,6 +504,7 @@ int do_request(void)
 		else {
 			pcre2_code *dummy = NULL;
 			SBUF_DEFINE(re);
+			char *hostre;
 
 			SBUF_MALLOC(re, 5 + strlen(complist));
 			snprintf(re, re_buflen, "^(%s)$", complist);
@@ -511,8 +515,14 @@ int do_request(void)
 			}
 
 			freeregex(dummy);
-			SBUF_MALLOC(xymondreq, 1024 + strlen(hostname) + strlen(re));
-			snprintf(xymondreq, xymondreq_buflen, "xymondboard host=^%s$ test=%s fields=testname,color,lastchange", hostname, re);
+			hostre = cgi_hostregex(hostname);	/* "." matches only a dot */
+			if (hostre == NULL) {
+				errormsg(500, "Invalid host name");
+				return 1;
+			}
+			SBUF_MALLOC(xymondreq, 1024 + strlen(hostre) + strlen(re));
+			snprintf(xymondreq, xymondreq_buflen, "xymondboard host=^%s$ test=%s fields=testname,color,lastchange", hostre, re);
+			xfree(hostre);
 		}
 
 		sres = newsendreturnbuf(1, NULL);

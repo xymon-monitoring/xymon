@@ -73,11 +73,14 @@ static int fetch_status(char *hostname)
 	int testsz;
 	int haveuname = 0;
 	sendreturn_t *sres;
+	char *hostre = cgi_hostregex(hostname);	/* "." matches only a dot */
 
-	SBUF_MALLOC(xymoncmd, 1024 + strlen(hostname));
+	if (!hostre) return 1;
+	SBUF_MALLOC(xymoncmd, 1024 + strlen(hostre));
 
 	sres = newsendreturnbuf(1, NULL);
-	snprintf(xymoncmd, xymoncmd_buflen, "xymondboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
+	snprintf(xymoncmd, xymoncmd_buflen, "xymondboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostre);
+	xfree(hostre);
 	if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		return 1;
 	}

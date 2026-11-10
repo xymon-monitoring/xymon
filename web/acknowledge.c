@@ -264,17 +264,16 @@ int main(int argc, char *argv[])
 
 			if (obeycookies && !gotfilter && ((hostname = get_cookie("host")) != NULL)) {
 				if (*hostname) {
-					pcre2_code *dummy;
-					SBUF_DEFINE(re);
+					/*
+					 * The cookie is the name of the host page the viewer came
+					 * from, not a pattern: "." must match only a dot.
+					 */
+					char *re = cgi_hostregex(hostname);
 
-					SBUF_MALLOC(re, 3+strlen(hostname));
-					snprintf(re, re_buflen, "^%s$", hostname);
-					dummy = compileregex(re);
-					if (dummy) {
-						/* Valid expression */
-						freeregex(dummy);
+					if (re) {
 						SBUF_REALLOC(cmd, 1024 + strlen(cmd) + strlen(re));
-						snprintf(cmd + strlen(cmd), cmd_buflen - strlen(cmd), " host=%s", re);
+						snprintf(cmd + strlen(cmd), cmd_buflen - strlen(cmd), " host=^%s$", re);
+						xfree(re);
 						gotfilter = 1;
 					}
 					else {
