@@ -16,6 +16,17 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+xymond -- a message line starting with "@@" is passed on as text
+----------------------------------------------------------------
+
+xymond frames the records it passes to its workers with lines starting with
+"@@". A line of a message -- a status, client data, a page or a note -- that
+started with "@@" was passed through as such a line; it now starts with "@ "
+instead, so it stays inside the message. One visible effect: a client data
+section showing a unified diff, whose hunk headers read "@@ -12,7 +12,8 @@",
+now reaches the server as "@ -12,7 ...", so a client-local.cfg LOG rule
+matching "^@@" no longer matches it. Nothing else to change on upgrade.
+
 showgraph -- the host names are checked, and the cache-flush is bounded
 -----------------------------------------------------------------------
 

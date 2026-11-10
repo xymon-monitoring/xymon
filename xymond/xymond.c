@@ -1033,6 +1033,24 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 			break;
 		}
 	}
+	/*
+	 * To the workers, a line that starts with "@@" frames a record -- it
+	 * ends one or starts the next -- and only xymond's own first line and
+	 * the terminator below may do that. What follows the first line was
+	 * copied in from outside (a status text, client data, a page or a
+	 * note); a line of it starting with "@@" now starts with "@ " instead,
+	 * the same length, so the bounds above still hold and only xymond's
+	 * own framing lines begin with "@@".
+	 */
+	{
+		char *p = strchr(channel->channelbuf, '\n');
+
+		while (p && ((p = strstr(p, "\n@@")) != NULL)) {
+			*(p+2) = ' ';
+			p += 3;
+		}
+	}
+
 	/* Terminate the message */
 	strncat(channel->channelbuf, "\n@@\n", (bufsz-1));
 
