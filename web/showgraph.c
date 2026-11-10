@@ -238,6 +238,15 @@ void parse_query(void)
 
 			hostname = strtok_r(cwalk->value, ",", &stp);
 			while (hostname) {
+				/*
+				 * The RRD files are found under the host's name, so each
+				 * name must be a plain path component.
+				 */
+				char *safehost = cgi_pathcomponent(hostname, 0);
+
+				if (!safehost) errormsg("Invalid host name");
+				xfree(safehost);
+
 				if (hostlist == NULL) {
 					hostlistsize = 1;
 					hostlist = (char **)malloc(sizeof(char *));
