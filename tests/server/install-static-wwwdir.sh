@@ -35,6 +35,9 @@ ROOT=$(find_root)
 PATH=$PATH:/usr/sbin:/sbin
 require_gnu_make
 require_bin XYMOND xymond/xymond
+# It installs with the tree's own Makefile, which a CMake or packaged build
+# does not have, though XYMOND may point at one of its binaries.
+[ -f "$ROOT/Makefile" ] || skip "tree not configured (no Makefile)"
 
 work=$(mktempdir)
 
@@ -45,7 +48,7 @@ install_vars() {
 		"XYMONUSER=$(id -un)" "HTTPDGID=$(id -gn)" \
 		"XYMONTOPDIR=$d/top" "XYMONHOME=$d/top/server" "XYMONVAR=$d/var" \
 		"CGIDIR=$d/top/cgi-bin" "SECURECGIDIR=$d/top/cgi-secure" \
-		"XYMONLOGDIR=$d/log" "MANROOT=$d/man" \
+		"XYMONLOGDIR=$d/log" "XYMONRUNDIR=$d/run" "MANROOT=$d/man" \
 		"INSTALLBINDIR=$d/top/server/bin" "INSTALLETCDIR=$d/etc" \
 		"INSTALLEXTDIR=$d/top/server/ext" "INSTALLTMPDIR=$d/var/tmp" \
 		"INSTALLWEBDIR=$d/etc/web" "INSTALLWWWDIR=$d/var/www"

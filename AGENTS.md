@@ -62,10 +62,11 @@ someone else's pull request, you report what you ran to its author instead.
   beside it, as `tests/rrd/*-harness.c` do — and `tests/final/` is held back by
   the runner and executed after everything else, because it checks what a whole
   run left behind.
-- Building is not `./configure && make`: `configure` asks fourteen questions and
-  refuses to run again while a `Makefile` exists. For a non-interactive build,
-  copy the recipe in `.github/workflows/build.yml`, which sets the answers as
-  environment variables. `./tests/testsuite` runs the suite.
+- Building is not `./configure && make`: `configure` asks over a dozen
+  questions and refuses to run again while a `Makefile` exists. For a
+  non-interactive build, copy the recipe in `.github/workflows/build.yml`,
+  which sets the answers as environment variables. `./tests/testsuite` runs
+  the suite.
 - A tool's private memory holds only what does not belong to the project:
   private data such as non-secret access details, one person's working
   preferences, and facts about that person's own machine that would change

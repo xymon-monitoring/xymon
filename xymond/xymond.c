@@ -254,6 +254,12 @@ typedef struct conn_t {
  * refused. IDLE_PRESSURE is a quarter of the 1024 descriptors select()
  * handles; IDLE_PER_SENDER keeps the senders needed to fill the rest at
  * (1024 - IDLE_PRESSURE) / IDLE_PER_SENDER, about 48.
+ *
+ * select() handles FD_SETSIZE descriptors and not one more: FD_SET on a
+ * larger number writes past the set, and select() then fails with EBADF,
+ * which ends xymond. A connection whose descriptor is at or above it is
+ * refused at accept() instead. The build asks every platform for 1024
+ * (build/Makefile.NetBSD, where the default is 256).
  */
 #define IDLE_FIRSTBYTE 5
 #define IDLE_PRESSURE 256
@@ -6702,7 +6708,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_OPENSSL
 		tlsctx = tls_load();
 		if (!tlsctx) return 1;
-		tls_log_settings("loaded");
+		/* The settings are logged below, once stderr is the log file. */
 #else
 		errprintf("--tls-listen: this xymond was built without OpenSSL\n");
 		return 1;
@@ -6774,15 +6780,19 @@ int main(int argc, char *argv[])
 	}
 
 	if (pidfile == NULL) {
-		/* Setup a default pid-file */
+		/* Setup a default pid-file: in the runtime directory, where the
+		   shipped tasks.cfg puts it and where xymon.sh looks for it.
+		   Bounded, XYMONRUNDIR being configured. */
 		char fn[PATH_MAX];
 
-		sprintf(fn, "%s/xymond.pid", xgetenv("XYMONSERVERLOGS"));
-		pidfile = strdup(fn);
+		if (snprintf(fn, sizeof(fn), "%s/xymond.pid", xymon_rundir()) >= (int)sizeof(fn)) {
+			errprintf("Default pidfile path does not fit under XYMONRUNDIR, no pidfile written\n");
+		}
+		else pidfile = strdup(fn);
 	}
 
-	/* Save PID */
-	{
+	/* Save PID, unless the default path did not fit (pidfile is NULL). */
+	if (pidfile) {
 		FILE *fd = fopen(pidfile, "w");
 		if (fd) {
 			if (fprintf(fd, "%lu\n", (unsigned long)getpid()) <= 0) {
@@ -6845,6 +6855,13 @@ int main(int argc, char *argv[])
 	 * points at the log, so startup warnings land there and not just on the
 	 * launching terminal -- matching the reload path. */
 	warn_unreachable_hostnames();
+
+#ifdef HAVE_OPENSSL
+	/* Loaded above, before the listeners; logged here, as the reload path
+	 * logs it, so the line is in the --log file and not in whatever stderr
+	 * xymond was started with. */
+	if (tlsctx) tls_log_settings("loaded");
+#endif
 
 	if (ackinfologfn) {
 		ackinfologfd = fopen(ackinfologfn, "a");
@@ -7270,6 +7287,23 @@ int main(int argc, char *argv[])
 				sock = accept(listeners[li].fd, (struct sockaddr *)&addr, &addrsz);
 				if (sock < 0) break;	/* EAGAIN: nothing more waiting, or an error */
 
+				/* A descriptor select() cannot hold is refused, not FD_SET */
+				if (sock >= FD_SETSIZE) {
+					static time_t lastlog = 0;
+					static int refused = 0;
+					char text[IP_ADDR_STRLEN];
+
+					refused++;
+					if (now >= lastlog + 60) {
+						errprintf("Refused %d connection(s) from %s: descriptor %d is beyond what select() handles (FD_SETSIZE %d)\n",
+							  refused, sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), sock, (int)FD_SETSIZE);
+						lastlog = now;
+						refused = 0;
+					}
+					close(sock);
+					continue;
+				}
+
 				/* The cap on silent connections, for each connection taken */
 				idlemine = idle_from(connhead, (struct sockaddr *)&addr, &idleall);
 				if ((idleall >= IDLE_PRESSURE) && (idlemine >= IDLE_PER_SENDER)) {
@@ -7336,7 +7370,8 @@ int main(int argc, char *argv[])
 	if (bf_buf) xfree(bf_buf);
 
 	save_checkpoint();
-	unlink(pidfile);
+	/* pidfile is NULL when the default path did not fit. */
+	if (pidfile) unlink(pidfile);
 
 	if (dbgfd) fclose(dbgfd);
 

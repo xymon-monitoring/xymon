@@ -29,13 +29,13 @@ asan_usable || skip "$CC cannot build and run ASan binaries"
 build_xymon_libs "$ROOT" "$WORK/libbuild.log" libxymoncomm.a
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
-pcre_libs=$(sed -n 's/^PCRELIBS *= *//p' "$ROOT/Makefile")
+pcre_libs=$(xymon_makevar "$ROOT" PCRELIBS)
 [ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
 # shellcheck disable=SC2086
 "$CC" $harness_cflags -fsanitize=address -o "$WORK/harness" \
 	"$(dirname "$0")/protocols-escaped-lengths.c" \
-	"$ROOT/lib/libxymoncomm.a" $pcre_libs $harness_ldflags 2>"$WORK/cc.log" \
+	"$(xymon_lib "$ROOT" libxymoncomm.a)" $pcre_libs $harness_ldflags 2>"$WORK/cc.log" \
 	|| { cat "$WORK/cc.log" >&2; fail "the harness does not compile"; }
 
 mkdir -p "$WORK/etc"

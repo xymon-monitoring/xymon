@@ -23,14 +23,14 @@ require_c_buildenv "$ROOT"
 work=$(mktempdir)
 
 pcre_libs=${PCRELIBS:-}
-[ -n "$pcre_libs" ] || pcre_libs=$(sed -n 's/^PCRELIBS *= *//p' "$ROOT/Makefile")
+[ -n "$pcre_libs" ] || pcre_libs=$(xymon_makevar "$ROOT" PCRELIBS)
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 
 # shellcheck disable=SC2086  # flag lists are meant to split
 "$CC" $harness_cflags -o "$work/harness" \
 	"$ROOT/tests/web/reportlog-event-count-harness.c" \
-	"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
+	"$(xymon_lib "$ROOT" libxymon.a)" "$(xymon_lib "$ROOT" libxymoncomm.a)" "$(xymon_lib "$ROOT" libxymon.a)" \
 	$pcre_libs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "the reportlog harness does not build"; }
 

@@ -71,7 +71,6 @@ jobs:
           USEXYMONPING=y \
           ENABLESSL=y \
           ENABLELDAP=y \
-          ENABLELDAPSSL=y \
           XYMONUSER=xymon \
           XYMONTOPDIR=/usr/lib/xymon \
           XYMONVAR=/var/lib/xymon \
@@ -82,6 +81,7 @@ jobs:
           SECUREXYMONCGIURL=/xymon-seccgi \
           HTTPDGID=www-data \
           XYMONLOGDIR=/var/log/xymon \
+          XYMONRUNDIR=/run/xymon \
           XYMONHOSTNAME=localhost \
           XYMONHOSTIP=127.0.0.1 \
           MANROOT=/usr/share/man \

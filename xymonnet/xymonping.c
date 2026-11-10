@@ -245,7 +245,11 @@ void load_ips(int argc, char *argv[], FILE *fd)
 }
 
 
-/* This is the data we send with each ping packet */
+/* This is the data we send with each ping packet. It sits right after the
+ * ICMP header -- offset sizeof(struct icmp) for IPv4 -- which need not suit
+ * its alignment (it holds a struct timespec), so it is copied in and out
+ * with memcpy() rather than accessed through a cast pointer: a
+ * strict-alignment CPU such as SPARC faults on the misaligned access. */
 typedef struct pingdata_t {
 	int id;				/* ID for the host this belongs to */
 	struct timespec timesent;	/* time we sent this ping */
@@ -257,7 +261,7 @@ int send_ping(int startidx, int minresponses)
 	static unsigned char buffer[PING_PACKET_SIZE];
 	struct icmp *icmphdr;
 	struct icmp6_hdr *icmp6hdr;
-	struct pingdata_t *pingdata;
+	struct pingdata_t pingdata;
 	int sentbytes, sock;
 	int idx = startidx;
 
@@ -285,6 +289,9 @@ int send_ping(int startidx, int minresponses)
 
 	/* Build the packet and send it */
 	memset(buffer, 0, PING_PACKET_SIZE);
+	memset(&pingdata, 0, sizeof(pingdata));	/* no stack bytes in the padding on the wire */
+	pingdata.id = idx;
+	getntimer(&pingdata.timesent);
 
 	if (hosts[idx]->family == AF_INET6) {
 		/* The kernel computes the ICMPv6 checksum on a raw socket */
@@ -295,9 +302,7 @@ int send_ping(int startidx, int minresponses)
 		icmp6hdr->icmp6_seq = htons(idx+1);	/* So we can map response to our hosts */
 		icmp6hdr->icmp6_id = htons(myicmpid);
 
-		pingdata = (struct pingdata_t *)(buffer + sizeof(struct icmp6_hdr));
-		pingdata->id = idx;
-		getntimer(&pingdata->timesent);
+		memcpy(buffer + sizeof(struct icmp6_hdr), &pingdata, sizeof(pingdata));
 	}
 	else {
 		icmphdr = (struct icmp *)buffer;
@@ -307,9 +312,7 @@ int send_ping(int startidx, int minresponses)
 		icmphdr->icmp_seq = htons(idx+1);	/* So we can map response to our hosts */
 		icmphdr->icmp_id = htons(myicmpid);
 
-		pingdata = (struct pingdata_t *)(buffer + sizeof(struct icmp));
-		pingdata->id = idx;
-		getntimer(&pingdata->timesent);
+		memcpy(buffer + sizeof(struct icmp), &pingdata, sizeof(pingdata));
 
 		icmphdr->icmp_cksum = calc_icmp_checksum((unsigned short *)buffer, PING_PACKET_SIZE);
 	}
@@ -347,7 +350,7 @@ int get_response(int sock, int family)
 	struct icmp *icmphdr;
 	struct icmp6_hdr *icmp6hdr;
 	int reply_type, reply_id, echoreply;
-	struct pingdata_t *pingdata;
+	struct pingdata_t pingdata;
 	int hostidx;
 	struct timespec rtt;
 
@@ -421,11 +424,11 @@ int get_response(int sock, int family)
 				pktcount++;
 				hosts[hostidx]->received += 1;
 
-				pingdata = (struct pingdata_t *)(buffer + iphdrlen + icmphdrlen);
+				memcpy(&pingdata, buffer + iphdrlen + icmphdrlen, sizeof(pingdata));
 
 				/* Calculate the round-trip time. */
-				rtt.tv_sec -= pingdata->timesent.tv_sec;
-				rtt.tv_nsec -= pingdata->timesent.tv_nsec;
+				rtt.tv_sec -= pingdata.timesent.tv_sec;
+				rtt.tv_nsec -= pingdata.timesent.tv_nsec;
 				if (rtt.tv_nsec < 0) {
 					rtt.tv_sec--;
 					rtt.tv_nsec += 1000000000;

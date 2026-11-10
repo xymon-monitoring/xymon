@@ -24,6 +24,10 @@ display a multi-host graph for each type where the graphs for all
 hosts are overlayed in a single image, allowing for easy comparison
 of the hosts.
 
+A host without the trend data a graph is drawn from is left out of that
+graph, and a graph none of the selected hosts has data for is shown empty;
+see showgraph.cgi(1).
+
 The hostlist uses the PAGEPATH cookie provided by Xymon webpages to
 select the list of hosts to present. Only the hosts visible on the
 page where hostgraph.cgi is invoked from will be visible.
@@ -38,14 +42,11 @@ Loads the environment defined in FILENAME before executing the CGI script.
 .SH BUGS
 This utility is experimental. It may change in a future release of Xymon.
 
-It is possible for the user to select graphs which do not exist. This results
-in broken image links.
-
 The set of graph-types is fixed in the server/web/hostgraphs_form template
 and does not adjust to which graphs are available.
 
 If the tool is invoked directly, all hosts defined in Xymon will be listed.
 
 .SH "SEE ALSO"
-hosts.cfg(5), xymonserver.cfg(5)
+hosts.cfg(5), xymonserver.cfg(5), showgraph.cgi(1)
 

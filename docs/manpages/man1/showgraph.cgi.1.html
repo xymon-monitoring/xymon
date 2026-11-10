@@ -33,7 +33,11 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
 <p class="Pp"></p>
 <dl class="Bl-tag">
   <dt id="host"><a class="permalink" href="#host"><b>host</b></a></dt>
-  <dd>Name of the host to generate a graph for</dd>
+  <dd>Name of the host to generate a graph for. A comma-separated list of hosts
+      draws one graph comparing them, from the graph's &quot;-multi&quot;
+      definition in <a href="../man5/graphs.cfg.5.html">graphs.cfg</a>(5). A host without that definition's RRD file is
+      left out of the graph; when no host has it, the graph is a blank
+    image.</dd>
   <dt id="service"><a class="permalink" href="#service"><b>service</b></a></dt>
   <dd>Name of the service to generate a graph for</dd>
   <dt id="disp"><a class="permalink" href="#disp"><b>disp</b></a></dt>

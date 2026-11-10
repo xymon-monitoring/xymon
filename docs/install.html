@@ -110,7 +110,7 @@ gives the current code.</p>
 <tr><td>Debian, Ubuntu</td><td><tt>apt-get install xymon</tt> (server) or <tt>xymon-client</tt></td></tr>
 <tr><td>FreeBSD</td><td>ports <tt>net-mgmt/xymon-server</tt> and <tt>net-mgmt/xymon-client</tt></td></tr>
 <tr><td>NetBSD</td><td>pkgsrc <tt>net/xymon</tt></td></tr>
-<tr><td>Red Hat Enterprise Linux and its rebuilds 8 to 10, x86_64</td><td><a href="https://github.com/xymon-monitoring/xymon-rpm">xymon-rpm</a>: highly experimental, not for production yet; see its README</td></tr>
+<tr><td>Red Hat Enterprise Linux and its rebuilds 8 to 10, and Fedora 43 and 44, x86_64</td><td><a href="https://github.com/xymon-monitoring/xymon-rpm">xymon-rpm</a>: highly experimental, not for production yet; see its README</td></tr>
 <tr><td>macOS</td><td>the Homebrew tap, below</td></tr>
 </table>
 <h4><a name="commonmacoshomebrew">macOS (Apple Silicon and Intel) using Homebrew</a></h4>
@@ -119,8 +119,8 @@ gives the current code.</p>
 which provides a full server formula and a lighter client-only formula:</p>
 <pre><tt>
 brew tap xymon-monitoring/xymon
-brew install --HEAD xymon-monitoring/xymon/xymon-server     # full server
-brew install --HEAD xymon-monitoring/xymon/xymon-client     # client only
+brew install xymon-monitoring/xymon/xymon-server     # full server
+brew install xymon-monitoring/xymon/xymon-client     # client only
 </tt></pre>
 <p>and run it under launchd with:</p>
 <pre><tt>
@@ -131,9 +131,9 @@ ends up in <tt>$(brew --prefix)/opt/xymon-server/server</tt>) and provide a
 launchd service. They do <i>not</i> create a dedicated "xymon" user or
 configure a webserver - edit <tt>etc/hosts.cfg</tt> (server) or the XYMSRV
 setting in <tt>etc/xymonclient.cfg</tt> (client), and set up the web frontend
-as described in the "Configuring your webserver" section above. As no Xymon
-release tarballs are published yet, the formulas are <tt>--HEAD</tt>-only and
-build the latest Git revision; see the
+as described in the "Configuring your webserver" section above. The formulas
+install the latest release; with <tt>--HEAD</tt> they build the latest
+revision of "main" instead &mdash; see the
 <a href="https://github.com/xymon-monitoring/homebrew-xymon">tap README</a>
 for how to upgrade a HEAD install. The SYSV IPC requirements described in the
 prerequisites apply on macOS too, where the stock limits are too low for xymond;
@@ -155,8 +155,8 @@ on Intel Macs), including the keg-only openssl@3 and openldap packages which
 Homebrew does not symlink into the main prefix; MacPorts (/opt/local) is
 detected as well.</p>
 
-<p><b>Testing a development branch or pull request:</b> the formulas always
-build the "main" branch. To build a feature branch instead (e.g. to test a
+<p><b>Testing a development branch or pull request:</b> a <tt>--HEAD</tt>
+install builds the "main" branch. To build a feature branch instead (e.g. to test a
 pending pull request on a Mac), point the <tt>head</tt> stanza of your local
 tap checkout at that branch and rebuild:</p>
 <pre><tt>

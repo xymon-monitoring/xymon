@@ -59,13 +59,12 @@ CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 require_gnu_make
 
-[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$ROOT/include/config.h" ] && [ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktempdir)
 
-"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
 pcre_libs=${PCRELIBS:-}
 if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
@@ -77,7 +76,7 @@ harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -iquote "$ROOT/xymond" -o "$work/harness" \
 	"$here/analysis-ds-firstmatch-harness.c" "$CLIENT_CONFIG_C" \
-	"$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
+	"$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 cat >"$work/hosts.cfg" <<'EOF'
