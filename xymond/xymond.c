@@ -6702,7 +6702,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_OPENSSL
 		tlsctx = tls_load();
 		if (!tlsctx) return 1;
-		tls_log_settings("loaded");
+		/* The settings are logged below, once stderr is the log file. */
 #else
 		errprintf("--tls-listen: this xymond was built without OpenSSL\n");
 		return 1;
@@ -6849,6 +6849,13 @@ int main(int argc, char *argv[])
 	 * points at the log, so startup warnings land there and not just on the
 	 * launching terminal -- matching the reload path. */
 	warn_unreachable_hostnames();
+
+#ifdef HAVE_OPENSSL
+	/* Loaded above, before the listeners; logged here, as the reload path
+	 * logs it, so the line is in the --log file and not in whatever stderr
+	 * xymond was started with. */
+	if (tlsctx) tls_log_settings("loaded");
+#endif
 
 	if (ackinfologfn) {
 		ackinfologfd = fopen(ackinfologfn, "a");
