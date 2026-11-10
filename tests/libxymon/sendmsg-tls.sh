@@ -36,6 +36,7 @@ set -euo pipefail
 ROOT=$(find_root)
 require_cc
 require_bin XYMON common/xymon
+xymon_ssl_known "$ROOT" || skip "cannot tell whether this build has OpenSSL: no top-level Makefile, and XYMON_SSLCFLAGS is not set"
 sslcflags=$(xymon_sslcflags "$ROOT")
 case $sslcflags in
 *HAVE_OPENSSL*) ;;

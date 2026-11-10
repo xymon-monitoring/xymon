@@ -20,6 +20,8 @@ set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
 
 require_gnu_make
+# This tests the function itself: the run's own override must not answer for it.
+unset XYMON_SSLCFLAGS
 
 work=$(mktempdir)
 
@@ -44,4 +46,16 @@ esac
 	|| fail "a tree configured without OpenSSL variables gave harness flags anyway: '$nossl'"
 [ -z "$unconfigured" ] || fail "an unconfigured tree gave harness flags: '$unconfigured'"
 
-pass "xymon_sslcflags carries SSLFLAGS and SSLINCDIR, and none of CFLAGS"
+# A build with no Makefile gives its flags itself; given, they win over the tree.
+given=$(XYMON_SSLCFLAGS=-DHAVE_OPENSSL xymon_sslcflags "$work/unconfigured")
+assert_equal "-DHAVE_OPENSSL" "$given" "XYMON_SSLCFLAGS on a tree with no Makefile"
+given=$(XYMON_SSLCFLAGS='' xymon_sslcflags "$work/macos")
+assert_equal "" "$given" "an empty XYMON_SSLCFLAGS over a configured tree"
+xymon_ssl_known "$work/macos" || fail "xymon_ssl_known: a configured tree could not tell"
+if xymon_ssl_known "$work/unconfigured"; then
+	fail "xymon_ssl_known: a tree with no Makefile and no XYMON_SSLCFLAGS claimed to tell"
+fi
+XYMON_SSLCFLAGS='' xymon_ssl_known "$work/unconfigured" \
+	|| fail "xymon_ssl_known: XYMON_SSLCFLAGS given, even empty, could not tell"
+
+pass "xymon_sslcflags carries SSLFLAGS and SSLINCDIR, and none of CFLAGS; XYMON_SSLCFLAGS answers for a build with no Makefile"

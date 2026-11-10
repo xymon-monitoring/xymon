@@ -31,6 +31,7 @@ require_cc
 commlib=$ROOT/lib/libxymoncomm.a
 [ -f "$commlib" ] || commlib=$ROOT/lib/libxymonclientcomm.a
 [ -f "$commlib" ] || skip "neither lib/libxymoncomm.a nor lib/libxymonclientcomm.a is built"
+xymon_ssl_known "$ROOT" || skip "cannot tell whether this build has OpenSSL: no top-level Makefile, and XYMON_SSLCFLAGS is not set"
 sslcflags=$(xymon_sslcflags "$ROOT")
 case $sslcflags in *HAVE_OPENSSL*) ;; *) skip "this build has no OpenSSL" ;; esac
 

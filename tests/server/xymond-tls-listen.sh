@@ -78,6 +78,7 @@ stop() { [ -n "$MLPID" ] || return 0; kill "$MLPID" 2>/dev/null || true; wait "$
 register_cleanup 'stop'
 
 # tls RECIPIENT MESSAGE [VAR=VALUE...] -- the xymon client over TLS, trusting the test CA
+xymon_ssl_known "$ROOT" || skip "cannot tell whether this build has OpenSSL: no top-level Makefile, and XYMON_SSLCFLAGS is not set"
 sslcflags=$(xymon_sslcflags "$ROOT")
 case $sslcflags in
 *HAVE_OPENSSL*) ;;
@@ -86,6 +87,8 @@ case $sslcflags in
 	pass "a xymond built without OpenSSL refuses --tls-listen" ;;
 esac
 
+# The harness links the tree's own archive, which only a make build writes.
+[ -f "$ROOT/lib/libxymoncomm.a" ] || skip "lib/libxymoncomm.a is not built"
 # shellcheck disable=SC2046,SC2086  # flag lists, split on purpose
 "$CC" $(xymon_cflags "$ROOT") $sslcflags -iquote "$ROOT/lib" -o "$work/harness" \
 	"$(dirname "$0")/xymond-tls-listen-harness.c" "$ROOT/lib/libxymoncomm.a" \

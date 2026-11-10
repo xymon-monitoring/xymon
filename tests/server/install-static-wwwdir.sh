@@ -35,6 +35,9 @@ ROOT=$(find_root)
 PATH=$PATH:/usr/sbin:/sbin
 require_gnu_make
 require_bin XYMOND xymond/xymond
+# It installs with the tree's own Makefile, which a CMake or packaged build
+# does not have, though XYMOND may point at one of its binaries.
+[ -f "$ROOT/Makefile" ] || skip "tree not configured (no Makefile)"
 
 work=$(mktempdir)
 
