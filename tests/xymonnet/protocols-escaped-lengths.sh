@@ -29,7 +29,7 @@ asan_usable || skip "$CC cannot build and run ASan binaries"
 build_xymon_libs "$ROOT" "$WORK/libbuild.log" libxymoncomm.a
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
-pcre_libs=$(sed -n 's/^PCRELIBS *= *//p' "$ROOT/Makefile")
+pcre_libs=$(xymon_makevar "$ROOT" PCRELIBS)
 [ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
 # shellcheck disable=SC2086

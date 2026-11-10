@@ -44,7 +44,7 @@ printf 'int main(void) { return 0; }\n' > "$work/probe.c"
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 pcre_libs=${PCRELIBS:-}
-[ -n "$pcre_libs" ] || [ ! -f "$ROOT/Makefile" ] || pcre_libs=$(sed -n 's/^PCRELIBS *= *//p' "$ROOT/Makefile")
+[ -n "$pcre_libs" ] || [ ! -f "$ROOT/Makefile" ] || pcre_libs=$(xymon_makevar "$ROOT" PCRELIBS)
 if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 	pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
 fi

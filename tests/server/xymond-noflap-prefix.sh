@@ -43,8 +43,7 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-noflap-prefix.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 require_gnu_make
-"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
 # Tags are spelled lowercase, as hosts.cfg(5) documents them, even though the
 # key table in lib/loadhosts.c stores them upper-case.

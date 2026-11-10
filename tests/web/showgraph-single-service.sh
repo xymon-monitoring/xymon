@@ -27,13 +27,13 @@ require_gnu_make
 
 # RRD and SSL build flags as configure detected them (SSLLIBS is empty
 # on a tree built without SSL - don't force -lssl on such a link)
-rrddef=$(sed -n 's/^RRDDEF *= *//p' "$ROOT/Makefile")
+rrddef=$(xymon_makevar "$ROOT" RRDDEF)
 # Where <rrd.h> lives, as configure found it: nothing on Linux, but
 # -I/usr/local/include or -I/opt/homebrew/include on the BSDs and macOS. The
 # product Makefiles pass it for every RRD-using object; without it this test
 # fails to compile on a host that builds Xymon perfectly well.
-rrdinc=$(sed -n 's/^RRDINCDIR *= *//p' "$ROOT/Makefile")
-rrdlibs=$(sed -n 's/^RRDLIBS *= *//p' "$ROOT/Makefile")
+rrdinc=$(xymon_makevar "$ROOT" RRDINCDIR)
+rrdlibs=$(xymon_makevar "$ROOT" RRDLIBS)
 [ -n "$rrdlibs" ] || rrdlibs="-lrrd"
 
 pcre_libs=${PCRELIBS:-}
@@ -45,8 +45,7 @@ fi
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-showgraph.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
-"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
