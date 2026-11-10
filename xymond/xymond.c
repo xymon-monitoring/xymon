@@ -6313,6 +6313,29 @@ static int listener_count = 0;
 static int maxconnections = 0;		/* Connections open at once, at most; see MAXCONNECTIONS_RESERVE */
 static int conncount = 0;		/* Connections in the connhead list, dead ones included until purged */
 
+/*
+ * Refused connections are logged at most once a minute, so the log does not
+ * become the next thing to flood: the first at once, then how many came
+ * since, with the latest one's sender and reason. A count still held when the
+ * minute is up is logged from the main loop, so a burst that stops is still
+ * reported in full.
+ */
+typedef struct refusallog_t {
+	time_t lastlog;
+	int count;
+	char detail[256];	/* "from SENDER: reason", of the latest refusal */
+} refusallog_t;
+static refusallog_t refused_limit, refused_idle;
+
+static void refusal_flush(refusallog_t *r, time_t now)
+{
+	if (r->count && (now >= r->lastlog + 60)) {
+		errprintf("Refused %d connection(s) %s\n", r->count, r->detail);
+		r->lastlog = now;
+		r->count = 0;
+	}
+}
+
 /* The poll() array, grown to the connections of the pass; listeners take the first slots */
 static struct pollfd *pollfds = NULL;
 static int pollfds_size = 0;
@@ -7137,6 +7160,10 @@ int main(int argc, char *argv[])
 			check_purple_status();
 		}
 
+		/* Refusals held back since the last log line, once their minute is up */
+		refusal_flush(&refused_limit, now);
+		refusal_flush(&refused_idle, now);
+
 		if ((last_stats_time + statsinterval) <= now) {
 			char *buf;
 			xymond_hostlist_t *h;
@@ -7413,17 +7440,13 @@ int main(int argc, char *argv[])
 
 				/* The connection limit: refused at the door, logged at most once a minute */
 				if (conncount >= maxconnections) {
-					static time_t lastlog = 0;
-					static int refused = 0;
 					char text[IP_ADDR_STRLEN];
 
-					refused++;
-					if (now >= lastlog + 60) {
-						errprintf("Refused %d connection(s) from %s: %d connections are open, the limit (XYMOND_MAXCONNECTIONS)\n",
-							  refused, sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), conncount);
-						lastlog = now;
-						refused = 0;
-					}
+					refused_limit.count++;
+					snprintf(refused_limit.detail, sizeof(refused_limit.detail),
+						 "from %s: %d connections are open, the limit (XYMOND_MAXCONNECTIONS)",
+						 sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), conncount);
+					refusal_flush(&refused_limit, now);
 					close(sock);
 					continue;
 				}
@@ -7431,18 +7454,13 @@ int main(int argc, char *argv[])
 				/* The cap on silent connections, for each connection taken */
 				idlemine = idle_from(connhead, (struct sockaddr *)&addr, &idleall);
 				if ((idleall >= IDLE_PRESSURE) && (idlemine >= IDLE_PER_SENDER)) {
-					static time_t lastlog = 0;
-					static int refused = 0;
 					char text[IP_ADDR_STRLEN];
 
-					/* Logged at most once a minute: the log must not become the next thing to flood */
-					refused++;
-					if (now >= lastlog + 60) {
-						errprintf("Refused %d connection(s) from %s: %d open connections have sent nothing yet, %d of them from it\n",
-							  refused, sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), idleall, idlemine);
-						lastlog = now;
-						refused = 0;
-					}
+					refused_idle.count++;
+					snprintf(refused_idle.detail, sizeof(refused_idle.detail),
+						 "from %s: %d open connections have sent nothing yet, %d of them from it",
+						 sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), idleall, idlemine);
+					refusal_flush(&refused_idle, now);
 					close(sock);
 					continue;
 				}
