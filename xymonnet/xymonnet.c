@@ -1117,8 +1117,29 @@ void run_ntp_service(service_t *service)
 		for (t=service->items; (t); t = t->next) {
 			/* Skip hosts that do not resolve or are down */
 			if (!t->host->dnserror && !t->host->pingerror) {
-				t->open = (ntp_internal_probe(ip_to_test(t->host), t->srcip,
-							      0, t->banner, NULL) == 0);	/* 0 = probe's own retry budget */
+				char *ip = ip_to_test(t->host), *srcip = t->srcip;
+				char srctext[NI_MAXHOST];
+				struct sockaddr_storage src;
+
+				/*
+				 * The --source-ip= default is for tests of its own family,
+				 * as for TCP tests; a test's own "@ADDRESS" is bound as
+				 * given, and one of the other family fails the probe. The
+				 * probe gets the address as source_sockaddr() read it, an
+				 * IPv4-mapped one as IPv4, and a scope kept.
+				 */
+				if (srcip && source_sockaddr(srcip, &src)) {
+					if ((srcip == defaultsourceip) && ((src.ss_family == AF_INET6) != (strchr(ip, ':') != NULL)))
+						srcip = NULL;
+					/* IPv4 with inet_ntop(): source_sockaddr() builds it
+					   without the sin_len some getnameinfo() check */
+					else if ((src.ss_family == AF_INET) ?
+						 (inet_ntop(AF_INET, &((struct sockaddr_in *)&src)->sin_addr, srctext, sizeof(srctext)) != NULL) :
+						 (getnameinfo((struct sockaddr *)&src, sizeof(struct sockaddr_in6),
+							      srctext, sizeof(srctext), NULL, 0, NI_NUMERICHOST) == 0))
+						srcip = srctext;
+				}
+				t->open = (ntp_internal_probe(ip, srcip, 0, t->banner, NULL) == 0);	/* 0 = probe's own retry budget */
 			}
 		}
 		return;
@@ -2292,9 +2313,9 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--source-ip=")) {
 			char *p = strchr(argv[argi], '=');
-			struct in_addr aa;
+			struct sockaddr_storage aa;
 			p++;
-			if (inet_aton(p, &aa))
+			if (source_sockaddr(p, &aa))
 				defaultsourceip = strdup(p);
 			else
 				errprintf("Invalid source ip address '%s'\n", argv[argi]);

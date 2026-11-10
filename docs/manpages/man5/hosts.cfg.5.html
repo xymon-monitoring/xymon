@@ -1092,8 +1092,12 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
     specific source IP-address instead of the one your operating system
     provides), you can use the modifier &quot;@IPADDRESS&quot; at the end of the
     test specification, <b>after</b> any other modifiers or port number.
-    &quot;IPADDRESS&quot; must be a valid dotted IP-address (not hostname) which
-    is assigned to the host running the network tests.</p>
+    &quot;IPADDRESS&quot; must be an IPv4 or IPv6 address (not hostname) which
+    is assigned to the host running the network tests; an IPv6 link-local
+    address may carry its scope, as fe80::1%eth0, and an IPv4-mapped one counts
+    as the IPv4 address. For a TCP test, an address of the other family than the
+    one tested is not used, and the default is; for an <b>ntp</b> test run by
+    the built-in probe it fails the test.</p>
 <p class="Pp">The name of the test also determines the column name that the test
     result will appear with in the Xymon webpages.</p>
 <p class="Pp">By prefixing a test with &quot;!&quot; it becomes a reverse test:

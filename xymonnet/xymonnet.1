@@ -175,8 +175,11 @@ valid.
 .IP "\fB\-\-source\-ip\fR=\fIIPADDRESS\fR"
 On multi-homed hosts, this option can be used to explicitly
 select the source IP address used for the network tests.
-"IPADDRESS" must be a valid IP-address on the host running
-xymonnet.
+"IPADDRESS" must be a valid IPv4 or IPv6 address on the host running
+xymonnet. It is used for the tests of hosts with an address of the same
+family, the built-in \fBntp\fR probe's included; the others use the
+default. Tests run by an external command, such as NTPDATE or the ping
+tool, do not use it.
 
 .IP "\fB\-\-loadhostsfromxymond\fR"
 Instead of reading the hosts.cfg file, xymonnet will load the
