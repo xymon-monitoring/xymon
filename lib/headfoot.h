@@ -26,6 +26,7 @@ extern void sethostenv_critack(int prio, char *ttgroup, char *ttextra, char *inf
 extern void sethostenv_critedit(char *updinfo, int prio, char *group, time_t starttime, time_t endtime, char *crittime, char *extra);
 extern void sethostenv_critclonelist_clear(void);
 extern void sethostenv_critclonelist_add(char *hostname);
+extern void sethostenv_critedit_lists(char *hostoptions, char *svcfield, char *records);
 extern void sethostenv_pagepath(char *s);
 extern void sethostenv_backsecs(int seconds);
 extern void sethostenv_eventtime(time_t starttime, time_t endtime);

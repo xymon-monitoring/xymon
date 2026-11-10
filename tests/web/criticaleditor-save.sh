@@ -50,7 +50,8 @@ edit() {	# QUERY_STRING [config file]
 		HOSTSCFG="!$work/etc/hosts.cfg" \
 		"$work/criticaleditor" --config="${2:-$work/etc/critical.cfg}" 2>/dev/null) \
 		|| fail "criticaleditor failed (rc $?) for '$1'"
-	HOST=$(sed -n 's/.*NAME="HOSTNAME"[^>]*VALUE="\([^"]*\)".*/\1/p' <<<"$OUT")
+	# the host pull-down's selected entry; the test is a text box here (no xymond)
+	HOST=$(sed -n '/NAME="HOSTNAME"/,/<\/SELECT>/s/.*<option value="\([^"]*\)" selected>.*/\1/p' <<<"$OUT")
 	SVC=$(sed -n 's/.*NAME="SERVICE"[^>]*VALUE="\([^"]*\)".*/\1/p' <<<"$OUT")
 }
 

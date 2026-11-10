@@ -1,10 +1,32 @@
 <BR>
 
 <CENTER>
+  <TABLE WIDTH="80%" BORDER=0 CELLSPACING=5 SUMMARY="Critical Systems already configured">
+    <TR BGCOLOR="#000033">
+       <TD>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>On the Critical Systems view now</B></FONT></CENTER>
+       </TD>
+    </TR>
+    <TR>
+       <TD BGCOLOR="#333333">
+       <TABLE BORDER=0 WIDTH="100%" CELLPADDING=3 SUMMARY="Configured critical systems">
+          <TR>
+             <TH ALIGN=LEFT>Host</TH><TH ALIGN=LEFT>Test</TH><TH>Priority</TH>
+             <TH ALIGN=LEFT>Monitored</TH><TH ALIGN=LEFT>Resolver group</TH>
+          </TR>
+          &CRITEDITRECORDS
+       </TABLE>
+       <FONT SIZE="-1">Click a host to edit it.</FONT>
+       </TD>
+    </TR>
+  </TABLE>
+
+  <BR>
+
   <TABLE WIDTH="80%" BORDER=0 CELLSPACING=5 SUMMARY="Critical Systems editor">
     <TR BGCOLOR="#000033">
        <TD COLSPAN=2>
-           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Edit Critical Systems</B></FONT></CENTER>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Add or change a critical system</B></FONT></CENTER>
        </TD>
     </TR>
     <TR>
@@ -13,37 +35,42 @@
        <CENTER>
 
        <FORM METHOD="GET" ACTION="criticaleditor.sh">
-          <TABLE BORDER=0 WIDTH="80%" SUMMARY="Host lookup">
+          <TABLE BORDER=0 WIDTH="90%" SUMMARY="Host and test">
 	     <TR>
-	        <TD>Host:&nbsp;<INPUT NAME="HOSTNAME" TYPE="TEXT" SIZE=30 VALUE="&XYMWEBHOST"></TD>
-		<TD>Test:&nbsp;<INPUT NAME="SERVICE" TYPE="TEXT" SIZE=10 VALUE="&XYMWEBSVC"></TD>
-		<TD>
-		   <INPUT TYPE="SUBMIT" NAME="Find" VALUE="Search" ALT="Find record">
-		   <INPUT TYPE="SUBMIT" NAME="Next" VALUE="Next" ALT="Next record">
+	        <TD>1. Host:&nbsp;
+		   <SELECT NAME="HOSTNAME" onChange="this.form.submit()">
+		   &CRITEDITHOSTLIST
+		   </SELECT>
+		   <INPUT TYPE="SUBMIT" NAME="Find" VALUE="Show" ALT="Show this host">
+		</TD>
+		<TD>2. Test:&nbsp;&CRITEDITSVCFIELD
+		   <INPUT TYPE="SUBMIT" NAME="Next" VALUE="Next configured" ALT="Next configured critical system">
 		</TD>
 	     </TR>
-
+	     <TR>
+	        <TD COLSPAN=2><FONT SIZE="-1">Choose the host, then one of the tests it reports.
+		The settings below are for that one host and test.</FONT></TD>
+	     </TR>
              <TR>
-	        <TD COLSPAN=3 ALIGN=CENTER>Last update by:&nbsp;&CRITEDITUPDINFO</TD>
+	        <TD COLSPAN=2 ALIGN=CENTER>Last changed by:&nbsp;&CRITEDITUPDINFO</TD>
              </TR>
 	  </TABLE>
 
-          <TABLE BORDER=0 WIDTH="100%" SUMMARY="Host definition">
-	     <TR><TD COLSPAN=3><HR WIDTH="100%"></TD></TR>
+          <TABLE BORDER=0 WIDTH="100%" CELLPADDING=4 SUMMARY="Settings">
+	     <TR><TD COLSPAN=2><HR WIDTH="100%"></TD></TR>
              <TR>
+		<TD VALIGN=TOP WIDTH="25%">3. Priority:</TD>
 		<TD>
-		   Priority:&nbsp;
 		   <SELECT NAME="PRIORITY">
 		   &CRITEDITPRIOLIST
 		   </SELECT>
+		   <BR><FONT SIZE="-1">1 = most urgent: wake someone up. 2 = fix soon. 3 = can wait until working hours.</FONT>
 		</TD>
              </TR>
 
-             <TR><TD COLSPAN=3>&nbsp;</TD></TR>
-
              <TR>
-	        <TD>Monitoring time:</TD>
-		<TD COLSPAN=2>
+	        <TD VALIGN=TOP>4. When it matters:</TD>
+		<TD>
 		   <SELECT NAME="CRITWKDAYS" MULTIPLE SIZE=3>
 		   &CRITEDITWKDAYS
 		   </SELECT>
@@ -55,88 +82,94 @@
 		   <SELECT NAME="CRITENDHOUR">
 		   &CRITEDITEND
 		   </SELECT>
+		   <BR><FONT SIZE="-1">Outside these days and hours it is not shown on the Critical Systems view.
+		   "All days", 00:00 to 24:00 means always.</FONT>
 		</TD>
              </TR>
 
              <TR>
-	        <TD>Start monitoring</TD>
-		<TD COLSPAN=2>
+	        <TD VALIGN=TOP>5. Start showing it on:</TD>
+		<TD>
 		   <SELECT NAME="start-day">
                    &CRITEDITDAYLIST1
                    </SELECT>
                    &nbsp;
-
 		   <SELECT NAME="start-mon">
                    &CRITEDITMONLIST1
                    </SELECT>
-
                    &nbsp;
 		   <SELECT NAME="start-yr">
                    &CRITEDITYEARLIST1
                    </SELECT>
+		   <BR><FONT SIZE="-1">Leave at "Never" to start now.</FONT>
 		</TD>
              </TR>
 
              <TR>
-	        <TD>Stop monitoring</TD>
-		<TD COLSPAN=2>
+	        <TD VALIGN=TOP>6. Stop showing it on:</TD>
+		<TD>
 		   <SELECT NAME="end-day">
                    &CRITEDITDAYLIST2
                    </SELECT>
-
                    &nbsp;
 		   <SELECT NAME="end-mon">
                    &CRITEDITMONLIST2
                    </SELECT>
-
                    &nbsp;
 		   <SELECT NAME="end-yr">
                    &CRITEDITYEARLIST2
                    </SELECT>
+		   <BR><FONT SIZE="-1">Leave at "Never" to keep it there.</FONT>
 		</TD>
              </TR>
 
-             <TR><TD COLSPAN=3>&nbsp;</TD></TR>
-
              <TR>
-	        <TD COLSPAN=2>Resolver group:&nbsp;<INPUT NAME="GROUP" TYPE="TEXT" SIZE=20 VALUE="&CRITEDITGROUP"></TD>
-	      </TR>
-	      <TR>
-	        <TD COLSPAN=3>Instruction:&nbsp;<INPUT NAME="EXTRA" TYPE="TEXT" SIZE=80 VALUE="&CRITEDITEXTRA"></TD>
+	        <TD VALIGN=TOP>7. Resolver group:</TD>
+		<TD><INPUT NAME="GROUP" TYPE="TEXT" SIZE=20 VALUE="&CRITEDITGROUP">
+		   <BR><FONT SIZE="-1">Who handles it, e.g. "Unix team".</FONT></TD>
+	     </TR>
+	     <TR>
+	        <TD VALIGN=TOP>8. Instructions:</TD>
+		<TD><INPUT NAME="EXTRA" TYPE="TEXT" SIZE=80 VALUE="&CRITEDITEXTRA">
+		   <BR><FONT SIZE="-1">What the operator should do first, e.g. "Restart Apache, then call the Unix on-call".</FONT></TD>
              </TR>
 
-             <TR><TD COLSPAN=3>&nbsp;</TD></TR>
+             <TR><TD COLSPAN=2>&nbsp;</TD></TR>
 
-             <TR><TD COLSPAN=3 ALIGN=CENTER>
-	        <INPUT TYPE="SUBMIT" NAME="Update" VALUE="Update record" ALT="Update record">
-             </TD></TR>
-             <TR><TD COLSPAN=3>&nbsp;</TD></TR>
-             <TR><TD COLSPAN=3 ALIGN=CENTER>
-	        <INPUT TYPE="SUBMIT" NAME="Drop" VALUE="Drop record" ALT="Drop record">
-		&nbsp;&nbsp;
-		Even&nbsp;if&nbsp;it&nbsp;has&nbsp;clones:
+             <TR><TD COLSPAN=2 ALIGN=CENTER>
+	        <INPUT TYPE="SUBMIT" NAME="Update" VALUE="Save" ALT="Save this host and test">
+		&nbsp;&nbsp;&nbsp;&nbsp;
+	        <INPUT TYPE="SUBMIT" NAME="Drop" VALUE="Delete" ALT="Delete this host and test">
+		&nbsp;
 		<INPUT TYPE="CHECKBOX" NAME="DROPEVENIFCLONED">
+		<FONT SIZE="-1">delete even if other hosts copy its settings</FONT>
              </TD></TR>
 
-	     <TR><TD COLSPAN=3><HR WIDTH="100%"></TD></TR>
+	     <TR><TD COLSPAN=2><HR WIDTH="100%"></TD></TR>
           </TABLE>
 
-          <TABLE BORDER=0 WIDTH="80%" SUMMARY="Host clones" CELLPADDING="10">
+          <TABLE BORDER=0 WIDTH="90%" SUMMARY="Host clones" CELLPADDING="10">
 	     <TR>
-	        <TD>
-		   Clones&nbsp;of&nbsp;this&nbsp;host:
+	        <TD COLSPAN=2><B>Copy these settings to other hosts</B> (clones)<BR>
+		<FONT SIZE="-1">A clone uses this host's settings for every test, so many hosts
+		can be set up once.</FONT></TD>
+	     </TR>
+	     <TR>
+	        <TD VALIGN=TOP>
+		   Hosts copying this one:<BR>
 		   <SELECT NAME="CRITEDITCLONELIST" MULTIPLE SIZE=5>
 		     &CRITEDITCLONELIST
 		   </SELECT>
+		   <BR><FONT SIZE="-1">Select one to stop it copying.</FONT>
 		</TD>
 		<TD VALIGN=TOP>
-		   Clone&nbsp;this&nbsp;host&nbsp;to:
+		   Add hosts (separate with spaces):<BR>
 		   <INPUT NAME="CRITEDITADDCLONES" TYPE="TEXT" SIZE=50>
 		 </TD>
 	     </TR>
 	     <TR>
 		<TD ALIGN=CENTER COLSPAN=2>
-		   <INPUT TYPE="SUBMIT" NAME="Clone" VALUE="Add/remove clones" ALT="Add to/remove from clonelist">
+		   <INPUT TYPE="SUBMIT" NAME="Clone" VALUE="Save clones" ALT="Add to or remove from the clone list">
 		</TD>
              </TR>
 	  </TABLE>
@@ -150,4 +183,3 @@
 </CENTER>
 
 <BR><BR><BR>
-
