@@ -39,7 +39,7 @@ here=$(dirname "$0")
 
 require_c_buildenv "$ROOT"
 [ -f "$ROOT/Makefile" ] || skip "tree not configured (no Makefile)"
-[ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktempdir)
@@ -62,7 +62,7 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 # shellcheck disable=SC2086  # deliberate word-splitting, as the neighbouring tests do
 "$CC" $harness_cflags -o "$work/harness" \
 	"$here/alerts-page-undecided-harness.c" \
-	"$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
+	"$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 cat >"$work/hosts.cfg" <<'EOF'

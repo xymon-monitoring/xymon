@@ -38,7 +38,7 @@ printf 'int main(void) { return 0; }\n' > "$work/probe.c"
 # Built the way client/Makefile builds msgcache: against the client archives
 # every variant produces, not the server's libxymon.a, which a client tree
 # without PCRE cannot build. Both must already be there -- no make from here.
-[ -f "$ROOT/lib/libxymonclientcomm.a" ] && [ -f "$ROOT/lib/libxymonclient.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymonclientcomm.a)" ] && [ -f "$(xymon_lib "$ROOT" libxymonclient.a)" ] \
 	|| skip "the client archives are not built (lib/libxymonclientcomm.a, lib/libxymonclient.a)"
 
 harness_cflags=$(xymon_cflags "$ROOT")
@@ -59,7 +59,7 @@ esac
 
 "$CC" -g -fsanitize=address $harness_cflags -o "$work/index-harness" \
 	"$ROOT/tests/client/msgcache-index-width-harness.c" \
-	"$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
+	"$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
 	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "the msgcache harness does not build against the client archives"; }
 

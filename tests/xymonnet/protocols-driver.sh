@@ -28,7 +28,7 @@ pcre_libs=$(sed -n 's/^PCRELIBS *= *//p' "$ROOT/Makefile")
 # shellcheck disable=SC2086
 "$CC" $harness_cflags -o "$WORK/harness" \
 	"$(dirname "$0")/protocols-driver.c" \
-	"$ROOT/lib/libxymoncomm.a" $pcre_libs $harness_ldflags 2>"$WORK/cc.log" \
+	"$(xymon_lib "$ROOT" libxymoncomm.a)" $pcre_libs $harness_ldflags 2>"$WORK/cc.log" \
 	|| { cat "$WORK/cc.log" >&2; fail "the harness does not compile"; }
 
 mkdir -p "$WORK/etc"

@@ -47,11 +47,11 @@ esac
 # A server build has libxymoncomm, holding all of libxymon; a client build
 # has libxymonclientcomm, with the rest of what sendmessage() needs in
 # libxymonclient.
-commlib=$ROOT/lib/libxymoncomm.a
+commlib=$(xymon_lib "$ROOT" libxymoncomm.a)
 restlib=
 if [ ! -f "$commlib" ]; then
-	commlib=$ROOT/lib/libxymonclientcomm.a
-	restlib=$ROOT/lib/libxymonclient.a
+	commlib=$(xymon_lib "$ROOT" libxymonclientcomm.a)
+	restlib=$(xymon_lib "$ROOT" libxymonclient.a)
 fi
 [ -f "$commlib" ] || skip "neither lib/libxymoncomm.a nor lib/libxymonclientcomm.a is built"
 

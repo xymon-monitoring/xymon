@@ -98,7 +98,7 @@ CLIENT_CONFIG_C="$ROOT/xymond/client_config.c"
 [ -f "$CLIENT_CONFIG_C" ] || skip "xymond/client_config.c not present in this checkout"
 
 require_c_buildenv "$ROOT"
-[ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktempdir)
@@ -121,7 +121,7 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 # shellcheck disable=SC2086  # deliberate word-splitting, as the neighbouring tests do
 "$CC" $harness_cflags -iquote "$ROOT/xymond" -o "$work/harness" \
 	"$here/analysis-page-filter-harness.c" "$CLIENT_CONFIG_C" \
-	"$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
+	"$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 # fronthost is on the top-level page only. bothhost is on the top-level page and

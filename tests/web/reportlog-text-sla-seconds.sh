@@ -28,7 +28,7 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 # shellcheck disable=SC2086  # flag lists are meant to split
 "$CC" $harness_cflags -o "$work/harness" \
 	"$ROOT/tests/web/reportlog-text-harness.c" \
-	"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
+	"$(xymon_lib "$ROOT" libxymon.a)" "$(xymon_lib "$ROOT" libxymoncomm.a)" "$(xymon_lib "$ROOT" libxymon.a)" \
 	$pcre_libs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "the reportlog harness does not build"; }
 
