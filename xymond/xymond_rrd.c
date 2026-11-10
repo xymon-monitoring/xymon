@@ -322,7 +322,8 @@ int main(int argc, char *argv[])
 
 		/* See if we have any cache-control messages pending */
 		do {
-			n = recv(ctlsocket, ctlbuf, sizeof(ctlbuf), 0);
+			/* One byte short of the buffer: the terminator goes after it */
+			n = recv(ctlsocket, ctlbuf, sizeof(ctlbuf) - 1, 0);
 			gotcachectlmessage = (n > 0);
 			if (gotcachectlmessage) {
 				/* We have a control message */
