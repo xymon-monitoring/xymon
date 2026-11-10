@@ -62,6 +62,7 @@ report() {
 		# the rule could only be satisfied by deleting the definition.
 		case $rule in
 		  runner-only-helper) [ "$f" = "$ROOT/tests/testsuite" ] && continue ;;
+		  make-tree-*) [ "$f" = "$ROOT/tests/lib/assert.sh" ] && continue ;;
 		esac
 		# Drop comment lines before matching, keeping real line numbers.
 		# "|| true" twice: a grep with no match exits 1, which set -e and
@@ -136,6 +137,20 @@ report "include-shadow" '\-I *"?\$\{?ROOT' \
 # name the path anyway -- the native ones -- reads it, it does not sed it.
 report "path-rewrite" 'sed.*/proc/' \
 	"replace the helper by name (fsf_stub_helper), not the path it reads"
+
+# A test reaches the build it runs against through the helpers, never through
+# the make tree's own files. A CMake or packaged build has no top-level
+# Makefile and keeps its archives elsewhere: a test that rebuilds lib/ with
+# make, reads a value out of the Makefile, or spells an archive's path fails
+# there, or mixes two builds, where the helpers take the build's overrides
+# (tests/README.md) and skip what they cannot answer. tests/lib/assert.sh is
+# where the helpers do read the make tree, and is not checked.
+report "make-tree-lib" 'XYMON_MAKE"? +[^|;]*-C +"?[$][{]?(ROOT|root)[}]?/lib' \
+	"rebuilds the archives with make in lib/; use build_xymon_libs, which leaves another build's alone"
+report "make-tree-makefile" '(sed|grep|awk|cat|head|tail|cut)( [^|;]*)? "?[$][{]?(ROOT|root)[}]?/Makefile' \
+	"reads the top-level Makefile, which only a make build has; use xymon_makevar ROOT NAME"
+report "make-tree-archive" '[$][{]?(ROOT|root)[}]?/lib/lib[a-z]+[.]a' \
+	"names an archive by where make writes it; use xymon_lib ROOT ARCHIVE"
 
 # The runner defines errline() and run_one() for itself. A test does not have
 # them: it is sourced with tests/lib/assert.sh and nothing else, so a call to
@@ -425,10 +440,26 @@ probe="$work/probe.sh"
 	printf 'sed s#/proc/mounts#f# x\n'
 	printf 'errline "boom"\n'
 	printf 'register_cleanup "kill $pid 2>/dev/null || true"\n'
+	printf '"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a\n'
+	printf 'libs=$(sed -n s/^PCRELIBS=//p "$ROOT/Makefile")\n'
+	printf 'cc x.c "$root/lib/libxymon.a"\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "11" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "14" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+
+# And not over-eager: the helpers that replace those, and a test that only
+# asks whether the make tree is there, match none of the patterns.
+fine="$work/fine.sh"
+{
+	printf 'build_xymon_libs "$ROOT" "$work/log" libxymoncomm.a\n'
+	printf 'libs=$(xymon_makevar "$ROOT" PCRELIBS)\n'
+	printf 'cc x.c "$(xymon_lib "$ROOT" libxymon.a)"\n'
+	printf '[ -f "$ROOT/Makefile" ] || skip "tree not configured"\n'
+	printf '"$XYMON_MAKE" -C "$ROOT" install PKGBUILD=1\n'
+} >"$fine"
+assert_equal "0" "$(grep -cE "$probe_pattern" "$fine" || true)" \
+	"a rule fires on the helpers that replace what it forbids, or on a test of the make build itself"
 
 # The cleanup-function rule the same way: a function that kills and does not
 # wait is reported, one that waits or uses stop_process is not.
