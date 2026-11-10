@@ -1343,7 +1343,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			calcpr = NULL;
 		}
 
-		errormsg(rrd_get_error());
+		/* rrdtool's message quotes file names built from the request */
+		errormsg(htmlquoted(rrd_get_error()));
 	}
 
 	if (useroptval) xfree(useroptval);
