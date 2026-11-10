@@ -31,14 +31,14 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 # suite in build.yml then exercises it for real). On a built tree, refresh
 # the archive incrementally so the harness tests this tree's code, not a
 # stale archive.
-[ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
-	"$here/html-log-custom-graphs-harness.c" "$ROOT/lib/libxymoncomm.a" \
+	"$here/html-log-custom-graphs-harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
 	$pcre_libs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 

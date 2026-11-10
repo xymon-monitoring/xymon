@@ -42,7 +42,7 @@ asan_usable || pass_partial "xymonrrd.c empty-list count loops are guarded" \
 
 # The second half needs a built tree. Without one the first has still run, so
 # that is what gets reported rather than a failure over a missing precondition.
-[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$ROOT/include/config.h" ] && [ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| pass_partial "xymonrrd.c empty-list count loops are guarded" \
 		"static check only; tree not configured or not built"
 
@@ -60,7 +60,7 @@ build_case() {  # build_case <output> <xymonrrd.c to use>
 	# shellcheck disable=SC2086
 	"$CC" $harness_cflags -fsanitize=address -o "$1" \
 		"$(dirname "$0")/rrddef-empty-list-harness.c" "$2" \
-		"$ROOT/lib/libxymoncomm.a" $pcre_libs $harness_ldflags 2>"$WORK/cc.log"
+		"$(xymon_lib "$ROOT" libxymoncomm.a)" $pcre_libs $harness_ldflags 2>"$WORK/cc.log"
 }
 
 # An empty protocols.cfg is what empties the TCP service list; with no file at

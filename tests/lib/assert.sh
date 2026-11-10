@@ -302,17 +302,37 @@ require_gnu_make() {
 # test that compiles a harness against the in-tree libraries, so a new shared
 # skip condition lands in one place; a test may still add stricter
 # conditions of its own (e.g. "tree already built") next to its call.
+#
+# A build that writes its own config.h elsewhere -- CMake, in its build
+# directory -- says where through XYMON_CFLAGS (see xymon_cflags), and counts
+# as configured.
 require_c_buildenv() {
 	require_cc
 	require_gnu_make
-	[ -f "$1/include/config.h" ] || skip "tree not configured (no include/config.h)"
+	[ -f "$1/include/config.h" ] || [ -n "${XYMON_CFLAGS+set}" ] \
+		|| skip "tree not configured (no include/config.h)"
+}
+
+# xymon_lib ROOT ARCHIVE -- the path of a library archive (libxymoncomm.a,
+# ...) a harness links: ROOT/lib, where make writes it, or XYMON_LIBDIR for a
+# build that writes its archives elsewhere -- CMake, in its build directory.
+xymon_lib() {
+	printf '%s' "${XYMON_LIBDIR:-$1/lib}/$2"
 }
 
 # build_xymon_libs ROOT LOGFILE ARCHIVE... -- build the named archives in
 # ROOT/lib, dumping the build log on stderr and failing if the build breaks.
+# With XYMON_LIBDIR set, the archives come from another build, which is not
+# make's to rebuild: each must be there, or the test skips.
 build_xymon_libs() {
-	local root=$1 log=$2
+	local root=$1 log=$2 a
 	shift 2
+	if [ -n "${XYMON_LIBDIR:-}" ]; then
+		for a in "$@"; do
+			[ -f "$XYMON_LIBDIR/$a" ] || skip "$a is not built in XYMON_LIBDIR ($XYMON_LIBDIR)"
+		done
+		return 0
+	fi
 	require_gnu_make
 	"$XYMON_MAKE" -C "$root/lib" "$@" >"$log" 2>&1 \
 		|| { cat "$log" >&2; fail "cannot build $*"; }
@@ -374,6 +394,10 @@ pcre_cflags() {
 # needs, and fails where PCRE is not installed. Only those two: they are what
 # a variant changes, and taking every -D would alter a server tree's compile
 # lines, which need nothing.
+#
+# XYMON_CFLAGS is added after them: a build with no top-level Makefile gives
+# there where its generated config.h is (-iquote BUILDDIR for CMake) and any
+# define its variant needs.
 xymon_cflags() {
 	local root=$1 probe tok defines=
 
@@ -390,8 +414,12 @@ xymon_cflags() {
 			case $tok in -DCLIENTONLY|-DCLIENTONLY=*|-DLOCALCLIENT|-DLOCALCLIENT=*) defines="$defines $tok" ;; esac
 		done
 	fi
-	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")$defines"
+	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")$defines${XYMON_CFLAGS:+ $XYMON_CFLAGS}"
 }
+#
+# XYMON_LDFLAGS, set, replaces all of it, for a build with no top-level
+# Makefile to ask: its search path, runtime path and the libraries its
+# archives need.
 
 # xymon_ldflags ROOT -- the configured link flags for a harness built against
 # the in-tree libraries: the library search path, the runtime path, and the
@@ -411,6 +439,10 @@ xymon_cflags() {
 xymon_ldflags() {
 	local root=$1 probe out cflags rpath libs tok search=
 
+	if [ -n "${XYMON_LDFLAGS+set}" ]; then
+		printf '%s' "$XYMON_LDFLAGS"
+		return 0
+	fi
 	[ -f "$root/Makefile" ] || return 0
 	require_gnu_make
 	# shellcheck disable=SC2016  # $(CFLAGS) etc. are make's to expand, not the shell's

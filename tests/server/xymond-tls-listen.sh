@@ -88,10 +88,10 @@ case $sslcflags in
 esac
 
 # The harness links the tree's own archive, which only a make build writes.
-[ -f "$ROOT/lib/libxymoncomm.a" ] || skip "lib/libxymoncomm.a is not built"
+[ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] || skip "lib/libxymoncomm.a is not built"
 # shellcheck disable=SC2046,SC2086  # flag lists, split on purpose
 "$CC" $(xymon_cflags "$ROOT") $sslcflags -iquote "$ROOT/lib" -o "$work/harness" \
-	"$(dirname "$0")/xymond-tls-listen-harness.c" "$ROOT/lib/libxymoncomm.a" \
+	"$(dirname "$0")/xymond-tls-listen-harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
 	$(xymon_ldflags "$ROOT") -lssl -lcrypto 2>"$work/cc.log" \
 	|| fail "the harness does not build: $(cat "$work/cc.log")"
 

@@ -23,7 +23,7 @@ ROOT=$(find_root)
 
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
-[ -f "$ROOT/lib/libxymoncomm.a" ] || skip "tree not built (lib/libxymoncomm.a absent)"
+[ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] || skip "tree not built (lib/libxymoncomm.a absent)"
 
 work=$(mktempdir)
 
@@ -72,7 +72,7 @@ HARNESS
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
+	"$work/harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 "$work/harness" 2>"$work/run.log" \

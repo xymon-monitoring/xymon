@@ -373,7 +373,13 @@ alive (autopkgtest does not provide build-dependencies by default). The
 env overrides point binary-driving tests (`require_bin`) and
 installed-artefact tests at the package's files, and `XYMON_SSLCFLAGS`
 says whether that build has OpenSSL, which the TLS tests otherwise read
-from a configured tree's `Makefile` and skip without one -- those are the tests
+from a configured tree's `Makefile` and skip without one. A build that compiles
+its own libraries out of the tree -- CMake, in its build directory -- also
+names, for the tests that compile a harness against them, where the
+archives are (`XYMON_LIBDIR`), the compile flags that reach its generated
+`config.h` (`XYMON_CFLAGS`, added to the tree's own include path) and the
+link flags its archives need (`XYMON_LDFLAGS`, in place of what the
+`Makefile` would give) -- those are the tests
 that give Debian's library-transition CI something that can break at
 runtime. Source-reading tests run against the unpacked (patched) source
 tree; for the installed-package use case they are *supplementary*

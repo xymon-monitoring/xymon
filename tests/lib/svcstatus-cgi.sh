@@ -98,7 +98,7 @@ svcstatus_build() {
 	harness_ldflags=$(xymon_ldflags "$ROOT")
 	"$CC" "$@" $harness_cflags -iquote "$ROOT/web" -o "$work/svcstatus" \
 		"$ROOT/web/svcstatus.c" "$ROOT/web/svcstatus-info.c" "$ROOT/web/svcstatus-trends.c" \
-		"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
+		"$(xymon_lib "$ROOT" libxymon.a)" "$(xymon_lib "$ROOT" libxymoncomm.a)" "$(xymon_lib "$ROOT" libxymon.a)" \
 		$pcre_libs $harness_ldflags 2>"$work/cc.log" || return 1
 }
 

@@ -21,7 +21,7 @@ require_gnu_make
 
 # Needs a configured/built tree (bare-tree CI skips; the post-build suite
 # runs it for real) and one built WITH RRD support.
-[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$ROOT/include/config.h" ] && [ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 [ -f "$ROOT/web/showgraph.cgi" ] || skip "tree built without RRD support (no showgraph.cgi)"
 
@@ -51,7 +51,7 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags $rrddef $rrdinc -o "$work/showgraph" \
-	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
+	"$ROOT/web/showgraph.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
 	$pcre_libs $rrdlibs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }
 

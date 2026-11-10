@@ -29,7 +29,7 @@ CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 require_gnu_make
 
-[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$ROOT/include/config.h" ] && [ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktempdir)
@@ -49,7 +49,7 @@ harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 # shellcheck disable=SC2086  # deliberate word-splitting, as the neighbouring tests do
 "$CC" $harness_cflags -iquote "$ROOT/xymond" -o "$harness" "$here/alert-escalation-repeat-harness.c" \
-	"$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
+	"$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 cat >"$work/hosts.cfg" <<'EOF'

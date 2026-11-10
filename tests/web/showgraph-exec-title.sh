@@ -45,7 +45,7 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags $rrddef $rrdinc -o "$work/showgraph" \
-	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
+	"$ROOT/web/showgraph.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
 	$pcre_libs $rrdlibs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }
 

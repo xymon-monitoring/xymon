@@ -175,7 +175,8 @@ report "sudo" '(^|[^-[:alnum:]_.])sudo[[:space:]]' \
 # Comments are stripped on both sides: a file that only *mentions* the helpers
 # in a comment satisfied the rule, and one that names an archive in a comment
 # was checked for no reason. Any in-tree archive counts, not one library-name
-# family -- the flags are needed for whatever the tree builds.
+# family -- the flags are needed for whatever the tree builds -- named by its
+# path or through xymon_lib, which finds it in another build's directory.
 check_link_flags() {
 	local f=$1 out=$2 code
 	code=$(grep -vE '^[[:space:]]*#' "$f" || true)
@@ -183,7 +184,7 @@ check_link_flags() {
 	# and a printf still writing then dies of SIGPIPE, which pipefail turns
 	# into a reported violation -- 901 times in 20000 on OpenBSD 7.9.
 	# [{]? rather than \{? : a brace after a backslash is not portable ERE.
-	grep -qE '[$][{]?ROOT[}]?[^[:space:]]*[.]a' <<<"$code" || return 0
+	grep -qE '[$][{]?ROOT[}]?[^[:space:]]*[.]a|xymon_lib "' <<<"$code" || return 0
 	grep -q 'xymon_cflags' <<<"$code" \
 		|| printf 'link-flags\t%s\t%s\n' "${f#"$ROOT"/}" "links an in-tree archive without xymon_cflags" >>"$out"
 	grep -q 'xymon_ldflags' <<<"$code" \
@@ -457,6 +458,14 @@ bypass="$work/bypass.sh"
 check_link_flags "$bypass" "$work/probe-violations"
 assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
 	"the link-flags rule no longer reports both missing helpers for an archive built without them"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf '"$CC" -o x y.c "$(xymon_lib "$ROOT" libportable.a)"\n'
+} >"$bypass"
+: >"$work/probe-violations"
+check_link_flags "$bypass" "$work/probe-violations"
+assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
+	"the link-flags rule does not see an archive named through xymon_lib"
 
 # The GNU-escape rule the same way: an escape is reported whatever follows it,
 # a word included, and the portable spellings are not.

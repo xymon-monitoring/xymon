@@ -52,8 +52,8 @@ build_xymond_worker() {
 	# Archives listed twice rather than --start-group, which is GNU ld only.
 	"$cc" $harness_cflags -iquote "$root/xymond" -o "$outdir/$prog" \
 		"${srcs[@]}" \
-		"$root/lib/libxymon.a" "$root/lib/libxymoncomm.a" "$root/lib/libxymontime.a" \
-		"$root/lib/libxymon.a" \
+		"$(xymon_lib "$root" libxymon.a)" "$(xymon_lib "$root" libxymoncomm.a)" "$(xymon_lib "$root" libxymontime.a)" \
+		"$(xymon_lib "$root" libxymon.a)" \
 		$pcre_libs $harness_ldflags 2>"$outdir/cc.log" \
 		|| { cat "$outdir/cc.log" >&2; fail "$prog does not build -- cannot run this test"; }
 }

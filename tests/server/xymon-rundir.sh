@@ -20,7 +20,7 @@ ROOT=$(find_root)
 here=$(dirname "$0")
 
 require_c_buildenv "$ROOT"
-[ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 logdir=$(sed -n 's/^XYMONLOGDIR *= *//p' "$ROOT/Makefile" 2>/dev/null)
 [ -n "$logdir" ] || skip "no XYMONLOGDIR in the top-level Makefile"
@@ -34,7 +34,7 @@ work=$(mktempdir); register_cleanup "rm -rf '$work'"
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
-	"$here/xymon-rundir-harness.c" "$ROOT/lib/libxymoncomm.a" \
+	"$here/xymon-rundir-harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
 	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 

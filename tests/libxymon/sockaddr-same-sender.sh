@@ -22,7 +22,7 @@ set -euo pipefail
 
 ROOT=$(find_root)
 require_cc
-[ -f "$ROOT/lib/libxymonclient.a" ] && [ -f "$ROOT/lib/libxymonclientcomm.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymonclient.a)" ] && [ -f "$(xymon_lib "$ROOT" libxymonclientcomm.a)" ] \
 	|| skip "the client libraries are not built"
 
 work=$(mktempdir)
@@ -62,7 +62,7 @@ esac
 # rather than a possibly older ipaccess.o.
 # shellcheck disable=SC2086  # the flags are a list of words
 "$CC" $harness_cflags -iquote "$ROOT/lib" -o "$work/harness" \
-	"$work/harness.c" "$ROOT/lib/ipaccess.c" "$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
+	"$work/harness.c" "$ROOT/lib/ipaccess.c" "$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
 	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| fail "the harness does not compile: $(cat "$work/cc.log")"
 

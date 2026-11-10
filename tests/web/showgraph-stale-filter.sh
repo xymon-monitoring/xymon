@@ -25,7 +25,7 @@ ROOT=$(find_root)
 
 require_c_buildenv "$ROOT"
 
-[ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 [ -f "$ROOT/web/showgraph.cgi" ] || skip "tree built without RRD support (no showgraph.cgi)"
 require_bin XYMOND_RRD xymond/xymond_rrd
@@ -51,7 +51,7 @@ build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags $rrddef $rrdinc -o "$work/showgraph" \
-	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
+	"$ROOT/web/showgraph.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
 	$pcre_libs $rrdlibs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }
 

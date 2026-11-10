@@ -38,7 +38,7 @@ printf 'int main(void) { return 0; }\n' > "$work/probe.c"
 	|| skip "the UBSan runtime is not installed: a program built with $san does not start"
 # shellcheck disable=SC2086  # the flag lists are word lists
 "$CC" -g -O1 $san $harness_cflags -iquote "$ROOT/xymonnet" -o "$work/harness" \
-	"$here/xymonping-align-harness.c" "$ROOT/lib/libxymontime.a" "$ROOT/lib/libxymoncomm.a" \
+	"$here/xymonping-align-harness.c" "$(xymon_lib "$ROOT" libxymontime.a)" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
 	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
