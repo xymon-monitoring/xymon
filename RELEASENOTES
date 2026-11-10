@@ -16,6 +16,15 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+web -- critical systems values are escaped on the pages that show them
+----------------------------------------------------------------------
+
+A critical system's resolver group, instructions, clone names and last-update
+line, and the group and instructions a service's status page takes from its
+URL, are now HTML-escaped where the editor and the status pages print them. A
+value holding "<", ">", "&" or a quote is shown as written rather than as
+markup. Nothing to change on upgrade.
+
 xymond -- a message line starting with "@@" is passed on as text
 ----------------------------------------------------------------
 

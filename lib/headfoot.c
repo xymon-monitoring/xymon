@@ -307,6 +307,27 @@ void sethostenv_critedit(char *updinfo, int prio, char *group, time_t starttime,
 	}
 }
 
+/*
+ * Print a critical-system value escaped for HTML: the editor's form, where
+ * most go inside VALUE="..." attributes, and the status page's critical
+ * acknowledgement table, where the group and instructions come from the
+ * URL. Not htmlquoted(): it also turns spaces into &nbsp;, which a VALUE
+ * attribute would hand back on the next save.
+ */
+static void fprint_escaped(FILE *output, const char *s)
+{
+	for (; (s && *s); s++) {
+		switch (*s) {
+		  case '&': fputs("&amp;", output); break;
+		  case '<': fputs("&lt;", output); break;
+		  case '>': fputs("&gt;", output); break;
+		  case '"': fputs("&quot;", output); break;
+		  case '\'': fputs("&#39;", output); break;
+		  default: fputc(*s, output); break;
+		}
+	}
+}
+
 void sethostenv_critclonelist_clear(void)
 {
 	int i;
@@ -1198,13 +1219,14 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		}
 
 		else if (strcmp(t_start, "CRITACKTTPRIO") == 0) fprintf(output, "%d", critackttprio);
-		else if (strcmp(t_start, "CRITACKTTGROUP") == 0) fprintf(output, "%s", critackttgroup);
-		else if (strcmp(t_start, "CRITACKTTEXTRA") == 0) fprintf(output, "%s", critackttextra);
+		/* From the status page's URL (NKTTGROUP, NKTTEXTRA): escaped like the editor's */
+		else if (strcmp(t_start, "CRITACKTTGROUP") == 0) fprint_escaped(output, critackttgroup);
+		else if (strcmp(t_start, "CRITACKTTEXTRA") == 0) fprint_escaped(output, critackttextra);
 		else if (strcmp(t_start, "CRITACKINFOURL") == 0) fprintf(output, "%s", ackinfourl);
 		else if (strcmp(t_start, "CRITACKDOCURL") == 0) fprintf(output, "%s", critackdocurl);
 
 		else if (strcmp(t_start, "CRITEDITUPDINFO") == 0) {
-			fprintf(output, "%s", criteditupdinfo);
+			fprint_escaped(output, criteditupdinfo);
 		}
 
 		else if (strcmp(t_start, "CRITEDITPRIOLIST") == 0) {
@@ -1219,17 +1241,21 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 		else if (strcmp(t_start, "CRITEDITCLONELIST") == 0) {
 			int i;
-			for (i=0; (criteditclonelist[i]); i++) 
-				fprintf(output, "<option value=\"%s\">%s</option>\n", 
-					criteditclonelist[i], criteditclonelist[i]);
+			for (i=0; (criteditclonelist[i]); i++) {
+				fprintf(output, "<option value=\"");
+				fprint_escaped(output, criteditclonelist[i]);
+				fprintf(output, "\">");
+				fprint_escaped(output, criteditclonelist[i]);
+				fprintf(output, "</option>\n");
+			}
 		}
 
 		else if (strcmp(t_start, "CRITEDITGROUP") == 0) {
-			fprintf(output, "%s", criteditgroup);
+			fprint_escaped(output, criteditgroup);
 		}
 
 		else if (strcmp(t_start, "CRITEDITEXTRA") == 0) {
-			fprintf(output, "%s", criteditextra);
+			fprint_escaped(output, criteditextra);
 		}
 
 		else if (strcmp(t_start, "CRITEDITWKDAYS") == 0) {
