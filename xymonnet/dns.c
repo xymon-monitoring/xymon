@@ -29,11 +29,6 @@ static char rcsid[] = "$Id$";
 #include "dns.h"
 #include "dns2.h"
 
-#ifdef HPUX
-/* Doesn't have hstrerror */
-char *hstrerror(int err) { return ""; }
-#endif
-
 static ares_channel mychannel;
 static int pending_dns_count = 0;
 int use_ares_lookup = 1;
@@ -50,9 +45,10 @@ FILE *dnsfaillog = NULL;
 
 typedef struct dnsitem_t {
 	char *name;
-	struct in_addr addr;
+	char addr[IP_ADDR_STRLEN];
 	struct dnsitem_t *next;
 	int failed;
+	int triedv6;
 	struct timespec resolvetime;
 } dnsitem_t;
 
@@ -87,13 +83,15 @@ static void dns_init(void)
 
 static char *find_dnscache(char *hostname)
 {
-	struct in_addr inp;
+	struct in_addr in4;
+	unsigned char in6[16];
 	xtreePos_t handle;
 	dnsitem_t *dnsc;
 
 	dns_init();
 
-	if (inet_aton(hostname, &inp) != 0) {
+	/* inet_aton() first: it reads the IPv4 short forms, such as 127.1, as before */
+	if ((inet_aton(hostname, &in4) != 0) || (inet_pton(AF_INET6, hostname, in6) == 1)) {
 		/* It is an IP, so just use that */
 		return hostname;
 	}
@@ -103,35 +101,57 @@ static char *find_dnscache(char *hostname)
 	if (handle == xtreeEnd(dnscache)) return NULL;
 
 	dnsc = (dnsitem_t *)xtreeData(dnscache, handle);
-	return inet_ntoa(dnsc->addr);
+	return dnsc->addr;
 }
 
 
-static void dns_simple_callback(void *arg, int status, int timeout, struct hostent *hent)
+/* dns_done -- record a lookup's address, or with ip NULL its failure */
+static void dns_done(dnsitem_t *dnsc, char *ip, const char *errtext, int err)
 {
-	struct dnsitem_t *dnsc = (dnsitem_t *)arg;
 	struct timespec etime;
 
 	getntimer(&etime);
 	tvdiff(&dnsc->resolvetime, &etime, &dnsc->resolvetime);
 	pending_dns_count--;
 
-	if (status == ARES_SUCCESS) {
-		memcpy(&dnsc->addr, *(hent->h_addr_list), sizeof(dnsc->addr));
-		dbgprintf("Got DNS result for host %s : %s\n", dnsc->name, inet_ntoa(dnsc->addr));
+	if (ip) {
+		snprintf(dnsc->addr, sizeof(dnsc->addr), "%s", ip);
+		dbgprintf("Got DNS result for host %s : %s\n", dnsc->name, dnsc->addr);
 		dns_stats_success++;
 	}
 	else {
-		memset(&dnsc->addr, 0, sizeof(dnsc->addr));
-		dbgprintf("DNS lookup failed for %s - status %s (%d)\n", dnsc->name, ares_strerror(status), status);
+		strcpy(dnsc->addr, "0.0.0.0");
+		dbgprintf("DNS lookup failed for %s - status %s (%d)\n", dnsc->name, errtext, err);
 		dnsc->failed = 1;
 		dns_stats_failed++;
 
 		if (dnsfaillog) {
 			fprintf(dnsfaillog, "DNS lookup failed for %s - status %s (%d)\n", 
-				dnsc->name, ares_strerror(status), status);
+				dnsc->name, errtext, err);
 		}
 	}
+}
+
+static void dns_simple_callback(void *arg, int status, int timeout, struct hostent *hent)
+{
+	struct dnsitem_t *dnsc = (dnsitem_t *)arg;
+	char ip[IP_ADDR_STRLEN];
+
+	/*
+	 * No IPv4 address: an IPv6 one, before giving up. Not after a timeout,
+	 * which the second lookup would only repeat.
+	 */
+	if ((status != ARES_SUCCESS) && (status != ARES_ETIMEOUT) && (status != ARES_ECANCELLED) &&
+	    (status != ARES_EDESTRUCTION) && !dnsc->triedv6) {
+		dnsc->triedv6 = 1;
+		ares_gethostbyname(mychannel, dnsc->name, AF_INET6, dns_simple_callback, dnsc);
+		return;
+	}
+
+	if ((status == ARES_SUCCESS) && inet_ntop(hent->h_addrtype, hent->h_addr_list[0], ip, sizeof(ip)))
+		dns_done(dnsc, ip, NULL, 0);
+	else
+		dns_done(dnsc, NULL, ares_strerror(status), status);
 }
 
 
@@ -208,31 +228,14 @@ void add_host_to_dns_queue(char *hostname)
 		ares_gethostbyname(mychannel, hostname, AF_INET, dns_simple_callback, dnsc);
 	}
 	else {
-		/*
-		 * This uses the normal resolver functions, but 
-		 * sends the result through the same processing
-		 * functions as used when we use ARES.
-		 */
-		struct hostent *hent;
-		int status;
+		/* The system resolver, through the same bookkeeping as ARES */
+		char ip[IP_ADDR_STRLEN];
+		int err;
 
-		hent = gethostbyname(hostname);
-		if (hent) {
-			status = ARES_SUCCESS;
-			dns_stats_success++;
-		}
-		else {
-			status = ARES_ENOTFOUND;
-			dns_stats_failed++;
-			dbgprintf("gethostbyname() failed with err %d: %s\n", h_errno, hstrerror(h_errno));
-			if (dnsfaillog) {
-				fprintf(dnsfaillog, "Hostname lookup failed for %s - status %s (%d)\n", 
-						hostname, hstrerror(h_errno), h_errno);
-			}
-		}
-
-		/* Send the result to our normal callback function */
-		dns_simple_callback(dnsc, status, 0, hent);
+		if (host_address(hostname, ip, sizeof(ip), &err))
+			dns_done(dnsc, ip, NULL, 0);
+		else
+			dns_done(dnsc, NULL, gai_strerror(err), err);
 	}
 }
 
