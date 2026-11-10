@@ -11,7 +11,8 @@
 #
 #   - neither comes out as markup; each comes out escaped, its '"' as &quot;
 #     and its '&' as &amp;;
-#   - an ordinary group and instructions are shown as they are.
+#   - an ordinary group and instructions are shown as they are;
+#   - with none in the URL, the cells stay blank (&nbsp;), as before.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -63,5 +64,10 @@ done
 render "$page&NKTTGROUP=Unix%20team&NKTTEXTRA=Call%20the%20on-call"
 assert_contains "<td align=center>Unix team</td>" "$OUT" "an ordinary group is not shown as it is"
 assert_contains "Call the on-call" "$OUT" "ordinary instructions are not shown as they are"
+
+# no group or instructions: the cells keep their &nbsp;, not an escaped "&amp;nbsp;"
+render "$page"
+assert_contains "<td align=center>&nbsp;</td>" "$OUT" "an empty group does not leave a blank cell"
+assert_not_contains "&amp;nbsp;" "$OUT" "an empty group or instructions shows the text &nbsp;"
 
 pass "the status page prints a critical system's group and instructions from its URL escaped"

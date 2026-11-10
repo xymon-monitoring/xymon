@@ -248,8 +248,9 @@ static char *critackdocurl = NULL;
 void sethostenv_critack(int prio, char *ttgroup, char *ttextra, char *infourl, char *docurl)
 {
 	critackttprio = prio;
-	if (critackttgroup) xfree(critackttgroup); critackttgroup = strdup((ttgroup && *ttgroup) ? ttgroup : "&nbsp;");
-	if (critackttextra) xfree(critackttextra); critackttextra = strdup((ttextra && *ttextra) ? ttextra : "&nbsp;");
+	/* Empty stays empty here: output_parsed() prints &nbsp; for it, and escapes the rest */
+	if (critackttgroup) xfree(critackttgroup); critackttgroup = strdup(ttgroup ? ttgroup : "");
+	if (critackttextra) xfree(critackttextra); critackttextra = strdup(ttextra ? ttextra : "");
 	if (ackinfourl) xfree(ackinfourl); ackinfourl = strdup(infourl);
 	if (critackdocurl) xfree(critackdocurl); critackdocurl = strdup((docurl && *docurl) ? docurl : "");
 }
@@ -1199,8 +1200,10 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 		else if (strcmp(t_start, "CRITACKTTPRIO") == 0) fprintf(output, "%d", critackttprio);
 		/* From the status page's URL (NKTTGROUP, NKTTEXTRA): escaped like the editor's */
-		else if (strcmp(t_start, "CRITACKTTGROUP") == 0) fprintf(output, "%s", htmlattrquoted(critackttgroup));
-		else if (strcmp(t_start, "CRITACKTTEXTRA") == 0) fprintf(output, "%s", htmlattrquoted(critackttextra));
+		else if (strcmp(t_start, "CRITACKTTGROUP") == 0)
+			fprintf(output, "%s", (*critackttgroup ? htmlattrquoted(critackttgroup) : "&nbsp;"));
+		else if (strcmp(t_start, "CRITACKTTEXTRA") == 0)
+			fprintf(output, "%s", (*critackttextra ? htmlattrquoted(critackttextra) : "&nbsp;"));
 		else if (strcmp(t_start, "CRITACKINFOURL") == 0) fprintf(output, "%s", ackinfourl);
 		else if (strcmp(t_start, "CRITACKDOCURL") == 0) fprintf(output, "%s", critackdocurl);
 
