@@ -716,27 +716,25 @@ int main(int argc, char *argv[])
 		xfree(re);
 	}
 	else if (hostpattern) {
-		pcre2_code *dummy;
-		SBUF_DEFINE(re);
+		/*
+		 * The "host" cookie is the name of the host page the viewer came
+		 * from (XYMWEBHIKEY in the page headers), a name and not a pattern:
+		 * "." must match only a dot, or a near-named host is reported too.
+		 */
+		char *re = cgi_hostregex(hostpattern);
 
-		SBUF_MALLOC(re,3 + strlen(hostpattern));
-		snprintf(re, re_buflen, "^%s$", hostpattern);
-		dummy = compileregex(re);
-		if (dummy) {
-			freeregex(dummy);
+		if (re) {
+			SBUF_MALLOC(xymoncmd, strlen(re) + 1024);
+			SBUF_MALLOC(procscmd, strlen(re) + 1024);
+			SBUF_MALLOC(svcscmd, strlen(re) + 1024);
 
-			SBUF_MALLOC(xymoncmd, strlen(hostpattern) + 1024);
-			SBUF_MALLOC(procscmd, strlen(hostpattern) + 1024);
-			SBUF_MALLOC(svcscmd, strlen(hostpattern) + 1024);
-
-			snprintf(xymoncmd, xymoncmd_buflen, "xymondboard host=^%s$ fields=hostname,testname", hostpattern);
-			snprintf(procscmd, procscmd_buflen, "xymondboard host=^%s$ test=procs fields=hostname,msg", hostpattern);
-			snprintf(svcscmd,  svcscmd_buflen,  "xymondboard host=^%s$ test=svcs fields=hostname,msg", hostpattern);
+			snprintf(xymoncmd, xymoncmd_buflen, "xymondboard host=^%s$ fields=hostname,testname", re);
+			snprintf(procscmd, procscmd_buflen, "xymondboard host=^%s$ test=procs fields=hostname,msg", re);
+			snprintf(svcscmd,  svcscmd_buflen,  "xymondboard host=^%s$ test=svcs fields=hostname,msg", re);
+			xfree(re);
 		}
 		else
 			patternerror = 1;
-
-		xfree(re);
 	}
 	else {
 		SBUF_MALLOC(xymoncmd, 1024);
