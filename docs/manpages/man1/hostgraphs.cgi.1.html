@@ -39,6 +39,9 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
 <p class="Pp">If multiple hosts are selected, hostgraph.cgi will attempt to
     display a multi-host graph for each type where the graphs for all hosts are
     overlayed in a single image, allowing for easy comparison of the hosts.</p>
+<p class="Pp">A host without the trend data a graph is drawn from is left out of
+    that graph, and a graph none of the selected hosts has data for is shown
+    empty; see <a href="../man1/showgraph.cgi.1.html">showgraph.cgi</a>(1).</p>
 <p class="Pp">The hostlist uses the PAGEPATH cookie provided by Xymon webpages
     to select the list of hosts to present. Only the hosts visible on the page
     where hostgraph.cgi is invoked from will be visible.</p>
@@ -61,8 +64,6 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
 <h1 class="Sh" id="BUGS"><a class="permalink" href="#BUGS">BUGS</a></h1>
 <p class="Pp">This utility is experimental. It may change in a future release of
     Xymon.</p>
-<p class="Pp">It is possible for the user to select graphs which do not exist.
-    This results in broken image links.</p>
 <p class="Pp">The set of graph-types is fixed in the server/web/hostgraphs_form
     template and does not adjust to which graphs are available.</p>
 <p class="Pp">If the tool is invoked directly, all hosts defined in Xymon will
@@ -73,7 +74,7 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
 <p>&#160;</p>
 <h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
   ALSO</a></h1>
-<p class="Pp"><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)</p>
+<p class="Pp"><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5), <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5), <a href="../man1/showgraph.cgi.1.html">showgraph.cgi</a>(1)</p>
 <p class="Pp"></p>
 </section>
 <p>&#160;</p>

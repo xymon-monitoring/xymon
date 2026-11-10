@@ -847,6 +847,42 @@ void build_menu_page(char *selfURI, int backsecs)
 }
 
 
+/*
+ * Does every file a fixed graph definition draws from exist? The files are
+ * named in its DEF: lines, not by the definition's name ([ram] draws from
+ * memory.real.rrd), and rrdtool fails the whole graph on one that is
+ * missing. @RRDFN@ stands for rrdfn. Run in the host's RRD directory.
+ */
+static int gdef_files_exist(gdef_t *gdef, char *rrdfn)
+{
+	int i;
+
+	for (i = 0; (gdef->defs && gdef->defs[i]); i++) {
+		char fn[PATH_MAX];
+		char *p, *e;
+		size_t len;
+		struct stat st;
+
+		if (strncmp(gdef->defs[i], "DEF:", 4) != 0) continue;
+		p = strchr(gdef->defs[i], '=');
+		if (!p) continue;
+		p++;
+		/* ponytail: the file ends at the first ':'; a fixed DEF names a plain file */
+		e = strchr(p, ':');
+		len = (e ? (size_t)(e - p) : strlen(p));
+		if ((len == 7) && (strncmp(p, "@RRDFN@", 7) == 0)) { p = rrdfn; len = strlen(rrdfn); }
+		if (len >= sizeof(fn)) return 0;
+		memcpy(fn, p, len); fn[len] = '\0';
+
+		if (stat(fn, &st) != 0) {
+			dbgprintf("showgraph: no %s, the %s graph is left empty\n", fn, gdef->name);
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 {
 	gdef_t *gdef = NULL, *gdefuser = NULL;
@@ -969,9 +1005,10 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	/* What RRD files do we have matching this request? */
 	if (hostlist || (gdef->fnpat == NULL)) {
 		/*
-		 * No pattern, just a single file. It doesnt matter if it exists, because
-		 * these types of graphs usually have a hard-coded value for the RRD filename
-		 * in the graph definition.
+		 * No pattern, just a single file. For one host, the files are those
+		 * hard-coded in the graph definition's DEF: lines; with one of them
+		 * missing, the graph is the blank image a pattern that matches
+		 * nothing gets, not an rrdtool error.
 		 */
 		rrddbcount = rrddbsize = (hostlist ? hostlistsize : 1);
 		rrddbs = (rrddb_t *)malloc((rrddbsize + 1) * sizeof(rrddb_t));
@@ -983,6 +1020,11 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			rrddbs[0].rrdfn = (char *)malloc(buflen);
 			snprintf(rrddbs[0].rrdfn, buflen, "%s.rrd", gdef->name);
 			rrddbs[0].rrdparam = NULL;
+			if (!gdef_files_exist(gdef, rrddbs[0].rrdfn)) {
+				xfree(rrddbs[0].key);
+				xfree(rrddbs[0].rrdfn);
+				rrddbcount = 0;
+			}
 		}
 		else {
 			int i, maxlen;
@@ -993,17 +1035,34 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			}
 			snprintf(paramfmt, sizeof(paramfmt), "%%-%ds", maxlen+1);
 
+			/*
+			 * Unlike a single host's graph, these name each host's file, and
+			 * rrdtool fails the whole graph on the first one missing. Leave
+			 * out a host without it; with none left, the graph is the blank
+			 * image a pattern that matches nothing gets.
+			 */
+			rrddbcount = 0;
 			for (i=0; (i < hostlistsize); i++) {
 				size_t buflen;
+				char *rrdfn;
+				struct stat st;
 
-				rrddbs[i].key = strdup(service);
 				buflen = strlen(hostlist[i]) + strlen(gdef->fnpat) + 2;
-				rrddbs[i].rrdfn = (char *)malloc(buflen);
-				snprintf(rrddbs[i].rrdfn, buflen, "%s/%s", hostlist[i], gdef->fnpat);
+				rrdfn = (char *)malloc(buflen);
+				snprintf(rrdfn, buflen, "%s/%s", hostlist[i], gdef->fnpat);
+				if (stat(rrdfn, &st) != 0) {
+					dbgprintf("showgraph: %s has no %s, left out of the graph\n", hostlist[i], gdef->fnpat);
+					xfree(rrdfn);
+					continue;
+				}
+
+				rrddbs[rrddbcount].key = strdup(service);
+				rrddbs[rrddbcount].rrdfn = rrdfn;
 
 				buflen = maxlen + 2;
-				rrddbs[i].rrdparam = (char *)malloc(buflen);
-				snprintf(rrddbs[i].rrdparam, buflen, paramfmt, hostlist[i]);
+				rrddbs[rrddbcount].rrdparam = (char *)malloc(buflen);
+				snprintf(rrddbs[rrddbcount].rrdparam, buflen, paramfmt, hostlist[i]);
+				rrddbcount++;
 			}
 		}
 	}
