@@ -78,6 +78,7 @@ stop() { [ -n "$MLPID" ] || return 0; kill "$MLPID" 2>/dev/null || true; wait "$
 register_cleanup 'stop'
 
 # tls RECIPIENT MESSAGE [VAR=VALUE...] -- the xymon client over TLS, trusting the test CA
+xymon_ssl_known "$ROOT" || skip "cannot tell whether this build has OpenSSL: no top-level Makefile, and XYMON_SSLCFLAGS is not set"
 sslcflags=$(xymon_sslcflags "$ROOT")
 case $sslcflags in
 *HAVE_OPENSSL*) ;;

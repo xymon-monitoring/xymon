@@ -446,10 +446,17 @@ xymon_ldflags() {
 # xymon_cflags() does not carry them either. Where OpenSSL is outside the
 # compiler's default path - Homebrew's keg-only openssl@3 on macOS - a harness
 # compiled without them fails on <openssl/ssl.h>. Asked of make, like
-# xymon_ldflags(); empty on an unconfigured tree.
+# xymon_ldflags(); empty on an unconfigured tree. A build with no top-level
+# Makefile -- CMake, an installed package -- gives its own in XYMON_SSLCFLAGS,
+# as it gives its binaries' paths to require_bin; set, even empty, it is used
+# as it stands.
 xymon_sslcflags() {
 	local root=$1 probe
 
+	if [ -n "${XYMON_SSLCFLAGS+set}" ]; then
+		printf '%s' "$XYMON_SSLCFLAGS"
+		return 0
+	fi
 	[ -f "$root/Makefile" ] || return 0
 	require_gnu_make
 	# shellcheck disable=SC2016  # $(SSLFLAGS) etc. are make's to expand, not the shell's
@@ -457,6 +464,14 @@ xymon_sslcflags() {
 	@printf "%s\n" "$(SSLFLAGS) $(SSLINCDIR)"
 '
 	printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_sslcflags 2>/dev/null || true
+}
+
+# xymon_ssl_known ROOT -- whether xymon_sslcflags can tell if this build has
+# OpenSSL: a configured tree, or XYMON_SSLCFLAGS given. A test that branches
+# on HAVE_OPENSSL skips otherwise, rather than take a build it cannot read for
+# one without OpenSSL.
+xymon_ssl_known() {
+	[ -n "${XYMON_SSLCFLAGS+set}" ] || [ -f "$1/Makefile" ]
 }
 
 # make_test_cert KEY CERT -- copy the suite's self-signed certificate to CERT

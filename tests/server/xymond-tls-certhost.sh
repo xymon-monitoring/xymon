@@ -33,6 +33,7 @@ ROOT=$(find_root)
 require_bin XYMOND xymond/xymond
 require_bin XYMONCLIENT common/xymon
 require_shm_segments "$(grep -c 'setup_channel(C_[A-Z_]*, CHAN_MASTER)' "$ROOT/xymond/xymond.c")"
+xymon_ssl_known "$ROOT" || skip "cannot tell whether this build has OpenSSL: no top-level Makefile, and XYMON_SSLCFLAGS is not set"
 case $(xymon_sslcflags "$ROOT") in *HAVE_OPENSSL*) ;; *) skip "this build has no OpenSSL: no TLS listener, no client certificates" ;; esac
 
 work=$(mktempdir)
