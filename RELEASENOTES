@@ -16,6 +16,19 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+showgraph -- the host names are checked, and the cache-flush is bounded
+-----------------------------------------------------------------------
+
+showgraph.cgi now requires each name in its "host=" parameter to be a plain
+host name -- the characters a Xymon web page accepts for a host, and no "/" --
+of at most 255 characters, and a graph takes at most 1000 hosts, above what a
+page normally graphs at once; anything else gets an error instead of a graph. A host whose name has other characters,
+which xymond already warns about, no longer gets graphs, as its other pages
+already did not. rrdtool's message on the error page is shown quoted. The
+cache-flush to xymond_rrd goes through one socket with one wait for all the
+hosts of a request, and xymond_rrd keeps no record for a name with nothing
+cached. Nothing to change on upgrade.
+
 xymond -- TLS between clients and the daemon
 --------------------------------------------
 
