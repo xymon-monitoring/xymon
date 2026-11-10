@@ -248,8 +248,9 @@ static char *critackdocurl = NULL;
 void sethostenv_critack(int prio, char *ttgroup, char *ttextra, char *infourl, char *docurl)
 {
 	critackttprio = prio;
-	if (critackttgroup) xfree(critackttgroup); critackttgroup = strdup((ttgroup && *ttgroup) ? ttgroup : "&nbsp;");
-	if (critackttextra) xfree(critackttextra); critackttextra = strdup((ttextra && *ttextra) ? ttextra : "&nbsp;");
+	/* Empty stays empty here: output_parsed() prints &nbsp; for it, and escapes the rest */
+	if (critackttgroup) xfree(critackttgroup); critackttgroup = strdup(ttgroup ? ttgroup : "");
+	if (critackttextra) xfree(critackttextra); critackttextra = strdup(ttextra ? ttextra : "");
 	if (ackinfourl) xfree(ackinfourl); ackinfourl = strdup(infourl);
 	if (critackdocurl) xfree(critackdocurl); critackdocurl = strdup((docurl && *docurl) ? docurl : "");
 }
@@ -1198,13 +1199,16 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		}
 
 		else if (strcmp(t_start, "CRITACKTTPRIO") == 0) fprintf(output, "%d", critackttprio);
-		else if (strcmp(t_start, "CRITACKTTGROUP") == 0) fprintf(output, "%s", critackttgroup);
-		else if (strcmp(t_start, "CRITACKTTEXTRA") == 0) fprintf(output, "%s", critackttextra);
+		/* From the status page's URL (NKTTGROUP, NKTTEXTRA): escaped like the editor's */
+		else if (strcmp(t_start, "CRITACKTTGROUP") == 0)
+			fprintf(output, "%s", (*critackttgroup ? htmlattrquoted(critackttgroup) : "&nbsp;"));
+		else if (strcmp(t_start, "CRITACKTTEXTRA") == 0)
+			fprintf(output, "%s", (*critackttextra ? htmlattrquoted(critackttextra) : "&nbsp;"));
 		else if (strcmp(t_start, "CRITACKINFOURL") == 0) fprintf(output, "%s", ackinfourl);
 		else if (strcmp(t_start, "CRITACKDOCURL") == 0) fprintf(output, "%s", critackdocurl);
 
 		else if (strcmp(t_start, "CRITEDITUPDINFO") == 0) {
-			fprintf(output, "%s", criteditupdinfo);
+			fprintf(output, "%s", htmlattrquoted(criteditupdinfo));
 		}
 
 		else if (strcmp(t_start, "CRITEDITPRIOLIST") == 0) {
@@ -1219,17 +1223,19 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 		else if (strcmp(t_start, "CRITEDITCLONELIST") == 0) {
 			int i;
-			for (i=0; (criteditclonelist[i]); i++) 
-				fprintf(output, "<option value=\"%s\">%s</option>\n", 
-					criteditclonelist[i], criteditclonelist[i]);
+			for (i=0; (criteditclonelist[i]); i++) {
+				/* Two statements: htmlattrquoted() returns one static buffer */
+				fprintf(output, "<option value=\"%s\">", htmlattrquoted(criteditclonelist[i]));
+				fprintf(output, "%s</option>\n", htmlattrquoted(criteditclonelist[i]));
+			}
 		}
 
 		else if (strcmp(t_start, "CRITEDITGROUP") == 0) {
-			fprintf(output, "%s", criteditgroup);
+			fprintf(output, "%s", htmlattrquoted(criteditgroup));
 		}
 
 		else if (strcmp(t_start, "CRITEDITEXTRA") == 0) {
-			fprintf(output, "%s", criteditextra);
+			fprintf(output, "%s", htmlattrquoted(criteditextra));
 		}
 
 		else if (strcmp(t_start, "CRITEDITWKDAYS") == 0) {

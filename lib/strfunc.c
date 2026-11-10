@@ -233,6 +233,43 @@ char *htmlquoted(char *s)
 	return STRBUF(result);
 }
 
+char *htmlattrquoted(char *s)
+{
+	/*
+	 * HTML-escape a value for an attribute (VALUE="..."), an <option> or
+	 * table text: & < > " ' are escaped, and a space stays a space. Not
+	 * htmlquoted(), which turns a space into &nbsp;: inside a VALUE
+	 * attribute that would come back literally on the next form submit.
+	 * A NULL gives "", so the result can go straight to printf("%s").
+	 */
+
+	static strbuffer_t *result = NULL;
+	char *inp, *endp;
+	char c;
+
+	if (!result) result = newstrbuffer(4096);
+	clearstrbuffer(result);
+	if (!s) return STRBUF(result);
+
+	inp = s;
+	do {
+		endp = inp + strcspn(inp, "\"&<>'");
+		c = *endp;
+		if (endp > inp) addtobufferraw(result, inp, endp-inp);
+		switch (c) {
+		  case '"': addtobuffer(result, "&quot;"); break;
+		  case '&': addtobuffer(result, "&amp;"); break;
+		  case '<': addtobuffer(result, "&lt;"); break;
+		  case '>': addtobuffer(result, "&gt;"); break;
+		  case '\'': addtobuffer(result, "&#39;"); break;
+		  default: break;
+		}
+		inp = (c == '\0') ? NULL : endp+1;
+	} while (inp);
+
+	return STRBUF(result);
+}
+
 char *prehtmlquoted(char *s)
 {
 	/*
