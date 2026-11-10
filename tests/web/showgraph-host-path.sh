@@ -6,7 +6,8 @@
 # showgraph finds a host's RRD files under XYMONRRDS/<host>, with the host
 # name taken from the request. A host name that is not a plain name, as
 # cgi_pathcomponent() defines it, is now refused with an error page, for a
-# single host and in a list of hosts; plain names still work.
+# single host and in a list of hosts; plain names still work. A name longer
+# than 255 characters, or a list of more than 1000 hosts, is refused too.
 #
 # The stub la.rrd in a sibling directory lets the test tell a refused name
 # (it never reaches an RRD) from an accepted one.
@@ -79,5 +80,19 @@ assert_not_contains "Invalid host name" "$out" "a plain host name is accepted"
 
 out=$(render "alpha,web-1.example.com")
 assert_not_contains "Invalid host name" "$out" "a list of plain host names is accepted"
+
+# Bounds: a name of 255 characters and a list of 1000 hosts are accepted,
+# one character or one host more is refused
+name255=$(printf '%255s' '' | tr ' ' h)
+out=$(render "$name255")
+assert_not_contains "Invalid host name" "$out" "a host name of 255 characters is accepted"
+out=$(render "${name255}h")
+assert_contains     "Invalid host name" "$out" "a host name of 256 characters is refused"
+
+list1000=$(seq -f 'h%g' 1 1000 | paste -sd, -)
+out=$(render "$list1000")
+assert_not_contains "Too many hosts"    "$out" "a list of 1000 hosts is accepted"
+out=$(render "$list1000,h1001")
+assert_contains     "Too many hosts"    "$out" "a list of 1001 hosts is refused"
 
 pass "showgraph refuses a host name that is not a plain name, and keeps plain ones"
