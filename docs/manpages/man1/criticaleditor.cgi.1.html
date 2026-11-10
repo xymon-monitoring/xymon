@@ -34,6 +34,14 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
 <p class="Pp">A detailed description of how to use the editor is provided in the
     Xymon Web documentation, available from the &quot;Help&quot; -&gt;
     &quot;Critical Systems&quot; link on the Xymon website.</p>
+<p class="Pp">Changes are written to critical.cfg, after copying the old file to
+    critical.cfg.bak. The web server runs this CGI, so its user must be able to
+    write both files. After each change the editor reports above the form
+    whether it was saved; a change it could not write is reported with the
+    reason, for example &quot;Permission denied&quot;, and the web server user's
+    name.</p>
+<p class="Pp">A host must be listed in hosts.cfg before a record or a clone can
+    be added for it.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
