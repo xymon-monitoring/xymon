@@ -16,6 +16,17 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+headfoot -- the host, test and board lists are shown escaped
+-----------------------------------------------------------
+
+The host, test and page lists the forms build (the metrics report, the
+enable/disable page, the report forms) printed names into <option> as they
+were held. The enable/disable page also built its currently-disabled table
+and a JavaScript host/test map from the status board. These are now escaped
+where they are printed: HTML for the <option> lists, the table and the page
+dropdown's value, and a JavaScript string for the host/test map. A name or
+message holding "<", ">", "&" or a quote is shown as written, not as markup.
+
 web -- critical systems values are escaped on the pages that show them
 ----------------------------------------------------------------------
 
