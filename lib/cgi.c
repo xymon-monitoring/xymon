@@ -86,6 +86,38 @@ char *cgi_hostregex(const char *hostname)
 }
 
 /*
+ * A page path as the "page=" filter of a xymondboard query: the page and its
+ * sub-pages, "^PAGE$|^PAGE/.+", with PAGE escaped as in cgi_hostregex() so
+ * that a '.' in it matches only a dot. The "pagepath" cookie is the path of
+ * the page the viewer came from, a name and not a pattern. A value with a
+ * space or a control character (a space would split the query into another
+ * filter) gives NULL. Returns a newly allocated string.
+ */
+char *cgi_pageregex(const char *pagepath)
+{
+	char *esc, *result, *p;
+	const char *s;
+	size_t len;
+
+	if (!pagepath || !*pagepath) return NULL;
+	for (s = pagepath; (*s); s++) if (isspace((unsigned char)*s) || iscntrl((unsigned char)*s)) return NULL;
+
+	esc = (char *)malloc(2*strlen(pagepath) + 1);
+	for (p = esc, s = pagepath; (*s); s++) {
+		if (!isalnum((unsigned char)*s)) *p++ = '\\';
+		*p++ = *s;
+	}
+	*p = '\0';
+
+	len = 2*strlen(esc) + sizeof("^$|^/.+");
+	result = (char *)malloc(len);
+	snprintf(result, len, "^%s$|^%s/.+", esc, esc);
+	xfree(esc);
+
+	return result;
+}
+
+/*
  * Confine a CGI value to a single legal path component -- the one policy
  * behind every host/service parameter. The value must be a single
  * component of CGI_NAMECHARS or it is refused as a whole (NULL): never

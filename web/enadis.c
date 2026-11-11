@@ -379,7 +379,8 @@ int main(int argc, char *argv[])
 
 		action = ACT_FILTER;
 		pagepath = get_cookie("pagepath");
-		if (obeycookies && pagepath && *pagepath) pagepattern = strdup(pagepath);
+		/* The page and its sub-pages, the name matched as written */
+		if (obeycookies && pagepath && *pagepath) pagepattern = cgi_pageregex(pagepath);
 	}
 
 	if (action == ACT_FILTER) {

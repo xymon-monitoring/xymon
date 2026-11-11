@@ -42,6 +42,7 @@ extern char *safe_basename(char *path);
 extern int cgi_hasctrl(const char *value);
 extern char *cgi_pathcomponent(const char *value, int decode_commas);
 extern char *cgi_hostregex(const char *hostname);
+extern char *cgi_pageregex(const char *pagepath);
 extern char *cgi_component(const char *value);
 extern void cgi_split_hostsvc(char *value, char **hostname, char **service);
 
