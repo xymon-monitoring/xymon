@@ -145,8 +145,11 @@ its own, listening on the network instead of reading from
 xymond_rrd \-\-rrddir=$XYMONVAR/rrd \-\-listen=10.0.0.2:1985
 \-\-locator=10.0.0.1:1984 \-\-locatorweight=2
 .PP
-The worker registers with the locator under its \fB--listen\fR address, and
-accepts messages on that TCP port. The worker options are:
+The worker registers with the locator under its \fB--listen\fR address, unless
+\fB--locatorid\fR names another, and
+accepts messages on that TCP port. Each address below may be IPv4 or IPv6,
+or a host name, resolved to its IPv4 address if it has one; an IPv6 address
+goes in brackets, as [2001:db8::2]:1985. The worker options are:
 
 .IP "\fB--listen\fR=\fIIP:PORT\fR"
 Where the worker accepts messages. Required for network mode.
