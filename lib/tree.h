@@ -36,6 +36,10 @@ extern xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata);
 extern void *xtreeDelete(void *treehandle, char *key);
 extern xtreePos_t xtreeFind(void *treehandle, char *key);
 extern xtreePos_t xtreeFirst(void *treehandle);
+/* A position is good until the next xtreeAdd() or xtreeDelete(): an add
+   shifts the array variant's indexes, and in the tsearch one xtreeNext()
+   follows links the last xtreeFirst() set up, so call xtreeFirst() again
+   before stepping on from any position, a found one included */
 extern xtreePos_t xtreeNext(void *treehandle, xtreePos_t pos);
 extern char *xtreeKey(void *treehandle, xtreePos_t pos);
 extern void *xtreeData(void *treehandle, xtreePos_t pos);
