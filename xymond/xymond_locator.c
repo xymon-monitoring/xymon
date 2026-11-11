@@ -652,34 +652,35 @@ int main(int argc, char *argv[])
 {
 	int daemonize = 0;
 	int lsocket;
-	struct sockaddr_in laddr;
+	struct sockaddr_storage laddr;
+	int locport = 1984;
+	char text[NI_MAXHOST];	/* an IPv6 address with its scope */
 	struct sigaction sa;
 	int argi, opt;
 
 	/* Don't save the output from errprintf() */
 	save_errbuf = 0;
 
-	memset(&laddr, 0, sizeof(laddr));
-	laddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	laddr.sin_port = htons(1984);
-	laddr.sin_family = AF_INET;
+	text_sockaddr("0.0.0.0", &laddr);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--listen=")) {
-			char *locaddr, *p;
-			int locport;
+			/*
+			 * IP:PORT or [IPv6]:PORT; one address, either family. A name
+			 * or an IPv4 short form such as 127.1 is resolved, to its IPv4
+			 * address if it has one.
+			 */
+			char *spec = strchr(argv[argi], '=')+1;
+			char *copy = strdup(spec), *locaddr;
 
-			locaddr = strchr(argv[argi], '=')+1;
-			p = strchr(locaddr, ':');
-			if (p) { locport = atoi(p+1); *p = '\0'; } else locport = 1984;
-
-			memset(&laddr, 0, sizeof(laddr));
-			laddr.sin_port = htons(locport);
-			laddr.sin_family = AF_INET;
-			if (inet_aton(locaddr, (struct in_addr *) &laddr.sin_addr.s_addr) == 0) {
-				errprintf("Invalid listen address %s\n", locaddr);
+			locport = 1984;
+			locaddr = split_hostport(copy, &locport);
+			if (!locaddr || !host_sockaddr(locaddr, &laddr, NULL)) {
+				errprintf("Invalid listen address %s\n", spec);
+				xfree(copy);
 				return 1;
 			}
+			xfree(copy);
 		}
 		else if (strcmp(argv[argi], "--daemon") == 0) {
 			daemonize = 1;
@@ -696,8 +697,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (laddr.ss_family == AF_INET6) ((struct sockaddr_in6 *)&laddr)->sin6_port = htons(locport);
+	else ((struct sockaddr_in *)&laddr)->sin_port = htons(locport);
+
 	/* Set up a socket to listen for new connections */
-	lsocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	lsocket = socket(laddr.ss_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (lsocket == -1) {
 		errprintf("Cannot create listen socket (%s)\n", strerror(errno));
 		return 1;
@@ -706,7 +710,8 @@ int main(int argc, char *argv[])
 	opt = 1;
 	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-	if (bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
+	if (bind(lsocket, (struct sockaddr *)&laddr,
+		 (laddr.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in)) == -1) {
 		errprintf("Cannot bind to listener address (%s)\n", strerror(errno));
 		return 1;
 	}
@@ -721,7 +726,11 @@ int main(int argc, char *argv[])
 	}
 
 	errprintf("Xymon locator version %s starting\n", VERSION);
-	errprintf("Listening on %s:%d\n", inet_ntoa(laddr.sin_addr), ntohs(laddr.sin_port));
+	/* As bound, an IPv6 scope included ("fe80::1%eth0"), bracketed when IPv6 */
+	if (getnameinfo((struct sockaddr *)&laddr, (laddr.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
+			text, sizeof(text), NULL, 0, NI_NUMERICHOST) != 0)
+		sockaddr_text((struct sockaddr *)&laddr, text, sizeof(text));
+	errprintf(strchr(text, ':') ? "Listening on [%s]:%d\n" : "Listening on %s:%d\n", text, locport);
 
 	if (daemonize) {
 		pid_t childpid;
@@ -754,8 +763,9 @@ int main(int argc, char *argv[])
 
 	do {
 		ssize_t n;
-		struct sockaddr_in remaddr;
+		struct sockaddr_storage remaddr;
 		socklen_t remaddrsz;
+		char remtext[IP_ADDR_STRLEN];
 		char buf[32768];
 		fd_set fdread;
 
@@ -793,19 +803,21 @@ int main(int argc, char *argv[])
 		}
 
 		buf[n] = '\0';
-		dbgprintf("Got message from %s:%d : '%s'\n", 
-				inet_ntoa(remaddr.sin_addr), ntohs(remaddr.sin_port), buf);
+		sockaddr_text((struct sockaddr *)&remaddr, remtext, sizeof(remtext));
+		dbgprintf(strchr(remtext, ':') ? "Got message from [%s]:%d : '%s'\n" : "Got message from %s:%d : '%s'\n", remtext,
+			  ntohs((remaddr.ss_family == AF_INET6) ? ((struct sockaddr_in6 *)&remaddr)->sin6_port
+								: ((struct sockaddr_in *)&remaddr)->sin_port), buf);
 
 		handle_request(buf, sizeof(buf));
 
 		n = sendto(lsocket, buf, strlen(buf)+1, 0, (struct sockaddr *)&remaddr, remaddrsz);
 		if (n == -1) {
 			if (errno == EAGAIN) {
-				errprintf("Out-queue full to %s, dropping response\n", inet_ntoa(remaddr.sin_addr));
+				errprintf("Out-queue full to %s, dropping response\n", remtext);
 			}
 			else {
 				errprintf("Send failure %s while sending to %s\n", 
-					  strerror(errno), inet_ntoa(remaddr.sin_addr));
+					  strerror(errno), remtext);
 			}
 		}
 
