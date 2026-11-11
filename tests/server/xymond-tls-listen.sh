@@ -60,12 +60,16 @@ sed -e 's|^XYMONHOME=.*|XYMONHOME="'"$work"'/home"|' \
 printf 'XYMOND_TLS_CERT="%s"\nXYMOND_TLS_KEY="%s"\nXYMONDTLSPORT="%s"\nMAXMSG_STATUS="512"\n' \
 	"$work/xymond.pem" "$work/xymond.key" "$T2" >> "$work/xymonserver.cfg"
 
+# xymond writes to its --log file once logging is set up; what it says
+# before that -- its listeners, a refusal to start -- goes to startup.log.
 MLPID=
 launch() {
+	# --log appends: empty it, or a previous run's "Setup complete" answers
+	: > "$work/xymond.log"
 	"$XYMOND" --no-daemon --listen="127.0.0.1:$P" "$@" \
 		--hosts="$work/hosts.cfg" --env="$work/xymonserver.cfg" \
 		--pidfile="$work/xymond.pid" --checkpoint-file="$work/chk.out" \
-		> "$work/xymond.log" 2>&1 &
+		--log="$work/xymond.log" > "$work/startup.log" 2>&1 &
 	MLPID=$!
 	for _ in $(seq 1 100); do
 		grep -q 'Setup complete' "$work/xymond.log" 2>/dev/null && return 0
@@ -83,7 +87,7 @@ sslcflags=$(xymon_sslcflags "$ROOT")
 case $sslcflags in
 *HAVE_OPENSSL*) ;;
 *)	if launch --tls-listen="127.0.0.1:$T"; then fail "a xymond built without OpenSSL started with --tls-listen"; fi
-	assert_contains "built without OpenSSL" "$(cat "$work/xymond.log")" "xymond did not say why it refused --tls-listen"
+	assert_contains "built without OpenSSL" "$(cat "$work/startup.log")" "xymond did not say why it refused --tls-listen"
 	pass "a xymond built without OpenSSL refuses --tls-listen" ;;
 esac
 
@@ -103,7 +107,7 @@ tls() {
 plain() { XYMON_TIMEOUT=5 "$XYMONCLIENT" "127.0.0.1:$P" "$1" 2>&1 || true; }
 
 launch --tls-listen="127.0.0.1:$T" || fail "xymond did not start with --tls-listen: $(cat "$work/xymond.log")"
-grep -q "Listening on 127.0.0.1:$T for TLS" "$work/xymond.log" || fail "xymond did not report its TLS listener: $(cat "$work/xymond.log")"
+grep -q "Listening on 127.0.0.1:$T for TLS" "$work/startup.log" || fail "xymond did not report its TLS listener: $(cat "$work/startup.log")"
 grep -q 'TLS: loaded .*client certificates not asked for' "$work/xymond.log" \
 	|| fail "xymond did not log the TLS settings at startup: $(cat "$work/xymond.log")"
 
@@ -179,17 +183,17 @@ stop
 # No TLS port that cannot give TLS
 mv "$work/xymond.pem" "$work/missing.pem"
 if launch --tls-listen="127.0.0.1:$T"; then fail "xymond started with a certificate file that does not exist"; fi
-grep -q "TLS: .*$work/xymond" "$work/xymond.log" || fail "xymond did not say which file failed: $(cat "$work/xymond.log")"
+grep -q "TLS: .*$work/xymond" "$work/startup.log" || fail "xymond did not say which file failed: $(cat "$work/startup.log")"
 mv "$work/missing.pem" "$work/xymond.pem"
 chmod 644 "$work/xymond.key"
 if launch --tls-listen="127.0.0.1:$T"; then fail "xymond started with a private key anyone may read"; fi
-assert_contains "may be read by anyone" "$(cat "$work/xymond.log")" "xymond did not say why the key was refused"
+assert_contains "may be read by anyone" "$(cat "$work/startup.log")" "xymond did not say why the key was refused"
 chmod 600 "$work/xymond.key"
 
 if ! launch --tls-listen="[::1]:$T"; then
-	grep -q 'Cannot bind to listen socket ::1' "$work/xymond.log" || fail "xymond did not start with --tls-listen=[::1]:$T: $(cat "$work/xymond.log")"
+	grep -q 'Cannot bind to listen socket ::1' "$work/startup.log" || fail "xymond did not start with --tls-listen=[::1]:$T: $(cat "$work/xymond.log")"
 	pass_partial "xymond takes TLS on IPv4, reads a message to its close_notify, drops one without, and reloads its certificate on SIGHUP" \
-		"IPv6: this host has no IPv6 loopback ($(grep -o 'Cannot bind.*' "$work/xymond.log"))"
+		"IPv6: this host has no IPv6 loopback ($(grep -o 'Cannot bind.*' "$work/startup.log"))"
 fi
 assert_contains "xymond" "$(tls "xymons://[::1]:$T" ping)" "xymond does not answer TLS on [::1]:$T"
 stop

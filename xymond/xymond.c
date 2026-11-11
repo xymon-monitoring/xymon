@@ -254,6 +254,12 @@ typedef struct conn_t {
  * refused. IDLE_PRESSURE is a quarter of the 1024 descriptors select()
  * handles; IDLE_PER_SENDER keeps the senders needed to fill the rest at
  * (1024 - IDLE_PRESSURE) / IDLE_PER_SENDER, about 48.
+ *
+ * select() handles FD_SETSIZE descriptors and not one more: FD_SET on a
+ * larger number writes past the set, and select() then fails with EBADF,
+ * which ends xymond. A connection whose descriptor is at or above it is
+ * refused at accept() instead. The build asks every platform for 1024
+ * (build/Makefile.NetBSD, where the default is 256).
  */
 #define IDLE_FIRSTBYTE 5
 #define IDLE_PRESSURE 256
@@ -1027,6 +1033,24 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 			break;
 		}
 	}
+	/*
+	 * To the workers, a line that starts with "@@" frames a record -- it
+	 * ends one or starts the next -- and only xymond's own first line and
+	 * the terminator below may do that. What follows the first line was
+	 * copied in from outside (a status text, client data, a page or a
+	 * note); a line of it starting with "@@" now starts with "@ " instead,
+	 * the same length, so the bounds above still hold and only xymond's
+	 * own framing lines begin with "@@".
+	 */
+	{
+		char *p = strchr(channel->channelbuf, '\n');
+
+		while (p && ((p = strstr(p, "\n@@")) != NULL)) {
+			*(p+2) = ' ';
+			p += 3;
+		}
+	}
+
 	/* Terminate the message */
 	strncat(channel->channelbuf, "\n@@\n", (bufsz-1));
 
@@ -6702,7 +6726,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_OPENSSL
 		tlsctx = tls_load();
 		if (!tlsctx) return 1;
-		tls_log_settings("loaded");
+		/* The settings are logged below, once stderr is the log file. */
 #else
 		errprintf("--tls-listen: this xymond was built without OpenSSL\n");
 		return 1;
@@ -6849,6 +6873,13 @@ int main(int argc, char *argv[])
 	 * points at the log, so startup warnings land there and not just on the
 	 * launching terminal -- matching the reload path. */
 	warn_unreachable_hostnames();
+
+#ifdef HAVE_OPENSSL
+	/* Loaded above, before the listeners; logged here, as the reload path
+	 * logs it, so the line is in the --log file and not in whatever stderr
+	 * xymond was started with. */
+	if (tlsctx) tls_log_settings("loaded");
+#endif
 
 	if (ackinfologfn) {
 		ackinfologfd = fopen(ackinfologfn, "a");
@@ -7273,6 +7304,23 @@ int main(int argc, char *argv[])
 				addrsz = sizeof(addr);
 				sock = accept(listeners[li].fd, (struct sockaddr *)&addr, &addrsz);
 				if (sock < 0) break;	/* EAGAIN: nothing more waiting, or an error */
+
+				/* A descriptor select() cannot hold is refused, not FD_SET */
+				if (sock >= FD_SETSIZE) {
+					static time_t lastlog = 0;
+					static int refused = 0;
+					char text[IP_ADDR_STRLEN];
+
+					refused++;
+					if (now >= lastlog + 60) {
+						errprintf("Refused %d connection(s) from %s: descriptor %d is beyond what select() handles (FD_SETSIZE %d)\n",
+							  refused, sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), sock, (int)FD_SETSIZE);
+						lastlog = now;
+						refused = 0;
+					}
+					close(sock);
+					continue;
+				}
 
 				/* The cap on silent connections, for each connection taken */
 				idlemine = idle_from(connhead, (struct sockaddr *)&addr, &idleall);

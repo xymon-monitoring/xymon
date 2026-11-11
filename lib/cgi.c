@@ -58,6 +58,34 @@ char *safe_basename(char *path)
 #define CGI_NAMECHARS XYMON_HOSTNAME_CHARS
 
 /*
+ * A host name as a regular expression that matches that name and no other,
+ * for the "host=^...$" filter of a xymondboard query. The anchors alone do
+ * not make a '.' literal, so "^web01.example.com$" also matches a host named
+ * "web01Xexample.com", and a page that keeps the first row it gets back can
+ * show that host's data. Every character that is not a letter or a digit is
+ * given a backslash, which PCRE reads as that character itself.
+ *
+ * Only a host name is accepted: a value with a character outside
+ * CGI_NAMECHARS (a space would split the query into another filter) gives
+ * NULL. Returns a newly allocated string, without the anchors.
+ */
+char *cgi_hostregex(const char *hostname)
+{
+	char *result, *p;
+
+	if (!hostname || !*hostname || hostname[strspn(hostname, CGI_NAMECHARS)]) return NULL;
+
+	result = (char *)malloc(2*strlen(hostname) + 1);
+	for (p = result; (*hostname); hostname++) {
+		if (!isalnum((unsigned char)*hostname)) *p++ = '\\';
+		*p++ = *hostname;
+	}
+	*p = '\0';
+
+	return result;
+}
+
+/*
  * Confine a CGI value to a single legal path component -- the one policy
  * behind every host/service parameter. The value must be a single
  * component of CGI_NAMECHARS or it is refused as a whole (NULL): never

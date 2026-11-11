@@ -87,8 +87,30 @@ else
 	printf '  note: boundary not checked, %s is too long for a %s-character path\n' "$work" "$size" >&2
 fi
 
+# A list of hosts: one request per host, through one socket and one wait.
+# The wait was 0.3 s per host, so ten hosts took three seconds.
+hosts=$(awk 'BEGIN{for(i=1;i<=10;i++)printf "%s%s",(i>1?",":""),"h"i}')
+"$work/receiver" "$work/run/rrdctl.3" 10 >"$work/received" 2>&1 &
+rpid=$!
+register_cleanup "stop_process $rpid"
+for _ in $(seq 1 50); do
+	[ -S "$work/run/rrdctl.3" ] && break
+	sleep 0.1
+done
+start=$(date +%s)
+env -i PATH="$PATH" REQUEST_METHOD=GET \
+	QUERY_STRING="host=$hosts&service=conn-multi&graph=hourly&action=view" \
+	XYMONHOME="$work" XYMONRUNDIR="$work/run" XYMONRRDS="$work/rrd" \
+	"$SHOWGRAPH" --config="$work/graphs.cfg" >"$work/render.log" 2>&1 || true
+elapsed=$(( $(date +%s) - start ))
+wait "$rpid" || fail "not every host's flush request arrived: $(cat "$work/received")"
+for h in h1 h5 h10; do
+	assert_contains "/$h/" "$(cat "$work/received")" "flush request for $h in a list of ten"
+done
+[ "$elapsed" -le 2 ] || fail "flushing ten hosts took ${elapsed}s, as if each waited on its own"
+
 # A directory showgraph cannot open is named in its error.
 out=$(render "$work/absent")
 assert_contains "Cannot access XYMONRUNDIR ($work/absent)" "$out" "a missing XYMONRUNDIR is named"
 
-pass "showgraph flushes the rrdctl sockets in XYMONRUNDIR, and bounds each path at sizeof(sun_path)"
+pass "showgraph flushes the rrdctl sockets in XYMONRUNDIR, bounds each path at sizeof(sun_path), and flushes a list of hosts with one wait"

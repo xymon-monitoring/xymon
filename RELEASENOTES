@@ -16,6 +16,62 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+headfoot -- the host, test and board lists are shown escaped
+-----------------------------------------------------------
+
+The host, test and page lists the forms build (the metrics report, the
+enable/disable page, the report forms) printed names into <option> as they
+were held. The enable/disable page also built its currently-disabled table
+and a JavaScript host/test map from the status board. These are now escaped
+where they are printed: HTML for the <option> lists, the table and the page
+dropdown's value, and a JavaScript string for the host/test map. A name or
+message holding "<", ">", "&" or a quote is shown as written, not as markup.
+
+web -- critical systems values are escaped on the pages that show them
+----------------------------------------------------------------------
+
+A critical system's resolver group, instructions, clone names and last-update
+line, and the group and instructions a service's status page takes from its
+URL, are now HTML-escaped where the editor and the status pages print them. A
+value holding "<", ">", "&" or a quote is shown as written rather than as
+markup. Nothing to change on upgrade.
+
+xymond -- a message line starting with "@@" is passed on as text
+----------------------------------------------------------------
+
+xymond frames the records it passes to its workers with lines starting with
+"@@". A line of a message -- a status, client data, a page or a note -- that
+started with "@@" was passed through as such a line; it now starts with "@ "
+instead, so it stays inside the message. One visible effect: a client data
+section showing a unified diff, whose hunk headers read "@@ -12,7 +12,8 @@",
+now reaches the server as "@ -12,7 ...", so a client-local.cfg LOG rule
+matching "^@@" no longer matches it. Nothing else to change on upgrade.
+
+showgraph -- the host names are checked, and the cache-flush is bounded
+-----------------------------------------------------------------------
+
+showgraph.cgi now requires each name in its "host=" parameter to be a plain
+host name -- the characters a Xymon web page accepts for a host, and no "/" --
+of at most 255 characters, and a graph takes at most 1000 hosts, above what a
+page normally graphs at once; anything else gets an error instead of a graph. A host whose name has other characters,
+which xymond already warns about, no longer gets graphs, as its other pages
+already did not. rrdtool's message on the error page is shown quoted. The
+cache-flush to xymond_rrd goes through one socket with one wait for all the
+hosts of a request, and xymond_rrd keeps no record for a name with nothing
+cached. Nothing to change on upgrade.
+
+web -- a host's pages show that host only
+-----------------------------------------
+
+The info and client pages, a COMPACT column, the configuration report and
+the acknowledgement page asked xymond for a host's statuses with its name as a
+pattern, in which each dot matched any character: with web01.example.com and
+web01-example.com both configured, web01.example.com's info page also listed
+the other host's tests, and its client page could show the other host's
+sender. Each name is now matched as written. The "host" cookie the
+configuration report and the acknowledgement page read is a host name too:
+one with other characters is refused as an invalid filter.
+
 xymond -- TLS between clients and the daemon
 --------------------------------------------
 
