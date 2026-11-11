@@ -667,7 +667,7 @@ void load_tests(void)
 					/* 
 					 * Simple TCP connect test. 
 					 */
-					char *option;
+					char *colon, *option = NULL;
 					xtreePos_t handle;
 
 					/* See if there's a source IP */
@@ -678,10 +678,10 @@ void load_tests(void)
 					}
 
 					/* Remove any trailing ":s", ":q", ":Q", ":portnumber" */
-					option = strchr(testspec, ':'); 
-					if (option) { 
-						*option = '\0'; 
-						option++; 
+					colon = strchr(testspec, ':');
+					if (colon) {
+						*colon = '\0';
+						option = colon + 1;
 					}
 	
 					/* Find the service */
@@ -729,7 +729,7 @@ void load_tests(void)
 					}
 
 					if (s) h->dodns = 1;
-					if (option) *(option-1) = ':';
+					if (colon) *colon = ':';
 				}
 
 				if (s) {
