@@ -228,6 +228,15 @@ client data page starts with a "[transport]" section saying how the
 message came ("TLSv1.3 from 192.0.2.1"). That section is added to the page
 only; the client message xymond stores and returns is unchanged.
 
+Graphs
+------
+
+For ten minutes after it starts, xymond_rrd keeps updates in its cache, writing
+an RRD only when its cache is full, and ignores flush requests from the graph
+pages, so that a previous xymond_rrd can finish writing first. Graphs may lag
+by up to ten minutes after a restart.
+
+
 Changes for 4.3.31
 ==================
 
