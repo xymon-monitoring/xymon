@@ -51,7 +51,7 @@ assert_not_contains "snprintf(item->auth, login_len," "$src" \
 # the source guard above already stands, so record a partial.
 command -v "$CC" >/dev/null 2>&1 \
 	|| pass_partial "url.c keeps the #226 snprintf size (source check)" "no C compiler for the behavioural run"
-[ -f "$ROOT/lib/libxymonclient.a" ] && [ -f "$ROOT/lib/libxymonclientcomm.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymonclient.a)" ] && [ -f "$(xymon_lib "$ROOT" libxymonclientcomm.a)" ] \
 	|| pass_partial "url.c keeps the #226 snprintf size (source check)" "library not built for the behavioural run"
 
 work=$(mktempdir)
@@ -95,7 +95,7 @@ case $harness_cflags in
 	*-DCLIENTONLY*) pcre_libs= ;;
 esac
 "$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$SRC" "$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
+	"$work/harness.c" "$SRC" "$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
 	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "netrc harness does not compile"; }
 

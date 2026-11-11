@@ -46,8 +46,8 @@ port=$(cat "$work/port")
 
 # Copy the shipped file and redirect only the port inside [smtp].
 awk -v port="$port" '
-	/^[[:space:]]*\[/ { insmtp = ($0 ~ /^[[:space:]]*\[smtp\][[:space:]]*$/) }
-	insmtp && /^[[:space:]]*port[[:space:]]/ { print "   port " port; next }
+	/^[ \t]*\[/ { insmtp = ($0 ~ /^[ \t]*\[smtp\][ \t]*$/) }
+	insmtp && /^[ \t]*port[ \t]/ { print "   port " port; next }
 	{ print }
 ' "$root/xymonnet/protocols.cfg" > "$work/home/etc/protocols.cfg"
 

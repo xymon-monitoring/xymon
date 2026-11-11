@@ -76,7 +76,7 @@ check_declares "$ROOT/client/xymonclient.cfg.DIST"              "xymonclient.d"
 
 CC=${CC:-cc}
 if ! command -v "$CC" >/dev/null 2>&1 \
-	|| [ ! -f "$ROOT/include/config.h" ] || [ ! -f "$ROOT/lib/libxymonclient.a" ] || [ ! -f "$ROOT/lib/libxymonclientcomm.a" ]; then
+	|| [ ! -f "$ROOT/include/config.h" ] || [ ! -f "$(xymon_lib "$ROOT" libxymonclient.a)" ] || [ ! -f "$(xymon_lib "$ROOT" libxymonclientcomm.a)" ]; then
 	pass_partial "shipped configs declare their drop-in directories (#222)" "stackio mechanism check needs a built tree"
 fi
 
@@ -98,7 +98,7 @@ case $harness_cflags in
 	*-DCLIENTONLY*) pcre_libs= ;;
 esac
 "$CC" -DSTANDALONE $harness_cflags -o "$work/stackio" \
-	"$ROOT/lib/stackio.c" "$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
+	"$ROOT/lib/stackio.c" "$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
 	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "standalone stackio does not compile"; }
 

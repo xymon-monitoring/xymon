@@ -37,15 +37,14 @@ XYMOND_C="$ROOT/xymond/xymond.c"
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 
-[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$ROOT/include/config.h" ] && [ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-noflap-prefix.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 require_gnu_make
-"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
 # Tags are spelled lowercase, as hosts.cfg(5) documents them, even though the
 # key table in lib/loadhosts.c stores them upper-case.
@@ -116,7 +115,7 @@ EOF
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$ROOT/lib/libxymoncomm.a" \
+	"$work/harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
 	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 

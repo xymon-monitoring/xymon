@@ -32,7 +32,10 @@ mkdir -p "$work/home/etc" "$work/tmp" "$work/rrd"
 : > "$work/home/etc/analysis.cfg"
 : > "$work/hosts.cfg"
 
-buildflags_output=$("$XYMON_MAKE" -s -C "$ROOT" -f Makefile -f - disk-test-flags <<'EOF'
+# MAKEFLAGS= : the probe makefile is read from stdin (-f -), and an inherited
+# jobserver -- the suite run under a parent "make -j", as debian/rules does --
+# corrupts that read, so the probe comes back empty. #733.
+buildflags_output=$(MAKEFLAGS= "$XYMON_MAKE" -s -C "$ROOT" -f Makefile -f - disk-test-flags <<'EOF'
 .PHONY: disk-test-flags
 disk-test-flags:
 	@printf '%s\n' 'ldflags=$(LDFLAGS)' 'rpathopt=$(RPATHOPT)' \
@@ -77,6 +80,7 @@ $2
 		XYMONHOME="$work/home" \
 		XYMONVAR="$work" \
 		XYMONTMP="$work/tmp" \
+		XYMONRUNDIR="$work/tmp" \
 		XYMONRRDS="$work/rrd" \
 		HOSTSCFG="!$work/hosts.cfg" \
 		TEST2RRD="disk" \
@@ -127,6 +131,7 @@ $2
 		XYMONHOME="$work/home" \
 		XYMONVAR="$work" \
 		XYMONTMP="$work/tmp" \
+		XYMONRUNDIR="$work/tmp" \
 		XYMONRRDS="$work/rrd" \
 		HOSTSCFG="!$work/hosts.cfg" \
 		TEST2RRD="inode" \

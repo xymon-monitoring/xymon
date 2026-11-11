@@ -59,18 +59,25 @@ printf 'MARK=cwd-server\n' >"$work/cwd/xymonserver.cfg"
 assert_equal "xymonhome" "$(mark "$work/cwd" XYMONHOME="$work/home")" \
 	"the configuration file under XYMONHOME was not the one read"
 
-assert_equal "cwd-server" "$(mark "$work/cwd" XYMONHOME="$long")" \
-	"with a 5000-character XYMONHOME, the search did not move on to ./xymonserver.cfg"
-
+# Reads no file of ours and only needs to exit 0, so it runs whatever the host
+# has installed.
 rc=0
 (cd "$work/none" && env -u MACHINEDOTS HOSTNAME="$long" "$XYMONCMD" true) >"$work/host.out" 2>&1 || rc=$?
 assert_equal "0" "$rc" \
 	"xymoncmd did not run its command with a 5000-character HOSTNAME: $(tail -3 "$work/host.out")"
 
+# Every case below needs the search to run past the fixed system paths
+# (/etc/xymon/xymonserver.cfg, then /etc/xymon-client/xymonclient.cfg) and reach
+# the current directory -- the move-on after a too-long XYMONHOME included. A
+# host that installs either file cannot run them: the search stops at the system
+# file, which carries no MARK, so the guard must come before them, not after.
 if [ -e /etc/xymon/xymonserver.cfg ] || [ -e /etc/xymon-client/xymonclient.cfg ]; then
-	pass_partial "xymoncmd reads the file under XYMONHOME, moves on past one whose name is too long, and runs with a 5000-character HOSTNAME" \
-		"not checked: XYMONCLIENTHOME's candidate, because this host has a system-wide configuration file the search finds first"
+	pass_partial "xymoncmd reads the file under XYMONHOME and runs with a 5000-character HOSTNAME" \
+		"not checked: moving on to ./xymonserver.cfg past a too-long XYMONHOME, and XYMONCLIENTHOME's candidate, because this host has a system-wide configuration file the search finds first"
 fi
+
+assert_equal "cwd-server" "$(mark "$work/cwd" XYMONHOME="$long")" \
+	"with a 5000-character XYMONHOME, the search did not move on to ./xymonserver.cfg"
 
 assert_equal "clienthome" "$(mark "$work/none" XYMONHOME="$work/none" XYMONCLIENTHOME="$work/client")" \
 	"the configuration file under XYMONCLIENTHOME was not the one read"

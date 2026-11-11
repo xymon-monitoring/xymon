@@ -73,7 +73,6 @@ jobs:
           USEXYMONPING=y \
           ENABLESSL=y \
           ENABLELDAP=y \
-          ENABLELDAPSSL=y \
           XYMONUSER=xymon \
           XYMONTOPDIR=/usr/lib/xymon \
           XYMONVAR=/var/lib/xymon \
@@ -84,6 +83,7 @@ jobs:
           SECUREXYMONCGIURL=/xymon-seccgi \
           HTTPDGID=www-data \
           XYMONLOGDIR=/var/log/xymon \
+          XYMONRUNDIR=/run/xymon \
           XYMONHOSTNAME=localhost \
           XYMONHOSTIP=127.0.0.1 \
           MANROOT=/usr/share/man \
@@ -129,6 +129,14 @@ jobs:
           # state, so 77 would otherwise surface as a bare nonzero failure with
           # no explanation. `|| rc=$?` exempts the runner from bash -e so the
           # mapping is reachable.
+          #
+          # xymonping needs raw sockets. This lane is not root, so make the
+          # built binary setuid-root, as a real install does, so its ipv6 test
+          # can run it -- the test itself never calls sudo (#759). A no-op when
+          # the binary was not built or the lane is already root.
+          if [ "$(id -u)" != 0 ] && [ -x xymonnet/xymonping ]; then
+            sudo chown 0 xymonnet/xymonping && sudo chmod u+s xymonnet/xymonping
+          fi
           rc=0
           ./tests/testsuite || rc=$?
           if [ "$rc" = 77 ]; then
@@ -137,7 +145,7 @@ jobs:
           fi
           exit "$rc"
 
-  # The 69 HTML manual pages under docs/manpages/ are generated from the roff
+  # The HTML manual pages under docs/manpages/ are generated from the roff
   # sources and committed alongside them, and nothing ever checked that the two
   # agree. They drifted for seven years: the last full regeneration is the
   # 4.3.30 release of September 2019 - all 69 pages still carry its two

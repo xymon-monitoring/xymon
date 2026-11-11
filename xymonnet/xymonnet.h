@@ -85,7 +85,6 @@ typedef struct extraping_t {
 typedef struct testedhost_t {
 	char *hostname;
 	char ip[IP_ADDR_STRLEN];
-	char cfgip[IP_ADDR_STRLEN];	/* Column 1 as written in hosts.cfg, before any DNS overwrite of ip */
 	int dialup;		/* dialup flag (if set, failed tests report as clear) */
 	int testip;		/* testip flag (don't do dns lookups on hostname) */
 	int nosslcert;		/* nosslcert flag */

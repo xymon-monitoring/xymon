@@ -32,7 +32,7 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 
 # shellcheck disable=SC2086
 "$CC" $harness_cflags -iquote "$ROOT/include" -o "$work/harness" \
-	"$(dirname "$0")/cgi-split-hostsvc-harness.c" "$ROOT/lib/libxymon.a" \
+	"$(dirname "$0")/cgi-split-hostsvc-harness.c" "$(xymon_lib "$ROOT" libxymon.a)" \
 	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 

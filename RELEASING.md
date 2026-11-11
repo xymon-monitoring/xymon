@@ -69,6 +69,21 @@ never in a pull request.
 
 ## Step by step
 
+### Before step 1: freeze `main` and test it
+
+A preview is `main` plus open pull requests, so it is not what the release
+ships. `main` is. A few days before step 1:
+
+- merge only fixes for this release into `main`, and move the other pull
+  requests to the next milestone;
+- ask testers to run a build of `main`: the `xymon-snapshot` channel of
+  xymon-rpm, rebuilt each night `main` moves, or Homebrew's `--HEAD`;
+- start step 1 once a few days pass with no new problem.
+
+That frozen `main` is the release candidate: the code that will be tagged,
+tested where people run it. There is no separate rc tag; the prep workflow
+takes `X.Y.Z` only.
+
 ### 1. Close out the changelog
 
 On `Changes`: merge `main` in, check every merged pull request has its
@@ -178,18 +193,40 @@ The tag sits on `main`'s tip, and `include/version.h` still holds the number
 just released, so a build from `main` reports the release and
 `git describe --exact-match` on the tip returns the tag until the next commit
 lands -- which misleads anything keying off either (it left the RPM build
-treating a `main` build as the release). Bump `include/version.h` to the next
-`X.Y.Z+1-dev` so `main` names what it is becoming. See #676 for the fuller
-build-identity work this anticipates.
+treating a `main` build as the release). So `include/version.h` moves to the
+next `X.Y.Z+1-dev`, and `main` names what it is becoming (#676).
+
+The release workflow does it: once the tarball is up, its `post-release-dev`
+job opens the pull request `version.h: X.Y.Z+1-dev after the X.Y.Z release`
+from the branch `post-release/X.Y.Z+1-dev`, and starts its checks. Review and
+merge it. If the next release will not be `X.Y.Z+1` (a `4.4.0`, say), edit the
+line in that pull request first. The job changes nothing when `main` has
+already moved on, and nothing after a tag that is not a final `X.Y.Z`.
+
+If the job failed, its run summary prints the same steps by hand:
 
 ```sh
 git fetch origin
 git switch -c post-release/X.Y.Z+1-dev origin/main
-# set VERSION in include/version.h to "X.Y.Z+1-dev", then:
+./build/bump-dev.sh X.Y.Z          # the version just released
 git commit -am "version.h: X.Y.Z+1-dev after the X.Y.Z release"
 git push origin post-release/X.Y.Z+1-dev
 gh pr create --base main --head post-release/X.Y.Z+1-dev \
 	--title "version.h: X.Y.Z+1-dev after the X.Y.Z release"
+```
+
+Then close the `X.Y.Z` milestone, after moving any pull request still in it
+to the next one. xymon-experimental retires a milestone's `candidate/` and
+`experimental/` branches only once it is closed here and its build integrated
+no pull request for it; left open, its branch stays at the last pre-release
+build and is
+taken for the release being driven, holding the daily lanes the next
+milestone should have.
+
+```sh
+gh pr list --search "milestone:X.Y.Z" --state open    # move these first
+m=$(gh api repos/xymon-monitoring/xymon/milestones -q '.[] | select(.title == "X.Y.Z") | .number')
+gh api -X PATCH "repos/xymon-monitoring/xymon/milestones/$m" -f state=closed
 ```
 
 ## Reproducibility

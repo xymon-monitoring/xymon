@@ -85,3 +85,86 @@ jobs:
             ${{ steps.vars.outputs.asset }}.sha256
 
 
+#===================================================
+  # After the tarball, propose main's next version. include/version.h still
+  # names the release, so a build from main would claim to be it
+  # (RELEASING.md, "After the release"; #676). A job of its own, so nothing
+  # here can touch the release; it only opens a pull request to review. It
+  # changes version.h alone -- not dorelease.sh's manual pages, which keep
+  # the release's version until the next one.
+  post-release-dev:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write   # gh workflow run: a push made with this token starts no workflow
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+#---------------------------------------------------
+      - name: Set include/version.h to the next -dev
+        id: bump
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#rel-}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "$GITHUB_REF_NAME is not a final X.Y.Z release: main keeps its version." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          ./build/bump-dev.sh "$VERSION"
+          if git diff --quiet; then
+            echo "main's include/version.h no longer names $VERSION: nothing to bump." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "next=$(sed -n 's/^#define VERSION "\(.*\)"$/\1/p' include/version.h)" >> "$GITHUB_OUTPUT"
+#---------------------------------------------------
+      - name: Open or update the pull request
+        if: steps.bump.outputs.next != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.bump.outputs.version }}
+          NEXT: ${{ steps.bump.outputs.next }}
+        run: |
+          set -euo pipefail
+          BRANCH="post-release/$NEXT"
+          TITLE="version.h: $NEXT after the $VERSION release"
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          # Recreated from main's tip on every run, as the prep branch is.
+          git checkout -B "$BRANCH"
+          git commit -q -am "$TITLE"
+          git push --force origin "$BRANCH"
+          if [ -z "$(gh pr list --head "$BRANCH" --base main --state open --json number -q '.[0].number // empty')" ]; then
+            gh pr create --base main --head "$BRANCH" --title "$TITLE" \
+              --body "Opened by \`workflow-release.yaml\` after the $VERSION release: \`include/version.h\` names the release until this merges, so a build from \`main\` would report it. Only that line changes. If the next release is not $NEXT, edit the line here before merging. See RELEASING.md, *After the release*."
+          fi
+          # A push made with GITHUB_TOKEN starts no workflow: run the checks.
+          gh workflow run build.yml --ref "$BRANCH"
+          gh workflow run tests.yml --ref "$BRANCH"
+          echo "Opened or updated the pull request for $NEXT on \`$BRANCH\`." >> "$GITHUB_STEP_SUMMARY"
+#---------------------------------------------------
+      - name: Say what to do by hand
+        if: failure()
+        shell: bash
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF2'
+          ## The version bump after the release failed
+
+          The release itself is not affected. Bump `include/version.h` by hand,
+          as RELEASING.md, *After the release*, describes:
+
+          ```
+          git fetch origin
+          git switch -c post-release/next-dev origin/main
+          ./build/bump-dev.sh X.Y.Z      # the version just released
+          git commit -am "version.h: X.Y.Z+1-dev after the X.Y.Z release"
+          git push origin post-release/next-dev
+          gh pr create --base main --head post-release/next-dev --fill
+          ```
+          EOF2

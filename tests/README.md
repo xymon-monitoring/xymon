@@ -363,6 +363,7 @@ packages**. The suite maps onto that as a single test entry, roughly:
 Test-Command: XYMONGREP=/usr/lib/xymon/client/bin/xymongrep \
               XYMONCLIENT_LINUX=/usr/lib/xymon/client/bin/xymonclient-linux.sh \
               XYMONSERVER_CFG=/etc/xymon/xymonserver.cfg \
+              XYMON_SSLCFLAGS=-DHAVE_OPENSSL \
               ./tests/testsuite
 Depends: xymon, xymon-client, gcc, make
 Restrictions: skippable
@@ -372,7 +373,15 @@ Restrictions: skippable
 instead of FAIL; `gcc`/`make` in `Depends` keep the compile-probe tests
 alive (autopkgtest does not provide build-dependencies by default). The
 env overrides point binary-driving tests (`require_bin`) and
-installed-artefact tests at the package's files -- those are the tests
+installed-artefact tests at the package's files, and `XYMON_SSLCFLAGS`
+says whether that build has OpenSSL, which the TLS tests otherwise read
+from a configured tree's `Makefile` and skip without one. A build that compiles
+its own libraries out of the tree -- CMake, in its build directory -- also
+names, for the tests that compile a harness against them, where the
+archives are (`XYMON_LIBDIR`), the compile flags that reach its generated
+`config.h` (`XYMON_CFLAGS`, added to the tree's own include path) and the
+link flags its archives need (`XYMON_LDFLAGS`, in place of what the
+`Makefile` would give) -- those are the tests
 that give Debian's library-transition CI something that can break at
 runtime. Source-reading tests run against the unpacked (patched) source
 tree; for the installed-package use case they are *supplementary*

@@ -41,15 +41,14 @@ ROOT=$(find_root)
 CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 
-[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymonclient.a" ] \
+[ -f "$ROOT/include/config.h" ] && [ -f "$(xymon_lib "$ROOT" libxymonclient.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktemp -d "${TMPDIR:-/tmp}/xymon-notbefore.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
 require_gnu_make
-"$XYMON_MAKE" -C "$ROOT/lib" libxymonclientcomm.a libxymonclient.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh the xymon client libraries"; }
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymonclientcomm.a libxymonclient.a
 
 # The far side of the window has to be a time this platform can represent: a
 # signed 32-bit time_t stops in January 2038, and timestr2timet() returns -1
@@ -185,7 +184,7 @@ EOF
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -DFUTURE_STAMP="\"$future\"" -o "$work/harness" \
-	"$work/harness.c" "$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
+	"$work/harness.c" "$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
 	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 

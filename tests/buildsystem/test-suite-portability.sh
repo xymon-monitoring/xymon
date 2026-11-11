@@ -63,6 +63,7 @@ report() {
 		# the rule could only be satisfied by deleting the definition.
 		case $rule in
 		  runner-only-helper) [ "$f" = "$ROOT/tests/testsuite" ] && continue ;;
+		  make-tree-*) [ "$f" = "$ROOT/tests/lib/assert.sh" ] && continue ;;
 		esac
 		# Drop comment lines before matching, keeping real line numbers.
 		# "|| true" twice: a grep with no match exits 1, which set -e and
@@ -138,6 +139,20 @@ report "include-shadow" '\-I *"?\$\{?ROOT' \
 report "path-rewrite" 'sed.*/proc/' \
 	"replace the helper by name (fsf_stub_helper), not the path it reads"
 
+# A test reaches the build it runs against through the helpers, never through
+# the make tree's own files. A CMake or packaged build has no top-level
+# Makefile and keeps its archives elsewhere: a test that rebuilds lib/ with
+# make, reads a value out of the Makefile, or spells an archive's path fails
+# there, or mixes two builds, where the helpers take the build's overrides
+# (tests/README.md) and skip what they cannot answer. tests/lib/assert.sh is
+# where the helpers do read the make tree, and is not checked.
+report "make-tree-lib" 'XYMON_MAKE"? +[^|;]*-C +"?[$][{]?(ROOT|root)[}]?/lib' \
+	"rebuilds the archives with make in lib/; use build_xymon_libs, which leaves another build's alone"
+report "make-tree-makefile" '(sed|grep|awk|cat|head|tail|cut)( [^|;]*)? "?[$][{]?(ROOT|root)[}]?/Makefile' \
+	"reads the top-level Makefile, which only a make build has; use xymon_makevar ROOT NAME"
+report "make-tree-archive" '[$][{]?(ROOT|root)[}]?/lib/lib[a-z]+[.]a' \
+	"names an archive by where make writes it; use xymon_lib ROOT ARCHIVE"
+
 # The runner defines errline() and run_one() for itself. A test does not have
 # them: it is sourced with tests/lib/assert.sh and nothing else, so a call to
 # one is a command-not-found. Such a call lands on the arm that REPORTS a
@@ -162,6 +177,13 @@ report "cleanup-kill" 'register_cleanup .*(^|[^[:alnum:]_-])kill([[:space:]]|$)'
 report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
 	"not installed on the BSD lanes; awk and sh are"
 
+# A test must not acquire privilege itself. A no-password sudo attempt is logged
+# and can be mailed as a security alert on a developer's machine (#759), and the
+# escalation is non-portable besides. Gate on "id -u"/setuid and skip; let the
+# runner provide root (CI installs the binary setuid or runs the suite as root).
+report "sudo" '(^|[^-[:alnum:]_.])sudo[[:space:]]' \
+	"a test must not call sudo: it surprises a developer's machine and privilege is the runner's job -- gate on id -u or the setuid bit and skip"
+
 # A harness that links the tree needs the configured flags: the BSDs keep
 # pcre2.h under /usr/local or /usr/pkg, and without the rpath the binary links
 # and then cannot find libpcre2 at run time.
@@ -169,7 +191,8 @@ report "interpreter" '(^|[^-[:alnum:]_])(python3?|perl)[[:space:]]' \
 # Comments are stripped on both sides: a file that only *mentions* the helpers
 # in a comment satisfied the rule, and one that names an archive in a comment
 # was checked for no reason. Any in-tree archive counts, not one library-name
-# family -- the flags are needed for whatever the tree builds.
+# family -- the flags are needed for whatever the tree builds -- named by its
+# path or through xymon_lib, which finds it in another build's directory.
 check_link_flags() {
 	local f=$1 out=$2 code
 	code=$(grep -vE '^[[:space:]]*#' "$f" || true)
@@ -177,7 +200,7 @@ check_link_flags() {
 	# and a printf still writing then dies of SIGPIPE, which pipefail turns
 	# into a reported violation -- 901 times in 20000 on OpenBSD 7.9.
 	# [{]? rather than \{? : a brace after a backslash is not portable ERE.
-	grep -qE '[$][{]?ROOT[}]?[^[:space:]]*[.]a' <<<"$code" || return 0
+	grep -qE '[$][{]?ROOT[}]?[^[:space:]]*[.]a|xymon_lib "' <<<"$code" || return 0
 	grep -q 'xymon_cflags' <<<"$code" \
 		|| printf 'link-flags\t%s\t%s\n' "${f#"$ROOT"/}" "links an in-tree archive without xymon_cflags" >>"$out"
 	grep -q 'xymon_ldflags' <<<"$code" \
@@ -303,6 +326,34 @@ check_early_exit_pipe() {
 
 for f in $files; do check_early_exit_pipe "$f" "$work/violations"; done
 
+# awk, unlike grep/sed/expr, has no POSIX character classes in old mawk -- the
+# floor on Debian (mawk is its default) and the BSDs. A [[:...:]] inside an awk
+# program matches nothing there, so the test silently misbehaves (#732). Use
+# [ \t] or an explicit range in an awk program; grep/sed/expr keep [[:...:]].
+# Multi-line programs are caught: a line is joined to the next while its single
+# quotes are unbalanced, so the whole program is seen at the line it opens on.
+# check_awk_charclass FILE OUT -- append this file's violations to OUT.
+check_awk_charclass() {
+	local f=$1 out=$2 n
+	awk '
+	{ line[NR] = $0 }
+	END {
+		q = "\047"
+		for (i = 1; i <= NR; i++) {
+			if (line[i] ~ /^[ \t]*#/) continue
+			buf = line[i]; start = i
+			while (i < NR && (gsub(q, q, buf) % 2) == 1) { i++; buf = buf " " line[i] }
+			if (buf ~ ("(^|[^A-Za-z0-9_])awk[^|]*[[][[]:")) print start
+		}
+	}
+	' "$f" |
+	while IFS= read -r n; do
+		printf 'awk-charclass\t%s\t%s\n' "${f#"$ROOT"/}:$n" \
+			'POSIX character class in an awk program; old mawk has none -- use [ \t] or an explicit range (grep/sed/expr keep [[:...:]])' >>"$out"
+	done
+}
+for f in $files; do check_awk_charclass "$f" "$work/violations"; done
+
 # git, the compiler and make speak the user's language: a German git writes
 # "KONFLIKT" where an English one writes "CONFLICT", and pin-check.sh failed
 # on every German system for asserting the English word (#628). Xymon's own
@@ -331,7 +382,7 @@ for f in $files; do check_translated "$f" "$work/violations"; done
 check_cleanup_fn() {
 	local f=$1 out=$2 fn body
 	for fn in $(sed -nE 's/^[[:space:]]*register_cleanup "?([A-Za-z_][A-Za-z0-9_]*)"?[[:space:]]*$/\1/p' "$f"); do
-		body=$(awk -v fn="$fn" '$0 ~ "^[[:space:]]*" fn "\\(\\)" { p = 1 } p { print } p && /^[[:space:]]*}/ { exit }' "$f" |
+		body=$(awk -v fn="$fn" '$0 ~ "^[ \t]*" fn "\\(\\)" { p = 1 } p { print } p && /^[ \t]*}/ { exit }' "$f" |
 			grep -vE '^[[:space:]]*#' || true)
 		grep -qE '(^|[^[:alnum:]_-])kill([[:space:]]|$)' <<<"$body" || continue
 		grep -qE 'stop_process|(^|[^[:alnum:]_])wait([[:space:]]|$)|kill +-0' <<<"$body" && continue
@@ -390,10 +441,26 @@ probe="$work/probe.sh"
 	printf 'sed s#/proc/mounts#f# x\n'
 	printf 'errline "boom"\n'
 	printf 'register_cleanup "kill $pid 2>/dev/null || true"\n'
+	printf '"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a\n'
+	printf 'libs=$(sed -n s/^PCRELIBS=//p "$ROOT/Makefile")\n'
+	printf 'cc x.c "$root/lib/libxymon.a"\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "11" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "14" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+
+# And not over-eager: the helpers that replace those, and a test that only
+# asks whether the make tree is there, match none of the patterns.
+fine="$work/fine.sh"
+{
+	printf 'build_xymon_libs "$ROOT" "$work/log" libxymoncomm.a\n'
+	printf 'libs=$(xymon_makevar "$ROOT" PCRELIBS)\n'
+	printf 'cc x.c "$(xymon_lib "$ROOT" libxymon.a)"\n'
+	printf '[ -f "$ROOT/Makefile" ] || skip "tree not configured"\n'
+	printf '"$XYMON_MAKE" -C "$ROOT" install PKGBUILD=1\n'
+} >"$fine"
+assert_equal "0" "$(grep -cE "$probe_pattern" "$fine" || true)" \
+	"a rule fires on the helpers that replace what it forbids, or on a test of the make build itself"
 
 # The cleanup-function rule the same way: a function that kills and does not
 # wait is reported, one that waits or uses stop_process is not.
@@ -423,6 +490,14 @@ bypass="$work/bypass.sh"
 check_link_flags "$bypass" "$work/probe-violations"
 assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
 	"the link-flags rule no longer reports both missing helpers for an archive built without them"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf '"$CC" -o x y.c "$(xymon_lib "$ROOT" libportable.a)"\n'
+} >"$bypass"
+: >"$work/probe-violations"
+check_link_flags "$bypass" "$work/probe-violations"
+assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
+	"the link-flags rule does not see an archive named through xymon_lib"
 
 # The GNU-escape rule the same way: an escape is reported whatever follows it,
 # a word included, and the portable spellings are not.

@@ -22,8 +22,8 @@
 # check_rrdds_thresholds() is not exposed by any binary's CLI, so this compiles
 # a small harness (analysis-ds-firstmatch-harness.c) against the real
 # xymond/client_config.c and lib, loads real hosts.cfg/analysis.cfg fixtures,
-# and counts "modify" lines per RRD key. Three scenarios, keyed by distinct RRD
-# keys so they do not interfere:
+# and counts "modify" lines per RRD key. Each scenario is keyed by a distinct
+# RRD key so they do not interfere:
 #
 #   k_shadow  : a specific rule that does NOT trigger, then a general rule of the
 #               same colour that WOULD -> 0 modifies. This is the sharp edge of
@@ -36,6 +36,15 @@
 #               shadowed across colours would drop this to 1.
 #   k_first   : two same-colour rules where the FIRST triggers -> 1 modify. The
 #               first-match result; before the fix this emitted 2.
+#   k_toppage : a PAGE=/ rule -> 1 modify. Unrelated to #32, and here because
+#               this caller is the one that reaches ruleset()'s naming of the
+#               top page. Its pagepaths are a parameter rather than a hostinfo
+#               lookup -- xymond sends "" for a host it cannot resolve, and the
+#               harness passes "" too -- and ruleset() names that page "/" so a
+#               PAGE=/ rule can select it, as analysis.cfg(5) documents. Every
+#               other caller reads XMH_ALLPAGEPATHS, which names the page
+#               itself, so without this scenario that line is unreachable from
+#               the suite and can be tidied away green.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -51,13 +60,12 @@ CC=${CC:-cc}
 command -v "$CC" >/dev/null 2>&1 || skip "no C compiler available (CC=$CC)"
 require_gnu_make
 
-[ -f "$ROOT/include/config.h" ] && [ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$ROOT/include/config.h" ] && [ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktempdir)
 
-"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a >"$work/libbuild.log" 2>&1 \
-	|| { cat "$work/libbuild.log" >&2; fail "cannot refresh libxymoncomm.a"; }
+build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
 pcre_libs=${PCRELIBS:-}
 if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
@@ -69,7 +77,7 @@ harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -iquote "$ROOT/xymond" -o "$work/harness" \
 	"$here/analysis-ds-firstmatch-harness.c" "$CLIENT_CONFIG_C" \
-	"$ROOT/lib/libxymoncomm.a" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
+	"$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
 cat >"$work/hosts.cfg" <<'EOF'
@@ -85,10 +93,12 @@ DS c_colours k_colours:load >1.0  color=yellow
 DS c_colours k_colours:load >2.0  color=red
 DS c_first   k_first:load   >1.0  color=red
 DS c_first   k_first:load   >2.0  color=red
+PAGE=/
+DS c_toppage k_toppage:load >1.0  color=red
 EOF
 
 out=$("$work/harness" "$work/hosts.cfg" "$work/analysis.cfg" \
-	load 3.5 k_shadow k_colours k_first 2>"$work/run.log") \
+	load 3.5 k_shadow k_colours k_first k_toppage 2>"$work/run.log") \
 	|| { cat "$work/run.log" >&2; fail "harness run failed"; }
 
 get() { printf '%s\n' "$out" | sed -n "s/^$1=//p"; }
@@ -99,5 +109,7 @@ assert_equal "2" "$(get k_colours)" \
 	"DS shadowing is too aggressive: yellow and red thresholds on one dataset must both fire (#32)"
 assert_equal "1" "$(get k_first)" \
 	"DS first-match regressed: two same-colour rules both fired instead of the first winning (#32)"
+assert_equal "1" "$(get k_toppage)" \
+	"PAGE=/ did not reach a host whose pagepaths arrived empty: ruleset() is not naming the top page, and this caller is the only one that still asks it to"
 
-pass "DS threshold rules honour analysis.cfg first-match per (column, dataset, colour) (#32)"
+pass "DS threshold rules honour analysis.cfg first-match per (column, dataset, colour) (#32), and PAGE=/ reaches an empty pagepath list"

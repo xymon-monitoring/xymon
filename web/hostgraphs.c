@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 
 			for (hosti=1; (hosts[hosti]); hosti++) fprintf(stdout, ",%s", htmlquoted(hosts[hosti]));
 
-			fprintf(stdout, "&amp;service=%s&amp;graph_start=%ld&amp;graph_end=%ld&graph=custom&amp;action=view&amp;graph_height=%s&amp;graph_width=%s\"></td></tr>\n",
+			fprintf(stdout, "&amp;service=%s&amp;graph_start=%ld&amp;graph_end=%ld&amp;graph=custom&amp;action=view&amp;graph_height=%s&amp;graph_width=%s\"></td></tr>\n",
 				htmlquoted(tests[testi]), (long int)starttime, (long int)endtime, xgetenv("RRDHEIGHT"), xgetenv("RRDWIDTH"));
 		}
 

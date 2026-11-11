@@ -93,6 +93,7 @@ extern int hostscfg_hostline(char *line, char *ip, size_t iplen, char *hostname,
 extern int load_hostinfo(char *hostname);
 extern char *hostscfg_content(void);
 extern char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling);
+extern char *knownhost_ex(char *hostname, char *hostip, enum ghosthandling_t ghosthandling, int *inperiod);
 extern int knownloghost(char *logdir);
 extern void *hostinfo(char *hostname);
 extern void *localhostinfo(char *hostname);

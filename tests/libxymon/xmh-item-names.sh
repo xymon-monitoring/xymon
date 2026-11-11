@@ -48,7 +48,7 @@ templates) and also what xmh_item_isflag[] is derived from:
 $mismatched"
 
 require_c_buildenv "$ROOT"
-[ -f "$ROOT/lib/libxymonclient.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymonclient.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 
@@ -66,7 +66,7 @@ harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags -o "$work/harness" \
 	"$here/xmh-item-names-harness.c" \
-	"$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
+	"$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
 	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 
