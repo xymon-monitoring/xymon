@@ -43,10 +43,14 @@ mkcfg() {  # mkcfg LIMIT -- the env file with XYMOND_MAXCONNECTIONS set to LIMIT
 }
 
 # A limit that is not a number: xymond logs it with the default, and runs on
-# that default. The open-file limit is lowered so the default is known.
+# that default. The open-file limit is lowered so the default is known, and
+# --no-loopback keeps the listener count at one: the default is the descriptor
+# limit less a reserve and the listeners, so an extra loopback listener xymond
+# would otherwise add -- ::1 where the host has it (#807) -- would drop it by
+# one and this exact-number check would pass or fail by where it runs.
 mkcfg forty
 P=$(free_port)
-( ulimit -n 200 && exec "$XYMOND" --no-daemon --listen="127.0.0.1:$P" --hosts="$work/hosts.cfg" \
+( ulimit -n 200 && exec "$XYMOND" --no-daemon --no-loopback --listen="127.0.0.1:$P" --hosts="$work/hosts.cfg" \
 	--env="$work/xymonserver.cfg" --pidfile="$work/bad.pid" --checkpoint-file="$work/bad.chk" ) > "$work/bad.log" 2>&1 &
 badpid=$!
 register_cleanup "stop_process $badpid"
