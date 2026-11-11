@@ -79,6 +79,32 @@ int sockaddr_same_sender(struct sockaddr *a, struct sockaddr *b)
 	return prefix_match(aa, ba, ((family == AF_INET) ? 32 : 64));
 }
 
+/*
+ * Split an address in place: "host:port", "[IPv6]:port",
+ * "[IPv6]", or a bare IPv6 address, which has more than one ':' and so
+ * cannot carry a port. Returns the host, without brackets; *port is set
+ * only when a port is given.
+ */
+char *split_hostport(char *s, int *port)
+{
+	char *p;
+
+	if (*s == '[') {
+		p = strchr(s, ']');
+		if (!p) return s;	/* unbalanced: left for the lookup to refuse */
+		*p = '\0';
+		if (*(p+1) == ':') *port = atoi(p+2);
+		return s+1;
+	}
+
+	p = strchr(s, ':');
+	if (p && (strchr(p+1, ':') == NULL)) {
+		*p = '\0';
+		*port = atoi(p+1);
+	}
+	return s;
+}
+
 /* An address written as text, IPv4 or IPv6, into ss. Returns 1, or 0 if it is neither. */
 int text_sockaddr(char *text, struct sockaddr_storage *ss)
 {
