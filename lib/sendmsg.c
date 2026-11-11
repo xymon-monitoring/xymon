@@ -125,6 +125,7 @@ static void setup_transport(void)
 			if (strncmp(h, "http://", 7) == 0) h += strlen("http://");
 			xymonproxyport = 8080;
 			xymonproxyhost = split_hostport(h, &xymonproxyport);
+			if (!xymonproxyhost) xymonproxyhost = h;	/* malformed: the connect says so */
 		}
 	}
 
@@ -333,6 +334,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, strbuffer_
 		if ((slash = strchr(rcptbuf, '/')) != NULL) *slash = '\0';
 		rcptport = (usetls ? atoi(xgetenv("XYMONDTLSPORT")) : xymondportnumber);
 		rcptip = split_hostport(rcptbuf, &rcptport);
+		if (!rcptip) rcptip = rcptbuf;	/* malformed: the lookup refuses it */
 		dbgprintf("Standard protocol%s on port %d\n", (usetls ? " over TLS" : ""), rcptport);
 #ifdef HAVE_OPENSSL
 		/* Build the TLS context before connect(), so loading the CA bundle
@@ -376,6 +378,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, strbuffer_
 			}
 
 			rcptip = split_hostport(rcptbuf, &rcptport);
+			if (!rcptip) rcptip = rcptbuf;	/* malformed: the lookup refuses it */
 
 			/* The Host: header brackets an IPv6 address, as a URL does */
 			posthost = (char *)malloc(strlen(rcptip) + 3);
