@@ -68,7 +68,7 @@ typedef struct conn_t {
 	int savedata;			/* Save the data to the client data buffer */
 	clients_t *client;		/* Which client this refers to. */
 	time_t tstamp;			/* When did the connection start. */
-	struct sockaddr_in caddr;	/* Destination address */
+	struct sockaddr_storage caddr;	/* Destination address, IPv4 or IPv6 */
 	int sockfd;			/* Socket */
 	enum { C_READING, C_WRITING, C_CLEANUP } action;	/* What are we doing? */
 	strbuffer_t *msgbuf;		/* I/O buffer */
@@ -98,18 +98,27 @@ void sigmisc_handler(int signum)
 	}
 }
 
-char *addrstring(struct sockaddr_in *addr, int includeport)
+/*
+ * The address as text. With includeport, for the log: any IPv6 scope kept, in
+ * brackets with the port when it is IPv6. Without, for the messages relayed
+ * (ClientIP, "Status message received from"): the address alone, without a
+ * scope, which means nothing beyond this host, and an IPv4-mapped one as the
+ * IPv4 address, as xymond names such a sender.
+ */
+char *addrstring(struct sockaddr_storage *addr, int includeport)
 {
-	int n;
-	/* Sized for what it actually holds: an IPv4 address and an optional
-	   ":port". It was char[100], which is not wrong but tells the compiler
-	   the return may be 99 characters -- so every caller that formats it into
-	   a fixed buffer warns about a truncation that cannot happen. The bound
-	   is now the truth, and the writes below respect it either way. */
-	static char res[INET_ADDRSTRLEN + sizeof(":65535")];
-	n = snprintf(res, sizeof(res), "%s", inet_ntoa(addr->sin_addr));
-	if ((n > 0) && (n < (int)sizeof(res)) && includeport)
-		snprintf(res+n, sizeof(res)-n, ":%d", ntohs(addr->sin_port));
+	/* Sized for what it holds: an address with any IPv6 scope, in brackets
+	   with a port when it is IPv6, and an optional ":port". */
+	static char res[NI_MAXHOST + sizeof("[]:65535")];
+	char text[NI_MAXHOST];
+	int v6 = (addr->ss_family == AF_INET6);
+	int port = ntohs(v6 ? ((struct sockaddr_in6 *)addr)->sin6_port : ((struct sockaddr_in *)addr)->sin_port);
+
+	if (getnameinfo((struct sockaddr *)addr, (v6 ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in)),
+			text, sizeof(text), NULL, 0, NI_NUMERICHOST) != 0)
+		sockaddr_text((struct sockaddr *)addr, text, sizeof(text));
+	if (!includeport) sockaddr_text((struct sockaddr *)addr, res, sizeof(res));
+	else snprintf(res, sizeof(res), (strchr(text, ':') ? "[%s]:%d" : "%s:%d"), text, port);
 	return res;
 }
 
@@ -143,10 +152,18 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 	newconn->action = C_WRITING;
 	newconn->tstamp = gettimer();
 
-	/* Setup the address. */
-	newconn->caddr.sin_port = htons(portnum);
-	newconn->caddr.sin_family = AF_INET;
-	if (inet_aton(destip, (struct in_addr *)&newconn->caddr.sin_addr.s_addr) == 0) {
+	/* Setup the address: IPv4 or IPv6, bare or in brackets, a short form or a name */
+	{
+		char *copy = strdup(destip), *host = split_hostport(copy, &portnum);
+
+		if (host && host_sockaddr(host, &newconn->caddr, NULL)) {
+			if (newconn->caddr.ss_family == AF_INET6) ((struct sockaddr_in6 *)&newconn->caddr)->sin6_port = htons(portnum);
+			else ((struct sockaddr_in *)&newconn->caddr)->sin_port = htons(portnum);
+		}
+		else newconn->caddr.ss_family = AF_UNSPEC;
+		xfree(copy);
+	}
+	if (newconn->caddr.ss_family == AF_UNSPEC) {
 		/* Bad IP. */
 		time_t now = gettimer();
 		if (debug || (newconn->client->nexterrortxt < now)) {
@@ -157,7 +174,7 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 		goto done;
 	}
 
-	newconn->sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	newconn->sockfd = socket(newconn->caddr.ss_family, SOCK_STREAM, 0);
 	if (newconn->sockfd == -1) {
 		/* No more sockets available. Try again later. */
 		errprintf("Out of sockets (req %lu)\n", newconn->seq);
@@ -175,7 +192,8 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 	}
 
 	/* All set ... start the connection */
-	n = connect(newconn->sockfd, (struct sockaddr *)&newconn->caddr, sizeof(newconn->caddr)); 
+	n = connect(newconn->sockfd, (struct sockaddr *)&newconn->caddr,
+		    (newconn->caddr.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in));
 	if ((n == -1) && (errno != EINPROGRESS)) {
 		/* Immediate connect failure - drop it */
 		time_t now = gettimer();
@@ -627,13 +645,12 @@ int main(int argc, char *argv[])
 					ip = strdup(xmh_item(hostwalk, XMH_IP));
 				}
 				else {
-					/* There is an explicit IP setting in the pulldata tag */
-					char *p;
+					/* An explicit IP:PORT, [IPv6]:PORT, :PORT or IP in the pulldata tag */
+					char *copy = strdup(ip+1), *host = split_hostport(copy, &port);
 
-					ip++; /* Skip the '=' */
-					ip = strdup(ip);
-					p = strchr(ip, ':');
-					if (p) { *p = '\0'; port = atoi(p+1); }
+					/* Malformed (copy left as it was): addrequest() reports it */
+					ip = strdup(host ? host : copy);
+					xfree(copy);
 
 					if (*ip == '\0') {
 						/* No IP given, just a port number */
@@ -643,16 +660,20 @@ int main(int argc, char *argv[])
 				}
 
 				if (strcmp(ip, "0.0.0.0") == 0) {
-					struct hostent *hent;
+					/*
+					 * The name's IPv4 address if it has one, else its IPv6
+					 * one, as msgcache listens on IPv4 unless told otherwise;
+					 * as text with any IPv6 scope, for addrequest() to read.
+					 */
+					struct sockaddr_storage ss;
+					char text[NI_MAXHOST];
 
 					xfree(ip); ip = NULL;
-					hent = gethostbyname(clientwalk->hostname);
-					if (hent) {
-						struct in_addr addr;
-
-						memcpy(&addr, *(hent->h_addr_list), sizeof(addr));
-						ip = strdup(inet_ntoa(addr));
-					}
+					if (host_sockaddr(clientwalk->hostname, &ss, NULL) &&
+					    (getnameinfo((struct sockaddr *)&ss,
+							 (ss.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
+							 text, sizeof(text), NULL, 0, NI_NUMERICHOST) == 0))
+						ip = strdup(text);
 				}
 
 				if (!ip) continue;

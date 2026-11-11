@@ -41,11 +41,15 @@ not work for clients communicating via msgcache.
 .SH OPTIONS
 .IP "\fB--listen\fR=\fIIPADDRESS\fR[:\fIPORT\fR]"
 Defines the IP-address and portnumber where msgcache listens for
-incoming connections. By default, msgcache listens for connections
-on all network interfaces, port 1984.
+incoming connections, IPv4 or IPv6; an IPv6 address goes in brackets,
+as [::1]:1984. By default, msgcache listens for connections
+on all IPv4 network interfaces, port 1984.
 
 .IP "\fB--server\fR=\fIIPADDRESS\fR[,\fIIPADDRESS\fR]"
 Restricts which servers are allowed to pick up the cached messages.
+The addresses may be IPv4 or IPv6, each a plain address or a prefix
+such as 10.0.0.0/8, without an IPv6 scope: an IPv4 server that reaches
+msgcache over IPv6 is matched by its IPv4 address.
 By default anyone can contact the msgcache utility and request all
 of the cached messages. This option allows only the listed servers
 to request the cached messages.

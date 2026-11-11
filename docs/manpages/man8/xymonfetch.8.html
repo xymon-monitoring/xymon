@@ -51,9 +51,12 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
 <p>&#160;</p>
 <h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
 <dl class="Bl-tag">
-  <dt id="server"><a class="permalink" href="#server"><b>--server</b>=<i>XYMON.SERVER.IP</i></a></dt>
+  <dt id="server"><a class="permalink" href="#server"><b>--server</b>=<i>XYMON.SERVER.IP</i>[:<i>PORT</i>]</a></dt>
   <dd>Defines the IP address of the Xymon server where the collected client
-      messages are forwarded to. By default, messages are sent to the loopback
+      messages are forwarded to: IPv4 or IPv6, or a host name, resolved to its
+      IPv4 address if it has one, each time a message is forwarded. An IPv6
+      address with a port goes in brackets, as [2001:db8::1]:1984. The port
+      defaults to XYMONDPORT. By default, messages are sent to the loopback
       address 127.0.0.1, i.e. to a Xymon server running on the same host as
       xymonfetch.
     <p class="Pp"></p>
