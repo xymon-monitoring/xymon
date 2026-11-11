@@ -339,14 +339,3 @@ int oksender_addr(sender_t *oklist, char *targetip, struct sockaddr *sa, char *m
 
 	return 0;
 }
-
-/* oksender_addr() for an IPv4 sender, as msgcache has one */
-int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgbuf)
-{
-	struct sockaddr_in sin;
-
-	memset(&sin, 0, sizeof(sin));
-	sin.sin_family = AF_INET;
-	sin.sin_addr = sender;
-	return oksender_addr(oklist, targetip, (struct sockaddr *)&sin, msgbuf);
-}
