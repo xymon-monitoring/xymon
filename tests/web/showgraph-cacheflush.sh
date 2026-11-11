@@ -89,7 +89,7 @@ fi
 
 # A list of hosts: one request per host, through one socket and one wait.
 # The wait was 0.3 s per host, so ten hosts took three seconds.
-hosts=$(seq -f 'h%g' 1 10 | paste -sd, -)
+hosts=$(awk 'BEGIN{for(i=1;i<=10;i++)printf "%s%s",(i>1?",":""),"h"i}')
 "$work/receiver" "$work/run/rrdctl.3" 10 >"$work/received" 2>&1 &
 rpid=$!
 register_cleanup "stop_process $rpid"

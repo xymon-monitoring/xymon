@@ -524,7 +524,7 @@ static void build_pagepath_dropdown(FILE *output)
 	}
 
 	for (handle = xtreeFirst(ptree); (handle != xtreeEnd(ptree)); handle = xtreeNext(ptree, handle)) {
-		fprintf(output, "<option value=\"%s\">%s</option>\n", (char *)xtreeData(ptree, handle), xtreeKey(ptree, handle));
+		fprintf(output, "<option value=\"%s\">%s</option>\n", htmlattrquoted((char *)xtreeData(ptree, handle)), xtreeKey(ptree, handle));
 	}
 
 	xtreeDestroy(ptree);
@@ -892,7 +892,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				rec = (treerec_t *)xtreeData(hostnames, handle);
 
 				if (wanted_host(rec->name)) {
-					fprintf(output, "<option value=\"%s\">%s</option>\n", rec->name, rec->name);
+					fprintf(output, "<option value=\"%s\">", htmlattrquoted(rec->name));
+					fprintf(output, "%s</option>\n", htmlattrquoted(rec->name));
 				}
 			}
 		}
@@ -906,7 +907,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			fprintf(output, "hosts[\"ALL\"] = [ \"ALL\"");
 			for (handle = xtreeFirst(testnames); (handle != xtreeEnd(testnames)); handle = xtreeNext(testnames, handle)) {
 				treerec_t *rec = xtreeData(testnames, handle);
-				fprintf(output, ", \"%s\"", rec->name);
+				fprintf(output, ", \"%s\"", jsquoted(rec->name));
 			}
 			fprintf(output, " ];\n");
 
@@ -944,13 +945,13 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						bwalk = strstr(tname, key); if (bwalk) bwalk++;
 					}
 
-					fprintf(output, "hosts[\"%s\"] = [ \"ALL\"", hrec->name);
+					fprintf(output, "hosts[\"%s\"] = [ \"ALL\"", jsquoted(hrec->name));
 					for (thandle = xtreeFirst(testnames); (thandle != xtreeEnd(testnames)); thandle = xtreeNext(testnames, thandle)) {
 						trec = (treerec_t *)xtreeData(testnames, thandle);
 						if (trec->flag == 0) continue;
 
 						trec->flag = 0;
-						fprintf(output, ", \"%s\"", trec->name);
+						fprintf(output, ", \"%s\"", jsquoted(trec->name));
 					}
 					fprintf(output, " ];\n");
 				}
@@ -964,7 +965,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 			for (handle = xtreeFirst(testnames); (handle != xtreeEnd(testnames)); handle = xtreeNext(testnames, handle)) {
 				rec = (treerec_t *)xtreeData(testnames, handle);
-				fprintf(output, "<option value=\"%s\">%s</option>\n", rec->name, rec->name);
+				fprintf(output, "<option value=\"%s\">", htmlattrquoted(rec->name));
+				fprintf(output, "%s</option>\n", htmlattrquoted(rec->name));
 			}
 		}
 		else if (strcmp(t_start, "DISABLELIST") == 0) {
@@ -1049,11 +1051,11 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						xgetenv("SECURECGIBINURL"));
 
 					fprintf(output, "<table summary=\"%s disabled tests\" width=\"100%%\">\n", 
-						(hwalk->name ? hwalk->name : ""));
+						htmlattrquoted(hwalk->name ? hwalk->name : ""));
 
 					fprintf(output, "<tr>\n");
 					fprintf(output, "<TH COLSPAN=3><I>%s</I></TH>", 
-							(hwalk->name ? hwalk->name : "All hosts"));
+							htmlattrquoted(hwalk->name ? hwalk->name : "All hosts"));
 					fprintf(output, "</tr>\n");
 
 
@@ -1062,14 +1064,15 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 					fprintf(output, "<td>\n");
 					if (hwalk->name) {
 						fprintf(output, "<input name=\"hostname\" type=hidden value=\"%s\">\n", 
-							hwalk->name);
+							htmlattrquoted(hwalk->name));
 
-						fprintf(output, "<textarea name=\"%s causes\" rows=\"8\" cols=\"50\" readonly style=\"font-size: 10pt\">\n", hwalk->name);
+						fprintf(output, "<textarea name=\"%s causes\" rows=\"8\" cols=\"50\" readonly style=\"font-size: 10pt\">\n", htmlattrquoted(hwalk->name));
 						for (twalk = hwalk->tests; (twalk); twalk = twalk->next) {
 							char *msg = twalk->cause;
 							msg += strspn(msg, "0123456789 ");
-							fprintf(output, "%s\n%s\nUntil: %s\n---------------------\n", 
-								twalk->name, msg, 
+							fprintf(output, "%s\n", htmlattrquoted(twalk->name));
+							fprintf(output, "%s\n", htmlattrquoted(msg));
+							fprintf(output, "Until: %s\n---------------------\n",
 								(twalk->until == -1) ? "OK" : ctime(&twalk->until));
 						}
 						fprintf(output, "</textarea>\n");
@@ -1078,8 +1081,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						dishost_t *hw2;
 						fprintf(output, "<select multiple size=8 name=\"hostname\">\n");
 						for (hw2 = hwalk->next; (hw2); hw2 = hw2->next)
-							fprintf(output, "<option value=\"%s\">%s</option>\n", 
-								hw2->name, hw2->name);
+							{ fprintf(output, "<option value=\"%s\">", htmlattrquoted(hw2->name));
+								  fprintf(output, "%s</option>\n", htmlattrquoted(hw2->name)); }
 						fprintf(output, "</select>\n");
 					}
 					fprintf(output, "</td>\n");
@@ -1089,8 +1092,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 					fprintf(output, "<option value=\"*\" selected>ALL</option>\n");
 					if (hwalk->tests) {
 						for (twalk = hwalk->tests; (twalk); twalk = twalk->next) {
-							fprintf(output, "<option value=\"%s\">%s</option>\n",
-								twalk->name, twalk->name);
+							fprintf(output, "<option value=\"%s\">", htmlattrquoted(twalk->name));
+							fprintf(output, "%s</option>\n", htmlattrquoted(twalk->name));
 						}
 					}
 					else {
@@ -1101,8 +1104,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 							rec = xtreeData(testnames, tidx);
 							if (rec->flag == 0) continue;
 
-							fprintf(output, "<option value=\"%s\">%s</option>\n",
-								rec->name, rec->name);
+							fprintf(output, "<option value=\"%s\">", htmlattrquoted(rec->name));
+							fprintf(output, "%s</option>\n", htmlattrquoted(rec->name));
 						}
 					}
 					fprintf(output, "</select>\n");
@@ -1156,7 +1159,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						p = cmd;
 						while ((eoln = strchr(p, '\n')) != NULL) {
 							*eoln = '\0';
-							fprintf(output, "%s<BR>", p);
+							fprintf(output, "%s<BR>", htmlattrquoted(p));
 							p = (eoln + 1);
 						}
 						fprintf(output, "</TD>\n");
