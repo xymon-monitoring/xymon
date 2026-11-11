@@ -89,7 +89,7 @@ assert_not_contains "Invalid host name" "$out" "a host name of 255 characters is
 out=$(render "${name255}h")
 assert_contains     "Invalid host name" "$out" "a host name of 256 characters is refused"
 
-list1000=$(seq -f 'h%g' 1 1000 | paste -sd, -)
+list1000=$(awk 'BEGIN{for(i=1;i<=1000;i++)printf "%s%s",(i>1?",":""),"h"i}')
 out=$(render "$list1000")
 assert_not_contains "Too many hosts"    "$out" "a list of 1000 hosts is accepted"
 out=$(render "$list1000,h1001")

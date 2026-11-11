@@ -27,6 +27,7 @@ extern void strbuffergrow(strbuffer_t *buf, int bytes);
 extern void strbufferuse(strbuffer_t *buf, int bytes);
 extern char *htmlquoted(char *s);
 extern char *htmlattrquoted(char *s);	/* & < > " ' escaped; a space stays a space, unlike htmlquoted() */
+extern char *jsquoted(char *s);	/* escape for a double-quoted JS string in a <script> */
 extern char *prehtmlquoted(char *s);
 extern strbuffer_t *replacetext(char *original, char *oldtext, char *newtext);
 

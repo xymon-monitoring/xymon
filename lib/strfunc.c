@@ -270,6 +270,43 @@ char *htmlattrquoted(char *s)
 	return STRBUF(result);
 }
 
+char *jsquoted(char *s)
+{
+	/*
+	 * Escape a value for a double-quoted JavaScript string literal inside a
+	 * <script> element: the backslash and the quote that would end the string,
+	 * "<" and ">" so a "</script>" in the value cannot close the element, and
+	 * the line terminators a string literal cannot span. A NULL gives "".
+	 */
+
+	static strbuffer_t *result = NULL;
+	char *inp, *endp;
+	char c;
+
+	if (!result) result = newstrbuffer(4096);
+	clearstrbuffer(result);
+	if (!s) return STRBUF(result);
+
+	inp = s;
+	do {
+		endp = inp + strcspn(inp, "\"\\<>\n\r");
+		c = *endp;
+		if (endp > inp) addtobufferraw(result, inp, endp-inp);
+		switch (c) {
+		  case '"':  addtobuffer(result, "\\\""); break;
+		  case '\\': addtobuffer(result, "\\\\"); break;
+		  case '<':  addtobuffer(result, "\\x3c"); break;
+		  case '>':  addtobuffer(result, "\\x3e"); break;
+		  case '\n': addtobuffer(result, "\\n"); break;
+		  case '\r': addtobuffer(result, "\\r"); break;
+		  default: break;
+		}
+		inp = (c == '\0') ? NULL : endp+1;
+	} while (inp);
+
+	return STRBUF(result);
+}
+
 char *prehtmlquoted(char *s)
 {
 	/*
