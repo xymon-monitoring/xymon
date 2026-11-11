@@ -206,8 +206,9 @@ xymond -- listening addresses
 -----------------------------
 
 xymond --listen now takes a comma-separated list of addresses, and also listens
-on 127.0.0.1 at XYMONDPORT, so the server's own client keeps reporting when a
-network interface goes away. --no-loopback listens only on the addresses given.
+on 127.0.0.1 at XYMONDPORT, and on ::1 where the host has IPv6, so the server's
+own client keeps reporting when a network interface goes away. --no-loopback
+listens only on the addresses given.
 Keep the server's client (xymonclient.cfg) on the same port as XYMONDPORT in
 xymonserver.cfg.
 

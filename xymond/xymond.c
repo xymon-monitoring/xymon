@@ -6305,20 +6305,28 @@ typedef struct xymond_listener_t {
 static xymond_listener_t *listeners = NULL;
 static int listener_count = 0;
 
-/* True when a listener already answers on 127.0.0.1 -- the wildcard, or
-   127.0.0.1 named outright. Only that address counts: it is where local
-   clients connect, and another 127.x address (Debian names the host
-   127.0.1.1) does not answer for it. A second socket over the wildcard is
-   refused on Linux anyway. */
-static int listeners_cover_loopback(void)
+/* True when a listener of this family already answers on its loopback --
+   the wildcard, or 127.0.0.1 / ::1 named outright. Only that address counts:
+   it is where local clients connect, and another 127.x address (Debian names
+   the host 127.0.1.1) does not answer for it. Families are kept apart, as an
+   IPv6 listener takes no IPv4 (IPV6_V6ONLY, add_listener()). A second socket
+   over the wildcard is refused on Linux anyway. */
+static int listeners_cover_loopback(int family)
 {
 	int i;
-	unsigned long a;
 
 	for (i = 0; i < listener_count; i++) {
-		if (listeners[i].addr.ss_family != AF_INET) continue;	/* an IPv6 socket takes no IPv4 */
-		a = ntohl(((struct sockaddr_in *)&listeners[i].addr)->sin_addr.s_addr);
-		if ((a == INADDR_ANY) || (a == INADDR_LOOPBACK)) return 1;
+		if (listeners[i].addr.ss_family != family) continue;
+		if (family == AF_INET) {
+			unsigned long a = ntohl(((struct sockaddr_in *)&listeners[i].addr)->sin_addr.s_addr);
+
+			if ((a == INADDR_ANY) || (a == INADDR_LOOPBACK)) return 1;
+		}
+		else {
+			struct in6_addr *a6 = &((struct sockaddr_in6 *)&listeners[i].addr)->sin6_addr;
+
+			if (IN6_IS_ADDR_UNSPECIFIED(a6) || IN6_IS_ADDR_LOOPBACK(a6)) return 1;
+		}
 	}
 
 	return 0;
@@ -6763,13 +6771,23 @@ int main(int argc, char *argv[])
 	   uses must not move it. Best-effort, unlike an address that was actually
 	   asked for: failing to start over an extra we added ourselves would be
 	   the worse failure. Logged either way. */
-	if (want_loopback && !listeners_cover_loopback()) {
+	if (want_loopback && !listeners_cover_loopback(AF_INET)) {
 		struct sockaddr_storage lo;
 
 		text_sockaddr("127.0.0.1", &lo);
 		((struct sockaddr_in *)&lo)->sin_port = htons(listenport);
 		if (add_listener(&lo, listenq, 0) != 0)
 			errprintf("Continuing without a loopback listener; the client on this host must use a configured address\n");
+	}
+	/* And on ::1, for a local client that reaches the server by an IPv6
+	   name or address. A host without IPv6 has no ::1: logged, not fatal. */
+	if (want_loopback && !listeners_cover_loopback(AF_INET6)) {
+		struct sockaddr_storage lo;
+
+		text_sockaddr("::1", &lo);
+		((struct sockaddr_in6 *)&lo)->sin6_port = htons(listenport);
+		if (add_listener(&lo, listenq, 0) != 0)
+			errprintf("Continuing without an IPv6 loopback listener (::1)\n");
 	}
 
 	if (listener_count == 0) {

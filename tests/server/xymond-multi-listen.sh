@@ -13,8 +13,9 @@
 #
 # Asked of a running daemon, address by address: a list binds every entry, a
 # single address is unchanged, a non-loopback address still leaves 127.0.0.1
-# answering, on XYMONDPORT rather than the named address's port, 0.0.0.0
-# already covers loopback, and --no-loopback leaves none.
+# answering, on XYMONDPORT rather than the named address's port, and ::1 too
+# where the host has it, 0.0.0.0 already covers loopback, [::] covers ::1, and
+# --no-loopback leaves none.
 #
 # Needs a built tree: xymond and the xymon client.
 set -euo pipefail
@@ -101,6 +102,12 @@ HAVE_LO2=no
 if launch --no-loopback --listen="$LO2:$P1"; then HAVE_LO2=yes; fi
 stop
 
+# ... and ::1? A host without IPv6 has none, and xymond then carries on without
+# its IPv6 loopback listener.
+HAVE_LO6=no
+if launch --no-loopback --listen="[::1]:$P1"; then HAVE_LO6=yes; fi
+stop
+
 # --- a list binds every entry -------------------------------------------------
 
 # Two ports on one address, so this holds wherever the suite runs: what is
@@ -134,6 +141,8 @@ if [ -n "$EXTIP" ]; then
 	# The external port is the operator's choice for the outside; local clients
 	# still connect to XYMONDPORT, so the loopback must not follow it.
 	answers 127.0.0.1 "$P1" && fail "the loopback listener took the named address's port ($P1) instead of XYMONDPORT ($P3), where local clients connect"
+	[ "$HAVE_LO6" = no ] || answers "[::1]" "$P3" \
+		|| fail "an IPv6 loopback listener must be kept on XYMONDPORT ($P3) as well, where the host has ::1"
 	stop
 fi
 
@@ -155,6 +164,16 @@ assert_not_contains "Address already in use" "$(cat "$work/xymond.log")" \
 	"the wildcard already covers loopback, so no second loopback socket may be attempted"
 stop
 
+# --- [::] already covers ::1, as 0.0.0.0 covers 127.0.0.1 ---------------------
+
+if [ "$HAVE_LO6" = yes ]; then
+	launch --listen="[::]:$P1" || { cat "$work/xymond.log" >&2; fail "xymond did not start on the IPv6 wildcard"; }
+	answers "[::1]" "$P1" || fail "the IPv6 wildcard must answer on ::1"
+	answers "[::1]" "$P3" && fail "the IPv6 wildcard already covers ::1, so no ::1 listener may be added on XYMONDPORT ($P3)"
+	answers 127.0.0.1 "$P3" || fail "an IPv6 wildcard takes no IPv4, so 127.0.0.1 must still be added on XYMONDPORT ($P3)"
+	stop
+fi
+
 # --- --no-loopback is how you say you really mean one address -----------------
 
 if [ -n "$EXTIP" ]; then
@@ -162,6 +181,7 @@ if [ -n "$EXTIP" ]; then
 	answers "$EXTIP" "$P1" || ext_unreachable="the non-loopback address $EXTIP did not answer from here; it bound (xymond started), so this is local reachability -- a packet filter (#734), not a fault -- while the loopback checks still ran"
 	answers 127.0.0.1 "$P3" && fail "--no-loopback must leave no loopback listener"
 	answers 127.0.0.1 "$P1" && fail "--no-loopback must leave no loopback listener"
+	[ "$HAVE_LO6" = no ] || ! answers "[::1]" "$P3" || fail "--no-loopback must leave no IPv6 loopback listener either"
 	stop
 fi
 
@@ -171,6 +191,7 @@ missing=""
 [ -n "$EXTIP" ] || missing="no non-loopback address here, so the loopback on XYMONDPORT and --no-loopback were not checked"
 [ -z "$ext_unreachable" ] || missing="${missing:+$missing; }$ext_unreachable"
 [ "$HAVE_LO2" = yes ] || missing="${missing:+$missing; }no 127.0.0.2 here, so naming another 127.x address was not checked"
+[ "$HAVE_LO6" = yes ] || missing="${missing:+$missing; }no ::1 here, so the IPv6 loopback listener was not checked"
 claim="xymond binds every address it is given and keeps a loopback listener"
 if [ -z "$missing" ]; then
 	pass "$claim"
