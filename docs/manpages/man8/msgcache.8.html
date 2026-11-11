@@ -63,15 +63,18 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
 <dl class="Bl-tag">
   <dt id="listen"><a class="permalink" href="#listen"><b>--listen</b>=<i>IPADDRESS</i>[:<i>PORT</i>]</a></dt>
   <dd>Defines the IP-address and portnumber where msgcache listens for incoming
-      connections. By default, msgcache listens for connections on all network
-      interfaces, port 1984.
+      connections, IPv4 or IPv6; an IPv6 address goes in brackets, as
+      [::1]:1984. By default, msgcache listens for connections on all IPv4
+      network interfaces, port 1984.
     <p class="Pp"></p>
   </dd>
   <dt id="server"><a class="permalink" href="#server"><b>--server</b>=<i>IPADDRESS</i>[,<i>IPADDRESS</i>]</a></dt>
-  <dd>Restricts which servers are allowed to pick up the cached messages. By
-      default anyone can contact the msgcache utility and request all of the
-      cached messages. This option allows only the listed servers to request the
-      cached messages.
+  <dd>Restricts which servers are allowed to pick up the cached messages. The
+      addresses may be IPv4 or IPv6, each a plain address or a prefix such as
+      10.0.0.0/8, without an IPv6 scope: an IPv4 server that reaches msgcache
+      over IPv6 is matched by its IPv4 address. By default anyone can contact
+      the msgcache utility and request all of the cached messages. This option
+      allows only the listed servers to request the cached messages.
     <p class="Pp"></p>
   </dd>
   <dt id="max-age"><a class="permalink" href="#max-age"><b>--max-age</b>=<i>N</i></a></dt>
