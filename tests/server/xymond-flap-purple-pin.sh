@@ -22,6 +22,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 here=$(dirname "$0")
@@ -56,12 +57,8 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 # libxymon.h pulls in pcre2.h, so a hand-rolled -I list fails to compile
 # there on a tree that builds perfectly well. The Makefiles already carry
 # those paths.
-harness_cflags=$(xymon_cflags "$ROOT")
-# shellcheck disable=SC2086
-"$CC" $harness_cflags -iquote "$ROOT/lib" -o "$work/harness" \
-	"$work/harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
-	$harness_ldflags 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+HARNESS_CFLAGS="-iquote $ROOT/lib" build_harness "$work" "$work/harness" \
+	"$work/harness.c" libxymoncomm.a
 
 "$work/harness" 2>"$work/stderr.log" \
 	|| fail "flap colour-pin assertions failed:

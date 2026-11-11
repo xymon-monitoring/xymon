@@ -8,12 +8,16 @@
 #     build_xymon_libs "$ROOT" "$work/libbuild.log" libxymon.a
 #     build_harness "$work" "$work/harness" "$here/foo-harness.c" libxymon.a
 #
-# The archive names are passed in link order; list one twice where a circular
-# dependency needs it, as the plain "$CC ... a.a b.a a.a" line did. The build's
-# own compile and link flags come from xymon_cflags/xymon_ldflags, and the
-# PCRE2 libraries are resolved the way build_xymond_worker resolves them and
-# appended -- an unused -lpcre2-8 on a harness that does not need it is
-# harmless, and every harness that pulls in libxymon.h needs it.
+# After the log directory and the output binary come the inputs in link order:
+# an argument ending in ".a" is an in-tree archive, resolved through xymon_lib;
+# anything else is a source compiled in (the harness, and any production .c it
+# drives directly). Sources are placed before the archives, and an archive may
+# be named twice where a circular dependency needs it, as the plain
+# "$CC ... a.c lib.a" line did. The build's own compile and link flags come
+# from xymon_cflags/xymon_ldflags, and the PCRE2 libraries are resolved the way
+# build_xymond_worker resolves them and appended -- an unused -lpcre2-8 on a
+# harness that does not need it is harmless, and every harness that pulls in
+# libxymon.h needs it.
 #
 # Extra compile flags -- an -iquote for a harness that includes a component's
 # private header, or a -D it sets -- go in HARNESS_CFLAGS, which the caller
@@ -28,9 +32,9 @@
 __XYMON_TESTS_BUILD_HARNESS_SOURCED=1
 
 build_harness() {
-	local logdir=$1 outbin=$2 src=$3
-	shift 3
-	local root cc pcre_libs harness_cflags harness_ldflags a archives
+	local logdir=$1 outbin=$2
+	shift 2
+	local root cc pcre_libs harness_cflags harness_ldflags arg sources archives
 
 	root=$(find_root)
 	cc=${CC:-cc}
@@ -45,12 +49,18 @@ build_harness() {
 	harness_cflags=$(xymon_cflags "$root")
 	harness_ldflags=$(xymon_ldflags "$root")
 
+	sources=()
 	archives=()
-	for a in "$@"; do archives+=("$(xymon_lib "$root" "$a")"); done
+	for arg in "$@"; do
+		case $arg in
+			*.a) archives+=("$(xymon_lib "$root" "$arg")") ;;
+			*)   sources+=("$arg") ;;
+		esac
+	done
 
 	# shellcheck disable=SC2086 # the flag strings are intentionally word-split
 	"$cc" $harness_cflags ${HARNESS_CFLAGS:-} -o "$outbin" \
-		"$src" "${archives[@]}" \
+		"${sources[@]}" "${archives[@]}" \
 		$pcre_libs $harness_ldflags 2>"$logdir/cc.log" \
 		|| { cat "$logdir/cc.log" >&2; fail "harness does not compile"; }
 }

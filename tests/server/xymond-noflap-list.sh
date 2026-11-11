@@ -35,6 +35,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 here=$(dirname "$0")
@@ -72,12 +73,8 @@ cat > "$work/hosts.cfg" <<'EOF'
 127.0.0.1 recordhost.example.com # conn noflap=web,cpu
 EOF
 
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-"$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
-	$harness_ldflags 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+build_harness "$work" "$work/harness" \
+	"$work/harness.c" libxymoncomm.a
 
 "$work/harness" "$work/hosts.cfg" 2>"$work/stderr.log" \
 	|| fail "noflap assertions failed:

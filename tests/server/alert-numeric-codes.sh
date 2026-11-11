@@ -17,6 +17,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 here=$(dirname "$0")
@@ -40,12 +41,8 @@ fi
 [ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
 # -iquote xymond: the harness #includes do_alert.c.
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-# shellcheck disable=SC2086  # deliberate word-splitting, as the neighbouring tests do
-"$CC" $harness_cflags -iquote "$ROOT/xymond" -o "$harness" "$here/alert-numeric-codes-harness.c" \
-	"$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+HARNESS_CFLAGS="-iquote $ROOT/xymond" build_harness "$work" "$harness" \
+	"$here/alert-numeric-codes-harness.c" libxymoncomm.a
 
 printf '127.0.0.1  testhost  # conn\n' >"$work/hosts.cfg"
 # shellcheck disable=SC2016  # the script expands these, not this shell

@@ -200,6 +200,12 @@ check_link_flags() {
 	# into a reported violation -- 901 times in 20000 on OpenBSD 7.9.
 	# [{]? rather than \{? : a brace after a backslash is not portable ERE.
 	grep -qE '[$][{]?ROOT[}]?[^[:space:]]*[.]a|xymon_lib "' <<<"$code" || return 0
+	# A test that hands its link to build_harness or build_xymond_worker
+	# delegates the flags to that helper, which carries xymon_cflags and
+	# xymon_ldflags itself. Such a test still names an archive -- to build it,
+	# to guard on its presence, or to pass it to the helper -- so it trips the
+	# detector above, but the configured flags are not its to hold.
+	grep -qE '(^|[^[:alnum:]_])(build_harness|build_xymond_worker)[[:space:]]' <<<"$code" && return 0
 	grep -q 'xymon_cflags' <<<"$code" \
 		|| printf 'link-flags\t%s\t%s\n' "${f#"$ROOT"/}" "links an in-tree archive without xymon_cflags" >>"$out"
 	grep -q 'xymon_ldflags' <<<"$code" \
@@ -497,6 +503,17 @@ assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
 check_link_flags "$bypass" "$work/probe-violations"
 assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
 	"the link-flags rule does not see an archive named through xymon_lib"
+# A test that names an archive but hands its link to build_harness delegates
+# the flags to the helper, so the rule reports nothing for it.
+{
+	printf '#!/usr/bin/env bash\n'
+	printf '[ -f "$(xymon_lib "$ROOT" libportable.a)" ] || skip "tree not built"\n'
+	printf 'build_harness "$work" "$work/harness" "$here/probe-harness.c" libportable.a\n'
+} >"$bypass"
+: >"$work/probe-violations"
+check_link_flags "$bypass" "$work/probe-violations"
+assert_equal "0" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
+	"the link-flags rule reports a test that delegates its link to build_harness"
 
 # The GNU-escape rule the same way: an escape is reported whatever follows it,
 # a word included, and the portable spellings are not.

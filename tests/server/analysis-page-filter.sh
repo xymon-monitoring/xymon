@@ -90,6 +90,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 here=$(dirname "$0")
@@ -116,13 +117,8 @@ if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 fi
 [ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
 
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-# shellcheck disable=SC2086  # deliberate word-splitting, as the neighbouring tests do
-"$CC" $harness_cflags -iquote "$ROOT/xymond" -o "$work/harness" \
-	"$here/analysis-page-filter-harness.c" "$CLIENT_CONFIG_C" \
-	"$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+HARNESS_CFLAGS="-iquote $ROOT/xymond" build_harness "$work" "$work/harness" \
+	"$here/analysis-page-filter-harness.c" "$CLIENT_CONFIG_C" libxymoncomm.a
 
 # fronthost is on the top-level page only. bothhost is on the top-level page and
 # on "home", so its pagepath list exercises the front page inside a list.
