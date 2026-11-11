@@ -113,7 +113,10 @@ char *urlencode(char *s)
 			outp++;
 		}
 		else {
-			snprintf(outp, (result_buflen - (outp - result)), "%%%0x", *inp);
+			/* Two hex digits, and of the byte: a plain char is signed on many
+			   platforms, so 0xe9 gave "%ffffffe9" cut to "%ff", and 0x09 gave
+			   "%9" with the NUL then stepped over */
+			snprintf(outp, (result_buflen - (outp - result)), "%%%02x", (unsigned char)*inp);
 			outp += 3;
 		}
 	}
