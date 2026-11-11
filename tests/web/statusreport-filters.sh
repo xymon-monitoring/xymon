@@ -15,7 +15,11 @@
 #   - --test=sslcert works as --column=sslcert;
 #   - a filter given from a page, without --all, keeps to that page;
 #   - with no filter it keeps to the pagepath cookie's page, as the man page
-#     says and as it did, and with --all lists every host.
+#     says and as it did, and with --all lists every host;
+#   - run through cgiwrap as nongreen.cgi, it is served, lists the red
+#     statuses and not the green one, and titles the page without quotes:
+#     cgiwrap passed the filter and heading in literal quotes, which no shell
+#     removes on the way, so xymond ignored the filter.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -24,6 +28,7 @@ set -euo pipefail
 . "$(dirname "$0")/../lib/xymond-daemon.sh"
 
 require_bin STATUSREPORT web/statusreport.cgi
+require_bin CGIWRAP web/cgiwrap
 require_bin XYMOND xymond/xymond
 require_bin XYMONCLIENT common/xymon
 require_shm_segments "$(grep -c 'setup_channel(C_[A-Z_]*, CHAN_MASTER)' "$(find_root)/xymond/xymond.c")"
@@ -108,4 +113,26 @@ report "pagepath=one" --heading=all --all
 [ "$RC" -eq 0 ] || fail "statusreport.cgi --all was not served (exit $RC): $OUT"
 assert_contains "hostb.example.com" "$OUT" "with --all, the report kept to the cookie's page"
 
-pass "statusreport.cgi takes --column, --test and --filter without aborting, and with no filter keeps to the viewer's page unless --all"
+# nongreen.cgi: cgiwrap runs $XYMONHOME/bin/statusreport.cgi with its options.
+# It first reads the cgioptions.cfg of the installed Xymon, at a path built in,
+# which can point it at that installation instead: then this is not checked.
+cgiopts=$(first_line "$(LC_ALL=C grep -ao '/[^[:cntrl:]]*/etc/cgioptions\.cfg' "$CGIWRAP" || true)")
+if [ -n "$cgiopts" ] && [ -e "$cgiopts" ]; then
+	pass_partial "statusreport.cgi takes --column, --test and --filter without aborting, and with no filter keeps to the viewer's page unless --all" \
+		"nongreen.cgi: this host has an installed Xymon ($cgiopts), which cgiwrap would run instead"
+fi
+mkdir -p "$work/home/bin" "$work/cgi"
+cp "$STATUSREPORT" "$work/home/bin/statusreport.cgi"
+ln -s "$CGIWRAP" "$work/cgi/nongreen.cgi"
+set +e
+OUT=$(env REQUEST_METHOD=GET QUERY_STRING="" HTTP_COOKIE="" XYMONHOME="$work/home" XYMONENV="$work/xymonserver.cfg" "$work/cgi/nongreen.cgi" 2>&1)
+RC=$?
+set -e
+[ "$RC" -eq 0 ] || fail "nongreen.cgi was not served (exit $RC): $OUT"
+assert_contains "hosta.example.com" "$OUT" "nongreen.cgi does not list the red sslcert"
+assert_contains "hostb.example.com" "$OUT" "nongreen.cgi does not list the red conn"
+assert_not_contains "hostc.example.com" "$OUT" "nongreen.cgi lists the green sslcert: its filter was not applied"
+# statusreport HTML-quotes its heading: a literal quote would show as &quot;
+assert_contains '<title>All&nbsp;non-green&nbsp;systems</title>' "$OUT" "nongreen.cgi's heading is not \"All non-green systems\" as written"
+
+pass "statusreport.cgi takes --column, --test and --filter without aborting, with no filter keeps to the viewer's page unless --all, and nongreen.cgi lists the non-green statuses alone"
