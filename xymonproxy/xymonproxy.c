@@ -720,8 +720,22 @@ int main(int argc, char *argv[])
 				cwalk->conntime = ctime;
 				if (cwalk->conntries < 0) {
 					errprintf("Server not responding, message lost\n");
-					cwalk->state = P_REQ_DONE;	/* Not CLENAUP - might be more servers */
 					msgs_timeout_from[P_REQ_CONNECTING]++;
+					/*
+					 * No connection, so nothing was sent and there is no
+					 * socket: not P_REQ_DONE, which shuts down and closes the
+					 * server socket, and waits there for a response. On to
+					 * the next server, if there is one, else give up.
+					 */
+					cwalk->snum--;
+					if (cwalk->snum) {
+						cwalk->conntries = CONNECT_TRIES;
+						cwalk->sendtries = SEND_TRIES;
+						cwalk->conntime = 0;
+					}
+					else {
+						cwalk->state = P_CLEANUP;
+					}
 					break;
 				}
 
