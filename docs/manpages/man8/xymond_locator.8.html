@@ -196,7 +196,10 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.30: 4 Sep 2019<br/><a
       --locator=10.0.0.1:1984 --locatorweight=2</dd>
 </dl>
 <p class="Pp">The worker registers with the locator under its <b>--listen</b>
-    address, and accepts messages on that TCP port. The worker options are:</p>
+    address, unless <b>--locatorid</b> names another, and accepts messages on
+    that TCP port. Each address below may be IPv4 or IPv6, or a host name,
+    resolved to its IPv4 address if it has one; an IPv6 address goes in
+    brackets, as [2001:db8::2]:1985. The worker options are:</p>
 <p class="Pp"></p>
 <dl class="Bl-tag">
   <dt id="listen~2"><a class="permalink" href="#listen~2"><b>--listen</b>=<i>IP:PORT</i></a></dt>

@@ -90,40 +90,32 @@ static int net_worker_listener(char *ipport)
 	 * network socket.
 	 */
 
-	char *listenip, *p;
+	char *listenip;
 	int listenport = 0;
 	int lsocket = -1;
-	struct sockaddr_in laddr;
+	struct sockaddr_storage laddr;
 	struct sigaction sa;
 	int opt;
 
-	listenip = ipport;
-	p = strchr(listenip, ':');
-	if (p) {
-		*p = '\0';
-		listenport = atoi(p+1);
-	}
-
-	if (listenport == 0) {
-		errprintf("Must include PORT number in --listen=IP:PORT option\n");
+	/* IP:PORT, [IPv6]:PORT or NAME:PORT; the port is required */
+	listenip = split_hostport(ipport, &listenport);
+	if (!listenip || (listenport == 0)) {
+		errprintf("Invalid --listen=%s: needs IP:PORT, [IPv6]:PORT or NAME:PORT\n", ipport);
 		return -1;
 	}
 
         /* Set up a socket to listen for new connections */
-	errprintf("Setting up network listener on %s:%d\n", listenip, listenport);
-	memset(&laddr, 0, sizeof(laddr));
-	if ((strlen(listenip) == 0) || (strcmp(listenip, "0.0.0.0") == 0)) {
-		listenip = "0.0.0.0";
-		laddr.sin_addr.s_addr = INADDR_ANY;
-	}
-	else if (inet_aton(listenip, (struct in_addr *) &laddr.sin_addr.s_addr) == 0) {
-		/* Not an IP */
-		errprintf("Listener IP must be an IP-address, not hostname\n");
+	errprintf(strchr(listenip, ':') ? "Setting up network listener on [%s]:%d\n" : "Setting up network listener on %s:%d\n",
+		  listenip, listenport);
+	if (strlen(listenip) == 0) listenip = "0.0.0.0";
+	/* An address, an IPv4 short form, or a name, resolved as the channel will */
+	if (!host_sockaddr(listenip, &laddr, NULL)) {
+		errprintf("Cannot determine the listener address %s\n", listenip);
 		return -1;
 	}
-	laddr.sin_port = htons(listenport);
-	laddr.sin_family = AF_INET;
-	lsocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (laddr.ss_family == AF_INET6) ((struct sockaddr_in6 *)&laddr)->sin6_port = htons(listenport);
+	else ((struct sockaddr_in *)&laddr)->sin_port = htons(listenport);
+	lsocket = socket(laddr.ss_family, SOCK_STREAM, 0);
 	if (lsocket == -1) {
 		errprintf("Cannot create listen socket (%s)\n", strerror(errno));
 		return -1;
@@ -132,7 +124,8 @@ static int net_worker_listener(char *ipport)
 	opt = 1;
 	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-	if (bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
+	if (bind(lsocket, (struct sockaddr *)&laddr,
+		 (laddr.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in)) == -1) {
 		errprintf("Cannot bind to listen socket (%s)\n", strerror(errno));
 		return -1;
 	}
@@ -153,8 +146,9 @@ static int net_worker_listener(char *ipport)
 	sigaction(SIGINT, &sa, NULL);
 
 	while (running) {
-		struct sockaddr_in netaddr;
-		int addrsz, sock;
+		struct sockaddr_storage netaddr;
+		socklen_t addrsz;
+		int sock;
 		int childstat;
 		pid_t childpid;
 		fd_set fdread;
@@ -263,22 +257,22 @@ void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t sticky
 	locatorsvc = svc;
 
 	if (listenipport) {
-		char *p;
-		struct in_addr dummy;
+		/* IP:PORT, [IPv6]:PORT or NAME:PORT: xymond_channel connects to it as written */
+		char *copy, *ip;
+		int port = 0;
+		struct sockaddr_storage dummy;
+		/* The ID is the --listen address unless given: name the option the user wrote */
+		char *idopt = (locatorid ? "--locatorid" : "--listen");
 
 		if (!locatorid) locatorid = strdup(listenipport);
 
-		p = strchr(locatorid, ':');
-		if (p == NULL) {
-			errprintf("Locator ID must be IP:PORT matching the listener address\n");
+		copy = strdup(locatorid);
+		ip = split_hostport(copy, &port);
+		if (!ip || (port == 0) || !host_sockaddr(ip, &dummy, NULL)) {
+			errprintf("Invalid %s=%s: needs IP:PORT, [IPv6]:PORT or a name and port that resolves\n", idopt, locatorid);
 			exit(1);
 		}
-		*p = '\0'; 
-		if (inet_aton(locatorid, &dummy) == 0) {
-			errprintf("Locator ID must be IP:PORT matching the listener address\n");
-			exit(1);
-		}
-		*p = ':';
+		xfree(copy);
 	}
 
 	if (listenipport && locatorlocation) {
