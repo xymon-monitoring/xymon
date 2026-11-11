@@ -12,6 +12,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 
@@ -21,16 +22,8 @@ work=$(mktempdir)
 
 build_xymon_libs "$ROOT" "$work/libbuild.log" libxymon.a
 
-pcre_libs=${PCRELIBS:-$(xymon_makevar "$ROOT" PCRELIBS)}
-[ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-
-# shellcheck disable=SC2086
-"$CC" $harness_cflags -o "$work/harness" \
-	"$(dirname "$0")/cgi-hostregex-harness.c" "$(xymon_lib "$ROOT" libxymon.a)" \
-	$pcre_libs $harness_ldflags 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+build_harness "$work" "$work/harness" \
+	"$(dirname "$0")/cgi-hostregex-harness.c" libxymon.a
 
 "$work/harness" >"$work/run.log" 2>&1 \
 	|| { cat "$work/run.log" >&2; fail "cgi_hostregex() does not make a host name a literal pattern"; }
