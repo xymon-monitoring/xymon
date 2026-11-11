@@ -44,11 +44,11 @@ export ASAN_OPTIONS="exitcode=99${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
 for cgi in history reportlog; do
 	"$CC" $cflags $harness_cflags -iquote "$ROOT/web" -o "$work/$cgi" \
 		"$ROOT/web/$cgi.c" \
-		"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
+		"$(xymon_lib "$ROOT" libxymon.a)" "$(xymon_lib "$ROOT" libxymoncomm.a)" "$(xymon_lib "$ROOT" libxymon.a)" \
 		$pcre_libs $harness_ldflags 2>"$work/cc-$cgi.log" \
 	|| { "$CC" $harness_cflags -iquote "$ROOT/web" -o "$work/$cgi" \
 			"$ROOT/web/$cgi.c" \
-			"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
+			"$(xymon_lib "$ROOT" libxymon.a)" "$(xymon_lib "$ROOT" libxymoncomm.a)" "$(xymon_lib "$ROOT" libxymon.a)" \
 			$pcre_libs $harness_ldflags 2>"$work/cc-$cgi.log" \
 		|| { cat "$work/cc-$cgi.log" >&2; fail "$cgi.cgi does not build"; }; }
 done

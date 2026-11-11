@@ -1,0 +1,31 @@
+# submissiontls-o365  smtp.office365.com (40.99.217.50) port 587  mode=plain
+# recorded 2026-08-31T13:30:41.016078Z
+S: 220 ZR2P278CA0057.outlook.office365.com Microsoft ESMTP MAIL Service ready at Mon, 31 Aug 2026 13:30:41 +0000 [08DF0616B55A7D8D]
+C: ehlo xymonnet
+S: 250-ZR2P278CA0057.outlook.office365.com Hello [203.0.113.1]
+S: 250-SIZE 157286400
+S: 250-PIPELINING
+S: 250-DSN
+S: 250-ENHANCEDSTATUSCODES
+S: 250-STARTTLS
+S: 250-8BITMIME
+S: 250-BINARYMIME
+S: 250-CHUNKING
+S: 250 SMTPUTF8
+C: starttls
+S: 220 2.0.0 SMTP server ready
+# [STARTTLS upgrade]
+C: ehlo xymonnet
+S: 250-ZR2P278CA0057.outlook.office365.com Hello [203.0.113.1]
+S: 250-SIZE 157286400
+S: 250-PIPELINING
+S: 250-DSN
+S: 250-ENHANCEDSTATUSCODES
+S: 250-AUTH LOGIN XOAUTH2
+S: 250-8BITMIME
+S: 250-BINARYMIME
+S: 250-CHUNKING
+S: 250 SMTPUTF8
+C: quit
+S: 221 2.0.0 Service closing transmission channel
+# certificate: subject=C = US, ST = Washington, L = Redmond, O = Microsoft Corporation, CN = outlook.com  notAfter=Jan 10 23:59:59 2027 GMT

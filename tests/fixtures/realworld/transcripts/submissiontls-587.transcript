@@ -1,0 +1,27 @@
+# submissiontls-587  smtp.gmail.com (142.251.127.108) port 587  mode=plain
+# recorded 2026-08-31T12:47:06.475389Z
+S: 220 smtp.gmail.com ESMTP ffacd0b85a97d-484322ce2a6sm16636658f8f.19 - gsmtp
+C: ehlo xymonnet
+S: 250-smtp.gmail.com at your service, [203.0.113.1]
+S: 250-SIZE 35882577
+S: 250-8BITMIME
+S: 250-STARTTLS
+S: 250-ENHANCEDSTATUSCODES
+S: 250-PIPELINING
+S: 250-CHUNKING
+S: 250 SMTPUTF8
+C: starttls
+S: 220 2.0.0 Ready to start TLS
+# [STARTTLS upgrade]
+C: ehlo xymonnet
+S: 250-smtp.gmail.com at your service, [203.0.113.1]
+S: 250-SIZE 35882577
+S: 250-8BITMIME
+S: 250-AUTH LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH
+S: 250-ENHANCEDSTATUSCODES
+S: 250-PIPELINING
+S: 250-CHUNKING
+S: 250 SMTPUTF8
+C: quit
+S: 221 2.0.0 closing connection ffacd0b85a97d-484322ce2a6sm16636658f8f.19 - gsmtp
+# peer certificate present: yes

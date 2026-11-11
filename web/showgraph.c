@@ -39,6 +39,14 @@ static char rcsid[] = "$Id$";
 #define WEEK_GRAPH  "e-48d"
 #define MONTH_GRAPH "e-576d"
 
+/*
+ * Bounds on host= : a DNS name is at most 253 characters, and a graph of
+ * more hosts than this has more lines than anyone can read. Each host costs
+ * a cache flush and a set of graph arguments, so neither may be unbounded.
+ */
+#define GRAPH_MAXHOSTNAME 255
+#define GRAPH_MAXHOSTS    1000
+
 unsigned char blankimg[] = "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\x04\x67\x41\x4d\x41\x00\x00\xb1\x8f\x0b\xfc\x61\x05\x00\x00\x00\x06\x62\x4b\x47\x44\x00\xff\x00\xff\x00\xff\xa0\xbd\xa7\x93\x00\x00\x00\x09\x70\x48\x59\x73\x00\x00\x0b\x12\x00\x00\x0b\x12\x01\xd2\xdd\x7e\xfc\x00\x00\x00\x07\x74\x49\x4d\x45\x07\xd1\x01\x14\x12\x21\x14\x7e\x4a\x3a\xd2\x00\x00\x00\x0d\x49\x44\x41\x54\x78\xda\x63\x60\x60\x60\x60\x00\x00\x00\x05\x00\x01\x7a\xa8\x57\x50\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82";
 
 
@@ -186,15 +194,19 @@ void rrd_cached_flush(char *hostname)
 	closedir(dirHandle);
 }
 
-void request_cacheflush(char *hostname)
+/*
+ * Ask xymond_rrd to flush the cached updates of these hosts before their RRD
+ * files are read: a "/host/" message per host to every $XYMONRUNDIR/rrdctl.*
+ * socket. One socket and one wait for the whole request, however many hosts:
+ * a socket per host was never closed, and a wait per host made a long list
+ * hold the CGI for minutes.
+ */
+void request_cacheflush(char **hosts, int hostcount)
 {
-	/* Build a cache-flush request, and send it to all of the $XYMONTMP/rrdctl.* sockets */
-	SBUF_DEFINE(req);
-	char *bufp;
-	int bytesleft;
 	DIR *dir;
 	struct dirent *d;
 	int ctlsocket = -1;
+	int sent = 0;
 
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (ctlsocket == -1) {
@@ -203,60 +215,69 @@ void request_cacheflush(char *hostname)
 	}
 	fcntl(ctlsocket, F_SETFL, O_NONBLOCK);
 
-	dir = opendir(xgetenv("XYMONTMP"));
+	dir = opendir(xymon_rundir());
 	if (!dir) {
-		errprintf("Cannot access $XYMONTMP directory: %s\n", strerror(errno));
+		errprintf("Cannot access XYMONRUNDIR (%s): %s\n", xymon_rundir(), strerror(errno));
+		close(ctlsocket);
 		return;
 	}
 
-	SBUF_MALLOC(req, strlen(hostname)+3);
-	snprintf(req, req_buflen, "/%s/", hostname);
-
 	while ((d = readdir(dir)) != NULL) {
-		if (strncmp(d->d_name, "rrdctl.", 7) == 0) {
-			struct sockaddr_un myaddr;
-			socklen_t myaddrsz = 0;
-			int n, sendfailed = 0;
-			SBUF_DEFINE(fnam);
+		struct sockaddr_un myaddr;
+		socklen_t myaddrsz;
+		SBUF_DEFINE(fnam);
+		int h;
 
-			memset(&myaddr, 0, sizeof(myaddr));
-			myaddr.sun_family = AF_UNIX;
+		if (strncmp(d->d_name, "rrdctl.", 7) != 0) continue;
 
-			SBUF_MALLOC(fnam, strlen(xgetenv("XYMONTMP"))+ strlen(d->d_name) + 2);
-			snprintf(fnam, fnam_buflen, "%s/%s", xgetenv("XYMONTMP"), d->d_name);
-			if (strlen(fnam) > sizeof(myaddr.sun_path)) {
-				errprintf("rrdctl files located in XYMONTMP with too long pathname - max %d characters\n", sizeof(myaddr.sun_path));
-				return;
-			}
-			strncpy(myaddr.sun_path, fnam, sizeof(myaddr.sun_path));
+		memset(&myaddr, 0, sizeof(myaddr));
+		myaddr.sun_family = AF_UNIX;
+
+		SBUF_MALLOC(fnam, strlen(xymon_rundir())+ strlen(d->d_name) + 2);
+		snprintf(fnam, fnam_buflen, "%s/%s", xymon_rundir(), d->d_name);
+		/*
+		 * ">=", not ">": at exactly sizeof(sun_path) the strncpy()
+		 * below leaves no terminator, and xymond_rrd refuses that
+		 * length. Skipped, not returned: the other sockets still get
+		 * their flush, and closedir() below still runs.
+		 */
+		if (strlen(fnam) >= sizeof(myaddr.sun_path)) {
+			errprintf("rrdctl socket path too long, skipping %s (max %d characters)\n",
+				  fnam, (int)sizeof(myaddr.sun_path) - 1);
 			xfree(fnam);
+			continue;
+		}
+		strncpy(myaddr.sun_path, fnam, sizeof(myaddr.sun_path));
+		xfree(fnam);
+		myaddrsz = sizeof(myaddr);
 
-			myaddrsz = sizeof(myaddr);
-			bufp = req; bytesleft = strlen(req);
-			do {
-				n = sendto(ctlsocket, bufp, bytesleft, 0, (struct sockaddr *)&myaddr, myaddrsz);
-				if (n == -1) {
-					if (errno == EDESTADDRREQ) {
-						/* Probably a left-over rrdctl file, ignore it */
-					}
-					else if (errno == EAGAIN) {
-						/* Harmless */
-					}
-					else {
-						errprintf("Sendto failed: %s\n", strerror(errno));
-					}
+		for (h = 0; (h < hostcount); h++) {
+			SBUF_DEFINE(req);
 
-					sendfailed = 1;
-				}
-				else {
-					bytesleft -= n;
-					bufp += n;
-				}
-			} while ((!sendfailed) && (bytesleft > 0));
+			SBUF_MALLOC(req, strlen(hosts[h])+3);
+			snprintf(req, req_buflen, "/%s/", hosts[h]);
+
+			/* A datagram goes whole or not at all */
+			if (sendto(ctlsocket, req, strlen(req), 0, (struct sockaddr *)&myaddr, myaddrsz) == -1) {
+				int e = errno;
+				xfree(req);
+				/*
+				 * The socket is non-blocking: EAGAIN (and EINTR) mean this
+				 * datagram did not go, but the socket is fine - skip this
+				 * host and keep flushing the rest, or one full send buffer
+				 * would drop every host after it. EDESTADDRREQ is a left-over
+				 * rrdctl file, and anything else a broken socket: stop on it.
+				 */
+				if ((e == EAGAIN) || (e == EINTR)) continue;
+				if (e != EDESTADDRREQ) errprintf("Sendto failed: %s\n", strerror(e));
+				break;
+			}
+			sent = 1;
+			xfree(req);
 		}
 	}
 	closedir(dir);
-	xfree(req);
+	close(ctlsocket);
 
 	/* If using rrdcached, send that a flush request as well 
 	 * Note: It's possible you might be using two layers of caching here (xymond_rrd's
@@ -265,14 +286,17 @@ void request_cacheflush(char *hostname)
 	 *
 	 * This variable can be controlled independently in ~/etc/cgioptions.cfg.
 	 */
-	if ((getenv("RRDCACHED_ADDRESS") != NULL) && (strlen(getenv("RRDCACHED_ADDRESS")) > 0)) rrd_cached_flush(hostname);
+	if ((getenv("RRDCACHED_ADDRESS") != NULL) && (strlen(getenv("RRDCACHED_ADDRESS")) > 0)) {
+		int h;
+		for (h = 0; (h < hostcount); h++) rrd_cached_flush(hosts[h]);
+	}
 
 	/*
 	 * Sleep 0.3 secs to allow the cache flush to happen.
 	 * Note: It isn't guaranteed to happen in this time, but
 	 * there's a good chance that it will.
 	 */
-	usleep(300000);
+	if (sent) usleep(300000);
 }
 
 
@@ -290,6 +314,16 @@ void parse_query(void)
 
 			hostname = strtok_r(cwalk->value, ",", &stp);
 			while (hostname) {
+				/*
+				 * The RRD files are found under the host's name, so each
+				 * name must be a plain path component.
+				 */
+				char *safehost = cgi_pathcomponent(hostname, 0);
+
+				if (!safehost || (strlen(safehost) > GRAPH_MAXHOSTNAME)) errormsg("Invalid host name");
+				xfree(safehost);
+				if (hostlistsize >= GRAPH_MAXHOSTS) errormsg("Too many hosts");
+
 				if (hostlist == NULL) {
 					hostlistsize = 1;
 					hostlist = (char **)malloc(sizeof(char *));
@@ -876,6 +910,42 @@ void build_menu_page(char *selfURI, int backsecs)
 }
 
 
+/*
+ * Does every file a fixed graph definition draws from exist? The files are
+ * named in its DEF: lines, not by the definition's name ([ram] draws from
+ * memory.real.rrd), and rrdtool fails the whole graph on one that is
+ * missing. @RRDFN@ stands for rrdfn. Run in the host's RRD directory.
+ */
+static int gdef_files_exist(gdef_t *gdef, char *rrdfn)
+{
+	int i;
+
+	for (i = 0; (gdef->defs && gdef->defs[i]); i++) {
+		char fn[PATH_MAX];
+		char *p, *e;
+		size_t len;
+		struct stat st;
+
+		if (strncmp(gdef->defs[i], "DEF:", 4) != 0) continue;
+		p = strchr(gdef->defs[i], '=');
+		if (!p) continue;
+		p++;
+		/* ponytail: the file ends at the first ':'; a fixed DEF names a plain file */
+		e = strchr(p, ':');
+		len = (e ? (size_t)(e - p) : strlen(p));
+		if ((len == 7) && (strncmp(p, "@RRDFN@", 7) == 0)) { p = rrdfn; len = strlen(rrdfn); }
+		if (len >= sizeof(fn)) return 0;
+		memcpy(fn, p, len); fn[len] = '\0';
+
+		if (stat(fn, &st) != 0) {
+			dbgprintf("showgraph: no %s, the %s graph is left empty\n", fn, gdef->name);
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 {
 	gdef_t *gdef = NULL, *gdefuser = NULL;
@@ -992,18 +1062,16 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
 	/* Request an RRD cache flush from the xymond_rrd update daemon */
-	if (hostlist) {
-		int i;
-		for (i=0; (i < hostlistsize); i++) request_cacheflush(hostlist[i]);
-	}
-	else if (hostname) request_cacheflush(hostname);
+	if (hostlist) request_cacheflush(hostlist, hostlistsize);
+	else if (hostname) request_cacheflush(&hostname, 1);
 
 	/* What RRD files do we have matching this request? */
 	if (hostlist || (gdef->fnpat == NULL)) {
 		/*
-		 * No pattern, just a single file. It doesnt matter if it exists, because
-		 * these types of graphs usually have a hard-coded value for the RRD filename
-		 * in the graph definition.
+		 * No pattern, just a single file. For one host, the files are those
+		 * hard-coded in the graph definition's DEF: lines; with one of them
+		 * missing, the graph is the blank image a pattern that matches
+		 * nothing gets, not an rrdtool error.
 		 */
 		rrddbcount = rrddbsize = (hostlist ? hostlistsize : 1);
 		rrddbs = (rrddb_t *)malloc((rrddbsize + 1) * sizeof(rrddb_t));
@@ -1015,6 +1083,11 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			rrddbs[0].rrdfn = (char *)malloc(buflen);
 			snprintf(rrddbs[0].rrdfn, buflen, "%s.rrd", gdef->name);
 			rrddbs[0].rrdparam = NULL;
+			if (!gdef_files_exist(gdef, rrddbs[0].rrdfn)) {
+				xfree(rrddbs[0].key);
+				xfree(rrddbs[0].rrdfn);
+				rrddbcount = 0;
+			}
 		}
 		else {
 			int i, maxlen;
@@ -1025,17 +1098,34 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			}
 			snprintf(paramfmt, sizeof(paramfmt), "%%-%ds", maxlen+1);
 
+			/*
+			 * Unlike a single host's graph, these name each host's file, and
+			 * rrdtool fails the whole graph on the first one missing. Leave
+			 * out a host without it; with none left, the graph is the blank
+			 * image a pattern that matches nothing gets.
+			 */
+			rrddbcount = 0;
 			for (i=0; (i < hostlistsize); i++) {
 				size_t buflen;
+				char *rrdfn;
+				struct stat st;
 
-				rrddbs[i].key = strdup(service);
 				buflen = strlen(hostlist[i]) + strlen(gdef->fnpat) + 2;
-				rrddbs[i].rrdfn = (char *)malloc(buflen);
-				snprintf(rrddbs[i].rrdfn, buflen, "%s/%s", hostlist[i], gdef->fnpat);
+				rrdfn = (char *)malloc(buflen);
+				snprintf(rrdfn, buflen, "%s/%s", hostlist[i], gdef->fnpat);
+				if (stat(rrdfn, &st) != 0) {
+					dbgprintf("showgraph: %s has no %s, left out of the graph\n", hostlist[i], gdef->fnpat);
+					xfree(rrdfn);
+					continue;
+				}
+
+				rrddbs[rrddbcount].key = strdup(service);
+				rrddbs[rrddbcount].rrdfn = rrdfn;
 
 				buflen = maxlen + 2;
-				rrddbs[i].rrdparam = (char *)malloc(buflen);
-				snprintf(rrddbs[i].rrdparam, buflen, paramfmt, hostlist[i]);
+				rrddbs[rrddbcount].rrdparam = (char *)malloc(buflen);
+				snprintf(rrddbs[rrddbcount].rrdparam, buflen, paramfmt, hostlist[i]);
+				rrddbcount++;
 			}
 		}
 	}
@@ -1377,7 +1467,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			calcpr = NULL;
 		}
 
-		errormsg(rrd_get_error());
+		/* rrdtool's message quotes file names built from the request */
+		errormsg(htmlquoted(rrd_get_error()));
 	}
 
 	if (useroptval) xfree(useroptval);

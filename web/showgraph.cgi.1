@@ -12,7 +12,10 @@ showgraph.cgi is passed a QUERY_STRING environment variable with the
 following parameters:
 .sp
 .IP "\fBhost\fR"
-Name of the host to generate a graph for
+Name of the host to generate a graph for. A comma-separated list of hosts
+draws one graph comparing them, from the graph's "-multi" definition in
+graphs.cfg(5). A host without that definition's RRD file is left out of the
+graph; when no host has it, the graph is a blank image.
 .IP "\fBservice\fR"
 Name of the service to generate a graph for
 .IP "\fBdisp\fR"

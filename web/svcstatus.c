@@ -255,6 +255,52 @@ int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts,
 	return 0;
 }
 
+/*
+ * The first lines of the client data page: how the host's last client
+ * message arrived, and from where, as xymond shows them on the client column
+ * ("TLSv1.3 from 192.0.2.10", "plaintext from ..."). Added to the page only,
+ * never to the stored message, which other tools read. NULL when xymond does
+ * not say: an older xymond, or a host with no client message.
+ */
+static char *client_transport_header(char *host)
+{
+	SBUF_DEFINE(req);
+	sendreturn_t *sres;
+	char *resp, *bar, *eol, *hdr = NULL;
+	char *hostre = cgi_hostregex(host);	/* "." matches only a dot */
+
+	if (!hostre) return NULL;
+	SBUF_MALLOC(req, 1024 + strlen(hostre) + strlen(xgetenv("CLIENTCOLUMN")));
+	/* sender first: an older xymond drops the field it does not know, and
+	   then there is no '|' to find */
+	snprintf(req, req_buflen, "xymondboard host=^%s$ test=^%s$ fields=sender,transport",
+		 hostre, xgetenv("CLIENTCOLUMN"));
+	xfree(hostre);
+	sres = newsendreturnbuf(1, NULL);
+	if (sendmessage(req, NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) {
+		resp = getsendreturnstr(sres, 1);
+		if (resp) {
+			eol = strchr(resp, '\n'); if (eol) *eol = '\0';
+			bar = strchr(resp, '|');
+			if (bar && *(bar+1)) {
+				size_t hdrsz;
+
+				*bar = '\0';
+				hdrsz = strlen(bar+1) + strlen(resp) + 32;
+				hdr = (char *)malloc(hdrsz);
+				if (*resp)
+					snprintf(hdr, hdrsz, "[transport]\n%s from %s\n", bar+1, resp);
+				else
+					snprintf(hdr, hdrsz, "[transport]\n%s\n", bar+1);
+			}
+			xfree(resp);
+		}
+	}
+	freesendreturnbuf(sres);
+	xfree(req);
+	return hdr;
+}
+
 int do_request(void)
 {
 	int color = 0, flapping = 0;
@@ -331,6 +377,21 @@ int do_request(void)
 				log = getsendreturnstr(sres, 1);
 			}
 			freesendreturnbuf(sres);
+
+			/* The whole message, not one section of it: say how it came */
+			if (log && !(sectionfilter && *sectionfilter)) {
+				char *hdr = client_transport_header(hostname);
+
+				if (hdr) {
+					size_t sz = strlen(hdr) + strlen(log) + 1;
+					char *both = (char *)malloc(sz);
+
+					snprintf(both, sz, "%s%s", hdr, log);
+					xfree(hdr);
+					xfree(log);
+					log = both;
+				}
+			}
 		}
 		else if (source == SRC_HISTLOGS) {
 			char logfn[PATH_MAX];
@@ -438,11 +499,12 @@ int do_request(void)
 
 			freeregex(dummy);
 			SBUF_MALLOC(xymondreq, 1024 + strlen(hostname) + strlen(service));
-			snprintf(xymondreq, xymondreq_buflen, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
+			snprintf(xymondreq, xymondreq_buflen, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers,transport", hostname, service);
 		}
 		else {
 			pcre2_code *dummy = NULL;
 			SBUF_DEFINE(re);
+			char *hostre;
 
 			SBUF_MALLOC(re, 5 + strlen(complist));
 			snprintf(re, re_buflen, "^(%s)$", complist);
@@ -453,8 +515,14 @@ int do_request(void)
 			}
 
 			freeregex(dummy);
-			SBUF_MALLOC(xymondreq, 1024 + strlen(hostname) + strlen(re));
-			snprintf(xymondreq, xymondreq_buflen, "xymondboard host=^%s$ test=%s fields=testname,color,lastchange", hostname, re);
+			hostre = cgi_hostregex(hostname);	/* "." matches only a dot */
+			if (hostre == NULL) {
+				errormsg(500, "Invalid host name");
+				return 1;
+			}
+			SBUF_MALLOC(xymondreq, 1024 + strlen(hostre) + strlen(re));
+			snprintf(xymondreq, xymondreq_buflen, "xymondboard host=^%s$ test=%s fields=testname,color,lastchange", hostre, re);
+			xfree(hostre);
 		}
 
 		sres = newsendreturnbuf(1, NULL);
@@ -484,7 +552,7 @@ int do_request(void)
 
 			memset(items, 0, sizeof(items));
 			p = gettok(sumline, "|"); icount = 0;
-			while (p && (icount < 20)) {
+			while (p && (icount < 21)) {
 				items[icount++] = p;
 				p = gettok(NULL, "|");
 			}
@@ -510,6 +578,7 @@ int do_request(void)
 			 * clienttstamp         [17]
 			 * flapping		[18]
 			 * modifiers		[19]
+			 * transport		[20]	(absent from an older xymond)
 			 */
 			color = parse_color(items[2]);
 			flags = strdup(items[3]);
@@ -533,7 +602,26 @@ int do_request(void)
 			logtime = atoi(items[5]);
 			if (items[7] && strlen(items[7])) acktime = atoi(items[7]);
 			if (items[8] && strlen(items[8])) disabletime = atoi(items[8]);
-			sender = strdup(items[9]);
+			if (items[20] && (strcmp(items[20], "plaintext") == 0)) {
+				/* "Status message received from 192.0.2.1 (plaintext)" */
+				size_t sz = strlen(items[9]) + 20;
+
+				sender = (char *)malloc(sz);
+				snprintf(sender, sz, "%s (plaintext)", items[9]);
+			}
+			else if (items[20] && (strncmp(items[20], "TLS", 3) == 0)) {
+				/* "... from 192.0.2.1 over TLSv1.3, client certificate" */
+				int vlen = strcspn(items[20], " ");
+				int cert = (strstr(items[20], " cert") != NULL);
+				size_t sz = strlen(items[9]) + vlen + 40;
+
+				sender = (char *)malloc(sz);
+				snprintf(sender, sz, "%s over %.*s%s", items[9], vlen, items[20],
+					 (cert ? ", client certificate" : ""));
+			}
+			else {
+				sender = strdup(items[9]);
+			}
 
 			if (items[11] && strlen(items[11])) ackmsg = items[11];
 			if (ackmsg) nldecode(ackmsg);
@@ -734,8 +822,21 @@ int do_request(void)
 				}
 				else {
 					SBUF_REALLOC(clienturi, 1024 + strlen(cgiurl) + MAX_HTMLQUOTE_FACTOR*strlen(htmlquoted(hostname)) + strlen(clientid));
-					snprintf(clienturi, clienturi_buflen, "%s/svcstatus.sh?CLIENT=%s&amp;TIMEBUF=%s", 
+					/*
+					 * historylog.sh, not svcstatus.sh: the saved client data is
+					 * read only by the historical view, which the CGI wrapper
+					 * selects by that name. svcstatus.sh shows the host's
+					 * current client data instead.
+					 */
+					snprintf(clienturi, clienturi_buflen, "%s/historylog.sh?CLIENT=%s&amp;TIMEBUF=%s",
 						cgiurl, htmlquoted(hostname), clientid);
+					/*
+					 * The page shows the link only when clientavail is set.
+					 * The file is on the server the locator named, so it
+					 * cannot be checked here the way the local branch below
+					 * does; the locator's answer is the evidence.
+					 */
+					clientavail = 1;
 				}
 			}
 			else {

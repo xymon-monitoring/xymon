@@ -248,8 +248,9 @@ static char *critackdocurl = NULL;
 void sethostenv_critack(int prio, char *ttgroup, char *ttextra, char *infourl, char *docurl)
 {
 	critackttprio = prio;
-	if (critackttgroup) xfree(critackttgroup); critackttgroup = strdup((ttgroup && *ttgroup) ? ttgroup : "&nbsp;");
-	if (critackttextra) xfree(critackttextra); critackttextra = strdup((ttextra && *ttextra) ? ttextra : "&nbsp;");
+	/* Empty stays empty here: output_parsed() prints &nbsp; for it, and escapes the rest */
+	if (critackttgroup) xfree(critackttgroup); critackttgroup = strdup(ttgroup ? ttgroup : "");
+	if (critackttextra) xfree(critackttextra); critackttextra = strdup(ttextra ? ttextra : "");
 	if (ackinfourl) xfree(ackinfourl); ackinfourl = strdup(infourl);
 	if (critackdocurl) xfree(critackdocurl); critackdocurl = strdup((docurl && *docurl) ? docurl : "");
 }
@@ -523,7 +524,7 @@ static void build_pagepath_dropdown(FILE *output)
 	}
 
 	for (handle = xtreeFirst(ptree); (handle != xtreeEnd(ptree)); handle = xtreeNext(ptree, handle)) {
-		fprintf(output, "<option value=\"%s\">%s</option>\n", (char *)xtreeData(ptree, handle), xtreeKey(ptree, handle));
+		fprintf(output, "<option value=\"%s\">%s</option>\n", htmlattrquoted((char *)xtreeData(ptree, handle)), xtreeKey(ptree, handle));
 	}
 
 	xtreeDestroy(ptree);
@@ -891,7 +892,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				rec = (treerec_t *)xtreeData(hostnames, handle);
 
 				if (wanted_host(rec->name)) {
-					fprintf(output, "<option value=\"%s\">%s</option>\n", rec->name, rec->name);
+					fprintf(output, "<option value=\"%s\">", htmlattrquoted(rec->name));
+					fprintf(output, "%s</option>\n", htmlattrquoted(rec->name));
 				}
 			}
 		}
@@ -905,7 +907,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			fprintf(output, "hosts[\"ALL\"] = [ \"ALL\"");
 			for (handle = xtreeFirst(testnames); (handle != xtreeEnd(testnames)); handle = xtreeNext(testnames, handle)) {
 				treerec_t *rec = xtreeData(testnames, handle);
-				fprintf(output, ", \"%s\"", rec->name);
+				fprintf(output, ", \"%s\"", jsquoted(rec->name));
 			}
 			fprintf(output, " ];\n");
 
@@ -943,13 +945,13 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						bwalk = strstr(tname, key); if (bwalk) bwalk++;
 					}
 
-					fprintf(output, "hosts[\"%s\"] = [ \"ALL\"", hrec->name);
+					fprintf(output, "hosts[\"%s\"] = [ \"ALL\"", jsquoted(hrec->name));
 					for (thandle = xtreeFirst(testnames); (thandle != xtreeEnd(testnames)); thandle = xtreeNext(testnames, thandle)) {
 						trec = (treerec_t *)xtreeData(testnames, thandle);
 						if (trec->flag == 0) continue;
 
 						trec->flag = 0;
-						fprintf(output, ", \"%s\"", trec->name);
+						fprintf(output, ", \"%s\"", jsquoted(trec->name));
 					}
 					fprintf(output, " ];\n");
 				}
@@ -963,7 +965,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 			for (handle = xtreeFirst(testnames); (handle != xtreeEnd(testnames)); handle = xtreeNext(testnames, handle)) {
 				rec = (treerec_t *)xtreeData(testnames, handle);
-				fprintf(output, "<option value=\"%s\">%s</option>\n", rec->name, rec->name);
+				fprintf(output, "<option value=\"%s\">", htmlattrquoted(rec->name));
+				fprintf(output, "%s</option>\n", htmlattrquoted(rec->name));
 			}
 		}
 		else if (strcmp(t_start, "DISABLELIST") == 0) {
@@ -1048,11 +1051,11 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						xgetenv("SECURECGIBINURL"));
 
 					fprintf(output, "<table summary=\"%s disabled tests\" width=\"100%%\">\n", 
-						(hwalk->name ? hwalk->name : ""));
+						htmlattrquoted(hwalk->name ? hwalk->name : ""));
 
 					fprintf(output, "<tr>\n");
 					fprintf(output, "<TH COLSPAN=3><I>%s</I></TH>", 
-							(hwalk->name ? hwalk->name : "All hosts"));
+							htmlattrquoted(hwalk->name ? hwalk->name : "All hosts"));
 					fprintf(output, "</tr>\n");
 
 
@@ -1061,14 +1064,15 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 					fprintf(output, "<td>\n");
 					if (hwalk->name) {
 						fprintf(output, "<input name=\"hostname\" type=hidden value=\"%s\">\n", 
-							hwalk->name);
+							htmlattrquoted(hwalk->name));
 
-						fprintf(output, "<textarea name=\"%s causes\" rows=\"8\" cols=\"50\" readonly style=\"font-size: 10pt\">\n", hwalk->name);
+						fprintf(output, "<textarea name=\"%s causes\" rows=\"8\" cols=\"50\" readonly style=\"font-size: 10pt\">\n", htmlattrquoted(hwalk->name));
 						for (twalk = hwalk->tests; (twalk); twalk = twalk->next) {
 							char *msg = twalk->cause;
 							msg += strspn(msg, "0123456789 ");
-							fprintf(output, "%s\n%s\nUntil: %s\n---------------------\n", 
-								twalk->name, msg, 
+							fprintf(output, "%s\n", htmlattrquoted(twalk->name));
+							fprintf(output, "%s\n", htmlattrquoted(msg));
+							fprintf(output, "Until: %s\n---------------------\n",
 								(twalk->until == -1) ? "OK" : ctime(&twalk->until));
 						}
 						fprintf(output, "</textarea>\n");
@@ -1077,8 +1081,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						dishost_t *hw2;
 						fprintf(output, "<select multiple size=8 name=\"hostname\">\n");
 						for (hw2 = hwalk->next; (hw2); hw2 = hw2->next)
-							fprintf(output, "<option value=\"%s\">%s</option>\n", 
-								hw2->name, hw2->name);
+							{ fprintf(output, "<option value=\"%s\">", htmlattrquoted(hw2->name));
+								  fprintf(output, "%s</option>\n", htmlattrquoted(hw2->name)); }
 						fprintf(output, "</select>\n");
 					}
 					fprintf(output, "</td>\n");
@@ -1088,8 +1092,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 					fprintf(output, "<option value=\"*\" selected>ALL</option>\n");
 					if (hwalk->tests) {
 						for (twalk = hwalk->tests; (twalk); twalk = twalk->next) {
-							fprintf(output, "<option value=\"%s\">%s</option>\n",
-								twalk->name, twalk->name);
+							fprintf(output, "<option value=\"%s\">", htmlattrquoted(twalk->name));
+							fprintf(output, "%s</option>\n", htmlattrquoted(twalk->name));
 						}
 					}
 					else {
@@ -1100,8 +1104,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 							rec = xtreeData(testnames, tidx);
 							if (rec->flag == 0) continue;
 
-							fprintf(output, "<option value=\"%s\">%s</option>\n",
-								rec->name, rec->name);
+							fprintf(output, "<option value=\"%s\">", htmlattrquoted(rec->name));
+							fprintf(output, "%s</option>\n", htmlattrquoted(rec->name));
 						}
 					}
 					fprintf(output, "</select>\n");
@@ -1155,7 +1159,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						p = cmd;
 						while ((eoln = strchr(p, '\n')) != NULL) {
 							*eoln = '\0';
-							fprintf(output, "%s<BR>", p);
+							fprintf(output, "%s<BR>", htmlattrquoted(p));
 							p = (eoln + 1);
 						}
 						fprintf(output, "</TD>\n");
@@ -1198,13 +1202,16 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		}
 
 		else if (strcmp(t_start, "CRITACKTTPRIO") == 0) fprintf(output, "%d", critackttprio);
-		else if (strcmp(t_start, "CRITACKTTGROUP") == 0) fprintf(output, "%s", critackttgroup);
-		else if (strcmp(t_start, "CRITACKTTEXTRA") == 0) fprintf(output, "%s", critackttextra);
+		/* From the status page's URL (NKTTGROUP, NKTTEXTRA): escaped like the editor's */
+		else if (strcmp(t_start, "CRITACKTTGROUP") == 0)
+			fprintf(output, "%s", (*critackttgroup ? htmlattrquoted(critackttgroup) : "&nbsp;"));
+		else if (strcmp(t_start, "CRITACKTTEXTRA") == 0)
+			fprintf(output, "%s", (*critackttextra ? htmlattrquoted(critackttextra) : "&nbsp;"));
 		else if (strcmp(t_start, "CRITACKINFOURL") == 0) fprintf(output, "%s", ackinfourl);
 		else if (strcmp(t_start, "CRITACKDOCURL") == 0) fprintf(output, "%s", critackdocurl);
 
 		else if (strcmp(t_start, "CRITEDITUPDINFO") == 0) {
-			fprintf(output, "%s", criteditupdinfo);
+			fprintf(output, "%s", htmlattrquoted(criteditupdinfo));
 		}
 
 		else if (strcmp(t_start, "CRITEDITPRIOLIST") == 0) {
@@ -1219,17 +1226,19 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 		else if (strcmp(t_start, "CRITEDITCLONELIST") == 0) {
 			int i;
-			for (i=0; (criteditclonelist[i]); i++) 
-				fprintf(output, "<option value=\"%s\">%s</option>\n", 
-					criteditclonelist[i], criteditclonelist[i]);
+			for (i=0; (criteditclonelist[i]); i++) {
+				/* Two statements: htmlattrquoted() returns one static buffer */
+				fprintf(output, "<option value=\"%s\">", htmlattrquoted(criteditclonelist[i]));
+				fprintf(output, "%s</option>\n", htmlattrquoted(criteditclonelist[i]));
+			}
 		}
 
 		else if (strcmp(t_start, "CRITEDITGROUP") == 0) {
-			fprintf(output, "%s", criteditgroup);
+			fprintf(output, "%s", htmlattrquoted(criteditgroup));
 		}
 
 		else if (strcmp(t_start, "CRITEDITEXTRA") == 0) {
-			fprintf(output, "%s", criteditextra);
+			fprintf(output, "%s", htmlattrquoted(criteditextra));
 		}
 
 		else if (strcmp(t_start, "CRITEDITWKDAYS") == 0) {

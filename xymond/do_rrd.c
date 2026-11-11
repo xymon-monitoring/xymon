@@ -665,6 +665,19 @@ void rrdcacheflushhost(char *hostname)
 	if (strncmp(hostname, rrddir, updcache_keyofs) == 0) hostname += updcache_keyofs;
 	keylen = strlen(hostname);
 
+	/*
+	 * A name that matches no cached update gets no record, so flush
+	 * requests for uncached names do not grow flushtree.
+	 */
+	for (handle = xtreeFirst(updcache); (handle != xtreeEnd(updcache)); handle = xtreeNext(updcache, handle)) {
+		cacheitem = (updcacheitem_t *) xtreeData(updcache, handle);
+		if (strncasecmp(cacheitem->key, hostname, keylen) == 0) break;
+	}
+	if (handle == xtreeEnd(updcache)) {
+		dbgprintf("Flush of '%s' skipped, nothing cached\n", hostname);
+		return;
+	}
+
 	if (!have_flushtree) {
 		flushtree = xtreeNew(strcasecmp);
 		have_flushtree = 1;

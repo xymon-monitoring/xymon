@@ -44,7 +44,13 @@ first line of the merged message.
 
 .IP "\fBRECIPIENT\fR"
 The \fBRECIPIENT\fR parameter defines which server receives
-the message. If RECIPIENT is given as "0.0.0.0", then the
+the message: an IPv4 or IPv6 address or a hostname, optionally
+followed by ":port". An IPv6 address with a port is written in
+brackets, "[2001:db8::1]:1984"; without a port, the default one
+is used (see XYMONDPORT in xymonserver.cfg(5)). A hostname with
+several addresses is tried address by address, in the order the
+resolver gives them, until one connects.
+If RECIPIENT is given as "0.0.0.0", then the
 message is sent to all of the servers listed in the XYMSERVERS
 environment variable.
 
@@ -59,6 +65,15 @@ HTTP protocol. The
 .I xymoncgimsg.cgi(8)
 CGI tool (included in Xymon) must be installed on the webserver
 for the HTTP transport to work.
+
+A \fBRECIPIENT\fR written "xymons://host[:port]" is reached over
+TLS, on the XYMONDTLSPORT port unless one is given; "xymon://host"
+is the same as "host". The server's certificate is checked as
+XYMON_TLS_VERIFY says, and a client certificate is presented when
+XYMON_TLS_CERT is set (see xymonserver.cfg(5)). When the TLS
+handshake fails, the message is not sent: there is no retry
+without TLS. A xymon built without OpenSSL refuses such a
+recipient.
 .br
 
 .IP "\fBMESSAGE\fR"
@@ -239,6 +254,15 @@ Either \-1 or Unix timestamp when an active acknowledgement expires.
 Either \-1 or Unix timestamp when the status is no longer disabled.
 .IP "\fBsender\fR"
 IP address where the status was received from.
+.IP "\fBtransport\fR"
+How the last report arrived: the TLS version (e.g. "TLSv1.3"), followed by
+" cert" when a verified client certificate names the host; "plaintext";
+or "local" for a report that did not come over a connection (from a
+scheduled task, or the backfeed queue). A status derived from a client
+message (cpu, disk, memory and the others xymond_client reports) shows how
+that client message arrived. Empty after xymond restarts until the next
+report, and for a status xymond set itself. Information only:
+nothing alerts or changes color on it.
 .IP "\fBcookie\fR"
 Either \-1 or the cookie value used to acknowledge an alert.
 .IP "\fBackmsg\fR"
@@ -385,6 +409,18 @@ Either \-1 or Unix timestamp when an active acknowledgement expires.
 Either \-1 or Unix timestamp when the status is no longer disabled.
 .IP "\fBsender\fR"
 IP address where the status was received from.
+.IP "\fBtransport\fR"
+How the last report arrived: the TLS version (e.g. "TLSv1.3"), followed by
+" cert" when a verified client certificate names the host; "plaintext";
+or "local" for a report that did not come over a connection (from a
+scheduled task, or the backfeed queue). A status derived from a client
+message (cpu, disk, memory and the others xymond_client reports) shows how
+that client message arrived. Empty after xymond restarts until the next
+report, and for a status xymond set itself. Information only:
+nothing alerts or changes color on it. The client column (CLIENTCOLUMN)
+shows how the host\(aqs last client message arrived, and its sender is
+where that message came from; the info and trends columns, which xymond
+makes up itself, show neither.
 .IP "\fBcookie\fR"
 Either \-1 or the cookie value used to acknowledge an alert.
 .IP "\fBline1\fR"

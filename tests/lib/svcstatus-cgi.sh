@@ -34,7 +34,7 @@ svcstatus_setup() {
 	# from configure's --pcrelib). Omitting them fails the link on a tree
 	# that builds fine. Keep the pkg-config/-lpcre2-8 fallback for a
 	# Makefile without PCRELIBS.
-	pcre_libs=${PCRELIBS:-$(sed -n 's/^PCRELIBS *= *//p' "$ROOT/Makefile")}
+	pcre_libs=${PCRELIBS:-$(xymon_makevar "$ROOT" PCRELIBS)}
 	if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
 		pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
 	fi
@@ -98,7 +98,7 @@ svcstatus_build() {
 	harness_ldflags=$(xymon_ldflags "$ROOT")
 	"$CC" "$@" $harness_cflags -iquote "$ROOT/web" -o "$work/svcstatus" \
 		"$ROOT/web/svcstatus.c" "$ROOT/web/svcstatus-info.c" "$ROOT/web/svcstatus-trends.c" \
-		"$ROOT/lib/libxymon.a" "$ROOT/lib/libxymoncomm.a" "$ROOT/lib/libxymon.a" \
+		"$(xymon_lib "$ROOT" libxymon.a)" "$(xymon_lib "$ROOT" libxymoncomm.a)" "$(xymon_lib "$ROOT" libxymon.a)" \
 		$pcre_libs $harness_ldflags 2>"$work/cc.log" || return 1
 }
 

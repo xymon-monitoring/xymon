@@ -302,17 +302,51 @@ require_gnu_make() {
 # test that compiles a harness against the in-tree libraries, so a new shared
 # skip condition lands in one place; a test may still add stricter
 # conditions of its own (e.g. "tree already built") next to its call.
+#
+# A build that writes its own config.h elsewhere -- CMake, in its build
+# directory -- says where through XYMON_CFLAGS (see xymon_cflags), and counts
+# as configured.
 require_c_buildenv() {
 	require_cc
 	require_gnu_make
-	[ -f "$1/include/config.h" ] || skip "tree not configured (no include/config.h)"
+	[ -f "$1/include/config.h" ] || [ -n "${XYMON_CFLAGS+set}" ] \
+		|| skip "tree not configured (no include/config.h)"
+}
+
+# xymon_makevar ROOT NAME -- the value configure wrote for NAME into the
+# top-level Makefile (PCRELIBS, RRDLIBS, XYMONLOGDIR, ...). A variable of the
+# same name in the environment answers first, as a build with no Makefile
+# gives it, the way PCRELIBS always could; with neither, nothing.
+xymon_makevar() {
+	local root=$1 name=$2
+	if [ -n "${!name+set}" ]; then
+		printf '%s' "${!name}"
+		return 0
+	fi
+	[ -f "$root/Makefile" ] || return 0
+	sed -n "s/^$name *= *//p" "$root/Makefile"
+}
+
+# xymon_lib ROOT ARCHIVE -- the path of a library archive (libxymoncomm.a,
+# ...) a harness links: ROOT/lib, where make writes it, or XYMON_LIBDIR for a
+# build that writes its archives elsewhere -- CMake, in its build directory.
+xymon_lib() {
+	printf '%s' "${XYMON_LIBDIR:-$1/lib}/$2"
 }
 
 # build_xymon_libs ROOT LOGFILE ARCHIVE... -- build the named archives in
 # ROOT/lib, dumping the build log on stderr and failing if the build breaks.
+# With XYMON_LIBDIR set, the archives come from another build, which is not
+# make's to rebuild: each must be there, or the test skips.
 build_xymon_libs() {
-	local root=$1 log=$2
+	local root=$1 log=$2 a
 	shift 2
+	if [ -n "${XYMON_LIBDIR:-}" ]; then
+		for a in "$@"; do
+			[ -f "$XYMON_LIBDIR/$a" ] || skip "$a is not built in XYMON_LIBDIR ($XYMON_LIBDIR)"
+		done
+		return 0
+	fi
 	require_gnu_make
 	"$XYMON_MAKE" -C "$root/lib" "$@" >"$log" 2>&1 \
 		|| { cat "$log" >&2; fail "cannot build $*"; }
@@ -374,6 +408,10 @@ pcre_cflags() {
 # needs, and fails where PCRE is not installed. Only those two: they are what
 # a variant changes, and taking every -D would alter a server tree's compile
 # lines, which need nothing.
+#
+# XYMON_CFLAGS is added after them: a build with no top-level Makefile gives
+# there where its generated config.h is (-iquote BUILDDIR for CMake) and any
+# define its variant needs.
 xymon_cflags() {
 	local root=$1 probe tok defines=
 
@@ -383,12 +421,19 @@ xymon_cflags() {
 		probe='__xymon_cflags:
 	@printf "%s\n" "$(CFLAGS)"
 '
-		for tok in $(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_cflags 2>/dev/null); do
+		# MAKEFLAGS= : the probe is read from stdin (-f -); an inherited
+		# jobserver (suite under a parent "make -j") corrupts that read and
+		# the probe returns nothing. #733.
+		for tok in $(printf '%s' "$probe" | MAKEFLAGS= "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_cflags 2>/dev/null); do
 			case $tok in -DCLIENTONLY|-DCLIENTONLY=*|-DLOCALCLIENT|-DLOCALCLIENT=*) defines="$defines $tok" ;; esac
 		done
 	fi
-	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")$defines"
+	printf '%s' "-iquote $root/include -iquote $root/lib $(pcre_cflags "$root")$defines${XYMON_CFLAGS:+ $XYMON_CFLAGS}"
 }
+#
+# XYMON_LDFLAGS, set, replaces all of it, for a build with no top-level
+# Makefile to ask: its search path, runtime path and the libraries its
+# archives need.
 
 # xymon_ldflags ROOT -- the configured link flags for a harness built against
 # the in-tree libraries: the library search path, the runtime path, and the
@@ -408,13 +453,18 @@ xymon_cflags() {
 xymon_ldflags() {
 	local root=$1 probe out cflags rpath libs tok search=
 
+	if [ -n "${XYMON_LDFLAGS+set}" ]; then
+		printf '%s' "$XYMON_LDFLAGS"
+		return 0
+	fi
 	[ -f "$root/Makefile" ] || return 0
 	require_gnu_make
 	# shellcheck disable=SC2016  # $(CFLAGS) etc. are make's to expand, not the shell's
 	probe='__xymon_ldflags:
 	@printf "%s\n" "$(CFLAGS)" "$(RPATHOPT)" "$(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)"
 '
-	out=$(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_ldflags 2>/dev/null) || return 0
+	# MAKEFLAGS= : see __xymon_cflags above -- stdin probe, inherited jobserver. #733.
+	out=$(printf '%s' "$probe" | MAKEFLAGS= "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_ldflags 2>/dev/null) || return 0
 
 	cflags=$(printf '%s\n' "$out" | sed -n 1p)
 	rpath=$(printf '%s\n' "$out" | sed -n 2p)
@@ -432,6 +482,61 @@ xymon_ldflags() {
 	case $rpath in *,) rpath= ;; esac
 
 	printf '%s' "$search $rpath $libs"
+}
+
+# xymon_sslcflags ROOT -- the compile flags the build gives its OpenSSL users,
+# for a harness that includes an OpenSSL header.
+#
+# The build adds $(SSLFLAGS) $(SSLINCDIR) only to the compile lines of the
+# files that use OpenSSL (xymonnet/Makefile, for one), never to CFLAGS, so
+# xymon_cflags() does not carry them either. Where OpenSSL is outside the
+# compiler's default path - Homebrew's keg-only openssl@3 on macOS - a harness
+# compiled without them fails on <openssl/ssl.h>. Asked of make, like
+# xymon_ldflags(); empty on an unconfigured tree. A build with no top-level
+# Makefile -- CMake, an installed package -- gives its own in XYMON_SSLCFLAGS,
+# as it gives its binaries' paths to require_bin; set, even empty, it is used
+# as it stands.
+xymon_sslcflags() {
+	local root=$1 probe
+
+	if [ -n "${XYMON_SSLCFLAGS+set}" ]; then
+		printf '%s' "$XYMON_SSLCFLAGS"
+		return 0
+	fi
+	[ -f "$root/Makefile" ] || return 0
+	require_gnu_make
+	# shellcheck disable=SC2016  # $(SSLFLAGS) etc. are make's to expand, not the shell's
+	probe='__xymon_sslcflags:
+	@printf "%s\n" "$(SSLFLAGS) $(SSLINCDIR)"
+'
+	printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_sslcflags 2>/dev/null || true
+}
+
+# xymon_ssl_known ROOT -- whether xymon_sslcflags can tell if this build has
+# OpenSSL: a configured tree, or XYMON_SSLCFLAGS given. A test that branches
+# on HAVE_OPENSSL skips otherwise, rather than take a build it cannot read for
+# one without OpenSSL.
+xymon_ssl_known() {
+	[ -n "${XYMON_SSLCFLAGS+set}" ] || [ -f "$1/Makefile" ]
+}
+
+# make_test_cert KEY CERT -- copy the suite's self-signed certificate to CERT
+# and its unencrypted key to KEY, for a test's TLS peer.
+#
+# The pair is checked in, not made by the test: the openssl command is missing
+# from many lanes' images, and NetBSD 10 and 11 have no openssl.cnf, without
+# which openssl req stops (NetBSD PR 60365). The key is for tests only and
+# protects nothing. It is EC P-256, which every crypto policy accepts, valid
+# until 9966, and names every host the TLS tests connect to. Made once with:
+#
+#   openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+#     -keyout test-key.pem -out test-cert.pem -days 2900000 -subj /CN=xymon-test \
+#     -addext subjectAltName=DNS:mail.test.local,DNS:localhost,IP:127.0.0.1
+make_test_cert() {
+	local lib
+
+	lib=$(dirname "${BASH_SOURCE[0]}")
+	cp "$lib/test-key.pem" "$1" && cp "$lib/test-cert.pem" "$2"
 }
 
 # require_shm_segments N -- skip unless one process may attach N SysV
@@ -458,7 +563,7 @@ require_shm_segments() {
 	[ -n "$found" ] || return 0
 	[ "$have" -ge "$want" ] && return 0
 
-	skip "$found is $have, need >= $want (xymond attaches one shared-memory segment per channel) -- raise it with: sudo sysctl -w $found=$want"
+	skip "$found is $have, need >= $want (xymond attaches one shared-memory segment per channel) -- raise it as root with: sysctl -w $found=$want"
 }
 
 # ---- repo location -----------------------------------------------------------
@@ -492,9 +597,9 @@ find_root() {
 # row names common/, which is what the server package ships.
 variant_products() {
 	cat <<-'EOF'
-		server       XYMONGREP=common/xymongrep XYMOND_CLIENT=xymond/xymond_client XYMOND_RRD=xymond/xymond_rrd SVCSTATUS_CGI=web/svcstatus.cgi
-		localclient  XYMONGREP=client/xymongrep XYMOND_CLIENT=client/xymond_client
-		client       XYMONGREP=client/xymongrep
+		server       XYMON=common/xymon XYMONGREP=common/xymongrep XYMOND_CLIENT=xymond/xymond_client XYMOND_RRD=xymond/xymond_rrd SVCSTATUS_CGI=web/svcstatus.cgi
+		localclient  XYMON=client/xymon XYMONGREP=client/xymongrep XYMOND_CLIENT=client/xymond_client
+		client       XYMON=client/xymon XYMONGREP=client/xymongrep
 	EOF
 }
 

@@ -68,9 +68,15 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
     <p class="Pp"></p>
   </dd>
   <dt id="RECIPIENT"><a class="permalink" href="#RECIPIENT"><b>RECIPIENT</b></a></dt>
-  <dd>The <b>RECIPIENT</b> parameter defines which server receives the message.
-      If RECIPIENT is given as &quot;0.0.0.0&quot;, then the message is sent to
-      all of the servers listed in the XYMSERVERS environment variable.
+  <dd>The <b>RECIPIENT</b> parameter defines which server receives the message:
+      an IPv4 or IPv6 address or a hostname, optionally followed by
+      &quot;:port&quot;. An IPv6 address with a port is written in brackets,
+      &quot;[2001:db8::1]:1984&quot;; without a port, the default one is used
+      (see XYMONDPORT in <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)). A hostname with several addresses
+      is tried address by address, in the order the resolver gives them, until
+      one connects. If RECIPIENT is given as &quot;0.0.0.0&quot;, then the
+      message is sent to all of the servers listed in the XYMSERVERS environment
+      variable.
     <p class="Pp">Usually, a client will use &quot;$XYMSRV&quot; for the
         <b>RECIPIENT</b> parameter, as this is defined for the client scripts to
         automatically contain the correct value.</p>
@@ -79,6 +85,14 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
         the Xymon messages to the Xymon server using standard HTTP protocol. The
         <i><a href="../man8/xymoncgimsg.cgi.8.html">xymoncgimsg.cgi</a>(8)</i> CGI tool (included in Xymon) must be installed
         on the webserver for the HTTP transport to work.</p>
+    <p class="Pp">A <b>RECIPIENT</b> written &quot;xymons://host[:port]&quot; is
+        reached over TLS, on the XYMONDTLSPORT port unless one is given;
+        &quot;xymon://host&quot; is the same as &quot;host&quot;. The server's
+        certificate is checked as XYMON_TLS_VERIFY says, and a client
+        certificate is presented when XYMON_TLS_CERT is set (see
+        <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5)). When the TLS handshake fails, the message is not
+        sent: there is no retry without TLS. A xymon built without OpenSSL
+        refuses such a recipient.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="MESSAGE"><a class="permalink" href="#MESSAGE"><b>MESSAGE</b></a></dt>
@@ -286,6 +300,15 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
   <dd>Either -1 or Unix timestamp when the status is no longer disabled.</dd>
   <dt id="sender"><a class="permalink" href="#sender"><b>sender</b></a></dt>
   <dd>IP address where the status was received from.</dd>
+  <dt id="transport"><a class="permalink" href="#transport"><b>transport</b></a></dt>
+  <dd>How the last report arrived: the TLS version (e.g. &quot;TLSv1.3&quot;),
+      followed by &quot; cert&quot; when a verified client certificate names the
+      host; &quot;plaintext&quot;; or &quot;local&quot; for a report that did
+      not come over a connection (from a scheduled task, or the backfeed queue).
+      A status derived from a client message (cpu, disk, memory and the others
+      xymond_client reports) shows how that client message arrived. Empty after
+      xymond restarts until the next report, and for a status xymond set itself.
+      Information only: nothing alerts or changes color on it.</dd>
   <dt id="cookie"><a class="permalink" href="#cookie"><b>cookie</b></a></dt>
   <dd>Either -1 or the cookie value used to acknowledge an alert.</dd>
   <dt id="ackmsg"><a class="permalink" href="#ackmsg"><b>ackmsg</b></a></dt>
@@ -438,6 +461,18 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
   <dd>Either -1 or Unix timestamp when the status is no longer disabled.</dd>
   <dt id="sender~2"><a class="permalink" href="#sender~2"><b>sender</b></a></dt>
   <dd>IP address where the status was received from.</dd>
+  <dt id="transport~2"><a class="permalink" href="#transport~2"><b>transport</b></a></dt>
+  <dd>How the last report arrived: the TLS version (e.g. &quot;TLSv1.3&quot;),
+      followed by &quot; cert&quot; when a verified client certificate names the
+      host; &quot;plaintext&quot;; or &quot;local&quot; for a report that did
+      not come over a connection (from a scheduled task, or the backfeed queue).
+      A status derived from a client message (cpu, disk, memory and the others
+      xymond_client reports) shows how that client message arrived. Empty after
+      xymond restarts until the next report, and for a status xymond set itself.
+      Information only: nothing alerts or changes color on it. The client column
+      (CLIENTCOLUMN) shows how the host's last client message arrived, and its
+      sender is where that message came from; the info and trends columns, which
+      xymond makes up itself, show neither.</dd>
   <dt id="cookie~2"><a class="permalink" href="#cookie~2"><b>cookie</b></a></dt>
   <dd>Either -1 or the cookie value used to acknowledge an alert.</dd>
   <dt id="line1"><a class="permalink" href="#line1"><b>line1</b></a></dt>

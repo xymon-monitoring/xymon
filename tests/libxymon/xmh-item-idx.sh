@@ -34,7 +34,7 @@ LOADHOSTS_C="$ROOT/lib/loadhosts.c"
 [ -f "$LOADHOSTS_C" ] || skip "lib/loadhosts.c not present in this checkout"
 
 require_c_buildenv "$ROOT"
-[ -f "$ROOT/lib/libxymonclient.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymonclient.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 
 work=$(mktempdir)
@@ -67,7 +67,7 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 # shellcheck disable=SC2086 # the flag strings are lists of words
 "$CC" $harness_cflags -o "$work/harness" \
 	"$here/xmh-item-idx-harness.c" \
-	"$ROOT/lib/libxymonclientcomm.a" "$ROOT/lib/libxymonclient.a" \
+	"$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
 	$harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
 

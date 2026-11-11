@@ -27,6 +27,10 @@ const static struct {
 	{ "XYMONDREL", VERSION },
 	{ "XYMONSERVERROOT", XYMONTOPDIR },
 	{ "XYMONSERVERLOGS", XYMONLOGDIR },
+	/* The log directory as configured, not as compiled: xymon_rundir() falls
+	   back to XYMONSERVERLOGS, and so must a task line expanding $XYMONRUNDIR
+	   when the configuration does not set it. */
+	{ "XYMONRUNDIR", "$XYMONSERVERLOGS" },
 	{ "XYMONSERVERHOSTNAME", XYMONHOSTNAME },
 	{ "XYMONSERVERIP", XYMONHOSTIP },
 	{ "XYMONSERVEROS", XYMONHOSTOS },
@@ -40,6 +44,16 @@ const static struct {
 	{ "DELAYRED", "" },
 	{ "DELAYYELLOW", "" },
 	{ "XYMONDPORT", "1984" },
+	{ "XYMONDTLSPORT", "1985" },
+	{ "XYMOND_TLS_CERT", "$XYMONHOME/etc/tls/xymond.pem" },
+	{ "XYMOND_TLS_KEY", "$XYMONHOME/etc/tls/xymond.key" },
+	{ "XYMOND_TLS_CA", "" },
+	{ "XYMOND_TLS_REQUIRE_CERT", "FALSE" },
+	{ "XYMON_TLS_CA", "" },
+	{ "XYMON_TLS_CERT", "" },
+	{ "XYMON_TLS_KEY", "" },
+	{ "XYMON_TLS_SNI", "" },
+	{ "XYMON_TLS_VERIFY", "full" },
 	{ "XYMSRV", "$XYMONSERVERIP" },
 	{ "XYMSERVERS", "" },
 	{ "FQDN", "TRUE" },
@@ -218,6 +232,22 @@ char *xgetenv(const char *name)
 	return result;
 }
 
+/*
+ * The runtime directory, as the programs building a pidfile or control
+ * socket path resolve it: XYMONRUNDIR, else the configured log directory,
+ * else the compiled one. An empty XYMONRUNDIR counts as unset -- "" would
+ * put those files at the filesystem root.
+ */
+char *xymon_rundir(void)
+{
+	char *p = xgetenv("XYMONRUNDIR");
+
+	if (p && *p) return p;
+	p = xgetenv("XYMONSERVERLOGS");
+	if (p && *p) return p;
+	return XYMONLOGDIR;
+}
+
 void envcheck(char *envvars[])
 {
 	int i;
@@ -317,6 +347,19 @@ void loadenv(char *envfile, char *area)
 				}
 
 				putenv(oneenv);
+
+				/* An empty XYMONRUNDIR is replaced on the line that sets it, so
+				   the lines after it in this file, and what xymonlaunch expands
+				   for tasks.cfg -- "--pidfile=$XYMONRUNDIR/xymond.pid" -- see
+				   the same directory as the programs, not "/xymond.pid". */
+				if (strcmp(oneenv, "XYMONRUNDIR=") == 0) {
+					SBUF_DEFINE(fixed);
+					char *val = xymon_rundir();
+
+					SBUF_MALLOC(fixed, strlen("XYMONRUNDIR=") + strlen(val) + 1);
+					snprintf(fixed, fixed_buflen, "XYMONRUNDIR=%s", val);
+					putenv(fixed);
+				}
 			}
 		}
 		stackfclose(fd);

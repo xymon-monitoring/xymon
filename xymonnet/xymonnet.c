@@ -109,8 +109,6 @@ char		*defaultsourceip = NULL;
 int		loadhostsfromxymond = 0;
 int		sslminkeysize = 0;
 STATIC_SBUF_DEFINE(warnbuf);
-static void add_warning(char *msg);
-static void warn_url_target_change(testitem_t *t);
 
 void dump_hostlist(void)
 {
@@ -283,15 +281,33 @@ service_t *add_service(char *name, int port, int namelen, int toolid)
 	return svc;
 }
 
+/*
+ * The port for a service comes from protocols.cfg. Every shipped entry names
+ * its port.
+ *
+ * A section without one falls back to the host's /etc/services, and says so
+ * each run. An upgrade keeps the sections already in protocols.cfg, and the
+ * [smtps], [amqp] and [amqps] shipped before 4.3.31 had no port line: they
+ * worked where /etc/services knew the name (Debian's does), and would stop
+ * being tested if the fallback went. The warning names the section to fix.
+ *
+ * Only a section that exists: XYMONNETSVCS also lists names protocols.cfg has
+ * no section for, and those get no port. A name with no port from either
+ * source is reported by add_tcp_test().
+ */
 int getportnumber(char *svcname)
 {
 	struct servent *svcinfo;
-	int result = 0;
+	svcinfo_t *section = find_tcp_service(svcname);
+	int result = default_tcp_port(svcname);
 
-	result = default_tcp_port(svcname);
-	if (result == 0) {
-		svcinfo = getservbyname(svcname, NULL);
-		if (svcinfo) result = ntohs(svcinfo->s_port);
+	if ((result == 0) && section && (strcmp(section->svcname, svcname) == 0)) {
+		svcinfo = getservbyname(svcname, "tcp");
+		if (svcinfo) {
+			result = ntohs(svcinfo->s_port);
+			errprintf("Service %s has no 'port' line in protocols.cfg; using %d from /etc/services. Add a port line\n",
+				  svcname, result);
+		}
 	}
 
 	return result;
@@ -394,69 +410,6 @@ int wanted_host(void *host, char *netstring)
 	return 0;
 }
 
-
-/* Two address strings for the same address? Parsed numerically, so legacy
- * IPv4 forms ("127.1") and canonical ones ("127.0.0.1") compare equal, as do
- * two spellings of an IPv6 address; otherwise a plain string compare. */
-static int same_ipaddr(const char *a, const char *b)
-{
-	struct in_addr a4, b4;
-	struct in6_addr a6, b6;
-
-	if (!a || !b) return 0;
-	if ((inet_aton(a, &a4) != 0) && (inet_aton(b, &b4) != 0))
-		return (a4.s_addr == b4.s_addr);
-	if ((inet_pton(AF_INET6, a, &a6) == 1) && (inet_pton(AF_INET6, b, &b6) == 1))
-		return (memcmp(&a6, &b6, sizeof(a6)) == 0);
-	return (strcmp(a, b) == 0);
-}
-
-/*
- * #516 warning: a URL test on a line with an address (not 0.0.0.0) is fetched
- * today from where the URL's own host resolves; a future release will fetch it
- * from the line's address instead. Name only the lines that would then change
- * target -- the URL's host, as an address or as the address its name resolved
- * to (which xymonnet already looked up to fetch it, so no extra lookup),
- * differs from the line's. A "=IP"-pinned or proxied URL keeps its own target,
- * and a URL for the line's own name does not change, so none of those are named.
- */
-static void warn_url_target_change(testitem_t *t)
-{
-	http_data_t *req = (http_data_t *)t->privdata;
-	char *lineip = t->host->cfgip;	/* as written in hosts.cfg: ip may be DNS-overwritten by ip_to_test() */
-	char *linename = t->host->hostname;
-	weburl_t url;
-	char *host, *usedip;
-	struct in6_addr addr;
-	char msg[1024];
-
-	if (!req) return;
-	if ((lineip[0] == '\0') || (strcmp(lineip, "0.0.0.0") == 0)) return;
-
-	/* Re-read the testspec for the pin/proxy/host it was written with; no lookup. */
-	decode_url(t->testspec, &url);
-	if (url.desturl->parseerror || url.proxyurl || url.desturl->ip) return;
-	host = url.desturl->host;
-	if (!host) return;
-
-	if ((inet_pton(AF_INET, host, &addr) == 1) || (inet_pton(AF_INET6, host, &addr) == 1)) {
-		/* The URL's host is itself an address: it names where it is already fetched. */
-		if (same_ipaddr(host, lineip)) return;	/* the line's own address: no change */
-		snprintf(msg, sizeof(msg), "xymonnet: host %s: the URL %.900s is fetched from %s. A future release will fetch it from %s, this line's hosts.cfg address: move it to a 0.0.0.0 line, or give the URL the address with \"=IP\"\n",
-			 linename, url.desturl->origform ? url.desturl->origform : host, host, lineip);
-		add_warning(msg);
-		return;
-	}
-
-	if (strcasecmp(host, linename) == 0) return;	/* the line's own name */
-
-	/* A name: decide from the address it actually resolved to for the fetch. */
-	usedip = (req->weburl.desturl ? req->weburl.desturl->ip : NULL);
-	if (!usedip || same_ipaddr(usedip, lineip)) return;	/* resolves to the line's address, or not at all */
-	snprintf(msg, sizeof(msg), "xymonnet: host %s: the URL %.900s is fetched from %s, the address %s resolves to. A future release will fetch it from %s, this line's hosts.cfg address: move it to a 0.0.0.0 line to keep resolving\n",
-		 linename, url.desturl->origform ? url.desturl->origform : host, usedip, host, lineip);
-	add_warning(msg);
-}
 
 void load_tests(void)
 {
@@ -651,8 +604,13 @@ void load_tests(void)
 							  xmh_item(hwalk, XMH_HOSTNAME), testspec);
 					}
 					else {
+						char *lineip = xmh_item(hwalk, XMH_IP);
+
 						s = httptest;
-						if (!url.desturl->ip)
+						/* A line with an address serves its URL tests (#516): only a
+						   URL with no address of its own, on a 0.0.0.0 line or behind a
+						   proxy, has a name to resolve. */
+						if (!url.desturl->ip && (url.proxyurl || !lineip || (strcmp(lineip, "0.0.0.0") == 0)))
 							add_url_to_dns_queue(testspec);
 					}
 				}
@@ -909,8 +867,8 @@ void load_tests(void)
 			}
 	
 			snprintf(h->ip, sizeof(h->ip), "%s", xmh_item(hwalk, XMH_IP));
-			snprintf(h->cfgip, sizeof(h->cfgip), "%s", xmh_item(hwalk, XMH_IP));
-			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
+			/* Only 0.0.0.0 asks for the name to be resolved; any other address is used as given (#516) */
+			if ((strcmp(h->ip, "0.0.0.0") == 0) && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {
 			/* No network tests for this host, so ignore it */
@@ -946,29 +904,19 @@ char *ip_to_test(testedhost_t *h)
 	char *dnsresult;
 	int nullip = (strcmp(h->ip, "0.0.0.0") == 0);
 
-	if (!nullip && (h->testip || (dnsmethod == IP_ONLY))) {
+	/*
+	 * The hosts.cfg address is the one tested, used as given; only 0.0.0.0
+	 * asks for the hostname to be resolved (#516). A wrong address is not
+	 * replaced by whatever DNS says, so it shows as a failing test.
+	 */
+	if (!nullip) {
 		/* Already have the IP setup */
 	}
 	else if (h->dodns) {
 		dnsresult = dnsresolve(h->hostname);
 
 		if (dnsresult) {
-			/*
-			 * A real address in hosts.cfg that DNS contradicts: say so, because
-			 * a future release tests the hosts.cfg address instead (#516). Once
-			 * h->ip holds the answer the two agree, so this is said once a run.
-			 */
-			if (!nullip && (strcmp(h->ip, dnsresult) != 0)) {
-				char msg[512];
-
-				snprintf(msg, sizeof(msg), "xymonnet: host %s: hosts.cfg says %s, DNS says %s; tested %s. A future release will test the hosts.cfg address: correct it, or write 0.0.0.0 to keep resolving\n",
-					 h->hostname, h->ip, dnsresult, dnsresult);
-				add_warning(msg);
-			}
 			snprintf(h->ip, sizeof(h->ip), "%s", dnsresult);
-		}
-		else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
-			/* Already have the IP setup */
 		}
 		else {
 			char msg[512];
@@ -1378,6 +1326,29 @@ int start_ping_service(service_t *service)
 }
 
 
+/*
+ * same_address: the two texts name one address.
+ *
+ * The pinger reports a target by address, and fping with -A spells an IPv6
+ * address its own way ("::1" for "0:0:0:0:0:0:0:1"), so the result's text
+ * need not be the text of hosts.cfg. Compare the addresses, not their
+ * spellings. A text that is not an address is compared as text, so a
+ * pinger that echoes a name still matches it.
+ */
+static int same_address(const char *a, const char *b)
+{
+	struct in_addr a4, b4;
+	struct in6_addr a6, b6;
+
+	if ((inet_pton(AF_INET, a, &a4) == 1) && (inet_pton(AF_INET, b, &b4) == 1))
+		return (memcmp(&a4, &b4, sizeof(a4)) == 0);
+	if ((inet_pton(AF_INET6, a, &a6) == 1) && (inet_pton(AF_INET6, b, &b6) == 1))
+		return (memcmp(&a6, &b6, sizeof(a6)) == 0);
+
+	return (strcmp(a, b) == 0);
+}
+
+
 int finish_ping_service(service_t *service)
 {
 	testitem_t	*t;
@@ -1481,7 +1452,7 @@ int finish_ping_service(service_t *service)
 					 * the same IP-address.
 					 */
 					for (t=service->items; (t); t = t->next) {
-						if (strcmp(t->host->ip, pingip) == 0) {
+						if (same_address(t->host->ip, pingip)) {
 							if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
 							t->open = (strstr(l, "is alive") != NULL);
 							t->banner = dupstrbuffer(l);
@@ -1490,7 +1461,7 @@ int finish_ping_service(service_t *service)
 						if (t->host->extrapings) {
 							ipping_t *walk;
 							for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
-								if (strcmp(walk->ip, pingip) == 0) {
+								if (same_address(walk->ip, pingip)) {
 									if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
 									walk->open = (strstr(l, "is alive") != NULL);
 									walk->banner = dupstrbuffer(l);
@@ -1532,6 +1503,10 @@ int finish_ping_service(service_t *service)
 	return 0;
 }
 
+
+/* The buffer every caller passes as `cause`; it is a pointer here, so its
+   size cannot be recovered with sizeof(). */
+#define MAX_CAUSE 1024
 
 int decide_color(service_t *service, char *svcname, testitem_t *test, int failgoesclear, char *cause)
 {
@@ -1662,7 +1637,19 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 				}
 			}
 			else {
-				if (!test->open) {
+				if (!test->open && (service->toolid == TOOL_CONTEST) &&
+				    tcp_dialogue_refused((tcptest_t *)test->privdata)) {
+					/*
+					 * The definition was refused, so nothing was checked and
+					 * nothing was sent. That the port is also shut is true but
+					 * not the fault to report: it sends the operator to look
+					 * at a service when the file is what is broken.
+					 */
+					snprintf(cause, MAX_CAUSE, "Unexpected service response: %s",
+						 tcp_dialogue_failure((tcptest_t *)test->privdata));
+					color = respcheck_color; countasdown = 0;
+				}
+				else if (!test->open) {
 					if (failgoesclear && (test->host->downcount != 0) && !test->alwaystrue) {
 						strcpy(cause, "Host appears to be down");
 						color = COL_CLEAR; countasdown = 0;
@@ -1698,9 +1685,31 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 				else {
 					tcptest_t *tcptest = (tcptest_t *)test->privdata;
 
-					/* Check if we got the expected data */
-					if (checktcpresponse && (service->toolid == TOOL_CONTEST) && !tcp_got_expected((tcptest_t *)test->privdata)) {
-						strcpy(cause, "Unexpected service response");
+					/*
+					 * Check if we got the expected data.
+					 *
+					 * --checkresponse governs whether an "expect" is an
+					 * opinion worth acting on. It does not govern whether a
+					 * definition protocols.cfg refused should be believed:
+					 * there is no check running to be lenient about, and
+					 * green would claim one happened. So a refusal comes
+					 * through this door whether the switch was given or not.
+					 */
+					if ((service->toolid == TOOL_CONTEST) &&
+					    (checktcpresponse || tcp_dialogue_refused((tcptest_t *)test->privdata)) &&
+					    !tcp_got_expected((tcptest_t *)test->privdata)) {
+						char *whichstep = tcp_dialogue_failure((tcptest_t *)test->privdata);
+
+						/*
+						 * Name the step. A dialogue can fail at any of
+						 * them, and the bare phrase leaves the reader
+						 * guessing whether it was the greeting, a reply
+						 * mid-conversation, or a peer that went quiet.
+						 */
+						if (whichstep)
+							snprintf(cause, MAX_CAUSE, "Unexpected service response: %s", whichstep);
+						else
+							strcpy(cause, "Unexpected service response");
 						color = respcheck_color; countasdown = 1;
 					}
 
@@ -2491,12 +2500,14 @@ int main(int argc, char *argv[])
 	 * The built-in tests go in first: add_service() returns an existing entry
 	 * by name, so a built-in name in XYMONNETSVCS or protocols.cfg would
 	 * otherwise make it a TCP test, whose results are read from the built-in
-	 * test's private data.
+	 * test's private data. Their ports are stated rather than looked up;
+	 * "domain" and "sunrpc" are only the names the ports were looked up
+	 * under, the tests are "dns" and "rpc".
 	 */
-	dnstest = add_service("dns", getportnumber("domain"), 0, TOOL_DNS);
-	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
-	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
-	httptest = add_service("http", getportnumber("http"),  0, TOOL_HTTP);
+	dnstest = add_service("dns", 53, 0, TOOL_DNS);
+	add_service("ntp", 123,   0, TOOL_NTP);
+	rpctest  = add_service("rpc", 111, 0, TOOL_RPCINFO);
+	httptest = add_service("http", 80,  0, TOOL_HTTP);
 	ldaptest = add_service("ldapurl", getportnumber("ldap"), strlen("ldap"), TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
 
@@ -2544,7 +2555,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	for (t = httptest->items; (t); t = t->next) { add_http_test(t); warn_url_target_change(t); }
+	for (t = httptest->items; (t); t = t->next) add_http_test(t);
 	add_timestamp("Test engine setup completed");
 
 	do_tcp_tests(timeout, concurrency);

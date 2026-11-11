@@ -25,24 +25,24 @@ ROOT=$(find_root)
 
 require_c_buildenv "$ROOT"
 
-[ -f "$ROOT/lib/libxymoncomm.a" ] \
+[ -f "$(xymon_lib "$ROOT" libxymoncomm.a)" ] \
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 [ -f "$ROOT/web/showgraph.cgi" ] || skip "tree built without RRD support (no showgraph.cgi)"
 require_bin XYMOND_RRD xymond/xymond_rrd
 
-rrddef=$(sed -n 's/^RRDDEF *= *//p' "$ROOT/Makefile")
+rrddef=$(xymon_makevar "$ROOT" RRDDEF)
 # Where <rrd.h> lives, as configure found it: /usr/include on Linux, but
 # /usr/local/include or /opt/homebrew/include on the BSDs and macOS, and the
 # product Makefiles pass it for every RRD-using object.
-rrdinc=$(sed -n 's/^RRDINCDIR *= *//p' "$ROOT/Makefile")
-rrdlibs=$(sed -n 's/^RRDLIBS *= *//p' "$ROOT/Makefile")
+rrdinc=$(xymon_makevar "$ROOT" RRDINCDIR)
+rrdlibs=$(xymon_makevar "$ROOT" RRDLIBS)
 [ -n "$rrdlibs" ] || rrdlibs="-lrrd"
 
 # PCRELIBS: explicit env override first, else the configured tree's own
 # setting (which carries any -L for a nonstandard install). The tree is
 # required to be built by now, so the Makefile always carries one.
 pcre_libs=${PCRELIBS:-}
-[ -n "$pcre_libs" ] || pcre_libs=$(sed -n 's/^PCRELIBS *= *//p' "$ROOT/Makefile")
+[ -n "$pcre_libs" ] || pcre_libs=$(xymon_makevar "$ROOT" PCRELIBS)
 
 work=$(mktempdir)
 
@@ -51,7 +51,7 @@ build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 harness_cflags=$(xymon_cflags "$ROOT")
 harness_ldflags=$(xymon_ldflags "$ROOT")
 "$CC" $harness_cflags $rrddef $rrdinc -o "$work/showgraph" \
-	"$ROOT/web/showgraph.c" "$ROOT/lib/libxymoncomm.a" \
+	"$ROOT/web/showgraph.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
 	$pcre_libs $rrdlibs $harness_ldflags 2>"$work/cc.log" \
 	|| { cat "$work/cc.log" >&2; fail "showgraph does not compile"; }
 
@@ -72,7 +72,7 @@ rrds="$work/rrd/testhost"
 	printf 'disk report\n'
 	printf '/dev/sda1 1000000 400000 600000 40%% /fresh\n'
 	printf '@@\n'
-} | env XYMONHOME="$work" XYMONTMP="$work/tmp" \
+} | env XYMONHOME="$work" XYMONTMP="$work/tmp" XYMONRUNDIR="$work/tmp" \
 	"$XYMOND_RRD" --rrddir="$work/rrd" --no-cache 2>/dev/null
 
 fresh="$rrds/disk,fresh.rrd"
