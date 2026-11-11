@@ -277,6 +277,12 @@ int main(int argc, char *argv[])
 			ip1 = strtok(ips, ",");
 			while (ip1) {
 				char *p; 
+
+				/* The table holds MAX_SERVERS; more would be written past it */
+				if (xymonservercount >= MAX_SERVERS) {
+					errprintf("Only %d servers are used, %s and the rest are ignored\n", MAX_SERVERS, ip1);
+					break;
+				}
 				p = strchr(ip1, ':');
 				if (p) { port1 = atoi(p+1); *p = '\0'; } else port1 = 1984;
 
