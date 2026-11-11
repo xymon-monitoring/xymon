@@ -284,7 +284,8 @@ name in the URL \- the name sent as SNI \- and turns the "sslcert" status red
 on a mismatch, "Certificate does NOT cover '<name>'", in addition to the expiry
 and strength checks below. An address written in the URL sends no servername
 (RFC 6066 forbids one), so the name is not checked while expiry and cipher still
-are; the \fBnosslcert\fR tag in
+are. This pins the address and so suits an endpoint whose IP is fixed, not a name
+that must keep resolving. The \fBnosslcert\fR tag in
 .I hosts.cfg(5)
 drops the "sslcert" status altogether. The name check needs OpenSSL 1.0.2 or
 later.

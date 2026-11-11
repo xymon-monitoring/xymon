@@ -198,7 +198,10 @@ is monitored under.
 
 To keep an endpoint's expiry and cipher watched without the name check, test it
 by address: "https://10.0.0.5/" sends no servername (RFC 6066 forbids an IP
-there), so the name is not checked and the rest of "sslcert" is unchanged. To
+there), so the name is not checked and the rest of "sslcert" is unchanged. This
+pins the address, so it suits an endpoint whose IP is fixed -- the appliance
+above -- but not a name that must keep following DNS: a dynamically resolved
+host would then be tested at whatever address was written, not its current one. To
 stop reporting the certificate at all, use the "nosslcert" tag, which drops the
 "sslcert" status. Both are described in hosts.cfg(5).
 
