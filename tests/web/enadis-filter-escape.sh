@@ -10,7 +10,9 @@
 #   - a POST with "apply filters" and a pattern in each of the four fields:
 #     none comes out as markup, each comes out escaped, and the quote
 #     that would close the attribute is "&quot;";
-#   - the pagepath cookie, which a GET takes as the page pattern: the same;
+#   - the pagepath cookie, which a GET turns into a literal-match page pattern
+#     (cgi_pageregex): each byte escaped for the regex and then for HTML, so no
+#     markup and no "." wildcard;
 #   - a pattern with a space keeps a plain space, so the next submit sends
 #     it back unchanged (no &nbsp;).
 #
@@ -77,7 +79,10 @@ done
 
 get_with_cookie '"><b>COOKIE</b>'
 assert_not_contains "<b>COOKIE</b>" "$OUT" "the pagepath cookie came out as markup"
-assert_contains "&quot;&gt;&lt;b&gt;COOKIE&lt;/b&gt;" "$OUT" "the pagepath cookie is not shown escaped"
+# a GET turns the cookie into cgi_pageregex's literal-match pattern: every
+# byte backslash-escaped for the regex, then HTML-escaped -- so "<b>" is
+# "&lt;b&gt;", markup neutralised twice over
+assert_contains '\&lt;b\&gt;COOKIE\&lt;\/b\&gt;' "$OUT" "the pagepath cookie is not shown as an escaped pattern"
 
 post "go=apply+filters&hostpattern=web+servers"
 assert_contains 'VALUE="web servers"' "$OUT" "a pattern with a space does not keep a plain space"
