@@ -17,6 +17,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 #include <netdb.h>
+#include <ctype.h>
 
 #include "libxymon.h"
 
@@ -83,25 +84,34 @@ int sockaddr_same_sender(struct sockaddr *a, struct sockaddr *b)
  * Split an address in place: "host:port", "[IPv6]:port",
  * "[IPv6]", or a bare IPv6 address, which has more than one ':' and so
  * cannot carry a port. Returns the host, without brackets; *port is set
- * only when a port is given.
+ * only when a port is given. NULL, with s untouched, when it is malformed:
+ * no ']' for a '[', anything but ":port" after the ']', or a port that is
+ * not a number from 1 to 65535.
  */
 char *split_hostport(char *s, int *port)
 {
-	char *p;
+	char *close = NULL, *colon = NULL, *end;
+	long n = 0;
 
 	if (*s == '[') {
-		p = strchr(s, ']');
-		if (!p) return s;	/* unbalanced: left for the lookup to refuse */
-		*p = '\0';
-		if (*(p+1) == ':') *port = atoi(p+2);
-		return s+1;
+		close = strchr(s, ']');
+		if (!close) return NULL;
+		if (*(close+1) == ':') colon = close+1;
+		else if (*(close+1) != '\0') return NULL;
+	}
+	else {
+		colon = strchr(s, ':');
+		if (colon && strchr(colon+1, ':')) colon = NULL;	/* a bare IPv6 address */
 	}
 
-	p = strchr(s, ':');
-	if (p && (strchr(p+1, ':') == NULL)) {
-		*p = '\0';
-		*port = atoi(p+1);
+	if (colon) {
+		if (!isdigit((unsigned char)*(colon+1))) return NULL;
+		n = strtol(colon+1, &end, 10);
+		if (*end || (n < 1) || (n > 65535)) return NULL;
 	}
+
+	if (colon) { *colon = '\0'; *port = (int)n; }
+	if (close) { *close = '\0'; return s+1; }
 	return s;
 }
 
