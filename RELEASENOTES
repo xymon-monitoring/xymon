@@ -90,6 +90,18 @@ then overwrote settings from later drop-ins. A configuration that kept
 include lines out of drop-in files to avoid this can now use them; one that
 depended on the old order reads its settings in file order instead.
 
+locator -- a locator address written as a name is resolved
+----------------------------------------------------------
+
+The address given with --locator= (xymond_channel, xymond_filestore,
+svcstatus.cgi) was read as an IPv4 address only: a host name became
+0.0.0.0, which reached a locator on the same machine by accident. A name
+is now resolved, to its IPv4 address if it has one, and an address that
+cannot be read or resolved is refused. A setup that relied on the
+accident, such as a name that points at an address the locator does not
+listen on, must give the locator's address. An IPv6 address is accepted
+in brackets, as [::1]:1984, here and in xymond_locator's --listen=.
+
 web -- critical systems values are escaped on the pages that show them
 ----------------------------------------------------------------------
 
