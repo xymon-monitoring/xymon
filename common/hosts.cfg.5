@@ -729,6 +729,15 @@ this host. By default, if an SSL-enabled service is tested,
 a second test result is generated with information about
 the SSL certificate - this tag disables the SSL certificate
 checks for the host.
+.IP
+An \fBhttps\fR test also checks that the certificate covers the name in
+the URL \- the name sent as SNI. A certificate that does not cover it turns
+\fBsslcert\fR red, "Certificate does NOT cover '<name>'", even when it is
+valid and unexpired; a matching one is noted "Certificate covers '<name>'"
+and the colour is unchanged. To keep the expiry and cipher checks without
+the name check, write the address in the URL (\fBhttps://10.0.0.5/\fR),
+which sends no servername; \fBnosslcert\fR instead turns the whole
+\fBsslcert\fR status off. The name check needs OpenSSL 1.0.2 or later.
 
 .IP "\fBssldays\fR=\fIWARNDAYS\fR:\fIALARMDAYS\fR"
 Define the number of days before an SSL certificate expires,

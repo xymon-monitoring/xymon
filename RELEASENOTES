@@ -185,12 +185,24 @@ name turns the "sslcert" status red, with "Certificate does NOT cover
 '<name>'"; a matching one is noted "Certificate covers '<name>'" and the
 colour is unchanged.
 
-On upgrade this can turn an "sslcert" red that was green before, where the
-tested endpoint answers with a certificate for some other name. That happens
-when a host is tested at an address -- its hosts.cfg column 1, or a "=IP" in
-the URL -- that serves a default certificate for a name it does not hold. The
-red is correct: the expiry being tracked was some other certificate's. The
-check needs OpenSSL 1.0.2 or later; on an older build it is skipped and
+On upgrade this can turn an "sslcert" red that was green before, wherever the
+certificate served does not name the host as it is tested. Two cases are
+common. An endpoint tested at an address -- its hosts.cfg column 1, or a "=IP"
+in the URL -- whose server answers with a default certificate for another name:
+here the red is correct, since the expiry that was tracked belonged to that
+other certificate. And an appliance, hypervisor or management interface -- a
+VMware ESXi host, a BMC, an IPMI -- holding one self-signed certificate that
+names only its IP: here the certificate is the endpoint's own, valid and
+unexpired, and the red flags only that it does not cover the DNS name the host
+is monitored under.
+
+To keep an endpoint's expiry and cipher watched without the name check, test it
+by address: "https://10.0.0.5/" sends no servername (RFC 6066 forbids an IP
+there), so the name is not checked and the rest of "sslcert" is unchanged. To
+stop reporting the certificate at all, use the "nosslcert" tag, which drops the
+"sslcert" status. Both are described in hosts.cfg(5).
+
+The check needs OpenSSL 1.0.2 or later; on an older build it is skipped and
 nothing changes.
 
 Clients -- logfetch

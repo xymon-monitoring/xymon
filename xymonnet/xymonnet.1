@@ -278,6 +278,17 @@ by default since URL's that include other URL's are now much more
 common. This option restores the old Big Brother-compatible behaviour.
 
 .SH OPTIONS FOR SSL CERTIFICATE TESTS
+.PP
+An \fBhttps\fR test checks that the certificate the server returns covers the
+name in the URL \- the name sent as SNI \- and turns the "sslcert" status red
+on a mismatch, "Certificate does NOT cover '<name>'", in addition to the expiry
+and strength checks below. An address written in the URL sends no servername
+(RFC 6066 forbids one), so the name is not checked while expiry and cipher still
+are; the \fBnosslcert\fR tag in
+.I hosts.cfg(5)
+drops the "sslcert" status altogether. The name check needs OpenSSL 1.0.2 or
+later.
+.PP
 .IP "\fB\-\-ssl\fR=\fISSLCERTTESTNAME\fR"
 Determines the name of the column Xymon displays for the SSL certificate checks.
 The default is "sslcert".
