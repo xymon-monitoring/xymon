@@ -36,7 +36,10 @@ to the Xymon server.
 .SH OPTIONS
 .IP "\fB\-\-server\fR=\fISERVERIP\fR[:\fIPORT\fR][,\fISERVER2IP\fR[:\fIPORT\fR]]"
 Specifies the IP-address and optional portnumber where incoming
-messages are forwarded to. The default portnumber is 1984, the
+messages are forwarded to: IPv4 or IPv6, or a host name, resolved to
+its IPv4 address if it has one. An IPv6 address with a port goes in
+brackets, as [2001:db8::1]:1984; without a port it may also be written
+bare. The default portnumber is 1984, the
 standard Xymon port number. If you have setup the normal
 Xymon environment, you can use "\-\-server=$XYMSRV". Up
 to 3 servers can be specified; incoming messages are sent to
@@ -48,9 +51,9 @@ listed here.  This option is required.
 
 .IP "\fB\-\-listen\fR=\fILOCALIP\fR[:\fIPORT\fR]"
 Specifies the IP-adress where xymonproxy listens for incoming
-connections. By default, xymonproxy listens on all IP-addresses
-assigned to the host. If no portnumber is given, port 1984
-will be used.
+connections, in the same forms as \fB\-\-server\fR. By default,
+xymonproxy listens on all IPv4 addresses assigned to the host. If no
+portnumber is given, port 1984 will be used.
 
 .IP "\fB\-\-timeout\fR=\fIN\fR"
 Specifies the number of seconds after which a connection is
