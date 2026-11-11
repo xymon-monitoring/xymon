@@ -84,32 +84,6 @@ void setproxy(char *proxy)
 	proxysetting = strdup(proxy);
 }
 
-/*
- * Split a recipient's address in place: "host:port", "[IPv6]:port",
- * "[IPv6]", or a bare IPv6 address, which has more than one ':' and so
- * cannot carry a port. Returns the host, without brackets; *port is set
- * only when a port is given.
- */
-static char *split_hostport(char *s, int *port)
-{
-	char *p;
-
-	if (*s == '[') {
-		p = strchr(s, ']');
-		if (!p) return s;	/* unbalanced: left for the lookup to refuse */
-		*p = '\0';
-		if (*(p+1) == ':') *port = atoi(p+2);
-		return s+1;
-	}
-
-	p = strchr(s, ':');
-	if (p && (strchr(p+1, ':') == NULL)) {
-		*p = '\0';
-		*port = atoi(p+1);
-	}
-	return s;
-}
-
 static void setup_transport(void)
 {
 	static int proxy_is_setup = 0;
