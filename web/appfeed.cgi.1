@@ -24,6 +24,13 @@ with the "\-\-critical" option it returns data from the "Critical systems" page.
 
 The output is an XML document with the current status of the selected hosts/services.
 
+With "host=HOSTNAME&test=TESTNAME" in the QUERY_STRING, appfeed.cgi answers with
+that one status only, whatever its colour, and adds its full message text as a
+"Message" element: what a status page shows, for a client that cannot afford
+the page itself. HOSTNAME and TESTNAME are matched exactly, and a name with a
+character Xymon does not allow in a host name is refused. A "filter" and the
+\-\-critical and \-\-access options still apply.
+
 .SH OPTIONS
 .IP "\fB\-\-env\fR=\fIFILENAME\fR"
 Loads the environment from FILENAME before executing the CGI.
