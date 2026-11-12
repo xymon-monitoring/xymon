@@ -1976,6 +1976,8 @@ void send_results(service_t *service, int failgoesclear)
 		addtostatus("\n\n");
 		finish_status();
 	}
+
+	xfree(svcname);
 }
 
 
