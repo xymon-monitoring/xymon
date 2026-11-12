@@ -60,6 +60,7 @@ hostdata_t *hosthead = NULL;
 int hostcount = 0;
 hostdata_t **hosts = NULL;	/* Array of pointers to the hostdata records, for fast access via ID */
 int myicmpid;
+int is_dgram4 = 0, is_dgram6 = 0;	/* 1 when that family's socket is an unprivileged SOCK_DGRAM one */
 int senddelay = (1000000 / 50);	/* Delay between sending packets, in microseconds */
 int pingsocket4 = -1;		/* The raw ICMP socket, opened when an IPv4 address is listed */
 int pingsocket6 = -1;		/* The raw ICMPv6 socket, opened when an IPv6 address is listed */
@@ -252,6 +253,7 @@ void load_ips(int argc, char *argv[], FILE *fd)
  * strict-alignment CPU such as SPARC faults on the misaligned access. */
 typedef struct pingdata_t {
 	int id;				/* ID for the host this belongs to */
+	int icmpid;			/* myicmpid of the round that sent it */
 	struct timespec timesent;	/* time we sent this ping */
 } pingdata_t;
 
@@ -291,6 +293,7 @@ int send_ping(int startidx, int minresponses)
 	memset(buffer, 0, PING_PACKET_SIZE);
 	memset(&pingdata, 0, sizeof(pingdata));	/* no stack bytes in the padding on the wire */
 	pingdata.id = idx;
+	pingdata.icmpid = myicmpid;
 	getntimer(&pingdata.timesent);
 
 	if (hosts[idx]->family == AF_INET6) {
@@ -353,6 +356,7 @@ int get_response(int sock, int family)
 	struct pingdata_t pingdata;
 	int hostidx;
 	struct timespec rtt;
+	int is_dgram = ((family == AF_INET6) ? is_dgram6 : is_dgram4);
 
 	/*
 	 * Read responses from the network.
@@ -375,7 +379,11 @@ int get_response(int sock, int family)
 		 * Thanks to "fping" for this neat way of matching requests and responses.
 		 *
 		 * An IPv4 raw socket delivers the IP header in front of the ICMP
-		 * header; an ICMPv6 raw socket delivers the ICMPv6 header alone.
+		 * header; an ICMPv6 socket delivers the ICMPv6 header alone. An
+		 * IPv4 SOCK_DGRAM socket leaves the IP header out on Linux but not
+		 * on every system (macOS keeps it), so look: an IPv4 header starts
+		 * with version 4, while the echo reply we are after starts with
+		 * type 0.
 		 */
 		if (family == AF_INET6) {
 			iphdrlen = 0;
@@ -393,7 +401,10 @@ int get_response(int sock, int family)
 		else {
 			/* Check the IP header - we need to have at least enough bytes for an ICMP header. */
 			iphdr = (struct ip *)buffer;
-			iphdrlen = (iphdr->ip_hl << 2);	/* IP header always aligned on 4-byte boundary */
+			if (!is_dgram || ((n > 0) && ((buffer[0] >> 4) == 4)))
+				iphdrlen = (iphdr->ip_hl << 2);	/* IP header always aligned on 4-byte boundary */
+			else
+				iphdrlen = 0;
 			icmphdrlen = sizeof(struct icmp);
 			if (n < (iphdrlen + PING_MINIMUM_SIZE)) {
 				errprintf("Short packet ignored\n");
@@ -412,7 +423,7 @@ int get_response(int sock, int family)
 		}
 
 		if (echoreply) {
-			if (reply_id != myicmpid) {
+			if (!is_dgram && (reply_id != myicmpid)) {
 				/* Not one of our packets. Happens if someone else does ping simultaneously. */
 				continue;
 			}
@@ -420,11 +431,19 @@ int get_response(int sock, int family)
 			/* A reply is counted for a host of its own family only, and only when it carries our payload */
 			if ((hostidx >= 0) && (hostidx < hostcount) && (hosts[hostidx]->family == family)
 			    && (n >= (int)(iphdrlen + icmphdrlen + sizeof(struct pingdata_t)))) {
+				memcpy(&pingdata, buffer + iphdrlen + icmphdrlen, sizeof(pingdata));
+
+				/*
+				 * A SOCK_DGRAM socket sets the echo identifier itself, so the
+				 * header cannot say whether this answers this round -- nor,
+				 * where the kernel does not keep each socket's replies apart,
+				 * this process. The payload carries our identifier back instead.
+				 */
+				if (is_dgram && (pingdata.icmpid != myicmpid)) continue;
+
 				/* Looks like one of our packets succeeded. */
 				pktcount++;
 				hosts[hostidx]->received += 1;
-
-				memcpy(&pingdata, buffer + iphdrlen + icmphdrlen, sizeof(pingdata));
 
 				/* Calculate the round-trip time. */
 				rtt.tv_sec -= pingdata.timesent.tv_sec;
@@ -534,20 +553,31 @@ static int open_ping_socket(int family, struct sockaddr *src, socklen_t srclen, 
 		protonumber = (proto ? proto->p_proto : IPPROTO_ICMP);
 	}
 
-	/* Get a raw socket. Requires root privs. */
-	get_root();
-	sock = socket(family, SOCK_RAW, protonumber); sockerr = errno;
-	if ((sock != -1) && src) {
-		/* Bind to a specific source address */
-		if (bind(sock, src, srclen) == -1) binderr = errno;
+	/*
+	 * Try an unprivileged SOCK_DGRAM ICMP socket first: Linux grants one to
+	 * a user whose group is inside net.ipv4.ping_group_range, with no
+	 * suid-root needed. Fall back to a raw socket, which needs root or the
+	 * cap_net_raw file capability.
+	 */
+	sock = socket(family, SOCK_DGRAM, protonumber);
+	if (sock != -1) {
+		if (family == AF_INET6) is_dgram6 = 1; else is_dgram4 = 1;
 	}
-	drop_root();
+	else {
+		get_root();
+		sock = socket(family, SOCK_RAW, protonumber); sockerr = errno;
+		drop_root();
+	}
 
 	if (sock == -1) {
 		errprintf("Cannot get RAW %s socket: %s\n", ((family == AF_INET6) ? "ICMPv6" : "ICMP"), strerror(sockerr));
-		if (sockerr == EPERM) errprintf("This program must be installed suid-root\n");
+		if ((sockerr == EPERM) || (sockerr == EACCES))
+			errprintf("Run as a user whose group is in net.ipv4.ping_group_range, or install this program suid-root or with cap_net_raw\n");
 		return -1;
 	}
+
+	/* Bind to a specific source address; an open socket needs no root for it */
+	if (src && (bind(sock, src, srclen) == -1)) binderr = errno;
 
 	if (binderr != 0) {
 		errprintf("Cannot bind to source address %s: %s\nUsing default address\n",
@@ -555,7 +585,8 @@ static int open_ping_socket(int family, struct sockaddr *src, socklen_t srclen, 
 	}
 
 #ifdef ICMP6_FILTER
-	if (family == AF_INET6) {
+	if ((family == AF_INET6) && !is_dgram6) {
+		/* A SOCK_DGRAM socket only ever gets the echo replies to its own requests */
 		/* Only echo replies are wanted; without the filter every ICMPv6 packet the host sees arrives here */
 		struct icmp6_filter filter;
 
