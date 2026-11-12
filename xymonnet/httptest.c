@@ -626,15 +626,19 @@ void add_http_test(testitem_t *t)
 			sslopt_clientcert = httptest->weburl.desturl->auth+5;
 		}
 		else {
+			char *b64 = base64encode(httptest->weburl.desturl->auth);
 			addtobuffer(httprequest, "Authorization: Basic ");
-			addtobuffer(httprequest, base64encode(httptest->weburl.desturl->auth));
+			addtobuffer(httprequest, b64);
 			addtobuffer(httprequest, "\r\n");
+			xfree(b64);
 		}
 	}
 	if (httptest->weburl.proxyurl && httptest->weburl.proxyurl->auth) {
+		char *b64 = base64encode(httptest->weburl.proxyurl->auth);
 		addtobuffer(httprequest, "Proxy-Authorization: Basic ");
-		addtobuffer(httprequest, base64encode(httptest->weburl.proxyurl->auth));
+		addtobuffer(httprequest, b64);
 		addtobuffer(httprequest, "\r\n");
+		xfree(b64);
 	}
 	for (ck = cookiehead; (ck); ck = ck->next) {
 		int useit = 0;
