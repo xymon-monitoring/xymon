@@ -379,10 +379,12 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	for (t=firsttest; (t && (t->host == host)); t = t->next) {
 		http_data_t *req;
 		char *data = "";
-		strbuffer_t *msg = newstrbuffer(0);
+		strbuffer_t *msg = NULL;
 		char msgline[1024];
 
 		if (!t->senddata) continue;
+
+		msg = newstrbuffer(0);
 
 		req = (http_data_t *) t->privdata;
 		if (req->output) data = req->output;
