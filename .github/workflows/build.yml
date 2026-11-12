@@ -62,7 +62,8 @@ jobs:
             libpcre2-dev \
             librrd-dev \
             libssl-dev \
-            libtirpc-dev
+            libtirpc-dev \
+            valgrind
 
       - name: Configure (${{ matrix.name }})
         env:

@@ -64,6 +64,25 @@ Leaving it unset is the default and stays supported: each test falls back to its
 own in-tree path, which is what a developer run, a release tarball and the
 build-free `tests.yml` lane all do.
 
+### Checking a program's memory with Valgrind
+
+`build/valgrind.sh PROGRAM [ARGUMENT...]` runs one program under Valgrind's
+Memcheck and exits 99 when it leaks a block or misuses memory, 77 when
+valgrind is not installed, and with the program's own status otherwise; its
+header says what counts, how to install valgrind and how to pass it more
+options. CI installs valgrind on its Linux lanes.
+
+How a test checks memory depends on what it runs:
+
+- **A binary of the build** runs through `build/valgrind.sh`: 99 is a
+  failure, and 77 a skip.
+- **A harness the test compiles itself** can also be built with
+  AddressSanitizer, where valgrind is missing: `asan_usable` says whether
+  the compiler can. LeakSanitizer reports a leak at exit on Linux; where the
+  sanitizer has no leak detection (macOS) only crashes and undefined
+  behaviour are caught, and the test ends with `pass_partial`, naming the
+  leak check as not run.
+
 ## What lives here, what doesn't
 
 - **Here:** shell-level integration scenarios that exercise binaries,
