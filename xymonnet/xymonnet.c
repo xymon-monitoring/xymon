@@ -613,6 +613,8 @@ void load_tests(void)
 						if (!url.desturl->ip && (url.proxyurl || !lineip || (strcmp(lineip, "0.0.0.0") == 0)))
 							add_url_to_dns_queue(testspec);
 					}
+
+					free_weburl(&url);
 				}
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
 					char *userfmt = "cont=apache;%s;.";
@@ -637,6 +639,8 @@ void load_tests(void)
 							snprintf(statusurl, statusurl_buflen, userfmt, userurl);
 							s = httptest;
 						}
+
+						free_weburl(&url);
 					}
 					else {
 						char *ip = xmh_item(hwalk, XMH_IP);
