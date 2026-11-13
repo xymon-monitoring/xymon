@@ -16,6 +16,14 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+enadis.cgi -- the filter patterns are shown escaped
+---------------------------------------------------
+
+The enable/disable page printed its host, page, IP and class filter patterns
+back into the form as sent. They are now HTML-escaped; a pattern that holds
+"<", ">", "&" or a quote still filters as before, and is only shown
+differently in the page source.
+
 headfoot -- the host, test and board lists are shown escaped
 -----------------------------------------------------------
 
