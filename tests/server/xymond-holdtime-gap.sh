@@ -102,7 +102,14 @@ xymond_launch() {
 }
 
 send() { "$XYMONCLIENT" "127.0.0.1:$PORT" "$1" || fail "xymond rejected: $1"; }
-status() { send "status testhost,example,com.conn $1 msg"; sleep 0.4; }
+# No pause after a send: xymond takes connections in the order they were
+# accepted, and a client sends the next message, or a query, only after the
+# last one is written and shut, so a query always sees what was sent before it.
+status() { send "status testhost,example,com.conn $1 msg"; }
+
+# past_second WHEN -- wait until the clock is past second WHEN, so a status
+# sent now gets a lastchange that differs from it (both count whole seconds).
+past_second() { while [ "$(date +%s)" -le "$1" ]; do sleep 0.1; done; }
 
 lastchange() {
 	"$XYMONCLIENT" "127.0.0.1:$PORT" "xymondboard fields=testname,lastchange" 2>/dev/null \
@@ -129,7 +136,7 @@ assert_held() {
 
 # assert_moved WHEN LABEL -- lastchange must have left WHEN. The live cases
 # build their own hold-times seconds ago, which assert_fresh cannot tell from a
-# carried one; they separate the two by a sleep and compare exactly.
+# carried one; they wait for the next second and compare exactly.
 assert_moved() {
 	local got; got=$(lastchange)
 	[ "$got" != "$1" ] \
@@ -206,9 +213,7 @@ HELDSINCE=$(( $(date +%s) - 86400 ))
 write_checkpoint clear "$(( $(date +%s) - 60 ))" red "$(( $(date +%s) - 60 ))"
 start_xymond --restart="$work/chk"
 send "disable testhost.example.com.conn 5 investigating"
-sleep 0.4
 send "enable testhost.example.com.conn"
-sleep 0.4
 status red
 assert_held "$HELDSINCE" "disable inside a gap"
 stop_xymond
@@ -314,11 +319,9 @@ rm -f "$work/chk"
 start_xymond
 status red
 HELDSINCE=$(lastchange)
-sleep 2
+past_second "$HELDSINCE"
 send "disable testhost.example.com.conn 5 investigating"
-sleep 0.4
 send "enable testhost.example.com.conn"
-sleep 0.4
 status blue	# genuine, and BLUE is exactly what the disable invented
 status red
 assert_moved "$HELDSINCE" "genuine report of the invented color must end the gap on a running daemon"
@@ -336,12 +339,10 @@ rm -f "$work/chk"
 start_xymond
 status red
 HELDSINCE=$(lastchange)
-sleep 2
+past_second "$HELDSINCE"
 send "disable testhost.example.com.conn 5 investigating"
-sleep 0.4
 status red	# genuine, but recorded as the disable's BLUE
 send "enable testhost.example.com.conn"
-sleep 0.4
 status red
 assert_held "$HELDSINCE" "reports arriving during a disable must not end the gap"
 stop_xymond
