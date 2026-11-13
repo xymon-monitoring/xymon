@@ -67,6 +67,15 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
       on the command line becomes the first line of the merged message.
     <p class="Pp"></p>
   </dd>
+  <dt id="build-info"><a class="permalink" href="#build-info"><b>--build-info</b></a></dt>
+  <dd>Print the version and the build, one per line
+      (&quot;version=4.3.32-dev&quot;, &quot;build=4.3.31-159-g2dcad5db7&quot;),
+      and exit. The build names the commit a build that is not a release comes
+      from, as git describe does after the last release tag; it is empty for a
+      release. Programs and the web page footers find it in the XYMONBUILD
+      environment variable.
+    <p class="Pp"></p>
+  </dd>
   <dt id="RECIPIENT"><a class="permalink" href="#RECIPIENT"><b>RECIPIENT</b></a></dt>
   <dd>The <b>RECIPIENT</b> parameter defines which server receives the message:
       an IPv4 or IPv6 address or a hostname, optionally followed by

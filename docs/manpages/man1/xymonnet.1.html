@@ -320,6 +320,16 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
 <p>&#160;</p>
 <h1 class="Sh" id="OPTIONS_FOR_SSL_CERTIFICATE_TESTS"><a class="permalink" href="#OPTIONS_FOR_SSL_CERTIFICATE_TESTS">OPTIONS
   FOR SSL CERTIFICATE TESTS</a></h1>
+<p class="Pp">An <b>https</b> test checks that the certificate the server
+    returns covers the name in the URL - the name sent as SNI - and turns the
+    &quot;sslcert&quot; status red on a mismatch, &quot;Certificate does NOT
+    cover '&lt;name&gt;'&quot;, in addition to the expiry and strength checks
+    below. An address written in the URL sends no servername (RFC 6066 forbids
+    one), so the name is not checked while expiry and cipher still are. This
+    pins the address and so suits an endpoint whose IP is fixed, not a name that
+    must keep resolving. The <b>nosslcert</b> tag in <i><a href="../man5/hosts.cfg.5.html">hosts.cfg</a>(5)</i> drops
+    the &quot;sslcert&quot; status altogether. The name check needs OpenSSL
+    1.0.2 or later.</p>
 <dl class="Bl-tag">
   <dt id="ssl"><a class="permalink" href="#ssl"><b>--ssl</b>=<i>SSLCERTTESTNAME</i></a></dt>
   <dd>Determines the name of the column Xymon displays for the SSL certificate

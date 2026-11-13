@@ -24,6 +24,13 @@ Systems editor now replaces "|", CR and LF in the resolver group, instructions,
 clone names, host and test with a space before writing, so such a character
 stays inside its field and on its line rather than adding a field or a record.
 A group or instruction that held a "|" is stored with a space there instead.
+enadis.cgi -- the filter patterns are shown escaped
+---------------------------------------------------
+
+The enable/disable page printed its host, page, IP and class filter patterns
+back into the form as sent. They are now HTML-escaped; a pattern that holds
+"<", ">", "&" or a quote still filters as before, and is only shown
+differently in the page source.
 
 headfoot -- the host, test and board lists are shown escaped
 -----------------------------------------------------------
@@ -194,12 +201,27 @@ name turns the "sslcert" status red, with "Certificate does NOT cover
 '<name>'"; a matching one is noted "Certificate covers '<name>'" and the
 colour is unchanged.
 
-On upgrade this can turn an "sslcert" red that was green before, where the
-tested endpoint answers with a certificate for some other name. That happens
-when a host is tested at an address -- its hosts.cfg column 1, or a "=IP" in
-the URL -- that serves a default certificate for a name it does not hold. The
-red is correct: the expiry being tracked was some other certificate's. The
-check needs OpenSSL 1.0.2 or later; on an older build it is skipped and
+On upgrade this can turn an "sslcert" red that was green before, wherever the
+certificate served does not name the host as it is tested. Two cases are
+common. An endpoint tested at an address -- its hosts.cfg column 1, or a "=IP"
+in the URL -- whose server answers with a default certificate for another name:
+here the red is correct, since the expiry that was tracked belonged to that
+other certificate. And an appliance, hypervisor or management interface -- a
+VMware ESXi host, a BMC, an IPMI -- holding one self-signed certificate that
+names only its IP: here the certificate is the endpoint's own, valid and
+unexpired, and the red flags only that it does not cover the DNS name the host
+is monitored under.
+
+To keep an endpoint's expiry and cipher watched without the name check, test it
+by address: "https://10.0.0.5/" sends no servername (RFC 6066 forbids an IP
+there), so the name is not checked and the rest of "sslcert" is unchanged. This
+pins the address, so it suits an endpoint whose IP is fixed -- the appliance
+above -- but not a name that must keep following DNS: a dynamically resolved
+host would then be tested at whatever address was written, not its current one. To
+stop reporting the certificate at all, use the "nosslcert" tag, which drops the
+"sslcert" status. Both are described in hosts.cfg(5).
+
+The check needs OpenSSL 1.0.2 or later; on an older build it is skipped and
 nothing changes.
 
 Clients -- logfetch
@@ -236,6 +258,19 @@ The client column shows it too, with the client message's sender, and the
 client data page starts with a "[transport]" section saying how the
 message came ("TLSv1.3 from 192.0.2.1"). That section is added to the page
 only; the client message xymond stores and returns is unchanged.
+
+build -- a build that is not a release names its commit
+-------------------------------------------------------
+
+A build from git that is not a release records the commit it comes from, as
+git describe names it after the last release tag (4.3.31-159-g2dcad5db7, with
+-dirty for local changes). "xymon --build-info" prints it, programs find it in
+XYMONBUILD, and the web page footers show it after the version. A release, or
+a build from a release tarball, has none, and its pages read as before. Set
+XYMON_BUILD_ID when running make to choose the value, or to leave it empty.
+The plain version, which the client update and other programs compare, does
+not change. An existing installation keeps its footer files; copy the new
+stdnormal_footer and critical_footer to show the build.
 
 Changes for 4.3.31
 ==================
