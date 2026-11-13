@@ -24,39 +24,27 @@ require_bin XYMOND_RRD xymond/xymond_rrd
 
 ROOT=$(find_root)
 require_c_buildenv "$ROOT"
-[ -f "$ROOT/Makefile" ] || skip "tree not configured (no Makefile)"
 
 work=$(mktempdir)
 mkdir -p "$work/home/etc" "$work/tmp" "$work/rrd"
 : > "$work/home/etc/analysis.cfg"
 : > "$work/hosts.cfg"
 
-buildflags_output=$("$XYMON_MAKE" -s -C "$ROOT" -f Makefile -f - disk-test-flags <<'EOF'
-.PHONY: disk-test-flags
-disk-test-flags:
-	@printf '%s\n' 'ldflags=$(LDFLAGS)' 'rpathopt=$(RPATHOPT)' \
-		'rrddef=$(RRDDEF)' 'rrdincdir=$(RRDINCDIR)' 'rrdlibs=$(RRDLIBS)'
-EOF
-) || fail "cannot read configured RRD build flags"
-# Read the lines into an array without mapfile: that is a bash 4 builtin
-# and macOS ships bash 3.2, where the suite runs under /usr/bin/env bash.
-buildflags=()
-while IFS= read -r line; do buildflags+=("$line"); done <<< "$buildflags_output"
-[ "${#buildflags[@]}" -eq 5 ] || fail "configured RRD build flags are incomplete"
-ldflags=${buildflags[0]#ldflags=}
-rpathopt=${buildflags[1]#rpathopt=}
-rrddef=${buildflags[2]#rrddef=}
-rrdincdir=${buildflags[3]#rrdincdir=}
-rrdlibs=${buildflags[4]#rrdlibs=}
+# The configured RRD flags through the helpers, which also answer for a
+# build with no top-level Makefile (tests/README.md).
+rrddef=$(xymon_makevar "$ROOT" RRDDEF)
+rrdincdir=$(xymon_makevar "$ROOT" RRDINCDIR)
+rrdlibs=$(xymon_makevar "$ROOT" RRDLIBS)
 [ -n "$rrdlibs" ] || rrdlibs="-lrrd"
+harness_ldflags=$(xymon_ldflags "$ROOT")
 
 # The last-update reader is the one tests/rrd/inode-unix-columns.sh builds; it
 # takes any RRD, so there is no second harness to keep in step.
 # Configured flags are deliberate word-split lists.
 # shellcheck disable=SC2086
-"$CC" $ldflags -iquote "$ROOT/include" $rrddef $rrdincdir \
-	-o "$work/rrd-lastupdate" $rpathopt \
-	"$ROOT/tests/rrd/inode-unix-columns-harness.c" $rrdlibs \
+"$CC" -iquote "$ROOT/include" $rrddef $rrdincdir \
+	-o "$work/rrd-lastupdate" \
+	"$ROOT/tests/rrd/inode-unix-columns-harness.c" $rrdlibs $harness_ldflags \
 	2>"$work/cc.log" || {
 	cat "$work/cc.log" >&2
 	fail "librrd last-update harness does not compile"
