@@ -15,15 +15,20 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+# shellcheck source=tests/lib/xymond-daemon.sh
+. "$(dirname "$0")/../lib/xymond-daemon.sh"
 
 require_bin XYMOND xymond/xymond
 require_bin XYMOND_CHANNEL xymond/xymond_channel
 require_bin XYMON common/xymon
+XYMONCLIENT="$XYMON"		# free_port() in lib/xymond-daemon.sh pings with it
 
 require_shm_segments "$(grep -c 'setup_channel(C_[A-Z_]*, CHAN_MASTER)' "$(find_root)/xymond/xymond.c")"
 
 work=$(mktempdir)
-port=$(( 20000 + (RANDOM % 15000) ))
+# A port drawn from just below the kernel ephemeral range and pinged free;
+# free_port() is in lib/xymond-daemon.sh.
+port=$(free_port) || fail "no free port"
 mkdir -p "$work"/{home/etc,home/tmp,var,logs}
 cat >"$work/home/etc/hosts.cfg" <<'HOSTS'
 127.0.0.11 hosta # noconn
