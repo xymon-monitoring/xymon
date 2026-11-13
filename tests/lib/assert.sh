@@ -14,6 +14,13 @@
 [ -n "${__XYMON_TESTS_ASSERT_SOURCED:-}" ] && return 0
 __XYMON_TESTS_ASSERT_SOURCED=1
 
+# make test runs the suite under the configured Makefile, which exports
+# XYMONRUNDIR and INSTALLSTATICWWWDIR (build/Makefile.rules). Inherited, they
+# send a test's daemons and scratch installs to the configured system paths,
+# /run/xymon say, which a package build cannot write (#843, #845). A test
+# that needs either sets it itself.
+unset XYMONRUNDIR INSTALLSTATICWWWDIR
+
 # ---- result reporting --------------------------------------------------------
 
 # fail MSG -- print on stderr and exit non-zero (CI treats as failure).
