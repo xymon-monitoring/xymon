@@ -112,7 +112,7 @@ probe_rules() { # probe_rules [extra make assignment]
 		echo "include $ROOT/build/Makefile.rules"
 		printf 'probe:\n\t@echo "[$(XYMONRUNDIR)]"\n'
 	} >"$probe"
-	env -u XYMONRUNDIR MAKEFLAGS= "$XYMON_MAKE" -s -f "$probe" probe 2>/dev/null
+	"$XYMON_MAKE" -s -f "$probe" probe 2>/dev/null
 }
 
 for case in "undefined:" "empty:XYMONRUNDIR ="; do

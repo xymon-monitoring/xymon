@@ -14,12 +14,18 @@
 [ -n "${__XYMON_TESTS_ASSERT_SOURCED:-}" ] && return 0
 __XYMON_TESTS_ASSERT_SOURCED=1
 
-# make test runs the suite under the configured Makefile, which exports
-# XYMONRUNDIR and INSTALLSTATICWWWDIR (build/Makefile.rules). Inherited, they
-# send a test's daemons and scratch installs to the configured system paths,
-# /run/xymon say, which a package build cannot write (#843, #845). A test
-# that needs either sets it itself.
-unset XYMONRUNDIR INSTALLSTATICWWWDIR
+# make test runs the suite under the configured Makefile, so every test
+# starts with what that make hands its children, and none of it is meant
+# for a test:
+# - XYMONRUNDIR and INSTALLSTATICWWWDIR, exported by build/Makefile.rules,
+#   send a test's daemons and scratch installs to the configured system
+#   paths, /run/xymon say, which a package build cannot write (#843, #845,
+#   #846). A test that needs either sets it itself.
+# - MAKEFLAGS, MFLAGS and MAKELEVEL carry the parent's options, its
+#   command-line variables and, under "make -j" as debian/rules runs it, its
+#   jobserver, which corrupts a probe makefile read from stdin (#733). A make
+#   a test runs then starts as it would from a shell.
+unset XYMONRUNDIR INSTALLSTATICWWWDIR MAKEFLAGS MFLAGS MAKELEVEL
 
 # ---- result reporting --------------------------------------------------------
 
@@ -428,10 +434,7 @@ xymon_cflags() {
 		probe='__xymon_cflags:
 	@printf "%s\n" "$(CFLAGS)"
 '
-		# MAKEFLAGS= : the probe is read from stdin (-f -); an inherited
-		# jobserver (suite under a parent "make -j") corrupts that read and
-		# the probe returns nothing. #733.
-		for tok in $(printf '%s' "$probe" | MAKEFLAGS= "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_cflags 2>/dev/null); do
+		for tok in $(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_cflags 2>/dev/null); do
 			case $tok in -DCLIENTONLY|-DCLIENTONLY=*|-DLOCALCLIENT|-DLOCALCLIENT=*) defines="$defines $tok" ;; esac
 		done
 	fi
@@ -470,8 +473,7 @@ xymon_ldflags() {
 	probe='__xymon_ldflags:
 	@printf "%s\n" "$(CFLAGS)" "$(RPATHOPT)" "$(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)"
 '
-	# MAKEFLAGS= : see __xymon_cflags above -- stdin probe, inherited jobserver. #733.
-	out=$(printf '%s' "$probe" | MAKEFLAGS= "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_ldflags 2>/dev/null) || return 0
+	out=$(printf '%s' "$probe" | "$XYMON_MAKE" -s -C "$root" -f Makefile -f - __xymon_ldflags 2>/dev/null) || return 0
 
 	cflags=$(printf '%s\n' "$out" | sed -n 1p)
 	rpath=$(printf '%s\n' "$out" | sed -n 2p)
