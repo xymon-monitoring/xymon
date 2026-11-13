@@ -110,6 +110,7 @@ endif
 	CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" RPATHOPT="$(RPATHOPT)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" LIBRTDEF="$(LIBRTDEF)" XYMONHOME="$(XYMONHOME)" $(MAKE) -C build all
 
 lib-build: include/config.h
+	sh $(BUILDTOPDIR)/build/build-id.sh
 	CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" OSDEF="$(OSDEF)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" ZLIBINCDIR="$(ZLIBINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" LIBRTDEF="$(LIBRTDEF)" XYMONTOPDIR="$(XYMONTOPDIR)" XYMONHOME="$(XYMONHOME)" XYMONCLIENTHOME=$(XYMONCLIENTHOME) XYMONLOGDIR="$(XYMONLOGDIR)" XYMONHOSTNAME="$(XYMONHOSTNAME)" XYMONHOSTIP="$(XYMONHOSTIP)" XYMONHOSTOS="$(XYMONHOSTOS)" $(MAKE) -C lib all
 
 ifeq ($(CLIENTONLY),yes)
@@ -117,6 +118,7 @@ lib-client: include/config.h
 else
 lib-client: include/config.h lib-build
 endif
+	sh $(BUILDTOPDIR)/build/build-id.sh
 	CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" OSDEF="$(OSDEF)" RPATHOPT="$(RPATHOPT)" PCREINCDIR="$(PCREINCDIR)" ZLIBINCDIR="$(ZLIBINCDIR)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" LIBRTDEF="$(LIBRTDEF)" XYMONTOPDIR="$(XYMONTOPDIR)" XYMONHOME="$(XYMONCLIENTHOME)" XYMONCLIENTHOME=$(XYMONCLIENTHOME) XYMONLOGDIR="$(XYMONLOGDIR)" XYMONHOSTNAME="$(XYMONHOSTNAME)" XYMONHOSTIP="$(XYMONHOSTIP)" XYMONHOSTOS="$(XYMONHOSTOS)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C lib client
 
 common-build: lib-build
@@ -191,7 +193,7 @@ clean:
 	$(MAKE) -C client clean
 #	$(MAKE) -C demotool clean
 #	$(MAKE) -C custom clean || echo ""
-	rm -f ./*~ include/config.h include/*~ debian/*~ rpm/*~ contrib/*~
+	rm -f ./*~ include/config.h build/build-id include/*~ debian/*~ rpm/*~ contrib/*~
 
 
 ####################
