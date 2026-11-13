@@ -58,17 +58,32 @@ void parse_query(void)
 		else if (strcasecmp(cwalk->name, "db") == 0) {
 			char *val, *p;
 
-			/* Don't allow any slashes in the db-name */
+			/* Only a name in etc/: a path before it is dropped */
 			val = cwalk->value;
 			p = strrchr(val, '/');
 			if (p) val = (p+1);
 
+			/* Only a CSV database: any other file in etc/ is not csvinfo's to show */
+			if ((*val == '.') || (strlen(val) <= 4) || (strcmp(val + strlen(val) - 4, ".csv") != 0))
+				errormsg("Invalid database");
+
 			srcdb = strdup(val);
 		}
 		else if (strcasecmp(cwalk->name, "column") == 0) {
-			keycolumn = atoi(cwalk->value);
+			/* A column csvinfo keeps; empty is the default, 0 */
+			char *end;
+			long n = strtol(cwalk->value, &end, 10);
+
+			if (*end || (n < 0) || (n >= MAXCOLUMNS)) errormsg("Invalid column");
+			keycolumn = (int)n;
 		}
 		else if (strcasecmp(cwalk->name, "delimiter") == 0) {
+			/*
+			 * A character to split at: an empty value would make it the
+			 * NUL, which strchr() finds at the end of every line, so the
+			 * split would not stop at a field boundary
+			 */
+			if (*(cwalk->value) == '\0') errormsg("Invalid delimiter");
 			delimiter = *(cwalk->value);
 		}
 
@@ -86,7 +101,7 @@ int main(int argc, char *argv[])
 	int bgcolor = COL_BLUE;
 	char *envarea = NULL;
 
-	char *headers[MAXCOLUMNS];
+	char *headers[MAXCOLUMNS+1];
 	char *items[MAXCOLUMNS];
 
 	int i, found;
@@ -141,7 +156,8 @@ int main(int argc, char *argv[])
 	if (unlimfgets(inbuf, db)) {
 		char *p1, *p2;
 
-		for (i=0, p1=STRBUF(inbuf), p2=strchr(STRBUF(inbuf), delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
+		/* One slot more than the columns stays NULL: it ends the list printed below */
+		for (i=0, p1=STRBUF(inbuf), p2=strchr(STRBUF(inbuf), delimiter); ((i < MAXCOLUMNS) && p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
 			*p2 = '\0';
 			headers[i] = strdup(p1);
 		}
@@ -161,9 +177,11 @@ int main(int argc, char *argv[])
 
 		for (i=0; i<MAXCOLUMNS; i++) *(items[i]) = '\0';
 
-		for (i=0, p1=STRBUF(inbuf), p2=strchr(STRBUF(inbuf), delimiter); (p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
+		for (i=0, p1=STRBUF(inbuf), p2=strchr(STRBUF(inbuf), delimiter); ((i < MAXCOLUMNS) && p1 && p2 && strlen(p1)); i++,p1=p2+1,p2=strchr(p1, delimiter)) {
 			*p2 = '\0';
-			strcpy(items[i], (strlen(p1) ? p1 : "&nbsp;"));
+			/* A field longer than the buffer is cut, not copied past it */
+			strncpy(items[i], (strlen(p1) ? p1 : "&nbsp;"), MAX_LINE_LEN-1);
+			items[i][MAX_LINE_LEN-1] = '\0';
 		}
 
 		found = (strcasecmp(items[keycolumn], wantedname) == 0);

@@ -16,6 +16,17 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+csvinfo -- only .csv databases are shown, and columns, fields and column= are bounded
+-------------------------------------------------------------------------------------
+
+csvinfo.cgi could be asked to show any file in $XYMONHOME/etc/, and did not
+bound the columns and fields it read, the key column, or the delimiter. It
+now accepts only a database whose name ends in ".csv" (in lower case), a key
+column from 0 to 79, and a delimiter that is not empty; it shows at most 80
+columns, and cuts a field longer than its line buffer. A database with
+another name must be renamed to end in ".csv", and the db= links that name
+it (such as a --docurl) changed to match.
+
 criticaleditor -- values that would break a record's line are kept in their field
 --------------------------------------------------------------------------------
 
