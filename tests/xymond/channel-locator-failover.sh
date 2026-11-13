@@ -23,6 +23,8 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+# shellcheck source=tests/lib/xymond-daemon.sh
+. "$(dirname "$0")/../lib/xymond-daemon.sh"
 
 require_bin XYMOND xymond/xymond
 require_bin XYMOND_CHANNEL xymond/xymond_channel
@@ -30,12 +32,17 @@ require_bin XYMOND_LOCATOR xymond/xymond_locator
 require_bin XYMOND_RRD xymond/xymond_rrd
 require_bin XYMONCMD common/xymoncmd
 require_bin XYMON common/xymon
+XYMONCLIENT="$XYMON"		# free_port() in lib/xymond-daemon.sh pings with it
 require_bin LOCATOR lib/xymonlocator
 
 require_shm_segments "$(grep -c 'setup_channel(C_[A-Z_]*, CHAN_MASTER)' "$(find_root)/xymond/xymond.c")"
 
 work=$(mktempdir)
-base=$(( 20000 + (RANDOM % 15000) ))
+# A port drawn from just below the kernel ephemeral range and pinged free,
+# plus the adjacent ports for the other daemons; free_port() is in
+# lib/xymond-daemon.sh. A draw below the range is not handed out
+# concurrently, so the block stays clear where a blind draw collided.
+base=$(free_port) || fail "no free port"
 port=$base lport=$((base + 1)) standby=$((base + 2)) dead=$((base + 3))
 mkdir -p "$work"/{home/etc,home/tmp,var,logs,rrd}
 cat >"$work/home/etc/hosts.cfg" <<'EOF'
