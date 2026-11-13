@@ -57,6 +57,18 @@ Modify the default timeout (30 seconds) for the worker module to handle a messag
 If a message is not handled within this time, it is considered lost. You normally
 do not have to modify this unless you have an extremely busy server.
 
+.IP "\fB--reconnect-interval\fR=\fISECONDS\fR"
+How long to wait before trying again a network worker, one found through the
+locator, that could not be reached while it still holds messages. The default is 10
+seconds. Keep it well below \fB--msgtimeout\fR: a message that waits longer
+than that is dropped, so a slower retry loses the messages queued while the
+worker was down. The smallest value is 1.
+
+.IP "\fB--respawn-interval\fR=\fISECONDS\fR"
+How long to wait before starting again a local worker that has exited. The
+default is 60 seconds, so a worker that fails on every message is not
+restarted, and its failure logged, in a tight loop. The smallest value is 1.
+
 .IP "\fB--daemon\fR"
 xymond_channel is normally started by
 .I xymonlaunch(8)
