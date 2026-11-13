@@ -243,6 +243,19 @@ client data page starts with a "[transport]" section saying how the
 message came ("TLSv1.3 from 192.0.2.1"). That section is added to the page
 only; the client message xymond stores and returns is unchanged.
 
+build -- a build that is not a release names its commit
+-------------------------------------------------------
+
+A build from git that is not a release records the commit it comes from, as
+git describe names it after the last release tag (4.3.31-159-g2dcad5db7, with
+-dirty for local changes). "xymon --build-info" prints it, programs find it in
+XYMONBUILD, and the web page footers show it after the version. A release, or
+a build from a release tarball, has none, and its pages read as before. Set
+XYMON_BUILD_ID when running make to choose the value, or to leave it empty.
+The plain version, which the client update and other programs compare, does
+not change. An existing installation keeps its footer files; copy the new
+stdnormal_footer and critical_footer to show the build.
+
 Changes for 4.3.31
 ==================
 

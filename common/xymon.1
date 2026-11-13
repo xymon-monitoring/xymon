@@ -42,6 +42,13 @@ on standard input, and send the result to the Xymon server.
 The message text provided on the command line becomes the
 first line of the merged message.
 
+.IP "\fB\-\-build\-info\fR"
+Print the version and the build, one per line ("version=4.3.32-dev",
+"build=4.3.31-159-g2dcad5db7"), and exit. The build names the commit a
+build that is not a release comes from, as git describe does after the
+last release tag; it is empty for a release. Programs and the web page
+footers find it in the XYMONBUILD environment variable.
+
 .IP "\fBRECIPIENT\fR"
 The \fBRECIPIENT\fR parameter defines which server receives
 the message: an IPv4 or IPv6 address or a hostname, optionally
