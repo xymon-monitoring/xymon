@@ -26,6 +26,7 @@ column from 0 to 79, and a delimiter that is not empty; it shows at most 80
 columns, and cuts a field longer than its line buffer. A database with
 another name must be renamed to end in ".csv", and the db= links that name
 it (such as a --docurl) changed to match.
+
 enadis.cgi -- the filter patterns are shown escaped
 ---------------------------------------------------
 
