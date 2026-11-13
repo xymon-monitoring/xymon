@@ -84,6 +84,21 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
       busy server.
     <p class="Pp"></p>
   </dd>
+  <dt id="reconnect-interval"><a class="permalink" href="#reconnect-interval"><b>--reconnect-interval</b>=<i>SECONDS</i></a></dt>
+  <dd>How long to wait before trying again a network worker, one found through
+      the locator, that could not be reached while it still holds messages. The
+      default is 10 seconds. Keep it well below <b>--msgtimeout</b>: a message
+      that waits longer than that is dropped, so a slower retry loses the
+      messages queued while the worker was down. The smallest value is 1.
+    <p class="Pp"></p>
+  </dd>
+  <dt id="respawn-interval"><a class="permalink" href="#respawn-interval"><b>--respawn-interval</b>=<i>SECONDS</i></a></dt>
+  <dd>How long to wait before starting again a local worker that has exited. The
+      default is 60 seconds, so a worker that fails on every message is not
+      restarted, and its failure logged, in a tight loop. The smallest value is
+      1.
+    <p class="Pp"></p>
+  </dd>
   <dt id="daemon"><a class="permalink" href="#daemon"><b>--daemon</b></a></dt>
   <dd>xymond_channel is normally started by <i><a href="../man8/xymonlaunch.8.html">xymonlaunch</a>(8)</i> as a task
       defined in the <i><a href="../man5/tasks.cfg.5.html">tasks.cfg</a>(5)</i> file. If you are not using xymonlaunch,

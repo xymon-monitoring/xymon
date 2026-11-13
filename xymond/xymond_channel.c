@@ -86,8 +86,8 @@ static int running = 1;
 static int gotalarm = 0;
 static int pendingcount = 0;
 static int messagetimeout = 30;
-#define RECONNECT_INTERVAL 10		/* seconds between connect attempts to a network peer */
-#define RESPAWN_INTERVAL 60		/* seconds between starts of a local worker */
+static int reconnect_interval = 10;	/* seconds between connect attempts to a network peer (--reconnect-interval) */
+static int respawn_interval = 60;	/* seconds between starts of a local worker (--respawn-interval) */
 
 /*
  * chksumsize is the space left in front of the message buffer, to
@@ -194,7 +194,7 @@ void openconnection(xymon_peer_t *peer)
 	 */
 	now = gettimer();
 	if (now < (peer->lastopentime +
-		   ((peer->peertype == P_NET) ? RECONNECT_INTERVAL : RESPAWN_INTERVAL))) return;
+		   ((peer->peertype == P_NET) ? reconnect_interval : respawn_interval))) return;
 
 	dbgprintf("Connecting to peer %s:%d\n", inet_ntoa(peer->peeraddr.sin_addr), ntohs(peer->peeraddr.sin_port));
 
@@ -501,6 +501,14 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			messagetimeout = atoi(p+1);
 		}
+		else if (argnmatch(argv[argi], "--reconnect-interval=")) {
+			char *p = strchr(argv[argi], '=');
+			reconnect_interval = atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--respawn-interval=")) {
+			char *p = strchr(argv[argi], '=');
+			respawn_interval = atoi(p+1);
+		}
 		else if (argnmatch(argv[argi], "--daemon")) {
 			daemonize = 1;
 		}
@@ -573,6 +581,19 @@ int main(int argc, char *argv[])
 		errprintf("Must specify command for local worker\n");
 		return 1;
 	}
+	/* Zero would retry a peer, or restart a worker, on every pass of the loop. */
+	if (reconnect_interval < 1) {
+		errprintf("--reconnect-interval must be at least 1 second\n");
+		return 1;
+	}
+	if (respawn_interval < 1) {
+		errprintf("--respawn-interval must be at least 1 second\n");
+		return 1;
+	}
+	if (reconnect_interval >= messagetimeout) {
+		errprintf("--reconnect-interval (%d s) is not below --msgtimeout (%d s): messages queued for a network peer that is down are dropped before it is tried again\n",
+			  reconnect_interval, messagetimeout);
+	}
 
 	/* Do cache responses to avoid doing too many lookups */
 	if (locatorbased) locator_prepcache(locatorservice, 0);
@@ -615,6 +636,8 @@ int main(int argc, char *argv[])
 		reopen_file(logfn, "a", stdout);
 		reopen_file(logfn, "a", stderr);
 	}
+	dbgprintf("Network peers are retried every %d s, a local worker restarted at most every %d s\n",
+		  reconnect_interval, respawn_interval);
 
 	/* Attach to the channel */
 	channel = setup_channel(cnid, CHAN_CLIENT);

@@ -3,14 +3,18 @@
 #
 # tests/xymond/channel-local-respawn.sh
 #
-# A local worker that fails on every message is started again at most once a
-# minute, as it always was: network peers are retried every 10 seconds, but a
-# local one restarted at that pace would be respawned, and log its failure,
-# six times as often.
+# A local worker that fails on every message is started again at most every
+# --respawn-interval seconds, once a minute by default, as it always was:
+# network peers are retried every 10 seconds, but a local one restarted at
+# that pace would be respawned, and log its failure, six times as often.
 #
 # Runs a real xymond and a channel whose worker records each start, then
-# exits at once. Statuses keep coming for 25 seconds, and the worker must have
-# started exactly once in that window.
+# exits at once. With the interval at 3 s and statuses arriving all the
+# while, the worker must not start again within a second of its first start,
+# and must start again within 6 s -- which neither the 60 s default nor the
+# 10 s network pace could do, so the option is what paced it. The 60 s and
+# 10 s defaults themselves are read from the line the channel logs at
+# startup.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -70,6 +74,7 @@ for _ in {1..100}; do
 done
 
 "$XYMOND_CHANNEL" --env="$work/xymonserver.cfg" --channel=status \
+	--respawn-interval=3 --debug \
 	--pidfile="$work/channel.pid" --daemon --log="$work/logs/channel.log" "$work/worker.sh"
 for _ in {1..50}; do [ -s "$work/channel.pid" ] && break; sleep 0.1; done
 chanpid=$(cat "$work/channel.pid")
@@ -80,16 +85,27 @@ status() {
 		|| fail "xymond rejected the status"
 }
 
+# The daemon logs its intervals once its log is open, after the pidfile.
+for _ in {1..50}; do grep -q "Network peers are retried every 10 s, a local worker restarted at most every 3 s" "$work/logs/channel.log" 2>/dev/null && break; sleep 0.1; done
+grep -q "Network peers are retried every 10 s, a local worker restarted at most every 3 s" "$work/logs/channel.log" \
+	|| fail "the channel did not log --respawn-interval=3 beside the 10 s reconnect default: $(cat "$work/logs/channel.log")"
+
 # The first status starts the worker.
 status
 for _ in {1..50}; do [ "$(starts)" -ge 1 ] && break; sleep 0.1; done
 [ "$(starts)" -ge 1 ] || fail "the channel never started its worker: $(cat "$work/logs/channel.log")"
 
-# Then a status a second for 25 s, each one a reason to start it again.
-for _ in {1..25}; do status; sleep 1; done
+# Then statuses keep coming, each one a reason to start it again. The clock
+# counts whole seconds, so the next start comes 2 to 3 s after the first:
+# none within the first second.
+for _ in {1..4}; do status; sleep 0.25; done
 n=$(starts)
 [ "$n" -eq 1 ] \
-	|| fail "a local worker that fails on every message was started $n times in 25 s, not once: it must wait a minute between starts"
+	|| fail "a local worker that fails on every message was started $n times within a second, with --respawn-interval=3"
+for _ in {1..24}; do [ "$(starts)" -ge 2 ] && break; status; sleep 0.25; done
+n=$(starts)
+[ "$n" -ge 2 ] \
+	|| fail "the failing local worker was not started again within 6 s, with --respawn-interval=3 and statuses arriving: $(cat "$work/logs/channel.log")"
 kill -0 "$chanpid" 2>/dev/null || fail "the channel died: $(cat "$work/logs/channel.log")"
 
-pass "xymond_channel starts a failing local worker once in 25 s: it waits a minute between starts"
+pass "xymond_channel restarts a failing local worker every --respawn-interval seconds and no sooner, once a minute by default"

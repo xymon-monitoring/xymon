@@ -4,14 +4,18 @@
 # tests/xymond/channel-locator-retry-interval.sh
 #
 # A network peer that does not answer is retried while it still holds a
-# message, every 10 seconds -- well inside --msgtimeout (30 s), which drops a
-# message that waits longer. At the old once-a-minute pace, a message queued
-# while a worker was down was dropped before the channel tried again.
+# message, every --reconnect-interval seconds -- 10 by default, well inside
+# --msgtimeout (30 s), which drops a message that waits longer. At the old
+# once-a-minute pace, a message queued while a worker was down was dropped
+# before the channel tried again.
 #
 # Runs real daemons: xymond, xymond_locator and the channel. The only rrd
 # server is registered by hand with nothing listening on its port, and the
-# connect attempts are counted in the channel's log over a fixed window, so
-# a slow machine makes more of them, not fewer.
+# channel's connect attempts are read from its log. With the interval at 3 s,
+# the queued message must not be retried within a second of the first
+# attempt, and must be retried within 6 s -- which the 10 s default could not
+# do, so the option is what paced it. The 10 s and 60 s defaults themselves
+# are read from the line the channel logs at startup.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -84,24 +88,33 @@ for _ in {1..100}; do
 done
 
 "$XYMOND_CHANNEL" --env="$work/xymonserver.cfg" --channel=status \
-	--locator="127.0.0.1:$lport" --service=rrd \
+	--locator="127.0.0.1:$lport" --service=rrd --reconnect-interval=3 --debug \
 	--pidfile="$work/channel.pid" --daemon --log="$work/logs/channel.log"
 for _ in {1..50}; do [ -s "$work/channel.pid" ] && break; sleep 0.1; done
 chanpid=$(cat "$work/channel.pid")
 
+# The daemon logs its intervals once its log is open, after the pidfile.
+for _ in {1..50}; do grep -q "Network peers are retried every 3 s, a local worker restarted at most every 60 s" "$work/logs/channel.log" 2>/dev/null && break; sleep 0.1; done
+grep -q "Network peers are retried every 3 s, a local worker restarted at most every 60 s" "$work/logs/channel.log" \
+	|| fail "the channel did not log --reconnect-interval=3 beside the 60 s respawn default: $(cat "$work/logs/channel.log")"
+
 # One status, queued for the dead server. The channel's first connect fails;
-# the message stays queued, and the peer is retried while it holds one. The
-# message waits up to --msgtimeout (30 s), so in 25 s a 10 s interval makes
-# at least two attempts, where the old minute made one.
+# the message stays queued, and the peer is retried while it holds one.
 "$XYMON" "127.0.0.1:$port" "status hosta.cpu green $(date) up: 3 days, 2 users, 120 procs, load=0.50" \
 	|| fail "xymond rejected the status"
 attempts() { grep -c "Cannot connect to peer 127.0.0.1:$dead" "$work/logs/channel.log" 2>/dev/null || true; }
 for _ in {1..50}; do [ "$(attempts)" -ge 1 ] && break; sleep 0.1; done
 [ "$(attempts)" -ge 1 ] || fail "the channel never tried the dead server: $(cat "$work/logs/channel.log")"
-sleep 25
+# The clock counts whole seconds, so the retry comes 2 to 3 s after the first
+# attempt: none within the first second.
+sleep 1
+n=$(attempts)
+[ "$n" -eq 1 ] \
+	|| fail "the channel tried the unreachable server $n times within a second, with --reconnect-interval=3: $(cat "$work/logs/channel.log")"
+for _ in {1..50}; do [ "$(attempts)" -ge 2 ] && break; sleep 0.1; done
 n=$(attempts)
 [ "$n" -ge 2 ] \
-	|| fail "the channel tried the unreachable server $n time(s) in 25 s; a network peer holding a message must be retried every 10 s: $(cat "$work/logs/channel.log")"
+	|| fail "the channel did not try the unreachable server again within 6 s, with --reconnect-interval=3 and a message queued: $(cat "$work/logs/channel.log")"
 kill -0 "$chanpid" 2>/dev/null || fail "the channel died: $(cat "$work/logs/channel.log")"
 
-pass "xymond_channel retries an unreachable network peer that holds a message every 10 seconds ($n attempts in 25 s)"
+pass "xymond_channel retries an unreachable network peer that holds a message every --reconnect-interval seconds, 10 by default"
