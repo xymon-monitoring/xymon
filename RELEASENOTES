@@ -16,6 +16,15 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+criticaleditor -- values that would break a record's line are kept in their field
+--------------------------------------------------------------------------------
+
+A record in critical.cfg is one line, its fields separated by "|". The Critical
+Systems editor now replaces "|", CR and LF in the resolver group, instructions,
+clone names, host and test with a space before writing, so such a character
+stays inside its field and on its line rather than adding a field or a record.
+A group or instruction that held a "|" is stored with a space there instead.
+
 enadis.cgi -- the filter patterns are shown escaped
 ---------------------------------------------------
 
