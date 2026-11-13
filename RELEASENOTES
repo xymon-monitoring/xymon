@@ -24,6 +24,7 @@ Systems editor now replaces "|", CR and LF in the resolver group, instructions,
 clone names, host and test with a space before writing, so such a character
 stays inside its field and on its line rather than adding a field or a record.
 A group or instruction that held a "|" is stored with a space there instead.
+
 enadis.cgi -- the filter patterns are shown escaped
 ---------------------------------------------------
 
