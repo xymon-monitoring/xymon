@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<META HTTP-EQUIV="REFRESH" CONTENT="60">
+<META HTTP-EQUIV="EXPIRES" CONTENT="Sat, 01 Jan 2001 00:00:00 GMT">
+<META HTTP-EQUIV="Set-Cookie" CONTENT="pagepath=; path=/">
+<META HTTP-EQUIV="Set-Cookie" CONTENT="host=; path=/">
+<TITLE>red : Xymon - Status @ @DATE@</TITLE>
+
+<!-- Styles for the Xymon body  -->
+<link rel="stylesheet" type="text/css" href="/xymon/gifs/xymonbody.css">
+
+<!-- Styles for the menu bar -->
+<link rel="stylesheet" type="text/css" href="/xymon/menu/xymonmenu.css">
+
+<!-- The favicon image -->
+<link rel="shortcut icon" href="/xymon/gifs/favicon-red.ico">
+
+</HEAD>
+
+<BODY class="red">
+
+
+
+<TABLE SUMMARY="Topline" WIDTH="100%">
+<TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
+<TR>
+  <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Xymon</B></FONT>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Current Status</B></FONT></CENTER>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>@DATE@</B></FONT>
+  </TD>
+</TR>
+<TR>
+  <TD COLSPAN=3> <HR WIDTH="100%"> </TD>
+</TR>
+</TABLE>
+<BR>
+
+<A NAME="pages-blk">&nbsp;</A>
+<BR>
+<CENTER>
+<TABLE SUMMARY="Page Block" BORDER=0>
+<TR><TD COLSPAN=2><CENTER> 
+<FONT COLOR="ivory" SIZE="+1">
+   <br><B><I>Pages Hosted Locally</I></B>
+</FONT></CENTER></TD></TR>
+<TR><TD COLSPAN=2><HR WIDTH="100%"></TD></TR>
+<TR>
+<TD ALIGN=LEFT><FONT SIZE="+1" COLOR="#FFFFCC" FACE="Tahoma, Arial, Helvetica">Main</FONT></TD>
+<TD><CENTER><A HREF="/xymon/main/main.html"><IMG SRC="/xymon/gifs/red.gif" WIDTH="16" HEIGHT="16" BORDER=0 ALT="red" TITLE="red"></A></CENTER></TD>
+</TR>
+</TABLE><BR>
+</CENTER>
+<BR><BR>
+
+<TABLE SUMMARY="Bottomline" WIDTH="100%">
+<TR>
+  <TD> <HR WIDTH="100%"> </TD>
+</TR>
+<TR>
+  <TD ALIGN=RIGHT><FONT FACE="Arial, Helvetica" SIZE="-2" COLOR="silver"><B><A HREF="http://xymon.sourceforge.net/" style="text-decoration: none">Xymon @VERSION@</A></B></FONT></TD>
+</TR>
+</TABLE>
+
+<!-- Don't rely just on HTML to set the cookies -->
+<!-- http://lists.xymon.com/pipermail/xymon/2018-June/045538.html -->
+<script type="text/javascript">
+    var metas = document.getElementsByTagName('meta');
+
+    for (var i=0; i<metas.length; i++) {
+        var type = metas[i].getAttribute("HTTP-EQUIV");
+        if (type == "Set-Cookie") {
+            var prop = metas[i].getAttribute("CONTENT");
+            document.cookie = prop;
+        }
+    }
+</script>
+
+
+
+</BODY>
+</HTML>
