@@ -73,7 +73,6 @@ printf '127.0.0.1\twith\t# mlok\n127.0.0.1\twithout\t# mlbad\n' > "$work/home/et
 
 XYMONHOME="$work/home" "$XYMONNET" --no-update --noping --checkresponse \
 	--dns=ip --timeout=15 >"$work/out.txt" 2>&1 || :
-sleep 1
 
 grep -q 'Service mlok on with is OK' "$work/out.txt" || fail \
 	'expect ... until "250 " did not consume the multi-line reply:
@@ -96,7 +95,7 @@ grep -q 'got quit' "$work/o1" || fail \
 # space before TEXT, and there is no text. The literal then never matches,
 # the expect waits for a line that has already been sent, and a healthy
 # server is reported down when the clock runs out.
-printf '%s\n' 'send "250-first\r\n250\r\n"' 'hold 6' > "$work/bare.script"
+printf '%s\n' 'send "250-first\r\n250\r\n"' 'hold 1' > "$work/bare.script"
 "$work/peer" "$work/bare.script" "$work/bare.obs" > "$work/bare.port" &
 echo $! >> "$work/pids"
 i=0; while [ "$i" -lt 50 ]; do [ -s "$work/bare.port" ] && break; sleep 0.1; i=$((i + 1)); done
@@ -128,7 +127,7 @@ $(grep -i barehost <<<"$bout" | sed -n '1,3p')"
 # by the FIRST line of a multi-line reply, so a server whose reply ends in a
 # failure code reports up. Shipped entries escape it only because they start
 # with an expect.
-printf '%s\n' 'recvany' 'send "250-first\r\n500 broken\r\n"' 'hold 6' > "$work/cf.script"
+printf '%s\n' 'recvany' 'send "250-first\r\n500 broken\r\n"' 'hold 1' > "$work/cf.script"
 "$work/peer" "$work/cf.script" "$work/cf.obs" > "$work/cf.port" &
 echo $! >> "$work/pids"
 i=0; while [ "$i" -lt 50 ]; do [ -s "$work/cf.port" ] && break; sleep 0.1; i=$((i + 1)); done
