@@ -6428,6 +6428,81 @@ static int add_listeners(char *listenspec, int listenport, int listenq, int tls)
 	return 0;
 }
 
+/*
+ * Close the connections that timed out, or that have sent nothing within
+ * IDLE_FIRSTBYTE, and free the closed ones. Run on every pass of the main
+ * loop, and also when select() times out: a server with no other traffic
+ * must still drop a silent connection after IDLE_FIRSTBYTE, not when the
+ * next client happens to wake it.
+ */
+static void conn_cleanup(conn_t **head, conn_t **tail)
+{
+	conn_t *cwalk, *tmp, *khead;
+	time_t now;
+
+	dbgprintf("Beginning conn_t cleanup\n");
+	now = getcurrenttime(NULL);
+	khead = NULL; cwalk = (*head);
+	while (cwalk) {
+		/* Check for connections that timeout, or that sent nothing in time */
+		if ((now > cwalk->timeout) ||
+		    ((cwalk->doingwhat == RECEIVING) && !cwalk->heard && (now > cwalk->firstbyte))) {
+			update_statistics("");
+			cwalk->doingwhat = NOTALK;
+			if (cwalk->sock >= 0) {
+				shutdown(cwalk->sock, SHUT_RDWR);
+				close(cwalk->sock);
+				cwalk->sock = -1;
+			}
+		}
+
+		/* Move dead connections to a purge-list */
+		if ((cwalk == (*head)) && (cwalk->doingwhat == NOTALK)) {
+			/* head of chain is dead */
+			tmp = (*head);
+			(*head) = (*head)->next;
+			tmp->next = khead;
+			khead = tmp;
+
+			cwalk = (*head);
+		}
+		else if (cwalk->next && (cwalk->next->doingwhat == NOTALK)) {
+			tmp = cwalk->next;
+			cwalk->next = tmp->next;
+			tmp->next = khead;
+			khead = tmp;
+
+			/* cwalk is unchanged */
+		}
+		else {
+			cwalk = cwalk->next;
+		}
+	}
+	if ((*head) == NULL) {
+		(*tail) = NULL;
+	}
+	else {
+		(*tail) = (*head);
+		cwalk = (*head)->next;
+		if (cwalk) {
+			while (cwalk->next) cwalk = cwalk->next;
+			(*tail) = cwalk;
+		}
+	}
+
+	/* Purge the dead connections */
+	while (khead) {
+		tmp = khead;
+		khead = khead->next;
+
+		if (tmp->buf) xfree(tmp->buf);
+		tls_free(tmp);
+		xfree(tmp);
+	}
+
+	dbgprintf("conn_t cleanup complete\n");
+}
+
 int main(int argc, char *argv[])
 {
 	conn_t *connhead = NULL, *conntail=NULL;
@@ -7079,7 +7154,20 @@ int main(int argc, char *argv[])
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &seltmo);
 		if (n <= 0) {
 			if ((errno == EINTR) || (n == 0)) {
-				/* Interrupted or a timeout happened */
+				/*
+				 * Interrupted or a timeout happened. Nothing is ready, so
+				 * the descriptor sets say nothing the rest of the loop
+				 * could use -- but the connection timeouts still run, once
+				 * a second, or a silent connection would outlive its
+				 * IDLE_FIRSTBYTE on a server with no other traffic.
+				 */
+				static time_t lastcleanup = 0;
+				time_t tnow = getcurrenttime(NULL);
+
+				if (tnow != lastcleanup) {
+					lastcleanup = tnow;
+					conn_cleanup(&connhead, &conntail);
+				}
 				continue;
 			}
 			else {
@@ -7212,71 +7300,7 @@ int main(int argc, char *argv[])
 		}
 
 		/* Clean up conn structs that are no longer used */
-		{
-			conn_t *tmp, *khead;
-
-			dbgprintf("Beginning conn_t cleanup\n");
-			now = getcurrenttime(NULL);
-			khead = NULL; cwalk = connhead;
-			while (cwalk) {
-				/* Check for connections that timeout, or that sent nothing in time */
-				if ((now > cwalk->timeout) ||
-				    ((cwalk->doingwhat == RECEIVING) && !cwalk->heard && (now > cwalk->firstbyte))) {
-					update_statistics("");
-					cwalk->doingwhat = NOTALK;
-					if (cwalk->sock >= 0) {
-						shutdown(cwalk->sock, SHUT_RDWR);
-						close(cwalk->sock);
-						cwalk->sock = -1;
-					}
-				}
-
-				/* Move dead connections to a purge-list */
-				if ((cwalk == connhead) && (cwalk->doingwhat == NOTALK)) {
-					/* head of chain is dead */
-					tmp = connhead;
-					connhead = connhead->next;
-					tmp->next = khead;
-					khead = tmp;
-
-					cwalk = connhead;
-				}
-				else if (cwalk->next && (cwalk->next->doingwhat == NOTALK)) {
-					tmp = cwalk->next;
-					cwalk->next = tmp->next;
-					tmp->next = khead;
-					khead = tmp;
-
-					/* cwalk is unchanged */
-				}
-				else {
-					cwalk = cwalk->next;
-				}
-			}
-			if (connhead == NULL) {
-				conntail = NULL;
-			}
-			else {
-				conntail = connhead;
-				cwalk = connhead->next;
-				if (cwalk) {
-					while (cwalk->next) cwalk = cwalk->next;
-					conntail = cwalk;
-				}
-			}
-
-			/* Purge the dead connections */
-			while (khead) {
-				tmp = khead;
-				khead = khead->next;
-
-				if (tmp->buf) xfree(tmp->buf);
-				tls_free(tmp);
-				xfree(tmp);
-			}
-
-			dbgprintf("conn_t cleanup complete\n");
-		}
+		conn_cleanup(&connhead, &conntail);
 
 		/* Take new connections from whichever listener is ready, resuming
 		   where the last scan stopped so a busy address cannot starve the
