@@ -29,8 +29,11 @@ make_test_cert "$work/k.pem" "$work/c.pem" \
 # smaller payloads are absorbed by the socket buffers, never defer, and pass
 # on the bug.
 payload=${XYMON_TEST_SSLWRITE_BYTES:-8000000}
+# The peer is told the count -- the one-byte send, then the payload -- so it
+# stops reading once it has it rather than after 8 s of silence; a short
+# delivery still waits the 8 s and fails below.
 
-"$work/peer" "$work/c.pem" "$work/k.pem" "$work/got.txt" > "$work/port" &
+"$work/peer" "$work/c.pem" "$work/k.pem" "$work/got.txt" "$((payload + 1))" > "$work/port" &
 peer=$!
 register_cleanup "stop_process $peer"
 
