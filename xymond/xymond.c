@@ -3989,7 +3989,10 @@ static int tls_days_left(SSL_CTX *ctx)
 	X509 *x = SSL_CTX_get0_certificate(ctx);
 	int days, secs;
 
-	if (X509_cmp_current_time(X509_get0_notBefore(x)) > 0) return -2;
+	/* ASN1_TIME_diff() for both ends: X509_cmp_current_time() is deprecated
+	   in OpenSSL 4.0. A diff that cannot be made leaves the certificate to
+	   the notAfter check, as X509_cmp_current_time()'s 0 did. */
+	if (ASN1_TIME_diff(&days, &secs, NULL, X509_get0_notBefore(x)) && ((days > 0) || ((days == 0) && (secs > 0)))) return -2;
 	if (!ASN1_TIME_diff(&days, &secs, NULL, X509_get0_notAfter(x)) || (days < 0) || ((days == 0) && (secs <= 0))) return -1;
 	return days;
 }
