@@ -33,6 +33,7 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 #include "../lib/rrd_api_compat.h"
+#include "../lib/rrdfilter.h"
 
 #define HOUR_GRAPH  "e-48h"
 #define DAY_GRAPH   "e-12d"
@@ -1020,10 +1021,12 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			rrddbs[0].rrdfn = (char *)malloc(buflen);
 			snprintf(rrddbs[0].rrdfn, buflen, "%s.rrd", gdef->name);
 			rrddbs[0].rrdparam = NULL;
-			if (!gdef_files_exist(gdef, rrddbs[0].rrdfn)) {
+			if (!gdef_files_exist(gdef, rrddbs[0].rrdfn) || rrd_is_filtered(service, rrddbs[0].rrdfn)) {
+				/* No file for this graph, or RRDEXCLUDE/RRDINCLUDE filters it out: the blank image, not an rrdtool error. */
 				xfree(rrddbs[0].key);
 				xfree(rrddbs[0].rrdfn);
 				rrddbcount = 0;
+				rrddbs[0].key = rrddbs[0].rrdfn = rrddbs[0].rrdparam = NULL;
 			}
 		}
 		else {
@@ -1116,6 +1119,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			if (*(d->d_name) == '.') continue;
 			ext = d->d_name + strlen(d->d_name) - strlen(".rrd");
 			if ((ext <= d->d_name) || (strcmp(ext, ".rrd") != 0)) continue;
+			if (rrd_is_filtered(service, d->d_name)) continue;
 
 			/* First check the exclude pattern. */
 			if (expat) {
