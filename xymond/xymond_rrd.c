@@ -271,6 +271,22 @@ int main(int argc, char *argv[])
 	}
 
 	/*
+	 * rrdcached is used through a local socket only. librrd refuses an
+	 * absolute file name when the daemon is remote, and every file here is
+	 * named absolutely, so over the network each update would be refused and
+	 * lost. Write the files directly instead; an empty address is no daemon.
+	 */
+	{
+		static char nodaemon[] = "RRDCACHED_ADDRESS=";
+		char *addr = getenv("RRDCACHED_ADDRESS");
+
+		if (addr && *addr && (strncmp(addr, "unix:", 5) != 0) && (*addr != '/')) {
+			errprintf("RRDCACHED_ADDRESS %s is not a local socket (unix:PATH or /PATH); writing the RRD files directly\n", addr);
+			putenv(nodaemon);
+		}
+	}
+
+	/*
 	 * Has an external rrdcached running? The environment answers when nothing
 	 * on the command line did - but --extcache and --no-extcache are answers,
 	 * and a flag the environment can overrule is not a flag.
