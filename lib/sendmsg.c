@@ -84,32 +84,6 @@ void setproxy(char *proxy)
 	proxysetting = strdup(proxy);
 }
 
-/*
- * Split a recipient's address in place: "host:port", "[IPv6]:port",
- * "[IPv6]", or a bare IPv6 address, which has more than one ':' and so
- * cannot carry a port. Returns the host, without brackets; *port is set
- * only when a port is given.
- */
-static char *split_hostport(char *s, int *port)
-{
-	char *p;
-
-	if (*s == '[') {
-		p = strchr(s, ']');
-		if (!p) return s;	/* unbalanced: left for the lookup to refuse */
-		*p = '\0';
-		if (*(p+1) == ':') *port = atoi(p+2);
-		return s+1;
-	}
-
-	p = strchr(s, ':');
-	if (p && (strchr(p+1, ':') == NULL)) {
-		*p = '\0';
-		*port = atoi(p+1);
-	}
-	return s;
-}
-
 static void setup_transport(void)
 {
 	static int proxy_is_setup = 0;
@@ -151,6 +125,7 @@ static void setup_transport(void)
 			if (strncmp(h, "http://", 7) == 0) h += strlen("http://");
 			xymonproxyport = 8080;
 			xymonproxyhost = split_hostport(h, &xymonproxyport);
+			if (!xymonproxyhost) xymonproxyhost = h;	/* malformed: the connect says so */
 		}
 	}
 
@@ -359,6 +334,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, strbuffer_
 		if ((slash = strchr(rcptbuf, '/')) != NULL) *slash = '\0';
 		rcptport = (usetls ? atoi(xgetenv("XYMONDTLSPORT")) : xymondportnumber);
 		rcptip = split_hostport(rcptbuf, &rcptport);
+		if (!rcptip) rcptip = rcptbuf;	/* malformed: the lookup refuses it */
 		dbgprintf("Standard protocol%s on port %d\n", (usetls ? " over TLS" : ""), rcptport);
 #ifdef HAVE_OPENSSL
 		/* Build the TLS context before connect(), so loading the CA bundle
@@ -402,6 +378,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, strbuffer_
 			}
 
 			rcptip = split_hostport(rcptbuf, &rcptport);
+			if (!rcptip) rcptip = rcptbuf;	/* malformed: the lookup refuses it */
 
 			/* The Host: header brackets an IPv6 address, as a URL does */
 			posthost = (char *)malloc(strlen(rcptip) + 3);

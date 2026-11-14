@@ -34,6 +34,9 @@ extern int oksender(sender_t *oklist, char *targetip, struct in_addr sender, cha
 extern char *sockaddr_text(struct sockaddr *sa, char *buf, size_t buflen);
 extern int sockaddr_same_sender(struct sockaddr *a, struct sockaddr *b);
 extern int text_sockaddr(char *text, struct sockaddr_storage *ss);
+extern int host_sockaddr(char *name, struct sockaddr_storage *ss, int *err);
+extern char *host_address(char *name, char *buf, size_t buflen, int *err);
+extern char *split_hostport(char *s, int *port);
 
 #endif
 

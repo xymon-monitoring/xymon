@@ -26,7 +26,9 @@ on a Xymon installation where one server does everything.
 
 .SH OPTIONS
 .IP "\fB--listen\fR=\fIIP\fR[:\fIPORT\fR]"
-The address and UDP port to listen on. Default: 0.0.0.0:1984. If the port is
+The address and UDP port to listen on, IPv4 or IPv6; an IPv6 address
+goes in brackets, as [::1]:1984. A host name is resolved, to its IPv4
+address if it has one. Default: 0.0.0.0:1984. If the port is
 omitted, 1984 is used.
 
 .IP "\fB--daemon\fR"
