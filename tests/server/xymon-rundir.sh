@@ -15,6 +15,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 here=$(dirname "$0")
@@ -31,12 +32,8 @@ work=$(mktempdir); register_cleanup "rm -rf '$work'"
 # runs make in lib/ without the top-level variables, and a stale environ.o
 # would be recompiled with XYMONLOGDIR="" -- the very macro checked below.
 
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-"$CC" $harness_cflags -o "$work/harness" \
-	"$here/xymon-rundir-harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
-	$harness_ldflags 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+build_harness "$work" "$work/harness" \
+	"$here/xymon-rundir-harness.c" libxymoncomm.a
 
 got=$(env -i XYMONRUNDIR="$work/run" XYMONSERVERLOGS="$work/logs" "$work/harness")
 assert_equal "$work/run" "$got" "XYMONRUNDIR set"

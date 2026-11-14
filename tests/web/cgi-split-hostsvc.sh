@@ -14,6 +14,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 
@@ -23,17 +24,11 @@ work=$(mktempdir)
 
 build_xymon_libs "$ROOT" "$work/libbuild.log" libxymon.a
 
-# The configured compile and link flags: libxymon.h pulls in pcre2.h, which
-# sits under /usr/local/include or /usr/pkg/include on the BSDs, and the link
-# needs the matching search path and runtime path.
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-
-# shellcheck disable=SC2086
-"$CC" $harness_cflags -iquote "$ROOT/include" -o "$work/harness" \
-	"$(dirname "$0")/cgi-split-hostsvc-harness.c" "$(xymon_lib "$ROOT" libxymon.a)" \
-	$harness_ldflags 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+# libxymon.h pulls in pcre2.h, which sits under /usr/local/include or
+# /usr/pkg/include on the BSDs; the harness includes lib/cgi.c's private
+# header, so it needs -iquote on include/.
+HARNESS_CFLAGS="-iquote $ROOT/include" build_harness "$work" "$work/harness" \
+	"$(dirname "$0")/cgi-split-hostsvc-harness.c" libxymon.a
 
 "$work/harness" >"$work/run.log" 2>&1 \
 	|| { cat "$work/run.log" >&2; fail "cgi_split_hostsvc() parse/reject behavior is broken"; }
