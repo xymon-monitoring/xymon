@@ -326,7 +326,8 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, strbuffer_
 	struct timeval tmo;
 	char *msgptr = message;
 	char *p;
-	char *rcptbuf = NULL, *rcptip = NULL;
+	char *rcptbuf = NULL, *rcptip = NULL, *resolvehost;
+	struct in_addr rcptaddr;
 	int rcptport = 0;
 	int connretries = SENDRETRIES;
 	SBUF_DEFINE(httpmessage);
@@ -473,7 +474,13 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, strbuffer_
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	snprintf(portstr, sizeof(portstr), "%d", rcptport);
-	if (getaddrinfo(rcptip, portstr, &hints, &addrs) != 0) {
+	/*
+	 * An IPv4 short form such as 127.1, which inet_aton() reads but OpenBSD's
+	 * getaddrinfo() does not, is canonicalised to its dotted quad first; a
+	 * name or an IPv6 address is left for getaddrinfo() to resolve.
+	 */
+	resolvehost = (inet_aton(rcptip, &rcptaddr) ? inet_ntoa(rcptaddr) : rcptip);
+	if (getaddrinfo(resolvehost, portstr, &hints, &addrs) != 0) {
 		snprintf(errordetails+strlen(errordetails), (sizeof(errordetails) - strlen(errordetails)), "Cannot determine IP address of message recipient %s", rcptip);
 		result = XYMONSEND_EIPUNKNOWN;
 		goto done;
