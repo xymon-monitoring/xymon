@@ -30,6 +30,17 @@ STATIC_SBUF_DEFINE(defaultfn);
 STATIC_SBUF_DEFINE(configfn);
 
 
+/*
+ * In the tsearch variant of the tree, xtreeNext() follows links that only
+ * xtreeFirst()'s walk sets up, and an add or a delete leaves them stale. So
+ * walk once after every change to rbconf: a record found by a lookup then
+ * steps on as well as one reached by a walk.
+ */
+static void relink(void)
+{
+	xtreeFirst(rbconf);
+}
+
 static void flushrec(void *k1, void *k2)
 {
 	char *key;
@@ -163,6 +174,7 @@ int load_critconfig(char *fn)
 
 	stackfclose(fd);
 	freestrbuffer(inbuf);
+	relink();
 
 	if (debug) {
 		xtreePos_t handle;
@@ -248,12 +260,24 @@ critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 			result = (critconf_t *)xtreeData(rbconf, handle);
 			if (timecheck(result->starttime, result->endtime, result->crittime)) return result;
 
-			/* Go to the next */
-			handle = xtreeNext(rbconf, handle);
-			if (handle != xtreeEnd(rbconf)) {
-				critconf_t *rec = (critconf_t *)xtreeData(rbconf, handle);
-				if (strncmp(realkey, rec->key, strlen(realkey)) != 0) handle=xtreeEnd(rbconf);
-			}
+			/*
+			 * On to the next time window of the same service, a key that goes
+			 * on with "|" ("KEY|1"). A sibling service with the same prefix
+			 * ("KEYstatus") sorts among them, as the tree's order puts most
+			 * characters before "|", so it is skipped; the first key without
+			 * the prefix ends the search. The key is read from the tree, as a
+			 * clone's data is its origin's name, not a critconf_t.
+			 */
+			do {
+				handle = xtreeNext(rbconf, handle);
+				if (handle != xtreeEnd(rbconf)) {
+					char *nextkey = (char *)xtreeKey(rbconf, handle);
+
+					/* Without case, as the tree orders its keys */
+					if (strncasecmp(realkey, nextkey, strlen(realkey)) != 0) handle = xtreeEnd(rbconf);
+					else if (nextkey[strlen(realkey)] == '|') break;
+				}
+			} while (handle != xtreeEnd(rbconf));
 		}
 		realkey = NULL;
 		break;
@@ -283,7 +307,8 @@ critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 		isclone = 1;
 		while (isclone && (handle != xtreeEnd(rbconf))) {
 			handle = xtreeNext(rbconf, handle);
-			if (handle) {
+			/* xtreeEnd(), not NULL: the array variant ends at -1 */
+			if (handle != xtreeEnd(rbconf)) {
 				realkey = (char *)xtreeKey(rbconf, handle);
 				isclone = (*(realkey + strlen(realkey) - 1) == '=');
 			}
@@ -427,6 +452,7 @@ void addclone_critconfig(char *origin, char *newclone)
 	handle = xtreeFind(rbconf, newkey);
 	if (handle != xtreeEnd(rbconf)) dropclone_critconfig(newclone);
 	xtreeAdd(rbconf, newkey, strdup(origin));
+	relink();
 }
 
 void dropclone_critconfig(char *drop)
@@ -443,6 +469,7 @@ void dropclone_critconfig(char *drop)
 	dropkey = (char *)xtreeKey(rbconf, handle);
 	dropsrc = (char *)xtreeDelete(rbconf, key);
 	xfree(dropkey); xfree(dropsrc);
+	relink();
 
 	xfree(key);
 }
@@ -486,6 +513,7 @@ int delete_critconfig(char *dropkey, int evenifcloned)
 		k1 = xtreeKey(rbconf, handle);
 		k2 = xtreeDelete(rbconf, dropkey);
 		flushrec(k1, k2);
+		relink();
 	}
 
 	return 0;
