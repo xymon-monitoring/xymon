@@ -35,12 +35,18 @@ static timestamp_t *stamphead = NULL;
 static timestamp_t *stamptail = NULL;
 
 
+/*
+ * The monotonic clock wherever the system names CLOCK_MONOTONIC, not where
+ * _POSIX_TIMERS is positive: that macro is about timer_create(), which macOS
+ * and OpenBSD do not have, so it left both on the wall clock although they
+ * have clock_gettime(CLOCK_MONOTONIC).
+ */
 time_t gettimer(void)
 {
 	int res;
 	struct timespec t;
 
-#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+#ifdef CLOCK_MONOTONIC
 	res = clock_gettime(CLOCK_MONOTONIC, &t);
 	if(-1 == res)
 	{
@@ -62,7 +68,7 @@ void getntimer(struct timespec *tp)
 	struct timezone tz;
 	int res;
 
-#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+#ifdef CLOCK_MONOTONIC	/* as in gettimer() */
 	res = clock_gettime(CLOCK_MONOTONIC, tp);
 	if(-1 == res)
 	{
