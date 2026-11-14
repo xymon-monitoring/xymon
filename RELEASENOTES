@@ -284,6 +284,16 @@ The plain version, which the client update and other programs compare, does
 not change. An existing installation keeps its footer files; copy the new
 stdnormal_footer and critical_footer to show the build.
 
+Clients -- macOS memory pressure
+--------------------------------
+
+macOS hosts get a new "swap" column, coloured by the kernel's memory-pressure
+level: green when normal, yellow on warn or an unknown level, red when
+critical. It appears once both the client and the server are upgraded. An alert
+rule that matches every service will page on it; exclude swap in alerts.cfg if
+that is not wanted.
+
+
 Changes for 4.3.31
 ==================
 
