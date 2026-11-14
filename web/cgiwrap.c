@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 	else if (strcmp(cgipgm, "historylog.cgi") == 0)          { cgipgm = "svcstatus.cgi";    addoptl("CGI_SVCHIST_OPTS");     addopt("--historical"); }
 	else if (strcmp(cgipgm, "hostgraphs.cgi") == 0)          {                              addoptl("CGI_HOSTGRAPHS_OPTS");  }
 	else if (strcmp(cgipgm, "hostlist.cgi") == 0)            {                              addoptl("CGI_HOSTLIST_OPTS");    }
-	else if (strcmp(cgipgm, "nongreen.cgi") == 0)            { cgipgm = "statusreport.cgi";                                  addopt("--filter=\"color=red,yellow\""); addopt("--all"); addopt("--heading=\"All non-green systems\""); addopt("--show-column"); addopt("--show-summary"); addopt("--link"); }
+	else if (strcmp(cgipgm, "nongreen.cgi") == 0)            { cgipgm = "statusreport.cgi";                                  addopt("--filter=color=red,yellow"); addopt("--all"); addopt("--heading=All non-green systems"); addopt("--show-column"); addopt("--show-summary"); addopt("--link"); }
 	else if (strcmp(cgipgm, "notifications.cgi") == 0)       {                              addoptl("CGI_NOTIFYLOG_OPTS");   }
 	else if (strcmp(cgipgm, "acknowledgements.cgi") == 0)    {                              addoptl("CGI_ACKNOWLEDGEMENTSLOG_OPTS");   }
 	else if (strcmp(cgipgm, "perfdata.cgi") == 0)            {                              addoptl("CGI_PERFDATA_OPTS");    }
