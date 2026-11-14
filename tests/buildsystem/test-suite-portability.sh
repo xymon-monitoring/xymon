@@ -52,7 +52,7 @@ files=$(
 # probe kept passing over a gap it was there to expose.
 __rule_patterns=()
 report() {
-	local rule=$1 pattern=$2 why=$3 f line
+	local rule=$1 pattern=$2 why=$3 f scan=
 
 	__rule_patterns[${#__rule_patterns[@]}]=$pattern
 	for f in $files; do
@@ -70,15 +70,27 @@ report() {
 		case $rule:$f in
 		  make-tree-probe:"$ROOT/tests/server/install-static-wwwdir.sh") continue ;;
 		esac
-		# Drop comment lines before matching, keeping real line numbers.
-		# "|| true" twice: a grep with no match exits 1, which set -e and
-		# pipefail would take for an error.
-		{ grep -nE "$pattern" "$f" 2>/dev/null || true; } | \
-		{ grep -vE '^[0-9]+:[[:space:]]*#' || true; } | \
-		while IFS= read -r line; do
-			printf '%s\t%s:%s\t%s\n' "$rule" "${f#"$ROOT"/}" "${line%%:*}" "$why" >>"$work/violations"
-		done
+		scan="$scan $f"
 	done
+	# One grep over every file the rule applies to, not one per file: a
+	# process per file and rule was most of this test's time. /dev/null as a
+	# second operand makes every grep name the file on each line, which -H
+	# would too but POSIX does not have. Comment lines are dropped after the
+	# match, keeping real line numbers; a path never holds ":<digits>:", so
+	# the first such field ends it. "|| true": a grep with no match exits 1,
+	# which set -e and pipefail would take for an error.
+	# $scan is a list of paths with no blanks in them, split on purpose.
+	# shellcheck disable=SC2086
+	{ grep -nE "$pattern" $scan /dev/null 2>/dev/null || true; } | \
+	awk -v rule="$rule" -v why="$why" -v root="$ROOT/" '
+		match($0, /:[0-9]+:/) {
+			path = substr($0, 1, RSTART - 1)
+			num = substr($0, RSTART + 1, RLENGTH - 2)
+			text = substr($0, RSTART + RLENGTH)
+			if (text ~ /^[[:space:]]*#/) next
+			if (index(path, root) == 1) path = substr(path, length(root) + 1)
+			printf "%s\t%s:%s\t%s\n", rule, path, num, why
+		}' >>"$work/violations"
 }
 
 # bash 3.2 is the floor: macOS ships it, and the suite runs under
