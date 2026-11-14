@@ -36,23 +36,29 @@ number of retries. With the default options, xymonping takes
 approximately 18 seconds to ping all hosts (tested with an
 input set of 1500 IP addresses).
 
-.SH SUID-ROOT INSTALLATION REQUIRED
-xymonping needs to be installed with suid-root privileges,
-since it requires a "raw socket" to send and receive ICMP
-Echo (ping) packets. IPv6 addresses are pinged on a second
-raw socket, for ICMPv6, opened only when the list holds one.
-When one of the two sockets cannot be opened, its hosts are
-reported as unreachable and the others are still pinged.
+.SH PRIVILEGES
+xymonping needs to send and receive ICMP Echo (ping) packets. IPv6
+addresses are pinged on a second socket, for ICMPv6, opened only when
+the list holds one. When one of the two sockets cannot be opened, its
+hosts are reported as unreachable and the others are still pinged.
 
-xymonping is implemented such that it immediately drops
-the root privileges, and only regains them to perform two
-operations: Obtaining the raw socket, and optionally binding
-it to a specific source address. These operations are performed
-as root, the rest of the time xymonping runs with normal user
-privileges. Specifically, no user-supplied data or network data
-is used while running with root privileges. Therefore it
-should be safe to provide xymonping with the necessary
-suid-root privileges.
+For each, xymonping first tries an unprivileged ICMP socket
+(SOCK_DGRAM). Linux allows one to a user whose group is inside the
+.B net.ipv4.ping_group_range
+sysctl; many distributions set that range to cover every group. To
+allow it everywhere:
+.sp
+.nf
+\&   sysctl \-w net.ipv4.ping_group_range="0 2147483647"
+.fi
+.PP
+If that socket is refused, xymonping falls back to a raw socket, which
+needs root: install xymonping suid-root. It drops root privileges
+immediately, and only regains them to open the raw socket; no
+user-supplied or network data is handled while privileged.
+.PP
+File capabilities work as well: \fBsetcap cap_net_raw+ep\fR on the
+binary lets xymonping open the raw socket without being suid-root.
 
 .SH OPTIONS
 .IP "\fB\-\-retries\fR=\fIN\fR"

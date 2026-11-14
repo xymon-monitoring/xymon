@@ -129,12 +129,26 @@ jobs:
           # no explanation. `|| rc=$?` exempts the runner from bash -e so the
           # mapping is reachable.
           #
-          # xymonping needs raw sockets. This lane is not root, so make the
-          # built binary setuid-root, as a real install does, so its ipv6 test
-          # can run it -- the test itself never calls sudo (#759). A no-op when
-          # the binary was not built or the lane is already root.
+          # xymonping falls back to raw sockets, which need root. This lane is
+          # not root, so make the built binary setuid-root, as a real install
+          # does, so its ipv6 test can run it -- the test itself never calls
+          # sudo (#759). A no-op when the binary was not built or the lane is
+          # already root.
           if [ "$(id -u)" != 0 ] && [ -x xymonnet/xymonping ]; then
             sudo chown 0 xymonnet/xymonping && sudo chmod u+s xymonnet/xymonping
+          fi
+          # xymonping.sh pings through Linux's unprivileged ICMP socket, with
+          # a copy of the binary that has no suid bit. This runner's
+          # net.ipv4.ping_group_range refuses that socket to every group, and
+          # a skip there fails the coverage floor: open it to all groups, and
+          # stop here if that did not take.
+          if [ -r /proc/sys/net/ipv4/ping_group_range ]; then
+            sudo sysctl -w net.ipv4.ping_group_range="0 2147483647" >/dev/null
+            read -r lo hi < /proc/sys/net/ipv4/ping_group_range
+            if [ "$lo" != 0 ] || [ "$hi" != 2147483647 ]; then
+              echo "::error::net.ipv4.ping_group_range is still '$lo $hi': xymonping.sh would skip, and the coverage floor would fail"
+              exit 1
+            fi
           fi
           rc=0
           ./tests/testsuite || rc=$?

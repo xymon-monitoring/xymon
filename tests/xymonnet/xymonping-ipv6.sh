@@ -8,8 +8,9 @@
 # same list, and a result names the address as it was given, so xymonnet
 # finds "0:0:0:0:0:0:0:1" under the spelling its hosts.cfg line used.
 #
-# xymonping takes a raw socket as root, and aborts in get_root() when it has
-# neither root nor the suid bit. The test runs it when it is root, or when the
+# xymonping takes an unprivileged ICMP socket where the system allows one, and
+# a raw one otherwise, which needs root; xymonping.sh pins the unprivileged
+# socket on its own. This test runs it when it is root, or when the
 # binary is setuid-root -- which xymonping(1) tells the admin to arrange when
 # xymonping is the pinger (fping gets the same from its own package), and which
 # the CI build does before the suite. Otherwise it skips, rather than acquiring
