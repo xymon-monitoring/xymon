@@ -41,8 +41,10 @@ make_test_cert "$work/k.pem" "$work/c.pem" \
 # failing on an unfixed build, the payload has become too small for the
 # host's buffers rather than the bug having gone away.
 payload=${XYMON_TEST_SSLWRITE_BYTES:-8000000}
+# The peer is told the count, so it stops reading once it has it rather than
+# after 8 s of silence; a short delivery still waits the 8 s and fails below.
 
-"$work/peer" "$work/c.pem" "$work/k.pem" "$work/got.txt" > "$work/port" &
+"$work/peer" "$work/c.pem" "$work/k.pem" "$work/got.txt" "$payload" > "$work/port" &
 peer=$!
 register_cleanup "stop_process $peer"
 
