@@ -66,6 +66,14 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
       caching of the data, so that data is stored on disk immediately.
     <p class="Pp"></p>
   </dd>
+  <dt id="cachemultiplier"><a class="permalink" href="#cachemultiplier"><b>--cachemultiplier</b>=<i>N</i></a></dt>
+  <dd>To spread the disk writes, xymond_rrd writes one RRD file out of its cache
+      for every 12 updates it receives, whether or not that file's cache is
+      full. This option makes it every 12 times N updates, so that fewer files
+      are written early. N is a whole number, 1 by default; a value that is not
+      a number, or below 1, is reported and ignored.
+    <p class="Pp"></p>
+  </dd>
   <dt id="processor"><a class="permalink" href="#processor"><b>--processor</b>=<i>FILENAME</i></a></dt>
   <dd>xymond_rrd can send a parallel copy of all RRD updates to a single
       external process as a stream on its STDIN. The data will be in a format
@@ -99,6 +107,26 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
       (the --extra-script or --processor options).
     <p class="Pp"></p>
   </dd>
+  <dt id="flushtimeout"><a class="permalink" href="#flushtimeout"><b>--flushtimeout</b>=<i>SECONDS</i></a></dt>
+  <dd>Wait at most this long for a message; when none has come, send the pending
+      modify messages (below) at once. Without this option xymond_rrd waits for
+      the next message however long it takes. SECONDS is from 1 to 86400; any
+      other value is reported and ignored.
+    <p class="Pp">Modify messages are the color changes that DS rules in
+        <i><a href="../man5/analysis.cfg.5.html">analysis.cfg</a>(5)</i> make from RRD data. xymond_rrd collects them and
+        sends them together every 23 seconds, and when it is idle for the time
+        --flushtimeout gives, so such a color change can reach xymond up to 23
+        seconds after the data that caused it.</p>
+    <p class="Pp"></p>
+  </dd>
+  <dt id="bfq"><a class="permalink" href="#bfq"><b>--bfq</b>,
+    <b>--no-bfq</b></a></dt>
+  <dd>xymond_rrd sends its modify messages to xymond through a local message
+      queue when xymond has one for it, and over the network otherwise. With
+      --bfq, xymond_rrd refuses to start when the queue cannot be used; with
+      --no-bfq, it never uses it.
+    <p class="Pp"></p>
+  </dd>
   <dt id="listen"><a class="permalink" href="#listen"><b>--listen</b>=<i>IP:PORT</i>,
     <b>--locator</b>=<i>IP:PORT</i></a></dt>
   <dd>Run as a network worker: accept messages on the TCP address given by
@@ -115,6 +143,16 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
 <p>&#160;</p>
 <h1 class="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
 <dl class="Bl-tag">
+  <dt id="RRDCACHED_ADDRESS"><a class="permalink" href="#RRDCACHED_ADDRESS"><b>RRDCACHED_ADDRESS</b></a></dt>
+  <dd>The socket of a local <i>rrdcached(1),</i> as unix:PATH or /PATH. When it
+      is set, xymond_rrd hands its updates to that daemon instead of writing the
+      RRD files itself, and the daemon writes them in batches; showgraph, given
+      the same setting in <i><a href="../man5/cgioptions.cfg.5.html">cgioptions.cfg</a>(5),</i> has the daemon write each
+      file before drawing it. The daemon must be able to write the files under
+      XYMONRRDS, which xymond_rrd names by their full path. A network address
+      (host:port) is not used: xymond_rrd logs it and writes the files itself.
+    <p class="Pp"></p>
+  </dd>
   <dt id="TEST2RRD"><a class="permalink" href="#TEST2RRD"><b>TEST2RRD</b></a></dt>
   <dd>Defines the mapping between a status-log columnname and the corresponding
       RRD database format. This is normally defined in the

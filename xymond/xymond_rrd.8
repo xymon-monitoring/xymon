@@ -42,6 +42,13 @@ a 30 minute period before being committed to disk in one update.
 This option disables caching of the data, so that data is stored
 on disk immediately.
 
+.IP "\fB\-\-cachemultiplier\fR=\fIN\fR"
+To spread the disk writes, xymond_rrd writes one RRD file out of its cache
+for every 12 updates it receives, whether or not that file's cache is full.
+This option makes it every 12 times N updates, so that fewer files are
+written early. N is a whole number, 1 by default; a value that is not a
+number, or below 1, is reported and ignored.
+
 .IP "\fB\-\-processor\fR=\fIFILENAME\fR"
 xymond_rrd can send a parallel copy of all RRD updates to a single
 external process as a stream on its STDIN. The data will be in a
@@ -72,6 +79,24 @@ Disable the actual writing of RRD files. This is only really useful if
 you send all of the data destined for the RRD files to an external
 processor (the \-\-extra\-script or \-\-processor options).
 
+.IP "\fB\-\-flushtimeout\fR=\fISECONDS\fR"
+Wait at most this long for a message; when none has come, send the pending
+modify messages (below) at once. Without this option xymond_rrd waits for
+the next message however long it takes. SECONDS is from 1 to 86400; any
+other value is reported and ignored.
+
+Modify messages are the color changes that DS rules in
+.I analysis.cfg(5)
+make from RRD data. xymond_rrd collects them and sends them together every
+23 seconds, and when it is idle for the time --flushtimeout gives, so such a
+color change can reach xymond up to 23 seconds after the data that caused it.
+
+.IP "\fB\-\-bfq\fR, \fB\-\-no\-bfq\fR"
+xymond_rrd sends its modify messages to xymond through a local message
+queue when xymond has one for it, and over the network otherwise. With
+\-\-bfq, xymond_rrd refuses to start when the queue cannot be used; with
+\-\-no\-bfq, it never uses it.
+
 .IP "\fB--listen\fR=\fIIP:PORT\fR, \fB--locator\fR=\fIIP:PORT\fR"
 Run as a network worker: accept messages on the TCP address given by
 \fB--listen\fR instead of from
@@ -83,6 +108,18 @@ described in
 .I xymond_locator(8).
 
 .SH ENVIRONMENT
+.IP "\fBRRDCACHED_ADDRESS\fR"
+The socket of a local
+.I rrdcached(1),
+as unix:PATH or /PATH. When it is set, xymond_rrd hands its updates to that
+daemon instead of writing the RRD files itself, and the daemon writes them
+in batches; showgraph, given the same setting in
+.I cgioptions.cfg(5),
+has the daemon write each file before drawing it. The daemon must be able
+to write the files under XYMONRRDS, which xymond_rrd names by their full
+path. A network address (host:port) is not used: xymond_rrd logs it and
+writes the files itself.
+
 .IP "\fBTEST2RRD\fR"
 Defines the mapping between a status-log columnname and the corresponding
 RRD database format. This is normally defined in the

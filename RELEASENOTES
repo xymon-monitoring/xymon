@@ -271,6 +271,20 @@ client data page starts with a "[transport]" section saying how the
 message came ("TLSv1.3 from 192.0.2.1"). That section is added to the page
 only; the client message xymond stores and returns is unchanged.
 
+xymond_rrd -- rrdcached, and new options
+----------------------------------------
+
+xymond_rrd can hand its updates to a local rrdcached: set RRDCACHED_ADDRESS
+to its socket (unix:PATH) in xymonserver.cfg, and in cgioptions.cfg for the
+graphs, which then have the daemon write each file before drawing it. A
+network address is not used; xymond_rrd logs it and writes the files itself.
+
+xymond_rrd now collects the color changes that DS rules in analysis.cfg make
+from RRD data and sends them every 23 seconds, instead of after each
+message, so such a change can show up to 23 seconds later. New options:
+--flushtimeout, --cachemultiplier, --bfq and --no-bfq, described in
+xymond_rrd(8).
+
 build -- a build that is not a release names its commit
 -------------------------------------------------------
 
