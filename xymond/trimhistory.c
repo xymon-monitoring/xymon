@@ -481,7 +481,23 @@ int main(int argc, char *argv[])
 	 * and there is still work that needs no host list: "allevents" is
 	 * recognised by name before any lookup, so it goes on being trimmed.
 	 */
-	loadres = load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	if (dropfiles || droplogs) {
+		/*
+		 * Read the file itself, not xymond's copy ("!"). Given $HOSTSCFG,
+		 * load_hostnames() asks xymond first, which expands the includes
+		 * in its own process: an include that would not open is counted
+		 * there, and the list arrives here looking complete. trimhistory
+		 * runs on the server that holds hosts.cfg, so nothing is lost.
+		 */
+		char *cfg = xgetenv("HOSTSCFG");
+		SBUF_DEFINE(fromfile);
+
+		SBUF_MALLOC(fromfile, strlen(cfg) + 2);
+		snprintf(fromfile, fromfile_buflen, "!%s", (*cfg == '!') ? cfg+1 : cfg);
+		loadres = load_hostnames(fromfile, NULL, get_fqdn());
+		xfree(fromfile);
+	}
+	else loadres = load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	if (dropfiles || droplogs) {
 		if (loadres == -1) {
 			errprintf("Cannot load %s - not dropping anything\n", xgetenv("HOSTSCFG"));
@@ -492,6 +508,22 @@ int main(int argc, char *argv[])
 				  xgetenv("HOSTSCFG"));
 			return 1;
 		}
+	}
+
+	/*
+	 * A host list that is short is worse here than one that is missing: it
+	 * looks entirely normal. "include" says the file is expected to be there
+	 * and "optional include" says it need not be, so a non-optional include
+	 * that would not open leaves us holding a configuration the admin did not
+	 * write - and every host it carried now looks like a host that was
+	 * removed. Deleting on that answer is the loss #512 is about; rendering
+	 * on it is merely incomplete, which is why only this caller asks.
+	 */
+	if ((dropfiles || droplogs) && stackfmissing()) {
+		errprintf("%s is incomplete - %d include(s) could not be read, "
+			  "so hosts are missing from the list. Not dropping anything.\n",
+			  xgetenv("HOSTSCFG"), stackfmissing());
+		return 1;
 	}
 
 	/* First scan the directory for all files, and pick up the ones we want to process */

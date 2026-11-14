@@ -18,6 +18,7 @@ extern char *unlimfgets(strbuffer_t *buffer, FILE *fd);
 extern FILE *stackfopen(char *filename, char *mode, void **v_filelist);
 extern int stackfclose(FILE *fd);
 extern char *stackfgets(strbuffer_t *buffer, char *extraincl);
+extern int stackfmissing(void);
 extern int stackfmodified(void *v_listhead);
 extern void stackfclist(void **v_listhead);
 
