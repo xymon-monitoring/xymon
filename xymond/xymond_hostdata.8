@@ -51,10 +51,20 @@ Default: 5
 .IP "\fB\-\-debug\fR"
 Enable debugging output.
 
+.IP "\fB--listen\fR=\fIIP:PORT\fR, \fB--locator\fR=\fIIP:PORT\fR"
+Run as a network worker: accept messages on the TCP address given by
+\fB--listen\fR instead of from
+.I xymond_channel(8),
+and register with the service locator at \fB--locator\fR; both are needed for
+this mode. \fB--locatorid\fR, \fB--locatorweight\fR and \fB--locatorextra\fR
+tune the registration. All five, and how the locator chooses a server, are
+described in
+.I xymond_locator(8).
+
 .SH FILES
 All of the host data are stored in the $CLIENTLOGS directory,
 by default this is the $XYMONVAR/hostdata/ directory.
 
 .SH "SEE ALSO"
-xymond(8), xymond_channel(8), xymon(7)
+xymond(8), xymond_channel(8), xymon(7), xymond_locator(8)
 
