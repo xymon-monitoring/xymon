@@ -200,7 +200,9 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
       <b>--timeout</b> alone, however large or slow its message, so a big client
       report from a known host is never treated as an attack. Both are applied
       when xymond next has work to do, which on a server receiving reports is
-      all the time.
+      all the time. How many connections xymond holds open at once, all senders
+      together, is XYMOND_MAXCONNECTIONS in <a href="../man5/xymonserver.cfg.5.html">xymonserver.cfg</a>(5): unset, the
+      process's open-file limit less a reserve.
     <p class="Pp"></p>
   </dd>
   <dt id="flap-count"><a class="permalink" href="#flap-count"><b>--flap-count</b>=<i>N</i></a></dt>
