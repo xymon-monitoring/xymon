@@ -38,7 +38,6 @@ static char rcsid[] = "$Id$";
 extern int seq;	/* from xymond_rrd.c */
 
 char *rrddir = NULL;
-int ext_rrd_cache = 0;		/* Has external rrdcached running */
 int use_rrd_cache = 1;         /* Use the cache by default */
 int no_rrd = 0;                /* Write to rrd by default */
 int cacheflushsz = 1;		/* Cache multipler set to 1x by default */
@@ -232,7 +231,7 @@ static void setupinterval(int intvl)
 	rrdinterval = (intvl ? intvl : DEFAULT_RRD_INTERVAL);
 }
 
-static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata, int dosync)
+static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 {
 	/* Flush any updates we've cached */
 	xymon_rrd_argv_item_t updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
@@ -515,7 +514,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	else callcounter = 0;
 
 	/* At this point, we will commit the update to disk */
-	result = flush_cached_updates(cacheitem, rrdvalues, 0);
+	result = flush_cached_updates(cacheitem, rrdvalues);
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
@@ -591,10 +590,7 @@ static void updcache_host_op(char *hostname, int flushfirst, char *flushas)
 			else {
 				snprintf(filedir, sizeof(filedir), "%s%s", rrddir, cacheitem->key);
 			}
-			/* dosync=0: this is the drop/rename path, not a request for
-			 * a reader, and the file is about to move out from under
-			 * any timestamp we would set on it. */
-			if (flush_cached_updates(cacheitem, NULL, 0) != 0) {
+			if (flush_cached_updates(cacheitem, NULL) != 0) {
 				errprintf("Could not flush cached updates for %s before the rename: %s\n",
 					  cacheitem->key, rrd_get_error());
 			}
@@ -642,7 +638,7 @@ void rrdcacheflushall(void)
 		cacheitem = (updcacheitem_t *) xtreeData(updcache, handle);
 		if (cacheitem->valcount > 0) {
 			sprintf(filedir, "%s%s", rrddir, cacheitem->key);
-			flush_cached_updates(cacheitem, NULL, 0);
+			flush_cached_updates(cacheitem, NULL);
 		}
 	}
 }
@@ -707,7 +703,7 @@ void rrdcacheflushhost(char *hostname)
 			if (cacheitem->valcount > 0) {
 				dbgprintf("Flushing cache '%s'\n", cacheitem->key);
 				sprintf(filedir, "%s%s", rrddir, cacheitem->key);
-				flush_cached_updates(cacheitem, NULL, 1);
+				flush_cached_updates(cacheitem, NULL);
 			}
 			/* Fall through */
 

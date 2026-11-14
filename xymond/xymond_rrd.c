@@ -226,10 +226,24 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			processor = strdup(p+1);
 		}
-		else if (strncmp(argv[argi], "--flushtimeout=", 15) == 0) {
-			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
-			timeout->tv_sec = (atoi(argv[argi]+15));
-			timeout->tv_nsec = 0;
+		else if (argnmatch(argv[argi], "--flushtimeout=")) {
+			/*
+			 * Checked, not atoi()'d: 0 makes select() return at once, so
+			 * the loop spins on idle messages, and a negative value makes
+			 * it fail, which stops xymond_rrd.
+			 */
+			static struct timespec flushtmo;
+			char *p = strchr(argv[argi], '=') + 1, *end;
+			long secs = strtol(p, &end, 10);
+
+			if ((end == p) || *end || (secs < 1) || (secs > 86400)) {
+				errprintf("Ignoring %s: the timeout is a number of seconds from 1 to 86400\n", argv[argi]);
+			}
+			else {
+				flushtmo.tv_sec = secs;
+				flushtmo.tv_nsec = 0;
+				timeout = &flushtmo;
+			}
 		}
 		else if (strcmp(argv[argi], "--bfq") == 0) {
 			force_backfeedqueue = 1;
@@ -240,19 +254,18 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-cache") == 0) {
 			use_rrd_cache = 0;
 		}
-		else if (strcmp(argv[argi], "--extcache") == 0) {
-			ext_rrd_cache = 1;
-		}
-		else if (strcmp(argv[argi], "--no-extcache") == 0) {
-			ext_rrd_cache = -1;
-		}
 		else if (strcmp(argv[argi], "--no-rrd") == 0) {
 			no_rrd = 1;
 		}
 		else if (argnmatch(argv[argi], "--cachemultiplier=")) {
-			char *p = strchr(argv[argi], '=');
-			cacheflushsz = atoi(p+1);
-			if (cacheflushsz <= 0) cacheflushsz = 1;
+			/* Bounded so that the multiplication by CACHESZ below fits an int */
+			char *p = strchr(argv[argi], '=') + 1, *end;
+			long mult = strtol(p, &end, 10);
+
+			if ((end == p) || *end || (mult < 1) || (mult > INT_MAX / CACHESZ)) {
+				errprintf("Ignoring %s: the multiplier is a whole number from 1 to %d\n", argv[argi], INT_MAX / CACHESZ);
+			}
+			else cacheflushsz = (int)mult;
 		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
@@ -286,22 +299,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/*
-	 * Has an external rrdcached running? The environment answers when nothing
-	 * on the command line did - but --extcache and --no-extcache are answers,
-	 * and a flag the environment can overrule is not a flag.
-	 */
-	if (ext_rrd_cache == 0) ext_rrd_cache = (getenv("RRDCACHED_ADDRESS") != NULL);
-	else ext_rrd_cache = (ext_rrd_cache > 0);
-	dbgprintf("xymond_rrd: External cache: %d\n", ext_rrd_cache);
-
 	if (exthandler && extids) setup_exthandler(exthandler, extids);
 
 	/* Open up our extcombo message for any modifications */
 	usebackfeedqueue = ((force_backfeedqueue >= 0) ? (sendmessage_init_local() > 0) : 0);
 	if (force_backfeedqueue == 1 && usebackfeedqueue <= 0) {
 		errprintf("Unable to set up backfeed queue when --bfq given; aborting\n");
-		exit(0);
+		exit(1);
 	}
 	if (usebackfeedqueue) combo_start_local(); else combo_start();
 
@@ -431,13 +435,15 @@ int main(int argc, char *argv[])
 			 */
 			while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 
-			/* Make sure any combo of pending modify's goes out */
-			/* if we don't have an idle message timeout set */
-			if (timeout == NULL) {
-				dbgprintf("Flushing any pending extcombo messages\n");
-				combo_end();
-				if (usebackfeedqueue) combo_start_local(); else combo_start();
-			}
+			/*
+			 * Make sure any combo of pending modify's goes out, with or
+			 * without --flushtimeout: its idle message comes only when no
+			 * message has arrived for that long, which a busy channel may
+			 * never allow.
+			 */
+			dbgprintf("Flushing any pending extcombo messages\n");
+			combo_end();
+			if (usebackfeedqueue) combo_start_local(); else combo_start();
 			comboflushtime = now + 23;
 		}
 
