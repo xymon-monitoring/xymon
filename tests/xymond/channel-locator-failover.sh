@@ -116,6 +116,6 @@ for _ in {1..20}; do
 	sleep 1
 done
 [ -n "$got" ] || fail "statuses never reached the standby in 20s, so the channel kept sending to a server that refuses connections: $(cat "$work/logs/channel.log")"
-kill -0 "$chanpid" 2>/dev/null || fail "the channel died: $(cat "$work/logs/channel.log")"
+process_running "$chanpid" || fail "the channel died: $(cat "$work/logs/channel.log")"
 
 pass "xymond_channel fails over to the standby when the active server refuses connections"

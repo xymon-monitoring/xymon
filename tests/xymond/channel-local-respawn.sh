@@ -106,6 +106,6 @@ for _ in {1..24}; do [ "$(starts)" -ge 2 ] && break; status; sleep 0.25; done
 n=$(starts)
 [ "$n" -ge 2 ] \
 	|| fail "the failing local worker was not started again within 6 s, with --respawn-interval=3 and statuses arriving: $(cat "$work/logs/channel.log")"
-kill -0 "$chanpid" 2>/dev/null || fail "the channel died: $(cat "$work/logs/channel.log")"
+process_running "$chanpid" || fail "the channel died: $(cat "$work/logs/channel.log")"
 
 pass "xymond_channel restarts a failing local worker every --respawn-interval seconds and no sooner, once a minute by default"

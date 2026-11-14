@@ -139,7 +139,7 @@ kids=$(ps -A -o pid= -o ppid= | awk -v p="$WPID" '$2 == p { print $1 }')
 kill "$WPID" $kids 2>/dev/null || true
 for _ in {1..100}; do
 	alive=
-	for p in "$WPID" $kids; do kill -0 "$p" 2>/dev/null && alive=1; done
+	for p in "$WPID" $kids; do process_running "$p" && alive=1; done
 	[ -n "$alive" ] || break
 	sleep 0.1
 done
@@ -160,6 +160,6 @@ for _ in {1..250}; do
 	sleep 0.1
 done
 [ -n "$got" ] || fail "statuses sent after the worker restarted did not all arrive within 25s: rrd1=$(ls "$work/rrd1" | tr '\n' ' ') -- $(cat "$work/logs/channel.log")"
-kill -0 "$chanpid" 2>/dev/null || fail "the channel died: $(cat "$work/logs/channel.log")"
+process_running "$chanpid" || fail "the channel died: $(cat "$work/logs/channel.log")"
 
 pass "xymond_channel delivers the messages sent while a locator worker restarts"

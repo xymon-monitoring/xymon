@@ -115,6 +115,6 @@ for _ in {1..50}; do [ "$(attempts)" -ge 2 ] && break; sleep 0.1; done
 n=$(attempts)
 [ "$n" -ge 2 ] \
 	|| fail "the channel did not try the unreachable server again within 6 s, with --reconnect-interval=3 and a message queued: $(cat "$work/logs/channel.log")"
-kill -0 "$chanpid" 2>/dev/null || fail "the channel died: $(cat "$work/logs/channel.log")"
+process_running "$chanpid" || fail "the channel died: $(cat "$work/logs/channel.log")"
 
 pass "xymond_channel retries an unreachable network peer that holds a message every --reconnect-interval seconds, 10 by default"
