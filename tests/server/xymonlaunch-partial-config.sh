@@ -46,11 +46,13 @@ printf 'BEAT_OK=1\n' >"$work/beat.env"
 cat >"$work/beat.sh" <<EOF
 #!/bin/sh
 [ -n "\$BEAT_OK" ] || exit 42
+echo \$\$ >"$work/beat.pid"
 while :; do echo tick >>"$work/beat"; sleep 1; done
 EOF
 cat >"$work/beat2.sh" <<EOF
 #!/bin/sh
 [ -n "\$BEAT_OK" ] || exit 42
+echo \$\$ >"$work/beat2.pid"
 while :; do echo tick >>"$work/beat2"; sleep 1; done
 EOF
 chmod +x "$work/beat.sh" "$work/beat2.sh"
@@ -87,14 +89,16 @@ lines()     { [ -f "$1" ] && wc -l <"$1" || echo 0; }
 # at most once in 5 seconds, so restarting the same one twice in a row would
 # wait that out for nothing.
 restart_task() {
-	local t=$1 pids
-	pids=$(pgrep -f "$work/$t.sh" || true)
-	[ -n "$pids" ] || fail "the supervised task $t was not running, so nothing here is about a restart"
-	# shellcheck disable=SC2086  # a list of pids
-	kill $pids 2>/dev/null || true
-	# The killed processes, not the name: a task not held back is started
-	# again at once, and its new process matches the name too.
-	wait_for 15 "gone $pids" \
+	local t=$1 pid
+	# The pid the task wrote when it started, not its name: a task not held
+	# back is started again at once, and its new process matches the name
+	# too. And not pgrep either, which minimal systems -- the RPM container
+	# images -- do not ship.
+	pid=$(cat "$work/$t.pid" 2>/dev/null || true)
+	[ -n "$pid" ] && kill -0 "$pid" 2>/dev/null \
+		|| fail "the supervised task $t was not running, so nothing here is about a restart"
+	kill "$pid" 2>/dev/null || true
+	wait_for 15 "gone $pid" \
 		|| fail "the supervised task would not die, so nothing here is about a restart"
 	: > "$work/$t"
 	wait_for 30 "[ -s '$work/$t' ]" || fail "$2"
@@ -114,7 +118,7 @@ reload() {
 good_config
 "$XYMONLAUNCH" --config="$cfg" --no-daemon >"$log" 2>&1 &
 launcher=$!
-register_cleanup "stop_process $launcher; pkill -f ${work}/beat.sh 2>/dev/null || true; pkill -f ${work}/beat2.sh 2>/dev/null || true"
+register_cleanup "stop_process $launcher \$(cat '$work/beat.pid' '$work/beat2.pid' 2>/dev/null)"
 
 wait_for 20 '[ -s "$work/beat" ] && [ -s "$work/beat2" ]' \
 	|| fail "the supervised tasks never started: $(cat "$log")"
