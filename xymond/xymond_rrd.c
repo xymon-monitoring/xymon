@@ -199,9 +199,8 @@ int main(int argc, char *argv[])
 	int usebackfeedqueue = 0;
 	int force_backfeedqueue = 0;
 	int comboflushtime;
-	int checkctltime;
-	/* Set before the loop and carried across iterations: the cachectl and
-	 * combo-flush checks read it before the pass refreshes it, so a
+	/* Set before the loop and carried across iterations: the combo-flush
+	 * check reads it before the pass refreshes it, so a
 	 * per-iteration declaration reads an indeterminate value on the way in. */
 	time_t now;
 	struct timespec *timeout = NULL;
@@ -294,7 +293,6 @@ int main(int argc, char *argv[])
 	net_worker_run(ST_RRD, LOC_STICKY, update_locator_hostdata);
 	now = gettimer();
 	comboflushtime = now + 23;
-	checkctltime = now + 4;
 
 
 	setup_signalhandler("xymond_rrd");
@@ -371,11 +369,13 @@ int main(int argc, char *argv[])
 			reloadextprocessor = 0;
 		}
 
-		/* See if we have any cache-control messages pending */
-		if ((checkctltime < now) && (ctlsocket != -1)) {
-		    dbgprintf("xymond_rrd: checking for rrdctl flush messages\n");
-
-		    do {
+		/*
+		 * See if we have any cache-control messages pending. On every pass,
+		 * not on a timer: showgraph waits 0.3 seconds after its request
+		 * before it reads the RRD files, so a request read later than that
+		 * flushes nothing the graph shows.
+		 */
+		do {
 			/* One byte short of the buffer: the terminator goes after it */
 			n = recv(ctlsocket, ctlbuf, sizeof(ctlbuf) - 1, 0);
 			gotcachectlmessage = (n > 0);
@@ -391,10 +391,7 @@ int main(int argc, char *argv[])
 					if (eol) { bol = eol+1; } else bol = NULL;
 				} while (bol && *bol);
 			}
-		    } while (gotcachectlmessage);
-		    checkctltime = now + 7;
-		}
-
+		} while (gotcachectlmessage);
 
 		/* Get next message */
 		msg = get_xymond_message(C_LAST, argv[0], &seq, timeout);
