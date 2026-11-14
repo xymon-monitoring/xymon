@@ -60,6 +60,12 @@ the xymonfetch logs. Note that this is ignored when debugging is enabled.
 .IP "\fB--debug\fR"
 Enable debugging output.
 
+.SH SIGNALS
+.IP "\fBSIGHUP\fR"
+Re-reads hosts.cfg, and re-opens the log file named in
+$XYMONLAUNCH_LOGFILENAME when xymonfetch was started by xymonlaunch
+with LOGFILE.
+
 .SH "SEE ALSO"
 msgcache(8), xymond(8), xymon(7)
 

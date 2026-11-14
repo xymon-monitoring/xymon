@@ -86,7 +86,10 @@ case "$CMD" in
 		rm -f $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	fi
 
-	$XYMONCLIENTHOME/bin/xymonlaunch --config=$XYMONCLIENTHOME/etc/clientlaunch.cfg --log=$XYMONCLIENTHOME/logs/clientlaunch.log --pidfile=$XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+	# --env, as the server's xymon.sh does: the launcher expands each task's
+	# pidfile path itself, so it must read what its tasks read - all of which
+	# already load this file through ENVFILE.
+	$XYMONCLIENTHOME/bin/xymonlaunch --config=$XYMONCLIENTHOME/etc/clientlaunch.cfg --env=$XYMONCLIENTHOME/etc/xymonclient.cfg --log=$XYMONCLIENTHOME/logs/clientlaunch.log --pidfile=$XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	if test $? -eq 0; then
 		echo "Xymon client for $SERVEROSTYPE started on $MACHINEDOTS"
 	else
