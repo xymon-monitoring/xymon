@@ -201,9 +201,8 @@ int main(int argc, char *argv[])
 	int comboflushtime;
 	int checkctltime;
 	/* Set before the loop and carried across iterations: the cachectl and
-	 * release-delay checks at the top of each pass read it before the pass
-	 * refreshes it, so a per-iteration declaration reads an indeterminate
-	 * value on the way in. */
+	 * combo-flush checks read it before the pass refreshes it, so a
+	 * per-iteration declaration reads an indeterminate value on the way in. */
 	time_t now;
 	struct timespec *timeout = NULL;
 
@@ -294,7 +293,6 @@ int main(int argc, char *argv[])
 	/* Do the network stuff if needed */
 	net_worker_run(ST_RRD, LOC_STICKY, update_locator_hostdata);
 	now = gettimer();
-	releasecachedelay = (int)now + 600;
 	comboflushtime = now + 23;
 	checkctltime = now + 4;
 
@@ -376,7 +374,6 @@ int main(int argc, char *argv[])
 		/* See if we have any cache-control messages pending */
 		if ((checkctltime < now) && (ctlsocket != -1)) {
 		    dbgprintf("xymond_rrd: checking for rrdctl flush messages\n");
-		    if (releasecachedelay && (releasecachedelay < (int)now)) releasecachedelay = 0;
 
 		    do {
 			/* One byte short of the buffer: the terminator goes after it */

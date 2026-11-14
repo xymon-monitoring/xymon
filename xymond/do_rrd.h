@@ -20,7 +20,6 @@
 extern char *rrddir;
 extern char *trackmax;
 extern int cacheflushsz;
-extern int releasecachedelay;
 extern int use_rrd_cache;
 extern int ext_rrd_cache;
 extern int no_rrd;

@@ -42,7 +42,6 @@ int ext_rrd_cache = 0;		/* Has external rrdcached running */
 int use_rrd_cache = 1;         /* Use the cache by default */
 int no_rrd = 0;                /* Write to rrd by default */
 int cacheflushsz = 1;		/* Cache multipler set to 1x by default */
-int releasecachedelay = -1;	/* Don't start auto-flushing the cache right away */
 
 static int  processorfd = 0;
 static FILE *processorstream = NULL;
@@ -497,10 +496,12 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 * updates, regardless of how much is in the cache. This gives us a steady 
 	 * (although slightly higher) load.
 	 * This can be modified with the cachemultiplier option to xymond_rrd.
-	 * We wait 10m (roughly 2 PDPs) after startup to give any previous xymond_rrd's
-	 * a chance to flush their caches first (since rrdtool can't handle out-of-order data well).
+	 *
+	 * No delay after startup: a previous xymond_rrd has written its cache
+	 * out before it exits (the flush at shutdown is not forked), so there is
+	 * no older writer to wait for.
 	 */
-	if (use_rrd_cache && ((++callcounter < cacheflushsz) || releasecachedelay) ) {
+	if (use_rrd_cache && (++callcounter < cacheflushsz)) {
 		if (cacheitem && (cacheitem->valcount < CACHESZ)) {
 			cacheitem->updseq[cacheitem->valcount] = seq;
 			cacheitem->updtime[cacheitem->valcount] = updtime;
@@ -655,11 +656,6 @@ void rrdcacheflushhost(char *hostname)
 	time_t now = gettimer();
 
 	if (updcache_keyofs == -1) return;
-
-	if (releasecachedelay) {
-		dbgprintf("Flush of '%s' skipped, too soon after restart of xymond_rrd\n", hostname);
-		return;
-	}
 
 	/* If we get a full path for the key, skip the leading rrddir */
 	if (strncmp(hostname, rrddir, updcache_keyofs) == 0) hostname += updcache_keyofs;
