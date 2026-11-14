@@ -20,11 +20,17 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
+/* What build/build-id.sh wrote: the commit, for a build that is not a release */
+#ifndef XYMONBUILD
+#define XYMONBUILD ""
+#endif
+
 const static struct {
 	char *name;
 	char *val;
 } xymonenv[] = {
 	{ "XYMONDREL", VERSION },
+	{ "XYMONBUILD", XYMONBUILD },
 	{ "XYMONSERVERROOT", XYMONTOPDIR },
 	{ "XYMONSERVERLOGS", XYMONLOGDIR },
 	/* The log directory as configured, not as compiled: xymon_rundir() falls

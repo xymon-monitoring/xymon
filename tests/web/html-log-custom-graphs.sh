@@ -11,6 +11,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 here=$(dirname "$0")
@@ -35,12 +36,8 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 	|| skip "tree not built (run make first; the post-build CI suite covers this)"
 build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a
 
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-"$CC" $harness_cflags -o "$work/harness" \
-	"$here/html-log-custom-graphs-harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
-	$pcre_libs $harness_ldflags 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+build_harness "$work" "$work/harness" \
+	"$here/html-log-custom-graphs-harness.c" libxymoncomm.a
 
 XYMONHOME="$work" \
 CGIBINURL="/xymon-cgi" \

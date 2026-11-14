@@ -49,21 +49,23 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
 </section>
 <section class="Sh">
 <p>&#160;</p>
-<h1 class="Sh" id="SUID-ROOT_INSTALLATION_REQUIRED"><a class="permalink" href="#SUID-ROOT_INSTALLATION_REQUIRED">SUID-ROOT
-  INSTALLATION REQUIRED</a></h1>
-<p class="Pp">xymonping needs to be installed with suid-root privileges, since
-    it requires a &quot;raw socket&quot; to send and receive ICMP Echo (ping)
-    packets. IPv6 addresses are pinged on a second raw socket, for ICMPv6,
-    opened only when the list holds one. When one of the two sockets cannot be
-    opened, its hosts are reported as unreachable and the others are still
-    pinged.</p>
-<p class="Pp">xymonping is implemented such that it immediately drops the root
-    privileges, and only regains them to perform two operations: Obtaining the
-    raw socket, and optionally binding it to a specific source address. These
-    operations are performed as root, the rest of the time xymonping runs with
-    normal user privileges. Specifically, no user-supplied data or network data
-    is used while running with root privileges. Therefore it should be safe to
-    provide xymonping with the necessary suid-root privileges.</p>
+<h1 class="Sh" id="PRIVILEGES"><a class="permalink" href="#PRIVILEGES">PRIVILEGES</a></h1>
+<p class="Pp">xymonping needs to send and receive ICMP Echo (ping) packets. IPv6
+    addresses are pinged on a second socket, for ICMPv6, opened only when the
+    list holds one. When one of the two sockets cannot be opened, its hosts are
+    reported as unreachable and the others are still pinged.</p>
+<p class="Pp">For each, xymonping first tries an unprivileged ICMP socket
+    (SOCK_DGRAM). Linux allows one to a user whose group is inside the
+    <b>net.ipv4.ping_group_range</b> sysctl; many distributions set that range
+    to cover every group. To allow it everywhere:</p>
+<p class="Pp"></p>
+<pre>   sysctl -w net.ipv4.ping_group_range=&quot;0 2147483647&quot;</pre>
+<p class="Pp">If that socket is refused, xymonping falls back to a raw socket,
+    which needs root: install xymonping suid-root. It drops root privileges
+    immediately, and only regains them to open the raw socket; no user-supplied
+    or network data is handled while privileged.</p>
+<p class="Pp">File capabilities work as well: <b>setcap cap_net_raw+ep</b> on
+    the binary lets xymonping open the raw socket without being suid-root.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">
@@ -128,7 +130,7 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
 <dt><a href="#NAME">NAME</a></dt>
 <dt><a href="#SYNOPSIS">SYNOPSIS</a></dt>
 <dt><a href="#DESCRIPTION">DESCRIPTION</a></dt>
-<dt><a href="#SUID-ROOT_INSTALLATION_REQUIRED">SUID-ROOT INSTALLATION REQUIRED</a></dt>
+<dt><a href="#PRIVILEGES">PRIVILEGES</a></dt>
 <dt><a href="#OPTIONS">OPTIONS</a></dt>
 <dt><a href="#SEE_ALSO">SEE ALSO</a></dt>
 </dl>

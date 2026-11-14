@@ -12,6 +12,12 @@
  * neither reports an error -- so only the peer can tell them apart.
  *
  *   argv[1] certificate   argv[2] key   argv[3] output file
+ *   argv[4] (optional) the byte count the test expects
+ *
+ * Draining ends after 8 seconds with nothing to read. With the expected
+ * count given, it ends after 0.2 seconds once that many bytes are in: a
+ * whole delivery is not kept waiting, a surplus sent after it is still
+ * counted, and a short one never reaches the count and waits the 8 s.
  *
  * Prints its port on stdout. Writes the byte count, or "ERR ...", to the
  * output file.
@@ -37,12 +43,13 @@ int main(int argc, char *argv[])
 	SSL *ssl;
 	FILE *out;
 	char buf[65536];
-	long total = 0;
+	long total = 0, expected = 0;
 	int rcvbuf = 8192;
 	fd_set rfds;
 	struct timeval tv;
 
-	if (argc < 4) { fprintf(stderr, "usage: %s CERT KEY OUTFILE\n", argv[0]); return 2; }
+	if (argc < 4) { fprintf(stderr, "usage: %s CERT KEY OUTFILE [EXPECTED]\n", argv[0]); return 2; }
+	if (argc > 4) expected = atol(argv[4]);
 
 	SSL_library_init();
 	SSL_load_error_strings();
@@ -89,7 +96,8 @@ int main(int argc, char *argv[])
 	for (;;) {
 		int n;
 
-		tv.tv_sec = 8; tv.tv_usec = 0;
+		if ((expected > 0) && (total >= expected)) { tv.tv_sec = 0; tv.tv_usec = 200000; }
+		else { tv.tv_sec = 8; tv.tv_usec = 0; }
 		FD_ZERO(&rfds); FD_SET(c, &rfds);
 		if (!SSL_pending(ssl) && (select(c + 1, &rfds, NULL, NULL, &tv) <= 0)) break;
 		n = SSL_read(ssl, buf, sizeof(buf));

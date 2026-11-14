@@ -10,7 +10,8 @@
 # by the user running the test (a staged INSTALLROOT install does not do: its
 # symlinks point outside the stage, and the install's chown follows them):
 #
-#   - unset: gifs, help and menu are real directories in the www tree, as
+#   - unsplit (the static directory is the www tree): gifs, help and menu are
+#     real directories in the www tree, as
 #     they always were, and the installed xymonserver.cfg carries the
 #     XYMONSTATICWWWDIR the tree was built with;
 #   - set: the content is in the static directory, the www tree holds
@@ -89,15 +90,19 @@ built_static=$("$XYMON_MAKE" -s --no-print-directory -C "$ROOT" -f Makefile -f -
 # A tree whose build files do not know the variable installs as if it were unset.
 [ -n "$built_static" ] || built_static=$("$XYMON_MAKE" -s --no-print-directory -C "$ROOT" -f Makefile -f - show-www <<<'show-www: ; @echo $(INSTALLWWWDIR)')
 
-# ---- unset: the content stays in the www tree ---------------------------------
+# ---- unsplit: the content stays in the www tree -------------------------------
+# The static directory is given as the www tree, not left unset: a tree
+# configured with INSTALLSTATICWWWDIR carries it in its Makefile, and leaving
+# it out of the command line would install into that path, outside the scratch
+# tree.
 d=$work/plain
-run_install "$d" "$work/plain.log" \
-	|| fail "the install without INSTALLSTATICWWWDIR failed: $(tail -n 3 "$work/plain.log")"
+run_install "$d" "$work/plain.log" "INSTALLSTATICWWWDIR=$d/var/www" \
+	|| fail "the install with an unsplit www tree failed: $(tail -n 3 "$work/plain.log")"
 for sub in gifs help menu; do
 	[ -d "$d/var/www/$sub" ] && [ ! -L "$d/var/www/$sub" ] \
-		|| fail "without INSTALLSTATICWWWDIR, www/$sub must be a real directory, as before"
+		|| fail "with an unsplit www tree, www/$sub must be a real directory, as before"
 done
-[ -n "$(ls -A "$d/var/www/gifs")" ] || fail "without INSTALLSTATICWWWDIR, www/gifs is empty"
+[ -n "$(ls -A "$d/var/www/gifs")" ] || fail "with an unsplit www tree, www/gifs is empty"
 
 # ---- set: the content moves, the www tree links to it --------------------------
 d=$work/split
@@ -146,4 +151,4 @@ for sub in gifs help menu; do
 		|| fail "make -C xymond or docs alone left www/$sub empty"
 done
 
-pass "INSTALLSTATICWWWDIR installs gifs, help and menu apart and links them back; unset, the www tree is as before"
+pass "INSTALLSTATICWWWDIR installs gifs, help and menu apart and links them back; unsplit, the www tree is as before"

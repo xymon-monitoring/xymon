@@ -1,2 +1,7 @@
 # exclude .gitignore and .github from archive
 .git* export-ignore
+
+# The reference pages of tests/web/xymongen-default-output.sh are xymongen's
+# output byte for byte, trailing spaces included; whitespace checks would
+# report what the test exists to keep.
+tests/fixtures/xymongen-default-output/** -whitespace

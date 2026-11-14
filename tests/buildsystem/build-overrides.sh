@@ -35,8 +35,11 @@ assert_equal "-lpcre2-8 -lssl" "$(XYMON_LDFLAGS='-lpcre2-8 -lssl' xymon_ldflags 
 assert_equal "" "$(xymon_ldflags "$work/tree")" "xymon_ldflags on a tree with no Makefile and no override"
 
 # require_c_buildenv and build_xymon_libs skip by exiting 77, so each runs in
-# a subshell whose exit status is the answer.
-if command -v cc >/dev/null 2>&1 || [ -n "${CC:-}" ]; then
+# a subshell whose exit status is the answer. require_c_buildenv is checked
+# only where its own prerequisites hold -- a working CC and GNU make --
+# since without them it skips before reaching the config.h check: a CC that
+# is merely named, as autopkgtest names a nonexistent one, is not enough (#848).
+if (require_cc; require_gnu_make) >/dev/null 2>&1; then
 	rc=0; (require_c_buildenv "$work/tree") >/dev/null 2>&1 || rc=$?
 	assert_equal 77 "$rc" "require_c_buildenv on a tree with no config.h and no XYMON_CFLAGS"
 	rc=0; (XYMON_CFLAGS="-iquote $work/other"; require_c_buildenv "$work/tree") >/dev/null 2>&1 || rc=$?

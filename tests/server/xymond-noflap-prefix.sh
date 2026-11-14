@@ -27,6 +27,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 
@@ -111,12 +112,8 @@ EOF
 # Link flags come from the build's own Makefile: SSLLIBS is absent on a
 # --no-ssl build, and carries the -L a non-standard OpenSSL prefix needs.
 
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-"$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" \
-	$harness_ldflags 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+build_harness "$work" "$work/harness" \
+	"$work/harness.c" libxymoncomm.a
 
 "$work/harness" "$work/hosts.cfg" 2>"$work/stderr.log" \
 	|| fail "noflap prefix assertions failed:

@@ -20,6 +20,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 here=$(dirname "$0")
@@ -47,12 +48,8 @@ fi
 # and then cannot run, pkgsrc putting libpcre2-8.so under /usr/pkg/lib. PCRE
 # itself is not in there -- it is not one of libxymoncomm's own libraries --
 # so it stays beside it, as the other alerts harnesses spell it.
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-# shellcheck disable=SC2086  # deliberate word-splitting, as the neighbouring tests do
-"$CC" $harness_cflags -o "$harness" "$here/alert-for-holdtime-harness.c" \
-	"$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+build_harness "$work" "$harness" \
+	"$here/alert-for-holdtime-harness.c" libxymoncomm.a
 
 cat >"$work/hosts.cfg" <<'EOF'
 127.0.0.1  testhost  # conn

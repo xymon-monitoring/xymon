@@ -17,6 +17,8 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
+#include <string.h>
 
 #include "libxymon.h"
 
@@ -48,12 +50,17 @@ void drop_root(void)
 				 
 }
 
+/*
+ * Failing to become root leaves the process with the privileges it already
+ * had, which is safe, so it is not fatal: the caller carries on and the
+ * privileged operation fails on its own, with its own error -- as
+ * clientupdate and logfetch expect, and as xymonping needs to report a
+ * refused raw socket, or to use file capabilities instead of suid-root.
+ * Failing to *drop* root, above, is what must stop the program.
+ */
 void get_root(void)
 {
-	if (seteuid(0) != 0) {
-		perror("Failed to get root privileges\n");
-		abort();
-	}
+	if (seteuid(0) != 0) dbgprintf("Not running as root: %s\n", strerror(errno));
 }
 
 #endif

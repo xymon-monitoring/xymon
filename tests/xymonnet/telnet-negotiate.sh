@@ -81,7 +81,9 @@ fi
 # A server that waits is the other case: an IBM i host (pub400.com) sends its
 # options and says nothing until they are answered. The probe answers them,
 # and the next case checks that the greeting then comes.
-printf 'send "\\xff\\xfb\\x03"\nhold 8\n' > "$work/mute.script"
+# Two seconds of silence, then the close: the probe has to give up on the
+# greeting either way, and the close comes well inside its --timeout.
+printf 'send "\\xff\\xfb\\x03"\nhold 2\n' > "$work/mute.script"
 "$work/peer" "$work/mute.script" "$work/mute.obs" > "$work/mute.port" &
 echo $! >> "$work/pid"
 i=0; while [ "$i" -lt 50 ]; do [ -s "$work/mute.port" ] && break; sleep 0.1; i=$((i + 1)); done

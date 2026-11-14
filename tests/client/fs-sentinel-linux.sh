@@ -153,7 +153,7 @@ run_block() {
 		XYMONTMP="$TMP/probe" \
 		XYMONCLIENT_FS_DF_LOCAL_ONLY=no \
 		XYMONCLIENT_FS_INCLUDE_TYPES="zfs virtiofs tmpfs nfs4 sshfs" \
-		XYMONCLIENT_FS_REMOTE_DF_BUDGET=2 \
+		XYMONCLIENT_FS_REMOTE_DF_BUDGET=1 \
 		PATH="${PS_STUB:+$PS_STUB:}$STUB:$PATH" \
 		"$@" \
 		/bin/sh "$_snip" 2>"$TMP/cycle.err" || true
@@ -213,13 +213,40 @@ assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" "the mount stays unavai
 wedged=$(cat "$TMP/probe/df-probe-disk.pid")
 end_stub "$wedged"
 for _ in $(seq 1 100); do
-	kill -0 "$wedged" 2>/dev/null || break
+	process_running "$wedged" || break
 	sleep 0.1
 done
-kill -0 "$wedged" 2>/dev/null && fail "could not end the simulated wedge (pid $wedged)"
+process_running "$wedged" && fail "could not end the simulated wedge (pid $wedged)"
 out=$(run_cycle)
 assert_contains 'srv:/exp 100 50 50 50% /remote/nfs' "$out" \
 	"the remote set must return once the server does"
+
+# --- a recorded df that has exited, and that nothing reaps ---------------------
+# The df left behind is an orphan, and PID 1 reaps it when it exits. Where
+# PID 1 is not an init -- a container, the unshare testbed of #866 -- it stays
+# a zombie: still in the table, so kill -0 answers, and on Linux still named
+# df. The sentinel took that for a df still wedged and kept the mount
+# unavailable for as long as the zombie lasted. It asks fs_procalive() now,
+# which is replaced here like the other primitives, by one that says the
+# process has exited; tests/client/fs-procalive.sh checks what each OS's own
+# says of a real zombie. The recorded pid is this shell's: in the table, and
+# df by the fs_procname stub, as the zombie is.
+cp "$TMP/df-section.sh" "$TMP/df-section-exited.sh"
+fsf_stub_helper "$TMP/df-section-exited.sh" fs_procalive "\treturn 1"
+grep -q 'fs_procalive "\$_old"' "$TMP/df-section-exited.sh" \
+	|| fail "the sentinel no longer asks fs_procalive about the df it recorded, so this case checks nothing"
+rm -f "$TMP"/probe/*
+echo $$ > "$TMP/probe/df-probe-disk.pid"
+out=$(run_block "$TMP/df-section-exited.sh")
+assert_contains 'srv:/exp 100 50 50 50% /remote/nfs' "$out" \
+	"a recorded df that has exited, though still in the process table, must not keep the mount unavailable"
+# And the same pid, when it does still run, is a df still wedged.
+rm -f "$TMP"/probe/*
+echo $$ > "$TMP/probe/df-probe-disk.pid"
+out=$(run_cycle)
+assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
+	"a recorded df that still runs keeps the mount unavailable"
+rm -f "$TMP"/probe/*
 assert_equal '0' "$(find "$TMP/probe" -type f | awk 'END { print NR }')" \
 	"the probe files must be cleaned up after a successful cycle"
 
@@ -252,21 +279,28 @@ while read -r _p; do end_stub "$_p"; done < "$DF_REMOTE"
 
 # --- the same window, forced open ---------------------------------------------
 # The 20-cycle race above only lands in the window by luck. This one holds it
-# open: a mv stub sleeps before renaming the pid into place, and a second cycle
-# runs while the first is stuck there. Publishing the pid used to truncate the
+# open: a mv stub holds before renaming the pid into place, and a second cycle
+# runs while the first is held there; the test releases it afterwards. Publishing the pid used to truncate the
 # file first, so the second cycle read an empty value, took it for a stale
 # entry, removed the files and started a probe of its own -- leaving the first
 # cycle's df running with nothing recording it (@SoundGoof). With the rename,
 # the second cycle reads the whole claim and stands down.
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
+MV_RELEASE="$TMP/mv-release"; rm -f "$MV_RELEASE"
 cat > "$STUB/mv" <<'EOF'
 #!/bin/sh
-# Only the sentinel's publication is delayed; everything else moves at once.
-case "$*" in *df-probe-*.pid) sleep 2 ;; esac
+# Only the sentinel's publication is held, until the test releases it (or
+# 10 s pass, so a failing test cannot leave it waiting); everything else
+# moves at once.
+case "$*" in *df-probe-*.pid)
+	_i=0
+	while [ ! -e "$MV_RELEASE" ] && [ "$_i" -lt 100 ]; do sleep 0.1; _i=$((_i + 1)); done ;;
+esac
 exec /bin/mv "$@"
 EOF
 chmod +x "$STUB/mv"
-run_cycle DF_HANG=1 DF_HANGTIME=6 >/dev/null 2>&1 &
+register_cleanup ": > '$MV_RELEASE'"
+run_cycle DF_HANG=1 DF_HANGTIME=6 MV_RELEASE="$MV_RELEASE" >/dev/null 2>&1 &
 _first=$!
 # Wait for the window rather than a duration: the stub's sleep is running once
 # the remote df has been started and the pid file still holds the claim.
@@ -277,9 +311,10 @@ while [ "$_n" -lt 100 ]; do
 	esac
 	_n=$((_n + 1)); sleep 0.1
 done
-out=$(run_cycle DF_HANG=1 DF_HANGTIME=6)
+out=$(run_cycle DF_HANG=1 DF_HANGTIME=6 MV_RELEASE="$MV_RELEASE")
+: > "$MV_RELEASE"
 wait "$_first" 2>/dev/null || true
-rm -f "$STUB/mv"
+rm -f "$STUB/mv" "$MV_RELEASE"
 assert_equal '1' "$(($(wc -l < "$DF_REMOTE")))" \
 	"a cycle reading the pid file mid-publication must not start a second probe"
 assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
@@ -297,25 +332,32 @@ rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 # Writing to the pidfile directly cannot do that -- the name appears first and
 # the claim lands after -- and an entry read in between is empty, which reads as
 # stale: the second cycle removes it and starts a df on top of the first.
-# An ln stub holds the first claim *after* linking, so a second cycle reads the
-# pidfile inside exactly that window. It must find a whole claim and stand down.
+# An ln stub holds the first claim *after* linking, until the test releases it,
+# so a second cycle reads the pidfile inside exactly that window. It must find
+# a whole claim and stand down.
 rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
-LN_HELD="$TMP/ln-held"; rm -f "$LN_HELD"
+LN_HELD="$TMP/ln-held"; LN_RELEASE="$TMP/ln-release"; rm -f "$LN_HELD" "$LN_RELEASE"
 cat > "$STUB/ln" <<'EOF'
 #!/bin/sh
 # The link itself is real and immediate; only the return from the first claim
-# is held, which is the window a reader has to survive.
+# is held, which is the window a reader has to survive -- until the test
+# releases it, or 10 s pass.
 case "$*" in
 	*df-probe-*.pid)
 		/bin/ln "$@" || exit $?
-		[ -e "$LN_HELD" ] || { : > "$LN_HELD"; sleep 3; }
+		if [ ! -e "$LN_HELD" ]; then
+			: > "$LN_HELD"
+			_i=0
+			while [ ! -e "$LN_RELEASE" ] && [ "$_i" -lt 100 ]; do sleep 0.1; _i=$((_i + 1)); done
+		fi
 		exit 0
 		;;
 esac
 exec /bin/ln "$@"
 EOF
 chmod +x "$STUB/ln"
-( run_cycle DF_HANG=1 DF_HANGTIME=8 LN_HELD="$LN_HELD" > "$TMP/claim-first.out" 2>/dev/null ) &
+register_cleanup ": > '$LN_RELEASE'"
+( run_cycle DF_HANG=1 DF_HANGTIME=8 LN_HELD="$LN_HELD" LN_RELEASE="$LN_RELEASE" > "$TMP/claim-first.out" 2>/dev/null ) &
 _first=$!
 # Wait for the window rather than a duration: it is open once the pidfile exists
 # and the cycle that linked it has not returned from ln yet.
@@ -324,9 +366,10 @@ while [ "$_n" -lt 100 ]; do
 	[ -e "$TMP/probe/df-probe-disk.pid" ] && [ -e "$LN_HELD" ] && break
 	_n=$((_n + 1)); sleep 0.1
 done
-out=$(run_cycle DF_HANG=1 DF_HANGTIME=8 LN_HELD="$LN_HELD")
+out=$(run_cycle DF_HANG=1 DF_HANGTIME=8 LN_HELD="$LN_HELD" LN_RELEASE="$LN_RELEASE")
+: > "$LN_RELEASE"
 wait "$_first" 2>/dev/null || true
-rm -f "$STUB/ln" "$LN_HELD"
+rm -f "$STUB/ln" "$LN_HELD" "$LN_RELEASE"
 assert_equal '1' "$(($(wc -l < "$DF_REMOTE")))" \
 	"a cycle reading the pid file between the link and the claim started a second probe"
 assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
@@ -495,7 +538,7 @@ rm -f "$TMP"/probe/*; : > "$DF_REMOTE"
 # direction would be worse than useless: a probe of a type the admin excluded
 # comes back empty-and-nonzero and reports the mount 100% full.
 out=$(env DF_CALLS="$DF_CALLS" DF_REMOTE="$DF_REMOTE" XYMONTMP="$TMP/probe" \
-	XYMONCLIENT_FS_DF_LOCAL_ONLY=no XYMONCLIENT_FS_REMOTE_DF_BUDGET=2 \
+	XYMONCLIENT_FS_DF_LOCAL_ONLY=no XYMONCLIENT_FS_REMOTE_DF_BUDGET=1 \
 	DF_HANG=1 PATH="$STUB:$PATH" /bin/sh "$TMP/df-section.sh" 2>/dev/null || true)
 assert_not_contains '/remote/nfs' "$out" \
 	"a nodev remote type is excluded before the sentinel sees it, so it is not reported"

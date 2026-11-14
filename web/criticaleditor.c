@@ -38,6 +38,17 @@ static char *rq_clonestoadd = NULL;
 static char *rq_clonestodrop = NULL;
 static int  rq_dropevenifcloned = 0;
 
+/*
+ * A record in critical.cfg is one line, its fields split on '|'. A value
+ * from the form that held '|', CR or LF would add a field or a whole record;
+ * replace those with a space, so a value stays inside its field and its line.
+ */
+static void critsanitize(char *s)
+{
+	for (; (s && *s); s++)
+		if ((*s == '|') || (*s == '\n') || (*s == '\r')) *s = ' ';
+}
+
 static void parse_query(void)
 {
 	cgidata_t *cgidata = cgi_request();
@@ -137,6 +148,13 @@ static void parse_query(void)
 
 		cwalk = cwalk->next;
 	}
+
+	critsanitize(rq_hostname);
+	critsanitize(rq_service);
+	critsanitize(rq_group);
+	critsanitize(rq_extra);
+	critsanitize(rq_clonestoadd);
+	critsanitize(rq_clonestodrop);
 
 	if (editaction == CRITEDIT_UPDATE) {
 		struct tm tm;

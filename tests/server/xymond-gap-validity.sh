@@ -23,6 +23,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 here=$(dirname "$0")
@@ -70,11 +71,8 @@ harness_ldflags=$(xymon_ldflags "$ROOT")
 
 # The configured compile flags, not a hand-rolled -I list: libxymon.h pulls in
 # pcre2.h, which lives under /usr/local/include or /usr/pkg/include on the BSDs.
-harness_cflags=$(xymon_cflags "$ROOT")
-# shellcheck disable=SC2086
-"$CC" $harness_cflags -iquote "$ROOT/lib" -o "$work/harness" \
-	"$work/harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+HARNESS_CFLAGS="-iquote $ROOT/lib" build_harness "$work" "$work/harness" \
+	"$work/harness.c" libxymoncomm.a
 
 "$work/harness" >"$work/out.log" 2>&1 \
 	|| fail "gap-validity assertions failed:

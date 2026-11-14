@@ -96,7 +96,6 @@ printf '127.0.0.1\thealthy\t# dlg\n127.0.0.1\tdegraded\t# dlgbad\n127.0.0.1\tleg
 
 XYMONHOME="$work/home" "$XYMONNET" --no-update --noping --checkresponse \
 	--dns=ip --timeout=15 >"$work/out.txt" 2>&1 || :
-sleep 1
 
 grep -q 'Service dlg on healthy is OK' "$work/out.txt" || fail \
 	"the healthy dialogue did not report the service up:
@@ -177,7 +176,8 @@ fi
 # also matches 205 -- what a server sends when it is CLOSING. Checking the
 # reply to QUIT is what separates a server that is ready from one that is on
 # its way out.
-printf '%s\n' 'send "205 closing connection\r\n"' 'recvany' 'hold 6' > "$work/bye.script"
+# The peer stays silent after QUIT, then closes: no reply to QUIT either way.
+printf '%s\n' 'send "205 closing connection\r\n"' 'recvany' 'hold 1' > "$work/bye.script"
 "$work/peer" "$work/bye.script" "$work/bye.obs" > "$work/bye.port" &
 echo $! >> "$work/pids"
 i=0; while [ "$i" -lt 50 ]; do [ -s "$work/bye.port" ] && break; sleep 0.1; i=$((i + 1)); done

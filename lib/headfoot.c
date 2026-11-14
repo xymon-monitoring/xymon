@@ -871,16 +871,16 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			}
 		}
 		else if (strcmp(t_start, "HOSTFILTER") == 0) {
-			if (hostpattern_text) fprintf(output, "%s", hostpattern_text);
+			if (hostpattern_text) fprintf(output, "%s", htmlattrquoted(hostpattern_text));
 		}
 		else if (strcmp(t_start, "PAGEFILTER") == 0) {
-			if (pagepattern_text) fprintf(output, "%s", pagepattern_text);
+			if (pagepattern_text) fprintf(output, "%s", htmlattrquoted(pagepattern_text));
 		}
 		else if (strcmp(t_start, "IPFILTER") == 0) {
-			if (ippattern_text) fprintf(output, "%s", ippattern_text);
+			if (ippattern_text) fprintf(output, "%s", htmlattrquoted(ippattern_text));
 		}
 		else if (strcmp(t_start, "CLASSFILTER") == 0) {
-			if (classpattern_text) fprintf(output, "%s", classpattern_text);
+			if (classpattern_text) fprintf(output, "%s", htmlattrquoted(classpattern_text));
 		}
 		else if (strcmp(t_start, "HOSTLIST") == 0) {
 			xtreePos_t handle;
