@@ -522,11 +522,14 @@ state_t *load_state(dispsummary_t **sumhead)
 			if (stat(dumpfn, &st) == 0) {
 				fd = fopen(dumpfn, "r");
 				if (fd) {
-					board = (char *)malloc(st.st_size + 1); *board = '\0';
-					if (fread(board, 1, st.st_size, fd)) {
-						fclose(fd);
-						xymondresult = XYMONSEND_OK;
-					}
+					size_t n;
+
+					/* The parsing below runs to the '\0', so it must be there */
+					board = (char *)malloc(st.st_size + 1);
+					n = fread(board, 1, st.st_size, fd);
+					board[n] = '\0';
+					fclose(fd);
+					if (n) xymondresult = XYMONSEND_OK;
 				}
 			}
 		}
