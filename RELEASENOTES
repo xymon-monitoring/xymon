@@ -100,6 +100,21 @@ sender. Each name is now matched as written. The "host" cookie the
 configuration report and the acknowledgement page read is a host name too:
 one with other characters is refused as an invalid filter.
 
+web -- a page's reports show that page only
+-------------------------------------------
+
+The acknowledgement page, the configuration report, the status report, the
+enable/disable page and the metrics report take the page the viewer came from
+(the "pagepath" cookie) and its sub-pages. The page name was a pattern there
+too, so a dot matched any character: from the page ops.eu they listed the
+hosts of opsXeu as well. The acknowledgement page also left out the first '^',
+and the enable/disable page used the name with no anchors at all, so those two
+also listed the hosts of devops.eu, and from the page db those of mongodb. The
+name is now matched as written (as xymond matches pages, without regard to
+case). A page pattern given to the enable/disable or metrics report page is
+still a pattern; the enable/disable page's box now starts with the escaped one
+for the viewer's page.
+
 xymond -- TLS between clients and the daemon
 --------------------------------------------
 

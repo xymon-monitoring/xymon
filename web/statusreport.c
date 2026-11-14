@@ -41,7 +41,12 @@ int main(int argc, char *argv[])
 	int argi, res;
 	sendreturn_t *sres;
 
-	pagefilter = filter = "";
+	/*
+	 * filter stays NULL until an option gives one: --column, --test and
+	 * --filter grow it with realloc(), which a string literal cannot take.
+	 */
+	pagefilter = "";
+	filter = NULL;
 
 	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {
@@ -122,25 +127,21 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!filter) allhosts = 1;
+	/* No --column, --test or --filter: every status of the page, or of every host with --all */
+	if (!filter) filter = "";
 
 	if (!allhosts) {
       		/* Setup the filter we use for the report */
 		cookie = get_cookie("pagepath");
 		if (cookie && *cookie) {
-			pcre2_code *dummy;
-			SBUF_DEFINE(re);
+			/* The page the viewer came from and its sub-pages, the name matched as written */
+			char *re = cgi_pageregex(cookie);
 
-			SBUF_MALLOC(re, 8 + 2*strlen(cookie));
-
-			snprintf(re, re_buflen, "^%s$|^%s/.+", cookie, cookie);
-			dummy = compileregex(re);
-			if (dummy)  {
-				freeregex(dummy);
+			if (re)  {
 				SBUF_MALLOC(pagefilter, 10 + strlen(re));
 				snprintf(pagefilter, pagefilter_buflen, "page=%s", re);
+				xfree(re);
 			}
-			xfree(re);
 		}
 	}
 

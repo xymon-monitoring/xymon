@@ -693,27 +693,21 @@ int main(int argc, char *argv[])
 
 	/* Fetch the list of host+test statuses we currently know about */
 	if (pagepattern) {
-		pcre2_code *dummy;
-		SBUF_DEFINE(re);
+		/* The page the viewer came from and its sub-pages, the name matched as written */
+		char *re = cgi_pageregex(pagepattern);
 
-		SBUF_MALLOC(re, 8 + 2*strlen(pagepattern));
-		snprintf(re, re_buflen, "^%s$|^%s/.+", pagepattern, pagepattern);
-		dummy = compileregex(re);
-		if (dummy) {
-			freeregex(dummy);
-
-			SBUF_MALLOC(xymoncmd, 2*strlen(pagepattern) + 1024);
-			SBUF_MALLOC(procscmd, 2*strlen(pagepattern) + 1024);
-			SBUF_MALLOC(svcscmd, 2*strlen(pagepattern) + 1024);
+		if (re) {
+			SBUF_MALLOC(xymoncmd, strlen(re) + 1024);
+			SBUF_MALLOC(procscmd, strlen(re) + 1024);
+			SBUF_MALLOC(svcscmd, strlen(re) + 1024);
 
 			snprintf(xymoncmd, xymoncmd_buflen, "xymondboard page=%s fields=hostname,testname", re);
 			snprintf(procscmd, procscmd_buflen, "xymondboard page=%s test=procs fields=hostname,msg", re);
 			snprintf(svcscmd,  svcscmd_buflen,  "xymondboard page=%s test=svcs fields=hostname,msg", re);
+			xfree(re);
 		}
 		else
 			patternerror = 1;
-
-		xfree(re);
 	}
 	else if (hostpattern) {
 		/*

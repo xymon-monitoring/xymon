@@ -285,17 +285,13 @@ int main(int argc, char *argv[])
 
 			if (obeycookies && !gotfilter && ((pagename = get_cookie("pagepath")) != NULL)) {
 				if (*pagename) {
-					pcre2_code *dummy;
-					SBUF_DEFINE(re);
+					/* The page the viewer came from and its sub-pages, the name matched as written */
+					char *re = cgi_pageregex(pagename);
 
-					SBUF_MALLOC(re, 8 + strlen(pagename)*2);
-					snprintf(re, re_buflen, "%s$|^%s/.+", pagename, pagename);
-					dummy = compileregex(re);
-					if (dummy) {
-						/* Valid expression */
-						freeregex(dummy);
+					if (re) {
 						SBUF_REALLOC(cmd, 1024 + strlen(cmd) + strlen(re));
 						snprintf(cmd + strlen(cmd), cmd_buflen - strlen(cmd), " page=%s", re);
+						xfree(re);
 						gotfilter = 1;
 					}
 					else {
