@@ -49,8 +49,15 @@ process_running "$other" \
 
 # Exited and never reaped. Where ps tells no state, process_running can only
 # ask kill -0, and there is nothing to check.
+#
+# The child exits only once its parent has become the sleep, which never
+# reaps. Exiting at once, it could be reaped by its shell before the exec, and
+# then there was no zombie: 2 to 4 runs in 100. comm is matched as *sleep, as
+# macOS gives the whole path; the wait is bounded, and the state is polled
+# until it says Z rather than given a fixed time.
+proc_state() { ps -o stat= -p "$1" 2>/dev/null || ps -o s= -p "$1" 2>/dev/null; }
 if ps -o stat= -p $$ >/dev/null 2>&1 || ps -o s= -p $$ >/dev/null 2>&1; then
-	sh -c "sh -c 'exit 0' & echo \$! >'$work/zombie'; exec sleep 30" &
+	sh -c "sh -c 'n=0; while [ \$n -lt 200 ]; do case \$(ps -o comm= -p \$PPID 2>/dev/null) in *sleep) break ;; esac; sleep 0.05; n=\$((n + 1)); done; exit 0' & echo \$! >'$work/zombie'; exec sleep 30" &
 	holder=$!
 	register_cleanup "stop_process -KILL $holder"
 	for _ in $(seq 1 50); do
@@ -58,7 +65,10 @@ if ps -o stat= -p $$ >/dev/null 2>&1 || ps -o s= -p $$ >/dev/null 2>&1; then
 		sleep 0.1
 	done
 	zombie=$(cat "$work/zombie")
-	sleep 0.3
+	for _ in $(seq 1 150); do
+		case $(proc_state "$zombie") in *Z*) break ;; esac
+		sleep 0.1
+	done
 	kill -0 "$zombie" 2>/dev/null || fail "the exited process is not in the table: no zombie to check with"
 	process_running "$zombie" && fail "process_running takes an exited, unreaped process for a running one"
 	process_running "$holder" || fail "process_running does not see the zombie's parent, which runs"
