@@ -284,6 +284,17 @@ The plain version, which the client update and other programs compare, does
 not change. An existing installation keeps its footer files; copy the new
 stdnormal_footer and critical_footer to show the build.
 
+Platforms -- IRIX, OSF1, SCO and GNU/kFreeBSD are removed
+----------------------------------------------------------
+
+The IRIX, OSF1/Tru64, SCO OpenServer/UnixWare and GNU/kFreeBSD ports are
+removed: their build targets, their client scripts, and the server's handling
+of their client reports. A client still reporting from one of these systems is
+no longer analysed or graphed -- xymond_client logs "No client backend for OS"
+-- so its cpu, disk, memory, procs and other client columns go purple. Retire
+such hosts before upgrading the server, or run xymond_client with
+--unknownclientosok to analyse their reports generically.
+
 Changes for 4.3.31
 ==================
 
