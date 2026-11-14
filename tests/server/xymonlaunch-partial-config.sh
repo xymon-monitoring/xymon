@@ -39,8 +39,9 @@ work=$(mktempdir)
 cfg="$work/tasks.cfg"
 log="$work/launch.log"
 
-# beat refuses to run without the variable its ENVFILE provides, so "still
-# ticking" proves the whole configuration survived, not just the command.
+# Each task refuses to run without the variable its ENVFILE provides, so
+# "still ticking" proves the whole configuration survived, not just the
+# command.
 printf 'BEAT_OK=1\n' >"$work/beat.env"
 cat >"$work/beat.sh" <<EOF
 #!/bin/sh
@@ -49,6 +50,7 @@ while :; do echo tick >>"$work/beat"; sleep 1; done
 EOF
 cat >"$work/beat2.sh" <<EOF
 #!/bin/sh
+[ -n "\$BEAT_OK" ] || exit 42
 while :; do echo tick >>"$work/beat2"; sleep 1; done
 EOF
 chmod +x "$work/beat.sh" "$work/beat2.sh"
@@ -61,6 +63,7 @@ good_config() {
 
 [beat2]
 	CMD $work/beat2.sh
+	ENVFILE $work/beat.env
 EOF
 }
 
@@ -76,17 +79,27 @@ wait_for() {
 	return 1
 }
 lines()     { [ -f "$1" ] && wc -l <"$1" || echo 0; }
-# restart_beat MESSAGE -- kill the supervised task and require xymonlaunch to
-# bring it back. The file is emptied *after* the child is gone, so a tick the
-# dying child still had in flight cannot be mistaken for the new one's first:
-# comparing counts across the kill let the old process satisfy the assertion.
-restart_beat() {
-	pkill -f "$work/beat.sh" 2>/dev/null || true
-	wait_for 15 '! pgrep -f "$work/beat.sh" >/dev/null' \
+# restart_task TASK MESSAGE -- kill the supervised TASK and require xymonlaunch
+# to bring it back. The file is emptied *after* the child is gone, so a tick
+# the dying child still had in flight cannot be mistaken for the new one's
+# first: comparing counts across the kill let the old process satisfy the
+# assertion. Each case restarts a different task: xymonlaunch starts one task
+# at most once in 5 seconds, so restarting the same one twice in a row would
+# wait that out for nothing.
+restart_task() {
+	local t=$1 pids
+	pids=$(pgrep -f "$work/$t.sh" || true)
+	[ -n "$pids" ] || fail "the supervised task $t was not running, so nothing here is about a restart"
+	# shellcheck disable=SC2086  # a list of pids
+	kill $pids 2>/dev/null || true
+	# The killed processes, not the name: a task not held back is started
+	# again at once, and its new process matches the name too.
+	wait_for 15 "gone $pids" \
 		|| fail "the supervised task would not die, so nothing here is about a restart"
-	: > "$work/beat"
-	wait_for 30 '[ -s "$work/beat" ]' || fail "$1"
+	: > "$work/$t"
+	wait_for 30 "[ -s '$work/$t' ]" || fail "$2"
 }
+gone() { local p; for p in "$@"; do kill -0 "$p" 2>/dev/null && return 1; done; return 0; }
 grew()      { [ "$(lines "$1")" -gt "$2" ]; }
 loadcount() { grep -c 'Loading tasklist configuration' "$log" || true; }
 loads_gt()  { [ "$(loadcount)" -gt "$1" ]; }
@@ -143,7 +156,7 @@ wait_for 20 "grew $work/beat2 $b2" \
 # so every task then looked newly created and was unlinked. Nothing died and
 # nothing was logged - the children ran on unsupervised, and never came back
 # (@SoundGoof, on Debian 13 and four BSDs).
-restart_beat "a task did not restart after a refused read -- the rollback dropped it from the task list, leaving its child running unsupervised: $(cat "$log")"
+restart_task beat "a task did not restart after a refused read -- the rollback dropped it from the task list, leaving its child running unsupervised: $(cat "$log")"
 
 # A good config is picked up again straight away - refusing one read must not
 # wedge the launcher into ignoring the file.
@@ -163,6 +176,6 @@ assert_contains "Cannot open configuration file" "$(cat "$log")" \
 
 # Nothing proves the task list survived while the tasks keep running -- it is
 # the *next* restart that reads the command back. So force one.
-restart_beat "the task did not restart after a re-read that could not open its config: $(cat "$log")"
+restart_task beat2 "the task did not restart after a re-read that could not open its config: $(cat "$log")"
 
 pass "a config read that stopped short, or could not be opened, is refused whole and leaves every running task alone"
