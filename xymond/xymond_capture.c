@@ -40,6 +40,7 @@ int main(int argc, char *argv[])
 	pcre2_code *extestexp = NULL;
 	pcre2_code *colorexp = NULL;
 	pcre2_match_data *ovector;
+	pcre2_code *match_re = NULL;
 	int err;
 	PCRE2_SIZE errofs;
 	FILE *logfd = stdout;
@@ -76,27 +77,27 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			hostexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
+			hostexp = pcre2_compile(PCRE2STR(exp), strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (hostexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--exhosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			exhostexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
+			exhostexp = pcre2_compile(PCRE2STR(exp), strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (exhostexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--tests=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			testexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
+			testexp = pcre2_compile(PCRE2STR(exp), strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (testexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--extests=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			extestexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
+			extestexp = pcre2_compile(PCRE2STR(exp), strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (extestexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--colors=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
-			colorexp = pcre2_compile(exp, strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
+			colorexp = pcre2_compile(PCRE2STR(exp), strlen(exp), PCRE2_CASELESS, &err, &errofs, NULL);
 			if (colorexp == NULL) printf("Invalid expression '%s'\n", exp);
 		}
 		else if (argnmatch(argv[argi], "--outfile=")) {
@@ -122,13 +123,28 @@ int main(int argc, char *argv[])
 		else {
 			printf("Unknown option %s\n", argv[argi]);
 			printf("Usage: %s [--hosts=EXP] [--tests=EXP] [--exhosts=EXP] [--extests=EXP] [--color=EXP] [--outfile=FILENAME] [--batch-timeout=N] [--batch-command=COMMAND]\n", argv[0]);
+			if (hostexp) pcre2_code_free(hostexp);
+			if (exhostexp) pcre2_code_free(exhostexp);
+			if (testexp) pcre2_code_free(testexp);
+			if (extestexp) pcre2_code_free(extestexp);
+			if (colorexp) pcre2_code_free(colorexp);
 			return 0;
 		}
 	}
 
 	signal(SIGCHLD, SIG_IGN);
 
-	ovector = pcre2_match_data_create(30, NULL);
+	match_re = (hostexp ? hostexp :
+		    exhostexp ? exhostexp :
+		    testexp ? testexp :
+		    extestexp ? extestexp :
+		    colorexp);
+	/* ovector sized from match_re but reused across all patterns below; safe because we only check match/no-match, not substrings */
+	ovector = (match_re ? pcre2_match_data_create_from_pattern(match_re, NULL) : NULL);
+	if (match_re && !ovector) {
+		errprintf("Cannot allocate PCRE match data for capture filtering\n");
+		return 1;
+	}
 	running = 1;
 	while (running) {
 		char *eoln, *restofmsg, *p;
@@ -299,23 +315,23 @@ int main(int argc, char *argv[])
 
 
 			if (hostexp) {
-				match = (pcre2_match(hostexp, hostname, strlen(hostname), 0, 0, ovector, NULL) >= 0);
+				match = (pcre2_match(hostexp, PCRE2STR(hostname), strlen(hostname), 0, 0, ovector, NULL) >= 0);
 				if (!match) continue;
 			}
 			if (exhostexp) {
-				match = (pcre2_match(exhostexp, hostname, strlen(hostname), 0, 0, ovector, NULL) >= 0);
+				match = (pcre2_match(exhostexp, PCRE2STR(hostname), strlen(hostname), 0, 0, ovector, NULL) >= 0);
 				if (match) continue;
 			}
 			if (testexp) {
-				match = (pcre2_match(testexp, testname, strlen(testname), 0, 0, ovector, NULL) >= 0);
+				match = (pcre2_match(testexp, PCRE2STR(testname), strlen(testname), 0, 0, ovector, NULL) >= 0);
 				if (!match) continue;
 			}
 			if (extestexp) {
-				match = (pcre2_match(extestexp, testname, strlen(testname), 0, 0, ovector, NULL) >= 0);
+				match = (pcre2_match(extestexp, PCRE2STR(testname), strlen(testname), 0, 0, ovector, NULL) >= 0);
 				if (match) continue;
 			}
 			if (colorexp) {
-				match = (pcre2_match(colorexp, color, strlen(color), 0, 0, ovector, NULL) >= 0);
+				match = (pcre2_match(colorexp, PCRE2STR(color), strlen(color), 0, 0, ovector, NULL) >= 0);
 				if (!match) continue;
 			}
 
@@ -339,8 +355,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	pcre2_match_data_free(ovector);
+	if (ovector) pcre2_match_data_free(ovector);
 
 	return 0;
 }
-
