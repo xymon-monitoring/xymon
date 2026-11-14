@@ -6,8 +6,9 @@
 # Pins that get_root() is not fatal: run by a user who cannot become root,
 # drop_root() then get_root() returns, the effective uid unchanged, where it
 # used to abort with a core dump. Run as root, as the CI lanes are, the
-# harness checks that root is given back, then gives root up for good and
-# checks the user case too: that case fails without the fix either way.
+# harness checks that root is given back, and a child that gives root up
+# for good checks the user case too: that case fails without the fix either
+# way.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
