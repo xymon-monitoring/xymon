@@ -548,6 +548,15 @@ make_test_cert() {
 	cp "$lib/test-key.pem" "$1" && cp "$lib/test-cert.pem" "$2"
 }
 
+# have_ipv6_loopback -- the host has ::1, read from its interface list (ip or
+# ifconfig) rather than from the program under test: a test that skips when its
+# own daemon cannot bind ::1 would skip on the very bug that stops it binding.
+have_ipv6_loopback() {
+	local ifs
+	ifs=$({ ip -6 addr show 2>/dev/null || true; ifconfig -a 2>/dev/null || true; })
+	grep -qE 'inet6 (addr: ?)?::1([/ %]|$)' <<<"$ifs"
+}
+
 # require_shm_segments N -- skip unless one process may attach N SysV
 # shared-memory segments. xymond attaches one per channel, and macOS ships
 # kern.sysv.shmseg=8 against the nine channels xymond sets up, so a stock Mac

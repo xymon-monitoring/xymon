@@ -53,8 +53,11 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
 <dl class="Bl-tag">
   <dt id="server"><a class="permalink" href="#server"><b>--server</b>=<i>SERVERIP</i>[:<i>PORT</i>][,<i>SERVER2IP</i>[:<i>PORT</i>]]</a></dt>
   <dd>Specifies the IP-address and optional portnumber where incoming messages
-      are forwarded to. The default portnumber is 1984, the standard Xymon port
-      number. If you have setup the normal Xymon environment, you can use
+      are forwarded to: IPv4 or IPv6, or a host name, resolved to its IPv4
+      address if it has one. An IPv6 address with a port goes in brackets, as
+      [2001:db8::1]:1984; without a port it may also be written bare. The
+      default portnumber is 1984, the standard Xymon port number. If you have
+      setup the normal Xymon environment, you can use
       &quot;--server=$XYMSRV&quot;. Up to 3 servers can be specified; incoming
       messages are sent to all of them (except &quot;config&quot;,
       &quot;query&quot; and &quot;download&quot; messages, which go to the LAST
@@ -64,9 +67,10 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
     <p class="Pp"></p>
   </dd>
   <dt id="listen"><a class="permalink" href="#listen"><b>--listen</b>=<i>LOCALIP</i>[:<i>PORT</i>]</a></dt>
-  <dd>Specifies the IP-adress where xymonproxy listens for incoming connections.
-      By default, xymonproxy listens on all IP-addresses assigned to the host.
-      If no portnumber is given, port 1984 will be used.
+  <dd>Specifies the IP-adress where xymonproxy listens for incoming connections,
+      in the same forms as <b>--server</b>. By default, xymonproxy listens on
+      all IPv4 addresses assigned to the host. If no portnumber is given, port
+      1984 will be used.
     <p class="Pp"></p>
   </dd>
   <dt id="timeout"><a class="permalink" href="#timeout"><b>--timeout</b>=<i>N</i></a></dt>

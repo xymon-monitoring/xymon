@@ -73,8 +73,8 @@ char *statename[P_CLEANUP+1] = {
 typedef struct conn_t {
 	enum phase_t state;
 	int csocket;
-	struct sockaddr_in caddr;
-	struct in_addr *clientip, *serverip;
+	struct sockaddr_storage caddr;
+	struct sockaddr *clientip, *serverip;	/* for the log: caddr, and the server connected to */
 	int snum;
 	int ssocket;
 	int conntries, sendtries;
@@ -137,7 +137,44 @@ int overdue(struct timespec *now, struct timespec *limit)
 	else return (now->tv_nsec >= limit->tv_nsec);
 }
 
-static int do_read(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t completedstate)
+/* An address as text, for the log, an IPv6 scope included. One static buffer: one call per message. */
+static char *addrtext(struct sockaddr *sa)
+{
+	static char buf[NI_MAXHOST];
+
+	if (!sa) return "?";
+	if (getnameinfo(sa, (sa->sa_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
+			buf, sizeof(buf), NULL, 0, NI_NUMERICHOST) != 0)
+		sockaddr_text(sa, buf, sizeof(buf));
+	return buf;
+}
+
+/*
+ * The client's address for the messages relayed: no IPv6 scope, which means
+ * nothing beyond this host, and at most INET6_ADDRSTRLEN-1 characters, which
+ * xymond reads in full. The proxy's own report has no client, and says
+ * 0.0.0.0 as it did. One static buffer: one call per message.
+ */
+static char *clienttext(struct sockaddr *sa)
+{
+	static char buf[INET6_ADDRSTRLEN];
+
+	if (!sa || ((sa->sa_family != AF_INET) && (sa->sa_family != AF_INET6))) return "0.0.0.0";
+	return sockaddr_text(sa, buf, sizeof(buf));
+}
+
+/* The port into an IPv4 or IPv6 address, and the length to bind or connect with */
+static socklen_t setport(struct sockaddr_storage *ss, int port)
+{
+	if (ss->ss_family == AF_INET6) {
+		((struct sockaddr_in6 *)ss)->sin6_port = htons(port);
+		return sizeof(struct sockaddr_in6);
+	}
+	((struct sockaddr_in *)ss)->sin_port = htons(port);
+	return sizeof(struct sockaddr_in);
+}
+
+static int do_read(int sockfd, struct sockaddr *addr, conn_t *conn, enum phase_t completedstate)
 {
 	int n;
 
@@ -150,7 +187,7 @@ static int do_read(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t 
 	n = read(sockfd, conn->bufp, (conn->bufsize - conn->buflen - 1));
 	if (n == -1) {
 		/* Error - abort */
-		errprintf("READ error from %s: %s\n", inet_ntoa(*addr), strerror(errno));
+		errprintf("READ error from %s: %s\n", addrtext(addr), strerror(errno));
 		msgs_timeout_from[conn->state]++;
 		conn->state = P_CLEANUP;
 		return -1;
@@ -168,14 +205,14 @@ static int do_read(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t 
 	return 0;
 }
 
-static int do_write(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t completedstate)
+static int do_write(int sockfd, struct sockaddr *addr, conn_t *conn, enum phase_t completedstate)
 {
 	int n;
 
 	n = write(sockfd, conn->bufp, conn->buflen);
 	if (n == -1) {
 		/* Error - abort */
-		errprintf("WRITE error to %s: %s\n", inet_ntoa(*addr), strerror(errno));
+		errprintf("WRITE error to %s: %s\n", addrtext(addr), strerror(errno));
 		msgs_timeout_from[conn->state]++;
 		conn->state = P_CLEANUP;
 		return -1;
@@ -205,7 +242,7 @@ void do_log(conn_t *conn)
 	for (; (*delim && !isspace((unsigned char) *delim)); delim++);
 	savechar = *delim; *delim = '\0';
 
-	errprintf("%s : %s\n", inet_ntoa(*conn->clientip), rq);
+	errprintf("%s : %s\n", addrtext(conn->clientip), rq);
 	*delim = savechar;
 	if (eol) *eol = '\n';
 }
@@ -221,8 +258,11 @@ int main(int argc, char *argv[])
 
 	int sockcount = 0;
 	int lsocket;
-	struct sockaddr_in laddr;
-	struct sockaddr_in xymonserveraddr[MAX_SERVERS];
+	struct sockaddr_storage laddr;
+	socklen_t laddrlen;
+	int listenport = 1984;
+	struct sockaddr_storage xymonserveraddr[MAX_SERVERS];
+	int xymonserverport[MAX_SERVERS];
 	int xymonservercount = 0;
 	int opt;
 	conn_t *chead = NULL;
@@ -245,28 +285,24 @@ int main(int argc, char *argv[])
 	/* Don'T save the output from errprintf() */
 	save_errbuf = 0;
 
-	memset(&laddr, 0, sizeof(laddr));
-	inet_aton("0.0.0.0", (struct in_addr *) &laddr.sin_addr.s_addr);
-	laddr.sin_port = htons(1984);
-	laddr.sin_family = AF_INET;
+	text_sockaddr("0.0.0.0", &laddr);
+	laddrlen = setport(&laddr, listenport);
 
 	for (opt=1; (opt < argc); opt++) {
 		if (argnmatch(argv[opt], "--listen=")) {
-			char *locaddr, *p;
-			int locport;
+			/* IP[:PORT] or [IPv6][:PORT]: an address, an IPv4 short form or a name */
+			char *spec = strchr(argv[opt], '=')+1;
+			char *copy = strdup(spec), *locaddr;
 
-			locaddr = strchr(argv[opt], '=')+1;
-			p = strchr(locaddr, ':');
-			if (p) { locport = atoi(p+1); *p = '\0'; } else locport = 1984;
-
-			memset(&laddr, 0, sizeof(laddr));
-			laddr.sin_port = htons(locport);
-			laddr.sin_family = AF_INET;
-			if (inet_aton(locaddr, (struct in_addr *) &laddr.sin_addr.s_addr) == 0) {
-				errprintf("Invalid listen address %s\n", locaddr);
+			listenport = 1984;
+			locaddr = split_hostport(copy, &listenport);
+			if (!locaddr || !host_sockaddr(locaddr, &laddr, NULL)) {
+				errprintf("Invalid listen address %s\n", spec);
+				xfree(copy);
 				return 1;
 			}
-			if (p) *p = ':';
+			laddrlen = setport(&laddr, listenport);
+			xfree(copy);
 		}
 		else if (argnmatch(argv[opt], "--server=") || argnmatch(argv[opt], "--bbdisplay=")) {
 			char *ips, *ip1;
@@ -276,20 +312,27 @@ int main(int argc, char *argv[])
 
 			ip1 = strtok(ips, ",");
 			while (ip1) {
-				char *p; 
-				p = strchr(ip1, ':');
-				if (p) { port1 = atoi(p+1); *p = '\0'; } else port1 = 1984;
+				/* IP[:PORT] or [IPv6][:PORT]: an address, an IPv4 short form or a name */
+				char *ip, *copy;
 
-				memset(&xymonserveraddr[xymonservercount], 0, sizeof(xymonserveraddr[xymonservercount]));
-				xymonserveraddr[xymonservercount].sin_port = htons(port1);
-				xymonserveraddr[xymonservercount].sin_family = AF_INET;
-				if (inet_aton(ip1, (struct in_addr *) &xymonserveraddr[xymonservercount].sin_addr.s_addr) == 0) {
+				/* The table holds MAX_SERVERS; more would be written past it */
+				if (xymonservercount >= MAX_SERVERS) {
+					errprintf("Only %d servers are used, %s and the rest are ignored\n", MAX_SERVERS, ip1);
+					break;
+				}
+				/* split a copy, so the message names the value given */
+				copy = strdup(ip1);
+				port1 = 1984;
+				ip = split_hostport(copy, &port1);
+				if (!ip || !host_sockaddr(ip, &xymonserveraddr[xymonservercount], NULL)) {
 					errprintf("Invalid remote address %s\n", ip1);
 				}
 				else {
+					setport(&xymonserveraddr[xymonservercount], port1);
+					xymonserverport[xymonservercount] = port1;
 					xymonservercount++;
 				}
-				if (p) *p = ':';
+				xfree(copy);
 				ip1 = strtok(NULL, ",");
 			}
 			xfree(ips);
@@ -349,8 +392,8 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[opt], "--help") == 0) {
 			printf("xymonproxy version %s\n", VERSION);
 			printf("\nOptions:\n");
-			printf("\t--listen=IP[:port]          : Listen address and portnumber\n");
-			printf("\t--server=IP[:port]          : Xymon server address and portnumber\n");
+			printf("\t--listen=IP[:port]          : Listen address and portnumber, [IPv6][:port] too\n");
+			printf("\t--server=IP[:port]          : Xymon server address and portnumber, [IPv6][:port] too\n");
 			printf("\t--report=[HOST.]SERVICE     : Sends a status message about proxy activity\n");
 			printf("\t--timeout=N                 : Communications timeout (seconds)\n");
 			printf("\t--lqueue=N                  : Listen-queue size\n");
@@ -370,7 +413,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Set up a socket to listen for new connections */
-	lsocket = socket(AF_INET, SOCK_STREAM, 0);
+	lsocket = socket(laddr.ss_family, SOCK_STREAM, 0);
 	if (lsocket == -1) {
 		errprintf("Cannot create listen socket (%s)\n", strerror(errno));
 		return 1;
@@ -378,7 +421,7 @@ int main(int argc, char *argv[])
 	opt = 1;
 	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	fcntl(lsocket, F_SETFL, O_NONBLOCK);
-	if (bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
+	if (bind(lsocket, (struct sockaddr *)&laddr, laddrlen) == -1) {
 		errprintf("Cannot bind to listen socket (%s)\n", strerror(errno));
 		return 1;
 	}
@@ -395,14 +438,20 @@ int main(int argc, char *argv[])
 	}
 
 	errprintf("xymonproxy version %s starting\n", VERSION);
-	errprintf("Listening on %s:%d\n", inet_ntoa(laddr.sin_addr), ntohs(laddr.sin_port));
+	{
+		/* "[IPv6]:port" or "IPv4:port" */
+		char *t = addrtext((struct sockaddr *)&laddr);
+		errprintf(strchr(t, ':') ? "Listening on [%s]:%d\n" : "Listening on %s:%d\n", t, listenport);
+	}
 	{
 		int i;
-		char *p;
-		char srvrs[500];
+		char *p, *t;
+		char srvrs[MAX_SERVERS * (NI_MAXHOST + 10)];
 
 		for (i=0, srvrs[0] = '\0', p=srvrs; (i<xymonservercount); i++) {
-			p += sprintf(p, "%s:%d ", inet_ntoa(xymonserveraddr[i].sin_addr), ntohs(xymonserveraddr[i].sin_port));
+			t = addrtext((struct sockaddr *)&xymonserveraddr[i]);
+			p += snprintf(p, sizeof(srvrs) - (p - srvrs), (strchr(t, ':') ? "[%s]:%d " : "%s:%d "),
+				      t, xymonserverport[i]);
 		}
 		errprintf("Sending to Xymon server(s) %s\n", srvrs);
 	}
@@ -465,7 +514,7 @@ int main(int argc, char *argv[])
 			stentry = (conn_t *)calloc(1, sizeof(conn_t));
 			stentry->state = P_REQ_READY;
 			stentry->csocket = stentry->ssocket = -1;
-			stentry->clientip = &stentry->caddr.sin_addr;
+			stentry->clientip = (struct sockaddr *)&stentry->caddr;
 			getntimer(&stentry->arrival);
 			stentry->timelimit.tv_sec = stentry->arrival.tv_sec + timeout;
 			stentry->timelimit.tv_nsec = stentry->arrival.tv_nsec;
@@ -539,7 +588,7 @@ int main(int argc, char *argv[])
 			  case P_REQ_READY:
 				if (cwalk->buflen <= 6) {
 					/* Got an empty request - just drop it */
-					dbgprintf("Dropping empty request from %s\n", inet_ntoa(*cwalk->clientip));
+					dbgprintf("Dropping empty request from %s\n", addrtext(cwalk->clientip));
 					cwalk->state = P_CLEANUP;
 					break;
 				}
@@ -576,10 +625,11 @@ int main(int argc, char *argv[])
 					msgs_other++;
 					cwalk->snum = xymonservercount;
 
-					if ((cwalk->buflen + 40 ) < cwalk->bufsize) {
+					/* "\n[proxy]\nClientIP:" is 18, "\n" and the NUL 2 more */
+					if ((cwalk->buflen + 20 + strlen(clienttext(cwalk->clientip))) < cwalk->bufsize) {
 						int n = sprintf(cwalk->bufp, 
 								"\n[proxy]\nClientIP:%s\n", 
-								inet_ntoa(*cwalk->clientip));
+								clienttext(cwalk->clientip));
 						cwalk->bufp += n;
 						cwalk->buflen += n;
 					}
@@ -629,10 +679,11 @@ int main(int argc, char *argv[])
 						cwalk->buflen = strlen(cwalk->buf);
 						cwalk->bufp = cwalk->buf + cwalk->buflen;
 
-						if ((cwalk->buflen + 50 ) < cwalk->bufsize) {
+						/* "\nStatus message received from " is 30, "\n" and the NUL 2 more */
+						if ((cwalk->buflen + 32 + strlen(clienttext(cwalk->clientip))) < cwalk->bufsize) {
 							int n = sprintf(cwalk->bufp, 
 									"\nStatus message received from %s\n", 
-									inet_ntoa(*cwalk->clientip));
+									clienttext(cwalk->clientip));
 							cwalk->bufp += n;
 							cwalk->buflen += n;
 						}
@@ -667,11 +718,18 @@ int main(int argc, char *argv[])
 							/* Create a duplicate conn_t record for all embedded messages */
 							ctmp = (conn_t *)malloc(sizeof(conn_t));
 							memcpy(ctmp, cwalk, sizeof(conn_t));
-							ctmp->bufsize = BUFSZ_INC*(((6 + strlen(currmsg) + 50) / BUFSZ_INC) + 1);
+							/*
+							 * "combo\n", the status, then "\nStatus message received
+							 * from " (30), the sender's address, "\n" and the NUL:
+							 * 38 bytes besides the two lengths, and the size below is
+							 * always more than 41 besides them. The room is the
+							 * address's: an IPv6 one is longer than 15.
+							 */
+							ctmp->bufsize = BUFSZ_INC*(((strlen(currmsg) + 41 + strlen(clienttext(cwalk->clientip))) / BUFSZ_INC) + 1);
 							ctmp->buf = (char *)malloc(ctmp->bufsize);
-							ctmp->buflen = sprintf(ctmp->buf, 
+							ctmp->buflen = sprintf(ctmp->buf,
 								"combo\n%s\nStatus message received from %s\n", 
-								currmsg, inet_ntoa(*cwalk->clientip));
+								currmsg, clienttext(cwalk->clientip));
 							ctmp->bufp = ctmp->buf + ctmp->buflen;
 							ctmp->state = P_REQ_COMBINING;
 							ctmp->next = chead;
@@ -725,7 +783,7 @@ int main(int argc, char *argv[])
 					break;
 				}
 
-				cwalk->ssocket = socket(AF_INET, SOCK_STREAM, 0);
+				cwalk->ssocket = socket(xymonserveraddr[xymonservercount - cwalk->snum].ss_family, SOCK_STREAM, 0);
 				if (cwalk->ssocket == -1) {
 					dbgprintf("Could not get a socket - will try again\n");
 					break; /* Retry the next time around */
@@ -735,9 +793,10 @@ int main(int argc, char *argv[])
 
 				{
 					int idx = (xymonservercount - cwalk->snum);
-					n = connect(cwalk->ssocket, (struct sockaddr *)&xymonserveraddr[idx], sizeof(xymonserveraddr[idx]));
-					cwalk->serverip = &xymonserveraddr[idx].sin_addr;
-					dbgprintf("Connecting to Xymon server at %s\n", inet_ntoa(*cwalk->serverip));
+					n = connect(cwalk->ssocket, (struct sockaddr *)&xymonserveraddr[idx],
+						    (xymonserveraddr[idx].ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in));
+					cwalk->serverip = (struct sockaddr *)&xymonserveraddr[idx];
+					dbgprintf("Connecting to Xymon server at %s\n", addrtext(cwalk->serverip));
 				}
 
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
@@ -1081,7 +1140,7 @@ int main(int argc, char *argv[])
 			if (FD_ISSET(lsocket, &fdread)) {
 				/* New incoming connection */
 				conn_t *newconn;
-				int caddrsize;
+				socklen_t caddrsize;
 
 				dbgprintf("New connection\n");
 				for (cwalk = chead; (cwalk && (cwalk->state != P_IDLE)); cwalk = cwalk->next);
@@ -1125,7 +1184,7 @@ int main(int argc, char *argv[])
 				}
 				else {
 					msgs_total++;
-					newconn->clientip = &newconn->caddr.sin_addr;
+					newconn->clientip = (struct sockaddr *)&newconn->caddr;
 					sockcount++;
 					fcntl(newconn->csocket, F_SETFL, O_NONBLOCK);
 					newconn->state = P_REQ_READING;

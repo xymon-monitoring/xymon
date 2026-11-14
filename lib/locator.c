@@ -37,7 +37,7 @@ static char rcsid[] = "$Id$";
 
 const char *servicetype_names[] = { "rrd", "client", "alert", "history", "hostdata" };
 
-static struct sockaddr_in myaddr;
+static struct sockaddr_storage myaddr;
 static socklen_t myaddrsz = 0;
 static int locatorsocket = -1;
 
@@ -67,6 +67,13 @@ static int call_locator(char *buf, size_t bufsz)
 	fd_set fds;
 	struct timeval tmo;
 	char *bufp;
+
+	/*
+	 * No socket: locator_init() refused its address or could not open
+	 * one, and the callers that ignore its return value end up here.
+	 * FD_SET() would be handed -1.
+	 */
+	if (locatorsocket < 0) return -1;
 
 	/* First, send the request */
 	bufp = buf;
@@ -219,7 +226,7 @@ char *locator_ping(void)
 
 int locator_init(char *ipport)
 {
-	char *ip, *p;
+	char *copy, *ip;
 	int portnum;
 
 	if (locatorsocket >= 0) {
@@ -227,35 +234,43 @@ int locator_init(char *ipport)
 		locatorsocket = -1;
 	}
 
-	locatorsocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (locatorsocket == -1) {
-		errprintf("Cannot get socket: %s\n", strerror(errno));
+	/*
+	 * IP:PORT, [IPv6]:PORT, or the address alone on XYMONDPORT. A name, or
+	 * an IPv4 short form such as 127.1, is resolved to its IPv4 address if
+	 * it has one: the locator listens on IPv4 unless told otherwise.
+	 */
+	copy = strdup(ipport);
+	portnum = atoi(xgetenv("XYMONDPORT"));
+	ip = split_hostport(copy, &portnum);
+	if (!ip || !host_sockaddr(ip, &myaddr, NULL)) {
+		errprintf("Invalid locator address %s\n", ipport);
+		xfree(copy);
 		return -1;
 	}
-
-	ip = strdup(ipport);
-	p = strchr(ip, ':'); 
-	if (p) {
-		*p = '\0';
-		portnum = atoi(p+1);
+	if (myaddr.ss_family == AF_INET6) {
+		((struct sockaddr_in6 *)&myaddr)->sin6_port = htons(portnum);
+		myaddrsz = sizeof(struct sockaddr_in6);
 	}
 	else {
-		portnum = atoi(xgetenv("XYMONDPORT"));
+		((struct sockaddr_in *)&myaddr)->sin_port = htons(portnum);
+		myaddrsz = sizeof(struct sockaddr_in);
 	}
 
-	memset(&myaddr, 0, sizeof(myaddr));
-	inet_aton(ip, (struct in_addr *) &myaddr.sin_addr.s_addr);
-	myaddr.sin_port = htons(portnum);
-	myaddr.sin_family = AF_INET;
-	myaddrsz = sizeof(myaddr);
-
-	if (connect(locatorsocket, (struct sockaddr *)&myaddr, myaddrsz) == -1) {
-		errprintf("Cannot set target address for locator: %s:%d (%s)\n",
-			ip, portnum, strerror(errno));
-		close(locatorsocket);
-		locatorsocket = -1;
+	locatorsocket = socket(myaddr.ss_family, SOCK_DGRAM, IPPROTO_UDP);
+	if (locatorsocket == -1) {
+		errprintf("Cannot get socket: %s\n", strerror(errno));
+		xfree(copy);
 		return -1;
 	}
+
+	if (connect(locatorsocket, (struct sockaddr *)&myaddr, myaddrsz) == -1) {
+		errprintf("Cannot set target address for locator %s (%s)\n", ipport, strerror(errno));
+		close(locatorsocket);
+		locatorsocket = -1;
+		xfree(copy);
+		return -1;
+	}
+	xfree(copy);
 
 	fcntl(locatorsocket, F_SETFL, O_NONBLOCK);
 
@@ -424,12 +439,12 @@ int main(int argc, char *argv[])
 	char *res;
 
 	if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
-		printf("Usage: %s IP:PORT\n", argv[0]);
+		printf("Usage: %s IP:PORT, or [IPv6]:PORT\n", argv[0]);
 		printf("Talks to the xymond_locator at IP:PORT, then prompts for its commands.\n");
 		return 0;
 	}
 	if (argc < 2) {
-		fprintf(stderr, "Usage: %s IP:PORT\n", argv[0]);
+		fprintf(stderr, "Usage: %s IP:PORT, or [IPv6]:PORT\n", argv[0]);
 		return 1;
 	}
 
