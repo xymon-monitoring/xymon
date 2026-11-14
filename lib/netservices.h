@@ -25,6 +25,7 @@
    of either. Single-step services keep the old path untouched. */
 #define TCP_DIALOGUE   0x0020
 #define TCP_DIALOGUE_BROKEN 0x0040	/* refused when the file was read: do not report OK */
+#define TCP_SNI        0x0200	/* send the tested hostname as the SNI server name */
 
 /* One step of a protocol dialogue, in the order protocols.cfg lists them.
    Kept as a list rather than an array because the parser appends while it
