@@ -235,7 +235,8 @@ maintenance.
   `uname`-guarded. The price is paid on both sides. The extracted region
   must be POSIX shell with portable tool flags (no bashism, no GNU-only
   flag, no `/proc`), and whatever is genuinely per-OS lives in a named
-  helper -- `fs_mounts`, `fs_filesystems`, `fs_procname` -- which the
+  helper -- `fs_mounts`, `fs_filesystems`, `fs_procname`,
+  `fs_procalive` -- which the
   test replaces *by name* with `fsf_stub_helper`, never by rewriting the
   path the helper reads. `tests/buildsystem/test-suite-portability.sh`
   enforces both halves.
@@ -243,7 +244,7 @@ maintenance.
   stubbed test throws them away. Close that with a **native test**: one
   that exercises the real primitive, guarded by `uname` and skipping
   where it doesn't apply (`tests/client/fs-procname.sh`,
-  `tests/client/fs-mounts.sh`). These are the only tests allowed to
+  `tests/client/fs-procalive.sh`, `tests/client/fs-mounts.sh`). These are the only tests allowed to
   guard on `uname`, and they should stay few -- one per primitive, not
   one per behaviour that happens to use it.
 - **A fixture that has to be a real binary is built, not copied.** Use

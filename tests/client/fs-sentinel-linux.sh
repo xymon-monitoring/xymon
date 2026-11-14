@@ -220,6 +220,33 @@ process_running "$wedged" && fail "could not end the simulated wedge (pid $wedge
 out=$(run_cycle)
 assert_contains 'srv:/exp 100 50 50 50% /remote/nfs' "$out" \
 	"the remote set must return once the server does"
+
+# --- a recorded df that has exited, and that nothing reaps ---------------------
+# The df left behind is an orphan, and PID 1 reaps it when it exits. Where
+# PID 1 is not an init -- a container, the unshare testbed of #866 -- it stays
+# a zombie: still in the table, so kill -0 answers, and on Linux still named
+# df. The sentinel took that for a df still wedged and kept the mount
+# unavailable for as long as the zombie lasted. It asks fs_procalive() now,
+# which is replaced here like the other primitives, by one that says the
+# process has exited; tests/client/fs-procalive.sh checks what each OS's own
+# says of a real zombie. The recorded pid is this shell's: in the table, and
+# df by the fs_procname stub, as the zombie is.
+cp "$TMP/df-section.sh" "$TMP/df-section-exited.sh"
+fsf_stub_helper "$TMP/df-section-exited.sh" fs_procalive "\treturn 1"
+grep -q 'fs_procalive "\$_old"' "$TMP/df-section-exited.sh" \
+	|| fail "the sentinel no longer asks fs_procalive about the df it recorded, so this case checks nothing"
+rm -f "$TMP"/probe/*
+echo $$ > "$TMP/probe/df-probe-disk.pid"
+out=$(run_block "$TMP/df-section-exited.sh")
+assert_contains 'srv:/exp 100 50 50 50% /remote/nfs' "$out" \
+	"a recorded df that has exited, though still in the process table, must not keep the mount unavailable"
+# And the same pid, when it does still run, is a df still wedged.
+rm -f "$TMP"/probe/*
+echo $$ > "$TMP/probe/df-probe-disk.pid"
+out=$(run_cycle)
+assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" \
+	"a recorded df that still runs keeps the mount unavailable"
+rm -f "$TMP"/probe/*
 assert_equal '0' "$(find "$TMP/probe" -type f | awk 'END { print NR }')" \
 	"the probe files must be cleaned up after a successful cycle"
 
