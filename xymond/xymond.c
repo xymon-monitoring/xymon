@@ -227,12 +227,12 @@ typedef struct conn_t {
 	unsigned char *buf, *bufp;	/* Message buffer and pointer */
 	size_t buflen, bufsz;		/* Active and maximum length of buffer */
 	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
-	time_t timeout;			/* When the timeout for this connection happens */
+	time_t timeout;			/* When the timeout for this connection happens, on gettimer()'s clock */
 #ifdef HAVE_OPENSSL
 	SSL *ssl;			/* The TLS session of a --tls-listen connection, else NULL */
 	int sslwant;			/* TLSWANT_READ or _WRITE: what TLS waits for, else 0 */
 #endif
-	time_t firstbyte;		/* When it is dropped if it has sent nothing by then */
+	time_t firstbyte;		/* When it is dropped if it has sent nothing by then, on gettimer()'s clock */
 	int heard;			/* Whether it has sent anything yet */
 	int readpass;			/* Been through a read pass: only then does it count toward the pressure total (idle_from) */
 	struct conn_t *next;
@@ -6434,6 +6434,10 @@ static int add_listeners(char *listenspec, int listenport, int listenq, int tls)
  * loop, and also when select() times out: a server with no other traffic
  * must still drop a silent connection after IDLE_FIRSTBYTE, not when the
  * next client happens to wake it.
+ *
+ * The deadlines are on gettimer()'s monotonic clock, not the wall clock: a
+ * step of the wall clock -- NTP, or a VM resynced by its host -- made every
+ * silent connection look expired at once, or kept it past IDLE_FIRSTBYTE.
  */
 static void conn_cleanup(conn_t **head, conn_t **tail)
 {
@@ -6441,7 +6445,7 @@ static void conn_cleanup(conn_t **head, conn_t **tail)
 	time_t now;
 
 	dbgprintf("Beginning conn_t cleanup\n");
-	now = getcurrenttime(NULL);
+	now = gettimer();
 	khead = NULL; cwalk = (*head);
 	while (cwalk) {
 		/* Check for connections that timeout, or that sent nothing in time */
@@ -7383,8 +7387,9 @@ int main(int argc, char *argv[])
 				conntail->buf = (unsigned char *)malloc(conntail->bufsz);
 				conntail->bufp = conntail->buf;
 				conntail->buflen = 0;
-				conntail->timeout = now + conn_timeout;
-				conntail->firstbyte = now + IDLE_FIRSTBYTE;
+				/* On conn_cleanup()'s clock, not the wall clock */
+				conntail->timeout = gettimer() + conn_timeout;
+				conntail->firstbyte = gettimer() + IDLE_FIRSTBYTE;
 				conntail->heard = 0;
 				conntail->readpass = 0;
 				conntail->next = NULL;
