@@ -16,7 +16,10 @@
 # reason; xymonnet's conn test reads an IPv6 ping result (from a stand-in
 # pinger that answers "alive" for every address, so no ICMP is needed); and a
 # TCP test connects to a listener on ::1 -- where ::1 cannot be bound, that
-# last part is reported as not checked.
+# last part is reported as not checked. A 0.0.0.0 host whose name has only an
+# IPv6 address is resolved to it and tested there; xymonnet used to look up
+# IPv4 addresses only. And a URL whose host is an IPv4 short form (127.1) is
+# taken as an address, as inet_aton() took it, not looked up as a name.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -62,7 +65,7 @@ chmod +x "$work/home/bin/fping"
 run() {
 	XYMONHOME="$work/home" XYMONTMP="$work/home/tmp" MACHINE=probe \
 		FPING="$work/home/bin/fping" FPINGOPTS="" \
-		"$XYMONNET" --no-update --ping --report --timeout=3 2>&1 || true
+		"$XYMONNET" --no-update --ping --report --timeout=3 "$@" 2>&1 || true
 }
 
 # --- loading -----------------------------------------------------------------
@@ -83,6 +86,34 @@ out=$(run)
 assert_contains "v6far.conn green" "$out" "the IPv6 host's ping result was not read"
 assert_contains "v4host.conn green" "$out" "the IPv4 host's ping result is no longer read"
 
+# --- a URL host that is an IPv4 short form -----------------------------------
+# An address, not a name to look up: c-ares does not read short forms
+printf '0.0.0.0\tlocalhost\t# http://127.1:1/\n' >"$work/home/etc/hosts.cfg"
+out=$(run --debug)
+assert_contains "Adding tcp test IP=127.1, port=1" "$out" "the URL host 127.1 was not tested"
+assert_not_contains "DNS lookup failed for 127.1" "$out" "the URL host 127.1 was looked up as a name"
+assert_not_contains "DNS error" "$out" "the URL host 127.1 gave a DNS error"
+
+# --- the system resolver (--no-ares) -----------------------------------------
+# A name that resolves and one that does not, through getaddrinfo(): each
+# lookup counted once in the DNS statistics, and the failure logged once
+printf '[demoport]\n   port 1\n' >"$work/home/etc/protocols.cfg"
+printf '0.0.0.0\tlocalhost\t# demoport\n0.0.0.0\tnosuch.invalid\t# demoport\n' >"$work/home/etc/hosts.cfg"
+out=$(run --no-ares --dnslog="$work/dns.log")
+stats=$(sed -n '/DNS statistics/,/dnsresolve/p' <<<"$out" | tr -s ' ')
+if grep -q "successful : 2" <<<"$stats" && ! grep -q 'nosuch.invalid' "$work/dns.log"; then
+	# A resolver that answers for any name (NXDOMAIN rewriting, a wildcard
+	# in a search domain): there is no failure to count
+	nores_partial="the --no-ares counts: this resolver answers for nosuch.invalid"
+else
+	nores_partial=
+	for want in "resolved : 2" "successful : 1" "failed : 1"; do
+		assert_contains "$want" "$stats" "the --no-ares lookups were not counted once each"
+	done
+	[ "$(grep -c 'nosuch.invalid' "$work/dns.log")" = 1 ] \
+		|| fail "the failed --no-ares lookup was not logged once to --dnslog: $(cat "$work/dns.log")"
+fi
+
 # --- TCP ---------------------------------------------------------------------
 "$work/listen" ::1 >"$work/port" 2>"$work/listen.err" &
 register_cleanup "stop_process $!"
@@ -96,4 +127,33 @@ printf '::1\tv6local\t# testip demoport\n' >"$work/home/etc/hosts.cfg"
 out=$(run)
 assert_contains "v6local.demoport green" "$out" "the TCP test did not reach the listener on ::1"
 
-pass "an IPv6 host in hosts.cfg is loaded and tested over TCP and ping, and \"::\" is refused with its reason"
+# --- a name with only an IPv6 address ----------------------------------------
+# A 0.0.0.0 line asks for its name to be resolved: here a name /etc/hosts
+# gives to ::1 alone, such as Debian's ip6-localhost or Fedora's localhost6.
+v6name=$(awk '!/^[ \t]*#/ && NF > 1 {
+	for (i = 2; i <= NF && $i !~ /^#/; i++) if ($1 == "::1") v6[$i] = 1; else other[$i] = 1
+} END { for (n in v6) if (!(n in other)) { print n; exit } }' /etc/hosts 2>/dev/null || true)
+if [ -z "$v6name" ]; then
+	pass_partial "an IPv6 host in hosts.cfg is loaded and tested over TCP and ping, and \"::\" is refused with its reason" \
+		"a name with only an IPv6 address: /etc/hosts has no name for ::1 alone"
+fi
+printf '0.0.0.0\t%s\t# demoport\n' "$v6name" >"$work/home/etc/hosts.cfg"
+out=$(run --debug)
+got=$(first_line "$(sed -n "s/.*Got DNS result for host $v6name : //p" <<<"$out")")
+case $got in
+*.*.*.*)	# the system resolver (DNS, or a stub such as systemd-resolved) gives it an IPv4 address too
+	pass_partial "an IPv6 host in hosts.cfg is loaded and tested over TCP and ping, and \"::\" is refused with its reason" \
+		"a name with only an IPv6 address: this system resolves $v6name to $got as well" ;;
+esac
+# A DNS server that does not answer: the IPv4 lookup times out, and by design
+# no IPv6 lookup follows, whatever /etc/hosts says
+if [ -z "$got" ] && grep -q "DNS lookup failed for $v6name.*Timeout" <<<"$out"; then
+	pass_partial "an IPv6 host in hosts.cfg is loaded and tested over TCP and ping, and \"::\" is refused with its reason" \
+		"a name with only an IPv6 address: the DNS server does not answer here"
+fi
+[ "$got" = ::1 ] || fail "$v6name, a 0.0.0.0 host whose name has only an IPv6 address, was not resolved to ::1 (got '${got:-nothing}')"
+assert_contains "${v6name//./,}.demoport green" "$out" \
+	"$v6name, a 0.0.0.0 host whose name has only an IPv6 address, was not resolved to it"
+
+claim="an IPv6 host in hosts.cfg is loaded and tested over TCP and ping, a 0.0.0.0 host whose name has only an IPv6 address is resolved to it, and \"::\" is refused with its reason"
+if [ -n "$nores_partial" ]; then pass_partial "$claim" "$nores_partial"; else pass "$claim"; fi
