@@ -786,7 +786,9 @@ int main(int argc, char *argv[])
 		hname = nexthost;
 		tname = strchr(nexthost, '|'); if (tname) { *tname = '\0'; tname++; }
 
-		if (criticalonly) {
+		/* A line without a test name (an empty answer) is no test: --critical would read its NULL name */
+		if (!tname) wanted = 0;
+		else if (criticalonly) {
 			void *hinfo = hostinfo(hname);
 			char *alerts = xmh_item(hinfo, XMH_NK);
 
@@ -821,6 +823,7 @@ int main(int argc, char *argv[])
 			nexthost = eoln+1;
 			if (*nexthost == '\0') nexthost = NULL;
 		}
+		else nexthost = NULL;	/* the last line had no newline, or the answer was empty */
 	} while (nexthost);
 
 	if (hostcount > 0) {
