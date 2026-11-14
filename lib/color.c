@@ -52,7 +52,7 @@ int parse_color(char *colortext)
 	inpcolor[7] = '\0';
 	n = strspn(inpcolor, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	inpcolor[n] = '\0';
-	strncat(inpcolor, " ", sizeof(inpcolor)-strlen(inpcolor));
+	strncat(inpcolor, " ", sizeof(inpcolor)-strlen(inpcolor) - 1);
 
 	if (strncasecmp(inpcolor, "green ", 6) == 0) {
 		MEMUNDEFINE(inpcolor);
