@@ -137,7 +137,8 @@ WEDGE
 
 # fsf_stub_helper FILE NAME BODY
 #   Replace a named helper in an extracted block. The clients keep every OS
-#   primitive behind such a helper -- fs_mounts, fs_filesystems, fs_procname --
+#   primitive behind such a helper -- fs_mounts, fs_filesystems, fs_procname,
+#   fs_procalive --
 #   so a test replaces the primitive the same way it replaces a command, by
 #   name, instead of rewriting a path that only one OS has. The block runs as a
 #   script, so the definition is edited in place rather than overridden.
