@@ -51,7 +51,7 @@ sender_t *serverlist = NULL;		/* Who is allowed to grab our messages */
 
 typedef struct conn_t {
 	time_t tstamp;
-	struct sockaddr_in caddr;
+	struct sockaddr_storage caddr;
 	enum { C_CLIENT_CLIENT, C_CLIENT_OTHER, C_SERVER } ctype;
 	enum { C_READING, C_WRITING, C_DONE } action;
 	int sockfd;
@@ -130,9 +130,11 @@ void grabdata(conn_t *conn)
 		int idnum;
 
 		/* Access check */
-		if (!oksender(serverlist, NULL, conn->caddr.sin_addr, STRBUF(conn->msgbuf))) {
+		if (!oksender_addr(serverlist, NULL, (struct sockaddr *)&conn->caddr, STRBUF(conn->msgbuf))) {
+			char text[IP_ADDR_STRLEN];
+
 			errprintf("Rejected pullclient request from %s\n",
-				  inet_ntoa(conn->caddr.sin_addr));
+				  sockaddr_text((struct sockaddr *)&conn->caddr, text, sizeof(text)));
 			conn->action = C_DONE;
 			return;
 		}
@@ -265,7 +267,10 @@ void senddata(conn_t *conn)
 
 	if (n <= -1) {
 		/* Write failure */
-		errprintf("Connection lost during write to %s\n", inet_ntoa(conn->caddr.sin_addr));
+		char text[IP_ADDR_STRLEN];
+
+		errprintf("Connection lost during write to %s\n",
+			  sockaddr_text((struct sockaddr *)&conn->caddr, text, sizeof(text)));
 		conn->action = C_DONE;
 	}
 	else {
@@ -281,34 +286,31 @@ int main(int argc, char *argv[])
 	int listenq = 10;
 	char *pidfile = "msgcache.pid";
 	int lsocket;
-	struct sockaddr_in laddr;
+	struct sockaddr_storage laddr;
+	int listenport = 1984;
+	char text[NI_MAXHOST];	/* an IPv6 address with its scope */
 	struct sigaction sa;
 	int opt;
 
 	/* Don't save the output from errprintf() */
 	save_errbuf = 0;
 
-	memset(&laddr, 0, sizeof(laddr));
-	inet_aton("0.0.0.0", (struct in_addr *) &laddr.sin_addr.s_addr);
-	laddr.sin_port = htons(1984);
-	laddr.sin_family = AF_INET;
+	text_sockaddr("0.0.0.0", &laddr);
 
 	for (opt=1; (opt < argc); opt++) {
 		if (argnmatch(argv[opt], "--listen=")) {
-			char *locaddr, *p;
-			int locport;
+			/* IP[:PORT] or [IPv6][:PORT]: an address, an IPv4 short form or a name */
+			char *spec = strchr(argv[opt], '=')+1;
+			char *copy = strdup(spec), *locaddr;
 
-			locaddr = strchr(argv[opt], '=')+1;
-			p = strchr(locaddr, ':');
-			if (p) { locport = atoi(p+1); *p = '\0'; } else locport = 1984;
-
-			memset(&laddr, 0, sizeof(laddr));
-			laddr.sin_port = htons(locport);
-			laddr.sin_family = AF_INET;
-			if (inet_aton(locaddr, (struct in_addr *) &laddr.sin_addr.s_addr) == 0) {
-				errprintf("Invalid listen address %s\n", locaddr);
+			listenport = 1984;
+			locaddr = split_hostport(copy, &listenport);
+			if (!locaddr || !host_sockaddr(locaddr, &laddr, NULL)) {
+				errprintf("Invalid listen address %s\n", spec);
+				xfree(copy);
 				return 1;
 			}
+			xfree(copy);
 		}
 		else if (argnmatch(argv[opt], "--server=")) {
 			/* Who is allowed to fetch cached messages */
@@ -347,7 +349,9 @@ int main(int argc, char *argv[])
 	}
 
 	/* Set up a socket to listen for new connections */
-	lsocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (laddr.ss_family == AF_INET6) ((struct sockaddr_in6 *)&laddr)->sin6_port = htons(listenport);
+	else ((struct sockaddr_in *)&laddr)->sin_port = htons(listenport);
+	lsocket = socket(laddr.ss_family, SOCK_STREAM, 0);
 	if (lsocket == -1) {
 		errprintf("Cannot create listen socket (%s)\n", strerror(errno));
 		return 1;
@@ -355,7 +359,8 @@ int main(int argc, char *argv[])
 	opt = 1;
 	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	fcntl(lsocket, F_SETFL, O_NONBLOCK);
-	if (bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
+	if (bind(lsocket, (struct sockaddr *)&laddr,
+		 (laddr.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in)) == -1) {
 		errprintf("Cannot bind to listen socket (%s)\n", strerror(errno));
 		return 1;
 	}
@@ -372,7 +377,11 @@ int main(int argc, char *argv[])
 	}
 
 	errprintf("Xymon msgcache version %s starting\n", VERSION);
-	errprintf("Listening on %s:%d\n", inet_ntoa(laddr.sin_addr), ntohs(laddr.sin_port));
+	/* As bound, an IPv6 scope included, bracketed when IPv6 */
+	if (getnameinfo((struct sockaddr *)&laddr, (laddr.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
+			text, sizeof(text), NULL, 0, NI_NUMERICHOST) != 0)
+		sockaddr_text((struct sockaddr *)&laddr, text, sizeof(text));
+	errprintf(strchr(text, ':') ? "Listening on [%s]:%d\n" : "Listening on %s:%d\n", text, listenport);
 
 	if (daemonize) {
 		pid_t childpid;
@@ -529,7 +538,7 @@ int main(int argc, char *argv[])
 		if (FD_ISSET(lsocket, &fdread)) {
 			/* New incoming connection */
 			conn_t *newconn;
-			int caddrsize;
+			socklen_t caddrsize;
 
 			dbgprintf("New connection\n");
 			newconn = calloc(1, sizeof(conn_t));
