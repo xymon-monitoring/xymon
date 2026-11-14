@@ -245,13 +245,15 @@ void add_url_to_dns_queue(char *url)
 	decode_url(url, &weburl);
 
 	if (weburl.proxyurl) {
-		if (weburl.proxyurl->parseerror) return;
-		add_host_to_dns_queue(weburl.proxyurl->host); 
+		if (!weburl.proxyurl->parseerror)
+			add_host_to_dns_queue(weburl.proxyurl->host);
 	}
 	else {
-		if (weburl.desturl->parseerror) return;
-		add_host_to_dns_queue(weburl.desturl->host); 
+		if (!weburl.desturl->parseerror)
+			add_host_to_dns_queue(weburl.desturl->host);
 	}
+
+	free_weburl(&weburl);
 }
 
 

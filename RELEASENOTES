@@ -44,6 +44,15 @@ back into the form as sent. They are now HTML-escaped; a pattern that holds
 "<", ">", "&" or a quote still filters as before, and is only shown
 differently in the page source.
 
+xymonnet -- the memory it leaked on every run is released
+---------------------------------------------------------
+
+Each web test leaked the URL it parsed -- the parsed address, the column
+name, the post and expect data -- and the base64 Authorization header it
+built; each run also leaked one buffer per service and one per test that
+sends no data. xymonnet runs every few minutes, so a long-lived process
+that embeds it grew with the leak. These are now freed.
+
 headfoot -- the host, test and board lists are shown escaped
 -----------------------------------------------------------
 
