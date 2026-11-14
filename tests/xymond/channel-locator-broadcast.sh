@@ -146,7 +146,7 @@ kill -HUP "$(cat "$work/xymond.pid")"
 sleep 2
 assert_not_contains "double free" "$(cat "$work/logs/channel.log")" \
 	"the channel freed a broadcast message twice"
-kill -0 "$chanpid" 2>/dev/null \
+process_running "$chanpid" \
 	|| fail "the channel died on a broadcast message to two workers: $(cat "$work/logs/channel.log")"
 
 # Still delivering: a host not seen before the HUP reaches a worker.

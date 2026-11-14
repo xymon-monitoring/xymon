@@ -156,15 +156,36 @@ register_cleanup() {
 	__XYMON_TESTS_CLEANUP_CMDS+=("$*")
 }
 
+# process_running PID -- true while PID is a process that still executes.
+# kill -0 alone answers for a zombie too: a process that has exited and stays
+# in the table until its parent reaps it. bash reaps its own children, and
+# init those it adopts, but not every PID 1 does -- in a container it may be
+# a program that never waits, and an orphan then stays a zombie for good.
+# Such a process runs no more code and KILL does nothing to it, so it counts
+# as gone. Its state is read from ps, as stat on Linux and the BSDs and as s
+# on Solaris; where ps gives neither, kill -0 decides, as before. Any other
+# state, uninterruptible sleep included, is a process still there.
+process_running() {
+	local st
+	kill -0 "$1" 2>/dev/null || return 1
+	st=$(ps -o stat= -p "$1" 2>/dev/null) || st=$(ps -o s= -p "$1" 2>/dev/null) || st=
+	case $st in
+		*[!\ ]*) ;;
+		*) kill -0 "$1" 2>/dev/null; return ;;
+	esac
+	case $st in *Z*) return 1 ;; esac
+	return 0
+}
+
 # stop_process [-SIGNAL] PID... -- signal each process (TERM by default) and
 # return only once it has exited, sending KILL after 10 seconds. A cleanup
 # that only signals returns while the process still runs -- xymond writes its
 # checkpoint as it exits -- and the temp dir removed next is written into
 # meanwhile: rm -rf fails on it and the dir is left behind. It polls rather
 # than waits, so a process that is not this shell's child, as one read from a
-# pidfile, is followed too; bash reaps its own children as they exit, so
-# they stop answering kill -0 then. Empty and dead PIDs are ignored, so a
-# cleanup can name a process that never started.
+# pidfile, is followed too, and it asks process_running, so one that has
+# exited and waits for a parent to reap it is not waited for. Empty and dead
+# PIDs are ignored, so a cleanup can name a process that never started.
 stop_process() {
 	local sig=-TERM p n
 	case ${1:-} in -*) sig=$1; shift ;; esac
@@ -172,7 +193,7 @@ stop_process() {
 		[ -n "$p" ] || continue
 		kill "$sig" "$p" 2>/dev/null || continue
 		n=0
-		while kill -0 "$p" 2>/dev/null && [ "$n" -le 110 ]; do
+		while process_running "$p" && [ "$n" -le 110 ]; do
 			n=$((n + 1))
 			[ "$n" -eq 100 ] && kill -KILL "$p" 2>/dev/null
 			sleep 0.1

@@ -213,10 +213,10 @@ assert_contains 'srv:/exp - - - 100% /remote/nfs' "$out" "the mount stays unavai
 wedged=$(cat "$TMP/probe/df-probe-disk.pid")
 end_stub "$wedged"
 for _ in $(seq 1 100); do
-	kill -0 "$wedged" 2>/dev/null || break
+	process_running "$wedged" || break
 	sleep 0.1
 done
-kill -0 "$wedged" 2>/dev/null && fail "could not end the simulated wedge (pid $wedged)"
+process_running "$wedged" && fail "could not end the simulated wedge (pid $wedged)"
 out=$(run_cycle)
 assert_contains 'srv:/exp 100 50 50 50% /remote/nfs' "$out" \
 	"the remote set must return once the server does"
