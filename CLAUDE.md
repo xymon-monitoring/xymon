@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<!-- Copyright (C) 2026 Bruno Manzoni -->
 @AGENTS.md
 
 The line above imports `AGENTS.md`, which holds the instructions for coding
