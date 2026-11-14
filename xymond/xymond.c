@@ -37,6 +37,8 @@ static char rcsid[] = "$Id$";
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ... */
 #endif
+#include <poll.h>
+#include <sys/resource.h>
 #include <errno.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -235,6 +237,7 @@ typedef struct conn_t {
 	time_t firstbyte;		/* When it is dropped if it has sent nothing by then */
 	int heard;			/* Whether it has sent anything yet */
 	int readpass;			/* Been through a read pass: only then does it count toward the pressure total (idle_from) */
+	int pollidx;			/* Its slot in the poll() array this pass, -1 when it is not polled */
 	struct conn_t *next;
 } conn_t;
 
@@ -251,16 +254,18 @@ typedef struct conn_t {
  * for a while too: a TLS client connects, then sets up its context, then
  * sends. Many such clients behind one address, reporting in the same
  * second, are a burst, not an attack, and below IDLE_PRESSURE nothing is
- * refused. IDLE_PRESSURE is a quarter of the 1024 descriptors select()
- * handles; IDLE_PER_SENDER keeps the senders needed to fill the rest at
- * (1024 - IDLE_PRESSURE) / IDLE_PER_SENDER, about 48.
+ * refused. IDLE_PRESSURE is a quarter of the 1024 connections xymond
+ * was sized for; IDLE_PER_SENDER keeps the senders needed to fill the rest
+ * at (1024 - IDLE_PRESSURE) / IDLE_PER_SENDER, about 48.
  *
- * select() handles FD_SETSIZE descriptors and not one more: FD_SET on a
- * larger number writes past the set, and select() then fails with EBADF,
- * which ends xymond. A connection whose descriptor is at or above it is
- * refused at accept() instead. The build asks every platform for 1024
- * (build/Makefile.NetBSD, where the default is 256).
+ * How many connections may be open at once is MAXCONNECTIONS: from
+ * XYMOND_MAXCONNECTIONS in xymonserver.cfg, else what the descriptor
+ * limit leaves after a reserve for files, channels and listeners. A
+ * connection past it is refused at accept(). The loop polls with poll(),
+ * so no FD_SETSIZE bounds it: the limit is the process's, and the
+ * administrator's.
  */
+#define MAXCONNECTIONS_RESERVE 64	/* descriptors kept back from the limit for files, channels and listeners */
 #define IDLE_FIRSTBYTE 5
 #define IDLE_PRESSURE 256
 #define IDLE_PER_SENDER 16
@@ -4114,7 +4119,7 @@ static void tls_failed(conn_t *c, char *what, int err)
 
 /*
  * One read, as in plaintext: TLS takes one record at a time off the socket,
- * so what is left of the message, and its close_notify, still wakes select().
+ * so what is left of the message, and its close_notify, still wakes poll().
  * Returns 1 when the client's close_notify ended the message, 0 to wait for
  * more, -1 when the connection was dropped.
  */
@@ -6305,6 +6310,80 @@ typedef struct xymond_listener_t {
 static xymond_listener_t *listeners = NULL;
 static int listener_count = 0;
 
+static int maxconnections = 0;		/* Connections open at once, at most; see MAXCONNECTIONS_RESERVE */
+static int conncount = 0;		/* Connections in the connhead list, dead ones included until purged */
+
+/* The poll() array, grown to the connections of the pass; listeners take the first slots */
+static struct pollfd *pollfds = NULL;
+static int pollfds_size = 0;
+
+/* select() semantics on a slot: an error or a hangup wakes a reader and a writer alike */
+#define POLL_READY_R(idx) (((idx) >= 0) && (pollfds[idx].revents & (POLLIN | POLLHUP | POLLERR | POLLNVAL)))
+#define POLL_READY_W(idx) (((idx) >= 0) && (pollfds[idx].revents & (POLLOUT | POLLHUP | POLLERR | POLLNVAL)))
+
+/* Append one descriptor to the poll() array, growing it when full; returns its slot */
+static int pollfd_add(int count, int fd, short events)
+{
+	if (count >= pollfds_size) {
+		int newsize = (pollfds_size ? 2 * pollfds_size : 64);
+		struct pollfd *grown = (struct pollfd *)realloc(pollfds, newsize * sizeof(struct pollfd));
+
+		if (!grown) {
+			errprintf("Out of memory growing the poll() array to %d\n", newsize);
+			return -1;
+		}
+		pollfds = grown;
+		pollfds_size = newsize;
+	}
+	pollfds[count].fd = fd;
+	pollfds[count].events = events;
+	pollfds[count].revents = 0;
+	return count;
+}
+
+/*
+ * The connection limit: XYMOND_MAXCONNECTIONS when set, else the soft
+ * descriptor limit less a reserve. A value the process cannot honour is
+ * brought down to what it can, and one that is not a number above 0 gives
+ * the default; both are logged. A tuning setting with a safe default must
+ * not stop xymond, and with it the alerts that would report the mistake.
+ */
+static void set_maxconnections(void)
+{
+	struct rlimit rl;
+	long ceiling = 1024;
+	char *setting = xgetenv("XYMOND_MAXCONNECTIONS");
+
+	if (getrlimit(RLIMIT_NOFILE, &rl) == 0) {
+		if (rl.rlim_cur == RLIM_INFINITY) ceiling = 65536;
+		else ceiling = (long)rl.rlim_cur;
+	}
+	ceiling -= MAXCONNECTIONS_RESERVE + listener_count;
+	if (ceiling < 1) ceiling = 1;
+
+	if (setting && *setting) {
+		char *end;
+		long wanted = strtol(setting, &end, 10);
+
+		while (isspace((unsigned char)*end)) end++;
+		if ((end == setting) || (*end != '\0') || (wanted < 1)) {
+			errprintf("XYMOND_MAXCONNECTIONS is \"%s\", not a number of connections above 0: using the default, %ld\n",
+				  setting, ceiling);
+			wanted = ceiling;
+		}
+		else if (wanted > ceiling) {
+			errprintf("XYMOND_MAXCONNECTIONS is %ld, but the descriptor limit leaves %ld: taking %ld\n", wanted, ceiling, ceiling);
+			wanted = ceiling;
+		}
+		maxconnections = (int)wanted;
+	}
+	else {
+		maxconnections = (int)ceiling;
+	}
+
+	dbgprintf("Taking at most %d connections at once\n", maxconnections);
+}
+
 /* True when a listener already answers on 127.0.0.1 -- the wildcard, or
    127.0.0.1 named outright. Only that address counts: it is where local
    clients connect, and another 127.x address (Debian names the host
@@ -6431,7 +6510,7 @@ static int add_listeners(char *listenspec, int listenport, int listenq, int tls)
 /*
  * Close the connections that timed out, or that have sent nothing within
  * IDLE_FIRSTBYTE, and free the closed ones. Run on every pass of the main
- * loop, and also when select() times out: a server with no other traffic
+ * loop, and also when poll() times out: a server with no other traffic
  * must still drop a silent connection after IDLE_FIRSTBYTE, not when the
  * next client happens to wake it.
  */
@@ -6463,6 +6542,7 @@ static void conn_cleanup(conn_t **head, conn_t **tail)
 			(*head) = (*head)->next;
 			tmp->next = khead;
 			khead = tmp;
+			conncount--;
 
 			cwalk = (*head);
 		}
@@ -6471,6 +6551,7 @@ static void conn_cleanup(conn_t **head, conn_t **tail)
 			cwalk->next = tmp->next;
 			tmp->next = khead;
 			khead = tmp;
+			conncount--;
 
 			/* cwalk is unchanged */
 		}
@@ -6852,6 +6933,9 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	/* How many connections at once: a setting that cannot be read is a reason not to start */
+	set_maxconnections();
+
 	/* Go daemon */
 	if (daemonize) {
 		pid_t childpid;
@@ -6987,9 +7071,7 @@ int main(int argc, char *argv[])
 		 *
 		 * Then do the network I/O.
 		 */
-		struct timeval seltmo;
-		fd_set fdread, fdwrite;
-		int maxfd, n;
+		int npoll, n;
 		conn_t *cwalk;
 		time_t now = getcurrenttime(NULL);
 		int childstat;
@@ -7117,46 +7199,45 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * Prepare for the network I/O.
-		 * Find the largest open socket we have, from our active sockets,
-		 * and setup the select() FD sets.
+		 * Prepare for the network I/O: the poll() array, listeners first
+		 * (so listener li is slot li), then every connection that waits
+		 * for something. poll() takes any number of descriptors; what
+		 * bounds the connections is maxconnections, at accept().
 		 */
-		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
-		maxfd = -1;
+		npoll = 0;
 		for (lidx = 0; lidx < listener_count; lidx++) {
-			FD_SET(listeners[lidx].fd, &fdread);
-			if (listeners[lidx].fd > maxfd) maxfd = listeners[lidx].fd;
+			if (pollfd_add(npoll, listeners[lidx].fd, POLLIN) < 0) break;
+			npoll++;
 		}
 
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
+			short events = 0;
+
+			cwalk->pollidx = -1;
 			switch (cwalk->doingwhat) {
 				case RECEIVING:
 					/* TLS may have to write to go on reading, and read to go on writing */
-					if (tls_wants(cwalk, TLSWANT_WRITE)) FD_SET(cwalk->sock, &fdwrite);
-					else FD_SET(cwalk->sock, &fdread);
-					if (cwalk->sock > maxfd) maxfd = cwalk->sock;
+					events = (tls_wants(cwalk, TLSWANT_WRITE) ? POLLOUT : POLLIN);
 					break;
 				case RESPONDING:
-					if (tls_wants(cwalk, TLSWANT_READ)) FD_SET(cwalk->sock, &fdread);
-					else FD_SET(cwalk->sock, &fdwrite);
-					if (cwalk->sock > maxfd) maxfd = cwalk->sock;
+					events = (tls_wants(cwalk, TLSWANT_READ) ? POLLIN : POLLOUT);
 					break;
 			}
+			if (events && (pollfd_add(npoll, cwalk->sock, events) >= 0)) cwalk->pollidx = npoll++;
 		}
 
-		/* 
-		 * Do the select() with a static 2 second timeout. 
+		/*
+		 * Do the poll() with a static 50 ms timeout.
 		 * This is long enough that we will suspend activity for
 		 * some time if there's nothing to do, but short enough for
 		 * us to attend to the housekeeping stuff without undue delay.
 		 */
-		seltmo.tv_sec = 0; seltmo.tv_usec = 50000;
-		n = select(maxfd+1, &fdread, &fdwrite, NULL, &seltmo);
+		n = poll(pollfds, npoll, 50);
 		if (n <= 0) {
 			if ((errno == EINTR) || (n == 0)) {
 				/*
 				 * Interrupted or a timeout happened. Nothing is ready, so
-				 * the descriptor sets say nothing the rest of the loop
+				 * the poll() results say nothing the rest of the loop
 				 * could use -- but the connection timeouts still run, once
 				 * a second, or a silent connection would outlive its
 				 * IDLE_FIRSTBYTE on a server with no other traffic.
@@ -7171,7 +7252,7 @@ int main(int argc, char *argv[])
 				continue;
 			}
 			else {
-				errprintf("Fatal error in select: %s\n", strerror(errno));
+				errprintf("Fatal error in poll: %s\n", strerror(errno));
 				break;
 			}
 		}
@@ -7190,19 +7271,19 @@ int main(int argc, char *argv[])
 				 * reaches the buffer -- buflen alone would count a TLS
 				 * client as silent until its handshake ends.
 				 */
-				if (!cwalk->heard && FD_ISSET(cwalk->sock, &fdread)) {
+				if (!cwalk->heard && POLL_READY_R(cwalk->pollidx)) {
 					char peek;
 
 					if (recv(cwalk->sock, &peek, 1, MSG_PEEK) > 0) cwalk->heard = 1;
 				}
 #ifdef HAVE_OPENSSL
 				if (cwalk->ssl) {
-					if (!FD_ISSET(cwalk->sock, &fdread) && !FD_ISSET(cwalk->sock, &fdwrite)) break;
+					if (!POLL_READY_R(cwalk->pollidx) && !POLL_READY_W(cwalk->pollidx)) break;
 					if (tls_receive(cwalk) == 1) do_message(cwalk, "");
 					break;
 				}
 #endif
-				if (FD_ISSET(cwalk->sock, &fdread)) {
+				if (POLL_READY_R(cwalk->pollidx)) {
 					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
 
 					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
@@ -7226,7 +7307,7 @@ int main(int argc, char *argv[])
 			  case RESPONDING:
 #ifdef HAVE_OPENSSL
 				if (cwalk->ssl) {
-					if (!FD_ISSET(cwalk->sock, &fdread) && !FD_ISSET(cwalk->sock, &fdwrite)) break;
+					if (!POLL_READY_R(cwalk->pollidx) && !POLL_READY_W(cwalk->pollidx)) break;
 					if (tls_respond(cwalk)) {
 						tls_close(cwalk);
 						shutdown(cwalk->sock, SHUT_WR);
@@ -7237,7 +7318,7 @@ int main(int argc, char *argv[])
 					break;
 				}
 #endif
-				if (FD_ISSET(cwalk->sock, &fdwrite)) {
+				if (POLL_READY_W(cwalk->pollidx)) {
 					n = write(cwalk->sock, cwalk->bufp, cwalk->buflen);
 
 					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
@@ -7311,7 +7392,8 @@ int main(int argc, char *argv[])
 			int sock, taken, idleall, idlemine;
 			int li = (accept_next + lidx) % listener_count;
 
-			if (!FD_ISSET(listeners[li].fd, &fdread)) continue;
+			/* li >= npoll: not added this pass, so its revents are stale */
+			if ((li >= npoll) || !POLL_READY_R(li)) continue;
 
 			dbgprintf("Picking up new connections\n");
 
@@ -7329,16 +7411,16 @@ int main(int argc, char *argv[])
 				sock = accept(listeners[li].fd, (struct sockaddr *)&addr, &addrsz);
 				if (sock < 0) break;	/* EAGAIN: nothing more waiting, or an error */
 
-				/* A descriptor select() cannot hold is refused, not FD_SET */
-				if (sock >= FD_SETSIZE) {
+				/* The connection limit: refused at the door, logged at most once a minute */
+				if (conncount >= maxconnections) {
 					static time_t lastlog = 0;
 					static int refused = 0;
 					char text[IP_ADDR_STRLEN];
 
 					refused++;
 					if (now >= lastlog + 60) {
-						errprintf("Refused %d connection(s) from %s: descriptor %d is beyond what select() handles (FD_SETSIZE %d)\n",
-							  refused, sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), sock, (int)FD_SETSIZE);
+						errprintf("Refused %d connection(s) from %s: %d connections are open, the limit (XYMOND_MAXCONNECTIONS)\n",
+							  refused, sockaddr_text((struct sockaddr *)&addr, text, sizeof(text)), conncount);
 						lastlog = now;
 						refused = 0;
 					}
@@ -7387,7 +7469,9 @@ int main(int argc, char *argv[])
 				conntail->firstbyte = now + IDLE_FIRSTBYTE;
 				conntail->heard = 0;
 				conntail->readpass = 0;
+				conntail->pollidx = -1;
 				conntail->next = NULL;
+				conncount++;
 #ifdef HAVE_OPENSSL
 				conntail->ssl = NULL;
 				if (listeners[li].tls && !tls_start(conntail)) {

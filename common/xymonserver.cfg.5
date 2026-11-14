@@ -458,6 +458,21 @@ The port a "xymons://" recipient is sent to over TLS when it
 names none (see xymon(1)), and the one an entry of xymond's
 \-\-tls\-listen option without a port listens on. Default: 1985.
 
+.IP "\fBXYMOND_MAXCONNECTIONS\fR"
+How many connections xymond holds open at once, on all of its
+listening ports together. One more is refused as it is accepted,
+and xymond logs the refusals at most once a minute. The default is
+what the process's open-file limit leaves after a reserve of 64
+descriptors for its files, channels and listeners, so the limit is
+the administrator's through xymonlaunch or the service manager; a
+value above that is brought down to it, and one that is not a number
+above 0 gives the default; both are said in the log. Separate
+from this, a connection that sends nothing is dropped after 5
+seconds, and once 256 such connections are open at most 16 are kept
+from one sender: see xymond(8).
+A large open-file limit means a large default: set this to bound it.
+Default: unset, the open-file limit less 64.
+
 .IP "\fBXYMOND_TLS_CERT\fR, \fBXYMOND_TLS_KEY\fR"
 The certificate xymond presents on its \-\-tls\-listen ports,
 with the chain to its CA after it if any, and its private key; the

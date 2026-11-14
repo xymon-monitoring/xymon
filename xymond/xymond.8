@@ -166,7 +166,9 @@ slowly. Only silence is acted on: once a connection has sent anything it
 is held to \fB\-\-timeout\fR alone, however large or slow its message, so a
 big client report from a known host is never treated as an attack. Both
 are applied when xymond next has work to do, which on a server receiving
-reports is all the time.
+reports is all the time. How many connections xymond holds open at once,
+all senders together, is XYMOND_MAXCONNECTIONS in xymonserver.cfg(5):
+unset, the process's open-file limit less a reserve.
 
 .IP "\fB\-\-flap\-count\fR=\fIN\fR"
 Track the N latest status-changes for flap-detection. See the
