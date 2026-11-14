@@ -26,7 +26,9 @@ on a Xymon installation where one server does everything.
 
 .SH OPTIONS
 .IP "\fB--listen\fR=\fIIP\fR[:\fIPORT\fR]"
-The address and UDP port to listen on. Default: 0.0.0.0:1984. If the port is
+The address and UDP port to listen on, IPv4 or IPv6; an IPv6 address
+goes in brackets, as [::1]:1984. A host name is resolved, to its IPv4
+address if it has one. Default: 0.0.0.0:1984. If the port is
 omitted, 1984 is used.
 
 .IP "\fB--daemon\fR"
@@ -143,8 +145,11 @@ its own, listening on the network instead of reading from
 xymond_rrd \-\-rrddir=$XYMONVAR/rrd \-\-listen=10.0.0.2:1985
 \-\-locator=10.0.0.1:1984 \-\-locatorweight=2
 .PP
-The worker registers with the locator under its \fB--listen\fR address, and
-accepts messages on that TCP port. The worker options are:
+The worker registers with the locator under its \fB--listen\fR address, unless
+\fB--locatorid\fR names another, and
+accepts messages on that TCP port. Each address below may be IPv4 or IPv6,
+or a host name, resolved to its IPv4 address if it has one; an IPv6 address
+goes in brackets, as [2001:db8::2]:1985. The worker options are:
 
 .IP "\fB--listen\fR=\fIIP:PORT\fR"
 Where the worker accepts messages. Required for network mode.

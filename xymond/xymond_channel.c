@@ -64,7 +64,8 @@ typedef struct xymon_peer_t {
 	time_t lastopentime;			/* Last time we attempted to connect to the peer */
 
 	/* For P_NET peers */
-	struct sockaddr_in peeraddr;		/* The IP address of the peer */
+	struct sockaddr_storage peeraddr;	/* The IP address of the peer, IPv4 or IPv6 */
+	char peertext[NI_MAXHOST+8];	/* the peer for the log: its address and port, or its command */
 
 	/* For P_LOCAL peers */
 	char *childcmd;				/* Command and arguments for the child process */
@@ -100,41 +101,22 @@ static int checksumsize = 0;
 void addnetpeer(char *peername)
 {
 	xymon_peer_t *newpeer;
-	struct in_addr addr;
-	char *oneip;
+	char *copy, *oneip;
 	int peerport = 0;
-	char *delim;
+	struct sockaddr_storage addr;
+	char text[NI_MAXHOST];	/* an IPv6 address with its scope */
 
 	dbgprintf("Adding network peer %s\n", peername);
 
-	oneip = strdup(peername);
-
-	delim = strchr(oneip, ':');
-	if (delim) {
-		*delim = '\0';
-		peerport = atoi(delim+1);
-	}
-
-	if (inet_aton(oneip, &addr) == 0) {
-		/* peer is not an IP - do DNS lookup */
-
-		struct hostent *hent;
-
-		hent = gethostbyname(oneip);
-		if (hent) {
-			char *realip;
-
-			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
-			realip = inet_ntoa(addr);
-			if (inet_aton(realip, &addr) == 0) {
-				errprintf("Invalid IP address for %s (%s)\n", oneip, realip);
-				goto done;
-			}
-		}
-		else {
-			errprintf("Cannot determine IP address of peer %s\n", oneip);
-			goto done;
-		}
+	/*
+	 * IP:PORT, [IPv6]:PORT, or a name, resolved to its IPv4 address if it
+	 * has one, as the worker listens on IPv4 unless told otherwise.
+	 */
+	copy = strdup(peername);
+	oneip = split_hostport(copy, &peerport);
+	if (!oneip || !host_sockaddr(oneip, &addr, NULL)) {
+		errprintf("Cannot determine IP address of peer %s\n", peername);
+		goto done;
 	}
 
 	if (peerport == 0) peerport = atoi(xgetenv("XYMONDPORT"));
@@ -143,14 +125,19 @@ void addnetpeer(char *peername)
 	newpeer->peername = strdup(peername);
 	newpeer->peerstatus = P_DOWN;
 	newpeer->peertype = P_NET;
-	newpeer->peeraddr.sin_family = AF_INET;
-	newpeer->peeraddr.sin_addr.s_addr = addr.s_addr;
-	newpeer->peeraddr.sin_port = htons(peerport);
+	memcpy(&newpeer->peeraddr, &addr, sizeof(addr));
+	if (addr.ss_family == AF_INET6) ((struct sockaddr_in6 *)&newpeer->peeraddr)->sin6_port = htons(peerport);
+	else ((struct sockaddr_in *)&newpeer->peeraddr)->sin_port = htons(peerport);
+	/* For the log: the address as connected to, an IPv6 scope included */
+	if (getnameinfo((struct sockaddr *)&addr, (addr.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
+			text, sizeof(text), NULL, 0, NI_NUMERICHOST) != 0)
+		sockaddr_text((struct sockaddr *)&addr, text, sizeof(text));
+	snprintf(newpeer->peertext, sizeof(newpeer->peertext), strchr(text, ':') ? "[%s]:%d" : "%s:%d", text, peerport);
 
 	xtreeAdd(peers, newpeer->peername, newpeer);
 
 done:
-	xfree(oneip);
+	xfree(copy);
 }
 
 
@@ -168,6 +155,7 @@ void addlocalpeer(char *childcmd, char **childargs)
 	newpeer->peerstatus = P_DOWN;
 	newpeer->peertype = P_LOCAL;
 	newpeer->childcmd = strdup(childcmd);
+	snprintf(newpeer->peertext, sizeof(newpeer->peertext), "%s", childcmd);
 	newpeer->childargs = (char **)calloc(count+1, sizeof(char *));
 	for (i=0; (i<count); i++) newpeer->childargs[i] = strdup(childargs[i]);
 
@@ -196,23 +184,22 @@ void openconnection(xymon_peer_t *peer)
 	if (now < (peer->lastopentime +
 		   ((peer->peertype == P_NET) ? reconnect_interval : respawn_interval))) return;
 
-	dbgprintf("Connecting to peer %s:%d\n", inet_ntoa(peer->peeraddr.sin_addr), ntohs(peer->peeraddr.sin_port));
+	dbgprintf("Connecting to peer %s\n", peer->peertext);
 
 	peer->lastopentime = now;
 	switch (peer->peertype) {
 	  case P_NET:
 		/* Get a socket, and connect to the peer */
-		peer->peersocket = socket(PF_INET, SOCK_STREAM, 0);
+		peer->peersocket = socket(peer->peeraddr.ss_family, SOCK_STREAM, 0);
 		if (peer->peersocket == -1) {
 			errprintf("Cannot get socket: %s\n", strerror(errno));
 			return;
 		}
 
-		n = connect(peer->peersocket, (struct sockaddr *)&peer->peeraddr, sizeof(peer->peeraddr));
+		n = connect(peer->peersocket, (struct sockaddr *)&peer->peeraddr,
+			    (peer->peeraddr.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in));
 		if (n == -1) {
-			errprintf("Cannot connect to peer %s:%d : %s\n",
-				inet_ntoa(peer->peeraddr.sin_addr), ntohs(peer->peeraddr.sin_port),
-				strerror(errno));
+			errprintf("Cannot connect to peer %s : %s\n", peer->peertext, strerror(errno));
 			close(peer->peersocket);
 			peer->peersocket = -1;
 			/*
@@ -832,10 +819,7 @@ int main(int argc, char *argv[])
 			}
 
 			if (flushcount) {
-				errprintf("Flushed %d stale messages for %s:%d\n",
-					  flushcount,
-				  	  inet_ntoa(pwalk->peeraddr.sin_addr), 
-					  ntohs(pwalk->peeraddr.sin_port));
+				errprintf("Flushed %d stale messages for %s\n", flushcount, pwalk->peertext);
 			}
 
 			while (pwalk->msghead && canwrite) {
@@ -897,9 +881,7 @@ int main(int argc, char *argv[])
 
 				if (hasfailed) {
 					/* Write failed, or message grew stale */
-					errprintf("Peer at %s:%d failed: %s\n",
-						  inet_ntoa(pwalk->peeraddr.sin_addr), ntohs(pwalk->peeraddr.sin_port),
-						  strerror(errno));
+					errprintf("Peer at %s failed: %s\n", pwalk->peertext, strerror(errno));
 					canwrite = 0;
 					/*
 					 * The queue is kept for the reconnect, so a message the

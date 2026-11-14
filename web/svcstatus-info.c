@@ -969,18 +969,11 @@ char *generate_info(char *hostname, char *critconfigfn)
 
 	val = xmh_item(hostwalk, XMH_IP);
 	if (strcmp(val, "0.0.0.0") == 0) {
-		struct in_addr addr;
-		struct hostent *hent;
 		static char hostip[IP_ADDR_STRLEN + 20];
 
-		hent = gethostbyname(hostname);
-		if (hent) {
-			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
-			strncpy(hostip, inet_ntoa(addr), sizeof(hostip)-1);
-			if (inet_aton(hostip, &addr) != 0) {
-				strncat(hostip, " (dynamic)", sizeof(hostip)-strlen(hostip)-1);
-				val = hostip;
-			}
+		if (host_address(hostname, hostip, IP_ADDR_STRLEN, NULL)) {
+			strncat(hostip, " (dynamic)", sizeof(hostip)-strlen(hostip)-1);
+			val = hostip;
 		}
 	}
 	addtobuffer(infobuf, "<tr><th align=left>IP:</th><td align=left>");
