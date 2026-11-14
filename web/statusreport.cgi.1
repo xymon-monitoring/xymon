@@ -29,7 +29,9 @@ Xymon CGI directory (e.g. "/xymon\-cgi/xymon\-nongreen.sh").
 
 .SH OPTIONS
 .IP "\fB\-\-column\fR=\fICOLUMNNAME\fR"
-Report the status of the COLUMNNAME column.
+Report the status of the COLUMNNAME column: the whole name, without
+regard to case. For columns matching a pattern, use
+\fB\-\-filter=test=PATTERN\fR.
 
 .IP "\fB\-\-all\fR"
 Report the status for all hosts known to Xymon. By default,

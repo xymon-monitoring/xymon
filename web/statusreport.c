@@ -41,7 +41,12 @@ int main(int argc, char *argv[])
 	int argi, res;
 	sendreturn_t *sres;
 
-	pagefilter = filter = "";
+	/*
+	 * filter stays NULL until an option gives one: --column, --test and
+	 * --filter grow it with realloc(), which a string literal cannot take.
+	 */
+	pagefilter = "";
+	filter = NULL;
 
 	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {
@@ -68,7 +73,7 @@ int main(int argc, char *argv[])
 				SBUF_CALLOC(filter, 1, needed);
 			}
 
-			snprintf(filter + curlen, filter_buflen - curlen, " test=%s", p+1);
+			snprintf(filter + curlen, filter_buflen - curlen, " test=^(%s)$", p+1);	/* the whole name; a pattern of names stays whole too */
 
 			if (!heading) {
 				SBUF_MALLOC(heading, 1024 + strlen(p) + strlen(timestamp));
@@ -122,7 +127,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!filter) allhosts = 1;
+	/* No --column, --test or --filter: every status of the page, or of every host with --all */
+	if (!filter) filter = "";
 
 	if (!allhosts) {
       		/* Setup the filter we use for the report */
