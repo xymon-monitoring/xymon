@@ -1,7 +1,7 @@
 #! /bin/sh
 #
-# xymonclient    This shell script takes care of starting and stopping
-#                the Xymon client.
+# xymon-client    This shell script takes care of starting and stopping
+#                 the xymon client.
 
 ### BEGIN INIT INFO
 # Provides:          xymon-client
@@ -16,7 +16,7 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON="/usr/lib/xymon/client/bin/xymonlaunch"
-NAME=xymonclient
+NAME=xymon-client
 DESC="Xymon Client"
 PIDFILE="/var/run/xymon/clientlaunch.pid"
 XYMONCLIENTHOME="/usr/lib/xymon/client"
@@ -26,7 +26,7 @@ test -x $DAEMON || exit 0
 . /lib/lsb/init-functions
 . /usr/share/xymon/init-common.sh
 
-# Include xymonclient defaults if available
+# Include xymon-client defaults if available
 if [ -f /etc/default/xymon-client ] ; then
 	. /etc/default/xymon-client
 fi
@@ -41,8 +41,14 @@ case "$1" in
 
 	create_includefiles
 
+	if test "$TMPFSSIZE" && test -e /proc/mounts && ! grep -q /var/lib/xymon/tmp /proc/mounts; then
+		echo "Mounting tmpfs on /var/lib/xymon/tmp"
+		rm -f /var/lib/xymon/tmp/*
+		mount -t tmpfs -o"size=$TMPFSSIZE,mode=755,uid=$(id -u xymon)" tmpfs /var/lib/xymon/tmp
+	fi
+
 	log_daemon_msg "Starting $DESC" "$NAME"
-	start-stop-daemon --exec $DAEMON --chuid xymon --umask 022 --start \
+       start-stop-daemon --pidfile "$PIDFILE" --exec $DAEMON --chuid xymon --umask 022 --start \
 		-- \
 		--config=/etc/xymon/clientlaunch.cfg \
 		--log=/var/log/xymon/clientlaunch.log \
@@ -51,7 +57,7 @@ case "$1" in
 	;;
   stop)
 	log_daemon_msg "Stopping $DESC" "$NAME"
-	start-stop-daemon --exec $DAEMON --pidfile $PIDFILE --stop --retry 5
+       start-stop-daemon --pidfile "$PIDFILE" --exec $DAEMON --pidfile $PIDFILE --stop --retry 5
 	log_end_msg $?
 	;;
   status)
@@ -94,7 +100,7 @@ case "$1" in
 	;;
   *)
 	N=/etc/init.d/$NAME
-	echo "Usage: $N {start|stop|restart|force-reload|status|rotate}" >&2
+	echo "Usage: $N {start|stop|restart|reload|force-reload|status|rotate}" >&2
 	exit 1
 	;;
 esac

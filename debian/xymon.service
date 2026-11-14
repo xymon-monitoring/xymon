@@ -1,0 +1,33 @@
+[Unit]
+Description=Xymon systems and network monitor
+Documentation=man:xymon(7) man:xymonlaunch(8) man:xymon(1)
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=xymon
+
+EnvironmentFile=-/etc/default/xymon-client
+
+# create includefiles and rundir:
+ExecStartPre=+/usr/share/xymon/xymon-server-prepare.sh
+
+ExecStart=/usr/lib/xymon/client/bin/xymonlaunch --no-daemon \
+    --config=/etc/xymon/tasks.cfg \
+    --env=/etc/xymon/xymonserver.cfg \
+    --log=/var/log/xymon/xymonlaunch.log
+
+ExecReload=/bin/kill -HUP $MAINPID
+
+Type=simple
+
+# Kill xymonlaunch, but don't send kills to the underlying procs, since they
+# might be doing important things (like writing checkpoints and flushing caches)
+KillMode=process
+# SendSIGHUP=yes
+SendSIGKILL=no
+# Give an extra 6s beyond xymonlaunch to let things disconnect
+RestartSec=6
+Restart=on-failure

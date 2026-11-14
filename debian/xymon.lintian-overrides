@@ -1,4 +1,27 @@
-xymon: package-contains-empty-directory usr/lib/xymon/server/download/
-#446982
-xymon: possibly-insecure-handling-of-tmp-files-in-maintainer-script preinst:30
-xymon: setuid-binary usr/lib/xymon/server/bin/xymonping 4755 root/root
+xymon: package-contains-empty-directory [usr/lib/xymon/server/download/]
+xymon: elevated-privileges 4755 root/root [usr/lib/xymon/server/bin/xymonping]
+xymon: spelling-error-in-binary retransmited retransmitted [usr/lib/xymon/server/bin/xymond_rrd]
+# Seems a false positive due to the fallback if apache2-maintscript-helper isn't there
+xymon: apache2-reverse-dependency-calls-invoke-rc.d [postinst:151]
+# Monitoring should start as late as possible and it's only "Should", not "Required"
+xymon: init.d-script-depends-on-all-virtual-facility should-start [etc/init.d/xymon]
+# Xymon server is not suitable for installation on a network file
+# system and cgi-bin and cgi-secure are likely always on the same file
+# system. (Upstream introduced these hardlinks in 4.3.20, see
+# http://lists.xymon.com/archive/2015-May/041717.html for the
+# discussion.)
+xymon: package-contains-hardlink pointing to: usr/lib/xymon/cgi-bin/acknowledgements.sh [usr/lib/xymon/cgi-*/*.sh]
+xymon: package-contains-hardlink pointing to: usr/lib/xymon/cgi-bin/acknowledgements.sh [usr/lib/xymon/server/bin/cgiwrap]
+# No version specified by upstream
+xymon: copyright-refers-to-symlink-license usr/share/common-licenses/GPL
+# ridiculous, see #904852
+xymon: package-contains-documentation-outside-usr-share-doc [usr/share/xymon/gifs/README]
+# A rather overzealous lintian tag when applied to packages with many
+# parts like CGI scripts with man pages.
+xymon: spare-manual-page [usr/share/man/man*/*.gz]
+# Documentation available via web interface
+xymon: package-contains-documentation-outside-usr-share-doc [usr/share/xymon/help/*]
+# The offending commands are wrapped between <IfModule !mod_authz_core.c> ... </IfModule>
+# See: https://bugs.debian.org/1063710
+xymon: apache2-deprecated-auth-config Allow [etc/apache2/conf-available/xymon.conf:23]
+xymon: apache2-deprecated-auth-config Order [etc/apache2/conf-available/xymon.conf:22]

@@ -1,0 +1,62 @@
+# Vietnamese translation for Xymon.
+# Copyright © 2007 Free Software Foundation, Inc.
+# Clytie Siddall <clytie@riverland.net.au>, 2007
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: xymon\n"
+"Report-Msgid-Bugs-To: xymon@packages.debian.org\n"
+"POT-Creation-Date: 2026-06-06 15:13+0200\n"
+"PO-Revision-Date: 2012-06-13 13:44+0200\n"
+"Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
+"Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: LocFactoryEditor 1.7b1\n"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid "Xymon server:"
+msgstr "Máy phục vụ Xymon:"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid ""
+"Please enter the network address used to access the Xymon server(s). If you "
+"use multiple servers, use a space-separated list of addresses."
+msgstr ""
+"Hãy gõ địa chỉ mạng được dùng để truy cập (các) máy phục vụ Xymon. Định giới "
+"nhiều máy phục vụ bằng dấu cách."
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:1001
+msgid ""
+"Using host names instead of IP addresses is discouraged in case the network "
+"experiences DNS failures."
+msgstr ""
+"Khuyên bạn không sử dụng tên máy thay cho địa chỉ IP, trong trường hợp mạng "
+"gặp dịch vụ DNS bị gián đoạn."
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:2001
+msgid "Client hostname:"
+msgstr "Tên máy khách:"
+
+#. Type: string
+#. Description
+#: ../xymon-client.templates:2001
+msgid ""
+"Please enter the host name used by the Xymon client when sending reports to "
+"the Xymon server. This name must match the name used in the hosts.cfg file "
+"on the Xymon server."
+msgstr ""
+"Hãy gõ tên máy được ứng dụng khách Xymon dùng khi gửi thông báo cho máy phục "
+"vụ Xymon. Tên này phải tương ứng với tên nằm trong tập tin « hosts.cfg » "
+"trên máy phục vụ Xymon."
