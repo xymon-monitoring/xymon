@@ -666,7 +666,8 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 		msgcmd = (char *)malloc(i+1);
 		strncpy(msgcmd, msg, i); *(msgcmd+i) = '\0';
 		// errprintf("sendtomany: msgcmd=%s\n", msgcmd);
-		for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msgcmd)); i++) ;
+		for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msgcmd)); i++)
+			;
 		xfree(msgcmd);
 
 		allservers = (multircptcmds[i] != NULL);
