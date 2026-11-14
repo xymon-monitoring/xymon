@@ -1186,6 +1186,56 @@ static int until_matches(unsigned char *line, int linelen, unsigned char *until,
 	return 0;
 }
 
+/*
+ * A source address, from --source-ip= or a test's "@ADDRESS", into SS: IPv4
+ * as inet_aton() reads it, short forms such as 127.1 included, as before; or
+ * IPv6, with a scope (fe80::1%eth0) where one is given. An IPv4-mapped
+ * address is the IPv4 address it stands for. Returns 1, or 0 if TEXT is not
+ * an address.
+ */
+int source_sockaddr(char *text, struct sockaddr_storage *ss)
+{
+	struct in_addr a4;
+	struct addrinfo hints, *res;
+
+	memset(ss, 0, sizeof(*ss));
+	if (inet_aton(text, &a4)) {
+		ss->ss_family = AF_INET;
+		((struct sockaddr_in *)ss)->sin_addr = a4;
+		return 1;
+	}
+
+	/*
+	 * An IPv4-mapped literal "::ffff:a.b.c.d" is the IPv4 address it
+	 * stands for. Read its dotted tail here rather than through
+	 * getaddrinfo(): Solaris rejects the mapped form under AF_INET6 with
+	 * AI_NUMERICHOST, where glibc and macOS accept and map it, so the
+	 * result would differ by platform. The dotted tail is what tells it
+	 * apart from a plain IPv6 address such as "::ffff:0:0".
+	 */
+	if ((strncasecmp(text, "::ffff:", 7) == 0) && strchr(text + 7, '.') && inet_aton(text + 7, &a4)) {
+		ss->ss_family = AF_INET;
+		((struct sockaddr_in *)ss)->sin_addr = a4;
+		return 1;
+	}
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET6;
+	hints.ai_flags = AI_NUMERICHOST;
+	if ((getaddrinfo(text, NULL, &hints, &res) != 0) || !res) return 0;
+	if (res->ai_addrlen <= sizeof(*ss)) memcpy(ss, res->ai_addr, res->ai_addrlen);
+	freeaddrinfo(res);
+	if (ss->ss_family != AF_INET6) return 0;
+
+	if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)ss)->sin6_addr)) {
+		memcpy(&a4, ((struct sockaddr_in6 *)ss)->sin6_addr.s6_addr + 12, sizeof(a4));
+		memset(ss, 0, sizeof(*ss));
+		ss->ss_family = AF_INET;
+		((struct sockaddr_in *)ss)->sin_addr = a4;
+	}
+	return 1;
+}
+
 void do_tcp_tests(int timeout, int concurrency)
 {
 	int		selres;
@@ -1272,30 +1322,25 @@ void do_tcp_tests(int timeout, int concurrency)
 			nextinqueue->fd = socket(nextinqueue->addr.ss_family, SOCK_STREAM, 0);
 			sockok = (nextinqueue->fd != -1);
 			if (sockok) {
-				/* Set the source address */
-				/* The source address is IPv4, so it applies to IPv4 tests only */
-				if (nextinqueue->srcaddr && (nextinqueue->addr.ss_family == AF_INET)) {
-					struct sockaddr_in src;
-					int isip;
-
-					memset(&src, 0, sizeof(src));
-					src.sin_family = PF_INET;
-					src.sin_port = 0;
-					isip = (inet_aton(nextinqueue->srcaddr, (struct in_addr *) &src.sin_addr.s_addr) != 0);
+				/* Set the source address: either family, used for tests of its own */
+				if (nextinqueue->srcaddr) {
+					struct sockaddr_storage src;
+					int isip = source_sockaddr(nextinqueue->srcaddr, &src);
 
 					if (!isip) {
 						char *envaddr = getenv(nextinqueue->srcaddr);
-						isip = (envaddr && (inet_aton(envaddr, (struct in_addr *) &src.sin_addr.s_addr) != 0));
+						isip = (envaddr && source_sockaddr(envaddr, &src));
 					}
 
-					if (isip) {
-						res = bind(nextinqueue->fd, (struct sockaddr *)&src, sizeof(src));
-						if (res != 0) errprintf("WARNING: Could not bind to source IP %s for test %s: %s\n",
-								nextinqueue->srcaddr, nextinqueue->tspec, strerror(errno));
-					}
-					else {
+					if (!isip) {
 						errprintf("WARNING: Invalid source IP %s for test %s, using default\n",
 								nextinqueue->srcaddr, nextinqueue->tspec);
+					}
+					else if (src.ss_family == nextinqueue->addr.ss_family) {
+						res = bind(nextinqueue->fd, (struct sockaddr *)&src,
+							   (src.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in));
+						if (res != 0) errprintf("WARNING: Could not bind to source IP %s for test %s: %s\n",
+								nextinqueue->srcaddr, nextinqueue->tspec, strerror(errno));
 					}
 				}
 

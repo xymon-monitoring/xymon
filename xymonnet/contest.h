@@ -218,6 +218,7 @@ typedef struct {
 	char		*faileddeps;		/* List of failed dependency checks */
 } http_data_t;
 
+extern int source_sockaddr(char *text, struct sockaddr_storage *ss);
 extern unsigned long tcp_stats_read;
 extern unsigned long tcp_stats_written;
 extern unsigned int tcp_stats_total;
