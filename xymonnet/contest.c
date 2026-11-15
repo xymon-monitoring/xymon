@@ -594,6 +594,65 @@ static void discard_ssl_state(tcptest_t *item)
 	}
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+/* Records a name mismatch, and lets verification go on past anything else */
+static int certname_cb(int ok, X509_STORE_CTX *ctx)
+{
+	if (!ok && (X509_STORE_CTX_get_error(ctx) == X509_V_ERR_HOSTNAME_MISMATCH))
+		*(int *)X509_STORE_CTX_get_app_data(ctx) = 0;
+	return 1;
+}
+
+/*
+ * Does cert cover name? 1 yes, 0 no, -1 not checked. OpenSSL 4.1 deprecates
+ * X509_check_host(), the name check on its own, for the one inside
+ * verification; this runs that verification for the name alone, so a
+ * certificate xymonnet does not trust -- self-signed, private CA, expired --
+ * is still checked. The certificate is its own trust anchor: LibreSSL ends
+ * verification at a chain it cannot build, whatever the callback answers,
+ * and never reaches the name. Anything else wrong is let pass.
+ *
+ * The answer starts at "covers", and only the callback, on a mismatch,
+ * takes it away. So a verification that does not end well may have stopped
+ * before the name: its "covers" is "not checked", never a name nobody
+ * compared. The callback lets every error pass, so one that went all the
+ * way returns 1.
+ *
+ * The subject CN is matched only when the certificate has no DNS
+ * subjectAltName, as X509_check_host() did before 4.1. The flag cannot be
+ * set unconditionally: 4.1 matches the CN only with it, and every version
+ * then matches the CN beside a subjectAltName too.
+ */
+static int cert_covers_name(X509 *cert, const char *name)
+{
+	X509_STORE *store = X509_STORE_new();
+	X509_STORE_CTX *ctx = X509_STORE_CTX_new();
+	GENERAL_NAMES *sans = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+	X509_VERIFY_PARAM *param;
+	int i, dnssan = 0, match = -1;
+
+	for (i = 0; sans && (i < sk_GENERAL_NAME_num(sans)) && !dnssan; i++)
+		dnssan = (sk_GENERAL_NAME_value(sans, i)->type == GEN_DNS);
+	if (sans) GENERAL_NAMES_free(sans);
+
+	if (store && ctx && X509_STORE_add_cert(store, cert) && X509_STORE_CTX_init(ctx, store, cert, NULL)) {
+		param = X509_STORE_CTX_get0_param(ctx);
+		X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_PARTIAL_CHAIN);
+		X509_VERIFY_PARAM_set_hostflags(param, dnssan ? 0 : X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT);
+		if (X509_VERIFY_PARAM_set1_host(param, name, strlen(name)) == 1) {
+			match = 1;
+			X509_STORE_CTX_set_app_data(ctx, &match);
+			X509_STORE_CTX_set_verify_cb(ctx, certname_cb);
+			if ((X509_verify_cert(ctx) != 1) && (match == 1)) match = -1;
+		}
+	}
+	if (ctx) X509_STORE_CTX_free(ctx);
+	if (store) X509_STORE_free(store);
+
+	return match;
+}
+#endif
+
 static void setup_ssl(tcptest_t *item)
 {
 	static int ssl_init_complete = 0;
@@ -926,17 +985,16 @@ static void setup_ssl(tcptest_t *item)
 
 	/*
 	 * Optional cert name check: does the presented certificate actually
-	 * cover the name we asked for (the SNI/host name)? X509_check_host
+	 * cover the name we asked for (the SNI/host name)? cert_covers_name()
 	 * matches SAN dNSName entries, falling back to the subject CN. This is
 	 * separate from expiry: a valid but wrong-name cert -- e.g. an SNI that
 	 * fell through to a default vhost -- is otherwise reported green.
 	 */
 	if (item->checkname && *item->checkname) {
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
-		int rc = X509_check_host(peercert, item->checkname, strlen(item->checkname), 0, NULL);
-		item->certnamematch = (rc == 1) ? 1 : ((rc == 0) ? 0 : -1);
+		item->certnamematch = cert_covers_name(peercert, item->checkname);
 #else
-		item->certnamematch = -1;	/* X509_check_host needs OpenSSL 1.0.2+ */
+		item->certnamematch = -1;	/* the host name checks need OpenSSL 1.0.2+ */
 #endif
 	}
 
