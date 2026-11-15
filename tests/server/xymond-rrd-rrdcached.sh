@@ -112,7 +112,12 @@ sockdir=$(mktemp -d "${TMPDIR:-/tmp}/xrc.XXXXXX")
 register_cleanup "rm -rf '$sockdir'"
 sock="$sockdir/s"
 mkdir -p "$work/rrd"
-"$RRDCACHED" -g -l "unix:$sock" -b "$work/rrd" -w 3600 -f 7200 -z 1 \
+# rrdcached refuses a base directory reached through a symbolic link, and on
+# macOS the temporary directory is one (/var/folders is /private/var/folders):
+# give it the path with the links resolved. The files xymond_rrd names keep
+# the work path; librrd resolves those itself before asking the daemon.
+rrdbase=$(cd "$work/rrd" && pwd -P)
+"$RRDCACHED" -g -l "unix:$sock" -b "$rrdbase" -w 3600 -f 7200 -z 1 \
 	-j "$work/journal" -p "$work/rrdcached.pid" >"$work/rrdcached.log" 2>&1 &
 daemon=$!
 register_cleanup "stop_process $daemon"
