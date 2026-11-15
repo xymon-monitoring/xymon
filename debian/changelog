@@ -218,10 +218,10 @@ xymon (4.3.30) stable; urgency=high
 
    * Fix reports with dashes or underscores not visible in history logs (Thanks, Tom Schmidt)
    * Really fix do_temperature.c report parsing for parentheses (Thanks, Tom Schmidt)
-   * Fix truncation on exec strings causing missing custom RRD titles (Thanks, Tom Schmidt) 
+   * Fix truncation on exec strings causing missing custom RRD titles (Thanks, Tom Schmidt)
    * RPC buffer calculation on snprintf taking improper sizeof (Thanks, Tom Schmidt)
    * Don't crash on a missing allevents file
-   * Fix assorted crashes with xymongen report generation after string changes  
+   * Fix assorted crashes with xymongen report generation after string changes
    * Add guards around GCC diagnostics pragma to allow for building on older vers
    * xymonclient-linux: Provide wide/untrimmed IP support in netstat port list
    * Fix problems with meta-combostatuses (Thanks, Dominique Delporte)
@@ -235,7 +235,7 @@ xymon (4.3.29) stable; urgency=medium
    * rev 8070
 
    * Security Fixes: A number of potential buffer overflows have been resolved
-     CVE-2019-13451, CVE-2019-13452, CVE-2019-13455, CVE-2019-13473, 
+     CVE-2019-13451, CVE-2019-13452, CVE-2019-13455, CVE-2019-13473,
      CVE-2019-13474, CVE-2019-13484, CVE-2019-13485, CVE-2019-13486
    * Deal with Set-Cookie deprecation on normal pages (Thanks, Erik Schminke)
    * Support glibc->tirpc migration on newer distributions
@@ -253,7 +253,7 @@ xymon (4.3.29) stable; urgency=medium
    * Fixes to do_temperature parsing (Thanks, Michael Pins)
    * Add support for GNU Hurd and GNU/kFreeBSD
    * Don't require apache authz_groupfile module by default when not needed
-   * Add --no-cpu-listing option to xymond_client to block 'top' output in         
+   * Add --no-cpu-listing option to xymond_client to block 'top' output in
      cpu test (Thanks, John Horne)
    * Double-quote the display name of host titles handed to RRD
    * Ensure NTP checks not hung for unreachable hosts (Thanks, Tom Schmidt)
@@ -273,7 +273,7 @@ xymon (4.3.28) stable; urgency=medium
      for standard TCP checks
    * Fix misparsing of --timelimit and --huge options in
      xymonnet (Reported by Foster Patch)
-   * Fix memory leak when processing netapp test reports 
+   * Fix memory leak when processing netapp test reports
      (Reported by Peter Welter)
    * The included version of c-ares has been bumped to version 1.12.0
    * Fix for building on OpenSSL 1.1.0 (Thanks, Axel Beckert)
@@ -300,13 +300,13 @@ xymon (4.3.27) stable; urgency=medium
 
    * rev 7957
 
-   * Don't treat empty (0 byte) directory size as invalid    
+   * Don't treat empty (0 byte) directory size as invalid
      (Reported by Bert Willekens)
    * Fix looping redirect on criticaleditor.sh
    * Allow NK-critical acknowledgements from status pages
    * Fix redirect to criticalview.sh, which is just a
      regular CGI
-   * Properly recognize https URLs as summary links (Thanks, 
+   * Properly recognize https URLs as summary links (Thanks,
      David Steinn Geirsson)
    * Add compile-time check for SSLv3 support
 
@@ -326,11 +326,11 @@ xymon (4.3.26) stable; urgency=medium
    * Restrict characters allowed for hostnames and testnames
    * HTML encode error log output on xymond/net/gen pages
    * HTML encode ghost hostnames output on xymond/ghostlist pages
-   * logfetch: only evaluate the first config of a given type seen for 
+   * logfetch: only evaluate the first config of a given type seen for
      the same file name
    * xymongen/reports: fix vague error message around missing history files
      and properly exclude clientlog statuses (Reported by Magdi Mahmoud)
-   * Ensure configured CLASS overrides in hosts.cfg are always passed on 
+   * Ensure configured CLASS overrides in hosts.cfg are always passed on
      to client workers, regardless of 'class' for that specific message
      (Reported by Steve Hill)
 
@@ -342,7 +342,7 @@ xymon (4.3.25) stable; urgency=high
    * rev 7890
 
    * Resolve buffer overflow when handling "config" file requests (CVE-2016-2054)
-   * Restrict "config" files to regular files inside the $XYMONHOME/etc/ directory 
+   * Restrict "config" files to regular files inside the $XYMONHOME/etc/ directory
      (symlinks disallowed) (CVE-2016-2055). Also, require that the initial filename
      end in '.cfg' by default
    * Resolve shell command injection vulnerability in useradm and chpasswd CGIs
@@ -352,17 +352,17 @@ xymon (4.3.25) stable; urgency=high
    * Restrict javascript execution in current and historical status messages by
      the addition of appropriate Content-Security-Policy headers to prevent XSS
      attacks. (CVE-2016-2058)
-   * We would like to thank Markus Krell for reporting the above issues, and for  
+   * We would like to thank Markus Krell for reporting the above issues, and for
       working with us to resolve them.
-   * 
-   * Fix "TRENDS" entries in hosts.cfg improperly handling partial matches with 
-     other graph names (Reported by Jeremy Laidman) 
+   *
+   * Fix "TRENDS" entries in hosts.cfg improperly handling partial matches with
+     other graph names (Reported by Jeremy Laidman)
    * A possible crash in when loading confreport.cgi has been fixed
      (Thanks, Axel Beckert)
    * Improve error handling slightly in the CGI wrapper
    * Fix missing network interface graph data on FreeBSD (Niko <nicolas@lienard.name>)
-   * In xymonnet, a rare SSL error state that could occur after a 
-     connection is opened will now be considered "service down"        
+   * In xymonnet, a rare SSL error state that could occur after a
+     connection is opened will now be considered "service down"
    * Fix a crash in xymonnet when handling certain malformed SSL certificates
      (Reported by Thomas Leavitt, originally via Jeremy Laidman)
    * Add new trends_header and trends_footer for use on associated Trends pages
@@ -373,14 +373,14 @@ xymon (4.3.25) stable; urgency=high
      and logfetch when in local mode without editing xymonclient.sh
    * xymonclient: Allow LOCALMODE to be set in xymonclient.cfg w/o passing --local option
    * logfetch: Add --noexec option to ignore commands to dynamically list files
-     for scanning (Suggested by Jeremy Laidman)                                      
-   * Add file globbing capabilities to logfetch to avoid need to fork commands      
+     for scanning (Suggested by Jeremy Laidman)
+   * Add file globbing capabilities to logfetch to avoid need to fork commands
      to create dynamic lists (Suggested by Jeremy Laidman)
    * The "Valid Until" time for an acknowledgement is now displayed on the ack log
      report page (Thanks, Dominique Frise)
-   * The xymon.sh and runclient.sh scripts are themselves now more LSB compliant 
+   * The xymon.sh and runclient.sh scripts are themselves now more LSB compliant
      (Thanks, Nikolai Lifanov)
-   * Windows systems now have a better calculation of "Actual" memory usage 
+   * Windows systems now have a better calculation of "Actual" memory usage
      (Thanks, John Rothlisberger)
    * A bug in xymond_alert that could cause pages about hosts.cfg not present at inital start
      to cause inconsistent alerting has been fixed
@@ -394,7 +394,7 @@ xymon (4.3.24) stable; urgency=high
    * rev 7774
 
    * Fix occasional crash in xymond when handling group names (Thanks, Franco Gasperino)
-   * Fix non-special HTTP <400 status codes red instead of yellow >.<   
+   * Fix non-special HTTP <400 status codes red instead of yellow >.<
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Mon, 23 Nov 2015 17:40:00 -0800
 
@@ -405,7 +405,7 @@ xymon (4.3.23) unstable; urgency=high
 
    * Fix broken 'TRACK' and 'OPTIONAL' identifiers in analysis.cfg
    * Prevent logfetch from segfaulting if a file we're tracking line matching
-     deltacounts for wasn't found      
+     deltacounts for wasn't found
    * Fix a type mismatch compiler warning in display group name alert matching
 
  -- Japheth Cleaver <cleaver-xymon@terabithia.org>  Thu, 12 Nov 2015 12:00:00 -0800
@@ -418,7 +418,7 @@ xymon (4.3.22) unstable; urgency=medium
    * Ensure we don't leave xymond_hostdata or xymond_history zombies lying around
      after dropping host records (Reported by Scot Kreienkamp)
    * Fix up HTML list layout to reflect current standards (Thanks, hallik@calyc3.com)
-   * Fix documentation incorrectly describing multigraph syntax as (e.g.) GRAPH_cpu. 
+   * Fix documentation incorrectly describing multigraph syntax as (e.g.) GRAPH_cpu.
      Should be GRAPHS_cpu (Thanks, Galen Johnson)
    * Supports scientific notation for NCV data (Thanks, Axel Beckert)
    * Increase resolution of xymonnet poll timing results (Thanks, Christoph Berg)
@@ -427,18 +427,18 @@ xymon (4.3.22) unstable; urgency=medium
    * Don't skip over "mailq.rrd" (Roland Rosenfeld)
    * The signature algorithm used on an SSL-enabled TCP test run by xymonnet is now shown
      on the sslcert page. (Thanks, Ralph Mitchell)
-   * The cipher list displayed in 'sslcert' tests will now be limited to the cipher that was 
+   * The cipher list displayed in 'sslcert' tests will now be limited to the cipher that was
      actually used on the SSL connection. The --showallciphers option to xymonnet will
      restore the previous behavior. (From idea from Ralph Mitchell)
-   * Provide configurable environment overrides in xymonserver.cfg for standard xymonnet 
-     options to fping/xymonping, ntpdate, and traceroute binaries. In regular installs, the   
+   * Provide configurable environment overrides in xymonserver.cfg for standard xymonnet
+     options to fping/xymonping, ntpdate, and traceroute binaries. In regular installs, the
      intended default options to traceroute (-n -q 2 -w 2 -m 15) were not actually used. This
-     may change in a future release, so it's suggested that users move any custom options to    
+     may change in a future release, so it's suggested that users move any custom options to
      the new TRACEROUTEOPTS setting in xymonserver.cfg.
-     (Orig. thanks, Axel Beckert, ntpdate issues pointed out by Matt Vander Werf)  
+     (Orig. thanks, Axel Beckert, ntpdate issues pointed out by Matt Vander Werf)
    * Enable latent additional SHA digest strengths (sha256, sha512, sha224, sha384)
    * Don't crash generating wml cards for statuses w/ very long lines (Reported by Axel Beckert)
-   * Flip SenderIP and Hostname columns on ghostlist pages to allow easier cutting and pasting 
+   * Flip SenderIP and Hostname columns on ghostlist pages to allow easier cutting and pasting
      to hosts files
    * Fix multiple disk volumes reported in on Darwin (OS X) clients. (Thanks, Axel Beckert)
    * Fix COMPACT parsing; update docs to match expected syntax (Thanks, Brian Scott)
@@ -493,7 +493,7 @@ xymon (4.3.20) unstable; urgency=medium
      apache configurations
    * The protocol section of URLs in hosts.cfg is now case-insensitive, and ftps
      URLs (FTP-over-SSL, not sftp) are recognized as a protocol.
-   * hosts.cfg docs have been clarified to include delayyellow and delayred as 
+   * hosts.cfg docs have been clarified to include delayyellow and delayred as
      allowable options (Reported by John Thurston)
    * 'optional include' and 'optional directory' syntax has been documented
    * pulldata directives in the hosts.cfg file now honor a given IP address and port
@@ -515,11 +515,11 @@ xymon (4.3.20) unstable; urgency=medium
      with environment variables - see xymonserver.cfg(5). From Werner Maier.
    * When clients are in "server" mode (sending raw data to the xymond server
      to be centrally processed), a 'clientlog' column will now be shown on
-     xymon pages (similar to trends and info columns). This can be disabled on 
-     a per-host basis by adding a 'noclient' tag to the hosts.cfg line, 
+     xymon pages (similar to trends and info columns). This can be disabled on
+     a per-host basis by adding a 'noclient' tag to the hosts.cfg line,
      or globally by adding that to the .default. host.
-   * Add protocols.cfg entries for amqp(s), svn, ircd, and mail (submission).     
-     (Note that smtp testing here may suffer the same occasional issue as  
+   * Add protocols.cfg entries for amqp(s), svn, ircd, and mail (submission).
+     (Note that smtp testing here may suffer the same occasional issue as
      regular smtp conversations with regard to out-of-order commands.)
    * Fix a crash on non-glibc systems when testing xymond_alert configs with
      a host not in hosts.cfg (Reported by John Thurston)
@@ -533,7 +533,7 @@ xymon (4.3.20) unstable; urgency=medium
 xymon (4.3.19) unstable; urgency=medium
 
    * rev 7619
-   
+
    * Don't crash when receiving an AAAA DNS response (BSD, thanks Mark Felder)
    * xymonclient.sh running in --local mode was generating reports that were
      marked as duplicates (and thus being ignored). Reported by Guillaume Chane.
@@ -550,18 +550,18 @@ xymon (4.3.19) unstable; urgency=medium
      is empty (eg, matching for a 302 Redirect)
    * --debug mode in most daemons should cause *much* less of a performance hit, and
      output will be timestamped in microseconds
-   * xymondboard can now be used to PCRE-match against the raw message, and 
-     acknowledgement and disable comments. Inequalities can be specified against the 
+   * xymondboard can now be used to PCRE-match against the raw message, and
+     acknowledgement and disable comments. Inequalities can be specified against the
      lastchange, logtime, validtime, acktime, disabletime fields (in epoch timestamps).
      The existing net= and tag= filters have been documented.
    * The sample xymon.conf apache snippet now supports apache 2.4 syntax
    * Fix missing newline when returning upcoming 'schedule' commands.
    * EXTIME= syntax in analysis.cfg and alerts.cfg has been added. This is applied
-     after any TIME= filter. Use (e.g.) to exclude Wednesday afternoons on a line 
+     after any TIME= filter. Use (e.g.) to exclude Wednesday afternoons on a line
      which is already restricted to 9:00a to 5:00p on weekdays only.
    * The included version of c-ares has been bumped to version 1.10.0.
    * Support for older EGD (entropy gathering daemon) has been removed (Thanks, Bernard Spil)
-   * A crash when xymond_rrd was run in --debug mode on non GNU/glibc systems has 
+   * A crash when xymond_rrd was run in --debug mode on non GNU/glibc systems has
      been fixed
    * The msgs and procs tests are now HTML-encoded to ensure that lines with brackets
      are properly displayed
@@ -578,13 +578,13 @@ xymon (4.3.19) unstable; urgency=medium
        the final section as can be fit in the space remaining will be included, similar
        to the previous behavior if maxbytes was exceeded but no trigger lines were given.
        (Thanks, Franco Gasperino.)
-     - The current location (where the previous run left off) is now marked in the status 
+     - The current location (where the previous run left off) is now marked in the status
        report.
-     - The '<...SKIPPED...>' and '<...CURRENT...>' texts can be overridden by specifying 
+     - The '<...SKIPPED...>' and '<...CURRENT...>' texts can be overridden by specifying
        values for LOGFETCHSKIPTEXT and LOGFETCHCURRENTTEXT in xymonclient.cfg
      - The "scrollback" (number of positions in previous "runs" back) that logfetch starts
        at can now be specified with the LOGFETCHSCROLLBACK variable, from 0 - 6 (the default)
-   * "deltacount" can be used to count the number of lines matching a specific regex in 
+   * "deltacount" can be used to count the number of lines matching a specific regex in
      client-local.cfg, counting only since the last run. These will be shown on the trends page.
      NOTE: Unlike the "linecount:" option, deltacount is specified after a specific "log:" line.
      See the client-local.cfg file for details.
@@ -638,8 +638,8 @@ xymon (4.3.17) unstable; urgency=low
 
    * Fix crash in xymond when using 'schedule' command
    * Configure/build/install fixes:
-     - Allow specifying location of the PCRE include/library files 
-       for client-side configuration build. 
+     - Allow specifying location of the PCRE include/library files
+       for client-side configuration build.
      - Pass IDTOOL to client installation (for Solaris).
      - Fix broken configure+Makefiles for client-side configuration
      - C-ARES: Fix wrong call to Makefile.test-cares during configure
@@ -691,8 +691,8 @@ xymon (4.3.14) unstable; urgency=low
    * Fix critical ack not working for hosts where the display-name is
      set (via "NAME:" tag). From Any Smith.
    * SNI (Server Name Indication) causes some SSL connections to fail
-     due to server-side buggy SSL implementations. Add "sni" and "nosni" 
-     flags to control SNI for specific hosts, and "--sni" option for 
+     due to server-side buggy SSL implementations. Add "sni" and "nosni"
+     flags to control SNI for specific hosts, and "--sni" option for
      xymonnet to control the default. Reported by Mark Felder.
    * Fix build process to fully obey any XYMONTOPDIR setting from the
      top-level Makefile. NOTE: Client-only builds no longer install the
@@ -706,22 +706,22 @@ xymon (4.3.14) unstable; urgency=low
      restrictions are delayed until REPEAT interval expires.
    * Fix crash in xymonlaunch when trying to find tasks.cfg
    * Fix HTML generated by acknowledge.cgi (missing '>')
-   * Fix Linux client reporting garbled client data if top output ends 
+   * Fix Linux client reporting garbled client data if top output ends
      without a new-line (causes CPU load and other vmstat graphs to
      stop updating)
    * Fix Debian installation so it enables Apache mod_rewrite
    * Fix merge-lines utility crashing when first line was an include
    * Fix "make install" failing when server/www/help was a symlink
-   * Document existing OPTIONAL setting in analysis.cfg for file-checks 
+   * Document existing OPTIONAL setting in analysis.cfg for file-checks
      on files which may not exist.
    * Document existing CLASS setting in alerts.cfg
-   * Add new INFOCOLUMNGIF and TRENDSCOLUMNGIF settings so the icons 
+   * Add new INFOCOLUMNGIF and TRENDSCOLUMNGIF settings so the icons
      used for these pages are configurable.
    * Enhance Solaris client to correctly handle Solaris zones.
    * Add new search facilities to xymond to select hosts with the
      'xymondboard' and 'hostinfo' commands.
-   * New --ack-each-color option for xymondd changes ack behaviour so a 
-     yellow ack does not apply when status changed to red, but a red ack 
+   * New --ack-each-color option for xymondd changes ack behaviour so a
+     yellow ack does not apply when status changed to red, but a red ack
      applies if status goes yellow
    * New "headermatch" tag for http tests so content checks can look at
      HTTP headers in addition to the HTML body.
@@ -743,7 +743,7 @@ xymon (4.3.13) unstable; urgency=low
    * netbios-ssn, snpp and lpd protocol.cfg entries (Tom Schmidt)
    * "temperature" status strips html tags from sensor names (Tom Schmidt)
    * Extra "total network I/O" line on ifstat graph (Tom Schmidt)
-   * New "backfeed" queue for high-speed transmission of Xymon status updates 
+   * New "backfeed" queue for high-speed transmission of Xymon status updates
      between modules located on the same server as xymond. Note: This is
      disabled by default, see the README.backfeed file.
    * New "extcombo" message type allows for combo messages of all types
@@ -814,7 +814,7 @@ xymon (4.3.10) unstable; urgency=low
    * Fix problem with ifstat data from Fedora in graphs
    * "inode" check on FreeBSD, OpenBSD, OSX, Solaris, HP/UX, AIX
      in addition to existing support for Linux
-   * Document building and installing Xymon on common platforms 
+   * Document building and installing Xymon on common platforms
      (Linux, FreeBSD, OpenBSD, Solaris)
    * Enhance xymoncfg so it can be used to import Xymon configuration
      settings into shell-scripts.
@@ -868,12 +868,12 @@ xymon (4.3.8) unstable; urgency=low
      (the --no-cipherlist option for xymonnet)
    * Improved build-scripts works on newer systems with libraries in
      new and surprising places
-   * Reduce xymonnet memory usage and runtime for ping tests when there 
+   * Reduce xymonnet memory usage and runtime for ping tests when there
      are multiple hosts.cfg entries with the same IP-address.
    * Add code for inode-monitoring on Linux. Does not currently work on
      any other client platform.
    * Added the ability to disable tests until a specific time, instead of
-     for some interval. Disabling a test also now computes the expire time 
+     for some interval. Disabling a test also now computes the expire time
      for the disable to happen at the next closest minute.
 
  -- Henrik Stoerner <henrik@hswn.dk>  Sun, 15 Jul 2012 17:00:00 +0200
@@ -892,7 +892,7 @@ xymon (4.3.7) unstable; urgency=low
    * Fix missing space in output from disk IGNORE rules in
      xymond_client --dump-config
    * Fix overwrite of xymon-apache.conf when upgrading
-   * Fix installation so it does not remove include/directory 
+   * Fix installation so it does not remove include/directory
      lines from configuration files.
    * Add client/local/ directory for custom client script
 
@@ -906,10 +906,10 @@ xymon (4.3.6) unstable; urgency=low
    * Allow for "include" and "directory" in combo.cfg and protocols.cfg
    * New INTERFACES definition in hosts.cfg to select which network
      interfaces are tracked in graphs.
-   * New access control mechanism for some CGI scripts returning host-specific 
-     information. Access optionally checked against an Apache-style "group" file 
+   * New access control mechanism for some CGI scripts returning host-specific
+     information. Access optionally checked against an Apache-style "group" file
      (see xymonwebaccess(5) CGI manpage).
-   * New "vertical" page-definitions (vpage, vsubpage,vsubparent) for listing hosts 
+   * New "vertical" page-definitions (vpage, vsubpage,vsubparent) for listing hosts
      across and tests down on a page.
    * Fix hostlist CGI crash when called with HTTP "HEAD"
    * Fix svcstatus CGI crash when called with non-existing hostname
@@ -917,10 +917,10 @@ xymon (4.3.6) unstable; urgency=low
    * Fix compile-errors on Solaris due to network libraries not being included.
    * Fix "logrotate" messages not being sent to some channels.
    * STATUSLIFETIME now provides the default time a status is valid (in xymond).
-   * Critical systems view: Use priority 99 for un-categorised priorities (imported from 
+   * Critical systems view: Use priority 99 for un-categorised priorities (imported from
      NK tags) and show this as 'No priority' on the webpage.
    * useradm CGI: Sort usernames
-   * New xymond module - xymond_distribute - can forward administrative commands (drop, rename, 
+   * New xymond module - xymond_distribute - can forward administrative commands (drop, rename,
      disable, enable) from one Xymon server to another.
    * New tool: appfeed CGI provides data for the Android "xymonQV" app by Darrik Mazey.
 
@@ -936,7 +936,7 @@ xymon (4.3.5) unstable; urgency=medium
      might cause crashes of the RRD handler.
    * Fix crashes in xymond caused by faulty new library for
      storing cookies and host-information.
-   * Fix memory corruption/crash in xymond caused by logging 
+   * Fix memory corruption/crash in xymond caused by logging
      of multi-source statuses.
    * New "delayred" and "delayyellow" definitions for a host
      can be used to delay change to a yellow/red status for
@@ -1000,7 +1000,7 @@ xymon (4.3.3) unstable; urgency=high
   * SECURITY FIX: More cross-site scripting vulnerabilities.
   * Remove extra "," before "History" button on status-view
   * Critical view: Shring priority-column to 10% width
-  * hosts.cfg loader: Check for valid IP spec (nibbles in 
+  * hosts.cfg loader: Check for valid IP spec (nibbles in
     0-255 range). Large numbers in a nibble were accepted,
     triggering problems when trying to ping the host.
   * Alert macros no longer limited to 8kB
@@ -1018,19 +1018,19 @@ xymon (4.3.1) unstable; urgency=medium
 
   rev 6667
 
-  * Web UI: SECURITY FIX - fix potential cross-site scripting vulnerabilities. 
+  * Web UI: SECURITY FIX - fix potential cross-site scripting vulnerabilities.
     Initial report by David Ferrest (email April 1st 2011).
-  * Solaris Makefile: Drop guessing of what linker is being used, since we 
+  * Solaris Makefile: Drop guessing of what linker is being used, since we
     get it wrong too often.
-  * configure: Add missing <string.h> include to fix compile failure on 
+  * configure: Add missing <string.h> include to fix compile failure on
     some systems.
-  * get_ostype(): Check that we have a valid OS identifier. 
+  * get_ostype(): Check that we have a valid OS identifier.
     Dont assume we can write to the string passed us.
-  * xymond user messages: Improve error message for oversize messages. 
+  * xymond user messages: Improve error message for oversize messages.
     Document the MAXMSG_USER setting.
-  * combostatus: Make the set of error-colors configurable. Change default set so 
+  * combostatus: Make the set of error-colors configurable. Change default set so
     BLUE and PURPLE are not considered errors (only RED is an error by default).
-  * xymon(1) manpage: Add missing description of some fields available in the 
+  * xymon(1) manpage: Add missing description of some fields available in the
     xymondboard command.
   * hosts.cfg manpage: Fix wrong NOPROP interpretation. From Thomas Brand.
   * Demotool: Change Hobbit->Xymon
@@ -1039,45 +1039,45 @@ xymon (4.3.1) unstable; urgency=medium
 
 xymon (4.3.0) unstable; urgency=medium
 
-  * Critical view and other webpages: Make the 'All systems OK' message 
-    configurable. Also allow the header/footer for the Critical Systems 
+  * Critical view and other webpages: Make the 'All systems OK' message
+    configurable. Also allow the header/footer for the Critical Systems
     view to be configurable.
     Suggestion and preliminary patch from Buchan Milne.
-  * xymonnet: Improve error report when HTTP tests get an empty response - 
+  * xymonnet: Improve error report when HTTP tests get an empty response -
     'HTTP error 0' sounds weird.
-  * report / snapshot CGI's: Fix buffer overrun in the HTML delimiter 
-    generated in the "please wait..." message. Also, fix potential buffer 
-    overrun in report CGI if invoked with a large value for the "style" 
-    parameter. 
+  * report / snapshot CGI's: Fix buffer overrun in the HTML delimiter
+    generated in the "please wait..." message. Also, fix potential buffer
+    overrun in report CGI if invoked with a large value for the "style"
+    parameter.
     Reported by Rolf Biesbroek.
-  * Graph definitions (graphs.cfg): Multi graphs cannot use a regex pattern. 
+  * Graph definitions (graphs.cfg): Multi graphs cannot use a regex pattern.
     Problem report by Brian Majeska
   * Solaris interface statistics: Filter out "mac" and "wrsmd" devices at
-    the client side. 
-    Update RRD handler to also filter "wrsmd" at the server side, like we 
-    already did for "mac" devices. 
+    the client side.
+    Update RRD handler to also filter "wrsmd" at the server side, like we
+    already did for "mac" devices.
     Cf. http://www.xymon.com/archive/2009/06/msg00204.html
   * Documentation: Document the XMH_* fields available in xymondboard commands.
-  * Documentation: Document SPLITNCV and "trends" methods of doing 
+  * Documentation: Document SPLITNCV and "trends" methods of doing
     custom graphs.
-  * RRD definitions: Allow override of --step/-s option for rrdcreate, 
-    from template supplied in rrddefinitions.cfg. 
+  * RRD definitions: Allow override of --step/-s option for rrdcreate,
+    from template supplied in rrddefinitions.cfg.
     Suggestion from Brian Majeska.
   * mailack: Remove restriction on how long a subjectline/message body can be.
-  * Build procedure: Add notice about running upgrade script before 
+  * Build procedure: Add notice about running upgrade script before
     installing the new version.
   * xymond_alert: Document --trace option
-  * Alerts: For recovery messages, add information so you can tell 
-    whether the recovery was due to the service actually recovering, or 
+  * Alerts: For recovery messages, add information so you can tell
+    whether the recovery was due to the service actually recovering, or
     if it was merely disabled.
-  * xymond_alert: Fix missing element in array of alert status texts used 
-    for tracing. 
+  * xymond_alert: Fix missing element in array of alert status texts used
+    for tracing.
     Spotted by Dominique Frise.
   * Add support for FreeBSD v8 modified ifstat output
-  * Documentation: Update information about the Xymon mailing lists 
+  * Documentation: Update information about the Xymon mailing lists
     following move to Mailman and new archive URL.
-  * HP/UX client: Use "swapinfo" to extract memory utilisation data, 
-    instead of the hpux-meminfo utility. 
+  * HP/UX client: Use "swapinfo" to extract memory utilisation data,
+    instead of the hpux-meminfo utility.
     By Earl Flack http://lists.xymon.com/pipermail/xymon/2010-December/030100.html
 
  -- Henrik Stoerner <henrik@hswn.dk>  Fri, 4 Mar 2011 11:08:00 +0100
@@ -1089,7 +1089,7 @@ xymon (4.3.0-0.20110120.rc1) unstable; urgency=low
   * hosts.cfg badldap documentation: Document that for LDAP URL's you must use 'badldapurl'. Reported by Simo Hmami.
   * xymond flap detection: Make number of tracked status changes and the flap-check period configurable. Change the defaults to trigger flapping at more than 5 status changes in a 30 minute period.
   * sendmessage: Enhanced error reporting, to help track down communication problems.
-  * xymond_client: Fix Windows SVC status handling to avoid coredumps, memory corruption and other nasties. 
+  * xymond_client: Fix Windows SVC status handling to avoid coredumps, memory corruption and other nasties.
     Will now report the real name of the service, instead of the pattern used in the analysis.cfg file.
     NOTE: Slight change to status message format.
   * Client handler: Fix owner/user check parsing. Reported by Ian Marsh http://www.xymon.com/archive/2011/01/msg00133.html (also broken in 4.2.3).
@@ -1180,7 +1180,7 @@ hobbit (4.2.3-1) unstable; urgency=low
   * Xymon version 4.2.3 release
   * Time-out code changed to use clock_gettime() with CLOCK_MONOTONIC
   * Bugfix for hobbitd/hobbitd_worker communication going out-of-sync
-    resulting in "garbled data" being logged and worker modules 
+    resulting in "garbled data" being logged and worker modules
     stopping.
   * NCV module now works with negative numbers.
   * Several bugfixes in DNS lookup code - could lead to crashes when
