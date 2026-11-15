@@ -218,17 +218,32 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	}
 	else {
 		struct addrinfo hints, *ai;
+		struct in_addr a4;
 
-		memset(&hints, 0, sizeof(hints));
-		hints.ai_family = AF_UNSPEC;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_flags = AI_NUMERICHOST;
-		if (getaddrinfo(ip, NULL, &hints, &ai) == 0) {
-			memcpy(&newtest->addr, ai->ai_addr, ai->ai_addrlen);
-			newtest->addrlen = ai->ai_addrlen;
-			freeaddrinfo(ai);
+		/*
+		 * inet_aton() reads an IPv4 short form such as 127.1 before
+		 * getaddrinfo(): OpenBSD's getaddrinfo() reads only a dotted quad,
+		 * even with AI_NUMERICHOST. An IPv6 literal, which it does read, is
+		 * left to it.
+		 */
+		if (inet_aton(ip, &a4)) {
+			((struct sockaddr_in *)&newtest->addr)->sin_family = AF_INET;
+			((struct sockaddr_in *)&newtest->addr)->sin_addr = a4;
+			newtest->addr.ss_family = AF_INET;
+			newtest->addrlen = sizeof(struct sockaddr_in);
 		}
-		else newtest->errcode = CONTEST_EDNS;
+		else {
+			memset(&hints, 0, sizeof(hints));
+			hints.ai_family = AF_UNSPEC;
+			hints.ai_socktype = SOCK_STREAM;
+			hints.ai_flags = AI_NUMERICHOST;
+			if (getaddrinfo(ip, NULL, &hints, &ai) == 0) {
+				memcpy(&newtest->addr, ai->ai_addr, ai->ai_addrlen);
+				newtest->addrlen = ai->ai_addrlen;
+				freeaddrinfo(ai);
+			}
+			else newtest->errcode = CONTEST_EDNS;
+		}
 	}
 	if (newtest->addr.ss_family == AF_INET6)
 		((struct sockaddr_in6 *)&newtest->addr)->sin6_port = htons(port);
