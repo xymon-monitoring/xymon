@@ -1,1 +1,3 @@
 debian/xymon-server-prepare.sh usr/share/xymon
+debian/xymonserver.d/10-debian.cfg etc/xymon/xymonserver.d
+debian/tasks.d/00-clientlaunch.cfg etc/xymon/tasks.d
