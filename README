@@ -54,22 +54,50 @@ wishlist at http://www.amazon.co.uk/ - just search for
 my mail-address (henrik@hswn.dk). A contribution in the 
 form of a book, CD or DVD is appreciated.
 
-The following files are distributed with Xymon and used
-by Xymon, but written by others and are NOT licensed under the GPL:
+The following files are distributed with Xymon and used by Xymon,
+but were written by others, in whole or in part. Each file's own
+notice is authoritative; this list is an index to them.
 
-* The lib/rmd160c.c, lib/rmdconst.h, lib/rmdlocl.h and lib/ripemd.h
+* The lib/rmd160c.c, lib/rmdconst.h, lib/rmd_locl.h and lib/ripemd.h
   files are Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com).
-  The license is BSD-like, but see these files for the exact license. 
+  The license is BSD-like, but see these files for the exact license.
   The version in Xymon was taken from the FreeBSD CVS archive.
 
-* The lib/md5.c and lib/md5.h files are (C) L. Peter Deutsch,
-  available under a BSD-like license from
+* The lib/md5.c file is Copyright (C) 1999, 2000, 2002 Aladdin
+  Enterprises, written by L. Peter Deutsch, under a zlib-style
+  license; see the file. It is available from
   http://sourceforge.net/projects/libmd5-rfc/
+  (lib/md5.h is Xymon's own, under the GPL.)
 
-* The lib/sha1.c file is originally written by by Steve Reid 
-  <steve@edmweb.com> and placed in the public domain. The version 
-  in Xymon was taken from the "mutt" mail client sources, so 
+* The lib/sha1.c file is originally written by Steve Reid
+  <steve@edmweb.com> and placed in the public domain. The version
+  in Xymon was taken from the "mutt" mail client sources, so
   some changes were done by Thomas Roessler <roessler@does-not-exist.org>.
+
+* The lib/sha2.c and lib/sha2.h files are Copyright (C) 2005, 2007
+  Olivier Gay <olivier.gay@a3.epfl.ch>. The license is BSD-like,
+  but see these files for the exact license.
+
+* Part of lib/crondate.c is derived from Paul Vixie's cron, and
+  carries its notices: Copyright 1988-1994 Paul Vixie, and
+  Copyright (c) 1989 The Regents of the University of California
+  (a BSD license). The rest of the file is under the GPL.
+
+* Part of xymonnet/dns2.c is taken from the C-ARES 1.2.0 library,
+  and carries its notice: Copyright 1998 by the Massachusetts
+  Institute of Technology, under an MIT-style license. The rest of
+  the file is under the GPL.
+
+* xymonnet/c-ares-1.15.0.tar.gz is the c-ares 1.15.0 release, under
+  an MIT-style license; see the LICENSE.md file in the archive.
+
+* xymond/webfiles/zoom.js was taken from the Cacti project, and is
+  Copyright (C) 2004 Eric Steffen, under the GPL version 2 or (at
+  your option) any later version.
+
+* The images in xymond/wwwfiles/gifs/ were collected from GPL and
+  public-domain sources; xymond/wwwfiles/gifs/README gives the
+  origin of each.
 
 
 Support
