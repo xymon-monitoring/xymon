@@ -44,8 +44,11 @@ depending on the variant:
 | `localclient` | `CONFTYPE=client ./configure --client` | `client/xymongrep` | `client/xymond_client` |
 | `client` | `./configure --client` | `client/xymongrep` | not built |
 
-The full table is `variant_products()` in `lib/assert.sh`; it also covers
-`xymond_rrd` and `svcstatus.cgi`, both server-only.
+The full table is `variant_products()` in `lib/assert.sh`. It names every
+program a test asks for through `require_bin`, server-only ones included: a
+name missing from it keeps the caller's default path in every build, so a test
+in an area the client builds run would look for `common/` there and skip.
+`XYMONCLIENT` is `XYMON` under the name the xymond tests use.
 
 A configured tree vouches for the caller's label: `configure.client` writes
 `CLIENTONLY` and `LOCALCLIENT` into the toplevel `Makefile`, and their

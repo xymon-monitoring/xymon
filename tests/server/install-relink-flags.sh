@@ -26,7 +26,7 @@ require_gnu_make
 [ -f "$ROOT/Makefile" ] || skip "requires a configured source tree with a top-level Makefile"
 require_bin XYMONGEN xymongen/xymongen
 require_bin XYMONNET xymonnet/xymonnet
-require_bin XYMONCMD common/xymon
+require_bin XYMON common/xymon
 
 work=$(mktempdir)
 tree=$work/tree
