@@ -23,6 +23,11 @@
 #       shipped line relies on. Driven through the real stackio reader
 #       (lib/stackio.c) built STANDALONE, with a present dir carrying two
 #       fragments and, for contrast, a missing dir with and without 'optional'.
+#       A drop-in that pulls in a file or a directory of its own is read to
+#       its end before the next drop-in starts (#881).
+#
+#   (C) A queued drop-in that cannot be opened is skipped, and the next one
+#       read in its place.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -129,4 +134,64 @@ render "$work/missing-required.cfg" >/dev/null
 assert_contains "WARNING" "$(cat "$work/err.log")" \
 	"a missing non-optional 'directory' unexpectedly stayed silent -- the optional contrast is meaningless"
 
-pass "shipped configs declare drop-in dirs and 'optional directory' merges fragments / tolerates absence (#222)"
+# A drop-in is read to its end before the next one starts, whatever it pulls
+# in itself (#881). The whole output is compared, because the defect is order:
+# every line was there, but the next drop-in was read in the middle of the
+# one before it. sed stops at the blank line the reader prints before its
+# prompt.
+config_lines() { render "$1" | sed '/^$/,$d' | tr '\n' ' '; }
+
+mkdir -p "$work/inc-frags" "$work/dir-frags" "$work/nested"
+printf 'INNER\n' >"$work/inner.cfg"
+printf 'BEFORE_A\ninclude %s\nAFTER_A\n' "$work/inner.cfg" >"$work/inc-frags/10-a.cfg"
+printf 'BETA\n' >"$work/inc-frags/20-b.cfg"
+printf 'BASELINE\ndirectory %s\nTAIL\n' "$work/inc-frags" >"$work/inc-in-frag.cfg"
+assert_equal "BASELINE BEFORE_A INNER AFTER_A BETA TAIL " "$(config_lines "$work/inc-in-frag.cfg")" \
+	"an include inside a drop-in let the next drop-in in before the rest of the including one (#881)"
+
+# The same for a drop-in that has a directory of its own: its fragments, then
+# the rest of it, then the next drop-in.
+printf 'X\n' >"$work/nested/x.cfg"
+printf 'Y\n' >"$work/nested/y.cfg"
+printf 'A1\ndirectory %s\nA2\n' "$work/nested" >"$work/dir-frags/10-a.cfg"
+printf 'B\n' >"$work/dir-frags/20-b.cfg"
+printf 'BASE\ndirectory %s\nTAIL\n' "$work/dir-frags" >"$work/dir-in-frag.cfg"
+assert_equal "BASE A1 X Y A2 B TAIL " "$(config_lines "$work/dir-in-frag.cfg")" \
+	"a directory inside a drop-in let the next drop-in in before the rest of the one holding it (#881)"
+
+
+# ---- (C) a queued drop-in that cannot be opened ---------------------------
+#
+# Root opens every file, and the lanes run as root, so the reader is built a
+# second time with config-include-dir-harness.c, whose fopen() refuses any
+# name containing "unopenable". A probe checks first that it is the fopen()
+# the reader calls: where the C library's is called instead, a probe file
+# that should be refused is read, and this part cannot run.
+"$CC" -DSTANDALONE $harness_cflags -o "$work/stackio-unopenable" \
+	"$ROOT/tests/libxymon/config-include-dir-harness.c" "$ROOT/lib/stackio.c" \
+	"$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
+	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
+	|| { cat "$work/cc.log" >&2; fail "stackio with the refusing fopen() does not compile"; }
+unopenable_lines() { printf '.\n' | "$work/stackio-unopenable" "$1" 2>"$work/err.log" | sed '/^$/,$d' | tr '\n' ' '; }
+
+printf 'PROBE_READ\n' >"$work/unopenable-probe.cfg"
+printf 'include %s\n' "$work/unopenable-probe.cfg" >"$work/probe.cfg"
+case $(unopenable_lines "$work/probe.cfg") in
+	*PROBE_READ*)
+		pass_partial "drop-ins are read one at a time, and the shipped drop-in directories are declared (#222, #881)" \
+			"the refusing fopen() is not the one stackio calls here, so a drop-in that cannot be opened is not checked" ;;
+esac
+
+# The first queued file cannot be opened: it is skipped with a warning, and
+# the next one is read in its place, where the directory line stands.
+mkdir -p "$work/first-bad"
+printf 'A\n' >"$work/first-bad/10-unopenable.cfg"
+printf 'B\n' >"$work/first-bad/20-b.cfg"
+printf 'C\n' >"$work/first-bad/30-c.cfg"
+printf 'BASE\ndirectory %s\nTAIL\n' "$work/first-bad" >"$work/first-bad.cfg"
+assert_equal "BASE B C TAIL " "$(unopenable_lines "$work/first-bad.cfg")" \
+	"a first drop-in that cannot be opened was not skipped for the next one"
+assert_contains "Cannot open include file '$work/first-bad/10-unopenable.cfg'" "$(cat "$work/err.log")" \
+	"a drop-in that cannot be opened was skipped without a warning"
+
+pass "shipped configs declare drop-in dirs and 'optional directory' merges fragments / tolerates absence (#222), one drop-in at a time, skipping one that cannot be opened (#881)"

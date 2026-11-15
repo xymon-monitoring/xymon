@@ -55,6 +55,17 @@ where they are printed: HTML for the <option> lists, the table and the page
 dropdown's value, and a JavaScript string for the host/test map. A name or
 message holding "<", ">", "&" or a quote is shown as written, not as markup.
 
+stackio -- a drop-in file is read to its end before the next one
+----------------------------------------------------------------
+
+A file read through a "directory" line that itself has an "include" (or a
+"directory") line now has its remaining lines read before the next file in
+the directory. They used to be read only after every later file, so a later
+drop-in saw settings the earlier one had not yet made, and the earlier one
+then overwrote settings from later drop-ins. A configuration that kept
+include lines out of drop-in files to avoid this can now use them; one that
+depended on the old order reads its settings in file order instead.
+
 web -- critical systems values are escaped on the pages that show them
 ----------------------------------------------------------------------
 
