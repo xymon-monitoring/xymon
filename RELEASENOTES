@@ -16,6 +16,18 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+xymon, xymondboard -- a send to no recipient fails instead of reporting success
+-------------------------------------------------------------------------------
+
+Sending to an empty recipient -- an empty XYMSRV, or 0.0.0.0 with no XYMSERVERS
+set -- returned success with an empty reply. A client that reads the reply as
+data then acted on nothing: load_hostnames() took the empty answer as the host
+list rather than falling back to hosts.cfg, so trimhistory --drop, which deletes
+the history of every host not listed, emptied the history directory. Such a send
+now fails with "No recipient to send to!", so xymon and xymondboard exit
+non-zero and load_hostnames() reads hosts.cfg from the file instead. A script
+that relied on 0.0.0.0 with no XYMSERVERS exiting 0 now sees exit 1.
+
 csvinfo -- only .csv databases are shown, and columns, fields and column= are bounded
 -------------------------------------------------------------------------------------
 
