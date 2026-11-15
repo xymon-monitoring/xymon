@@ -13,6 +13,10 @@ permissions:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write      # the draft release and its assets
+      id-token: write      # the OIDC token the provenance attestation is signed with
+      attestations: write  # storing that attestation with the repository
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -67,6 +71,17 @@ jobs:
           # a rebuild from the same tag.
           sha256sum "${{ steps.vars.outputs.asset }}" > "${{ steps.vars.outputs.asset }}.sha256"
           cat "${{ steps.vars.outputs.asset }}.sha256"
+#---------------------------------------------------
+      - name: Attest the tarball's provenance
+        # The .sha256 sits beside the tarball, so it catches a corrupted
+        # download but not a replaced one. The attestation is signed for this
+        # workflow run, and names the repository, the tag and the commit the
+        # tarball was built from: "gh attestation verify" checks a download
+        # against it with no key to distribute (RELEASING.md, Reproducibility).
+        # Pinned to a commit SHA, as the release action below.
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
+        with:
+          subject-path: ${{ steps.vars.outputs.asset }}
 #---------------------------------------------------
       - name: Create GitHub Release and upload tarball
         # Pinned to a commit SHA (the v3 tag) so a moved/compromised tag can't
