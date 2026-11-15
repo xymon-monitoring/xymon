@@ -26,6 +26,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 here=$(dirname "$0")
@@ -62,14 +63,8 @@ keys=$(grep -o 'xmh_item_key\[XMH_[A-Z0-9_]*\][[:space:]]*=[[:space:]]*"[^"]*"' 
 		'cont=http://www.example.com/;ok' 'dns=www.example.com' 'ntp' 'notareservedtag'
 } > "$work/cases"
 
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-# shellcheck disable=SC2086 # the flag strings are lists of words
-"$CC" $harness_cflags -o "$work/harness" \
-	"$here/xmh-item-idx-harness.c" \
-	"$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
-	$harness_ldflags 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+build_harness "$work" "$work/harness" \
+	"$here/xmh-item-idx-harness.c" libxymonclientcomm.a libxymonclient.a
 
 "$work/harness" "$work/cases" 2>"$work/stderr.log" \
 	|| fail "xmh_item_idx() misreads hosts.cfg tags:

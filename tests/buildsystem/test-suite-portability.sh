@@ -52,7 +52,7 @@ files=$(
 # probe kept passing over a gap it was there to expose.
 __rule_patterns=()
 report() {
-	local rule=$1 pattern=$2 why=$3 f line
+	local rule=$1 pattern=$2 why=$3 f scan=
 
 	__rule_patterns[${#__rule_patterns[@]}]=$pattern
 	for f in $files; do
@@ -64,15 +64,33 @@ report() {
 		  runner-only-helper) [ "$f" = "$ROOT/tests/testsuite" ] && continue ;;
 		  make-tree-*) [ "$f" = "$ROOT/tests/lib/assert.sh" ] && continue ;;
 		esac
-		# Drop comment lines before matching, keeping real line numbers.
-		# "|| true" twice: a grep with no match exits 1, which set -e and
-		# pipefail would take for an error.
-		{ grep -nE "$pattern" "$f" 2>/dev/null || true; } | \
-		{ grep -vE '^[0-9]+:[[:space:]]*#' || true; } | \
-		while IFS= read -r line; do
-			printf '%s\t%s:%s\t%s\n' "$rule" "${f#"$ROOT"/}" "${line%%:*}" "$why" >>"$work/violations"
-		done
+		# install-static-wwwdir tests the make build's own install, and the
+		# INSTALLSTATICWWWDIR it checks is computed by build/Makefile.rules,
+		# which only make can evaluate.
+		case $rule:$f in
+		  make-tree-probe:"$ROOT/tests/server/install-static-wwwdir.sh") continue ;;
+		esac
+		scan="$scan $f"
 	done
+	# One grep over every file the rule applies to, not one per file: a
+	# process per file and rule was most of this test's time. /dev/null as a
+	# second operand makes every grep name the file on each line, which -H
+	# would too but POSIX does not have. Comment lines are dropped after the
+	# match, keeping real line numbers; a path never holds ":<digits>:", so
+	# the first such field ends it. "|| true": a grep with no match exits 1,
+	# which set -e and pipefail would take for an error.
+	# $scan is a list of paths with no blanks in them, split on purpose.
+	# shellcheck disable=SC2086
+	{ grep -nE "$pattern" $scan /dev/null 2>/dev/null || true; } | \
+	awk -v rule="$rule" -v why="$why" -v root="$ROOT/" '
+		match($0, /:[0-9]+:/) {
+			path = substr($0, 1, RSTART - 1)
+			num = substr($0, RSTART + 1, RLENGTH - 2)
+			text = substr($0, RSTART + RLENGTH)
+			if (text ~ /^[[:space:]]*#/) next
+			if (index(path, root) == 1) path = substr(path, length(root) + 1)
+			printf "%s\t%s:%s\t%s\n", rule, path, num, why
+		}' >>"$work/violations"
 }
 
 # bash 3.2 is the floor: macOS ships it, and the suite runs under
@@ -151,6 +169,8 @@ report "make-tree-makefile" '(sed|grep|awk|cat|head|tail|cut)( [^|;]*)? "?[$][{]
 	"reads the top-level Makefile, which only a make build has; use xymon_makevar ROOT NAME"
 report "make-tree-archive" '[$][{]?(ROOT|root)[}]?/lib/lib[a-z]+[.]a' \
 	"names an archive by where make writes it; use xymon_lib ROOT ARCHIVE"
+report "make-tree-probe" 'XYMON_MAKE"?[^|;]*-f +"?Makefile"? +-f +-' \
+	"reads the top-level Makefile through a make probe, which only a make build has; use xymon_makevar ROOT NAME, or xymon_cflags/xymon_ldflags"
 
 # The runner defines errline() and run_one() for itself. A test does not have
 # them: it is sourced with tests/lib/assert.sh and nothing else, so a call to
@@ -200,6 +220,12 @@ check_link_flags() {
 	# into a reported violation -- 901 times in 20000 on OpenBSD 7.9.
 	# [{]? rather than \{? : a brace after a backslash is not portable ERE.
 	grep -qE '[$][{]?ROOT[}]?[^[:space:]]*[.]a|xymon_lib "' <<<"$code" || return 0
+	# A test that hands its link to build_harness or build_xymond_worker
+	# delegates the flags to that helper, which carries xymon_cflags and
+	# xymon_ldflags itself. Such a test still names an archive -- to build it,
+	# to guard on its presence, or to pass it to the helper -- so it trips the
+	# detector above, but the configured flags are not its to hold.
+	grep -qE '(^|[^[:alnum:]_])(build_harness|build_xymond_worker)[[:space:]]' <<<"$code" && return 0
 	grep -q 'xymon_cflags' <<<"$code" \
 		|| printf 'link-flags\t%s\t%s\n' "${f#"$ROOT"/}" "links an in-tree archive without xymon_cflags" >>"$out"
 	grep -q 'xymon_ldflags' <<<"$code" \
@@ -443,10 +469,11 @@ probe="$work/probe.sh"
 	printf '"$XYMON_MAKE" -C "$ROOT/lib" libxymoncomm.a\n'
 	printf 'libs=$(sed -n s/^PCRELIBS=//p "$ROOT/Makefile")\n'
 	printf 'cc x.c "$root/lib/libxymon.a"\n'
+	printf 'out=$("$XYMON_MAKE" -s -C "$ROOT" -f Makefile -f - probe <<EOF)\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "14" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "15" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # And not over-eager: the helpers that replace those, and a test that only
 # asks whether the make tree is there, match none of the patterns.
@@ -497,6 +524,17 @@ assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
 check_link_flags "$bypass" "$work/probe-violations"
 assert_equal "2" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
 	"the link-flags rule does not see an archive named through xymon_lib"
+# A test that names an archive but hands its link to build_harness delegates
+# the flags to the helper, so the rule reports nothing for it.
+{
+	printf '#!/usr/bin/env bash\n'
+	printf '[ -f "$(xymon_lib "$ROOT" libportable.a)" ] || skip "tree not built"\n'
+	printf 'build_harness "$work" "$work/harness" "$here/probe-harness.c" libportable.a\n'
+} >"$bypass"
+: >"$work/probe-violations"
+check_link_flags "$bypass" "$work/probe-violations"
+assert_equal "0" "$(wc -l <"$work/probe-violations" | tr -d " ")" \
+	"the link-flags rule reports a test that delegates its link to build_harness"
 
 # The GNU-escape rule the same way: an escape is reported whatever follows it,
 # a word included, and the portable spellings are not.

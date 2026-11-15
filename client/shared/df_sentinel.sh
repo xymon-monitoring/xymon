@@ -45,7 +45,7 @@ df_sentinel()
 			claim:*)
 				# Another cycle holds the claim and has not started its df yet.
 				_c=${_old#claim:}
-				[ -n "$_c" ] && kill -0 "$_c" 2>/dev/null && { rm -f "$_tmpf"; return 124; }
+				[ -n "$_c" ] && fs_procalive "$_c" && { rm -f "$_tmpf"; return 124; }
 				;;
 			?*)
 				# A df we recorded. Still wedged? The command name is
@@ -54,9 +54,11 @@ df_sentinel()
 				# ps elsewhere -- and neither touches the filesystem, so a
 				# wedged mount cannot block the check. Basename, because the
 				# name is short on Linux and the BSDs, the full path on macOS.
+				# fs_procalive(), not kill -0: a df that has exited and that
+				# nothing reaps keeps its PID, and on Linux its name.
 				_c=$(fs_procname "$_old")
 				_c=${_c##*/}
-				if kill -0 "$_old" 2>/dev/null; then
+				if fs_procalive "$_old"; then
 					case "$_c" in
 					  df) rm -f "$_tmpf"; return 124 ;;
 					  "")

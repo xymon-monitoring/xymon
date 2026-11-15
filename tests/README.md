@@ -64,6 +64,25 @@ Leaving it unset is the default and stays supported: each test falls back to its
 own in-tree path, which is what a developer run, a release tarball and the
 build-free `tests.yml` lane all do.
 
+### Checking a program's memory with Valgrind
+
+`build/valgrind.sh PROGRAM [ARGUMENT...]` runs one program under Valgrind's
+Memcheck and exits 99 when it leaks a block or misuses memory, 77 when
+valgrind is not installed, and with the program's own status otherwise; its
+header says what counts, how to install valgrind and how to pass it more
+options. CI installs valgrind on its Linux lanes.
+
+How a test checks memory depends on what it runs:
+
+- **A binary of the build** runs through `build/valgrind.sh`: 99 is a
+  failure, and 77 a skip.
+- **A harness the test compiles itself** can also be built with
+  AddressSanitizer, where valgrind is missing: `asan_usable` says whether
+  the compiler can. LeakSanitizer reports a leak at exit on Linux; where the
+  sanitizer has no leak detection (macOS) only crashes and undefined
+  behaviour are caught, and the test ends with `pass_partial`, naming the
+  leak check as not run.
+
 ## What lives here, what doesn't
 
 - **Here:** shell-level integration scenarios that exercise binaries,
@@ -216,7 +235,8 @@ maintenance.
   `uname`-guarded. The price is paid on both sides. The extracted region
   must be POSIX shell with portable tool flags (no bashism, no GNU-only
   flag, no `/proc`), and whatever is genuinely per-OS lives in a named
-  helper -- `fs_mounts`, `fs_filesystems`, `fs_procname` -- which the
+  helper -- `fs_mounts`, `fs_filesystems`, `fs_procname`,
+  `fs_procalive` -- which the
   test replaces *by name* with `fsf_stub_helper`, never by rewriting the
   path the helper reads. `tests/buildsystem/test-suite-portability.sh`
   enforces both halves.
@@ -224,7 +244,7 @@ maintenance.
   stubbed test throws them away. Close that with a **native test**: one
   that exercises the real primitive, guarded by `uname` and skipping
   where it doesn't apply (`tests/client/fs-procname.sh`,
-  `tests/client/fs-mounts.sh`). These are the only tests allowed to
+  `tests/client/fs-procalive.sh`, `tests/client/fs-mounts.sh`). These are the only tests allowed to
   guard on `uname`, and they should stay few -- one per primitive, not
   one per behaviour that happens to use it.
 - **A fixture that has to be a real binary is built, not copied.** Use

@@ -786,7 +786,20 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
   <dd>Disables the standard check of any SSL certificates for this host. By
       default, if an SSL-enabled service is tested, a second test result is
       generated with information about the SSL certificate - this tag disables
-      the SSL certificate checks for the host.
+      the SSL certificate checks for the host.</dd>
+  <dt></dt>
+  <dd>An <b>https</b> test also checks that the certificate covers the name in
+      the URL - the name sent as SNI. A certificate that does not cover it turns
+      <b>sslcert</b> red, &quot;Certificate does NOT cover '&lt;name&gt;'&quot;,
+      even when it is valid and unexpired; a matching one is noted
+      &quot;Certificate covers '&lt;name&gt;'&quot; and the colour is unchanged.
+      To keep the expiry and cipher checks without the name check, write the
+      address in the URL (<b>https://10.0.0.5/</b>), which sends no servername.
+      This pins the address, so it suits an endpoint whose IP is fixed, not a
+      name that must keep resolving - a dynamically resolved host would then be
+      tested at the written address, not its current one. <b>nosslcert</b>
+      instead turns the whole <b>sslcert</b> status off. The name check needs
+      OpenSSL 1.0.2 or later.
     <p class="Pp"></p>
   </dd>
   <dt id="ssldays"><a class="permalink" href="#ssldays"><b>ssldays</b>=<i>WARNDAYS</i>:<i>ALARMDAYS</i></a></dt>

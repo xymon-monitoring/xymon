@@ -15,13 +15,14 @@ csvinfo.cgi is passed a QUERY_STRING environment variable
 with the following parameters:
 
    key (string to search for, typically hostname)
-   column (columnnumber to search - default 0)
-   db  (name of the CSV database file in $XYMONHOME/etc/, default hostinfo.csv)
-   delimiter (delimiter character for columns, default semi-colon)
+   column (columnnumber to search, 0 to 79 - default 0)
+   db  (name of the CSV database file in $XYMONHOME/etc/, ending in ".csv" - default hostinfo.csv)
+   delimiter (delimiter character for columns, not empty - default semi-colon)
 
 CSV files are easily created from e.g. spreadsheets, by exporting them
 in CSV format. You should have one host per line, with the first line
-containing the column headings. Despite their name, the default delimiter
+containing the column headings. csvinfo.cgi shows at most 80 columns, and
+cuts a field longer than its line buffer. Despite their name, the default delimiter
 for CSV files is the semi-colon - if you need a different delimiter,
 invoke csvinfo.cgi with the "delimiter=<character>" in the query
 string.

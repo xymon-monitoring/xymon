@@ -18,6 +18,7 @@
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
+. "$(dirname "$0")/../lib/build-harness.sh"
 
 ROOT=$(find_root)
 
@@ -68,11 +69,8 @@ int main(void)
 }
 HARNESS
 
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-"$CC" $harness_cflags -o "$work/harness" \
-	"$work/harness.c" "$(xymon_lib "$ROOT" libxymoncomm.a)" $harness_ldflags $pcre_libs 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "harness does not compile"; }
+build_harness "$work" "$work/harness" \
+	"$work/harness.c" libxymoncomm.a
 
 "$work/harness" 2>"$work/run.log" \
 	|| fail "a firstline regex matched past the first line:

@@ -37,17 +37,20 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
   <br/>
    key (string to search for, typically hostname)
   <br/>
-   column (columnnumber to search - default 0)
+   column (columnnumber to search, 0 to 79 - default 0)
   <br/>
-   db (name of the CSV database file in $XYMONHOME/etc/, default hostinfo.csv)
+   db (name of the CSV database file in $XYMONHOME/etc/, ending in
+    &quot;.csv&quot; - default hostinfo.csv)
   <br/>
-   delimiter (delimiter character for columns, default semi-colon)</p>
+   delimiter (delimiter character for columns, not empty - default
+  semi-colon)</p>
 <p class="Pp">CSV files are easily created from e.g. spreadsheets, by exporting
     them in CSV format. You should have one host per line, with the first line
-    containing the column headings. Despite their name, the default delimiter
-    for CSV files is the semi-colon - if you need a different delimiter, invoke
-    csvinfo.cgi with the &quot;delimiter=&lt;character&gt;&quot; in the query
-    string.</p>
+    containing the column headings. csvinfo.cgi shows at most 80 columns, and
+    cuts a field longer than its line buffer. Despite their name, the default
+    delimiter for CSV files is the semi-colon - if you need a different
+    delimiter, invoke csvinfo.cgi with the
+    &quot;delimiter=&lt;character&gt;&quot; in the query string.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">

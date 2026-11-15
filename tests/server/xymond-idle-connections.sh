@@ -14,10 +14,11 @@
 # whole --timeout.
 #
 # Checked, with xymond-idle-connections-harness.c:
-#   - three connections that send nothing are closed by the time 9 seconds
-#     have passed, while a status sent slowly over 7 seconds is kept --
-#     xymond applies timeouts when it next has something to do, which a
-#     ping at 6.5 seconds provides;
+#   - three connections that send nothing are closed by the time 7 seconds
+#     have passed, with nothing else reaching xymond meanwhile: it drops them
+#     on its own, not when the next client happens to wake it -- it used to
+#     wait for one, so on a quiet server a silent connection stayed open;
+#     and a status sent slowly over 8 seconds is kept;
 #   - 100 connections from one address, each in the middle of sending a
 #     status, as a proxy has, are all kept;
 #   - 100 connections from one address that send nothing, with no pressure,
@@ -65,22 +66,20 @@ for _ in $(seq 1 100); do
 	sleep 0.1
 done
 
-ping_xymond() { XYMON_TIMEOUT=5 "$XYMONCLIENT" "127.0.0.1:$P" ping >/dev/null 2>&1 || true; }
-
-# Silent connections go; a slow message stays
-"$work/harness" count 127.0.0.1 "$P" 3 9 > "$work/count.out" 2>&1 &
+# Silent connections go; a slow message stays. Nothing else talks to xymond
+# until the slow status resumes at 8 seconds, after the count at 7: the
+# silent connections have to be dropped with no other traffic to wake it.
+"$work/harness" count 127.0.0.1 "$P" 3 7 > "$work/count.out" 2>&1 &
 cpid=$!
-"$work/harness" slow 127.0.0.1 "$P" testhost.slow 7 > "$work/slow.out" 2>&1 &
+"$work/harness" slow 127.0.0.1 "$P" testhost.slow 8 > "$work/slow.out" 2>&1 &
 spid=$!
-sleep 6.5
-ping_xymond
 wait "$cpid" || fail "the harness failed counting silent connections: $(cat "$work/count.out")"
 wait "$spid" || fail "the harness failed sending slowly: $(cat "$work/slow.out")"
 assert_contains "open 0" "$(cat "$work/count.out")" \
-	"connections that sent nothing were not closed after 5 seconds; xymond's log: $(cat "$work/xymond.log")"
+	"connections that sent nothing were not closed within 7 seconds on a server with no other traffic; xymond's log: $(cat "$work/xymond.log")"
 got=$(XYMON_TIMEOUT=5 "$XYMONCLIENT" "127.0.0.1:$P" "xymondlog testhost.slow" 2>&1 || true)
 assert_contains "sent slowly" "$got" \
-	"a status sent slowly over 7 seconds was dropped as if it had sent nothing; xymond's log: $(cat "$work/xymond.log")"
+	"a status sent slowly over 8 seconds was dropped as if it had sent nothing; xymond's log: $(cat "$work/xymond.log")"
 
 # A proxy's case: many connections from one address, each in the middle of
 # a message. They are not silent, so none counts against the cap.

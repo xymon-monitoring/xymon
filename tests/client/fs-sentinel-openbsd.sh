@@ -109,7 +109,7 @@ run_cycle() {
 	env DF_CALLS="$DF_CALLS" DF_REMOTE="$DF_REMOTE" \
 		XYMONTMP="$TMP/probe" \
 		XYMONCLIENT_FS_DF_LOCAL_ONLY=no \
-		XYMONCLIENT_FS_REMOTE_DF_BUDGET=2 \
+		XYMONCLIENT_FS_REMOTE_DF_BUDGET=1 \
 		PATH="$STUB:$PATH" \
 		"$@" \
 		/bin/sh "$SNIPPET" 2>/dev/null || true

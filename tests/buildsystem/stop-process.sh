@@ -14,6 +14,14 @@
 # child of it, from a pidfile. After stop_process each is gone. Then empty
 # and already dead PIDs are accepted, as a cleanup for something that never
 # started needs.
+#
+# Gone is what process_running says, not kill -0: a process that has exited
+# and that no parent reaps stays in the table as a zombie, and kill -0 still
+# answers for it. That is what an orphan becomes where PID 1 does not reap --
+# a container whose first process is not an init (#866) -- and stop_process
+# then waited its full eleven seconds for a process that had already exited.
+# Checked with a zombie made here: its parent replaces itself with a sleep,
+# which never waits for it.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -34,10 +42,43 @@ kill -0 "$child" 2>/dev/null \
 sh -c "sh -c '$slow' & echo \$! >'$work/pid'"
 other=$(cat "$work/pid")
 sleep 0.2
+process_running "$other" || fail "process_running does not see a process that runs"
 stop_process "$other"
-kill -0 "$other" 2>/dev/null \
+process_running "$other" \
 	&& fail "stop_process returned while a process that is not its child, still exiting, was running"
+
+# Exited and never reaped. Where ps tells no state, process_running can only
+# ask kill -0, and there is nothing to check.
+#
+# The child exits only once its parent has become the sleep, which never
+# reaps. Exiting at once, it could be reaped by its shell before the exec, and
+# then there was no zombie: 2 to 4 runs in 100. comm is matched as *sleep, as
+# macOS gives the whole path; the wait is bounded, and the state is polled
+# until it says Z rather than given a fixed time.
+proc_state() { ps -o stat= -p "$1" 2>/dev/null || ps -o s= -p "$1" 2>/dev/null; }
+if ps -o stat= -p $$ >/dev/null 2>&1 || ps -o s= -p $$ >/dev/null 2>&1; then
+	sh -c "sh -c 'n=0; while [ \$n -lt 200 ]; do case \$(ps -o comm= -p \$PPID 2>/dev/null) in *sleep) break ;; esac; sleep 0.05; n=\$((n + 1)); done; exit 0' & echo \$! >'$work/zombie'; exec sleep 30" &
+	holder=$!
+	register_cleanup "stop_process -KILL $holder"
+	for _ in $(seq 1 50); do
+		[ -s "$work/zombie" ] && break
+		sleep 0.1
+	done
+	zombie=$(cat "$work/zombie")
+	for _ in $(seq 1 150); do
+		case $(proc_state "$zombie") in *Z*) break ;; esac
+		sleep 0.1
+	done
+	kill -0 "$zombie" 2>/dev/null || fail "the exited process is not in the table: no zombie to check with"
+	process_running "$zombie" && fail "process_running takes an exited, unreaped process for a running one"
+	process_running "$holder" || fail "process_running does not see the zombie's parent, which runs"
+	t0=$SECONDS
+	stop_process "$zombie"
+	[ $((SECONDS - t0)) -lt 5 ] \
+		|| fail "stop_process waited $((SECONDS - t0)) s for a process that had already exited"
+	stop_process "$holder"
+fi
 
 stop_process "" 999999999 || fail "stop_process failed on an empty and a dead PID"
 
-pass "stop_process returns once the process has exited, its child or not, and accepts empty and dead PIDs"
+pass "stop_process returns once the process has exited, its child or not, reaped or not, and accepts empty and dead PIDs"

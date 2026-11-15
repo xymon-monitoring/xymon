@@ -86,8 +86,10 @@ as() {
 	esac
 }
 # kept HOST.TEST -- the status xymond holds for it (asked in plaintext: no
-# --www-senders restricts xymondlog)
-kept() { sleep 0.5; as plain "xymondlog $1"; }
+# --www-senders restricts xymondlog). No pause before it: a TLS send returns
+# only once xymond has handled the message and sent its close_notify, and a
+# plaintext one is taken before a query that connects after it.
+kept() { as plain "xymondlog $1"; }
 
 cfg "$work/ca.pem"
 launch || fail "xymond did not start with XYMOND_TLS_CA: $(cat "$work/xymond.log")"
@@ -117,14 +119,12 @@ assert_contains "xymond" "$(as none ping)" "with XYMOND_TLS_CA but no XYMOND_TLS
 as none "client web01.example.com.linux linux
 [date]
 no certificate" >/dev/null
-sleep 0.3
 grep -q 'Invalid client message - sender 127.0.0.1 not allowed for host web01.example.com' "$work/xymond.log" \
 	|| fail "a client message for web01 without its certificate was not refused: $(tail -5 "$work/xymond.log")"
 n=$(grep -c 'Invalid client message' "$work/xymond.log")
 as web01 "client web01.example.com.linux linux
 [date]
 with the certificate" >/dev/null
-sleep 0.3
 [ "$(grep -c 'Invalid client message' "$work/xymond.log")" = "$n" ] \
 	|| fail "a client message for web01 with its certificate was refused: $(tail -3 "$work/xymond.log")"
 
@@ -132,14 +132,12 @@ sleep 0.3
 as none "data web01.example.com.trends
 [cpu.rrd]
 no certificate" >/dev/null
-sleep 0.3
 grep -q 'Invalid data message - sender 127.0.0.1 not allowed for host web01.example.com' "$work/xymond.log" \
 	|| fail "a data message for web01 without its certificate was not refused: $(tail -5 "$work/xymond.log")"
 n=$(grep -c 'Invalid data message' "$work/xymond.log")
 as web01 "data web01.example.com.trends
 [cpu.rrd]
 with the certificate" >/dev/null
-sleep 0.3
 [ "$(grep -c 'Invalid data message' "$work/xymond.log")" = "$n" ] \
 	|| fail "a data message for web01 with its certificate was refused: $(tail -3 "$work/xymond.log")"
 
