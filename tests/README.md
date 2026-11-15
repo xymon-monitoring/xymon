@@ -319,6 +319,22 @@ maintenance.
   ```
   Every test that sets `HOSTSCFG` wants its fixture, so every one carries the
   prefix.
+- **A log polled for a readiness line is emptied in the parent before each
+  start.** A test that starts `xymond` in the background and waits for
+  "Setup complete" in its log can read the line the previous start left: the
+  `>` that empties the file runs in the background child, after the fork, so
+  on a loaded runner the parent's `grep` can get there first and go on before
+  the new daemon has bound its sockets -- a few runs in a hundred, as a
+  listener that "does not answer". With `--log=` xymond appends, and the old
+  line is always there. Empty it in the parent:
+  ```bash
+  : > "$work/xymond.log"           # in the parent, before the start
+  "$XYMOND" --no-daemon ... > "$work/xymond.log" 2>&1 &
+  ```
+  Every test that waits on a readiness line does so, the ones whose earlier
+  starts are meant to fail included: a start added after a successful one
+  would otherwise reopen the race. `start_xymond()`
+  (tests/lib/xymond-daemon.sh) waits on a ping instead and needs nothing.
 - **A test fails when its fix is absent -- or says why it doesn't.** That
   is what makes it a regression test rather than a green tick, and it is
   worth asserting deliberately: prefer an assertion about what only the

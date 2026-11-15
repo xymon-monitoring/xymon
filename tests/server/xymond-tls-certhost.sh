@@ -58,6 +58,10 @@ cfg() {
 
 MLPID=
 launch() {
+	# The log is emptied here, in the parent: the redirection below truncates
+	# it in the background child, and the grep can read the previous start's
+	# "Setup complete" before that (tests/README.md, Conventions).
+	: > "$work/xymond.log"
 	"$XYMOND" --no-daemon --listen="127.0.0.1:$P" --tls-listen="127.0.0.1:$T" \
 		--status-senders=192.0.2.1 --maint-senders=192.0.2.1 \
 		--hosts="$work/hosts.cfg" --env="$work/xymonserver.cfg" "$@" \
