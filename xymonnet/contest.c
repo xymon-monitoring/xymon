@@ -37,6 +37,7 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 #include "xymonnet.h"
+#include "../lib/xymontls.h"	/* xymontls_asn1_length() */
 #include "contest.h"
 #include "httptest.h"
 #include "dns.h"
@@ -529,7 +530,7 @@ static char *xymon_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 	int century=0,year=0,month=0,day=0,hour=0,minute=0,second=0;
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-	len=ASN1_STRING_length(tm);
+	len=xymontls_asn1_length(tm);
 	asn1_string=(char *)ASN1_STRING_get0_data(tm);
 #else
 	len=tm->length;
