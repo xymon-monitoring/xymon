@@ -193,5 +193,9 @@ assert_equal "BASE B C TAIL " "$(unopenable_lines "$work/first-bad.cfg")" \
 	"a first drop-in that cannot be opened was not skipped for the next one"
 assert_contains "Cannot open include file '$work/first-bad/10-unopenable.cfg'" "$(cat "$work/err.log")" \
 	"a drop-in that cannot be opened was skipped without a warning"
+# The warning quotes the line that queued it, as text.
+assert_contains "line was: directory $work/first-bad" "$(cat "$work/err.log")" \
+	"the warning for a drop-in that cannot be opened did not quote the directory line"
+
 
 pass "shipped configs declare drop-in dirs and 'optional directory' merges fragments / tolerates absence (#222), one drop-in at a time, skipping one that cannot be opened (#881)"

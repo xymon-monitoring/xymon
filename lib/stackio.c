@@ -442,7 +442,7 @@ static void addtofnlist(char *dirname, int is_optional, void **v_listhead, htnam
  * queue. One that cannot be opened is skipped with a warning rather than
  * left queued, so the rest are still read where they belong.
  */
-static FILE *openqueued(htnames_t **pending, int optional, strbuffer_t *buffer)
+static FILE *openqueued(htnames_t **pending, int optional, const char *line)
 {
 	FILE *newfd = NULL;
 
@@ -451,8 +451,8 @@ static FILE *openqueued(htnames_t **pending, int optional, strbuffer_t *buffer)
 
 		newfd = stackfopen(tmp->name, "r", (void **)fdhead->listhead);
 		if (newfd == NULL) {
-			if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", tmp->name, buffer);
-			else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", tmp->name, buffer);
+			if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", tmp->name, line);
+			else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", tmp->name, line);
 		}
 
 		*pending = tmp->next;
@@ -522,7 +522,7 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 
 			if (*dirfn) addtofnlist(dirfn, optional, (void **)fdhead->listhead, pending);
 			if (*pending) {
-				if (openqueued(pending, optional, buffer)) return stackfgets(buffer, extraincl);
+				if (openqueued(pending, optional, STRBUF(buffer))) return stackfgets(buffer, extraincl);
 
 				/* None of them opened: return the directory line, as a failed include does. */
 				*nameend = endchar;
@@ -570,8 +570,9 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			else {
 				htnames_t *tmp = *pending;
 
-				if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", tmp->name, buffer);
-				else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", tmp->name, buffer);
+				/* No line to quote: the file before it has ended. */
+				if (!optional) errprintf("WARNING: Cannot open include file '%s'\n", tmp->name);
+				else dbgprintf("stackfgets(): Cannot open include file '%s'\n", tmp->name);
 
 				*pending = tmp->next;
 				xfree(tmp->name); xfree(tmp);
