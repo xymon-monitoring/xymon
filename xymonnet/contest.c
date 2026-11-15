@@ -557,7 +557,11 @@ static char *xymon_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 	day=(asn1_string[4]-'0')*10+(asn1_string[5]-'0');
 	hour=(asn1_string[6]-'0')*10+(asn1_string[7]-'0');
 	minute=(asn1_string[8]-'0')*10+(asn1_string[9]-'0');
-	if ( (asn1_string[10] >= '0') && (asn1_string[10] <= '9') &&
+	/* Seconds only when the time has them, 12 characters or more (a 15 has
+	   had its century skipped and still has them): no NUL follows the time
+	   to stop the read, which OpenSSL 4.1 no longer promises. */
+	if ( (len >= 12) &&
+	     (asn1_string[10] >= '0') && (asn1_string[10] <= '9') &&
 	     (asn1_string[11] >= '0') && (asn1_string[11] <= '9')) {
 		second= (asn1_string[10]-'0')*10+(asn1_string[11]-'0');
 	}
