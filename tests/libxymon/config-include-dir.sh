@@ -21,8 +21,10 @@
 #   (B) Mechanism: the 'optional directory' directive actually merges the
 #       fragments AND tolerates the directory being absent. This is what the
 #       shipped line relies on. Driven through the real stackio reader
-#       (lib/stackio.c) built STANDALONE, with a present dir carrying two
-#       fragments and, for contrast, a missing dir with and without 'optional'.
+#       (lib/stackio.c) built STANDALONE -- xymonstackio where there is one,
+#       so an installed package's own binary is checked -- with a present dir
+#       carrying two fragments and, for contrast, a missing dir with and
+#       without 'optional'.
 #       A drop-in that pulls in a file or a directory of its own is read to
 #       its end before the next drop-in starts (#881).
 #
@@ -77,38 +79,62 @@ check_declares "$ROOT/client/clientlaunch.cfg.DIST"             "clientlaunch.d"
 check_declares "$ROOT/client/xymonclient.cfg.DIST"              "xymonclient.d"
 
 # ---- (B) the directive actually works, via the real stackio reader ---------
+#
+# The reader is lib/stackio.c built STANDALONE, which is what xymonstackio is
+# (lib/Makefile). Where there is one -- $STACKIO, as an installed package's
+# tests export it, or a server build's lib/xymonstackio -- that binary is
+# driven, so the package's own build is what gets checked. Otherwise the test
+# builds the same reader against the client archives, which every build makes:
+# xymonstackio links the server's libxymon.a, and a client build has none.
 
 CC=${CC:-cc}
-if ! command -v "$CC" >/dev/null 2>&1 \
-	|| [ ! -f "$ROOT/include/config.h" ] || [ ! -f "$(xymon_lib "$ROOT" libxymonclient.a)" ] || [ ! -f "$(xymon_lib "$ROOT" libxymonclientcomm.a)" ]; then
-	pass_partial "shipped configs declare their drop-in directories (#222)" "stackio mechanism check needs a built tree"
-fi
+built_tree() {
+	command -v "$CC" >/dev/null 2>&1 && [ -f "$ROOT/include/config.h" ] \
+		&& [ -f "$(xymon_lib "$ROOT" libxymonclient.a)" ] && [ -f "$(xymon_lib "$ROOT" libxymonclientcomm.a)" ]
+}
+
+# build_stackio OUT [SOURCE...] -- the STANDALONE reader, with SOURCE linked in.
+build_stackio() {
+	local out=$1 pcre_libs harness_cflags harness_ldflags
+	shift
+	pcre_libs=${PCRELIBS:-}
+	if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
+		pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
+	fi
+	[ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
+	harness_cflags=$(xymon_cflags "$ROOT")
+	harness_ldflags=$(xymon_ldflags "$ROOT")
+	# The client archives use PCRE only in a localclient tree, by the same
+	# CLIENTONLY/LOCALCLIENT test lib/loadalerts.h makes, so a plain client tree
+	# links none -- and may have none installed.
+	case $harness_cflags in
+		*-DLOCALCLIENT*) ;;
+		*-DCLIENTONLY*) pcre_libs= ;;
+	esac
+	# shellcheck disable=SC2086 # the flag strings are intentionally word-split
+	"$CC" -DSTANDALONE $harness_cflags -o "$out" \
+		"$@" "$ROOT/lib/stackio.c" "$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
+		$harness_ldflags $pcre_libs 2>"$work/cc.log" \
+		|| { cat "$work/cc.log" >&2; fail "standalone stackio does not compile"; }
+}
 
 work=$(mktempdir)
 
-pcre_libs=${PCRELIBS:-}
-if [ -z "$pcre_libs" ] && command -v pkg-config >/dev/null 2>&1; then
-	pcre_libs=$(pkg-config --libs libpcre2-8 2>/dev/null || true)
+if [ -n "${STACKIO:-}" ]; then
+	[ -x "$STACKIO" ] || fail "STACKIO is set to '$STACKIO', which is not an executable"
+	stackio=$STACKIO
+elif [ -x "$ROOT/lib/xymonstackio" ]; then
+	stackio=$ROOT/lib/xymonstackio
+elif built_tree; then
+	stackio=$work/stackio
+	build_stackio "$stackio"
+else
+	pass_partial "shipped configs declare their drop-in directories (#222)" "stackio mechanism check needs xymonstackio or a built tree"
 fi
-[ -n "$pcre_libs" ] || pcre_libs="-lpcre2-8"
-
-harness_cflags=$(xymon_cflags "$ROOT")
-harness_ldflags=$(xymon_ldflags "$ROOT")
-# The client archives use PCRE only in a localclient tree, by the same
-# CLIENTONLY/LOCALCLIENT test lib/loadalerts.h makes, so a plain client tree
-# links none -- and may have none installed.
-case $harness_cflags in
-	*-DLOCALCLIENT*) ;;
-	*-DCLIENTONLY*) pcre_libs= ;;
-esac
-"$CC" -DSTANDALONE $harness_cflags -o "$work/stackio" \
-	"$ROOT/lib/stackio.c" "$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
-	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "standalone stackio does not compile"; }
 
 # The STANDALONE reader reads argv[1] via stackfgets() (which expands include
 # directives), prints every line, then prompts on stdin -- feed it '.' to quit.
-render() { printf '.\n' | "$work/stackio" "$1" 2>"$work/err.log"; }
+render() { printf '.\n' | "$stackio" "$1" 2>"$work/err.log"; }
 
 mkdir -p "$work/frags"
 printf 'FRAGMENT_ALPHA\n' >"$work/frags/10-alpha.cfg"
@@ -167,11 +193,9 @@ assert_equal "BASE A1 X Y A2 B TAIL " "$(config_lines "$work/dir-in-frag.cfg")" 
 # name containing "unopenable". A probe checks first that it is the fopen()
 # the reader calls: where the C library's is called instead, a probe file
 # that should be refused is read, and this part cannot run.
-"$CC" -DSTANDALONE $harness_cflags -o "$work/stackio-unopenable" \
-	"$ROOT/tests/libxymon/config-include-dir-harness.c" "$ROOT/lib/stackio.c" \
-	"$(xymon_lib "$ROOT" libxymonclientcomm.a)" "$(xymon_lib "$ROOT" libxymonclient.a)" \
-	$harness_ldflags $pcre_libs 2>"$work/cc.log" \
-	|| { cat "$work/cc.log" >&2; fail "stackio with the refusing fopen() does not compile"; }
+built_tree || pass_partial "drop-ins are read one at a time, and the shipped drop-in directories are declared (#222, #881)" \
+	"a drop-in that cannot be opened is checked through a reader built here, and this tree is not built"
+build_stackio "$work/stackio-unopenable" "$ROOT/tests/libxymon/config-include-dir-harness.c"
 unopenable_lines() { printf '.\n' | "$work/stackio-unopenable" "$1" 2>"$work/err.log" | sed '/^$/,$d' | tr '\n' ' '; }
 
 printf 'PROBE_READ\n' >"$work/unopenable-probe.cfg"
