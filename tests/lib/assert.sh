@@ -609,6 +609,35 @@ find_root() {
 	cd "$(dirname "${BASH_SOURCE[1]}")/../.." && pwd
 }
 
+# copy_source_tree ROOT DEST -- copy the built tree at ROOT, all but .git, to
+# DEST, and print DEST.
+#
+# For a test that runs make in the tree with paths of its own, such as a
+# "make install" into a scratch directory. That make can recompile: environ.o
+# follows the build id (lib/Makefile), which changes with an uncommitted edit
+# or a new commit, and "make install" recomputes it. Recompiled in the tree
+# itself, environ.o keeps the test's paths, and every later test that links
+# the library reads them. In a copy, nothing outlives the test.
+#
+# A plain cp, not cp -p (tests/buildsystem/test-suite-portability.sh refuses
+# it), so the copy's timestamps are those of the copying, in no useful order.
+# Every file is then given one time: no prerequisite is newer than its target,
+# and make rebuilds only what does not depend on time -- environ.o, when the
+# copy's build id differs from the one it was built with.
+copy_source_tree() {
+	local src=$1 dest=$2 f
+	mkdir -p "$dest" || fail "cannot create $dest"
+	for f in "$src"/* "$src"/.[!.]*; do
+		[ -e "$f" ] || continue
+		[ "${f##*/}" = .git ] && continue
+		cp -R "$f" "$dest/" || fail "cannot copy $f to $dest"
+	done
+	: > "$dest/.copied" || fail "cannot write in $dest"
+	# A dangling symlink cannot be touched; it has no time make would read.
+	find "$dest" -exec touch -r "$dest/.copied" {} + 2>/dev/null || true
+	printf '%s' "$dest"
+}
+
 # ---- binary discovery --------------------------------------------------------
 
 # ---- build products, by variant ---------------------------------------------

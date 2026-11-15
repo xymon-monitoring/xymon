@@ -41,6 +41,9 @@ require_bin XYMOND xymond/xymond
 [ -f "$ROOT/Makefile" ] || skip "tree not configured (no Makefile)"
 
 work=$(mktempdir)
+# A copy: make may recompile, and must not leave this test's paths in the
+# tree later tests link against (copy_source_tree, tests/lib/assert.sh).
+tree=$(copy_source_tree "$ROOT" "$work/tree")
 
 # install_vars DEST -- the install paths, all inside DEST, one per line.
 install_vars() {
@@ -61,7 +64,7 @@ run_make() {
 	shift 3
 	local -a vars=()
 	while IFS= read -r v; do vars+=("$v"); done <<<"$(install_vars "$d")"
-	"$XYMON_MAKE" -C "$ROOT" "$target" "${vars[@]}" "$@" >"$log" 2>&1
+	"$XYMON_MAKE" -C "$tree" "$target" "${vars[@]}" "$@" >"$log" 2>&1
 }
 
 # run_install DEST LOG [VAR=VALUE...] -- a full install into DEST. The install
@@ -75,9 +78,9 @@ run_install() {
 	shift 2
 	local -a vars=()
 	while IFS= read -r v; do vars+=("$v"); done <<<"$(install_vars "$d")"
-	"$XYMON_MAKE" -C "$ROOT" install "${vars[@]}" PKGBUILD=1 "$@" >"$log" 2>&1 \
-		&& "$XYMON_MAKE" -C "$ROOT" install-docs "${vars[@]}" "$@" >>"$log" 2>&1 \
-		&& "$XYMON_MAKE" -C "$ROOT/xymond" install-cfg "${vars[@]}" "$@" >>"$log" 2>&1
+	"$XYMON_MAKE" -C "$tree" install "${vars[@]}" PKGBUILD=1 "$@" >"$log" 2>&1 \
+		&& "$XYMON_MAKE" -C "$tree" install-docs "${vars[@]}" "$@" >>"$log" 2>&1 \
+		&& "$XYMON_MAKE" -C "$tree/xymond" install-cfg "${vars[@]}" "$@" >>"$log" 2>&1
 }
 
 # staticdir_in CFG -- the XYMONSTATICWWWDIR value xymonserver.cfg was given.
@@ -86,9 +89,9 @@ staticdir_in() {
 }
 
 # The static directory this tree was built with, as make computes it.
-built_static=$("$XYMON_MAKE" -s --no-print-directory -C "$ROOT" -f Makefile -f - show-static <<<'show-static: ; @echo $(INSTALLSTATICWWWDIR)')
+built_static=$("$XYMON_MAKE" -s --no-print-directory -C "$tree" -f Makefile -f - show-static <<<'show-static: ; @echo $(INSTALLSTATICWWWDIR)')
 # A tree whose build files do not know the variable installs as if it were unset.
-[ -n "$built_static" ] || built_static=$("$XYMON_MAKE" -s --no-print-directory -C "$ROOT" -f Makefile -f - show-www <<<'show-www: ; @echo $(INSTALLWWWDIR)')
+[ -n "$built_static" ] || built_static=$("$XYMON_MAKE" -s --no-print-directory -C "$tree" -f Makefile -f - show-www <<<'show-www: ; @echo $(INSTALLWWWDIR)')
 
 # ---- unsplit: the content stays in the www tree -------------------------------
 # The static directory is given as the www tree, not left unset: a tree
@@ -140,7 +143,7 @@ vars=()
 while IFS= read -r v; do vars+=("$v"); done <<<"$(install_vars "$d")"
 mkdir -p "$d/stage$d/etc/web" "$d/stage$d/top/server"
 for sub in xymond:install-cfg docs:install; do
-	"$XYMON_MAKE" -C "$ROOT/${sub%%:*}" "${sub#*:}" "${vars[@]}" INSTALLROOT="$d/stage" PKGBUILD=1 \
+	"$XYMON_MAKE" -C "$tree/${sub%%:*}" "${sub#*:}" "${vars[@]}" INSTALLROOT="$d/stage" PKGBUILD=1 \
 		>"$work/sub.log" 2>&1 \
 		|| fail "make -C ${sub%%:*} ${sub#*:} failed: $(tail -n 3 "$work/sub.log")"
 done
