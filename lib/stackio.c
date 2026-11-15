@@ -440,7 +440,8 @@ static void addtofnlist(char *dirname, int is_optional, void **v_listhead, htnam
 /*
  * Open the first queued name that opens, taking each name tried off the
  * queue. One that cannot be opened is skipped with a warning rather than
- * left queued, so the rest are still read where they belong.
+ * left queued, so the rest are still read where they belong. The warning
+ * quotes line, the "directory" line, when there is one to quote.
  */
 static FILE *openqueued(htnames_t **pending, int optional, const char *line)
 {
@@ -450,9 +451,13 @@ static FILE *openqueued(htnames_t **pending, int optional, const char *line)
 		htnames_t *tmp = *pending;
 
 		newfd = stackfopen(tmp->name, "r", (void **)fdhead->listhead);
-		if (newfd == NULL) {
+		if ((newfd == NULL) && line) {
 			if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", tmp->name, line);
 			else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", tmp->name, line);
+		}
+		else if (newfd == NULL) {
+			if (!optional) errprintf("WARNING: Cannot open include file '%s'\n", tmp->name);
+			else dbgprintf("stackfgets(): Cannot open include file '%s'\n", tmp->name);
 		}
 
 		*pending = tmp->next;
@@ -546,41 +551,15 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 	}
 	else if (result == NULL) {
 		/*
-		 * End-of-file on read. A file is closed only once nothing it queued
-		 * is left; then the file it returns to either opens its own next
-		 * queued file or carries on with its next line. A file can still hold
-		 * queued names here only after a queued file could not be opened at
-		 * the end of the one before it; the rest are read now.
+		 * End-of-file on read. Nothing this file queued is left, so it is
+		 * closed; the file it returns to opens its own next queued file, or
+		 * carries on with its next line when none is left or none opens.
+		 * No line to quote in a warning: the file before it has ended.
 		 */
-		if (fdhead->pending == NULL) {
-			stackfclose(NULL);
-			if (fdhead == NULL) return NULL;
-		}
-
-		if (fdhead->pending) {
-			htnames_t **pending = &fdhead->pending;
-
-			if (stackfopen((*pending)->name, "r", (void **)fdhead->listhead) != NULL) {
-				htnames_t *tmp = *pending;
-
-				*pending = tmp->next;
-				xfree(tmp->name); xfree(tmp);
-				return stackfgets(buffer, extraincl);
-			}
-			else {
-				htnames_t *tmp = *pending;
-
-				/* No line to quote: the file before it has ended. */
-				if (!optional) errprintf("WARNING: Cannot open include file '%s'\n", tmp->name);
-				else dbgprintf("stackfgets(): Cannot open include file '%s'\n", tmp->name);
-
-				*pending = tmp->next;
-				xfree(tmp->name); xfree(tmp);
-				return result;
-			}
-		}
-		else
-			return stackfgets(buffer, extraincl);
+		stackfclose(NULL);
+		if (fdhead == NULL) return NULL;
+		if (fdhead->pending) openqueued(&fdhead->pending, optional, NULL);
+		return stackfgets(buffer, extraincl);
 	}
 
 	return result;

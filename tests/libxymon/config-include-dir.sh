@@ -27,7 +27,7 @@
 #       its end before the next drop-in starts (#881).
 #
 #   (C) A queued drop-in that cannot be opened is skipped, and the next one
-#       read in its place.
+#       read in its place, whether it is the first or a later one.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -197,5 +197,20 @@ assert_contains "Cannot open include file '$work/first-bad/10-unopenable.cfg'" "
 assert_contains "line was: directory $work/first-bad" "$(cat "$work/err.log")" \
 	"the warning for a drop-in that cannot be opened did not quote the directory line"
 
+# A later queued file cannot be opened, as the one before it ends: it is
+# skipped too, and the rest of the configuration is still read.
+mkdir -p "$work/later-bad"
+printf 'A\n' >"$work/later-bad/10-a.cfg"
+printf 'B\n' >"$work/later-bad/20-unopenable.cfg"
+printf 'C\n' >"$work/later-bad/30-c.cfg"
+printf 'BASE\ndirectory %s\nTAIL\n' "$work/later-bad" >"$work/later-bad.cfg"
+assert_equal "BASE A C TAIL " "$(unopenable_lines "$work/later-bad.cfg")" \
+	"a later drop-in that cannot be opened ended the configuration there"
+assert_contains "Cannot open include file '$work/later-bad/20-unopenable.cfg'" "$(cat "$work/err.log")" \
+	"a later drop-in that cannot be opened was skipped without a warning"
+# No line is being read there: the buffer still holds the last line of the
+# file that ended, and quoting it would point at the wrong line.
+assert_not_contains "line was" "$(cat "$work/err.log")" \
+	"the warning for a later drop-in quoted a line that has nothing to do with it"
 
 pass "shipped configs declare drop-in dirs and 'optional directory' merges fragments / tolerates absence (#222), one drop-in at a time, skipping one that cannot be opened (#881)"
