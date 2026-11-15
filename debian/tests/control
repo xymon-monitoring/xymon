@@ -1,0 +1,3 @@
+Tests: xymon-testsuite
+Depends: @, bsdextrautils, openssl
+Restrictions: allow-stderr
