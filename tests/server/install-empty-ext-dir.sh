@@ -35,6 +35,9 @@ require_gnu_make
 require_bin XYMOND xymond/xymond
 
 work=$(mktempdir)
+# A copy: make may recompile, and must not leave this test's paths in the
+# tree later tests link against (copy_source_tree, tests/lib/assert.sh).
+tree=$(copy_source_tree "$ROOT" "$work/tree")
 dest=$work/inst
 vars=(
 	INSTALLROOT= PKGBUILD=
@@ -50,12 +53,12 @@ vars=(
 	INSTALLSTATICWWWDIR="$dest/var/www"
 )
 
-"$XYMON_MAKE" -C "$ROOT" install "${vars[@]}" PKGBUILD=1 >"$work/install.log" 2>&1 \
+"$XYMON_MAKE" -C "$tree" install "${vars[@]}" PKGBUILD=1 >"$work/install.log" 2>&1 \
 	|| fail "a full install into a scratch tree failed, before ext/ was emptied: $(tail -n 5 "$work/install.log")"
 [ -d "$dest/top/server/ext" ] || fail "the install did not create ext/ at $dest/top/server/ext"
 
 rm -f "$dest/top/server/ext/"*
-"$XYMON_MAKE" -C "$ROOT/xymond" install-cfg "${vars[@]}" >"$work/install-cfg.log" 2>&1 \
+"$XYMON_MAKE" -C "$tree/xymond" install-cfg "${vars[@]}" >"$work/install-cfg.log" 2>&1 \
 	|| fail "xymond's install-cfg fails when ext/ is empty, as on a server built without xymonnet: $(grep -E -m 1 'cannot|Error' "$work/install-cfg.log" || tail -n 1 "$work/install-cfg.log")"
 
 pass "xymond's install-cfg completes with an empty ext/ directory"
