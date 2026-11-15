@@ -53,8 +53,16 @@ ephemeral_port_floor() {
 # invented -- an invented one is how this went wrong before: assuming 32768
 # puts every draw *inside* the ephemeral range on OpenBSD (starts at 1024) and
 # FreeBSD (10000). The historical span is used instead and the retry carries it.
+#
+# Nor does it hand one test the same port twice. Each draw is independent and
+# nothing listens on the first port yet when the second is drawn, so two calls
+# could return the same number -- and a test that binds both, as
+# tests/server/xymond-multi-listen.sh does with a list of addresses, fails
+# with "Address in use". The ports already given are kept in a file, since
+# every call runs in its own $(...) subshell; $$ is the test's own shell in
+# each of them, and assert.sh's cleanup of xt.$$.* removes the file.
 free_port() {
-	local p tries=0 lo hi
+	local p tries=0 lo hi given="${__XYMON_TESTS_TMPROOT:-${TMPDIR:-/tmp}}/xt.$$.ports"
 
 	hi=$(ephemeral_port_floor || true)
 	case "$hi" in ''|*[!0-9]*) hi= ;; esac
@@ -69,8 +77,12 @@ free_port() {
 
 	while [ "$tries" -lt 50 ]; do
 		p=$(( lo + (RANDOM % (hi - lo)) ))
-		"$XYMONCLIENT" "127.0.0.1:$p" "ping" >/dev/null 2>&1 || { printf '%s' "$p"; return 0; }
 		tries=$((tries+1))
+		grep -qx "$p" "$given" 2>/dev/null && continue
+		"$XYMONCLIENT" "127.0.0.1:$p" "ping" >/dev/null 2>&1 && continue
+		printf '%s\n' "$p" >> "$given"
+		printf '%s' "$p"
+		return 0
 	done
 	return 1
 }
