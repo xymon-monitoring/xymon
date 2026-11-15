@@ -118,7 +118,9 @@ in batches; showgraph, given the same setting in
 has the daemon write each file before drawing it. The daemon must be able
 to write the files under XYMONRRDS, which xymond_rrd names by their full
 path. A network address (host:port) is not used: xymond_rrd logs it and
-writes the files itself.
+writes the files itself. rrdcached needs RRDtool 1.5 or later: older
+versions refuse the updates xymond_rrd sends, which name their data
+sources, and those updates are lost.
 
 .IP "\fBTEST2RRD\fR"
 Defines the mapping between a status-log columnname and the corresponding

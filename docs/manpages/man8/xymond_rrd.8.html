@@ -151,6 +151,9 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
       file before drawing it. The daemon must be able to write the files under
       XYMONRRDS, which xymond_rrd names by their full path. A network address
       (host:port) is not used: xymond_rrd logs it and writes the files itself.
+      rrdcached needs RRDtool 1.5 or later: older versions refuse the updates
+      xymond_rrd sends, which name their data sources, and those updates are
+      lost.
     <p class="Pp"></p>
   </dd>
   <dt id="TEST2RRD"><a class="permalink" href="#TEST2RRD"><b>TEST2RRD</b></a></dt>

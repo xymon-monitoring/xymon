@@ -17,8 +17,10 @@
 #
 # The last two each fail alone: a flush request xymond_rrd reads too late
 # leaves the update in its cache, and a graph drawn without RRDCACHED_ADDRESS
-# leaves it in rrdcached's. Where rrdcached is not installed only the first is
-# checked, and the test says so.
+# leaves it in rrdcached's. Where rrdcached is not installed, or librrd is
+# older than 1.5, only the first is checked, and the test says so: librrd 1.4
+# refuses an update with a template through the daemon, and xymond_rrd writes
+# every update with one, so rrdcached needs RRDtool 1.5 or later.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -97,6 +99,12 @@ assert_contains "RRDCACHED_ADDRESS 127.0.0.1:1 is not a local socket" "$(cat "$w
 RRDCACHED=$(command -v rrdcached 2>/dev/null) \
 	|| pass_partial "a network rrdcached address is refused and the RRD files written directly" \
 		"rrdcached is not installed: the local daemon and the graph flush are not checked"
+rrdver=$("$work/last" -v)
+IFS=. read -r rrdmajor rrdminor _ <<< "$rrdver"
+if [ "$rrdmajor" -lt 1 ] || { [ "$rrdmajor" -eq 1 ] && [ "$rrdminor" -lt 5 ]; }; then
+	pass_partial "a network rrdcached address is refused and the RRD files written directly" \
+		"librrd $rrdver is older than 1.5, which rrdcached needs: the local daemon and the graph flush are not checked"
+fi
 
 # A socket path is limited to sizeof(sun_path); the work directory may be
 # longer than that, so the daemon's socket lives in a short one.
@@ -146,6 +154,6 @@ exec 9>&-
 assert_contains "Content-type: image/png" "$page" "the page for one host is drawn"
 after=$(ondisk "$rrd") || fail "the RRD cannot be read after the graph: $after"
 [ "$after" = "$t2" ] \
-	|| fail "the graph of one host was drawn from a file not brought up to date: its last update is $after on disk, not $t2 (xymond_rrd log: $(tail -20 "$work/rrd.log"))"
+	|| fail "the graph of one host was drawn from a file not brought up to date: its last update is $after on disk, not $t2 (xymond_rrd, on unix.test and errors: $(grep -E 'unix\.test|Flushing cache|RRD error' "$work/rrd.log" | tail -20))"
 
 pass "a network rrdcached address is refused and the files written directly; with a local rrdcached, xymond_rrd sends its updates to it, and a graph of one host brings the file up to date before drawing it"

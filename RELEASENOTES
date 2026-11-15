@@ -278,6 +278,8 @@ xymond_rrd can hand its updates to a local rrdcached: set RRDCACHED_ADDRESS
 to its socket (unix:PATH) in xymonserver.cfg, and in cgioptions.cfg for the
 graphs, which then have the daemon write each file before drawing it. A
 network address is not used; xymond_rrd logs it and writes the files itself.
+This needs RRDtool 1.5 or later: with an older one (CentOS 7, Amazon Linux 2
+ship 1.4), leave RRDCACHED_ADDRESS unset, or every update is lost.
 
 xymond_rrd now collects the color changes that DS rules in analysis.cfg make
 from RRD data and sends them every 23 seconds, instead of after each
