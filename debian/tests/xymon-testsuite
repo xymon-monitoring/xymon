@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# Run the xymon testsuite (skips the source code test via a nonexisent CC)
+#
+# (c) 2026 Roland Rosenfeld <roland@debian.org>
+
+env CC=/nonexistent-xymon-autopkgtest-cc \
+    AVAILABILITY=/usr/lib/xymon/server/bin/xymonavailability \
+    CONTEST=/usr/lib/xymon/server/bin/xymonnetprobe \
+    CSVINFO=/usr/lib/xymon/server/bin/csvinfo.cgi \
+    DATEPAGE=/usr/lib/xymon/server/bin/datepage.cgi \
+    HOSTGRAPHS=/usr/lib/xymon/server/bin/hostgraphs.cgi \
+    LOADHOSTS=/usr/lib/xymon/server/bin/xymonloadhosts \
+    LOCATOR=/usr/lib/xymon/server/bin/xymonlocator \
+    LOGFETCH=/usr/lib/xymon/client/bin/logfetch \
+    MAILACK=/usr/lib/xymon/server/bin/xymon-mailack \
+    MSGCACHE=/usr/lib/xymon/client/bin/msgcache \
+    RRDCACHECTL=/usr/lib/xymon/server/bin/rrdcachectl \
+    SNAPSHOT=/usr/lib/xymon/server/bin/snapshot.cgi \
+    STACKIO=/usr/lib/xymon/server/bin/xymonstackio \
+    SVCSTATUS_CGI=/usr/lib/xymon/server/bin/svcstatus.cgi \
+    TASKSCFG=/etc/xymon/tasks.cfg \
+    TRIMHISTORY=/usr/lib/xymon/server/bin/trimhistory \
+    XYMON=/usr/lib/xymon/client/bin/xymon \
+    XYMONCLIENT=/usr/lib/xymon/client/bin/xymon \
+    XYMONCLIENT_CFG=/etc/xymon/xymonclient.cfg \
+    XYMONCLIENT_LINUX=/usr/lib/xymon/client/bin/xymonclient-linux.sh \
+    XYMONCMD=/usr/lib/xymon/client/bin/xymoncmd \
+    XYMOND=/usr/lib/xymon/server/bin/xymond \
+    XYMOND_ALERT=/usr/lib/xymon/server/bin/xymond_alert \
+    XYMOND_CHANNEL=/usr/lib/xymon/server/bin/xymond_channel \
+    XYMOND_CLIENT=/usr/lib/xymon/client/bin/xymond_client \
+    XYMOND_HISTORY=/usr/lib/xymon/server/bin/xymond_history \
+    XYMOND_HOSTDATA=/usr/lib/xymon/server/bin/xymond_hostdata \
+    XYMOND_LOCATOR=/usr/lib/xymon/server/bin/xymond_locator \
+    XYMOND_RRD=/usr/lib/xymon/server/bin/xymond_rrd \
+    XYMONGEN=/usr/lib/xymon/server/bin/xymongen \
+    XYMONGREP=/usr/lib/xymon/client/bin/xymongrep \
+    XYMONLAUNCH=/usr/lib/xymon/server/bin/xymonlaunch \
+    XYMONNET=/usr/lib/xymon/server/bin/xymonnet \
+    XYMONPING=/usr/lib/xymon/server/bin/xymonping \
+    XYMONSERVER_CFG=/etc/xymon/xymonserver.cfg \
+    ./tests/testsuite
