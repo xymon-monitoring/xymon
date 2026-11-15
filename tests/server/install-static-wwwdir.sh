@@ -87,6 +87,14 @@ run_install() {
 staticdir_in() {
 	sed -n 's/^XYMONSTATICWWWDIR="\(.*\)".*/\1/p' "$1"
 }
+# make_error LOG -- make's first "***" line and the 10 lines before it, where
+# the output of the command that failed is; the last 11 lines when there is no
+# such line. The last lines alone are only make leaving its directories.
+make_error() {
+	awk '{ line[NR] = $0 } /\*\*\*/ && !hit { hit = NR }
+	     END { last = hit ? hit : NR; first = last - 10; if (first < 1) first = 1
+	           for (i = first; i <= last; i++) print line[i] }' "$1"
+}
 
 # The static directory this tree was built with, as make computes it.
 built_static=$("$XYMON_MAKE" -s --no-print-directory -C "$tree" -f Makefile -f - show-static <<<'show-static: ; @echo $(INSTALLSTATICWWWDIR)')
@@ -100,7 +108,7 @@ built_static=$("$XYMON_MAKE" -s --no-print-directory -C "$tree" -f Makefile -f -
 # tree.
 d=$work/plain
 run_install "$d" "$work/plain.log" "INSTALLSTATICWWWDIR=$d/var/www" \
-	|| fail "the install with an unsplit www tree failed: $(tail -n 3 "$work/plain.log")"
+	|| fail "the install with an unsplit www tree failed: $(make_error "$work/plain.log")"
 for sub in gifs help menu; do
 	[ -d "$d/var/www/$sub" ] && [ ! -L "$d/var/www/$sub" ] \
 		|| fail "with an unsplit www tree, www/$sub must be a real directory, as before"
@@ -110,7 +118,7 @@ done
 # ---- set: the content moves, the www tree links to it --------------------------
 d=$work/split
 run_install "$d" "$work/split.log" "INSTALLSTATICWWWDIR=$d/static" \
-	|| fail "the install with INSTALLSTATICWWWDIR failed: $(tail -n 3 "$work/split.log")"
+	|| fail "the install with INSTALLSTATICWWWDIR failed: $(make_error "$work/split.log")"
 for sub in gifs help menu; do
 	[ -d "$d/static/$sub" ] && [ ! -L "$d/static/$sub" ] \
 		|| fail "with INSTALLSTATICWWWDIR, $sub must be a real directory in the static tree"
@@ -133,7 +141,7 @@ cfgval=$(staticdir_in "$work/plain/etc/xymonserver.cfg")
 # ---- a standalone install-docs still links help --------------------------------
 d=$work/docs
 run_make "$d" "$work/docs.log" install-docs "INSTALLSTATICWWWDIR=$d/static" \
-	|| fail "a standalone install-docs with INSTALLSTATICWWWDIR failed: $(tail -n 3 "$work/docs.log")"
+	|| fail "a standalone install-docs with INSTALLSTATICWWWDIR failed: $(make_error "$work/docs.log")"
 [ -L "$d/var/www/help" ] && [ -d "$d/var/www/help" ] \
 	|| fail "a standalone install-docs left www/help without its link into the static tree"
 
@@ -145,7 +153,7 @@ mkdir -p "$d/stage$d/etc/web" "$d/stage$d/top/server"
 for sub in xymond:install-cfg docs:install; do
 	"$XYMON_MAKE" -C "$tree/${sub%%:*}" "${sub#*:}" "${vars[@]}" INSTALLROOT="$d/stage" PKGBUILD=1 \
 		>"$work/sub.log" 2>&1 \
-		|| fail "make -C ${sub%%:*} ${sub#*:} failed: $(tail -n 3 "$work/sub.log")"
+		|| fail "make -C ${sub%%:*} ${sub#*:} failed: $(make_error "$work/sub.log")"
 done
 for sub in gifs help menu; do
 	[ ! -e "$d/stage/$sub" ] \
