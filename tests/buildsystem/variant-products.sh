@@ -38,5 +38,12 @@ expect localclient XYMOND_CLIENT client/xymond_client
 expect client      XYMOND_CLIENT ""
 expect server      XYMOND xymond/xymond
 expect client      XYMOND ""
+for v in server localclient client; do
+	expect "$v" CLIENTUPDATE client/clientupdate
+done
+expect server      XYMONPROXY xymonproxy/xymonproxy
+expect localclient XYMONPROXY ""
+expect server      STATUSREPORT web/statusreport.cgi
+expect client      STATUSREPORT ""
 
 pass "variant_products() resolves XYMONCLIENT as XYMON in every build, and each program where its build puts it"
