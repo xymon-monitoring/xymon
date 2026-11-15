@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/server/xymonlaunch-partial-config.sh
+# tests/client/xymonlaunch-partial-config.sh
 #
 # xymonlaunch re-reads its config whenever the file's timestamp changes, and
 # the re-read begins by clearing every task's settings so that it can tell
