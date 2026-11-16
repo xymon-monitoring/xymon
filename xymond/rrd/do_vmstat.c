@@ -292,11 +292,10 @@ int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	while (p && (datacount < MAX_VMSTAT_VALUES)) {
  
          /* Removing . and , from the numbers */
-         char *p1;
+         char *p1, *p2;
          while ( (p1 = strchr(p,'.')) != NULL ) {
             strcpy (p1, p1+1) ;
          }
-         char *p2;
          while ( (p2 = strchr(p,',')) != NULL ) {
             strcpy (p2, p2+1) ;
          }

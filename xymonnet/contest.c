@@ -709,6 +709,8 @@ static void setup_ssl(tcptest_t *item)
 	}
 
 	if (item->sslctx == NULL) {
+		const char *alpn_protocols = NULL;
+
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		item->sslctx = SSL_CTX_new(TLS_client_method());
 #else
@@ -804,7 +806,6 @@ static void setup_ssl(tcptest_t *item)
 
 		/* Set ALPN protocols if specified */
 		/* First check service definition for ALPN, then fallback to ssloptions */
-		const char *alpn_protocols = NULL;
 		if (item->svcinfo && item->svcinfo->alpns) {
 			alpn_protocols = item->svcinfo->alpns;
 		} else if (item->ssloptions && item->ssloptions->alpns) {
@@ -820,11 +821,13 @@ static void setup_ssl(tcptest_t *item)
 			/* Parse comma-separated protocol list */
 			ptr = alpn_copy;
 			while ((token = strtok_r(ptr, ",", &saveptr)) != NULL) {
+				int len;
+
 				ptr = NULL;
 				
 				/* Remove leading/trailing whitespace */
 				while (*token == ' ' || *token == '\t') token++;
-				int len = strlen(token);
+				len = strlen(token);
 				while (len > 0 && (token[len-1] == ' ' || token[len-1] == '\t')) {
 					token[len-1] = '\0';
 					len--;

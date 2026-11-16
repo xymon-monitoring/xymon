@@ -483,12 +483,15 @@ void load_config(char *conffn)
 
 	/* Running tasks that have been deleted or changed are killed off now. */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
+		char *oldpidfile, *pidfn = NULL;
+
 		if ((twalk->cfload != -1) && (twalk->cmd == NULL)) twalk->cfload = -1;
 
 		/* The path the child wrote to: the re-read cleared twalk->pidfile,
-		   and the comparison below frees the copy's. So it is read here. */
-		char *oldpidfile = (twalk->copy ? twalk->copy->pidfile : twalk->pidfile);
-		char *pidfn = NULL;
+		   and the comparison below frees the copy's. So it is read here.
+		   pidfn is expand_env()'s static buffer: no other expand_env() call
+		   may come between this one and the unlink()s of pidfn below. */
+		oldpidfile = (twalk->copy ? twalk->copy->pidfile : twalk->pidfile);
 		if (oldpidfile) pidfn = expand_env(oldpidfile);
 
 		/* compare the current settings with the copy - if we have one */

@@ -96,6 +96,14 @@ jobs:
           ./configure --${{ matrix.variant }}
 
       - name: Build
+        env:
+          # The build's own default (build/Makefile.Linux), plus the C90 rule
+          # that declarations come before the statements of their block. gcc
+          # accepts them after by default, but some net-snmp packages put this
+          # flag in net-snmp-config --cflags (tests/libxymon/sbuf-define-c90.sh
+          # names them), so a declaration after a statement breaks the build
+          # there and nowhere else. Here it fails CI first.
+          CFLAGS: -g -O2 -Werror=declaration-after-statement
         run: |
           echo "running make with $(nproc) parallel processes"
           make -j$(nproc)
