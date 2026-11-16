@@ -16,6 +16,20 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+client -- XYMONCLIENTRUNDIR can be set at build time
+----------------------------------------------------
+
+XYMONCLIENTRUNDIR, where the client writes msgcache's pidfile, was fixed to the
+client's log directory in the shipped xymonclient.cfg: a packager who wanted the
+pidfile under /var/run/xymon had to patch that file. It is now filled in at
+build time from a placeholder, like the server's XYMONRUNDIR: export
+XYMONCLIENTRUNDIR before "configure" and the built xymonclient.cfg names that
+directory. A build that sets nothing is unchanged: the shipped value stays the
+relocatable "$XYMONCLIENTLOGS", the client's log directory, resolved when the
+client starts. The client does not create
+the directory, so a value pointing at /run must exist and be writable by the
+user running the client.
+
 xymonnet -- a TLS test sends the tested name as the TLS servername
 -----------------------------------------------------------------
 A TLS test -- imaps, smtps, pop3s, ldaps, ftps, nntps, telnets, amqps -- sends the

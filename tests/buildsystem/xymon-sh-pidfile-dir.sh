@@ -87,10 +87,67 @@ if grep -nE 'XYMONRUNDIR' "$clientcfg"; then
 fi
 grep -q 'XYMONCLIENTRUNDIR' "$clientcfg" \
 	|| fail "no client task names XYMONCLIENTRUNDIR, so this contract has nothing to hold"
-# and the shipped client configuration defines it, as the client's log
-# directory; the built-in default only covers a configuration kept from before.
-grep -q '^XYMONCLIENTRUNDIR="\$XYMONCLIENTLOGS"' "$ROOT/client/xymonclient.cfg.DIST" \
-	|| fail "client/xymonclient.cfg.DIST does not define XYMONCLIENTRUNDIR as \$XYMONCLIENTLOGS"
+
+# ---- and the client directory is settable at build time, not only by patching
+# The packager who wants msgcache.pid under /run sets XYMONCLIENTRUNDIR, the way
+# the server's XYMONRUNDIR is set, rather than editing a shipped file. The
+# shipped configuration takes it from a build-time placeholder; a default build
+# keeps the relocatable "$XYMONCLIENTLOGS", the client's log directory, named in
+# the file and resolved when the client starts, so the tarball still moves.
+clientcfgdist="$ROOT/client/xymonclient.cfg.DIST"
+grep -qE '^XYMONCLIENTRUNDIR="@XYMONCLIENTRUNDIR@"' "$clientcfgdist" \
+	|| fail "client/xymonclient.cfg.DIST does not take XYMONCLIENTRUNDIR from the @XYMONCLIENTRUNDIR@ placeholder, so a package can only set it by patching a shipped file"
+
+# Every placeholder the client configuration uses must be substituted by the
+# rule that generates it, or the installed xymonclient.cfg keeps the literal
+# @VAR@ and hands it to every client program as a path.
+clientmk="$ROOT/client/Makefile"
+[ -f "$clientmk" ] || fail "missing $clientmk"
+crule=$(grep -F 'xymonclient.cfg.DIST' "$clientmk")
+[ -n "$crule" ] || fail "cannot find the line that generates xymonclient.cfg in client/Makefile"
+for var in $(grep -oE '@[A-Z_]+@' "$clientcfgdist" | sort -u); do
+	case $crule in
+		*"$var"*) ;;
+		*) fail "xymonclient.cfg.DIST uses $var but client/Makefile does not substitute it: the installed file would keep it literal and hand it to every client program as a path" ;;
+	esac
+done
+
+# ... and @XYMONCLIENTRUNDIR@ is substituted with the resolved value, not the
+# raw knob: otherwise a default build would write XYMONCLIENTRUNDIR="" rather
+# than naming the client's log directory.
+case $crule in
+	*'@XYMONCLIENTRUNDIR@!$(XYMONCLIENTRUNDIRSUB)'*) ;;
+	*) fail "client/Makefile does not substitute @XYMONCLIENTRUNDIR@ with its resolved value, so a default build would not name \$XYMONCLIENTLOGS" ;;
+esac
+
+# The placeholder is substituted with whatever the client sub-make is passed,
+# so the top-level build has to pass it; without that a configured value never
+# reaches xymonclient.cfg.
+grep -q 'XYMONCLIENTRUNDIR="$(XYMONCLIENTRUNDIR)"' "$ROOT/build/Makefile.rules" \
+	|| fail "build/Makefile.rules does not pass XYMONCLIENTRUNDIR to the client sub-make, so a build-time value never reaches xymonclient.cfg"
+
+# ... and configure takes it from the environment into the Makefile, for the
+# client-only build and the full build alike, as it does XYMONRUNDIR. The
+# emitted line has to carry the shell variable, not a constant: a literal
+# "XYMONCLIENTRUNDIR = " would compile but discard whatever the packager set.
+for conf in configure.server configure.client; do
+	grep -qF 'XYMONCLIENTRUNDIR = $XYMONCLIENTRUNDIR' "$ROOT/$conf" \
+		|| fail "$conf does not write XYMONCLIENTRUNDIR into the Makefile from its own value, so the exported setting never substitutes the placeholder"
+done
+
+# A default build keeps XYMONCLIENTRUNDIR relocatable; a set directory is named
+# outright. Evaluated through client/Makefile, the file that resolves it.
+require_gnu_make
+cwork=$(mktempdir); register_cleanup "rm -rf '$cwork'"
+cprobe="$cwork/probe.mk"
+{
+	echo "include $clientmk"
+	printf 'probe:\n\t@printf '"'"'%%s\\n'"'"' '"'"'$(XYMONCLIENTRUNDIRSUB)'"'"'\n'
+} >"$cprobe"
+[ "$("$XYMON_MAKE" -s -f "$cprobe" probe 2>/dev/null)" = '$XYMONCLIENTLOGS' ] \
+	|| fail "a default build does not keep XYMONCLIENTRUNDIR relocatable: got [$("$XYMON_MAKE" -s -f "$cprobe" probe 2>/dev/null)]"
+[ "$("$XYMON_MAKE" -s -f "$cprobe" XYMONCLIENTRUNDIR=/run/xymon probe 2>/dev/null)" = '/run/xymon' ] \
+	|| fail "a set XYMONCLIENTRUNDIR does not name the directory in the configuration"
 
 # ---- it is settable without patching a file ---------------------------------
 # The audience for these settings is the packager, who runs configure
