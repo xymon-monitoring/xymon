@@ -34,7 +34,9 @@ script which starts the Xymon client.
 
 .IP "\fBXYMONCLIENTLOGS\fR"
 The directory for the Xymon clients' own log files. Default:
-$XYMONHOME/logs
+$XYMONHOME/logs. A build that set INSTALLCLIENTLOGDIR names that directory
+here instead, so the client logs there without relying on the symlink left at
+$XYMONHOME/logs.
 
 .IP "\fBXYMONCLIENTRUNDIR\fR"
 The directory for the client's runtime files: msgcache's pidfile. Default:
@@ -46,7 +48,8 @@ does not create it, so it must exist and be writable by the user running the
 client.
 
 .IP "\fBXYMONTMP\fR"
-Directory used for temporary files. Default: $XYMONHOME/tmp/
+Directory used for temporary files. Default: $XYMONHOME/tmp/. A build that set
+INSTALLCLIENTTMPDIR names that directory here instead.
 
 .IP "\fBXYMONCLIENT_FS_INCLUDE_TYPES\fR"
 Whitespace-separated filesystem types to include in the client's disk

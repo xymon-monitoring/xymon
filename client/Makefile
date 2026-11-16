@@ -39,7 +39,7 @@ XYMONCLIENTRUNDIRSUB = $(XYMONCLIENTRUNDIR)
 endif
 
 xymonclient.cfg: xymonclient.cfg.DIST
-	cat xymonclient.cfg.DIST | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONCLIENTRUNDIR@!$(XYMONCLIENTRUNDIRSUB)!g' >xymonclient.cfg
+	cat xymonclient.cfg.DIST | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONTMP@!$(XYMONTMPSUB)!g' | sed -e 's!@XYMONCLIENTLOGS@!$(XYMONCLIENTLOGSSUB)!g' | sed -e 's!@XYMONCLIENTRUNDIR@!$(XYMONCLIENTRUNDIRSUB)!g' >xymonclient.cfg
 	../build/bb-commands.sh >>xymonclient.cfg
 
 clientlaunch.cfg: clientlaunch.cfg.DIST
@@ -86,6 +86,23 @@ INSTALLCLIENTTMPDIR = $(XYMONHOME)/tmp
 endif
 ifndef INSTALLCLIENTLOGDIR
 INSTALLCLIENTLOGDIR = $(XYMONHOME)/logs
+endif
+
+# What xymonclient.cfg names for XYMONTMP and XYMONCLIENTLOGS. A build that
+# relocated the directory -- INSTALLCLIENTTMPDIR differs from the default --
+# names it in the configuration, so the client writes there directly and does
+# not depend on the compatibility symlink. A default build keeps the relocatable
+# "$XYMONHOME/tmp", resolved at the client's start, so the tarball still moves.
+# $$XYMONHOME reaches the sed replacement as the literal $XYMONHOME.
+ifeq ($(INSTALLCLIENTTMPDIR),$(XYMONHOME)/tmp)
+XYMONTMPSUB = $$XYMONHOME/tmp
+else
+XYMONTMPSUB = $(INSTALLCLIENTTMPDIR)
+endif
+ifeq ($(INSTALLCLIENTLOGDIR),$(XYMONHOME)/logs)
+XYMONCLIENTLOGSSUB = $$XYMONHOME/logs
+else
+XYMONCLIENTLOGSSUB = $(INSTALLCLIENTLOGDIR)
 endif
 
 install:
