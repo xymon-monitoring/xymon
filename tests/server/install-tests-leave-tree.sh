@@ -25,7 +25,19 @@ if [ ! -f "$ROOT/Makefile" ] || [ ! -f "$ROOT/lib/environ.o" ]; then
 fi
 require_bin XYMOND xymond/xymond
 
-work=$(mktempdir)
+# The copy of the built tree and the install staging under it are large. Keep
+# them on the same filesystem as the tree -- which is on disk, since the build
+# wrote there -- rather than under $TMPDIR, which defaults to /tmp: NetBSD backs
+# /tmp with a memory tmpfs too small to hold a built tree three times over (the
+# tree, its copy, and the staged install). Fall back to $TMPDIR where no
+# directory can be made beside the tree.
+if disk_tmp=$(mktemp -d "$(dirname "$ROOT")/xymon-it.XXXXXX" 2>/dev/null); then
+	register_cleanup "rm -rf -- $(printf '%q' "$disk_tmp")"
+	export TMPDIR="$disk_tmp"
+	work="$disk_tmp"
+else
+	work=$(mktempdir)
+fi
 copy=$(copy_source_tree "$ROOT" "$work/tree")
 echo "a-different-build-id" > "$copy/build/build-id"
 before=$(cksum < "$copy/lib/environ.o")
