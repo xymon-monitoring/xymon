@@ -516,6 +516,8 @@ char *generate_stats(void)
 	time_t uptime = (nowtimer - boottimer);
 	time_t boottstamp = (now - uptime);
 	char msgline[2048];
+	char versiontxt[256];
+	char *buildid;
 
 	dbgprintf("-> generate_stats\n");
 
@@ -533,8 +535,20 @@ char *generate_stats(void)
 	sprintf(uptimetxt, "%d days, %02d:%02d:%02d", 
 		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
 
+	/*
+	 * Name the build's commit beside the release number when there is one,
+	 * as the web-page footer does with &XYMONBUILD. XYMONBUILD is empty for
+	 * a release, and then the line is the plain number. This is display text
+	 * on xymond's own status page, not a value any program compares.
+	 */
+	buildid = xgetenv("XYMONBUILD");
+	if (buildid && *buildid)
+		snprintf(versiontxt, sizeof(versiontxt), "%s %s", VERSION, buildid);
+	else
+		snprintf(versiontxt, sizeof(versiontxt), "%s", VERSION);
+
 	sprintf(msgline, "status %s.xymond %s\nStatistics for Xymon daemon\nVersion: %s\nUp since %s (%s)\n\n",
-		xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), VERSION, bootuptxt, uptimetxt);
+		xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), versiontxt, bootuptxt, uptimetxt);
 	addtobuffer(statsbuf, msgline);
 	sprintf(msgline, "Incoming messages      : %10ld\n", msgs_total);
 	addtobuffer(statsbuf, msgline);

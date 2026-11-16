@@ -326,8 +326,12 @@ A build from git that is not a release records the commit it comes from, as
 git describe names it after the last release tag (4.3.31-159-g2dcad5db7, with
 -dirty for local changes). "xymon --build-info" prints it, programs find it in
 XYMONBUILD, and the web page footers show it after the version. A release, or
-a build from a release tarball, has none, and its pages read as before. Set
-XYMON_BUILD_ID when running make to choose the value, or to leave it empty.
+a build from a release tarball, has none, and its pages read as before. A
+snapshot of a single commit that is not a release -- a GitHub source archive,
+or a port built from a commit hash -- has no git of its own either, so it
+reads as a release and names no commit; a packager building one who wants the
+commit shown passes XYMON_BUILD_ID. Set XYMON_BUILD_ID when running make to
+choose the value, or to leave it empty.
 The plain version, which the client update and other programs compare, does
 not change. An existing installation keeps its footer files; copy the new
 stdnormal_footer and critical_footer to show the build.
