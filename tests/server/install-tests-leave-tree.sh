@@ -32,7 +32,7 @@ before=$(cksum < "$copy/lib/environ.o")
 
 for t in install-empty-ext-dir install-static-wwwdir; do
 	bash "$copy/tests/server/$t.sh" > "$work/$t.log" 2>&1 \
-		|| fail "$t did not pass when run from a copy of the tree: $(tail -n 5 "$work/$t.log")"
+		|| fail "$t did not pass when run from a copy of the tree: $(cat "$work/$t.log")"
 	[ "$(cksum < "$copy/lib/environ.o")" = "$before" ] \
 		|| fail "after $t, lib/environ.o of the tree it ran from was rebuilt, with that test's paths"
 done
