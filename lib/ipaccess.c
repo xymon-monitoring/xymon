@@ -17,6 +17,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 #include <netdb.h>
+#include <ctype.h>
 
 #include "libxymon.h"
 
@@ -77,6 +78,41 @@ int sockaddr_same_sender(struct sockaddr *a, struct sockaddr *b)
 
 	if ((family == 0) || (sockaddr_bytes(b, ba) != family)) return 0;
 	return prefix_match(aa, ba, ((family == AF_INET) ? 32 : 64));
+}
+
+/*
+ * Split an address in place: "host:port", "[IPv6]:port",
+ * "[IPv6]", or a bare IPv6 address, which has more than one ':' and so
+ * cannot carry a port. Returns the host, without brackets; *port is set
+ * only when a port is given. NULL, with s untouched, when it is malformed:
+ * no ']' for a '[', anything but ":port" after the ']', or a port that is
+ * not a number from 1 to 65535.
+ */
+char *split_hostport(char *s, int *port)
+{
+	char *close = NULL, *colon = NULL, *end;
+	long n = 0;
+
+	if (*s == '[') {
+		close = strchr(s, ']');
+		if (!close) return NULL;
+		if (*(close+1) == ':') colon = close+1;
+		else if (*(close+1) != '\0') return NULL;
+	}
+	else {
+		colon = strchr(s, ':');
+		if (colon && strchr(colon+1, ':')) colon = NULL;	/* a bare IPv6 address */
+	}
+
+	if (colon) {
+		if (!isdigit((unsigned char)*(colon+1))) return NULL;
+		n = strtol(colon+1, &end, 10);
+		if (*end || (n < 1) || (n > 65535)) return NULL;
+	}
+
+	if (colon) { *colon = '\0'; *port = (int)n; }
+	if (close) { *close = '\0'; return s+1; }
+	return s;
 }
 
 /* An address written as text, IPv4 or IPv6, into ss. Returns 1, or 0 if it is neither. */
