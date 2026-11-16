@@ -209,7 +209,7 @@ int xymontls_peer_has_name(SSL *ssl, char *name)
 #else
 		data = ASN1_STRING_data(gn->d.dNSName);
 #endif
-		len = ASN1_STRING_length(gn->d.dNSName);
+		len = xymontls_asn1_length(gn->d.dNSName);
 		/* The whole entry: a name with an embedded NUL matches nothing */
 		found = (len >= 0) && ((size_t)len == namelen) && (memchr(data, 0, len) == NULL) &&
 			(strncasecmp((const char *)data, name, namelen) == 0);

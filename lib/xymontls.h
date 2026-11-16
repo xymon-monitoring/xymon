@@ -55,6 +55,17 @@ extern int xymontls_peer_has_name(SSL *ssl, char *name);
 /* 0 when keyfn may be read by others than its owner and group, with the reason in err */
 extern int xymontls_key_private(char *keyfn, char *err, size_t errsz);
 
+/*
+ * The length of an ASN1_STRING, as an int. OpenSSL 4.1 deprecates
+ * ASN1_STRING_length() for ASN1_STRING_get_length(), which earlier releases
+ * and LibreSSL do not have.
+ */
+#if (OPENSSL_VERSION_NUMBER >= 0x40100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+#define xymontls_asn1_length(s) ((int)ASN1_STRING_get_length(s))
+#else
+#define xymontls_asn1_length(s) ASN1_STRING_length(s)
+#endif
+
 #endif
 
 #endif
