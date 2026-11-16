@@ -16,6 +16,18 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+configure -- asks whether to enable SNMP where Net-SNMP is installed
+-------------------------------------------------------------------
+
+On a build machine that has Net-SNMP, "configure --server" now asks "Do you
+want to enable SNMP support (n) ?", after the LDAP questions and before the
+Xymon user. It asked nothing about SNMP before: xymon-snmpcollect was built
+only with SNMP=1 in the environment, which still works. The answer defaults
+to no, so a build that answers nothing is as it was. A build that feeds
+configure its answers on standard input, by position, would find every
+answer after this one shifted by one on such a machine: set ENABLESNMP=n, or
+ENABLESNMP=y, in the environment, and configure does not read an answer.
+
 xymon, xymondboard -- a send to no recipient fails instead of reporting success
 -------------------------------------------------------------------------------
 

@@ -36,6 +36,9 @@ for p in Makefile build include lib common xymongen xymonnet; do
 done
 
 aged="common/xymon xymongen/xymongen xymonnet/xymonnet"
+# Built with SNMP, xymon-snmpcollect links SNMPLIBS, which only the prefix gives
+# the install sub-make.
+[ -x "$tree/xymonnet/xymon-snmpcollect" ] && aged="$aged xymonnet/xymon-snmpcollect"
 for p in $aged; do touch -t 200001010000 "$tree/$p"; done
 touch -t 200101010000 "$work/aged"
 
