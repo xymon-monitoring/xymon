@@ -7206,7 +7206,7 @@ int main(int argc, char *argv[])
 				msg.bufsz = msg.buflen = sz;
 				msg.bufp = msg.buf + msg.buflen;
 				msg.doingwhat = RECEIVING;
-				msg.timeout = now + 10;
+				msg.timeout = gettimer() + 10;
 				msg.next = NULL;
 				msg.sock = -1;
 				text_sockaddr("0.0.0.0", &msg.addr);	/* the backfeed mark, see oksender_addr() */
