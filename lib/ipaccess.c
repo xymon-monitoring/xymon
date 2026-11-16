@@ -16,6 +16,7 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <netdb.h>
 
 #include "libxymon.h"
 
@@ -92,6 +93,90 @@ int text_sockaddr(char *text, struct sockaddr_storage *ss)
 	}
 	ss->ss_family = AF_INET;	/* left as 0.0.0.0 */
 	return 0;
+}
+
+/*
+ * host_sockaddr -- NAME's address into SS, from the system resolver: its IPv4
+ * address if it has one, else its IPv6 one, as the resolver gave it (an IPv6
+ * scope kept), port 0. Returns 1, or 0 if it has neither, with the
+ * getaddrinfo() error in *ERR when ERR is not NULL (0 on success).
+ *
+ * One family at a time, as gethostbyname() asked for IPv4 alone: a name with
+ * an IPv4 address costs one query, and a resolver that drops IPv6 queries
+ * delays only the names without one; a name with no address costs two. IPv6
+ * is not asked after EAI_AGAIN: a timeout, which it would only repeat, as
+ * xymonnet's c-ares lookup does not after one, but on glibc and musl also a
+ * server failure (SERVFAIL), so a name whose IPv4 question fails that way is
+ * not resolved even if it has an IPv6 address, as gethostbyname() did not.
+ * After any other failure *ERR is the IPv6 question's error. glibc answers
+ * an IPv4 question for a name /etc/hosts gives to ::1 alone with 127.0.0.1,
+ * as gethostbyname() did.
+ *
+ * An IPv4 address inet_aton() reads, short forms such as 127.1 included, is
+ * taken as it is first: OpenBSD's getaddrinfo() reads only the dotted quad,
+ * and the callers read addresses with inet_aton() before.
+ *
+ * A scopeless IPv6 literal inet_pton() reads is taken first too, as the IPv4
+ * one is: the resolver must not be asked for a numeric address, and a BSD
+ * without one answers the bogus IPv4 question for a literal such as ::1 in a
+ * way that ends the loop before its IPv6 question. A scoped literal
+ * (fe80::1%eth0) is left to the resolver, which keeps its scope in the result;
+ * inet_pton() fills only the address, having no field for the scope to go in.
+ */
+int host_sockaddr(char *name, struct sockaddr_storage *ss, int *err)
+{
+	static const int families[] = { AF_INET, AF_INET6 };
+	struct addrinfo hints, *res;
+	struct in_addr a4;
+	struct in6_addr a6;
+	int i, rc = EAI_NONAME;
+
+	if (inet_aton(name, &a4)) {
+		memset(ss, 0, sizeof(*ss));
+		ss->ss_family = AF_INET;
+		((struct sockaddr_in *)ss)->sin_addr = a4;
+		if (err) *err = 0;
+		return 1;
+	}
+
+	if ((strchr(name, ':') != NULL) && (strchr(name, '%') == NULL) && (inet_pton(AF_INET6, name, &a6) == 1)) {
+		memset(ss, 0, sizeof(*ss));
+		ss->ss_family = AF_INET6;
+		((struct sockaddr_in6 *)ss)->sin6_addr = a6;
+		if (err) *err = 0;
+		return 1;
+	}
+
+	memset(ss, 0, sizeof(*ss));
+	for (i = 0; i < 2; i++) {
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_family = families[i];
+		hints.ai_socktype = SOCK_STREAM;
+		rc = getaddrinfo(name, NULL, &hints, &res);
+		if ((rc == 0) && res && (res->ai_family == families[i]) && (res->ai_addrlen <= sizeof(*ss))) {
+			memcpy(ss, res->ai_addr, res->ai_addrlen);
+			freeaddrinfo(res);
+			if (err) *err = 0;
+			return 1;
+		}
+		if (rc == 0) { if (res) freeaddrinfo(res); rc = EAI_NONAME; }
+		if (rc == EAI_AGAIN) break;
+	}
+	if (err) *err = rc;
+
+	return 0;
+}
+
+/*
+ * host_address -- host_sockaddr()'s address as text in BUF, or NULL. The text
+ * has no IPv6 scope: to connect to a link-local address, use host_sockaddr().
+ */
+char *host_address(char *name, char *buf, size_t buflen, int *err)
+{
+	struct sockaddr_storage ss;
+
+	if (!host_sockaddr(name, &ss, err)) return NULL;
+	return sockaddr_text((struct sockaddr *)&ss, buf, buflen);
 }
 
 /*

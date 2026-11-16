@@ -175,8 +175,9 @@ The tag is the "I approve this release" gate — nothing ships without it. Tag
 the PR's merge commit, not `origin/main`, whose tip may have moved on.
 
 Pushing it triggers the release workflow: `xymon-X.Y.Z.tar.gz` (`git archive`
-of the tag with `tar.umask=0022`, `gzip -n -9`), its `.sha256`, and a **draft**
-release with both attached.
+of the tag with `tar.umask=0022`, `gzip -n -9`), its `.sha256`, a signed
+attestation of where the tarball was built, and a **draft** release with the
+tarball and its `.sha256` attached.
 
 ### 5. Publish the draft release
 
@@ -250,6 +251,18 @@ To check a published tarball, rebuild it from the tag and compare:
 git -c tar.umask=0022 archive --format=tar --prefix=xymon-X.Y.Z/ rel-X.Y.Z \
 	| gzip -n -9 | sha256sum
 ```
+
+Or check it against the attestation the release workflow signed, which says
+that this repository's release workflow built it, from which tag and commit.
+It needs no key: the signature is tied to the workflow run.
+
+```sh
+gh attestation verify xymon-X.Y.Z.tar.gz -R xymon-monitoring/xymon
+```
+
+The `.sha256` alone sits beside the tarball, so it catches a damaged download
+but not a replaced one; the rebuild and the attestation catch both. 4.3.31
+and earlier have no attestation.
 
 ## Testing locally
 

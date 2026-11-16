@@ -16,6 +16,30 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+configure -- asks whether to enable SNMP where Net-SNMP is installed
+-------------------------------------------------------------------
+
+On a build machine that has Net-SNMP, "configure --server" now asks "Do you
+want to enable SNMP support (n) ?", after the LDAP questions and before the
+Xymon user. It asked nothing about SNMP before: xymon-snmpcollect was built
+only with SNMP=1 in the environment, which still works. The answer defaults
+to no, so a build that answers nothing is as it was. A build that feeds
+configure its answers on standard input, by position, would find every
+answer after this one shifted by one on such a machine: set ENABLESNMP=n, or
+ENABLESNMP=y, in the environment, and configure does not read an answer.
+
+xymon, xymondboard -- a send to no recipient fails instead of reporting success
+-------------------------------------------------------------------------------
+
+Sending to an empty recipient -- an empty XYMSRV, or 0.0.0.0 with no XYMSERVERS
+set -- returned success with an empty reply. A client that reads the reply as
+data then acted on nothing: load_hostnames() took the empty answer as the host
+list rather than falling back to hosts.cfg, so trimhistory --drop, which deletes
+the history of every host not listed, emptied the history directory. Such a send
+now fails with "No recipient to send to!", so xymon and xymondboard exit
+non-zero and load_hostnames() reads hosts.cfg from the file instead. A script
+that relied on 0.0.0.0 with no XYMSERVERS exiting 0 now sees exit 1.
+
 csvinfo -- only .csv databases are shown, and columns, fields and column= are bounded
 -------------------------------------------------------------------------------------
 
@@ -54,6 +78,17 @@ and a JavaScript host/test map from the status board. These are now escaped
 where they are printed: HTML for the <option> lists, the table and the page
 dropdown's value, and a JavaScript string for the host/test map. A name or
 message holding "<", ">", "&" or a quote is shown as written, not as markup.
+
+stackio -- a drop-in file is read to its end before the next one
+----------------------------------------------------------------
+
+A file read through a "directory" line that itself has an "include" (or a
+"directory") line now has its remaining lines read before the next file in
+the directory. They used to be read only after every later file, so a later
+drop-in saw settings the earlier one had not yet made, and the earlier one
+then overwrote settings from later drop-ins. A configuration that kept
+include lines out of drop-in files to avoid this can now use them; one that
+depended on the old order reads its settings in file order instead.
 
 web -- critical systems values are escaped on the pages that show them
 ----------------------------------------------------------------------
@@ -166,6 +201,19 @@ EXPAGE= in analysis.cfg now excludes a host when any page it is listed on
 matches, not only its first page, for INODE, PAGING, MIBVAL, CICS, VSIZE and
 GETVIS, as the other checks already did. On a host listed on more than one
 page, those six may lose rules they used to keep.
+xymond -- a connection limit, and no FD_SETSIZE
+-----------------------------------------------
+
+xymond now drives its connections with poll() instead of select(), so
+the number it can hold open at once is no longer fixed when it is built
+(1024 on most platforms, 256 on NetBSD, past which xymond stopped with
+"Fatal error in select"). The limit is XYMOND_MAXCONNECTIONS in
+xymonserver.cfg; unset, it is the process's open-file limit less 64. A
+connection beyond it is refused as it is accepted and logged at most
+once a minute. A value that is not a number is logged and the default
+used. A large open-file limit means a large default; set
+XYMOND_MAXCONNECTIONS to bound it. Nothing changes for an installation
+that stays below its old ceiling.
 
 xymonping -- IPv6 addresses are pinged
 -------------------------------------
@@ -278,11 +326,26 @@ A build from git that is not a release records the commit it comes from, as
 git describe names it after the last release tag (4.3.31-159-g2dcad5db7, with
 -dirty for local changes). "xymon --build-info" prints it, programs find it in
 XYMONBUILD, and the web page footers show it after the version. A release, or
-a build from a release tarball, has none, and its pages read as before. Set
-XYMON_BUILD_ID when running make to choose the value, or to leave it empty.
+a build from a release tarball, has none, and its pages read as before. A
+snapshot of a single commit that is not a release -- a GitHub source archive,
+or a port built from a commit hash -- has no git of its own either, so it
+reads as a release and names no commit; a packager building one who wants the
+commit shown passes XYMON_BUILD_ID. Set XYMON_BUILD_ID when running make to
+choose the value, or to leave it empty.
 The plain version, which the client update and other programs compare, does
 not change. An existing installation keeps its footer files; copy the new
 stdnormal_footer and critical_footer to show the build.
+
+Platforms -- IRIX, OSF1, SCO and GNU/kFreeBSD are removed
+----------------------------------------------------------
+
+The IRIX, OSF1/Tru64, SCO OpenServer/UnixWare and GNU/kFreeBSD ports are
+removed: their build targets, their client scripts, and the server's handling
+of their client reports. A client still reporting from one of these systems is
+no longer analysed or graphed -- xymond_client logs "No client backend for OS"
+-- so its cpu, disk, memory, procs and other client columns go purple. Retire
+such hosts before upgrading the server, or run xymond_client with
+--unknownclientosok to analyse their reports generically.
 
 Changes for 4.3.31
 ==================

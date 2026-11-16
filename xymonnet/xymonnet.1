@@ -100,7 +100,8 @@ https tests on its line (see "Testing sites by IP-address" in
 .br
 By default (the "standard"), and with "\-\-dns=only", xymonnet looks up
 the hostname of a 0.0.0.0 host; if that fails, all services on that host
-are reported as being down.
+are reported as being down. The host is tested at its IPv4 address, or at
+its IPv6 address if it has none.
 .br
 With "\-\-dns=ip" xymonnet does no lookup at all, so a 0.0.0.0 host
 cannot be tested.

@@ -26,7 +26,7 @@ require_gnu_make
 [ -f "$ROOT/Makefile" ] || skip "requires a configured source tree with a top-level Makefile"
 require_bin XYMONGEN xymongen/xymongen
 require_bin XYMONNET xymonnet/xymonnet
-require_bin XYMONCMD common/xymon
+require_bin XYMON common/xymon
 
 work=$(mktempdir)
 tree=$work/tree
@@ -36,6 +36,9 @@ for p in Makefile build include lib common xymongen xymonnet; do
 done
 
 aged="common/xymon xymongen/xymongen xymonnet/xymonnet"
+# Built with SNMP, xymon-snmpcollect links SNMPLIBS, which only the prefix gives
+# the install sub-make.
+[ -x "$tree/xymonnet/xymon-snmpcollect" ] && aged="$aged xymonnet/xymon-snmpcollect"
 for p in $aged; do touch -t 200001010000 "$tree/$p"; done
 touch -t 200101010000 "$work/aged"
 

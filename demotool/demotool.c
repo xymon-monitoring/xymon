@@ -386,9 +386,11 @@ void do_select(void)
 
 		if (nwalk->listenfd && FD_ISSET(nwalk->listenfd, &readfds)) {
 			while ((newfd = accept(nwalk->listenfd, NULL, 0)) > 0) {
+				active_t *newitem;
+
 				/* Pick up a new connection */
 				fcntl(newfd, F_SETFL, O_NONBLOCK);
-				active_t *newitem = (active_t *)malloc(sizeof(active_t));
+				newitem = (active_t *)malloc(sizeof(active_t));
 				newitem->fd = newfd;
 				newitem->rbegin.tv_sec = now.tv_sec + nwalk->delay;
 				newitem->rbegin.tv_usec = now.tv_usec + (random() % 1000000);

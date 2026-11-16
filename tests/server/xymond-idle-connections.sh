@@ -42,6 +42,18 @@ require_bin XYMONCLIENT common/xymon
 require_cc
 require_shm_segments "$(grep -c 'setup_channel(C_[A-Z_]*, CHAN_MASTER)' "$(find_root)/xymond/xymond.c")"
 
+# 300 silent connections are held at once by both the harness and xymond,
+# each a process of its own with this shell's open-file limit, and each
+# with descriptors of its own besides. A login shell's default limit can be
+# lower -- 128 on OpenBSD -- and the run would then fail on "Too many open
+# files", which reads as a xymond failure. Raise the soft limit to the hard
+# one, and skip where even that is too low.
+ulimit -n "$(ulimit -H -n)" 2>/dev/null || true
+nofile=$(ulimit -n)
+if [ "$nofile" != unlimited ] && [ "$nofile" -lt 400 ]; then
+	skip "the open-file limit is $nofile, and 300 connections held by the harness and xymond each need about 400"
+fi
+
 work=$(mktempdir)
 mkdir -p "$work/home/etc" "$work/home/tmp" "$work/home/www"
 printf 'page test Test\n127.0.0.1 testhost # conn\n' > "$work/hosts.cfg"

@@ -58,6 +58,10 @@ answers() {
 # launch ARGS... : start a daemon and wait for it to say it is up, or to die
 # trying. Returns non-zero if it never came up.
 launch() {
+	# The log is emptied here, in the parent: the redirection below truncates
+	# it in the background child, and the grep can read the previous start's
+	# "Setup complete" before that (tests/README.md, Conventions).
+	: > "$work/xymond.log"
 	"$XYMOND" --no-daemon "$@" \
 		--hosts="$work/hosts.cfg" --env="$work/xymonserver.cfg" \
 		--pidfile="$work/xymond.pid" --checkpoint-file="$work/chk.out" \

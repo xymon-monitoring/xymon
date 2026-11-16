@@ -6,9 +6,12 @@
 # build/build-id.sh names the commit a build that is not a release comes
 # from, and nothing for a release (#676). Run on a copy of the script in a
 # scratch repository: no git, a release tag, a commit after it, a dirty tree,
-# no tag, the override, a tree inside someone else's repository, and an
-# unchanged identity leaving the file alone. Then, when the tree is built,
-# xymon --build-info reports what the build wrote.
+# no tag, a shallow clone that cannot reach the tag, the override, a tree
+# inside someone else's repository, and an unchanged identity leaving the file
+# alone. Then, when the tree is built, xymon --build-info reports what the
+# build wrote, xymon --version does not (the client update level falls back to
+# it, so a leak there would update every client on every commit), and the
+# shipped page footers carry the identity as &XYMONBUILD.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -39,6 +42,15 @@ assert_equal "9.9.9-dirty" "$(id)" "release tag with changes"
 g commit -q -am two
 assert_match '^9\.9\.9-1-g[0-9a-f]{7,}$' "$(id)" "a commit after the tag"
 
+# A shallow clone cannot reach the tag a few commits back, so git describe
+# falls to --always: a bare hash, which still names the commit. The report
+# this issue is about is an empty identity, never a hash.
+if git clone -q --depth 1 --no-tags "file://$work/src" "$work/shallow" 2>/dev/null; then
+	mkdir -p "$work/shallow/build" && cp "$ROOT/build/build-id.sh" "$work/shallow/build/"
+	sid=$(cd "$work/shallow" && unset XYMON_BUILD_ID && sh build/build-id.sh && cat build/build-id)
+	assert_match '^[0-9a-f]{7,}$' "$sid" "a shallow clone with no tag reachable: the hash"
+fi
+
 old=$(id)
 touch -t 200001010000 "$work/src/build/build-id"
 assert_equal "$old" "$(id)" "same identity again"
@@ -55,6 +67,15 @@ mkdir -p "$work/src/sub/build" && cp "$ROOT/build/build-id.sh" "$work/src/sub/bu
 out=$(cd "$work/src/sub" && unset XYMON_BUILD_ID && sh build/build-id.sh && cat build/build-id)
 assert_equal "" "$out" "a tree inside another repository"
 
+# The commit reaches the page footer: the shipped footers name &XYMONBUILD,
+# which headfoot expands from the environment -- empty for a release, the
+# commit otherwise. A release build compiles XYMONBUILD empty, so the footer
+# shows only the number there.
+for footer in stdnormal_footer critical_footer; do
+	assert_contains "&XYMONBUILD" "$(cat "$ROOT/xymond/webfiles/$footer")" \
+		"$footer carries the build identity"
+done
+
 xymon=$ROOT/common/xymon
 if [ ! -x "$xymon" ] || [ ! -f "$ROOT/build/build-id" ]; then
 	pass_partial "build/build-id.sh" "xymon not built, --build-info not checked"
@@ -63,4 +84,12 @@ want=$(cat "$ROOT/build/build-id")
 got=$(env -u XYMONBUILD "$xymon" --build-info)
 assert_equal "version=$(sed -n 's/^#define VERSION "\(.*\)"$/\1/p' "$ROOT/include/version.h")
 build=$want" "$got" "xymon --build-info"
+
+# The release number alone on a surface a program compares: the client update
+# level falls back to xymon --version (client/xymonclient.sh), so the identity
+# must not reach it, or every client updates on every commit.
+plain=$(sed -n 's/^#define VERSION "\(.*\)"$/\1/p' "$ROOT/include/version.h")
+assert_equal "Xymon version $plain" "$(XYMONBUILD=leak-me "$xymon" --version)" \
+	"xymon --version stays the plain number with XYMONBUILD set"
+
 pass "build/build-id.sh, and xymon --build-info reports it"

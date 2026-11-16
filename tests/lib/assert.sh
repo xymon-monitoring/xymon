@@ -609,6 +609,35 @@ find_root() {
 	cd "$(dirname "${BASH_SOURCE[1]}")/../.." && pwd
 }
 
+# copy_source_tree ROOT DEST -- copy the built tree at ROOT, all but .git, to
+# DEST, and print DEST.
+#
+# For a test that runs make in the tree with paths of its own, such as a
+# "make install" into a scratch directory. That make can recompile: environ.o
+# follows the build id (lib/Makefile), which changes with an uncommitted edit
+# or a new commit, and "make install" recomputes it. Recompiled in the tree
+# itself, environ.o keeps the test's paths, and every later test that links
+# the library reads them. In a copy, nothing outlives the test.
+#
+# A plain cp, not cp -p (tests/buildsystem/test-suite-portability.sh refuses
+# it), so the copy's timestamps are those of the copying, in no useful order.
+# Every file is then given one time: no prerequisite is newer than its target,
+# and make rebuilds only what does not depend on time -- environ.o, when the
+# copy's build id differs from the one it was built with.
+copy_source_tree() {
+	local src=$1 dest=$2 f
+	mkdir -p "$dest" || fail "cannot create $dest"
+	for f in "$src"/* "$src"/.[!.]*; do
+		[ -e "$f" ] || continue
+		[ "${f##*/}" = .git ] && continue
+		cp -R "$f" "$dest/" || fail "cannot copy $f to $dest"
+	done
+	: > "$dest/.copied" || fail "cannot write in $dest"
+	# A dangling symlink cannot be touched; it has no time make would read.
+	find "$dest" -exec touch -r "$dest/.copied" {} + 2>/dev/null || true
+	printf '%s' "$dest"
+}
+
 # ---- binary discovery --------------------------------------------------------
 
 # ---- build products, by variant ---------------------------------------------
@@ -625,11 +654,18 @@ find_root() {
 #
 # A server build carries both common/xymongrep and client/xymongrep; the server
 # row names common/, which is what the server package ships.
+#
+# Every product a test names goes here, server-only ones included: a role
+# missing from the table keeps the caller's default path in every build, and
+# a test in an area the client builds run then looks for common/ there and
+# skips. XYMONCLIENT is the same program as XYMON, under the name the xymond
+# tests and free_port() use. One line per variant: product_path() stops at
+# the variant's first line.
 variant_products() {
 	cat <<-'EOF'
-		server       XYMON=common/xymon XYMONGREP=common/xymongrep XYMOND_CLIENT=xymond/xymond_client XYMOND_RRD=xymond/xymond_rrd SVCSTATUS_CGI=web/svcstatus.cgi
-		localclient  XYMON=client/xymon XYMONGREP=client/xymongrep XYMOND_CLIENT=client/xymond_client
-		client       XYMON=client/xymon XYMONGREP=client/xymongrep
+		server       XYMON=common/xymon XYMONCLIENT=common/xymon XYMONGREP=common/xymongrep XYMONCMD=common/xymoncmd XYMONLAUNCH=common/xymonlaunch LOGFETCH=client/logfetch MSGCACHE=client/msgcache CLIENTUPDATE=client/clientupdate XYMOND_CLIENT=xymond/xymond_client XYMOND=xymond/xymond XYMOND_CHANNEL=xymond/xymond_channel XYMOND_ALERT=xymond/xymond_alert XYMOND_HISTORY=xymond/xymond_history XYMOND_HOSTDATA=xymond/xymond_hostdata XYMOND_LOCATOR=xymond/xymond_locator XYMOND_RRD=xymond/xymond_rrd TRIMHISTORY=xymond/trimhistory RRDCACHECTL=xymond/rrdcachectl MAILACK=xymond/xymon-mailack XYMONNET=xymonnet/xymonnet XYMONPING=xymonnet/xymonping CONTEST=xymonnet/xymonnetprobe XYMONGEN=xymongen/xymongen SVCSTATUS_CGI=web/svcstatus.cgi SHOWGRAPH=web/showgraph.cgi CSVINFO=web/csvinfo.cgi DATEPAGE=web/datepage.cgi HOSTGRAPHS=web/hostgraphs.cgi SNAPSHOT=web/snapshot.cgi STATUSREPORT=web/statusreport.cgi CONFREPORT=web/confreport.cgi EVENTLOG=web/eventlog.cgi GHOSTLIST=web/ghostlist.cgi CGIWRAP=web/cgiwrap XYMONPROXY=xymonproxy/xymonproxy XYMONFETCH=xymond/xymonfetch LOCATOR=lib/xymonlocator LOADHOSTS=lib/xymonloadhosts STACKIO=lib/xymonstackio AVAILABILITY=lib/xymonavailability
+		localclient  XYMON=client/xymon XYMONCLIENT=client/xymon XYMONGREP=client/xymongrep XYMONCMD=client/xymoncmd XYMONLAUNCH=client/xymonlaunch LOGFETCH=client/logfetch MSGCACHE=client/msgcache CLIENTUPDATE=client/clientupdate XYMOND_CLIENT=client/xymond_client
+		client       XYMON=client/xymon XYMONCLIENT=client/xymon XYMONGREP=client/xymongrep XYMONCMD=client/xymoncmd XYMONLAUNCH=client/xymonlaunch LOGFETCH=client/logfetch MSGCACHE=client/msgcache CLIENTUPDATE=client/clientupdate
 	EOF
 }
 

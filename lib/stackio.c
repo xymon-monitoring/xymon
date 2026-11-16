@@ -43,12 +43,27 @@ static fgetsbuf_t *fgetshead = NULL;
 typedef struct stackfd_t {
 	FILE *fd;
 	filelist_t **listhead;
+	/*
+	 * The files a "directory" line in this file queued and that are not yet
+	 * read. Kept per file, not in one global list: when a file ends, the next
+	 * queued file must come from the file it returns to, or an include inside
+	 * a drop-in would start the next drop-in before the rest of its own.
+	 */
+	htnames_t *pending;
 	struct stackfd_t *next;
 } stackfd_t;
 static stackfd_t *fdhead = NULL;
 static char *stackfd_base = NULL;
 static char *stackfd_mode = NULL;
-static htnames_t *fnlist = NULL;
+
+static void freepending(htnames_t **pending)
+{
+	while (*pending) {
+		htnames_t *tmp = *pending;
+		*pending = tmp->next;
+		xfree(tmp->name); xfree(tmp);
+	}
+}
 
 /*
  * initfgets() and unlimfgets() implements a fgets() style
@@ -219,6 +234,7 @@ FILE *stackfopen(char *filename, char *mode, void **v_listhead)
 		newitem = (stackfd_t *) malloc(sizeof(stackfd_t));
 		newitem->fd = newfd;
 		newitem->listhead = listhead;
+		newitem->pending = NULL;
 		newitem->next = fdhead;
 		fdhead = newitem;
 		initfgets(newfd);
@@ -254,21 +270,18 @@ int stackfclose(FILE *fd)
 			olditem = fdhead;
 			fdhead = fdhead->next;
 			fclose(olditem->fd);
+			freepending(&olditem->pending);
 			xfree(olditem);
 		}
 		xfree(stackfd_base);
 		xfree(stackfd_mode);
-		while (fnlist) {
-			htnames_t *tmp = fnlist;
-			fnlist = fnlist->next;
-			xfree(tmp->name); xfree(tmp);
-		}
 		result = 0;
 	}
 	else {
 		olditem = fdhead;
 		fdhead = fdhead->next;
 		result = fclose(olditem->fd);
+		freepending(&olditem->pending);
 		xfree(olditem);
 	}
 
@@ -324,7 +337,7 @@ static int namecompare(const void *v1, const void *v2)
 	return -strcmp(*n1, *n2);
 }
 
-static void addtofnlist(char *dirname, int is_optional, void **v_listhead)
+static void addtofnlist(char *dirname, int is_optional, void **v_listhead, htnames_t **pending)
 {
 	filelist_t **listhead = (filelist_t **)v_listhead;
 	DIR *dirfd;
@@ -396,7 +409,7 @@ static void addtofnlist(char *dirname, int is_optional, void **v_listhead)
 		if (S_ISDIR(st.st_mode)) {
 			/* Skip RCS sub-directories */
 			if (strcmp(d->d_name, "RCS") == 0) continue;
-			addtofnlist(fn, 0, v_listhead);		/* this directory is optional, but opening up files that do exist isn't */
+			addtofnlist(fn, 0, v_listhead, pending);		/* this directory is optional, but opening up files that do exist isn't */
 		}
 
 		/* Skip everything that isn't a regular file */
@@ -416,12 +429,42 @@ static void addtofnlist(char *dirname, int is_optional, void **v_listhead)
 		for (i=0; (i<fnsz); i++) {
 			htnames_t *newitem = malloc(sizeof(htnames_t));
 			newitem->name = fnames[i];
-			newitem->next = fnlist;
-			fnlist = newitem;
+			newitem->next = *pending;
+			*pending = newitem;
 		}
 
 		xfree(fnames);
 	}
+}
+
+/*
+ * Open the first queued name that opens, taking each name tried off the
+ * queue. One that cannot be opened is skipped with a warning rather than
+ * left queued, so the rest are still read where they belong. The warning
+ * quotes line, the "directory" line, when there is one to quote.
+ */
+static FILE *openqueued(htnames_t **pending, int optional, const char *line)
+{
+	FILE *newfd = NULL;
+
+	while (*pending && (newfd == NULL)) {
+		htnames_t *tmp = *pending;
+
+		newfd = stackfopen(tmp->name, "r", (void **)fdhead->listhead);
+		if ((newfd == NULL) && line) {
+			if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", tmp->name, line);
+			else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", tmp->name, line);
+		}
+		else if (newfd == NULL) {
+			if (!optional) errprintf("WARNING: Cannot open include file '%s'\n", tmp->name);
+			else dbgprintf("stackfgets(): Cannot open include file '%s'\n", tmp->name);
+		}
+
+		*pending = tmp->next;
+		xfree(tmp->name); xfree(tmp);
+	}
+
+	return newfd;
 }
 
 char *stackfgets(strbuffer_t *buffer, char *extraincl)
@@ -471,6 +514,8 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 		}
 		else if ((strncmp(bufpastwhitespace, "directory ", 10) == 0) || (strncmp(bufpastwhitespace, "directory\t", 10) == 0)) {
 			char *dirfn, *nameend, *eol, eolchar = '\0', endchar;
+			/* Taken now: a successful stackfopen() moves fdhead to the new file. */
+			htnames_t **pending = &fdhead->pending;
 
 			eol = bufpastwhitespace + strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
 			dirfn = bufpastwhitespace + 9;
@@ -480,22 +525,11 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			while ((nameend > dirfn) && isspace(*(nameend - 1))) nameend--;
 			endchar = *nameend; *nameend = '\0';
 
-			if (*dirfn) addtofnlist(dirfn, optional, (void **)fdhead->listhead);
-			if (fnlist && (stackfopen(fnlist->name, "r", (void **)fdhead->listhead) != NULL)) {
-				htnames_t *tmp = fnlist;
+			if (*dirfn) addtofnlist(dirfn, optional, (void **)fdhead->listhead, pending);
+			if (*pending) {
+				if (openqueued(pending, optional, STRBUF(buffer))) return stackfgets(buffer, extraincl);
 
-				fnlist = fnlist->next;
-				xfree(tmp->name); xfree(tmp);
-				return stackfgets(buffer, extraincl);
-			}
-			else if (fnlist) {
-				htnames_t *tmp = fnlist;
-
-				if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", fnlist->name, buffer);
-				else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", fnlist->name, buffer);
-
-				fnlist = fnlist->next;
-				xfree(tmp->name); xfree(tmp);
+				/* None of them opened: return the directory line, as a failed include does. */
 				*nameend = endchar;
 				if (eol) *eol = eolchar;
 				return result;
@@ -516,31 +550,16 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 		}
 	}
 	else if (result == NULL) {
-		/* end-of-file on read */
+		/*
+		 * End-of-file on read. Nothing this file queued is left, so it is
+		 * closed; the file it returns to opens its own next queued file, or
+		 * carries on with its next line when none is left or none opens.
+		 * No line to quote in a warning: the file before it has ended.
+		 */
 		stackfclose(NULL);
-		if (fnlist) {
-			if (stackfopen(fnlist->name, "r", (void **)fdhead->listhead) != NULL) {
-				htnames_t *tmp = fnlist;
-
-				fnlist = fnlist->next;
-				xfree(tmp->name); xfree(tmp);
-				return stackfgets(buffer, extraincl);
-			}
-			else {
-				htnames_t *tmp = fnlist;
-
-				if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", fnlist->name, buffer);
-				else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", fnlist->name, buffer);
-
-				fnlist = fnlist->next;
-				xfree(tmp->name); xfree(tmp);
-				return result;
-			}
-		}
-		else if (fdhead != NULL)
-			return stackfgets(buffer, extraincl);
-		else
-			return NULL;
+		if (fdhead == NULL) return NULL;
+		if (fdhead->pending) openqueued(&fdhead->pending, optional, NULL);
+		return stackfgets(buffer, extraincl);
 	}
 
 	return result;

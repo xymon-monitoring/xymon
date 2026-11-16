@@ -10,12 +10,35 @@
 
 static char disk_rcsid[] = "$Id$";
 
+/*
+ * The header df prints when it emits a type column. Detected here rather than
+ * from a list of type names - that list was xfs/efs/cxfs, so a Linux "df -PT"
+ * reporting ext4 fell through to the plain layout (measured: disk5%.rrd).
+ */
+static int has_type_column(char *msg)
+{
+	char *p = msg;
+
+	while (p) {
+		if (strncmp(p, "Filesystem", 10) == 0) {
+			char *q = p + 10;
+
+			q += strspn(q, " \t");
+			if (strncmp(q, "Type", 4) == 0) return 1;
+		}
+		p = strchr(p, '\n');
+		if (p) p++;
+	}
+
+	return 0;
+}
+
 int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *disk_params[] = { "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", NULL };
 	static void *disk_tpl      = NULL;
 
-	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
+	enum { DT_TYPECOL, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
 	char *eoln, *curline;
 	static int ptnsetup = 0;
 	static pcre2_code *inclpattern = NULL;
@@ -54,7 +77,14 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		}
 	}
 
-	if (strstr(msg, " xfs ") || strstr(msg, " efs ") || strstr(msg, " cxfs ")) dsystype = DT_IRIX;
+	/*
+	 * DT_TYPECOL: a type column shifts every field one right. Named DT_IRIX
+	 * for the df that produced it, but the shape is not IRIX's and the branch
+	 * is selected on the message, not the host's OS - removing it with the
+	 * platform sent such reports to DT_UNIX, which read the capacity column
+	 * as the mount point and stored a pct of 9728 as NaN.
+	 */
+	if (has_type_column(msg)) dsystype = DT_TYPECOL;
 	else if (strstr(msg, "DASD")) dsystype = DT_AS400;
 	else if (strstr(msg, "NetWare Volumes")) dsystype = DT_NETWARE;
 	else if (strstr(msg, "NetAPP")) dsystype = DT_NETAPP;
@@ -129,12 +159,13 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 			dsystype = DT_UNIX;
 
 		switch (dsystype) {
-		  case DT_IRIX:
+		  case DT_TYPECOL:
 			diskname = xstrdup(columns[6]);
 			p = strchr(columns[5], '%'); if (p) *p = ' ';
 			pused = atoi(columns[5]);
 			aused = str2ll(columns[3], NULL);
 			break;
+
 		  case DT_AS400:
 			diskname = xstrdup("/DASD");
 			p = strchr(columns[columncount-1], '%'); if (p) *p = ' ';
