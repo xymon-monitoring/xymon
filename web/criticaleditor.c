@@ -181,6 +181,14 @@ static void parse_query(void)
 			rq_end = mktime(&tm);
 		}
 
+		/*
+		 * The form always sends all three; a request missing one gets the
+		 * form's own defaults, every day and all day, instead of a crash.
+		 */
+		if (!rq_critwkdays) rq_critwkdays = strdup("*");
+		if (!rq_critslastart) rq_critslastart = strdup("0000");
+		if (!rq_critslaend) rq_critslaend = strdup("2400");
+
 		SBUF_MALLOC(rq_crittime,strlen(rq_critwkdays) + strlen(rq_critslastart) + strlen(rq_critslaend) + 3);
 		snprintf(rq_crittime, rq_crittime_buflen, "%s:%s:%s", rq_critwkdays, rq_critslastart, rq_critslaend);
 	}
@@ -345,6 +353,17 @@ void addclone(char *origin, char *newhosts, char *service)
 {
 	char *newclone;
 
+	if (!origin) {
+		/* A clone points at a host's record: without the host there is none */
+		findrecord(NULL, NULL, "Nothing cloned: enter the host to clone from", NULL, NULL);
+		return;
+	}
+	if (!newhosts) {
+		/* Without hosts to add, strtok() would resume cgi_request()'s freed buffer */
+		findrecord(NULL, NULL, "Nothing cloned: enter the hosts to clone to", NULL, NULL);
+		return;
+	}
+
 	newclone = strtok(newhosts, " ");
 	while (newclone) {
 		addclone_critconfig(origin, newclone);
@@ -372,6 +391,12 @@ void dropclone(char *origin, char *drops, char *service)
 void deleterecord(char *hostname, char *service, int evenifcloned)
 {
 	SBUF_DEFINE(key);
+
+	if (!hostname || !service) {
+		/* Both name a record; without them there is nothing to delete */
+		findrecord(hostname, service, "Nothing deleted: enter both a host and a test", NULL, NULL);
+		return;
+	}
 
 	SBUF_MALLOC(key, strlen(hostname) + strlen(service) + 2);
 	snprintf(key, key_buflen, "%s|%s", hostname, service);
