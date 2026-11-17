@@ -68,6 +68,17 @@ back into the form as sent. They are now HTML-escaped; a pattern that holds
 "<", ">", "&" or a quote still filters as before, and is only shown
 differently in the page source.
 
+appfeed.cgi -- one status with its full text
+--------------------------------------------
+
+appfeed.cgi, the XML feed for phone apps, takes "host=" and "test=": it then
+answers with that one status, whatever its colour, and its full message text
+in a new "Message" element. An app can show what is wrong without loading the
+status web page. Without them the feed is the same, except that a status's
+first line, or an acknowledgement or disable text, can no longer add XML
+elements of its own: a "]]>" in them is now split out of the CDATA, as in the
+new element.
+
 headfoot -- the host, test and board lists are shown escaped
 -----------------------------------------------------------
 

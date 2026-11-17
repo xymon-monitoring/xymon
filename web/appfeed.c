@@ -24,6 +24,8 @@ static char *queryfilter = NULL;
 static char *boardcmd  = "xymondboard";
 static char *fieldlist = "fields=hostname,testname,color,lastchange,logtime,cookie,acktime,ackmsg,disabletime,dismsg,line1";
 static char *colorlist = "color=red,yellow,purple";
+static char *queryhost = NULL;	/* host= and test=: one status, with its full text */
+static char *querytest = NULL;
 
 static void errormsg(char *msg)
 {
@@ -42,6 +44,12 @@ static int parse_query(void)
 		if (strcasecmp(cwalk->name, "filter") == 0) {
 			queryfilter = strdup(cwalk->value);
 		}
+		else if (strcasecmp(cwalk->name, "host") == 0) {
+			queryhost = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "test") == 0) {
+			querytest = strdup(cwalk->value);
+		}
 
 		cwalk = cwalk->next;
 	}
@@ -52,6 +60,32 @@ static int parse_query(void)
 	if ((strncmp(queryfilter, "color=", 6) == 0) || (strstr(queryfilter, " color=") != NULL)) colorlist = "";
 
 	return 0;
+}
+
+/*
+ * Print text from a status, an acknowledgement or a disable as XML character
+ * data: inside CDATA, with each "]]>"
+ * split across two sections so the text cannot end the section, and with the
+ * control characters XML does not allow (all below 0x20 but tab, newline and
+ * carriage return) left out, so one stray byte cannot make the document
+ * unreadable.
+ */
+static void print_cdata(FILE *output, char *s)
+{
+	fprintf(output, "<![CDATA[");
+	for (; (*s); s++) {
+		if ((strncmp(s, "]]>", 3) == 0)) {
+			fprintf(output, "]]]]><![CDATA[>");
+			s += 2;
+		}
+		else if (((unsigned char)*s < 0x20) && (*s != '\t') && (*s != '\n') && (*s != '\r')) {
+			continue;
+		}
+		else {
+			fputc(*s, output);
+		}
+	}
+	fprintf(output, "]]>");
 }
 
 char *extractline(char *ptn, char **src)
@@ -89,6 +123,7 @@ int main(int argc, char **argv)
 	sendreturn_t *sres;
 	int xymondresult;
 	char *log, *bol, *eoln, *endkey;
+	int detail = 0;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -117,8 +152,29 @@ int main(int argc, char **argv)
 
 	/* Setup the query for xymond */
 	parse_query();
-	SBUF_MALLOC(xymondreq, strlen(boardcmd) + strlen(fieldlist) + strlen(colorlist) + strlen(queryfilter) + 5);
-	snprintf(xymondreq, xymondreq_buflen, "%s %s %s %s", boardcmd, fieldlist, colorlist, queryfilter);
+	if (queryhost || querytest) {
+		/*
+		 * One status, by its exact host and test name, whatever its colour,
+		 * with the full message text added as the last field. The names are
+		 * matched as written: a "." is a dot, not any character.
+		 */
+		char *hostre = (queryhost ? cgi_hostregex(queryhost) : NULL);
+		char *testre = (querytest ? cgi_hostregex(querytest) : NULL);
+		SBUF_DEFINE(detailfilter);
+
+		if (!hostre || !testre) {
+			errormsg("Invalid host or test name");
+			return 1;
+		}
+		SBUF_MALLOC(detailfilter, strlen(hostre) + strlen(testre) + strlen(queryfilter) + 32);
+		snprintf(detailfilter, detailfilter_buflen, "host=^%s$ test=^%s$ %s", hostre, testre, queryfilter);
+		xfree(hostre); xfree(testre);
+		queryfilter = detailfilter;
+		colorlist = "";
+		detail = 1;
+	}
+	SBUF_MALLOC(xymondreq, strlen(boardcmd) + strlen(fieldlist) + strlen(colorlist) + strlen(queryfilter) + 10);
+	snprintf(xymondreq, xymondreq_buflen, "%s %s%s %s %s", boardcmd, fieldlist, (detail ? ",msg" : ""), colorlist, queryfilter);
 
 	/* Get the current status */
 	sres = newsendreturnbuf(1, NULL);
@@ -153,7 +209,7 @@ int main(int argc, char **argv)
 	bol = log;
 	while (bol && *bol) {
 		int useit = 1;
-		char *hostname, *testname, *color, *txt, *lastchange, *logtime, *cookie, *acktime, *ackmsg, *distime, *dismsg;
+		char *hostname, *testname, *color, *txt, *lastchange, *logtime, *cookie, *acktime, *ackmsg, *distime, *dismsg, *msg = NULL;
 
 		eoln = strchr(bol, '\n'); if (eoln) *eoln = '\0';
 
@@ -186,6 +242,7 @@ int main(int argc, char **argv)
 			distime = (ackmsg ? gettok(NULL, "|") : NULL);
 			dismsg = (distime ? gettok(NULL, "|") : NULL);
 			txt = (dismsg ? gettok(NULL, "|") : NULL);
+			if (detail && txt) msg = gettok(NULL, "|");
 
 			if (txt) {
 				/* We have all data */
@@ -203,8 +260,14 @@ int main(int argc, char **argv)
 					ackedby = extractline("Acked by: ", &ackmsg);
 
 					fprintf(output, "  <AckTime>%s</AckTime>\n", acktime);
-					fprintf(output, "  <AckText><![CDATA[%s]]></AckText>\n", ackmsg);
-					if (ackedby) fprintf(output, "  <AckedBy><![CDATA[%s]]></AckedBy>\n", ackedby);
+					fprintf(output, "  <AckText>");
+					print_cdata(output, ackmsg);
+					fprintf(output, "</AckText>\n");
+					if (ackedby) {
+						fprintf(output, "  <AckedBy>");
+						print_cdata(output, ackedby);
+						fprintf(output, "</AckedBy>\n");
+					}
 				}
 				if (atoi(distime) != 0) {
 					char *disabledby;
@@ -214,10 +277,25 @@ int main(int argc, char **argv)
 					if (strncmp(dismsg, "Reason: ", 8) == 0) dismsg += 8;
 
 					fprintf(output, "  <DisableTime>%s</DisableTime>\n", distime);
-					fprintf(output, "  <DisableText><![CDATA[%s]]></DisableText>\n", dismsg);
-					if (disabledby) fprintf(output, "  <DisabledBy><![CDATA[%s]]></DisabledBy>\n", disabledby);
+					fprintf(output, "  <DisableText>");
+					print_cdata(output, dismsg);
+					fprintf(output, "</DisableText>\n");
+					if (disabledby) {
+						fprintf(output, "  <DisabledBy>");
+						print_cdata(output, disabledby);
+						fprintf(output, "</DisabledBy>\n");
+					}
 				}
-				fprintf(output, "  <MessageSummary><![CDATA[%s]]></MessageSummary>\n", txt);
+				/* The first line is written by the monitored host: never raw */
+				fprintf(output, "  <MessageSummary>");
+				print_cdata(output, txt);
+				fprintf(output, "</MessageSummary>\n");
+				if (msg) {
+					nldecode(msg);
+					fprintf(output, "  <Message>");
+					print_cdata(output, msg);
+					fprintf(output, "</Message>\n");
+				}
 				fprintf(output, "  <DetailURL><![CDATA[%s]]></DetailURL>\n", hostsvcurl(hostname, testname, 0));
 				fprintf(output, "</ServerStatus>\n");
 			}
