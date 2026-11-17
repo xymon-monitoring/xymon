@@ -67,6 +67,20 @@ Leaving it unset is the default and stays supported: each test falls back to its
 own in-tree path, which is what a developer run, a release tarball and the
 build-free `tests.yml` lane all do.
 
+### `XYMON_TESTS_TIMEOUT` — how long one test may run
+
+Each test gets 600 seconds. One that outlasts them is stopped and counted as a
+failure, "timed out after 600s", and the run goes on with the next test:
+
+    XYMON_TESTS_TIMEOUT=120 ./tests/testsuite
+
+The runner first lists the test's processes, then sends the test `TERM`, which
+runs its `EXIT` trap and so its cleanups, and after 10 seconds kills whatever
+of that list is left: a child blocked on a peer outlives the shell that started
+it. `0` lifts the limit; a value that is not a number of seconds is refused
+before any test runs. `tests/buildsystem/testsuite-timeout.sh` checks all of
+this.
+
 ### Checking a program's memory with Valgrind
 
 `build/valgrind.sh PROGRAM [ARGUMENT...]` runs one program under Valgrind's
