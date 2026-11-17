@@ -359,6 +359,13 @@ no longer analysed or graphed -- xymond_client logs "No client backend for OS"
 such hosts before upgrading the server, or run xymond_client with
 --unknownclientosok to analyse their reports generically.
 
+xymonnet -- send the tested hostname as the TLS server name with "options sni"
+------------------------------------------------------------------------------
+A server holding several certificates on one address answers a handshake that
+names no host with its default one, so the sslcert column could report another
+name's expiry. A protocols.cfg entry with "options sni" now sends the tested
+hostname (never an IP literal). Off until you add it; no shipped entry sets it.
+
 Changes for 4.3.31
 ==================
 
