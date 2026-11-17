@@ -14,7 +14,10 @@
  *                               of a status at once and hold it, print "open K"
  *                               for those xymond kept, then finish them all
  *
- * Exit status 3 when SRC cannot be bound here, and 4 when a mode has not
+ * Exit status 3 when SRC cannot be bound here, and only then: the test reads
+ * 3 as "no such address on this machine" and leaves that part unchecked, so
+ * a socket() that fails, as it does when the process is out of descriptors,
+ * exits 1 like any other failure. Exit status 4 when a mode has not
  * finished after a minute: every connect() and read() here waits on xymond,
  * and a xymond that stalls must fail the test, saying where, rather than hold
  * it until the CI step's own limit kills it without a word.
@@ -96,7 +99,7 @@ static int dial(char *src, int port)
 	}
 	for (attempt = 0; attempt < 3; attempt++) {
 		s = socket(family, SOCK_STREAM, 0);
-		if (s < 0) { perror("socket"); exit(3); }
+		if (s < 0) { perror("socket"); exit(1); }
 		if (bind(s, (struct sockaddr *)&from, len) != 0) { perror(src); exit(3); }
 		rc = connect_within(s, (struct sockaddr *)&to, len);
 		if (rc == 0) return s;
