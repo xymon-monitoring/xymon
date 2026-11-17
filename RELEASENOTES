@@ -60,6 +60,23 @@ clone names, host and test with a space before writing, so such a character
 stays inside its field and on its line rather than adding a field or a record.
 A group or instruction that held a "|" is stored with a space there instead.
 
+criticaleditor -- a change that cannot be saved now says so
+-----------------------------------------------------------
+
+The Critical Systems editor showed the form after every change, saved or not.
+It now says above the form whether the change was saved or deleted, and why
+not. The editor writes critical.cfg and critical.cfg.bak as the web server's
+user. An install where that user cannot write them -- for instance a package
+that ships both owned by the Xymon user and not writable by the web server --
+lost every change without a word, and now shows "NOT SAVED: cannot write
+critical.cfg", naming the user that must be able to write both files. Giving
+the web server's group write access to the two files fixes it. A
+critical.cfg the web server can write but not read is left as it is, with
+"NOT SAVED: cannot read critical.cfg": it could not be backed up, and saving
+would have replaced its records with only the one being edited. A write that
+fails part way, as on a full disk, puts critical.cfg back from the backup it
+has just made, rather than leaving it cut short.
+
 enadis.cgi -- the filter patterns are shown escaped
 ---------------------------------------------------
 
