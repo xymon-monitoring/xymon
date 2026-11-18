@@ -60,6 +60,34 @@ clone names, host and test with a space before writing, so such a character
 stays inside its field and on its line rather than adding a field or a record.
 A group or instruction that held a "|" is stored with a space there instead.
 
+criticaleditor -- pick the host and test, and see what is configured
+--------------------------------------------------------------------
+
+The Critical Systems editor asked for the host and test to be typed, and the
+only way to see what was configured was to walk it with Search and Next. The
+host field now also offers the hosts in hosts.cfg, and the test field the
+tests that host reports to xymond now; both can still be typed, as a template
+for clones is. Picking a host shows its settings. A table above the form
+lists every configured host and test, with its priority, monitoring time and
+resolver group, and a link to edit it.
+
+criticaleditor -- a change that cannot be saved now says so
+-----------------------------------------------------------
+
+The Critical Systems editor showed the form after every change, saved or not.
+It now says above the form whether the change was saved or deleted, and why
+not. The editor writes critical.cfg and critical.cfg.bak as the web server's
+user. An install where that user cannot write them -- for instance a package
+that ships both owned by the Xymon user and not writable by the web server --
+lost every change without a word, and now shows "NOT SAVED: cannot write
+critical.cfg", naming the user that must be able to write both files. Giving
+the web server's group write access to the two files fixes it. A
+critical.cfg the web server can write but not read is left as it is, with
+"NOT SAVED: cannot read critical.cfg": it could not be backed up, and saving
+would have replaced its records with only the one being edited. A write that
+fails part way, as on a full disk, puts critical.cfg back from the backup it
+has just made, rather than leaving it cut short.
+
 enadis.cgi -- the filter patterns are shown escaped
 ---------------------------------------------------
 
@@ -67,6 +95,26 @@ The enable/disable page printed its host, page, IP and class filter patterns
 back into the form as sent. They are now HTML-escaped; a pattern that holds
 "<", ">", "&" or a quote still filters as before, and is only shown
 differently in the page source.
+
+appfeed.cgi -- one status with its full text
+--------------------------------------------
+
+appfeed.cgi, the XML feed for phone apps, takes "host=" and "test=": it then
+answers with that one status, whatever its colour, and its full message text
+in a new "Message" element. An app can show what is wrong without loading the
+status web page. Without them the feed is the same, except that a status's
+first line, or an acknowledgement or disable text, can no longer add XML
+elements of its own: a "]]>" in them is now split out of the CDATA, as in the
+new element.
+
+xymonnet -- the memory it leaked on every run is released
+---------------------------------------------------------
+
+Each web test leaked the URL it parsed -- the parsed address, the column
+name, the post and expect data -- and the base64 Authorization header it
+built; each run also leaked one buffer per service and one per test that
+sends no data. xymonnet runs every few minutes, so a long-lived process
+that embeds it grew with the leak. These are now freed.
 
 headfoot -- the host, test and board lists are shown escaped
 -----------------------------------------------------------
@@ -89,6 +137,18 @@ drop-in saw settings the earlier one had not yet made, and the earlier one
 then overwrote settings from later drop-ins. A configuration that kept
 include lines out of drop-in files to avoid this can now use them; one that
 depended on the old order reads its settings in file order instead.
+
+locator -- a locator address written as a name is resolved
+----------------------------------------------------------
+
+The address given with --locator= (xymond_channel, xymond_filestore,
+svcstatus.cgi) was read as an IPv4 address only: a host name became
+0.0.0.0, which reached a locator on the same machine by accident. A name
+is now resolved, to its IPv4 address if it has one, and an address that
+cannot be read or resolved is refused. A setup that relied on the
+accident, such as a name that points at an address the locator does not
+listen on, must give the locator's address. An IPv6 address is accepted
+in brackets, as [::1]:1984, here and in xymond_locator's --listen=.
 
 web -- critical systems values are escaped on the pages that show them
 ----------------------------------------------------------------------

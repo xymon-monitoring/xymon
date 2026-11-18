@@ -22,6 +22,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <ctype.h>
 #include <utime.h>
+#include <errno.h>
 
 #include "libxymon.h"
 
@@ -283,7 +284,8 @@ critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 		isclone = 1;
 		while (isclone && (handle != xtreeEnd(rbconf))) {
 			handle = xtreeNext(rbconf, handle);
-			if (handle) {
+			/* xtreeEnd(), not NULL: the array variant ends at -1 */
+			if (handle != xtreeEnd(rbconf)) {
 				realkey = (char *)xtreeKey(rbconf, handle);
 				isclone = (*(realkey + strlen(realkey) - 1) == '=');
 			}
@@ -344,7 +346,9 @@ int update_critconfig(critconf_t *rec)
 
 	xtreePos_t handle;
 	FILE *fd;
-	int result = 0;
+	int bakerr = 0;		/* errno of a backup that failed */
+	int bakmade = 0;	/* critical.cfg.bak now holds critical.cfg as it was */
+	int err;
 
 	/* First, copy the old file */
 	SBUF_MALLOC(bakfn, strlen(configfn) + 5);
@@ -355,21 +359,44 @@ int update_critconfig(critconf_t *rec)
 	}
 	else ut.actime = ut.modtime = getcurrenttime(NULL);
 	fd = fopen(configfn, "r");
+	if ((fd == NULL) && (errno != ENOENT)) {
+		/*
+		 * It is there but cannot be read: it cannot be backed up, and the
+		 * rewrite would replace what is in it with what was loaded, which
+		 * is nothing. Leave it as it is. Not there at all is a first save.
+		 */
+		err = errno;
+		errprintf("Cannot read %s: %s\n", configfn, strerror(err));
+		xfree(bakfn);
+		errno = err;
+		return CRITSAVE_NOREAD;
+	}
 	if (fd) {
 		bakfd = fopen(bakfn, "w");
 		if (bakfd) {
-			while ((n = fread(buf, 1, sizeof(buf), fd)) > 0) fwrite(buf, 1, n, bakfd);
-			fclose(bakfd);
-			utime(bakfn, &ut);
+			/* errno is taken where a call fails, before another can change it */
+			while (!bakerr && ((n = fread(buf, 1, sizeof(buf), fd)) > 0)) {
+				if (fwrite(buf, 1, n, bakfd) != (size_t)n) bakerr = (errno ? errno : EIO);
+			}
+			if (!bakerr && ferror(fd)) bakerr = (errno ? errno : EIO);
+			if ((fclose(bakfd) != 0) && !bakerr) bakerr = (errno ? errno : EIO);
+			if (!bakerr) {
+				utime(bakfn, &ut);
+				bakmade = 1;
+			}
 		}
+		else bakerr = errno;
 		fclose(fd);
 	}
-	xfree(bakfn);
+	if (bakerr) errprintf("Cannot write backup file %s: %s\n", bakfn, strerror(bakerr));
 
 	fd = fopen(configfn, "w");
 	if (fd == NULL) {
-		errprintf("Cannot open output file %s\n", configfn);
-		return 1;
+		err = errno;
+		errprintf("Cannot open output file %s: %s\n", configfn, strerror(err));
+		xfree(bakfn);
+		errno = err;
+		return CRITSAVE_NOOPEN;
 	}
 
 	if (rec) {
@@ -377,9 +404,11 @@ int update_critconfig(critconf_t *rec)
 		if (handle == xtreeEnd(rbconf)) xtreeAdd(rbconf, rec->key, rec);
 	}
 
+	err = 0;
 	handle = xtreeFirst(rbconf);
 	while (handle != xtreeEnd(rbconf)) {
 		char *onekey;
+		int wrc;
 
 		onekey = (char *)xtreeKey(rbconf, handle);
 
@@ -389,7 +418,8 @@ int update_critconfig(critconf_t *rec)
 			
 			hostname = strdup(onekey);
 			*(hostname + strlen(hostname) - 1) = '\0';
-			fprintf(fd, "%s|=%s\n", hostname, pointsto);
+			wrc = fprintf(fd, "%s|=%s\n", hostname, pointsto);
+			xfree(hostname);
 		}
 		else {
 			critconf_t *onerec = (critconf_t *)xtreeData(rbconf, handle);
@@ -399,7 +429,7 @@ int update_critconfig(critconf_t *rec)
 			if (onerec->starttime > 0) snprintf(startstr, sizeof(startstr), "%d", (int)onerec->starttime);
 			if (onerec->endtime > 0) snprintf(endstr, sizeof(endstr), "%d", (int)onerec->endtime);
 
-			fprintf(fd, "%s|%s|%s|%s|%d|%s|%s|%s\n",
+			wrc = fprintf(fd, "%s|%s|%s|%s|%d|%s|%s|%s\n",
 				onekey, 
 				startstr, endstr,
 				(onerec->crittime ? onerec->crittime : ""),
@@ -409,12 +439,55 @@ int update_critconfig(critconf_t *rec)
 				(onerec->updinfo ? onerec->updinfo : ""));
 		}
 
+		/* The first failure's reason, before another call can change errno */
+		if ((wrc < 0) && !err) err = (errno ? errno : EIO);
+
 		handle = xtreeNext(rbconf, handle);
 	}
 
-	fclose(fd);
+	/* A full disk shows only here: in a write error, or when fclose() flushes */
+	if (!err && ferror(fd)) err = EIO;
+	if ((fclose(fd) != 0) && !err) err = (errno ? errno : EIO);
+	if (err) {
+		int restored = 0;
 
-	return result;
+		errprintf("Cannot write %s: %s\n", configfn, strerror(err));
+
+		/*
+		 * The file was truncated when it was opened, and holds only part of
+		 * the new one now. Put the backup back: it is the file as it was,
+		 * and on a full disk it fits in the space the truncation freed.
+		 * Only a backup made just now: a critical.cfg.bak left from before
+		 * is not the file this change replaced.
+		 */
+		if (bakmade && ((bakfd = fopen(bakfn, "r")) != NULL)) {
+			if ((fd = fopen(configfn, "w")) != NULL) {
+				int werr = 0;
+
+				while ((n = fread(buf, 1, sizeof(buf), bakfd)) > 0) {
+					if (fwrite(buf, 1, n, fd) != (size_t)n) werr = 1;
+				}
+				if (ferror(bakfd)) werr = 1;
+				if (fclose(fd) != 0) werr = 1;
+				restored = !werr;
+			}
+			fclose(bakfd);
+		}
+		if (restored) errprintf("Restored %s from %s\n", configfn, bakfn);
+		else errprintf("Could not restore %s: it may be incomplete\n", configfn);
+
+		xfree(bakfn);
+		errno = err;
+		return (restored ? CRITSAVE_WRITEFAIL : CRITSAVE_WRITEFAIL_BROKEN);
+	}
+	xfree(bakfn);
+
+	if (bakerr) {
+		errno = bakerr;
+		return CRITSAVE_NOBACKUP;
+	}
+
+	return CRITSAVE_OK;
 }
 
 void addclone_critconfig(char *origin, char *newclone)
@@ -452,7 +525,7 @@ int delete_critconfig(char *dropkey, int evenifcloned)
 	xtreePos_t handle;
 
 	handle = xtreeFind(rbconf, dropkey);
-	if (handle == xtreeEnd(rbconf)) return 0;
+	if (handle == xtreeEnd(rbconf)) return CRITDELETE_NORECORD;
 
 	if (!evenifcloned) {
 		/* Check if this record has any clones attached to it */
@@ -470,7 +543,7 @@ int delete_critconfig(char *dropkey, int evenifcloned)
 			ptr = (char *)xtreeData(rbconf, handle);
 			if ((*(key + strlen(key) - 1) == '=') && (strcmp(hostname, ptr) == 0)) {
 				xfree(hostname);
-				return 1;
+				return CRITDELETE_CLONED;
 			}
 
 			handle = xtreeNext(rbconf, handle);
@@ -488,6 +561,6 @@ int delete_critconfig(char *dropkey, int evenifcloned)
 		flushrec(k1, k2);
 	}
 
-	return 0;
+	return CRITDELETE_OK;
 }
 

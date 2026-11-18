@@ -199,6 +199,55 @@ void strbufferuse(strbuffer_t *buf, int bytes)
 	*(buf->s+buf->used) = '\0';
 }
 
+/*
+ * The four *quoted() routines below are one scan over different character
+ * sets. qsub pairs each character these routines act on with the text that
+ * replaces it; quote() runs the scan, copying the input a run at a time and
+ * substituting at each listed character. Each public routine keeps its own
+ * static result buffer, so a caller mixing two of them in one expression
+ * gets two buffers as before; two calls to the same routine still alias, as
+ * every single-static-buffer routine in this file does.
+ */
+
+typedef struct qsub {
+	char c;			/* the character to replace, 0 ends the list */
+	char *rep;		/* the text that replaces it */
+} qsub_t;
+
+static char *quote(strbuffer_t **resultp, char *s, qsub_t *subs, int nullisnull)
+{
+	strbuffer_t *result;
+	char set[16];
+	char *inp, *endp;
+	char c;
+	int i;
+
+	if (!s && nullisnull) return NULL;
+
+	if (!*resultp) *resultp = newstrbuffer(4096);
+	result = *resultp;
+	clearstrbuffer(result);
+	if (!s) return STRBUF(result);
+
+	for (i = 0; subs[i].c; i++) set[i] = subs[i].c;
+	set[i] = '\0';
+
+	inp = s;
+	do {
+		endp = inp + strcspn(inp, set);
+		c = *endp;
+		if (endp > inp) addtobufferraw(result, inp, endp-inp);
+		if (c) {
+			for (i = 0; subs[i].c; i++) {
+				if (subs[i].c == c) { addtobuffer(result, subs[i].rep); break; }
+			}
+		}
+		inp = (c == '\0') ? NULL : endp+1;
+	} while (inp);
+
+	return STRBUF(result);
+}
+
 char *htmlquoted(char *s)
 {
 	/*
@@ -206,31 +255,12 @@ char *htmlquoted(char *s)
 	 */
 
 	static strbuffer_t *result = NULL;
-	char *inp, *endp;
-	char c;
+	static qsub_t subs[] = {
+		{'"', "&quot;"}, {'&', "&amp;"}, {'<', "&lt;"}, {'>', "&gt;"},
+		{' ', "&nbsp;"}, {0, NULL}
+	};
 
-	if (!s) return NULL;
-
-	if (!result) result = newstrbuffer(4096);
-	clearstrbuffer(result);
-
-	inp = s;
-	do {
-		endp = inp + strcspn(inp, "\"&<> ");
-		c = *endp;
-		if (endp > inp) addtobufferraw(result, inp, endp-inp);
-		switch (c) {
-		  case '"': addtobuffer(result, "&quot;"); break;
-		  case '&': addtobuffer(result, "&amp;"); break;
-		  case '<': addtobuffer(result, "&lt;"); break;
-		  case '>': addtobuffer(result, "&gt;"); break;
-		  case ' ': addtobuffer(result, "&nbsp;"); break;
-		  default: break;
-		}
-		inp = (c == '\0') ? NULL : endp+1;
-	} while (inp);
-
-	return STRBUF(result);
+	return quote(&result, s, subs, 1);
 }
 
 char *htmlattrquoted(char *s)
@@ -244,30 +274,12 @@ char *htmlattrquoted(char *s)
 	 */
 
 	static strbuffer_t *result = NULL;
-	char *inp, *endp;
-	char c;
+	static qsub_t subs[] = {
+		{'"', "&quot;"}, {'&', "&amp;"}, {'<', "&lt;"}, {'>', "&gt;"},
+		{'\'', "&#39;"}, {0, NULL}
+	};
 
-	if (!result) result = newstrbuffer(4096);
-	clearstrbuffer(result);
-	if (!s) return STRBUF(result);
-
-	inp = s;
-	do {
-		endp = inp + strcspn(inp, "\"&<>'");
-		c = *endp;
-		if (endp > inp) addtobufferraw(result, inp, endp-inp);
-		switch (c) {
-		  case '"': addtobuffer(result, "&quot;"); break;
-		  case '&': addtobuffer(result, "&amp;"); break;
-		  case '<': addtobuffer(result, "&lt;"); break;
-		  case '>': addtobuffer(result, "&gt;"); break;
-		  case '\'': addtobuffer(result, "&#39;"); break;
-		  default: break;
-		}
-		inp = (c == '\0') ? NULL : endp+1;
-	} while (inp);
-
-	return STRBUF(result);
+	return quote(&result, s, subs, 0);
 }
 
 char *jsquoted(char *s)
@@ -280,31 +292,12 @@ char *jsquoted(char *s)
 	 */
 
 	static strbuffer_t *result = NULL;
-	char *inp, *endp;
-	char c;
+	static qsub_t subs[] = {
+		{'"', "\\\""}, {'\\', "\\\\"}, {'<', "\\x3c"}, {'>', "\\x3e"},
+		{'\n', "\\n"}, {'\r', "\\r"}, {0, NULL}
+	};
 
-	if (!result) result = newstrbuffer(4096);
-	clearstrbuffer(result);
-	if (!s) return STRBUF(result);
-
-	inp = s;
-	do {
-		endp = inp + strcspn(inp, "\"\\<>\n\r");
-		c = *endp;
-		if (endp > inp) addtobufferraw(result, inp, endp-inp);
-		switch (c) {
-		  case '"':  addtobuffer(result, "\\\""); break;
-		  case '\\': addtobuffer(result, "\\\\"); break;
-		  case '<':  addtobuffer(result, "\\x3c"); break;
-		  case '>':  addtobuffer(result, "\\x3e"); break;
-		  case '\n': addtobuffer(result, "\\n"); break;
-		  case '\r': addtobuffer(result, "\\r"); break;
-		  default: break;
-		}
-		inp = (c == '\0') ? NULL : endp+1;
-	} while (inp);
-
-	return STRBUF(result);
+	return quote(&result, s, subs, 0);
 }
 
 char *prehtmlquoted(char *s)
@@ -312,33 +305,16 @@ char *prehtmlquoted(char *s)
 	/*
 	 * This routine converts a string which may contain html to a string
 	 * safe to include in a PRE block. It's similar to above, but escapes
-	 * only the minmum characters for efficiency.
+	 * only the minmum characters for efficiency. The ">" is not, strictly
+	 * speaking, needed, but unbalanced encoding might confuse automated readers.
 	 */
 
 	static strbuffer_t *result = NULL;
-	char *inp, *endp;
-	char c;
+	static qsub_t subs[] = {
+		{'&', "&amp;"}, {'<', "&lt;"}, {'>', "&gt;"}, {0, NULL}
+	};
 
-	if (!s) return NULL;
-
-	if (!result) result = newstrbuffer(4096);
-	clearstrbuffer(result);
-
-	inp = s;
-	do {
-		endp = inp + strcspn(inp, "&<>");
-		c = *endp;
-		if (endp > inp) addtobufferraw(result, inp, endp-inp);
-		switch (c) {
-		  case '&': addtobuffer(result, "&amp;"); break;
-		  case '<': addtobuffer(result, "&lt;"); break;
-		  case '>': addtobuffer(result, "&gt;"); break;	// this is not, strictly speaking, needed, but unbalanced encoding might confuse automated readers
-		  default: break;
-		}
-		inp = (c == '\0') ? NULL : endp+1;
-	} while (inp);
-
-	return STRBUF(result);
+	return quote(&result, s, subs, 1);
 }
 
 strbuffer_t *replacetext(char *original, char *oldtext, char *newtext)

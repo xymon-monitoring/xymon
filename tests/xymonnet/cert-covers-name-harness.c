@@ -19,6 +19,12 @@
 
 #include <openssl/pem.h>
 
+/* Before OpenSSL 1.1, the same accessors had these names */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#define X509_getm_notBefore X509_get_notBefore
+#define X509_getm_notAfter  X509_get_notAfter
+#endif
+
 /* A self-signed certificate: subject CN, subjectAltName (NULL for none), expired or not */
 static X509 *make_cert(const char *cn, const char *san, int expired)
 {

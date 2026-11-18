@@ -82,6 +82,17 @@ case ${XYMON_TESTS_STRICT:-} in
 		exit 1 ;;
 esac
 
+# A test that never ends -- a peer that never answers, a write nobody reads --
+# would hold the run until the CI step's own timeout: the tests after it got no
+# result, and the log named none. Each test gets this many seconds; 0 lifts
+# the limit.
+XYMON_TESTS_TIMEOUT=${XYMON_TESTS_TIMEOUT:-600}
+case $XYMON_TESTS_TIMEOUT in
+	*[!0-9]*)
+		errline "XYMON_TESTS_TIMEOUT='${XYMON_TESTS_TIMEOUT}' is not a number of seconds -- 0 lifts the limit"
+		exit 1 ;;
+esac
+
 # The lib/ and fixtures/ excludes above are also a hole: an executable test
 # misfiled there vanishes without a trace. In strict mode that is a filing
 # error; outside strict a fileMode=false checkout, where every file reads as
@@ -106,9 +117,13 @@ __XYMON_TESTS_RUNROOT=$(mktemp -d "${TMPDIR:-/tmp}/xymon-run.XXXXXX") || exit 1
 export __XYMON_TESTS_RUNROOT
 TMPDIR=$__XYMON_TESTS_RUNROOT
 export TMPDIR
+# A test runs in the background, so that a watchdog can time it, and sh starts
+# a background command with SIGINT ignored: the traps pass the signal on to the
+# test running at the time, as TERM, so that it does not outlive the run.
+testpid=
 trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial" "$__XYMON_TESTS_RUNROOT.leftovers"' EXIT
-trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial" "$__XYMON_TESTS_RUNROOT.leftovers"; exit 130' INT
-trap 'rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial" "$__XYMON_TESTS_RUNROOT.leftovers"; exit 143' TERM
+trap '[ -n "$testpid" ] && kill -TERM "$testpid" 2>/dev/null; rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial" "$__XYMON_TESTS_RUNROOT.leftovers"; exit 130' INT
+trap '[ -n "$testpid" ] && kill -TERM "$testpid" 2>/dev/null; rm -rf "$__XYMON_TESTS_RUNROOT" "$__XYMON_TESTS_RUNROOT.partial" "$__XYMON_TESTS_RUNROOT.leftovers"; exit 143' TERM
 
 # XYMON_VARIANT names the build this tree is, so the runner can leave out the
 # tests whose subject that build does not contain. Unset -- a developer run, or
@@ -211,6 +226,67 @@ XYMON_TESTS_LEFTOVER_LOG=$leftover_log
 export XYMON_TESTS_LEFTOVER_LOG
 
 pass=0; skip=0; fail=0; filtered=0; failed=''; filtered_areas=''; skipped_in=''
+# descendants PID -- the processes descended from PID. From one ps listing
+# where ps is present; from /proc where it is not, which is how the smallest
+# Linux container images run, with procps never installed. A backgrounded child
+# the test left is then still reached and stopped, instead of outliving the run.
+# Both paths build the same pid-to-parent map and walk it breadth-first.
+descendants() {
+	if command -v ps >/dev/null 2>&1; then
+		ps -A -o pid= -o ppid= 2>/dev/null | awk -v root="$1" '
+			{ parent[$1] = $2 }
+			END {
+				n = 1; queue[1] = root
+				for (i = 1; i <= n; i++)
+					for (p in parent)
+						if (parent[p] == queue[i]) { queue[++n] = p; print p }
+			}'
+	elif [ -r "/proc/$1/task/$1/children" ]; then
+		# Linux lists a process's own children in this file (space-separated
+		# pids), so the subtree is walked with no ps, no glob -- the runner
+		# sets -f -- and no stat parsing. A pid that exits mid-walk just
+		# reads empty.
+		proc_descendants "$1"
+	fi
+}
+
+# proc_descendants PID -- PID's descendants from /proc/<pid>/task/<pid>/children,
+# depth-first. A separate function so it can recurse.
+proc_descendants() {
+	for pd_c in $(cat "/proc/$1/task/$1/children" 2>/dev/null); do
+		echo "$pd_c"
+		proc_descendants "$pd_c"
+	done
+}
+
+# watchdog PID LIMIT MARK -- once the test PID has run LIMIT seconds, write
+# MARK and stop it. Its descendants are listed first: once the test has gone,
+# they are orphans, and nothing links them to it any more. The test gets TERM,
+# which runs its EXIT trap and so its cleanups, and 10 seconds; then it gets
+# KILL, and what is left of the list TERM and KILL -- a child blocked on a peer
+# outlives the shell that started it.
+watchdog() {
+	wd_t=0
+	while [ "$wd_t" -lt "$2" ]; do
+		sleep 1
+		kill -0 "$1" 2>/dev/null || return 0
+		wd_t=$((wd_t + 1))
+	done
+	: > "$3"
+	wd_kids=$(descendants "$1")
+	kill -TERM "$1" 2>/dev/null
+	wd_t=0
+	while [ "$wd_t" -lt 10 ] && kill -0 "$1" 2>/dev/null; do
+		sleep 1
+		wd_t=$((wd_t + 1))
+	done
+	kill -KILL "$1" 2>/dev/null
+	for wd_p in $wd_kids; do kill -TERM "$wd_p" 2>/dev/null; done
+	sleep 1
+	for wd_p in $wd_kids; do kill -KILL "$wd_p" 2>/dev/null; done
+	return 0
+}
+
 run_one() {
 	t=$1
 
@@ -253,8 +329,30 @@ run_one() {
 
 	group "$t"
 	runroot_before=$(ls -A "$__XYMON_TESTS_RUNROOT" 2>/dev/null)
-	"./$t"
-	rc=$?
+	timedout=
+	if [ "$XYMON_TESTS_TIMEOUT" -gt 0 ]; then
+		mark=$__XYMON_TESTS_RUNROOT.timedout
+		rm -f "$mark"
+		"./$t" &
+		testpid=$!
+		watchdog "$testpid" "$XYMON_TESTS_TIMEOUT" "$mark" >/dev/null 2>&1 &
+		wdpid=$!
+		wait "$testpid"
+		rc=$?
+		testpid=
+		# A watchdog that fired is still killing what the test left: let it
+		# finish. Otherwise it is only counting, and is stopped.
+		if [ -f "$mark" ]; then
+			timedout=1
+			rm -f "$mark"
+		else
+			kill "$wdpid" 2>/dev/null
+		fi
+		wait "$wdpid" 2>/dev/null
+	else
+		"./$t"
+		rc=$?
+	fi
 	for entry in $(ls -A "$__XYMON_TESTS_RUNROOT" 2>/dev/null); do
 		case "
 $runroot_before
@@ -265,16 +363,23 @@ $entry
 			*) printf '%s %s\n' "$entry" "$t" >>"$leftover_log" ;;
 		esac
 	done
-	case $rc in
-		0)  printf '  ok\n';           pass=$((pass + 1)) ;;
-		77) printf '  skip (rc=77)\n'; skip=$((skip + 1))
-		    skipped_in="${skipped_in}${area:-.} ${t}
+	if [ -n "$timedout" ]; then
+		errline "$t timed out after ${XYMON_TESTS_TIMEOUT}s (XYMON_TESTS_TIMEOUT) and was stopped"
+		fail=$((fail + 1))
+		failed="${failed}  - ${t} (timed out after ${XYMON_TESTS_TIMEOUT}s)
+"
+	else
+		case $rc in
+			0)  printf '  ok\n';           pass=$((pass + 1)) ;;
+			77) printf '  skip (rc=77)\n'; skip=$((skip + 1))
+			    skipped_in="${skipped_in}${area:-.} ${t}
 " ;;
-		*)  errline "$t FAILED (rc=$rc)"
-		    fail=$((fail + 1))
-		    failed="${failed}  - ${t} (rc=${rc})
+			*)  errline "$t FAILED (rc=$rc)"
+			    fail=$((fail + 1))
+			    failed="${failed}  - ${t} (rc=${rc})
 " ;;
-	esac
+		esac
+	fi
 	endgroup
 }
 

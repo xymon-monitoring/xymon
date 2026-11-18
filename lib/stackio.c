@@ -66,6 +66,17 @@ static void freepending(htnames_t **pending)
 }
 
 /*
+ * Non-optional "include" and "directory" lines whose target could not be
+ * opened during the current stack. A configuration file says which of its
+ * includes may be missing -- that is what the "optional" prefix is for -- and
+ * without this the two spellings are indistinguishable to a caller: both leave
+ * it holding a file that parsed cleanly and is short by whatever the include
+ * carried. Harmless for a reader, not for one that deletes on the answer
+ * (trimhistory --drop, #512).
+ */
+static int stackfd_lostincludes = 0;
+
+/*
  * initfgets() and unlimfgets() implements a fgets() style
  * input routine that can handle arbitrarily long input lines.
  * Buffer space for the input is dynamically allocated and
@@ -214,6 +225,7 @@ FILE *stackfopen(char *filename, char *mode, void **v_listhead)
 	if (fdhead == NULL) {
 		char *p;
 
+		stackfd_lostincludes = 0;
 		stackfd_base = strdup(filename);
 		p = strrchr(stackfd_base, '/'); if (p) *(p+1) = '\0';
 
@@ -288,6 +300,17 @@ int stackfclose(FILE *fd)
 	return result;
 }
 
+int stackfmissing(void)
+{
+	/*
+	 * How many non-optional includes the last stack could not open. A caller
+	 * that only renders can ignore this and show what did load; one that
+	 * deletes on the answer cannot (#512).
+	 */
+	return stackfd_lostincludes;
+}
+
+
 int stackfmodified(void *v_listhead)
 {
 	/* Walk the list of filenames, and see if any have changed */
@@ -354,7 +377,7 @@ static void addtofnlist(char *dirname, int is_optional, void **v_listhead, htnam
 		snprintf(dirfn, sizeof(dirfn), "%s/%s", stackfd_base, dirname);
 
 	if ((dirfd = opendir(dirfn)) == NULL) {
-		if (!is_optional) errprintf("WARNING: Cannot open directory %s\n", dirfn);
+		if (!is_optional) { stackfd_lostincludes++; errprintf("WARNING: Cannot open directory %s\n", dirfn); }
 		else dbgprintf("addtofnlist(): Cannot open directory %s\n", dirfn);
 		return;
 	}
@@ -452,11 +475,11 @@ static FILE *openqueued(htnames_t **pending, int optional, const char *line)
 
 		newfd = stackfopen(tmp->name, "r", (void **)fdhead->listhead);
 		if ((newfd == NULL) && line) {
-			if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", tmp->name, line);
+			if (!optional) { stackfd_lostincludes++; errprintf("WARNING: Cannot open include file '%s', line was: %s\n", tmp->name, line); }
 			else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", tmp->name, line);
 		}
 		else if (newfd == NULL) {
-			if (!optional) errprintf("WARNING: Cannot open include file '%s'\n", tmp->name);
+			if (!optional) { stackfd_lostincludes++; errprintf("WARNING: Cannot open include file '%s'\n", tmp->name); }
 			else dbgprintf("stackfgets(): Cannot open include file '%s'\n", tmp->name);
 		}
 
@@ -504,7 +527,7 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			if (*newfn && (stackfopen(newfn, "r", (void **)fdhead->listhead) != NULL))
 				return stackfgets(buffer, extraincl);
 			else {
-				if (!optional) errprintf("WARNING: Cannot open include file '%s', line was: %s\n", newfn, STRBUF(buffer));
+				if (!optional) { stackfd_lostincludes++; errprintf("WARNING: Cannot open include file '%s', line was: %s\n", newfn, STRBUF(buffer)); }
 				else dbgprintf("stackfgets(): Cannot open include file '%s', line was: %s\n", newfn, STRBUF(buffer));
 
 				*nameend = endchar;

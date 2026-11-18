@@ -667,4 +667,48 @@ char *decode_url(char *testspec, weburl_t *weburl)
 
 	return weburl->desturl->origform;
 }
+
+/*
+ * Release what decode_url() allocated into a caller-provided weburl_t: the
+ * two urlelem_t blocks and the strings hung off them, and the strings pulled
+ * out of the test spec. Use it only on a weburl_t that decode_url() filled
+ * through the buffer the caller passed in -- not the static one it falls back
+ * to when called with a NULL argument, whose storage it reuses across calls.
+ */
+static void free_urlelem(urlelem_t *u)
+{
+	/*
+	 * scheme is a string literal on every branch but the generic one, so it
+	 * is not freed; and on a parse error the other fields are still the ""
+	 * sentinels set at entry, not allocations, so there is nothing to free.
+	 */
+	if (u->parseerror) return;
+
+	if (u->origform)   xfree(u->origform);
+	if (u->schemeopts) xfree(u->schemeopts);
+	if (u->host)       xfree(u->host);
+	if (u->ip)         xfree(u->ip);
+	if (u->auth)       xfree(u->auth);
+	if (u->relurl)     xfree(u->relurl);
+}
+
+void free_weburl(weburl_t *weburl)
+{
+	if (weburl == NULL) return;
+
+	if (weburl->desturl) {
+		free_urlelem(weburl->desturl);
+		xfree(weburl->desturl);
+	}
+	if (weburl->proxyurl) {
+		free_urlelem(weburl->proxyurl);
+		xfree(weburl->proxyurl);
+	}
+	if (weburl->columnname)      xfree(weburl->columnname);
+	if (weburl->postcontenttype) xfree(weburl->postcontenttype);
+	if (weburl->postdata)        xfree(weburl->postdata);
+	if (weburl->expdata)         xfree(weburl->expdata);
+	if (weburl->okcodes)         xfree(weburl->okcodes);
+	if (weburl->badcodes)        xfree(weburl->badcodes);
+}
  

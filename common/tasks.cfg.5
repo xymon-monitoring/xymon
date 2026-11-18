@@ -33,6 +33,8 @@ An entry looks like this:
 \&          NEEDS xymond
 \&          GROUP webupdates
 \&          INTERVAL 5m
+\&          DELAY 30
+\&          FAILDELAY 600
 \&          ONHOST localhost
 \&          MAXTIME 10m
 \&          LOGFILE /var/log/xymon/updateweb.log
@@ -70,11 +72,28 @@ provide a "regular expression"; if the hostname where xymonlaunch
 runs matches this expression, then the task will run. If it doesn't
 match, then the task is treated as if it were DISABLED.
 
+The \fBDELAY\fR keyword applies to a task with NEEDS: it sets how
+long the task waits after the task it NEEDS has started. The time
+takes the same "m", "h" or "d" suffix as MAXTIME below, and defaults
+to 5 seconds. DELAY 0 starts the task as soon as its NEEDS task is
+running. A task without NEEDS starts immediately, whatever its DELAY.
+
 The \fBMAXTIME\fR keyword sets a maximum time that the task may
 run; if exceeded, xymonlaunch will kill the task. The time
 is in seconds by default, you can specify minutes, hours or
 days by adding an "m", "h" or "d" after the number. By default
 there is no upper limit on how long a taskmay run.
+
+The \fBFAILDELAY\fR keyword holds back a task that keeps failing.
+A task that has exited with a non-zero status, or been killed by a
+signal, more than \fB5\fR times in a row, each time within FAILDELAY
+of its previous start, is not started again until FAILDELAY has
+passed since its last start. A clean exit clears the count. For
+example, with FAILDELAY 15m, a task that failed six times in a row
+is tried again 15 minutes after its last start. A value under five
+seconds never holds a task back: xymonlaunch starts a task at most
+once in five seconds, and by then the hold has already expired.
+FAILDELAY 0 disables the hold. Default: 10m
 
 The \fBNEEDS\fR instructs xymonlaunch not to run this task unless
 the task defined by the NEEDS keyword is already running. This

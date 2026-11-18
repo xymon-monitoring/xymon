@@ -18,6 +18,8 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <pwd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -28,6 +30,7 @@ static char *operator = NULL;
 static enum { CRITEDIT_FIND, CRITEDIT_NEXT, CRITEDIT_UPDATE, CRITEDIT_DELETE, CRITEDIT_ADDCLONE, CRITEDIT_DROPCLONE } editaction = CRITEDIT_FIND;
 static char *rq_hostname = NULL;
 static char *rq_service = NULL;
+static char *rq_prevhost = NULL;	/* the host the form was showing */
 static int rq_priority = 0;
 static char *rq_group = NULL;
 static char *rq_extra = NULL;
@@ -37,6 +40,68 @@ static time_t rq_end = 0;
 static char *rq_clonestoadd = NULL;
 static char *rq_clonestodrop = NULL;
 static int  rq_dropevenifcloned = 0;
+
+/*
+ * What the last change did, shown above the form: "Saved", "Deleted", or why
+ * not. It is shown together with findrecord()'s own notes about clones, not
+ * instead of them. Anything the user typed goes in escaped.
+ */
+static char statusmsg[2048] = "";
+
+static void setstatus(const char *fmt, const char *arg)
+{
+	/* htmlattrquoted(), not htmlquoted(): a space stays a space, so it wraps */
+	snprintf(statusmsg, sizeof(statusmsg), fmt, (arg ? htmlattrquoted((char *)arg) : ""));
+}
+
+/* After update_critconfig() returned rc, with errno saying why */
+static void setsaveresult(int rc, const char *done)
+{
+	char why[1024];
+	int e = errno;		/* before getpwuid(), which may change it */
+	struct passwd *pw;
+
+	switch (rc) {
+	  case CRITSAVE_OK:
+		setstatus("%s", done);
+		return;
+
+	  case CRITSAVE_NOBACKUP:
+		snprintf(why, sizeof(why), "%s, but critical.cfg.bak could not be written: %s", done, strerror(e));
+		setstatus("%s", why);
+		return;
+
+	  case CRITSAVE_NOOPEN:
+		pw = getpwuid(geteuid());
+		snprintf(why, sizeof(why),
+			 "NOT SAVED: cannot write critical.cfg: %s. The web server runs as %s, which must be able to write critical.cfg and critical.cfg.bak",
+			 strerror(e), (pw ? pw->pw_name : "an unknown user"));
+		setstatus("%s", why);
+		return;
+
+	  case CRITSAVE_NOREAD:
+		pw = getpwuid(geteuid());
+		snprintf(why, sizeof(why),
+			 "NOT SAVED: cannot read critical.cfg: %s. The web server runs as %s, which must be able to read and write critical.cfg, and write critical.cfg.bak",
+			 strerror(e), (pw ? pw->pw_name : "an unknown user"));
+		setstatus("%s", why);
+		return;
+
+	  case CRITSAVE_WRITEFAIL:
+		snprintf(why, sizeof(why),
+			 "NOT SAVED: writing critical.cfg failed: %s. It was put back as it was before this change",
+			 strerror(e));
+		setstatus("%s", why);
+		return;
+
+	  default:
+		snprintf(why, sizeof(why),
+			 "NOT SAVED: writing critical.cfg failed: %s, and it could not be put back. It may be incomplete: check it, and critical.cfg.bak",
+			 strerror(e));
+		setstatus("%s", why);
+		return;
+	}
+}
 
 /*
  * A record in critical.cfg is one line, its fields split on '|'. A value
@@ -86,6 +151,9 @@ static void parse_query(void)
 		}
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
 			if (*cwalk->value) rq_service = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "PREVHOST") == 0) {
+			if (*cwalk->value) rq_prevhost = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "PRIORITY") == 0) {
 			rq_priority = atoi(cwalk->value);
@@ -181,12 +249,220 @@ static void parse_query(void)
 			rq_end = mktime(&tm);
 		}
 
+		/*
+		 * The form always sends all three; a request missing one gets the
+		 * form's own defaults, every day and all day, instead of a crash.
+		 */
+		if (!rq_critwkdays) rq_critwkdays = strdup("*");
+		if (!rq_critslastart) rq_critslastart = strdup("0000");
+		if (!rq_critslaend) rq_critslaend = strdup("2400");
+
 		SBUF_MALLOC(rq_crittime,strlen(rq_critwkdays) + strlen(rq_critslastart) + strlen(rq_critslaend) + 3);
 		snprintf(rq_crittime, rq_crittime_buflen, "%s:%s:%s", rq_critwkdays, rq_critslastart, rq_critslaend);
 	}
 	else if (editaction == CRITEDIT_ADDCLONE) {
 		if (!rq_clonestoadd && rq_clonestodrop) editaction = CRITEDIT_DROPCLONE;
 	}
+}
+
+/* ---- What can be chosen, and what is configured: shown with every form ---- */
+
+static int cmpstr(const void *a, const void *b)
+{
+	return strcmp(*(char * const *)a, *(char * const *)b);
+}
+
+/* "W:0700:2000" as "Mon-Fri 07:00-20:00"; no time set is "Always" */
+static void addwhen(strbuffer_t *buf, char *crittime)
+{
+	static const char *daynames[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+	char days[64], start[5], end[5];
+	char *p;
+
+	if (!crittime || !*crittime || (strcmp(crittime, "*:0000:2400") == 0)) {
+		addtobuffer(buf, "Always");
+		return;
+	}
+	if ((sscanf(crittime, "%63[^:]:%4[0-9]:%4[0-9]", days, start, end) != 3) || (strlen(start) != 4) || (strlen(end) != 4)) {
+		addtobuffer(buf, htmlattrquoted(crittime));	/* not a form the editor writes: shown as it is */
+		return;
+	}
+
+	if (strcmp(days, "*") == 0) addtobuffer(buf, "All days");
+	else if (strcmp(days, "W") == 0) addtobuffer(buf, "Mon-Fri");
+	else {
+		int first = 1;
+		for (p = days; (*p); p++) {
+			if ((*p < '0') || (*p > '6')) continue;
+			if (!first) addtobuffer(buf, ",");
+			addtobuffer(buf, (char *)daynames[*p - '0']);
+			first = 0;
+		}
+	}
+	addtobuffer(buf, " ");
+	addtobufferraw(buf, start, 2); addtobuffer(buf, ":"); addtobufferraw(buf, start+2, 2);
+	addtobuffer(buf, "-");
+	addtobufferraw(buf, end, 2); addtobuffer(buf, ":"); addtobufferraw(buf, end+2, 2);
+}
+
+/* An <option> for a <datalist> */
+static void addoption(strbuffer_t *buf, char *value)
+{
+	addtobuffer_many(buf, "<option value=\"", htmlattrquoted(value), "\">\n", NULL);
+}
+
+/*
+ * The host: typed, or picked from the hosts in hosts.cfg, sorted. Typed, as
+ * a template for clones ("Standard Unix") is a name no host has.
+ */
+static char *host_field(char *hostname)
+{
+	strbuffer_t *buf = newstrbuffer(0);
+	char **names = NULL;
+	int count = 0, i, known = 0;
+	void *h;
+
+	for (h = first_host(); (h); h = next_host(h, 0)) {
+		char **more = (char **)realloc(names, (count + 1) * sizeof(char *));
+
+		if (!more) break;	/* out of memory: offer the names so far */
+		names = more;
+		names[count++] = xmh_item(h, XMH_HOSTNAME);
+	}
+	if (count) qsort(names, count, sizeof(char *), cmpstr);
+
+	addtobuffer_many(buf, "<INPUT NAME=\"HOSTNAME\" TYPE=\"TEXT\" SIZE=30 LIST=\"critedit-hosts\" onChange=\"this.form.submit()\" VALUE=\"",
+			 htmlattrquoted(hostname), "\">\n<DATALIST ID=\"critedit-hosts\">\n", NULL);
+	for (i = 0; (i < count); i++) {
+		addoption(buf, names[i]);
+		if (hostname && (strcmp(names[i], hostname) == 0)) known = 1;
+	}
+	addtobuffer(buf, "</DATALIST>");
+	if (count && hostname && *hostname && !known) {
+		/* With no hosts.cfg loaded, every name would be marked */
+		addtobuffer(buf, "<BR><FONT SIZE=\"-1\">Not a host in hosts.cfg: a template for clones, or a host since removed.</FONT>");
+	}
+
+	xfree(names);
+	return grabstrbuffer(buf);
+}
+
+/*
+ * The tests the host reports now, from xymond's board, sorted. The columns
+ * xymond makes up itself (info, trends, client data) are left out: they
+ * never change color. The board is asked by pattern, so only rows whose
+ * host name matches exactly are taken.
+ */
+static int board_tests(char *hostname, char ***tests)
+{
+	SBUF_DEFINE(req);
+	sendreturn_t *sres;
+	char *resp, *line, *bar;
+	char **more;
+	int count = 0;
+
+	*tests = NULL;
+	if (!hostname || !*hostname || cgi_hasctrl(hostname)) return 0;
+
+	SBUF_MALLOC(req, strlen(hostname) + 64);
+	snprintf(req, req_buflen, "xymondboard host=^%s$ fields=hostname,testname", hostname);
+	sres = newsendreturnbuf(1, NULL);
+	if (sendmessage(req, NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) {
+		resp = getsendreturnstr(sres, 1);
+		for (line = strtok(resp, "\n"); (line); line = strtok(NULL, "\n")) {
+			bar = strchr(line, '|');
+			if (!bar) continue;
+			*bar = '\0';
+			if (strcmp(line, hostname) != 0) continue;
+			bar++;
+			if (!*bar || (strcmp(bar, xgetenv("INFOCOLUMN")) == 0) ||
+			    (strcmp(bar, xgetenv("TRENDSCOLUMN")) == 0) ||
+			    (strcmp(bar, xgetenv("CLIENTCOLUMN")) == 0)) continue;
+			more = (char **)realloc(*tests, (count + 1) * sizeof(char *));
+			if (!more) break;	/* out of memory: offer the tests so far */
+			*tests = more;
+			(*tests)[count++] = strdup(bar);
+		}
+		xfree(resp);
+	}
+	freesendreturnbuf(sres);
+	xfree(req);
+
+	if (count) qsort(*tests, count, sizeof(char *), cmpstr);
+	return count;
+}
+
+/* The test: typed, or picked from the tests the host reports now */
+static char *service_field(char *hostname, char *service)
+{
+	strbuffer_t *buf = newstrbuffer(0);
+	char **tests;
+	int count, i;
+
+	/* So that choosing another host starts with no test chosen */
+	if (hostname && *hostname) {
+		addtobuffer_many(buf, "<INPUT TYPE=\"HIDDEN\" NAME=\"PREVHOST\" VALUE=\"", htmlattrquoted(hostname), "\">", NULL);
+	}
+
+	addtobuffer_many(buf, "<INPUT NAME=\"SERVICE\" TYPE=\"TEXT\" SIZE=12 LIST=\"critedit-tests\" VALUE=\"",
+			 htmlattrquoted(service), "\">\n<DATALIST ID=\"critedit-tests\">\n", NULL);
+	count = board_tests(hostname, &tests);
+	for (i = 0; (i < count); i++) {
+		addoption(buf, tests[i]);
+		xfree(tests[i]);
+	}
+	if (tests) xfree(tests);
+	addtobuffer(buf, "</DATALIST>");
+
+	return grabstrbuffer(buf);
+}
+
+/* One row per configured critical system, each with a link to edit it */
+static char *record_rows(char *hostname, char *service)
+{
+	strbuffer_t *buf = newstrbuffer(0);
+	critconf_t *rec;
+	char prio[16];
+	int count = 0;
+
+	for (rec = get_critconfig(NULL, CRITCONF_FIRST, NULL); (rec); rec = get_critconfig(NULL, CRITCONF_NEXT, NULL)) {
+		char *host = strdup(rec->key), *svc, *hostenc;
+		int current;
+
+		svc = strchr(host, '|'); if (svc) *(svc++) = '\0'; else svc = "";
+		current = (hostname && service && (strcmp(host, hostname) == 0) && (strcmp(svc, service) == 0));
+
+		hostenc = strdup(urlencode(host));
+		addtobuffer(buf, current ? "<TR BGCOLOR=\"#000066\">" : "<TR>");
+		addtobuffer_many(buf, "<TD><A HREF=\"criticaleditor.sh?HOSTNAME=", hostenc,
+				 "&amp;SERVICE=", urlencode(svc), "&amp;Find=Show\">", NULL);
+		addtobuffer(buf, htmlattrquoted(host));
+		addtobuffer_many(buf, "</A></TD><TD>", htmlattrquoted(svc), NULL);
+		snprintf(prio, sizeof(prio), "%d", rec->priority);
+		addtobuffer_many(buf, "</TD><TD ALIGN=CENTER>", prio, "</TD><TD>", NULL);
+		addwhen(buf, rec->crittime);
+		addtobuffer_many(buf, "</TD><TD>", htmlattrquoted(rec->ttgroup), "</TD></TR>\n", NULL);
+
+		xfree(hostenc);
+		xfree(host);
+		count++;
+	}
+
+	if (count == 0) {
+		addtobuffer(buf, "<TR><TD COLSPAN=5><I>None yet: choose a host and a test below, fill in the form and click Update record.</I></TD></TR>\n");
+	}
+
+	return grabstrbuffer(buf);
+}
+
+static void setlists(char *hostname, char *service)
+{
+	char *hostf = host_field(hostname);
+	char *svcf = service_field(hostname, service);
+	char *rows = record_rows(hostname, service);
+
+	sethostenv_critedit_lists(hostf, svcf, rows);
+	xfree(hostf); xfree(svcf); xfree(rows);
 }
 
 void findrecord(char *hostname, char *service, char *nodatawarning, char *isclonewarning, char *hascloneswarning)
@@ -257,6 +533,16 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	if (isaclone && isclonewarning) snprintf(warnmsg, sizeof(warnmsg), "%s", isclonewarning);
 	if (hasclones && hascloneswarning) snprintf(warnmsg, sizeof(warnmsg), "%s", hascloneswarning);
 
+	/* The result of the change first, then the note about clones */
+	if (*statusmsg) {
+		char note[sizeof(warnmsg)];
+
+		snprintf(note, sizeof(note), "%s", warnmsg);
+		snprintf(warnmsg, sizeof(warnmsg), "%s%s%s", statusmsg, (*note ? "<BR>" : ""), note);
+	}
+
+	setlists(hostname, service);
+
 	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	showform(stdout, "critedit", "critedit_form", COL_BLUE, getcurrenttime(NULL), warnmsg, NULL);
 }
@@ -298,7 +584,10 @@ void updaterecord(char *hostname, char *service)
 {
 	critconf_t *rec = NULL;
 
-	if (hostname && service) {
+	if (!hostname || !service) {
+		setstatus("NOT SAVED: enter both a host and a test%s", "");
+	}
+	else {
 		SBUF_DEFINE(key);
 		char *realkey;
 		char datestr[20];
@@ -334,7 +623,7 @@ void updaterecord(char *hostname, char *service)
 		rec->updinfo = (char *)malloc(upd_buflen);
 		snprintf(rec->updinfo, upd_buflen, "%s %s", operator, datestr);
 
-		update_critconfig(rec);
+		setsaveresult(update_critconfig(rec), "Saved");
 		xfree(key);
 	}
 
@@ -345,13 +634,24 @@ void addclone(char *origin, char *newhosts, char *service)
 {
 	char *newclone;
 
+	if (!origin) {
+		/* A clone points at a host's record: without the host there is none */
+		findrecord(NULL, NULL, "Nothing cloned: enter the host to clone from", NULL, NULL);
+		return;
+	}
+	if (!newhosts) {
+		/* Without hosts to add, strtok() would resume cgi_request()'s freed buffer */
+		findrecord(NULL, NULL, "Nothing cloned: enter the hosts to clone to", NULL, NULL);
+		return;
+	}
+
 	newclone = strtok(newhosts, " ");
 	while (newclone) {
 		addclone_critconfig(origin, newclone);
 		newclone = strtok(NULL, " ");
 	}
 
-	update_critconfig(NULL);
+	setsaveresult(update_critconfig(NULL), "Saved");
 	findrecord(origin, service, NULL, NULL, NULL);
 }
 
@@ -365,22 +665,57 @@ void dropclone(char *origin, char *drops, char *service)
 		drop = strtok(NULL, " ");
 	}
 
-	update_critconfig(NULL);
+	setsaveresult(update_critconfig(NULL), "Saved");
 	findrecord(origin, service, NULL, NULL, NULL);
 }
 
 void deleterecord(char *hostname, char *service, int evenifcloned)
 {
 	SBUF_DEFINE(key);
+	char *realkey = NULL;
+	char why[1024];
+
+	if (!hostname || !service) {
+		/* Both name a record; without them there is nothing to delete */
+		findrecord(hostname, service, "Nothing deleted: enter both a host and a test", NULL, NULL);
+		return;
+	}
 
 	SBUF_MALLOC(key, strlen(hostname) + strlen(service) + 2);
 	snprintf(key, key_buflen, "%s|%s", hostname, service);
-	if (delete_critconfig(key, evenifcloned) == 0) {
-		update_critconfig(NULL);
-	}
+	if (get_critconfig(key, CRITCONF_FIRSTMATCH, &realkey) && realkey && (strcmp(realkey, key) != 0)) {
+		/*
+		 * A clone: the host has no record of its own, it shows its origin's.
+		 * Deleting by this key would find nothing, and say "Deleted".
+		 */
+		char *origin = strdup(realkey), *p = strchr(origin, '|');
 
+		if (p) *p = '\0';
+		snprintf(why, sizeof(why), "Nothing deleted: %s is a clone of ", htmlattrquoted(hostname));
+		strncat(why, htmlattrquoted(origin), sizeof(why) - strlen(why) - 1);
+		strncat(why, ". Remove it from that host's clone list instead", sizeof(why) - strlen(why) - 1);
+		snprintf(statusmsg, sizeof(statusmsg), "%s", why);
+		xfree(origin);
+	}
+	else switch (delete_critconfig(key, evenifcloned)) {
+	  case CRITDELETE_OK:
+		setsaveresult(update_critconfig(NULL), "Deleted");
+		break;
+
+	  case CRITDELETE_NORECORD:
+		setstatus("Nothing deleted: there is no record for this host and test%s", "");
+		break;
+
+	  case CRITDELETE_CLONED:
+	  default:
+		/* It has clones: the form says "Will not delete record that is cloned" */
+		break;
+	}
+	xfree(key);
+
+	/* Not "Will not delete record that is cloned" where the status already says why not */
 	findrecord(hostname, service, NULL, NULL, 
-		   (evenifcloned ? "Warning: Orphans will be ignored" : "Will not delete record that is cloned"));
+		   (evenifcloned ? "Warning: Orphans will be ignored" : (*statusmsg ? NULL : "Will not delete record that is cloned")));
 }
 
 int main(int argc, char *argv[])
@@ -425,11 +760,16 @@ int main(int argc, char *argv[])
 
 	parse_query();
 	load_critconfig(configfn);
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());	/* for the host list */
+
+	/* Another host was chosen: the test chosen for the last one does not apply */
+	if ((editaction == CRITEDIT_FIND) && rq_prevhost && rq_hostname && (strcmp(rq_prevhost, rq_hostname) != 0))
+		rq_service = NULL;
 
 	switch (editaction) {
 	  case CRITEDIT_FIND:
 		findrecord(rq_hostname, rq_service, 
-			   ((rq_hostname && rq_service) ? "No record for this host/service" : NULL),
+			   ((rq_hostname && rq_service) ? "Not on the Critical Systems view yet: fill in the form and click Update record to add it" : NULL),
 			   "Cloned - showing master record", NULL);
 		break;
 
