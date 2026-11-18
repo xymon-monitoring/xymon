@@ -30,6 +30,7 @@ static char *operator = NULL;
 static enum { CRITEDIT_FIND, CRITEDIT_NEXT, CRITEDIT_UPDATE, CRITEDIT_DELETE, CRITEDIT_ADDCLONE, CRITEDIT_DROPCLONE } editaction = CRITEDIT_FIND;
 static char *rq_hostname = NULL;
 static char *rq_service = NULL;
+static char *rq_prevhost = NULL;	/* the host the form was showing */
 static int rq_priority = 0;
 static char *rq_group = NULL;
 static char *rq_extra = NULL;
@@ -151,6 +152,9 @@ static void parse_query(void)
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
 			if (*cwalk->value) rq_service = strdup(cwalk->value);
 		}
+		else if (strcasecmp(cwalk->name, "PREVHOST") == 0) {
+			if (*cwalk->value) rq_prevhost = strdup(cwalk->value);
+		}
 		else if (strcasecmp(cwalk->name, "PRIORITY") == 0) {
 			rq_priority = atoi(cwalk->value);
 		}
@@ -261,6 +265,206 @@ static void parse_query(void)
 	}
 }
 
+/* ---- What can be chosen, and what is configured: shown with every form ---- */
+
+static int cmpstr(const void *a, const void *b)
+{
+	return strcmp(*(char * const *)a, *(char * const *)b);
+}
+
+/* "W:0700:2000" as "Mon-Fri 07:00-20:00"; no time set is "Always" */
+static void addwhen(strbuffer_t *buf, char *crittime)
+{
+	static const char *daynames[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+	char days[64], start[5], end[5];
+	char *p;
+
+	if (!crittime || !*crittime || (strcmp(crittime, "*:0000:2400") == 0)) {
+		addtobuffer(buf, "Always");
+		return;
+	}
+	if ((sscanf(crittime, "%63[^:]:%4[0-9]:%4[0-9]", days, start, end) != 3) || (strlen(start) != 4) || (strlen(end) != 4)) {
+		addtobuffer(buf, htmlattrquoted(crittime));	/* not a form the editor writes: shown as it is */
+		return;
+	}
+
+	if (strcmp(days, "*") == 0) addtobuffer(buf, "All days");
+	else if (strcmp(days, "W") == 0) addtobuffer(buf, "Mon-Fri");
+	else {
+		int first = 1;
+		for (p = days; (*p); p++) {
+			if ((*p < '0') || (*p > '6')) continue;
+			if (!first) addtobuffer(buf, ",");
+			addtobuffer(buf, (char *)daynames[*p - '0']);
+			first = 0;
+		}
+	}
+	addtobuffer(buf, " ");
+	addtobufferraw(buf, start, 2); addtobuffer(buf, ":"); addtobufferraw(buf, start+2, 2);
+	addtobuffer(buf, "-");
+	addtobufferraw(buf, end, 2); addtobuffer(buf, ":"); addtobufferraw(buf, end+2, 2);
+}
+
+/* An <option> for a <datalist> */
+static void addoption(strbuffer_t *buf, char *value)
+{
+	addtobuffer_many(buf, "<option value=\"", htmlattrquoted(value), "\">\n", NULL);
+}
+
+/*
+ * The host: typed, or picked from the hosts in hosts.cfg, sorted. Typed, as
+ * a template for clones ("Standard Unix") is a name no host has.
+ */
+static char *host_field(char *hostname)
+{
+	strbuffer_t *buf = newstrbuffer(0);
+	char **names = NULL;
+	int count = 0, i, known = 0;
+	void *h;
+
+	for (h = first_host(); (h); h = next_host(h, 0)) {
+		char **more = (char **)realloc(names, (count + 1) * sizeof(char *));
+
+		if (!more) break;	/* out of memory: offer the names so far */
+		names = more;
+		names[count++] = xmh_item(h, XMH_HOSTNAME);
+	}
+	if (count) qsort(names, count, sizeof(char *), cmpstr);
+
+	addtobuffer_many(buf, "<INPUT NAME=\"HOSTNAME\" TYPE=\"TEXT\" SIZE=30 LIST=\"critedit-hosts\" onChange=\"this.form.submit()\" VALUE=\"",
+			 htmlattrquoted(hostname), "\">\n<DATALIST ID=\"critedit-hosts\">\n", NULL);
+	for (i = 0; (i < count); i++) {
+		addoption(buf, names[i]);
+		if (hostname && (strcmp(names[i], hostname) == 0)) known = 1;
+	}
+	addtobuffer(buf, "</DATALIST>");
+	if (count && hostname && *hostname && !known) {
+		/* With no hosts.cfg loaded, every name would be marked */
+		addtobuffer(buf, "<BR><FONT SIZE=\"-1\">Not a host in hosts.cfg: a template for clones, or a host since removed.</FONT>");
+	}
+
+	xfree(names);
+	return grabstrbuffer(buf);
+}
+
+/*
+ * The tests the host reports now, from xymond's board, sorted. The columns
+ * xymond makes up itself (info, trends, client data) are left out: they
+ * never change color. The board is asked by pattern, so only rows whose
+ * host name matches exactly are taken.
+ */
+static int board_tests(char *hostname, char ***tests)
+{
+	SBUF_DEFINE(req);
+	sendreturn_t *sres;
+	char *resp, *line, *bar;
+	char **more;
+	int count = 0;
+
+	*tests = NULL;
+	if (!hostname || !*hostname || cgi_hasctrl(hostname)) return 0;
+
+	SBUF_MALLOC(req, strlen(hostname) + 64);
+	snprintf(req, req_buflen, "xymondboard host=^%s$ fields=hostname,testname", hostname);
+	sres = newsendreturnbuf(1, NULL);
+	if (sendmessage(req, NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) {
+		resp = getsendreturnstr(sres, 1);
+		for (line = strtok(resp, "\n"); (line); line = strtok(NULL, "\n")) {
+			bar = strchr(line, '|');
+			if (!bar) continue;
+			*bar = '\0';
+			if (strcmp(line, hostname) != 0) continue;
+			bar++;
+			if (!*bar || (strcmp(bar, xgetenv("INFOCOLUMN")) == 0) ||
+			    (strcmp(bar, xgetenv("TRENDSCOLUMN")) == 0) ||
+			    (strcmp(bar, xgetenv("CLIENTCOLUMN")) == 0)) continue;
+			more = (char **)realloc(*tests, (count + 1) * sizeof(char *));
+			if (!more) break;	/* out of memory: offer the tests so far */
+			*tests = more;
+			(*tests)[count++] = strdup(bar);
+		}
+		xfree(resp);
+	}
+	freesendreturnbuf(sres);
+	xfree(req);
+
+	if (count) qsort(*tests, count, sizeof(char *), cmpstr);
+	return count;
+}
+
+/* The test: typed, or picked from the tests the host reports now */
+static char *service_field(char *hostname, char *service)
+{
+	strbuffer_t *buf = newstrbuffer(0);
+	char **tests;
+	int count, i;
+
+	/* So that choosing another host starts with no test chosen */
+	if (hostname && *hostname) {
+		addtobuffer_many(buf, "<INPUT TYPE=\"HIDDEN\" NAME=\"PREVHOST\" VALUE=\"", htmlattrquoted(hostname), "\">", NULL);
+	}
+
+	addtobuffer_many(buf, "<INPUT NAME=\"SERVICE\" TYPE=\"TEXT\" SIZE=12 LIST=\"critedit-tests\" VALUE=\"",
+			 htmlattrquoted(service), "\">\n<DATALIST ID=\"critedit-tests\">\n", NULL);
+	count = board_tests(hostname, &tests);
+	for (i = 0; (i < count); i++) {
+		addoption(buf, tests[i]);
+		xfree(tests[i]);
+	}
+	if (tests) xfree(tests);
+	addtobuffer(buf, "</DATALIST>");
+
+	return grabstrbuffer(buf);
+}
+
+/* One row per configured critical system, each with a link to edit it */
+static char *record_rows(char *hostname, char *service)
+{
+	strbuffer_t *buf = newstrbuffer(0);
+	critconf_t *rec;
+	char prio[16];
+	int count = 0;
+
+	for (rec = get_critconfig(NULL, CRITCONF_FIRST, NULL); (rec); rec = get_critconfig(NULL, CRITCONF_NEXT, NULL)) {
+		char *host = strdup(rec->key), *svc, *hostenc;
+		int current;
+
+		svc = strchr(host, '|'); if (svc) *(svc++) = '\0'; else svc = "";
+		current = (hostname && service && (strcmp(host, hostname) == 0) && (strcmp(svc, service) == 0));
+
+		hostenc = strdup(urlencode(host));
+		addtobuffer(buf, current ? "<TR BGCOLOR=\"#000066\">" : "<TR>");
+		addtobuffer_many(buf, "<TD><A HREF=\"criticaleditor.sh?HOSTNAME=", hostenc,
+				 "&amp;SERVICE=", urlencode(svc), "&amp;Find=Show\">", NULL);
+		addtobuffer(buf, htmlattrquoted(host));
+		addtobuffer_many(buf, "</A></TD><TD>", htmlattrquoted(svc), NULL);
+		snprintf(prio, sizeof(prio), "%d", rec->priority);
+		addtobuffer_many(buf, "</TD><TD ALIGN=CENTER>", prio, "</TD><TD>", NULL);
+		addwhen(buf, rec->crittime);
+		addtobuffer_many(buf, "</TD><TD>", htmlattrquoted(rec->ttgroup), "</TD></TR>\n", NULL);
+
+		xfree(hostenc);
+		xfree(host);
+		count++;
+	}
+
+	if (count == 0) {
+		addtobuffer(buf, "<TR><TD COLSPAN=5><I>None yet: choose a host and a test below, fill in the form and click Update record.</I></TD></TR>\n");
+	}
+
+	return grabstrbuffer(buf);
+}
+
+static void setlists(char *hostname, char *service)
+{
+	char *hostf = host_field(hostname);
+	char *svcf = service_field(hostname, service);
+	char *rows = record_rows(hostname, service);
+
+	sethostenv_critedit_lists(hostf, svcf, rows);
+	xfree(hostf); xfree(svcf); xfree(rows);
+}
+
 void findrecord(char *hostname, char *service, char *nodatawarning, char *isclonewarning, char *hascloneswarning)
 {
 	critconf_t *rec = NULL;
@@ -336,6 +540,8 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 		snprintf(note, sizeof(note), "%s", warnmsg);
 		snprintf(warnmsg, sizeof(warnmsg), "%s%s%s", statusmsg, (*note ? "<BR>" : ""), note);
 	}
+
+	setlists(hostname, service);
 
 	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	showform(stdout, "critedit", "critedit_form", COL_BLUE, getcurrenttime(NULL), warnmsg, NULL);
@@ -554,11 +760,16 @@ int main(int argc, char *argv[])
 
 	parse_query();
 	load_critconfig(configfn);
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());	/* for the host list */
+
+	/* Another host was chosen: the test chosen for the last one does not apply */
+	if ((editaction == CRITEDIT_FIND) && rq_prevhost && rq_hostname && (strcmp(rq_prevhost, rq_hostname) != 0))
+		rq_service = NULL;
 
 	switch (editaction) {
 	  case CRITEDIT_FIND:
 		findrecord(rq_hostname, rq_service, 
-			   ((rq_hostname && rq_service) ? "No record for this host/service" : NULL),
+			   ((rq_hostname && rq_service) ? "Not on the Critical Systems view yet: fill in the form and click Update record to add it" : NULL),
 			   "Cloned - showing master record", NULL);
 		break;
 

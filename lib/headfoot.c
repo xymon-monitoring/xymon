@@ -266,6 +266,7 @@ static char *criteditslastart = NULL;
 static char *criteditslaend = NULL;
 static char **criteditclonelist = NULL;
 static int criteditclonesize = 0;
+static char *criteditlists[3] = { NULL, NULL, NULL };	/* host field, test field, record rows */
 
 void sethostenv_critedit(char *updinfo, int prio, char *group, time_t starttime, time_t endtime, char *crittime, char *extra)
 {
@@ -334,6 +335,23 @@ void sethostenv_critclonelist_add(char *hostname)
 	if (*p == '=') *p = '\0';
 }
 
+
+/*
+ * The critical systems editor's host and test fields, with what can be
+ * chosen for each, and the table of configured records. criticaleditor.cgi
+ * builds them, escaping everything it puts in.
+ */
+void sethostenv_critedit_lists(char *hostfield, char *svcfield, char *records)
+{
+	int i;
+	char *v[3];
+
+	v[0] = hostfield; v[1] = svcfield; v[2] = records;
+	for (i = 0; (i < 3); i++) {
+		if (criteditlists[i]) xfree(criteditlists[i]);
+		criteditlists[i] = (v[i] ? strdup(v[i]) : NULL);
+	}
+}
 
 void sethostenv_backsecs(int seconds)
 {
@@ -1231,6 +1249,18 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				fprintf(output, "<option value=\"%s\">", htmlattrquoted(criteditclonelist[i]));
 				fprintf(output, "%s</option>\n", htmlattrquoted(criteditclonelist[i]));
 			}
+		}
+
+		else if (strcmp(t_start, "CRITEDITHOSTFIELD") == 0) {
+			if (criteditlists[0]) fprintf(output, "%s", criteditlists[0]);
+		}
+
+		else if (strcmp(t_start, "CRITEDITSVCFIELD") == 0) {
+			if (criteditlists[1]) fprintf(output, "%s", criteditlists[1]);
+		}
+
+		else if (strcmp(t_start, "CRITEDITRECORDS") == 0) {
+			if (criteditlists[2]) fprintf(output, "%s", criteditlists[2]);
 		}
 
 		else if (strcmp(t_start, "CRITEDITGROUP") == 0) {

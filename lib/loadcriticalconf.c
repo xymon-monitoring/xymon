@@ -284,7 +284,8 @@ critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 		isclone = 1;
 		while (isclone && (handle != xtreeEnd(rbconf))) {
 			handle = xtreeNext(rbconf, handle);
-			if (handle) {
+			/* xtreeEnd(), not NULL: the array variant ends at -1 */
+			if (handle != xtreeEnd(rbconf)) {
 				realkey = (char *)xtreeKey(rbconf, handle);
 				isclone = (*(realkey + strlen(realkey) - 1) == '=');
 			}

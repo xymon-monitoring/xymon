@@ -45,11 +45,15 @@
 		<h3>The editor form</h3>
 		Let me explain what the various fields are for:
 		<ul>
-			<li>The <b>Host</b> and <b>Test</b> fields are text entry fields.
-			This is where you enter the name of the host and test you want to
-			configure. If you would rather not type too much, you can enter
-			just the beginning of the hostname and use the <b>Search</b> and
-			<b>Next</b> buttons to walk through the currently configured tests.
+			<li>The <b>Host</b> and <b>Test</b> fields are where you enter the
+			host and test you want to configure. You can type them, or pick
+			from a list: the hosts in hosts.cfg, and the tests the chosen host
+			reports to Xymon now. A template for clones (see below) is typed,
+			as no host has its name. Picking a host shows its settings.
+			Every configured host and test is listed in a table above the
+			form; click one to edit it. You can also enter just the beginning
+			of the hostname and use the <b>Search</b> and <b>Next</b> buttons
+			to walk through the currently configured tests.
 			After each change the editor says above the form whether it was
 			saved, and if not, why.</li>
 
