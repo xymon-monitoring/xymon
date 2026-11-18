@@ -5,12 +5,6 @@ pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes from 4.3.31 -> 4.3.32 (XX Xxx XXXX)
 ===========================================
 
-* Escape the & before graph=custom in hostgraphs' graph links (#787) (Thanks, David Dee)
-* Say in xymonserver.cfg(5) that XYMOND_TLS_REQUIRE_CERT needs a restart to change (#774)
-* Say in the install guide that Homebrew installs the release, and xymon-rpm builds Fedora (#771)
-* Add xymon-tls(7), how to set up TLS and move clients to it (#623) (Thanks, David Dee)
-* Warn in xymonnet about a URL test for another name on an addressed line (#611) (Thanks, David Dee)
-* Warn in xymonnet when hosts.cfg and DNS disagree on a host's address (#610) (Thanks, David Dee)
 * Offer hosts and tests to pick in criticaleditor, and list what is set (#910) (Thanks, David Dee)
 * Refuse to trim history on a hosts.cfg that lost an include (#513) (Thanks, David Dee)
 * Use xymonproxy's first three --server addresses and refuse the rest (#814) (Thanks, David Dee)
