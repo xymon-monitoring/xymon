@@ -5,6 +5,17 @@ pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes from 4.3.31 -> 4.3.32 (XX Xxx XXXX)
 ===========================================
 
+* Offer hosts and tests to pick in criticaleditor, and list what is set (#910) (Thanks, David Dee)
+* Refuse to trim history on a hosts.cfg that lost an include (#513) (Thanks, David Dee)
+* Use xymonproxy's first three --server addresses and refuse the rest (#814) (Thanks, David Dee)
+* Start statusreport's filter unset, so its options stop aborting (#819) (Thanks, David Dee)
+* Say in criticaleditor whether each change was saved, and why not (#894) (Thanks, David Dee)
+* Stop xymonnet leaking memory on every run (#837) (Thanks, David Dee)
+* Leave strncat the byte for its terminator in lib and xymonnet (#909) (Thanks, David Dee)
+* Answer appfeed's host= and test= with that one status and its full text (#891) (Thanks, David Dee)
+* Answer a criticaleditor request missing a field instead of crashing (#893) (Thanks, David Dee)
+* Let the locator listen on and reach an IPv6 address (#808) (Thanks, David Dee)
+* Time xymonlaunch task starts with DELAY and FAILDELAY (#173) (from J. Cleaver) (Thanks, David Dee)
 * Name the build's commit on xymond's own status Version line (#895) (Thanks, David Dee)
 * Read a drop-in to its end before the next, whatever it includes (#883) (Thanks, Roland Rosenfeld)
 * Poll connections in xymond, and cap them with XYMOND_MAXCONNECTIONS (#763) (Thanks, David Dee)
