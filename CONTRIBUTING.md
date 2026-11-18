@@ -233,6 +233,20 @@ GitHub cannot express that, so off the bypass list it asks for a review
 whatever the row; the lighter rows say when a maintainer may bypass, and one
 who does says so in the pull request.
 
+**Every bypass gets its comment**, posted before the merge: a short, honest
+reason for merging without a review, whatever it is, then the row that allows
+it — the row is not the reason. One command does both, the merge only once the
+comment is posted, and leaves the branch alone: delete it only after the pull
+request shows as merged.
+
+```sh
+gh pr comment N -b 'Bypass: SHORT REASON (CONTRIBUTING: ROW).' \
+	&& gh pr merge N --squash --admin
+```
+
+`--merge` in place of `--squash` keeps the commits; never add
+`--delete-branch` to it.
+
 How a change was written does not enter into it. Whoever opens the pull request
 is its author, whatever helped them write it: they read every line, can say
 what each part does and how it was checked, and answer for it. Responsibility
