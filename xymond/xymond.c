@@ -259,12 +259,12 @@ typedef struct conn_t {
  *
  * How many connections may be open at once is MAXCONNECTIONS: from
  * XYMOND_MAXCONNECTIONS in xymonserver.cfg, else what the descriptor
- * limit leaves after a reserve for files, channels and listeners. A
- * connection past it is refused at accept(). The loop polls with poll(),
+ * limit leaves after a reserve for files and channels, and one descriptor
+ * per listener. A connection past it is refused at accept(). The loop polls with poll(),
  * so no FD_SETSIZE bounds it: the limit is the process's, and the
  * administrator's.
  */
-#define MAXCONNECTIONS_RESERVE 64	/* descriptors kept back from the limit for files, channels and listeners */
+#define MAXCONNECTIONS_RESERVE 64	/* descriptors kept back for files and channels; listeners are reserved on top */
 #define IDLE_FIRSTBYTE 5
 #define IDLE_PRESSURE 256
 #define IDLE_PER_SENDER 16
