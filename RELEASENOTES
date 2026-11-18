@@ -60,6 +60,17 @@ clone names, host and test with a space before writing, so such a character
 stays inside its field and on its line rather than adding a field or a record.
 A group or instruction that held a "|" is stored with a space there instead.
 
+criticaleditor -- pick the host and test, and see what is configured
+--------------------------------------------------------------------
+
+The Critical Systems editor asked for the host and test to be typed, and the
+only way to see what was configured was to walk it with Search and Next. The
+host field now also offers the hosts in hosts.cfg, and the test field the
+tests that host reports to xymond now; both can still be typed, as a template
+for clones is. Picking a host shows its settings. A table above the form
+lists every configured host and test, with its priority, monitoring time and
+resolver group, and a link to edit it.
+
 criticaleditor -- a change that cannot be saved now says so
 -----------------------------------------------------------
 

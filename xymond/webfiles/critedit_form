@@ -1,6 +1,28 @@
 <BR>
 
 <CENTER>
+  <TABLE WIDTH="80%" BORDER=0 CELLSPACING=5 SUMMARY="Critical Systems configured">
+    <TR BGCOLOR="#000033">
+       <TD>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>On the Critical Systems view now</B></FONT></CENTER>
+       </TD>
+    </TR>
+    <TR>
+       <TD BGCOLOR="#333333">
+       <TABLE BORDER=0 WIDTH="100%" CELLPADDING=3 SUMMARY="Configured critical systems">
+          <TR>
+             <TH ALIGN=LEFT>Host</TH><TH ALIGN=LEFT>Test</TH><TH>Priority</TH>
+             <TH ALIGN=LEFT>Monitored</TH><TH ALIGN=LEFT>Resolver group</TH>
+          </TR>
+          &CRITEDITRECORDS
+       </TABLE>
+       <FONT SIZE="-1">Click a host to edit it.</FONT>
+       </TD>
+    </TR>
+  </TABLE>
+
+  <BR>
+
   <TABLE WIDTH="80%" BORDER=0 CELLSPACING=5 SUMMARY="Critical Systems editor">
     <TR BGCOLOR="#000033">
        <TD COLSPAN=2>
@@ -15,9 +37,9 @@
        <FORM METHOD="GET" ACTION="criticaleditor.sh">
           <TABLE BORDER=0 WIDTH="80%" SUMMARY="Host lookup">
 	     <TR>
-	        <TD>Host:&nbsp;<INPUT NAME="HOSTNAME" TYPE="TEXT" SIZE=30 VALUE="&XYMWEBHOST"></TD>
-		<TD>Test:&nbsp;<INPUT NAME="SERVICE" TYPE="TEXT" SIZE=10 VALUE="&XYMWEBSVC"></TD>
-		<TD>
+	        <TD VALIGN=TOP>Host:&nbsp;&CRITEDITHOSTFIELD</TD>
+		<TD VALIGN=TOP>Test:&nbsp;&CRITEDITSVCFIELD</TD>
+		<TD VALIGN=TOP>
 		   <INPUT TYPE="SUBMIT" NAME="Find" VALUE="Search" ALT="Find record">
 		   <INPUT TYPE="SUBMIT" NAME="Next" VALUE="Next" ALT="Next record">
 		</TD>
