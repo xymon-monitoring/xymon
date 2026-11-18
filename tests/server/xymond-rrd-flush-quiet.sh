@@ -13,6 +13,14 @@
 # Here an update for unix.test is cached, the channel then kept open and
 # silent, and the flush sent: the cached update must be written within a few
 # seconds, the worker still running.
+#
+# A flush that finds nothing to write must not start the 60 s that must pass
+# between two flushes of a host either. Every twelfth update xymond_rrd
+# takes is written through, the cache with it (do_rrd.c, CACHESZ, its count
+# taking the first update too): a flush right after finds the cache empty;
+# one sent after the next update, a second later, is served. Another host,
+# two.test, so that the flush above, which did write, has started no 60 s
+# for it: its first flush is the one that finds nothing.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -88,7 +96,26 @@ waitfor "Flushing '" $((before + 1)) \
 	|| fail "a flush sent while the channel was quiet was not served: $(grep -v 'Want msg' "$work/rrd.log" | tail -n 20)"
 kill -0 "$worker" 2>/dev/null || fail "xymond_rrd stopped: $(grep -v 'Want msg' "$work/rrd.log" | tail -n 20)"
 
+# More than 60 s are not waited here: the throttle is reached from a cache
+# that empties by itself. Eleven updates more, the twelfth taken, written
+# through with what is cached: the cache is empty.
+written=$(lines "updates pending")
+for i in $(seq 1 11); do status "$i" two.test; done
+waitfor "updates pending" $((written + 1)) \
+	|| fail "the twelfth update was not written through: $(grep -v 'Want msg' "$work/rrd.log" | tail -n 20)"
+sleep 1
+skipped=$(lines "skipped, too soon")
+"$work/sender" "$work/run/$sock" "/two.test/" || fail "could not send the flush that finds nothing"
+sleep 1
+status 12 two.test
+sleep 1
+written=$(lines "updates pending")
+"$work/sender" "$work/run/$sock" "/two.test/" || fail "could not send the flush after it"
+waitfor "updates pending" $((written + 1)) \
+	|| fail "a flush after one that found nothing to write was held back: $(grep -v 'Want msg' "$work/rrd.log" | tail -n 12)"
+assert_equal "$skipped" "$(lines "skipped, too soon")" "and none was skipped as too soon"
+
 exec 9>&-
 wait "$worker" 2>/dev/null || true
 
-pass "xymond_rrd serves a cache flush while its channel is quiet"
+pass "xymond_rrd serves a cache flush while its channel is quiet, and a flush that wrote nothing holds no other back"

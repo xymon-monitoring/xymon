@@ -643,7 +643,7 @@ void rrdcacheflushhost(char *hostname)
 	xtreePos_t handle;
 	updcacheitem_t *cacheitem;
 	flushtree_t *flushitem;
-	int keylen;
+	int keylen, flushed = 0;
 	time_t now = gettimer();
 
 	if (updcache_keyofs == -1) return;
@@ -684,7 +684,6 @@ void rrdcacheflushhost(char *hostname)
 		dbgprintf("Flush of '%s' skipped, too soon\n", hostname);
 		return;
 	}
-	flushitem->flushtime = now;
 
 	handle = xtreeFirst(updcache); 
 	while (handle != xtreeEnd(updcache)) {
@@ -699,6 +698,7 @@ void rrdcacheflushhost(char *hostname)
 				dbgprintf("Flushing cache '%s'\n", cacheitem->key);
 				sprintf(filedir, "%s%s", rrddir, cacheitem->key);
 				flush_cached_updates(cacheitem, NULL);
+				flushed++;
 			}
 			/* Fall through */
 
@@ -707,6 +707,14 @@ void rrdcacheflushhost(char *hostname)
 			break;
 		}
 	}
+
+	/*
+	 * The 60 s between two flushes of a host count from one that wrote
+	 * something: a request that found every cache empty -- just written,
+	 * or not filled yet -- must not hold back the one, seconds later,
+	 * that finds the new values there.
+	 */
+	if (flushed) flushitem->flushtime = now;
 }
 
 static int rrddatasets(char *hostname, char ***dsnames)
