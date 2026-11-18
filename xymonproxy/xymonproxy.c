@@ -261,6 +261,7 @@ int main(int argc, char *argv[])
 	struct sockaddr_storage xymonserveraddr[MAX_SERVERS];
 	int xymonserverport[MAX_SERVERS];
 	int xymonservercount = 0;
+	char *toomanyservers = NULL;	/* first --server past the limit; logged once the log is open */
 	int opt;
 	conn_t *chead = NULL;
 	struct sigaction sa;
@@ -314,7 +315,9 @@ int main(int argc, char *argv[])
 
 				/* The table holds MAX_SERVERS; more would be written past it */
 				if (xymonservercount >= MAX_SERVERS) {
-					errprintf("Only %d servers are used, %s and the rest are ignored\n", MAX_SERVERS, ip1);
+					/* Logged after the log file is opened, not here during option
+					   parsing, so it lands in the proxy's own log, not xymonlaunch's */
+					if (!toomanyservers) toomanyservers = strdup(ip1);
 					break;
 				}
 				/* split a copy, so the message names the value given */
@@ -438,6 +441,10 @@ int main(int argc, char *argv[])
 	if (logfile) {
 		reopen_file(logfile, "a", stdout);
 		reopen_file(logfile, "a", stderr);
+	}
+	if (toomanyservers) {
+		errprintf("Only %d servers are used, %s and the rest are ignored\n", MAX_SERVERS, toomanyservers);
+		xfree(toomanyservers);
 	}
 
 	/*
