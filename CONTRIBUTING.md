@@ -344,7 +344,14 @@ when the diff does not explain itself. Write it for both.
   `Depends-on: #N`, one line per pull request; a pull request based on another's
   branch needs none. The `blocked`, `unblocks` and `deps-none-found` labels are
   recomputed from these lines and the base branches every day and set to what
-  they say, so a dependency written any other way is not seen.
+  they say, so a dependency written any other way is not seen. That line is for
+  a *hard* dependency — the pull request cannot merge until the named one is on
+  `main`. An order that is only preferable, where each pull request builds and
+  merges on its own, is not one: it goes in the ordering prose above instead,
+  written into both pull requests and said to be non-blocking. Never write
+  `Depends-on:` reciprocally — two lines pointing at each other are a cycle the
+  labels cannot resolve, and leave both `blocked`; two changes that genuinely
+  cannot merge without each other are one change, not two.
 - Show the evidence, compactly. Suite counts, a measurement, a before-and-after table.
   A table of three rows says what three paragraphs say, and survives being skimmed.
 - Cite what can be checked. A claim about the tree carries `file:line`; a claim about
