@@ -5,6 +5,12 @@ pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes from 4.3.31 -> 4.3.32 (XX Xxx XXXX)
 ===========================================
 
+* Send the tested name as SNI on every TLS service xymonnet tests (#913) (Thanks, Mark Felder)
+* Give every acklist entry its own line, whatever its length (#921) (Thanks, David Dee)
+* Expand xymoncmd's arguments after reading the environment file (#920) (Thanks, David Dee)
+* Join the parameters of ghostlist's links with &amp; (#800) (Thanks, David Dee)
+* Stop confreport at the last line of xymond's answer, newline or not (#827) (Thanks, David Dee)
+* Pass nongreen.cgi its filter without literal quotes (#825) (Thanks, David Dee)
 * Offer hosts and tests to pick in criticaleditor, and list what is set (#910) (Thanks, David Dee)
 * Refuse to trim history on a hosts.cfg that lost an include (#513) (Thanks, David Dee)
 * Use xymonproxy's first three --server addresses and refuse the rest (#814) (Thanks, David Dee)
