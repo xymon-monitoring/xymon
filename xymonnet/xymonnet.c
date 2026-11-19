@@ -677,7 +677,8 @@ void load_tests(void)
 					 * The connection still goes to the host's own address, as the
 					 * bare service does. http/https and ldap/ldaps are handled
 					 * above; what reaches here must name a TLS service in
-					 * protocols.cfg -- imaps, smtps, pop3s and the rest.
+					 * protocols.cfg -- imaps, smtps, pop3s and the rest -- and a
+					 * servername.
 					 */
 					char *spec = strdup(testspec);
 					char *sep = strstr(spec, "://");
@@ -688,10 +689,33 @@ void load_tests(void)
 					*sep = '\0';				/* spec is now the scheme */
 					name = sep + 3;
 					p = strchr(name, '/'); if (p) *p = '\0';	/* drop any path */
-					p = strrchr(name, ':');
-					if (p) { specialport = atoi(p+1); *p = '\0'; }	/* a port */
 
-					if (!svc_uses_tls(find_tcp_service(spec))) {
+					/*
+					 * Split off a port. An IPv6 literal is bracketed -- [::1] or
+					 * [::1]:636 -- so the colons inside it are not a port; an
+					 * unbracketed name with more than one colon is an IPv6 literal
+					 * with no port, left whole. Only a single colon is "host:port".
+					 */
+					if (*name == '[') {
+						p = strchr(name, ']');
+						if (p) {
+							name++; *p = '\0';			/* the literal, without the brackets */
+							if (*(p+1) == ':') specialport = atoi(p+2);
+						}
+					}
+					else {
+						p = strrchr(name, ':');
+						if (p && (strchr(name, ':') == p)) {	/* a single colon: host:port */
+							specialport = atoi(p+1); *p = '\0';
+						}
+					}
+
+					if (*name == '\0') {
+						errprintf("Host %s: a '%s://' test needs a servername\n",
+							  xmh_item(hwalk, XMH_HOSTNAME), spec);
+						s = NULL;
+					}
+					else if (!svc_uses_tls(find_tcp_service(spec))) {
 						errprintf("Host %s: '%s://' is not a TLS service in protocols.cfg\n",
 							  xmh_item(hwalk, XMH_HOSTNAME), spec);
 						s = NULL;
@@ -708,7 +732,7 @@ void load_tests(void)
 							xfree(specialname);
 						}
 						if (s) {
-							tlsname = (*name ? strdup(name) : NULL);
+							tlsname = strdup(name);
 							h->dodns = 1;
 						}
 					}

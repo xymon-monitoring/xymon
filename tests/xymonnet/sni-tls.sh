@@ -80,9 +80,14 @@ run "imaps://name sets the servername" \
 run "smtps://name sets the servername" \
 	'127.0.0.1 label.example.com # smtps://real.example.com:@PORT@' 'real.example.com'
 
-# A servername written as an address sends none, as RFC 6066 requires.
+# A servername written as an address sends none, as RFC 6066 requires -- an
+# IPv6 literal included, written in brackets so its colons are not a port. The
+# brackets are stripped before the literal is recognised, so none is sent (not
+# the bracketed string).
 run "scheme://address sends no servername" \
 	'127.0.0.1 label.example.com # imaps://127.0.0.1:@PORT@' ''
+run "scheme://[v6] sends no servername" \
+	'127.0.0.1 label.example.com # imaps://[::1]:@PORT@' ''
 
 # A non-TLS scheme names no TLS service, so the test is refused, not run: smtp
 # is plaintext. xymonnet logs the refusal and creates no test.
@@ -92,4 +97,12 @@ grep -qiF "'smtp://' is not a TLS service" <<<"$reject" \
 	|| fail "a non-TLS scheme in a URL was not refused; xymonnet said:
 $reject"
 
-pass "every TLS service sends the tested name, a scheme://name overrides it, an address sends none, and a non-TLS scheme is refused"
+# An empty authority -- "scheme://" or "scheme://:port" -- names no servername,
+# so it is refused rather than quietly falling back to the hosts.cfg hostname.
+printf '127.0.0.1 host.example.com # imaps://:993\n' > "$work/home/etc/hosts.cfg"
+reject=$(XYMONHOME="$work/home" "$XYMONNET" --noping --no-update --timeout=2 2>&1 || :)
+grep -qiF "a 'imaps://' test needs a servername" <<<"$reject" \
+	|| fail "an empty authority was not refused; xymonnet said:
+$reject"
+
+pass "every TLS service sends the tested name, a scheme://name overrides it, an address (v4 or bracketed v6) sends none, and an empty authority or a non-TLS scheme is refused"
