@@ -223,9 +223,8 @@ int main(int argc, char *argv[])
 
 		cookie = get_cookie("pagepath");
 		if (!pagepattern && cookie && *cookie) {
-			/* Match the exact pagename and sub-pages */
-			SBUF_MALLOC(pagepattern, 10 + 2*strlen(cookie));
-			snprintf(pagepattern, pagepattern_buflen, "^%s$|^%s/.+", cookie, cookie);
+			/* The page and its sub-pages, the name matched as written */
+			pagepattern = cgi_pageregex(cookie);
 		}
 
 		if (hostpattern || pagepattern || ippattern || classpattern)
