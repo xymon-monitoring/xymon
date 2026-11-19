@@ -50,6 +50,18 @@ a reviewer cannot tell from the diff which of your results you ran and which you
 inferred, and the pre-review is where that line is drawn. When you add a commit to
 someone else's pull request, you report what you ran to its author instead.
 
+## Reviews
+
+Whether a change needs a review by someone other than its author is
+`CONTRIBUTING.md`'s rule, and a second reader being the better outcome binds
+your work as much as anyone's. What is not yours: do not propose that a pull
+request be reviewed, name a reviewer, or ask anyone to review one. Choosing and
+soliciting a reviewer is the author's part, the way asking for a second pair of
+eyes on one's own change is — a human author reaches for it, and you would do
+it on their behalf by default. State the mechanical fact where it applies — the
+ruleset requires an approving review, the checks are green, a thread is
+unresolved — and stop there.
+
 ## Where things are
 
 - `xymond/` the server daemons, `xymonnet/` the network probes, `client/` the

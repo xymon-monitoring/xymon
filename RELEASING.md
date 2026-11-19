@@ -43,6 +43,11 @@ half a sentence to `grep`.
 * Fix single-service graphs matching unrelated RRD files (#139) (Thanks, Mark Felder)
 ```
 
+Entries in the open section go newest first: each pass puts its entries at
+the top, the pull request merged last on the first line, so the section reads
+from the latest merge down to the earliest. A released section keeps the order
+it shipped with.
+
 Credit as `(Thanks, Name)` — the person's name, not their login — in order:
 whoever wrote the change; whoever reported the problem, if a maintainer wrote
 the fix; whoever reviewed it, when there is nobody else to name. A change

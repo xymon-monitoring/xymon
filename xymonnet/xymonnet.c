@@ -506,6 +506,7 @@ void load_tests(void)
 			service_t *s = NULL;
 			int dialuptest = 0, reversetest = 0, silenttest = 0, sendasdata = 0;
 			char *srcip = NULL;
+			char *tlsname = NULL;		/* TLS servername from an "imaps://name" test */
 			int alwaystruetest = (xmh_item(hwalk, XMH_FLAG_NOCLEAR) != NULL);
 
 			if (xmh_item_idx(testspec) == -1) {
@@ -667,11 +668,81 @@ void load_tests(void)
 				else if (argnmatch(testspec, "dig=")) {
 					s = dnstest;
 				}
-				else {
-					/* 
-					 * Simple TCP connect test. 
+				else if (strstr(testspec, "://")) {
+					/*
+					 * A TLS service written as a URL -- scheme://SERVERNAME[:port].
+					 * The host part is the TLS servername, and the name the peer
+					 * certificate is checked against, for a host whose hosts.cfg
+					 * name is a label rather than the name the service answers to.
+					 * The connection still goes to the host's own address, as the
+					 * bare service does. http/https and ldap/ldaps are handled
+					 * above; what reaches here must name a TLS service in
+					 * protocols.cfg -- imaps, smtps, pop3s and the rest -- and a
+					 * servername.
 					 */
-					char *option;
+					char *spec = strdup(testspec);
+					char *sep = strstr(spec, "://");
+					char *name, *p;
+					int specialport = 0;
+					xtreePos_t handle;
+
+					*sep = '\0';				/* spec is now the scheme */
+					name = sep + 3;
+					p = strchr(name, '/'); if (p) *p = '\0';	/* drop any path */
+
+					/*
+					 * Split off a port. An IPv6 literal is bracketed -- [::1] or
+					 * [::1]:636 -- so the colons inside it are not a port; an
+					 * unbracketed name with more than one colon is an IPv6 literal
+					 * with no port, left whole. Only a single colon is "host:port".
+					 */
+					if (*name == '[') {
+						p = strchr(name, ']');
+						if (p) {
+							name++; *p = '\0';			/* the literal, without the brackets */
+							if (*(p+1) == ':') specialport = atoi(p+2);
+						}
+					}
+					else {
+						p = strrchr(name, ':');
+						if (p && (strchr(name, ':') == p)) {	/* a single colon: host:port */
+							specialport = atoi(p+1); *p = '\0';
+						}
+					}
+
+					if (*name == '\0') {
+						errprintf("Host %s: a '%s://' test needs a servername\n",
+							  xmh_item(hwalk, XMH_HOSTNAME), spec);
+						s = NULL;
+					}
+					else if (!svc_uses_tls(find_tcp_service(spec))) {
+						errprintf("Host %s: '%s://' is not a TLS service in protocols.cfg\n",
+							  xmh_item(hwalk, XMH_HOSTNAME), spec);
+						s = NULL;
+					}
+					else {
+						handle = xtreeFind(svctree, spec);
+						s = ((handle == xtreeEnd(svctree)) ? NULL : (service_t *)xtreeData(svctree, handle));
+						if (s && specialport) {
+							SBUF_DEFINE(specialname);
+
+							SBUF_MALLOC(specialname, strlen(s->testname)+12);
+							snprintf(specialname, specialname_buflen, "%s_%d", s->testname, specialport);
+							s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
+							xfree(specialname);
+						}
+						if (s) {
+							tlsname = strdup(name);
+							h->dodns = 1;
+						}
+					}
+					xfree(spec);
+				}
+				else {
+					/*
+					 * Simple TCP connect test.
+					 */
+					char *colon, *option = NULL;
 					xtreePos_t handle;
 
 					/* See if there's a source IP */
@@ -682,10 +753,10 @@ void load_tests(void)
 					}
 
 					/* Remove any trailing ":s", ":q", ":Q", ":portnumber" */
-					option = strchr(testspec, ':'); 
-					if (option) { 
-						*option = '\0'; 
-						option++; 
+					colon = strchr(testspec, ':');
+					if (colon) {
+						*colon = '\0';
+						option = colon + 1;
 					}
 	
 					/* Find the service */
@@ -733,7 +804,7 @@ void load_tests(void)
 					}
 
 					if (s) h->dodns = 1;
-					if (option) *(option-1) = ':';
+					if (colon) *colon = ':';
 				}
 
 				if (s) {
@@ -741,6 +812,7 @@ void load_tests(void)
 
 					anytests = 1;
 					newtest = init_testitem(h, s, srcip, testspec, dialuptest, reversetest, alwaystruetest, silenttest, sendasdata);
+					newtest->tlsservername = tlsname;	/* the "imaps://name" host, or NULL */
 					newtest->next = s->items;
 					s->items = newtest;
 
@@ -2555,8 +2627,24 @@ int main(int argc, char *argv[])
 					if (s->namelen) tname[s->namelen] = '\0';
 					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL,
 									   t->srcip,
-									   NULL, t->silenttest, NULL, 
+									   NULL, t->silenttest, NULL,
 									   NULL, NULL, NULL);
+					/*
+					 * A TLS service sends the tested name as the servername, the
+					 * way an https test does, so its "sslcert" check describes
+					 * the host's own certificate and not whatever the endpoint
+					 * serves by default. The name is the one a "scheme://name"
+					 * test gives, or the tested hostname otherwise; never an IP
+					 * literal. A test does TLS at connect ("options ssl") or via a
+					 * "start tls" step, so the gate is whether it does TLS at all
+						 * -- svc_uses_tls -- not the service name.
+					 */
+					if (t->privdata) {
+						tcptest_t *tt = (tcptest_t *)t->privdata;
+
+						if (svc_uses_tls(tt->svcinfo))
+							tls_servername(tt, t->tlsservername ? t->tlsservername : t->host->hostname);
+					}
 				}
 			}
 		}
@@ -2609,6 +2697,8 @@ int main(int argc, char *argv[])
 					t->certexpires = testresult->certexpires;
 					t->certkeysz = testresult->certkeysz;
 					t->mincipherbits = testresult->mincipherbits;
+					t->certnamematch = testresult->certnamematch;
+					t->certcheckname = testresult->checkname;
 					t->duration.tv_sec = testresult->duration.tv_sec;
 					t->duration.tv_nsec = testresult->duration.tv_nsec;
 

@@ -232,6 +232,7 @@ extern char *tcp_dialogue_failure(tcptest_t *test);
 extern tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt, char *srcip,
 			    char *tspec, int silent, unsigned char *reqmsg, 
 			    void *priv, f_callback_data datacallback, f_callback_final finalcallback);
+extern void tls_servername(tcptest_t *t, char *name);
 extern void do_tcp_tests(int timeout, int concurrency);
 extern void show_tcp_test_results(void);
 extern int tcp_got_expected(tcptest_t *test);

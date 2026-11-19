@@ -259,12 +259,12 @@ typedef struct conn_t {
  *
  * How many connections may be open at once is MAXCONNECTIONS: from
  * XYMOND_MAXCONNECTIONS in xymonserver.cfg, else what the descriptor
- * limit leaves after a reserve for files, channels and listeners. A
- * connection past it is refused at accept(). The loop polls with poll(),
+ * limit leaves after a reserve for files and channels, and one descriptor
+ * per listener. A connection past it is refused at accept(). The loop polls with poll(),
  * so no FD_SETSIZE bounds it: the limit is the process's, and the
  * administrator's.
  */
-#define MAXCONNECTIONS_RESERVE 64	/* descriptors kept back from the limit for files, channels and listeners */
+#define MAXCONNECTIONS_RESERVE 64	/* descriptors kept back for files and channels; listeners are reserved on top */
 #define IDLE_FIRSTBYTE 5
 #define IDLE_PRESSURE 256
 #define IDLE_PER_SENDER 16
@@ -2897,19 +2897,27 @@ char *acklist_string(xymond_log_t *log, int level)
 {
 	static strbuffer_t *res = NULL;
 	ackinfo_t *awalk;
-	char tmpstr[512];
+	char numbers[64];
 
 	if (log->acklist == NULL) return NULL;
 
 	if (res) clearstrbuffer(res); else res = newstrbuffer(0);
 
+	/*
+	 * Each entry goes into the growing buffer as it is, its newline last.
+	 * Formatted into a 512-byte buffer first, a longer one was cut and lost
+	 * its newline, and the next entry ran on in the same line: a reader saw
+	 * one acknowledgement where there were two.
+	 */
 	for (awalk = log->acklist; (awalk); awalk = awalk->next) {
 		if ((level != -1) && (awalk->level != level)) continue;
-		snprintf(tmpstr, sizeof(tmpstr), "%d:%d:%d:%s:%s\n", 
-			 (int)awalk->received, (int)awalk->validuntil, 
-			 awalk->level, awalk->ackedby, awalk->msg);
-		tmpstr[sizeof(tmpstr)-1] = '\0';
-		addtobuffer(res, tmpstr);
+		snprintf(numbers, sizeof(numbers), "%d:%d:%d:",
+			 (int)awalk->received, (int)awalk->validuntil, awalk->level);
+		addtobuffer(res, numbers);
+		addtobuffer(res, awalk->ackedby);
+		addtobuffer(res, ":");
+		addtobuffer(res, awalk->msg);
+		addtobuffer(res, "\n");
 	}
 
 	return STRBUF(res);

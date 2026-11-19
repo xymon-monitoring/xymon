@@ -229,10 +229,10 @@ int main(int argc, char *argv[])
 		if (outform == O_HTML) {
 			fprintf(stdout, "<table align=center>\n");
 			fprintf(stdout, "<tr>");
-			fprintf(stdout, "<th align=left><a href=\"ghostlist.sh?SORT=sender&MAXAGE=%d\">Sender</a></th>", maxage);
-			fprintf(stdout, "<th align=left><a href=\"ghostlist.sh?SORT=name&MAXAGE=%d\">Hostname</a></th>", maxage);
+			fprintf(stdout, "<th align=left><a href=\"ghostlist.sh?SORT=sender&amp;MAXAGE=%d\">Sender</a></th>", maxage);
+			fprintf(stdout, "<th align=left><a href=\"ghostlist.sh?SORT=name&amp;MAXAGE=%d\">Hostname</a></th>", maxage);
 			fprintf(stdout, "<th align=left>Candidate</th>");
-			fprintf(stdout, "<th align=right><a href=\"ghostlist.sh?SORT=time&MAXAGE=%d\">Report age</a></th>", maxage);
+			fprintf(stdout, "<th align=right><a href=\"ghostlist.sh?SORT=time&amp;MAXAGE=%d\">Report age</a></th>", maxage);
 			fprintf(stdout, "</tr>\n");
 		}
 
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 
 		if (outform == O_HTML) {
 			fprintf(stdout, "</table>\n");
-			fprintf(stdout, "<br><br><center><a href=\"ghostlist.sh?SORT=%s&MAXAGE=%d&TEXT\">Text report</a></center>\n", htmlquoted(sortstring), maxage);
+			fprintf(stdout, "<br><br><center><a href=\"ghostlist.sh?SORT=%s&amp;MAXAGE=%d&amp;TEXT\">Text report</a></center>\n", htmlquoted(sortstring), maxage);
 		}
 	}
 	else

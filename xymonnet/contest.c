@@ -181,6 +181,25 @@ static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 }
 
 
+/*
+ * The TLS servername (SNI) for a test is the name being tested, and the name
+ * the peer certificate is checked against. Never an IP literal: RFC 6066
+ * forbids one -- a proper server ignores it, a strict one rejects the
+ * handshake -- so a name written as an address is how a test asks for no
+ * servername, coherently with the address it then connects to.
+ */
+void tls_servername(tcptest_t *t, char *name)
+{
+	struct in6_addr addr;
+
+	t->sni = NULL;
+	if (name &&
+	    (inet_pton(AF_INET, name, &addr) != 1) &&
+	    (inet_pton(AF_INET6, name, &addr) != 1))
+		t->sni = name;
+	t->checkname = t->sni;
+}
+
 tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 			char *srcip,
 			char *tspec, int silent, unsigned char *reqmsg, 

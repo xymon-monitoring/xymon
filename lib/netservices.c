@@ -790,3 +790,20 @@ svcinfo_t *find_tcp_service(char *svcname)
 	return NULL;
 }
 
+/*
+ * Whether a service does TLS, so a caller can send the tested name as the
+ * servername for it (SNI) and check the certificate against it: either TLS
+ * from the first byte ("options ssl"), or an upgrade step ("start tls")
+ * anywhere in its dialogue. Every TLS service shipped uses the step.
+ */
+int svc_uses_tls(svcinfo_t *svc)
+{
+	svcstep_t *st;
+
+	if (!svc) return 0;
+	if (svc->flags & TCP_SSL) return 1;
+	for (st = svc->steps; (st); st = st->next)
+		if (st->type == STEP_STARTTLS) return 1;
+	return 0;
+}
+

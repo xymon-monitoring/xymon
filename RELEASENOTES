@@ -16,6 +16,23 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+xymonnet -- a TLS test sends the tested name as the TLS servername
+-----------------------------------------------------------------
+A TLS test -- imaps, smtps, pop3s, ldaps, ftps, nntps, telnets, amqps -- sends the
+host it tests as the TLS server name (SNI), the way an https test already does,
+so its "sslcert" status describes the host's own certificate rather than
+whatever the endpoint returns by default. Where the host's hosts.cfg name is a
+label rather than the name the service answers to, write "scheme://servername"
+(for example "imaps://mail.example.com") to send and check that name instead; a
+servername written as an IP address sends none, as RFC 6066 requires, which also
+turns the name check off and leaves the expiry alone.
+
+This widens what the "sslcert" column scores: a certificate that does not cover
+the tested name now turns it red, where before only expiry, cipher and key size
+were checked and a wrong-name certificate read green. Where one address serves
+several names behind SNI the certificate reported may change; "scheme://name" or
+an address is how to set, or silence, the name each test checks.
+
 configure -- asks whether to enable SNMP where Net-SNMP is installed
 -------------------------------------------------------------------
 
@@ -268,8 +285,9 @@ xymond now drives its connections with poll() instead of select(), so
 the number it can hold open at once is no longer fixed when it is built
 (1024 on most platforms, 256 on NetBSD, past which xymond stopped with
 "Fatal error in select"). The limit is XYMOND_MAXCONNECTIONS in
-xymonserver.cfg; unset, it is the process's open-file limit less 64. A
-connection beyond it is refused as it is accepted and logged at most
+xymonserver.cfg; unset, it is the process's open-file limit less 64 and
+one per listening port. A connection beyond it is refused as it is
+accepted and logged at most
 once a minute. A value that is not a number is logged and the default
 used. A large open-file limit means a large default; set
 XYMOND_MAXCONNECTIONS to bound it. Nothing changes for an installation
