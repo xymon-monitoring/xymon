@@ -17,8 +17,8 @@
 # INSTALLSYSTEMDDIR installs nothing.
 #
 # Driven through "make -f build/Makefile.rules", the file that carries the
-# rule, so the check needs no configured or built tree: the recipe is a sed and
-# a mkdir with the paths passed on the command line.
+# rule, so the check needs no configured or built tree: the recipe is
+# build/subst.sh and a mkdir with the paths passed on the command line.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -32,13 +32,13 @@ for f in "$dist" "$rules"; do
 done
 
 # Every @VAR@ the .DIST carries is substituted by the install-systemd rule. The
-# sed replacement is '@VAR@!$(VAR)'; pin it as a fixed string so a renamed or
-# dropped clause fails here rather than at install time.
+# rule sets VAR='$(VAR)' for build/subst.sh; pin it as a fixed string so a
+# renamed or dropped name fails here rather than at install time.
 placeholders=$(grep -oE '@[A-Z_]+@' "$dist" | sort -u)
 [ -n "$placeholders" ] || fail "tools/xymonlaunch.service.DIST carries no @PLACEHOLDER@ to substitute"
 for ph in $placeholders; do
 	name=${ph#@}; name=${name%@}
-	grep -qF "$ph!\$($name)" "$rules" \
+	grep -qF "$name='\$($name)'" "$rules" \
 		|| fail "build/Makefile.rules install-systemd does not substitute $ph with \$($name): the installed unit would keep it literal"
 done
 
