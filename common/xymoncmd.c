@@ -121,7 +121,7 @@ static int env_candidate(char *buf, size_t buflen, char *dir, char *file)
 
 int main(int argc, char *argv[])
 {
-	int argi;
+	int argi, i;
 	char *cmd = NULL;
 	char **cmdargs = NULL;
 	int argcount = 0;
@@ -147,11 +147,12 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		else {
+			/* Expanded once the environment file is read, below. */
 			if (argcount == 0) {
-				cmdargs[0] = cmd = strdup(expand_env(argv[argi]));
+				cmdargs[0] = argv[argi];
 				argcount = 1;
 			}
-			else cmdargs[argcount++] = strdup(expand_env(argv[argi]));
+			else cmdargs[argcount++] = argv[argi];
 		}
 	}
 
@@ -178,6 +179,16 @@ int main(int argc, char *argv[])
 	/* Make sure SERVEROSTYPE, MACHINEDOTS and MACHINE are setup for our child */
 	xymon_default_envs(envfile);
 	loadenv(envfile, envarea);
+
+	/*
+	 * The command's arguments are expanded only now, against the file just
+	 * read. Expanded while the options were parsed, a variable the file sets
+	 * took its compiled default -- XYMONSERVERWWWNAME as XYMONHOSTNAME,
+	 * XYMONRUNDIR as XYMONSERVERLOGS -- while the command ran with the
+	 * file's value in its environment.
+	 */
+	for (i = 0; (i < argcount); i++) cmdargs[i] = strdup(expand_env(cmdargs[i]));
+	if (argcount > 0) cmd = cmdargs[0];
 
 
 	/* Go! */
