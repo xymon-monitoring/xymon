@@ -16,6 +16,14 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+xymonnet -- an imaps test sends the tested hostname as the TLS servername
+-------------------------------------------------------------------------
+An imaps test now sends the host it tests as the TLS server name (SNI), the
+way an https test already does, so its "sslcert" status describes the host's
+own certificate rather than whatever the endpoint returns by default. A name
+written as an IP address still sends none, as RFC 6066 requires. Where one
+address serves several names behind SNI, the certificate reported may change.
+
 configure -- asks whether to enable SNMP where Net-SNMP is installed
 -------------------------------------------------------------------
 

@@ -2555,8 +2555,22 @@ int main(int argc, char *argv[])
 					if (s->namelen) tname[s->namelen] = '\0';
 					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL,
 									   t->srcip,
-									   NULL, t->silenttest, NULL, 
+									   NULL, t->silenttest, NULL,
 									   NULL, NULL, NULL);
+					/*
+					 * imaps sends the tested hostname as the TLS servername,
+					 * the way an https test does, so its "sslcert" check
+					 * describes the host's own certificate and not whatever
+					 * the endpoint serves by default. imaps upgrades with
+					 * "start tls", so this is not gated on "options ssl". The
+					 * first TLS service to do so; the rest can follow.
+					 */
+					if (t->privdata) {
+						tcptest_t *tt = (tcptest_t *)t->privdata;
+
+						if (tt->svcinfo && (strcmp(tt->svcinfo->svcname, "imaps") == 0))
+							tls_servername(tt, t->host->hostname);
+					}
 				}
 			}
 		}

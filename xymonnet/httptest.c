@@ -733,17 +733,7 @@ void add_http_test(testitem_t *t)
 	 * several URLs with different names, so a host-level switch cannot express
 	 * the choice. The URL can.
 	 */
-	{
-		char *host = httptest->weburl.desturl->host;
-		struct in6_addr addr;
-
-		httptest->tcptest->sni = NULL;
-		if (host &&
-		    (inet_pton(AF_INET, host, &addr) != 1) &&
-		    (inet_pton(AF_INET6, host, &addr) != 1))
-			httptest->tcptest->sni = host;
-		/* Verify the peer cert covers the name we send as SNI */
-		httptest->tcptest->checkname = httptest->tcptest->sni;
-	}
+	/* The servername is the URL's host; tls_servername() drops an IP literal. */
+	tls_servername(httptest->tcptest, httptest->weburl.desturl->host);
 }
 
