@@ -20,7 +20,9 @@ xymonnet -- an imaps test sends the tested hostname as the TLS servername
 -------------------------------------------------------------------------
 An imaps test now sends the host it tests as the TLS server name (SNI), the
 way an https test already does, so its "sslcert" status describes the host's
-own certificate rather than whatever the endpoint returns by default. A name
+own certificate rather than whatever the endpoint returns by default. Where
+the host's hosts.cfg name is a label rather than the name its service answers
+to, write "imaps://servername" to send and check that name instead. A name
 written as an IP address still sends none, as RFC 6066 requires. Where one
 address serves several names behind SNI, the certificate reported may change.
 

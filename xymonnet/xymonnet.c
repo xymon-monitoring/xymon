@@ -506,6 +506,7 @@ void load_tests(void)
 			service_t *s = NULL;
 			int dialuptest = 0, reversetest = 0, silenttest = 0, sendasdata = 0;
 			char *srcip = NULL;
+			char *tlsname = NULL;		/* TLS servername from an "imaps://name" test */
 			int alwaystruetest = (xmh_item(hwalk, XMH_FLAG_NOCLEAR) != NULL);
 
 			if (xmh_item_idx(testspec) == -1) {
@@ -667,9 +668,46 @@ void load_tests(void)
 				else if (argnmatch(testspec, "dig=")) {
 					s = dnstest;
 				}
+				else if (argnmatch(testspec, "imaps://")) {
+					/*
+					 * imaps written as a URL -- imaps://SERVERNAME[:port]. The
+					 * host part is the TLS servername, and the name the peer
+					 * certificate is checked against, for a host whose hosts.cfg
+					 * name is a label rather than the name its service answers
+					 * to. The connection still goes to the host's own address,
+					 * as bare imaps does.
+					 */
+					char *spec = strdup(testspec + strlen("imaps://"));
+					char *p;
+					int specialport = 0;
+					xtreePos_t handle;
+
+					p = strchr(spec, '/'); if (p) *p = '\0';	/* drop any path */
+					p = strrchr(spec, ':');
+					if (p) { specialport = atoi(p+1); *p = '\0'; }	/* a port */
+
+					handle = xtreeFind(svctree, "imaps");
+					s = ((handle == xtreeEnd(svctree)) ? NULL : (service_t *)xtreeData(svctree, handle));
+					if (!s)
+						errprintf("Host %s: an imaps:// test needs the imaps service in protocols.cfg\n",
+							  xmh_item(hwalk, XMH_HOSTNAME));
+					else {
+						if (specialport) {
+							SBUF_DEFINE(specialname);
+
+							SBUF_MALLOC(specialname, strlen(s->testname)+12);
+							snprintf(specialname, specialname_buflen, "%s_%d", s->testname, specialport);
+							s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
+							xfree(specialname);
+						}
+						tlsname = (*spec ? strdup(spec) : NULL);
+						h->dodns = 1;
+					}
+					xfree(spec);
+				}
 				else {
-					/* 
-					 * Simple TCP connect test. 
+					/*
+					 * Simple TCP connect test.
 					 */
 					char *option;
 					xtreePos_t handle;
@@ -741,6 +779,7 @@ void load_tests(void)
 
 					anytests = 1;
 					newtest = init_testitem(h, s, srcip, testspec, dialuptest, reversetest, alwaystruetest, silenttest, sendasdata);
+					newtest->tlsservername = tlsname;	/* the "imaps://name" host, or NULL */
 					newtest->next = s->items;
 					s->items = newtest;
 
@@ -2558,18 +2597,19 @@ int main(int argc, char *argv[])
 									   NULL, t->silenttest, NULL,
 									   NULL, NULL, NULL);
 					/*
-					 * imaps sends the tested hostname as the TLS servername,
-					 * the way an https test does, so its "sslcert" check
-					 * describes the host's own certificate and not whatever
-					 * the endpoint serves by default. imaps upgrades with
-					 * "start tls", so this is not gated on "options ssl". The
-					 * first TLS service to do so; the rest can follow.
+					 * imaps sends the tested name as the TLS servername, the
+					 * way an https test does, so its "sslcert" check describes
+					 * the host's own certificate and not whatever the endpoint
+					 * serves by default. The name is the one an "imaps://name"
+					 * test gives, or the tested hostname otherwise; never an IP
+					 * literal. imaps upgrades with "start tls", so this is not
+					 * gated on "options ssl". The first TLS service to do so.
 					 */
 					if (t->privdata) {
 						tcptest_t *tt = (tcptest_t *)t->privdata;
 
 						if (tt->svcinfo && (strcmp(tt->svcinfo->svcname, "imaps") == 0))
-							tls_servername(tt, t->host->hostname);
+							tls_servername(tt, t->tlsservername ? t->tlsservername : t->host->hostname);
 					}
 				}
 			}

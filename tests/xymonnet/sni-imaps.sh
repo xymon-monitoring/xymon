@@ -58,4 +58,13 @@ run() {
 run "imaps sends the tested hostname" \
 	'127.0.0.1 mail.example.com # imaps:@PORT@' 'mail.example.com'
 
-pass "an imaps test sends the tested hostname as the TLS servername"
+# imaps://NAME overrides it: the host is labelled "label.example.com" but the
+# servername, and the name the certificate is checked against, is mail.example.com.
+run "imaps://name sets the servername" \
+	'127.0.0.1 label.example.com # imaps://mail.example.com:@PORT@' 'mail.example.com'
+
+# An imaps written as an address sends none, as RFC 6066 requires.
+run "imaps://address sends no servername" \
+	'127.0.0.1 label.example.com # imaps://127.0.0.1:@PORT@' ''
+
+pass "an imaps test sends the tested hostname, or an imaps://name's name, as the TLS servername, and none for an address"
