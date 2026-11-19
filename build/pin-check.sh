@@ -196,7 +196,7 @@ build_tree() { make -j"$JOBS" >"$work/make.log" 2>&1; }
 # reported as a wall of flags.
 is_inert() {
 	case $1 in
-		.github/* | docs/* | *.md | Changes | RELEASENOTES | \
+		.github/* | docs/* | *.md | Changes | RELEASENOTES | releasenotes.d/* | \
 		*.1 | *.2 | *.3 | *.4 | *.5 | *.6 | *.7 | *.8) return 0 ;;
 	esac
 	return 1

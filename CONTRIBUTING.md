@@ -18,9 +18,13 @@ for you. Almost every pull request gets one, so two inserting at the top of the
 same section would conflict for no reason.
 
 **`RELEASENOTES` is the exception: write its entry in the pull request that
-needs one**, in the open `(not yet released)` section at the top of the file.
-The reviewer then reads what an administrator will be told alongside the change
-that makes it true. Most pull requests need none.
+needs one**, as a file of its own in `releasenotes.d/`, not in `RELEASENOTES`
+itself. The reviewer then reads what an administrator will be told alongside the
+change that makes it true, and two pull requests with an entry each do not
+conflict, as they did when each wrote at the top of the same section. The entries
+are moved into `RELEASENOTES` at release. Most pull requests need none.
+[`releasenotes.d/README`](releasenotes.d/README) says how a file is named and
+written.
 
 What belongs in each file, and how entries are written, is in
 [`RELEASING.md`](RELEASING.md).

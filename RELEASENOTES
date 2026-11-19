@@ -9,8 +9,11 @@ changes you should be aware of when upgrading.
 For a full list of changes and enhancements, please see the 
 Changes file.
 
-A pull request that needs an entry writes it in the open "(not yet
-released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
+A pull request that needs an entry writes it as a file of its own in
+releasenotes.d/, and the entries are moved here at release; until then
+the entries not yet released are read there, beside those of the open
+"(not yet released)" section below. See CONTRIBUTING.md; full rules in
+RELEASING.md.
 
 
 Changes for 4.3.32 (not yet released)
