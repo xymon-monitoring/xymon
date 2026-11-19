@@ -123,8 +123,14 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 				*p = '\0';
 			}
 
-			/* Show only the first 30 characters in message */
-			if (strlen(ackmsg) > 30) ackmsg[30] = '\0';
+			/* Show only the first 30 bytes of the message, but do not
+			   split a UTF-8 character: back up over a trailing continuation
+			   byte (10xxxxxx) so the cut never leaves a partial sequence. */
+			if (strlen(ackmsg) > 30) {
+				int cut = 30;
+				while ((cut > 0) && (((unsigned char)ackmsg[cut] & 0xc0) == 0x80)) cut--;
+				ackmsg[cut] = '\0';
+			}
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 			#pragma GCC diagnostic push
