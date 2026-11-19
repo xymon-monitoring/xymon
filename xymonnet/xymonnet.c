@@ -2663,6 +2663,8 @@ int main(int argc, char *argv[])
 					t->certexpires = testresult->certexpires;
 					t->certkeysz = testresult->certkeysz;
 					t->mincipherbits = testresult->mincipherbits;
+					t->certnamematch = testresult->certnamematch;
+					t->certcheckname = testresult->checkname;
 					t->duration.tv_sec = testresult->duration.tv_sec;
 					t->duration.tv_nsec = testresult->duration.tv_nsec;
 
