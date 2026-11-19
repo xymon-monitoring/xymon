@@ -18,7 +18,7 @@ Changes for 4.3.32 (not yet released)
 
 xymonnet -- a TLS test sends the tested name as the TLS servername
 -----------------------------------------------------------------
-A TLS test -- imaps, smtps, pop3s, ftps, nntps, telnets, amqps -- now sends the
+A TLS test -- imaps, smtps, pop3s, ldaps, ftps, nntps, telnets, amqps -- sends the
 host it tests as the TLS server name (SNI), the way an https test already does,
 so its "sslcert" status describes the host's own certificate rather than
 whatever the endpoint returns by default. Where the host's hosts.cfg name is a

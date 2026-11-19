@@ -32,7 +32,7 @@ peer="$work/peer"
 mkdir -p "$work/home/etc" "$work/tmp"
 cp "$root/xymonnet/protocols.cfg" "$work/home/etc/protocols.cfg"
 export XYMONHOME="$work/home" XYMONTMP="$work/tmp"
-export XYMONNETSVCS="imaps smtps pop3s imap smtp pop3 http ssh"
+export XYMONNETSVCS="imaps smtps pop3s ldaps imap smtp pop3 ldap http ssh"
 
 # run TAG HOSTLINE EXPECT -- start the peer, point one test at it through
 # HOSTLINE (with @PORT@ replaced by the peer's port), and check the SNI it read
@@ -65,6 +65,12 @@ run "imaps sends the tested hostname" \
 # The gate is "does TLS", not the service name: pop3s sends it too.
 run "pop3s sends the tested hostname" \
 	'127.0.0.1 mail.example.com # pop3s:@PORT@' 'mail.example.com'
+
+# ldaps is the TLS-cert counterpart to the ldap:// functional test (its
+# protocols.cfg entry exists "so the certificate is checked"); it goes through
+# this same path, so it sends the servername too.
+run "ldaps sends the tested hostname" \
+	'127.0.0.1 ldap.example.com # ldaps:@PORT@' 'ldap.example.com'
 
 # scheme://NAME overrides it, for any TLS service: the host is labelled
 # "label.example.com" but the servername, and the name the certificate is
