@@ -536,20 +536,6 @@ The interval between start time and end time may cross midnight, e.g. \fB*:2330:
 would be valid and have the same effect as \fB*:2330:2400,*:0000:0200\fR.
 
 
-.SH XYMON TAGS FOR THE WML (WAP) CARDS
-If xymongen is run with the "\-\-wml" option, it will generate a
-set of WAP-format output "cards" that can be viewed with a
-WAP-capable device, e.g. a PDA or cell-phone.
-
-.IP "\fBWML:[+|\-]testname[,[+|\-]testname]\fR"
-This tag determines which tests for this hosts are included
-in the WML (WAP) page. Syntax is identical to the NK: tag.
-
-The default set of WML tests are taken from the \-\-wml
-command line option.  If no "WML:" tag is specified, the
-"NK:" tag is used if present.
-
-
 .SH XYMON STATUS PROPAGATION OPTIONS
 These tags affect how a status propagates upwards from a single
 test to the page and higher. This can also be done with the

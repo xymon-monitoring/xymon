@@ -1,0 +1,14 @@
+xymongen -- the WML/WAP card output is removed
+----------------------------------------------
+
+xymongen no longer generates WML cards for WAP devices: the --wml option,
+the WML: tag in hosts.cfg, and the XYMONWAP and WMLMAXCHARS settings are
+gone, and no www/wml directory is installed. An upgrade leaves an existing
+www/wml in place; it can be removed, along with any web server alias that
+points at it. WAP browsers are obsolete and the generator was off by
+default.
+
+If XYMONGENOPTS still names --wml, xymongen logs an unknown-option error
+and, run with --report as the server runs it, turns its own xymongen
+status yellow, though it still generates the pages. Remove --wml to clear
+it; a WML: tag in hosts.cfg is now ignored.

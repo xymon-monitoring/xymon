@@ -380,9 +380,6 @@ URL prefix (without hostname) of the Xymon availability reports. E.g. "/xymon/re
 .IP "\fBXYMONSNAPURL\fR"
 URL prefix (without hostname) of the Xymon snapshots. E.g. "/xymon/snap".
 
-.IP "\fBXYMONWAP\fR"
-URL prefix (without hostname) of the Xymon WAP/WML files. E.g. "/xymon/wml".
-
 .IP "\fBCGIBINURL\fR"
 URL prefix (without hostname) of the Xymon CGI-scripts. Default: $XYMONSERVERCGIURL .
 
@@ -975,10 +972,6 @@ Default: cpu,disk,memory,procs,svcs.
 If defined, this is the title of the RSS/RDF documents generated when
 .I xymongen(1)
 is invoked with the "\-\-rss" option. The default value is "Xymon Alerts".
-
-.IP "\fBWMLMAXCHARS\fR"
-Maximum size of a WAP/WML output "card" when generating these.
-Default: 1500.
 
 .IP "\fBXYMONNONGREENEXT\fR"
 List of scripts to run as extensions to the "All non-green" page. Note that

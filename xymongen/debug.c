@@ -29,17 +29,15 @@ void dumphosts(host_t *head, char *prefix)
 	char	format[512];
 
 	strcpy(format, prefix);
-	strcat(format, "Host: %s, ip: %s, name: %s, color: %d, old: %d, anywaps: %d, wapcolor: %d, pretitle: '%s', noprop-y: %s, noprop-r: %s, noprop-p: %s, noprop-ack: %s, waps: %s\n");
+	strcat(format, "Host: %s, ip: %s, name: %s, color: %d, old: %d, pretitle: '%s', noprop-y: %s, noprop-r: %s, noprop-p: %s, noprop-ack: %s\n");
 
 	for (h = head; (h); h = h->next) {
 		printf(format, h->hostname, h->ip, textornull(h->displayname), h->color, h->oldage,
-			h->anywaps, h->wapcolor,
 			textornull(h->pretitle),
-			textornull(h->nopropyellowtests), 
-			textornull(h->nopropredtests), 
-			textornull(h->noproppurpletests), 
-			textornull(h->nopropacktests), 
-			textornull(h->waps));
+			textornull(h->nopropyellowtests),
+			textornull(h->nopropredtests),
+			textornull(h->noproppurpletests),
+			textornull(h->nopropacktests));
 		for (e = h->entries; (e); e = e->next) {
 			printf("\t\t\t\t\tTest: %s, alert %d, propagate %d, state %d, age: %s, oldage: %d\n", 
 				e->column->name, e->alert, e->propagate, e->color, e->age, e->oldage);

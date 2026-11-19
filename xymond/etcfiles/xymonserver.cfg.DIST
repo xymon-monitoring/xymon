@@ -91,7 +91,6 @@ XYMONNOTESSKIN="$XYMONSERVERWWWURL/notes"       # Xymon URL prefix for the onlin
 XYMONMENUSKIN="$XYMONSERVERWWWURL/menu"         # Xymon URL prefix for the webpage menu files.
 XYMONREPURL="$XYMONSERVERWWWURL/rep"		# Xymon URL prefix for the Xymon availability reports
 XYMONSNAPURL="$XYMONSERVERWWWURL/snap"		# Xymon URL prefix for the Xymon snapshots
-XYMONWAP="$XYMONSERVERWWWURL/wml"		# Xymon URL prefix for the WAP/WML files.
 CGIBINURL="$XYMONSERVERCGIURL"			# URL prefix for the Xymon CGI-scripts - /cgi-bin
 SECURECGIBINURL="$XYMONSERVERSECURECGIURL"	# URL prefix for the secured Xymon CGI-scripts - /cgi-secure
 
@@ -248,7 +247,7 @@ XYMONPAGECOLFONT="COLOR=\"#87a9e5\" SIZE=\"-1\""	# Size and color of the column 
 XYMONPAGEROWFONT="SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
 XYMONPAGETITLE="COLOR=\"#FFFFF0\" SIZE=\"+1\""	# Size and color of the Xymon titles
 XYMONDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
-XYMONRSSTITLE="Xymon Alerts"			# Title for the RSS and WML outputs.
+XYMONRSSTITLE="Xymon Alerts"			# Title for the RSS output.
 ACKUNTILMSG="Next update at: %H:%M %Y-%m-%d"    # strftime format for the acknowledgement status display.
 XYMONALLOKTEXT="<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>"
 
@@ -258,8 +257,6 @@ XYMONBODYMENUCSS="$XYMONMENUSKIN/xymonmenu-blue.css"	# Stylesheet used for the X
 XYMONBODYHEADER="file:$XYMONHOME/etc/xymonmenu.cfg"	# File containing the HTML code snippet that defines the menu
 XYMONBODYFOOTER=""					# HTML inserted at the bottom of all webpages.
 
-# For WML output
-WMLMAXCHARS="1500"				# Max number of bytes in a WAP message
 
 # For Xymon reports
 XYMONREPWARN="97"				# Default availability causing yellow status on availability report.
@@ -315,7 +312,6 @@ BBTMP="$XYMONTMP"
 BBNOTES="$XYMONNOTESDIR"
 BBNOTESSKIN="$XYMONNOTESSKIN"
 BBMENUSKIN="$XYMONMENUSKIN"
-BBWAP="$XYMONWAP"
 
 MKBBLOCAL="$XYMONPAGELOCAL"
 MKBBREMOTE="$XYMONPAGEREMOTE"

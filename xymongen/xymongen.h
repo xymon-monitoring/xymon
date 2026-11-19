@@ -40,8 +40,6 @@
       |                                    criticalcolor       |
       +---------------------------------   parent              |
                                            alerts              |
-                                           waps                |
-					   anywaps             |
                                            nopropyellowtests   |
                                            nopropredtests      |
                                            noproppurpletests   |
@@ -54,7 +52,6 @@
                                            next                 oldage
                                                                 acked
                                                                 alert
-                                                                onwap
                                                                 propagate
                                                                 reportinfo
 								fileage
@@ -122,7 +119,6 @@ typedef struct entry_t {
 	time_t  fileage;
 	int	acked;
 	int	alert;
-	int	onwap;
 	int	propagate;
 	int	compacted;
 	char 	*sumurl;
@@ -159,9 +155,6 @@ typedef struct host_t {
 	int     oldage;
 	char	*alerts;
 	int	nktime;
-	int	anywaps;
-	int	wapcolor;
-	char	*waps;
 	char    *nopropyellowtests;
 	char    *nopropredtests;
 	char    *noproppurpletests;

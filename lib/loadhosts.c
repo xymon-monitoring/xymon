@@ -102,8 +102,6 @@ static void xmh_item_list_setup(void)
 	xmh_item_name[XMH_NKTIME]              = "XMH_NKTIME";
 	xmh_item_key[XMH_TRENDS]               = "TRENDS:";
 	xmh_item_name[XMH_TRENDS]              = "XMH_TRENDS";
-	xmh_item_key[XMH_WML]                  = "WML:";
-	xmh_item_name[XMH_WML]                 = "XMH_WML";
 	xmh_item_key[XMH_NOPROP]               = "NOPROP:";
 	xmh_item_name[XMH_NOPROP]              = "XMH_NOPROP";
 	xmh_item_key[XMH_NOPROPRED]            = "NOPROPRED:";
