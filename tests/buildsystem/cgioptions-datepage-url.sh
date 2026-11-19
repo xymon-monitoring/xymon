@@ -28,6 +28,7 @@ mkdir -p "$work/xymond" "$work/build"
 cp "$ROOT/xymond/Makefile" "$work/xymond/"
 cp -R "$ROOT/xymond/etcfiles" "$work/xymond/"
 cp "$ROOT/build/bb-commands.sh" "$work/build/"
+cp "$ROOT/build/subst.sh" "$work/build/"
 
 "$XYMON_MAKE" -C "$work/xymond" cfgfiles \
 	XYMONHOME=/opt/xymon/server XYMONTOPDIR=/opt/xymon INSTALLETCDIR=/opt/xymon/server/etc \

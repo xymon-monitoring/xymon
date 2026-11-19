@@ -39,14 +39,14 @@ XYMONCLIENTRUNDIRSUB = $(XYMONCLIENTRUNDIR)
 endif
 
 xymonclient.cfg: xymonclient.cfg.DIST
-	cat xymonclient.cfg.DIST | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONCLIENTRUNDIR@!$(XYMONCLIENTRUNDIRSUB)!g' >xymonclient.cfg
+	XYMONHOSTIP='$(XYMONHOSTIP)' XYMONHOME='$(XYMONHOME)' XYMONCLIENTRUNDIR='$(XYMONCLIENTRUNDIRSUB)' ../build/subst.sh XYMONHOSTIP XYMONHOME XYMONCLIENTRUNDIR <xymonclient.cfg.DIST >xymonclient.cfg
 	../build/bb-commands.sh >>xymonclient.cfg
 
 clientlaunch.cfg: clientlaunch.cfg.DIST
 ifeq ($(LOCALCLIENT),yes)
-	cat clientlaunch.cfg.DIST | sed -e 's!@CLIENTFLAGS@!--local!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >clientlaunch.cfg
+	CLIENTFLAGS='--local' XYMONHOME='$(XYMONHOME)' ../build/subst.sh CLIENTFLAGS XYMONHOME <clientlaunch.cfg.DIST >clientlaunch.cfg
 else
-	cat clientlaunch.cfg.DIST | sed -e 's!@CLIENTFLAGS@!!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >clientlaunch.cfg
+	CLIENTFLAGS='' XYMONHOME='$(XYMONHOME)' ../build/subst.sh CLIENTFLAGS XYMONHOME <clientlaunch.cfg.DIST >clientlaunch.cfg
 endif
 
 logfetch: logfetch.c $(XYMONCLIENTLIB)

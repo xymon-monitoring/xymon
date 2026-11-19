@@ -40,6 +40,7 @@ generate() {
 	cp "$ROOT/xymond/Makefile" "$work/tree/xymond/"
 	cp -R "$ROOT/xymond/etcfiles" "$work/tree/xymond/"
 	cp "$ROOT/build/bb-commands.sh" "$work/tree/build/"
+	cp "$ROOT/build/subst.sh" "$work/tree/build/"
 	"$XYMON_MAKE" -C "$work/tree/xymond" cfgfiles \
 		XYMONHOME=/opt/xymon/server XYMONTOPDIR=/opt/xymon INSTALLETCDIR=/opt/xymon/server/etc \
 		INSTALLWWWDIR=/opt/xymon/server/www CGIDIR=/cgi SECURECGIDIR=/secure-cgi \
