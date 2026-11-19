@@ -130,6 +130,7 @@ typedef struct testitem_t {
 	struct service_t *service;	/* Pointer to service_t record for the service to test */
 
 	char		*testspec;      /* Pointer to the raw testspec in hosts.cfg */
+	char		*tlsservername;	/* TLS servername from a "scheme://name" test, else NULL */
 	int		reverse;	/* "!testname" flag */
 	int		dialup;		/* "?testname" flag */
 	int		alwaystrue;	/* "~testname" flag */

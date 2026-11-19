@@ -16,6 +16,23 @@ released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes for 4.3.32 (not yet released)
 =====================================
 
+xymonnet -- a TLS test sends the tested name as the TLS servername
+-----------------------------------------------------------------
+A TLS test -- imaps, smtps, pop3s, ldaps, ftps, nntps, telnets, amqps -- sends the
+host it tests as the TLS server name (SNI), the way an https test already does,
+so its "sslcert" status describes the host's own certificate rather than
+whatever the endpoint returns by default. Where the host's hosts.cfg name is a
+label rather than the name the service answers to, write "scheme://servername"
+(for example "imaps://mail.example.com") to send and check that name instead; a
+servername written as an IP address sends none, as RFC 6066 requires, which also
+turns the name check off and leaves the expiry alone.
+
+This widens what the "sslcert" column scores: a certificate that does not cover
+the tested name now turns it red, where before only expiry, cipher and key size
+were checked and a wrong-name certificate read green. Where one address serves
+several names behind SNI the certificate reported may change; "scheme://name" or
+an address is how to set, or silence, the name each test checks.
+
 configure -- asks whether to enable SNMP where Net-SNMP is installed
 -------------------------------------------------------------------
 
