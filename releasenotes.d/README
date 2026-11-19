@@ -1,0 +1,32 @@
+releasenotes.d -- RELEASENOTES entries not yet released
+=======================================================
+
+A pull request that needs a RELEASENOTES entry adds one file here, and
+leaves RELEASENOTES alone. Two pull requests then never write to the same
+place, where each adding its entry at the top of RELEASENOTES put every
+one of them in conflict with the next one merged.
+
+A file is one entry, exactly as it will read in RELEASENOTES: a title
+naming the component, then " -- " and what changes; a line of dashes as
+long as the title; an empty line; then prose.
+
+	xymonnet -- what changes for whoever upgrades
+	---------------------------------------------
+
+	Who is concerned, what changes for them, what they have to do.
+
+Name it after what it is about, with the suffix .txt: component first,
+then a few words, as in xymonnet-tls-servername.txt. The name is not
+printed; entries are placed in the order of their names, so those of one
+component stay together.
+
+At release, build/releasenotes.sh X.Y.Z moves every entry into the
+"Changes for X.Y.Z" section of RELEASENOTES and removes its file
+(RELEASING.md, step 1). "build/releasenotes.sh --check" reads the entries
+and changes nothing; tests/buildsystem/releasenotes-entries.sh runs it.
+
+What belongs in RELEASENOTES at all, and what an entry says, is in
+RELEASING.md, "The changelog". The script refuses a title that is not
+"component -- what changes" or is over 80 columns, a line over 80
+columns, more than two paragraphs of prose, and a pull request or an
+issue named by its number.

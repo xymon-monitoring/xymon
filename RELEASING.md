@@ -20,14 +20,15 @@ gates; everything mechanical is automated.
 
 `Changes` is prepared on the **`Changes`** branch, never in a pull request. The
 ritual there: merge `main` in, then one catch-up commit with an entry per pull
-request merged since. `RELEASENOTES` is written on `main`, in the pull request
-that needs an entry; the `Changes` branch only receives it when `main` is
-merged in.
+request merged since. A `RELEASENOTES` entry is written on `main`, in the pull
+request that needs one, as a file of its own in `releasenotes.d/`; the `Changes`
+branch only receives it when `main` is merged in, and moves the entries into
+`RELEASENOTES` at release (step 1 below).
 
 [`CONTRIBUTING.md`](CONTRIBUTING.md) holds the other half of that rule, the part a
 contributor needs: put the wording for a `Changes` entry in the pull request
 description and it is placed here afterwards; write a `RELEASENOTES` entry in the
-pull request itself. How an entry is written is this file's.
+pull request itself, in `releasenotes.d/`. How an entry is written is this file's.
 
 **`Changes` merges into `main` only at release** (step 1 below). Between
 releases main carries exactly what the last release shipped, so a section
@@ -62,15 +63,47 @@ git log.
 **`RELEASENOTES`** — what an administrator needs to know *before upgrading*: a
 default that changed, a setting that stops working, a dependency now required.
 Prose, no pull-request numbers. Most changes do not belong here; if it cannot
-break a working installation, it needs no entry. An entry goes in the open
-`Changes for X.Y.Z (not yet released)` section at the top, written in the pull
-request that makes the change, so its reviewer reads the two together. The
-first pull request after a release that needs an entry opens that section, and
-sets the version in the title box above it.
+break a working installation, it needs no entry. An entry is written in the
+pull request that makes the change, so its reviewer reads the two together, as
+a file of its own: `releasenotes.d/NAME.txt`, holding the entry as it will read
+-- a title, a line of dashes of its length, prose
+([`releasenotes.d/README`](releasenotes.d/README)). No pull request writes in
+`RELEASENOTES` itself: each one adding its entry at the top of the same section
+put every open pull request in conflict with the next one merged.
+
+An entry answers three questions, in this order, and nothing else:
+
+1. **Who is concerned** -- the condition that makes a reader go on: "a client
+   built with `INSTALLETCDIR`", "a `protocols.cfg` that writes `options ssl`".
+   Whoever is not concerned stops there.
+2. **What changes for them** -- what it did, what it does now, in a sentence.
+3. **What they have to do** -- the action, or that there is none.
+
+How the code does it belongs in the commit message; why it was wrong and who
+reported it, in the pull request; what does not change, in half a sentence
+where the reader would fear it, and nowhere otherwise. Something new that
+breaks nothing is a `Changes` entry, not this one.
+
+The title is `component -- what changes`, readable alone, within 80 columns.
+The prose is one paragraph, with a second only where the action takes steps;
+settings and files are named as they are typed. The script refuses what it can
+measure -- a title of another form or over 80 columns, a line over 80 columns,
+more than two paragraphs of prose, a pull request or an issue named by its
+number -- and
+`tests/buildsystem/releasenotes-entries.sh` runs it on the tree's entries, so a
+pull request with an entry the release could not place fails. Whether the three
+questions are answered is the reviewer's to read.
+
+`build/releasenotes.sh X.Y.Z` moves the entries into `RELEASENOTES` at release:
+under the `Changes for X.Y.Z (not yet released)` section when the file has one
+-- 4.3.32's, opened before the entries had files of their own -- above what it
+holds, and otherwise under a new `Changes for X.Y.Z` section opened above the
+last release's, with the title box set to `X.Y.Z`. Entries go in the order of
+their file names, so those of one component stay together.
 
 The next `Changes from X -> Y` heading sits open with a placeholder date. That
-date, and dropping `(not yet released)` from `RELEASENOTES`, happen at release,
-never in a pull request.
+date, and moving the entries into `RELEASENOTES`, happen at release, never in a
+pull request.
 
 ## Step by step
 
@@ -93,26 +126,31 @@ takes `X.Y.Z` only.
 
 On `Changes`: merge `main` in, check every merged pull request has its
 `Changes` entry and every one that needed a `RELEASENOTES` entry wrote it, fill
-the release date into the top `Changes from X -> Y (XX Xxx XXXX)` heading, drop
-`(not yet released)` from the top `RELEASENOTES` heading, then merge into
+the release date into the top `Changes from X -> Y (XX Xxx XXXX)` heading, run
+`build/releasenotes.sh X.Y.Z` -- it moves the entries of `releasenotes.d/` into
+`RELEASENOTES`, removes their files and drops `(not yet released)` from the
+heading of a section that has it -- then merge into
 `main`. Nothing later touches these files — `dorelease.sh` regenerates
 `md5.dat` and the version stamps only — so a release cut without this ships a
 placeholder where the date should be.
 
 The open sections name the version chosen when they were opened. If the
 release gets another number — a 4.4.0 where 4.3.31 was planned — rename it in
-the same pass, in three places: the top `Changes from X -> Y` heading, and in
-`RELEASENOTES` the title box and the `Changes for X.Y.Z` heading.
+the same pass, before `build/releasenotes.sh`, which refuses an open section
+naming another version: the top `Changes from X -> Y` heading, and in
+`RELEASENOTES` the title box and the `Changes for X.Y.Z` heading when the file
+has them open.
 
 ```sh
 git fetch origin
 git switch Changes && git merge --no-edit origin/main
-# Fill the date into the top "Changes from X -> Y (XX Xxx XXXX)" heading, and
-# drop "(not yet released)" from the top RELEASENOTES heading, then:
+# Fill the date into the top "Changes from X -> Y (XX Xxx XXXX)" heading, then
+# move the entries of releasenotes.d/ into RELEASENOTES:
+build/releasenotes.sh X.Y.Z
 git commit -am "Changes: close out X.Y.Z"
 git push origin Changes
 gh pr create --base main --head Changes --title "Changes: X.Y.Z"
-# Review the two-file diff, then merge it to main:
+# Review the diff -- the two files, and the entries removed -- then merge it to main:
 gh pr merge Changes --merge
 ```
 
