@@ -27,14 +27,14 @@ COMMONTOOLS=xymon xymoncmd xymongrep xymoncfg xymondigest
 all: $(PROGRAMS) $(COMMONTOOLS) xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS)
 
 xymonclient.cfg: xymonclient.cfg.DIST
-	cat xymonclient.cfg.DIST | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >xymonclient.cfg
+	../build/subst XYMONHOSTIP='$(XYMONHOSTIP)' XYMONHOME='$(XYMONHOME)' <xymonclient.cfg.DIST >xymonclient.cfg
 	../build/bb-commands.sh >>xymonclient.cfg
 
 clientlaunch.cfg: clientlaunch.cfg.DIST
 ifeq ($(LOCALCLIENT),yes)
-	cat clientlaunch.cfg.DIST | sed -e 's!@CLIENTFLAGS@!--local!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >clientlaunch.cfg
+	../build/subst CLIENTFLAGS='--local' XYMONHOME='$(XYMONHOME)' <clientlaunch.cfg.DIST >clientlaunch.cfg
 else
-	cat clientlaunch.cfg.DIST | sed -e 's!@CLIENTFLAGS@!!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >clientlaunch.cfg
+	../build/subst CLIENTFLAGS='' XYMONHOME='$(XYMONHOME)' <clientlaunch.cfg.DIST >clientlaunch.cfg
 endif
 
 logfetch: logfetch.c $(XYMONCLIENTLIB)

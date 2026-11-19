@@ -125,15 +125,15 @@ rrdcachectl: $(RRDCACHECTLOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(RRDCACHECTLOBJS) $(XYMONCOMMLIBS)
 
 xymon.sh: xymon.sh.DIST
-	cat $< | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONLOGDIR@!$(XYMONLOGDIR)!g' | sed -e 's!@XYMONRUNDIR@!$(XYMONRUNDIR)!g' | sed -e 's!@XYMONUSER@!$(XYMONUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	../build/subst XYMONHOME='$(XYMONHOME)' XYMONLOGDIR='$(XYMONLOGDIR)' XYMONRUNDIR='$(XYMONRUNDIR)' XYMONUSER='$(XYMONUSER)' RUNTIMEDEFS='$(RUNTIMEDEFS)' <$< >$@
 	chmod 755 $@
 
 xymonreports.sh: xymonreports.sh.DIST
-	cat $< | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >$@
+	../build/subst XYMONHOME='$(XYMONHOME)' <$< >$@
 	chmod 755 $@
 
 moverrd.sh: moverrd.sh.DIST
-	cat $< | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONVAR@!$(XYMONVAR)!g' >$@
+	../build/subst XYMONHOME='$(XYMONHOME)' XYMONVAR='$(XYMONVAR)' <$< >$@
 	chmod 755 $@
 
 ifeq ($(XYMONCGIURL),$(SECUREXYMONCGIURL))
@@ -148,14 +148,14 @@ endif
 XYMONWEBALIAS = $(if $(XYMONHOSTURL),Alias $(XYMONHOSTURL) "$(INSTALLWWWDIR)",Alias / "$(INSTALLWWWDIR)/")
 
 cfgfiles:
-	cat $(APACHECONF) | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@INSTALLETCDIR@!$(INSTALLETCDIR)!g' | sed -e 's!@INSTALLWWWDIR@!$(INSTALLWWWDIR)!g' | sed -e 's!@CGIDIR@!$(CGIDIR)!g' | sed -e 's!@SECURECGIDIR@!$(SECURECGIDIR)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' | sed -e 's!@XYMONWEBALIAS@!$(XYMONWEBALIAS)!g' >etcfiles/xymon-apache.conf
-	cat etcfiles/xymonserver.cfg.DIST | sed -e 's!@XYMONTOPDIR@!$(XYMONTOPDIR)!g'| sed -e 's!@XYMONLOGDIR@!$(XYMONLOGDIR)!g'| sed -e 's!@XYMONRUNDIR@!$(XYMONRUNDIR)!g' | sed -e 's!@XYMONHOSTNAME@!$(XYMONHOSTNAME)!g'| sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g'| sed -e 's!@XYMONHOSTOS@!$(XYMONHOSTOS)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONSTATICWWWDIR@!$(INSTALLSTATICWWWDIR)!g' | sed -e 's!@XYMONVAR@!$(XYMONVAR)!g' | sed -e 's!@FPING@!$(FPING)!g' | sed -e 's!@MAILPROGRAM@!$(MAILPROGRAM)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >etcfiles/xymonserver.cfg
+	../build/subst XYMONHOME='$(XYMONHOME)' INSTALLETCDIR='$(INSTALLETCDIR)' INSTALLWWWDIR='$(INSTALLWWWDIR)' CGIDIR='$(CGIDIR)' SECURECGIDIR='$(SECURECGIDIR)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' XYMONWEBALIAS='$(XYMONWEBALIAS)' <$(APACHECONF) >etcfiles/xymon-apache.conf
+	../build/subst XYMONTOPDIR='$(XYMONTOPDIR)' XYMONLOGDIR='$(XYMONLOGDIR)' XYMONRUNDIR='$(XYMONRUNDIR)' XYMONHOSTNAME='$(XYMONHOSTNAME)' XYMONHOSTIP='$(XYMONHOSTIP)' XYMONHOSTOS='$(XYMONHOSTOS)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' XYMONHOME='$(XYMONHOME)' XYMONSTATICWWWDIR='$(INSTALLSTATICWWWDIR)' XYMONVAR='$(XYMONVAR)' FPING='$(FPING)' MAILPROGRAM='$(MAILPROGRAM)' RUNTIMEDEFS='$(RUNTIMEDEFS)' <etcfiles/xymonserver.cfg.DIST >etcfiles/xymonserver.cfg
 	../build/bb-commands.sh >>etcfiles/xymonserver.cfg
-	cat etcfiles/hosts.cfg.DIST | sed -e 's!@XYMONHOSTNAME@!$(XYMONHOSTNAME)!g' | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >etcfiles/hosts.cfg
-	cat etcfiles/alerts.cfg.DIST | sed -e 's!@XYMONHOSTNAME@!$(XYMONHOSTNAME)!g' | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >etcfiles/alerts.cfg
-	for f in analysis combo graphs client-local rrddefinitions; do sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' etcfiles/$$f.cfg.DIST >etcfiles/$$f.cfg; done
-	cat etcfiles/tasks.cfg.DIST | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONTOPDIR@!$(XYMONTOPDIR)!g' >etcfiles/tasks.cfg
-	cat etcfiles/cgioptions.cfg.DIST | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' >etcfiles/cgioptions.cfg
+	../build/subst XYMONHOSTNAME='$(XYMONHOSTNAME)' XYMONHOSTIP='$(XYMONHOSTIP)' XYMONHOME='$(XYMONHOME)' <etcfiles/hosts.cfg.DIST >etcfiles/hosts.cfg
+	../build/subst XYMONHOSTNAME='$(XYMONHOSTNAME)' XYMONHOSTIP='$(XYMONHOSTIP)' XYMONHOME='$(XYMONHOME)' <etcfiles/alerts.cfg.DIST >etcfiles/alerts.cfg
+	for f in analysis combo graphs client-local rrddefinitions; do ../build/subst XYMONHOME='$(XYMONHOME)' <etcfiles/$$f.cfg.DIST >etcfiles/$$f.cfg; done
+	../build/subst XYMONHOME='$(XYMONHOME)' XYMONTOPDIR='$(XYMONTOPDIR)' <etcfiles/tasks.cfg.DIST >etcfiles/tasks.cfg
+	../build/subst XYMONHOME='$(XYMONHOME)' XYMONHOSTURL='$(XYMONHOSTURL)' <etcfiles/cgioptions.cfg.DIST >etcfiles/cgioptions.cfg
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

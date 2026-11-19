@@ -81,7 +81,7 @@ xymon-snmpcollect.o: xymon-snmpcollect.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.sh: %.sh.DIST
-	cat $< | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	../build/subst XYMONHOME='$(XYMONHOME)' RUNTIMEDEFS='$(RUNTIMEDEFS)' <$< >$@
 	chmod 755 $@
 
 clean:

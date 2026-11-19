@@ -11,18 +11,10 @@ INSTALLSTATICWWWDIR ?= $(INSTALLWWWDIR)
 all: xymon-tips.html xymon-apacheconf.txt
 
 xymon-tips.html: xymon-tips.html.DIST
-	cat $< | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' >$@
+	../build/subst XYMONHOSTURL='$(XYMONHOSTURL)' <$< >$@
 
 xymon-apacheconf.txt: xymon-apacheconf.txt.DIST
-	cat $< \
-	  | sed -e 's!@INSTALLWWWDIR@!$(INSTALLWWWDIR)!g' \
-	  | sed -e 's!@CGIDIR@!$(CGIDIR)!g' \
-	  | sed -e 's!@SECURECGIDIR@!$(SECURECGIDIR)!g' \
-	  | sed -e 's!@INSTALLETCDIR@!$(INSTALLETCDIR)!g' \
-	  | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' \
-	  | sed -e 's!@XYMONCGIURL@!$(XYMONCGIURL)!g' \
-	  | sed -e 's!@SECUREXYMONCGIURL@!$(SECUREXYMONCGIURL)!g' \
-	  | sed -e 's!@XYMONWEBALIAS@!$(XYMONWEBALIAS)!g' >$@
+	../build/subst INSTALLWWWDIR='$(INSTALLWWWDIR)' CGIDIR='$(CGIDIR)' SECURECGIDIR='$(SECURECGIDIR)' INSTALLETCDIR='$(INSTALLETCDIR)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' XYMONWEBALIAS='$(XYMONWEBALIAS)' <$< >$@
 
 clean:
 	rm -f xymon-tips.html xymon-apacheconf.txt *~

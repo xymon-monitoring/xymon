@@ -1,4 +1,4 @@
-TOOLS = merge-lines merge-sects setup-newfiles
+TOOLS = merge-lines merge-sects setup-newfiles subst
 
 all: $(TOOLS)
 
@@ -10,6 +10,9 @@ merge-sects: merge-sects.c
 
 setup-newfiles: setup-newfiles.c
 	$(CC) $(LDFLAGS) -o $@ $(CFLAGS) $< ../lib/libxymonclient.a
+
+subst: subst.c
+	$(CC) $(LDFLAGS) -o $@ $(CFLAGS) $<
 
 clean:
 	rm -f $(TOOLS) testfile *.o *~
