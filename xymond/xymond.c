@@ -2897,19 +2897,27 @@ char *acklist_string(xymond_log_t *log, int level)
 {
 	static strbuffer_t *res = NULL;
 	ackinfo_t *awalk;
-	char tmpstr[512];
+	char numbers[64];
 
 	if (log->acklist == NULL) return NULL;
 
 	if (res) clearstrbuffer(res); else res = newstrbuffer(0);
 
+	/*
+	 * Each entry goes into the growing buffer as it is, its newline last.
+	 * Formatted into a 512-byte buffer first, a longer one was cut and lost
+	 * its newline, and the next entry ran on in the same line: a reader saw
+	 * one acknowledgement where there were two.
+	 */
 	for (awalk = log->acklist; (awalk); awalk = awalk->next) {
 		if ((level != -1) && (awalk->level != level)) continue;
-		snprintf(tmpstr, sizeof(tmpstr), "%d:%d:%d:%s:%s\n", 
-			 (int)awalk->received, (int)awalk->validuntil, 
-			 awalk->level, awalk->ackedby, awalk->msg);
-		tmpstr[sizeof(tmpstr)-1] = '\0';
-		addtobuffer(res, tmpstr);
+		snprintf(numbers, sizeof(numbers), "%d:%d:%d:",
+			 (int)awalk->received, (int)awalk->validuntil, awalk->level);
+		addtobuffer(res, numbers);
+		addtobuffer(res, awalk->ackedby);
+		addtobuffer(res, ":");
+		addtobuffer(res, awalk->msg);
+		addtobuffer(res, "\n");
 	}
 
 	return STRBUF(res);
