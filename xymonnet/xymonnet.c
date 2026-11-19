@@ -668,31 +668,38 @@ void load_tests(void)
 				else if (argnmatch(testspec, "dig=")) {
 					s = dnstest;
 				}
-				else if (argnmatch(testspec, "imaps://")) {
+				else if (strstr(testspec, "://")) {
 					/*
-					 * imaps written as a URL -- imaps://SERVERNAME[:port]. The
-					 * host part is the TLS servername, and the name the peer
+					 * A TLS service written as a URL -- scheme://SERVERNAME[:port].
+					 * The host part is the TLS servername, and the name the peer
 					 * certificate is checked against, for a host whose hosts.cfg
-					 * name is a label rather than the name its service answers
-					 * to. The connection still goes to the host's own address,
-					 * as bare imaps does.
+					 * name is a label rather than the name the service answers to.
+					 * The connection still goes to the host's own address, as the
+					 * bare service does. http/https and ldap/ldaps are handled
+					 * above; what reaches here must name a TLS service in
+					 * protocols.cfg -- imaps, smtps, pop3s and the rest.
 					 */
-					char *spec = strdup(testspec + strlen("imaps://"));
-					char *p;
+					char *spec = strdup(testspec);
+					char *sep = strstr(spec, "://");
+					char *name, *p;
 					int specialport = 0;
 					xtreePos_t handle;
 
-					p = strchr(spec, '/'); if (p) *p = '\0';	/* drop any path */
-					p = strrchr(spec, ':');
+					*sep = '\0';				/* spec is now the scheme */
+					name = sep + 3;
+					p = strchr(name, '/'); if (p) *p = '\0';	/* drop any path */
+					p = strrchr(name, ':');
 					if (p) { specialport = atoi(p+1); *p = '\0'; }	/* a port */
 
-					handle = xtreeFind(svctree, "imaps");
-					s = ((handle == xtreeEnd(svctree)) ? NULL : (service_t *)xtreeData(svctree, handle));
-					if (!s)
-						errprintf("Host %s: an imaps:// test needs the imaps service in protocols.cfg\n",
-							  xmh_item(hwalk, XMH_HOSTNAME));
+					if (!svc_uses_tls(find_tcp_service(spec))) {
+						errprintf("Host %s: '%s://' is not a TLS service in protocols.cfg\n",
+							  xmh_item(hwalk, XMH_HOSTNAME), spec);
+						s = NULL;
+					}
 					else {
-						if (specialport) {
+						handle = xtreeFind(svctree, spec);
+						s = ((handle == xtreeEnd(svctree)) ? NULL : (service_t *)xtreeData(svctree, handle));
+						if (s && specialport) {
 							SBUF_DEFINE(specialname);
 
 							SBUF_MALLOC(specialname, strlen(s->testname)+12);
@@ -700,8 +707,10 @@ void load_tests(void)
 							s = add_service(specialname, specialport, strlen(s->testname), TOOL_CONTEST);
 							xfree(specialname);
 						}
-						tlsname = (*spec ? strdup(spec) : NULL);
-						h->dodns = 1;
+						if (s) {
+							tlsname = (*name ? strdup(name) : NULL);
+							h->dodns = 1;
+						}
 					}
 					xfree(spec);
 				}
@@ -2597,18 +2606,19 @@ int main(int argc, char *argv[])
 									   NULL, t->silenttest, NULL,
 									   NULL, NULL, NULL);
 					/*
-					 * imaps sends the tested name as the TLS servername, the
+					 * A TLS service sends the tested name as the servername, the
 					 * way an https test does, so its "sslcert" check describes
 					 * the host's own certificate and not whatever the endpoint
-					 * serves by default. The name is the one an "imaps://name"
+					 * serves by default. The name is the one a "scheme://name"
 					 * test gives, or the tested hostname otherwise; never an IP
-					 * literal. imaps upgrades with "start tls", so this is not
-					 * gated on "options ssl". The first TLS service to do so.
+					 * literal. A test does TLS at connect ("options ssl") or via a
+					 * "start tls" step, so the gate is whether it does TLS at all
+						 * -- svc_uses_tls -- not the service name.
 					 */
 					if (t->privdata) {
 						tcptest_t *tt = (tcptest_t *)t->privdata;
 
-						if (tt->svcinfo && (strcmp(tt->svcinfo->svcname, "imaps") == 0))
+						if (svc_uses_tls(tt->svcinfo))
 							tls_servername(tt, t->tlsservername ? t->tlsservername : t->host->hostname);
 					}
 				}

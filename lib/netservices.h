@@ -60,6 +60,7 @@ extern void dump_tcp_services(void);
 extern int tcp_services_unreadable(void);
 extern int default_tcp_port(char *svcname);
 extern svcinfo_t *find_tcp_service(char *svcname);
+extern int svc_uses_tls(svcinfo_t *svc);
 
 #endif
 
