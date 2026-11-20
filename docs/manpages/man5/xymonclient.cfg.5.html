@@ -194,7 +194,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
       which selects the same set. That flag needs AIX 7.1, which is the client's
       floor. Its inode df (<b>/usr/sysv/bin/df</b>) is given <b>-l</b>, that
       command's spelling of the same thing, since guarding one report and not
-      the other would leave the same mount able to wedge the run.
+      the other would leave the same mount able to wedge the run. On a host
+      without <b>/usr/sysv/bin/df</b> the inode report comes from <b>df -v</b>,
+      given <b>-T local</b> like the disk report.
     <br/>
     With <b>no</b> on AIX, a remote filesystem whose server does not supply all
       the statistics is reported as df writes it &#x2014; blanks rather than
