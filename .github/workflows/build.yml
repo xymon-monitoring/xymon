@@ -23,10 +23,14 @@ jobs:
       startsWith(github.ref, 'refs/heads/release/') ||
       startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    # A regression test that blocks (e.g. a configure probe growing an
-    # interactive prompt) would otherwise hang the job for the runner's
-    # 6-hour ceiling. Build + suite take ~1 minute; 15 is generous.
-    timeout-minutes: 15
+    # A step that blocks (e.g. a configure probe growing an interactive prompt,
+    # or a hung test) would otherwise hold the runner for its 6-hour ceiling.
+    # Each step that can block has a limit of its own, a few times what it
+    # takes; this one only bounds the whole. It is not the steps' sum: the
+    # package install alone took 7 to 14 minutes on some runners, where it
+    # usually takes under a minute, and a job limit of 15 cancelled builds
+    # that were going fine.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -53,6 +57,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install build dependencies
+        timeout-minutes: 30
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -66,6 +71,7 @@ jobs:
             valgrind
 
       - name: Configure (${{ matrix.name }})
+        timeout-minutes: 5
         env:
           CONFTYPE: ${{ matrix.conftype }}
         run: |
@@ -96,6 +102,7 @@ jobs:
           ./configure --${{ matrix.variant }}
 
       - name: Build
+        timeout-minutes: 10
         env:
           # The build's own default (build/Makefile.Linux), plus the C90 rule
           # that declarations come before the statements of their block. gcc
@@ -123,6 +130,8 @@ jobs:
       # tree and leaves out the areas that build has none of. A client leg
       # verifies the client it just built -- which no leg did while gated.
       - name: Run regression tests against the build
+        # About 6 minutes for a server build.
+        timeout-minutes: 20
         env:
           XYMON_VARIANT: ${{ matrix.testvariant }}
           # Dependencies installed and the full variant built: a skip in a
@@ -208,6 +217,7 @@ jobs:
           sudo apt-get install -y mandoc python3
 
       - name: Regenerate and compare
+        id: compare
         run: |
           set -euo pipefail
           before=$(mktemp -d)
@@ -217,6 +227,11 @@ jobs:
             echo "docs/manpages is up to date with the roff sources"
             exit 0
           fi
+          # The roff source of each page that changed: docs/manpages/man5/X.5.html
+          # comes from the one tracked file named X.5 outside docs/.
+          git status --porcelain -- docs/manpages | sed 's|.*/||; s|\.html$||' | sort -u \
+            | while read -r page; do git ls-files "*/$page" ":!docs/*" | head -1; done > /tmp/manpages-sources
+          cp /tmp/manpages-sources "$RUNNER_TEMP/manpages-sources"
           {
             echo "The HTML under docs/manpages/ is out of date with the man-page"
             echo "sources (the .1/.5/.8 roff files). Update it to match the sources"
@@ -226,7 +241,7 @@ jobs:
             git status --porcelain -- docs/manpages | sed 's/^/  /'
             echo
             echo "  1. With mandoc + python3, rebuild each changed page's HTML from its source:"
-            echo "         build/makehtml.sh common/hosts.cfg.5"
+            sed 's/^/         build\/makehtml.sh /' /tmp/manpages-sources
             echo
             echo "  2. Without any toolchain, download the HTML this run already built from"
             echo "     the sources -- this overwrites the stale pages under docs/manpages/:"
@@ -238,12 +253,44 @@ jobs:
             echo "Diff (first 200 lines):"
             sed -n '1,200p' /tmp/manpages.diff
           } >&2
-          echo "::error::docs/manpages is out of date - see the job log and the manpages-regenerated artifact"
           exit 1
 
       - name: Upload the regenerated pages
-        if: failure()
+        id: upload
+        if: failure() && steps.compare.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: manpages-regenerated
           path: docs/manpages/
+
+      # What the contributor sees first is the annotation on the pull request and
+      # the run's summary page, not this job's log: both say how to fix it, with
+      # the artifact's link, so nobody has to find the log or install a toolchain.
+      - name: Say how to fix it
+        if: failure() && steps.compare.outcome == 'failure'
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          url=${ARTIFACT_URL:-$run_url}
+          {
+            echo "## The manual pages' HTML is out of date"
+            echo
+            echo "The HTML under \`docs/manpages/\` no longer matches the man-page sources this pull request changed:"
+            echo
+            sed 's/^/- `/; s/$/`/' "$RUNNER_TEMP/manpages-sources"
+            echo
+            echo "This run has already built the right HTML. To use it, without installing anything:"
+            echo
+            echo "1. Download [manpages-regenerated]($url) (a zip file)."
+            echo "2. Unzip it into \`docs/manpages/\` in your checkout, replacing the files there."
+            echo "3. Commit: \`git add docs/manpages && git commit\`, and push."
+            echo
+            echo "Or, with the GitHub CLI: \`gh run download $GITHUB_RUN_ID -n manpages-regenerated -D docs/manpages\`"
+            echo
+            echo "Or, with mandoc and python3, rebuild each page from its source:"
+            echo
+            sed 's/^/    build\/makehtml.sh /' "$RUNNER_TEMP/manpages-sources"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=docs/manpages is out of date::Download the manpages-regenerated artifact ($url), unzip it into docs/manpages/ and commit. The run's Summary page says more."

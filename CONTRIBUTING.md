@@ -18,9 +18,13 @@ for you. Almost every pull request gets one, so two inserting at the top of the
 same section would conflict for no reason.
 
 **`RELEASENOTES` is the exception: write its entry in the pull request that
-needs one**, in the open `(not yet released)` section at the top of the file.
-The reviewer then reads what an administrator will be told alongside the change
-that makes it true. Most pull requests need none.
+needs one**, as a file of its own in `releasenotes.d/`, not in `RELEASENOTES`
+itself. The reviewer then reads what an administrator will be told alongside the
+change that makes it true, and two pull requests with an entry each do not
+conflict, as they did when each wrote at the top of the same section. The entries
+are moved into `RELEASENOTES` at release. Most pull requests need none.
+[`releasenotes.d/README`](releasenotes.d/README) says how a file is named and
+written.
 
 What belongs in each file, and how entries are written, is in
 [`RELEASING.md`](RELEASING.md).
@@ -344,7 +348,14 @@ when the diff does not explain itself. Write it for both.
   `Depends-on: #N`, one line per pull request; a pull request based on another's
   branch needs none. The `blocked`, `unblocks` and `deps-none-found` labels are
   recomputed from these lines and the base branches every day and set to what
-  they say, so a dependency written any other way is not seen.
+  they say, so a dependency written any other way is not seen. That line is for
+  a *hard* dependency — the pull request cannot merge until the named one is on
+  `main`. An order that is only preferable, where each pull request builds and
+  merges on its own, is not one: it goes in the ordering prose above instead,
+  written into both pull requests and said to be non-blocking. Never write
+  `Depends-on:` reciprocally — two lines pointing at each other are a cycle the
+  labels cannot resolve, and leave both `blocked`; two changes that genuinely
+  cannot merge without each other are one change, not two.
 - Show the evidence, compactly. Suite counts, a measurement, a before-and-after table.
   A table of three rows says what three paragraphs say, and survives being skimmed.
 - Cite what can be checked. A claim about the tree carries `file:line`; a claim about

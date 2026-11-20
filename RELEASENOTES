@@ -9,12 +9,29 @@ changes you should be aware of when upgrading.
 For a full list of changes and enhancements, please see the 
 Changes file.
 
-A pull request that needs an entry writes it in the open "(not yet
-released)" section below. See CONTRIBUTING.md; full rules in RELEASING.md.
+A pull request that needs an entry writes it as a file of its own in
+releasenotes.d/, and the entries are moved here at release; until then
+the entries not yet released are read there, beside those of the open
+"(not yet released)" section below. See CONTRIBUTING.md; full rules in
+RELEASING.md.
 
 
 Changes for 4.3.32 (not yet released)
 =====================================
+
+client -- XYMONCLIENTRUNDIR can be set at build time
+----------------------------------------------------
+
+XYMONCLIENTRUNDIR, where the client writes msgcache's pidfile, was fixed to the
+client's log directory in the shipped xymonclient.cfg: a packager who wanted the
+pidfile under /var/run/xymon had to patch that file. It is now filled in at
+build time from a placeholder, like the server's XYMONRUNDIR: export
+XYMONCLIENTRUNDIR before "configure" and the built xymonclient.cfg names that
+directory. A build that sets nothing is unchanged: the shipped value stays the
+relocatable "$XYMONCLIENTLOGS", the client's log directory, resolved when the
+client starts. The client does not create
+the directory, so a value pointing at /run must exist and be writable by the
+user running the client.
 
 xymonnet -- a TLS test sends the tested name as the TLS servername
 -----------------------------------------------------------------
@@ -211,6 +228,21 @@ the other host's tests, and its client page could show the other host's
 sender. Each name is now matched as written. The "host" cookie the
 configuration report and the acknowledgement page read is a host name too:
 one with other characters is refused as an invalid filter.
+
+web -- a page's reports show that page only
+-------------------------------------------
+
+The acknowledgement page, the configuration report, the status report, the
+enable/disable page and the metrics report take the page the viewer came from
+(the "pagepath" cookie) and its sub-pages. The page name was a pattern there
+too, so a dot matched any character: from the page ops.eu they listed the
+hosts of opsXeu as well. The acknowledgement page also left out the first '^',
+and the enable/disable page used the name with no anchors at all, so those two
+also listed the hosts of devops.eu, and from the page db those of mongodb. The
+name is now matched as written (as xymond matches pages, without regard to
+case). A page pattern given to the enable/disable or metrics report page is
+still a pattern; the enable/disable and metrics report boxes now start
+with the escaped one for the viewer's page.
 
 xymond -- TLS between clients and the daemon
 --------------------------------------------

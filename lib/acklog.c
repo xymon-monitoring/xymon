@@ -123,8 +123,18 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 				*p = '\0';
 			}
 
-			/* Show only the first 30 characters in message */
-			if (strlen(ackmsg) > 30) ackmsg[30] = '\0';
+			/* Show only the first 30 bytes of the message, but do not
+			   split a UTF-8 character: back up over a trailing continuation
+			   byte (10xxxxxx) so the cut never leaves a partial sequence.
+			   A UTF-8 character has at most three continuation bytes, so
+			   the cut never goes below 27: text in another charset, such
+			   as Latin-1, can hold a longer run of bytes in 0x80-0xBF, and
+			   following it back would shorten the cell for nothing. */
+			if (strlen(ackmsg) > 30) {
+				int cut = 30;
+				while ((cut > 27) && (((unsigned char)ackmsg[cut] & 0xc0) == 0x80)) cut--;
+				ackmsg[cut] = '\0';
+			}
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 			#pragma GCC diagnostic push

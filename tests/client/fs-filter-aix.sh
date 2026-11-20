@@ -322,6 +322,79 @@ assert_not_contains "Mounted on" "$inode_sec" \
 assert_contains "reporting data as unavailable" "$(cat "$STDERR_LOG")" \
 	"a failed inode df must also say so on stderr, as the other clients do"
 
+# --- [inode] without the System V df -----------------------------------------
+
+# Some AIX 7.3 hosts have no /usr/sysv/bin/df. The client then asks the native
+# df -v and reshapes it; the report the server reads must be the one the System
+# V df gives for the same filesystems. The absolute path is repointed at one
+# that does not exist, and the df stub answers -v from the table below: /, a
+# device name long enough for df to wrap it, /proc with no inode accounting
+# ("-"), and a remote mount only "-T local" keeps out.
+NOSYSV="$TMP/no-such-dir/df"
+cat > "$STUB/df" <<EOF
+#!/bin/sh
+printf '%s\n' "\$@" >> "$DF_LOG"
+_v=no; _local=no; _prev=
+for _a in "\$@"; do
+	[ "\$_a" = "-v" ] && _v=yes
+	[ "\$_prev" = "-T" ] && [ "\$_a" = "local" ] && _local=yes
+	_prev="\$_a"
+done
+[ "\$_v" = yes ] || exit 0
+cat <<'TABLE' | { [ "\$_local" = yes ] && grep -v '^srv:/export ' || cat; }
+Filesystem    512-blocks      Used      Free %Used    Iused    Ifree %Iused Mounted on
+/dev/hd4         2097152    639984   1457168   31%     1504     6688    19% /
+/dev/fslv_with_a_long_name
+                 2097152   1048576   1048576   50%      200      800    20% /data
+/proc                  -         -         -     -        -        -     -  /proc
+srv:/export      2097152   1048576   1048576   50%      300      700    30% /mnt
+TABLE
+EOF
+chmod +x "$STUB/df"
+
+FSFN="$TMP/aix-df-inode-nosysv.sh"
+fsf_extract "$FSFN" "s!/usr/sysv/bin/df!$NOSYSV!" '\[mount\]'
+
+run_nosysv() {
+	( cd "$TMP" && env "$@" $FSF_SHELL "$FSFN" ) 2> "$STDERR_LOG" \
+		|| fail "extracted [df]+[inode] block without the System V df exited non-zero: $(cat "$STDERR_LOG")"
+}
+
+: > "$DF_LOG"
+out=$(run_nosysv)
+inode_sec=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p' | sed 1d)
+expected=$(printf '%-20s %10s %10s %10s %10s %s\n' \
+	Filesystem itotal iused avail %iused "Mounted on" \
+	/dev/hd4 8192 1504 6688 19% / \
+	/dev/fslv_with_a_long_name 1000 200 800 20% /data)
+assert_equal "$expected" "$inode_sec" \
+	"without the System V df, [inode] must come from df -v in the System V layout, a wrapped device name joined and a filesystem without inode counts dropped"
+assert_match '(^|
+)-v
+-T
+local($|
+)' "$(cat "$DF_LOG")" \
+	"the df -v behind [inode] must be kept off remote mounts with -T local, as the disk report is"
+
+: > "$DF_LOG"
+out=$(run_nosysv XYMONCLIENT_FS_DF_LOCAL_ONLY=no)
+inode_sec=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p' | sed 1d)
+assert_contains "30% /mnt" "$inode_sec" \
+	"DF_LOCAL_ONLY=no must let the df -v behind [inode] report remote filesystems"
+
+# A df -v that dies leaves nothing to reshape, and must get the marker the
+# System V df gets, not a header the reshaping invented.
+cat > "$STUB/df" <<'EOF'
+#!/bin/sh
+for _a in "$@"; do [ "$_a" = "-v" ] && { echo "df: not a recognized flag: v" >&2; exit 2; }; done
+exit 0
+EOF
+chmod +x "$STUB/df"
+out=$(run_nosysv)
+inode_sec=$(printf '%s\n' "$out" | sed -n '/^\[inode\]/,$p' | sed 1d)
+assert_equal "Inode report collection failed: df exited 2 with no output" "$inode_sec" \
+	"a failed df -v must leave the failure marker alone in [inode], with no header"
+
 # --- a df that fails names its status ----------------------------------------
 
 # The contract asserts only that a failed df is loud. What matters here is the

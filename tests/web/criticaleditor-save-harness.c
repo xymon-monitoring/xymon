@@ -12,8 +12,10 @@
  * one the editor calls. Any other open goes through open() and fdopen().
  *
  * With _FILE_OFFSET_BITS=64, glibc's stdio.h renames fopen() to fopen64(),
- * so the editor calls fopen64(): both are defined here. The setting is
- * dropped for this file, so that its own fopen() keeps its name.
+ * so the editor calls fopen64(): there both are defined here. The setting is
+ * dropped for this file, so that its own fopen() keeps its name. fopen64() is
+ * defined on glibc only: 64-bit Solaris renames it the other way, to fopen()
+ * (#pragma redefine_extname), and a second fopen() does not assemble.
  */
 
 #undef _FILE_OFFSET_BITS
@@ -45,8 +47,10 @@ FILE *fopen(const char *path, const char *mode)
 	return refusing_fopen(path, mode);
 }
 
+#ifdef __GLIBC__
 FILE *fopen64(const char *path, const char *mode);
 FILE *fopen64(const char *path, const char *mode)
 {
 	return refusing_fopen(path, mode);
 }
+#endif
