@@ -1,0 +1,10 @@
+xymonnet -- the sslcert subject and issuer are shown in RFC 2253 form
+---------------------------------------------------------------------
+
+The sslcert status shows a certificate's subject and issuer. They were
+written in the non-standard "/C=.../O=..." form, with every byte above
+7-bit ASCII escaped as "\xHH"; they are now the standard RFC 2253 form
+("CN=...,O=...,C=..."), and an accented field is kept as UTF-8.
+
+Anything that reads the subject or issuer out of the sslcert status text
+sees the new form; nothing in Xymon itself parses it.
