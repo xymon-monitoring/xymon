@@ -9,9 +9,9 @@ create_includefiles ()
 
 	umask 022
 
-	if ! [ -d /var/run/xymon ] ; then
-		mkdir /var/run/xymon
-		chown xymon:xymon /var/run/xymon
+	if ! [ -d /run/xymon ] ; then
+		mkdir /run/xymon
+		chown xymon:xymon /run/xymon
 	fi
 
 	set -- $XYMONSERVERS
@@ -21,7 +21,7 @@ create_includefiles ()
 	else
 		echo "XYMSRV=\"0.0.0.0\""
 		echo "XYMSERVERS=\"$XYMONSERVERS\""
-	fi > /var/run/xymon/bbdisp-runtime.cfg
+	fi > /run/xymon/bbdisp-runtime.cfg
 
 	return 0
 }

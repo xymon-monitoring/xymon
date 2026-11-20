@@ -6,9 +6,11 @@
 
 env CC=/nonexistent-xymon-autopkgtest-cc \
     AVAILABILITY=/usr/lib/xymon/server/bin/xymonavailability \
+    CONFREPORT=/usr/lib/xymon/server/bin/confreport.cgi \
     CONTEST=/usr/lib/xymon/server/bin/xymonnetprobe \
     CSVINFO=/usr/lib/xymon/server/bin/csvinfo.cgi \
     DATEPAGE=/usr/lib/xymon/server/bin/datepage.cgi \
+    GHOSTLIST=/usr/lib/xymon/server/bin/ghostlist.cgi \
     HOSTGRAPHS=/usr/lib/xymon/server/bin/hostgraphs.cgi \
     LOADHOSTS=/usr/lib/xymon/server/bin/xymonloadhosts \
     LOCATOR=/usr/lib/xymon/server/bin/xymonlocator \
@@ -18,6 +20,7 @@ env CC=/nonexistent-xymon-autopkgtest-cc \
     RRDCACHECTL=/usr/lib/xymon/server/bin/rrdcachectl \
     SNAPSHOT=/usr/lib/xymon/server/bin/snapshot.cgi \
     STACKIO=/usr/lib/xymon/server/bin/xymonstackio \
+    STATUSREPORT=/usr/lib/xymon/server/bin/statusreport.cgi \
     SVCSTATUS_CGI=/usr/lib/xymon/server/bin/svcstatus.cgi \
     TASKSCFG=/etc/xymon/tasks.cfg \
     TRIMHISTORY=/usr/lib/xymon/server/bin/trimhistory \
@@ -34,10 +37,12 @@ env CC=/nonexistent-xymon-autopkgtest-cc \
     XYMOND_HOSTDATA=/usr/lib/xymon/server/bin/xymond_hostdata \
     XYMOND_LOCATOR=/usr/lib/xymon/server/bin/xymond_locator \
     XYMOND_RRD=/usr/lib/xymon/server/bin/xymond_rrd \
+    XYMONFETCH=/usr/lib/xymon/server/bin/xymonfetch \
     XYMONGEN=/usr/lib/xymon/server/bin/xymongen \
     XYMONGREP=/usr/lib/xymon/client/bin/xymongrep \
     XYMONLAUNCH=/usr/lib/xymon/server/bin/xymonlaunch \
     XYMONNET=/usr/lib/xymon/server/bin/xymonnet \
     XYMONPING=/usr/lib/xymon/server/bin/xymonping \
+    XYMONPROXY=/usr/lib/xymon/server/bin/xymonproxy \
     XYMONSERVER_CFG=/etc/xymon/xymonserver.cfg \
     ./tests/testsuite

@@ -18,7 +18,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON="/usr/lib/xymon/client/bin/xymonlaunch"
 NAME=xymon-client
 DESC="Xymon Client"
-PIDFILE="/var/run/xymon/clientlaunch.pid"
+PIDFILE="/run/xymon/clientlaunch.pid"
 XYMONCLIENTHOME="/usr/lib/xymon/client"
 
 test -x $DAEMON || exit 0
@@ -90,10 +90,10 @@ case "$1" in
   reload|force-reload)
 	[ -x /usr/lib/xymon/server/bin/xymond ] && exit 0
 	create_includefiles
-	kill -HUP `cat /var/run/xymon/clientlaunch.pid`
+	kill -HUP `cat /run/xymon/clientlaunch.pid`
 	;;
   rotate)
-	for PIDFILE in /var/run/xymon/*.pid
+	for PIDFILE in /run/xymon/*.pid
 	do
 		test -e $PIDFILE && kill -HUP `cat $PIDFILE`
 	done
@@ -106,4 +106,3 @@ case "$1" in
 esac
 
 exit 0
-
