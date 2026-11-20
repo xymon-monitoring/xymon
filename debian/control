@@ -9,6 +9,7 @@ Build-Depends:
  libpcre2-dev,
  libpng-dev,
  librrd-dev,
+ libsnmp-dev,
  libssl-dev,
  libtirpc-dev,
  mandoc,

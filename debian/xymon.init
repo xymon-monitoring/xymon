@@ -17,7 +17,7 @@
 #                    (Also monitors the local host.)
 ### END INIT INFO
 
-PIDFILE=/var/run/xymon/xymonlaunch.pid
+PIDFILE=/run/xymon/xymonlaunch.pid
 DAEMON=/usr/lib/xymon/server/bin/xymonlaunch
 NAME="xymond"
 DESC="Xymon Server"
@@ -95,7 +95,7 @@ case "$1" in
 	;;
 
    "rotate")
-	for PIDFILE in /var/run/xymon/*.pid
+	for PIDFILE in /run/xymon/*.pid
 	do
 		test -e $PIDFILE && kill -HUP `cat $PIDFILE`
 	done
@@ -107,4 +107,3 @@ case "$1" in
 esac
 
 exit 0
-

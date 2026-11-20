@@ -27,11 +27,6 @@ Comment:
  https://github.com/xymon-monitoring/xymon/issues/525 shows the
  copyright holders based on the git authors.
 
-Files: client/xymonclient-sco_sv.sh
-Copyright: 2005-2011 Henrik Størner
-           2006 Charles Goyard <cg@fsck.fr>
-License: GPL-2
-
 Files: client/runclient.sh
 Copyright: 2005-2011 Henrik Storner
            2006 Scott Smith ("status" section)
@@ -160,6 +155,25 @@ License: public-domain
 Files: lib/sha2.*
 Copyright: 2005, 2007 Olivier Gay <olivier.gay@a3.epfl.ch>
 License: BSD-3-Clause
+
+Files: lib/crondate.c
+Copyright: 2010-2011 Henrik Storner <henrik@storner.dk>
+           2010 Milan Kocian <milon@wq.cz>
+           1988,1990,1993,1994 by Paul Vixie
+           1989 The Regents of the University of California.
+License: GPL-2 and Vixie-cron and BSD-3-clause
+
+License: Vixie-cron
+ All rights reserved
+ .
+ Distribute freely, except: don't remove my name from the source or
+ documentation (don't take credit for my work), mark your changes (don't
+ get me blamed for your possible bugs), don't alter or remove this
+ notice. May be sold if buildable source is provided to buyer. No
+ warrantee of any kind, express or implied, is included with this
+ software; use at your own risk, responsibility for damages (if any) to
+ anyone resulting from the use of this software rests entirely with the
+ user.
 
 License: GPL-2 with OpenSSL exception
  This program is released under the GNU General Public License (GPL),

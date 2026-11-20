@@ -22,7 +22,7 @@ set -e
 
 case "$1" in
     purge|disappear)
-        rm -rf /var/lib/xymon /var/log/xymon /var/run/xymon /etc/xymon \
+        rm -rf /var/lib/xymon /var/log/xymon /run/xymon /etc/xymon \
             /etc/default/xymon-client
         if test -x /usr/sbin/deluser ; then
             deluser xymon || true
