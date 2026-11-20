@@ -33,7 +33,7 @@ static int xmlutf8 = 1;			/* ... and whether it is UTF-8 */
  * The feed is declared in the charset the web pages declare, the charset=
  * of HTMLCONTENTTYPE, UTF-8 when it names none: the status text is the same
  * text the pages show. A name with anything but letters, digits, '.', '_'
- * or '-' in it is not used.
+ * or '-' in it, or not starting with a letter, is not used.
  */
 static void set_xmlcharset(void)
 {
@@ -43,14 +43,19 @@ static void set_xmlcharset(void)
 	size_t len;
 
 	if (!ct) return;
-	/* strcasestr() is not everywhere */
-	for (p = ct; (*p && (strncasecmp(p, "charset=", 8) != 0)); p++)
-		;
+	/* strcasestr() is not everywhere. charset= must start a parameter:
+	 * after ';' or whitespace, not inside another name like xcharset= */
+	for (p = ct; *p; p++) {
+		if ((strncasecmp(p, "charset=", 8) == 0) && (p > ct) &&
+		    ((p[-1] == ';') || (p[-1] == ' ') || (p[-1] == '\t'))) break;
+	}
 	if (!*p) return;
 	p += 8;
 	if ((*p == '"') || (*p == '\'')) quote = *(p++);
 	len = strspn(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-");
 	if ((len == 0) || (len > 40)) return;
+	/* XML's EncName starts with a letter */
+	if (!(((*p >= 'A') && (*p <= 'Z')) || ((*p >= 'a') && (*p <= 'z')))) return;
 	/* The name must end there: at its closing quote, or the end of the value */
 	if (quote) { if (p[len] != quote) return; }
 	else if (p[len] && (p[len] != ';') && (p[len] != ' ') && (p[len] != '\t')) return;
@@ -132,18 +137,21 @@ static int parse_query(void)
 }
 
 /*
- * Print text from a status, an acknowledgement or a disable as XML character
- * data: inside CDATA, with each "]]>"
- * split across two sections so the text cannot end the section, and with the
- * control characters XML does not allow (all below 0x20 but tab, newline and
- * carriage return) left out, so one stray byte cannot make the document
- * unreadable.
+ * Print text as XML character data. With cdata, inside CDATA, with each "]]>"
+ * split across two sections so the text cannot end the section; without, with
+ * & < and > as entities. Either way, the control characters XML does not allow
+ * (all below 0x20 but tab, newline and carriage return) are left out, and a
+ * UTF-8 feed gets only well-formed UTF-8, so one stray byte cannot make the
+ * document unreadable.
  */
-static void print_cdata(FILE *output, char *s)
+static void print_xml(FILE *output, char *s, int cdata)
 {
-	fprintf(output, "<![CDATA[");
+	if (cdata) fprintf(output, "<![CDATA[");
 	for (; (*s); s++) {
-		if ((strncmp(s, "]]>", 3) == 0)) {
+		if (!cdata && (*s == '&')) fputs("&amp;", output);
+		else if (!cdata && (*s == '<')) fputs("&lt;", output);
+		else if (!cdata && (*s == '>')) fputs("&gt;", output);
+		else if (cdata && (strncmp(s, "]]>", 3) == 0)) {
 			fprintf(output, "]]]]><![CDATA[>");
 			s += 2;
 		}
@@ -172,7 +180,7 @@ static void print_cdata(FILE *output, char *s)
 			fputc(*s, output);
 		}
 	}
-	fprintf(output, "]]>");
+	if (cdata) fprintf(output, "]]>");
 }
 
 char *extractline(char *ptn, char **src)
@@ -335,8 +343,13 @@ int main(int argc, char **argv)
 			if (txt) {
 				/* We have all data */
 				fprintf(output, "<ServerStatus>\n");
-				fprintf(output, "  <Servername>%s</Servername>\n", hostname);
-				fprintf(output, "  <Type>%s</Type>\n", testname);
+				/* Under --ghosts=allow, the sending machine names the host */
+				fprintf(output, "  <Servername>");
+				print_xml(output, hostname, 0);
+				fprintf(output, "</Servername>\n");
+				fprintf(output, "  <Type>");
+				print_xml(output, testname, 0);
+				fprintf(output, "</Type>\n");
 				fprintf(output, "  <Status>%s</Status>\n", color);
 				fprintf(output, "  <LastChange>%s</LastChange>\n", lastchange);
 				fprintf(output, "  <LogTime>%s</LogTime>\n", logtime);
@@ -349,11 +362,11 @@ int main(int argc, char **argv)
 
 					fprintf(output, "  <AckTime>%s</AckTime>\n", acktime);
 					fprintf(output, "  <AckText>");
-					print_cdata(output, ackmsg);
+					print_xml(output, ackmsg, 1);
 					fprintf(output, "</AckText>\n");
 					if (ackedby) {
 						fprintf(output, "  <AckedBy>");
-						print_cdata(output, ackedby);
+						print_xml(output, ackedby, 1);
 						fprintf(output, "</AckedBy>\n");
 					}
 				}
@@ -366,25 +379,27 @@ int main(int argc, char **argv)
 
 					fprintf(output, "  <DisableTime>%s</DisableTime>\n", distime);
 					fprintf(output, "  <DisableText>");
-					print_cdata(output, dismsg);
+					print_xml(output, dismsg, 1);
 					fprintf(output, "</DisableText>\n");
 					if (disabledby) {
 						fprintf(output, "  <DisabledBy>");
-						print_cdata(output, disabledby);
+						print_xml(output, disabledby, 1);
 						fprintf(output, "</DisabledBy>\n");
 					}
 				}
 				/* The first line is written by the monitored host: never raw */
 				fprintf(output, "  <MessageSummary>");
-				print_cdata(output, txt);
+				print_xml(output, txt, 1);
 				fprintf(output, "</MessageSummary>\n");
 				if (msg) {
 					nldecode(msg);
 					fprintf(output, "  <Message>");
-					print_cdata(output, msg);
+					print_xml(output, msg, 1);
 					fprintf(output, "</Message>\n");
 				}
-				fprintf(output, "  <DetailURL><![CDATA[%s]]></DetailURL>\n", hostsvcurl(hostname, testname, 0));
+				fprintf(output, "  <DetailURL>");
+				print_xml(output, hostsvcurl(hostname, testname, 0), 1);
+				fprintf(output, "</DetailURL>\n");
 				fprintf(output, "</ServerStatus>\n");
 			}
 		}

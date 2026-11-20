@@ -127,18 +127,6 @@ first line, or an acknowledgement or disable text, can no longer add XML
 elements of its own: a "]]>" in them is now split out of the CDATA, as in the
 new element.
 
-appfeed.cgi -- declared in the web pages' charset
--------------------------------------------------
-
-appfeed.cgi declared its XML as ISO-8859-1, while the web pages declare
-UTF-8 by default. An app reading the feed showed UTF-8 status text garbled
-("donnÃ©es" for "données") where the page showed it right. The feed now
-declares the charset of HTMLCONTENTTYPE, UTF-8 when it names none, in the
-HTTP header and in the XML declaration. Declared UTF-8, a byte a host sent
-that is not part of well-formed UTF-8 is shown as U+FFFD, so the feed stays
-well-formed XML. A site that sets HTMLCONTENTTYPE to another charset gets
-that charset in the feed too, with the text as before.
-
 xymonnet -- the memory it leaked on every run is released
 ---------------------------------------------------------
 

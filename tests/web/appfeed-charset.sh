@@ -16,7 +16,11 @@
 #     stays well-formed;
 #   - with charset=ISO-8859-1, the answer is declared ISO-8859-1 and every
 #     byte comes through as sent, as before this change;
-#   - a charset name holding anything but a name's characters is not used.
+#   - a charset name holding anything but a name's characters, or not
+#     starting with a letter, is not used, nor a charset= ending another
+#     parameter's name;
+#   - a host name holding < > & and a Latin-1 byte is escaped, so the answer
+#     stays well-formed.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -47,6 +51,7 @@ mkdir -p "$work/etc" "$work/home/etc" "$work/home/tmp"
 {
 	printf '127.0.0.1 web01-example.com # \n'
 	printf '127.0.0.1 web01.example.com # \n'
+	printf '127.0.0.1 g<h>&caf\351.example.com # \n'
 } >"$work/etc/hosts.cfg"
 require_cfg XYMONSERVER_CFG xymond/etcfiles/xymonserver.cfg
 sed -e 's|^XYMONHOME=.*|XYMONHOME="'"$work"'/home"|' \
@@ -84,12 +89,17 @@ x() { XYMON_TIMEOUT=5 "$XYMONCLIENT" "127.0.0.1:$PORT" "$1"; }
 # point past U+10FFFF (F4 90 80 80), and a two-byte sequence cut off at the
 # end of the text
 x "$(printf 'status web01,example,com.conn red donn\303\251es ok')" >/dev/null
+x "$(printf 'status g<h>&caf\351,example,com.conn red ghost')" >/dev/null
 x "$(printf 'status web01-example,com.conn red caf\351; ff\357\277\277; ol\300\257; o3\340\200\257; su\355\240\200; hi\364\220\200\200; cut\303')" >/dev/null
 for _ in $(seq 1 50); do
 	got=$(x 'xymondboard color=red fields=hostname')
-	case $got in *web01-example*) break ;; esac
+	case $got in *web01-example*g*) break ;; *g*web01-example*) break ;; esac
 	sleep 0.1
 done
+case $got in
+	*web01-example*g*|*g*web01-example*) ;;
+	*) fail "xymond did not take the test statuses: '$got'" ;;
+esac
 
 feed() {	# HTMLCONTENTTYPE -- the plain feed, in OUT
 	printf 'XYMONDPORT="%s"\nXYMSRV="127.0.0.1"\nXYMONSERVERCGIURL="/xymon-cgi"\nHTMLCONTENTTYPE="%s"\n' \
@@ -116,6 +126,11 @@ for ct in "text/html" "text/html; charset=UTF-8" "text/html; charset=utf-8"; do
 	assert_contains $'donn\303\251es ok' "$OUT" "'$ct': well-formed UTF-8 did not come through as sent"
 	assert_contains "caf$FFFD; ff$FFFD; ol$FFFD$FFFD; o3$FFFD$FFFD$FFFD; su$FFFD$FFFD$FFFD; hi$FFFD$FFFD$FFFD$FFFD; cut$FFFD" "$OUT" \
 		"'$ct': a byte that is not well-formed UTF-8 was not shown as U+FFFD"
+	assert_contains "<Servername>g&lt;h&gt;&amp;caf$FFFD.example.com</Servername>" "$OUT" \
+		"'$ct': a host name holding < > & and a Latin-1 byte was not escaped"
+	case $OUT in
+		*"<Servername>g<h>"*) fail "'$ct': a host name put markup in the XML" ;;
+	esac
 	case $OUT in
 		*$'caf\351'*|*$'\357\277\277'*|*$'\300\257'*|*$'\340\200'*|*$'\355\240'*|*$'\364\220'*) fail "'$ct': a byte that is not well-formed UTF-8 reached the XML" ;;
 	esac
@@ -126,6 +141,13 @@ assert_contains "Content-type: text/xml; charset=ISO-8859-1" "$OUT" "ISO-8859-1:
 assert_contains "<?xml version='1.0' encoding='ISO-8859-1'?>" "$OUT" "ISO-8859-1: the XML is not declared so"
 assert_contains $'caf\351; ff\357\277\277; ol\300\257; o3\340\200\257; su\355\240\200; hi\364\220\200\200; cut\303' "$OUT" "ISO-8859-1: the bytes were not kept as sent"
 
+assert_contains $'<Servername>g&lt;h&gt;&amp;caf\351.example.com</Servername>' "$OUT" \
+	"ISO-8859-1: a host name was not escaped, or its bytes not kept"
+
+feed "text/html; xcharset=ISO-8859-1"
+assert_contains "<?xml version='1.0' encoding='UTF-8'?>" "$OUT" "the end of another parameter's name was taken for charset="
+feed "text/html; charset=_x"
+assert_contains "<?xml version='1.0' encoding='UTF-8'?>" "$OUT" "a charset name not starting with a letter was used"
 feed "text/html; charset=\"x'><y"
 assert_contains "<?xml version='1.0' encoding='UTF-8'?>" "$OUT" "a charset that is not a name was used"
 feed "text/html; charset=\"ISO-8859-1'"
