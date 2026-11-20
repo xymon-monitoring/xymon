@@ -26,6 +26,75 @@ static char *fieldlist = "fields=hostname,testname,color,lastchange,logtime,cook
 static char *colorlist = "color=red,yellow,purple";
 static char *queryhost = NULL;	/* host= and test=: one status, with its full text */
 static char *querytest = NULL;
+static char *xmlcharset = "UTF-8";	/* the pages' charset, from HTMLCONTENTTYPE */
+static int xmlutf8 = 1;			/* ... and whether it is UTF-8 */
+
+/*
+ * The feed is declared in the charset the web pages declare, the charset=
+ * of HTMLCONTENTTYPE, UTF-8 when it names none: the status text is the same
+ * text the pages show. A name with anything but letters, digits, '.', '_'
+ * or '-' in it is not used.
+ */
+static void set_xmlcharset(void)
+{
+	char *ct = xgetenv("HTMLCONTENTTYPE");
+	char *p, *name;
+	char quote = '\0';
+	size_t len;
+
+	if (!ct) return;
+	/* strcasestr() is not everywhere */
+	for (p = ct; (*p && (strncasecmp(p, "charset=", 8) != 0)); p++)
+		;
+	if (!*p) return;
+	p += 8;
+	if ((*p == '"') || (*p == '\'')) quote = *(p++);
+	len = strspn(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-");
+	if ((len == 0) || (len > 40)) return;
+	/* The name must end there: at its closing quote, or the end of the value */
+	if (quote) { if (p[len] != quote) return; }
+	else if (p[len] && (p[len] != ';') && (p[len] != ' ') && (p[len] != '\t')) return;
+
+	name = (char *)malloc(len + 1);
+	memcpy(name, p, len); name[len] = '\0';
+	xmlcharset = name;
+	xmlutf8 = ((strcasecmp(name, "UTF-8") == 0) || (strcasecmp(name, "UTF8") == 0));
+}
+
+/*
+ * The length of the well-formed UTF-8 character at s, or 0 when the byte at
+ * s does not start one: overlong forms, surrogates and code points past
+ * U+10FFFF are not well-formed. U+FFFE and U+FFFF are well-formed but not
+ * allowed in XML 1.0, and give -3.
+ */
+static int utf8_char(const unsigned char *s)
+{
+	unsigned char c = s[0];
+	int len, i;
+	unsigned char lo = 0x80, hi = 0xBF;
+
+	if (c < 0x80) return 1;
+	else if ((c >= 0xC2) && (c <= 0xDF)) len = 2;
+	else if ((c >= 0xE0) && (c <= 0xEF)) {
+		len = 3;
+		if (c == 0xE0) lo = 0xA0;	/* overlong */
+		if (c == 0xED) hi = 0x9F;	/* surrogates */
+	}
+	else if ((c >= 0xF0) && (c <= 0xF4)) {
+		len = 4;
+		if (c == 0xF0) lo = 0x90;	/* overlong */
+		if (c == 0xF4) hi = 0x8F;	/* past U+10FFFF */
+	}
+	else return 0;
+
+	if ((s[1] < lo) || (s[1] > hi)) return 0;
+	for (i = 2; (i < len); i++) {
+		if ((s[i] < 0x80) || (s[i] > 0xBF)) return 0;
+	}
+	if ((c == 0xEF) && (s[1] == 0xBF) && ((s[2] == 0xBE) || (s[2] == 0xBF))) return -3;	/* U+FFFE, U+FFFF */
+
+	return len;
+}
 
 static void errormsg(char *msg)
 {
@@ -80,6 +149,24 @@ static void print_cdata(FILE *output, char *s)
 		}
 		else if (((unsigned char)*s < 0x20) && (*s != '\t') && (*s != '\n') && (*s != '\r')) {
 			continue;
+		}
+		else if (xmlutf8 && ((unsigned char)*s >= 0x80)) {
+			/*
+			 * Declared UTF-8, the text must be: a host can send a byte
+			 * from another charset, and one such byte would make the
+			 * whole answer not well-formed. Each such byte is shown as
+			 * U+FFFD, and so is a character XML does not allow.
+			 */
+			int len = utf8_char((unsigned char *)s);
+
+			if (len > 0) {
+				fwrite(s, 1, len, output);
+				s += len - 1;
+			}
+			else {
+				fputs("\xEF\xBF\xBD", output);
+				if (len < 0) s += -len - 1;
+			}
 		}
 		else {
 			fputc(*s, output);
@@ -201,8 +288,9 @@ int main(int argc, char **argv)
 	/* Load the critical config */
 	if (criticalconfig) load_critconfig(criticalconfig);
 
-	fprintf(output, "Content-type: text/xml\n\n");
-	fprintf(output, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+	set_xmlcharset();
+	fprintf(output, "Content-type: text/xml; charset=%s\n\n", xmlcharset);
+	fprintf(output, "<?xml version='1.0' encoding='%s'?>\n", xmlcharset);
 	fprintf(output, "<StatusBoard>\n");
 
 	/* Step through the status board, one line at a time */
