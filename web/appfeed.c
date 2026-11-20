@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 	if (criticalconfig) load_critconfig(criticalconfig);
 
 	fprintf(output, "Content-type: text/xml\n\n");
-	fprintf(output, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+	fprintf(output, "<?xml version='1.0' encoding='%s'?>\n", htmlcontentcharset());
 	fprintf(output, "<StatusBoard>\n");
 
 	/* Step through the status board, one line at a time */

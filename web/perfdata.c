@@ -392,7 +392,7 @@ int main(int argc, char **argv)
 
 	switch (outform) {
 	  case O_XML:
-		printf("<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+		printf("<?xml version='1.0' encoding='%s'?>\n", htmlcontentcharset());
 		printf("<datasets>\n");
 		break;
 	  default:

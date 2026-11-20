@@ -4744,8 +4744,8 @@ void do_message(conn_t *msg, char *origin)
 
 			xfree(msg->buf);
 
-			addtobuffer_many(response, 
-				"<?xml version='1.0' encoding='ISO-8859-1'?>\n",
+			addtobuffer_many(response,
+				"<?xml version='1.0' encoding='", htmlcontentcharset(), "'?>\n",
 				"<ServerStatus>\n",
 				"  <ServerName>", 	h->hostname, 				"</ServerName>\n",
 				"  <Type>", 		log->test->name, 			"</Type>\n",
@@ -4940,7 +4940,7 @@ void do_message(conn_t *msg, char *origin)
 
 		response = newstrbuffer(lastboardsize);
 
-		addtobuffer(response, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+		addtobuffer_many(response, "<?xml version='1.0' encoding='", htmlcontentcharset(), "'?>\n", NULL);
 		addtobuffer(response, "<StatusBoard>\n");
 
 		for (hosthandle = xtreeFirst(rbhosts); (hosthandle != xtreeEnd(rbhosts)); hosthandle = xtreeNext(rbhosts, hosthandle)) {
