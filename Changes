@@ -5,6 +5,12 @@ pull request. See CONTRIBUTING.md; full rules in RELEASING.md.
 Changes from 4.3.31 -> 4.3.32 (XX Xxx XXXX)
 ===========================================
 
+* Set XYMONCLIENTRUNDIR at build time, like the server's run dir (#905) (Thanks, Roland Rosenfeld)
+* Take [inode] from df -v on AIX hosts without /usr/sysv/bin/df (#930) (Thanks, Stef Coene)
+* Give xgetenv a MACHINE buffer where the build has no setenv() (#935) (Thanks, David Dee)
+* Cut an acknowledgement summary on a UTF-8 character boundary (#929) (#936) (Thanks, David Dee)
+* Keep a service banner's bytes above 0x7f, stripping only control bytes (#928) (Thanks, David Dee)
+* Match the pagepath cookie's page name literally in page filters (#818) (Thanks, David Dee)
 * Send the tested name as SNI on every TLS service xymonnet tests (#913) (Thanks, Mark Felder)
 * Give every acklist entry its own line, whatever its length (#921) (Thanks, David Dee)
 * Expand xymoncmd's arguments after reading the environment file (#920) (Thanks, David Dee)
