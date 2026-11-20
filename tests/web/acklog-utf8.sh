@@ -23,6 +23,11 @@
 # whose lead byte is at 27.
 
 set -euo pipefail
+# The assertions grep for byte sequences that are not valid UTF-8 (a lone lead
+# byte, a run of continuation bytes). Under a UTF-8 locale, BSD grep -- macOS
+# and the BSDs -- aborts the match with "grep: illegal byte sequence" instead
+# of searching, so the byte checks must run byte-oriented.
+export LC_ALL=C
 # shellcheck source=tests/lib/assert.sh
 . "$(dirname "$0")/../lib/assert.sh"
 # shellcheck source=tests/lib/build-harness.sh
