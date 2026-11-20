@@ -13,6 +13,12 @@
 # "zzz". Byte 30 (0-indexed) is the A9 continuation byte: the old cut kept the
 # C3 and dropped the A9, leaving a dangling C3; the fix drops the whole
 # character, so no C3 byte reaches the output.
+#
+# A second message, on another test, is "lat" then 32 bytes B0 (Latin-1
+# degree signs, each in the continuation range). A UTF-8 character has at most
+# three continuation bytes, so the cut backs up to byte 27 and no further: the
+# cell keeps "lat" and 24 B0 bytes. Followed back without a bound, the run
+# would leave only "lat".
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -32,7 +38,7 @@ mkdir -p "$work/logs" "$work/acks"
 
 build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a libxymon.a
 
-printf '1.2.3.4\tackhost\t# cpu\n' > "$work/hosts.cfg"
+printf '1.2.3.4\tackhost\t# cpu disk\n' > "$work/hosts.cfg"
 
 pfx=$(printf '%029d' 0 | tr 0 a)          # 29 'a' bytes
 eacute=$(printf '\303\251')               # one UTF-8 character, bytes C3 A9
@@ -44,6 +50,10 @@ now=$(date +%s)
 # seventh TAB.
 printf '%s\t1\t100000\t1\tnp_filename_not_used\tackhost.cpu\tgreen\t%szzz\n' \
 	"$now" "${pfx}${eacute}" > "$work/logs/acknowledge.log"
+degree=$(printf '\260')                    # Latin-1 degree sign, byte B0
+run24=$(printf '%024d' 0 | sed "s/0/$degree/g")
+printf '%s\t2\t100000\t2\tnp_filename_not_used\tackhost.disk\tgreen\tlat%s%s\n' \
+	"$now" "$run24" "$run24" >> "$work/logs/acknowledge.log"
 
 build_harness "$work" "$work/harness" \
 	"$here/acklog-utf8-harness.c" libxymon.a libxymoncomm.a libxymon.a
@@ -63,4 +73,8 @@ if grep -aqF "$lead" "$work/out"; then
 the ack table. The cut must back up to a character boundary."
 fi
 
-pass "do_acklog's 30-byte message cut does not split a UTF-8 character"
+grep -aqF "lat$run24" "$work/out" \
+	|| fail "a run of Latin-1 bytes in 0x80-0xBF shortened the cut below byte 27:
+the cell should keep 'lat' and 24 B0 bytes, and kept less."
+
+pass "do_acklog's 30-byte message cut does not split a UTF-8 character, and backs up at most three bytes"
