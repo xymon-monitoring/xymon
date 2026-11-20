@@ -23,10 +23,14 @@ jobs:
       startsWith(github.ref, 'refs/heads/release/') ||
       startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    # A regression test that blocks (e.g. a configure probe growing an
-    # interactive prompt) would otherwise hang the job for the runner's
-    # 6-hour ceiling. Build + suite take ~1 minute; 15 is generous.
-    timeout-minutes: 15
+    # A step that blocks (e.g. a configure probe growing an interactive prompt,
+    # or a hung test) would otherwise hold the runner for its 6-hour ceiling.
+    # Each step that can block has a limit of its own, a few times what it
+    # takes; this one only bounds the whole. It is not the steps' sum: the
+    # package install alone took 7 to 14 minutes on some runners, where it
+    # usually takes under a minute, and a job limit of 15 cancelled builds
+    # that were going fine.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -53,6 +57,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install build dependencies
+        timeout-minutes: 30
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -66,6 +71,7 @@ jobs:
             valgrind
 
       - name: Configure (${{ matrix.name }})
+        timeout-minutes: 5
         env:
           CONFTYPE: ${{ matrix.conftype }}
         run: |
@@ -96,6 +102,7 @@ jobs:
           ./configure --${{ matrix.variant }}
 
       - name: Build
+        timeout-minutes: 10
         env:
           # The build's own default (build/Makefile.Linux), plus the C90 rule
           # that declarations come before the statements of their block. gcc
@@ -123,6 +130,8 @@ jobs:
       # tree and leaves out the areas that build has none of. A client leg
       # verifies the client it just built -- which no leg did while gated.
       - name: Run regression tests against the build
+        # About 6 minutes for a server build.
+        timeout-minutes: 20
         env:
           XYMON_VARIANT: ${{ matrix.testvariant }}
           # Dependencies installed and the full variant built: a skip in a
