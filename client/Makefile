@@ -26,8 +26,20 @@ COMMONTOOLS=xymon xymoncmd xymongrep xymoncfg xymondigest
 
 all: $(PROGRAMS) $(COMMONTOOLS) xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS)
 
+# What xymonclient.cfg names for XYMONCLIENTRUNDIR, where msgcache writes its
+# pidfile. A build that set XYMONCLIENTRUNDIR names that directory outright; a
+# default build keeps the relocatable "$XYMONCLIENTLOGS" -- the client's log
+# directory, where msgcache.pid has always been -- resolved when the client
+# starts, so the tarball still moves. $$XYMONCLIENTLOGS reaches the sed
+# replacement as the literal $XYMONCLIENTLOGS.
+ifeq ($(strip $(XYMONCLIENTRUNDIR)),)
+XYMONCLIENTRUNDIRSUB = $$XYMONCLIENTLOGS
+else
+XYMONCLIENTRUNDIRSUB = $(XYMONCLIENTRUNDIR)
+endif
+
 xymonclient.cfg: xymonclient.cfg.DIST
-	cat xymonclient.cfg.DIST | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' >xymonclient.cfg
+	cat xymonclient.cfg.DIST | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONCLIENTRUNDIR@!$(XYMONCLIENTRUNDIRSUB)!g' >xymonclient.cfg
 	../build/bb-commands.sh >>xymonclient.cfg
 
 clientlaunch.cfg: clientlaunch.cfg.DIST

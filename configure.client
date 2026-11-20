@@ -198,6 +198,8 @@ echo "# Username running Xymon"          >>Makefile
 echo "XYMONUSER = $XYMONUSER"            >>Makefile
 echo "# Xymon server IP-address"         >>Makefile
 echo "XYMONHOSTIP = $XYMONHOSTIP"        >>Makefile
+echo "# Where to put the client's runtime files; empty means the client log directory" >>Makefile
+echo "XYMONCLIENTRUNDIR = $XYMONCLIENTRUNDIR" >>Makefile
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
 echo "LIBRTDEF = $LIBRTDEF"              >>Makefile

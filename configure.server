@@ -469,6 +469,8 @@ echo "# Where to put logfiles"           >>Makefile
 echo "XYMONLOGDIR = $XYMONLOGDIR"        >>Makefile
 echo "# Where to put runtime files (pidfiles, sockets)" >>Makefile
 echo "XYMONRUNDIR = $XYMONRUNDIR"        >>Makefile
+echo "# Where to put the client's runtime files; empty means the client log directory" >>Makefile
+echo "XYMONCLIENTRUNDIR = $XYMONCLIENTRUNDIR" >>Makefile
 echo "# Where to install manpages"       >>Makefile
 echo "MANROOT = $MANROOT"                >>Makefile
 echo "# How to run fping or xymonping"   >>Makefile
