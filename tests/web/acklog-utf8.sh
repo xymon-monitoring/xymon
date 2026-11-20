@@ -14,11 +14,13 @@
 # C3 and dropped the A9, leaving a dangling C3; the fix drops the whole
 # character, so no C3 byte reaches the output.
 #
-# A second message, on another test, is "lat" then 32 bytes B0 (Latin-1
+# A second message, on another test, is "lat" then 48 bytes B0 (Latin-1
 # degree signs, each in the continuation range). A UTF-8 character has at most
 # three continuation bytes, so the cut backs up to byte 27 and no further: the
-# cell keeps "lat" and 24 B0 bytes. Followed back without a bound, the run
-# would leave only "lat".
+# cell is "lat" and exactly 24 B0 bytes, checked up to the cell's closing tag.
+# Followed back without a bound, the run would leave only "lat"; a bound that
+# stops short of 27 would keep more, and split a four-byte UTF-8 character
+# whose lead byte is at 27.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -51,7 +53,8 @@ now=$(date +%s)
 printf '%s\t1\t100000\t1\tnp_filename_not_used\tackhost.cpu\tgreen\t%szzz\n' \
 	"$now" "${pfx}${eacute}" > "$work/logs/acknowledge.log"
 degree=$(printf '\260')                    # Latin-1 degree sign, byte B0
-run24=$(printf '%024d' 0 | sed "s/0/$degree/g")
+run8="$degree$degree$degree$degree$degree$degree$degree$degree"
+run24="$run8$run8$run8"
 printf '%s\t2\t100000\t2\tnp_filename_not_used\tackhost.disk\tgreen\tlat%s%s\n' \
 	"$now" "$run24" "$run24" >> "$work/logs/acknowledge.log"
 
@@ -73,8 +76,8 @@ if grep -aqF "$lead" "$work/out"; then
 the ack table. The cut must back up to a character boundary."
 fi
 
-grep -aqF "lat$run24" "$work/out" \
-	|| fail "a run of Latin-1 bytes in 0x80-0xBF shortened the cut below byte 27:
-the cell should keep 'lat' and 24 B0 bytes, and kept less."
+grep -aqF "lat$run24</TD>" "$work/out" \
+	|| fail "a run of Latin-1 bytes in 0x80-0xBF was not cut at byte 27:
+the cell should be 'lat' and exactly 24 B0 bytes."
 
 pass "do_acklog's 30-byte message cut does not split a UTF-8 character, and backs up at most three bytes"
