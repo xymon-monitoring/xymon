@@ -312,6 +312,102 @@ char *jsquoted(char *s)
 	return quote(&result, s, subs, 0);
 }
 
+/*
+ * The length of the well-formed UTF-8 character at s, or 0 when the byte at s
+ * does not start one: overlong forms, surrogates and code points past U+10FFFF
+ * are not well-formed. U+FFFE and U+FFFF are well-formed but not allowed in
+ * XML 1.0, and give -3. s is NUL-terminated; no byte past the NUL is read.
+ */
+int utf8_char(const unsigned char *s)
+{
+	unsigned char c = s[0];
+	int len, i;
+	unsigned char lo = 0x80, hi = 0xBF;
+
+	if (c < 0x80) return 1;
+	else if ((c >= 0xC2) && (c <= 0xDF)) len = 2;
+	else if ((c >= 0xE0) && (c <= 0xEF)) {
+		len = 3;
+		if (c == 0xE0) lo = 0xA0;	/* overlong */
+		if (c == 0xED) hi = 0x9F;	/* surrogates */
+	}
+	else if ((c >= 0xF0) && (c <= 0xF4)) {
+		len = 4;
+		if (c == 0xF0) lo = 0x90;	/* overlong */
+		if (c == 0xF4) hi = 0x8F;	/* past U+10FFFF */
+	}
+	else return 0;
+
+	if ((s[1] < lo) || (s[1] > hi)) return 0;
+	for (i = 2; (i < len); i++) {
+		if ((s[i] < 0x80) || (s[i] > 0xBF)) return 0;
+	}
+	if ((c == 0xEF) && (s[1] == 0xBF) && ((s[2] == 0xBE) || (s[2] == 0xBF))) return -3;	/* U+FFFE, U+FFFF */
+
+	return len;
+}
+
+void addtobuffer_xmlquoted(strbuffer_t *result, char *s, int utf8, int cdata)
+{
+	/*
+	 * Append text as XML character data to result, for a feed declared UTF-8
+	 * (utf8 set) or not. With cdata, inside a CDATA section, each "]]>" is split
+	 * so the text cannot end the section; without, with & < > as entities.
+	 * Either way the control bytes XML forbids (below 0x20 but tab, newline,
+	 * carriage return) are left out, and when utf8 is set each byte that is not
+	 * part of well-formed UTF-8 becomes U+FFFD, so one stray byte cannot make
+	 * the document unreadable. A NULL s appends nothing (an empty CDATA section
+	 * with cdata). Writing straight to the caller's buffer, several fields can
+	 * be appended in sequence with no shared state -- unlike xmlquoted() below.
+	 */
+	if (cdata) addtobuffer(result, "<![CDATA[");
+	for (; (s && *s); s++) {
+		if (!cdata && (*s == '&')) addtobuffer(result, "&amp;");
+		else if (!cdata && (*s == '<')) addtobuffer(result, "&lt;");
+		else if (!cdata && (*s == '>')) addtobuffer(result, "&gt;");
+		else if (cdata && (strncmp(s, "]]>", 3) == 0)) {
+			addtobuffer(result, "]]]]><![CDATA[>");
+			s += 2;
+		}
+		else if (((unsigned char)*s < 0x20) && (*s != '\t') && (*s != '\n') && (*s != '\r')) {
+			continue;
+		}
+		else if (utf8 && ((unsigned char)*s >= 0x80)) {
+			int len = utf8_char((unsigned char *)s);
+
+			if (len > 0) {
+				addtobufferraw(result, s, len);
+				s += len - 1;
+			}
+			else {
+				addtobuffer(result, "\xEF\xBF\xBD");
+				if (len < 0) s += -len - 1;
+			}
+		}
+		else {
+			addtobufferraw(result, s, 1);
+		}
+	}
+	if (cdata) addtobuffer(result, "]]>");
+}
+
+char *xmlquoted(char *s, int utf8, int cdata)
+{
+	/*
+	 * addtobuffer_xmlquoted() into a static buffer, for a FILE* caller that
+	 * wants a string. The result is good until the next call -- one xmlquoted()
+	 * per statement. A caller appending several fields to one buffer uses
+	 * addtobuffer_xmlquoted() instead, which keeps no shared state.
+	 */
+	static strbuffer_t *result = NULL;
+
+	if (!result) result = newstrbuffer(4096);
+	clearstrbuffer(result);
+	addtobuffer_xmlquoted(result, s, utf8, cdata);
+
+	return STRBUF(result);
+}
+
 char *prehtmlquoted(char *s)
 {
 	/*

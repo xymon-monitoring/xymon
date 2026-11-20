@@ -28,6 +28,9 @@ extern void strbufferuse(strbuffer_t *buf, int bytes);
 extern char *htmlquoted(char *s);
 extern char *htmlattrquoted(char *s);	/* & < > " ' escaped; a space stays a space, unlike htmlquoted() */
 extern char *jsquoted(char *s);	/* escape for a double-quoted JS string in a <script> */
+extern int utf8_char(const unsigned char *s);	/* length of the well-formed UTF-8 char at s, 0 if none, -3 for U+FFFE/U+FFFF */
+extern char *xmlquoted(char *s, int utf8, int cdata);	/* text as XML char data; invalid UTF-8 -> U+FFFD when utf8; cdata wraps in CDATA */
+extern void addtobuffer_xmlquoted(strbuffer_t *buf, char *s, int utf8, int cdata);	/* xmlquoted() straight into buf; several fields per statement, no shared state */
 extern char *prehtmlquoted(char *s);
 extern strbuffer_t *replacetext(char *original, char *oldtext, char *newtext);
 

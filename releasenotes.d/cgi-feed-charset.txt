@@ -1,0 +1,9 @@
+cgi -- the XML feeds declare the pages' charset, kept well-formed UTF-8
+-----------------------------------------------------------------------
+
+perfdata.cgi and xymond's xymondxboard and xymondxlog replies declared their
+XML as ISO-8859-1 while the web pages declare UTF-8, so a consumer read UTF-8
+status text as mojibake. They now declare the charset of HTMLCONTENTTYPE, UTF-8
+when it names none. Declared UTF-8, a byte a host sent that is not well-formed
+UTF-8 is shown as U+FFFD, so the feed stays well-formed. A site that sets
+HTMLCONTENTTYPE to another charset gets that charset, with the text as before.
