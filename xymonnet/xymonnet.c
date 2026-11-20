@@ -2702,9 +2702,14 @@ int main(int argc, char *argv[])
 					t->duration.tv_sec = testresult->duration.tv_sec;
 					t->duration.tv_nsec = testresult->duration.tv_nsec;
 
-					/* Binary data in banner ... */
+					/* Replace control bytes that would corrupt the status
+					   display, but keep every byte >= 0x80 so a UTF-8 banner
+					   survives: isprint() is false for all of them in the C
+					   locale, and the signed-char (int) cast made the test
+					   undefined for them as well. */
 					for (i=0, p=STRBUF(t->banner); (i < STRBUFLEN(t->banner)); i++, p++) {
-						if (!isprint((int)*p) && !isspace((int)*p)) *p = '.';
+						unsigned char c = (unsigned char)*p;
+						if ((c < ' ' && !isspace(c)) || (c == 0x7f)) *p = '.';
 					}
 				}
 			}
