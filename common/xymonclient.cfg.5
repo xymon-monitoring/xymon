@@ -165,7 +165,9 @@ local filesystems only. AIX df has no \fB\-l\fR; it is given
 which is the client's floor. Its
 inode df (\fB/usr/sysv/bin/df\fR) is given \fB\-l\fR, that command's
 spelling of the same thing, since guarding one report and not the other
-would leave the same mount able to wedge the run.
+would leave the same mount able to wedge the run. On a host without
+\fB/usr/sysv/bin/df\fR the inode report comes from \fBdf \-v\fR, given
+\fB\-T local\fR like the disk report.
 .br
 With \fBno\fR on AIX, a remote filesystem whose server does not supply
 all the statistics is reported as df writes it \(em blanks rather than

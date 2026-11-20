@@ -107,14 +107,38 @@ echo "[inode]"
 # here from the disk report above.
 # One call per line, not a one-liner: the test reaches this absolute path by
 # rewriting it, and a sed substitution replaces the first match on a line.
+# Not every AIX has the System V df ("/usr/sysv/bin/df: not found" on some
+# 7.3 hosts). Without it the native df -v is asked instead - the same local-only
+# guard, spelled "-T local" as in the disk report - and its rows are rewritten
+# below into the System V layout, so that one awk and one set of markers serve
+# both.
+SYSVDF=no
+[ -x /usr/sysv/bin/df ] && SYSVDF=yes
 INOOUT=$(
-	if [ "$DFLOCALONLY" = yes ]; then
+	if [ "$SYSVDF" = no ]; then
+		if [ "$DFLOCALONLY" = yes ]; then df -v -T local; else df -v; fi
+	elif [ "$DFLOCALONLY" = yes ]; then
 		/usr/sysv/bin/df -i -l
 	else
 		/usr/sysv/bin/df -i
 	fi
 )
 INORC=$?
+# df -v prints "Filesystem 512-blocks Used Free %Used Iused Ifree %Iused
+# Mounted on"; itotal is Iused + Ifree, and a filesystem without inode
+# accounting shows "-" for both, which comes out as an itotal of 0 and is
+# dropped by the guard below like its System V counterpart. A long device name
+# is wrapped onto a line of its own, joined back as in the disk report. Only
+# output is rewritten: an empty one must stay empty for the marker below.
+if [ "$SYSVDF" = no ] && [ -n "$INOOUT" ]; then
+	INOOUT=$(printf '%s\n' "$INOOUT" | sed -e '/^[^ 	][^ 	]*$/{
+N
+s/[ 	]*\n[ 	]*/ /
+}' | awk '
+NR<2 { print "Mount Dir  Filesystem iused avail itotal %iused"; next }
+{ print $9, $1, $6+0, $7+0, $6+$7, $8 }
+')
+fi
 # The header is held back until a row survives, as in the disk report: nothing
 # to report must not come out as a header describing no filesystems, and the
 # marker below must not travel behind one.
