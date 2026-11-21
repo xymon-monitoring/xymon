@@ -457,6 +457,16 @@ no longer analysed or graphed -- xymond_client logs "No client backend for OS"
 such hosts before upgrading the server, or run xymond_client with
 --unknownclientosok to analyse their reports generically.
 
+Clients -- macOS memory pressure
+--------------------------------
+
+macOS hosts get a new "swap" column, coloured by the kernel's memory-pressure
+level: green when normal, yellow on warn or an unknown level, red when
+critical. It appears once both the client and the server are upgraded. An alert
+rule that matches every service will page on it; exclude swap in alerts.cfg if
+that is not wanted.
+
+
 Changes for 4.3.31
 ==================
 
