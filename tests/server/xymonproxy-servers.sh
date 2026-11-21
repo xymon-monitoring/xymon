@@ -35,4 +35,18 @@ used=$(sed -n 's/.*Sending to Xymon server(s) //p' "$work/proxy.log")
 [ "$used" = "127.0.0.1:1 127.0.0.1:2 127.0.0.1:3 " ] \
 	|| fail "xymonproxy sends to '$used', not the first three servers alone"
 
+# With --logfile, the "Only N servers" warning must reach the proxy's own
+# log file, not the stderr it had before the redirect: it is logged after the
+# log file is opened, so reverting the deferral fails here.
+"$XYMONPROXY" --no-daemon --listen="127.0.0.1:$(free_port)" --logfile="$work/px.log" \
+	--server="127.0.0.1:1,127.0.0.1:2,127.0.0.1:3,127.0.0.1:4,127.0.0.1:5" 2>/dev/null &
+pid2=$!
+register_cleanup "stop_process $pid2"
+for _ in {1..50}; do
+	grep -q "Listening on" "$work/px.log" 2>/dev/null && break
+	kill -0 "$pid2" 2>/dev/null || break
+	sleep 0.1
+done
+assert_contains "Only 3 servers are used, 127.0.0.1:4 and the rest are ignored" "$(cat "$work/px.log" 2>/dev/null)" "the ignored-server warning did not reach the proxy's own log file"
+
 pass "xymonproxy uses the first three --server addresses and refuses the rest with a message"
