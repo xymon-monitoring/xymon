@@ -193,7 +193,7 @@ maintenance.
   The first command is `set -euo pipefail`. POSIX `sh` is not a goal
   for tests: the floor is bash 3.2. The tools they call must still
   behave the same on every platform;
-  `tests/buildsystem/test-suite-portability.sh` enforces that.
+  `tests/buildsystem/test-suite-lint.sh` enforces that.
 - **Quiet on success, verbose on failure.** Don't print per-step
   progress on the happy path; CI logs are noisy enough. On failure
   the `fail` helper prints to stderr and exits, which is usually
@@ -255,7 +255,7 @@ maintenance.
   helper -- `fs_mounts`, `fs_filesystems`, `fs_procname`,
   `fs_procalive` -- which the
   test replaces *by name* with `fsf_stub_helper`, never by rewriting the
-  path the helper reads. `tests/buildsystem/test-suite-portability.sh`
+  path the helper reads. `tests/buildsystem/test-suite-lint.sh`
   enforces both halves.
   That leaves the helpers' own bodies covered by nothing, since every
   stubbed test throws them away. Close that with a **native test**: one
@@ -280,7 +280,7 @@ maintenance.
   translation changes -- an exit status, a file or host name, a number -- or
   runs that command with `LC_ALL=C`. `tests/buildsystem/pin-check.sh` once
   looked for git's "CONFLICT", which a German git writes "KONFLIKT" (#628);
-  `test-suite-portability.sh` now refuses such an assertion. Xymon's own
+  `test-suite-lint.sh` now refuses such an assertion. Xymon's own
   messages are not translated, `strerror` text included, since Xymon never
   calls `setlocale`, so a test may assert on them.
 - **No persistent side effects.** Use `mktemp -d` for scratch space and
@@ -352,7 +352,7 @@ maintenance.
   starts are meant to fail included: a start added after a successful one
   would otherwise reopen the race. `start_xymond()`
   (tests/lib/xymond-daemon.sh) waits on a ping instead and needs nothing.
-  `tests/buildsystem/test-suite-portability.sh` refuses the shape it can see:
+  `tests/buildsystem/test-suite-lint.sh` refuses the shape it can see:
   a start in a function or a loop, its log grepped after it, and not emptied
   before it there.
 - **A test fails when its fix is absent -- or says why it doesn't.** That

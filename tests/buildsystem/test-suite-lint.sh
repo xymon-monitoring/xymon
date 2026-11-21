@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# tests/buildsystem/test-suite-portability.sh
+# tests/buildsystem/test-suite-lint.sh
 #
 # A test over the tests. Every rule here is a failure the suite actually had,
 # each found by a lane after passing on a developer's Linux box -- most by a
@@ -526,7 +526,7 @@ check_readiness_log() {
 for f in $files; do check_readiness_log "$f" "$work/violations"; done
 
 if [ -s "$work/violations" ]; then
-	printf 'portability rules broken by the test suite:\n\n' >&2
+	printf 'test-suite lint rules broken:\n\n' >&2
 	sort "$work/violations" | awk -F'\t' '{ printf "  [%s] %s\n      %s\n", $1, $2, $3 }' >&2
 	fail "$(wc -l <"$work/violations" | tr -d ' ') violation(s); see above"
 fi

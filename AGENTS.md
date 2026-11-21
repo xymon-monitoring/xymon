@@ -107,7 +107,7 @@ unresolved — and stop there.
 
 ## What the test suite will not accept
 
-`tests/buildsystem/test-suite-portability.sh` fails the run on the constructs
+`tests/buildsystem/test-suite-lint.sh` fails the run on the constructs
 below. It checks them statically, on whatever platform you are on, because they
 are the ones that cost a round trip to discover:
 

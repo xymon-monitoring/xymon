@@ -36,7 +36,7 @@ set -euo pipefail
 ROOT=$(find_root)
 # Beside this script, reached through $0: a path spelled "$ROOT/...awk" reads as
 # an in-tree archive to the link-flags rule of
-# tests/buildsystem/test-suite-portability.sh, whose pattern ends [.]a.
+# tests/buildsystem/test-suite-lint.sh, whose pattern ends [.]a.
 here=$(dirname "$0")
 detector="$here/strncat-bounds.awk"
 baseline="$here/strncat-bounds.baseline"
@@ -47,7 +47,7 @@ work=$(mktempdir)
 
 # --- the detector reports the bad form, and only it -------------------------
 # A fixture rather than the tree: this is what keeps the rule honest, the way
-# tests/buildsystem/test-suite-portability.sh probes its own rules.
+# tests/buildsystem/test-suite-lint.sh probes its own rules.
 cat >"$work/fixture.c" <<'EOF'
 void f(char *src) {
 	char dst[64];
