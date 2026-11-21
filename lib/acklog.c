@@ -221,8 +221,14 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			fprintf(output, "<TR BGCOLOR=#000000>\n");
 
 			fprintf(output, "<TD ALIGN=CENTER><FONT COLOR=white>%s</FONT></TD>\n", ctime(&acks[num].acktime));
-			fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n", colorname(acks[num].color), acks[num].hostname);
-			fprintf(output, "<TD ALIGN=CENTER><FONT COLOR=white>%s</FONT></TD>\n", acks[num].testname);
+			/*
+			 * Everything below comes from acknowledge.log, and the message and
+			 * the "Acked by" name are whatever the acknowledger typed, %-decoded
+			 * above: escaped, one htmlattrquoted() per statement, as its result
+			 * is a static buffer.
+			 */
+			fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n", colorname(acks[num].color), htmlattrquoted(acks[num].hostname));
+			fprintf(output, "<TD ALIGN=CENTER><FONT COLOR=white>%s</FONT></TD>\n", htmlattrquoted(acks[num].testname));
 
 			if (acks[num].color != -1) {
    				fprintf(output, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\"></TD>\n", 
@@ -232,8 +238,8 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			else
    				fprintf(output, "<TD ALIGN=CENTER><FONT COLOR=white>&nbsp;</FONT></TD>\n");
 
-			fprintf(output, "<TD ALIGN=LEFT BGCOLOR=#000033>%s</TD>\n", acks[num].ackedby);
-			fprintf(output, "<TD ALIGN=LEFT>%s</TD></TR>\n", acks[num].ackmsg);
+			fprintf(output, "<TD ALIGN=LEFT BGCOLOR=#000033>%s</TD>\n", htmlattrquoted(acks[num].ackedby));
+			fprintf(output, "<TD ALIGN=LEFT>%s</TD></TR>\n", htmlattrquoted(acks[num].ackmsg));
 		}
 
 	}

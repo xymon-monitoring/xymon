@@ -44,6 +44,26 @@ static char *render_log_msg(const char *service, int is_history, const char *fla
 	return html;
 }
 
+static char *render_ack(char *ackmsg)
+{
+	char *html = NULL;
+	size_t htmlsz = 0;
+	FILE *out;
+
+	out = open_memstream(&html, &htmlsz);
+	if (!out) { perror("open_memstream"); exit(2); }
+
+	generate_html_log("testhost", "Test Host", "cpu", "127.0.0.1",
+			  COL_RED, 0, "tester", "",
+			  0, "0 minutes", "red status", "status body",
+			  NULL, 0, ackmsg, NULL, 0, NULL,
+			  0, 1, 0, 0, NULL, NULL,
+			  NULL, NULL, NULL, 3600, out);
+
+	fclose(out);
+	return html;
+}
+
 static char *render_log(const char *service, int is_history)
 {
 	return render_log_msg(service, is_history, "", "status body");
@@ -141,6 +161,20 @@ int main(void)
 				la ? la->xymonrrdname : "returns NULL");
 			failures++;
 		}
+	}
+
+	/* The acknowledgement and its "Acked by:" name are what the
+	 * acknowledger typed: both come out as text, and escaping one does not
+	 * overwrite the other. */
+	{
+		char ackmsg[] = "on <i>it</i>\nAcked by: <b>op</b>";
+
+		html = render_ack(ackmsg);
+		expect_contains("ack message escaped", html, "&lt;i&gt;it&lt;/i&gt;");
+		expect_contains("acked-by name escaped", html, "Acked by: &lt;b&gt;op&lt;/b&gt;");
+		expect_not_contains("ack message escaped", html, "<i>it</i>");
+		expect_not_contains("acked-by name escaped", html, "<b>op</b>");
+		free(html);
 	}
 
 	printf(failures ? "FAILED\n" : "ALL OK\n");

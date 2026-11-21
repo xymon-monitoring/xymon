@@ -374,10 +374,11 @@ void do_acknowledgementslog(FILE *output,
 			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", ctime(&walk->eventtime));
 			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", ctime(&walk->validity));
 
-			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostname);
-			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", walk->service->name);
-			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", walk->recipient);
-			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", walk->message);
+			/* From acknowledge.log: the name and message are what the acknowledger typed */
+			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", htmlattrquoted(hostname));
+			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", htmlattrquoted(walk->service->name));
+			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", htmlattrquoted(walk->recipient));
+			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", htmlattrquoted(walk->message));
 		}
 
 		fprintf(output, "</TABLE>\n");
