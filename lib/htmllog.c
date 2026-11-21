@@ -396,8 +396,11 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		ackedby = strstr(ackmsg, "\nAcked by:");
 		if (ackedby) {
 			*ackedby = '\0';
+			/* "Acked by:" is followed by the name the acknowledger gave, so
+			 * it is escaped like the message. htmlattrquoted() has its own
+			 * buffer: a second htmlquoted() here would overwrite the first. */
 			fprintf(output, "<font %s>Current acknowledgment: %s<br>%s<br>%s</font><br>\n", 
-				ackfont, htmlquoted(ackmsg), (ackedby+1), ackuntil);
+				ackfont, htmlquoted(ackmsg), htmlattrquoted(ackedby+1), ackuntil);
 			*ackedby = '\n';
 		}
 		else {

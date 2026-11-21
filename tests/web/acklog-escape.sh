@@ -34,13 +34,14 @@ mkdir -p "$work/logs" "$work/acks"
 
 build_xymon_libs "$ROOT" "$work/libbuild.log" libxymoncomm.a libxymon.a
 
-printf '1.2.3.4\tackhost\t# cpu\n' > "$work/hosts.cfg"
+printf '1.2.3.4\tackhost\t# cpu\n1.2.3.5\tack<u>host\t# \n' > "$work/hosts.cfg"
 
 now=$(date +%s)
 # acknowledge.log records: a huge duration so none reads as expired, acktime
 # "now" so each falls inside do_acklog's 240-minute window, host "ackhost" so
 # hostinfo() resolves it. The message is the rest of the line after the
 # seventh TAB; "np_filename_not_used" makes the "Acked by:" in it the name.
+# The fifth has markup in the host and test names instead.
 {
 	printf '%s\t1\t100000\t1\tnp_filename_not_used\tackhost.cpu\tred\t%s\n' \
 		"$now" "%3Cb%3Ebold%3C/b%3E"
@@ -50,6 +51,8 @@ now=$(date +%s)
 		"$now" "disk replaced, watching"
 	printf '%s\t4\t100000\t4\tnp_filename_not_used\tackhost.cpu\tred\t%s\n' \
 		"$now" "<b>raw</b>\\nAcked by:<i>who</i>"
+	printf '%s\t5\t100000\t5\tnp_filename_not_used\tack<u>host.c<s>pu\tred\t%s\n' \
+		"$now" "named host"
 } > "$work/logs/acknowledge.log"
 
 build_harness "$work" "$work/harness" \
@@ -67,9 +70,11 @@ for part in table report; do
 	out=${!part}
 	assert_contains "disk replaced, watching" "$out" \
 		"$part: a plain acknowledgement message did not render, so it was not written"
-	for tag in "<b>" "<i>"; do
+	for tag in "<b>" "<i>" "<u>" "<s>"; do
 		assert_not_contains "$tag" "$out" "$part: an acknowledgement's text reached the page as markup ($tag)"
 	done
+	assert_contains "ack&lt;u&gt;host" "$out" "$part: a host name was not shown escaped"
+	assert_contains "c&lt;s&gt;pu" "$out" "$part: a test name was not shown escaped"
 	# (the report trims a character on each side of "\nAcked by:", as it always has)
 	assert_contains "&lt;b&gt;raw&lt;/b" "$out" "$part: a message as xymond logs it was not shown escaped"
 done
