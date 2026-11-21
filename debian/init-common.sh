@@ -1,4 +1,4 @@
-# common init functions for Xymon and Xymon-client
+# common init functions for xymon and xymon-client
 
 create_includefiles ()
 {
@@ -9,9 +9,9 @@ create_includefiles ()
 
 	umask 022
 
-	if ! [ -d /var/run/xymon ] ; then
-		mkdir /var/run/xymon
-		chown xymon:xymon /var/run/xymon
+	if ! [ -d /run/xymon ] ; then
+		mkdir /run/xymon
+		chown xymon:xymon /run/xymon
 	fi
 
 	set -- $XYMONSERVERS
@@ -21,35 +21,7 @@ create_includefiles ()
 	else
 		echo "XYMSRV=\"0.0.0.0\""
 		echo "XYMSERVERS=\"$XYMONSERVERS\""
-	fi > /var/run/xymon/bbdisp-runtime.cfg
-
-	for cfg in /etc/xymon/clientlaunch.d/*.cfg ; do
-		test -e $cfg && echo "include $cfg"
-	done > /var/run/xymon/clientlaunch-include.cfg
-
-	if test -d /etc/xymon/xymonlaunch.d ; then
-		for cfg in /etc/xymon/xymonlaunch.d/*.cfg ; do
-			test -e $cfg && echo "include $cfg"
-		done > /var/run/xymon/xymonlaunch-include.cfg
-	fi
-
-	if test -d /etc/xymon/xymongraph.d ; then
-		for cfg in /etc/xymon/xymongraph.d/*.cfg ; do
-			test -e $cfg && echo "include $cfg"
-		done > /var/run/xymon/xymongraph-include.cfg
-	fi
-
-	if test -d /etc/xymon/xymonserver.d ; then
-		for cfg in /etc/xymon/xymonserver.d/*.cfg ; do
-			test -e $cfg && echo "include $cfg"
-		done > /var/run/xymon/xymonserver-include.cfg
-	fi
-
-	if test -d /etc/xymon/xymonclient.d ; then
-		for cfg in /etc/xymon/xymonclient.d/*.cfg ; do
-			test -e $cfg && echo "include $cfg"
-		done > /var/run/xymon/xymonclient-include.cfg
-	fi
+	fi > /run/xymon/bbdisp-runtime.cfg
 
 	return 0
 }
