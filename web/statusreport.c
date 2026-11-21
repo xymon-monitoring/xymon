@@ -130,6 +130,12 @@ int main(int argc, char *argv[])
 	/* No --column, --test or --filter: every status of the page, or of every host with --all */
 	if (!filter) filter = "";
 
+	/* No --heading, and no --column or --test to name one after: the title is still printed */
+	if (!heading) {
+		SBUF_MALLOC(heading, 1024 + strlen(timestamp));
+		snprintf(heading, heading_buflen, "Status report on %s", timestamp);
+	}
+
 	if (!allhosts) {
       		/* Setup the filter we use for the report */
 		cookie = get_cookie("pagepath");
