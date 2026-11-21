@@ -222,15 +222,27 @@ static char *quote(strbuffer_t **resultp, char *s, qsub_t *subs, int nullisnull)
 	char c;
 	int i;
 
+	/*
+	 * set holds the table's characters for strcspn(). A table that does not
+	 * fit is a mistake in this file, not in the input: stopping short would
+	 * leave its last characters unescaped, so stop the program instead --
+	 * before the early returns, so that a NULL input does not hide it.
+	 */
+	for (i = 0; subs[i].c; i++) {
+		if (i >= (int)sizeof(set) - 1) {
+			errprintf("quote: a substitution table has more than %d entries\n", (int)sizeof(set) - 1);
+			abort();
+		}
+		set[i] = subs[i].c;
+	}
+	set[i] = '\0';
+
 	if (!s && nullisnull) return NULL;
 
 	if (!*resultp) *resultp = newstrbuffer(4096);
 	result = *resultp;
 	clearstrbuffer(result);
 	if (!s) return STRBUF(result);
-
-	for (i = 0; subs[i].c; i++) set[i] = subs[i].c;
-	set[i] = '\0';
 
 	inp = s;
 	do {
