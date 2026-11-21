@@ -285,10 +285,10 @@ situation, and this file gets revisited if it arrives.
   equivalent, and say what was reverted or used. A change that only adds a test
   is checked by breaking the behaviour the test guards. Test the behaviour, not
   its spelling, unless the source or config is itself the surface, as in the
-  portability check's own tests — reading source is what that check does — or
+  lint check's own tests — reading source is what that check does — or
   a shipped default. For a behaviour that stays untested, say why and what was
   checked instead. How to write and run a test is in `tests/README.md`;
-  `tests/buildsystem/test-suite-portability.sh` refuses the constructs a
+  `tests/buildsystem/test-suite-lint.sh` refuses the constructs a
   portable test avoids.
 - Keep the description accurate as it evolves. A reviewer reading it after
   three force-pushes should not be reading the original plan.

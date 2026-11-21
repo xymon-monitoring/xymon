@@ -628,7 +628,7 @@ find_root() {
 # itself, environ.o keeps the test's paths, and every later test that links
 # the library reads them. In a copy, nothing outlives the test.
 #
-# A plain cp, not cp -p (tests/buildsystem/test-suite-portability.sh refuses
+# A plain cp, not cp -p (tests/buildsystem/test-suite-lint.sh refuses
 # it), so the copy's timestamps are those of the copying, in no useful order.
 # Every file is then given one time: no prerequisite is newer than its target,
 # and make rebuilds only what does not depend on time -- environ.o, when the

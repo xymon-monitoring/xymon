@@ -82,7 +82,7 @@
 #     # control: passes with and without the fix
 #
 # tests/README.md carries the convention, alongside "# native-primitive: NAME",
-# which the portability checker already requires for the same reason: declare
+# which the test-suite lint check already requires for the same reason: declare
 # the intent, or a checker is entitled to assume the worst of a test that
 # cannot fail.
 #

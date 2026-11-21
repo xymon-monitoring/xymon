@@ -16,7 +16,7 @@
 # the CI build does before the suite. Otherwise it skips, rather than acquiring
 # the privilege itself: a test must not call sudo, which surprises a developer's
 # machine (sudo can mail a security alert for a no-password attempt, #759) and
-# which the portability check forbids. It also skips where the host has no route
+# which the test-suite lint check forbids. It also skips where the host has no route
 # to ::1, the only other environment it cannot check; a socket that will not
 # open is a failure.
 

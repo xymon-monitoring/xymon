@@ -7,7 +7,7 @@
  * open for reading a file whose name contains "unreadable", and to open for
  * writing one whose name contains "unwritable". That reaches the editor's
  * "cannot read" path as root, which the CI lanes run as: root opens a file
- * whatever its permissions, and the portability check refuses a chmod that
+ * whatever its permissions, and the test-suite lint check refuses a chmod that
  * relies on it not doing so. The test checks first that this fopen() is the
  * one the editor calls. Any other open goes through open() and fdopen().
  *
