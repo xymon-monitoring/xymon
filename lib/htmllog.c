@@ -559,9 +559,15 @@ char *alttag(char *columnname, int color, int acked, int propagate, char *age)
 {
 	static char tag[1024];
 	size_t remain;
+	int n;
 
+	/*
+	 * snprintf() returns the length it would have written, which for a long
+	 * column name is more than the room there was: count only what fits.
+	 */
 	remain = sizeof(tag) - 1;
-	remain -= snprintf(tag, remain, "%s:%s:", columnname, colorname(color));
+	n = snprintf(tag, remain, "%s:%s:", columnname, colorname(color));
+	remain = ((n >= 0) && ((size_t)n < remain)) ? (remain - n) : 0;
 	if (remain > 20) {
 		if (acked) { strncat(tag, "acked:", remain); remain -= 6; }
 		if (!propagate) { strncat(tag, "nopropagate:", remain); remain -= 12; }
