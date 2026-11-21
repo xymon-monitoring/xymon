@@ -457,6 +457,12 @@ no longer analysed or graphed -- xymond_client logs "No client backend for OS"
 such hosts before upgrading the server, or run xymond_client with
 --unknownclientosok to analyse their reports generically.
 
+xymond_channel, xymond_worker -- reach a network worker over IPv6
+-----------------------------------------------------------------
+A network worker's --listen and the channel that connects to it were IPv4
+only. Both now take IPv6 and names, as [addr]:port or name:port. A name that
+resolves to IPv4 is still used, so an existing locator setup is unchanged.
+
 Changes for 4.3.31
 ==================
 
