@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # build/pin-check.sh -- find tests that no longer prove the fix they were
 # written for.

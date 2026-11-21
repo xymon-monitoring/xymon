@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later
+ * Copyright (C) 2026 Bruno Manzoni
  *
  * Creates one RRD whose last reading is at a chosen time, for
  * tests/web/showgraph-stale-filter.sh. xymond_rrd cannot: only creation

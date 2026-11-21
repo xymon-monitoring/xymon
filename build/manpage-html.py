@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 """Post-process mandoc(1) HTML so it matches the pages Xymon has always shipped.
 
 mandoc converts the manual pages more faithfully than man2html - it keeps the

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # The same deferred SSL_write, on the dialogue path.
 #
 # ssl-write-defer-behaviour.sh proves the LEGACY write retries what

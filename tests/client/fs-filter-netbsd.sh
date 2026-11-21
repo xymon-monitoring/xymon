@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Markus Häll
 #
 # tests/client/fs-filter-netbsd.sh
 #

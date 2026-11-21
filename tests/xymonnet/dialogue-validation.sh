@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # A protocols.cfg mistake should say so, and stop the entry.
 #
 # An unresolvable line used to be a silent no-op: the step vanished and the

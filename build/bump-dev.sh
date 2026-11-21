@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # build/bump-dev.sh X.Y.Z -- after the X.Y.Z release, set include/version.h
 # to X.Y.(Z+1)-dev, so a build from main names what it is becoming rather

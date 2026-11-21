@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # The port a shipped service is checked on comes from protocols.cfg.
 #
 # An entry without a port line is checked on whatever the host's /etc/services

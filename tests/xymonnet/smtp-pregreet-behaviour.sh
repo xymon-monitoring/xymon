@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # The companion to smtp-no-pregreet.sh, which reads the source. This one
 # runs the probe and asks what actually went over the wire.

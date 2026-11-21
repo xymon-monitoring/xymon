@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2026 Bruno Manzoni */
 /* Make mandoc(1) HTML render like the man2html output Xymon ships today.
  *
  * man2html emits no stylesheet at all, so what users see is the browser's own

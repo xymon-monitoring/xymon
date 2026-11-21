@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 name: pr dependencies
 
 # The blocked / unblocks / deps-none-found labels say whether a pull request can be

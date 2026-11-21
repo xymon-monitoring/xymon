@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2026 Bruno Manzoni */
 /* Harness for tests/libxymon/xmh-item-idx.sh.
  *
  * xmh_item_idx() answers "is this hosts.cfg tag a reserved one?" for the info
