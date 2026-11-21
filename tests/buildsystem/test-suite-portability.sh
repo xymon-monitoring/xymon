@@ -4,8 +4,8 @@
 # tests/buildsystem/test-suite-portability.sh
 #
 # A test over the tests. Every rule here is a failure the suite actually had,
-# each found by a BSD or macOS runner after passing on Linux -- which is the
-# expensive way to learn it. They are cheap to check statically, so they are
+# each found by a lane after passing on a developer's Linux box -- most by a
+# BSD or macOS runner -- which is the expensive way to learn it. They are cheap to check statically, so they are
 # checked here, on every platform, before the slow lanes get a chance.
 #
 # Comment lines are skipped: several tests explain in a comment why they avoid
@@ -468,6 +468,63 @@ check_bash_shebang() {
 
 for f in $files; do check_bash_shebang "$f" "$work/violations" "$ROOT"; done
 
+# A start in the background empties its log in the child, after the fork, so a
+# wait that greps that log for a readiness line can read what the previous
+# start left and go on before the new process is up (tests/README.md, "A log
+# polled for a readiness line is emptied in the parent before each start").
+# It failed xymonproxy-addresses.sh on an Alpine lane. A start runs more than
+# once when it sits in a function or a loop, and that is where it is reported:
+# such a start, a grep of the same file after it in that function or loop, and
+# no ": >FILE" or "rm -f FILE" before it there.
+# check_readiness_log FILE OUT -- append this file's violations to OUT.
+check_readiness_log() {
+	local f=$1 out=$2 n
+	# [ \t], not [[:space:]]: older mawks have no character classes.
+	awk '
+	{ line[NR] = $0 }
+	END {
+		fs = 0; depth = 0
+		for (i = 1; i <= NR; i++) {
+			if (line[i] ~ /^[A-Za-z_][A-Za-z0-9_]*\(\)[ \t]*\{/) fs = i
+			if (line[i] ~ /^}/) { for (j = fs; fs && j <= i; j++) fend[j] = i; fs = 0 }
+			if (fs) fstart[i] = fs
+			if (line[i] ~ /^[ \t]*#/) continue
+			if (line[i] ~ /(^|[;&|( \t])(for|while|until)[ \t]/ && line[i] !~ /(^|[; \t])done([; \t]|$)/) stack[++depth] = i
+			if (depth) lstart[i] = stack[depth]
+			if (line[i] ~ /^[ \t]*done([; \t)|]|$)/ && depth) {
+				for (j = stack[depth]; j <= i; j++) if (!(j in lend)) lend[j] = i
+				depth--
+			}
+		}
+		for (i = 1; i <= NR; i++) {
+			if (line[i] ~ /^[ \t]*#/) continue
+			buf = line[i]; start = i
+			while (buf ~ /\\$/ && i < NR) { sub(/\\$/, "", buf); i++; buf = buf " " line[i] }
+			if (!match(buf, />[ \t]*"?[$A-Za-z0-9_{}\/.-]+"?[ \t]+2>&1[ \t]*&[ \t]*$/)) continue
+			file = substr(buf, RSTART + 1, RLENGTH - 1)
+			sub(/[ \t]+2>&1.*$/, "", file); gsub(/[ \t"]/, "", file)
+			if (start in fstart) { s = fstart[start]; e = fend[start] }
+			else if (start in lstart) { s = lstart[start]; e = lend[start] }
+			else continue
+			waits = 0
+			for (j = i + 1; j <= e; j++)
+				if (line[j] !~ /^[ \t]*#/ && line[j] ~ /(^|[^A-Za-z0-9_-])grep[ \t]/ && index(line[j], file)) waits = 1
+			if (!waits) continue
+			cleared = 0
+			for (j = s; j < start; j++)
+				if (index(line[j], file) && (line[j] ~ /^[ \t]*:[ \t]*>/ || line[j] ~ /rm[ \t]+-f/)) cleared = 1
+			if (!cleared) print start
+		}
+	}
+	' "$f" |
+	while IFS= read -r n; do
+		printf 'readiness-log\t%s\t%s\n' "${f#"$ROOT"/}:$n" \
+			'a start repeated in a function or loop, whose log is then grepped, empties that log only in the background child; empty it in the parent first (: >FILE), tests/README.md' >>"$out"
+	done
+}
+
+for f in $files; do check_readiness_log "$f" "$work/violations"; done
+
 if [ -s "$work/violations" ]; then
 	printf 'portability rules broken by the test suite:\n\n' >&2
 	sort "$work/violations" | awk -F'\t' '{ printf "  [%s] %s\n      %s\n", $1, $2, $3 }' >&2
@@ -679,5 +736,24 @@ shfile="$work/shebang.sh"
 check_bash_shebang "$shfile" "$work/shebang-violations" "$shroot"
 assert_equal "1" "$(wc -l <"$work/shebang-violations" | tr -d " ")" \
 	"the bash-shebang rule should report the one #!/bin/bash script run directly, and only it"
+
+# The readiness-log rule the same way: a start repeated in a function or a
+# loop, whose log is grepped after it, is reported; the same start with its log
+# emptied first (": >" or "rm -f"), a start run once, and a wait on a socket
+# are not.
+rlfile="$work/readiness.sh"
+{
+	printf '#!/usr/bin/env bash\n'
+	printf 'bad() {\n\t"$P" --listen="$1" \\\n\t\t>"$work/p.log" 2>&1 &\n\tgrep -q Listening "$work/p.log"\n}\n'
+	printf 'for try in 1 2; do\n\t"$P" >"$work/q.log" 2>&1 &\n\tgrep -q Listening "$work/q.log" && break\ndone\n'
+	printf 'emptied() {\n\t: >"$work/r.log"\n\t"$P" >"$work/r.log" 2>&1 &\n\tgrep -q Listening "$work/r.log"\n}\n'
+	printf 'removed() {\n\trm -f "$work/s.log"\n\t"$P" >"$work/s.log" 2>&1 &\n\tgrep -q Listening "$work/s.log"\n}\n'
+	printf 'socket() {\n\t"$P" >"$work/t.log" 2>&1 &\n\t[ -S "$sock" ] || cat "$work/t.log"\n}\n'
+	printf '"$P" >"$work/u.log" 2>&1 &\ngrep -q Listening "$work/u.log"\n'
+} >"$rlfile"
+: >"$work/rl-violations"
+check_readiness_log "$rlfile" "$work/rl-violations"
+assert_equal "3 8" "$(cut -f2 "$work/rl-violations" | sed 's/.*://' | tr '\n' ' ' | sed 's/ $//')" \
+	"the readiness-log rule no longer reports exactly the start repeated in a function and the one in a loop whose log is grepped (and not one whose log is emptied first, one run once, or a wait on a socket)"
 
 pass "the test suite keeps to bash 3.2, portable tool flags, the configured build flags, and one lane per client"
