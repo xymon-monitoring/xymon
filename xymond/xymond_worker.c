@@ -700,3 +700,36 @@ startagain:
 	return result;
 }
 
+/*
+ * Refuse a path component xymond did not validate, rather than reduce it with
+ * basename(): the reduction maps different wire names onto one file, so
+ * "a/victim" replaced the note, log and page of "victim" (measured), and a raw
+ * testname "../.." once reached the recursive dropdirectory() and climbed out
+ * of its directory (#287). Both '/' and '\\' are refused - '\\' separates
+ * directories on an SMB/CIFS $XYMONVAR, and xymond's new-testname charset
+ * admits it. Refusal also retires basename(3)'s trap: on NetBSD/OpenBSD its
+ * static storage once stored host "realhost" test "conn" as conn.conn.
+ *
+ * "", and any leading-dot name, are refused too. "" lands a note on dir
+ * itself; "." and ".." are dir and its parent; a leading dot collides with the
+ * temp namespace - a stored ".victim" is the temp name update_file() derives
+ * for "victim", whose unlink() then destroys it (measured).
+ *
+ * Defined here because xymond_worker.o links into every worker, so the
+ * drop/rename and notes-file handlers in xymond_history and xymond_filestore
+ * share one copy.
+ */
+int name_confined(char *dir, char *component)
+{
+	if (component[0] == '\0') {
+		errprintf("Empty name under %s, refusing it\n", dir);
+		return 0;
+	}
+	if (component[0] == '.') {
+		errprintf("Name '%s' under %s begins with a dot, refusing it\n", component, dir);
+		return 0;
+	}
+	if ((strchr(component, '/') == NULL) && (strchr(component, '\\') == NULL)) return 1;
+	errprintf("Name '%s' under %s holds a path separator, refusing it\n", component, dir);
+	return 0;
+}

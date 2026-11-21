@@ -46,35 +46,6 @@ static int locatorbased = 0;
 enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 
 /*
- * A path component is refused outright, never reduced with basename(): the
- * reduction maps different wire names onto one file, so "a/victim" replaced
- * the note, log and page of "victim" (measured). Both '/' and '\\' are refused
- * - '\\' separates directories on an SMB/CIFS $XYMONVAR, and xymond's
- * new-testname charset admits it. Refusal also retires basename(3)'s trap: on
- * NetBSD/OpenBSD its static storage once stored host "realhost" test "conn" as
- * conn.conn.
- *
- * "", and any leading-dot name, are refused too. "" lands a note on dir
- * itself; "." and ".." are dir and its parent; a leading dot collides with the
- * temp namespace - a stored ".victim" is the temp name update_file() derives
- * for "victim", whose unlink() then destroys it (measured).
- */
-static int name_confined(char *dir, char *component)
-{
-	if (component[0] == '\0') {
-		errprintf("Empty name under %s, refusing it\n", dir);
-		return 0;
-	}
-	if (component[0] == '.') {
-		errprintf("Name '%s' under %s begins with a dot, refusing it\n", component, dir);
-		return 0;
-	}
-	if ((strchr(component, '/') == NULL) && (strchr(component, '\\') == NULL)) return 1;
-	errprintf("Name '%s' under %s holds a path separator, refusing it\n", component, dir);
-	return 0;
-}
-
-/*
  * Build "<dir>/<host>.<test>[.<suffix>]", both components confined. Neither
  * arrives validated. With '/' refused, a "." or ".." residue cannot climb
  * out of dir: the component is always followed by "." and more text - not

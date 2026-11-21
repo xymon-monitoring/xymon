@@ -82,29 +82,6 @@ static int histlog_hostdir_ok(char *histlogdir, char *hostdash)
 	return 1;
 }
 
-/*
- * The drop/rename and status handlers build paths under histdir/histlogdir
- * from the channel's hostname and testname, which xymond does not validate as
- * path components - a raw testname "../.." reached the recursive
- * dropdirectory() and climbed out of histlogdir (#287). Refuse "", a leading
- * '.', and a '/' or '\\' separator on each component before it becomes a path,
- * as xymond_filestore does; real host and test names pass unchanged.
- */
-static int name_confined(char *dir, char *component)
-{
-	if (component[0] == '\0') {
-		errprintf("Empty name under %s, refusing it\n", dir);
-		return 0;
-	}
-	if (component[0] == '.') {
-		errprintf("Name '%s' under %s begins with a dot, refusing it\n", component, dir);
-		return 0;
-	}
-	if ((strchr(component, '/') == NULL) && (strchr(component, '\\') == NULL)) return 1;
-	errprintf("Name '%s' under %s holds a path separator, refusing it\n", component, dir);
-	return 0;
-}
-
 void sig_handler(int signum)
 {
 	/*
