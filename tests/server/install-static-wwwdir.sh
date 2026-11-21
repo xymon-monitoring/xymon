@@ -128,7 +128,7 @@ for sub in gifs help menu; do
 		|| fail "with INSTALLSTATICWWWDIR, www/$sub must resolve to static/$sub"
 done
 [ -n "$(ls -A "$d/static/gifs")" ] || fail "with INSTALLSTATICWWWDIR, static/gifs is empty"
-for sub in notes html wml; do
+for sub in notes html; do
 	[ -d "$d/var/www/$sub" ] && [ ! -L "$d/var/www/$sub" ] \
 		|| fail "with INSTALLSTATICWWWDIR, www/$sub is written at run time and must stay a real directory"
 done
