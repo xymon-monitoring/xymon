@@ -1,0 +1,6 @@
+build -- generate and install a systemd unit with INSTALLSYSTEMDDIR
+-------------------------------------------------------------------
+A systemd unit is generated from this build's own paths. Set INSTALLSYSTEMDDIR
+to where systemd reads units and "make install" puts it there; unset, nothing
+is installed and it stays a sample. INSTALLENVDIR names the environment-file
+directory (/etc/sysconfig, /etc/default, or the tree's etc by default).
