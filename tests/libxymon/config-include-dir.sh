@@ -12,7 +12,7 @@
 # graphs.d, ... without editing the shipped file. 'optional' means a missing
 # directory is silently ignored; 'directory' reads every file in it.
 #
-# Two things could regress independently, so the test pins both:
+# Four things could regress independently, so the test pins all four:
 #
 #   (A) Shipped artefact: every .DIST that PR #222 gave a drop-in directory
 #       still declares it. A dropped or mistyped line silently disables the
@@ -30,6 +30,12 @@
 #
 #   (C) A queued drop-in that cannot be opened is skipped, and the next one
 #       read in its place, whether it is the first or a later one.
+#
+#   (D) Install: the component shipping the config also creates the directory
+#       it declares. A drop-in the admin has to mkdir first is one in name
+#       only: the server made all of its own and the client made neither, so
+#       clientlaunch.d existed only where Debian's packaging invented it
+#       (debian/xymon-client.dirs) -- reported on the RHEL9 packages.
 
 set -euo pipefail
 # shellcheck source=tests/lib/assert.sh
@@ -51,7 +57,7 @@ ROOT=$(find_root)
 # carries .cfg keep it in the directory name (xymonserver.d,
 # xymonclient.d) -- so assert per-file on its own expected suffix.
 check_declares() {  # check_declares <file> <expected-dir-suffix>
-	local f=$1 suffix=$2 re
+	local f=$1 suffix=$2 re mk
 	# A sparse checkout (e.g. server-only, no client/) may lack a whole
 	# subtree; only require files whose directory is actually present, so such
 	# a tree skips them rather than failing. Within a present directory the
@@ -65,6 +71,17 @@ check_declares() {  # check_declares <file> <expected-dir-suffix>
 	re=$(printf '%s' "$suffix" | sed 's/[.]/\\./g')
 	grep -qE "^[[:space:]]*optional directory @XYMONHOME@/etc/${re}[[:space:]]*\$" "$f" \
 		|| fail "shipped $(basename "$f") has no active 'optional directory @XYMONHOME@/etc/$suffix' line (#222)"
+
+	# (D) whoever ships the config creates the directory. Either it is made by
+	# name, or it is one entry in the "for d in ..." list both makefiles use --
+	# where the name comes before the mkdir, hence the two orders.
+	case "$f" in
+	"$ROOT"/client/*) mk="$ROOT/client/Makefile" ;;
+	*)                mk="$ROOT/xymond/Makefile" ;;
+	esac
+	[ -f "$mk" ] || return 0
+	grep -qE "mkdir.*${re}|${re}.*mkdir" "$mk" \
+		|| fail "$(basename "$f") declares etc/$suffix, but ${mk#"$ROOT"/} never creates it"
 }
 
 check_declares "$ROOT/xymond/etcfiles/alerts.cfg.DIST"          "alerts.d"
@@ -129,7 +146,7 @@ elif built_tree; then
 	stackio=$work/stackio
 	build_stackio "$stackio"
 else
-	pass_partial "shipped configs declare their drop-in directories (#222)" "stackio mechanism check needs xymonstackio or a built tree"
+	pass_partial "shipped configs declare their drop-in directories and the install creates them (#222)" "stackio mechanism check needs xymonstackio or a built tree"
 fi
 
 # The STANDALONE reader reads argv[1] via stackfgets() (which expands include
@@ -193,7 +210,7 @@ assert_equal "BASE A1 X Y A2 B TAIL " "$(config_lines "$work/dir-in-frag.cfg")" 
 # name containing "unopenable". A probe checks first that it is the fopen()
 # the reader calls: where the C library's is called instead, a probe file
 # that should be refused is read, and this part cannot run.
-built_tree || pass_partial "drop-ins are read one at a time, and the shipped drop-in directories are declared (#222, #881)" \
+built_tree || pass_partial "drop-ins are read one at a time, and the shipped drop-in directories are declared and created (#222, #881)" \
 	"a drop-in that cannot be opened is checked through a reader built here, and this tree is not built"
 build_stackio "$work/stackio-unopenable" "$ROOT/tests/libxymon/config-include-dir-harness.c"
 unopenable_lines() { printf '.\n' | "$work/stackio-unopenable" "$1" 2>"$work/err.log" | sed '/^$/,$d' | tr '\n' ' '; }
@@ -202,7 +219,7 @@ printf 'PROBE_READ\n' >"$work/unopenable-probe.cfg"
 printf 'include %s\n' "$work/unopenable-probe.cfg" >"$work/probe.cfg"
 case $(unopenable_lines "$work/probe.cfg") in
 	*PROBE_READ*)
-		pass_partial "drop-ins are read one at a time, and the shipped drop-in directories are declared (#222, #881)" \
+		pass_partial "drop-ins are read one at a time, and the shipped drop-in directories are declared and created (#222, #881)" \
 			"the refusing fopen() is not the one stackio calls here, so a drop-in that cannot be opened is not checked" ;;
 esac
 
@@ -237,4 +254,4 @@ assert_contains "Cannot open include file '$work/later-bad/20-unopenable.cfg'" "
 assert_not_contains "line was" "$(cat "$work/err.log")" \
 	"the warning for a later drop-in quoted a line that has nothing to do with it"
 
-pass "shipped configs declare drop-in dirs and 'optional directory' merges fragments / tolerates absence (#222), one drop-in at a time, skipping one that cannot be opened (#881)"
+pass "shipped configs declare drop-in dirs, the install creates them, and 'optional directory' merges fragments / tolerates absence (#222), one drop-in at a time, skipping one that cannot be opened (#881)"

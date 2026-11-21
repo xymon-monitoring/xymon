@@ -61,7 +61,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
   </dd>
   <dt id="XYMONCLIENTLOGS"><a class="permalink" href="#XYMONCLIENTLOGS"><b>XYMONCLIENTLOGS</b></a></dt>
   <dd>The directory for the Xymon clients' own log files. Default:
-      $XYMONHOME/logs
+      $XYMONHOME/logs. A build that set INSTALLCLIENTLOGDIR names that directory
+      here instead, so the client logs there without relying on the symlink left
+      at $XYMONHOME/logs.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENTRUNDIR"><a class="permalink" href="#XYMONCLIENTRUNDIR"><b>XYMONCLIENTRUNDIR</b></a></dt>
@@ -76,7 +78,8 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONTMP"><a class="permalink" href="#XYMONTMP"><b>XYMONTMP</b></a></dt>
-  <dd>Directory used for temporary files. Default: $XYMONHOME/tmp/
+  <dd>Directory used for temporary files. Default: $XYMONHOME/tmp/. A build that
+      set INSTALLCLIENTTMPDIR names that directory here instead.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENT_FS_INCLUDE_TYPES"><a class="permalink" href="#XYMONCLIENT_FS_INCLUDE_TYPES"><b>XYMONCLIENT_FS_INCLUDE_TYPES</b></a></dt>

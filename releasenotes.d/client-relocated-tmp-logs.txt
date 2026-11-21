@@ -1,0 +1,12 @@
+client -- the configuration names a relocated tmp and log directory
+-------------------------------------------------------------------
+
+When a build sets INSTALLCLIENTTMPDIR or INSTALLCLIENTLOGDIR to move the
+client's temporary or log directory, xymonclient.cfg now names that directory
+in XYMONTMP and XYMONCLIENTLOGS, so the client writes there directly rather
+than through the compatibility symlink left at $XYMONHOME/tmp and
+$XYMONHOME/logs. A build that moves nothing is unchanged: the shipped values
+stay the relocatable "$XYMONHOME/tmp" and "$XYMONHOME/logs", resolved when the
+client starts, so a tarball still moves. This completes the directory move the
+install directories already do (INSTALLCLIENT{TMP,LOG}DIR): the files land in
+the chosen place and the configuration points there.
