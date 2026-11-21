@@ -435,12 +435,16 @@ startagain:
 		return NULL;
 	}
 
-	if (timeout) {
-		/* Calculate when the read should timeout. */
+	if (timeout && (endpos == NULL)) {
+		/*
+		 * Calculate when the read should timeout -- only when there is
+		 * something to read: a message already buffered is returned
+		 * without reading the clock.
+		 */
 		getntimer(&cutoff);
 		cutoff.tv_sec += timeout->tv_sec;
 		cutoff.tv_nsec += timeout->tv_nsec;
-		if (cutoff.tv_nsec > 1000000000) {
+		if (cutoff.tv_nsec >= 1000000000) {
 			cutoff.tv_sec += 1;
 			cutoff.tv_nsec -= 1000000000;
 		}
@@ -525,6 +529,17 @@ startagain:
 				if (selecttmo.tv_usec < 0) {
 					selecttmo.tv_sec--;
 					selecttmo.tv_usec += 1000000;
+				}
+
+				/*
+				 * The cutoff is past: a message arriving in parts can
+				 * outlast it. That is a timeout, the part kept for the
+				 * next call; select() given a negative time fails
+				 * (EINVAL), which would end the worker as an i/o error.
+				 */
+				if (selecttmo.tv_sec < 0) {
+					*seq = 0;
+					return idlemsg;
 				}
 			}
 

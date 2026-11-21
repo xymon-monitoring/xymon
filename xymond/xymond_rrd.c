@@ -20,6 +20,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <time.h>
 #include <limits.h>
 #include <sys/wait.h>
 #include <dirent.h>
@@ -38,6 +39,11 @@ static char rcsid[] = "$Id$";
 #include "client_config.h"
 
 #include <signal.h>
+
+/* How long the main loop waits for a channel message before it looks at
+ * the cache-control socket again: 100 ms, so that a flush request is
+ * served within that much of a 300 ms client wait. */
+#define CHANNEL_WAIT_NS 100000000L
 
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
@@ -339,8 +345,19 @@ int main(int argc, char *argv[])
 			}
 		} while (gotcachectlmessage);
 
-		/* Get next message */
-		msg = get_xymond_message(C_LAST, argv[0], &seq, NULL);
+		/*
+		 * Get next message, waiting no longer than CHANNEL_WAIT: a quiet
+		 * channel gives "@@idle", and the loop comes back to the control
+		 * socket above. Without the bound, a flush request sent while the
+		 * channel was quiet waited for the next message -- on the data
+		 * channel, the next client report, minutes away -- and a client
+		 * that flushes, then reads, as showgraph does, read the file a
+		 * cache behind.
+		 */
+		{
+			struct timespec channelwait = { 0, CHANNEL_WAIT_NS };
+			msg = get_xymond_message(C_LAST, argv[0], &seq, &channelwait);
+		}
 		if (msg == NULL) {
 			running = 0;
 			continue;
@@ -353,6 +370,9 @@ int main(int argc, char *argv[])
 			load_client_config(NULL);
 			reloadtime = now + 600;
 		}
+
+		/* Nothing came: back to the control socket, with no combo begun. */
+		if (strncmp(msg, "@@idle", 6) == 0) continue;
 
 		/* Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
