@@ -352,6 +352,9 @@ maintenance.
   starts are meant to fail included: a start added after a successful one
   would otherwise reopen the race. `start_xymond()`
   (tests/lib/xymond-daemon.sh) waits on a ping instead and needs nothing.
+  `tests/buildsystem/test-suite-portability.sh` refuses the shape it can see:
+  a start in a function or a loop, its log grepped after it, and not emptied
+  before it there.
 - **A test fails when its fix is absent -- or says why it doesn't.** That
   is what makes it a regression test rather than a green tick, and it is
   worth asserting deliberately: prefer an assertion about what only the
