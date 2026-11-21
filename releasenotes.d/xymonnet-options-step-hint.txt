@@ -1,0 +1,8 @@
+xymonnet -- "options ssl", "telnet" and "banner" log a hint to use the step
+---------------------------------------------------------------------------
+
+A protocols.cfg entry that writes "options ssl", "options telnet" or "options
+banner" now logs a one-line hint naming the step that says the same thing and
+says where it happens: "start tls" as the first step, "start iac", or an
+"expect". The option still works -- the hint is advisory, nothing is refused --
+and no shipped entry uses one, so a stock install logs nothing.
