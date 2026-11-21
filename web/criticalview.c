@@ -267,7 +267,9 @@ void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * col
 				char *htmlextrastr;
 
 				htmlalttag = alttag(colname, column->color, 0, 1, agestring(age));
-				htmlackstr = (column->ackmsg ? column->ackmsg : "");
+				/* The ack message is what the acknowledger typed: escape it,
+				 * or a quote ends the TITLE attribute */
+				htmlackstr = strdup(htmlattrquoted(column->ackmsg ? column->ackmsg : ""));
 				htmlgroupstr = strdup(urlencode(column->config->ttgroup ? column->config->ttgroup : ""));
 				htmlextrastr = strdup(urlencode(column->config->ttextra ? column->config->ttextra : ""));
 				fprintf(output, "<A HREF=\"%s&amp;NKPRIO=%d&amp;NKTTGROUP=%s&amp;NKTTEXTRA=%s\">",
@@ -281,6 +283,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * col
 					xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 				xfree(htmlgroupstr);
 				xfree(htmlextrastr);
+				xfree(htmlackstr);
 			}
 		}
 
