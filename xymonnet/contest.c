@@ -247,9 +247,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 		 * left to it.
 		 */
 		if (inet_aton(ip, &a4)) {
-			((struct sockaddr_in *)&newtest->addr)->sin_family = AF_INET;
 			((struct sockaddr_in *)&newtest->addr)->sin_addr = a4;
-			newtest->addr.ss_family = AF_INET;
 			newtest->addrlen = sizeof(struct sockaddr_in);
 		}
 		else {
