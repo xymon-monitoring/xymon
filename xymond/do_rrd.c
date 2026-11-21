@@ -40,6 +40,7 @@ extern int seq;	/* from xymond_rrd.c */
 char *rrddir = NULL;
 int use_rrd_cache = 1;         /* Use the cache by default */
 int no_rrd = 0;                /* Write to rrd by default */
+int cacheflushsz = 1;		/* Cache multipler set to 1x by default */
 
 static int  processorfd = 0;
 static FILE *processorstream = NULL;
@@ -59,7 +60,6 @@ static char *fnparams[4] = { NULL, };  /* Saved parameters passed to setupfn() *
 #define DEFAULT_RRD_INTERVAL 300
 static int  rrdinterval = DEFAULT_RRD_INTERVAL;
 
-#define CACHESZ 12             /* # of updates that can be cached - updates are usually 5 minutes apart */
 static int updcache_keyofs = -1;
 static void * updcache;
 typedef struct updcacheitem_t {
@@ -491,11 +491,16 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 * fill at the same speed); this would result in huge load-spikes every 
 	 * rrdinterval*CACHESZ seconds.
 	 *
-	 * So to smooth the load, we force the update through for every CACHESZ 
+	 * So to smooth the load, we force the update through for every CACHESZ*multiplier 
 	 * updates, regardless of how much is in the cache. This gives us a steady 
 	 * (although slightly higher) load.
+	 * This can be modified with the cachemultiplier option to xymond_rrd.
+	 *
+	 * No delay after startup: a previous xymond_rrd has written its cache
+	 * out before it exits (the flush at shutdown is not forked), so there is
+	 * no older writer to wait for.
 	 */
-	if (use_rrd_cache && (++callcounter < CACHESZ)) {
+	if (use_rrd_cache && (++callcounter < cacheflushsz)) {
 		if (cacheitem && (cacheitem->valcount < CACHESZ)) {
 			cacheitem->updseq[cacheitem->valcount] = seq;
 			cacheitem->updtime[cacheitem->valcount] = updtime;
