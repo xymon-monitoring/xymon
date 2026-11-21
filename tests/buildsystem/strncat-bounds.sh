@@ -13,9 +13,12 @@
 #	strncat(dst, src, sizeof(dst) - strlen(dst));		/* one byte over */
 #	strncat(dst, src, sizeof(dst) - strlen(dst) - 1);	/* fits */
 #
-# The tree has 88 of the first form. This test does not demand they be fixed:
-# it records the count per file and fails when a file gains one, so a new call
-# cannot join them unnoticed. Three open pull requests move such a line and
+# The tree still has some of the first form. This test does not demand they be
+# fixed: it records the count per file and fails when a file gains one, so a
+# new call cannot join them unnoticed. It fails too when a file has fewer than
+# its baseline: a fixed site left in the baseline is room for a new one to take
+# its place unnoticed, which is how the count stood at 89 for 47 sites after
+# the 42 fixed by #909. Whoever fixes one lowers the baseline in the same change. Three open pull requests move such a line and
 # keep its bound; one adds a new one -- that is what this catches, at review
 # time rather than after.
 #
@@ -72,15 +75,22 @@ awk -F: '{ print $1 }' "$work/found" | sort | uniq -c \
 	| awk '{ print $1, $2 }' | sort -k2 >"$work/current"
 sort -k2 "$baseline" >"$work/expected"
 
-# --- compare, and report what grew -----------------------------------------
+# --- compare, and report what grew and what shrank -------------------------
 : >"$work/grown"
+: >"$work/shrank"
 while read -r count path; do
 	was=$(awk -v p="$path" '$2 == p { print $1 }' "$work/expected")
 	[ -n "$was" ] || was=0
 	if [ "$count" -gt "$was" ]; then
 		printf '%s: %s now, %s in the baseline\n' "$path" "$count" "$was" >>"$work/grown"
+	elif [ "$count" -lt "$was" ]; then
+		printf '%s: %s now, %s in the baseline\n' "$path" "$count" "$was" >>"$work/shrank"
 	fi
 done <"$work/current"
+# A file the baseline names that has no site left at all
+while read -r was path; do
+	grep -q " $path\$" "$work/current" || printf '%s: 0 now, %s in the baseline\n' "$path" "$was" >>"$work/shrank"
+done <"$work/expected"
 
 if [ -s "$work/grown" ]; then
 	printf '%s\n' "a strncat() bound that leaves no room for the terminator was added:" >&2
@@ -89,10 +99,14 @@ if [ -s "$work/grown" ]; then
 	fail "the strncat baseline grew"
 fi
 
+if [ -s "$work/shrank" ]; then
+	printf '%s\n' "fewer strncat() sites than the baseline records -- a fixed one is room for a new one:" >&2
+	cat "$work/shrank" >&2
+	printf '%s\n' "lower $baseline to these counts (a file with none left is removed from it)" >&2
+	fail "the strncat baseline was not lowered"
+fi
+
 total=$(wc -l <"$work/found" | tr -d " ")
 expected_total=$(awk '{ s += $1 } END { print s + 0 }' "$work/expected")
-if [ "$total" -lt "$expected_total" ]; then
-	pass_partial "$total sites, down from $expected_total: lower the baseline in $baseline"
-fi
 
 pass "no strncat() bound lost its room for the terminator ($total sites, baseline $expected_total)"
