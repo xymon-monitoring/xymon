@@ -540,3 +540,22 @@ char *get_cookie(char *cookiename)
 	return NULL;
 }
 
+/*
+ * The charset named in HTMLCONTENTTYPE, for an XML "encoding=" declaration that
+ * must match the bytes Xymon passes through (the host's status text, which the
+ * web pages render under this same charset). Returns "utf-8" -- HTMLCONTENTTYPE's
+ * own default -- when none is named.
+ */
+char *htmlcontentcharset(void)
+{
+	static char charset[64];
+	char *ct = xgetenv("HTMLCONTENTTYPE");
+	char *p = (ct ? strstr(ct, "charset=") : NULL);
+
+	if (!p) return "utf-8";
+	p += strlen("charset=");
+	snprintf(charset, sizeof(charset), "%s", p);
+	charset[strcspn(charset, "; \t\r\n")] = '\0';
+	return (*charset ? charset : "utf-8");
+}
+
