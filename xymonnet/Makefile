@@ -31,6 +31,19 @@ xymonnet: $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIBS)
 xymonping: $(PINGTESTOBJS) $(XYMONTIMELIB) ../lib/libxymon.a
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS)
 
+# The local headers each object includes: without them, changing a header
+# such as xymonnet.h -- a struct layout -- leaves the other objects built
+# against the old one. CMake works these out itself; make needs them listed.
+xymonnet.o: xymonnet.h contest.h httptest.h dns.h ldaptest.h httpresult.h httpcookies.h
+contest.o: xymonnet.h contest.h httptest.h dns.h
+httptest.o: xymonnet.h contest.h httptest.h dns.h httpcookies.h
+httpresult.o: xymonnet.h contest.h httpresult.h httpcookies.h
+ldaptest.o: xymonnet.h ldaptest.h
+dns.o: dns.h dns2.h
+dns2.o: dns2.h
+httpcookies.o: httpcookies.h
+xymonnetprobe: xymonnet.h contest.h httptest.h dns.h
+
 xymonnet.o: xymonnet.c ntpprobe.c udpquery.h
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ xymonnet.c
 
