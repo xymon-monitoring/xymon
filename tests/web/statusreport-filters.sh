@@ -16,6 +16,9 @@
 #   - a filter given from a page, without --all, keeps to that page;
 #   - with no filter it keeps to the pagepath cookie's page, as the man page
 #     says and as it did, and with --all lists every host;
+#   - with no --heading and no --column or --test to name one after, the page
+#     is still titled, "Status report on" and the time: the heading stayed
+#     NULL and reached printf("%s") -- "(null)" with glibc, undefined elsewhere;
 #   - run through cgiwrap as nongreen.cgi, it is served, lists the red
 #     statuses and not the green one, and titles the page without quotes:
 #     cgiwrap passed the filter and heading in literal quotes, which no shell
@@ -101,6 +104,8 @@ assert_not_contains "hostb.example.com" "$OUT" "--test=sslcert lists a host whos
 report "" --filter=color=red,yellow --all
 [ "$RC" -eq 0 ] || fail "statusreport.cgi with --filter as the first option was not served (exit $RC): $OUT"
 assert_contains "hosta.example.com" "$OUT" "nongreen's --filter does not list a red host"
+assert_match '<title>Status&nbsp;report&nbsp;on&nbsp;(Mon|Tue|Wed|Thu|Fri|Sat|Sun)&nbsp;(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)&nbsp;(&nbsp;)?[0-9]{1,2}&nbsp;[0-9]{2}:[0-9]{2}:[0-9]{2}&nbsp;[0-9]{4}</title>' "$OUT" \
+	"with no --heading, --column or --test the page is not titled \"Status report on\" and the time: $(grep -o '<title>[^<]*</title>' <<<"$OUT" || echo 'no <title>')"
 
 # A filter from a page, without --all: the filter, kept to that page
 report "pagepath=one" --column=sslcert --filter=color=red
@@ -141,4 +146,4 @@ assert_not_contains "hostc.example.com" "$OUT" "nongreen.cgi lists the green ssl
 # statusreport HTML-quotes its heading: a literal quote would show as &quot;
 assert_contains '<title>All&nbsp;non-green&nbsp;systems</title>' "$OUT" "nongreen.cgi's heading is not \"All non-green systems\" as written"
 
-pass "statusreport.cgi takes --column, --test and --filter without aborting, with no filter keeps to the viewer's page unless --all, and nongreen.cgi lists the non-green statuses alone"
+pass "statusreport.cgi takes --column, --test and --filter without aborting, with no filter keeps to the viewer's page unless --all, titles a page given no heading, and nongreen.cgi lists the non-green statuses alone"
