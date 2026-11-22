@@ -119,7 +119,11 @@ Section: User Commands (1)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="
     By default (the &quot;standard&quot;), and with &quot;--dns=only&quot;,
       xymonnet looks up the hostname of a 0.0.0.0 host; if that fails, all
       services on that host are reported as being down. The host is tested at
-      its IPv4 address, or at its IPv6 address if it has none.
+      its IPv4 address, or at its IPv6 address if it has none. When an http or
+      https URL gives no address of its own (no &quot;=IP&quot;), the host it is
+      reached through is looked up the same way, with the same fallback: the
+      URL's host on a 0.0.0.0 line, or the proxy's host when it goes through a
+      proxy that has no address of its own either.
     <br/>
     With &quot;--dns=ip&quot; xymonnet does no lookup at all, so a 0.0.0.0 host
       cannot be tested.
