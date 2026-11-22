@@ -524,20 +524,28 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					struct in_addr ipv4;
 					char *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
 					char *alertid, *alertidenv;
-					int msglen;
 
 					cfidtxt = (char *)malloc(strlen("CFID=") + 10);
 					sprintf(cfidtxt, "CFID=%d", recip->cfid);
 					putenv(cfidtxt);
 
 					p = message_text(alert, recip);
-					if (debug) {
-						msglen = strlen(p);
-						if (msglen > (max_alertmsg_scripts - strlen("BBALPHAMSG="))) {
-							errprintf("Truncated large alert message from %d bytes; consider increasing MAXMSG_ALERTSCRIPT above %d\n", msglen, atoi(xgetenv("MAXMSG_ALERTSCRIPT")));
+					{
+						/* snprintf cuts the message at the buffer edge,
+						   which can split a multi-byte UTF-8 character and
+						   leave the script a partial one in BBALPHAMSG. Back
+						   up over a trailing continuation byte (10xxxxxx), at
+						   most three, as the ack-table cut does (do_acklog). */
+						int avail = max_alertmsg_scripts - 1 - (int)strlen("BBALPHAMSG=");
+						int cut = (int)strlen(p);
+						if (cut > avail) {
+							int floor = (avail > 3) ? (avail - 3) : 0;
+							cut = avail;
+							while ((cut > floor) && (((unsigned char)p[cut] & 0xc0) == 0x80)) cut--;
+							if (debug) errprintf("Truncated large alert message from %d bytes; consider increasing MAXMSG_ALERTSCRIPT above %d\n", (int)strlen(p), atoi(xgetenv("MAXMSG_ALERTSCRIPT")));
 						}
+						snprintf(bbalphamsg, max_alertmsg_scripts, "BBALPHAMSG=%.*s", cut, p);
 					}
-					snprintf(bbalphamsg, max_alertmsg_scripts, "BBALPHAMSG=%s", p);
 					putenv(bbalphamsg);
 
 					ackcode = (char *)malloc(strlen("ACKCODE=") + 10);
