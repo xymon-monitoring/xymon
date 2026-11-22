@@ -135,11 +135,16 @@ static char *shellquote(const char *s)
 	return result;
 }
 
-void errormsg(char *msg)
+static void errorpage(char *msg)
 {
 	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	printf("<html><head><title>Invalid request</title></head>\n");
 	printf("<body>%s</body></html>\n", msg);
+}
+
+void errormsg(char *msg)
+{
+	errorpage(msg);
 	exit(1);
 }
 
@@ -1404,8 +1409,19 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			calcpr = NULL;
 		}
 
-		/* rrdtool's message quotes file names built from the request */
-		errormsg(htmlquoted(rrd_get_error()));
+		/*
+		 * Not errormsg(): rrd_graph can fail while the thread Pango starts
+		 * to load the fonts ("[pango] FcInit") is still running, and
+		 * exit()'s teardown under it crashes that thread, and the CGI with
+		 * it, on a few percent of failed graphs. _exit() skips the teardown;
+		 * nothing here registers an atexit handler, so only stdout needs
+		 * flushing first.
+		 *
+		 * rrdtool's message quotes file names built from the request.
+		 */
+		errorpage(htmlquoted(rrd_get_error()));
+		fflush(stdout);
+		_exit(1);
 	}
 
 	if (useroptval) xfree(useroptval);
