@@ -44,11 +44,15 @@ assert_match '^9\.9\.9-1-g[0-9a-f]{7,}$' "$(id)" "a commit after the tag"
 
 # A shallow clone cannot reach the tag a few commits back, so git describe
 # falls to --always: a bare hash, which still names the commit. The report
-# this issue is about is an empty identity, never a hash.
+# this issue is about is an empty identity, never a hash. A clone that cannot
+# be made leaves the case unchecked, and the test says so rather than passing.
+gap=""
 if git clone -q --depth 1 --no-tags "file://$work/src" "$work/shallow" 2>/dev/null; then
 	mkdir -p "$work/shallow/build" && cp "$ROOT/build/build-id.sh" "$work/shallow/build/"
 	sid=$(cd "$work/shallow" && unset XYMON_BUILD_ID && sh build/build-id.sh && cat build/build-id)
 	assert_match '^[0-9a-f]{7,}$' "$sid" "a shallow clone with no tag reachable: the hash"
+else
+	gap="git clone --depth 1 failed here, so the shallow-clone case was not checked"
 fi
 
 old=$(id)
@@ -78,7 +82,7 @@ done
 
 xymon=$ROOT/common/xymon
 if [ ! -x "$xymon" ] || [ ! -f "$ROOT/build/build-id" ]; then
-	pass_partial "build/build-id.sh" "xymon not built, --build-info not checked"
+	pass_partial "build/build-id.sh" "xymon not built, --build-info not checked${gap:+; $gap}"
 fi
 want=$(cat "$ROOT/build/build-id")
 got=$(env -u XYMONBUILD "$xymon" --build-info)
@@ -92,4 +96,5 @@ plain=$(sed -n 's/^#define VERSION "\(.*\)"$/\1/p' "$ROOT/include/version.h")
 assert_equal "Xymon version $plain" "$(XYMONBUILD=leak-me "$xymon" --version)" \
 	"xymon --version stays the plain number with XYMONBUILD set"
 
+[ -z "$gap" ] || pass_partial "build/build-id.sh, and xymon --build-info reports it" "$gap"
 pass "build/build-id.sh, and xymon --build-info reports it"
