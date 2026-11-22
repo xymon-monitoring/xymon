@@ -2117,7 +2117,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 					snprintf(msgline, sizeof(msgline), "&%s Unknown RPC service %s\n",
 						colorname(COL_RED), rpcsvc);
 				}
-				strncat(msgbuf, msgline, (MSGBUFSIZE - strlen(msgbuf)));
+				strncat(msgbuf, msgline, (MSGBUFSIZE - strlen(msgbuf) - 1));
 
 				rpcsvc = strtok(NULL, ",");
 			}
