@@ -685,6 +685,39 @@ static int cert_covers_name(X509 *cert, const char *name)
 }
 #endif
 
+/*
+ * A certificate's subject or issuer as a string for the sslcert status.
+ *
+ * X509_NAME_oneline(), used here before, writes a non-standard "/C=.../O=..."
+ * form OpenSSL strongly discourages, and escapes every byte >= 0x80 as "\xHH",
+ * so an accented field such as "O=Soci\xC3\xA9t\xC3\xA9" read as mojibake.
+ *
+ * X509_NAME_print_ex() with XN_FLAG_RFC2253 gives the RFC 2253 form
+ * ("CN=...,O=...,C=..."); ASN1_STRFLGS_RFC2253 already converts the value to
+ * UTF-8, and dropping ASN1_STRFLGS_ESC_MSB stops the high bytes being escaped,
+ * so the UTF-8 survives. Control bytes stay escaped (ESC_CTRL is kept), so the
+ * one-line status cannot be broken. The result is malloc'd for the caller's
+ * xfree(), where X509_NAME_oneline's OPENSSL_malloc'd buffer did not match.
+ */
+static char *cert_dn_string(X509_NAME *name)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x0090700fL
+	BIO *b = BIO_new(BIO_s_mem());
+	char *data, *result;
+	long len;
+
+	X509_NAME_print_ex(b, name, 0, XN_FLAG_RFC2253 & ~ASN1_STRFLGS_ESC_MSB);
+	len = BIO_get_mem_data(b, &data);
+	result = (char *)malloc(len + 1);
+	memcpy(result, data, len);
+	result[len] = '\0';
+	BIO_free(b);
+	return result;
+#else
+	return X509_NAME_oneline(name, NULL, 0);
+#endif
+}
+
 static void setup_ssl(tcptest_t *item)
 {
 	static int ssl_init_complete = 0;
@@ -1033,8 +1066,8 @@ static void setup_ssl(tcptest_t *item)
 #endif
 	}
 
-	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
-	certissuer = X509_NAME_oneline(X509_get_issuer_name(peercert), NULL, 0);
+	certcn = cert_dn_string(X509_get_subject_name(peercert));
+	certissuer = cert_dn_string(X509_get_issuer_name(peercert));
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 	certsigalg = OBJ_nid2ln(OBJ_obj2nid(peercert->sig_alg->algorithm));
 #else
