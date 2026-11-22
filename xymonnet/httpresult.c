@@ -231,8 +231,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			else {
 				snprintf(m1, sizeof(m1), "Connected, but got empty response (code: %d)", req->httpstatus);
 			}
-			addtobuffer(msgtext, m1);
-			req->errorcause = strdup(m1);
+			/* The server's own reason phrase: text, not markup */
+			addtobuffer(msgtext, htmlattrquoted(m1));
+			req->errorcause = strdup(htmlattrquoted(m1));
 		}
 		else {
 			addtobuffer(msgtext, "OK");
@@ -299,7 +300,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 			if (req->headers) {
 				addtostatus("\n");
-				addtostatus(req->headers);
+				addtostatus(htmlattrquoted((char *)req->headers));
 			}
 			if (req->faileddeps) addtostatus(req->faileddeps);
 
@@ -362,7 +363,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		if (req->headers) {
 			addtostatus("\n");
-			addtostatus(req->headers);
+			addtostatus(htmlattrquoted((char *)req->headers));
 		}
 		if (req->faileddeps) addtostatus(req->faileddeps);
 
@@ -588,7 +589,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		addtostatus("\n");
 
 		if (headermatch && req->headers) {
-			addtostatus(req->headers);
+			addtostatus(htmlattrquoted((char *)req->headers));
 			addtostatus("\n");
 		}
 

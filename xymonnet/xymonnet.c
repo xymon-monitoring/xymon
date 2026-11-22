@@ -2030,13 +2030,14 @@ void send_results(service_t *service, int failgoesclear)
 				}
 			}
 			else {
-				addtostatus("\n"); addtostrstatus(t->banner); addtostatus("\n");
+				/* What the service sent: text, not markup, on the status page */
+				addtostatus("\n"); addtostatus(htmlattrquoted(STRBUF(t->banner))); addtostatus("\n");
 			}
 		}
 
 		if ((service == pingtest) && t->host->traceroute && (STRBUFLEN(t->host->traceroute) > 0)) {
 			addtostatus("Traceroute results:\n");
-			addtostrstatus(t->host->traceroute);
+			addtostatus(htmlattrquoted(STRBUF(t->host->traceroute)));
 			addtostatus("\n");
 		}
 
@@ -2140,7 +2141,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 		if (t->open) {
 			if (STRBUFLEN(t->banner)) {
 				addtostatus("\n\n");
-				addtostrstatus(t->banner);
+				addtostatus(htmlattrquoted(STRBUF(t->banner)));
 			}
 			else {
 				snprintf(msgline, sizeof(msgline), "\n\nNo output from rpcinfo -p %s\n", t->host->ip);
@@ -2149,7 +2150,7 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 		}
 		else {
 			addtostatus("\n\nCould not connect to the portmapper service\n");
-			if (STRBUFLEN(t->banner)) addtostrstatus(t->banner);
+			if (STRBUFLEN(t->banner)) addtostatus(htmlattrquoted(STRBUF(t->banner)));
 		}
 		finish_status();
 	}
@@ -2236,7 +2237,8 @@ void send_sslcert_status(testedhost_t *host)
 				}
 				addtobuffer(sslmsg, "\n");
 
-				addtobuffer(sslmsg, t->certinfo);
+				/* The subject and issuer are what the certificate holds */
+				addtobuffer(sslmsg, htmlattrquoted(t->certinfo));
 			}
 		}
 	}
