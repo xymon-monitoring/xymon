@@ -676,15 +676,16 @@ void load_tests(void)
 					 * name is a label rather than the name the service answers to.
 					 * The connection still goes to the host's own address, as the
 					 * bare service does. http/https and ldap/ldaps are handled
-					 * above; what reaches here must name a TLS service in
-					 * protocols.cfg -- imaps, smtps, pop3s and the rest -- and a
-					 * servername.
+					 * above; a known TLS service here -- imaps, smtps, pop3s and
+					 * the rest -- names a servername. A scheme that is not a
+					 * service at all is left to another test, not warned about.
 					 */
 					char *spec = strdup(testspec);
 					char *sep = strstr(spec, "://");
 					char *name, *p;
 					int specialport = 0;
 					xtreePos_t handle;
+					svcinfo_t *svc;
 
 					*sep = '\0';				/* spec is now the scheme */
 					name = sep + 3;
@@ -715,7 +716,17 @@ void load_tests(void)
 							  xmh_item(hwalk, XMH_HOSTNAME), spec);
 						s = NULL;
 					}
-					else if (!svc_uses_tls(find_tcp_service(spec))) {
+					else if ((svc = find_tcp_service(spec)) == NULL) {
+						/*
+						 * Not a service xymonnet knows -- a scheme like
+						 * "http6s://" that another test (an external one)
+						 * handles. Leave it to that test; before SNI reached
+						 * every TLS service this branch did not exist, so no
+						 * warning was logged for it.
+						 */
+						s = NULL;
+					}
+					else if (!svc_uses_tls(svc)) {
 						errprintf("Host %s: '%s://' is not a TLS service in protocols.cfg\n",
 							  xmh_item(hwalk, XMH_HOSTNAME), spec);
 						s = NULL;
