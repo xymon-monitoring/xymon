@@ -5,7 +5,10 @@
 #
 # ghostlist.cgi links its column headings and its "Text report" back to
 # itself. The parameters of those links are joined with "&amp;", as an HTML
-# attribute needs; they had a bare "&" before MAXAGE and TEXT.
+# attribute needs; they had a bare "&" before MAXAGE and TEXT. The Text report
+# link carries the request's own SORT value, which is put back URL-encoded: it
+# went through htmlquoted(), HTML escaping, so a space became "&nbsp;" and an
+# "&" became "&amp;" -- read back in the URL as a separator.
 #
 # The links are printed once xymond answers the ghostlist query, with or
 # without ghosts in it, so a xymond with an empty board is enough.
@@ -57,4 +60,10 @@ assert_contains 'ghostlist.sh?SORT=name&amp;MAXAGE=300&amp;TEXT' "$out" "the Tex
 assert_not_contains '&MAXAGE=' "$out" "a bare & is left before MAXAGE"
 assert_not_contains '&TEXT' "$out" "a bare & is left before TEXT"
 
-pass "ghostlist.cgi joins the parameters of its column and Text report links with &amp;"
+# A SORT value with a space and an "&" comes back URL-encoded in the Text report link
+out=$(REQUEST_METHOD=GET QUERY_STRING="SORT=a%20b%26c&MAXAGE=300" XYMONHOME="$work/home" \
+	"$GHOSTLIST" --env="$work/xymonserver.cfg" 2>"$work/stderr" || true)
+assert_contains 'ghostlist.sh?SORT=a%20b%26c&amp;MAXAGE=300&amp;TEXT' "$out" \
+	"the SORT value is not URL-encoded in the Text report link: $(grep -o 'ghostlist.sh?SORT=[^"]*TEXT' <<<"$out" || echo 'no link')"
+
+pass "ghostlist.cgi joins the parameters of its column and Text report links with &amp;, and puts its SORT value back URL-encoded"
