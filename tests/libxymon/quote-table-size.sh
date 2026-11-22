@@ -13,6 +13,8 @@
 #
 # The harness includes strfunc.c to reach the static quote(), and is built
 # with AddressSanitizer where the compiler has it.
+# abort_on_error=0 keeps AddressSanitizer's own reports from exiting through
+# abort() (its default on macOS), so that only quote()'s abort() gives 134.
 
 set -euo pipefail
 . "$(dirname "$0")/../lib/assert.sh"
@@ -34,23 +36,23 @@ if asan_usable; then san="-fsanitize=address -fno-omit-frame-pointer"; fi
 HARNESS_CFLAGS="-iquote $ROOT/include -iquote $ROOT/lib $san" \
 	build_harness "$work" "$work/harness" "$here/quote-table-size-harness.c" "$lib"
 
-out=$(ASAN_OPTIONS=detect_leaks=0 "$work/harness" 15 2>"$work/err") \
+out=$(ASAN_OPTIONS=detect_leaks=0:abort_on_error=0 "$work/harness" 15 2>"$work/err") \
 	|| fail "a table of 15 entries stopped quote(): $(head -3 "$work/err")"
 assert_equal "<a><b><c><d><e><f><g><h><i><j><k><l><m><n><o>pqrstuvwxyz" "$out" \
 	"a table of 15 entries does not escape each of its characters"
 
 rc=0
-out=$(ASAN_OPTIONS=detect_leaks=0 "$work/harness" 16 2>"$work/err") || rc=$?
+out=$(ASAN_OPTIONS=detect_leaks=0:abort_on_error=0 "$work/harness" 16 2>"$work/err") || rc=$?
 [ "$rc" -eq 134 ] || fail "a table of 16 entries did not abort quote() (exit $rc, abort is 134): it printed '$out'"
 assert_contains "quote: a substitution table has more than 15 entries" "$(cat "$work/err")" \
 	"a table of 16 entries stopped quote() without saying why"
 
 rc=0
-out=$(ASAN_OPTIONS=detect_leaks=0 "$work/harness" 16 null 2>"$work/err") || rc=$?
+out=$(ASAN_OPTIONS=detect_leaks=0:abort_on_error=0 "$work/harness" 16 null 2>"$work/err") || rc=$?
 [ "$rc" -eq 134 ] || fail "a table of 16 entries with a NULL input did not abort quote() (exit $rc, abort is 134): it returned '$out'"
 assert_contains "quote: a substitution table has more than 15 entries" "$(cat "$work/err")" \
 	"a table of 16 entries with a NULL input stopped quote() without saying why"
-out=$(ASAN_OPTIONS=detect_leaks=0 "$work/harness" 15 null 2>"$work/err") \
+out=$(ASAN_OPTIONS=detect_leaks=0:abort_on_error=0 "$work/harness" 15 null 2>"$work/err") \
 	|| fail "a table of 15 entries with a NULL input stopped quote(): $(head -3 "$work/err")"
 assert_equal "(NULL)" "$out" "quote() no longer returns NULL for a NULL input with nullisnull set"
 
