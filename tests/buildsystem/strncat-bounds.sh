@@ -68,7 +68,10 @@ assert_equal "3" "$(wc -l <"$work/probe" | tr -d " ")" \
 
 # --- the tree, counted per file ---------------------------------------------
 : >"$work/found"
-for f in $(cd "$ROOT" && git ls-files '*.c'); do
+# find, not git ls-files: the test runs where the tree is not a git
+# checkout (a release tarball, a lane container without git), where
+# git ls-files is empty and every site would read as removed.
+for f in $(cd "$ROOT" && find . -name .git -prune -o -type f -name '*.c' -print | sed 's|^\./||' | sort); do
 	awk -v FILE="$f" -f "$detector" "$ROOT/$f" >>"$work/found" || true
 done
 awk -F: '{ print $1 }' "$work/found" | sort | uniq -c \
