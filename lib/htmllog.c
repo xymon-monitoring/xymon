@@ -655,10 +655,13 @@ void setdoctarget(char *target)
 
 char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip)
 {
-	static char result[4096];
+	STATIC_SBUF_DEFINE(result);
 	void *hinfo = hostinfo(hostname);
 	char *hostlinkurl;
+	char *font = xgetenv("XYMONPAGEROWFONT");
+	char *nc;
 
+	if (result) xfree(result);
 	if (!doctarget) doctarget = strdup("");
 
 	/* First the hostname and a notes-link.
@@ -672,35 +675,37 @@ char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip)
 	 * may be links to documentation in some page-title).
 	 *
 	 * else just put the hostname there.
+	 *
+	 * result is grown to fit: a long display name or COMMENT (nameandcomment()
+	 * sizes its own buffer to them) must not be cut at a fixed length, which
+	 * would drop the closing tags and could split a UTF-8 character.
 	 */
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wformat-truncation"
-#endif  // __GNUC__
+	nc = nameandcomment(hinfo, hostname, usetooltip);
+
 	if (documentationurl) {
-		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
-			urldoclink(documentationurl, hostname),
-			doctarget, xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+		char *url = urldoclink(documentationurl, hostname);
+		SBUF_MALLOC(result, strlen(url) + strlen(doctarget) + strlen(font) + strlen(nc) + 64);
+		snprintf(result, result_buflen, "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
+			url, doctarget, font, nc);
 	}
 	else if ((hostlinkurl = hostlink(hostname)) != NULL) {
-		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
-			hostlinkurl, doctarget, xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+		SBUF_MALLOC(result, strlen(hostlinkurl) + strlen(doctarget) + strlen(font) + strlen(nc) + 64);
+		snprintf(result, result_buflen, "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
+			hostlinkurl, doctarget, font, nc);
 	}
 	else if (defaultlink) {
 		/* Provide a link to the page where this host lives */
-		snprintf(result, sizeof(result), "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>",
-			xgetenv("XYMONWEB"), defaultlink, doctarget,
-			xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+		char *web = xgetenv("XYMONWEB");
+		SBUF_MALLOC(result, strlen(web) + strlen(defaultlink) + strlen(doctarget) + strlen(font) + strlen(nc) + 64);
+		snprintf(result, result_buflen, "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>",
+			web, defaultlink, doctarget, font, nc);
 	}
 	else {
-		snprintf(result, sizeof(result), "<FONT %s>%s</FONT>",
-			xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+		SBUF_MALLOC(result, strlen(font) + strlen(nc) + 32);
+		snprintf(result, result_buflen, "<FONT %s>%s</FONT>", font, nc);
 	}
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-	#pragma GCC diagnostic pop
 
-#endif  // __GNUC__
 	return result;
 }
 
