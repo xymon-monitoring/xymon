@@ -88,6 +88,10 @@ report() {
 			num = substr($0, RSTART + 1, RLENGTH - 2)
 			text = substr($0, RSTART + RLENGTH)
 			if (text ~ /^[[:space:]]*#/) next
+			# A dry run (make -n) of the tree builds nothing: it rebuilds
+			# no archive and mixes no two builds, which is what make-tree-lib
+			# is about, so it passes. A real build invocation carries no -n.
+			if (rule == "make-tree-lib" && text ~ /(^|[[:space:]])-[A-Za-z]*n([[:space:]]|$)/) next
 			if (index(path, root) == 1) path = substr(path, length(root) + 1)
 			printf "%s\t%s:%s\t%s\n", rule, path, num, why
 		}' >>"$work/violations"
