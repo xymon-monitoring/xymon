@@ -46,7 +46,7 @@ EOF
 	printf 'disk report\n'
 	printf '/dev/sda1 1000000 400000 600000 40%% /data\n'
 	printf '@@\n'
-} | env XYMONHOME="$WORK" XYMONTMP="$WORK/tmp" HOSTSCFG="$WORK/hosts.cfg" \
+} | env XYMONHOME="$WORK" XYMONTMP="$WORK/tmp" XYMONRUNDIR="$WORK/tmp" HOSTSCFG="$WORK/hosts.cfg" \
 	"$XYMOND_RRD" --rrddir="$WORK/rrd" --no-cache 2>"$WORK/worker.log" \
 	|| { sed -n '1,10p' "$WORK/worker.log" >&2
 	     fail "xymond_rrd died on a disk status while rrddefinitions.cfg carries its own step setting"; }
