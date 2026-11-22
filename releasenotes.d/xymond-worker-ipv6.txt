@@ -1,0 +1,6 @@
+xymond_channel, xymond_worker -- reach a network worker over IPv6
+-----------------------------------------------------------------
+
+A network worker's --listen and the channel that connects to it were IPv4
+only. Both now take IPv6 and names, as [addr]:port or name:port. A name that
+resolves to IPv4 is still used, so an existing locator setup is unchanged.
