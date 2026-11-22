@@ -38,6 +38,8 @@ extern cgidata_t *cgi_request(void);
 extern char *csp_header(const char *pagename); 
 extern int cgi_refererok(char *expected); 
 extern char *get_cookie(char *cookiename);
+extern char *htmlcontentcharset(void);
+extern int htmlcontentutf8(void);	/* whether htmlcontentcharset() names UTF-8 */
 extern char *safe_basename(char *path);
 extern int cgi_hasctrl(const char *value);
 extern char *cgi_pathcomponent(const char *value, int decode_commas);

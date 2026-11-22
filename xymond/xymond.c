@@ -4744,19 +4744,31 @@ void do_message(conn_t *msg, char *origin)
 
 			xfree(msg->buf);
 
-			addtobuffer_many(response, 
-				"<?xml version='1.0' encoding='ISO-8859-1'?>\n",
+			/*
+			 * ServerName, Type and TestFlags are host-controlled (TestFlags
+			 * is copied verbatim from the status message), so each goes through
+			 * addtobuffer_xmlquoted() -- a lone & < > or a stray byte would
+			 * otherwise make the whole reply not well-formed. One filter call
+			 * per statement, since it writes straight to response.
+			 */
+			addtobuffer_many(response,
+				"<?xml version='1.0' encoding='", htmlcontentcharset(), "'?>\n",
 				"<ServerStatus>\n",
-				"  <ServerName>", 	h->hostname, 				"</ServerName>\n",
-				"  <Type>", 		log->test->name, 			"</Type>\n",
+				"  <ServerName>", NULL);
+			addtobuffer_xmlquoted(response, h->hostname, htmlcontentutf8(), 0);
+			addtobuffer_many(response, "</ServerName>\n", "  <Type>", NULL);
+			addtobuffer_xmlquoted(response, log->test->name, htmlcontentutf8(), 0);
+			addtobuffer_many(response, "</Type>\n",
 				"  <Status>", 		colnames[log->color], 			"</Status>\n",
-				"  <TestFlags>", 	(log->testflags ? log->testflags : ""), "</TestFlags>\n",
+				"  <TestFlags>", NULL);
+			addtobuffer_xmlquoted(response, (log->testflags ? log->testflags : ""), htmlcontentutf8(), 0);
+			addtobuffer_many(response, "</TestFlags>\n",
 				"  <LastChange>", 	timestr(log->lastchange), 		"</LastChange>\n",
 				"  <LogTime>", 		timestr(log->logtime), 			"</LogTime>\n",
 				"  <ValidTime>", 	timestr(log->validtime), 		"</ValidTime>\n",
 				"  <AckTime>", 		timestr(log->acktime), 			"</AckTime>\n",
 				"  <DisableTime>", 	timestr(log->enabletime), 		"</DisableTime>\n",
-				"  <Sender>", 		(log->sender ? log->sender : "xymond"),	"</Sender>\n", 
+				"  <Sender>", 		(log->sender ? log->sender : "xymond"),	"</Sender>\n",
 				NULL);
 			timestr(-999);
 
@@ -4765,20 +4777,25 @@ void do_message(conn_t *msg, char *origin)
 			else
 				addtobuffer(response, "  <Cookie>N/A</Cookie>\n");
 
-			if (log->ackmsg && (log->acktime > now))
-				addtobuffer_many(response, "  <AckMsg><![CDATA[", log->ackmsg, "]]></AckMsg>\n", NULL);
+			if (log->ackmsg && (log->acktime > now)) {
+				addtobuffer(response, "  <AckMsg>");
+				addtobuffer_xmlquoted(response, log->ackmsg, htmlcontentutf8(), 1);
+				addtobuffer(response, "</AckMsg>\n");
+			}
 			else
 				addtobuffer(response, "  <AckMsg>N/A</AckMsg>\n");
 
-			if (log->dismsg && (log->enabletime > now))
-				addtobuffer_many(response, "  <DisMsg><![CDATA[", log->dismsg, "]]></DisMsg>\n", NULL);
+			if (log->dismsg && (log->enabletime > now)) {
+				addtobuffer(response, "  <DisMsg>");
+				addtobuffer_xmlquoted(response, log->dismsg, htmlcontentutf8(), 1);
+				addtobuffer(response, "</DisMsg>\n");
+			}
 			else
 				addtobuffer(response, "  <DisMsg>N/A</DisMsg>\n");
 
-			addtobuffer_many(response, 
-				"  <Message><![CDATA[", msg_data(log->message, 0), "]]></Message>\n",
-				"</ServerStatus>\n",
-				NULL);
+			addtobuffer(response, "  <Message>");
+			addtobuffer_xmlquoted(response, msg_data(log->message, 0), htmlcontentutf8(), 1);
+			addtobuffer_many(response, "</Message>\n", "</ServerStatus>\n", NULL);
 
 			msg->doingwhat = RESPONDING;
 			msg->buflen = STRBUFLEN(response);
@@ -4940,7 +4957,7 @@ void do_message(conn_t *msg, char *origin)
 
 		response = newstrbuffer(lastboardsize);
 
-		addtobuffer(response, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+		addtobuffer_many(response, "<?xml version='1.0' encoding='", htmlcontentcharset(), "'?>\n", NULL);
 		addtobuffer(response, "<StatusBoard>\n");
 
 		for (hosthandle = xtreeFirst(rbhosts); (hosthandle != xtreeEnd(rbhosts)); hosthandle = xtreeNext(rbhosts, hosthandle)) {
@@ -4980,12 +4997,18 @@ void do_message(conn_t *msg, char *origin)
 				eoln = strchr(lwalk->message, '\n');
 				if (eoln) *eoln = '\0';
 
-				addtobuffer_many(response, 
+				/* Host-controlled fields through addtobuffer_xmlquoted(), one per statement; see xymondxlog above. */
+				addtobuffer_many(response,
 					"  <ServerStatus>\n",
-					"    <ServerName>", hwalk->hostname, "</ServerName>\n",
-					"    <Type>", lwalk->test->name, "</Type>\n",
+					"    <ServerName>", NULL);
+				addtobuffer_xmlquoted(response, hwalk->hostname, htmlcontentutf8(), 0);
+				addtobuffer_many(response, "</ServerName>\n", "    <Type>", NULL);
+				addtobuffer_xmlquoted(response, lwalk->test->name, htmlcontentutf8(), 0);
+				addtobuffer_many(response, "</Type>\n",
 					"    <Status>", colorname(lwalk->color), "</Status>\n",
-					"    <TestFlags>", (lwalk->testflags ? lwalk->testflags : ""), "</TestFlags>\n",
+					"    <TestFlags>", NULL);
+				addtobuffer_xmlquoted(response, (lwalk->testflags ? lwalk->testflags : ""), htmlcontentutf8(), 0);
+				addtobuffer_many(response, "</TestFlags>\n",
 					"    <LastChange>", timestr(lwalk->lastchange), "</LastChange>\n",
 					"    <LogTime>", timestr(lwalk->logtime), "</LogTime>\n",
 					"    <ValidTime>", timestr(lwalk->validtime), "</ValidTime>\n",
@@ -5000,10 +5023,9 @@ void do_message(conn_t *msg, char *origin)
 				else
 					addtobuffer(response, "    <Cookie>N/A</Cookie>\n");
 
-				addtobuffer_many(response, 
-					"    <MessageSummary><![CDATA[", lwalk->message, "]]></MessageSummary>\n",
-					"  </ServerStatus>\n",
-					NULL);
+				addtobuffer(response, "    <MessageSummary>");
+				addtobuffer_xmlquoted(response, lwalk->message, htmlcontentutf8(), 1);
+				addtobuffer_many(response, "</MessageSummary>\n", "  </ServerStatus>\n", NULL);
 
 				if (eoln) *eoln = '\n';
 			}

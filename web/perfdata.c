@@ -132,10 +132,10 @@ int oneset(char *hostname, char *rrdname, char *starttime, char *endtime, char *
 	switch (outform) {
 	  case O_XML:
 		printf("  <dataset>\n");
-		printf("     <hostname>%s</hostname>\n", hostname);
-		printf("     <datasource>%s</datasource>\n", rrdname);
-		printf("     <rrdcolumn>%s</rrdcolumn>\n", colname);
-		printf("     <measurement>%s</measurement>\n", (dsdescr ? dsdescr : colname));
+		printf("     <hostname>%s</hostname>\n", xmlquoted(hostname, htmlcontentutf8(), 0));
+		printf("     <datasource>%s</datasource>\n", xmlquoted(rrdname, htmlcontentutf8(), 0));
+		printf("     <rrdcolumn>%s</rrdcolumn>\n", xmlquoted(colname, htmlcontentutf8(), 0));
+		printf("     <measurement>%s</measurement>\n", xmlquoted((dsdescr ? dsdescr : colname), htmlcontentutf8(), 0));
 		printf("     <datapoints>\n");
 		break;
 
@@ -392,7 +392,7 @@ int main(int argc, char **argv)
 
 	switch (outform) {
 	  case O_XML:
-		printf("<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+		printf("<?xml version='1.0' encoding='%s'?>\n", htmlcontentcharset());
 		printf("<datasets>\n");
 		break;
 	  default:

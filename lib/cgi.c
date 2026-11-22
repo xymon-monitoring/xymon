@@ -540,3 +540,61 @@ char *get_cookie(char *cookiename)
 	return NULL;
 }
 
+/*
+ * The charset named in HTMLCONTENTTYPE, for an XML "encoding=" declaration that
+ * must match the bytes Xymon passes through (the host's status text, which the
+ * web pages render under this same charset). "UTF-8" -- HTMLCONTENTTYPE's own
+ * default -- when none is named. The name is taken only when it is a well-formed
+ * charset= value: at the start of a parameter (after ';' or space, not inside
+ * another name like xcharset=), case-insensitive, quotes matched, made of name
+ * characters and starting with a letter; anything else leaves the default.
+ * htmlcontentutf8() reports whether that charset is UTF-8, so a caller can keep
+ * the feed well-formed (see xmlquoted()).
+ */
+static char htmlcc_charset[48];
+static int htmlcc_utf8 = 1;
+static int htmlcc_done = 0;
+
+static void htmlcc_parse(void)
+{
+	char *ct = xgetenv("HTMLCONTENTTYPE");
+	char *p;
+	char quote = '\0';
+	size_t len;
+
+	htmlcc_done = 1;
+	strcpy(htmlcc_charset, "UTF-8");
+	htmlcc_utf8 = 1;
+	if (!ct) return;
+
+	for (p = ct; *p; p++) {
+		if ((strncasecmp(p, "charset=", 8) == 0) && (p > ct) &&
+		    ((p[-1] == ';') || (p[-1] == ' ') || (p[-1] == '\t'))) break;
+	}
+	if (!*p) return;
+	p += 8;
+	if ((*p == '"') || (*p == '\'')) quote = *(p++);
+	len = strspn(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-");
+	if ((len == 0) || (len >= sizeof(htmlcc_charset))) return;
+	/* XML's EncName starts with a letter */
+	if (!(((*p >= 'A') && (*p <= 'Z')) || ((*p >= 'a') && (*p <= 'z')))) return;
+	/* The name must end there: at its closing quote, or the end of the value */
+	if (quote) { if (p[len] != quote) return; }
+	else if (p[len] && (p[len] != ';') && (p[len] != ' ') && (p[len] != '\t')) return;
+
+	memcpy(htmlcc_charset, p, len); htmlcc_charset[len] = '\0';
+	htmlcc_utf8 = ((strcasecmp(htmlcc_charset, "UTF-8") == 0) || (strcasecmp(htmlcc_charset, "UTF8") == 0));
+}
+
+char *htmlcontentcharset(void)
+{
+	if (!htmlcc_done) htmlcc_parse();
+	return htmlcc_charset;
+}
+
+int htmlcontentutf8(void)
+{
+	if (!htmlcc_done) htmlcc_parse();
+	return htmlcc_utf8;
+}
+
